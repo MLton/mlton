@@ -432,7 +432,6 @@ structure MLton: MLTON =
 	 struct
 	    open Word
 
-	    fun ~ (x: word) = 0w0 - x
 	    fun rol (w, w') =
 	       let
 		  val w' = w' mod (fromInt wordSize)
@@ -469,7 +468,6 @@ structure MLton: MLTON =
 	 struct
 	    open Word8
 
-	    fun ~ (x: word) = 0w0 - x
 	    val _ = >> : word * Word.word -> word
 	    fun rol (w: word, w': Word.word): word =
 	       let
