@@ -230,12 +230,6 @@ typedef struct GC_state {
 	/* GC_init computes frameLayout index using native codegen style. */
 	bool native;
 	
-	/* Resizing contols (expressed as ratios of heapSize / live data) */
-	uint minLive;      /* shrink heap when bytesLive * minLive < heapSize */
-	uint maxLive;      /* grow heap when bytesLive * maxLive > heapSize */
-	uint liveRatio;    /* when resizing, set heapSize to the smallest multiple
-	* of pages greater than liveRatio * numBytesLive
-	*/
 	bool useFixedHeap; /* if true, then don't resize the heap */
 	uint maxHeapSize;  /* if zero, then unlimited,
 			    * else fromSize + toSize < maxHeapSize
@@ -260,6 +254,15 @@ typedef struct GC_state {
 	int bytesLive;		/* Number of bytes copied by most recent GC. */
 	pointer back;     	/* Points at next available word in toSpace. */
 	pointer toLimit;	/* End of tospace. */
+
+	/* Memory */
+	uint totalRam; /* bytes */
+	uint totalSwap; /* bytes */
+	uint halfMem; /* bytes */
+	uint halfRam; /* bytes */
+	uint liveThresh1;
+	uint liveThresh2;
+	uint liveThresh3;
 
 	/* ------------------------------------------------- */
 	/*                     loadWorld                     */
@@ -298,9 +301,6 @@ typedef struct GC_state {
 	uint maxStackSizeSeen;
 	uint maxBytesLive;
 	float ramSlop;
-	uint totalRam; /* bytes */
-	uint totalSwap; /* bytes */
-	uint maxSemi; /* bytes */
 	bool isOriginal;
 	uint pageSize; /* bytes */
 } *GC_state;
@@ -450,10 +450,6 @@ static inline bool GC_isValidSlot(GC_state s, pointer slot) {
 
 typedef void (*GC_pointerFun)(GC_state s, pointer *p);
 
-/* Apply f to each global pointer into the heap. */
-void GC_foreachGlobal(GC_state s, GC_pointerFun f);
-void GC_foreachPointerInRange(GC_state s, pointer front, pointer *back,
-					GC_pointerFun f);
 void GC_display(GC_state s, FILE *stream);
 void GC_fromSpace(GC_state s);
 bool GC_mutatorInvariant(GC_state s);
@@ -461,6 +457,11 @@ uint GC_objectSize(pointer p);
 void GC_setHeapParams(GC_state s, uint size);
 void GC_setStack(GC_state s);
 void GC_toSpace(GC_state s);
+
+/* Translate all pointers to the heap from within the stack and the heap for
+ * a heap that has moved from s->base == old to s->base.
+ */
+void GC_translateHeap(GC_state s, pointer from, pointer to, uint size);
 
 pointer GC_foreachPointerInObject(GC_state s, GC_pointerFun f, pointer p);
 

@@ -32,35 +32,6 @@ void GC_saveWorld(GC_state s, int fd, void (*saveGlobals)(int fd)) {
 }
 
 /* ------------------------------------------------- */
-/*                   translateHeap                   */
-/* ------------------------------------------------- */
-
-static void translatePointer(GC_state s, pointer *p) {
-	if (1 == s->translateDirection)
-		*p += s->translateDiff;
-	else
-		*p -= s->translateDiff;
-}
-
-/* Translate all pointers to the heap from within the stack and the heap for
- * a heap that has moved from s->base == old to s->base.
- */
-static void translateHeap(GC_state s, pointer old) {
-	if (s->base == old)
-		return;
-	else if (s->base > old) {
-		s->translateDiff = s->base - old;
-		s->translateDirection = 1;
-	} else {
-		s->translateDiff = old - s->base;
-		s->translateDirection = -1;
-	}
-	/* Translate globals and heap. */
-	GC_foreachGlobal(s, translatePointer);
-	GC_foreachPointerInRange(s, s->base, &s->frontier, translatePointer);
-}
-
-/* ------------------------------------------------- */
 /*                   GC_loadWorld                    */
 /* ------------------------------------------------- */
 
@@ -95,7 +66,7 @@ void GC_loadWorld(GC_state s,
 	/* translateHeap must occur after loading the heap and globals, since it
 	 * changes pointers in all of them.
 	 */
-	translateHeap(s, base);
+	GC_translateHeap(s, base, s->base, heapSize);
 	GC_setStack(s);
 	/* Allocate toSpace.  We at least must do this if s->useFixedHeap. */
 	s->toSize = s->fromSize;

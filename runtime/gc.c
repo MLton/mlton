@@ -22,6 +22,9 @@
 #include <values.h>
 #endif
 
+typedef unsigned long long W64;
+typedef unsigned long W32;
+
 #define METER FALSE  /* Displays distribution of object sizes at program exit. */
 
 /* The mutator should maintain the invariants
@@ -35,6 +38,7 @@
  */
 
 enum {
+	BACKOFF_TRIES = 20,
 	BOGUS_EXN_STACK = 0xFFFFFFFF,
 	BOGUS_POINTER = 0x1,
 	DEBUG = FALSE,
@@ -58,6 +62,10 @@ enum {
 		numNonPointers = (header & NON_POINTER_MASK) >> POINTER_BITS;	\
 		numPointers = header & POINTER_MASK;				\
 	} while (0)
+
+static inline ulong meg (uint n) {
+	return n / (1024ul * 1024ul);
+}
 
 static inline uint toBytes(uint n) {
 	return n << 2;
@@ -209,6 +217,14 @@ static void showMem() {
 }
 
 #endif
+
+static inline void releaseToSpace (GC_state s) {
+	if (s->messages)
+		fprintf (stderr, "Releasing to space.\n");
+	release (s->toBase, s->toSize);
+	s->toBase = NULL;
+	s->toSize = 0;
+}
 
 /* ------------------------------------------------- */
 /*                     roundPage                     */
@@ -418,59 +434,51 @@ stackCopy(GC_stack from, GC_stack to)
 /*                 computeSemiSize                   */
 /* ------------------------------------------------- */
 
-typedef unsigned long long W64;
-typedef unsigned long W32;
+#define LIVE_RATIO_MIN 1.25
 
-static inline ulong meg (uint n) {
-	return n / (1024ul * 1024ul);
-}
+enum {
+	LIVE_RATIO = 8,	/* The desired live ratio. */
+};
 
-/* computeSemiSize returns the amount of space needed for a semispace,
- * given that live is the number of bytes that will be coped into the space
- * and used is the amount used by the other semispace.
- * It will attempt to make the size live * s->liveRatio, but will not
- * violate the invariant that fromSize + toSize <= maxHeapSize.  It will also
- * back off in the case that more space is needed than available RAM.
+/*
+ * For computing the semispace size (y) based on the live amount (x), there are
+ * three possibilities, depending on x.  
  *
- * It is careful not to overflow when doing the multiply.
+ * Let R = s->ramSlop * s->totalRam
+ * 
+ * Case 1:  x * (1 + LIVE_RATIO) <= R
+ * 	The semispace will easily fit in memory with the live ratio and
+ * 	there will be enough space to do a GC in memory, which requires having
+ * 	the entire old space (of size y = LIVE_RATIO * x) plus the amount of
+ *      live data in memory (x) in new space.
+ *   In this case, set y = x * LIVE_RATIO.
+ * 
+ * Case 2: R < x * (1 + LIVE_RATIO) and x * (1 + LIVE_RATIO_MIN) <= R
+ * 	The semispace will not fit into memory with the live ratio, but there
+ * 	is still enough space that we can hope to do the GC in memory if
+ * 	we use a smaller live ratio.
+ *   In this case set y = R - x.   Thus, x + y = R, and we can still do the
+ *   GC in memory.
+ * 
+ * Case 3: R < x * (1 + LIVE_RATIO_MIN)
+ * 	Trying to do the GC in memory would require too small of a live ratio,
+ * 	so we're gonna page.  Use a small live ratio to keep the working set
+ * 	small. 
+ *    In this case, set y = LIVE_RATIO_MIN * x.
  */
-static uint
-computeSemiSize(GC_state s, W64 live, uint used, int try)
-{
-	W64 neededLong;
-	uint needed;
 
-	assert(not s->useFixedHeap);
-	neededLong = live * s->liveRatio;
-	if (neededLong <= (W64)s->maxSemi)
-		needed = roundPage(s, (W32)neededLong);
-	else {
-		W64 maybe;
-		uint n;
-		static double ks[13] = {1.99, 1.99, 1.8, 1.7, 1.6, 1.5, 
-					1.4, 1.3, 1.2, 1.15, 1.1, 1.05, 1.01};
-		double k;
+static W32 computeSemiSize (GC_state s, W64 live) {
+	W32 res;
 
-		assert (0 <= try and try < 13);
-		k = ks[try];
-		k = ((k-1)/2)+1;
-		maybe = (W64)(ks[try] * (double)live);
-		n = roundPage(s, maybe > (W64)(s->totalRam + s->totalSwap)
-				? s->totalRam + s->totalSwap
-				: (W32)maybe);
-		if (n <= s->maxSemi)
-			n = s->maxSemi;
-		else if (s->messages and try > 0)
-				fprintf(stderr, "[Requested %lluMb (> %luMb) cannot be satisfied, allocating %luMb instead. Live = %luMb, k=%.2f]\n",
-					neededLong / (1024 * 1024), 
-					meg(s->maxSemi),
-					meg(n), meg(live), ks[try]);
-		needed = n;
-	}
-	if (s->maxHeapSize > 0 and needed > s->maxHeapSize - used)
-		return roundPage(s, s->maxHeapSize - used);
+	if (live <= s->liveThresh1)
+		res = min (live * LIVE_RATIO, s->halfMem);
+	else if (live <= s->liveThresh2)
+	        res = min (s->ramSlop * s->totalRam - live, s->halfMem);
+	else if (live <= s->liveThresh3)
+		res = live * LIVE_RATIO_MIN;
 	else
-		return needed;
+		res = s->totalRam + s->totalSwap;
+	return roundPage (s, res);
 }
 
 /* ------------------------------------------------- */
@@ -636,7 +644,7 @@ toData(pointer p)
 	word header;	
 
 	header = *(word*)p;
-	return ((ARRAY_TAG == (header & TAG_MASK))
+	return ((0x0 == (header & 0x80000000))
 		? p + 2 * WORD_SIZE
 		: p + WORD_SIZE);
 }
@@ -651,7 +659,7 @@ toData(pointer p)
  * f may increase *back (for example, this is done by forward).
  */
 
-inline void
+static inline void
 GC_foreachPointerInRange(GC_state s, pointer front, pointer *back,
 			 GC_pointerFun f)
 {
@@ -916,9 +924,10 @@ GC_fromSpace(GC_state s)
 
 /* This toggles back and forth between high and low addresses to decrease
  * the chance of virtual memory fragmentation causing an mmap to fail.
- * This is important for large (>1G) heaps.
+ * This is important for large heaps.
  */
-static void *smmap_dienot(size_t length, int direction) {
+static void *allocateSemi (GC_state s, size_t length) {
+	static int direction = 1;
 	int i;
 	void *result = (void*)-1;
 
@@ -943,27 +952,18 @@ static void *smmap_dienot(size_t length, int direction) {
 		result = mmap(address+(void*)0, length, PROT_READ | PROT_WRITE,
 				MAP_PRIVATE | MAP_ANON, -1, 0);
 #endif
-		unless ((void*)-1 == result)
+		unless ((void*)-1 == result) {
+			direction = (direction==0);
+			if (s->toSize > s->maxHeapSizeSeen)
+				s->maxHeapSizeSeen = s->toSize;
 			break;
+		}
 	}
 	return result;
 }
 
-static void 
-toSpace (GC_state s) {
-	static int direction = 1;
-	s->toBase = smmap_dienot(s->toSize, direction);
-	if (s->toBase != (void*)-1) {
-		direction = (direction==0);
-		if (s->toSize > s->maxHeapSizeSeen)
-			s->maxHeapSizeSeen = s->toSize;
-	}
-}
-
-void 
-GC_toSpace(GC_state s)
-{
-	toSpace(s);
+void GC_toSpace (GC_state s) {
+	s->toBase = allocateSemi (s, s->toSize);
  	if (s->toBase == (void*)-1) 
 		diee("Out of swap space");
 }
@@ -1153,7 +1153,7 @@ GC_setHeapParams(GC_state s, uint size)
 			s->fromSize = roundPage(s, s->ramSlop * s->totalRam);
 	        s->fromSize = roundPage(s, s->fromSize / 2);
 	} else {
-		s->fromSize = computeSemiSize(s, size, 0, 0);
+		s->fromSize = computeSemiSize (s, size);
 	}
 	if (size + LIMIT_SLOP > s->fromSize)
 		die("Out of memory (setHeapParams).");
@@ -1174,10 +1174,9 @@ static void readProcessor() {
 }
 
 /*
- * Set RAM and SWAP size.  Very Linux specific.
+ * Set RAM and SWAP size.
  * Note the total amount of RAM is multiplied by ramSlop so that we don't
- * use all of memory or start swapping.  It used to be .95, but Linux
- * 2.2 is more aggressive about swapping.
+ * use all of memory or start swapping.
  *
  * Ensure that s->totalRam + s->totalSwap < 4G.
  */
@@ -1237,7 +1236,6 @@ setMemInfo(GC_state s)
 	GlobalMemoryStatus(&ms); 
 	s->totalRam = ms.dwTotalPhys;
 	s->totalSwap = ms.dwTotalPageFile;
-	s->maxSemi = roundPage(s, s->ramSlop * (double)s->totalRam / 2);
 }
 #endif
 
@@ -1321,14 +1319,12 @@ GC_init(GC_state s, int argc, char **argv,
 	s->maxBytesLive = 0;
 	s->maxHeapSize = 0;
 	s->maxHeapSizeSeen = 0;
-	s->maxLive = 3;
 	s->maxPause = 0;
 	s->maxStackSizeSeen = 0;
 	s->messages = FALSE;
-	s->minLive = 20;
 	s->numGCs = 0;
 	s->numLCs = 0;
-	s->ramSlop = 0.85;
+	s->ramSlop = 0.80;
 	s->savedThread = BOGUS_THREAD;
 	s->signalHandler = BOGUS_THREAD;
 	sigemptyset(&s->signalsHandled);
@@ -1336,14 +1332,6 @@ GC_init(GC_state s, int argc, char **argv,
 	sigemptyset(&s->signalsPending);
 	s->startTime = currentTime();
 	s->summary = FALSE;
-	/* The next bit is for heap resizing. */
-	/* Set liveRatio (close) to the geometric mean of minLive and maxLive. */
-	{ 
-		uint i;
-		for (i = s->maxLive; i * i <= s->minLive * s->maxLive; ++i)
-			/* Nothing */ ;
-		s->liveRatio = i;
-	}
  	readProcessor();
 	worldFile = NULL;
 	i = 1;
@@ -1403,10 +1391,15 @@ GC_init(GC_state s, int argc, char **argv,
 		}
 	}
 	setMemInfo(s);
-	s->maxSemi = roundPage(s, s->ramSlop * (double)s->totalRam / 2);
+	s->halfMem = 
+		roundPage (s, s->ramSlop * (s->totalRam + s->totalSwap) / 2);
+	s->halfRam = roundPage (s, s->ramSlop * s->totalRam / 2);
+	s->liveThresh1 = s->ramSlop * s->totalRam / (1 + LIVE_RATIO);
+	s->liveThresh2 = s->ramSlop * s->totalRam / (1 + LIVE_RATIO_MIN);
+	s->liveThresh3 = (s->totalRam + s->totalSwap) / LIVE_RATIO_MIN;
 	if (DEBUG)
-		fprintf(stderr, "totalRam = %u  totalSwap = %u  maxSemi = %u\n",
-			s->totalRam, s->totalSwap, s->maxSemi);
+		fprintf(stderr, "totalRam = %u  totalSwap = %u\n",
+			s->totalRam, s->totalSwap);
 	if (s->isOriginal)
 		newWorld(s);
 	else
@@ -1417,6 +1410,39 @@ GC_init(GC_state s, int argc, char **argv,
 #if METER
 int sizes[25600];
 #endif
+
+/* ------------------------------------------------- */
+/*                   translateHeap                   */
+/* ------------------------------------------------- */
+
+static void translatePointer(GC_state s, pointer *p) {
+	if (1 == s->translateDirection)
+		*p += s->translateDiff;
+	else
+		*p -= s->translateDiff;
+}
+
+void GC_translateHeap (GC_state s, pointer from, pointer to, uint size) {
+	pointer limit;
+
+	if (s->messages)
+		fprintf (stderr, "Translating heap of size %s from 0x%x to 0x%x.\n",
+				uintToCommaString (size),
+				(uint)from, (uint)to);
+	if (from == to)
+		return;
+	else if (to > from) {
+		s->translateDiff = to - from;
+		s->translateDirection = 1;
+	} else {
+		s->translateDiff = from - to;
+		s->translateDirection = -1;
+	}
+	/* Translate globals and heap. */
+	GC_foreachGlobal (s, translatePointer);
+	limit = to + size;
+	GC_foreachPointerInRange (s, to, &limit, translatePointer);
+}
 
 /* ------------------------------------------------- */
 /*                      forward                      */
@@ -1483,9 +1509,12 @@ forward(GC_state s, pointer *pp)
 		 * than fromSpace, and so the copy may fail.
 		 */
   		if (s->back + size + skip > s->toLimit) {
-			showMem ();
-			die("Out of memory (forward).\nsize=%u skip=%u remaining=%u s->fromSize=%u s->toSize=%u headerBytes=%d objectBytes=%u header=%x\nDiagnostic: probably a RAM problem.",
-				size, skip, s->toLimit - s->back, s->fromSize, s->toSize, headerBytes, objectBytes, header);
+			if (s->messages) {
+				showMem ();
+				fprintf (stderr, "size=%u skip=%u remaining=%u s->fromSize=%u s->toSize=%u headerBytes=%d objectBytes=%u header=%x\n",
+						size, skip, s->toLimit - s->back, s->fromSize, s->toSize, headerBytes, objectBytes, header);
+			}
+			die ("Out of memory (forward).\nDiagnostic: probably a RAM problem.");
 		}
   		/* Copy the object. */
  		if (FALSE and processor_has_sse2 and size >= 8192) {
@@ -1539,78 +1568,147 @@ static inline void forwardEachPointerInRange(GC_state s, pointer front,
 /*                       doGC                        */
 /* ------------------------------------------------- */
 
+static inline void prepareToSpace (GC_state s, uint bytesRequested, 
+					uint stackBytesRequested) {
+	W64 needed;
+	W32 backoff, requested;
+	int i;
+
+	if (s->useFixedHeap)
+		return;
+	needed = (W64)s->bytesLive + (W64)bytesRequested 
+			+ (W64)stackBytesRequested;
+	requested = computeSemiSize (s, needed);
+	if (0 != s->toSize) {
+		assert (s->fromSize == s->toSize);
+		if (s->toSize < requested / 2)
+			/* The heap needs to grow. */
+			releaseToSpace (s);
+		else
+			/* The heap is fine. */
+			return;
+	}
+	assert (0 == s->toSize and NULL == s->toBase);
+	if (requested < s->fromSize)
+		requested = s->fromSize;
+	s->toSize = requested;
+	backoff = roundPage (s, requested / BACKOFF_TRIES);
+	for (i = 0; i < BACKOFF_TRIES; ++i) {
+		s->toBase = allocateSemi (s, s->toSize);
+		unless ((void*)-1 == s->toBase)
+			return;
+		s->toBase = (void*)NULL;
+		if (s->messages)
+			fprintf(stderr, "[Requested %luM cannot be satisfied, backing off by %luM (need = %luM).\n",
+				meg(s->toSize), meg(backoff), meg(needed));
+		s->toSize -= backoff;
+	}
+	if (s->messages)
+		showMem ();
+	die ("Out of swap space: cannot obtain %u bytes.", s->toSize);
+}
+
+static inline void resizeHeap (GC_state s, uint bytesRequested) {
+	W64 needed;
+	uint keep;
+
+	if (s->useFixedHeap)
+		return;
+	needed = (W64)s->bytesLive + bytesRequested;
+	/* Determine the size of new space (now fromSpace). */
+	if (needed <= s->liveThresh1)
+		/* If the ratio of live data to semispace size is too low,
+		 * shrink new space.
+		 */
+		keep = needed * 20 < (W64)s->fromSize
+			? roundPage (s, needed * LIVE_RATIO)
+			: s->fromSize;
+	else 
+		/* We're in the region where paging is relevant, so shrink
+		 * the heap to whatever we think is the optimal size.
+		 */
+		keep = computeSemiSize (s, needed);
+	if (keep < s->fromSize) {
+		if (DEBUG or s->messages)
+			fprintf(stderr, 
+				"Shrinking new space at %x to %u bytes.\n",
+				(uint)s->base , keep);
+		decommit (s->base + keep, s->fromSize - keep);
+		s->fromSize = keep;
+	}
+	/* Determine the size of old space, and possibly unmap it. */
+	if (s->toSize < s->fromSize)
+		/* toSpace is smaller than fromSpace, so we won't be
+		 * able to use it for the next GC anyways.
+		 */
+		keep = 0;
+	else if (s->fromSize > s->halfRam)
+		/* Holding on to toSpace may cause swapping. */
+		keep = 0;
+        /* s->fromSize <= s->toSize and s->fromSize < s->halfRam */
+	else if (3 * needed > (W64)s->toSize)
+		/* toSpace is too small */
+		keep = 0;
+	else
+		/* toSpace is about right, so make it the same size as
+		 * fromSpace.
+		 */
+		keep = s->fromSize;
+	assert (keep <= s->toSize);
+	if (keep < s->toSize) {
+		if (DEBUG or s->messages)
+			fprintf(stderr, 
+				"Shrinking old space at %x to %u bytes.\n",
+				(uint)s->toBase , keep);
+		assert(keep <= s->toSize);
+		if (0 == keep)
+			releaseToSpace (s);
+		else {
+			decommit(s->toBase + keep, s->toSize - keep);
+			s->toSize = keep;
+		}
+	}
+}
+
+#if (defined (__CYGWIN__))
+static inline void shrinkFromSpace (GC_state s, W32 keep) {
+
+}
+#elif (defined (__linux__))
+static inline void shrinkFromSpace (GC_state s, W32 keep) {
+	if (keep < s->fromSize) {
+		decommit (s->base + keep, s->fromSize - keep);
+		s->fromSize = keep;
+	}
+}
+#endif
+
 void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 	uint gcTime;
 	uint size;
-	W64 live;
-	uint needed;
-	int try;
 	pointer front;
 	struct rusage ru_start, ru_finish, ru_total;
-
+	
 	assert(invariant(s));
 	if (DEBUG or s->messages)
 		fprintf(stderr, "Starting gc.  bytesRequested = %u\n",
 				bytesRequested);
 	fixedGetrusage(RUSAGE_SELF, &ru_start);
-	live = (W64)s->bytesLive + (W64)bytesRequested 
-		+ (W64)stackBytesRequested;
-	unless (s->useFixedHeap) { /* Get toSpace ready. */
-		try = 0;
-	retry:
-		needed = computeSemiSize (s, live, s->fromSize, try);
-		/* We would like toSpace to be as big as fromSpace. Although,
-		 * if we are backing off (try > 1) then we will not insist on
-                 * this.
-                 */
-		if (needed < s->fromSize and try <= 1)
-			needed = s->fromSize;
-		/* Massage toSpace so that it is of needed size. */
-		if (s->toBase != NULL) {
-			if (s->toSize < needed) {
-				if (DEBUG or s->messages)
-					fprintf(stderr, "Unmapping toSpace\n");
-				release(s->toBase, s->toSize);
-				s->toBase = NULL;
-			 } else if (s->toSize > needed) {
-				uint delete;
-
-				delete = s->toSize - needed;
-				if (DEBUG or s->messages)
-					fprintf(stderr, "Shrinking toSpace by %u\n",
-						 delete);
-				decommit(s->toBase + needed, delete);
-			 }
-		}
-		s->toSize = needed;
-		if ((void*)NULL == s->toBase) {
-			toSpace(s);
-			if ((void*)-1 == s->toBase) {
-				s->toBase = (void*)NULL;
-				if (++try < 13)
-					goto retry;
-				else {
-					showMem ();
-					die ("Out of swap space: cannot obtain %u bytes.", s->toSize);
-				}
-			}
-		}
-	}
-	/* toSpace is ready.  */
-	assert(s->toBase != (void*)NULL);
+	prepareToSpace (s, bytesRequested, stackBytesRequested);
+	assert (s->toBase != (void*)NULL);
  	if (DEBUG or s->messages) {
 		fprintf(stderr, "fromSpace = %x  toSpace = %x\n",
 			(uint)s->base, (uint)s->toBase);
-	 	fprintf(stderr, 
-			"fromSpace size = %s", uintToCommaString(s->fromSize));
-		fprintf(stderr, 
-			"  toSpace %s\n", uintToCommaString(s->toSize));
+	 	fprintf(stderr, "fromSpace size = %s", 
+				uintToCommaString(s->fromSize));
+		fprintf(stderr, "  toSpace size = %s\n",
+				uintToCommaString(s->toSize));
 	}
  	s->numGCs++;
  	s->bytesAllocated += s->frontier - s->base - s->bytesLive;
+	/* The actual GC. */
 	s->back = s->toBase;
 	s->toLimit = s->toBase + s->toSize;
-	/* The actual GC. */
 	front = s->back;
 	GC_foreachGlobal(s, forward);
 	forwardEachPointerInRange(s, front, &s->back);
@@ -1633,89 +1731,56 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 	s->bytesLive = s->frontier - s->base;
 	if (s->bytesLive > s->maxBytesLive)
 		s->maxBytesLive = s->bytesLive;
-	/* Resize heap, if necessary. */
-	unless (s->useFixedHeap) {
-		W64 needed;
-		uint keep;
-
-		needed = (W64)s->bytesLive + bytesRequested;
-		/* Determine the size of new space (now fromSpace). */
-		if (needed * s->minLive < (W64)s->fromSize) {
-			/* The ratio of live data to semispace size is too low,
-			 * so shrink new space.
-			 */
-			keep = roundPage(s, needed * s->liveRatio);
-		} else if (s->fromSize > s->maxSemi) {
-			if (2 * needed <= (W64)s->maxSemi) {
-				/* The live data fits in a semispace that is half
-				 * of the RAM size, with a factor of two to 
-				 * spare, so shrink down to maxSemi.
- 				 */
-				keep = s->maxSemi;
-			} else {
-				/* Needed is large.  Allocate a factor of two
-				 * provided that the semispace will still fit
-				 * in RAM.
- 				 */
-				double mult;
-
-				mult = (2 * needed > s->ramSlop * s->totalRam)
-					? 1.25 : 2.0;
-				keep = min(s->fromSize,
-					roundPage(s, (size_t)needed * mult));
-			}
-		} else
-			/* The heap is about right -- leave new space alone. */
-			keep = s->fromSize;
-		assert (keep <= s->fromSize);
-		if (keep < s->fromSize) {
-			if (DEBUG or s->messages)
-				fprintf(stderr, 
-					"Shrinking new space at %x to %u bytes.\n",
-					(uint)s->base , keep);
-			assert(keep <= s->fromSize);
-			decommit(s->base + keep, s->fromSize - keep);
-			s->fromSize = keep;
-		}
-		/* Determine the size of old space, and possibly unmap it. */
-		if (s->toSize < s->fromSize)
-			/* toSpace is smaller than fromSpace, so we won't be
-			 * able to use it for the next GC anyways.
-			 */
-			keep = 0;
-		else if (s->fromSize > s->maxSemi)
-			/* Holding on to toSpace may cause swapping. */
-			keep = 0;
-		else if (s->fromSize == s->maxSemi)
-			/* We fit in memory, so keep spaces at s->maxSemi. */
-			keep = s->fromSize;
-	        /* s->fromSize <= s->toSize and s->fromSize < s->maxSemi */
-		else if (needed * s->maxLive > (W64)s->toSize)
-			/* toSpace is too small */
-			keep = 0;
-		else
- 			/* toSpace is about right, so make it the same size as
-			 * fromSpace.
-			 */
-			keep = s->fromSize;
-		assert (keep <= s->toSize);
-		if (keep < s->toSize) {
-			if (DEBUG or s->messages)
-				fprintf(stderr, 
-					"Shrinking old space at %x to %u bytes.\n",
-					(uint)s->toBase , keep);
-			assert(keep <= s->toSize);
-			if (0 == keep)
-				release(s->toBase, s->toSize);
-			else
-				decommit(s->toBase + keep, s->toSize - keep);
-			s->toSize = keep;
-			if (0 == keep)
-				s->toBase = NULL;
-		}
-	}
-	setLimit(s);
 	s->bytesCopied += s->bytesLive;
+	setLimit(s);
+	/* If the GC didn't create enough space, then release toSpace, shrink 
+         * fromSpace as much as possible, shifting it to a new location.  Then
+         * try to allocate the semispace again.
+	 */
+	if (bytesRequested > s->limit - s->frontier) {
+		pointer old;
+		W32 keep, size;
+
+		if (s->messages)
+			fprintf (stderr, "Shifting.\n");
+		unless (0 == s->toSize)
+			releaseToSpace (s);
+		old = s->base;
+		size = s->fromSize;
+		/* Allocate a new from space that is just large enough. */
+		keep = roundPage (s, s->bytesLive);
+		s->fromSize = keep;
+		s->base = allocateSemi (s, keep);
+		if ((void*)-1 == s->base) {
+			if (s->messages)
+				showMem ();
+			die ("Out of memory.  Unable to shift from space.");
+		}
+		memcpy (s->base, old, keep);
+		GC_translateHeap (s, old, s->base, s->bytesLive);
+		release (old, size);
+		/* Allocate a new toSpace and copy to it. */
+		prepareToSpace (s, bytesRequested, stackBytesRequested);
+		old = s->base;
+		memcpy (s->toBase, s->base, keep);
+		GC_translateHeap (s, old, s->toBase, s->bytesLive);
+		release (s->base, keep);
+		s->base = s->toBase;
+		s->fromSize = s->toSize;
+		s->toBase = NULL;
+		s->toSize = 0;
+		GC_setStack (s);
+		s->frontier = s->base + s->bytesLive;
+		setLimit (s);
+		if (bytesRequested > s->limit - s->frontier) {
+			if (s->messages)
+				showMem ();
+			die ("Out of memory.");
+		}
+	} else {
+		resizeHeap (s, bytesRequested);
+		setLimit (s);
+	}
 	fixedGetrusage(RUSAGE_SELF, &ru_finish);
 	rusageMinusMax(&ru_finish, &ru_start, &ru_total);
 	rusagePlusMax(&s->ru_gc, &ru_total, &s->ru_gc);
@@ -1728,15 +1793,6 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 			intToCommaString(s->bytesLive),
 			100.0 * ((double) s->bytesLive) / size);
 	}
-	unless (bytesRequested <= s->limit - s->frontier) {
-		if (s->useFixedHeap) {
-			die("Out of memory (doGC).");
-		} 
-		if (DEBUG)
-			fprintf(stderr, "Recursive call to doGC.\n");
-		GC_doGC(s, bytesRequested, 0);
-	}
-	assert(bytesRequested <= s->limit - s->frontier);
 	if (DEBUG) 
 		GC_display(s, stderr);
 	assert(invariant(s));
@@ -1748,21 +1804,21 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 
 void GC_gc(GC_state s, uint bytesRequested, bool force,
 		string file, int line) {
+	uint stackBytesRequested;
+
 	GC_enter(s);
 	s->currentThread->bytesNeeded = bytesRequested;
-	do {
-	uint stackBytesRequested;
-	if (DEBUG) {
-		fprintf (stderr, "%s %d: ", file, line);
-		GC_display(s, stderr);
-	}
+start:
 	stackBytesRequested =
 		(stackTopIsOk(s, s->currentThread->stack))
 		? 0 
 		: stackBytes(2 * s->currentThread->stack->reserved);
-	if (DEBUG)
+	if (DEBUG) {
+		fprintf (stderr, "%s %d: ", file, line);
 		fprintf(stderr, "bytesRequested = %u  stackBytesRequested = %u\n",
 				bytesRequested, stackBytesRequested);
+		GC_display(s, stderr);
+	}
 	if (force or
 		(W64)(W32)s->frontier + (W64)bytesRequested 
 			+ (W64)stackBytesRequested > (W64)(W32)s->limit) {
@@ -1770,7 +1826,6 @@ void GC_gc(GC_state s, uint bytesRequested, bool force,
 			fprintf(stderr, "%s %d: GC_doGC\n", file, line);
 		/* This GC will grow the stack, if necessary. */
 		GC_doGC (s, bytesRequested, s->currentThread->stack->reserved);
-		assert (bytesRequested <= s->limit - s->frontier);
 	} else if (not (stackTopIsOk (s, s->currentThread->stack))) {
 		uint size;
 		GC_stack stack;
@@ -1787,7 +1842,6 @@ void GC_gc(GC_state s, uint bytesRequested, bool force,
 		stackCopy(s->currentThread->stack, stack);
 		s->currentThread->stack = stack;
 		GC_setStack(s);
-		assert (bytesRequested <= s->limit - s->frontier);
 	} else {
 		/* Switch to the signal handler thread. */
 		assert (0 == s->canHandle);
@@ -1806,9 +1860,11 @@ void GC_gc(GC_state s, uint bytesRequested, bool force,
                  */
 		s->canHandle = 2;
 		switchToThread(s, s->signalHandler);
+		bytesRequested = s->currentThread->bytesNeeded;
+		if (bytesRequested > s->limit - s->frontier)
+			goto start;
 	}
-	} while ((W64)(W32)s->frontier + (W64)s->currentThread->bytesNeeded 
-			> (W64)(W32)s->limit);
+	assert (s->currentThread->bytesNeeded <= s->limit - s->frontier);
 	/* The GC_enter and GC_leave must be outside the while loop.  If they
          * were inside and force == TRUE, a signal handler could intervene just
          * before the GC_enter or just after the GC_leave, which would set 
@@ -1873,7 +1929,8 @@ GC_done (GC_state s)
 {
 	GC_enter(s);
 	release(s->base, s->fromSize);
-	if (s->toBase != NULL) release(s->toBase, s->toSize);
+	unless (0 == s->toSize)
+		releaseToSpace (s);
 	if (s->summary) {
 		double time;
 		uint gcTime = rusageTime(&s->ru_gc);
