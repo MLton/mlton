@@ -1535,12 +1535,14 @@ structure Program =
 		   in
 		      ()
 		   end)
+	       val root = funcNode main
 	       val l =
-		  Graph.layoutDot
-		  (graph, {title = title,
-			   options = [],
-			   edgeOptions = edgeOptions,
-			   nodeOptions = nodeOptions})
+		  Graph.layoutDot'
+		  (graph, fn {nodeName} =>
+		   {title = title,
+		    options = [GraphOption.Rank (Min, [{nodeName = nodeName root}])],
+		    edgeOptions = edgeOptions,
+		    nodeOptions = nodeOptions})
 	       val _ = destroy ()
 	    in
 	       l
@@ -1568,7 +1570,7 @@ structure Program =
 		    saveToFile
 		    ({suffix = "call-graph.dot"},
 		     Dot, (), Layout (fn () =>
-				     layoutCallGraph (p, !Control.inputFile)))
+				      layoutCallGraph (p, !Control.inputFile)))
 		 end
 	 end
 
