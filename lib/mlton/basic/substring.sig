@@ -10,14 +10,13 @@ signature SUBSTRING =
    sig
       type t
 
-      val all: string -> t 
       val base: t -> string * {start: int, length: int}
       val compare: t * t -> order 
       val concat: t list -> string
       val endOf: t -> int (* start + length *)
       val explode: t -> char list 
       val extract: string * int * int option -> t 
-      val first: t -> char option 
+      val first: t -> char option
       val getc: t -> (char * t) option 
       val isEmpty: t -> bool
       val layout: t -> Layout.t
