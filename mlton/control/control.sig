@@ -249,6 +249,10 @@ signature CONTROL =
       (* version number *)
       val version: string
 
+      val warnNonExhaustive: bool ref
+
+      val warnRedundant: bool ref
+
       (*------------------------------------*)
       (*             End Flags              *)
       (*------------------------------------*)

@@ -250,7 +250,8 @@ fun casee {caseType: Xtype.t,
       fun warn () =
 	 let
 	    val _ =
-	       if noMatch <> Cexp.RaiseAgain
+	       if !Control.warnNonExhaustive
+		  andalso noMatch <> Cexp.RaiseAgain
 		  andalso Vector.exists (cases, fn {isDefault, numUses, ...} =>
 					 isDefault andalso !numUses > 0)
 		  then
@@ -263,7 +264,8 @@ fun casee {caseType: Xtype.t,
 	       Vector.keepAll (cases, fn {isDefault, numUses, ...} =>
 			       not isDefault andalso !numUses = 0)
 	    val _ =
-	       if 0 = Vector.length redundant
+	       if not (!Control.warnRedundant)
+		  orelse 0 = Vector.length redundant
 		  then ()
 	       else 
 		  let

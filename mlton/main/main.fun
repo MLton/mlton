@@ -370,7 +370,10 @@ fun makeOptions {usage} =
 	 variant := (case s of
 			"first-word" => FirstWord
 		      | "header" => Header
-		      | _ => usage (concat ["invalid -variant arg: ", s]))))
+		      | _ => usage (concat ["invalid -variant arg: ", s])))),
+       (Normal, "warn-match", " {true|false}",
+	"nonexhaustive and redundant match warnings",
+	Bool (fn b => (warnNonExhaustive := b; warnRedundant := b)))
        ],
        fn (style, name, arg, desc, opt) =>
        {arg = arg, desc = desc, name = name, opt = opt, style = style})
@@ -788,26 +791,6 @@ fun exportMLton (): unit =
    case CommandLine.arguments () of
       [root, file] => exportNJ (root, file)
     | _ => Error.bug "usage: exportMLton root file"
-
-val _ =
-   let
-      open Trace.Immediate
-   in
-      debug := Out Out.error
-      ; flagged ()
-(*      ; on ["matchCompile"] *)
-(*      ; on ["setConTycon"] *)
-(*      ; on ["elaborateDec", "elaborateExp", "elaboratePat"] *)
-(*      ; on ["coalesce"] *)
-(*      ; on ["elaborateStrdec"] *)
-(*      ; on ["extendVar"] *)
-(*      ; on ["elaborateStrdec", "elaborateTopdec"] *)
-(*      ; on ["unify"] *)
-(*      ; on ["Scheme.instantiate"] *)
-(*      ; on ["Unknown.minTime"] *)
-(*      ; on ["Xml.checkExp", "Xml.checkPrimExp"] *)
-(*      ; on ["Xml.Shrink.varInfo", "Xml.Shrink.setVarInfo"] *)
-   end
 
 fun doit () =
    let

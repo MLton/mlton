@@ -487,6 +487,14 @@ val verbosity = control {name = "verbosity",
 
 val version = "MLton MLTONVERSION"
 
+val warnNonExhaustive = control {name = "warn non-exhaustive",
+				 default = true,
+				 toString = Bool.toString}
+
+val warnRedundant = control {name = "warn redundant",
+			     default = true,
+			     toString = Bool.toString}
+
 datatype style = No | Assembly | C | Dot | ML
 
 fun preSuf style =
