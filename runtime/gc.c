@@ -1482,9 +1482,11 @@ forward(GC_state s, pointer *pp)
 		/* This check is necessary, because toSpace may be smaller
 		 * than fromSpace, and so the copy may fail.
 		 */
-  		if (s->back + size + skip > s->toLimit)
+  		if (s->back + size + skip > s->toLimit) {
+			showMem ();
 			die("Out of memory (forward).\nsize=%u skip=%u remaining=%u s->fromSize=%u s->toSize=%u headerBytes=%d objectBytes=%u header=%x\nDiagnostic: probably a RAM problem.",
 				size, skip, s->toLimit - s->back, s->fromSize, s->toSize, headerBytes, objectBytes, header);
+		}
   		/* Copy the object. */
  		if (FALSE and processor_has_sse2 and size >= 8192) {
 			extern void bcopy_simd(void *, void const *, int);
