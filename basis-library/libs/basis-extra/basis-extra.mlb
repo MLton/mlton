@@ -129,6 +129,8 @@ in
     ../../posix/posix.sig
     ../../posix/posix.sml
 
+    ../../platform/cygwin.sml
+
     ../../io/stream-io.sig
     ../../io/stream-io.fun
     ../../io/imperative-io.sig

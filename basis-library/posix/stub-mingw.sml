@@ -39,6 +39,19 @@ in
 	       val fcntl3 = stub ("fcntl3", fcntl3)
 	    end
 
+	 structure Process =
+	    struct
+	       open Process
+
+	       val exece = stub ("exece", exece)
+	       val execp = stub ("execp", exece)
+	       val exit = stub ("exit", exit)
+	       val fork = stub ("fork", fork)
+	       val kill = stub ("kill", kill)
+	       val pause = stub ("pause", pause)
+	       val waitpid = stub ("waitpid", waitpid)
+	    end
+
 	 structure ProcEnv =
 	    struct
 	       open ProcEnv

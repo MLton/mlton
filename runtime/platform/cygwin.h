@@ -18,6 +18,7 @@
 #include <syslog.h>
 #include <termios.h>
 #include <windows.h>
+#include <sys/cygwin.h>
 #include <io.h>
 
 #include "gmp.h"

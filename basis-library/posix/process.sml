@@ -150,8 +150,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 		| K_SAME_GROUP => ~1
 		| K_GROUP pid => ~ (Pid.toInt pid)
 	 in
-	    SysCall.simple
-	    (fn () => Prim.kill (Pid.fromInt pid, s))
+	    SysCall.simple (fn () => Prim.kill (Pid.fromInt pid, s))
 	 end
 
       local

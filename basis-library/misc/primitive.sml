@@ -907,26 +907,21 @@ structure Primitive =
 			   val cygwinUseMmap =
 			      _import "MLton_Platform_CygwinUseMmap": bool;
 			in
-			   val useWindowsProcess: bool =
-			      case host of
-				 Cygwin => false (* not cygwinUseMmap *)
-			       | MinGW => true
-			       | _ => false
-
 			   val forkIsEnabled =
 			      case host of
 				 Cygwin => cygwinUseMmap
 			       | MinGW => false
 			       | _ => true
+
+			   val useWindowsProcess = not forkIsEnabled
 			end
 		     end
 	       end
 
 	    structure Process =
 	       struct
-		  val create = 
-		     _import "MLton_Process_create"
-		     : NullString.t * NullString.t * int * int * int -> Pid.t;
+                  val cwait =
+                     _import "MLton_Process_cwait": Pid.t * int ref -> Pid.t;
 		  val spawne =
 		     _import "MLton_Process_spawne"
 		     : (NullString.t * NullString.t array * NullString.t array
@@ -1345,6 +1340,22 @@ structure Primitive =
 	    val assign = _prim "Ref_assign": 'a ref * 'a -> unit;
 	 end
 
+      structure Signal:>
+	 sig
+	    eqtype t
+	    type how
+
+	    val fromInt: int -> t
+	    val toInt: t -> int
+	 end =
+	 struct
+	    type t = int
+	    type how = int
+
+	    val fromInt = fn s => s
+	    val toInt = fn s => s
+	 end
+
       structure Socket =
 	 struct
 	    type sock = int
@@ -1597,6 +1608,25 @@ structure Primitive =
 	     * are supposed to be immutable and the optimizer depends on this.
 	     *)
 	    val fromArray = _prim "Array_toVector": 'a array -> 'a vector;
+	 end
+
+      structure Cygwin =
+	 struct
+	    val toFullWindowsPath =
+	       _import "Cygwin_toFullWindowsPath": NullString.t -> cstring;
+	 end
+
+      structure Windows =
+	 struct
+	    structure Process =
+	       struct
+		  val create = 
+		     _import "Windows_Process_create"
+		     : (NullString.t * NullString.t * NullString.t
+			* int * int * int) -> Pid.t;
+		  val terminate =
+		     _import "Windows_terminate": Pid.t * Signal.t -> int;
+	       end
 	 end
 
       structure Word8 =

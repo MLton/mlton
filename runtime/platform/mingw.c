@@ -1,11 +1,13 @@
 #include "platform.h"
 
-#include "create.c"
-#include "showMem.win32.c"
-#include "virtualAlloc.c"
+#include "windows.c"
 
 void decommit (void *base, size_t length) {
-	decommitVirtual (base, length);
+	Windows_decommit (base, length);
+}
+
+HANDLE fileDesHandle (int fd) {
+	return _get_osfhandle (fd);
 }
 
 int getpagesize (void) {
@@ -31,11 +33,11 @@ int mkstemp (char *template) {
 }
 
 void *mmapAnon (void *start, size_t length) {
-	return mmapAnonVirtual (start, length);
+	return Windows_mmapAnon (start, length);
 }
 
 void release (void *base, size_t length) {
-	releaseVirtual (base);
+	Windows_release (base);
 }
 
 Word32 totalRam (GC_state s) {
@@ -267,7 +269,7 @@ int pipe (int filedes[2]) {
 	 */
 	filedes[0] = _open_osfhandle((long)read,  _O_RDONLY);
 	filedes[1] = _open_osfhandle((long)write, _O_WRONLY);
-	if (filedes[0] == -1 || filedes[1] == -1) {
+	if (filedes[0] == -1 or filedes[1] == -1) {
 		if (filedes[0] == -1) 
 			CloseHandle(read); 
 		else	close(filedes[0]);
@@ -427,18 +429,7 @@ pid_t fork (void) {
 }
 
 int kill (pid_t pid, int sig) {
-	HANDLE h;
-	
-	h = (HANDLE)pid;
-	/* We terminate with 'sig' for the _return_ code + 0x80
-	 * Then in the basis library I test for this to decide W_SIGNALED.
-	 * Perhaps not the best choice, but I have no better idea.
-	 */
-        unless (TerminateProcess (h, sig | 0x80)) {
-		errno = ECHILD;
-		return -1;
-	}
-	return 0;
+	die ("kill not implemented");
 }
 
 int pause (void) {
@@ -455,11 +446,7 @@ pid_t wait (int *status) {
 }
 
 pid_t waitpid (pid_t pid, int *status, int options) {
-	HANDLE h;
-
-	h = (HANDLE)pid;
-	/* -1 on error, the casts here are due to bad types on both sides */
-	return _cwait (status, (_pid_t)h, 0);
+	die ("waitpid not implemented");
 }
 
 /* ------------------------------------------------- */
@@ -477,7 +464,7 @@ int sigaction (int signum,
 		return -1;
 	}
 	if (newact) {
-		if (signum == SIGKILL || signum == SIGSTOP) {
+		if (signum == SIGKILL or signum == SIGSTOP) {
 			errno = EINVAL;
 			return -1;
 		}
@@ -660,6 +647,18 @@ int tcsetattr (int fd, int optional_actions, struct termios *termios_p) {
 
 int tcsetpgrp (int fd, pid_t pgrpid) {
 	die ("tcsetpgrp not implemented");
+}
+
+/* ------------------------------------------------- */
+/*                      Process                      */
+/* ------------------------------------------------- */
+
+Pid MLton_Process_cwait (Pid pid, Pointer status) {
+	HANDLE h;
+	
+	h = (HANDLE)pid;
+	/* -1 on error, the casts here are due to bad types on both sides */
+	return _cwait ((int*)status, (_pid_t)h, 0);
 }
 
 /* ------------------------------------------------- */

@@ -187,6 +187,22 @@ structure MLtonProcess =
 	    DynamicWind.wind (fn () => f x, fn () => Mask.unblock Mask.all)
 	 end
 
+      fun cwait pid =
+	 let
+	    val status: int ref = ref 0
+	    val pid =
+	       SysCall.syscall
+	       (fn () =>
+		let 
+		   val p = Prim.cwait (pid, status)
+		   val p' = Pid.toInt p
+		in
+		   (p', fn () => p)
+		end)
+	 in
+	    (pid, Process.fromStatus (Exit.Status.fromInt (!status)))
+	 end
+
       fun reap (T {pid, status, stderr, stdin, stdout}) =
 	 case !status of
 	    NONE => 
@@ -195,18 +211,27 @@ structure MLtonProcess =
 		  (* protect is probably too much; typically, one
 		   * would only mask SIGINT, SIGQUIT and SIGHUP
 		   *)
-		  val (_, st) = protect Process.waitpid (Process.W_CHILD pid, [])
+		  val (_, st) =
+		     if useWindowsProcess
+			then cwait pid
+		     else protect Process.waitpid (Process.W_CHILD pid, [])
 		  val () = status := SOME st
 	       in
 		  st
 	       end
 	  | SOME status => status
-	 
+
       fun kill (p as T {pid, status, ...}, signal) =
         case !status of
 	   NONE =>
 	      let
-		 val () = Process.kill (Process.K_PROC pid, signal)
+		 val () =
+		    if useWindowsProcess
+		       then
+			  SysCall.simple
+			  (fn () =>
+			   Primitive.Windows.Process.terminate (pid, signal))
+		    else Process.kill (Process.K_PROC pid, signal)
 	      in
 		 ignore (reap p)
 	      end
@@ -239,11 +264,22 @@ structure MLtonProcess =
 		 (fn #"\"" => "\\\"" | #"\\" => "\\\\" | x => String.str x) y,
 		 dquote]
 
-      fun create (cmd, env, FD stdin, FD stdout, FD stderr) =
+      fun create (cmd, args, env, FD stdin, FD stdout, FD stderr) =
 	 SysCall.syscall
 	 (fn () =>
 	  let
-	     val p = Prim.create (cmd, env, stdin, stdout, stderr)
+	     val cmd =
+		let
+		   open MLton.Platform.OS
+		in
+		   case host of
+		      Cygwin => Cygwin.toExe cmd
+		    | MinGW => cmd
+		    | _ => raise Fail "create"
+		end
+	     val p =
+		Primitive.Windows.Process.create
+		(NullString.nullTerm cmd, args, env, stdin, stdout, stderr)
 	     val p' = Pid.toInt p
 	  in
 	     (p', fn () => p)
@@ -251,7 +287,8 @@ structure MLtonProcess =
 
       fun launchWithCreate (path, args, env, stdin, stdout, stderr) =
 	 create 
-	 (NullString.nullTerm (String.concatWith " "
+	 (path,
+	  NullString.nullTerm (String.concatWith " "
 			       (List.map cmdEscape (path :: args))),
 	  NullString.nullTerm (String.concatWith "\000" env ^ "\000"),
 	  stdin, stdout, stderr)
