@@ -20,7 +20,8 @@ TEX_FILES = \
 	nj-deviations.tex	\
 	platform.tex		\
 	profiling.tex		\
-	solaris.tex
+	solaris.tex		\
+	type-checking.tex
 
 all:	main.ps main/index.html
 
