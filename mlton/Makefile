@@ -12,7 +12,7 @@ FLAGS = @MLton ram-slop 0.7 gc-summary $(RUNTIME_ARGS) --
 
 ifeq (self, $(shell if [ -x $(BIN)/mlton ]; then echo self; fi))
   # We're compiling MLton with itself, so don't use any stubs.
-  CM = mlton.mlb
+  CM = mlton.cm
   FLAGS += -default-ann 'sequenceUnit true'
 else
 ifeq (cygwin, $(shell $(SRC)/bin/host-os))
