@@ -1946,42 +1946,18 @@ static void minorGC (GC_state s) {
 
 /* Hashing based on Introduction to Algorithms by Cormen Leiserson, and Rivest.
  * Section numbers in parens.
+ * k is key to be hashed.
+ * table is of size 2^p  (it must be a power of two)
  * Open addressing (12.4), meaning that we stick the entries directly in the 
  *   table and probe until we find what we want.
- * Multiplication method (12.3.2), meaning that we take the table size as a power
- *   of two (2^p) and compute the hash by multiplying by a magic number, chosen
- *   by Knuth, and taking the high-order p bits of the low order 32 bits.
+ * Multiplication method (12.3.2), meaning that we compute the hash by 
+ *   multiplying by a magic number, chosen by Knuth, and take the high-order p
+ *   bits of the low order 32 bits.
  * Double hashing (12.4), meaning that we use two hash functions, the first to
  *   decide where to start looking and a second to decide at what offset to
  *   probe.  The second hash must be relatively prime to the table size, which
  *   we ensure by making it odd and keeping the table size as a power of 2.
- * This all relies on the table size being a power of 2.
- * k is key to be hashed.
- * table is of size 2^p.
  */
-static inline W32 hash1 (W32 k, W32 p) {
-	static Bool init = FALSE;
-	W32 res;
-	static W64 z; // magic multiplier
-
-	if (! init) {
-		init = TRUE;
-		z = (W64) (floor (((sqrt (5.0) - 1.0) / 2.0)
-					* (double)0x100000000llu));
-	}
-	res = (W32)(z * (W64)k) >> (32 - p);
-	return res;
-}
-
-static inline W32 hash2 (W32 k, W32 p) {
-	W32 res;
-
-	res = hash1 (k, p);
-	if (1 == res % 2);
-		res--;
-	return res;
-}
-
 static GC_ObjectHashTable newTable () {
 	GC_ObjectHashTable t;
 
@@ -1999,22 +1975,34 @@ static void destroyTable (GC_ObjectHashTable t) {
 }
 
 static inline Pointer tableInsert 
-	(GC_ObjectHashTable t, W32 hash, Pointer object, 
+	(GC_state s, GC_ObjectHashTable t, W32 hash, Pointer object, 
 		Bool mightBeThere, Header header, Pointer max) {
 	GC_ObjectHashElement e;
 	Header header2;
 	W32 i;
+	static Bool init = FALSE;
 	static int maxNumProbes = 0;
+	static W64 mult; // magic multiplier for hashing
 	int numProbes;
 	W32 probe;
 	word *p;
 	word *p2;
 
-	i = hash1 (hash, t->log2ElementsSize);
-	probe = hash2 (hash, t->log2ElementsSize);
+	if (! init) {
+		init = TRUE;
+		mult = floor (((sqrt (5.0) - 1.0) / 2.0)
+				* (double)0x100000000llu);
+	}
+	i = (W32)(mult * (W64)hash) >> (32 - t->log2ElementsSize);
+	probe = (1 == i % 2) ? i : i - 1;
+	if (DEBUG_SHARE)
+		fprintf (stderr, "probe = 0x%08x\n", (uint)probe);
+	assert (1 == probe % 2);
 	numProbes = 0;
 look:
-	assert (0 < i and i < t->elementsSize);
+	if (DEBUG_SHARE)
+		fprintf (stderr, "i = 0x%08x\n", (uint)i);
+	assert (0 <= i and i < t->elementsSize);
 	numProbes++;
 	e = &t->elements[i];
 	if (NULL == e->object) {
@@ -2053,7 +2041,7 @@ lookNext:
 	return e->object;
 }
 
-static void maybeGrowTable (GC_ObjectHashTable t) {	
+static void maybeGrowTable (GC_state s, GC_ObjectHashTable t) {	
 	GC_ObjectHashElement e0;
 	struct GC_ObjectHashElement *elements0;
 	int i;
@@ -2064,15 +2052,18 @@ static void maybeGrowTable (GC_ObjectHashTable t) {
 	s0 = t->elementsSize;
 	t->elementsSize *= 2;
 	t->log2ElementsSize++;
-	if (TRUE or DEBUG_SHARE)
-		fprintf (stderr, "tableGrow  new size = %d\n", t->elementsSize);
+	if (DEBUG_SHARE)
+		fprintf (stderr, "growing table to size %d\n", t->elementsSize);
 	elements0 = t->elements;
 	ARRAY (t->elements, t->elementsSize);
 	for (i = 0; i < s0; ++i) {
 		e0 = &elements0[i];
-		tableInsert (t, e0->hash, e0->object, FALSE, 0, 0);
+		unless (NULL == e0->object)
+			tableInsert (s, t, e0->hash, e0->object, FALSE, 0, 0);
 	}
 	free (elements0);
+	if (DEBUG_SHARE)
+		fprintf (stderr, "done growing table\n");
 }
 
 
@@ -2104,8 +2095,8 @@ static Pointer hashCons (GC_state s, Pointer object) {
 	for (p = (word*)object; p < max; ++p)
 		hash = hash * 31 + *p;
 	/* Insert into table. */
-       	res = tableInsert (t, hash, object, TRUE, header, (Pointer)max);
-	maybeGrowTable (t);
+       	res = tableInsert (s, t, hash, object, TRUE, header, (Pointer)max);
+	maybeGrowTable (s, t);
 done:
 	if (DEBUG_SHARE)
 		fprintf (stderr, "0x%08x = hashCons (0x%08x)\n", 
@@ -4336,6 +4327,9 @@ static int processAtMLton (GC_state s, int argc, char **argv,
 						die ("@MLton grow-ratio missing argument.");
 					s->growRatio =
 						stringToFloat (argv[i++]);
+				} else if (0 == strcmp (arg, "hash-cons")) {
+					++i;
+					s->hashConsDuringGC = TRUE;
 				} else if (0 == strcmp (arg, "live-ratio")) {
 					++i;
 					if (i == argc)
