@@ -648,6 +648,12 @@ struct
 	      in
 		p'
 	      end
+	      handle exn
+	       => Error.bug ("x86MLton.wordAlign::" ^
+			     (case exn
+				of Fail s => s
+				 | Overflow => "Overflow"
+				 | _ => "?"))
 
   fun applyFF {target: Label.t,
 	       args: (Operand.t * Size.t) list,
