@@ -53,7 +53,7 @@ function doInst() {
 	
 function instantiate() {
 	echo 'Instantiating version numbers'
-	for f in web/index.html user-guide/macros.tex
+	for f in web/index.html user-guide/macros.tex \
 	 		ANNOUNCE CHANGES README; do
 		doInst $f
 	done
