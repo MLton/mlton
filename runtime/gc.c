@@ -94,13 +94,10 @@ static void *ssmmap(size_t length, size_t dead_low, size_t dead_high) {
  * Round size up to a multiple of the size of a page.
  */
 static inline size_t
-roundPage(size_t size)
+roundPage(GC_state s, size_t size)
 {
-	static size_t	psize;
-
-	psize = getpagesize();
-	size += psize - 1;
-	size -= size % psize;
+	size += s->pageSize - 1;
+	size -= size % s->pageSize;
 	return (size);
 }
 
@@ -322,7 +319,7 @@ computeSemiSize(GC_state s, W64 live, uint used, int try)
 	assert(not s->useFixedHeap);
 	neededLong = live * s->liveRatio;
 	if (neededLong <= (W64)s->maxSemi)
-		needed = roundPage((W32)neededLong);
+		needed = roundPage(s, (W32)neededLong);
 	else {
 		W64 maybe;
 		uint n;
@@ -331,7 +328,7 @@ computeSemiSize(GC_state s, W64 live, uint used, int try)
 					1.4, 1.3, 1.2, 1.15, 1.1, 1.05, 1.01};
 		assert (0 <= try and try < 13);
 		maybe = (W64)(ks[try] * (double)live);
-		n = roundPage(maybe > (W64)(s->totalRam + s->totalSwap)
+		n = roundPage(s, maybe > (W64)(s->totalRam + s->totalSwap)
 				? s->totalRam + s->totalSwap
 				: (W32)maybe);
 		if (n <= s->maxSemi)
@@ -344,7 +341,7 @@ computeSemiSize(GC_state s, W64 live, uint used, int try)
 		needed = n;
 	}
 	if (s->maxHeapSize > 0 and needed > s->maxHeapSize - used)
-		return roundPage(s->maxHeapSize - used);
+		return roundPage(s, s->maxHeapSize - used);
 	else
 		return needed;
 }
@@ -1018,7 +1015,7 @@ static inline void
 initSignalStack(GC_state s)
 {
         static stack_t altstack;
-	size_t ss_size = roundPage(SIGSTKSZ);
+	size_t ss_size = roundPage(s, SIGSTKSZ);
 	size_t psize = getpagesize();
 	void *ss_sp = ssmmap(2 * ss_size, psize, psize);
 	altstack.ss_sp = ss_sp + ss_size;
@@ -1040,8 +1037,8 @@ GC_setHeapParams(GC_state s, uint size)
 {
 	if (s->useFixedHeap) {
 		if (0 == s->fromSize)
-			s->fromSize = roundPage(s->ramSlop * s->totalRam);
-	        s->fromSize = roundPage(s->fromSize / 2);
+			s->fromSize = roundPage(s, s->ramSlop * s->totalRam);
+	        s->fromSize = roundPage(s, s->fromSize / 2);
 	} else {
 		s->fromSize = computeSemiSize(s, size, 0, 0);
 	}
@@ -1068,18 +1065,29 @@ static void readProcessor() {
  * Note the total amount of RAM is multiplied by ramSlop so that we don't
  * use all of memory or start swapping.  It used to be .95, but Linux
  * 2.2 is more aggressive about swapping.
+ *
+ * Ensure that s->totalRam + s->totalSwap < 4G.
  */
 
 static inline void
 setMemInfo(GC_state s)
 {
 	struct sysinfo	sbuf;
+	W32 maxMem;
+	W64 tmp;
 
+	maxMem = 0x100000000llu - s->pageSize;
 	unless (0 == sysinfo(&sbuf))
 		diee("sysinfo failed");
-	s->totalRam = sbuf.totalram;
-	s->totalSwap = sbuf.totalswap;
-	s->maxSemi = roundPage(s->ramSlop * (double)s->totalRam / 2);
+	tmp = sbuf.mem_unit * (W64)sbuf.totalram;
+	s->totalRam = (tmp > (W64)maxMem) ? maxMem : (W32)tmp;
+	maxMem = maxMem - s->totalRam;
+	tmp = sbuf.mem_unit * (W64)sbuf.totalswap;
+	s->totalSwap = (tmp > (W64)maxMem) ? maxMem : (W32)tmp;
+	s->maxSemi = roundPage(s, s->ramSlop * (double)s->totalRam / 2);
+	if (DEBUG)
+		fprintf(stderr, "totalRam = %u  totalSwap = %u  maxSemi = %u\n",
+			s->totalRam, s->totalSwap, s->maxSemi);
 }
 
 static void newWorld(GC_state s)
@@ -1150,6 +1158,7 @@ GC_init(GC_state s, int argc, char **argv,
 	char *worldFile;
 	int i;
 
+	s->pageSize = getpagesize();
 	initSignalStack(s);
 	s->bytesAllocated = 0;
 	s->bytesCopied = 0;
@@ -1485,7 +1494,7 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 			/* The ratio of live data to semispace size is too low,
 			 * so shrink new space.
 			 */
-			keep = roundPage(needed * s->liveRatio);
+			keep = roundPage(s, needed * s->liveRatio);
 		else if (s->fromSize > s->maxSemi
 				and needed * 2 <= (W64)s->maxSemi)
 			/* The live data fits in a semispace that is half of the

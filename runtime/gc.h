@@ -298,6 +298,7 @@ typedef struct GC_state {
 	uint totalSwap; /* bytes */
 	uint maxSemi; /* bytes */
 	bool isOriginal;
+	uint pageSize; /* bytes */
 } *GC_state;
 
 /* ------------------------------------------------- */
