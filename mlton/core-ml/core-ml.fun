@@ -7,7 +7,9 @@ struct
 open S
 
 local open Ast
-in structure Adec = Dec
+in
+   structure Adec = Dec
+   structure Apat = Pat
 end
 
 fun makeList (con, app, tuple) l =
@@ -25,6 +27,40 @@ structure Pat =
        | Constraint of t * Type.t
        | Layered of Var.t * t
 
+      local
+	 structure Pat = Ast.Pat
+      in
+	 fun toAst p =
+	    case p of
+	       Wild => Pat.wild
+	     | Var x => Pat.var (Var.toAst x)
+	     | Const c => Pat.const c
+	     | Record {record, flexible} =>
+		  (case (flexible, Record.detupleOpt record) of
+		      (false, SOME ps) => Pat.tuple (Vector.map (ps, toAst))
+		    | _ =>
+			 Pat.make
+			 (Pat.Record
+			  {flexible = flexible,
+			   items = (Vector.map
+				    (Record.toVector record, fn (field, p) =>
+				     Pat.Item.Field (field, toAst p)))}))
+	     | Con {con, arg} =>
+		  let val con = Con.toAst con
+		  in case arg of
+		     NONE => Pat.con con
+		   | SOME p => Pat.app (con, toAst p)
+		  end
+	     | Constraint (p, t) => Pat.constraint (toAst p,  Type.toAst t)
+	     | Layered (x, p) =>
+		  Pat.layered {fixop = Ast.Fixop.None,
+			       var = Var.toAst x,
+			       constraint = NONE,
+			       pat = toAst p}
+
+	 val layout = Pat.layout o toAst
+      end
+   
       fun isRefutable p =
 	 case p of
 	    Wild => false
@@ -59,9 +95,10 @@ structure Pat =
 		| Record {flexible, record} =>
 		     Record {flexible = flexible,
 			     record = Record.map (record, loop)}
-		| Con {con, arg} => Con {con = con, arg = (case arg of
-							      NONE => NONE
-							    | SOME p => SOME (loop p))}
+		| Con {con, arg} => Con {con = con,
+					 arg = (case arg of
+						   NONE => NONE
+						 | SOME p => SOME (loop p))}
 		| Constraint (p, t) => Constraint (loop p, t)
 		| Layered (_, p) => loop p
 	 in loop p
@@ -84,9 +121,15 @@ structure Pat =
 						   NONE => NONE
 						 | SOME p => SOME (loop p))}
 		| Constraint (p, t) => loop p (*Constraint (loop p, t)*)
-		| Layered (_, p) => loop p
+		| Layered (x', p) =>
+		     if Var.equals (x, x') then Var y else loop p
 	 in loop p
 	 end
+
+      val removeOthersReplace =
+	 Trace.trace3 ("Pat.removeOthersReplace",
+		       layout, Var.layout, Var.layout, layout)
+	 removeOthersReplace
 
       fun tuple ps =
 	 if 1 = Vector.length ps
@@ -120,39 +163,6 @@ structure Pat =
 		| _ => ()
 	 in loop p
 	 end
-      
-      local structure Pat = Ast.Pat
-      in
-	 fun toAst p =
-	    case p of
-	       Wild => Pat.wild
-	     | Var x => Pat.var (Var.toAst x)
-	     | Const c => Pat.const c
-	     | Record {record, flexible} =>
-		  (case (flexible, Record.detupleOpt record) of
-		      (false, SOME ps) => Pat.tuple (Vector.map (ps, toAst))
-		    | _ =>
-			 Pat.make
-			 (Pat.Record
-			  {flexible = flexible,
-			   items = (Vector.map
-				    (Record.toVector record, fn (field, p) =>
-				     Pat.Item.Field (field, toAst p)))}))
-	     | Con {con, arg} =>
-		  let val con = Con.toAst con
-		  in case arg of
-		     NONE => Pat.con con
-		   | SOME p => Pat.app (con, toAst p)
-		  end
-	     | Constraint (p, t) => Pat.constraint (toAst p,  Type.toAst t)
-	     | Layered (x, p) =>
-		  Pat.layered {fixop = Ast.Fixop.None,
-			       var = Var.toAst x,
-			       constraint = NONE,
-			       pat = toAst p}
-
-	 val layout = Pat.layout o toAst
-      end
    end
 
 datatype dec =
@@ -162,7 +172,7 @@ datatype dec =
 	   tyvars: Tyvar.t vector}
   | Fun of {tyvars: Tyvar.t vector,
 	    decs: {var: Var.t,
-		   ty: Type.t option,
+		   types: Type.t vector,
 		   match: match} vector}
   | Datatype of {
 		 tyvars: Tyvar.t vector,
@@ -234,11 +244,16 @@ in
 						  filePos = filePos},
 			       rvbs = Vector.new0 ()})
        | Fun {tyvars, decs} =>
-	    Dec.funn (tyvars,
-		      Vector.map (decs, fn {var, ty, match} =>
-				  {var = Var.toAst var,
-				   match = matchToAst match,
-				   resultTy = Type.optionToAst ty}))
+	    Dec.make (Dec.Val
+		      {tyvars = tyvars,
+		       vbs = Vector.new0 (),
+		       rvbs = (Vector.map
+			       (decs, fn {var, types, match} =>
+				{pat = (Vector.fold
+					(types, Apat.var (Var.toAst var),
+					 fn (t, p) =>
+					 Apat.constraint (p, Type.toAst t))),
+				 match = matchToAst match}))})
        | Datatype ds => astDatatype ds
        | Exception {con, arg} =>
 	    Dec.exceptionn (Con.toAst con, Type.optionToAst arg)
@@ -390,7 +405,8 @@ structure Exp =
 	    Let (Vector.new1
 		 (Fun {tyvars = Vector.new0 (),
 		       decs = (Vector.new1
-			       {var = loop, ty = NONE,
+			       {var = loop,
+				types = Vector.new0 (),
 				match = (Match.new
 					 (Vector.new1
 					  (Pat.tuple (Vector.new0 ()),

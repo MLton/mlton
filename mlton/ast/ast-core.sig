@@ -153,9 +153,7 @@ signature AST_CORE =
 		       vbs: {pat: Pat.t,
 			     exp: Exp.t,
 			     filePos: string} vector,
-		       rvbs: {var: Var.t,
-			      ty: Type.t option,
-			      fixity: Vid.t option,
+		       rvbs: {pat: Pat.t,
 			      match: Match.t} vector}
 	     | Fun of Tyvar.t vector * {clauses: {pats: Pat.t vector,
 						  resultType: Type.t option,

@@ -186,9 +186,9 @@ val info = Trace.info "elaboratePat"
 
 fun elaboratePat (p: Apat.t, E: Env.t): Cpat.t =
    let
-      fun bind (x: Ast.Var.t): CoreML.Var.t =
+      fun bind (x: Ast.Var.t): Cvar.t =
 	 let
-	    val x' = CoreML.Var.fromAst x
+	    val x' = Cvar.fromAst x
 	    val _ = Env.extendVar (E, x, x')
 	 in x'
 	 end
@@ -262,7 +262,7 @@ and elaboratePatsV (ps: Apat.t vector, E): Cpat.t vector =
 fun constrain (e, tyOpt) =
    case tyOpt of
       NONE => e
-    | SOME ty => CoreML.Exp.Constraint (e, ty)
+    | SOME ty => Cexp.Constraint (e, ty)
   
 (*---------------------------------------------------*)
 (*                   Declarations                    *)
@@ -299,7 +299,7 @@ fun elaborateDec (d, E) =
 	       (Vector.map
 		(datatypes, fn {tyvars, tycon = name, cons} =>
 		 let
-		    val tycon = CoreML.Tycon.fromAst name
+		    val tycon = Tycon.fromAst name
 		 in
 		    ((name, TypeStr.tycon tycon),
 		     {name = name, tycon = tycon, tyvars = tyvars, cons = cons})
@@ -386,7 +386,7 @@ fun elaborateDec (d, E) =
 		       case EbRhs.node rhs of
 			  EbRhs.Def c => (decs, Env.lookupLongcon (E, c))
 			| EbRhs.Gen to =>
-			     let val exn' = CoreML.Con.fromAst exn
+			     let val exn' = Con.fromAst exn
 			     in (Decs.add
 				 (decs,
 				  Cdec.Exception {con = exn',
@@ -454,7 +454,8 @@ fun elaborateDec (d, E) =
 			  let
 			     val {args, ...} = Vector.sub (clauses, 0)
 			     val numVars = Vector.length args
-			  in {var = newFunc, ty = NONE,
+			  in {var = newFunc,
+			      types = Vector.new0 (),
 			      match =
 			      let
 				 val rs =
@@ -536,21 +537,82 @@ fun elaborateDec (d, E) =
 		 ; Decs.empty)
 	   | Adec.Val {tyvars, vbs, rvbs} =>
 		let
+		   val hasCon: string option ref = ref NONE
+		   fun checkName (name: Ast.Longvid.t): unit =
+		      case !hasCon of
+			 SOME _ => ()
+		       | NONE =>
+			    if isSome (Env.peekLongcon
+				       (E, Ast.Longvid.toLongcon name))
+			       then hasCon := SOME (Region.toString
+						    (Ast.Longvid.region name))
+			    else ()
 		   (* Must do all the es and rvbs pefore the ps because of
 		    * scoping rules.
 		    *)
 		   val es = Vector.map (vbs, elabExp o #exp)
-		   val vars = Vector.map (rvbs, #var)
-		   val newVars = Vector.map (vars, Cvar.fromAst)
-		   val _ = Vector.foreach2 (vars, newVars, fn (name, var) =>
-					    Env.extendVar (E, name, var))
+		   fun varsAndTypes (p: Apat.t, vars, types)
+		      : Avar.t list * Atype.t list =
+		      let
+			 fun error () =
+			    Error.bug
+			    (concat ["strange rec pattern: ",
+				     Layout.toString (Apat.layout p)])
+			 datatype z = datatype Apat.node
+		      in
+			 case Apat.node p of
+			    Wild => (vars, types)
+			  | Var {name, ...} =>
+			       (checkName name
+				; (case Ast.Longvid.split name of
+				      ([], x) =>
+					 (Ast.Vid.toVar x :: vars, types)
+				    | _ => Error.bug "longid in val rec pattern"))
+			  | Constraint (p, t) =>
+			       varsAndTypes (p, vars, t :: types)
+			  | FlatApp ps =>
+			       if 1 = Vector.length ps
+				  then varsAndTypes (Vector.sub (ps, 0),
+						     vars, types)
+			       else error ()
+			  | Apat.Layered {var, constraint, pat, ...} =>
+			       varsAndTypes (pat, var :: vars,
+					     case constraint of
+						NONE => types
+					      | SOME t => t :: types)
+			  | _ => error ()
+		      end
+		   val varsAndTypes =
+		      Trace.trace ("varsAndTypes",
+				   Apat.layout o #1,
+				   Layout.tuple2 (List.layout Avar.layout,
+						  List.layout Atype.layout))
+		      varsAndTypes
+		   val vts =
+		      Vector.map
+		      (rvbs, fn {pat, ...} =>
+		       let
+			  val (vars, types) = varsAndTypes (pat, [], [])
+			  val var =
+			     case vars of
+				[] => Cvar.newNoname ()
+			      | x :: _ =>
+				   let
+				      val x' = Cvar.fromAst x
+				      val _ =
+					 List.foreach
+					 (vars, fn y => Env.extendVar (E, y, x'))
+				   in
+				      x'
+				   end
+		       in
+			  (var, Vector.fromListMap (types, Scheme.ty o elabType))
+		       end)
 		   val rvbs =
-		      Vector.map2
-		      (rvbs, newVars,
-		       fn ({var, fixity, match, ty}, newvar) =>
-		       {var = newvar,
-			ty = elabTypeOpt ty,
-			match = elabMatch match})
+		      Vector.map2 (rvbs, vts, fn ({match, ...}, (var, types)) =>
+				   {var = var,
+				    types = types,
+				    match = elabMatch match})
 		   val ps = Vector.map (vbs, fn {pat, filePos, ...} =>
 					{pat = elaboratePat (pat, E),
 					 filePos = filePos})
@@ -559,16 +621,31 @@ fun elaborateDec (d, E) =
 						    filePos = filePos,
 						    tyvars = tyvars,
 						    exp = e})
-		in Decs.append
-		   (Decs.fromVector vbs,
+		in Decs.appends
+		   [Decs.fromVector vbs,
 		    Decs.single (Cdec.Fun {tyvars = tyvars,
-					   decs = rvbs}))
+					   decs = rvbs}),
+		    (* Hack to implement rule 126, which requires Bind to be
+		     * raised if any of the rvbs contains a constructor in a
+		     * pattern.  This, despite the fact that rule 26 allows
+		     * identifier status to be overridden for the purposes of
+		     * type checking.
+		     *)
+		    case !hasCon of
+		       NONE => Decs.empty
+		     | SOME filePos => 
+			  Decs.single
+			  (Cdec.Val {exp = Cexp.Raise {exn = Cexp.Con Con.bind,
+						       filePos = filePos},
+				     filePos = "",
+				     pat = Cpat.Wild,
+				     tyvars = Vector.new0 ()})]
 		end
 	     ) d
-      and elabExps (es: Ast.Exp.t list): CoreML.Exp.t list =
+      and elabExps (es: Ast.Exp.t list): Cexp.t list =
 	 List.map (es, elabExp)
-      and elabExp arg: CoreML.Exp.t =
-	 Trace.traceInfo (info', Ast.Exp.layout, CoreML.Exp.layout,
+      and elabExp arg: Cexp.t =
+	 Trace.traceInfo (info', Ast.Exp.layout, Cexp.layout,
 			  Trace.assertTrue)
 	 (fn (e: Aexp.t) =>
 	  let

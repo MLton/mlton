@@ -1,4 +1,31 @@
-Here are the changes from version 20011003 to version VERSION.
+Here are the changes from version 20010806 to version VERSION.
+
+Summary:
+   + Added MLton.Exn.history, which is similar to SMLofNJ.exnHistory.
+   + Support for #line directives of the form (*#line line.col "file"*).
+   + Performance improvements in native codegenerator.
+   + Bug fixes in front-end, optimizer, register allocator,
+     Real.{maxFinite, minPos, toManExp}, and in heap save and restore.
+
+* 2001-10-5
+  - Fixed a bug in polymorphic layered patterns, like
+	val 'a a as b = []
+    These would always fail due to the variable "a" not being handled correctly.
+  - Fixed the syntax of "val rec" so that a pattern is allowed on the left-hand
+    side of the =.  Thus, we used to reject, but now accept, the following.
+	val rec a as b as c = fn _ => ()
+	val rec a : unit -> unit : unit -> unit = fn () => ()
+    Thanks again to Andreas Rossberg's test files.  This is now tested for in
+    valrec.sml.
+  - Fixed dynamic semantics of "val rec" so that if "val rec" is used to
+    override constructor status, then at run time, the Bind exception is raised
+    as per rule 126 of the Definition.  So, for example, the following program
+    type checks and compiles, but raises Bind at run time.
+	val rec NONE = fn () => ()
+	val _ = NONE ()
+    Again, this is checked in valrec.sml.
+  - Added '\r\n' to ml.lex so that Windows style newlines are acceptable in 
+    input files.
 
 * 2001-10-4
   - Fixed bug in the implementation of "open" declarations, which in the case of
@@ -10,19 +37,6 @@ Here are the changes from version 20011003 to version VERSION.
   - Fixed bug that caused tyvars of length 1 (i.e. ') to be rejected.  This is
     now checked in the id.sml regression test.  Again, thanks to Andreas
     Rossberg for the test.
-
---------------------------------------------------------------------------------
-
-Here are the changes from version 20010806 to version 20011003.
-
-Summary:
-   + Added MLton.Exn.history, which is similar to SMLofNJ.exnHistory.
-   + Support for #line directives of the form (*#line line.col "file"*).
-   + Bug fix in heap save and restore to solve problem with excessive heap
-     usage by compiler. 
-   + Performance improvements in native codegenerator.
-   + Bug fixes in optimizer, register allocator, and in
-     Real.{maxFinite, minPos, toManExp}.
 
 * 2001-10-2
   - Fixed bugs in Real.toManExp (which always returned the wrong result because

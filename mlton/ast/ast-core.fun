@@ -259,10 +259,10 @@ datatype expNode =
   | FFI of {name: string, ty: Type.t}
 and decNode =
     Val of {tyvars: Tyvar.t vector,
-	    vbs: {pat: Pat.t, exp: exp, filePos: string} vector,
-	    rvbs: {var: Var.t,
-		   ty: Type.t option,
-		   fixity: Vid.t option,
+	    vbs: {pat: Pat.t,
+		  exp: exp,
+		  filePos: string} vector,
+	    rvbs: {pat: Pat.t,
 		   match: match} vector}
   | Fun of Tyvar.t vector * {clauses: {pats: Pat.t vector,
 				       resultType: Type.t option,
@@ -371,7 +371,7 @@ and layoutDec d =
     | SeqDec ds => align (Vector.toListMap (ds, layoutDec))
     | Val {tyvars, vbs, rvbs} =>
 	 align [layoutAndsTyvars ("val", (tyvars, vbs), layoutVb),
-		layoutAndsTyvars ("rec", (Vector.new0 (), rvbs), layoutRvb)]
+		layoutAndsTyvars ("val rec", (Vector.new0 (), rvbs), layoutRvb)]
     | Fun fbs => layoutAndsTyvars ("fun", fbs, layoutFb)
     | Type typBind => TypBind.layout typBind
     | Datatype rhs => DatatypeRhs.layout rhs
@@ -397,9 +397,8 @@ and layoutDec d =
 and layoutVb {pat, exp, filePos} =
    bind (Pat.layoutT pat, layoutExpT exp)
 
-and layoutRvb {var, match, ty, ...} =
-   bind (maybeConstrain (Var.layout var, ty),
-	 seq [str "fn ", layoutMatch match])
+and layoutRvb {pat, match, ...} =
+   bind (Pat.layout pat, seq [str "fn ", layoutMatch match])
    
 and layoutFb {clauses, filePos} =
    alignPrefix (Vector.toListMap (clauses, layoutClause), "| ")
@@ -566,32 +565,21 @@ structure Dec =
 
       fun funn (tyvars, rvbs): t =
 	 make
-	 (if Vector.forall (rvbs, fn {resultTy, ...} =>
-			    case resultTy of
-			       NONE => true
-			     | _ => false)
-	     then Fun (tyvars,
-		       Vector.map
-		       (rvbs, fn {var,
-				  match = Match.T {rules, filePos},
-				  resultTy} =>
-			let
-			   val vp = Pat.longvid (Longvid.short (Vid.fromVar var))
-			in
-			   {clauses =
-			    Vector.map (rules, fn (pat, exp) =>
-					{pats = Vector.new2 (vp, pat),
-					 body = exp,
-					 resultType = NONE}),
-			    filePos = filePos}
-			end))
-	  else Val {tyvars = tyvars,
-		    vbs = Vector.new0 (),
-		    rvbs = Vector.map (rvbs, fn {var, match, ...} =>
-				       {var = var,
-					fixity = NONE,
-					match = match,
-					ty = NONE})}) (* can't use the resultty *)
+	 (Fun (tyvars,
+	       Vector.map
+	       (rvbs, fn {var,
+			  match = Match.T {rules, filePos},
+			  resultTy} =>
+		let
+		   val vp = Pat.longvid (Longvid.short (Vid.fromVar var))
+		in
+		   {clauses =
+		    Vector.map (rules, fn (pat, exp) =>
+				{pats = Vector.new2 (vp, pat),
+				 body = exp,
+				 resultType = NONE}),
+		    filePos = filePos}
+		end)))
 	     
       fun exceptionn (exn: Con.t, to: Type.t option): t =
 	 make (Exception (Vector.new1 (exn, make (Eb.Rhs.Gen to))))

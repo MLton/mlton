@@ -117,10 +117,12 @@ fun renameDec (d, env) =
 	 let
 	    val (env, tyvars) = TyvarEnv.rename (env, tyvars)
 	    val (decs, unguarded) =
-	       renames (decs, fn {var, ty, match} =>
-			 let val (ty, u1) = renameTyOpt (ty, env)
+	       renames (decs, fn {var, types, match} =>
+			 let
+			    val (types, u1) = renames (types, fn t =>
+						       renameTy (t, env))
 			    val (match, u2) = renameMatch (match, env)
-			 in ({var = var, ty = ty, match = match},
+			 in ({var = var, types = types, match = match},
 			     Tyvars.+ (u1, u2))
 			 end)
 	 in (Fun {tyvars = (Vector.fromList
@@ -128,7 +130,7 @@ fun renameDec (d, env) =
 			     (Tyvars.+
 			      (unguarded,
 			       Tyvars.fromList (Vector.toList tyvars))))),
-		 decs = decs},
+		  decs = decs},
 	     Tyvars.empty)
 	 end
     | Datatype dbs =>
@@ -140,9 +142,9 @@ fun renameDec (d, env) =
 		   val (env, tyvars) = TyvarEnv.rename (env, tyvars)
 		   val (cons, unguarded) =
 		      renames (cons, fn {con, arg} =>
-				let val (arg, unguarded) = renameTyOpt (arg, env)
-				in ({con = con, arg = arg}, unguarded)
-				end)
+			       let val (arg, unguarded) = renameTyOpt (arg, env)
+			       in ({con = con, arg = arg}, unguarded)
+			       end)
 		in ({tyvars = tyvars, tycon = tycon, cons = cons},
 		    Tyvars.- (unguarded, Tyvars.fromList (Vector.toList tyvars)))
 		end)
@@ -270,13 +272,14 @@ fun removeDec (d: Dec.t, scope: Env.t): Dec.t =
     | Fun {tyvars, decs} =>
 	 let val (scope, tyvars) = bindNew (scope, tyvars)
 	 in Fun {tyvars = tyvars,
-		 decs = Vector.map (decs, fn {var, ty, match} =>
+		 decs = Vector.map (decs, fn {var, types, match} =>
 				    {var = var,
-				     ty = removeTyOpt (ty, scope),
+				     types = Vector.map (types, fn t =>
+							 removeTy (t, scope)),
 				     match = removeMatch (match, scope)})}
 	 end
     | Exception {con, arg} => Exception {con = con,
-				       arg = removeTyOpt (arg, scope)}
+					 arg = removeTyOpt (arg, scope)}
     | Datatype dbs =>
 	 Datatype
 	 (Vector.map (dbs, fn {tyvars, tycon, cons} =>

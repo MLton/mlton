@@ -5,6 +5,11 @@
  * Copyright 1989 by AT&T Bell Laboratories
  *
  * $Log: ml.lex,v $
+ * Revision 1.3  2001/10/04 22:34:56  sweeks
+ * Fixed bug that caused tyvars of length 1 (i.e. ') to be rejected.  This is now
+ * checked in the id.sml regression test.  Again, thanks to Andreas Rossberg for
+ * the test.
+ *
  * Revision 1.2  2001/08/23 00:49:17  sweeks
  * Added support for #line directives of the form
  * 	(*#line line.col "file"*)
@@ -127,7 +132,9 @@ id={alphanumId}|{symId};
 longid={id}("."{id})*;
 ws=("\012"|[\t\ ])*;
 nrws=("\012"|[\t\ ])+;
-eol=("\013\010"|"\010"|"\013");
+cr="\013";
+nl="\010";
+eol=({cr}{nl}|{nl}|{cr});
 num=[0-9]+;
 frac="."{num};
 exp=[eE](~?){num};
@@ -137,7 +144,7 @@ hexnum={hexDigit}+;
 
 %%
 <INITIAL>{ws}	=> (continue ());
-<INITIAL>\n	=> (Source.newline (source, yypos); continue ());
+<INITIAL>{eol}	=> (Source.newline (source, yypos); continue ());
 <INITIAL>"_overload" => (tok (Tokens.OVERLOAD, source, yypos, yypos + 9));
 <INITIAL>"_prim" => (tok (Tokens.PRIM, source, yypos, yypos + 5));
 <INITIAL>"_ffi" => (tok (Tokens.FFI, source, yypos, yypos + 5));
@@ -230,8 +237,6 @@ hexnum={hexDigit}+;
                     ; commentLevel := 1
                     ; commentStart := Source.getPos (source, yypos)
                     ; continue ());
-<INITIAL>"*)"	=> (error (source, yypos, yypos + 2, "unmatched close comment") ;
-		    continue ());
 <INITIAL>.	=> (error (source, yypos, yypos + 1, "illegal token") ;
 		    continue ());
 

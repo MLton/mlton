@@ -116,7 +116,7 @@ signature CORE_ML =
 		       tyvars: Tyvar.t vector,
 		       decs: {
 			      var: Var.t,
-			      ty: Type.t option,
+			      types: Type.t vector, (* multiple constraints *)
 			      match: Match.t
 			     } vector
 		      }

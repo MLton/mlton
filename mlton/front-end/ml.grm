@@ -172,10 +172,11 @@ type funbind = {name : Fctid.t,
 		result : SigConst.t,
 		body : Strexp.t}
 
-type vb = {pat: Pat.t, exp: Exp.t, filePos: string}
-type rvb = {var: Var.t,
-	    ty: Type.t option,
-	    fixity: Vid.t option,
+type vb = {pat: Pat.t,
+	   exp: Exp.t,
+	   filePos: string}
+   
+type rvb = {pat: Pat.t,
 	    match: Match.t}
    
 fun ensureNonqualified (s,region) =
@@ -304,7 +305,6 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | rvalbind of rvb list
        | rvalbindRest of rvb list
        | constraint of Type.t option
-       | vidOrOpVar of {var: Var.t, fixity: Vid.t option}
        | funs of clauses list
        | clausesTop of clauses
        | clauses of clause list
@@ -736,17 +736,11 @@ valbindRest :                          (([], []))
 	    | AND valbind              (valbind)
 
 rvalbind : REC rvalbind                (rvalbind)
-         | vidOrOpVar constraint EQUALOP FN match rvalbindRest
-            ({var = #var vidOrOpVar,
-	      fixity = #fixity vidOrOpVar,
-	      ty = constraint,
-	      match = match} :: rvalbindRest)
+         | pat EQUALOP FN match rvalbindRest
+            ({pat = pat, match = match} :: rvalbindRest)
 
 rvalbindRest :               ([])
              | AND rvalbind  (rvalbind)
-
-vidOrOpVar : vid     ({var = Vid.toVar vid, fixity = SOME vid})
-           | OP var  ({var = var, fixity = NONE})
 
 constraint :	 		(NONE)
 	   | COLON ty	 	(SOME ty)
@@ -982,7 +976,7 @@ patitems : patitem COMMA patitems  (let val (items, f) = patitems
 
 patitem	: field EQUALOP pat              (Pat.Item.Field (field,pat))
 	| vidNoEqual constraint opaspat  (Pat.Item.Vid (vidNoEqual,
-						       constraint, opaspat))
+							constraint, opaspat))
 
 opaspat :         (NONE)
         | AS pat  (SOME pat)

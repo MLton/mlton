@@ -1,8 +1,6 @@
 We are pleased to announce a new release of MLton, the whole-program
 optimizing compiler for Standard ML.  MLton runs on X86 machines with
-Linux. 
-
-MLton has the following features.
+Linux.  MLton has the following features.
 
    + Generates standalone executables with good runtime performance
    + SML 97 compliant, with a mostly complete basis library
@@ -12,28 +10,6 @@ MLton has the following features.
    + Libraries for continuations, interval timers, random numbers,
        resource limits, resource usage, signal handlers, sockets, system
        logging, threads, and heap save and restore
-
-Version VERSION is a bug-fix release over 20010806.  For a complete 
-list of changes and bug fixes, see the CHANGES file. Notable changes
-include:
-
-   + Added MLton.Exn.history, which is similar to SMLofNJ.exnHistory.
-   + Support for #line directives of the form (*#line line.col "file"*).
-   + Bug fix in heap save and restore to solve problem with excessive heap
-     usage by compiler.
-   + Performance improvements in native codegenerator.
-   + Bug fixes in optimizer, register allocator, and in
-     Real.{maxFinite, minPos, toManExp}.
-
-Version 20010806 was a major release over 20010706, and included the
-following changes.
-
-    + Word.andb (w, 0xFF) now works correctly.
-    + MLton.Rusage.rusage has a patch to work around a linux kernel bug.
-    + Programs of the form "exp ; program" are now accepted.
-    + Added the "MLton.Rlimit" structure.
-    + Added the "-keep dot" flag, which produces call graphs,
-      intraprocedural control-flow graphs, and dominator trees.
 
 For more information, go to the MLton home page. 
 

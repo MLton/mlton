@@ -230,7 +230,8 @@ in
 
    val ll = List.layout (Layout.tuple2 (Var.layout, Type.layout))
    val traceInferPat =
-      Trace.trace2 ("inferPat", Cpat.layout, ll, Layout.tuple2 (layoutPatCode, ll))
+      Trace.trace2 ("inferPat", Cpat.layout, ll,
+		    Layout.tuple2 (layoutPatCode, ll))
 end
 
 fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
@@ -698,7 +699,8 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 			   else d
 		     in List.fold
 			(Cpat.vars pat, (d, env), fn (y, (d, env)) =>
-			 let val y' = Var.new y
+			 let
+			    val y' = Var.new y
 			    val p = Cpat.removeOthersReplace (pat, y, y')
 			    val (p, xts) = inferPat (p, [])
 			    val e as (_, te) =
@@ -778,15 +780,14 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 		   val args: Tyvar.t vector ref = ref (Vector.new0 ())
 		   val (decs, env') =
 		      Vector.mapAndFold
-		      (decs, env, fn ({var, ty, match}, env) =>
+		      (decs, env, fn ({var, types, match}, env) =>
 		       let
 			  val argType = newType ()
 			  val resultType = newType ()
 			  val t = Type.arrow (argType, resultType)
 			  val _ =
-			     case ty of
-				NONE => ()
-			      | SOME t' => Type.unify (t, Type.fromCoreML t')
+			     Vector.foreach
+			     (types, fn t' => Type.unify (t, Type.fromCoreML t'))
 		       in
 			  ({var = var,
 			    argType = argType,
