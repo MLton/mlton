@@ -3,13 +3,40 @@ struct
 
 open S
 open Rssa
-   
+
+structure Graph = DirectedGraph
+local
+   open Graph
+in
+   structure Edge = Edge
+   structure Node = Node
+end
+
 type sourceSeq = int list
+
+structure InfoNode =
+   struct
+      datatype t = T of {index: int,
+			 info: SourceInfo.t,
+			 node: Node.t}
+
+      local
+	 fun make f (T r) = f r
+      in
+	 val index = make #index
+	 val info = make #info
+	 val node = make #node
+      end
+
+      fun layout (T {index, info, ...}) =
+	 Layout.record [("index", Int.layout index),
+			("info", SourceInfo.layout info)]
+   end
 
 structure Push =
    struct
       datatype t =
-	 Enter of int
+	 Enter of InfoNode.t
        | Skip of SourceInfo.t
 
       fun layout z =
@@ -17,14 +44,14 @@ structure Push =
 	    open Layout
 	 in
 	    case z of
-	       Enter i => seq [str "Enter ", Int.layout i]
+	       Enter n => seq [str "Enter ", InfoNode.layout n]
 	     | Skip i => seq [str "Skip ", SourceInfo.layout i]
 	 end
 
       fun toSources (ps: t list): int list =
 	 List.fold (rev ps, [], fn (p, ac) =>
 		    case p of
-		       Enter i => i :: ac
+		       Enter (InfoNode.T {index, ...}) => index :: ac
 		     | Skip _ => ac)
    end
 
@@ -37,42 +64,61 @@ fun profile program =
 	    sourceSeqs = Vector.new0 ()}
    else
    let
+      val Program.T {functions, main, objectTypes} = program
       val debug = false
       val profile = !Control.profile
       val profileAlloc: bool = profile = Control.ProfileAlloc
       val profileTime: bool = profile = Control.ProfileTime
       val frameProfileIndices = ref []
       local
-	 val table: {index: int,
-		     info: SourceInfo.t} HashSet.t =
-	    HashSet.new {hash = SourceInfo.hash o #info}
+	 val graph = Graph.new ()
+	 val {get = nodeOptions, ...} =
+	    Property.get (Node.plist, Property.initFun (fn _ => ref []))
+	 val table: InfoNode.t HashSet.t =
+	    HashSet.new {hash = SourceInfo.hash o InfoNode.info}
 	 val c = Counter.new 0
 	 val sourceInfos = ref []
       in
-	 fun sourceInfoIndex (si: SourceInfo.t): int =
-	    #index
-	    (HashSet.lookupOrInsert
-	     (table, SourceInfo.hash si,
-	      fn {info = si', ...} => SourceInfo.equals (si, si'),
-	      fn () => let
-			  val _ = List.push (sourceInfos, si)
-			  val index = Counter.next c
-			  val _ =
-			     if not debug
-				then ()
-			     else
-			     let
-				open Layout
-			     in
-				outputl (seq [Int.layout index,
-					      str " ",
-					      SourceInfo.layout si],
-					 Out.error)
-			     end
-		       in
-			 {index = index,
-			  info = si}
-		       end))
+	 fun addEdge {from, to} =
+	    if List.exists (Node.successors from, fn e =>
+			    Node.equals (to, Edge.to e))
+	       then ()
+	    else (Graph.addEdge (graph, {from = from, to = to}); ())
+	 fun sourceInfoNode (si: SourceInfo.t) =
+	    HashSet.lookupOrInsert
+	    (table, SourceInfo.hash si,
+	     fn InfoNode.T {info = si', ...} => SourceInfo.equals (si, si'),
+	     fn () => let
+			 val _ = List.push (sourceInfos, si)
+			 val index = Counter.next c
+			 val node = Graph.newNode graph
+			 val _ =
+			    List.push
+			    (nodeOptions node,
+			     Dot.NodeOption.label (SourceInfo.toString si))
+		      in
+			 InfoNode.T {index = index,
+				     info = si,
+				     node = node}
+		      end)
+	 val sourceInfoIndex = InfoNode.index o sourceInfoNode
+	 fun firstEnter (ps: Push.t list): InfoNode.t option =
+	    List.peekMap (ps, fn p =>
+			  case p of
+			     Push.Enter n => SOME n
+			   | _ => NONE)
+	 fun saveGraph () =
+	    Control.saveToFile
+	    ({suffix = "call-graph.dot"},
+	     Control.Dot,
+	     (),
+	     Control.Layout (fn () =>
+			     Graph.layoutDot
+			     (graph,
+			      fn _ => {edgeOptions = fn _ => [],
+				       nodeOptions = ! o nodeOptions,
+				       options = [],
+				       title = "call graph"})))
 	 fun makeSources () = Vector.fromListRev (!sourceInfos)
       end
       val unknownIndex = sourceInfoIndex SourceInfo.unknown
@@ -128,15 +174,47 @@ fun profile program =
 	    Statement.ProfileLabel l
 	 end
       fun shouldPush (si: SourceInfo.t, ps: Push.t list): bool =
-	 case List.peekMap (ps, fn Push.Enter i => SOME i | _ => NONE) of
+	 case firstEnter ps of
 	    NONE => true
-	  | SOME i =>
+	  | SOME (InfoNode.T {index, ...}) =>
 	       not (SourceInfo.isBasis si)
-	       orelse i = mainIndex
-	       orelse i = unknownIndex
+	       orelse index = mainIndex
+	       orelse index = unknownIndex
+      local
+	 val {get: Func.t -> {callees: Node.t list ref,
+			      callers: Node.t list ref}, ...} =
+	    Property.get (Func.plist,
+			  Property.initFun (fn _ => {callers = ref [],
+						     callees = ref []}))
+      in
+	 val funcInfo = get
+	 fun addFuncEdges () =
+	    (* Don't need to add edges for main because no one calls it. *)
+	    List.foreach (functions, fn f =>
+			  let
+			     val {callers, callees} = get (Function.name f)
+			  in
+			     List.foreach
+			     (!callers, fn from =>
+			      List.foreach (!callees, fn to =>
+					    addEdge {from = from, to = to}))
+			  end)
+      end
       fun doFunction (f: Function.t): Function.t =
 	 let
 	    val {args, blocks, name, raises, returns, start} = Function.dest f
+	    val {callees, ...} = funcInfo name
+	    fun enter (si: SourceInfo.t, ps: Push.t list) =
+	       let
+		  val n as InfoNode.T {node, ...} = sourceInfoNode si
+		  val _ = 
+		     case firstEnter ps of
+			NONE => List.push (callees, node)
+		      | SOME (InfoNode.T {node = node', ...}) =>
+			   addEdge {from = node', to = node}
+	       in
+		  Push.Enter n :: ps
+	       end
 	    val _ =
 	       Vector.foreach
 	       (blocks, fn block as Block.T {label, ...} =>
@@ -330,8 +408,7 @@ fun profile program =
 					   Enter si =>
 					      if shouldPush (si, sourceSeq)
 						 then (true,
-						       Push.Enter (sourceInfoIndex si)
-						       :: sourceSeq)
+						       enter (si, sourceSeq))
 					      else (false,
 						    Push.Skip si :: sourceSeq)
 					 | Leave si =>
@@ -342,9 +419,11 @@ fun profile program =
 						     let
 							val (keep, isOk) =
 							   case p of
-							      Push.Enter i =>
+							      Push.Enter
+							      (InfoNode.T
+							       {index, ...}) =>
 								 (true,
-								  i = sourceInfoIndex si)
+								  index = sourceInfoIndex si)
 							    | Push.Skip si' =>
 								 (false,
 								  SourceInfo.equals (si, si'))
@@ -381,6 +460,15 @@ fun profile program =
 			      Transfer.CCall {func, ...} =>
 				 CFunction.needsProfileAllocIndex func
 			    | _ => false
+			(* Record the call for the call graph. *)
+			val _ =
+			   case transfer of
+			      Transfer.Call {func, ...} =>
+				 Option.app
+				 (firstEnter sourceSeq,
+				  fn InfoNode.T {node, ...} =>
+				  List.push (#callers (funcInfo func), node))
+			    | _ => ()
 			val {args, kind, label, statements, ...} =
 			   maybeSplit {args = args,
 				       bytesAllocated = bytesAllocated,
@@ -408,10 +496,11 @@ fun profile program =
 			  returns = returns,
 			  start = start}
 	 end
-      val Program.T {functions, main, objectTypes} = program
       val program = Program.T {functions = List.revMap (functions, doFunction),
 			       main = doFunction main,
 			       objectTypes = objectTypes}
+      val _ = addFuncEdges ()
+      val _ = saveGraph ()
    in
       {frameProfileIndices = Vector.fromList (!frameProfileIndices),
        labels = Vector.fromList (!labels),
