@@ -3,13 +3,15 @@
 # This script calls MLton.
 
 set -e
+set -x
 
 lib='lib unset'
 gcc='gcc'
 mlton="$lib/mlton-compile"
 world="$lib/world.mlton"
 nj='sml'
-njHeap="$lib/mlton.x86-linux"
+source "$lib/host-platform"
+njHeap="$lib/mlton.$HOST_ARCH-$HOST_OS"
 
 rargs=""
 case "$1" in
