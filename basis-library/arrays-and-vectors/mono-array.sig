@@ -26,9 +26,6 @@ signature MONO_ARRAY =
       val exists: (elem -> bool) -> array -> bool
       val all: (elem -> bool) -> array -> bool
       val collate: (elem * elem -> order) -> array * array -> order
-
-      (* Deprecated *)
-      val extract: array * int * int option -> vector 
    end
 
 signature MONO_ARRAY_EXTRA =
@@ -48,4 +45,7 @@ signature MONO_ARRAY_EXTRA =
       val duplicate: array -> array
       val toList: array -> elem list
       val unfoldi: int * 'a * (int * 'a -> elem * 'a) -> array
+
+      (* Deprecated *)
+      val extract: array * int * int option -> vector
    end

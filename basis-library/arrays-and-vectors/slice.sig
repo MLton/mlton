@@ -70,6 +70,7 @@ signature SLICE =
       val fields: ('a elt -> bool) -> 'a slice -> 'a slice list
 
       (* Extra *)
+      val append: 'a slice * 'a slice -> 'a sequence
       (* createi,create:
        * (int * (int -> 'b elt) -> 'c  should be a tabulate function.
        *)

@@ -213,6 +213,21 @@ functor Sequence (S: sig
 	       if isMutable orelse (start <> 0 orelse len <> S.length seq)
 		  then map (fn x => x) sl
 	       else seq
+	    fun append (sl1: 'a slice, sl2: 'a slice): 'a sequence =
+	       if length sl2 = 0
+		  then sequence sl1
+	       else 
+		  let
+		     val l1 = length sl1
+		     val l2 = length sl2
+		     val n = l1 + l2 handle Overflow => raise Size
+		  in
+		     unfoldi (n, (0, sl1),
+			      fn (_, (i, sl)) =>
+				  if i < length sl
+				     then (unsafeSub (sl, i), (i + 1, sl))
+				  else (unsafeSub (sl2, 0), (1, sl2)))
+		  end
 	    fun concat (sls: 'a slice list): 'a sequence =
 	       case sls of
 		  [] => seq0 ()
@@ -427,6 +442,7 @@ functor Sequence (S: sig
 	   Slice.update' update (Slice.full seq, i, x)
 	fun unsafeUpdate' update (seq, i, x) = 
 	   Slice.unsafeUpdate' update (Slice.full seq, i, x)
+	fun append seqs = make2 Slice.append seqs
 	fun concat seqs = Slice.concat (List.map Slice.full seqs)
 	fun appi f = make (Slice.appi f)
 	fun app f = make (Slice.app f)

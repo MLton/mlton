@@ -15,8 +15,8 @@ signature STRING_CVT =
 
       val splitl: (char -> bool) -> (char, 'a) reader -> 'a -> string * 'a
 
-      val takel: (char -> bool) -> (char, 'a) reader ->'a -> string 
-      val dropl: (char -> bool) -> (char, 'a) reader ->'a -> 'a 
+      val takel: (char -> bool) -> (char, 'a) reader -> 'a -> string 
+      val dropl: (char -> bool) -> (char, 'a) reader -> 'a -> 'a 
       val skipWS: (char, 'a) reader -> 'a -> 'a
 
       type cs

@@ -30,6 +30,7 @@ signature MONO_VECTOR_EXTRA_PRE =
       val unsafeSub: vector * int -> elem
 
       (* Used to implement Substring/String functions *)
+      val append: vector * vector -> vector
       val concatWith: vector -> vector list -> vector
       val isPrefix: (elem * elem -> bool) -> vector -> vector -> bool
       val isSubvector: (elem * elem -> bool) -> vector -> vector -> bool
@@ -43,8 +44,11 @@ signature MONO_VECTOR_EXTRA_PRE =
       val toList: vector -> elem list
       val unfoldi: int * 'a * (int * 'a -> elem * 'a) -> vector
       val vector: int * elem -> vector
+
+(*
       (* Deprecated *)
       val extract: vector * int * int option -> vector
+*)
    end
 
 signature MONO_VECTOR_EXTRA =

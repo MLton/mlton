@@ -53,6 +53,10 @@ signature SEQUENCE =
       val fields: ('a elt -> bool) -> 'a sequence -> 'a sequence list
 
       (* Extra *)
+      val append: 'a sequence * 'a sequence -> 'a sequence
+      (* createi,create:
+       * (int * (int -> 'b elt) -> 'c  should be a tabulate function.
+       *)
       val createi: (int * (int -> 'b elt) -> 'c) ->
                    (int * 'a elt -> 'b elt) -> 'a sequence -> 'c
       val create: (int * (int -> 'b elt) -> 'c) ->
