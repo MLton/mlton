@@ -756,9 +756,41 @@ was passed).  It is an error for a signal handler to raise an
 unhandled exception.  To avoid the possibility of aynchronous
 exceptions, it is an error to {\tt Thread.switch'} to an
 interrupted thread with a thunk that raises an exception (either
-directly, or via {\tt Thread.prepend}). All signals are automatically
-blocked for the duration of a handler.  Signal handlers will never run
-during a critical section (see \secref{thread}).
+directly, or via {\tt Thread.prepend}).
+
+A signal handler is never invoked while the running thread is in a
+critical section (see \secref{thread}).  Invoking a signal handler
+implicitly enters a critical section and the normal return of a signal
+handler implicitly exits the critical section; hence, a signal handler
+is never interrupted by another signal handler.
+
+Signal handling interacts in a non-trivial way with those functions in
+the Basis Library that correspond directly to interruptable system
+calls (a subset of those functions that may raise {\tt OS.SysError}).
+The desire is that these functions should have predictable semantics.
+The principal concerns are:
+\begin{enumerate}
+\item 
+  system calls that are interrupted by signals should, by default, be
+  restarted; the alternative is to raise {\tt
+    OS.SysError(Posix.Error.errorMsg Posix.Error.intr, SOME
+    Posix.Error.intr)}.  This behavior is determined dynamically by
+  the value of {\tt Signal.restart}.
+\item 
+  signal handlers should always get a chance to run (when outside a
+  critical region).  If a system call is interrupted by a signal, then
+  the signal handler will run before the call is restarted or {\tt
+    OS.SysError} is raised; that is, before the {\tt Signal.restart}
+  check.
+\item 
+  a system call that must be restarted while in a critical section
+  will be restarted with the handled signals blocked (and the
+  previously blocked signals remembered).  This encourages the system
+  call to complete, allowing the program to make progess towards
+  leaving the critical section where the signal can be handled.  If
+  the system call completes, the set of blocked signals are restored
+  to those previously blocked.
+\end{enumerate}
 
 \begin{verbatim}
 signature MLTON_SIGNAL =
@@ -786,7 +818,7 @@ signature MLTON_SIGNAL =
             val allBut: signal list -> t
             val block: t -> unit
             val getBlocked: unit -> t
-            val member: t * signal -> bool
+            val isMember: t * signal -> bool
             val none: t
             val setBlocked: t -> unit
             val some: signal list -> t
@@ -794,7 +826,9 @@ signature MLTON_SIGNAL =
          end
 
       val getHandler: t -> Handler.t
+      val handled: unit -> Mask.t
       val prof: t
+      val restart: bool ref
       val setHandler: t * Handler.t -> unit
       val suspend: Mask.t -> unit
       val vtalrm: t
@@ -836,7 +870,7 @@ the type of signal masks, which are sets of blocked signals.
 a mask of all signals.
 
 \entry{Mask.allBut l}
-a mask of all signals except for those in l.
+a mask of all signals except for those in {\tt l}.
 
 \entry{Mask.block m}
 block all signals in {\tt m}.
@@ -845,8 +879,8 @@ block all signals in {\tt m}.
 get the signal mask {\tt m}, i.e. a signal is blocked if and only
 if it is in {\tt m}.
 
-\entry{Mask.member (m, s)}
-returns true if the signal {\tt s} is in the {\tt m}.
+\entry{Mask.isMember (m, s)}
+returns true if the signal {\tt s} is in {\tt m}.
 
 \entry{Mask.none}
 a mask of no signals.
@@ -862,15 +896,24 @@ if it is in {\tt m}.
 \entry{getHandler s}
 returns the current handler for signal {\tt s}.
 
+\entry{handled} 
+returns the signal mask {\tt m} corresponding to the currently handled
+signals; i.e., a signal is handled if and only if it is im {\tt m}.
+
 \entry{prof}
 {\tt SIGPROF}, the profiling signal.
+
+\entry{restart}
+dynamically determines the behavior of interrupted system calls; when
+{\tt true}, interrupted system calls are restarted; when {\tt false},
+interrupted system calls raise {\tt OS.SysError}.
 
 \entry{setHandler (s, h)}
 sets the handler for signal {\tt s} to {\tt h}.
 
 \entry{suspend m}
 temporarily sets the signal mask to {\tt m} and suspends until an
-unmasked signal is received and handled, at which point suspend resets
+unmasked signal is received and handled, at which point {\tt suspend} resets
 the mask and returns.
 
 \entry{vtalrm}

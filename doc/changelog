@@ -1,5 +1,9 @@
 Here are the changes since version 20040227.
 
+* 2004-05-17
+  - Automatically restart functions in the Basis Library that correspond
+    directly to interruptable system calls.
+	
 * 2004-05-13
   - Added -profile count, for dynamic counts of function calls and branches.
   - Equate the types Posix.Signal.signal and Unix.signal.
@@ -15,13 +19,16 @@ Here are the changes since version 20040227.
     shouldn't have been.  This would cause some programs to be
     mistakenly rejected. 
 
+* 2004-04-30
+  - Added MLton.Signal.{handled,restart}.
+	
 * 2004-04-23
   - Added Timer.checkCPUTimes, and updated the Timer structure to
     match the latest basis spec.  Also fixed totalCPUTimer and
     totalRealTimer, which were wrong.
 
 * 2004-04-13
-  - Added MLton.Signal.Mask.{getBlocked,member}.
+  - Added MLton.Signal.Mask.{getBlocked,isMember}.
 	
 * 2004-04-12
   - Fix bug that mistakenly generalized variable types containing

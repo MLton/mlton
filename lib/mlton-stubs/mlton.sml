@@ -364,12 +364,8 @@ structure MLton: MLTON =
 	       end
 
 	    fun getHandler _ = raise Fail "getHandler"
-	    fun handleDefault _ = raise Fail "handleDefault"
-	    fun handleWith' _ = raise Fail "handleWith'"
-	    fun handleWith _ = raise Fail "handleWith"
-	    fun ignore _ = raise Fail "ignore"
-	    fun isHandledDefault _ = raise Fail "isHandledDefault"
-	    fun isIgnored _ = raise Fail "isIgnored"
+	    fun handled _ = raise Fail "handled"
+	    val restart = ref true
 	    fun setHandler _ = raise Fail "setHandler"
 	    fun suspend _ = raise Fail "suspend"
 	 end

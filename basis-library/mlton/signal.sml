@@ -129,18 +129,13 @@ val (getHandler, setHandler, handlers) =
 
 val gcHandler = ref Ignore
 
-structure Mask =
-   struct
-      open Mask
-
-      fun handled () =
-	 Mask.some
-	 (Array.foldri
-	  (fn (s, h, sigs) =>
-	   case h of 
-	      Handler _ => (fromInt s)::sigs
-	    | _ => sigs) [] handlers)
-   end
+fun handled () =
+   Mask.some
+   (Array.foldri
+    (fn (s, h, sigs) =>
+     case h of 
+	Handler _ => (fromInt s)::sigs
+      | _ => sigs) [] handlers)
    
 structure Handler =
    struct
@@ -170,7 +165,7 @@ structure Handler =
 	       PosixError.SysCall.blocker :=
 	       (fn () => let
 			    val m = Mask.getBlocked ()
-			    val () = Mask.block (Mask.handled ())
+			    val () = Mask.block (handled ())
 			 in
 			    fn () => Mask.setBlocked m
 			 end)
@@ -180,7 +175,7 @@ structure Handler =
 	       (fn t =>
 		let
 		   val mask = Mask.getBlocked ()
-		   val () = Mask.block (Mask.handled ())
+		   val () = Mask.block (handled ())
 		   val fs = 
 		      case !gcHandler of
 			 Handler f => if Prim.isGCPending () then [f] else []

@@ -23,7 +23,6 @@ signature MLTON_SIGNAL =
 	    val allBut: signal list -> t
 	    val block: t -> unit
 	    val getBlocked: unit -> t
-	    val handled: unit -> t
 	    val isMember: t * signal -> bool
 	    val none: t
 	    val setBlocked: t -> unit
@@ -32,6 +31,7 @@ signature MLTON_SIGNAL =
 	 end
 
       val getHandler: t -> Handler.t
+      val handled: unit -> Mask.t
       val prof: t
       val restart: bool ref
       val setHandler: t * Handler.t -> unit

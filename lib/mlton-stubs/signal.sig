@@ -31,7 +31,9 @@ signature MLTON_SIGNAL =
 	 end
 
       val getHandler: t -> Handler.t
+      val handled: unit -> Mask.t
       val prof: t
+      val restart: bool ref
       val setHandler: t * Handler.t -> unit
       (* suspend m temporarily sets the signal mask to m and suspends until an
        * unmasked signal is received and handled, and then resets the mask.
