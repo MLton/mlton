@@ -530,9 +530,17 @@ fun allocate {argOperands,
 	     val _ =
 		Vector.foreach
 		(blocks, fn R.Block.T {label, args, statements, ...} =>
-		 (display (R.Label.layout label)
-		  ; Vector.foreach (args, diagVar o #1)
-		  ; Vector.foreach (statements, diagStatement)))
+		 let
+		    val {live, ...} = labelInfo label
+		    val () = display (R.Label.layout label)
+		    val () =
+		       display
+		       (seq [str "live: ", Vector.layout Operand.layout live])
+		    val () = Vector.foreach (args, diagVar o #1)
+		    val () = Vector.foreach (statements, diagStatement)
+		 in
+		    ()
+		 end)
 	  in ()
 	  end)
    in
