@@ -79,6 +79,9 @@ mlton-stubs_cm:
 mlton.sml: $(SOURCES)
 	rm -f mlton.sml && mlton -stop sml mlton.cm && chmod -w mlton.sml
 
+.PHONY: front-end
+front-end: front-end/ml.lex.sml front-end/ml.grm.sml
+
 front-end/ml.lex.sml: front-end/ml.lex
 	rm -f front-end/ml.lex.sml
 	mllex front-end/ml.lex
