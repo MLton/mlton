@@ -1333,7 +1333,13 @@ structure Scheme =
 			then {isNew = true,
 			      ty = Type.record (Srecord.map (r, #ty))}
 		     else keep t
-		  fun recursive _ = Error.bug "instantiating recursive type"
+		  fun recursive _ =
+		     (* If we get here, there has already been a type error
+		      * in the user's program, so we return a new type to avoid
+		      * compounding the error.
+		      *)
+		     {isNew = true,
+		      ty = Type.new ()}
 		  fun var (ty, a) =
 		     case tyvarInst a of
 			NONE => {isNew = false, ty = ty}
