@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -263,7 +263,10 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
    end
 
 val traceElaborateSigexp =
-   Trace.trace ("elaborateSigexp", Sigexp.layout, Option.layout Interface.layout)
+   Trace.trace2 ("elaborateSigexp",
+		 Sigexp.layout,
+		 fn {isTop} => Layout.record [("isTop", Bool.layout isTop)],
+		 Option.layout Interface.layout)
    
 val info' = Trace.info "elaborateSpec"
  
@@ -274,11 +277,12 @@ fun elaborateSigexp (sigexp: Sigexp.t, E: StructureEnv.t): Interface.t option =
       val E = StructureEnv.makeInterfaceEnv E
       fun elaborateSigexp arg : Interface.t option =
 	 traceElaborateSigexp
-	 (fn (sigexp: Sigexp.t) =>
+	 (fn (sigexp: Sigexp.t, {isTop}) =>
 	  case Sigexp.node sigexp of
 	     Sigexp.Spec spec =>
 		(* rule 62 *)
-		SOME (#1 (Env.makeInterface (E, fn () => elaborateSpec spec)))
+		SOME (#1 (Env.makeInterface (E, {isTop = isTop},
+					     fn () => elaborateSpec spec)))
 	   | Sigexp.Var x =>
 		(* rule 63 *)
 		Option.map (Env.lookupSigid (E, x), Interface.copy)
@@ -288,7 +292,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, E: StructureEnv.t): Interface.t option =
 		   val time = Interface.Time.tick ()
 		in
 		   Option.map
-		   (elaborateSigexp sigexp, fn I =>
+		   (elaborateSigexp (sigexp, {isTop = false}), fn I =>
 		    let
 		       val _ = 
 			  List.foreach
@@ -357,7 +361,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, E: StructureEnv.t): Interface.t option =
 		 end)
 	   | Spec.IncludeSigexp sigexp =>
 		(* rule 75 *)
-		Option.app (elaborateSigexp sigexp, fn I =>
+		Option.app (elaborateSigexp (sigexp, {isTop = false}), fn I =>
 			    Env.openInterface (E, I, Sigexp.region sigexp))
 	   | Spec.IncludeSigids sigids =>
 		(* Appendix A, p.59 *)
@@ -424,10 +428,11 @@ fun elaborateSigexp (sigexp: Sigexp.t, E: StructureEnv.t): Interface.t option =
 		(* rules 74, 84 *)
 		List.foreach
 		(ss, fn (strid, sigexp) =>
-		 Env.extendStrid (E, strid,
-				  case elaborateSigexp sigexp of
-				     NONE => Interface.empty
-				   | SOME I => I))
+		 Env.extendStrid
+		 (E, strid,
+		  case elaborateSigexp (sigexp, {isTop = false}) of
+		     NONE => Interface.empty
+		   | SOME I => I))
 	   | Spec.Type typedescs =>
 		(* rule 69 *)
 		elaborateTypedescs (typedescs, {equality = false}, E)
@@ -452,7 +457,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, E: StructureEnv.t): Interface.t option =
 		  Scheme.make (elaborateType (t, E))))
 		) arg
    in
-      elaborateSigexp sigexp
+      elaborateSigexp (sigexp, {isTop = true})
    end
 
 val elaborateSigexp =

@@ -822,6 +822,7 @@ structure UniqueId = IntUniqueId ()
 
 datatype t = T of {copy: copy,
 		   flexible: FlexibleTycon.t TyconMap.t option ref,
+		   isClosed: bool,
 		   original: t option,
 		   plist: PropertyList.t,
 		   strs: (Strid.t * t) array,
@@ -843,9 +844,10 @@ fun original I =
       NONE => I
     | SOME I => I
 	 
-fun new {strs, types, vals} =
+fun new {isClosed, strs, types, vals} =
    T (Set.singleton {copy = ref NONE,
 		     flexible = ref NONE,
+		     isClosed = isClosed,
 		     original = NONE,
 		     plist = PropertyList.new (),
 		     strs = strs,
@@ -853,7 +855,8 @@ fun new {strs, types, vals} =
 		     uniqueId = UniqueId.new (),
 		     vals = vals})
 
-val empty = new {strs = Array.new0 (),
+val empty = new {isClosed = true,
+		 strs = Array.new0 (),
 		 types = Array.new0 (),
 		 vals = Array.new0 ()}
 
@@ -887,7 +890,6 @@ fun sameShape (I, I') =
    case (#original (dest I), #original (dest I')) of
       (SOME I, SOME I') => equals (I, I')
     | _ => false
-
 
 fun peekStrid (T s, strid: Strid.t): t option =
    let
@@ -1013,9 +1015,25 @@ fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, time): unit =
 	       let
 		  fun loop (T s, T s', strids): unit =
 		     let
-			val {strs, types, ...} = Set.value s
+			val {isClosed, strs, types, ...} = Set.value s
 			val {strs = strs', types = types', ...} = Set.value s'
-			val _ = Set.union (s, s')
+			val _ =
+			   (* Can't always union here.  I and I' may have
+			    * exactly the same shape, but may have free
+			    * flxible tycons defined in other signatures that
+			    * are different.
+			    * However, if the interface is closed, that is, if
+			    * all of the flexible tycons that appear in it are
+			    * also defined in it, then sharing the structures
+			    * implies that the structures are identical.  This
+			    * also relies on the fact that the structures have
+			    * the same shape, which means that they are copies
+			    * of the same interface.  That is sufficient to
+			    * guarantee that all rigid tycons are identical.
+			    *)
+			   if isClosed
+			      then Set.union (s, s')
+			   else ()
 			val _ =
 			   Array.foreach2
 			   (types, types', fn ((name, s), (_, s')) =>
@@ -1109,7 +1127,7 @@ fun copy (I: t): t =
 	    case !copy of
 	       NONE =>
 		  let
-		     val {original, strs, types, vals, ...} = r
+		     val {isClosed, original, strs, types, vals, ...} = r
 		     val types =
 			Array.map (types, fn (name, typeStr) =>
 				   (name, TypeStr.copy typeStr))
@@ -1124,6 +1142,7 @@ fun copy (I: t): t =
 			       | SOME I => I)
 		     val I = T (Set.singleton {copy = ref NONE,
 					       flexible = ref NONE,
+					       isClosed = isClosed,
 					       original = original,
 					       plist = PropertyList.new (),
 					       strs = strs,

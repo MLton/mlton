@@ -3021,7 +3021,8 @@ structure InterfaceEnv =
 			 {prefix = [s]})
 	 end
 
-      fun makeInterface (T {currentScope, strs, types, vals, ...}, make) =
+      fun makeInterface (T {currentScope, strs, types, vals, ...},
+			 {isTop}, make) =
 	 let
 	    val s = NameSpace.collect strs
 	    val t = NameSpace.collect types
@@ -3036,7 +3037,8 @@ structure InterfaceEnv =
 	    val Info.T v = v ()
 	    val v = Array.map (v, fn {domain, range = (status, scheme), ...} =>
 			       (domain, (status, scheme)))
-	    val I = Interface.new {strs = s, types = t, vals = v}
+	    val I = Interface.new {isClosed = isTop,
+				   strs = s, types = t, vals = v}
 	    val _ = currentScope := s0
 	 in
 	    (I, res)

@@ -137,7 +137,8 @@ signature ELABORATE_ENV =
 	    val lookupLongstrid: t * Ast.Longstrid.t -> Interface.t option
 	    val lookupLongtycon: t * Ast.Longtycon.t -> TypeStr.t option
 	    val lookupSigid: t * Ast.Sigid.t -> Interface.t option
-	    val makeInterface: t * (unit -> 'a) -> Interface.t * 'a
+	    val makeInterface:
+	       t * {isTop: bool} * (unit -> 'a) -> Interface.t * 'a
 	    val openInterface: t * Interface.t * Region.t -> unit
 	 end
       sharing Interface.Scheme = InterfaceEnv.Scheme
