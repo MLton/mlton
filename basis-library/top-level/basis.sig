@@ -213,6 +213,7 @@ signature BASIS =
       structure MLton : MLTON
       structure SMLofNJ : SML_OF_NJ
       structure Unsafe : UNSAFE
+      structure SML90 : SML90
 
       (* ************************************************** *)
       (* ************************************************** *)

@@ -79,3 +79,4 @@ signature WINDOWS = WINDOWS
 signature MLTON = MLTON
 signature SML_OF_NJ = SML_OF_NJ
 signature UNSAFE = UNSAFE
+signature SML90 = SML90

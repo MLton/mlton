@@ -132,6 +132,7 @@ structure Basis:> BASIS =
       structure MLton = MLton
       structure SMLofNJ = SMLofNJ
       structure Unsafe = Unsafe
+      structure SML90 = SML90
 
       open ArrayGlobal
 	   BoolGlobal
