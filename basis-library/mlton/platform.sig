@@ -1,8 +1,20 @@
 signature MLTON_PLATFORM =
    sig
-      datatype arch = Sparc | X86
-      val arch: arch
+      structure Arch:
+	 sig
+	    datatype t = Sparc | X86
+
+	    val host: t
+	    val fromString: string -> t option
+	    val toString: t -> string
+	 end
 	 
-      datatype os = Cygwin | FreeBSD | Linux | NetBSD | SunOS
-      val os: os
+      structure OS:
+	 sig
+	    datatype t = Cygwin | FreeBSD | Linux | NetBSD | SunOS
+
+	    val host: t
+	    val fromString: string -> t option
+	    val toString: t -> string
+	 end
    end

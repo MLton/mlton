@@ -31,25 +31,25 @@
 /* ------------------------------------------------- */
 
 #if (defined (__sparc__))
-#define MLton_Platform_arch 0
+#define MLton_Platform_Arch_host 0
 #elif (defined (__i386__))
-#define MLton_Platform_arch 1
+#define MLton_Platform_Arch_host 1
 #else
-#error MLton_Platform_arch not defined
+#error MLton_Platform_Arch_host not defined
 #endif
 
 #if (defined (__CYGWIN__))
-#define MLton_Platform_os 0
+#define MLton_Platform_OS_host 0
 #elif (defined (__FreeBSD__))
-#define MLton_Platform_os 1
+#define MLton_Platform_OS_host 1
 #elif (defined (__linux__))
-#define MLton_Platform_os 2
+#define MLton_Platform_OS_host 2
 #elif (defined (__NetBSD__))
-#define MLton_Platform_os 3
+#define MLton_Platform_OS_host 3
 #elif (defined (__sun__))
-#define MLton_Platform_os 4
+#define MLton_Platform_OS_host 4
 #else
-#error MLton_Platform_os not defined
+#error MLton_Platform_OS_host not defined
 #endif
 
 #if (defined (__sun__))

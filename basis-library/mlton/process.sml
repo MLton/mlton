@@ -6,10 +6,10 @@ structure MLtonProcess: MLTON_PROCESS =
 
       type pid = Posix.Process.pid
 
-      structure Platform = MLton.Platform
+      val isCygwin = let open MLton.Platform.OS in host = Cygwin end
 	 
       fun spawne {path, args, env} =
-	 if Platform.os = Platform.Cygwin
+	 if isCygwin
 	    then Error.checkReturnResult (Prim.spawne (String.nullTerm path,
 						       C.CSS.fromList args,
 						       C.CSS.fromList env))
@@ -22,7 +22,7 @@ structure MLtonProcess: MLTON_PROCESS =
 	 spawne {path = path, args = args, env = Posix.ProcEnv.environ ()}
 
       fun spawnp {file, args} =
-	 if Platform.os = Platform.Cygwin
+	 if isCygwin
 	    then Error.checkReturnResult (Prim.spawnp (String.nullTerm file,
 						       C.CSS.fromList args))
 	 else	 

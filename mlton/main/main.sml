@@ -40,20 +40,20 @@ val ccOpts: string list ref = ref []
 val coalesce: int option ref = ref NONE
 val expert: bool ref = ref false
 val gcc: string ref = ref "<unset>"
-val includeDirs: string list ref = ref []
 val keepGenerated = ref false
 val keepO = ref false
 val keepSML = ref false
 val linkOpts: string list ref = ref []
 val output: string option ref = ref NONE
-val optimization: int ref = ref 1
 val profileSet: bool ref = ref false
 val showBasis: bool ref = ref false
 val stop = ref Place.OUT
+val targetCCOpts: {opt: string, target: string} list ref = ref []
+val targetLinkOpts: {opt: string, target: string} list ref = ref []
 
-val hostMap: unit -> {arch: Control.hostArch,
+val hostMap: unit -> {arch: MLton.Platform.Arch.t,
 		      host: string,
-		      os: Control.hostOS} list =
+		      os: MLton.Platform.OS.t} list =
    Promise.lazy
    (fn () =>
     List.map
@@ -62,18 +62,13 @@ val hostMap: unit -> {arch: Control.hostArch,
 	[host, arch, os] =>
 	   let
 	      val arch =
-		 case arch of
-		    "x86" => Control.X86
-		  | "sparc" => Control.Sparc
-		  | _ => Error.bug (concat ["strange arch: ", arch])
+		 case MLton.Platform.Arch.fromString arch of
+		    NONE => Error.bug (concat ["strange arch: ", arch])
+		  | SOME a => a
 	      val os =
-		 case os of
-		    "cygwin" => Control.Cygwin
-		  | "freebsd" => Control.FreeBSD
-		  | "linux" => Control.Linux
-		  | "netbsd" => Control.NetBSD
-		  | "sunos" => Control.SunOS
-		  | _ => Error.bug (concat ["strange os: ", os])
+		 case MLton.Platform.OS.fromString os of
+		    NONE => Error.bug (concat ["strange os: ", os])
+		  | SOME os => os
 	   in
 	      {arch = arch, host = host, os = os}
 	   end
@@ -84,6 +79,7 @@ fun setHostType (hostString: string, usage): unit =
       NONE => usage (concat ["invalid host ", hostString])
     | SOME {arch, os, ...} =>
 	 let
+	    datatype z = datatype MLton.Platform.Arch.t
 	    open Control
 	 in
 	    hostArch := arch
@@ -100,6 +96,7 @@ fun makeOptions {usage} =
       val usage = fn s => (usage s; raise Fail "unreachable")
       open Control Popt
       fun push r = SpaceString (fn s => List.push (r, s))
+      datatype z = datatype MLton.Platform.Arch.t
    in
       List.map
       (
@@ -135,17 +132,7 @@ fun makeOptions {usage} =
        (Expert, "cc", " <gcc>", "path to gcc executable",
 	SpaceString (fn s => gcc := s)),
        (Normal, "cc-opt", " <opt>", "pass option to C compiler",
-	SpaceString (fn opt =>
-		     if opt = ""
-			then ccOpts := []
-		     else 
-			if (3 = String.size opt
-			    andalso String.isPrefix {prefix = "-O",
-						     string = opt})
-			   then optimization := (Char.toInt
-						 (String.sub (opt, 2))
-						 - Char.toInt #"0")
-			else List.push (ccOpts, opt))),
+	push ccOpts),
        (Expert, "coalesce", " <n>", "coalesce chunk size for C codegen",
 	Int (fn n => coalesce := SOME n)),
        (Expert, "debug", " {false|true}", "produce executable with debug info",
@@ -248,10 +235,7 @@ fun makeOptions {usage} =
 	"compute dynamic counts of limit checks",
 	boolRef limitCheckCounts),
        (Normal, "link-opt", " <opt>", "pass option to linker",
-	SpaceString (fn s =>
-		     if s = ""
-			then linkOpts := []
-		     else List.push (linkOpts, s))),
+	push linkOpts),
        (Expert, "loop-passes", " <n>", "loop optimization passes (1)",
 	Int 
 	(fn i => 
@@ -264,7 +248,9 @@ fun makeOptions {usage} =
 	"may @MLton load-world be used",
 	boolRef mayLoadWorld),
        (Normal, "native",
-	if !hostArch = Sparc then " {false}" else " {true|false}",
+	if !hostArch = MLton.Platform.Arch.Sparc
+	   then " {false}"
+	else " {true|false}",
 	"use native code generator",
 	boolRef Native.native),
        (Expert, "native-commented", " <n>", "level of comments  (0)",
@@ -346,6 +332,15 @@ fun makeOptions {usage} =
 		   | "o" => Place.O
 		   | "sml" => Place.SML
 		   | _ => usage (concat ["invalid -stop arg: ", s])))),
+       (Expert, "target-cc-opt", " target <opt>", "target-dependent CC option",
+	(SpaceString2
+	 (fn (target, opt) =>
+	  List.push (targetCCOpts, {opt = opt, target = target})))),
+       (Expert, "target-link-opt", " target <opt>",
+	"target-dependent link option",
+	(SpaceString2
+	 (fn (target, opt) =>
+	  List.push (targetLinkOpts, {opt = opt, target = target})))),
        (Expert, #1 trace, " name1,...", "trace compiler internals", #2 trace),
        (Expert, "text-io-buf-size", " <n>", "TextIO buffer size",
 	intRef textIOBufSize),
@@ -400,89 +395,26 @@ fun commandLine (args: string list): unit =
 	  | Self => "self"
       val lib = concat [!libDir, "/", hostString]
       val _ = Control.libDir := lib
-      val includeDirs = concat [lib, "/include"] :: !includeDirs
-      (* Much of the commentary for the C flags is taken from the gcc docs. *)
-      val standardCFlags =
-	 [
-	  (* Do not allow gcc to assume the strictest aliasing rules, in which
-	   * an object of one type is assumed never to reside at the same
-	   * address as an object of a different type, unless the types are
-	   * almost the same.
-	   *)
-	  "-fno-strict-aliasing",
-	  (* Don't keep the frame pointer in a register for functions that
-	   * don't need one.
-	   *)
-	  "-fomit-frame-pointer",
-	  "-w"]
-      val x86CFlags =
-	 standardCFlags
-	 @ [
-	    (* Don't perform the optimizations of loop strength reduction and
-	     * elimination of iteration variables.
-	     *)
-	    "-fno-strength-reduce",
-	     (* Attempt to reorder instructions to eliminate execution stalls
-	      * due to required data being unavailable.
-	      *)
-	    "-fschedule-insns",
-	    "-fschedule-insns2",
-	    (* For align-{functions,jumps,loops, we use -m for now instead of
-	     * -f because old gcc's will barf on -f, while newer ones only warn
-	     * about -m.  Someday, when we think we won't run into older gcc's,
-	     * these should be changed to -f.
-	     *)
-	    (* `-falign-functions=N'
-	     * Align the start of functions to the next power-of-two greater
-	     * than N, skipping up to N bytes.
-	     *)
-	    "-malign-functions=5",
-	    (* Align branch targets to a power-of-two boundary. *)
-	    "-malign-jumps=2",
-	    (* Align loops to a power-of-two boundary. *)
-	    "-malign-loops=2",
-            (* Assume the defaults for the machine type when scheduling
-	     * instructions.
-	     * pentiumpro is the same as i686.
-	     *)
-	     "-mcpu=pentiumpro"] 
-      val x86LinkLibs = []
-      val sparcCFlags =
-	 standardCFlags
-	 @ [
-	    (* Enable the SPARC V9 instruction set with UltraSPARC extensions. *)
-	    "-Wa,-xarch=v8plusa",
-	    (* Treat the registers g5, g7 as allocable registers that are
-	     * clobbered by function calls.
-	     *)
-	    "-fcall-used-g5",
-	    "-fcall-used-g7",
-	    (* Generate code for a 32 bit environment. *)
-	    "-m32",
-	    (* Emit integer multiply and integer divide instructions that exist
-	     * in SPARC v8 but not in SPARC v7.
-	     *)
-	    "-mv8",
-	    (* Set the instruction set, register set, and instruction scheduling 
-	     * parameters for machine type.
-	     *)
-	    "-mcpu=ultrasparc",
-	    (* Emit exit code inline at every function exit. *)
-	    "-mno-epilogue"]
-      val sparcLinkLibs = ["dl", "nsl", "socket"]
-      val (ccDefaultOpts, defaultLibs) =
-	 case !hostArch of
-	    X86 => (x86CFlags, x86LinkLibs)
-	  | Sparc => (sparcCFlags, sparcLinkLibs)
-      fun prefixAll (prefix: string, l: string list): string list =
-	 List.map (l, fn s => concat [prefix, s])
-      val defaultLibs =
-	 prefixAll ("-l", defaultLibs @ ["gdtoa", "m"])
+      val hostArch = !hostArch
+      val archStr = MLton.Platform.Arch.toString hostArch
+      val hostOS = !hostOS
+      val OSStr = MLton.Platform.OS.toString hostOS
       fun tokenize l =
-	 String.tokens (concat (List.separate (rev (!l), " ")), Char.isSpace)
-      val ccOpts = tokenize ccOpts
+	 String.tokens (concat (List.separate (l, " ")), Char.isSpace)
+      fun addTargetOpts (opts, targetOpts) =
+	 tokenize
+	 (List.append
+	  (List.fold
+	   (!targetOpts, [], fn ({opt, target}, ac) =>
+	    if target = archStr orelse target = OSStr
+	       then opt :: ac
+	    else ac),
+	   rev (!opts)))
+      val ccOpts = addTargetOpts (ccOpts, targetCCOpts)
+      val linkOpts = addTargetOpts (linkOpts, targetLinkOpts)
+      datatype z = datatype MLton.Platform.OS.t
       val linkWithGmp =
-	 case !hostOS of
+	 case hostOS of
 	    Cygwin => ["-lgmp"]
 	  | FreeBSD => ["-L/usr/local/lib/", "-lgmp"]
 	  | Linux =>
@@ -514,11 +446,10 @@ fun commandLine (args: string list): unit =
       val linkOpts =
 	 List.concat [[concat ["-L", lib],
 		       if !debug then "-lmlton-gdb" else "-lmlton"],
-		      tokenize linkOpts,
-		      defaultLibs,
+		      linkOpts,
 		      linkWithGmp]
       val _ =
-	 if !Native.native andalso !hostArch = Sparc
+	 if !Native.native andalso hostArch = MLton.Platform.Arch.Sparc
 	    then usage "can't use -native true on Sparc"
 	 else ()
       val _ =
@@ -538,7 +469,7 @@ fun commandLine (args: string list): unit =
 	    then keepSSA := true
 	 else ()
       val _ =
-	 if !hostOS = Cygwin andalso !profile = ProfileTime
+	 if hostOS = MLton.Platform.OS.Cygwin andalso !profile = ProfileTime
 	    then usage "can't use -profile time on Cygwin"
 	 else ()
       fun printVersion (out: Out.t): unit =
@@ -626,15 +557,9 @@ fun commandLine (args: string list): unit =
 			 | SOME f => f
 		     fun docc (inputs: File.t list,
 			       output: File.t,
-			       switches: string list,
-			       linkOpts: string list): unit =
+			       switches: string list): unit =
 			System.system
-			(gcc, List.concat [switches,
-					   ["-o", output],
-					   inputs,
-					   linkOpts])
-		     val definesAndIncludes =
-			prefixAll ("-I", rev (includeDirs))
+			(gcc, List.concat [switches, ["-o", output], inputs])
 		     datatype debugFormat =
 			Dwarf | DwarfPlus | Dwarf2 | Stabs | StabsPlus
 		     (* The -Wa,--gstabs says to pass the --gstabs option to the
@@ -655,23 +580,26 @@ fun commandLine (args: string list): unit =
 			   val _ =
 			      trace (Top, "Link")
 			      (fn () =>
-			       docc (inputs, output,
-				     List.concat
-				     [case host of
-					 Cross s => ["-b", s]
-				       | Self => [],
-				      if !debug then gccDebug else [],
-				      if !static then ["-static"] else []],
-				     linkOpts))
+			       System.system
+			       (gcc,
+				List.concat
+				[["-o", output],
+				 (case host of
+				     Cross s => ["-b", s]
+				   | Self => []),
+				 if !debug then gccDebug else [],
+				 if !static then ["-static"] else [],
+				 inputs,
+				 linkOpts]))
 			      ()
 			   (* gcc on Cygwin appends .exe, which I don't want, so
 			    * move the output file to it's rightful place.
-			    * Notice that we do not use !hostOS here, since we
+			    * Notice that we do not use hostOS here, since we
 			    * care about the platform we're running on, not the
 			    * platform we're generating for.
 			    *)
 			   val _ =
-			      if MLton.Platform.os = Cygwin
+			      if let open MLton.Platform.OS in host = Cygwin end
 				 then
 				    if String.contains (output, #".")
 				       then ()
@@ -705,13 +633,7 @@ fun commandLine (args: string list): unit =
 					 if SOME "c" = extension
 					    then
 					       (gccDebug @ ["-DASSERT=1"],
-						List.concat
-						[definesAndIncludes,
-						 [concat
-						  ["-O", (Int.toString
-							  (!optimization))]],
-						 ccDefaultOpts,
-						 ccOpts])
+						ccOpts)
 					 else ([asDebug], [])
 				      val switches =
 					 if !debug
@@ -738,8 +660,7 @@ fun commandLine (args: string list): unit =
 							   (Counter.next c),
 							   ".o"])
 					 else temp ".o"
-				      val _ =
-					 docc ([input], output, switches, [])
+				      val _ = docc ([input], output, switches)
 				   in
 				      output :: ac
 				   end

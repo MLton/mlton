@@ -69,11 +69,9 @@ signature CONTROL =
        | Self
       val host: host ref
 
-      datatype hostArch = datatype MLton.Platform.arch
-      val hostArch: hostArch ref
+      val hostArch: MLton.Platform.Arch.t ref
 
-      datatype hostOS = datatype MLton.Platform.os
-      val hostOS: hostOS ref
+      val hostOS: MLton.Platform.OS.t ref
 
       (* Indentation used in laying out ILs. *)
       val indentation: int ref

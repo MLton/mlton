@@ -23,9 +23,9 @@ structure SMLofNJ: SML_OF_NJ =
 
 	    fun getHostArch () =
 	       let
-		  open Primitive.MLton.Platform
+		  open MLton.Platform.Arch
 	       in
-		  case arch of
+		  case host of
 		     X86 => "X86"
 		   | Sparc => "SPARC"
 	       end
@@ -33,9 +33,9 @@ structure SMLofNJ: SML_OF_NJ =
 	    fun getOSKind () = UNIX
 	    fun getOSName () =
 	       let
-		  open Primitive.MLton.Platform
+		  open MLton.Platform.OS
 	       in
-		  case os of
+		  case host of
 		     Cygwin => "Cygwin"
 		   | FreeBSD => "FreeBSD"
 		   | Linux => "Linux"

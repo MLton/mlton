@@ -24,9 +24,8 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 	  | 0 => NONE
 	  | n => SOME n
 
-      structure Platform = MLton.Platform
       val fork =
-	 if Platform.os <> Platform.Cygwin
+	 if let open MLton.Platform.OS in host <> Cygwin end
 	    then fork
  	 else
 	    fn () =>

@@ -62,12 +62,9 @@ struct
 	open Label
 
 	fun toString l =
-	   case !Control.hostOS of
-	      Control.Cygwin => concat ["_", Label.toString l]
-	    | Control.FreeBSD => Label.toString l
-	    | Control.Linux => Label.toString l
-	    | Control.NetBSD => Label.toString l
-	    | _ => Error.bug "x86 can't handle hostOS"
+	   if !Control.hostOS =  MLton.Platform.OS.Cygwin
+	      then concat ["_", Label.toString l]
+	   else Label.toString l
 
 	val layout = Layout.str o toString
      end

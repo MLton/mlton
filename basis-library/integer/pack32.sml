@@ -22,7 +22,7 @@ functor Pack (val isBigEndian: bool): PACK_WORD =
 	 end
       
       fun maybeRev w =
-	 if isBigEndian = Primitive.MLton.Platform.isBigEndian
+	 if isBigEndian = Primitive.MLton.Platform.Arch.isBigEndian
 	    then w
 	 else revWord w
 

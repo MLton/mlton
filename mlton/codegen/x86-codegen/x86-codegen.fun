@@ -92,12 +92,7 @@ struct
 	     * that don't handle signals, since signals get used under the hood
 	     * in Cygwin.
 	     *)
-	    case !Control.hostOS of
-	       Control.Cygwin => true
-	     | Control.FreeBSD => false
-	     | Control.Linux => false
-	     | Control.NetBSD => false
-	     | _ => Error.bug "x86 can't handle hostType"
+	    !Control.hostOS = MLton.Platform.OS.Cygwin
 
 	val makeC = outputC
 	val makeS = outputS
@@ -158,12 +153,9 @@ struct
 		    (* Drop the leading _ with Cygwin, because gcc will add it.
 		     *)
 		    val mainLabel =
-		       case !Control.hostOS of
-			  Control.Cygwin => String.dropPrefix (mainLabel, 1)
-			| Control.FreeBSD => mainLabel
-			| Control.Linux => mainLabel
-			| Control.NetBSD => mainLabel
-			| _ => Error.bug "x86 can't handle hostType"
+		       if !Control.hostOS = MLton.Platform.OS.Cygwin
+			  then String.dropPrefix (mainLabel, 1)
+		       else mainLabel
 		 in
 		    [mainLabel, if reserveEsp then C.truee else C.falsee]
 		 end

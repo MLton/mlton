@@ -143,13 +143,38 @@ structure MLton: MLTON =
 
       structure Platform =
 	 struct
-	    datatype arch = Sparc | X86
-			     
-	    val arch: arch = X86
-			   
-	    datatype os = Cygwin | FreeBSD | Linux | NetBSD | SunOS
+	    fun peek (l, f) = List.find f l
+	    fun omap (opt, f) = Option.map f opt
+	 
+	    structure Arch =
+	       struct
+		  datatype t = Sparc | X86
 
-	    val os: os = SunOS
+		  val host: t = X86
+
+		  val all = [(Sparc, "sparc"), (X86, "x86")]
+
+		  fun fromString s = omap (peek (all, fn (_, s') => s = s'), #1)
+
+		  fun toString a = #2 (valOf (peek (all, fn (a', _) => a = a')))
+	       end
+
+	    structure OS =
+	       struct
+		  datatype t = Cygwin | FreeBSD | Linux | NetBSD | SunOS
+
+		  val host: t = Linux
+
+		  val all = [(Cygwin, "cygwin"),
+			     (FreeBSD, "freebsd"),
+			     (Linux, "linux"),
+			     (NetBSD, "netbsd"),
+			     (SunOS, "sunos")]
+	       
+		  fun fromString s = omap (peek (all, fn (_, s') => s = s'), #1)
+
+		  fun toString a = #2 (valOf (peek (all, fn (a', _) => a = a')))
+	       end
 	 end
 
       structure ProcEnv =

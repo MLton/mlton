@@ -59,16 +59,19 @@ functor Real (R: PRE_REAL): REAL =
 	    open Prim.Math
 
 	    structure MLton = Primitive.MLton
-	    structure Platform = MLton.Platform
 	    (* Patches for Cygwin and SunOS, whose math libraries do not handle
 	     * out-of-range args.
 	     *)
 	    val (acos, asin, ln, log10) =
 	       if not MLton.native
-		  andalso (case Platform.os of
-			      Platform.Cygwin => true
-			    | Platform.SunOS => true
-			    | _ => false)
+		  andalso let
+			     open MLton.Platform.OS
+			  in
+			     case host of
+				Cygwin => true
+			      | SunOS => true
+			      | _ => false
+			  end
 		  then
 		     let
 			fun patch f x =

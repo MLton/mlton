@@ -514,29 +514,35 @@ structure Primitive =
 
 	    structure Platform =
 	       struct
-		  datatype arch = Sparc | X86
+		  structure Arch =
+		     struct
+			datatype t = Sparc | X86
 
-		  val arch: arch =
-		     case _const "MLton_Platform_arch": int; of
-			0 => Sparc
-		      | 1 => X86
-		      | _ => raise Fail "strange MLton_Platform_arch"
-			   
-		  datatype os = Cygwin | FreeBSD | Linux | NetBSD | SunOS
+			val host: t =
+			   case _const "MLton_Platform_Arch_host": int; of
+			      0 => Sparc
+			    | 1 => X86
+			    | _ => raise Fail "strange MLton_Platform_Arch_host"
 
-		  val os: os =
-		     case _const "MLton_Platform_os": int; of
-			0 => Cygwin
-		      | 1 => FreeBSD
-		      | 2 => Linux
-		      | 3 => NetBSD
-		      | 4 => SunOS
-		      | _ => raise Fail "strange MLton_Platform_os"
+			val isBigEndian =
+			   case host of
+			      X86 => false
+			    | Sparc => true
+		     end
 
-		  val isBigEndian =
-		     case arch of
-			X86 => false
-		      | Sparc => true
+		  structure OS =
+		     struct
+			datatype t = Cygwin | FreeBSD | Linux | NetBSD | SunOS
+
+			val host: t =
+			   case _const "MLton_Platform_OS_host": int; of
+			      0 => Cygwin
+			    | 1 => FreeBSD
+			    | 2 => Linux
+			    | 3 => NetBSD
+			    | 4 => SunOS
+			    | _ => raise Fail "strange MLton_Platform_OS_Host"
+		     end
 	       end
 
 	    structure Profile =

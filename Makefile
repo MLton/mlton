@@ -106,7 +106,7 @@ deb-spell:
 
 .PHONY: dirs
 dirs:
-	mkdir -p $(BIN) $(LIB)/$(HOST)/include
+	mkdir -p $(BIN) $(LIB)/$(HOST) $(LIB)/include
 
 .PHONY: docs
 docs:
@@ -170,7 +170,7 @@ runtime:
 	@echo 'Compiling MLton runtime system for $(HOST).'
 	$(MAKE) -C runtime
 	$(CP) $(RUN)/*.a $(LIB)/$(HOST)/
-	$(CP) runtime/*.h include/*.h $(LIB)/$(HOST)/include/
+	$(CP) runtime/*.h include/*.h $(LIB)/include/
 
 .PHONY: script
 script:

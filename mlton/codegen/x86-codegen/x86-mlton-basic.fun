@@ -371,12 +371,9 @@ struct
   val fileLineLabel =
      Promise.lazy
      (fn () =>
-      Label.fromString (case !Control.hostOS of
-			   Control.Cygwin => "_LINE__"
-			 | Control.FreeBSD => "__LINE__"
-			 | Control.Linux => "__LINE__"
-			 | Control.NetBSD => "__LINE__"
-			 | _ => Error.bug "x86 can't handle hostOS"))
+      Label.fromString (if !Control.hostOS = MLton.Platform.OS.Cygwin
+			   then "_LINE__"
+			else "__LINE__"))
 					 
   val fileLine
     = fn () => if !Control.debug
