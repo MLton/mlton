@@ -59,6 +59,7 @@ structure Graph = DirectedGraph
 local
    open Graph
 in
+   structure Edge = Edge
    structure Node = Node
 end
 
@@ -331,6 +332,8 @@ structure NodePred =
        | Or of t vector
        | PathFrom of t
        | PathTo of t
+       | Pred of t
+       | Succ of t
 
       val rec toSexp: t -> Sexp.t =
 	 fn p =>
@@ -349,6 +352,8 @@ structure NodePred =
 	     | Or ps => nAry ("or", ps)
 	     | PathFrom p => unary ("from", p)
 	     | PathTo p => unary ("to", p)
+	     | Pred p => unary ("pred", p)
+	     | Succ p => unary ("succ", p)
 	 end
 
       val layout = Sexp.layout o toSexp
@@ -389,6 +394,8 @@ structure NodePred =
 						| "from" => unary PathFrom
 						| "not" => unary Not
 						| "or" => nAry Or
+						| "pred" => unary Pred
+						| "succ" => unary Succ
 						| "thresh" =>
 						     (case ss of
 							 [Sexp.Atom x] =>
@@ -458,6 +465,34 @@ structure NodePred =
 					       b orelse b'))
 		| PathFrom p => path (p, (g, fn n => n))
 		| PathTo p => path (p, transpose ())
+		| Pred p =>
+		     let
+			val ns = vectorToNodes (loop p)
+			val {destroy, get, set, ...}  =
+			   Property.destGetSetOnce
+			   (Node.plist, Property.initConst false)
+			val _ = Vector.foreach (ns, fn n => set (n, true))
+			val v =
+			   Vector.map
+			   (nodes, fn n =>
+			    get n orelse
+			    List.exists (Node.successors n, get o Edge.to))
+			val _ = destroy ()
+		     in
+			v
+		     end
+		| Succ p =>
+		     let
+			val a = Array.array (numNodes, false)
+			fun yes n = Array.update (a, nodeIndex n, true)
+			val _ =
+			   Vector.foreach
+			   (vectorToNodes (loop p), fn n =>
+			    (yes n
+			     ; List.foreach (Node.successors n, yes o Edge.to)))
+		     in
+			Vector.fromArray a
+		     end
 	    and path (p: t, (g: Graph.t, getNode)): bool vector =
 	       let
 		  val roots = vectorToNodes (loop p)

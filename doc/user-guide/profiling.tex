@@ -137,6 +137,8 @@ following grammar.
 & $\alt$ & {\tt (from {\it e})} \\
 & $\alt$ & {\tt (not {\it e})} \\
 & $\alt$ & {\tt (or {\it e} ...)} \\
+& $\alt$ & {\tt (pred {\it e})} \\
+& $\alt$ & {\tt (succ {\it e})} \\
 & $\alt$ & {\tt (to {\it e})} \\
 & $\alt$ & {\tt (thresh {\it x})} \\
 \end{tabular}
@@ -151,6 +153,8 @@ following grammar.
 & | & {\tt (from {\it e})} \\
 & | & {\tt (not {\it e})} \\
 & | & {\tt (or {\it e} ...)} \\
+& | & {\tt (pred {\it e})} \\
+& | & {\tt (succ {\it e})} \\
 & | & {\tt (to {\it e})} \\
 & | & {\tt (thresh {\it x})} \\
 \end{tabular}
@@ -161,10 +165,12 @@ In the grammar, {\tt all} denotes the set of all nodes, {\it s} is a
 regular expression denoting the set of nodes whose function name (and
 source position) matches {\it s}.  The {\tt and}, {\tt not}, and {\tt
 or} expressionds denote intersection, complement, and union,
-respectively.  The {\tt from} ({\tt to}) expression denotes the set of
-nodes that have paths from (to) the set of nodes denoted by its
-argument.  Finally, {\tt thresh} denotes the set of nodes whose
-percentage of ticks is above the real number {\it x}.
+respectively.  The {\tt pred} and {\tt succ} expressions add the set
+of immediate predecessors or successors to their argument,
+respectively.  The {\tt from} and {\tt to} expressions denote the set
+of nodes that have paths from or to the set of nodes denoted by its
+argument, respectively Finally, {\tt thresh} denotes the set of nodes
+whose percentage of ticks is above the real number {\it x}.
 
 For example, if you want to see the entire call-graph for a program,
 you can use {\tt -graph all}.  If you want to see all nodes reachable
