@@ -89,6 +89,8 @@ fun options () =
 	trueRef buildConstants),
        (Expert, "coalesce", " n", "coalesce chunk size for C codegen",
 	Int (fn n => coalesce := SOME n)),
+       (Expert, "debug", " {false|true}", "produce executable with debug info",
+	boolRef debug),
        (Normal, "detect-overflow", " {true|false}",
 	"overflow checking on integer arithmetic",
 	boolRef detectOverflow),
@@ -110,8 +112,9 @@ fun options () =
        (Normal, "exn-history", " {false|true}",
 	"enable Exn.history",
 	boolRef Control.exnHistory),
-       (Expert, "g", "", "produce executable with debug info",
-	None (fn () => debug := true)),
+       (Normal, "fixed-heap", " n[{k|m}]",
+	"heap size used by resulting executable",
+	Mem (fn n => fixedHeap := SOME n)),
        (Expert, "gc-check", " {limit|first|every}", "force GCs",
 	SpaceString (fn s =>
 		     case s of
@@ -121,9 +124,6 @@ fun options () =
 		      | "every" => (gcCheck := Every;
 				    List.push(defines, "GC_EVERY_CHECK"))
 		      | _ => usage (concat ["invalid -gc-check flag: ", s]))),
-       (Normal, "h", " heapSize [{k|m}]",
-	"heap size used by resulting executable",
-	Mem (fn n => fixedHeap := SOME n)),
        (Normal, "host",
 	concat [" {",
 		concat (List.separate (List.map (hostMap (), #host), "|")),
@@ -214,8 +214,9 @@ fun options () =
 	SpaceString (fn s => output := SOME s)),
        (Expert, "O", "digit", "gcc optimization level",
 	Digit (fn d => optimization := d)),
-       (Normal, "p", "", "produce executable suitable for profiling",
-	None (fn () => (profile := true; keepSSA := true))),
+       (Normal, "profile", " {false|true}",
+	"produce executable suitable for profiling",
+	Bool (fn b => if b then (profile := true; keepSSA := true) else ())),
        (Expert, "print-at-fun-entry", " {false|true}",
 	"print debugging message at every call",
 	boolRef printAtFunEntry),

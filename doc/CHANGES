@@ -1,5 +1,11 @@
 Here are the changes from version 20011006 to version VERSION.
 
+* 2002-03-27
+  - Regularization of options
+	-g	-->	-degug {false|true}
+	-h n	--> 	-fixed-heap n
+	-p 	--> 	-profile {false|true}
+
 * 2002-03-22
   - Set up the stubs so that MLton can be compiled in the standard basis
     library, with no MLton structure.  Thus it is now easy to compile MLton

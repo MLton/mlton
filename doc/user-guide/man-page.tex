@@ -50,10 +50,10 @@ Enable {\tt Exn.history}.  This has a performance impact, both in memory usage
 of exceptions and in runtime, because of additional work that must be performed
 at each exception construction, raise, and handle.  By default, it is disabled.
 
-\option{-h \mbox{\rm heapSize[}km\mbox{\rm ]}}
-The resulting executable will use a fixed size heap of heapSize size.  A value
+\option{-fixed-heap \mbox{\rm n[}km\mbox{\rm ]}}
+The resulting executable will use a fixed size heap of size {\tt n}.  A value
 of {\tt 0} means that the heap size should be chosen almost as large as the
-amount of 
+amount of
 RAM in the machine.  A trailing {\tt k} means that {\tt heapSize} is in units of
 1024 bytes.  A trailing {\tt m} means that {\tt heapSize} is in megabytes.  If
 neither appears, then {\tt heapSize} is in bytes.  By default the executable
@@ -111,10 +111,10 @@ Specify the name of the final output file.
 The default file name is the input file with its
 suffix removed and an appropriate suffix added.
 
-\option{-p}
+\option{-profile \{false|true\}}
 Produce an executable that will gather profiling information.  The default is
-not to gather profiling information.  This option implies {\tt -keep ssa}.
-See \secref{profiling} for details.
+not to gather profiling information.  {\tt -profile true} implies {\tt -keep
+ssa}.  See \secref{profiling} for details.
 
 \option{-polyvariance \{true|false\}}
 Control whether the optimizer runs polyvariance, which is a pass that duplicates
@@ -169,7 +169,7 @@ default settings of all options and exits.
 %
 %\begin{description}
 %
-%\option{-g}
+%\option{-}
 %Add debugging information for gdb.  Link with a version of the runtime
 %system that has asserts turned on (and runs about half as fast).
 %The default is not to produce debugging information.
