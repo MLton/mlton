@@ -1,0 +1,91 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>Improvements to MLton</title>
+  </head>
+
+  <body>
+    We have lots of ideas for improvements to MLton, many of which we do not
+    have time to implement, or at least haven't started on yet.  Here is a list
+    of some of those improvements, ranging from the easy (1 week) to the
+    difficult (several months).  If you have any interest in working on one of
+    these, or some other improvement to MLton not listed here, please send mail
+    to <a href =
+	  "mailto:MLton@sourcelight.com"><TT>MLton@sourcelight.com</TT></a>.
+
+    <ul> 
+      <li> Garbage collector.
+	<br>
+	Right now, MLton's collector is breadth first, nongenerational, and
+	tagged.  We would be interested to see any of the 7 other possibilities
+	by making a different choice in one or more of these dimensions
+	(depth/breadth first, (non)generational, or tagged/tagless).  Probably
+	the easiest to do would be do change the collector to be depth first.
+	Changing either of the other would require compiler support.  In
+	particular, making the collector tagless is an interesting research
+	project.
+      <li> Optimizations
+	<ul>
+	  <li>Improved closure representation.
+	    <br>
+	    Right now, MLton's closure conversion algorithm uses a simple flat
+	    closure to represent each function.
+	  <li> Elimination of array bounds checks in loops.
+	  <li> Elimination of repeated array bounds checks (common when a
+	    subscript is followed by an update.
+	  <li> Elimination of overflow checks on array index computations.
+	  <li> Common-subexpression elimination, especially of repeated
+	    selects from tuples and of repeated array subscripts.
+	  <li> Loop-invariant code motion, especially for tuple selects and
+	    array and vector lengths.
+	</ul>
+      <li> Profiler.
+	<ul>
+	  <li> Improve so that profiling can be controlled from within the
+	    program so that specific parts of a program can be compiled.
+	  <li> Relate to the source code.
+	</ul>
+      <li> Debugger.
+	<br> Build one.
+	<ul>
+	  <li> It shouldn't be too hard to spit out stabs data similar to what
+	    the profiler does now, relating to the CPS code.
+	  <li> Relate to the source code
+	</ul>
+      <li> Port CML.
+	<br> The support for threads and signals is already there, so
+	it shouldn't be too hard to change the uses of callcc to
+	MLton.thread.switch.  Harder is thinking about how to make MLton's
+	libraries thread safe.
+      <li> Libraries.
+	<ul>
+	  <li> Add support for 64 bit integers, and use them for file
+	    positions.
+	  <li> Interface to gtk+.
+	  <li> Interface to OpenGL.
+	  <li> Any useful additions to the <tt>MLton</tt> structure.
+	  <li> Transform the compiler libraries used within MLton into generally
+	    useful libraries.
+	</ul>
+      </ul>
+    </ul>
+
+    Here are some projects that we're already working on.
+    <dl>
+      <dt> Henry Cejtin
+      <dd> Upgrading to a new version of gmp and exporting fast gcd algorithms.
+      <dt> Matthew Fluet
+      <dd> Improving representation of data structures so that
+	the indirection in ref cells can sometimes be avoided and so that
+	tuples can be flattened into arrays.  Also, hopefully improve bool 
+	arrays, which currently use 32 bits per elt!
+      <dt> Stephen Weeks
+      <dd> A real front end.
+    </ul>
+    <hr>
+<!-- Created: Mon Jan 29 13:26:08 PST 2001 -->
+<!-- hhmts start -->
+Last modified: Fri Jul  6 13:34:03 PDT 2001
+<!-- hhmts end -->
+  </body>
+</html>

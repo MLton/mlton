@@ -1,0 +1,724 @@
+\sec{Modules specific to {\mlton}}{mlton}
+
+This section describes the modules {\mlton} makes available that are
+not part of the standard basis library.
+
+\subsection{{\tt MLton}}
+
+\begin{verbatim}
+structure MLton:
+   sig
+      val debug: bool
+      val isMLton: bool
+      val safe: bool
+      val size: 'a -> int
+	 
+      structure Cont: MLTON_CONT
+      structure GC: MLTON_GC
+      structure Itimer: MLTON_ITIMER
+      structure ProcEnv: MLTON_PROC_ENV
+      structure Random: MLTON_RANDOM
+      structure Rlimit: MLTON_RLIMIT
+      structure Rusage: MLTON_RUSAGE
+      structure Signal: MLTON_SIGNAL
+      structure Socket: MLTON_SOCKET
+      structure Syslog: MLTON_SYSLOG
+      structure Thread: MLTON_THREAD
+      structure TextIO: MLTON_TEXT_IO
+      structure Word: MLTON_WORD where type word = Word.word
+      structure Word8: MLTON_WORD where type word = Word8.word
+      structure World: MLTON_WORLD
+   end
+\end{verbatim}
+
+\subsubsection{{\tt MLton}}
+
+\newcommand{\entry}[1]{\item[\tt #1]\hspace{1in}\\}
+\begin{description}
+
+\entry{debug}
+a compile-time constant that is true when compiling {\tt
+-DMLton\_debug=1} and false when compiling {\tt -DMLton\_debug=0}.
+The default is false.
+
+\entry{isMLton} always true in a {\mlton} basis library.
+
+\entry{\tt safe}
+a compile time constant that makes it easy to
+include assertions and checks in code that you would like removed when running
+at full speed.  {\tt safe} will be true unless the program is compiled with the
+{\tt -safe false} option, in which case it will be false.  The simplification
+passes of the compiler will remove any uses of {\tt safe} at compile time.  For
+example, array subscripting might be implemented as:
+\begin{verbatim}
+fun sub (a, i) =
+   if MLton.safe andalso (i < 0 orelse i >= length a)
+      then raise Subscript
+   else unsafeSub (a, i)
+\end{verbatim}
+When compiled {\tt -safe false}, {\tt sub} will reduce to
+{\tt unsafeSub}.
+
+\entry{size x}
+return the amount of heap space (in bytes) taken by the value of {\tt x}.  Size
+takes time proportional to the size of its argument.  For an example, see {\tt
+examples/size.sml}.
+
+\end{description}
+
+\subsubsec{{\tt MLton.Cont}}{cont}
+
+\begin{verbatim}
+signature MLTON_CONT =
+   sig
+      type 'a t
+
+      val callcc: ('a t -> 'a) -> 'a
+      val prepend: 'a t * ('b -> 'a) -> 'b t
+      val throw: 'a t * 'a -> 'b
+      val throw': 'a t * (unit -> 'a) -> 'b
+   end
+\end{verbatim}
+
+\begin{description}
+
+\entry{type 'a t}
+the type of continuations that expect a value of type {\tt 'a}.
+
+\entry{callcc f}
+apply {\tt f} to the current continuation.  At present, {\tt
+callcc} takes time proportional to the current stack size.
+
+\entry{prepend (k, f)}
+compose a function {\tt f} with a continuation {\tt k} to create a
+continuation that first does {\tt f} and then does {\tt k}.  {\tt
+prepend} is a constant time operation.
+
+\entry{throw (k, v)}
+throw value {\tt v} to continuation {\tt k}.  At present, {\tt throw}
+takes time proportional to the size of {\tt k}.
+
+\entry{throw' (k, th)}
+a generalization of throw that evaluates {\tt th ()} in the context
+of {\tt k}.  Thus, for example, if {\tt th ()} raises an exception or
+grabs another continuation, it will see {\tt k}, not the current
+continuation.
+
+\end{description}
+
+\subsubsection{{\tt MLton.GC}}
+\begin{verbatim}
+signature MLTON_GC =
+   sig
+      val collect: unit -> unit
+      val setMessages: bool -> unit
+      val setSummary: bool -> unit
+   end
+\end{verbatim}
+
+\begin{description}
+\entry{GC.collect ()}
+causes a garbage collection to occur.
+
+\entry{GC.setMessages}
+controls whether diagnostic messages are
+printed at the beginning and end of each garbage collection.  It is
+the same as the {\tt gc-messages} runtime system option.
+
+\entry{GC.setSummary}
+controls whether a summary of garbage
+collection statistics is printed upon termination of the program.  It
+is the same as the {\tt gc-summary} runtime system option.
+
+\end{description}
+
+\subsubsec{{\tt MLton.Itimer}}{itimer}
+
+\begin{verbatim}
+signature MLTON_ITIMER =
+   sig
+      datatype which =
+         Prof
+       | Real
+       | Virtual
+
+      val set: which * {value: Time.time,
+                        interval: Time.time} -> unit
+      val whichSignal: which -> Posix.Signal.signal
+   end
+\end{verbatim}
+
+\begin{description}
+\entry{set (w, \{value, interval\})}
+set the interval timer (using {\tt setitimer}) specified by {\tt w} to the given
+{\tt value} and {\tt interval}.
+
+\entry{whichSignal w}
+return the signal corresponding to {\tt w}.
+\end{description}
+
+\subsubsection{\tt MLton.ProcEnv}
+\begin{verbatim}
+signature MLTON_PROC_ENV =
+   sig
+      val setenv: {name: string, value: string} -> unit
+   end
+\end{verbatim}
+
+\begin{description}
+\entry{setenv \{name, value\}}
+Like the C {\tt setenv} function.
+\end{description}
+
+\subsubsection{\tt MLton.Random}
+\begin{verbatim}
+signature MLTON_RANDOM =
+   sig
+      val alphaNumString: int -> string
+      val rand: unit -> word
+      val seed: unit -> word
+      val srand: word -> unit
+      val useed: unit -> word
+   end
+\end{verbatim}
+
+\begin{description}
+\entry{alphaNumString n}
+return a string of length {\tt n} of random alphanumeric characters.
+
+\entry{rand ()}
+return the next pseudrandom number.
+
+\entry{seed ()}
+return a random word from {\tt /dev/random}.  Useful as an arg to {\tt srand}.
+
+\entry{srand w}
+set the seed used by {\tt rand} to {\tt w}.
+
+\entry{useed ()}
+return a random word from {\tt /dev/urandom}.  Useful as an arg to {\tt srand}.
+\end{description}
+
+\subsubsection{\tt MLton.Rlimit}
+This structure provides a wrapper around the C {\tt getrlimit} and {\tt
+setrlimit}.
+\begin{verbatim}
+signature MLTON_RLIMIT =
+   sig
+      type rlim = word
+	       
+      val infinity: rlim
+
+      type resource
+	       
+      val cpuTime: resource             (* CPU     CPU time in seconds *)
+      val coreFileSize: resource        (* CORE    max core file size *)
+      val dataSize: resource            (* DATA    max data size *)
+      val fileSize: resource            (* FSIZE   Maximum filesize *)
+      val lockedInMemorySize: resource  (* MEMLOCK max locked address space *)
+      val numFiles: resource            (* NOFILE  max number of open files *)  
+      val numProcesses: resource        (* NPROC   max number of processes *)
+      val residentSetSize: resource     (* RSS     max resident set size *)
+      val stackSize: resource           (* STACK   max stack size *)
+      val virtualMemorySize: resource   (* AS      virtual memory limit *)
+      
+      val get: resource -> {hard: rlim, soft: rlim}
+      val set: resource * {hard: rlim, soft: rlim} -> unit
+   end
+\end{verbatim}
+
+\begin{description}
+\entry{type rlim}
+the type of resource limits.
+
+\entry{infinity}
+indicates that a resource is unlimited.
+
+\entry{type resource}
+type types of resources that can be inspected and modified.
+
+\entry{get r}
+returns the current hard and soft limits for resource {\tt r}.
+
+\entry{set (r, \{hard, soft\})}
+sets the hard and soft limits for resource {\tt r}.
+\end{description}
+
+\subsubsection{\tt MLton.Rusage}
+\begin{verbatim}
+signature MLTON_RUSAGE =
+   sig
+      type t = {utime: Time.time, (* user time *)
+                stime: Time.time} (* system time *)
+         
+      val rusage: unit -> {children: t,
+                           gc: t,
+                           self: t}
+   end
+\end{verbatim}
+
+\begin{description}
+\entry{type t}
+corresponds to a subset of the C {\tt struct rusage}.  We will add fields as
+necessary.
+
+\entry{rusage ()}
+corresponds to the C {\tt getrusage} function.  It returns the resource usage of
+the exited children, the garbage collector, and the process itself.  The process
+time includes the gc time.
+\end{description}
+
+\subsubsec{{\tt MLton.Signal}}{signal}
+Signals handlers are functions from threads to threads.  When a signal 
+handler is invoked, it receives as an argument the thread that was
+interrupted by the signal.  The signal handler returns the thread that 
+it would like to resume execution.  It is an error for a signal
+handler to raise an exception.  All signals are automatically blocked
+for the duration of a handler.
+
+\begin{verbatim}
+signature MLTON_SIGNAL =
+   sig
+      include POSIX_SIGNAL
+
+      val prof: signal
+      val vtalrm: signal
+
+      structure Mask:
+         sig
+            type t
+               
+            val all: t
+            val some: signal list -> t
+            val block: t -> unit
+            val unblock: t -> unit
+            val set: t -> unit
+         end
+
+      structure Handler:
+         sig
+            datatype t =
+               Default
+             | Ignore
+             | Handler of unit Thread.t -> unit Thread.t
+
+            val get: signal -> t
+            val set: signal * t -> unit
+            val simple: (unit -> unit) -> t
+         end
+   end
+\end{verbatim}
+
+\begin{description}
+
+\entry{prof}
+{\tt SIGPROF}, the profiling signal.
+
+\entry{vtalrm}
+{\tt SIGVTALRM}, the signal for virtual timers.
+
+\entry{Mask.t} the type of signal masks
+
+\entry{Mask.all} a mask of all signals.
+
+\entry{Mask.some l} a mask of the signals in {\tt l}.
+
+\entry{Mask.block m} block all signals in {\tt m}.
+
+\entry{Mask.unblock m} unblock all signals in {\tt m}.
+
+\entry{Mask.set m} set the signal mask to {\tt m}.
+
+\entry{Handler.get s} return the current handler for signal {\tt s}.
+
+\entry{Handler.set (s, h)} set the handler for signal {\tt s} to
+be {\tt h}.
+
+\entry{Handler.simple f} return a handler that executes {\tt f ()}
+and then lets the interrupted thread continue.
+\end{description}
+
+\subsubsection{{\tt MLton.Socket}}
+This module contains a bare minimum of functionality to do TCP/IP programming.
+This module may disappear after the {\tt Socket} module of the standard basis
+library becomes available.  Or, it may remain and be implemented on top of that
+module. 
+\begin{verbatim}
+signature MLTON_SOCKET =
+   sig
+      structure Address:
+         sig
+            type t = word
+         end
+      structure Host:
+         sig
+            type t = {name: string}
+
+            val getByAddress: Address.t -> t option
+            val getByName: string -> t option
+         end
+      structure Port:
+         sig
+            type t = int
+         end
+
+      type t
+
+      val accept: t -> Address.t * Port.t * TextIO.instream * TextIO.outstream
+      val connect: string * Port.t -> TextIO.instream * TextIO.outstream
+      val listen: unit -> Port.t * t
+      val listenAt: Port.t -> t
+      val shutdownRead: TextIO.instream -> unit
+      val shutdownWrite: TextIO.outstream -> unit
+   end
+\end{verbatim}
+
+\begin{description}
+
+\entry{type Address.t}
+the type of IP addresses.
+
+\entry{Host.getByAddress a}
+lookup the hostname (using {\tt gethostbyaddr}) corresponding to {\tt a}.
+
+\entry{Host.getByName s}
+lookup the hostname (using {\tt gethostbyname}) corresponding to {\tt s}.
+
+\entry{type Port.t}
+the type of TCP ports.
+
+\entry{type t}
+the type of sockets.
+
+\entry{accept s}
+accept a connection on socket {\tt s} and return the address and
+port of the connecting socket, as well as streams corresponding to the
+connection.
+
+\entry{connect (h, p)}
+connect to host {\tt h} on port {\tt p}, returning the streams
+corresponding to the connection.
+
+\entry{listen ()}
+listen to a port chosen by the system.  Returns the port and the socket.
+
+\entry{listenAt p}
+listen to port {\tt p}.  Returns the socket.
+
+\entry{shutdownRead ins}
+cause the read part of the socket associated with {\tt ins} to be shutdown.
+
+\entry{shutdownWrite out}
+cause the write part of the socket associated with {\tt out} to be shutdown.
+\end{description}
+
+\subsubsection{\tt MLton.Syslog}
+A complete interface to the system logging facilities.  See {\tt man 3 syslog}
+for more details.
+\begin{verbatim}
+signature MLTON_SYSLOG =
+   sig
+      type openflag
+       val CONS     : openflag
+       val NDELAY   : openflag
+       val PERROR   : openflag
+       val PID      : openflag
+   
+       type facility
+       val AUTHPRIV : facility
+       val CRON     : facility
+       val DAEMON   : facility
+       val KERN     : facility
+       val LOCAL0   : facility
+       val LOCAL1   : facility
+       val LOCAL2   : facility
+       val LOCAL3   : facility
+       val LOCAL4   : facility
+       val LOCAL5   : facility
+       val LOCAL6   : facility
+       val LOCAL7   : facility
+       val LPR      : facility
+       val MAIL     : facility
+       val NEWS     : facility
+       val SYSLOG   : facility
+       val USER     : facility
+       val UUCP     : facility
+   
+       type loglevel
+       val EMERG    : loglevel
+       val ALERT    : loglevel
+       val CRIT     : loglevel
+       val ERR      : loglevel
+       val WARNING  : loglevel
+       val NOTICE   : loglevel
+       val INFO     : loglevel
+       val DEBUG    : loglevel
+   
+       val closelog: unit -> unit
+       val log: loglevel * string -> unit
+       val openlog: string * openflag list * facility -> unit
+   end
+\end{verbatim}
+
+\begin{description}
+\entry{closelog ()}
+close the connection to the system logger.
+
+\entry{log (l, s)}
+log message {\tt s} at a loglevel {\tt l}.
+
+\entry{openlog (name, flags, facility)}
+open a connection to the system logger. {\tt name} will be prefixed to each
+message, and is typically set to the program name.
+
+\end{description}
+
+\subsubsection{{\tt MLton.TextIO}}
+\begin{verbatim}
+signature MLTON_TEXT_IO =
+   sig
+      val inFd: TextIO.instream -> Posix.IO.file_desc
+      val mkstemp: string -> string * TextIO.outstream
+      val mkstemps: {prefix: string, suffix: string} -> string * TextIO.outstream
+      val newIn: Posix.IO.file_desc -> TextIO.instream
+      val newOut: Posix.IO.file_desc -> TextIO.outstream
+      val outFd: TextIO.outstream -> Posix.IO.file_desc
+   end
+\end{verbatim}
+
+\begin{description}
+
+\entry{inFd ins} return the file descriptor corresponding to
+{\tt ins}.
+
+\entry{mkstemp s}
+like the C {\tt mkstemp} function, generate and open a tempory file with prefix
+{\tt s}.  This should be used instead of {\tt OS.FileSys.tmpName}, which has
+security risks.
+
+\entry{mkstemps \{prefix, suffix\}}
+{\tt mkstemps} is like {\tt mkstemp}, except it has both a prefix and suffix.
+
+\entry{newIn fd} create a new instream from file descriptor {\tt 
+fd}.
+
+\entry{newOut} create a new outstream from file descriptor {\tt 
+fd}.
+
+\entry{outFd out} return the file descriptor corresponding to
+{\tt out}.
+\end{description}
+
+\subsubsec{{\tt MLton.Thread}}{thread}
+Threads are data structures that will begin computing when {\tt
+switch}ed to with a value.
+\begin{verbatim}
+signature MLTON_THREAD =
+   sig
+      type 'a t
+
+      val atomicBegin: unit -> unit
+      val atomicEnd: unit -> unit
+      val new: ('a -> unit) -> 'a t
+      val prepend: 'a t * ('b -> 'a) -> 'b t
+      val switch: ('a t -> 'b t * 'b) -> 'a
+      val switch': ('a t -> 'b t * (unit -> 'b)) -> 'a
+   end
+\end{verbatim}
+
+\begin{description}
+
+\entry{type 'a t}
+the type of threads that expect a value of type {\tt 'a}.
+
+\entry{atomicBegin ()}
+begin a critical section.
+
+\entry{atomicEnd ()}
+end a critical section.
+
+\entry{new f}
+create a new thread that, when run, applies {\tt f} to the
+value given to the thread. 
+
+\entry{prepend (t, f)}
+create a new thread (destroying {\tt t} in the process) that first applies
+{\tt f} to the value given to the thread and then continues with {\tt
+t}.  This is a constant time operation.
+
+\entry{switch f}
+apply {\tt f} to the current thread to get
+{\tt (t, v)}, and then start running thread {\tt t} on value {\tt
+v}.  It is an error for {\tt f} to perform another {\tt switch}.  Also, {\tt f}
+is guaranteed to run atomically.
+
+\entry{switch' f}
+apply {\tt f} to the current thread to get
+{\tt (t, g)}, and then starts running thread {\tt t} computing the
+value {\tt g ()}.
+
+\end{description}
+
+\subsubsection{\tt MLton.Word, MLton.Word8}
+\begin{verbatim}
+signature MLTON_WORD =
+   sig
+      type word
+	 
+      val ~ : word -> word
+   end
+\end{verbatim}
+
+\begin{description}
+\entry{\~{} w}
+unary negation of {\tt w}.
+\end{description}
+
+\subsubsec{{\tt MLton.World}}{world}
+\begin{verbatim}
+signature MLTON_WORLD =
+   sig
+      datatype status = Clone | Original
+
+      val load: string -> 'a
+      val save: string -> status
+      val saveThread: string * unit Thread.t -> status
+   end
+\end{verbatim}
+
+\begin{description}
+\entry{datatype status}
+used to specify whether a world is original or a restarted (a clone).
+
+\entry{load f}
+load the saved computation from file f.
+
+\entry{save f}
+save the entire state of the computation to
+the file {\tt f}.  The computation can then be restarted at a later
+time using {\tt World.load} or the {\tt load-world} runtime system
+option.  The call to {\tt save} in the original computation returns
+{\tt Original} and the call in the restarted world returns {\tt
+Clone}.  The following example is a transcript run in the {\tt
+examples/save-world} directory.
+\begin{verbatim}
+% mlton save-world.sml
+% save-world
+I am the original
+% save-world @MLton load-world world --
+I am the clone
+\end{verbatim}
+
+\entry{saveThread (f, t)}
+save the entire state of the computation to
+the file {\tt f}, and resume with thread {\tt t} upon restart.
+
+\end{description}
+
+\subsection{{\tt SMLofNJ: SML\_OF\_NJ}}
+
+{\tt SMLofNJ} implements a subset of the structure of the same name
+provided in Standard ML of New Jersey.  It is included to make it
+easier to port programs between the two systems.  The semantics of
+these functions may be different than in {\smlnj}.
+
+\begin{verbatim}
+signature SML_OF_NJ =
+   sig
+      structure Cont:
+         sig
+            type 'a cont
+            val callcc: ('a cont -> 'a) -> 'a
+            val throw: 'a cont -> 'a -> 'b
+         end
+      structure SysInfo:
+         sig
+	    exception UNKNOWN
+	    datatype os_kind = BEOS | MACOS | OS2 | UNIX | WIN32
+
+	    val getHostArch: unit -> string
+	    val getOSKind: unit -> os_kind
+	    val getOSName: unit -> string
+         end
+      structure Internals:
+         sig
+            structure GC:
+               sig
+                  val messages: bool -> unit
+               end             
+         end
+
+      val exportFn: string * (string * string list -> OS.Process.status) -> unit
+      val exportML: string -> bool
+      val getCmdName: unit -> string
+      val getArgs: unit -> string list
+      val getAllArgs: unit -> string list
+   end
+\end{verbatim}
+
+\begin{description}
+
+\entry{structure Cont} implements continuations.
+
+\entry{SysInfo.getHostArch ()}
+returns {\tt "X86"}.
+
+\entry{SysInfo.getOSKind}
+returns {\tt UNIX}.
+
+\entry{SysInfo.getOSName ()}
+returns {\tt "Linux"}.
+
+\entry{Internals.GC.messages b}
+the same as {\tt MLton.GC.messages b}.
+
+\entry{getCmdName ()}
+the same as {\tt CommandLine.name ()}.
+
+\entry{getArgs ()}
+the same as {\tt CommandLine.arguments ()}.
+
+\entry{getAllArgs ()}
+the same as {\tt getCmdName() :: getArgs()}.
+
+\entry{exportFn f}
+save the state of the computation to a file that will apply {\tt f} to
+the command-line arguments upon restart.
+
+\entry{exportML f}
+save the state of the computation to file {\tt f} and continue.
+Return {\tt true} in the restarted computation and {\tt false} in the
+continuing computation.
+
+\end{description}
+
+\subsection{{\tt Unsafe: UNSAFE}}
+
+This module is a subset of the {\tt Unsafe} module provided by
+{\smlnj}.  It is included in {\mlton} because the code generated by
+ML-Yacc includes references to unsafe subscript operations.
+
+\begin{verbatim}
+signature UNSAFE =
+  sig
+    structure Vector: UNSAFE_VECTOR
+    structure Array: UNSAFE_ARRAY
+
+    structure CharVector: UNSAFE_MONO_VECTOR
+      where type vector = CharVector.vector
+      where type elem = CharVector.elem
+    structure CharArray: UNSAFE_MONO_ARRAY
+      where type array = CharArray.array
+      where type elem = CharArray.elem
+
+    structure Word8Vector: UNSAFE_MONO_VECTOR
+      where type vector = Word8Vector.vector
+      where type elem = Word8Vector.elem
+    structure Word8Array: UNSAFE_MONO_ARRAY
+      where type array = Word8Array.array
+      where type elem = Word8Array.elem
+    structure Real64Array: UNSAFE_MONO_ARRAY
+      where type array = Real64Array.array
+      where type elem = Real64Array.elem
+  end
+\end{verbatim}

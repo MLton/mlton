@@ -1,0 +1,86 @@
+\sec{Credits}{credits}
+
+\begin{itemize}
+
+\item
+{\mlton} was designed by:\\
+\hspace*{2em}Henry Cejtin (\mailto{henry@\addr})\\
+\hspace*{2em}Matthew Fluet (\mailto{fluet@cs.cornell.edu})\\
+\hspace*{2em}Suresh Jagannathan (\mailto{sjagannathan@storagenetworks.com})\\
+\hspace*{2em}Stephen Weeks (\mailto{sweeks@acm.org})
+
+\item
+Stephen Weeks implemented most things except for what's listed below.
+
+\item
+Henry Cejtin wrote the {\tt IntInf} implementation,
+{\tt prof.c},
+the original (Python) implementation of {\tt mlprof},
+the original man pages,
+the {\tt .spec} files for the RPMs,
+and lots of little hacks to speed stuff up.
+
+\item
+Matthew Fluet implemented the {\tt x86} native code generator, the contification
+analysis, and ported {\tt mlprof} to work with the new code generator.
+
+\item
+Suresh Jagannathan implemented alternate inlining and uncurrying optimizations.
+
+\item
+Tom 7 (\mailto{twm@andrew.cmu.edu}) wrote the original version of {\tt
+MLton.Syslog} as part of his {\tt mlftpd} project.
+
+\item
+{\mlton} was developed using
+\htmladdnormallink{Standard ML of New Jersey}
+		  {http://cm.bell-labs.com/cm/cs/what/smlnj/index.html}
+and the
+\htmladdnormallink{Compilation Manager (CM)}
+		  {http://cm.bell-labs.com/cm/cs/what/smlnj/doc/CM/index.html}.
+
+\item
+{\mlton}'s lexer ({\tt src/frontend/ml.lex}), 
+parser ({\tt src/frontend/ml.grm}),
+and precedence-parser ({\tt src/elaborate/precedence-parse.fun})
+are modified versions of code from the {\smlnj}.
+
+\item
+{\mlton} uses the {\smlnj} library implementation of splay trees.
+
+\item
+The {\mlton} basis library implementation uses modified versions of
+portions of the the {\smlnj} basis library modules {\tt Real}, {\tt
+IO}, {\tt Unix}, {\tt Process}, and {\tt Option}.
+
+\item
+The {\mlton} basis library implementation uses modified versions of
+portions of the
+\htmladdnormallink{ML Kit Version 3}
+		  {http://www.it.edu/research/mlkit/kit3/readme.html}
+basis library modules {\tt Real}, {\tt Path}, {\tt Time}, and
+{\tt Date}.
+
+\item
+Many of the benchmarks come from the SML/NJ benchmark suite.
+
+\item
+Many of the regression tests come from the ML Kit Version 3 distribution, which
+borrowed them from the
+\htmladdnormallink{Moscow ML}
+		  {http://www.dina.kvl.dk/~sestoft/mosml.html}
+distribution.
+
+\item
+{\mlton} uses the
+\htmladdnormallink{GNU multiprecision library}
+		  {http://www.gnu.org/software/gmp/gmp.html}
+for its implementation of {\tt IntInf}.
+
+\item
+We would like to thank to the following people for helpful discussions.\\
+\hspace*{2em}Simon Helsen (\mailto{shelsen@acm.org})\\
+\hspace*{2em}Richard Kelsey (\mailto{kelsey@research.nj.nec.com})\\
+\hspace*{2em}Jeffrey Mark Siskind (\mailto{Qobi@research.nj.nec.com})\\
+\hspace*{2em}\'{A}NOQ of the Sun (\mailto{anoq@HardcoreProcessing.com})
+\end{itemize}

@@ -1,0 +1,67 @@
+\sec{Compiling {\mlton}}{compiling}
+
+If you want to compile {\mlton}, you need either the source {\tt rpm} or {\tt
+tgz}.  You can compile with either {\mlton} or {\smlnj}.
+
+\subsection{Compiling with {\mlton}}
+
+To compile with {\mlton}, you need the binary versions of {\tt mlton}, {\tt
+mllex}, and {\tt mlyacc} that come with the binary {\tt rpm} or {\tt tgz}.  To
+compile, run {\tt make} from within the {\tt src} directory.
+\begin{verbatim}
+% make
+mlyacc front-end/ml.grm
+1 shift/reduce conflict
+mllex front-end/ml.lex
+
+Number of states = 278
+Number of distinct rows = 183
+Approx. memory size of trans. table = 188856 bytes
+Compiling mlton (takes a while)
+time mlton @MLton -- -v -o mlton-compile mlton.cm
+MLton starting
+   Compile SML starting
+      pre codegen starting
+...
+\end{verbatim}
+This calls {\tt mlyacc} and {\tt mllex} to build the parser and lexer, and then
+calls {\tt mlton} to compile itself.
+
+Compiling {\mlton} requires at least 400m of memory.  By default, MLton limits
+itself to using 85\% of the total RAM available on your machine.  Thus, if your
+machine has less than 512m, it is likely that self-compilation will fail.  Even
+if you have enough memory, there simply may not be enough available, due to
+memory consumed by other processes.  In this case, you will likely see the
+following error during self-compilation.
+\begin{verbatim}
+mmap failed (Cannot allocate memory)
+\end{verbatim}
+The only fix is to make sure that enough virtual memory is available.
+
+You can force {\mlton} to use swap space, but we do not recommend it because
+{\mlton}'s two-space stop-and-copy gc means that {\mlton} has a large working
+set.  Nevertheless, if you would like to force {\mlton} to use swap space, and
+you have at least 400m combined swap plus RAM, you can change the {\tt FLAGS}
+line in {\tt src/mlton/Makefile} to something like the following.
+\begin{verbatim}
+FLAGS = @MLton max-heap 400m -- -v -o $(AOUT)
+\end{verbatim}
+
+\subsection{Compiling with {\smlnj}}
+
+To compile with {\smlnj} version 110.9.1, run the following command from within
+{\tt src/mlton}.
+\begin{verbatim}
+% make nj-mlton
+(                                                                       \
+        echo 'SMLofNJ.Internals.GC.messages false;';                    \
+        echo 'CM.verbose(SOME false);';                                 \
+        echo 'CM.make'\''{group = "sources.cm", force_relink = true};'; \
+        echo 'Main.exportNJ("../../src/basis-library", "../../lib/mlton");'     \
+) | sml
+Standard ML of New Jersey v110.9.1 [FLINT v1.41], October 19, 1998 [CM; autoload enabled]
+- val it = () : unit
+val it = true : bool
+../lib/mlton-stubs-in-smlnj/socket.sig:1.1-1.19: declaration not tracked by CM
+...
+\end{verbatim}

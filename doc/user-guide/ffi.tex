@@ -1,0 +1,108 @@
+\sec{Foreign function interface (FFI)}{ffi}
+
+{\mlton}'s FFI is {\em not} part of Standard ML and it is quite possible that
+this interface will change.  That having been said, it is easy to make calls to
+C functions from within SML using {\mlton}, at least when passing and returning
+simple types like {\tt char}, {\tt double}, {\tt int}, and {\tt word}.  It is
+not possible to call C macros or to call SML from C.  Suppose you would like to
+call a C function with the following prototype from SML:
+\begin{verbatim}
+int foo(double d, unsigned char c);
+\end{verbatim}
+{\mlton} extends the syntax of SML to allow expressions like the following:
+\begin{verbatim}
+_ffi "foo": real * char -> int;
+\end{verbatim}
+This expression returns a function of type {\tt real * char -> int}
+whose behavior is implemented by calling the C function whose name is
+{\tt foo}.  Thinking in terms of C, imagine that there is a C
+variable {\tt d} of type {\tt double}, {\tt c} of type {\tt unsigned
+char}, and {\tt i} of type {\tt int}.  Then, the C statement
+\mbox{\tt i = foo(d, c)} is executed.
+The general form of an \verb+_ffi+ declaration is:
+\begin{verbatim}
+_ffi "c function name": ty;
+\end{verbatim}
+The semicolon is not optional.  Here is a grammar for the types that
+are currently allowed.
+\[
+\begin{array}{lcl}
+\production{\mbox{ty}}
+	   {u \alt t\ \mbox{\tt *}\ \ldots\ \mbox{\tt *}\ t\ \mbox{\tt ->}\ u}
+\production{t}
+	   {u \alt u\ \mbox{\tt array} \alt u\ \mbox{\tt ref}
+             \alt u\ \mbox{\tt vector}}
+\production{u}
+	   {\mbox{\tt bool} \alt \mbox{\tt char} \alt \mbox{\tt int} \alt \mbox{\tt real} \alt \mbox{\tt string} \alt \mbox{\tt unit} \alt \mbox{\tt word} \alt \mbox{\tt word8}}
+\end{array}
+\]
+Here is the mapping between SML types and C types.
+\begin{center}
+\begin{tabular}{ll}
+SML type & C type\\
+\hline
+{\tt bool} & {\tt int} (0 is false, nonzero is true) \\
+{\tt char} & {\tt unsigned char} \\
+{\tt int} & {\tt int} \\
+{\tt real} & {\tt double} \\
+{\tt string} & {\tt char *} \\
+{\tt unit} & {\tt void} \\
+{\tt word} & {\tt unsigned int} \\
+{\tt word8} & {\tt unsigned char} \\
+{\tt u array} & {\tt char *} \\
+{\tt u ref} & {\tt char *} \\
+{\tt u vector} & {\tt char *} \\
+\end{tabular}
+\end{center}
+Passing or returning tuples or datatypes is not allowed because the
+representation of these is decided late in the compilation
+process and because many optimizations can cause the representation to
+change.  Arrays, refs, and vectors may only be passed as arguments and
+not returned as results because C functions are not allowed to
+allocate in the SML heap.  Although the C type of an array, ref, or
+vector is always {\tt char*}, in reality, the object is layed out in
+the natural C representation.
+%You are responsible for doing the cast
+%if you want to keep the C compiler from complaining.
+Strings are just
+like char arrays, and are not null terminated, unless you manually do
+so from the SML side.
+
+\subsec{Compile-time constants}{compile-time-constant}
+
+{\mlton}'s \verb+_prim+ facility provides access to compile-time constants,
+which can be defined either via C include ({\tt .h}) files or on the command
+line with the {\tt -D} command-line option.
+The facility supports constants of type {\tt bool}, {\tt int}, {\tt real},
+{\tt string}, and {\tt word}.
+For example, the basis library
+implementation contains the following lines.
+\begin{verbatim}
+type syserror = int
+val acces = _prim "Posix_Error_acces": syserror;
+\end{verbatim}
+This defines the SML variable {\tt acces} to be an int whose value is the value
+of the C constant (macro) \verb+Posix_Error_access+, which is obtained from the
+(automatically) included file {\tt posix-constants.h}.  At compile-time, {\mlton}
+generates a C file that prints the values of all \verb+_prim+ constants, calls
+{\tt gcc} to produce an executable, runs the executable, and reads the result.
+The \verb+_prim+ expressions are then replaced by appropriate constants, which
+are available to the rest of the compilation process.
+
+\subsection{Example}
+
+The example in the {\tt examples/ffi} directory demonstrates the use of
+\verb+_ffi+ and \verb+_prim+ declarations.  The {\tt Makefile} demonstrates how
+to call {\mlton} to include and link with the appropriate files.  Running {\tt
+make} should produce an executable, {\tt ffi}, which should output {\tt success}
+when run.  You should also read \secref{compile-time-options} to familiarize
+yourself with the {\mlton} options governing include files and linking ({\tt
+-include}, {\tt -I}, {\tt -l}, and {\tt -L}).
+
+\begin{verbatim}
+% mlton -stop o ffi.c
+% mlton -I. -include ffi.h main.sml ffi.o
+% main
+13
+success
+\end{verbatim}

@@ -1,0 +1,61 @@
+\sec{Getting started}{getting-started}
+
+\subsection{Installation}
+
+{\mlton} runs on X86 machines under Linux.  {\mlton} is distributed in source
+and binary RPM and gzipped tar format.  To install the binary RPM, run the
+following command.
+\begin{alltt}
+rpm -i mlton-\version-1.i386.rpm
+\end{alltt}
+The binary RPM installs the following files and directories.
+
+\newcommand{\place}[1]{\item[\tt #1]\hspace{1in}\\}
+
+\begin{description}
+
+\place{/usr/local/bin/mllex}
+A lexer generator.
+
+\place{/usr/local/bin/mlprof}
+A profiler (see \secref{profiling}).
+
+\place{/usr/local/bin/mlton}
+A script to call the compiler.
+This script may be moved anywhere, however,
+it makes use of files in {\tt /usr/local/lib/mlton}.
+
+\place{/usr/local/bin/mlyacc}
+A parser generator.
+
+\place{/usr/local/man/man1/mlprof.1}
+Man page for {\tt mlprof}.
+
+\place{/usr/local/man/man1/mlton.1}
+Man page for {\tt mlton}.
+
+\place{\doc}
+Directory containing the user guide, example SML programs (in the {\tt examples}
+dir), and license information.
+
+\place{/usr/local/lib/mlton}
+Directory containing libraries and include files needed during
+compilation.
+
+\end{description}
+
+\subsection{Hello, World!}
+
+Create a file called {\tt hello-world.sml} with the following contents.
+
+\begin{verbatim}
+print "Hello, world!;\n"
+\end{verbatim}
+Now, create an executable called {\tt hello-world} with the following command.
+\begin{verbatim}
+mlton hello-world.sml
+\end{verbatim}
+You can now run this executable to verify that it works.  There are several
+other small examples in {\tt examples}.  In particular, there are examples that
+demonstrate world save and restore, callcc, object size primitive, threads,
+profiling, and the FFI.

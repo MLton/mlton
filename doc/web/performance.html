@@ -1,0 +1,770 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>MLton's Performance</title>
+  </head>
+
+  <body>
+    This page compares the performance of the following SML compilers on a range
+    of benchmarks.
+    <ul>
+      <li> <a href = "http://www.sourcelight.com/MLton/">MLton</a> 20010708
+      <li> <a href = "http://www.itu.dk/research/mlkit/">ML Kit</a> 3.9.1
+      <li> <a href = "http://www.dina.kvl.dk/~sestoft/mosml.html">Moscow ML</a>
+	2.00
+      <li> <a href =
+	      "http://cm.bell-labs.com/cm/cs/what/smlnj/index.html">SML/NJ</a>
+	110.33
+    </ul>
+
+    All of the benchmarks are available <a href = "benchmarks/">here</a>.
+    Some of the benchmarks were obtained from
+    <a href="ftp://ftp.research.bell-labs.com/dist/smlnj/benchmarks/110-benchmarks.tar.Z">here</a>.
+    Some of the benchmarks use data files in the 
+    <a href="benchmarks/DATA/"><tt>DATA</tt></a> subdirectory.
+
+    <h1>Setup</h1>
+    All benchmarks were compiled and run on a 733MhZ P6 with 512M of physical
+    memory. The benchmarks were compiled with the default settings for all the
+    compilers, except for Moscow ML, which was passed the <tt>-orthodox
+    -standalone -toplevel</tt> switches.  The SML/NJ executables were produced
+    by wrapping the entire program in a <tt>local</tt> declaration whose body
+    performs an <tt>exportFn</tt>.
+    
+    <h1>Run time ratio</h1>
+    <p>
+      The following table gives the ratio of the run time of each benchmark
+      to the run time when compiled by MLton.  A * in an entry means that the
+      compiler failed to compile the benchmark or that the benchmark failed to
+      run.
+    <p>
+    <table border=2 cellpadding=5 cellspacing=2>
+<tr>
+<th align = left>benchmark</th>
+<th align = right>ML Kit</th>
+<th align = right>Moscow ML</th>
+<th align = right>SML/NJ</th>
+</tr>
+<tr>
+<td align = left>barnes-hut</td>
+<td align = right>3.5</td>
+<td align = right>12.2</td>
+<td align = right>0.8</td>
+</tr>
+<tr>
+<td align = left>checksum</td>
+<td align = right>*</td>
+<td align = right>*</td>
+<td align = right>3.3</td>
+</tr>
+<tr>
+<td align = left>count-graphs</td>
+<td align = right>6.7</td>
+<td align = right>21.9</td>
+<td align = right>1.5</td>
+</tr>
+<tr>
+<td align = left>fft</td>
+<td align = right>8.1</td>
+<td align = right>26.3</td>
+<td align = right>1.0</td>
+</tr>
+<tr>
+<td align = left>fib</td>
+<td align = right>0.9</td>
+<td align = right>4.8</td>
+<td align = right>1.1</td>
+</tr>
+<tr>
+<td align = left>hamlet</td>
+<td align = right>*</td>
+<td align = right>9.2</td>
+<td align = right>1.4</td>
+</tr>
+<tr>
+<td align = left>knuth-bendix</td>
+<td align = right>4.8</td>
+<td align = right>12.6</td>
+<td align = right>2.1</td>
+</tr>
+<tr>
+<td align = left>lexgen</td>
+<td align = right>2.4</td>
+<td align = right>5.6</td>
+<td align = right>1.6</td>
+</tr>
+<tr>
+<td align = left>life</td>
+<td align = right>6.9</td>
+<td align = right>20.0</td>
+<td align = right>0.9</td>
+</tr>
+<tr>
+<td align = left>logic</td>
+<td align = right>*</td>
+<td align = right>3.5</td>
+<td align = right>0.6</td>
+</tr>
+<tr>
+<td align = left>mandelbrot</td>
+<td align = right>4.2</td>
+<td align = right>32.7</td>
+<td align = right>1.4</td>
+</tr>
+<tr>
+<td align = left>matrix-multiply</td>
+<td align = right>10.1</td>
+<td align = right>35.3</td>
+<td align = right>3.0</td>
+</tr>
+<tr>
+<td align = left>md5</td>
+<td align = right>*</td>
+<td align = right>*</td>
+<td align = right>3.0</td>
+</tr>
+<tr>
+<td align = left>merge</td>
+<td align = right>*</td>
+<td align = right>*</td>
+<td align = right>10.7</td>
+</tr>
+<tr>
+<td align = left>mlyacc</td>
+<td align = right>*</td>
+<td align = right>7.7</td>
+<td align = right>1.7</td>
+</tr>
+<tr>
+<td align = left>mpuz</td>
+<td align = right>8.8</td>
+<td align = right>47.9</td>
+<td align = right>3.0</td>
+</tr>
+<tr>
+<td align = left>nucleic</td>
+<td align = right>*</td>
+<td align = right>15.8</td>
+<td align = right>0.7</td>
+</tr>
+<tr>
+<td align = left>peek</td>
+<td align = right>5.4</td>
+<td align = right>28.4</td>
+<td align = right>1.9</td>
+</tr>
+<tr>
+<td align = left>psdes-random</td>
+<td align = right>8.7</td>
+<td align = right>*</td>
+<td align = right>2.3</td>
+</tr>
+<tr>
+<td align = left>ratio-regions</td>
+<td align = right>12.4</td>
+<td align = right>47.0</td>
+<td align = right>5.7</td>
+</tr>
+<tr>
+<td align = left>ray</td>
+<td align = right>*</td>
+<td align = right>11.8</td>
+<td align = right>0.9</td>
+</tr>
+<tr>
+<td align = left>raytrace</td>
+<td align = right>*</td>
+<td align = right>*</td>
+<td align = right>2.3</td>
+</tr>
+<tr>
+<td align = left>simple</td>
+<td align = right>2.3</td>
+<td align = right>12.5</td>
+<td align = right>1.3</td>
+</tr>
+<tr>
+<td align = left>smith-normal-form</td>
+<td align = right>*</td>
+<td align = right>*</td>
+<td align = right>96.4</td>
+</tr>
+<tr>
+<td align = left>tak</td>
+<td align = right>1.7</td>
+<td align = right>7.8</td>
+<td align = right>1.4</td>
+</tr>
+<tr>
+<td align = left>tensor</td>
+<td align = right>*</td>
+<td align = right>*</td>
+<td align = right>5.9</td>
+</tr>
+<tr>
+<td align = left>tsp</td>
+<td align = right>2.4</td>
+<td align = right>14.4</td>
+<td align = right>1.6</td>
+</tr>
+<tr>
+<td align = left>vector-concat</td>
+<td align = right>11.5</td>
+<td align = right>20.5</td>
+<td align = right>7.1</td>
+</tr>
+<tr>
+<td align = left>vector-rev</td>
+<td align = right>12.4</td>
+<td align = right>39.1</td>
+<td align = right>23.1</td>
+</tr>
+<tr>
+<td align = left>vliw</td>
+<td align = right>2.6</td>
+<td align = right>7.8</td>
+<td align = right>1.3</td>
+</tr>
+<tr>
+<td align = left>wc-input1</td>
+<td align = right>13.4</td>
+<td align = right>*</td>
+<td align = right>7.3</td>
+</tr>
+<tr>
+<td align = left>wc-scanStream</td>
+<td align = right>8.0</td>
+<td align = right>*</td>
+<td align = right>1.6</td>
+</tr>
+<tr>
+<td align = left>zebra</td>
+<td align = right>11.8</td>
+<td align = right>23.3</td>
+<td align = right>6.9</td>
+</tr>
+<tr>
+<td align = left>zern</td>
+<td align = right>*</td>
+<td align = right>*</td>
+<td align = right>1.5</td>
+</tr>
+    </table>	
+
+    <h1>Compile time</h1>
+    The following table gives the compile time of each benchmark in seconds.
+    A * in an entry means that the compiler failed to compile the benchmark.
+    <p>
+    <table border=2 cellpadding=5 cellspacing=2> 
+<tr>
+<th align = left>benchmark</th>
+<th align = right>ML Kit</th>
+<th align = right>MLton</th>
+<th align = right>Moscow ML</th>
+<th align = right>SML/NJ</th>
+</tr>
+<tr>
+<td align = left>barnes-hut</td>
+<td align = right>8.1</td>
+<td align = right>2.6</td>
+<td align = right>0.8</td>
+<td align = right>1.7</td>
+</tr>
+<tr>
+<td align = left>checksum</td>
+<td align = right>*</td>
+<td align = right>0.7</td>
+<td align = right>*</td>
+<td align = right>0.2</td>
+</tr>
+<tr>
+<td align = left>count-graphs</td>
+<td align = right>2.6</td>
+<td align = right>1.8</td>
+<td align = right>0.2</td>
+<td align = right>1.1</td>
+</tr>
+<tr>
+<td align = left>fft</td>
+<td align = right>2.1</td>
+<td align = right>1.5</td>
+<td align = right>0.2</td>
+<td align = right>1.0</td>
+</tr>
+<tr>
+<td align = left>fib</td>
+<td align = right>1.0</td>
+<td align = right>0.7</td>
+<td align = right>0.1</td>
+<td align = right>0.2</td>
+</tr>
+<tr>
+<td align = left>hamlet</td>
+<td align = right>*</td>
+<td align = right>52.3</td>
+<td align = right>43.2</td>
+<td align = right>91.6</td>
+</tr>
+<tr>
+<td align = left>knuth-bendix</td>
+<td align = right>5.3</td>
+<td align = right>2.5</td>
+<td align = right>0.4</td>
+<td align = right>2.2</td>
+</tr>
+<tr>
+<td align = left>lexgen</td>
+<td align = right>10.2</td>
+<td align = right>5.8</td>
+<td align = right>0.8</td>
+<td align = right>4.8</td>
+</tr>
+<tr>
+<td align = left>life</td>
+<td align = right>2.8</td>
+<td align = right>1.5</td>
+<td align = right>0.2</td>
+<td align = right>0.7</td>
+</tr>
+<tr>
+<td align = left>logic</td>
+<td align = right>6.8</td>
+<td align = right>7.5</td>
+<td align = right>0.4</td>
+<td align = right>2.0</td>
+</tr>
+<tr>
+<td align = left>mandelbrot</td>
+<td align = right>1.1</td>
+<td align = right>0.8</td>
+<td align = right>0.1</td>
+<td align = right>0.2</td>
+</tr>
+<tr>
+<td align = left>matrix-multiply</td>
+<td align = right>1.2</td>
+<td align = right>0.8</td>
+<td align = right>0.1</td>
+<td align = right>0.3</td>
+</tr>
+<tr>
+<td align = left>md5</td>
+<td align = right>*</td>
+<td align = right>2.4</td>
+<td align = right>*</td>
+<td align = right>2.1</td>
+</tr>
+<tr>
+<td align = left>merge</td>
+<td align = right>1.0</td>
+<td align = right>0.8</td>
+<td align = right>0.1</td>
+<td align = right>0.2</td>
+</tr>
+<tr>
+<td align = left>mlyacc</td>
+<td align = right>60.4</td>
+<td align = right>19.4</td>
+<td align = right>7.4</td>
+<td align = right>24.1</td>
+</tr>
+<tr>
+<td align = left>mpuz</td>
+<td align = right>1.4</td>
+<td align = right>1.0</td>
+<td align = right>0.1</td>
+<td align = right>0.4</td>
+</tr>
+<tr>
+<td align = left>nucleic</td>
+<td align = right>28.2</td>
+<td align = right>4.5</td>
+<td align = right>2.1</td>
+<td align = right>3.0</td>
+</tr>
+<tr>
+<td align = left>peek</td>
+<td align = right>1.1</td>
+<td align = right>1.1</td>
+<td align = right>0.1</td>
+<td align = right>0.2</td>
+</tr>
+<tr>
+<td align = left>psdes-random</td>
+<td align = right>1.1</td>
+<td align = right>0.8</td>
+<td align = right>*</td>
+<td align = right>0.3</td>
+</tr>
+<tr>
+<td align = left>ratio-regions</td>
+<td align = right>4.4</td>
+<td align = right>3.1</td>
+<td align = right>0.4</td>
+<td align = right>2.1</td>
+</tr>
+<tr>
+<td align = left>ray</td>
+<td align = right>3.7</td>
+<td align = right>3.6</td>
+<td align = right>0.2</td>
+<td align = right>1.1</td>
+</tr>
+<tr>
+<td align = left>raytrace</td>
+<td align = right>*</td>
+<td align = right>10.1</td>
+<td align = right>*</td>
+<td align = right>6.8</td>
+</tr>
+<tr>
+<td align = left>simple</td>
+<td align = right>14.6</td>
+<td align = right>7.4</td>
+<td align = right>0.9</td>
+<td align = right>4.5</td>
+</tr>
+<tr>
+<td align = left>smith-normal-form</td>
+<td align = right>*</td>
+<td align = right>8.1</td>
+<td align = right>*</td>
+<td align = right>3.5</td>
+</tr>
+<tr>
+<td align = left>tak</td>
+<td align = right>1.0</td>
+<td align = right>0.7</td>
+<td align = right>0.1</td>
+<td align = right>0.2</td>
+</tr>
+<tr>
+<td align = left>tensor</td>
+<td align = right>*</td>
+<td align = right>3.1</td>
+<td align = right>*</td>
+<td align = right>3.5</td>
+</tr>
+<tr>
+<td align = left>tsp</td>
+<td align = right>2.7</td>
+<td align = right>1.8</td>
+<td align = right>0.3</td>
+<td align = right>0.8</td>
+</tr>
+<tr>
+<td align = left>vector-concat</td>
+<td align = right>1.0</td>
+<td align = right>0.8</td>
+<td align = right>0.1</td>
+<td align = right>0.2</td>
+</tr>
+<tr>
+<td align = left>vector-rev</td>
+<td align = right>1.0</td>
+<td align = right>0.8</td>
+<td align = right>0.1</td>
+<td align = right>0.2</td>
+</tr>
+<tr>
+<td align = left>vliw</td>
+<td align = right>36.2</td>
+<td align = right>12.1</td>
+<td align = right>3.0</td>
+<td align = right>18.8</td>
+</tr>
+<tr>
+<td align = left>wc-input1</td>
+<td align = right>1.1</td>
+<td align = right>1.7</td>
+<td align = right>0.1</td>
+<td align = right>0.3</td>
+</tr>
+<tr>
+<td align = left>wc-scanStream</td>
+<td align = right>1.1</td>
+<td align = right>1.8</td>
+<td align = right>0.1</td>
+<td align = right>0.3</td>
+</tr>
+<tr>
+<td align = left>zebra</td>
+<td align = right>2.8</td>
+<td align = right>5.0</td>
+<td align = right>0.2</td>
+<td align = right>0.8</td>
+</tr>
+<tr>
+<td align = left>zern</td>
+<td align = right>*</td>
+<td align = right>1.1</td>
+<td align = right>*</td>
+<td align = right>0.8</td>
+</tr>
+    </table>
+
+    <h1>Code size</h1> 
+    The following table gives the code size of each benchmark in bytes.  The
+    size for MLton and the ML Kit is the sum of text and data for the standalone
+    executable as reported by <tt>size</tt>.  The size for Moscow ML is the size
+    in bytes of the executable <tt>a.out</tt>.  The size for SML/NJ is the size
+    of the heap file created by <tt>exportFn</tt> and does not include the size
+    of the SML/NJ runtime system (approximately 95K).  A * in an entry means that
+    the compiler failed to compile the benchmark. 
+    <p>
+    <table border=2 cellpadding=5 cellspacing=2> 
+<tr>
+<th align = left>benchmark</th>
+<th align = right>ML Kit</th>
+<th align = right>MLton</th>
+<th align = right>Moscow ML</th>
+<th align = right>SML/NJ</th>
+</tr>
+<tr>
+<td align = left>barnes-hut</td>
+<td align = right>179,980</td>
+<td align = right>45,835</td>
+<td align = right>94,990</td>
+<td align = right>331,768</td>
+</tr>
+<tr>
+<td align = left>checksum</td>
+<td align = right>*</td>
+<td align = right>22,994</td>
+<td align = right>*</td>
+<td align = right>332,504</td>
+</tr>
+<tr>
+<td align = left>count-graphs</td>
+<td align = right>109,948</td>
+<td align = right>42,418</td>
+<td align = right>84,575</td>
+<td align = right>355,376</td>
+</tr>
+<tr>
+<td align = left>fft</td>
+<td align = right>107,284</td>
+<td align = right>33,114</td>
+<td align = right>84,095</td>
+<td align = right>332,808</td>
+</tr>
+<tr>
+<td align = left>fib</td>
+<td align = right>68,588</td>
+<td align = right>22,842</td>
+<td align = right>79,878</td>
+<td align = right>310,968</td>
+</tr>
+<tr>
+<td align = left>hamlet</td>
+<td align = right>*</td>
+<td align = right>977,217</td>
+<td align = right>277,168</td>
+<td align = right>1,263,816</td>
+</tr>
+<tr>
+<td align = left>knuth-bendix</td>
+<td align = right>115,252</td>
+<td align = right>62,139</td>
+<td align = right>88,439</td>
+<td align = right>321,504</td>
+</tr>
+<tr>
+<td align = left>lexgen</td>
+<td align = right>227,444</td>
+<td align = right>132,090</td>
+<td align = right>104,883</td>
+<td align = right>390,136</td>
+</tr>
+<tr>
+<td align = left>life</td>
+<td align = right>100,220</td>
+<td align = right>39,642</td>
+<td align = right>83,390</td>
+<td align = right>305,120</td>
+</tr>
+<tr>
+<td align = left>logic</td>
+<td align = right>136,068</td>
+<td align = right>150,658</td>
+<td align = right>87,252</td>
+<td align = right>331,744</td>
+</tr>
+<tr>
+<td align = left>mandelbrot</td>
+<td align = right>101,612</td>
+<td align = right>22,906</td>
+<td align = right>81,341</td>
+<td align = right>311,992</td>
+</tr>
+<tr>
+<td align = left>matrix-multiply</td>
+<td align = right>118,348</td>
+<td align = right>23,466</td>
+<td align = right>81,879</td>
+<td align = right>338,632</td>
+</tr>
+<tr>
+<td align = left>md5</td>
+<td align = right>*</td>
+<td align = right>36,187</td>
+<td align = right>*</td>
+<td align = right>331,792</td>
+</tr>
+<tr>
+<td align = left>merge</td>
+<td align = right>68,796</td>
+<td align = right>23,962</td>
+<td align = right>80,091</td>
+<td align = right>307,904</td>
+</tr>
+<tr>
+<td align = left>mlyacc</td>
+<td align = right>525,404</td>
+<td align = right>425,226</td>
+<td align = right>148,286</td>
+<td align = right>700,456</td>
+</tr>
+<tr>
+<td align = left>mpuz</td>
+<td align = right>89,500</td>
+<td align = right>27,970</td>
+<td align = right>82,381</td>
+<td align = right>320,184</td>
+</tr>
+<tr>
+<td align = left>nucleic</td>
+<td align = right>234,220</td>
+<td align = right>60,066</td>
+<td align = right>207,154</td>
+<td align = right>354,288</td>
+</tr>
+<tr>
+<td align = left>peek</td>
+<td align = right>77,420</td>
+<td align = right>30,539</td>
+<td align = right>81,618</td>
+<td align = right>311,016</td>
+</tr>
+<tr>
+<td align = left>psdes-random</td>
+<td align = right>84,540</td>
+<td align = right>24,178</td>
+<td align = right>*</td>
+<td align = right>313,016</td>
+</tr>
+<tr>
+<td align = left>ratio-regions</td>
+<td align = right>111,308</td>
+<td align = right>59,378</td>
+<td align = right>87,485</td>
+<td align = right>335,856</td>
+</tr>
+<tr>
+<td align = left>ray</td>
+<td align = right>123,356</td>
+<td align = right>73,377</td>
+<td align = right>89,860</td>
+<td align = right>384,072</td>
+</tr>
+<tr>
+<td align = left>raytrace</td>
+<td align = right>*</td>
+<td align = right>180,902</td>
+<td align = right>*</td>
+<td align = right>510,056</td>
+</tr>
+<tr>
+<td align = left>simple</td>
+<td align = right>194,364</td>
+<td align = right>170,906</td>
+<td align = right>94,397</td>
+<td align = right>641,056</td>
+</tr>
+<tr>
+<td align = left>smith-normal-form</td>
+<td align = right>*</td>
+<td align = right>143,386</td>
+<td align = right>*</td>
+<td align = right>483,400</td>
+</tr>
+<tr>
+<td align = left>tak</td>
+<td align = right>68,356</td>
+<td align = right>22,866</td>
+<td align = right>79,928</td>
+<td align = right>306,872</td>
+</tr>
+<tr>
+<td align = left>tensor</td>
+<td align = right>*</td>
+<td align = right>53,802</td>
+<td align = right>*</td>
+<td align = right>342,048</td>
+</tr>
+<tr>
+<td align = left>tsp</td>
+<td align = right>115,732</td>
+<td align = right>39,067</td>
+<td align = right>86,140</td>
+<td align = right>322,552</td>
+</tr>
+<tr>
+<td align = left>vector-concat</td>
+<td align = right>77,660</td>
+<td align = right>23,426</td>
+<td align = right>80,191</td>
+<td align = right>317,128</td>
+</tr>
+<tr>
+<td align = left>vector-rev</td>
+<td align = right>77,860</td>
+<td align = right>23,482</td>
+<td align = right>80,073</td>
+<td align = right>317,128</td>
+</tr>
+<tr>
+<td align = left>vliw</td>
+<td align = right>418,076</td>
+<td align = right>264,234</td>
+<td align = right>135,386</td>
+<td align = right>618,576</td>
+</tr>
+<tr>
+<td align = left>wc-input1</td>
+<td align = right>144,652</td>
+<td align = right>43,075</td>
+<td align = right>86,900</td>
+<td align = right>311,992</td>
+</tr>
+<tr>
+<td align = left>wc-scanStream</td>
+<td align = right>145,100</td>
+<td align = right>45,675</td>
+<td align = right>87,076</td>
+<td align = right>313,016</td>
+</tr>
+<tr>
+<td align = left>zebra</td>
+<td align = right>85,404</td>
+<td align = right>111,131</td>
+<td align = right>83,419</td>
+<td align = right>310,256</td>
+</tr>
+<tr>
+<td align = left>zern</td>
+<td align = right>*</td>
+<td align = right>27,041</td>
+<td align = right>*</td>
+<td align = right>337,944</td>
+</tr>
+    </table>
+
+    <hr>
+    <!-- Created: Tue Jun  2 16:05:24 EDT 1998 -->
+    <!-- hhmts start -->
+Last modified: Tue Jul 10 15:05:24 PDT 2001
+<!-- hhmts end -->
+  </body>
+</html>
+

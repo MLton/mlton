@@ -1,0 +1,9 @@
+This release includes a native X86 code generator
+(instead of using gcc), which leads to
+significantly improved compile times and run
+times for generated executables.  The release
+also includes many bug fixes, including correct
+raising of the Overflow exception for integer
+arithmetic.  Finally, there are several new
+modules in the MLton structure.
+

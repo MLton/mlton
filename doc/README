@@ -1,0 +1,41 @@
+We are pleased to announce a new release of MLton, the whole-program
+optimizing compiler for Standard ML.  MLton runs on X86 machines with
+Linux. 
+
+Version 20010706 is a major release over 20000906, and includes the following
+changes.
+
+    + Native X86 code generator (instead of using gcc)
+    + Significantly improved compile times 
+    + Significantly improved run times for generated executables
+    + Many bug fixes
+    + Correct raising of the Overflow exception for integer arithmetic
+    + New modules in the MLton structure
+
+For a complete list of changes and bugfixes, see the CHANGES file.  
+
+MLton has the following features.
+
+   + Generates standalone executables with good runtime performance 
+   + SML 97 compliant, with a mostly complete basis library 
+   + Fast IntInf based on the GNU multiprecision library (gmp) 
+   + Fast C FFI 
+   + Profiling 
+   + Libraries for continuations, interval timers, random numbers,
+       resource limits, resource usage, signal handlers, sockets, system
+       logging, threads, and heap save and restore  
+
+For more information, go to the MLton home page. 
+
+	http://www.sourcelight.com/MLton/
+
+Send comments, questions, and bug reports to MLton@sourcelight.com.
+
+doc directory contents:
+	CHANGES			changelog
+	HTML/			html user guide
+	README			this file
+	cmcat.sml		a utility for producing whole programs in SML/NJ
+	examples/		example SML programs
+	license/		license information
+	user-guide.ps.gz	postscript user guide

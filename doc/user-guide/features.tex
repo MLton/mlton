@@ -1,0 +1,125 @@
+\sec{Features of {\mlton}}{features}
+
+\newcommand{\feature}[1]{\item[\bf #1]\hspace{1in}\\}
+\begin{description}
+\feature{whole-program optimization}
+Because {\mlton} compiles the whole program at once, it can perform optimization
+across module boundaries.  As a consequence, {\mlton} can reduce or eliminate
+the runtime penalty that arises with separate compilation of SML features such
+as functors, modules, polymorphism, and higher-order functions.  {\mlton} takes
+advantage of having the entire program to perform transformations such as:
+defunctorization, monomorphisation, higher-order control-flow analysis,
+inlining, unboxing, argument flattening, redundant-argument removal, constant
+folding, and representation selection.  Whole program compilation is an integral
+part of the design of {\mlton} and is not likely to change.
+
+\feature{SML 97 compliant}
+{\mlton} compiles the full Standard ML language as given in The
+Definition of Standard ML (Revised)\cite{MTHM97}.  If there is a
+program that is valid according to The Definition that is rejected by
+{\mlton}, it is a bug.
+
+\feature{basis library mostly complete}
+{\mlton} contains a mostly complete implementation of the basis library.
+Missing are some IO modules ({\tt BinIO}, {\tt ImperativeIO}, {\tt StreamIO},
+{\tt PrimIO}), and a few functions in the {\tt IntInf}, {\tt Os.IO}, {\tt Real},
+and {\tt TextIO} structures.  See \secref{basis-library} for details.
+
+\feature{good run-time performance}
+{\mlton} generated executables have good run-time performance.
+For a comparison of several SML compilers, see
+\link{http://www.sourcelight.com/MLton/performance.html}.
+For a comparison of many compilers, including {\mlton}, see
+\link{http://www.bagley.org/\~{}doug/shootout/}.
+
+\feature{standalone executables}
+{\mlton} generates standalone executables.  No additional code or
+libraries are necessary in order to run an executable.  MLton can also generate
+statically linked executables.
+
+\feature{small executables}
+Because of whole-program compilation, {\mlton} can use very aggressive 
+dead-code elimination, which often leads to smaller executables than
+with other compilers.
+
+\feature{compiles large programs}
+{\mlton} is sufficiently robust that it can compile large programs,
+including itself (83K lines) and the
+\htmladdnormallink
+  {ML Kit Version 3}
+  {http://www.it.edu/research/mlkit/kit3/readme.html}
+(75K lines).
+The distributed version of {\mlton} was compiled by {\mlton}.
+
+\feature{fast {\tt IntInf} based on GNU multiprecision library}
+The {\mlton} implementation of arbitrary precision arithmetic (the
+{\tt IntInf} structure) uses the
+\htmladdnormallink{GNU multiprecision library (gmp)}
+		  {http://www.gnu.org/software/gmp/gmp.html}.
+Hence, for {\tt IntInf} intensive programs, {\mlton} is often orders
+of magnitude faster than {\smlnj}.
+
+\feature{fast C FFI}
+{\mlton} has a straightforward and fast FFI for calling C routines
+from SML.  In fact, much of the {\tt Posix} structure in the basis library is
+implemented using the C FFI.  The FFI also supports the definition of
+compile-time constants.  See \secref{ffi} for details.
+
+\feature{profiling}
+{\mlton} has support for profiling similar to {\tt gprof}.  See
+\secref{profiling} for details.
+
+\feature{useful libraries}
+{\mlton} has a collection of libraries that provide useful functionality that
+cannot be implemented with the standard basis library.  See below for an
+overview and \secref{mlton} for details.
+
+\begin{description}
+
+\feature{size primitive}
+{\mlton} includes a primitive that returns the size (in bytes) of any
+object.  This can be quite useful in understanding the space behavior
+of a program.
+
+\feature{continuations}
+{\mlton} supports continuations via {\tt callcc} and {\tt throw}.
+
+\feature{interval timers}
+{\mlton} supports the functionality of the C {\tt setitimer} function.
+
+\feature{random numbers}
+{\mlton} has functions similar to the C {\tt rand} and {\tt srand} functions, as
+well as support for access to {\tt /dev/random} and {\tt /dev/urandom}.
+
+\feature{resource usage}
+{\mlton} supports a subset of the functionality of the C {\tt getrusage}
+function.
+
+\feature{signal handlers}
+{\mlton} supports signal handlers written in SML.  Signal handlers are 
+run in a separate thread, and have access to the thread that was
+interrupted by the signal.  Signal handlers can be used in conjunction with
+threads to implement preemptive multitasking.
+
+\feature{sockets}
+{\mlton} supports simple socket operations like {\tt accept}, 
+{\tt connect}, and {\tt listen}.
+
+\feature{system logging}
+{\mlton} has a complete interface to the C {\tt syslog} function.
+
+\feature{threads}
+{\mlton} has preliminary support for threads, upon which either
+preemptive or non-preemptive multitasking can be implemented.  Threads
+are still experimental.  At some point in the future, {\mlton} may
+support CML, but there is still a ways to go.
+
+\feature{world save and restore}
+{\mlton} has a facility for saving the entire state of a computation
+to a file, and restarting it later.  This facility can be used for
+staging and for checkpointing computations.  It can even be used from
+within signal handlers, allowing interrupt driven checkpointing.
+
+\end{description}
+\end{description}
+

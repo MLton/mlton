@@ -1,0 +1,116 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+  <HEAD>
+    <TITLE>MLton</TITLE>
+    <META NAME="author" CONTENT="Stephen T. Weeks">
+    <META NAME="description" CONTENT="
+      MLton is a whole-program optimizing compiler for
+      the Standard ML programming language.">
+    <META NAME="keywords" CONTENT="MLton SML Standard ML compiler">
+    <LINK REV="made" HREF="mailto:MLton@sourcelight.com">
+  </HEAD>
+  <BODY>
+
+    <h3>What is MLton?</h3>
+    MLton is a whole-program optimizing compiler for the
+    <a href="http://cm.bell-labs.com/cm/cs/what/smlnj/sml.html">Standard
+      ML</a> programming language.  MLton runs on X86 machines with
+    Linux.
+
+    <h3>What's new?</h3>
+    Version 20010706 is a major release over 20000906, and includes the
+    following changes.
+    <ul>
+      <li> Native X86 code generator (instead of using <tt>gcc</tt>)
+      <li> Significantly improved compile times 
+      <li> Significantly improved run times for generated executables
+      <li> Many bug fixes
+      <li> Correct raising of the Overflow exception for integer arithmetic
+      <li> New modules in the <tt>MLton</tt> structure
+    </ul>
+    For a complete list of changes and bugfixes, see the 
+    <a href = "CHANGES">CHANGES</a> file.
+
+    <h3>Features of MLton</h3>
+    MLton has the following features (for details, please see
+    the user manual in <a href = "HTML/main.html">html</a>
+    or <a href = "user-guide.ps.gz">postscript</a>).
+
+    <ul>
+      <li> Generates standalone executables with
+        <a href = "performance.html">good runtime performance</a>.
+      <li> SML 97 compliant, with a 
+	<a href = "HTML/node14.html">mostly complete basis library</a>
+      <li> Fast <tt>IntInf</tt> based on the
+	<a href = "http://www.gnu.org/software/gmp/gmp.html">GNU
+	  multiprecision library (gmp)</a>
+      <li> <a href = "HTML/node10.html">Fast C FFI</a>
+      <li> <a href = "HTML/node13.html">Profiling</a>
+      <li> Libraries for
+	<a href = "HTML/node20.html">continuations</a>,
+        <a href = "HTML/node22.html">interval timers</a>,
+	<a href = "HTML/node24.html">random numbers</a>,
+        <a href = "HTML/node25.html">resource limits</a>,
+	<a href = "HTML/node26.html">resource usage</a>,
+	<a href = "HTML/node27.html">signal handlers</a>,
+	<a href = "HTML/node28.html">sockets</a>,
+	<a href = "HTML/node29.html">system logging</a>,
+	<a href = "HTML/node31.html">threads</a>,
+	and <a href = "HTML/node33.html">heap save and restore</a>
+    </ul>
+
+    <h3>Download</h3>
+    The latest version (20010706) is available in the following formats.
+    <ul>
+      <li> Binary RPM (3.1M)
+	<ul>
+	  <li> <a href = "mlton-20010706-1.i386.rpm">rpm</a>
+	    for Red Hat 7.x (glibc 2.2, rpm 4.x)
+	  <li> <a href = "mlton-20010706-1.rhat6x.i386.rpm">rpm</a>
+	    for Red Hat 6.x (glibc 2.1, rpm 3.x)
+	</ul>
+      <li> Source RPM (2.0M)
+	<ul>
+	  <li> <a href = "mlton-20010706-1.src.rpm">rpm</a> 
+	    for Red Hat 7.x (rpm 4.x)
+	  <li> <a href = "mlton-20010706-1.src.rhat6x.rpm">rpm</a>
+	    for Red Hat 6.x (rpm 3.x)
+	</ul>
+      <li> Gzipped tar (for non-RPM distributions)
+	<ul>
+	  <li> binary <a href = "mlton-20010706-1.i386.tgz">tgz</a>
+	    for Red Hat 7.x (glibc 2.2)
+	  <li> binary <a href = "mlton-20010706-1.rhat6x.i386.tgz">tgz</a>
+	    for Red Hat 6.x (glibc 2.1)
+	  <li> source <a href = "mlton-20010706.src.tgz">tgz</a>
+	</ul>
+    </ul>
+
+    Older versions of MLton are available <a href = "OLD/">here</a>.
+<!--    <br>Experimental versions of MLton are available <a href =
+      "EXPERIMENTAL/index.html">here</a>. -->
+
+    <h3>Links</h3>
+    <a href = "people.html">People</a> that have worked on MLton.
+    <br><a href = "projects.html">Projects</a> that use MLton.
+    <br><a href = "improvements.html">Improvements</a> that we
+    would like to see made to MLton.
+    <br> <a href = "papers/index.html">Papers</a> about MLton.
+
+    <h3>Contact</h3>
+    To send a comment, question, or bug report to MLton's authors, use
+    <a href = "mailto:MLton@sourcelight.com"><TT>MLton@sourcelight.com</TT></a>.
+    To send mail to the MLton user community, use
+    <a href =
+      "mailto:MLton-discuss@sourcelight.com"><TT>MLton-discuss@sourcelight.com</TT></a>.
+    To join the </tt>MLton-discuss</tt> mailing list, send mail to
+    <a href =
+      "mailto:majordomo@sourcelight.com"><TT>majordomo@sourcelight.com</TT></A>
+    with a message body (not subject) of <TT>subscribe MLton-discuss</TT>.
+
+    <hr>
+    <!-- hhmts start -->
+Last modified: Tue Jul 17 15:49:15 PDT 2001
+<!-- hhmts end -->
+  </body>
+</html>

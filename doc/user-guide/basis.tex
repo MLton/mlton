@@ -1,0 +1,121 @@
+\sec{Basis library}{basis-library}
+
+This section describes the portion that {\mlton} implements of the Standard ML
+Basis Library specified at
+\link{http://cm.bell-labs.com/cm/cs/what/smlnj/doc/basis/index.html}.
+
+\subsection{Top level values}
+
+The only top level value that is {\em not} implemented is:
+\begin{verbatim}
+val use: string -> unit
+\end{verbatim}
+{\mlton} does not implement {\tt use} because it conflicts with whole
+program compilation, since {\tt use} allows new code to be loaded
+dynamically.
+
+\subsection{Modules}
+The following table lists for each module what functions are unimplemented and
+which of the implemented functions are known to deviate from the basis library
+specification.  If a module does not appear, it is completely unimplemented.
+\\
+\newcommand{\module}[3]{{\tt #1:} & {\tt #2} & #3\\}
+\newcommand{\extra}[1]{&& #1\\}
+\newcommand{\fullmodule}[2]{\module{#1}{#2}{Fully implemented}}
+
+\begin{longtable}{lll}
+\fullmodule{Array}{ARRAY}
+\fullmodule{Array2}{ARRAY2}
+\fullmodule{Bool}{BOOL}
+\fullmodule{BoolArray}{MONO\_ARRAY}
+\fullmodule{BoolArray2}{MONO\_ARRAY2}
+\fullmodule{BoolVector}{MONO\_VECTOR}
+\fullmodule{Byte}{BYTE}
+\fullmodule{Char}{CHAR}
+\fullmodule{CharArray}{MONO\_ARRAY}
+\fullmodule{CharArray2}{MONO\_ARRAY2}
+\fullmodule{CharVector}{MONO\_VECTOR}
+\fullmodule{CommandLine}{COMMAND\_LINE}
+\fullmodule{Date}{DATE}
+\fullmodule{General}{GENERAL}
+\fullmodule{IEEEReal}{IEEE\_REAL}
+\fullmodule{IO}{IO}
+\fullmodule{Int}{INTEGER}
+\fullmodule{Int32}{INTEGER}
+\fullmodule{IntArray}{MONO\_ARRAY}
+\fullmodule{IntArray2}{MONO\_ARRAY2}
+\module{IntInf}{INT\_INF}
+       {Missing: {\tt log2}, {\tt orb}, {\tt xorb}, {\tt andb},
+         {\tt notb}, {\tt <<}, {\tt ~>>}}
+\fullmodule{IntVector}{MONO\_VECTOR}
+\fullmodule{LargeInt}{INTEGER}
+\module{LargeReal}{REAL}{Same as {\tt Real}}
+\fullmodule{LargeWord}{WORD}
+\fullmodule{ListPair}{LIST\_PAIR}
+\fullmodule{List}{LIST}
+\fullmodule{Math}{MATH}
+\fullmodule{OS.FileSys}{OS\_FILE\_SYS}
+\extra{Use of {\tt OS.FileSys.tmpName} causes a link-time warning.}
+\extra{You can use {\tt MLton.TextIO.mkstemp} instead.}
+\module{OS.IO}
+       {OS\_IO}
+       {Missing: {\tt type poll\_desc},
+                 {\tt type poll\_info},
+                 {\tt exception Poll},}
+\extra{
+  {\tt infoToPollDesc},
+  {\tt isIn},
+  {\tt isOut},
+  {\tt isPri},
+  {\tt pollDesc},
+  {\tt pollIn},}
+\extra{
+  {\tt pollOut},
+  {\tt pollPri},
+  {\tt pollToIODesc},
+  {\tt poll}.}
+\module{OS.Path}{OS\_PATH}
+       {Missing: {\tt exception InvalidArc}, {\tt toUnixPath},
+        {\tt fromUnixPath}.}
+\fullmodule{OS.Process}{OS\_PROCESS}
+\fullmodule{Option}{OPTION}
+\fullmodule{Pack32Big}{PACK\_WORD}
+\fullmodule{Pack32Little}{PACK\_WORD}
+\fullmodule{PackReal64Little}{PACK\_REAL}
+\fullmodule{PackRealLittle}{PACK\_REAL}
+\fullmodule{Position}{INTEGER}
+\fullmodule{Posix}{POSIX}
+\module{Real}{REAL}
+       {Missing: {\tt toLargeInt},
+                 {\tt fromLargeInt},
+                 {\tt nextAfter},}
+\extra{{\tt toDecimal}, {\tt fromDecimal}.}
+\extra{Do not match spec: {\tt scan}, {\tt fmt}, {\tt toString}, {\tt
+        fromString}.}
+\fullmodule{RealArray}{MONO\_ARRAY}
+\fullmodule{RealArray2}{MONO\_ARRAY2}
+\fullmodule{RealVector}{MONO\_VECTOR}
+\fullmodule{SML90}{SML90}
+\fullmodule{StringCvt}{STRING\_CVT}
+\fullmodule{String}{STRING}
+\fullmodule{Substring}{SUBSTRING}
+\fullmodule{SysWord}{WORD}
+\module{TextIO}{TEXT\_IO}
+       {Missing:
+ {\tt getPosIn},
+ {\tt getPosOut},
+ {\tt openString},
+ {\tt setPosIn},}
+\extra{
+ {\tt setPosOut}.}
+\fullmodule{Timer}{TIMER}
+\fullmodule{Time}{TIME}
+\fullmodule{Unix}{UNIX}
+\fullmodule{Vector}{VECTOR}
+\fullmodule{Word}{WORD}
+\fullmodule{Word8}{WORD}
+\fullmodule{Word8Array}{MONO\_ARRAY}
+\fullmodule{Word8Array2}{MONO\_ARRAY2}
+\fullmodule{Word8Vector}{MONO\_VECTOR}
+\fullmodule{Word32}{WORD}
+\end{longtable}

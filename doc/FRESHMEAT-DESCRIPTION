@@ -1,0 +1,13 @@
+MLton is a whole-program optimizing compiler for
+Standard ML that runs on X86 machines under
+Linux.  MLton generates standalone executables
+with good runtime performance, is SML 97
+compliant, and has a mostly complete basis
+library.  MLton has support for profiling and a
+fast C FFI.  MLton has additional libraries for
+continuations, interval timers, random numbers,
+signal handlers, sockets, system logging,
+threads, and heap save and restore.  It also has
+a fast implementation of IntInf based on the GNU
+multiprecision library.
+
