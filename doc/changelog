@@ -4,6 +4,8 @@ Here are the changes since version 20030711.
   - Fixed packaging for Cygwin and Sparc to include libgmp.a.
   - Eliminated bootstrap target.  The Makefile automatically
     determines whether to bootstrap or not.
+  - Fixed XML type checker bug that could cause error: empty tyvars in
+    PolyVal dec.
 
 * 2003-07-12
   - Turned off FORCE_GENERATIONAL in gc.  It had been set, which

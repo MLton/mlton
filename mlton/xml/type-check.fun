@@ -275,12 +275,9 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 	     | PolyVal {tyvars, var, ty, exp} =>
 		  (bindTyvars tyvars
 		   ; checkType ty
-		   ; if Vector.isEmpty tyvars
-			then Error.bug "empty tyvars in PolyVal dec"
-		     else ()
-			; check (ty, checkExp exp)
-			; unbindTyvars tyvars
-			; setVar (var, {tyvars = tyvars, ty = ty}))
+		   ; check (ty, checkExp exp)
+		   ; unbindTyvars tyvars
+		   ; setVar (var, {tyvars = tyvars, ty = ty}))
 	     | Fun {tyvars, decs} =>
 		  (bindTyvars tyvars
 		   ; (Vector.foreach
