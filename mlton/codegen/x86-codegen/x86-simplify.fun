@@ -2025,15 +2025,20 @@ struct
       end
 
       local
-	val isInstructionAL
+	val isInstructionAL_setZF
 	  = fn Assembly.Instruction (Instruction.BinAL {...})
 	     => true
-	     | Assembly.Instruction (Instruction.UnAL {...})
-		
-	     => true
-	     | Assembly.Instruction (Instruction.SRAL {...})
-		
-	     => true
+	     | Assembly.Instruction (Instruction.UnAL {oper, ...})
+	     => (case oper
+		   of Instruction.NOT => false
+		    | _ => true)
+	     | Assembly.Instruction (Instruction.SRAL {oper, ...})
+	     => (case oper
+		   of Instruction.ROL => false
+		    | Instruction.RCL => false
+		    | Instruction.ROR => false
+		    | Instruction.RCR => false
+		    | _ => true)
 	     | _ => false
 
 	val isInstructionTEST_eqSrcs
@@ -2050,7 +2055,7 @@ struct
 
 	val template 
 	  = {start = EmptyOrNonEmpty,
-	     statements = [One isInstructionAL,
+	     statements = [One isInstructionAL_setZF,
 			   All isComment,
 			   One isInstructionTEST_eqSrcs,
 			   All isComment],
@@ -2660,16 +2665,42 @@ struct
 		end
 	    val _ = List.foreach (funcs, loop)
 
+	    fun check oper
+	      = case (Operand.deImmediate oper, Operand.deLabel oper)
+		  of (SOME immediate, _) 
+		   => (case Immediate.deLabel immediate
+			 of SOME label => ! (#reach (get label))
+			  | NONE => true)
+		   | (_, SOME label) => ! (#reach (get label))
+		   | _ => true
+
 	    val changed = ref false
 	    val blocks
 	      = List.keepAllMap
 	        (labels,
 		 fn label 
 		  => let
-		       val {block as Block.T {transfer, ...}, reach} = get label
+		       val {block as Block.T {entry, 
+					      profileInfo, 
+					      statements, 
+					      transfer}, 
+			    reach} = get label
 		     in
 		       if !reach
-			 then SOME block
+			 then SOME 
+			      (Block.T 
+			       {entry = entry,
+				profileInfo = profileInfo,
+				statements
+				= List.keepAll
+				  (statements,
+				   fn Assembly.Instruction i 
+				    => (case #srcs (Instruction.srcs_dsts i)
+					  of NONE => true
+					   | SOME srcs
+					   => List.forall(srcs, check))
+				    | _ => true),
+				transfer = transfer})
 			 else (changed := true ;
 			       List.foreach 
 			       (Transfer.nearTargets transfer,
