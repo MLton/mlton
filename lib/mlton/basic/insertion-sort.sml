@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under the GNU General Public License (GPL).
@@ -38,10 +38,11 @@ fun sort (a: 'a array, op <= : 'a * 'a -> bool): unit =
 			 let
 			    val j' = j - 1
 			    val z = x j'
-			 in if t <= z
-			       then (update (a, j, z)
-				     ; sift j')
-			    else j
+			 in
+			    if z <= t
+			       then j
+			    else (update (a, j, z)
+				  ; sift j')
 			 end
 		   else j)
 	     val _ = update (a, sift i, t)
