@@ -60,6 +60,7 @@ structure Date
 structure Dir
 structure DirectedGraph
 structure DisjointSet
+structure DotColor
 structure DynamicWind
 structure Engine
 structure Error
