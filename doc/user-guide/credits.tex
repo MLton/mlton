@@ -21,8 +21,10 @@ the {\tt .spec} files for the RPMs,
 and lots of little hacks to speed stuff up.
 
 \item
-Matthew Fluet implemented the {\tt x86} native code generator, the contification
-analysis, and ported {\tt mlprof} to work with the new code generator.
+Matthew Fluet implemented the {\tt x86} native code generator,
+ported {\tt mlprof} to work with the native code generator,
+and implemented several CPS optimizations, including contification, common-block
+elimination, and unused argument removal.
 
 \item
 Suresh Jagannathan implemented alternate inlining and uncurrying optimizations.
