@@ -44,7 +44,7 @@ in
 	       open Process
 
 	       val exece = stub ("exece", exece)
-	       val execp = stub ("execp", exece)
+	       val execp = stub ("execp", execp)
 	       val exit = stub ("exit", exit)
 	       val fork = stub ("fork", fork)
 	       val kill = stub ("kill", kill)
