@@ -35,7 +35,7 @@ signature IMPERATIVE_IO_EXTRA =
 
       val equalsIn: instream * instream -> bool
       val equalsOut: outstream * outstream -> bool
-      val inputLine: instream -> vector
+      val inputLine: instream -> vector option
       val openVector: vector -> instream
       val outputSlice: outstream * (vector * int * int option) -> unit
       val scanStream: ((elem, StreamIO.instream) StringCvt.reader -> 

@@ -2611,9 +2611,9 @@ functor DLXSimulatorFun (structure RF : REGISTERFILE;
        * instructions in a file into a list.
        *)
       fun ReadFileToInstr file
-	  = if (TextIO.endOfStream file)
-	      then []
-	      else (TextIO.inputLine file) :: (ReadFileToInstr file);
+	 = (case TextIO.inputLine file of
+	       NONE => []
+	     | SOME l => l :: (ReadFileToInstr file));
 
 
       (*

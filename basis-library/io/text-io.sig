@@ -30,7 +30,7 @@ signature TEXT_IO =
       val input1: instream -> elem option 
       val input: instream -> vector 
       val inputAll: instream -> vector 
-      val inputLine: instream -> string
+      val inputLine: instream -> string option
       val inputN: instream * int -> vector 
       val lookahead: instream -> elem option
       val mkInstream: StreamIO.instream -> instream

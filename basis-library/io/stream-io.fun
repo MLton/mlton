@@ -488,7 +488,7 @@ functor StreamIOExtra
 	       SOME i => let
 			   val inp' = V.extract(inp, pos, SOME (i - pos))
 			 in
-			   (inp', updatePos (is, i))
+			   SOME (inp', updatePos (is, i))
 			 end
 	     | NONE => if pos < V.length inp
 			 then let
@@ -500,9 +500,9 @@ functor StreamIOExtra
 				fun doit next = 
 				  case next of
 				    Link {buf} => first (updateBufBeg (is, buf))
-				  | Eos {buf} => (empty, updateBufBeg (is, buf))
+				  | Eos {buf} => NONE
 				  | End => doit (extendB "inputLine" is)
-				  | _ => (empty, is)
+				  | _ => NONE
 			      in
 				doit (!next)
 			      end)
@@ -532,7 +532,7 @@ functor StreamIOExtra
 			   else inps
 	      val inp = V.concat (List.rev inps)
 	    in
-	      (inp, is)
+	       SOME (inp, is)
 	    end
 	in
 	  first is

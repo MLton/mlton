@@ -2360,8 +2360,8 @@ fun from_textfile filename =
     open TextIO
     val fh = openIn filename
     fun res () =
-      case inputLine fh of "" => (closeIn fh; NIL)
-      | s => CONS (s, lazify_thunk res)
+      case inputLine fh of NONE => (closeIn fh; NIL)
+      | SOME s => CONS (s, lazify_thunk res)
   in
     res ()
   end;

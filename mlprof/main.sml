@@ -121,7 +121,10 @@ structure AFile =
 	    (afile, ["@MLton", "show-prof"],
 	     fn ins =>
 	     let
-		fun line () = In.inputLine ins
+		fun line () =
+		   case In.inputLine ins of
+		      NONE => Error.bug "unexpected end of show-prof data"
+		    | SOME l => l
 		val magic = valOf (Word.fromString (line ()))
 		fun vector (f: string -> 'a): 'a vector =
 		   Vector.tabulate (valOf (Int.fromString (line ())),
@@ -319,21 +322,24 @@ structure ProfFile =
 	 File.withIn
 	 (mlmonfile, fn ins =>
 	  let
+	     fun line () =
+		case In.inputLine ins of
+		   NONE => Error.bug "unexpected end of mlmon file"
+		 | SOME l => String.dropSuffix (line (), 1)
 	     val _ =
-		if "MLton prof\n" = In.inputLine ins
+		if "MLton prof" = line ()
 		   then ()
 		else Error.bug "bad header"
 	     val kind =
-		case In.inputLine ins of
-		   "alloc\n" => Kind.Alloc
-		 | "time\n" => Kind.Time
+		case line () of
+		   "alloc" => Kind.Alloc
+		 | "time" => Kind.Time
 		 | _ => Error.bug "invalid profile kind"
 	     val style =
-		case In.inputLine ins of
-		   "current\n" => Style.Current
-		 | "stack\n" => Style.Stack
+		case line () of
+		   "current" => Style.Current
+		 | "stack" => Style.Stack
 		 | _ => Error.bug "invalid profile style"
-	     fun line () = String.dropSuffix (In.inputLine ins, 1)
 	     val magic =
 		case Word.fromString (line ()) of
 		   NONE => Error.bug "invalid magic"

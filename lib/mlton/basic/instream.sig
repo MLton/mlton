@@ -20,7 +20,7 @@ signature INSTREAM =
       val input: t -> string
       val inputAll: t -> string
       val inputChar: t -> char option
-      val inputLine: t -> string
+      val inputLine: t -> string option
       val inputN: t * int -> string
       val inputNothing: t -> unit
       (* inputTo(i, p) inputs up to but not including the first char

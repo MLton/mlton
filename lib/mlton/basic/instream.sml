@@ -25,7 +25,7 @@ fun outputAll (ins: t, out: Out.t): unit =
    end
 
 val inputLine =
-   Trace.trace ("In.inputLine", layout, String.layout) inputLine
+   Trace.trace ("In.inputLine", layout, Option.layout String.layout) inputLine
 
 fun 'a withClose (ins: t, f: t -> 'a): 'a =
    DynamicWind.wind (fn () => f ins, fn () => close ins)

@@ -50,7 +50,7 @@ signature STREAM_IO_EXTRA =
 			 buffer_mode: IO.buffer_mode} -> outstream
 
       val openVector: vector -> instream
-      val inputLine: instream -> (vector * instream)
+      val inputLine: instream -> (vector * instream) option
       val outputSlice: outstream * (vector * int * int option) -> unit
    end
 

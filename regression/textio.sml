@@ -291,8 +291,8 @@ val test12a =
     tst' "test12a" (fn _ => 
 	   let val is = openIn "empty.dat"
 	   in 
-	       (inputLine is = ""
-		andalso inputLine is = "")
+	       (inputLine is = NONE
+		andalso inputLine is = NONE)
 	       before closeIn is
 	   end);
 
@@ -300,8 +300,8 @@ val test12b =
     tst' "test12b" (fn _ => 
 	   let val is = openIn "small1.dat"
 	   in 
-	       (inputLine is = "+\n"
-		andalso inputLine is = "")
+	       (inputLine is = SOME "+\n"
+		andalso inputLine is = NONE)
 	       before closeIn is
 	   end);
 
@@ -309,10 +309,10 @@ val test12c =
     tst' "test12c" (fn _ => 
 	   let val is = openIn "text.dat"
 	   in 
-	       (inputLine is = "Line 1\n"
-	       andalso inputLine is = "Line 2\n"
-	       andalso inputLine is = "Line 3\n"
-	       andalso inputLine is = "")
+	       (inputLine is = SOME "Line 1\n"
+	       andalso inputLine is = SOME "Line 2\n"
+	       andalso inputLine is = SOME "Line 3\n"
+	       andalso inputLine is = NONE)
 	       before closeIn is
 	   end);
 
@@ -320,8 +320,8 @@ val test12d =
     tst' "test12d" (fn _ => 
 	   let val is = openIn "medium.dat"
 	   in 
-	       (inputLine is = longstring ^ "\n"
-	       andalso inputLine is = "")
+	       (inputLine is = SOME (longstring ^ "\n")
+	       andalso inputLine is = NONE)
 	       before closeIn is
 	   end);
 

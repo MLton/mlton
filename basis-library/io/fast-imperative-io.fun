@@ -91,9 +91,9 @@ functor FastImperativeIOExtra
       fun inputLine (In is) =
 	case !is of
 	  Buffer b => BI.inputLine b
-	| Stream s => let val (v, s') = SIO.inputLine s
-		      in is := Stream s'; v
-		      end
+	| Stream s =>
+	     Option.map (fn (v, s') => (is := Stream s'; v)) (SIO.inputLine s)
+
       fun canInput (In is, n) = 
 	case !is of
 	  Buffer b => BI.canInput (b, n)

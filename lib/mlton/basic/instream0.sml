@@ -24,8 +24,8 @@ fun foldChars (ins, a, f) =
    let
       fun loop a =
 	 case inputLine ins of
-	    "" => a
-	  | l => loop (String.fold (l, a, f))
+	    NONE => a
+	  | SOME l => loop (String.fold (l, a, f))
    in
       loop a
    end
@@ -34,8 +34,8 @@ fun foldLines (ins, ac, f) =
    let
       fun loop ac =
 	 case inputLine ins of
-	    "" => ac
-	  | l => loop (f (l, ac))
+	    NONE => ac
+	  | SOME l => loop (f (l, ac))
    in loop ac
    end
 

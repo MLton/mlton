@@ -41,7 +41,11 @@ val open_in = TextIO.openIn
 val open_out = TextIO.openOut
 val close_in = TextIO.closeIn
 val close_out = TextIO.closeOut
-val input_line = TextIO.inputLine
+val input_line =
+   fn ins =>
+   case TextIO.inputLine ins of
+      NONE => ""
+    | SOME s => s
 type instream = TextIO.instream
 type outstream = TextIO.outstream
 fun outputc f x = TextIO.output(f, x)

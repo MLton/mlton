@@ -34,7 +34,7 @@ signature BUFFER_I_EXTRA =
 
       val openVector: vector -> inbuffer
 
-      val inputLine: inbuffer -> vector
+      val inputLine: inbuffer -> vector option
    end
 
 signature BUFFER_I_EXTRA_FILE =

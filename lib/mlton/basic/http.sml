@@ -394,12 +394,14 @@ structure Header =
       fun input (ins: In.t): t list Result.t =
 	 let
 	    fun loop (headers: string list): string list =
-	       let val line = In.inputLine ins
-	       in if line = "\r\n" orelse line = ""
-		     then headers
-		  else loop (line :: headers)
-	       end
-	 in fromString (concat (rev (loop [])))
+	       case In.inputLine ins of
+		  NONE => headers
+		| SOME l => 
+		     if l = "\r\n"
+			then headers
+		     else loop (l :: headers)
+	 in
+	    fromString (concat (rev (loop [])))
 	 end
    end
 
@@ -466,17 +468,18 @@ structure Request =
       val requestIsValid = Option.isSome o requestLine
 	 
       fun input (ins: In.t): t Result.t =
-	 let val line = In.inputLine ins
-	 in case requestLine line of
-	    NONE => Result.No line
-	  | SOME {method, uri, version} =>
-	       Result.map
-	       (Header.input ins, fn hs =>
-		T {method = method,
-		  uri = uri,
-		  version = version,
-		  headers = hs})
-	 end
+	 case In.inputLine ins of
+	    NONE => Result.No ""
+	  | SOME l =>
+	       case requestLine l of
+		  NONE => Result.No l
+		| SOME {method, uri, version} =>
+		     Result.map
+		     (Header.input ins, fn hs =>
+		      T {method = method,
+			 uri = uri,
+			 version = version,
+			 headers = hs})
 
       val input =
 	 Trace.trace ("Request.input", In.layout, Result.layout layout) input
@@ -753,22 +756,24 @@ structure Response =
       fun output (r, out) = Out.output (out, toString r)
 	 
       fun input (ins: In.t): t Result.t =
-	 let
-	    val line = In.inputLine ins
-	    open Regexp
-	 in
-	    case Compiled.matchAll (responseLine (), line) of
-	       NONE => Result.No line
-	     | SOME m => 
-		  let val {lookup, ...} = Match.stringFuns m
-		     val version = Version.extract m
-		     val status = Status.fromString (lookup status')
-		  in Result.map (Header.input ins, fn hs =>
-				 T {version = version,
-				    status = status,
-				    headers = hs})
-		  end
-	 end
+	 case In.inputLine ins of
+	    NONE => Result.No ""
+	  | SOME l => 
+	       let 
+		  open Regexp
+	       in
+		  case Compiled.matchAll (responseLine (), l) of
+		     NONE => Result.No l
+		   | SOME m => 
+			let val {lookup, ...} = Match.stringFuns m
+			   val version = Version.extract m
+			   val status = Status.fromString (lookup status')
+			in Result.map (Header.input ins, fn hs =>
+				       T {version = version,
+					  status = status,
+					  headers = hs})
+			end
+	       end
    end
 
 end

@@ -22813,11 +22813,10 @@ structure Sml :> SML =
 		let
 		    val _      = TextIO.output(TextIO.stdOut, "SML> ")
 		    val _      = TextIO.flushOut TextIO.stdOut
-		    val source = TextIO.inputLine ins
 		in
-		    if source = "" then
-			()
-		    else
+		   case TextIO.inputLine ins of
+		      NONE => ()
+		    | SOME source =>
 			loop(process arg source)
 			handle Error.Error _ =>	(* Syntax error *)
 			    loop arg

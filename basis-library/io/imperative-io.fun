@@ -64,9 +64,9 @@ functor ImperativeIOExtra
       fun inputAll (In is) = let val (v, is') = SIO.inputAll (!is)
 			     in is := is'; v
 			     end
-      fun inputLine (In is) = let val (v, is') = SIO.inputLine (!is)
-			      in is := is'; v
-			      end
+      fun inputLine (In is) =
+	 Option.map (fn (v, is') => (is := is'; v)) (SIO.inputLine (!is))
+
       fun canInput (In is, n) = SIO.canInput (!is, n)
       fun lookahead (In is) = Option.map (fn (c, is') => c) (SIO.input1 (!is))
       fun closeIn (In is) = SIO.closeIn (!is)

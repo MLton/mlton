@@ -492,8 +492,8 @@ functor DataIO (S : SPACE) : DATA_IO =
 	  val strm = TextIO.openIn fname
 	  val buf = ref(SS.full "")
 	  fun getLn () = (case (TextIO.inputLine strm)
-		 of "" => raise Fail "inputData: EOF"
-		  | s => buf := SS.full s
+		 of NONE => raise Fail "inputData: EOF"
+		  | SOME s => buf := SS.full s
 		(* end case *))
 	  fun skipWS () = let
 		val buf' = SS.dropl Char.isSpace (!buf)
@@ -747,9 +747,9 @@ structure GetParam : sig
 		    else SOME(SS.string(SS.triml (size name+1) suffix))
 		end
 	  fun get default = (case (TextIO.inputLine TextIO.stdIn)
-		 of "" => raise EOF
-		  | "\n" => default
-		  | s => substring(s, 0, size s - 1)
+		 of NONE => raise EOF
+		  | SOME "\n" => default
+		  | SOME s => substring(s, 0, size s - 1)
 		(* end case *))
 	  in
 	    if (null (! defaults))

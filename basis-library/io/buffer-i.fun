@@ -307,7 +307,7 @@ functor BufferIExtra
 			   else inps
 	      val inp = V.concat (List.rev inps)
 	    in
-	      inp
+	      SOME inp
 	    end
 	  fun loop inps =
 	    if updateB "inputLine" ib
@@ -335,7 +335,9 @@ functor BufferIExtra
 		   in
 		     loop' f
 		   end
-	      else finish (inps, List.length inps > 0)
+	      else (case inps of
+		       [] => NONE
+		     | _ => finish (inps, true))
 	in
 	  loop []
 	end

@@ -1,5 +1,5 @@
 (* -*- mode: sml -*-
- * $Id: echo.sml,v 1.10 2003/02/09 17:22:20 sweeks Exp $
+ * $Id: echo.sml,v 1.11 2003/09/24 17:45:27 sweeks Exp $
  * http://www.bagley.org/~doug/shootout/
  * from Tom 7
  *)
@@ -18,17 +18,18 @@ fun server () =
     let val (_, _, ins, outs) = MLton.Socket.accept listener
         fun s b = 
             case TextIO.inputLine ins of
-                "" => let in
+                NONE => let in
                           Posix.Process.wait ();
                           print (concat ["server processed ",
 					 Int.toString b,
 					 " bytes\n"])
                       end
-              | i =>  let in 
-                          TextIO.output(outs, i);
-			  TextIO.flushOut outs;
-                          s (b + 19)
-                      end
+              | SOME i =>
+		   let in 
+		      TextIO.output(outs, i);
+		      TextIO.flushOut outs;
+		      s (b + 19)
+		   end
     in s 0
     end
 
@@ -42,7 +43,7 @@ fun client () =
           | c n = let in
                       TextIO.output(outs, data);
 		      TextIO.flushOut outs;
-                      TextIO.inputLine ins = data
+                      TextIO.inputLine ins = SOME data
                           orelse raise Error "Didn't receive the same data";
                       c (n - 1)
                   end
