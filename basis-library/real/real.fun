@@ -39,7 +39,6 @@ functor Real (R: PRE_REAL): REAL =
       end
 
       val zero = fromLarge TO_NEAREST 0.0
-      val negZero = ~ zero
       val one = fromLarge TO_NEAREST 1.0
       val negOne = ~ one
       val two = fromLarge TO_NEAREST 2.0
@@ -743,19 +742,22 @@ functor Real (R: PRE_REAL): REAL =
 			    else pow (x, y))
 	    val pow = safePow
 
-	    (* FreeBSD and NetBSD don't get the sign of tanh ~0.0 right. *)
-	    val tanh =
-	       if let
-		     open MLton.Platform.OS
-		  in
-		     case host of
-			FreeBSD => true
-		      | NetBSD => true
-		      | _ => false
-		  end
-		  then fn x => if x == zero 
-				  then if signBit x then negZero else zero
-			       else tanh x
-	       else tanh
+	    fun cosh x =
+	       case class x of
+		  INF => x
+		| ZERO => one
+		| _ => R.Math.cosh x
+		     
+	    fun sinh x =
+	       case class x of
+		  INF => x
+		| ZERO => x
+		| _ => R.Math.sinh x
+		     
+	    fun tanh x =
+	       case class x of
+		  INF => if x > zero then one else negOne
+		| ZERO => x
+		| _ => R.Math.tanh x
 	 end
    end
