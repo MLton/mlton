@@ -1468,8 +1468,9 @@ struct
 	    val register
 	      = case registers
 		  of [] 
-		   => raise Spill
 (*
+		   => raise Spill
+*)
 		   => let
 			fun listToString(ss: string list): string
 			  = "[" ^ (concat(List.separate(ss, ", "))) ^ "]"
@@ -1497,7 +1498,6 @@ struct
 			print "Raising Spill in chooseRegister\n";
 			raise Spill
 		      end
-*)
 		   | register::_ => register
 			
 	    val values = valuesRegister {register = register,
@@ -1638,7 +1638,7 @@ struct
 	       saves = saves,
 	       registerAllocation = registerAllocation,
 	       spiller = spillRegisters,
-	       msg = "freeRegisters",
+	       msg = "freeRegister",
 	       reissue = fn {assembly = assembly_spill,
 			     registerAllocation}
 	                  => let
@@ -1658,7 +1658,7 @@ struct
 				registerAllocation = registerAllocation}
 			     end}
 
-      and freeFltRegister {info as {futures as {pre = future, ...},...}: Liveness.t,
+      and freeFltRegister {info: Liveness.t,
 			   size: Size.t,
 			   supports: Operand.t list,
 			   saves: Operand.t list,
@@ -1667,6 +1667,7 @@ struct
 			   fltrename: FltRegister.t -> FltRegister.t,
 			   registerAllocation: t}
 	= let
+	    val info as {futures as {pre = future, ...},...} = info
 	    val values
 	      = fltvalueFilter {filter = fn _ => true,
 				registerAllocation = registerAllocation}
@@ -7285,24 +7286,35 @@ struct
 			      info = info,
 			      registerAllocation = registerAllocation}
 
+		  val force = Register.withLowPart (size, Size.BYTE)
+
 		  val {operand = final_dst,
 		       assembly = assembly_dst,
 		       registerAllocation = registerAllocation}
-		    = RA.allocateOperand {operand = dst,
-					  options = {register = true,
-						     immediate = false,
-						     label = false,
-						     address = false},
-					  info = info,
-					  size = size,
-					  move = false,
-					  supports = [],
-					  saves = [],
-					  force 
-					  = Register.withLowPart (size, 
-								  Size.BYTE),
-					  registerAllocation 
-					  = registerAllocation}
+		    = RA.allocateOperand 
+		      {operand = dst,
+		       options = {register = true,
+				  immediate = false,
+				  label = false,
+				  address = false},
+		       info = info,
+		       size = size,
+		       move = false,
+		       supports = [],
+		       saves = [],
+		       force = Register.withLowPart (size, Size.BYTE),
+		       registerAllocation = registerAllocation}
+
+		  val temp_dst
+		    = case final_dst
+			of Operand.Register r
+			 => let
+			      val register 
+				= Register.lowPartOf (r, Size.BYTE)
+			    in
+			      Operand.register register
+			    end
+			 | _ => Error.bug "allocateRegisters: SETcc, temp_reg"
 
 		  val {uses = final_uses,
 		       defs = final_defs,  
@@ -7321,13 +7333,6 @@ struct
 			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
-
-		  val temp_reg
-		    = case final_dst
-			of Operand.Register r 
-			 => Register.lowPartOf (r, Size.BYTE)
-			 | _ 
-			 => Error.bug "allocateRegisters: SETcc, temp_reg"
 		in
 		  {assembly 
 		   = AppendList.appends 
@@ -7336,15 +7341,21 @@ struct
 		      AppendList.single
 		      (Assembly.instruction_setcc
 		       {condition = condition,
-			dst = Operand.register temp_reg,
+			dst = temp_dst,
 			size = Size.BYTE}),
 		      if size = Size.BYTE
-			then AppendList.empty
+			then if Operand.eq (final_dst, temp_dst)
+			       then AppendList.empty
+			       else AppendList.single
+				    (Assembly.instruction_mov
+				     {dst = final_dst,
+				      src = temp_dst,
+				      size = Size.BYTE})
 			else AppendList.single
 			     (Assembly.instruction_movx
 			      {oper = Instruction.MOVZX,
 			       dst = final_dst,
-			       src = Operand.register temp_reg,
+			       src = temp_dst,
 			       dstsize = size,
 			       srcsize = Size.BYTE}),
 		      assembly_post],

@@ -4841,9 +4841,11 @@ struct
 			else (print ("pre: " ^ msg);
 			      x86Liveness.LivenessBlock.printBlock block;
 			      print (String.make(60, #"*"));
+			      print ("\n");
 			      print ("post: " ^ msg);
 			      x86Liveness.LivenessBlock.printBlock block';
 			      print (String.make(60, #"*"));
+			      print ("\n");
 			      false))
 
 	(*********************************************************************)

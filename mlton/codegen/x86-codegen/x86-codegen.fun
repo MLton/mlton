@@ -47,21 +47,13 @@ struct
 		  structure x86JumpInfo = x86JumpInfo
 		  structure x86EntryTransfer = x86EntryTransfer)
 
-  structure x86GenerateTransfersOld
-    = x86GenerateTransfersOld(structure x86 = x86
-			      structure x86MLton = x86MLton
-			      structure x86Liveness = x86Liveness
-			      structure x86JumpInfo = x86JumpInfo
-			      structure x86LoopInfo = x86LoopInfo
-			      structure x86EntryTransfer = x86EntryTransfer)
-
-  structure x86GenerateTransfersNew
-    = x86GenerateTransfersNew(structure x86 = x86
-			      structure x86MLton = x86MLton
-			      structure x86Liveness = x86Liveness
-			      structure x86JumpInfo = x86JumpInfo
-			      structure x86LoopInfo = x86LoopInfo
-			      structure x86EntryTransfer = x86EntryTransfer)
+  structure x86GenerateTransfers
+    = x86GenerateTransfers(structure x86 = x86
+			   structure x86MLton = x86MLton
+			   structure x86Liveness = x86Liveness
+			   structure x86JumpInfo = x86JumpInfo
+			   structure x86LoopInfo = x86LoopInfo
+			   structure x86EntryTransfer = x86EntryTransfer)
 
   structure x86AllocateRegisters
     = x86AllocateRegisters(structure x86 = x86
@@ -420,24 +412,12 @@ struct
 				    of Fail s => s
 				     | _ => "?"))
 
-(*
-	      val x86.Chunk.T {blocks, ...} = chunk
-	      val _ = List.foreach
-		      (blocks, x86.Block.printBlock)
-*)
-
 	      val unallocated_assembly : x86.Assembly.t list list
-		= (if !Control.Native.newGenTransfer
-		     then x86GenerateTransfersNew.generateTransfers
-		          {chunk = chunk,
-			   optimize = !Control.Native.optimize,
-			   liveInfo = liveInfo,
-			   jumpInfo = jumpInfo}
-		     else x86GenerateTransfersOld.generateTransfers
-		          {chunk = chunk,
-			   optimize = !Control.Native.optimize,
-			   liveInfo = liveInfo,
-			   jumpInfo = jumpInfo})
+		= (x86GenerateTransfers.generateTransfers
+		   {chunk = chunk,
+		    optimize = !Control.Native.optimize,
+		    liveInfo = liveInfo,
+		    jumpInfo = jumpInfo})
 		  handle exn
 		   => (Error.bug ("x86GenerateTransfers.generateTransfers::" ^
 				  (case exn
@@ -457,11 +437,23 @@ struct
 				    of Fail s => s
 				     | _ => "?"))
 
+	      val _ = x86Validate.validate 
+		      {assembly = allocated_assembly}
+		      handle exn
+		       => Error.bug ("x86Validate.validate::" ^ 
+				     (case exn
+					of Fail s => s
+					 | _ => "?"))
 	      val _ 
 		= Assert.assert
 		  ("x86CodeGen.output: invalid",
 		   fn () => x86Validate.validate 
-		            {assembly = allocated_assembly})
+		            {assembly = allocated_assembly}
+			    handle exn
+			     => Error.bug ("x86Validate.validate::" ^ 
+					   (case exn
+					      of Fail s => s
+					       | _ => "?")))
 
 	      val validated_assembly = allocated_assembly
 
@@ -509,8 +501,7 @@ struct
 	      loop chunks
 	      ; x86Translate.translateChunk_totals ()
               ; x86Simplify.simplify_totals ()
-              ; x86GenerateTransfersOld.generateTransfers_totals ()
-              ; x86GenerateTransfersNew.generateTransfers_totals ()
+              ; x86GenerateTransfers.generateTransfers_totals ()
 	      ; x86AllocateRegisters.allocateRegisters_totals ()
 	      ; x86Validate.validate_totals ()
 	    end

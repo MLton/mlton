@@ -765,7 +765,7 @@ struct
 	     => let
 		  val _ = if Size.class size = Size.INT
 			    then ()
-			    else Error.bug "validate: MOVX, srcsize"
+			    else Error.bug "validate: CX, srcsize"
 		in
 		  true
 		end
