@@ -4,6 +4,8 @@ Here are the changes since version 20030716.
   - Int64 is completely there.
 
 * 2003-09-05
+  - Added structures {LargeInt,LargeReal,LargeWord,Word}
+                     {Array,Array2,ArraySlice,Vector,VectorSlice}
   - Fixed bug in Real.toDecimal, which return class NORMAL for
     subnormals.
   - Fixed bug in Real.toLargeInt, which didn't return as precise an
