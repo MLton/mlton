@@ -124,8 +124,8 @@ structure MLton: MLTON =
 	    open IntInf
 
 	    datatype rep =
-	       Small of Word.word
-	     | Big of Word.word Vector.vector
+	       Big of Word.word Vector.vector
+	     | Small of Int.int
 
 	    val areSmall =
 	       fn _ => raise Fail "MLton.IntInf.areSmall unimplemented"

@@ -2,6 +2,12 @@ Here are the changes since version 20030312.
 
 At this point, the only missing basis library function is "use".
 
+* 2004-07-02
+  - Fixed bug with negative IntInf constants that could cause compile
+    time error message:
+    "x86Translate.translateChunk ... strange Offset: base: ..."
+  - Changed argument type of MLton.IntInf.Small from word to int.
+
 * 2003-06-25
   - Added {Int{8,16},Word8}{,Array,ArraySlice,Vector,VectorSlice,Array2}
     structures.

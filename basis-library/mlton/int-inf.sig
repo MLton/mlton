@@ -8,8 +8,8 @@ signature MLTON_INT_INF =
        val gcd: int * int -> int 
        val isSmall: int -> bool
        datatype rep =
- 	  Small of word
- 	| Big of word vector
+	  Big of word vector
+	| Small of Int.int
        val rep: int -> rep
        val size: int -> Int.int
    end

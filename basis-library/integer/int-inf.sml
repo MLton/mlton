@@ -18,8 +18,8 @@ structure IntInf: INT_INF_EXTRA =
       structure Word = Word32
 	 
       datatype rep =
-	 Small of Word.word
-       | Big of Word.word Vector.vector
+	 Big of Word.word Vector.vector
+       | Small of Int.int
 	 
       structure Prim = Primitive.IntInf
       type bigInt = Prim.int
@@ -151,10 +151,10 @@ structure IntInf: INT_INF_EXTRA =
 	 end
 
       fun rep x =
-	 if isSmall x then
-	    Small (stripTag x)
-	 else
-	    Big (Prim.toVector x)
+	 if isSmall x
+	    then Small (Word.toIntX (stripTag x))
+	 else Big (Prim.toVector x)
+	    
       (*
        * Convert a bigInt to a smallInt, raising overflow if it
        * is too big.
@@ -212,7 +212,7 @@ structure IntInf: INT_INF_EXTRA =
 		
       fun bigToInt64 (arg: bigInt): Int64.int =
 	 case rep arg of
-	    Small w => Int64.fromInt (Word.toIntX w)
+	    Small i => Int64.fromInt i
 	  | Big v => 
 	       if Vector.length v > 3
 		 then raise Overflow
@@ -908,7 +908,7 @@ structure IntInf: INT_INF_EXTRA =
 		  Big v =>
 		     Int.+ (Int.* (bitsPerLimb, Int.- (Vector.length v, 2)),
 			    Word.log2 (Vector.sub (v, Int.- (Vector.length v, 1))))
-		| Small w => Word.log2 w
+		| Small i => Word.log2 (Word.fromInt i)
       end
 
       (* 
