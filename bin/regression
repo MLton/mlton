@@ -74,18 +74,9 @@ do
 			fi
 		fi
 		if [ ! -r $f.nonterm -a $cross = 'no' ]; then
-			if [ -x $f.exe ]; then
-				./$f.exe >$tmp 2>&1
-				if [ -r $f.ok.cygwin ]; then
-					diff $f.ok.cygwin $tmp
-				elif [ -r $f.ok ]; then
-					diff $f.ok $tmp
-				fi
-			else
-				$f >$tmp 2>&1
-				if [ -r $f.ok ]; then
-					diff $f.ok $tmp
-				fi
+			$f >$tmp 2>&1
+			if [ -r $f.ok ]; then
+				diff $f.ok $tmp
 			fi
 		fi
 	;;
