@@ -345,36 +345,28 @@ fun elaboratePat (p: Apat.t, E: Env.t, amInRvb: bool)
 		      val {args, instance} = Scheme.instantiate s
 		      val args = args ()
 		      val p = loop p
-		      val res =
-			 case Type.deArrowOpt instance of
-			    NONE =>
-			       let
-				  val _ =
-				     error
-				     (seq [str "constant constructor applied to argument in pattern: ",
-					   Ast.Longcon.layout c],
-				      empty)
-			       in
-				  newType ()
-			       end
-			  | SOME (u1, u2) =>
-			       let
-				  val _ =
-				     unify
-				     (Cpat.ty p, u1, fn (l, l') =>
-				      (region,
-				       str "constructor and argument don't agree in pattern",
-				       align
-				       [seq [str "constructor expects: ", l],
-					seq [str "but got:             ", l']]))
-			       in
-				  u2
-			       end
+		      val argType = newType ()
+		      val resultType = newType ()
+		      val _ =
+			 unify
+			 (instance, Type.arrow (argType, resultType), fn _ =>
+			  (region,
+			   seq [str "constant constructor applied to argument in pattern: ",
+				Ast.Longcon.layout c],
+			   empty))
+		      val _ =
+			 unify
+			 (Cpat.ty p, argType, fn (l, l') =>
+			  (region,
+			   str "constructor applied to incorrect arguments in pattern",
+			   align
+			   [seq [str "expects: ", l],
+			    seq [str "but got: ", l']]))
 		   in
 		      Cpat.make (Cpat.Con {arg = SOME p,
 					   con = con,
 					   targs = args},
-				 res)
+				 resultType)
 		   end
 	      | Apat.Const c =>
 		   (case Aconst.node c of
@@ -1492,8 +1484,8 @@ fun elaborateDec (d, {env = E,
 			 (argType, Cexp.ty e2, fn (l1, l2) =>
 			  (region,
 			   str "function applied to incorrect arguments",
-			   align [seq [str "expects: ", l2],
-				  seq [str "but got: ", l1]]))
+			   align [seq [str "expects: ", l1],
+				  seq [str "but got: ", l2]]))
 		   in
 		      Cexp.make (Cexp.App (e1, e2), resultType)
 		   end
