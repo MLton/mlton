@@ -63,6 +63,7 @@ instantiate
 doInst ../mlton/control/control.sml
 sed "/^Version:/s;.*;Version: $version;" <mlton.spec >z
 sed "/^Release:/s;.*;Release: $release;" <z >$rpms/SPECS/mlton.spec
+rm -f z
 
 manvers=`date '+%B %d, %Y'`
 cd $src/man
@@ -97,7 +98,7 @@ if [ $home = 'yes' ]; then
 	find . -type d | grep CVS | xargs rm -rf
 	find . -type f | grep cvsignore | xargs rm -f
 	echo '  Building tgz'
-	tar.write -x Makefile -x .cvsignore | gzip >$root/mlton-home.tgz
+	tar.write -x Makefile -x .cvsignore . | gzip >$root/mlton-home.tgz
 	echo '  ftp'\''ing'
 	remote='hirame'
 	cd $root

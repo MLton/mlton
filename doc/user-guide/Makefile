@@ -34,7 +34,7 @@ main.ps: main.dvi
 
 .PHONY: clean
 clean:
-	rm -rf main TAGS core main.ps.gz main.aux main.bbl main.blg main.dvi main.log main.ps main.toc *~
+	rm -rf main TAGS core macros.aux main.ps.gz main.aux main.bbl main.blg main.dvi main.log main.ps main.toc *~
 
 .PHONY: tags
 tags:
