@@ -11,4 +11,4 @@ val rec f =
    fn 0 => ()
     | n => (tak (18, 12, 6) ; f (n-1))
 
-val _ = f 100
+val _ = f 5000
