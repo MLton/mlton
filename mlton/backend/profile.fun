@@ -277,7 +277,8 @@ fun profile program =
 		  end
 	    in
 	       val (firstLabel, firstSource) =
-		  (goto start; Error.bug "no profile info")
+		  (goto start
+		   ; (Label.bogus, SourceInfo.unknown))
 		  handle Yes z => z
 	    end
 	    val blocks = ref []
