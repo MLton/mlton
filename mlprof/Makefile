@@ -35,4 +35,4 @@ clean:
 
 .PHONY: test
 test: $(NAME)
-	./mlprof -d 2 mlton.prof mlmon.out
+	./mlprof z mlmon.out
