@@ -67,6 +67,21 @@ source file."
   (interactive)
   (setq mlton-main-file (buffer-file-name)))
 
+(defvar sml-filename-regexp
+   "\\(\\([-a-zA-Z0-9/.]\\)+\\)\\(\\.\\)\\(\\(cm\\)\\|\\(fun\\)\\|\\(grm\\)\\|\\(lex\\)\\|\\(mlb\\)\\|\\(sig\\)\\|\\(sml\\)\\|\\(ML\\)\\)")
+
+(defun sml-save-buffers ()
+  (save-buffer-excursion
+   (let ((l (buffer-list)))
+     (while (not (null l))
+       (let* ((b (car l))
+	      (n (buffer-name b)))
+	 (if (and n (string-match sml-filename-regexp n))
+	     (progn
+	       (set-buffer b)
+	       (if (buffer-modified-p) (save-buffer)))))
+       (setq l (cdr l))))))
+
 (defun mlton-compile ()
   (interactive)
   (let ((buffer (current-buffer)))
