@@ -353,13 +353,16 @@ fun shrinkFunction (globals: Statement.t vector) =
 			      else normal ()
 			else
 			   let
-			      val s as Statement.T {exp, ...} =
+			      val s as Statement.T {exp, ty, ...} =
 				 Vector.sub (statements, i)
 			   in
 			      if (case exp of
 				     Exp.Profile _ => true
 				   | _ => false)
-				 then loop (i + 1, s :: ac)
+				 then loop (i + 1,
+					    Statement.T {exp = exp,
+							 ty = ty,
+							 var = NONE} :: ac)
 			      else normal ()
 			   end
 		  in
