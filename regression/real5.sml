@@ -6,7 +6,13 @@ open Real
 datatype z = datatype StringCvt.realfmt
 val _ = pi radix
 val _ = pi precision
-val _ = pr (maxFinite, FIX (SOME 0))
+
+(* Avoid printing very much of maxFinite to avoid seeing differences between
+ * libraries.  Someday MLton will do its own real -> string conversion and this
+ * should be fixed.
+ *)
+val _ = p (String.substring (Real.fmt (FIX (SOME 0)) maxFinite, 0, 10))
+
 val _ = pr (minPos, SCI (SOME 20))
 val _ = pr (minNormalPos, SCI (SOME 20))
 val _ = pr (posInf, SCI NONE)
