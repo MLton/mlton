@@ -3,6 +3,8 @@ type word = Word.t
    
 signature RUNTIME =
    sig
+      structure GCField: GC_FIELD
+	 
       (* All sizes are in bytes, unless they explicitly say "pointers". *)
 
       val allocTooLarge: word

@@ -32,7 +32,7 @@ signature RSSA_STRUCTS =
 	    val foldLabel: t * 'a * (Label.t * 'a -> 'a) -> 'a
 	    val foreachLabel: t * (Label.t -> unit) -> unit
 	 end
-      structure RuntimeOperand: RUNTIME_OPERAND
+      structure RuntimeOperand: GC_FIELD
       structure Type: MTYPE
       sharing Label = Cases.Label
    end

@@ -20,9 +20,8 @@ all:
 	cd $(COMP) && $(MAKE)
 	mv $(COMP)/$(AOUT) $(LIB)
 	$(MAKE) world
-	$(MAKE) runtime HOST=$(HOST) HOSTTYPE=$(HOSTTYPE)
 	$(MAKE) script
-	$(MAKE) constants HOST=$(HOST)
+	$(MAKE) runtime HOST=$(HOST) HOSTTYPE=$(HOSTTYPE)
 	cd $(LEX) && $(MAKE) && $(CP) $(LEX) $(BIN)
 	cd $(YACC) && $(MAKE) && $(CP) $(YACC) $(BIN)
 	cd $(PROF) && $(MAKE) && $(CP) $(PROF) $(BIN)
@@ -43,7 +42,7 @@ runtime:
 	( sed '/$(HOST)/d' <$(HOSTMAP); echo '$(HOST) $(HOSTTYPE)' ) \
 		>>$(HOSTMAP).tmp
 	mv $(HOSTMAP).tmp $(HOSTMAP)
-	cat $(HOSTMAP)
+	$(MAKE) constants HOST=$(HOST)
 
 .PHONY: script
 script:
@@ -60,7 +59,7 @@ world:
 constants:
 	@echo 'Creating constants file.'
 	$(BIN)/mlton -build-constants >tmp.c
-	$(BIN)/mlton -v -o tmp tmp.c
+	$(BIN)/mlton -o tmp tmp.c
 	tmp >$(LIB)/$(HOST)/constants
 	rm -f tmp tmp.c
 

@@ -1,6 +1,78 @@
 structure Runtime: RUNTIME =
 struct
 
+structure GCField =
+   struct
+      datatype t =
+	 Base
+       | CanHandle
+       | CurrentThread
+       | Frontier
+       | Limit
+       | LimitPlusSlop
+       | MaxFrameSize
+       | SignalIsPending
+       | StackBottom
+       | StackLimit
+       | StackTop
+
+      val baseOffset: int ref = ref 0
+      val canHandleOffset: int ref = ref 0
+      val currentThreadOffset: int ref = ref 0
+      val frontierOffset: int ref = ref 0
+      val limitOffset: int ref = ref 0
+      val limitPlusSlopOffset: int ref = ref 0
+      val maxFrameSizeOffset: int ref = ref 0
+      val signalIsPendingOffset: int ref = ref 0
+      val stackBottomOffset: int ref = ref 0
+      val stackLimitOffset: int ref = ref 0
+      val stackTopOffset: int ref = ref 0
+
+      fun setOffsets {base, canHandle, currentThread, frontier, limit,
+		      limitPlusSlop, maxFrameSize, signalIsPending, stackBottom,
+		      stackLimit, stackTop} =
+	 (baseOffset := base
+	  ; canHandleOffset := canHandle
+	  ; currentThreadOffset := currentThread
+	  ; frontierOffset := frontier
+	  ; limitOffset := limit
+	  ; limitPlusSlopOffset := limitPlusSlop
+	  ; maxFrameSizeOffset := maxFrameSize
+	  ; signalIsPendingOffset := signalIsPending
+	  ; stackBottomOffset := stackBottom
+	  ; stackLimitOffset := stackLimit
+	  ; stackTopOffset := stackTop)
+
+      val offset =
+	 fn Base => !baseOffset
+	  | CanHandle => !canHandleOffset
+	  | CurrentThread => !currentThreadOffset
+	  | Frontier => !frontierOffset
+	  | Limit => !limitOffset
+	  | LimitPlusSlop => !limitPlusSlopOffset
+	  | MaxFrameSize => !maxFrameSizeOffset
+	  | SignalIsPending => !signalIsPendingOffset
+	  | StackBottom => !stackBottomOffset
+	  | StackLimit => !stackLimitOffset
+	  | StackTop => !stackTopOffset
+
+      (* These strings are carefully chosen to be what the C codegen wants. *)
+      val toString =
+	 fn Base => "gcState.base"
+	  | CanHandle => "gcState.canHandle"
+	  | CurrentThread => "gcState.currentThread"
+	  | Frontier => "frontier"
+	  | Limit => "gcState.limit"
+	  | LimitPlusSlop => "gcState.limitPlusSlop"
+	  | MaxFrameSize => "gcState.maxFrameSize"
+	  | SignalIsPending => "gcState.signalIsPending"
+	  | StackBottom => "gcState.stackBottom"
+	  | StackLimit => "gcState.stackLimit"
+	  | StackTop => "stackTop"
+
+      val layout = Layout.str o toString
+   end
+
 val wordSize: int = 4
 val arrayHeaderSize = 2 * wordSize
 val labelSize = wordSize

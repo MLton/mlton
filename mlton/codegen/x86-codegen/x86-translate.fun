@@ -122,18 +122,24 @@ struct
 		datatype z = datatype Machine.RuntimeOperand.t
 		open x86MLton
 	      in
-		case oper
-		  of Frontier => gcState_frontierContentsOperand
-		   | Limit => gcState_limitContentsOperand
-		   | LimitPlusSlop => gcState_limitPlusSlopContentsOperand
-		   | StackLimit => gcState_stackLimitContentsOperand
-		   | StackTop => gcState_stackTopContentsOperand
+		case oper of
+		   Base => gcState_baseContentsOperand ()
+		 | CanHandle => gcState_canHandleContentsOperand ()
+		 | CurrentThread => gcState_currentThreadContentsOperand ()
+		 | Frontier => gcState_frontierContentsOperand ()
+		 | Limit => gcState_limitContentsOperand ()
+		 | LimitPlusSlop => gcState_limitPlusSlopContentsOperand ()
+		 | MaxFrameSize => gcState_maxFrameSizeContentsOperand ()
+		 | SignalIsPending => gcState_signalIsPendingContentsOperand ()
+		 | StackBottom => gcState_stackBottomContentsOperand ()
+		 | StackLimit => gcState_stackLimitContentsOperand ()
+		 | StackTop => gcState_stackTopContentsOperand ()
 	      end
 	   | StackOffset {offset, ty}
 	   => let
 		val memloc 
 		  = x86.MemLoc.simple 
-		    {base = x86MLton.gcState_stackTopContents, 
+		    {base = x86MLton.gcState_stackTopContents (), 
 		     index = x86.Immediate.const_int offset,
 		     scale = x86.Scale.One,
 		     size = x86MLton.toX86Size ty,
@@ -441,15 +447,16 @@ struct
 	      => let
 		   val (comment_begin, comment_end) = comments statement
 		   val exnStack
-		     = x86MLton.gcState_currentThread_exnStackContentsOperand
-		   val stackTop = x86MLton.gcState_stackTopContentsOperand
-		   val stackBottom = x86MLton.gcState_stackBottomContentsOperand
+		     = x86MLton.gcState_currentThread_exnStackContentsOperand ()
+		   val stackTop = x86MLton.gcState_stackTopContentsOperand ()
+		   val stackBottom =
+		      x86MLton.gcState_stackBottomContentsOperand ()
 		   val tempP 
 		     = let
 			 val index = x86.Immediate.const_int offset
 			 val memloc
 			   = x86.MemLoc.simple 
-			     {base = x86MLton.gcState_stackTopContents, 
+			     {base = x86MLton.gcState_stackTopContents (), 
 			      index = index,
 			      scale = x86.Scale.One,
 			      size = x86MLton.pointerSize,
@@ -478,9 +485,10 @@ struct
 		   val (comment_begin,
 			comment_end) = comments statement
 		   val exnStack
-		     = x86MLton.gcState_currentThread_exnStackContentsOperand
-		   val stackTop = x86MLton.gcState_stackTopContentsOperand
-		   val stackBottom = x86MLton.gcState_stackBottomContentsOperand
+		     = x86MLton.gcState_currentThread_exnStackContentsOperand ()
+		   val stackTop = x86MLton.gcState_stackTopContentsOperand ()
+		   val stackBottom =
+		      x86MLton.gcState_stackBottomContentsOperand ()
 		 in
 		   AppendList.appends
 		   [comment_begin,
@@ -512,16 +520,16 @@ struct
 		   val (comment_begin,
 			comment_end) = comments statement
 		     
-		   val exnStack 
-		     = x86.Operand.memloc 
-		       x86MLton.gcState_currentThread_exnStackContents
+		   val exnStack =
+		      x86.Operand.memloc 
+		      (x86MLton.gcState_currentThread_exnStackContents ())
 		     
 		   val tempP 
 		     = let
 			 val index = x86.Immediate.const_int offset
 			 val memloc 
 			   = x86.MemLoc.simple 
-			     {base = x86MLton.gcState_stackTopContents, 
+			     {base = x86MLton.gcState_stackTopContents (), 
 			      index = index,
 			      scale = x86.Scale.One,
 			      size = x86MLton.pointerSize,
@@ -560,11 +568,11 @@ struct
 		       ("toX86Assembly: Allocate, dstsize",
 			fn () => dstsize = x86MLton.pointerSize)
 		       
-		   val frontier = x86MLton.gcState_frontierContentsOperand
-		   val frontierDeref = x86MLton.gcState_frontierDerefOperand
+		   val frontier = x86MLton.gcState_frontierContentsOperand ()
+		   val frontierDeref = x86MLton.gcState_frontierDerefOperand ()
 		   val frontierPlusOHW
 		     = (x86.Operand.memloc o x86.MemLoc.simple)
-		       {base = x86MLton.gcState_frontierContents, 
+		       {base = x86MLton.gcState_frontierContents (), 
 			index = x86.Immediate.const_int objectHeaderBytes,
 			scale = x86.Scale.One,
 			size = x86MLton.pointerSize,
@@ -687,13 +695,13 @@ struct
 		       ("toX86Blocks: AllocateArray, numEltsSize",
 			fn () => numEltsSize = x86MLton.wordSize)
 
-		    val frontier = x86MLton.gcState_frontierContentsOperand
-		    val frontierDeref = x86MLton.gcState_frontierDerefOperand
+		    val frontier = x86MLton.gcState_frontierContentsOperand ()
+		    val frontierDeref = x86MLton.gcState_frontierDerefOperand ()
 		    val frontierOffset
 		       = let
 			    val memloc 
 			       = x86.MemLoc.simple 
-			       {base = x86MLton.gcState_frontierContents, 
+			       {base = x86MLton.gcState_frontierContents (), 
 				index = x86.Immediate.const_int 1,
 				scale = x86MLton.wordScale,
 				size = x86MLton.pointerSize,
@@ -703,7 +711,7 @@ struct
 			 end
 		    val frontierPlusAHW
 		       = (x86.Operand.memloc o x86.MemLoc.simple)
-		       {base = x86MLton.gcState_frontierContents, 
+		       {base = x86MLton.gcState_frontierContents (), 
 			index = x86.Immediate.const_int arrayHeaderBytes,
 			scale = x86.Scale.One,
 			size = x86MLton.pointerSize,
@@ -998,8 +1006,8 @@ struct
 			     = x86.MemLocSet.add
 			       (x86.MemLocSet.add
 				(x86.MemLocSet.empty,
-				 x86MLton.gcState_stackBottomContents),
-				x86MLton.gcState_currentThread_exnStackContents)})}))
+				 x86MLton.gcState_stackBottomContents ()),
+				x86MLton.gcState_currentThread_exnStackContents ())})}))
 	      | Switch {test, cases, default}
 	      => AppendList.append
 	         (comments transfer,

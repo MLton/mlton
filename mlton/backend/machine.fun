@@ -8,27 +8,8 @@ open S
 
 structure ChunkLabel = IntUniqueId ()
 structure Type = Mtype ()
+structure RuntimeOperand = Runtime.GCField
    
-structure RuntimeOperand =
-   struct
-      datatype t =
-	 Frontier
-       | Limit
-       | LimitPlusSlop
-       | StackLimit
-       | StackTop
-
-      (* These strings are carefully chosen to be what the C codegen wants. *)
-      val toString =
-	 fn Frontier => "frontier"
-	  | Limit => "gcState.limit"
-	  | LimitPlusSlop => "gcState.limitPlusSlop"
-	  | StackLimit => "gcState.stackLimit"
-	  | StackTop => "stackTop"
-
-      val layout = Layout.str o toString
-   end
-
 structure SmallIntInf =
    struct
       type t = word

@@ -302,6 +302,29 @@ fun preCodegen {input, docc}: Machine.Program.t =
 	 File.withIn
 	 (concat [!Control.libDir, "/constants"], fn ins =>
 	  LookupConstant.load (basisDecs (), ins))
+      (* Set GC_state offsets. *)
+      val _ =
+	 let
+	    fun get s =
+	       case lookupConstant s of
+		  LookupConstant.Const.Int n => n
+		| _ => Error.bug "GC_state offset must be an int"
+	 in
+	    Runtime.GCField.setOffsets
+	    {
+	     base = get "base",
+	     canHandle = get "canHandle",
+	     currentThread = get "currentThread",
+	     frontier = get "frontier",
+	     limit = get "limit",
+	     limitPlusSlop = get "limitPlusSlop",
+	     maxFrameSize = get "maxFrameSize",
+	     signalIsPending = get "signalIsPending",
+	     stackBottom = get "stackBottom",
+	     stackLimit = get "stackLimit",
+	     stackTop = get "stackTop"
+	     }
+	 end
       val xml =
 	 Control.passSimplify
 	 {name = "infer",

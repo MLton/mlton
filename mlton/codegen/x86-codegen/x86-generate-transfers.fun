@@ -101,12 +101,12 @@ struct
 	    (Assembly.directive_assume
 	     {assumes
 	      = [{register = stackTopReg,
-		  memloc = stackTop,
+		  memloc = stackTop (),
 		  weight = 1024,
 		  sync = false,
 		  reserve = false},
 		 {register = frontierReg,
-		  memloc = frontier,
+		  memloc = frontier (),
 		  weight = 2048,
 		  sync = false,
 		  reserve = false}]},
@@ -117,12 +117,12 @@ struct
 	    (Assembly.directive_assume
 	     {assumes
 	      = [{register = stackTopReg,
-		  memloc = stackTop,
+		  memloc = stackTop (),
 		  weight = 1024,
 		  sync = false,
 		  reserve = false},
 		 {register = frontierReg,
-		  memloc = frontier,
+		  memloc = frontier (),
 		  weight = 2048,
 		  sync = false,
 		  reserve = false}]},
@@ -142,10 +142,10 @@ struct
 	     AppendList.fromList
 	     [(Assembly.directive_cache
 	       {caches = [{register = stackTopReg,
-			   memloc = stackTop,
+			   memloc = stackTop (),
 			   reserve = true},
 			  {register = frontierReg,
-			   memloc = frontier,
+			   memloc = frontier (),
 			   reserve = true}]}),
 	      (Assembly.directive_clearflt ()),
 	      (Assembly.directive_force
@@ -303,8 +303,8 @@ struct
 			      {live = MemLocSet.add
 			              (MemLocSet.add
 				       (LiveSet.toMemLocSet live,
-					stackTop),
-			              frontier),
+					stackTop ()),
+			              frontier ()),
 			       id = id})::
 			     nil,
 			   transfer = Transfer.goto {target = label}}
@@ -370,12 +370,12 @@ struct
 					 (Assembly.directive_assume
 					  {assumes
 					   = ({register = stackTopReg,
-					       memloc = stackTop,
+					       memloc = stackTop (),
 					       weight = 1024,
 					       sync = false,
 					       reserve = false})::
 					   ({register = frontierReg,
-					     memloc = frontier,
+					     memloc = frontier (),
 					     weight = 2048,
 					     sync = false,
 					     reserve = false})::
@@ -418,12 +418,12 @@ struct
 				  (Assembly.directive_assume
 				   {assumes
 				    = ({register = stackTopReg,
-					memloc = stackTop,
+					memloc = stackTop (),
 					weight = 1024,
 					sync = false,
 					reserve = false})::
 				    ({register = frontierReg,
-				      memloc = frontier,
+				      memloc = frontier (),
 				      weight = 2048,
 				      sync = false,
 				      reserve = false})::
@@ -498,7 +498,7 @@ struct
 				  (profile_assembly,
 				   let
 				     val stackTop 
-				       = x86MLton.gcState_stackTopContentsOperand
+				       = x86MLton.gcState_stackTopContentsOperand ()
 				     val bytes 
 				       = x86.Operand.immediate_const_int (~ size)
 				   in
@@ -523,7 +523,7 @@ struct
 				  (profile_assembly,
 				   let
 				     val stackTop 
-				       = x86MLton.gcState_stackTopContentsOperand
+				       = x86MLton.gcState_stackTopContentsOperand ()
 				     val bytes 
 				       = x86.Operand.immediate_const_int (~ offset)
 				   in
@@ -551,7 +551,7 @@ struct
 				  (profile_assembly,
 				   let
 				     val stackTop 
-				       = x86MLton.gcState_stackTopContentsOperand
+				       = x86MLton.gcState_stackTopContentsOperand ()
 				     val bytes 
 				       = x86.Operand.immediate_const_int (~ size)
 				   in
@@ -668,8 +668,8 @@ struct
 			     {live = MemLocSet.add
 			             (MemLocSet.add
 				      (LiveSet.toMemLocSet falsee_live,
-				       stackTop),
-				      frontier),
+				       stackTop ()),
+				      frontier ()),
 			      id = id},
 			     Assembly.instruction_jcc
 			     {condition = condition_neg,
@@ -698,8 +698,8 @@ struct
 			     {live = MemLocSet.add
 			             (MemLocSet.add
 				      (LiveSet.toMemLocSet truee_live,
-				       stackTop),
-				      frontier),
+				       stackTop ()),
+				      frontier ()),
 			      id = id},
 			     Assembly.instruction_jcc
 			     {condition = condition,
@@ -775,8 +775,8 @@ struct
 				 {live = MemLocSet.add
 				         (MemLocSet.add
 					  (LiveSet.toMemLocSet target_live,
-					   stackTop),
-					  frontier),
+					   stackTop ()),
+					  frontier ()),
 				  id = id},
 				 Assembly.instruction_jcc
 				 {condition = Instruction.E,
@@ -826,11 +826,11 @@ struct
 				| NONE => ()
 
 		     val stackTop 
-		       = x86MLton.gcState_stackTopContentsOperand
+		       = x86MLton.gcState_stackTopContentsOperand ()
 		     val stackTopMinusWordDeref'
-		       = x86MLton.gcState_stackTopMinusWordDeref
+		       = x86MLton.gcState_stackTopMinusWordDeref ()
 		     val stackTopMinusWordDeref
-		       = x86MLton.gcState_stackTopMinusWordDerefOperand
+		       = x86MLton.gcState_stackTopMinusWordDerefOperand ()
 		     val bytes 
 		       = x86.Operand.immediate_const_int size
 
@@ -873,7 +873,7 @@ struct
 		| Return {live}
 		=> let
 		     val stackTopMinusWordDeref
-		       = x86MLton.gcState_stackTopMinusWordDerefOperand
+		       = x86MLton.gcState_stackTopMinusWordDerefOperand ()
 		   in
 		     (* flushing at far transfer *)
 		     (farTransfer live
@@ -887,13 +887,13 @@ struct
 		| Raise {live}
 		=> let
 		     val exnStack 
-		       = x86MLton.gcState_currentThread_exnStackContentsOperand
+		       = x86MLton.gcState_currentThread_exnStackContentsOperand ()
 		     val stackTop 
-		       = x86MLton.gcState_stackTopContentsOperand
+		       = x86MLton.gcState_stackTopContentsOperand ()
 		     val stackTopDeref
-		       = x86MLton.gcState_stackTopDerefOperand
+		       = x86MLton.gcState_stackTopDerefOperand ()
 		     val stackBottom 
-		       = x86MLton.gcState_stackBottomContentsOperand
+		       = x86MLton.gcState_stackBottomContentsOperand ()
 		    in
 		      (* flushing at far transfer *)
 		      (farTransfer live
@@ -923,13 +923,13 @@ struct
 					   liveInfo = liveInfo}
 
 		     val stackTop'
-		       = x86MLton.gcState_stackTopContents
+		       = x86MLton.gcState_stackTopContents ()
 		     val stackTop 
-		       = x86MLton.gcState_stackTopContentsOperand
+		       = x86MLton.gcState_stackTopContentsOperand ()
 		     val bytes 
 		       = x86.Operand.immediate_const_int size
 		     val stackTopMinusWordDeref
-		       = x86MLton.gcState_stackTopMinusWordDerefOperand
+		       = x86MLton.gcState_stackTopMinusWordDerefOperand ()
 
 		     val live = x86Liveness.LiveInfo.getLive(liveInfo, return)
 
@@ -1060,27 +1060,27 @@ struct
 			     = x86MLton.threadTempContentsOperand
 
 			   val currentThread
-			     = x86MLton.gcState_currentThreadContentsOperand	
+			     = x86MLton.gcState_currentThreadContentsOperand ()
 			   val stack
-			     = x86MLton.gcState_currentThread_stackContentsOperand
+			     = x86MLton.gcState_currentThread_stackContentsOperand ()
 			   val stack_used
-			     = x86MLton.gcState_currentThread_stack_usedContentsOperand
+			     = x86MLton.gcState_currentThread_stack_usedContentsOperand ()
 			   val stack_reserved
-			     = x86MLton.gcState_currentThread_stack_reservedContentsOperand
+			     = x86MLton.gcState_currentThread_stack_reservedContentsOperand ()
 			   val stackBottom
-			     = x86MLton.gcState_stackBottomContentsOperand
+			     = x86MLton.gcState_stackBottomContentsOperand ()
 			   val stackLimit
-			     = x86MLton.gcState_stackLimitContentsOperand
+			     = x86MLton.gcState_stackLimitContentsOperand ()
 			   val maxFrameSize
-			     = x86MLton.gcState_maxFrameSizeContentsOperand
+			     = x86MLton.gcState_maxFrameSizeContentsOperand ()
 			   val canHandle
-			     = x86MLton.gcState_canHandleContentsOperand
+			     = x86MLton.gcState_canHandleContentsOperand ()
 			   val signalIsPending
-			     = x86MLton.gcState_signalIsPendingContentsOperand
+			     = x86MLton.gcState_signalIsPendingContentsOperand ()
 			   val limit
-			     = x86MLton.gcState_limitContentsOperand
+			     = x86MLton.gcState_limitContentsOperand ()
 			   val base
-			     = x86MLton.gcState_baseContentsOperand
+			     = x86MLton.gcState_baseContentsOperand ()
 
 			   val resetJoin = Label.newString "resetJoin"
 			 in
@@ -1191,7 +1191,7 @@ struct
 					 memloc = stackTop',
 					 reserve = true},
 					{register = frontierReg,
-					 memloc = frontier,
+					 memloc = frontier (),
 					 reserve = true}]},
 			     Assembly.directive_force
 			     {commit_memlocs = MemLocSet.empty,
@@ -1212,7 +1212,7 @@ struct
 					 memloc = stackTop',
 					 reserve = true},
 					{register = frontierReg,
-					 memloc = frontier,
+					 memloc = frontier (),
 					 reserve = true}]},
 			     Assembly.directive_force
 			     {commit_memlocs = MemLocSet.empty,
@@ -1233,7 +1233,7 @@ struct
 					 memloc = stackTop',
 					 reserve = true},
 					{register = frontierReg,
-					 memloc = frontier,
+					 memloc = frontier (),
 					 reserve = true}]},
 			     Assembly.directive_force
 			     {commit_memlocs = MemLocSet.empty,
@@ -1252,7 +1252,7 @@ struct
 				  sync = false,
 				  reserve = false},
 				 {register = frontierReg,
-				  memloc = frontier,
+				  memloc = frontier (),
 				  weight = 2048,
 				  sync = false,
 				  reserve = false}]}],
@@ -1603,8 +1603,8 @@ struct
 				       live = MemLocSet.add
 				              (MemLocSet.add
 					       (LiveSet.toMemLocSet default_live,
-						stackTop),
-					       frontier)},
+						stackTop ()),
+					       frontier ())},
 				      Assembly.instruction_jcc
 				      {condition = Instruction.NZ,
 				       target = Operand.label defaultC},
@@ -1644,8 +1644,8 @@ struct
 			    live = MemLocSet.add
 				   (MemLocSet.add
 				    (LiveSet.toMemLocSet live,
-				     stackTop),
-				    frontier)},
+				     stackTop ()),
+				    frontier ())},
 			   Assembly.instruction_jcc
 			   {condition = Instruction.AE,
 			    target = Operand.label defaultT},
@@ -1796,10 +1796,10 @@ struct
 		  ((* flushing at near transfer *)
 		   (Assembly.directive_cache
 		    {caches = [{register = stackTopReg,
-				memloc = stackTop,
+				memloc = stackTop (),
 				reserve = true},
 			       {register = frontierReg,
-				memloc = frontier,
+				memloc = frontier (),
 				reserve = true}]})::
 		   (Assembly.directive_fltcache
 		    {caches 
@@ -1871,10 +1871,10 @@ struct
 		   [(* flushing at near transfer *)
 		    (Assembly.directive_cache
 		     {caches = [{register = stackTopReg,
-				 memloc = stackTop,
+				 memloc = stackTop (),
 				 reserve = true},
 				{register = frontierReg,
-				 memloc = frontier,
+				 memloc = frontier (),
 				 reserve = true}]}),
 		    (Assembly.directive_fltcache
 		     {caches 

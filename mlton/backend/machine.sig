@@ -41,7 +41,7 @@ signature MACHINE =
 	    val ty: t -> Type.t
 	 end
 
-      structure RuntimeOperand: RUNTIME_OPERAND
+      structure RuntimeOperand: GC_FIELD
 
       structure Operand:
 	 sig
