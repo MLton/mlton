@@ -11,8 +11,8 @@ val aux = control {name = "aux",
 		   default = false,
 		   toString = Bool.toString}
 
-val commonSubexp = control {name = "common subexpression elimintation",
-			    default = false,
+val commonSubexp = control {name = "common-subexpression elimintation",
+			    default = true,
 			    toString = Bool.toString}
 
 structure Chunk =

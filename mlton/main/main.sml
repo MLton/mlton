@@ -62,7 +62,7 @@ val options =
       open Control Popt
       fun push r = String (fn s => List.push (r, s))
    in [
-       (Expert, "common-subexp", " {true|false}",
+       (Expert, "cse", " {true|false}",
 	"CPS common subexpression elimination",
 	boolRef Control.commonSubexp),
        (Normal,

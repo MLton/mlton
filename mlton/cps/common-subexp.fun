@@ -99,13 +99,6 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 			fun keep () =
 			   Bind {var = var, ty = ty, exp = exp}
 			   :: loopDecs decs
-			fun msg x =
-			   let open Layout
-			   in outputl (seq [Dec.layout d,
-					    str " replaced by ",
-					    Var.layout x],
-				       Out.error)
-			   end
 			fun lookup (exp: PrimExp.t) =
 			   let
 			      val hash = PrimExp.hash exp
@@ -130,8 +123,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 				       :: decs
 				    end
 			      else
-				 (msg var'
-				  ; setReplace (var, SOME var')
+				 (setReplace (var, SOME var')
 				  ; loopDecs decs)
 			   end
 		     in
@@ -157,8 +149,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 					   *)
 					  lookup exp
 				     | SOME x =>
-					  (msg x
-					   ; setReplace (var, SOME x)
+					  (setReplace (var, SOME x)
 					   ; loopDecs decs)
 				 datatype z = datatype Prim.Name.t
 			      in
