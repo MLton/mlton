@@ -215,9 +215,12 @@ static bool isAlignedReserved (GC_state s, uint r) {
 }
 #endif
 
+static inline uint pad (GC_state s, uint bytes, uint extra) {
+	return align (bytes + extra, s->alignment) - extra;
+}
+
 static inline pointer alignFrontier (GC_state s, pointer p) {
-	return (pointer) (align ((uint)p + GC_NORMAL_HEADER_SIZE, s->alignment)
-				- GC_NORMAL_HEADER_SIZE);
+	return (pointer) pad (s, (uint)p, GC_NORMAL_HEADER_SIZE);
 }
 
 pointer GC_alignFrontier (GC_state s, pointer p) {
@@ -227,9 +230,7 @@ pointer GC_alignFrontier (GC_state s, pointer p) {
 static inline uint stackReserved (GC_state s, uint r) {
 	uint res;
 
-	res = align (STACK_HEADER_SIZE + sizeof (struct GC_stack) + r, 
-			s->alignment)
-		- (STACK_HEADER_SIZE + sizeof (struct GC_stack));
+	res = pad (s, r, STACK_HEADER_SIZE + sizeof (struct GC_stack));
 	if (DEBUG_STACKS)
 		fprintf (stderr, "%s = stackReserved (%s)\n",
 				uintToCommaString (res),
@@ -984,8 +985,7 @@ static inline uint arrayNumBytes (GC_state s,
 	/* Empty arrays have POINTER_SIZE bytes for the forwarding pointer */
 	if (0 == result) 
 		result = POINTER_SIZE;
-	return align (result + GC_ARRAY_HEADER_SIZE, s->alignment) 
-		- GC_ARRAY_HEADER_SIZE;
+	return pad (s, result, GC_ARRAY_HEADER_SIZE);
 }
 
 /* ---------------------------------------------------------------- */
@@ -1029,34 +1029,51 @@ static inline pointer foreachPointerInObject (GC_state s, pointer p,
 			maybeCall (f, s, (pointer*)&(((GC_weak)p)->object));
 		p += sizeof (struct GC_weak);
 	} else if (ARRAY_TAG == tag) {
-		uint numBytes;
+		uint bytesPerElement;
+		uint dataBytes;
 		pointer max;
+		uint numElements;
 
-		numBytes = arrayNumBytes (s, p, numPointers, numNonPointers);
-		max = p + numBytes;
-		if (0 == numPointers or 0 == GC_arrayNumElements (p)) {
-			/* There are no pointers, just update p. */
-			p = max;
-		} else if (numNonPointers == 0) {
-		  	/* It's an array with only pointers. */
-			for (; p < max; p += POINTER_SIZE)
-				maybeCall (f, s, (pointer*)p);
-		} else {
-			uint numBytesPointers;
-			
-			numBytesPointers = toBytes (numPointers);
-			/* For each array element. */
-			while (p < max) {
-				pointer max2;
-
-				p += numNonPointers;
-				max2 = p + numBytesPointers;
-				/* For each internal pointer. */
-				for ( ; p < max2; p += POINTER_SIZE) 
+		numElements = GC_arrayNumElements (p);
+		bytesPerElement = numNonPointers + toBytes (numPointers);
+		dataBytes = numElements * bytesPerElement;
+		/* Must check 0 == dataBytes before 0 == numPointers to correctly
+		 * handle arrays when both are true.
+		 */
+		if (0 == dataBytes)
+			/* Empty arrays have space for forwarding pointer. */
+			dataBytes = POINTER_SIZE;
+		else if (0 == numPointers)
+			/* No pointers to process. */
+			;
+		else {
+			max = p + dataBytes;
+			if (0 == numNonPointers)
+			  	/* Array with only pointers. */
+				for (; p < max; p += POINTER_SIZE)
 					maybeCall (f, s, (pointer*)p);
+			else {
+				/* Array with a mix of pointers and non-pointers.
+ 			         */
+				uint numBytesPointers;
+			
+				numBytesPointers = toBytes (numPointers);
+				/* For each array element. */
+				while (p < max) {
+					pointer max2;
+
+					/* Skip the non-pointers. */
+					p += numNonPointers;
+					max2 = p + numBytesPointers;
+					/* For each internal pointer. */
+					for ( ; p < max2; p += POINTER_SIZE) 
+						maybeCall (f, s, (pointer*)p);
+				}
 			}
+			assert (p == max);
+			p -= dataBytes;
 		}
-		assert (p == max);
+		p += pad (s, dataBytes, GC_ARRAY_HEADER_SIZE);
 	} else { /* stack */
 		GC_stack stack;
 		pointer top, bottom;
