@@ -115,9 +115,11 @@ structure FlatRule =
 
 structure Finish =
    struct
-      type t = Layout.t * Info.t vector -> Exp.t
+      datatype t = T of Layout.t * Info.t vector -> Exp.t
 	 
       fun layout (_: t) = Layout.str "<finish>"
+
+      fun apply (T f, a) = f a
    end
 
 local
@@ -141,8 +143,10 @@ local
 		 inj (s,
 		      Vector.map
 		      (cases, fn {const, infos: Info.t list} =>
-		       (get const, finish (Const.layout const,
-					   Vector.fromList infos))))))
+		       (get const,
+			Finish.apply (finish,
+				      (Const.layout const,
+				       Vector.fromList infos)))))))
 in
    val directCases =
       make (List.remove (WordSize.all, fn s =>
@@ -283,7 +287,8 @@ fun matchCompile {caseType: Type.t,
 			    case pat of
 			       FlatPat.Any => false
 			     | _ => true) of
-	     NONE => finish (wild, Vector.map (rules, FlatRule.info))
+	     NONE => Finish.apply (finish,
+				   (wild, Vector.map (rules, FlatRule.info)))
 	   | SOME (FlatRule.T {pat, ...}) =>
 		let
 		   val test = Exp.var (var, ty)
@@ -322,7 +327,9 @@ fun matchCompile {caseType: Type.t,
 			       info: Info.t} vector,
 		       finish: Finish.t): Exp.t =
 	 if i = Vector.length vars
-	    then finish (Layout.tuple (rev pats), Vector.map (rules, #info))
+	    then Finish.apply (finish,
+			       (Layout.tuple (rev pats),
+				Vector.map (rules, #info)))
 	 else
 	    let
 	       val (var, ty) = Vector.sub (vars, i)
@@ -343,17 +350,19 @@ fun matchCompile {caseType: Type.t,
 				  continue = Matches (SOME pats, continue)}})
 	    in
 	       matchFlat
-	       (var, ty, rules, fn (pat, infos) =>
-		matchesFlat
-		(i + 1, vars, pat :: pats,
-		 Vector.map (infos, fn Info.T {accum, continue} =>
-			     case continue of
-				Matches (pats, continue) =>
-				   {pats = pats,
-				    info = Info.T {accum = accum,
-						   continue = continue}}
-			      | _ => Error.bug "matchesFlat:"),
-		 finish))
+	       (var, ty, rules,
+		Finish.T
+		(fn (pat, infos) =>
+		 matchesFlat
+		 (i + 1, vars, pat :: pats,
+		  Vector.map (infos, fn Info.T {accum, continue} =>
+			      case continue of
+				 Matches (pats, continue) =>
+				    {pats = pats,
+				     info = Info.T {accum = accum,
+						    continue = continue}}
+			       | _ => Error.bug "matchesFlat:"),
+		  finish)))
 	    end
       (*------------------------------------*)
       (*               tuple                *)
@@ -448,13 +457,14 @@ fun matchCompile {caseType: Type.t,
 	    val defaults = Vector.fromList defaults
 	    val default =
 	       if Vector.isEmpty cases
-		  then SOME (finish (wild, defaults), region)
+		  then SOME (Finish.apply (finish, (wild, defaults)), region)
 	       else
 		  let
 		     val {con, ...} = Vector.sub (cases, 0)
 		     val tycon = conTycon con
 		     fun done (defaultPat: Layout.t) =
-			SOME (finish (defaultPat, defaults), region)
+			SOME (Finish.apply (finish, (defaultPat, defaults)),
+			      region)
 		  in
 		     if Tycon.equals (tycon, Tycon.exn)
 			then done (Layout.str  "e")
@@ -495,14 +505,17 @@ fun matchCompile {caseType: Type.t,
 				  case arg of
 				     NoArg infos =>
 					(NONE,
-					 finish (Con.layout con,
-						 Vector.fromList infos))
+					 Finish.apply
+					 (finish, (Con.layout con,
+						   Vector.fromList infos)))
 				   | Arg {var, ty, rules} =>
 					(SOME (var, ty),
-					 match (var, ty,
-						Vector.fromList rules,
-						fn (p, e) =>
-						finish (conApp (con, p), e)))
+					 match
+					 (var, ty, Vector.fromList rules,
+					  Finish.T
+					  (fn (p, e) =>
+					   Finish.apply
+					   (finish, (conApp (con, p), e)))))
 			    in
 			       {con = con,
 				targs = tys,
@@ -524,8 +537,10 @@ fun matchCompile {caseType: Type.t,
 				  exp = Exp.deref test,
 				  body = match (var, ty,
 						Vector.fromList rules,
-						fn (p, e) =>
-						finish (conApp (con, p), e))}
+						Finish.T
+						(fn (p, e) =>
+						 Finish.apply
+						 (finish, (conApp (con, p), e))))}
 			   else normal ()
 		      | _ => normal ()
 		  end
@@ -610,7 +625,7 @@ fun matchCompile {caseType: Type.t,
 				 else Const.layout c)
 			end
 	       in
-		  finish (unhandled, Vector.fromList defaults)
+		  Finish.apply (finish, (unhandled, Vector.fromList defaults))
 	       end
 	 in
 	    case List.peek (directCases, fn (ty', _, _) =>
@@ -619,8 +634,9 @@ fun matchCompile {caseType: Type.t,
 		  List.fold
 		  (cases, default (), fn ({const, infos}, rest) =>
 		   Exp.iff {test = Exp.equal (test, Exp.const const),
-			    thenn = finish (Const.layout const,
-					    Vector.fromList infos),
+			    thenn = Finish.apply (finish,
+						  (Const.layout const,
+						   Vector.fromList infos)),
 			    elsee = rest,
 			    ty = caseType})
 	     | SOME (_, cardinality, make) =>
@@ -647,19 +663,20 @@ fun matchCompile {caseType: Type.t,
 			     Rule.T {pat = p,
 				     info = Info.T {accum = Env.empty,
 						    continue = Finish (r, f)}}),
-		fn (pat, infos) =>
-		if Vector.isEmpty infos
-		   then Error.bug "matchRules: no default"
-		else
-		   let
-		      val Info.T {accum = env, continue} = Vector.sub (infos, 0)
-		   in
-		      case continue of
-			 Finish (r, f) =>
-			    (List.push (r, pat)
-			     ; f (fn x => Env.lookup (env, x)))
-		       | _ => Error.bug "matchRules: expecting Finish"
-		   end)
+		Finish.T
+		(fn (pat, infos) =>
+		 if Vector.isEmpty infos
+		    then Error.bug "matchRules: no default"
+		 else
+		    let
+		       val Info.T {accum = env, continue} = Vector.sub (infos, 0)
+		    in
+		       case continue of
+			  Finish (r, f) =>
+			     (List.push (r, pat)
+			      ; f (fn x => Env.lookup (env, x)))
+			| _ => Error.bug "matchRules: expecting Finish"
+		    end))
    in
       (res,
        fn () => Vector.map (examples, fn r => Layout.alignPrefix (! r, "| ")))
