@@ -527,3 +527,5 @@ in
 end (* local *)
 end (*struct*);
 *)
+
+val _ = print "\n"
