@@ -59,7 +59,7 @@ SML	= sml
 nj-mlton: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
-		echo '#set CM.Control.verbose true;';				\
+		echo '#set CM.Control.verbose false;';				\
 		echo 'CM.make "sources.cm";';					\
 		echo 'Main.exportNJ("$(SRC)/basis-library", "$(LIB)/mlton");'	\
 	) | time $(SML)
