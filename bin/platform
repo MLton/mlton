@@ -60,3 +60,4 @@ sun*)
 ;;
 esac
 
+echo "HOST_OS=$HOST_OS HOST_ARCH=$HOST_ARCH"
