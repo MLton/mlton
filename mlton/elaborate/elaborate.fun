@@ -14,6 +14,7 @@ local
    open Ast
 in
    structure FctArg = FctArg
+   structure Fctid = Fctid
    structure Longstrid = Longstrid
    structure SigConst = SigConst
    structure Sigexp = Sigexp
@@ -153,7 +154,9 @@ fun elaborateProgram (program,
 		     val (decs, S) = elabStrexp strexp
 		     val (decs', S) =
 			FunctorClosure.apply (Env.lookupFctid (E, fctid),
-					      S, nest, Strexp.region strexp)
+					      S,
+					      [Fctid.toString fctid],
+					      Strexp.region strexp)
 		  in
 		     (Decs.append (decs, decs'), S)
 		  end
@@ -191,7 +194,7 @@ fun elaborateProgram (program,
 	   | Topdec.Functor funbinds =>
 		(* Appendix A, p.58 *)
 		(Vector.foreach
-		 (funbinds, fn ({name, arg, result, body}) =>
+		 (funbinds, fn {name, arg, result, body} =>
 		  let
 		     val body = Strexp.constrained (body, result)
 		     val (arg, argSig, body, prefix) =
@@ -231,7 +234,6 @@ fun elaborateProgram (program,
 	 let
 	    val res = elabTopdec d
 	    val _ = ElaborateCore.reportUndeterminedTypes ()
-(*	    val _ = Control.checkForErrors "elaborate" *)
 	 in
 	    res
 	 end

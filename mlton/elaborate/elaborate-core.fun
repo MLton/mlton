@@ -1313,7 +1313,7 @@ fun elaborateDec (d, {env = E,
 						    (p, E, preError)),
 					  region = Apat.region p})
 				     val bodyRegion = Aexp.region body
-				     val body = elabExp (body, nest)
+				     val body = elabExp (body, nest, NONE)
 				     val _ =
 					Option.app
 					(resultType, fn t =>
@@ -1524,10 +1524,10 @@ fun elaborateDec (d, {env = E,
 					      str " = ", Aexp.layout exp])]
 				end
 			  in
-			     {exp = elabExp (exp,
-					     case Apat.getName pat of
-						NONE => "anon" :: nest
-					      | SOME s => s :: nest),
+			     {exp = elabExp (exp, nest,
+					     SOME (case Apat.getName pat of
+						      NONE => "anon"
+						    | SOME s => s)),
 			      expRegion = Aexp.region exp,
 			      lay = lay,
 			      pat = pat,
@@ -1693,12 +1693,13 @@ fun elaborateDec (d, {env = E,
 					     vbs = vbs})
 		   end
 	  end) arg
-      and elabExp (arg: Aexp.t * Nest.t): Cexp.t =
-	 Trace.traceInfo (elabExpInfo,
-			  Layout.tuple2 (Aexp.layout, Nest.layout),
-			  Layout.ignore,
-			  Trace.assertTrue)
-	 (fn (e: Aexp.t, nest) =>
+      and elabExp (arg: Aexp.t * Nest.t * string option): Cexp.t =
+	 Trace.traceInfo
+	 (elabExpInfo,
+	  Layout.tuple3 (Aexp.layout, Nest.layout, Layout.ignore),
+	  Layout.ignore,
+	  Trace.assertTrue)
+	 (fn (e: Aexp.t, nest, maybeName) =>
 	  let
 	     val preError = Promise.lazy (fn () => Env.setTyconNames E)
 	     val unify = fn (t, t', f) => unify (t, t', preError, f)
@@ -1711,7 +1712,7 @@ fun elaborateDec (d, {env = E,
 					  (r, l, align [l', lay ()])
 				       end)
 	     val region = Aexp.region e
-	     fun elab e = elabExp (e, nest)
+	     fun elab e = elabExp (e, nest, NONE)
 	  in
 	     case Aexp.node e of
 		Aexp.Andalso (e, e') =>
@@ -1796,6 +1797,10 @@ fun elaborateDec (d, {env = E,
 	      | Aexp.FlatApp items => elab (Parse.parseExp (items, E, lay))
 	      | Aexp.Fn m =>
 		   let
+		      val nest =
+			 case maybeName of
+			    NONE => "anon" :: nest
+			  | SOME s => s :: nest
 		      val {arg, argType, body} =
 			 elabMatchFn (m, preError, nest, "function", lay,
 				      Cexp.RaiseMatch)
@@ -2057,7 +2062,8 @@ fun elaborateDec (d, {env = E,
 						       name = name,
 						       region = region,
 						       ty = expandedTy},
-					       nest)))
+					       nest,
+					       NONE)))
 			       val _ =
 				  unify
 				  (Cexp.ty e,
@@ -2224,7 +2230,7 @@ fun elaborateDec (d, {env = E,
 			 align [seq [str "pattern:  ", l1],
 				seq [str "previous: ", l2],
 				seq [str "in: ", lay ()]]))
-		    val e = elabExp (exp, nest)
+		    val e = elabExp (exp, nest, NONE)
 		    val _ =
 		       unify
 		       (Cexp.ty e, resultType, preError, fn (l1, l2) =>
