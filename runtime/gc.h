@@ -194,6 +194,7 @@ typedef struct GC_state {
 	ullong bytesAllocated;
  	ullong bytesCopied;
 	int bytesLive;		/* Number of bytes copied by most recent GC. */
+	ullong bytesMarkCompacted;
 	GC_thread currentThread; /* This points to a thread in the heap. */
  	/* The dfs stack is only used during the depth-first-search of an 
 	 * object.  This is used in computing the size of an object.
@@ -266,7 +267,6 @@ typedef struct GC_state {
 	 */
 	bool summary; 
 	pointer toBase; /* The start (lowest address) of to space. */
-	pointer toLimit; /* The end of tospace. */
 	uint toSize; /* size (bytes) of to space */
 	uint totalRam; /* bytes */
 	uint totalSwap; /* bytes */

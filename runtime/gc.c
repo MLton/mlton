@@ -137,6 +137,12 @@ static inline size_t roundPage (GC_state s, size_t size) {
 	return (size);
 }
 
+#ifndef NODEBUG
+static bool isPageAligned (GC_state s, size_t size) {
+	return 0 == (size % s->pageSize);
+}
+#endif
+
 #if (defined (__linux__) || defined (__FreeBSD__))
 /* A super-safe mmap.
  *  Allocates a region of memory with dead zones at the high and low ends.
@@ -876,11 +882,6 @@ bool mutatorInvariant (GC_state s) {
 }
 #endif /* #ifndef NODEBUG */
 
-static inline void setLimit (GC_state s) {
-	s->limitPlusSlop = s->base + s->fromSize;
-	s->limit = s->limitPlusSlop - LIMIT_SLOP;
-}
-
 static inline void blockSignals (GC_state s) {
 	sigprocmask (SIG_BLOCK, &s->signalsHandled, NULL);
 }
@@ -907,7 +908,7 @@ void enter (GC_state s) {
 	unless (s->inSignalHandler) {
 		blockSignals (s);
 		if (s->limit == 0)
-			setLimit (s);
+			s->limit = s->limitPlusSlop - LIMIT_SLOP;
 	}
 	assert (invariant (s));
 }
@@ -1103,7 +1104,7 @@ static inline void forward (GC_state s, pointer *pp) {
 			skip = stack->reserved - stack->used;
 		}
 		size = headerBytes + objectBytes;
-		assert (s->back + size + skip <= s->toLimit);
+		assert (s->back + size + skip <= s->toBase + s->toSize);
   		/* Copy the object. */
 		if (DEBUG_DETAILED)
 			fprintf (stderr, "copying from 0x%08x to 0x%08x\n",
@@ -1139,6 +1140,14 @@ static inline void forwardEachPointerInRange (GC_state s, pointer front,
 	assert(front == *back);
 }
 
+static void setFromSize (GC_state s, uint size) {
+	if (size > s->maxHeapSizeSeen)
+		s->maxHeapSizeSeen = size;
+	s->fromSize = size;
+	s->limitPlusSlop = s->base + s->fromSize;
+	s->limit = s->limitPlusSlop - LIMIT_SLOP;
+}
+
 static void swapSemis (GC_state s) {
 	pointer p;
 	uint tmp;
@@ -1147,7 +1156,7 @@ static void swapSemis (GC_state s) {
 	s->base = s->toBase;
 	s->toBase = p;
 	tmp = s->fromSize;
-	s->fromSize = s->toSize;
+	setFromSize (s, s->toSize);
 	s->toSize = tmp;
 }
 
@@ -1167,12 +1176,12 @@ static inline void cheneyCopy (GC_state s) {
 	assert (s->toBase != (void*)NULL);
 	assert (s->toSize >= s->fromSize);
 	s->back = s->toBase;
-	s->toLimit = s->toBase + s->toSize;
 	front = s->back;
 	foreachGlobal (s, forward);
 	forwardEachPointerInRange (s, front, &s->back);
 	swapSemis (s);
 	s->frontier = s->back;
+	s->bytesCopied += s->frontier - s->base;
 }
 
 /* ---------------------------------------------------------------- */
@@ -1664,6 +1673,7 @@ static inline void markCompact (GC_state s) {
 	foreachGlobal (s, threadInternal);
 	updateForwardPointers (s);
 	updateBackwardPointersAndSlide (s);
+	s->bytesMarkCompacted += s->frontier - s->base;
 	if (s->messages)
 		fprintf (stderr, "Mark-compact GC done.\n");
 }
@@ -1674,6 +1684,7 @@ static inline void markCompact (GC_state s) {
 
 static inline void shrinkFromSpace (GC_state s, W32 keep) {
 	assert (keep <= s->fromSize);
+	assert (isPageAligned (s, keep));
 	if (0 == keep)
 		releaseFromSpace (s);
 	else if (keep < s->fromSize) {
@@ -1682,12 +1693,13 @@ static inline void shrinkFromSpace (GC_state s, W32 keep) {
 				"Shrinking from space at %x to %u bytes.\n",
 				(uint)s->base , (uint)keep);
 		decommit (s->base + keep, s->fromSize - keep);
-		s->fromSize = keep;
+		setFromSize (s, keep);
 	}
 }
 
 static inline void shrinkToSpace (GC_state s, W32 keep) {
 	assert (keep <= s->toSize);
+	assert (isPageAligned (s, keep));
 	if (0 == keep)
 		releaseToSpace (s);
 	else if (keep < s->toSize) {
@@ -1796,7 +1808,7 @@ static inline void resizeHeap (GC_state s, W64 need) {
 			fd = smkstemp (template);
 			sclose (fd);
 			if (s->messages)
-				fprintf (stderr, "Paging fromSpace to %s.\n", 
+				fprintf (stderr, "Paging from space to %s.\n", 
 						template);
 			stream = sfopen (template, "wb");
 			sfwrite (s->base, 1, s->bytesLive, stream);
@@ -1819,7 +1831,6 @@ static inline void resizeHeap (GC_state s, W64 need) {
 		setStack (s);
 		s->frontier = s->base + s->bytesLive;
 	}
-	setLimit (s);
 	/* Resize to space. */
 	if (0 == s->toSize)
 		/* nothing */ ;
@@ -1886,7 +1897,6 @@ void doGC (GC_state s, uint bytesRequested) {
 	else
 		markCompact (s);
 	setStack (s);
-	setLimit (s);
 	s->bytesLive = s->frontier - s->base;
 	if (s->bytesLive > s->maxBytesLive)
 		s->maxBytesLive = s->bytesLive;
@@ -2129,21 +2139,21 @@ static inline void initSignalStack(GC_state s) {
 #endif
 }
 
-/* set fromSize.
- * size must not be an approximation, because setHeapParams will die if it
- * can't set fromSize big enough.
- */
-inline void setHeapParams (GC_state s, uint size) {
+/* fromSpace (s, live) allocates fromSpace big enough to hold live data. */
+static inline void fromSpace (GC_state s, uint live) {
+	uint size;
+
 	if (s->useFixedHeap) {
 		if (0 == s->fromSize)
-			s->fromSize = roundPage (s, s->ramSlop * s->totalRam);
+			size = roundPage (s, s->ramSlop * s->totalRam);
 		else
-		        s->fromSize = roundPage (s, s->fromSize);
-	} else {
-		s->fromSize = computeSemiSize (s, size);
-	}
-	if (size > s->fromSize)
+		        size = roundPage (s, s->fromSize);
+	} else
+		size = computeSemiSize (s, live);
+	if (live > size)
 		die ("Out of memory (setHeapParams).");
+	s->base = smmap (size);
+	setFromSize (s, size);
 }
 
 static int processor_has_sse2=0;
@@ -2279,14 +2289,6 @@ setMemInfo(GC_state s)
 
 #endif /* definition of setMemInfo */
 
-inline void fromSpace (GC_state s)
-{
-	s->base = smmap (s->fromSize);
-	if (s->fromSize > s->maxHeapSizeSeen)
-		s->maxHeapSizeSeen = s->fromSize;
-	setLimit (s);
-}
-
 static void usage(string s) {
 	die("Usage: %s [@MLton [fixed-heap n[{k|m}]] [gc-messages] [gc-summary] [load-world file] [ram-slop x] --] args", 
 		s);
@@ -2337,10 +2339,7 @@ static void newWorld (GC_state s)
 	assert (isWordAligned (sizeof (struct GC_thread)));
 	for (i = 0; i < s->numGlobals; ++i)
 		s->globals[i] = (pointer)BOGUS_POINTER;
-	setHeapParams (s, s->bytesLive + initialThreadBytes (s));
-	assert (s->bytesLive + initialThreadBytes (s) + LIMIT_SLOP 
-			<= s->fromSize);
-	fromSpace (s);
+	fromSpace (s, s->bytesLive + initialThreadBytes (s));
 	s->frontier = s->base;
 	s->toSize = 0;
 	s->toBase = NULL;
@@ -2359,6 +2358,7 @@ int GC_init (GC_state s, int argc, char **argv,
 	initSignalStack(s);
 	s->bytesAllocated = 0;
 	s->bytesCopied = 0;
+	s->bytesMarkCompacted = 0;
 	s->canHandle = 0;
 	s->currentThread = BOGUS_THREAD;
 	rusageZero(&s->ru_gc);
@@ -2517,6 +2517,7 @@ inline void GC_done (GC_state s) {
 	 			s->bytesAllocated 
 				+ (s->frontier - s->base - s->bytesLive));
 		displayUllong ("bytes copied", s->bytesCopied);
+		displayUllong ("bytes mark-compacted", s->bytesMarkCompacted);
 		displayUint ("max bytes live", s->maxBytesLive);
 #if METER
 		{
@@ -2582,8 +2583,7 @@ void GC_loadWorld (GC_state s,
 	s->signalHandler = (GC_thread)sfreadUint(file);
 	heapSize = frontier - base;
 	s->bytesLive = heapSize;
-       	setHeapParams (s, heapSize);
-	fromSpace (s);
+       	fromSpace (s, heapSize);
 	sfread (s->base, 1, heapSize, file);
 	s->frontier = s->base + heapSize;
 	(*loadGlobals)(file);
