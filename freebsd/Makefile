@@ -7,13 +7,10 @@
 
 PORTNAME=	mlton
 PORTVERSION=	MLTONVERSION
-CATEGORIES= 	lang
-MASTER_SITES=					\
-	http://www.mlton.org/download/		\
-	http://www.mlton.org/experimental/
-DISTFILES=		\
-	${BOOT_DIST}	\
-	${SRC_DIST}
+CATEGORIES=	lang
+MASTER_SITES=	http://www.mlton.org/download/	\
+		http://www.mlton.org/experimental/
+DISTFILES=	${BOOT_DIST} ${SRC_DIST}
 EXTRACT_ONLY=	${SRC_DIST}
 
 MAINTAINER=	MLton@mlton.org
@@ -21,60 +18,56 @@ COMMENT=	An optimizing Standard ML compiler
 
 # MLton build depends on itself.  There is no easy way to avoid this.
 # This Makefile is supposed to install an alread-built version of
-# MLton, BOOT_DIST, to use for bootstrapping. 
-BUILD_DEPENDS= 					\
-	hevea:${PORTSDIR}/textproc/hevea:	\
-	latex:${PORTSDIR}/print/teTeX: 		\
-	mlton:${PORTSDIR}/lang/mlton:
-LIB_DEPENDS= 					\
-	gmp.6:${PORTSDIR}/math/libgmp4
+# MLton, BOOT_DIST, to use for bootstrapping.
+BUILD_DEPENDS=	hevea:${PORTSDIR}/textproc/hevea: \
+		latex:${PORTSDIR}/print/teTeX: \
+		mlton:${PORTSDIR}/lang/mlton:
+LIB_DEPENDS=	gmp.6:${PORTSDIR}/math/libgmp4
 
-SRC_DIST=	${DISTNAME}-1.src.tgz
+SRC_DIST=	${DISTNAME}-1.freebsd.src.tgz
 BOOT_DIST=	${DISTNAME}-1.i386-freebsd.tbz
 
 ONLY_FOR_ARCHS=	i386
 
-MAN1=			\
-	mllex.1 	\
-	mlprof.1 	\
-	mlton.1 	\
-	mlyacc.1
+MAN1=		mllex.1 mlprof.1 mlton.1 mlyacc.1
 MANCOMPRESSED=	yes
 
 BOOT_WRKSRC=	${WRKDIR}/mlton-bootstrap
 
 USE_REINPLACE=	yes
 ALL_TARGET=	all
-USE_GMAKE= 	yes
-MAKE_ARGS=	DESTDIR='' 	\
+USE_GMAKE=	yes
+MAKE_ARGS=	DESTDIR='' \
 		PREFIX=${PREFIX}
 
 PORTDIR=	usr/ports/lang/mlton
 
 .PHONY: build-package
 build-package:
-	export PATH=${BOOT_WRKSRC}/bin:${PATH} && ${MAKE} makesum build
+	export PATH=${BOOT_WRKSRC}/bin:${PATH} && ${MAKE} makesum build pkg-plist
 	portlint .
 	${MAKE} deinstall
 	${MAKE} install
 	${MAKE} package
-	tar -cpf - Makefile distinfo pkg-descr pkg-plist | \
-		( ${MKDIR} ${PORTDIR} && cd ${PORTDIR} && tar -xpf - )
+	${TAR} -cpf - Makefile distinfo pkg-descr pkg-plist | \
+		( ${MKDIR} ${PORTDIR} && cd ${PORTDIR} && ${TAR} -xpf - )
 	shar `find ${PORTDIR}` >/tmp/mlton-${PORTVERSION}-portdir.shar
 
-.PHONY: pkg-plist
+TMP_PLIST=	/tmp/mlton.pkg-plist
+PLIST=		${.CURDIR}/pkg-plist
+
 pkg-plist:
 	cd ${WRKSRC} && ${GMAKE} install
-	cd ${WRKSRC}/install/usr && 				\
-		${FIND} -d * \! -type d | ${GREP} -v man/man | 	\
-		sort >${.CURDIR}/pkg-plist
-	cd ${WRKSRC}/install/usr && 					\
-		${FIND} -d * -type d | ${GREP} mlton | ${SED} -e 's/^/@dirrm /'	\
-		>>${.CURDIR}/pkg-plist
-
-.PHONY: post-build
-post-build:
-	${MAKE} pkg-plist
+	cd ${WRKSRC}/install/usr && \
+		${FIND} -d * \! -type d | ${GREP} -v man/man | \
+		sort >${PLIST}
+	cd ${WRKSRC}/install/usr && \
+		${FIND} -d * -type d | ${GREP} mlton | \
+			${SED} -e 's/^/@dirrm /' >>${PLIST}
+	${SED} -e 's;@dirrm share/doc/mlton;%%PORTDOCS%%@dirrm %%DOCSDIR%%;' \
+		<${PLIST} >${TMP_PLIST}
+	${SED} -e 's;share/doc/mlton;%%PORTDOCS%%%%DOCSDIR%%;'	\
+		<${TMP_PLIST} >${PLIST}
 
 .PHONY: post-extract
 post-extract:
