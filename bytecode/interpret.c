@@ -348,7 +348,6 @@ void displayRegs () {
 }
 
 static inline void interpret (Bytecode b, Word32 codeOffset, Bool disassemble) {
-	int addressNameIndex;
 	CallCIndex callCIndex;
 	Pointer code;
 	Pointer frontier;
@@ -364,11 +363,10 @@ static inline void interpret (Bytecode b, Word32 codeOffset, Bool disassemble) {
 	code = b->code;
 	pcMax = b->code + b->codeSize;
 	if (DEBUG or disassemble) {
-		addressNameIndex = 0;
 		ARRAY (offsetToLabel, b->codeSize);
-		for (i = 0; i < b->addressNamesSize; ++i)
-			offsetToLabel [b->addressNames[i].offset] =
-				b->addressNames[i].name;
+		for (i = 0; i < b->nameOffsetsSize; ++i)
+			offsetToLabel [b->nameOffsets[i].codeOffset] =
+				b->addressNames + b->nameOffsets[i].nameOffset;
 	}
 	if (disassemble)
 		pc = code;

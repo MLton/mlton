@@ -28,16 +28,17 @@ regs(Word64);
 		assert (0 == Real64RegI);	\
 	} while (0)
 
-struct AddressName {
-	char *name;
-	Word32 offset;
+struct NameOffsets {
+	Word32 codeOffset;  // An offset into code.
+	Word32 nameOffset;  // An offset into addressNames.
 };
 
 typedef struct Bytecode {
-	struct AddressName *addressNames;
-	Word32 addressNamesSize;
+	char *addressNames;
 	Pointer code;
 	Word32 codeSize;
+	struct NameOffsets *nameOffsets;
+	Word32 nameOffsetsSize;
 } *Bytecode;
 
 #define PopReg(ty) (assert (ty##RegI > 0), ty##Reg [--ty##RegI])

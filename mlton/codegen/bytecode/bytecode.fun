@@ -684,25 +684,41 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
       val word8ArrayToString: Word8.t array -> string =
 	 fn a => String.tabulate (Array.length a, fn i =>
 				  Char.fromWord8 (Array.sub (a, i)))
+      val {labels, offsets, ...} =
+	 List.fold
+	 (chunks, {labels = [], offset = 0, offsets = []},
+	  fn (Chunk.T {blocks, ...}, ac) =>
+	  Vector.fold
+	  (blocks, ac, fn (Block.T {label, ...}, {labels, offset, offsets}) =>
+	   let
+	      val offsets = {code = labelOffset label, name = offset} :: offsets
+	      val label = Label.toString label
+	   in
+	      {labels = label :: labels,
+	       offset = offset + String.size label + 1,
+	       offsets = offsets}
+	   end))
+      val labels =
+	 concat (List.fold (labels, [], fn (l, ac) => l :: "\000" :: ac))
+      val offsets = rev offsets
+      fun printString s =
+	 (print "\t\""; print (String.escapeC s); print "\",\n")
+      fun printInt i = print (concat ["\t", Int.toString i, ",\n"])
       val () =
-	 (print "static struct AddressName addressNames [] = {\n"
-	  ; (List.foreach
-	     (chunks, fn Chunk.T {blocks, ...} =>
-	      Vector.foreach
-	      (blocks, fn Block.T {label, ...} =>
-	       (Int.inc addressNamesSize
-		; print (concat ["\t{ \"", String.escapeC (Label.toString label),
-				 "\", ", Int.toString (labelOffset label),
-				 " },\n"])))))
+	 (print "static struct NameOffsets nameOffsets [] = {\n"
+	  ; List.foreach (offsets, fn {code, name} =>
+			  print (concat ["\t{ ",
+					 Int.toString code, ", ",
+					 Int.toString name,
+					 " },\n"]))
 	  ; print "};\n"
-	  ; print (concat
-		   ["struct Bytecode MLton_bytecode = {\n",
-		    "\taddressNames,\n",
-		    "\t", Int.toString (!addressNamesSize), ",\n"])
-	  ; print "\t\""
-	  ; print (String.escapeC (word8ArrayToString code))
-	  ; print "\",\n"
-	  ; print (concat ["\t", Int.toString (Array.length code), "\n};\n"]))
+	  ; print "struct Bytecode MLton_bytecode = {\n"
+	  ; printString labels
+	  ; printString (word8ArrayToString code)
+	  ; printInt (Array.length code)
+	  ; print "\tnameOffsets,\n"
+	  ; printInt (List.length offsets)
+	  ; print "};\n")
       val () = done ()
    in
       ()
