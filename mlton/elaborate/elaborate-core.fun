@@ -118,7 +118,7 @@ structure Apat =
 
 structure Lookup =
    struct
-      type t = Longtycon.t -> TypeStr.t
+      type t = Longtycon.t -> TypeStr.t option
 
       fun fromEnv (E: Env.t) longtycon = Env.lookupLongtycon (E, longtycon)
    end
@@ -133,35 +133,37 @@ fun elaborateType (ty: Atype.t, lookup: Lookup.t): Type.t =
 	       let
 		  val ts = Vector.map (ts, loop)
 		  fun normal () =
-		     let
-			val s = lookup c
-			val kind = TypeStr.kind s
-			val numArgs = Vector.length ts
-		     in
-			if (case kind of
-			       Kind.Arity n => n = numArgs
-			     | Kind.Nary => true)
-			   then TypeStr.apply (s, ts)
-			else
+		     case lookup c of
+			NONE => Type.new ()
+		      | SOME s => 
 			   let
-			      open Layout
-			      val _ = 
-				 Control.error
-				 (Atype.region ty,
-				  seq [str "type ",
-				       Ast.Longtycon.layout c,
-				       str " given ",
-				       Int.layout numArgs,
-				       str (if numArgs = 1
-					       then " argument"
-					       else " arguments"),
-				       str " but wants ",
-				       Kind.layout kind],
-				  empty)
+			      val kind = TypeStr.kind s
+			      val numArgs = Vector.length ts
 			   in
-			      Type.new ()
+			      if (case kind of
+				     Kind.Arity n => n = numArgs
+				   | Kind.Nary => true)
+				 then TypeStr.apply (s, ts)
+			      else
+				 let
+				    open Layout
+				    val _ = 
+				       Control.error
+				       (Atype.region ty,
+					seq [str "type ",
+					     Ast.Longtycon.layout c,
+					     str " given ",
+					     Int.layout numArgs,
+					     str (if numArgs = 1
+						     then " argument"
+						  else " arguments"),
+					     str " but wants ",
+					     Kind.layout kind],
+					empty)
+				 in
+				    Type.new ()
+				 end
 			   end
-		     end
 	       in
 		  case (Ast.Longtycon.split c, Vector.length ts) of
 		     (([], c), 2) =>
@@ -1180,15 +1182,19 @@ fun elaborateDec (d, {env = E,
 			  #1 (elabDatBind (datBind, nest))
 		     | DatatypeRhs.Repl {lhs, rhs} => (* rule 18 *)
 			  let
-			     val s = Env.lookupLongtycon (E, rhs)
-			     val forceUsed =
-				case TypeStr.node s of
-				   TypeStr.Datatype _ => true
-				 | _ => false
-			     val _ =
-				Env.extendTycon (E, lhs, s,
-						 {forceUsed = forceUsed,
-						  isRebind = false})
+			     val () =
+				Option.app
+				(Env.lookupLongtycon (E, rhs), fn s =>
+				 let
+				    val forceUsed =
+				       case TypeStr.node s of
+					  TypeStr.Datatype _ => true
+					| _ => false
+				 in
+				    Env.extendTycon (E, lhs, s,
+						     {forceUsed = forceUsed,
+						      isRebind = false})
+				 end)
 			  in
 			     Decs.empty
 			  end)

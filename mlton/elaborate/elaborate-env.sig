@@ -188,7 +188,7 @@ signature ELABORATE_ENV =
       val lookupFctid: t * Ast.Fctid.t -> FunctorClosure.t option
       val lookupLongcon: t * Ast.Longcon.t -> CoreML.Con.t * Scheme.t
       val lookupLongstrid: t * Ast.Longstrid.t -> Structure.t option
-      val lookupLongtycon: t * Ast.Longtycon.t -> TypeStr.t
+      val lookupLongtycon: t * Ast.Longtycon.t -> TypeStr.t option
       val lookupLongvar: t * Ast.Longvar.t -> CoreML.Var.t * Scheme.t
       val lookupLongvid: t * Ast.Longvid.t -> Vid.t * Scheme.t
       val lookupSigid: t * Ast.Sigid.t -> Interface.t option

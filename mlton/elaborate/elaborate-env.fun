@@ -1711,8 +1711,8 @@ in
 	    Ast.Longstrid.region,
 	    Ast.Longstrid.layout)
    val lookupLongtycon =
-      make (peekLongtycon,
-	    fn () => TypeStr.bogus Kind.Nary,
+      make (fn z => PeekResult.map (peekLongtycon z, SOME),
+	    fn () => NONE,
 	    "type",
 	    Longtycon.region,
 	    Longtycon.layout)
@@ -3004,7 +3004,7 @@ structure InterfaceEnv =
 			   long: Longtycon.t): TypeStr.t option =
 	 let
 	    fun doit () =
-	       SOME (TypeStr.fromEnv (Env.lookupLongtycon (env, long)))
+	       Option.map (Env.lookupLongtycon (env, long), TypeStr.fromEnv)
 	    val (strids, c) = Longtycon.split long
 	 in
 	    case strids of
