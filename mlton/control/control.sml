@@ -7,14 +7,6 @@ struct
 structure C = Control ()
 open C
 
-val aux = control {name = "aux",
-		   default = false,
-		   toString = Bool.toString}
-
-val commonSubexp = control {name = "common-subexpression elimination",
-			    default = true,
-			    toString = Bool.toString}
-
 structure Chunk =
    struct
       datatype t =
@@ -48,6 +40,11 @@ val defines = control {name = "defines",
 val detectOverflow = control {name = "detect overflow",
 			      default = true,
 			      toString = Bool.toString}
+
+val dropCpsPasses =
+   control {name = "drop CPS passes",
+	    default = [],
+	    toString = List.toString String.toString}
 
 val fixedHeap = control {name = "fixed heap",
 			 default = NONE,
@@ -112,17 +109,21 @@ val instrumentSxml = control {name = "instrument Sxml",
 			      default = false,
 			      toString = Bool.toString}
 
-val keepCps = control {name = "keep CPS",
+val keepCps = control {name = "keepCps",
 		       default = false,
 		       toString = Bool.toString}
+   
+val keepDiagnostics = control {name = "keep diagnostics",
+			       default = [],
+			       toString = List.toString (fn s => s)}
 
 val keepDot = control {name = "keep dot",
 		       default = false,
 		       toString = Bool.toString}
 
-val keepMach = control {name = "keep mach",
-			default = false,
-			toString = Bool.toString}
+val keepPasses = control {name = "keep passes",
+			  default = [],
+			  toString = List.toString (fn s => s)}
    
 val localFlatten = control {name = "local flatten",
 			    default = true,
@@ -201,10 +202,6 @@ val printAtFunEntry = control {name = "print at fun entry",
 val profile = control {name = "profile",
 		       default = false,
 		       toString = Bool.toString}
-
-val redundantTests = control {name = "redundant test elimination",
-			      default = false,
-			      toString = Bool.toString}
 
 val safe = control {name = "safe",
 		    default = true,
@@ -436,17 +433,6 @@ val ('a, 'b) traceBatch: string -> ('a -> 'b) ->
 							     gc = !totalGC}]))
 	   end
 
-fun displays (name: string, thunk: (Layout.t -> unit) -> unit): unit =
-   trace (Pass, "display")
-   File.withOut (concat [File.base (!inputFile), ".", name], fn out =>
-		 thunk (fn l => (Layout.output (l, out)
-				 ; Out.newline out)))
-
-val displays = fn arg => if !aux then displays arg else ()
-   
-fun display (name: string, thunk: unit -> Layout.t): unit =
-   displays (name, fn disp => disp (trace (Pass, "layout") thunk ()))
-
 (*------------------------------------*)
 (*               Errors               *)
 (*------------------------------------*)
@@ -502,30 +488,64 @@ fun 'a sizeMessage (name: string, a: 'a): Layout.t =
 		   Int.toCommaString (MLton.size a), " bytes"])
    end
 
+val diagnosticWriter: (Layout.t -> unit) option ref = ref NONE
+
+fun diagnostic f =
+   case !diagnosticWriter of
+      NONE => ()
+    | SOME w => f w
+
+fun displays (suffix: string, thunk: (Layout.t -> unit) -> 'a): 'a =
+   trace (Pass, "display")
+   File.withOut (concat [!inputFile, ".", suffix], fn out =>
+		 thunk (fn l => (Layout.outputl (l, out))))
+   
+fun display (name: string, thunk: unit -> Layout.t): unit =
+   displays (name, fn disp => disp (trace (Pass, "layout") thunk ()))
+
 fun pass {name: string,
 	  suffix: string,
 	  style: style,
 	  display = disp,
 	  thunk: unit -> 'a}: 'a =
-   let
-      val result = trace (Pass, name) thunk ()
-      val verb = Detail
-   in message (verb, fn () => sizeMessage (suffix, result))
-      ; message (verb, PropertyList.stats)
-      ; message (verb, HashSet.stats)
-      ; checkForErrors name
-      ; (case disp of
-	    NoDisplay => ()
-	  | Layout layout =>
-	       displays (suffix, fn output =>
-			 (outputHeader (style, output)
-			  ; output (layout result)))
-	  | Layouts layout =>
-	       displays (suffix, fn output =>
-			 (outputHeader (style, output)
-			  ; layout (result, output))))
-      ; result
-   end
+   Ref.fluidLet
+   (inputFile, concat [!inputFile, ".", name], fn () =>
+    let
+       val result =
+	  if not (List.contains (!keepDiagnostics, name, String.equals))
+	     then trace (Pass, name) thunk ()
+	  else
+	     displays
+	     ("diagnostic", fn disp =>
+	      let
+		 val _ = diagnosticWriter := SOME disp
+		 val result = trace (Pass, name) thunk ()
+		 val _ = diagnosticWriter := NONE
+	      in
+		 result
+	      end)
+       val verb = Detail
+       val _ = message (verb, fn () => sizeMessage (suffix, result))
+       val _ = message (verb, PropertyList.stats)
+       val _ = message (verb, HashSet.stats)
+       val _ = checkForErrors name
+       val _ =
+	  if not (List.contains (!keepPasses, name, String.equals))
+	     then ()
+	  else
+	     case disp of
+		NoDisplay => ()
+	      | Layout layout =>
+		   displays (suffix, fn output =>
+			     (outputHeader (style, output)
+			      ; output (layout result)))
+	      | Layouts layout =>
+		   displays (suffix, fn output =>
+			     (outputHeader (style, output)
+			      ; layout (result, output)))
+    in
+       result
+    end)
 
 fun passTypeCheck {name: string,
 		   suffix: string,
@@ -551,12 +571,12 @@ fun passSimplify {name, suffix, style, thunk, display, typeCheck, simplify} =
    let
       val result =
 	 passTypeCheck {name = name,
-			suffix = suffix ^ ".unsimplified",
+			suffix = "",
 			style = style,
 			thunk = thunk,
-			display = NoDisplay,
+			display = display,
 			typeCheck = typeCheck}
-   in passTypeCheck {name = name ^ " simplify",
+   in passTypeCheck {name = name ^ "Simplify",
 		     suffix = suffix,
 		     style = style,
 		     thunk = fn () => simplify result,

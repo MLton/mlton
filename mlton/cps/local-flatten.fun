@@ -147,6 +147,18 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 		   ()
 		end
 	     val _ = loop body
+	     val _ =
+		Control.diagnostic
+		(fn display =>
+		 Exp.foreachVar (body, fn (x, _) =>
+				 case varInfo x of
+				    VarInfo.Arg i =>
+				       display (let open Layout
+						in seq [Var.layout x,
+						     str " ",
+							ArgInfo.layout i]
+						end)
+				  | _ => ()))
 	     fun makeTuple (formals: (Var.t * Type.t) vector,
 			    reps: argsInfo)
 		: (Var.t * Type.t) vector * Dec.t list =
@@ -274,23 +286,6 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 		    globals = globals,
 		    functions = functions,
 		    main = main}
-      val _ =
-	 if false
-	    then
-	       Control.displays
-	       ("local-flatten", fn display =>
-		(Program.layouts (program, display)
-		 ; Program.foreachVar (program, fn (x, _) =>
-				       case varInfo x of
-					  VarInfo.Arg i =>
-					     display (let open Layout
-						      in seq [Var.layout x,
-							      str " ",
-							      ArgInfo.layout i]
-						      end)
-					| _ => ())
-		 ; Program.layouts (program', display)))
-	 else ()
    in
       program'
    end

@@ -63,8 +63,6 @@ fun lambdaSize (Program.T {body, ...}): Lambda.t -> int =
       ; size
    end
 
-val counter = Counter.new 0
-   
 fun shouldDuplicate (program as Program.T {body, ...}, small, product)
    : Var.t -> bool =
    let
@@ -192,26 +190,25 @@ fun shouldDuplicate (program as Program.T {body, ...}, small, product)
 		      | _ => Error.bug "strange dec"
 	 in loopDecs decs
 	 end
-   in loopExp (body, 1)
-      ; let
-	   fun sort l =
-	      List.insertionSort (l, fn ((_, _, _, c), (_, _, _, c')) => c < c')
-	in Control.displays
-	   ("threshold" ^ Int.toString (Counter.next counter),
-	    fn layout => 
-	    List.foreach
-	    (sort (!costs), fn (x, size, numOcc, c) =>
-	     layout (let open Layout
-		     in seq [Var.layout x,
-			     str " ", Int.layout size,
-			     str " ", Int.layout numOcc,
-			     str " ", Int.layout c]
-		     end)))
-	end
-     ; (fn x =>
-	case varInfo x of
-	   NONE => false
-	 | SOME {shouldDuplicate, ...} => !shouldDuplicate)
+      val _ = loopExp (body, 1)
+      fun sort l =
+	 List.insertionSort (l, fn ((_, _, _, c), (_, _, _, c')) => c < c')
+      val _ =
+	 Control.diagnostic
+	 (fn layout => 
+	  List.foreach
+	  (sort (!costs), fn (x, size, numOcc, c) =>
+	   layout (let open Layout
+		   in seq [Var.layout x,
+			   str " ", Int.layout size,
+			   str " ", Int.layout numOcc,
+			   str " ", Int.layout c]
+		   end)))
+   in
+      fn x =>
+      case varInfo x of
+	 NONE => false
+       | SOME {shouldDuplicate, ...} => !shouldDuplicate
    end
 
 fun duplicate (program as Program.T {datatypes, body},

@@ -106,22 +106,23 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
    let
       val {tyconRep, conRep, toMtype} = Representation.compute program
       val _ =
-	 Control.displays
-	 ("rep", fn display =>
-	  Vector.foreach
-	  (datatypes, fn {tycon, cons} =>
-	   let open Layout
-	   in display (seq [Tycon.layout tycon,
-			    str " ",
-			    TyconRep.layout (tyconRep tycon)])
-	      ; display (indent
-			 (Vector.layout (fn {con, ...} =>
-					seq [Con.layout con,
-					     str " ",
-					     ConRep.layout (conRep con)])
-			  cons,
-			  2))
-	   end))
+	 Control.diagnostic
+	 (fn display =>
+	  (display (Layout.str "Representations:")
+	   ; (Vector.foreach
+	      (datatypes, fn {tycon, cons} =>
+	       let open Layout
+	       in display (seq [Tycon.layout tycon,
+				str " ",
+				TyconRep.layout (tyconRep tycon)])
+		  ; display (indent
+			     (Vector.layout (fn {con, ...} =>
+					     seq [Con.layout con,
+						  str " ",
+						  ConRep.layout (conRep con)])
+			      cons,
+			      2))
+	       end))))
       fun toMtypes ts = Vector.map (ts, toMtype)
       val wordSize = 4
       val tagOffset = 0
@@ -130,15 +131,16 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
       val chunks = Chunkify.chunkify {program = program,
 				      jumpHandlers = jumpHandlers}
       val _ = 
-	 Control.displays
-	 ("chunks", fn display =>
-	  List.foreach
-	  (chunks, fn {funcs, jumps} =>
-	   let open Layout
-	   in display
-	      (record ([("funcs", List.layout Func.layout funcs),
-			("jumps", List.layout Jump.layout jumps)]))
-	   end))
+	 Control.diagnostic
+	 (fn display =>
+	  (display (Layout.str "Chunkification:")
+	   ; (List.foreach
+	      (chunks, fn {funcs, jumps} =>
+	       let open Layout
+	       in display
+		  (record ([("funcs", List.layout Func.layout funcs),
+			    ("jumps", List.layout Jump.layout jumps)]))
+	       end))))
       val {get = jumpInfo: Jump.t -> {args: (Var.t * Ctype.t) vector,
 				      chunk: Chunk.t option ref,
 				      cont: Label.t option ref,

@@ -207,8 +207,8 @@ fun nonRecursive (program as Program.T {functions, ...}, {size: int option}) =
 	   | ns => List.foreach (ns, fn n =>
 				 #shouldInline (funcInfo (nodeFunc n)) := false))
       val _ =
-	 Control.displays
-	 ("inline", fn layout =>
+	 Control.diagnostic
+	 (fn layout =>
 	  let open Layout
 	  in Vector.foreach
 	     (functions, fn Function.T {name, body, ...} =>
@@ -348,8 +348,8 @@ fun product (program as Program.T {functions, ...},
 	   | _ => ())
 
       val _ =
-	 Control.displays
-	 ("inline", fn layout =>
+	 Control.diagnostic
+	 (fn layout =>
 	  let open Layout
 	  in Vector.foreach
 	     (functions, fn Function.T {name, body, ...} =>

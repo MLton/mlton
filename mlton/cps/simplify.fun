@@ -6,93 +6,44 @@ struct
 
 open S
 
+structure CommonSubexp = CommonSubexp (S)
+structure ConstantPropagation = ConstantPropagation (S)
+structure Contify = Contify (S)
+structure Flatten = Flatten (S)
+structure Inline = Inline (S)
+structure IntroduceLoops = IntroduceLoops (S)
+structure LocalFlatten = LocalFlatten (S)
+structure LoopInvariant = LoopInvariant (S)
+structure PolyEqual = PolyEqual (S)
+structure RaiseToJump = RaiseToJump (S)
+structure Redundant = Redundant (S)
+structure RedundantTests = RedundantTests (S)
+structure RemoveUnused = RemoveUnused (S)
+structure SimplifyTypes = SimplifyTypes (S)
+structure UnusedArgs = UnusedArgs (S)
+structure Useless = Useless (S)
+
 fun $ (f, g) x = g (f x)
 infixr $
 
 fun stats p =
-   (Control.message (Control.Detail, fn () => Program.layoutStats p)
-    ; p)
+   Control.message (Control.Detail, fn () => Program.layoutStats p)
 
-val typeCheck =
-   stats
-   $ (fn p => (if !Control.typeCheck
-		  then Control.trace (Control.Pass, "typeCheck") typeCheck p
-	       else ()
-               ; p))
+fun typeCheck p =
+   (stats p
+    ; if !Control.typeCheck
+	 then Control.trace (Control.Pass, "typeCheck") typeCheck p
+      else ())
 
 fun trace (name, pass) =
    Control.trace (Control.Pass, name)
    (Trace.trace ("Simplify." ^ name, Program.layout, Program.layout) pass)
 
-structure CommonSubexp = CommonSubexp (S)
-val commonSubexp =
-   trace ("commonSubexp", CommonSubexp.eliminate)
-   
-structure ConstantPropagation = ConstantPropagation (S)
-val constantPropagation =
-   trace ("constantPropagation", ConstantPropagation.simplify)
-
-structure Contify = Contify (S)
-val contify = trace ("contify", Contify.contify)
-
-structure Flatten = Flatten (S)
-val flatten = trace ("flatten", Flatten.flatten)
-(* val flatten =
- *    fn p =>
- *    Int.fold (0, !Control.flattenRounds, p, fn (_, p) => typeCheck (flatten p))
- *)
-
-structure Inline = Inline (S)
-val inline = trace ("inline", Inline.inline)
-
-structure IntroduceLoops = IntroduceLoops (S)
-val introduceLoops = trace ("introduce-loops", IntroduceLoops.introduceLoops)
-
-(*structure LoopCount = LoopCount (S) *)
-
-structure LocalFlatten = LocalFlatten (S)
-val localFlatten = trace ("local-flatten", LocalFlatten.flatten)
-   
-structure LoopInvariant = LoopInvariant (S)
-val loopInvariant = trace ("loop-invariant", LoopInvariant.loopInvariant)
-   
-structure PolyEqual = PolyEqual (S)
-val polyEqual = trace ("poly-equal", PolyEqual.polyEqual)
-
-structure RaiseToJump = RaiseToJump (S)
-val raiseToJump = trace ("raise-to-jump", RaiseToJump.raiseToJump)
-
-structure Redundant = Redundant (S)
-val redundant = trace ("redundant", Redundant.redundant)
-
-structure RedundantTests = RedundantTests (S)
-val redundantTests = trace ("redundant tests", RedundantTests.simplify)
-
-structure RemoveUnused = RemoveUnused (S)
-val removeUnused = trace ("removeUnused", RemoveUnused.remove)
-   
-structure SimplifyTypes = SimplifyTypes (S)
-val simplifyTypes = trace ("simplifyTypes", SimplifyTypes.simplify)
-
-structure UnusedArgs = UnusedArgs (S)
-val unusedArgs = trace ("unusedArgs", UnusedArgs.unusedArgs)
-
-structure Useless = Useless (S)
-val useless = trace ("useless", Useless.useless)
-
 fun leafInline p =
    Ref.fluidLet
    (Control.inline, Control.Leaf {size = SOME 20 (* arbitrary *)}, fn () =>
-    inline p)
-val leafInline = trace ("leaf-inline", leafInline)
+    Inline.inline p)
 			   
-fun save suffix p =
-   (Ref.fluidLet
-    (Control.aux, true, 
-     fn () => Control.displays (suffix, fn layout =>
-				Program.layouts (p, layout)))
-    ; p)
-
 (*
  * useless should run after constant propagation because const prop makes
  *  slots of tuples that are constant useless
@@ -107,83 +58,69 @@ fun save suffix p =
 
 fun traces s p = (Trace.Immediate.on s; p)
 
-val removeUnused = shrink o removeUnused
-
 val passes =
    [
-    removeUnused,
-    leafInline,
-    raiseToJump,
-    contify,
-    localFlatten,
-    constantPropagation,  (* constantPropagation cannot be omitted.
-			   * It implements Array_array0.
-			   *)
-    useless,
-    removeUnused,
-    unusedArgs,
-    simplifyTypes,
-    polyEqual, (* polyEqual cannot be omitted.  It implements MLton_equal. *)
-    contify,
-    inline,
-    localFlatten,
-    removeUnused,
-    raiseToJump,
-    contify,
-    unusedArgs,
-    introduceLoops,
-    loopInvariant,
-    flatten,
-    localFlatten,
-    commonSubexp,
-    redundantTests,
-    redundant,
-    unusedArgs,
-    removeUnused  (* removeUnused cannot be omitted.
-		   * The final shrink pass ensures that constant operands are
-		   * not used in dead switch branches in a type-unsafe way.
-		   * This ensures that constants are not used where pointers
-		   * are expected in the Operand.offsets generated in the
-		   * backend.
-		   *)
+    ("removeUnused1", RemoveUnused.remove),
+    ("leafInline", leafInline),
+    ("raiseToJump1", RaiseToJump.raiseToJump),
+    ("contify1", Contify.contify),
+    ("localFlatten1", LocalFlatten.flatten),
+    (* constantPropagation cannot be omitted. It implements Array_array0. *)
+    ("constantPropagation", ConstantPropagation.simplify),
+    ("useless", Useless.useless),
+    ("removeUnused2", RemoveUnused.remove),
+    ("unusedArgs1", UnusedArgs.unusedArgs),
+    ("simplifyTypes", SimplifyTypes.simplify),
+    (* polyEqual cannot be omitted.  It implements MLton_equal. *)
+    ("polyEqual", PolyEqual.polyEqual),
+    ("contify2", Contify.contify),
+    ("inline", Inline.inline),
+    ("localFlatten2", LocalFlatten.flatten),
+    ("removeUnused3", RemoveUnused.remove),
+    ("raiseToJump2", RaiseToJump.raiseToJump),
+    ("contify3", Contify.contify),
+    ("unusedArgs2", UnusedArgs.unusedArgs),
+    ("introduceLoops", IntroduceLoops.introduceLoops),
+    ("loopInvariant", LoopInvariant.loopInvariant),
+    ("flatten", Flatten.flatten),
+    ("localFlatten3", LocalFlatten.flatten),
+    ("redundantTests", RedundantTests.simplify),
+    ("redundant", Redundant.redundant),
+    ("unusedArgs3", UnusedArgs.unusedArgs),
+     (* removeUnused cannot be omitted.
+      * The final shrink pass ensures that constant operands are
+      * not used in dead switch branches in a type-unsafe way.
+      * This ensures that constants are not used where pointers
+      * are expected in the Operand.offsets generated in the
+      * backend.
+      *)
+    ("removeUnused4", RemoveUnused.remove)
     ]
    
 fun simplify p =
-   List.fold (passes, stats p, fn (pass, p) => typeCheck (pass p))
+   (stats p
+    ; List.fold (passes, p, fn ((name, pass), p) =>
+		 if List.contains (!Control.dropCpsPasses, name, String.equals)
+		    then p
+		 else
+		    Control.passTypeCheck
+		    {name = name,
+		     suffix = "cps",
+		     style = Control.No,
+		     thunk = fn () => pass p,
+		     display = Control.Layouts Program.layouts,
+		     typeCheck = typeCheck}))
 
-(*
-fun display (pass, p, s, i)
-  = let open Control
-    in if !keepCps
-	 then (Ref.fluidLet
-	       (aux, true, fn () =>
-		displays (s ^ "." ^ pass ^ ".cps" ^ (Int.toString i), fn disp =>
-			  (outputHeader (No, disp)
-			   ; Program.layouts (p, disp)))))
-	 else ()
-    end
-in
-fun simplify p =
-   List.fold
-   (passes,
-    stats p,
-    fn (pass, p)
-     => let
-	  val _ = display (pass, p, "pre", !n)
-	  val p' = pass p
-	  val _ = display (pass, p', "post", !n)
-	  val _ = n := !n + 1
-	in
-	  typeCheck p'
-	end)
-end
-*)
-   
 val typeCheck = S.typeCheck
 
 val simplify = fn p => let val p' = simplify p
-                       in (typeCheck p' 
-			   ; p')
+                       in
+			  (* Always want to type check the final CPS program,
+			   * even if type checking is turned off, just to catch
+			   * bugs.
+			   *)
+			  typeCheck p' 
+			  ; p'
 		       end 
 
 end

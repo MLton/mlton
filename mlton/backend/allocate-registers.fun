@@ -398,10 +398,9 @@ fun allocate {program = program as Program.T {globals, functions, ...},
 	 Vector.foreach (functions, fn Function.T {name, args, body, ...} =>
 			 allocateFunc (name, args, body))
       val _ =
-	 Control.displays
-	 ("reg", fn display =>
+	 Control.diagnostic
+	 (fn display =>
 	  let
-	     val _ = Control.outputHeader (Control.No, display)
 	     open Layout
 	     fun layoutVar x =
 		display (seq

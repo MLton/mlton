@@ -2,7 +2,7 @@ type int = Int.t
    
 signature REMOVE_UNUSED_STRUCTS = 
    sig
-      include CPS_TREE
+      include SHRINK
    end
 
 signature REMOVE_UNUSED = 

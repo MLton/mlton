@@ -86,7 +86,7 @@ val displayDecs =
    
 fun parseAndElaborateFiles (fs: File.t list, E: Env.t): Decs.t =
    Control.pass
-   {name = "parse and elaborate",
+   {name = "parseAndElaborate",
     suffix = "core-ml",
     style = Control.ML,
     thunk = fn () => List.fold (fs, Decs.empty, fn (f, ds) =>
@@ -186,31 +186,29 @@ local
    val r = ref NONE
 in
    fun forceBasisLibrary (d: Dir.t): unit =
-      Ref.fluidLet
-      (Control.aux, false, fn () =>
-       let
-	  fun basisFile f = String./ (d, f)
-	  fun files (f, E) =
-	     parseAndElaborateFiles
-	     (rev (File.foldLines (basisFile f, [], fn (s, ac) =>
-				   if s <> "\n" andalso #"#" <> String.sub (s, 0)
-				      then basisFile (String.dropLast s) :: ac
-				   else ac)),
-	      basisEnv)
-	  val (d1, (d2, d3)) =
-	     Env.localTop
-	     (basisEnv,
-	      fn () => (Env.addPrim basisEnv
-			; files ("build-basis", basisEnv)),
-	      fn () =>
-	      (files ("bind-basis", basisEnv),
-	       (* Suffix is concatenated onto the end of the program for cleanup. *)
-	       parseAndElaborateFiles ([basisFile "misc/suffix.sml"], basisEnv)))
-	  val _ = Env.addEquals basisEnv
-	  val _ = Env.clean basisEnv
-       in r := SOME {prefix = Decs.append (d1, d2),
-		     suffix = d3}
-       end)
+      let
+	 fun basisFile f = String./ (d, f)
+	 fun files (f, E) =
+	    parseAndElaborateFiles
+	    (rev (File.foldLines (basisFile f, [], fn (s, ac) =>
+				  if s <> "\n" andalso #"#" <> String.sub (s, 0)
+				     then basisFile (String.dropLast s) :: ac
+				  else ac)),
+	     basisEnv)
+	 val (d1, (d2, d3)) =
+	    Env.localTop
+	    (basisEnv,
+	     fn () => (Env.addPrim basisEnv
+		       ; files ("build-basis", basisEnv)),
+	     fn () =>
+	     (files ("bind-basis", basisEnv),
+	      (* Suffix is concatenated onto the end of the program for cleanup. *)
+	      parseAndElaborateFiles ([basisFile "misc/suffix.sml"], basisEnv)))
+	 val _ = Env.addEquals basisEnv
+	 val _ = Env.clean basisEnv
+      in r := SOME {prefix = Decs.append (d1, d2),
+		    suffix = d3}
+      end
    fun basisLibrary () =
       (case !r of
 	  NONE => forceBasisLibrary "../basis-library"
@@ -296,7 +294,7 @@ fun preCodegen {input, docc}: MachineOutput.Program.t =
 			       Sxml.Program.layoutStats sxml)
       val sxml =
 	 Control.passSimplify
-	 {name = "implement exceptions",
+	 {name = "implementExceptions",
 	  suffix = "sxml",
 	  style = Control.ML,
 	  thunk = fn () => ImplementExceptions.doit sxml,
@@ -314,7 +312,7 @@ fun preCodegen {input, docc}: MachineOutput.Program.t =
 			       Sxml.Program.layoutStats sxml)
       val cps =
 	 Control.passSimplify
-	 {name = "closure convert",
+	 {name = "closureConvert",
 	  suffix = "cps",
 	  style = Control.No,
 	  thunk = fn () => ClosureConvert.closureConvert sxml,
@@ -323,12 +321,16 @@ fun preCodegen {input, docc}: MachineOutput.Program.t =
 	  display = Control.Layouts Cps.Program.layouts}
       val _ =
 	 let open Control
-	 in if !keepCps andalso not (!aux)
-	       then (Ref.fluidLet
-		     (aux, true, fn () =>
-		      displays ("cps", fn disp =>
-				(outputHeader (No, disp)
-				 ; Cps.Program.layouts (cps, disp)))))
+	 in if !keepCps
+	       then
+		  File.withOut
+		  (concat [!inputFile, ".cps"], fn out =>
+		   let
+		      fun disp l = Layout.outputl (l, out)
+		   in
+		      outputHeader (No, disp)
+		      ; Cps.Program.layouts (cps, disp)
+		   end)
 	    else ()
 	 end
       val machine =
@@ -343,19 +345,8 @@ fun preCodegen {input, docc}: MachineOutput.Program.t =
 	 {name = "toMOut",
 	  suffix = "mout",
 	  style = Control.No,
-	  display = Control.NoDisplay,
+	  display = Control.Layouts MachineOutput.Program.layouts,
 	  thunk = fn () => Machine.Program.toMachineOutput machine}
-      val _ =
-         let open Control
-         in if !keepMach
-               then (Ref.fluidLet
-                     (aux, true, fn () =>
-                      displays ("mach", fn disp =>
-                                (outputHeader (No, disp)
-                                 ; MachineOutput.Program.layouts (mprogram,
-                                                                  disp)))))
-            else ()
-         end
    in
       mprogram
    end

@@ -338,6 +338,7 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
 	     VarInfo.Used =>
 		SOME {var = var, ty = ty, exp = simplifyPrimExp exp}
 	   | _ => NONE)
+      val shrinkExp = shrinkExp globals
       val functions =
 	 Vector.keepAllMap
 	 (functions, fn Function.T {name, args, body, returns} =>
@@ -345,7 +346,7 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
 	  in if !visited
 		then SOME (Function.T {name = name, args = args,
 				       returns = returns,
-				       body = simplifyExp body})
+				       body = shrinkExp (simplifyExp body)})
 	     else NONE
 	  end)
       val p =

@@ -14,17 +14,12 @@ signature CONTROL =
       (*            Begin Flags             *)
       (*------------------------------------*)
 
-      (* whether or not to print auxiliary files *)
-      val aux: bool ref
-
       datatype chunk =
 	 OneChunk
        | ChunkPerFunc
        | Coalesce of {limit: int}
 
       val chunk: chunk ref
-
-      val commonSubexp: bool ref
 
       (* The current SML source being processed. *)
       val currentSource: Source.t ref
@@ -36,10 +31,13 @@ signature CONTROL =
 
       val detectOverflow: bool ref
 
+      (* List of CPS optimization passes to skip. *)
+      val dropCpsPasses: string list ref
+
       (* SOME n means that the executable should use a fixed heap of size n *)
       val fixedHeap: int option ref
 
-      (* Indentation used in laying out cps trees. *)
+      (* Indentation used in laying out CPS trees. *)
       val indentation: int ref
 	 
       (* The .h files that should be #include'd in the .c file. *)
@@ -60,11 +58,17 @@ signature CONTROL =
       (* call count instrumentation *)
       val instrument: bool ref
 
+      (* Save the CPS to a file. *)
       val keepCps: bool ref
+	 
+      (* List of pass names to keep diagnostic info on. *)
+      val keepDiagnostics: string list ref
 
+      (* Keep dot files for whatever CPS files are produced. *)
       val keepDot: bool ref
 
-      val keepMach: bool ref
+      (* List of pass names to save the result of. *)
+      val keepPasses: string list ref
 
       val localFlatten: bool ref
 
@@ -125,9 +129,6 @@ signature CONTROL =
       (* Insert profiling information. *)
       val profile: bool ref
 
-      (* CPS redundant test*)
-      val redundantTests: bool ref
-	 
       (* Array bounds checking. *)
       val safe: bool ref
 	 
@@ -167,9 +168,6 @@ signature CONTROL =
       val unindent: unit -> unit
       val getDepth: unit -> int
 
-      val displays: string * ((Layout.t -> unit) -> unit) -> unit
-      val display: string * (unit -> Layout.t) -> unit
-
       (*------------------------------------*)
       (*          Error Reporting           *)
       (*------------------------------------*)
@@ -189,6 +187,7 @@ signature CONTROL =
        | Layout of 'a -> Layout.t
        | Layouts of 'a * (Layout.t -> unit) -> unit
 
+      val diagnostic: ((Layout.t -> unit) -> unit) -> unit
       val outputHeader: style * (Layout.t -> unit) -> unit
       val outputHeader': style * Out.t -> unit
 
@@ -199,17 +198,17 @@ signature CONTROL =
 		 display: 'a display} ->'a
 	 
       val passTypeCheck: {name: string,
-			   suffix: string,
-			   style: style,
-			   thunk: unit -> 'a,
-			   display: 'a display,
-			   typeCheck: 'a -> unit} -> 'a
-	 
-      val passSimplify: {name: string,
 			  suffix: string,
 			  style: style,
 			  thunk: unit -> 'a,
 			  display: 'a display,
-			  simplify: 'a -> 'a,
 			  typeCheck: 'a -> unit} -> 'a
+	 
+      val passSimplify: {name: string,
+			 suffix: string,
+			 style: style,
+			 thunk: unit -> 'a,
+			 display: 'a display,
+			 simplify: 'a -> 'a,
+			 typeCheck: 'a -> unit} -> 'a
    end

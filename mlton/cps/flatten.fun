@@ -167,8 +167,8 @@ fun flatten (Program.T {datatypes, globals, functions, main}) =
       val _ = Vector.foreach (functions, fn Function.T {name, body, ...} =>
 			      loopExp (body, #returns (funcInfo name)))
       val _ =
-	 Control.displays
-	 ("flat", fn display =>
+	 Control.diagnostic
+	 (fn display =>
 	  Vector.foreach
 	  (functions, fn Function.T {name, ...} =>
 	   let val {args, returns} = funcInfo name

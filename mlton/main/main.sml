@@ -62,15 +62,18 @@ val options =
       open Control Popt
       fun push r = String (fn s => List.push (r, s))
    in [
-       (Expert, "cse", " {true|false}",
-	"CPS common subexpression elimination",
-	boolRef Control.commonSubexp),
        (Normal,
 	"detect-overflow",
 	" {true|false}",
 	"overflow checking on integer arithmetic",
 	Bool (fn b => (detectOverflowSet := true
 		       ; detectOverflow := b))),
+       (Expert, "diag", " pass", "keep diagnostic info for pass",
+	SpaceString (fn s =>
+		     (List.push (keepDiagnostics, s)
+		      ; List.push (keepPasses, s)))),
+       (Expert, "drop-cps-pass", " pass", "omit CPS optimization pass",
+	SpaceString (fn s => List.push (dropCpsPasses, s))),
        (Normal, "D", "define", "define compile-time constant",
 	String (fn s => (List.push (defines, s)
 			 ; if s = "INSTRUMENT"
@@ -93,17 +96,17 @@ val options =
 	Int setInlineSize),
        (Normal, "I", "dir", "search dir for include files",
 	push includeDirs),
-       (Normal, "keep", " {cps|dot|g|il|o|sml}", "save intermediate files",
+       (Normal, "keep", " {cps|dot|g|o|sml}", "save intermediate files",
 	SpaceString (fn s =>
 		     case s of
 			"cps" => keepCps := true
-		      | "dot" => (keepDot := true; keepCps := true)
+		      | "dot" => keepDot := true
 		      | "g" => keepGenerated := true
-		      | "il" => aux := true
-		      | "mach" => keepMach := true
 		      | "o" => keepO := true
 		      | "sml" => keepSML := true
 		      | _ => usage (concat ["invalid -keep flag: ", s]))),
+       (Expert, "keep-pass", " pass", "keep the results of pass",
+	SpaceString (fn s => List.push (keepPasses, s))),
        (Normal, "l", "library", "link with library", push libs),
        (Expert, "local-flatten", " {true|false}",
 	"CPS local flattening optimization",
@@ -138,14 +141,10 @@ val options =
        (Normal, "o", " file", "name of output file",
 	SpaceString (fn s => output := SOME s)),
        (Normal, "p", "", "produce executable suitable for profiling",
-	None (fn () => (profile := true
-			; keepCps := true))),
+	None (fn () => (profile := true; keepCps := true))),
        (Expert, "print-at-fun-entry", "",
 	"print debugging message at every call",
 	trueRef printAtFunEntry),
-       (Expert, "redundant-tests", " {false|true}",
-	"CPS redundant test optimization",
-	boolRef redundantTests),
        (Normal, "safe", " {true|false}", "bounds checking and other checks",
 	boolRef safe),
        (Normal, "show-basis", "", "display the basis library",
@@ -242,6 +241,10 @@ fun commandLine (args: string list): unit =
 	    then chunk := ChunkPerFunc
 	 else chunk := Coalesce {limit = 2000}
       val _ =
+	 if !keepDot andalso List.isEmpty (!keepPasses)
+	    then keepCps := true
+	 else ()
+      val _ =
 	 if !detectOverflowSet
 	    then ()
 	 else if !Native.native
@@ -255,9 +258,6 @@ fun commandLine (args: string list): unit =
 	 List.push (defines,
 		    concat ["MLton_safe=", if !safe then "TRUE" else "FALSE"])
       val _ = if !debug then () else List.push (defines, "NODEBUG")
-      val _ = if !aux andalso !keepDot
-		 then usage "cannot use -keep dot and -keep il"
-	      else ()
       val _ = Control.includes := !includes
    in case result of
       Result.No switch => usage (concat ["invalid switch: ", switch])

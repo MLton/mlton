@@ -312,8 +312,8 @@ fun closureConvert (program as Sxml.Program.T {datatypes, body}): Cps.Program.t 
 	 in ()
 	 end
       val _ =
-	 Control.displays
-	 ("flow", fn display =>
+	 Control.diagnostic
+	 (fn display =>
 	  Sexp.foreachBoundVar
 	  (body, fn (x, _, _) => display (let open Layout
 					  in seq [Var.layout x,

@@ -751,12 +751,11 @@ fun simplify (program as Program.T {datatypes, globals, functions, main})
 		  useFromTypeOnBinds = false
 		  }
       val _ =
-	 Control.displays
-	 ("const", fn display =>
+	 Control.diagnostic
+	 (fn display =>
 	  let open Layout
-	  in display (str "Input program:\n")
-	     ; Program.layouts (program, display)
-	     ; display (str "\nConstructors:\n")
+	  in 
+	     display (str "\nConstructors:\n")
 	     ; (Vector.foreach
 		(datatypes, fn {cons, ...} =>
 		 Vector.foreach

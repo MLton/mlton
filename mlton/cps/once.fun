@@ -107,8 +107,8 @@ fun once (program as Program.T {globals, functions, main, ...}) =
 	    loop (body, vars, n, [])
 	 end
       val _ =
-	 Control.displays
-	 ("once-graph", fn display =>
+	 Control.diagnostic
+	 (fn display =>
 	  (display (Exp.layout body)
 	   ; display (Layout.str "\n\n")
 	   ; let open Graph.LayoutDot
@@ -131,8 +131,8 @@ fun once (program as Program.T {globals, functions, main, ...}) =
 	   | _ => ())
       val _ = Vector.foreach (globals, fn {var, ...} => setOnce (var, true))
       val _ =
-	 Control.displays
-	 ("once-vars", fn display =>
+	 Control.diagnostic
+	 (fn display =>
 	  Exp.foreachVar (body, fn (x, _) =>
 			  if once x then display (Var.layout x)
 			  else ()))

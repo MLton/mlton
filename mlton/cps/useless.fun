@@ -536,25 +536,22 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
 	    handleDec = fn HandlerPush j => Vector.foreach2 (jump j, exnVals (),
 							    Value.unify)
 	  | _ => ()}))
-      (* diagnostic *)
       val _ =
-	 Control.displays
-	 ("useless", fn display =>
+	 Control.diagnostic
+	 (fn display =>
 	  let open Layout
-	  in display (str "Input program:\n")
-	     ; Program.layouts (program, display)
-	     ; display (str "\n\nUseless:")
-	     ; (Vector.foreach
-		(datatypes, fn {tycon, cons} =>
-		 display
-		 (align
-		  [Tycon.layout tycon,
-		   indent (Vector.layout
-			   (fn {con, ...} =>
-			    seq [Con.layout con, str " ",
-				 Vector.layout Value.layout (conArgs con)])
-			   cons,
-			   2)])))
+	  in
+	     Vector.foreach
+	     (datatypes, fn {tycon, cons} =>
+	      display
+	      (align
+	       [Tycon.layout tycon,
+		indent (Vector.layout
+			(fn {con, ...} =>
+			 seq [Con.layout con, str " ",
+			      Vector.layout Value.layout (conArgs con)])
+			cons,
+			2)]))
 	     ; (Program.foreachVar
 		(program, fn (x, _) => display (seq [Var.layout x,
 						     str " ",
@@ -879,9 +876,6 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
 		    functions = functions,
 		    main = main}
       val _ = Program.clear program
-      val _ =
-	 Control.displays ("post-useless", fn display =>
-			   Program.layouts (program, display))
    in
       program
    end

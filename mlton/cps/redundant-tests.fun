@@ -103,16 +103,7 @@ structure NodeInfo =
    end
 
 fun simplify (program as Program.T {globals, datatypes, functions, main}) =
-   if not (!Control.redundantTests)
-      then program
-   else
-   Ref.fluidLet
-   (Control.aux, true, fn () =>
    let
-      val _ =
-	 Control.displays
-	 ("redundant-tests.pre", fn display =>
-	  (Program.layouts (program, display)))
       datatype varInfo =
 	 Const of Const.t
        | Fact of Fact.t
@@ -229,16 +220,14 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 				      ; ()))
 		    end)
 		val _ =
-		   File.withOut
-		   ("z.dot", fn out =>
-		    Layout.outputl
-		    (Graph.LayoutDot.layout
-		     {graph = g,
-		      title = "dominator tree",
-		      options = [],
-		      edgeOptions = fn _ => [],
-		      nodeOptions = fn _ => []},
-		     out))
+		   Control.diagnostic
+		   (fn disp =>
+		    disp (Graph.LayoutDot.layout
+			  {graph = g,
+			   title = "dominator tree",
+			   options = [],
+			   edgeOptions = fn _ => [],
+			   nodeOptions = fn _ => []}))
 	     end				     
 	     fun loopTransfer (t, n: Node.t) =
 		case t of
@@ -325,7 +314,6 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 		   ()
 		end
 	     val _ = loop (body, root)
-	     val _ = Out.output (Out.error, "analysis done\n")
 	     (* Analysis is done. *)
 	     (* Set up ancestors. *)
 	     fun loop (n: Node.t, a: Node.t option) =
@@ -340,26 +328,20 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 		   List.foreach (!children, fn n => loop (n, a))
 		end
 	     val _ = loop (root, NONE)
-	     val _ = Out.output (Out.error, "ancestors done\n")
 	     (* Diagnostic. *)
 	     val _ = 
-		Ref.fluidLet
-		(Control.inputFile, concat [!Control.inputFile,
-					    ".", Func.toString name,
-					    ".facts"],
-		 fn () =>
-		 Control.displays
-		 ("", fn display =>
-		  Exp.foreachDec
-		  (body,
-		   fn Fun {name, ...} =>
-		   let open Layout
-		   in display (seq [Jump.layout name,
-				    str " ",
-				    List.layout Fact.layout
-				    (! (#facts (jumpInfo name)))])
-		   end
-		    | _ => ())))
+		Control.diagnostic
+		(fn display =>
+		 Exp.foreachDec
+		 (body,
+		  fn Fun {name, ...} =>
+		  let open Layout
+		  in display (seq [Jump.layout name,
+				   str " ",
+				   List.layout Fact.layout
+				   (! (#facts (jumpInfo name)))])
+		  end
+		   | _ => ()))
 	     (* Transformation. *)
 	     fun determine (i: NodeInfo.t, f: Fact.t) =
 		let
@@ -431,23 +413,18 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 	  end
       val functions = Vector.map (functions, simplifyFunction)
       val _ =
-	 let open Layout
-	 in outputl (seq [str "numSimplified = ",
-			  Int.layout (!numSimplified)],
-		     Out.error)
-	 end
+	 Control.diagnostic
+	 (fn disp =>
+	  let open Layout
+	  in disp (seq [str "numSimplified = ", Int.layout (!numSimplified)])
+	  end)
       val program = 
 	 Program.T {datatypes = datatypes,
 		    globals = globals,
 		    functions = functions,
 		    main = main}
-      val _ =
-	 Control.displays
-	 ("redundant-tests.post", fn display =>
-	  Program.layouts (program, display))
    in
       program
    end
-   )
 
 end
