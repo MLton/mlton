@@ -98,7 +98,8 @@ fun mkLexAndParse () =
 	    [make (concat [!Control.libDir, "/mlb-path-map"]),
 	     case OS.Process.getEnv "HOME" of
 		NONE => []
-	      | SOME path => make (concat [path, "/.mlton/mlb-path-map"])]
+	      | SOME path => make (concat [path, "/.mlton/mlb-path-map"]),
+	     [{var = "LIB_MLTON_DIR", path = !Control.libDir}]]
       end
 
       fun regularize {fileOrig, cwd, relativize} =

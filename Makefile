@@ -156,7 +156,7 @@ nj-mlton-dual:
 .PHONY: mlbpathmap
 mlbpathmap:
 	touch $(MLBPATHMAP)
-	( echo 'MLTON_ROOT $(LIB)/sml' ) 	\
+	( echo 'MLTON_ROOT $$(LIB_MLTON_DIR)/sml' ) 	\
 		>>$(MLBPATHMAP).tmp
 	mv $(MLBPATHMAP).tmp $(MLBPATHMAP)
 
@@ -289,7 +289,6 @@ install: install-docs install-no-docs
 install-no-docs:
 	mkdir -p $(TLIB) $(TBIN) $(TMAN)
 	$(CP) $(LIB)/. $(TLIB)/
-	( echo 'MLTON_ROOT $(TLIB)/sml' ) >$(TLIB)/mlb-path-map
 	sed "/^lib=/s;'.*';'$(prefix)/$(ULIB)';" 			\
 			<$(SRC)/bin/mlton >$(TBIN)/mlton
 	chmod +x $(TBIN)/mlton
