@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+(*
 structure Int32: INTEGER_EXTRA =
    struct
       structure Int = Primitive.Int
@@ -171,9 +172,16 @@ structure Int32: INTEGER_EXTRA =
 	      in loop (exp, 1)
 	      end
    end
+*)
 
+structure Int32 : INTEGER_EXTRA =
+  Integer
+  (structure P = Primitive.Int32
+    open P
+    val precision' : Int.int = 32
+    val maxInt' : int = 0x7fffffff
+    val minInt' : int = ~0x80000000
+   )
 structure Int = Int32
 structure IntGlobal: INTEGER_GLOBAL = Int
 open IntGlobal
-structure Position = Int
-structure FixedInt = Int

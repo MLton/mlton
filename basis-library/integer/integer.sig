@@ -13,30 +13,50 @@ signature INTEGER_GLOBAL =
       eqtype int
    end
 
-signature INTEGER =
+signature PRE_INTEGER =
    sig
       include INTEGER_GLOBAL
 
+      val * : int * int -> int
+      val + : int * int -> int 
+      val - : int * int -> int
+      val < : int * int -> bool
+      val <= : int * int -> bool
+      val > : int * int -> bool
+      val >= : int * int -> bool
+      val quot : int * int -> int
+      val rem : int * int -> int
+      val ~ : int -> int
+      val fromInt : Int.int -> int
+      val toInt : int -> Int.int
+   end
+signature PRE_INTEGER_EXTRA =
+   sig
+      include PRE_INTEGER
+
+      val *? : int * int -> int
+      val +? : int * int -> int
+      val -? : int * int -> int
+      val ~? : int -> int
+      val geu: int * int -> bool
+      val gtu: int * int -> bool
+      val precision' : Int.int
+      val maxInt' : int
+      val minInt' : int
+   end
+
+signature INTEGER =
+   sig
+      include PRE_INTEGER
+
       val toLarge: int -> LargeInt.int 
       val fromLarge: LargeInt.int -> int 
-      val toInt: int -> Int.int 
-      val fromInt: Int.int -> int 
       val precision: Int.int option 
       val minInt: int option 
       val maxInt: int option 
-      val + : int * int -> int 
-      val - : int * int -> int 
-      val * : int * int -> int 
       val div: int * int -> int 
       val mod: int * int -> int 
-      val quot: int * int -> int 
-      val rem: int * int -> int
       val compare: int * int -> order 
-      val > : int * int -> bool 
-      val >= : int * int -> bool 
-      val < : int * int -> bool 
-      val <= : int * int -> bool 
-      val ~ : int -> int 
       val abs: int -> int 
       val min: int * int -> int 
       val max: int * int -> int 
@@ -53,11 +73,17 @@ signature INTEGER =
 signature INTEGER_EXTRA =
    sig
       include INTEGER
-
+      (* include PRE_INTEGER_EXTRA *)
+      val *? : int * int -> int
+      val +? : int * int -> int
+      val -? : int * int -> int
+      val ~? : int -> int
       val geu: int * int -> bool
       val gtu: int * int -> bool
-      val maxInt': int
-      val minInt': int
+      val precision' : Int.int
+      val maxInt' : int
+      val minInt' : int
+
       val power: {base: int, exp: int} -> int
    end
 

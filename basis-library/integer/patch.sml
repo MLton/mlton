@@ -15,8 +15,23 @@ structure Int32: INTEGER_EXTRA =
       val fromLarge = IntInf.toInt
       val toLarge = IntInf.fromInt
    end
-
 structure Int = Int32
+structure Position = Int
+structure FixedInt = Int
+structure Int16: INTEGER_EXTRA =
+   struct
+      open Int16
+       
+      val fromLarge = fromInt o Int.fromLarge
+      val toLarge = Int.toLarge o toInt
+   end
+structure Int8: INTEGER_EXTRA =
+   struct
+      open Int8
+       
+      val fromLarge = fromInt o Int.fromLarge
+      val toLarge = Int.toLarge o toInt
+   end
 
 structure Word8: WORD_EXTRA =
    struct

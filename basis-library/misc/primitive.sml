@@ -245,6 +245,72 @@ structure Primitive =
 	    val getRoundingMode = _ffi "IEEEReal_getRoundingMode": unit -> int;
 	 end
 
+      structure Int8 =
+	 struct
+	    type int = int8
+
+	    val *? = _prim "Int8_mul": int * int -> int;
+	    val * =
+	       if detectOverflow
+		  then _prim "Int8_mulCheck": int * int -> int;
+	       else *?
+	    val +? = _prim "Int8_add": int * int -> int;
+	    val + =
+	       if detectOverflow
+		  then _prim "Int8_addCheck": int * int -> int;
+	       else +?
+	    val -? = _prim "Int8_sub": int * int -> int;
+	    val - =
+	       if detectOverflow
+		  then _prim "Int8_subCheck": int * int -> int;
+	       else -?
+	    val < = _prim "Int8_lt": int * int -> bool;
+	    val <= = _prim "Int8_le": int * int -> bool;
+	    val > = _prim "Int8_gt": int * int -> bool;
+	    val >= = _prim "Int8_ge": int * int -> bool;
+	    val quot = _prim "Int8_quot": int * int -> int;
+	    val rem = _prim "Int8_rem": int * int -> int;
+	    val ~? = _prim "Int8_neg": int -> int; 
+	    val ~ =
+	       if detectOverflow
+		  then _prim "Int8_negCheck": int -> int;
+	       else ~?
+	    val fromInt = _prim "Int32_toInt8": Int.int -> int;
+	    val toInt = _prim "Int8_toInt32": int -> Int.int;
+	 end
+      structure Int16 =
+	 struct
+	    type int = int16
+
+	    val *? = _prim "Int16_mul": int * int -> int;
+	    val * =
+	       if detectOverflow
+		  then _prim "Int16_mulCheck": int * int -> int;
+	       else *?
+	    val +? = _prim "Int16_add": int * int -> int;
+	    val + =
+	       if detectOverflow
+		  then _prim "Int16_addCheck": int * int -> int;
+	       else +?
+	    val -? = _prim "Int16_sub": int * int -> int;
+	    val - =
+	       if detectOverflow
+		  then _prim "Int16_subCheck": int * int -> int;
+	       else -?
+	    val < = _prim "Int16_lt": int * int -> bool;
+	    val <= = _prim "Int16_le": int * int -> bool;
+	    val > = _prim "Int16_gt": int * int -> bool;
+	    val >= = _prim "Int16_ge": int * int -> bool;
+	    val quot = _prim "Int16_quot": int * int -> int;
+	    val rem = _prim "Int16_rem": int * int -> int;
+	    val ~? = _prim "Int16_neg": int -> int; 
+	    val ~ =
+	       if detectOverflow
+		  then _prim "Int16_negCheck": int -> int;
+	       else ~?
+	    val fromInt = _prim "Int32_toInt16": Int.int -> int;
+	    val toInt = _prim "Int16_toInt32": int -> Int.int;
+	 end
       structure Int32 =
 	 struct
 	    type int = int32
@@ -275,6 +341,8 @@ structure Primitive =
 	       if detectOverflow
 		  then _prim "Int32_negCheck": int -> int;
 	       else ~?
+	    val fromInt : int -> int = fn x => x
+	    val toInt : int -> int = fn x => x
 	 end
       structure Int = Int32
 
@@ -924,6 +992,37 @@ structure Primitive =
 	       _prim "Word8Vector_subWord": word8 vector * int -> word;
 	 end
 
+      structure Word16 =
+	 struct
+	    type word = word16
+
+	    val + = _prim "Word16_add": word * word -> word;
+	    val andb = _prim "Word16_andb": word * word -> word;
+	    val ~>> = _prim "Word16_arshift": word * word32 -> word;
+	    val div = _prim "Word16_div": word * word -> word;
+	    val fromInt = _prim "Int32_toWord16": int -> word;
+	    val fromLargeWord = _prim "Word32_toWord16": word32 -> word;
+	    val >= = _prim "Word16_ge": word * word -> bool;
+	    val > = _prim "Word16_gt" : word * word -> bool;
+	    val <= = _prim "Word16_le": word * word -> bool;
+	    val << = _prim "Word16_lshift": word * word32 -> word;
+	    val < = _prim "Word16_lt" : word * word -> bool;
+	    val mod = _prim "Word16_mod": word * word -> word;
+	    val * = _prim "Word16_mul": word * word -> word;
+	    val ~ = _prim "Word16_neg": word -> word;
+	    val notb = _prim "Word16_notb": word -> word;
+	    val orb = _prim "Word16_orb": word * word -> word;
+	    val rol = _prim "Word16_rol": word * word32 -> word;
+	    val ror = _prim "Word16_ror": word * word32 -> word;
+	    val >> = _prim "Word16_rshift": word * word32 -> word;
+	    val - = _prim "Word16_sub": word * word -> word;
+	    val toInt = _prim "Word16_toInt32": word -> int;
+	    val toIntX = _prim "Word16_toInt32X": word -> int;
+	    val toLargeWord = _prim "Word16_toWord32": word -> word32;
+	    val toLargeWordX = _prim "Word16_toWord32X": word -> word32;
+	    val xorb = _prim "Word16_xorb": word * word -> word;
+	 end
+
       structure Word32 =
 	 struct
 	    type word = word32
@@ -966,16 +1065,40 @@ structure Primitive =
    struct
       open Primitive
 
+      structure Int8 =
+	 struct
+	    open Int8
+	       
+	    local
+	       fun make f (i: int, i': int): bool =
+		  f (Primitive.Word8.fromInt i, Primitive.Word8.fromInt i')
+	    in
+	       val geu = make Primitive.Word8.>=
+	       val gtu = make Primitive.Word8.> 
+	    end
+	 end
+      structure Int16 =
+	 struct
+	    open Int16
+	       
+	    local
+	       fun make f (i: int, i': int): bool =
+		  f (Primitive.Word16.fromInt i, Primitive.Word16.fromInt i')
+	    in
+	       val geu = make Primitive.Word16.>=
+	       val gtu = make Primitive.Word16.> 
+	    end
+	 end
       structure Int32 =
 	 struct
 	    open Int32
 	       
 	    local
 	       fun make f (i: int, i': int): bool =
-		  f (Primitive.Word.fromInt i, Primitive.Word.fromInt i')
+		  f (Primitive.Word32.fromInt i, Primitive.Word32.fromInt i')
 	    in
-	       val geu = make Primitive.Word.>=
-	       val gtu = make Primitive.Word.> 
+	       val geu = make Primitive.Word32.>=
+	       val gtu = make Primitive.Word32.> 
 	    end
 	 end
       structure Int = Int32
