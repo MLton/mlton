@@ -309,7 +309,7 @@ hexnum={hexDigit}+;
 			  Char.ord(String.sub(yytext, 1)) * 100
 			  + Char.ord(String.sub(yytext, 2)) * 10
 			  + Char.ord(String.sub(yytext, 3))
-			  - (Char.ord #"0") *111
+			  - (Char.ord #"0") * 111
 		    in (if x > 255
 			   then stringError (source, yypos,
 					     "illegal ascii escape")
