@@ -67,22 +67,26 @@ structure Handler =
    end
 
 datatype handler = datatype Handler.t
-   
+
+(* Signal 0 is invalid, so we pretend it is default *)
+local
+   val r = ref false
+in
+   fun defaultOrIgnore s =
+      if 0 = s
+	 orelse (PosixError.checkResult (Prim.isDefault (s, r))
+		 ; !r)
+	 then Default
+      else Ignore
+end
+    
 val (get, set, handlers) =
    let
-      val handlers =
-	 Array.tabulate (Prim.numSignals, fn s =>
-			 if Prim.isDefault s
-			    then Default
-			 else Ignore)
+      val handlers = Array.tabulate (Prim.numSignals, defaultOrIgnore)
       val _ =
 	 Cleaner.addNew
 	 (Cleaner.atLoadWorld, fn () =>
-	  Array.modifyi
-	  (fn (s, _) => if Prim.isDefault s
-			   then Default
-			else Ignore)
-	  (handlers, 0, NONE))
+	  Array.modifyi (defaultOrIgnore o #1) (handlers, 0, NONE))
    in
       (fn s => Array.sub (handlers, s),
        fn (s, h) => if Primitive.MLton.Profile.profile andalso s = prof

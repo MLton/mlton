@@ -507,7 +507,8 @@ structure PosixPrimitive =
 	    val default = _ffi "Posix_Signal_default": signal -> int;
 	    val handlee = _ffi "Posix_Signal_handle": signal -> int;
 	    val ignore = _ffi "Posix_Signal_ignore": signal -> int;
-	    val isDefault = _ffi "Posix_Signal_isDefault": signal -> bool;
+	    val isDefault =
+	       _ffi "Posix_Signal_isDefault": signal * bool ref -> int;
 	    val isPending = _ffi "Posix_Signal_isPending": signal -> bool;
 	    val numSignals = _const "Posix_Signal_numSignals": int;
 	    val setmask = _const "Posix_Signal_setmask": how;

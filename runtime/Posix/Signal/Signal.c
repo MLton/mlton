@@ -51,12 +51,14 @@ Int Posix_Signal_ignore (Int signum) {
 	return sigaction (signum, &sa, NULL);
 }
 
-bool Posix_Signal_isDefault (Int signum) {
+Int Posix_Signal_isDefault (Int signum, Bool *isDef) {
+	Int res;
 	struct sigaction sa;
 
  	sa.sa_flags = SA_FLAGS;
-	sigaction (signum, NULL, &sa);
-	return (sa.sa_handler == SIG_DFL);
+	res = sigaction (signum, NULL, &sa);
+	*isDef = sa.sa_handler == SIG_DFL;
+	return res;
 }
 
 static sigset_t set;

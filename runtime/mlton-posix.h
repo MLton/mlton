@@ -180,11 +180,10 @@ Signal Posix_Process_stopSig (Status s);
 /*                      Signal                       */
 /* ------------------------------------------------- */
 
-
 Int Posix_Signal_default (Int signum);
 Int Posix_Signal_handle (Int signum);
 Int Posix_Signal_ignore (Int signum);
-Bool Posix_Signal_isDefault (Int signum);
+Int Posix_Signal_isDefault (Int signum, Bool *isDef);
 Bool Posix_Signal_isPending (Int signum);
 Int Posix_Signal_sigaddset (Int signum);
 Int Posix_Signal_sigdelset (Int signum);
