@@ -3256,9 +3256,11 @@ int GC_init (GC_state s, int argc, char **argv) {
 		die ("invalid ratios");
 	setMemInfo (s);
 	s->ram = s->ramSlop * s->totalRam;
-	if (DEBUG or DEBUG_RESIZING)
-		fprintf (stderr, "totalRam = %u  totalSwap = %u\n",
-				s->totalRam, s->totalSwap);
+	if (DEBUG or DEBUG_RESIZING or s->messages)
+		fprintf (stderr, "totalRam = %s  totalSwap = %s  ram = %s\n",
+				uintToCommaString (s->totalRam), 
+				uintToCommaString (s->totalSwap),
+				uintToCommaString (s->ram));
 	if (s->isOriginal)
 		newWorld (s);
 	else
