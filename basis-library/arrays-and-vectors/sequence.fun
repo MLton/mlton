@@ -92,58 +92,59 @@ functor Sequence (S: sig
 	 struct
 	    type 'a sequence = 'a sequence
 	    type 'a elt = 'a elt
-	    type 'a slice = {seq: 'a sequence, start: int, len: int}
+	    datatype 'a t = T of {seq: 'a sequence, start: int, len: int}
+	    type 'a slice = 'a t
 
-	    fun length (sl: 'a slice as {len, ...}) = len
-	    fun unsafeSub (sl: 'a slice as {seq, start, ...}, i) =
+	    fun length (T {len, ...}) = len
+	    fun unsafeSub (T {seq, start, ...}, i) =
 	       S.sub (seq, start +? i)
-	    fun sub (sl: 'a slice as {seq, start, len}, i) =
+	    fun sub (sl as T {seq, start, len}, i) =
 	       if Primitive.safe andalso Primitive.Int.geu (i, len)
 		  then raise Subscript
 	       else unsafeSub (sl, i)
-	    fun unsafeUpdate' update (sl: 'a slice as {seq, start, ...}, i, x) =
+	    fun unsafeUpdate' update (T {seq, start, ...}, i, x) =
 	       update (seq, start +? i, x)
-	    fun update' update (sl: 'a slice as {seq, start, len}, i, x) =
+	    fun update' update (sl as T {seq, start, len}, i, x) =
 	       if Primitive.safe andalso Primitive.Int.geu (i, len)
 		  then raise Subscript
 	       else unsafeUpdate' update (sl, i, x)
 	    fun full (seq: 'a sequence) : 'a slice = 
-	       {seq = seq, start = 0, len = S.length seq}
-	    fun subslice (sl: 'a slice as {seq, start, len}, start', len') = 
+	       T {seq = seq, start = 0, len = S.length seq}
+	    fun subslice (T {seq, start, len}, start', len') = 
 	       case len' of
 		  NONE => if Primitive.safe andalso
 		             (start' < 0 orelse start' > len)
 			     then raise Subscript
-			  else {seq = seq,
-				start = start +? start',
-				len = len -? start'}
+			  else T {seq = seq,
+				  start = start +? start',
+				  len = len -? start'}
 		| SOME len' => if Primitive.safe andalso
 			          (start' < 0 orelse start' > len orelse
 				   len' < 0 orelse len' > len -? start')
 				  then raise Subscript
-			       else {seq = seq,
-				     start = start +? start',
-				     len = len'}
-	    fun unsafeSubslice (sl: 'a slice as {seq, start, len}, start', len') = 
-	       {seq = seq, 
-		start = start +? start',
-		len = case len' of
-		        NONE => len -? start'
-		      | SOME len' => len'}
+			       else T {seq = seq,
+				       start = start +? start',
+				       len = len'}
+	    fun unsafeSubslice (T {seq, start, len}, start', len') = 
+	       T {seq = seq, 
+		  start = start +? start',
+		  len = (case len' of
+			    NONE => len -? start'
+			  | SOME len' => len')}
 	    fun slice (seq: 'a sequence, start, len) =
 	       subslice (full seq, start, len)
 	    fun unsafeSlice (seq: 'a sequence, start, len) =
 	       unsafeSubslice (full seq, start, len)
-	    fun base (sl: 'a slice as {seq, start, len}) = (seq, start, len)
+	    fun base (T {seq, start, len}) = (seq, start, len)
 	    fun isEmpty sl = length sl = 0
-	    fun getItem (sl: 'a slice as {seq, start, len}) =
+	    fun getItem (sl as T {seq, start, len}) =
 	       if isEmpty sl
 		  then NONE
 	       else SOME (S.sub (seq, start), 
-			  {seq = seq, 
-			   start = start +? 1, 
-			   len = len -? 1})
-	    fun foldli f b (sl: 'a slice as {seq, start, len}) =
+			  T {seq = seq, 
+			     start = start +? 1, 
+			     len = len -? 1})
+	    fun foldli f b (sl as T {seq, start, len}) =
 	       let
 		  val min = start
 		  val max = start +? len
@@ -152,7 +153,7 @@ functor Sequence (S: sig
 		     else loop (i +? 1, f (i -? min, S.sub (seq, i), b))
 	       in loop (min, b)
 	       end
-	    fun foldri f b (sl: 'a slice as {seq, start, len}) =
+	    fun foldri f b (T {seq, start, len}) =
 	       let
 		  val min = start
 		  val max = start +? len
@@ -169,12 +170,12 @@ functor Sequence (S: sig
 	    end
 	    fun appi f sl = foldli (fn (i, x, ()) => f (i, x)) () sl
 	    fun app f sl = appi (f o #2) sl
-	    fun createi tabulate f (sl: 'a slice as {seq, start, len}) =
+	    fun createi tabulate f (T {seq, start, len}) =
 	       tabulate (len, fn i => f (i, S.sub (seq, start +? i)))
 	    fun create tabulate f sl = createi tabulate (f o #2) sl
 	    fun mapi f sl = createi tabulate f sl
 	    fun map f sl = mapi (f o #2) sl
-	    fun findi p (sl: 'a slice as {seq, start, len}) = 
+	    fun findi p (T {seq, start, len}) = 
 	       let
 		  val min = start
 		  val max = start +? len
@@ -193,8 +194,8 @@ functor Sequence (S: sig
 	    fun exists p sl = existsi (p o #2) sl
 	    fun alli p sl = not (existsi (not o p) sl)
 	    fun all p sl = alli (p o #2) sl
-	    fun collate cmp (sl1 as {seq = seq1, start = start1, len = len1},
-			     sl2 as {seq = seq2, start = start2, len = len2}) =
+	    fun collate cmp (T {seq = seq1, start = start1, len = len1},
+			     T {seq = seq2, start = start2, len = len2}) =
 	       let
 		  val min1 = start1
 		  val min2 = start2
@@ -211,7 +212,7 @@ functor Sequence (S: sig
 			    | ans => ans)
 	       in loop (min1, min2)
 	       end
-	    fun sequence (sl: 'a slice as {seq, start, len}): 'a sequence =
+	    fun sequence (sl as T {seq, start, len}): 'a sequence =
 	       if isMutable orelse (start <> 0 orelse len <> S.length seq)
 		  then map (fn x => x) sl
 	       else seq
@@ -267,7 +268,7 @@ functor Sequence (S: sig
 	       if Primitive.safe andalso k < 0
 		  then raise Subscript
 	       else
-		  (fn (sl as {seq, start, len}) =>
+		  (fn (T {seq, start, len}) =>
 		   if k > len
 		      then unsafeSlice (seq, start +? len, SOME 0)
 		   else unsafeSlice (seq, start +? k, SOME (len -? k)))
@@ -275,8 +276,9 @@ functor Sequence (S: sig
 	       if Primitive.safe andalso k < 0
 		  then raise Subscript
 	       else 
-		  (fn (sl as {seq, start, len}) =>
-		   unsafeSlice (seq, start, SOME (if k > len then 0 else len -? k)))
+		  (fn (T {seq, start, len}) =>
+		   unsafeSlice (seq, start,
+				SOME (if k > len then 0 else len -? k)))
 	    fun isSubsequence (eq: 'a elt * 'a elt -> bool)
 	                      (seq: 'a sequence)
 			      (sl: 'a slice) =
@@ -341,10 +343,10 @@ functor Sequence (S: sig
 			  end
 		  else false
 	       end
-	    fun split (sl: 'a slice as {seq, start, len}, i) =
+	    fun split (T {seq, start, len}, i) =
 	       (unsafeSlice (seq, start, SOME (i -? start)),
 		unsafeSlice (seq, i, SOME (len -? (i -? start))))
-	    fun splitl f (sl: 'a slice as {seq, start, len}) =
+	    fun splitl f (sl as T {seq, start, len}) =
 	       let
 		  val stop = start +? len
 		  fun loop i =
@@ -355,7 +357,7 @@ functor Sequence (S: sig
 			  else i
 	       in split (sl, loop start)
 	       end
-	    fun splitr f (sl: 'a slice as {seq, start, len}) =
+	    fun splitr f (sl as T {seq, start, len}) =
 	       let
 		  fun loop i =
 		     if i < start
@@ -365,7 +367,7 @@ functor Sequence (S: sig
 			  else i +? 1
 	       in split (sl, loop (start +? len -? 1))
 	       end
-	    fun splitAt (sl: 'a slice as {seq, start, len}, i) =
+	    fun splitAt (T {seq, start, len}, i) =
 	       if Primitive.safe andalso Primitive.Int.gtu (i, len)
 		  then raise Subscript
 	       else (unsafeSlice (seq, start, SOME i),
@@ -376,7 +378,7 @@ functor Sequence (S: sig
 	    fun taker p s = #2 (splitr p s)
 	    fun position (eq: 'a elt * 'a elt -> bool)
 	                 (seq': 'a sequence)
-			 (sl: 'a slice as {seq, start, len}) =
+			 (sl as T {seq, start, len}) =
 	       let
 		  val len' = S.length seq'
 		  val max = start +? len -? len' +? 1
@@ -397,8 +399,8 @@ functor Sequence (S: sig
 	       in split (sl, loop start)
 	       end
 	    fun span (eq: 'a sequence * 'a sequence -> bool)
-	             (sl: 'a slice as {seq, start, len},
-		      sl': 'a slice as {seq = seq', start = start', len = len'}) =
+	             (T {seq, start, len},
+		      T {seq = seq', start = start', len = len'}) =
 	       if Primitive.safe andalso 
 		  (not (eq (seq, seq')) orelse start' +? len' < start)
 		  then raise Span
@@ -406,7 +408,7 @@ functor Sequence (S: sig
 	    fun translate f (sl: 'a slice) =
 	       concat (List.rev (foldl (fn (c, l) => (full (f c)) :: l) [] sl))
 	    local
-	       fun make finish p (sl: 'a slice as {seq, start, len}) =
+	       fun make finish p (T {seq, start, len}) =
 		  let
 		     val max = start +? len
 		     fun loop (i, start, sls) =
