@@ -18,7 +18,7 @@ ifeq ($(HOST_ARCH), sparc)
 ARCHFLAGS += -Wa,-xarch=v8plusa -fcall-used-g5 -fcall-used-g7 -funroll-all-loops -m32 -mv8 -mcpu=ultrasparc
 endif
 
-CC =		gcc -Wall -I. $(ARCHFLAGS) $(HOSTFLAGS)
+CC = gcc -Wall -I. -D_LARGEFILE64_SOURCE $(ARCHFLAGS) $(HOSTFLAGS)
 CFLAGS = -O2
 DEBUGFLAGS = -gstabs+ -g2
 
