@@ -7,12 +7,12 @@
  *)
 structure Word8Vector = EqtypeMonoVector(type elem = Word8.word)
 structure Word8VectorSlice = Word8Vector.MonoVectorSlice
-
 (* Moved to text/string0.sml
 structure CharVector = MonoVector(type elem = char)
 structure CharVectorSlice = CharVector.MonoVectorSlice
 *)
-
+structure CharVector = EqtypeMonoVector(type elem = char)
+structure CharVectorSlice = CharVector.MonoVectorSlice
 structure BoolVector = EqtypeMonoVector(type elem = bool)
 structure BoolVectorSlice = BoolVector.MonoVectorSlice
 structure IntVector = EqtypeMonoVector(type elem = int)

@@ -38,6 +38,7 @@ signature MONO_ARRAY_EXTRA =
 	  and type vector = vector
 	  and type vector_slice = vector_slice
 
+      val rawArray: int -> array
       val unsafeSub: array * int -> elem
       val unsafeUpdate: array * int * elem -> unit
 

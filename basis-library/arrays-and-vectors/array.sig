@@ -42,6 +42,7 @@ signature ARRAY_EXTRA =
 	  and type 'a vector = 'a vector
 	  and type 'a vector_slice = 'a vector_slice
 
+      val rawArray: int -> 'a array
       val unsafeSub: 'a array * int -> 'a
       val unsafeUpdate: 'a array * int * 'a -> unit
 

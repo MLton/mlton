@@ -2,7 +2,10 @@ signature BUFFER_I_EXTRA_ARG =
    sig
       structure PrimIO: PRIM_IO
       structure StreamIO: STREAM_IO_EXTRA
-      structure Array: MONO_ARRAY
+      structure Array: sig
+                          include MONO_ARRAY
+			  val rawArray: int -> array
+		       end
       structure Vector: sig 
 	                   include MONO_VECTOR
                            val fromArray: Array.array -> vector
@@ -234,7 +237,7 @@ functor BufferIExtra
 				       IO.BlockingNotSupported 
 			     | SOME readArr => 
 				 let
-				   val inp = A.array (n, someElem)
+				   val inp = A.rawArray n
 				   fun fill k =
 				     if k >= size
 				       then ()
@@ -456,6 +459,11 @@ signature BUFFER_I_ARG =
 functor BufferI
         (S: BUFFER_I_ARG): BUFFER_I = 
   BufferIExtra(open S
+	       structure Array =
+		  struct
+		     open Array
+		     fun rawArray n = Array.array (n, someElem)
+		  end
 	       structure Vector =
 		  struct
 		     open Vector
@@ -483,7 +491,10 @@ signature BUFFER_I_EXTRA_FILE_ARG =
    sig
       structure PrimIO: PRIM_IO
       structure StreamIO: STREAM_IO_EXTRA_FILE
-      structure Array: MONO_ARRAY
+      structure Array: sig
+	                  include MONO_ARRAY
+			  val rawArray: int -> array
+		       end
       structure Vector: sig 
 	                   include MONO_VECTOR
                            val fromArray: Array.array -> vector

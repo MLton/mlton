@@ -59,6 +59,7 @@ structure Array: ARRAY_EXTRA =
 	    val array = sequence
 	 end
 
+      val rawArray = Primitive.Array.array
       val array = new
 
       local

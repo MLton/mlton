@@ -39,6 +39,7 @@ structure Vector: VECTOR_EXTRA =
       val isSubvector = isSubsequence
 
       val fromArray = Primitive.Vector.fromArray
+
       val vector = new
    end
 structure VectorSlice: VECTOR_SLICE_EXTRA = Vector.VectorSlice

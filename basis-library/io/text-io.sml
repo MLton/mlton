@@ -162,7 +162,7 @@ structure TextIO2: TEXT_IO_EXTRA =
 			end
    end
 
-structure TextIO = TextIO2
+structure TextIO = TextIO1
 
 structure TextIOGlobal: TEXT_IO_GLOBAL = TextIO
 open TextIOGlobal

@@ -427,7 +427,7 @@ structure Socket : SOCKET_EXTRA =
 	end
       fun recvVec' (sock, n, in_flags) =
 	let
-	  val a = Primitive.Array.array n
+	  val a = Word8Array.rawArray n
 	  val bytesRead = 
 	    recvArr' (sock, {buf = a, i = 0, sz = SOME n}, in_flags)
 	in
