@@ -1588,7 +1588,7 @@ struct
 			   Assembly.instruction_cmp
 			   {src1 = indexTemp,
 			    src2 = Operand.immediate_const_int rangeK,
-			    size = size},
+			    size = Size.LONG},
 			   Assembly.directive_saveregalloc
 			   {id = idT,
 			    live = MemLocSet.add
