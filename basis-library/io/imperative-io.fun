@@ -744,23 +744,23 @@ end
 signature IMPERATIVE_IO_ARG =
    sig
       structure Array: MONO_ARRAY
-      structure ArraySlice: MONO_ARRAY_SLICE
+(*      structure ArraySlice: MONO_ARRAY_SLICE *)
       structure StreamIO: STREAM_IO
       structure Vector: MONO_VECTOR
-      structure VectorSlice: MONO_VECTOR_SLICE
-      sharing type Array.array = ArraySlice.array
+(*      structure VectorSlice: MONO_VECTOR_SLICE *)
+(*      sharing type Array.array = ArraySlice.array *)
       sharing type
 	 Array.elem
-	 = ArraySlice.elem
+(*	 = ArraySlice.elem *)
 	 = StreamIO.elem
 	 = Vector.elem
-	 = VectorSlice.elem
+(*	 = VectorSlice.elem *)
       sharing type
 	 Array.vector
-	 = ArraySlice.vector
+(*	 = ArraySlice.vector *)
 	 = Vector.vector
-	 = VectorSlice.vector
-      sharing type ArraySlice.vector_slice = VectorSlice.slice
+(*	 = VectorSlice.vector *)
+(*      sharing type ArraySlice.vector_slice = VectorSlice.slice *)
    end
 
 functor ImperativeIO (S: IMPERATIVE_IO_ARG): IMPERATIVE_IO =
