@@ -578,17 +578,45 @@ structure FunctorClosure =
 	 apply
    end
 
+structure Time:>
+   sig
+      type t
+
+      val >= : t * t -> bool
+      val <= : t * t -> bool
+      val next: unit -> t
+      val now: unit -> t
+      val toString: t -> string
+   end =
+   struct
+      type t = int
+
+      val toString = Int.toString
+
+      val op >= : t * t -> bool = op >=
+
+      val op <= : t * t -> bool = op <=
+
+      val c = Counter.new 0
+
+      fun next () = Counter.next c
+
+      fun now () = Counter.value c
+   end
+
 (* ------------------------------------------------- *)
 (*                     NameSpace                     *)
 (* ------------------------------------------------- *)
 
 structure Values =
    struct
+      type ('a, 'b) value = {domain: 'a,
+			     isUsed: bool ref,
+			     range: 'b,
+			     scope: Scope.t,
+			     time: Time.t}
       (* The domains of all elements in a values list have the same symbol. *)
-      datatype ('a, 'b) t = T of {domain: 'a,
-				  isUsed: bool ref,
-				  scope: Scope.t,
-				  range: 'b} list ref
+      datatype ('a, 'b) t = T of ('a, 'b) value list ref
 
       fun new (): ('a, 'b) t = T (ref [])
 
@@ -760,7 +788,10 @@ in
       List.foreach (!topSymbols, fn s => foreach (E, s, z))
 end
 
-fun collect (E as T r, f: {isUsed: bool, scope: Scope.t} -> bool) =
+fun collect (E as T r,
+	     keep: {isUsed: bool, scope: Scope.t} -> bool,
+	     le: {domain: Symbol.t, time: Time.t}
+	         * {domain: Symbol.t, time: Time.t} -> bool) =
    let
       val fcts = ref []
       val sigs = ref []
@@ -770,9 +801,9 @@ fun collect (E as T r, f: {isUsed: bool, scope: Scope.t} -> bool) =
       fun doit ac vs =
 	 case Values.! vs of
 	    [] => ()
-	  | {domain, isUsed, range, scope, ...} :: _ =>
-	       if f {isUsed = !isUsed, scope = scope}
-		  then List.push (ac, (domain, range))
+	  | (z as {isUsed, scope, ...}) :: _ =>
+	       if keep {isUsed = !isUsed, scope = scope}
+		  then List.push (ac, z)
 	       else ()
       val _ =
 	 foreachDefinedSymbol (E, {fcts = doit fcts,
@@ -781,10 +812,13 @@ fun collect (E as T r, f: {isUsed: bool, scope: Scope.t} -> bool) =
 				   strs = doit strs,
 				   types = doit types,
 				   vals = doit vals})
-      fun finish (r, toSymbol) =
+      fun ('a, 'b) finish (r, toSymbol: 'a -> Symbol.t) =
 	 QuickSort.sortArray
-	 (Array.fromList (!r), fn ((d, _), (d', _)) =>
-	  Symbol.<= (toSymbol d, toSymbol d'))
+	 (Array.fromList (!r),
+	  fn ({domain = d, time = t, ...}: ('a, 'b) Values.value,
+	      {domain = d', time = t',...}: ('a, 'b) Values.value) =>
+	  le ({domain = toSymbol d, time = t},
+	      {domain = toSymbol d', time = t'}))
    in
       {fcts = finish (fcts, Fctid.toSymbol),
        sigs = finish (sigs, Sigid.toSymbol),
@@ -838,10 +872,17 @@ fun setTyconNames (E: t): unit =
 		; Info.foreach (strs, fn (strid, str) =>
 				loopStr (str, 1 + length, strids @ [strid])))
 	 end
-      val {strs, types, ...} = collect (E, fn _ => true)
-      val _ = Array.foreach (types, fn (name, typeStr) =>
+      (* Sort the declarations in decreasing order of definition time so that
+       * later declarations will be processed first, and hence will take
+       * precedence.
+       *)
+      val {strs, types, ...} =
+	 collect (E, fn _ => true,
+		  fn ({time = t, ...}, {time = t', ...}) => Time.>= (t, t'))
+      val _ = Array.foreach (types, fn {domain = name, range = typeStr, ...} =>
 			     doType (typeStr, name, 0, []))
-      val _ = Array.foreach (strs, fn (strid, str) => loopStr (str, 1, [strid]))
+      val _ = Array.foreach (strs, fn {domain = strid, range = str, ...} =>
+			     loopStr (str, 1, [strid]))
       val _ =
 	 List.foreach
 	 (!allTycons, fn c =>
@@ -934,23 +975,26 @@ val dummyStructure =
 		Structure.layoutPretty o #1)
    dummyStructure
 
-fun layout' (E: t, f, showUsed): Layout.t =
+fun layout' (E: t, keep, showUsed): Layout.t =
    let
       val _ = setTyconNames E
-      val {fcts, sigs, strs, types, vals} = collect (E, f)
+      val {fcts, sigs, strs, types, vals} =
+	 collect (E, keep,
+		  fn ({domain = d, ...}, {domain = d', ...}) =>
+		  Symbol.<= (d, d'))
       open Layout
       fun doit (a, layout) = align (Array.toListMap (a, layout))
       val {get = shapeSigid: Shape.t -> (Sigid.t * Interface.t) option,
 	   set = setShapeSigid, ...} =
 	 Property.getSet (Shape.plist, Property.initConst NONE)
-      val _ = Array.foreach (sigs, fn (s, I) =>
+      val _ = Array.foreach (sigs, fn {domain = s, range = I, ...} =>
 			     setShapeSigid (Interface.shape I, SOME (s, I)))
       val {strSpec, typeSpec, valSpec, ...} =
 	 Structure.layouts (showUsed, shapeSigid)
       val {layoutAbbrev, layoutStr, ...} =
 	 Structure.layouts ({showUsed = false}, shapeSigid)
       val sigs =
-	 doit (sigs, fn (sigid, I) =>
+	 doit (sigs, fn {domain = sigid, range = I, ...} =>
 	       let
 		  val (S, _) = dummyStructure (E, I, {prefix = "?.",
 						      tyconNewString = false})
@@ -959,23 +1003,24 @@ fun layout' (E: t, f, showUsed): Layout.t =
 			 indent (layoutStr S, 3)]
 	       end)
       val fcts =
-	 doit (fcts, fn (s, FunctorClosure.T {formal, result, ...}) =>
-	       align [seq [str "functor ", Fctid.layout s, str " ",
+	 doit (fcts,
+	       fn {domain,
+		   range = FunctorClosure.T {formal, result, ...}, ...} =>
+	       align [seq [str "functor ", Fctid.layout domain, str " ",
 			   paren (seq [str "S: ", #1 (layoutAbbrev formal)])],
 		      case result of
 			   NONE => empty
 			 | SOME S =>
 			      indent (seq [str ": ", #1 (layoutAbbrev S)], 3)])
-      val vals = align (Array.foldr (vals, [], fn (vs, ac) =>
-				     case valSpec vs of
+      val vals = align (Array.foldr (vals, [], fn ({domain, range, ...}, ac) =>
+				     case valSpec (domain, range) of
 					NONE => ac
 				      | SOME l => l :: ac))
+      val types = doit (types, fn {domain, range, ...} =>
+			typeSpec (domain, range))
+      val strs = doit (strs, fn {domain, range, ...} => strSpec (domain, range))
    in
-      align [doit (types, typeSpec),
-	     vals,
-	     sigs,
-	     fcts,
-	     doit (strs, strSpec)]
+      align [types, vals, sigs, fcts, strs]
    end
 
 fun layout E = layout' (E, fn _ => true, {showUsed = false})
@@ -1167,21 +1212,19 @@ val peekLongtycon = PeekResult.toOption o peekLongtycon
 (*                      extend                       *)
 (* ------------------------------------------------- *)
 
-val extend: t * ('a, 'b) NameSpace.t * Scope.t * {domain: 'a,
-						  isUsed: bool ref,
-						  range: 'b} -> unit =
+val extend: t * ('a, 'b) NameSpace.t * {domain: 'a,
+					isUsed: bool ref,
+					range: 'b,
+					scope: Scope.t,
+					time: Time.t} -> unit =
    fn (T {maybeAddTop, ...},
        NameSpace.T {current, lookup, toSymbol, ...},
-       scope,
-       {domain, isUsed, range}) =>
+       value as {domain, isUsed, range, scope, time}) =>
    let
-      val value = {domain = domain,
-		   isUsed = isUsed,
-		   range = range,
-		   scope = scope}
       val values as Values.T r = lookup domain
-      fun new () = (List.push (current, values)
-		    ; List.push (r, value))
+      fun new () =
+	 (List.push (current, values)
+	  ; List.push (r, value))
    in
       case !r of
 	 [] =>
@@ -1205,9 +1248,11 @@ local
       let
 	 val ns = get fields
       in
-	 extend (E, ns, !currentScope, {domain = domain,
-					isUsed = ref false,
-					range = range})
+	 extend (E, ns, {domain = domain,
+			 isUsed = ref false,
+			 range = range,
+			 scope = !currentScope,
+			 time = Time.next ()})
       end
 in
    val extendFctid = make #fcts
@@ -1258,10 +1303,12 @@ local
 	       val _ = List.foreach (c1, fn v => (Values.pop v; ()))
 	       val _ = current := old
 	       val _ =
-		  List.foreach (lift, fn {domain, isUsed, range, ...} =>
-				extend (E, ns, s0, {domain = domain,
-						    isUsed = isUsed,
-						    range = range}))
+		  List.foreach (lift, fn {domain, isUsed, range, time, ...} =>
+				extend (E, ns, {domain = domain,
+						isUsed = isUsed,
+						range = range,
+						scope = s0,
+						time = time}))
 	    in
 	       ()
 	    end
@@ -1400,7 +1447,12 @@ fun openStructure (E as T {currentScope, strs, vals, types, ...},
    let
       val scope = !currentScope
       fun doit (ns, Info.T a) =
-	 Array.foreach (a, fn z => extend (E, ns, scope, z))
+	 Array.foreach (a, fn {domain, isUsed, range} =>
+			extend (E, ns, {domain = domain,
+					isUsed = isUsed,
+					range = range,
+					scope = scope,
+					time = Time.next ()}))
       val _ = doit (strs, strs')
       val _ = doit (vals, vals')
       val _ = doit (types, types')
@@ -1986,7 +2038,8 @@ fun snapshot (E as T {currentScope, fcts, fixs, sigs, strs, types, vals, ...})
 		(List.push (vs, {domain = domain,
 				 isUsed = isUsed,
 				 range = range,
-				 scope = s0})
+				 scope = s0,
+				 time = Time.next ()})
 		 ; List.push (current, v)))
       val _ =
 	 foreachTopLevelSymbol (E, {fcts = doit fcts,
@@ -2238,20 +2291,21 @@ structure InterfaceEnv =
 	 let
 	    val scope = !currentScope
 	    val NameSpace.T {current, lookup, toSymbol, ...} = ns fields
-	    val value = {domain = domain,
-			 isUsed = ref false,
-			 range = range,
-			 scope = scope}
+	    fun value () = {domain = domain,
+			    isUsed = ref false,
+			    range = range,
+			    scope = scope,
+			    time = Time.next ()}
 	    val values as Values.T r = lookup domain
 	    fun new () = (List.push (current, values)
-			  ; List.push (r, value))
+			  ; List.push (r, value ()))
 	 in
 	    case !r of
 	       [] => new ()
 	     | {scope = scope', ...} :: l =>
 		  if Scope.equals (scope, scope')
 		     then if !allowDuplicates
-			     then r := value :: l
+			     then r := value () :: l
 			  else
 			     Control.error
 			     (region,
