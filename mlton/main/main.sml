@@ -151,7 +151,7 @@ val options =
 		   | _ => usage (concat ["invalid -stop arg: ", s])))),
        (Expert, #1 trace, " name1,...", "trace compiler internals", #2 trace),
        (Expert, "type-check", " {false|true}", "type check ILs",
-	trueRef typeCheck),
+	boolRef typeCheck),
        (Expert, "use-basis-library", " {true|false}",
 	"prefix the basis library to the program",
 	boolRef useBasisLibrary),
