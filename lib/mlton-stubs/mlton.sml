@@ -32,6 +32,8 @@ functor IO (S : sig
  *) 
 structure MLton: MLTON =
    struct
+      type pointer = Word32.word
+	 
       val cleanAtExit = fn _ => raise Fail "cleanAtExit"
       val deserialize = fn _ => raise Fail "deserialize"
       val eq = fn _ => false

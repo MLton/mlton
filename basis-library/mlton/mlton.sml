@@ -9,6 +9,8 @@ structure MLton: MLTON =
 struct
 
 structure Prim = Primitive.MLton
+
+type pointer = pointer
   
 val isMLton = true
    

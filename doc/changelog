@@ -1,5 +1,9 @@
 Here are the changes since version 20030312.
 
+* 2003-05-20
+  - Added type MLton.pointer, the type of C pointers, for use with the
+    FFI.
+
 * 2003-05-18
   - Fixed two bugs in type inference that could cause the compiler to
     raise the TypeError exception, along with a lot of XML IL.

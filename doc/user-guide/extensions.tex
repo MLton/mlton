@@ -23,6 +23,8 @@ substructures do change from release to release of {\mlton}.
 \begin{verbatim}
 structure MLton:
    sig
+      type pointer
+
       val eq: 'a * 'a -> bool
       datatype hostType = Cygwin | FreeBSD | Linux
       val hostType: hostType
@@ -61,6 +63,10 @@ structure MLton:
 
 \newcommand{\entry}[1]{\item[\tt #1]\hspace{1in}\\}
 \begin{description}
+
+\entry{type pointer}
+the type of C pointers ({\tt void*}).  This is useful with the FFI
+(see \secref{ffi}).
 
 \entry{eq (x, y)}
 returns true if {\tt x} and {\tt y} are equal as pointers.  For simple types

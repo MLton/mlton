@@ -10,6 +10,8 @@ type word = Word.word
    
 signature MLTON =
    sig
+      type pointer
+      
       val cleanAtExit: unit -> unit
 (*      val deserialize: Word8Vector.vector -> 'a *)
       (* Pointer equality.  The usual caveats about lack of a well-defined
