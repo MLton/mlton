@@ -167,11 +167,19 @@ signature HTTP =
 	    val toString: t -> string
 	 end
       
+      structure Post:
+         sig
+	    datatype t =
+	       Simple of string
+	     | Multipart of {tag: string,
+			     file: File.t} list
+         end
+
       val fetch:
 	 {uri: Uri.t,
 	  headers: Header.t list,
 	  head: bool,
-	  post: string option,
+	  post: Post.t option,
 	  proxy: {host: string,
 		  port: int} option} -> In.t
 	 

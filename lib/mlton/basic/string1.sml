@@ -8,6 +8,8 @@ structure String1 =
       open F
       type t = string
 	 
+      val last = String0.last
+
       val layout = Layout.str o escapeSML
 
       (* This hash function is taken from pages 56-57 of

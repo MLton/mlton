@@ -73,7 +73,7 @@ signature LIST =
       val map3: 'a t * 'b t * 'c t * ('a * 'b * 'c -> 'd) -> 'd t
 (*      val map4: 'a t * 'b t * 'c t * 'd t * ('a * 'b * 'c * 'd -> 'e) -> 'e t *)
       val nth: 'a t * int -> 'a
-(*      val nthTail: 'a t * int -> 'a t *)
+      val nthTail: 'a t * int -> 'a t
 (*       val ordered :
  * 	 {< : 'a * 'a -> bool}
  * 	 -> {insert: 'a t * 'a -> 'a t,

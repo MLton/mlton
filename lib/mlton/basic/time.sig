@@ -22,6 +22,7 @@ signature TIME =
       val + : t * t -> t
       val - : t * t -> t
       val days: int -> t
+      val fromString: string -> t option
       val fromMicroseconds: int -> t
       val fromMilliseconds: int -> t
       val fromReal: real -> t

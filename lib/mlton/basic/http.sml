@@ -469,16 +469,55 @@ structure Request =
 	 Trace.trace ("Request.input", In.layout, Result.layout layout) input
    end
 
+structure Post =
+   struct
+      datatype t =
+	 Simple of string
+       | Multipart of {tag: string,
+		       file: File.t} list
+   end
+
 (* ------------------------------------------------- *)
 (*                       fetch                       *)
 (* ------------------------------------------------- *)
 
 structure Path = Uri.Path
-   
+
+fun multipart (boundary: string, files): int * (Out.t -> unit) =
+   let
+      datatype z =
+	 File of File.t
+       | Strings of string list
+      val zs =
+	 List.foldr
+	 (files, [Strings ["--", boundary, "--"]],
+	  fn ({tag, file}, zs) =>
+	  Strings ["--", boundary, "\r\n",
+		   "Content-Disposition: form-data; name=\"", tag,
+		   "\"; filename=\"", file, "\"\r\n\r\n"]
+		   :: File file
+		   :: Strings ["\r\n"]
+		   :: zs)
+      val size = List.fold (zs, 0, fn (z, n) =>
+			    case z of
+			       File f => n + File.size f
+			     | Strings ss =>
+				  List.fold (ss, n, fn (s, n) =>
+					     n + String.size s))
+      fun output out =
+         List.foreach (zs, fn z =>
+		       case z of
+			  File f => File.outputContents (f, out)
+			| Strings ss =>
+			     List.foreach (ss, fn s => Out.output (out, s)))
+   in
+      (size, output)
+   end
+
 fun fetch {uri: Uri.t,
 	  headers: Header.t list,
 	  head: bool,
-	  post: string option,
+          post: Post.t option,
 	  proxy: {host: string, port: int} option}: In.t =
    let open Uri
    in case uri of
@@ -487,14 +526,36 @@ fun fetch {uri: Uri.t,
 	    path, query, fragment} =>
 	 let
 	    val headers = Header.Host host :: headers
-	    val (method, headers) =
+	    val (method, headers, postit) =
 	       case post of
-		  NONE => (if head then Method.Head else Method.Get, headers)
-		| SOME s =>
+		  NONE =>
+		     (if head then Method.Head else Method.Get,
+			 headers,
+			 fn _ => ())
+		| SOME (Post.Simple s) =>
 		     (Method.Post,
-		      Header.ContentType "application/x-www-form-urlencoded"
-		      :: Header.ContentLength (String.size s)
-		      :: headers)
+		      headers
+		      @ [Header.ContentType "application/x-www-form-urlencoded",
+			 Header.ContentLength (String.size s)],
+		      fn out =>
+		      (Out.output (out, s)
+		       ; Out.output (out, "\r\n")))
+		| SOME (Post.Multipart (parts)) =>
+                     let
+			val boundary =
+			   "---------------------------1152020049741332361890637729"
+			val (size, write) = multipart (boundary, parts)
+			val header =
+			   headers
+			   @ [Header.ContentType
+			      (concat ["multipart/form-data; boundary=",
+				       boundary]),
+			      Header.ContentLength size]
+                     in
+                        (Method.Post, headers,
+			 fn out => (write out
+				    ; Out.output (out, "\r\n")))
+                     end
 	    val (scheme, authority) =
 	       if Option.isSome proxy
 		  then (SOME Scheme.Http,
@@ -526,9 +587,7 @@ fun fetch {uri: Uri.t,
 			    | SOME hp => hp)
 	    val print = Out.outputc out
 	    val _ = Request.output (request, out)
-	    val _ = (case post of
-			NONE => ()
-		      | SOME s => (print s; print "\r\n"))
+            val _ = postit out
 	    val _ = Out.close out
 	 in ins
 	 end

@@ -14,7 +14,7 @@ structure A' =
       val shape = length
 	 
       fun maxLength a = Array.length (getArray a)
-      fun minLength a = maxLength a div 4
+      fun minLength a = Int.quot (maxLength a, 4)
    
       fun invariant a =
 	 maxLength a >= 1
@@ -65,9 +65,18 @@ structure A' =
 	 end
    end
 
-structure A'' = Array (open A'
-		       val unsafeSub = sub
-		       val unsafeUpdate = update)
+structure A'' =
+   Array (open A'
+	  val unsafeSub = sub
+	  val unsafeUpdate = update
+	  val unfoldi: int * 'a * (int * 'a -> 'b * 'a) -> 'b t =
+	     fn (n, ac, f) =>
+	     T {array = ref (Array.unfoldi (n, ac, fn (i, a) =>
+					    let
+					       val (b, a') = f (i, a)
+					    in (SOME b, a')
+					    end)),
+		length = ref n})
 
 open A' A''
 
