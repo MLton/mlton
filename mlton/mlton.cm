@@ -248,6 +248,8 @@ ssa/inline.sig
 ssa/inline.fun
 ssa/introduce-loops.sig
 ssa/introduce-loops.fun
+ssa/known-case.sig
+ssa/known-case.fun
 ssa/local-flatten.sig
 ssa/local-flatten.fun
 ssa/local-ref.sig
