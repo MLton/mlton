@@ -80,19 +80,23 @@ fun elaborateProgram (program,
    let
       val Ast.Program.T decs = Ast.Program.coalesce program 
       fun elabSigexp s = ElaborateSigexp.elaborateSigexp (s, E)
-      fun elabSigexpConstraint (cons: SigConst.t, S: Structure.t): Structure.t =
+      fun elabSigexpConstraint (cons: SigConst.t, S: Structure.t)
+	 : Decs.t * Structure.t =
 	 let
 	    fun s (sigexp, opaque) =
-	       let val interface = elabSigexp sigexp
-	       in Structure.cut {str = S,
-				 interface = interface,
-				 opaque = opaque,
-				 region = Sigexp.region sigexp}
+	       let
+		  val (S, decs) =
+		     Structure.cut (S, {interface = elabSigexp sigexp,
+					opaque = opaque,
+					region = Sigexp.region sigexp})
+	       in
+		  (decs, S)
 	       end
-	 in case cons of
-	    SigConst.None => S
-	  | SigConst.Transparent sigexp => s (sigexp, false)
-	  | SigConst.Opaque sigexp => s (sigexp, true)
+	 in
+	    case cons of
+	       SigConst.None => (Decs.empty, S)
+	     | SigConst.Opaque sigexp => s (sigexp, true)
+	     | SigConst.Transparent sigexp => s (sigexp, false)
 	 end	 
       fun elabStrdec (arg: Strdec.t * string list): Decs.t =
 	 Trace.traceInfo' (info,
@@ -124,11 +128,10 @@ fun elaborateProgram (program,
 		    let
 		       val (decs', S) = elabStrexp (def,
 						    Strid.toString name :: nest)
-		       val _ = 
-			  Env.extendStrid
-			  (E, name, elabSigexpConstraint (constraint, S))
+		       val (decs'', S) = elabSigexpConstraint (constraint, S)
+		       val _ = Env.extendStrid (E, name, S)
 		    in
-		       Decs.append (decs, decs')
+		       Decs.appends [decs, decs', decs'']
 		    end)
 	  end) arg
       and elabStrexp (e: Strexp.t, nest: string list): Decs.t * Structure.t =
@@ -148,8 +151,9 @@ fun elaborateProgram (program,
 	     | Strexp.Constrained (e, c) => (* rules 52, 53 *)
 		  let
 		     val (decs, S) = elabStrexp e
+		     val (decs', S) = elabSigexpConstraint (c, S)
 		  in
-		     (decs, elabSigexpConstraint (c, S))
+		     (Decs.append (decs, decs'), S)
 		  end
 	     | Strexp.Let (d, e) => (* rule 55 *)
 		  Env.scope

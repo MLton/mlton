@@ -1937,8 +1937,7 @@ fun elaborateDec (d, {env = E,
 		      fun con c = Cexp.Con (c, args ())
 		      val e =
 			 case vid of
-			    Vid.ConAsVar c => con c
-			  | Vid.Con c => con c
+			    Vid.Con c => con c
 			  | Vid.Exn c => con c
 			  | Vid.Overload yts =>
 			       let

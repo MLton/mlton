@@ -44,7 +44,6 @@ signature ELABORATE_ENV =
 	 sig
 	    datatype t =
 	       Con of CoreML.Con.t
-	     | ConAsVar of CoreML.Con.t
 	     | Exn of CoreML.Con.t
 	     | Overload of (CoreML.Var.t * Type.t) vector
 	     | Var of CoreML.Var.t
@@ -68,10 +67,9 @@ signature ELABORATE_ENV =
 	    (* cut keeps only those bindings in the structure that also appear
 	     * in the interface.  It proceeds recursively on substructures.
 	     *)
-	    val cut: {str: t,
-		      interface: Interface.t,
-		      opaque: bool,
-		      region: Region.t} -> t
+	    val cut: t * {interface: Interface.t,
+			  opaque: bool,
+			  region: Region.t} -> t * Decs.t
 	    (* ffi represents MLtonFFI, which is built by the basis library
 	     * and is set in compile.sml after processing the basis.
 	     *)

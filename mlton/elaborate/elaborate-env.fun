@@ -25,12 +25,15 @@ local
    open CoreML
 in
    structure Con = Con
-   structure Var = Var
+   structure Dec = Dec
+   structure Exp = Exp
+   structure Pat = Pat
    structure Prim = Prim
    structure Record = Record
    structure SortedRecord = SortedRecord
    structure Tycon = Tycon
    structure Tyvar = Tyvar
+   structure Var = Var
    structure Var = Var
 end
 
@@ -60,14 +63,18 @@ structure Vid =
    struct
       datatype t =
 	 Con of Con.t
-       | ConAsVar of Con.t
        | Exn of Con.t
        | Overload of (Var.t * Type.t) vector
        | Var of Var.t
 
+      val statusPretty =
+	 fn Con _ => "a constructor"
+	  | Exn _ => "an exception"
+	  | Overload _ => "an overload"
+	  | Var _ => "a variable"
+
       val statusString =
 	 fn Con _ => "con"
-	  | ConAsVar _ => "var"
 	  | Exn _ => "exn"
 	  | Overload _ => "var"
 	  | Var _ => "var"
@@ -80,7 +87,6 @@ structure Vid =
 	    val (name, l) =
 	       case vid of
 		  Con c => ("Con", Con.layout c)
-		| ConAsVar c => ("ConAsVar", Con.layout c)
 		| Exn c => ("Exn", Con.layout c)
 		| Overload xts =>
 		     ("Overload",
@@ -175,6 +181,12 @@ structure TypeStr = TypeStr (structure Con = Con
 				end
 			     structure Tyvar = Tyvar)
 
+local
+   open TypeStr
+in
+   structure Cons = Cons
+end
+
 structure Interface = Interface (structure Ast = Ast
 				 structure EnvTypeStr = TypeStr)
 
@@ -184,6 +196,16 @@ in
    structure ShapeId = ShapeId
    structure Status = Status
 end
+
+structure Status =
+   struct
+      open Status
+
+      val pretty: t -> string =
+	 fn Con => "a constructor"
+	  | Exn => "an exception"
+	  | Var => "a variable"
+   end
 
 structure Info =
    struct
@@ -234,7 +256,7 @@ fun equalSchemes (s: Scheme.t, s': Scheme.t, name: unit -> Layout.t, r: Region.t
        in
 	  (r,
 	   seq [str "type ", name (),
-		str " in structure and signature disagree"],
+		str " in structure disagrees with signature"],
 	   align [seq [str "structure: ", l1],
 		  seq [str "signature: ", l2]])
        end)
@@ -292,7 +314,6 @@ structure Structure =
 	    in
 	       case vid of
 		  Con _ => simple "con"
-		| ConAsVar _ => simple "val"
 		| Exn c =>
 		     seq [str "exception ", Con.layout c, 
 			  case Type.deArrowOpt (Scheme.ty scheme) of
@@ -411,8 +432,9 @@ structure Structure =
 	 end
       
       (* section 5.3, 5.5, 5.6 and rules 52, 53 *)
-      fun cut {str, interface, opaque: bool, region}: t =
+      fun cut (str: t, {interface, opaque: bool, region}): t * Decs.t =
 	 let
+	    val decs = ref []
 	    fun error (name, l) =
 	       let
 		  open Layout
@@ -422,6 +444,56 @@ structure Structure =
 		   seq [str (concat [name, " "]), l,
 			str " in signature but not in structure"],
 		   empty)
+	       end
+	    fun checkCons (Cons.T v, Cons.T v', strids): unit =
+	       let
+		  fun lay (c: Ast.Con.t) =
+		     Longcon.layout (Longcon.long (rev strids, c))
+		  val extraStr =
+		     Vector.keepAllMap
+		     (v, fn {name = n, scheme = s, ...} =>
+		      case Vector.peek (v', fn {name = n', ...} =>
+					Ast.Con.equals (n, n')) of
+			 NONE => SOME n
+		       | SOME {scheme = s', ...} =>
+			    let
+			       val _ =
+				  equalSchemes
+				  (s, s', fn () =>
+				   let
+				      open Layout
+				   in
+				      seq [str "of ", lay n]
+				   end,
+				   region)
+			    in
+			       NONE
+			    end)
+		  fun extras (v, name) =
+		     if 0 = Vector.length v
+			then ()
+		     else
+			let
+			   open Layout
+			in
+			   Control.error
+			   (region,
+			    seq [str (concat ["constructors in ", name, " only: "]),
+				 seq (List.separate (Vector.toListMap (v, lay),
+						     str ", "))],
+			    empty)
+			end
+		  val _ = extras (extraStr, "structure")
+		  val extraSig =
+		     Vector.keepAllMap
+		     (v', fn {name = n', ...} =>
+		      if Vector.exists (v, fn {name = n, ...} =>
+					Ast.Con.equals (n, n'))
+			 then NONE
+		      else SOME n')
+		  val _ = extras (extraSig, "signature")
+	       in
+		  ()
 	       end
 	    val interface =
 	       Interface.realize
@@ -519,11 +591,12 @@ structure Structure =
 						end
 					  else
 					     case TypeStr.node typeStr of
-						Datatype _ =>
+						Datatype {cons = c, ...} =>
 						   (case TypeStr.node typeStr' of
-						       Datatype _ =>
-							  (* need to match they cons in the structure against the signature *)
-							  typeStr'
+						       Datatype {cons = c', ...} =>
+							  (checkCons (c', c,
+								      strids)
+							   ; typeStr')
 						     | _ =>
 							  let
 							     open Layout
@@ -552,21 +625,63 @@ structure Structure =
 						values = values}
 				    end
 			   end
-                        fun handleVal {name, scheme, status} =
+                        fun handleVal {name, scheme = s, status} =
 			   case peekVid' (S, name) of
 			      NONE =>
 				 error ("variable",
 					Longvid.layout (Longvid.long
 							(rev strids, name)))
-			    | SOME {range = (vid, s), values, ...} =>
+			    | SOME {range = (vid, s'), values, ...} =>
 				 let
+				    val (tyvars, t) = Scheme.dest s
+				    val {args, instance = t'} =
+				       Scheme.instantiate s'
+				    val _ =
+				       Type.unify
+				       (t, t', fn (l, l') =>
+					let
+					   open Layout
+					in
+					   (region,
+					    seq [str "type of ",
+						 Longvid.layout	
+						 (Longvid.long
+						  (rev strids, name)),
+						 str " in structure disagrees with signature"],
+					    align [seq [str "structure: ", l'],
+						   seq [str "signature: ", l]])
+					end)
+				    fun addDec (n: Exp.node): Vid.t =
+				       let
+					  val x = Var.newNoname ()
+					  val e = Exp.make (n, t')
+					  val _ =
+					     List.push
+					     (decs,
+					      Dec.Val
+					      {rvbs = Vector.new0 (),
+					       tyvars = fn () => tyvars,
+					       vbs = (Vector.new1
+						      {exp = e,
+						       lay = fn _ => Layout.empty,
+						       pat = Pat.var (x, t'),
+						       patRegion = region})})
+				       in
+					  Vid.Var x
+				       end
+				    fun con (c: Con.t): Vid.t =
+				       addDec (Exp.Con (c, args ()))
 				    val vid =
 				       case (vid, status) of
-					  (Vid.Con c, Status.Var) =>
-					     Vid.ConAsVar c
-					| (Vid.Exn c, Status.Var) =>
-					     Vid.ConAsVar c
-					| (_, Status.Var) => vid
+					  (Vid.Con c, Status.Var) => con c
+					| (Vid.Exn c, Status.Var) => con c
+					| (Vid.Var x, Status.Var) =>
+					     if 0 < Vector.length tyvars
+						orelse 0 < Vector.length (args ())
+						then
+						   addDec
+						   (Exp.Var (fn () => x, args))
+					     else vid
 					| (Vid.Con _, Status.Con) => vid
 					| (Vid.Exn _, Status.Exn) => vid
 					| _ =>
@@ -578,11 +693,11 @@ structure Structure =
 						 Longvid.toString
 						 (Longvid.long (rev strids,
 								name)),
-						 " has status ",
-						 Vid.statusString vid,
-						 " in structure but status ",
-						 Status.toString status,
-						 " in signature "]),
+						 " is ",
+						 Vid.statusPretty vid,
+						 " in the structure but ",
+						 Status.pretty status,
+						 " in the signature "]),
 					       Layout.empty)
 					      ; vid)
 				 in
@@ -605,16 +720,17 @@ structure Structure =
 			   then S
 			else doit ()
 	       end
+	    val str = cut (str, interface, [])
 	 in
-	    cut (str, interface, [])
+	    (str, Decs.fromList (!decs))
 	 end
 
       val cut =
 	 Trace.trace ("cut",
-		      fn {str, interface, ...} =>
+		      fn (str, {interface, ...}) =>
 		      Layout.tuple [layoutPretty str,
 				    Interface.layout interface],
-		      layout)
+		      layout o #1)
 	 cut
 
       val ffi: t option ref = ref NONE
@@ -992,12 +1108,14 @@ fun functorClosure
       val restore = snapshot E
       fun apply (arg, nest, region) =
 	 let
-	    val actual = Structure.cut {str = arg,
-					interface = argInt,
-					opaque = false,
-					region = region}
+	    val (actual, decs) =
+	       Structure.cut (arg, {interface = argInt,
+				    opaque = false,
+				    region = region})
+	    val (decs', str) = restore (fn () => makeBody (actual, nest))
 	 in
-	    restore (fn () => makeBody (actual, nest))
+	    (Decs.append (decs, decs'),
+	     str)
 	 end
       val apply =
 	 Trace.trace ("functorApply",
