@@ -22,21 +22,20 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
       val exnName = Var.newString "exnName"
       (* sumType is the type of the datatype with all of the exn constructors. *)
       val {
-	   dropLambda,
+	   dropVar,
 	   extra,
 	   extraDatatypes,
 	   extract,
 	   extractSum,
 	   inject,
 	   raisee,
-	   setRaise,
 	   sumTycon,
 	   sumType,
 	   wrapBody
 	   } =
 	 if not (!Control.exnHistory)
 	    then {
-		  dropLambda = fn _ => false,
+		  dropVar = fn _ => false,
 		  extra = fn _ => Error.bug "no extra",
 		  extraDatatypes = Vector.new0 (),
 		  extract = fn (exn, _, f) => f (Dexp.monoVar (exn, Type.exn)),
@@ -46,91 +45,85 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 			    [MonoVal {var = var, ty = ty,
 				      exp = Raise {exn = exn,
 						   filePos = filePos}}]),
-		  setRaise = fn _ => Error.bug "no setRaise",
 		  sumTycon = Tycon.exn,
 		  sumType = Type.exn,
 		  wrapBody = Dexp.toExp
 		  }
 	 else
 	    let
-	       val setRaiseVar = Var.newNoname ()
 	       val sumTycon = Tycon.newNoname ()
 	       val sumType = Type.con (sumTycon, Vector.new0 ())
-	       val (extraType: Type.t, extraVar: Var.t) =
-		  DynamicWind.withEscape
-		  (fn escape =>
-		   let
-		      val _ =
-			 Exp.foreachPrimExp
-			 (body, fn (_, e) =>
-			  case e of
-			     PrimApp {prim, targs, args, ...} =>
-				if Prim.name prim = Prim.Name.Exn_setInitExtra
-				   then (escape
-					 (Vector.sub (targs, 0),
-					  VarExp.var (Vector.sub (args, 0))))
-				else ()
-			   | _ => ())
-		   in
-		      Error.bug "no Exn_setInitExtra primitive"
-		   end)
+	       fun find (name: Prim.Name.t): Var.t * Type.t * PrimExp.t =
+		  let
+		     val (var, ty) =
+			DynamicWind.withEscape
+			(fn escape =>
+			 let
+			    val _ =
+			       Exp.foreachPrimExp
+			       (body, fn (_, _, e) =>
+				case e of
+				   PrimApp {args, prim, targs, ...} =>
+				      if Prim.name prim = name 
+					 then escape (VarExp.var
+						      (Vector.sub (args, 0)),
+						      Vector.sub (targs, 0))
+				      else ()
+				 | _ => ())
+			 in
+			    Error.bug
+			    (concat ["can't find ", Prim.Name.toString name])
+			 end)
+		     val (ty, exp) =
+			DynamicWind.withEscape
+			(fn escape =>
+			 let
+			    val _ = Exp.foreachPrimExp (body, fn (x, t, e) =>
+							if Var.equals (x, var)
+							   then escape (t, e)
+							else ())
+			 in
+			    Error.bug
+			    (concat ["can't find ", Var.toString var])
+			 end)
+		  in
+		     (var, ty, exp)
+		  end
+	       val (initExtraVar, initExtraType, initExtraExp) =
+		  find Prim.Name.Exn_setInitExtra
+	       val extraType = initExtraType
+	       val (extendExtraVar, extendExtraType, extendExtraExp) =
+		  find Prim.Name.Exn_setExtendExtra
 	       local
 		  open Type
 	       in
-		  val initExtraType = arrow (unit, extraType)
 		  val exnCon = Con.newNoname ()
 		  val exnConArgType = tuple (Vector.new2 (extraType, sumType))
-		  val seType = tuple (Vector.new2 (string, exn))
-		  val seuType = arrow (seType, unit)
+		  val seType = tuple (Vector.new2 (string, extraType))
 	       end
-	       val extraLambda =
-		  DynamicWind.withEscape
-		  (fn escape =>
-		   let
-		      val _ =
-			 Exp.foreachPrimExp
-			 (body, fn (x, e) =>
-			  if Var.equals (x, extraVar)
-			     then escape e
-			  else ())
-		   in
-		      Error.bug "couldn't find extraLambda"
-		   end)
-	       fun dropLambda x = Var.equals (x, extraVar)
-	       val initExtra = Var.newNoname ()
 	       fun wrapBody body =
-		   let
-		      val body =
-			 Dexp.let1
-			 {var = setRaiseVar,
-			  exp = (Dexp.reff
-				 (Dexp.lambda
-				  {arg = Var.newNoname (),
-				   argType = seType,
-				   bodyType = Type.unit,
-				   body = Dexp.unit ()})),
-			  body = body}
-		   in Exp.prefix (Dexp.toExp body,
-				  Dec.MonoVal {var = initExtra,
-					       ty = initExtraType,
-					       exp = extraLambda})
-		   end
-	       fun inject (e: Dexp.t): Dexp.t =
+		  Exp.prefix
+		  (Exp.prefix (Dexp.toExp body,
+			       Dec.MonoVal {var = initExtraVar,
+					    ty = initExtraType,
+					    exp = initExtraExp}),
+		   Dec.MonoVal {var = extendExtraVar,
+				ty = extendExtraType,
+				exp = extendExtraExp})
+	       fun makeExn {exn, extra} =
 		  let
 		     open Dexp
-		     val extra =
-			app {func = monoVar (initExtra, initExtraType),
-			     arg = unit (),
-			     ty = extraType}
 		  in
 		     conApp
 		     {con = exnCon,
 		      targs = Vector.new0 (),
 		      ty = Type.exn,
-		      arg = SOME (tuple
-				  {exps = Vector.new2 (extra, e),
-				   ty = exnConArgType})}
+		      arg = SOME (tuple {exps = Vector.new2 (extra, exn),
+					 ty = exnConArgType})}
 		  end
+	       fun inject (exn: Dexp.t): Dexp.t =
+		  makeExn {exn = exn,
+			   extra = Dexp.monoVar (initExtraVar, initExtraType)}
 	       fun extractSum x =
 		  Dexp.select {tuple = x, offset = 1, ty = sumType}
 	       fun extract (exn: Var.t, ty, f: Dexp.t -> Dexp.t): Dexp.t =
@@ -149,7 +142,15 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 					 arg = SOME (tuple, exnConArgType)},
 				  f (monoVar (tuple, exnConArgType))))}
 		  end
-	       fun raisee {var = x, ty, exn, filePos} =
+	       fun extra (x: Var.t) =
+		  extract (x, extraType, fn tuple =>
+			   Dexp.select {tuple = tuple,
+					offset = 0,
+					ty = extraType})
+	       fun raisee {exn: VarExp.t,
+			   filePos: string,
+			   ty: Type.t,
+			   var = x : Var.t} =
 		  let
 		     val exn = VarExp.var exn
 		     open Dexp
@@ -157,41 +158,43 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 		     vall
 		     {var = x,
 		      exp = 
-		      sequence
-		      (Vector.new2
-		       (app {func = deref (monoVar (setRaiseVar,
-						    Type.reff seuType)),
-			     arg = tuple {exps = (Vector.new2
-						  (string filePos,
-						   monoVar (exn, Type.exn))),
-					  ty = seType},
-			     ty = Type.unit},
-			raisee ({exn = monoVar (exn, Type.exn),
-				 filePos = filePos},
-				ty)))}
+		      extract
+		      (exn, ty, fn tup =>
+		       raisee
+		       ({exn =
+			 makeExn
+			 {exn = select {tuple = tup,
+					offset = 1,
+					ty = sumType},
+			  extra =
+			  app {func = monoVar (extendExtraVar, extendExtraType),
+			       arg = tuple {exps = (Vector.new2
+						    (string filePos,
+						     select {tuple = tup,
+							     offset = 0,
+							     ty = extraType})),
+					    ty = seType},
+			       ty = extraType}},
+			 filePos = filePos},
+			ty))}
 		  end
 	       val extraDatatypes =
 		  Vector.new1 {tycon = Tycon.exn,
 			       tyvars = Vector.new0 (),
 			       cons = Vector.new1 {con = exnCon,
 						   arg = SOME exnConArgType}}
-	       fun extra (x: Var.t) =
-		  extract (x, extraType, fn tuple =>
-			   Dexp.select {tuple = tuple,
-					offset = 0,
-					ty = extraType})
-	       fun setRaise assign =
-		  assign (setRaiseVar, seuType)
+	       fun dropVar x =
+		  Var.equals (x, initExtraVar)
+		  orelse Var.equals (x, extendExtraVar)
 	    in
 	       {
-		dropLambda = dropLambda,
+		dropVar = dropVar,
 		extra = extra,
 		extraDatatypes = extraDatatypes,
 		extract = extract,
 		extractSum = extractSum,
 		inject = inject,
 		raisee = raisee,
-		setRaise = setRaise,
 		sumTycon = sumTycon,
 		sumType = sumType,
 		wrapBody = wrapBody
@@ -277,15 +280,16 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 	       end
 	  | _ => Error.bug "implement exceptions saw unexpected dec"
       and loopMonoVal {var, ty, exp} : Dec.t list =
+	 if dropVar var
+	    then []
+	 else
 	 let
 	    fun primExp e = [MonoVal {var = var, ty = ty, exp = e}]
 	    fun keep () = primExp exp
 	    fun makeExp e = Dexp.vall {var = var, exp = e}
-	 in case exp of
-	    Lambda l =>
-	       if dropLambda var
-		  then []
-	       else primExp (Lambda (loopLambda l))
+	 in
+	    case exp of
+	    Lambda l => primExp (Lambda (loopLambda l))
 	  | PrimApp {prim, targs, args} =>
 	       let
 		  datatype z = datatype Prim.Name.t
@@ -302,8 +306,8 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 		   | Exn_name =>
 			primExp (App {func = VarExp.mono exnName,
 				      arg = Vector.sub (args, 0)})
+		   | Exn_setExtendExtra => []
 		   | Exn_setInitExtra => []
-		   | Exn_setRaise => setRaise assign
 		   | Exn_setTopLevelHandler =>
 			assign (topLevelHandler,
 				Type.arrow (Type.exn, Type.unit))

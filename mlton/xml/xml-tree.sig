@@ -145,13 +145,13 @@ signature XML_TREE =
 	    val foreach:
 	       {exp: t,
 		handleExp: t -> unit,
-		handlePrimExp: Var.t * PrimExp.t -> unit,
+		handlePrimExp: Var.t * Type.t * PrimExp.t -> unit,
 		handleBoundVar: Var.t * Tyvar.t vector * Type.t -> unit,
 		handleVarExp: VarExp.t -> unit} -> unit
 	    val foreachBoundVar:
 	       t * (Var.t * Tyvar.t vector * Type.t -> unit) -> unit
 	    val foreachExp: t * (t -> unit) -> unit
-	    val foreachPrimExp: t * (Var.t * PrimExp.t -> unit) -> unit
+	    val foreachPrimExp: t * (Var.t * Type.t * PrimExp.t -> unit) -> unit
 	    val foreachVarExp: t * (VarExp.t -> unit) -> unit
 	    val fromPrimExp: PrimExp.t * Type.t -> t
 	    val hasPrim: t * (Prim.t -> bool) -> bool

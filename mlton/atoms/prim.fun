@@ -55,8 +55,8 @@ structure Name =
        | Exn_extra
        | Exn_keepHistory
        | Exn_name
+       | Exn_setExtendExtra
        | Exn_setInitExtra
-       | Exn_setRaise
        | Exn_setTopLevelHandler
        | FFI of string
        | GC_collect
@@ -276,8 +276,8 @@ structure Name =
 	  (Cpointer_isNull, Functional, "Cpointer_isNull"),
 	  (Exn_extra, Functional, "Exn_extra"),
 	  (Exn_name, Functional, "Exn_name"),
+	  (Exn_setExtendExtra, SideEffect, "Exn_setExtendExtra"),
 	  (Exn_setInitExtra, SideEffect, "Exn_setInitExtra"),
-	  (Exn_setRaise, SideEffect, "Exn_setRaise"),
 	  (Exn_setTopLevelHandler, SideEffect, "Exn_setTopLevelHandler"),
 	  (Exn_setTopLevelHandler, SideEffect, "Exn_setTopLevelHandler"),
 	  (GC_collect, SideEffect, "GC_collect"),
@@ -688,7 +688,8 @@ fun 'a extractTargs {prim, args, result,
        | Array_update => one (arg 2)
        | Array_length => one (dearray (arg 0))
        | Exn_extra => one result
-       | Exn_setInitExtra => one (#2 (dearrow (arg 0)))
+       | Exn_setExtendExtra => one (#2 (dearrow (arg 0)))
+       | Exn_setInitExtra => one (arg 0)
        | MLton_bogus => one result
        | MLton_deserialize => one result
        | MLton_eq => one (arg 0)

@@ -45,8 +45,8 @@ signature PRIM =
 	     | Exn_extra (* implemented in implement-exceptions.fun *)
 	     | Exn_keepHistory (* a compile-time boolean *)
 	     | Exn_name (* implemented in implement-exceptions.fun *)
+	     | Exn_setExtendExtra (* implemented in implement-exceptions.fun *)
 	     | Exn_setInitExtra (* implemented in implement-exceptions.fun *)
-	     | Exn_setRaise (* implemented in implement-exceptions.fun *)
 	     | Exn_setTopLevelHandler (* implemented in implement-exceptions.fun *)
 	     | FFI of string
 	     | GC_collect

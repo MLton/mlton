@@ -6,19 +6,9 @@ structure Exn: MLTON_EXN =
 
       val history: t -> string list =
 	 if keepHistory
-	    then (
-		  (* In setInitExtra f, f cannot contain any free variables,
-		   * since implement-exceptions will move it to the top of the
-		   * program.
-		   *)
-		  setInitExtra (fn () => (ref []): extra)
-		  ; setRaise (fn (s, e) =>
-			      let
-				 val r = extra e
-			      in
-				 r := s :: !r
-			      end)
-		  ; ! o extra)
+	    then (setInitExtra ([]: extra)
+		  ; setExtendExtra (op ::)
+		  ; extra)
 	 else fn _ => []
 
       local

@@ -174,16 +174,18 @@ structure Primitive =
 	     * allows the various passes like monomorphisation to translate
 	     * the types appropriately.
 	     *)
-	    type extra = string list ref
+	    type extra = string list
 
 	    val extra = fn x => _prim "Exn_extra": exn -> 'a; x
 	    val extra: exn -> extra = extra
 	    val name = _prim "Exn_name": exn -> string;
 	    val keepHistory = _build_const "Exn_keepHistory": bool;
-	    val setInitExtra =
-	       fn x => _prim "Exn_setInitExtra": (unit -> 'a) -> unit; x
-	    val setInitExtra: (unit -> extra) -> unit = setInitExtra
-	    val setRaise = _prim "Exn_setRaise": (string * exn -> unit) -> unit;
+	    val setExtendExtra =
+	       fn x => _prim "Exn_setExtendExtra": (string * 'a -> 'a) -> unit; x
+	    val setExtendExtra: (string * extra -> extra) -> unit =
+	       setExtendExtra
+	    val setInitExtra = fn x => _prim "Exn_setInitExtra": 'a -> unit; x
+	    val setInitExtra: extra -> unit = setInitExtra
 	    val setTopLevelHandler =
 	       _prim "Exn_setTopLevelHandler": (exn -> unit) -> unit;
 	 end

@@ -326,7 +326,7 @@ structure Exp =
       (*------------------------------------*)
       fun foreach {exp: t,
 		   handleExp: t -> unit,
-		   handlePrimExp: Var.t * PrimExp.t -> unit,
+		   handlePrimExp: Var.t * Type.t * PrimExp.t -> unit,
 		   handleBoundVar: Var.t * Tyvar.t vector * Type.t -> unit,
 		   handleVarExp: VarExp.t -> unit}: unit =
 	 let
@@ -338,8 +338,8 @@ structure Exp =
 		  ; handleVarExp result
 		  ; handleExp e
 	       end
-	    and loopPrimExp (x: Var.t, e: PrimExp.t): unit =
-	       (handlePrimExp (x, e)
+	    and loopPrimExp (x: Var.t, ty: Type.t, e: PrimExp.t): unit =
+	       (handlePrimExp (x, ty, e)
 		; (case e of
 		      Const _ => ()
 		    | Var x => handleVarExp x
@@ -368,7 +368,7 @@ structure Exp =
 	    and loopDec d =
 	       case d of
 		  MonoVal {var, ty, exp} =>
-		     (monoVar (var, ty); loopPrimExp (var, exp))
+		     (monoVar (var, ty); loopPrimExp (var, ty, exp))
 		| PolyVal {var, tyvars, ty, exp} =>
 		     (handleBoundVar (var, tyvars, ty)
 		      ; loopExp exp)
@@ -416,7 +416,7 @@ structure Exp =
       fun hasPrim (e, f) =
 	 DynamicWind.withEscape
 	 (fn escape =>
-	  (foreachPrimExp (e, fn (_, e) =>
+	  (foreachPrimExp (e, fn (_, _, e) =>
 			   case e of
 			      PrimApp {prim, ...} => if f prim then escape true
 						     else ()

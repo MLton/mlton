@@ -666,7 +666,7 @@ fun closureConvert
 	    exception Yes of Type.t vector
 	 in
 	    (Sexp.foreachPrimExp
-	     (body, fn (_, e) =>
+	     (body, fn (_, _, e) =>
 	      case e of
 		 SprimExp.Handle {catch = (x, _), ...} =>
 		    raise (Yes (Vector.new1 (varInfoType (varInfo x))))

@@ -1,5 +1,14 @@
 Here are the changes from version 20020410 to version VERSION.
 
+* 2002-08-25
+  - Changed the implementation of exception history to be completely functional.
+    Now, the extra field in exceptions (when compiling -exn-history true) is a
+    string list instead of a string list ref, and raise conses a new exception
+    with a new element in the list instead of assigning to the list.  This 
+    changes the semantics of exception history (for the better) on some
+    programs. See regression/exnHistory3.sml for an example.  It also
+    significantly improves performance when compiling -exn-history true.
+
 * 2002-07 and 2002-08
   - Added generational GC, and code to the runtime that automatically turns it
     on and off.
