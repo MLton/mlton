@@ -15,6 +15,7 @@ val debug = false
 
 val sourcesIndexGC: int = 1
 
+val coalesce: bool ref = ref false
 val gray: bool ref = ref false
 val ignore: Regexp.t ref = ref Regexp.none
 val mlmonFiles: string list ref = ref []
@@ -71,15 +72,17 @@ structure AFile =
       datatype t = T of {callGraph: Graph.t,
 			 magic: word,
 			 name: string,
-			 sources: {node: Node.t,
-				   source: Source.t} option vector}
+			 nodes: {node: Node.t,
+				 source: Source.t} vector,
+			 sources: {nodeIndex: int} option vector}
 
-      fun layout (T {magic, name, sources, ...}) =
+      fun layout (T {magic, name, nodes, sources, ...}) =
 	 Layout.record
 	 [("name", String.layout name),
 	  ("magic", Word.layout magic),
+	  ("nodes", Vector.layout (Source.layout o #source) nodes),
 	  ("sources",
-	   Vector.layout (Option.layout (Source.layout o #source)) sources)]
+	   Vector.layout (Option.layout (Int.layout o #nodeIndex)) sources)]
 
       fun new {afile: File.t}: t =
 	 if not (File.doesExist afile)
@@ -154,10 +157,72 @@ structure AFile =
 				  then NONE
 			       else SOME {node = newNode node,
 					  source = source})
+		val eqRel =
+		   if not (!coalesce)
+		      then
+			 (* The identity relation. *)
+			 Vector.fromListMap (Graph.nodes graph, Vector.new1)
+		   else
+		      (* Equate all nodes with the same source. *)
+		      let
+			 val table = HashSet.new {hash = #hash}
+			 val _ =
+			    Vector.foreach
+			    (sources, fn z =>
+			     Option.app
+			     (z, fn {node, source} =>
+			      let
+				 val s = Source.toString source
+				 val hash = String.hash s
+				 val {nodes, ...} =
+				    HashSet.lookupOrInsert
+				    (table, hash,
+				     fn {source, ...} => s = source,
+				     fn () => {hash = hash,
+					       nodes = ref [],
+					       source = s})
+				 val _ = List.push (nodes, node)
+			      in
+				 ()
+			      end))
+		      in
+			 Vector.fromList
+			 (HashSet.fold
+			  (table, [], fn ({nodes, ...}, ac) =>
+			   Vector.fromList (!nodes) :: ac))
+		      end
+		val (graph, {newNode, ...}) =
+		   Graph.quotient (graph, eqRel)
+		val _ =
+		   List.foreachi
+		   (Graph.nodes graph, fn (i, n) =>
+		    setNodeIndex (n, i))
+		val nodes = Array.array (Graph.numNodes graph, NONE)
+		val sources =
+		   Vector.map (sources, fn z =>
+			       Option.map
+			       (z, fn {node, source} =>
+				let
+				   val node = newNode node
+				   val i = nodeIndex node
+				   val _ =
+				      Array.update (nodes, i,
+						    SOME {node = node,
+							  source = source})
+				in
+				   {nodeIndex = i}
+				end))
+		val nodes =
+		   Vector.tabulate
+		   (Array.length nodes, fn i =>
+		    case Array.sub (nodes, i) of
+		       NONE => Error.bug "node not set"
+		     | SOME z => z)
 	     in
 		T {callGraph = graph,
 		   magic = magic,
 		   name = afile,
+		   nodes = nodes,
 		   sources = sources}
 	     end)
    end
@@ -555,7 +620,7 @@ structure NodePred =
    
 val graphPred: NodePred.t option ref = ref NONE
 
-fun display (AFile.T {callGraph, name = aname, sources, ...},
+fun display (AFile.T {callGraph, name = aname, nodes, sources, ...},
 	     ProfFile.T {counts, kind, total, totalGC, ...}): unit =
    let
       val {get = nodeInfo: Node.t -> {keep: bool ref,
@@ -601,63 +666,77 @@ fun display (AFile.T {callGraph, name = aname, sources, ...},
 	    Counts.Current _ => false
 	  | Counts.Empty => false
 	  | Counts.Stack _ => true
-      fun doit (v, f) =
-	 Vector.mapi
-	 (v, fn (i, x) =>
-	  let
-	     val {per, perGC, perStack, row, sortPer} = f x
-	  in
-	     case Vector.sub (sources, i) of
-		NONE => NONE
-	      | SOME {node, source, ...} =>
-		   let
-		      val {mayKeep, options, ...} = nodeInfo node
-		      val _ =
-			 mayKeep :=
-			 (fn a =>
-			  let
-			     datatype z = datatype Atomic.t
-			  in
-			     case a of
-				Name (_, rc) =>
-				   Regexp.Compiled.matchesAll
-				   (rc, Source.toString source)
-			      | Thresh x => per >= x
-			      | ThreshGC x => perGC >= x
-			      | ThreshStack x => perStack >= x
-			  end)
-		      val _ = 
-			 options :=
-			 List.append
-			 ([Dot.NodeOption.Label
-			   (Source.toDotLabel source
-			    @ (if per > 0.0
-				  then [(concat (List.separate (row, " ")),
-					 Dot.Center)]
-			       else [])),
-			   Dot.NodeOption.Shape Dot.Box,
-			   if !gray
-			      then
-				 Dot.NodeOption.Color
-				 (DotColor.gray (100 - (Real.round perStack)))
-			   else Dot.NodeOption.Color DotColor.Black],
-			  !options)
-		      val showInTable =
-			 per > 0.0
-			 andalso (per >= thresh
-				  orelse (not profileStack
-					  andalso i = sourcesIndexGC))
-		   in
-		      if showInTable
-			 then SOME {sortPer = sortPer,
-				    row = Source.toString source :: row}
-		      else NONE
-		   end
-	  end)
+      fun doit (v, zero, sum, f) =
+	 let
+	    (* Combine counts for sources in the same node. *)
+	    val a = Array.array (Vector.length nodes, zero)
+	    val _ =
+	       Vector.foreachi
+	       (v, fn (i, z) =>
+		Option.app
+		(Vector.sub (sources, i),
+		 fn {nodeIndex, ...} =>
+		 Array.update (a, nodeIndex,
+			       sum (z, Array.sub (a, nodeIndex)))))
+	 in
+	    Vector.tabulate
+	    (Array.length a, fn i =>
+	     let
+		val {per, perGC, perStack, row, sortPer} = f (Array.sub (a, i))
+		val {node, source, ...} = Vector.sub (nodes, i)
+		val _ =
+		   print (concat [Source.toString source,
+				  " ",
+				  Real.toString perStack,
+				  "\n"])
+		val {mayKeep, options, ...} = nodeInfo node
+		val _ =
+		   mayKeep :=
+		   (fn a =>
+		    let
+		       datatype z = datatype Atomic.t
+		    in
+		       case a of
+			  Name (_, rc) =>
+			     Regexp.Compiled.matchesAll
+			     (rc, Source.toString source)
+			| Thresh x => per >= x
+			| ThreshGC x => perGC >= x
+			| ThreshStack x => perStack >= x
+		    end)
+		val _ = 
+		   options :=
+		   List.append
+		   ([Dot.NodeOption.Label
+		     (Source.toDotLabel source
+		      @ (if per > 0.0
+			    then [(concat (List.separate (row, " ")),
+				   Dot.Center)]
+			 else [])),
+		     Dot.NodeOption.Shape Dot.Box,
+		     if !gray
+			then
+			   Dot.NodeOption.Color
+			   (DotColor.gray (100 - (Real.round perStack)))
+		     else Dot.NodeOption.Color DotColor.Black],
+		    !options)
+		val showInTable =
+		   per > 0.0
+		   andalso (per >= thresh
+			    orelse (not profileStack
+				    andalso i = sourcesIndexGC))
+	     in
+		if showInTable
+		   then SOME {sortPer = sortPer,
+			      row = Source.toString source :: row}
+		else NONE
+	     end)
+	 end
       val counts =
 	 case counts of
 	    Counts.Current v =>
-	       doit (v, fn z =>
+	       doit (v, IntInf.zero, IntInf.+,
+		     fn z =>
 		     let
 			val (p, r) = per z
 		     in
@@ -669,11 +748,21 @@ fun display (AFile.T {callGraph, name = aname, sources, ...},
 		  val (p, r) = per IntInf.zero
 	       in
 		  doit (Vector.new (Vector.length sources, ()),
+			(), fn ((), ()) => (),
 			fn () => {per = p, perGC = 0.0, perStack = 0.0,
 				  row = r, sortPer = p})
 	       end
 	  | Counts.Stack v =>
-	       doit (v, fn {current, stack, stackGC} =>
+	       doit (v,
+		     {current = IntInf.zero,
+		      stack = IntInf.zero,
+		      stackGC = IntInf.zero},
+		     fn ({current = c, stack = s, stackGC = g},
+			 {current = c', stack = s', stackGC = g'}) =>
+		     {current = IntInf.+ (c, c'),
+		      stack = IntInf.+ (s, s'),
+		      stackGC = IntInf.+ (g, g')},
+		     fn {current, stack, stackGC} =>
 		     let
 			val (cp, cr) = per current
 			val (sp, sr) = per stack
@@ -783,7 +872,10 @@ fun makeOptions {usage} =
       open Popt
    in
       List.map
-      ([(Normal, "graph", " <pred>", "show graph nodes",
+      ([(Normal, "coalesce", " {false|true}",
+	 "combine duplicates of same source function",
+	 boolRef coalesce),
+	(Normal, "graph", " <pred>", "show graph nodes",
 	 SpaceString (fn s =>
 		      graphPred := SOME (NodePred.fromString s)
 		      handle e => usage (concat ["invalid -graph arg: ",
