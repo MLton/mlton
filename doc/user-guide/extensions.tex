@@ -765,9 +765,6 @@ signature MLTON_SIGNAL =
       type t
       type signal = t
 
-      val prof: t
-      val vtalrm: t
-
       structure Handler:
          sig
             type t
@@ -794,20 +791,16 @@ signature MLTON_SIGNAL =
          end
 
       val getHandler: t -> Handler.t
+      val prof: t
       val setHandler: t * Handler.t -> unit
       val suspend: Mask.t -> unit
+      val vtalrm: t
    end
 \end{verbatim}
 
 \begin{description}
 
 \entry{type t} the type of signals.
-
-\entry{prof}
-{\tt SIGPROF}, the profiling signal.
-
-\entry{vtalrm}
-{\tt SIGVTALRM}, the signal for virtual timers.
 
 \entry{type Handler.t}
 the type of signal handlers.
@@ -859,12 +852,18 @@ if it is in {\tt m}.
 \entry{getHandler s}
 returns the current handler for signal {\tt s}.
 
+\entry{prof}
+{\tt SIGPROF}, the profiling signal.
+
 \entry{setHandler (s, h)}
 sets the handler for signal {\tt s} to {\tt h}.
 
 \entry{suspend m}
 temporarily sets the signal mask to {\tt m} and suspends until an
 unmasked signal is received and handled, and then resets the mask.
+
+\entry{vtalrm}
+{\tt SIGVTALRM}, the signal for virtual timers.
 \end{description}
 %
 \subsubsection{{\tt MLton.Socket}}
