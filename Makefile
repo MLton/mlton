@@ -7,7 +7,7 @@ COMP = $(SRC)/mlton
 RUN = $(SRC)/runtime
 MLTON = $(BIN)/mlton
 RUNTIME = $(LIB)/libmlton.a $(LIB)/libmlton-gdb.a $(LIB)/libgmp.a \
-	$(LIB)/prof.o $(INC)/mlton.h
+	$(INC)/mlton.h
 AOUT = mlton-compile
 LEX = mllex
 PROF = mlprof
@@ -65,9 +65,6 @@ $(RUN)/libmlton.a $(RUN)/libmlton-gdb.a $(RUN)/libgmp.a:
 	@echo 'Compiling MLton runtime system'
 	cd runtime && $(MAKE)
 
-$(LIB)/prof.o: $(RUN)/prof.o
-	cp -p $(RUN)/prof.o $(LIB)
-
 $(INC)/mlton.h: include/mlton.h runtime/*.h
 	cp -fp include/*.h $(INC)
 	cp -fp runtime/*.h $(INC)
@@ -108,7 +105,7 @@ install:
 	) &&								\
 	(								\
 		cd $(LIB) &&						\
-		cp -p *.a prof.o $(AOUT) world.mlton $(TLIB)/lib	\
+		cp -p *.a $(AOUT) world.mlton $(TLIB)/lib	\
 	) &&								\
 	(								\
 		cd $(INC) &&						\

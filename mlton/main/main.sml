@@ -355,9 +355,7 @@ fun commandLine (args: string list): unit =
 		  fun compileO (inputs: File.t list) =
 		     trace (Top, "Link")
 		     (fn () =>
-		      docc (if !profile
-			       then inputs @ [concat [root, "/lib/prof.o"]]
-			    else inputs,
+		      docc (inputs,
 			    maybeOut "",
 			    List.concat [if !debug then ["-g"] else [],
 					 if !static then ["-static"] else []],
