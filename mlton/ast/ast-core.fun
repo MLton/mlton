@@ -384,7 +384,7 @@ and layoutDec d =
     | SeqDec ds => align (Vector.toListMap (ds, layoutDec))
     | Val {tyvars, vbs, rvbs} =>
 	 align [layoutAndsTyvars ("val", (tyvars, vbs), layoutVb),
-		layoutAndsTyvars ("val rec", (Vector.new0 (), rvbs), layoutRvb)]
+		layoutAndsTyvars ("val rec", (tyvars, rvbs), layoutRvb)]
     | Fun fbs => layoutAndsTyvars ("fun", fbs, layoutFb)
     | Type typBind => TypBind.layout typBind
     | Datatype rhs => DatatypeRhs.layout rhs
