@@ -27,6 +27,8 @@ runtime.fun
 pointer-tycon.sig
 pointer-tycon.fun
 object-type.sig
+scale.sig
+scale.fun
 rep-type.sig
 rep-type.fun
 switch.sig

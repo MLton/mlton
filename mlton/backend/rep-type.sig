@@ -14,6 +14,7 @@ signature REP_TYPE_STRUCTS =
       structure Prim: PRIM
       structure RealSize: REAL_SIZE
       structure Runtime: RUNTIME
+      structure Scale: SCALE
       structure WordSize: WORD_SIZE
       structure WordX: WORD_X
       sharing CFunction = Prim.CFunction
@@ -48,7 +49,8 @@ signature REP_TYPE =
 			    index: t,
 			    offset: Bytes.t,
 			    pointerTy: PointerTycon.t -> ObjectType.t,
-			    result: t} -> bool
+			    result: t,
+			    scale: Scale.t} -> bool
       val arshift: t * t -> t
       val bool: t
       val bytes: t -> Bytes.t

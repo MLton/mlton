@@ -17,6 +17,7 @@ signature RSSA_STRUCTS =
       structure PointerTycon: POINTER_TYCON
       structure Return: RETURN
       structure Runtime: RUNTIME
+      structure Scale: SCALE
       structure Type: REP_TYPE
 
       sharing Atoms = Type
@@ -25,6 +26,7 @@ signature RSSA_STRUCTS =
       sharing ObjectType = Type.ObjectType
       sharing PointerTycon = ObjectType.PointerTycon = Type.PointerTycon
       sharing Runtime = Type.Runtime
+      sharing Scale = Type.Scale
    end
 
 signature RSSA = 
@@ -42,6 +44,7 @@ signature RSSA =
 	       ArrayOffset of {base: t,
 			       index: t,
 			       offset: Bytes.t,
+			       scale: Scale.t,
 			       ty: Type.t}
 	     | Cast of t * Type.t
 	     | Const of Const.t

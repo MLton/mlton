@@ -32,7 +32,7 @@ extern struct GC_state gcState;
 #define G(ty, i) (global##ty [i])
 #define GPNR(i) G(PointerNonRoot, i)
 #define O(ty, b, o) (*(ty*)((b) + (o)))
-#define X(ty, b, i, o) (*(ty*)((b) + ((i) * sizeof(ty)) + (o)))
+#define X(ty, b, i, s, o) (*(ty*)((b) + ((i) * (s)) + (o)))
 #define S(ty, i) *(ty*)(StackTop + (i))
 
 /* ------------------------------------------------- */

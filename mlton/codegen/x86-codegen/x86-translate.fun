@@ -25,6 +25,7 @@ struct
      structure Label = Label
      structure Live = Live
      structure Register = Register
+     structure Scale = Scale
      structure StackOffset = StackOffset
      structure Type = Type
      structure WordSize = WordSize
@@ -76,7 +77,7 @@ struct
 	 get #1 0 v
 
       val rec toX86Operand : t -> (x86.Operand.t * x86.Size.t) vector =
-	 fn ArrayOffset {base, index, offset, ty}
+	 fn ArrayOffset {base, index, offset, scale, ty}
  	    => let
 		  val base = toX86Operand base
 		  val _ = Assert.assert("x86Translate.Operand.toX86Operand: Array/base",
@@ -86,7 +87,12 @@ struct
 		  val _ = Assert.assert("x86Translate.Operand.toX86Operand: Array/index",
 				       fn () => Vector.length index = 1)
 		  val index = getOp0 index
-
+		  val scale =
+		     case scale of
+			Scale.One => x86.Scale.One
+		      | Scale.Two => x86.Scale.Two
+		      | Scale.Four => x86.Scale.Four
+		      | Scale.Eight => x86.Scale.Eight
 		  val ty = Type.toCType ty
 		  val origin =
 		     case (x86.Operand.deMemloc base,
@@ -96,14 +102,14 @@ struct
 			   x86.MemLoc.simple 
 			   {base = base,
 			    index = index,
-			    scale = x86.Scale.fromCType ty,
+			    scale = scale,
 			    size = x86.Size.BYTE,
 			    class = x86MLton.Classes.Heap}
 		      | (SOME base, _, SOME index) =>
 			   x86.MemLoc.complex 
 			   {base = base,
 			    index = index,
-			    scale = x86.Scale.fromCType ty,
+			    scale = scale,
 			    size = x86.Size.BYTE,
 			    class = x86MLton.Classes.Heap}
 		      | _ => Error.bug (concat ["toX86Operand: strange Offset:",

@@ -52,6 +52,7 @@ structure Operand =
 	 ArrayOffset of {base: t,
 			 index: t,
 			 offset: Bytes.t,
+			 scale: Scale.t,
 			 ty: Type.t}
        | Cast of t * Type.t
        | Const of Const.t
@@ -101,9 +102,10 @@ structure Operand =
 	    open Layout 
 	 in
 	    case z of
-	       ArrayOffset {base, index, offset, ty} =>
+	       ArrayOffset {base, index, offset, scale, ty} =>
 		  seq [str (concat ["X", Type.name ty, " "]),
-		       tuple [layout base, layout index, Bytes.layout offset],
+		       tuple [layout base, layout index, Scale.layout scale,
+			      Bytes.layout offset],
 		       constrain ty]
 	     | Cast (z, ty) =>
 		  seq [str "Cast ", tuple [layout z, Type.layout ty]]
@@ -1115,14 +1117,15 @@ structure Program =
 		   datatype z = datatype Operand.t
 		   fun ok () =
 		      case x of
-			 ArrayOffset {base, index, offset, ty} =>
+			 ArrayOffset {base, index, offset, scale, ty} =>
 			    (checkOperand base
 			     ; checkOperand index
 			     ; Type.arrayOffsetIsOk {base = Operand.ty base,
 						     index = Operand.ty index,
 						     offset = offset,
 						     pointerTy = tyconTy,
-						     result = ty})
+						     result = ty,
+						     scale = scale})
 		       | Cast (z, ty) =>
 			    (checkOperand z
 			    ; Type.castIsOk {from = Operand.ty z,

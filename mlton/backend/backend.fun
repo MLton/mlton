@@ -442,10 +442,11 @@ let
 	    datatype z = datatype R.Operand.t
 	 in
 	    case oper of
-	       ArrayOffset {base, index, offset, ty} =>
+	       ArrayOffset {base, index, offset, scale, ty} =>
 		  M.Operand.ArrayOffset {base = translateOperand base,
 					 index = translateOperand index,
 					 offset = offset,
+					 scale = scale,
 					 ty = ty}
 	     | Cast (z, t) => M.Operand.Cast (translateOperand z, t)
 	     | Const c => constOperand c

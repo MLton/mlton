@@ -329,6 +329,16 @@ datatype z = datatype Transfer.t
 structure PackedRepresentation = PackedRepresentation (structure Rssa = Rssa
 						       structure Ssa = Ssa)
 
+structure Type =
+   struct
+      open Type
+	 
+      fun scale (ty: t): Scale.t =
+	 case Scale.fromInt (Bytes.toInt (bytes ty)) of
+	    NONE => Error.bug "Type.scale"
+	  | SOME s => s
+   end
+
 fun updateCard (addr: Operand.t): Statement.t list =
    let
       val index = Var.newNoname ()
@@ -347,6 +357,7 @@ fun updateCard (addr: Operand.t): Statement.t list =
 		    {base = Runtime GCField.CardMap,
 		     index = Var {ty = indexTy, var = index},
 		     offset = Bytes.zero,
+		     scale = Scale.One,
 		     ty = Type.word Bits.inByte}),
 	     src = Operand.word (WordX.one (WordSize.fromBits Bits.inByte))}]
    end
@@ -722,6 +733,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 				 move (ArrayOffset {base = a 0,
 						    index = a 1,
 						    offset = Bytes.zero,
+						    scale = Type.scale Type.defaultWord,
 						    ty = Type.defaultWord})
 			      fun dst () =
 				 case var of
@@ -795,15 +807,18 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 				   ArrayOffset {base = a 0,
 						index = a 1,
 						offset = Bytes.zero,
+						scale = Type.scale ty,
 						ty = ty})
 		     fun pointerSet () =
 			let
 			   val src = a 2
+			   val ty = Operand.ty src
 			in
 			   add (Move {dst = ArrayOffset {base = a 0,
 							 index = a 1,
 							 offset = Bytes.zero,
-							 ty = Operand.ty src},
+							 scale = Type.scale ty,
+							 ty = ty},
 				      src = a 2})
 			end
 		     fun codegenOrC (p: Prim.t) =
@@ -1073,6 +1088,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 						      {base = a 0,
 						       index = a 1,
 						       offset = Bytes.zero,
+						       scale = Type.scale Type.defaultWord,
 						       ty = Type.defaultWord}),
 					       src = a 2})
 			       | Word8Vector_subWord => subWord ()

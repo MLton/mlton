@@ -69,12 +69,16 @@ signature MACHINE =
 	    val ty: t -> Type.t
 	 end
 
+      structure Scale: SCALE
+      sharing Scale = Type.Scale
+	 
       structure Operand:
 	 sig
 	    datatype t =
 	       ArrayOffset of {base: t,
 			       index: t,
 			       offset: Bytes.t,
+			       scale: Scale.t,
 			       ty: Type.t}
 	     | Cast of t * Type.t
 	     | Contents of {oper: t,

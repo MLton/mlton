@@ -25,6 +25,7 @@ in
    structure PointerTycon = PointerTycon
    structure Prim = Prim
    structure Runtime = Runtime
+   structure Scale = Scale
    structure Statement = Statement
    structure Switch = Switch
    structure Transfer = Transfer
@@ -483,41 +484,45 @@ structure Base =
 			NONE => Error.bug "Base.toOperand missing eltWidth"
 		      | SOME w => w
 	       in
-		  if Bytes.equals (eltWidth, Type.bytes ty)
-		     then (ArrayOffset {base = vector,
-					index = index,
-					offset = offset,
-					ty = ty},
-			   [])
-		  else
-		     let
-			val size = WordSize.default
-			val wty = Type.word (WordSize.bits size)
-			(* vector + (width * index) + offset *)
-			val prod = Var.newNoname ()
-			val s1 =
-			   PrimApp {args = (Vector.new2
-					    (index,
-					     Operand.word
-					     (WordX.fromIntInf
-					      (Bytes.toIntInf eltWidth, size)))),
-				    dst = SOME (prod, wty),
-				    prim = Prim.wordMul (size, {signed = false})}
-			val eltBase = Var.newNoname ()
-			val s2 =
-			   PrimApp {args = (Vector.new2
-					    (vector,
-					     Operand.Var {ty = wty,
-							  var = prod})),
-				    dst = SOME (eltBase, wty),
-				    prim = Prim.wordAdd size}
-		     in
-			(Offset {base = Operand.Var {ty = wty,
-						     var = eltBase},
-				 offset = offset,
-				 ty = ty},
-			 [s1, s2])
-		     end
+		  case Scale.fromInt (Bytes.toInt eltWidth) of
+		     NONE =>
+			let
+			   val size = WordSize.default
+			   val wty = Type.word (WordSize.bits size)
+			   (* vector + (width * index) + offset *)
+			   val prod = Var.newNoname ()
+			   val s1 =
+			      PrimApp {args = (Vector.new2
+					       (index,
+						Operand.word
+						(WordX.fromIntInf
+						 (Bytes.toIntInf eltWidth,
+						  size)))),
+				       dst = SOME (prod, wty),
+				       prim = Prim.wordMul (size,
+							    {signed = false})}
+			   val eltBase = Var.newNoname ()
+			   val s2 =
+			      PrimApp {args = (Vector.new2
+					       (vector,
+						Operand.Var {ty = wty,
+							     var = prod})),
+				       dst = SOME (eltBase, wty),
+				       prim = Prim.wordAdd size}
+			in
+			   (Offset {base = Operand.Var {ty = wty,
+							var = eltBase},
+				    offset = offset,
+				    ty = ty},
+			    [s1, s2])
+			end
+		   | SOME s =>
+			(ArrayOffset {base = vector,
+				      index = index,
+				      offset = offset,
+				      scale = s,
+				      ty = ty},
+			 [])
 	       end
    end
 

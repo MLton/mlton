@@ -12,37 +12,7 @@ open S
 
 type int = Int.t
 
-local
-   open Machine
-in
-   structure Block = Block
-   structure CFunction = CFunction
-   structure CType = CType
-   structure Chunk = Chunk
-   structure ChunkLabel = ChunkLabel
-   structure FrameInfo = FrameInfo
-   structure Global = Global
-   structure Kind = Kind
-   structure Label = Label
-   structure Live = Live
-   structure ObjectType = ObjectType
-   structure Operand = Operand
-   structure Prim = Prim
-   structure ProfileInfo = ProfileInfo
-   structure ProfileLabel = ProfileLabel
-   structure Program = Program
-   structure RealSize = RealSize
-   structure RealX = RealX
-   structure Register = Register
-   structure Runtime = Runtime
-   structure StackOffset = StackOffset
-   structure Statement = Statement
-   structure Switch = Switch
-   structure Transfer = Transfer
-   structure Type = Type
-   structure WordSize = WordSize
-   structure WordX = WordX
-end
+open Machine
 
 datatype z = datatype RealSize.t
 datatype z = datatype WordSize.prim
@@ -583,10 +553,11 @@ fun output {program as Machine.Program.T {chunks,
 	 datatype z = datatype Operand.t
       	 fun toString (z: Operand.t): string =
 	    case z of
-	       ArrayOffset {base, index, offset, ty} =>
+	       ArrayOffset {base, index, offset, scale, ty} =>
 		  concat ["X", C.args [Type.toC ty,
 				       toString base,
 				       toString index,
+				       Scale.toString scale,
 				       C.bytes offset]]
 	     | Cast (z, ty) => concat ["(", Type.toC ty, ")", toString z]
 	     | Contents {oper, ty} => contents (ty, toString oper)
