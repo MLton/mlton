@@ -25,7 +25,7 @@ all: $(AOUT)
 
 $(AOUT): $(NAME).cm $(shell $(MLTON) -stop f mlton.cm)
 	@echo 'Compiling mlton (takes a while)'
-	time $(MLTON) $(FLAGS) $(CM)
+	$(MLTON) $(FLAGS) $(CM)
 	size $(AOUT)
 	strip $(AOUT)
 
