@@ -621,12 +621,19 @@ functor Real (R: PRE_REAL): REAL =
 	  | ZERO => 0
 	  | _ =>
 	       let
+		  (* This round may turn x into an INF, so we need to check the
+		   * class again.
+		   *)
 		  val x = roundReal (x, mode)
 	       in
-		  if minInt <= x andalso x <= maxInt
-		     then LargeInt.fromInt (Prim.toInt x)
-		  else
-		     valOf (LargeInt.fromString (fmt (StringCvt.FIX (SOME 0)) x))
+		  case class x of
+		     INF => raise Overflow
+		   | _ => 
+			if minInt <= x andalso x <= maxInt
+			   then LargeInt.fromInt (Prim.toInt x)
+			else
+			   valOf
+			   (LargeInt.fromString (fmt (StringCvt.FIX (SOME 0)) x))
 	       end
 	 
       structure Math =

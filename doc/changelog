@@ -1,5 +1,13 @@
 Here are the changes since version 20040227.
 
+* 2004-08-27
+  - Fixed bug in Real.toLargeInt.  It would incorrectly raise Option
+    instead of Overflow in the case when the real was not an INF, but
+    rounding produced an INF.
+  - Fixed bugs in Date.{fmt,fromString,scan,toString}.  They
+    incorrectly allowed a space for the first character in the day of
+    the month.
+
 * 2004-08-18
   - Changed MLton.{Thread,Signal,World} to distinguish between 
     implicitly and explicitly paused threads.
