@@ -572,7 +572,8 @@ fun commandLine (args: string list): unit =
 	      | OpenBSD => true
 	      | _ => false)
 	    andalso !profile = ProfileTime
-	    then usage "can't use -profile time on Cygwin"
+	    then usage (concat ["can't use -profile time on ",
+				MLton.Platform.OS.toString targetOS])
 	 else ()
       fun printVersion (out: Out.t): unit =
 	 Out.output (out, concat [version, " ", build, "\n"])
