@@ -297,7 +297,8 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 
       datatype instream = In of {common: {reader: reader,
 					  augmented_reader: reader,
-					  tail: state ref ref},
+					  tail: state ref ref,
+					  uniq: unit ref},
 				 pos: int,
 				 buf: buf}
 
@@ -323,6 +324,7 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
       fun instreamReader is = instreamCommonSel (is, #reader)
       fun readerSel (PIO.RD v, sel) = sel v
       fun instreamName is = readerSel (instreamReader is, #name)
+      fun instreamUniq is = instreamCommonSel (is, #uniq)
 
       val empty = V.tabulate (0, fn _ => someElem)
       val line = V.tabulate (1, fn _ => lineElem)
@@ -598,12 +600,17 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 		      | _ => SOME 0
 	     end
 
-      fun closeIn (is as In {common = {tail, ...}, ...}) =
-	case !(!tail) of
-	  End => (!tail := Closed;
-		  ((readerSel (instreamReader is, #close)) ())
-		  handle exn => liftExn (instreamName is) "closeIn" exn)
-	| _ => ()
+      fun makeCloseIn (In {common = {reader = PIO.RD {close, name, ...},
+				     tail, ...},
+			   ...}): unit -> unit =
+	 fn () =>
+	 case !(!tail) of
+	    End =>
+	       (!tail := Closed
+		; close () handle exn => liftExn name "closeIn" exn)
+	  | _ => ()
+
+      fun closeIn ins = makeCloseIn ins ()
 
       fun endOfStream is =
 	let val (inp, _) = input is
@@ -634,7 +641,8 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 	in
 	  In {common = {reader = reader,
 			augmented_reader = PIO.augmentReader reader,
-			tail = ref next},
+			tail = ref next,
+			uniq = ref ()},
 	      pos = 0,
 	      buf = buf}
 	end
@@ -788,24 +796,25 @@ functor StreamIOExtraFile (S: STREAM_IO_EXTRA_FILE_ARG): STREAM_IO_EXTRA_FILE =
 	  SOME ioDesc => valOf (Posix.FileSys.iodToFD ioDesc)
 	| NONE => liftExn (instreamName is) "inFd" (Fail "<no ioDesc>")
 
-      val openInstreams : (instream * {close: bool}) list ref = ref []
+      val closeAtExits: {close: unit -> unit, uniq: unit ref} list ref = ref []
       val mkInstream'' =
 	let
-	  val _ = Cleaner.addNew
-	          (Cleaner.atExit, fn () =>
-		   List.app (fn (is, {close}) => 
-			     if close
-			       then closeIn is
-			       else ()) (!openInstreams))
+	   val _ = Cleaner.addNew (Cleaner.atExit, fn () =>
+				   List.app (fn {close, ...} => close ())
+				   (!closeAtExits))
 	in
-	  fn {reader, closed, buffer_contents, atExit} =>
+	  fn {reader, closed, buffer_contents, atExit = {close = closeAtExit}} =>
 	  let
-	    val is = mkInstream' {reader = reader,
-				  closed = closed,
-				  buffer_contents = buffer_contents}
-	    val _ = if closed
-		      then ()
-		      else openInstreams := (is,atExit) :: (!openInstreams)
+	    val is =
+	       mkInstream' {reader = reader,
+			    closed = closed,
+			    buffer_contents = buffer_contents}
+	    val _ =
+	       if closed orelse not closeAtExit
+		  then ()
+	       else closeAtExits := ({close = makeCloseIn is,
+				      uniq = instreamUniq is}
+				     :: (!closeAtExits))
 	  in
 	    is
 	  end
@@ -820,11 +829,12 @@ functor StreamIOExtraFile (S: STREAM_IO_EXTRA_FILE_ARG): STREAM_IO_EXTRA_FILE =
 					 then NONE
 					 else SOME buffer_contents}
       val closeIn = fn is =>
-	let
-	  val _ = openInstreams := List.filter (fn (is',_) => 
-						not (equalsIn (is, is'))) 
-                                               (!openInstreams)
-	in
-	  closeIn is
-	end
+	 let
+	    val u = instreamUniq is
+	    val _ =
+	       closeAtExits :=
+	       List.filter (fn {uniq, ...} => u = uniq) (!closeAtExits)
+	 in
+	    closeIn is
+	 end
    end
