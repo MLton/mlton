@@ -46,6 +46,19 @@ structure Con =
 		   val fromString = fn s => fromString (s, Region.bogus))
 
       open P
+
+      fun ensureRedefine c =
+	 if List.exists ([cons, falsee, nill, reff, truee],
+			 fn c' => equals (c, c'))
+	    then 
+	       let
+		  open Layout
+	       in
+		  Control.error (region c,
+				 seq [str "can not redefine ", layout c],
+				 empty)
+	       end
+	 else ()
    end
 
 structure Sigid = AstId (val className = "signature")

@@ -12,7 +12,8 @@ open S
 
 local
    open Ast
-in 
+in
+   structure Acon = Con
    structure Aconst = Const
    structure Adec = Dec
    structure Aexp = Exp
@@ -20,6 +21,7 @@ in
    structure Apat = Pat
    structure Atype = Type
    structure Avar = Var
+   structure Avid = Vid
    structure DatatypeRhs = DatatypeRhs
    structure DatBind = DatBind
    structure EbRhs = EbRhs
@@ -458,18 +460,6 @@ val elaboratePat:
 		      in
 			 case Aconst.node c of
 			    Aconst.Bool b => if b then Cpat.truee else Cpat.falsee
-			  | Aconst.Real r =>
-			       let
-				  open Layout
-				  val _ = 
-				     Control.error
-				     (region,
-				      seq [str "real constants are not allowed in patterns: ",
-					   lay ()],
-				      empty)
-			       in
-				  doit ()
-			       end
 			  | _ => doit ()
 		      end
 		 | Apat.Constraint (p, t) =>
@@ -1262,6 +1252,9 @@ fun elaborateDec (d, {env = E,
 				val _ = Env.extendVar (E, func, var,
 						       Scheme.fromType ty)
 				val _ = markFunc var
+				val _ =
+				   Acon.ensureRedefine
+				   (Avid.toCon (Avid.fromVar func))
 			     in
 				{clauses = clauses,
 				 func = func,
@@ -1577,7 +1570,9 @@ fun elaborateDec (d, {env = E,
 			     val bound =
 				Vector.map
 				(bound, fn (x, _, _) =>
-				 (Env.extendVar (E, x, var, scheme)
+				 (Acon.ensureRedefine (Avid.toCon
+						       (Avid.fromVar x))
+				  ; Env.extendVar (E, x, var, scheme)
 				  ; (x, var, ty)))
 			  in
 			     {bound = bound,

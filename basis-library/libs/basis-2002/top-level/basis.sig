@@ -1,24 +1,21 @@
 signature BASIS_2002 =
    sig
       (* Top-level types *)
-      eqtype unit
-      eqtype int 
-      eqtype word 
-      type real
-      eqtype char
-      eqtype string
-      type substring 
-      type exn
       eqtype 'a array
-      eqtype 'a vector
-(*
-      eqtype 'a ref
-*)
-      datatype 'a ref = ref of 'a
-      datatype bool = false | true
+      datatype bool = datatype bool
+      eqtype char
+      type exn
+      eqtype int 
       datatype 'a option = NONE | SOME of 'a 
       datatype order = LESS | EQUAL | GREATER 
-      datatype 'a list = nil | :: of ('a * 'a list)
+      datatype list = datatype list
+      datatype ref = datatype ref
+      type real
+      eqtype string
+      type substring 
+      eqtype unit
+      eqtype 'a vector
+      eqtype word 
 
       (* Top-level exceptions *)
       exception Bind 
@@ -356,16 +353,11 @@ signature BASIS_2002 =
       sharing RealArray = Real64Array
       sharing WordArray = Word32Array
 
-      sharing type BoolArray.elem = bool
       sharing type BoolArray.vector = BoolVector.vector
-      sharing type BoolArraySlice.elem = bool
       sharing type BoolArraySlice.array = BoolArray.array
       sharing type BoolArraySlice.vector = BoolVector.vector
       sharing type BoolArraySlice.vector_slice = BoolVectorSlice.slice
-      sharing type BoolVector.elem = bool
-      sharing type BoolVectorSlice.elem = bool
       sharing type BoolVectorSlice.vector = BoolVector.vector
-      sharing type BoolArray2.elem = bool
       sharing type BoolArray2.vector = BoolVector.vector
       sharing type CharArray2.elem = char
       sharing type CharArray2.vector = CharVector.vector
@@ -538,15 +530,21 @@ signature BASIS_2002 =
       sharing type Word32Array2.elem = Word32.word
       sharing type Word32Array2.vector = Word32Vector.vector
    end
+   (* bool is already defined as bool and so cannot be shared.
+    * So, we where these to get the needed sharing.
+    *)
+   where type BoolArray.elem = bool
+   where type BoolArray2.elem = bool
+   where type BoolArraySlice.elem = bool
+   where type BoolVector.elem = bool
+   where type BoolVectorSlice.elem = bool
+
    (* Top-level types.  These appear free in basis signatures and hence must be
     * the same in the basis as at the top level.
     *)
    where type 'a array = 'a array
-   where type 'a list = 'a list
    where type 'a option = 'a option
-   where type 'a ref = 'a ref
    where type 'a vector = 'a vector
-   where type bool = bool
    where type char = char
    where type exn = exn
    where type int = int

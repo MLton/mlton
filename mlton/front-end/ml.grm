@@ -282,7 +282,8 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | datatypeRhsnode of DatatypeRhs.node
        | datatypeRhsnodeNoWithtype of DatatypeRhs.node
        | db of db
-       | dbs of db list
+       | dbs of db vector
+       | dbs' of db list
        | dec of Dec.t
        | decnode of Dec.node
        | decnolocal of Dec.node
@@ -841,7 +842,8 @@ opcon   : con           (con)
 ebs     : eb              ([eb])
         | eb AND ebs      (eb::ebs)
 
-eb	: opcon ebrhs	  ((opcon,ebrhs))
+eb	: opcon ebrhs	  (Con.ensureRedefine opcon
+			   ; (opcon, ebrhs))
 
 ebrhs : ebrhsnode (EbRhs.makeRegion' (ebrhsnode,
 				     ebrhsnodeleft, ebrhsnoderight))
@@ -864,22 +866,24 @@ digit : int (if int < 0 orelse int >= 10
 		      ; 0)
 	     else IntInf.toInt int)
 
-datatypeRhs : datatypeRhsnode (DatatypeRhs.makeRegion' (datatypeRhsnode,
-						       datatypeRhsnodeleft,
-						       datatypeRhsnoderight))
+datatypeRhs
+   : datatypeRhsnode
+     (DatatypeRhs.makeRegion' (datatypeRhsnode,
+			       datatypeRhsnodeleft, datatypeRhsnoderight))
 
-datatypeRhsNoWithtype : datatypeRhsnodeNoWithtype
-                        (DatatypeRhs.makeRegion' (datatypeRhsnodeNoWithtype,
-						 datatypeRhsnodeNoWithtypeleft,
-						 datatypeRhsnodeNoWithtyperight))
+datatypeRhsNoWithtype
+   : datatypeRhsnodeNoWithtype
+     (DatatypeRhs.makeRegion' (datatypeRhsnodeNoWithtype,
+			       datatypeRhsnodeNoWithtypeleft,
+			       datatypeRhsnodeNoWithtyperight))
 
 datatypeRhsnode
-        : repl              (repl)
-        | datBind           (DatatypeRhs.DatBind datBind)
+   : repl              (repl)
+   | datBind           (DatatypeRhs.DatBind datBind)
 
 datatypeRhsnodeNoWithtype
-        : repl               (repl)
-        | datBindNoWithtype  (DatatypeRhs.DatBind datBindNoWithtype)
+   : repl               (repl)
+   | datBindNoWithtype  (DatatypeRhs.DatBind datBindNoWithtype)
 
 repl : tyvars tycon EQUALOP DATATYPE longtycon
        (if Vector.isEmpty tyvars
@@ -890,17 +894,9 @@ repl : tyvars tycon EQUALOP DATATYPE longtycon
 
 datBind : dbs withtypes
           (let
-	      val datatypes = Vector.fromList dbs
 	      val _ =
 		 reportDuplicates
-		 (Vector.concatV (Vector.map (datatypes, #cons)),
-		  "constructor",
-		  fn ((c, _), (c', _)) => Con.equals (c, c'),
-		  Con.layout o #1,
-		  Con.region o #1)
-	      val _ =
-		 reportDuplicates
-		 (Vector.concat [Vector.map (datatypes, #tycon),
+		 (Vector.concat [Vector.map (dbs, #tycon),
 				 let
 				    val TypBind.T v = TypBind.node withtypes
 				 in
@@ -911,23 +907,41 @@ datBind : dbs withtypes
 		  Ast.Tycon.layout,
 		  Ast.Tycon.region)
 	   in
-	      DatBind.makeRegion' (DatBind.T {datatypes = datatypes,
+	      DatBind.makeRegion' (DatBind.T {datatypes = dbs,
 					      withtypes = withtypes},
 				   dbsleft,
 				   withtypesright)
 	   end)
 
 datBindNoWithtype
-        : dbs  (DatBind.makeRegion' (DatBind.T {datatypes = Vector.fromList dbs,
-						withtypes = TypBind.empty},
-				     dbsleft, dbsright))
+   : dbs
+    (DatBind.makeRegion' (DatBind.T {datatypes = dbs,
+				     withtypes = TypBind.empty},
+			  dbsleft, dbsright))
 
-dbs : db                       ([db])
-    | db AND dbs               (db :: dbs)
+dbs : dbs' (let
+	       val datatypes = Vector.fromList dbs'
+	       val _ =
+		  reportDuplicates
+		  (Vector.concatV (Vector.map (datatypes, #cons)),
+		   "constructor",
+		   fn ((c, _), (c', _)) => Con.equals (c, c'),
+		   Con.layout o #1,
+		   Con.region o #1)
+	       val _ =
+		  Vector.foreach (datatypes, fn {cons, ...} =>
+				  Vector.foreach (cons, Con.ensureRedefine o #1))
+	    in
+	       datatypes
+	    end)
 
-db	: tyvars tycon EQUALOP constrs	({tycon = tycon,
-					  tyvars = tyvars,
-					  cons = Vector.fromList constrs})
+dbs' : db           ([db])
+     | db AND dbs'  (db :: dbs')
+
+db	: tyvars tycon EQUALOP constrs	({cons = Vector.fromList constrs,
+					  tycon = tycon,
+					  tyvars = tyvars})
+					  
 
 withtypes :                   (TypBind.empty)
 	  | WITHTYPE typBind  (typBind)
@@ -1050,7 +1064,24 @@ apatnode : longvidNoEqual        (Pat.Var {name = longvidNoEqual,
 					   fixop = Fixop.None})
         | OP vid                 (Pat.Var {name = Longvid.short vid,
 					   fixop = Fixop.Op})
-	| const		         (Pat.Const const)
+	| const
+          (let
+	      val _ =
+		 case Const.node const of
+		    Const.Real r =>
+		       let
+			  open Layout
+		       in
+			  Control.error
+			  (Const.region const,
+			   seq [str "real constants are not allowed in patterns: ",
+				Const.layout const],
+			   empty)
+		       end
+		    | _ => ()
+	   in
+	      Pat.Const const
+	   end)
 	| WILD			 (Pat.Wild)
 	| LPAREN pats RPAREN     (Pat.tuple (Vector.fromList pats))
 	| LBRACKET pats RBRACKET (Pat.List (Vector.fromList pats))

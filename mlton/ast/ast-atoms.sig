@@ -29,7 +29,10 @@ signature AST_ATOMS =
       structure Con:
 	 sig
 	    include AST_ID
-	    include PRIM_CONS sharing type con = t
+	    include PRIM_CONS
+	    sharing type con = t
+
+            val ensureRedefine: t -> unit
 	 end
 
       structure Sigid: AST_ID

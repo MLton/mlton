@@ -11,14 +11,11 @@ signature BASIS_1997 =
       type exn
       eqtype 'a array
       eqtype 'a vector
-(*
-      eqtype 'a ref
-*)
-      datatype 'a ref = ref of 'a
-      datatype bool = false | true
+      datatype ref = datatype ref
+      datatype bool = datatype bool
       datatype 'a option = NONE | SOME of 'a
       datatype order = LESS | EQUAL | GREATER 
-      datatype 'a list = nil | :: of ('a * 'a list)
+      datatype list = datatype list
 
       (* Top-level exceptions *)
       exception Bind 

@@ -11,12 +11,9 @@ signature BASIS_NONE =
       type exn
       eqtype 'a array 
       eqtype 'a vector
-(*
-      eqtype 'a ref
-*)
-      datatype 'a ref = ref of 'a
-      datatype bool = false | true
-      datatype 'a list = nil | :: of ('a * 'a list)
+      datatype ref = datatype ref
+      datatype bool = datatype bool
+      datatype list = datatype list
 
       exception Bind
       exception Match
@@ -31,6 +28,3 @@ signature BASIS_NONE =
    where type exn = exn
    where type 'a array = 'a array
    where type 'a vector = 'a vector
-   where type 'a ref = 'a ref
-   where type bool = bool
-   where type 'a list = 'a list
