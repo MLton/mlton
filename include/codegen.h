@@ -19,9 +19,10 @@
 #define Real(c, f) globaldouble[c] = f;
 #define EndReals }
 
+/* gcState can't be static because stuff in mlton-lib.c refers to it */
+struct GC_state gcState;
+
 #define Globals(c, d, i, p, u, nr)					\
-	/* gcState can't be static because stuff in mlton-lib.c refers to it */	\
-	struct GC_state gcState;						\
 	char globaluchar[c];						\
 	double globaldouble[d];						\
 	int globalint[i];						\
