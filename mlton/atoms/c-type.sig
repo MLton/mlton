@@ -29,7 +29,7 @@ signature C_TYPE =
       val equals: t * t -> bool
       val isPointer: t -> bool
       val memo: (t -> 'a) -> t -> 'a
-      (* name: R{32,64} I[8,16,32,64] P W[8,16,32] *)
+      (* name: R{32,64} I[8,16,32,64] P W[8,16,32,64] *)
       val name: t -> string
       val pointer: t
       val layout: t -> Layout.t

@@ -226,11 +226,13 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 	   | SOME e => SOME (loop e))
       and loops es = List.map (es, loop)
       and loop (e: Exp.t): Exp.t =
-	 let val {decs, result} = Exp.dest e
+	 let
+	    val {decs, result} = Exp.dest e
 	    val decs = List.concatRev (List.fold (decs, [], fn (d, ds) =>
 						  loopDec d :: ds))
-	 in Exp.new {decs = decs,
-		     result = result}
+	 in
+	    Exp.make {decs = decs,
+		      result = result}
 	 end
       and loopDec (dec: Dec.t): Dec.t list =
 	 case dec of
@@ -438,9 +440,9 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 	 let
 	    val {arg, argType, body} = Lambda.dest l
 	 in
-	    Lambda.new {arg = arg,
-			argType = argType,
-			body = loop body}
+	    Lambda.make {arg = arg,
+			 argType = argType,
+			 body = loop body}
 	 end
       val body =
 	 let
@@ -489,7 +491,7 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 			 val exn = Var.newNoname ()
 		      in
 			 Lambda
-			 (Lambda.new
+			 (Lambda.make
 			  {arg = exn,
 			   argType = Type.exn,
 			   body =

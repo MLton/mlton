@@ -242,9 +242,7 @@ fun outputDeclarations
     }: unit =
    let
       fun declareExports () =
-	 if Ffi.numExports () > 0
-	    then Ffi.declareExports {print = print}
-	 else ()
+	 Ffi.declareExports {print = print}
       fun declareLoadSaveGlobals () =
 	 let
 	    val _ =
@@ -437,49 +435,6 @@ structure Type =
 	     | Word s => word s
 	     | _ => Error.bug (concat ["Type.toC strange type: ", toString t])
       end
-   end
-
-structure Prim =
-   struct
-      open Prim
-      structure Type =
-	 struct
-	    open Type
-
-	    local
-	       val {get: Tycon.t -> string option, set, ...} =
-		  Property.getSetOnce (Tycon.plist, Property.initConst NONE)
-	       val tycons =
-		  List.map
-		  (IntSize.all, fn s =>
-		   (Tycon.int s, concat ["Int", IntSize.toString s]))
-		  @ [(Tycon.intInf, "Pointer"),
-		     (Tycon.pointer, "Pointer"),
-		     (Tycon.preThread, "Pointer")]
-		  @ (List.map
-		     (RealSize.all, fn s =>
-		      (Tycon.real s, concat ["Real", RealSize.toString s])))
-		  @ [(Tycon.reff, "Pointer"),
-		     (Tycon.thread, "Pointer"),
-		     (Tycon.tuple, "Pointer"),
-		     (Tycon.vector, "Pointer"),
-		     (Tycon.weak, "Pointer")]
-		  @ (List.map
-		     (WordSize.all, fn s =>
-		      (Tycon.word s, concat ["Word", WordSize.toString s])))
-	       val _ =
-		  List.foreach (tycons, fn (tycon, s) => set (tycon, SOME s))
-	    in
-	       fun toC (ty: t): string =
-		  case ty of
-		     Con (c, _) =>
-			(case get c of
-			    NONE => Error.bug (concat ["strange tycon: ",
-						       Tycon.toString c])
-			  | SOME s => s)
-		   | _ => Error.bug "strange type"
-	    end
-	 end
    end
 
 fun contents (ty, z) = concat ["C", C.args [Type.toC ty, z]]

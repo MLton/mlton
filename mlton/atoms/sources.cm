@@ -53,8 +53,8 @@ c-function.sig
 c-function.fun
 c-type.sig
 c-type.fun
-cons.fun
-cons.sig
+con.fun
+con.sig
 const.fun
 const.sig
 ffi.fun

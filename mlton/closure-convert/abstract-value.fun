@@ -276,27 +276,29 @@ fun tuple (vs: t vector): t = new (Tuple vs,
 
 fun select (v, i) =
    case tree v of
-      Type t => fromType (Vector.sub (Type.detuple t, i))
+      Type t => fromType (Vector.sub (Type.deTuple t, i))
     | Tuple vs => Vector.sub (vs, i)
     | _ => Error.bug "Value.select expected tuple"
 
-fun deref v =
+fun deRef v =
    case tree v of
-      Type t => fromType (Type.deref t)
+      Type t => fromType (Type.deRef t)
     | Unify (_, v) => v
-    | _ => Error.bug "Value.deref"
+    | _ => Error.bug "Value.deRef"
 
-fun deweak v =
-   case tree v of
-      Type t => fromType (Type.deweak t)
-    | Unify (_, v) => v
-    | _ => Error.bug "Value.deweak"
+val deRef = Trace.trace ("Value.deRef", layout, layout) deRef
 
-fun dearray v =
+fun deWeak v =
    case tree v of
-      Type t => fromType (Type.dearray t)
+      Type t => fromType (Type.deWeak t)
     | Unify (_, v) => v
-    | _ => Error.bug "Value.dearray"
+    | _ => Error.bug "Value.deWeak"
+
+fun deArray v =
+   case tree v of
+      Type t => fromType (Type.deArray t)
+    | Unify (_, v) => v
+    | _ => Error.bug "Value.deArray"
 
 fun lambda (l: Sxml.Lambda.t, t: Type.t): t =
    new (Lambdas (LambdaNode.lambda l), t)       
@@ -309,15 +311,14 @@ fun unify (v, v') =
    else let val t = tree v
 	    val t' = tree v'
 	in Dset.union (v, v')
-	   ; (case (t,             t') of
-		 (Type t,        Type t')        => if Type.equals (t, t')
-						       then ()
-						    else Error.bug "unify"
+	   ; (case (t, t') of
+		 (Type t, Type t') => if Type.equals (t, t')
+					 then ()
+				      else Error.bug "unify"
 	       | (Unify (_, v), Unify (_, v')) => unify (v, v')
-	       | (Tuple vs,      Tuple vs')      =>
-		    Vector.foreach2 (vs, vs', unify)
-	       | (Lambdas l,     Lambdas l')     => LambdaNode.unify (l, l')
-	       | _                               => Error.bug "impossible unify")
+	       | (Tuple vs, Tuple vs') => Vector.foreach2 (vs, vs', unify)
+	       | (Lambdas l, Lambdas l') => LambdaNode.unify (l, l')
+	       | _ => Error.bug "impossible unify")
 	end
 
 val unify = Trace.trace2 ("Value.unify", layout, layout, Unit.layout) unify

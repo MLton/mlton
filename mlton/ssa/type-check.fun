@@ -341,7 +341,7 @@ fun typeCheck (program as Program.T {datatypes, functions, ...}): unit =
 				       end,
 				    Unit.layout) coerce
       fun select {tuple: Type.t, offset: int, resultType}: Type.t =
-	 case Type.detupleOpt tuple of
+	 case Type.deTupleOpt tuple of
 	    NONE => error "select of non tuple"
 	  | SOME ts => Vector.sub (ts, offset)
       val {get = conInfo: Con.t -> {args: Type.t vector,
@@ -373,22 +373,7 @@ fun typeCheck (program as Program.T {datatypes, functions, ...}): unit =
 	 in ()
 	 end
       fun filterGround to (t: Type.t): unit = coerce {from = t, to = to}
-      fun primApp {prim, targs, args, resultType, resultVar} =
-	 case Prim.checkApp {prim = prim,
-			     targs = targs,
-			     args = args,
-			     con = Type.con,
-			     equals = Type.equals,
-			     dearrowOpt = Type.dearrowOpt,
-			     detupleOpt = Type.detupleOpt,
-			     isUnit = Type.isUnit
-			     } of
-	    NONE => error (concat
-			   ["bad primapp ",
-			    Prim.toString prim,
-			    ", args = ",
-			    Layout.toString (Vector.layout Type.layout args)])
-	  | SOME t => t
+      fun primApp {prim, targs, args, resultType, resultVar} = resultType
       val primApp =
 	 Trace.trace ("checkPrimApp",
 		      fn {prim, targs, args, ...} =>

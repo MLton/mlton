@@ -350,7 +350,7 @@ structure Value =
 				      Exp.PrimApp {args = args,
 						   prim = Prim.array,
 						   targs = targs},
-				      Type.dearray ty)
+				      Type.deArray ty)
 			  | Const (Const.T {const, ...}) =>
 			       (case !const of
 				   Const.Const c => yes (Exp.Const c)
@@ -371,7 +371,7 @@ structure Value =
 				      Exp.PrimApp {args = args,
 						   prim = Prim.reff,
 						   targs = targs},
-				      Type.deref ty)
+				      Type.deRef ty)
 			  | Tuple vs =>
 			       (case globals (vs, newGlobal) of
 				   NONE => No

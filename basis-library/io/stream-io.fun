@@ -45,7 +45,7 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 						     function = function,
 						     cause = cause}
 
-      val hasLine = V.exists isLine
+      val hasLine = fn z => V.exists isLine z
 
       (*---------------*)
       (*   outstream   *)

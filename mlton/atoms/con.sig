@@ -5,23 +5,15 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-Group
+signature CON_STRUCTS = 
+   sig
+   end
 
-functor Infer
-   
-is
+signature CON = 
+   sig
+      include HASH_ID
+      include PRIM_CONS where type con = t
 
-../atoms/sources.cm
-../control/sources.cm
-../core-ml/sources.cm
-../../lib/mlton/sources.cm
-../xml/sources.cm
-
-infer.fun
-infer.sig
-match-compile.fun
-match-compile.sig
-nested-pat.fun
-nested-pat.sig
-type-env.fun
-type-env.sig
+      val fromBool: bool -> t
+      val stats: unit -> Layout.t
+   end

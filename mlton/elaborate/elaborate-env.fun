@@ -10,8 +10,10 @@ struct
 
 open S
 
-local open Ast
-in structure Fixity = Fixity
+local
+   open Ast
+in
+   structure Fixity = Fixity
    structure Strid = Strid
    structure Longcon = Longcon
    structure Longvid = Longvid
@@ -19,104 +21,145 @@ in structure Fixity = Fixity
    structure Longtycon = Longtycon
 end
 
-local open CoreML
-in structure Con = Con
+local
+   open CoreML
+in
+   structure Con = Con
    structure Var = Var
    structure Prim = Prim
    structure Record = Record
-   structure Scheme = Scheme
    structure Srecord = SortedRecord
    structure Tycon = Tycon
-   structure Type = Type
    structure Tyvar = Tyvar
    structure Var = Var
 end
 
-structure Scope = UniqueId ()
+local
+   open TypeEnv
+in
+   structure Scheme = InferScheme
+   structure Type = Type
+end
 
+structure Decs = Decs (structure CoreML = CoreML)
+
+structure Scheme =
+   struct
+      open Scheme
+	 
+      val bogus = fromType (Type.var (Tyvar.newNoname {equality = false}))
+   end
+
+structure TypeScheme = Scheme
+
+structure Scope = UniqueId ()
+   
 structure TypeStr =
    struct
-      datatype t =
-	 Datatype of {cons: {name: Ast.Con.t,
-			     con: Con.t} vector,
+      structure Kind = CoreML.Tycon.Kind
+
+      datatype node =
+	 Datatype of {cons: {con: Con.t,
+			     name: Ast.Con.t,
+			     scheme: Scheme.t} vector,
 		      tycon: Tycon.t}
        | Scheme of Scheme.t
        | Tycon of Tycon.t
 
+      datatype t = T of {kind: Kind.t,
+			 node: node}
+
+      local
+	 fun make f (T r) = f r
+      in
+	 val kind = make #kind
+	 val node = make #node
+      end
+
       val bogus =
-	 Scheme (Scheme.T
-		 {tyvars = Vector.new0 (),
-		  ty = Type.Var (Ast.Tyvar.newNoname {equality = false})})
+	 T {kind = Kind.Arity 0,
+	    node = Scheme Scheme.bogus}
 
       fun abs t =
-	 case t of
-	    Datatype {tycon, ...} => Tycon tycon
+	 case node t of
+	    Datatype {tycon, ...} => T {kind = kind t,
+					node = Tycon tycon}
 	  | _ => t
 
-      fun apply (t, tys) =
-	 case t of
+      fun apply (t: t, tys: Type.t vector): Type.t =
+	 case node t of
 	    Datatype {tycon, ...} => Type.con (tycon, tys)
 	  | Scheme s => Scheme.apply (s, tys)
 	  | Tycon t => Type.con (t, tys)
 
       fun cons t =
-	 case t of
+	 case node t of
 	    Datatype {cons, ...} => cons
 	  | _ => Vector.new0 ()
 
-      fun data (tycon, cons) = Datatype {tycon = tycon, cons = cons}
+      fun data (tycon, kind, cons) =
+	 T {kind = kind,
+	    node = Datatype {tycon = tycon, cons = cons}}
 
-      val def = Scheme
+      fun def (s, kind) = T {kind = kind,
+			     node = Scheme s}
 
-      val tycon = Tycon
+      fun tycon (c, kind) = T {kind = kind,
+			       node = Tycon c}
 
       fun layout t =
-	 let open Layout
-	 in case t of
-	    Datatype {tycon, cons} =>
-	       seq [str "Datatype ",
-		    record [("tycon", Tycon.layout tycon),
-			    ("cons", (Vector.layout (fn {name, con} =>
-						     tuple [Ast.Con.layout name,
-							    Con.layout con])
-				      cons))]]
-	  | Scheme s => Scheme.layout s
-	  | Tycon t => seq [str "Tycon ", Tycon.layout t]
+	 let
+	    open Layout
+	 in
+	    case node t of
+	       Datatype {tycon, cons} =>
+		  seq [str "Datatype ",
+		       record [("tycon", Tycon.layout tycon),
+			       ("cons", (Vector.layout
+					 (fn {con, name, scheme} =>
+					  tuple [Ast.Con.layout name,
+						 Con.layout con,
+						 str ": ",
+						 Scheme.layout scheme])
+					 cons))]]
+	     | Scheme s => Scheme.layout s
+	     | Tycon t => seq [str "Tycon ", Tycon.layout t]
 	 end
    end
 
 structure Vid =
    struct
-      open CoreML
-	 
       datatype t =
-	 Var of Var.t
-       | Con of Con.t
-       | ConAsVar of CoreML.Con.t
+	 Con of Con.t
+       | ConAsVar of Con.t
        | Exn of Con.t
-       | Prim of Prim.t
+       | Overload of (Var.t * Type.t) vector
+       | Var of Var.t
 
       val statusString =
-	 fn Var _ => "var"
-	  | Prim _ => "var"
+	 fn Con _ => "con"
 	  | ConAsVar _ => "var"
-	  | Con _ => "con"
 	  | Exn _ => "exn"
+	  | Overload _ => "var"
+	  | Var _ => "var"
 
       val bogus = Var Var.bogus
 
       fun layout vid =
-	 let open Layout
+	 let
+	    open Layout
 	    val (name, l) =
 	       case vid of
-		  Var v => ("Var", Var.layout v)
-		| Con c => ("Con", Con.layout c)
+		  Con c => ("Con", Con.layout c)
 		| ConAsVar c => ("ConAsVar", Con.layout c)
 		| Exn c => ("Exn", Con.layout c)
-		| Prim p => ("Prim", Prim.layout p)
-	 in if false
-	       then l
-	    else paren (seq [str name, str " ", l])
+		| Overload xts =>
+		     ("Overload",
+		      Vector.layout (Layout.tuple2 (Var.layout, Type.layout))
+		      xts)
+		| Var v => ("Var", Var.layout v)
+	 in
+	    paren (seq [str name, str " ", l])
 	 end
 
       val deVar =
@@ -126,10 +169,6 @@ structure Vid =
       val deCon =
 	 fn Con c => SOME c
 	  | Exn c => SOME c
-	  | _ => NONE
-
-      val dePrim =
-	 fn Prim p => SOME p
 	  | _ => NONE
 	  
       fun output (r, out) = Layout.output (layout r, out)
@@ -307,7 +346,7 @@ structure Structure =
       datatype t = T of {shapeId: ShapeId.t option,
 			 strs: (Ast.Strid.t, t) Info.t,
 			 types: (Ast.Tycon.t, TypeStr.t) Info.t,
-			 vals: (Ast.Vid.t, Vid.t) Info.t}
+			 vals: (Ast.Vid.t, Vid.t * Scheme.t) Info.t}
 
       fun layoutUsed (T {strs, types, vals, ...}) =
 	 let
@@ -327,25 +366,26 @@ structure Structure =
 			 align [seq [str "structure ", Ast.Strid.layout d],
 				indent (layoutUsed r, 3)])]
 	 end
+
       fun layout (T {strs, vals, types, ...}) =
 	 Layout.record
 	 [("types", Info.layout (Ast.Tycon.layout, TypeStr.layout) types),
-	  ("vals", Info.layout (Ast.Vid.layout, Vid.layout) vals),
+	  ("vals",
+	   Info.layout (Ast.Vid.layout,
+			Layout.tuple2 (Vid.layout, Scheme.layout))
+	   vals),
 	  ("strs", Info.layout (Ast.Strid.layout, layout) strs)]
 
       local
 	 open Layout
       in
 	 fun layoutTypeSpec (d, _) = seq [str "type ", Ast.Tycon.layout d]
-	 fun layoutValSpec (d, r) =
-	    seq [str (case r of
-			 Vid.Var _ => "val"
-		       | Vid.Con _ => "con"
-		       | Vid.ConAsVar _ => "val"
-		       | Vid.Exn _ => "exn"
-		       | Vid.Prim _ => "val"),
+	 fun layoutValSpec (d, (vid, scheme)) =
+	    seq [str (Vid.statusString vid),
 		 str " ",
-		 Ast.Vid.layout d]
+		 Ast.Vid.layout d,
+		 str ": ",
+		 Scheme.layoutPretty scheme]
 	 fun layoutStrSpec (d, r) =
 	    seq [str "structure ", Ast.Strid.layout d, str ": ",
 		 layoutPretty r]
@@ -385,16 +425,11 @@ structure Structure =
       fun peekTycon z = Option.map (peekTycon' z, #range)
       fun peekVid z = Option.map (peekVid' z, #range)
 
-      val peekVid =
-	 Trace.trace2 ("peekVid",
-		       layout, Ast.Vid.layout, Option.layout Vid.layout)
-	 peekVid
-	 
       local
 	 fun make (from, de) (S, x) =
 	    case peekVid (S, from x) of
 	       NONE => NONE
-	     | SOME vid => de vid
+	     | SOME (vid, s) => Option.map (de vid, fn z => (z, s))
       in
 	 val peekCon = make (Ast.Vid.fromCon, Vid.deCon)
 	 val peekVar = make (Ast.Vid.fromVar, Vid.deVar)
@@ -470,11 +505,11 @@ structure Structure =
 				     (Longtycon.long (rev strids, name)))
 			       | SOME {range = typeStr', values, ...} =>
 				    let
-				       datatype z = datatype TypeStr.t
+				       datatype z = datatype TypeStr.node
 				       val typeStr'' =
 					  case typeStr of
 					     Interface.TypeStr.Datatype {cons} =>
-						(case typeStr' of
+						(case TypeStr.node typeStr' of
 						    Datatype _ => typeStr'
 						  | _ =>
 						       (Control.error
@@ -487,9 +522,11 @@ structure Structure =
 					   | Interface.TypeStr.Tycon =>
 						let
 						   datatype z = datatype TypeStr.t
-						in case typeStr' of
+						in case TypeStr.node typeStr' of
 						   Datatype {tycon, ...} =>
-						      Tycon tycon
+						      TypeStr.T
+						      {kind = TypeStr.kind typeStr',
+						       node = Tycon tycon}
 						 | _ => typeStr'
 						end
 				    in List.push (types,
@@ -503,7 +540,7 @@ structure Structure =
 				    error (Longvid.className,
 					   Longvid.layout (Longvid.long
 							   (rev strids, name)))
-			       | SOME {range = vid, values, ...} =>
+			       | SOME {range = (vid, s), values, ...} =>
 				    let
 				       val vid =
 					  case (vid, status) of
@@ -531,9 +568,10 @@ structure Structure =
 						    " in signature "]),
 						  Layout.empty)
 						 ; vid)
-				    in List.push (vals,
+				    in
+				       List.push (vals,
 						  {isUsed = ref false,
-						   range = vid,
+						   range = (vid, s),
 						   values = values})
 				    end
 			   val _ =
@@ -699,7 +737,7 @@ datatype t = T of {currentScope: Scope.t ref,
 		   sigs: (Ast.Sigid.t, Interface.t) NameSpace.t,
 		   strs: (Ast.Strid.t, Structure.t) NameSpace.t,
 		   types: (Ast.Tycon.t, TypeStr.t) NameSpace.t,
-		   vals: (Ast.Vid.t, Vid.t) NameSpace.t}
+		   vals: (Ast.Vid.t, Vid.t * Scheme.t) NameSpace.t}
 
 fun clean (T {fcts, fixs, sigs, strs, types, vals, ...}): unit =
    let
@@ -738,7 +776,8 @@ fun empty () =
 fun layout (T {strs, types, vals, ...}) =
    Layout.tuple
    [NameSpace.layout (Ast.Tycon.layout, TypeStr.layout) types,
-    NameSpace.layout (Ast.Vid.layout, Vid.layout) vals,
+    NameSpace.layout (Ast.Vid.layout,
+		      Layout.tuple2 (Vid.layout, Scheme.layout)) vals,
     NameSpace.layout (Ast.Strid.layout, Structure.layout) strs]
 
 fun layoutPretty (T {fcts, sigs, strs, types, vals, ...}) =
@@ -855,7 +894,8 @@ fun snapshot (T {currentScope, fcts, fixs, sigs, strs, types, vals}):
       val strs = doit (strs, Ast.Strid.layout)
       val types = doit (types, Ast.Tycon.layout)
       val vals = doit (vals, Ast.Vid.layout)
-   in fn th =>
+   in
+      fn th =>
       let
 	 val s0 = Scope.new ()
 	 val fcts = fcts s0
@@ -869,7 +909,8 @@ fun snapshot (T {currentScope, fcts, fixs, sigs, strs, types, vals}):
 	 val res = th ()
 	 val _ = currentScope := s1
 	 val _ = (fcts (); fixs (); sigs (); strs (); types (); vals ())
-      in res
+      in
+	 res
       end
    end
       
@@ -891,14 +932,13 @@ fun functorClosure
       val apply =
 	 Trace.trace ("functorApply",
 		      Structure.layout o #1,
-		      Layout.tuple2 (Decs.layout, Structure.layout))
+		      Layout.tuple2 (Layout.ignore, Structure.layout))
 	 apply
       fun sizeMessage () = layoutSize apply
    in
       FunctorClosure.T {apply = apply,
 			sizeMessage = sizeMessage}
    end
-   
 
 (* ------------------------------------------------- *)
 (*                       peek                        *)
@@ -920,13 +960,13 @@ in
    fun peekVar (E, x) =
       case peekVid (E, Ast.Vid.fromVar x) of
 	 NONE => NONE
-       | SOME vid => Vid.deVar vid
+       | SOME (vid, s) => Option.map (Vid.deVar vid, fn x => (x, s))
 end
 
-fun peekCon (E: t, c: Ast.Con.t): CoreML.Con.t option =
+fun peekCon (E: t, c: Ast.Con.t): (Con.t * Scheme.t) option =
    case peekVid (E, Ast.Vid.fromCon c) of
       NONE => NONE
-    | SOME vid => Vid.deCon vid
+    | SOME (vid, s) => Option.map (Vid.deCon vid, fn c => (c, s))
 
 local
    fun make (split, peek, strPeek) (E, x) =
@@ -944,13 +984,20 @@ local
 		      | SOME S => strPeek (S, x)
       end
 in
-   val peekLongstrid = make (Ast.Longstrid.split, peekStrid, Structure.peekStrid)
-   val peekLongtycon = make (Ast.Longtycon.split, peekTycon, Structure.peekTycon)
+   val peekLongstrid =
+      make (Ast.Longstrid.split, peekStrid, Structure.peekStrid)
+   val peekLongtycon =
+      make (Ast.Longtycon.split, peekTycon, Structure.peekTycon)
    val peekLongvar = make (Ast.Longvar.split, peekVar, Structure.peekVar)
    val peekLongvid = make (Ast.Longvid.split, peekVid, Structure.peekVid)
    val peekLongcon = make (Ast.Longcon.split, peekCon, Structure.peekCon)
 end
 
+val peekLongcon =
+   Trace.trace2 ("peekLongcon", Layout.ignore, Ast.Longcon.layout,
+		 Option.layout (Layout.tuple2
+				(CoreML.Con.layout, TypeScheme.layout)))
+   peekLongcon
 (* ------------------------------------------------- *)
 (*                      lookup                       *)
 (* ------------------------------------------------- *)
@@ -964,13 +1011,16 @@ local
        | NONE => (unbound x; bogus)
 in
    val lookupFctid = make (peekFctid, FunctorClosure.bogus, Ast.Fctid.unbound)
-   val lookupLongcon = make (peekLongcon, Con.bogus, Ast.Longcon.unbound)
+   val lookupLongcon =
+      make (peekLongcon, (Con.bogus, Scheme.bogus), Ast.Longcon.unbound)
    val lookupLongstrid =
       make (peekLongstrid, Structure.bogus, Ast.Longstrid.unbound)
    val lookupLongtycon =
       make (peekLongtycon, TypeStr.bogus, Ast.Longtycon.unbound)
-   val lookupLongvid = make (peekLongvid, Vid.bogus, Ast.Longvid.unbound)
-   val lookupLongvar = make (peekLongvar, Var.bogus, Ast.Longvar.unbound)
+   val lookupLongvid =
+      make (peekLongvid, (Vid.bogus, Scheme.bogus), Ast.Longvid.unbound)
+   val lookupLongvar =
+      make (peekLongvar, (Var.bogus, Scheme.bogus), Ast.Longvar.unbound)
    val lookupSigid = make (peekSigid, Interface.bogus, Ast.Sigid.unbound)
 end
 
@@ -1008,17 +1058,22 @@ val extendTycon =
 		 Unit.layout)
    extendTycon
 
-fun extendCon (E, c, c') =
-   extendVals (E, Ast.Vid.fromCon c, Vid.Con c')
+fun extendCon (E, c, c', s) =
+   extendVals (E, Ast.Vid.fromCon c, (Vid.Con c', s))
 	       
-fun extendExn (E, c, c') =
-   extendVals (E, Ast.Vid.fromCon c, Vid.Exn c')
+fun extendExn (E, c, c', s) =
+   extendVals (E, Ast.Vid.fromCon c, (Vid.Exn c', s))
 	       
-fun extendVar (E, x, x') =
-   extendVals (E, Ast.Vid.fromVar x, Vid.Var x')
+fun extendVar (E, x, x', s) =
+   extendVals (E, Ast.Vid.fromVar x, (Vid.Var x', s))
+
+fun extendOverload (E, x, yts, s) =
+   extendVals (E, Ast.Vid.fromVar x, (Vid.Overload yts, s))
 
 val extendVar =
-   Trace.trace3 ("extendVar", layout, Ast.Var.layout, Var.layout, Unit.layout)
+   Trace.trace4
+   ("extendVar", Layout.ignore, Ast.Var.layout, Var.layout, Scheme.layoutPretty,
+    Unit.layout)
    extendVar
 
 (* ------------------------------------------------- *)   
@@ -1098,10 +1153,11 @@ in
 	 val types = types ()
 	 val vals = vals ()
 	 val _ = currentScope := Scope.new ()
-	 val a2 = f2 ()
+	 val a2 = f2 a1
 	 val _ = (fixs (); strs (); types (); vals ())
 	 val _ = currentScope := s0
-      in (a1, a2)
+      in
+	 a2
       end
 
    (* Can't eliminate the use of strs in localCore, because openn still modifies
@@ -1337,7 +1393,4 @@ fun makeInterfaceMaker E =
     types = NameSpace.new let open Ast.Tycon in (equals, hash) end,
     vals = NameSpace.new let open Ast.Vid in (equals, hash) end}
    
-fun addEquals E =
-   extendVals (E, Ast.Vid.fromString ("=", Region.bogus), Vid.Prim Prim.equal)
- 
 end

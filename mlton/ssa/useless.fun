@@ -771,11 +771,11 @@ fun useless (program: Program.t): Program.t =
 		   targs = Prim.extractTargs {prim = prim,
 					      args = argTypes,
 					      result = resultType,
-					      dearray = Type.dearray,
-					      dearrow = Type.dearrow,
-					      deref = Type.deref,
-					      devector = Type.devector,
-					      deweak = Type.deweak}}
+					      deArray = Type.deArray,
+					      deArrow = Type.deArrow,
+					      deRef = Type.deRef,
+					      deVector = Type.deVector,
+					      deWeak = Type.deWeak}}
 	       end
 	  | Select {tuple, offset} =>
 	       let

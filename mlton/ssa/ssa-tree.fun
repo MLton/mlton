@@ -299,9 +299,7 @@ structure Exp =
 				  then empty
 			       else Vector.layout Type.layout targs
 		       else empty,
-		       if isSome (Prim.numArgs prim)
-			  then seq [str " ", layoutTuple args]
-		       else empty]
+		       seq [str " ", layoutTuple args]]
 	     | Profile p => ProfileExp.layout p
 	     | Select {tuple, offset} =>
 		  seq [str "#", Int.layout (offset + 1), str " ",

@@ -2,4 +2,4 @@
 
 (* Checks parsing of "* )". *)
 
-val op* = (op*);
+val op* : int * int -> int = (op*);

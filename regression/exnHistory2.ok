@@ -1,4 +1,4 @@
 unhandled exception: Fail: foo
 with history:
-	exnHistory2.sml:1.15
+	exnHistory2.sml 1.15
 Nonzero exit status.

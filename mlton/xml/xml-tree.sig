@@ -37,7 +37,6 @@ signature XML_TREE =
 	    val falsee: t
 	    val truee: t
 	    val con: t -> Con.t
-	    val toAst: t -> Ast.Pat.t
 	    val layout: t -> Layout.t
 	 end
 
@@ -67,9 +66,9 @@ signature XML_TREE =
 			    body: exp}
 	    val equals: t * t -> bool
 	    val layout: t -> Layout.t
-	    val new: {arg: Var.t,
-		      argType: Type.t,
-		      body: exp} -> t
+	    val make: {arg: Var.t,
+		       argType: Type.t,
+		       body: exp} -> t
 	    val plist: t -> PropertyList.t
 	 end
 
@@ -136,7 +135,6 @@ signature XML_TREE =
 			   tyvars: Tyvar.t vector,
 			   var: Var.t}
 
-	    val toAst: t -> Ast.Dec.t
 	    val layout: t -> Layout.t
 	 end
 
@@ -171,7 +169,7 @@ signature XML_TREE =
 	    val fromPrimExp: PrimExp.t * Type.t -> t
 	    val hasPrim: t * (Prim.t -> bool) -> bool
 	    val layout: t -> Layout.t
-	    val new: {decs: Dec.t list, result: VarExp.t} -> t
+	    val make: {decs: Dec.t list, result: VarExp.t} -> t
 	    val prefix: t * Dec.t -> t
 	    val result: t -> VarExp.t
 	    val size: t -> int
@@ -188,9 +186,9 @@ signature XML_TREE =
 		test: t,
 		ty: Type.t} (* type of entire case expression *)
 	       -> t
-	    val conApp: {con: Con.t,
+	    val conApp: {arg: t option,
+			 con: Con.t,
 			 targs: Type.t vector,
-			 arg: t option,
 			 ty: Type.t} -> t
 	    val const: Const.t -> t
 	    val deref: t -> t
@@ -199,10 +197,10 @@ signature XML_TREE =
 	    val equal: t * t -> t
 	    val falsee: unit -> t
 	    val fromExp: Exp.t * Type.t -> t
-	    val handlee: {try: t,
-			  ty: Type.t,
-			  catch: Var.t * Type.t,
-			  handler: t} -> t
+	    val handlee: {catch: Var.t * Type.t,
+			  handler: t,
+			  try: t,
+			  ty: Type.t} -> t
 	    val iff: {test: t, thenn: t, elsee: t, ty: Type.t} -> t
 	    val lambda: {arg: Var.t,
 			 argType: Type.t,
@@ -212,9 +210,9 @@ signature XML_TREE =
 	    val let1: {var: Var.t, exp: t, body: t} -> t
 	    val lett: {decs: Dec.t list, body: t} -> t
 	    val monoVar: Var.t * Type.t -> t
-	    val primApp: {prim: Prim.t,
+	    val primApp: {args: t vector,
+			  prim: Prim.t,
 			  targs: Type.t vector,
-			  args: t vector,
 			  ty: Type.t} -> t
 	    val raisee: {exn: t, filePos: string option} * Type.t -> t
 	    val reff: t -> t
@@ -227,20 +225,20 @@ signature XML_TREE =
 	    val tuple: {exps: t vector, ty: Type.t} -> t
 	    val unit: unit -> t
 	    val vall: {var: Var.t, exp: t} -> Dec.t list
-	    val var: {var: Var.t,
-		      targs: Type.t vector,
-		      ty: Type.t} -> t
+	    val var: {targs: Type.t vector,
+		      ty: Type.t,
+		      var: Var.t} -> t
 	    val varExp: VarExp.t * Type.t -> t
 	 end
 
       structure Program:
 	 sig
 	    datatype t =
-	       T of {datatypes: {cons: {arg: Type.t option,
+	       T of {body: Exp.t,
+		     datatypes: {cons: {arg: Type.t option,
 					con: Con.t} vector,
 				 tycon: Tycon.t,
 				 tyvars: Tyvar.t vector} vector,
-		     body: Exp.t,
 		     (* overflow is SOME only after exceptions have been
 		      * implemented.
 		      *)

@@ -62,25 +62,25 @@ end
 val arrow = Trace.trace ("arrow", Layout.tuple2 (layout, layout), layout) arrow
 
 fun deUnaryOpt tycon t =
-   case deconOpt t of
+   case deConOpt t of
       SOME (c, ts) => if Tycon.equals (c, tycon)
 			 then SOME (Vector.sub (ts, 0))
 		      else NONE
     | _ => NONE
 
-val dearrayOpt = deUnaryOpt Tycon.array
-val derefOpt = deUnaryOpt Tycon.reff
-val deweakOpt = deUnaryOpt Tycon.weak
+val deArrayOpt = deUnaryOpt Tycon.array
+val deRefOpt = deUnaryOpt Tycon.reff
+val deWeakOpt = deUnaryOpt Tycon.weak
 
 fun deUnary tycon t =
    case deUnaryOpt tycon t of
       SOME t => t
     | NONE => Error.bug "deUnary"
 
-val dearray = deUnary Tycon.array
-val deref = deUnary Tycon.reff
-val devector = deUnary Tycon.vector
-val deweak = deUnary Tycon.weak
+val deArray = deUnary Tycon.array
+val deRef = deUnary Tycon.reff
+val deVector = deUnary Tycon.vector
+val deWeak = deUnary Tycon.weak
    
 fun tuple ts =
    if 1 = Vector.length ts
@@ -89,57 +89,58 @@ fun tuple ts =
 
 val unit = tuple (Vector.new0 ())
 
-fun detupleOpt t =
-   case deconOpt t of
+fun deTupleOpt t =
+   case deConOpt t of
       SOME (c, ts) => if Tycon.equals (c, Tycon.tuple) then SOME ts else NONE
     | NONE => NONE
 
-val isTuple = Option.isSome o detupleOpt
+val isTuple = Option.isSome o deTupleOpt
 
-fun detuple t =
-   case detupleOpt t of
+fun deTuple t =
+   case deTupleOpt t of
       SOME t => t
     | NONE => Error.bug "detuple"
 
-fun nth (t, n) = Vector.sub (detuple t, n)
+fun nth (t, n) = Vector.sub (deTuple t, n)
 
 val unitRef = reff unit
 
-fun detycon t =
-   case deconOpt t of
+fun deTycon t =
+   case deConOpt t of
       SOME (c, _) => c
     | NONE => Error.bug "detycon"
 
-fun deconConstOpt t =
-   case deconOpt t of
-      SOME (c, ts) => SOME (c, Vector.map (ts, fn t =>
-					   case deconOpt t of
-					      SOME (c, _) => c
-					    | NONE => Error.bug "deconConstOpt"))
-    | NONE => NONE
-fun deconConst t =
-   case deconOpt t of
-      SOME (c, ts) => (c, Vector.map (ts, fn t =>
-				      case deconOpt t of
-					 SOME (c, _) => c
-				       | NONE => Error.bug "deconConst"))
-    | NONE => Error.bug "deconConst"
+fun deConConstOpt t =
+   Option.map
+   (deConOpt t, fn (c, ts) =>
+    (c, Vector.map (ts, fn t =>
+		    case deConOpt t of
+		       SOME (c, _) => c
+		     | NONE => Error.bug "deConConstOpt")))
+
+fun deConConst t =
+   case deConOpt t of
+      NONE => Error.bug "deConConst"
+    | SOME (c, ts) => (c, Vector.map (ts, fn t =>
+				      case deConOpt t of
+					 NONE => Error.bug "deConConst"
+				       | SOME (c, _) => c))
 
 
-fun dearrowOpt t =
-   case deconOpt t of
+fun deArrowOpt t =
+   case deConOpt t of
       SOME (c, ts) => if Tycon.equals (c, Tycon.arrow)
 			       then SOME (Vector.sub (ts, 0), Vector.sub (ts, 1))
 			    else NONE
     | _ => NONE
 
-fun dearrow t =
-   case dearrowOpt t of
+fun deArrow t =
+   case deArrowOpt t of
       SOME x => x
-    | NONE => Error.bug "Type.dearrow"
+    | NONE => Error.bug "Type.deArrow"
 
 val dearrow =
-   Trace.trace ("dearrow", layout, Layout.tuple2 (layout, layout)) dearrow
+   Trace.trace ("deArrow", layout, Layout.tuple2 (layout, layout)) deArrow
 
 val arg = #1 o dearrow
 val result = #2 o dearrow

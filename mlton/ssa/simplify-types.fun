@@ -545,7 +545,7 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
 		end)
 	  | Select {tuple, offset} =>
 	       let
-		  val ts = Type.detuple (oldVarType tuple)
+		  val ts = Type.deTuple (oldVarType tuple)
 	       in Vector.fold'
 		  (ts, 0, (offset, 0), fn (pos, t, (n, offset)) =>
 		   if n = 0

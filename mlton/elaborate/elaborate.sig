@@ -12,14 +12,23 @@ signature ELABORATE_STRUCTS =
    sig
       structure Ast: AST
       structure CoreML: CORE_ML
-      sharing Ast = CoreML.Ast
+      structure TypeEnv: TYPE_ENV
+      sharing Ast.Record = CoreML.Record
+      sharing Ast.SortedRecord = CoreML.SortedRecord
+      sharing Ast.Tyvar = CoreML.Tyvar
+      sharing CoreML.Atoms = TypeEnv.Atoms
+      sharing CoreML.Type = TypeEnv.Type
    end
 
 signature ELABORATE = 
    sig
       include ELABORATE_STRUCTS
+
+      structure ConstType: CONST_TYPE
       structure Decs: DECS
       structure Env: ELABORATE_ENV
-	 
-      val elaborateProgram: Ast.Program.t * Env.t -> Decs.t
+
+      val elaborateProgram:
+	 Ast.Program.t * Env.t * (string * ConstType.t -> CoreML.Const.t)
+	 -> Decs.t
    end

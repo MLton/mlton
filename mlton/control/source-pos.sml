@@ -45,7 +45,7 @@ val bogus = T {column = ~1,
 	       line = ~1}
 
 fun toString (p as T {column, line, ...}) =
-   concat [file p, ":", Int.toString line, ".", Int.toString column]
+   concat [file p, " ", Int.toString line, ".", Int.toString column]
 
 fun posToString (T {line, column, ...}) =
    concat [Int.toString line, ".", Int.toString column]

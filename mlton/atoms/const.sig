@@ -10,7 +10,6 @@ type word = Word.t
    
 signature CONST_STRUCTS = 
    sig
-      structure Ast: AST
       structure IntX: INT_X
       structure RealX: REAL_X
       structure WordX: WORD_X
@@ -41,8 +40,6 @@ signature CONST =
       val layout: t -> Layout.t
       val real: RealX.t -> t
       val string: string -> t
-      val toAstExp: t -> Ast.Exp.t
-      val toAstPat: t -> Ast.Pat.t
       val toString: t -> string
       val word: WordX.t -> t
       val word8: Word8.t -> t

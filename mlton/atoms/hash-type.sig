@@ -32,7 +32,6 @@ signature HASH_TYPE =
       val equals: t * t -> bool
       (* for reporting type errors *)
       val error: string * Layout.t -> 'a
-      val fromPrim: Prim.Type.t -> t
       val hash: t -> Word.t
       val hom: {ty: t,
 		var: Tyvar.t -> 'a,
@@ -49,7 +48,6 @@ signature HASH_TYPE =
 	 -> {hom: t -> 'a,
 	     destroy: unit -> unit}
       val ofConst: Const.t -> t
-      val optionToAst: t option -> Ast.Type.t option
       val plist: t -> PropertyList.t
       val stats: unit -> Layout.t
       val string: t (* synonym for word8Vector *)
@@ -58,9 +56,6 @@ signature HASH_TYPE =
        * The ai's are not required to contain every free variable in t
        *)
       val substitute: t * (Tyvar.t * t) vector -> t
-      (* conversion to Ast *)
-      val toAst: t -> Ast.Type.t
-      val toPrim: t -> Prim.Type.t
       val toString: t -> string
       val tycon: t -> Tycon.t
       val var: Tyvar.t -> t

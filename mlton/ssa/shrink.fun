@@ -1227,7 +1227,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 					        NONE => 
 						   (case VarInfo.ty tuple of
 						       SOME ty =>
-							  (case Type.detupleOpt ty of
+							  (case Type.deTupleOpt ty of
 							      SOME ts =>
 								 if Vector.length xs =
 								    Vector.length ts

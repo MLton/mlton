@@ -60,14 +60,6 @@ fun maybeConstrain (e, tyo) =
       NONE => e
     | SOME ty => layoutConstraint (e, ty)
 
-fun nest (prefix, x, y) =
-   align [seq [str prefix, x],
-	      seq [str "in ", y],
-	      str "end"]
-
-fun layoutLet (d, e) = nest ("let ", d, e)
-fun layoutLocal (d, d') = nest ("local ", d, d')
-
 fun layoutLongvid x =
    str (let val s = Longvid.toString x
 	in if s = "*" then " * "
@@ -75,6 +67,13 @@ fun layoutLongvid x =
 		   then s ^ " "
 		else s
 	end)
+
+structure Vector =
+   struct
+      open Vector
+
+      fun cons (x, v) = concat [new1 x, v]
+   end
 
 (*---------------------------------------------------*)
 (*                     Patterns                      *)
@@ -92,7 +91,7 @@ structure Pat =
 		     var: Var.t,
 		     constraint: Type.t option,
 		     pat: t}
-       | List of t list
+       | List of t vector
        | Record of {flexible: bool,
 		    items: item vector}
        | Tuple of t vector
@@ -119,7 +118,7 @@ structure Pat =
       val constraint = make o Constraint
       val layered = make o Layered
 
-      val emptyList = make (List [])
+      val emptyList = make (List (Vector.new0 ()))
 
       fun longvid x = make (Var {name = x, fixop = Fixop.None})
       val var = longvid o Longvid.short o Vid.fromVar
@@ -129,21 +128,25 @@ structure Pat =
 	 else longvid (Longvid.short (Vid.fromCon c))
 		     
       fun app (c, p) =
-	 let val default = make (App (Longcon.short c, p))
-	 in if Con.equals (c, Con.cons)
-	       then (case node p of
-			Tuple ps =>
-			   if 2 = Vector.length ps
-			      then
-				 let
-				    val p0 = Vector.sub (ps, 0)
-				    val p1 = Vector.sub (ps, 1)
-				 in case node p1 of
-				     List ps => make (List (p0 :: ps))
-				   | _ => default
-				 end
-			   else default
-		      | _ => default)
+	 let
+	    val default = make (App (Longcon.short c, p))
+	 in
+	    if Con.equals (c, Con.cons)
+	       then
+		  case node p of
+		     Tuple ps =>
+			if 2 = Vector.length ps
+			   then
+			      let
+				 val p0 = Vector.sub (ps, 0)
+				 val p1 = Vector.sub (ps, 1)
+			      in
+				 case node p1 of
+				    List ps => make (List (Vector.cons (p0, ps)))
+				  | _ => default
+			      end
+			else default
+		   | _ => default
 	    else default
 	 end
       
@@ -182,7 +185,7 @@ structure Pat =
 		      then str (if Vector.isEmpty items then "..." else ", ...")
 		   else empty,
 		   str "}"]
-	  | List ps => Layout.list (List.map (ps, layoutT))
+	  | List ps => Layout.vector (Vector.map (ps, layoutT))
 	  | FlatApp ps => delimit (layoutFlatApp ps)
 	  | App (c, p) => delimit (mayAlign [Longcon.layout c,
 					     layoutF p])
@@ -273,11 +276,11 @@ datatype expNode =
   | Seq of exp vector
   | Const of Const.t
   | Record of expNode Wrap.t Record.t (* the Kit barfs on exp Record.t *)
-  | List of exp list
+  | List of exp vector
   | Selector of Field.t
   | Constraint of exp * Type.t
   | Handle of exp * match
-  | Raise of {exn: exp, filePos: string}
+  | Raise of exp
   | If of exp * exp * exp
   | Andalso of exp * exp
   | Orelse of exp * exp
@@ -292,32 +295,34 @@ and decNode =
   | Exception of Eb.t vector
   | Fix of {fixity: Fixity.t,
 	    ops: Vid.t vector}
-  | Fun of Tyvar.t vector * {clauses: {body: exp,
-				       pats: Pat.t vector,
-				       resultType: Type.t option} vector,
-			     filePos: string} vector
+  | Fun of Tyvar.t vector * {body: exp,
+			     pats: Pat.t vector,
+			     resultType: Type.t option} vector vector
   | Local of dec * dec
   | Open of Longstrid.t vector
-  | Overload of Var.t * Type.t * Longvar.t vector
+  | Overload of Var.t * Tyvar.t vector * Type.t * Longvar.t vector
   | SeqDec of dec vector
   | Type of TypBind.t
   | Val of {tyvars: Tyvar.t vector,
 	    vbs: {exp: exp,
-		  filePos: string,
 		  pat: Pat.t} vector,
 	    rvbs: {match: match,
 		   pat: Pat.t} vector}
-and match = T of {filePos: string,
-		  rules: (Pat.t * exp) vector}
+and matchNode = T of (Pat.t * exp) vector
 withtype
-   exp = expNode Wrap.t
-and dec = decNode Wrap.t
+    dec = decNode Wrap.t
+and exp = expNode Wrap.t
+and match = matchNode Wrap.t
 
 open Wrap
 
 structure Match =
    struct
-      datatype t = datatype match
+      open Wrap
+      type t = match
+      datatype node = datatype matchNode
+      type node' = node
+      type obj = t
    end
 
 fun layoutAndsTyvars (prefix, (tyvars, xs), layoutX) =
@@ -330,7 +335,36 @@ fun layoutAndsTyvars (prefix, (tyvars, xs), layoutX) =
 		| [] => [],
 	      fn (prefix, x) => seq [prefix, x])
 
-fun layoutExp (e, isDelimited) =
+fun expNodeName e =
+   case node e of
+      Andalso _ => "Andalso"
+    | App _ => "App"
+    | Case _ => "Case"
+    | Const _ => "Const"
+    | Constraint _ => "Constraint"
+    | FlatApp _ => "FlatApp"
+    | Fn _ => "Fn"
+    | Handle _ => "Handle"
+    | If _ => "If"
+    | Let _ => "Let"
+    | List _ => "List"
+    | Orelse _ => "Orelse"
+    | Prim _ => "Prim"
+    | Raise _ => "Raise"
+    | Record _ => "Record"
+    | Selector _ => "Selector"
+    | Seq _ => "Seq"
+    | Var _ => "Var"
+    | While _ => "While"
+
+val traceLayoutExp =
+   Trace.traceInfo' (Trace.info "layoutExp",
+		     fn (e, b: bool) => Layout.str (expNodeName e),
+		     Layout.ignore: Layout.t -> Layout.t)
+   
+fun layoutExp arg =
+   traceLayoutExp
+   (fn (e, isDelimited) =>
    let
       fun delimit t = if isDelimited then t else paren t
    in
@@ -344,7 +378,7 @@ fun layoutExp (e, isDelimited) =
 	    delimit (align [seq [str "case ", layoutExpT expr,
 				 str " of"],
 			    indent (layoutMatch match, 2)])
-       | Let (dec, expr) => layoutLet (layoutDec dec, layoutExpT expr)
+       | Let (dec, expr) => Pretty.lett (layoutDec dec, layoutExpT expr)
        | Seq es => paren (align (separateRight (layoutExpsT es, " ;")))
        | Const c => Const.layout c
        | Record r =>
@@ -355,19 +389,19 @@ fun layoutExp (e, isDelimited) =
 		  else tuple (layoutExpsT es)
 	    in
 	       Record.layout {record = r,
-			      separator = " =",
+			      separator = " = ",
 			      extra = "",
 			      layoutTuple = layoutTuple,
 			      layoutElt = layoutExpT}
 	    end
-       | List es => list (List.map (es, layoutExpT))
+       | List es => vector (Vector.map (es, layoutExpT))
        | Selector f => seq [str "#", Field.layout f]
        | Constraint (expr, constraint) =>
 	    delimit (layoutConstraint (layoutExpF expr, constraint))
        | Handle (try, match) =>
 	    delimit (align [layoutExpF try,
 			    seq [str "handle ", layoutMatch match]])
-       | Raise {exn, ...} => delimit (seq [str "raise ", layoutExpF exn])
+       | Raise exn => delimit (seq [str "raise ", layoutExpF exn])
        | If (test, thenCase, elseCase) =>
 	    delimit (mayAlign [seq [str "if ", layoutExpT test],
 			       seq [str "then ", layoutExpT thenCase],
@@ -382,13 +416,17 @@ fun layoutExp (e, isDelimited) =
 	    delimit (align [seq [str "while ", layoutExpT test],
 			    seq [str "do ", layoutExpT expr]])
        | Prim {name, ...} => str name
-   end
+   end) arg
 and layoutExpsT es = Vector.toListMap (es, layoutExpT)
 and layoutExpT e = layoutExp (e, true)
 and layoutExpF e = layoutExp (e, false)
 
-and layoutMatch (Match.T {rules, ...}) =
-   alignPrefix (Vector.toListMap (rules, layoutRule), "| ")
+and layoutMatch m =
+   let
+      val Match.T rules = node m
+   in
+      alignPrefix (Vector.toListMap (rules, layoutRule), "| ")
+   end
    
 and layoutRule (pat, exp) =
    mayAlign [seq [Pat.layoutF pat, str " =>"],
@@ -396,40 +434,40 @@ and layoutRule (pat, exp) =
       
 and layoutDec d =
    case node d of
-      Local (d, d') => layoutLocal (layoutDec d, layoutDec d')
-    | SeqDec ds => align (Vector.toListMap (ds, layoutDec))
-    | Val {tyvars, vbs, rvbs} =>
-	 align [layoutAndsTyvars ("val", (tyvars, vbs), layoutVb),
-		layoutAndsTyvars ("val rec", (tyvars, rvbs), layoutRvb)]
-    | Fun fbs => layoutAndsTyvars ("fun", fbs, layoutFb)
-    | Type typBind => TypBind.layout typBind
-    | Datatype rhs => DatatypeRhs.layout rhs
-    | Abstype {datBind, body} =>
+      Abstype {datBind, body} =>
 	 align [DatBind.layout ("abstype", datBind),
 		seq [str "with ", layoutDec body],
 		str "end"]
+    | Datatype rhs => DatatypeRhs.layout rhs
     | Exception ebs =>
 	 layoutAnds ("exception", Vector.toList ebs,
 		     fn (prefix, eb) => seq [prefix, Eb.layout eb])
+    | Fix {fixity, ops} =>
+	 seq [Fixity.layout fixity, str " ",
+	      seq (separate (Vector.toListMap (ops, Vid.layout), " "))]
+    | Fun fbs => layoutAndsTyvars ("fun", fbs, layoutFb)
+    | Local (d, d') => Pretty.locall (layoutDec d, layoutDec d')
     | Open ss => seq [str "open ",
 		      seq (separate (Vector.toListMap (ss, Longstrid.layout),
 				     " "))]
-    | Overload (x, t, xs) =>
+    | Overload (x, _, t, xs) =>
 	 seq [str "_overload ",
 	      align [layoutConstraint (Var.layout x, t),
 		     layoutAnds ("as", Vector.toList xs, fn (prefix, x) =>
 				 seq [prefix, Longvar.layout x])]]
-    | Fix {fixity, ops} =>
-	 seq [Fixity.layout fixity, str " ",
-	      seq (separate (Vector.toListMap (ops, Vid.layout), " "))]
+    | SeqDec ds => align (Vector.toListMap (ds, layoutDec))
+    | Type typBind => TypBind.layout typBind
+    | Val {tyvars, vbs, rvbs} =>
+	 align [layoutAndsTyvars ("val", (tyvars, vbs), layoutVb),
+		layoutAndsTyvars ("val rec", (tyvars, rvbs), layoutRvb)]
 
-and layoutVb {pat, exp, filePos} =
+and layoutVb {pat, exp} =
    bind (Pat.layoutT pat, layoutExpT exp)
 
 and layoutRvb {pat, match, ...} =
    bind (Pat.layout pat, seq [str "fn ", layoutMatch match])
    
-and layoutFb {clauses, filePos} =
+and layoutFb clauses =
    alignPrefix (Vector.toListMap (clauses, layoutClause), "| ")
    
 and layoutClause ({pats, resultType, body}) =
@@ -452,7 +490,8 @@ structure Exp =
       fun make n = makeRegion (n, Region.bogus)
       val const = make o Const
       val constraint = make o Constraint
-      val fnn = make o Fn
+      fun fnn rs =
+	 make (Fn (Match.makeRegion (Match.T rs, Region.bogus)))
       val handlee = make o Handle
       val raisee = make o Raise
       val record = make o Record
@@ -468,17 +507,20 @@ structure Exp =
 	    case node e of
 	       Var {name=x', ...} => Longvid.equals (x, x')
 	     | _ => false
-      in val isTrue = isLongvid Longvid.truee
+      in
 	 val isFalse = isLongvid Longvid.falsee
+	 val isTrue = isLongvid Longvid.truee
       end
-   
+			    
       fun iff (a: t, b: t, c: t): t =
 	 make (if isTrue b then Orelse (a, c)
 	      else if isFalse c then Andalso (a, b)
 		   else If (a, b, c))
 		 
-      fun casee (e: t, m as Match.T {rules, ...}) =
-	 let val default = make (Case (e, m))
+      fun casee (e: t, m: Match.t) =
+	 let
+	    val Match.T rules = Match.node m
+	    val default = make (Case (e, m))
 	 in
 	    if 2 = Vector.length rules
 	       then
@@ -495,7 +537,7 @@ structure Exp =
 	    else default
 	 end
 
-      val emptyList: t = make (List [])
+      val emptyList: t = make (List (Vector.new0 ()))
 	 
       fun con c: t = if Con.equals (c, Con.nill) then emptyList
 		      else longvid (Longvid.short (Vid.fromCon c))
@@ -520,7 +562,9 @@ structure Exp =
 					   val es = Vector.sub (v, 1)
 					in
 					   case node es of
-					      List es => make (List (e1 :: es))
+					      List es =>
+						 make (List (Vector.cons
+							     (e1, es)))
 					    | _ => e
 					end
 				  else e
@@ -570,19 +614,6 @@ structure Exp =
 
       val unit: t = tuple (Vector.new0 ())
 
-      fun delay (e: t): t =
-	 fnn (Match.T {rules = Vector.new1 (Pat.tuple (Vector.new0 ()), e),
-		       filePos = ""})
-(*	 
- *      val handleFunc =
- *	 let val e = Var.fromString "e"
- *	    val f = Var.fromString "f"
- *	    val x = Var.fromString "x"
- *	 in fnn (rules [(Pat.tuple [Pat.var e, Pat.var f],
- *		       make (Handle (app (var e, unit),
- *				   rules [(Pat.var x, app (var f, var x))])))])
- *	 end
- *)
       val layout = layoutExpT
    end
 
@@ -598,24 +629,6 @@ structure Dec =
 	 
       val openn = make o Open
 
-      fun funn (tyvars, rvbs): t =
-	 make
-	 (Fun (tyvars,
-	       Vector.map
-	       (rvbs, fn {var,
-			  match = Match.T {rules, filePos},
-			  resultTy} =>
-		let
-		   val vp = Pat.longvid (Longvid.short (Vid.fromVar var))
-		in
-		   {clauses =
-		    Vector.map (rules, fn (pat, exp) =>
-				{pats = Vector.new2 (vp, pat),
-				 body = exp,
-				 resultType = NONE}),
-		    filePos = filePos}
-		end)))
-	     
       fun exceptionn (exn: Con.t, to: Type.t option): t =
 	 make (Exception (Vector.new1 (exn, make (Eb.Rhs.Gen to))))
 
@@ -634,8 +647,7 @@ structure Dec =
 
       fun vall (tyvars, var, exp): t =
 	 make (Val {tyvars = tyvars,
-		    vbs = Vector.new1 {pat = Pat.var var, exp = exp,
-				       filePos = ""},
+		    vbs = Vector.new1 {exp = exp, pat = Pat.var var},
 		    rvbs = Vector.new0 ()})
 
       local

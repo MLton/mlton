@@ -9,16 +9,6 @@
 #include <string.h>
 #include "libmlton.h"
 
-void MLton_printStringEscaped (FILE *f, unsigned char *s) {
-	int i;
-	for (i = 0; s[i] != '\0'; i++)
-		fprintf(f, "%d%d%d", 
-				s[i] / 100 % 10,
-				s[i] / 10 % 10,
-				s[i] % 10);
-	fprintf(f, "\n");
-}
-
 /* ------------------------------------------------- */
 /*                     MLton_init                     */
 /* ------------------------------------------------- */

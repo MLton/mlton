@@ -8,20 +8,25 @@
 Group
 
 signature AST
-signature AST_ID
+signature FIELD
 signature INT_SIZE
 signature LONGID
 signature PRIM_CONS
 signature PRIM_TYCONS
 signature REAL_SIZE
 signature RECORD
+signature TYCON_KIND
 signature TYVAR
 signature WORD_SIZE
 signature WRAPPED
 
 functor Ast
+functor Field
 functor PrimCons
 functor PrimTycons
+functor Record
+functor TyconKind
+functor Tyvar
    
 is
 
@@ -52,6 +57,8 @@ real-size.fun
 real-size.sig
 record.fun
 record.sig
+tycon-kind.fun
+tycon-kind.sig
 tyvar.fun
 tyvar.sig
 word-size.fun

@@ -33,18 +33,11 @@ signature ID_NO_AST =
 signature ID_STRUCTS =
    sig
       include ID_NO_AST_STRUCTS
-      structure AstId: AST_ID
    end
 
 signature ID =
    sig
       include ID_NO_AST
-      structure AstId: AST_ID
-	 
-      val fromAst: AstId.t -> t
-      val fromAsts: AstId.t list -> t list
-      val toAst: t -> AstId.t
-      val toAsts: t list -> AstId.t list
    end
 
 signature HASH_ID =

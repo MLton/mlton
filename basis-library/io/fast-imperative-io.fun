@@ -174,8 +174,6 @@ functor FastImperativeIOExtraFile
 						     function = function,
 						     cause = cause}
 
-      val empty = V.fromList []
-
       (*---------------*)
       (*   outstream   *)
       (*---------------*)

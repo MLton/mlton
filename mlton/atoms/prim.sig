@@ -15,16 +15,11 @@ signature PRIM_STRUCTS =
       structure Const: CONST
       structure IntSize: INT_SIZE
       structure RealSize: REAL_SIZE
-      structure Scheme: SCHEME
-      structure Type: TYPE
       structure WordSize: WORD_SIZE
       sharing CFunction.CType = CType
-      sharing IntSize = CType.IntSize = Const.IntX.IntSize = Type.Tycon.IntSize
+      sharing IntSize = CType.IntSize = Const.IntX.IntSize
       sharing RealSize = CType.RealSize = Const.RealX.RealSize
-	 = Type.Tycon.RealSize
-      sharing Type = Scheme.Type
       sharing WordSize = CType.WordSize = Const.WordX.WordSize
-	 = Type.Tycon.WordSize
    end
 
 signature PRIM = 
@@ -40,7 +35,6 @@ signature PRIM =
 	     | Array_sub (* backend *)
 	     | Array_toVector (* backend *)
 	     | Array_update (* backend *)
-	     | BuildConstant of string (* type inference *)
 	     | C_CS_charArrayToWord8Array (* type inference *)
 	     | Char_chr (* type inference *)
 	     | Char_ge (* type inference *)
@@ -49,7 +43,6 @@ signature PRIM =
 	     | Char_lt (* type inference *)
 	     | Char_ord (* type inference *)
 	     | Char_toWord8 (* type inference *)
-	     | Constant of string (* type inference *)
 	     | Cpointer_isNull (* codegen *)
 	     | Exn_extra (* implement exceptions *)
 	     | Exn_keepHistory (* a compile-time boolean *)
@@ -246,32 +239,20 @@ signature PRIM =
       val assign: t
       val bogus: t
       val bug: t
-      val buildConstant: string * Scheme.t -> t
-      val checkApp: {
-		     prim: t,
-		     targs: 'a vector,
-		     args: 'a vector,
-		     con: Type.Tycon.t * 'a vector -> 'a,
-		     equals: 'a * 'a -> bool,
-		     dearrowOpt: 'a -> ('a * 'a) option,
-		     detupleOpt: 'a -> 'a vector option,
-		     isUnit: 'a -> bool
-		     } -> 'a option
-      val constant: string * Scheme.t -> t
       val deref: t
       val deserialize: t
       val eq: t    (* pointer equality *)
       val equal: t (* polymorphic equality *)
       val equals: t * t -> bool (* equality of names *)
-      val extractTargs: {prim: t,
-			 args: 'a vector,
-			 result: 'a,
-			 dearray: 'a -> 'a,
-			 dearrow: 'a -> 'a * 'a,
-			 deref: 'a -> 'a,
-			 devector: 'a -> 'a,
-			 deweak: 'a -> 'a} -> 'a vector
-      val ffi: CFunction.t * Scheme.t -> t
+      val extractTargs: {args: 'a vector,
+			 deArray: 'a -> 'a,
+			 deArrow: 'a -> 'a * 'a,
+			 deRef: 'a -> 'a,
+			 deVector: 'a -> 'a,
+			 deWeak: 'a -> 'a,
+			 prim: t,
+			 result: 'a} -> 'a vector
+      val ffi: CFunction.t -> t
       val ffiSymbol: {name: string, ty: CType.t} -> t
       val gcCollect: t
       val intInfEqual: t
@@ -302,11 +283,9 @@ signature PRIM =
        *)
       val maySideEffect: t -> bool
       val name: t -> Name.t
-      val new: string * Scheme.t -> t
+      val new: string -> t
       val newNullary: CFunction.t -> t (* new of type unit -> unit *)
-      val numArgs: t -> int option
       val reff: t
-      val scheme: t -> Scheme.t
       val serialize: t
       val toString: t -> string
       val vectorLength: t

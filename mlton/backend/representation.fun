@@ -558,7 +558,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		       SOME (pointer {fin = fn r => setTupleRep (t, r),
 				      isNormal = true,
 				      mutable = false,
-				      tys = S.Type.detuple t})
+				      tys = S.Type.deTuple t})
 	       | Vector t => SOME (array {mutable = false, ty = t})
 	       | Weak t =>
 		    (case toRtype t of

@@ -48,12 +48,12 @@ signature ABSTRACT_VALUE =
       val addHandler: t * (Lambda.t -> unit) -> unit
       val coerce: {from: t, to: t} -> unit
       val ssaType: t -> Ssa.Type.t option ref
-      val dearray: t -> t
-      val deref: t -> t
+      val deArray: t -> t
+      val deRef: t -> t
+      val deWeak: t -> t
       val dest: t -> dest
       (* Destroy info associated with Sxml.Type used to keep track of arrows. *)
       val destroy: unit -> unit
-      val deweak: t -> t
       val equals: t * t -> bool
       val fromType: Sxml.Type.t -> t
       val isEmpty: t -> bool (* no possible values correspond to me *) 

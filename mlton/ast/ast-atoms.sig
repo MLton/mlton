@@ -90,16 +90,16 @@ signature AST_ATOMS =
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t
 
-	    val var: Tyvar.t -> t
-	    val con: Tycon.t * t vector -> t
-	    val record: t SortedRecord.t -> t
 	    val arrow: t * t -> t
+	    val con: Tycon.t * t vector -> t
 	    val exn:  t
+	    val layout: t -> Layout.t
+	    val layoutApp: Layout.t * 'a vector * ('a -> Layout.t) -> Layout.t
+	    val layoutOption: t option -> Layout.t
+	    val record: t SortedRecord.t -> t
 	    val tuple: t vector -> t
 	    val unit: t
-	    val layout: t -> Layout.t
-	    val layoutOption: t option -> Layout.t
-	    val layoutApp: Layout.t * 'a vector * ('a -> Layout.t) -> Layout.t
+	    val var: Tyvar.t -> t
 	 end
       structure TypBind:
 	 sig

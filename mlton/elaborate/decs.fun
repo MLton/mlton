@@ -10,6 +10,8 @@ struct
 
 open S
 
+structure Dec = CoreML.Dec
+
 type dec = CoreML.Dec.t
 
 open AppendList
@@ -20,16 +22,11 @@ fun add (ds, d) = append (ds, single d)
 
 val fromDec = single
 
-fun toAsts ds =
-   Vector.map (toVector ds, CoreML.Dec.toAst)
-
-fun toAst ds = Ast.Dec.makeRegion (Ast.Dec.SeqDec (toAsts ds), Region.bogus)
-
 fun layout ds =
    let
       open Layout
    in
-      align (Vector.toListMap (toAsts ds, Ast.Dec.layout))
+      align (Vector.toListMap (toVector ds, Dec.layout))
    end
 
 end

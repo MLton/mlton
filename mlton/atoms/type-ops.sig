@@ -15,7 +15,7 @@ signature TYPE_OPS_STRUCTS =
       type t
 
       val con: Tycon.t * t vector -> t
-      val deconOpt: t -> (Tycon.t * t vector) option
+      val deConOpt: t -> (Tycon.t * t vector) option
       val layout: t -> Layout.t
    end
 
@@ -36,24 +36,24 @@ signature TYPE_OPS =
       val arrow: t * t -> t
       val bool: t
       val con: tycon * t vector -> t
-      val dearray: t -> t
-      val dearrayOpt: t -> t option
-      val dearrow: t -> t * t
-      val dearrowOpt: t -> (t * t) option
-      val deconOpt: t -> (tycon * t vector) option
-      val deconConstOpt: t -> (tycon * tycon vector) option
-      val deconConst: t -> (tycon * tycon vector)
+      val deArray: t -> t
+      val deArrayOpt: t -> t option
+      val deArrow: t -> t * t
+      val deArrowOpt: t -> (t * t) option
+      val deConOpt: t -> (tycon * t vector) option
+      val deConConstOpt: t -> (tycon * tycon vector) option
+      val deConConst: t -> (tycon * tycon vector)
+      val deRef: t -> t
+      val deRefOpt: t -> t option
+      val deTuple: t -> t vector
+      val deTupleOpt: t -> t vector option
+      val deTycon: t -> tycon
+      val deVector: t -> t
+      val deWeak: t -> t
+      val deWeakOpt: t -> t option
       val defaultInt: t
       val defaultReal: t
       val defaultWord: t
-      val deref: t -> t
-      val derefOpt: t -> t option
-      val detuple: t -> t vector
-      val detupleOpt: t -> t vector option
-      val detycon: t -> tycon
-      val devector: t -> t
-      val deweak: t -> t
-      val deweakOpt: t -> t option
       val exn: t
       val int: intSize -> t
       val intInf: t

@@ -10,24 +10,17 @@ struct
 
 open S
 
-structure C = HashId (structure AstId = AstId
-		     val noname = "C")
+structure C = HashId (val noname = "C")
 open C
+
 structure P = PrimCons (C)
 open P
-
-val fromAst = newString o AstId.toString
-   
-fun fromAsts l = List.map (l, fromAst)
-
-fun toAst id = AstId.fromString (toString id, Region.bogus)
-   
-fun toAsts l = List.map (l, toAst)
 
 val all = [cons, falsee, nill, reff, truee, bind, match]
 
 fun stats () =
-   let open Layout
+   let
+      open Layout
    in
       align
       (List.map (all, fn c =>

@@ -122,11 +122,6 @@ in
    open I
 end
    
-val fromAst = newString o AstId.toString
-fun fromAsts l = List.map (l, fromAst)
-fun toAst id = AstId.fromString (toString id, Region.bogus)
-fun toAsts l = List.map (l, toAst)
-
 end
 
 functor HashId (S: ID_STRUCTS): HASH_ID =
@@ -228,11 +223,6 @@ fun new (T {originalName, ...}) =
       printName = ref NONE,
       hash = Random.word (),
       plist = Plist.new ()}
-
-val fromAst = newString o AstId.toString
-fun fromAsts l = List.map (l, fromAst)
-fun toAst id = AstId.fromString (toString id, Region.bogus)
-fun toAsts l = List.map (l, toAst)
 
 val clear = Plist.clear o plist
    

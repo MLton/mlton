@@ -50,11 +50,7 @@ and c : 'a -> 'a as d : 'a -> 'a = fn x => x
 and rec e as f as g = fn x => x
 and h : 'b -> 'b : 'b -> 'b = fn x => x;
 
-val x =
-let
-    val rec LESS = fn x => x	(* will raise Bind *)
-    and NONE as SOME = fn x => x
-    val SOME = 1;
-in
-    raise Fail "should not get here!"
-end handle Bind => ();
+val rec LESS = fn x => x
+and NONE as SOME = fn x => x
+val SOME = 13
+val _ = print (concat [Int.toString SOME, "\n"])

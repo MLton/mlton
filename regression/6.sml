@@ -1,6 +1,6 @@
 fun f x = x
 
-val r = ref f
+val r: (int -> int) ref = ref f
 
 val _ = r := (fn y => y)
 

@@ -338,7 +338,7 @@ structure Cont:
 fun selects (tuple: Var.t, ty: Type.t, components: Var.t vector)
    : Statement.t list =
    let
-      val ts = Type.detuple ty
+      val ts = Type.deTuple ty
    in
       Vector.foldi
       (ts, [], fn (i, t, ss) =>
@@ -544,7 +544,7 @@ fun linearize' (e: t, h: Handler.t, k: Cont.t): Label.t * Block.t list =
 		   val l = reify (k, ty)
 		   val k = Cont.goto l
 		   val (args, exps) =
-		      case Type.detupleOpt ty of
+		      case Type.deTupleOpt ty of
 			 NONE =>
 			    let
 			       val res = Var.newNoname ()

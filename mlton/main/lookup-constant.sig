@@ -10,13 +10,15 @@ type word = Word.t
    
 signature LOOKUP_CONSTANT_STRUCTS = 
    sig
-      structure CoreML: CORE_ML
+      structure Const: CONST
+      structure ConstType: CONST_TYPE
+      structure Ffi: FFI
    end
 
 signature LOOKUP_CONSTANT = 
    sig
       include LOOKUP_CONSTANT_STRUCTS
 
-      val build: CoreML.Dec.t vector * Out.t -> unit
-      val load: CoreML.Dec.t vector * In.t -> string -> CoreML.Const.t
+      val build: (string * ConstType.t) list * Out.t -> unit
+      val load: In.t -> string * ConstType.t -> Const.t
    end

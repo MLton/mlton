@@ -10,10 +10,13 @@ struct
 
 open S
 
-local open Ast
-in structure FctArg = FctArg
+local
+   open Ast
+in
+   structure FctArg = FctArg
    structure Longstrid = Longstrid
    structure Topdec = Topdec
+
    structure SigConst = SigConst
    structure Sigexp = Sigexp
    structure Strdec = Strdec
@@ -21,19 +24,18 @@ in structure FctArg = FctArg
    structure Strexp = Strexp
 end
 
-local open CoreML
-in structure Con = Con
+local
+   open CoreML
+in
+   structure Con = Con
    structure Prim = Prim
-   structure Scheme = Scheme
    structure Tycon = Tycon
    structure Type = Type
 end
 
-structure Decs = Decs (structure Ast = Ast
-		       structure CoreML = CoreML)
 structure Env = ElaborateEnv (structure Ast = Ast
 			      structure CoreML = CoreML
-			      structure Decs = Decs)
+			      structure TypeEnv = TypeEnv)
 
 local
    open Env
@@ -49,7 +51,20 @@ structure ElaborateSigexp = ElaborateSigexp (structure Ast = Ast
 					     structure Env = Env
 					     structure Interface = Interface)
 
+structure ConstType =
+   struct
+      datatype t = Bool | Int | Real | String | Word
+
+      val toString =
+	 fn Bool => "Bool"
+	  | Int => "Int"
+	  | Real => "Real"
+	  | String => "String"
+	  | Word => "Word"
+   end
+
 structure ElaborateCore = ElaborateCore (structure Ast = Ast
+					 structure ConstType = ConstType
 					 structure CoreML = CoreML
 					 structure Decs = Decs
 					 structure Env = Env)
@@ -57,8 +72,11 @@ structure ElaborateCore = ElaborateCore (structure Ast = Ast
 val info = Trace.info "elaborateStrdec"
 val info' = Trace.info "elaborateTopdec"
 	  
-fun elaborateProgram (Ast.Program.T decs, E: Env.t) =
+fun elaborateProgram (program,
+		      E: Env.t,
+		      lookupConstant) =
    let
+      val Ast.Program.T decs = Ast.Program.coalesce program 
       fun elabSigexp s = ElaborateSigexp.elaborateSigexp (s, E)
       fun elabSigexpConstraint (cons: SigConst.t, S: Structure.t): Structure.t =
 	 let
@@ -81,15 +99,19 @@ fun elaborateProgram (Ast.Program.T decs, E: Env.t) =
 			   Layout.ignore)
 	 (fn (d: Strdec.t, nest: string list) =>
 	  let
+	     val d = Strdec.coalesce d
 	     val elabStrdec = fn d => elabStrdec (d, nest)
 	  in
 	     case Strdec.node d of
 		Strdec.Core d => (* rule 56 *)
-		   ElaborateCore.elaborateDec (d, nest, E)
+		   ElaborateCore.elaborateDec
+		   (d, {env = E,
+			lookupConstant = lookupConstant,
+			nest = nest})
 	      | Strdec.Local (d, d') => (* rule 58 *)
-		   Decs.append (Env.localModule (E,
-						 fn () => elabStrdec d,
-						 fn () => elabStrdec d'))
+		   Env.localModule (E,
+				    fn () => elabStrdec d,
+				    fn d => Decs.append (d, elabStrdec d'))
 	      | Strdec.Seq ds => (* rule 60 *)
 		   List.fold
 		   (ds, Decs.empty, fn (d, decs) =>

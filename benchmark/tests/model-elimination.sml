@@ -2521,6 +2521,8 @@ fun maybe p S.NIL = raise Noparse
 fun finished S.NIL = ((), S.NIL)
   | finished (S.CONS _) = raise Noparse;
 
+val finished: ('a, unit) parser = finished
+
 fun some p = maybe (fn x => if p x then SOME x else NONE);
 
 fun any input = some (K true) input;

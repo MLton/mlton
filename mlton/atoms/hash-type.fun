@@ -47,7 +47,7 @@ structure Type =
 	 end
       open Dest
 
-      fun deconOpt t =
+      fun deConOpt t =
 	 case dest t of
 	    Con x => SOME x
 	  | _ => NONE
@@ -86,18 +86,10 @@ structure Type =
 	 in res
 	 end
 
-      local
-	 structure Atype = Ast.Type
-      in
-	 fun toAst t =
-	    hom {ty = t,
-		 var = Atype.var,
-		 con = fn (c, ts) =>
-		 if Tycon.equals (c, Tycon.tuple) then Atype.tuple ts
-		 else Atype.con (Tycon.toAst c, ts)}
-      end
-   
-      val layout = Ast.Type.layout o toAst
+      fun layout (ty: t): Layout.t =
+	 hom {con = Tycon.layoutApp,
+	      ty = ty,
+	      var = Tyvar.layout}
 
       val toString = Layout.toString o layout
 	 
@@ -165,22 +157,6 @@ val string = word8Vector
    
 structure Plist = PropertyList
 
-local structure Type = Ast.Type
-in
-   fun toAst (t: t): Type.t =
-      case dest t of
-	 Var a => Type.var a
-       | Con (c, ts) =>
-	    let
-	       val ts = Vector.map (ts, toAst)
-	    in
-	       if Tycon.equals (c, Tycon.tuple) then Type.tuple ts
-	       else Type.con (Tycon.toAst c, ts)
-	    end
-end
-
-fun optionToAst z = Option.map (z, toAst)
-
 fun ofConst c =
    let
       datatype z = datatype Const.t
@@ -237,22 +213,6 @@ in
        ; Layout.output (lay, out)
        ; print "\n"
        ; raise TypeError)
-end
-
-local
-   structure Ptype = Prim.Type
-in
-   fun fromPrims ts = Vector.map (ts, fromPrim)
-   and fromPrim t =
-      case t of
-	 Ptype.Var a => var a
-       | Ptype.Con (c, ts) => con (c, fromPrims ts)
-       | Ptype.Record r =>
-	    con (Tycon.tuple, fromPrims (SortedRecord.range r))
-
-   fun toPrim t = hom {ty = t,
-		       var = Ptype.var,
-		       con = Ptype.con}
 end
 
 fun tycon t =

@@ -5,12 +5,13 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-functor AstConst (S: AST_CONST_STRUCTS) :> AST_CONST =
+functor AstConst (S: AST_CONST_STRUCTS): AST_CONST =
 struct
 
 open Region.Wrap
 datatype node =
-   Char of char
+   Bool of bool
+ | Char of char
  | Int of IntInf.t
  | Real of string
  | String of string
@@ -27,7 +28,8 @@ local
 in
    fun layout c =
       case node c of
-	 Char c => wrap ("#\"", "\"", String.implode [c])
+	 Bool b => if b then str "true" else str "false"
+       | Char c => wrap ("#\"", "\"", String.implode [c])
        | Int s => str (IntInf.toString s)
        | Real l => String.layout l
        | String s => wrap ("\"", "\"", s)

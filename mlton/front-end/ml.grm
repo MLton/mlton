@@ -1,4 +1,4 @@
-(* Heavily modified from SML/NJ sources by sweeks@research.nj.nec.com *)
+(* Heavily modified from SML/NJ sources by sweeks@sweeks.com *)
 
 (* ml.grm
  *
@@ -136,8 +136,7 @@ type rule = Pat.t * Exp.t
 type clause = {pats : Pat.t vector,
 	       resultType : Type.t option,
 	       body : Exp.t}
-type clauses = {clauses: clause vector,
-		filePos: string}
+type clauses = clause vector
 type eb = Con.t * EbRhs.t
 type db = {tyvars: Tyvar.t vector,
 	   tycon: Tycon.t,
@@ -172,8 +171,7 @@ type funbind = {name : Fctid.t,
 		body : Strexp.t}
 
 type vb = {pat: Pat.t,
-	   exp: Exp.t,
-	   filePos: string}
+	   exp: Exp.t}
    
 type rvb = {pat: Pat.t,
 	    match: Match.t}
@@ -701,18 +699,23 @@ decnolocal
 	| fixity vids		(Dec.Fix {fixity = fixity,
 					  ops = Vector.fromList vids})
 	| OVERLOAD var COLON ty AS longvarands
-	                        (Dec.Overload (var, ty,
+	                        (Dec.Overload (var,
+					       Vector.new0 (),
+					       ty,
 					       Vector.fromList longvarands))
 
-valbindTop : valbind (let val (vbs, rvbs) = valbind
-		      in (Vector.fromList vbs,
+valbindTop : valbind (let
+			 val (vbs, rvbs) = valbind
+		      in
+			 (Vector.fromList vbs,
 			  Vector.fromList rvbs)
 		      end)
 
 valbind	: pat EQUALOP exp valbindRest
-          (let val (vbs, rvbs) = valbindRest
-	   in ({pat = pat, exp = exp, filePos = SourcePos.toString pat1left}
-	       :: vbs,
+          (let
+	      val (vbs, rvbs) = valbindRest
+	   in
+	      ({pat = pat, exp = exp} :: vbs,
 	       rvbs)
 	   end)
         | REC rvalbind                 (([], rvalbind))
@@ -734,8 +737,7 @@ constraint :	 		(NONE)
 funs	: clausesTop               ([clausesTop])
 	| clausesTop AND funs	   (clausesTop :: funs)
 
-clausesTop: clauses ({clauses = Vector.fromList clauses,
-		      filePos = SourcePos.toString clauses1left})
+clausesTop: clauses (Vector.fromList clauses)
 
 clauses	: clause		([clause])
 	| clause BAR clauses	(clause :: clauses)
@@ -849,8 +851,8 @@ withtypes :                   (TypBind.empty)
 longvarands : longvar  ([longvar])
             | longvar AND longvarands (longvar :: longvarands)
 
-match : rules           (Match.T {rules = Vector.fromList rules,
-				  filePos = SourcePos.toString rules1left})
+match : rules           (Match.makeRegion' (Match.T (Vector.fromList rules),
+					    rulesleft, rulesright))
 
 rules : rule            ([rule])
       | rule BAR rules  (rule :: rules)
@@ -862,7 +864,7 @@ elabel	: field EQUALOP exp	(field,exp)
 elabels : elabel COMMA elabels	(elabel :: elabels)
 	| elabel	        ([elabel])
 
-exp_ps	: exp		        ([exp])
+exp_ps	: exp SEMICOLON exp     ([exp1, exp2])
 	| exp SEMICOLON exp_ps	(exp :: exp_ps)
 
 exp : expnode (Exp.makeRegion' (expnode, expnodeleft, expnoderight))
@@ -876,9 +878,7 @@ expnode	: exp HANDLE match	(Exp.Handle (exp, match))
 	| CASE exp OF match	(Exp.Case (exp, match))
 	| WHILE exp DO exp	(Exp.While {test = exp1, expr = exp2})
 	| IF exp THEN exp ELSE exp (Exp.If (exp1, exp2, exp3))
-	| RAISE exp	        (Exp.Raise
-				 {exn = exp,
-				  filePos = SourcePos.toString exp1left})
+	| RAISE exp	        (Exp.Raise exp)
 
 app_exp	: aexp app_exp1     (Exp.makeRegion' (aexp, aexpleft, aexpright)
 			     :: app_exp1)
@@ -898,10 +898,12 @@ aexp	: OP vid		(Exp.Var {name = Longvid.short vid,
 	    (Exp.Record (Record.fromVector (Vector.fromList elabels)))
 	| LBRACE RBRACE		(Exp.unit)
 	| LPAREN RPAREN		(Exp.unit)
+	| LPAREN expnode RPAREN (expnode)
 	| LPAREN exp_ps RPAREN	(Exp.Seq (Vector.fromList exp_ps))
 	| LPAREN exp_2c RPAREN	(Exp.tuple (Vector.fromList exp_2c))
-	| LBRACKET exp_list RBRACKET  (Exp.List exp_list)
-	| LBRACKET RBRACKET           (Exp.List nil)
+	| LBRACKET exp_list RBRACKET  (Exp.List (Vector.fromList exp_list))
+	| LBRACKET RBRACKET           (Exp.List (Vector.new0 ()))
+	| LET decs IN exp END   (Exp.Let (decs, exp))
 	| LET decs IN exp_ps END
 	    (Exp.Let (decs, Exp.makeRegion' (Exp.Seq (Vector.fromList exp_ps),
 					     exp_psleft,
@@ -956,12 +958,12 @@ apat : apatnode (Pat.makeRegion' (apatnode, apatnodeleft, apatnoderight))
 
 apatnode : longvidNoEqual        (Pat.Var {name = longvidNoEqual,
 					   fixop = Fixop.None})
-        | OP vidNoEqual          (Pat.Var {name = Longvid.short vidNoEqual,
+        | OP vid                 (Pat.Var {name = Longvid.short vid,
 					   fixop = Fixop.Op})
 	| const		         (Pat.Const const)
 	| WILD			 (Pat.Wild)
 	| LPAREN pats RPAREN     (Pat.tuple (Vector.fromList pats))
-	| LBRACKET pats RBRACKET (Pat.List pats)
+	| LBRACKET pats RBRACKET (Pat.List (Vector.fromList pats))
 	| LBRACE RBRACE          (Pat.unit)
 	| LBRACE patitems RBRACE (let val (items, f) = patitems
 				  in Pat.Record {items = Vector.fromList items,

@@ -10,578 +10,411 @@ struct
 
 open S
 
-local open Ast
-in
-   structure Adec = Dec
-   structure Apat = Pat
-end
+structure Field = Record.Field
 
-structure Wrap = Region.Wrap
-
-fun makeList (con, app, tuple) (l, r) =
-   List.foldr (l, Wrap.makeRegion (con Con.nill, r), fn (x1, x2) =>
-	       Wrap.makeRegion (app (Con.cons, tuple (Vector.new2 (x1, x2), r)),
-				r))
+fun maybeConstrain (x, t) =
+   let
+      open Layout
+   in
+      if !Control.showTypes
+	 then seq [x, str ": ", Type.layout t]
+      else x
+   end
 
 structure Pat =
    struct
-      open Wrap
-	 
-      datatype node =
-	 Wild
-       | Var of Var.t
-       | Const of Ast.Const.t
-       | Con of {con: Con.t, arg: t option}
-       | Record of {flexible: bool, record: t Record.t}
-       | Constraint of t * Type.t
+      datatype t = T of {node: node,
+			 ty: Type.t}
+      and node =
+	 Con of {arg: t option,
+		 con: Con.t,
+		 targs: Type.t vector}
+       | Const of unit -> Const.t
        | Layered of Var.t * t
-      withtype t = node Wrap.t
-      type node' = node
-      type obj = t
+       | List of t vector
+       | Record of t Record.t
+       | Tuple of t vector
+       | Var of Var.t
+       | Wild
 
       local
-	 structure Pat = Ast.Pat
+	 fun make f (T r) = f r
       in
-	 fun toAst p =
-	    case node p of
-	       Wild => Pat.wild
-	     | Var x => Pat.var (Var.toAst x)
-	     | Const c => Pat.const c
-	     | Record {record, flexible} =>
-		  (case (flexible, Record.detupleOpt record) of
-		      (false, SOME ps) => Pat.tuple (Vector.map (ps, toAst))
-		    | _ =>
-			 Pat.makeRegion
-			 (Pat.Record
-			  {flexible = flexible,
-			   items = (Vector.map
-				    (Record.toVector record, fn (field, p) =>
-				     Pat.Item.Field (field, toAst p)))},
-			  Region.bogus))
-	     | Con {con, arg} =>
-		  let
-		     val con = Con.toAst con
-		  in
-		     case arg of
-			NONE => Pat.con con
-		      | SOME p => Pat.app (con, toAst p)
-		  end
-	     | Constraint (p, t) => Pat.constraint (toAst p,  Type.toAst t)
-	     | Layered (x, p) =>
-		  Pat.layered {fixop = Ast.Fixop.None,
-			       var = Var.toAst x,
-			       constraint = NONE,
-			       pat = toAst p}
-
-	 val layout = Pat.layout o toAst
+	 val dest = make (fn {node, ty} => (node, ty))
+	 val node = make #node
+	 val ty = make #ty
       end
 
-      fun isWild p =
+      fun make (n, t) = T {node = n, ty = t}
+
+      fun layout p =
+	 let
+	    val t = ty p
+	    open Layout
+	 in
+	    case node p of
+	       Con {arg, con, targs} =>
+		  seq [Con.layout con,
+		       if !Control.showTypes andalso 0 < Vector.length targs
+			  then tuple (Vector.toListMap (targs, Type.layout))
+		       else empty,
+		       case arg of
+			  NONE => empty
+			| SOME p => seq [str " ", layout p]]
+	     | Const f => Const.layout (f ())
+	     | Layered (x, p) =>
+		  seq [maybeConstrain (Var.layout x, t), str " as ", layout p]
+	     | List ps => list (Vector.toListMap (ps, layout))
+	     | Record r =>
+		  record (Vector.toListMap
+			  (Record.toVector r, fn (f, p) =>
+			   (Field.toString f, layout p)))
+	     | Tuple ps => tuple (Vector.toListMap (ps, layout))
+	     | Var x => maybeConstrain (Var.layout x, t)
+	     | Wild => str "_"
+	 end
+
+      fun var (x, t) = make (Var x, t)
+
+      fun tuple ps = make (Tuple ps, Type.tuple (Vector.map (ps, ty)))
+	 
+      local
+	 fun bool c = make (Con {arg = NONE, con = c, targs = Vector.new0 ()},
+			    Type.bool)
+      in
+	 val falsee: t = bool Con.falsee
+	 val truee: t = bool Con.truee
+      end
+   
+      fun isWild (p: t): bool =
 	 case node p of
 	    Wild => true
 	  | _ => false
 	 
-      fun isRefutable p =
+      fun isRefutable (p: t): bool =
 	 case node p of
-	    Wild => false
-	  | Var _ => false
+	    Con _ => true
 	  | Const _ => true
-	  | Con _ => true
-	  | Record {record, ...} => Record.exists (record, isRefutable)
-	  | Constraint (p, _) => isRefutable p
 	  | Layered (_, p) => isRefutable p
-
-      fun vars'(p, l) =
-	 case node p of
-	    Wild => l
-	  | Var x => x :: l
-	  | Const _ => l
-	  | Con {arg, ...} => (case arg of
-				  NONE => l
-				| SOME p => vars'(p, l))
-	  | Record {record, ...} => Record.fold (record, l, vars')
-	  | Constraint (p, _) => vars'(p, l)
-	  | Layered (x, p) => vars'(p, x :: l)
-
-      fun vars p = vars'(p, [])
-
-      fun removeVarsPred (p: t, pred: Var.t -> bool): t =
-	 let
-	    fun loop p =
-	       let
-		  fun doit n = makeRegion (n, region p)
-	       in
-		  case node p of
-		     Wild => p
-		   | Const _ => p
-		   | Var x => if pred x
-				 then doit Wild
-			      else p
-		   | Record {flexible, record} =>
-			doit (Record {flexible = flexible,
-				      record = Record.map (record, loop)})
-		   | Con {con, arg} =>
-			doit (Con {con = con,
-				   arg = (case arg of
-					     NONE => NONE
-					   | SOME p => SOME (loop p))})
-		   | Constraint (p, t) => doit (Constraint (loop p, t))
-		   | Layered (_, p) => loop p
-	       end
-	 in loop p
-	 end
-
-      fun removeVars p = removeVarsPred (p, fn _ => true)
-
-      fun removeOthersReplace (p, x, y) =
-	 let
-	    fun loop p =
-	       let
-		  fun doit n = makeRegion (n, region p)
-	       in
-		  case node p of
-		     Wild => doit Wild
-		   | Const _ => p
-		   | Var x' =>
-			doit (if Var.equals (x, x') then Var y else Wild)
-		   | Record {record, flexible} =>
-			doit (Record {flexible = flexible,
-				      record = Record.map (record, loop)})
-		   | Con {con, arg} =>
-			doit (Con {con = con,
-				   arg = (case arg of
-					     NONE => NONE
-					   | SOME p => SOME (loop p))})
-		   | Constraint (p, _) => loop p
-		   | Layered (x', p) =>
-			if Var.equals (x, x')
-			   then doit (Var y)
-			else loop p
-	       end
-	 in
-	    loop p
-	 end
-
-      val removeOthersReplace =
-	 Trace.trace3 ("Pat.removeOthersReplace",
-		       layout, Var.layout, Var.layout, layout)
-	 removeOthersReplace
-
-      fun tuple (ps, region)  =
-	 if 1 = Vector.length ps
-	    then Vector.sub (ps, 0)
-	 else makeRegion (Record {flexible = false, record = Record.tuple ps},
-			  region)
-
-      fun unit r = tuple (Vector.new0 (), r)
-	 
-      val list =
-	 makeList (fn c => Con {con = c, arg = NONE},
-		   fn (c, p) => Con {con = c, arg = SOME p},
-		   tuple)
-
-      fun var (x, r) = makeRegion (Var x, r)
-	 
-      fun record {flexible, record, region} =
-	 makeRegion (Record {flexible = flexible, record = record},
-		     region)
-
-      local
-	 fun make c r = makeRegion (Con {con = c, arg = NONE}, r)
-      in
-	 val truee = make Con.truee
-	 val falsee = make Con.falsee
-      end
-
-      fun foreachVar (p, f) =
-	 let
-	    fun loop p =
-	       case node p of
-		  Var x => f x
-		| Con {arg = SOME p, ...} => loop p
-		| Record {record, ...} => Record.foreach (record, loop)
-		| Constraint (p, _) => loop p
-		| Layered (x, p) => (f x; loop p)
-		| _ => ()
-	 in loop p
-	 end
+	  | List _ => true
+	  | Record r => Record.exists (r, isRefutable)
+	  | Tuple ps => Vector.exists (ps, isRefutable)
+	  | Var _ => false
+	  | Wild => false
    end
 
-datatype decNode =
-   Val of {exp: exp,
-	   filePos: string,
-	   pat: Pat.t,
-	   tyvars: Tyvar.t vector}
-  | Fun of {tyvars: Tyvar.t vector,
-	    decs: {match: match,
-		   profile: SourceInfo.t option,
-		   types: Type.t vector,
-		   var: Var.t} vector}
-  | Datatype of {
-		 tyvars: Tyvar.t vector,
-		 tycon: Tycon.t,
-		 cons: {
-			con: Con.t,
-			arg: Type.t option
-			} vector
-		 } vector
-  | Exception of {
-		  con: Con.t,
-		  arg: Type.t option
-		  }
-  | Overload of {var: Var.t,
-		 scheme: Scheme.t,
-		 ovlds: Var.t vector}
-and expNode =
-   Var of Var.t
-  | Prim of Prim.t
-  | Const of Ast.Const.t
-  | Con of Con.t
-  | Record of exp Record.t
-  | Fn of {match: match,
-	   profile: SourceInfo.t option}
-  | App of exp * exp
-  | Let of dec vector * exp
-  | Constraint of exp * Type.t
-  | Handle of exp * match
-  | Raise of {exn: exp, filePos: string}
-and match = Match of {filePos: string,
-		      rules: (Pat.t * exp) vector}
-withtype exp = expNode Wrap.t
-and dec = decNode Wrap.t
-
-structure Match =
+structure NoMatch =
    struct
-      type t = match
+      datatype t = Impossible | RaiseAgain | RaiseBind | RaiseMatch
 
-      local
-	 fun make f m =
-	    let
-	       val Match r = m
-	    in
-	       f r
-	    end
-      in
-	 val filePos = make #filePos
-	 val rules = make #rules
-      end
+      val toString =
+	 fn Impossible => "Impossible"
+	  | RaiseAgain => "RaiseAgain"
+	  | RaiseBind => "RaiseBind"
+	  | RaiseMatch => "RaiseMatch"
 
-      fun region m =
-	 Wrap.region (#1 (Vector.sub (rules m, 0)))
-		     
-
-      fun new {filePos, rules} =
-	 Match {filePos = filePos,
-		rules = rules}
+      val layout = Layout.str o toString
    end
+
+datatype noMatch = datatype NoMatch.t
+
+datatype dec =
+   Datatype of {cons: {arg: Type.t option,
+		       con: Con.t} vector,
+		tycon: Tycon.t,
+		tyvars: Tyvar.t vector} vector
+ | Exception of {arg: Type.t option,
+		 con: Con.t}
+ | Fun of {decs: {lambda: lambda,
+		  var: Var.t} vector,
+	   tyvars: unit -> Tyvar.t vector}
+ | Val of {rvbs: {lambda: lambda,
+		  var: Var.t} vector,
+	   tyvars: unit -> Tyvar.t vector,
+	   vbs: {exp: exp,
+		 pat: Pat.t,
+		 patRegion: Region.t} vector}
+and exp = Exp of {node: expNode,
+		  ty: Type.t}
+and expNode =
+   App of exp * exp
+  | Case of  {noMatch: noMatch,
+	      region: Region.t,
+	      rules: (Pat.t * exp) vector,
+	      test: exp}
+  | Con of Con.t * Type.t vector
+  | Const of unit -> Const.t
+  | EnterLeave of exp * SourceInfo.t
+  | Handle of {catch: Var.t * Type.t,
+	       handler: exp,
+	       try: exp}
+  | Lambda of lambda
+  | Let of dec vector * exp
+  | List of exp vector
+  | PrimApp of {args: exp vector,
+		prim: Prim.t,
+		targs: Type.t vector}
+  | Raise of {exn: exp,
+	      region: Region.t}
+  | Record of exp Record.t
+  | Seq of exp vector
+  | Var of (unit -> Var.t) * (unit -> Type.t vector)
+and lambda = Lam of {arg: Var.t,
+		     argType: Type.t,
+		     body: exp}
 
 local
-   local
-      open Ast
-   in
-      structure Dec = Dec
-      structure Exp = Exp
-      structure Longvar = Longvar
-   end
+   open Layout
 in
-   fun astDatatype ds =
-      Dec.datatypee
-      (Vector.map
-       (ds, fn {tyvars, tycon, cons} =>
-	{tyvars = tyvars,
-	 tycon = Tycon.toAst tycon,
-	 cons = Vector.map (cons, fn {con, arg} =>
-			    (Con.toAst con, Type.optionToAst arg))}))
-      
-   fun decToAst (d: dec) =
-      let
-	 fun doit n = Dec.makeRegion (n, Region.bogus)
-      in
-	 case Wrap.node d of
-	    Val {pat, filePos, tyvars, exp} =>
-	       doit (Dec.Val {tyvars = tyvars,
-			      vbs = Vector.new1 {pat = Pat.toAst pat,
-						 exp = expToAst exp,
-						 filePos = filePos},
-			      rvbs = Vector.new0 ()})
-	  | Fun {tyvars, decs} =>
-	       doit (Dec.Val
-		     {tyvars = tyvars,
-		      vbs = Vector.new0 (),
-		      rvbs = (Vector.map
-			      (decs, fn {match, types, var, ...} =>
-			       {pat = (Vector.fold
-				       (types, Apat.var (Var.toAst var),
-					fn (t, p) =>
-					Apat.constraint (p, Type.toAst t))),
-				match = matchToAst match}))})
-	  | Datatype ds => astDatatype ds
-	  | Exception {con, arg} =>
-	       Dec.exceptionn (Con.toAst con, Type.optionToAst arg)
-	  | Overload {var, scheme, ovlds} =>
-	       doit (Dec.Overload
-		     (Var.toAst var,
-		      Type.toAst (Scheme.ty scheme),
-		      Vector.map (ovlds, fn x =>
-				  Longvar.short (Var.toAst x))))
-      end
-   and expToAst e =
-      case Wrap.node e of
-	 App (e1, e2) => Exp.app (expToAst e1, expToAst e2)
-       | Con c => Exp.con (Con.toAst c)
-       | Const c => Exp.const c
-       | Constraint (e, t) => Exp.constraint (expToAst e, Type.toAst t)
-       | Fn {match, ...} => Exp.fnn (matchToAst match)
-       | Handle (try, match) => Exp.handlee (expToAst try, matchToAst match)
-       | Let (ds, e) => Exp.lett (Vector.map (ds, decToAst), expToAst e)
-       | Prim p => Exp.longvid (Ast.Longvid.short
-				(Ast.Longvid.Id.fromString (Prim.toString p,
-							    Region.bogus)))
-       | Raise {exn, filePos} =>
-	    Exp.raisee {exn = expToAst exn, filePos = filePos}
-       | Record r => Exp.record (Record.map (r, expToAst))
-       | Var x => Exp.var (Var.toAst x)
+   fun layoutTyvars ts =
+      case Vector.length ts of
+	 0 => empty
+       | 1 => seq [str " ", Tyvar.layout (Vector.sub (ts, 0))]
+       | _ => seq [str " ", tuple (Vector.toListMap (ts, Tyvar.layout))]
+	 
+   fun layoutConArg {arg, con} =
+      seq [Con.layout con,
+	   case arg of
+	      NONE => empty
+	    | SOME t => seq [str " of ", Type.layout t]]
 
-   and matchToAst m =
-      let
-	 val Match {rules, filePos} = m
-      in
-	 Ast.Match.T
-	 {filePos = filePos,
-	  rules = Vector.map (rules, fn (p, e) => (Pat.toAst p, expToAst e))}
-      end
+   fun layoutDec d =
+      case d of
+	 Datatype v =>
+	    seq [str "datatype",
+		 align
+		 (Vector.toListMap
+		  (v, fn {cons, tycon, tyvars} =>
+		   seq [layoutTyvars tyvars, Tycon.layout tycon, str " = ",
+			align
+			(separateLeft (Vector.toListMap (cons, layoutConArg),
+				       "| "))]))]
+       | Exception ca =>
+	    seq [str "exception ", layoutConArg ca]
+       | Fun {decs, tyvars, ...} => layoutFuns (tyvars, decs)
+       | Val {rvbs, tyvars, vbs, ...} =>
+	    align [layoutFuns (tyvars, rvbs),
+		   align (Vector.toListMap
+			  (vbs, fn {exp, pat, ...} =>
+			   seq [str "val",
+				mayAlign [seq [layoutTyvars (tyvars ()),
+					       str " ", Pat.layout pat,
+					       str " ="],
+					  layoutExp exp]]))]
+   and layoutExp (Exp {node, ...}) =
+      case node of
+	 App (e1, e2) => paren (seq [layoutExp e1, str " ", layoutExp e2])
+       | Case {noMatch, rules, test, ...} =>
+	    Pretty.casee {default = NONE,
+			  rules = Vector.map (rules, fn (p, e) =>
+					      (Pat.layout p, layoutExp e)),
+			  test = layoutExp test}
+       | Con (c, _) => Con.layout c
+       | Const f => Const.layout (f ())
+       | EnterLeave (e, _) => layoutExp e
+       | Handle {catch, handler, try} =>
+	    Pretty.handlee {catch = Var.layout (#1 catch),
+			    handler = layoutExp handler,
+			    try = layoutExp try}
+       | Lambda l => layoutLambda l
+       | Let (ds, e) =>
+	    Pretty.lett (align (Vector.toListMap (ds, layoutDec)),
+			 layoutExp e)
+       | List es => list (Vector.toListMap (es, layoutExp))
+       | PrimApp {args, prim, targs} =>
+	    Pretty.primApp {args = Vector.map (args, layoutExp),
+			    prim = Prim.layout prim,
+			    targs = Vector.map (targs, Type.layout)}
+       | Raise {exn, ...} => Pretty.raisee (layoutExp exn)
+       | Record r =>
+	    Record.layout
+	    {extra = "",
+	     layoutElt = layoutExp,
+	     layoutTuple = fn es => tuple (Vector.toListMap (es, layoutExp)),
+	     record = r,
+	     separator = " = "}
+       | Seq es => Pretty.seq (Vector.map (es, layoutExp))
+       | Var (x, targs) => Var.layout (x ())
+   and layoutFuns (tyvars, decs)  =
+      if 0 = Vector.length decs
+	 then empty
+      else
+	 align [seq [str "val rec", layoutTyvars (tyvars ())],
+		indent (align (Vector.toListMap
+			       (decs, fn {lambda, var} =>
+				align [seq [Var.layout var, str " = "],
+				       indent (layoutLambda lambda, 3)])),
+			3)]
+   and layoutLambda (Lam {arg, argType, body}) =
+      paren (align [seq [str "fn ", Var.layout arg, str " =>"],
+		    layoutExp body])
 end
 
-fun makeForeachVar f =
-   let
-      fun exp e =
-	 case Wrap.node e of
-	    App (e1, e2) => (exp e1; exp e2)
-	  | Constraint (e, _) => exp e
-	  | Fn {match = m, ...} => match m
-	  | Handle (e, m) => (exp e; match m)
-	  | Let (ds, e) => (Vector.foreach (ds, dec); exp e)
-	  | Raise {exn, ...} => exp exn
-	  | Record r => Record.foreach (r, exp)
-	  | Var x => f x
-	  | _ => ()
-      and match m = Vector.foreach (Match.rules m, exp o #2)
-      and dec d =
-	 case Wrap.node d of
-	    Fun {decs, ...} => Vector.foreach (decs, match o #match)
-	  | Overload {ovlds, ...} => Vector.foreach (ovlds, f)
-	  | Val {exp = e, ...} => exp e
-	  | _ => ()
-   in
-      {exp = exp, dec = dec}
+structure Lambda =
+   struct
+      datatype t = datatype lambda
+
+      val layout = layoutLambda
+
+      val make = Lam
+
+      fun dest (Lam r) = r
    end
 
 structure Exp =
    struct
-      open Wrap
       type dec = dec
-      type match = match
+      type lambda = lambda
+      datatype t = datatype exp
       datatype node = datatype expNode
-      type t = exp
-      type node' = node
-      type obj = t
 
-      val toAst = expToAst
+      datatype noMatch = datatype noMatch
+	    
+      val layout = layoutExp
 
-      fun foreachVar (e, f) = #exp (makeForeachVar f) e
+      local
+	 fun make f (Exp r) = f r
+      in
+	 val dest = make (fn {node, ty} => (node, ty))
+	 val node = make #node
+	 val ty = make #ty
+      end
+	    
+      fun make (n, t) = Exp {node = n,
+			     ty = t}
 
-      fun fnn (m, r) = makeRegion (Fn m, r)
-
-      fun fn1 {exp, pat, profile, region}= 
-	 fnn ({match = Match.new {filePos = "",
-				  rules = Vector.new1 (pat, exp)},
-	       profile = profile},
-	      region)
-
-      fun isExpansive e =
+      fun enterLeave (e, si) = make (EnterLeave (e, si), ty e)
+	 
+      fun var (x: Var.t, ty: Type.t): t =
+	 make (Var (fn () => x, fn () => Vector.new0 ()), ty)
+	 
+      fun isExpansive (e: t): bool =
 	 case node e of
-	    Var _ => false
-	  | Const _ => false
-	  | Con _ => false
-	  | Fn _ => false
-	  | Prim _ => false
-	  | Record r => Record.exists (r, isExpansive)
-	  | Constraint (e, _) => isExpansive e
-	  | App (e1, e2) =>
+	    App (e1, e2) =>
 	       (case node e1 of
-		   Con c => Con.equals (c, Con.reff) orelse isExpansive e2
+		   Con (c, _) => Con.equals (c, Con.reff) orelse isExpansive e2
 		 | _ => true)
-	  | _ => true
+	  | Case _ => true
+	  | Con _ => false
+	  | Const _ => false
+	  | EnterLeave _ => true
+	  | Handle _ => true
+	  | Lambda _ => false
+	  | Let _ => true
+	  | List es => Vector.exists (es, isExpansive)
+	  | PrimApp _ => true
+	  | Raise _ => true
+	  | Record r => Record.exists (r, isExpansive)
+	  | Seq _ => true
+	  | Var _ => false
 
-      fun record (record, r) = makeRegion (Record record, r)
-	 
-      fun lambda (x, e, p, r) =
-	 fn1 {exp = e,
-	      pat = makeRegion (Pat.Var x, r),
-	      profile = p,
-	      region = r}
-
-      fun casee (test, rules, r) =
-	 makeRegion (App (makeRegion (Fn {match = rules,
-					  profile = NONE},
-				      r),
-			  test),
-		     r)
-
-      fun tuple (es, r) =
+      fun tuple es =
 	 if 1 = Vector.length es
 	    then Vector.sub (es, 0)
-	 else record (Record.tuple es, r)
+	 else make (Record (Record.tuple es),
+		    Type.tuple (Vector.map (es, ty)))
 
-      fun unit r = tuple (Vector.new0 (), r)
+      val unit = tuple (Vector.new0 ())
 
-      fun seq (es, r) =
-	 if 1 = Vector.length es
-	    then Vector.sub (es, 0)
-	 else
-	    let
-	       val (es, e) = Vector.splitLast es
-	    in
-	       makeRegion
-	       (Let (Vector.map (es, fn e =>
-				 makeRegion (Val {pat = makeRegion (Pat.Wild, r),
-						  tyvars = Vector.new0 (),
-						  exp = e,
-						  filePos = ""},
-					     r)),
-		     e),
-		r)
-	    end
+      local
+	 fun bool c = make (Con (c, Vector.new0 ()), Type.bool)
+      in
+	 val falsee: t = bool Con.falsee
+	 val truee: t = bool Con.truee
+      end
 
-      fun force (e, r) = makeRegion (App (e, unit r), r)
+      fun lambda (l as Lam {argType, body, ...}) =
+	 make (Lambda l, Type.arrow (argType, ty body))
+
+      fun casee (z as {rules, ...}) =
+	 if 0 = Vector.length rules
+	    then Error.bug "CoreML.casee"
+	 else make (Case z, ty (#2 (Vector.sub (rules, 0))))
+			  
+      fun iff (test, thenCase, elseCase): t =
+	 casee {noMatch = Impossible,
+		region = Region.bogus,
+		rules = Vector.new2 ((Pat.truee, thenCase),
+				     (Pat.falsee, elseCase)),
+		test = test}
+
+      fun andAlso (e1, e2) = iff (e1, e2, falsee)
 	 
-      fun list (l, r) =
-	 makeList (Con, fn (c, e) => App (makeRegion (Con c, r), e), tuple)
-	 (l, r)
+      fun orElse (e1, e2) = iff (e1, truee, e2)
 
-      fun var (x, r) = makeRegion (Var x, r)
-	 
-      fun selector (f, r) =
-	 let
-	    val x = Var.newNoname ()
-	 in
-	    fn1 {exp = var (x, r),
-		 pat = (Pat.record
-			{flexible = true,
-			 record = Record.fromVector (Vector.new1
-						     (f, Pat.var (x, r))),
-			 region = r}),
-		 profile = NONE,
-		 region = r}
-	 end
-
-      fun iff (test, thenCase, elseCase, r) =
-	 casee (test,
-		Match.new {filePos = "",
-			   rules = Vector.new2 ((Pat.truee r, thenCase),
-						(Pat.falsee r, elseCase))},
-		r)
-
-      fun con (c, r) = makeRegion (Con c, r)
-      fun truee r = con (Con.truee, r)
-      fun falsee r = con (Con.falsee, r)
-	 
-      fun andAlso (e1, e2, r) = iff (e1, e2, falsee r, r)
-      fun orElse (e1, e2, r) = iff (e1, truee r, e2, r)
-
-      fun whilee {test, expr, region = r} =
+      fun whilee {expr, test} =
 	 let
 	    val loop = Var.newNoname ()
-	    val call = makeRegion (App (var (loop, r), unit r), r)
-	    val match =
-	       Match.new {filePos = "",
-			  rules = (Vector.new1
-				   (Pat.tuple (Vector.new0 (), r),
-				    iff (test,
-					 seq (Vector.new2 (expr, call), r),
-					 unit r,
-					 r)))}
+	    val loopTy = Type.arrow (Type.unit, Type.unit)
+	    val call = make (App (var (loop, loopTy), unit), Type.unit)
+	    val lambda =
+	       Lambda.make
+	       {arg = Var.newNoname (),
+		argType = Type.unit,
+		body = iff (test,
+			    make (Seq (Vector.new2 (expr, call)),
+				  Type.unit),
+			    unit)}
 	 in
-	    makeRegion
-	    (Let (Vector.new1
-		  (makeRegion
-		   (Fun {tyvars = Vector.new0 (),
-			 decs = (Vector.new1
-				 {match = match,
-				  profile = SOME (SourceInfo.anonymous r),
-				  types = Vector.new0 (),
-				  var = loop})},
-		    r)),
+	    make
+	    (Let (Vector.new1 (Fun {decs = Vector.new1 {lambda = lambda,
+							var = loop},
+				    tyvars = fn () => Vector.new0 ()}),
 		  call),
-	     r)
+	     Type.unit)
 	 end
 
-      val layout = Ast.Exp.layout o toAst
    end
 
 structure Dec =
    struct
-      open Wrap
-      type t = dec
-      datatype node = datatype decNode
-      type node' = node
-      type obj = t
+      datatype t = datatype dec
 
-      fun isExpansive d =
-	 case node d of
-	    Val {exp, ...} => Exp.isExpansive exp
-	  | _ => false
-
-      val toAst = decToAst
-
-      val layout = Adec.layout o toAst
+      val layout = layoutDec
    end
 
 structure Program =
    struct
       datatype t = T of {decs: Dec.t vector}
 
-      fun toAst (T {decs, ...}) =
-	 Adec.makeRegion
-	 (Adec.Local
-	  (Adec.makeRegion (Adec.SeqDec (Vector.map (decs, Dec.toAst)),
-			    Region.bogus),
-	   Adec.empty),
-	  Region.bogus)
+      fun layout (T {decs, ...}) =
+	 Layout.align (Vector.toListMap (decs, Dec.layout))
 
-      val layout = Adec.layout o toAst
-
-      fun size (T {decs = ds, ...}): int =
-	 let
-	    val n = ref 0
-	    fun inc () = n := 1 + !n
-	    fun exp e =
-	       (inc ()
-		; (case Exp.node e of
-		      App (e, e') => (exp e; exp e')
-		    | Constraint (e, _) => exp e
-		    | Fn {match = m, ...} => match m
-		    | Handle (e, m) => (exp e; match m)
-		    | Let (ds, e) => (Vector.foreach (ds, dec); exp e)
-		    | Raise {exn, ...} => exp exn
-		    | Record r => Record.foreach (r, exp)
-		    | _ => ()))
-	    and match m = Vector.foreach (Match.rules m, exp o #2)
-	    and dec d =
-	       case Dec.node d of
-		  Exception _ => inc ()
-		| Fun {decs, ...} => Vector.foreach (decs, match o #match)
-		| Val {exp = e, ...} => exp e
-		| _ => ()
-	    val _ = Vector.foreach (ds, dec)
-	 in
-	    !n
-	 end
-      
-      fun layoutStats p =
-	 let open Layout
-	 in seq [str "size = ", Int.layout (size p)]
-	 end
+(*       fun typeCheck (T {decs, ...}) =
+ * 	 let
+ * 	    fun checkExp (e: Exp.t): Ty.t =
+ * 	       let
+ * 		  val (n, t) = Exp.dest e
+ * 		  val 
+ * 		  datatype z = datatype Exp.t
+ * 		  val t' =
+ * 		     case n of
+ * 			App (e1, e2) =>
+ * 			   let
+ * 			      val t1 = checkExp e1
+ * 			      val t2 = checkExp e2
+ * 			   in
+ * 			      case Type.deArrowOpt t1 of
+ * 				 NONE => error "application of non-function"
+ * 			       | SOME (u1, u2) =>
+ * 				    if Type.equals (u1, t2)
+ * 				       then t2
+ * 				    else error "function/argument mismatch"
+ * 			   end
+ * 		      | Case {rules, test} =>
+ * 			   let
+ * 			      val {pat, exp} = Vector.sub (rules, 0)
+ * 			   in
+ * 			      Vector.foreach (rules, fn {pat, exp} =>
+ * 					      Type.equals
+ * 					      (checkPat pat, 
+ * 			   end
+ * 	       in
+ * 				     
+ * 	       end
+ * 	 in
+ * 	 end
+ *)
    end
 
 end

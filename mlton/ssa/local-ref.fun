@@ -317,7 +317,7 @@ fun eliminate (program: Program.t): Program.t
 		     = Option.app
 		       (var, fn var =>
 			let
-			  val vi = VarInfo.new (SOME (label, Type.deref ty))
+			  val vi = VarInfo.new (SOME (label, Type.deRef ty))
 			  val _ = setVarInfo (var, vi)
 			in
 			  List.push (refs, var) ;

@@ -901,7 +901,7 @@ fun closureConvert
 				  let
 				     val a = varExpInfo (arg 0)
 				     val y = varExpInfo (arg 2)
-				     val v = Value.dearray (VarInfo.value a)
+				     val v = Value.deArray (VarInfo.value a)
 				  in
 				     primApp (v1 (valueType v),
 					      v3 (convertVarInfo a,
@@ -927,12 +927,14 @@ fun closureConvert
 				      | _ => doit ()
 				  end
 			     | MLton_handlesSignals =>
-				  if handlesSignals then Dexp.truee else Dexp.falsee
+				  if handlesSignals
+				     then Dexp.truee
+				  else Dexp.falsee
 			     | Ref_assign =>
 				  let
 				     val r = varExpInfo (arg 0)
 				     val y = varExpInfo (arg 1)
-				     val v = Value.deref (VarInfo.value r)
+				     val v = Value.deRef (VarInfo.value r)
 				  in
 				     primApp (v1 (valueType v),
 					      v2 (convertVarInfo r,
@@ -942,7 +944,7 @@ fun closureConvert
 			     | Ref_ref =>
 				  let
 				     val y = varExpInfo (arg 0)
-				     val v = Value.deref v
+				     val v = Value.deRef v
 				  in
 				     primApp (v1 (valueType v),
 					      v1 (coerce (convertVarInfo y,
@@ -961,7 +963,7 @@ fun closureConvert
 			     | Weak_new =>
 				  let
 				     val y = varExpInfo (arg 0)
-				     val v = Value.deweak v
+				     val v = Value.deWeak v
 				  in
 				     primApp (v1 (valueType v),
 					      v1 (coerce (convertVarInfo y,
@@ -976,11 +978,11 @@ fun closureConvert
 				      {prim = prim,
 				       args = Vector.map (args, varInfoType),
 				       result = ty,
-				       dearray = Type.dearray,
-				       dearrow = Type.dearrow,
-				       deref = Type.deref,
-				       devector = Type.devector,
-				       deweak = Type.deweak},
+				       deArray = Type.deArray,
+				       deArrow = Type.deArrow,
+				       deRef = Type.deRef,
+				       deVector = Type.deVector,
+				       deWeak = Type.deWeak},
 				      Vector.map (args, convertVarInfo))
 				  end)
 			end

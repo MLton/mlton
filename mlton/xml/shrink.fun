@@ -76,7 +76,7 @@ structure VarInfo =
 	 fn (i, n) =>
 	 case i of
 	    Mono {numOccurrences = r, ...} => inc (r, n)
-	  | _ => ()
+	  | Poly _ => ()
 
       val inc =
 	 Trace.trace2 ("VarInfo.inc", layout, Int.layout, Unit.layout) inc
@@ -90,6 +90,17 @@ structure VarInfo =
       val varExp =
 	 fn Mono {varExp, ...} => varExp
 	  | Poly x => x
+   end
+
+structure InternalVarInfo =
+   struct
+      datatype t =
+	 VarInfo of VarInfo.t
+       | Self
+
+      val layout =
+	 fn VarInfo i => VarInfo.layout i
+	  | Self => Layout.str "self"
    end
 
 structure MonoVarInfo =
@@ -136,20 +147,24 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
 		 andalso (Vector.length v
 			  = conNumCons (Pat.con (#1 (Vector.sub (v, 0)))))))
 	  | _ => false
-      val {get = varInfo: Var.t -> VarInfo.t, set = setVarInfo, ...} =
+      val {get = varInfo: Var.t -> InternalVarInfo.t, set = setVarInfo, ...} =
 	 Property.getSet (Var.plist,
 			  Property.initRaise ("shrink varInfo", Var.layout))
+      val setVarInfo =
+	 Trace.trace2 ("Xml.Shrink.setVarInfo",
+		       Var.layout, InternalVarInfo.layout, Unit.layout)
+	 setVarInfo
       val varInfo =
-	 Trace.trace ("Xml.Shrink.varInfo", Var.layout, VarInfo.layout) varInfo
+	 Trace.trace ("Xml.Shrink.varInfo", Var.layout, InternalVarInfo.layout)
+	 varInfo
       fun monoVarInfo x =
 	 case varInfo x of
-	    VarInfo.Mono i => i
+	    InternalVarInfo.VarInfo (VarInfo.Mono i) => i
 	  | _ => Error.bug "monoVarInfo"
-      fun varInfos xs = List.map (xs, varInfo)
-      fun varExpInfo (x as VarExp.T {var, targs, ...}): VarInfo.t =
-	 if Vector.isEmpty targs
-	    then varInfo var
-	 else VarInfo.Poly x
+      fun varExpInfo (x as VarExp.T {var, ...}): VarInfo.t =
+	 case varInfo var of
+	    InternalVarInfo.Self => VarInfo.Poly x
+	  | InternalVarInfo.VarInfo i => i
       val varExpInfo =
 	 Trace.trace ("varExpInfo", VarExp.layout, VarInfo.layout) varExpInfo
       fun varExpInfos xs = Vector.map (xs, varExpInfo)
@@ -157,7 +172,7 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
 		       {numOccurrences = r, ...}: MonoVarInfo.t,
 		       i: VarInfo.t): unit =
 	 (VarInfo.inc (i, !r)
-	  ; setVarInfo (x, i))
+	  ; setVarInfo (x, InternalVarInfo.VarInfo i))
       val replaceInfo =
 	 Trace.trace ("replaceInfo",
 		      fn (x, _, i) => Layout.tuple [Var.layout x,
@@ -167,16 +182,16 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
       fun replace (x, i) = replaceInfo (x, monoVarInfo x, i)
       val shrinkVarExp = VarInfo.varExp o varExpInfo
       fun shrinkVarExps xs = Vector.map (xs, shrinkVarExp)
-      val dummyVarExp = VarExp.mono (Var.newString "dummy")
       local
 	 fun handleBoundVar (x, ts, ty) =
 	    setVarInfo (x,
 			if Vector.isEmpty ts
-			   then VarInfo.Mono {numOccurrences = ref 0,
-					      value = ref NONE,
-					      varExp = VarExp.mono x}
-			else VarInfo.Poly dummyVarExp)
-	 fun handleVarExp x = VarInfo.inc (varInfo (VarExp.var x), 1)
+			   then (InternalVarInfo.VarInfo
+				 (VarInfo.Mono {numOccurrences = ref 0,
+						value = ref NONE,
+						varExp = VarExp.mono x}))
+			else InternalVarInfo.Self)
+	 fun handleVarExp x = VarInfo.inc (varExpInfo x, 1)
       in
 	 fun countExp (e: Exp.t): unit =
 	    Exp.foreach {exp = e,
@@ -186,7 +201,7 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
 			 handleVarExp = handleVarExp}
       end
       fun deleteVarExp (x: VarExp.t): unit =
-	 VarInfo.inc (varInfo (VarExp.var x), ~1)
+	 VarInfo.inc (varExpInfo x, ~1)
       fun deleteExp (e: Exp.t): unit = Exp.foreachVarExp (e, deleteVarExp)
       val deleteExp =
 	 Trace.trace ("deleteExp", Exp.layout, Unit.layout) deleteExp
@@ -197,9 +212,11 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
       fun shrinkExp arg: Exp.t =
 	 traceShrinkExp
 	 (fn (e: Exp.t) =>
-	  let val {decs, result} = Exp.dest e
-	  in Exp.new {decs = shrinkDecs decs,
-		      result = shrinkVarExp result}
+	  let
+	     val {decs, result} = Exp.dest e
+	  in
+	     Exp.make {decs = shrinkDecs decs,
+		       result = shrinkVarExp result}
 	  end) arg
       and shrinkDecs (decs: Dec.t list): Dec.t list =
 	 case decs of
@@ -275,7 +292,7 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
 		| MonoVal b =>
 		     shrinkMonoVal (b, fn () => shrinkDecs decs)
       and shrinkMonoVal ({var, ty, exp},
-			   rest: unit -> Dec.t list) =
+			 rest: unit -> Dec.t list) =
 	 let
 	    val info as {numOccurrences, value, ...} = monoVarInfo var
 	    fun finish (exp, decs) =
@@ -308,7 +325,28 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
 	       end
 	 in
 	    case exp of
-	       Case {test, cases, default} =>
+	       App {func, arg} =>
+		  let
+		     val arg = varExpInfo arg
+		     fun normal func =
+			expansive (App {func = func,
+					arg = VarInfo.varExp arg})
+		  in case varExpInfo func of
+		     VarInfo.Poly x => normal x
+		   | VarInfo.Mono {numOccurrences, value, varExp, ...} => 
+			case (!numOccurrences, !value) of
+			   (1, SOME (Value.Lambda {isInlined, lam = l})) =>
+			      let
+				 val {arg = form, body, ...} = Lambda.dest l
+			      in VarInfo.inc (arg, ~1)
+				 ; replace (form, arg)
+				 ; isInlined := true
+				 ; numOccurrences := 0
+				 ; expression body
+			      end
+			 | _ => normal varExp
+		  end
+	     | Case {test, cases, default} =>
 		  let
 		     fun match (cases, f): Dec.t list =
 			let
@@ -448,27 +486,6 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
 			   ; VarInfo.inc (x, ~1)
 			   ; rest ()
 			end
-	     | App {func, arg} =>
-		  let
-		     val arg = varExpInfo arg
-		     fun normal func =
-			expansive (App {func = func,
-					arg = VarInfo.varExp arg})
-		  in case varExpInfo func of
-		     VarInfo.Poly x => normal x
-		   | VarInfo.Mono {numOccurrences, value, varExp, ...} => 
-			case (!numOccurrences, !value) of
-			   (1, SOME (Value.Lambda {isInlined, lam = l})) =>
-			      let
-				 val {arg = form, body, ...} = Lambda.dest l
-			      in VarInfo.inc (arg, ~1)
-				 ; replace (form, arg)
-				 ; isInlined := true
-				 ; numOccurrences := 0
-				 ; expression body
-			      end
-			 | _ => normal varExp
-		  end
 	 end
       and shrinkLambda l: Lambda.t =
 	 traceShrinkLambda
@@ -476,16 +493,27 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
 	  let
 	     val {arg, argType, body} = Lambda.dest l
 	  in
-	     Lambda.new {arg = arg,
-			 argType = argType,
-			 body = shrinkExp body}
+	     Lambda.make {arg = arg,
+			  argType = argType,
+			  body = shrinkExp body}
 	  end) l
       val _ = countExp body
-      val _ = Option.app (overflow, fn x => VarInfo.inc (varInfo x, 1))
+      val _ =
+	 Option.app
+	 (overflow, fn x =>
+	  case varInfo x of
+	     InternalVarInfo.VarInfo i => VarInfo.inc (i, 1)
+	   | _ => Error.bug "strange overflow var")
       val body = shrinkExp body
+      (* Must lookup the overflow variable again because it may have been set
+       * during shrinking.
+       *)
       val overflow =
-	 Option.map (overflow, fn x =>
-		     VarExp.var (VarInfo.varExp (varInfo x)))
+	 Option.map
+	 (overflow, fn x =>
+	  case varInfo x of
+	     InternalVarInfo.VarInfo i => VarExp.var (VarInfo.varExp i)
+	   | _ => Error.bug "strange overflow var")
       val _ = Exp.clear body
       val _ = Vector.foreach (datatypes, fn {cons, ...} =>
 			      Vector.foreach (cons, Con.clear o #con))

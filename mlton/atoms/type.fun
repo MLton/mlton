@@ -33,20 +33,14 @@ structure Type =
 	    
       val record = Record
 
-      val deconOpt =
+      val deConOpt =
 	 fn Con (c, ts) => SOME (c, ts)
 	  | Record r => (case Record.detupleOpt r of
 			    NONE => NONE
 			  | SOME ts => SOME (Tycon.tuple, ts))
 	  | _ => NONE
 
-      fun toAst t =
-	 case t of
-	    Var a => Ast.Type.var a
-	  | Con (c, ts) => Ast.Type.con (Tycon.toAst c, Vector.map (ts, toAst))
-	  | Record r => Ast.Type.record (Record.map (r, toAst))
-
-      val layout = Ast.Type.layout o toAst
+      val layout = fn _ => Layout.str "<type>"
    end
 
 structure Ops = TypeOps (structure Tycon = Tycon
@@ -75,8 +69,6 @@ fun tyvars t =
 		      Tyvars.union (ac, tyvars t))
 	 
 val tyvars = Tyvars.toList o tyvars
-
-fun optionToAst z = Option.map (z, toAst)
 
 fun substitute (t, sub) =
    let

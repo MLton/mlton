@@ -5,13 +5,12 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-functor Var(S: VAR_STRUCTS): VAR = 
+functor Var (S: VAR_STRUCTS): VAR = 
 struct
 
 open S
 
-structure V = HashId(structure AstId = AstId
-		     val noname = "x")
+structure V = HashId (val noname = "x")
 open V
    
 end

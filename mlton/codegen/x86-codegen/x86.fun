@@ -570,7 +570,8 @@ struct
 	   | (Const c1, ImmedBinExp _) => LESS
 	   | (Label l1, Label l2) 
 	   => lexical [fn () => EQUAL,
-		       fn () => Label.AstId.compare(Label.toAst l1, Label.toAst l2)]
+		       fn () => String.compare (Label.toString l1,
+						Label.toString l2)]
 	   | (Label l1, ImmedUnExp _) => LESS
 	   | (Label l1, ImmedBinExp _) => LESS
 	   | (ImmedUnExp {oper = oper1, exp = exp1},

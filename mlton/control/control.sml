@@ -715,7 +715,11 @@ fun error (r: Region.t, msg: Layout.t, extra: Layout.t): unit =
    let
       val _ = Int.inc numErrors
       open Layout
-      val _ = outputl (align [seq [Region.layout r, str " Error: ", msg],
+      val p =
+	 case Region.left r of
+	    NONE => "<bogus>"
+	  | SOME p => SourcePos.toString p
+      val _ = outputl (align [seq [str "Error: ", str p, str ": ", msg],
 			      indent (extra, 3)],
 		       Out.error)
    in

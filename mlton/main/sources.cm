@@ -8,7 +8,6 @@
 Group
 
 structure Char
-structure Compile
 structure Control
 structure Date
 structure Dir
@@ -38,13 +37,16 @@ is
 ../codegen/sources.cm
 ../control/sources.cm
 ../core-ml/sources.cm
+../defunctorize/sources.cm
 ../elaborate/sources.cm
 ../front-end/sources.cm
 ../ssa/sources.cm
-../type-inference/sources.cm
 ../xml/sources.cm
 
+compile.fun
 compile.sig
-compile.sml
+lookup-constant.sig
+lookup-constant.fun
+main.fun
 main.sig
 main.sml

@@ -9,13 +9,6 @@ functor XmlTree (S: XML_TREE_STRUCTS): XML_TREE =
 struct
 
 open S
-local open Ast
-in
-   structure Adec = Dec
-   structure Aexp = Exp
-   structure Amatch = Match
-   structure Apat = Pat
-end
 
 structure Type =
    struct
@@ -32,35 +25,40 @@ structure Type =
 	  | Dest.Con x => Con x
    end
 
+fun maybeConstrain (x, t) =
+   let
+      open Layout
+   in
+      if !Control.showTypes
+	 then seq [x, str ": ", Type.layout t]
+      else x
+   end
+   
 structure Pat =
    struct
-      structure Apat = Ast.Pat
+      datatype t = T of {arg: (Var.t * Type.t) option,
+			 con: Con.t,
+			 targs: Type.t vector}
 	 
-      datatype t = T of {con: Con.t,
-			 targs: Type.t vector,
-			 arg: (Var.t * Type.t) option}
-	 
-      fun con (T {con, ...}) = con
-
-      local fun make c = T {con = c, targs = Vector.new0 (), arg = NONE}
-      in val truee = make Con.truee
-	 val falsee = make Con.falsee
+      local
+	 open Layout
+      in
+	 fun layout (T {arg, con, targs}) =
+	    seq [Con.layout con,
+		 case arg of
+		    NONE => empty
+		  | SOME (x, t) =>
+		       maybeConstrain (seq [str " ", Var.layout x], t)]
       end
 
-      fun toAst (T {con, arg, ...}) =
-	 let
-	    val con = Con.toAst con
-	 in
-	    case arg of
-	       NONE => Apat.con con
-	     | SOME (x, t) =>
-		  if !Control.showTypes
-		     then Apat.app (con, Apat.constraint (Apat.var (Var.toAst x),
-							  Type.toAst t))
-		  else Apat.app (con, Apat.var (Var.toAst x))
-	 end
+      fun con (T {con, ...}) = con
 
-      val layout = Apat.layout o toAst
+      local
+	 fun make c = T {con = c, targs = Vector.new0 (), arg = NONE}
+      in 
+	 val falsee = make Con.falsee
+	 val truee = make Con.truee
+      end
    end
 
 structure Cases =
@@ -69,6 +67,20 @@ structure Cases =
 	 Con of (Pat.t * 'a) vector
        | Int of IntSize.t * (IntX.t * 'a) vector
        | Word of WordSize.t * (WordX.t * 'a) vector
+
+      fun layout (cs, layout) =
+	 let
+	    open Layout
+	    fun doit (v, f) =
+	       align (Vector.toListMap (v, fn (x, e) =>
+					align [seq [f x, str " => "],
+					       indent (layout e, 3)]))
+	 in
+	    case cs of
+	       Con v => doit (v, Pat.layout)
+	     | Int (_, v) => doit (v, IntX.layout)
+	     | Word (_, v) => doit (v, WordX.layout)
+	 end
 
       fun fold (c: 'a t, b: 'b, f: 'a * 'b -> 'b): 'b =
 	 let
@@ -115,14 +127,10 @@ structure Cases =
 	 end
    end
 
-(*---------------------------------------------------*)
-(*                      VarExp                       *)
-(*---------------------------------------------------*)
-
 structure VarExp =
    struct
-      datatype t = T of {var: Var.t,
-			 targs: Type.t vector}
+      datatype t = T of {targs: Type.t vector,
+			 var: Var.t}
 
       fun mono var = T {var = var, targs = Vector.new0 ()}
 
@@ -133,10 +141,6 @@ structure VarExp =
 	 val var = make #var
       end
    
-      val toAst = Aexp.var o Var.toAst o var
-
-      fun toAsts (xs: t list): Aexp.t list = List.map (xs, toAst)
-
       fun layout (T {var, targs, ...}) =
 	 if !Control.showTypes
 	    then let open Layout
@@ -170,9 +174,9 @@ and primExp =
 	       catch: Var.t * Type.t,
 	       handler: exp}
   | Lambda of lambda
-  | PrimApp of {prim: Prim.t,
-		targs: Type.t vector,
-		args: VarExp.t vector}
+  | PrimApp of {args: VarExp.t vector,
+		prim: Prim.t,
+		targs: Type.t vector}
   | Profile of ProfileExp.t
   | Raise of {exn: VarExp.t,
 	      filePos: string option}
@@ -181,190 +185,134 @@ and primExp =
   | Tuple of VarExp.t vector
   | Var of VarExp.t
 and dec =
-   Exception of {con: Con.t,
-		 arg: Type.t option}
-  | Fun of {tyvars: Tyvar.t vector,
-	    decs: {var: Var.t,
+   Exception of {arg: Type.t option,
+		 con: Con.t}
+  | Fun of {decs: {lambda: lambda,
 		   ty: Type.t,
-		   lambda: lambda} vector}
-  | MonoVal of {var: Var.t,
-	       ty: Type.t,
-	       exp: primExp}
-  | PolyVal of {tyvars: Tyvar.t vector,
+		   var: Var.t} vector,
+	    tyvars: Tyvar.t vector}
+  | MonoVal of {exp: primExp,
 		ty: Type.t,
-		var: Var.t,
-		exp: exp}
+		var: Var.t}
+  | PolyVal of {exp: exp,
+		ty: Type.t,
+		tyvars: Tyvar.t vector,
+		var: Var.t}
 and lambda = Lam of {arg: Var.t,
 		     argType: Type.t,
 		     body: exp,
 		     plist: PropertyList.t}
 
-(*---------------------------------------------------*)
-(*                 Conversion to Ast                 *)
-(*---------------------------------------------------*)
-
-fun expToAst (Exp {decs, result, ...}): Aexp.t =
-   Aexp.lett (decsToAst decs, VarExp.toAst result)
-and expsToAsts es = List.map (es, expToAst)
-and decsToAst decs = Vector.fromListMap (decs, decToAst)
-and decToAst d : Adec.t =
-   let
-      fun doit n = Adec.makeRegion (n, Region.bogus)
-   in
+local
+   open Layout
+in
+   fun layoutConArg {arg, con} =
+      seq [Con.layout con,
+	   case arg of
+	      NONE => empty
+	    | SOME t => seq [str " of ", Type.layout t]]
+   fun layoutTyvars ts =
+      case Vector.length ts of
+	 0 => empty
+       | 1 => seq [str " ", Tyvar.layout (Vector.sub (ts, 0))]
+       | _ => seq [str " ", tuple (Vector.toListMap (ts, Tyvar.layout))]
+   fun layoutDec d =
       case d of
-	 MonoVal {var, ty, exp} =>
-	    doit
-	    (Adec.Val
-	     {tyvars = Vector.new0 (),
-	      vbs = (Vector.new1
-		     {filePos = "",
-		      exp = primExpToAst exp,
-		      pat = if !Control.showTypes
-			       then Apat.constraint (Apat.var (Var.toAst var),
-						     Type.toAst ty)
-			    else  Apat.var (Var.toAst var)}),
-	      rvbs = Vector.new0 ()})
-       | PolyVal {tyvars, var, exp, ...} =>
-	    Adec.vall (tyvars, Var.toAst var, expToAst exp)
-       | Fun {tyvars, decs} =>
-	    doit
-	    (Adec.Fun
-	     (tyvars,
-	      Vector.map
-	      (decs, fn {var, ty, lambda = Lam {arg, argType, body, ...}, ...} =>
-	       {filePos = "",
-		clauses =
-		Vector.new1
-		{pats = (Vector.new2
-			 (Apat.var (Var.toAst var),
-			  if !Control.showTypes
-			     then Apat.constraint (Apat.var (Var.toAst arg),
-						   Type.toAst argType)
-			  else Apat.var (Var.toAst arg))),
-		 resultType = SOME (Type.toAst (#2 (Type.dearrow ty))),
-		 body = expToAst body}})))
-       | Exception {con, arg} =>
-	    Adec.exceptionn (Con.toAst con, Type.optionToAst arg)
-   end
-and primExpToAst e : Aexp.t =
-   case e of
-      App {func, arg} => Aexp.app (VarExp.toAst func, VarExp.toAst arg)
-    | Case {test, cases, default, ...} =>
-	 let
-	    fun doit (l, f) =
-	       Vector.map (l, fn (i, exp) => (f i, expToAst exp))
-	    datatype z = datatype Cases.t
-	    val make =
-	       fn n => Ast.Pat.const (Ast.Const.makeRegion (n, Region.bogus))
-	    val cases =
-	       case cases of
-		  Con l => Vector.map (l, fn (pat, exp) =>
-				       (Pat.toAst pat, expToAst exp))
-		| Int (_, l) => doit (l, make o Ast.Const.Int o IntX.toIntInf)
-		| Word (_, l) => doit (l, make o Ast.Const.Word o WordX.toIntInf)
-	    val cases =
-	       case default of
-		  NONE => cases
-		| SOME (e, _) =>
-		     Vector.concat [cases,
-				    Vector.new1 (Ast.Pat.wild, expToAst e)]
-	 in
-	    Aexp.casee (VarExp.toAst test,
-			Amatch.T {rules = cases,
-				  filePos = ""})
-	 end
-    | ConApp {con, arg, ...} =>
-	 let val con = Aexp.con (Con.toAst con)
-	 in case arg of
-	    NONE => con
-	  | SOME e => Aexp.app (con, VarExp.toAst e)
-	 end
-    | Const c => Const.toAstExp c
-    | Handle {try, catch, handler} =>
-	 Aexp.handlee
-	 (expToAst try,
-	  Amatch.T {filePos = "",
-		    rules = Vector.new1 (Apat.var (Var.toAst (#1 catch)),
-					 expToAst handler)})
-    | Lambda lambda => Aexp.fnn (lambdaToAst lambda)
-    | PrimApp {prim, args, ...} =>
-	 let
-	    val p = Aexp.longvid (Ast.Longvid.short
-				  (Ast.Longvid.Id.fromString
-				   (Prim.toString prim,
-				    Region.bogus)))
-	 in
-	    case Prim.numArgs prim of
-	       NONE => p
-	     | SOME _ => Aexp.app (p, Aexp.tuple (Vector.map
-						  (args, VarExp.toAst)))
-	 end
-    | Profile s =>
-	 let
-	    val (oper, si) =
-	       case s of
-		  ProfileExp.Enter si => ("ProfileEnter", si)
-		| ProfileExp.Leave si => ("ProfileLeave", si)
-	 in
-	    Aexp.app
-	    (Aexp.var (Ast.Var.fromString (oper, Region.bogus)),
-	     Aexp.const (Ast.Const.makeRegion
-			 (Ast.Const.String (SourceInfo.toString si),
-			  Region.bogus)))
-	 end
-    | Raise {exn, filePos} =>
-	 Aexp.raisee {exn = VarExp.toAst exn,
-		      filePos = (case filePos of
-				    NONE => ""
-				  | SOME s => s)}
-    | Select {tuple, offset} =>
-	 Aexp.select {tuple = VarExp.toAst tuple,
-		      offset = offset}
-    | Tuple xs => Aexp.tuple (Vector.map (xs, VarExp.toAst))
-    | Var x => VarExp.toAst x
-
-and lambdaToAst (Lam {arg, body, argType, ...}): Amatch.t =
-   Amatch.T
-   {filePos = "",
-    rules = Vector.new1 ((if !Control.showTypes
-			     then Apat.constraint (Apat.var (Var.toAst arg),
-						   Type.toAst argType)
-			  else Apat.var (Var.toAst arg), 
-			     expToAst body))}
-
-fun layoutLambda f = Aexp.layout (Aexp.fnn (lambdaToAst f))
-
-(*---------------------------------------------------*)
-(*                   Declarations                    *)
-(*---------------------------------------------------*)
+	 Exception ca =>
+	    seq [str "exception ", layoutConArg ca]
+       | Fun {decs, tyvars} =>
+	    align [seq [str "val rec", layoutTyvars tyvars, str " "],
+		   indent (align (Vector.toListMap
+				  (decs, fn {lambda, ty, var} =>
+				   align [seq [maybeConstrain (Var.layout var, ty),
+					       str " = "],
+					  indent (layoutLambda lambda, 3)])),
+			   3)]
+       | MonoVal {exp, ty, var} =>
+	    align [seq [str "val ",
+			maybeConstrain (Var.layout var, ty), str " = "],
+		   indent (layoutPrimExp exp, 3)]
+       | PolyVal {exp, ty, tyvars, var} =>
+	    align [seq [str "val",
+			if !Control.showTypes
+			   then layoutTyvars tyvars
+			else empty,
+			   str " ",
+			   maybeConstrain (Var.layout var, ty),
+			   str " = "],
+		   indent (layoutExp exp, 3)]
+   and layoutExp (Exp {decs, result}) =
+      align [str "let",
+	     indent (align (List.map (decs, layoutDec)), 3),
+	     str "in",
+	     indent (VarExp.layout result, 3),
+	     str "end"]
+   and layoutPrimExp e =
+      case e of
+	 App {arg, func} => seq [VarExp.layout func, str " ", VarExp.layout arg]
+       | Case {test, cases, default} =>
+	    align [seq [str "case ", VarExp.layout test, str " of"],
+		   indent
+		   (align
+		    [case default of
+			NONE => empty
+		      | SOME (e, _) => seq [str "_ => ", layoutExp e]],
+		    2),
+		   Cases.layout (cases, layoutExp)]
+       | ConApp {arg, con, ...} =>
+	    seq [Con.layout con,
+		 case arg of
+		    NONE => empty
+		  | SOME x => seq [str " ", VarExp.layout x]]
+       | Const c => Const.layout c
+       | Handle {catch, handler, try} =>
+	    align [layoutExp try,
+		   seq [str "handle ",
+			Var.layout (#1 catch),
+			str " => ", layoutExp handler]]
+       | Lambda l => layoutLambda l
+       | PrimApp {args, prim, targs} =>
+	    seq [Prim.layout prim,
+		 if !Control.showTypes
+		    andalso 0 < Vector.length targs
+		    then list (Vector.toListMap (targs, Type.layout))
+		 else empty,
+		 str " ", tuple (Vector.toListMap (args, VarExp.layout))]
+       | Profile e => ProfileExp.layout e
+       | Raise {exn, ...} => seq [str "raise ", VarExp.layout exn]
+       | Select {offset, tuple} =>
+	    seq [str "#", Int.layout offset, str " ", VarExp.layout tuple]
+       | Tuple xs => tuple (Vector.toListMap (xs, VarExp.layout))
+       | Var x => VarExp.layout x
+   and layoutLambda (Lam {arg, argType, body, ...}) =
+      align [seq [str "fn ", maybeConstrain (Var.layout arg, argType),
+		  str " => "],
+	     layoutExp body]
+	    
+end   
 
 structure Dec =
    struct
       type exp = exp
       datatype t = datatype dec
 
-      val toAst = decToAst
-      val layout = Ast.Dec.layout o toAst
+      val layout = layoutDec
    end
-
-(*---------------------------------------------------*)
-(*                    Expressions                    *)
-(*---------------------------------------------------*)
 
 structure PrimExp =
    struct
       type exp = exp
       datatype t = datatype primExp
 
-      val toAst = primExpToAst
-      val layout = Aexp.layout o toAst
+      val layout = layoutPrimExp
    end
 
 structure Exp =
    struct
       datatype t = datatype exp
 
-      val new = Exp
+      val layout = layoutExp
+      val make = Exp
       fun dest (Exp r) = r
       val decs = #decs o dest
       val result = #result o dest
@@ -383,9 +331,6 @@ structure Exp =
 	 val prefixs = make (op @)
       end
 
-      val toAst = expToAst
-      val layout = Ast.Exp.layout o toAst
-
       fun enterLeave (e: t, ty: Type.t, si: SourceInfo.t): t =
 	 if !Control.profile = Control.ProfileNone
 	    orelse !Control.profileIL <> Control.ProfileSource
@@ -401,18 +346,18 @@ structure Exp =
 	    val exn = Var.newNoname ()
 	    val res = Var.newNoname ()
 	    val handler =
-	       new {decs = [prof ProfileExp.Leave,
-			    MonoVal {exp = Raise {exn = VarExp.mono exn,
-						  filePos = NONE},
-				     ty = ty,
-				     var = res}],
-		    result = VarExp.mono res}
+	       make {decs = [prof ProfileExp.Leave,
+			     MonoVal {exp = Raise {exn = VarExp.mono exn,
+						   filePos = NONE},
+				      ty = ty,
+				      var = res}],
+		     result = VarExp.mono res}
 	    val {decs, result} = dest e
 	    val decs =
 	       List.concat [[prof ProfileExp.Enter],
 			    decs,
 			    [prof ProfileExp.Leave]]
-	    val try = new {decs = decs, result = result}
+	    val try = make {decs = decs, result = result}
 	 in
 	    fromPrimExp (Handle {catch = (exn, Type.exn),
 				 handler = handler,
@@ -589,7 +534,7 @@ structure Lambda =
 	 val body = make #body
       end
 
-      fun new {arg, argType, body} =
+      fun make {arg, argType, body} =
 	 Lam {arg = arg,
 	      argType = argType,
 	      body = body,
@@ -750,8 +695,10 @@ structure DirectExp =
 
       fun deref (e: t): t =
 	 convert (e, fn (x, t) =>
-		  let val t = Type.deref t
-		  in (PrimApp {prim = Prim.deref,
+		  let
+		     val t = Type.deRef t
+		  in
+		     (PrimApp {prim = Prim.deref,
 			       targs = Vector.new1 t,
 			       args = Vector.new1 x},
 		      t)
@@ -797,9 +744,9 @@ structure DirectExp =
 			   Dec.MonoVal {var = var, ty = ty, exp = exp}))
 	 
       fun lambda {arg, argType, body, bodyType} =
-	 simple (Lambda (Lambda.new {arg = arg,
-				     argType = argType,
-				     body = toExp body}),
+	 simple (Lambda (Lambda.make {arg = arg,
+				      argType = argType,
+				      body = toExp body}),
 		 Type.arrow (argType, bodyType))
       
       fun detupleGen (e: PrimExp.t,
@@ -813,7 +760,7 @@ structure DirectExp =
 	   | 1 => [MonoVal {var = Vector.sub (components, 0), ty = t, exp = e}]
 	   | _ =>
 		let
-		   val ts = Type.detuple t
+		   val ts = Type.deTuple t
 		   val tupleVar = Var.newNoname ()
 		in MonoVal {var = tupleVar, ty = t, exp = e}
 		   ::
@@ -835,17 +782,20 @@ structure DirectExp =
 	 tuple
 	 (fn (e, t) =>
 	  let
-	     val ts = Type.detuple t
-	  in case e of
-	     Tuple xs => send (body (Vector.zip (xs, ts)), k)
-	   | _ => let
-		     val components = Vector.map (ts, fn _ => Var.newNoname ())
-		  in detupleGen (e, t, components,
-				 send (body (Vector.map2
-					     (components, ts, fn (x, t) =>
-					      (VarExp.mono x, t))),
-				       k))
-		  end
+	     val ts = Type.deTuple t
+	  in
+	     case e of
+		Tuple xs => send (body (Vector.zip (xs, ts)), k)
+	      | _ => let
+			val components =
+			   Vector.map (ts, fn _ => Var.newNoname ())
+		     in
+			detupleGen (e, t, components,
+				    send (body (Vector.map2
+						(components, ts, fn (x, t) =>
+						 (VarExp.mono x, t))),
+					  k))
+		     end
 	  end)
    end
 
@@ -865,16 +815,20 @@ structure Exp =
 
 structure Datatype =
    struct
-      type t = {tycon: Tycon.t,
-		tyvars: Tyvar.t vector,
-		cons: {con: Con.t,
-		       arg: Type.t option} vector}
+      type t = {cons: {arg: Type.t option,
+		       con: Con.t} vector,
+		tycon: Tycon.t,
+		tyvars: Tyvar.t vector}
 
-      fun toAst ({tyvars, tycon, cons}:t) =
-	 {tyvars = tyvars,
-	  tycon = Tycon.toAst tycon,
-	  cons = Vector.map (cons, fn {con, arg} =>
-			     (Con.toAst con, Type.optionToAst arg))}
+      fun layout ({cons, tycon, tyvars}: t): Layout.t =
+	 let
+	    open Layout
+	 in
+	    seq [layoutTyvars tyvars, str " ", Tycon.layout tycon, str " = ",
+		 align
+		 (separateLeft (Vector.toListMap (cons, layoutConArg),
+				"| "))]
+	 end
    end
 
 (*---------------------------------------------------*)
@@ -883,31 +837,21 @@ structure Datatype =
 
 structure Program =
    struct
-      datatype t = T of {datatypes: Datatype.t vector,
-			 body: Exp.t,
+      datatype t = T of {body: Exp.t,
+			 datatypes: Datatype.t vector,
 			 overflow: Var.t option}
 
       fun size (T {body, ...}) = Exp.size body
 
-      fun toAst (T {datatypes, body, ...}) =
-	 let
-	    val body = Exp.toAst body
-	 in
-	    if Vector.isEmpty datatypes
-	       then body
-	    else
-	       Aexp.lett (Vector.new1
-			  (Adec.datatypee (Vector.map
-					   (datatypes, Datatype.toAst))),
-			  body)
-	 end
-
-      fun layout (p as T {overflow, ...}) =
+      fun layout (p as T {body, datatypes, overflow, ...}) =
 	 let
 	    open Layout
 	 in
 	    align [seq [str "Overflow: ", Option.layout Var.layout overflow],
-		   Ast.Exp.layout (toAst p)]
+		   str "Datatypes:",
+		   align (Vector.toListMap (datatypes, Datatype.layout)),
+		   str "Body:",
+		   Exp.layout body]
 	 end
 
       fun clear (T {datatypes, body, ...}) =

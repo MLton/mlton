@@ -18,9 +18,9 @@ structure FlatPat =
       datatype t =
 	 Any
        | Const of Const.t
-       | Con of {con: Con.t,
-		 targs: Type.t vector,
-		 arg: NestedPat.t option}
+       | Con of {arg: NestedPat.t option,
+		 con: Con.t,
+		 targs: Type.t vector}
        | Tuple of NestedPat.t vector
 
       fun layout p =
@@ -51,15 +51,15 @@ structure FlatPat =
 	    fun extend x = Env.extend (env, x, var)
 	 in
 	    case NestedPat.node pat of
-	       NestedPat.Wild => (Any, env)
-	     | NestedPat.Var x => (Any, extend x)
-	     | NestedPat.Layered (x, p) => flatten (var, p, extend x)
+	       NestedPat.Con x => (Con x, env)
 	     | NestedPat.Const c => (Const c, env)
-	     | NestedPat.Con x => (Con x, env)
+	     | NestedPat.Layered (x, p) => flatten (var, p, extend x)
 	     | NestedPat.Tuple ps =>
 		  if 1 = Vector.length ps
 		     then flatten (var, Vector.sub (ps, 0), env)
 		  else (Tuple ps, env)
+	     | NestedPat.Var x => (Any, extend x)
+	     | NestedPat.Wild => (Any, env)
 	 end
 
       fun flattens (vars: Var.t vector,

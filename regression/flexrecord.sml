@@ -83,16 +83,13 @@ val _ =
 (* flexrecord7 *)
 
 (* flexrecord8 *)
-val f = #foo
-val g = (fn x => x) f
-val _ = f {foo=0, bar=1}
-(* flexrecord8 *)
-
-(* flexrecord9 *)
-structure S =
-   struct
+val _ =
+   fn _ =>
+   let
       val f = #foo
+      val g = (fn x => x) f
+      val _ = f {foo=0, bar=1}
+   in
+      ()
    end
-
-val _ = S.f {foo=1, goo=2}
-(* flexrecord9 *)
+(* flexrecord8 *)

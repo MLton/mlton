@@ -5,8 +5,16 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+type int = Int.t
+
+signature COMPILE_STRUCTS =
+   sig
+   end
+
 signature COMPILE =
    sig
+      include COMPILE_STRUCTS
+	 
       val compile: {input: File.t list,
 		    outputC: unit -> {file: File.t,
 				      print: string -> unit,

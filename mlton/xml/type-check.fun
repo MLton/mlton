@@ -58,8 +58,8 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 	 end
       val {get = getVar: Var.t -> {tyvars: Tyvar.t vector, ty: Type.t},
 	   set = setVar, ...} =
-	 Property.getSetOnce (Var.plist,
-			      Property.initRaise ("var scheme", Var.layout))
+	 Property.getSet (Var.plist,
+			  Property.initRaise ("var scheme", Var.layout))
       (* val getVar = Trace.trace ("getVar", Var.layout, Layout.ignore) getVar *)
       (* val setVar = Trace.trace2 ("setVar", Var.layout, Layout.ignore, Layout.ignore) setVar *)
       fun checkVarExp (VarExp.T {var, targs}): Type.t =
@@ -83,7 +83,7 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 	 let
 	    val t = checkConExp (con, targs)
 	 in
-	    case (arg, Type.dearrowOpt t) of
+	    case (arg, Type.deArrowOpt t) of
 	         (NONE, NONE) => t
 	       | (SOME (x, ty), SOME (t1, t2)) =>
 		    (checkType ty
@@ -93,8 +93,8 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 		       else (Type.error
 			     ("argument constraint of wrong type",
 			      let open Layout
-			      in align [seq [str "t1: ", Type.layout t1],
-					seq [str "ty: ", Type.layout ty],
+			      in align [seq [str "constructor expects : ", Type.layout t1],
+					seq [str "but got: ", Type.layout ty],
 					seq [str "p: ", Pat.layout p]]
 			      end)))
 	       | _ => Type.error ("constructor pattern mismatch", Pat.layout p)
@@ -139,7 +139,7 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 	       let
 		  val t2 = checkVarExp x
 	       in
-		  case Type.dearrowOpt t1 of
+		  case Type.deArrowOpt t1 of
 		     NONE => error "function not of arrow type"
 		   | SOME (t2', t3) =>
 			if Type.equals (t2, t2') then t3
@@ -224,30 +224,20 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 		     else error "bad handle"
 		  end
 	     | Lambda l => checkLambda l
-	     | PrimApp {prim, targs, args} =>
+	     | PrimApp {prim, targs, args} => 
 		  let
 		     val _ = checkTypes targs
 		  in
-		     case Prim.checkApp {prim = prim,
-					 targs = targs,
-					 args = checkVarExps args,
-					 con = Type.con,
-					 equals = Type.equals,
-					 dearrowOpt = Type.dearrowOpt,
-					 detupleOpt = Type.detupleOpt,
-					 isUnit = Type.isUnit
-					 } of
-			NONE => error "bad primapp"
-		      | SOME t => t
+		     ty
 		  end
 	     | Profile _ => Type.unit
 	     | Raise {exn, ...} => if isExnType (checkVarExp exn)
 				      then ty
 				   else error "bad raise"
 	     | Select {tuple, offset} =>
-		  (case Type.detupleOpt (checkVarExp tuple) of
-		      SOME ts => Vector.sub (ts, offset)
-		    | NONE => error "selection from nontuple")
+		  (case Type.deTupleOpt (checkVarExp tuple) of
+		      NONE => error "selection from nontuple"
+		    | SOME ts => Vector.sub (ts, offset))
 	     | Tuple xs =>
 		  if 1 = Vector.length xs
 		     then error "unary tuple"
@@ -268,6 +258,15 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 	 in
 	    case d of
 	       Exception c => setCon (c, Vector.new0 (), Type.exn)
+	     | Fun {tyvars, decs} =>
+		  (bindTyvars tyvars
+		   ; (Vector.foreach
+		      (decs, fn {lambda, ty, var} =>
+		       (checkType ty
+			; setVar (var, {tyvars = tyvars, ty = ty}))))
+		   ; Vector.foreach (decs, fn {ty, lambda, ...} =>
+				     check (ty, checkLambda lambda))
+		   ; unbindTyvars tyvars)
 	     | MonoVal {var, ty, exp} =>
 		  (checkType ty
 		   ; check (ty, checkPrimExp (exp, ty))
@@ -278,15 +277,6 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 		   ; check (ty, checkExp exp)
 		   ; unbindTyvars tyvars
 		   ; setVar (var, {tyvars = tyvars, ty = ty}))
-	     | Fun {tyvars, decs} =>
-		  (bindTyvars tyvars
-		   ; (Vector.foreach
-		      (decs, fn {var, ty, lambda} =>
-		       (checkType ty
-			; setVar (var, {tyvars = tyvars, ty = ty}))))
-		   ; Vector.foreach (decs, fn {ty, lambda, ...} =>
-				     check (ty, checkLambda lambda))
-		   ; unbindTyvars tyvars)
 	 end handle e => (Layout.outputl (Dec.layout d, Out.error)
 			  ; raise e)
       val _ =

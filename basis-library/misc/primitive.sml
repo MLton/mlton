@@ -13,6 +13,10 @@
  * script produces type-correct SML code.
  *)
 
+infix 4 = <> > >= < <=
+
+val op = = fn z => _prim "MLton_equal": 'a * 'a -> bool; z
+
 type 'a array = 'a array
 structure Bool =
    struct
@@ -170,10 +174,10 @@ structure Primitive =
 
       structure Char =
 	 struct
-	    val < = _prim "Char_lt": char * char -> bool;
-	    val <= = _prim "Char_le": char * char -> bool;
-	    val > = _prim "Char_gt": char * char -> bool;
-	    val >= = _prim "Char_ge": char * char -> bool;
+	    val op < = _prim "Char_lt": char * char -> bool;
+	    val op <= = _prim "Char_le": char * char -> bool;
+	    val op > = _prim "Char_gt": char * char -> bool;
+	    val op >= = _prim "Char_ge": char * char -> bool;
 	    val chr = _prim "Char_chr": int -> char;
 	    val ord = _prim "Char_ord": char -> int;
 	    val toWord8 = _prim "Char_toWord8": char -> Word8.word;
@@ -317,10 +321,10 @@ structure Primitive =
 	       if detectOverflow
 		  then _prim "Int8_subCheck": int * int -> int;
 	       else -?
-	    val < = _prim "Int8_lt": int * int -> bool;
-	    val <= = _prim "Int8_le": int * int -> bool;
-	    val > = _prim "Int8_gt": int * int -> bool;
-	    val >= = _prim "Int8_ge": int * int -> bool;
+	    val op < = _prim "Int8_lt": int * int -> bool;
+	    val op <= = _prim "Int8_le": int * int -> bool;
+	    val op > = _prim "Int8_gt": int * int -> bool;
+	    val op >= = _prim "Int8_ge": int * int -> bool;
 	    val quot = _prim "Int8_quot": int * int -> int;
 	    val rem = _prim "Int8_rem": int * int -> int;
 	    val ~? = _prim "Int8_neg": int -> int; 
@@ -354,10 +358,10 @@ structure Primitive =
 	       if detectOverflow
 		  then _prim "Int16_subCheck": int * int -> int;
 	       else -?
-	    val < = _prim "Int16_lt": int * int -> bool;
-	    val <= = _prim "Int16_le": int * int -> bool;
-	    val > = _prim "Int16_gt": int * int -> bool;
-	    val >= = _prim "Int16_ge": int * int -> bool;
+	    val op < = _prim "Int16_lt": int * int -> bool;
+	    val op <= = _prim "Int16_le": int * int -> bool;
+	    val op > = _prim "Int16_gt": int * int -> bool;
+	    val op >= = _prim "Int16_ge": int * int -> bool;
 	    val quot = _prim "Int16_quot": int * int -> int;
 	    val rem = _prim "Int16_rem": int * int -> int;
 	    val ~? = _prim "Int16_neg": int -> int; 
@@ -390,10 +394,10 @@ structure Primitive =
 	       if detectOverflow
 		  then _prim "Int32_subCheck": int * int -> int;
 	       else -?
-	    val < = _prim "Int32_lt": int * int -> bool;
-	    val <= = _prim "Int32_le": int * int -> bool;
-	    val > = _prim "Int32_gt": int * int -> bool;
-	    val >= = _prim "Int32_ge": int * int -> bool;
+	    val op < = _prim "Int32_lt": int * int -> bool;
+	    val op <= = _prim "Int32_le": int * int -> bool;
+	    val op > = _prim "Int32_gt": int * int -> bool;
+	    val op >= = _prim "Int32_ge": int * int -> bool;
 	    val quot = _prim "Int32_quot": int * int -> int;
 	    val rem = _prim "Int32_rem": int * int -> int;
 	    val ~? = _prim "Int32_neg": int -> int; 
@@ -409,7 +413,6 @@ structure Primitive =
 	 struct
 	    infix 7 *?
 	    infix 6 +? -?
-	    infix 4 = <> > >= < <=
 
 	    type int = Int64.int
 
@@ -814,11 +817,11 @@ structure Primitive =
 	    val + = _prim "Real64_add": real * real -> real;
 	    val - = _prim "Real64_sub": real * real -> real;
 	    val / = _prim "Real64_div": real * real -> real;
-	    val < = _prim "Real64_lt": real * real -> bool;
-	    val <= = _prim "Real64_le": real * real -> bool;
+	    val op < = _prim "Real64_lt": real * real -> bool;
+	    val op <= = _prim "Real64_le": real * real -> bool;
 	    val == = _prim "Real64_equal": real * real -> bool;
-	    val > = _prim "Real64_gt": real * real -> bool;
-	    val >= = _prim "Real64_ge": real * real -> bool;
+	    val op > = _prim "Real64_gt": real * real -> bool;
+	    val op >= = _prim "Real64_ge": real * real -> bool;
 	    val ?= = _prim "Real64_qequal": real * real -> bool;
 	    val abs = _prim "Real64_abs": real -> real;
 	    val class = _import "Real64_class": real -> int;
@@ -908,11 +911,11 @@ structure Primitive =
 	    val + = _prim "Real32_add": real * real -> real;
 	    val - = _prim "Real32_sub": real * real -> real;
 	    val / = _prim "Real32_div": real * real -> real;
-	    val < = _prim "Real32_lt": real * real -> bool;
-	    val <= = _prim "Real32_le": real * real -> bool;
+	    val op < = _prim "Real32_lt": real * real -> bool;
+	    val op <= = _prim "Real32_le": real * real -> bool;
 	    val == = _prim "Real32_equal": real * real -> bool;
-	    val > = _prim "Real32_gt": real * real -> bool;
-	    val >= = _prim "Real32_ge": real * real -> bool;
+	    val op > = _prim "Real32_gt": real * real -> bool;
+	    val op >= = _prim "Real32_ge": real * real -> bool;
 	    val ?= = _prim "Real32_qequal": real * real -> bool;
 	    val abs = _prim "Real32_abs": real -> real;
 	    val class = _import "Real32_class": real -> int;
@@ -1180,11 +1183,11 @@ structure Primitive =
 	    val div = _prim "Word8_div": word * word -> word;
 	    val fromInt = _prim "Int32_toWord8": int -> word;
 	    val fromLarge = _import "Word64_toWord8": LargeWord.word -> word;
-	    val >= = _prim "Word8_ge": word * word -> bool;
-	    val > = _prim "Word8_gt" : word * word -> bool;
-	    val <= = _prim "Word8_le": word * word -> bool;
+	    val op >= = _prim "Word8_ge": word * word -> bool;
+	    val op > = _prim "Word8_gt" : word * word -> bool;
+	    val op <= = _prim "Word8_le": word * word -> bool;
 	    val << = _prim "Word8_lshift": word * Word.word -> word;
-	    val < = _prim "Word8_lt" : word * word -> bool;
+	    val op < = _prim "Word8_lt" : word * word -> bool;
 	    val mod = _prim "Word8_mod": word * word -> word;
 	    val * = _prim "Word8_mul": word * word -> word;
 	    val mulCheck = _prim "Word8_mulCheck": word * word -> word;
@@ -1236,11 +1239,11 @@ structure Primitive =
 	    val div = _prim "Word16_div": word * word -> word;
 	    val fromInt = _prim "Int32_toWord16": int -> word;
 	    val fromLarge = _import "Word64_toWord16": LargeWord.word -> word;
-	    val >= = _prim "Word16_ge": word * word -> bool;
-	    val > = _prim "Word16_gt" : word * word -> bool;
-	    val <= = _prim "Word16_le": word * word -> bool;
+	    val op >= = _prim "Word16_ge": word * word -> bool;
+	    val op > = _prim "Word16_gt" : word * word -> bool;
+	    val op <= = _prim "Word16_le": word * word -> bool;
 	    val << = _prim "Word16_lshift": word * Word.word -> word;
-	    val < = _prim "Word16_lt" : word * word -> bool;
+	    val op < = _prim "Word16_lt" : word * word -> bool;
 	    val mod = _prim "Word16_mod": word * word -> word;
 	    val * = _prim "Word16_mul": word * word -> word;
 	    val mulCheck = _prim "Word16_mulCheck": word * word -> word;
@@ -1270,11 +1273,11 @@ structure Primitive =
 	    val div = _prim "Word32_div": word * word -> word;
 	    val fromInt = _prim "Int32_toWord32": int -> word;
 	    val fromLarge = _import "Word64_toWord32": LargeWord.word -> word;
-	    val >= = _prim "Word32_ge": word * word -> bool;
-	    val > = _prim "Word32_gt" : word * word -> bool;
-	    val <= = _prim "Word32_le": word * word -> bool;
+	    val op >= = _prim "Word32_ge": word * word -> bool;
+	    val op > = _prim "Word32_gt" : word * word -> bool;
+	    val op <= = _prim "Word32_le": word * word -> bool;
 	    val << = _prim "Word32_lshift": word * word -> word;
-	    val < = _prim "Word32_lt" : word * word -> bool;
+	    val op < = _prim "Word32_lt" : word * word -> bool;
 	    val mod = _prim "Word32_mod": word * word -> word;
 	    val * = _prim "Word32_mul": word * word -> word;
 	    val mulCheck = _prim "Word32_mulCheck": word * word -> word;
@@ -1305,11 +1308,11 @@ structure Primitive =
 	    val div = _import "Word64_div": word * word -> word;
 	    val fromInt = _import "Int32_toWord64": int -> word;
 	    val fromLarge: LargeWord.word -> word = fn x => x
-	    val >= = _import "Word64_ge": word * word -> bool;
-	    val > = _import "Word64_gt" : word * word -> bool;
-	    val <= = _import "Word64_le": word * word -> bool;
+	    val op >= = _import "Word64_ge": word * word -> bool;
+	    val op > = _import "Word64_gt" : word * word -> bool;
+	    val op <= = _import "Word64_le": word * word -> bool;
 	    val << = _import "Word64_lshift": word * Word.word -> word;
-	    val < = _import "Word64_lt" : word * word -> bool;
+	    val op < = _import "Word64_lt" : word * word -> bool;
 	    val mod = _import "Word64_mod": word * word -> word;
 	    val * = _import "Word64_mul": word * word -> word;
 (*	    val mulCheck = _import "Word64_mulCheck": word * word -> word; *)
@@ -1345,7 +1348,7 @@ structure Primitive =
 	    open Int8
 	       
 	    local
-	       fun make f (i: int, i': int): bool =
+	       fun make f (i: Int.int, i': Int.int): bool =
 		  f (Primitive.Word8.fromInt i, Primitive.Word8.fromInt i')
 	    in
 	       val geu = make Primitive.Word8.>=
@@ -1357,7 +1360,7 @@ structure Primitive =
 	    open Int16
 	       
 	    local
-	       fun make f (i: int, i': int): bool =
+	       fun make f (i: Int.int, i': Int.int): bool =
 		  f (Primitive.Word16.fromInt i, Primitive.Word16.fromInt i')
 	    in
 	       val geu = make Primitive.Word16.>=

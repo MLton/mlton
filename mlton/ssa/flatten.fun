@@ -36,7 +36,7 @@ structure Rep =
       val isFlat = not o isTop
 
       fun fromType t =
-	 case Type.detupleOpt t of
+	 case Type.deTupleOpt t of
 	    NONE => let val r = new () in makeTop r; r end
 	  | SOME l => new ()
 
@@ -214,7 +214,7 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 	 Vector.fromList
 	 (Vector.fold2 (ts, rs, [], fn (t, r, ts) =>
 			if Rep.isFlat r
-			   then Vector.fold (Type.detuple t, ts, op ::)
+			   then Vector.fold (Type.deTuple t, ts, op ::)
 			else t :: ts))
       val datatypes =
 	 Vector.map
@@ -265,7 +265,7 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 		     (args, reps, ([], []), fn ((x, ty), r, (args, stmts)) =>
 		      if Rep.isFlat r
 			 then let
-			         val tys = Type.detuple ty
+			         val tys = Type.deTuple ty
 				 val xs = Vector.map (tys, fn _ => Var.newNoname ())
 				 val _ = varTuple x := SOME xs
 				 val args =
@@ -316,7 +316,7 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 				   let
 				      val xts =
 					 Vector.map
-					 (Type.detuple ty, fn ty =>
+					 (Type.deTuple ty, fn ty =>
 					  (Var.newNoname (), ty))
 				      val xs = Vector.map (xts, #1)
 				      val formals =
@@ -349,7 +349,7 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 					 let
 					    val xts =
 					       Vector.map
-					       (Type.detuple ty, fn ty =>
+					       (Type.deTuple ty, fn ty =>
 						(Var.newNoname (), ty))
 					    val xs = Vector.map (xts, #1)
 					    val actuals =

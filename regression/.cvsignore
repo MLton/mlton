@@ -1,3 +1,5 @@
+*.ui
+*.uo
 *.dat
 *.dot
 *.ssa

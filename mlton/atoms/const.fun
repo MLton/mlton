@@ -11,11 +11,6 @@ struct
 open S
 
 local
-   open Ast
-in
-   structure Aconst = Const
-end
-local
    open IntX
 in
    structure IntSize = IntSize
@@ -93,22 +88,6 @@ in
        | Word8Vector v => String.hash (Word8.vectorToString v)
 end
    
-fun 'a toAst (make: Ast.Const.t -> 'a, constrain: 'a * Ast.Type.t -> 'a) c =
-   let
-      val aconst =
-	 case c of
-	    Int i => Aconst.Int (IntX.toIntInf i)
-	  | IntInf i => Aconst.Int i
-	  | Real r => Aconst.Real (RealX.toString r)
-	  | Word w => Aconst.Word (WordX.toIntInf w)
-	  | Word8Vector v => Aconst.String (Word8.vectorToString v)
-   in
-      make (Ast.Const.makeRegion (aconst, Region.bogus))
-   end
-
-val toAstExp = toAst (Ast.Exp.const, Ast.Exp.constraint)
-val toAstPat = toAst (Ast.Pat.const, Ast.Pat.constraint)
-
 fun equals (c, c') =
    case (c, c') of
       (Int i, Int i') => IntX.equals (i, i')

@@ -1148,10 +1148,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				    (case targ () of
 					NONE => none ()
 				      | SOME ty => arrayUpdate ty)
-			       | FFI f =>
-				    if Option.isNone (Prim.numArgs prim)
-				       then normal ()
-				    else simpleCCall f
+			       | FFI f => simpleCCall f
 			       | FFI_getPointer =>
 				    simpleCCall CFunction.getPointer
 			       | FFI_setPointer =>

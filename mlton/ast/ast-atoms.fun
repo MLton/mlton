@@ -5,7 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-functor AstAtoms (S: AST_ATOMS_STRUCTS) :> AST_ATOMS = 
+functor AstAtoms (S: AST_ATOMS_STRUCTS): AST_ATOMS = 
 struct
 
 open S
@@ -15,6 +15,8 @@ structure IntSize = IntSize ()
 structure RealSize = RealSize ()
 structure WordSize = WordSize ()
 
+structure Kind = TyconKind ()
+
 structure Tycon =
    struct
       structure Id = AstId (val className = "tycon")
@@ -22,10 +24,11 @@ structure Tycon =
 
       structure P =
 	 PrimTycons (structure IntSize = IntSize
+		     structure Kind = Kind
 		     structure RealSize = RealSize
 		     structure WordSize = WordSize
 		     open Id
-		     val fromString = fn s => fromString (s, Region.bogus))
+		     fun fromString s = Id.fromString (s, Region.bogus))
       open P
    end
 

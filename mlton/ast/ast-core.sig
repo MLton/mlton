@@ -54,7 +54,7 @@ signature AST_CORE =
 			   fixop: Fixop.t,
 			   pat: t,
 			   var: Var.t}
-	     | List of t list
+	     | List of t vector
 	     | Record of {flexible: bool,
 			  items: Item.t vector}
 	     | Tuple of t vector
@@ -113,13 +113,12 @@ signature AST_CORE =
 	     | Handle of t * match
 	     | If of t * t * t
 	     | Let of dec * t
-	     | List of t list
+	     | List of t vector
 	     | Orelse of t * t
 	     | Prim of {kind: PrimKind.t,
 			name: string,
 			ty: Type.t}
-	     | Raise of {exn: t,
-			 filePos: string}
+	     | Raise of t
 	     | Record of t Record.t
 	     | Selector of Record.Field.t
 	     | Seq of t vector
@@ -136,13 +135,13 @@ signature AST_CORE =
 	    val con: Con.t -> t
 	    val const: Const.t -> t
 	    val constraint: t * Type.t -> t
-	    val fnn: match -> t
+	    val fnn: (Pat.t * t) vector -> t
 	    val handlee: t * match -> t
 	    val iff: t * t * t -> t
 	    val layout: t -> Layout.t
 	    val lett: dec vector * t -> t
 	    val longvid: Longvid.t -> t
-	    val raisee: {exn: t, filePos: string} -> t
+	    val raisee: t -> t
 	    val record: t Record.t -> t
 	    val select: {tuple: t, offset: int} -> t
 	    val seq: t vector -> t
@@ -153,8 +152,11 @@ signature AST_CORE =
 
       structure Match:
 	 sig
-	    datatype t = T of {filePos: string,
-			       rules: (Pat.t * Exp.t) vector}
+	    type t
+	    datatype node = T of (Pat.t * Exp.t) vector
+	    include WRAPPED
+	    sharing type node' = node
+            sharing type obj = t
 	 end where type t = Exp.match
       
       structure EbRhs:
@@ -177,20 +179,18 @@ signature AST_CORE =
 	     | Exception of (Con.t * EbRhs.t) vector
 	     | Fix of {fixity: Fixity.t,
 		       ops: Vid.t vector}
-	     | Fun of Tyvar.t vector * {clauses: {pats: Pat.t vector,
-						  resultType: Type.t option,
-						  body: Exp.t} vector,
-					filePos: string} vector
+	     | Fun of Tyvar.t vector * {pats: Pat.t vector,
+					resultType: Type.t option,
+					body: Exp.t} vector vector
 	     | Local of t * t
 	     | Open of Longstrid.t vector
-	     | Overload of Var.t * Type.t * Longvar.t vector
+	     | Overload of Var.t * Tyvar.t vector * Type.t * Longvar.t vector
 	     | SeqDec of t vector
 	     | Type of TypBind.t
 	     | Val of {rvbs: {match: Match.t,
 			      pat: Pat.t} vector,
 		       tyvars: Tyvar.t vector,
 		       vbs: {exp: Exp.t,
-			     filePos: string,
 			     pat: Pat.t} vector}
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t
@@ -201,15 +201,9 @@ signature AST_CORE =
             val empty: t
 	    val exceptionn: Con.t * Type.t option -> t
 	    val fromExp: Exp.t -> t
-	    val funn: Tyvar.t vector * {var: Var.t,
-					match: Match.t,
-					resultTy: Type.t option} vector -> t
 	    val layout: t -> Layout.t
 	    val openn: Longstrid.t vector -> t
 	    val vall: Tyvar.t vector * Var.t * Exp.t -> t
 	 end
       sharing type Dec.t = Exp.dec
-
-      val layoutLet: Layout.t * Layout.t -> Layout.t
-      val layoutLocal: Layout.t * Layout.t -> Layout.t
    end

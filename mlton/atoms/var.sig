@@ -7,7 +7,6 @@
  *)
 signature VAR_STRUCTS =
    sig
-      structure AstId: AST_ID
    end
 
 signature VAR =

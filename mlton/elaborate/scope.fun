@@ -177,8 +177,7 @@ fun ('down, 'up)
 				      fixop = fixop,
 				      pat = pat,
 				      var = var})
-		   | List ps => do1 (loops (Vector.fromList ps, loop),
-				     fn ps => List (Vector.toList ps))
+		   | List ps => do1 (loops (ps, loop), List)
 		   | Record {flexible, items} =>
 			let
 			   val (items, u) =
@@ -298,7 +297,7 @@ fun ('down, 'up)
 		  let
 		     val (down, finish) = bind' (down, tyvars)
 		     val (decs, u) =
-			loops (decs, fn {clauses, filePos} =>
+			loops (decs, fn clauses =>
 			       let
 				  val (clauses, u) =
 				     loops
@@ -317,9 +316,7 @@ fun ('down, 'up)
 					  combineUp (u, combineUp (u', u'')))
 				      end)
 				 in
-				    ({clauses = clauses,
-				      filePos = filePos},
-				     u)
+				    (clauses, u)
 				 end)
 		     val (tyvars, u) = finish u
 		  in
@@ -328,7 +325,14 @@ fun ('down, 'up)
 	     | Local (d, d') =>
 		  do2 (loopDec (d, down), loopDec (d', down), Local)
 	     | Open _ => empty ()
-	     | Overload _ => empty ()
+	     | Overload (x, tyvars, ty, ys) =>
+		  let
+		     val (down, finish) = bind' (down, tyvars)
+		     val (ty, up) = loopTy (ty, down)
+		     val (tyvars, up) = finish up
+		  in
+		     (doit (Overload (x, tyvars, ty, ys)), up)
+		  end
 	     | SeqDec ds => doVec (ds, SeqDec)
 	     | Type tb => do1 (loopTypBind (tb, down), Type)
 	     | Val {rvbs, tyvars, vbs} =>
@@ -345,13 +349,12 @@ fun ('down, 'up)
 				   combineUp (u, u'))
 			       end)
 		     val (vbs, u') =
-			loops (vbs, fn {exp, filePos, pat} =>
+			loops (vbs, fn {exp, pat} =>
 			       let
 				  val (exp, u) = loopExp (exp, down)
 				  val (pat, u') = loopPat (pat, down)
 			       in
 				  ({exp = exp,
-				    filePos = filePos,
 				    pat = pat},
 				   combineUp (u, u'))
 			       end)
@@ -385,13 +388,6 @@ fun ('down, 'up)
 		     in
 			(doit (f es), u)
 		     end
-		  fun doList (es: Exp.t list, f: Exp.t list -> Exp.node)
-		     : Exp.t * 'up =
-		     let
-			val (es, u) = loops (Vector.fromList es, loop)
-		     in
-			(doit (f (Vector.toList es)), u)
-		     end
 	       in
 		  case Exp.node e of
 		     Andalso (e1, e2) => do2 (loop e1, loop e2, Andalso)
@@ -404,16 +400,14 @@ fun ('down, 'up)
 		   | Handle (e, m) => do2 (loop e, loopMatch m, Handle)
 		   | If (e1, e2, e3) => do3 (loop e1, loop e2, loop e3, If)
 		   | Let (dec, e) => do2 (loopDec (dec, d), loop e, Let)
-		   | List ts => doList (ts, List)
+		   | List ts => doVec (ts, List)
 		   | Orelse (e1, e2) => do2 (loop e1, loop e2, Orelse)
 		   | Prim {kind, name, ty} =>
 			do1 (loopTy (ty, d), fn ty =>
 			     Prim {kind = kind,
 				   name = name,
 				   ty = ty})
-		   | Raise {exn, filePos} =>
-			do1 (loop exn,
-			     fn exn => Raise {exn = exn, filePos = filePos})
+		   | Raise exn => do1 (loop exn, Raise)
 		   | Record r =>
 			let
 			   val (r, u) = Record.change (r, fn es =>
@@ -431,8 +425,9 @@ fun ('down, 'up)
 	 in
 	    loop e
 	 end
-      and loopMatch (Match.T {filePos, rules}, d) =
+      and loopMatch (m, d) =
 	 let
+	    val (Match.T rules, region) = Match.dest m
 	    val (rules, u) =
 	       loops (rules, fn (p, e) =>
 		      let
@@ -442,7 +437,8 @@ fun ('down, 'up)
 			 ((p, e), combineUp (u, u'))
 		      end)
 	 in
-	    (Match.T {filePos = filePos, rules = rules}, u)
+	    (Match.makeRegion (Match.T rules, region),
+	     u)
 	 end
    in
       loopDec (d, initDown)

@@ -1,0 +1,14 @@
+Group
+
+functor Defunctorize
+
+is
+
+../../lib/mlton/sources.cm
+../control/sources.cm
+../core-ml/sources.cm
+../match-compile/sources.cm
+../xml/sources.cm
+
+defunctorize.fun
+defunctorize.sig

@@ -24,7 +24,7 @@ structure Type =
       fun containsArrow t = containsTycon (t, Tycon.arrow)
 
       fun isHigherOrder t =
-	 case dearrowOpt t of
+	 case deArrowOpt t of
 	    NONE => false
 	  | SOME (t1, t2) => containsArrow t1 orelse isHigherOrder t2
 
@@ -264,16 +264,18 @@ fun duplicate (program as Program.T {datatypes, body, overflow},
 	    then setVarInfo (var, Dup {duplicates = ref []})
 	 else (bind var; ())
       fun loopExp (e: Exp.t): Exp.t =
-	 let val {decs, result} = Exp.dest e
-	 in Exp.new (loopDecs (decs, result))
+	 let
+	    val {decs, result} = Exp.dest e
+	 in
+	    Exp.make (loopDecs (decs, result))
 	 end
       and loopLambda (l: Lambda.t): Lambda.t =
 	 let
 	    val {arg, argType, body} = Lambda.dest l
 	 in
-	    Lambda.new {arg = bind arg,
-			argType = argType,
-			body = loopExp body}
+	    Lambda.make {arg = bind arg,
+			 argType = argType,
+			 body = loopExp body}
 	 end
       and loopDecs (ds: Dec.t list, result): {decs: Dec.t list,
 					      result: VarExp.t} =

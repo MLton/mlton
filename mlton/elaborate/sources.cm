@@ -7,9 +7,11 @@
  *)
 Group
 
+signature CONST_TYPE
 signature ELABORATE
 functor Elaborate
-   
+functor TypeEnv
+
 is
 
 ../ast/sources.cm
@@ -18,7 +20,7 @@ is
 ../core-ml/sources.cm
 ../../lib/mlton/sources.cm
 
-
+const-type.sig
 decs.fun
 decs.sig
 elaborate-core.fun
@@ -33,3 +35,5 @@ precedence-parse.fun
 precedence-parse.sig
 scope.fun
 scope.sig
+type-env.fun
+type-env.sig

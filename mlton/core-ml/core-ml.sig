@@ -11,8 +11,20 @@ type int = Int.t
 signature CORE_ML_STRUCTS = 
    sig
       include ATOMS
-      structure Type: TYPE
-      sharing Type = Prim.Type
+      structure Type:
+	 sig
+	    type t
+
+	    val arrow: t * t -> t
+	    val bool: t
+	    val deConOpt: t -> (Tycon.t * t vector) option
+	    val deRecord: t -> (Record.Field.t * t) vector
+	    val hom: {con: Tycon.t * 'a vector -> 'a,
+		      var: Tyvar.t -> 'a} -> t -> 'a
+	    val layout: t -> Layout.t
+	    val tuple: t vector -> t
+	    val unit: t
+	 end
    end
 
 signature CORE_ML = 
@@ -23,133 +35,119 @@ signature CORE_ML =
 	 sig
 	    type t
 	    datatype node =
-	       Con of {
+	       Con of {arg: t option,
 		       con: Con.t,
-		       arg: t option
-		      }
-	     | Const of Ast.Const.t
-	     | Constraint of t * Type.t
+		       targs: Type.t vector}
+	     | Const of unit -> Const.t
 	     | Layered of Var.t * t
-	     | Record of {
-			  flexible: bool,
-			  record: t Record.t
-			 }
+	     | List of t vector
+	     | Record of t Record.t
+	     | Tuple of t vector
 	     | Var of Var.t
 	     | Wild
-	    include WRAPPED sharing type node' = node
-		            sharing type obj = t
 
-	    val foreachVar: t * (Var.t -> unit) -> unit
+	    val dest: t -> node * Type.t
+	    val falsee: t 
 	    (* true if pattern contains a constant, constructor or variable *)
 	    val isRefutable: t -> bool
 	    val isWild: t -> bool
 	    val layout: t -> Layout.t
-	    val list: t list * Region.t -> t
-	    val record: {flexible: bool,
-			 record: t Record.t,
-			 region: Region.t} -> t
-	    (* removeOthersReplace(pat, old,new) replaces all variables in pat
-	     * with Wild, except for old, which it replaces with new
-	     *)
-	    val removeOthersReplace: t * Var.t * Var.t -> t
-	    val removeVars: t -> t 	    (* replace all variables with Wild *)
-	    val toAst: t -> Ast.Pat.t	    (* conversion to Ast *)
-	    val tuple: t vector * Region.t -> t
-	    val unit: Region.t -> t
-	    (* a list (without duplicates) of variables occurring in a pattern *)
-	    val vars: t -> Var.t list 
+	    val make: node * Type.t -> t
+	    val node: t -> node
+	    val var: Var.t * Type.t -> t
+	    val truee: t
+	    val tuple: t vector -> t
+	    val ty: t -> Type.t
 	 end
 
       structure Exp:
 	 sig
 	    type dec
-	    type match
+	    type lambda
 	    type t
+	    datatype noMatch = Impossible | RaiseAgain | RaiseBind | RaiseMatch
 	    datatype node =
 	       App of t * t
-	     | Con of Con.t
-	     | Const of Ast.Const.t
-	     | Constraint of t * Type.t
-	     | Fn of {match: match,
-		      profile: SourceInfo.t option}
-	     | Handle of t * match
+	     | Case of {noMatch: noMatch,
+			region: Region.t,
+			rules: (Pat.t * t) vector,
+			test: t}
+	     | Con of Con.t * Type.t vector
+	     | Const of unit -> Const.t
+	     | EnterLeave of t * SourceInfo.t
+	     | Handle of {catch: Var.t * Type.t,
+			  handler: t,
+			  try: t}
+	     | Lambda of lambda
 	     | Let of dec vector * t
-	     | Prim of Prim.t
+	     | List of t vector
+	     | PrimApp of {args: t vector,
+			   prim: Prim.t,
+			   targs: Type.t vector}
 	     | Raise of {exn: t,
-			 filePos: string}
+			 region: Region.t}
 	     | Record of t Record.t
-	     | Var of Var.t
-	    include WRAPPED sharing type node' = node
-		            sharing type obj = t
+	     | Seq of t vector
+	     | Var of (unit -> Var.t) * (unit -> Type.t vector)
 
-	    val andAlso: t * t * Region.t -> t
-	    val casee: t * match * Region.t -> t
-	    val force: t * Region.t -> t
-	    val foreachVar: t * (Var.t -> unit) -> unit
-	    val iff: t * t * t * Region.t -> t
+	    val andAlso: t * t -> t
+	    val casee: {noMatch: noMatch,
+			region: Region.t,
+			rules: (Pat.t * t) vector,
+			test: t} -> t
+	    val dest: t -> node * Type.t
+	    val enterLeave: t * SourceInfo.t -> t
+	    val iff: t * t * t -> t
+	    val falsee: t
 	    (* true if the expression may side-effect. See p 19 of Definition *)
 	    val isExpansive: t -> bool
-	    val lambda: Var.t * t * SourceInfo.t option * Region.t -> t
+	    val lambda: lambda -> t
 	    val layout: t -> Layout.t
-	    val list: t list * Region.t -> t
-	    val orElse: t * t * Region.t -> t
-	    val selector: Record.Field.t * Region.t -> t
-	    val seq: t vector * Region.t -> t
-	    val tuple: t vector * Region.t -> t
-	    val unit: Region.t -> t
-	    val whilee: {test: t, expr: t, region: Region.t} -> t
+	    val make: node * Type.t -> t
+	    val node: t -> node
+	    val orElse: t * t -> t
+	    val truee: t
+	    val tuple: t vector -> t
+	    val ty: t -> Type.t
+	    val unit: t
+	    val var: Var.t * Type.t -> t
+	    val whilee: {expr: t, test: t} -> t
 	 end
 
-      structure Match:
+      structure Lambda:
 	 sig
 	    type t
 
-	    val filePos: t -> string
-	    val new: {rules: (Pat.t * Exp.t) vector,
-		      filePos: string} -> t
-	    val region: t -> Region.t
-	    val rules: t -> (Pat.t * Exp.t) vector
+	    val dest: t -> {arg: Var.t,
+			    argType: Type.t,
+			    body: Exp.t}
+	    val layout: t -> Layout.t
+	    val make: {arg: Var.t,
+		       argType: Type.t,
+		       body: Exp.t} -> t
 	 end
-      where type t = Exp.match
+      sharing type Exp.lambda = Lambda.t
 
       structure Dec:
 	 sig
-	    type t
-	    datatype node =
-	       Datatype of {
-			    tyvars: Tyvar.t vector,
+	    datatype t =
+	       Datatype of {cons: {arg: Type.t option,
+				   con: Con.t} vector,
 			    tycon: Tycon.t,
-			    cons: {
-				   con: Con.t,
-				   arg: Type.t option
-				  } vector
-			   } vector
-	     | Exception of {
-			     con: Con.t,
-			     arg: Type.t option
-			    }
-	     | Fun of {
-		       tyvars: Tyvar.t vector,
-		       decs: {match: Match.t,
-			      profile: SourceInfo.t option,
-			      types: Type.t vector, (* multiple constraints *)
-			      var: Var.t} vector
-		      }
-	     | Overload of {
-			    var: Var.t,
-			    scheme: Scheme.t,
-			    ovlds: Var.t vector
-			   }
-	     | Val of {exp: Exp.t,
-		       filePos: string,
-		       pat: Pat.t,
-		       tyvars: Tyvar.t vector}
-	    include WRAPPED sharing type node' = node
-		            sharing type obj = t
+			    tyvars: Tyvar.t vector} vector
+	     | Exception of {arg: Type.t option,
+			     con: Con.t}
+	     | Fun of {decs: {lambda: Lambda.t,
+			      var: Var.t} vector,
+		       tyvars: unit -> Tyvar.t vector}
+	     | Val of {rvbs: {lambda: Lambda.t,
+			      var: Var.t} vector,
+		       tyvars: unit -> Tyvar.t vector,
+		       vbs: {exp: Exp.t,
+			     pat: Pat.t,
+			     patRegion: Region.t} vector}
 
-	    val isExpansive: t -> bool
 	    val layout: t -> Layout.t
-	    val toAst: t -> Ast.Dec.t
 	 end
       where type t = Exp.dec
 
@@ -158,6 +156,5 @@ signature CORE_ML =
 	    datatype t = T of {decs: Dec.t vector}
 
 	    val layout: t -> Layout.t
-	    val layoutStats: t -> Layout.t
 	 end
    end

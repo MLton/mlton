@@ -11,6 +11,8 @@ signature NESTED_PAT_STRUCTS =
       structure Type:
 	 sig
 	    type t
+
+	    val layout: t -> Layout.t
 	    val tuple: t vector -> t
 	 end
    end
@@ -21,21 +23,24 @@ signature NESTED_PAT =
       
       datatype t = T of {pat: node, ty: Type.t}
       and node =
-	 Wild
-       | Var of Var.t
-       | Const of Const.t
-       | Con of {con: Con.t,
-		 targs: Type.t vector,
-		 arg: t option}
-       | Tuple of t vector
-       | Layered of Var.t * t
+	 Con of {arg: t option,
+		 con: Con.t,
+		 targs: Type.t vector}
+	| Const of Const.t
+	| Layered of Var.t * t
+	| Tuple of t vector
+	| Var of Var.t
+	| Wild
 
       (* isRefutable p iff p contains a constant, constructor or variable. *)
       val isRefutable: t -> bool
       val isVar: t -> bool
       val layout: t -> Layout.t
-      val new: node * Type.t -> t
+      val make: node * Type.t -> t
       val node: t -> node
+      val removeOthersReplace: t * {new: Var.t, old: Var.t} -> t
+      val removeVars: t -> t
+      val replaceTypes: t * (Type.t -> Type.t) -> t
       val tuple: t vector -> t
       val ty: t -> Type.t
       val unit: t

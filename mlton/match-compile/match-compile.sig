@@ -16,7 +16,7 @@ signature MATCH_COMPILE_STRUCTS =
 	 sig
 	    type t
 
-	    val detuple: t -> t vector
+	    val deTuple: t -> t vector
 	    val equals: t * t -> bool
 	    val int: IntSize.t -> t
 	    val layout: t -> Layout.t
@@ -65,12 +65,12 @@ signature MATCH_COMPILE =
       include MATCH_COMPILE_STRUCTS
 
       val matchCompile:
-	 {conTycon: Con.t -> Tycon.t,
-	  tyconCons: Tycon.t -> Con.t vector,
+	 {caseType: Type.t, (* type of entire expression *)
+	  cases: (NestedPat.t * ((Var.t -> Var.t) -> Exp.t)) vector,
+	  conTycon: Con.t -> Tycon.t,
+	  region: Region.t,
 	  test: Var.t,
 	  testType: Type.t,
-	  caseType: Type.t, (* type of entire expression *)
-	  cases: (NestedPat.t * ((Var.t -> Var.t) -> Exp.t)) vector,
-	  region: Region.t}
+	  tyconCons: Tycon.t -> Con.t vector}
 	 -> Exp.t
    end

@@ -10,7 +10,8 @@ struct
 
 open S
 open Xml.Atoms
-local open Xml
+local
+   open Xml
 in
    structure Xcases = Cases
    structure Xpat = Pat
@@ -22,7 +23,8 @@ in
    structure Xtype = Type
    structure XvarExp = VarExp
 end
-local open Sxml
+local
+   open Sxml
 in
    structure Scases = Cases
    structure Spat = Pat
@@ -185,7 +187,7 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
 	 Property.destGetSet (Tycon.plist,
 			      Property.initRaise ("mono", Tycon.layout))
       val _ =
-	 List.foreach (Tycon.prims, fn t =>
+	 List.foreach (Tycon.prims, fn (t, _) =>
 		       setTycon (t, fn ts => Stype.con (t, ts)))
       val {set = setTyvar, get = getTyvar: Tyvar.t -> Stype.t, ...} =
 	 Property.getSet (Tyvar.plist,
@@ -344,14 +346,16 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
       fun monoExp (arg: Xexp.t): Sexp.t =
 	 traceMonoExp
 	 (fn (e: Xexp.t) =>
-	  let val {decs, result} = Xexp.dest e
+	  let
+	     val {decs, result} = Xexp.dest e
 	     val thunks = List.fold (decs, [], fn (d, thunks) =>
 				     monoDec d :: thunks)
 	     val result = monoVarExp result
 	     val decs =
 		List.fold (thunks, [], fn (thunk, decs) => thunk () @ decs)
-	  in Sexp.new {decs = decs,
-		       result = result}
+	  in
+	     Sexp.make {decs = decs,
+			result = result}
 	  end) arg
       and monoPrimExp (e: XprimExp.t): SprimExp.t =
 	 case e of
@@ -403,9 +407,9 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
 	    val {arg, argType, body} = Xlambda.dest l
 	    val (arg, argType) = renameMono (arg, argType)
 	 in
-	    Slambda.new {arg = arg,
-			 argType = argType,
-			 body = monoExp body}
+	    Slambda.make {arg = arg,
+			  argType = argType,
+			  body = monoExp body}
 	 end
       (*------------------------------------*)
       (*              monoDec               *)

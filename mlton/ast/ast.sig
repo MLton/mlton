@@ -7,6 +7,10 @@
  *)
 signature AST_STRUCTS =
    sig
+      structure Record: RECORD
+      structure SortedRecord: RECORD
+      sharing Record.Field = SortedRecord.Field
+      structure Tyvar: TYVAR
    end
 
 signature AST =
@@ -90,11 +94,11 @@ signature AST =
 
 	    type t
 	    datatype node =
-	       Var of Longstrid.t
-	     | Struct of strdec
+	       App of Fctid.t * t
              | Constrained of t * SigConst.t
-	     | App of Fctid.t * t
 	     | Let of strdec * t
+	     | Struct of strdec
+	     | Var of Longstrid.t
 
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t
@@ -112,16 +116,17 @@ signature AST =
 	 sig
 	    type t
 	    datatype node =
-	       Structure of {name: Strid.t,
+	       Core of Dec.t
+	     | Local of t * t
+	     | Seq of t list
+	     | Structure of {name: Strid.t,
 			     def: Strexp.t,
 			     constraint: SigConst.t} list
-	     | Seq of t list
-	     | Local of t * t
-	     | Core of Dec.t
 
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t
 
+            val coalesce: t -> t
             val core: Dec.t -> t
 	    val layout: t -> Layout.t
 	    val locall: t * t -> t
@@ -147,12 +152,12 @@ signature AST =
 	 sig
 	    type t
 	    datatype node =
-	       Strdec of Strdec.t
-	     | Signature of (Sigid.t * Sigexp.t) list
-	     | Functor of {name: Fctid.t,
+	       Functor of {name: Fctid.t,
 			   arg: FctArg.t,
 			   result: SigConst.t,
 			   body: Strexp.t} list
+	     | Signature of (Sigid.t * Sigexp.t) list
+	     | Strdec of Strdec.t
 
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t
@@ -172,6 +177,7 @@ signature AST =
 	    datatype t = T of Topdec.t list
 
 	    val append: t * t -> t
+	    val coalesce: t -> t
 	    val empty: t
 	    val size: t -> int
 	    val layout: t -> Layout.t

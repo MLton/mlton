@@ -8,6 +8,7 @@
 signature PRIM_TYCONS_STRUCTS =
    sig
       structure IntSize: INT_SIZE
+      structure Kind: TYCON_KIND
       structure RealSize: REAL_SIZE
       structure WordSize: WORD_SIZE
 
@@ -15,14 +16,16 @@ signature PRIM_TYCONS_STRUCTS =
 
       val fromString: string -> t
       val equals: t * t -> bool
+      val layout: t -> Layout.t
    end
 
 signature PRIM_TYCONS =
    sig
       structure IntSize: INT_SIZE
+      structure Kind: TYCON_KIND
       structure RealSize: REAL_SIZE
       structure WordSize: WORD_SIZE
-
+     
       type tycon
 
       val array: tycon
@@ -39,10 +42,11 @@ signature PRIM_TYCONS =
       val isIntX: tycon -> bool
       val isRealX: tycon -> bool
       val isWordX: tycon -> bool
+      val layoutApp: tycon * Layout.t vector -> Layout.t
       val list: tycon
       val pointer: tycon
       val preThread: tycon
-      val prims: tycon list
+      val prims: (tycon * Kind.t) list
       val real: RealSize.t -> tycon
       val reals: (tycon * RealSize.t) list
       val reff: tycon

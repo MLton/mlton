@@ -123,8 +123,6 @@ Group is
 ../lib/mlton/basic/file-desc.sig
 ../lib/mlton/basic/file-desc.sml
 ../lib/mlton/basic/signal.sml
-../lib/mlton/basic/int-inf.sig
-../lib/mlton/basic/int-inf.sml
 ../lib/mlton/basic/function.sig
 ../lib/mlton/basic/function.sml
 ../lib/mlton/basic/dir.sig
@@ -135,6 +133,8 @@ Group is
 ../lib/mlton/basic/justify.sml
 ../lib/mlton/basic/popt.sig
 ../lib/mlton/basic/popt.sml
+../lib/mlton/basic/int-inf.sig
+../lib/mlton/basic/int-inf.sml
 ../lib/mlton/basic/escape.sig
 ../lib/mlton/basic/escape.sml
 ../lib/mlton/basic/choice-pattern.sig

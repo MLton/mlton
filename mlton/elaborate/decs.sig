@@ -7,9 +7,7 @@
  *)
 signature DECS_STRUCTS =
    sig
-      structure Ast: AST
       structure CoreML: CORE_ML
-      sharing Ast = CoreML.Ast
    end
 
 signature DECS =
@@ -31,7 +29,6 @@ signature DECS =
       val layout: t -> Layout.t
       val map: t * (dec -> dec) -> t
       val single: dec -> t
-      val toAst: t -> Ast.Dec.t
       val toList: t -> dec list
       val toVector: t -> dec vector
    end

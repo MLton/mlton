@@ -11,12 +11,6 @@ struct
 open S
 
 structure Const = AstConst ()
-structure Field = Field ()
-structure Record = Record (val isSorted = false
-			   structure Field = Field)
-structure SortedRecord = Record (val isSorted = true
-				 structure Field = Field)
-structure Tyvar = Tyvar ()
    
 structure AstAtoms = AstAtoms (structure Const = Const
 			       structure Record = Record
@@ -225,7 +219,7 @@ fun layoutStrdec d =
 			   | _ => Split 3,
 				seq [Strid.layout name, SigConst.layout constraint],
 				layoutStrexp def))
-    | Local (d, d') => layoutLocal (layoutStrdec d, layoutStrdec d')
+    | Local (d, d') => Pretty.locall (layoutStrdec d, layoutStrdec d')
     | Seq ds => align (layoutStrdecs ds)
     | Core d => Dec.layout d
 
@@ -240,7 +234,7 @@ and layoutStrexp exp =
     | Constrained (e, c) => mayAlign [layoutStrexp e, SigConst.layout c]
     | App (f, e) =>
 	 seq [Fctid.layout f, str "(", layoutStrexp e, str ")"]
-    | Let (dec, strexp) => layoutLet (layoutStrdec dec, layoutStrexp strexp)
+    | Let (dec, strexp) => Pretty.lett (layoutStrdec dec, layoutStrexp strexp)
 	 
 structure Strexp =
    struct
@@ -270,6 +264,7 @@ structure Strdec =
 
       fun make n = makeRegion (n, Region.bogus)
       val structuree = make o Structure
+
       val locall = make o Local
       val core = make o Core
       val seq = make o Seq
@@ -279,6 +274,64 @@ structure Strdec =
       val layout = layoutStrdec
 
       val fromExp = core o Dec.fromExp
+
+      val trace = Trace.trace ("coalesce", layout, layout)
+      fun coalesce (d: t): t =
+	 trace
+	 (fn d =>
+	 case node d of
+	    Core _ => d
+	  | Local (d1, d2) =>
+	       let
+		  val d1 = coalesce d1
+		  val d2 = coalesce d2
+		  val node = 
+		     case (node d1, node d2) of
+			(Core d1', Core d2') =>
+			   Core (Dec.makeRegion
+				 (Dec.Local (d1', d2'),
+				  Region.append (region d1, region d2)))
+		      | _ => Local (d1, d2)
+	       in
+		  makeRegion (node, region d)
+	       end
+	  | Seq ds =>
+	       let
+		  fun finish (ds: Dec.t list, ac: t list): t list =
+		     case ds of
+			[] => ac
+		      | _ =>
+			   let
+			      val d =
+				 makeRegion (Core (Dec.makeRegion
+						   (Dec.SeqDec (Vector.fromListRev ds),
+						    Region.bogus)),
+					     Region.bogus)
+			   in
+			      d :: ac
+			   end
+		  fun loop (ds, cores, ac) =
+		     case ds of
+			[] => finish (cores, ac)
+		      | d :: ds =>
+			   let
+			      val d = coalesce d
+			   in
+			      case node d of
+				 Core d => loop (ds, d :: cores, ac)
+			       | Seq ds' => loop (ds' @ ds, cores, ac)
+			       | _ => loop (ds, [], d :: finish (cores, ac))
+			   end
+		  val r = region d
+	       in
+		  case loop (ds, [], []) of
+		     [] => makeRegion (Core (Dec.makeRegion
+					     (Dec.SeqDec (Vector.new0 ()), r)),
+				       r)
+		   | [d] => d
+		   | ds => makeRegion (Seq (rev ds), r)
+	       end
+	  | Structure _ => d) d
    end
 
 structure FctArg =
@@ -348,6 +401,32 @@ structure Program =
 
       fun layout (T ds) = Layout.align (List.map (ds, Topdec.layout))
 
+      fun coalesce (T ds) =
+	 let
+	    fun finish (sds, ac) =
+	       case sds of
+		  [] => ac
+		| _ =>
+		     let
+			val t =
+			   Topdec.makeRegion
+			   (Topdec.Strdec (Strdec.makeRegion
+					   (Strdec.Seq (rev sds), Region.bogus)),
+			    Region.bogus)
+		     in
+			t :: ac
+		     end
+	    fun loop (ds, sds, ac) =
+	       case ds of
+		  [] => finish (sds, ac)
+		| d :: ds =>
+		     case Topdec.node d of
+			Topdec.Strdec d => loop (ds, d :: sds, ac)
+		      | _ => loop (ds, [], d :: finish (sds, ac))
+	 in
+	    T (rev (loop (ds, [], [])))
+	 end
+
       fun size (T ds): int =
 	 let
 	    open Dec Exp Strexp Strdec Topdec
@@ -360,7 +439,7 @@ structure Program =
 		     (Vector.foreach (vbs, exp o #exp)
 		      ; Vector.foreach (rvbs, match o #match))
 		| Fun (_, ds) =>
-		     Vector.foreach (ds, fn {clauses, ...} =>
+		     Vector.foreach (ds, fn clauses =>
 				     Vector.foreach (clauses, exp o #body))
 		| Abstype {body, ...} => dec body
 		| Exception cs => Vector.foreach (cs, fn _ => inc ())
@@ -369,28 +448,37 @@ structure Program =
 		| _ => ()
 
 	    and exp (e: Exp.t): unit =
-	       (inc ();
-		case Exp.node e of
-		   Fn m => match m
-		 | FlatApp es => exps es
-		 | Exp.App (e, e') => (exp e; exp e')
-		 | Case (e, m) => (exp e; match m)
-		 | Exp.Let (d, e) => (dec d; exp e)
-		 | Exp.Seq es => exps es
-		 | Record r => Record.foreach (r, exp)
-		 | List es => List.foreach (es, exp)
-		 | Constraint (e, _) => exp e
-		 | Handle (e, m) => (exp e; match m)
-		 | Raise {exn, ...} => exp exn
-		 | If (e1, e2, e3) => (exp e1; exp e2; exp e3)
-		 | Andalso (e1, e2) => (exp e1; exp e2)
-		 | Orelse (e1, e2) => (exp e1; exp e2)
-		 | While {test, expr} => (exp test; exp expr)
-		 | _ => ())
+	       let
+		  val _ = inc ()
+		  datatype z = datatype Exp.node
+	       in
+		  case Exp.node e of
+		     Andalso (e1, e2) => (exp e1; exp e2)
+		   | App (e, e') => (exp e; exp e')
+		   | Case (e, m) => (exp e; match m)
+		   | Constraint (e, _) => exp e
+		   | FlatApp es => exps es
+		   | Fn m => match m
+		   | Handle (e, m) => (exp e; match m)
+		   | If (e1, e2, e3) => (exp e1; exp e2; exp e3)
+		   | Let (d, e) => (dec d; exp e)
+		   | List es => Vector.foreach (es, exp)
+		   | Orelse (e1, e2) => (exp e1; exp e2)
+		   | Raise exn => exp exn
+		   | Record r => Record.foreach (r, exp)
+		   | Seq es => exps es
+		   | While {test, expr} => (exp test; exp expr)
+		   | _ => ()
+	       end
 
 	    and exps es = Vector.foreach (es, exp)
 	       
-	    and match (Match.T {rules, ...}) = Vector.foreach (rules, exp o #2)
+	    and match m =
+	       let
+		  val Match.T rules = Match.node m
+	       in
+		  Vector.foreach (rules, exp o #2)
+	       end
 		     
 	    fun strdec d =
 	       case Strdec.node d of

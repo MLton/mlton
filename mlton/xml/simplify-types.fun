@@ -229,16 +229,16 @@ fun simplifyTypes (I.Program.T {body, datatypes, overflow}) =
 	 let
 	    val {decs, result} = I.Exp.dest e
 	 in
-	    O.Exp.new {decs = List.map (decs, fixDec),
-		       result = fixVarExp result}
+	    O.Exp.make {decs = List.map (decs, fixDec),
+			result = fixVarExp result}
 	 end
       and fixLambda (l: I.Lambda.t): O.Lambda.t =
 	 let
 	    val {arg, argType, body} = I.Lambda.dest l
 	 in
-	    O.Lambda.new {arg = arg,
-			  argType = fixType argType,
-			  body = fixExp body}
+	    O.Lambda.make {arg = arg,
+			   argType = fixType argType,
+			   body = fixExp body}
 	 end
       and fixPrimExp (e: I.PrimExp.t): O.PrimExp.t =
 	 case e of

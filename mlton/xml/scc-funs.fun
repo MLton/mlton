@@ -18,7 +18,7 @@ fun sccFuns (Program.T {datatypes, body, overflow}) =
    let
       (* For each function appearing in a fun dec record its node, which will
        * have edges to the nodes of other functions declared in the same dec
-       * if they appear in it's body.
+       * if they appear in its body.
        *)
       val {get = funInfo: Var.t -> {
 				    node: unit Node.t,
@@ -39,9 +39,9 @@ fun sccFuns (Program.T {datatypes, body, overflow}) =
 	 let
 	    val {arg, argType, body} = Lambda.dest l
 	 in
-	    Lambda.new {arg = arg,
-			argType = argType,
-			body = loopExp body}
+	    Lambda.make {arg = arg,
+			 argType = argType,
+			 body = loopExp body}
 	 end
       and loopPrimExp (e: PrimExp.t): PrimExp.t =
 	 case e of
@@ -66,7 +66,8 @@ fun sccFuns (Program.T {datatypes, body, overflow}) =
 	  | Tuple xs => (loopVarExps xs; e)
 	  | Var x => (loopVarExp x; e)
       and loopExp (e: Exp.t): Exp.t =
-	 let val {decs, result} = Exp.dest e
+	 let
+	    val {decs, result} = Exp.dest e
 	    val decs =
 	       List.rev
 	       (List.fold
@@ -116,9 +117,10 @@ fun sccFuns (Program.T {datatypes, body, overflow}) =
 		       end))
 	    val _ = loopVarExp result
 	 in
-	    Exp.new {decs = decs, result = result}
+	    Exp.make {decs = decs, result = result}
 	 end
-   in Program.T {datatypes = datatypes,
+   in
+      Program.T {datatypes = datatypes,
 		 body = loopExp body,
 		 overflow = overflow}
    end

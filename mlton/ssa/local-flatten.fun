@@ -192,7 +192,7 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 			    else
 			       let
 				  val vars = Vector.map
-				             (Type.detuple ty, fn ty =>
+				             (Type.deTuple ty, fn ty =>
 					      (Var.newNoname (), ty))
 			       in
 				  (vars,
@@ -220,7 +220,7 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 			       let
 				  val (vars, stmts) =
 				     Vector.foldi
-				     (Type.detuple t, ([], stmts),
+				     (Type.deTuple t, ([], stmts),
 				      fn (i, ty, (vars, stmts)) =>
 				      let val var = Var.newNoname ()
 				      in (var :: vars,

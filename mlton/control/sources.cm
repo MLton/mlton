@@ -10,6 +10,7 @@ Group
 signature REGION
    
 structure Control
+structure Pretty
 structure Region
 structure Source
 structure SourcePos
@@ -21,6 +22,8 @@ is
 
 control.sig
 control.sml
+pretty.sig
+pretty.sml
 region.sig
 region.sml
 source-pos.sig

@@ -25,12 +25,6 @@ in
    structure IntX = IntX
    structure WordX = WordX
 end
-local
-   open Type
-in
-   structure Tycon = Tycon
-   structure Tyvar = Tyvar
-end
 
 structure Kind =
    struct
@@ -50,7 +44,6 @@ structure Name =
        | Array_sub (* backend *)
        | Array_toVector (* backend *)
        | Array_update (* backend *)
-       | BuildConstant of string (* type inference *)
        | C_CS_charArrayToWord8Array (* type inference *)
        | Char_chr (* type inference *)
        | Char_ge (* type inference *)
@@ -59,7 +52,6 @@ structure Name =
        | Char_lt (* type inference *)
        | Char_ord (* type inference *)
        | Char_toWord8 (* type inference *)
-       | Constant of string (* type inference *)
        | Cpointer_isNull (* codegen *)
        | Exn_extra (* implement exceptions *)
        | Exn_keepHistory (* a compile-time boolean *)
@@ -459,9 +451,7 @@ structure Name =
 	 
       fun toString n =
 	 case n of
-	    BuildConstant s => s
-	  | Constant s => s
-	  | FFI f => CFunction.name f
+	    FFI f => CFunction.name f
 	  | FFI_Symbol {name, ...} => name
 	  | _ => (case List.peek (strings, fn (n', _, _) => n = n') of
 		     NONE => Error.bug "Prim.toString missing name"
@@ -473,17 +463,13 @@ structure Name =
 datatype t =
    T of {name: Name.t,
 	 nameString: string,
-	 scheme: Scheme.t,
-	 kind: Kind.t,
-	 numArgs: int option}
+	 kind: Kind.t}
 
 local
    fun make sel (T r) = sel r
 in
    val kind = make #kind
    val name = make #name
-   val numArgs = make #numArgs
-   val scheme = make #scheme
    val toString = make #nameString
 end
 
@@ -501,270 +487,136 @@ val isCommutative = Name.isCommutative o name
 val mayOverflow = Name.mayOverflow o name
 val mayRaise = Name.mayRaise o name
 
-structure CType =
-   struct
-      open CType
-
-      val toType =
-	 memo (fn t =>
-	       case t of
-		  Int s => Type.int s
-		| Pointer => Type.pointer
-		| Real s => Type.real s
-		| Word s => Type.word s)
-   end
-
-structure Scheme =
-   struct
-      open Scheme
-	 
-      fun numArgs (s: t): int option =
-	 case Type.dearrowOpt (ty s) of
-	    NONE => NONE
-	  | SOME (t, _) => (case Type.detupleOpt t of
-			      NONE => SOME 1
-			    | SOME ts => SOME (Vector.length ts))
-   end
-
-fun new (n: Name.t, k: Kind.t, s: Scheme.t): t =
-   T {
-      kind = k,
+fun make (n: Name.t, k: Kind.t): t =
+   T {kind = k,
       name = n,
-      nameString = Name.toString n,
-      numArgs = Scheme.numArgs s,
-      scheme = s
-      }
-
-local
-   fun make f (name: string, s: Scheme.t): t =
-      new (f name, Kind.Functional, s)
-in
-   val buildConstant = make Name.BuildConstant
-   val constant = make Name.Constant
-end
+      nameString = Name.toString n}
 
 fun equals (p, p') = Name.equals (name p, name p')
 
+val new: Name.t -> t =
+   fn n =>
+   let
+      val k =
+	 case n of
+	    Name.FFI _ => Kind.SideEffect
+	  | Name.FFI_Symbol _ => Kind.DependsOnState
+	  | _ => (case List.peek (Name.strings, fn (n', _, _) => n = n') of
+		     NONE => Error.bug (concat ["strange name: ",
+						Name.toString n])
+		   | SOME (_, k, _) => k)
+   in
+      make (n, k)
+   end
+
+val array = new Name.Array_array
+val assign = new Name.Ref_assign
+val bogus = new Name.MLton_bogus
+val bug = new Name.MLton_bug
+val deref = new Name.Ref_deref
+val deserialize = new Name.MLton_deserialize
+val eq = new Name.MLton_eq
+val equal = new Name.MLton_equal
+val gcCollect = new Name.GC_collect
+val intInfEqual = new Name.IntInf_equal
+val intInfNeg = new Name.IntInf_neg
+val intInfNotb = new Name.IntInf_notb
+val reff = new Name.Ref_ref
+val serialize = new Name.MLton_serialize
+val vectorLength = new Name.Vector_length
+val vectorSub = new Name.Vector_sub
+
 local
-   val newPrim = new
-   open Type Scheme
-   val new = newPrim
-   val --> = arrow
-   infix -->
-
-   val new =
-      fn (n: Name.t, s: Scheme.t) =>
-      let
-	 val k =
-	    case n of
-	       Name.FFI _ => Kind.SideEffect
-	     | Name.FFI_Symbol _ => Kind.DependsOnState
-	     | _ => (case List.peek (Name.strings, fn (n', _, _) => n = n') of
-			NONE => Error.bug (concat ["strange name: ",
-						   Name.toString n])
-		      | SOME (_, k, _) => k)
-      in
-	 new (n, k, s)
-      end
-   val tuple = tuple o Vector.fromList
+   fun make n = IntSize.memoize (new o n)
 in
-   val array = new (Name.Array_array, make1 (fn a => int I32 --> array a))
-   val assign =
-      new (Name.Ref_assign, make1 (fn a => tuple [reff a, a] --> unit))
-   val bogus = new (Name.MLton_bogus, make1 (fn a => a))
-   val bug = new (Name.MLton_bug, make0 (word8Vector --> unit))
-   val deref = new (Name.Ref_deref, make1 (fn a => reff a --> a))
-   val deserialize =
-      new (Name.MLton_deserialize, make1 (fn a => vector (word W8) --> a))
-   val eq = new (Name.MLton_eq, makeEqual1 (fn a => tuple [a, a] --> bool))
-   val equal = new (Name.MLton_equal, makeEqual1 (fn a => tuple [a, a] --> bool))
-   val gcCollect = new (Name.GC_collect, make0 (tuple [word W32, bool] --> unit))
-   val reff = new (Name.Ref_ref, make1 (fn a => a --> reff a))
-   val serialize = new (Name.MLton_serialize,
-			make1 (fn a => a --> vector (word W8)))
-   val vectorLength =
-      new (Name.Vector_length, make1 (fn a => vector a --> int I32))
-   val vectorSub =
-      new (Name.Vector_sub, make1 (fn a => tuple [vector a, int I32] --> a))
-
-   fun new0 (name, ty) = new (name, make0 ty)
-
-   fun intEqual s = new0 (Name.Int_equal s, tuple [int s, int s] --> bool)
-   fun intNeg s = new0 (Name.Int_neg s, int s --> int s)
-   fun intNegCheck s = new0 (Name.Int_negCheck s, int s --> int s)
-   val intInfNeg =
-      new0 (Name.IntInf_neg, tuple [intInf, word W32] --> intInf)
-   val intInfNotb =
-      new0 (Name.IntInf_notb, tuple [intInf, word W32] --> intInf)
-   val intInfEqual = new0 (Name.IntInf_equal, tuple [intInf, intInf] --> bool)
-
-   fun wordEqual s = new0 (Name.Word_equal s, tuple [word s, word s] --> bool)
-   fun wordNotb (s: WordSize.t) = new0 (Name.Word_notb s, word s --> word s)
-   fun wordNeg (s: WordSize.t) = new0 (Name.Word_neg s, word s --> word s)
-
-   local
-      fun make n =
-	 IntSize.memoize (fn s => new0 (n s, tuple [int s, int s] --> int s))
-   in
-      val intAdd = make Name.Int_add
-      val intAddCheck = make Name.Int_addCheck
-      val intMul = make Name.Int_mul
-      val intMulCheck = make Name.Int_mulCheck
-      val intSub = make Name.Int_sub
-      val intSubCheck = make Name.Int_subCheck
-   end
-
-   local
-      fun make n =
-	 WordSize.memoize
-	 (fn s => new0 (n s, tuple [word s, word s] --> word s))
-   in
-      val wordAdd = make Name.Word_add
-      val wordAddCheck = make Name.Word_addCheck
-      val wordAndb = make Name.Word_andb
-      val wordMul = make Name.Word_mul
-      val wordMulCheck = make Name.Word_mulCheck
-      val wordRshift = make Name.Word_rshift
-      val wordSub = make Name.Word_sub
-   end
-
-   local
-      fun make n =
-	 WordSize.memoize
-	 (fn s => new0 (n s, tuple [word s, word s] --> bool))
-   in
-      val wordGe = make Name.Word_ge
-      val wordGt = make Name.Word_gt
-      val wordLe = make Name.Word_le
-      val wordLt = make Name.Word_lt
-   end
-
-   local
-      fun make (name, (ty, memo), (ty', memo')) =
-	 let
-	    val f =
-	       memo (fn s => memo' (fn s' => new0 (name (s, s'),
-						   ty s --> ty' s')))
-      in
-	 fn (s, s') => f s s'
-      end
-      val int = (int, IntSize.memoize)
-      val word = (word, WordSize.memoize)
-   in
-      val intToWord = make (Name.Int_toWord, int, word)
-      val wordToInt = make (Name.Word_toInt, word, int)
-      val wordToIntX = make (Name.Word_toIntX, word, int)
-   end
-      
-   fun ffi (f: CFunction.t, s: Scheme.t) =
-      new (Name.FFI f, s)
-
-   fun newNullary f = new0 (Name.FFI f, unit --> unit)
-
-   val allocTooLarge = newNullary CFunction.allocTooLarge
-
-   fun ffiSymbol (z as {ty, ...}) =
-      new (Name.FFI_Symbol z, Scheme.fromType (CType.toType ty))
+   val intAdd = make Name.Int_add
+   val intAddCheck = make Name.Int_addCheck
+   val intEqual = make Name.Int_equal
+   val intNeg = make Name.Int_neg
+   val intNegCheck = make Name.Int_negCheck
+   val intMul = make Name.Int_mul
+   val intMulCheck = make Name.Int_mulCheck
+   val intSub = make Name.Int_sub
+   val intSubCheck = make Name.Int_subCheck
 end
 
-val new: string * Scheme.t -> t =
-   fn (name, scheme) =>
+local
+   fun make n = WordSize.memoize (new o n)
+in
+   val wordAdd = make Name.Word_add
+   val wordAddCheck = make Name.Word_addCheck
+   val wordAndb = make Name.Word_andb
+   val wordEqual = make Name.Word_equal
+   val wordGe = make Name.Word_ge
+   val wordGt = make Name.Word_gt
+   val wordLe = make Name.Word_le
+   val wordLt = make Name.Word_lt
+   val wordMul = make Name.Word_mul
+   val wordMulCheck = make Name.Word_mulCheck
+   val wordNeg = make Name.Word_neg
+   val wordNotb = make Name.Word_notb
+   val wordRshift = make Name.Word_rshift
+   val wordSub = make Name.Word_sub
+end
+
+local
+   fun make (name, memo, memo') =
+      let
+	 val f = memo (fn s => memo' (fn s' => name (s, s')))
+      in
+	 fn (s, s') => new (f s s')
+      end
+   val int = IntSize.memoize
+   val word = WordSize.memoize
+in
+   val intToWord = make (Name.Int_toWord, int, word)
+   val wordToInt = make (Name.Word_toInt, word, int)
+   val wordToIntX = make (Name.Word_toIntX, word, int)
+end
+      
+val ffi = new o Name.FFI
+   
+fun newNullary f = new (Name.FFI f)
+   
+val allocTooLarge = newNullary CFunction.allocTooLarge
+   
+fun ffiSymbol z = new (Name.FFI_Symbol z)
+
+val new: string -> t =
+   fn name =>
    let
       val (name, kind) =
 	 case List.peek (Name.strings, fn (_, _, s) => s = name) of
 	    NONE => Error.bug (concat ["unknown primitive: ", name])
 	  | SOME (n, k, _) => (n, k)
    in
-      new (name, kind, scheme)
+      make (name, kind)
    end
 
-val new = Trace.trace2 ("Prim.new", String.layout, Scheme.layout, layout) new
-   
-fun 'a checkApp {prim, targs, args,
-		 con, detupleOpt, dearrowOpt, equals, isUnit}
-   : 'a option =
-   let
-      val error = NONE
-      val Scheme.T {tyvars, ty} = scheme prim
-      fun show s =
-	 if true
-	    then ()
-	 else Out.print s
-   in
-      if Vector.length targs <> Vector.length tyvars
-	 then
-	    (show (concat ["primapp error, #targs=",
-			   Int.toString (Vector.length targs),
-			   ", #tyvars=",
-			   Int.toString (Vector.length tyvars), "\n"])
-	     ; error)
-      else
-	 let
-	    val con = fn (c, ts) =>
-	       let
-		  val c = if Tycon.equals (c, Tycon.char)
-			     then Tycon.word W8
-			  else c
-	       in
-		  con (c, ts)
-	       end
-	    val env = Vector.zip (tyvars, targs)
-	    fun var a =
-	       case Vector.peek (env, fn (a', _) => Tyvar.equals (a, a')) of
-		  NONE => Error.bug "prim scheme with free tyvar"
-		| SOME (_, t) => t
-	    val ty = Type.hom {ty = ty, var = var, con = con}
-	 in
-	    case numArgs prim of
-	       NONE => if Vector.isEmpty args
-			  then SOME ty
-		       else (show "primapp error, no numArgs\n"
-			     ; error)
-	     | SOME n =>
-		  case dearrowOpt ty of
-		     NONE => error
-		   | SOME (argType, result) =>
-			case (n, Vector.length args) of
-			   (0, 0) => SOME result
-			 | (1, 1) =>
-			      if equals (argType, Vector.sub (args, 0))
-				 then SOME result
-			      else error
-			 | _ => 
-			      case detupleOpt argType of
-				 NONE => error
-			       | SOME argTypes =>
-				    if Vector.equals (args, argTypes, equals)
-				       then SOME result
-				    else error
-	 end
-   end
+val new = Trace.trace ("Prim.new", String.layout, layout) new
 
-fun returnsBool p =
-   case Type.dearrowOpt (Scheme.ty (scheme p)) of
-      SOME (_, Type.Con (tycon, _)) => Tycon.equals (tycon, Tycon.bool)
-    | _ => false
-
-fun 'a extractTargs {prim, args, result,
-		     dearray,
-		     dearrow: 'a -> 'a * 'a,
-		     deref,
-		     devector,
-		     deweak} =
+fun 'a extractTargs {args: 'a vector,
+		     deArray: 'a -> 'a,
+		     deArrow: 'a -> 'a * 'a,
+		     deRef: 'a -> 'a,
+		     deVector: 'a -> 'a,
+		     deWeak: 'a -> 'a,
+		     prim: t,
+		     result: 'a} =
    let
       val one = Vector.new1
       fun arg i = Vector.sub (args, i)
       datatype z = datatype Name.t
    in
       case name prim of
-	 Array_array => one (dearray result)
-       | Array_array0Const => one (dearray result)
+	 Array_array => one (deArray result)
+       | Array_array0Const => one (deArray result)
        | Array_sub => one result
-       | Array_toVector => one (dearray (arg 0))
+       | Array_toVector => one (deArray (arg 0))
        | Array_update => one (arg 2)
-       | Array_length => one (dearray (arg 0))
+       | Array_length => one (deArray (arg 0))
        | Exn_extra => one result
-       | Exn_setExtendExtra => one (#2 (dearrow (arg 0)))
+       | Exn_setExtendExtra => one (#2 (deArrow (arg 0)))
        | Exn_setInitExtra => one (arg 0)
        | FFI_getPointer => one result
        | FFI_setPointer => one (arg 0)
@@ -773,18 +625,22 @@ fun 'a extractTargs {prim, args, result,
        | MLton_eq => one (arg 0)
        | MLton_equal => one (arg 0)
        | MLton_serialize => one (arg 0)
-       | MLton_size => one (deref (arg 0))
+       | MLton_size => one (deRef (arg 0))
        | MLton_touch => one (arg 0)
        | Ref_assign => one (arg 1)
        | Ref_deref => one result
        | Ref_ref => one (arg 0)
-       | Vector_length => one (devector (arg 0))
+       | Vector_length => one (deVector (arg 0))
        | Vector_sub => one result
-       | Weak_canGet => one (deweak (arg 0))
+       | Weak_canGet => one (deWeak (arg 0))
        | Weak_get => one result
        | Weak_new => one (arg 0)
        | _ => Vector.new0 ()
    end
+
+val extractTargs =
+   fn z =>
+   Trace.trace ("extractTargs", layout o #prim, Layout.ignore) extractTargs z
 
 structure SmallIntInf = Const.SmallIntInf
 
