@@ -132,7 +132,10 @@ mlton/world.sig
 mlton/world.sml
 mlton/socket.sig
 mlton/socket.sml
+mlton/random.sig
+mlton/random.sml
 mlton/text-io.sig
+mlton/text-io.sml
 mlton/gc.sig
 mlton/gc.sml
 mlton/word.sig
@@ -146,8 +149,6 @@ mlton/rusage.sig
 mlton/rusage.sml
 mlton/syslog.sig
 mlton/syslog.sml
-mlton/random.sig
-mlton/random.sml
 mlton/exn.sig
 mlton/exn.sml
 mlton/mlton.sig
