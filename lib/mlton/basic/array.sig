@@ -19,5 +19,6 @@ signature ARRAY =
       val shuffleN: 'a t * int -> unit
       val swap: 'a t * int * int -> unit
       val toVector: 'a t -> 'a vector
+      val toVectorMap: 'a t * ('a -> 'b) -> 'b vector
       val update: 'a t * int * 'a -> unit
    end

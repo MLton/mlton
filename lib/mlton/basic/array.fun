@@ -49,6 +49,8 @@ fun fromListRev l =
 	 in a
 	 end
 
-fun toVector a = Vector.tabulate (length a, fn i => sub (a, i))
+fun toVectorMap (a, f) = Vector.tabulate (length a, fn i => f (sub (a, i)))
+
+fun toVector a = toVectorMap (a, fn x => x)
    
 end
