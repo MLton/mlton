@@ -73,7 +73,6 @@ struct
 	val GCState = new "GCState"
 	val GCStateHold = new "GCStateHold"
 	  
-	val IntInfRes = new "IntInfRes"
 	val ThreadStack = new "ThreadStack"
       end
 
@@ -101,7 +100,6 @@ struct
 		     StaticNonTemp::
 		     GCState::
 		     GCStateHold::
-		     IntInfRes::
 		     ThreadStack::
 		     nil)
 
@@ -178,30 +176,6 @@ struct
 		     class = Classes.CStack}
   val c_stackPDerefDoubleOperand
     = Operand.memloc c_stackPDerefDouble
-
-  val intInfTemp = Label.fromString "intInfTemp"
-  val intInfTempContents 
-    = makeContents {base = Immediate.label intInfTemp,
-		    size = wordSize,
-		    class = Classes.StaticTemp}
-  val intInfTempContentsOperand
-    = Operand.memloc intInfTempContents
-  val intInfTempFrontierContents 
-    = MemLoc.simple {base = intInfTempContents,
-		     index = Immediate.const_int 0,
-		     scale = wordScale,
-		     size = pointerSize,
-		     class = Classes.IntInfRes}
-  val intInfTempFrontierContentsOperand
-    = Operand.memloc intInfTempFrontierContents 
-  val intInfTempValueContents
-    = MemLoc.simple {base = intInfTempContents,
-		     index = Immediate.const_int 1,
-		     scale = wordScale,
-		     size = pointerSize,
-		     class = Classes.IntInfRes}
-  val intInfTempValueContentsOperand
-    = Operand.memloc intInfTempValueContents
 				 
   val threadTemp = Label.fromString "threadTemp"
   val threadTempContents 

@@ -21,6 +21,7 @@ signature X86_LIVENESS =
 
     structure LiveSet: sig 
                          include SET
+			 val fromMemLocSet: x86.MemLocSet.t -> t
 			 val toMemLocSet: t -> x86.MemLocSet.t
 		       end
     sharing type LiveSet.Element.t = x86.MemLoc.t

@@ -29,8 +29,8 @@ signature X86_LIVE_TRANSFERS =
     type t
 
     val computeLiveTransfers : {chunk : x86.Chunk.t,
-				transferRegs : x86.Register.t list,
-				transferFltRegs : Int.t, 
+				transferRegs : x86.Entry.t -> x86.Register.t list,
+				transferFltRegs : x86.Entry.t -> Int.t, 
 				liveInfo : x86Liveness.LiveInfo.t,
 				jumpInfo : x86JumpInfo.t,
 				loopInfo : x86LoopInfo.t} -> t

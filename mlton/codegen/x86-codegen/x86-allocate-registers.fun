@@ -147,9 +147,9 @@ struct
 	    doit'("dead: ", dead, MemLoc.toString,
 	    doit'("commit: ", commit, MemLoc.toString,
 	    doit'("remove: ", remove, MemLoc.toString,
-(*	    doit("future (pre): ", List.rev pre, future_toString,  *)
+	    doit("future (pre): ", List.rev pre, future_toString,
 	    doit("future (post): ", List.rev post, future_toString, 
-	    doit("hint: ", hint, hint_toString, "")))))
+	    doit("hint: ", hint, hint_toString, ""))))))
 	  end
 
       fun toComments {dead, commit, remove, futures as {pre, post}, hint} 
@@ -168,9 +168,9 @@ struct
 	    doit'("dead: ", dead, MemLoc.toString,
 	    doit'("commit: ", commit, MemLoc.toString,
 	    doit'("remove: ", remove, MemLoc.toString,
-(*	    doit("future (pre): ", List.rev pre, future_toString,  *)
+	    doit("future (pre): ", List.rev pre, future_toString,
 	    doit("future (post): ", List.rev post, future_toString,
-	    doit("hint: ", hint, hint_toString, [])))))
+	    doit("hint: ", hint, hint_toString, []))))))
 	  end
 
 
@@ -521,6 +521,10 @@ struct
 			       andalso
 			       (Size.class (MemLoc.size memloc) <> Size.INT)))::
 		      future
+		   | Directive.Return {memloc}
+		   => (M (FDEF, memloc))::future
+		   | Directive.FltReturn {memloc}
+		   => (M (FDEF, memloc))::future
 		   | Directive.ClearFlt
 		   => (MP (FMREMOVEP,
 			   fn memloc

@@ -59,7 +59,6 @@ signature X86_MLTON_BASIC =
 	val GCState : x86.MemLoc.Class.t
 	val GCStateHold : x86.MemLoc.Class.t
 	  
-	val IntInfRes : x86.MemLoc.Class.t	  
 	val ThreadStack : x86.MemLoc.Class.t
 	  
 	val allClasses : x86.ClassSet.t ref
@@ -85,9 +84,6 @@ signature X86_MLTON_BASIC =
     val realTemp3ContentsOperand : x86.Operand.t
     val fpswTempContentsOperand : x86.Operand.t
     val statusTempContentsOperand : x86.Operand.t
-    val intInfTempContentsOperand : x86.Operand.t
-    val intInfTempValueContentsOperand : x86.Operand.t
-    val intInfTempFrontierContentsOperand : x86.Operand.t
 
     (* Static arrays defined in x86codegen.h *)
     val local_base : Machine.Type.t -> x86.Label.t

@@ -41,44 +41,68 @@ struct
   val wordSize = x86MLton.wordSize
 
   val normalRegs =
-     let
-	val transferRegs
-	   =
-	   (*
-	    Register.eax::
-	    Register.al::
-	    *)
-	   Register.ebx::
-	   Register.bl::
-	   Register.ecx::
-	   Register.cl::
-	   Register.edx:: 
-	   Register.dl::
-	   Register.edi::
-	   Register.esi::
-	   (*
-	    Register.esp::
-	    Register.ebp::
-	    *)
-	   nil
+    let
+      val transferRegs
+	=
+	  (*
+	  Register.eax::
+	  Register.al::
+	  *)
+	  Register.ebx::
+	  Register.bl::
+	  Register.ecx::
+	  Register.cl::
+	  Register.edx:: 
+	  Register.dl::
+	  Register.edi::
+	  Register.esi::
+	  (*
+	  Register.esp::
+	  Register.ebp::
+	  *)
+	  nil
      in
 	{frontierReg = Register.esp,
 	 stackTopReg = Register.ebp,
-	 transferRegs = transferRegs}
+	 transferRegs = fn Entry.Jump _ => transferRegs
+	                 | Entry.CReturn _ => Register.eax::Register.al::transferRegs
+			 | _ => []}
      end
 
   val reserveEspRegs =
-     {frontierReg = Register.edi,
-      stackTopReg = Register.ebp,
-      transferRegs = [Register.ebx,
-		      Register.bl,
-		      Register.ecx,
-		      Register.cl,
-		      Register.edx,
-		      Register.dl,
-		      Register.esi]}
+    let
+      val transferRegs
+	=
+	  (*
+	  Register.eax::
+	  Register.al::
+	  *)
+	  Register.ebx::
+	  Register.bl::
+	  Register.ecx::
+	  Register.cl::
+	  Register.edx:: 
+	  Register.dl::
+	  (*
+	  Register.edi::
+          *)
+	  Register.esi::
+          (*
+	  Register.esp::
+	  Register.ebp::
+	  *)
+	  nil
+     in
+	{frontierReg = Register.edi,
+	 stackTopReg = Register.ebp,
+	 transferRegs = fn Entry.Jump _ => transferRegs
+	                 | Entry.CReturn _ => Register.eax::Register.al::transferRegs
+			 | _ => []}
+     end
 
-  val transferFltRegs : Int.t = 6
+  val transferFltRegs : Entry.t -> Int.t = fn Entry.Jump _ => 6
+                                            | Entry.CReturn _ => 6
+					    | _ => 0
 
   val indexReg = x86.Register.eax
 
@@ -1191,8 +1215,17 @@ struct
 				  val FrameInfo.T {size, ...} = valOf frameInfo
 				  val bytes = x86.Operand.immediate_const_int size
 				    
-				  val live 
-				    = x86Liveness.LiveInfo.getLive(liveInfo, return)
+				  val live =
+				    x86Liveness.LiveInfo.getLive(liveInfo, return)
+				  val {defs, ...} = Transfer.uses_defs_kills transfer
+				  val live = 
+				    List.fold
+				    (defs,
+				     live,
+				     fn (oper,live) =>
+				     case Operand.deMemloc oper of
+				       SOME memloc =>  LiveSet.remove (live, memloc)
+				     | NONE => live)
 				in
 				  (runtimeTransfer (LiveSet.toMemLocSet live)
 				   (AppendList.fromList
@@ -1209,7 +1242,7 @@ struct
 				      size = pointerSize},
 				     x86.Assembly.directive_force
 				     {commit_memlocs = MemLocSet.singleton 
-				      stackTopMinusWordDeref',
+				                       stackTopMinusWordDeref',
 				      commit_classes = ClassSet.empty,
 				      remove_memlocs = MemLocSet.empty,
 				      remove_classes = ClassSet.empty,

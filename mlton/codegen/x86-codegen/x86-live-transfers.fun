@@ -186,8 +186,8 @@ struct
   end
 
   fun computeLiveTransfers {chunk as Chunk.T {blocks,...},
-			    transferRegs : Register.t list,
-			    transferFltRegs : Int.t,
+			    transferRegs : Entry.t -> Register.t list,
+			    transferFltRegs : Entry.t -> Int.t,
 			    liveInfo : x86Liveness.LiveInfo.t,
 			    jumpInfo : x86JumpInfo.t,
 			    loopInfo : x86LoopInfo.t}
@@ -461,7 +461,7 @@ struct
 				    | Return _ => (I.PosInfinity, NONE)
 				    | Raise _ => (I.PosInfinity, NONE)
 			            | CCall {func, ...}
-				    => if CFunction.mayGC func
+				    => if CFunction.maySwitchThreads func
 				          orelse Size.class (MemLoc.size temp) <> Size.INT
 					 then (I.PosInfinity, NONE)
 					 else default ()
@@ -536,7 +536,7 @@ struct
 			     | Cont {...} => (I.PosInfinity, NONE)
 			     | Handler {...} => (I.PosInfinity, NONE)
 			     | CReturn {func, ...}
-			     => if (CFunction.mayGC func
+			     => if (CFunction.maySwitchThreads func
 				    orelse Size.class (MemLoc.size temp) <> Size.INT)
 				  then (I.PosInfinity, NONE)
 				  else default ()
@@ -559,7 +559,8 @@ struct
 
 	fun doit {label, hints}
 	  = let
-	      val {block, pred, succ, liveTransfers, ...} = getInfo label
+	      val {block as Block.T {entry, ...}, pred, succ, 
+		   live as liveData, liveTransfers, ...} = getInfo label
 	    in
 	      case !liveTransfers
 		of SOME _ => ()
@@ -575,9 +576,52 @@ struct
 (*
 		      val _ 
 			= (print (Label.toString label);
+(*
 			   print "\nloopLabels: ";
 			   print (List.toString Label.toString loopLabels);
-			   print "\ndistance_F:\n";
+*)
+			   print "\nliveData:\n";
+			   Vector.foreach
+			   (liveData,
+			    fn {memloc, distanceF', distanceF,
+				distanceB', distanceB} =>
+			    (print (MemLoc.toString memloc);
+			     print ": ";
+			     case !distanceF' of
+			       NONE => print "?"
+			     | SOME (Position i) => (print "Pos "; print (I.toString i))
+			     | SOME (Length i) => (print "Len "; print (I'.toString i));
+			     print " ";
+			     case !distanceB' of
+			       NONE => print "?"
+			     | SOME (Position i) => (print "Pos "; print (I.toString i))
+			     | SOME (Length i) => (print "Len "; print (I'.toString i));
+			     print "\n"));
+			   print "regHints:\n";
+			   List.foreach
+			   (regHints,
+			    fn (memloc,register,sync) =>
+			    (print (MemLoc.toString memloc);
+			     print ": ";
+			     print (Register.toString register);
+			     print ": ";
+			     print (Bool.toString (!sync));
+			     print "\n"));
+			   print "fltregHints:\n";
+			   List.foreach
+			   (fltregHints,
+			    fn (memloc,sync) =>
+			    (print (MemLoc.toString memloc);
+			     print ": ";
+			     print (Bool.toString (!sync));
+			     print "\n"));
+			   print "live:\n";
+			   List.foreach
+			   (live,
+			    fn memloc
+			     => (print (MemLoc.toString memloc);
+				 print "\n"));
+			   print "distance_F:\n";
 			   List.foreach
 			   (live,
 			    fn memloc
@@ -599,15 +643,14 @@ struct
 			     => (print (MemLoc.toString memloc);
 				 print ": ";
 				 let
-				   val (n, l) = get_distanceF {temp = memloc,
+				   val (n, l) = get_distanceB {temp = memloc,
 							       label = label}
 				 in
 				   print (I.toString n);
 				   print " ";
 				   print (Option.toString Label.toString l)
 				 end;
-				 print "\n"));
-			   print "\n")
+				 print "\n")))
 *)
 
 		      val live
@@ -676,6 +719,18 @@ struct
 		      val live
 			= List.insertionSort
 			  (live, fn ((_,n1),(_,n2)) => I'.>(n1, n2))
+
+(*
+		      val _ 
+			= (print "live:\n";
+			   List.foreach
+			   (live,
+			    fn (memloc,n)
+			     => (print (MemLoc.toString memloc);
+				 print ": ";
+				 print (I'.toString n);
+				 print "\n")))
+*)
 
 		      val {yes = liveRegs, no = liveFltRegs}
 			= List.partition
@@ -767,10 +822,10 @@ struct
 				   | NONE => default ()
 			      end
 
-		      val liveRegsTransfers = doitRegs(transferRegs, liveRegs, [])
+		      val liveRegsTransfers = doitRegs(transferRegs entry, liveRegs, [])
 
 
-		      val liveFltRegs = take(liveFltRegs, transferFltRegs)
+		      val liveFltRegs = take(liveFltRegs, transferFltRegs entry)
 		      val liveFltRegsTransfers
 			= List.map(liveFltRegs, fn (memloc, _) => (memloc, ref true))
 			  
@@ -778,11 +833,52 @@ struct
 		      val _ = liveTransfers := SOME (liveRegsTransfers, 
 						     liveFltRegsTransfers)
 
+(*
+		      val _
+			= (print "liveRegsTransfers:\n";
+			   List.foreach
+			   (liveRegsTransfers,
+			    fn (memloc,register,sync) =>
+			    (print (MemLoc.toString memloc);
+			     print ": ";
+			     print (Register.toString register);
+			     print ": ";
+			     print (Bool.toString (!sync));
+			     print "\n"));
+			   print "liveFltRegsTransfers:\n";
+			   List.foreach
+			   (liveFltRegsTransfers,
+			    fn (memloc,sync) =>
+			    (print (MemLoc.toString memloc);
+			     print ": ";
+			     print (Bool.toString (!sync));
+			     print "\n"));
+			   print "")
+*)
+
 		      fun doit' label = enque {label = label, 
 					       hints = (liveRegsTransfers,
 							liveFltRegsTransfers)}
 		      fun doit'' label = enque {label = label, 
 						hints = ([],[])}
+		      fun doit''' dstsize label 
+			= enque {label = label,
+				 hints = case dstsize
+					   of NONE => ([],[])
+					    | SOME dstsize
+					    => (case Size.class dstsize
+						  of Size.INT 
+						   => ([(MemLoc.cReturnTempContents 
+							 dstsize,
+							 Register.return dstsize,
+							 ref true)],
+						       [])
+						   | Size.FLT 
+						   => ([],
+						       [(MemLoc.cReturnTempContents 
+							 dstsize,
+							 ref true)])
+						   | _ => Error.bug "CCall")}
 		      datatype z = datatype Transfer.t
 		    in
 		      case transfer
@@ -805,8 +901,10 @@ struct
 			 => ()
 			 | Raise {...}
 			 => ()
-			 | CCall {return, ...}
-			 => Option.app (return, doit'')
+			 | CCall {dstsize, func, return, ...}
+			 => if CFunction.maySwitchThreads func
+			      then Option.app (return, doit'')
+			    else Option.app (return, doit''' dstsize)
 		    end
 	    end
 
@@ -921,7 +1019,7 @@ struct
 		       | Raise {...}
 		       => ()
 		       | CCall {func, return, ...}
-		       => if CFunction.mayGC func
+		       => if CFunction.maySwitchThreads func
 			    then Option.app (return, doit'')
 			    else Option.app (return, doit')
 		  end
@@ -999,8 +1097,8 @@ struct
 		 end
 
   val (computeLiveTransfers : {chunk : Chunk.t,
-			       transferRegs : Register.t list,
-			       transferFltRegs : Int.t,
+			       transferRegs : Entry.t -> Register.t list,
+			       transferFltRegs : Entry.t -> Int.t,
 			       liveInfo : LiveInfo.t,
 			       jumpInfo : x86JumpInfo.t,
 			       loopInfo : x86LoopInfo.t} -> t,

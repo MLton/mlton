@@ -16,6 +16,7 @@ struct
 
   structure LiveSet = struct 
 			open MemLocSet
+			fun fromMemLocSet s = s
 			fun toMemLocSet s = s
 		      end
   fun track memloc = ClassSet.contains(!x86MLtonBasic.Classes.livenessClasses, 
