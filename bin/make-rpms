@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -x
 
 # This script makes binary and source RPMs and puts them in the current 
 # directory.
@@ -87,6 +87,7 @@ echo 'Building rpms'
 	echo "%_topdir $root" >$root/.rpmmacros
 	time rpm -ba --quiet --clean --buildroot $root/install \
 		$root/SPECS/mlton.spec
+	touch $root/RPMS/i386/$package.i386.rpm $root/SRPMS/$package.src.rpm
 )
 
 echo 'Cleaning up'
@@ -96,14 +97,20 @@ rm -rf install BUILD RPMS SOURCES SPECS SRPMS
 
 if [ $home = 'yes' ]; then
 	echo 'Building web home'
-	echo '  Checking out docs'
 	cd $root
 	cvs -Q co -d doc mlton/doc
 	cvs -Q release doc
-	cd $root/doc
+	cd doc
 	instantiate
 	cd web
-	make
+	cvs -Q co -d benchmarks mlton/benchmark/tests
+	cvs -Q release benchmarks
+	find benchmarks -type d | grep CVS | xargs rm -rf
+	cp -p ../CHANGES .
+	(cd ../user-guide && make)
+	gzip -c ../user-guide/main.ps >user-guide.ps.gz
+	(cd ../user-guide/main && tar.write .) | 
+		(mkdir HTML && cd HTML && tar.read)
 	cp $root/$package.i386.rpm $root/$package.src.rpm .
 	find . -type d | grep CVS | xargs rm -rf
 	find . -type f | grep cvsignore | xargs rm -f
