@@ -10,7 +10,8 @@
  * deduced by CM.
  *
  * To use from the REPL, do the following:
- * CMcat.cmcat {defines = [],
+ * CMcat.cmcat {comments = true,
+ *              defines = [],
  *              sources = "sources.cm",
  *	        out = TextIO.stdOut}
  *
@@ -245,8 +246,7 @@ struct
 	       val _ =
 		  List.foreach
 		  (libs, 
-		   fn {graph = NONE, source, ...} =>
-		   ()
+		   fn {graph = NONE, source, ...} => ()
 		    | {graph = SOME {graph = PG.GRAPH {defs, export, imports}, 
 				     imports = imports', ...},
 		       source, ...} =>
@@ -522,7 +522,7 @@ struct
 		  (g, nodes,
 		   Graph.DfsParam.startNode
 		   (fn node => (get node) ()))
-		  
+
 	       val keep = fn (source, vn) =>
 		  Option.isSome
 		  (HashSet.peek
@@ -533,9 +533,8 @@ struct
 		  case HashSet.peek
 		       (imports, String.hash descr, fn X {source, ...} =>
 			descr = source) of
-		     NONE => raise Fail "import"
+		     NONE => []
 		   | SOME (X {syms, ...}) => !syms
-
 	    in
 	       (keep, imports)
 	    end
