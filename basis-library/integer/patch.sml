@@ -121,6 +121,10 @@ structure Word32: WORD32_EXTRA =
       end
    end
 
+structure Word = Word32
+
+structure SysWord = Word32
+
 structure Word64: WORD =
    struct
       open Word64
@@ -136,7 +140,7 @@ structure Word64: WORD =
 			      0w32))
 
       fun toLargeIntX w =
-	 if 0w0 = andb (w, << (0w1, 0w63))
+	 if Word32.toLarge 0w0 = andb (w, << (Word32.toLarge 0w1, 0w63))
 	    then toLargeInt w
 	 else IntInf.- (toLargeInt w, t64)
 
@@ -149,6 +153,4 @@ structure Word64: WORD =
 	 end
    end
 
-structure Word = Word32
 structure LargeWord = Word64
-structure SysWord = Word32

@@ -6,12 +6,8 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 
-functor PackWord32 (S: sig
-			  val isBigEndian: bool
-		       end): PACK_WORD =
+functor PackWord32 (val isBigEndian: bool): PACK_WORD =
 struct
-
-open S
 
 val bytesPerElem: int = 4
 
@@ -43,7 +39,7 @@ local
       let
 	 val _ = start (i, length av)
       in
-	 sub (av, i)
+	 Word.toLarge (sub (av, i))
       end
 in
    val subArr = make (sub, Word8Array.length)
@@ -56,7 +52,7 @@ fun update (a, i, w) =
    let
       val _ = start (i, Array.length a)
    in
-      up (a, i, w)
+      up (a, i, Word.fromLarge w)
    end
 
 end

@@ -5,7 +5,7 @@ structure Word =
 
 structure LargeWord = 
    struct
-      type word = word
+      type word = word64
    end
 
 signature WORD_GLOBAL =

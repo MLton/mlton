@@ -33,7 +33,7 @@ structure MLtonRandom: MLTON_RANDOM =
 		   val _ = loop 4
 		   val _ = Posix.IO.close fd
 		in
-		   SOME (PackWord32Little.subArr (buf, 0))
+		   SOME (Word.fromLarge (PackWord32Little.subArr (buf, 0)))
 		end
 		   handle OS.SysErr _ => NONE)
 	    end

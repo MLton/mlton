@@ -126,7 +126,7 @@ structure NetHostDB: NET_HOST_DB_EXTRA =
 		   end
 	  val l = loop (4, state, [])
 	  fun get1 w = 
-	    (Word8.fromLargeWord (Word32.andb (w, 0wxFF)),
+	    (Word8.fromLarge (Word32.toLarge (Word32.andb (w, 0wxFF))),
 	     Word32.>>(w, 0w8))
 	  fun get2 w =
 	    let 
