@@ -4,5 +4,6 @@ functor OSConvert
   struct
      open OS
      structure FileSys = OSFileSysConvert(structure FileSys = FileSys)
+     structure Path = OSPathConvert(structure Path = Path)
      structure Process = OSProcessConvert(structure Process = Process)
   end

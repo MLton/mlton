@@ -273,6 +273,8 @@ libs/basis-1997/system/timer.sig
 libs/basis-1997/system/timer-convert.fun
 libs/basis-1997/system/file-sys.sig
 libs/basis-1997/system/file-sys-convert.fun
+libs/basis-1997/system/path.sig
+libs/basis-1997/system/path-convert.fun
 libs/basis-1997/system/process.sig
 libs/basis-1997/system/process-convert.fun
 libs/basis-1997/system/os.sig

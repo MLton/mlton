@@ -108,7 +108,7 @@ signature BASIS_1997 =
       structure OS : OS_1997
 (*
       structure OS.FileSys : OS_FILE_SYS_1997
-      structure OS.Path : OS_PATH
+      structure OS.Path : OS_PATH_1997
       structure OS.Process : OS_PROCESS_1997
       structure OS.IO : OS_IO
 *)
