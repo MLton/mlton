@@ -31,14 +31,14 @@
  * -Dsym can be used to define CM preprocessor symbols.
  *)
 
-structure CMcat :
+structure CMcat (* :
 sig
    val cmcat : {comments: bool,
 		defines: String.t list,
 		out: Out.t,
-		source: String.t} -> unit
+		sources: String.t} -> unit
    val export : unit -> unit
-end =
+end *) =
 struct
    structure PG = PortableGraph
    structure Graph = DirectedGraph
@@ -47,21 +47,41 @@ struct
 
    fun message s = Out.output (Out.error, s ^ "\n")
 
+   structure CM =
+      struct
+	 open CM
+
+	 structure Graph =
+	    struct
+	       val graph = fn src =>
+		  (Graph.graph src)
+		  handle _ => NONE
+	    end
+      end
+
+   structure SrcDescr =
+      struct
+	 datatype t = T of String.t * String.t
+	 fun hash (T (src, descr)) =
+	    Word.xorb(String.hash src, String.hash descr)
+	 fun toString (T (src, descr)) =
+	    concat [descr, ":", src]
+	 fun extract (T (src, descr)) =
+	    if String.sub(descr, 0) = #"$"
+	       then descr
+	       else src
+      end
+
    structure Closure =
       struct
-	 structure Import =
-	    struct
-	       datatype t = Known of String.t | Unknown of CM.Library.lib
-	    end
-
 	 fun topoSortImportGraph source =
 	    let
-	       datatype t = T of {hash: Word.t,
-				  graph: {graph: PG.graph,
-					  imports: Import.t List.t,
+	       datatype t = T of {graph: {graph: PG.graph,
+					  imports: SrcDescr.t List.t,
 					  nativesrc: String.t -> String.t} option,
+				  hash: Word.t,
 				  node: t Node.t,
-				  source: String.t}
+				  srcdescr: SrcDescr.t}
 
 	       val g : t Graph.t = Graph.new ()
 	       val m : t HashSet.t =
@@ -71,86 +91,63 @@ struct
 		  Property.getSetOnce
 		  (Node.plist, Property.initRaise ("topoSortImportGraph:get", Node.layout))
 
-	       val sources = ref [(source,NONE)];
+	       val todo = ref [(SrcDescr.T (source,source),fn _ => ())];
 
 	       fun closure () =
-		  if List.length (!sources) = 0
+		  if List.length (!todo) = 0
 		     then ()
 		     else DynamicWind.withEscape
 			  (fn esc =>
 			   let
-			      val (source,finish) = List.pop sources
-			      val hash = String.hash source
-
-			      fun error () =
-				 (message ("CM.Graph.graph " ^ source ^ ": failed");
-				  esc ())
+			      val (srcdescr,finish) = List.pop todo
+			      val hash = SrcDescr.hash srcdescr
 
 			      val T {node, ...} =
 				 HashSet.lookupOrInsert
-				 (m, hash, fn T {source = source', ...} => 
-				  String.equals (source, source'),
+				 (m, hash, fn T {srcdescr = srcdescr', ...} => 
+				  srcdescr = srcdescr',
 				  fn () => 
-				  (case CM.Graph.graph source of
-				      NONE => error ()
-				    | SOME {graph, imports, nativesrc, ...} => 
-					 let
-					    val node = Graph.newNode g
-					    val imports =
-					       List.map
-					       (imports, fn lib =>
-						let
-						   val descr = CM.Library.descr lib
-						   val descr = List.last (String.split(descr, #":"))
-						   val source = CM.Library.osstring lib
-						in
-						   if String.isPrefix {prefix = "$", string = descr}
-						   then (let
-							    val hash = String.hash descr
-							    val T {node = import_node, ...} =
-							       HashSet.lookupOrInsert
-							       (m, hash, fn T {source, ...} =>
-								String.equals (descr, source), 
-								fn () =>
-								let
-								   val node = Graph.newNode g
-								   val result =
-								      T {graph = NONE,
-									 hash = hash,
-									 node = node,
-									 source = descr}
-								   val _ = set(node,result)
-								in
-								   result
-								end)
-							 in
-							    Graph.addEdge
-							    (g, {from = import_node, to = node})
-							 end ;
-							 Import.Unknown lib)
-						   else (let 
-							    val finish = fn import_node =>
-							       Graph.addEdge
-							       (g, {from = import_node, to = node})
-							 in 
-							    List.push(sources, (source, SOME finish)) ;
-							    Import.Known source
-							 end)
-						end)
-
-					    val result = 
-					       T {graph = SOME {graph = graph,
-								imports = imports,
-								nativesrc = nativesrc},
-						  hash = hash,
-						  node = node,
-						  source = source}
-					 in
-					    set (node, result) ;
-					    result
-					 end)
-				 handle _ => error ())
-			      val _ = Option.map(finish, fn finish => finish node)
+				  case CM.Graph.graph (SrcDescr.extract srcdescr) of
+				     NONE => let
+						val node = Graph.newNode g
+						val result =
+						   T {graph = NONE,
+						      hash = hash,
+						      node = node,
+						      srcdescr = srcdescr}
+						val _ = set(node, result)
+					     in
+						result
+					     end
+				   | SOME {graph, imports, nativesrc, ...} => 
+					let
+					   val node = Graph.newNode g
+					   val imports =
+					      List.map
+					      (imports, fn lib =>
+					       let
+						  val descr = CM.Library.descr lib
+						  val descr = List.last (String.split(descr, #":"))
+						  val src = CM.Library.osstring lib
+						  val finish = fn import_node =>
+						     (ignore o Graph.addEdge)
+						     (g, {from = import_node, to = node})
+					       in
+						  List.push(todo, (SrcDescr.T (src, descr), finish)) ;
+						  SrcDescr.T (src, descr)
+					       end)
+					   val result = 
+					      T {graph = SOME {graph = graph,
+							       imports = imports,
+							       nativesrc = nativesrc},
+						 hash = hash,
+						 node = node,
+						 srcdescr = srcdescr}
+					in
+					   set (node, result) ;
+					   result
+					end)
+			      val _ = finish node
 			   in
 			      closure ()
 			   end)
@@ -165,10 +162,10 @@ struct
 			      List.map
 			      (nodes, fn n =>
 			       let
-				  val T {graph, source, ...} = get n
+				  val T {graph, srcdescr, ...} = get n
 			       in
 				  {graph = graph,
-				   source = source}
+				   srcdescr = srcdescr}
 			       end)
 			in
 			   libs
@@ -178,19 +175,20 @@ struct
 	    end
 
 	 fun filter (libs : {graph: {graph: PG.graph, 
-				     imports: Import.t List.t,
+				     imports: SrcDescr.t List.t,
 				     nativesrc: String.t -> String.t} option, 
-			     source: String.t} List.t) =
+			     srcdescr: SrcDescr.t} List.t) =
 	    let
 	       datatype t = T of {hash: Word.t,
-				  lhs: String.t * PG.varname,
-				  syms: (String.t * PG.namespace * String.t * t Node.t) list}
+				  lhs: SrcDescr.t * PG.varname,
+				  syms: (SrcDescr.t * PG.namespace * String.t * t Node.t) list}
 	       val symsNodesDefs : t HashSet.t =
 		  HashSet.new {hash = fn T {hash, ...} => hash}
 
 	       datatype s = S of {hash: Word.t,
-				  source: String.t,
-				  syms: (String.t * PG.namespace * String.t * t Node.t) list ref}
+				  known: Bool.t,
+				  srcdescr: SrcDescr.t,
+				  syms: (SrcDescr.t * PG.namespace * String.t * t Node.t) list ref}
 	       val exports : s HashSet.t =
 		  HashSet.new {hash = fn S {hash, ...} => hash}
 
@@ -201,42 +199,42 @@ struct
 		  (Node.plist, Property.initRaise ("filter:get", Node.layout))
 
 	       datatype w = W of {hash: Word.t,
-				  lhs: String.t * PG.varname}
+				  lhs: SrcDescr.t * PG.varname}
 	       val keep : w HashSet.t =
 		  HashSet.new {hash = fn W {hash, ...} => hash}
 	       val addKeep =
-		  fn (source,vn) =>
+		  fn (srcdescr,vn) =>
 		  let
-		     val hash = Word.xorb(String.hash source, String.hash vn)
+		     val hash = Word.xorb(SrcDescr.hash srcdescr, String.hash vn)
 		     val result = W {hash = hash,
-				     lhs = (source, vn)}
+				     lhs = (srcdescr, vn)}
 		  in
 		     fn () =>
 		     (HashSet.insertIfNew
 		      (keep, hash, fn W {lhs, ...} =>
-		       (source,vn) = lhs, fn () => result,
+		       (srcdescr,vn) = lhs, fn () => result,
 		       fn _ => raise Fail "keep") ;
 		      ())
 		  end
 
 	       datatype x = X of {hash: Word.t,
-				  source: String.t,
+				  srcdescr: SrcDescr.t,
 				  syms: (PG.namespace * String.t) list ref}
 	       val imports : x HashSet.t =
 		  HashSet.new {hash = fn X {hash, ...} => hash}
 	       val addImport =
-		  fn (descr,ns,s) =>
+		  fn (srcdescr,ns,s) =>
 		  let
-		     val hash = String.hash descr
+		     val hash = SrcDescr.hash srcdescr
 		  in
 		     fn () =>
 		     let
 			val X {syms, ...} =
 			   HashSet.lookupOrInsert
-			   (imports, hash, fn X {source, ...} =>
-			    descr = source, fn () =>
+			   (imports, hash, fn X {srcdescr = srcdescr', ...} =>
+			    srcdescr = srcdescr', fn () =>
 			    X {hash = hash,
-			       source = descr,
+			       srcdescr = srcdescr,
 			       syms = ref []})
 		     in
 			List.push(syms,(ns,s))
@@ -246,45 +244,51 @@ struct
 	       val _ =
 		  List.foreach
 		  (libs, 
-		   fn {graph = NONE, source, ...} => ()
+		   fn {graph = NONE, srcdescr, ...} =>
+		   let
+		      val hash = SrcDescr.hash srcdescr
+		      val _ =
+			 HashSet.insertIfNew
+			 (exports, hash, 
+			  fn S {srcdescr = srcdescr', ...} => srcdescr = srcdescr',
+			  fn () => S {hash = hash,
+				      known = false,
+				      srcdescr = srcdescr,
+				      syms = ref []},
+			  fn _ => raise Fail (concat ["srcdescr: ", 
+						      SrcDescr.toString srcdescr, 
+						      " repeated"]))
+		   in
+		      ()
+		   end
 		    | {graph = SOME {graph = PG.GRAPH {defs, export, imports}, 
 				     imports = imports', ...},
-		       source, ...} =>
+		       srcdescr, ...} =>
 		   let
-		      val source_hash = String.hash source
+		      val srcdescr_hash = SrcDescr.hash srcdescr
 
 		      local
 			 val imports =
 			    List.map2(imports, imports', fn (vn,import) =>
 				      (vn,
-				       case import of
-					  Import.Known source =>
-					     let
-						val hash = String.hash source
-					     in
-						case HashSet.peek
-						     (exports, hash, fn S {source = source', ...} =>
-						      source = source') of
-						   NONE => raise Fail "importFn"
-						 | SOME (S {syms as envSyms, ...}) => 
-						      fn symsSyms =>
-						      List.keepAll
-						      (!envSyms, fn (source,ns,v,node) =>
-						       List.contains(symsSyms,(ns,v),(op =)))
-					     end
-					| Import.Unknown lib =>
-					     let
-						val descr = CM.Library.descr lib
-						val descr = List.last (String.split(descr, #":"))
-						val hash = String.hash descr
-						val S {syms, ...} =
-						   HashSet.lookupOrInsert
-						   (exports, hash, fn S {source, ...} =>
-						    descr = source, fn () =>
-						    S {hash = hash,
-						       source = descr,
-						       syms = ref []})
-					     in
+				       let
+					  val hash = SrcDescr.hash import
+					  val S {known, syms as envSyms, ...} =
+					     case HashSet.peek
+						  (exports, hash, fn S {srcdescr, ...} =>
+						   import = srcdescr) of
+						NONE => raise Fail (concat ["srcdescr: ", 
+									    SrcDescr.toString srcdescr, 
+									    " unknown"])
+					      | SOME s => s
+				       in
+					  if known
+					     then 
+						fn symsSyms =>
+						List.keepAll
+						(!envSyms, fn (srcdescr,ns,v,node) =>
+						 List.contains(symsSyms,(ns,v),(op =)))
+					     else 
 						fn symsSyms =>
 						List.map
 						(symsSyms, fn (ns,s) =>
@@ -292,13 +296,13 @@ struct
 						    SOME z => z
 						  | NONE => let
 							       val node = Graph.newNode g
-							       val _ = set(node,addImport (descr,ns,s))
-							       val z = (descr,ns,s,node)
+							       val _ = set(node,addImport (import,ns,s))
+							       val z = (import,ns,s,node)
 							    in
 							       List.push(syms,z) ;
 							       z
 							    end)
-					     end))
+				       end))
 		      in
 			 val importFn =
 			    String.memoizeList(fn _ => raise Fail "importFn",
@@ -360,7 +364,7 @@ struct
 				end
 			   | PG.IMPORT {lib, syms} => 
 				let
-				   val hash = Word.xorb(source_hash, String.hash lhs)
+				   val hash = Word.xorb(srcdescr_hash, String.hash lhs)
 
 				   val symsSyms =
 				      let val hash = String.hash syms
@@ -374,24 +378,24 @@ struct
 				   val syms = importFn lib symsSyms
 				   val result = 
 				      T {hash = hash,
-					 lhs = (source, lhs),
+					 lhs = (srcdescr, lhs),
 					 syms = syms}
 				in
 				   HashSet.insertIfNew
 				   (symsNodesDefs, hash, fn T {lhs = lhs', ...} =>
-				    (source,lhs) = lhs', fn () => result,
+				    (srcdescr,lhs) = lhs', fn () => result,
 				    fn _ => raise Fail (concat ["lhs: ", lhs, " violates VARNAME_ONCE"])) ;
 				   ()
 				end
 			   | PG.COMPILE {src, env, syms} => 
 				let
-				   val hash = Word.xorb(source_hash, String.hash lhs)
+				   val hash = Word.xorb(srcdescr_hash, String.hash lhs)
 				   val envSyms =
-				      let val hash = Word.xorb(source_hash, String.hash env)
+				      let val hash = Word.xorb(srcdescr_hash, String.hash env)
 				      in
 					 case HashSet.peek
 					      (symsNodesDefs, hash, fn T {lhs, ...} =>
-					       (source,env) = lhs) of
+					       (srcdescr,env) = lhs) of
 					    NONE => raise Fail (concat ["lhs: ", lhs, " violates ENV_TYPE"])
 					  | SOME (T {syms, ...}) => syms
 				      end	
@@ -405,7 +409,7 @@ struct
 					  | SOME (V {syms, ...}) => syms
 				      end
 				   val node = Graph.newNode g
-				   val _ = set(node, addKeep (source, lhs))
+				   val _ = set(node, addKeep (srcdescr, lhs))
 				   val _ = 
 				      List.foreach
 				      (envSyms, fn (_,_,_,node') =>
@@ -413,27 +417,27 @@ struct
 				   val syms =
 				      List.map
 				      (symsSyms, fn (ns,v) =>
-				       (source,ns,v,node))
+				       (srcdescr,ns,v,node))
 				   val result = 
 				      T {hash = hash,
-					 lhs = (source, lhs),
+					 lhs = (srcdescr, lhs),
 					 syms = syms}
 				in
 				   HashSet.insertIfNew
 				   (symsNodesDefs, hash, fn T {lhs = lhs', ...} =>
-				    (source,lhs) = lhs', fn () => result,
+				    (srcdescr,lhs) = lhs', fn () => result,
 				    fn _ => raise Fail (concat ["lhs: ", lhs, " violates VARNAME_ONCE"])) ;
 				   ()
 				end
 			   | PG.FILTER {env, syms} => 
 				let
-				   val hash = Word.xorb(source_hash, String.hash lhs)
+				   val hash = Word.xorb(srcdescr_hash, String.hash lhs)
 				   val envSyms =
-				      let val hash = Word.xorb(source_hash, String.hash env)
+				      let val hash = Word.xorb(srcdescr_hash, String.hash env)
 				      in
 					 case HashSet.peek
 					      (symsNodesDefs, hash, fn T {lhs, ...} =>
-					       (source,env) = lhs) of
+					       (srcdescr,env) = lhs) of
 					    NONE => raise Fail (concat ["lhs: ", lhs, " violates ENV_TYPE"])
 					  | SOME (T {syms, ...}) => syms
 				      end
@@ -448,72 +452,75 @@ struct
 				      end
 				   val syms =
 				      List.keepAll
-				      (envSyms, fn (source,ns,v,node) =>
+				      (envSyms, fn (srcdescr,ns,v,node) =>
 				       List.contains(symsSyms,(ns,v),(op =)))
 				   val result = 
 				      T {hash = hash,
-					 lhs = (source, lhs),
+					 lhs = (srcdescr, lhs),
 					 syms = syms}
 				in
 				   HashSet.insertIfNew
 				   (symsNodesDefs, hash, fn T {lhs = lhs', ...} =>
-				    (source,lhs) = lhs', fn () => result,
+				    (srcdescr,lhs) = lhs', fn () => result,
 				    fn _ => raise Fail (concat ["lhs: ", lhs, " violates VARNAME_ONCE"])) ;
 				   ()
 				end
 			   | PG.MERGE vns => 
 				let
-				   val hash = Word.xorb(source_hash, String.hash lhs)
+				   val hash = Word.xorb(srcdescr_hash, String.hash lhs)
 				   val syms =
 				      List.foldr
 				      (vns, [], fn (vn,symsAcc) =>
-				       let val hash = Word.xorb(source_hash, String.hash vn)
+				       let val hash = Word.xorb(srcdescr_hash, String.hash vn)
 				       in
 					  case HashSet.peek
 					       (symsNodesDefs, hash, fn T {lhs, ...} =>
-						lhs = (source,vn)) of
+						lhs = (srcdescr,vn)) of
 					     NONE => raise Fail (concat ["lhs: ", lhs, " violates ENV_TYPE"])
 					   | SOME (T {syms, ...}) => symsAcc @ syms
 				       end)
 				   val result =
 				      T {hash = hash,
-					 lhs = (source, lhs),
+					 lhs = (srcdescr, lhs),
 					 syms = syms}
 				in	
 				   HashSet.insertIfNew
 				   (symsNodesDefs, hash, fn T {lhs = lhs', ...} =>
-				    (source,lhs) = lhs', fn () => result,
+				    (srcdescr,lhs) = lhs', fn () => result,
 				    fn _ => raise Fail (concat ["lhs: ", lhs, " violates VARNAME_ONCE"])) ;
 				   ()
 				end)
 
 		      val exportSyms =
-			 let val hash = Word.xorb(source_hash, String.hash export)
+			 let val hash = Word.xorb(srcdescr_hash, String.hash export)
 			 in
 			    case HashSet.peek
 			         (symsNodesDefs, hash, fn T {lhs, ...} =>
-				  (source,export) = lhs) of
+				  (srcdescr,export) = lhs) of
 			       NONE => raise Fail (concat ["lhs: ", export, " violates ENV_TYPE"])
 			     | SOME (T {syms, ...}) => syms
 			 end
-		      val result = S {hash = source_hash,
-				      source = source,
+		      val result = S {hash = srcdescr_hash,
+				      known = true,
+				      srcdescr = srcdescr,
 				      syms = ref exportSyms}
 		      val _ =
 			 HashSet.insertIfNew
-			 (exports, source_hash, fn S {source = source', ...} =>
-			  source = source', fn () => result,
-			  fn _ => raise Fail (concat ["source: ", source, " repeated"]))
+			 (exports, srcdescr_hash, fn S {srcdescr = srcdescr', ...} =>
+			  srcdescr = srcdescr', fn () => result,
+			  fn _ => raise Fail (concat ["srcdescr: ", 
+						      SrcDescr.toString srcdescr, 
+						      " repeated"]))
 
 		   in
 		      ()
 		   end)
 
-	       val {source, ...} = List.last libs
+	       val {srcdescr, ...} = List.last libs
 	       val nodes =
 		  case HashSet.peek
-		       (exports, String.hash source, fn S {source = source', ...} =>
-			source = source') of
+		       (exports, SrcDescr.hash srcdescr, fn S {srcdescr = srcdescr', ...} =>
+			srcdescr = srcdescr') of
 		     NONE => raise Fail "nodes"
 		   | SOME (S {syms , ...}) => 
 			List.map(!syms,fn (_,_,_,n) => n)
@@ -523,16 +530,16 @@ struct
 		   Graph.DfsParam.startNode
 		   (fn node => (get node) ()))
 
-	       val keep = fn (source, vn) =>
+	       val keep = fn (srcdescr, vn) =>
 		  Option.isSome
 		  (HashSet.peek
-		   (keep, Word.xorb(String.hash source, String.hash vn), 
-		    fn W {lhs, ...} => (source, vn) = lhs))
+		   (keep, Word.xorb(SrcDescr.hash srcdescr, String.hash vn), 
+		    fn W {lhs, ...} => (srcdescr, vn) = lhs))
 
-	       val imports = fn descr =>
+	       val imports = fn import =>
 		  case HashSet.peek
-		       (imports, String.hash descr, fn X {source, ...} =>
-			descr = source) of
+		       (imports, SrcDescr.hash import, fn X {srcdescr, ...} =>
+			import = srcdescr) of
 		     NONE => []
 		   | SOME (X {syms, ...}) => !syms
 	    in
@@ -540,7 +547,7 @@ struct
 	    end
       end
 
-   fun cmcat {comments, defines, out, source} =
+   fun cmcat {comments, defines, out, sources} =
       let
 	 (* Define preprocessor symbols *)
 	 val _ = List.foreach(defines, fn sym => 
@@ -549,17 +556,16 @@ struct
 	 val _ = (#set CM.Control.warn_obsolete) false
 	 val _ = Control.printWarnings := false
 	 val dir = OS.FileSys.getDir ()
-	 val libs = Closure.topoSortImportGraph
-	            (OS.Path.mkAbsolute {path = source, relativeTo = dir})
+	 val libs = Closure.topoSortImportGraph sources
 	 val (keep,imports) = Closure.filter libs
       in
 	 List.foreach
 	 (libs,
-	  fn {graph = NONE, source, ...} =>
+	  fn {graph = NONE, srcdescr as SrcDescr.T (src, descr) , ...} =>
 	  if comments
-	     then (Out.output (out, "(* " ^ source ^ "\n");
+	     then (Out.output (out, "(* " ^ descr ^ "\n");
 			       List.foreach
-			       (imports source, fn (ns,s) =>
+			       (imports srcdescr, fn (ns,s) =>
 			       Out.output (out, " * " ^ (case ns of 
 			                                    PG.SGN => "signature " 
 	                                                  | PG.STR => "structure " 
@@ -567,9 +573,9 @@ struct
 			                        s ^ "\n"));
 			       Out.output (out, " *)\n"))
 	     else ()
-	   | {graph = SOME {graph, nativesrc, ...}, source, ...} =>
+	   | {graph = SOME {graph, nativesrc, ...}, srcdescr as SrcDescr.T (src, descr), ...} =>
 	  (if comments
-	      then Out.output (out, "(* " ^ (OS.Path.mkRelative {path = source, relativeTo = dir}) ^ " *)\n")
+	      then Out.output (out, "(* " ^ (OS.Path.mkRelative {path = src, relativeTo = dir}) ^ " *)\n")
 	      else ();
 	   let val PG.GRAPH {defs, ...} = graph
 	   in 
@@ -577,7 +583,7 @@ struct
 	      (defs, fn def =>
 	       case def of
 		  PG.DEF {lhs, rhs = PG.COMPILE {src = (src, native), ...}, ...} =>
-		     if keep(source,lhs)
+		     if keep(srcdescr,lhs)
 			then Out.output(out, (if native then src else nativesrc src) ^ "\n")
 			else ()
 		| _ => ())
@@ -601,7 +607,7 @@ struct
 		   cmcat {comments = !comments,
 			  defines = !defines,
 			  out = Out.standard,
-			  source = file}
+			  sources = file}
 	      | flag :: args =>
 		   if String.equals (flag, "-comments")
 		      then
@@ -614,7 +620,7 @@ struct
 		   else die (String.concat ["invalid flag ", flag])
 	      | _ => die "wrong number of arguments"
        in
-	  loop args handle _ => die "cmcat failed"
+	  loop args (* handle _ => die "cmcat failed" *)
 	  ; 0
        end)
 
