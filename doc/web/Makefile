@@ -7,8 +7,8 @@ all:
 	rm -f HTML/*
 	mkdir -p HTML
 	cd $(UG)/main && \
-		cp -p main.css main.html node*.html *.png ../web/HTML
-	cvs -Q co -d benchmarks mlton/src/benchmark/tests
+		cp -p main.css main.html node*.html *.png ../../web/HTML
+	cvs -Q co -d benchmarks mlton/benchmark/tests
 	cvs -Q release benchmarks
 	find benchmarks -type d | grep CVS | xargs rm -rf
 
