@@ -1,5 +1,13 @@
 Here are the changes since version 20030312.
 
+* 2003-05-15
+  - Fixed bug in Real.class introduced on 04-28 that cause many
+    regression failures with reals when using newer gccs.
+
+* 2003-05-13
+  - Fixed bug in MLton.FFI on Cygwin that caused Thread_returnToC to
+    be undefined.
+
 * 2003-05-12
   - Added support for finalization with MLton.Finalize.
 
