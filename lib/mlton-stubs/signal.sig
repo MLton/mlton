@@ -52,3 +52,10 @@ signature MLTON_SIGNAL =
        *)
       val suspend: Mask.t -> unit
    end
+
+signature MLTON_SIGNAL_EXTRA =
+   sig
+      include MLTON_SIGNAL
+
+      val handleGC: (unit -> unit) -> unit
+   end

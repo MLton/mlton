@@ -34,6 +34,7 @@ structure MLton:
       structure BinIO: MLTON_BIN_IO
       structure Cont: MLTON_CONT
       structure Exn: MLTON_EXN
+      structure Finalize: MLTON_FINALIZE
       structure GC: MLTON_GC
       structure IntInf: MLTON_INT_INF
       structure Itimer: MLTON_ITIMER
@@ -177,10 +178,28 @@ signature MLTON_EXN =
 \begin{description}
 
 \entry{history e}
-the file positions that have raised the exception {\tt e}, in reverse
+returns the file positions that have raised the exception {\tt e}, in reverse
 chronological order.   A {\tt handle} expression that implicitly reraises counts
 as a raise.  {\tt history} will return {\tt []} unless the program is compiled
 with {\tt -exn-history true}.
+
+\end{description}
+
+\subsubsec{{\tt MLton.Finalize}}{finalize}
+\begin{verbatim}
+signature MLTON_FINALIZE =
+   sig
+      val finalize: 'a * (unit -> unit) -> unit
+   end
+\end{verbatim}
+
+\begin{description}
+
+\entry{finalize (a, f)}
+will run {\tt f ()} when {\tt a} becomes unreachable.  The finalizer
+runs asynchronously in a separate thread after a garbage collection
+determines that {\tt a} is unreachable, which is done by keeping a
+weak pointer to {\tt a}, see \secref{weak} for details.
 
 \end{description}
 
@@ -880,7 +899,7 @@ by the equations $b_0 = b$ and $(v_i, b_{i+1}) = f (i, b_i)$.
 
 \end{description}
 
-\subsubsection{\tt MLton.Weak}
+\subsubsec{\tt MLton.Weak}{weak}
 \begin{verbatim}
 signature MLTON_WEAK =
    sig

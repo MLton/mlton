@@ -2941,13 +2941,12 @@ static void startHandler (GC_state s) {
 	s->canHandle = 2;
 }
 
-
 /* GC_startHandler does not do an enter()/leave(), even though it is exported.
- * The basis library uses it as via _ffi, not _prim, and so does not treat it
- * as a runtime call -- so the invariant in enter would fail miserably. 
- * It simulates the relevant part of enter() by blocking signals and resetting
- * the limit.  The leave() wouldn't do anything upon exit  because we are in a
- * signal handler.
+ * The basis library uses it via _ffi, not _prim, and so does not treat it as a
+ * runtime call -- so the invariant in enter would fail miserably. It simulates
+ * the relevant part of enter() by blocking signals and resetting the limit.
+ * The leave() wouldn't do anything upon exit because we are in a signal
+ * handler.
  */
 void GC_startHandler (GC_state s) {
 	blockSignals (s);
@@ -2971,7 +2970,15 @@ void GC_gc (GC_state s, uint bytesRequested, bool force,
 		or bytesRequested > s->limitPlusSlop - s->frontier
 		or not (stackTopIsOk (s, s->currentThread->stack))) {
 		/* This GC will grow the stack, if necessary. */
-		doGC (s, 0, bytesRequested, force, TRUE);
+		doGC (s, 0, bytesRequested, force, TRUE);	
+		/* Send a GC signal. */
+		if (BOGUS_THREAD != s->signalHandler) {
+			if (DEBUG_SIGNALS)
+				fprintf (stderr, "GC Signal pending\n");
+			s->gcSignalIsPending = TRUE;
+			unless (s->inSignalHandler)
+				s->signalIsPending = TRUE;
+		}
 	} else {
 		startHandler (s);
 		switchToThread (s, s->signalHandler);
@@ -4028,6 +4035,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->copyRatio = 4.0;
 	s->copyGenerationalRatio = 4.0;
 	s->currentThread = BOGUS_THREAD;
+	s->gcSignalIsPending = FALSE;
 	s->growRatio = 8.0;
 	s->inSignalHandler = FALSE;
 	s->isOriginal = TRUE;
@@ -4289,10 +4297,22 @@ void GC_done (GC_state s) {
 	heapRelease (s, &s->heap2);
 }
 
+static void signalPending (GC_state s) {
+	if (0 == s->canHandle) {
+		if (DEBUG_SIGNALS)
+			fprintf (stderr, "setting limit = 0\n");
+		s->limit = 0;
+	}
+	s->signalIsPending = TRUE;
+}
+
 void GC_finishHandler (GC_state s) {
+	if (DEBUG_SIGNALS)
+		fprintf (stderr, "GC_finishHandler ()\n");
 	assert (s->canHandle == 1);
 	s->inSignalHandler = FALSE;	
 	sigemptyset (&s->signalsPending);
+	s->gcSignalIsPending = FALSE;
 	unblockSignals (s);
 }
 
@@ -4304,13 +4324,8 @@ void GC_finishHandler (GC_state s) {
 void GC_handler (GC_state s, int signum) {
 	if (DEBUG_SIGNALS)
 		fprintf (stderr, "GC_handler  signum = %d\n", signum);
-	if (0 == s->canHandle) {
-		if (DEBUG_SIGNALS)
-			fprintf (stderr, "setting limit = 0\n");
-		s->limit = 0;
-	}
+	signalPending (s);
 	sigaddset (&s->signalsPending, signum);
-	s->signalIsPending = TRUE;
 	if (DEBUG_SIGNALS)
 		fprintf (stderr, "GC_handler done\n");
 }

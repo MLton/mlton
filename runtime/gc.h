@@ -348,6 +348,7 @@ typedef struct GC_state {
 	 */
 	uint *frameSources;
 	uint frameSourcesSize;
+	bool gcSignalIsPending;
 	pointer *globals;
 	uint globalsSize;
 	float growRatio;
@@ -533,6 +534,7 @@ void GC_display (GC_state s, FILE *stream);
  * Prints out gc statistics if s->summary is set.
  */
 void GC_done (GC_state s);
+
 
 /* GC_finishHandler should be called by the mutator signal handler thread when
  * it is done handling the signal.

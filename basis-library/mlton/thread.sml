@@ -176,7 +176,5 @@ fun switchToHandler () =
 	  NONE => raise Fail "no signal handler installed"
 	| SOME t => Prim.switchTo t))
 
-type 'a thread = 'a t
-
 end
 

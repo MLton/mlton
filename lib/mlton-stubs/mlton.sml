@@ -96,6 +96,11 @@ structure MLton: MLTON =
 	 struct
 	    val handleCallFromC = fn _ => raise Fail "FFI.handleCallFromC"
 	 end
+
+      structure Finalize =
+	 struct
+	    fun finalize _ = ()
+	 end
       
       structure GC =
 	 struct

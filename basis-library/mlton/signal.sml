@@ -5,7 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-structure MLtonSignal: MLTON_SIGNAL =
+structure MLtonSignal: MLTON_SIGNAL_EXTRA =
 struct
 
 open Posix.Signal
@@ -104,6 +104,8 @@ val (get, set, handlers) =
        handlers)
    end
 
+val gcHandler = ref Ignore
+   
 val getHandler = get
 
 fun isHandledDefault s =
@@ -157,13 +159,22 @@ structure Handler =
 	    val () =
 	       MLtonThread.setHandler
 	       (fn t =>
-		Array.foldli
-		(fn (s, h, t) =>
-		 case h of
-		    Handler f => if Prim.isPending s then f t else t
-		  | _ => t)
-		t
-		handlers)
+		let
+		   val t =
+		      Array.foldli
+		      (fn (s, h, t) =>
+		       case h of
+			  Handler f => if Prim.isPending s then f t else t
+			| _ => t)
+		      t
+		      handlers
+		   val t =
+		      case !gcHandler of
+			 Handler f => if Prim.isGCPending () then f t else t
+		       | _ => t
+		in
+		   t
+		end)
 	 in
 	    Handler
 	 end
@@ -195,5 +206,8 @@ fun suspend m =
    (Mask.create m
     ; Prim.suspend ()
     ; MLtonThread.switchToHandler ())
-   
+
+fun handleGC f =
+   gcHandler := Handler.handler (fn t => (f (); t))
+
 end
