@@ -176,6 +176,7 @@ signature ELABORATE_ENV =
 	 t * Ast.Priority.t * Ast.Var.t * (CoreML.Var.t * Type.t) vector * Scheme.t
 	 -> unit
       val forceUsed: t -> unit
+      val forceUsedLocal: t * (unit -> 'a) -> 'a
       val functorClosure:
 	 t * string * Interface.t
 	 * (Structure.t * string list -> Decs.t * Structure.t option)
@@ -195,9 +196,9 @@ signature ELABORATE_ENV =
       val lookupLongvid: t * Ast.Longvid.t -> Vid.t * Scheme.t
       val lookupSigid: t * Ast.Sigid.t -> Interface.t option
       val lookupStrid: t * Ast.Strid.t -> Structure.t option
-      val makeStructure: t * (unit -> 'a) -> 'a * Structure.t
       val makeBasis: t * (unit -> 'a) -> 'a * Basis.t
       val makeInterfaceEnv: t -> InterfaceEnv.t
+      val makeStructure: t * (unit -> 'a) -> 'a * Structure.t
       val newCons: ((t * {con: CoreML.Con.t,
 			  name: Ast.Con.t} vector)
 		    -> Scheme.t vector

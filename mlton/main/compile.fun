@@ -281,35 +281,18 @@ end
 (*                 parseAndElaborateMLB              *)
 (* ------------------------------------------------- *)
 
-datatype input = File of File.t | String of String.t
+val (lexAndParseMLB, lexAndParseMLBMsg) =
+   Control.traceBatch (Control.Pass, "lex and parse")
+   MLBFrontEnd.lexAndParseString
 
-local
-   val (lexAndParseMLBFile, lexAndParseMLBFileMsg) =
-      Control.traceBatch (Control.Pass, "lex and parse")
-      MLBFrontEnd.lexAndParseFile
-   val (lexAndParseMLBString, lexAndParseMLBStringMsg) =
-      Control.traceBatch (Control.Pass, "lex and parse")
-      MLBFrontEnd.lexAndParseString
-   val lexAndParseMLBMsgRef = ref lexAndParseMLBFileMsg
-in
-   fun lexAndParseMLB fs =
-      case fs of
-	 File f => (lexAndParseMLBMsgRef := lexAndParseMLBFileMsg
-		    ; lexAndParseMLBFile f)
-       | String s => (lexAndParseMLBMsgRef := lexAndParseMLBStringMsg
-		      ; lexAndParseMLBString s)
-   fun lexAndParseMLBMsg () =
-      (!lexAndParseMLBMsgRef) ()
-end
-
-val lexAndParseMLB : input -> Ast.Basdec.t * File.t vector = fn (fs: input) => 
+val lexAndParseMLB : String.t -> Ast.Basdec.t * File.t vector = fn input => 
    let
-      val (ast, files) = lexAndParseMLB fs
+      val (ast, files) = lexAndParseMLB input
       val _ = Control.checkForErrors "parse"
    in (ast, files)
    end
 
-val filesMLB = fn {input} => #2 (lexAndParseMLB (File input))
+val filesMLB = fn {input} => #2 (lexAndParseMLB input)
 val lexAndParseMLB = #1 o lexAndParseMLB
 
 val (elaborateMLB, elaborateMLBMsg) =
@@ -324,7 +307,7 @@ val displayEnvDecs =
      [("deadCode", Bool.layout b),
       ("decs", Decs.layout d)])
     ds)
-fun parseAndElaborateMLB (fs: input): Env.t * (Decs.t * bool) vector =
+fun parseAndElaborateMLB (input: String.t): Env.t * (Decs.t * bool) vector =
    Control.pass
    {name = "parseAndElaborate",
     suffix = "core-ml",
@@ -332,7 +315,7 @@ fun parseAndElaborateMLB (fs: input): Env.t * (Decs.t * bool) vector =
     thunk = fn () => 
     Ref.fluidLet
     (Elaborate.lookupConstant, lookupConstant, fn () =>
-     elaborateMLB (lexAndParseMLB fs, {addPrim = addPrim})),
+     elaborateMLB (lexAndParseMLB input, {addPrim = addPrim})),
     display = displayEnvDecs}
    
 (* ------------------------------------------------- *)
@@ -343,7 +326,7 @@ fun outputBasisConstants (out: Out.t): unit =
    let
       val _ = amBuildingConstants := true
       val (_, decs) =
-	 parseAndElaborateMLB (File "$(MLTON_ROOT)/basis/libs/primitive.mlb")
+	 parseAndElaborateMLB "$(MLTON_ROOT)/basis/libs/primitive.mlb"
       val decs = Vector.map (decs, fn (decs, _) => Decs.toList decs)
       val decs = Vector.concatV (Vector.map (decs, Vector.fromList))
       (* Need to defunctorize so the constants are forced. *)
@@ -361,7 +344,7 @@ fun outputBasisConstants (out: Out.t): unit =
 
 exception Done
 
-fun elaborate {input: input}: Xml.Program.t =
+fun elaborate {input: String.t}: Xml.Program.t =
    let
       val (E, decs) = parseAndElaborateMLB input
       val _ =
@@ -535,7 +518,7 @@ fun preCodegen {input}: Machine.Program.t =
       machine
    end
  
-fun compile {input: input, outputC, outputS}: unit =
+fun compile {input: String.t, outputC, outputS}: unit =
    let
       val machine =
 	 Control.trace (Control.Top, "pre codegen")
@@ -564,13 +547,13 @@ fun compile {input: input, outputC, outputS}: unit =
    end handle Done => ()
 
 fun compileMLB {input: File.t, outputC, outputS}: unit =
-   compile {input = File input,
+   compile {input = input,
 	    outputC = outputC,
 	    outputS = outputS}
 
 val elaborateMLB =
    fn {input: File.t} =>
-   (ignore (elaborate {input = File input}))
+   (ignore (elaborate {input = input}))
    handle Done => ()
 
 local
@@ -590,7 +573,7 @@ local
 	     String.concat (List.separate(input, "\n")), "\n",
 	     "end\n"]
       in
-	 String s
+	 s
       end
 in
    fun compileSML {input: File.t list, outputC, outputS}: unit =

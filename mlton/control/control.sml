@@ -262,13 +262,13 @@ structure Elaborate =
 	    make {name = "forceUsed",
 		  default = 0, 
 		  toString = Int.toString,
-		  expert = true,
+		  expert = false,
 		  options = fn ss => 
 		    case ss of 
 		       [] => SOME ()
 		     | _ => NONE,
 		  newCur = fn (i,()) => i + 1,
-		  newDef = fn (_,()) => 0,
+		  newDef = fn (_,()) => 1,
 		  withDef = withDef, withAnn = withAnn,
 		  setDef = setDef, setAble = setAble}
 	 val {ctrl = sequenceUnit, withDef, withAnn, setDef, setAble} =

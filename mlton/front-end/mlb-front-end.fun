@@ -77,6 +77,10 @@ val lexAndParseString =
 
 fun mkLexAndParse () =
    let
+      val cwd = Dir.current ()
+      val relativize = SOME cwd
+      val state = {cwd = cwd, relativize = relativize, seen = []}
+
       val files: File.t Buffer.t = Buffer.new {dummy = "<dummy>"}
 
       val psi : (OS.FileSys.file_id * Ast.Basdec.t) HashSet.t =
@@ -92,14 +96,27 @@ fun mkLexAndParse () =
 		      | _ => Error.bug (concat ["strange mlb path mapping: ", 
 						file, ":: ", line]))
 	       else []
-      in
+
 	 val pathMap =
 	    (List.rev o List.concat)
 	    [make (concat [!Control.libDir, "/mlb-path-map"]),
 	     case OS.Process.getEnv "HOME" of
 		NONE => []
 	      | SOME path => make (concat [path, "/.mlton/mlb-path-map"]),
-	     [{var = "LIB_MLTON_DIR", path = !Control.libDir}]]
+	     [{var = "LIB_MLTON_DIR", 
+	       path = OS.Path.mkAbsolute {path = !Control.libDir,
+					  relativeTo = cwd}}]]
+	 fun peekPathMap var' =
+	    case List.peek (pathMap, fn {var,...} =>
+			    var = var') of
+	       NONE => NONE
+	     | SOME {path, ...} => SOME path
+      in
+	 val peekPathMap =
+	    Trace.trace ("MLBFrontEnd.peekPathMap", 
+			 String.layout,
+			 Option.layout Dir.layout)
+	    peekPathMap
       end
 
       fun regularize {fileOrig, cwd, relativize} =
@@ -119,10 +136,9 @@ fun mkLexAndParse () =
 				  | c::s => loopVar (s, c::acc)
 			      val (s, var) = loopVar (s, [])
 			   in
-			      case List.peek (pathMap, fn {var = var', ...} => 
-					      var = var') of
+			      case peekPathMap var of
 				 NONE => loop (s, [], accs)
-			       | SOME {path, ...} => 
+			       | SOME path => 
 				    loop ((String.explode path) @ s, [], accs)
 			   end
 		      | c::s => loop (s, c::acc, accs)
@@ -248,25 +264,13 @@ fun mkLexAndParse () =
 	 in
 	    basdec
 	 end
-
-      val cwd = Dir.current ()
-      val relativize = SOME cwd
-      val state = {cwd = cwd, relativize = relativize, seen = []}
-      val lexAndParseFile = fn (f: File.t) =>
-	 (case lexAndParseProgOrMLB state (f, Region.bogus) of
-	     Ast.Basdec.MLB (_, _, basdec) => basdec
-	   | _ => Ast.Basdec.empty,
-	  Buffer.toVector files before Buffer.reset files)
-      val lexAndParseString = fn (s: String.t) => 
-	 (wrapLexAndParse state (lexAndParseString, s),
-	  Buffer.toVector files before Buffer.reset files)
    in
-      (lexAndParseFile, lexAndParseString)
+      fn (s: String.t) => 
+      (wrapLexAndParse state (lexAndParseString, s),
+       Buffer.toVector files before Buffer.reset files)
    end
 
-val lexAndParseFile = fn (f: File.t) =>
-   (#1 (mkLexAndParse ())) f
 val lexAndParseString = fn (s: String.t) =>
-   (#2 (mkLexAndParse ())) s
+   (mkLexAndParse ()) s
 
 end

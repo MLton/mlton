@@ -80,9 +80,15 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
       val decs = Buffer.new {dummy = (Decs.empty, false)}
 
       val E = Env.empty ()
+      val withDef = fn f =>
+	 withDef (fn () =>
+		  if forceUsed () = 1
+		     then Env.forceUsedLocal (E, f)
+		     else f ())
+
       val emptySnapshot : (unit -> Env.Basis.t) -> Env.Basis.t = 
 	 Env.snapshot E
-      val emptySnapshot = fn f =>
+      val emptySnapshot = fn (f: unit -> Env.Basis.t) =>
 	 emptySnapshot (fn () => withDef f)
 	 
       val primBasis =
@@ -107,108 +113,105 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
 			   Basexp.layout,
 			   Layout.ignore)
 	 (fn (basexp: Basexp.t) =>
-	 case Basexp.node basexp of
-	    Basexp.Bas basdec => 
-	       let
-		  val ((), B) =
-		     Env.makeBasis (E, fn () => elabBasdec basdec)
-       in
-		  SOME B
-	       end
-	  | Basexp.Var basid => Env.lookupBasid (E, basid)
-	  | Basexp.Let (basdec, basexp) => 
-	       Env.scopeAll
-	       (E, fn () =>
-		(elabBasdec basdec
-		 ; elabBasexp basexp))) basexp
+	  case Basexp.node basexp of
+	     Basexp.Bas basdec => 
+		let
+		   val ((), B) =
+		      Env.makeBasis (E, fn () => elabBasdec basdec)
+		in
+		   SOME B
+		end
+	   | Basexp.Var basid => Env.lookupBasid (E, basid)
+	   | Basexp.Let (basdec, basexp) => 
+		Env.scopeAll
+		(E, fn () =>
+		 (elabBasdec basdec
+		  ; elabBasexp basexp))) basexp
       and elabBasdec (basdec: Basdec.t) : unit =
 	 Trace.traceInfo' (elabBasdecInfo,
 			   Basdec.layout,
 			   Layout.ignore)
 	 (fn (basdec: Basdec.t) =>
-	 case Basdec.node basdec of
-	    Basdec.Defs def =>
-	       let
-		  fun doit (lookup, extend, bnds) =
-		     Vector.foreach
-		     (Vector.map
-		      (bnds, fn {lhs, rhs} =>
-		       {lhs = lhs, rhs = lookup (E, rhs)}),
-		      fn {lhs, rhs} =>
-		      Option.app (rhs, fn z => extend (E, lhs, z)))
-	       in
-		  case ModIdBind.node def of
-		     ModIdBind.Fct bnds => 
-			doit (Env.lookupFctid, Env.extendFctid, bnds)
-		   | ModIdBind.Sig bnds => 
-			doit (Env.lookupSigid, Env.extendSigid, bnds)
-		   | ModIdBind.Str bnds => 
-			doit (Env.lookupStrid, Env.extendStrid, bnds)
-	       end
-	  | Basdec.Basis basbinds => 
-	       let
-		  val basbinds =
-		     Vector.map
-		     (basbinds, fn {name, def} =>
-		      let
-			 val B = elabBasexp def
-		      in
-			 {B = B, name = name}
-		      end)
-	       in
-		  Vector.foreach
-		  (basbinds, fn {name, B, ...} =>
-		   Option.app (B, fn B => Env.extendBasid (E, name, B)))
-	       end
-	  | Basdec.Local (basdec1, basdec2) =>
-	       Env.localAll (E,
-			     fn () => elabBasdec basdec1,
-			     fn () => elabBasdec basdec2)
-	  | Basdec.Seq basdecs =>
-	       List.foreach(basdecs, elabBasdec)
-	  | Basdec.Open basids => 
-	       Vector.foreach
-	       (Vector.map (basids, fn basid => Env.lookupBasid (E, basid)),
-		fn bo => Option.app (bo, fn b => Env.openBasis (E, b)))
-	  | Basdec.Prog (_, prog) =>
-	       Buffer.add (decs, (elabProg prog, deadCode ()))
-	  | Basdec.MLB (_, fid, basdec) =>
-	       let
-		  val fid = valOf fid
-		  val (_, B) =
-		     HashSet.lookupOrInsert
-		     (psi, OS.FileSys.hash fid, fn (fid', _) => 
-		      OS.FileSys.compare (fid, fid') = EQUAL, fn () =>
-		      let
-			 val B =
-			    emptySnapshot
-			    (fn () =>
-			     (#2 o Env.makeBasis) 
-			     (E, fn () => elabBasdec basdec))
-		      in
-			 (fid, B)
-		      end)
-	       in
-		  Env.openBasis (E, B)
-	       end
-	  | Basdec.Prim => 
-	       (if not (allowPrim ())
-		   then let open Layout
-			in Control.error (Basdec.region basdec, str "_prim disallowed", empty)
-			end
-		   else ()
-		; Env.openBasis (E, primBasis))
-	  | Basdec.Ann (anns, basdec) =>
-	       let
-		  val old = forceUsed ()
-	       in
-		  withAnns 
-		  (anns, fn () => 
-		   (elabBasdec basdec
-		    ; if forceUsed () <> old
-			 then Env.forceUsed E
-			 else ()))
-	       end) basdec
+	  case Basdec.node basdec of
+	     Basdec.Defs def =>
+		let
+		   fun doit (lookup, extend, bnds) =
+		      Vector.foreach
+		      (Vector.map (bnds, fn {lhs, rhs} =>
+				   {lhs = lhs, rhs = lookup (E, rhs)}), 
+		       fn {lhs, rhs} =>
+		       Option.app (rhs, fn z => extend (E, lhs, z)))
+		in
+		   case ModIdBind.node def of
+		      ModIdBind.Fct bnds => 
+			 doit (Env.lookupFctid, Env.extendFctid, bnds)
+		    | ModIdBind.Sig bnds => 
+			 doit (Env.lookupSigid, Env.extendSigid, bnds)
+		    | ModIdBind.Str bnds => 
+			 doit (Env.lookupStrid, Env.extendStrid, bnds)
+		end
+	   | Basdec.Basis basbinds => 
+		let
+		   val basbinds =
+		      Vector.map
+		      (basbinds, fn {name, def} =>
+		       let val B = elabBasexp def
+		       in {B = B, name = name}
+		       end)
+		in
+		   Vector.foreach
+		   (basbinds, fn {name, B, ...} =>
+		    Option.app (B, fn B => Env.extendBasid (E, name, B)))
+		end
+	   | Basdec.Local (basdec1, basdec2) =>
+		Env.localAll (E, fn () => 
+			      elabBasdec basdec1, fn () => 
+			      elabBasdec basdec2)
+	   | Basdec.Seq basdecs =>
+		List.foreach(basdecs, elabBasdec)
+	   | Basdec.Open basids => 
+		Vector.foreach
+		(Vector.map (basids, fn basid => 
+			     Env.lookupBasid (E, basid)), fn bo => 
+		 Option.app (bo, fn b => Env.openBasis (E, b)))
+	   | Basdec.Prog (_, prog) =>
+		Buffer.add (decs, (elabProg prog, deadCode ()))
+	   | Basdec.MLB (_, fid, basdec) =>
+		let
+		   val fid = valOf fid
+		   val (_, B) =
+		      HashSet.lookupOrInsert
+		      (psi, OS.FileSys.hash fid, fn (fid', _) => 
+		       OS.FileSys.compare (fid, fid') = EQUAL, fn () =>
+		       let
+			  val B =
+			     emptySnapshot
+			     (fn () =>
+			      (#2 o Env.makeBasis) 
+			      (E, fn () => elabBasdec basdec))
+		       in
+			  (fid, B)
+		       end)
+		in
+		   Env.openBasis (E, B)
+		end
+	   | Basdec.Prim => 
+		(if not (allowPrim ())
+		    then let open Layout
+			 in Control.error (Basdec.region basdec, str "_prim disallowed", empty)
+			 end
+		    else ()
+		 ; Env.openBasis (E, primBasis))
+	   | Basdec.Ann (anns, basdec) =>
+		let
+		   val old = forceUsed ()
+		in
+		   withAnns 
+		   (anns, fn () => 
+		    if forceUsed () <> old
+		       then Env.forceUsedLocal (E, fn () => elabBasdec basdec)
+		       else elabBasdec basdec)
+		end) basdec
       val _ = withDef (fn () => elabBasdec mlb)
    in
       (E, Buffer.toVector decs)

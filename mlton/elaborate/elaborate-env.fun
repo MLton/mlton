@@ -2007,7 +2007,6 @@ fun extendOverload (E, p, x, yts, s) =
 (* ------------------------------------------------- *)   
 (*                       local                       *)
 (* ------------------------------------------------- *)
-
 local
    fun doit (E: t, ns as NameSpace.T {current, ...}, s0) =
       let
@@ -2094,6 +2093,51 @@ in
     *)
    val localCore = localModule
 end
+
+fun forceUsedLocal (E as T {currentScope, bass, fcts, fixs, sigs, strs, types, vals, ...},
+		    th) =
+   let
+      fun doit (forceRange, ns as NameSpace.T {current, ...}, s0) =
+	 let
+	    val old = !current
+	    val _ = current := []
+	 in
+	    fn () =>
+	    let
+	       val c = !current
+	       val lift = List.revMap (c, Values.pop)
+	       val _ = current := old
+	       val _ =
+		  List.foreach 
+		  (lift, fn {domain, range, time, uses, ...} =>
+		   (Uses.forceUsed uses
+		    ; forceRange range
+		    ; extend (E, ns, {domain = domain,
+				      forceUsed = false,
+				      range = range,
+				      scope = s0,
+				      time = time,
+				      uses = ExtendUses.Old uses})))
+	    in
+	       ()
+	    end
+	 end
+      val s0 = !currentScope
+      val bass = doit (ignore, bass, s0)
+      val fcts = doit (fn f => Option.app (FunctorClosure.result f,
+					   Structure.forceUsed), fcts, s0)
+      val fixs = doit (ignore, fixs, s0)
+      val sigs = doit (ignore, sigs, s0)
+      val strs = doit (Structure.forceUsed, strs, s0)
+      val types = doit (ignore, types, s0)
+      val vals = doit (ignore, vals, s0)
+      val _ = currentScope := Scope.new {isTop = true}
+      val res = th ()
+      val _ = (bass(); fcts (); fixs (); sigs (); strs (); types (); vals ())
+      val _ = currentScope := s0
+   in
+      res
+   end
 
 fun makeStructure (T {currentScope, fixs, strs, types, vals, ...}, make) =
    let
