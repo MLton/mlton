@@ -235,22 +235,23 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
 
   %%
   %term
-      EOF | SEMICOLON
+      CHAR of char
+    | INT of {digits: string,
+	      negate: bool,
+	      radix: StringCvt.radix}
     | LONGID of string
-    | TYVAR of string
-    | INT of IntInf.t
-    | WORD of IntInf.t
     | REAL of string
     | STRING of string 
-    | CHAR of char
-    | ABSTYPE | AND
-    | ARROW | AS | BAR | CASE | DATATYPE | DOTDOTDOT | ELSE | END | EQUALOP
-    | EQTYPE | EXCEPTION | DO | DARROW | FN | FUN | FUNCTOR | HANDLE 
-    | HASH | IF | IN | INCLUDE | INFIX | INFIXR | LET | LOCAL | NONFIX | OF 
-    | OP | OPEN | OVERLOAD | RAISE | REC | SHARING | SIG | SIGNATURE | STRUCT
-    | STRUCTURE | THEN | TYPE | VAL | WHERE | WHILE | WILD | WITH | WITHTYPE 
-    | ASTERISK | COLON | COLONGT | COMMA | LBRACE | LBRACKET | LPAREN | RBRACE 
-    | RBRACKET | RPAREN | ORELSE | ANDALSO | FUNSIG
+    | TYVAR of string
+    | WORD of {digits: string,
+	       radix: StringCvt.radix}
+    | ABSTYPE | AND | ANDALSO | ARROW | AS | ASTERISK | BAR | CASE | COLON
+    | COLONGT | COMMA | DATATYPE | DOTDOTDOT | ELSE | END | EOF | EQUALOP
+    | EQTYPE | EXCEPTION | DO | DARROW | FN | FUN | FUNCTOR | HANDLE | HASH
+    | IF | IN | INCLUDE | INFIX | INFIXR | LBRACE | LBRACKET | LET | LOCAL
+    | LPAREN | NONFIX | ORELSE | OF | OP | OPEN | OVERLOAD | RAISE | RBRACE 
+    | RBRACKET | REC | RPAREN | SEMICOLON | SHARING | SIG | SIGNATURE | STRUCT
+    | STRUCTURE | THEN | TYPE | VAL | WHERE | WHILE | WILD | WITH | WITHTYPE
       (* Extensions *)
     | BUILD_CONST | CONST | EXPORT | FFI | IMPORT | PRIM
 
@@ -421,6 +422,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | wherespec of wherespec
        | wherespecs of wherespec list
        | withtypes of TypBind.t
+       | word of IntInf.t
 
 %verbose
 %pos SourcePos.t
@@ -458,12 +460,12 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
         -> IN LONGID END | -> ELSE LONGID
 
 %value CHAR (#"a")
-%value INT (0)
+%value INT ({digits = "0", negate = false, radix = StringCvt.DEC})
 %value LONGID ("bogus")
 %value REAL ("13.0")
 %value STRING ("bogus")
 %value TYVAR ("'a")
-%value WORD (0)
+%value WORD ({digits = "0", radix = StringCvt.DEC})
 
 %%
 
@@ -898,12 +900,40 @@ fixity	: INFIX			(Fixity.Infix NONE)
 	| INFIXR digit		(Fixity.Infixr (SOME digit))
 	| NONFIX		(Fixity.Nonfix)
 
-int : INT (INT)
-	   
-digit : int (if int < 0 orelse int >= 10
-		then (error (reg (intleft, intright), "expected single digit")
-		      ; 0)
-	     else IntInf.toInt int)
+int : INT
+   (let
+       val {digits, negate, radix} = INT
+    in
+       case StringCvt.scanString (fn r => IntInf.scan (radix, r)) digits of
+	  NONE => Error.bug "parser saw invalid int"
+	| SOME i => if negate then ~ i else i
+    end)
+
+word : WORD
+   (let
+       val {digits, radix} = WORD
+    in
+       case StringCvt.scanString (fn r => IntInf.scan (radix, r)) digits of
+	  NONE => Error.bug "parser saw invalid word"
+	| SOME i => i
+    end)
+
+digit : INT
+   (let
+       val {digits, negate, radix} = INT
+    in
+       if 1 = String.size digits andalso not negate andalso radix = StringCvt.DEC
+	  then valOf (Int.fromString digits)
+       else let
+	       open Layout
+	       val _ = 
+		  Control.error (reg (INTleft, INTright),
+				 str "invalid digit in infix declaration",
+				 empty)
+	    in
+	       0
+	    end
+    end)
 
 datatypeRhs
    : datatypeRhsnode
@@ -1205,8 +1235,8 @@ ty0_pc	: ty COMMA ty		([ty1, ty2])
 const	: const'                (Const.makeRegion
 				 (const', reg (const'left, const'right)))
 
-const'  : INT			(Const.Int INT)
-	| WORD			(Const.Word WORD)
+const'  : int			(Const.Int int)
+	| word			(Const.Word word)
 	| REAL			(Const.Real REAL)
 	| STRING		(Const.String STRING)
 	| CHAR 		        (Const.Char CHAR)

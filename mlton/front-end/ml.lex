@@ -1,4 +1,4 @@
-(* Heavily modified from the SML/NJ sources by sweeks@acm.org. *)
+(* Heavily modified from the SML/NJ sources by sweeks@sweeks.com. *)
 
 (* ml.lex
  *
@@ -87,27 +87,19 @@ fun tok (t, s, l, r) =
 
 fun tok' (t, x, s, l) = tok (fn (l, r) => t (x, l, r), s, l, l + size x)
 
-fun scanInt (yytext: string,
-	     start: int,
-	     radix: StringCvt.radix,
-	     negate: bool,
-	     makeToken,
-	     source,
-	     yypos: int) =
-   let
-      val str = String.dropPrefix (yytext, start)
-      val left = yypos
-      val right = left + size str
-   in
-      makeToken ((case (StringCvt.scanString
-			(fn r => IntInf.scan (radix, r)) str) of
-		     NONE => (error (source, left, right,
-				     concat ["invalid constant: ", yytext])
-			      ; 0)
-		   | SOME n => if negate then ~ n else n),
-		 Source.getPos (source, left),
-		 Source.getPos (source, right))
-   end
+fun int (yytext, drop, source, yypos, {negate: bool}, radix) =
+   Tokens.INT ({digits = String.dropPrefix (yytext, drop),
+		negate = negate,
+		radix = radix},
+	       Source.getPos (source, yypos),
+	       Source.getPos (source, yypos + size yytext))
+
+fun word (yytext, drop, source, yypos, radix) =
+   Tokens.WORD ({digits = String.dropPrefix (yytext, drop),
+		 radix = radix},
+		Source.getPos (source, yypos),
+		Source.getPos (source, yypos + size yytext))
+
 
 %% 
 %reject
@@ -176,7 +168,6 @@ hexnum={hexDigit}+;
 <INITIAL>"fn" => (tok (Tokens.FN, source, yypos, yypos + 2));
 <INITIAL>"fun" => (tok (Tokens.FUN, source, yypos, yypos + 3));
 <INITIAL>"functor" => (tok (Tokens.FUNCTOR, source, yypos, yypos + 7));
-<INITIAL>"funsig" => (tok (Tokens.FUNSIG, source, yypos, yypos + 7));
 <INITIAL>"handle" => (tok (Tokens.HANDLE, source, yypos, yypos + 6));
 <INITIAL>"if" => (tok (Tokens.IF, source, yypos, yypos + 2));
 <INITIAL>"in" => (tok (Tokens.IN, source, yypos, yypos + 2));
@@ -210,18 +201,18 @@ hexnum={hexDigit}+;
 			 "*" => tok (Tokens.ASTERISK, source, yypos, yypos + 1)
 		       | _ => tok' (Tokens.LONGID, yytext, source, yypos));
 <INITIAL>{real}	=> (tok' (Tokens.REAL, yytext, source, yypos));
-<INITIAL>{num}	=> (scanInt (yytext, 0, StringCvt.DEC, false, Tokens.INT,
-			     source, yypos));
-<INITIAL>~{num}	=> (scanInt (yytext, 1, StringCvt.DEC, true, Tokens.INT,
-			     source, yypos));
-<INITIAL>"0x"{hexnum} => (scanInt (yytext, 2, StringCvt.HEX, false, Tokens.INT,
-				   source, yypos));
-<INITIAL>"~0x"{hexnum} => (scanInt (yytext, 3, StringCvt.HEX, true, Tokens.INT,
-				    source, yypos));
-<INITIAL>"0w"{num} => (scanInt (yytext, 2, StringCvt.DEC, false, Tokens.WORD,
-				source, yypos));
-<INITIAL>"0wx"{hexnum} => (scanInt (yytext, 3, StringCvt.HEX, false, Tokens.WORD,
-				    source, yypos));
+<INITIAL>{num} =>
+   (int (yytext, 0, source, yypos, {negate = false}, StringCvt.DEC));
+<INITIAL>"~"{num} =>
+   (int (yytext, 1, source, yypos, {negate = true}, StringCvt.DEC));
+<INITIAL>"0x"{hexnum} =>
+   (int (yytext, 2, source, yypos, {negate = false}, StringCvt.HEX));
+<INITIAL>"~0x"{hexnum} =>
+   (int (yytext, 3, source, yypos, {negate = true}, StringCvt.HEX));
+<INITIAL>"0w"{num} =>
+   (word (yytext, 2, source, yypos, StringCvt.DEC));
+<INITIAL>"0wx"{hexnum} =>
+   (word (yytext, 3, source, yypos, StringCvt.HEX));
 <INITIAL>\"	=> (charlist := [""]
                     ; stringStart := Source.getPos (source, yypos)
                     ; stringtype := true
