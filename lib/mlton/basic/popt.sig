@@ -28,6 +28,7 @@ signature POPT =
        | String of string -> unit
 	 (* one arg: any string *)
        | SpaceString of string -> unit
+       | SpaceString2 of string * string -> unit
 
       val boolRef: bool ref -> opt
       val falseRef: bool ref -> opt
