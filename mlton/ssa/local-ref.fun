@@ -279,8 +279,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 
       (* varInfo *)
       val {get = varInfo: Var.t -> VarInfo.t,
-	   set = setVarInfo,
-	   rem = remVarInfo, ...} 
+	   set = setVarInfo, ...} 
 	= Property.getSetOnce
 	  (Var.plist, Property.initFun (fn _ => VarInfo.new NONE))
       fun nonLocal x = VarInfo.nonLocal (varInfo x)
