@@ -138,12 +138,11 @@ fun parsePat (ps, E, lay) =
 	  | _ =>
 	       let
 		  open Layout
-		  val _ =
+		  val () =
 		     Control.error
 		     (Pat.region p1,
-		      seq [str "non-constructor applied to argument: ",
-			   Pat.layout p1],
-		      lay ())
+		      str "non-constructor applied to argument in pattern",
+		      seq [str "in: ", Pat.layout p1, str " ", Pat.layout p2])
 	       in
 		  Pat.wild
 	       end
