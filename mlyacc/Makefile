@@ -11,15 +11,13 @@ $(NAME): $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)
 	strip $(NAME)
 	size $(NAME)
 
-ifeq ($(MAKECMDGOALS),$(NAME).cm)
-.PHONY:	$(NAME).cm
-$(NAME).cm: src/yacc.lex.sml src/yacc.grm.sig src/yacc.grm.sml
+.PHONY:	$(NAME)_cm
+$(NAME)_cm: src/yacc.lex.sml src/yacc.grm.sig src/yacc.grm.sml
 	(								\
 		echo 'Group is' &&					\
 		cmcat sources.cm | grep -v 'mlton-stubs-in-smlnj' &&	\
 		echo 'call-main.sml';					\
 	) >$(NAME).cm
-endif
 
 src/yacc.lex.sml: src/yacc.lex
 	rm -f src/yacc.lex.sml && \

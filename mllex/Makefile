@@ -11,15 +11,13 @@ $(NAME): $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)
 	strip $(NAME)
 	size $(NAME)
 
-ifeq ($(MAKECMDGOALS),$(NAME).cm)
-.PHONY:	$(NAME).cm
-$(NAME).cm:
+.PHONY:	$(NAME)_cm
+$(NAME)_cm:
 	(								\
 		echo 'Group is' &&					\
 		cmcat sources.cm | grep -v 'mlton-stubs-in-smlnj' &&	\
 		echo 'call-main.sml';					\
 	) >$(NAME).cm
-endif
 
 .PHONY: clean
 clean:

@@ -16,9 +16,8 @@ $(AOUT): $(NAME).cm $(shell $(MLTON) -stop f mlton.cm)
 	size $(AOUT)
 	strip $(AOUT)
 
-ifeq ($(MAKECMDGOALS),$(NAME).cm)
-.PHONY:	$(NAME).cm
-$(NAME).cm: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
+.PHONY:	$(NAME)_cm
+$(NAME)_cm: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 	(								\
 		echo 'Group is'&&					\
 		cmcat sources.cm | grep -v 'mlton-stubs-in-smlnj' |	\
@@ -27,7 +26,6 @@ $(NAME).cm: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 			grep -v mlyacc &&				\
 		echo 'call-main.sml';					\
 	) >$(NAME).cm
-endif
 
 mlton.sml: $(NAME).cm $(shell $(MLTON) -stop f mlton.cm)
 	rm -f mlton.sml && mlton -stop sml mlton.cm && chmod -w mlton.sml
