@@ -1910,6 +1910,7 @@ struct
        x86Liveness.LiveInfo.verifyLiveInfo_msg ();
        x86JumpInfo.verifyJumpInfo_msg ();
        x86EntryTransfer.verifyEntryTransfer_msg ();
+       x86LoopInfo.createLoopInfo_msg ();
        x86LiveTransfers.computeLiveTransfers_totals ();
        Control.unindent ())
 end
