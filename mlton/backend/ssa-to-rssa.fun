@@ -129,6 +129,57 @@ structure CFunction =
 	 val int64Equal = make "Int64_equal"
       end
 
+      local
+	 fun make name =
+	    IntSize.memoize
+	    (fn s =>
+	     vanilla {args = Vector.new2 (CType.Int s, CType.Int s),
+		      name = concat ["Int", IntSize.toString s, "_", name],
+		      return = SOME CType.bool})
+      in
+	 val intGe = make "ge"
+	 val intGt = make "gt"
+	 val intLe = make "le"
+	 val intLt = make "lt"
+      end
+
+      local
+	 val int = ("Int", CType.Int, IntSize.memoize, IntSize.toString)
+	 val word = ("Word", CType.Word, WordSize.memoize, WordSize.toString)
+	 fun make ((fromName, fromType, fromMemo, fromString),
+		   (toName, toType, toMemo, toString)) =
+	    let
+	       val f =
+		  fromMemo
+		  (fn s1 =>
+		   toMemo
+		   (fn s2 =>
+		    vanilla {args = Vector.new1 (fromType s1),
+			     name = concat [fromName, fromString s1,
+					    "_to", toName, toString s2],
+			     return = SOME (toType s2)}))
+	    in
+	       fn (s1, s2) => f s1 s2
+	    end
+      in
+	 val intToInt = make (int, int)
+	 val intToWord = make (int, word)
+	 val wordToInt = make (word, int)
+      end
+   
+      local
+	 fun make name =
+	    IntSize.memoize
+	    (fn s =>
+	     vanilla {args = Vector.new2 (CType.Int s, CType.Int s),
+		      name = concat ["Int", IntSize.toString s, "_", name],
+		      return = SOME (CType.Int s)})
+      in
+	 val intMul = make "mul"
+	 val intQuot = make "quot"
+	 val intRem = make "rem"
+      end
+
       val word64Equal = vanilla {args = Vector.new2 (Word64, Word64),
 				 name = "Word64_equal",
 				 return = SOME CType.defaultInt}
@@ -1174,6 +1225,60 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				    if s = IntSize.I64 andalso !Control.Native.native 
 				       then simpleCCall CFunction.int64Equal
 				       else normal ()
+			       | Int_ge s =>
+				    if s = IntSize.I64 andalso !Control.Native.native
+				       then simpleCCall (CFunction.intGe s)
+				    else normal ()
+			       | Int_gt s =>
+				    if s = IntSize.I64 andalso !Control.Native.native
+				       then simpleCCall (CFunction.intGt s)
+				    else normal ()
+			       | Int_le s =>
+				    if s = IntSize.I64 andalso !Control.Native.native
+				       then simpleCCall (CFunction.intLe s)
+				    else normal ()
+			       | Int_lt s =>
+				    if s = IntSize.I64 andalso !Control.Native.native
+				       then simpleCCall (CFunction.intLt s)
+				    else normal ()
+			       | Int_mul s =>
+				    if s = IntSize.I64 andalso !Control.Native.native
+				       then simpleCCall (CFunction.intMul s)
+				    else normal ()
+			       | Int_quot s =>
+				    if s = IntSize.I64
+				       orelse not (!Control.Native.native)
+				       then simpleCCall (CFunction.intQuot s)
+				    else normal ()
+			       | Int_rem s =>
+				    if s = IntSize.I64
+				       orelse not (!Control.Native.native)
+				       then simpleCCall (CFunction.intRem s)
+				    else normal ()
+			       | Int_toInt (s1, s2) =>
+				    let
+				       datatype z = datatype IntSize.t
+				    in
+				       if (case (s1, s2) of
+					      (I32, I64) => true
+					    | (I64, I32) => true
+					    | _ => false)
+					  andalso !Control.Native.native
+					  then simpleCCall (CFunction.intToInt (s1, s2))
+				       else normal ()
+				    end
+			       | Int_toWord (s1, s2) =>
+				    let
+				       datatype z = datatype IntSize.t
+				       datatype z = datatype WordSize.t
+				    in
+				       if (case (s1, s2) of
+					      (I64, W32) => true
+					    | _ => false)
+					  andalso !Control.Native.native
+					  then simpleCCall (CFunction.intToWord (s1, s2))
+				       else normal ()
+				    end
 			       | IntInf_add => simpleCCall CFunction.intInfAdd
 			       | IntInf_andb => simpleCCall CFunction.intInfAndb
 			       | IntInf_arshift =>
@@ -1371,6 +1476,18 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				    if s = WordSize.W64
 				       then simpleCCall CFunction.word64Equal
 				    else normal ()
+			       | Word_toInt (s1, s2) =>
+				    let
+				       datatype z = datatype IntSize.t
+				       datatype z = datatype WordSize.t
+				    in
+				       if (case (s1, s2) of
+					      (W64, I32) => true
+					    | _ => false)
+					  andalso !Control.Native.native
+					  then simpleCCall (CFunction.wordToInt (s1, s2))
+				       else normal ()
+				    end
 			       | Word_toIntInf => cast ()
 			       | WordVector_toIntInf => cast ()
 			       | Word8Array_subWord => sub Type.defaultWord

@@ -392,8 +392,8 @@ mulOverflow(Word, 32, 64)
 #define intAllBinary(name, op)			\
 	intBinary(name,op,8)			\
 	intBinary(name,op,16)			\
-	intBinary(name,op,32)
-//	intBinary(name,op,64)
+	intBinary(name,op,32)			\
+	intBinary(name,op,64)
 intAllBinary (add, +)
 intAllBinary (mul, *)
 intAllBinary (sub, -)
@@ -408,8 +408,8 @@ intAllBinary (sub, -)
 #define intAllBinaryCompare(name, op)		\
 	intBinaryCompare(name,op,8)		\
 	intBinaryCompare(name,op,16)		\
-	intBinaryCompare(name,op,32)
-//	intBinaryCompare(name,op,64)
+	intBinaryCompare(name,op,32)		\
+	intBinaryCompare(name,op,64)
 intAllBinaryCompare (equal, ==)
 intAllBinaryCompare (ge, >=)
 intAllBinaryCompare (gt, >)
@@ -603,10 +603,10 @@ wordOps(64)
 		return (t)x;			\
 	}
 //coerce (Int64, Int64)
-//coerce (Int64, Int32)
+coerce (Int64, Int32)
 //coerce (Int64, Int16)
 //coerce (Int64, Int8)
-//coerce (Int32, Int64)
+coerce (Int32, Int64)
 coerce (Int32, Int32)
 coerce (Int32, Int16)
 coerce (Int32, Int8)
@@ -626,7 +626,7 @@ coerce (Int16, Real64)
 coerce (Int16, Real32)
 coerce (Int8, Real64)
 coerce (Int8, Real32)
-//coerce (Int64, Word32)
+coerce (Int64, Word32)
 //coerce (Int64, Word16)
 //coerce (Int64, Word8)  
 coerce (Int32, Word32)
@@ -650,7 +650,7 @@ coerce (Real64, Real64)
 coerce (Real64, Real32)
 coerce (Real32, Real64)
 coerce (Real32, Real32)
-//coerce (Word32, Int64)
+coerce (Word32, Int64)
 coerce (Word32, Int32)
 coerce (Word32, Int16)
 coerce (Word32, Int8)

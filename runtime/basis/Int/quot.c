@@ -30,15 +30,16 @@
 #error check that C / correctly implements quot from the basis library
 #endif
 
-Int8 Int8_quot (Int8 n, Int8 d) {
-	return n / d;
-}
+#define binary(size, name, op)							\
+	Int##size Int##size##_##name (Int##size i, Int##size j) {		\
+		return i op j;							\
+	}
 
-Int16 Int16_quot (Int16 n, Int16 d) {
-	return n / d;
-}
+#define both(size)								\
+	binary(size, quot, /)							\
+	binary(size, rem, %)
 
-Int32 Int32_quot (Int32 n, Int32 d) {
-	return n / d;
-}
-
+both(8)
+both(16)
+both(32)
+both(64)

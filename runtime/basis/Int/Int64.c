@@ -4,9 +4,6 @@ enum {
 	DEBUG = FALSE,
 };
 
-#define Int64_max (Int64)0x7FFFFFFFFFFFFFFF
-#define Int64_min (Int64)0x8000000000000000
-
 #define binary(name, op)							\
 	Int64 Int64_##name (Int64 i, Int64 j) {					\
 		if (DEBUG)							\
@@ -14,11 +11,7 @@ enum {
 					i op j, i, j);				\
 		return i op j;							\
 	}
-binary(add, +)
 binary(mul, *)
-binary(sub, -)
-binary(quot, /)
-binary(rem, %)
 #undef binary
 
 #define compare(name, op)						\

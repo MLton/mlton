@@ -111,7 +111,7 @@ structure Primitive =
 	    val leave = _import "Debug_leave": string -> unit;
 	 end
    end
-   
+
 structure Primitive =
    struct
       val detectOverflow = _build_const "MLton_detectOverflow": bool;
@@ -415,15 +415,13 @@ structure Primitive =
       structure Int = Int32
       structure Int64 =
 	 struct
-	    infix 7 *?
-
 	    type int = Int64.int
 
 	    val precision' : Int.int = 64
 	    val maxInt' : int = 0x7FFFFFFFFFFFFFFF
 	    val minInt' : int = ~0x8000000000000000
 
-	    val op *? = _import "Int64_mul": int * int -> int;
+	    val *? = _prim "Int64_mul": int * int -> int;
 	    val +? = _prim "Int64_add": int * int -> int;
 	    val + =
 	       if detectOverflow
@@ -434,23 +432,23 @@ structure Primitive =
 	       if detectOverflow
 		  then _prim "Int64_subCheck": int * int -> int;
 	       else -?
-	    val op < = _import "Int64_lt": int * int -> bool;
-	    val op <= = _import "Int64_le": int * int -> bool;
-	    val op > = _import "Int64_gt": int * int -> bool;
-	    val op >= = _import "Int64_ge": int * int -> bool;
+	    val op < = _prim "Int64_lt": int * int -> bool;
+	    val op <= = _prim "Int64_le": int * int -> bool;
+	    val op > = _prim "Int64_gt": int * int -> bool;
+	    val op >= = _prim "Int64_ge": int * int -> bool;
 	    val quot = _import "Int64_quot": int * int -> int;
 	    val rem = _import "Int64_rem": int * int -> int;
-	    val geu = _import "Int64_geu": int * int -> bool;
-	    val gtu = _import "Int64_gtu": int * int -> bool;
+ 	    val geu = _import "Int64_geu": int * int -> bool;
+ 	    val gtu = _import "Int64_gtu": int * int -> bool;
 	    val ~? = _prim "Int64_neg": int -> int; 
 	    val ~ =
 	       if detectOverflow
 		  then _prim "Int64_negCheck": int -> int;
 	       else ~?
-	    val fromInt = _import "Int32_toInt64": Int.int -> int;
-	    val fromWord = _import "Word32_toInt64": word -> int;
-	    val toInt = _import "Int64_toInt32": int -> Int.int;
-	    val toWord = _import "Int64_toWord32": int -> word;
+	    val fromInt = _prim "Int32_toInt64": Int.int -> int;
+	    val fromWord = _prim "Word32_toInt64": word -> int;
+	    val toInt = _prim "Int64_toInt32": int -> Int.int;
+	    val toWord = _prim "Int64_toWord32": int -> word;
 
 	    val * = fn _ => raise Fail "Int64.* unimplemented"
 	 end

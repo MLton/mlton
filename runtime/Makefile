@@ -39,7 +39,6 @@ OBJS =						\
 	basis/Int/mulOverflow.o			\
 	basis/Int/negOverflow.o			\
 	basis/Int/quot.o			\
-	basis/Int/rem.o				\
 	basis/Int/subOverflow.o			\
 	basis/Itimer/set.o			\
 	basis/MLton/allocTooLarge.o		\
@@ -207,7 +206,6 @@ DEBUG_OBJS =					\
 	basis/Int/mulOverflow-gdb.o		\
 	basis/Int/negOverflow-gdb.o		\
 	basis/Int/quot-gdb.o			\
-	basis/Int/rem-gdb.o			\
 	basis/Int/subOverflow-gdb.o		\
 	basis/Itimer/set-gdb.o			\
 	basis/MLton/allocTooLarge-gdb.o		\

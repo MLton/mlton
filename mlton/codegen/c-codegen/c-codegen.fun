@@ -93,7 +93,7 @@ structure IntX =
 	       I8 => simple "8"
 	     | I16 => simple "16"
 	     | I32 => tricky ("0x80000000")
-	     | I64 => concat ["(Int64)", tricky "0x8000000000000000"]
+	     | I64 => concat [tricky "0x8000000000000000", "ll"]
 	 end
    end
 
@@ -129,7 +129,7 @@ structure WordX =
 	       W8 => simple "8"
 	     | W16 => simple "16"
 	     | W32 => concat ["0x", toString w]
-	     | W64 => simple "64"
+	     | W64 => concat ["0x", toString w, "llu"]
 	 end
    end
    
