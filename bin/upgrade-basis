@@ -34,7 +34,7 @@ feature () {
 	feature="$1"
 	sml="$2"
 	echo "$feature" >$tmp
-	if ! mlton $tmp >/dev/null 2>&1; then
+	if ! mlton -stop tc $tmp >/dev/null 2>&1; then
 		echo "$sml"
 	fi
 }
