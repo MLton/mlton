@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -409,7 +409,7 @@ structure Interface =
 		  Etype.hom (t, {con = con,
 				 expandOpaque = false,
 				 record = record,
-				 replaceCharWithWord8 = false,
+				 replaceSynonyms = false,
 				 var = var})
 	       end
 	 end
@@ -2789,7 +2789,7 @@ fun functorClosure
 		     Type.hom (t, {con = con,
 				   expandOpaque = false,
 				   record = Type.record,
-				   replaceCharWithWord8 = false,
+				   replaceSynonyms = false,
 				   var = Type.var})
 		  end
 	       fun replaceScheme (s: Scheme.t): Scheme.t =

@@ -50,7 +50,7 @@ in
    val weak = unary Tycon.weak
 end
 
-val word8 = word (WordSize.W 8)
+val word8 = word WordSize.byte
 val word8Vector = vector word8
    
 local

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -72,10 +72,10 @@ structure Statement =
 
       fun caseBytes (s: Statement.t,
 		     {big = _: Operand.t -> 'a,
-		      small: word -> 'a}): 'a =
+		      small: Bytes.t -> 'a}): 'a =
 	 case s of
-	    Object {size, ...} => small (Word.fromInt size)
-	  | _ => small 0w0
+	    Object {size, ...} => small size
+	  | _ => small Bytes.zero
    end
 
 structure Transfer =
@@ -83,38 +83,39 @@ structure Transfer =
       open Transfer
 
       fun caseBytes (t: t, {big: Operand.t -> 'a,
-			    small: word -> 'a}): 'a =
+			    small: Bytes.t -> 'a}): 'a =
 	 case t of
 	    CCall {args, func, ...} =>
 	       (case CFunction.bytesNeeded func of
-		   NONE => small 0w0
+		   NONE => small Bytes.zero
 		 | SOME i =>
 		      Operand.caseBytes (Vector.sub (args, i),
 					 {big = big,
 					  small = small}))
-	  | _ => small 0w0
+	  | _ => small Bytes.zero
    end
 
 structure Block =
    struct
       open Block
 
-      fun objectBytesAllocated (T {statements, transfer, ...}): word =
-	 Vector.fold (statements, 0w0, fn (s, ac) =>
-		      ac + Statement.caseBytes (s,
-						{big = fn _ => 0w0,
-						 small = fn w => w}))
-	 + Transfer.caseBytes (transfer,
-			       {big = fn _ => 0w0,
-				small = fn w => w})
+      fun objectBytesAllocated (T {statements, transfer, ...}): Bytes.t =
+	 Bytes.+
+	 (Vector.fold (statements, Bytes.zero, fn (s, ac) =>
+		       Bytes.+
+		       (ac,
+			Statement.caseBytes (s, {big = fn _ => Bytes.zero,
+						 small = fn b => b}))),
+	  Transfer.caseBytes (transfer, {big = fn _ => Bytes.zero,
+					 small = fn b => b}))
    end
 
 val extraGlobals: Var.t list ref = ref []
    
 fun insertFunction (f: Function.t,
 		    handlesSignals: bool,
-		    blockCheckAmount: {blockIndex: int} -> word,
-		    ensureBytesFree: Label.t -> word) =
+		    blockCheckAmount: {blockIndex: int} -> Bytes.t,
+		    ensureFree: Label.t -> Bytes.t) =
    let
       val {args, blocks, name, raises, returns, start} = Function.dest f
       val newBlocks = ref []
@@ -138,7 +139,7 @@ fun insertFunction (f: Function.t,
 				     modifiesFrontier = false,
 				     modifiesStackTop = false,
 				     name = "MLton_allocTooLarge",
-				     return = NONE}
+				     return = Type.unit}
 		     val _ =
 			newBlocks :=
 			Block.T {args = Vector.new0 (),
@@ -170,8 +171,8 @@ fun insertFunction (f: Function.t,
 					  Operand.EnsuresBytesFree =>
 					     Operand.word
 					     (WordX.fromIntInf
-					      (Word.toIntInf
-					       (ensureBytesFree (valOf return)),
+					      (Bytes.toIntInf
+					       (ensureFree (valOf return)),
 					       WordSize.default))
 					| _ => z)),
 			      func = func,
@@ -203,7 +204,7 @@ fun insertFunction (f: Function.t,
 				    label = dontCollect',
 				    statements = Vector.new0 (),
 				    transfer =
-				    Transfer.ifInt
+				    Transfer.ifBool
 				    (global, {falsee = dontCollect,
 					      truee = collect})})
 			    in
@@ -345,7 +346,8 @@ fun insertFunction (f: Function.t,
 			 frontierCheck (isFirst,
 					Prim.eq,
 					Operand.Runtime Limit,
-					Operand.int (IntX.zero IntSize.default),
+					Operand.word (WordX.zero
+						      WordSize.default),
 					{collect = collect,
 					 dontCollect = newBlock (false,
 								 statements,
@@ -359,8 +361,8 @@ fun insertFunction (f: Function.t,
 				newBlock (false, statements, transfer)})
 			else newBlock (isFirst, statements, transfer)
 		end
-	     fun heapCheckNonZero (bytes: Word.t): Label.t =
-		if bytes <= Word.fromInt Runtime.limitSlop
+	     fun heapCheckNonZero (bytes: Bytes.t): Label.t =
+		if Bytes.<= (bytes, Runtime.limitSlop)
 		   then frontierCheck (true,
 				       Prim.wordGt WordSize.default,
 				       Operand.Runtime Frontier,
@@ -369,30 +371,31 @@ fun insertFunction (f: Function.t,
 					       (WordX.zero WordSize.default)))
 		else heapCheck (true,
 				Operand.word (WordX.fromIntInf
-					      (Word.toIntInf bytes,
+					      (Bytes.toIntInf bytes,
 					       WordSize.default)))
 	     fun smallAllocation _ =
 		let
-		   val w = blockCheckAmount {blockIndex = i}
+		   val b = blockCheckAmount {blockIndex = i}
 		in
-		   if w = 0w0
+		   if Bytes.isZero b
 		      then maybeStack ()
-		   else heapCheckNonZero w
+		   else heapCheckNonZero b
 		end
 	     fun bigAllocation (bytesNeeded: Operand.t) =
 		let
 		   val extraBytes =
-		      Word.fromInt Runtime.arrayHeaderSize
-		      + blockCheckAmount {blockIndex = i}
+		      Bytes.+ (Runtime.arrayHeaderSize,
+			       blockCheckAmount {blockIndex = i})
 		in
 		   case bytesNeeded of
 		      Operand.Const c =>
 			 (case c of
 			     Const.Word w =>
 				heapCheckNonZero
-				(Word.addCheck
-				 (Word.fromIntInf (WordX.toIntInf w),
-				  extraBytes)
+				(Bytes.fromWord
+				 (Word.addCheck
+				  (Word.fromIntInf (WordX.toIntInf w),
+				   Bytes.toWord extraBytes))
 				 handle Overflow => Runtime.allocTooLarge)
 			   | _ => Error.bug "strange primitive bytes needed")
 		    | _ =>
@@ -405,7 +408,8 @@ fun insertFunction (f: Function.t,
 			     Transfer.Arith
 			     {args = Vector.new2 (Operand.word
 						  (WordX.fromIntInf
-						   (Word.toIntInf extraBytes,
+						   (Word.toIntInf
+						    (Bytes.toWord extraBytes),
 						    WordSize.default)),
 						  bytesNeeded),
 			      dst = bytes,
@@ -442,7 +446,7 @@ fun insertPerBlock (f: Function.t, handlesSignals) =
       fun blockCheckAmount {blockIndex} =
 	 Block.objectBytesAllocated (Vector.sub (blocks, blockIndex))
    in
-      insertFunction (f, handlesSignals, blockCheckAmount, fn _ => 0w0)
+      insertFunction (f, handlesSignals, blockCheckAmount, fn _ => Bytes.zero)
    end
 
 structure Graph = DirectedGraph
@@ -450,7 +454,7 @@ structure Node = Graph.Node
 structure Edge = Graph.Edge
 structure Forest = Graph.LoopForest
 
-val traceMaxPath = Trace.trace ("maxPath", Int.layout, Word.layout)
+val traceMaxPath = Trace.trace ("maxPath", Int.layout, Bytes.layout)
 
 fun insertCoalesce (f: Function.t, handlesSignals) =
    let
@@ -618,7 +622,9 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
 			      let
 				 val i = nodeIndex n
 			      in
-				 if 0w0 < Vector.sub (objectBytesAllocated, i)
+				 if (Bytes.<
+				     (Bytes.zero,
+				      Vector.sub (objectBytesAllocated, i)))
 				    then Array.update (classDoesAllocate, 
 						       indexClass i, 
 						       true)
@@ -672,7 +678,7 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
       local
 	 val a = Array.array (n, NONE)
       in
-	 fun maxPath arg : word =  (* i is a node index *)
+	 fun maxPath arg : Bytes.t =  (* i is a node index *)
 	    traceMaxPath
 	    (fn (i: int) =>
 	    case Array.sub (a, i) of
@@ -682,15 +688,16 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
 		     val x = Vector.sub (objectBytesAllocated, i)
 		     val max =
 			List.fold
-			(Node.successors (indexNode i), 0w0, fn (e, max) =>
+			(Node.successors (indexNode i), Bytes.zero,
+			 fn (e, max) =>
 			 let
 			    val i' = nodeIndex (Edge.to e)
 			 in
 			    if Array.sub (mayHaveCheck, i')
 			       then max
-			    else Word.max (max, maxPath i')
+			    else Bytes.max (max, maxPath i')
 			 end)
-		     val x = x + max
+		     val x = Bytes.+ (x, max)
 		     val _ = Array.update (a, i, SOME x)
 		  in
 		     x
@@ -700,7 +707,7 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
       fun blockCheckAmount {blockIndex} =
 	 if Array.sub (mayHaveCheck, blockIndex)
 	    then maxPath blockIndex
-	 else 0w0
+	 else Bytes.zero
       val f = insertFunction (f, handlesSignals, blockCheckAmount,
 			      maxPath o labelIndex)
       val _ =
@@ -710,7 +717,7 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
 	  (blocks, fn Block.T {label, ...} =>
 	   display (let open Layout
 		    in seq [Label.layout label, str " ",
-			    Word.layout (maxPath (labelIndex label))]
+			    Bytes.layout (maxPath (labelIndex label))]
 		    end)))
       val _ = Function.clear f
    in
@@ -735,9 +742,11 @@ fun insert (Program.T {functions, handlesSignals, main, objectTypes}) =
 		  label = newStart,
 		  statements = (Vector.fromListMap
 				(!extraGlobals, fn x =>
-				 Statement.Bind {isMutable = true,
-						 oper = Operand.bool true,
-						 var = x})),
+				 Statement.Bind
+				 {isMutable = true,
+				  oper = Operand.Cast (Operand.bool true,
+						       Type.bool),
+				  var = x})),
 		  transfer = Transfer.Goto {args = Vector.new0 (),
 					    dst = start}}
       val blocks = Vector.concat [Vector.new1 block, blocks]

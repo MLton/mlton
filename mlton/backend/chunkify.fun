@@ -39,18 +39,7 @@ fun blockSize (Block.T {statements, transfer, ...}): int =
    let
       val transferSize =
 	 case transfer of
-	    Switch s =>
-	       let
-		  datatype z = datatype Switch.t
-		  fun simple {cases, default = _, size = _, test = _} =
-		     1 + Vector.length cases
-	       in
-		  case s of
-		     EnumPointers _ => 2
-		   | Int z => simple z
-		   | Pointer {cases, ...} => 1 + Vector.length cases
-		   | Word z => simple z
-	       end
+	    Switch (Switch.T {cases, ...}) => 1 + Vector.length cases
 	  | _ => 1
       val statementsSize =
 	 if !Control.profile = Control.ProfileNone

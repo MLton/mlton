@@ -1,14 +1,14 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-functor x86(S: X86_STRUCTS): X86 =
+functor x86 (S: X86_STRUCTS): X86 =
 struct
 
-    val tracerTop
+   val tracerTop
     = fn s => Control.traceBatch (Control.Pass, s)
 (*
     = fn s => fn f => (Control.trace (Control.Pass, s) f, fn () => ())
@@ -43,20 +43,8 @@ struct
 
   open S
 
-  local
-     open Runtime
-  in
-     structure CFunction = CFunction
-  end
-  structure CType = CFunction.CType
-  local
-     open CType
-  in
-     structure IntSize = IntSize
-     structure RealSize = RealSize
-     structure WordSize = WordSize
-  end
-   
+  structure RepType = CFunction.RepType
+
   structure Label =
      struct
 	open Label
@@ -140,33 +128,13 @@ struct
       in
 	 fun fromCType t =
 	    case t of
-	       Int s =>
-		  let
-		     datatype z = datatype IntSize.prim
-		  in
-		     case IntSize.prim s of
-			I8 => Vector.new1 BYTE
-		      | I16 => Vector.new1 WORD
-		      | I32 => Vector.new1 LONG
-		      | I64 => Vector.new2 (LONG, LONG)
-		  end
-	     | Pointer => Vector.new1 LONG
-	     | Real s => 
-		  let datatype z = datatype RealSize.t
-		  in case s of
-		       R32 => Vector.new1 SNGL
-		     | R64 => Vector.new1 DBLE
-		  end
-	     | Word s =>
-		  let
-		     datatype z = datatype WordSize.prim
-		  in
-		     case WordSize.prim s of
-		       W8 => Vector.new1 BYTE
-		     | W16 => Vector.new1 WORD 
-		     | W32 => Vector.new1 LONG
-		     | W64 => Vector.new2 (LONG, LONG)
-		  end
+	       Pointer => Vector.new1 LONG
+	     | Real32 => Vector.new1 SNGL
+	     | Real64 => Vector.new1 DBLE
+	     | Word8 => Vector.new1 BYTE
+	     | Word16 => Vector.new1 WORD
+	     | Word32 => Vector.new1 LONG
+	     | Word64 => Vector.new2 (LONG, LONG)
       end
 
       val class
@@ -701,33 +669,13 @@ struct
       in
 	 fun fromCType t =
 	    case t of
-	       Int s =>
-		  let
-		     datatype z = datatype IntSize.prim
-		  in
-		     case IntSize.prim s of
-			I8 => One
-		      | I16 => Two
-		      | I32 => Four
-		      | I64 => Eight
-		  end
-	     | Pointer => Four
-	     | Real s => 
-		  let datatype z = datatype RealSize.t
-		  in case s of
-		       R32 => Four
-		     | R64 => Eight
-		  end
-	     | Word s =>
-		  let
-		     datatype z = datatype WordSize.prim
-		  in
-		     case WordSize.prim s of
-			W8 => One
-		      | W16 => Two
-		      | W32 => Four
-		      | W64 => Eight
-		  end
+	       Pointer => Four
+	     | Real32 => Four
+	     | Real64 => Eight
+	     | Word8 => One
+	     | Word16 => Two
+	     | Word32 => Four
+	     | Word64 => Eight
       end
 
       fun eq(s1, s2) = s1 = s2
@@ -1445,46 +1393,26 @@ struct
 	 datatype z = datatype Size.t
       in
 	 fun cReturnTemps ty =
-	    case ty of
-	       Int s => let
-			   datatype z = datatype IntSize.prim
-			in
-			   case IntSize.prim s of
-			     I8 => [{src = register Register.al,
-				     dst = cReturnTempContent (0, BYTE)}]
-			   | I16 => [{src = register Register.ax,
-				      dst = cReturnTempContent (0, WORD)}]
-			   | I32 => [{src = register Register.eax,
-				      dst = cReturnTempContent (0, LONG)}]
-			   | I64 => [{src = register Register.eax,
-				      dst = cReturnTempContent (0, LONG)},
-				     {src = register Register.edx,
-				      dst = cReturnTempContent (4, LONG)}]
-			end
-	     | Pointer => [{src = register Register.eax,
-			    dst = cReturnTempContent (0, LONG)}]
-	     | Real s => let datatype z = datatype RealSize.t
-			 in case s of
-			      R32 => [{src = fltregister FltRegister.top,
-				       dst = cReturnTempContent (0, SNGL)}]
-			    | R64 => [{src = fltregister FltRegister.top,
-				       dst = cReturnTempContent (0, DBLE)}]
-			 end
-	     | Word s => let
-			    datatype z = datatype WordSize.prim
-			 in
-			    case WordSize.prim s of
-			      W8 => [{src = register Register.al,
-				      dst = cReturnTempContent (0, BYTE)}]
-			    | W16 => [{src = register Register.ax,
-				       dst = cReturnTempContent (0, WORD)}]
-			    | W32 => [{src = register Register.eax,
-				       dst = cReturnTempContent (0, LONG)}]
-			    | W64 => [{src = register Register.eax,
-				       dst = cReturnTempContent (0, LONG)},
-				      {src = register Register.edx,
-				       dst = cReturnTempContent (4, LONG)}]
-			 end
+	    if RepType.isUnit ty
+	       then []
+	    else
+	       case RepType.toCType ty of
+		  Pointer => [{src = register Register.eax,
+			       dst = cReturnTempContent (0, LONG)}]
+		| Real32 => [{src = fltregister FltRegister.top,
+			      dst = cReturnTempContent (0, SNGL)}]
+		| Real64 => [{src = fltregister FltRegister.top,
+			      dst = cReturnTempContent (0, DBLE)}]
+		| Word8 => [{src = register Register.al,
+			     dst = cReturnTempContent (0, BYTE)}]
+		| Word16 => [{src = register Register.ax,
+			      dst = cReturnTempContent (0, WORD)}]
+		| Word32 => [{src = register Register.eax,
+			      dst = cReturnTempContent (0, LONG)}]
+		| Word64 => [{src = register Register.eax,
+			      dst = cReturnTempContent (0, LONG)},
+			     {src = register Register.edx,
+			      dst = cReturnTempContent (4, LONG)}]
       end
     end
 
@@ -3848,14 +3776,10 @@ struct
 
       val uses_defs_kills
 	= fn CReturn {dsts, func, ...} 
-	   => let 
+	   => let
 		 val uses =
-		    case CFunction.return func of
-		       NONE => []
-		     | SOME ty => 
-			  List.map
-			  (Operand.cReturnTemps ty,
-			   fn {dst, ...} => Operand.memloc dst)
+		    List.map (Operand.cReturnTemps (CFunction.return func),
+			      fn {dst, ...} => Operand.memloc dst)
 	      in
 		 {uses = uses, 
 		  defs = Vector.toListMap(dsts, fn (dst, _) => dst), 
@@ -4152,12 +4076,8 @@ struct
 	   | CCall {args, func, ...}
 	   => let
 		 val defs =
-		    case CFunction.return func of
-		       NONE => []
-		     | SOME ty => 
-			  List.map
-			  (Operand.cReturnTemps ty,
-			   fn {dst, ...} => Operand.memloc dst)
+		    List.map (Operand.cReturnTemps (CFunction.return func),
+			      fn {dst, ...} => Operand.memloc dst)
 	      in
 		 {uses = List.map(args, fn (oper,_) => oper),
 		  defs = defs, kills = []}

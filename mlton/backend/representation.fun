@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -43,14 +43,64 @@ in
    structure Tycon = Tycon
 end
 
+val bitsPerByte: int = 8
+
 datatype z = datatype WordSize.prim
+
+structure Type =
+   struct
+      open Type
+
+      fun enumPointers {enum, pointers}: t =
+	 sum (Vector.concat [Vector.map (enum, constant),
+			     Vector.map (pointers, pointer)])
+
+      fun layoutEP {enum, pointers} =
+	 Layout.record
+	 [("enum", Vector.layout WordX.layout enum),
+	  ("pointers", Vector.layout PointerTycon.layout pointers)]
+	 
+      val enumPointers =
+	 Trace.trace ("enumPointers", layoutEP, layout) enumPointers
+	 
+      fun getEnumPointersOpt (t: t)
+	 : {enum: WordX.t vector,
+	    pointers: PointerTycon.t vector} option =
+	 case dest t of
+	    Constant w =>
+	       SOME {enum = Vector.new1 w, pointers = Vector.new0 ()}
+	  | Pointer p =>
+	       SOME {enum = Vector.new0 (), pointers = Vector.new1 p}
+	  | Sum ts =>
+	       let
+		  val (ws, ps) =
+		     Vector.fold
+		     (ts, ([], []), fn (t, (ws, ps)) =>
+		      case dest t of
+			 Constant w => (w :: ws, ps)
+		       | Pointer p => (ws, p :: ps)
+		       | _ => Error.bug "getEnumPointers")
+	       in
+		  SOME {enum = Vector.fromListRev ws,
+			pointers = Vector.fromListRev ps}
+	       end
+	  | _ => NONE
+
+      fun getEnumPointers t =
+	 case getEnumPointersOpt t of
+	    NONE => Error.bug "getEnumPointers of non Sum"
+	  | SOME z => z
+
+      val getEnumPointers =
+	 Trace.trace ("getEnumPointers", layout, layoutEP) getEnumPointers
+   end
 
 structure TupleRep =
    struct
-      datatype t = T of {offsets: {offset: int,
-				   ty: R.Type.t} option vector,
-			 size: int,
-			 ty: R.Type.t,
+      datatype t = T of {offsets: {offset: Bytes.t,
+				   ty: Type.t} option vector,
+			 size: Bytes.t,
+			 ty: Type.t,
 			 tycon: R.PointerTycon.t}
 
       fun layout (T {offsets, size, ty, tycon, ...}) =
@@ -59,11 +109,11 @@ structure TupleRep =
 	 in record [("offsets",
 		     Vector.layout (Option.layout
 				    (fn {offset, ty} =>
-				     record [("offset", Int.layout offset),
-					     ("ty", R.Type.layout ty)]))
+				     record [("offset", Bytes.layout offset),
+					     ("ty", Type.layout ty)]))
 		     offsets),
-		    ("size", Int.layout size),
-		    ("ty", R.Type.layout ty),
+		    ("size", Bytes.layout size),
+		    ("ty", Type.layout ty),
 		    ("tycon", R.PointerTycon.layout tycon)]
 	 end
 
@@ -73,98 +123,51 @@ structure TupleRep =
 	 val tycon = make #tycon
       end
 
-      fun select (T {offsets, ...}, {dst, offset, tuple}) =
-	 case Vector.sub (offsets, offset) of
-	    NONE => []
-	  | SOME {offset, ty} =>
-	       [R.Statement.Bind
-		{isMutable = false,
-		 oper = R.Operand.Offset {base = tuple (),
-					  offset = offset,
-					  ty = ty},
-		 var = dst ()}]
-
-      fun tuple (T {size, offsets, ty, tycon, ...}, {components, dst, oper}) =
+      fun tuple (T {offsets, size, ty, tycon, ...}, {components, dst, oper}) =
 	 let
 	    val stores =
 	       QuickSort.sortVector
 	       (Vector.keepAllMap2
 		(components, offsets, fn (x, offset) =>
-		 Option.map (offset, fn {offset, ty = _} =>
+		 Option.map (offset, fn {offset, ...} =>
 			     {offset = offset,
 			      value = oper x})),
-		fn ({offset = i, ...}, {offset = i', ...}) => i <= i')
+		fn ({offset, ...}, {offset = offset', ...}) =>
+		Bytes.<= (offset, offset'))
 	 in
-	    [R.Statement.Object {dst = dst,
-				 size = size + Runtime.normalHeaderSize,
-				 stores = stores,
-				 ty = ty,
-				 tycon = tycon}]
+	    [R.Statement.Object {dst = (dst, ty),
+				 header = (Runtime.typeIndexToHeader
+					   (PointerTycon.index tycon)),
+				 size = size,
+				 stores = stores}]
 	 end
-
-      fun conSelects (T {offsets, ...}, variant: Operand.t): Operand.t vector =
-	 Vector.keepAllMap
-	 (offsets, fn off =>
-	  Option.map (off, fn {offset, ty} =>
-		      Operand.Offset {base = variant,
-				      offset = offset,
-				      ty = ty}))
    end
 
 structure ConRep =
    struct
       datatype t =
-	 (* an integer representing a variant in a datatype *)
-	 IntAsTy of {int: int,
-		     ty: Rssa.Type.t}
-       (* box the arg(s) and add the integer tag as the first word *)
-       | TagTuple of {rep: TupleRep.t,
-		      tag: int}
+	 (* box the arg(s) *)
+	 TagTuple of TupleRep.t
        (* just keep the value itself *)
        | Transparent of Rssa.Type.t
        (* box the arg(s) *)
        | Tuple of TupleRep.t
        (* need no representation *)
        | Void
+	 (* an integer representing a variant in a datatype *)
+       | WordAsTy of {ty: Rssa.Type.t,
+		      word: WordX.t}
 
       val layout =
 	 let
 	    open Layout
 	 in
-	    fn IntAsTy {int, ty} =>
-	          seq [Int.layout int, str ": ", R.Type.layout ty]
-	     | TagTuple {rep, tag} =>
-		  seq [str "TagTuple ",
-		       record [("rep", TupleRep.layout rep),
-			       ("tag", Int.layout tag)]]
-	     | Transparent t => seq [str "Transparent ", R.Type.layout t]
+	    fn TagTuple rep => seq [str "TagTuple ", TupleRep.layout rep]
+	     | Transparent t => seq [str "Transparent ", Type.layout t]
 	     | Tuple r => seq [str "Tuple ", TupleRep.layout r]
 	     | Void => str "Void"
-	 end
-
-      fun con (cr: t, {args, dst, oper, ty}) =
-	 let
-	    fun move (oper: Operand.t) =
-	       [Statement.Bind {isMutable = false,
-				oper = oper,
-				var = dst ()}]
-	    fun allocate (ys, tr) =
-	       TupleRep.tuple (tr, {components = ys,
-				    dst = dst (),
-				    oper = oper})
-	 in
-	    case cr of
-	       Void => []
-	     | IntAsTy {int, ty} =>
-		  move (Operand.Cast
-			(Operand.int
-			 (IntX.make (IntInf.fromInt int,
-				     IntSize.default)),
-			 ty))
-	     | TagTuple {rep, ...} => allocate (args, rep)
-	     | Transparent _ =>
-		  move (Operand.cast (oper (Vector.sub (args, 0)), ty ()))
-	     | Tuple rep => allocate (args, rep)
+	     | WordAsTy {ty, word} =>
+	          seq [str "0x", WordX.layout word, str ": ", Type.layout ty]
 	 end
    end
 
@@ -214,251 +217,8 @@ structure TyconRep =
 	 end
       
       val equals:t * t -> bool = op =
-
-      fun genCase (testRep: t,
-		   {cases: (ConRep.t * Label.t) vector,
-		    default: Label.t option,
-		    test: unit -> Operand.t}) =
-	 let
-	    datatype z = datatype Operand.t
-	    datatype z = datatype Transfer.t
-	    val extraBlocks = ref []
-	    fun newBlock {args, kind,
-			  statements: Statement.t vector,
-			  transfer: Transfer.t}: Label.t =
-	       let
-		  val l = Label.newNoname ()
-		  val _ = List.push (extraBlocks,
-				     Block.T {args = args,
-					      kind = kind,
-					      label = l,
-					      statements = statements,
-					      transfer = transfer})
-	       in
-		  l
-	       end
-	    fun enum (test: Operand.t): Transfer.t =
-	       let
-		  val cases =
-		     Vector.keepAllMap
-		     (cases, fn (c, j) =>
-		      case c of
-			 ConRep.IntAsTy {int, ...} => SOME (int, j)
-		       | _ => NONE)
-		  val numEnum =
-		     case Operand.ty test of
-			Type.EnumPointers {enum, ...} => Vector.length enum
-		      | _ => Error.bug "strage enum"
-		  val default =
-		     if numEnum = Vector.length cases
-			then NONE
-		     else default
-	       in
-		  if 0 = Vector.length cases
-		     then
-			(case default of
-			    NONE => Error.bug "no targets"
-			  | SOME l => Goto {dst = l,
-					    args = Vector.new0 ()})
-		  else
-		     let
-			val l = #2 (Vector.sub (cases, 0))
-		     in
-			if Vector.forall (cases, fn (_, l') =>
-					  Label.equals (l, l'))
-			   andalso (case default of
-				       NONE => true
-				     | SOME l' => Label.equals (l, l'))
-			   then Goto {dst = l,
-				      args = Vector.new0 ()}
-			else
-			   let
-			      val cases =
-				 QuickSort.sortVector
-				 (cases, fn ((i, _), (i', _)) => i <= i')
-			      val cases =
-				 Vector.map (cases, fn (i, l) =>
-					     (IntX.make (IntInf.fromInt i,
-							 IntSize.default),
-					      l))
-			   in
-			      Switch
-			      (Switch.Int {cases = cases,
-					   default = default,
-					   size = IntSize.default,
-					   test = test})
-			   end
-		     end
-	       end
-	    fun switchEP
-	       (makePointersTransfer: Operand.t -> Statement.t list * Transfer.t)
-	       : Transfer.t =
-	       let
-		  val test = test ()
-		  val {enum = e, pointers = p} =
-		     case Operand.ty test of
-			Type.EnumPointers ep => ep
-		      | _ => Error.bug "strange switchEP"
-		  val enumTy = Type.EnumPointers {enum = e,
-						  pointers = Vector.new0 ()}
-		  val enumVar = Var.newNoname ()
-		  val enumOp = Var {var = enumVar,
-				    ty = enumTy}
-		  val pointersTy = Type.EnumPointers {enum = Vector.new0 (),
-						      pointers = p}
-		  val pointersVar = Var.newNoname ()
-		  val pointersOp = Var {ty = pointersTy,
-					var = pointersVar}
-		  fun block (var, ty, statements, transfer) =
-		     newBlock {args = Vector.new0 (),
-			       kind = Kind.Jump,
-			       statements = (Vector.fromList
-					     (Statement.Bind
-					      {isMutable = false,
-					       oper = Cast (test, ty),
-					       var = var}
-					      :: statements)),
-			       transfer = transfer}
-		  val (s, t) = makePointersTransfer pointersOp
-		  val pointers = block (pointersVar, pointersTy, s, t)
-		  val enum = block (enumVar, enumTy, [], enum enumOp)
-	       in
-		  Switch (Switch.EnumPointers {enum = enum,
-					       pointers = pointers,
-					       test = test})
-	       end
-	    fun enumAndOne (): Transfer.t =
-	       let
-		  fun make (pointersOp: Operand.t)
-		     : Statement.t list * Transfer.t =
-		     let
-			val (dst, args: Operand.t vector) =
-			   case Vector.peekMap
-			      (cases, fn (c, j) =>
-			       case c of
-				  ConRep.Transparent _ =>
-				     SOME (j, Vector.new1 pointersOp)
-				| ConRep.Tuple r =>
-				     SOME (j,
-					   TupleRep.conSelects (r, pointersOp))
-				| _ => NONE) of
-			      NONE =>
-				 (case default of
-				     NONE => Error.bug "enumAndOne: no default"
-				   | SOME j => (j, Vector.new0 ()))
-			    | SOME z => z
-		     in
-			([], Goto {args = args, dst = dst})
-		     end
-	       in
-		  switchEP make
-	       end
-	    fun indirectTag (test: Operand.t): Statement.t list * Transfer.t =
-	       let
-		  val cases =
-		     Vector.keepAllMap
-		     (cases, fn (c, l) =>
-		      case c of
-			 ConRep.TagTuple {rep, tag} =>
-			    let
-			       val tycon = TupleRep.tycon rep
-			       val tag = PointerTycon.index tycon
-			       val pointerVar = Var.newNoname ()
-			       val pointerTy = Type.pointer tycon
-			       val pointerOp =
-				  Operand.Var {ty = pointerTy,
-					       var = pointerVar}
-			       val statements =
-				  Vector.new1
-				  (Statement.Bind
-				   {isMutable = false,
-				    oper = Cast (test, pointerTy),
-				    var = pointerVar})
-			       val dst =
-				  newBlock
-				  {args = Vector.new0 (),
-				   kind = Kind.Jump,
-				   statements = statements,
-				   transfer =
-				   Goto
-				   {args = TupleRep.conSelects (rep, pointerOp),
-				    dst = l}}
-			    in
-			       SOME {dst = dst,
-				     tag = tag,
-				     tycon = tycon}
-			    end
-		       | _ => NONE)
-		  val numTag =
-		     case Operand.ty test of
-			Type.EnumPointers {pointers, ...} =>
-			   Vector.length pointers
-		      | _ => Error.bug "strange indirecTag"
-		  val default =
-		     if numTag = Vector.length cases
-			then NONE
-		     else default
-		  val cases =
-		     QuickSort.sortVector
-		     (cases, fn ({tycon = t, ...}, {tycon = t', ...}) =>
-		      PointerTycon.<= (t, t'))
-		  val headerOffset = ~4
-		  val tagVar = Var.newNoname ()
-		  val s =
-		     Statement.PrimApp
-		     {args = (Vector.new2
-			      (Offset {base = test,
-				       offset = headerOffset,
-				       ty = Type.defaultWord},
-			       Operand.word (WordX.one WordSize.default))),
-		      dst = SOME (tagVar, Type.defaultWord),
-		      prim = Prim.wordRshift WordSize.default}
-		  val tag =
-		     Cast (Var {ty = Type.defaultWord,
-				var = tagVar},
-			   Type.defaultInt)
-	       in
-		  ([s], Switch (Switch.Pointer {cases = cases,
-						default = default,
-						tag = tag,
-						test = test}))
-	       end
-	    fun prim () =
-	       case (Vector.length cases, default) of
-		  (1, _) =>
-		     (* We use _ instead of NONE for the default becuase
-		      * there may be an unreachable default case.
-		      *)
-		     let
-			val (c, l) = Vector.sub (cases, 0)
-		     in
-			case c of
-			   ConRep.Void =>
-			      Goto {dst = l,
-				    args = Vector.new0 ()}
-			 | ConRep.Transparent _ =>
-			      Goto {dst = l,
-				    args = Vector.new1 (test ())}
-			 | ConRep.Tuple r =>
-			      Goto {dst = l,
-				    args = TupleRep.conSelects (r, test ())}
-			 | _ => Error.bug "strange conRep for Prim"
-		     end
-		| (0, SOME l) => Goto {dst = l, args = Vector.new0 ()}
-		| _ => Error.bug "prim datatype with more than one case"
-	    val (ss, t) =
-	       case testRep of
-		  Direct => ([], prim ())
-		| Enum => ([], enum (test ()))
-		| EnumDirect => ([], enumAndOne ())
-		| EnumIndirect => ([], enumAndOne ())
-		| EnumIndirectTag => ([], switchEP indirectTag)
-		| IndirectTag => indirectTag (test ())
-		| Void => ([], prim ())
-	 in
-	    (ss, t, !extraBlocks)
-	 end
    end
+
 
 fun compute (program as Ssa.Program.T {datatypes, ...}) =
    let
@@ -516,7 +276,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 				 let
 				    val a = Vector.sub (args, 0)
 				    (* Which types are guaranteed to be
-				     * translated to R.Type.Pointer and are
+				     * translated to Type.Pointer and are
 				     * represented as zero mod 4.
 				     *)
 				    datatype z = datatype S.Type.dest
@@ -559,13 +319,13 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	 Vector.foreach (datatypes, fn S.Datatype.T {cons, tycon} =>
 			 setTyconCons (tycon, cons))
       (* We have to break the cycle in recursive types to avoid an infinite
-       * recursion when converting from S.Type.t to R.Type.t.  This is done
+       * recursion when converting from S.Type.t to Type.t.  This is done
        * by creating pointer tycons and delaying building the corresponding
        * object types until after toRtype is done.  The "finish" list keeps
        * the list of things to do later.
        *)
       val finish: (unit -> unit) list ref = ref []
-      val {get = toRtype: S.Type.t -> R.Type.t option, ...} =
+      val {get = toRtype: S.Type.t -> Type.t option, ...} =
 	 Property.get
 	 (S.Type.plist,
 	  Property.initRec
@@ -575,10 +335,13 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 			    isTagged: bool,
 			    mutable: bool,
 			    pointerTycon: R.PointerTycon.t,
-			    ty: R.Type.t,
+			    ty: Type.t,
 			    tys: S.Type.t vector}: TupleRep.t =
 		 let
-		    val initialOffset = if isTagged then Runtime.wordSize else 0
+		    val initialOffset =
+		       if isTagged
+			  then Bytes.inWord
+		       else Bytes.zero
 		    val tys = Vector.map (tys, toRtype)
 		    val bytes = ref []
 		    val doubleWords = ref []
@@ -593,17 +356,10 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 			 | SOME t =>
 			      let
 				 val r =
-				    if let
-					  datatype z = datatype R.Type.t
-				       in
-					  case t of
-					     EnumPointers {pointers, ...} =>
-						0 < Vector.length pointers
-					   | IntInf => true
-					   | _ => false
-				       end
+				    if Type.isPointer t
 				       then pointers
-				    else (case R.Type.size t of
+				    else (case (Bytes.toInt
+						(Bits.toBytes (Type.width t))) of
 					     1 => bytes
 					   | 2 => halfWords
 					   | 4 => words
@@ -616,32 +372,39 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		       List.fold
 		       (!r, accum, fn ((index, ty), (res, offset)) =>
 			({index = index, offset = offset, ty = ty} :: res,
-			 offset + size))
-		    val (accum, offset: int) =
-		       build (bytes, 1,
-		       build (halfWords, 2,
-		       build (words, 4,
-		       build (doubleWords, 8, 
+			 Bytes.+ (offset, size)))
+		    val (accum, offset: Bytes.t) =
+		       build (bytes, Bytes.fromInt 1,
+		       build (halfWords, Bytes.fromInt 2,
+		       build (words, Bytes.fromInt 4,
+		       build (doubleWords, Bytes.fromInt 8, 
 			      ([], initialOffset)))))
 		    val offset =
 		       if isNormal
 			  then
 			     let
-				val offset = CType.align (CType.pointer, offset)
+				val offset =
+				   Bytes.align (offset,
+						{alignment = Bytes.inPointer})
 			     in
 				if !Control.align = Control.Align8
 				andalso
-				   0 < Int.rem (Runtime.normalHeaderSize
-						+ offset
-						+ (Runtime.pointerSize
-						   * List.length (!pointers)),
+				   0 < Int.rem (Bytes.toInt
+						((Bytes.+
+						  (Runtime.normalHeaderSize,
+						   Bytes.+
+						   (offset,
+						    Bytes.scale
+						    (Runtime.pointerSize,
+						     List.length (!pointers)))))),
 						8)
-				   then offset + 4
+				   then Bytes.+ (offset, Bytes.fromInt 4)
 				else offset
 			     end
 		       else offset
-		    val (components, size) = build (pointers, 4, (accum, offset))
-		    val size = if 0 = size then 4 else size
+		    val (components, size) =
+		       build (pointers, Runtime.pointerSize, (accum, offset))
+		    val size = if Bytes.isZero size then Bytes.inWord else size
 		    val offsets =
 		       Vector.mapi
 		       (tys, fn (i, ty) =>
@@ -662,34 +425,55 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		    val components =
 		       if isTagged
 			  then {mutable = false,
-				offset = 0,
-				ty = R.Type.int IntSize.default} :: components
+				offset = Bytes.zero,
+				ty = Type.int IntSize.default} :: components
 		       else components
 		    val components =
-		       Vector.fromArray
-		       (QuickSort.sortArray
-			(Array.fromList components,
-			 fn ({offset = i, ...}, {offset = i', ...}) =>
-			 i <= i'))
-		    val mc = R.MemChunk.T {components = components,
-					   size = size}
+		       QuickSort.sortArray
+		       (Array.fromList components,
+			fn ({offset = i, ...}, {offset = i', ...}) =>
+			Bytes.<= (i, i'))
+		    val (_, cs) =
+		       Array.fold
+		       (components, (Bytes.zero, []),
+			fn ({mutable, offset, ty}, (i, ac)) =>
+			let
+			   val ac =
+			      if Bytes.equals (i, offset)
+				 then ac
+			      else
+				 Type.junk (Bytes.toBits (Bytes.- (offset, i)))
+				 :: ac
+			in
+			   (Bytes.+ (offset,
+				     Bits.toBytes (Type.width ty)),
+			    ty :: ac)
+			end)
+		    val t = Type.seq (Vector.fromListRev cs)
+		    val tSize = Type.bytes t
+		    val t =
+		       if Bytes.equals (tSize, size)
+			  then t
+		       else Type.seq (Vector.new2
+				      (t, Type.junk (Bytes.toBits
+						     (Bytes.- (size, tSize)))))
 		    val _ =
 		       List.push
 		       (objectTypes,
 			(pointerTycon,
 			 if isNormal
-			    then R.ObjectType.Normal mc
-			 else R.ObjectType.Array mc))
+			    then R.ObjectType.Normal t
+			 else R.ObjectType.Array t))
 		 in
 		    TupleRep.T {offsets = offsets,
-				size = size,
+				size = Bytes.+ (size, Runtime.normalHeaderSize),
 				ty = ty,
 				tycon = pointerTycon}
 		 end
-	      fun pointer {fin, isNormal, mutable, tys}: R.Type.t =
+	      fun pointer {fin, isNormal, mutable, tys}: Type.t =
 		 let
 		    val pt = R.PointerTycon.new ()
-		    val ty = R.Type.pointer pt
+		    val ty = Type.pointer pt
 		    val _ =
 		       List.push
 		       (finish, fn () =>
@@ -702,7 +486,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		 in
 		    ty
 		 end
-	      fun convertDatatype (tycon: Tycon.t): R.Type.t option =
+	      fun convertDatatype (tycon: Tycon.t): Type.t option =
 		 let
 		    val (noArgs', haveArgs') = splitCons (tyconCons tycon)
 		    val noArgs = Vector.fromList noArgs'
@@ -724,7 +508,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 					 ty = ty,
 					 tys = args}
 			 in
-			    setConRep (con, conRep {rep = rep, tag = i})
+			    setConRep (con, conRep rep)
 			 end))
 		    fun transparent {con, args} =
 		       let
@@ -736,23 +520,25 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		       in
 			  ty
 		       end
-		    fun enumAnd (pointers: R.PointerTycon.t vector): R.Type.t =
+		    fun enumAnd (pointers: R.PointerTycon.t vector): Type.t =
 		       let
 			  val enum =
 			     Vector.tabulate
-			     (Vector.length noArgs, fn i => 2 * i + 1)
+			     (Vector.length noArgs, fn i =>
+			      WordX.fromIntInf (IntInf.fromInt (2 * i + 1),
+						WordSize.default))
 			  val ty =
-			     R.Type.EnumPointers {enum = enum,
-						  pointers = pointers}
+			     Type.enumPointers {enum = enum,
+						pointers = pointers}
 			  val _ =
 			     Vector.foreach2
-			     (noArgs, enum, fn (c, i) =>
-			      setConRep (c, (ConRep.IntAsTy
-					     {int = i, ty = ty})))
+			     (noArgs, enum, fn (c, w) =>
+			      setConRep (c, (ConRep.WordAsTy
+					     {ty = ty, word = w})))
 		       in
 			  ty
 		       end
-		    fun indirectTag (): R.Type.t =
+		    fun indirectTag (): Type.t =
 		       let
 			  val pts = pointers ()
 			  val ty = enumAnd pts
@@ -790,18 +576,24 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 			  let
 			     val enum =
 				Vector.tabulate
-				(Vector.length noArgs, fn i => i)
+				(Vector.length noArgs, fn i =>
+				 WordX.fromIntInf (IntInf.fromInt i,
+						   WordSize.default))
 			     val ty =
-				R.Type.EnumPointers {enum = enum,
-						     pointers = Vector.new0 ()}
-			     fun set (i, c) =
-				setConRep (c, (ConRep.IntAsTy
-					       {int = i, ty = ty}))
+				Type.enumPointers {enum = enum,
+						   pointers = Vector.new0 ()}
+			     fun set (w, c) =
+				setConRep (c, (ConRep.WordAsTy
+					       {ty = ty, word = w}))
+			     fun seti (i, c) =
+				set (WordX.fromIntInf (IntInf.fromInt i,
+						       WordSize.default),
+				     c)
 			     val _ =
 				if Tycon.equals (tycon, Tycon.bool)
-				   then (set (0, Con.falsee)
-					 ; set (1, Con.truee))
-				else Vector.foreachi (noArgs, set)
+				   then (seti (0, Con.falsee)
+					 ; seti (1, Con.truee))
+				else Vector.foreachi (noArgs, seti)
 			  in
 			     SOME ty
 			  end
@@ -810,11 +602,10 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 			      [ca as {con, args}] =>
 				 if 1 = Vector.length args
 				    then
-				       case transparent ca of
-					  R.Type.EnumPointers {pointers, ...} =>
-					     SOME (enumAnd pointers)
-					| _ =>
-					     Error.bug "EnumDirect of non pointer"
+				       SOME
+				       (enumAnd
+					(#pointers
+					 (Type.getEnumPointers (transparent ca))))
 				 else
 				    let
 				       val pt = R.PointerTycon.new ()
@@ -841,7 +632,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 			  let
 			     val pts = pointers ()
 			     val ty = enumAnd pts
-			     val _ = indirect {conRep = ConRep.Tuple o #rep,
+			     val _ = indirect {conRep = ConRep.Tuple,
 					       isTagged = false,
 					       pointerTycons = pts,
 					       ty = ty}
@@ -861,7 +652,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 			     NONE
 			  end
 		 end
-	      fun array {mutable: bool, ty: S.Type.t}: R.Type.t =
+	      fun array {mutable: bool, ty: S.Type.t}: Type.t =
 		 let
 		    fun new () =
 		       pointer {fin = fn _ => (),  
@@ -876,8 +667,8 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		       case S.Type.dest ty of
 			  Word s =>
 			     (case WordSize.prim s of
-				 W8 => R.Type.word8Vector
-			       | W32 => R.Type.wordVector
+				 W8 => Type.word8Vector
+			       | W32 => Type.wordVector
 			       | _ => new ())
 			| _ => new ()
 		 end
@@ -886,16 +677,15 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	      case S.Type.dest t of
 		 Array t => SOME (array {mutable = true, ty = t})
 	       | Datatype tycon => convertDatatype tycon
-	       | Int s => SOME (R.Type.int (IntSize.roundUpToPrim s))
-	       | IntInf => SOME R.Type.intInf
-	       | PreThread => SOME R.Type.thread
-	       | Real s => SOME (R.Type.real s)
+	       | Int s => SOME (Type.int (IntSize.roundUpToPrim s))
+	       | IntInf => SOME Type.intInf
+	       | Real s => SOME (Type.real s)
 	       | Ref t =>
 		    SOME (pointer {fin = fn r => setRefRep (t, r),
 				   isNormal = true,
 				   mutable = true,
 				   tys = Vector.new1 t})
-	       | Thread => SOME R.Type.thread
+	       | Thread => SOME Type.thread
 	       | Tuple ts =>
 		    if Vector.isEmpty ts
 		       then NONE
@@ -909,23 +699,24 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		    (case toRtype t of
 			NONE => NONE
 		      | SOME t =>
-			   if R.Type.isPointer t
+			   if Type.isPointer t
 			      then
 				 let
 				     val pt = PointerTycon.new ()
 				     val _ =
 					List.push
 					(objectTypes,
-					 (pt, R.ObjectType.weak t))
+					 (pt, R.ObjectType.Weak t))
 				  in
-				     SOME (R.Type.pointer pt)
+				     SOME (Type.pointer pt)
 				  end
 			   else NONE)
-	       | Word s => SOME (R.Type.word (WordSize.roundUpToPrim s))
+	       | Word s =>
+		    SOME (Type.word (WordSize.bits (WordSize.roundUpToPrim s)))
 	   end))
       val toRtype =
 	 Trace.trace
-	 ("toRtype", S.Type.layout, Option.layout R.Type.layout)
+	 ("toRtype", S.Type.layout, Option.layout Type.layout)
 	 toRtype
       val _ = S.Program.foreachVar (program, fn (_, t) => ignore (toRtype t))
       val n = List.length (!finish)
@@ -962,13 +753,325 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 			      cons,
 			      2))
 	       end))))
+      fun conApp {args, con, dst, oper, ty} =
+	 let
+	    fun move (oper: Operand.t) =
+	       [Statement.Bind {isMutable = false,
+				oper = oper,
+				var = dst ()}]
+	    fun allocate (ys, tr) =
+	       TupleRep.tuple (tr, {components = ys,
+				    dst = dst (),
+				    oper = oper})
+	    datatype z = datatype ConRep.t
+	 in
+	    case conRep con of
+	       Void => []
+	     | TagTuple rep => allocate (args, rep)
+	     | Transparent _ =>
+		  move (Operand.cast (oper (Vector.sub (args, 0)), ty ()))
+	     | Tuple rep => allocate (args, rep)
+	     | WordAsTy {ty, word} => move (Operand.word word)
+	 end
+      fun conSelects (TupleRep.T {offsets, ...}, variant: Operand.t)
+	 : Operand.t vector =
+	 Vector.keepAllMap
+	 (offsets, fn off =>
+	  Option.map (off, fn {offset, ty} =>
+		      Operand.Offset {base = variant,
+				      offset = offset,
+				      ty = ty}))
+      fun genCase {cases: (Con.t * Label.t) vector,
+		   default: Label.t option,
+		   test: unit -> Operand.t,
+		   tycon: Tycon.t} =
+	 let
+	    datatype z = datatype Operand.t
+	    datatype z = datatype Transfer.t
+	    val extraBlocks = ref []
+	    fun newBlock {args, kind,
+			  statements: Statement.t vector,
+			  transfer: Transfer.t}: Label.t =
+	       let
+		  val l = Label.newNoname ()
+		  val _ = List.push (extraBlocks,
+				     Block.T {args = args,
+					      kind = kind,
+					      label = l,
+					      statements = statements,
+					      transfer = transfer})
+	       in
+		  l
+	       end
+	    fun enum (test: Operand.t): Transfer.t =
+	       let
+		  val cases =
+		     Vector.keepAllMap
+		     (cases, fn (c, j) =>
+		      case conRep c of
+			 ConRep.WordAsTy {word, ...} => SOME (word, j)
+		       | _ => NONE)
+		  val numEnum =
+		     case Type.dest (Operand.ty test) of
+			Type.Constant _ => 1
+		      | Type.Sum ts => Vector.length ts
+		      | _ => Error.bug "strange enum"
+		  val default =
+		     if numEnum = Vector.length cases
+			then NONE
+		     else default
+	       in
+		  if 0 = Vector.length cases
+		     then
+			(case default of
+			    NONE => Error.bug "no targets"
+			  | SOME l => Goto {dst = l,
+					    args = Vector.new0 ()})
+		  else
+		     let
+			val l = #2 (Vector.sub (cases, 0))
+		     in
+			if Vector.forall (cases, fn (_, l') =>
+					  Label.equals (l, l'))
+			   andalso (case default of
+				       NONE => true
+				     | SOME l' => Label.equals (l, l'))
+			   then Goto {dst = l,
+				      args = Vector.new0 ()}
+			else
+			   let
+			      val cases =
+				 QuickSort.sortVector
+				 (cases, fn ((w, _), (w', _)) =>
+				  WordX.<= (w, w'))
+			   in
+			      Switch (Switch.T {cases = cases,
+						default = default,
+						size = WordSize.default,
+						test = test})
+			   end
+		     end
+	       end
+	    fun switchEP
+	       (makePointersTransfer: Operand.t -> Statement.t list * Transfer.t)
+	       : Statement.t list * Transfer.t =
+	       let
+		  val test = test ()
+		  val {enum = e, pointers = p} =
+		     Type.getEnumPointers (Operand.ty test)
+		  val enumTy = Type.enumPointers {enum = e,
+						  pointers = Vector.new0 ()}
+		  val enumVar = Var.newNoname ()
+		  val enumOp = Var {var = enumVar,
+				    ty = enumTy}
+		  val pointersTy = Type.enumPointers {enum = Vector.new0 (),
+						      pointers = p}
+		  val pointersVar = Var.newNoname ()
+		  val pointersOp = Var {ty = pointersTy,
+					var = pointersVar}
+		  fun block (var, ty, statements, transfer) =
+		     newBlock {args = Vector.new0 (),
+			       kind = Kind.Jump,
+			       statements = (Vector.fromList
+					     (Statement.Bind
+					      {isMutable = false,
+					       oper = Cast (test, ty),
+					       var = var}
+					      :: statements)),
+			       transfer = transfer}
+		  val (s, t) = makePointersTransfer pointersOp
+		  val pointers = block (pointersVar, pointersTy, s, t)
+		  val enum = block (enumVar, enumTy, [], enum enumOp)
+		  val tmp = Var.newNoname ()
+		  val ss =
+		     [Statement.PrimApp
+		      {args = (Vector.new2
+			       (Operand.word
+				(WordX.fromIntInf (3, WordSize.default)),
+				Operand.cast (test, Type.defaultWord))),
+		       dst = SOME (tmp, Type.defaultWord),
+		       prim = Prim.wordAndb WordSize.default}]
+		  val t =
+		     Transfer.Switch
+		     (Switch.T
+		      {cases = Vector.new1 (WordX.zero WordSize.default,
+					    pointers),
+		       default = SOME enum,
+		       size = WordSize.default,
+		       test = Operand.Var {ty = Type.defaultWord,
+					   var = tmp}})
+	       in
+		  (ss, t)
+	       end
+	    fun enumAndOne (): Statement.t list * Transfer.t =
+	       let
+		  fun make (pointersOp: Operand.t)
+		     : Statement.t list * Transfer.t =
+		     let
+			val (dst, args: Operand.t vector) =
+			   case Vector.peekMap
+			      (cases, fn (c, j) =>
+			       case conRep c of
+				  ConRep.Transparent _ =>
+				     SOME (j, Vector.new1 pointersOp)
+				| ConRep.Tuple r =>
+				     SOME (j, conSelects (r, pointersOp))
+				| _ => NONE) of
+			      NONE =>
+				 (case default of
+				     NONE => Error.bug "enumAndOne: no default"
+				   | SOME j => (j, Vector.new0 ()))
+			    | SOME z => z
+		     in
+			([], Goto {args = args, dst = dst})
+		     end
+	       in
+		  switchEP make
+	       end
+	    fun indirectTag (test: Operand.t): Statement.t list * Transfer.t =
+	       let
+		  val cases =
+		     Vector.keepAllMap
+		     (cases, fn (c, l) =>
+		      case conRep c of
+			 ConRep.TagTuple rep =>
+			    let
+			       val tycon = TupleRep.tycon rep
+			       val tag = PointerTycon.index tycon
+			       val pointerVar = Var.newNoname ()
+			       val pointerTy = Type.pointer tycon
+			       val pointerOp =
+				  Operand.Var {ty = pointerTy,
+					       var = pointerVar}
+			       val statements =
+				  Vector.new1
+				  (Statement.Bind
+				   {isMutable = false,
+				    oper = Cast (test, pointerTy),
+				    var = pointerVar})
+			       val dst =
+				  newBlock
+				  {args = Vector.new0 (),
+				   kind = Kind.Jump,
+				   statements = statements,
+				   transfer =
+				   Goto {args = conSelects (rep, pointerOp),
+					 dst = l}}
+			    in
+			       SOME (WordX.fromIntInf (Int.toIntInf tag,
+						       WordSize.default),
+				     dst)
+			    end
+		       | _ => NONE)
+		  val pointers =
+		     #pointers (Type.getEnumPointers (Operand.ty test))
+		  val numTag = Vector.length pointers
+		  val default =
+		     if numTag = Vector.length cases
+			then NONE
+		     else default
+		  val cases =
+		     QuickSort.sortVector
+		     (cases, fn ((w, _), (w', _)) => WordX.<= (w, w'))
+		  val headerOffset = Bytes.fromInt ~4
+		  val tagVar = Var.newNoname ()
+		  val tagTy =
+		     Type.sum (Vector.map
+			       (pointers, fn p =>
+				Type.constant
+				(WordX.fromIntInf
+				 (Int.toIntInf (PointerTycon.index p),
+				  WordSize.default))))
+					   
+		  val s =
+		     Statement.PrimApp
+		     {args = (Vector.new2
+			      (Offset {base = test,
+				       offset = headerOffset,
+				       ty = Type.sum (Vector.map
+						      (pointers,
+						       Type.pointerHeader))},
+			       Operand.word (WordX.one WordSize.default))),
+		      dst = SOME (tagVar, tagTy),
+		      prim = Prim.wordRshift WordSize.default}
+	       in
+		  ([s],
+		   Transfer.Switch
+		   (Switch.T {cases = cases,
+			      default = default,
+			      size = WordSize.default,
+			      test = Operand.Var {ty = tagTy,
+						  var = tagVar}}))
+	       end
+	    fun prim () =
+	       case (Vector.length cases, default) of
+		  (1, _) =>
+		     (* We use _ instead of NONE for the default becuase
+		      * there may be an unreachable default case.
+		      *)
+		     let
+			val (c, l) = Vector.sub (cases, 0)
+		     in
+			case conRep c of
+			   ConRep.Void =>
+			      Goto {dst = l,
+				    args = Vector.new0 ()}
+			 | ConRep.Transparent _ =>
+			      Goto {dst = l,
+				    args = Vector.new1 (test ())}
+			 | ConRep.Tuple r =>
+			      Goto {dst = l,
+				    args = conSelects (r, test ())}
+			 | _ => Error.bug "strange conRep for Prim"
+		     end
+		| (0, SOME l) => Goto {dst = l, args = Vector.new0 ()}
+		| _ => Error.bug "prim datatype with more than one case"
+	    val (ss, t) =
+	       let
+		  datatype z = datatype TyconRep.t
+	       in
+		  case tyconRep tycon of
+		     Direct => ([], prim ())
+		   | Enum => ([], enum (test ()))
+		   | EnumDirect => enumAndOne ()
+		   | EnumIndirect => enumAndOne ()
+		   | EnumIndirectTag => switchEP indirectTag
+		   | IndirectTag => indirectTag (test ())
+		   | Void => ([], prim ())
+	       end
+	 in
+	    (ss, t, !extraBlocks)
+	 end
+      fun select {dst, offset, tuple, tupleTy} =
+	 let
+	    val TupleRep.T {offsets, ...} = tupleRep tupleTy
+	 in
+	    case Vector.sub (offsets, offset) of
+	       NONE => []
+	     | SOME {offset, ty} =>
+		  [R.Statement.Bind
+		   {isMutable = false,
+		    oper = R.Operand.Offset {base = tuple (),
+					     offset = offset,
+					     ty = ty},
+		    var = dst ()}]
+	 end
+      fun tuple ({components, dst = (dst, dstTy), oper}) =
+	 TupleRep.tuple (tupleRep dstTy,
+			 {components = components, dst = dst, oper = oper})
+      fun reff {arg, dst, ty} =
+	 TupleRep.tuple (refRep ty,
+			 {components = Vector.new1 arg,
+			  dst = dst,
+			  oper = fn f => f ()})
    in
-      {conRep = conRep,
+      {conApp = conApp,
+       genCase = genCase,
        objectTypes = objectTypes,
-       refRep = refRep,
+       reff = reff,
+       select = select,
        toRtype = toRtype,
-       tupleRep = tupleRep,
-       tyconRep = tyconRep}
+       tuple = tuple}
    end
 
 end

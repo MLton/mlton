@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -28,7 +28,6 @@ structure Type =
 	| Datatype of Tycon.t
 	| Int of IntSize.t
 	| IntInf
-	| PreThread
 	| Real of RealSize.t
 	| Ref of t
 	| Thread
@@ -54,8 +53,7 @@ structure Type =
 	 val tycons =
 	    [(Tycon.array, unary Array)]
 	    @ Vector.toListMap (Tycon.ints, fn (t, s) => (t, nullary (Int s)))
-	    @ [(Tycon.intInf, nullary IntInf),
-	       (Tycon.preThread, nullary PreThread)]
+	    @ [(Tycon.intInf, nullary IntInf)]
 	    @ Vector.toListMap (Tycon.reals, fn (t, s) => (t, nullary (Real s)))
 	    @ [(Tycon.reff, unary Ref),
 	       (Tycon.thread, nullary Thread),
@@ -88,7 +86,6 @@ structure Type =
 	       | Datatype t => Tycon.layout t
 	       | Int s => str (concat ["int", IntSize.toString s])
 	       | IntInf => str "IntInf.int"
-	       | PreThread => str "preThread"
 	       | Real s => str (concat ["real", RealSize.toString s])
 	       | Ref t => seq [layout t, str " ref"]
 	       | Thread => str "thread"
@@ -101,19 +98,6 @@ structure Type =
 	       | Weak t => seq [layout t, str " weak"]
 	       | Word s => str (concat ["word", WordSize.toString s])))
       end
-   end
-
-structure Func =
-   struct
-      open Var (* Id (structure AstId = Ast.Var) *)
-
-      fun newNoname () = newString "F"
-   end
-
-structure Label =
-   struct
-      open Func
-      fun newNoname () = newString "L"
    end
 
 structure Cases =
@@ -611,7 +595,7 @@ structure Transfer =
 
       fun iff (test: Var.t, {truee, falsee}) =
 	 let
-	    val s = IntSize.I 32
+	    val s = IntSize.I (Bits.fromInt 32)
 	 in
 	    Case
 	    {cases = Cases.Int (s, Vector.new2 ((IntX.zero s, falsee),

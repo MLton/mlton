@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor Compile (S: COMPILE_STRUCTS): COMPILE =
 struct
 
@@ -504,9 +505,9 @@ fun elaborate {input: File.t list}: Xml.Program.t =
       (* Set GC_state offsets. *)
       val _ =
 	 let
-	    fun get (s: string): int =
+	    fun get (s: string): Bytes.t =
 	       case lookupConstant (s, ConstType.Int) of
-		  Const.Int i => IntX.toInt i
+		  Const.Int i => Bytes.fromInt (IntX.toInt i)
 		| _ => Error.bug "GC_state offset must be an int"
 	 in
 	    Runtime.GCField.setOffsets
@@ -596,8 +597,14 @@ fun preCodegen {input}: Machine.Program.t =
 	    else ()
 	 end
       val _ =
-	 Control.trace (Control.Pass, "machine type check")
-	 Machine.Program.typeCheck machine
+	 (*
+	  * For now, machine type check is too slow to run.
+	  *)
+	 if true
+	    then ()
+	 else
+	    Control.trace (Control.Pass, "machine type check")
+	    Machine.Program.typeCheck machine
    in
       machine
    end

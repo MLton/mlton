@@ -11,29 +11,26 @@ struct
   open S
   open x86
 
-  structure Runtime = Machine.Runtime
-  structure CFunction = Machine.CFunction
-  structure CType = CFunction.CType
   local
-     open CType
+     open Machine
   in
-     structure IntSize = IntSize
-     structure RealSize = RealSize
-     structure WordSize = WordSize
+     structure CFunction = CFunction
+     structure CType = CType
+     structure Runtime = Runtime
   end
 
   (*
    * x86.Size.t equivalents
    *)
-  val wordBytes = Runtime.wordSize
+  val wordBytes = Bytes.toInt Bytes.inWord
   val wordSize = Size.fromBytes wordBytes
   val wordScale = Scale.fromBytes wordBytes
-  val pointerBytes = Runtime.pointerSize
+  val pointerBytes = Bytes.toInt Runtime.pointerSize
   val pointerSize = Size.fromBytes pointerBytes
   val pointerScale = Scale.fromBytes pointerBytes
-  val normalHeaderBytes = Runtime.normalHeaderSize
-  val arrayHeaderBytes = Runtime.arrayHeaderSize
-  val intInfOverheadBytes = Runtime.intInfOverheadSize
+  val normalHeaderBytes = Bytes.toInt Runtime.normalHeaderSize
+  val arrayHeaderBytes = Bytes.toInt Runtime.arrayHeaderSize
+  val intInfOverheadBytes = Bytes.toInt Runtime.intInfOverhead
 
   (*
    * Memory classes
@@ -304,44 +301,43 @@ struct
 
 
   local
-    val localI_base =
-       IntSize.memoize
-       (fn s => Label.fromString (concat ["localInt", IntSize.toString s]))
-    val localP_base = Label.fromString "localPointer"
-    val localR_base =
-       RealSize.memoize
-       (fn s => Label.fromString (concat ["localReal", RealSize.toString s]))
-    val localW_base =
-       WordSize.memoize
-       (fn s => Label.fromString (concat ["localWord", WordSize.toString s]))
-    datatype z = datatype CType.t
+     fun make name size =
+	Label.fromString (concat ["local", name, size])
+     val r = make "Real"
+     val w = make "Word"
+     datatype z = datatype CType.t
   in
-    fun local_base ty =
-       case ty of
-	  Int s => localI_base s
-	| Pointer => localP_base
-	| Real s => localR_base s
-	| Word s => localW_base s
+     val local_base =
+	CType.memo
+	(fn t =>
+	 case t of
+	    Pointer => Label.fromString "localPointer"
+	  | Real32 => r "32"
+	  | Real64 => r "64"
+	  | Word8 => w "8"
+	  | Word16 => w "16"
+	  | Word32 => w "32"
+	  | Word64 => w "64")
   end
 
   local
-     fun make (name, memo, toString) =
-	memo (fn s => Label.fromString (concat ["global", name, toString s]))
-     val globalI_base =
-	make ("Int", IntSize.memoize, IntSize.toString)
-     val globalP_base = Label.fromString "globalPointer"
-     val globalR_base =
-	make ("Real", RealSize.memoize, RealSize.toString)
-     val globalW_base =
-	make ("Word", WordSize.memoize, WordSize.toString)
+     fun make name size =
+	Label.fromString (concat ["global", name, size])
+     val r = make "Real"
+     val w = make "Word"
     datatype z = datatype CType.t
   in
-     fun global_base ty =
-	case ty of
-	   Int s => globalI_base s
-	 | Pointer => globalP_base
-	 | Real s => globalR_base s
-	 | Word s => globalW_base s
+     val global_base =
+	CType.memo
+	(fn t =>
+	 case t of
+	    Pointer => Label.fromString "globalPointer"
+	  | Real32 => r "32"
+	  | Real64 => r "64"
+	  | Word8 => w "8"
+	  | Word16 => w "16"
+	  | Word32 => w "32"
+	  | Word64 => w "64")
   end
 
   val globalPointerNonRoot_base = Label.fromString "globalPointerNonRoot"
@@ -400,7 +396,7 @@ struct
 	   Immediate.binexp
 	   {oper = Immediate.Addition,
 	    exp1 = Immediate.label gcState_label,
-	    exp2 = Immediate.const_int (Field.offset f)}
+	    exp2 = Immediate.const_int (Bytes.toInt (Field.offset f))}
 	fun contents () =
 	   makeContents {base = imm (),
 			 size = size,

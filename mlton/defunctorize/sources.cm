@@ -10,5 +10,5 @@ is
 ../match-compile/sources.cm
 ../xml/sources.cm
 
-defunctorize.fun
 defunctorize.sig
+defunctorize.fun

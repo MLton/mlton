@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -9,6 +9,7 @@ functor AllocateRegisters (S: ALLOCATE_REGISTERS_STRUCTS): ALLOCATE_REGISTERS =
 struct
 
 open S
+
 structure R = Rssa
 
 local
@@ -17,6 +18,7 @@ in
    structure Func = Func
    structure Function = Function
    structure Kind = Kind
+   structure Label = Label
    structure Type = Type
    structure Var = Var
 end
@@ -38,41 +40,41 @@ structure Allocation:
          sig
             type t
 
-            val get: t * Type.t -> t * {offset: int}
+            val get: t * Type.t -> t * {offset: Bytes.t}
             val layout: t -> Layout.t
-            val new: {offset: int, ty: Type.t} list -> t
-            val size: t -> int
+            val new: {offset: Bytes.t, ty: Type.t} list -> t
+            val size: t -> Bytes.t
          end
 
       type t
 
       val getRegister: t * Type.t -> Register.t
-      val getStack: t * Type.t -> {offset: int}
+      val getStack: t * Type.t -> {offset: Bytes.t}
       val layout: t -> Layout.t
-      val new: {offset: int, ty: Type.t} list * Register.t list -> t
+      val new: {offset: Bytes.t, ty: Type.t} list * Register.t list -> t
       val stack: t -> Stack.t
-      val stackSize: t -> int
+      val stackSize: t -> Bytes.t
    end =
    struct
        structure Stack =
        struct
 	  (* Keep a list of allocated slots sorted in increasing order of offset.
 	   *)
-	  datatype t = T of {offset: int, size: int} list
+	  datatype t = T of {offset: Bytes.t, size: Bytes.t} list
 
 	  fun layout (T alloc) =
 	     List.layout (fn {offset, size} =>
-			  Layout.record [("offset", Int.layout offset),
-					 ("size", Int.layout size)])
+			  Layout.record [("offset", Bytes.layout offset),
+					 ("size", Bytes.layout size)])
 	                 alloc
 	 
 	  fun size (T alloc) =
 	     case alloc of
-	        [] => 0
+	        [] => Bytes.zero
 	      | _ => let
 		        val {offset, size} = List.last alloc
 		     in
-		        offset + size
+		        Bytes.+ (offset, size)
 		     end
 
 	  fun new (alloc): t =
@@ -80,29 +82,29 @@ structure Allocation:
 		(QuickSort.sortArray
 		 (Array.fromListMap (alloc, fn {offset, ty} =>
 				     {offset = offset,
-				      size = Type.size ty}),
-		  fn (r, r') => #offset r <= #offset r')))
+				      size = Type.bytes ty}),
+		  fn (r, r') => Bytes.<= (#offset r, #offset r'))))
 
 	  fun get (T alloc, ty) =
 	     let
-	        val slotSize = Type.size ty
+	        val slotSize = Type.bytes ty
 	     in
 	        case alloc of
-		   [] => (T [{offset = 0, size = slotSize}],
-			  {offset = 0})
+		   [] => (T [{offset = Bytes.zero, size = slotSize}],
+			  {offset = Bytes.zero})
 		 | a :: alloc =>
 		      let
 			 fun loop (alloc, a as {offset, size}, ac) =
 			    let
-			       val prevEnd = offset + size
+			       val prevEnd = Bytes.+ (offset, size)
 			       val begin = Type.align (ty, prevEnd)
 			       fun coalesce () =
-				  if prevEnd = begin
+				  if Bytes.equals (prevEnd, begin)
 				     then ({offset = offset,
-					    size = size + slotSize},
+					    size = Bytes.+ (size, slotSize)},
 					   ac)
-				     else ({offset = begin, size = slotSize},
-					   {offset = offset, size = size} :: ac)
+				  else ({offset = begin, size = slotSize},
+					{offset = offset, size = size} :: ac)
 			    in
 			      case alloc of
 				 [] =>
@@ -112,19 +114,22 @@ structure Allocation:
 				       (T (rev (a :: ac)), {offset = begin})
 				    end
 			        | (a' as {offset, size}) :: alloc =>
-				    if begin + slotSize > offset
+				    if Bytes.> (Bytes.+ (begin, slotSize),
+						offset)
 				       then loop (alloc, a', a :: ac)
-				       else
+				    else
 				       let
 					  val (a'' as {offset = o', size = s'}, ac) = 
 					     coalesce ()
 					  val alloc =
 					     List.appendRev
 					     (ac,
-					      if o' + s' = offset
-						 then {offset = o', size = size + s'}
+					      if Bytes.equals (Bytes.+ (o', s'),
+							       offset)
+						 then {offset = o',
+						       size = Bytes.+ (size, s')}
 						      :: alloc
-						 else a'' :: a' :: alloc)
+					      else a'' :: a' :: alloc)
 				       in
 					  (T alloc, {offset = begin})
 				       end
@@ -253,13 +258,13 @@ structure Info =
    struct
       type t = {live: Operand.t vector,
 		liveNoFormals: Operand.t vector,
-		size: int}
+		size: Bytes.t}
 
       fun layout ({live, liveNoFormals, size, ...}: t) =
 	 Layout.record
 	 [("live", Vector.layout Operand.layout live),
 	  ("liveNoFormals", Vector.layout Operand.layout liveNoFormals),
-	  ("size", Int.layout size)]
+	  ("size", Bytes.layout size)]
    end
 
 (* ------------------------------------------------- *)
@@ -367,8 +372,7 @@ fun allocate {argOperands,
 				let
 				   val {offset} = Allocation.getStack (a, ty)
 				in
-				   Operand.StackOffset {ty = ty,
-							offset = offset}
+				   Operand.StackOffset {offset = offset, ty = ty}
 				end
 			   | Register =>
 				Operand.Register
@@ -405,7 +409,7 @@ fun allocate {argOperands,
 		  val (stack, {offset = handler, ...}) =
 		     Allocation.Stack.get (stack, Type.defaultWord)
 		  val (_, {offset = link, ...}) = 
-		     Allocation.Stack.get (stack, Type.ExnStack)
+		     Allocation.Stack.get (stack, Type.exnStack)
 	       in
 		  SOME {handler = handler, link = link}
 	       end
@@ -443,7 +447,7 @@ fun allocate {argOperands,
 			     if linkLive
 				then
 				   Operand.StackOffset {offset = link,
-							ty = Type.ExnStack}
+							ty = Type.exnStack}
 				   :: ops
 			     else ops
 		       in
@@ -462,7 +466,7 @@ fun allocate {argOperands,
 		   NONE => stackInit
 		 | SOME {handler, link} =>
 		      {offset = handler, ty = Type.defaultWord} (* should be label *)
-		      :: {offset = link, ty = Type.ExnStack}
+		      :: {offset = link, ty = Type.exnStack}
 		      :: stackInit
 	     val a = Allocation.new (stackInit, registersInit)
 	     val size =
@@ -471,17 +475,25 @@ fun allocate {argOperands,
 		      (case handlerLinkOffset of
 			  NONE => Error.bug "Handler with no handler offset"
 			| SOME {handler, ...} =>
-			     Runtime.labelSize + handler)
+			     Bytes.+ (Runtime.labelSize, handler))
 		 | _ =>
 		      let
 			 val size =
-			    Runtime.labelSize
-			    + Runtime.wordAlignInt (Allocation.stackSize a)
+			    Bytes.+
+			    (Runtime.labelSize,
+			     Bytes.wordAlign (Allocation.stackSize a))
 		      in
 			 case !Control.align of
 			    Control.Align4 => size
-			  | Control.Align8 => CType.align8 size
+			  | Control.Align8 =>
+			       Bytes.align (size, {alignment = Bytes.fromInt 8})
 		      end
+	     val _ =
+		if Bytes.isWordAligned size
+		   then ()
+		else Error.bug (concat ["bad size ",
+					Bytes.toString size,
+					" in ", Label.toString label])
 	     val _ = Vector.foreach (args, fn (x, _) => allocateVar (x, a))
 	     (* Must compute live after allocateVar'ing the args, since that
 	      * sets the operands for the args.
@@ -509,8 +521,8 @@ fun allocate {argOperands,
 			      str " handlerLinkOffset ",
 			      Option.layout
 			      (fn {handler, link} =>
-			       record [("handler", Int.layout handler),
-				       ("link", Int.layout link)])
+			       record [("handler", Bytes.layout handler),
+				       ("link", Bytes.layout link)])
 			      handlerLinkOffset])
 	     val _ = Vector.foreach (args, diagVar o #1)
 	     val _ =

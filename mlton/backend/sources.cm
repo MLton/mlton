@@ -8,9 +8,7 @@
 Group
 
 signature MACHINE
-signature PROFILE_LABEL
-signature RUNTIME
-
+ 
 functor Backend
 functor Machine
    
@@ -22,40 +20,34 @@ is
 ../control/sources.cm
 ../ssa/sources.cm
 
-allocate-registers.fun
-allocate-registers.sig
-backend.fun
-backend.sig
-chunkify.fun
-chunkify.sig
-equivalence-graph.fun
-equivalence-graph.sig
-err.sml
-implement-handlers.fun
-implement-handlers.sig
-limit-check.fun
-limit-check.sig
-live.fun
-live.sig
-machine.fun
-machine.sig
-machine-atoms.fun
-machine-atoms.sig
-parallel-move.fun
-parallel-move.sig
-profile.fun
-profile.sig
-profile-label.fun
-profile-label.sig
-representation.fun
-representation.sig
-rssa.fun
-rssa.sig
-runtime.fun
-runtime.sig
-signal-check.fun
-signal-check.sig
-ssa-to-rssa.fun
-ssa-to-rssa.sig
-switch.fun
 switch.sig
+switch.fun
+err.sml
+rssa.sig
+rssa.fun
+representation.sig
+representation.fun
+ssa-to-rssa.sig
+ssa-to-rssa.fun
+implement-handlers.sig
+implement-handlers.fun
+limit-check.sig
+limit-check.fun
+signal-check.sig
+signal-check.fun
+machine.sig
+machine.fun
+profile.sig
+profile.fun
+live.sig
+live.fun
+allocate-registers.sig
+allocate-registers.fun
+equivalence-graph.sig
+equivalence-graph.fun
+chunkify.sig
+chunkify.fun
+parallel-move.sig
+parallel-move.fun
+backend.sig
+backend.fun

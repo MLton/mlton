@@ -9,8 +9,7 @@ is
 ../control/sources.cm
 ../../lib/mlton/sources.cm
 
-match-compile.fun
-match-compile.sig
-nested-pat.fun
 nested-pat.sig
-
+nested-pat.fun
+match-compile.sig
+match-compile.fun

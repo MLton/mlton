@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -1171,12 +1171,12 @@ structure Type =
 	    UnifyResult.NotUnifiable ((l, _), (l', _)) => NotUnifiable (l, l')
 	  | UnifyResult.Unified => Unified
 
-      val word8 = word (WordSize.W 8)
+      val word8 = word WordSize.byte
 	 
       fun 'a simpleHom {con: t * Tycon.t * 'a vector -> 'a,
 			expandOpaque: bool,
 			record: t * (Field.t * 'a) vector -> 'a,
-			replaceCharWithWord8: bool,
+			replaceSynonyms: bool,
 			var: t * Tyvar.t -> 'a} =
 	 let
 	    val unit = con (unit, Tycon.tuple, Vector.new0 ())
@@ -1218,10 +1218,13 @@ structure Type =
 	    val word = default (word WordSize.default, Tycon.defaultWord)
 	    val con =
 	       fn (t, c, ts) =>
-	       if replaceCharWithWord8 andalso Tycon.equals (c, Tycon.char)
-		  then con (word8,
-			    Tycon.word (WordSize.W 8),
-			    Vector.new0 ())
+	       if replaceSynonyms
+		  then if Tycon.equals (c, Tycon.char)
+			  then con (word8, Tycon.word WordSize.byte,
+				    Vector.new0 ())
+		       else if Tycon.equals (c, Tycon.preThread)
+			       then con (thread, Tycon.thread, Vector.new0 ())
+			    else con (t, c, ts)
 	       else con (t, c, ts)
 	 in
 	    makeHom {con = con,
@@ -1615,7 +1618,7 @@ structure Type =
 	    simpleHom {con = con,
 		       expandOpaque = expandOpaque,
 		       record = fn (t, fs) => tuple (t, Vector.map (fs, #2)),
-		       replaceCharWithWord8 = true,
+		       replaceSynonyms = true,
 		       var = var}
 	 end
 
@@ -1633,7 +1636,7 @@ structure Type =
 		record = fn (t, fs) => (t,
 					SOME (Vector.map (fs, fn (f, (t, _)) =>
 							  (f, t)))),
-		replaceCharWithWord8 = true,
+		replaceSynonyms = true,
 		var = fn (t, _) => (t, NONE)}
 	    val res =
 	       case #2 (hom t) of
@@ -1667,14 +1670,14 @@ structure Type =
 
       val deTuple = valOf o deTupleOpt
 
-      fun hom (t, {con, expandOpaque = e, record, replaceCharWithWord8 = r,
+      fun hom (t, {con, expandOpaque = e, record, replaceSynonyms = r,
 		   var}) =
 	 let
 	    val {hom, destroy} =
 	       simpleHom {con = fn (_, c, v) => con (c, v),
 			  expandOpaque = e,
 			  record = fn (_, fs) => record (Srecord.fromVector fs),
-			  replaceCharWithWord8 = r,
+			  replaceSynonyms = r,
 			  var = fn (_, a) => var a}
 	    val res = hom t
 	    val _ = destroy ()

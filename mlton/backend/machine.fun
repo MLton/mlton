@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -11,16 +11,7 @@ struct
 
 open S
 
-structure IntSize = IntX.IntSize
-structure RealSize = RealX.RealSize
-structure WordSize = WordX.WordSize
-structure Runtime = Runtime (structure CType = CType)
-structure Atoms = MachineAtoms (open S
-				structure IntSize = IntSize
-				structure RealSize = RealSize
-				structure Runtime = Runtime
-				structure WordSize = WordSize)
-open Atoms
+structure Type = RepType
 
 structure ChunkLabel = Id (val noname = "ChunkLabel")
 
@@ -135,27 +126,29 @@ structure Global =
 
 structure StackOffset =
    struct
-      type t = {offset: int,
+      type t = {offset: Bytes.t,
 		ty: Type.t}
 
-      fun layout {offset, ty} =
+      fun layout ({offset, ty}: t): Layout.t =
 	 let
 	    open Layout
 	 in
 	    seq [str (concat ["S", Type.name ty]),
-		 paren (Int.layout offset),
+		 paren (Bytes.layout offset),
 		 str ": ", Type.layout ty]
 	 end
 
-      fun equals ({offset = i, ty}, {offset = i', ty = ty'}) =
-	 i = i' andalso Type.equals (ty, ty')
+      val equals: t * t -> bool =
+	 fn ({offset = b, ty}, {offset = b', ty = ty'}) =>
+	 Bytes.equals (b, b') andalso Type.equals (ty, ty')
 
-      fun interfere ({offset = off, ty = ty}, {offset = off', ty = ty'}): bool =
+      val interfere: t * t -> bool =
+	 fn ({offset = b, ty = ty}, {offset = b', ty = ty'}) =>
 	 let 
-	    val max = off + Type.size ty
-	    val max' = off' + Type.size ty'
+	    val max = Bytes.+ (b, Type.bytes ty)
+	    val max' = Bytes.+ (b', Type.bytes ty')
 	 in
-	    max > off' andalso max' > off
+	    Bytes.> (max, b') andalso Bytes.> (max', b)
 	 end
    end
 
@@ -176,7 +169,9 @@ structure Operand =
        | SmallIntInf of SmallIntInf.t
        | Label of Label.t
        | Line
-       | Offset of {base: t, offset: int, ty: Type.t}
+       | Offset of {base: t,
+		    offset: Bytes.t,
+		    ty: Type.t}
        | Register of Register.t
        | Real of RealX.t
        | StackOffset of StackOffset.t
@@ -199,7 +194,7 @@ structure Operand =
 	| Contents {ty, ...} => ty
 	| File => Type.cPointer ()
 	| Frontier => Type.defaultWord
-	| GCState => Type.cPointer ()
+	| GCState => Type.gcState
 	| Global g => Global.ty g
 	| Int i => Type.int (IntX.size i)
 	| Label l => Type.label l
@@ -210,7 +205,7 @@ structure Operand =
 	| SmallIntInf _ => Type.intInf
 	| StackOffset {ty, ...} => ty
 	| StackTop => Type.defaultWord
-	| Word w => Type.word (WordX.size w)
+	| Word w => Type.constant w
 
     fun layout (z: t): Layout.t =
 	 let
@@ -239,14 +234,14 @@ structure Operand =
 	     | Line => str "<Line>"
 	     | Offset {base, offset, ty} =>
 		  seq [str (concat ["O", Type.name ty, " "]),
-		       tuple [layout base, Int.layout offset],
+		       tuple [layout base, Bytes.layout offset],
 		       constrain ty]
 	     | Real r => RealX.layout r
 	     | Register r => Register.layout r
 	     | SmallIntInf w => seq [str "SmallIntInf ", paren (Word.layout w)]
 	     | StackOffset so => StackOffset.layout so
 	     | StackTop => str "<StackTop>"
-	     | Word w => seq [WordX.layout w, str ": ", Type.layout (ty z)]
+	     | Word w => seq [str "0x", WordX.layout w]
 	 end
 
     val toString = Layout.toString o layout
@@ -267,7 +262,7 @@ structure Operand =
 	   | (Line, Line) => true
 	   | (Offset {base = b, offset = i, ...},
 	      Offset {base = b', offset = i', ...}) =>
-	        equals (b, b') andalso i = i' 
+	        equals (b, b') andalso Bytes.equals (i, i')
 	   | (Real r, Real r') => RealX.equals (r, r')
 	   | (Register r, Register r') => Register.equals (r, r')
 	   | (SmallIntInf w, SmallIntInf w') => Word.equals (w, w')
@@ -293,6 +288,7 @@ structure Operand =
    end
 
 structure Switch = Switch (open Atoms
+			   structure Type = Type
 			   structure Use = Operand)
 
 structure Statement =
@@ -303,8 +299,8 @@ structure Statement =
        | Noop
        | Object of {dst: Operand.t,
 		    header: word,
-		    size: int,
-		    stores: {offset: int,
+		    size: Bytes.t,
+		    stores: {offset: Bytes.t,
 			     value: Operand.t} vector}
        | PrimApp of {args: Operand.t vector,
 		     dst: Operand.t option,
@@ -324,11 +320,12 @@ structure Statement =
 		  [Operand.layout dst,
 		   seq [str " = Object ",
 			record [("header", Word.layout header),
-				("size", Int.layout size)],
+				("size", Bytes.layout size)],
 			str " ",
-			Vector.layout (fn {offset, value} =>
-				       record [("offset", Int.layout offset),
-					       ("value", Operand.layout value)])
+			Vector.layout
+			(fn {offset, value} =>
+			 record [("offset", Bytes.layout offset),
+				 ("value", Operand.layout value)])
 			stores]]
 	     | PrimApp {args, dst, prim, ...} =>
 		  let
@@ -402,8 +399,7 @@ structure Transfer =
 		   dst: Operand.t,
 		   overflow: Label.t,
 		   prim: Prim.t,
-		   success: Label.t,
-		   ty: Type.t}
+		   success: Label.t}
        | CCall of {args: Operand.t vector,
 		   frameInfo: FrameInfo.t option,
 		   func: CFunction.t,
@@ -412,7 +408,7 @@ structure Transfer =
 		  live: Operand.t vector,
 		  return: {return: Label.t,
 			   handler: Label.t option,
-			   size: int} option}
+			   size: Bytes.t} option}
        | Goto of Label.t
        | Raise
        | Return
@@ -446,7 +442,7 @@ structure Transfer =
 				 record [("return", Label.layout return),
 					 ("handler",
 					  Option.layout Label.layout handler),
-					 ("size", Int.layout size)])
+					 ("size", Bytes.layout size)])
 				return)]]
 	     | Goto l => seq [str "Goto ", Label.layout l]
 	     | Raise => str "Raise"
@@ -706,13 +702,13 @@ structure Program =
       datatype t = T of {chunks: Chunk.t list,
 			 frameLayouts: {frameOffsetsIndex: int,
 					isC: bool,
-					size: int} vector,
-			 frameOffsets: int vector vector,
+					size: Bytes.t} vector,
+			 frameOffsets: Bytes.t vector vector,
 			 handlesSignals: bool,
 			 intInfs: (Global.t * string) list,
 			 main: {chunkLabel: ChunkLabel.t,
 				label: Label.t},
-			 maxFrameSize: int,
+			 maxFrameSize: Bytes.t,
 			 objectTypes: ObjectType.t vector,
 			 profileInfo: ProfileInfo.t option,
 			 reals: (Global.t * RealX.t) list,
@@ -737,15 +733,15 @@ structure Program =
 	    output (record
 		    [("handlesSignals", Bool.layout handlesSignals),
 		     ("main", Label.layout label),
-		     ("maxFrameSize", Int.layout maxFrameSize),
+		     ("maxFrameSize", Bytes.layout maxFrameSize),
 		     ("frameOffsets",
-		      Vector.layout (Vector.layout Int.layout) frameOffsets),
+		      Vector.layout (Vector.layout Bytes.layout) frameOffsets),
 		     ("frameLayouts",
 		      Vector.layout (fn {frameOffsetsIndex, isC, size} =>
 				     record [("frameOffsetsIndex",
 					      Int.layout frameOffsetsIndex),
 					     ("isC", Bool.layout isC),
-					     ("size", Int.layout size)])
+					     ("size", Bytes.layout size)])
 		      frameLayouts)])
 	    ; Option.app (profileInfo, fn pi =>
 			  (output (str "\nProfileInfo:")
@@ -858,12 +854,12 @@ structure Program =
 		("frameLayouts",
 		 fn () => (0 <= frameOffsetsIndex
 			   andalso frameOffsetsIndex < Vector.length frameOffsets
-			   andalso size <= maxFrameSize
-			   andalso size <= Runtime.maxFrameSize
-			   andalso 0 = Int.rem (size, 4)),
+			   andalso Bytes.<= (size, maxFrameSize)
+			   andalso Bytes.<= (size, Runtime.maxFrameSize)
+			   andalso Bytes.isWordAligned size),
 		 fn () => Layout.record [("frameOffsetsIndex",
 					  Int.layout frameOffsetsIndex),
-					 ("size", Int.layout size)]))
+					 ("size", Bytes.layout size)]))
 	    val _ =
 	       Vector.foreach
 	       (objectTypes, fn ty =>
@@ -886,10 +882,10 @@ structure Program =
 		end)
 	    val _ = globals ("real", reals, Type.isReal, RealX.layout)
 	    val _ = globals ("intInf", intInfs,
-			     fn t => Type.equals (t, Type.intInf),
+			     fn t => Type.isSubtype (t, Type.intInf),
 			     String.layout)
 	    val _ = globals ("string", strings,
-			     fn t => Type.equals (t, Type.word8Vector),
+			     fn t => Type.isSubtype (t, Type.word8Vector),
 			     String.layout)
 	    (* Check for no duplicate labels. *)
 	    local
@@ -931,7 +927,7 @@ structure Program =
 			    ; arrayOffsetIsOk z)
 		      | Cast (z, t) =>
 			   (checkOperand (z, alloc)
-			    ; (castIsOk
+			    ; (Type.castIsOk
 			       {from = Operand.ty z,
 				fromInt = (case z of
 					      Int i => SOME i
@@ -957,16 +953,25 @@ structure Program =
 			    in true
 			    end handle _ => false)
 		      | Line => true
-		      | Offset (z as {base, ...}) =>
+		      | Offset {base, offset, ty} =>
 			   (checkOperand (base, alloc)
-			    ; offsetIsOk z)
+			    ; (case base of
+				  Operand.GCState => true
+				| _ => 
+				     (case Type.offset (Operand.ty base,
+							{offset = offset,
+							 pointerTy = tyconTy,
+							 width = Type.width ty}) of
+					 NONE => false
+				       | SOME t => Type.isSubtype (t, ty))))
 		      | Real _ => true
 		      | Register _ => Alloc.doesDefine (alloc, x)
 		      | SmallIntInf w => 0wx1 = Word.andb (w, 0wx1)
 		      | StackOffset {offset, ty, ...} =>
-			   offset + Type.size ty <= maxFrameSize
+			   Bytes.<= (Bytes.+ (offset, Type.bytes ty),
+				     maxFrameSize)
 			   andalso Alloc.doesDefine (alloc, x)
-			   andalso (case ty of
+			   andalso (case Type.dest ty of
 				       Type.Label l =>
 					  let
 					     val Block.T {kind, ...} =
@@ -976,8 +981,10 @@ structure Program =
 						   val {size, ...} =
 						      getFrameInfo fi
 						in
-						   size
-						   = offset + Runtime.labelSize
+						   Bytes.equals
+						   (size,
+						    Bytes.+ (offset,
+							     Runtime.labelSize))
 						end
 					  in
 					     case kind of
@@ -998,65 +1005,20 @@ structure Program =
 	       in
 		  Err.check ("operand", ok, fn () => Operand.layout x)
 	       end
-	    and arrayOffsetIsOk {base, index, ty} =
-	       Type.equals (Operand.ty index, Type.defaultInt)
+	    and arrayOffsetIsOk {base: Operand.t, index: Operand.t, ty} =
+	       Type.isSubtype (Operand.ty index, Type.defaultInt)
 	       andalso
-	       case Operand.ty base of
-		  Type.EnumPointers {enum, pointers} =>
-		     0 = Vector.length enum
-		     andalso
-		     Vector.forall
-		     (pointers, fn p =>
-		      case tyconTy p of
-			 ObjectType.Array
-			 (MemChunk.T {components, ...}) =>
-			    1 = Vector.length components
-			    andalso
-			    let
-			       val {offset, ty = ty', ...} =
-				  Vector.sub (components, 0)
-			    in
-			       offset = 0
-			       andalso (Type.equals (ty, ty')
-					orelse
-					(* Get a word from a word8 array.*)
-					(Type.equals
-					 (ty, Type.word (WordSize.W 32))
-					 andalso
-					 Type.equals
-					 (ty', Type.word (WordSize.W 8))))
-			    end
+	       case Type.dest (Operand.ty base) of
+		  Type.Pointer p =>
+		     (case tyconTy p of
+			 ObjectType.Array ty' =>
+			    Type.isSubtype (ty', ty)
+			    orelse
+			    (* Get a word from a word8 array.*)
+			    (Type.equals (ty, Type.defaultWord)
+			     andalso Type.equals (ty', Type.word8))
 		       | _ => false)
-		| t => Type.isCPointer t
-	    and offsetIsOk {base, offset, ty} =
-	       let
-		  fun memChunkIsOk (MemChunk.T {components, ...}) =
-		     case (Vector.peek
-			   (components, fn {offset = offset', ...} =>
-			    offset = offset')) of
-			NONE => false
-		      | SOME {ty = ty', ...} => Type.equals (ty, ty')
-				  
-	       in
-		  case Operand.ty base of
-		     Type.EnumPointers {enum, pointers} =>
-			0 = Vector.length enum
-			andalso
-			((* Array_toVector header update. *)
-			 (offset = Runtime.headerOffset
-			  andalso Type.equals (ty, Type.defaultWord))
-			 orelse
-			 (offset = Runtime.arrayLengthOffset
-			  andalso Type.equals (ty, Type.defaultInt))
-			 orelse
-			 Vector.forall
-			 (pointers, fn p =>
-			  case tyconTy p of
-			     ObjectType.Normal m => memChunkIsOk m
-			   | _ => false))
-		   | Type.MemChunk m => memChunkIsOk m
-		   | t => Type.isCPointer t
-	       end
+		| _ => Type.isCPointer (Operand.ty base)
 	    fun checkOperands (v, a) =
 	       Vector.foreach (v, fn z => checkOperand (z, a))
 	    fun check' (x, name, isOk, layout) =
@@ -1092,12 +1054,13 @@ structure Program =
 			    val liveOffsets =
 			       Vector.fromArray
 			       (QuickSort.sortArray
-				(Array.fromList liveOffsets, op <=))
+				(Array.fromList liveOffsets, Bytes.<=))
 			    val liveOffsets' =
 			       Vector.sub (frameOffsets, frameOffsetsIndex)
 			       handle Subscript => raise No
 			 in
-			    liveOffsets = liveOffsets'
+			    Vector.equals (liveOffsets, liveOffsets',
+					   Bytes.equals)
 			 end)
 		     end handle No => false
 		  fun slotsAreInFrame (fi: FrameInfo.t): bool =
@@ -1108,7 +1071,7 @@ structure Program =
 			(alloc, fn z =>
 			 case z of
 			    Operand.StackOffset {offset, ty} =>
-			       offset + Type.size ty <= size
+			       Bytes.<= (Bytes.+ (offset, Type.bytes ty), size)
 			  | _ => false)
 		     end
 	       in
@@ -1121,20 +1084,32 @@ structure Program =
 				       Alloc.define (alloc, z)))
 			else NONE
 		   | CReturn {dst, frameInfo, func, ...} =>
-			if (if CFunction.mayGC func
-			       then (case frameInfo of
-					NONE => false
-				      | SOME fi => (frame (fi, true, true)
-						    andalso slotsAreInFrame fi))
-			    else if !Control.profile = Control.ProfileNone
-				    then true
-				 else (case frameInfo of
-					  NONE => false
-					| SOME fi => frame (fi, false, true)))
-			   then SOME (case dst of
-					 NONE => alloc
-				       | SOME z => Alloc.define (alloc, z))
-			else NONE
+			let
+			   val ok =
+			      (case dst of
+				  NONE => true
+				| SOME z =>
+				     Type.isSubtype (CFunction.return func,
+						     Operand.ty z))
+                              andalso
+			      (if CFunction.mayGC func
+				  then (case frameInfo of
+					   NONE => false
+					 | SOME fi =>
+					      (frame (fi, true, true)
+					       andalso slotsAreInFrame fi))
+			       else if !Control.profile = Control.ProfileNone
+				       then true
+				    else (case frameInfo of
+					     NONE => false
+					   | SOME fi => frame (fi, false, true)))
+			in
+			   if ok
+			      then SOME (case dst of
+					    NONE => alloc
+					  | SOME z => Alloc.define (alloc, z))
+			   else NONE
+			end
 		   | Func => SOME alloc
 		   | Handler {frameInfo, ...} =>
 			if frame (frameInfo, false, false)
@@ -1154,35 +1129,41 @@ structure Program =
 			   val alloc = Alloc.define (alloc, dst)
 			   val _ = checkOperand (dst, alloc)
 			in
-			   if Type.equals (Operand.ty dst, Operand.ty src)
+			   if Type.isSubtype (Operand.ty src, Operand.ty dst)
 			      andalso Operand.isLocation dst
 			      then SOME alloc
 			   else NONE
 			end
 		   | Noop => SOME alloc
-		   | Object {dst, header, stores, ...} =>
+		   | Object {dst, header, size, stores} =>
 			let
-			   val _ =
-			      Vector.foreach
-			      (stores, fn {value, ...} =>
-			       checkOperand (value, alloc))
+			   val () =
+			      Vector.foreach (stores, fn {value, ...} =>
+					      checkOperand (value, alloc))
 			   val alloc = Alloc.define (alloc, dst)
-			   val _ = checkOperand (dst, alloc)
+			   val () = checkOperand (dst, alloc)
+			   val index = Runtime.headerToTypeIndex header
+			   val tycon = PointerTycon.fromIndex index
 			in
-			   (case Vector.sub (objectTypes,
-					     Runtime.headerToTypeIndex
-					     header) of
-			       ObjectType.Normal mc =>
-				  (if MemChunk.isValidInit
-				      (mc, 
-				       Vector.map
-				       (stores, fn {offset, value} =>
-					{offset = offset,
-					 ty = Operand.ty value}))
-				      then SOME alloc
-				   else NONE)
-			     | _ => NONE)
-			       handle Subscript => NONE
+			   case (SOME (Vector.sub (objectTypes, index))
+				 handle Subscript => NONE) of
+			      SOME (ObjectType.Normal t) =>
+				 (if Bytes.equals
+				     (size, Bytes.+ (Runtime.normalHeaderSize,
+						     Type.bytes t))
+				     andalso
+				     Type.isSubtype (Type.pointer tycon,
+						     Operand.ty dst)
+				     andalso
+				     Type.isValidInit
+				     (t, 
+				      Vector.map
+				      (stores, fn {offset, value} =>
+				       {offset = offset,
+					ty = Operand.ty value}))
+				     then SOME alloc
+				  else NONE)
+			    | _ => NONE
 			end
 		   | PrimApp {args, dst, ...} =>
 			let
@@ -1231,7 +1212,7 @@ structure Program =
 		     | (SOME os, SOME os') =>
 			  Vector.equals (os, os', Operand.equals)
 		     | _ => false)
-	    fun checkCont (cont: Label.t, size: int, alloc: Alloc.t) =
+	    fun checkCont (cont: Label.t, size: Bytes.t, alloc: Alloc.t) =
 	       let
 		  val Block.T {kind, live, ...} = labelBlock cont
 	       in
@@ -1239,7 +1220,8 @@ structure Program =
 		     then
 			(case kind of
 			    Kind.Cont {args, frameInfo, ...} =>
-			       (if size = #size (getFrameInfo frameInfo)
+			       (if Bytes.equals (size,
+						 #size (getFrameInfo frameInfo))
 				   then
 				      SOME
 				      (live,
@@ -1249,7 +1231,7 @@ structure Program =
 					 case z of
 					    Operand.StackOffset {offset, ty} =>
 					       Operand.StackOffset
-					       {offset = offset - size,
+					       {offset = Bytes.- (offset, size),
 						ty = ty}
 					  | _ => z)))
 				else NONE)
@@ -1268,7 +1250,7 @@ structure Program =
 			NONE =>
 			   {raises = raises,
 			    returns = returns,
-			    size = 0}
+			    size = Bytes.zero}
 		      | SOME {handler, return, size} =>
 			   let
 			      val (contLive, returns) =
@@ -1308,10 +1290,10 @@ structure Program =
 		      (live, [], fn (z, ac) =>
 		       case z of
 			  Operand.StackOffset {offset, ty} =>
-			     if offset < size
+			     if Bytes.< (offset, size)
 				then ac
 			     else (Operand.StackOffset
-				   {offset = offset - size,
+				   {offset = Bytes.- (offset, size),
 				    ty = ty} :: ac)
 			| _ => ac))
 	       in
@@ -1335,20 +1317,32 @@ structure Program =
 		  datatype z = datatype Transfer.t
 	       in
 		  case t of
-		     Arith {args, dst, overflow, success, ty, ...} =>
+		     Arith {args, dst, overflow, prim, success, ...} =>
 			let
 			   val _ = checkOperands (args, alloc)
 			   val alloc = Alloc.define (alloc, dst)
 			   val _ = checkOperand (dst, alloc)
 			in
-			   Type.equals (ty, Operand.ty dst)
+			   Prim.mayOverflow prim
 			   andalso jump (overflow, alloc)
 			   andalso jump (success, alloc)
+			   andalso
+			   (case (Prim.typeCheck
+				  (prim, Vector.map (args, Operand.ty))) of
+			       NONE => false
+			     | SOME t => Type.isSubtype (t, Operand.ty dst))
+
 			end
 		   | CCall {args, frameInfo = fi, func, return} =>
 			let
 			   val _ = checkOperands (args, alloc)
 			in
+			   CFunction.isOk func
+			   andalso
+			   Vector.equals (args, CFunction.args func,
+					  fn (z, t) =>
+					  Type.isSubtype (Operand.ty z, t))
+			   andalso
 			   case return of
 			      NONE => true
 			    | SOME l =>
@@ -1363,14 +1357,6 @@ structure Program =
 					  CFunction.equals (func, f)
 					  andalso (Option.equals
 						   (fi, fi', FrameInfo.equals))
-					  andalso
-					  (case (dst, CFunction.return f) of
-					      (NONE, _) => true
-					    | (SOME x, SOME ty) =>
-						 CType.equals
-						 (ty,
-						  Type.toCType (Operand.ty x))
-					    | _ => false)
 				     | _ => false
 				 end
 			end

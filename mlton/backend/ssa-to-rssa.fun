@@ -31,17 +31,18 @@ structure CFunction =
       open CFunction 
 
       local
-	 open CType
+	 open Type
       in
-	 val Int32 = Int (IntSize.I 32)
-	 val Word32 = Word (WordSize.W 32)
+	 val gcState = gcState
+	 val Int32 = int (IntSize.I (Bits.fromInt 32))
+	 val Word32 = word (Bits.fromInt 32)
+	 val unit = unit
       end
 
-      datatype z = datatype CType.t
       datatype z = datatype Convention.t
-
+	 
       val copyCurrentThread =
-	 T {args = Vector.new1 Pointer,
+	 T {args = Vector.new1 gcState,
 	    bytesNeeded = NONE,
 	    convention = Cdecl,
 	    ensuresBytesFree = false,
@@ -50,10 +51,10 @@ structure CFunction =
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "GC_copyCurrentThread",
-	    return = NONE}
+	    return = unit}
 
       val copyThread =
-	 T {args = Vector.new2 (Pointer, Pointer),
+	 T {args = Vector.new2 (gcState, Type.thread),
 	    bytesNeeded = NONE,
 	    convention = Cdecl,
 	    ensuresBytesFree = false,
@@ -62,7 +63,7 @@ structure CFunction =
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "GC_copyThread",
-	    return = SOME Pointer}
+	    return = Type.thread}
 
       val exit =
 	 T {args = Vector.new1 Int32,
@@ -74,10 +75,10 @@ structure CFunction =
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "MLton_exit",
-	    return = NONE}
+	    return = unit}
 
-      val gcArrayAllocate =
-	 T {args = Vector.new4 (Pointer, Word32, Word32, Word32),
+      fun gcArrayAllocate {return} =
+	 T {args = Vector.new4 (gcState, Word32, Int32, Word32),
 	    bytesNeeded = NONE,
 	    convention = Cdecl,
 	    ensuresBytesFree = true,
@@ -86,11 +87,11 @@ structure CFunction =
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "GC_arrayAllocate",
-	    return = SOME Pointer}
+	    return = return}
 
       local
 	 fun make name =
-	    T {args = Vector.new1 Pointer,
+	    T {args = Vector.new1 gcState,
 	       bytesNeeded = NONE,
 	       convention = Cdecl,
 	       ensuresBytesFree = false,
@@ -99,14 +100,14 @@ structure CFunction =
 	       modifiesFrontier = true,
 	       modifiesStackTop = true,
 	       name = name,
-	       return = NONE}
+	       return = unit}
       in
 	 val pack = make "GC_pack"
 	 val unpack = make "GC_unpack"
       end
 
       val threadSwitchTo =
-	 T {args = Vector.new2 (Pointer, Word32),
+	 T {args = Vector.new2 (Type.thread, Word32),
 	    bytesNeeded = NONE,
 	    convention = Cdecl,
 	    ensuresBytesFree = true,
@@ -115,20 +116,20 @@ structure CFunction =
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "Thread_switchTo",
-	    return = NONE}
+	    return = unit}
 
-      val weakCanGet =
-	 vanilla {args = Vector.new1 Pointer,
+      fun weakCanGet t =
+	 vanilla {args = Vector.new1 t,
 		  name = "GC_weakCanGet",
-		  return = SOME CType.bool}
+		  return = Type.bool}
 	 
-      val weakGet =
-	 vanilla {args = Vector.new1 Pointer,
+      fun weakGet {arg, return} =
+	 vanilla {args = Vector.new1 arg,
 		  name = "GC_weakGet",
-		  return = SOME Pointer}
+		  return = return}
 		  
-      val weakNew =
-	 T {args = Vector.new3 (Pointer, Word32, Pointer),
+      fun weakNew {arg, return} =
+	 T {args = Vector.new3 (gcState, Word32, arg),
 	    bytesNeeded = NONE,
 	    convention = Cdecl,
 	    ensuresBytesFree = false,
@@ -137,10 +138,10 @@ structure CFunction =
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "GC_weakNew",
-	    return = SOME Pointer}
+	    return = return}
 
       val worldSave =
-	 T {args = Vector.new2 (Pointer, Int32),
+	 T {args = Vector.new2 (gcState, Word32),
 	    bytesNeeded = NONE,
 	    convention = Cdecl,
 	    ensuresBytesFree = false,
@@ -149,7 +150,12 @@ structure CFunction =
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "GC_saveWorld",
-	    return = NONE}
+	    return = unit}
+
+      fun size t =
+	 vanilla {args = Vector.new1 t,
+		  name = "MLton_size",
+		  return = Int32}
    end
 
 structure Name =
@@ -159,37 +165,38 @@ structure Name =
       fun cFunctionRaise (n: t): CFunction.t =
 	 let
 	    datatype z = datatype CFunction.Convention.t
+	    val word = Type.word o WordSize.bits
 	    val vanilla = CFunction.vanilla
-	    val int = ("Int", CType.Int, IntSize.toString)
-	    val real = ("Real", CType.Real, RealSize.toString)
-	    val word = ("Word", CType.Word, WordSize.toString)
+	    val intC = ("Int", Type.int, IntSize.toString)
+	    val realC = ("Real", Type.real, RealSize.toString)
+	    val wordC = ("Word", word, WordSize.toString)
 	    fun coerce (s1, (fromName, fromType, fromString),
 			s2, (toName, toType, toString)) =
 	       vanilla {args = Vector.new1 (fromType s1),
 			name = concat [fromName, fromString s1,
 				       "_to", toName, toString s2],
-			return = SOME (toType s2)}
+			return = toType s2}
 	    fun coerceX (s1, (fromName, fromType, fromString),
 			 s2, (toName, toType, toString)) =
 	       vanilla {args = Vector.new1 (fromType s1),
 			name = concat [fromName, fromString s1,
 				       "_to", toName, toString s2, "X"],
-			return = SOME (toType s2)}
+			return = toType s2}
 	    fun intBinary (s, name) =
 	       let
-		  val t = CType.Int s
+		  val t = Type.int s
 	       in
 		  vanilla {args = Vector.new2 (t, t),
 			   name = concat ["Int", IntSize.toString s, "_", name],
-			   return = SOME t}
+			   return = t}
 	       end
 	    fun intCompare (s, name) =
-	       vanilla {args = Vector.new2 (CType.Int s, CType.Int s),
+	       vanilla {args = Vector.new2 (Type.int s, Type.int s),
 			name = concat ["Int", IntSize.toString s, "_", name],
-			return = SOME CType.bool}
+			return = Type.bool}
 	    fun intInfBinary name =
-	       CFunction.T {args = Vector.new3 (CType.pointer, CType.pointer,
-						CType.defaultWord),
+	       CFunction.T {args = Vector.new3 (Type.intInf, Type.intInf,
+						Type.defaultWord),
 			    bytesNeeded = SOME 2,
 			    convention = Cdecl,
 			    ensuresBytesFree = false,
@@ -198,15 +205,11 @@ structure Name =
 			    modifiesFrontier = true,
 			    modifiesStackTop = false,
 			    name = concat ["IntInf_", name],
-			    return = SOME CType.pointer}
-	    fun intInfCompare name =
-	       vanilla {args = Vector.new2 (CType.pointer, CType.pointer),
-			name = concat ["IntInf_", name],
-			return = SOME CType.defaultInt}
+			    return = Type.intInf}
 	    fun intInfShift name =
-	       CFunction.T {args = Vector.new3 (CType.pointer,
-						CType.defaultWord,
-						CType.defaultWord),
+	       CFunction.T {args = Vector.new3 (Type.intInf,
+						Type.defaultWord,
+						Type.defaultWord),
 			    bytesNeeded = SOME 2,
 			    convention = Cdecl,
 			    ensuresBytesFree = false,
@@ -215,11 +218,11 @@ structure Name =
 			    modifiesFrontier = true,
 			    modifiesStackTop = false,
 			    name = concat ["IntInf_", name],
-			    return = SOME CType.pointer}
+			    return = Type.intInf}
 	    val intInfToString =
-	       CFunction.T {args = Vector.new3 (CType.pointer,
-						CType.defaultInt,
-						CType.defaultWord),
+	       CFunction.T {args = Vector.new3 (Type.intInf,
+						Type.defaultInt,
+						Type.defaultWord),
 			    bytesNeeded = SOME 2,
 			    convention = Cdecl,
 			    ensuresBytesFree = false,
@@ -228,10 +231,9 @@ structure Name =
 			    modifiesFrontier = true,
 			    modifiesStackTop = false,
 			    name = "IntInf_toString",
-			    return = SOME CType.pointer}
+			    return = Type.string}
 	    fun intInfUnary name =
-	       CFunction.T {args = Vector.new2 (CType.pointer,
-						CType.defaultWord),
+	       CFunction.T {args = Vector.new2 (Type.intInf, Type.defaultWord),
 			    bytesNeeded = SOME 1,
 			    convention = Cdecl,
 			    ensuresBytesFree = false,
@@ -240,28 +242,28 @@ structure Name =
 			    modifiesFrontier = true,
 			    modifiesStackTop = false,
 			    name = concat ["IntInf_", name],
-			    return = SOME CType.pointer}
+			    return = Type.intInf}
 	    fun wordBinary (s, name) =
 	       let
-		  val t = CType.Word s
+		  val t = word s
 	       in
 		  vanilla {args = Vector.new2 (t, t),
 			   name = concat ["Word", WordSize.toString s,
 					  "_", name],
-			   return = SOME t}
+			   return = t}
 	       end
 	    fun wordCompare (s, name) =
-	       vanilla {args = Vector.new2 (CType.Word s, CType.Word s),
+	       vanilla {args = Vector.new2 (word s, word s),
 			name = concat ["Word", WordSize.toString s, "_", name],
-			return = SOME CType.bool}
+			return = Type.bool}
 	    fun wordShift (s, name) =
-	       vanilla {args = Vector.new2 (CType.Word s, CType.defaultWord),
+	       vanilla {args = Vector.new2 (word s, Type.defaultWord),
 			name = concat ["Word", WordSize.toString s, "_", name],
-			return = SOME (CType.Word s)}
+			return = word s}
 	    fun wordUnary (s, name) =
-	       vanilla {args = Vector.new1 (CType.Word s),
+	       vanilla {args = Vector.new1 (word s),
 			name = concat ["Word", WordSize.toString s, "_", name],
-			return = SOME (CType.Word s)}
+			return = word s}
 	 in
 	    case n of
 	       Int_add s => intBinary (s, "add")
@@ -269,10 +271,10 @@ structure Name =
 		  let
 		     val s = IntSize.roundUpToPrim s
 		  in
-		     vanilla {args = Vector.new2 (CType.Int s, CType.Int s),
+		     vanilla {args = Vector.new2 (Type.int s, Type.int s),
 			      name = concat ["Int", IntSize.toString s,
 					     "_equal"],
-			      return = SOME CType.defaultInt}
+			      return = Type.bool}
 		  end
 	     | Int_ge s => intCompare (s, "ge")
 	     | Int_gt s => intCompare (s, "gt")
@@ -281,14 +283,20 @@ structure Name =
 	     | Int_mul s => intBinary (s, "mul")
 	     | Int_quot s => intBinary (s, "quot")
 	     | Int_rem s => intBinary (s, "rem")
-	     | Int_toInt (s1, s2) => coerce (s1, int, s2, int)
-	     | Int_toReal (s1, s2) => coerce (s1, int, s2, real)
-	     | Int_toWord (s1, s2) => coerce (s1, int, s2, word)
+	     | Int_toInt (s1, s2) => coerce (s1, intC, s2, intC)
+	     | Int_toReal (s1, s2) => coerce (s1, intC, s2, realC)
+	     | Int_toWord (s1, s2) => coerce (s1, intC, s2, wordC)
 	     | IntInf_add => intInfBinary "add"
 	     | IntInf_andb => intInfBinary "andb"
 	     | IntInf_arshift => intInfShift "arshift"
-	     | IntInf_compare => intInfCompare "compare"
-	     | IntInf_equal =>  intInfCompare "equal"
+	     | IntInf_compare => 
+		  vanilla {args = Vector.new2 (Type.intInf, Type.intInf),
+			   name = "IntInf_compare",
+			   return = Type.defaultInt}
+	     | IntInf_equal =>
+		  vanilla {args = Vector.new2 (Type.intInf, Type.intInf),
+			   name = "IntInf_equal",
+			   return = Type.bool}
 	     | IntInf_gcd => intInfBinary "gcd"
 	     | IntInf_lshift => intInfShift "lshift"
 	     | IntInf_mul => intInfBinary "mul"
@@ -301,7 +309,6 @@ structure Name =
 	     | IntInf_toString => intInfToString
 	     | IntInf_xorb => intInfBinary "xorb"
 	     | MLton_bug => CFunction.bug
-	     | MLton_size => CFunction.size
 	     | Thread_returnToC => CFunction.returnToC
 	     | Word_add s => wordBinary (s, "add")
 	     | Word_andb s => wordBinary (s, "andb")
@@ -322,10 +329,10 @@ structure Name =
 	     | Word_ror s => wordShift (s, "ror")
 	     | Word_rshift s => wordShift (s, "rshift")
 	     | Word_sub s => wordBinary (s, "sub")
-	     | Word_toInt (s1, s2) => coerce (s1, word, s2, int)
-	     | Word_toIntX (s1, s2) => coerceX (s1, word, s2, int)
-	     | Word_toWord (s1, s2) => coerce (s1, word, s2, word)
-	     | Word_toWordX (s1, s2) => coerceX (s1, word, s2, word)
+	     | Word_toInt (s1, s2) => coerce (s1, wordC, s2, intC)
+	     | Word_toIntX (s1, s2) => coerceX (s1, wordC, s2, intC)
+	     | Word_toWord (s1, s2) => coerce (s1, wordC, s2, wordC)
+	     | Word_toWordX (s1, s2) => coerceX (s1, wordC, s2, wordC)
 	     | Word_xorb s => wordBinary (s, "xorb")
 	     | _ => raise Fail "cFunctionRaise"
 	 end
@@ -595,21 +602,76 @@ datatype z = datatype Transfer.t
 
 structure Representation = Representation (structure Rssa = Rssa
 					   structure Ssa = Ssa)
-local
-   open Representation
-in
-   structure ConRep = ConRep
-   structure TupleRep = TupleRep
-   structure TyconRep = TyconRep
-end
+
+fun updateCard (addr: Operand.t): Statement.t list =
+   let
+      val index = Var.newNoname ()
+      val indexTy = Type.defaultWord
+   in
+      [PrimApp {args = (Vector.new2
+			(addr,
+			 Operand.word
+			 (WordX.fromIntInf (IntInf.fromInt
+					    (!Control.cardSizeLog2),
+					    WordSize.default)))),
+		dst = SOME (index, indexTy),
+		prim = Prim.wordRshift WordSize.default},
+       Move {dst = (Operand.ArrayOffset
+		    {base = Operand.Runtime GCField.CardMap,
+		     index = (Operand.Cast
+			      (Operand.Var {ty = indexTy, var = index},
+			       Type.defaultInt)),
+		     ty = Type.word Bits.inByte}),
+	     src = Operand.word (WordX.one (WordSize.fromBits Bits.inByte))}]
+   end
+
+fun arrayUpdate {array, index, elt, ty}: Statement.t list =
+   if not (!Control.markCards) orelse not (Type.isPointer ty)
+      then
+	 [Move {dst = ArrayOffset {base = array, index = index, ty = ty},
+		src = elt}]
+   else
+      let
+	 val bytes = Bytes.toIntInf (Type.bytes ty)
+	 val shift = IntInf.log2 bytes
+	 val _ =
+	    if bytes = IntInf.pow (2, shift)
+	       then ()
+	    else Error.bug "can't handle shift"
+	 val shift = Bits.fromInt shift
+	 val addr = Var.newNoname ()
+	 val addrTy = Type.address ty
+	 val addrOp = Operand.Var {ty = addrTy, var = addr}
+	 val temp = Var.newNoname ()
+	 val tempTy =
+	    Type.seq
+	    (Vector.new2 (Type.constant (WordX.zero (WordSize.fromBits shift)),
+			  Type.word (Bits.- (Bits.inWord, shift))))
+	 val tempOp = Operand.Var {ty = tempTy, var = temp}
+      in
+	 [PrimApp {args = Vector.new2 (Operand.cast (index, Type.defaultWord),
+				       Operand.word (WordX.fromIntInf
+						     (Bits.toIntInf shift,
+						      WordSize.default))),
+		   dst = SOME (temp, tempTy),
+		   prim = Prim.wordLshift WordSize.default},
+	  PrimApp {args = Vector.new2 (Cast (array, addrTy), tempOp),
+		   dst = SOME (addr, addrTy),
+		   prim = Prim.wordAdd WordSize.default}]
+	 @ updateCard addrOp
+	 @ [Move {dst = Operand.Offset {base = addrOp,
+					offset = Bytes.zero,
+					ty = ty},
+		  src = elt}]
+      end
+
+val word = Type.word o WordSize.bits
 
 fun convert (program as S.Program.T {functions, globals, main, ...})
    : Rssa.Program.t =
    let
-      val {conRep, objectTypes, refRep, toRtype, tupleRep, tyconRep} =
+      val {conApp, genCase, objectTypes, reff, select, toRtype, tuple} =
 	 Representation.compute program
-      val conRep =
-	 Trace.trace ("conRep", Con.layout, ConRep.layout) conRep
       fun tyconTy (pt: PointerTycon.t): ObjectType.t =
 	 Vector.sub (objectTypes, PointerTycon.index pt)
       val {get = varInfo: Var.t -> {ty: S.Type.t},
@@ -648,15 +710,15 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 	 : Statement.t list * Transfer.t =
 	 let
 	    fun id x = x
-	    fun simple (s, cs, make, branch, le) =
+	    fun simple (s, cs, cast) =
 	       ([],
 		Switch
-		(make {cases = (QuickSort.sortVector
-				(Vector.map (cs, fn (i, j) => (branch i, j)),
-				 fn ((i, _), (i', _)) => le (i, i'))),
-		       default = default,
-		       size = s,
-		       test = varOp test}))
+		(Switch.T
+		 {cases = (QuickSort.sortVector
+			   (cs, fn ((w, _), (w', _)) => WordX.<= (w, w'))),
+		  default = default,
+		  size = s,
+		  test = cast (varOp test)}))
 	 in
 	    case cases of
 	       S.Cases.Con cases =>
@@ -669,17 +731,12 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			    if Vector.isEmpty tys
 			       then
 				  let
-				     val cases =
-					Vector.map
-					(cases, fn (c, l) =>
-					 (conRep c, l))
 				     val test = fn () => varOp test
 				     val (ss, t, blocks) =
-					TyconRep.genCase
-					(tyconRep tycon,
-					 {cases = cases,
-					  default = default,
-					  test = test})
+					genCase {cases = cases,
+						 default = default,
+						 test = test,
+						 tycon = tycon}
 				     val () =
 					extraBlocks := blocks @ !extraBlocks
 				  in
@@ -687,8 +744,18 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				  end
 			    else Error.bug "strange type in case"
 			 end)
-	     | S.Cases.Int (s, cs) => simple (s, cs, Switch.Int, id, IntX.<=)
-	     | S.Cases.Word (s, cs) => simple (s, cs, Switch.Word, id, WordX.<=)
+	     | S.Cases.Int (s, cs) =>
+		  let
+		     val s = WordSize.fromBits (IntSize.bits s)
+		     val cs = Vector.map (cs, fn (i, l) =>
+					  (WordX.fromIntInf (IntX.toIntInf i, s),
+					   l))
+		     val t = word s
+		  in
+		     simple (s, cs, fn z => Operand.Cast (z, t))
+		  end
+	     | S.Cases.Word (s, cs) =>
+		  simple (s, cs, fn z => z)
 	 end
       val {get = labelInfo: (Label.t ->
 			     {args: (Var.t * S.Type.t) vector,
@@ -847,22 +914,25 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
       fun bogus (t: Type.t): Operand.t =
 	 let
 	    val c = Operand.Const
+	    datatype z = datatype Type.dest
 	 in
-	    case t of
-	       Type.EnumPointers _  =>
+	    case Type.dest t of
+	       Constant w => c (Const.word w)
+	     | Int s => c (Const.int (IntX.zero s))
+	     | Pointer _ =>
 		  Operand.Cast (Operand.int (IntX.one IntSize.default), t)
-	     | Type.ExnStack => Error.bug "bogus ExnStack"
-	     | Type.Int s => c (Const.int (IntX.zero s))
-	     | Type.IntInf => SmallIntInf 0wx1
-	     | Type.Label _ => Error.bug "bogus Label"
-	     | Type.MemChunk _ => Error.bug "bogus MemChunk"
-	     | Type.Real s => c (Const.real (RealX.zero s))
-	     | Type.Word s => c (Const.word (WordX.zero s))
+	     | Real s => c (Const.real (RealX.zero s))
+	     | Sum ts => bogus (Vector.sub (ts, 0))
+	     | Word s => c (Const.word (WordX.zero (WordSize.fromBits s)))
+	     | _ => Error.bug (concat ["no bogus value of type ",
+				       Layout.toString (Type.layout t)])
 	 end
       val handlesSignals = 
 	 S.Program.hasPrim 
 	 (program, fn p => 
-	  Prim.name p = Prim.Name.MLton_installSignalHandler)
+	  case Prim.name p of
+	     Prim.Name.MLton_installSignalHandler => true
+	   | _ => false)
       fun translateStatementsTransfer (statements, ss, transfer) =
 	 let
 	    fun loop (i, ss, t): Statement.t vector * Transfer.t =
@@ -887,11 +957,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			in
 			   loop (i - 1, ss, t)
 			end
-		     fun allocate (ys: Var.t vector, tr) =
-			adds (TupleRep.tuple
-			      (tr, {components = ys,
-				    dst = valOf var,
-				    oper = varOp}))
 		     fun move (oper: Operand.t) =
 			add (Bind {isMutable = false,
 				   oper = oper,
@@ -899,12 +964,12 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 		  in
 		     case exp of
 			S.Exp.ConApp {con, args} =>
-			   adds (ConRep.con
-				 (conRep con,
-				  {args = args,
-				   dst = fn () => valOf var,
-				   oper = varOp,
-				   ty = fn () => valOf (toRtype ty)}))
+			   adds (conApp
+				 {args = args,
+				  con = con,
+				  dst = fn () => valOf var,
+				  oper = varOp,
+				  ty = fn () => valOf (toRtype ty)})
 		      | S.Exp.Const c =>
 			   let
 			      datatype z = datatype Const.t
@@ -935,7 +1000,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				    NONE => no ()
 				  | SOME t =>
 				       if Type.isPointer t
-					  then yes ()
+					  then yes t
 				       else no ()
 			      fun arrayOrVectorLength () =
 				 move (Operand.Offset
@@ -963,20 +1028,21 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				    val canHandle =
 				       Operand.Runtime GCField.CanHandle
 				    val res = Var.newNoname ()
+				    val resTy = Operand.ty canHandle
 				 in
 				    [Statement.PrimApp
 				     {args = (Vector.new2
 					      (canHandle,
-					       (Operand.int
-						(IntX.make
+					       (Operand.word
+						(WordX.fromIntInf
 						 (IntInf.fromInt n,
-						  IntSize.default))))),
-				      dst = SOME (res, Type.defaultInt),
-				      prim = Prim.intAdd IntSize.default},
+						  WordSize.default))))),
+				      dst = SOME (res, resTy),
+				      prim = Prim.wordAdd WordSize.default},
 				     Statement.Move
 				     {dst = canHandle,
 				      src = Operand.Var {var = res,
-							 ty = Type.defaultInt}}]
+							 ty = resTy}}]
 				 end
 			      fun ccallGen
 				 {args: Operand.t vector,
@@ -1027,105 +1093,30 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				     end)
 				 end
 			      fun ccall {args, func} =
-				  ccallGen {args = args,
-					    func = func,
-					    prefix = fn t => ([], t)}
+				 ccallGen {args = args,
+					   func = func,
+					   prefix = fn t => ([], t)}
 			      fun simpleCCall (f: CFunction.t) =
 				 ccall {args = vos args,
 					func = f}
 			      fun array (numElts: Operand.t) =
 				 let
+				    val result = valOf (toRtype ty)
 				    val pt =
-				       case (Type.dePointer
-					     (valOf (toRtype ty))) of
-					  NONE => Error.bug "strange array"
-					| SOME pt => PointerTycon pt
+				       case Type.dest result of
+					  Type.Pointer pt => PointerTycon pt
+					| _ => Error.bug "strange array"
 				    val args =
 				       Vector.new4 (Operand.GCState,
 						    Operand.EnsuresBytesFree,
 						    numElts,
 						    pt)
+				    val func =
+				       CFunction.gcArrayAllocate
+				       {return = result}
 				 in
-				    ccall {args = args,
-					   func = CFunction.gcArrayAllocate}
+				    ccall {args = args, func = func}
 				 end
-		     fun updateCard (addr: Operand.t, prefix, assign) =
-		        let
-			   val index = Var.newNoname ()
-			   val ss = 
-			      (PrimApp
-			       {args = (Vector.new2
-					(Operand.Cast (addr, Type.defaultWord),
-					 Operand.word
-					 (WordX.fromIntInf
-					  (IntInf.fromInt
-					   (!Control.cardSizeLog2),
-					   WordSize.default)))),
-				dst = SOME (index, Type.defaultInt),
-				prim = Prim.wordRshift WordSize.default})
-			      :: (Move
-				  {dst = (Operand.ArrayOffset
-					  {base = (Operand.Runtime
-						   GCField.CardMap),
-					   index = (Operand.Var
-						    {ty = Type.defaultInt,
-						     var = index}),
-					   ty = Type.word (WordSize.W 8)}),
-				   src = Operand.word (WordX.one (WordSize.W 8))})
-			      :: assign
-			      :: ss
-			in
-			  loop (i - 1, prefix ss, t)
-			end
-		     fun arrayUpdate (ty: Type.t) =
-		        if !Control.markCards andalso Type.isPointer ty
-			   then let
-				   val arrayOp = varOp (a 0)
-				   val temp = Var.newNoname ()
-				   val tempOp =
-				      Operand.Var {var = temp,
-						   ty = Type.defaultWord}
-				   val addr = Var.newNoname ()
-				   val mc =
-				      case Type.dePointer (Operand.ty arrayOp) of
-					 NONE => Error.bug "strange array"
-				       | SOME p => 
-					    case tyconTy p of
-					       ObjectType.Array mc => mc
-					     | _ => Error.bug "strange array"
-				   val addrOp =
-				      Operand.Var {var = addr,
-						   ty = Type.MemChunk mc}
-				   fun prefix ss =
-				      (PrimApp
-				       {args = Vector.new2
-					       (Operand.Cast (varOp (a 1),
-							      Type.defaultWord),
-					        Operand.word
-						(WordX.fromIntInf
-						 (IntInf.fromInt (Type.size ty),
-						  WordSize.default))),
-				        dst = SOME (temp, Type.defaultWord),
-				        prim = Prim.wordMul WordSize.default})
-				      :: (PrimApp
-					  {args = (Vector.new2
-						   (Operand.Cast (arrayOp,
-								  Type.defaultWord),
-						    tempOp)),
-					   dst = SOME (addr, Type.MemChunk mc),
-					   prim = Prim.wordAdd WordSize.default})
-				      :: ss
-				   val assign =
-				      Move {dst = (Operand.Offset
-						   {base = addrOp,
-						    offset = 0,
-						    ty = ty}),
-					    src = varOp (a 2)}
-				in
-				   updateCard (addrOp, prefix, assign)
-				end
-			else add (Move {dst = arrayOffset ty,
-					src = varOp (a 2)})
 		     fun pointerGet ty =
 			move (ArrayOffset {base = varOp (a 0),
 					   index = varOp (a 1),
@@ -1138,14 +1129,18 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 		     fun refAssign (ty, src) =
 		        let
 			   val addr = varOp (a 0)
-			   val assign = Move {dst = Operand.Offset {base = addr,
-								    offset = 0,
-								    ty = ty},
-					      src = src}
+			   val ss =
+			      Move {dst = Operand.Offset {base = addr,
+							  offset = Bytes.zero,
+							  ty = ty},
+				    src = src}
+			      :: ss
+			   val ss =
+			      if !Control.markCards andalso Type.isPointer ty
+				 then updateCard addr @ ss
+			      else ss
 			in
-			   if !Control.markCards andalso Type.isPointer ty
-			      then updateCard (addr, fn ss => ss, assign)
-			   else loop (i - 1, assign::ss, t)
+			   loop (i - 1, ss, t)
 			end
 		     fun nativeOrC (p: Prim.t) =
 			let
@@ -1161,12 +1156,18 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 							  Name.toString n])
 				  | SOME f => simpleCCall f)
 			end
+		     val arrayUpdate =
+			fn ty =>
+			loop (i - 1,
+			      arrayUpdate {array = varOp (a 0),
+					   index = varOp (a 1),
+					   elt = varOp (a 2),
+					   ty = ty}
+			      @ ss, t)
 		     datatype z = datatype Prim.Name.t
 			   in
 			      case Prim.name prim of
-				 Array_array =>
-				    array (Operand.Var {var = a 0,
-							ty = Type.defaultInt})
+				 Array_array => array (varOp (a 0))
 			       | Array_length => arrayOrVectorLength ()
 			       | Array_sub =>
 				    (case targ () of
@@ -1177,9 +1178,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				       val array = varOp (a 0)
 				       val vecTy = valOf (toRtype ty)
 				       val pt =
-					  case Type.dePointer vecTy of
-					     NONE => Error.bug "strange Array_toVector"
-					   | SOME pt => pt
+					  case Type.dest vecTy of
+					     Type.Pointer pt => pt
+					   | _ => Error.bug "strange Array_toVector"
 				    in
 				       loop
 				       (i - 1,
@@ -1241,21 +1242,24 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					NONE => move (Operand.bool true)
 				      | SOME _ => primApp prim)
 			       | MLton_installSignalHandler => none ()
+			       | MLton_size =>
+				    simpleCCall
+				    (CFunction.size (Operand.ty (varOp (a 0))))
 			       | MLton_touch => none ()
-			       | Pointer_getInt s => pointerGet (Type.Int s)
+			       | Pointer_getInt s => pointerGet (Type.int s)
 			       | Pointer_getPointer =>
 				    (case targ () of
 					NONE => Error.bug "getPointer"
 				      | SOME t => pointerGet t)
-			       | Pointer_getReal s => pointerGet (Type.Real s)
-			       | Pointer_getWord s => pointerGet (Type.Word s)
-			       | Pointer_setInt s => pointerSet (Type.Int s)
+			       | Pointer_getReal s => pointerGet (Type.real s)
+			       | Pointer_getWord s => pointerGet (word s)
+			       | Pointer_setInt s => pointerSet (Type.int s)
 			       | Pointer_setPointer =>
 				    (case targ () of
 					NONE => Error.bug "setPointer"
 				      | SOME t => pointerSet t)
-			       | Pointer_setReal s => pointerSet (Type.Real s)
-			       | Pointer_setWord s => pointerSet (Type.Word s)
+			       | Pointer_setReal s => pointerSet (Type.real s)
+			       | Pointer_setWord s => pointerSet (word s)
 			       | Ref_assign =>
 				    (case targ () of
 					NONE => none ()
@@ -1265,19 +1269,20 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					NONE => none ()
 				      | SOME ty =>
 					   move (Offset {base = varOp (a 0),
-							 offset = 0,
+							 offset = Bytes.zero,
 							 ty = ty}))
 			       | Ref_ref =>
-				    allocate
-				    (Vector.new1 (a 0),
-				     refRep (Vector.sub (targs, 0)))
+				    adds (reff {arg = fn () => varOp (a 0),
+						dst = valOf var,
+						ty = Vector.sub (targs, 0)})
 			       | Thread_atomicBegin =>
 				    (* gcState.canHandle++;
 				     * if (gcState.signalIsPending)
 				     *   gcState.limit = gcState.limitPlusSlop - LIMIT_SLOP;
 				     *)
 				    split
-				    (Vector.new0 (), Kind.Jump, ss, fn l =>
+				    (Vector.new0 (), Kind.Jump, ss,
+				     fn continue =>
 				     let
 					datatype z = datatype GCField.t
 					val tmp = Var.newNoname ()
@@ -1291,7 +1296,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 						      Operand.word
 						      (WordX.fromIntInf
 						       (IntInf.fromInt
-							Runtime.limitSlop,
+							(Bytes.toInt Runtime.limitSlop),
 							size)))),
 					     dst = SOME (tmp, ty),
 					     prim = Prim.wordSub size},
@@ -1299,25 +1304,25 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					    {dst = Operand.Runtime Limit,
 					     src = Operand.Var {var = tmp,
 								ty = ty}})
-					val l' =
+					val signalIsPending =
 					   newBlock
 					   {args = Vector.new0 (),
 					    kind = Kind.Jump,
 					    statements = statements,
 					    transfer = (Transfer.Goto
 							{args = Vector.new0 (),
-							 dst = l})}
+							 dst = continue})}
 				     in
-					if handlesSignals 
-					   then (bumpCanHandle 1,
-						 Transfer.ifInt
-						 (Operand.Runtime SignalIsPending,
-						  {falsee = l,
-						   truee = l'}))
-					   else (bumpCanHandle 1,
-						 Transfer.Goto
-						 {args = Vector.new0 (),
-						  dst = l})
+					(bumpCanHandle 1,
+					 if handlesSignals 
+					    then
+					       Transfer.ifBool
+					       (Operand.Runtime SignalIsPending,
+						{falsee = continue,
+						 truee = signalIsPending})
+					 else 
+					    Transfer.Goto {args = Vector.new0 (),
+							   dst = continue})
 				     end)
 			       | Thread_atomicEnd =>
 				    (* gcState.canHandle--;
@@ -1326,56 +1331,64 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				     *   gc;
 				     *)
 				    split
-				    (Vector.new0 (), Kind.Jump, ss, fn l =>
+				    (Vector.new0 (), Kind.Jump, ss,
+				     fn continue =>
 				     let
 					datatype z = datatype GCField.t
-					val func = CFunction.gc {maySwitchThreads = true}
-					val args = 
-					   Vector.new5
-					   (Operand.GCState,
-					    Operand.int (IntX.zero IntSize.default),
-					    Operand.bool false,
-					    Operand.File,
-					    Operand.Line)
-					val l''' = 
+					val func =
+					   CFunction.gc {maySwitchThreads = true}
+					val returnFromHandler = 
 					   newBlock
 					   {args = Vector.new0 (),
 					    kind = Kind.CReturn {func = func},
 					    statements = Vector.new0 (),
-					    transfer = Goto {args = Vector.new0 (),
-							     dst = l}}
-					val l'' =
-					   newBlock
-					   {args = Vector.new0 (),
-					    kind = Kind.Jump,
-					    statements = Vector.new0 (),
-					    transfer = Transfer.CCall {args = args,
-								       func = func,
-								       return = SOME l'''}}
-					val l' =
+					    transfer =
+					    Goto {args = Vector.new0 (),
+						  dst = continue}}
+					val args = 
+					   Vector.new5
+					   (Operand.GCState,
+					    Operand.int (IntX.zero
+							 IntSize.default),
+					    Operand.bool false,
+					    Operand.File,
+					    Operand.Line)
+					val switchToHandler =
 					   newBlock
 					   {args = Vector.new0 (),
 					    kind = Kind.Jump,
 					    statements = Vector.new0 (),
 					    transfer =
-					    Transfer.ifInt
+					    Transfer.CCall
+					    {args = args,
+					     func = func,
+					     return = SOME returnFromHandler}}
+					val testCanHandle =
+					   newBlock
+					   {args = Vector.new0 (),
+					    kind = Kind.Jump,
+					    statements = Vector.new0 (),
+					    transfer =
+					    Transfer.ifZero
 					    (Operand.Runtime CanHandle,
-					     {falsee = l'',
-					      truee = l})}
+					     {falsee = continue,
+					      truee = switchToHandler})}
 				     in
-					if handlesSignals 
-					   then (bumpCanHandle ~1,
-						 Transfer.ifInt
-						 (Operand.Runtime SignalIsPending,
-						  {falsee = l,
-						   truee = l'}))
-					   else (bumpCanHandle ~1,
-						 Transfer.Goto
-						 {args = Vector.new0 (),
-						  dst = l})
+					(bumpCanHandle ~1,
+					 if handlesSignals 
+					    then 
+					       Transfer.ifBool
+					       (Operand.Runtime SignalIsPending,
+						{falsee = continue,
+						 truee = testCanHandle})
+					 else 
+					    Transfer.Goto {args = Vector.new0 (),
+							   dst = continue})
 				     end)
 			       | Thread_canHandle =>
-				    move (Operand.Runtime GCField.CanHandle)
+				    move (Operand.Cast
+					  (Operand.Runtime GCField.CanHandle,
+					   Type.defaultInt))
 			       | Thread_copy =>
 				    ccall {args = (Vector.concat
 						   [Vector.new1 Operand.GCState,
@@ -1393,28 +1406,37 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				      | SOME t => sub t)
 			       | Weak_canGet =>
 				    ifTargIsPointer
-				    (fn () => simpleCCall CFunction.weakCanGet,
+				    (fn _ => (simpleCCall
+					       (CFunction.weakCanGet
+						(Operand.ty (varOp (a 0))))),
 				     fn () => move (Operand.bool false))
 			       | Weak_get =>
 				    ifTargIsPointer
-				    (fn () => simpleCCall CFunction.weakGet,
+				    (fn t => (simpleCCall
+					      (CFunction.weakGet
+					       {arg = Operand.ty (varOp (a 0)),
+						return = t})),
 				     none)
 			       | Weak_new =>
 				    ifTargIsPointer
-				    (fn () =>
+				    (fn t =>
 				     let
+					val result = valOf (toRtype ty)
 					val header =
 					   Operand.PointerTycon
-					   (valOf
-					    (Type.dePointer
-					     (valOf (toRtype ty))))
+					   (case Type.dest result of
+					       Type.Pointer pt => pt
+					     | _ => Error.bug "Weak_new")
+					val func =
+					   CFunction.weakNew {arg = t,
+							      return = result}
 				     in
 					ccall {args = (Vector.concat
 						       [Vector.new2
 							(Operand.GCState,
 							 header),
 							vos args]),
-					       func = CFunction.weakNew}
+					       func = func}
 				     end,
 				     none)
 			       | Word_equal s =>
@@ -1444,15 +1466,16 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			   end
 		      | S.Exp.Profile e => add (Statement.Profile e)
 		      | S.Exp.Select {tuple, offset} =>
-			   adds (TupleRep.select
-				 (tupleRep (varType tuple),
-				  {dst = fn () => valOf var,
-				   offset = offset,
-				   tuple = fn () => varOp tuple}))
+			   adds (select {dst = fn () => valOf var,
+					 offset = offset,
+					 tuple = fn () => varOp tuple,
+					 tupleTy = varType tuple})
 		      | S.Exp.Tuple ys =>
 			   if 0 = Vector.length ys
 			      then none ()
-			   else allocate (ys, tupleRep ty)
+			   else adds (tuple {components = ys,
+					     dst = (valOf var, ty),
+					     oper = varOp})
 		      | S.Exp.Var y =>
 			   (case toRtype ty of
 			       NONE => none ()

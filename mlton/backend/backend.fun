@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -203,7 +203,7 @@ fun toMachine (program: Ssa.Program.t) =
 	 val frameLayoutsCounter = Counter.new 0
 	 val _ = IntSet.reset ()
 	 val table = HashSet.new {hash = Word.fromInt o #frameOffsetsIndex}
-	 val frameOffsets: int vector list ref = ref []
+	 val frameOffsets: Bytes.t vector list ref = ref []
 	 val frameOffsetsCounter = Counter.new 0
 	 val {get = frameOffsetsIndex: IntSet.t -> int, ...} =
 	    Property.get
@@ -213,8 +213,9 @@ fun toMachine (program: Ssa.Program.t) =
 	      let
 		 val _ = List.push (frameOffsets,
 				    QuickSort.sortVector
-				    (Vector.fromList (IntSet.toList offsets),
-				     op <=))
+				    (Vector.fromListMap
+				     (IntSet.toList offsets, Bytes.fromInt),
+				     Bytes.<=))
 	      in
 		 Counter.next frameOffsetsCounter
 	      end))
@@ -230,10 +231,12 @@ fun toMachine (program: Ssa.Program.t) =
 	    end
 	 fun getFrameLayoutsIndex {isC: bool,
 				   label: Label.t,
-				   offsets: int list,
-				   size: int}: int =
+				   offsets: Bytes.t list,
+				   size: Bytes.t}: int =
 	    let
-	       val foi = frameOffsetsIndex (IntSet.fromList offsets)
+	       val foi =
+		  frameOffsetsIndex (IntSet.fromList
+				     (List.map (offsets, Bytes.toInt)))
 	       fun new () =
 		  let
 		     val _ =
@@ -265,7 +268,7 @@ fun toMachine (program: Ssa.Program.t) =
 		 fn {frameOffsetsIndex = foi', isC = isC', size = s', ...} =>
 		 foi = foi'
 		 andalso isC = isC'
-		 andalso size = s',
+		 andalso Bytes.equals (size, s'),
 		 fn () => {frameLayoutsIndex = new (),
 			   frameOffsetsIndex = foi,
 			   isC = isC,
@@ -410,7 +413,7 @@ fun toMachine (program: Ssa.Program.t) =
 	       M.Operand.Offset {base = M.Operand.GCState,
 				 offset = GCField.offset field,
 				 ty = ty}
-      val exnStackOp = runtimeOp (GCField.ExnStack, Type.ExnStack)
+      val exnStackOp = runtimeOp (GCField.ExnStack, Type.exnStack)
       val stackBottomOp = runtimeOp (GCField.StackBottom, Type.defaultWord)
       val stackTopOp = runtimeOp (GCField.StackTop, Type.defaultWord)
       fun translateOperand (oper: R.Operand.t): M.Operand.t =
@@ -446,8 +449,8 @@ fun toMachine (program: Ssa.Program.t) =
 	 end
       fun translateOperands ops = Vector.map (ops, translateOperand)
       fun genStatement (s: R.Statement.t,
-			handlerLinkOffset: {handler: int,
-					    link: int} option)
+			handlerLinkOffset: {handler: Bytes.t,
+					    link: Bytes.t} option)
 	 : M.Statement.t vector =
 	 let
 	    fun handlerOffset () = #handler (valOf handlerLinkOffset)
@@ -468,12 +471,11 @@ fun toMachine (program: Ssa.Program.t) =
 		  Vector.new1
 		  (M.Statement.move {dst = translateOperand dst,
 				     src = translateOperand src})
-	     | Object {dst, size, stores, tycon, ...} =>
+	     | Object {dst, header, size, stores} =>
 		  Vector.new1
 		  (M.Statement.Object
-		   {dst = varOperand dst,
-		    header = (Runtime.typeIndexToHeader
-			      (PointerTycon.index tycon)),
+		   {dst = varOperand (#1 dst),
+		    header = header,
 		    size = size,
 		    stores = Vector.map (stores, fn {offset, value} =>
 					 {offset = offset,
@@ -498,7 +500,8 @@ fun toMachine (program: Ssa.Program.t) =
 			       (stackTopOp,
 				M.Operand.Int
 				(IntX.defaultInt
-				 (handlerOffset () + Runtime.wordSize)))),
+				 (Bytes.toInt
+				  (Bytes.+ (handlerOffset (), Bytes.inWord)))))),
 		       dst = SOME tmp,
 		       prim = Prim.wordAdd WordSize.default},
 		      M.Statement.PrimApp
@@ -512,7 +515,7 @@ fun toMachine (program: Ssa.Program.t) =
 		  (M.Statement.move
 		   {dst = exnStackOp,
 		    src = M.Operand.StackOffset {offset = linkOffset (),
-						 ty = Type.ExnStack}})
+						 ty = Type.exnStack}})
 	     | SetHandler h =>
 		  Vector.new1
 		  (M.Statement.move
@@ -524,7 +527,7 @@ fun toMachine (program: Ssa.Program.t) =
 		  Vector.new1
 		  (M.Statement.move
 		   {dst = M.Operand.StackOffset {offset = linkOffset (),
-						 ty = Type.ExnStack},
+						 ty = Type.exnStack},
 		    src = exnStackOp})
 	     | _ => Error.bug (concat
 			       ["backend saw strange statement: ",
@@ -551,17 +554,17 @@ fun toMachine (program: Ssa.Program.t) =
 	 setLabelInfo
       fun callReturnOperands (xs: 'a vector,
 			      ty: 'a -> Type.t,
-			      shift: int): M.Operand.t vector =
+			      shift: Bytes.t): M.Operand.t vector =
 	 #1 (Vector.mapAndFold
-	     (xs, 0,
+	     (xs, Bytes.zero,
 	      fn (x, offset) =>
 	      let
 		 val ty = ty x
 		 val offset = Type.align (ty, offset)
 	      in
-		 (M.Operand.StackOffset {offset = shift + offset, 
+		 (M.Operand.StackOffset {offset = Bytes.+ (shift, offset),
 					 ty = ty},
-		  offset + Type.size ty)
+		  Bytes.+ (offset, Type.bytes ty))
 	      end))
       fun genFunc (f: Function.t, isMain: bool): unit =
 	 let
@@ -571,7 +574,7 @@ fun toMachine (program: Ssa.Program.t) =
 	    val raises = Option.map (raises, fn ts => raiseOperands ts)
 	    val returns =
 	       Option.map (returns, fn ts =>
-			   callReturnOperands (ts, fn t => t, 0))
+			   callReturnOperands (ts, fn t => t, Bytes.zero))
 	    val chunk = funcChunk name
 	    fun labelArgOperands (l: R.Label.t): M.Operand.t vector =
 	       Vector.map (#args (labelInfo l), varOperand o #1)
@@ -658,7 +661,7 @@ fun toMachine (program: Ssa.Program.t) =
 	    in
 	       val {handlerLinkOffset, labelInfo = labelRegInfo, ...} =
 		  AllocateRegisters.allocate
-		  {argOperands = callReturnOperands (args, #2, 0),
+		  {argOperands = callReturnOperands (args, #2, Bytes.zero),
 		   function = f,
 		   varInfo = varInfo}
 	    end
@@ -719,8 +722,7 @@ fun toMachine (program: Ssa.Program.t) =
 					   dst = varOperand dst,
 					   overflow = overflow,
 					   prim = prim,
-					   success = success,
-					   ty = ty})
+					   success = success})
 		   | R.Transfer.CCall {args, func, return} =>
 			simple (M.Transfer.CCall
 				{args = translateOperands args,
@@ -734,8 +736,8 @@ fun toMachine (program: Ssa.Program.t) =
 			   datatype z = datatype R.Return.t
 			   val (contLive, frameSize, return) =
 			      case return of
-				 Dead => (Vector.new0 (), 0, NONE)
-			       | Tail => (Vector.new0 (), 0, NONE)
+				 Dead => (Vector.new0 (), Bytes.zero, NONE)
+			       | Tail => (Vector.new0 (), Bytes.zero, NONE)
 			       | NonTail {cont, handler} =>
 				    let
 				       val {liveNoFormals, size, ...} =
@@ -783,7 +785,7 @@ fun toMachine (program: Ssa.Program.t) =
 		   | R.Transfer.Return xs =>
 			let
 			   val dsts =
-			      callReturnOperands (xs, R.Operand.ty, 0)
+			      callReturnOperands (xs, R.Operand.ty, Bytes.zero)
 			in
 			   (parallelMove
 			    {chunk = chunk,
@@ -793,49 +795,22 @@ fun toMachine (program: Ssa.Program.t) =
 			end
 		   | R.Transfer.Switch switch =>
 			let
-			   fun doit ({cases: ('a * Label.t) vector,
-				      default: Label.t option,
-				      size: 'b,
-				      test: R.Operand.t},
-				     make: {cases: ('a * Label.t) vector,
-					    default: Label.t option,
-					    size: 'b,
-					    test: M.Operand.t} -> M.Switch.t) =
-			      simple
-			      (case (Vector.length cases, default) of
-				  (0, NONE) => bugTransfer
-				| (1, NONE) =>
-				     M.Transfer.Goto (#2 (Vector.sub (cases, 0)))
-				| (0, SOME dst) => M.Transfer.Goto dst
-				| _ =>
-				     M.Transfer.Switch
-				     (make {cases = cases,
-					    default = default,
-					    size = size,
-					    test = translateOperand test}))
+			   val R.Switch.T {cases, default, size, test} =
+			      switch
 			in
-			   case switch of
-			      R.Switch.EnumPointers {enum, pointers, test} =>
-			         simple
-			         (M.Transfer.Switch
-				  (M.Switch.EnumPointers
-				   {enum = enum,
-				    pointers = pointers,
-				    test = translateOperand test}))
-			    | R.Switch.Int z => doit (z, M.Switch.Int)
-			    | R.Switch.Pointer {cases, default, tag, test} =>
-				 simple
-				 (M.Transfer.Switch
-				  (M.Switch.Pointer
-				   {cases = (Vector.map
-					     (cases, fn {dst, tag, tycon} =>
-					      {dst = dst,
-					       tag = tag,
-					       tycon = tycon})),
+			   simple
+			   (case (Vector.length cases, default) of
+			       (0, NONE) => bugTransfer
+			     | (1, NONE) =>
+				  M.Transfer.Goto (#2 (Vector.sub (cases, 0)))
+			     | (0, SOME dst) => M.Transfer.Goto dst
+			     | _ =>
+				  M.Transfer.Switch
+				  (M.Switch.T
+				   {cases = cases,
 				    default = default,
-				    tag = translateOperand tag,
+				    size = size,
 				    test = translateOperand test}))
-			    | R.Switch.Word z => doit (z, M.Switch.Word)
 			end
 	       end
 	    val genTransfer =
@@ -1015,13 +990,13 @@ fun toMachine (program: Ssa.Program.t) =
       val _ = List.foreach (chunks, fn M.Chunk.T {blocks, ...} =>
 			    Vector.foreach (blocks, Label.clear o M.Block.label))
       val (frameLabels, frameLayouts, frameOffsets) = allFrameInfo ()
-      val maxFrameSize =
+      val maxFrameSize: Bytes.t =
 	 List.fold
-	 (chunks, 0, fn (M.Chunk.T {blocks, ...}, max) =>
+	 (chunks, Bytes.zero, fn (M.Chunk.T {blocks, ...}, max) =>
 	  Vector.fold
 	  (blocks, max, fn (M.Block.T {kind, statements, transfer, ...}, max) =>
 	   let
-	      fun doOperand (z: M.Operand.t, max) =
+	      fun doOperand (z: M.Operand.t, max: Bytes.t): Bytes.t =
 		 let
 		    datatype z = datatype M.Operand.t
 		 in
@@ -1032,14 +1007,14 @@ fun toMachine (program: Ssa.Program.t) =
 		     | Contents {oper, ...} => doOperand (oper, max)
 		     | Offset {base, ...} => doOperand (base, max)
 		     | StackOffset {offset, ty} =>
-			  Int.max (offset + Type.size ty, max)
+			  Bytes.max (Bytes.+ (offset, Type.bytes ty), max)
 		     | _ => max
 		 end
 	      val max =
 		 case M.Kind.frameInfoOpt kind of
 		    NONE => max
 		  | SOME (M.FrameInfo.T {frameLayoutsIndex, ...}) =>
-		       Int.max
+		       Bytes.max
 		       (max,
 			#size (Vector.sub (frameLayouts, frameLayoutsIndex)))
 	      val max =
@@ -1051,7 +1026,7 @@ fun toMachine (program: Ssa.Program.t) =
 	   in
 	      max
 	   end))
-      val maxFrameSize = Runtime.wordAlignInt maxFrameSize
+      val maxFrameSize = Bytes.wordAlign maxFrameSize
       val profileInfo = makeProfileInfo {frames = frameLabels}
    in
       Machine.Program.T 

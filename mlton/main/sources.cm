@@ -43,10 +43,10 @@ is
 ../ssa/sources.cm
 ../xml/sources.cm
 
-compile.fun
-compile.sig
 lookup-constant.sig
 lookup-constant.fun
-main.fun
+compile.sig
+compile.fun
 main.sig
+main.fun
 main.sml

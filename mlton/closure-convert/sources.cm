@@ -17,11 +17,11 @@ is
 ../ssa/sources.cm
 ../xml/sources.cm
 
-abstract-value.fun
 abstract-value.sig
-closure-convert.fun
-closure-convert.sig
-globalize.fun
+abstract-value.fun
 globalize.sig
-lambda-free.fun
+globalize.fun
 lambda-free.sig
+lambda-free.fun
+closure-convert.sig
+closure-convert.fun

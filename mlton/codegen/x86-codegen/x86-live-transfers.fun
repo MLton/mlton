@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -22,6 +22,12 @@ struct
      open Runtime
   in
      structure CFunction = CFunction
+  end
+
+  local
+     open CFunction
+  in
+     structure RepType = RepType
   end
 
   structure LiveSet = x86Liveness.LiveSet
@@ -845,20 +851,25 @@ struct
 							liveFltRegsTransfers)}
 		      fun doit'' label = enque {label = label, 
 						hints = ([],[])}
-		      fun doit''' func label 
-			= enque {label = label,
-				 hints = case CFunction.return func of
-				           NONE => ([],[])
-					 | SOME ty =>
-					      List.fold
-					      (Operand.cReturnTemps ty,
-					       ([],[]), fn ({src, dst}, (regHints, fltregHints)) =>
-					       case src of
-						  Operand.Register reg =>
-						     ((dst, reg, ref true)::regHints, fltregHints)
-						| Operand.FltRegister _ =>
-						     (regHints, (dst, ref true)::fltregHints)
-						| _ => (regHints, fltregHints))}
+		      fun doit''' func label =
+			 let
+			    val hints =
+			       List.fold
+			       (Operand.cReturnTemps (CFunction.return func),
+				([],[]),
+				fn ({src, dst}, (regHints, fltregHints)) =>
+				case src of
+				   Operand.Register reg =>
+				      ((dst, reg, ref true) :: regHints,
+				       fltregHints)
+				 | Operand.FltRegister _ =>
+				      (regHints,
+				       (dst, ref true) :: fltregHints)
+				 | _ => (regHints, fltregHints))
+			 in
+			    enque {hints = hints,
+				   label = label}
+			 end
 		      datatype z = datatype Transfer.t
 		    in
 		      case transfer

@@ -9,6 +9,12 @@ val all = [R32, R64]
 
 val default = R64
 
+val compare =
+   fn (R32, R32) => EQUAL
+    | (R32, _) => LESS
+    | (R64, R64) => EQUAL
+    | _ => GREATER
+
 val equals: t * t -> bool = op =
 
 val memoize: (t -> 'a) -> t -> 'a =
@@ -27,12 +33,10 @@ val toString =
 
 val layout = Layout.str o toString
 
-val bytes: t -> int =
-   fn R32 => 4
-    | R64 => 8
+val bytes: t -> Bytes.t =
+   fn R32 => Bytes.fromInt 4
+    | R64 => Bytes.fromInt 8
 
-val bits: t -> int =
-   fn R32 => 32
-    | R64 => 64
+val bits: t -> Bits.t = Bytes.toBits o bytes
 
 end

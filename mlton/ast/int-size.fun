@@ -3,56 +3,101 @@ struct
 
 open S
 
-datatype t = T of {precision: int}
+datatype t = T of {bits: Bits.t}
 
-fun bits (T {precision = p, ...}) = p
+fun bits (T {bits, ...}) = bits
 
-val equals: t * t -> bool = op =
+val toString = Bits.toString o bits
 
-val sizes: int list =
-   List.tabulate (31, fn i => i + 2)
-   @ [64]
+val layout = Layout.str o toString
+
+fun compare (s, s') = Bits.compare (bits s, bits s')
+
+val {equals, ...} = Relation.compare compare
 
 fun isValidSize (i: int) =
    (2 <= i andalso i <= 32) orelse i = 64
 
-fun make i = T {precision = i}
+val sizes: Bits.t list =
+   Vector.toList
+   (Vector.keepAllMap
+    (Vector.tabulate (65, fn i => if isValidSize i
+				     then SOME (Bits.fromInt i)
+				  else NONE),
+     fn i => i))
+
+fun make i = T {bits = i}
+
+val byte = make (Bits.fromInt 8)
 
 val allVector = Vector.tabulate (65, fn i =>
 				  if isValidSize i
-				     then SOME (make i)
+				     then SOME (make (Bits.fromInt i))
 				  else NONE)
-				
-fun I i =
-   case Vector.sub (allVector, i) handle Subscript => NONE of
-      NONE => Error.bug (concat ["strange int size: ", Int.toString i])
+
+fun I (b: Bits.t): t =
+   case Vector.sub (allVector, Bits.toInt b) handle Subscript => NONE of
+      NONE => Error.bug (concat ["strange int size: ", Bits.toString b])
     | SOME s => s
-   
+
 val all = List.map (sizes, I)
 
-val prims = [I 8, I 16, I 32, I 64]
+val prims = List.map ([8, 16, 32, 64], I o Bits.fromInt)
 
-val default = I 32
- 
+val default = I Bits.inWord
+
+fun pointer () = I Bits.inWord
+
 val memoize: (t -> 'a) -> t -> 'a =
    fn f =>
    let
       val v = Vector.map (allVector, fn opt => Option.map (opt, f))
    in
-      fn T {precision = i, ...} => valOf (Vector.sub (v, i))
+      fn T {bits = b, ...} => valOf (Vector.sub (v, Bits.toInt b))
    end
 
-val toString = Int.toString o bits
+fun roundUpToPrim s =
+   let
+      val bits = Bits.toInt (bits s)
+      val bits =
+	 if bits <= 8
+	    then 8
+	 else if bits <= 16
+		 then 16
+	      else if bits <= 32
+		      then 32
+		   else if bits = 64
+			   then 64
+			else Error.bug "IntSize.roundUpToPrim"
+   in
+      I (Bits.fromInt bits)
+   end
 
-val layout = Layout.str o toString
+val bytes: t -> Bytes.t = Bits.toBytes o bits
 
-val cardinality = memoize (fn s => IntInf.pow (2, bits s))
+val max: t -> IntInf.t =
+   memoize (fn s => IntInf.<< (1, Bits.toWord (bits s)) - 1)
+   
+val cardinality = memoize (fn s => IntInf.pow (2, Bits.toInt (bits s)))
+
+datatype prim = I8 | I16 | I32 | I64
+
+val primOpt =
+   memoize (fn T {bits, ...} =>
+	    List.peekMap ([(8, I8), (16, I16), (32, I32), (64, I64)],
+			  fn (b, p) =>
+			  if b = Bits.toInt bits then SOME p else NONE))
+
+fun prim s =
+   case primOpt s of
+      NONE => Error.bug "IntSize.prim"
+    | SOME p => p
 
 val range =
    memoize
    (fn s =>
     let
-       val pow = IntInf.pow (2, bits s - 1)
+       val pow = IntInf.pow (2, Bits.toInt (bits s) - 1)
     in
        (~ pow, pow - 1)
     end)
@@ -67,36 +112,5 @@ fun isInRange (s, i) =
 val min = #1 o range
 
 val max = #2 o range
-
-datatype prim = I8 | I16 | I32 | I64
-
-val primOpt = memoize (fn T {precision = i, ...} =>
-		       List.peekMap ([(8, I8), (16, I16), (32, I32), (64, I64)],
-				     fn (i', p) =>
-				     if i = i' then SOME p else NONE))
-
-fun prim s =
-   case primOpt s of
-      NONE => Error.bug "IntSize.prim"
-    | SOME p => p
-
-fun roundUpToPrim s =
-   let
-      val bits = bits s
-      val bits =
-	 if bits <= 8
-	    then 8
-	 else if bits <= 16
-		 then 16
-	      else if bits <= 32
-		      then 32
-		   else if bits = 64
-			   then 64
-			else Error.bug "IntSize.roundUpToPrim"
-   in
-      I bits
-   end
-
-val bytes: t -> int = memoize (fn s => bits (roundUpToPrim s) div 8)
 
 end

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -223,9 +223,15 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 		     else error "bad handle"
 		  end
 	     | Lambda l => checkLambda l
-	     | PrimApp {targs, ...} => 
+	     | PrimApp {args, prim, targs} =>
 		  let
 		     val _ = checkTypes targs
+		     val () =
+			if Type.checkPrimApp {args = checkVarExps args,
+					      prim = prim,
+					      result = ty}
+			   then ()
+			else error "bad primapp"
 		  in
 		     ty
 		  end

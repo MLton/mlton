@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -10,31 +10,20 @@ type word = Word.t
    
 signature MACHINE_STRUCTS = 
    sig
-      structure CFunction: C_FUNCTION
-      structure CType: C_TYPE
-      structure IntX: INT_X
-      structure Label: ID
-      structure Prim: PRIM
-      structure SourceInfo: SOURCE_INFO
-      structure RealX: REAL_X
-      structure WordX: WORD_X
-      sharing CFunction = Prim.CFunction
-      sharing CFunction.CType = CType = Prim.CType = Prim.CFunction.CType
-      sharing CType.IntSize = IntX.IntSize = Prim.IntSize
-      sharing CType.RealSize = RealX.RealSize = Prim.RealSize
-      sharing CType.WordSize = WordX.WordSize = Prim.WordSize
+      include ATOMS
    end
 
 signature MACHINE = 
    sig
-      include MACHINE_ATOMS
+      include MACHINE_STRUCTS
+
+      structure Type: REP_TYPE
+      sharing Type = RepType
 
       structure Switch: SWITCH
-      sharing IntX = Switch.IntX
-      sharing Label = Switch.Label
-      sharing PointerTycon = Switch.PointerTycon
+      sharing Atoms = Switch
       sharing Type = Switch.Type
-      sharing WordX = Switch.WordX
+
       structure ChunkLabel: ID
 
       structure Register:
@@ -83,12 +72,12 @@ signature MACHINE =
 	     | Label of Label.t
 	     | Line (* expand by codegen into int constant *)
 	     | Offset of {base: t,
-			  offset: int,
+			  offset: Bytes.t,
 			  ty: Type.t}
 	     | Real of RealX.t
 	     | Register of Register.t
 	     | SmallIntInf of word
-	     | StackOffset of {offset: int,
+	     | StackOffset of {offset: Bytes.t,
 			       ty: Type.t}
 	     | StackTop
 	     | Word of WordX.t
@@ -114,8 +103,8 @@ signature MACHINE =
 	     (* Fixed-size allocation. *)
 	     | Object of {dst: Operand.t,
 			  header: word,
-			  size: int,
-			  stores: {offset: int,
+			  size: Bytes.t,
+			  stores: {offset: Bytes.t,
 				   value: Operand.t} vector}
 	     | PrimApp of {args: Operand.t vector,
 			   dst: Operand.t option,
@@ -148,8 +137,7 @@ signature MACHINE =
 			 dst: Operand.t,
 			 overflow: Label.t,
 			 prim: Prim.t,
-			 success: Label.t,
-			 ty: Type.t} (* int or word *)
+			 success: Label.t}
 	     | CCall of {args: Operand.t vector,
 			 frameInfo: FrameInfo.t option,
 			 func: CFunction.t,
@@ -162,7 +150,7 @@ signature MACHINE =
 			live: Operand.t vector,
 			return: {return: Label.t,
 				 handler: Label.t option,
-				 size: int} option}
+				 size: Bytes.t} option}
 	     | Goto of Label.t (* label must be a Jump *)
 	     | Raise
 	     | Return
@@ -245,23 +233,23 @@ signature MACHINE =
 	       T of {chunks: Chunk.t list,
 		     frameLayouts: {frameOffsetsIndex: int,
 				    isC: bool,
-				    size: int} vector,
+				    size: Bytes.t} vector,
 		     (* Each vector in frame Offsets specifies the offsets
 		      * of live pointers in a stack frame.  A vector is referred
 		      * to by index as the offsetsIndex in frameLayouts.
 		      *)
-		     frameOffsets: int vector vector,
+		     frameOffsets: Bytes.t vector vector,
 		     handlesSignals: bool,
 		     intInfs: (Global.t * string) list,
 		     main: {chunkLabel: ChunkLabel.t,
 			    label: Label.t},
-		     maxFrameSize: int,
-		     objectTypes: ObjectType.t vector,
+		     maxFrameSize: Bytes.t,
+		     objectTypes: Type.ObjectType.t vector,
 		     profileInfo: ProfileInfo.t option,
 		     reals: (Global.t * RealX.t) list,
 		     strings: (Global.t * string) list}
 
-	    val frameSize: t * FrameInfo.t -> int
+	    val frameSize: t * FrameInfo.t -> Bytes.t
 	    val clearLabelNames: t -> unit
 	    val layouts: t * (Layout.t -> unit) -> unit
 	    val typeCheck: t -> unit

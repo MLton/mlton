@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -27,10 +27,17 @@ signature ATOMS' =
       structure Cons: SET
       structure Const: CONST
       structure Ffi: FFI
+      structure Func: FUNC
       structure IntX: INT_X
-      structure Prim: PRIM 
+      structure Label: LABEL
+      structure ObjectType: OBJECT_TYPE
+      structure PointerTycon: POINTER_TYCON
+      structure Prim: PRIM
+      structure ProfileLabel: PROFILE_LABEL
+      structure RepType: REP_TYPE
       structure ProfileExp: PROFILE_EXP
       structure RealX: REAL_X
+      structure Runtime: RUNTIME
       structure SourceInfo: SOURCE_INFO
       structure Tycon: TYCON
       structure Tycons: SET
@@ -40,24 +47,24 @@ signature ATOMS' =
       structure WordX: WORD_X
 
       sharing CFunction = Ffi.CFunction = Prim.CFunction
-      sharing CFunction.CType = CType = Ffi.CType = Prim.CType
+      sharing CType = Ffi.CType = Prim.CType = RepType.CType
       sharing Con = Prim.Con
       sharing Const = Prim.Const
-      sharing Field = Record.Field = SortedRecord.Field
-      sharing IntSize = CType.IntSize = IntX.IntSize = Prim.IntSize =
-	 Tycon.IntSize
-      sharing IntX = Const.IntX
-      sharing RealSize = CType.RealSize = Prim.RealSize = RealX.RealSize
+      sharing IntSize = IntX.IntSize = Prim.IntSize = RepType.IntSize
+	 = Tycon.IntSize
+      sharing IntX = Const.IntX = RepType.IntX
+      sharing Label = RepType.Label
+      sharing ObjectType = RepType.ObjectType
+      sharing PointerTycon = ObjectType.PointerTycon = RepType.PointerTycon
+      sharing RealSize = Prim.RealSize = RealX.RealSize = RepType.RealSize
 	 = Tycon.RealSize
+      sharing RepType = CFunction.RepType = Prim.RepType
       sharing RealX = Const.RealX
+      sharing Runtime = ObjectType.Runtime = RepType.Runtime
       sharing SourceInfo = ProfileExp.SourceInfo
-      sharing WordSize = CType.WordSize = Prim.WordSize = Tycon.WordSize
+      sharing WordSize = Prim.WordSize = RepType.WordSize = Tycon.WordSize
 	 = WordX.WordSize
-      sharing WordX = Const.WordX
-      sharing type Con.t = Cons.Element.t
-      sharing type Tycon.t = Tycons.Element.t
-      sharing type Tyvar.t = Tyvars.Element.t
-      sharing type Var.t = Vars.Element.t
+      sharing WordX = Const.WordX = RepType.WordX
    end
 
 signature ATOMS =
@@ -66,6 +73,14 @@ signature ATOMS =
 	 
       include ATOMS'
 
+      (* For each structure, like CFunction, I would like to write two sharing
+       * constraints
+       *   sharing Atoms = CFunction
+       *   sharing CFunction = Atoms.CFunction
+       * but I can't because of a bug in SML/NJ that reports "Sharing structure
+       * with a descendent substructure".  So, I am forced to write out lots
+       * of individual sharing constraints.  Blech.
+       *)
       sharing CFunction = Atoms.CFunction
       sharing CType = Atoms.CType
       sharing Con = Atoms.Con
@@ -73,16 +88,22 @@ signature ATOMS =
       sharing Const = Atoms.Const
       sharing Ffi = Atoms.Ffi
       sharing Field = Atoms.Field
+      sharing Func = Atoms.Func
       sharing IntSize = Atoms.IntSize
       sharing IntX = Atoms.IntX
+      sharing Label = Atoms.Label
+      sharing ObjectType = Atoms.ObjectType
+      sharing PointerTycon = Atoms.PointerTycon
       sharing Prim = Atoms.Prim
+      sharing ProfileLabel = Atoms.ProfileLabel
       sharing ProfileExp = Atoms.ProfileExp
       sharing RealSize = Atoms.RealSize
       sharing RealX = Atoms.RealX
       sharing Record = Atoms.Record
+      sharing RepType = Atoms.RepType
+      sharing Runtime = Atoms.Runtime
       sharing SortedRecord = Atoms.SortedRecord
       sharing SourceInfo = Atoms.SourceInfo
-(*      sharing Symbol = Con.Symbol = Tycon.Symbol = Var.Symbol *)
       sharing Tycon = Atoms.Tycon
       sharing Tycons = Atoms.Tycons
       sharing Tyvar = Atoms.Tyvar

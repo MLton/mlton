@@ -35,8 +35,8 @@ signature ALLOCATE_REGISTERS =
 	 -> {(* If handlers are used, handlerLinkOffset gives the stack offsets
 	      * where the handler and link (old exnStack) should be stored.
 	      *)
-	     handlerLinkOffset: {handler: int,
-				 link: int} option,
+	     handlerLinkOffset: {handler: Bytes.t,
+				 link: Bytes.t} option,
 	     labelInfo:
 	     Rssa.Label.t -> {(* Live operands at the beginning of the block. *)
 			      live: Machine.Operand.t vector,
@@ -47,6 +47,6 @@ signature ALLOCATE_REGISTERS =
 			      (* Number of bytes in frame including return
 			       * address.
 			       *)
-			      size: int
+			      size: Bytes.t
 			      }}
    end

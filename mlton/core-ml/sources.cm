@@ -18,7 +18,7 @@ is
 ../control/sources.cm
 ../../lib/mlton/sources.cm
 
-core-ml.fun
 core-ml.sig
-dead-code.fun
+core-ml.fun
 dead-code.sig
+dead-code.fun

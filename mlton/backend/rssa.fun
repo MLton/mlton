@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -9,12 +9,24 @@ functor Rssa (S: RSSA_STRUCTS): RSSA =
 struct
 
 open S
+
+structure Type = RepType
+   
 local
    open Runtime
 in
    structure CFunction = CFunction
    structure GCField = GCField
 end
+
+fun constrain (ty: Type.t): Layout.t =
+   let
+      open Layout
+   in
+      if !Control.showTypes
+	 then seq [str ": ", Type.layout ty]
+      else empty
+   end
 
 structure Operand =
    struct
@@ -29,7 +41,7 @@ structure Operand =
        | GCState
        | Line
        | Offset of {base: t,
-		    offset: int,
+		    offset: Bytes.t,
 		    ty: Type.t}
        | PointerTycon of PointerTycon.t
        | Runtime of GCField.t
@@ -40,8 +52,8 @@ structure Operand =
       val int = Const o Const.int
       val word = Const o Const.word
 	 
-      fun bool b = Cast (int (IntX.make (if b then 1 else 0, IntSize.default)),
-			 Type.bool)
+      fun bool b =
+	 word (WordX.fromIntInf (if b then 1 else 0, WordSize.default))
 	 
       val ty =
 	 fn ArrayOffset {ty, ...} => ty
@@ -54,26 +66,22 @@ structure Operand =
 		     Int i => Type.int (IntX.size i)
 		   | IntInf _ => Type.intInf
 		   | Real r => Type.real (RealX.size r)
-		   | Word w => Type.word (WordX.size w)
+		   | Word w => Type.constant w
 		   | Word8Vector _ => Type.word8Vector
 	       end
-	  | EnsuresBytesFree => Type.word WordSize.default
+	  | EnsuresBytesFree => Type.defaultWord
 	  | File => Type.cPointer ()
-	  | GCState => Type.cPointer ()
+	  | GCState => Type.gcState
 	  | Line => Type.int IntSize.default
 	  | Offset {ty, ...} => ty
-	  | PointerTycon _ => Type.word WordSize.default
-	  | Runtime z => Type.fromCType (GCField.ty z)
-	  | SmallIntInf _ => Type.IntInf
+	  | PointerTycon _ => Type.defaultWord
+	  | Runtime z => Type.ofGCField z
+	  | SmallIntInf _ => Type.intInf
 	  | Var {ty, ...} => ty
 
       fun layout (z: t): Layout.t =
 	 let
 	    open Layout 
-	    fun constrain (ty: Type.t): Layout.t =
-	       if !Control.showTypes
-		  then seq [str ": ", Type.layout ty]
-	       else empty
 	 in
 	    case z of
 	       ArrayOffset {base, index, ty} =>
@@ -89,7 +97,7 @@ structure Operand =
 	     | Line => str "<Line>"
 	     | Offset {base, offset, ty} =>
 		  seq [str (concat ["O", Type.name ty, " "]),
-		       tuple [layout base, Int.layout offset],
+		       tuple [layout base, Bytes.layout offset],
 		       constrain ty]
 	     | PointerTycon pt => PointerTycon.layout pt
 	     | Runtime r => GCField.layout r
@@ -125,7 +133,7 @@ structure Operand =
 	 foldVars (z, (), f o #1)
 
       fun caseBytes (z, {big: t -> 'a,
-			 small: word -> 'a}): 'a =
+			 small: Bytes.t -> 'a}): 'a =
 	 case z of
 	    Const c =>
 	       (case c of
@@ -134,7 +142,7 @@ structure Operand =
 			 val w = WordX.toIntInf w
 		      in
 			 if w <= 512 (* 512 is pretty arbitrary *)
-			    then small (Word.fromIntInf w)
+			    then small (Bytes.fromIntInf w)
 			 else big z
 		      end
 		 | _ => Error.bug "strange numBytes")
@@ -142,6 +150,7 @@ structure Operand =
    end
 
 structure Switch = Switch (open S
+			   structure Type = Type
 			   structure Use = Operand)
 
 structure Statement =
@@ -152,12 +161,11 @@ structure Statement =
 		  var: Var.t}
        | Move of {dst: Operand.t,
 		  src: Operand.t}
-       | Object of {dst: Var.t,
-		    size: int,
-		    stores: {offset: int,
-			     value: Operand.t} vector,
-		    ty: Type.t,
-		    tycon: PointerTycon.t}
+       | Object of {dst: Var.t * Type.t,
+		    header: word,
+		    size: Bytes.t,
+		    stores: {offset: Bytes.t,
+			     value: Operand.t} vector}
        | PrimApp of {args: Operand.t vector,
 		     dst: (Var.t * Type.t) option,
 		     prim: Prim.t}
@@ -177,7 +185,7 @@ structure Statement =
 	       Bind {oper, var, ...} =>
 		  def (var, Operand.ty oper, useOperand (oper, a))
 	     | Move {dst, src} => useOperand (src, useOperand (dst, a))
-	     | Object {dst, stores, ty, ...} =>
+	     | Object {dst = (dst, ty), stores, ...} =>
 		  Vector.fold (stores, def (dst, ty, a),
 			       fn ({value, ...}, a) => useOperand (value, a))
 	     | PrimApp {dst, args, ...} =>
@@ -211,10 +219,6 @@ structure Statement =
       val layout =
 	 let
 	    open Layout
-	    fun constrain ty =
-	       if !Control.showTypes
-		  then seq [str ": ", Type.layout ty]
-	       else empty
 	 in
 	    fn Bind {oper, var, ...} =>
 		  seq [Var.layout var, constrain (Operand.ty oper),
@@ -222,17 +226,17 @@ structure Statement =
 	     | Move {dst, src} =>
 		  mayAlign [Operand.layout dst,
 			    seq [str " = ", Operand.layout src]]
-	     | Object {dst, size, stores, ty, tycon} =>
+	     | Object {dst = (dst, ty), header, size, stores} =>
 		  mayAlign
 		  [seq [Var.layout dst, constrain ty],
 		   seq [str " = Object ",
 			record
-			[("size", Int.layout size),
-			 ("tycon", PointerTycon.layout tycon),
+			[("header", Word.layout header),
+			 ("size", Bytes.layout size),
 			 ("stores",
 			  Vector.layout
 			  (fn {offset, value} =>
-			   record [("offset", Int.layout offset),
+			   record [("offset", Bytes.layout offset),
 				   ("value", Operand.layout value)])
 			  stores)]]]
 	     | PrimApp {dst, prim, args, ...} =>
@@ -381,19 +385,19 @@ structure Transfer =
 	 foreachDef (t, Var.clear o #1)
 
       local
-	 fun make i = IntX.make (i, IntSize.default)
+	 fun make i = WordX.fromIntInf (i, WordSize.default)
       in
 	 fun ifBool (test, {falsee, truee}) =
-	    Switch (Switch.Int
+	    Switch (Switch.T
 		    {cases = Vector.new2 ((make 0, falsee), (make 1, truee)),
 		     default = NONE,
-		     size = IntSize.default,
+		     size = WordSize.default,
 		     test = test})
-	 fun ifInt (test, {falsee, truee}) =
-	    Switch (Switch.Int
-		    {cases = Vector.new1 (make 0, falsee),
-		     default = SOME truee,
-		     size = IntSize.default,
+	 fun ifZero (test, {falsee, truee}) =
+	    Switch (Switch.T
+		    {cases = Vector.new1 (make 0, truee),
+		     default = SOME falsee,
+		     size = WordSize.default,
 		     test = test})
       end
    end
@@ -994,7 +998,7 @@ structure Program =
 			 ArrayOffset z => arrayOffsetIsOk z
 		       | Cast (z, ty) =>
 			    (checkOperand z
-			    ; (castIsOk
+			    ; (Type.castIsOk
 			       {from = Operand.ty z,
 				fromInt = (case z of
 					      Const c =>
@@ -1009,11 +1013,17 @@ structure Program =
 		       | File => true
 		       | GCState => true
 		       | Line => true
-		       | Offset z => offsetIsOk z
+		       | Offset {base, offset, ty} =>
+			    (case Type.offset (Operand.ty base,
+					       {offset = offset,
+						pointerTy = tyconTy,
+						width = Type.width ty}) of
+				NONE => false
+			      | SOME t => Type.isSubtype (t, ty))
 		       | PointerTycon _ => true
 		       | Runtime _ => true
 		       | SmallIntInf _ => true
-		       | Var {ty, var} => Type.equals (ty, varType var)
+		       | Var {ty, var} => Type.isSubtype (varType var, ty)
 		in
 		   Err.check ("operand", ok, fn () => Operand.layout x)
 		end
@@ -1022,63 +1032,19 @@ structure Program =
 		  val _ = checkOperand base
 		  val _ = checkOperand index
 	       in
-		  Type.equals (Operand.ty index, Type.defaultInt)
+		  Type.isSubtype (Operand.ty index, Type.defaultInt)
 		  andalso
-		  case Operand.ty base of
-		     Type.EnumPointers {enum, pointers} =>
-			0 = Vector.length enum
-			andalso
-			Vector.forall
-			(pointers, fn p =>
-			 case tyconTy p of
-			    ObjectType.Array
-			    (MemChunk.T {components, ...}) =>
-			       1 = Vector.length components
-			       andalso
-			       let
-				  val {offset, ty = ty', ...} =
-				     Vector.sub (components, 0)
-			       in
-				  0 = offset
-				  andalso (Type.equals (ty, ty')
-					   orelse
-					   (* Get a word from a word8 array.*)
-					   (Type.equals
-					    (ty, Type.word (WordSize.W 32))
-					    andalso
-					    Type.equals
-					    (ty', Type.word (WordSize.W 8))))
-			       end
+		  case Type.dest (Operand.ty base) of
+		     Type.Pointer p =>
+			(case tyconTy p of
+			    ObjectType.Array ty' =>
+			       Type.isSubtype (ty', ty)
+			       orelse
+			       (* Get a word from a word8 array.*)
+			       (Type.equals (ty, Type.defaultWord)
+				andalso Type.equals (ty', Type.word8))
 			  | _ => false)
-		   | t => Type.isCPointer t
-	       end
-	    and offsetIsOk {base, offset, ty} =
-	       let
-		  val _ = checkOperand base
-		  fun memChunkIsOk (MemChunk.T {components, ...}) =
-		     case Vector.peek (components, fn {offset = offset', ...} =>
-				       offset = offset') of
-			NONE => false
-		      | SOME {ty = ty', ...} => Type.equals (ty, ty')
-	       in
-		  case Operand.ty base of
-		     Type.EnumPointers {enum, pointers} =>
-			0 = Vector.length enum
-			andalso
-			((* Array_toVector header update. *)
-			 (offset = Runtime.headerOffset
-			  andalso Type.equals (ty, Type.defaultWord))
-			 orelse
-			 (offset = Runtime.arrayLengthOffset
-			  andalso Type.equals (ty, Type.defaultInt))
-			 orelse
-			 Vector.forall
-			 (pointers, fn p =>
-			  case tyconTy p of
-			     ObjectType.Normal m => memChunkIsOk m
-			   | _ => false))
-		   | Type.MemChunk m => memChunkIsOk m
-		   | _ => false
+		   | _ => Type.isCPointer (Operand.ty base)
 	       end
 	    val checkOperand =
 	       Trace.trace ("checkOperand", Operand.layout, Unit.layout)
@@ -1096,22 +1062,41 @@ structure Program =
 		   | Move {dst, src} =>
 			(checkOperand dst
 			 ; checkOperand src
-			 ; (Type.equals (Operand.ty dst, Operand.ty src)
+			 ; (Type.isSubtype (Operand.ty src, Operand.ty dst)
 			    andalso Operand.isLocation dst))
-		   | Object {stores, tycon, ...} =>
-			(Vector.foreach (stores, checkOperand o # value)
-			 ; (case tyconTy tycon of
-			       ObjectType.Normal mc =>
-				  MemChunk.isValidInit
-				  (mc, 
+		   | Object {dst = (_, ty), header, size, stores} =>
+			let
+			   val () =
+			      Vector.foreach (stores, checkOperand o # value)
+			   val tycon =
+			      PointerTycon.fromIndex
+			      (Runtime.headerToTypeIndex header)
+			in
+			   Type.isSubtype (Type.pointer tycon, ty)
+			   andalso
+			   (case tyconTy tycon of
+			       ObjectType.Normal t =>
+				  Bytes.equals
+				  (size, Bytes.+ (Runtime.normalHeaderSize,
+						  Type.bytes t))
+				  andalso
+				  Type.isValidInit
+				  (t, 
 				   Vector.map
 				   (stores, fn {offset, value} =>
 				    {offset = offset,
 				     ty = Operand.ty value}))
-			     | _ => false))
-		   | PrimApp {args, ...} =>
+			      | _ => false)
+			end
+		   | PrimApp {args, dst, prim} =>
 			(Vector.foreach (args, checkOperand)
-			 ; true)
+			 ; (case (Prim.typeCheck
+				  (prim, Vector.map (args, Operand.ty))) of
+			       NONE => false
+			     | SOME t =>
+				  case dst of
+				     NONE => true
+				   | SOME (_, t') => Type.isSubtype (t, t')))
 		   | Profile _ => true
 		   | ProfileLabel _ => true
 		   | SetExnStackLocal => true
@@ -1128,7 +1113,7 @@ structure Program =
 		  val Block.T {args = formals, kind, ...} = labelBlock dst
 	       in
 		  Vector.equals (args, formals, fn (t, (_, t')) =>
-				 Type.equals (t, t'))
+				 Type.isSubtype (t, t'))
 		  andalso (case kind of
 			      Kind.Jump => true
 			    | _ => false)
@@ -1138,7 +1123,8 @@ structure Program =
 			  callee: Type.t vector option): bool =
 	       case (caller, callee) of
 		  (_, NONE) => true
-		| (SOME ts, SOME ts') => Vector.equals (ts, ts', Type.equals)
+		| (SOME caller, SOME callee) =>
+		     Vector.equals (callee, caller, Type.isSubtype)
 		| _ => false
 	    fun nonTailIsOk (formals: (Var.t * Type.t) vector,
 			     returns: Type.t vector option): bool =
@@ -1146,7 +1132,7 @@ structure Program =
 		  NONE => true
 		| SOME ts => 
 		     Vector.equals (formals, ts, fn ((_, t), t') =>
-				    Type.equals (t, t'))
+				    Type.isSubtype (t', t))
 	    fun callIsOk {args, func, raises, return, returns} =
 	       let
 		  val Function.T {args = formals,
@@ -1156,7 +1142,7 @@ structure Program =
 
 	       in
 		  Vector.equals (args, formals, fn (z, (_, t)) =>
-				 Type.equals (t, Operand.ty z))
+				 Type.isSubtype (Operand.ty z, t))
 		  andalso
 		  (case return of
 		      Return.Dead =>
@@ -1224,14 +1210,21 @@ structure Program =
 				 andalso labelIsNullaryJump overflow
 				 andalso labelIsNullaryJump success
 				 andalso
-				 Vector.forall (args, fn x =>
-						Type.equals (ty, Operand.ty x))
+				 (case (Prim.typeCheck
+					(prim, Vector.map (args, Operand.ty))) of
+				     NONE => false
+				   | SOME t => Type.isSubtype (t, ty))
 			      end
 			 | CCall {args, func, return} =>
 			      let
 				 val _ = checkOperands args
 			      in
 				 CFunction.isOk func
+				 andalso
+				 Vector.equals (args, CFunction.args func,
+						fn (z, t) =>
+						Type.isSubtype
+						(Operand.ty z, t))
 				 andalso
 				 case return of
 				    NONE => true
@@ -1262,7 +1255,7 @@ structure Program =
 				   | SOME ts =>
 					Vector.equals
 					(zs, ts, fn (z, t) =>
-					 Type.equals (t, Operand.ty z))))
+					 Type.isSubtype (Operand.ty z, t))))
 			 | Return zs =>
 			      (checkOperands zs
 			       ; (case returns of
@@ -1270,24 +1263,40 @@ structure Program =
 				   | SOME ts =>
 					Vector.equals
 					(zs, ts, fn (z, t) =>
-					 Type.equals (t, Operand.ty z))))
+					 Type.isSubtype (Operand.ty z, t))))
 			 | Switch s =>
 			      Switch.isOk (s, {checkUse = checkOperand,
 					       labelIsOk = labelIsNullaryJump})
 		     end
-		  fun blockOk (Block.T {kind, statements, transfer, ...}): bool =
+		  fun blockOk (Block.T {args, kind, statements, transfer, ...})
+		     : bool =
 		     let
 			fun kindOk (k: Kind.t): bool =
 			   let
 			      datatype z = datatype Kind.t
-			      val _ =
-				 case k of
-				    Cont _ => true
-				  | CReturn _ => true
-				  | Handler => true
-				  | Jump => true
 			   in
-			      true
+			      case k of
+				 Cont _ => true
+			       | CReturn {func} =>
+				    let
+				       val return = CFunction.return func
+				    in
+				       0 = Vector.length args
+				       orelse
+				       (1 = Vector.length args
+					andalso
+					let
+					   val expects =
+					      #2 (Vector.sub (args, 0))
+					in
+					   Type.isSubtype (return, expects) 
+					   andalso
+					   CType.equals (Type.toCType return,
+							 Type.toCType expects)
+					end)
+				    end
+			       | Handler => true
+			       | Jump => true
 			   end
 			val _ = check' (kind, "kind", kindOk, Kind.layout)
 			val _ =

@@ -15,7 +15,7 @@ end
 
 fun equals (T {int = i, size = s, ...}, 
 	    T {int = i', size = s', ...}) = 
-   i = i' andalso s = s'
+   i = i' andalso IntSize.equals (s, s')
 
 fun toString (T {int = i, ...}) = IntInf.toString i
 

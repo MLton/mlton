@@ -1,10 +1,17 @@
+(* Copyright (C) 2004 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under the GNU General Public License (GPL).
+ * Please see the file MLton-LICENSE for license information.
+ *)
+
 type int = Int.t
    
 signature FFI_STRUCTS = 
    sig
       structure CFunction: C_FUNCTION
       structure CType: C_TYPE
-      sharing CFunction.CType = CType
+      sharing CType = CFunction.RepType.CType
    end
 
 signature FFI = 

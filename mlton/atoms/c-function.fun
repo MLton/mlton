@@ -3,6 +3,17 @@ struct
 
 open S
 
+structure Type = RepType
+structure CType = Type.CType
+
+local
+   open Type
+in
+   structure IntSize = IntSize
+   structure RealSize = RealSize
+   structure WordSize = WordSize
+end
+
 structure Convention =
    struct
       datatype t =
@@ -16,7 +27,7 @@ structure Convention =
       val layout = Layout.str o toString
    end
 
-datatype t = T of {args: CType.t vector,
+datatype t = T of {args: Type.t vector,
 		   bytesNeeded: int option,
 		   convention: Convention.t,
 		   ensuresBytesFree: bool,
@@ -25,13 +36,13 @@ datatype t = T of {args: CType.t vector,
 		   modifiesFrontier: bool,
 		   modifiesStackTop: bool,
 		   name: string,
-		   return: CType.t option}
+		   return: Type.t}
    
 fun layout (T {args, bytesNeeded, convention, ensuresBytesFree, mayGC,
 	       maySwitchThreads, modifiesFrontier, modifiesStackTop, name,
-	       return}) =
+	       return, ...}) =
    Layout.record
-   [("args", Vector.layout CType.layout args),
+   [("args", Vector.layout Type.layout args),
     ("bytesNeeded", Option.layout Int.layout bytesNeeded),
     ("convention", Convention.layout convention),
     ("ensuresBytesFree", Bool.layout ensuresBytesFree),
@@ -40,8 +51,8 @@ fun layout (T {args, bytesNeeded, convention, ensuresBytesFree, mayGC,
     ("modifiesFrontier", Bool.layout modifiesFrontier),
     ("modifiesStackTop", Bool.layout modifiesStackTop),
     ("name", String.layout name),
-    ("return", Option.layout CType.layout return)]
-
+    ("return", Type.layout return)]
+   
 local
    fun make f (T r) = f r
 in
@@ -61,7 +72,7 @@ fun equals (f, f') = name f = name f'
 fun isOk (T {ensuresBytesFree, mayGC, maySwitchThreads, modifiesFrontier,
 	     modifiesStackTop, return, ...}): bool =
    (if maySwitchThreads
-       then mayGC andalso Option.isNone return
+       then mayGC andalso RepType.isUnit return
     else true)
        andalso
        (if ensuresBytesFree orelse maySwitchThreads
@@ -77,23 +88,28 @@ val isOk = Trace.trace ("CFunction.isOk", layout, Bool.layout) isOk
 val equals =
    Trace.trace2 ("CFunction.equals", layout, layout, Bool.layout) equals
 
-datatype z = datatype CType.t
 datatype z = datatype Convention.t
+
 local
-   open CType
+   open Type
 in
-   val Int32 = Int (IntSize.I 32)
-   val Word32 = Word (WordSize.W 32)
+   val Int32 = int (IntSize.I (Bits.fromInt 32))
+   val Word32 = word (Bits.fromInt 32)
+   val bool = bool
+   val cPointer = cPointer
+   val gcState = gcState
+   val string = word8Vector
+   val unit = unit
 end
-	 
+   
 local
    fun make b =
       T {args = let
-		   open CType
+		   open Type
 		in
-		   Vector.new5 (Pointer, Word32, Int32, Pointer, Int32)
+		   Vector.new5 (gcState, Word32, bool, cPointer (), Int32)
 		end,
-	     bytesNeeded = NONE,
+	  bytesNeeded = NONE,
 	     convention = Cdecl,
 	     ensuresBytesFree = true,
 	     mayGC = true,
@@ -101,7 +117,7 @@ local
 	     modifiesFrontier = true,
 	     modifiesStackTop = true,
 	     name = "GC_gc",
-	     return = NONE}
+	     return = unit}
    val t = make true
    val f = make false
 in
@@ -123,30 +139,26 @@ fun vanilla {args, name, return} =
 val allocTooLarge =
    vanilla {args = Vector.new0 (),
 	    name = "MLton_allocTooLarge",
-	    return = NONE}
+	    return = unit}
    
-val bug = vanilla {args = Vector.new1 Pointer,
+val bug = vanilla {args = Vector.new1 string,
 		   name = "MLton_bug",
-		   return = NONE}
-	 
+		   return = unit}
+
 val profileEnter =
-   vanilla {args = Vector.new1 Pointer,
+   vanilla {args = Vector.new1 gcState,
 	    name = "GC_profileEnter",
-	    return = NONE}
+	    return = unit}
+
 val profileInc =
-   vanilla {args = Vector.new2 (Pointer, Word32),
+   vanilla {args = Vector.new2 (gcState, Word32),
 	    name = "GC_profileInc",
-	    return = NONE}
+	    return = unit}
 	 
 val profileLeave =
-   vanilla {args = Vector.new1 Pointer,
+   vanilla {args = Vector.new1 gcState,
 	    name = "GC_profileLeave",
-	    return = NONE}
-
-val size =
-   vanilla {args = Vector.new1 Pointer,
-	    name = "MLton_size",
-	    return = SOME CType.defaultInt}
+	    return = unit}
 
 val returnToC =
    T {args = Vector.new0 (),
@@ -158,16 +170,17 @@ val returnToC =
       mayGC = true,
       maySwitchThreads = true,
       name = "Thread_returnToC",
-      return = NONE}
+      return = unit}
 
 fun prototype (T {args, convention, name, return, ...}) =
    let
       val c = Counter.new 0
-      fun arg t = concat [CType.toString t, " x", Int.toString (Counter.next c)]
+      fun arg t = concat [CType.toString (Type.toCType t),
+			  " x", Int.toString (Counter.next c)]
    in
-      concat [case return of
-		 NONE => "void"
-	       | SOME t => CType.toString t,
+      concat [if Type.isUnit return
+		 then "void"
+	      else CType.toString (Type.toCType return),
 	      if convention <> Convention.Cdecl
 		 then concat [" __attribute__ ((",
 			      Convention.toString convention,

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -505,12 +505,11 @@ struct
 				       then AppendList.empty
 				       else let
 					       val srcs =
-						  case CFunction.return func of
-						     NONE => Vector.new0 ()
-						   | SOME ty =>
-							(Vector.fromList o List.map)
-							(Operand.cReturnTemps ty,
-							 fn {dst,...} => dst)
+						  Vector.fromList
+						  (List.map
+						   (Operand.cReturnTemps
+						    (CFunction.return func),
+						    #dst))
 					    in
 					       (AppendList.fromList o Vector.fold2)
 					       (dsts, srcs, [], fn ((dst,dstsize),src,stmts) =>
@@ -1282,12 +1281,9 @@ struct
 						 end,
 				  dead_classes = ccallflushClasses})
 		     val getResult =
-			case returnTy of
-			   NONE => AppendList.empty
-			 | SOME ty =>
-			      AppendList.single
-			      (Assembly.directive_return
-			       {returns = Operand.cReturnTemps ty})
+			AppendList.single
+			(Assembly.directive_return
+			 {returns = Operand.cReturnTemps returnTy})
 		     val fixCStack =
 			if size_args > 0
 			   andalso convention = CFunction.Convention.Cdecl

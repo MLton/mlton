@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -22,11 +22,14 @@ signature HASH_TYPE =
       structure Dest:
 	 sig
 	    datatype dest =
-	       Var of Tyvar.t
-	     | Con of Tycon.t * t vector
+	       Con of Tycon.t * t vector
+	     | Var of Tyvar.t
 	    val dest: t -> dest
 	 end
 
+      val checkPrimApp: {args: t vector,
+			 prim: Prim.t,
+			 result: t} -> bool
       val containsTycon: t * Tycon.t -> bool
       (* O(1) time *)
       val equals: t * t -> bool

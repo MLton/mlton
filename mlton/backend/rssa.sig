@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -7,23 +7,15 @@
  *)
 type int = Int.t
 type word = Word.t
-   
+
 signature RSSA_STRUCTS = 
    sig
-      include MACHINE_ATOMS
+      include ATOMS
 
-      structure Const: CONST
-      structure Func: ID
       structure Handler: HANDLER
-      structure ProfileExp: PROFILE_EXP
       structure Return: RETURN
-      structure Var: VAR
       sharing Handler = Return.Handler
-      sharing IntX = Const.IntX
       sharing Label = Handler.Label
-      sharing RealX = Const.RealX
-      sharing SourceInfo = ProfileExp.SourceInfo
-      sharing WordX = Const.WordX
    end
 
 signature RSSA = 
@@ -31,11 +23,10 @@ signature RSSA =
       include RSSA_STRUCTS
 
       structure Switch: SWITCH
-      sharing IntX = Switch.IntX
-      sharing Label = Switch.Label
-      sharing PointerTycon = Switch.PointerTycon
-      sharing Type = Switch.Type
-      sharing WordX = Switch.WordX
+      sharing Atoms = Switch
+
+      structure Type: REP_TYPE
+      sharing Type = RepType
      
       structure Operand:
 	 sig
@@ -56,17 +47,17 @@ signature RSSA =
 	     | GCState
 	     | Line (* expand by codegen into int constant *)
 	     | Offset of {base: t,
-			  offset: int,
+			  offset: Bytes.t,
 			  ty: Type.t}
 	     | PointerTycon of PointerTycon.t
 	     | Runtime of Runtime.GCField.t
 	     | SmallIntInf of word
-	     | Var of {var: Var.t,
-		       ty: Type.t}
+	     | Var of {ty: Type.t,
+		       var: Var.t}
 
 	    val bool: bool -> t
 	    val caseBytes: t * {big: t -> 'a,
-				small: word -> 'a} -> 'a
+				small: Bytes.t -> 'a} -> 'a
 	    val cast: t * Type.t -> t
 	    val int: IntX.t -> t
 	    val layout: t -> Layout.t
@@ -84,13 +75,12 @@ signature RSSA =
 			var: Var.t}
 	     | Move of {dst: Operand.t,
 			src: Operand.t}
-	     | Object of {dst: Var.t,
-			  size: int, (* in bytes, including header *)
+	     | Object of {dst: Var.t * Type.t,
+			  header: word,
+			  size: Bytes.t, (* including header *)
 			  (* The stores are in increasing order of offset. *)
-			  stores: {offset: int, (* bytes *)
-				   value: Operand.t} vector,
-			  ty: Type.t,
-			  tycon: PointerTycon.t}
+			  stores: {offset: Bytes.t,
+				   value: Operand.t} vector}
 	     | PrimApp of {args: Operand.t vector,
 			   dst: (Var.t * Type.t) option,
 			   prim: Prim.t}
@@ -158,7 +148,8 @@ signature RSSA =
 	    val foreachLabel: t * (Label.t -> unit) -> unit
 	    val foreachUse: t * (Var.t -> unit) -> unit
 	    val ifBool: Operand.t * {falsee: Label.t, truee: Label.t} -> t
-	    val ifInt: Operand.t * {falsee: Label.t, truee: Label.t} -> t
+	    (* in ifZero, the operand should be of type defaultWord *)
+	    val ifZero: Operand.t * {falsee: Label.t, truee: Label.t} -> t
 	    val layout: t -> Layout.t
 	 end
 

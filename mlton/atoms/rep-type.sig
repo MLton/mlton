@@ -1,0 +1,111 @@
+(* Copyright (C) 2004 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under the GNU General Public License (GPL).
+ * Please see the file MLton-LICENSE for license information.
+ *)
+
+signature REP_TYPE_STRUCTS =
+   sig
+      structure CType: C_TYPE
+      structure IntSize: INT_SIZE
+      structure IntX: INT_X
+      structure Label: LABEL
+      structure PointerTycon: POINTER_TYCON
+      structure RealSize: REAL_SIZE
+      structure Runtime: RUNTIME
+      structure WordSize: WORD_SIZE
+      structure WordX: WORD_X
+      sharing IntSize = IntX.IntSize
+      sharing WordSize = WordX.WordSize
+   end
+
+signature REP_TYPE =
+   sig
+      include REP_TYPE_STRUCTS
+	 
+      structure ObjectType: OBJECT_TYPE
+      (*
+       * - Junk is used for padding.  You can stick any value in, but you
+       *   can't get any value out.
+       * - In Seq, the components are listed in increasing order of
+       *   address.
+       * - In Seq ts, length ts <> 1
+       * - In Sum ts, length ts >= 2
+       * - In Sum ts, all t in ts must have same width.
+       * - In Sum ts, there are no duplicates, and the types are in order.
+       *)
+      type t
+      sharing type t = ObjectType.ty
+      datatype dest =
+	 Address of t (* an internal pointer *)
+       | Constant of WordX.t
+       | ExnStack
+       | GCState (* The address of gcState. *)
+       | Int of IntSize.t
+       | Junk of Bits.t
+       | Label of Label.t
+       | Pointer of PointerTycon.t
+       | Real of RealSize.t
+       | Seq of t vector
+       | Sum of t vector
+       | Word of Bits.t
+
+      val add: t * t -> t
+      val address: t -> t
+      val align: t * Bytes.t -> Bytes.t
+      val andb: t * t -> t option
+      val bool: t
+      val bytes: t -> Bytes.t
+      val castIsOk: {from: t,
+		     fromInt: IntX.t option,
+		     to: t,
+		     tyconTy: PointerTycon.t -> ObjectType.t} -> bool
+      val char: t
+      val cPointer: unit -> t
+      val constant: WordX.t -> t
+      val defaultInt: t
+      val defaultWord: t
+      val dest: t -> dest
+      val equals: t * t -> bool
+      val exnStack: t
+      val fragment: t * {start: Bits.t, width: Bits.t} -> t
+      val fromCType: CType.t -> t
+      val gcState: t
+      val int: IntSize.t -> t
+      val intInf: t
+      val isBool: t -> bool
+      val isCPointer: t -> bool
+      val isPointer: t -> bool
+      val isUnit: t -> bool
+      val isValidInit: t * {offset: Bytes.t, ty: t} vector -> bool
+      val isReal: t -> bool
+      val isSubtype: t * t -> bool
+      val junk: Bits.t -> t
+      val label: Label.t -> t
+      val layout: t -> Layout.t
+      val lshift: t * t -> t
+      val mul: t * t -> t
+      val name: t -> string (* simple one letter abbreviation *)
+      val ofGCField: Runtime.GCField.t -> t
+      val offset: t * {offset: Bytes.t,
+		       pointerTy: PointerTycon.t -> ObjectType.t,
+		       width: Bits.t} -> t option
+      val orb: t * t -> t option
+      val pointer: PointerTycon.t -> t
+      val pointerHeader: PointerTycon.t -> t
+      val real: RealSize.t -> t
+      val rshift: t * t -> t
+      val seq: t vector -> t
+      val string: t
+      val sum: t vector -> t
+      val thread: t
+      val toCType: t -> CType.t
+      val toString: t -> string
+      val unit: t
+      val width: t -> Bits.t
+      val word: Bits.t -> t
+      val word8: t
+      val wordVector: t
+      val word8Vector: t
+   end

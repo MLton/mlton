@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -62,6 +62,7 @@ local
    open CoreML
 in
    structure CFunction = CFunction
+   structure CType = CType
    structure Convention	 = CFunction.Convention	
    structure Con = Con
    structure Const = Const
@@ -226,7 +227,7 @@ fun 'a elabConst (c: Aconst.t,
 	 Aconst.Bool b => if b then t else f
        | Aconst.Char c =>
 	    now (Const.Word (WordX.fromIntInf (IntInf.fromInt (Char.toInt c),
-					       WordSize.W 8)),
+					       WordSize.byte)),
 		 Type.char)
        | Aconst.Int i =>
 	    let
@@ -386,9 +387,9 @@ val elaboratePat:
 			    seq [str "variable ",
 				 Avar.layout x,
 				 str " occurs in multiple patterns"],
-			    align [seq [str "pattern: ",
+			    align [seq [str "in: ",
 					approximate (Apat.layout p)],
-				   seq [str "pattern: ",
+				   seq [str "and in: ",
 					approximate (Apat.layout p')]])
 
 			end
@@ -438,7 +439,7 @@ val elaboratePat:
 			     fn _ =>
 			     (region,
 			      str "constant constructor applied to argument",
-			      seq [str "pattern: ", lay ()]))
+			      seq [str "in: ", lay ()]))
 			 val _ =
 			    unify
 			    (Cpat.ty p, argType, fn (l, l') =>
@@ -446,7 +447,7 @@ val elaboratePat:
 			      str "constructor applied to incorrect argument",
 			      align [seq [str "expects: ", l'],
 				     seq [str "but got: ", l],
-				     seq [str "pattern: ", lay ()]]))
+				     seq [str "in: ", lay ()]]))
 		      in
 			 Cpat.make (Cpat.Con {arg = SOME p,
 					      con = con,
@@ -471,7 +472,7 @@ val elaboratePat:
 		      end
 		 | Apat.FlatApp items =>
 		      loop (Parse.parsePat
-			    (items, E, fn () => seq [str "pattern: ", lay ()]))
+			    (items, E, fn () => seq [str "in: ", lay ()]))
 		 | Apat.Layered {var = x, constraint, pat, ...} =>
 		      let
 			 val t =
@@ -496,7 +497,7 @@ val elaboratePat:
 				    (Vector.map2 (ps, ps', fn (p, p') =>
 						  (Cpat.ty p', Apat.region p)),
 				     preError,
-				     fn () => seq [str "pattern:  ", lay ()]))
+				     fn () => seq [str "in:  ", lay ()]))
 		      end
 		 | Apat.Record {flexible, items} =>
 		      (* rules 36, 38, 39 and Appendix A, p.57 *)
@@ -540,7 +541,7 @@ val elaboratePat:
 					   Control.error
 					   (region,
 					    str "unresolved ... in record pattern",
-					    seq [str "pattern: ", lay ()])
+					    seq [str "in: ", lay ()])
 				     val _ = List.push (overloads, (Priority.default, resolve))
 				  in
 				     t
@@ -627,9 +628,9 @@ structure Nest =
 val info = Trace.info "elaborateDec"
 val elabExpInfo = Trace.info "elaborateExp"
 
-structure CType =
+structure RepType =
    struct
-      open CoreML.CType
+      open CoreML.RepType
 
       fun sized (all: 'a list,
 		 toString: 'a -> string,
@@ -642,12 +643,14 @@ structure CType =
       val nullary: (t * string * Tycon.t) list =
 	 [(bool, "Bool", Tycon.bool),
 	  (char, "Char", Tycon.char),
-	  (pointer, "Pointer", Tycon.pointer),
-	  (pointer, "Pointer", Tycon.preThread),
-	  (pointer, "Pointer", Tycon.thread)]
-	 @ sized (IntSize.all, IntSize.toString, "Int", Int, Tycon.int)
-	 @ sized (RealSize.all, RealSize.toString, "Real", Real, Tycon.real)
-	 @ sized (WordSize.all, WordSize.toString, "Word", Word, Tycon.word)
+	  (cPointer (), "Pointer", Tycon.pointer),
+	  (thread, "Pointer", Tycon.preThread),
+	  (thread, "Pointer", Tycon.thread)]
+	 @ sized (IntSize.all, IntSize.toString, "Int", int, Tycon.int)
+	 @ sized (RealSize.all, RealSize.toString, "Real", real, Tycon.real)
+	 @ sized (WordSize.all, WordSize.toString, "Word",
+		  word o WordSize.bits,
+		  Tycon.word)
 
       val unary: Tycon.t list =
 	 [Tycon.array, Tycon.reff, Tycon.vector]
@@ -661,12 +664,12 @@ structure CType =
 		     if List.exists (unary, fn c' => Tycon.equals (c, c'))
 			andalso 1 = Vector.length ts
 			andalso isSome (fromType (Vector.sub (ts, 0)))
-			then SOME (Pointer, "Pointer")
+			then SOME (cPointer (), "Pointer")
 		     else NONE
 		| SOME (t, s, _) => SOME (t, s)
 
       val fromType =
-	 Trace.trace ("Ctype.fromType",
+	 Trace.trace ("RepType.fromType",
 		      Type.layoutPretty,
 		      Option.layout (Layout.tuple2 (layout, String.layout)))
 	 fromType
@@ -723,9 +726,9 @@ fun import {attributes: Attribute.t list,
 	 error (seq [str "invalid attributes for import: ",
 		     List.layout Attribute.layout attributes])
    in
-      case CType.parse ty of
+      case RepType.parse ty of
 	 NONE =>
-	    (case CType.fromType ty of
+	    (case RepType.fromType ty of
 		NONE => 
 		   let
 		      val _ =
@@ -762,7 +765,9 @@ fun import {attributes: Attribute.t list,
 			       mayGC = true,
 			       maySwitchThreads = false,
 			       name = name,
-			       return = Option.map (result, #1)}
+			       return = (case result of
+					    NONE => RepType.unit
+					  | SOME (t, _) => t)}
 	    in
 	       Prim.ffi func
 	    end
@@ -780,7 +785,7 @@ fun export {attributes, name: string, region: Region.t, ty: Type.t}: Aexp.t =
 		     ; Convention.Cdecl)
 	  | SOME c => c
       val (exportId, args, res) =
-	 case CType.parse ty of
+	 case RepType.parse ty of
 	    NONE =>
 	       (Control.error
 		(region,
@@ -790,10 +795,11 @@ fun export {attributes, name: string, region: Region.t, ty: Type.t}: Aexp.t =
 		; (0, Vector.new0 (), NONE))
 	  | SOME (us, t) =>
 	       let
-		  val id = Ffi.addExport {args = Vector.map (us, #1),
-					  convention = convention,
-					  name = name,
-					  res = Option.map (t, #1)}
+		  val id =
+		     Ffi.addExport {args = Vector.map (us, RepType.toCType o #1),
+				    convention = convention,
+				    name = name,
+				    res = Option.map (t, RepType.toCType o #1)}
 	       in
 		  (id, us, t)
 	       end
@@ -825,6 +831,7 @@ fun export {attributes, name: string, region: Region.t, ty: Type.t}: Aexp.t =
 		   (Vector.map
 		    (args, fn (u, name) =>
 		     let
+			val u = RepType.toCType u
 			val x =
 			   Var.fromSymbol
 			   (Symbol.fromString
@@ -1942,7 +1949,7 @@ fun elaborateDec (d, {env = E,
 			 (ty, {con = Type.con,
 			       expandOpaque = true,
 			       record = Type.record,
-			       replaceCharWithWord8 = true,
+			       replaceSynonyms = true,
 			       var = Type.var})
 		      (* We use expandedTy to get the underlying primitive right
 		       * but we use wrap in the end to make the result of the
@@ -2099,7 +2106,7 @@ fun elaborateDec (d, {env = E,
 					 name = name,
 					 region = region,
 					 ty = expandedTy})
-		       | Prim => eta (Prim.new name)
+		       | Prim => eta (Prim.fromString name)
 		   end
 	      | Aexp.Raise exn =>
 		   let

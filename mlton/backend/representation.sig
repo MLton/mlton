@@ -25,50 +25,32 @@ signature REPRESENTATION =
 	    type t
 
 	    val layout: t -> Layout.t
-	    val select:
-	       t * {dst: unit -> Rssa.Var.t,
-		    offset: int,
-		    tuple: unit -> Rssa.Operand.t} -> Rssa.Statement.t list
-	    val tuple:
-	       t * {components: 'a vector,
-		    dst: Rssa.Var.t,
-		    oper: 'a -> Rssa.Operand.t} -> Rssa.Statement.t list
 	    val tycon: t -> Rssa.PointerTycon.t
-	 end
-
-      (* How a constructor variant of a datatype is represented. *)
-      structure ConRep:
-	 sig
-	    type t
-
-	    val con: t * {args: 'a vector,
-			  dst: unit -> Rssa.Var.t,
-			  oper: 'a -> Rssa.Operand.t,
-			  ty: unit -> Rssa.Type.t} -> Rssa.Statement.t list
-	    val layout: t -> Layout.t
-	 end
-
-      structure TyconRep:
-	 sig
-	    type t
-
-	    val genCase:
-	       t * {cases: (ConRep.t * Rssa.Label.t) vector,
-		    default: Rssa.Label.t option,
-		    test: unit -> Rssa.Operand.t}
-	       -> (Rssa.Statement.t list
-		   * Rssa.Transfer.t
-		   * Rssa.Block.t list)
 	 end
 
       val compute:
 	 Ssa.Program.t
-	 -> {
-	     conRep: Ssa.Con.t -> ConRep.t,
+	 -> {conApp: {args: 'a vector,
+		      con: Ssa.Con.t,
+		      dst: unit -> Rssa.Var.t,
+		      oper: 'a -> Rssa.Operand.t,
+		      ty: unit -> Rssa.Type.t} -> Rssa.Statement.t list,
+	     genCase: {cases: (Ssa.Con.t * Rssa.Label.t) vector,
+		       default: Rssa.Label.t option,
+		       test: unit -> Rssa.Operand.t,
+		       tycon: Ssa.Tycon.t} -> (Rssa.Statement.t list
+					       * Rssa.Transfer.t
+					       * Rssa.Block.t list),
 	     objectTypes: Rssa.ObjectType.t vector,
-	     refRep: Ssa.Type.t -> TupleRep.t,
+	     reff: {arg: unit -> Rssa.Operand.t,
+		    dst: Rssa.Var.t,
+		    ty: Ssa.Type.t} -> Rssa.Statement.t list,
+	     select: {dst: unit -> Rssa.Var.t,
+		      offset: int,
+		      tuple: unit -> Rssa.Operand.t,
+		      tupleTy: Ssa.Type.t} -> Rssa.Statement.t list,
 	     toRtype: Ssa.Type.t -> Rssa.Type.t option,
-	     tupleRep: Ssa.Type.t -> TupleRep.t,
-	     tyconRep: Ssa.Tycon.t -> TyconRep.t
-	    }
+	     tuple: {components: 'a vector,
+		     dst: Rssa.Var.t * Ssa.Type.t,
+		     oper: 'a -> Rssa.Operand.t} -> Rssa.Statement.t list}
    end

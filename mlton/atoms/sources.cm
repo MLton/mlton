@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -19,10 +19,14 @@ signature FFI
 signature GENERIC_SCHEME
 signature ID
 signature HASH_TYPE
+signature LABEL
 signature PRIM
 signature PROFILE_EXP
+signature PROFILE_LABEL
 signature REAL_X
 signature RECORD
+signature REP_TYPE
+signature RUNTIME
 signature SOURCE_INFO
 signature TYCON
 signature TYPE_OPS
@@ -43,41 +47,52 @@ is
 ../ast/sources.cm
 ../control/sources.cm
 
-atoms.fun
-atoms.sig
-c-function.sig
-c-function.fun
+id.sig
+id.fun
+(* Windows doesn't like files named con, so use con- instead. *)
+con-.sig
+con-.fun
+int-x.sig
+int-x.fun
+real-x.sig
+real-x.fun
+word-x.sig
+word-x.fun
 c-type.sig
 c-type.fun
-(* Windows doesn't like files named con, so use con- instead. *)
-con-.fun
-con-.sig
-const.fun
+runtime.sig
+runtime.fun
+pointer-tycon.sig
+pointer-tycon.fun
+object-type.sig
+label.sig
+rep-type.sig
+rep-type.fun
+c-function.sig
+c-function.fun
 const.sig
-ffi.fun
-ffi.sig
-generic-scheme.fun
-generic-scheme.sig
-hash-type.fun
-hash-type.sig
-id.fun
-id.sig
-int-x.fun
-int-x.sig
-prim.fun
+const.fun
 prim.sig
-profile-exp.fun
-profile-exp.sig
-real-x.fun
-real-x.sig
-source-info.fun
+prim.fun
+ffi.sig
+ffi.fun
+func.sig
+generic-scheme.sig
+generic-scheme.fun
+profile-label.sig
+profile-label.fun
 source-info.sig
-tycon.fun
+source-info.fun
+profile-exp.sig
+profile-exp.fun
 tycon.sig
-type-ops.fun
+tycon.fun
 type-ops.sig
+type-ops.fun
 use-name.fun
-var.fun
 var.sig
-word-x.fun
-word-x.sig
+var.fun
+atoms.sig
+atoms.fun
+hash-type.sig
+hash-type.fun

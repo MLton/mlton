@@ -1,8 +1,15 @@
+(* Copyright (C) 2004 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under the GNU General Public License (GPL).
+ * Please see the file MLton-LICENSE for license information.
+ *)
+
 type int = Int.t
    
 signature C_FUNCTION_STRUCTS = 
    sig
-      structure CType: C_TYPE
+      structure RepType: REP_TYPE
    end
 
 signature C_FUNCTION = 
@@ -17,8 +24,7 @@ signature C_FUNCTION =
 	    val toString: t -> string
 	 end
 
-      datatype t = T of {
-			 args: CType.t vector,
+      datatype t = T of {args: RepType.t vector,
 			 (* bytesNeeded = SOME i means that the i'th
 			  * argument to the function is a word that
 			  * specifies the number of bytes that must be
@@ -34,10 +40,10 @@ signature C_FUNCTION =
 			 modifiesFrontier: bool,
 			 modifiesStackTop: bool,
 			 name: string,
-			 return: CType.t option}
+			 return: RepType.t}
 
       val allocTooLarge: t
-      val args: t -> CType.t vector
+      val args: t -> RepType.t vector
       val bug: t
       val bytesNeeded: t -> int option
       val ensuresBytesFree: t -> bool
@@ -54,15 +60,14 @@ signature C_FUNCTION =
       val profileInc: t
       val profileLeave: t
       val prototype: t -> string
+      val return: t -> RepType.t
       (* returnToC is not really a C function.  Calls to it must be handled
        * specially by each codegen to ensure that the C stack is handled
        * correctly.  However, for the purposes of everything up to the
        * backend it looks like a call to C.
        *)
       val returnToC: t
-      val return: t -> CType.t option
-      val size: t
-      val vanilla: {args: CType.t vector,
+      val vanilla: {args: RepType.t vector,
 		    name: string,
-		    return: CType.t option} -> t
+		    return: RepType.t} -> t
    end

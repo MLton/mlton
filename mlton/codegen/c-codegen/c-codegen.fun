@@ -35,6 +35,7 @@ in
    structure RealSize = RealSize
    structure RealX = RealX
    structure Register = Register
+   structure RepType = RepType
    structure Runtime = Runtime
    structure Statement = Statement
    structure Switch = Switch
@@ -159,6 +160,8 @@ structure C =
       fun int (i: int) =
 	 IntX.toC (IntX.make (IntInf.fromInt i, IntSize.default))
 
+      val bytes = int o Bytes.toInt
+
       fun string s =
 	 let val quote = "\""
 	 in concat [quote, String.escapeC s, quote]
@@ -166,8 +169,8 @@ structure C =
 
       fun word (w: Word.t) = "0x" ^ Word.toString w
 
-      fun push (i, print) =
-	 call ("\tPush", [int i], print)
+      fun push (size: Bytes.t, print) =
+	 call ("\tPush", [bytes size], print)
    end
 
 structure Operand =
@@ -184,8 +187,8 @@ structure Operand =
 	  | _ => false
    end
 
-fun creturn (t: CType.t): string =
-   concat ["CReturn", CType.name t]
+fun creturn (t: RepType.t): string =
+   concat ["CReturn", CType.name (RepType.toCType t)]
 
 fun outputIncludes (includes, print) =
    (List.foreach (includes, fn i => (print "#include <";
@@ -283,7 +286,7 @@ fun outputDeclarations
 	 (frameOffsets, fn (i, v) =>
 	  (print (concat ["static ushort frameOffsets", C.int i, "[] = {"])
 	   ; print (C.int (Vector.length v))
-	   ; Vector.foreach (v, fn i => (print ","; print (C.int i)))
+	   ; Vector.foreach (v, fn i => (print ","; print (C.bytes i)))
 	   ; print "};\n"))
       fun declareArray (ty: string,
 			name: string,
@@ -298,7 +301,7 @@ fun outputDeclarations
 		       fn (_, {frameOffsetsIndex, isC, size}) =>
 		       concat ["{",
 			       C.bool isC,
-			       ", ", C.int size,
+			       ", ", C.bytes size,
 			       ", frameOffsets", C.int frameOffsetsIndex,
 			       "}"])
       fun declareAtMLtons () =
@@ -308,13 +311,13 @@ fun outputDeclarations
 	 ("GC_ObjectType", "objectTypes", objectTypes,
 	  fn (_, ty) =>
 	  let
-	     datatype z = datatype Runtime.ObjectType.t
+	     datatype z = datatype Runtime.RObjectType.t
 	     val (tag, nonPointers, pointers) =
 		case ObjectType.toRuntime ty of
-		   Array {numBytesNonPointers, numPointers} =>
-		      (0, numBytesNonPointers, numPointers)
-		 | Normal {numPointers, numWordsNonPointers} =>
-		      (1, numWordsNonPointers, numPointers)
+		   Array {nonPointer, pointers} =>
+		      (0, Bytes.toInt nonPointer, pointers)
+		 | Normal {nonPointer, pointers} =>
+		      (1, Words.toInt nonPointer, pointers)
 		 | Stack =>
 		      (2, 0, 0)
 		 | Weak =>
@@ -340,7 +343,7 @@ fun outputDeclarations
 			  [C.int align,
 			   C.int (!Control.cardSizeLog2),
 			   magic,
-			   C.int maxFrameSize,
+			   C.bytes maxFrameSize,
 			   C.bool (!Control.markCards),
 			   C.bool (!Control.profileStack)]
 			  @ additionalMainArgs,
@@ -401,28 +404,8 @@ structure Type =
    struct
       open Type
 
-      local
-	 fun make (name, memo, toString) =
-	    memo (fn s => concat [name, toString s])
-	 val int = make ("Int", IntSize.memoize, IntSize.toString)
-	 val real = make ("Real", RealSize.memoize, RealSize.toString)
-	 val word = make ("Word", WordSize.memoize, WordSize.toString)
-	 val pointer = "Pointer"
-      in
-	 fun toC (t: t): string =
-	    case t of
-	       EnumPointers {pointers, ...} =>
-		  if 0 = Vector.length pointers
-		     then int (IntSize.I 32)
-		  else pointer
-	     | ExnStack => word WordSize.default
-	     | Int s => int s
-	     | IntInf => pointer
-	     | Label _ => word WordSize.default
-	     | Real s => real s
-	     | Word s => word s
-	     | _ => Error.bug (concat ["Type.toC strange type: ", toString t])
-      end
+      fun toC (t: t): string =
+	 CType.toString (Type.toCType t)
    end
 
 fun contents (ty, z) = concat ["C", C.args [Type.toC ty, z]]
@@ -548,7 +531,9 @@ fun output {program as Machine.Program.T {chunks,
 	     | Label l => labelToStringIndex l
 	     | Line => "__LINE__"
 	     | Offset {base, offset, ty} =>
-		  concat ["O", C.args [Type.toC ty, toString base, C.int offset]]
+		  concat ["O", C.args [Type.toC ty,
+				       toString base,
+				       C.bytes offset]]
 	     | Real r => RealX.toC r
 	     | Register r =>
 		  concat [Type.name (Register.ty r), "_",
@@ -556,7 +541,7 @@ fun output {program as Machine.Program.T {chunks,
 	     | SmallIntInf w =>
 		  concat ["SmallIntInf", C.args [concat ["0x", Word.toString w]]]
 	     | StackOffset {offset, ty} =>
-		  concat ["S", C.args [Type.toC ty, C.int offset]]
+		  concat ["S", C.args [Type.toC ty, C.bytes offset]]
 	     | StackTop => "StackTop"
 	     | Word w => WordX.toC w
       in
@@ -597,9 +582,10 @@ fun output {program as Machine.Program.T {chunks,
 				       contents
 				       (Operand.ty value,
 					concat ["Frontier + ",
-						C.int
-						(offset
-						 + Runtime.normalHeaderSize)])
+						C.bytes
+						(Bytes.+
+						 (offset,
+						  Runtime.normalHeaderSize))])
 				 in
 				    print "\t"
 				    ; (print
@@ -610,13 +596,13 @@ fun output {program as Machine.Program.T {chunks,
 					      ty = ty}))
 				 end))
 			     ; print "\t"
-			     ; C.call ("EndObject", [C.int size], print))
+			     ; C.call ("EndObject", [C.bytes size], print))
 		       | PrimApp {args, dst, prim} =>
 			    let
 			       fun call (): string =
 				  concat
 				  [Prim.toString prim,
-				   "(",
+				   " (",
 				   concat
 				   (List.separate
 				    (Vector.toListMap (args, fetchOperand),
@@ -671,7 +657,8 @@ fun output {program as Machine.Program.T {chunks,
 				       doit
 				       (name, fn () =>
 					concat
-					["extern ", CType.toString ty,
+					["extern ",
+					 CType.toString (RepType.toCType ty),
 					    " ", name, ";\n"])
 				  | _ => ())
 			   | _ => ())
@@ -753,16 +740,16 @@ fun output {program as Machine.Program.T {chunks,
 		     | Return => ()
 		     | Switch s => Switch.foreachLabel (s, jump)
 		 end)
-	    fun push (return: Label.t, size: int) =
+	    fun push (return: Label.t, size: Bytes.t) =
 	       (print "\t"
 		; print (move {dst = (operandToString
 				      (Operand.StackOffset
-				       {offset = size - Runtime.labelSize,
+				       {offset = Bytes.- (size, Runtime.labelSize),
 					ty = Type.label return})),
 			       dstIsMem = true,
 			       src = operandToString (Operand.Label return),
 			       srcIsMem = false,
-			       ty = Type.Label return})
+			       ty = Type.label return})
 		; C.push (size, print)
 		; if profiling
 		     then print "\tFlushStackTop();\n"
@@ -837,7 +824,7 @@ fun output {program as Machine.Program.T {chunks,
 			   end 
 		      | _ => ()
 		  fun pop (fi: FrameInfo.t) =
-		     (C.push (~ (Program.frameSize (program, fi)), print)
+		     (C.push (Bytes.~ (Program.frameSize (program, fi)), print)
 		      ; if profiling
 			   then print "\tFlushStackTop();\n"
 			else ())
@@ -858,7 +845,7 @@ fun output {program as Machine.Program.T {chunks,
 				    ["\t",
 				     move {dst = operandToString x,
 					   dstIsMem = Operand.isMem x,
-					   src = creturn (Type.toCType ty),
+					   src = creturn ty,
 					   srcIsMem = false,
 					   ty = ty}])
 				end)))
@@ -984,9 +971,9 @@ fun output {program as Machine.Program.T {chunks,
 			      else ()
 			   val _ = print "\t"
 			   val _ =
-			      case returnTy of
-				 NONE => ()
-			       | SOME t => print (concat [creturn t, " = "])
+			      if RepType.isUnit returnTy
+				 then ()
+			      else print (concat [creturn returnTy, " = "])
 			   val _ = C.call (name, args, print)
 			   val _ = afterCall ()
  			   val _ =
@@ -1058,46 +1045,29 @@ fun output {program as Machine.Program.T {chunks,
 					       #2 (Vector.sub (cases, 0)))
 				  | (_, SOME l) => switch (cases, l)
 			      end
-			   fun simple ({cases, default, size = _, test}, f) =
+			   val Switch.T {cases, default, test, ...} = switch
+			   fun normal () =
 			      doit {cases = Vector.map (cases, fn (c, l) =>
-							(f c, l)),
+							(WordX.toC c, l)),
 				    default = default,
 				    test = test}
-			   datatype z = datatype Switch.t
 			in
-			   case switch of
-			      EnumPointers {enum, pointers, test} =>
-			      iff (concat
-				   ["IsInt (", operandToString test, ")"],
-				   enum, pointers)
-			    | Int (z as {cases, default, test, ...}) =>
+			   if 2 = Vector.length cases
+			      andalso Option.isNone default
+			      then
 				 let
-				    fun normal () = simple (z, IntX.toC)
+				    val (c0, l0) = Vector.sub (cases, 0)
+				    val (c1, l1) = Vector.sub (cases, 1)
+				    val i0 = WordX.toIntInf c0
+				    val i1 = WordX.toIntInf c1
 				 in
-				    if 2 = Vector.length cases
-				       andalso Option.isNone default
-				       then
-					  let
-					     val (c0, l0) = Vector.sub (cases, 0)
-					     val (c1, l1) = Vector.sub (cases, 1)
-					  in
-					     if IntX.isZero c0
-						andalso IntX.isOne c1
-						then bool (test, l1, l0)
-					     else if (IntX.isOne c0
-						      andalso IntX.isZero c1)
-						     then bool (test, l0, l1)
-						  else normal ()
-					  end
-				    else normal ()
+				    if i0 = 0 andalso i1 = 1
+				       then bool (test, l1, l0)
+				    else if i0 = 1 andalso i1 = 0
+					    then bool (test, l0, l1)
+					 else normal ()
 				 end
-			    | Pointer {cases, default, tag, ...} =>
-				 doit {cases = (Vector.map
-						(cases, fn {dst, tag, ...} =>
-						 (Int.toString tag, dst))),
-				       default = default,
-				       test = tag}
-			    | Word z => simple (z, WordX.toC)
+			   else normal ()
 			end
 	       end
 	    fun declareRegisters () =
@@ -1118,7 +1088,7 @@ fun output {program as Machine.Program.T {chunks,
 		 ("StackTopOffset", GCField.StackTop)],
 		fn (name, f) =>
 		print (concat ["#define ", name, " ",
-			       Int.toString (GCField.offset f), "\n"]))
+			       Bytes.toString (GCField.offset f), "\n"]))
 	 in
 	    outputIncludes (["c-chunk.h"], print)
 	    ; outputOffsets ()

@@ -206,6 +206,7 @@ extern struct GC_state gcState;
 #endif
 
 #if (defined (INT_NO_CHECK))
+
 #define Int_addCheck(dst, n1, n2, l) dst = n1 + n2
 #define Int_mulCheck(dst, n1, n2, l) dst = n1 * n2
 #define Int_negCheck(dst, n, l) dst = -n
@@ -218,6 +219,7 @@ extern struct GC_state gcState;
 #define Int_subCheckXC Int_subCheck
 #define Word32_addCheckCX Word32_addCheck
 #define Word32_addCheckXC Word32_addCheck
+
 #endif
 
 #if (defined (INT_TEST))
@@ -235,8 +237,10 @@ extern struct GC_state gcState;
 #define Word32_max (Word32)0xFFFFFFFF
 #define Word64_max (Word64)0xFFFFFFFFFFFFFFFF
 
-#define Int_addCheckXC(size, dst, x, c, l)		\
+#define Int_addCheckXC(size, dst, xW, cW, l)		\
 	do {						\
+		Int##size x = xW;			\
+		Int##size c = cW;			\
 		if (c >= 0) {				\
 			if (x > Int##size##_max - c)	\
 				goto l;			\
@@ -271,9 +275,11 @@ extern struct GC_state gcState;
 #define Int32_negCheck(dst, n, l) Int_negCheck(32, dst, n, l)
 #define Int64_negCheck(dst, n, l) Int_negCheck(64, dst, n, l)
 
-#define Int_subCheckCX(size, dst, c, x, l)		\
+#define Int_subCheckCX(size, dst, cW, xW, l)		\
 	do {						\
  		if (c >= 0) {				\
+		Int##size c = cW;			\
+		Int##size x = xW;			\
 			if (x < c - Int##size##_max)	\
 				goto l;			\
 		} else if (x > c - Int##size##_min)	\
@@ -285,8 +291,10 @@ extern struct GC_state gcState;
 #define Int32_subCheckCX(dst, c, x, l) Int_subCheckCX(32, dst, c, x, l)
 #define Int64_subCheckCX(dst, c, x, l) Int_subCheckCX(64, dst, c, x, l)
 
-#define Int_subCheckXC(size, dst, x, c, l)		\
+#define Int_subCheckXC(size, dst, xW, cW, l)		\
 	do {						\
+		Int##size c = cW;			\
+		Int##size x = xW;			\
 		if (c <= 0) {				\
 			if (x > Int##size##_max + c)	\
 				goto l;			\

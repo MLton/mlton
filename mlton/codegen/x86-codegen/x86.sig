@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -11,10 +11,11 @@ type word = Word.t
 signature X86_STRUCTS =
   sig
     structure CFunction: C_FUNCTION
+    structure CType: C_TYPE
     structure Label: ID
     structure ProfileLabel: PROFILE_LABEL
     structure Runtime: RUNTIME
-    sharing CFunction.CType = Runtime.CType
+    sharing CType = CFunction.RepType.CType
   end
 
 signature X86 =
@@ -22,7 +23,8 @@ signature X86 =
     structure CFunction: C_FUNCTION
     structure Label: ID
     structure Runtime: RUNTIME
-    sharing CFunction.CType = Runtime.CType
+    structure CType: C_TYPE
+    sharing CType = CFunction.RepType.CType
 
     val tracer : string -> ('a -> 'b) -> 
                  (('a -> 'b) * (unit -> unit))
@@ -43,7 +45,7 @@ signature X86 =
 	val toString' : t -> string
 	val fromBytes : int -> t
 	val toBytes : t -> int
-	val fromCType : CFunction.CType.t -> t vector
+	val fromCType : CType.t -> t vector
 	val class : t -> class
 	val toFPI : t -> t
 	val eq : t * t -> bool
@@ -172,7 +174,7 @@ signature X86 =
 	val eq : t * t -> bool
 	val toImmediate : t -> Immediate.t
 	val fromBytes : int -> t
-	val fromCType : CFunction.CType.t -> t
+	val fromCType : CType.t -> t
       end
 
     structure Address :
@@ -305,7 +307,7 @@ signature X86 =
 	val size : t -> Size.t option
 	val eq : t * t -> bool
 
-	val cReturnTemps: CFunction.CType.t -> {src: t, dst: MemLoc.t} list
+	val cReturnTemps: CFunction.RepType.t -> {src: t, dst: MemLoc.t} list
       end
 
     structure Instruction :

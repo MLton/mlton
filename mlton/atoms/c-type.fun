@@ -4,85 +4,69 @@ struct
 open S
 
 datatype t =
-   Int of IntSize.t
- | Pointer
- | Real of RealSize.t
- | Word of WordSize.t
+   Pointer
+ | Real32
+ | Real64
+ | Word8
+ | Word16
+ | Word32
+ | Word64
 
-val bool = Int (IntSize.I 32)
-val char = Word (WordSize.W 8)
-val defaultInt = Int IntSize.default
-val defaultReal = Real RealSize.default
-val defaultWord = Word WordSize.default
-val pointer = Pointer
+val all = [Pointer, Real32, Real64, Word8, Word16, Word32, Word64]
 
-val all =
-   List.map (IntSize.prims, Int)
-   @ [Pointer]
-   @ List.map (RealSize.all, Real)
-   @ List.map (WordSize.prims, Word)
-
-val equals: t * t -> bool =
-   fn (Int s, Int s') => IntSize.equals (s, s')
-    | (Pointer, Pointer) => true
-    | (Real s, Real s') => RealSize.equals (s, s')
-    | (Word s, Word s') => WordSize.equals (s, s')
-    | _ => false
-
-val isPointer: t -> bool =
-   fn Pointer => true
-    | _ => false
+val equals: t * t -> bool = op =
    
 fun memo (f: t -> 'a): t -> 'a =
    let
-      val int = IntSize.memoize (f o Int)
       val pointer = f Pointer
-      val real = RealSize.memoize (f o Real)
-      val word = WordSize.memoize (f o Word)
+      val real32 = f Real32
+      val real64 = f Real64
+      val word8 = f Word8
+      val word16 = f Word16
+      val word32 = f Word32
+      val word64 = f Word64
    in
-      fn Int s => int s
-       | Pointer => pointer
-       | Real s => real s
-       | Word s => word s
+      fn Pointer => pointer
+       | Real32 => real32
+       | Real64 => real64
+       | Word8 => word8
+       | Word16 => word16
+       | Word32 => word32
+       | Word64 => word64
    end
 
 val toString =
-   memo
-   (fn u =>
-    case u of
-       Int s => concat ["Int", IntSize.toString s]
-     | Pointer => "Pointer"
-     | Real s => concat ["Real", RealSize.toString s]
-     | Word s => concat ["Word", WordSize.toString s])
+   fn Pointer => "Pointer"
+    | Real32 => "Real32"
+    | Real64 => "Real64"
+    | Word8 => "Word8"
+    | Word16 => "Word16"
+    | Word32 => "Word32"
+    | Word64 => "Word64"
 
 val layout = Layout.str o toString
 
-fun size (t: t): int =
+fun size (t: t): Bytes.t =
    case t of
-      Int s => IntSize.bytes s
-    | Pointer => 4
-    | Real s => RealSize.bytes s
-    | Word s => WordSize.bytes s
+      Pointer => Bytes.inPointer
+    | Real32 => Bytes.fromInt 4
+    | Real64 => Bytes.fromInt 8
+    | Word8 => Bytes.fromInt 1
+    | Word16 => Bytes.fromInt 2
+    | Word32 => Bytes.fromInt 4
+    | Word64 => Bytes.fromInt 8
 
 fun name t =
    case t of
-      Int s => concat ["I", IntSize.toString s]
-    | Pointer => "P"
-    | Real s => concat ["R", RealSize.toString s]
-    | Word s => concat ["W", WordSize.toString s]
+      Pointer => "P"
+    | Real32 => "R32"
+    | Real64 => "R64"
+    | Word8 => "W8"
+    | Word16 => "W16"
+    | Word32 => "W32"
+    | Word64 => "W64"
 
-local
-   fun align a b =
-      let
-	 open Word
-	 val a = fromInt a - 0w1
-      in
-	 toInt (andb (notb a, a + fromInt b))
-      end
-in
-   val align4 = align 4
-   val align8 = align 8
-   val align: t * int -> int = fn (ty, n) => align (size ty) n
-end
+fun align (t: t, b: Bytes.t): Bytes.t =
+   Bytes.align (b, {alignment = size t})
 
 end

@@ -1,68 +1,64 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-functor x86Codegen(S: X86_CODEGEN_STRUCTS): X86_CODEGEN =
+functor x86Codegen (S: X86_CODEGEN_STRUCTS): X86_CODEGEN =
 struct
   open S
 
   structure CType = Machine.CType
      
-  structure x86 
-     = x86 (structure CFunction = Machine.CFunction
-	    structure Label = Machine.Label
-	    structure ProfileLabel = Machine.ProfileLabel
-	    structure Runtime = Machine.Runtime)
+  structure x86 = x86 (Machine)
 
   structure x86MLtonBasic
-    = x86MLtonBasic(structure x86 = x86
-		    structure Machine = Machine)
+    = x86MLtonBasic (structure x86 = x86
+		     structure Machine = Machine)
 
   structure x86Liveness
-    = x86Liveness(structure x86 = x86
-		  structure x86MLtonBasic = x86MLtonBasic)
+    = x86Liveness (structure x86 = x86
+		   structure x86MLtonBasic = x86MLtonBasic)
 
   structure x86JumpInfo
-    = x86JumpInfo(structure x86 = x86)
+    = x86JumpInfo (structure x86 = x86)
 
   structure x86LoopInfo
-    = x86LoopInfo(structure x86 = x86)
+    = x86LoopInfo (structure x86 = x86)
 
   structure x86EntryTransfer
-    = x86EntryTransfer(structure x86 = x86)
+    = x86EntryTransfer (structure x86 = x86)
 
   structure x86MLton 
-    = x86MLton(structure x86MLtonBasic = x86MLtonBasic
-	       structure x86Liveness = x86Liveness)
+    = x86MLton (structure x86MLtonBasic = x86MLtonBasic
+		structure x86Liveness = x86Liveness)
 
   structure x86Translate 
-    = x86Translate(structure x86 = x86
-		   structure x86MLton = x86MLton
-		   structure x86Liveness = x86Liveness)
+    = x86Translate (structure x86 = x86
+		    structure x86MLton = x86MLton
+		    structure x86Liveness = x86Liveness)
 
   structure x86Simplify
-    = x86Simplify(structure x86 = x86
-		  structure x86Liveness = x86Liveness
-		  structure x86JumpInfo = x86JumpInfo
-		  structure x86EntryTransfer = x86EntryTransfer)
+    = x86Simplify (structure x86 = x86
+		   structure x86Liveness = x86Liveness
+		   structure x86JumpInfo = x86JumpInfo
+		   structure x86EntryTransfer = x86EntryTransfer)
 
   structure x86GenerateTransfers
-    = x86GenerateTransfers(structure x86 = x86
-			   structure x86MLton = x86MLton
-			   structure x86Liveness = x86Liveness
-			   structure x86JumpInfo = x86JumpInfo
-			   structure x86LoopInfo = x86LoopInfo
-			   structure x86EntryTransfer = x86EntryTransfer)
+    = x86GenerateTransfers (structure x86 = x86
+			    structure x86MLton = x86MLton
+			    structure x86Liveness = x86Liveness
+			    structure x86JumpInfo = x86JumpInfo
+			    structure x86LoopInfo = x86LoopInfo
+			    structure x86EntryTransfer = x86EntryTransfer)
 
   structure x86AllocateRegisters
-    = x86AllocateRegisters(structure x86 = x86
-			   structure x86MLton = x86MLton)
+    = x86AllocateRegisters (structure x86 = x86
+			    structure x86MLton = x86MLton)
 
   structure x86Validate
-    = x86Validate(structure x86 = x86)
+    = x86Validate (structure x86 = x86)
 
   structure C =
     struct
@@ -193,7 +189,8 @@ struct
 	fun frameInfoToX86 (Machine.FrameInfo.T {frameLayoutsIndex, ...}) =
 	   x86.FrameInfo.T
 	   {frameLayoutsIndex = frameLayoutsIndex,
-	    size = #size (Vector.sub (frameLayouts, frameLayoutsIndex))}
+	    size = Bytes.toInt (#size (Vector.sub (frameLayouts,
+						   frameLayoutsIndex)))}
 	   
 	fun outputChunk (chunk as Machine.Chunk.T {blocks, chunkLabel, ...},
 			 print)

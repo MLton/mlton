@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -204,5 +204,137 @@ fun containsTycon (ty, tycon) =
 	var = fn _ => false,
 	con = fn (tycon', bs) => (Tycon.equals (tycon, tycon')
 				  orelse Vector.exists (bs, fn b => b))}
+
+structure P = PointerTycon
+   
+fun fromRepType (t: RepType.t): t =
+   let
+      fun bug () = Error.bug (concat ["Type.fromRepType: ", RepType.toString t])
+      datatype z = datatype RepType.dest
+   in
+      case RepType.dest t of
+	 Int s => int s
+       | Real s => real s
+       | Pointer p =>
+	    (case List.peek ([(P.thread, thread),
+			      (P.word8Vector, word8Vector)],
+			     fn (p', _) => P.equals (p, p')) of
+		NONE => bug ()
+	      | SOME (_, t) => t)
+       | Seq ts => if 0 = Vector.length ts then unit else bug ()
+       | Sum _ => if RepType.isBool t then bool else bug ()
+       | Word s => word (WordSize.fromBits s)
+       | _ => bug ()
+   end
+
+val fromRepType =
+   Trace.trace ("Type.fromRepType", RepType.layout, layout) fromRepType
+
+local
+   val {get, set, ...} =
+      Property.getSetOnce (Tycon.plist, Property.initConst NONE)
+   val () =
+      List.foreach ([Tycon.array, Tycon.reff, Tycon.vector], fn t =>
+		    set (t, SOME (RepType.cPointer ())))
+   fun doit (ts, f) = Vector.foreach (ts, fn (c, s) => set (c, SOME (f s)))
+   val () = doit (Tycon.ints, RepType.int)
+   val () = doit (Tycon.reals, RepType.real)
+   val () = set (Tycon.thread, SOME RepType.thread)
+   val () = doit (Tycon.words, RepType.word o WordSize.bits)
+in
+   fun toRepType (t: t): RepType.t =
+      let
+	 fun bug () = Error.bug (concat ["Type.toRepType: ", toString t])
+      in
+	 case dest t of
+	    Con (c, _) =>
+	       (case get c of
+		   NONE => bug ()
+		 | SOME t => t)
+	  | Var _ => bug ()
+      end
+end
+
+fun checkPrimApp {args, prim, result}: bool =
+   let
+      fun check () =
+	 case Prim.typeCheck (prim, Vector.map (args, toRepType)) of
+	    NONE => false
+	  | SOME t => equals (result, fromRepType t)
+      datatype z = datatype Prim.Name.t
+   in
+      case Prim.name prim of
+	 Array_array => true
+       | Array_array0Const => true
+       | Array_length => true
+       | Array_sub => true
+       | Array_toVector => true
+       | Array_update => true
+       | Exn_extra => true
+       | Exn_name => true
+       | Exn_setExtendExtra => true
+       | Exn_setInitExtra => true
+       | Exn_setTopLevelHandler => true
+       | GC_collect => true
+       | GC_pack => true
+       | GC_unpack => true
+       | IntInf_add => true
+       | IntInf_andb => true
+       | IntInf_arshift => true
+       | IntInf_compare => true
+       | IntInf_equal => true
+       | IntInf_gcd => true
+       | IntInf_lshift => true
+       | IntInf_mul => true
+       | IntInf_neg => true
+       | IntInf_notb => true
+       | IntInf_orb => true
+       | IntInf_quot => true
+       | IntInf_rem => true
+       | IntInf_sub => true
+       | IntInf_toString => true
+       | IntInf_toVector => true
+       | IntInf_toWord => true
+       | IntInf_xorb => true
+       | MLton_bogus => true
+       | MLton_bug => true
+       | MLton_eq => true
+       | MLton_equal => true
+       | MLton_halt => true
+       | MLton_handlesSignals => true
+       | MLton_installSignalHandler => true
+       | MLton_size => true
+       | MLton_touch => true
+       | Pointer_getInt _ => true
+       | Pointer_getPointer => true
+       | Pointer_getReal _ => true
+       | Pointer_getWord _ => true
+       | Pointer_setInt _ => true
+       | Pointer_setPointer => true
+       | Pointer_setReal _ => true
+       | Pointer_setWord _ => true
+       | Ref_assign => true
+       | Ref_deref => true
+       | Ref_ref => true
+       | Thread_atomicBegin => true
+       | Thread_atomicEnd => true
+       | Thread_canHandle => true
+       | Thread_copy => true
+       | Thread_copyCurrent => true
+       | Thread_returnToC => true
+       | Thread_switchTo => true
+       | Vector_length => true
+       | Vector_sub => true
+       | Weak_canGet => true
+       | Weak_get => true
+       | Weak_new => true
+       | Word_toIntInf => true
+       | WordVector_toIntInf => true
+       | Word8Array_subWord => true
+       | Word8Array_updateWord => true
+       | Word8Vector_subWord => true
+       | World_save => true
+       | _ => check ()
+   end
 
 end

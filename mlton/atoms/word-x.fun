@@ -3,10 +3,11 @@ struct
 
 open S
 
+type int = Int.t
 type word = Word.t
 
 val modulus: WordSize.t -> IntInf.t =
-   fn s => IntInf.<< (1, Word.fromInt (WordSize.bits s))
+   fn s => IntInf.<< (1, Bits.toWord (WordSize.bits s))
 
 local
    datatype t = T of {size: WordSize.t,
@@ -39,7 +40,7 @@ local
 	 val s = size w
 	 val v' = value w'
       in
-	 if v' >= IntInf.fromInt (WordSize.bits s)
+	 if v' >= Bits.toIntInf (WordSize.bits s)
 	    then zero s
 	 else make (f (value w, Word.fromIntInf v'), s)
       end
@@ -50,11 +51,11 @@ end
 
 fun equals (w, w') = WordSize.equals (size w, size w') andalso value w = value w'
 
-fun fromChar (c: Char.t) = make (Int.toIntInf (Char.toInt c), WordSize.W 8)
+fun fromChar (c: Char.t) = make (Int.toIntInf (Char.toInt c), WordSize.byte)
 
 val fromIntInf = make
 
-fun fromWord8 w = make (Word8.toIntInf w, WordSize.W 8)
+fun fromWord8 w = make (Word8.toIntInf w, WordSize.byte)
 
 fun isAllOnes w = value w = modulus (size w) - 1
 
@@ -93,8 +94,8 @@ fun ~>> (w, w') =
       val shift = value w'
       val s = size w
       val b = WordSize.bits s
-      val shift = if shift > IntInf.fromInt b
-		     then Word.fromInt b
+      val shift = if shift > Bits.toIntInf b
+		     then Bits.toWord b
 		  else Word.fromIntInf shift
    in
       make (IntInf.~>> (toIntInfX w, shift), s)
@@ -111,19 +112,36 @@ fun rol (w, w') =
    let
       val s = size w
       val b = WordSize.bits s
-      val shift = Word.fromIntInf (value w' mod IntInf.fromInt b)
+      val shift = Word.fromIntInf (value w' mod Bits.toIntInf b)
    in
-      make (swap (value w, {hi = shift, lo = Word.fromInt b - shift}), s)
+      make (swap (value w, {hi = shift, lo = Bits.toWord b - shift}), s)
    end
 
 fun ror (w, w') =
    let
       val s = size w
       val b = WordSize.bits s
-      val shift = Word.fromIntInf (value w' mod IntInf.fromInt b)
+      val shift = Word.fromIntInf (value w' mod Bits.toIntInf b)
    in
-      make (swap (value w, {hi = Word.fromInt b - shift, lo = shift}), s)
+      make (swap (value w, {hi = Bits.toWord b - shift, lo = shift}), s)
    end
+
+fun splice {hi, lo} =
+   fromIntInf (value lo
+	       + IntInf.<< (value hi, Bits.toWord (WordSize.bits (size lo))),
+	       WordSize.+ (size hi, size lo))
+   
+fun split (w, {lo}) =
+   let
+      val {size, value} = dest w
+      val (q, r) = IntInf.quotRem (value, IntInf.<< (1, Bits.toWord lo))
+   in
+      {hi = fromIntInf (q, WordSize.fromBits (Bits.- (WordSize.bits size, lo))),
+       lo = fromIntInf (r, WordSize.fromBits lo)}
+   end
+
+fun bitIsSet (w, i: int) =
+   1 = IntInf.rem (IntInf.~>> (value w, Word.fromInt i), 2)
 
 local
    val make: (IntInf.t * IntInf.t -> IntInf.t) -> t * t -> t =

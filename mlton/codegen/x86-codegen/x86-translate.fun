@@ -248,6 +248,7 @@ struct
 	       Vector.new1 (x86MLton.fileLine (), x86MLton.wordSize)
 	  | Offset {base = GCState, offset, ty} =>
 	       let
+		  val offset = Bytes.toInt offset
 		  val ty = Type.toCType ty
 		  val offset = x86MLton.gcState_offset {offset = offset, ty = ty}
 	       in
@@ -255,6 +256,7 @@ struct
 	       end
 	  | Offset {base, offset, ty} =>
 	       let
+		  val offset = Bytes.toInt offset
 		 val ty = Type.toCType ty
 		 val base = toX86Operand base
 		 val _ = Assert.assert("x86Translate.Operand.toX86Operand: Contents/base",
@@ -309,6 +311,7 @@ struct
 	       Vector.new1 (x86.Operand.immediate_const_word ii,x86.Size.LONG)
 	  | StackOffset {offset, ty} =>
 	       let
+		  val offset = Bytes.toInt offset
 		  val ty = Type.toCType ty
 		  val origin =
 		     x86.MemLoc.simple 
@@ -557,6 +560,7 @@ struct
 		       
 		   fun stores_toX86Assembly ({offset, value}, l)
 		     = let
+			  val offset = Bytes.toInt offset
 			 val origin =
 			    x86.MemLoc.simple
 			    {base = dst',
@@ -613,7 +617,8 @@ struct
 				       x86.Assembly.instruction_binal
 				       {oper = x86.Instruction.ADD,
 					dst = frontier,
-					src = x86.Operand.immediate_const_int size,
+					src = x86.Operand.immediate_const_int
+					      (Bytes.toInt size),
 					size = x86MLton.pointerSize}],
 				      stores_toX86Assembly)),
 		      transfer = NONE}),
@@ -826,67 +831,15 @@ struct
 				(x86.MemLocSet.empty,
 				 x86MLton.gcState_stackBottomContents ()),
 				x86MLton.gcState_exnStackContents ())})}))
-	      | Switch switch
+	      | Switch (Machine.Switch.T {cases, default, test, ...})
               => let
-		    datatype z = datatype Machine.Switch.t
-		    fun simple ({cases, default, test}, doSwitch) =
-		       AppendList.append
-		       (comments transfer,
-			doSwitch (test, Vector.toList cases, default))
-			
+		    val cases =
+		       Vector.toListMap (cases, fn (w, l) =>
+					 (Word.fromIntInf (WordX.toIntInf w), l))
 		 in
-		    case switch of
-		       EnumPointers {enum, pointers, test} =>
-			  let
-			     val (test,testsize) =
-				Vector.sub(Operand.toX86Operand test, 0)
-			  in
-			     AppendList.append
-			     (comments transfer,
-			      AppendList.single
-			      ((* if (test & 0x3) goto int 
-				* goto pointer
-				*)
-			       x86.Block.mkBlock'
-			       {entry = NONE,
-				statements 
-				= [x86.Assembly.instruction_test
-				   {src1 = test,
-				    src2 = x86.Operand.immediate_const_word 0wx3,
-				    size = testsize}],
-				transfer 
-				= SOME (x86.Transfer.iff
-					{condition = x86.Instruction.NZ,
-					 truee = enum,
-					 falsee = pointers})}))
-			  end
-		     | Int {cases, default, size, test} =>
-			  (Assert.assert("x86Translate.Transfer.toX86Blocks: Switch/Int", 
-					 fn () =>
-					 not (IntSize.equals
-					      (size, IntSize.I 64)))
-			   ; simple ({cases = (Vector.map
-					       (cases, fn (i, l) =>
-						(IntX.toInt i, l))),
-				      default = default,
-				      test = test},
-				     doSwitchInt))
-		     | Pointer {cases, default, tag, ...} =>
-			  simple ({cases = (Vector.map
-					    (cases, fn {dst, tag, ...} =>
-					     (tag, dst))),
-				   default = default,
-				   test = tag},
-				  doSwitchInt)
-		     | Word {cases, default, test, ...} =>
-			  simple ({cases = (Vector.map
-					    (cases, fn (w, l) =>
-					     (Word.fromIntInf
-					      (WordX.toIntInf w),
-					      l))),
-				   default = default,
-				   test = test},
-				  doSwitchWord)
+		    AppendList.append
+		    (comments transfer,
+		     doSwitchWord (test, cases, default))
 		 end
 	      | Goto label
 	      => (AppendList.append
@@ -917,7 +870,7 @@ struct
 						   live = live,
 						   return = return,
 						   handler = handler,
-						   size = size}
+						   size = Bytes.toInt size}
 		 in
 		    AppendList.append
 		    (com,

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -12,13 +12,7 @@ signature BACKEND_STRUCTS =
    sig
       structure Machine: MACHINE
       structure Ssa: SSA
-      sharing Machine.CFunction = Ssa.CFunction
-      sharing Machine.IntX = Ssa.IntX
-      sharing Machine.Label = Ssa.Label
-      sharing Machine.Prim = Ssa.Prim
-      sharing Machine.RealX = Ssa.RealX
-      sharing Machine.SourceInfo = Ssa.SourceInfo
-      sharing Machine.WordX = Ssa.WordX
+      sharing Machine.Atoms = Ssa.Atoms
 
       val funcToLabel: Ssa.Func.t -> Machine.Label.t
    end

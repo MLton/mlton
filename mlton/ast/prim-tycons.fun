@@ -37,7 +37,7 @@ datatype z = datatype AdmitsEquality.t
 local
    fun 'a make (prefix: string,
 		all: 'a list,
-		bits: 'a -> int,
+		bits: 'a -> Bits.t,
 		default: 'a,
 		equalsA: 'a * 'a -> bool,
 		memo: ('a -> t) -> ('a -> t),
@@ -46,7 +46,7 @@ local
 	 val all =
 	    Vector.fromListMap
 	    (all, fn s =>
-	     (fromString (concat [prefix, Int.toString (bits s)]), s))
+	     (fromString (concat [prefix, Bits.toString (bits s)]), s))
 	 val fromSize =
 	    memo
 	    (fn s =>

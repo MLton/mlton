@@ -493,11 +493,15 @@ fun profile program =
 			       | Handler => add pushes
 			       | Jump => ()
 			   end
-			fun maybeSplit {args, bytesAllocated, kind, label,
+			fun maybeSplit {args,
+					bytesAllocated: Bytes.t,
+					kind,
+					label,
 					leaves,
 					pushes: Push.t list,
 					statements} =
-			   if profileAlloc andalso bytesAllocated > 0
+			   if profileAlloc
+			      andalso Bytes.> (bytesAllocated, Bytes.zero)
 			      then
 				 let
 				    val newLabel = Label.newNoname ()
@@ -510,7 +514,8 @@ fun profile program =
 						(Operand.GCState,
 						 Operand.word
 						 (WordX.fromIntInf
-						  (IntInf.fromInt bytesAllocated,
+						  (IntInf.fromInt
+						   (Bytes.toInt bytesAllocated),
 						   WordSize.default)))),
 					func = func,
 					return = SOME newLabel}
@@ -525,14 +530,14 @@ fun profile program =
 						 transfer = transfer}
 				 in
 				    {args = Vector.new0 (),
-				     bytesAllocated = 0,
+				     bytesAllocated = Bytes.zero,
 				     kind = Kind.CReturn {func = func},
 				     label = newLabel,
 				     leaves = [],
 				     statements = []}
 				 end
 			   else {args = args,
-				 bytesAllocated = 0,
+				 bytesAllocated = Bytes.zero,
 				 kind = kind,
 				 label = label,
 				 leaves = leaves,
@@ -542,7 +547,7 @@ fun profile program =
 			   Vector.fold
 			   (statements,
 			    {args = args,
-			     bytesAllocated = 0,
+			     bytesAllocated = Bytes.zero,
 			     kind = kind,
 			     label = label,
 			     leaves = [],
@@ -568,7 +573,8 @@ fun profile program =
 			    case s of
 			       Object {size, ...} =>
 				  {args = args,
-				   bytesAllocated = bytesAllocated + size,
+				   bytesAllocated = Bytes.+ (bytesAllocated,
+							     size),
 				   kind = kind,
 				   label = label,
 				   leaves = leaves,

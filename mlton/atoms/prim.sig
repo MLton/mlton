@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -13,11 +13,13 @@ signature PRIM_STRUCTS =
       structure Const: CONST
       structure IntSize: INT_SIZE
       structure RealSize: REAL_SIZE
+      structure RepType: REP_TYPE
       structure WordSize: WORD_SIZE
-      sharing CFunction.CType = CType
-      sharing IntSize = CType.IntSize = Const.IntX.IntSize
-      sharing RealSize = CType.RealSize = Const.RealX.RealSize
-      sharing WordSize = CType.WordSize = Const.WordX.WordSize
+      sharing CType = RepType.CType
+      sharing IntSize = Const.IntX.IntSize = RepType.IntSize
+      sharing RealSize = Const.RealX.RealSize = RepType.RealSize
+      sharing RepType = CFunction.RepType
+      sharing WordSize = Const.WordX.WordSize = RepType.WordSize
    end
 
 signature PRIM = 
@@ -42,7 +44,7 @@ signature PRIM =
 	     | Exn_setTopLevelHandler (* implement exceptions *)
 	     | FFI of CFunction.t (* ssa to rssa *)
 	     | FFI_Symbol of {name: string,
-			      ty: CType.t} (* codegen *)
+			      ty: RepType.t} (* codegen *)
 	     | GC_collect (* ssa to rssa *)
 	     | GC_pack (* ssa to rssa *)
 	     | GC_unpack (* ssa to rssa *)
@@ -239,7 +241,7 @@ signature PRIM =
       val deserialize: t
       val eq: t    (* pointer equality *)
       val equal: t (* polymorphic equality *)
-      val equals: t * t -> bool (* equality of names *)
+      val equals: t * t -> bool
       val extractTargs: {args: 'a vector,
 			 deArray: 'a -> 'a,
 			 deArrow: 'a -> 'a * 'a,
@@ -249,7 +251,8 @@ signature PRIM =
 			 prim: t,
 			 result: 'a} -> 'a vector
       val ffi: CFunction.t -> t
-      val ffiSymbol: {name: string, ty: CType.t} -> t
+      val ffiSymbol: {name: string, ty: RepType.t} -> t
+      val fromString: string -> t
       val gcCollect: t
       val intInfEqual: t
       val intAdd: IntSize.t -> t
@@ -280,11 +283,10 @@ signature PRIM =
        *)
       val maySideEffect: t -> bool
       val name: t -> Name.t
-      val new: string -> t
-      val newNullary: CFunction.t -> t (* new of type unit -> unit *)
       val reff: t
       val serialize: t
       val toString: t -> string
+      val typeCheck: t * RepType.t vector -> RepType.t option
       val vectorLength: t
       val vectorSub: t
       val wordAdd: WordSize.t -> t
@@ -295,6 +297,7 @@ signature PRIM =
       val wordGt: WordSize.t -> t
       val wordLe: WordSize.t -> t
       val wordLt: WordSize.t -> t
+      val wordLshift: WordSize.t -> t
       val wordMul: WordSize.t -> t
       val wordMulCheck: WordSize.t -> t
       val wordRshift: WordSize.t -> t

@@ -63,25 +63,6 @@ $(AOUT): $(SOURCES)
 $(UP):
 	$(SRC)/bin/upgrade-basis "$(PATH)" >$(UP)
 
-mlton.cm: mlton-stubs.cm
-	grep -v mlton-stubs mlton-stubs.cm >mlton.cm
-
-# This makes a version of MLton that can be compiled in the standard basis
-# library.  I.E. it doesn't require a MLton structure.
-.PHONY:	mlton-stubs_cm
-mlton-stubs_cm:
-	(								\
-		echo 'Group is' &&					\
-		cmcat sources.cm | grep -v 'basis-stubs' | 		\
-			grep -v 'mlton-stubs-in-smlnj' |		\
-			grep mlyacc &&					\
-		echo '$(UP)' &&						\
-		cmcat sources.cm | grep -v 'basis-stubs' | 		\
-			grep -v 'mlton-stubs-in-smlnj' |		\
-			grep -v mlyacc &&				\
-		echo 'call-main.sml';					\
-	) >mlton-stubs.cm
-
 mlton.sml: $(SOURCES)
 	rm -f mlton.sml && mlton -stop sml mlton.cm && chmod -w mlton.sml
 

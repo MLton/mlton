@@ -323,7 +323,7 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
       val print = Out.outputc out
       exception TypeError
       fun error (msg, lay) =
-	 (print ("Type error: " ^ msg ^ "\n")
+	 (print (concat ["Type error: ", msg, "\n"])
 	  ; Layout.output (lay, out)
 	  ; print "\n"
 	  ; raise TypeError)
@@ -336,7 +336,6 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
       fun coerces (from, to) =
 	 Vector.foreach2 (from, to, fn (from, to) =>
 			 coerce {from = from, to = to})
-      val error = fn s => error (s, Layout.empty)
       val coerce =
 	 Trace.trace ("TypeCheck.coerce",
 		      fn {from, to} => let open Layout
@@ -346,7 +345,7 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
 				    Unit.layout) coerce
       fun select {tuple: Type.t, offset: int, resultType = _}: Type.t =
 	 case Type.deTupleOpt tuple of
-	    NONE => error "select of non tuple"
+	    NONE => error ("select of non tuple", Layout.empty)
 	  | SOME ts => Vector.sub (ts, offset)
       val {get = conInfo: Con.t -> {args: Type.t vector,
 				    result: Type.t},
@@ -376,6 +375,24 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
 	    val _ = coerces (args', args)
 	 in ()
 	 end
+      fun primApp {args, prim, resultType, resultVar, targs} =
+	 let
+	    datatype z = datatype Prim.Name.t
+	    val () =
+	       if Type.checkPrimApp {args = args,
+				     prim = prim,
+				     result = resultType}
+		  then ()
+	       else error ("bad primapp",
+			   let
+			      open Layout
+			   in
+			      seq [Prim.layout prim,
+				   tuple (Vector.toListMap (args, Type.layout))]
+			   end)
+	 in
+	    resultType
+	 end
       val _ =
 	 analyze {
 		  coerce = coerce,
@@ -388,14 +405,15 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
 						       to = Type.word s},
 		  fromType = fn x => x,
 		  layout = Type.layout,
-		  primApp = #resultType,
+		  primApp = primApp,
 		  program = program,
 		  select = select,
 		  tuple = Type.tuple,
 		  useFromTypeOnBinds = true
 		  }
 	 handle e => error (concat ["analyze raised exception ",
-				    Layout.toString (Exn.layout e)])
+				    Layout.toString (Exn.layout e)],
+			    Layout.empty)
       val _ = Program.clear program
    in
       ()

@@ -8,22 +8,26 @@ signature WORD_SIZE =
    sig
       include WORD_SIZE_STRUCTS
 
-      eqtype t
-	 
+      type t
+
+      val + : t * t -> t
       val all: t list
-      val bits: t -> int
-      val bytes: t -> int
+      val bits: t -> Bits.t
+      val bytes: t -> Bytes.t
+      val byte: t
       val cardinality: t -> IntInf.t
+      val compare: t * t -> Relation.t
       val default: t
-      val equals: t * t -> bool 
+      val equals: t * t -> bool
+      val fromBits: Bits.t -> t
       val layout: t -> Layout.t
       val max: t -> IntInf.t
       val memoize: (t -> 'a) -> t -> 'a
+      val one: t
       val pointer: unit -> t
       datatype prim = W8 | W16 | W32 | W64
       val prim: t -> prim
       val prims: t list
       val roundUpToPrim: t -> t
       val toString: t -> string
-      val W: int -> t
    end

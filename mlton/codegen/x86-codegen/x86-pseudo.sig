@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -11,9 +11,10 @@ type word = Word.t
 signature X86_PSEUDO =
   sig
     structure CFunction: C_FUNCTION
+    structure CType: C_TYPE
     structure Label: ID
     structure Runtime: RUNTIME
-    sharing CFunction.CType = Runtime.CType
+    sharing CType = CFunction.RepType.CType
 
     val tracer : string -> ('a -> 'b) -> 
                  (('a -> 'b) * (unit -> unit))
@@ -29,7 +30,7 @@ signature X86_PSEUDO =
 	  | FPIS | FPIL | FPIQ
 	val fromBytes : int -> t
 	val toBytes : t -> int
-	val fromCType : CFunction.CType.t -> t vector
+	val fromCType : CType.t -> t vector
 	val class : t -> class
 	val eq : t * t -> bool
 	val lt : t * t -> bool
@@ -75,7 +76,7 @@ signature X86_PSEUDO =
       sig
 	datatype t = One | Two | Four | Eight
 	val fromBytes : int -> t
-	val fromCType : CFunction.CType.t -> t
+	val fromCType : CType.t -> t
       end
 
     structure MemLoc :

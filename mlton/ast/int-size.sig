@@ -8,15 +8,16 @@ signature INT_SIZE =
    sig
       include INT_SIZE_STRUCTS
 	 
-      eqtype t
+      type t
 
       val all: t list
-      val bits: t -> int
-      val bytes: t -> int
+      val bits: t -> Bits.t
+      val bytes: t -> Bytes.t
       val cardinality: t -> IntInf.t
+      val compare: t * t -> Relation.t
       val default: t
       val equals: t * t -> bool
-      val I : int -> t
+      val I : Bits.t -> t
       val isInRange: t * IntInf.t -> bool
       val layout: t -> Layout.t
       val max: t -> IntInf.t

@@ -48,7 +48,7 @@ in
    val hash = make #hash
    val originalName = make #originalName
    val plist = make #plist
-   val printName= make #printName
+   val printName = make #printName
 end
 
 fun clearPrintName x = printName x := NONE

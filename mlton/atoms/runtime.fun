@@ -1,4 +1,4 @@
-(* Copyright (C) 2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2002-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under the GNU General Public License (GPL).
@@ -27,32 +27,33 @@ structure GCField =
 
       val equals: t * t -> bool = op =
 	 
-      val ty =
-	 fn CanHandle => CType.defaultInt
-	  | CardMap => CType.pointer
-	  | CurrentThread => CType.pointer
-	  | ExnStack => CType.defaultWord
-	  | Frontier => CType.pointer
-	  | Limit => CType.pointer
-	  | LimitPlusSlop => CType.pointer
-	  | MaxFrameSize => CType.defaultWord
-	  | SignalIsPending => CType.defaultInt
-	  | StackBottom => CType.pointer
-	  | StackLimit => CType.pointer
-	  | StackTop => CType.pointer
+(*       val ty =
+ * 	 fn CanHandle => CType.defaultInt
+ * 	  | CardMap => CType.pointer
+ * 	  | CurrentThread => CType.pointer
+ * 	  | ExnStack => CType.defaultWord
+ * 	  | Frontier => CType.pointer
+ * 	  | Limit => CType.pointer
+ * 	  | LimitPlusSlop => CType.pointer
+ * 	  | MaxFrameSize => CType.defaultWord
+ * 	  | SignalIsPending => CType.defaultInt
+ * 	  | StackBottom => CType.pointer
+ * 	  | StackLimit => CType.pointer
+ * 	  | StackTop => CType.pointer
+ *)
 
-      val canHandleOffset: int ref = ref 0
-      val cardMapOffset: int ref = ref 0
-      val currentThreadOffset: int ref = ref 0
-      val exnStackOffset: int ref = ref 0
-      val frontierOffset: int ref = ref 0
-      val limitOffset: int ref = ref 0
-      val limitPlusSlopOffset: int ref = ref 0
-      val maxFrameSizeOffset: int ref = ref 0
-      val signalIsPendingOffset: int ref = ref 0
-      val stackBottomOffset: int ref = ref 0
-      val stackLimitOffset: int ref = ref 0
-      val stackTopOffset: int ref = ref 0
+      val canHandleOffset: Bytes.t ref = ref Bytes.zero
+      val cardMapOffset: Bytes.t ref = ref Bytes.zero
+      val currentThreadOffset: Bytes.t ref = ref Bytes.zero
+      val exnStackOffset: Bytes.t ref = ref Bytes.zero
+      val frontierOffset: Bytes.t ref = ref Bytes.zero
+      val limitOffset: Bytes.t ref = ref Bytes.zero
+      val limitPlusSlopOffset: Bytes.t ref = ref Bytes.zero
+      val maxFrameSizeOffset: Bytes.t ref = ref Bytes.zero
+      val signalIsPendingOffset: Bytes.t ref = ref Bytes.zero
+      val stackBottomOffset: Bytes.t ref = ref Bytes.zero
+      val stackLimitOffset: Bytes.t ref = ref Bytes.zero
+      val stackTopOffset: Bytes.t ref = ref Bytes.zero
 
       fun setOffsets {canHandle, cardMap, currentThread, exnStack, frontier,
 		      limit, limitPlusSlop, maxFrameSize, signalIsPending,
@@ -101,13 +102,13 @@ structure GCField =
       val layout = Layout.str o toString
    end
 
-structure ObjectType =
+structure RObjectType =
    struct
       datatype t =
-	 Array of {numBytesNonPointers: int,
-		   numPointers: int}
-       | Normal of {numPointers: int,
-		    numWordsNonPointers: int}
+	 Array of {nonPointer: Bytes.t,
+		   pointers: int}
+       | Normal of {nonPointer: Words.t,
+		    pointers: int}
        | Stack
        | Weak
        | WeakGone
@@ -117,14 +118,14 @@ structure ObjectType =
 	    open Layout
 	 in
 	    case t of
-	       Array {numBytesNonPointers = nbnp, numPointers = np} =>
+	       Array {nonPointer = np, pointers = p} =>
 		  seq [str "Array ",
-		       record [("numBytesNonPointers", Int.layout nbnp),
-			       ("numPointers", Int.layout np)]]
-	     | Normal {numPointers = np, numWordsNonPointers = nwnp} =>
+		       record [("nonPointer", Bytes.layout np),
+			       ("pointers", Int.layout p)]]
+	     | Normal {nonPointer = np, pointers = p} =>
 		  seq [str "Normal ",
-		       record [("numPointers", Int.layout np),
-			       ("numWordsNonPointers", Int.layout nwnp)]]
+		       record [("nonPointer", Words.layout np),
+			       ("pointers", Int.layout p)]]
 	     | Stack => str "Stack"
 	     | Weak => str "Weak"
 	     | WeakGone => str "WeakGone"
@@ -142,36 +143,31 @@ fun typeIndexToHeader typeIndex =
 
 fun headerToTypeIndex w = Word.toInt (Word.>> (w, 0w1))
 
-val wordSize: int = 4
-val arrayHeaderSize = 3 * wordSize
-val intInfOverheadSize = arrayHeaderSize + wordSize (* for the sign *)
-val labelSize = wordSize
-val limitSlop: int = 512
-val normalHeaderSize = wordSize
-val pointerSize = wordSize
-val array0Size = arrayHeaderSize + wordSize (* for the forwarding pointer *)
+val arrayHeaderSize = Bytes.scale (Bytes.inWord, 3)
 
-val arrayLengthOffset = ~ (2 * wordSize)
-val allocTooLarge: word = 0wxFFFFFFFC
+val intInfOverhead = Bytes.+ (arrayHeaderSize, Bytes.inWord) (* for the sign *)
 
-val headerOffset = ~wordSize
+val labelSize = Bytes.inWord
 
-fun normalSize {numPointers, numWordsNonPointers} =
-   wordSize * (numPointers + numWordsNonPointers)
+val limitSlop = Bytes.fromInt 512
 
-fun wordAlignWord (w: word): word =
-   let
-      open Word
-   in
-      andb (Word.addCheck (w, 0w3), notb 0w3)
-   end
+val normalHeaderSize = Bytes.inWord
 
-fun wordAlignInt (i: int): int =
-   Word.toInt (wordAlignWord (Word.fromInt i))
-   
-fun isWordAligned (n: int): bool =
-   0 = Int.rem (n, wordSize)
-   
-val maxFrameSize = Int.pow (2, 16)
+val pointerSize = Bytes.inWord
+
+val array0Size =
+   Bytes.+ (arrayHeaderSize, Bytes.inWord) (* for the forwarding pointer *)
+
+val arrayLengthOffset = Bytes.~ (Bytes.scale (Bytes.inWord, 2))
+
+val allocTooLarge = Bytes.fromWord 0wxFFFFFFFC
+
+val headerOffset = Bytes.~ Bytes.inWord
+
+fun normalSize {nonPointers, pointers} =
+   Bytes.+ (Words.toBytes nonPointers,
+	    Bytes.scale (pointerSize, pointers))
+ 
+val maxFrameSize = Bytes.fromInt (Int.pow (2, 16))
 
 end

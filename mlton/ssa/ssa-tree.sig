@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -11,8 +11,6 @@ signature SSA_TREE_STRUCTS =
    sig
       include ATOMS
    end
-
-signature LABEL = ID
 
 signature HANDLER =
    sig
@@ -64,7 +62,6 @@ signature SSA_TREE =
 	     | Datatype of Tycon.t
 	     | Int of IntSize.t
 	     | IntInf
-	     | PreThread
 	     | Real of RealSize.t
 	     | Ref of t
 	     | Thread
@@ -78,22 +75,18 @@ signature SSA_TREE =
 	 end
       sharing Atoms = Type.Atoms
 
-      structure Func: ID
-      structure Label: LABEL
-(*      sharing Symbol = Func.Symbol = Label.Symbol *)
-      
       structure Exp:
 	 sig
 	    datatype t =
-	       ConApp of {con: Con.t,
-			  args: Var.t vector}
+	       ConApp of {args: Var.t vector,
+			  con: Con.t}
 	     | Const of Const.t
-	     | PrimApp of {prim: Prim.t,
-			   targs: Type.t vector,
-			   args: Var.t vector}
+	     | PrimApp of {args: Var.t vector,
+			   prim: Prim.t,
+			   targs: Type.t vector}
 	     | Profile of ProfileExp.t
-	     | Select of {tuple: Var.t,
-			  offset: int}
+	     | Select of {offset: int,
+			  tuple: Var.t}
 	     | Tuple of Var.t vector
 	     | Var of Var.t
 
@@ -110,9 +103,9 @@ signature SSA_TREE =
 
       structure Statement:
 	 sig
-	    datatype t = T of {var: Var.t option,
+	    datatype t = T of {exp: Exp.t,
 			       ty: Type.t,
-			       exp: Exp.t}
+			       var: Var.t option}
 
 	    val clear: t -> unit (* clear the var *)
 	    val equals: t * t -> bool
@@ -147,31 +140,28 @@ signature SSA_TREE =
       structure Transfer:
 	 sig
 	    datatype t =
-	       Arith of {prim: Prim.t,
-			 args: Var.t vector,
+	       Arith of {args: Var.t vector,
 			 overflow: Label.t, (* Must be nullary. *)
+			 prim: Prim.t,
 			 success: Label.t, (* Must be unary. *)
 			 ty: Type.t} (* int or word *)
 	     | Bug  (* MLton thought control couldn't reach here. *)
 	     | Call of {args: Var.t vector,
 			func: Func.t,
 			return: Return.t}
-	     | Case of {test: Var.t,
-			cases: Cases.t,
-			default: Label.t option (* Must be nullary. *)
-		       }
-	     | Goto of {dst: Label.t,
-			args: Var.t vector
-			}
+	     | Case of {cases: Cases.t,
+			default: Label.t option, (* Must be nullary. *)
+			test: Var.t}
+	     | Goto of {args: Var.t vector,
+			dst: Label.t}
 	     (* Raise implicitly raises to the caller.  
 	      * I.E. the local handler stack must be empty.
 	      *)
 	     | Raise of Var.t vector
 	     | Return of Var.t vector
-	     | Runtime of {prim: Prim.t,
-			   args: Var.t vector,
-			   return: Label.t (* Must be nullary. *)
-			  }
+	     | Runtime of {args: Var.t vector,
+			   prim: Prim.t,
+			   return: Label.t} (* Must be nullary. *)
 
 	    val equals: t * t -> bool
 	    val foreachFunc : t * (Func.t -> unit) -> unit
@@ -189,12 +179,10 @@ signature SSA_TREE =
       structure Block:
 	 sig
 	    datatype t =
-	       T of {
-		     args: (Var.t * Type.t) vector,
+	       T of {args: (Var.t * Type.t) vector,
 		     label: Label.t,
 		     statements: Statement.t vector,
-		     transfer: Transfer.t
-		     }
+		     transfer: Transfer.t}
 
 	    val args: t -> (Var.t * Type.t) vector
 	    val clear: t -> unit
@@ -259,12 +247,10 @@ signature SSA_TREE =
       structure Program:
 	 sig
 	    datatype t =
-	       T of {
-		     datatypes: Datatype.t vector,
+	       T of {datatypes: Datatype.t vector,
 		     functions: Function.t list,
 		     globals: Statement.t vector,
-		     main: Func.t (* Must be nullary. *)
-		    } 
+		     main: Func.t (* Must be nullary. *)}
 
 	    val clear: t -> unit
 	    val clearTop: t -> unit
