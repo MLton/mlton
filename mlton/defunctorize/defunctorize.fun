@@ -346,7 +346,7 @@ structure Xexp =
 		targs = targs,
 		ty = ty}
 	 in
-	    if false andalso not forceLeftToRight
+	    if not forceLeftToRight
 	       then
 		  (* Build the list right to left. *)
 		  Vector.foldr (es, nill, fn (e, rest) =>
