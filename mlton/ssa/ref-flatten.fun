@@ -171,12 +171,21 @@ structure Value =
       val ground: Type.t -> t = new o Ground
 
       fun object (con, args) =
-	 new (Object {args = args,
-		      con = con,
-		      finalComponents = ref NONE,
-		      finalOffsets = ref NONE,
-		      finalType = ref NONE,
-		      flat = Set.singleton Unknown})
+	 let
+	    (* Only flatten objects with mutable fields. *)
+	    val flat =
+	       Set.singleton
+	       (if Vector.exists (args, #isMutable)
+		   then Unknown
+		else NotFlat)
+	 in
+	    new (Object {args = args,
+			 con = con,
+			 finalComponents = ref NONE,
+			 finalOffsets = ref NONE,
+			 finalType = ref NONE,
+			 flat = flat})
+	 end
 	     
       val tuple: {elt: t, isMutable: bool} vector -> t =
 	 fn vs => object (NONE, vs)
