@@ -62,7 +62,7 @@ compiler:
 .PHONY: constants
 constants:
 	@echo 'Creating constants file.'
-	$(BIN)/mlton -build-constants >tmp.c
+	$(BIN)/mlton -build-constants true >tmp.c
 	$(BIN)/mlton -output tmp tmp.c
 	./tmp >$(LIB)/$(HOST)/constants
 	rm -f tmp tmp.c
@@ -195,6 +195,9 @@ world:
 # puts them.
 DESTDIR = $(CURDIR)/install
 PREFIX = /usr
+ifeq ($(HOSTTYPE), sun)
+PREFIX = /usr/local
+endif
 prefix = $(PREFIX)
 MAN_PREFIX_EXTRA =
 TBIN = $(DESTDIR)$(prefix)/bin
@@ -202,6 +205,14 @@ ULIB = lib/mlton
 TLIB = $(DESTDIR)$(prefix)/$(ULIB)
 TMAN = $(DESTDIR)$(prefix)$(MAN_PREFIX_EXTRA)/man/man1
 TDOC = $(DESTDIR)$(prefix)/share/doc/mlton
+ifeq ($(HOSTTYPE), sun)
+TDOC = $(DESTDIR)$(prefix)/doc/mlton
+endif
+
+GZIP_MAN = true
+ifeq ($(HOSTTYPE), sun)
+GZIP_MAN = false
+endif
 
 .PHONY: install
 install:
@@ -225,9 +236,12 @@ install:
 	$(CP) $(BIN)/$(LEX) $(BIN)/$(PROF) $(BIN)/$(YACC) $(TBIN)/
 	( cd $(SRC)/man && tar cf - mllex.1 mlprof.1 mlton.1 mlyacc.1 ) | \
 		( cd $(TMAN)/ && tar xf - )
-	cd $(TMAN) && $(GZIP) mllex.1 mlprof.1 mlton.1 mlyacc.1
-	find $(TDOC)/ -name CVS -type d | xargs --no-run-if-empty rm -rf
-	find $(TDOC)/ -name .cvsignore -type f | xargs --no-run-if-empty rm -rf
+	if $(GZIP_MAN); then						\
+		cd $(TMAN) && $(GZIP) mllex.1 mlprof.1 mlton.1		\
+			mlyacc.1;					\
+	fi
+	find $(TDOC)/ -name CVS -type d | xargs rm -rf
+	find $(TDOC)/ -name .cvsignore -type f | xargs rm -rf
 	for f in $(TLIB)/$(AOUT) \
 		$(TBIN)/$(LEX) $(TBIN)/$(PROF) $(TBIN)/$(YACC); do \
 		strip --remove-section=.comment --remove-section=.note $$f; \

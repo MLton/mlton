@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # This script runs the regression tests in src/regression.
 # It also compiles the tests in benchmark/tests
@@ -56,7 +56,7 @@ compFail () {
 	echo "compilation of $f failed with $flags"
 }
 
-$mlton -verbose 1
+$mlton -verbose 1 || echo 'no mlton present'
 echo "flags = $flags"
 
 cd $src/regression

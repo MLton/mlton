@@ -18,20 +18,20 @@ extern bool returnToC;
 
 #define IsInt(p) (0x3 & (int)(p))
 
-#define BZ(x, l)						\
-	do {							\
-		if (DEBUG_CCODEGEN)				\
-			fprintf (stderr, "%d  BZ(%d, %s)\n", 	\
-					__LINE__, (x), #l); 	\
-		if (0 == (x)) goto l;				\
+#define BZ(x, l)							\
+	do {								\
+		if (DEBUG_CCODEGEN)					\
+			fprintf (stderr, "%s: %d  BZ(%d, %s)\n",	\
+					__FILE__, __LINE__, (x), #l);	\
+		if (0 == (x)) goto l;					\
 	} while (0)
 
-#define BNZ(x, l)						\
-	do {							\
-		if (DEBUG_CCODEGEN)				\
-			fprintf (stderr, "%d  BNZ(%d, %s)\n",	\
-					__LINE__, (x), #l);	\
-		if (x) goto l;					\
+#define BNZ(x, l)							\
+	do {								\
+		if (DEBUG_CCODEGEN)					\
+			fprintf (stderr, "%s: %d  BNZ(%d, %s)\n",	\
+					__FILE__, __LINE__, (x), #l);	\
+		if (x) goto l;						\
 	} while (0)
 
 /* ------------------------------------------------- */
@@ -58,8 +58,8 @@ struct cont {
 
 #define ChunkSwitch(n)							\
 		if (DEBUG_CCODEGEN)					\
-			fprintf (stderr, "%d  entering chunk %d\n",	\
-					__LINE__, n);			\
+			fprintf (stderr, "%s: %d  entering chunk %d\n",	\
+					__FILE__, __LINE__, n);		\
 		CacheFrontier();					\
 		CacheStackTop();					\
 		while (1) {						\
@@ -83,13 +83,13 @@ struct cont {
 /*                Calling SML from C                 */
 /* ------------------------------------------------- */
 
-#define Thread_returnToC()						\
-	do {								\
-		if (DEBUG_CCODEGEN)					\
-			fprintf (stderr, "%d  Thread_returnToC()\n",	\
-					__LINE__);			\
-		returnToC = TRUE;					\
-		return cont;						\
+#define Thread_returnToC()							\
+	do {									\
+		if (DEBUG_CCODEGEN)						\
+			fprintf (stderr, "%s: %d  Thread_returnToC()\n",	\
+					__FILE__, __LINE__);			\
+		returnToC = TRUE;						\
+		return cont;							\
 	} while (0)
 
 /* ------------------------------------------------- */
@@ -227,17 +227,18 @@ int main (int argc, char **argv) {						\
 	do {									\
 		l_nextFun = *(word*)(stackTop - WORD_SIZE);			\
 		if (DEBUG_CCODEGEN)						\
-			fprintf (stderr, "%d  Return()  l_nextFun = %d\n",	\
-					__LINE__, l_nextFun);			\
+			fprintf (stderr, "%s: %d  Return()  l_nextFun = %d\n",	\
+					__FILE__, __LINE__, l_nextFun);		\
 		goto top;							\
 	} while (0)
 
-#define Raise()								\
-	do {								\
-		if (DEBUG_CCODEGEN)					\
-			fprintf (stderr, "%d  Raise\n", __LINE__);	\
-		stackTop = StackBottom + ExnStack;			\
-		Return();						\
+#define Raise()							\
+	do {							\
+		if (DEBUG_CCODEGEN)				\
+			fprintf (stderr, "%s: %d  Raise\n", 	\
+					__FILE__, __LINE__);	\
+		stackTop = StackBottom + ExnStack;		\
+		Return();					\
 	} while (0)
 
 /* ------------------------------------------------- */
@@ -286,21 +287,10 @@ int main (int argc, char **argv) {						\
 		*(word*)frontier = (h);					\
 		x = frontier + GC_NORMAL_HEADER_SIZE;			\
 		if (DEBUG_CCODEGEN)					\
-			fprintf (stderr, "%d  0x%x = Object(%d)\n",	\
-				 __LINE__, x, h);			\
+			fprintf (stderr, "%s: %d  0x%x = Object(%d)\n",	\
+					__FILE__, __LINE__, x, h);	\
 		assert (frontier <= gcState.limitPlusSlop);		\
 	} while (0)
-
-#define Assign(ty, o, v)						\
-	do {								\
-		*(ty*)(frontier + GC_NORMAL_HEADER_SIZE + (o)) = (v);	\
-	} while (0)
-
-#define AC(o, x) Assign(uchar, o, x)
-#define AD(o, x) Assign(double, o, x)
-#define AI(o, x) Assign(int, o, x)
-#define AP(o, x) Assign(pointer, o, x)
-#define AU(o, x) Assign(uint, o, x)
 
 #define EndObject(bytes)					\
 	do {							\
@@ -410,25 +400,39 @@ enum {
 
 #endif
 
-static inline Int Int_addOverflow(Int lhs, Int rhs, Bool *overflow) {
+static inline Int Int_addOverflow (Int lhs, Int rhs, Bool *overflow) {
 	long long	tmp;
 
 	tmp = (long long)lhs + rhs;
 	*overflow = (tmp != (int)tmp);
 	return tmp;
 }
-static inline Int Int_mulOverflow(Int lhs, Int rhs, Bool *overflow) {
+static inline Int Int_mulOverflow (Int lhs, Int rhs, Bool *overflow) {
 	long long	tmp;
 
 	tmp = (long long)lhs * rhs;
 	*overflow = (tmp != (int)tmp);
 	return tmp;
 }
-static inline Int Int_subOverflow(Int lhs, Int rhs, Bool *overflow) {
+static inline Int Int_subOverflow (Int lhs, Int rhs, Bool *overflow) {
 	long long	tmp;
 
 	tmp = (long long)lhs - rhs;
 	*overflow = (tmp != (int)tmp);
+	return tmp;
+}
+static inline Word32 Word32_addOverflow (Word32 lhs, Word32 rhs, Bool *overflow) {
+	ullong tmp;
+
+	tmp = (ullong)lhs + rhs;
+	*overflow = (tmp != (Word32)tmp);
+	return tmp;
+}
+static inline Word32 Word32_mulOverflow (Word32 lhs, Word32 rhs, Bool *overflow) {
+	ullong tmp;
+
+	tmp = (ullong)lhs * rhs;
+	*overflow = (tmp != (Word32)tmp);
 	return tmp;
 }
 
@@ -438,10 +442,12 @@ static inline Int Int_subOverflow(Int lhs, Int rhs, Bool *overflow) {
 		int overflow;							\
 		dst = f(n1, n2, &overflow);					\
 		if (DEBUG_CCODEGEN)						\
-			fprintf(stderr, #f "(%d, %d) = %d\n", n1, n2, dst);	\
+			fprintf (stderr, "%s: %d " #f "(%d, %d) = %d\n",	\
+					__FILE__, __LINE__, n1, n2, dst);	\
 		if (overflow) {							\
 			if (DEBUG_CCODEGEN)					\
-				fprintf(stderr, "overflow\n");			\
+				fprintf (stderr, "%s: %d overflow\n",		\
+						__FILE__, __LINE__);		\
 			goto l;							\
 		}								\
 	} while (0)
@@ -600,6 +606,43 @@ static inline Word Word32_mulCheckFast (Word n1, Word n2) {
 #define Real_neg(x) (-(x))
 #define Real_sub(x, y) ((x) - (y))
 #define Real_toInt(x) ((int)(x))
+
+typedef volatile union {
+	word tab[2];
+	double d;
+} DoubleOr2Words;
+
+static inline double Real_fetch (double *dp) {
+ 	DoubleOr2Words u;
+	Word32 *p;
+
+	p = (Word32*)dp;
+	u.tab[0] = p[0];
+	u.tab[1] = p[1];
+ 	return u.d;
+}
+
+static inline void Real_move (double *dst, double *src) {
+	Word32 *pd;
+	Word32 *ps;
+	Word32 t;
+
+	pd = (Word32*)dst;
+	ps = (Word32*)src;
+	t = ps[1];
+	pd[0] = ps[0];
+	pd[1] = t;		
+}
+
+static inline void Real_store (double *dp, double d) {
+ 	DoubleOr2Words u;
+	Word32 *p;
+
+	p = (Word32*)dp;
+	u.d = d;
+	p[0] = u.tab[0];
+	p[1] = u.tab[1];
+}
 
 /* ------------------------------------------------- */
 /*                      Vector                       */

@@ -28,11 +28,15 @@ structure Real64: REAL =
 	    open Math
 
 	    structure MLton = Primitive.MLton
-	    (* Patches for Cygwin newlib, which does not handle out of range
-	     * args.
+	    (* Patches for Cygwin and Sun, whose math libraries do not handle
+	     * out of range args.
 	     *)
 	    val (acos, asin, ln, log10) =
-	       if not MLton.native andalso MLton.hostType = MLton.Cygwin
+	       if not MLton.native
+		  andalso (case MLton.hostType of
+			      MLton.Cygwin => true
+			    | MLton.Sun => true
+			    | _ => false)
 		  then
 		     let
 			fun patch f x =

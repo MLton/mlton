@@ -1,6 +1,15 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 set -e
+
+case `hosttype` in
+cygwin|freebsd|linux)
+	grepFlags='-q'
+;;
+sun)
+	grepFlags=''
+;;
+esac
 
 doit () {
 	rm -rf '.#'* .*~ *~ *.a *.o CM core mlmon.out
@@ -10,7 +19,8 @@ doit () {
 	for f in `ls`; do
 		if [ -d $f ]; then
 			cd $f;
-			if [ -r Makefile ] && grep -q '^clean:' Makefile ; then 
+			if [ -r Makefile ] && 
+				grep $grepFlags '^clean:' Makefile ; then 
 				gmake clean
 			else
 				doit

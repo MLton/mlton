@@ -315,7 +315,9 @@ struct
       Label.fromString (case !Control.hostType of
 			   Control.Cygwin => "_LINE__"
 			 | Control.FreeBSD => "__LINE__"
-			 | Control.Linux => "__LINE__"))
+			 | Control.Linux => "__LINE__"
+			 | _ => Error.bug "x86 can't handle hostType"))
+					 
   val fileLine
     = fn () => if !Control.debug
 		 then Operand.immediate (Immediate.const_int 0)

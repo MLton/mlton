@@ -5,7 +5,7 @@
 
 Int Posix_FileSys_open (NullString p, Word w, Mode m) {
 
-#if (defined (__linux__) || defined (__FreeBSD__))
+#if (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
 
 	return open ((char *) p, w, m);
 

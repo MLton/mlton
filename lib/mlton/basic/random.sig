@@ -19,8 +19,8 @@ signature RANDOM =
       val nRandom: {list: 'a list, length: int, n: int} -> 'a list
       (* 0.0 <= real() <= 1.0 *)
       val real: unit -> real
-      val seed: unit -> Word.t
+      val seed: unit -> Word.t option
       val srand: Word.t -> unit
-      val useed: unit -> Word.t
+      val useed: unit -> Word.t option
       val word: unit -> Word.t
    end

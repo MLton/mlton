@@ -17,7 +17,7 @@ signature MLTON =
        *)
       val eq: 'a * 'a -> bool
       val errno: unit -> int (* the value of the C errno global *)
-      datatype hostType = Cygwin | FreeBSD | Linux
+      datatype hostType = Cygwin | FreeBSD | Linux | Sun
       val hostType: hostType
       val isMLton: bool
       val safe: bool

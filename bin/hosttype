@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 set -e
 
@@ -11,6 +11,9 @@ CYGWIN*)
 	;;
 FreeBSD*)
 	hosttype=freebsd
+	;;
+SunOS)
+	hosttype=sun
 	;;
 *)
 	hosttype=unknown

@@ -94,6 +94,7 @@ struct
 	       Control.Cygwin => true
 	     | Control.FreeBSD => false
 	     | Control.Linux => false
+	     | _ => Error.bug "x86 can't handle hostType"
 
 	val makeC = outputC
 	val makeS = outputS
@@ -154,6 +155,7 @@ struct
 			  Control.Cygwin => String.dropPrefix (mainLabel, 1)
 			| Control.FreeBSD => mainLabel
 			| Control.Linux => mainLabel
+			| _ => Error.bug "x86 can't handle hostType"
 		 in
 		    [mainLabel, if reserveEsp then C.truee else C.falsee]
 		 end

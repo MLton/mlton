@@ -3,6 +3,10 @@
 
 #include <stdlib.h>
 #include <errno.h>
+#if (defined __sun__)
+#include <sys/filio.h> /* For FIONBIO, FIONREAD. */
+#include <sys/sockio.h> /* For SIOCATMARK. */
+#endif
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/socket.h>

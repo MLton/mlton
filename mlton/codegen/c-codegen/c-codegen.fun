@@ -120,7 +120,14 @@ structure Operand =
    struct
       open Operand
 
-      val layout = Layout.str o toString
+      fun isMem (z: t): bool =
+	 case z of
+	    ArrayOffset _ => true
+	  | Cast (z, _) => isMem z
+	  | Contents _ => true
+	  | Offset _ => true
+	  | StackOffset _ => true
+	  | _ => false
    end
 
 fun creturn (t: Runtime.Type.t): string =
@@ -226,7 +233,9 @@ fun outputDeclarations
 	  end)
       fun declareMain () =
 	 let
-	    val magic = C.word (Random.useed ())
+	    val magic = C.word (case Random.useed () of
+				   NONE => String.hash (!Control.inputFile)
+				 | SOME w => w)
 	 in 
 	    C.callNoSemi ("Main",
 			  [C.int (!Control.cardSizeLog2),
@@ -367,6 +376,27 @@ fun output {program as Machine.Program.T {chunks,
 	       then s
 	    else concat [s, " /* ", Label.toString l, " */"]
 	 end
+      val handleMisalignedReals =
+	 !Control.alignDoubles = Control.AlignNo
+	 andalso !Control.hostType = Control.Sun
+      fun addr z = concat ["&(", z, ")"]
+      fun realFetch z = concat ["Real_fetch(", addr z, ")"]
+      fun realMove {dst, src} =
+	 concat ["Real_move(", addr dst, ", ", addr src, ");\n"]
+      fun realStore {dst, src} =
+	 concat ["Real_store(", addr dst, ", ", src, ");\n"]
+      fun move {dst: string, dstIsMem: bool,
+		src: string, srcIsMem: bool,
+		ty: Type.t}: string =
+	 if handleMisalignedReals
+	    andalso Type.equals (ty, Type.real)
+	    then
+	       case (dstIsMem, srcIsMem) of
+		  (false, false) => concat [dst, " = ", src, ";\n"]
+		| (false, true) => concat [dst, " = ", realFetch src, ";\n"]
+		| (true, false) => realStore {dst = dst, src = src}
+		| (true, true) => realMove {dst = dst, src = src}
+	 else concat [dst, " = ", src, ";\n"]
       local
 	 datatype z = datatype Operand.t
       	 fun toString (z: Operand.t): string =
@@ -424,7 +454,12 @@ fun output {program as Machine.Program.T {chunks,
       in
 	 val operandToString = toString
       end
-   
+      fun fetchOperand (z: Operand.t): string =
+	 if handleMisalignedReals
+	    andalso Type.equals (Operand.ty z, Type.real)
+	    andalso Operand.isMem z
+	    then realFetch (operandToString z)
+	 else operandToString z
       fun outputStatement (s, print) =
 	 let
 	    datatype z = datatype Statement.t
@@ -435,55 +470,71 @@ fun output {program as Machine.Program.T {chunks,
 		  (print "\t"
 		   ; (case s of
 			 Move {dst, src} =>
-			    C.move ({dst = operandToString dst,
-				     src = operandToString src},
-				    print)
+			    print
+			    (move {dst = operandToString dst,
+				   dstIsMem = Operand.isMem dst,
+				   src = operandToString src,
+				   srcIsMem = Operand.isMem src,
+				   ty = Operand.ty dst})
 		       | Noop => ()
 		       | Object {dst, header, size, stores} =>
 			    (C.call ("Object", [operandToString dst,
 						C.word header],
 				     print)
-			     ; print "\t"
 			     ; (Vector.foreach
 				(stores, fn {offset, value} =>
-				 (C.call
-				  (concat ["A", Type.name (Operand.ty value)],
-				   [C.int offset, operandToString value], 
-				   print)
-				  ; print "\t")))
+				 let
+				    val ty = Operand.ty value
+				    val dst =
+				       concat
+				       ["C", Type.name (Operand.ty value),
+					"(frontier + ",
+					C.int (offset
+					       + Runtime.normalHeaderSize),
+					")"]
+				 in
+				    print "\t"
+				    ; (print
+				       (move {dst = dst,
+					      dstIsMem = true,
+					      src = operandToString value,
+					      srcIsMem = Operand.isMem value,
+					      ty = ty}))
+				 end))
+			     ; print "\t"
 			     ; C.call ("EndObject", [C.int size], print))
 		       | PrimApp {args, dst, prim} =>
 			    let
-			       val _ =
-				  case dst of
-				     NONE => ()
-				   | SOME dst =>
-					print
-					(concat [operandToString dst, " = "])
-			       fun doit () =
-				  C.call
-				  (Prim.toString prim,
-				   Vector.toListMap (args, operandToString),
-				   print)
-			       val _ =
+			       fun call (): string =
+				  concat
+				  [Prim.toString prim,
+				   "(",
+				   concat
+				   (List.separate
+				    (Vector.toListMap (args, fetchOperand),
+				     ", ")),
+				   ")"]
+			       fun app (): string =
 				  case Prim.name prim of
 				     Prim.Name.FFI s =>
 					(case Prim.numArgs prim of
-					    NONE => print (concat [s, ";\n"])
-					  | SOME _ => doit ())
-				   | _ => doit ()
-			    in 
-			       ()
+					    NONE => s
+					  | SOME _ => call ())
+				   | _ => call ()
+			    in
+			       case dst of
+				  NONE => (print (app ())
+					   ; print ";\n")
+				| SOME dst =>
+				     print (move {dst = operandToString dst,
+						  dstIsMem = Operand.isMem dst,
+						  src = app (),
+						  srcIsMem = false,
+						  ty = Operand.ty dst})
 			    end
 		       | ProfileLabel l =>
 			    C.call ("ProfileLabel", [ProfileLabel.toString l],
 				    print)
-		       | SetExnStackLocal {offset} =>
-			    C.call ("SetExnStackLocal", [C.int offset], print)
-		       | SetExnStackSlot {offset} =>
-			    C.call ("SetExnStackSlot", [C.int offset], print)
-		       | SetSlotExnStack {offset} =>
-			    C.call ("SetSlotExnStack", [C.int offset], print)
 			    ))
 	 end
       val profiling = !Control.profile <> Control.ProfileNone
@@ -546,12 +597,14 @@ fun output {program as Machine.Program.T {chunks,
 		 end)
 	    fun push (return: Label.t, size: int) =
 	       (print "\t"
-		; C.move ({dst = operandToString
-			   (Operand.StackOffset
-			    {offset = size - Runtime.labelSize,
-			     ty = Type.label return}),
-			   src = operandToString (Operand.Label return)},
-			  print)
+		; print (move {dst = (operandToString
+				      (Operand.StackOffset
+				       {offset = size - Runtime.labelSize,
+					ty = Type.label return})),
+			       dstIsMem = true,
+			       src = operandToString (Operand.Label return),
+			       srcIsMem = false,
+			       ty = Type.Label return})
 		; C.push (size, print)
 		; if profiling
 		     then print "\tFlushStackTop();\n"
@@ -574,21 +627,22 @@ fun output {program as Machine.Program.T {chunks,
 					concat ["tmp",
 						Int.toString (Counter.next c)]
 				     val _ =
-					print (concat
-					       ["\t",
-						Runtime.Type.toString
-						(Type.toRuntime ty),
-						" ", tmp,
-						" = ", operandToString z,
-						";\n"])
+					print
+					(concat
+					 ["\t",
+					  Runtime.Type.toString
+					  (Type.toRuntime ty),
+					  " ", tmp, " = ",
+					  fetchOperand z,
+					  ";\n"])
 				  in
 				     tmp
 				  end
-			     | _ => operandToString z)
+			     | _ => fetchOperand z)
 		     in
 			(args, fn () => print "\t}\n")
 		     end
-	       else (Vector.toListMap (args, operandToString),
+	       else (Vector.toListMap (args, fetchOperand),
 		     fn () => ())
 	    val tracePrintLabelCode =
 	       Trace.trace
@@ -642,10 +696,18 @@ fun output {program as Machine.Program.T {chunks,
 			     | SOME fi => pop (valOf frameInfo)
 			    ; (Option.app
 			       (dst, fn x =>
-				print (concat
-				       ["\t", operandToString x, " = ",
-					creturn (Type.toRuntime (Operand.ty x)),
-					";\n"]))))
+				let
+				   val ty = Operand.ty x
+				in
+				   print
+				   (concat
+				    ["\t",
+				     move {dst = operandToString x,
+					   dstIsMem = Operand.isMem x,
+					   src = creturn (Type.toRuntime ty),
+					   srcIsMem = false,
+					   ty = ty}])
+				end)))
 		      | Kind.Func => ()
 		      | Kind.Handler {frameInfo, ...} => pop frameInfo
 		      | Kind.Jump => ()
@@ -743,7 +805,7 @@ fun output {program as Machine.Program.T {chunks,
 			   val (args, afterCall) =
 			      case frameInfo of
 				 NONE =>
-				    (Vector.toListMap (args, operandToString),
+				    (Vector.toListMap (args, fetchOperand),
 				     fn () => ())
 			       | SOME frameInfo =>
 				    let

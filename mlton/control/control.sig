@@ -18,6 +18,9 @@ signature CONTROL =
       (*            Begin Flags             *)
       (*------------------------------------*)
 
+      datatype alignDoubles = AlignNo | AlignPad | AlignSkip
+      val alignDoubles: alignDoubles ref
+	 
       val basisLibs: string list
       val basisLibrary: string ref
 
@@ -64,10 +67,7 @@ signature CONTROL =
        | Self
       val host: host ref
 
-      datatype hostType =
-	 Cygwin
-       | FreeBSD
-       | Linux
+      datatype hostType = datatype MLton.hostType
       val hostType: hostType ref
 
       (* Indentation used in laying out ILs. *)

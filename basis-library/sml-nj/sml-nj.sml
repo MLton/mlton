@@ -21,7 +21,17 @@ structure SMLofNJ: SML_OF_NJ =
 	    exception UNKNOWN
 	    datatype os_kind = BEOS | MACOS | OS2 | UNIX | WIN32
 
-	    fun getHostArch () = "X86"
+	    fun getHostArch () =
+	       let
+		  open Primitive.MLton
+	       in
+		  case hostType of
+		     Cygwin => "X86"
+		   | FreeBSD => "X86"
+		   | Linux => "X86"
+		   | Sun => "SPARC"
+	       end
+		     
 	    fun getOSKind () = UNIX
 	    fun getOSName () =
 	       let
@@ -31,6 +41,7 @@ structure SMLofNJ: SML_OF_NJ =
 		     Cygwin => "Cygwin"
 		   | FreeBSD => "FreeBSD"
 		   | Linux => "Linux"
+		   | Sun => "Solaris"
 	       end
 	 end
       

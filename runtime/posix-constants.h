@@ -71,12 +71,22 @@
 #define Posix_FileSys_S_ifchr S_IFCHR
 #define Posix_FileSys_S_ififo S_IFIFO
 
-/* Cygwin/Windows distinguish between text and binary files, but Linux and
- * FreeBSD do not.
+/* Cygwin/Windows distinguish between text and binary files, but Linux,
+ * FreeBSD, and Solaris do not.
  */
-#if (defined (__linux__) || defined (__FreeBSD__))
+#if (defined (__CYGWIN__))
+
+/* Nothing. */
+
+#elif (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
+
 #define O_BINARY 0
 #define O_TEXT 0
+
+#else 
+
+#error May need to define O_BINARY and O_TEXT on platform.
+
 #endif
 
 #define Posix_FileSys_O_append O_APPEND
@@ -85,7 +95,7 @@
 #define Posix_FileSys_O_excl O_EXCL
 #define Posix_FileSys_O_noctty O_NOCTTY
 #define Posix_FileSys_O_nonblock O_NONBLOCK
-#if (defined (__CYGWIN__) || defined (__linux__))
+#if (defined (__CYGWIN__) || defined (__linux__) || defined (__sun__))
 #define Posix_FileSys_O_sync O_SYNC
 #elif (defined (__FreeBSD__))
 #define Posix_FileSys_O_sync 0
@@ -222,7 +232,7 @@ enum {
 #define Posix_Signal_vtalrm SIGVTALRM
 
 #define Posix_Signal_block SIG_BLOCK
-#if (defined (__CYGWIN__) || defined (__FreeBSD__))
+#if (defined (__CYGWIN__) || defined (__FreeBSD__) || defined (__sun__))
 #define Posix_Signal_numSignals NSIG
 #elif (defined (__linux__))
 #define Posix_Signal_numSignals _NSIG

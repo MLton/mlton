@@ -1,61 +1,70 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # This script adds a new crosscompiler target for MLton.
-# You may need to set installLibDir, crossHost, or cygwin.
-# This script builds an executable in the current directory that you must
-# run on the target machine.  This executable prints on standard output
-# the values of the compile time constants needed by the MLton when 
-# cross compiling.  You must place the output of running the executable in
-# $libDir/$crossHost/constants.
+#
+# It takes three arguments.
+#
+# 1. <crossHost>, will be used via the -b flag passed to the GCC
+# cross-compiler tools.  You must already have installed the GCC
+# cross-compiler tools.  This script does not do that, although you
+# may find the script build-cross-gcc helpful.  <crossHost> here
+# should be the same as target in build-cross-gcc.  Examples are
+# i386-pc-cygwin and sparc-sun-solaris.
+#
+# 2. {cygwin|sun}, specifies the kind of system.  There are only two
+# possibilities.
+#
+# 3. <machine> specifies a remote machine of the cross type.  After
+# cross compiling the runtime, this script will ssh to that machine to
+# get the values of the constants that the MLton basis library needs.
+# Of course, you must be able to ssh to this machine.
+#
+# You also may need to set $libDir, which determines where the
+# cross-compiler target will be installed.
 
 set -e
 
+die () {
+	echo >&2 "$1"
+	exit 1
+}
+
+usage () {
+	die "usage: $name <crossHost> {cygwin|sun} <machine>"
+}
+
+case "$#" in
+3)
+	crossHost="$1"
+	crossType="$2"
+	machine="$3"
+	;;
+*)
+	usage
+	;;
+esac
+
+name=`basename $0`
 original=`pwd`
 dir=`dirname $0`
 src=`cd $dir/.. && pwd`
 
-# libDir is the mlton lib directory where you would like the 
-# cross-compiler information to be installed.  If you have installed from the
-# rpms, this will usually be /usr/local/lib/mlton.  You must have write 
-# permission there. 
+# libDir is the mlton lib directory where you would like the
+# cross-compiler information to be installed.  If you have installed
+# from the rpms, this will usually be /usr/lib/mlton.  You must have
+# write permission there.
 
 lib="$src/build/lib"
 
-# crossHost will be used via the -b flag passed to the GCC cross-compiler tools.
-# You must already have installed the GCC cross-compiler tools.  This script
-# does not do that, although you may find the script build-cross-gcc helpful.
-# crossHost here should be the same as target in build-cross-gcc.
-crossHost='i386-pc-cygwin'
-
-# There are two possible types for the target machine: cygwin and linux. 
-# It should be obvious which of those you want.
-
-crossType='cygwin'
-
 # You shouldn't need to change anything below this line.
 
-name=`basename $0`
-
-function die {
-	echo >&2 $1
-	exit 1
-}
-
-function usage {
-	die "usage: $name"
-}
-
-case "$#" in
-0)
+case "$crossType" in
+cygwin|sun)
 ;;
 *)
-	usage
+	die "invalid crossType: $crossType"
 ;;
 esac
-
-if [ "$crossType" != 'linux' -a "$crossType" != 'cygwin' ]; then
-	die "invalid crossType: $crossType"
-fi
 
 PATH=$src/build/bin:$PATH
 
@@ -72,10 +81,14 @@ echo 'Making runtime.'
 exe='print-constants'
 echo 'Building print-constants executable.'
 (
-	mlton -build-constants >$exe.c
-	mlton -output $original/$exe.exe -host $crossHost $exe.c
+	mlton -build-constants true >$exe.c
+	mlton -output $original/$exe -host $crossHost $exe.c
 	rm -f $exe.c
 ) || die "Unable to build $exe executable."
 
-echo "You must now run $exe.exe on the $crossHost machine"
-echo "and put the output in $lib/$crossHost/constants."
+echo "Running print-constants on $machine."
+tar cf - $exe |
+	ssh $machine "tar xf - && ./$exe && rm -f $exe" \
+	>"$lib/$crossHost/constants"
+
+rm -f $original/$exe

@@ -36,10 +36,10 @@ structure Place =
    end
 
 val buildConstants: bool ref = ref false
+val ccOpts: string list ref = ref []
 val coalesce: int option ref = ref NONE
 val expert: bool ref = ref false
 val gcc: string ref = ref "<unset>"
-val gccSwitches : string ref = ref ""
 val includeDirs: string list ref = ref []
 val keepGenerated = ref false
 val keepO = ref false
@@ -65,8 +65,18 @@ val hostMap: unit -> {host: string, hostType: Control.hostType} list =
 		"cygwin" => Control.Cygwin
 	      | "freebsd" => Control.FreeBSD
 	      | "linux" => Control.Linux
+	      | "sun" => Control.Sun
 	      | _ => Error.bug (concat ["strange hostType: ", hostType]))}
       | _ => Error.bug (concat ["strange host mapping: ", line])))
+
+fun setHostType (hostString: string, usage): unit =
+   case List.peek (hostMap (), fn {host = h, ...} => h = hostString) of
+      NONE => usage (concat ["invalid host ", hostString])
+    | SOME {hostType = t, ...} =>
+	 (Control.hostType := t
+	  ; (case !Control.hostType of
+		Control.Sun => Control.Native.native := false
+	      | _ => ()))
    
 fun makeOptions {usage} = 
    let
@@ -77,6 +87,16 @@ fun makeOptions {usage} =
       List.map
       (
        [
+       (Expert, "align-doubles", " {no|pad|skip}",
+	" how to align doubles",
+	(SpaceString (fn s =>
+		      alignDoubles
+		      := (case s of
+			     "no" => AlignNo
+			   | "pad" => AlignPad
+			   | "skip" => AlignSkip
+			   | _ => usage (concat ["invalid -align-doubles flag: ",
+						 s]))))),
        (Normal, "basis", " {2002|1997|...}",
 	"select basis library to prefix to the program",
 	SpaceString (fn s =>
@@ -87,30 +107,23 @@ fun makeOptions {usage} =
 			   then basisLibrary := s'
 			else usage (concat ["invalid -basis flag: ", s])
 		     end)),
-       (Expert, "build-constants", "",
+       (Expert, "build-constants", " {false|true}",
 	"output C file that prints basis constants",
-	trueRef buildConstants),
-       (Expert, "card-size-log2", " n",
+	boolRef buildConstants),
+       (Expert, "card-size-log2", " <n>",
 	"log (base 2) of card size used by GC",
 	intRef cardSizeLog2),
-       (Expert, "cc", " gcc", "path to gcc executable",
-	SpaceString (fn s => (gcc := s; gccSwitches := ""))),
-       (Expert, "coalesce", " n", "coalesce chunk size for C codegen",
+       (Expert, "cc", " <gcc>", "path to gcc executable",
+	SpaceString (fn s => gcc := s)),
+       (Expert, "cc-opt", " <opt>", "pass option to C compiler", push ccOpts),
+       (Expert, "coalesce", " <n>", "coalesce chunk size for C codegen",
 	Int (fn n => coalesce := SOME n)),
-       (Expert, "ccopt", " opt", "pass option to C compiler",
-	SpaceString (fn s =>
-		     if 3 = String.size s
-			andalso String.isPrefix {string = s, prefix = "-O"}
-			then (optimization
-			      := Char.toInt (String.sub (s, 2))
-			         - Char.toInt #"0")
-		     else gccSwitches := concat [!gccSwitches, " ", s])),
        (Expert, "debug", " {false|true}", "produce executable with debug info",
 	boolRef debug),
        (Normal, "detect-overflow", " {true|false}",
 	"overflow checking on integer arithmetic",
 	boolRef detectOverflow),
-       (Expert, "diag", " pass", "keep diagnostic info for pass",
+       (Expert, "diag", " <pass>", "keep diagnostic info for pass",
 	SpaceString (fn s =>
 		     (case Regexp.fromString s of
 			 SOME (re,_) => let val re = Regexp.compileDFA re
@@ -119,10 +132,8 @@ fun makeOptions {usage} =
 					   ; List.push (keepPasses, re)
 					end
 		       | NONE => usage (concat ["invalid -diag flag: ", s])))),
-       (Expert, "drop-pass", " pass", "omit optimization pass",
+       (Expert, "drop-pass", " <pass>", "omit optimization pass",
 	SpaceString (fn s => List.push (dropPasses, s))),
-       (Expert, "D", "define", "define a constant for gcc",
-	String (fn s => (List.push (defines, s)))),
        (Expert, "eliminate-overflow", " {true|false}",
 	"eliminate useless overflow tests",
 	boolRef eliminateOverflow),
@@ -152,26 +163,14 @@ fun makeOptions {usage} =
 		concat (List.separate (List.map (hostMap (), #host), "|")),
 		"}"],
 	"host type that executable will run on",
-	SpaceString (fn s => host := (if s = "self" then Self else Cross s))),
+	SpaceString (fn s =>
+		     (setHostType (s, usage)
+		      ; host := (if s = "self" then Self else Cross s)))),
        (Normal, "ieee-fp", " {false|true}", "use strict IEEE floating-point",
 	boolRef Native.IEEEFP),
-       (Expert, "indentation", " n", "indentation level in ILs",
+       (Expert, "indentation", " <n>", "indentation level in ILs",
 	intRef indentation),
-(*        (Normal, "include", " file.h", "include a .h file",
- * 	SpaceString (fn s => List.push (includes, s))),
- *)
-       (Normal, "inline", " <n>", "inlining threshold",
-	Int setInlineSize),
-       (* -inline-array true is no longer allowed, because GC_arrayAllocate
-	* knows intimate details of the generational GC.
-	*)
-(*        (Expert, "inline-array", " {false|true}",
- * 	"inline array allocation",
- *	boolRef inlineArrayAllocation),
- *)
-(*        (Normal, "I", "dir", "search dir for include files",
- * 	push includeDirs),
- *)
+       (Normal, "inline", " <n>", "inlining threshold", Int setInlineSize),
        (Normal, "keep", " {g|o|sml}", "save intermediate files",
 	SpaceString (fn s =>
 		     case s of
@@ -183,14 +182,14 @@ fun makeOptions {usage} =
 		      | "rssa" => keepRSSA := true
 		      | "ssa" => keepSSA := true
 		      | _ => usage (concat ["invalid -keep flag: ", s]))),
-       (Expert, "keep-pass", " pass", "keep the results of pass",
+       (Expert, "keep-pass", " <pass>", "keep the results of pass",
 	SpaceString
 	(fn s => (case Regexp.fromString s of
 		     SOME (re,_) => let val re = Regexp.compileDFA re
 				    in List.push (keepPasses, re)
 				    end
 		   | NONE => usage (concat ["invalid -keep-pass flag: ", s])))),
-       (Expert, "lib", " lib", "set MLton lib directory",
+       (Expert, "lib", " <lib>", "set MLton lib directory",
 	SpaceString (fn s => libDir := s)),
        (Normal, "lib-search", " <dir>", "search dir for libraries (like gcc -L)",
 	push libDirs),
@@ -214,7 +213,7 @@ fun makeOptions {usage} =
 	boolRef limitCheckCounts),
        (Normal, "link", " <library>", "link with library (like gcc -l)",
 	push libs),
-       (Expert, "loop-passes", " n", "loop optimization passes (1)",
+       (Expert, "loop-passes", " <n>", "loop optimization passes (1)",
 	Int 
 	(fn i => 
 	 if i >= 1
@@ -225,14 +224,16 @@ fun makeOptions {usage} =
        (Normal, "may-load-world", " {true|false}",
 	"may @MLton load-world be used",
 	boolRef mayLoadWorld),
-       (Normal, "native", " {true|false}", "use native code generator",
+       (Normal, "native",
+	if !hostType = Sun then " {false}" else " {true|false}",
+	"use native code generator",
 	boolRef Native.native),
-       (Expert, "native-commented", " n", "level of comments  (0)",
+       (Expert, "native-commented", " <n>", "level of comments  (0)",
 	intRef Native.commented),
        (Expert, "native-copy-prop", " {true|false}", 
 	"use copy propagation",
 	boolRef Native.copyProp),
-       (Expert, "native-cutoff", " n", 
+       (Expert, "native-cutoff", " <n>", 
 	"live transfer cutoff distance",
 	intRef Native.cutoff),
        (Expert, "native-live-transfer", " {0,...,8}",
@@ -244,9 +245,9 @@ fun makeOptions {usage} =
        (Expert, "native-move-hoist", " {true|false}",
 	"use move hoisting",
 	boolRef Native.moveHoist),
-       (Expert, "native-optimize", " n", "level of optimizations",
+       (Expert, "native-optimize", " <n>", "level of optimizations",
         intRef Native.optimize),
-       (Expert, "native-split", " n", "split assembly files at ~n lines",
+       (Expert, "native-split", " <n>", "split assembly files at ~n lines",
 	Int (fn i => Native.split := SOME i)),
        (Expert, "native-shuffle", " {true|false}",
 	"shuffle registers at C-calls",
@@ -280,15 +281,13 @@ fun makeOptions {usage} =
 	 case s of
 	    "source" => profileIL := ProfileSource
 	  | _ => usage (concat ["invalid -profile-il arg: ", s]))),
-       (Normal, "profile-split", " <regexp>",
-	"split duplicates of functions",
+       (Normal, "profile-split", " <regexp>", "split duplicates of functions",
 	SpaceString
 	(fn s =>
 	 case Regexp.fromString s of
 	    NONE => usage (concat ["invalid -profile-split regexp: ", s])
 	  | SOME (r, _) => profileSplit := Regexp.or [r, !profileSplit])),
-       (Normal, "profile-stack", " {false|true}",
-	"profile the stack",
+       (Normal, "profile-stack", " {false|true}", "profile the stack",
 	boolRef profileStack),
        (Normal, "safe", " {true|false}", "bounds checking and other checks",
 	boolRef safe),
@@ -315,7 +314,7 @@ fun makeOptions {usage} =
 		   | "sml" => Place.SML
 		   | _ => usage (concat ["invalid -stop arg: ", s])))),
        (Expert, #1 trace, " name1,...", "trace compiler internals", #2 trace),
-       (Expert, "text-io-buf-size", " n", "TextIO buffer size",
+       (Expert, "text-io-buf-size", " <n>", "TextIO buffer size",
 	intRef textIOBufSize),
        (Expert, "type-check", " {false|true}", "type check ILs",
 	boolRef typeCheck),
@@ -327,7 +326,7 @@ fun makeOptions {usage} =
 			| "1" => Top
 			| "2" => Pass
 			| "3" =>  Detail
-			| _ => usage (concat ["invalid -v arg: ", s])))),
+			| _ => usage (concat ["invalid -verbose arg: ", s])))),
        (Expert, "variant", " {header|first-word}",
 	"how to represent variant tags",
 	SpaceString
@@ -358,6 +357,7 @@ fun commandLine (args: string list): unit =
 	 case args of
 	    lib :: args => (libDir := lib; args)
 	  | _ => Error.bug "incorrect args from shell script"
+      val _ = setHostType ("self", usage)
       val result = parse args
       val gcc = !gcc
       val host = !host
@@ -369,10 +369,51 @@ fun commandLine (args: string list): unit =
       val _ = Control.libDir := lib
       val libDirs = lib :: !libDirs
       val includeDirs = concat [lib, "/include"] :: !includeDirs
+      val x86CFlags =
+	 ["-fno-strength-reduce",
+	  "-fno-strict-aliasing",
+	  "-fomit-frame-pointer",
+	  "-fschedule-insns",
+	  "-fschedule-insns2",
+	  "-malign-functions=5",
+	  "-malign-jumps=2",
+	  "-malign-loops=2",
+	  (* -mcpu=pentiumpro is the same as -mcpu=i686 *)
+	  "-mcpu=pentiumpro",
+	  "-w"]
+      val x86LinkLibs = ["m"]
+      val sparcCFlags =
+	 ["-Wa,-xarch=v8plusa",
+	  "-m32",
+	  "-malign-functions=4",
+	  "-mcpu=v9",
+	  "-mno-epilogue",
+	  "-mtune=ultrasparc",
+	  "-w"]
+      val sparcLinkLibs = ["dl", "m", "nsl", "socket"]
+      val (cFlags, defaultLibs) =
+	 case !hostType of
+	    Cygwin => (x86CFlags, x86LinkLibs)
+	  | FreeBSD => (x86CFlags, x86LinkLibs)
+	  | Linux => (x86CFlags, x86LinkLibs)
+	  | Sun => (sparcCFlags, sparcLinkLibs)
+      val ccOpts =
+	 List.fold
+	 (!ccOpts, cFlags, fn (ccOpt, ac) => 
+	  if ccOpt = ""
+	     then ac (* reset the options *)
+	  else if (3 = String.size ccOpt
+		   andalso String.isPrefix {string = ccOpt, prefix = "-O"})
+		  then (optimization := (Char.toInt (String.sub (ccOpt, 2))
+					 - Char.toInt #"0")
+			; ac)
+	       else ccOpt :: ac)
+      val ccOpts = String.tokens (concat (List.separate (ccOpts, " ")),
+				  Char.isSpace)
       val _ =
-	 case List.peek (hostMap (), fn {host = h, ...} => h = hostString) of
-	    NONE => usage (concat ["invalid host ", hostString])
-	  | SOME {hostType = t, ...} => hostType := t
+	 if !Native.native andalso !hostType = Sun
+	    then usage "can't use -native true on Sparc"
+	 else ()
       val _ =
 	 chunk := (if !Native.native
 		      then
@@ -416,18 +457,23 @@ fun commandLine (args: string list): unit =
 	       let
 		  val rec loop =
 		     fn [] => usage (concat ["invalid file suffix on ", input])
-		      | (suf, start) :: sufs =>
+		      | (suf, start, hasNum) :: sufs =>
 			   if String.isSuffix {string = input, suffix = suf}
 			      then (start,
-				    String.dropSuffix (File.fileOf input, 
-						       String.size suf))
+				    let
+				       val f = File.base input
+				    in
+				       if hasNum
+					  then File.base f
+				       else f
+				    end)
 			   else loop sufs
 		  datatype z = datatype Place.t
 	       in
-		  loop [(".cm", CM),
-			(".sml", SML),
-			(".c", Generated),
-			(".o", O)]
+		  loop [(".cm", CM, false),
+			(".sml", SML, false),
+			(".c", Generated, true),
+			(".o", O, true)]
 	       end
 	    val (csoFiles, rest) =
 	       List.splitPrefix (rest, fn s =>
@@ -480,8 +526,7 @@ fun commandLine (args: string list): unit =
 					   inputs,
 					   linkLibs])
 		     val definesAndIncludes =
-			List.concat [list ("-D", !defines),
-				     list ("-I", rev (includeDirs))]
+			list ("-I", rev (includeDirs))
 		     (* This mess is necessary because the linker on linux
 		      * adds a dependency to a shared library even if there are
 		      * no references to it.  So, on linux, we explicitly link
@@ -514,13 +559,13 @@ fun commandLine (args: string list): unit =
 				    NONE => ["-lgmp"]
 				  | SOME lib => [lib]
 			      end
+			 | Sun => ["-lgmp"]
                      val linkLibs: string list =
 			List.concat [list ("-L", rev (libDirs)),
 				     list ("-l",
-					   (if !debug
-					       then "mlton-gdb"
+					   (if !debug then "mlton-gdb"
 					    else "mlton")
-					       :: !libs),
+					    :: (defaultLibs @ (!libs))),
 				     linkWithGmp]
 		     datatype debugFormat =
 			Dwarf | DwarfPlus | Dwarf2 | Stabs | StabsPlus
@@ -555,19 +600,22 @@ fun commandLine (args: string list): unit =
 			    * move the output file to it's rightful place.
 			    *)
 			   val _ =
-			      case MLton.hostType of
-				 MLton.Cygwin =>
+			      if MLton.hostType = MLton.Cygwin
+				 then
 				    if String.contains (output, #".")
 				       then ()
 				    else
 				       File.move {from = concat [output, ".exe"],
 						  to = output}
-			       | MLton.FreeBSD => ()
-			       | MLton.Linux => ()
+			      else ()
 			in
 			   ()
 			end
 		  fun compileCSO (inputs: File.t list): unit =
+		     if List.forall (inputs, fn f =>
+				     SOME "o" = File.extension f)
+			then compileO inputs
+		     else
 		     let
 			val r = ref 0
 			val oFiles =
@@ -575,58 +623,60 @@ fun commandLine (args: string list): unit =
 			   (fn () =>
 			    List.fold
 			    (inputs, [], fn (input, ac) =>
-			     if String.isSuffix {string = input,
-						 suffix = ".o"}
-				then input :: ac
-			     else
 			     let
-				val (debugSwitches, switches) =
-				   if String.isSuffix {string = input,
-						       suffix = ".c"}
-				      then
-					 (gccDebug,
-					  List.concat
-					  [definesAndIncludes,
-					   [concat
-					    ["-O",
-					     Int.toString (!optimization)]],
-					   if !Native.native
-					      then []
-					   else String.tokens (!gccSwitches,
-							       Char.isSpace)])
-				   else ([asDebug], [])
-				val switches =
-				   if !debug
-				      then debugSwitches @ switches
-				   else switches
-				val switches =
-				   case host of
-				      Cross s => "-b" :: s :: switches
-				    | Self => switches
-				val switches = "-c" :: switches
-				val output =
-				   if stop = Place.O orelse !keepO
-				      then
-					 if !keepGenerated
-					    then
-					       concat
-					       [String.dropSuffix (input, 1),
-						"o"]
-					 else
-					    (Int.inc r
-					     ; (suffix
-						(concat [".", Int.toString (!r),
-							 ".o"])))
-				   else temp ".o"
-				val _ = docc ([input], output, switches, [])
+				val extension = File.extension input
 			     in
-				output :: ac
+				if SOME "o" = extension
+				   then input :: ac
+				else
+				   let
+				      val (debugSwitches, switches) =
+					 if SOME "c" = extension
+					    then
+					       (gccDebug,
+						List.concat
+						[definesAndIncludes,
+						 [concat
+						  ["-O", (Int.toString
+							  (!optimization))]],
+						 ccOpts])
+					 else ([asDebug], [])
+				      val switches =
+					 if !debug
+					    then debugSwitches @ switches
+					 else switches
+				      val switches =
+					 case host of
+					    Cross s => "-b" :: s :: switches
+					  | Self => switches
+				      val switches = "-c" :: switches
+				      val output =
+					 if stop = Place.O orelse !keepO
+					    then
+					       if !keepGenerated
+						  then
+						     concat
+						     [String.dropSuffix
+						      (input, 1),
+						      "o"]
+					       else
+						  (Int.inc r
+						   ; (suffix
+						      (concat
+						       [".", Int.toString (!r),
+							".o"])))
+					 else temp ".o"
+				      val _ =
+					 docc ([input], output, switches, [])
+				   in
+				      output :: ac
+				   end
 			     end))
 			   ()
 		     in
 			case stop of
 			   Place.O => ()
-			 | _ => compileO oFiles
+			 | _ => compileO (rev oFiles)
 		     end
 		  fun compileSml (files: File.t list) =
 		     let

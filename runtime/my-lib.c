@@ -151,7 +151,7 @@ string intToCommaString(int n) {
 	
 	if (0 == n)
 		buf[i--] = '0';
-#if (defined (__CYGWIN__) || defined (__FreeBSD__))
+#if (defined (__CYGWIN__) || defined (__FreeBSD__) || defined (__sun__))
 #define MININT 0x80000000
 #endif
  	else if (MININT == n) {
@@ -240,7 +240,7 @@ void *smmap (size_t length) {
 	result = VirtualAlloc (0, length, MEM_COMMIT, PAGE_READWRITE);
 	if (NULL == result)
 		die("VirtualAlloc failed");
-#elif (defined (__linux__) || defined (__FreeBSD__))
+#elif (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
 	result = mmap (NULL, length, PROT_READ | PROT_WRITE, 
 			MAP_PRIVATE | MAP_ANON, -1, 0);
 	if (result == (void*)-1) 

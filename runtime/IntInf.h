@@ -24,7 +24,7 @@
  * MLton package.
  */
 #include "/usr/local/include/gmp.h"
-#elif (defined (__linux__))
+#elif (defined (__linux__) || defined (__sun__))
 #include <gmp.h>
 #else
 #error gmp.h not defined for platform

@@ -17,7 +17,9 @@ TEX_FILES = \
 	main.tex		\
 	man-page.tex		\
 	nj-deviations.tex	\
+	platform.tex		\
 	profiling.tex		\
+	sunos.tex
 
 all:	main.ps main/main.html
 

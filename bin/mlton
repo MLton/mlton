@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # This script calls MLton.
 
@@ -35,22 +35,9 @@ doit () {
 	exit 1
 }
 
-# You may need to add -L/path/to/libgmp before the "$@" so that the linker
-# can find the gmp.
-
-# -mcpu=pentiumpro is the same as -mcpu=i686
+# You may need to add -lib-search /path/to/libgmp before the "$@" so that the
+# linker can find the gmp.
 
 doit "$lib" \
 	-cc "$gcc" \
-	-ccopt '-malign-functions=5
-		-malign-jumps=2 
-		-fno-strict-aliasing
-		-fno-strength-reduce
-		-fomit-frame-pointer
-		-fschedule-insns 
-		-fschedule-insns2
-		-malign-loops=2
-		-mcpu=pentiumpro
-		-w' \
-	-link m \
 	"$@"

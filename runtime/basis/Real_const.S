@@ -32,7 +32,7 @@ _Real_minPos:
 	.long 0x00000001
 	.long 0x00000000
 
-#elif (defined (__linux__) || defined(__FreeBSD__))
+#elif (defined (__linux__) || defined (__FreeBSD__))
 .data
 
 .globl Real_maxFinite
@@ -57,6 +57,10 @@ Real_minNormalPos:
 Real_minPos:
 	.long 0x00000001
 	.long 0x00000000
+
+#elif (defined (__sun__))
+
+// Don't need to do anything, since Real.c defines these constants.
 
 #else
 

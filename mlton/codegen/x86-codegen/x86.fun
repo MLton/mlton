@@ -58,6 +58,7 @@ struct
 	      Control.Cygwin => concat ["_", Label.toString l]
 	    | Control.FreeBSD => Label.toString l
 	    | Control.Linux => Label.toString l
+	    | _ => Error.bug "x86 can't handle hostType"
 
 	val layout = Layout.str o toString
      end

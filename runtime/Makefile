@@ -1,4 +1,6 @@
 HOST = self
+HOSTTYPE = $(shell ../bin/hosttype)
+
 ifeq ($(HOST), self)
 AR = ar rc
 HOSTFLAGS =
@@ -6,7 +8,22 @@ else
 AR = $(HOST)-ar rc
 HOSTFLAGS = -b $(HOST)
 endif
-CC =		gcc -Wall -I. -mcpu=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=5 -fomit-frame-pointer $(HOSTFLAGS)
+
+X86FLAGS = -mcpu=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=5 -fomit-frame-pointer
+ifeq ($(HOSTTYPE), cygwin)
+ARCHFLAGS = $(X86FLAGS)
+endif
+ifeq ($(HOSTTYPE), freebsd)
+ARCHFLAGS = $(X86FLAGS)
+endif
+ifeq ($(HOSTTYPE), linux)
+ARCHFLAGS = $(X86FLAGS)
+endif
+ifeq ($(HOSTTYPE), sun)
+ARCHFLAGS = 
+endif
+
+CC =		gcc -Wall -I. $(ARCHFLAGS) $(HOSTFLAGS)
 # Can't use more optimization than -O1 because gcc doesn't correctly compile
 #  Real_class in basis/Real.c
 CFLAGS = -O1

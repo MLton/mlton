@@ -13,7 +13,8 @@ typedef char Char;
 typedef double Double;
 typedef int Int;
 typedef char *Pointer;
-typedef unsigned long Word;
+typedef unsigned long Word32;
+typedef Word32 Word;
 
 /* Here are some type abbreviations for abstract machine types. */
 typedef Int Bool;
@@ -98,23 +99,12 @@ void IEEEReal_setRoundingMode(Int mode);
 Int IEEEReal_getRoundingMode();
 
 /* ------------------------------------------------- */
-/*                        Int                        */
-/* ------------------------------------------------- */
-
-Bool Int_addOverflow(int n1, int n2, int *res);
-Bool Int_mulOverflow(int n1, int n2, int *res);
-Bool Int_negOverflow(int n, int *res);
-Bool Int_subOverflow(int n1, int n2, int *res);
-Int Int_quot(Int numerator, Int denominator);
-Int Int_rem(Int numerator, Int denominator);
-
-/* ------------------------------------------------- */
 /*                      Itimer                       */
 /* ------------------------------------------------- */
 
-void Itimer_set(Int which,
-		Int interval_tv_sec, Int interval_tv_usec,
-		Int value_tv_sec, Int value_tv_usec);
+void Itimer_set (Int which,
+			Int interval_tv_sec, Int interval_tv_usec,
+			Int value_tv_sec, Int value_tv_usec);
 
 /* ------------------------------------------------- */
 /*                       MLton                       */
@@ -174,20 +164,20 @@ extern Double Real_maxFinite;
 extern Double Real_minNormalPos;
 extern Double Real_minPos;
 
-Int Real_class(Double d);
-Int Real_isFinite(Double d);
-Int Real_isNan(Double d);
-Int Real_isNormal(Double d);
-Int Real_isPositive(Double d);
-Int Real_qequal(Double x1, Double x2);
-double Real_round(Double d);
-Int Real_signBit(Double d);
+Int Real_class (Double d);
+Int Real_isFinite (Double d);
+Int Real_isNan (Double d);
+Int Real_isNormal (Double d);
+Int Real_isPositive (Double d);
+Int Real_qequal (Double x1, Double x2);
+double Real_round (Double d);
+Int Real_signBit (Double d);
 
 /* ------------------------------------------------- */
 /*                      Rlimit                       */
 /* ------------------------------------------------- */
 
-#if (defined (__CYGWIN__))
+#if (defined (__CYGWIN__) || defined (__sun__))
 #define RLIMIT_BOGUS 0xFFFFFFFF
 #define RLIMIT_RSS RLIMIT_BOGUS
 #define RLIMIT_NPROC RLIMIT_BOGUS
@@ -205,7 +195,7 @@ Int Real_signBit(Double d);
 #define MLton_Rlimit_stackSize RLIMIT_STACK
 #if (defined (__FreeBSD__))
 #define MLton_Rlimit_virtualMemorySize RLIMIT_DATA
-#elif (defined (__CYGWIN__) || defined (__linux__))
+#elif (defined (__CYGWIN__) || defined (__linux__) || defined (__sun__))
 #define MLton_Rlimit_virtualMemorySize RLIMIT_AS
 #else
 #error MLton_Rlimit_virtualMemorySize not defined

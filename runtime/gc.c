@@ -36,12 +36,16 @@
 #include <limits.h>
 #endif
 
-#if (defined (__linux__) || defined (__FreeBSD__))
+#if (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
 #include <signal.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <ucontext.h>
+#endif
+
+#if (defined (__sun__))
+#include <sys/swap.h>  /* For swapctl. */
 #endif
 
 #include "IntInf.h"
@@ -129,7 +133,7 @@ static inline uint toBytes (uint n) {
 	return n << 2;
 }
 
-#if (defined (__linux__) || defined (__FreeBSD__))
+#if (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
 static inline uint min (uint x, uint y) {
 	return ((x < y) ? x : y);
 }
@@ -163,7 +167,7 @@ static bool isAligned (uint a, uint b) {
 	return 0 == a % b;
 }
 
-#if (defined (__linux__) || defined (__FreeBSD__))
+#if (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
 /* A super-safe mmap.
  *  Allocates a region of memory with dead zones at the high and low ends.
  *  Any attempt to touch the dead zone (read or write) will cause a
@@ -182,6 +186,15 @@ static void *ssmmap (size_t length, size_t dead_low, size_t dead_high) {
 		diee ("mprotect failed");
 	return result;
 }
+
+#elif (defined (__CYGWIN__))
+
+/* Nothing needed. */
+
+#else
+
+#error ssmmap not defined on platform
+
 #endif
 
 static void release (void *base, size_t length) {
@@ -191,7 +204,7 @@ static void release (void *base, size_t length) {
 				(uint)base);
 	if (0 == VirtualFree (base, 0, MEM_RELEASE))
 		die ("VirtualFree release failed");
-#elif (defined (__linux__) || defined (__FreeBSD__))
+#elif (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
 	smunmap (base, length);
 #else
 #error release not defined
@@ -205,7 +218,7 @@ static void decommit (void *base, size_t length) {
 				(uint)base, (uint)length);
 	if (0 == VirtualFree (base, length, MEM_DECOMMIT))
 		die ("VirtualFree decommit failed");
-#elif (defined (__linux__) || defined (__FreeBSD__))
+#elif (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
 	smunmap (base, length);
 #else
 #error decommit not defined	
@@ -289,23 +302,35 @@ static void showMem () {
 	showMaps();
 }
 
-#elif (defined (__linux__))
-
-static void showMem() {
-	static char buffer[256];
-
-	sprintf(buffer, "/bin/cat /proc/%d/maps\n", getpid());
-	(void)system(buffer);
-}
-
 #elif (defined (__FreeBSD__))
 
 static void showMem () {
 	static char buffer[256];
 
-	sprintf (buffer, "/bin/cat /proc/%d/map\n", getpid ());
+	sprintf (buffer, "/bin/cat /proc/%d/map\n", (int)getpid ());
 	(void)system (buffer);
 }
+
+#elif (defined (__linux__))
+
+static void showMem () {
+	static char buffer[256];
+
+	sprintf (buffer, "/bin/cat /proc/%d/maps\n", (int)getpid ());
+	(void)system (buffer);
+}
+
+#elif (defined (__sun__))
+
+static void showMem () {
+	static char buffer[256];
+	sprintf (buffer, "pmap %d\n", (int)getpid ());
+	system (buffer);
+}
+
+#else
+
+#error showMem not defined on platform
 
 #endif
 
@@ -1387,7 +1412,7 @@ static bool heapCreate (GC_state s, GC_heap h, W32 desiredSize, W32 minSize) {
 						(uint)h->start, 
 						(uint)address,
 						(uint)h->size);
-#elif (defined (__linux__) || defined (__FreeBSD__))
+#elif (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
 			h->start = mmap (address+(void*)0, h->size, 
 						PROT_READ | PROT_WRITE,
 						MAP_PRIVATE | MAP_ANON, -1, 0);
@@ -2249,7 +2274,7 @@ static void translateHeap (GC_state s, pointer from, pointer to, uint size) {
 /*                            heapRemap                             */
 /* ---------------------------------------------------------------- */
 
-#if (defined (__CYGWIN__) || defined (__FreeBSD__))
+#if (defined (__CYGWIN__) || defined (__FreeBSD__) || defined (__sun__))
 
 static bool heapRemap (GC_state s, GC_heap h, W32 desired, W32 minSize) {
 	return FALSE;
@@ -3112,7 +3137,7 @@ void GC_profileWrite (GC_state s, GC_profile p, int fd) {
 	}
 }
 
-#if (defined (__linux__) || defined (__FreeBSD__))
+#if (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
 
 #ifndef EIP
 #define EIP	14
@@ -3134,6 +3159,8 @@ static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {
         pc = (pointer) ucp->uc_mcontext.gregs[EIP];
 #elif (defined (__FreeBSD__))
 	pc = (pointer) ucp->uc_mcontext.mc_eip;
+#elif (defined (__sun__))
+	pc = (pointer) ucp->uc_mcontext.gregs[REG_PC];
 #else
 #error pc not defined
 #endif
@@ -3257,8 +3284,11 @@ static void profileTimeInit (GC_state s) {
 
 static void initSignalStack (GC_state s) {
 #if (defined (__CYGWIN__))
+
 	/* Nothing */
-#elif (defined (__linux__) || defined (__FreeBSD__))
+
+#elif (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
+
         static stack_t altstack;
 	size_t ss_size = align (SIGSTKSZ, s->pageSize);
 	size_t psize = s->pageSize;
@@ -3267,8 +3297,11 @@ static void initSignalStack (GC_state s) {
 	altstack.ss_size = ss_size;
 	altstack.ss_flags = 0;
 	sigaltstack (&altstack, NULL);
+
 #else
+
 #error initSignalStack not defined
+
 #endif
 }
 
@@ -3343,7 +3376,7 @@ static void setMemInfo (GC_state s) {
 static void setMemInfo (GC_state s) {
 	MEMORYSTATUS ms; 
 
-	GlobalMemoryStatus(&ms); 
+	GlobalMemoryStatus (&ms); 
 	s->totalRam = ms.dwTotalPhys;
 	s->totalSwap = ms.dwTotalPageFile;
 }
@@ -3351,47 +3384,51 @@ static void setMemInfo (GC_state s) {
 #elif (defined (__FreeBSD__))
 
 /* returns total amount of swap available */
-static int 
-get_total_swap() 
-{
+static int totalSwap () {
         static char buffer[256];
         FILE *file;
         int total_size = 0;
 
-        file = popen("/usr/sbin/swapinfo -k | awk '{ print $4; }'\n", "r");
+        file = popen ("/usr/sbin/swapinfo -k | awk '{ print $4; }'\n", "r");
         if (file == NULL) 
                 diee ("swapinfo failed");
-
         /* skip header */
-        fgets(buffer, 255, file);
-
+        fgets (buffer, 255, file);
         while (fgets(buffer, 255, file) != NULL) { 
                 total_size += atoi(buffer);
         }
-
-        pclose(file);
-
+        pclose (file);
         return total_size * 1024;
 }
 
 /* returns total amount of memory available */
-static int
-get_total_mem()
-{
-	int i, mem, len;
+static int totalRam() {
+	int mem, len;
 
-	len = sizeof(int);
-	i = sysctlbyname("hw.physmem", &mem, &len, NULL, 0);
-
-	if (i == -1)
-		diee("sysctl failed");
-
+	len = sizeof (int);
+	if (-1 == sysctlbyname ("hw.physmem", &mem, &len, NULL, 0))
+		diee ("sysctl failed");
 	return mem;
 }
 
 static void setMemInfo (GC_state s) {
-	s->totalRam = get_total_mem();
-	s->totalSwap = get_total_swap();
+	s->totalRam = totalRam();
+	s->totalSwap = totalSwap();
+}
+
+#elif (defined (__sun__))
+
+static void setMemInfo (GC_state s) {
+	struct anoninfo anon;
+
+	s->totalRam = sysconf (_SC_PHYS_PAGES) * s->pageSize;
+	if (-1 == swapctl (SC_AINFO, &anon))
+		/* Couldn't get swap, so assume that there's as much swap as
+		 * there is RAM.
+		 */
+		s->totalSwap = s->totalRam;
+	else
+		s->totalSwap = anon.ani_max * s->pageSize;
 }
 
 #else

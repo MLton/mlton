@@ -443,9 +443,9 @@ signature MLTON_RANDOM =
    sig
       val alphaNumString: int -> string
       val rand: unit -> word
-      val seed: unit -> word
+      val seed: unit -> word option
       val srand: word -> unit
-      val useed: unit -> word
+      val useed: unit -> word option
    end
 \end{verbatim}
 
@@ -457,13 +457,18 @@ return a string of length {\tt n} of random alphanumeric characters.
 return the next pseudrandom number.
 
 \entry{seed ()}
-return a random word from {\tt /dev/random}.  Useful as an arg to {\tt srand}.
+return a random word from {\tt /dev/random}.  Useful as an arg to {\tt
+srand}.  If {\tt /dev/random} can not be read from, {\tt seed ()}
+returns {\tt NONE}.
 
 \entry{srand w}
 set the seed used by {\tt rand} to {\tt w}.
 
 \entry{useed ()}
-return a random word from {\tt /dev/urandom}.  Useful as an arg to {\tt srand}.
+return a random word from {\tt /dev/urandom}.  Useful as an arg to
+{\tt srand}.  If {\tt /dev/urandom} can not be read from, {\tt useed
+()} returns {\tt NONE}.
+
 \end{description}
 
 \subsubsection{\tt MLton.Rlimit}

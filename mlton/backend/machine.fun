@@ -324,9 +324,6 @@ structure Statement =
 		     dst: Operand.t option,
 		     prim: Prim.t}
        | ProfileLabel of ProfileLabel.t
-       | SetExnStackLocal of {offset: int}
-       | SetExnStackSlot of {offset: int}
-       | SetSlotExnStack of {offset: int}
 
       val layout =
 	 let
@@ -361,12 +358,6 @@ structure Statement =
 		  end
 	     | ProfileLabel l =>
 		  seq [str "ProfileLabel ", ProfileLabel.layout l]
-	     | SetExnStackLocal {offset} =>
-		  seq [str "SetExnStackLocal ", Int.layout offset]
-	     | SetExnStackSlot {offset} =>
-		  seq [str "SetExnStackSlot ", Int.layout offset]
-	     | SetSlotExnStack {offset} =>
-		  seq [str "SetSlotExnStack ", Int.layout offset]
 	 end
  
       fun move (arg as {dst, src}) =
@@ -1188,39 +1179,6 @@ structure Program =
 				    | _ => NONE
 				end
 			else SOME alloc
-		   | SetExnStackLocal {offset} =>
-			(case Alloc.peekOffset (alloc, offset) of
-			    NONE => NONE
-			  | SOME {ty, ...} =>
-			       (case ty of
-				   Type.Label l =>
-				      let
-					 val Block.T {kind, ...} = labelBlock l
-				      in
-					 case kind of
-					    Kind.Handler {frameInfo, ...} =>
-					       let
-						  val {size, ...} =
-						     getFrameInfo frameInfo
-					       in
-						  if offset = size
-						     then SOME alloc
-						  else NONE
-					       end
-					  | _ => NONE
-				      end
-				 | _ => NONE))
-		   | SetExnStackSlot {offset} =>
-			(checkOperand
-			 (Operand.StackOffset {offset = offset,
-					       ty = Type.word},
-			  alloc)
-			 ; SOME alloc)
-		   | SetSlotExnStack {offset} =>
-			SOME
-			(Alloc.define
-			 (alloc, Operand.StackOffset {offset = offset,
-						      ty = Type.word}))
 	       end
 	    fun liveIsOk (live: Operand.t vector,
 			  a: Alloc.t): bool =

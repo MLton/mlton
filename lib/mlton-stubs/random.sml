@@ -1,7 +1,7 @@
 structure Random: MLTON_RANDOM = 
    struct
-      fun seed _ = 0w13: Word32.word
-      fun useed _ = 0w13: Word32.word
+      fun seed _ = SOME (0w13: Word32.word)
+      fun useed _ = SOME (0w13: Word32.word)
       local
 	 val seed: word ref = ref 0w13
       in

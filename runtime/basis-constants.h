@@ -33,10 +33,16 @@
 #define MLton_hostType 1
 #elif (defined (__linux__))
 #define MLton_hostType 2
+#elif (defined (__sun__))
+#define MLton_hostType 3
 #else
 #error MLton_hostType not defined
 #endif
-#define MLton_isLittleEndian TRUE
+
+#if (defined (__sun__))
+#define LOG_AUTHPRIV LOG_AUTH
+#define LOG_PERROR 0
+#endif /* __sun__ */
 
 /* ------------------------------------------------- */
 /*                      Ptrace                       */
@@ -46,7 +52,7 @@
 
 /* Nothing to do -- everything comes from sys/ptrace.h. */
 
-#elif (defined (__CYGWIN__) || defined (__FreeBSD__))
+#elif (defined (__CYGWIN__) || defined (__FreeBSD__) || defined (__sun__))
 
 #define PTRACE_BOGUS 0xFFFFFFFF
 #define PTRACE_SYSCALL PTRACE_BOGUS

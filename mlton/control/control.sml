@@ -11,6 +11,22 @@ struct
 structure C = Control ()
 open C
 
+structure AlignDoubles =
+   struct
+      datatype t = AlignNo | AlignPad | AlignSkip
+
+      val toString =
+	 fn AlignNo => "no"
+	  | AlignPad => "pad"
+	  | AlignSkip => "skip"
+   end
+
+datatype alignDoubles = datatype AlignDoubles.t
+
+val alignDoubles = control {name = "align doubles",
+			    default = AlignNo,
+			    toString = AlignDoubles.toString}
+   
 val basisLibs = ["basis-2002", "basis-2002-strict", "basis-1997", "basis-none"]
 val basisLibrary = control {name = "basis library",
 			    default = "basis-2002",
@@ -36,6 +52,7 @@ structure Chunk =
    end
 
 datatype chunk = datatype Chunk.t
+   
 val chunk = control {name = "chunk",
 		     default = Coalesce {limit = 4096},
 		     toString = Chunk.toString}
@@ -116,24 +133,24 @@ structure Host =
    end
 
 datatype host = datatype Host.t
+   
 val host = control {name = "host",
 		    default = Self,
 		    toString = Host.toString}
 
 structure HostType =
    struct
-      datatype t =
-	 Cygwin
-       | FreeBSD
-       | Linux
+      datatype t = datatype MLton.hostType
 
       val toString =
 	 fn Cygwin => "Cygwin"
 	  | FreeBSD => "FreeBSD"
 	  | Linux => "Linux"
+	  | Sun => "Sun"
    end
 
 datatype hostType = datatype HostType.t
+   
 val hostType = control {name = "host type",
 			default = Linux,
 			toString = HostType.toString}
@@ -249,7 +266,9 @@ structure LimitCheck =
 
       val layout = Layout.str o toString
    end
+
 datatype limitCheck = datatype LimitCheck.t
+
 val limitCheck = control {name = "limit check",
 			  default = LoopHeaders {fullCFG = false,
 						 loopExits = true},
@@ -428,6 +447,7 @@ structure Variant =
 	  | Header => "header"
 	  | HeaderIndirect => "header indirect"
    end
+
 datatype variant = datatype Variant.t
 
 val variant = control {name = "variant",
@@ -456,6 +476,7 @@ structure Verbosity =
 	  | (_, Detail) => true
 	  | _ => false
    end
+
 datatype verbosity = datatype Verbosity.t
    
 val verbosity = control {name = "verbosity",

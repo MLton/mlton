@@ -111,9 +111,6 @@ signature MACHINE =
 			   dst: Operand.t option,
 			   prim: Prim.t}
 	     | ProfileLabel of ProfileLabel.t
-	     | SetExnStackLocal of {offset: int}
-	     | SetExnStackSlot of {offset: int}
-	     | SetSlotExnStack of {offset: int}
 
 	    val foldOperands: t * 'a * (Operand.t * 'a -> 'a) -> 'a
 	    val layout: t -> Layout.t

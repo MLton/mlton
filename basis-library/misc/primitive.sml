@@ -56,7 +56,6 @@ structure Primitive =
       val halt = _prim "MLton_halt": int -> unit;
       val handlesSignals = _prim "MLton_handlesSignals": bool;
       val installSignalHandler = _prim "MLton_installSignalHandler": unit -> unit;
-      val isLittleEndian = _const "MLton_isLittleEndian": bool;
       val safe = _build_const "MLton_safe": bool;
       val usesCallcc: bool ref = ref false;
 
@@ -290,13 +289,23 @@ structure Primitive =
       structure MLton =
 	 struct
 	    datatype hostType =
-	       Cygwin | FreeBSD | Linux
+	       Cygwin | FreeBSD | Linux | Sun
+
 	    val hostType: hostType =
 	       case _const "MLton_hostType": int; of
 		  0 => Cygwin
 		| 1 => FreeBSD
 		| 2 => Linux
+		| 3 => Sun
+		| _ => raise Fail "strange hostType constant"
 
+	    val isBigEndian =
+	       case hostType of
+		  Cygwin => false
+		| FreeBSD => false
+		| Linux => false
+		| Sun => true
+			      
 	    val native = _build_const "MLton_native": bool;
 
 	    structure Profile =

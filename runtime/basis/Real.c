@@ -44,7 +44,9 @@ Int Real_signBit(Double d) {
 #define Real_Class_normal 4
 #define Real_Class_subnormal 5
 
-Int Real_class(Double d) {
+#if (defined (__i386__))
+
+Int Real_class (Double d) {
 	Word word0, word1;
 
 	word0 = ((Word *)&d)[0];
@@ -71,19 +73,11 @@ Int Real_class(Double d) {
 	}
 }
 
-Int Real_isFinite(Double d) {
-	return finite(d); /* finite is from math.h */
+inline Int Real_isNan (Double d) {
+	return isnan (d); /* isnan is from math.h */
 }
 
-inline Int Real_isNan(Double d) {
-	return isnan(d); /* isnan is from math.h */
-}
-
-Int Real_qequal(Double x1, Double x2) {
-	return Real_isNan(x1) || Real_isNan(x2) || x1 == x2;
-}
-
-Int Real_isNormal(Double d) {
+Int Real_isNormal (Double d) {
 	Word word1, exponent;
 
 	word1 = ((Word *)&d)[1];
@@ -93,7 +87,7 @@ Int Real_isNormal(Double d) {
 	return not(exponent == 0 or exponent == EXPONENT_MASK);
 }
 
-Double Real_round(Double d) {
+Double Real_round (Double d) {
 	register double f0;
 
 	f0 = d;
@@ -103,3 +97,60 @@ Double Real_round(Double d) {
 	return f0;
 
 }
+
+#elif (defined __sparc__)
+
+#include <ieeefp.h>
+
+double Real_maxFinite =    1.7976931348623157e308;
+double Real_minPos =       4.94065645841246544e-324;
+double Real_minNormalPos = 2.22507385850720140e-308;
+
+Int Real_class (Double d) {
+	fpclass_t c;
+
+	c = fpclass (d);
+	switch (c) {
+	case FP_SNAN: return Real_Class_nanSignalling;
+	case FP_QNAN: return Real_Class_nanQuiet;
+	case FP_NINF: return Real_Class_inf;
+	case FP_PINF: return Real_Class_inf;
+	case FP_NDENORM: return Real_Class_subnormal;
+	case FP_PDENORM: return Real_Class_subnormal;
+	case FP_NZERO: return Real_Class_zero;
+	case FP_PZERO: return Real_Class_zero;
+	case FP_NNORM: return Real_Class_normal;
+	case FP_PNORM: return Real_Class_normal;
+	default:
+		die ("Real_class error: invalid class %d\n", c);
+	}
+}
+
+inline Int Real_isNan (Double d) {
+	fpclass_t c;
+
+	c = fpclass (d);
+ 	return c == FP_SNAN || c == FP_QNAN;
+}
+
+Int Real_isNormal (Double d) {
+	fpclass_t c;
+
+	c = fpclass (d);
+	return c == FP_NNORM || c == FP_PNORM || c == FP_NZERO || c == FP_PZERO;
+}
+
+Double Real_round (Double d) {
+	return rint (d);
+}
+
+#endif /* __sparc__ */
+
+Int Real_isFinite (Double d) {
+	return finite (d); /* finite is from math.h */
+}
+
+Int Real_qequal (Double x1, Double x2) {
+	return Real_isNan (x1) || Real_isNan (x2) || x1 == x2;
+}
+

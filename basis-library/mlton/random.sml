@@ -1,7 +1,7 @@
 structure MLtonRandom: MLTON_RANDOM =
    struct
-      (* Linux specific.  Uses /dev/random and /dev/urandom to get a
-       * random word.
+      (* Uses /dev/random and /dev/urandom to get a random word.
+       * If they can't be read from, return 0w13.
        *)
       local
 	 fun make (file, name) =
@@ -9,32 +9,33 @@ structure MLtonRandom: MLTON_RANDOM =
 	       val buf = Word8Array.array (4, 0w0)
 	    in
 	       fn () =>
-	       let
-		  val fd =
-		     let
-			open Posix.FileSys
-		     in
-			openf (file, O_RDONLY, O.flags [])
-		     end
-		  fun loop rem =
-		     let
-			val n = Posix.IO.readArr (fd, {buf = buf,
-						       i = 4 - rem,
-						       sz = SOME rem})
-			val _ = if n = 0
-				   then (Posix.IO.close fd; raise Fail name)
-				else ()
-			val rem = rem - n
-		     in
-			if rem = 0
-			   then ()
-			else loop rem
-		     end
-		  val _ = loop 4
-		  val _ = Posix.IO.close fd
-	       in
-		  Pack32Little.subArr (buf, 0)
-	       end
+	       (let
+		   val fd =
+		      let
+			 open Posix.FileSys
+		      in
+			 openf (file, O_RDONLY, O.flags [])
+		      end
+		   fun loop rem =
+		      let
+			 val n = Posix.IO.readArr (fd, {buf = buf,
+							i = 4 - rem,
+							sz = SOME rem})
+			 val _ = if n = 0
+				    then (Posix.IO.close fd; raise Fail name)
+				 else ()
+			 val rem = rem - n
+		      in
+			 if rem = 0
+			    then ()
+			 else loop rem
+		      end
+		   val _ = loop 4
+		   val _ = Posix.IO.close fd
+		in
+		   SOME (Pack32Little.subArr (buf, 0))
+		end
+		   handle OS.SysErr _ => NONE)
 	    end
       in
 	 val seed = make ("/dev/random", "Random.seed")
