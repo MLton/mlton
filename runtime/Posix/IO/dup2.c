@@ -1,6 +1,6 @@
 #include <unistd.h>
 #include "mlton-posix.h"
 
-Fd Posix_IO_dup2(Fd f1, Fd f2) {
-	return dup2(f1, f2);
+Fd Posix_IO_dup2 (Fd f1, Fd f2) {
+	return dup2 (f1, f2);
 }
