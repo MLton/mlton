@@ -197,7 +197,7 @@ structure Primitive =
       val detectOverflow =
 	 _command_line_const "MLton.detectOverflow": bool = true;
       val eq = _prim "MLton_eq": 'a * 'a -> bool;
-(*      val errno = _import "MLton_errno": unit -> int; *)
+      (* val errno = _import "MLton_errno": unit -> int; *)
       val installSignalHandler =
 	 _prim "MLton_installSignalHandler": unit -> unit;
       val safe = _command_line_const "MLton.safe": bool = true;
@@ -207,7 +207,7 @@ structure Primitive =
       structure Stdio =
 	 struct
 	    val print = _import "Stdio_print": string -> unit;
-(*	    val sprintf = _import "Stdio_sprintf": char array * nullString * real -> int; *)
+	    (* val sprintf = _import "Stdio_sprintf": char array * nullString * real -> int; *)
 	 end
 
       structure Array =
@@ -283,8 +283,8 @@ structure Primitive =
 	    val ord = _prim "WordU16_toWord32": char -> int;
 	    val toInt16 = _prim "WordS16_toWord16": char -> Int16.int;
 	    val fromInt16 = _prim "WordS16_toWord16": Int16.int -> char;
-	    val toWord16 = _prim "WordU16_toWord16": char -> Word16.word;
-	    val fromWord16 = _prim "WordU16_toWord16": Word16.word -> char;
+	    (* val toWord16 = _prim "WordU16_toWord16": char -> Word16.word; *)
+	    (* val fromWord16 = _prim "WordU16_toWord16": Word16.word -> char; *)
 	 end
       
       structure Char4 =
@@ -296,8 +296,8 @@ structure Primitive =
 	    val ord = _prim "WordU32_toWord32": char -> int;
 	    val toInt32 = _prim "WordS32_toWord32": char -> Int32.int;
 	    val fromInt32 = _prim "WordS32_toWord32": Int32.int -> char;
-	    val toWord32 = _prim "WordU32_toWord32": char -> Word32.word;
-	    val fromWord32 = _prim "WordU32_toWord32": Word32.word -> char;
+	    (* val toWord32 = _prim "WordU32_toWord32": char -> Word32.word; *)
+	    (* val fromWord32 = _prim "WordU32_toWord32": Word32.word -> char; *)
 	 end
 
       structure CommandLine =
@@ -910,12 +910,12 @@ structure Primitive =
 		      | _ => raise Fail "MLton_codegen"
 
 		  val isBytecode = codegen = Bytecode
-(*		  val isC = codegen = C *)
+		  (* val isC = codegen = C *)
 		  val isNative = codegen = Native
 	       end
 	    
-(*       val deserialize = _prim "MLton_deserialize": Word8Vector.vector -> 'a ref; *)
-(*       val serialize = _prim "MLton_serialize": 'a ref -> Word8Vector.vector; *)
+	    (* val deserialize = _prim "MLton_deserialize": Word8Vector.vector -> 'a ref; *)
+	    (* val serialize = _prim "MLton_serialize": 'a ref -> Word8Vector.vector; *)
 	    val share = _prim "MLton_share": 'a -> unit;
 	    val size = _prim "MLton_size": 'a ref -> int;
 
@@ -1116,8 +1116,8 @@ structure Primitive =
 
       structure Net =
 	 struct
-(* 	    val htonl = _import "Net_htonl": int -> int; *)
-(*	    val ntohl = _import "Net_ntohl": int -> int; *)
+	    (* val htonl = _import "Net_htonl": int -> int; *)
+	    (* val ntohl = _import "Net_ntohl": int -> int; *)
  	    val htons = _import "Net_htons": int -> int;
 	    val ntohs = _import "Net_ntohs": int -> int;
 	 end
@@ -1217,6 +1217,9 @@ structure Primitive =
 
 	    fun isNull p = p = null
 
+	    (* val + = _prim "Pointer_add": t * t -> t; *)
+	    (* val op < = _prim "Pointer_lt" : t * t -> bool; *)
+	    (* val - = _prim "Pointer_sub": t * t -> t; *)
 	    val free = _import "free": t -> unit;
 	    val getInt8 = _prim "Pointer_getWord8": t * int -> Int8.int;
 	    val getInt16 = _prim "Pointer_getWord16": t * int -> Int16.int;
@@ -1511,7 +1514,7 @@ structure Primitive =
 		  val getSockName =
 		     _import "Socket_Ctl_getSockName": sock * pre_sock_addr * int ref -> int;
 
-(*		  val NBIO = _const "Socket_Ctl_FIONBIO": request; *)
+		  (* val NBIO = _const "Socket_Ctl_FIONBIO": request; *)
 		  val NREAD = _const "Socket_Ctl_FIONREAD": request;
 		  val ATMARK = _const "Socket_Ctl_SIOCATMARK": request;
 	       end
