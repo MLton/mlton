@@ -145,6 +145,8 @@ fun setHandler (f: unit t -> unit t): unit =
       Prim.setHandler p
    end
 
+val msg = Primitive.Stdio.print
+   
 val setCallFromCHandler =
    let
       val r: (unit -> unit) ref =
@@ -156,11 +158,15 @@ val setCallFromCHandler =
 		   fun loop (): unit =
 		      let
 			 val t = Prim.saved ()
+			 val _ =
+			    Prim.switchTo
+			    (toPrimitive
+			     (new (fn () => (atomicEnd ()
+					     ; !r ()
+					     ; Prim.setSaved t
+					     ; Prim.returnToC ()))))
 		      in
-			 !r () handle e => MLtonExn.topLevelHandler e
-			 ; Prim.setSaved t
-			 ; Prim.returnToC ()
-			 ; loop ()
+			 loop ()
 		      end
 		in
 		   loop
