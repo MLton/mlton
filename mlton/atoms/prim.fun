@@ -713,6 +713,7 @@ structure ApplyResult =
 	 Apply of prim * 'a list
        | Bool of bool
        | Const of Const.t
+       | Overflow
        | Unknown
        | Var of 'a
 
@@ -725,6 +726,7 @@ structure ApplyResult =
 	 in fn Apply (p, args) => seq [layoutPrim p, List.layout layoutX args]
 	     | Bool b => Bool.layout b
 	     | Const c => Const.layout c
+	     | Overflow => str "Overflow"
 	     | Unknown => str "Unknown"
 	     | Var x => layoutX x
 	 end
@@ -888,7 +890,7 @@ fun 'a apply (p, args, varEquals) =
 	   | _ => ApplyResult.Unknown)
 	     handle Chr => ApplyResult.Unknown
 		  | Div => ApplyResult.Unknown
-		  | Overflow => ApplyResult.Unknown
+		  | Exn.Overflow => ApplyResult.Overflow
 		  | Subscript => ApplyResult.Unknown
       fun someVars () =
 	 let
@@ -905,30 +907,31 @@ fun 'a apply (p, args, varEquals) =
 	       let
 		  fun negate () = Apply (intInfNeg, [x, space])
 		  val i = IntInf.toInt i
-	       in case name of
-		  IntInf_add => if i = 0 then Var x else Unknown
-		| IntInf_mul =>
-		     (case i of
-			 0 => intInfConst 0
-		       | 1 => Var x
-		       | ~1 => negate ()
-		       | _ => Unknown)
-		| IntInf_quot => if inOrder
-				    then (case i of
-					     1 => Var x
-					   | ~1 => negate ()
-					   | _ => Unknown)
-				 else Unknown
-                | IntInf_rem => if inOrder andalso (i = ~1 orelse i = 1)
-				   then intInfConst 0
-				else Unknown
-		| IntInf_sub => if i = 0
-				   then if inOrder
-					   then Var x
-					else negate ()
-				else Unknown
-		| _ => Unknown
-	       end handle Overflow => Unknown
+	       in
+		  case name of
+		     IntInf_add => if i = 0 then Var x else Unknown
+		   | IntInf_mul =>
+			(case i of
+			    0 => intInfConst 0
+			  | 1 => Var x
+			  | ~1 => negate ()
+			  | _ => Unknown)
+		   | IntInf_quot => if inOrder
+				       then (case i of
+						1 => Var x
+					      | ~1 => negate ()
+					      | _ => Unknown)
+				    else Unknown
+		   | IntInf_rem => if inOrder andalso (i = ~1 orelse i = 1)
+				      then intInfConst 0
+				   else Unknown
+		   | IntInf_sub => if i = 0
+				      then if inOrder
+					      then Var x
+					   else negate ()
+				   else Unknown
+		   | _ => Unknown
+	       end handle Exn.Overflow => Unknown
 	    fun varWord (x, w, inOrder) =
 	       let
 		  fun allOnes isWord8 = if isWord8 then 0wxFF else 0wxFFFFFFFF
@@ -1020,42 +1023,43 @@ fun 'a apply (p, args, varEquals) =
 					 else word32Notb,
 					 [x])
 			  else Unknown
-	       in case name of
-		  Word8_add => add ()
-		| Word32_add => add ()
-		| Word8_andb => andb true
-		| Word32_andb => andb false
-		| Word8_arshift => arshift true
-		| Word32_arshift => arshift false
-		| Word8_div => div ()
-		| Word32_div => div ()
-		| Word8_ge => ge true
-		| Word32_ge => ge false
-		| Word8_gt => gt true
-		| Word32_gt => gt false
-		| Word8_le => le true
-		| Word32_le => le false
-		| Word8_lshift => shift true
-		| Word32_lshift => shift false
-		| Word8_lt => lt true
-		| Word32_lt => lt false
-		| Word8_mod => mod true
-		| Word32_mod => mod false
-		| Word8_mul => mul true
-		| Word32_mul => mul false
-		| Word8_orb => orb true
-		| Word32_orb => orb false
-		| Word8_rol => ro true
-		| Word32_rol => ro false
-		| Word8_ror => ro true
-		| Word32_ror => ro false
-		| Word8_rshift => shift true
-		| Word32_rshift => shift false
-		| Word8_sub => sub true
-		| Word32_sub => sub false
-		| Word8_xorb => xorb true
-		| Word32_xorb => xorb false
-		| _ => Unknown
+	       in
+		  case name of
+		     Word8_add => add ()
+		   | Word32_add => add ()
+		   | Word8_andb => andb true
+		   | Word32_andb => andb false
+		   | Word8_arshift => arshift true
+		   | Word32_arshift => arshift false
+		   | Word8_div => div ()
+		   | Word32_div => div ()
+		   | Word8_ge => ge true
+		   | Word32_ge => ge false
+		   | Word8_gt => gt true
+		   | Word32_gt => gt false
+		   | Word8_le => le true
+		   | Word32_le => le false
+		   | Word8_lshift => shift true
+		   | Word32_lshift => shift false
+		   | Word8_lt => lt true
+		   | Word32_lt => lt false
+		   | Word8_mod => mod true
+		   | Word32_mod => mod false
+		   | Word8_mul => mul true
+		   | Word32_mul => mul false
+		   | Word8_orb => orb true
+		   | Word32_orb => orb false
+		   | Word8_rol => ro true
+		   | Word32_rol => ro false
+		   | Word8_ror => ro true
+		   | Word32_ror => ro false
+		   | Word8_rshift => shift true
+		   | Word32_rshift => shift false
+		   | Word8_sub => sub true
+		   | Word32_sub => sub false
+		   | Word8_xorb => xorb true
+		   | Word32_xorb => xorb false
+		   | _ => Unknown
 	       end
 	    fun varInt (x, i, inOrder) =
 	       case name of 
@@ -1090,101 +1094,102 @@ fun 'a apply (p, args, varEquals) =
 		  then Apply (intInfIsSmall, [x])
 	       else ApplyResult.falsee
 	    datatype z = datatype ApplyArg.t
-	 in case (name, args) of
-	    (IntInf_areSmall, [Const (IntInf i), Var x]) => areSmall (x, i)
-	  | (IntInf_areSmall, [Var x, Const (IntInf i)]) => areSmall (x, i)
-	  | (IntInf_neg, [Const (IntInf i), _]) => intInf (IntInf.~ i)
-	  | (IntInf_toString, [Const (IntInf i), _, _]) =>
-	       string (IntInf.toString i)
-	  | (_, [Con {con = c, hasArg = h}, Con {con = c', hasArg = h'}]) =>
-	       if name = MLton_equal orelse name = MLton_eq
-		  then if Con.equals (c, c')
-			  then if h
-				  then bool true
+	 in
+	    case (name, args) of
+	       (IntInf_areSmall, [Const (IntInf i), Var x]) => areSmall (x, i)
+	     | (IntInf_areSmall, [Var x, Const (IntInf i)]) => areSmall (x, i)
+	     | (IntInf_neg, [Const (IntInf i), _]) => intInf (IntInf.~ i)
+	     | (IntInf_toString, [Const (IntInf i), _, _]) =>
+		  string (IntInf.toString i)
+	     | (_, [Con {con = c, hasArg = h}, Con {con = c', hasArg = h'}]) =>
+		  if name = MLton_equal orelse name = MLton_eq
+		     then if Con.equals (c, c')
+			     then if h
+				     then bool true
+				  else Unknown
+			  else bool false
+		  else Unknown
+	     | (_, [Var x, Const (Word i)]) => varWord (x, i, true)
+	     | (_, [Const (Word i), Var x]) => varWord (x, i, false)
+	     | (_, [Var x, Const (Int i)]) => varInt (x, i, true)
+	     | (_, [Const (Int i), Var x]) => varInt (x, i, false)
+	     | (_, [Const (IntInf i1), Const (IntInf i2), _]) =>
+		  (case name of
+		      IntInf_add => iio (IntInf.+, i1, i2)
+		    | IntInf_mul => iio (IntInf.*, i1, i2)
+		    | IntInf_quot => iio (IntInf.quot, i1, i2)
+		    | IntInf_rem => iio (IntInf.rem, i1, i2)
+		    | IntInf_sub => iio (IntInf.-, i1, i2)
+		    | _ => Unknown)
+	     | (_, [Var x, Const (IntInf i), Var space]) =>
+		  varIntInf (x, i, space, true)
+	     | (_, [Const (IntInf i), Var x, Var space]) =>
+		  varIntInf (x, i, space, false)
+	     | (_, [Var x, Var y, _]) =>
+		  if varEquals (x, y)
+		     then
+			(case name of
+			    IntInf_quot => intInfConst 1
+			  | IntInf_rem => intInfConst 0
+			  | IntInf_sub => intInfConst 0
+			  | _ => Unknown)
+		  else Unknown
+			  | (_, [Var x, Var y]) =>
+			       if varEquals (x, y)
+				  then let
+					  val t = ApplyResult.truee
+					  val f = ApplyResult.falsee
+					  datatype z = datatype ApplyResult.t
+				       in case name of
+					  Char_lt => f
+					| Char_le => t
+					| Char_gt => f
+					| Char_ge => t
+					| Int_ge => t
+					| Int_geu => t
+					| Int_gt => f
+					| Int_gtu => f
+					| Int_le => t
+					| Int_lt => f
+					| Int_quot => int 1
+					| Int_rem => int 0
+					| Int_sub => int 0
+					| IntInf_areSmall => Apply (intInfIsSmall, [x])
+					| IntInf_compare => int 0
+					| IntInf_equal => t
+					| MLton_eq => t
+					| MLton_equal => t
+					| Real_lt => f
+					| Real_le => t
+					| Real_equal => t
+					| Real_gt => f
+					| Real_ge => t
+					| Real_qequal => t
+					| String_equal => t
+					| Word8_andb => Var x
+					| Word8_div => word8 0w1
+					| Word8_ge => t
+					| Word8_gt => f
+					| Word8_le => t
+					| Word8_lt => f
+					| Word8_mod => word8 0w0
+					| Word8_orb => Var x
+					| Word8_sub => word8 0w0
+					| Word8_xorb => word8 0w0
+					| Word32_andb => Var x
+					| Word32_div => word 0w1
+					| Word32_ge => t
+					| Word32_gt => f
+					| Word32_le => t
+					| Word32_lt => f
+					| Word32_mod => word 0w0
+					| Word32_orb => Var x
+					| Word32_sub => word 0w0
+					| Word32_xorb => word 0w0
+					| _ => Unknown
+				       end
 			       else Unknown
-		       else bool false
-	       else Unknown
-	  | (_, [Var x, Const (Word i)]) => varWord (x, i, true)
-	  | (_, [Const (Word i), Var x]) => varWord (x, i, false)
-	  | (_, [Var x, Const (Int i)]) => varInt (x, i, true)
-	  | (_, [Const (Int i), Var x]) => varInt (x, i, false)
-	  | (_, [Const (IntInf i1), Const (IntInf i2), _]) =>
-	       (case name of
-		   IntInf_add => iio (IntInf.+, i1, i2)
-		 | IntInf_mul => iio (IntInf.*, i1, i2)
-		 | IntInf_quot => iio (IntInf.quot, i1, i2)
-		 | IntInf_rem => iio (IntInf.rem, i1, i2)
-		 | IntInf_sub => iio (IntInf.-, i1, i2)
-		 | _ => Unknown)
-	  | (_, [Var x, Const (IntInf i), Var space]) =>
-	       varIntInf (x, i, space, true)
-	  | (_, [Const (IntInf i), Var x, Var space]) =>
-	       varIntInf (x, i, space, false)
-	  | (_, [Var x, Var y, _]) =>
-	       if varEquals (x, y)
-		  then
-		     (case name of
-			 IntInf_quot => intInfConst 1
-		       | IntInf_rem => intInfConst 0
-		       | IntInf_sub => intInfConst 0
-		       | _ => Unknown)
-	       else Unknown
-	  | (_, [Var x, Var y]) =>
-	       if varEquals (x, y)
-		  then let
-			  val t = ApplyResult.truee
-			  val f = ApplyResult.falsee
-			  datatype z = datatype ApplyResult.t
-		       in case name of
-			  Char_lt => f
-			| Char_le => t
-			| Char_gt => f
-			| Char_ge => t
-			| Int_ge => t
-			| Int_geu => t
-			| Int_gt => f
-			| Int_gtu => f
-			| Int_le => t
-			| Int_lt => f
-			| Int_quot => int 1
-			| Int_rem => int 0
-			| Int_sub => int 0
-			| IntInf_areSmall => Apply (intInfIsSmall, [x])
-			| IntInf_compare => int 0
-			| IntInf_equal => t
-			| MLton_eq => t
-			| MLton_equal => t
-			| Real_lt => f
-			| Real_le => t
-			| Real_equal => t
-			| Real_gt => f
-			| Real_ge => t
-			| Real_qequal => t
-			| String_equal => t
-			| Word8_andb => Var x
-			| Word8_div => word8 0w1
-			| Word8_ge => t
-			| Word8_gt => f
-			| Word8_le => t
-			| Word8_lt => f
-			| Word8_mod => word8 0w0
-			| Word8_orb => Var x
-			| Word8_sub => word8 0w0
-			| Word8_xorb => word8 0w0
-			| Word32_andb => Var x
-			| Word32_div => word 0w1
-			| Word32_ge => t
-			| Word32_gt => f
-			| Word32_le => t
-			| Word32_lt => f
-			| Word32_mod => word 0w0
-			| Word32_orb => Var x
-			| Word32_sub => word 0w0
-			| Word32_xorb => word 0w0
-			| _ => Unknown
-		       end
-	       else Unknown
-	  | _ => Unknown
+             | _ => Unknown
 	 end
    in
       if List.forall (args, fn ApplyArg.Const _ => true | _ => false)

@@ -809,9 +809,14 @@ fun shrinkFunction (globals: Statement.t vector) =
 		       | Prim.ApplyResult.Var x =>
 			    let
 			       val _ = deleteLabel failure
-			       val (ss, t) = goto (success, Vector.new1 x)
 			    in
-			       (ss, t)
+			       goto (success, Vector.new1 x)
+			    end
+		       | Prim.ApplyResult.Overflow =>
+			    let
+			       val _ = deleteLabel success
+			    in
+			       goto (failure, Vector.new0 ())
 			    end
 		       | _ =>
 			    ([], Prim {prim = prim,
@@ -1127,10 +1132,10 @@ fun shrinkFunction (globals: Statement.t vector) =
 			      end
 			 | Const c => construct (Value.Const c,
 						 fn () => Exp.Const c)
-			 | Unknown => apply {prim = prim,
-					     targs = targs,
-					     args = args}
 			 | Var vi => setVar vi
+			 | _ => apply {prim = prim,
+				       targs = targs,
+				       args = args}
 		     end
 		| Select {tuple, offset} =>
 		     let

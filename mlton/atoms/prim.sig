@@ -218,6 +218,7 @@ signature PRIM =
 	       Apply of prim * 'a list
 	     | Bool of bool
 	     | Const of Const.t
+	     | Overflow
 	     | Unknown
 	     | Var of 'a
 
