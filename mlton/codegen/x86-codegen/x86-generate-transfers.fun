@@ -1073,8 +1073,9 @@ struct
 		     val CFunction.T {convention,
 				      maySwitchThreads,
 				      modifiesFrontier,
-				      modifiesStackTop, 
-				      return = returnTy, ...} = func
+				      readsStackTop, 
+				      return = returnTy,
+				      writesStackTop, ...} = func
 		     val stackTopMinusWordDeref
 		       = x86MLton.gcState_stackTopMinusWordDerefOperand ()
 		     val Liveness.T {dead, ...}
@@ -1232,7 +1233,7 @@ struct
 							       then MemLocSet.add
 								    (s, frontier ())
 							       else s
-						     val s = if modifiesStackTop
+						     val s = if readsStackTop
 							       then MemLocSet.add
 								    (s, stackTop ())
 							       else s
@@ -1272,7 +1273,7 @@ struct
 							     then MemLocSet.add
 							          (s, frontier ())
 							     else s
-						   val s = if modifiesStackTop
+						   val s = if writesStackTop
 							     then MemLocSet.add
 							          (s, stackTop ())
 							     else s

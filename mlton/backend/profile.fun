@@ -25,9 +25,10 @@ structure CFunction =
 	       mayGC = false,
 	       maySwitchThreads = false,
 	       modifiesFrontier = false,
-	       modifiesStackTop = true,
 	       name = name,
-	       return = unit}
+	       readsStackTop = true,
+	       return = unit,
+	       writesStackTop = false}
       in
 	 val profileEnter =
 	    make {args = Vector.new1 gcState,

@@ -23,13 +23,14 @@ datatype 'a t = T of {args: 'a vector,
 		      mayGC: bool,
 		      maySwitchThreads: bool,
 		      modifiesFrontier: bool,
-		      modifiesStackTop: bool,
 		      name: string,
-		      return: 'a}
+		      readsStackTop: bool,
+		      return: 'a,
+		      writesStackTop: bool}
    
 fun layout (T {args, bytesNeeded, convention, ensuresBytesFree, mayGC,
-	       maySwitchThreads, modifiesFrontier, modifiesStackTop, name,
-	       return, ...},
+	       maySwitchThreads, modifiesFrontier, name, readsStackTop,
+	       return, writesStackTop, ...},
 	    layoutType) =
    Layout.record
    [("args", Vector.layout layoutType args),
@@ -39,9 +40,10 @@ fun layout (T {args, bytesNeeded, convention, ensuresBytesFree, mayGC,
     ("mayGC", Bool.layout mayGC),
     ("maySwitchThreads", Bool.layout maySwitchThreads),
     ("modifiesFrontier", Bool.layout modifiesFrontier),
-    ("modifiesStackTop", Bool.layout modifiesStackTop),
     ("name", String.layout name),
-    ("return", layoutType return)]
+    ("readsStackTop", Bool.layout readsStackTop),
+    ("return", layoutType return),
+    ("writesStackTop", Bool.layout writesStackTop)]
    
 local
    fun make f (T r) = f r
@@ -52,16 +54,17 @@ in
    fun mayGC z = make #mayGC z
    fun maySwitchThreads z = make #maySwitchThreads z
    fun modifiesFrontier z = make #modifiesFrontier z
-   fun modifiesStackTop z = make #modifiesStackTop z
    fun name z = make #name z
+   fun readsStackTop z = make #readsStackTop z
    fun return z = make #return z
+   fun writesStackTop z = make #writesStackTop z
 end
 
 fun equals (f, f') = name f = name f'
 
 fun map (T {args, bytesNeeded, convention, ensuresBytesFree, mayGC,
-	    maySwitchThreads, modifiesFrontier, modifiesStackTop, name,
-	    return},
+	    maySwitchThreads, modifiesFrontier, name, readsStackTop, return,
+	    writesStackTop},
 	 f) =
    T {args = Vector.map (args, f),
       bytesNeeded = bytesNeeded,
@@ -70,12 +73,13 @@ fun map (T {args, bytesNeeded, convention, ensuresBytesFree, mayGC,
       mayGC = mayGC,
       maySwitchThreads = maySwitchThreads,
       modifiesFrontier = modifiesFrontier,
-      modifiesStackTop = modifiesStackTop,
       name = name,
-      return = f return}
+      readsStackTop = readsStackTop,
+      return = f return,
+      writesStackTop = writesStackTop}
    
 fun isOk (T {ensuresBytesFree, mayGC, maySwitchThreads, modifiesFrontier,
-	     modifiesStackTop, return, ...},
+	     readsStackTop, return, writesStackTop, ...},
 	  {isUnit}): bool =
    (if maySwitchThreads
        then mayGC andalso isUnit return
@@ -86,7 +90,8 @@ fun isOk (T {ensuresBytesFree, mayGC, maySwitchThreads, modifiesFrontier,
 	else true)
 	   andalso 
 	   (if mayGC
-	       then (modifiesFrontier andalso modifiesStackTop)
+	       then (modifiesFrontier
+		     andalso readsStackTop andalso writesStackTop)
 	    else true)
 
 fun vanilla {args, name, return} =
@@ -97,8 +102,9 @@ fun vanilla {args, name, return} =
       mayGC = false,
       maySwitchThreads = false,
       modifiesFrontier = false,
-      modifiesStackTop = false,
       name = name,
-      return = return}
+      readsStackTop = false,
+      return = return,
+      writesStackTop = false}
 
 end

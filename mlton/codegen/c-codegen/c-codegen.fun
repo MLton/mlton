@@ -954,8 +954,10 @@ fun output {program as Machine.Program.T {chunks,
 			let
 			   val CFunction.T {maySwitchThreads,
 					    modifiesFrontier,
-					    modifiesStackTop,
-					    name, return = returnTy, ...} = func
+					    name,
+					    readsStackTop,
+					    return = returnTy,
+					    writesStackTop,...} = func
 			   val (args, afterCall) =
 			      case frameInfo of
 				 NONE =>
@@ -975,7 +977,7 @@ fun output {program as Machine.Program.T {chunks,
 				 then print "\tFlushFrontier();\n"
 			      else ()
 			   val _ =
-			      if modifiesStackTop
+			      if readsStackTop
 				 then print "\tFlushStackTop();\n"
 			      else ()
 			   val _ = print "\t"
@@ -990,7 +992,7 @@ fun output {program as Machine.Program.T {chunks,
 				 then print "\tCacheFrontier();\n"
 			      else ()
 			   val _ =
-			      if modifiesStackTop
+			      if writesStackTop
 				 then print "\tCacheStackTop();\n"
 			      else ()
 			   val _ =

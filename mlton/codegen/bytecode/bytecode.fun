@@ -307,7 +307,6 @@ fun output {program, outputC} =
 		  let
 		     val CFunction.T {maySwitchThreads,
 				      modifiesFrontier,
-				      modifiesStackTop,
 				      name, return = returnTy, ...} = func
 		     val () = emitOpcode cCall
 		     val () =

@@ -37,9 +37,10 @@ signature C_FUNCTION =
 			     mayGC: bool,
 			     maySwitchThreads: bool,
 			     modifiesFrontier: bool,
-			     modifiesStackTop: bool,
 			     name: string,
-			     return: 'a}
+			     readsStackTop: bool,
+			     return: 'a,
+			     writesStackTop: bool}
 
       val args: 'a t -> 'a vector
       val bytesNeeded: 'a t -> int option
@@ -51,9 +52,10 @@ signature C_FUNCTION =
       val mayGC: 'a t -> bool
       val maySwitchThreads: 'a t -> bool
       val modifiesFrontier: 'a t -> bool
-      val modifiesStackTop: 'a t -> bool
       val name: 'a t -> string
+      val readsStackTop: 'a t -> bool
       val return: 'a t -> 'a
+      val writesStackTop: 'a t -> bool
       val vanilla: {args: 'a vector,
 		    name: string,
 		    return: 'a} -> 'a t

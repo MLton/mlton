@@ -802,13 +802,15 @@ fun import {attributes: Attribute.t list,
 			       convention = convention,
 			       ensuresBytesFree = false,
 			       modifiesFrontier = true,
-			       modifiesStackTop = true,
 			       mayGC = true,
 			       maySwitchThreads = false,
 			       name = name,
+			       readsStackTop = true,
 			       return = (case result of
 					    NONE => Type.unit
-					  | SOME {ty, ...} => ty)}
+					  | SOME {ty, ...} => ty),
+			       writesStackTop = true}
+
 	    in
 	       Prim.ffi func
 	    end

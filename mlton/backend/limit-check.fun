@@ -159,9 +159,10 @@ fun insertFunction (f: Function.t,
 				     mayGC = false,
 				     maySwitchThreads = false,
 				     modifiesFrontier = false,
-				     modifiesStackTop = false,
 				     name = "MLton_allocTooLarge",
-				     return = Type.unit}
+				     readsStackTop = false,
+				     return = Type.unit,
+				     writesStackTop = false}
 		     val _ =
 			newBlocks :=
 			Block.T {args = Vector.new0 (),

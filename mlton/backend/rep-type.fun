@@ -488,9 +488,10 @@ structure BuiltInCFunction =
 		   mayGC = true,
 		   maySwitchThreads = b,
 		   modifiesFrontier = true,
-		   modifiesStackTop = true,
 		   name = "GC_gc",
-		   return = unit}
+		   readsStackTop = true,
+		   return = unit,
+		   writesStackTop = true}
 	 val t = make true
 	 val f = make false
       in
