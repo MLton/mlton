@@ -37,7 +37,11 @@ in
        | SOME i => print (concat [Int.toString i, "\n"])
 end
 
-val _ = printSize ("a continuation option ref", rc)
+val _ =
+   (print "The size of a continuation option ref is "
+    ; if MLton.size rc > 1000
+	 then print "> 1000.\n"
+      else print "< 1000.\n")
 
 val _ =
    case !rc of
