@@ -1,4 +1,7 @@
-structure Socket: SOCKET_EXTRA =
+structure Socket:> SOCKET_EXTRA
+   where type SOCK.sock_type = int
+   where type pre_sock_addr = Word8.word array
+=
 struct
 
 structure Prim = Primitive.Socket
@@ -30,12 +33,13 @@ datatype active = ACTIVE
 
 structure AF =
    struct
-      type addr_family = Prim.AF.addr_family
+      type addr_family = NetHostDB.addr_family
+      val i2a = NetHostDB.intToAddrFamily
       val names = [
-		   ("UNIX", Prim.AF.UNIX),
-		   ("INET", Prim.AF.INET),
-		   ("INET6", Prim.AF.INET6),
-		   ("UNSPEC", Prim.AF.UNSPEC)
+		   ("UNIX", i2a Prim.AF.UNIX),
+		   ("INET", i2a Prim.AF.INET),
+		   ("INET6", i2a Prim.AF.INET6),
+		   ("UNSPEC", i2a Prim.AF.UNSPEC)
 		   ]
       fun list () = names
       fun toString af' =
@@ -221,7 +225,7 @@ structure Ctl =
 
 fun sameAddr (SA sa1, SA sa2) = sa1 = sa2
 
-fun familyOfAddr (SA sa) = Prim.familyOfAddr sa
+fun familyOfAddr (SA sa) = NetHostDB.intToAddrFamily (Prim.familyOfAddr sa)
 
 fun bind (S s, SA sa) =
    PE.checkResult (Prim.bind (s, sa, Vector.length sa))

@@ -1,10 +1,14 @@
-structure NetHostDB: NET_HOST_DB_EXTRA =
+structure NetHostDB:> NET_HOST_DB_EXTRA =
    struct
       structure Prim = Primitive.NetHostDB
 
       (* network byte order (MSB) *)
       type pre_in_addr = Prim.pre_in_addr
       type in_addr = Prim.in_addr
+
+      val preInAddrToWord8Array = fn a => a
+      val inAddrToWord8Vector = fn v => v
+	 
       structure PW = PackWord32Big
       fun new_in_addr () =
 	let
@@ -24,6 +28,10 @@ structure NetHostDB: NET_HOST_DB_EXTRA =
 	end
       fun any () = wordToInAddr (Word.fromInt Prim.INADDR_ANY)
       type addr_family = Prim.addr_family
+
+      val intToAddrFamily = fn z => z
+      val addrFamilyToInt = fn z => z
+	 
       datatype entry = T of {name: string,
 			     aliases: string list,
 			     addrType: addr_family,

@@ -588,6 +588,7 @@ signature BASIS_2002 =
    where type Real32.real = Real32.real
    where type Real64.real = Real64.real
    where type Real64Array.array = Real64Array.array
+   where type Socket.dgram = Socket.dgram
    where type ('a, 'b) Socket.sock = ('a, 'b) Socket.sock
    where type 'a Socket.sock_addr = 'a Socket.sock_addr
    where type 'a Socket.stream = 'a Socket.stream

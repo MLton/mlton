@@ -7,7 +7,7 @@ structure UnixSock : UNIX_SOCK =
       type 'mode stream_sock = 'mode Socket.stream sock
       type dgram_sock = Socket.dgram sock
       type sock_addr = unix Socket.sock_addr
-      val unixAF = Primitive.Socket.AF.UNIX
+      val unixAF = NetHostDB.intToAddrFamily Primitive.Socket.AF.UNIX
 
       fun toAddr s = 
 	let

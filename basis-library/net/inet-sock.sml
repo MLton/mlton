@@ -1,4 +1,4 @@
-structure INetSock: INET_SOCK =
+structure INetSock:> INET_SOCK =
    struct
       structure Prim = Primitive.Socket.INetSock
 
@@ -8,12 +8,13 @@ structure INetSock: INET_SOCK =
       type dgram_sock = Socket.dgram sock
       type sock_addr = inet Socket.sock_addr
 
-      val inetAF = Primitive.Socket.AF.INET
+      val inetAF = NetHostDB.intToAddrFamily Primitive.Socket.AF.INET
 
       fun toAddr (in_addr, port) =
 	let
 	  val (sa, salen, finish) = Socket.new_sock_addr ()
-	  val _ = Prim.toAddr (in_addr, Net.htons port, sa, salen)
+	  val _ = Prim.toAddr (NetHostDB.inAddrToWord8Vector in_addr,
+			       Net.htons port, sa, salen)
 	in
 	  finish ()
 	end
@@ -25,7 +26,7 @@ structure INetSock: INET_SOCK =
 	  val _ = Prim.fromAddr (Word8Vector.toPoly (Socket.unpackSockAddr sa))
 	  val port = Net.ntohs (Prim.getPort ())
 	  val (ia, finish) = NetHostDB.new_in_addr ()
-	  val _ = Prim.getInAddr ia
+	  val _ = Prim.getInAddr (NetHostDB.preInAddrToWord8Array ia)
 	in
 	  (finish (), port)
 	end
