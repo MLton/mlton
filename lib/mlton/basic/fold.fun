@@ -17,7 +17,7 @@ fun foldi (l, b, f) =
 
 fun foreachi (l, f) = foldi (l, (), fn (i, x, ()) => f (i, x))
 
-fun foreach (l, f) = fold (l, (), f o #1)
+fun foreach (l, f: 'a elt -> unit) = fold (l, (), f o #1)
 
 fun last l =
    case fold (l, NONE, SOME o #1) of
