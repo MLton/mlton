@@ -5,7 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-structure General: GENERAL =
+structure General =
    struct
       type unit = unit
 
@@ -21,7 +21,8 @@ structure General: GENERAL =
       exception Span
       exception Subscript
       val exnName = Primitive.Exn.name
-      val exnMessage = exnName
+      (* exnMessage will be improved upon after MLton.Exn is defined. *)
+      val exnMessage = exnName 
  
       datatype order = LESS | EQUAL | GREATER
 
@@ -32,5 +33,11 @@ structure General: GENERAL =
       fun ignore _ = ()
    end
 
-structure GeneralGlobal: GENERAL_GLOBAL = General
-open GeneralGlobal
+(* GeneralGlobal will be defined once MLton.Exn is.  For now, we just open
+ * everything we have.
+ *)
+local
+   structure Z: GENERAL_GLOBAL = General
+in
+   open Z
+end
