@@ -417,7 +417,7 @@ fun makeOptions {usage} =
    end
 
 val mainUsage =
-   "mlton [option ...] file.{cm|sml|c|o} [file.{c|S|o} ...]"
+   "mlton [option ...] file.{c|cm|o|sml} [file.{c|o|s|S} ...]"
 
 val {parse, usage} =
    Popt.makeUsage {mainUsage = mainUsage,
