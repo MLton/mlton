@@ -20,6 +20,7 @@ TEX_FILES = \
 	mlb.tex			\
 	mlb-formal.tex		\
 	nj-deviations.tex	\
+	openbsd.tex		\
 	platform.tex		\
 	profiling.tex		\
 	solaris.tex		\
