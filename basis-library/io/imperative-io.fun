@@ -643,12 +643,17 @@ fun getInstream (ib as In {state, ...}) =
 		  val In {buf, first, last, ...} = ib
 		  val f = !first
 		  val l = !last
-	       in 
-		  if f < l
-		     then 
-			doit (false,
-			      SOME (true, AS.vector (AS.slice (buf, f, SOME (l - f)))))
-		  else doit (false, NONE)
+		  val s =
+		     if f < l
+			then 
+			   doit (false,
+				 SOME (true, 
+				       AS.vector (AS.slice (buf, f, 
+							    SOME (l - f)))))
+			else doit (false, NONE)
+		  val () = state := Stream s
+	       in
+		  s
 	       end
        | Stream s => s
    end
