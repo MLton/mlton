@@ -290,6 +290,7 @@ fun preCodegen {input, docc}: Machine.Program.t =
 	    [("Exn_keepHistory", Bool (!exnHistory)),
 	     ("MLton_debug", Bool (!debug)),
 	     ("MLton_detectOverflow", Bool (!detectOverflow)),
+	     ("MLton_native", Bool (!Native.native)),
 	     ("MLton_profile", Bool (!profile)),
 	     ("MLton_safe", Bool (!safe)),
 	     ("TextIO_bufSize", Int (!textIOBufSize))]

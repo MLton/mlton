@@ -13,13 +13,42 @@ structure Real: REAL =
       open Real IEEEReal
       infix 4 == != ?=
       type real = real
-   
+ 
       val radix: int = 2
 
       val precision: int = 52
 
       val posInf = 1.0 / 0.0
       val negInf = ~1.0 / 0.0
+
+      val nan = posInf + negInf
+	 
+      structure Math =
+	 struct
+	    open Math
+
+	    structure MLton = Primitive.MLton
+	    (* Patches for Cygwin newlib, which does not handle out of range
+	     * args.
+	     *)
+	    val (acos, asin, ln, log10) =
+	       if not MLton.native andalso MLton.hostType = MLton.Cygwin
+		  then
+		     let
+			fun patch f x =
+			   if x < ~1.0 orelse x > 1.0
+			      then nan
+			   else f x
+			val acos = patch acos
+			val asin = patch asin
+			fun patch f x = if x < 0.0 then nan else f x
+			val ln = patch ln
+			val log10 = patch log10
+		     in
+			(acos, asin, ln, log10)
+		     end
+	       else (acos, asin, ln, log10)
+	 end
 
       val op != = not o op ==
 

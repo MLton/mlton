@@ -294,6 +294,8 @@ structure Primitive =
 		  0 => Cygwin
 		| 1 => Linux
 
+	    val native = _build_const "MLton_native": bool;
+
 	    structure Profile =
 	       struct
 		  val profile = _build_const "MLton_profile": bool;
