@@ -1455,11 +1455,14 @@ in
 		  let
 		     open Layout
 		  in
+		     Regexp.layout regexp
+(*
 		     align [case machine of
 			       DFA dfa => DFA.layout dfa
 			     | NFA nfa => NFA.layout nfa
 			    (* str "implementing", Regexp.layout regexp *)
 				  ]
+*)
 		  end
 
 	       fun match {compiled = T {machine, ...},
