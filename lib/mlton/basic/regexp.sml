@@ -2000,9 +2000,7 @@ in
 	       end
 	 in
 	    val fromString: string -> (t * Save.t vector) option =
-	       fn s => (SOME (S (explode s))) handle X s => (print s;
-							     print "\n";
-							     NONE)
+	       fn s => (SOME (S (explode s))) handle X s => NONE
 	    val fromString =
 	       Trace.trace ("Regexp.fromString",
 			    String.layout,
