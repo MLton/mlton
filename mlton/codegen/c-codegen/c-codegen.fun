@@ -477,12 +477,15 @@ fun output {program = Machine.Program.T {chunks,
 			   end 
 		      | _ => ()
 		  val _ =
-		     print (let open Layout
-			    in toString
-			       (seq [str "\t/* live: ",
-				     Vector.layout Operand.layout live,
-				     str " */\n"])
-			    end)
+		     if 0 = !Control.Native.commented
+			then ()
+		     else
+			print (let open Layout
+			       in toString
+				  (seq [str "\t/* live: ",
+					Vector.layout Operand.layout live,
+					str " */\n"])
+			       end)
 		  val _ =
 		     case kind of
 			Kind.Cont {frameInfo, ...} =>
@@ -506,10 +509,10 @@ fun output {program = Machine.Program.T {chunks,
 	    and outputTransfer (t, source: Label.t) =
 	       let
 		  fun iff (test, a, b) =
-		     (force b
-		      ; C.call ("\tBZ", [test, Label.toString b], print)
-		      ; gotoLabel a
-		      ; maybePrintLabel b)
+		     (force a
+		      ; C.call ("\tBNZ", [test, Label.toString a], print)
+		      ; gotoLabel b
+		      ; maybePrintLabel a)
 		  datatype z = datatype Transfer.t
 	       in
 		  case t of
