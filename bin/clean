@@ -25,7 +25,7 @@ doit () {
 			cd $f;
 			if [ -r Makefile ] && 
 				grep $grepFlags '^clean:' Makefile ; then 
-				gmake clean
+				mmake clean
 			else
 				doit
 			fi && 

@@ -136,7 +136,7 @@ freebsd:
 	( cd $(SRC) && tar -cpf - . ) | ( cd $(BSDSRC) && tar -xpf - )
 	cd /tmp && tar -cpf - mlton-$(VERSION) | \
 		 $(GZIP) >/usr/ports/distfiles/mlton-$(VERSION)-1.freebsd.src.tgz
-	cd $(BSDSRC)/freebsd && make build-package
+	cd $(BSDSRC)/freebsd && $(MAKE) build-package
 #	rm -rf $(BSDSRC)
 
 .PHONY: libraries

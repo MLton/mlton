@@ -59,6 +59,8 @@ original=`pwd`
 dir=`dirname $0`
 src=`cd $dir/.. && pwd`
 
+PATH="$dir":$PATH
+
 # libDir is the mlton lib directory where you would like the
 # cross-compiler information to be installed.  If you have installed
 # from the rpms, this will usually be /usr/lib/mlton.  You must have
@@ -73,18 +75,18 @@ mkdir -p "$lib/$crossTarget" || die "Cannot write to $lib."
 
 tmp='/tmp/mlton-add-cross'
 
-( cd $src && make dirs )
+( cd $src && mmake dirs )
 
 ssh $machine "rm -rf $tmp && mkdir $tmp"
 
 echo 'Making runtime.' 
 ( cd $src && tar cf - bin runtime ) | 
 	ssh $machine "cd $tmp && tar xf - && cd runtime &&
-		make COMPILE_FAST=yes TARGET_ARCH=$crossArch TARGET_OS=$crossOS clean all"
+		mmake COMPILE_FAST=yes TARGET_ARCH=$crossArch TARGET_OS=$crossOS clean all"
 ssh $machine "cd $tmp/runtime && tar cf - *.a" | 
 	( cd $lib/$crossTarget && tar xf - )
 ( cd $src &&
-	make TARGET=$crossTarget TARGET_ARCH=$crossArch TARGET_OS=$crossOS \
+	mmake TARGET=$crossTarget TARGET_ARCH=$crossArch TARGET_OS=$crossOS \
 		mlbpathmap targetmap )
 
 exe='print-constants'

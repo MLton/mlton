@@ -5,6 +5,8 @@
 # Please see the file MLton-LICENSE for license information.
 #
 
+PATH = ../bin:$(shell echo $$PATH)
+
 TARGET = self
 TARGET_ARCH = $(shell ../bin/host-arch)
 TARGET_OS = $(shell ../bin/host-os)
@@ -135,7 +137,7 @@ clean:
 
 .PHONY: gdtoa-patch
 gdtoa-patch:
-	cd gdtoa && make clean && rm -f &~
+	cd gdtoa && $(MAKE) clean && rm -f &~
 	mv gdtoa gdtoa-new
 	zcat gdtoa.tgz | tar xf -
 	diff -P -C 2 -r gdtoa gdtoa-new >gdtoa-patch || exit 0

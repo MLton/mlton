@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+set -e
+
+die () {
+	echo $1 >&2
+	exit 1
+}
+
+if gmake >/dev/null 2>&1; then
+	make='gmake'
+elif make -v 2>&1 | grep -q GNU; then
+	make=`which make`
+else
+	die 'Can'\''t find GNU make'
+fi
+
+exec $make "$@"
