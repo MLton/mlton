@@ -1,3 +1,4 @@
+.PHONY: all
 all: CHANGES benchmarks user-guide
 
 benchmarks:
