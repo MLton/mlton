@@ -55,6 +55,8 @@ shrink.fun
 shrink.sig
 simplify.fun
 simplify.sig
+simplify-types.fun
+simplify-types.sig
 ssa-tree.fun
 ssa-tree.sig
 ssa.fun
@@ -63,3 +65,5 @@ two-point-lattice.fun
 two-point-lattice.sig
 type-check.fun
 type-check.sig
+useless.fun
+useless.sig

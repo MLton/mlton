@@ -20,8 +20,8 @@ structure PolyEqual = PolyEqual (S)
 structure Redundant = Redundant (S)
 structure RedundantTests = RedundantTests (S)
 structure RemoveUnused = RemoveUnused (S)
-(* structure SimplifyTypes = SimplifyTypes (S) *)
-(* structure Useless = Useless (S) *)
+structure SimplifyTypes = SimplifyTypes (S)
+structure Useless = Useless (S)
 
 fun leafInline p =
    Ref.fluidLet
@@ -51,9 +51,9 @@ val passes =
      * useless should run after constantPropagation because constantPropagation
      * makes slots of tuples that are constant useless.
      *)
-(*    ("useless", Useless.useless), *)
+    ("useless", Useless.useless),
     ("removeUnused2", RemoveUnused.remove),
-(*    ("simplifyTypes", SimplifyTypes.simplify), *)
+    ("simplifyTypes", SimplifyTypes.simplify),
     ("removeUnusedX5", removeX),
     (* polyEqual cannot be omitted.  It implements MLton_equal.
      * polyEqual should run
