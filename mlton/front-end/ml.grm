@@ -164,6 +164,11 @@ structure Spec =
 (*      val seq = Trace.trace2 ("Spec.seq", layout, layout, layout) seq *)
    end
 
+fun consTopdec (d, dss) =
+   case dss of
+      [] => [[d]]
+    | ds :: dss => (d :: ds) :: dss
+
 type rule = Pat.t * Exp.t
 type clause = {pats : Pat.t vector,
 	       resultType : Type.t option,
@@ -318,7 +323,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | idEqual of string * Region.t
        | idNoAsterisk of string * Region.t
        | int of IntInf.t
-       | leadExps of Topdec.t list
+       | leadExps of Topdec.t list list
        | longcon of Longcon.t
        | longid of string * Region.t
        | longidEqual of string * Region.t
@@ -388,7 +393,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | tlabels  of (Field.t * Type.t) list
        | topdec of Topdec.t
        | topdecnode of Topdec.node
-       | topdecs of Topdec.t list
+       | topdecs of Topdec.t list list
        | tuple_ty of Type.t list
        | ty of Type.t
        | ty' of Type.t
@@ -474,16 +479,16 @@ program : topdecs                   (Program.T topdecs)
         | leadExps                  (Program.T leadExps)
         |                           (Program.T [])
 	 
-leadExps: exp SEMICOLON leadExps   (Topdec.fromExp exp :: leadExps)
-        | exp SEMICOLON topdecs    (Topdec.fromExp exp :: topdecs)
-	| exp SEMICOLON            ([Topdec.fromExp exp])
+leadExps: exp SEMICOLON leadExps   ([Topdec.fromExp exp] :: leadExps)
+        | exp SEMICOLON topdecs    ([Topdec.fromExp exp] :: topdecs)
+	| exp SEMICOLON            ([[Topdec.fromExp exp]])
 	  
-topdecs : topdec                    ([topdec])
+topdecs : topdec                    ([[topdec]])
         | SEMICOLON                 ([])
-        | SEMICOLON topdecs         (topdecs)
-        | topdec topdecs            (topdec::topdecs)
-        | SEMICOLON exp SEMICOLON topdecs  (Topdec.fromExp exp :: topdecs)
-        | SEMICOLON exp SEMICOLON   ([Topdec.fromExp exp])
+        | SEMICOLON topdecs         ([] :: topdecs)
+        | topdec topdecs            (consTopdec (topdec, topdecs))
+        | SEMICOLON exp SEMICOLON topdecs  ([Topdec.fromExp exp] :: topdecs)
+        | SEMICOLON exp SEMICOLON   ([[Topdec.fromExp exp]])
 
 topdec : topdecnode (Topdec.makeRegion' (topdecnode,
 					 topdecnodeleft,

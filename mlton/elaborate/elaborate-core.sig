@@ -31,4 +31,5 @@ signature ELABORATE_CORE =
 		      lookupConstant: string * ConstType.t -> CoreML.Const.t,
 		      nest: string list}
 	 -> Decs.t
+      val reportUndeterminedTypes: unit -> unit
    end

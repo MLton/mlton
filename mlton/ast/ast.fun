@@ -399,15 +399,18 @@ structure Topdec =
 
 structure Program =
    struct
-      datatype t = T of Topdec.t list
+      datatype t = T of Topdec.t list list
 
       val empty = T []
 
       fun append (T ds1, T ds2) = T (ds1 @ ds2)
 
-      fun layout (T ds) = Layout.align (List.map (ds, Topdec.layout))
+      fun layout (T dss) =
+	 Layout.align (List.map (dss, fn ds =>
+				 Layout.paren 
+				 (Layout.align (List.map (ds, Topdec.layout)))))
 
-      fun coalesce (T ds) =
+      fun coalesce (T dss): t =
 	 let
 	    fun finish (sds, ac) =
 	       case sds of
@@ -430,29 +433,33 @@ structure Program =
 			Topdec.Strdec d => loop (ds, d :: sds, ac)
 		      | _ => loop (ds, [], d :: finish (sds, ac))
 	 in
-	    T (rev (loop (ds, [], [])))
+	    T (List.map (dss, fn ds => rev (loop (ds, [], []))))
 	 end
 
-      fun size (T ds): int =
+      val coalesce =
+	 Trace.trace ("Ast.Program.coalesce", layout, layout) coalesce
+
+      fun size (T dss): int =
 	 let
-	    open Dec Exp Strexp Strdec Topdec
 	    val n = ref 0
 	    fun inc () = n := 1 + !n
-
 	    fun dec (d: Dec.t): unit =
-	       case Dec.node d of
-		  Val {vbs, rvbs, ...} =>
-		     (Vector.foreach (vbs, exp o #exp)
-		      ; Vector.foreach (rvbs, match o #match))
-		| Fun (_, ds) =>
-		     Vector.foreach (ds, fn clauses =>
-				     Vector.foreach (clauses, exp o #body))
-		| Abstype {body, ...} => dec body
-		| Exception cs => Vector.foreach (cs, fn _ => inc ())
-		| SeqDec ds => Vector.foreach (ds, dec)
-		| Dec.Local (d, d') => (dec d; dec d')
-		| _ => ()
-
+	       let
+		  datatype z = datatype Dec.node
+	       in
+		  case Dec.node d of
+		     Abstype {body, ...} => dec body
+		   | Exception cs => Vector.foreach (cs, fn _ => inc ())
+		   | Fun (_, ds) =>
+			Vector.foreach (ds, fn clauses =>
+					Vector.foreach (clauses, exp o #body))
+		   | Local (d, d') => (dec d; dec d')
+		   | SeqDec ds => Vector.foreach (ds, dec)
+		   | Val {vbs, rvbs, ...} =>
+			(Vector.foreach (vbs, exp o #exp)
+			 ; Vector.foreach (rvbs, match o #match))
+		   | _ => ()
+	       end
 	    and exp (e: Exp.t): unit =
 	       let
 		  val _ = inc ()
@@ -476,16 +483,13 @@ structure Program =
 		   | While {test, expr} => (exp test; exp expr)
 		   | _ => ()
 	       end
-
 	    and exps es = Vector.foreach (es, exp)
-	       
 	    and match m =
 	       let
 		  val Match.T rules = Match.node m
 	       in
 		  Vector.foreach (rules, exp o #2)
 	       end
-		     
 	    fun strdec d =
 	       case Strdec.node d of
 		  Core d => dec d
@@ -502,12 +506,17 @@ structure Program =
 		| _ => ()
 
 	    fun topdec d =
-	       case Topdec.node d of
-		  Strdec d => strdec d
-		| Functor ds =>
-		     Vector.foreach (ds, fn {body, ...} => strexp body)
-		| _ => ()
-	 in List.foreach (ds, topdec);
+	       let
+		  datatype z = datatype Topdec.node
+	       in
+		  case Topdec.node d of
+		     Functor ds =>
+			Vector.foreach (ds, fn {body, ...} => strexp body)
+		   | Strdec d => strdec d
+		   | _ => ()
+	       end
+	    val _ = List.foreach (dss, fn ds => List.foreach (ds, topdec))
+	 in
 	    !n
 	 end
    end

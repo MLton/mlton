@@ -1414,9 +1414,17 @@ structure Scheme =
 	    Type.unknown {canGeneralize = canGeneralize,
 			  equality = Equality.truee})))
 
-      fun haveFrees (v: t vector): bool vector =
+      val reportFrees = false
+      fun haveFrees (v: t vector, newTycon): bool vector =
 	 let
 	    exception Yes
+	    val unknown =
+	       if reportFrees
+		  then fn _ => raise Yes
+	       else (fn (t, _) =>
+		     (Type.unify (t, Type.con (newTycon (), Vector.new0 ()),
+				  fn () => Error.bug "haveFrees unify")
+		      ; ()))
 	    val {destroy, hom} =
 	       Type.makeHom {con = fn _ => (),
 			     expandOpaque = false,
@@ -1426,7 +1434,7 @@ structure Scheme =
 			     real = fn _ => (),
 			     record = fn _ => (),
 			     recursive = fn _ => (),
-			     unknown = fn _ => raise Yes,
+			     unknown = unknown,
 			     var = fn _ => (),
 			     word = fn _ => ()}
 	    val res =
@@ -1566,7 +1574,7 @@ fun close (ensure: Tyvar.t vector, region)
       end
    end
 
-fun closeTop (r: Region.t): unit =
+fun closeTop (): unit =
    let
       val _ =
 	 List.foreach

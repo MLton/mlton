@@ -172,7 +172,7 @@ signature AST =
 
       structure Program:
 	 sig
-	    datatype t = T of Topdec.t list
+	    datatype t = T of Topdec.t list list
 
 	    val append: t * t -> t
 	    val coalesce: t -> t

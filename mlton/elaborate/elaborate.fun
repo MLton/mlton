@@ -229,13 +229,15 @@ fun elaborateProgram (program,
 	 fn d =>
 	 let
 	    val res = elabTopdec d
-	    val _ = Control.checkForErrors "elaborate"
+	    val _ = ElaborateCore.reportUndeterminedTypes ()
+(*	    val _ = Control.checkForErrors "elaborate" *)
 	 in
 	    res
 	 end
    in
-      List.fold (decs, Decs.empty, fn (d, decs) =>
-		 Decs.append (decs, elabTopdec d))
+      List.fold (decs, Decs.empty, fn (ds, decs) =>
+		 List.fold (ds, decs, fn (d, decs) =>
+			    Decs.append (decs, elabTopdec d)))
    end
 
 end

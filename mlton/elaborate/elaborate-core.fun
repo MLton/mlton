@@ -1067,7 +1067,10 @@ fun elaborateDec (d, {env = E,
 		      (freeTyvarChecks,
 		       fn () =>
 		       Vector.foreach2
-		       (v, Scheme.haveFrees (Vector.map (v, #2)),
+		       (v,
+			Scheme.haveFrees (Vector.map (v, #2),
+					  fn () =>
+					  Env.newTycon ("X", Kind.Arity 0)),
 			fn ((x, s), b) =>
 			if b
 			   then
@@ -2218,11 +2221,13 @@ fun elaborateDec (d, {env = E,
 			     Priority.<= (y, x)),
 			    fn (_,p) => (p (); ()))
       val _ = overloads := []
-      val _ = List.foreach (rev (!freeTyvarChecks), fn p => p ())
-      val _ = freeTyvarChecks := []
-      val _ = TypeEnv.closeTop (Adec.region d)
    in
       ds
    end
+
+fun reportUndeterminedTypes () =
+   (List.foreach (rev (!freeTyvarChecks), fn p => p ())
+    ; freeTyvarChecks := []
+    ; TypeEnv.closeTop ())
 
 end

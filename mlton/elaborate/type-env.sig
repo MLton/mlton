@@ -70,7 +70,7 @@ signature TYPE_ENV =
 	    val bound: t -> Tyvar.t vector
 	    val dest: t -> Tyvar.t vector * Type.t
 	    val fromType: Type.t -> t
-	    val haveFrees: t vector -> bool vector
+	    val haveFrees: t vector * (unit -> Tycon.t) -> bool vector
 	    val instantiate: t -> {args: unit -> Type.t vector,
 				   instance: Type.t}
 	    val layout: t -> Layout.t
@@ -93,7 +93,7 @@ signature TYPE_ENV =
 	 -> Type.t vector
 	 -> {bound: unit -> Tyvar.t vector,
 	     schemes: Scheme.t vector}
-      val closeTop: Region.t -> unit
+      val closeTop: unit -> unit
       val setOpaqueTyconExpansion: Tycon.t * (Type.t vector -> Type.t) -> unit
       val tyconAdmitsEquality: Tycon.t -> Tycon.AdmitsEquality.t ref
    end
