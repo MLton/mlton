@@ -41,7 +41,6 @@
  */
 
 enum {
-	BACKOFF_TRIES = 20,
 	BOGUS_EXN_STACK = 0xFFFFFFFF,
 	BOGUS_POINTER = 0x1,
 	DEBUG = FALSE,
@@ -254,7 +253,7 @@ static void showMaps () {
 	}
 }
 
-static void showMem() {
+static void showMem () {
 	MEMORYSTATUS ms; 
 
 	ms.dwLength = sizeof (MEMORYSTATUS); 
@@ -973,7 +972,11 @@ static W32 computeSemiSize (GC_state s, W64 live) {
 			max64 (live * LIVE_RATIO_MIN, 
 				min64 (s->ramSlop * s->totalRam,
 					live * LIVE_RATIO)));
-	return roundPage (s, res);
+	res = roundPage (s, res);
+	if (DEBUG_RESIZING)
+		fprintf (stderr, "%u = computeSemiSize (%llu)\n",
+				(uint)res, live);
+	return res;
 }
 
 /* This toggles back and forth between high and low addresses to decrease
@@ -993,6 +996,7 @@ static void *allocateSemi (GC_state s, size_t length) {
 			address = 0xf8000000ul - address;
 #if (defined (__CYGWIN__))
 		address = 0; /* FIXME */
+		i = 31; /* FIXME */
 		result = VirtualAlloc ((LPVOID)address, length,
 					MEM_COMMIT,
 					PAGE_READWRITE);
@@ -1025,6 +1029,7 @@ static void *allocateSemi (GC_state s, size_t length) {
 static inline bool prepareToSpace (GC_state s, W64 need, W32 minSize) {
 	W32 backoff, requested;
 	int i;
+	int backoffTries;
 
 	requested = computeSemiSize (s, need);
 	if (requested < minSize)
@@ -1036,8 +1041,14 @@ static inline bool prepareToSpace (GC_state s, W64 need, W32 minSize) {
 		releaseToSpace (s);
 	assert (0 == s->toSize and NULL == s->toBase);
 	s->toSize = requested;
-	backoff = roundPage (s, (requested - minSize) / BACKOFF_TRIES);
-	for (i = 0; i < BACKOFF_TRIES; ++i) {
+	if (requested == minSize) {
+		backoff = 0;
+		backoffTries = 1;
+	} else	{
+		backoffTries = 20;
+		backoff = roundPage (s, (requested - minSize) / backoffTries);
+	}
+	for (i = 0; i < backoffTries; ++i) {
 		s->toBase = allocateSemi (s, s->toSize);
 		unless ((void*)-1 == s->toBase)
 			return TRUE;
@@ -1754,6 +1765,9 @@ static inline void resizeHeap (GC_state s, W64 need) {
 
 	grow = FALSE;
 	keep = 0;
+	if (DEBUG_RESIZING)
+		fprintf (stderr, "resizeHeap  need = %llu  fromSize = %u\n",
+				need, s->fromSize);
 	if (need >= s->fromSize)
 		grow = TRUE;
 	else if (need * LIVE_RATIO_MIN >= s->ramSlop * s->totalRam) {
@@ -2226,8 +2240,7 @@ setMemInfo (GC_state s)
 #elif (defined (__CYGWIN__))
 #include <windows.h>
 static inline void
-setMemInfo(GC_state s)
-{
+setMemInfo (GC_state s) {
 	MEMORYSTATUS ms; 
 
 	GlobalMemoryStatus(&ms); 
@@ -2280,9 +2293,7 @@ get_total_mem()
         return atoi(buffer);
 }
 
-static inline void
-setMemInfo(GC_state s)
-{
+static inline void setMemInfo (GC_state s) {
 	s->totalRam = get_total_mem();
 	s->totalSwap = get_total_swap();
 }
@@ -2438,7 +2449,7 @@ int GC_init (GC_state s, int argc, char **argv,
 		}
 	}
 	setMemInfo(s);
-	if (DEBUG)
+	if (DEBUG or DEBUG_RESIZING)
 		fprintf(stderr, "totalRam = %u  totalSwap = %u\n",
 			s->totalRam, s->totalSwap);
 	if (s->isOriginal)
