@@ -3,6 +3,8 @@
 %% \usepackage{amsmath}
 %% \usepackage{amssymb}
 
+%% \include{macros}
+
 % math fonts
 \newcommand{\mbb}[1]{\mathbb{#1}}
 \newcommand{\mbf}[1]{\mathbf{#1}}
@@ -364,6 +366,7 @@ in the Core and Modules semantics.
 \end{equation}
 
 \begin{equation}
+\label{eqn:mlb:SS:path.sml}
 \judge{
 \mcal{P}(\mit{FE}~\mrm{of}~\mit{M}, \msf{path.sml}) = (\mit{FE}', \mit{topdec}) \quad
 \mit{B}~\mrm{of}~\mit{M} \vdash \mit{topdec} \Rightarrow \mit{B}'
@@ -426,7 +429,7 @@ in the Core and Modules semantics.
 \begin{itemize}
 \item[(\ref{eqn:mlb:SS:bstrbind})] Note that $\mit{fstrbind} \subset
 \mit{strbind}$.  Hence, this rule can be derived from the
-Definition's $B \vdash \mit{strbind} \Rightarrow SE$.
+Definition's $\mit{B} \vdash \mit{strbind} \Rightarrow \mit{SE}$.
 \end{itemize}
 
 {\large\noindent
@@ -454,7 +457,7 @@ Definition's $B \vdash \mit{strbind} \Rightarrow SE$.
 \begin{itemize}
 \item[(\ref{eqn:mlb:SS:bsigbind})] Note that $\mit{fsigbind} \subset
 \mit{sigbind}$.  Hence, this rule can be derived from the
-Definition's $B \vdash \mit{sigbind} \Rightarrow G$.  As such, the
+Definition's $\mit{B} \vdash \mit{sigbind} \Rightarrow \mit{G}$.  As such, the
 following comment from the Definition applies:
 \begin{quote}
 The bound names of $\mit{B}(\mit{sigid}_2)$ can always be renamed to
@@ -689,7 +692,7 @@ $\mit{basbind}$.
 \begin{itemize}
 \item[(\ref{eqn:mlb:DS:bstrbind})] Note that $\mit{fstrbind} \subset
 \mit{strbind}$.  Hence, this rule can be derived from the
-Definition's $B \vdash \mit{strbind} \Rightarrow SE / p$, noting that
+Definition's $\mit{B} \vdash \mit{strbind} \Rightarrow \mit{SE} / p$, noting that
 the derivation may neither cause a side-effect nor generate an
 exception packet.
 \end{itemize}
@@ -715,7 +718,7 @@ exception packet.
 \begin{itemize}
 \item[(\ref{eqn:mlb:DS:bsigbind})] Note that $\mit{fsigbind} \subset
 \mit{sigbind}$.  Hence, this rule can be derived from the
-Definition's $IB \vdash \mit{sigbind} \Rightarrow G$, noting that
+Definition's $\mit{IB} \vdash \mit{sigbind} \Rightarrow \mit{G}$, noting that
 the derivation may neither cause a side-effect nor generate an
 exception packet.
 \end{itemize}
