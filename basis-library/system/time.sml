@@ -128,10 +128,8 @@ structure Time: TIME_EXTRA =
 	    end
       end
 
-      fun fmt (digits: int) (t: time): string =
-	 Real.fmt
-	 (StringCvt.FIX (SOME (if digits < 0 then 0 else digits)))
-	 (toReal t)
+      fun fmt (n: int) (t: time): string =
+	 Real.fmt (StringCvt.FIX (SOME n)) (toReal t)
 
       val toString = fmt 3
 
