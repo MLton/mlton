@@ -79,7 +79,7 @@ cygwin)
 	w32api='w32api-2.1-1'
 ;;
 mingw)
-	target='i386-mingw32msvc'
+	target='i386-pc-mingw32'
 	# target='mingw32'
 	# These flags are from build-cross.sh from www.libsdl.org except:
 	# I added --disable-nls because of undefined references to dcgettext__
