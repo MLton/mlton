@@ -343,7 +343,7 @@ structure Structure =
       local
 	 open Layout
       in
-	 fun layouts (keep: {isUsed: bool} -> bool,
+	 fun layouts ({showUsed: bool},
 		      shapeSigid: Shape.t -> (Sigid.t * Interface.t) option) =
 	    let
 	       fun layoutTypeSpec (n, s) =
@@ -430,7 +430,7 @@ structure Structure =
 		     fun doit (Info.T a, layout) =
 			align (Array.foldr
 			       (a, [], fn ({domain, isUsed, range, ...}, ac) =>
-				if keep {isUsed = !isUsed}
+				if not showUsed orelse !isUsed
 				   then (case layout (domain, range) of
 					    NONE => ac
 					  | SOME l => l :: ac)
@@ -445,36 +445,37 @@ structure Structure =
 		      str "end"]
 		  end
                and layoutAbbrev (S as T {interface, ...}) =
-		  case interface of
+		  case if showUsed
+			  then NONE
+		       else (case interface of
+				NONE => NONE
+			      | SOME I => shapeSigid (Interface.shape I)) of
 		     NONE => (layoutStr S, {messy = true})
-		   | SOME I =>
-			case shapeSigid (Interface.shape I) of
-			   NONE => (layoutStr S, {messy = true})
-			 | SOME (s, I) =>
-			      let
-				 val wheres = ref []
-				 fun realizeTycon ({nest, str = S}, c, _, _, _) =
-				    case S of
-				       NONE => Error.bug "missing structure"
-				     | SOME S =>
-					  case peekTycon (S, c) of
-					     NONE => Error.bug "missing tycon"
-					   | SOME typeStr =>
-						(List.push
-						 (wheres,
-						  seq [str "where ",
-						       layoutTypeSpec'
-						       (Ast.Longtycon.layout
-							(Ast.Longtycon.long
-							 (rev nest, c)),
-							typeStr,
-							{allowData = false})])
-						 ; typeStr)
-				 val _ = realize (S, I, realizeTycon)
-			      in
-				 (align (Sigid.layout s :: (rev (!wheres))),
-				  {messy = false})
-			      end
+		   | SOME (s, I) =>
+			let
+			   val wheres = ref []
+			   fun realizeTycon ({nest, str = S}, c, _, _, _) =
+			      case S of
+				 NONE => Error.bug "missing structure"
+			       | SOME S =>
+				    case peekTycon (S, c) of
+				       NONE => Error.bug "missing tycon"
+				     | SOME typeStr =>
+					  (List.push
+					   (wheres,
+					    seq [str "where ",
+						 layoutTypeSpec'
+						 (Ast.Longtycon.layout
+						  (Ast.Longtycon.long
+						   (rev nest, c)),
+						  typeStr,
+						  {allowData = false})])
+					   ; typeStr)
+			   val _ = realize (S, I, realizeTycon)
+			in
+			   (align (Sigid.layout s :: (rev (!wheres))),
+			    {messy = false})
+			end
 	    in
 	       {layoutAbbrev = layoutAbbrev,
 		layoutStr = layoutStr,
@@ -484,7 +485,8 @@ structure Structure =
 	    end
       end
 
-      fun layoutPretty S = #layoutStr (layouts (fn _ => true, fn _ => NONE)) S
+      fun layoutPretty S =
+	 #layoutStr (layouts ({showUsed = false}, fn _ => NONE)) S
 
       datatype 'a peekResult =
 	 Found of 'a
@@ -932,7 +934,7 @@ val dummyStructure =
 		Structure.layoutPretty o #1)
    dummyStructure
 
-fun layout' (E: t, f, fStr): Layout.t =
+fun layout' (E: t, f, showUsed): Layout.t =
    let
       val _ = setTyconNames E
       val {fcts, sigs, strs, types, vals} = collect (E, f)
@@ -943,8 +945,10 @@ fun layout' (E: t, f, fStr): Layout.t =
 	 Property.getSet (Shape.plist, Property.initConst NONE)
       val _ = Array.foreach (sigs, fn (s, I) =>
 			     setShapeSigid (Interface.shape I, SOME (s, I)))
-      val {layoutAbbrev, layoutStr, strSpec, typeSpec, valSpec, ...} =
-	 Structure.layouts (fStr, shapeSigid)
+      val {strSpec, typeSpec, valSpec, ...} =
+	 Structure.layouts (showUsed, shapeSigid)
+      val {layoutAbbrev, layoutStr, ...} =
+	 Structure.layouts ({showUsed = false}, shapeSigid)
       val sigs =
 	 doit (sigs, fn (sigid, I) =>
 	       let
@@ -974,16 +978,17 @@ fun layout' (E: t, f, fStr): Layout.t =
 	     doit (strs, strSpec)]
    end
 
-fun layout E = layout' (E, fn _ => true, fn _ => true)
+fun layout E = layout' (E, fn _ => true, {showUsed = false})
 
 fun layoutCurrentScope (E as T {currentScope, ...}) =
    let
       val s = !currentScope
    in
-      layout' (E, fn {scope, ...} => Scope.equals (s, scope), fn _ => true)
+      layout' (E, fn {scope, ...} => Scope.equals (s, scope),
+	       {showUsed = false})
    end
 
-fun layoutUsed (E: t): Layout.t = layout' (E, #isUsed, #isUsed)
+fun layoutUsed (E: t): Layout.t = layout' (E, #isUsed, {showUsed = true})
 
 (* ------------------------------------------------- *)
 (*                       peek                        *)
