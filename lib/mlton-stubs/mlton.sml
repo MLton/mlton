@@ -61,7 +61,19 @@ structure MLton: MLTON =
 	       end
 	 end
       
-      structure BinIO = IO (BinIO)
+      structure BinIO =
+	 struct
+	    type instream = unit
+	    type outstream = unit
+
+	    fun inFd _ = raise Fail "inFd"
+	    fun mkstemps _ = raise Fail "mkstemps"
+	    fun mkstemp _ = raise Fail "mkstemp"
+	    fun newIn _ = raise Fail "newIn"
+	    fun newOut _ = raise Fail "newOut"
+	    fun outFd _ = raise Fail "outFd"
+	    fun setIn _ = raise Fail "setIn"
+	 end
 
       structure Cont =
 	 struct
