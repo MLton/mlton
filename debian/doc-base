@@ -9,5 +9,5 @@ Format: postscript
 Files: /usr/share/doc/mlton/user-guide.ps.gz
 
 Format: HTML
-Index: /usr/share/doc/mlton/HTML/main.html
-Files: /usr/share/doc/mlton/HTML/*.html
+Index: /usr/share/doc/mlton/user-guide/index.html
+Files: /usr/share/doc/mlton/user-guide/*.html

@@ -18,7 +18,7 @@ build: configure-stamp build-stamp
 build-stamp:
 	dh_testdir
 	# Add here commands to compile the package.
-	$(MAKE)
+	$(MAKE) bootstrap
 	#/usr/bin/docbook-to-man debian/mlton.sgml > mlton.1
 	touch build-stamp
 
@@ -35,10 +35,7 @@ install: build
 	dh_installdirs
 	# Add here commands to install the package into debian/mlton.
 	$(MAKE) install DESTDIR=$(CURDIR)/debian/mlton prefix=/usr
-	find debian/mlton -name CVS -type d | xargs --no-run-if-empty rm -rf
-	find debian/mlton -name .cvsignore -type f | xargs --no-run-if-empty rm -rf
 	( cd debian/mlton/usr/share/doc/mlton \
-	  && mv CHANGES changelog \
 	  && rm -r license )
 
 # Build architecture-independent files here.

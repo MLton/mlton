@@ -37,12 +37,12 @@ have successfully built {\mlton}, you should recompile it with itself, which
 will use {\tt mlton.cm} to bypass the stubs and use the real {\tt MLton}
 structure from the basis library.
 
-Compiling {\mlton} requires at least 256m of memory.  Thus, if your machine has
-less than this, it is likely that self-compilation will take a very long time
-due to paging.  Even if you have enough memory, there simply may not be enough
-available, due to memory consumed by other processes.  In this case, you may
-see an ``Out of memory'' during self compilation.  The only fix is to make sure
-that enough memory is available.
+Compiling {\mlton} requires at least 256M of actual RAM.  Thus, if your machine
+has less than this, it is likely that self-compilation will take a very long
+time due to paging.  Even if you have enough memory, there simply may not be
+enough available, due to memory consumed by other processes.  In this case, you
+may see an ``Out of memory'' message, or self-compilation may become extremely
+slow.  The only fix is to make sure that enough memory is available.
 
 \subsection{Compiling with {\smlnj}}
 

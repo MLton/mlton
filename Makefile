@@ -25,10 +25,19 @@ all:
 	$(MAKE) script world runtime hostmap constants tools docs
 	@echo 'Build of MLton succeeded.'
 
+.PHONY: bootstrap
+bootstrap:
+	$(MAKE)
+	rm -f mlton/mlton-compile
+	$(MAKE)
+
 .PHONY: clean
 clean:
-	$(MAKE) -C regression clean
 	bin/clean
+
+.PHONY: clean-cvs
+clean-cvs:
+	find . -type d | grep CVS | xargs rm -rf
 
 .PHONY: cm
 cm:
@@ -103,7 +112,6 @@ version:
 	@echo 'Instantiating version numbers.'
 	for f in							\
 		doc/user-guide/macros.tex				\
-		doc/CHANGES 						\
 		mlton/control/control.sml; 				\
 	do								\
 		sed "s/\(.*\)VERSION\(.*\)/\1$(VERSION)\2/" <$$f >z &&	\
@@ -116,8 +124,9 @@ world:
 	$(LIB)/$(AOUT) @MLton -- $(SRC)/basis-library $(LIB)/world
 
 # The TBIN and TLIB are where the files are going to be after installing.
-# The PREFIX is added onto them to indicate where the Makefile actually
-# puts them.  (PREFIX is mainly used when building RPMs.)
+# The DESTDIR and is added onto them to indicate where the Makefile actually
+# puts them.
+DESTDIR = $(CURDIR)/install
 prefix = /usr/local
 TBIN = $(DESTDIR)$(prefix)/bin
 ULIB = lib/mlton
@@ -128,9 +137,9 @@ TDOC = $(DESTDIR)$(prefix)/share/doc/mlton
 .PHONY: install
 install:
 	mkdir -p $(TDOC) $(TLIB) $(TBIN) $(TMAN)
-	(								\
-		cd $(SRC)/doc &&					\
-		$(CP) CHANGES cmcat.sml examples license README $(TDOC)/ \
+	(									\
+		cd $(SRC)/doc &&						\
+		$(CP) changelog cmcat.sml examples license README $(TDOC)/	\
 	)
 	rm -rf $(TDOC)/user-guide
 	$(CP) $(SRC)/doc/user-guide/main $(TDOC)/user-guide
@@ -141,3 +150,5 @@ install:
 	chmod +x $(TBIN)/mlton
 	$(CP) $(BIN)/$(LEX) $(BIN)/$(PROF) $(BIN)/$(YACC) $(TBIN)/
 	$(CP) $(SRC)/man/mlton.1 $(SRC)/man/mlprof.1 $(TMAN)/
+	find $(DESTDIR) -name CVS -type d | xargs --no-run-if-empty rm -rf
+	find $(DESTDIR) -name .cvsignore -type f | xargs --no-run-if-empty rm -rf

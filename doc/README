@@ -19,8 +19,8 @@ For more information, go to the MLton home page.
 Send comments, questions, and bug reports to MLton@mlton.org.
 
 doc directory contents:
-	CHANGES			changelog
 	README			this file
+	changelog		changelog
 	cmcat.sml		a utility for producing whole programs in SML/NJ
 	examples/		example SML programs
 	license/		license information

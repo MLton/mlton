@@ -1,13 +1,13 @@
 .PHONY: all
-all: CHANGES benchmarks user-guide
+all: benchmarks changelog user-guide
 
 benchmarks:
 	mkdir benchmarks
 	cp -pR ../../benchmark/tests/*.sml benchmarks/
 	cp -pR ../../benchmark/tests/DATA benchmarks/
 
-CHANGES: ../CHANGES
-	cp -p ../CHANGES ./
+changelog: ../changelog
+	cp -p ../changelog ./
 
 .PHONY: user-guide
 user-guide:
