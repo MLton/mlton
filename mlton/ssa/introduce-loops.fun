@@ -17,9 +17,7 @@ fun introduceLoops (Program.T {datatypes, globals, functions, main}) =
 	 (functions, fn f =>
 	  let
 	     val {name, args, start, blocks, returns} = Function.dest f
-	     val callsItself = ref false
 	     val tailCallsItself = ref false
-	     exception NonTail
 	     val noChange = (args, start, blocks)
 	     val (args, start, blocks) =
 	        (Vector.foreach
@@ -27,13 +25,12 @@ fun introduceLoops (Program.T {datatypes, globals, functions, main}) =
 		  case transfer of
 		     Call {func, return, ...} =>
 		        if Func.equals (name, func)
-			   then (callsItself := true;
-				 case return of
-				    NONE => tailCallsItself := true
-				  | SOME _ => raise NonTail)
+			   then case return of
+			           NONE => tailCallsItself := true
+				 | SOME _ => ()
 			else ()
 		   | _ => ()) ;
-		 if !callsItself
+		 if !tailCallsItself
 		    then
 		       let
 			  val _ = Control.diagnostics
@@ -87,7 +84,6 @@ fun introduceLoops (Program.T {datatypes, globals, functions, main}) =
 			  blocks)
 		       end
 		 else noChange)
-		handle NonTail => noChange
 	  in Function.new {name = name,
 			   args = args,
 			   start = start,
