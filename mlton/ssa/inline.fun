@@ -521,7 +521,7 @@ fun inline (program as Program.T {datatypes, globals, functions, main}) =
 		    globals = globals,
 		    functions = functions,
 		    main = main}
-      val _ = Program.clear program
+      val _ = Program.clearTop program
    in
       program
    end

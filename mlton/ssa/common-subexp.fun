@@ -304,7 +304,6 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 	 in
 	    Vector.fromList (!blocks)
 	 end
-
       val shrink = shrinkFunction globals
       val functions =
 	 List.revMap
@@ -323,18 +322,17 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 		(blocks, fn Block.T {transfer, ...} =>
 		 Transfer.foreachLabel (transfer, fn label' => 
 					Int.inc (#inDeg (labelInfo label'))))
-	     val blocks = doitTree (Function.dominatorTree f)
-	     val f = Function.new {args = args,
+	     val t = Function.dominatorTree f
+	     val blocks = doitTree t
+	  in
+	     shrink (Function.new {args = args,
 				   blocks = blocks,
 				   mayRaise = mayRaise,
 				   name = name,
 				   returns = returns,
-				   start = start}
-	     val f = shrink f
-	     val _ = Function.clear f
-	  in
-	     f
+				   start = start})
 	  end)
+      val _ = Vector.foreach (globals, Statement.clear)
       val program = 
 	 Program.T {datatypes = datatypes,
 		    globals = globals,

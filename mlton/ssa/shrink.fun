@@ -5,9 +5,6 @@ functor Shrink (S: SHRINK_STRUCTS): SHRINK =
 struct
 
 open S
-
-fun shrinkFunction _ f = f
-fun shrink p = p
    
 datatype z = datatype Exp.t
 datatype z = datatype Transfer.t
@@ -148,7 +145,16 @@ val traceApply =
 		Prim.ApplyResult.layout (Var.layout o VarInfo.var))
 
 val bug = ([], Bug)
-   
+
+fun clear (f: Function.t): unit =
+   let
+      val {args, blocks, ...} = Function.dest f
+      val _ = Vector.foreach (args, Var.clear o #1)
+      val _ = Vector.foreach (blocks, Block.clear)
+   in
+      ()
+   end
+
 fun shrinkFunction (globals: Statement.t vector) =
    let
       fun use (VarInfo.T {isUsed, var, ...}): Var.t =
@@ -186,6 +192,7 @@ fun shrinkFunction (globals: Statement.t vector) =
    in
       fn (f: Function.t, mayDelete: bool) =>
       let
+	 val _ = clear f
 	 val {args, blocks, mayRaise, name, returns, start, ...} =
 	    Function.dest f
 	 (* Index the labels by their defining block in blocks. *)
@@ -331,13 +338,26 @@ fun shrinkFunction (globals: Statement.t vector) =
 	    end
 	 val traceDeleteLabel =
 	    Trace.trace ("Shrink.deleteLabel", layoutLabel, Unit.layout)
+	 fun indexToLabel i = Block.label (Vector.sub (blocks, i))
 	 fun deleteLabel arg =
 	    traceDeleteLabel
 	    (fn l => deleteLabelIndex (labelIndex l)) arg
 	 and deleteLabelIndex (i: int): unit =
 	    let
+	       val _ =
+		  Control.diagnostic
+		  (fn () =>
+		   let
+		      open Layout
+		   in
+		      seq [str "deleteLabelIndex ",
+			   Label.layout (indexToLabel i)]
+		   end)
 	       val n = Array.sub (inDegree, i) - 1
-	       val _ = Assert.assert ("deleteLabelIndex", fn () => n >= 0)
+	       val _ =
+		  if n < 0
+		     then Error.bug "deleteLabelIndex"
+		  else ()
 	       val _ = Array.update (inDegree, i, n)
 	    in
 	       if n = 0 andalso not (Array.sub (isBlock, i))
@@ -401,9 +421,17 @@ fun shrinkFunction (globals: Statement.t vector) =
 		     ()
 		  end
 	    end) arg
-	 and simplifyBlock (Block.T {statements, transfer, ...})
+	 and simplifyBlock (Block.T {label, statements, transfer, ...})
 	    : Statement.t list * Transfer.t =
-	    let 
+	    let
+	       val _ =
+		  Control.diagnostic
+		  (fn () =>
+		   let
+		      open Layout
+		   in
+		      seq [str "simplifyBlock ", Label.layout label]
+		   end)
 	       val fs = Vector.map (statements, evalStatement)
 	       val (ss, transfer) = simplifyTransfer transfer
 	       val statements = Vector.foldr (fs, ss, fn (f, ss) => f ss)
@@ -411,6 +439,15 @@ fun shrinkFunction (globals: Statement.t vector) =
 	       (statements, transfer)
 	    end
 	 and simplifyTransfer (t: Transfer.t): Statement.t list * Transfer.t =
+	    (
+		  Control.diagnostic
+		  (fn () =>
+		   let
+		      open Layout
+		   in
+		      seq [str "simplifyTransfer ", Transfer.layout t]
+		   end)
+		  ;
 	    case t of
 	       Bug => ([], Bug)
 	     | Call {func, args, return} =>
@@ -517,6 +554,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 		   end
 	      | Raise xs => ([], Raise (simplifyVars xs))
 	      | Return xs => ([], Return (simplifyVars xs))
+		   )
 	 and simplifyCase {test: VarInfo.t, cases, default, cantSimplify}
 	    : Statement.t list * Transfer.t =
 	    if Cases.isEmpty cases
@@ -643,6 +681,16 @@ fun shrinkFunction (globals: Statement.t vector) =
 	    traceGoto
 	    (fn (dst: Label.t, args: VarInfo.t vector) =>
 	    let
+	       val _ =
+		  Control.diagnostic
+		  (fn () =>
+		   let
+		      open Layout
+		   in
+		      seq [str "goto ",
+			   Label.layout dst,
+			   Vector.layout VarInfo.layout args]
+		   end)
 	       val i = labelIndex dst
 	       val n = Array.sub (inDegree, i)
 	       val _ = Assert.assert ("goto", fn () => n >= 1)
@@ -819,14 +867,17 @@ fun shrinkFunction (globals: Statement.t vector) =
 			     sideEffect = true,
 			     value = NONE}
 	    end
-	 val _ = forceBlock start 
+	 val _ = forceBlock start
+	 val f = 
+	    Function.new {args = args,
+			  blocks = Vector.fromList (!newBlocks),
+			  mayRaise = mayRaise,
+			  name = name,
+			  returns = returns,
+			  start = start}
+	 val _ = clear f
       in
-	 Function.new {args = args,
-		       blocks = Vector.fromList (!newBlocks),
-		       mayRaise = mayRaise,
-		       name = name,
-		       returns = returns,
-		       start = start}
+	 f
       end
    end
 
@@ -835,39 +886,17 @@ val traceShrinkFunction =
 		 Func.layout o Function.name,
 		 Bool.layout,
 		 Func.layout o Function.name)
-   
+
 val shrinkFunction =
    fn g =>
    let
       val s = shrinkFunction g
-      val global = Statement.prettifyGlobals g
    in
       fn f =>
-      let
-	 fun doit (f, s) =
-	    case 0 of
-	       0 => ()
-	     | 1 =>
-		  File.withOut
-		  (concat ["/tmp/z.", Func.toString (Function.name f),
-			   ".", s, ".ssa"],
-		   fn out =>
-		   Layout.outputl (Function.layout (f, global),
-				   out))
-	     | _ => 
-		  File.withOut
-		  (concat ["/tmp/z.",
-			   Func.toString (Function.name f),
-			   ".", s, ".dot"],
-		   fn out =>
-		   Layout.outputl (#graph (Function.layoutDot (f, global)),
-				   out))
-	 val _ = doit (f, "pre")
-	 val f' = traceShrinkFunction s (f, true)
-	 val _ = doit (f', "post")
-      in
-	 f'
-      end
+      (traceShrinkFunction s (f, true)
+       handle e => (Error.bug (concat ["shrinker raised ",
+				       Layout.toString (Exn.layout e)])
+		    ; raise e))
    end
 
 fun shrink (Program.T {datatypes, globals, functions, main}) =

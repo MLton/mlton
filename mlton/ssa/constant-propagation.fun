@@ -810,7 +810,8 @@ fun simplify (program as Program.T {datatypes, globals, functions, main})
 		  transfer = doitTransfer transfer}
       fun doitFunction f =
 	 let val {name, args, start, blocks, returns, mayRaise} = Function.dest f
-	 in Function.new {name = name,
+	 in
+	    Function.new {name = name,
 			  args = args,
 			  start = start,
 			  blocks = Vector.map (blocks, doitBlock),
@@ -825,7 +826,7 @@ fun simplify (program as Program.T {datatypes, globals, functions, main})
 			       globals = globals,
 			       functions = List.revMap (functions, shrink),
 			       main = main}
-      val _ = Program.clear program
+      val _ = Program.clearTop program
    in
       program
    end

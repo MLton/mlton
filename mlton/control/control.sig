@@ -118,8 +118,6 @@ signature CONTROL =
        *)
       val newReturn: bool ref
 
-      val optimizeSSA: bool ref
-	 
       (* Only duplicate big functions when
        * (size - small) * (number of occurrences - 1) <= product
        *)

@@ -85,6 +85,7 @@ signature SSA_TREE =
 			       ty: Type.t,
 			       exp: Exp.t}
 
+	    val clear: t -> unit (* clear the var *)
 	    val exp: t -> Exp.t
 	    val layout: t -> Layout.t
 	    val mayAllocate: t -> bool
@@ -239,6 +240,8 @@ signature SSA_TREE =
 
 	    val checkHandlers: t -> unit
 	    val clear: t -> unit
+	    val clearGlobals: t -> unit
+	    val clearTop: t -> unit
 	    val fromCps: Cps.Program.t * {jumpToLabel: Cps.Jump.t -> Label.t,
 					  funcToFunc: Cps.Func.t -> Func.t} -> t
 	    val foreachVar: t * (Var.t * Type.t -> unit) -> unit

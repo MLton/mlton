@@ -54,41 +54,205 @@ structure SideEffects =
     val whenSideEffects = addHandler
   end
 
-structure Terminates =
+structure MayReturn =
   struct
-    structure L = TwoPointLattice (val bottom = "does not terminate"
-				   val top = "terminates")
+    structure L = TwoPointLattice (val bottom = "does not return"
+				   val top = "may return")
     open L
-    val terminate = makeTop
-    val doesTerminate = isTop
-    val whenTerminates = addHandler
+    val return = makeTop
+    val mayReturn = isTop
+    val whenReturns = addHandler
   end
 
-structure Fails =
+structure MayRaise =
   struct
-    structure L = TwoPointLattice (val bottom = "does not fail"
-				   val top = "fails")
+    structure L = TwoPointLattice (val bottom = "does not raise"
+				   val top = "may raise")
     open L
-    val fail = makeTop
-    val doesFail = isTop
-    val whenFails = addHandler
+    val raisee = makeTop
+    val mayRaise = isTop
+    val whenRaises = addHandler
   end
+
+structure VarInfo =
+   struct
+      datatype t = T of {used: Used.t}
+
+      fun layout (T {used, ...}) = Used.layout used
+	 
+      local
+	 fun make f (T r) = f r
+      in
+	 val used = make #used
+      end
+
+      fun new () = T {used = Used.new ()}
+
+      fun whenUsed (vi, th) = Used.whenUsed (used vi, th)
+      val isUsed = Used.isUsed o used
+      val use = Used.use o used
+   end
+
+structure ConInfo =
+   struct
+      datatype t = T of {args: (VarInfo.t * Type.t) vector,
+			 coned: Coned.t,
+			 deconed: Deconed.t,
+			 dummy: Exp.t option ref,
+			 tycon: Tycon.t}
+
+      fun layout (T {args, coned, deconed, ...}) =
+	 Layout.record [("args", Vector.layout (VarInfo.layout o #1) args),
+			("coned", Coned.layout coned),
+			("deconed", Deconed.layout deconed)]
+
+      local
+	 fun make f (T r) = f r
+      in
+	 val args = make #args
+	 val coned = make #coned
+	 val deconed = make #deconed
+	 val dummy = make #dummy
+	 val tycon = make #tycon
+      end
+
+      val con = Coned.con o coned
+      val isConed = Coned.isConed o coned
+      fun whenConed (c, th) = Coned.whenConed (coned c, th)
+      val decon = Deconed.decon o deconed
+      val isDeconed = Deconed.isDeconed o deconed
+      fun whenDeconed (c, th) = Deconed.whenDeconed (deconed c, th)
+
+      fun new {args: Type.t vector, tycon: Tycon.t}: t =
+	 T {args = Vector.map (args, fn t => (VarInfo.new (), t)),
+	    coned = Coned.new (),
+	    deconed = Deconed.new (),
+	    dummy = ref NONE,
+	    tycon = tycon}
+   end
+
+structure FuncInfo =
+   struct
+      datatype t = T of {args: (VarInfo.t * Type.t) vector,
+			 bugLabel: Label.t option ref,
+			 mayRaise: MayRaise.t,
+			 mayReturn: MayReturn.t,
+			 retLabel: Label.t option ref,
+			 returns: (VarInfo.t * Type.t) vector option,
+			 sideEffects: SideEffects.t,
+			 used: Used.t,
+			 wrappers: Block.t list ref}
+
+      fun layout (T {args, mayRaise, mayReturn, returns, sideEffects, used,
+		     ...}) =
+	 Layout.record
+	 [("args",
+	   Vector.layout (Layout.tuple2 (VarInfo.layout, Type.layout)) args),
+	  ("mayRaise", MayRaise.layout mayRaise),
+	  ("mayReturn", MayReturn.layout mayReturn),
+	  ("returns", (Option.layout
+		       (Vector.layout (Layout.tuple2 (VarInfo.layout,
+						      Type.layout)))
+		       returns)),
+	  ("sideEffects", SideEffects.layout sideEffects),
+	  ("used", Used.layout used)]
+
+      local
+	 fun make f (T r) = f r
+      in
+	 val args = make #args
+	 val bugLabel = make #bugLabel
+	 val mayRaise' = make #mayRaise
+	 val mayReturn' = make #mayReturn
+	 val retLabel = make #retLabel
+	 val returns = make #returns
+	 val sideEffects = make #sideEffects
+	 val used = make #used
+	 val wrappers = make #wrappers
+      end
+
+      val raisee = MayRaise.raisee o mayRaise'
+      val mayRaise = MayRaise.mayRaise o mayRaise'
+      fun whenRaises (i, th) = MayRaise.whenRaises (mayRaise' i, th)
+
+      val return = MayReturn.return o mayReturn'
+      fun whenReturns (i, th) = MayReturn.whenReturns (mayReturn' i, th)
+      val mayReturn = MayReturn.mayReturn o mayReturn'
+
+      val isUsed = Used.isUsed o used
+
+      val sideEffect = SideEffects.sideEffect o sideEffects
+	
+      fun new {args, returns} =
+	 T {args = args,
+	    bugLabel = ref NONE,
+	    mayRaise = MayRaise.new (),
+	    mayReturn = MayReturn.new (),
+	    retLabel = ref NONE,
+	    returns = returns,
+	    sideEffects = SideEffects.new (),
+	    used = Used.new (),
+	    wrappers = ref []}
+   end
+
+structure LabelInfo =
+   struct
+      datatype t = T of {args: (VarInfo.t * Type.t) vector,
+			 catches: Catches.t,
+			 func: FuncInfo.t,
+			 used: Used.t,
+			 wrappers: (Type.t vector * Label.t) list ref}
+
+      fun layout (T {args, catches, used, ...}) =
+	 Layout.record
+	 [("args", Vector.layout (VarInfo.layout o #1) args),
+	  ("catches", Catches.layout catches),
+	  ("used", Used.layout used)]
+				  
+      fun new {func, args} =
+	 T {args = args,
+	    catches = Catches.new (),
+	    func = func,
+	    used = Used.new (),
+	    wrappers = ref []}
+
+      local
+	 fun make f (T r) = f r
+      in
+	 val args = make #args
+	 val catches = make #catches
+	 val func = make #func
+	 val used = make #used
+	 val wrappers = make #wrappers
+      end
+
+      val doesCatch = Catches.doesCatch o catches
+      val isUsed = Used.isUsed o used
+      fun whenUsed (li, f) = Used.whenUsed (used li, f)
+   end
 
 fun remove (program as Program.T {datatypes, globals, functions, main})
   = let
-      val {get = varInfo: Var.t -> {used: Used.t}, ...}
-	= Property.get
-	  (Var.plist,
-	   Property.initFun (fn _ => {used = Used.new ()}))
+      val {get = varInfo: Var.t -> VarInfo.t, ...}
+	= Property.get (Var.plist, Property.initFun (fn _ => VarInfo.new ()))
       local
 	fun make s = (s o varInfo, ! o s o varInfo)
       in
-	val usedVar = #used o varInfo
+	val usedVar = VarInfo.used o varInfo
 	val useVar = Used.use o usedVar
 	val isUsedVar = Used.isUsed o usedVar
-	val isNotUsedVar = not o isUsedVar
-	fun whenUsedVar (x, th) = Used.whenUsed(usedVar x, th)
-	fun flowVarVar (x, y) = Used.<=(usedVar x, usedVar y)
+	fun flowVarInfoTyVarInfoTy ((vi, _), (vi', _)) =
+	   Used.<= (VarInfo.used vi, VarInfo.used vi')
+	fun flowVarInfoTysVarInfoTys (xs, ys) =
+	   Vector.foreach2 (xs, ys, flowVarInfoTyVarInfoTy)
+	fun flowVarInfoTyVar ((vi, _), x) = Used.<= (VarInfo.used vi, usedVar x)
+	fun flowVarInfoTysVars (xs, ys) =
+	   Vector.foreach2 (xs, ys, flowVarInfoTyVar)
+	fun flowVarTyVarInfoTy ((x, _), (vi, _)) =
+	   Used.<= (usedVar x, VarInfo.used vi)
+	fun flowVarTysVarInfoTys (xs, ys) =
+	   Vector.foreach2 (xs, ys, flowVarTyVarInfoTy)
+	fun flowVarVar (x, y) = Used.<= (usedVar x, usedVar y)
 	fun flowVarTyVar ((x, _), y) = flowVarVar (x, y)
 	fun flowVarVarTy (x, (y, _)) = flowVarVar (x, y)
 	fun flowVarTyVarTy ((x, _), (y, _)) = flowVarVar (x, y)
@@ -97,19 +261,14 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	fun flowVarsVarTys (xs, ys) = Vector.foreach2(xs, ys, flowVarVarTy)
 	fun flowVarTysVarTys (xs, ys) = Vector.foreach2(xs, ys, flowVarTyVarTy)
       end
-
-      val {get = tyInfo: Type.t -> 
-	                 {deconed: bool ref}, 
-	   ...}
-	= Property.get
-	  (Type.plist,
-	   Property.initFun (fn _ => {deconed = ref false}))
+      val {get = tyInfo: Type.t -> {deconed: bool ref}, destroy, ...} =
+	 Property.destGet (Type.plist,
+			   Property.initFun (fn _ => {deconed = ref false}))
       local
 	fun make s = (s o tyInfo, ! o s o tyInfo)
       in
 	val (deconedTy, deconedTy') = make #deconed
       end
-
       val {get = tyconInfo: Tycon.t -> 
 	                    {cons: {con: Con.t, args: Type.t vector} vector,
 			     numCons: int ref},
@@ -123,153 +282,39 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	val consTycon = #cons o tyconInfo
 	val (numConsTycon, numConsTycon') = make #numCons
       end
-
-      val {get = conInfo: Con.t -> 
-	                  {args: (Var.t * Type.t) vector,
-			   coned: Coned.t,
-			   deconed: Deconed.t,
-			   dummy: Exp.t option ref,
-			   tycon: Tycon.t},
-	   set = setConInfo, ...}
-	= Property.getSetOnce
-	  (Con.plist, 
-	   Property.initRaise ("RemoveUnused.conInfo", Con.layout))
-      local
-	fun make s = (s o conInfo, ! o s o conInfo)
-      in
-	val conedCon = #coned o conInfo
-	val conCon = Coned.con o conedCon
-	val isConedCon = Coned.isConed o conedCon
-	fun whenConedCon (c, th) = Coned.whenConed(conedCon c, th)
-
-	val deconedCon = #deconed o conInfo
-	val deconCon = Deconed.decon o deconedCon
-	val isDeconedCon = Deconed.isDeconed o deconedCon
-	fun whenDeconedCon (c, th) = Deconed.whenDeconed(deconedCon c, th)
-
-	val argsCon = #args o conInfo
-	val (dummy, dummy') = make #dummy
-	val tyconCon = #tycon o conInfo
-      end
-      val conInfo 
-	= Trace.trace ("RemoveUnused.conInfo",
-		       Con.layout,
-		       fn {coned, deconed, ...} 
-		        => Layout.record [("coned", Coned.layout coned),
-					  ("deconed", Deconed.layout deconed)])
-	              conInfo
-      fun newConInfo (con, args, tycon)
-	= setConInfo (con, {args = Vector.map(args, fn t => (Var.newNoname (), t)),
-			    coned = Coned.new (),
-			    deconed = Deconed.new (),
-			    dummy = ref NONE,
-			    tycon = tycon})
-
-
-      val {get = funcInfo: Func.t -> 
-	                   {used: Used.t,
-			    args: (Var.t * Type.t) vector,
-			    returns: (Var.t * Type.t) vector option,
-			    sideEffects: SideEffects.t,
-			    terminates: Terminates.t,
-			    fails: Fails.t,
-			    bugLabel: Label.t option ref,
-			    bugWrappers: (Type.t vector * Label.t) list ref,
-			    retLabel: Label.t option ref,
-			    wrappers: Block.t list ref},
-	   set = setFuncInfo, ...}
-	= Property.getSetOnce
+      val {get = conInfo: Con.t -> ConInfo.t, set = setConInfo, ...} =
+	 Property.getSetOnce
+	 (Con.plist, Property.initRaise ("RemoveUnused.conInfo", Con.layout))
+      val conInfo =
+	 Trace.trace ("RemoveUnused.conInfo", Con.layout, ConInfo.layout) conInfo
+      fun newConInfo (con, args, tycon) =
+	 setConInfo (con, ConInfo.new {args = args, tycon = tycon})
+      val {get = funcInfo: Func.t -> FuncInfo.t, set = setFuncInfo, ...}
+	 = Property.getSetOnce
 	  (Func.plist,
 	   Property.initRaise ("RemoveUnused.funcInfo", Func.layout))
-      local
-	fun make s = (s o funcInfo, ! o s o funcInfo)
-      in
-	val usedFunc = #used o funcInfo
-	val useFunc = Used.use o usedFunc
-	val isUsedFunc = Used.isUsed o usedFunc
-	fun whenUsedFunc (f, th) = Used.whenUsed(usedFunc f, th)
-
-	val sideEffectsFunc = #sideEffects o funcInfo
-	val sideEffectFunc = SideEffects.sideEffect o sideEffectsFunc
-	val doesSideEffectFunc = SideEffects.doesSideEffect o sideEffectsFunc
-	val doesNotSideEffectFunc = not o doesSideEffectFunc
-	fun whenSideEffectsFunc (f, th) 
-	  = SideEffects.whenSideEffects(sideEffectsFunc f, th)
-	fun flowSideEffects (f, g) 
-	  = SideEffects.<=(sideEffectsFunc f, sideEffectsFunc g)
-
-	val terminatesFunc = #terminates o funcInfo
-	val terminateFunc = Terminates.terminate o terminatesFunc
-	val doesTerminateFunc = Terminates.doesTerminate o terminatesFunc
-	val doesNotTerminateFunc = not o doesTerminateFunc
-	fun whenTerminatesFunc (f, th) 
-	  = Terminates.whenTerminates(terminatesFunc f, th)
-	fun flowTerminates (f, g) 
-	  = Terminates.<=(terminatesFunc f, terminatesFunc g)
-
-	val failsFunc = #fails o funcInfo
-	val failFunc = Fails.fail o failsFunc
-	val doesFailFunc = Fails.doesFail o failsFunc
-	val doesNotFailFunc = not o doesFailFunc
-	fun whenFailsFunc (f, th) 
-	  = Fails.whenFails(failsFunc f, th)
-	fun flowFails (f, g) 
-	  = Fails.<=(failsFunc f, failsFunc g)
-
-	val argsFunc = #args o funcInfo
-	val returnsFunc = #returns o funcInfo
-	val (wrappersFunc, wrappersFunc') = make #wrappers
-
-	val (bugLabel, bugLabel') = make #bugLabel
-	val (bugWrappers, bugWrappers') = make #bugWrappers
-	val (retLabel, retLabel') = make #retLabel
-      end
-
-      val {get = labelInfo: Label.t -> 
-	                    {used: Used.t,
-			     catches: Catches.t,
-			     func: Func.t,
-			     args: (Var.t * Type.t) vector,
-			     wrappers: (Type.t vector * Label.t) list ref},
-	   set = setLabelInfo, ...}
+      val {get = labelInfo: Label.t -> LabelInfo.t, set = setLabelInfo, ...}
 	= Property.getSetOnce
 	  (Label.plist,
 	   Property.initRaise ("RemoveUnused.labelInfo", Label.layout))
-      local
-	fun make s = (s o labelInfo, ! o s o labelInfo)
-      in
-	val usedLabel = #used o labelInfo
-	val useLabel = Used.use o usedLabel
-	val isUsedLabel = Used.isUsed o usedLabel
-	fun whenUsedLabel (l, th) = Used.whenUsed(usedLabel l, th)
-
-	val catchesLabel = #catches o labelInfo
-	val catchLabel = Catches.catch o catchesLabel
-	val doesCatchLabel = Catches.doesCatch o catchesLabel
-	fun whenCatchesLabel (l, th) = Catches.whenCatches(catchesLabel l, th)
-
-	val funcLabel = #func o labelInfo
-	val argsLabel = #args o labelInfo
-	val (wrappersLabel, wrappersLabel') = make #wrappers
-      end
-
-
-
-      fun visitLabel l = useLabel l
-      fun visitLabelTh l = fn () => visitLabel l
-      fun visitFunc f = useFunc f
-      fun visitFuncTh f = fn () => visitFunc f
-
+      val visitLabelInfo = Used.use o LabelInfo.used
+      val visitLabel = visitLabelInfo o labelInfo
+      fun visitFuncInfo fi = Used.use (FuncInfo.used fi)
+      val visitFunc = visitFuncInfo o funcInfo
       fun visitVar (x: Var.t) = useVar x
       fun visitVars (xs: Var.t Vector.t) = Vector.foreach (xs, visitVar)
-      
-      fun visitExp (e: Exp.t)
-	= case e
-	    of ConApp {con, args} 
-	     => (conCon con; 
-		 flowVarTysVars(argsCon con, args))
-	     | PrimApp {prim, targs, args}
-	     => let
+      fun visitExp (e: Exp.t) =
+	 case e of
+	    ConApp {con, args} =>
+	       let
+		  val c = conInfo con
+		  val _ = ConInfo.con c
+		  val _ = flowVarInfoTysVars (ConInfo.args c, args)
+	       in
+		  ()
+	       end
+	  | PrimApp {prim, targs, args} =>
+	       let
 		  val _ = visitVars args
 		  datatype z = datatype Type.dest
 		  fun decon t
@@ -279,18 +324,23 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 			if !deconed
 			  then ()
 			  else (deconed := true;
-				case Type.dest t
-				  of Datatype t
-				   => Vector.foreach
-				      (consTycon t,
-				       fn {con, ...} 
-				        => (deconCon con;
-					    Vector.foreach
-					    (argsCon con, 
-					     fn (x, t) => (useVar x; decon t))))
-				   | Tuple ts => Vector.foreach (ts, decon)
-				   | Vector t => decon t
-				   | _ => ())
+				case Type.dest t of
+				   Datatype t =>
+				      Vector.foreach
+				      (consTycon t, fn {con, ...} =>
+				       let
+					  val c = conInfo con
+					  val _ = ConInfo.decon c
+					  val _ =
+					     Vector.foreach
+					     (ConInfo.args c, fn (x, t) =>
+					      (VarInfo.use x; decon t))
+				       in
+					  ()
+				       end)
+				 | Tuple ts => Vector.foreach (ts, decon)
+				 | Vector t => decon t
+				 | _ => ())
 		      end
 		in
 		  case (Prim.name prim, Vector.length targs)
@@ -309,47 +359,63 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	     | Tuple xs => visitVars xs
 	     | Var x => visitVar x
 	     | _ => ()
-      fun visitExpTh e = fn () => visitExp e
-
-      fun visitStatement (f: Func.t,
-			  s: Statement.t
-			  as Statement.T {var, ty, exp})
-	= if Exp.maySideEffect exp
-	    then (sideEffectFunc f;
-		  visitExp exp)
-	    else Option.app(var, fn var => whenUsedVar(var, visitExpTh exp))
-      fun visitStatements (f: Func.t,
-			   ss: Statement.t Vector.t)
-	= Vector.foreach (ss, fn s => visitStatement(f, s))
-
-      fun visitTransfer (f: Func.t, t: Transfer.t)
-	= case t
+      fun maybeVisitVarExp (var, exp) =
+	 Option.app (var, fn var =>
+		     VarInfo.whenUsed (varInfo var, fn () => visitExp exp))
+      fun visitStatement (s: Statement.t as Statement.T {var, ty, exp},
+			  f: FuncInfo.t) =
+	 if Exp.maySideEffect exp
+	    then (FuncInfo.sideEffect f
+		  ; visitExp exp)
+	 else maybeVisitVarExp (var, exp)
+      fun visitTransfer (t: Transfer.t, f: FuncInfo.t) =
+	 case t
 	    of Bug => ()
 	     | Call {func, args, return}
 	     => let
+		   val f' = funcInfo func
+		   fun mayRaise () =
+		      MayRaise.<= (FuncInfo.mayRaise' f', FuncInfo.mayRaise' f)
 		in
-		  flowVarTysVars(argsFunc func, args);
-		  flowSideEffects(func, f);
+		  flowVarInfoTysVars (FuncInfo.args f', args);
+		  SideEffects.<= (FuncInfo.sideEffects f',
+				  FuncInfo.sideEffects f);
 		  case return of
 		     Return.Dead => ()
-		   | Return.HandleOnly => flowFails (func, f)
+		   | Return.HandleOnly => mayRaise ()
 		   | Return.NonTail {cont, handler} =>
-			(Option.app (returnsFunc func, fn xts =>
-				     flowVarTysVarTys (argsLabel cont, xts));
-			 whenTerminatesFunc(func, visitLabelTh cont);
-			 case handler of
-			    Handler.Handle handler 
-			    => (whenFailsFunc(func, fn () => catchLabel handler);
-				whenFailsFunc(func, visitLabelTh handler))
-			  | _ => flowFails (func, f))
+			let
+			   val contInfo = labelInfo cont
+			   val _ = 
+			      Option.app
+			      (FuncInfo.returns f', fn xts =>
+			       flowVarInfoTysVarInfoTys
+			       (LabelInfo.args contInfo, xts))
+			   val _ = 
+			      FuncInfo.whenReturns
+			      (f', fn () => visitLabelInfo contInfo)
+			in
+			   case handler of
+			      Handler.Handle handler =>
+				 FuncInfo.whenRaises
+				 (f', fn () =>
+				  let
+				     val handlerInfo = labelInfo handler
+				  in
+				     Catches.catch (LabelInfo.catches handlerInfo)
+				     ; visitLabelInfo handlerInfo
+				  end)
+			    | _ => mayRaise ()
+			end
 		   | Return.Tail =>
-			((case (returnsFunc f, returnsFunc func) of
+			((case (FuncInfo.returns f, FuncInfo.returns f') of
 			     (SOME xts, SOME xts') =>
-				flowVarTysVarTys (xts, xts')
-			   | _ => ());
-			 flowTerminates(func, f);
-			 flowFails(func, f));
-		  visitFunc func
+				flowVarInfoTysVarInfoTys (xts, xts')
+			   | _ => ())
+			 ; MayReturn.<= (FuncInfo.mayReturn' f',
+					 FuncInfo.mayReturn' f)
+			 ; mayRaise ());
+		  visitFuncInfo f'
 		end
 	     | Case {test, cases, default}
 	     => let
@@ -366,58 +432,74 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 		     => if Vector.length cases = 0
 			  then Option.app (default, visitLabel)
 			  else let
-				 val _ = Vector.foreach
-				         (cases,
-					  fn (con, l)
-					   => (deconCon con;
-					       flowVarTysVarTys(argsLabel l, 
-								argsCon con);
-					       whenConedCon(con, visitLabelTh l)))
-				 val cons
-				   = consTycon (tyconCon (#1 (Vector.sub(cases, 0))))
+				 val _ =
+				    Vector.foreach
+				    (cases, fn (con, l) =>
+				     let
+					val c = conInfo con
+					val _ = ConInfo.decon c
+					val li = labelInfo l
+					val _ =
+					   flowVarInfoTysVarInfoTys
+					   (LabelInfo.args li, ConInfo.args c)
+					val _ =
+					   ConInfo.whenConed
+					   (c, fn () => visitLabelInfo li)
+				     in
+					()
+				     end)
+				 val cons =
+				    consTycon
+				    (ConInfo.tycon
+				     (conInfo (#1 (Vector.sub (cases, 0)))))
 			       in
 				 case default
 				   of NONE => ()
-				    | SOME l
-				    => Vector.foreach
-				       (cons,
-					fn {con, ...}
-					 => if Vector.exists
-					       (cases, 
-						fn (c, _) => Con.equals(c, con))
-					      then ()
-					      else whenConedCon(con, visitLabelTh l))
+				    | SOME l =>
+					 let
+					    val li = labelInfo l
+					 in
+					    Vector.foreach
+					    (cons, fn {con, ...} =>
+					     if Vector.exists
+						(cases, fn (c, _) =>
+						 Con.equals(c, con))
+						then ()
+					     else
+						ConInfo.whenConed
+						(conInfo con, fn () =>
+						 visitLabelInfo li))
+					 end
 			       end
 		end
-	     | Goto {dst, args} 
-	     => (flowVarTysVars(argsLabel dst, args);
-		 visitLabel dst)
+	     | Goto {dst, args} =>
+		  let
+		     val dst = labelInfo dst
+		     val _ = flowVarInfoTysVars (LabelInfo.args dst, args)
+		     val _ = visitLabelInfo dst
+		  in
+		     ()
+		  end
 	     | Prim {args, failure, success, ...} 
-	     => (sideEffectFunc f;
+	     => (FuncInfo.sideEffect f;
 		 visitVars args;
 		 visitLabel failure;
 		 visitLabel success)
-	     | Raise xs
-	     => (failFunc f;
-		 visitVars xs)
-	     | Return xs 
-	     => (terminateFunc f;
-		 flowVarTysVars(valOf (returnsFunc f), xs))
+	     | Raise xs =>
+		  (FuncInfo.raisee f
+		   ; visitVars xs)
+	     | Return xs =>
+		  (FuncInfo.return f
+		   ; flowVarInfoTysVars (valOf (FuncInfo.returns f), xs))
       val visitTransfer
 	= Trace.trace ("RemoveUnused.visitTransfer",
-		       Layout.tuple2 (Func.layout, Transfer.layout),
+		       Layout.tuple2 (Transfer.layout, FuncInfo.layout),
 		       Unit.layout)
 	              visitTransfer
-
-      fun visitBlock (b: Block.t as Block.T {label, statements, transfer, ...})
-	= let
-	    val f = funcLabel label
-	  in
-	    (visitStatements (f, statements);
-	     visitTransfer (f, transfer))
-	  end
-      fun visitBlockTh b = fn () => visitBlock b
-
+      fun visitBlock (b: Block.t as Block.T {label, statements, transfer, ...},
+		      f: FuncInfo.t) =
+	 (Vector.foreach (statements, fn s => visitStatement (s, f))
+	  ; visitTransfer (transfer, f))
       (* Visit all reachable expressions. *)
       val _ = Vector.foreach
 	      (datatypes,
@@ -427,47 +509,50 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 		    (cons, 
 		     fn {con, args} => newConInfo (con, args, tycon))))
       val _ = let
-		fun doit c = (conCon c; deconCon c)
+		 fun doit c =
+		    let
+		       val c = conInfo c
+		       val _ = ConInfo.con c
+		       val _ = ConInfo.decon c
+		    in
+		       ()
+		    end
 	      in
 		doit Con.truee ; doit Con.falsee 
 	      end
-      val _ = Vector.foreach
-	      (globals,
-	       fn Statement.T {var, ty, exp}
-	        => Option.app(var, 
-			      fn var => whenUsedVar(var, visitExpTh exp)))
+      val _ = Vector.foreach (globals, fn Statement.T {var, exp, ...} =>
+			      maybeVisitVarExp (var, exp))
       val _ = List.foreach
-	      (functions,
-	       fn function 
-	        => let
-		     val {name, args, returns,
-			  start, blocks, ...} = Function.dest function
-		   in
-		     setFuncInfo
-		     (name, {used = Used.new (),
-			     args = args,
-			     returns = (Option.map
-					(returns, fn ts =>
-					 Vector.map
-					 (ts, fn t => (Var.newNoname (), t)))),
-			     sideEffects = SideEffects.new (),
-			     terminates = Terminates.new (),
-			     fails = Fails.new (),
-			     bugLabel = ref NONE,
-			     bugWrappers = ref [],
-			     retLabel = ref NONE,
-			     wrappers = ref []});
-		     whenUsedFunc(name, visitLabelTh start);
+	      (functions, fn function =>
+	       let
+		  val {name, args, returns, start, blocks, ...} =
+		     Function.dest function
+		  val f as FuncInfo.T {used, ...} =
+		     FuncInfo.new
+		     {args = Vector.map (args, fn (x, t) => (varInfo x, t)),
+		      returns = (Option.map
+				 (returns, fn ts =>
+				  Vector.map
+				  (ts, fn t => (VarInfo.new (), t))))}
+		  val _ = setFuncInfo (name, f)
+		  val _ = Used.whenUsed (used, fn () => visitLabel start)
+		  val _ =
 		     Vector.foreach
-		     (blocks,
-		      fn block as Block.T {label, args, ...}
-		       => (setLabelInfo(label, {used = Used.new (),
-						catches = Catches.new (),
-						func = name,
-						args = args,
-						wrappers = ref []});
-			   whenUsedLabel(label, visitBlockTh block)))
-		   end)
+		     (blocks, fn block as Block.T {label, args, ...} =>
+		      let
+			 val li as LabelInfo.T {used, ...} =
+			    LabelInfo.new {args = Vector.map (args, fn (x, t) =>
+							      (varInfo x, t)),
+					   func = f}
+			 val _ = setLabelInfo (label, li)
+			 val _ = Used.whenUsed (used, fn () =>
+						visitBlock (block, f))
+		      in
+			 ()
+		      end)
+	       in
+		  ()
+	       end)
       val _ = visitFunc main
 
       (* Analysis is done,  Now build the resulting program. *)
@@ -484,36 +569,28 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 				 (seq [Tycon.layout tycon,
 				       str ": ",
 				       Vector.layout
-				       (fn {con, ...}
-					 => seq [Con.layout con,
-						 record
-						 [("isConedCon",
-						   Bool.layout (isConedCon con)),
-						  ("isDeconedCon", 
-						   Bool.layout (isDeconedCon con)),
-						  ("argsCon", 
-						   Vector.layout
-						   (Bool.layout o isUsedVar o #1)
-						   (argsCon con))]])
+				       (fn {con, ...} =>
+					seq [Con.layout con,
+					     ConInfo.layout (conInfo con)])
 				       cons])
 			      end)
-
 		 val r: Exp.t option ref = ref NONE
 		 val cons 
 		   = Vector.keepAllMap
 		     (cons,
 		      fn c as {con, args}
 		       => let
+			     val c = conInfo con
 			  in
-			    case (isConedCon con, isDeconedCon con)
+			    case (ConInfo.isConed c, ConInfo.isDeconed c)
 			      of (false, _) => NONE
-			       | (true, true) => SOME {con = con,
-						       args = Vector.keepAllMap
-						              (argsCon con,
-							       fn (x, t)
-							        => if isUsedVar x
-								     then SOME t
-								     else NONE)}
+			       | (true, true) =>
+				    SOME {con = con,
+					  args = Vector.keepAllMap
+					  (ConInfo.args c, fn (x, t) =>
+					   if VarInfo.isUsed x
+					      then SOME t
+					   else NONE)}
 			       | (true, false)
 			       => let
 				    val (e, res)
@@ -532,7 +609,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 							  args = targs})
 					      end
 					   | SOME e => (e, NONE)
-				    val _ = (dummy con) := SOME e
+				    val _ = ConInfo.dummy c := SOME e
 				  in
 				    res
 				  end
@@ -544,142 +621,146 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 		   then NONE
 		   else SOME (Datatype.T {tycon = tycon, cons = cons})
 	       end)
-
-      fun getWrapperLabel (l, args)
-	= if Vector.forall2
-	     (args, argsLabel l,
-	      fn ((x, _), (y, _)) => isUsedVar x = isUsedVar y)
-	    then l
-	    else let
-		   val tys = Vector.keepAllMap
-		             (args, fn (x, ty) => if isUsedVar x
-						    then SOME ty
-						    else NONE)
-		 in 
-		   case List.peek
-		        (wrappersLabel' l,
-		         fn (args', l') 
-			  => Vector.length args' = Vector.length tys
-			     andalso
-			     Vector.forall2
-			     (args', tys,
-			      fn (ty', ty) => Type.equals(ty', ty)))
-		     of SOME (_, l') => l'
-		      | NONE
-		      => let
+      fun getWrapperLabel (l: Label.t,
+			   args: (VarInfo.t * Type.t) vector) =
+	 let
+	    val li = labelInfo l
+	 in
+	    if Vector.forall2 (args, LabelInfo.args li, fn ((x, _), (y, _)) =>
+			       VarInfo.isUsed x = VarInfo.isUsed y)
+	       then l
+	    else
+	       let
+		  val tys =
+		     Vector.keepAllMap (args, fn (x, ty) =>
+					if VarInfo.isUsed x
+					   then SOME ty
+					else NONE)
+	       in 
+		  case List.peek (!(LabelInfo.wrappers li), fn (args', l') =>
+				  Vector.length args' = Vector.length tys
+				  andalso
+				  Vector.forall2 (args', tys, fn (ty', ty) =>
+						  Type.equals (ty', ty))) of
+		     SOME (_, l') => l'
+		   | NONE =>
+			let
 			   val l' = Label.newNoname ()
-			   val (args', args'')
-			     = Vector.unzip
-			       (Vector.map2
-				(args, argsLabel l,
-				 fn ((x, ty), (y, _))
-			          => let
-				       val z = Var.newNoname ()
-				     in
-				       (if isUsedVar x
-					  then SOME (z, ty)
-					  else NONE,
-					if isUsedVar y
-					  then SOME z
-					  else NONE)
-				     end))
-			   val args' = Vector.keepAllMap(args', fn x => x)
+			   val (args', args'') =
+			      Vector.unzip
+			      (Vector.map2
+			       (args, LabelInfo.args li, fn ((x, ty), (y, _)) =>
+				let
+				   val z = Var.newNoname ()
+				in
+				   (if VarInfo.isUsed x then SOME (z, ty) else NONE,
+				    if VarInfo.isUsed y then SOME z else NONE)
+				end))
+			   val args' = Vector.keepAllMap (args', fn x => x)
 			   val (_, tys') = Vector.unzip args'
-			   val args'' = Vector.keepAllMap(args'', fn x => x)
+			   val args'' = Vector.keepAllMap (args'', fn x => x)
 			   val block = Block.T {label = l',
 						args =  args',
 						statements = Vector.new0 (),
 						transfer = Goto {dst = l,
 								 args = args''}}
-			   val _ = List.push(wrappersLabel l, (tys', l'))
-			   val _ = List.push(wrappersFunc (funcLabel l), block)
-			 in
+			   val _ = List.push (LabelInfo.wrappers li, (tys', l'))
+			   val _ =
+			      List.push (FuncInfo.wrappers (LabelInfo.func li),
+					 block)
+			in
 			   l'
-			 end
-		 end
+			end
+	       end
+	 end
       val getContWrapperLabel = getWrapperLabel
       val getConWrapperLabel = getWrapperLabel
-
-      fun getOriginalWrapperLabel l
-	= getWrapperLabel 
-	  (l, Vector.map(argsLabel l, fn (_, t) => let 
-						     val x = Var.newNoname ()
-						   in
-						     useVar x;
-						     (x, t)
-						   end))
+      fun getOriginalWrapperLabel l =
+	 getWrapperLabel 
+	 (l, Vector.map (LabelInfo.args (labelInfo l), fn (_, t) =>
+			 let 
+			    val x = VarInfo.new ()
+			    val _ = VarInfo.use x
+			 in
+			    (x, t)
+			 end))
       val getHandlerWrapperLabel = getOriginalWrapperLabel
       val getPrimFailureWrapperLabel = getOriginalWrapperLabel
       val getPrimSuccessWrapperLabel = getOriginalWrapperLabel
-
-      fun getBugFunc f
-	= case bugLabel' f
-	    of SOME l => l
-	     | NONE
-	     => let
-		  val l = Label.newNoname ()
-		  val block = Block.T {label = l,
-				       args = Vector.new0 (),
-				       statements = Vector.new0 (),
-				       transfer = Bug}
-		  val _ = bugLabel f := SOME l
-		  val _ = List.push(wrappersFunc f, block)
-		in
-		  l
-		end
-
-      fun getRetFunc f
-	= case retLabel' f
-	    of SOME l => l
-	     | NONE
-	     => let
-		  val l = Label.newNoname ()
-		  val args = Vector.keepAllMap
-		             (valOf (returnsFunc f),
-			      fn (x, ty) => if isUsedVar x
-					       then SOME (x, ty)
-					    else NONE)
-		  val xs = Vector.map (args, fn (x, ty) => x)
-		  val block = Block.T {label = l,
-				       args = args,
-				       statements = Vector.new0 (),
-				       transfer = Return xs}
-		  val _ = retLabel f := SOME l
-		  val _ = List.push (wrappersFunc f, block)
-		  val _ = setLabelInfo (l, {used = Used.new (),
-					    catches = Catches.new (),
-					    func = f,
-					    args = valOf (returnsFunc f),
-					    wrappers = ref []})
-		in
-		  l
-		end
+      fun getBugFunc (f: FuncInfo.t): Label.t =
+	 let
+	    val r = FuncInfo.bugLabel f
+	 in
+	    case !r of
+	       SOME l => l
+	     | NONE =>
+		  let
+		     val l = Label.newNoname ()
+		     val block = Block.T {label = l,
+					  args = Vector.new0 (),
+					  statements = Vector.new0 (),
+					  transfer = Bug}
+		     val _ = r := SOME l
+		     val _ = List.push (FuncInfo.wrappers f, block)
+		  in
+		     l
+		  end
+	 end
+      fun getRetFunc (f: FuncInfo.t): Label.t =
+	 let
+	    val r = FuncInfo.retLabel f
+	 in
+	    case !r of
+	       SOME l => l
+	     | NONE =>
+		  let
+		     val l = Label.newNoname ()
+		     val returns = valOf (FuncInfo.returns f)
+		     val args =
+			Vector.keepAllMap
+			(returns, fn (vi, ty) =>
+			 if VarInfo.isUsed vi
+			    then SOME (Var.newNoname (), ty)
+			 else NONE)
+		     val xs = Vector.map (args, #1)
+		     val block = Block.T {label = l,
+					  args = args,
+					  statements = Vector.new0 (),
+					  transfer = Return xs}
+		     val _ = r := SOME l
+		     val _ = List.push (FuncInfo.wrappers f, block)
+		     val _ = setLabelInfo (l, LabelInfo.new {func = f,
+							     args = returns})
+		  in
+		     l
+		  end
+	 end
       fun getRetContFunc (f, args) = getWrapperLabel (getRetFunc f, args)
-
-      fun simplifyExp (e: Exp.t): Exp.t
-	= case e
-	    of ConApp {con, args}
-	     => if isDeconedCon con
-		  then ConApp {con = con,
-			       args = Vector.keepAllMap2
-			              (args, argsCon con,
-				       fn (x, (y, t)) => if isUsedVar y
-							   then SOME x
-							   else NONE)}
-		  else valOf (dummy' con)
-	     | _ => e
-      val simplifyExp
-	= Trace.trace ("RemoveUnused.simplifyExp",
-		       Exp.layout,
-		       Exp.layout)
-                      simplifyExp
-
-      fun simplifyStatement (f: Func.t,
-			     s: Statement.t 
-			     as Statement.T {var, ty, exp}): Statement.t option =
+      fun simplifyExp (e: Exp.t): Exp.t =
+	 case e of
+	    ConApp {con, args} =>
+	       let
+		  val c = conInfo con
+	       in
+		  if ConInfo.isDeconed c
+		     then ConApp {con = con,
+				  args = (Vector.keepAllMap2
+					  (args, ConInfo.args c,
+					   fn (x, (y, t)) =>
+					   if VarInfo.isUsed y
+					      then SOME x
+					   else NONE))}
+		  else valOf (! (ConInfo.dummy c))
+	       end
+	  | _ => e
+      val simplifyExp =
+	 Trace.trace ("RemoveUnused.simplifyExp", Exp.layout, Exp.layout)
+	 simplifyExp
+      fun simplifyStatement (s as Statement.T {var, ty, exp},
+			     f: FuncInfo.t): Statement.t option =
 	 let
 	    fun maybe (l, th) =
-	       if doesCatchLabel l
+	       if LabelInfo.doesCatch (labelInfo l)
 		  then SOME (Statement.T {var = var, ty = ty, exp = th ()})
 	       else
 		  NONE
@@ -708,186 +789,164 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 			 | NONE => doit NONE
 		      end
 	 end
-      fun simplifyStatements (f: Func.t, 
-			      ss: Statement.t Vector.t): Statement.t Vector.t
-	= Vector.keepAllMap (ss, fn s => simplifyStatement(f, s))
-
-      fun simplifyTransfer (f: Func.t, t: Transfer.t): Transfer.t
-	= case t
-	    of Call {func, args, return}
-	     => let
-		   val return =
-		      case return of
-			 Return.Dead => Return.Dead
-		       | Return.HandleOnly =>
-			    if doesFailFunc func
-			       then Return.HandleOnly
-			    else Return.Dead
-		       | Return.NonTail {cont, handler} =>
-(*
-			    if not (doesTerminateFunc func)
-			       andalso
-			       (not (doesFailFunc func)
-				orelse
-				case handler of
-				   Handler.CallerHandler => true
-				 | _ => false)
-			       andalso
-			       Vector.equals
-			       (Vector.keepAllMap
-				(returnsFunc func, fn (x, ty) =>
-				 if isUsedVar x
-				    then SOME ty
-				 else NONE),
-				Vector.keepAllMap
-				(returnsFunc f, fn (x, ty) =>
-				 if isUsedVar x
-				    then SOME ty
-				 else NONE),
-				Type.equals)
-			       then NONE
-			    else
-*)
-			    if doesTerminateFunc func
-			       then
-				  Return.NonTail
-				  {cont = getContWrapperLabel (cont,
-							       valOf (returnsFunc func)),
-				   handler = if doesFailFunc func
-						then Handler.map (handler,
-								  getHandlerWrapperLabel)
-					     else Handler.None}
-			    else
-			       if doesFailFunc func
-				  then
-				     (case handler of
-					 Handler.CallerHandler =>
-					    Return.HandleOnly
-				       | Handler.Handle l =>
-					    Return.NonTail
-					    {cont = getBugFunc f,
-					     handler =
-					     Handler.Handle
-					     (getHandlerWrapperLabel l)}
-				       | Handler.None => Error.bug "fail to None")
-			       else Return.Dead
-                    | Return.Tail =>
-			 if (case (returnsFunc f, returnsFunc func) of
-				(SOME xts, SOME yts) =>
-				   Vector.forall2
-				   (xts, yts, fn ((x, _), (y, _)) =>
-				    isUsedVar x = isUsedVar y)
-			      | (SOME _, NONE) => true
-			      | (NONE, SOME _) => Error.bug "return mismatch"
-			      | (NONE, NONE) => true)
-			    then Return.Tail
-			 else
-			    if doesTerminateFunc func
-			       then
-				  Return.NonTail
-				  {cont = getRetContFunc (f, valOf (returnsFunc func)),
-				   handler = if doesFailFunc func
-						then Handler.CallerHandler
-					     else Handler.None}
-			    else
-			       if doesFailFunc func
-				  then Return.HandleOnly
-			       else Return.Dead
-		   val args =
-		      Vector.keepAllMap2 (args, argsFunc func, fn (x, (y, t)) =>
-					  if isUsedVar y
-					     then SOME x
-					  else NONE)
-		in
-		   Call {func = func,
-			 args = args,
-			 return = return}
-		end
-	     | Case {test, cases = Cases.Con cases, default}
-	     => let
-		  val cases 
-		    = Vector.keepAllMap
-		      (cases, 
-		       fn (con, l) 
-		        => if isConedCon con
-			     then SOME (con, getConWrapperLabel (l, argsCon con))
-			     else NONE)
-		  fun keep default = Case {test = test,
-					   cases = Cases.Con cases,
-					   default = default}
-		  fun none () = keep NONE
-		in
-		  case default
-		    of NONE => none ()
-		     | SOME l => if Vector.length cases = 0
-				   then if isUsedLabel l
-					  then Goto {dst = l, args = Vector.new0 ()}
-					  else Bug
-				   else let
-					  val numCons
-					    = numConsTycon' 
-					      (tyconCon (#1 (Vector.sub(cases, 0))))
-					in 
-					  if Vector.length cases = numCons
-					    then none ()
-					    else keep (SOME l)
-					end
-		end
-	     | Goto {dst, args}
-	     => Goto {dst = dst, 
-		      args = Vector.keepAllMap2
-		             (args, argsLabel dst,
-			      fn (x, (y, t)) => if isUsedVar y
-						  then SOME x
-						  else NONE)}
-	     | Prim {prim, args, failure, success} 
-	     => Prim {prim = prim,
-		      args = args,
-		      failure = getPrimFailureWrapperLabel failure,
-		      success = getPrimSuccessWrapperLabel success}
-	     | Return xs
-	     => Return (Vector.keepAllMap2
-			(xs, valOf (returnsFunc f),
-			 fn (x, (y, t)) => if isUsedVar y
-					     then SOME x
-					     else NONE))
-	     | _ => t
+      fun simplifyStatements (ss: Statement.t Vector.t,
+			      f: FuncInfo.t) : Statement.t Vector.t =
+	 Vector.keepAllMap (ss, fn s => simplifyStatement (s, f))
+      fun simplifyTransfer (t: Transfer.t, f: FuncInfo.t): Transfer.t =
+	 case t of
+	    Call {func, args, return} =>
+	       let
+		  val f' = funcInfo func
+		  val return =
+		     case return of
+			Return.Dead => Return.Dead
+		      | Return.HandleOnly =>
+			   if FuncInfo.mayRaise f'
+			      then Return.HandleOnly
+			   else Return.Dead
+		      | Return.NonTail {cont, handler} =>
+			   if FuncInfo.mayReturn f'
+			      then
+				 Return.NonTail
+				 {cont = (getContWrapperLabel
+					  (cont, valOf (FuncInfo.returns f'))),
+				  handler = if FuncInfo.mayRaise f'
+					       then (Handler.map
+						     (handler,
+						      getHandlerWrapperLabel))
+					    else Handler.None}
+			   else
+			      if FuncInfo.mayRaise f'
+				 then
+				    (case handler of
+					Handler.CallerHandler =>
+					   Return.HandleOnly
+				      | Handler.Handle l =>
+					   Return.NonTail
+					   {cont = getBugFunc f,
+					    handler =
+					    Handler.Handle
+					    (getHandlerWrapperLabel l)}
+				      | Handler.None => Error.bug "fail to None")
+			      else Return.Dead
+                      | Return.Tail =>
+			   if (case (FuncInfo.returns f, FuncInfo.returns f') of
+				  (SOME xts, SOME yts) =>
+				     Vector.forall2
+				     (xts, yts, fn ((x, _), (y, _)) =>
+				      VarInfo.isUsed x = VarInfo.isUsed y)
+				| (SOME _, NONE) => true
+				| (NONE, SOME _) => Error.bug "return mismatch"
+				| (NONE, NONE) => true)
+			      then Return.Tail
+			   else
+			      if FuncInfo.mayReturn f'
+				 then
+				    Return.NonTail
+				    {cont = (getRetContFunc
+					     (f, valOf (FuncInfo.returns f'))),
+				     handler = if FuncInfo.mayRaise f'
+						  then Handler.CallerHandler
+					       else Handler.None}
+			      else
+				 if FuncInfo.mayRaise f'
+				    then Return.HandleOnly
+				 else Return.Dead
+		  val args =
+		     Vector.keepAllMap2
+		     (args, FuncInfo.args f', fn (x, (y, t)) =>
+		      if VarInfo.isUsed y
+			 then SOME x
+		      else NONE)
+	       in
+		  Call {func = func,
+			args = args,
+			return = return}
+	       end
+	| Case {test, cases = Cases.Con cases, default} =>
+	     let
+		val cases =
+		   Vector.keepAllMap
+		   (cases, fn (con, l) =>
+		    let
+		       val c = conInfo con
+		    in
+		       if ConInfo.isConed c
+			  then SOME (con, getConWrapperLabel (l, ConInfo.args c))
+		       else NONE
+		    end)
+		fun keep default = Case {test = test,
+					 cases = Cases.Con cases,
+					 default = default}
+		fun none () = keep NONE
+	     in
+		case default
+		   of NONE => none ()
+		 | SOME l => if Vector.length cases = 0
+				then if LabelInfo.isUsed (labelInfo l)
+					then Goto {dst = l, args = Vector.new0 ()}
+				     else Bug
+			     else let
+				     val numCons =
+					numConsTycon' 
+					(ConInfo.tycon
+					 (conInfo
+					  (#1 (Vector.sub (cases, 0)))))
+				  in 
+				     if Vector.length cases = numCons
+					then none ()
+				     else keep (SOME l)
+				  end
+	     end
+	| Goto {dst, args} =>
+	     Goto {dst = dst, 
+		   args = (Vector.keepAllMap2
+			   (args, LabelInfo.args (labelInfo dst),
+			    fn (x, (y, t)) => if VarInfo.isUsed y
+						 then SOME x
+					      else NONE))}
+	| Prim {prim, args, failure, success} =>
+	     Prim {prim = prim,
+		   args = args,
+		   failure = getPrimFailureWrapperLabel failure,
+		   success = getPrimSuccessWrapperLabel success}
+	| Return xs =>
+	     Return (Vector.keepAllMap2
+		     (xs, valOf (FuncInfo.returns f),
+		      fn (x, (y, t)) => if VarInfo.isUsed y
+					   then SOME x
+					else NONE))
+	| _ => t
       val simplifyTransfer
 	= Trace.trace ("RemoveUnused.simplifyTransfer",
-		       Layout.tuple2 (Func.layout, Transfer.layout),
+		       Layout.tuple2 (Transfer.layout, FuncInfo.layout),
 		       Transfer.layout)
-	              simplifyTransfer
-
+	simplifyTransfer
       fun simplifyBlock (b: Block.t
 			 as Block.T {label, args, 
 				     statements, transfer}): Block.t option
 	= let
-	    val {args, func, ...} = labelInfo label
+	    val li = labelInfo label
 	    val _ = Control.diagnostics
 	            (fn display
 		      => let open Layout
-		         in display
-			    (seq [Label.layout label,
-				  str ": ",
-				  record
-				  [("isUsedLabel", Bool.layout (isUsedLabel label)),
-				   ("doesCatchLabel",
-				    Bool.layout (doesCatchLabel label)),
-				   ("argsLabel",
-				    Vector.layout
-				    (Bool.layout o isUsedVar o #1)
-				    (argsLabel label))]])
+		         in display (seq [Label.layout label,
+					  str ": ",
+					  LabelInfo.layout li])
 			 end)
 	  in 
-	    if isUsedLabel label
+	    if LabelInfo.isUsed li
 	      then let
-		     val args = Vector.keepAllMap
-		                (args,
-				 fn (x,ty) => if isUsedVar x
-						then SOME (x,ty)
-						else NONE)
-		     val statements = simplifyStatements (func, statements)
-		     val transfer = simplifyTransfer (func, transfer)
+		     val args =
+			Vector.keepAllMap2
+			(LabelInfo.args li, args, fn ((vi, _), (x, ty)) =>
+			 if VarInfo.isUsed vi
+			    then SOME (x, ty)
+			 else NONE)
+		     val statements =
+			simplifyStatements (statements, LabelInfo.func li)
+		     val transfer =
+			simplifyTransfer (transfer, LabelInfo.func li)
 		   in
 		     SOME (Block.T {label = label,
 				    args = args,
@@ -896,71 +955,50 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 		   end
 	      else NONE
 	  end
-      fun simplifyBlocks (bs: Block.t Vector.t): Block.t Vector.t
-	= Vector.keepAllMap (bs, simplifyBlock)
-
-
-      val globals = simplifyStatements (main, globals)
-
+      fun simplifyBlocks (bs: Block.t Vector.t): Block.t Vector.t =
+	 Vector.keepAllMap (bs, simplifyBlock)
+      val globals = simplifyStatements (globals, funcInfo main)
       val shrink = shrinkFunction globals
-
-      fun simplifyFunction (f: Function.t): Function.t option
-	= let
-	    val {name, blocks, start, ...} = Function.dest f
-	    val {args, fails, returns, terminates, wrappers, ...} = funcInfo name
-	    val _ = Control.diagnostics
-	            (fn display
-		      => let open Layout
-			 in display
-			    (seq [Func.layout name,
-				  str ": ",
-				  record
-				  [("isUsedFunc", Bool.layout (isUsedFunc name)),
-				   ("doesSideEffectFunc",
-				    Bool.layout (doesSideEffectFunc name)),
-				   ("doesTerminateFunc",
-				    Bool.layout (doesTerminateFunc name)),
-				   ("doesFailFunc",
-				    Bool.layout (doesFailFunc name)),
-				   ("argsFunc",
-				    Vector.layout
-				    (Bool.layout o isUsedVar o #1)
-				    (argsFunc name)),
-				   ("returnsFunc",
-				    Option.layout
-				    (Vector.layout
-				     (Bool.layout o isUsedVar o #1))
-				    (returnsFunc name))]])
-			 end)
+      fun simplifyFunction (f: Function.t): Function.t option =
+	 let
+	    val {args, blocks, name, start, ...} = Function.dest f
+	    val fi = funcInfo name
+	    val _ =
+	       Control.diagnostics
+	       (fn display =>
+		let open Layout
+		in display
+		   (seq [Func.layout name, str ": ", FuncInfo.layout fi])
+		end)
 	  in
-	    if not (isUsedFunc name)
+	    if not (FuncInfo.isUsed fi)
 	       then NONE
 	    else
 	       let
-		  val args = Vector.keepAllMap
-		     (args,
-		      fn (x, t) => if isUsedVar x
-				      then SOME (x, t)
-				   else NONE)
-
+		  val args =
+		     Vector.keepAllMap2
+		     (FuncInfo.args fi, args, fn ((vi, _), (x, t)) =>
+		      if VarInfo.isUsed vi
+			 then SOME (x, t)
+		      else NONE)
 		  val blocks = simplifyBlocks blocks
-		  val wrappers = Vector.fromList (!wrappers)
+		  val wrappers = Vector.fromList (! (FuncInfo.wrappers fi))
 		  val blocks = Vector.concat [wrappers, blocks]
 		  val returns =
-		     case returns of
+		     case FuncInfo.returns fi of
 			NONE => NONE
 		      | SOME xts => 
-			   if Terminates.doesTerminate terminates
+			   if FuncInfo.mayReturn fi
 			      then 
 				 SOME (Vector.keepAllMap
-				       (xts, fn (x, t) => if isUsedVar x
+				       (xts, fn (x, t) => if VarInfo.isUsed x
 							     then SOME t
 							  else NONE))
 			   else NONE
 	       in
 		  SOME (shrink (Function.new {args = args,
 					      blocks = blocks,
-					      mayRaise = Fails.doesFail fails,
+					      mayRaise = FuncInfo.mayRaise fi,
 					      name = name,
 					      returns = returns,
 					      start = start}))
@@ -968,15 +1006,15 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	  end
       fun simplifyFunctions (fs: Function.t List.t): Function.t List.t
 	= List.keepAllMap (fs, simplifyFunction)
-
       val functions = simplifyFunctions functions
-
       val program = Program.T {datatypes = datatypes,
 			       globals = globals,
 			       functions = functions,
 			       main = main}
-      val _ = Program.clear program
+      val _ = destroy ()
+      val _ = Program.clearTop program
     in
       program
     end
+ 
 end

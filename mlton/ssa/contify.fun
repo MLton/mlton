@@ -791,7 +791,7 @@ fun contify (program as Program.T {functions, ...})
 	            {program = program,
 		     getContData = getContData,
 		     getFuncData = getFuncData}
-      val _ = Program.clear program
+      val _ = Program.clearTop program
     in
       program
     end

@@ -370,6 +370,7 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 		    globals = globals,
 		    functions = functions,
 		    main = main}
+      val _ = Program.clearGlobals program
    in
       program
    end

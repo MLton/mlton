@@ -303,15 +303,12 @@ fun preCodegen {input, docc}: MachineOutput.Program.t =
       val _ = Control.message (Control.Detail, fn () =>
 			       Sxml.Program.layoutStats sxml)
       val cps =
-	 Control.passSimplify
+	 Control.passTypeCheck
 	 {name = "closureConvert",
 	  suffix = "cps",
 	  style = Control.No,
 	  thunk = fn () => ClosureConvert.closureConvert sxml,
 	  typeCheck = Cps.typeCheck,
-	  simplify = (if !Control.optimizeSSA
-			 then fn p => p
-		      else Cps.simplify),
 	  display = Control.Layouts Cps.Program.layouts}
       val _ =
 	 let open Control
@@ -331,9 +328,7 @@ fun preCodegen {input, docc}: MachineOutput.Program.t =
 	 Control.passSimplify
 	 {display = Control.Layouts Ssa.Program.layouts,
 	  name = "toSSA",
-	  simplify = (if !Control.optimizeSSA
-			 then Ssa.simplify
-		      else fn p => p),
+	  simplify = Ssa.simplify,
 	  style = Control.No,
 	  suffix = "ssa",
 	  thunk = fn () => Ssa.Program.fromCps (cps,

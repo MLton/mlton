@@ -8,5 +8,5 @@ signature CPS_STRUCTS =
 
 signature CPS = 
    sig
-      include SIMPLIFY
+      include SHRINK
    end

@@ -717,7 +717,7 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
 		    functions = functions,
 		    main = main}
       val _ = destroySimplifyType ()
-      val _ = Program.clear program
+      val _ = Program.clearTop program
    in
       program
    end

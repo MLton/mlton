@@ -186,10 +186,6 @@ structure Native =
 			   toString = Option.toString Int.toString}
    end
 
-val optimizeSSA = control {name = "optimize SSA",
-			   default = true,
-			   toString = Bool.toString}
-
 val polyvariance =
    control {name = "polyvariance",
 	    default = SOME {rounds = 2,

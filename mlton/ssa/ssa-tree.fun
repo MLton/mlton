@@ -1591,6 +1591,14 @@ structure Program =
 	  ; Vector.foreach (globals, Statement.clear)
 	  ; List.foreach (functions, Function.clear))
 
+      fun clearGlobals (T {globals, ...}) =
+	 Vector.foreach (globals, Statement.clear)
+
+      fun clearTop (p as T {datatypes, functions, ...}) =
+	 (Vector.foreach (datatypes, Datatype.clear)
+	  ; List.foreach (functions, Func.clear o Function.name)
+	  ; clearGlobals p)
+
       fun foreachVar (T {globals, functions, ...}, f) =
 	 (Vector.foreach (globals, fn Statement.T {var, ty, ...} =>
 			  f (valOf var, ty))
