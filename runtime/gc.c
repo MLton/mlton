@@ -4213,7 +4213,9 @@ static int processAtMLton (GC_state s, int argc, char **argv,
 	int i;
 
 	i = 1;
-	while (i < argc and (0 == strcmp (argv [i], "@MLton"))) {
+	while (s->mayProcessAtMLton 
+		and i < argc 
+		and (0 == strcmp (argv [i], "@MLton"))) {
 		bool done;
 
 		i++;
@@ -4306,6 +4308,9 @@ static int processAtMLton (GC_state s, int argc, char **argv,
 				} else if (0 == strcmp (arg, "show-prof")) {
 					showProf (s);
 					exit (0);
+				} else if (0 == strcmp (arg, "stop")) {
+					++i;
+					s->mayProcessAtMLton = FALSE;
 				} else if (0 == strcmp (arg, "--")) {
 					++i;
 					done = TRUE;
@@ -4355,6 +4360,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->maxPause = 0;
 	s->maxStackSizeSeen = 0;
 	s->mayLoadWorld = TRUE;
+	s->mayProcessAtMLton = TRUE;
 	s->messages = FALSE;
 	s->minorBytesScanned = 0;
 	s->minorBytesSkipped = 0;
