@@ -740,9 +740,8 @@ fun 'a apply (p, args, varEquals) =
 		  s: WordSize.t) =
 	 let
 	    val x = f (WordX.toIntInf w, WordX.toIntInf w')
-	    val x' = x mod (Int.toIntInf (WordSize.bits s))
 	 in
-	    if x = x'
+	    if x <= WordX.toIntInf (WordX.max s)
 	       then word (WordX.fromIntInf (x, s))
 	    else ApplyResult.Overflow
 	 end
