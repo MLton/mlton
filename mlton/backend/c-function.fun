@@ -79,7 +79,7 @@ local
 	 modifiesFrontier = true,
 	 modifiesStackTop = true,
 	 name = "GC_gc",
-	 needsCurrentSource = false,
+	 needsCurrentSource = true,
 	 returnTy = NONE}
    val t = make true
    val f = make false
