@@ -242,6 +242,11 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 			     link: unit option ref} -> 'a option ref) =
 	 let
 	    val todo: ('a * LiveInfo.t) list ref = ref []
+	    (* The foldr is important because the statements in each block were
+	     * visited in order, meaning that the earlier statements appear
+	     * later in !defuse.  Hence, with the foldr, the defs and uses are
+	     * visited in order for each block.
+	     *)
 	    val defs =
 	       List.foldr
 	       (!defuse, [], fn (du, defs) =>
@@ -250,8 +255,15 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 		 | Use (a, b as LiveInfo.T {liveHS, ...}) =>
 		      let
 			 val _ =
-			    if List.exists (defs, fn b' =>
-					    LiveInfo.equals (b, b'))
+			    if
+			       (* Since we are visiting all of the statements
+				* in the block together, in order, we are
+				* guaranteed that if there is a prior definition
+				* then it will be first on defs.
+				*)
+			       (case defs of 
+				   [] => false
+				 | b' :: _ => LiveInfo.equals (b, b'))
 			       then ()
 			    else (sel liveHS := SOME a
 				  ; List.push (todo, (a, b)))
