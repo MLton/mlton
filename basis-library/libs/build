@@ -220,15 +220,8 @@ libs/basis-2002/top-level/basis.sig
 libs/basis-2002/top-level/basis.sml
 
 #
-# BasisNone
-#
-libs/basis-none/top-level/basis.sig
-libs/basis-none/top-level/basis.sml
-
-#
 # Basis1997
 #
-
 libs/basis-1997/arrays-and-vectors/vector.sig
 libs/basis-1997/arrays-and-vectors/array.sig
 libs/basis-1997/arrays-and-vectors/vector-array-convert.fun
