@@ -137,7 +137,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
       exception NoLocalRefs
 
       (* Compute multi *)
-      val multi = Control.trace (Control.Pass, "multi") Multi.multi
+      val multi = Control.trace (Control.Detail, "multi") Multi.multi
       val {usesThreadsOrConts: bool,
 	   funcIsMultiUsed: Func.t -> bool, 
 	   labelDoesThreadCopyCurrent: Label.t -> bool, ...} 
@@ -149,7 +149,6 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 	= Property.getSetOnce
 	  (Var.plist, Property.initFun (fn _ => GlobalInfo.new false))
 
-      fun localizeGlobalRefs () = let
       val _ = Vector.foreach
 	      (globals, fn Statement.T {var, exp, ...} =>
 	       Option.app (var, fn var => 
@@ -273,10 +272,6 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 		    (f::functions, List.rev globals)
 		  end)
       val globals = Vector.fromList globals
-      in (functions,globals) end
-      val localizeGlobalRefs = Control.trace (Control.Pass, "localizeGlobalRefs")
-                                             localizeGlobalRefs
-      val (functions, globals) = localizeGlobalRefs ()
 
       (* restore and shrink *)
       val restore = restoreFunction globals
