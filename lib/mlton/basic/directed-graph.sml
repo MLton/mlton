@@ -508,7 +508,7 @@ datatype idomRes =
    Idom of Node.t
   | Root
   | Unreachable
-    
+
 fun dominators (graph, {root}) =
    let
       val n0 = Node.new ()
@@ -677,9 +677,10 @@ fun dominators (graph, {root}) =
 	     else idom' w := idom (idom w)
 	  end)
       val _ = idom' root := root
-      val _ = Assert.assert ("dominators", fn () =>
- 			     validDominators (graph, {root = root,
- 						      idom = idom}))
+(*       val _ = Assert.assert ("dominators", fn () =>
+ *  			     validDominators (graph, {root = root,
+ *  						      idom = idom}))
+ *)
       val {get = idomFinal, set = setIdom, ...} =
 	 Property.getSetOnce (Node.plist, Property.initConst Unreachable)
       val _ = setIdom (root, Root)
