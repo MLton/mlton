@@ -23,7 +23,7 @@ root=`cd $dir/../.. && pwd`
 src="$root/src"
 lib="$root/lib"
 bin="$root/bin"
-mlton="$bin/mlton -new-flatten true -tuple-recon-elim 2"
+mlton="$bin/mlton"
 cont='callcc.sml callcc2.sml callcc3.sml'
 signal='signals.sml'
 thread='thread0.sml thread1.sml thread2.sml mutex.sml prodcons.sml same-fringe.sml timeout.sml'
@@ -51,7 +51,7 @@ PATH=.:$PATH
 				flags=''
 			;;
 			esac
-			$mlton -native true -type-check true $flags $f.sml
+			$mlton -type-check true $flags $f.sml
 			if [ $? -ne 0 ]; then
 				echo "compilation of $f failed"
 #				exit 1
