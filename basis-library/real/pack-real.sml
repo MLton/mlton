@@ -25,7 +25,7 @@ local
 in
    fun toBytes (r: real): Word8Vector.vector =
       (up (a, 0, r)
-       ; Byte.stringToBytes (Byte.unpackString (a, 0, NONE)))
+       ; Byte.stringToBytes (Byte.unpackString (Word8ArraySlice.full a)))
 end
 
 fun subVec (v, i) =

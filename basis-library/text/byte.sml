@@ -20,7 +20,12 @@ structure Byte: BYTE =
 
       val stringToBytes = Primitive.String.toWord8Vector
 
-      val unpackString = bytesToString o Word8Array.extract
-
-      val unpackStringVec = bytesToString o Word8Vector.extract
+      local
+	 fun make (length, sub) s =
+	    String.tabulate (length s, fn i => byteToChar (sub (s, i)))
+      in
+	 val unpackString = make (Word8ArraySlice.length, Word8ArraySlice.sub)
+	 val unpackStringVec =
+	    make (Word8VectorSlice.length, Word8VectorSlice.sub)
+      end
    end

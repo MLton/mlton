@@ -170,7 +170,9 @@ structure TextIO2: TEXT_IO_EXTRA =
       structure S = struct
 		      structure PrimIO = TextPrimIO
 		      structure Array = CharArray
+		      structure ArraySlice = CharArraySlice
 		      structure Vector = CharVector
+		      structure VectorSlice = CharVectorSlice
 		      val someElem = (#"\000": Char.char)
 		      val lineElem = (#"\n": Char.char)
 		      fun isLine c = c = lineElem

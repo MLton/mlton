@@ -1,31 +1,39 @@
 signature STREAM_IO_EXTRA_ARG = 
    sig
-      structure PrimIO: PRIM_IO_EXTRA where type pos = Position.int
+      structure PrimIO: PRIM_IO where type pos = Position.int
+      structure Array: MONO_ARRAY
+      structure ArraySlice: MONO_ARRAY_SLICE
       structure Vector: sig 
 	                  include MONO_VECTOR
 			  val extract: vector * int * int option -> vector
 			end
-      structure Array: MONO_ARRAY
-      sharing type PrimIO.elem = Vector.elem = Array.elem
-      sharing type PrimIO.vector = Vector.vector = Array.vector
-      sharing type PrimIO.array = Array.array
-      val someElem: PrimIO.elem
+      structure VectorSlice: MONO_VECTOR_SLICE
+      sharing type Array.array = ArraySlice.array = PrimIO.array
+      sharing type Array.elem = ArraySlice.elem = PrimIO.elem = Vector.elem
+	 = VectorSlice.elem
+      sharing type Array.vector = ArraySlice.vector = PrimIO.vector
+	 = Vector.vector = VectorSlice.vector
+      sharing type ArraySlice.slice = PrimIO.array_slice
+      sharing type ArraySlice.vector_slice = PrimIO.vector_slice
+	 = VectorSlice.slice
 
-      val lineElem : Vector.elem
       val isLine : Vector.elem -> bool 
+      val lineElem : Vector.elem
+      val someElem: PrimIO.elem
    end
 
-functor StreamIOExtra 
-        (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
+functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
    struct
       open S
 
       structure PIO = PrimIO
       structure A = Array
+      structure AS = ArraySlice
       structure V = struct
 		      open Vector
 		      val extract = extract
 		    end
+      structure VS = VectorSlice
 
       type elem = PIO.elem
       type vector = PIO.vector
@@ -73,43 +81,44 @@ functor StreamIOExtra
       fun writerSel (PIO.WR v, sel) = sel v
       fun outstreamName os = writerSel (outstreamWriter os, #name)
 
-      fun flushGen (writeSeq: {buf: 'a, i: int, sz: int option} -> int,
-		    {buf: 'a, i: int, sz: int}) =
-	let
-	  val max = i + sz
-	  fun loop i =
-	    if i = max
-	      then ()
-	      else let val j = writeSeq {buf = buf, i = i, sz = SOME (max - i)}
-		   in 
-		     if j = 0
-		       then raise (Fail "partial write")
+      fun flushGen (write: 'a -> int,
+		    base: 'a -> ('b * int * int),
+		    slice: ('b * int * int option) -> 'a,
+		    a: 'a) =
+	 let
+	    val (b, i, sz) = base a
+	    val max = i + sz
+	    fun loop i =
+	       if i = max
+		  then ()
+	       else let
+		       val j = write (slice (b, i, SOME (max - i)))
+		    in 
+		       if j = 0
+			  then raise (Fail "partial write")
 		       else loop (i + j)
-		   end
-	in loop i
-	end
+		    end
+	 in
+	    loop i
+	 end
 
       fun flushVec (writer, x) =
-	let val writeVec = writerSel (writer, #writeVec)
-	in
-	  case writeVec of
-	    SOME writeVec => flushGen (writeVec, x)
-	  | NONE => raise IO.BlockingNotSupported
-	end
+	 case writerSel (writer, #writeVec) of
+	    NONE => raise IO.BlockingNotSupported
+	  | SOME writeVec => flushGen (writeVec, VS.base, VS.slice, x)
+     
       fun flushArr (writer, x) =
-	let val writeArr = writerSel (writer, #writeArr)
-	in
-	  case writeArr of
-	    SOME writeArr => flushGen (writeArr, x)
-	  | NONE => raise IO.BlockingNotSupported
-	end
-
+	 case writerSel (writer, #writeArr) of
+	    NONE => raise IO.BlockingNotSupported
+	  | SOME writeArr => flushGen (writeArr, AS.base, AS.slice, x)
+     
       fun flushBuf (writer, Buf {size, array}) =
-	let val size' = !size 
-	in 
-	  size := 0;
-	  flushArr (writer, {buf = array, i = 0, sz = size'})
-	end
+	 let
+	    val size' = !size 
+	 in 
+	    size := 0
+	    ; flushArr (writer, AS.slice (array, 0, SOME size'))
+	 end
 
       fun output (os as Out {augmented_writer, 
 			     state, 
@@ -117,8 +126,7 @@ functor StreamIOExtra
 	if terminated (!state)
 	  then liftExn (outstreamName os) "output" IO.ClosedStream
 	  else let
-		 fun put () = flushVec (augmented_writer, 
-					{buf = v, i = 0, sz = V.length v})
+		  fun put () = flushVec (augmented_writer, VS.full v)
 		 fun doit (buf as Buf {size, array}, maybe) =
 		   let
 		     val curSize = !size
@@ -163,7 +171,7 @@ functor StreamIOExtra
 		   case !buffer_mode of
 		     NO_BUF => (A.update (buf1, 0, c);
 				flushArr (augmented_writer,
-					  {buf = buf1, i = 0, sz = 1}))
+					  AS.slice (buf1, 0, SOME 1)))
 		   | LINE_BUF buf => doit (buf, isLine c)
 		   | BLOCK_BUF buf => doit (buf, false)
 		 end
@@ -657,15 +665,23 @@ functor StreamIOExtra
 signature STREAM_IO_ARG = 
    sig
       structure PrimIO: PRIM_IO where type pos = Position.int
-      structure Vector: MONO_VECTOR
       structure Array: MONO_ARRAY
-      sharing type PrimIO.elem = Vector.elem = Array.elem
-      sharing type PrimIO.vector = Vector.vector = Array.vector
-      sharing type PrimIO.array = Array.array
+      structure ArraySlice: MONO_ARRAY_SLICE
+      structure Vector: MONO_VECTOR
+      structure VectorSlice: MONO_VECTOR_SLICE
+      sharing type Array.array = ArraySlice.array = PrimIO.array
+      sharing type Array.elem = ArraySlice.elem = PrimIO.elem = Vector.elem
+	 = VectorSlice.elem
+      sharing type Array.vector = ArraySlice.vector = PrimIO.vector
+	 = Vector.vector = VectorSlice.vector
+      sharing type ArraySlice.slice = PrimIO.array_slice
+      sharing type ArraySlice.vector_slice = PrimIO.vector_slice
+	 = VectorSlice.slice
+
       val someElem: PrimIO.elem
    end
-functor StreamIO
-        (S: STREAM_IO_ARG): STREAM_IO = 
+
+functor StreamIO (S: STREAM_IO_ARG): STREAM_IO = 
   StreamIOExtra(open S
 		structure Vector =
 		  struct
@@ -689,32 +705,19 @@ functor StreamIO
 
 signature STREAM_IO_EXTRA_FILE_ARG =
    sig
-      structure PrimIO: PRIM_IO_EXTRA where type pos = Position.int
-      structure Vector: sig 
-	                  include MONO_VECTOR
-			  val extract: vector * int * int option -> vector
-			end
-      structure Array: MONO_ARRAY
-      sharing type PrimIO.elem = Vector.elem = Array.elem
-      sharing type PrimIO.vector = Vector.vector = Array.vector
-      sharing type PrimIO.array = Array.array
-      val someElem: PrimIO.elem
-
-      val lineElem : Vector.elem
-      val isLine : Vector.elem -> bool
+      include STREAM_IO_EXTRA_ARG
 
       structure Cleaner: CLEANER
    end
 
-functor StreamIOExtraFile
-        (S: STREAM_IO_EXTRA_FILE_ARG): STREAM_IO_EXTRA_FILE =
+functor StreamIOExtraFile (S: STREAM_IO_EXTRA_FILE_ARG): STREAM_IO_EXTRA_FILE =
    struct
       open S
 
       structure PIO = PrimIO
       structure V = Vector
 
-      structure StreamIO = StreamIOExtra(open S)
+      structure StreamIO = StreamIOExtra (S)
       open StreamIO
 
       structure PFS = Posix.FileSys

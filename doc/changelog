@@ -1,9 +1,16 @@
 Here are the changes since version 20030716.
 
+* 2003-0924
+  - Tracking basis library changes:
+    o TextIO.inputLine now returns a string option.
+    o Slices used in Byte, PRIM_IO, PrimIO, Posix.IO, StreamIO
+    o Posix.IO.readVec raises Size, not Subscript, with negative
+      argument. 
+
 * 2003-09-22
   - Fixed Real.toManExp so that the mantissa is in [0.5, 1), 
     not [1, 2).  The spec says that 1.0 <= man * radix < radix, which
-    since radix is 2, implies that the mantiss is in [0.5, 1).
+    since radix is 2, implies that the mantissa is in [0.5, 1).
   - Added Time.{from,to}Nanoseconds.
 
 * 2003-09-11

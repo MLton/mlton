@@ -6,30 +6,38 @@ signature BUFFER_I_EXTRA_ARG =
                           include MONO_ARRAY
 			  val rawArray: int -> array
 		       end
+      structure ArraySlice: MONO_ARRAY_SLICE
       structure Vector: sig 
 	                   include MONO_VECTOR
                            val fromArray: Array.array -> vector
 			end
-      sharing type PrimIO.elem = StreamIO.elem = Vector.elem = Array.elem
-      sharing type PrimIO.vector = StreamIO.vector = Vector.vector = Array.vector
-      sharing type PrimIO.array = Array.array
-      sharing type PrimIO.reader = StreamIO.reader
+      structure VectorSlice: MONO_VECTOR_SLICE
+      sharing type Array.array = ArraySlice.array = PrimIO.array
+      sharing type Array.elem = ArraySlice.elem = PrimIO.elem = StreamIO.elem
+	 = Vector.elem = VectorSlice.elem
+      sharing type Array.vector = ArraySlice.vector = PrimIO.vector
+	 = StreamIO.vector = Vector.vector = VectorSlice.vector
+      sharing type ArraySlice.slice = PrimIO.array_slice
+      sharing type ArraySlice.vector_slice = PrimIO.vector_slice
+	 = VectorSlice.slice
       sharing type PrimIO.pos = StreamIO.pos
-      val someElem: PrimIO.elem
+      sharing type PrimIO.reader = StreamIO.reader
 
-      val lineElem: Vector.elem
       val isLine: Vector.elem -> bool
+      val lineElem: Vector.elem
+      val someElem: PrimIO.elem
    end
 
-functor BufferIExtra
-        (S: BUFFER_I_EXTRA_ARG): BUFFER_I_EXTRA =
+functor BufferIExtra (S: BUFFER_I_EXTRA_ARG): BUFFER_I_EXTRA =
    struct
       open S
 
       structure PIO = PrimIO
       structure SIO = StreamIO
-      structure V = Vector
       structure A = Array
+      structure AS = ArraySlice
+      structure V = Vector
+      structure VS = VectorSlice
 
       type elem = PrimIO.elem
       type vector = PrimIO.vector
@@ -80,7 +88,7 @@ functor BufferIExtra
 		   let
 		     fun doit readArr =
 		       let
-			 val i = readArr {buf = buf, i = 0, sz = NONE}
+			 val i = readArr (AS.full buf)
 			         handle exn =>
 				 liftExn (inbufferName ib) function exn
 		       in
@@ -134,7 +142,7 @@ functor BufferIExtra
 		let
 		  fun loop read =
 		    let
-		      val i = readArr {buf = buf, i = read, sz = NONE}
+		      val i = readArr (AS.full buf)
 			      handle exn =>
 			      liftExn (inbufferName ib) function exn
 		    in
@@ -251,9 +259,7 @@ functor BufferIExtra
 				       else let
 					      val j = 
 						readArr
-						{buf = inp,
-						 i = i,
-						 sz = SOME (n - i)}
+						(AS.slice (inp, i, SOME (n - i)))
 						handle exn => 
 					        liftExn (inbufferName ib) "inputN" exn
 					    in
@@ -446,77 +452,84 @@ functor BufferIExtra
 	getInstream' SIO.mkInstream' ib
    end
 
-signature BUFFER_I_ARG = 
-   sig
-      structure PrimIO: PRIM_IO
-      structure StreamIO: STREAM_IO
-      structure Array: MONO_ARRAY
-      structure Vector: MONO_VECTOR
-      sharing type PrimIO.elem = StreamIO.elem = Vector.elem = Array.elem
-      sharing type PrimIO.vector = StreamIO.vector = Vector.vector = Array.vector
-      sharing type PrimIO.array = Array.array
-      sharing type PrimIO.reader = StreamIO.reader
-      sharing type PrimIO.pos = StreamIO.pos
-      val someElem: PrimIO.elem
-   end
-functor BufferI
-        (S: BUFFER_I_ARG): BUFFER_I = 
-  BufferIExtra(open S
-	       structure Array =
-		  struct
-		     open Array
-		     fun rawArray n = Array.array (n, someElem)
-		  end
-	       structure Vector =
-		  struct
-		     open Vector
-		     fun fromArray a = 
-		       tabulate(Array.length a, fn i => Array.sub (a, i))
-		  end
-	       structure StreamIO =
-		  struct
-		     open StreamIO
-		     fun input1' _ = raise (Fail "<input1'>")
-		     fun equalsIn _ = raise (Fail "<equalsIn>")
-		     fun instreamReader _ = raise (Fail "<instreamReader>")
-		     fun mkInstream' _ = raise (Fail "<mkInstream>")
-		     fun equalsOut _ = raise (Fail "<equalsOut>")
-		     fun outstreamWriter _ = raise (Fail "<outstreamWriter>")
-		     fun mkOutstream' _ = raise (Fail "<mkOutstream>")
-		     fun openVector _ = raise (Fail "<openVector>")
-		     fun inputLine _ = raise (Fail "<inputLine>")
-		     fun outputSlice _ = raise (Fail "<outputSlice>")
-		  end
-	       val lineElem = someElem
-	       fun isLine _ = raise (Fail "<isLine>"))
+(* signature BUFFER_I_ARG = 
+ *    sig
+ *       structure PrimIO: PRIM_IO
+ *       structure StreamIO: STREAM_IO
+ *       structure Array: MONO_ARRAY
+ *       structure Vector: MONO_VECTOR
+ *       sharing type PrimIO.elem = StreamIO.elem = Vector.elem = Array.elem
+ *       sharing type PrimIO.vector = StreamIO.vector = Vector.vector = Array.vector
+ *       sharing type PrimIO.array = Array.array
+ *       sharing type PrimIO.reader = StreamIO.reader
+ *       sharing type PrimIO.pos = StreamIO.pos
+ *       val someElem: PrimIO.elem
+ *    end
+ * functor BufferI
+ *         (S: BUFFER_I_ARG): BUFFER_I = 
+ *   BufferIExtra(open S
+ * 	       structure Array =
+ * 		  struct
+ * 		     open Array
+ * 		     fun rawArray n = Array.array (n, someElem)
+ * 		  end
+ * 	       structure Vector =
+ * 		  struct
+ * 		     open Vector
+ * 		     fun fromArray a = 
+ * 		       tabulate(Array.length a, fn i => Array.sub (a, i))
+ * 		  end
+ * 	       structure StreamIO =
+ * 		  struct
+ * 		     open StreamIO
+ * 		     fun input1' _ = raise (Fail "<input1'>")
+ * 		     fun equalsIn _ = raise (Fail "<equalsIn>")
+ * 		     fun instreamReader _ = raise (Fail "<instreamReader>")
+ * 		     fun mkInstream' _ = raise (Fail "<mkInstream>")
+ * 		     fun equalsOut _ = raise (Fail "<equalsOut>")
+ * 		     fun outstreamWriter _ = raise (Fail "<outstreamWriter>")
+ * 		     fun mkOutstream' _ = raise (Fail "<mkOutstream>")
+ * 		     fun openVector _ = raise (Fail "<openVector>")
+ * 		     fun inputLine _ = raise (Fail "<inputLine>")
+ * 		     fun outputSlice _ = raise (Fail "<outputSlice>")
+ * 		  end
+ * 	       val lineElem = someElem
+ * 	       fun isLine _ = raise (Fail "<isLine>"))
+ *)
 
 signature BUFFER_I_EXTRA_FILE_ARG =
    sig
       structure PrimIO: PRIM_IO
       structure StreamIO: STREAM_IO_EXTRA_FILE
       structure Array: sig
-	                  include MONO_ARRAY
+                          include MONO_ARRAY
 			  val rawArray: int -> array
 		       end
+      structure ArraySlice: MONO_ARRAY_SLICE
       structure Vector: sig 
 	                   include MONO_VECTOR
                            val fromArray: Array.array -> vector
 			end
-      sharing type PrimIO.elem = StreamIO.elem = Vector.elem = Array.elem
-      sharing type PrimIO.vector = StreamIO.vector = Vector.vector = Array.vector
-      sharing type PrimIO.array = Array.array
-      sharing type PrimIO.reader = StreamIO.reader
+      structure VectorSlice: MONO_VECTOR_SLICE
+      sharing type Array.array = ArraySlice.array = PrimIO.array
+      sharing type Array.elem = ArraySlice.elem = PrimIO.elem = StreamIO.elem
+	 = Vector.elem = VectorSlice.elem
+      sharing type Array.vector = ArraySlice.vector = PrimIO.vector
+	 = StreamIO.vector = Vector.vector = VectorSlice.vector
+      sharing type ArraySlice.slice = PrimIO.array_slice
+      sharing type ArraySlice.vector_slice = PrimIO.vector_slice
+	 = VectorSlice.slice
       sharing type PrimIO.pos = StreamIO.pos
-      val someElem: PrimIO.elem
+      sharing type PrimIO.reader = StreamIO.reader
 
-      val lineElem: Vector.elem
       val isLine: Vector.elem -> bool
+      val lineElem: Vector.elem
+      val someElem: PrimIO.elem
 
       structure Cleaner: CLEANER
    end
 
-functor BufferIExtraFile
-        (S: BUFFER_I_EXTRA_FILE_ARG): BUFFER_I_EXTRA_FILE =
+functor BufferIExtraFile (S: BUFFER_I_EXTRA_FILE_ARG): BUFFER_I_EXTRA_FILE =
    struct
       open S
 

@@ -18,9 +18,9 @@ structure MLtonRandom: MLTON_RANDOM =
 		      end
 		   fun loop rem =
 		      let
-			 val n = Posix.IO.readArr (fd, {buf = buf,
-							i = 4 - rem,
-							sz = SOME rem})
+			 val n = Posix.IO.readArr (fd,
+						   Word8ArraySlice.slice
+						   (buf, 4 - rem, SOME rem))
 			 val _ = if n = 0
 				    then (Posix.IO.close fd; raise Fail name)
 				 else ()

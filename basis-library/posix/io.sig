@@ -9,15 +9,9 @@ signature POSIX_IO =
 
       val close: file_desc -> unit 
       val readVec: file_desc * int -> Word8Vector.vector 
-      val readArr: file_desc * {buf: Word8Array.array,
-				i: int,
-				sz: int option} -> int 
-      val writeVec: file_desc * {buf: Word8Vector.vector,
-				 i: int,
-				 sz: int option} -> int 
-      val writeArr: file_desc * {buf: Word8Array.array,
-				 i: int,
-				 sz: int option} -> int 
+      val readArr: file_desc * Word8ArraySlice.slice -> int
+      val writeVec: file_desc * Word8VectorSlice.slice -> int
+      val writeArr: file_desc * Word8ArraySlice.slice -> int
 
       datatype whence = SEEK_SET | SEEK_CUR | SEEK_END
 

@@ -84,28 +84,27 @@ datatype buf =
 
 fun isFull (Buf {size, ...}) = !size = bufSize
 
+structure AS = Word8ArraySlice
+structure VS = Word8VectorSlice
+   
 (* Write out to fd size bytes of buf starting at index i. *)
 fun flushGen (fd: FS.file_desc,
 	      buf: 'a,
 	      i: int,
 	      size: int,
-	      write: FS.file_desc * {buf: 'a,
-				     i: int,
-				     sz: int option} -> int): unit =
+	      slice: 'a * int * int option -> 'b,
+	      write: FS.file_desc * 'b -> int): unit =
    let
       val max = i + size
       fun loop i =
 	 if i = max
 	    then ()
-	 else
-	    loop (i + write (fd, {buf = buf,
-				  i = i,
-				  sz = SOME (max - i)}))
+	 else loop (i + write (fd, slice (buf, i, SOME (max - i))))
    in loop i
    end
 
 fun flush (fd, Buf {size, array}) =
-   (flushGen (fd, array, 0, !size, PIO.writeArr)
+   (flushGen (fd, array, 0, !size, AS.slice, PIO.writeArr)
     ; size := 0)
    
 datatype bufStyle =
@@ -247,7 +246,8 @@ fun output (out as ref (Out {bufStyle, closed, fd, ...}), s): unit =
    else
       let
 	 val v = NativeVector.toWord8Vector s
-	 fun put () = flushGen (fd, v, 0, Vector.length v, PIO.writeVec)
+	 fun put () =
+	    flushGen (fd, v, 0, Vector.length v, VS.slice, PIO.writeVec)
 	 fun doit (b as Buf {size, array}, maybe) =
 	    let
 	       val curSize = !size
@@ -297,7 +297,7 @@ in
 	    case bufStyle of
 	       Unbuffered =>
 		  (Array.update (buf1, 0, NativeVector.toByte c)
-		   ; flushGen (fd, buf1, 0, 1, PIO.writeArr))
+		   ; flushGen (fd, buf1, 0, 1, AS.slice, PIO.writeArr))
 	     | Line b => doit (b, NativeVector.isLine c)
 	     | Buffered b => doit (b, false)
 	 end handle exn => raise IO.Io {name = outName out,
@@ -385,9 +385,9 @@ structure Buf =
 		 orelse
 		 (* need to read *)
 		 let
-		    val bytesRead =
-		       PIO.readArr (fd, {buf = buf, i = 0, sz = NONE})
-		 in if bytesRead = 0
+		    val bytesRead = PIO.readArr (fd, AS.full buf)
+		 in
+		    if bytesRead = 0
 		       then (eof := true; false)
 		    else (first := 0; last := bytesRead; true)
 		 end
@@ -464,9 +464,9 @@ structure Buf =
 			else let
 				val bytesRead' =
 				   PIO.readArr
-				   (fd, {buf = dst, i = bytesRead,
-					 sz = SOME (bytesToRead
-						    -? bytesRead)})
+				   (fd,
+				    AS.slice (dst, bytesRead,
+					      SOME (bytesToRead -? bytesRead)))
 			     in if bytesRead' = 0
 				   then (eof := true
 					 ; first := !last
@@ -575,8 +575,7 @@ structure StreamIO =
 		     else
 			let
 			   val buf = Primitive.Array.array bufSize
-			   val n =
-			      PIO.readArr (fd, {buf = buf, i = 0, sz = NONE})
+			   val n = PIO.readArr (fd, AS.full buf)
 			   val buf =
 			      if n < bufSize
 				 then Array.tabulate (n, fn i =>

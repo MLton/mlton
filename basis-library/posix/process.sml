@@ -45,9 +45,9 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 		  case fork () of
 		     NONE => 
 			(PosixIO.writeVec (outfd,
-					   {buf = (Word8Vector.tabulate
-						   (1, fn _ => 0w0)),
-					    i = 0, sz = NONE})
+					   Word8VectorSlice.full
+					   (Word8Vector.tabulate
+					    (1, fn _ => 0w0)))
 			 ; NONE)
 		   | SOME n =>
 			let

@@ -33,19 +33,21 @@ structure BinIO2: BIN_IO_EXTRA =
       structure S = struct
 		      structure PrimIO = BinPrimIO
 		      structure Array = Word8Array
+		      structure ArraySlice = Word8ArraySlice
 		      structure Vector = Word8Vector
+		      structure VectorSlice = Word8VectorSlice
 		      val someElem = (0wx0: Word8.word)
 		      val lineElem = (0wx0: Word8.word)
 		      fun isLine _ = false
 		      structure Cleaner = Cleaner
 		    end
-      structure StreamIO = StreamIOExtraFile(open S)
+      structure StreamIO = StreamIOExtraFile (open S)
       structure SIO = StreamIO
       structure S = struct 
 		      open S 
 		      structure StreamIO = StreamIO
 		    end
-      structure BufferI = BufferIExtraFile(open S)
+      structure BufferI = BufferIExtraFile (open S)
       structure BI = BufferI
       structure S = struct
 		      open S
@@ -55,7 +57,7 @@ structure BinIO2: BIN_IO_EXTRA =
 		      val mkReader = Posix.IO.mkBinReader
 		      val mkWriter = Posix.IO.mkBinWriter
 		    end
-      structure FastImperativeIO = FastImperativeIOExtraFile(open S)
+      structure FastImperativeIO = FastImperativeIOExtraFile (open S)
       open FastImperativeIO
    end
 

@@ -524,10 +524,14 @@ structure PosixPrimitive =
 	    val readChar = _import "Posix_IO_read":
 	       fd * char array * int * size -> ssize;
 	    val writeChar = _import "Posix_IO_write":
+	       fd * char array * int * size -> ssize;
+	    val writeCharVec = _import "Posix_IO_write":
 	       fd * char vector * int * size -> ssize;
 	    val readWord8 = _import "Posix_IO_read":
 	       fd * word8 array * int * size -> ssize;
 	    val writeWord8 = _import "Posix_IO_write":
+	       fd * word8 array * int * size -> ssize;
+	    val writeWord8Vec = _import "Posix_IO_write":
 	       fd * word8 vector * int * size -> ssize;
 	 end	       
 
