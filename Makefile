@@ -63,7 +63,7 @@ constants:
 
 .PHONY: deb
 deb:
-	$(MAKE) clean clean-cvs version
+	$(MAKE) clean clean-cvs
 	debuild
 
 .PHONY: deb-binary
