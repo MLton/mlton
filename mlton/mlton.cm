@@ -292,6 +292,8 @@ ssa/implement-handlers.sig
 ssa/implement-handlers.fun
 ssa/introduce-loops.sig
 ssa/introduce-loops.fun
+ssa/local-flatten.sig
+ssa/local-flatten.fun
 ssa/two-point-lattice.sig
 ssa/two-point-lattice.fun
 ssa/remove-unused.sig

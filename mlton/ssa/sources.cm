@@ -25,6 +25,8 @@ implement-handlers.fun
 implement-handlers.sig
 introduce-loops.sig
 introduce-loops.fun
+local-flatten.fun
+local-flatten.sig
 remove-unused.fun
 remove-unused.sig
 shrink.fun
