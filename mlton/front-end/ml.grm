@@ -73,9 +73,7 @@ structure Pat =
       fun makeAs (p1: t, p2: t): node =
 	 let
 	    fun err () =
-	       (error (Pat.region p1,
-		       "must have variable to left in as pattern") ;
-		bogus)
+	       error (Pat.region p1, "must have variable to left in as pattern")
 	    fun fixopVar (p : t) =
 	       case node p of
 		  FlatApp ps =>
@@ -87,7 +85,7 @@ structure Pat =
 					   SOME (fixop, Vid.toVar vid)
 				      | _ =>
 					   let
-					      val _ = err ()
+					      val () = err ()
 					   in
 					      SOME (Fixop.None, Var.bogus)
 					   end)
@@ -108,8 +106,8 @@ structure Pat =
 			       Layered {fixop = fixop, var = var,
 					constraint = SOME t,
 					pat = p2}
-			  | _ => err ())
-		   | _ => err ()
+			  | _ => (err (); bogus))
+		   | _ => (err (); bogus)
 	 end
    end
 
