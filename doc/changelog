@@ -1,5 +1,9 @@
 Here are the changes since version 20030716.
 
+* 2003-12-28
+  - Fixed horrible bug in MLton.Random.alphaNumString that caused it
+    to return 0 for all characters beyond position 11.
+
 * 2003-12-17
   - Removed -basis as a normal flag.  It is still available as an
     expert flag, but its use is deprecated.  It will almost certainly
