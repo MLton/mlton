@@ -6,10 +6,11 @@ all:
 	gzip -c $(UG)/main.ps >user-guide.ps.gz
 	rm -f HTML/*
 	mkdir -p HTML
-	cd $(UG)/main &&
+	cd $(UG)/main && \
 		cp -p main.css main.html node*.html *.png ../web/HTML
-	cvs co -d benchmarks mlton/src/benchmark/tests
+	cvs -Q co -d benchmarks mlton/src/benchmark/tests
 	cvs -Q release benchmarks
+	find benchmarks -type d | grep CVS | xargs rm -rf
 
 .PHONY: clean
 clean:
