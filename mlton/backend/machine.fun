@@ -595,6 +595,16 @@ structure Chunk =
 					entries, gcReturns, ...},
 			     frames): unit =
 	 let
+	    val _ =
+	       Control.diagnostics
+	       (fn display =>
+		let
+		   open Layout
+		   val _ = display (seq [str "limit checks for ",
+					 ChunkLabel.layout chunkLabel])
+		in
+		   ()
+		end)
 	    val returns: Label.t list ref = ref []
 
 	    fun newFrame (GCInfo.T {frameSize, live, return, ...}) =
@@ -668,25 +678,30 @@ structure Chunk =
 				     * length arrays *)
 				    + pointerSize
 				 fun here () =
-				    let val _ = newFrame gcInfo
+				    let
+				       val _ = newFrame gcInfo
 				       val lc = {bytesPerElt = bytesPerElt,
-						 bytesAllocated = bytesAllocated};
-				    in limitCheck := SOME lc; 0
+						 bytesAllocated = bytesAllocated}
+				       val _ = limitCheck := SOME lc
+				    in
+				       0
 				    end
 				 (* maxArrayLimitCheck is arbitrary -- it's just
 				  * there to ensure that really huge array
 				  * allocations don't get moved too early.
 				  *)
 				 val maxArrayLimitCheck = 10000
-			      in case numElts of
-				 Operand.Int numElts =>
-				    if numElts <= maxArrayLimitCheck
-				       then (bytesAllocated +
-					     Type.align
-					     (Type.pointer,
-					      numElts * bytesPerElt))
-				    else here ()
-			       | _ => here ()
+			      in
+				 case numElts of
+				    Operand.Int numElts =>
+				       if numElts <= maxArrayLimitCheck
+					  then
+					     (bytesAllocated +
+					      Type.align (Type.pointer,
+							  numElts * bytesPerElt))
+					     handle Exn.Overflow => here ()
+				       else here ()
+				  | _ => here ()
 			      end
 			   val bytesAllocated =
 			      Array.foldr
@@ -713,7 +728,9 @@ structure Chunk =
 			   ; bytesAllocated
 			end
 	       end
-	    val _ = List.foreach (!entries, fn l => (memo l; ()))
+	    val _ =
+	       List.foreach (!entries, fn l => (memo l; ()))
+	       handle Exn.Overflow => Error.bug "limit check insertion overflow"
 	    val _ = gcReturns := SOME (!returns)
 	    val _ = destroy ()
 	    val _ =
