@@ -19,3 +19,6 @@ x + let
     in
         g() * 2.0
     end;
+
+
+(* Checks each overloaded operator at each type. *)
