@@ -342,7 +342,8 @@ static inline void Real64_store (Real64 *dp, Real64 d) {
 		if (DEBUG_CCODEGEN)						\
 			fprintf (stderr, "%s = 0x%08x " #op " 0x%08x\n",	\
 					res ? "true": "false",			\
-					w1, w2);				\
+					(unsigned int)w1,			\
+					(unsigned int)w2);			\
 		return w1 op w2;						\
 	}
 #define wordShift(size, name, op)			\
