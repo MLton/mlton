@@ -24,7 +24,11 @@ RELEASE = 1
 
 .PHONY: all
 all:
-	$(MAKE) dirs docs runtime compiler world-no-check
+	$(MAKE) docs all-no-docs
+
+.PHONY: all-no-docs
+all-no-docs:
+	$(MAKE) dirs runtime compiler world-no-check
 # If we're compiling with another version of MLton, then we want to do
 # another round of compilation so that we get a MLton built without
 # stubs.  Remove $(AOUT) so that the $(MAKE) compiler below will
@@ -109,7 +113,7 @@ dirs:
 	mkdir -p $(BIN) $(LIB)/$(TARGET) $(LIB)/include
 
 .PHONY: docs
-docs:
+docs: dirs
 	$(MAKE) -C $(SRC)/doc/user-guide
 	$(MAKE) -C $(LEX) docs
 	$(MAKE) -C $(YACC) docs
