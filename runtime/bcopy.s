@@ -7,18 +7,18 @@ bcopy_simd:
 	pushl	%edi
         pushl	%esi
 
-	movl	16(%ebp),%ecx	# size
-	movl	8(%ebp),%eax	# source
-	orl	12(%ebp),%eax	# destination
+	movl	16(%ebp),%ecx		# size
+	movl	8(%ebp),%eax		# source
+	orl	12(%ebp),%eax		# destination
 
 	cmpl	$31,%ecx		# size < 32
 	jle	bcopy4
 
 	movl	8(%ebp),%edx
-	movb	(%edx),%eax	# touch first byte of src
-	movb	-4(%ecx,%edx),%eax	# touch last byte of src
+	movb	(%edx),%al		# touch first byte of src
+	movb	-4(%ecx,%edx),%al	# touch last byte of src
 
-	andb	$0xe0,%dl	# align src to 32-byte boundary
+	andb	$0xe0,%dl		# align src to 32-byte boundary
 	xorl	%eax,%eax
 bcopy1:
 	prefetchnta (%eax,%edx)
@@ -26,8 +26,8 @@ bcopy1:
 	cmpl	%ecx,%eax
 	jl	bcopy1
 
-	movl	8(%ebp),%esi	# src
-	movl	12(%ebp),%edi	# dst
+	movl	8(%ebp),%esi		# src
+	movl	12(%ebp),%edi		# dst
 
 	movl	%edi,%eax
 	andl	$15,%eax
@@ -58,7 +58,7 @@ bcopy4:
 	rep ; movsb
 	
 bcopy5:	
-	sfence			# flush the WC buffer
+	sfence				# flush the WC buffer
 
 	popl %esi
 	popl %edi
