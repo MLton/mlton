@@ -13,25 +13,25 @@ structure PosixProcess: POSIX_PROCESS =
       val wordToPid = SysWord.toInt
       val pidToWord = SysWord.fromInt
 	 
-      fun fork() =
-	 case Prim.fork() of
-	    ~1 => Error.error()
+      fun fork () =
+	 case Prim.fork () of
+	    ~1 => Error.error ()
 	  | 0 => NONE
 	  | n => SOME n
 
       val conv = String.nullTerm
       val convs = C.CSS.fromList
 
-      fun exec(path, args): 'a =
-	 (Error.checkResult(Prim.exec(conv path, convs args))
+      fun exec (path, args): 'a =
+	 (Error.checkResult (Prim.exec (conv path, convs args))
 	  ; raise Fail "Posix.Process.exec")
 
-      fun exece(path, args, env): 'a =
-	 (Error.checkResult(Prim.exece(conv path, convs args, convs env))
+      fun exece (path, args, env): 'a =
+	 (Error.checkResult (Prim.exece (conv path, convs args, convs env))
 	  ; raise Fail "Posix.Process.exece")
 	 
-      fun execp(file, args): 'a =
-	 (Error.checkResult(Prim.execp(conv file, convs args))
+      fun execp (file, args): 'a =
+	 (Error.checkResult (Prim.execp (conv file, convs args))
 	  ; raise Fail "Posix.Process.execp")
 
       datatype waitpid_arg =
@@ -60,39 +60,39 @@ structure PosixProcess: POSIX_PROCESS =
 	    
 	 val status: status ref = ref 0
 
-	 fun getStatus() =
+	 fun getStatus () =
 	    let val status = !status
 	    in if Prim.ifExited status
 		  then (case Prim.exitStatus status of
 			   0 => W_EXITED
-			 | n => W_EXITSTATUS(Word8.fromInt n))
+			 | n => W_EXITSTATUS (Word8.fromInt n))
 	       else if Prim.ifSignaled status
-		       then W_SIGNALED(Prim.termSig status)
+		       then W_SIGNALED (Prim.termSig status)
 	       else if Prim.ifStopped status
-		       then W_STOPPED(Prim.stopSig status)
+		       then W_STOPPED (Prim.stopSig status)
 		    else raise Fail "Posix.Process.waitpid"
 	    end
       in
-	 fun waitpid(wa, flags) =
-	    let val pid = Prim.waitpid(convertwa wa, status,
-				       SysWord.toInt(W.flags flags))
+	 fun waitpid (wa, flags) =
+	    let val pid = Prim.waitpid (convertwa wa, status,
+				       SysWord.toInt (W.flags flags))
 	    in Error.checkResult pid
-	       ; (pid, getStatus())
+	       ; (pid, getStatus ())
 	    end
 
-	 fun waitpid_nh(wa, flags) =
+	 fun waitpid_nh (wa, flags) =
 	    let
 	       val pid =
-		  Prim.waitpid(convertwa wa, status,
-			       SysWord.toInt(W.flags(wnohang :: flags)))
+		  Prim.waitpid (convertwa wa, status,
+			       SysWord.toInt (W.flags (wnohang :: flags)))
 	    in Error.checkResult pid
 	       ; if pid = 0
 		    then NONE
-		 else SOME(pid, getStatus())
+		 else SOME (pid, getStatus ())
 	    end
       end
 
-      fun wait() = waitpid(W_ANY_CHILD, [])
+      fun wait () = waitpid (W_ANY_CHILD, [])
 
       fun exit (w: Word8.word): 'a  =
 	 ((* A call to AtExit.clean is done before calling exit in
@@ -106,22 +106,22 @@ structure PosixProcess: POSIX_PROCESS =
        | K_SAME_GROUP
        | K_GROUP of pid 
 
-      fun kill(ka: killpid_arg, s: signal): unit =
+      fun kill (ka: killpid_arg, s: signal): unit =
 	 let val pid = (case ka of
 			   K_PROC pid => pid
 			 | K_SAME_GROUP => ~1
 			 | K_GROUP pid => ~ pid)
-	 in Error.checkResult(Prim.kill(pid, s))
+	 in Error.checkResult (Prim.kill (pid, s))
 	 end
 
       local
 	 fun wrap prim (t: Time.time): Time.time =
 	    Time.fromSeconds
-	    (LargeInt.fromInt(prim(LargeInt.toInt(Time.toSeconds t))))
+	    (LargeInt.fromInt (prim (LargeInt.toInt (Time.toSeconds t))))
       in
 	 val alarm = wrap Prim.alarm
 	 val sleep = wrap Prim.sleep
       end
 	 
-      fun pause() = Error.checkResult(Prim.pause())
+      fun pause () = Error.checkResult (Prim.pause ())
    end
