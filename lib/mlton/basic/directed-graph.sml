@@ -918,6 +918,24 @@ fun loopForest {headers, graph, root}
 fun loopForestSteensgaard {graph, root}
   = let
       fun headers X
+	= let
+	    val headers = ref []
+	  in
+	    foreachEdge
+	    (graph, fn (n, e) => let 
+				   val from = Edge.from e
+				   val to = Edge.to e
+				 in
+				   if List.contains(X, to, Node.equals)
+				      andalso
+				      not (List.contains(X, from, Node.equals))
+				      then List.push(headers, to)
+				   else ()
+				 end) ;
+	    List.removeDuplicates(!headers, Node.equals)
+	  end
+(*
+      fun headers X
 	= List.keepAll
 	  (X,
 	   fn node 
@@ -938,6 +956,7 @@ fun loopForestSteensgaard {graph, root}
 				       else ()
 				   end);
 		     false)))
+*)
     in
       loopForest {headers = headers,
 		  graph = graph,
