@@ -1,3 +1,11 @@
+mlton (MLTONVERSION-1) unstable; urgency=low
+
+  * new upstream version
+  * define MREMAP_MAYMOVE to avoid including linux/mman.h, closes: #219987
+  * Switched from laxex2html to HeVeA, closes: #221341
+
+ -- Stephen Weeks <sweeks@sweeks.com>  Tue, 02 Dec 2003 06:54:35 -0800
+
 mlton (20030716-1) unstable; urgency=low
 
   * new upstream version

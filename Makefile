@@ -24,7 +24,7 @@ RELEASE = 1
 
 .PHONY: all
 all:
-	$(MAKE) dirs runtime compiler world-no-check
+	$(MAKE) dirs docs runtime compiler world-no-check
 # If we're compiling with another version of MLton, then we want to do
 # another round of compilation so that we get a MLton built without
 # stubs.  Remove $(AOUT) so that the $(MAKE) compiler below will
@@ -32,7 +32,7 @@ all:
 ifeq (other, $(shell if [ ! -x $(BIN)/mlton ]; then echo other; fi))
 	rm -f $(COMP)/$(AOUT)
 endif
-	$(MAKE) script targetmap constants compiler world tools docs
+	$(MAKE) script targetmap constants compiler world tools
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: bootstrap-nj
@@ -72,7 +72,7 @@ constants:
 DEBSRC = mlton-$(VERSION).orig
 .PHONY: deb
 deb:
-	$(MAKE) clean clean-cvs version deb-change
+	$(MAKE) clean clean-cvs version
 	tar -cpf - . | \
 		( cd .. && mkdir $(DEBSRC) && cd $(DEBSRC) && tar -xpf - )
 	cd .. && tar -cpf - $(DEBSRC) | $(GZIP) >mlton_$(VERSION).orig.tar.gz
@@ -190,6 +190,7 @@ tools:
 version:
 	@echo 'Instantiating version numbers.'
 	for f in							\
+		debian/changelog					\
 		doc/mlton.spec						\
 		doc/user-guide/macros.tex				\
 		freebsd/Makefile					\
@@ -211,6 +212,7 @@ world:
 world-no-check: 
 	@echo 'Making world.'
 	$(CP) $(SRC)/basis-library $(LIB)/sml
+	find $(LIB)/sml -type f -name .cvsignore | xargs rm -rf
 	$(LIB)/$(AOUT) @MLton -- $(LIB)/world
 
 # The TBIN and TLIB are where the files are going to be after installing.
