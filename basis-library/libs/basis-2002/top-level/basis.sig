@@ -541,6 +541,7 @@ signature BASIS_2002 =
    where type exn = exn
    where type int = int
    where type order = order
+   where type MLton.pointer = MLton.pointer
    where type real = real
    where type string = string
    where type substring = substring
