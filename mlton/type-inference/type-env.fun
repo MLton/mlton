@@ -620,13 +620,10 @@ structure Type =
 	       then Vector.sub (ts, 0)
 	    else con (Tycon.tuple, ts)
 	 fun sortFields (fields: (Field.t * 'a) list) =
-	    let
-	       val a = Array.fromList fields
-	       val _ = QuickSort.sort (a, fn ((f, _), (f', _)) =>
-				       Field.<= (f, f'))
-	    in
-	       Array.toVector a
-	    end
+	    Array.toVector
+	    (QuickSort.sortArray
+	     (Array.fromList fields, fn ((f, _), (f', _)) =>
+	      Field.<= (f, f')))
 	 fun unsorted (fields: (Field.t * X.t) list, final: FinalRecordType.t) =
 	    let
 	       val v = sortFields fields

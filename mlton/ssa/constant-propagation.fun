@@ -365,13 +365,9 @@ structure Value =
 			  | Array {birth, length, ...} =>
 			       unary (birth, fn _ => length,
 				      fn {args, targs} =>
-				      if isZero length
-					 then Exp.PrimApp {args = Vector.new0 (),
-							   prim = Prim.array0,
-							   targs = targs}
-				      else Exp.PrimApp {args = args,
-							prim = Prim.array,
-							targs = targs},
+				      Exp.PrimApp {args = args,
+						   prim = Prim.array,
+						   targs = targs},
 				      Type.dearray ty)
 			  | Vector _ => No
 			  | Tuple vs =>
@@ -773,7 +769,6 @@ fun simplify (program: Program.t): Program.t =
 	    in
 	       case Prim.name prim of
 		  Array_array => array (arg 0, bear ())
-		| Array_array0 => array (zero, bear ())
 		| Array_array0Const => array (zero, Birth.here ())
 		| Array_length => arrayLength (arg 0)
 		| Array_sub => dearray (arg 0)

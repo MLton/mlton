@@ -710,9 +710,7 @@ struct
 	[comment_begin,
 	 (case Prim.name prim of
 	       Array_length => lengthArrayVectorString ()
-	     | Byte_byteToChar => mov ()
-	     | Byte_charToByte => mov ()
-	     | C_CS_charArrayToWord8Array => mov ()
+
 	     | Char_lt => cmp Instruction.B
 	     | Char_le => cmp Instruction.BE
 	     | Char_gt => cmp Instruction.A
@@ -783,10 +781,6 @@ struct
 	     | Int_ge => cmp Instruction.GE
 	     | Int_gtu => cmp Instruction.A
 	     | Int_geu => cmp Instruction.AE
-	     | IntInf_fromVector => mov ()
-	     | IntInf_toVector => mov ()
-	     | IntInf_fromWord => mov ()
-	     | IntInf_toWord => mov ()
 	     | MLton_eq => cmp Instruction.E
 	     | MLton_serialize => unimplemented primName
 	     | MLton_deserialize => unimplemented primName
@@ -1303,8 +1297,6 @@ struct
 		end
 	     | Real_neg => funa Instruction.FCHS
 	     | Real_round => funa Instruction.FRNDINT
-	     | String_fromWord8Vector => mov ()
-	     | String_toWord8Vector => mov ()
 	     | Vector_length => lengthArrayVectorString ()
 	     | Word8_toInt => movx Instruction.MOVZX
 	     | Word8_toIntX => movx Instruction.MOVSX
@@ -1334,8 +1326,6 @@ struct
 	     | Word8Array_subWord => subWord8ArrayVector ()
 	     | Word8Array_updateWord => updateWord8Array ()
 	     | Word8Vector_subWord => subWord8ArrayVector ()
-	     | Word32_toIntX => mov ()
-	     | Word32_fromInt => mov ()
 	     | Word32_add => binal Instruction.ADD
 	     | Word32_sub => binal Instruction.SUB
 	     | Word32_andb => binal Instruction.AND

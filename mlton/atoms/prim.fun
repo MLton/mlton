@@ -34,7 +34,6 @@ structure Name =
    struct
       datatype t =
 	 Array_array
-       | Array_array0
        | Array_array0Const
        | Array_length
        | Array_sub
@@ -256,7 +255,6 @@ structure Name =
       val strings =
 	 [
 	  (Array_array, Moveable, "Array_array"),
-	  (Array_array0, Moveable, "Array_array0"),
 	  (Array_array0Const, Moveable, "Array_array0Const"),
 	  (Array_length, Functional, "Array_length"),
 	  (Array_sub, DependsOnState, "Array_sub"),
@@ -528,7 +526,6 @@ local
       end
    val tuple = tuple o Vector.fromList    
 in
-   val array0 = new (Name.Array_array0, make1 (fn a => unit --> array a))
    val array = new (Name.Array_array, make1 (fn a => int --> array a))
    val assign = new (Name.Ref_assign, make1 (fn a => tuple [reff a, a] --> unit))
    val bogus = new (Name.MLton_bogus, make1 (fn a => a))
@@ -678,7 +675,6 @@ fun 'a extractTargs {prim, args, result,
    in
       case name prim of
 	 Array_array => one (dearray result)
-       | Array_array0 => one (dearray result)
        | Array_array0Const => one (dearray result)
        | Array_sub => one result
        | Array_update => one (arg 2)

@@ -41,13 +41,6 @@
 		sfread(globaluint, sizeof(uint), u, file);			\
 	}
 
-#define Locals(c, d, i, p, u)						\
-	char localuchar[c];						\
-	double localdouble[d];				       		\
-	int localint[i];						\
-	pointer localpointer[p];					\
-	uint localuint[u]
-
 #define BeginIntInfs static struct GC_intInfInit intInfInits[] = {
 #define IntInf(g, n) { g, n },
 #define EndIntInfs { 0, NULL }};
@@ -56,9 +49,9 @@
 #define String(g, s, l) { g, s, l },
 #define EndStrings { 0, NULL, 0 }};
 
-#define BeginFloats static void float_Init() {
-#define Float(c, f) globaldouble[c] = f;
-#define EndFloats }
+#define BeginReals static void real_Init() {
+#define Real(c, f) globaldouble[c] = f;
+#define EndReals }
 
 #define IsInt(p) (0x3 & (int)(p))
 
@@ -140,7 +133,7 @@ int main (int argc, char **argv) {					\
 	gcState.stringInits = stringInits;				\
 	MLton_init (argc, argv, &gcState);				\
 	if (gcState.isOriginal) {					\
-		float_Init();						\
+		real_Init();						\
 		PrepFarJump(mc, ml);					\
 	} else {							\
 		/* Return to the saved world */				\
@@ -205,6 +198,7 @@ int main (int argc, char **argv) {					\
 #define GD(i) Global(double, i)
 #define GI(i) Global(int, i)
 #define GP(i) Global(pointer, i)
+#define GPNR(i) Global(pointerNonRoot, i)
 #define GU(i) Global(uint, i)
 
 #define Offset(ty, b, o) (*(ty*)((b) + (o)))
@@ -340,19 +334,6 @@ int main (int argc, char **argv) {					\
 #define XI(b, i) ArrayOffset(int, b, i)
 #define XP(b, i) ArrayOffset(pointer, b, i)
 #define XU(b, i) ArrayOffset(uint, b, i)
-
-/* ------------------------------------------------- */
-/*                       Byte                        */
-/* ------------------------------------------------- */
-
-#define Byte_byteToChar(b) b
-#define Byte_charToByte(c) c
-
-/* ------------------------------------------------- */
-/*                         C                         */
-/* ------------------------------------------------- */
-
-#define C_CS_charArrayToWord8Array(x) x
 
 /* ------------------------------------------------- */
 /*                       Char                        */
@@ -584,15 +565,6 @@ static inline Word Word32_mulCheckFast (Word n1, Word n2) {
 #define Int_neg(n) (-(n))
 
 /* ------------------------------------------------- */
-/*                      IntInf                       */
-/* ------------------------------------------------- */
-
-#define IntInf_fromVector(x) x
-#define IntInf_fromWord(w) ((pointer)(w))
-#define IntInf_toVector(x) x
-#define IntInf_toWord(i) ((uint)(i))
-
-/* ------------------------------------------------- */
 /*                       MLton                       */
 /* ------------------------------------------------- */
 
@@ -644,18 +616,10 @@ static inline Word Word32_mulCheckFast (Word n1, Word n2) {
 #define Real_toInt(x) ((int)(x))
 
 /* ------------------------------------------------- */
-/*                      String                       */
-/* ------------------------------------------------- */
-
-#define String_fromWord8Vector(x) x
-#define String_toWord8Vector(x) x
-
-/* ------------------------------------------------- */
 /*                      Vector                       */
 /* ------------------------------------------------- */
 
 #define Vector_length GC_arrayNumElements
-#define Vector_fromArray(a) a
 
 /* ------------------------------------------------- */
 /*                       Word8                       */
@@ -715,7 +679,6 @@ static inline Word Word32_mulCheckFast (Word n1, Word n2) {
  */
 #define Word32_arshift(w, s) ((int)(w) >> (s))
 #define Word32_div(w1, w2) ((w1) / (w2))
-#define Word32_fromInt(x) ((uint)(x))
 #define Word32_ge(w1, w2) ((w1) >= (w2))
 #define Word32_gt(w1, w2) ((w1) > (w2))
 #define Word32_le(w1, w2) ((w1) <= (w2))
@@ -730,7 +693,6 @@ static inline Word Word32_mulCheckFast (Word n1, Word n2) {
 #define Word32_rol(x, y) ((x)>>(32-(y)) | ((x)<<(y)))
 #define Word32_rshift(w, s) ((w) >> (s))
 #define Word32_sub(w1, w2) ((w1) - (w2))
-#define Word32_toIntX(x) ((int)(x))
 #define Word32_xorb(w1, w2) ((w1) ^ (w2))
 
 #endif /* #ifndef _CCODEGEN_H_ */

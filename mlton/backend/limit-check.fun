@@ -74,16 +74,7 @@ structure Statement =
 		     {big: Operand.t -> 'a,
 		      small: word -> 'a}): 'a =
 	 case s of
-	    Object {numPointers = np, numWordsNonPointers = nwnp, ...} =>
-	       small (Word.fromInt
-		      (Runtime.normalHeaderSize
-		       + Runtime.normalSize {numPointers = np,
-					     numWordsNonPointers = nwnp}))
-	  | PrimApp {args, prim, ...} =>
-	       (case Prim.name prim of
-		   Prim.Name.Array_array0 =>
-		      small (Word.fromInt Runtime.array0Size)
-		 | _ => small 0w0)
+	    Object {size, ...} => small (Word.fromInt size)
 	  | _ => small 0w0
    end
 
@@ -122,7 +113,7 @@ fun insertFunction (f: Function.t,
 		    blockCheckAmount: {blockIndex: int} -> word,
 		    ensureBytesFree: Label.t -> word) =
    let
-      val {args, blocks, name, start} = Function.dest f
+      val {args, blocks, name, raises, returns, start} = Function.dest f
       val newBlocks = ref []
       val (_, allocTooLarge) = Block.allocTooLarge newBlocks
       val _ =
@@ -175,8 +166,9 @@ fun insertFunction (f: Function.t,
 				    profileInfo = profileInfo,
 				    statements = Vector.new0 (),
 				    transfer =
-				    Transfer.iff (global, {falsee = dontCollect,
-							   truee = collect})})
+				    Transfer.ifInt
+				    (global, {falsee = dontCollect,
+					      truee = collect})})
 			    in
 			       (dontCollect',
 				Vector.new1
@@ -249,7 +241,7 @@ fun insertFunction (f: Function.t,
 					 dst = SOME (res, Type.bool),
 					 prim = prim}
 		   val transfer =
-		      Transfer.iff
+		      Transfer.ifBool
 		      (Operand.Var {var = res, ty = Type.bool},
 		       {falsee = dontCollect,
 			truee = collect})
@@ -396,6 +388,8 @@ fun insertFunction (f: Function.t,
       Function.new {args = args,
 		    blocks = Vector.fromList (!newBlocks),
 		    name = name,
+		    raises = raises,
+		    returns = returns,
 		    start = start}
    end
 
@@ -417,7 +411,7 @@ val traceMaxPath = Trace.trace ("maxPath", Int.layout, Word.layout)
 
 fun insertCoalesce (f: Function.t, handlesSignals) =
    let
-      val {args, blocks, name, start} = Function.dest f
+      val {args, blocks, name, raises, returns, start} = Function.dest f
       val n = Vector.length blocks
       val {get = labelIndex, set = setLabelIndex, rem = remLabelIndex, ...} =
 	 Property.getSetOnce
@@ -677,7 +671,7 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
       f
    end
 
-fun insert (p as Program.T {functions, main, profileAllocLabels}) =
+fun insert (p as Program.T {functions, main, objectTypes, profileAllocLabels}) =
    let
       val _ = Control.diagnostic (fn () => Layout.str "Limit Check maxPaths")
       datatype z = datatype Control.limitCheck
@@ -687,7 +681,8 @@ fun insert (p as Program.T {functions, main, profileAllocLabels}) =
 	    PerBlock => insertPerBlock (f, handlesSignals)
 	  | _ => insertCoalesce (f, handlesSignals)
       val functions = List.revMap (functions, insert)
-      val {args, blocks, name, start} = Function.dest (insert main)
+      val {args, blocks, name, raises, returns, start} =
+	 Function.dest (insert main)
       val newStart = Label.newNoname ()
       val block =
 	 Block.T {args = Vector.new0 (),
@@ -706,10 +701,13 @@ fun insert (p as Program.T {functions, main, profileAllocLabels}) =
       val main = Function.new {args = args,
 			       blocks = blocks,
 			       name = name,
+			       raises = raises,
+			       returns = returns,
 			       start = newStart}
    in
       Program.T {functions = functions,
 		 main = main,
+		 objectTypes = objectTypes,
 		 profileAllocLabels = profileAllocLabels}
    end
 

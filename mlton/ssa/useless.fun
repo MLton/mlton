@@ -468,7 +468,6 @@ fun useless (program: Program.t): Program.t =
 		  case Prim.name prim of
 		     Array_array =>
 			coerce {from = arg 0, to = arrayLength result}
-		   | Array_array0 => ()
 		   | Array_array0Const => ()
 		   | Array_length => return (arrayLength (arg 0))
 		   | Array_sub => sub ()

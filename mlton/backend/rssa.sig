@@ -10,11 +10,10 @@ type word = Word.t
    
 signature RSSA_STRUCTS = 
    sig
-      include ATOMS
+      include MACHINE_ATOMS
 
-      structure Cases: MACHINE_CASES 
+      structure Const: CONST
       structure Func: HASH_ID
-      structure Label: HASH_ID
       structure Handler:
 	 sig
 	    datatype t =
@@ -39,29 +38,27 @@ signature RSSA_STRUCTS =
 	    val foldLabel: t * 'a * (Label.t * 'a -> 'a) -> 'a
 	    val foreachLabel: t * (Label.t -> unit) -> unit
 	 end
-      structure Runtime: RUNTIME
-      structure Type: MTYPE
-      sharing Label = Cases.Label
-      sharing Type = Runtime.Type
+      structure Var: VAR
    end
 
 signature RSSA = 
    sig
       include RSSA_STRUCTS
 
+      structure Switch: SWITCH
+      sharing Label = Switch.Label
+      sharing PointerTycon = Switch.PointerTycon
+      sharing Type = Switch.Type
       structure CFunction: C_FUNCTION
       sharing CFunction = Runtime.CFunction
-
+     
       structure Operand:
 	 sig
 	    datatype t =
-	       ArrayHeader of {numBytesNonPointers: int,
-			       numPointers: int}
-	     | ArrayOffset of {base: Var.t,
-			       index: Var.t,
+	       ArrayOffset of {base: t,
+			       index: t,
 			       ty: Type.t}
-	     | CastInt of t
-	     | CastWord of t
+	     | Cast of t * Type.t
 	     | Const of Const.t
 	       (* EnsuresBytesFree is a pseudo-op used by C functions (like
 		* GC_allocateArray) that take a number of bytes as an argument
@@ -73,17 +70,19 @@ signature RSSA =
 	     | File (* expand by codegen into string constant *)
 	     | GCState
 	     | Line (* expand by codegen into int constant *)
-	     | Offset of {base: Var.t,
-			  bytes: int,
+	     | Offset of {base: t,
+			  offset: int,
 			  ty: Type.t}
-	     | Pointer of int (* the int must be nonzero mod Runtime.wordSize. *)
+	     | PointerTycon of PointerTycon.t
 	     | Runtime of Runtime.GCField.t
+	     | SmallIntInf of word
 	     | Var of {var: Var.t,
 		       ty: Type.t}
 
 	    val bool: bool -> t
 	    val caseBytes: t * {big: t -> 'a,
 				small: word -> 'a} -> 'a
+	    val cast: t * Type.t -> t
 	    val char: char -> t
 	    val int: int -> t
 	    val layout: t -> Layout.t
@@ -91,6 +90,7 @@ signature RSSA =
 	    val ty: t -> Type.t
 	    val word: word -> t
 	 end
+      sharing Operand = Switch.Use
       
       structure Statement:
 	 sig
@@ -101,10 +101,12 @@ signature RSSA =
 	     | Move of {dst: Operand.t,
 			src: Operand.t}
 	     | Object of {dst: Var.t,
-			  numPointers: int,
-			  numWordsNonPointers: int,
+			  size: int, (* in bytes, including header *)
+			  (* The stores are in increasing order of offset. *)
 			  stores: {offset: int, (* bytes *)
-				   value: Operand.t} vector}
+				   value: Operand.t} vector,
+			  ty: Type.t,
+			  tycon: PointerTycon.t}
 	     | PrimApp of {args: Operand.t vector,
 			   dst: (Var.t * Type.t) option,
 			   prim: Prim.t}
@@ -117,7 +119,7 @@ signature RSSA =
 	     * If s defines a variable x, then return f (x, a), else return a.
 	     *)
 	    val foldDef: t * 'a * (Var.t * Type.t * 'a -> 'a) -> 'a
-	    (* forDef (s, f) = foldDef (s, (), fn (x, ()) => f x) *)
+	    (* foreachDef (s, f) = foldDef (s, (), fn (x, ()) => f x) *)
 	    val foreachDef: t * (Var.t * Type.t -> unit) -> unit
 	    val foreachDefUse: t * {def: (Var.t * Type.t) -> unit,
 				    use: Var.t -> unit} -> unit
@@ -154,12 +156,7 @@ signature RSSA =
 	      *)
 	     | Raise of Operand.t vector
 	     | Return of Operand.t vector
-	     | Switch of {cases: Cases.t,
-			  default: Label.t option, (* Must be nullary. *)
-			  test: Operand.t}
-	     | SwitchIP of {int: Label.t,
-			    pointer: Label.t,
-			    test: Operand.t}
+	     | Switch of Switch.t
 
 	    val bug: t
 	    (* foldDef (t, a, f)
@@ -173,7 +170,8 @@ signature RSSA =
 					 use: Var.t -> unit} -> unit
 	    val foreachLabel: t * (Label.t -> unit) -> unit
 	    val foreachUse: t * (Var.t -> unit) -> unit
-	    val iff: Operand.t * {falsee: Label.t, truee: Label.t} -> t
+	    val ifBool: Operand.t * {falsee: Label.t, truee: Label.t} -> t
+	    val ifInt: Operand.t * {falsee: Label.t, truee: Label.t} -> t
 	    val layout: t -> Layout.t
 	 end
 
@@ -215,6 +213,8 @@ signature RSSA =
 	    val dest: t -> {args: (Var.t * Type.t) vector,
 			    blocks: Block.t vector,
 			    name: Func.t,
+			    raises: Type.t vector option,
+			    returns: Type.t vector option,
 			    start: Label.t}
 	    (* dfs (f, v) visits the blocks in depth-first order, applying v b
 	     * for block b to yield v', then visiting b's descendents,
@@ -225,6 +225,8 @@ signature RSSA =
 	    val new: {args: (Var.t * Type.t) vector,
 		      blocks: Block.t vector,
 		      name: Func.t,
+		      raises: Type.t vector option,
+		      returns: Type.t vector option,
 		      start: Label.t} -> t
 	    val start: t -> Label.t
 	 end
@@ -233,11 +235,8 @@ signature RSSA =
 	 sig
 	    datatype t =
 	       T of {functions: Function.t list,
-		     (* main must be nullary and should not be called by other
-		      * functions. It defines global variables that are in scope
-		      * for the rest of the program.
-		      *)
 		     main: Function.t,
+		     objectTypes: ObjectType.t vector,
 		     profileAllocLabels: string vector}
 
 	    val clear: t -> unit

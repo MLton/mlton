@@ -15,33 +15,32 @@ local
    open Machine
 in
    structure Chunk = Chunk
+   structure Global = Global
+   structure Label = Label
+   structure MemChunk = MemChunk
+   structure ObjectType = ObjectType
+   structure PointerTycon = PointerTycon
+   structure Register = Register
    structure Runtime = Runtime
+   structure Type = Type
 end
 local
    open Runtime
 in
    structure CFunction = CFunction
    structure GCField = GCField
-   structure ObjectType = ObjectType
 end
 val wordSize = Runtime.wordSize
-   
-structure Rssa = Rssa (open Ssa
-		       structure Cases = Machine.Cases
-		       structure Runtime = Runtime
-		       structure Type = Machine.Type)
+
+structure Rssa = Rssa (open Ssa Machine)
 structure R = Rssa
 local
    open Rssa
 in
-   structure Cases = Cases
-   structure Con = Con
    structure Const = Const
    structure Func = Func
    structure Function = Function
-   structure Label = Label
    structure Prim = Prim
-   structure Tycon = Tycon
    structure Type = Type
    structure Var = Var
 end 
@@ -93,8 +92,7 @@ structure IntSet = UniqueSet (val cacheSize: int = 1
 structure Chunk =
    struct
       datatype t = T of {blocks: M.Block.t list ref,
-			 chunkLabel: M.ChunkLabel.t,
-			 regMax: Type.t -> int ref}
+			 chunkLabel: M.ChunkLabel.t}
 
       fun label (T {chunkLabel, ...}) = chunkLabel
 	 
@@ -102,19 +100,7 @@ structure Chunk =
 	 
       fun new (): t =
 	 T {blocks = ref [],
-	    chunkLabel = M.ChunkLabel.new (),
-	    regMax = Type.memo (fn _ => ref 0)}
-	 
-      fun register (T {regMax, ...}, n, ty) =
-	 let
-	    val r = regMax ty
-	    val _ = r := Int.max (!r, n + 1)
-	 in
-	    M.Register.T {index = n, ty = ty}
-	 end
-      
-      fun tempRegister (c as T {regMax, ...}, ty) =
-	 register (c, !(regMax ty), ty)
+	    chunkLabel = M.ChunkLabel.new ()}
 	 
       fun newBlock (T {blocks, ...}, z) =
 	 List.push (blocks, M.Block.T z)
@@ -127,7 +113,7 @@ val traceGenBlock =
 
 fun eliminateDeadCode (f: R.Function.t): R.Function.t =
    let
-      val {args, blocks, name, start} = R.Function.dest f
+      val {args, blocks, name, returns, raises, start} = R.Function.dest f
       val {get, set, ...} =
 	 Property.getSetOnce (Label.plist, Property.initConst false)
       val get = Trace.trace ("Backend.labelIsReachable",
@@ -143,6 +129,8 @@ fun eliminateDeadCode (f: R.Function.t): R.Function.t =
       R.Function.new {args = args,
 		      blocks = blocks,
 		      name = name,
+		      returns = returns,
+		      raises = raises,
 		      start = start}
    end
 
@@ -162,7 +150,19 @@ fun toMachine (program: Ssa.Program.t) =
 	 if !Control.profile = Control.ProfileAlloc
 	    then pass ("profileAlloc", ProfileAlloc.doit, program)
 	 else program
-      val program as R.Program.T {functions, main, profileAllocLabels} = program
+      val _ =
+	 let
+	    open Control
+	 in
+	    if !keepRSSA
+	       then saveToFile ({suffix = "rssa"},
+				No,
+				program,
+				Layouts Rssa.Program.layouts)
+	    else ()
+	 end
+      val program as R.Program.T {functions, main, objectTypes,
+				  profileAllocLabels} = program
       val handlesSignals = Rssa.Program.handlesSignals program
       (* Chunk information *)
       val {get = labelChunk, set = setLabelChunk, ...} =
@@ -172,12 +172,6 @@ fun toMachine (program: Ssa.Program.t) =
 	 Property.getSetOnce (Func.plist,
 			      Property.initRaise ("funcChunk", Func.layout))
       val funcChunkLabel = Chunk.label o funcChunk
-      val globalCounter = Type.memo (fn _ => Counter.new 0)
-      fun newGlobal ty =
-	 M.Global.T {index = Counter.next (globalCounter ty),
-		     ty = ty}
-      val globalPointerNonRootCounter = Counter.new 0
-      val constantCounter = Type.memo (fn _ => Counter.new 0)
       val chunks = ref []
       fun newChunk () =
 	 let
@@ -212,13 +206,10 @@ fun toMachine (program: Ssa.Program.t) =
 	       NONE =>
 		  let
 		     val opers =
-			Vector.map
-			(ts, fn t =>
-			 if Type.isPointer t
-			    then
-			       M.Operand.GlobalPointerNonRoot
-			       (Counter.next globalPointerNonRootCounter)
-			 else M.Operand.Global (newGlobal t))
+			Vector.map (ts, fn ty =>
+				    M.Operand.Global
+				    (Global.new {isRoot = false,
+						 ty = ty}))
 		     val _ = List.push (table, (ts, opers))
 		  in
 		     opers
@@ -260,7 +251,8 @@ fun toMachine (program: Ssa.Program.t) =
 		      (HashSet.lookupOrInsert
 		       (set, hash, fn {string, ...} => s = string,
 			fn () => {hash = hash,
-				  global = newGlobal ty,
+				  global = M.Global.new {isRoot = true,
+							 ty = ty},
 				  string = s})))
 		  end
 	       fun all () =
@@ -272,9 +264,9 @@ fun toMachine (program: Ssa.Program.t) =
 	    end
       in
 	 val (allIntInfs, globalIntInf) =
-	    make (Type.pointer, fn i => IntInf.format (i, StringCvt.DEC))
-	 val (allFloats, globalFloat) = make (Type.double, fn s => s)
-	 val (allStrings, globalString) = make (Type.pointer, fn s => s)
+	    make (Type.intInf, fn i => IntInf.format (i, StringCvt.DEC))
+	 val (allReals, globalReal) = make (Type.real, fn s => s)
+	 val (allStrings, globalString) = make (Type.string, fn s => s)
 	 fun constOperand (c: Const.t): M.Operand.t =
 	    let
 	       datatype z = datatype Const.Node.t
@@ -285,65 +277,21 @@ fun toMachine (program: Ssa.Program.t) =
 		| IntInf i =>
 		     (case Const.SmallIntInf.toWord i of
 			 NONE => globalIntInf i
-		       | SOME w => M.Operand.IntInf w)
+		       | SOME w => M.Operand.SmallIntInf w)
 		| Real f =>
 		     if !Control.Native.native
-			then globalFloat f
-		     else M.Operand.Float f
+			then globalReal f
+		     else M.Operand.Real f
 		| String s => globalString s
 		| Word w =>
 		     let val ty = Const.ty c
 		     in if Const.Type.equals (ty, Const.Type.word)
-			   then M.Operand.Uint w
+			   then M.Operand.Word w
 			else if Const.Type.equals (ty, Const.Type.word8)
 				then M.Operand.Char (Char.chr (Word.toInt w))
 			     else Error.bug "strange word"
 		     end
 	    end
-      end
-      (* Hash table for uniqifying object types. *)
-      local
-	 val table = HashSet.new {hash = #hash}
-	 val arrayHash = Random.word ()
-	 val normalHash = Random.word ()
-	 fun hash1 (w: word, i: int): word =
-	    Word.fromInt i + Word.* (w, 0w31)
-	 fun hash (i1: int, i2: int, w: word) = hash1 (hash1 (w, i1), i2)
-	 (* Start the counter at 1 because index 0 is reserved for the stack
-	  * object type.
-	  *)
-	 val counter = Counter.new 1
-	 fun getIndex (hash: word, ty: ObjectType.t): int =
-	    #index
-	    (HashSet.lookupOrInsert
-	     (table, hash, fn r => ObjectType.equals (ty, #ty r),
-	      fn () => {hash = hash,
-			index = Counter.next counter,
-			ty = ty}))
-      in
-	 fun arrayTypeIndex (z as {numBytesNonPointers = nbnp,
-				   numPointers = np}): int =
-	    getIndex (hash (nbnp, np, arrayHash), ObjectType.Array z)
-	 fun normalTypeIndex (z as {numPointers = np,
-				    numWordsNonPointers = nwnp}): int =
-	    getIndex (hash (np, nwnp, normalHash), ObjectType.Normal z)
-	 fun objectTypes () =
-	    let
-	       val a = Array.new (Counter.value counter, ObjectType.Stack)
-	       val _ = HashSet.foreach (table, fn {index, ty, ...} =>
-					Array.update (a, index, ty))
-	    in
-	       Vector.fromArray a
-	    end
-	 (* The GC requires some hardwired type indices -- see gc.h. *)
-	 val stackTypeIndex = 0
-	 val stringTypeIndex = (* 1 *)
-	    arrayTypeIndex {numBytesNonPointers = 1, numPointers = 0}
-	 val threadTypeIndex = (* 2 *)
-	    normalTypeIndex {numPointers = 1, numWordsNonPointers = 2}
-	 val word8VectorTypeIndex = (* 1 *) stringTypeIndex
-	 val wordVectorTypeIndex = (* 3 *)
-	    arrayTypeIndex {numBytesNonPointers = 4, numPointers = 0}
       end
       fun parallelMove {chunk,
 			dsts: M.Operand.t vector,
@@ -352,8 +300,7 @@ fun toMachine (program: Ssa.Program.t) =
 	    val moves =
 	       Vector.fold2 (srcs, dsts, [],
 			     fn (src, dst, ac) => {src = src, dst = dst} :: ac)
-	    fun temp r =
-	       M.Operand.Register (Chunk.tempRegister (chunk, M.Operand.ty r))
+	    fun temp r = M.Operand.Register (Register.new (M.Operand.ty r))
 	 in
 	    Vector.fromList
 	    (ParallelMove.move {
@@ -364,35 +311,31 @@ fun toMachine (program: Ssa.Program.t) =
 				temp = temp
 				})
 	 end
-      val array0Header =
-	 M.Operand.Uint (Runtime.typeIndexToHeader
-			 (arrayTypeIndex {numBytesNonPointers = 0,
-					  numPointers = 0}))
       fun translateOperand (oper: R.Operand.t): M.Operand.t =
 	 let
 	    datatype z = datatype R.Operand.t
 	 in
 	    case oper of
-	       ArrayHeader z =>
-		  M.Operand.Uint (Runtime.typeIndexToHeader (arrayTypeIndex z))
-	     | ArrayOffset {base, index, ty} =>
-		  M.Operand.ArrayOffset {base = varOperand base,
-					 index = varOperand index,
+	       ArrayOffset {base, index, ty} =>
+		  M.Operand.ArrayOffset {base = translateOperand base,
+					 index = translateOperand index,
 					 ty = ty}
-	     | CastInt z => M.Operand.CastInt (translateOperand z)
-	     | CastWord z => M.Operand.CastWord (translateOperand z)
+	     | Cast (z, t) => M.Operand.Cast (translateOperand z, t)
 	     | Const c => constOperand c
 	     | EnsuresBytesFree =>
 		  Error.bug "backend translateOperand saw EnsuresBytesFree"
 	     | File => M.Operand.File
 	     | GCState => M.Operand.GCState
 	     | Line => M.Operand.Line
-	     | Offset {base, bytes, ty} =>
-		  M.Operand.Offset {base = varOperand base,
-				    offset = bytes,
+	     | Offset {base, offset, ty} =>
+		  M.Operand.Offset {base = translateOperand base,
+				    offset = offset,
 				    ty = ty}
-	     | Pointer n => M.Operand.Pointer n
+	     | PointerTycon pt =>
+		  M.Operand.Word (Runtime.typeIndexToHeader
+				  (PointerTycon.index pt))
 	     | Runtime r => M.Operand.Runtime r
+	     | SmallIntInf w => M.Operand.SmallIntInf w
 	     | Var {var, ...} => varOperand var
 	 end
       fun translateOperands ops = Vector.map (ops, translateOperand)
@@ -419,18 +362,13 @@ fun toMachine (program: Ssa.Program.t) =
 		  Vector.new1
 		  (M.Statement.move {dst = translateOperand dst,
 				     src = translateOperand src})
-	     | Object {dst, numPointers, numWordsNonPointers, stores} =>
+	     | Object {dst, size, stores, tycon, ...} =>
 		  Vector.new1
 		  (M.Statement.Object
 		   {dst = varOperand dst,
 		    header = (Runtime.typeIndexToHeader
-			      (normalTypeIndex
-			       {numPointers = numPointers,
-				numWordsNonPointers = numWordsNonPointers})),
-		    size = (Runtime.normalHeaderSize
-			    + (Runtime.normalSize
-			       {numPointers = numPointers,
-				numWordsNonPointers = numWordsNonPointers})),
+			      (PointerTycon.index tycon)),
+		    size = size,
 		    stores = Vector.map (stores, fn {offset, value} =>
 					 {offset = offset,
 					  value = translateOperand value})})
@@ -439,42 +377,7 @@ fun toMachine (program: Ssa.Program.t) =
 		     datatype z = datatype Prim.Name.t
 		  in
 		     case Prim.name prim of
-			Array_array0 =>
-			   let
-			      val frontier =
-				 M.Operand.Runtime GCField.Frontier
-			      fun arg i =
-				 translateOperand (Vector.sub (args, i))
-			      val numElts = arg 0
-			   in Vector.new5
-			      (M.Statement.Move
-			       {dst = M.Operand.Contents {oper = frontier,
-							  ty = Type.word},
-				src = M.Operand.Uint 0w0},
-			       M.Statement.Move
-			       {dst = M.Operand.Offset {base = frontier,
-							offset = wordSize,
-							ty = Type.int},
-				src = numElts},
-			       M.Statement.Move
-			       {dst = M.Operand.Offset {base = frontier,
-							offset = 2 * wordSize,
-							ty = Type.uint},
-				src = array0Header},
-			       M.Statement.PrimApp
-			       {args = Vector.new2 (frontier,
-						    M.Operand.Uint
-						    (Word.fromInt
-						     (3 * wordSize))),
-				dst = SOME (varOperand (#1 (valOf dst))),
-				prim = Prim.word32Add},
-			       M.Statement.PrimApp
-			       {args = Vector.new2 (frontier,
-						    M.Operand.Uint (Word.fromInt Runtime.array0Size)),
-				dst = SOME frontier,
-				prim = Prim.word32Add})
-			   end
-		      | MLton_installSignalHandler => Vector.new0 ()
+			MLton_installSignalHandler => Vector.new0 ()
 		      | _ => 
 			   Vector.new1
 			   (M.Statement.PrimApp
@@ -524,14 +427,18 @@ fun toMachine (program: Ssa.Program.t) =
 	    val chunk = funcChunk name
 	    fun labelArgOperands (l: R.Label.t): M.Operand.t vector =
 	       Vector.map (#args (labelInfo l), varOperand o #1)
-	    fun newVarInfo (x, ty) =
-	       setVarInfo
-	       (x, {operand = if isMain
-				 then
-				    VarOperand.Const (M.Operand.Global
-						      (newGlobal ty))
-			      else VarOperand.Allocate {operand = ref NONE},
-                    ty = ty})
+	    fun newVarInfo (x, ty: Type.t) =
+	       let
+		  val operand =
+		     if isMain
+			then VarOperand.Const (M.Operand.Global
+					       (M.Global.new {isRoot = true,
+							      ty = ty}))
+		     else VarOperand.Allocate {operand = ref NONE}
+	       in
+		  setVarInfo (x, {operand = operand,
+				  ty = ty})
+	       end
 	    fun newVarInfos xts = Vector.foreach (xts, newVarInfo)
 	    (* Set the constant operands, labelInfo, and varInfo. *)
 	    val _ = newVarInfos args
@@ -553,20 +460,33 @@ fun toMachine (program: Ssa.Program.t) =
 				   then normal ()
 				else
 				   let
-				      fun set oper =
-					 setVarInfo
-					 (var, {operand = VarOperand.Const oper,
-						ty = M.Operand.ty oper})
+				      fun set (z: M.Operand.t,
+					       casts: Type.t list) =
+					 let
+					    val z =
+					       List.fold
+					       (casts, z, fn (t, z) =>
+						M.Operand.Cast (z, t))
+					 in
+					    setVarInfo
+					    (var, {operand = VarOperand.Const z,
+						   ty = M.Operand.ty z})
+					 end
+				      fun loop (z: R.Operand.t, casts) =
+					 case z of
+					    R.Operand.Cast (z, t) =>
+					       loop (z, t :: casts)
+					  | R.Operand.Const c =>
+					       set (constOperand c, casts)
+					  | R.Operand.Var {var = var', ...} =>
+					       (case #operand (varInfo var') of
+						   VarOperand.Const z =>
+						      set (z, casts)
+						 | VarOperand.Allocate _ =>
+						      normal ())
+					  | _ => normal ()
 				   in
-				      case oper of
-					 R.Operand.Const c => set (constOperand c)
-				       | R.Operand.Pointer n =>
-					    set (M.Operand.Pointer n)
-				       | R.Operand.Var {var = var', ...} =>
-					    (case #operand (varInfo var') of
-						VarOperand.Const oper => set oper
-					      | VarOperand.Allocate _ => normal ())
-				       | _ => normal ()
+				      loop (oper, [])
 				   end
 			   | _ => normal ()
 		       end)
@@ -596,25 +516,16 @@ fun toMachine (program: Ssa.Program.t) =
 		     val {operand, ty, ...} = varInfo x
 		  in
 		     {operand = (case operand of
-				    VarOperand.Allocate {operand, ...} => SOME operand
+				    VarOperand.Allocate {operand, ...} =>
+				       SOME operand
 				  | _ => NONE),
 		      ty = ty}
-		  end
-	       fun newRegister (l, n, ty) =
-		  let
-		     val chunk =
-			case l of
-			   NONE => chunk
-			 | SOME l => labelChunk l
-		  in
-		     Chunk.register (chunk, n, ty)
 		  end
 	    in
 	       val {handlerLinkOffset, labelInfo = labelRegInfo, ...} =
 		  AllocateRegisters.allocate
 		  {argOperands = callReturnOperands (args, #2, 0),
 		   function = f,
-		   newRegister = newRegister,
 		   varInfo = varInfo}
 	    end
 	    val profileInfoFunc = Func.toString name
@@ -679,7 +590,7 @@ fun toMachine (program: Ssa.Program.t) =
 						      ty = Type.label},
 						     M.Operand.StackOffset 
 						     {offset = link,
-						      ty = Type.uint}))
+						      ty = Type.word}))
 						end
 				       val size = 
 					  if !Control.newReturn
@@ -713,8 +624,8 @@ fun toMachine (program: Ssa.Program.t) =
 			 M.Transfer.Goto dst)
 		   | R.Transfer.Raise srcs =>
 			(M.Statement.moves
-			 {dsts = raiseOperands (Vector.map
-						(srcs, R.Operand.ty)),
+			 {dsts = (raiseOperands
+				  (Vector.map (srcs, R.Operand.ty))),
 			  srcs = translateOperands srcs},
 			 M.Transfer.Raise)
 		   | R.Transfer.Return xs =>
@@ -726,30 +637,50 @@ fun toMachine (program: Ssa.Program.t) =
 					  dsts = dsts},
 			    M.Transfer.Return {live = dsts})
 			end
-		   | R.Transfer.Switch {cases, default, test} =>
+		   | R.Transfer.Switch switch =>
 			let
-			   fun doit l =
+			   fun doit ({cases: ('a * Label.t) vector,
+				      default: Label.t option,
+				      test: R.Operand.t},
+				     make: {cases: ('a * Label.t) vector,
+					    default: Label.t option,
+					    test: M.Operand.t} -> M.Switch.t) =
 			      simple
-			      (case (l, default) of
-				  ([], NONE) => bugTransfer
-				| ([(_, dst)], NONE) => M.Transfer.Goto dst
-				| ([], SOME dst) => M.Transfer.Goto dst
+			      (case (Vector.length cases, default) of
+				  (0, NONE) => bugTransfer
+				| (1, NONE) =>
+				     M.Transfer.Goto (#2 (Vector.sub (cases, 0)))
+				| (0, SOME dst) => M.Transfer.Goto dst
 				| _ =>
 				     M.Transfer.Switch
-				     {cases = cases,
-				      default = default,
-				      test = translateOperand test})
+				     (make {cases = cases,
+					    default = default,
+					    test = translateOperand test}))
 			in
-			   case cases of
-			      Cases.Char l => doit l
-			    | Cases.Int l => doit l
-			    | Cases.Word l => doit l
+			   case switch of
+			      R.Switch.Char z => doit (z, M.Switch.Char)
+			    | R.Switch.EnumPointers {enum, pointers, test} =>
+			         simple
+			         (M.Transfer.Switch
+				  (M.Switch.EnumPointers
+				   {enum = enum,
+				    pointers = pointers,
+				    test = translateOperand test}))
+			    | R.Switch.Int z => doit (z, M.Switch.Int)
+			    | R.Switch.Pointer {cases, default, tag, test} =>
+				 simple
+				 (M.Transfer.Switch
+				  (M.Switch.Pointer
+				   {cases = (Vector.map
+					     (cases, fn {dst, tag, tycon} =>
+					      {dst = dst,
+					       tag = tag,
+					       tycon = tycon})),
+				    default = default,
+				    tag = translateOperand tag,
+				    test = translateOperand test}))
+			    | R.Switch.Word z => doit (z, M.Switch.Word)
 			end
-		   | R.Transfer.SwitchIP {int, pointer, test} =>
-			simple (M.Transfer.SwitchIP
-				{int = int,
-				 pointer = pointer,
-				 test = translateOperand test})
 	       end
 	    val genTransfer =
 	       Trace.trace ("Backend.genTransfer",
@@ -794,9 +725,9 @@ fun toMachine (program: Ssa.Program.t) =
 			   (liveNoFormals, [], fn (oper, ac) =>
 			    case oper of
 			       M.Operand.StackOffset {offset, ty} =>
-				  (case Type.dest ty of
-				      Type.Pointer => offset :: ac
-				    | _ => ac)
+				  if Type.isPointer ty
+				     then offset :: ac
+				  else ac
 			     | _ => ac)
 		     in
 			List.push (frames, {chunkLabel = Chunk.label chunk,
@@ -955,10 +886,9 @@ fun toMachine (program: Ssa.Program.t) =
 		       statements = statements,
 		       transfer = transfer}
 	 end
-      fun chunkToMachine (Chunk.T {chunkLabel, blocks, regMax}) =
+      fun chunkToMachine (Chunk.T {chunkLabel, blocks}) =
 	 Machine.Chunk.T {chunkLabel = chunkLabel,
-			  blocks = Vector.fromListMap (!blocks, blockToMachine),
-			  regMax = ! o regMax}
+			  blocks = Vector.fromListMap (!blocks, blockToMachine)}
       val mainName = R.Function.name main
       val main = {chunkLabel = Chunk.label (funcChunk mainName),
 		  label = funcToLabel mainName}
@@ -981,7 +911,7 @@ fun toMachine (program: Ssa.Program.t) =
 		    case z of
 		       ArrayOffset {base, index, ...} =>
 			  doOperand (base, doOperand (index, max))
-		     | CastInt z => doOperand (z, max)
+		     | Cast (z, _) => doOperand (z, max)
 		     | Contents {oper, ...} => doOperand (oper, max)
 		     | Offset {base, ...} => doOperand (base, max)
 		     | StackOffset {offset, ty} =>
@@ -1001,20 +931,18 @@ fun toMachine (program: Ssa.Program.t) =
 	   in
 	      max
 	   end))
-      val maxFrameSize = Type.wordAlign maxFrameSize
+      val maxFrameSize = Runtime.wordAlignInt maxFrameSize
    in
       Machine.Program.T 
       {chunks = chunks,
-       floats = allFloats (),
        frameOffsets = frameOffsets, 
-       globals = Counter.value o globalCounter,
-       globalsNonRoot = Counter.value globalPointerNonRootCounter,
        handlesSignals = handlesSignals,
        intInfs = allIntInfs (), 
        main = main,
        maxFrameSize = maxFrameSize,
-       objectTypes = objectTypes (),
+       objectTypes = objectTypes,
        profileAllocLabels = profileAllocLabels,
+       reals = allReals (),
        strings = allStrings ()}
    end
 

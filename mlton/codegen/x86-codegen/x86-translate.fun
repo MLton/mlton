@@ -28,213 +28,182 @@ struct
   structure Prim = Machine.Prim
   structure Runtime = Machine.Runtime
     
-  structure Type =
-    struct
-      open Machine.Type
-      fun name t = case dest t 
-		     of Char => "C"
-		      | Double => "D"
-		      | Int => "I"
-		      | Pointer => "P"
-		      | Uint => "U"
-    end
+  structure Type = Machine.Type
     
   structure Local =
-    struct
-      open Machine.Register
+     struct
+	open Machine.Register
 
-      fun toX86MemLoc (T{index, ty})
-	= let
-	    val base
-	      = x86.Immediate.label (x86MLton.local_base ty)
-	  in
-	    x86.MemLoc.imm {base = base,
-			    index = x86.Immediate.const_int index,
-			    scale = x86MLton.toX86Scale ty,
-			    size = x86MLton.toX86Size ty,
-			    class = x86MLton.Classes.Locals}
-	  end
+	fun toX86MemLoc (r: t) =
+	   let
+	      val ty = Machine.Type.toRuntime (ty r)
+	      val base = x86.Immediate.label (x86MLton.local_base ty)
+	   in
+	      x86.MemLoc.imm {base = base,
+			      index = x86.Immediate.const_int (index r),
+			      scale = x86MLton.toX86Scale ty,
+			      size = x86MLton.toX86Size ty,
+			      class = x86MLton.Classes.Locals}
+	   end
 
-      fun eq(T{index = index1, ty = ty1},T{index = index2, ty = ty2})
-	= Type.equals(ty1, ty2) 
-	  andalso index1 = index2
-
-      val toString = Layout.toString o layout
-    end
+	val eq = equals
+     end
   
   structure Global =
-    struct
-      open Machine.Global
+     struct
+	open Machine.Global
 
-      fun toX86MemLoc (T{index, ty})
-	= let
-	    val base
-	      = x86.Immediate.label (x86MLton.global_base ty)
-	  in
-	    x86.MemLoc.imm {base = base,
-			    index = x86.Immediate.const_int index,
-			    scale = x86MLton.toX86Scale ty,
-			    size = x86MLton.toX86Size ty,
-			    class = x86MLton.Classes.Globals}
-	  end
+	fun toX86MemLoc (g: t) =
+	   let
+	      val ty = Machine.Type.toRuntime (ty g)
+	      val base =
+		 x86.Immediate.label
+		 (if isRoot g
+		     then x86MLton.global_base ty
+		  else x86MLton.globalPointerNonRoot_base)
+	   in
+	      x86.MemLoc.imm {base = base,
+			      index = x86.Immediate.const_int (index g),
+			      scale = x86MLton.toX86Scale ty,
+			      size = x86MLton.toX86Size ty,
+			      class = x86MLton.Classes.Globals}
+	   end
 
-      val toString = Layout.toString o layout
-    end
+	val toString = Layout.toString o layout
+     end
 
   structure Operand =
     struct
       open Machine.Operand
 
-      val toX86Size = x86MLton.toX86Size o ty
+      val toX86Size = x86MLton.toX86Size o Type.toRuntime o ty
 
-      val rec toX86Operand
-	= fn Char c 
-	   => x86.Operand.immediate_const_char c
-	   | Int i 
-	   => x86.Operand.immediate_const_int i
-	   | Uint w
-	   => x86.Operand.immediate_const_word w
-	   | IntInf ii
-	   => x86.Operand.immediate_const_word ii
-	   | File => x86MLton.fileName
-	   | Float f
-	     => Error.bug "toX86Operand: Float, unimplemented"
-	   | GCState => x86.Operand.label x86MLton.gcState_label
-	   | Pointer i
-	   => x86.Operand.immediate_const_int i
-	   | Label l
-	   => x86.Operand.immediate_label l
-	   | Line => x86MLton.fileLine ()
-	   | CastInt p
-	   => toX86Operand p
-	   | CastWord p
-	   => toX86Operand p
-	   | Register l
-	   => x86.Operand.memloc (Local.toX86MemLoc l)
-	   | Global g
-	   => x86.Operand.memloc (Global.toX86MemLoc g)
-	   | GlobalPointerNonRoot i
-           => let
-		val base
-		  = x86.Immediate.label (x86MLton.globalPointerNonRoot_base)
-		val memloc 
-		  = x86.MemLoc.imm 
-		    {base = base,
-		     index = x86.Immediate.const_int i,
-		     scale = x86MLton.pointerScale,
-		     size = x86MLton.pointerSize,
-		     class = x86MLton.Classes.Globals}
-	      in
-		x86.Operand.memloc memloc
-	      end
-	   | Runtime oper 
-	   => let
-		datatype z = datatype Machine.Runtime.GCField.t
-		open x86MLton
-	      in
-		case oper of
-		   CanHandle => gcState_canHandleContentsOperand ()
-		 | CardMap => gcState_cardMapContentsOperand ()
-		 | CurrentThread => gcState_currentThreadContentsOperand ()
-		 | Frontier => gcState_frontierContentsOperand ()
-		 | Limit => gcState_limitContentsOperand ()
-		 | LimitPlusSlop => gcState_limitPlusSlopContentsOperand ()
-		 | MaxFrameSize => gcState_maxFrameSizeContentsOperand ()
-		 | ProfileAllocIndex => gcState_profileAllocIndexContentsOperand ()
-		 | SignalIsPending => gcState_signalIsPendingContentsOperand ()
-		 | StackBottom => gcState_stackBottomContentsOperand ()
-		 | StackLimit => gcState_stackLimitContentsOperand ()
-		 | StackTop => gcState_stackTopContentsOperand ()
-	      end
-	   | StackOffset {offset, ty}
-	   => let
-		val memloc 
-		  = x86.MemLoc.simple 
-		    {base = x86MLton.gcState_stackTopContents (), 
-		     index = x86.Immediate.const_int offset,
-		     scale = x86.Scale.One,
-		     size = x86MLton.toX86Size ty,
-		     class = x86MLton.Classes.Stack}
-	      in
-		x86.Operand.memloc memloc
-	      end
-	   | Offset {base, offset, ty}
-	   => let
-		val base = toX86Operand base
-		val memloc
-		  =  case x86.Operand.deMemloc base
-		       of SOME base
-			=> x86.MemLoc.simple 
+      val rec toX86Operand =
+	 fn ArrayOffset {base, index, ty} =>
+	       let
+		  val base = toX86Operand base
+		  val index = toX86Operand index
+		  val ty = Type.toRuntime ty
+		  val memloc =
+		     case (x86.Operand.deMemloc base,
+			   x86.Operand.deImmediate index,
+			   x86.Operand.deMemloc index) of
+			(SOME base, SOME index, _) =>
+			   x86.MemLoc.simple 
+			   {base = base,
+			    index = index,
+			    scale = x86MLton.toX86Scale ty,
+			    size = x86MLton.toX86Size ty,
+			    class = x86MLton.Classes.Heap}
+		      | (SOME base, _, SOME index) =>
+			   x86.MemLoc.complex 
+			   {base = base,
+			    index = index,
+			    scale = x86MLton.toX86Scale ty,
+			    size = x86MLton.toX86Size ty,
+			    class = x86MLton.Classes.Heap}
+		      | _ => Error.bug (concat ["toX86Operand: strange Offset:",
+						" base: ",
+						x86.Operand.toString base,
+						" index: ",
+						x86.Operand.toString index])
+	       in
+		  x86.Operand.memloc memloc
+	       end
+	  | Cast (z, _) => toX86Operand z
+	  | Char c => x86.Operand.immediate_const_char c
+	  | Contents {oper, ty} =>
+	       let
+		  val ty = Type.toRuntime ty
+		  val base = toX86Operand oper
+		  val offset = x86.Immediate.const_int 0
+		  val size = x86MLton.toX86Size ty
+		  val memloc =
+		     case x86.Operand.deMemloc base of
+			SOME base =>
+			   x86.MemLoc.simple 
+			   {base = base,
+			    index = x86.Immediate.const_int 0,
+			    scale = x86.Scale.One,
+			    size = x86MLton.toX86Size ty,
+			    class = x86MLton.Classes.Heap}
+		      | _ => Error.bug (concat
+					["toX86Operand: strange Contents",
+					 " base: ",
+					 x86.Operand.toString base])
+	       in
+		  x86.Operand.memloc memloc
+	       end
+	  | File => x86MLton.fileName
+	  | GCState => x86.Operand.label x86MLton.gcState_label
+	  | Global g => x86.Operand.memloc (Global.toX86MemLoc g)
+	  | Int i => x86.Operand.immediate_const_int i
+	  | Label l => x86.Operand.immediate_label l
+	  | Line => x86MLton.fileLine ()
+	  | Offset {base, offset, ty} =>
+	       let
+		  val base = toX86Operand base
+		  val ty = Type.toRuntime ty
+		  val memloc =
+		     case x86.Operand.deMemloc base of
+			SOME base =>
+			   x86.MemLoc.simple 
 			   {base = base,
 			    index = x86.Immediate.const_int offset,
 			    scale = x86.Scale.One,
 			    size = x86MLton.toX86Size ty,
 			    class = x86MLton.Classes.Heap}
-		        | _
-			=> Error.bug ("toX86Operand: strange Offset:" ^
-				      " base: " ^
-				      (x86.Operand.toString base))
-	      in
-		x86.Operand.memloc memloc
-	      end
-	   | ArrayOffset {base, index, ty}
-	   => let
-		val base = toX86Operand base
-		val index = toX86Operand index
+		      | _ => Error.bug (concat ["toX86Operand: strange Offset:",
+						" base: ",
+						x86.Operand.toString base])
+	       in
+		  x86.Operand.memloc memloc
+	       end
+	  | Real _ => Error.bug "toX86Operand: Real unimplemented"
+	  | Register l => x86.Operand.memloc (Local.toX86MemLoc l)
+	  | Runtime oper =>
+		let
+		   datatype z = datatype Machine.Runtime.GCField.t
+		   open x86MLton
+		in
+		   case oper of
+		      CanHandle => gcState_canHandleContentsOperand ()
+		    | CardMap => gcState_cardMapContentsOperand ()
+		    | CurrentThread => gcState_currentThreadContentsOperand ()
+		    | Frontier => gcState_frontierContentsOperand ()
+		    | Limit => gcState_limitContentsOperand ()
+		    | LimitPlusSlop => gcState_limitPlusSlopContentsOperand ()
+		    | MaxFrameSize => gcState_maxFrameSizeContentsOperand ()
+		    | ProfileAllocIndex =>
+			 gcState_profileAllocIndexContentsOperand ()
+		    | SignalIsPending =>
+			 gcState_signalIsPendingContentsOperand ()
+		    | StackBottom => gcState_stackBottomContentsOperand ()
+		    | StackLimit => gcState_stackLimitContentsOperand ()
+		    | StackTop => gcState_stackTopContentsOperand ()
+		end
+	  | SmallIntInf ii => x86.Operand.immediate_const_word ii
+	  | StackOffset {offset, ty} =>
+	       let
+		  val ty = Type.toRuntime ty
+		  val memloc =
+		     x86.MemLoc.simple 
+		     {base = x86MLton.gcState_stackTopContents (), 
+		      index = x86.Immediate.const_int offset,
+		      scale = x86.Scale.One,
+		      size = x86MLton.toX86Size ty,
+		      class = x86MLton.Classes.Stack}
+	       in
+		  x86.Operand.memloc memloc
+	       end
+	  | Word w => x86.Operand.immediate_const_word w
+	       
+      val toX86Operand =
+	 fn operand =>
+	 toX86Operand operand
+	 handle exn => Error.reraise (exn, "x86Translate.Operand.toX86Operand")
 
-		val memloc
-		  = case (x86.Operand.deMemloc base,
-			  x86.Operand.deImmediate index,
-			  x86.Operand.deMemloc index)
-		       of (SOME base, SOME index, _)
-		        => x86.MemLoc.simple 
-			   {base = base,
-			    index = index,
-			    scale = x86MLton.toX86Scale ty,
-			    size = x86MLton.toX86Size ty,
-			    class = x86MLton.Classes.Heap}
-			| (SOME base, _, SOME index)
-		        => x86.MemLoc.complex 
-			   {base = base,
-			    index = index,
-			    scale = x86MLton.toX86Scale ty,
-			    size = x86MLton.toX86Size ty,
-			    class = x86MLton.Classes.Heap}
-			| _
-			=> Error.bug ("toX86Operand: strange Offset:" ^
-				      " base: " ^
-				      (x86.Operand.toString base) ^
-				      " index: " ^
-				      (x86.Operand.toString index))
-	      in
-		x86.Operand.memloc memloc
-	      end
-	   | Contents {oper, ty}
-	   => let
-		val base = toX86Operand oper
-		val offset = x86.Immediate.const_int 0
-		val size = x86MLton.toX86Size ty
-
-		val memloc
-		  = case x86.Operand.deMemloc base
-		      of SOME base
-		       => x86.MemLoc.simple 
-			  {base = base,
-			   index = x86.Immediate.const_int 0,
-			   scale = x86.Scale.One,
-			   size = x86MLton.toX86Size ty,
-			   class = x86MLton.Classes.Heap}
-		       | _
-		       => Error.bug ("toX86Operand: strange Contents" ^
-				     " base: " ^
-				      (x86.Operand.toString base))
-	      in
-		x86.Operand.memloc memloc
-	      end
-      val toX86Operand 
-	= fn operand => (toX86Operand operand)
-	                handle exn
-			 => Error.reraise (exn, "x86Translate.Operand.toX86Operand")
+      fun convert x = (toX86Operand x, toX86Size x)
     end
 
   type transInfo = x86MLton.transInfo
@@ -320,11 +289,8 @@ struct
 		     transfer = NONE})
 		 end
 	      | Kind.CReturn {dst, frameInfo, func}
-	      => let
-		   fun convert x
-		     = (Operand.toX86Operand x,
-			x86MLton.toX86Size (Operand.ty x))
-		   val dst = Option.map (dst, convert)
+		=> let
+		   val dst = Option.map (dst, Operand.convert)
 		 in
 		   x86MLton.creturn
 		   {dst = dst,
@@ -408,15 +374,9 @@ struct
 		 end 
 	      | PrimApp {dst, prim, args}
    	      => let
-		   val (comment_begin,
-			comment_end) = comments statement
-		   fun convert x
-		     = (Operand.toX86Operand x,
-			x86MLton.toX86Size (Operand.ty x))
-
-		   val args = Vector.map(args, convert)
-		     
-		   val dst = Option.map(dst, convert)
+		   val (comment_begin, comment_end) = comments statement
+		   val args = Vector.map (args, Operand.convert)
+		   val dst = Option.map (dst, Operand.convert)
 		 in
 		   AppendList.appends
 		   [comment_begin,
@@ -563,7 +523,9 @@ struct
 		       
 		   fun stores_toX86Assembly ({offset, value}, l)
 		     = let
-			 val size = x86MLton.toX86Size (Operand.ty value)
+			 val size =
+			    x86MLton.toX86Size
+			    (Type.toRuntime (Operand.ty value))
 			 val value = Operand.toX86Operand value
 			 val dst
 			   = let
@@ -781,15 +743,13 @@ struct
 		 end
 	    else AppendList.empty
 
+	 
       fun toX86Blocks {transfer, transInfo as {...} : transInfo}
 	= (case transfer
 	     of Arith {prim, args, dst, overflow, success, ty}
 	      => let
-		   fun convert x
-		     = (Operand.toX86Operand x,
-			x86MLton.toX86Size (Operand.ty x))
-		   val args = Vector.map(args, convert)
-		   val dst = convert dst
+		   val args = Vector.map (args, Operand.convert)
+		   val dst = Operand.convert dst
 		 in
 		   AppendList.append
 		   (comments transfer,
@@ -802,10 +762,7 @@ struct
 		 end
 	      | CCall {args, frameInfo, func, return}
 	      => let
-		   fun convert x
-		     = (Operand.toX86Operand x,
-			x86MLton.toX86Size (Operand.ty x))
-		   val args = Vector.map (args, convert)
+		   val args = Vector.map (args, Operand.convert)
 		 in
 		   AppendList.append
 		   (comments transfer,	
@@ -855,40 +812,51 @@ struct
 				(x86.MemLocSet.empty,
 				 x86MLton.gcState_stackBottomContents ()),
 				x86MLton.gcState_currentThread_exnStackContents ())})}))
-	      | Switch {test, cases, default}
-	      => AppendList.append
-	         (comments transfer,
-		  (case cases 
-		     of Machine.Cases.Char cases 
-		      => doSwitchChar (test,cases,default)
-		      | Machine.Cases.Int cases 
-		      => doSwitchInt (test,cases,default)
-	              | Machine.Cases.Word cases 
-	              => doSwitchWord (test,cases,default)))
-	      | SwitchIP {test, int, pointer}
-	      => let
-		   val size = Operand.toX86Size test
-		   val test = Operand.toX86Operand test
+	      | Switch switch
+              => let
+		    datatype z = datatype Machine.Switch.t
+		    fun simple ({cases, default, test}, doSwitch) =
+		       AppendList.append
+		       (comments transfer,
+			doSwitch (test, Vector.toList cases, default))
+			
 		 in
-		   AppendList.append
-		   (comments transfer,
-		    AppendList.single
-		    ((* if (test & 0x3) goto int 
-		      * goto pointer
-		      *)
-		     x86.Block.T'
-		     {entry = NONE,
-		      profileInfo = x86.ProfileInfo.none,
-		      statements 
-		      = [x86.Assembly.instruction_test
-			 {src1 = test,
-			  src2 = x86.Operand.immediate_const_word 0wx3,
-			  size = size}],
-		      transfer 
-		      = SOME (x86.Transfer.iff
-			      {condition = x86.Instruction.NZ,
-			       truee = int,
-			       falsee = pointer})}))
+		    case switch of
+		       Char z => simple (z, doSwitchChar)
+		     | EnumPointers {enum, pointers, test} =>
+			  let
+			     val size = Operand.toX86Size test
+			     val test = Operand.toX86Operand test
+			  in
+			     AppendList.append
+			     (comments transfer,
+			      AppendList.single
+			      ((* if (test & 0x3) goto int 
+				* goto pointer
+				*)
+			       x86.Block.T'
+			       {entry = NONE,
+				profileInfo = x86.ProfileInfo.none,
+				statements 
+				= [x86.Assembly.instruction_test
+				   {src1 = test,
+				    src2 = x86.Operand.immediate_const_word 0wx3,
+				    size = size}],
+				transfer 
+				= SOME (x86.Transfer.iff
+					{condition = x86.Instruction.NZ,
+					 truee = enum,
+					 falsee = pointers})}))
+			  end
+		     | Int z => simple (z, doSwitchInt)
+		     | Pointer {cases, default, tag, ...} =>
+			  simple ({cases = (Vector.map
+					    (cases, fn {dst, tag, ...} =>
+					     (tag, dst))),
+				   default = default,
+				   test = tag},
+				  doSwitchInt)
+		     | Word z => simple (z, doSwitchWord)
 		 end
 	      | Goto label
 	      => (AppendList.append

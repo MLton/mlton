@@ -78,20 +78,16 @@ struct
 
   open x86
   structure Type = Machine.Type
-  fun output {program as Machine.Program.T 
-	                 {chunks,
-			  floats, 
-			  frameOffsets,
-			  globals,
-			  globalsNonRoot,
-			  handlesSignals,
-			  intInfs,
-			  main,
-			  maxFrameSize,
-			  profileAllocLabels,
-			  strings,
-			  ...}: Machine.Program.t,
-	      includes: string list,
+  fun output {program as Machine.Program.T {chunks,
+					    frameOffsets,
+					    handlesSignals,
+					    intInfs,
+					    main,
+					    maxFrameSize,
+					    profileAllocLabels,
+					    strings,
+					    ...},
+              includes: string list,
 	      outputC,
 	      outputS}: unit
     = let
@@ -269,8 +265,42 @@ struct
 		     if reserveEsp then C.truee else C.falsee,
 		     a1, a2, a3]
 		 end
+	      fun declareLocals () =
+		 let
+		    val tyMax = Runtime.Type.memo (fn _ => ref 0)
+		    val {get = seen, rem, set = setSeen} =
+		       Property.getSetOnce (Machine.Register.plist,
+					    Property.initConst false)
+		    val all =
+		       Machine.Program.foldRegs
+		       (program, [], fn (r, ac) =>
+			if seen r
+			   then ac
+			else let
+				val _ = setSeen (r, true)
+				val m = tyMax (Machine.Type.toRuntime
+					       (Machine.Register.ty r))
+				val n = Machine.Register.index r
+				val _ =
+				   if n > !m
+				      then m := n
+				   else ()
+			     in
+				r :: ac
+			     end)
+		    val _ = List.foreach (all, rem)
+		 in
+		    print
+		    (concat ["Locals",
+			     Layout.toString
+			     (Layout.tuple (List.map
+					    (Runtime.Type.all, fn t =>
+					     Int.layout (! (tyMax t))))),
+			     ";\n"])
+		 end
 	      fun rest () =
-		 (declareFrameLayouts()
+		 (declareLocals ()
+		  ; declareFrameLayouts ()
 		  ; print "extern uint profileAllocLabels;\n")
 	    in
 	      CCodegen.outputDeclarations

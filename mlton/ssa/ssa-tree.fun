@@ -812,7 +812,8 @@ structure Transfer =
    end
 datatype z = datatype Transfer.t
 
-local open Layout
+local
+   open Layout
 in
    fun layoutFormals (xts: (Var.t * Type.t) vector) =
       Vector.layout (fn (x, t) =>

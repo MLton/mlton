@@ -41,7 +41,19 @@ fun blockSize (Block.T {statements, transfer, ...}): int =
    let
       val transferSize =
 	 case transfer of
-	    Switch {cases, ...} => 1 + Cases.length cases
+	    Switch s =>
+	       let
+		  datatype z = datatype Switch.t
+		  fun simple {cases, default, test} =
+		     1 + Vector.length cases
+	       in
+		  case s of
+		     Char z => simple z
+		   | EnumPointers _ => 2
+		   | Int z => simple z
+		   | Pointer {cases, ...} => 1 + Vector.length cases
+		   | Word z => simple z
+	       end
 	  | _ => 1
    in transferSize + Vector.length statements
    end
@@ -136,11 +148,7 @@ fun coalesce (program as Program.T {functions, main, ...}, limit) =
 			  (same overflow; same success)
 		     | CCall {return, ...} => Option.app (return, same)
 		     | Goto {dst, ...} => same dst
-		     | Switch {cases, default, ...} =>
-			  (Cases.foreach (cases, same)
-			   ; Option.app (default, same))
-		     | SwitchIP {int, pointer, ...} =>
-			  (same int; same pointer)
+		     | Switch s => Switch.foreachLabel (s, same)
 		     | _ => ()
 		 end)
 	  in

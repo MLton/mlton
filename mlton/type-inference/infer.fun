@@ -221,7 +221,8 @@ fun makeXconst (c: Aconst.t, ty: Type.t): Xconst.t =
    end
 
 fun 'a sortByField (v: (Field.t * 'a) vector): 'a vector =
-   Vector.map (Vector.sort (v, fn ((f, _), (f', _)) => Field.<= (f, f')),
+   Vector.map (QuickSort.sortVector (v, fn ((f, _), (f', _)) =>
+				     Field.<= (f, f')),
 	       #2)
 
 (*---------------------------------------------------*)

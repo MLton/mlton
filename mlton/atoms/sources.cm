@@ -28,6 +28,7 @@ signature VAR
 functor Atoms
 functor Cases
 functor Id
+functor IdNoAst
 functor GenericScheme
 functor HashType
 functor TypeOps

@@ -60,9 +60,9 @@
 #define String(g, s, l) { g, s, l },
 #define EndStrings { 0, NULL, 0 }};
 
-#define BeginFloats static void float_Init() {
-#define Float(c, f) globaldouble[c] = f;
-#define EndFloats }
+#define BeginReals static void real_Init() {
+#define Real(c, f) globaldouble[c] = f;
+#define EndReals }
 
 #define Main(cs, mmc, mfs, mfi, mot, mg, ml, reserveEsp, a1, a2, a3) 	\
 extern pointer ml;							\
@@ -88,7 +88,7 @@ int main (int argc, char **argv) {					\
 	gcState.stringInits = stringInits;				\
 	MLton_init (argc, argv, &gcState);				\
 	if (gcState.isOriginal) {					\
-		float_Init();						\
+		real_Init();						\
 		jump = (pointer)&ml;   					\
 	} else {       							\
 		jump = *(pointer*)(gcState.stackTop - WORD_SIZE); 	\

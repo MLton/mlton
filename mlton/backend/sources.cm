@@ -12,7 +12,6 @@ signature RUNTIME
 
 functor Backend
 functor Machine
-functor Runtime
    
 is
 
@@ -38,10 +37,10 @@ limit-check.fun
 limit-check.sig
 live.fun
 live.sig
-machine-cases.fun
-machine-cases.sig
 machine.fun
 machine.sig
+machine-atoms.fun
+machine-atoms.sig
 mtype.fun
 mtype.sig
 parallel-move.fun
@@ -58,4 +57,5 @@ signal-check.fun
 signal-check.sig
 ssa-to-rssa.fun
 ssa-to-rssa.sig
-
+switch.fun
+switch.sig

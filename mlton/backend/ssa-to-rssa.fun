@@ -9,10 +9,14 @@ functor SsaToRssa (S: SSA_TO_RSSA_STRUCTS): SSA_TO_RSSA =
 struct
 
 open S
+open Rssa
 
 structure S = Ssa
-
-open Rssa
+local
+   open Ssa
+in
+   structure Con = Con
+end
 local
    open Runtime
 in
@@ -160,20 +164,26 @@ datatype z = datatype Statement.t
 datatype z = datatype Transfer.t
 
 structure ImplementHandlers = ImplementHandlers (structure Ssa = Ssa)
-structure Representation = Representation (structure Ssa = Ssa
-					   structure Mtype = Type)
-
-local open Representation
+structure Representation = Representation (structure Rssa = Rssa
+					   structure Ssa = Ssa)
+local
+   open Representation
 in
-   structure TyconRep = TyconRep
    structure ConRep = ConRep
+   structure TupleRep = TupleRep
+   structure TyconRep = TyconRep
 end
 
 fun convert (p: S.Program.t): Rssa.Program.t =
    let
       val program as S.Program.T {datatypes, globals, functions, main} =
 	 ImplementHandlers.doit p
-      val {tyconRep, conRep, toMtype = toType} = Representation.compute program
+      val {conRep, objectTypes, refRep, toRtype, tupleRep, tyconRep} =
+	 Representation.compute program
+      val conRep =
+	 Trace.trace ("conRep", Con.layout, ConRep.layout) conRep
+      fun tyconTy (pt: PointerTycon.t): ObjectType.t =
+	 Vector.sub (objectTypes, PointerTycon.index pt)
       (* varInt is set for variables that are constant integers.  It is used
        * so that we can precompute array numBytes when numElts is known.
        *)
@@ -200,140 +210,19 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	 setVarInfo
       val varType = #ty o varInfo
       fun varOp (x: Var.t): Operand.t =
-	 Var {var = x, ty = valOf (toType (varType x))}
+	 Var {var = x, ty = valOf (toRtype (varType x))}
       val varOp =
-	 Trace.trace
-	 ("SsaToRssa.varOp", Var.layout, Operand.layout)
-	 varOp
+	 Trace.trace ("SsaToRssa.varOp", Var.layout, Operand.layout) varOp
       fun varOps xs = Vector.map (xs, varOp)
-      val _ =
-	 Control.diagnostics
-	 (fn display =>
-	  (display (Layout.str "Representations:")
-	   ; (Vector.foreach
-	      (datatypes, fn S.Datatype.T {tycon, cons} =>
-	       let open Layout
-	       in display (seq [Tycon.layout tycon,
-				str " ",
-				TyconRep.layout (tyconRep tycon)])
-		  ; display (indent
-			     (Vector.layout (fn {con, ...} =>
-					     seq [Con.layout con,
-						  str " ",
-						  ConRep.layout (conRep con)])
-			      cons,
-			      2))
-	       end))))
-      fun toTypes ts = Vector.map (ts, toType)
-      val labelSize = Type.size Type.label
-      val tagOffset = 0
-      fun sortTypes (initialOffset: int,
-		     tys: Type.t option vector)
-	 : {numPointers: int,
-	    numWordsNonPointers: int,
-	    offsets: {offset: int, ty: Type.t} option vector,
-	    size: int} =
-	 let
-	    val bytes = ref []
-	    val doubleWords = ref []
-	    val words = ref []
-	    val pointers = ref []
-	    val numPointers = ref 0
-	    val _ =
-	       Vector.foreachi
-	       (tys, fn (i, t) =>
-		case t of
-		   NONE => ()
-		 | SOME t =>
-		      let
-			 val r =
-			    if Type.isPointer t
-			       then (Int.inc numPointers
-				     ; pointers)
-			    else (case Type.size t of
-				     1 => bytes
-				   | 4 => words
-				   | 8 => doubleWords
-				   | _ => Error.bug "strange size")
-		      in
-			 List.push (r, (i, t))
-		      end)
-	    fun build (r, size, accum) =
-	       List.fold (!r, accum, fn ((index, ty), (res, offset)) =>
-			  ({index = index, offset = offset, ty = ty} :: res,
-			   offset + size))
-	    val (accum, offset: int) =
-	       build (bytes, 1,
-		      build (words, 4,
-			     build (doubleWords, 8, ([], initialOffset))))
-	    val offset = Type.align (Type.pointer, offset)
-	    val numWordsNonPointers =
-	       (offset - initialOffset) div Runtime.wordSize
-	    val (components, size) = build (pointers, 4, (accum, offset))
-	    val offsets =
-	       Vector.mapi
-	       (tys, fn (i, ty) =>
-		Option.map
-		(ty, fn ty =>
-		 let
-		    val {offset, ty, ...} =
-		       List.lookup (components, fn {index, ...} => i = index)
-		 in
-		    {offset = offset, ty = ty}
-		 end))
-	 in
-	    {numPointers = !numPointers,
-	     numWordsNonPointers = numWordsNonPointers,
-	     offsets = offsets,
-	     size = size}
-	 end
-      (* Compute layout for each con and associate it with the con. *)
-      local
-	 val {get, set, ...} =
-	    Property.getSetOnce (Con.plist,
-				 Property.initRaise ("con info", Con.layout))
-      in
-	 val _ =
-	    Vector.foreach
-	    (datatypes, fn S.Datatype.T {cons, ...} =>
-	     Vector.foreach (cons, fn {con, args} =>
-			     let
-				fun doit n =
-				   let
-				      val mtypes = toTypes args
-				      val info = sortTypes (n, mtypes)
-				   in
-				      set (con, {info = info,
-						 mtypes = mtypes})
-				   end
-			     in
-				case conRep con of
-				   ConRep.Tuple => doit 0
-				 | ConRep.TagTuple _ => doit 4
-				 | _ => ()
-			     end))
-	 val conInfo = get
-      end
-      (* Compute layout for each tuple type. *)
-      val {get = tupleInfo, ...} =
-	 Property.get (S.Type.plist,
-		       Property.initFun
-		       (fn t => sortTypes (0, toTypes (S.Type.detuple t))))
-      fun conSelects (variant: Var.t, con: Con.t): Operand.t vector =
-	 let
-	    val _ = Assert.assert ("conSelects", fn () =>
-				   case conRep con of
-				      ConRep.TagTuple _ => true
-				    | ConRep.Tuple => true
-				    | _ => false)
-	    val {info = {offsets, ...}, ...} = conInfo con
-	 in
-	    Vector.keepAllMap (offsets, fn off =>
-			       Option.map (off, fn {offset, ty} =>
-					   Offset {base = variant,
-						   bytes = offset,
-						   ty = ty}))
-	 end
+      fun toRtypes ts = Vector.map (ts, toRtype)
+      fun conSelects {rep = TupleRep.T {offsets, ...},
+		      variant: Operand.t}: Operand.t vector =
+	 Vector.keepAllMap
+	 (offsets, fn off =>
+	  Option.map (off, fn {offset, ty} =>
+		      Offset {base = variant,
+			      offset = offset,
+			      ty = ty}))
       val extraBlocks = ref []
       val (resetAllocTooLarge, allocTooLarge) = Block.allocTooLarge extraBlocks
       fun newBlock {args, kind, profileInfo,
@@ -351,57 +240,58 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	 in
 	    l
 	 end
+      val tagOffset = 0
       fun genCase {cases: (Con.t * Label.t) vector,
 		   default: Label.t option,
 		   profileInfo,
-		   test: Var.t,
+		   test: Operand.t,
 		   testRep: TyconRep.t}: Transfer.t =
 	 let
-	    fun switch {cases: Cases.t,
-			default: Label.t option,
-			numLeft: int,
-			test: Operand.t}: Transfer.t =
+	    fun enum (test: Operand.t): Transfer.t =
 	       let
-		  datatype z = None | One of Label.t | Many
-		  val default = if numLeft = 0 then NONE else default
-		  val targets =
-		     Cases.fold
-		     (cases,
-		      case default of
-			 SOME l => One l
-		       | NONE => None,
-		      fn (l, Many) => Many
-		       | (l, One l') => if Label.equals (l, l')
-					   then One l'
-					else Many
-		       | (l, None) => One l)
-	       in		
-		  case targets of
-		     None => Error.bug "no targets"
-		   | One l => Goto {dst = l,
-				    args = Vector.new0 ()}
-		   | Many => Switch {test = test,
-				     cases = cases,
-				     default = default}
-	       end
-	    fun enum (test: Operand.t, numEnum: int): Transfer.t =
-	       let
-		  val (cases, numLeft) =
-		     Vector.fold
-		     (cases, ([], numEnum),
-		      fn ((c, j), (cases, numLeft)) =>
-		      let
-			 fun keep n = ((n, j) :: cases, numLeft - 1)
-		      in
-			 case conRep c of
-			    ConRep.Int n => keep n
-			  | ConRep.IntCast n => keep n
-			  | _ => (cases, numLeft)
-		      end)
-	       in switch {test = test,
-			  cases = Cases.Int cases,
-			  default = default,
-			  numLeft = numLeft}
+		  val cases =
+		     Vector.keepAllMap
+		     (cases, fn (c, j) =>
+		      case conRep c of
+			 ConRep.IntAsTy {int, ...} => SOME (int, j)
+		       | _ => NONE)
+		  val numEnum =
+		     case Operand.ty test of
+			Type.EnumPointers {enum, ...} => Vector.length enum
+		      | _ => Error.bug "strage enum"
+		  val default =
+		     if numEnum = Vector.length cases
+			then NONE
+		     else default
+	       in
+		  if 0 = Vector.length cases
+		     then
+			(case default of
+			    NONE => Error.bug "no targets"
+			  | SOME l => Goto {dst = l,
+					    args = Vector.new0 ()})
+		  else
+		     let
+			val l = #2 (Vector.sub (cases, 0))
+		     in
+			if Vector.forall (cases, fn (_, l') =>
+					  Label.equals (l, l'))
+			   andalso (case default of
+				       NONE => true
+				     | SOME l' => Label.equals (l, l'))
+			   then Goto {dst = l,
+				      args = Vector.new0 ()}
+			else
+			   let
+			      val cases =
+				 QuickSort.sortVector
+				 (cases, fn ((i, _), (i', _)) => i <= i')
+			   in
+			      Switch (Switch.Int {test = test,
+						  cases = cases,
+						  default = default})
+			   end
+		     end
 	       end
 	    fun transferToLabel (transfer: Transfer.t): Label.t =
 	       case transfer of
@@ -414,13 +304,43 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 				 profileInfo = profileInfo,
 				 statements = Vector.new0 (),
 				 transfer = transfer}
-	    fun switchIP (numEnum, pointer: Label.t): Transfer.t =
-	       Transfer.SwitchIP
-	       {int = transferToLabel (enum (CastInt (Var {var = test,
-							   ty = Type.pointer}),
-					     numEnum)),
-		pointer = pointer,
-	       test = varOp test}
+	    fun switchEP (makePointersTransfer: Operand.t -> Transfer.t)
+	       : Transfer.t =
+	       let
+		  val {enum = e, pointers = p} =
+		     case Operand.ty test of
+			Type.EnumPointers ep => ep
+		      | _ => Error.bug "strange switchEP"
+		  val enumTy = Type.EnumPointers {enum = e,
+						  pointers = Vector.new0 ()}
+		  val enumVar = Var.newNoname ()
+		  val enumOp = Operand.Var {var = enumVar,
+					    ty = enumTy}
+		  val pointersTy = Type.EnumPointers {enum = Vector.new0 (),
+						      pointers = p}
+		  val pointersVar = Var.newNoname ()
+		  val pointersOp = Operand.Var {ty = pointersTy,
+						var = pointersVar}
+		  fun block (var, ty, transfer) =
+		     newBlock {args = Vector.new0 (),
+			       kind = Kind.Jump,
+			       profileInfo = profileInfo,
+			       statements = (Vector.new1
+					     (Statement.Bind
+					      {isMutable = false,
+					       oper = Operand.Cast (test, ty),
+					       var = var})),
+			       transfer = transfer}
+		  val pointers =
+		     block (pointersVar, pointersTy,
+			    makePointersTransfer pointersOp)
+		  val enum = block (enumVar, enumTy, enum enumOp)
+	       in
+		  Switch (Switch.EnumPointers
+			  {enum = enum,
+			   pointers = pointers,
+			   test = test})
+	       end
 	    fun tail (l: Label.t, args: Operand.t vector): Label.t =
 	       if 0 = Vector.length args
 		  then l
@@ -434,40 +354,89 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			       statements = Vector.new0 (),
 			       transfer = Goto {dst = l, args = args}}
 		  end
-	    fun enumAndOne (numEnum: int): Transfer.t =
+	    fun enumAndOne (): Transfer.t =
 	       let
-		  val (l, args: Operand.t vector) =
-		     Vector.loop
-		     (cases, fn (c, j) =>
-		      case conRep c of
-			 ConRep.Transparent _ =>
-			    SOME (j, Vector.new1 (varOp test))
-		       | ConRep.Tuple => SOME (j, conSelects (test, c))
-		       | _ => NONE,
-			    fn () =>
-			    case default of
-			       NONE =>
-				  Error.bug "enumAndOne: no default"
-			     | SOME j => (j, Vector.new0 ()))
-	       in switchIP (numEnum, tail (l, args))
+		  fun make (pointersOp: Operand.t): Transfer.t =
+		     let
+			val (dst, args: Operand.t vector) =
+			   case Vector.peekMap
+			      (cases, fn (c, j) =>
+			       case conRep c of
+				  ConRep.Transparent _ =>
+				     SOME (j, Vector.new1 pointersOp)
+				| ConRep.Tuple r =>
+				     SOME (j, conSelects {rep = r,
+							  variant = pointersOp})
+				| _ => NONE) of
+			      NONE =>
+				 (case default of
+				     NONE => Error.bug "enumAndOne: no default"
+				   | SOME j => (j, Vector.new0 ()))
+			    | SOME z => z
+		     in
+			Transfer.Goto {args = args,
+				       dst = dst}
+		     end
+	       in
+		  switchEP make
 	       end
-	    fun indirectTag (numTag: int): Transfer.t =
+	    fun indirectTag (test: Operand.t): Transfer.t =
 	       let
-		  val (cases, numLeft) =
-		     Vector.fold
-		     (cases, ([], numTag),
-		      fn ((c, j), (cases, numLeft)) =>
+		  val cases =
+		     Vector.keepAllMap
+		     (cases, fn (c, l) =>
 		      case conRep c of
-			 ConRep.TagTuple n =>
-			    ((n, tail (j, conSelects (test, c))) :: cases,
-			     numLeft - 1)
-		       | _ => (cases, numLeft))
-	       in switch {test = Offset {base = test,
-					 bytes = tagOffset,
+			 ConRep.TagTuple {rep, tag} =>
+			    let
+			       val tycon = TupleRep.tycon rep
+			       val pointerVar = Var.newNoname ()
+			       val pointerTy = Type.pointer tycon
+			       val pointerOp =
+				  Operand.Var {ty = pointerTy,
+					       var = pointerVar}
+			       val statements =
+				  Vector.new1
+				  (Statement.Bind
+				   {isMutable = false,
+				    oper = Operand.Cast (test, pointerTy),
+				    var = pointerVar})
+			       val dst =
+				  newBlock
+				  {args = Vector.new0 (),
+				   kind = Kind.Jump,
+				   profileInfo = profileInfo,
+				   statements = statements,
+				   transfer =
+				   Goto {args = conSelects {rep = rep,
+							    variant = pointerOp},
+					 dst = l}}
+			    in
+			       SOME {dst = dst,
+				     tag = tag,
+				     tycon = tycon}
+			    end
+		       | _ => NONE)
+		  val numTag =
+		     case Operand.ty test of
+			Type.EnumPointers {pointers, ...} =>
+			   Vector.length pointers
+		      | _ => Error.bug "strange indirecTag"
+		  val default =
+		     if numTag = Vector.length cases
+			then NONE
+		     else default
+		  val cases =
+		     QuickSort.sortVector
+		     (cases, fn ({tycon = t, ...}, {tycon = t', ...}) =>
+		      PointerTycon.<= (t, t'))
+	       in
+		  Switch (Switch.Pointer
+			  {cases = cases,
+			   default = default,
+			   tag = Offset {base = test,
+					 offset = tagOffset,
 					 ty = Type.int},
-			  cases = Cases.Int cases,
-			  default = default,
-			  numLeft = numLeft}
+			   test = test})
 	       end
 	    fun prim () =
 	       case (Vector.length cases, default) of
@@ -484,23 +453,23 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 				    args = Vector.new0 ()}
 			 | ConRep.Transparent _ =>
 			      Goto {dst = l,
-				    args = Vector.new1 (varOp test)}
-			 | ConRep.Tuple =>
+				    args = Vector.new1 test}
+			 | ConRep.Tuple r =>
 			      Goto {dst = l,
-				    args = conSelects (test, c)}
+				    args = conSelects {rep = r,
+						       variant = test}}
 			 | _ => Error.bug "strange conRep for Prim"
 		     end
 		| (0, SOME l) => Goto {dst = l, args = Vector.new0 ()}
 		| _ => Error.bug "prim datatype with more than one case"
 	 in
 	    case testRep of
-	       TyconRep.Prim mtype => prim ()
-	     | TyconRep.Enum {numEnum} => enum (varOp test, numEnum)
-	     | TyconRep.EnumDirect {numEnum} => enumAndOne numEnum
-	     | TyconRep.EnumIndirect {numEnum} => enumAndOne numEnum
-	     | TyconRep.EnumIndirectTag {numEnum, numTag} =>
-		  switchIP (numEnum, transferToLabel (indirectTag numTag))
-	     | TyconRep.IndirectTag {numTag} => indirectTag numTag
+	       TyconRep.Direct => prim ()
+	     | TyconRep.Enum => enum test
+	     | TyconRep.EnumDirect => enumAndOne ()
+	     | TyconRep.EnumIndirect => enumAndOne ()
+	     | TyconRep.EnumIndirectTag => switchEP indirectTag
+	     | TyconRep.IndirectTag => indirectTag test
 	     | TyconRep.Void => prim ()
 	 end
       fun translateCase (profileInfo,
@@ -509,17 +478,20 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			  default: Label.t option}): Transfer.t =
 	 let
 	    fun id x = x
-	    fun doit (l, f, branch) =
-	       Switch {test = varOp test,
-		       cases = f (Vector.toListMap
-				  (l, fn (i, j) => (branch i, j))),
-		       default = default}
+	    fun simple (l, make, branch, le) =
+	       Switch
+	       (make {test = varOp test,
+		      cases = (QuickSort.sortVector
+			       (Vector.map (l, fn (i, j) => (branch i, j)),
+				fn ((i, _), (i', _)) => le (i, i'))),
+		      default = default})
 	 in
 	    case cases of
-	       S.Cases.Char l => doit (l, Cases.Char, id)
-	     | S.Cases.Int l => doit (l, Cases.Int, id)
-	     | S.Cases.Word l => doit (l, Cases.Word, id)
-	     | S.Cases.Word8 l => doit (l, Cases.Char, Word8.toChar)
+	       S.Cases.Char cs => simple (cs, Switch.Char, id, Char.<=)
+	     | S.Cases.Int cs => simple (cs, Switch.Int, id, Int.<=)
+	     | S.Cases.Word cs => simple (cs, Switch.Word, id, Word.<=)
+	     | S.Cases.Word8 cs =>
+		  simple (cs, Switch.Char, Word8.toChar, Char.<=)
 	     | S.Cases.Con cases =>
 		  (case (Vector.length cases, default) of
 		      (0, NONE) => Transfer.bug
@@ -531,7 +503,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			       then genCase {cases = cases,
 					     default = default,
 					     profileInfo = profileInfo,
-					     test = test,
+					     test = varOp test,
 					     testRep = tyconRep tycon}
 			    else Error.bug "strange type in case"
 			 end)
@@ -547,7 +519,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	 let
 	    val {args, ...} = labelInfo l
 	    val args = Vector.keepAllMap (args, fn (x, t) =>
-					  Option.map (toType t, fn t =>
+					  Option.map (toRtype t, fn t =>
 						      (Var.new x, t)))
 	    val l' = Label.new l
 	    val _ = 
@@ -611,13 +583,13 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	 labelCont
       fun vos (xs: Var.t vector) =
 	 Vector.keepAllMap (xs, fn x =>
-			    Option.map (toType (varType x), fn _ =>
+			    Option.map (toRtype (varType x), fn _ =>
 					varOp x))
       fun translateTransfer (profileInfo, t: S.Transfer.t): Transfer.t =
 	 case t of
 	    S.Transfer.Arith {args, overflow, prim, success, ty} =>
 	       let
-		  val ty = valOf (toType ty)
+		  val ty = valOf (toRtype ty)
 		  val temp = Var.newNoname ()
 		  val noOverflow =
 		     newBlock
@@ -698,7 +670,25 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	       end
       fun translateFormals v =
 	 Vector.keepAllMap (v, fn (x, t) =>
-			    Option.map (toType t, fn t => (x, t)))
+			    Option.map (toRtype t, fn t => (x, t)))
+      fun bogus (t: Type.t): Operand.t =
+	 let
+	    val c = Operand.Const
+	 in
+	    case t of
+	       Type.Char =>
+		  c (Const.fromChar #"\000")
+	     | Type.CPointer =>
+		  Error.bug "bogus CPointer"
+	     | Type.EnumPointers (ep as {enum, ...})  =>
+		  Operand.Cast (Operand.int 1, t)
+	     | Type.Int => c (Const.fromInt 0)
+	     | Type.IntInf => SmallIntInf 0wx1
+	     | Type.Label => Error.bug "bogus Label"
+	     | Type.MemChunk _ => Error.bug "bogus MemChunk"
+	     | Type.Real => c (Const.fromReal "0.0")
+	     | Type.Word => c (Const.fromWord 0w0)
+	 end
       fun translateStatementsTransfer (profileInfo, statements, transfer) =
 	 let
 	    fun loop (i, ss, t): Statement.t vector * Transfer.t =
@@ -706,7 +696,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 		  then (Vector.fromList ss, t)
 	       else
 		  let
-		     val S.Statement.T {var, ty, exp} =
+		     val s as S.Statement.T {var, ty, exp} =
 			Vector.sub (statements, i)
 		     fun none () = loop (i - 1, ss, t)
 		     fun add s = loop (i - 1, s :: ss, t)
@@ -724,39 +714,39 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			   loop (i - 1, ss, t)
 			end
 		     fun makeStores (ys: Var.t vector, offsets) =
-			Vector.keepAllMap2
-			(ys, offsets, fn (y, offset) =>
-			 Option.map (offset, fn {offset, ty} =>
-				     {offset = offset,
-				      value = varOp y}))
+			QuickSort.sortVector
+			(Vector.keepAllMap2
+			 (ys, offsets, fn (y, offset) =>
+			  Option.map (offset, fn {offset, ty} =>
+				      {offset = offset,
+				       value = varOp y})),
+			 fn ({offset = i, ...}, {offset = i', ...}) => i <= i')
 		     fun allocate (ys: Var.t vector,
-				   {size, offsets, numPointers,
-				    numWordsNonPointers}) =
-			let
-			   val (p, np) =
-			      if 0 = numPointers
-				 andalso 0 = numWordsNonPointers
-				 then (0, 1)
-			      else (numPointers, numWordsNonPointers)
-			in
-			   add (Object {dst = valOf var,
-					numPointers = p,
-					numWordsNonPointers = np,
-					stores = makeStores (ys, offsets)})
-			end
+				   TupleRep.T {size, offsets, ty, tycon, ...}) =
+			add (Object {dst = valOf var,
+				     size = size + Runtime.normalHeaderSize,
+				     stores = makeStores (ys, offsets),
+				     ty = ty,
+				     tycon = tycon})
+		     val allocate =
+			Trace.trace2
+			("allocate",
+			 Vector.layout Var.layout,
+			 TupleRep.layout,
+			 Layout.ignore)
+			allocate
 		     fun allocateTagged (n: int,
 					 ys: Var.t vector,
-					 {size, offsets,
-					  numPointers, numWordsNonPointers}) =
+					 TupleRep.T {size, offsets, ty, tycon}) =
 			add (Object
 			     {dst = valOf var,
-			      numPointers = numPointers,
-			      numWordsNonPointers =
-			      (* for the tag *) 1 + numWordsNonPointers,
+			      size = size + Runtime.normalHeaderSize,
 			      stores = (Vector.concat
 					[Vector.new1 {offset = tagOffset,
 						      value = Operand.int n},
-					 makeStores (ys, offsets)])})
+					 makeStores (ys, offsets)]),
+			      ty = ty,
+			      tycon = tycon})
 		     fun move (oper: Operand.t) =
 			add (Bind {isMutable = false,
 				   oper = oper,
@@ -766,28 +756,33 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			S.Exp.ConApp {con, args} =>
 			   (case conRep con of
 			       ConRep.Void => none ()
-			     | ConRep.Int n => move (Operand.int n)
-			     | ConRep.IntCast n => move (Operand.Pointer n)
-			     | ConRep.TagTuple n =>
-				  allocateTagged (n, args, #info (conInfo con))
+			     | ConRep.IntAsTy {int, ty} =>
+				  move (Operand.Cast (Operand.int int, ty))
+			     | ConRep.TagTuple {rep, tag} =>
+				  allocateTagged (tag, args, rep)
 			     | ConRep.Transparent _ =>
-				  move (varOp (Vector.sub (args, 0)))
-			     | ConRep.Tuple =>
-				  allocate (args, #info (conInfo con)))
+				  move (Operand.cast
+					(varOp (Vector.sub (args, 0)),
+					 valOf (toRtype ty)))
+			     | ConRep.Tuple rep =>
+				  allocate (args, rep))
 		      | S.Exp.Const c => move (Operand.Const c)
 		      | S.Exp.PrimApp {prim, targs, args, ...} =>
 			   let
 			      fun a i = Vector.sub (args, i)
-			      fun targ () = toType (Vector.sub (targs, 0))
+			      fun cast () =
+				 move (Operand.cast (varOp (a 0),
+						     valOf (toRtype ty)))
+			      fun targ () = toRtype (Vector.sub (targs, 0))
 			      fun arrayOffset (ty: Type.t): Operand.t =
-				 ArrayOffset {base = a 0,
-					      index = a 1,
+				 ArrayOffset {base = varOp (a 0),
+					      index = varOp (a 1),
 					      ty = ty}
 			      fun sub (ty: Type.t) = move (arrayOffset ty)
 			      fun dst () =
 				 case var of
 				    SOME x =>
-				       Option.map (toType (varType x), fn t =>
+				       Option.map (toRtype (varType x), fn t =>
 						   (x, t))
 				  | NONE => NONE
 			      fun normal () =
@@ -868,119 +863,112 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			      fun simpleCCall (f: CFunction.t) =
 				 ccall {args = vos args,
 					func = f}
-			      fun array0 (numElts: Operand.t) =
-				 add
-				 (PrimApp {args = Vector.new1 numElts,
-					   dst = dst (),
-					   prim = Prim.array0})
+			      fun array (numElts: Operand.t) =
+				 let
+				    val pt =
+				       case (Type.dePointer
+					     (valOf (toRtype ty))) of
+					  NONE => Error.bug "strange array"
+					| SOME pt => PointerTycon pt
+				    val args =
+				       Vector.new4 (Operand.GCState,
+						    Operand.EnsuresBytesFree,
+						    numElts,
+						    pt)
+				 in
+				    ccall {args = args,
+					   func = CFunction.gcArrayAllocate}
+				 end
 		     fun updateCard (addr: Operand.t, prefix, assign) =
 		        let
 			   val index = Var.newNoname ()
-			   val map = Var.newNoname ()
 			   val ss = 
 			      (PrimApp
 			       {args = (Vector.new2
-					(Operand.CastWord addr,
+					(Operand.Cast (addr, Type.Word),
 					 Operand.word
 					 (Word.fromInt
 					  (!Control.cardSizeLog2)))),
 				dst = SOME (index, Type.int),
 				prim = Prim.word32Rshift})
-			      :: (Bind {isMutable = false,
-					oper = Operand.Runtime GCField.CardMap,
-					var = map})
 			      :: (Move
 				  {dst = (Operand.ArrayOffset
-					  {base = map,
-					   index = index,
+					  {base = (Operand.Runtime
+						   GCField.CardMap),
+					   index = Operand.Var {ty = Type.int,
+								var = index},
 					   ty = Type.char}),
 				   src = Operand.char #"\001"})
-			      :: assign
+				  :: assign
 			      :: ss
 			in
 			  loop (i - 1, prefix ss, t)
 			end
-		     fun arrayUpdate (ty, src) =
+		     fun arrayUpdate (ty: Type.t) =
 		        if !Control.markCards andalso Type.isPointer ty
 			   then let
+				   val src = varOp (a 2)
+				   val arrayOp = varOp (a 0)
 				   val temp = Var.newNoname ()
 				   val tempOp = Operand.Var {var = temp,
 							     ty = Type.word}
 				   val addr = Var.newNoname ()
-				   val addrOp = Operand.Var {var = addr,
-							     ty = Type.pointer}
+				   val mc =
+				      case Type.dePointer (Operand.ty arrayOp) of
+					 NONE => Error.bug "strange array"
+				       | SOME p => 
+					    case tyconTy p of
+					       ObjectType.Array mc => mc
+					     | _ => Error.bug "strange array"
+				   val addrOp =
+				      Operand.Var {var = addr,
+						   ty = Type.MemChunk mc}
 				   fun prefix ss =
 				      (PrimApp
 				       {args = Vector.new2
-					       (Operand.CastWord (varOp (a 1)),
+					       (Operand.Cast (varOp (a 1),
+							      Type.Word),
 					        Operand.word
 						(Word.fromInt (Type.size ty))),
 				        dst = SOME (temp, Type.word),
 				        prim = Prim.word32Mul})
 				      :: (PrimApp
 					  {args = (Vector.new2
-						   (Operand.CastWord
-						    (varOp (a 0)),
+						   (Operand.Cast (arrayOp,
+								  Type.Word),
 						    tempOp)),
-					   dst = SOME (addr, Type.pointer),
+					   dst = SOME (addr, Type.MemChunk mc),
 					   prim = Prim.word32Add})
 				      :: ss
-				   val assign = Move {dst = Operand.Offset
-						            {base = addr,
-							     bytes = 0,
-							     ty = ty},
-						      src = src}
+				   val assign =
+				      Move {dst = (Operand.Offset
+						   {base = addrOp,
+						    offset = 0,
+						    ty = ty}),
+					    src = varOp (a 2)}
 				in
 				   updateCard (addrOp, prefix, assign)
 				end
 			else add (Move {dst = arrayOffset ty,
-					src = src})
+					src = varOp (a 2)})
 		     fun refAssign (ty, src) =
 		        let
-			   val addr = a 0
+			   val addr = varOp (a 0)
 			   val assign = Move {dst = Operand.Offset {base = addr,
-								    bytes = 0,
+								    offset = 0,
 								    ty = ty},
 					      src = src}
 			in
 			   if !Control.markCards andalso Type.isPointer ty
-			      then updateCard (varOp addr, fn ss => ss, assign)
+			      then updateCard (addr, fn ss => ss, assign)
 			   else loop (i - 1, assign::ss, t)
 			end
-
-
 			      datatype z = datatype Prim.Name.t
 			   in
 			      case Prim.name prim of
 				 Array_array =>
-  let
-     val numElts = a 0
-     val numEltsOp = Operand.Var {var = numElts, ty = Type.int}
-  in
-     case targ () of
-	NONE => array0 numEltsOp
-      | SOME t =>
-	   let
-	      val (nbnp, np, bytesPerElt) =
-		 if Type.isPointer t
-		    then (0, 1, Runtime.pointerSize)
-		 else
-		    let val n = Type.size t
-		    in (n, 0, n)
-		    end
-	   in
-	      if 0 = np andalso 0 = nbnp
-		 then array0 numEltsOp
-	      else ccall {args = (Vector.new4
-				  (Operand.GCState,
-				   Operand.EnsuresBytesFree,
-				      numEltsOp,
-				      ArrayHeader {numBytesNonPointers = nbnp,
-						   numPointers = np})),
-			  func = CFunction.gcArrayAllocate}
-	   end
-  end
-			       | Array_array0 => array0 (Operand.int 0)
+				    array (Operand.Var {var = a 0,
+							ty = Type.int})
 			       | Array_sub =>
 				    (case targ () of
 					NONE => none ()
@@ -988,7 +976,10 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			       | Array_update =>
 				    (case targ () of
 					NONE => none ()
-				      | SOME ty => arrayUpdate (ty, varOp (a 2)))
+				      | SOME ty => arrayUpdate ty)
+			       | Byte_byteToChar => cast ()
+			       | Byte_charToByte => cast ()
+			       | C_CS_charArrayToWord8Array => cast ()
 			       | FFI name =>
 				    if Option.isNone (Prim.numArgs prim)
 				       then normal ()
@@ -998,7 +989,9 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 					{name = name,
 					 returnTy =
 					 Option.map
-					 (var, valOf o toType o varType)})
+					 (var, fn x =>
+					  Type.toRuntime
+					  (valOf (toRtype (varType x))))})
 			       | GC_collect =>
 				    ccall
 				    {args = Vector.new5 (Operand.GCState,
@@ -1016,13 +1009,17 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 					   func = CFunction.unpack}
 			       | IntInf_add => simpleCCall CFunction.intInfAdd
 			       | IntInf_andb => simpleCCall CFunction.intInfAndb
-			       | IntInf_arshift => simpleCCall CFunction.intInfArshift
+			       | IntInf_arshift =>
+				    simpleCCall CFunction.intInfArshift
 			       | IntInf_compare =>
 				    simpleCCall CFunction.intInfCompare
 			       | IntInf_equal =>
 				    simpleCCall CFunction.intInfEqual
+			       | IntInf_fromVector => cast ()
+			       | IntInf_fromWord => cast ()
 			       | IntInf_gcd => simpleCCall CFunction.intInfGcd
-			       | IntInf_lshift => simpleCCall CFunction.intInfLshift
+			       | IntInf_lshift =>
+				    simpleCCall CFunction.intInfLshift
 			       | IntInf_mul => simpleCCall CFunction.intInfMul
 			       | IntInf_neg => simpleCCall CFunction.intInfNeg
 			       | IntInf_notb => simpleCCall CFunction.intInfNotb
@@ -1032,27 +1029,13 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			       | IntInf_sub => simpleCCall CFunction.intInfSub
 			       | IntInf_toString =>
 				    simpleCCall CFunction.intInfToString
+			       | IntInf_toVector => cast ()
+			       | IntInf_toWord => cast ()
 			       | IntInf_xorb => simpleCCall CFunction.intInfXorb
 			       | MLton_bogus =>
-				    (case toType ty of
+				    (case toRtype ty of
 					NONE => none ()
-				      | SOME t =>
-					   let
-					      val c = Operand.Const
-					   in
-					      move
-					      (case Type.dest t of
-						  Type.Char =>
-						     c (Const.fromChar #"\000")
-						| Type.Double =>
-						     c (Const.fromReal "0.0")
-						| Type.Int =>
-						     c (Const.fromInt 0)
-						| Type.Pointer =>
-						     Operand.Pointer 1
-						| Type.Uint =>
-						     c (Const.fromWord 0w0))
-					   end)
+				      | SOME t => move (bogus t))
 			       | MLton_bug => simpleCCall CFunction.bug
 			       | MLton_eq =>
 				    (case targ () of
@@ -1074,19 +1057,15 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 				    (case targ () of
 					NONE => none ()
 				      | SOME ty =>
-					   move (Offset {base = a 0,
-							 bytes = 0,
+					   move (Offset {base = varOp (a 0),
+							 offset = 0,
 							 ty = ty}))
 			       | Ref_ref =>
-				    let
-				       val (ys, ts) =
-					  case targ () of
-					     NONE => (Vector.new0 (),
-						      Vector.new0 ())
-					   | SOME t => (Vector.new1 (a 0),
-							Vector.new1 (SOME t))
-				    in allocate (ys, sortTypes (0, ts))
-				    end
+				    allocate
+				    (Vector.new1 (a 0),
+				     refRep (Vector.sub (targs, 0)))
+			       | String_fromWord8Vector => cast ()
+			       | String_toWord8Vector => cast ()
 			       | Thread_atomicBegin =>
 				    (* assert (s->canHandle >= 0);
 				     * s->canHandle++;
@@ -1107,8 +1086,9 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 						dst = SOME (tmp, Type.word),
 						prim = prim},
 					       Statement.Move
-					       {dst = (Operand.CastWord
-						       (Operand.Runtime dst)),
+					       {dst = (Operand.Cast
+						       (Operand.Runtime dst,
+							Type.Word)),
 						src = (Operand.Var
 						       {var = tmp,
 							ty = Type.word})})
@@ -1132,7 +1112,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 							 dst = l})}
 				     in
 					(bumpCanHandle 1,
-					 Transfer.iff
+					 Transfer.ifInt
 					 (Operand.Runtime SignalIsPending,
 					  {falsee = l,
 					   truee = l'}))
@@ -1151,8 +1131,9 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 					val statements =
 					   Vector.new1
 					   (Statement.Move
-					    {dst = (Operand.CastWord
-						    (Operand.Runtime Limit)),
+					    {dst = (Operand.Cast
+						    (Operand.Runtime Limit,
+						     Type.Word)),
 					     src = Operand.word 0w0})
 					val l'' =
 					   newBlock
@@ -1171,13 +1152,13 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 					    profileInfo = profileInfo,
 					    statements = Vector.new0 (),
 					    transfer =
-					    Transfer.iff
+					    Transfer.ifInt
 					    (Operand.Runtime CanHandle,
-					     {truee = l,
-					      falsee = l''})}
+					     {falsee = l'',
+					      truee = l})}
 				     in
 					(bumpCanHandle ~1,
-					 Transfer.iff
+					 Transfer.ifInt
 					 (Operand.Runtime SignalIsPending,
 					  {falsee = l,
 					   truee = l'}))
@@ -1194,11 +1175,36 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 						   (varOp (a 0),
 						    Operand.EnsuresBytesFree)),
 					   func = CFunction.threadSwitchTo}
-			       | Vector_fromArray => move (varOp (a 0))
+			       | Vector_fromArray =>
+				    let
+				       val array = varOp (a 0)
+				       val vecTy = valOf (toRtype ty)
+				       val pt =
+					  case Type.dePointer vecTy of
+					     NONE => Error.bug "strange Vector_fromArray"
+					   | SOME pt => pt
+				    in
+				       loop
+				       (i - 1,
+					Move
+					{dst = (Offset
+						{base = array,
+						 offset = Runtime.headerOffset,
+						 ty = Type.word}),
+					 src = PointerTycon pt}
+					:: Bind {isMutable = false,
+						 oper = (Operand.Cast
+							 (array, vecTy)),
+						 var = valOf var}
+					:: ss,
+					t)
+				    end
 			       | Vector_sub =>
 				    (case targ () of
 					NONE => none ()
 				      | SOME t => sub t)
+			       | Word32_toIntX => cast ()
+			       | Word32_fromInt => cast ()
 			       | World_save =>
 				    ccall {args = (Vector.new2
 						   (Operand.GCState,
@@ -1207,21 +1213,28 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			       | _ => normal ()
 			   end
 		      | S.Exp.Select {tuple, offset} =>
-			   (case Vector.sub (#offsets (tupleInfo (varType tuple)),
-					     offset) of
-			       NONE => none ()
-			     | SOME {offset, ty} =>
-				  move (Offset {base = tuple,
-						bytes = offset,
-						ty = ty}))
+			   let
+			      val TupleRep.T {offsets, ...} =
+				 tupleRep (varType tuple)
+			   in
+			      case Vector.sub (offsets, offset) of
+				 NONE => none ()
+			       | SOME {offset, ty} =>
+				    move (Offset {base = varOp tuple,
+						  offset = offset,
+						  ty = ty})
+			   end
 		      | S.Exp.SetExnStackLocal => add SetExnStackLocal
 		      | S.Exp.SetExnStackSlot => add SetExnStackSlot
 		      | S.Exp.SetHandler h => 
 			   add (SetHandler (labelHandler (profileInfo, h)))
 		      | S.Exp.SetSlotExnStack => add SetSlotExnStack
-		      | S.Exp.Tuple ys => allocate (ys, tupleInfo ty)
+		      | S.Exp.Tuple ys =>
+			   if 0 = Vector.length ys
+			      then none ()
+			   else allocate (ys, tupleRep ty)
 		      | S.Exp.Var y =>
-			   (case toType ty of
+			   (case toRtype ty of
 			       NONE => none ()
 			     | SOME _ => move (varOp y))
 		      | _ => Error.bug "translateStatement saw strange PrimExp"
@@ -1250,7 +1263,8 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	    val _ = resetAllocTooLarge ()
 	    val _ =
 	       S.Function.foreachVar (f, fn (x, t) => setVarInfo (x, {ty = t}))
-	    val {args, blocks, name, start, ...} = S.Function.dest f
+	    val {args, blocks, name, raises, returns, start, ...} =
+	       S.Function.dest f
 	    val _ =
 	       Vector.foreach
 	       (blocks, fn S.Block.T {label, args, ...} =>
@@ -1265,10 +1279,15 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 				     translateBlock (profileInfo, block))
 	    val blocks = Vector.concat [Vector.fromList (!extraBlocks), blocks]
 	    val _ = extraBlocks := []
+	    fun transTypes (ts : S.Type.t vector option)
+	       : Type.t vector option =
+	       Option.map (ts, fn ts => Vector.keepAllMap (ts, toRtype))
 	 in
 	    Function.new {args = translateFormals args,
 			  blocks = blocks,
 			  name = name,
+			  raises = transTypes raises,
+			  returns = transTypes returns,
 			  start = start}
 	 end
       val main =
@@ -1294,6 +1313,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
       val functions = List.revMap (functions, translateFunction)
       val p = Program.T {functions = functions,
 			 main = main,
+			 objectTypes = objectTypes,
 			 profileAllocLabels = Vector.new0 ()}
       val _ = Program.clear p
    in

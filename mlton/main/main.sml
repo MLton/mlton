@@ -170,6 +170,7 @@ fun makeOptions {usage} =
 		      | "g" => keepGenerated := true
 		      | "o" => keepO := true
 		      | "sml" => keepSML := true
+		      | "rssa" => keepRSSA := true
 		      | "ssa" => keepSSA := true
 		      | _ => usage (concat ["invalid -keep flag: ", s]))),
        (Expert, "keep-pass", " pass", "keep the results of pass",

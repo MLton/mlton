@@ -24,7 +24,6 @@ signature PRIM =
 	 sig
 	    datatype t =
 	       Array_array (* implemented in backend *)
-	     | Array_array0 (* implemented in backend *)
 	     | Array_array0Const (* implemented in constant-propagation.fun *)
 	     | Array_length
 	     | Array_sub (* implemented in backend *)
@@ -250,7 +249,6 @@ signature PRIM =
 
       val allocTooLarge: t
       val apply: t * 'a ApplyArg.t list * ('a * 'a -> bool) -> 'a ApplyResult.t
-      val array0: t
       val array: t
       val assign: t
       val bogus: t

@@ -22,7 +22,7 @@ fun 'a analyze
       val unit = fromType Type.unit
       fun coerces (from, to) =
 	 Vector.foreach2 (from, to, fn (from, to) =>
-			 coerce {from = from, to = to})
+			  coerce {from = from, to = to})
       val {get = value: Var.t -> 'a, set = setValue, ...} =
 	 Property.getSetOnce
 	 (Var.plist,

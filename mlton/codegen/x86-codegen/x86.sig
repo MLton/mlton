@@ -10,7 +10,7 @@ type word = Word.t
 
 signature X86_STRUCTS =
   sig
-    structure Label : HASH_ID
+    structure Label: HASH_ID
     structure Runtime: RUNTIME
   end
 

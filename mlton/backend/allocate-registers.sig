@@ -22,16 +22,14 @@ signature ALLOCATE_REGISTERS =
       val allocate:
 	 {argOperands: Machine.Operand.t vector,
 	  function: Rssa.Function.t,
-	  newRegister: (Rssa.Label.t option * int * Machine.Type.t
-			-> Machine.Register.t),
 	  varInfo: Rssa.Var.t -> {
-                                 (* If (isSome operand) then a stack slot or
-				  * register needs to be allocated for the
-				  * variable.
-				  *)
-				 operand: Machine.Operand.t option ref option,
-				 ty: Machine.Type.t
-				 }
+				  (* If (isSome operand) then a stack slot or
+				   * register needs to be allocated for the
+				   * variable.
+				   *)
+				  operand: Machine.Operand.t option ref option,
+				  ty: Machine.Type.t
+				  }
 	  }
 	 -> {(* If handlers are used, handlerLinkOffset gives the stack offsets
 	      * where the handler and link (old exnStack) should be stored.

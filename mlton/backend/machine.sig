@@ -12,39 +12,44 @@ signature MACHINE_STRUCTS =
    sig
       structure Label: HASH_ID
       structure Prim: PRIM
-      structure Runtime: RUNTIME
    end
 
 signature MACHINE = 
    sig
-      include MACHINE_STRUCTS
+      include MACHINE_ATOMS
 
+      structure Switch: SWITCH
+      sharing Label = Switch.Label
+      sharing PointerTycon = Switch.PointerTycon
+      sharing Type = Switch.Type
       structure CFunction: C_FUNCTION
       sharing CFunction = Runtime.CFunction
       structure ChunkLabel: UNIQUE_ID
-      structure Type: MTYPE
-      sharing Type = Runtime.Type
 
       structure Register:
 	 sig
-	    datatype t = T of {index: int,
-			       ty: Type.t}
+	    type t
 
 	    val equals: t * t -> bool
-	    val index: t -> int
+	    val index: t -> int 
 	    val layout: t -> Layout.t
+	    val new: Type.t -> t
+	    val plist: t -> PropertyList.t
 	    val toString: t -> string
 	    val ty: t -> Type.t
 	 end
 
       structure Global:
 	 sig
-	    datatype t = T of {index: int,
-			       ty: Type.t}
+	    type t
 
 	    val equals: t * t -> bool
 	    val index: t -> int
+	    val isRoot: t -> bool
 	    val layout: t -> Layout.t
+	    val new: {isRoot: bool, ty: Type.t} -> t
+	    val numberOfNonRoot: unit -> int
+	    val numberOfType: Runtime.Type.t -> int
 	    val toString: t -> string
 	    val ty: t -> Type.t
 	 end
@@ -55,29 +60,26 @@ signature MACHINE =
 	       ArrayOffset of {base: t,
 			       index: t,
 			       ty: Type.t}
-	     | CastInt of t (* takes an IntOrPointer and makes it an int *)
-	     | CastWord of t (* takes a pointer and makes it a word *)
+	     | Cast of t * Type.t
 	     | Char of char
 	     | Contents of {oper: t,
 			    ty: Type.t}
 	     | File (* expand by codegen into string constant *)
-	     | Float of string
 	     | GCState
 	     | Global of Global.t
-	     | GlobalPointerNonRoot of int
 	     | Int of int
-	     | IntInf of word
 	     | Label of Label.t
 	     | Line (* expand by codegen into int constant *)
 	     | Offset of {base: t,
 			  offset: int,
 			  ty: Type.t}
-	     | Pointer of int (* the int must be nonzero mod Runtime.wordSize. *)
+	     | Real of string
 	     | Register of Register.t
 	     | Runtime of Runtime.GCField.t
+	     | SmallIntInf of word
 	     | StackOffset of {offset: int,
 			       ty: Type.t}
-	     | Uint of Word.t
+	     | Word of Word.t
 
 	    val equals: t * t -> bool
 	    val interfere: {write: t, read: t} -> bool
@@ -85,6 +87,7 @@ signature MACHINE =
 	    val toString: t -> string
 	    val ty: t -> Type.t
 	 end
+      sharing Operand = Switch.Use
 
       structure Statement:
 	 sig
@@ -116,8 +119,6 @@ signature MACHINE =
 	    val moves: {dsts: Operand.t vector,
 			srcs: Operand.t vector} -> t vector
 	 end
-
-      structure Cases: MACHINE_CASES sharing Label = Cases.Label
 
       structure FrameInfo:
 	 sig
@@ -160,16 +161,7 @@ signature MACHINE =
 	     | Goto of Label.t (* label must be a Jump *)
 	     | Raise
 	     | Return of {live: Operand.t vector}
-	     | Switch of {test: Operand.t,
-			  cases: Cases.t,
-			  default: Label.t option}
-	     (* Switch to one of two labels, based on whether the operand is an
-	      * Integer or a Pointer.  Pointers are word aligned and integers
-	      * are not.
-	      *)
-	     | SwitchIP of {int: Label.t,
-			    pointer: Label.t,
-			    test: Operand.t}
+	     | Switch of Switch.t
 
 	    val foldOperands: t * 'a * (Operand.t * 'a -> 'a) -> 'a
 	    val layout: t -> Layout.t
@@ -208,31 +200,37 @@ signature MACHINE =
       structure Chunk:
 	 sig
 	    datatype t = T of {blocks: Block.t vector,
-			       chunkLabel: ChunkLabel.t,
-			       regMax: Type.t -> int}
+			       chunkLabel: ChunkLabel.t}
+
+	    (* Fold over each register that appears in the chunk.
+	     * May visit duplicates.
+	     *)
+	    val foldRegs: t * 'a * (Register.t * 'a -> 'a) -> 'a
 	 end
 
       structure Program:
 	 sig
 	    datatype t =
 	       T of {chunks: Chunk.t list,
-		     floats: (Global.t * string) list,
 		     (* Each vector in frame Offsets specifies the offsets
 		      * of live pointers in a stack frame.  A vector is referred
 		      * to by index as the frameOffsetsIndex in a block kind.
 		      *)
 		     frameOffsets: int vector vector,
-		     globals: Type.t -> int,
-		     globalsNonRoot: int,
 		     handlesSignals: bool,
 		     intInfs: (Global.t * string) list,
 		     main: {chunkLabel: ChunkLabel.t,
 			    label: Label.t},
 		     maxFrameSize: int,
-		     objectTypes: Runtime.ObjectType.t vector,
+		     objectTypes: ObjectType.t vector,
 		     profileAllocLabels: string vector,
+		     reals: (Global.t * string) list,
 		     strings: (Global.t * string) list}
 
+	    (* Fold over each register that appears in the chunk.
+	     * May visit duplicates.
+	     *)
+	    val foldRegs: t * 'a * (Register.t * 'a -> 'a) -> 'a
 	    val layouts: t * (Layout.t -> unit) -> unit
 	    val typeCheck: t -> unit
 	 end

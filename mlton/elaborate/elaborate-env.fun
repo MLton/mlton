@@ -543,11 +543,10 @@ structure Structure =
 				   handleVal = handleVal})
 			   fun doit (elts, less) =
 			      Info.T
-			      (Array.fromList
-			       (MergeSort.sort
-				(!elts,
-				 fn ({values = v, ...}, {values = v', ...}) =>
-				 less (Values.domain v, Values.domain v'))))
+			      (QuickSort.sortArray
+			       (Array.fromList (!elts),
+				fn ({values = v, ...}, {values = v', ...}) =>
+				less (Values.domain v, Values.domain v')))
 			in
 			   T {shapeId = SOME shapeId',
 			      strs = doit (strs, Ast.Strid.<=),
@@ -621,10 +620,10 @@ structure NameSpace =
 			       end)
 	       val _ = current := old
 	       val a =
-		  Array.fromList
-		  (MergeSort.sort
-		   (elts, fn ({values = v, ...}, {values = v', ...}) =>
-		    le (Values.domain v, Values.domain v')))
+		  QuickSort.sortArray
+		  (Array.fromList elts,
+		   fn ({values = v, ...}, {values = v', ...}) =>
+		   le (Values.domain v, Values.domain v'))
 	    in
 	       Structure.Info.T a
 	    end
@@ -747,7 +746,7 @@ fun layoutPretty (T {fcts, sigs, strs, types, vals, ...}) =
 		case !ranges of
 		   [] => ac
 		 | {value, ...} :: _ => (domain, value) :: ac)
-	 in align (List.map (MergeSort.sort
+	 in align (List.map (QuickSort.sortList
 			     (l, fn ((d, _), (d', _)) => le (d, d')),
 			     layout))
 	 end
@@ -777,7 +776,7 @@ fun layoutUsed (T {fcts, sigs, strs, types, vals, ...}) =
 		      else ac)
 	 in
 	    align (List.map
-		   (MergeSort.sort
+		   (QuickSort.sortList
 		    (all, fn ((d, _), (d', _)) => le (d, d')),
 		    #2))
 	 end

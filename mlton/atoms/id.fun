@@ -13,7 +13,7 @@ structure IdCounter:
       val getCounter = String.memoize (fn _ => Counter.new 0)
    end
 
-functor Id (S: ID_STRUCTS): ID =
+functor IdNoAst (S: ID_NO_AST_STRUCTS): ID_NO_AST =
 struct
 
 open S
@@ -108,13 +108,25 @@ fun new (T {originalName, ...}) =
       printName = ref NONE,
       plist = Plist.new ()}
 
+val clear = Plist.clear o plist
+   
+end
+
+functor Id (S: ID_STRUCTS): ID =
+struct
+
+open S
+local
+   structure I = IdNoAst (S)
+in
+   open I
+end
+   
 val fromAst = newString o AstId.toString
 fun fromAsts l = List.map (l, fromAst)
 fun toAst id = AstId.fromString (toString id, Region.bogus)
 fun toAsts l = List.map (l, toAst)
 
-val clear = Plist.clear o plist
-   
 end
 
 functor HashId (S: ID_STRUCTS): HASH_ID =

@@ -12,11 +12,13 @@ signature SSA_TO_RSSA_STRUCTS =
    sig
       structure Rssa: RSSA
       structure Ssa: SSA
-      sharing Rssa.Atoms = Ssa.Atoms
+      sharing Rssa.Const = Ssa.Const
       sharing Rssa.Func = Ssa.Func
-      sharing Rssa.Label = Ssa.Label
-      sharing Rssa.Return = Ssa.Return
       sharing Rssa.Handler = Ssa.Handler
+      sharing Rssa.Label = Ssa.Label
+      sharing Rssa.Prim = Ssa.Prim
+      sharing Rssa.Return = Ssa.Return
+      sharing Rssa.Var = Ssa.Var
    end
 
 signature SSA_TO_RSSA =

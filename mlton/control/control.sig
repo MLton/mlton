@@ -88,6 +88,9 @@ signature CONTROL =
       (* call count instrumentation *)
       val instrument: bool ref
 
+      (* Save the RSSA to a file. *)
+      val keepRSSA: bool ref
+	 
       (* Save the SSA to a file. *)
       val keepSSA: bool ref
 	 

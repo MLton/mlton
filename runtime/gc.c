@@ -803,19 +803,19 @@ static inline pointer foreachPointerInObject (GC_state s, GC_pointerFun f,
 		pointer max;
 
 		assert (ARRAY_TAG == tag);
-		assert (0 == GC_arrayNumElements (p)
-				? 0 == numPointers
-				: TRUE);
 		numBytes = arrayNumBytes (p, numPointers, numNonPointers);
 		max = p + numBytes;
 		if (numPointers == 0) {
 			/* There are no pointers, just update p. */
 			p = max;
 		} else if (numNonPointers == 0) {
-			assert (0 < GC_arrayNumElements (p));
 		  	/* It's an array with only pointers. */
-			for (; p < max; p += POINTER_SIZE)
-				maybeCall (f, s, (pointer*)p);
+			if (0 == GC_arrayNumElements (p))
+				/* Skip the space for the forwarding pointer. */
+				p = max;
+			else
+				for (; p < max; p += POINTER_SIZE)
+					maybeCall (f, s, (pointer*)p);
 		} else {
 			uint numBytesPointers;
 			
@@ -1410,7 +1410,7 @@ static inline uint objectSize (GC_state s, pointer p)
 	} else { /* Array. */
 		assert(ARRAY_TAG == tag);
 		headerBytes = GC_ARRAY_HEADER_SIZE;
-		objectBytes = arrayNumBytes(p, numPointers, numNonPointers);
+		objectBytes = arrayNumBytes (p, numPointers, numNonPointers);
 	}
 	return headerBytes + objectBytes;
 }
@@ -1815,13 +1815,10 @@ markNextInNormal:
 		header = nextHeader;
 		goto markNext;
 	} else if (ARRAY_TAG == tag) {
-		assert (0 == GC_arrayNumElements (cur)
-				? 0 == numPointers
-				: TRUE);
 		numBytes = arrayNumBytes (cur, numPointers, numNonPointers);
 		size += GC_ARRAY_HEADER_SIZE + numBytes;
 		*headerp = header;
-		if (0 == numBytes or 0 == numPointers)
+		if (0 == numPointers or 0 == GC_arrayNumElements (cur))
 			goto ret;
 		assert (0 == numNonPointers);
 		max = cur + numBytes;
@@ -2642,6 +2639,9 @@ pointer GC_arrayAllocate (GC_state s, W32 ensureBytesFree, W32 numElts,
 		die ("Out of memory: cannot allocate array with %s bytes.\n",
 			ullongToCommaString (arraySize64));
 	arraySize = (W32)arraySize64;
+	if (3 * WORD_SIZE == arraySize)
+		/* array is empty -- create space for forwarding pointer. */
+ 		arraySize = 4 * WORD_SIZE;
 	if (DEBUG_ARRAY)
 		fprintf (stderr, "array with %s elts of size %u and total size %s.  ensure %s bytes free.\n",
 			uintToCommaString (numElts), 

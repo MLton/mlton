@@ -21,8 +21,8 @@ in
    structure Function = Function
    structure Kind = Kind
    structure Label = Label
-   structure Var = Var
    structure Type = Type
+   structure Var = Var
 end
 
 local
@@ -36,14 +36,14 @@ end
 val traceForceStack =
    Trace.trace ("Allocate.forceStack", Var.layout, Unit.layout)
    
-(* If a handler is stored in a stack frame, then we need both a uint for
+(* If a handler is stored in a stack frame, then we need both a word for
  * the old handler and space for the handler itself
  *)
 local
    open Type
 in
    val labelSize = size label
-   val handlerSize = labelSize + size uint
+   val handlerSize = labelSize + size word
 end
 
 structure Live = Live (open Rssa)
@@ -63,16 +63,17 @@ structure Allocation:
          sig
             type t
             val empty: t
-            val get: t * Type.t -> t * {index: int}
+            val get: t * Type.t -> t * Register.t
             val layout: t -> Layout.t
-            val new: {index: int, ty: Type.t} list -> t
+            val new: Register.t list -> t
          end
+
       type t
       val empty: t
-      val getRegister: t * Type.t -> t * {index: int}
+      val getRegister: t * Type.t -> t * Register.t
       val getStack: t * Type.t -> t * {offset: int}
       val layout: t -> Layout.t
-      val new: {offset: int, ty: Type.t} list * {index: int, ty: Type.t} list -> t
+      val new: {offset: int, ty: Type.t} list * Register.t list -> t
       val registers: t -> Registers.t
       val stack: t -> Stack.t
       val stackSize: t -> int
@@ -102,14 +103,12 @@ structure Allocation:
 		     end
 
 	  fun new (alloc): t =
-	     let
-	        val a = Array.fromListMap (alloc, fn {offset, ty} =>
-					   {offset = offset,
-					    size = Type.size ty})
-		val _ = QuickSort.sort (a, fn (r, r') => #offset r <= #offset r')
-	     in
-	        T (Array.toList a)
-	     end
+	     T (Array.toList
+		(QuickSort.sortArray
+		 (Array.fromListMap (alloc, fn {offset, ty} =>
+				     {offset = offset,
+				      size = Type.size ty}),
+		  fn (r, r') => #offset r <= #offset r')))
 
 	  fun get (T alloc, ty) =
 	     let
@@ -165,71 +164,20 @@ structure Allocation:
        end
        structure Registers =
        struct
-	  datatype t = T of {ty: Type.t, alloc: {index: int} list} list
+	  datatype t = T
 
-	  val empty = T (List.map (Type.all, fn ty => {ty = ty, alloc = []}))
+	  val empty = T
 
-	  fun layout (T allocs) =
-	     List.layout (fn {ty, alloc} =>
-			  Layout.record [("ty", Type.layout ty),
-					 ("alloc", List.layout
-					           (fn {index} =>
-						    Layout.record
-						    [("index", Int.layout index)])
-						   alloc)])
-	                 allocs
+	  fun layout T = Layout.str "<registers>"
 
-	  fun new (allocs): t =
-	     let
-	        val allocs = List.equivalence (allocs, fn ({ty = ty1, ...},
-							   {ty = ty2, ...}) =>
-					       Type.equals (ty1, ty2))
-		val allocs =
-		   List.revMap
-		   (allocs, fn alloc =>
-		    let
-		       val a = Array.fromListMap (alloc, fn {ty, index} =>
-						  {index = index})
-		       val _ = QuickSort.sort (a, fn (r, r') => #index r <= #index r')
-		    in
-		       {ty = #ty (hd alloc),
-			alloc = Array.toList a}
-		    end)
-	     in
-	        T allocs
-	     end
+	  fun new _ = T
 
-	  fun get (T allocs, ty') =
-	     let
-	        val (allocs, index) =
-		   case List.partition (allocs, fn {ty, ...} => 
-					Type.equals (ty', ty)) of
-		      {yes = [], no = allocs} => 
-			 ({ty = ty', alloc = [{index = 0}]}::allocs, 
-			  {index = 0})
-		    | {yes = [{ty, alloc}], no = allocs} =>
-			 let
-			    fun loop (i, [], alloc') = 
-			       (List.appendRev 
-				(alloc', [{index = i}]), 
-				{index = i})
-			      | loop (i, index::alloc, alloc') =
-			       if i = #index index
-				  then loop (i + 1, alloc, index::alloc')
-			       else (List.appendRev 
-				     ({index = i}::alloc', index::alloc),
-				     {index = i})
-			    val (alloc, index) = loop (0, alloc, [])
-			 in
-			    ({ty = ty, alloc = alloc}::allocs, index)
-			 end
-		    | _ => Error.bug "AllocateRegisters.Allocation.Registers.get"
-	     in
-	        (T allocs, index)
-	     end
+	  fun get (rs, ty) = (rs, Register.new ty)
        end
        
-       datatype t = T of {stack: Stack.t, registers: Registers.t}
+       datatype t = T of {registers: Registers.t,
+			  stack: Stack.t}
+
        local
 	  fun make s (T x) = s x
        in
@@ -237,6 +185,7 @@ structure Allocation:
 	  val stackSize = Stack.size o stack
 	  val registers = make #registers
        end
+    
        val empty = T {stack = Stack.empty,
 		      registers = Registers.empty}
 
@@ -253,13 +202,16 @@ structure Allocation:
 	  end
        fun getRegister (T {stack, registers}, ty) =
 	  let
-	     val (registers, index) = Registers.get (registers, ty)
+	     val (registers, reg) = Registers.get (registers, ty)
 	  in
-	     (T {stack = stack, registers = registers}, index)
+	     (T {registers = registers,
+		 stack = stack},
+	      reg)
 	  end
 
        fun new (stack, registers) = 
-	  T {stack = Stack.new stack, registers = Registers.new registers}
+	  T {registers = Registers.new registers,
+	     stack = Stack.new stack}
    end
 
 structure Info =
@@ -284,9 +236,8 @@ structure Info =
 
 fun allocate {argOperands: Machine.Operand.t vector,
 	      function = f: Rssa.Function.t,
-	      newRegister,
 	      varInfo: Var.t -> {operand: Machine.Operand.t option ref option,
-				 ty: Machine.Type.t}} =
+				 ty: Type.t}} =
    let
       fun diagnostics f =
 	 Control.diagnostics
@@ -373,7 +324,6 @@ fun allocate {argOperands: Machine.Operand.t vector,
 	  in
 	     ()
 	  end)
-      val nextReg = Type.memo (fn _ => ref 0)
       fun allocateVar (x: Var.t,
 		       l: Label.t option, 
 		       force: bool,
@@ -387,22 +337,17 @@ fun allocate {argOperands: Machine.Operand.t vector,
 			  case place x of
 			     Stack =>
 				let
-				   val (a, {offset}) = Allocation.getStack (a, ty)
+				   val (a, {offset}) =
+				      Allocation.getStack (a, ty)
 				in
 				   (a, Operand.StackOffset {ty = ty,
 							    offset = offset})
 				end
 			   | Register =>
 				let
-(*
-                                   val r = nextReg ty
-				   val reg = newRegister (l, !r, ty)
-				   val _ = Int.inc r
-*)
-				   val (a, {index}) = Allocation.getRegister (a, ty)
-				   val reg = newRegister (l, index, ty)
+				   val (a, r) = Allocation.getRegister (a, ty)
 				in
-				   (a, Operand.Register reg)
+				   (a, Operand.Register r)
 				end
 		       val _ = 
 			  case operand of
@@ -416,7 +361,10 @@ fun allocate {argOperands: Machine.Operand.t vector,
       val allocateVar =
 	 Trace.trace4
 	 ("Allocate.allocateVar",
-	  Var.layout, Option.layout Label.layout, Bool.layout, Allocation.layout,
+	  Var.layout,
+	  Option.layout Label.layout,
+	  Bool.layout,
+	  Allocation.layout,
 	  Allocation.layout)
 	 allocateVar
       (* Create the initial stack and set the stack slots for the formals. *)
@@ -427,7 +375,8 @@ fun allocate {argOperands: Machine.Operand.t vector,
 			 case oper of
 			    M.Operand.StackOffset {offset, ...} =>
 			       (valOf (#operand (varInfo x)) := SOME oper
-				; {offset = offset, ty = t} :: ac)
+				; ({offset = offset, ty = t}
+				   :: ac))
 			  | _ => Error.bug "callReturnOperands"))
       (* Allocate slots for the link and handler, if necessary. *)
       val (stack, handlerLinkOffset) =
@@ -437,7 +386,7 @@ fun allocate {argOperands: Machine.Operand.t vector,
 		  val (stack, {offset = handler, ...}) =
 		     Allocation.Stack.get (stack, Type.label)
 		  val (stack, {offset = link, ...}) = 
-		     Allocation.Stack.get (stack, Type.uint)
+		     Allocation.Stack.get (stack, Type.word)
 	       in
 		  (stack, SOME {handler = handler, link = link})
 	       end
@@ -475,7 +424,7 @@ fun allocate {argOperands: Machine.Operand.t vector,
 			     if linkLive
 				then
 				   Operand.StackOffset {offset = link,
-							ty = Type.uint}
+							ty = Type.word}
 				   :: ops
 			     else ops
 		       in
@@ -483,20 +432,23 @@ fun allocate {argOperands: Machine.Operand.t vector,
 		       end)
 	     val liveNoFormals = getOperands beginNoFormals
 	     val (stackInit, registersInit) =
-	        List.fold (liveNoFormals, ([],[]), fn (oper, (stack, registers)) =>
-			   case oper of
-			      Operand.StackOffset a => (a::stack, registers)
-			    | Operand.Register (Register.T a) => (stack, a::registers)
-			    | _ => (stack, registers))
+	        List.fold
+		(liveNoFormals, ([],[]), fn (oper, (stack, registers)) =>
+		 case oper of
+		    Operand.StackOffset a => (a::stack, registers)
+		  | Operand.Register r => (stack, r::registers)
+		  | _ => (stack, registers))
 	     val stackInit =
 		case handlerLinkOffset of
 		   NONE => stackInit
 		 | SOME {handler, link} =>
 		      {offset = handler, ty = Type.label}
-		      :: {offset = link, ty = Type.uint}
+		      :: {offset = link, ty = Type.word}
 		      :: stackInit
 	     val a = Allocation.new (stackInit, registersInit)
-	     val size = Runtime.labelSize + Type.wordAlign (Allocation.stackSize a)
+	     val size =
+		Runtime.labelSize
+		+ Runtime.wordAlignInt (Allocation.stackSize a)
 	     val a =
 		Vector.fold (args, a, fn ((x, _), a) =>
 			     allocateVar (x, SOME label, false, a))

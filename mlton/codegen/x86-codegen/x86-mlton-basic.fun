@@ -29,7 +29,7 @@ struct
   val intInfOverheadBytes = Runtime.intInfOverheadSize
    
   local
-    open Machine.Type
+     datatype z = datatype Runtime.Type.dest
   in
     fun toX86Size' t
       = case t
@@ -38,7 +38,7 @@ struct
 	   | Int => x86.Size.LONG
 	   | Pointer => x86.Size.LONG
 	   | Uint => x86.Size.LONG
-    val toX86Size = fn t => toX86Size' (dest t)
+    val toX86Size = fn t => toX86Size' (Runtime.Type.dest t)
     fun toX86Scale' t
       = case t
 	  of Char => x86.Scale.One
@@ -46,7 +46,7 @@ struct
 	   | Int => x86.Scale.Four
 	   | Pointer => x86.Scale.Four
 	   | Uint => x86.Scale.Four
-    val toX86Scale = fn t => toX86Scale' (dest t)
+    val toX86Scale = fn t => toX86Scale' (Runtime.Type.dest t)
   end
 
   (*
@@ -242,15 +242,15 @@ struct
     = Operand.memloc fpswTempContents
 
   local
-    open Machine.Type
     val localC_base = Label.fromString "localuchar"
     val localD_base = Label.fromString "localdouble"
     val localI_base = Label.fromString "localint"
     val localP_base = Label.fromString "localpointer"
     val localU_base = Label.fromString "localuint"
+    datatype z = datatype Runtime.Type.dest
   in
     fun local_base ty
-      = case dest ty
+      = case Runtime.Type.dest ty
 	  of Char    => localC_base
 	   | Double  => localD_base
 	   | Int     => localI_base
@@ -259,7 +259,6 @@ struct
   end
 
   local
-    open Machine.Type
     val globalC_base = Label.fromString "globaluchar"
     val globalC_num = Label.fromString "num_globaluchar"
     val globalD_base = Label.fromString "globaldouble"
@@ -270,9 +269,10 @@ struct
     val globalP_num = Label.fromString "num_globalpointer"
     val globalU_base = Label.fromString "globaluint"
     val globalU_num = Label.fromString "num_globaluint"
+    datatype z = datatype Runtime.Type.dest
   in
     fun global_base ty
-      = case dest ty
+      = case Runtime.Type.dest ty
 	  of Char    => globalC_base
 	   | Double  => globalD_base
 	   | Int     => globalI_base

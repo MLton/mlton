@@ -19,10 +19,13 @@ structure CoreML = CoreML (open Atoms
 structure Xml = Xml (open Atoms)
 structure Sxml = Xml
 structure Ssa = Ssa (open Atoms)
-structure Runtime = Runtime ()
 structure Machine = Machine (structure Label = Ssa.Label
-			     structure Prim = Atoms.Prim
-			     structure Runtime = Runtime)
+			     structure Prim = Atoms.Prim)
+local
+   open Machine
+in
+   structure Runtime = Runtime
+end
 
 (*---------------------------------------------------*)
 (*                  Compiler Passes                  *)
@@ -436,17 +439,12 @@ fun preCodegen {input, docc}: Machine.Program.t =
 	  display = Control.Layouts Ssa.Program.layouts,
 	  simplify = Ssa.simplify}
       val _ =
-	 let open Control
-	 in if !keepSSA
-	       then
-		  File.withOut
-		  (concat [!inputFile, ".ssa"], fn out =>
-		   let
-		      fun disp l = Layout.outputl (l, out)
-		   in
-		      outputHeader (No, disp)
-		      ; Ssa.Program.layouts (ssa, disp)
-		   end)
+	 let
+	    open Control
+	 in
+	    if !keepSSA
+	       then saveToFile ({suffix = "ssa"}, No, ssa,
+				 Layouts Ssa.Program.layouts)
 	    else ()
 	 end
       val machine =

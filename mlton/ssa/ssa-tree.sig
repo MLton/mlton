@@ -282,8 +282,8 @@ signature SSA_TREE =
 	    datatype t =
 	       T of {
 		     datatypes: Datatype.t vector,
-		     globals: Statement.t vector,
 		     functions: Function.t list,
+		     globals: Statement.t vector,
 		     main: Func.t (* Must be nullary. *)
 		    } 
 

@@ -21,10 +21,10 @@ fun insert p =
       then p
    else
       let
-	 val Program.T {functions, main, profileAllocLabels} = p
+	 val Program.T {functions, main, objectTypes, profileAllocLabels} = p
 	 fun insert (f: Function.t): Function.t =
 	    let
-	       val {args, blocks, name, start} = Function.dest f
+	       val {args, blocks, name, raises, returns, start} = Function.dest f
 	       val {get = labelIndex: Label.t -> int, set = setLabelIndex,
 		    rem = remLabelIndex, ...} =
 		  Property.getSetOnce
@@ -92,14 +92,15 @@ fun insert p =
 			     val compare =
 				Vector.new1
 				(Statement.PrimApp
-				 {args = Vector.new2 (Operand.CastInt
+				 {args = Vector.new2 (Operand.Cast
 						      (Operand.Runtime
-						       Runtime.GCField.Limit),
-						      Operand.int 0),
+						       Runtime.GCField.Limit,
+						       Type.Word),
+						      Operand.word 0w0),
 				  dst = SOME (res, Type.bool),
 				  prim = Prim.eq})
 			     val compareTransfer =
-				Transfer.iff
+				Transfer.ifBool
 				(Operand.Var {var = res, ty = Type.bool},
 				 {falsee = dontCollect,
 				  truee = collect})
@@ -163,6 +164,8 @@ fun insert p =
 	       val f = Function.new {args = args,
 				     blocks = blocks,
 				     name = name,
+				     raises = raises,
+				     returns = returns,
 				     start = start}
 	       val _ = Function.clear f
 	    in
@@ -171,6 +174,7 @@ fun insert p =
       in
 	 Program.T {functions = List.revMap (functions, insert),
 		    main = main,
+		    objectTypes = objectTypes,
 		    profileAllocLabels = profileAllocLabels}
       end
 

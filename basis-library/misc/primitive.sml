@@ -242,12 +242,11 @@ structure Primitive =
 	 struct
 	    open Array
 
-      	    fun array n =
-	       if safe andalso Int.< (n, 0)
-		  then raise Size
-	       else if eq (n, 0)
-		       then _prim "Array_array0": unit -> 'a array; ()
-		    else _prim "Array_array": int -> 'a array; n
+	    val array = fn n => _prim "Array_array": int -> 'a array; n
+      	    val array =
+	       fn n => if safe andalso Int.< (n, 0)
+			  then raise Size
+		       else array n
 	 end
 
       structure IntInf =

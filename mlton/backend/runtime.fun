@@ -153,15 +153,20 @@ val array0Size = arrayHeaderSize + wordSize (* for the forwarding pointer *)
 val arrayLengthOffset = ~ (2 * wordSize)
 val allocTooLarge: word = 0wxFFFFFFFC
 
+val headerOffset = ~wordSize
+
 fun normalSize {numPointers, numWordsNonPointers} =
    wordSize * (numPointers + numWordsNonPointers)
 
-fun wordAlign (w: word): word =
+fun wordAlignWord (w: word): word =
    let
       open Word
    in
       andb (MLton.Word.addCheck (w, 0w3), notb 0w3)
    end
+
+fun wordAlignInt (i: int): int =
+   Word.toInt (wordAlignWord (Word.fromInt i))
    
 fun isWordAligned (n: int): bool =
    0 = Int.rem (n, wordSize)

@@ -32,7 +32,7 @@ signature RUNTIME =
 	     | ProfileAllocIndex
 	     | SignalIsPending
 	     | StackBottom
-	     | StackLimit (* Must have  StackTop <= StackLimit *)
+	     | StackLimit (* Must have StackTop <= StackLimit *)
 	     | StackTop (* Points at the next available word on the stack. *)
 
 	    val layout: t -> Layout.t
@@ -60,9 +60,6 @@ signature RUNTIME =
 	     | Normal of {numPointers: int,
 			  numWordsNonPointers: int}
 	     | Stack
-
-	    val equals: t * t -> bool
-	    val layout: t -> Layout.t
 	 end
 
       (* All sizes are in bytes, unless they explicitly say "pointers". *)
@@ -71,6 +68,7 @@ signature RUNTIME =
       val arrayHeaderSize: int
       val arrayLengthOffset: int
       val array0Size: int
+      val headerOffset: int
       val headerToTypeIndex: word -> int
       val isWordAligned: int -> bool
       val intInfOverheadSize: int
@@ -84,6 +82,7 @@ signature RUNTIME =
 		       numWordsNonPointers: int} -> int
       val pointerSize: int
       val typeIndexToHeader: int -> word
-      val wordAlign: word -> word (* Can raise Overflow. *)
+      val wordAlignInt: int -> int (* Can raise Overflow. *)
+      val wordAlignWord: word -> word (* Can raise Overflow. *)
       val wordSize: int
    end

@@ -14,18 +14,19 @@ local
    open Machine
 in
    structure Block = Block
-   structure Cases = Cases
    structure Chunk = Chunk
    structure ChunkLabel = ChunkLabel
    structure FrameInfo = FrameInfo
    structure Global = Global
    structure Kind = Kind
    structure Label = Label
+   structure ObjectType = ObjectType
    structure Operand = Operand
    structure Prim = Prim
    structure Register = Register
    structure Runtime = Runtime
    structure Statement = Statement
+   structure Switch = Switch
    structure Transfer = Transfer
    structure Type = Type
 end
@@ -35,7 +36,6 @@ local
 in
    structure CFunction = CFunction
    structure GCField = GCField
-   structure ObjectType = ObjectType
 end
 
 structure Kind =
@@ -92,10 +92,10 @@ structure C =
 
       fun word (w: Word.t) = "0x" ^ Word.toString w
 
-      (* The only difference between SML floats and C floats is that
+      (* The only difference between SML reals and C floats/doubles is that
        * SML uses "~" while C uses "-".
        *)
-      fun float s = String.translate (s, fn #"~" => "-" | c => String.fromChar c)
+      fun real s = String.translate (s, fn #"~" => "-" | c => String.fromChar c)
 
       fun string s =
 	 let val quote = "\""
@@ -126,26 +126,29 @@ structure Operand =
 	 fn ArrayOffset {base, index, ty} =>
 	       concat ["X", Type.name ty,
 		       C.args [toString base, toString index]]
-          | CastInt oper => concat ["PointerToInt", C.args [toString oper]]
-	  | CastWord oper => concat ["(word)", C.args [toString oper]]
+          | Cast (z, ty) =>
+	       concat ["(", Runtime.Type.toString (Type.toRuntime ty), ")",
+		       toString z]
           | Char c => C.char c
           | Contents {oper, ty} =>
 	       concat ["C", Type.name ty, "(", toString oper, ")"]
 	  | File => "__FILE__"
-          | Float s => C.float s
 	  | GCState => "&gcState"
-          | Global g => Global.toString g
-          | GlobalPointerNonRoot n =>
-	       concat ["globalpointerNonRoot [", C.int n, "]"]
-          | Int n => C.int n
-          | IntInf w =>
-	       concat ["SmallIntInf", C.args [concat ["0x", Word.toString w]]]
+          | Global g =>
+	       concat ["G", Type.name (Global.ty g),
+		       if Global.isRoot g
+			  then ""
+		       else "NR",
+		       "(", Int.toString (Global.index g), ")"]
+	  | Int n => C.int n
           | Label l => Label.toStringIndex l
 	  | Line => "__LINE__"
           | Offset {base, offset, ty} =>
 	       concat ["O", Type.name ty, C.args [toString base, C.int offset]]
-          | Pointer n => concat ["IntAsPointer", C.args [C.int n]]
-          | Register r => Register.toString r
+          | Real s => C.real s
+          | Register r =>
+	       concat ["R", Type.name (Register.ty r),
+		       "(", Int.toString (Register.index r), ")"]
 	  | Runtime r =>
 	       let
 		  datatype z = datatype GCField.t
@@ -164,14 +167,17 @@ structure Operand =
 		   | StackLimit => "gcState.stackLimit"
 		   | StackTop => "stackTop"
 	       end
+          | SmallIntInf w =>
+	       concat ["SmallIntInf", C.args [concat ["0x", Word.toString w]]]
           | StackOffset {offset, ty} =>
 	       concat ["S", Type.name ty, "(", C.int offset, ")"]
-          | Uint w => C.word w
+          | Word w => C.word w
 
       val layout = Layout.str o toString
    end
 
-fun creturn (t: Type.t): string = concat ["CReturn", Type.name t]
+fun creturn (t: Runtime.Type.t): string =
+   concat ["CReturn", Runtime.Type.name t]
 
 fun outputDeclarations
    {additionalMainArgs: string list,
@@ -180,8 +186,8 @@ fun outputDeclarations
     name: string,
     print: string -> unit,
     program = (Machine.Program.T
-	       {chunks, frameOffsets, floats, globals, globalsNonRoot, intInfs,
-		maxFrameSize, objectTypes, strings, ...}),
+	       {chunks, frameOffsets, intInfs, maxFrameSize, objectTypes,
+		reals, strings, ...}),
     rest: unit -> unit
     }: unit =
    let
@@ -192,23 +198,11 @@ fun outputDeclarations
 	  ; print "\n")
       fun declareGlobals () =
 	 C.call ("Globals",
-		 List.map (List.map (let open Type
+		 List.map (List.map (let open Runtime.Type
 				     in [char, double, int, pointer, uint]
 				     end, 
-				     globals) @ [globalsNonRoot],
-			   C.int),
-		 print)
-      fun locals ty =
-	 List.fold (chunks, 0, fn (Machine.Chunk.T {regMax, ...}, max) =>
-		    if regMax ty > max
-		       then regMax ty
-		    else max)
-      fun declareLocals () =
-	 C.call ("Locals",
-		 List.map (List.map (let open Type
-				     in [char, double, int, pointer, uint]
-				     end,
-				     locals),
+				     Global.numberOfType)
+			   @ [Global.numberOfNonRoot ()],
 			   C.int),
 		 print)
       fun declareIntInfs () =
@@ -230,15 +224,15 @@ fun outputDeclarations
 					 print)
 			   ; print "\n"))
 	  ; print "EndStrings\n")
-      fun declareFloats () =
-	 (print "BeginFloats\n"
-	  ; List.foreach (floats, fn (g, f) =>
-			  (C.callNoSemi ("Float",
+      fun declareReals () =
+	 (print "BeginReals\n"
+	  ; List.foreach (reals, fn (g, f) =>
+			  (C.callNoSemi ("Real",
 					 [C.int (Global.index g),
-					  C.float f],
+					  C.real f],
 					 print)
 			   ; print "\n"))
-	  ; print "EndFloats\n")
+	  ; print "EndReals\n")
       fun declareFrameOffsets () =
 	 Vector.foreachi
 	 (frameOffsets, fn (i, v) =>
@@ -249,15 +243,16 @@ fun outputDeclarations
       fun declareObjectTypes () =
 	 (print (concat ["static GC_ObjectType objectTypes[] = {\n"])
 	  ; (Vector.foreach
-	     (objectTypes, fn t =>
+	     (objectTypes, fn ty =>
 	      let
+		 datatype z = datatype Runtime.ObjectType.t
 		 val (tag, nonPointers, pointers) =
-		    case t of
-		       ObjectType.Array {numBytesNonPointers, numPointers} =>
+		    case ObjectType.toRuntime ty of
+		       Array {numBytesNonPointers, numPointers} =>
 			  (0, numBytesNonPointers, numPointers)
-		     | ObjectType.Normal {numPointers, numWordsNonPointers} =>
+		     | Normal {numPointers, numWordsNonPointers} =>
 			  (1, numWordsNonPointers, numPointers)
-		     | ObjectType.Stack =>
+		     | Stack =>
 			  (2, 0, 0)
 	      in
 		 print (concat ["\t{ ", Int.toString tag, ", ",
@@ -283,10 +278,9 @@ fun outputDeclarations
       print (concat ["#define ", name, "CODEGEN\n\n"])
       ; outputIncludes ()
       ; declareGlobals ()
-      ; declareLocals ()
       ; declareIntInfs ()
       ; declareStrings ()
-      ; declareFloats ()
+      ; declareReals ()
       ; declareFrameOffsets ()
       ; declareObjectTypes ()
       ; rest ()
@@ -294,9 +288,7 @@ fun outputDeclarations
    end
 
 fun output {program as Machine.Program.T {chunks,
-					  frameOffsets,
-					  main = {chunkLabel, label},
-					  objectTypes, ...},
+					  main = {chunkLabel, label}, ...},
             includes,
 	    outputC: unit -> {file: File.t,
 			      print: string -> unit,
@@ -443,7 +435,7 @@ fun output {program as Machine.Program.T {chunks,
 			    C.call ("SetSlotExnStack", [C.int offset], print)
 			    ))
 	 end
-      fun outputChunk (Chunk.T {chunkLabel, blocks, regMax, ...}) =
+      fun outputChunk (chunk as Chunk.T {chunkLabel, blocks, ...}) =
 	 let
 	    fun labelFrameSize (l: Label.t): int =
 	       FrameInfo.size (valOf (labelFrameInfo l))
@@ -477,11 +469,7 @@ fun output {program as Machine.Program.T {chunks,
 		     | Goto dst => jump dst
 		     | Raise => ()
 		     | Return _ => ()
-		     | Switch {cases, default, ...} =>
-			  (Cases.foreach (cases, jump)
-			   ; Option.app (default, jump))
-		     | SwitchIP {int, pointer, ...} =>
-			  (jump int; jump pointer)
+		     | Switch s => Switch.foreachLabel (s, jump)
 		 end)
 	    fun push (return: Label.t, size: int) =
 	       (C.push (size, print)
@@ -509,10 +497,13 @@ fun output {program as Machine.Program.T {chunks,
 					concat ["tmp",
 						Int.toString (Counter.next c)]
 				     val _ =
-					print (concat ["\t", Type.toString ty,
-						       " ", tmp,
-						       " = ", Operand.toString z,
-						       ";\n"])
+					print (concat
+					       ["\t",
+						Runtime.Type.toString
+						(Type.toRuntime ty),
+						" ", tmp,
+						" = ", Operand.toString z,
+						";\n"])
 				  in
 				     tmp
 				  end
@@ -570,8 +561,10 @@ fun output {program as Machine.Program.T {chunks,
 			    else ()
 			    ; (Option.app
 			       (dst, fn x =>
-				print (concat ["\t", Operand.toString x, " = ",
-					       creturn (Operand.ty x), ";\n"]))))
+				print (concat
+				       ["\t", Operand.toString x, " = ",
+					creturn (Type.toRuntime (Operand.ty x)),
+					";\n"]))))
 		      | Kind.Func _ => ()
 		      | Kind.Handler {offset} => C.push (~offset, print)
 		      | Kind.Jump => ()
@@ -732,56 +725,105 @@ fun output {program as Machine.Program.T {chunks,
 		   | Goto dst => gotoLabel dst
 		   | Raise => C.call ("\tRaise", [], print)
 		   | Return _ => C.call ("\tReturn", [], print)
-		   | Switch {test, cases, default} =>
+		   | Switch switch =>
 			let 
-			   val test = Operand.toString test
-			   fun bool (t, f) = iff (test, t, f)
-			   fun doit (cases, f) =
+			   fun bool (test: Operand.t, t, f) =
+			      iff (Operand.toString test, t, f)
+			   fun doit {cases: (string * Label.t) vector,
+				     default: Label.t option,
+				     test: Operand.t}: unit =
 			      let
-				 fun switch (cases, l) =
+				 val test = Operand.toString test
+				 fun switch (cases: (string * Label.t) vector,
+					     default: Label.t): unit =
 				    (print "switch ("
 				     ; print test
 				     ; print ") {\n"
-				     ; (List.foreach
+				     ; (Vector.foreach
 					(cases, fn (n, l) => (print "case "
-							      ; print (f n)
+							      ; print n
 							      ; print ":\n"
 							      ; gotoLabel l)))
 				     ; print "default:\n"
-				     ; gotoLabel l
+				     ; gotoLabel default
 				     ; print "}\n")
 			      in
-				 case (cases,            default) of
-				    ([],               NONE) =>
+				 case (Vector.length cases, default) of
+				    (0, NONE) =>
 				       Error.bug "switch: empty cases"
-				  | ([(_, l)],         NONE)   => gotoLabel l
-				  | ([],               SOME l) => gotoLabel l
-				  | ((_, l) :: cases', NONE)   => switch (cases', l)
-				  | (_,                SOME l) => switch (cases, l)
+				  | (0, SOME l) => gotoLabel l
+				  | (1, NONE) =>
+				       gotoLabel (#2 (Vector.sub (cases, 0)))
+				  | (_, NONE) =>
+				       switch (Vector.dropPrefix (cases, 1),
+					       #2 (Vector.sub (cases, 0)))
+				  | (_, SOME l) => switch (cases, l)
 			      end
+			   fun simple ({cases, default, test}, f) =
+			      doit {cases = Vector.map (cases, fn (c, l) =>
+							(f c, l)),
+				    default = default,
+				    test = test}
+			   datatype z = datatype Switch.t
 			in
-			   case cases of
-			      Cases.Char l => doit (l, C.char)
-			    | Cases.Int l =>
-				 (case (l, default) of
-				     ([(0, f), (1, t)], NONE) => bool (t, f)
-				   | ([(1, t), (0, f)], NONE) => bool (t, f)
-				   | _ => doit (l, C.int))
-			    | Cases.Word l => doit (l, C.word)
+			   case switch of
+			      Char z => simple (z, C.char)
+			    | EnumPointers {enum, pointers, test} =>
+			      iff (concat
+				   ["IsInt (", Operand.toString test, ")"],
+				   enum, pointers)
+			    | Int (z as {cases, default, test}) =>
+				 let
+				    fun normal () = simple (z, C.int)
+				 in
+				    if 2 = Vector.length cases
+				       then
+					  let
+					     val c0 = Vector.sub (cases, 0)
+					     val c1 = Vector.sub (cases, 1)
+					  in
+					     case (c0, c1, default) of
+						((0, f), (1, t), NONE) =>
+						   bool (test, t, f)
+					      | ((1, t), (0, f), NONE) =>
+						   bool (test, t, f)
+					      | _ => normal ()
+					  end
+				    else normal ()
+				 end
+			    | Pointer {cases, default, tag, ...} =>
+				 doit {cases = (Vector.map
+						(cases, fn {dst, tag, ...} =>
+						 (Int.toString tag, dst))),
+				       default = default,
+				       test = tag}
+			    | Word z => simple (z, C.word)
 			end
-		   | SwitchIP {test, int, pointer} =>
-			iff (concat ["IsInt (", Operand.toString test, ")"],
-			     int, pointer)
+	       end
+	    fun declareRegisters () =
+	       let
+		  val {get = seen, rem, set = setSeen} =
+		     Property.getSetOnce (Register.plist,
+					  Property.initConst false)
+		  val all =
+		     Chunk.foldRegs
+		     (chunk, [], fn (r, ac) =>
+		      if seen r
+			 then ac
+		      else (setSeen (r, true)
+			    ; r :: ac))
+	       in
+		  List.foreach
+		  (all, fn r =>
+		   (rem r
+		    ; C.call (concat ["D", Type.name (Register.ty r)],
+			      [C.int (Register.index r)],
+			      print)))
 	       end
 	 in
 	    C.callNoSemi ("Chunk", [ChunkLabel.toString chunkLabel], print)
+	    ; declareRegisters ()
 	    ; print "\n"
-	    (* Declare registers. *)
-	    ; List.foreach (Type.all, fn ty =>
-			    Int.for (0, regMax ty,
-				     fn i => C.call (concat ["D", Type.name ty],
-						     [C.int i],
-						     print)))
 	    ; print "ChunkSwitch\n"
 	    ; Vector.foreach (blocks, fn Block.T {kind, label, ...} =>
 			      if Kind.isEntry kind

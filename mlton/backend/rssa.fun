@@ -19,70 +19,32 @@ end
 structure Operand =
    struct
       datatype t =
-	 ArrayHeader of {numBytesNonPointers: int,
-			 numPointers: int}
-       | ArrayOffset of {base: Var.t,
-			 index: Var.t,
+	 ArrayOffset of {base: t,
+			 index: t,
 			 ty: Type.t}
-       | CastInt of t
-       | CastWord of t
+       | Cast of t * Type.t
        | Const of Const.t
        | EnsuresBytesFree
        | File
        | GCState
        | Line
-       | Offset of {base: Var.t,
-		    bytes: int,
+       | Offset of {base: t,
+		    offset: int,
 		    ty: Type.t}
-       | Pointer of int
+       | PointerTycon of PointerTycon.t
        | Runtime of GCField.t
+       | SmallIntInf of word
        | Var of {var: Var.t,
 		 ty: Type.t}
 
       val char = Const o Const.fromChar
       val int = Const o Const.fromInt
       val word = Const o Const.fromWord
-      fun bool b = int (if b then 1 else 0)
+      fun bool b = Cast (int (if b then 1 else 0), Type.bool)
 	 
-      val rec toString =
-	 fn ArrayHeader {numBytesNonPointers, numPointers} =>
-	       concat ["AH (",
-		       Int.toString numBytesNonPointers,
-		       ", ",
-		       Int.toString numPointers,
-		       ")"]
-	  | ArrayOffset {base, index, ty} =>
-	       concat ["X", Type.name ty, 
-		       "(", Var.toString base, ",", Var.toString index, ")"]
-	  | CastInt z => concat ["CastInt ", toString z]
-	  | CastWord z => concat ["CastWord ", toString z]
-	  | Const c => Const.toString c
-	  | EnsuresBytesFree => "<EnsuresBytesFree>"
-	  | File => "<File>"
-	  | GCState => "<GCState>"
-	  | Line => "<Line>"
-	  | Offset {base, bytes, ty} =>
-	       concat ["O", Type.name ty,
-		       "(", Var.toString base, ",", Int.toString bytes, ")"]
-	  | Pointer n => concat ["IntAsPointer (", Int.toString n, ")"]
-	  | Runtime r => GCField.toString r
-	  | Var {var, ...} => Var.toString var
-
-      val layout: t -> Layout.t = Layout.str o toString
-
-      val rec isLocation =
-	 fn ArrayOffset _ => true
-	  | CastWord z => isLocation z
-	  | Offset _ => true
-	  | Runtime _ => true
-	  | Var _ => true
-	  | _ => false
-
       val ty =
-	 fn ArrayHeader _ => Type.word
-	  | ArrayOffset {ty, ...} => ty
-	  | CastInt _ => Type.int
-	  | CastWord _ => Type.word
+	 fn ArrayOffset {ty, ...} => ty
+	  | Cast (_, ty) => ty
 	  | Const c =>
 	       let
 		  datatype z = datatype Const.Node.t
@@ -90,35 +52,83 @@ structure Operand =
 		  case Const.node c of
 		     Char _ => Type.char
 		   | Int _ => Type.int
-		   | IntInf _ => Type.pointer
-		   | Real _ => Type.double
-		   | String _ => Type.pointer
+		   | IntInf _ => Type.intInf
+		   | Real _ => Type.real
+		   | String _ => Type.string
 		   | Word _ =>
 			let
 			   val ty = Const.ty c
 			in
 			   if Const.Type.equals (ty, Const.Type.word)
-			      then Type.uint
+			      then Type.word
 			   else if Const.Type.equals (ty, Const.Type.word8)
 				   then Type.char
 				else Error.bug "strange word"
 			end
 	       end
 	  | EnsuresBytesFree => Type.word
-	  | File => Type.pointer
-	  | GCState => Type.pointer
+	  | File => Type.cpointer
+	  | GCState => Type.cpointer
 	  | Line => Type.int
 	  | Offset {ty, ...} => ty
-	  | Pointer _ => Type.pointer
-	  | Runtime z => GCField.ty z
+	  | PointerTycon _ => Type.word
+	  | Runtime z => Type.fromRuntime (GCField.ty z)
+	  | SmallIntInf _ => Type.IntInf
 	  | Var {ty, ...} => ty
+
+      fun layout (z: t): Layout.t =
+	 let
+	    open Layout 
+	    fun constrain (ty: Type.t): Layout.t =
+	       if !Control.showTypes
+		  then seq [str ": ", Type.layout ty]
+	       else empty
+	 in
+	    case z of
+	       ArrayOffset {base, index, ty} =>
+		  seq [str (concat ["X", Type.name ty, " "]),
+		       tuple [layout base, layout index],
+		       constrain ty]
+	     | Cast (z, ty) =>
+		  seq [str "Cast ", tuple [layout z, Type.layout ty]]
+	     | Const c => Const.layout c
+	     | EnsuresBytesFree => str "<EnsuresBytesFree>"
+	     | File => str "<File>"
+	     | GCState => str "<GCState>"
+	     | Line => str "<Line>"
+	     | Offset {base, offset, ty} =>
+		  seq [str (concat ["O", Type.name ty, " "]),
+		       tuple [layout base, Int.layout offset],
+		       constrain ty]
+	     | PointerTycon pt => PointerTycon.layout pt
+	     | Runtime r => GCField.layout r
+	     | SmallIntInf w => seq [str "SmallIntInf ", paren (Word.layout w)]
+	     | Var {var, ty} => seq [Var.layout var, constrain ty]
+	 end
+
+      val toString = Layout.toString o layout
+
+      fun cast (z, t) =
+	 if Type.equals (t, ty z)
+	    then z
+	 else Cast (z, t)
+
+      val cast = Trace.trace2 ("Operand.cast", layout, Type.layout, layout) cast
+	 
+      val rec isLocation =
+	 fn ArrayOffset _ => true
+	  | Cast (z, _) => isLocation z
+	  | Offset _ => true
+	  | Runtime _ => true
+	  | Var _ => true
+	  | _ => false
 
       fun 'a foldVars (z: t, a: 'a, f: Var.t * 'a -> 'a): 'a =
 	 case z of
-	    ArrayOffset {base, index, ...} => f (index, f (base, a))
-	  | CastInt z => foldVars (z, a, f)
-	  | CastWord z => foldVars (z, a, f)
-	  | Offset {base, ...} => f (base, a)
+	    ArrayOffset {base, index, ...} =>
+	       foldVars (index, foldVars (base, a, f), f)
+	  | Cast (z, _) => foldVars (z, a, f)
+	  | Offset {base, ...} => foldVars (base, a, f)
 	  | Var {var, ...} => f (var, a)
 	  | _ => a
 
@@ -138,6 +148,9 @@ structure Operand =
 	  | _ => big z
    end
 
+structure Switch = Switch (open S
+			   structure Use = Operand)
+
 structure Statement =
    struct
       datatype t =
@@ -147,10 +160,11 @@ structure Statement =
        | Move of {dst: Operand.t,
 		  src: Operand.t}
        | Object of {dst: Var.t,
-		    numPointers: int,
-		    numWordsNonPointers: int,
+		    size: int,
 		    stores: {offset: int,
-			     value: Operand.t} vector}
+			     value: Operand.t} vector,
+		    ty: Type.t,
+		    tycon: PointerTycon.t}
        | PrimApp of {args: Operand.t vector,
 		     dst: (Var.t * Type.t) option,
 		     prim: Prim.t}
@@ -173,8 +187,8 @@ structure Statement =
 	       Bind {oper, var, ...} =>
 		  def (var, Operand.ty oper, useOperand (oper, a))
 	     | Move {dst, src} => useOperand (src, useOperand (dst, a))
-	     | Object {dst, stores, ...} =>
-		  Vector.fold (stores, def (dst, Type.pointer, a),
+	     | Object {dst, stores, ty, ...} =>
+		  Vector.fold (stores, def (dst, ty, a),
 			       fn ({value, ...}, a) => useOperand (value, a))
 	     | PrimApp {dst, args, ...} =>
 		  Vector.fold (args,
@@ -205,26 +219,42 @@ structure Statement =
       val layout =
 	 let
 	    open Layout
+	    fun constrain ty =
+	       if !Control.showTypes
+		  then seq [str ": ", Type.layout ty]
+	       else empty
 	 in
 	    fn Bind {oper, var, ...} =>
-		  seq [Var.layout var, str " = ", Operand.layout oper]
+		  seq [Var.layout var, constrain (Operand.ty oper),
+		       str " = ", Operand.layout oper]
 	     | Move {dst, src} =>
-		  seq [Operand.layout dst, str " = ", Operand.layout src]
-	     | Object {dst, numPointers, numWordsNonPointers, stores, ...} =>
-		  seq [Var.layout dst, str " = Object ",
-		       tuple [Int.layout numWordsNonPointers,
-			      Int.layout numPointers],
-		       str " ",
-		       Vector.layout (fn {offset, value} =>
-				      record [("offset", Int.layout offset),
-					      ("value", Operand.layout value)])
-		       stores]
+		  mayAlign [Operand.layout dst,
+			    seq [str " = ", Operand.layout src]]
+	     | Object {dst, size, stores, ty, tycon} =>
+		  mayAlign
+		  [seq [Var.layout dst, constrain ty],
+		   seq [str " = Object ",
+			record
+			[("size", Int.layout size),
+			 ("tycon", PointerTycon.layout tycon),
+			 ("stores",
+			  Vector.layout
+			  (fn {offset, value} =>
+			   record [("offset", Int.layout offset),
+				   ("value", Operand.layout value)])
+			  stores)]]]
 	     | PrimApp {dst, prim, args, ...} =>
-		  seq [(case dst of
-			   NONE => empty
-			 | SOME (x, _) => seq [Var.layout x, str " = "]),
-		       Prim.layout prim, str " ",
-		       Vector.layout Operand.layout args]
+		  let
+		     val rest =
+			seq [Prim.layout prim, str " ",
+			     Vector.layout Operand.layout args]
+		  in
+		     case dst of
+			NONE => rest
+		      | SOME (x, t) =>
+			   mayAlign [seq [Var.layout x, constrain t],
+				     seq [str " = ", rest]]
+		  end
 	     | SetExnStackLocal => str "SetExnStackLocal"
 	     | SetExnStackSlot => str "SetExnStackSlot "
 	     | SetHandler l => seq [str "SetHandler ", Label.layout l]
@@ -254,12 +284,7 @@ structure Transfer =
 		  args: Operand.t vector}
        | Raise of Operand.t vector
        | Return of Operand.t vector
-       | Switch of {cases: Cases.t,
-		    default: Label.t option,
-		    test: Operand.t}
-       | SwitchIP of {int: Label.t,
-		      pointer: Label.t,
-		      test: Operand.t}
+       | Switch of Switch.t
 
       fun layout t =
 	 let
@@ -305,17 +330,9 @@ structure Transfer =
 	     | Goto {dst, args} =>
 		  seq [Label.layout dst, str " ",
 		       Vector.layout Operand.layout args]
-	     | Raise xs => seq [str "Raise", Vector.layout Operand.layout xs]
+	     | Raise xs => seq [str "Raise ", Vector.layout Operand.layout xs]
 	     | Return xs => seq [str "Return ", Vector.layout Operand.layout xs]
-	     | Switch {test, cases, default} =>
-		  seq [str "Switch ",
-		       tuple [Operand.layout test,
-			      Cases.layout cases,
-			      Option.layout Label.layout default]]
-	     | SwitchIP {test, int, pointer} =>
-		  seq [str "SwitchIP ", tuple [Operand.layout test,
-					       Label.layout int,
-					       Label.layout pointer]]
+	     | Switch s => Switch.layout s
 	 end
 
       val bug =
@@ -325,9 +342,10 @@ structure Transfer =
 		func = CFunction.bug,
 		return = NONE}
 
-      fun 'a foldDefLabelUse (t, a: 'a, {def: Var.t * Type.t * 'a -> 'a,
-					 label: Label.t * 'a -> 'a,
-					 use: Var.t * 'a -> 'a}): 'a =
+      fun 'a foldDefLabelUse (t, a: 'a,
+			      z as {def: Var.t * Type.t * 'a -> 'a,
+				    label: Label.t * 'a -> 'a,
+				    use: Var.t * 'a -> 'a}): 'a =
 	 let
 	    fun useVars (xs: Var.t vector, a) =
 	       Vector.fold (xs, a, use)
@@ -355,16 +373,8 @@ structure Transfer =
 	     | Goto {args, dst, ...} => label (dst, useOperands (args, a))
 	     | Raise zs => useOperands (zs, a)
 	     | Return zs => useOperands (zs, a)
-	     | Switch {cases, default, test, ...} =>
-		  let
-		     val a = useOperand (test, a)
-		     val a = Option.fold (default, a, label)
-		     val a = Cases.fold (cases, a, label)
-		  in
-		     a
-		  end
-	     | SwitchIP {int, pointer, test, ...} =>
-		  label (int, label (pointer, useOperand (test, a)))
+	     | Switch s => Switch.foldLabelUse (s, a, {label = label,
+						       use = useOperand})
 	 end
 
       fun foreachDefLabelUse (t, {def, label, use}) =
@@ -394,10 +404,17 @@ structure Transfer =
       fun clear (t: t): unit =
 	 foreachDef (t, Var.clear o #1)
 
-      fun iff (test, {falsee, truee}) =
-	 Switch {cases = Cases.Int [(0, falsee), (1, truee)],
-		 default = NONE,
-		 test = test}
+      fun ifBool (test, {falsee, truee}) =
+	 Switch (Switch.Int
+		 {cases = Vector.new2 ((0, falsee), (1, truee)),
+		  default = NONE,
+		  test = test})
+	 
+      fun ifInt (test, {falsee, truee}) =
+	 Switch (Switch.Int
+		 {cases = Vector.new1 (0, falsee),
+		  default = SOME truee,
+		  test = test})
    end
 
 structure Kind =
@@ -423,6 +440,18 @@ structure Kind =
 	     | Jump => str "Jump"
 	 end
    end
+
+local
+   open Layout
+in
+   fun layoutFormals (xts: (Var.t * Type.t) vector) =
+      Vector.layout (fn (x, t) =>
+		    seq [Var.layout x,
+			 if !Control.showTypes
+			    then seq [str ": ", Type.layout t]
+			 else empty])
+      xts
+end
 
 structure Block =
    struct
@@ -520,6 +549,8 @@ structure Function =
       datatype t = T of {args: (Var.t * Type.t) vector,
 			 blocks: Block.t vector,
 			 name: Func.t,
+			 raises: Type.t vector option,
+			 returns: Type.t vector option,
 			 start: Label.t}
 
       local
@@ -542,18 +573,26 @@ structure Function =
       fun hasPrim (T {blocks, ...}, pred) =
 	 Vector.exists (blocks, fn b => Block.hasPrim (b, pred))
 
-      fun layout (T {args, blocks, name, start}): Layout.t =
+      fun layoutHeader (T {args, name, start, ...}): Layout.t =
 	 let
 	    open Layout
 	 in
-	    align
-	    [seq [Func.layout name,
-		  Vector.layout (Layout.tuple2 (Var.layout, Type.layout)) args,
-		  str " = ",
-		  Label.layout start,
-		  str " ()"],
-	     indent (align (Vector.toListMap (blocks, Block.layout)),
-		     2)]
+	    seq [str "fun ", Func.layout name,
+		 str " ", layoutFormals args,
+		 str " = ", Label.layout start, str " ()"]
+	 end
+
+      fun layouts (f as T {blocks, ...}, output) =
+	 (output (layoutHeader f)
+	  ; Vector.foreach (blocks, fn b =>
+			    output (Layout.indent (Block.layout b, 2))))
+
+      fun layout (f as T {blocks, ...}) =
+	 let
+	    open Layout
+	 in
+	    align [layoutHeader f,
+		   indent (align (Vector.toListMap (blocks, Block.layout)), 2)]
 	 end
 
       fun dfs (T {blocks, start, ...}, v) =
@@ -630,9 +669,11 @@ structure Function =
 
 structure Program =
    struct
-      datatype t = T of {functions: Function.t list,
-			 main: Function.t,
-			 profileAllocLabels: string vector}
+      datatype t =
+	 T of {functions: Function.t list,
+	       main: Function.t,
+	       objectTypes: ObjectType.t vector,
+	       profileAllocLabels: string vector}
 
       fun clear (T {functions, main, ...}) =
 	 (List.foreach (functions, Function.clear)
@@ -646,17 +687,23 @@ structure Program =
 	 end
 
       fun handlesSignals p =
-	 hasPrim (p, fn p => Prim.name p = Prim.Name.MLton_installSignalHandler)
+	 hasPrim (p, fn p =>
+		  Prim.name p = Prim.Name.MLton_installSignalHandler)
 	 
-      fun layouts (T {functions, main, ...}, output': Layout.t -> unit): unit =
+      fun layouts (T {functions, main, objectTypes, ...},
+		   output': Layout.t -> unit): unit =
 	 let
 	    open Layout
 	    val output = output'
 	 in
-	    output (str "Main:")
-	    ; output (Function.layout main)
-	    ; output (str "\n\nFunctions:")
-	    ; List.foreach (functions, output o Function.layout)
+	    output (str "\nObjectTypes:")
+	    ; Vector.foreachi (objectTypes, fn (i, ty) =>
+			       output (seq [str "pt_", Int.layout i,
+					    str " = ", ObjectType.layout ty]))
+	    ; output (str "\nMain:")
+	    ; Function.layouts (main, output)
+	    ; output (str "\nFunctions:")
+	    ; List.foreach (functions, fn f => Function.layouts (f, output))
 	 end
 	    
       fun checkScopes (program as T {functions, main, ...}): unit =
@@ -753,8 +800,16 @@ structure Program =
 	 in ()
 	 end
 
-      fun typeCheck (p as T {functions, main, ...}) =
+      fun typeCheck (p as T {functions, main, objectTypes, ...}) =
 	 let
+	    val _ =
+	       Vector.foreach
+	       (objectTypes, fn ty =>
+		Err.check ("objectType",
+			   fn () => ObjectType.isOk ty,
+			   fn () => ObjectType.layout ty))
+	    fun tyconTy (pt: PointerTycon.t): ObjectType.t =
+	       Vector.sub (objectTypes, PointerTycon.index pt)
 	    val _ = checkScopes p
 	    val {get = labelBlock: Label.t -> Block.t,
 		 set = setLabelBlock, ...} =
@@ -775,29 +830,89 @@ structure Program =
 		   datatype z = datatype Operand.t
 		   fun ok () =
 		      case x of
-			 ArrayHeader {numBytesNonPointers = nbnp, numPointers = np} =>
-			    nbnp >= 0 andalso np >= 0
-			    
-		       | ArrayOffset {base, index, ty} =>
-			    Type.equals (varType base, Type.pointer)
-			    andalso Type.equals (varType index, Type.int)
-		       | CastInt z => Type.equals (Operand.ty z, Type.pointer)
-		       | CastWord z =>
-			    Type.equals (Operand.ty z, Type.pointer)
-			    orelse Type.equals (Operand.ty z, Type.int)
+			 ArrayOffset z => arrayOffsetIsOk z
+		       | Cast (z, ty) =>
+			    (checkOperand z
+			    ; (castIsOk
+			       {from = Operand.ty z,
+				fromInt = (case z of
+					      Const c =>
+						 (case Const.node c of
+						     Const.Node.Int n => SOME n
+						   | _ => NONE)
+					    | _ => NONE),
+				to = ty,
+				tyconTy = tyconTy}))
 		       | Const _ => true
 		       | EnsuresBytesFree => true
 		       | File => true
 		       | GCState => true
 		       | Line => true
-		       | Offset {base, ...} =>
-			    Type.equals (varType base, Type.pointer)
-		       | Pointer n => 0 < Int.rem (n, Runtime.wordSize)
+		       | Offset z => offsetIsOk z
+		       | PointerTycon _ => true
 		       | Runtime _ => true
+		       | SmallIntInf _ => true
 		       | Var {ty, var} => Type.equals (ty, varType var)
 		in
 		   Err.check ("operand", ok, fn () => Operand.layout x)
 		end
+	    and arrayOffsetIsOk {base, index, ty} =
+	       let
+		  val _ = checkOperand base
+		  val _ = checkOperand index
+	       in
+		  Type.equals (Operand.ty index, Type.int)
+		  andalso
+		  case Operand.ty base of
+		     Type.CPointer => true (* needed for card marking *)
+		   | Type.EnumPointers {enum, pointers} =>
+			0 = Vector.length enum
+			andalso
+			Vector.forall
+			(pointers, fn p =>
+			 case tyconTy p of
+			    ObjectType.Array
+			    (MemChunk.T {components, ...}) =>
+			       1 = Vector.length components
+			       andalso
+			       let
+				  val {offset, ty = ty', ...} =
+				     Vector.sub (components, 0)
+			       in
+				  offset = 0
+				  andalso Type.equals (ty, ty')
+			       end
+			  | _ => false)
+		   | _ => false
+	       end
+	    and offsetIsOk {base, offset, ty} =
+	       let
+		  val _ = checkOperand base
+		  fun memChunkIsOk (MemChunk.T {components, ...}) =
+		     case Vector.peek (components, fn {offset = offset', ...} =>
+				       offset = offset') of
+			NONE => false
+		      | SOME {ty = ty', ...} => Type.equals (ty, ty')
+	       in
+		  case Operand.ty base of
+		     Type.EnumPointers {enum, pointers} =>
+			0 = Vector.length enum
+			andalso
+			((* Vector_fromArray header update. *)
+			 (offset = Runtime.headerOffset
+			  andalso Type.equals (ty, Type.word))
+			 orelse
+			 Vector.forall
+			 (pointers, fn p =>
+			  case tyconTy p of
+			     ObjectType.Normal m => memChunkIsOk m
+			   | _ => false))
+		   | Type.MemChunk m => memChunkIsOk m
+		   | _ => false
+	       end
+	    val checkOperand =
+	       Trace.trace ("checkOperand", Operand.layout, Unit.layout)
+	       checkOperand
 	    fun checkOperands v = Vector.foreach (v, checkOperand)
 	    fun check' (x, name, isOk, layout) =
 	       Err.check (name, fn () => isOk x, fn () => layout x)
@@ -817,11 +932,17 @@ structure Program =
 			 ; checkOperand src
 			 ; (Type.equals (Operand.ty dst, Operand.ty src)
 			    andalso Operand.isLocation dst))
-		   | Object {dst, numPointers, numWordsNonPointers, stores} =>
-			 (Vector.foreach (stores, fn {offset, value} =>
-					  checkOperand value)
-			  ; (numPointers >= 0
-			     andalso numWordsNonPointers >= 0))
+		   | Object {dst, size, stores, tycon, ...} =>
+			(Vector.foreach (stores, checkOperand o # value)
+			 ; (case tyconTy tycon of
+			       ObjectType.Normal mc =>
+				  MemChunk.isValidInit
+				  (mc, 
+				   Vector.map
+				   (stores, fn {offset, value} =>
+				    {offset = offset,
+				     ty = Operand.ty value}))
+			     | _ => false))
 		   | PrimApp {args, ...} =>
 			(Vector.foreach (args, checkOperand)
 			 ; true)
@@ -833,111 +954,20 @@ structure Program =
 			  | _ => false)
 		   | SetSlotExnStack => true
 	       end
-	    fun goto {dst, args} =
+	    fun goto {args: Type.t vector,
+		      dst: Label.t}: bool =
 	       let
 		  val Block.T {args = formals, kind, ...} = labelBlock dst
 	       in
-		  Vector.equals (args, formals, fn (z, (_, t)) =>
-				 Type.equals (t, Operand.ty z))
+		  Vector.equals (args, formals, fn (t, (_, t')) =>
+				 Type.equals (t, t'))
 		  andalso (case kind of
 			      Kind.Jump => true
 			    | _ => false)
 	       end
 	    fun labelIsNullaryJump l = goto {dst = l, args = Vector.new0 ()}
-	    fun transferOk (t: Transfer.t): bool =
-	       let
-		  datatype z = datatype Transfer.t
-	       in
-		  case t of
-		     Arith {args, dst, overflow, prim, success, ty} =>
-			Prim.mayOverflow prim
-			andalso labelIsNullaryJump overflow
-			andalso labelIsNullaryJump success
-			andalso
-			Vector.forall (args, fn x =>
-				       Type.equals (ty, Operand.ty x))
-		   | CCall {args, func, return} =>
-			let
-			   val _ = checkOperands args
-			in
-			   CFunction.isOk func
-			   andalso
-			   case return of
-			      NONE => true
-			    | SOME l =>
-				 case labelKind l of
-				    Kind.CReturn {func = f} =>
-				       CFunction.equals (func, f)
-				  | _ => false
-			   end
-		   | Call {args, func, return} =>
-			let
-			   val Function.T {args = formals, ...} = funcInfo func
-			in
-			   Vector.equals (args, formals, fn (z, (_, t)) =>
-					  Type.equals (t, Operand.ty z))
-			   andalso
-			   (case return of
-			       Return.Dead => true
-			     | Return.HandleOnly => true
-			     | Return.NonTail {cont, handler = h} =>
-				  (case labelKind cont of
-				      Kind.Cont {handler = h'} =>
-					 (case (h, h') of
-					     (Handler.CallerHandler, NONE) =>
-						true
-					   | (Handler.None, NONE) => true
-					   | (Handler.Handle l, SOME l') =>
-						Label.equals (l, l')
-					   | _ => false)
-				    | _ => false)
-			     | Return.Tail => true)
-			end
-		   | Goto z => goto z
-		   | Raise _ => true
-		   | Return _ => true
-		   | Switch {cases, default, test} =>
-			(Cases.forall (cases, labelIsNullaryJump)
-			 andalso Option.forall (default, labelIsNullaryJump)
-			 andalso (Type.equals
-				  (Operand.ty test,
-				   case cases of
-				      Cases.Char _ => Type.char
-				    | Cases.Int _ => Type.int
-				    | Cases.Word _ => Type.uint)))
-		   | SwitchIP {int, pointer, test} =>
-			(checkOperand test
-			 ; (labelIsNullaryJump pointer
-			    andalso labelIsNullaryJump int
-			    andalso Type.equals (Type.pointer,
-						 Operand.ty test)))
-	       end
-	    fun blockOk (Block.T {args, kind, label, 
-				  statements, transfer, ...}): bool =
-	       let
-		  fun kindOk (k: Kind.t): bool =
-		     let
-			datatype z = datatype Kind.t
-			val _ =
-			   case k of
-			      Cont _ => true
-			    | CReturn _ => true
-			    | Handler => true
-			    | Jump => true
-		     in
-			true
-		     end
-		  val _ = check' (kind, "kind", kindOk, Kind.layout)
-		  val _ =
-		     Vector.foreach
-		     (statements, fn s =>
-		      check' (s, "statement", statementOk, Statement.layout))
-		  val _ = check' (transfer, "transfer", transferOk,
-				  Transfer.layout)
-	       in
-		  true
-	       end
-	    fun checkFunction (Function.T {args, blocks, start, ...}) =
+	    fun checkFunction (Function.T {args, blocks, raises, returns, start,
+					   ...}) =
 	       let
 		  val _ = Vector.foreach (args, setVarType)
 		  val _ =
@@ -951,9 +981,114 @@ structure Program =
 					 (s, setVarType))
 		       ; Transfer.foreachDef (transfer, setVarType)))
 		  val _ = labelIsNullaryJump start
+		  fun transferOk (t: Transfer.t): bool =
+		     let
+			datatype z = datatype Transfer.t
+		     in
+			case t of
+			   Arith {args, dst, overflow, prim, success, ty} =>
+			      let
+				 val _ = checkOperands args
+			      in
+				 Prim.mayOverflow prim
+				 andalso labelIsNullaryJump overflow
+				 andalso labelIsNullaryJump success
+				 andalso
+				 Vector.forall (args, fn x =>
+						Type.equals (ty, Operand.ty x))
+			      end
+			 | CCall {args, func, return} =>
+			      let
+				 val _ = checkOperands args
+			      in
+				 CFunction.isOk func
+				 andalso
+				 case return of
+				    NONE => true
+				  | SOME l =>
+				       case labelKind l of
+					  Kind.CReturn {func = f} =>
+					     CFunction.equals (func, f)
+					| _ => false
+			      end
+			 | Call {args, func, return} =>
+			      let
+				 val _ = checkOperands args
+				 val Function.T {args = formals, ...} = funcInfo func
+			      in
+				 Vector.equals (args, formals, fn (z, (_, t)) =>
+						Type.equals (t, Operand.ty z))
+				 andalso
+				 (case return of
+				     Return.Dead => true
+				   | Return.HandleOnly => true
+				   | Return.NonTail {cont, handler = h} =>
+					(case labelKind cont of
+					    Kind.Cont {handler = h'} =>
+					       (case (h, h') of
+						   (Handler.CallerHandler, NONE) =>
+						      true
+						 | (Handler.None, NONE) => true
+						 | (Handler.Handle l, SOME l') =>
+						      Label.equals (l, l')
+						 | _ => false)
+					  | _ => false)
+				   | Return.Tail => true)
+			      end
+			 | Goto {args, dst} =>
+			      (checkOperands args
+			       ; goto {args = Vector.map (args, Operand.ty),
+				       dst = dst})
+			 | Raise zs =>
+			      (checkOperands zs
+			       ; (case raises of
+				     NONE => false
+				   | SOME ts =>
+					Vector.equals
+					(zs, ts, fn (z, t) =>
+					 Type.equals (t, Operand.ty z))))
+			 | Return zs =>
+			      (checkOperands zs
+			       ; (case returns of
+				     NONE => false
+				   | SOME ts =>
+					Vector.equals
+					(zs, ts, fn (z, t) =>
+					 Type.equals (t, Operand.ty z))))
+			 | Switch s =>
+			      Switch.isOk (s, {labelIsOk = labelIsNullaryJump})
+		     end
+		  fun blockOk (Block.T {args, kind, label, 
+					statements, transfer, ...}): bool =
+		     let
+			fun kindOk (k: Kind.t): bool =
+			   let
+			      datatype z = datatype Kind.t
+			      val _ =
+				 case k of
+				    Cont _ => true
+				  | CReturn _ => true
+				  | Handler => true
+				  | Jump => true
+			   in
+			      true
+			   end
+			val _ = check' (kind, "kind", kindOk, Kind.layout)
+			val _ =
+			   Vector.foreach
+			   (statements, fn s =>
+			    check' (s, "statement", statementOk,
+				    Statement.layout))
+			val _ = check' (transfer, "transfer", transferOk,
+					Transfer.layout)
+		     in
+			true
+		     end
+
 		  val _ = 
 		     Vector.foreach
-		     (blocks, fn b => check' (b, "block", blockOk, Block.layout))
+		     (blocks, fn b =>
+		      check' (b, "block", blockOk, Block.layout))
 	       in
 		  ()
 	       end

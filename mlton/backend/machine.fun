@@ -5,18 +5,24 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor Machine (S: MACHINE_STRUCTS): MACHINE =
 struct
 
 open S
 
+structure Runtime = Runtime ()
 local
    open Runtime
 in
    structure CFunction = CFunction
    structure GCField = GCField
-   structure Type = Type
 end
+
+structure Atoms = MachineAtoms (structure Label = Label
+				structure Prim = Prim
+				structure Runtime = Runtime)
+open Atoms
 
 structure ChunkLabel = IntUniqueId ()
    
@@ -28,45 +34,90 @@ structure SmallIntInf =
 structure Register =
    struct
       datatype t = T of {index: int,
+			 plist: PropertyList.t,
 			 ty: Type.t}
 
       local
 	 fun make f (T r) = f r
       in
 	 val index = make #index
+	 val plist = make #plist
 	 val ty = make #ty
       end
 
-      fun toString (T {index, ty}) =
-         concat ["R", Type.name ty, "(", Int.toString index, ")"]
-	 
-      val layout = Layout.str o toString
+      local
+	 val c = Counter.new 0
+      in
+	 fun new ty = T {index = Counter.next c,
+			 plist = PropertyList.new (),
+			 ty = ty}
+      end
 
-      fun equals (r1, r2) = 
-	 Type.equals (ty r1, ty r2) 
-	 andalso index r1 = index r2
+      fun layout (T {index, ty, ...}) =
+	 let
+	    open Layout
+	 in
+	    seq [str "reg ",
+		 record [("index", Int.layout index),
+			 ("ty", Type.layout ty)]]
+	 end
+
+      val toString = Layout.toString o layout
+
+      fun equals (T {plist = p, ...}, T {plist = p', ...}) =
+	 PropertyList.equals (p, p')
    end
 
 structure Global =
    struct
       datatype t = T of {index: int,
+			 isRoot: bool,
+			 plist: PropertyList.t,
 			 ty: Type.t}
+
+      fun layout (T {index, ty, ...}) =
+	 let
+	    open Layout
+	 in
+	    seq [str "glob ",
+		 record [("index", Int.layout index),
+			 ("ty", Type.layout ty)]]
+	 end
+      
+      val toString = Layout.toString o layout
 
       local
 	 fun make f (T r) = f r
       in
 	 val index = make #index
+	 val isRoot = make #isRoot
+	 val plist = make #plist
 	 val ty = make #ty
       end
 
-      fun toString (T {index, ty}) =
-         concat ["G", Type.name ty, "(", Int.toString index, ")"]
-	 
-      val layout = Layout.str o toString
+      val nonRootCounter = Counter.new 0
+      fun numberOfNonRoot () = Counter.value nonRootCounter
 
-      fun equals (g1, g2) = 
-	 Type.equals (ty g1, ty g2)
-	 andalso index g1 = index g2
+      val memo = Runtime.Type.memo (fn _ => Counter.new 0)
+      fun numberOfType t = Counter.value (memo t)
+	 
+      fun new {isRoot, ty} =
+	 let
+	    val isRoot = isRoot orelse not (Type.isPointer ty)
+	    val counter =
+	       if isRoot
+		  then memo (Type.toRuntime ty)
+	       else nonRootCounter
+	    val g = T {index = Counter.next counter,
+		       isRoot = isRoot,
+		       plist = PropertyList.new (),
+		       ty = ty}
+	 in
+	    g
+	 end
+
+      fun equals (T {plist = p, ...}, T {plist = p', ...}) =
+	 PropertyList.equals (p, p')
    end
 
 structure Operand =
@@ -75,115 +126,117 @@ structure Operand =
 	 ArrayOffset of {base: t,
 			 index: t,
 			 ty: Type.t}
-       | CastInt of t
-       | CastWord of t
+       | Cast of t * Type.t
        | Char of char
        | Contents of {oper: t,
 		      ty: Type.t}
        | File
-       | Float of string
        | GCState
        | Global of Global.t
-       | GlobalPointerNonRoot of int
        | Int of int
-       | IntInf of SmallIntInf.t
+       | SmallIntInf of SmallIntInf.t
        | Label of Label.t
        | Line
        | Offset of {base: t, offset: int, ty: Type.t}
-       | Pointer of int
        | Register of Register.t
+       | Real of string
        | Runtime of GCField.t
        | StackOffset of {offset: int, ty: Type.t}
-       | Uint of Word.t
+       | Word of Word.t
     
       val rec isLocation =
 	 fn ArrayOffset _ => true
-	  | CastWord z => isLocation z
+	  | Cast (z, _) => isLocation z
 	  | Contents _ => true
 	  | Global _ => true
-	  | GlobalPointerNonRoot _ => true
 	  | Offset _ => true
 	  | Register _ => true
 	  | Runtime z => true
 	  | StackOffset _ => true
 	  | _ => false
 
-      val rec toString =
-	 fn ArrayOffset {base, index, ty} =>
-	 concat ["X", Type.name ty, 
-		 "(", toString base, ",", toString index, ")"]
-	  | CastInt oper => concat ["(int) (", toString oper, ")"]
-	  | CastWord oper => concat ["(word) (", toString oper, ")"]
-	  | Char c => Char.escapeC c
-	  | Contents {oper, ty} =>
-	       concat ["C", Type.name ty, "(", toString oper, ")"]
-	  | File => "<FILE>"
-	  | Float s => s
-	  | GCState => "gcState"
-	  | Global g => Global.toString g
-	  | GlobalPointerNonRoot n =>
-	       concat ["globalpointerNonRoot [", Int.toString n, "]"]
-	  | Int n => Int.toString n
-	  | IntInf w => concat ["SmallIntInf (", Word.toString w, ")"]
-	  | Label l => Label.toString l
-	  | Line => "<LINE>"
-	  | Offset {base, offset, ty} =>
-	       concat ["O", Type.name ty,
-		       "(", toString base, ",", Int.toString offset, ")"]
-	  | Pointer n => concat ["IntAsPointer (", Int.toString n, ")"]
-	  | Register r => Register.toString r
-	  | Runtime r => GCField.toString r
-	  | StackOffset {offset, ty} =>
-	       concat ["S", Type.name ty, "(", Int.toString offset, ")"]
-	  | Uint w => concat ["0x", Word.toString w]
+      fun layout (z: t): Layout.t =
+	 let
+	    open Layout 
+	    fun constrain (ty: Type.t): Layout.t =
+	       if !Control.showTypes
+		  then seq [str ": ", Type.layout ty]
+	       else empty
+	 in
+	    case z of
+	       ArrayOffset {base, index, ty} =>
+		  seq [str (concat ["X", Type.name ty, " "]),
+		       tuple [layout base, layout index],
+		       constrain ty]
+	     | Cast (z, ty) =>
+		  seq [str "Cast ", tuple [layout z, Type.layout ty]]
+	     | Char c => str (Char.escapeC c)
+	     | Contents {oper, ty} =>
+		  seq [str (concat ["C", Type.name ty, " "]),
+		       paren (layout oper)]
+	     | File => str "<File>"
+	     | GCState => str "<GCState>"
+	     | Global g => Global.layout g
+	     | Int i => Int.layout i
+	     | Label l => Label.layout l
+	     | Line => str "<Line>"
+	     | Offset {base, offset, ty} =>
+		  seq [str (concat ["O", Type.name ty, " "]),
+		       tuple [layout base, Int.layout offset],
+		       constrain ty]
+	     | Real s => str s
+	     | Register r => Register.layout r
+	     | Runtime r => GCField.layout r
+	     | SmallIntInf w => seq [str "SmallIntInf ", paren (Word.layout w)]
+	     | StackOffset {offset, ty} =>
+		  seq [str (concat ["S", Type.name ty, " "]),
+		       paren (Int.layout offset)]
+	     | Word w => seq [str "0x", Word.layout w]
+	 end
 
-    val layout = Layout.str o toString
+    val toString = Layout.toString o layout
 
     val ty =
        fn ArrayOffset {ty, ...} => ty
-	| CastInt _ => Type.int
-	| CastWord _ => Type.word
+	| Cast (_, ty) => ty
 	| Char _ => Type.char
 	| Contents {ty, ...} => ty
-	| File => Type.pointer
-	| Float _ => Type.double
-	| GCState => Type.pointer
+	| File => Type.cpointer
+	| GCState => Type.cpointer
 	| Global g => Global.ty g
-	| GlobalPointerNonRoot _ => Type.pointer
 	| Int _ => Type.int
-	| IntInf _ => Type.pointer
 	| Label _ => Type.label
 	| Line => Type.int
 	| Offset {ty, ...} => ty
-	| Pointer _ => Type.pointer
+	| Real _ => Type.real
 	| Register r => Register.ty r
-	| Runtime z => GCField.ty z
+	| Runtime z => Type.fromRuntime (GCField.ty z)
+	| SmallIntInf _ => Type.intInf
 	| StackOffset {ty, ...} => ty
-	| Uint _ => Type.uint
+	| Word _ => Type.word
 	 
       val rec equals =
 	 fn (ArrayOffset {base = b, index = i, ...},
 	     ArrayOffset {base = b', index = i', ...}) =>
 	        equals (b, b') andalso equals (i, i') 
-	   | (CastInt z, CastInt z') => equals (z, z')
-	   | (CastWord z, CastWord z') => equals (z, z')
+	   | (Cast (z, t), Cast (z', t')) =>
+		Type.equals (t, t') andalso equals (z, z')
 	   | (Char c, Char c') => c = c'
 	   | (Contents {oper = z, ...}, Contents {oper = z', ...}) =>
 		equals (z, z')
 	   | (File, File) => true
-	   | (Float f, Float f') => f = f'
 	   | (GCState, GCState) => true
-	   | (Int n, Int n') => n = n'
-	   | (IntInf w, IntInf w') => Word.equals (w, w')
+	   | (Int i, Int i') => i = i'
 	   | (Line, Line) => true
 	   | (Offset {base = b, offset = i, ...},
 	      Offset {base = b', offset = i', ...}) =>
 	        equals (b, b') andalso i = i' 
-	   | (Pointer n, Pointer n') => n = n'
+	   | (Real s, Real s') => s = s'
 	   | (Register r, Register r') => Register.equals (r, r')
+	   | (SmallIntInf w, SmallIntInf w') => Word.equals (w, w')
 	   | (StackOffset {offset = n, ...}, StackOffset {offset = n', ...}) =>
 		n = n'
-	   | (Uint w, Uint w') => w = w'
+	   | (Word w, Word w') => w = w'
 	   | _ => false
 
       fun interfere {write: t, read: t}: bool =
@@ -193,7 +246,6 @@ structure Operand =
 	       inter base orelse inter index
 	  | (Contents {oper, ...}, _) => inter oper
 	  | (Global g, Global g') => Global.equals (g, g')
-	  | (GlobalPointerNonRoot i, GlobalPointerNonRoot j) => i = j
 	  | (Offset {base, offset, ...}, _) => inter base
 	  | (Register r, Register r') => Register.equals (r, r')
 	  | (StackOffset {offset = off, ty = ty},
@@ -206,6 +258,9 @@ structure Operand =
 	  | _ => false
 	 end
    end
+
+structure Switch = Switch (open Atoms
+			   structure Use = Operand)
 
 structure Statement =
    struct
@@ -274,9 +329,16 @@ structure Statement =
 	  | PrimApp {args, dst, ...} =>
 	       Vector.fold (args, Option.fold (dst, ac, f), f)
 	  | _ => ac
-   end
 
-structure Cases = MachineCases (structure Label = Label)
+      fun foldDefs (s, a, f) =
+	 case s of
+	    Move {dst, ...} => f (dst, a)
+	  | Object {dst, ...} => f (dst, a)
+	  | PrimApp {dst, ...} => (case dst of
+				      NONE => a
+				    | SOME z => f (z, a))
+	  | _ => a
+   end
 
 structure FrameInfo =
    struct
@@ -318,12 +380,7 @@ structure Transfer =
        | Goto of Label.t
        | Raise
        | Return of {live: Operand.t vector}
-       | Switch of {cases: Cases.t,
-		    default: Label.t option,
-		    test: Operand.t}
-       | SwitchIP of {int: Label.t,
-		      pointer: Label.t,
-		      test: Operand.t}
+       | Switch of Switch.t
 
       fun layout t =
 	 let
@@ -360,24 +417,23 @@ structure Transfer =
 	     | Return {live} => 
 		  seq [str "Return ",
 		       record [("live", Vector.layout Operand.layout live)]]
-	     | Switch {test, cases, default} =>
-		  seq [str "Switch ",
-		       tuple [Operand.layout test,
-			      Cases.layout cases,
-			      Option.layout Label.layout default]]
-	     | SwitchIP {test, int, pointer} =>
-		  seq [str "SwitchIP ", tuple [Operand.layout test,
-					       Label.layout int,
-					       Label.layout pointer]]
+	     | Switch s => Switch.layout s
 	 end
 
-      fun foldOperands (t, ac, f) =
+       fun foldOperands (t, ac, f) =
+ 	 case t of
+ 	    Arith {args, dst, ...} => Vector.fold (args, f (dst, ac), f)
+ 	  | CCall {args, ...} => Vector.fold (args, ac, f)
+ 	  | Switch s =>
+	       Switch.foldLabelUse
+	       (s, ac, {label = fn (_, a) => a,
+			use = f})
+ 	  | _ => ac
+
+       fun foldDefs (t, a, f) =
 	 case t of
-	    Arith {args, dst, ...} => Vector.fold (args, f (dst, ac), f)
-	  | CCall {args, ...} => Vector.fold (args, ac, f)
-	  | Switch {test, ...} => f (test, ac)
-	  | SwitchIP {test, ...} => f (test, ac)
-	  | _ => ac
+	    Arith {dst, ...} => f (dst, a)
+	  | _ => a
    end
 
 structure Kind =
@@ -456,73 +512,80 @@ structure Block =
 	 end
 
       fun layouts (block, output' : Layout.t -> unit) = output' (layout block)
+
+      fun foldDefs (T {kind, statements, transfer, ...}, a, f) =
+	 let
+	    val a =
+	       case kind of
+		  Kind.CReturn {dst, ...} =>
+		     (case dst of
+			 NONE => a
+		       | SOME z => f (z, a))
+		| _ => a
+	    val a =
+	       Vector.fold (statements, a, fn (s, a) =>
+			    Statement.foldDefs (s, a, f))
+	    val a = Transfer.foldDefs (transfer, a, f)
+	 in
+	    a
+	 end
    end
 
 structure Chunk =
    struct
       datatype t = T of {chunkLabel: ChunkLabel.t,
-			 blocks: Block.t vector,
-			 regMax: Type.t -> int}
+			 blocks: Block.t vector}
 
-      fun layout (T {blocks, regMax, ...}) =
+      fun layout (T {blocks, ...}) =
 	 let
 	    open Layout
 	 in
-	    align
-	    [align (List.map (Type.all, fn t =>
-			      seq [str "regMax ", Type.layout t,
-				   str " = ", Int.layout (regMax t)])),
-	     align (Vector.toListMap (blocks, Block.layout))]
+	    align (Vector.toListMap (blocks, Block.layout))
 	 end
 
-      fun layouts (c as T {blocks, regMax, ...}, output' : Layout.t -> unit) =
-	 let
-	    open Layout
-	    val output = output'
-	 in
-	    List.foreach (Type.all, fn t =>
-			  output (seq [str "regMax ", Type.layout t,
-				       str " = ", Int.layout (regMax t)]))
-	    ; Vector.foreach (blocks, fn block => Block.layouts (block, output))
-	 end
+      fun layouts (c as T {blocks, ...}, output : Layout.t -> unit) =
+	 Vector.foreach (blocks, fn block => Block.layouts (block, output))
+
+
+      fun foldRegs (T {blocks, ...}, a, f) =
+	 Vector.fold
+	 (blocks, a, fn (b, a) =>
+	  Block.foldDefs
+	  (b, a, fn (z, a) =>
+	   case z of
+	      Operand.Register r => f (r, a)
+	    | _ => a))
    end
 
 structure Program =
    struct
       datatype t = T of {chunks: Chunk.t list,
-			 floats: (Global.t * string) list,
 			 frameOffsets: int vector vector,
-			 globals: Type.t -> int,
-			 globalsNonRoot: int,
 			 handlesSignals: bool,
 			 intInfs: (Global.t * string) list,
 			 main: {chunkLabel: ChunkLabel.t,
 				label: Label.t},
 			 maxFrameSize: int,
-			 objectTypes: Runtime.ObjectType.t vector,
+			 objectTypes: ObjectType.t vector,
 			 profileAllocLabels: string vector,
+			 reals: (Global.t * string) list,
 			 strings: (Global.t * string) list}
 
-      fun layouts (p as T {chunks, frameOffsets, globals, globalsNonRoot,
-			   handlesSignals, main = {label, ...}, maxFrameSize,
-			   objectTypes, profileAllocLabels, ...},
+      fun layouts (p as T {chunks, frameOffsets, handlesSignals,
+			   main = {label, ...},
+			   maxFrameSize, objectTypes,
+			   profileAllocLabels, ...},
 		   output': Layout.t -> unit) =
 	 let
 	    open Layout
 	    val output = output'
 	 in
 	    output (record
-		    [("globals",
-		      List.layout (fn t =>
-				   seq [Type.layout t, str " ",
-					Int.layout (globals t)])
-		      Type.all),
-		     ("globalsNonRoot", Int.layout globalsNonRoot),
-		     ("handlesSignals", Bool.layout handlesSignals),
+		    [("handlesSignals", Bool.layout handlesSignals),
 		     ("main", Label.layout label),
 		     ("maxFrameSize", Int.layout maxFrameSize),
-		     ("objectTypes",
-		      Vector.layout Runtime.ObjectType.layout objectTypes),
+		     ("pointerTypes",
+		      Vector.layout ObjectType.layout objectTypes),
 		     ("profileAllocLabels",
 		      Vector.layout String.layout profileAllocLabels),
 		     ("frameOffsets",
@@ -530,11 +593,20 @@ structure Program =
             ; List.foreach (chunks, fn chunk => Chunk.layouts (chunk, output))
 	 end
 	    
-      fun typeCheck (T {chunks, floats, frameOffsets, globals, globalsNonRoot,
-			intInfs, main, maxFrameSize, objectTypes, strings, ...})
-	 =
+      fun foldRegs (T {chunks, ...}, a, f) =
+	 List.fold (chunks, a, fn (c, a) => Chunk.foldRegs (c, a, f))
+
+      fun typeCheck (T {chunks, frameOffsets, intInfs, main,
+			maxFrameSize, objectTypes, reals, strings, ...}) =
 	 let
-	    val numTypeIndices = Vector.length objectTypes
+	    val _ =
+	       Vector.foreach
+	       (objectTypes, fn ty =>
+		Err.check ("objectType",
+			   fn () => ObjectType.isOk ty,
+			   fn () => ObjectType.layout ty))
+	    fun tyconTy (pt: PointerTycon.t): ObjectType.t =
+	       Vector.sub (objectTypes, PointerTycon.index pt)
 	    open Layout
 	    fun globals (name, gs, ty) =
 	       List.foreach
@@ -543,9 +615,9 @@ structure Program =
 			   fn () => Type.equals (ty, Global.ty g),
 			   fn () =>
 			   seq [String.layout s, str ": ", Type.layout ty]))
-	    val _ = globals ("float", floats, Type.double)
-	    val _ = globals ("intInf", intInfs, Type.pointer)
-	    val _ = globals ("string", strings, Type.pointer)
+	    val _ = globals ("real", reals, Type.real)
+	    val _ = globals ("intInf", intInfs, Type.intInf)
+	    val _ = globals ("string", strings, Type.string)
 	    val {get = labelBlock: Label.t -> Block.t,
 		 set = setLabelBlock, ...} =
 	       Property.getSetOnce (Label.plist,
@@ -559,53 +631,100 @@ structure Program =
 	    val _ =
 	       List.foreach
 	       (chunks,
-		fn Chunk.T {chunkLabel, blocks, regMax} =>
+		fn Chunk.T {blocks, ...} =>
 		let
 		   fun checkOperand (x: Operand.t): unit =
 		      let
 			 datatype z = datatype Operand.t
 			 fun ok () =
 			    case x of
-			       ArrayOffset {base, index, ty} =>
-				  (checkOperand base
-				   ; checkOperand index
-				   ; (Type.equals (Operand.ty base, Type.pointer)
-				      andalso Type.equals (Operand.ty index,
-							   Type.int)))
-			     | CastInt x =>
-				  (checkOperand x
-				   ; Type.equals (Operand.ty x, Type.pointer))
-			     | CastWord x =>
-				  (checkOperand x
-				   ; (Type.equals (Operand.ty x, Type.pointer)
-				      orelse
-				      Type.equals (Operand.ty x, Type.int)))
+			       ArrayOffset z => arrayOffsetIsOk z
+			     | Cast (z, t) =>
+				  (checkOperand z
+				   ; (castIsOk
+				      {from = Operand.ty z,
+				       fromInt = (case z of
+						     Int i => SOME i
+						   | _ => NONE),
+				       to = t,
+				       tyconTy = tyconTy}))
 			     | Char _ => true
 			     | Contents {oper, ...} =>
 				  (checkOperand oper
-				   ; Type.equals (Operand.ty oper, Type.pointer))
+				   ; Type.equals (Operand.ty oper,
+						  Type.cpointer))
 			     | File => true
-			     | Float _ => true
 			     | GCState => true
 			     | Global _ => true
-			     | GlobalPointerNonRoot n =>
-				  0 <= n andalso n < globalsNonRoot
 			     | Int _ => true
-			     | IntInf w => 0wx1 = Word.andb (w, 0wx1)
 			     | Label l => (labelBlock l; true)
 			     | Line => true
-			     | Offset {base, ...} =>
-				  (checkOperand base
-				   ; Type.equals (Operand.ty base, Type.pointer))
-			     | Pointer n => 0 < Int.rem (n, Runtime.wordSize)
-			     | Register (Register.T {index, ty}) =>
-				  0 <= index andalso index < regMax ty
+			     | Offset z => offsetIsOk z
+			     | Real _ => true
+			     | Register _ => true
 			     | Runtime _ => true
+			     | SmallIntInf w => 0wx1 = Word.andb (w, 0wx1)
 			     | StackOffset {offset, ty, ...} =>
 				  offset + Type.size ty <= maxFrameSize
-			     | Uint _ => true
+			     | Word _ => true
 		      in
 			 Err.check ("operand", ok, fn () => Operand.layout x)
+		      end
+		   and arrayOffsetIsOk {base, index, ty} =
+		      let
+			 val _ = checkOperand base
+			 val _ = checkOperand index
+		      in
+			 Type.equals (Operand.ty index, Type.int)
+			 andalso
+			 case Operand.ty base of
+			    Type.CPointer => true (* needed for card marking *)
+			  | Type.EnumPointers {enum, pointers} =>
+			       0 = Vector.length enum
+			       andalso
+			       Vector.forall
+			       (pointers, fn p =>
+				case tyconTy p of
+				   ObjectType.Array
+				   (MemChunk.T {components, ...}) =>
+				      1 = Vector.length components
+				      andalso
+				      let
+					 val {offset, ty = ty', ...} =
+					    Vector.sub (components, 0)
+				      in
+					 offset = 0
+					 andalso Type.equals (ty, ty')
+				      end
+				 | _ => false)
+			  | _ => false
+		      end
+		   and offsetIsOk {base, offset, ty} =
+		      let
+			 val _ = checkOperand base
+			 fun memChunkIsOk (MemChunk.T {components, ...}) =
+			    case (Vector.peek
+				  (components, fn {offset = offset', ...} =>
+				   offset = offset')) of
+			       NONE => false
+			     | SOME {ty = ty', ...} => Type.equals (ty, ty')
+				  
+		      in
+			 case Operand.ty base of
+			    Type.EnumPointers {enum, pointers} =>
+			       0 = Vector.length enum
+			       andalso
+			       ((* Vector_fromArray header update. *)
+				(offset = Runtime.headerOffset
+				 andalso Type.equals (ty, Type.word))
+				orelse
+				Vector.forall
+				(pointers, fn p =>
+				 case tyconTy p of
+				    ObjectType.Normal m => memChunkIsOk m
+				  | _ => false))
+			  | Type.MemChunk m => memChunkIsOk m
+			  | _ => false
 		      end
 		   fun checkOperands v = Vector.foreach (v, checkOperand)
 		   fun check' (x, name, isOk, layout) =
@@ -619,40 +738,6 @@ structure Program =
 		      andalso 0 = Int.rem (size, 4)
 		   fun checkFrameInfo i =
 		      check' (i, "frame info", frameInfoOk, FrameInfo.layout)
-		   fun isValidNormal ({numPointers = np,
-				       numWordsNonPointers = nwnp},
-				      stores): bool =
-		      let
-			 val pointerStart = nwnp * Runtime.wordSize
-			 val pointerEnd = pointerStart + np * Runtime.pointerSize
-			 val initPointers = Array.new (np, false)
-		      in
-			 (* Check that every store is valid *)
-			 Vector.forall
-			 (stores, fn {offset, value} =>
-			  let
-			     val _ = checkOperand value
-			     val ty = Operand.ty value
-			  in
-			     if Type.isPointer ty
-				then
-				   pointerStart <= offset
-				   andalso offset < pointerEnd
-				   andalso Runtime.isWordAligned offset
-				   andalso (Array.update
-					    (initPointers,
-					     Int.quot (offset - pointerStart,
-						       Runtime.pointerSize),
-					     true)
-					    ; true)
-			     else
-				0 <= offset
-				andalso (offset + Type.size ty <= pointerStart)
-			  end)
-			 andalso
-			 (* Check that every pointer is initialized. *)
-			 Array.forall (initPointers, fn b => b)
-		      end
 		   fun kindOk (k: Kind.t): bool =
 		      let
 			 datatype z = datatype Kind.t
@@ -686,8 +771,13 @@ structure Program =
 				; (case Vector.sub (objectTypes,
 						    Runtime.headerToTypeIndex
 						    header) of
-				      Runtime.ObjectType.Normal z =>
-					 isValidNormal (z, stores)
+				      ObjectType.Normal mc =>
+					 MemChunk.isValidInit
+					 (mc, 
+					  Vector.map
+					  (stores, fn {offset, value} =>
+					   {offset = offset,
+					    ty = Operand.ty value}))
 				    | _ => false) handle Subscript => false)
 			  | PrimApp {args, dst, prim} =>
 			       (Option.app (dst, checkOperand)
@@ -732,8 +822,10 @@ structure Program =
 						 (case (dst, CFunction.returnTy f) of
 						     (NONE, _) => true
 						   | (SOME x, SOME ty) =>
-							Type.equals
-							(ty, Operand.ty x)
+							Runtime.Type.equals
+							(ty,
+							 Type.toRuntime
+							 (Operand.ty x))
 						   | _ => false)
 					    | _ => false
 					end
@@ -760,21 +852,8 @@ structure Program =
 			  | Goto l => labelIsJump l
 			  | Raise => true
 			  | Return {live} => (checkOperands live; true)
-			  | Switch {cases, default, test} =>
-			       (checkOperand test
-				; (Cases.forall (cases, labelIsJump)
-				   andalso Option.forall (default, labelIsJump)
-				   andalso
-				   (Type.equals
-				    (Operand.ty test,
-				     case cases of
-					Cases.Char _ => Type.char
-				      | Cases.Int _ => Type.int
-				      | Cases.Word _ => Type.uint))))
-			  | SwitchIP {int, pointer, test} =>
-			       (checkOperand test
-				; (labelIsJump pointer
-				   andalso labelIsJump int))
+			  | Switch s =>
+			       Switch.isOk (s, {labelIsOk = labelIsJump})
 		      end
 		   fun blockOk (Block.T {kind, label, live, profileInfo,
 					 statements, transfer}): bool =

@@ -42,7 +42,8 @@ fun fromVector v =
 	   | _ => false)
       val v =
 	 if isSorted
-	    then Vector.sort (v, fn ((s, _), (s', _)) => Field.<= (s, s')) 
+	    then QuickSort.sortVector (v, fn ((s, _), (s', _)) =>
+				       Field.<= (s, s')) 
 	 else v
    in if isTuple v
 	 then Tuple (Vector.map (v, #2))

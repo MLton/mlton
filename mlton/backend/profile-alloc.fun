@@ -27,7 +27,7 @@ structure CFunction =
 	    returnTy = NONE}
    end
 
-fun doit (Program.T {functions, main, ...}) =
+fun doit (Program.T {functions, main, objectTypes, ...}) =
    let
       (* Start the counter at 1 because element 0 is PROFILE_ALLOC_MISC. *)
       val counter = Counter.new 1
@@ -35,9 +35,9 @@ fun doit (Program.T {functions, main, ...}) =
       val labelIndex = String.memoize (fn s =>
 				       (List.push (profileAllocLabels, s)
 					; Counter.next counter))
-      fun doFunction (f: Function.t) =
+      fun doFunction (f: Function.t): Function.t =
 	 let
-	    val {args, blocks, name, start} = Function.dest f
+	    val {args, blocks, name, raises, returns, start} = Function.dest f
 	    val extraBlocks = ref []
 	    val blocks =
 	       Vector.map
@@ -49,17 +49,7 @@ fun doit (Program.T {functions, main, ...}) =
 		      Vector.fold
 		      (statements, 0, fn (s, ac) =>
 		       case s of
-			  Statement.Object {numPointers, numWordsNonPointers,
-					    ...} =>
-			     ac
-			     + Runtime.normalHeaderSize
-			     + (Runtime.normalSize
-				{numPointers = numPointers,
-				 numWordsNonPointers = numWordsNonPointers})
-			| Statement.PrimApp {prim, ...} =>
-			    (case Prim.name prim of
-				Prim.Name.Array_array0 => ac + Runtime.array0Size
-			      | _ => ac)
+			  Statement.Object {size, ...} => ac + size
 			| _ => ac)
 		   val needs =
 		      case transfer of
@@ -123,6 +113,8 @@ fun doit (Program.T {functions, main, ...}) =
 	    Function.new {args = args,
 			  blocks = blocks,
 			  name = name,
+			  raises = raises,
+			  returns = returns,
 			  start = start}
 	 end
       val functions = List.revMap (functions, doFunction)
@@ -131,6 +123,7 @@ fun doit (Program.T {functions, main, ...}) =
    in
       Program.T {functions = functions,
 		 main = main,
+		 objectTypes = objectTypes,
 		 profileAllocLabels = profileAllocLabels}
    end
 
