@@ -170,7 +170,7 @@ structure Operand =
 	       in
 		  case r of
 		     CanHandle => "gcState.canHandle"
-		   | CardMap => "gcState.heap.cardMap"
+		   | CardMap => "gcState.cardMapForMutator"
 		   | CurrentThread => "gcState.currentThread"
 		   | Frontier => "frontier"
 		   | Limit => "gcState.limit"

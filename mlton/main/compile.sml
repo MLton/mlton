@@ -330,7 +330,7 @@ fun preCodegen {input, docc}: Machine.Program.t =
 	    Runtime.GCField.setOffsets
 	    {
 	     canHandle = get "canHandle",
-	     cardMap = get "heap.cardMap",
+	     cardMap = get "cardMapForMutator",
 	     currentThread = get "currentThread",
 	     frontier = get "frontier",
 	     limit = get "limit",

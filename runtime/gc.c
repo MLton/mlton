@@ -46,6 +46,7 @@ enum {
 	COPY_CHUNK_SIZE = 0x800000,
 	DEBUG = FALSE,
 	DEBUG_ARRAY = FALSE,
+	DEBUG_CARD_MARKING = FALSE,
 	DEBUG_DETAILED = FALSE,
 	DEBUG_GENERATIONAL = FALSE,
 	DEBUG_MARK_COMPACT = FALSE,
@@ -105,12 +106,12 @@ static inline ulong meg (uint n) {
 	return n / (1024ul * 1024ul);
 }
 
-static inline uint toBytes(uint n) {
+static inline uint toBytes (uint n) {
 	return n << 2;
 }
 
 #if (defined (__linux__) || defined (__FreeBSD__))
-static inline uint min(uint x, uint y) {
+static inline uint min (uint x, uint y) {
 	return ((x < y) ? x : y);
 }
 
@@ -140,12 +141,6 @@ static inline uint align (uint a, uint b) {
 static bool isAligned (uint a, uint b) {
 	return 0 == a % b;
 }
-
-#ifndef NODEBUG
-static bool isPageAligned (GC_state s, size_t size) {
-	return isAligned (size, s->pageSize);
-}
-#endif
 
 #if (defined (__linux__) || defined (__FreeBSD__))
 /* A super-safe mmap.
@@ -297,9 +292,9 @@ static inline void copy (pointer src, pointer dst, uint size) {
 	if (DEBUG_DETAILED)
 		fprintf (stderr, "copy (0x%08x, 0x%08x, %u)\n",
 				(uint)src, (uint)dst, size);
-	assert (isWordAligned((uint)src));
-	assert (isWordAligned((uint)dst));
-	assert (isWordAligned(size));
+	assert (isAligned ((uint)src, WORD_SIZE));
+	assert (isAligned ((uint)dst, WORD_SIZE));
+	assert (isAligned (size, WORD_SIZE));
 	assert (dst <= src or src + size <= dst);
 	if (src == dst)
 		return;
@@ -352,7 +347,7 @@ int fixedGetrusage (int who, struct rusage *rup) {
 }
 
 static inline void rusageZero (struct rusage *ru) {
-	memset(ru, 0, sizeof(*ru));
+	memset (ru, 0, sizeof(*ru));
 }
 
 static void rusagePlusMax (struct rusage *ru1,
@@ -441,7 +436,7 @@ static uint rusageTime (struct rusage *ru) {
 }
 
 /* Return time as number of milliseconds. */
-static inline uint currentTime () {
+static uint currentTime () {
 	struct rusage	ru;
 
 	fixedGetrusage (RUSAGE_SELF, &ru);
@@ -452,7 +447,7 @@ static inline void startTiming (struct rusage *ru_start) {
 	fixedGetrusage (RUSAGE_SELF, ru_start);
 }
 
-static inline uint stopTiming (struct rusage *ru_start, struct rusage *ru_gc) {
+static uint stopTiming (struct rusage *ru_start, struct rusage *ru_gc) {
 	struct rusage ru_finish, ru_total;
 
 	fixedGetrusage (RUSAGE_SELF, &ru_finish);
@@ -467,13 +462,13 @@ static inline uint stopTiming (struct rusage *ru_start, struct rusage *ru_gc) {
 
 void GC_display (GC_state s, FILE *stream) {
 	fprintf (stream, "GC state\n\tcardMap = 0x%08x\n\toldGen = 0x%08x\n\toldGenSize = %s\n\toldGen + oldGenSize = 0x%08x\n\tnursery = 0x%08x\n\tfrontier = 0x%08x\n\tfrontier - nursery = %u\n\tlimitPlusSlop - frontier = %d\n",
-			(uint) s->heap.cardMap,
+			(uint) s->cardMap,
    			(uint) s->heap.oldGen,
 			uintToCommaString (s->heap.oldGenSize),
 			(uint) s->heap.oldGen + s->heap.oldGenSize,
-			(uint) s->heap.nursery, 
+			(uint) s->nursery, 
 			(uint) s->frontier,
-			s->frontier - s->heap.nursery,
+			s->frontier - s->nursery,
 			s->limitPlusSlop - s->frontier);
 	fprintf (stream, "\tcanHandle = %d\n", s->canHandle);
 	fprintf (stderr, "\tcurrentThread = 0x%08x\n", (uint) s->currentThread);
@@ -490,8 +485,8 @@ void GC_display (GC_state s, FILE *stream) {
 		int i;
 
 		fprintf (stderr, "crossMap trues");
-		for (i = 0; i < s->heap.numCards; ++i)
-			if (s->heap.crossMap[i])
+		for (i = 0; i < s->crossMapSize; ++i)
+			if (s->crossMap[i])
 				fprintf (stderr, " %u", i);
 		fprintf (stderr, "\n");
 	}		
@@ -505,13 +500,25 @@ static inline uint divCardSize (GC_state s, uint n) {
 	return n >> s->cardSizeLog2;
 }
 
+static inline pointer cardMapAddr (GC_state s, pointer p) {
+	pointer res;
+
+	res = &s->cardMapForMutator [divCardSize (s, (uint)p)];
+	if (DEBUG_CARD_MARKING)
+		fprintf (stderr, "0x%08x = cardMapAddr (0x%08x)\n",
+				(uint)res, (uint)p);
+	return res;
+}
+
 static inline bool cardIsMarked (GC_state s, pointer p) {
-	return s->heap.cardMap[divCardSize (s, (uint)p)];
+	return *cardMapAddr (s, p);
 }
 
 static inline void markCard (GC_state s, pointer p) {
+	if (DEBUG_CARD_MARKING)
+		fprintf (stderr, "markCard (0x%08x)\n", (uint)p);
 	if (s->mutatorMarksCards)
-		s->heap.cardMap[divCardSize (s, (uint)p)] = '\001';
+		*cardMapAddr (s, p) = '\001';
 }
 
 /* ---------------------------------------------------------------- */
@@ -600,12 +607,12 @@ static bool hasBytesFree (GC_state s, W32 oldGen, W32 nursery) {
 				uintToCommaString (oldGen),
 				uintToCommaString (nursery));
 	return s->heap.oldGenSize + oldGen 
-			<= s->heap.size - (s->heap.canMinor ? 2 : 1) * s->heap.nurserySize
+			<= s->heap.size - (s->canMinor ? 2 : 1) * s->nurserySize
 		and nursery <= s->limitPlusSlop - s->frontier;
 }
 #endif
 
-static inline pointer object (GC_state s, uint header, W32 bytesRequested,
+static pointer object (GC_state s, uint header, W32 bytesRequested,
 				bool allocInOldGen) {
 	pointer frontier;
 	pointer result;
@@ -615,7 +622,7 @@ static inline pointer object (GC_state s, uint header, W32 bytesRequested,
 				header, 
 				(uint)bytesRequested,
 				boolToString (allocInOldGen));
-	assert (isWordAligned (bytesRequested));
+	assert (isAligned (bytesRequested, WORD_SIZE));
 	assert (allocInOldGen
 			? hasBytesFree (s, bytesRequested, 0)
 			: hasBytesFree (s, 0, bytesRequested));
@@ -635,7 +642,7 @@ static inline pointer object (GC_state s, uint header, W32 bytesRequested,
 	return result;
 }
 
-static inline GC_stack newStack (GC_state s, uint size, bool allocInOldGen) {
+static GC_stack newStack (GC_state s, uint size, bool allocInOldGen) {
 	GC_stack stack;
 
 	if (size > s->maxStackSizeSeen)
@@ -649,7 +656,7 @@ static inline GC_stack newStack (GC_state s, uint size, bool allocInOldGen) {
 	return stack;
 }
 
-inline void setStack (GC_state s) {
+static void setStack (GC_state s) {
 	GC_stack stack;
 
 	stack = s->currentThread->stack;
@@ -661,7 +668,7 @@ inline void setStack (GC_state s) {
 	markCard (s, (pointer)stack);
 }
 
-static inline void stackCopy (GC_stack from, GC_stack to) {
+static void stackCopy (GC_stack from, GC_stack to) {
 	assert (from->used <= to->reserved);
 	to->used = from->used;
 	if (DEBUG_STACKS)
@@ -689,8 +696,7 @@ static inline void maybeCall (GC_pointerFun f, GC_state s, pointer *pp) {
 }
 
 /* Apply f to each global pointer into the heap. */
-static inline void foreachGlobal (GC_state s, GC_pointerFun f)
-{
+static inline void foreachGlobal (GC_state s, GC_pointerFun f) {
 	int i;
 
  	for (i = 0; i < s->numGlobals; ++i) {
@@ -706,11 +712,9 @@ static inline void foreachGlobal (GC_state s, GC_pointerFun f)
 }
 
 /* The number of bytes in an array, not including the header. */
-static inline uint
-arrayNumBytes (pointer p, 
-		     uint numPointers,
-		     uint numNonPointers)
-{
+static inline uint arrayNumBytes (pointer p, 
+				     uint numPointers,
+				     uint numNonPointers) {
 	uint numElements, bytesPerElement, result;
 	
 	numElements = GC_arrayNumElements (p);
@@ -731,7 +735,8 @@ arrayNumBytes (pointer p,
  * Returns pointer to the end of object, i.e. just past object.
  */
 
-inline pointer foreachPointerInObject (GC_state s, GC_pointerFun f, pointer p) {
+static inline pointer foreachPointerInObject (GC_state s, GC_pointerFun f,
+						pointer p) {
 	word header;
 	uint numPointers;
 	uint numNonPointers;
@@ -874,7 +879,7 @@ static inline pointer foreachPointerInRange (GC_state s,
 	assert (front <= b);
  	while (front < b) {
 		while (front < b) {
-			assert (isWordAligned ((uint)front));
+			assert (isAligned ((uint)front, WORD_SIZE));
 	       		if (DEBUG_DETAILED)
 				fprintf (stderr, "front = 0x%08x  *back = 0x%08x\n",
 						(uint)front, *(uint*)back);
@@ -904,7 +909,7 @@ static inline bool isInOldGen (GC_state s, pointer p) {
 }
 
 static inline bool isInNursery (GC_state s, pointer p) {
-	return s->heap.nursery <= p and p < s->frontier;
+	return s->nursery <= p and p < s->frontier;
 }
 
 static inline bool isInFromSpace (GC_state s, pointer p) {
@@ -958,23 +963,26 @@ static bool invariant (GC_state s) {
 				assert(offsets[j + 1] < layout->numBytes);
 		}
 	}
+	if (s->mutatorMarksCards) {
+		assert (s->cardMap == 
+				&s->cardMapForMutator[divCardSize(s, (uint)s->heap.oldGen)]);
+		assert (&s->cardMapForMutator[divCardSize (s, (uint)s->heap.oldGen + s->heap.size - WORD_SIZE)]
+				< s->cardMap + s->cardMapSize);
+	}
 	/* Heap */
-	assert (isAligned (s->heap.size, s->cardSize));
+	assert (isAligned (s->heap.size, s->pageSize));
 	assert (isAligned ((uint)s->heap.oldGen, s->cardSize));
 	assert (isAligned (s->heap.oldGenSize, WORD_SIZE));
-	assert (isAligned ((uint)s->heap.nursery, WORD_SIZE));
-	assert (isAligned (s->heap.nurserySize, WORD_SIZE));
+	assert (isAligned ((uint)s->nursery, WORD_SIZE));
+	assert (isAligned (s->nurserySize, WORD_SIZE));
 	assert (isAligned ((uint)s->frontier, WORD_SIZE));
-	assert (s->heap.nursery <= s->frontier);
+	assert (s->nursery <= s->frontier);
 	unless (0 == s->heap.size) {
-		assert (isPageAligned (s, s->heap.totalSize));
-		assert (s->heap.nursery <= s->frontier);
+		assert (s->nursery <= s->frontier);
 		assert (s->frontier <= s->limitPlusSlop);
-		assert (s->limitPlusSlop == s->heap.nursery + s->heap.nurserySize);
+		assert (s->limitPlusSlop == s->nursery + s->nurserySize);
 		assert (s->limit == s->limitPlusSlop - LIMIT_SLOP);
-		assert (s->heap.oldGenSize 
-				+ (s->heap.canMinor ? 2 : 1) * s->heap.nurserySize 
- 				<= s->heap.size);
+		assert (hasBytesFree (s, 0, 0));
 	}
 	assert (s->heap2.start == NULL or s->heap.size == s->heap2.size);
 	/* Check that all pointers are into from space. */
@@ -985,11 +993,10 @@ static bool invariant (GC_state s) {
 	foreachPointerInRange (s, s->heap.oldGen, &back, assertIsInFromSpace);
 	if (DEBUG_DETAILED)
 		fprintf (stderr, "Checking nursery.\n");
-	foreachPointerInRange (s, s->heap.nursery, &s->frontier, 
-				assertIsInFromSpace);
+	foreachPointerInRange (s, s->nursery, &s->frontier, assertIsInFromSpace);
 	/* Current thread. */
 	stack = s->currentThread->stack;
-	assert (isWordAligned (stack->reserved));
+	assert (isAligned (stack->reserved, WORD_SIZE));
 	assert (s->stackBottom == stackBottom (stack));
 	assert (s->stackTop == stackTop (stack));
  	assert (s->stackLimit == stackLimit (s, stack));
@@ -1122,55 +1129,52 @@ static W32 heapDesiredSize (GC_state s, W64 live, W32 currentSize) {
 static inline void heapInit (GC_heap h) {
 	h->size = 0;
 	h->start = NULL;
-	h->totalSize = 0;
 }
 
 static inline bool heapIsInit (GC_heap h) {
 	return 0 == h->size;
 }
 
-static inline void heapRelease (GC_state s, GC_heap h) {
+static void heapRelease (GC_state s, GC_heap h) {
 	if (NULL == h->start)
 		return;
 	if (DEBUG or s->messages)
 		fprintf (stderr, "Releasing heap at 0x%08x of size %s.\n", 
 				(uint)h->start, 
 				uintToCommaString (h->size));
-	release (h->start, h->totalSize);
+	release (h->start, h->size);
 	heapInit (h);
 }
 
-static inline void heapShrink (GC_state s, GC_heap h, W32 keep) {
+static void heapShrink (GC_state s, GC_heap h, W32 keep) {
 	assert (keep <= h->size);
-	keep = align (keep, s->cardSize);
-	if (0 == keep)
+	if (0 == keep) {
 		heapRelease (s, h);
-	else if (keep < h->size) {
-		uint remove;
-
-		remove = (uint)h->start + h->totalSize 
-				- align ((uint)h->oldGen + keep, s->pageSize);
-		assert (isAligned (remove, s->pageSize));
+		return;
+	}
+	keep = align (keep, s->pageSize);
+	if (keep < h->size) {
 		if (DEBUG or s->messages)
 			fprintf (stderr, 
-				"Shrinking space at 0x%08x of size %s to %s bytes.\n",
+				"Shrinking heap at 0x%08x of size %s to %s bytes.\n",
 				(uint)h->start, 
 				uintToCommaString (h->size),
 				uintToCommaString (keep));
+		decommit (h->start + keep, h->size - keep);
 		h->size = keep;
-		if (remove > 0) {
-			decommit (h->start + h->totalSize - remove, remove);
-			h->totalSize -= remove;
-		}
 	}
 }
 
 static void setLimit (GC_state s) {
-	s->limitPlusSlop = s->heap.nursery + s->heap.nurserySize;
+	s->limitPlusSlop = s->nursery + s->nurserySize;
 	s->limit = s->limitPlusSlop - LIMIT_SLOP;
 }
 
-static inline void setNursery (GC_state s, W32 oldGenBytesRequested,
+static void clearCardMap (GC_state s) {
+	memset (s->cardMap, 0, s->cardMapSize);
+}
+
+static void setNursery (GC_state s, W32 oldGenBytesRequested,
 				W32 nurseryBytesRequested) {
 	GC_heap h;
 
@@ -1179,8 +1183,8 @@ static inline void setNursery (GC_state s, W32 oldGenBytesRequested,
 				uintToCommaString (oldGenBytesRequested),
 				(uint)s->frontier);
 	h = &s->heap;
-	h->nurserySize = h->size - h->oldGenSize - oldGenBytesRequested;
-	assert (isAligned (h->nurserySize, WORD_SIZE));
+	s->nurserySize = h->size - h->oldGenSize - oldGenBytesRequested;
+	assert (isAligned (s->nurserySize, WORD_SIZE));
 	if (	/* The mutator marks cards. */
 		s->mutatorMarksCards
 		/* The live ratio is low enough to make generational GC
@@ -1190,33 +1194,68 @@ static inline void setNursery (GC_state s, W32 oldGenBytesRequested,
 			<= s->generationalRatio
 		/* The nursery is large enough to be worth it. */
 		and ((float)(h->size - s->bytesLive) 
-			/ (float)h->nurserySize) <= s->nurseryRatio
+			/ (float)s->nurserySize) <= s->nurseryRatio
 		/* There is enough space in the nursery. */
-		and h->nurserySize >= 2 * nurseryBytesRequested
+		and s->nurserySize >= 2 * nurseryBytesRequested
 		) {
-		h->canMinor = TRUE;
-		h->nurserySize /= 2;
-		unless (isAligned (h->nurserySize, WORD_SIZE))
-			h->nurserySize -= 2;
+		s->canMinor = TRUE;
+		s->nurserySize /= 2;
+		unless (isAligned (s->nurserySize, WORD_SIZE))
+			s->nurserySize -= 2;
+		clearCardMap (s);
 	} else {
-		if (h->nurserySize < nurseryBytesRequested)
+		if (s->nurserySize < nurseryBytesRequested)
 			die ("Out of memory.  Insufficient space in nursery.");
-		h->canMinor = FALSE;
+		s->canMinor = FALSE;
 	}
-	h->nursery = h->oldGen + h->size - h->nurserySize;
-	s->frontier = h->nursery;
+	s->nursery = h->oldGen + h->size - s->nurserySize;
+	s->frontier = s->nursery;
 	setLimit (s);
-	assert (isAligned (h->nurserySize, WORD_SIZE));
-	assert (isAligned ((uint)h->nursery, WORD_SIZE));
+	assert (isAligned (s->nurserySize, WORD_SIZE));
+	assert (isAligned ((uint)s->nursery, WORD_SIZE));
 	assert (hasBytesFree (s, oldGenBytesRequested, nurseryBytesRequested));
 }
 
-static inline void heapClearCardMap (GC_heap h) {
-	memset (h->start, 0, h->numCards);
+static inline void clearCrossMap (GC_state s) {
+	memset (s->crossMap, 0, s->crossMapSize);
 }
 
-static inline void heapClearCrossMap (GC_heap h) {
-	memset (h->crossMap, 0, h->numCards);
+static void setCardMapForMutator (GC_state s) {
+	GC_heap h;
+
+	unless (s->mutatorMarksCards)
+		return;
+	h = &s->heap;
+	if ((uint)s->cardMap < divCardSize (s, (uint)h->oldGen))
+		diee ("Unable to set cardMapForMutator.");
+	s->cardMapForMutator = s->cardMap - divCardSize (s, (uint)h->oldGen);
+	if (DEBUG_CARD_MARKING)
+		fprintf (stderr, "cardMapForMutator = 0x%08x\n",
+				(uint)s->cardMapForMutator);
+}
+
+static void createCardMapAndCrossMap (GC_state s) {
+	GC_heap h;
+
+	unless (s->mutatorMarksCards) {
+		s->cardMapSize = 0;
+		s->cardMap = NULL;
+		s->cardMapForMutator = NULL;
+		s->crossMapSize = 0;
+		s->crossMap = NULL;
+		return;
+	}
+	h = &s->heap;
+	assert (isAligned (h->size, s->cardSize));
+	s->cardMapSize = align (divCardSize (s, h->size), s->pageSize);
+	s->cardMap = smmap (s->cardMapSize);
+	setCardMapForMutator (s);
+	if (DEBUG_CARD_MARKING)
+		fprintf (stderr, "cardMap = 0x%08x  size = %s\n", 
+				(uint)s->cardMap,
+				uintToCommaString (s->cardMapSize));
+	s->crossMapSize = s->cardMapSize;
+	s->crossMap = smmap (s->crossMapSize);
 }
 
 /* heapCreate (s, h, need, minSize) allocates a heap of the size necessary to
@@ -1225,7 +1264,7 @@ static inline void heapClearCrossMap (GC_heap h) {
  * is unable.  If a reasonable size to space is already there, then heapCreate
  * leaves it.
  */
-static inline bool heapCreate (GC_state s, GC_heap h, 
+static bool heapCreate (GC_state s, GC_heap h, 
 				W32 desiredSize, W32 minSize) {
 	W32 backoff;
 
@@ -1236,34 +1275,21 @@ static inline bool heapCreate (GC_state s, GC_heap h,
 	assert (heapIsInit (h));
 	if (desiredSize < minSize)
 		desiredSize = minSize;
-	desiredSize = align (desiredSize, s->cardSize);
+	desiredSize = align (desiredSize, s->pageSize);
 	assert (0 == h->size and NULL == h->start);
 	backoff = (desiredSize - minSize) / 20;
 	if (0 == backoff)
 		backoff = 1; /* enough to terminate the loop below */
-	backoff = align (backoff, s->cardSize);
+	backoff = align (backoff, s->pageSize);
 	/* mmap toggling back and forth between high and low addresses to
          * decrease the chance of virtual memory fragmentation causing an mmap
 	 * to fail.  This is important for large heaps.
 	 */
 	for (h->size = desiredSize; h->size >= minSize; h->size -= backoff) {
-		uint cardMapSpace;
 		static int direction = 1;
 		int i;
 
-		assert (isAligned (h->size, s->cardSize));
-		if (s->mutatorMarksCards)
-			h->numCards = divCardSize (s, h->size);
-		else
-			h->numCards = 0;
-		if (DEBUG_DETAILED)
-			fprintf (stderr, "numCards = %u\n", h->numCards);
-		/* We make sure that the card map and cross map take up a 
-		 * multiple of s->cardSize bytes so that oldGen starts on a card
-		 * boundary.
-		 */
-		cardMapSpace = align (2 * h->numCards, s->cardSize);
-		h->totalSize = align (h->size + cardMapSpace, s->pageSize);
+		assert (isAligned (h->size, s->pageSize));
 		for (i = 0; i < 32; i++) {
 			unsigned long address;
 
@@ -1273,16 +1299,16 @@ static inline bool heapCreate (GC_state s, GC_heap h,
 #if (defined (__CYGWIN__))
 			address = 0; /* FIXME */
 			i = 31; /* FIXME */
-			h->start = VirtualAlloc ((LPVOID)address, h->totalSize,
+			h->start = VirtualAlloc ((LPVOID)address, h->size,
 							MEM_COMMIT,
 							PAGE_READWRITE);
 			if (DEBUG_MEM)
 				fprintf (stderr, "0x%08x = VirtualAlloc (0x%08x, %u, MEM_COMMIT, PAGE_READWRITE)\n",
 						(uint)h->start, 
 						(uint)address,
-						(uint)h->totalSize);
+						(uint)h->size);
 #elif (defined (__linux__) || defined (__FreeBSD__))
-			h->start = mmap (address+(void*)0, h->totalSize, 
+			h->start = mmap (address+(void*)0, h->size, 
 						PROT_READ | PROT_WRITE,
 						MAP_PRIVATE | MAP_ANON, -1, 0);
 			if ((void*)-1 == h->start)
@@ -1290,22 +1316,10 @@ static inline bool heapCreate (GC_state s, GC_heap h,
 #endif
 			unless ((void*)NULL == h->start) {
 				direction = (direction==0);
-				assert (isPageAligned (s, h->totalSize));
-				if (h->totalSize > s->maxHeapSizeSeen)
-					s->maxHeapSizeSeen = h->totalSize;
-				h->oldGen = h->start + cardMapSpace;
+				if (h->size > s->maxHeapSizeSeen)
+					s->maxHeapSizeSeen = h->size;
+				h->oldGen = h->start;
 				assert (isAligned ((uint)h->oldGen, s->cardSize));
-				if (s->mutatorMarksCards) {
-					assert (divCardSize (s, (uint)h->oldGen) <= (uint)h->start);
-					h->cardMap = h->start 
-						- divCardSize (s, (uint)h->oldGen);
-					assert (h->start == &h->cardMap[divCardSize(s, (uint)h->oldGen)]);
-					assert (h->start + h->numCards - 1 == &h->cardMap[divCardSize (s, (uint)h->oldGen + h->size - WORD_SIZE)]);
-					h->crossMap = h->start + h->numCards;
-				} else {
-					h->cardMap = NULL;
-					h->crossMap = NULL;
-				}
 				if (DEBUG or s->messages)
 					fprintf (stderr, "Created heap of size %s at 0x%08x.\n",
 							uintToCommaString (h->size),
@@ -1316,9 +1330,8 @@ static inline bool heapCreate (GC_state s, GC_heap h,
 		}
 		if (s->messages)
 			fprintf(stderr, "[Requested %luM cannot be satisfied, backing off by %luM (min size = %luM).\n",
-				meg (h->totalSize), meg (backoff), meg (minSize));
+				meg (h->size), meg (backoff), meg (minSize));
 	}
-	h->totalSize = 0;
 	h->size = 0;
 	return FALSE;
 }
@@ -1331,7 +1344,7 @@ static inline void setCrossMap (GC_state s, pointer p) {
 		if (DEBUG_GENERATIONAL)
 			fprintf (stderr, "crossMap[%u] = TRUE\n",
 					divCardSize (s, p - h->oldGen));
-		h->crossMap[divCardSize (s, p - h->oldGen)] = '\001';
+		s->crossMap[divCardSize (s, p - h->oldGen)] = '\001';
 	}
 }
 
@@ -1451,9 +1464,10 @@ static void swapSemis (GC_state s) {
 	s->heap2 = s->heap;
 	s->heap = h;
 	setLimit (s);
+	setCardMapForMutator (s);
 }
 
-static inline void cheneyCopy (GC_state s) {
+static void cheneyCopy (GC_state s) {
 	struct rusage ru_start;
 
 	assert (s->heap2.size >= s->heap.oldGenSize);
@@ -1473,12 +1487,11 @@ static inline void cheneyCopy (GC_state s) {
 	}
 	assert (s->heap2.start != (void*)NULL);
 	/* The next assert ensures there is enough space for the copy to succeed.
-	 * It does not say  assert (s->heap2.size >= s->heap.size)
-  	 * because that is too strong.
+	 * It does not say  assert (s->heap2.size >= s->heap.size) because that
+         * is too strong.
 	 */
-	assert (s->heap2.size >= s->frontier - s->heap.nursery);
-	heapClearCardMap (&s->heap2);
-	heapClearCrossMap (&s->heap2);
+	assert (s->heap2.size >= s->heap.oldGenSize);
+	clearCrossMap (s);
 	s->back = s->heap2.oldGen;
 	foreachGlobal (s, forward);
 	foreachPointerInRange (s, s->heap2.oldGen, &s->back, forward);
@@ -1502,18 +1515,17 @@ static inline void forwardIfInNursery (GC_state s, pointer *pp) {
 	pointer p;
 
 	p = *pp;
-	if (p < s->heap.nursery)
+	if (p < s->nursery)
 		return;
 	if (DEBUG_GENERATIONAL)
 		fprintf (stderr, "intergenerational pointer from 0x%08x to 0x%08x\n",
 			(uint)pp, *(uint*)pp);
-	assert (s->heap.nursery <= p 
-			and p < s->heap.nursery + s->heap.nurserySize);
+	assert (s->nursery <= p and p < s->nursery + s->nurserySize);
 	forward (s, pp);
 }
 
 /* Walk through all the cards and forward all intergenerational pointers. */
-static inline void forwardInterGenerationalPointers (GC_state s) {
+static void forwardInterGenerationalPointers (GC_state s) {
 	pointer cardMap;
 	uint cardNum;
 	pointer crossMap;
@@ -1527,8 +1539,8 @@ static inline void forwardInterGenerationalPointers (GC_state s) {
 		fprintf (stderr, "Forwarding inter-generational pointers.\n");
 	h = &s->heap;
 	/* Constants. */
-	cardMap = h->start;
-	crossMap = h->crossMap;
+	cardMap = s->cardMap;
+	crossMap = s->crossMap;
 	numCards = divCardSize (s, align (h->oldGenSize, s->cardSize));
 	oldGenStart = h->oldGen;
 	oldGenEnd = oldGenStart + h->oldGenSize;
@@ -1594,7 +1606,7 @@ done:
 		fprintf (stderr, "Forwarding inter-generational pointers done.\n");
 }
 
-static inline void minorGC (GC_state s) {
+static void minorGC (GC_state s) {
 	W32 bytesAllocated;
 	W32 bytesCopied;
 	struct rusage ru_start;
@@ -1603,11 +1615,11 @@ static inline void minorGC (GC_state s) {
 		fprintf (stderr, "minorGC  frontier = 0x%08x\n", 
 				(uint)s->frontier);
 	assert (invariant (s));
-	bytesAllocated = s->frontier - s->heap.nursery;
+	bytesAllocated = s->frontier - s->nursery;
 	if (bytesAllocated == 0)
 		return;
  	s->bytesAllocated += bytesAllocated;
-	if (not s->heap.canMinor) {
+	if (not s->canMinor) {
 		s->heap.oldGenSize += bytesAllocated;
 		bytesCopied = 0;
 	} else {
@@ -1615,7 +1627,7 @@ static inline void minorGC (GC_state s) {
 			fprintf (stderr, "Minor GC.\n");
 		startTiming (&ru_start);
 		s->toSpace = s->heap.oldGen + s->heap.oldGenSize;
-		s->toLimit = s->toSpace + s->heap.nurserySize;
+		s->toLimit = s->toSpace + s->nurserySize;
 		assert (invariant (s));
 		s->numMinorGCs++;
 		s->numMinorsSinceLastMajor++;
@@ -1626,7 +1638,6 @@ static inline void minorGC (GC_state s) {
 		 */
 		foreachGlobal (s, forwardIfInNursery);
 		forwardInterGenerationalPointers (s);
-		heapClearCardMap (&s->heap);
 		foreachPointerInRange (s, s->toSpace, &s->back,
 					forwardIfInNursery);
 		bytesCopied = s->back - s->toSpace;
@@ -1637,9 +1648,6 @@ static inline void minorGC (GC_state s) {
 			fprintf (stderr, "Minor GC done.  %s bytes copied.\n",
 					uintToCommaString (bytesCopied));
 	}
-	setNursery (s, 0, 0);
-	setStack (s);
-	assert (invariant (s));
 }
 
 /* ---------------------------------------------------------------- */
@@ -1925,7 +1933,7 @@ static inline void threadInternal (GC_state s, pointer *pp) {
 	*headerp = (Header)pp;
 }
 
-static inline void updateForwardPointers (GC_state s) {
+static void updateForwardPointers (GC_state s) {
 	pointer back;
 	pointer front;
 	uint gap;
@@ -2024,7 +2032,7 @@ done:
 	return;
 }
 
-static inline void updateBackwardPointersAndSlide (GC_state s) {
+static void updateBackwardPointersAndSlide (GC_state s) {
 	pointer back;
 	pointer front;
 	uint gap;
@@ -2106,7 +2114,7 @@ done:
 	return;
 }
 
-static inline void markCompact (GC_state s) {
+static void markCompact (GC_state s) {
 	struct rusage ru_start;
 
 	if (DEBUG or s->messages)
@@ -2114,8 +2122,7 @@ static inline void markCompact (GC_state s) {
 	startTiming (&ru_start);		
 	s->numMarkCompactGCs++;
 	s->crossMapHeap = &s->heap;
-	heapClearCardMap (&s->heap);
-	heapClearCrossMap (&s->heap);
+	clearCrossMap (s);
 	foreachGlobal (s, markGlobal);
 	foreachGlobal (s, threadInternal);
 	updateForwardPointers (s);
@@ -2163,11 +2170,13 @@ static void translateHeap (GC_state s, pointer from, pointer to, uint size) {
 /*                             heapGrow                             */
 /* ---------------------------------------------------------------- */
 
-static inline void heapGrow (GC_state s, GC_heap h, W32 desired, W32 minSize) {
+static void growHeap (GC_state s, W32 desired, W32 minSize) {
+	GC_heap h;
 	struct GC_heap h2;
 	pointer old;
 	uint size;
 
+	h = &s->heap;
 	assert (desired >= h->size);
 	if (DEBUG_RESIZING)
 		fprintf (stderr, "Growing heap at 0x%08x of size %s to %s bytes.\n",
@@ -2227,6 +2236,7 @@ copy:
 	}
 	h->oldGenSize = size;
 	translateHeap (s, old, h->oldGen, size);
+	setCardMapForMutator (s);
 }
 
 /* ---------------------------------------------------------------- */
@@ -2236,7 +2246,7 @@ copy:
  * available in from space and that to space is either the same size as from
  * space or is unmapped.
  */
-static inline void resizeHeap (GC_state s, W64 need) {
+static void resizeHeap (GC_state s, W64 need) {
 	W32 desired;
 
 	if (DEBUG_RESIZING)
@@ -2249,11 +2259,29 @@ static inline void resizeHeap (GC_state s, W64 need) {
 		heapShrink (s, &s->heap, desired);
 	else {
 		heapRelease (s, &s->heap2);
-		heapGrow (s, &s->heap, desired, need);
+		growHeap (s, desired, need);
 	}
-	setNursery (s, 0, 0);
-	setStack (s);
-	/* Resize to space. */
+	/* Resize card map and cross map. */
+	if (s->mutatorMarksCards 
+		and s->cardMapSize != 
+			align (divCardSize (s, s->heap.size), s->pageSize)) {
+		pointer oldCrossMap;
+		uint oldCrossMapSize;
+
+		smunmap (s->cardMap, s->cardMapSize);
+		oldCrossMap = s->crossMap;
+		oldCrossMapSize = s->crossMapSize;
+		createCardMapAndCrossMap (s);
+		copy (oldCrossMap, s->crossMap,
+			min (s->crossMapSize, oldCrossMapSize));
+		smunmap (oldCrossMap, oldCrossMapSize);
+	}
+	assert (s->heap.size >= need);
+}
+
+static void resizeHeap2 (GC_state s) {
+	if (DEBUG_RESIZING)
+		fprintf (stderr, "resizeHeap2\n");
 	if (0 == s->heap2.size)
 		/* nothing */ ;
 	else if (/* toSpace is smaller than fromSpace, so we won't be
@@ -2265,8 +2293,6 @@ static inline void resizeHeap (GC_state s, W64 need) {
 		heapRelease (s, &s->heap2);
 	else
 		heapShrink (s, &s->heap2, s->heap.size);
-	assert (s->heap.size >= need);
-	assert (invariant (s));
 }
 
 static void growStack (GC_state s) {
@@ -2282,14 +2308,13 @@ static void growStack (GC_state s) {
 	stackCopy (s->currentThread->stack, stack);
 	s->currentThread->stack = stack;
 	markCard (s, (pointer)s->currentThread);
-	setStack (s);
 }
 
 /* ---------------------------------------------------------------- */
 /*                        Garbage Collection                        */
 /* ---------------------------------------------------------------- */
 
-static inline void majorGC (GC_state s, W32 bytesRequested) {
+static void majorGC (GC_state s, W32 bytesRequested, bool mayResize) {
 	s->numMinorsSinceLastMajor = 0;
         if (not s->useFixedHeap
  		and s->heap.size < s->ram
@@ -2300,22 +2325,23 @@ static inline void majorGC (GC_state s, W32 bytesRequested) {
 		cheneyCopy (s);
 	else
 		markCompact (s);
-	setNursery (s, 0, 0);
-	setStack (s);
 	if (s->bytesLive > s->maxBytesLive)
 		s->maxBytesLive = s->bytesLive;
 	/* Notice that the s->bytesLive below is different than the s->bytesLive
 	 * used is an argument to heapCreate above.  Above, it was an estimate.
 	 * Here, it is exactly how much was live after the GC.
 	 */
-	resizeHeap (s, (W64)s->bytesLive + bytesRequested);
+	if (mayResize)
+		resizeHeap (s, (W64)s->bytesLive + bytesRequested);
+	resizeHeap2 (s);
 	assert (s->heap.oldGenSize + bytesRequested <= s->heap.size);
 }
 
-void doGC (GC_state s, 
+static void doGC (GC_state s, 
 		W32 oldGenBytesRequested,
 		W32 nurseryBytesRequested, 
-		bool forceMajor) {
+		bool forceMajor,
+		bool mayResize) {
 	uint gcTime;
 	bool stackTopOk;
 	W64 stackBytesRequested;
@@ -2340,13 +2366,14 @@ void doGC (GC_state s,
 		+ nurseryBytesRequested;
 	if (forceMajor 
 		or totalBytesRequested > s->heap.size - s->heap.oldGenSize)
-		majorGC (s, totalBytesRequested);
+		majorGC (s, totalBytesRequested, mayResize);
 	setNursery (s, oldGenBytesRequested + stackBytesRequested,
 			nurseryBytesRequested);
 	assert (hasBytesFree (s, oldGenBytesRequested + stackBytesRequested,
 					nurseryBytesRequested));
 	unless (stackTopOk)
 		growStack (s);
+	setStack (s);
 	gcTime = stopTiming (&ru_start, &s->ru_gc);
 	s->maxPause = max (s->maxPause, gcTime);
 	if (DEBUG or s->messages) {
@@ -2369,11 +2396,11 @@ void doGC (GC_state s,
 static inline void ensureFree (GC_state s, uint b) {
 	assert (s->frontier <= s->limitPlusSlop);
 	if (b > s->limitPlusSlop - s->frontier)
-		doGC (s, 0, b, FALSE);
+		doGC (s, 0, b, FALSE, TRUE);
 	assert (b <= s->limitPlusSlop - s->frontier);
 }
 
-static inline void switchToThread (GC_state s, GC_thread t) {
+static void switchToThread (GC_state s, GC_thread t) {
 	if (DEBUG_THREADS)
 		fprintf (stderr, "switchToThread (0x%08x)  used = %u  reserved = %u\n", 
 				(uint)t, t->stack->used, t->stack->reserved);
@@ -2403,7 +2430,7 @@ void GC_switchToThread (GC_state s, GC_thread t) {
 		setStack (s);
 		if (t->bytesNeeded > s->limitPlusSlop - s->frontier)  {
 			enter (s);
-			doGC (s, 0, t->bytesNeeded, FALSE);
+			doGC (s, 0, t->bytesNeeded, FALSE, TRUE);
 			leave (s);
 		}
 	}
@@ -2460,7 +2487,7 @@ void GC_gc (GC_state s, uint bytesRequested, bool force,
 		or bytesRequested > s->limitPlusSlop - s->frontier
 		or not (stackTopIsOk (s, s->currentThread->stack))) {
 		/* This GC will grow the stack, if necessary. */
-		doGC (s, 0, bytesRequested, force);
+		doGC (s, 0, bytesRequested, force, TRUE);
 	} else {
 		startHandler (s);
 		switchToThread (s, s->signalHandler);
@@ -2507,7 +2534,7 @@ pointer GC_arrayAllocate (GC_state s, W32 ensureBytesFree, W32 numElts,
 			uintToCommaString (ensureBytesFree));
 	if (arraySize >= s->oldGenArraySize) {
 		enter (s);
-		doGC (s,  arraySize, ensureBytesFree, FALSE);
+		doGC (s,  arraySize, ensureBytesFree, FALSE, TRUE);
 		leave (s);
 		frontier = (W32*)(s->heap.oldGen + s->heap.oldGenSize);
 		last = (W32*)((pointer)frontier + arraySize);
@@ -2518,7 +2545,7 @@ pointer GC_arrayAllocate (GC_state s, W32 ensureBytesFree, W32 numElts,
 		require = arraySize + ensureBytesFree;
 		if (require > s->limitPlusSlop - s->frontier) {
 			enter (s);
-			doGC (s, 0, require, FALSE);
+			doGC (s, 0, require, FALSE, TRUE);
 			leave (s);
 		}
 		frontier = (W32*)s->frontier;
@@ -2557,7 +2584,7 @@ static inline uint initialThreadBytes (GC_state s) {
 	return threadBytes () + stackBytes (initialStackSize (s));
 }
 
-static inline GC_thread newThreadOfSize (GC_state s, uint stackSize) {
+static GC_thread newThreadOfSize (GC_state s, uint stackSize) {
 	GC_stack stack;
 	GC_thread t;
 
@@ -2573,7 +2600,7 @@ static inline GC_thread newThreadOfSize (GC_state s, uint stackSize) {
 	return t;
 }
 
-static inline GC_thread copyThread (GC_state s, GC_thread from, uint size) {
+static GC_thread copyThread (GC_state s, GC_thread from, uint size) {
 	GC_thread to;
 
 	if (DEBUG_THREADS)
@@ -2631,7 +2658,7 @@ pointer GC_copyThread (GC_state s, pointer thread) {
 /*                          Initialization                          */
 /* ---------------------------------------------------------------- */
 
-static inline void initSignalStack (GC_state s) {
+static void initSignalStack (GC_state s) {
 #if (defined (__linux__) || defined (__FreeBSD__))
         static stack_t altstack;
 	size_t ss_size = align (SIGSTKSZ, s->pageSize);
@@ -2688,9 +2715,7 @@ struct Msysinfo {
 	unsigned int mem_unit;		/* Memory unit size in bytes */
 	char _f[20-2*sizeof(long)-sizeof(int)];	/* Padding: libc5 uses this.. */
 };
-static inline void
-setMemInfo (GC_state s)
-{
+static void setMemInfo (GC_state s) {
 	struct Msysinfo	sbuf;
 	W32 maxMem;
 	W64 tmp;
@@ -2713,8 +2738,7 @@ setMemInfo (GC_state s)
 }
 #elif (defined (__CYGWIN__))
 #include <windows.h>
-static inline void
-setMemInfo (GC_state s) {
+static void setMemInfo (GC_state s) {
 	MEMORYSTATUS ms; 
 
 	GlobalMemoryStatus(&ms); 
@@ -2767,7 +2791,7 @@ get_total_mem()
         return atoi(buffer);
 }
 
-static inline void setMemInfo (GC_state s) {
+static void setMemInfo (GC_state s) {
 	s->totalRam = get_total_mem();
 	s->totalSwap = get_total_swap();
 }
@@ -2817,7 +2841,7 @@ static uint stringToBytes (string s) {
 	return result;
 }
 
-static inline void setInitialBytesLive (GC_state s) {
+static void setInitialBytesLive (GC_state s) {
 	int i;
 	int numElements;
 
@@ -2850,7 +2874,7 @@ static inline void setInitialBytesLive (GC_state s) {
  * On exit, the GC_state pointed to by state is adjusted to account for any
  * space used.
  */
-static inline void initIntInfs (GC_state s) {
+static void initIntInfs (GC_state s) {
 	struct GC_intInfInit *inits;
 	pointer frontier;
 	char	*str;
@@ -2927,7 +2951,7 @@ static inline void initIntInfs (GC_state s) {
 	s->frontier = frontier;
 }
 
-static inline void initStrings (GC_state s) {
+static void initStrings (GC_state s) {
 	struct GC_stringInit *inits;
 	pointer frontier;
 	int i;
@@ -2970,12 +2994,13 @@ static void newWorld (GC_state s)
 {
 	int i;
 
-	assert (isWordAligned (sizeof (struct GC_thread)));
+	assert (isAligned (sizeof (struct GC_thread), WORD_SIZE));
 	for (i = 0; i < s->numGlobals; ++i)
 		s->globals[i] = (pointer)BOGUS_POINTER;
 	setInitialBytesLive (s);
 	heapCreate (s, &s->heap, heapDesiredSize (s, s->bytesLive, 0),
 			s->bytesLive);
+	createCardMapAndCrossMap (s);
 	s->frontier = s->heap.oldGen;
 	initIntInfs (s);
 	initStrings (s);
@@ -3008,7 +3033,7 @@ static void loadWorld (GC_state s, char *fileName) {
 	s->signalHandler = (GC_thread) sfreadUint (file);
        	heapCreate (s, &s->heap, heapDesiredSize (s, s->heap.oldGenSize, 0),
 			s->heap.oldGenSize);
-	setNursery (s, 0, 0);
+	createCardMapAndCrossMap (s);
 	sfread (s->heap.oldGen, 1, s->heap.oldGenSize, file);
 	(*s->loadGlobals) (file);
 	unless (EOF == fgetc (file))
@@ -3018,6 +3043,7 @@ static void loadWorld (GC_state s, char *fileName) {
 	 * changes pointers in all of them.
 	 */
 	translateHeap (s, oldGen, s->heap.oldGen, s->heap.oldGenSize);
+	setNursery (s, 0, 0);
 	setStack (s);
 }
 
@@ -3073,6 +3099,8 @@ int GC_init (GC_state s, int argc, char **argv) {
 	rusageZero (&s->ru_gcMinor);
  	readProcessor ();
 	worldFile = NULL;
+	unless (isAligned (s->pageSize, s->cardSize))
+		die ("page size must be a multiple of card size");
 	i = 1;
 	if (argc > 1 and (0 == strcmp (argv [1], "@MLton"))) {
 		bool done;
@@ -3206,7 +3234,7 @@ static void displayCollectionStats (FILE *out, string name, struct rusage *ru,
 	fprintf (out, "\n");
 }
 
-inline void GC_done (GC_state s) {
+void GC_done (GC_state s) {
 	FILE *out;
 
 	enter (s);
@@ -3276,7 +3304,7 @@ void GC_finishHandler (GC_state s) {
  * because sigaddset does both a read and a write of s->signalsPending.
  * The signals are blocked by Posix_Signal_handle (see Posix/Signal/Signal.c).
  */
-inline void GC_handler (GC_state s, int signum) {
+void GC_handler (GC_state s, int signum) {
 	if (DEBUG_SIGNALS)
 		fprintf (stderr, "GC_handler  signum = %d\n", signum);
 	if (0 == s->canHandle) {
@@ -3309,7 +3337,7 @@ void GC_saveWorld (GC_state s, int fd) {
 		fprintf (stderr, "Save world.\n");
 	enter (s);
 	/* Compact the heap. */
-	doGC (s, 0, 0, TRUE);
+	doGC (s, 0, 0, TRUE, TRUE);
 	sprintf (buf,
 		"Heap file created by MLton.\noldGen = 0x%08x\nbytesLive = %u\n",
 		(uint)s->heap.oldGen, (uint)s->bytesLive);
@@ -3325,6 +3353,8 @@ void GC_saveWorld (GC_state s, int fd) {
 }
 
 void GC_pack (GC_state s) {
+	uint keep;
+
 	enter (s);
 	if (DEBUG or s->messages)
 		fprintf (stderr, "Packing heap of size %s.\n",
@@ -3333,9 +3363,13 @@ void GC_pack (GC_state s) {
 	 * allocated since the last collection.  But you would still need to 
 	 * do a minor GC to make all objects contiguous.
  	 */
-	doGC (s, 0, 0, TRUE);
-	heapShrink (s, &s->heap, s->bytesLive * 1.1);
-	setNursery (s, 0, 0);
+	doGC (s, 0, 0, TRUE, FALSE);
+	keep = s->heap.oldGenSize * 1.1;
+	if (keep <= s->heap.size) {
+		heapShrink (s, &s->heap, keep);
+		setNursery (s, 0, 0);
+		setStack (s);
+	}
 	heapRelease (s, &s->heap2);
 	if (DEBUG or s->messages)
 		fprintf (stderr, "Packed heap to size %s.\n",
@@ -3350,8 +3384,11 @@ void GC_unpack (GC_state s) {
 				uintToCommaString (s->heap.size));
 	minorGC (s);
 	resizeHeap (s, s->heap.oldGenSize);
+	resizeHeap2 (s);
+	setNursery (s, 0, 0);
+	setStack (s);
 	if (DEBUG or s->messages)
-		fprintf (stderr, "Unpacked heap of size %s.\n",
+		fprintf (stderr, "Unpacked heap to size %s.\n",
 				uintToCommaString (s->heap.size));
 	leave (s);
 }

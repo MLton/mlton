@@ -194,36 +194,21 @@ typedef struct GC_thread {
 /*                      GC_heap                      */
 /* ------------------------------------------------- */
 
-/* Heap layout is as follows (drawing is not to scale -- card
- * map and cross map are < 1% of the space)
+/* Heap layout is as follows
  *
- *  --------------------------------------------------------------------------
- * | card map | cross map |    old generation    |   to space   |   nursery   |
- *  --------------------------------------------------------------------------
+ *  ---------------------------------------------------
+ * |    old generation    |   to space   |   nursery   |
+ *  ---------------------------------------------------
  *
- * If generational collection is not used then the card map, cross map, and 
- * to space are empty. 
+ * If not canMinor then the to space is empty, and the nursery starts
+ * immediately after the old generation.
  */
 
 typedef struct GC_heap {
-	bool canMinor; /* TRUE iff there is space for a minor gc. */
-	pointer cardMap;
-	pointer crossMap;
-	uint numCards;
-	pointer nursery;
-	uint nurserySize;
 	pointer oldGen;
 	uint oldGenSize;
-        /* size is the amount (in bytes) of usable heap, i.e. not including the
-	 * cardMap and crossMap.
-	*/
 	uint size;
 	pointer start;		/* start of memory area */
-	/* totalSize is the total length of the memory area.  i.e., the memory
-	 * range is [start, start + totalSize)
-         */
-	uint totalSize;
-
 } *GC_heap;
 
 /* ------------------------------------------------- */
@@ -253,10 +238,16 @@ typedef struct GC_state {
 	ullong bytesCopiedMinor;
 	int bytesLive; /* Number of bytes live at most recent major GC. */
 	ullong bytesMarkCompacted;
+	bool canMinor; /* TRUE iff there is space for a minor gc. */
+	pointer cardMap;
+	pointer cardMapForMutator;
+	uint cardMapSize;
 	uint cardSize;
 	uint cardSizeLog2;
 	float copyRatio;	/* Minimum live ratio to use copying GC. */
 	GC_heap crossMapHeap;	/* only used during GC. */
+	pointer crossMap;
+	uint crossMapSize;
 	GC_thread currentThread; /* This points to a thread in the heap. */
 	uint fixedHeapSize; 	/* Only meaningful if useFixedHeap. */
 	GC_frameLayout *frameLayouts;
@@ -309,6 +300,8 @@ typedef struct GC_state {
 	 * nurseryRatio, use minor GCs.
 	 */
 	float nurseryRatio;
+	pointer nursery;
+	uint nurserySize;
 	GC_ObjectType *objectTypes; /* Array of object types. */
 	/* Arrays larger than oldGenArraySize are allocated in the old generation
 	 * instead of the nursery, if possible.
@@ -479,7 +472,7 @@ static inline bool GC_isPointer (pointer p) {
 }
 
 static inline bool GC_isValidFrontier (GC_state s, pointer frontier) {
-	return s->heap.nursery <= frontier and frontier <= s->limit;
+	return s->nursery <= frontier and frontier <= s->limit;
 }
 
 static inline bool GC_isValidSlot (GC_state s, pointer slot) {
