@@ -130,7 +130,7 @@ for f in `ls *.sml`; do
 				libs='-lws2_32 -lkernel32 -lpsapi -lnetapi32'
 			;;
 			*solaris)
-				libs='-ldl -lnsl -lsocket'
+				libs='-lnsl -lsocket'
 			;;
 			*)
 				libs=''
@@ -140,13 +140,16 @@ for f in `ls *.sml`; do
 			# Must use $f.[0-9].[cS], not $f.*.[cS], because the
 			# latter will include other files, e.g. for finalize,
 			# it will also include finalize.2.
+			files="$f.[0-9].[cS]"
+			if ls $f.[0-9][0-9].[cS] >/dev/null 2>&1; then 
+				files="$files $f.[0-9][0-9].[cS]"
+			fi
 			gcc -o $f -w -O1				\
 				-I "../build/lib/include"		\
 				-L"../build/lib/$crossTarget"		\
 				-L/usr/pkg/lib				\
 				-L/usr/local/lib			\
-				$f.[0-9].[cS] $f.[0-9][0-9].[cS]	\
-				$libs				
+				$files $libs
 		;;
 		esac
 		if [ ! -r $f.nonterm -a $cross = 'no' -a -x $f ]; then
