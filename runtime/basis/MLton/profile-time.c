@@ -188,4 +188,4 @@ void MLton_ProfileTime_init (void) {
 
 #error profiling not defined
 
-#endif /* (defined (__linux__)) */
+#endif

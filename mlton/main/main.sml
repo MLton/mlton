@@ -343,12 +343,9 @@ fun commandLine (args: string list): unit =
 	    then keepSSA := true
 	 else ()
       val _ =
-	 case !hostType of
-	    Cygwin => if !profile = ProfileTime
-			 then usage "-profile time not allowed on Cygwin"
-		      else ()
-	  | FreeBSD => ()
-	  | Linux => ()
+	 if !hostType = Cygwin andalso !profile <> ProfileNone
+	    then usage "profiling not allowed on Cygwin"
+	 else ()
       fun printVersion () = print (concat [version, " ", build, "\n"])
    in
       case result of

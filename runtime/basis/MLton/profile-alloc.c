@@ -1,3 +1,4 @@
+#if (defined (__linux__) || defined (__FreeBSD__))
 #include <string.h>
 
 #include "gc.h"
@@ -90,3 +91,16 @@ void MLton_ProfileAlloc_Data_write (Pointer d, Word fd) {
 		}
 	}
 }
+
+#elif (defined (__CYGWIN__))
+
+/* No profiling on Cygwin. 
+ * There is a check in mlton/main/main.sml to make sure that profiling is never
+ * turned on on Cygwin.
+ */
+
+#else
+
+#error profiling not defined
+
+#endif
