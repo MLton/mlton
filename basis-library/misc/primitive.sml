@@ -12,7 +12,11 @@ infix 4 = (* <> > >= < <= *)
 
 val op = = fn z => _prim "MLton_equal": ''a * ''a -> bool; z
 
-type 'a array = 'a array
+structure Array =
+   struct
+      type 'a array = 'a array
+   end
+type 'a array = 'a Array.array
 structure Bool =
    struct
       datatype bool = datatype bool
