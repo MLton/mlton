@@ -30,5 +30,6 @@ fun layout e =
        | _ => seq [str "unhandled exception: ", str (exnName e)]
    end
 
+val toString = Layout.toString o layout
+
 end
-   

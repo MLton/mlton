@@ -16,4 +16,5 @@ signature EXN =
       val history: t -> string list
       val name: t -> string
       val layout: t -> Layout.t
+      val toString: t -> string
    end
