@@ -39,8 +39,12 @@ structure Word32: WORD32_EXTRA =
 
       fun toLargeInt (w: word): LargeInt.int =
 	 if highBitSet w
-	    then IntInf.+ (IntInf.bigIntConstant 0x80000000,
-			   toLargeIntX (andb (w, 0wx7FFFFFFF)))
+	    then
+	       (* Use 2 * 0x40000000 instead of 0x80000000 so that SML/NJ
+		* doesn't complain about an integer constant being too large.
+		*)
+	       IntInf.+ (IntInf.* (2, 0x40000000), 
+			 toLargeIntX (andb (w, 0wx7FFFFFFF)))
 	 else toLargeIntX w
 
       fun toReal (w: word): real =
@@ -56,11 +60,13 @@ structure Word32: WORD32_EXTRA =
       in
 	 fun fromLargeInt (i: IntInf.int): word =
 	    fromInt
-	    (let open IntInf
-		 val low32 = i mod t32
-	     in toInt (if low32 >= t31
-			 then low32 - t32
-		      else low32)
+	    (let
+		open IntInf
+		val low32 = i mod t32
+	     in
+		toInt (if low32 >= t31
+			  then low32 - t32
+		       else low32)
 	     end)
       end
    end
