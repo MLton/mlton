@@ -45,6 +45,7 @@ structure VarInfo =
 		     lam: Lambda.t}
 	| Tuple of t vector
       withtype monoVarInfo = {numOccurrences: int ref,
+			      ty: Type.t,
 			      value: value option ref,
 			      varExp: VarExp.t}
 
@@ -52,8 +53,9 @@ structure VarInfo =
 	 open Layout
       in
 	 val rec layout =
-	    fn Mono {numOccurrences, value, varExp} =>
+	    fn Mono {numOccurrences, ty, value, varExp} =>
 	         record [("numOccurrences", Int.layout (!numOccurrences)),
+			 ("ty", Type.layout ty),
 			 ("value", Option.layout layoutValue (!value)),
 			 ("varExp", VarExp.layout varExp)]
 	     | Poly x => seq [str "Poly ", VarExp.layout x]
@@ -113,9 +115,24 @@ structure Value =
 
 fun simplifyOnce (Program.T {datatypes, body, overflow}) =
    let
+      (* before implementExceptions, the exn tycon has no definition *)
+      exception TyconDef
+      val {get = tyconInfo: Tycon.t -> int, set = setTyconInfo, ...} =
+	 Property.getSetOnce
+	 (Tycon.plist, Property.initFun (fn _ => raise TyconDef))
+      val {get = conInfo: Con.t -> int, set = setConInfo, ...} =
+	 Property.getSetOnce
+	 (Con.plist, Property.initRaise ("simplify conInfo", Con.layout))
+      val _ = 
+	 Vector.foreach
+	 (datatypes, fn {tycon, cons, ...} =>
+	  (setTyconInfo (tycon, Vector.length cons)
+	   ; Vector.foreachi
+	     (cons, fn (i, {con, ...}) => 
+	      setConInfo (con, i))))
       val {get = varInfo: Var.t -> VarInfo.t, set = setVarInfo, ...} =
 	 Property.getSet (Var.plist,
-			  Property.initRaise ("simplify info", Var.layout))
+			  Property.initRaise ("simplify varInfo", Var.layout))
       val varInfo =
 	 Trace.trace ("Xml.Simplify.varInfo", Var.layout, VarInfo.layout) varInfo
       fun monoVarInfo x =
@@ -146,10 +163,11 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
       fun simplifyVarExps xs = Vector.map (xs, simplifyVarExp)
       val dummyVarExp = VarExp.mono (Var.newString "dummy")
       local
-	 fun handleBoundVar (x, ts, _) =
+	 fun handleBoundVar (x, ts, ty) =
 	    setVarInfo (x,
 			if Vector.isEmpty ts
 			   then VarInfo.Mono {numOccurrences = ref 0,
+					      ty = ty,
 					      value = ref NONE,
 					      varExp = VarExp.mono x}
 			else VarInfo.Poly dummyVarExp)
@@ -401,7 +419,7 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
 						     simplifyExp)})
 		  in case varExpInfo test of
 		     VarInfo.Poly test => normal test
-		   | VarInfo.Mono {value, varExp, ...} => 
+		   | VarInfo.Mono {ty, value, varExp, ...} => 
 			case (cases, !value) of
 			   (Cases.Con cases,
 			    SOME (Value.ConApp {con = c, arg, ...})) =>
@@ -419,6 +437,28 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
 				 (fn SOME (x, _) => (replace (x, v); true)
 			       | _ => false)
 			   end
+			  | (Cases.Con cases, NONE) =>
+			       (let
+				   val tycon = case Type.dest ty of
+				                  Type.Con (tycon, _) => tycon
+						| _ => Error.bug "expected Con"
+				   val cons = Array.array (tyconInfo tycon, false)
+				   val cases =
+				      Vector.map
+				      (cases, fn (pat as Pat.T {con, ...}, exp) =>
+				       (Array.update (cons, conInfo con, true)
+					; (pat, simplifyExp exp)))
+				   val default =
+				      if Array.forall (cons, fn b => b)
+				         then NONE
+				      else Option.map (default, simplifyExp)
+				in
+				   expansive
+				   (Case {test = varExp,
+					  cases = Cases.Con cases,
+					  default = default})
+				end
+				handle TyconDef => normal varExp)
 			  | (_, SOME (Value.Const c)) =>
 			       let
 				  fun doit (l, z) = match (l, fn z' => z = z')

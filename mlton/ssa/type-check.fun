@@ -16,38 +16,43 @@ structure Node = Graph.Node
 fun checkScopes (program as
 		 Program.T {datatypes, globals, functions, main}): unit =
    let
-      datatype status =
+      datatype 'a status =
 	 Undefined
-       | InScope
+       | InScope of 'a
        | Defined
 
-      fun make (layout, plist) =
+      fun make' (layout, plist) =
 	 let
 	    val {get, set, ...} =
 	       Property.getSet (plist, Property.initConst Undefined)
-	    fun bind x =
+	    fun bind (x, v) =
 	       case get x of
-		  Undefined => set (x, InScope)
+		  Undefined => set (x, InScope v)
 		| _ => Error.bug ("duplicate definition of "
 				  ^ (Layout.toString (layout x)))
 	    fun reference x =
 	       case get x of
-		  InScope => ()
+		  InScope v => v
 		| _ => Error.bug (concat
 				  ["reference to ",
 				   Layout.toString (layout x),
 				   " not in scope"])
 
 	    fun unbind x = set (x, Defined)
-	 in (bind, reference, unbind)
+	 in (bind, ignore o reference, reference, unbind)
+	 end
+      fun make (layout, plist) =
+	 let val (bind, reference, _, unbind) = make' (layout, plist)
+	 in (fn x => bind (x, ()), reference, unbind)
 	 end
 
-      val (bindCon, getCon, _) = make (Con.layout, Con.plist)
-      val (bindVar, getVar, unbindVar) = make (Var.layout, Var.plist)
+      val (bindTycon, getTycon, getTycon', _) = make' (Tycon.layout, Tycon.plist)
+      val (bindCon, getCon, getCon', _) = make' (Con.layout, Con.plist)
+      val (bindVar, getVar, getVar', unbindVar) = make' (Var.layout, Var.plist)
+      fun getVars xs = Vector.foreach (xs, getVar)
       val (bindFunc, getFunc, _) = make (Func.layout, Func.plist)
       val (bindLabel, getLabel, unbindLabel) = make (Label.layout, Label.plist)
-      fun getVars xs = Vector.foreach (xs, getVar)
-      fun loopStatement (Statement.T {var, exp, ...}) =
+      fun loopStatement (Statement.T {var, ty, exp, ...}) =
 	 let
 	    val _ =
 	       case exp of
@@ -64,7 +69,7 @@ fun checkScopes (program as
 		| SetHandler l => getLabel l
 		| Tuple xs => Vector.foreach (xs, getVar)
 		| Var x => getVar x
-	    val _ = Option.app (var, bindVar)
+	    val _ = Option.app (var, fn x => bindVar (x, ty))
 	 in
 	    ()
 	 end
@@ -77,9 +82,62 @@ fun checkScopes (program as
 		; getVars args
 		; Return.foreachLabel (return, getLabel))
 	  | Case {test, cases, default, ...} =>
-	       (getVar test
-		; Cases.foreach' (cases, getLabel, getCon)
-		; Option.app (default, getLabel))
+	       let
+		  fun doit (cases, equals, toWord) =
+		     let
+		        val table = HashSet.new {hash = toWord}
+		     in
+		        Vector.foreach
+			(cases, fn (x, l) =>
+			 let
+			    val _ = HashSet.insertIfNew
+			            (table, toWord x, fn y => equals (x, y),
+				     fn () => x, 
+				     fn y => Error.bug "redundant branch in case")
+			 in
+			    getLabel l
+			 end)
+			; case default of 
+			     SOME l => getLabel l
+			   | NONE => Error.bug "case has no default"
+		     end
+		  fun doitCon cases =
+		     let
+		        val numCons = 
+			   case Type.dest (getVar' test) of
+			      Type.Datatype t => getTycon' t
+			    | _ => Error.bug "case test is not a datatype"
+			val cons = Array.array (numCons, false)
+		     in
+		        Vector.foreach
+			(cases, fn (con, l) =>
+			 let
+			    val i = getCon' con
+			    val _ = if Array.sub (cons, i)
+			               then Error.bug "redundant branch in case"
+				    else Array.update (cons, i, true)
+			 in
+			    getLabel l
+			 end)
+			; if Array.forall (cons, fn b => b)
+			     then case default of
+			             NONE => ()
+				   | SOME l => 
+				        Error.bug "exhaustive case has default"
+			  else case default of
+			          NONE => 
+				     Error.bug "non-exhaustive case has no default"
+				| SOME l => getLabel l
+		     end
+	       in
+		 getVar test
+		 ; case cases of
+		      Cases.Char cases => doit (cases, Char.equals, Word.fromChar)
+		    | Cases.Con cases => doitCon cases 
+		    | Cases.Int cases => doit (cases, Int.equals, Word.fromInt)
+		    | Cases.Word cases => doit (cases, Word.equals, Word.fromWord)
+		    | Cases.Word8 cases => doit (cases, Word8.equals, Word.fromWord8)
+	       end
 	  | Goto {dst, args} => (getLabel dst; getVars args)
 	  | Raise xs => getVars xs
 	  | Return xs => getVars xs
@@ -94,7 +152,7 @@ fun checkScopes (program as
 	    fun loop (Tree.T (block, children)): unit =
 	       let
 		  val Block.T {args, statements, transfer, ...} = block
-		  val _ = Vector.foreach (args, bindVar o #1)
+		  val _ = Vector.foreach (args, bindVar)
 		  val _ = Vector.foreach (statements, loopStatement)
 		  val _ = loopTransfer transfer
 		  val _ = Vector.foreach (children, loop)
@@ -105,7 +163,7 @@ fun checkScopes (program as
 	       in
 		  ()
 	       end
-	    val _ = Vector.foreach (args, bindVar o #1)
+	    val _ = Vector.foreach (args, bindVar)
 	    val _ = Vector.foreach (blocks, bindLabel o Block.label)
 	    val _ = loop (Function.dominatorTree f)
 	    val _ = Vector.foreach (blocks, unbindLabel o Block.label)
@@ -114,8 +172,10 @@ fun checkScopes (program as
 	 in
 	     ()
 	 end
-      val _ = Vector.foreach (datatypes, fn Datatype.T {cons, ...} =>
-			      Vector.foreach (cons, bindCon o #con))
+      val _ = Vector.foreach
+	      (datatypes, fn Datatype.T {tycon, cons} =>
+	       (bindTycon (tycon, Vector.length cons) ;
+		Vector.foreachi (cons, fn (i, {con, ...}) => bindCon (con, i))))
       val _ = Vector.foreach (globals, loopStatement)
       val _ = List.foreach (functions, bindFunc o Function.name)
       val _ = List.foreach (functions, loopFunc)
