@@ -419,23 +419,10 @@ functor StreamIOExtra
       fun input1 (is as In {pos, state, ...}) =
 	case !state of
 	  Link {inp, next} =>
-(*
-	    let
-	      val update = if pos + 1 < V.length inp
-			     then fn () => updatePos (is, pos + 1)
-			     else fn () => updateState (is, next)
-	    in
-	      SOME (V.sub (inp, pos), update ())
-	    end
-*)
-	    let
-	      val (k, next) = if pos + 1 < V.length inp
-				then (pos + 1, state)
-				else (0, next)
-	    in
-	      SOME (V.sub (inp, pos), update (is, k, next))
-	    end
-
+	     SOME (V.sub (inp, pos),
+		   if pos + 1 < V.length inp
+		      then updatePos (is, pos + 1)
+		   else updateState (is, next))
 	| End => 
 	    let val _ = extendB "input1" is 
 	    in input1 is
