@@ -123,9 +123,11 @@ structure Statement =
 structure LimitCheck =
    struct
       datatype t =
-	 Array of {numElts: Var.t,
-		   bytesPerElt: int,
-		   extraBytes: int}
+	 Array of {bytesPerElt: int,
+		   extraBytes: int,
+		   numElts: Var.t,
+		   stackToo: bool}
+
        | Heap of {bytes: int,
 		  stackToo: bool}
        | Signal
@@ -141,11 +143,12 @@ structure LimitCheck =
 	    open Layout
 	 in
 	    case l of
-	       Array {bytesPerElt, extraBytes, numElts} =>
+	       Array {bytesPerElt, extraBytes, numElts, stackToo} =>
 		  seq [str "Array ",
 		       record [("bytesPerElt", Int.layout bytesPerElt),
 			       ("extraBytes", Int.layout extraBytes),
-			       ("numElts", Var.layout numElts)]]
+			       ("numElts", Var.layout numElts),
+			       ("stackToo", Bool.layout stackToo)]]
 	     | Heap {bytes, stackToo} =>
 		  seq [str "Heap ",
 		       record [("bytes", Int.layout bytes),

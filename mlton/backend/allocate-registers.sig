@@ -2,6 +2,7 @@
  * Please see the file LICENSE for license information.
  *)
 type int = Int.t
+type word = Word.t
    
 signature ALLOCATE_REGISTERS_STRUCTS = 
    sig
@@ -14,14 +15,11 @@ signature ALLOCATE_REGISTERS =
    sig
       include ALLOCATE_REGISTERS_STRUCTS
 
-      (* Use Machine.Chunk.newRegister with the appropriate chunk to get a new
-       * register.
-       *)
       val allocate:
 	 {
-	  chunk: Machine.Chunk.t,
 	  function: Rssa.Function.t,
-	  labelChunk: Rssa.Label.t -> Machine.Chunk.t,
+	  newRegister: (Rssa.Label.t option * int * Machine.Type.t
+			-> Machine.Register.t),
 	  varInfo: Rssa.Var.t -> {
                                  (* If (isSome operand) then a stack slot or
 				  * register needs to be allocated for the

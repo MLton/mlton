@@ -93,9 +93,10 @@ signature RSSA =
       structure LimitCheck:
 	 sig
 	    datatype t =
-	       Array of {numElts: Var.t,
-			 bytesPerElt: int,
-			 extraBytes: int} (* for subsequent allocation *)
+	       Array of {bytesPerElt: int,
+			 extraBytes: int, (* for subsequent allocation *)
+			 numElts: Var.t,
+			 stackToo: bool}
 	     | Heap of {bytes: int,
 			stackToo: bool}
 	     | Signal

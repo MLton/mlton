@@ -15,6 +15,7 @@ in
    structure Func = Func
    structure Function = Function
    structure Kind = Block.Kind
+   structure Label = Label
    structure Var = Var
    structure Type = Type
 end
@@ -22,21 +23,9 @@ end
 local
    open Machine
 in
-   structure Chunk = Chunk
    structure Operand = Operand
    structure Register = Register
 end
-
-val traceAllocateBlock =
-   Trace.trace ("Allocate.block",
-		fn (Tree.T (Block.T {label, ...}, _),
-		    _: Chunk.t) => R.Label.layout label,
-		Unit.layout)
-
-val traceAllocateStatement =
-   Trace.trace ("Allocate.statement",
-		fn (s, _: Chunk.t) => R.Statement.layout s,
-		Unit.layout)
 
 val traceForceStack =
    Trace.trace ("Allocate.forceStack", Var.layout, Unit.layout)
@@ -173,9 +162,8 @@ fun ^ r = valOf (!r)
 (*                     allocate                      *)
 (* ------------------------------------------------- *)
 
-fun allocate {chunk: Machine.Chunk.t,
-	      function = f: Rssa.Function.t,
-	      labelChunk: Rssa.Label.t -> Machine.Chunk.t,
+fun allocate {function = f: Rssa.Function.t,
+	      newRegister,
 	      varInfo: Var.t -> {operand: Machine.Operand.t option ref option,
 				 ty: Machine.Type.t}} =
    let
@@ -281,16 +269,9 @@ fun allocate {chunk: Machine.Chunk.t,
 	     end)
 	 (* The next available register number for each type. *)
 	 val nextReg = Type.memo (fn _ => ref 0)
-	 fun nextRegister (ty: Type.t, c: Chunk.t): Register.t =
-	    let
-	       val r = nextReg ty
-	       val reg = Chunk.register (c, !r, ty)
-	       val _ = Int.inc r
-	    in
-	       reg
-	    end
-	 fun allocateVarInfo (x: Var.t, {operand, ty},
-			      c: Chunk.t, 
+	 fun allocateVarInfo (x: Var.t,
+			      {operand, ty},
+			      l: Label.t option, 
 			      force: bool,
 			      s: Stack.t): Stack.t =
 	    if force orelse isSome operand
@@ -301,11 +282,17 @@ fun allocate {chunk: Machine.Chunk.t,
 				let
 				   val (s, {offset}) = Stack.get (s, ty)
 				in
-				   (s, Operand.stackOffset {ty = ty,
+				   (s, Operand.StackOffset {ty = ty,
 							    offset = offset})
 				end
 			   | Register =>
-				(s, Operand.register (nextRegister (ty, c)))
+				let
+				   val r = nextReg ty
+				   val reg = newRegister (l, !r, ty)
+				   val _ = Int.inc r
+				in
+				   (s, Operand.Register reg)
+				end
 		       val _ = 
 			  case operand of
 			     NONE => ()
@@ -333,7 +320,7 @@ fun allocate {chunk: Machine.Chunk.t,
 	  *)
 	 val stack =
 	    Vector.fold (args, stack, fn ((x, _), s) =>
-			 allocateVar (x, chunk, true, s))
+			 allocateVar (x, NONE, true, s))
 	 (* Allocate slots for the link and handler, if necessary.
 	  * This code relies on Stack.get putting them together, since for now
 	  * the machine IL assumes they are and only has the ability to refer
@@ -360,7 +347,7 @@ fun allocate {chunk: Machine.Chunk.t,
 			then let
 				val handlerOffset = valOf handlerOffset
 			     in
-				(Operand.stackOffset {offset = handlerOffset,
+				(Operand.StackOffset {offset = handlerOffset,
 						      ty = Type.uint})
 				:: ops
 			     end
@@ -370,7 +357,7 @@ fun allocate {chunk: Machine.Chunk.t,
 			then let
 				val handlerOffset = valOf handlerOffset
 			     in
-				(Operand.stackOffset
+				(Operand.StackOffset
 				 {offset = handlerOffset + labelSize,
 				  ty = Type.uint})
 				:: ops
@@ -452,15 +439,15 @@ fun allocate {chunk: Machine.Chunk.t,
 				| _ => false)
 		      then Error.bug "newReturn not implemented"
 		   else ()
-		val c = labelChunk label
 		val s =
 		   Vector.fold (args, stack, fn ((x, _), s) =>
-				allocateVar (x, c, false, s))
+				allocateVar (x, SOME label, false, s))
 		val _ =
 		   Vector.fold
 		   (statements, s, fn (s, stack) =>
-		    R.Statement.foldDef (s, stack, fn ({var, ...}, stack) =>
-					 allocateVar (var, c, false, stack)))
+		    R.Statement.foldDef
+		    (s, stack, fn ({var, ...}, stack) =>
+		     allocateVar (var, SOME label, false, stack)))
 		val _ = setLabelInfo (label, {live = live,
 					       liveNoFormals = liveNoFormals,
 					       size = Stack.size stack,

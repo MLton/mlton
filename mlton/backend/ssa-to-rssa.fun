@@ -605,9 +605,10 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 					   fn return => 
 					   LimitCheck
 					   {kind = (LimitCheck.Array
-						    {numElts = numElts,
-						     bytesPerElt = bytesPerElt,
-						     extraBytes = 0}),
+						    {bytesPerElt = bytesPerElt,
+						     extraBytes = 0,
+						     numElts = numElts,
+						     stackToo = false}),
 					    return = return})
 				       end
 				  | Array_sub =>

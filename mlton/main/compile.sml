@@ -15,9 +15,8 @@ structure CoreML = CoreML (open Atoms
 structure Xml = Xml (open Atoms)
 structure Sxml = Xml
 structure Ssa = Ssa (open Atoms)
-structure MachineOutput = MachineOutput (structure Label = Ssa.Func
-					 structure Prim = Atoms.Prim)
-structure Machine = Machine (structure MachineOutput = MachineOutput)
+structure Machine = Machine (structure Label = Ssa.Label
+			     structure Prim = Atoms.Prim)
 
 (*---------------------------------------------------*)
 (*                  Compiler Passes                  *)
@@ -39,10 +38,9 @@ structure ClosureConvert = ClosureConvert (structure Ssa = Ssa
 					   structure Sxml = Sxml)
 structure Backend = Backend (structure Ssa = Ssa
 			     structure Machine = Machine
-			     fun funcToLabel f = f
-			     fun labelToLabel l = l)
-structure CCodeGen = CCodeGen (structure MachineOutput = MachineOutput)
-structure x86CodeGen = x86CodeGen (structure MachineOutput = MachineOutput)
+			     fun funcToLabel f = f)
+structure CCodeGen = CCodeGen (structure Machine = Machine)
+structure x86CodeGen = x86CodeGen (structure Machine = Machine)
 
 local open Elaborate
 in 
@@ -212,7 +210,7 @@ fun layoutBasisLibrary () = Env.layoutPretty basisEnv
 (*                      compile                      *)
 (* ------------------------------------------------- *)
 
-fun preCodegen {input, docc}: MachineOutput.Program.t =
+fun preCodegen {input, docc}: Machine.Program.t =
    let
       fun parseElabMsg () = (lexAndParseMsg (); elaborateMsg ())
       val primitiveDecs =
@@ -330,33 +328,26 @@ fun preCodegen {input, docc}: MachineOutput.Program.t =
 	  style = Control.No,
 	  display = Control.NoDisplay,
 	  thunk = fn () => Backend.generate ssa}
-      val mprogram =
-	 Control.pass
-	 {name = "toMOut",
-	  suffix = "mout",
-	  style = Control.No,
-	  display = Control.Layouts MachineOutput.Program.layouts,
-	  thunk = fn () => Machine.Program.toMachineOutput machine}
    in
-      mprogram
+      machine
    end
 
 fun compile {input: File.t list, outputC, outputS, docc}: unit =
    let
-      val mprogram =
+      val machine =
 	 Control.trace (Control.Top, "pre codegen")
 	 preCodegen {input = input, docc = docc}
       val _ =
 	 if !Control.Native.native
 	    then
 	       Control.trace (Control.Top, "x86 code gen")
-	       x86CodeGen.output {program = mprogram,
+	       x86CodeGen.output {program = machine,
                                   includes = !Control.includes,
 				  outputC = outputC,
 				  outputS = outputS}
 	 else
 	    Control.trace (Control.Top, "C code gen")
-	    CCodeGen.output {program = mprogram,
+	    CCodeGen.output {program = machine,
                              includes = !Control.includes,
 			     outputC = outputC}
       val _ = Control.message (Control.Detail, PropertyList.stats)

@@ -1,10 +1,9 @@
 Group
 
-signature MACHINE_OUTPUT
+signature MACHINE
 
 functor Backend
 functor Machine
-functor MachineOutput
    
 is
 
@@ -27,8 +26,6 @@ live.fun
 live.sig
 machine-cases.fun
 machine-cases.sig
-machine-output.fun
-machine-output.sig
 machine.fun
 machine.sig
 mtype.fun
