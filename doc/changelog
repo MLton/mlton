@@ -1,5 +1,9 @@
 Here are the changes since version 20030312.
 
+* 2003-05-02
+  - Switched over to new layered IO implementation, which completes
+    the implementation of the BinIO and TextIO modules.
+
 * 2003-04-28
   - Fixed bug that caused an assertion failure when generating a jump 
      table for a case dispatch on a non-word sized index with non-zero
