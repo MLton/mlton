@@ -4,6 +4,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 structure Random: RANDOM =
 struct
 
@@ -87,7 +88,7 @@ fun natLessThan (n: int): int =
    else Word.toInt (wordLessThan (Word.fromInt n))
 
 fun charFrom (s: string): char =
-   String.sub (s, natLessThan (String.size s))
+   Pervasive.String.sub (s, natLessThan (Pervasive.String.size s))
 
 fun nRandom {list, length, n} =
    let

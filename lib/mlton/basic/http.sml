@@ -842,10 +842,12 @@ structure Response =
 		  case Compiled.matchAll (responseLine (), l) of
 		     NONE => Result.No l
 		   | SOME m => 
-			let val {lookup, ...} = Match.stringFuns m
+			let
+			   val {lookup, ...} = Match.stringFuns m
 			   val version = Version.extract m
 			   val status = Status.fromString (lookup status')
-			in Result.map (Header.input ins, fn hs =>
+			in
+			   Result.map (Header.input ins, fn hs =>
 				       T {version = version,
 					  status = status,
 					  headers = hs})
