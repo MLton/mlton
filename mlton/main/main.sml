@@ -87,8 +87,7 @@ fun options () =
       open Control Popt
       fun push r = String (fn s => List.push (r, s))
    in [
-       (Normal, "basis", 
-	" {" ^ (String.concat (List.separate (Control.basisLibs, "|")))  ^ "}",
+       (Normal, "basis", " {basis-2002|...}",
 	"select basis library to prefix to the program",
 	SpaceString (fn s => 
 		     basisLibrary :=

@@ -212,14 +212,14 @@ sml-nj/unsafe.sml
 #
 # Basis2002
 #
-libs/basis-2002/basis.sig
-libs/basis-2002/basis.sml
+libs/basis-2002/top-level/basis.sig
+libs/basis-2002/top-level/basis.sml
 
 #
 # Basis2002Strict
 #
-libs/basis-2002-strict/basis.sig
-libs/basis-2002-strict/basis.sml
+libs/basis-2002-strict/top-level/basis.sig
+libs/basis-2002-strict/top-level/basis.sml
 
 #
 # Basis1997
@@ -324,5 +324,5 @@ libs/basis-1997/system/unix.sig
 libs/basis-1997/system/unix-convert.fun
 libs/basis-1997/io/io.sig
 libs/basis-1997/io/io-convert.fun
-libs/basis-1997/basis.sig
-libs/basis-1997/basis.sml
+libs/basis-1997/top-level/basis.sig
+libs/basis-1997/top-level/basis.sml
