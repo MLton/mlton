@@ -1191,12 +1191,24 @@ bool mutatorInvariant (GC_state s) {
 }
 #endif /* #if ASSERT */
 
+/* The purpose of blocking signals in GC is to prevent GC_handler from running,
+ * which would muck with s->limit.  However, if the program doesn't handle 
+ * signals, we don't need to block them.  This can be tested via the weak symbol
+ * Posix_Signal_handle.
+ */
+void Posix_Signal_handle () __attribute__ ((weak)); 
+static inline bool shouldBlockSignals () {
+	return 0 != Posix_Signal_handle;
+}
+
 static inline void blockSignals (GC_state s) {
-	sigprocmask (SIG_BLOCK, &s->signalsHandled, NULL);
+	if (shouldBlockSignals ())
+		sigprocmask (SIG_BLOCK, &s->signalsHandled, NULL);
 }
 
 static inline void unblockSignals (GC_state s) {
-	sigprocmask (SIG_UNBLOCK, &s->signalsHandled, NULL);
+	if (shouldBlockSignals ())
+		sigprocmask (SIG_UNBLOCK, &s->signalsHandled, NULL);
 }
 
 /* ---------------------------------------------------------------- */
@@ -1698,12 +1710,16 @@ static void swapSemis (GC_state s) {
 	setCardMapForMutator (s);
 }
 
+static inline bool detailedGCTime (GC_state s) {
+	return s->summary;
+}
+
 static void cheneyCopy (GC_state s) {
 	struct rusage ru_start;
 	pointer toStart;
 
 	assert (s->heap2.size >= s->oldGenSize);
-	if (s->summary) 
+	if (detailedGCTime (s))
 		startTiming (&ru_start);
 	s->numCopyingGCs++;
 	s->toSpace = s->heap2.start;
@@ -1735,7 +1751,7 @@ static void cheneyCopy (GC_state s) {
 				uintToCommaString (s->oldGenSize));
 	swapSemis (s);
 	clearCrossMap (s);
-	if (s->summary)
+	if (detailedGCTime (s))
 		stopTiming (&ru_start, &s->ru_gcCopy);		
  	if (DEBUG or s->messages)
 		fprintf (stderr, "Major copying GC done.\n");
@@ -1978,7 +1994,7 @@ static void minorGC (GC_state s) {
 	} else {
 		if (DEBUG_GENERATIONAL or s->messages)
 			fprintf (stderr, "Minor GC.\n");
-		if (s->summary)
+		if (detailedGCTime (s))
 			startTiming (&ru_start);
 		s->amInMinorGC = TRUE;
 		s->toSpace = s->heap.start + s->oldGenSize;
@@ -2003,7 +2019,7 @@ static void minorGC (GC_state s) {
 		s->bytesCopiedMinor += bytesCopied;
 		s->oldGenSize += bytesCopied;
 		s->amInMinorGC = FALSE;
-		if (s->summary)
+		if (detailedGCTime (s))
 			stopTiming (&ru_start, &s->ru_gcMinor);
 		if (DEBUG_GENERATIONAL or s->messages)
 			fprintf (stderr, "Minor GC done.  %s bytes copied.\n",
@@ -2519,7 +2535,7 @@ static void markCompact (GC_state s) {
 
 	if (DEBUG or s->messages)
 		fprintf (stderr, "Major mark-compact GC.\n");
-	if (s->summary)
+	if (detailedGCTime (s))
 		startTiming (&ru_start);		
 	s->numMarkCompactGCs++;
 	foreachGlobal (s, markGlobal);
@@ -2528,7 +2544,7 @@ static void markCompact (GC_state s) {
 	updateBackwardPointersAndSlide (s);
 	clearCrossMap (s);
 	s->bytesMarkCompacted += s->oldGenSize;
-	if (s->summary)
+	if (detailedGCTime (s))
 		stopTiming (&ru_start, &s->ru_gcMarkCompact);
 	if (DEBUG or s->messages)
 		fprintf (stderr, "Major mark-compact GC done.\n");
@@ -2832,6 +2848,18 @@ static inline void leaveGC (GC_state s) {
 	}
 }
 
+/* MLton_Rusage_ru is the only code outside of gc.c that uses gcState.ru_gc.
+ * So, we only need to keep gcTime if gc.c needs it due to s->summary or 
+ * s->messages, or if MLton_Rusage_ru is called.  Because MLton_Rusage_ru is
+ * defined in a file all to itself (basis/MLton/rusage.c), it is called iff it
+ * is linked in, which we can test via a weak symbol.
+ */
+void MLton_Rusage_ru () __attribute__ ((weak));
+static inline bool needGCTime (GC_state s) {
+	return DEBUG or s->summary or s->messages
+		or (0 != MLton_Rusage_ru != 0);
+}
+
 static void doGC (GC_state s, 
 			W32 oldGenBytesRequested,
 			W32 nurseryBytesRequested, 
@@ -2849,7 +2877,8 @@ static void doGC (GC_state s,
 				uintToCommaString (nurseryBytesRequested),
 				uintToCommaString (oldGenBytesRequested));
 	assert (invariant (s));
-	startTiming (&ru_start);
+	if (needGCTime (s))
+		startTiming (&ru_start);
 	minorGC (s);
 	stackTopOk = stackTopIsOk (s, s->currentThread->stack);
 	stackBytesRequested =
@@ -2870,8 +2899,11 @@ static void doGC (GC_state s,
 	unless (stackTopOk)
 		growStack (s);
 	setStack (s);
-	gcTime = stopTiming (&ru_start, &s->ru_gc);
-	s->maxPause = max (s->maxPause, gcTime);
+	if (needGCTime (s)) {
+		gcTime = stopTiming (&ru_start, &s->ru_gc);
+		s->maxPause = max (s->maxPause, gcTime);
+	} else
+		gcTime = 0;  /* Assign gcTime to quell gcc warning. */
 	if (DEBUG or s->messages) {
 		fprintf (stderr, "Finished gc.\n");
 		fprintf (stderr, "time: %s ms\n", intToCommaString (gcTime));
