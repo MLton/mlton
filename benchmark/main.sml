@@ -108,6 +108,7 @@ val benchCounts: (string * int * int) list =
     ("model-elimination", 0, 0),
     ("mpuz", 20, 5),
     ("nucleic", 500, 150),
+    ("output1", 1, 1),
     ("peek", 1000, 100),
     ("psdes-random", 3, 1),
     ("ratio-regions", 512, 256),
