@@ -3,5 +3,5 @@ fun f n =
       then ()
    else f 13
 
-val _ = f 0
+val _ = (f 0; raise Fail "bug") handle Subscript => ()
 val _ = f 1
