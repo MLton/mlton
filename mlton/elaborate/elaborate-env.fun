@@ -366,8 +366,7 @@ structure Structure =
 				       NONE => empty
 				     | SOME (t, _) => seq [str " of ", lay t]])
 			in
-			   seq [str "data", def,
-				mayAlign (separateLeft (cs, "| "))]
+			   seq [str "data", def, alignPrefix (cs, "| ")]
 			end
 		   | TypeStr.Scheme s =>
 			seq [def, lay (Scheme.apply (s, tyvars))]
