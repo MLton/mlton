@@ -148,9 +148,10 @@ fun layoutDot' (T {nodes, ...},
 			     options: Dot.GraphOption.t list,
 			     title: string}): Layout.t =
    let
+      val ns = !nodes
       val c = Counter.new 0
-      val {get = nodeId, destroy, ...} =
-	 Property.destGet
+      val {get = nodeId, rem, ...} =
+	 Property.get
 	 (Node.plist,
 	  Property.initFun
 	  (fn _ => concat ["n", Int.toString (Counter.next c)]))
@@ -158,7 +159,7 @@ fun layoutDot' (T {nodes, ...},
 	 mkOptions {nodeName = nodeId}
       val nodes =
 	 List.revMap
-	 (!nodes, fn n as Node.Node {successors, ...} =>
+	 (ns, fn n as Node.Node {successors, ...} =>
 	  {name = nodeId n,
 	   options = nodeOptions n,
 	   successors = List.revMap (!successors, fn e =>
@@ -168,7 +169,7 @@ fun layoutDot' (T {nodes, ...},
 	 Dot.layout {nodes = nodes,
 		     options = options,
 		     title = title}
-      val _ = destroy ()
+      val _ = List.foreach (ns, rem)
    in
       res
    end
