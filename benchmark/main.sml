@@ -498,15 +498,14 @@ fun main args =
 			       :: List.revMap (compilers, fn (_, n') => n'))
 			      :: (List.revMap
 				  (benchmarks, fn b =>
-				   b ::
-				   List.revMap
-				   (compilers, fn (n, _) =>
-				    case (List.peek
-					  (data, fn {bench = b',
-						     compiler = c', ...} =>
-					   b = b' andalso n = c')) of
-				       NONE => "*"
-				     | SOME {value = v, ...} => toString v)))
+				   b :: (List.revMap
+					 (compilers, fn (n, _) =>
+					  case (List.peek
+						(data, fn {bench = b',
+							   compiler = c', ...} =>
+						 b = b' andalso n = c')) of
+					     NONE => "*"
+					   | SOME {value = v, ...} => toString v))))
 			   open Justify
 			   val _ =
 			      outputTable
@@ -528,10 +527,18 @@ fun main args =
 			       ; p ["</tr>"])
 			   val _ =
 			      if !doHtml
-				 then 
+				 then
 				    (prow (hd rows, "h")
-				     ; List.foreach (tl rows, fn r =>
-						     prow (r, "d")))
+				     ; (List.foreach
+					(tl rows, fn b :: r =>
+					 let
+					    val b = 
+					       concat
+					       ["<a href = \"benchmarks/", b,
+						".sml\">", b, "</a>"]
+					 in
+					    prow (b :: r, "d")
+					 end)))
 			      else ()
 			in
 			   ()
