@@ -1,5 +1,8 @@
 Here are the changes since version 20030716.
 
+* 2003-09-11
+  - OS.IO.poll and Socket.select now raise errors on negative timeouts.
+
 * 2003-09-10
   - Word64 is now there.
 

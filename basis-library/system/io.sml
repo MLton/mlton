@@ -105,8 +105,11 @@ structure OS_IO: OS_IO =
 	  val eventss = Vector.fromList eventss
           val timeOut =
 	     case timeOut of
-	        SOME t => Int.fromLarge (Time.toMilliseconds t)
-	      | NONE => ~1
+		NONE => ~1
+	      | SOME t =>
+		   if Time.< (t, Time.zeroTime)
+		      then let open PosixError in raiseSys inval end
+		   else Int.fromLarge (Time.toMilliseconds t)
 	  val reventss = Array.array (n, 0w0)
 	  val _ = Posix.Error.checkResult 
                   (Prim.poll (fds, eventss, n, timeOut, reventss))
