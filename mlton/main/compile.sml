@@ -355,8 +355,11 @@ fun preCodegen {input, docc}: Machine.Program.t =
 		  then ()
 	       else 
 		  let
-		     val _ = Ffi.declareExports {print = fn _ => ()}
-		     val _ = print "#include \"types.h\"\n"
+		     val _ =
+			File.outputContents
+			(concat [!Control.libDir, "/include/types.h"],
+			 Out.standard)
+		     val _ = print "\n"
 		     val _ = Ffi.declareHeaders {print = print}
 		  in
 		     Process.succeed ()

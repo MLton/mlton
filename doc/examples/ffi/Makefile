@@ -6,8 +6,8 @@ all: import export
 	./export
 
 export: export.sml ffi-export.c
-	$(mlton) -export-header true >export.h export.sml
-	gcc -c -I/usr/lib/mlton/self/include ffi-export.c
+	$(mlton) -export-header true export.sml >export.h
+	gcc -c ffi-export.c
 	$(mlton) export.sml ffi-export.o
 
 import: import.sml ffi-import.o

@@ -65,10 +65,7 @@ in
 end
 
 val headers: string list ref = ref []
-
-fun declareHeaders {print} =
-   List.foreach (!headers, fn s => (print s; print ";\n"))
-       
+      
 fun declareExports {print} =
    let
       val maxMap = Type.memo (fn _ => ref ~1)
@@ -155,5 +152,9 @@ fun declareExports {print} =
 	  ; print "}\n"
        end)
    end
+
+fun declareHeaders {print} =
+   (declareExports {print = fn _ => ()}
+    ; List.foreach (!headers, fn s => (print s; print ";\n")))
 
 end
