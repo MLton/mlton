@@ -514,12 +514,12 @@ signature MLTON_SIGNAL =
             val isIgnore: t -> bool
          end
 
-      val getHandler: t -> handler
+      val getHandler: t -> Handler.t
       val handleDefault: t -> unit
       val handleWith': t * (unit Thread.t -> unit Thread.t) -> unit
       val handleWith: t * (unit -> unit) -> unit
       val ignore: t -> unit
-      val setHandler: t * handler -> unit
+      val setHandler: t * Handler.t -> unit
       val suspend: Mask.t -> unit
    end
 \end{verbatim}
