@@ -323,89 +323,102 @@ structure Structure =
       local
 	 open Layout
       in
-	 fun layoutTypeSpec (name: Ast.Tycon.t, s) =
+	 fun layouts (keep: {isUsed: bool} -> bool) =
 	    let
-	       val {destroy, lay} = Type.makeLayoutPretty ()
-	       val lay = #1 o lay
-	       val tyvars =
-		  case TypeStr.kind s of
-		     Kind.Arity n =>
-			Vector.tabulate
-			(n, fn _ =>
-			 Type.var (Tyvar.newNoname {equality = false}))
-		   | Kind.Nary => Vector.new0 ()
-	       val args =
-		  case Vector.length tyvars of
-		     0 => empty
-		   | 1 => seq [lay (Vector.sub (tyvars, 0)), str " "]
-		   | _ =>
-			seq
-			[paren (seq (separateRight
-				     (Vector.toList (Vector.map (tyvars, lay)),
-				      ", "))),
-			 str " "]
-	       val def = seq [str "type ", args,
-			      Ast.Tycon.layout name, str " = "]
-	       val res = 
-		  case TypeStr.node s of
-		     TypeStr.Datatype {cons = Cons.T cs, ...} =>
-			let
-			   val cs =
-			      Vector.toListMap
-			      (cs, fn {name, scheme, ...} =>
-			       seq [Ast.Con.layout name,
-				    case (Type.deArrowOpt
-					  (Scheme.apply (scheme, tyvars))) of
-				       NONE => empty
-				     | SOME (t, _) => seq [str " of ", lay t]])
-			in
-			   seq [str "data", def, alignPrefix (cs, "| ")]
-			end
-		   | TypeStr.Scheme s =>
-			seq [def, lay (Scheme.apply (s, tyvars))]
-		   | TypeStr.Tycon c =>
-			seq [def, lay (Type.con (c, tyvars))]
-	       val _ = destroy ()
+	       fun layoutTypeSpec (name: Ast.Tycon.t, s) =
+		  let
+		     val {destroy, lay} = Type.makeLayoutPretty ()
+		     val lay = #1 o lay
+		     val tyvars =
+			case TypeStr.kind s of
+			   Kind.Arity n =>
+			      Vector.tabulate
+			      (n, fn _ =>
+			       Type.var (Tyvar.newNoname {equality = false}))
+			 | Kind.Nary => Vector.new0 ()
+		     val args =
+			case Vector.length tyvars of
+			   0 => empty
+			 | 1 => seq [lay (Vector.sub (tyvars, 0)), str " "]
+			 | _ =>
+			      seq
+			      [paren (seq (separateRight
+					   (Vector.toList (Vector.map (tyvars, lay)),
+					    ", "))),
+			       str " "]
+		     val def = seq [str "type ", args,
+				    Ast.Tycon.layout name, str " = "]
+		     val res = 
+			case TypeStr.node s of
+			   TypeStr.Datatype {cons = Cons.T cs, ...} =>
+			      let
+				 val cs =
+				    Vector.toListMap
+				    (cs, fn {name, scheme, ...} =>
+				     seq [Ast.Con.layout name,
+					  case (Type.deArrowOpt
+						(Scheme.apply (scheme, tyvars))) of
+					     NONE => empty
+					   | SOME (t, _) => seq [str " of ", lay t]])
+			      in
+				 seq [str "data", def, alignPrefix (cs, "| ")]
+			      end
+			 | TypeStr.Scheme s =>
+			      seq [def, lay (Scheme.apply (s, tyvars))]
+			 | TypeStr.Tycon c =>
+			      seq [def, lay (Type.con (c, tyvars))]
+		     val _ = destroy ()
+		  in
+		     res
+		  end
+	       fun layoutValSpec (d: Ast.Vid.t, (vid, scheme)) =
+		  let
+		     fun simple s =
+			seq [str s, str " ", Ast.Vid.layout d,
+			     str ": ", Scheme.layoutPretty scheme]
+		     datatype z = datatype Vid.t
+		  in
+		     case vid of
+			Con _ => simple "con"
+		      | Exn c =>
+			   seq [str "exception ", Con.layout c, 
+				case Type.deArrowOpt (Scheme.ty scheme) of
+				   NONE => empty
+				 | SOME (t, _) =>
+				      seq [str " of ", Type.layoutPretty t]]
+		      | Overload  _ => simple "val"
+		      | Var _ => simple "val"
+		  end
+	       fun layoutStrSpec (d: Strid.t, r) =
+		  align [seq [str "structure ", Strid.layout d, str ":"],
+			 indent (layoutPretty r, 3)]
+	       and layoutPretty (T {strs, vals, types, ...}) =
+		  let
+		     fun doit (Info.T a, layout) =
+			align (Array.foldr
+			       (a, [], fn ({domain, isUsed, range, ...}, ac) =>
+				if keep {isUsed = !isUsed}
+				   then layout (domain, range) :: ac
+				else ac))
+		  in
+		     align
+		     [str "sig",
+		      indent (align [doit (types, layoutTypeSpec),
+				     doit (vals, layoutValSpec),
+				     doit (strs, layoutStrSpec)],
+			      3),
+		      str "end"]
+		  end
 	    in
-	       res
-	    end
-	 fun layoutValSpec (d: Ast.Vid.t, (vid, scheme)) =
-	    let
-	       fun simple s =
-		  seq [str s, str " ", Ast.Vid.layout d,
-		       str ": ", Scheme.layoutPretty scheme]
-	       datatype z = datatype Vid.t
-	    in
-	       case vid of
-		  Con _ => simple "con"
-		| Exn c =>
-		     seq [str "exception ", Con.layout c, 
-			  case Type.deArrowOpt (Scheme.ty scheme) of
-			     NONE => empty
-			   | SOME (t, _) =>
-				seq [str " of ", Type.layoutPretty t]]
-		| Overload  _ => simple "val"
-		| Var _ => simple "val"
-	    end
-	 fun layoutStrSpec (d: Strid.t, r) =
-	    align [seq [str "structure ", Strid.layout d, str ":"],
-		   indent (layoutPretty r, 3)]
-	 and layoutPretty (T {strs, vals, types, ...}) =
-	    let
-	       fun doit (Info.T a, layout) =
-		  align (Array.foldr (a, [], fn ({domain, range, ...}, ac) =>
-				      layout (domain, range) :: ac))
-	    in
-	       align
-	       [str "sig",
-		indent (align [doit (types, layoutTypeSpec),
-			       doit (vals, layoutValSpec),
-			       doit (strs, layoutStrSpec)],
-			3),
-		str "end"]
+	       {str = layoutPretty,
+		strSpec = layoutStrSpec,
+		typeSpec = layoutTypeSpec,
+		valSpec = layoutValSpec}
 	    end
       end
 
+      fun layoutPretty S = #str (layouts (fn _ => true)) S
+	 
       local
 	 fun make (field, toSymbol) (T fields, domain) =
 	    Info.peek (field fields, domain, toSymbol)
@@ -724,44 +737,30 @@ fun collect (E as T r, f: {isUsed: bool, scope: Scope.t} -> bool) =
        vals = finish (vals, Ast.Vid.toSymbol)}
    end
    
-fun layout' (E: t, f): Layout.t =
+fun layout' (E: t, f, fStr): Layout.t =
    let
       val {fcts, sigs, strs, types, vals} = collect (E, f)
       open Layout
       fun doit (a, layout) = align (Array.toListMap (a, layout))
+      val {strSpec, typeSpec, valSpec, ...} = Structure.layouts fStr
    in
-      align [doit (types, Structure.layoutTypeSpec),
-	     doit (vals, Structure.layoutValSpec),
+      align [doit (types, typeSpec),
+	     doit (vals, valSpec),
 	     doit (sigs, fn (s, _) => seq [str "signature ", Sigid.layout s]),
 	     doit (fcts, fn (s, _) => seq [str "functor ", Fctid.layout s]),
-	     doit (strs, Structure.layoutStrSpec)]
+	     doit (strs, strSpec)]
    end
 
-fun layout E = layout' (E, fn _ => true)
+fun layout E = layout' (E, fn _ => true, fn _ => true)
 
 fun layoutCurrentScope (E as T {currentScope, ...}) =
    let
       val s = !currentScope
    in
-      layout' (E, fn {scope, ...} => Scope.equals (s, scope))
+      layout' (E, fn {scope, ...} => Scope.equals (s, scope), fn _ => true)
    end
 
-fun layoutUsed (E: t): Layout.t =
-   let
-      val {fcts, sigs, strs, types, vals} = collect (E, #isUsed)
-      open Layout
-      fun doit (a, layout) = align (Array.toListMap (a, layout))
-      fun doitn (ns, name, lay) =
-	 doit (ns, fn (s, _) => seq [str name, str " ", lay s])
-   in
-      align [doitn (types, "type", Ast.Tycon.layout),
-	     doitn (vals, "val", Ast.Vid.layout),
-	     doitn (sigs, "signature", Sigid.layout),
-	     doitn (fcts, "functor", Fctid.layout),
-	     doit (strs, fn (s, r) =>
-		   align [seq [str "structure ", Strid.layout s],
-			  indent (Structure.layoutUsed r, 3)])]
-   end
+fun layoutUsed (E: t): Layout.t = layout' (E, #isUsed, #isUsed)
 
 (* ------------------------------------------------- *)
 (*                       peek                        *)
