@@ -41,7 +41,7 @@ functor Sequence (S: sig
 		     val (x, b') = f (i, b)
 		     val _ = Array.update (a, i, x)
 		  in
-		     loop (i + 1, b')
+		     loop (i +? 1, b')
 		  end
 	    val _ = loop (0, b)
 	 in
@@ -227,7 +227,7 @@ functor Sequence (S: sig
 		     unfoldi (n, (0, sl1),
 			      fn (_, (i, sl)) =>
 				  if i < length sl
-				     then (unsafeSub (sl, i), (i + 1, sl))
+				     then (unsafeSub (sl, i), (i +? 1, sl))
 				  else (unsafeSub (sl2, 0), (1, sl2)))
 		  end
 	    fun concat (sls: 'a slice list): 'a sequence =
@@ -284,7 +284,7 @@ functor Sequence (S: sig
 	       in
 		  if n <= n'
 		     then let
-			     val n'' = n' - n
+			     val n'' = n' -? n
 			     fun loop (i, j) =
 			        if i > n''
 				   then false
@@ -327,7 +327,7 @@ functor Sequence (S: sig
 	       in
 		  if n <= n'
 		     then let
-			     val n'' = n' - n
+			     val n'' = n' -? n
 			     fun loop (j) =
 			        if j >= n
 				   then true
