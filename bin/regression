@@ -37,8 +37,6 @@ while [ "$#" -gt 0 ]; do
 	esac
 done
 
-echo "flags = $flags"
-
 dir=`dirname $0`
 src=`cd $dir/.. && pwd`
 bin="$src/build/bin"
@@ -57,6 +55,9 @@ PATH=$bin:.:$PATH
 compFail () {
 	echo "compilation of $f failed with $flags"
 }
+
+$mlton -v
+echo "flags = $flags"
 
 cd $src/regression
 for f in `ls *.sml`; do
