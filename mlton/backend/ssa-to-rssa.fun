@@ -1288,7 +1288,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				       val s2 = IntSize.roundUpToPrim s2
 				    in
 				       if IntSize.equals (s1, s2)
-					  then cast ()
+					  then move (a 0)
 				       else nativeOrC (Prim.intToInt (s1, s2))
 				    end
 			       | IntInf_toVector => cast ()
