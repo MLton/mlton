@@ -36,8 +36,9 @@ fun insertFunction (f: Function.t) =
 	     val bytes = 
 		Vector.fold (statements, 0, fn (s, ac) =>
 			     case s of
-				Statement.Object {numPointers = p,
-						  numWordsNonPointers = np, ...} =>
+				Statement.Object
+				{numPointers = p,
+				 numWordsNonPointers = np, ...} =>
 				   ac + Runtime.objectHeaderSize
 				   + (Runtime.objectSize
 				      {numPointers = p,
@@ -104,38 +105,9 @@ fun insertFunction (f: Function.t) =
 		    name = name,
 		    start = newStart}
    end
-	 
+
 fun insert (Program.T {functions, main}) =
    Program.T {functions = List.revMap (functions, insertFunction),
-	      main = main}
-
-(* fun allocateArray
- * 			      ({user = {gcInfo, numElts, numPointers,
- * 					numBytesNonPointers, ...},
- * 				limitCheck}: Statement.allocateArray,
- * 			       bytesAllocated: int): int =
- * 			      let
- * 				 val bytesAllocated =
- * 				    bytesAllocated
- * 				    (* space for array header *)
- * 				    + arrayHeaderSize
- * 				 (* maxArrayLimitCheck is arbitrary -- it's just
- * 				  * there to ensure that really huge array
- * 				  * allocations don't get moved too early.
- * 				  *)
- * 				 val maxArrayLimitCheck = 10000
- * 			      in
- * 				 case numElts of
- * 				    Operand.Int numElts =>
- * 				       if numElts <= maxArrayLimitCheck
- * 					  then
- * 					     (bytesAllocated +
- * 					      Type.align (Type.pointer,
- * 							  numElts * bytesPerElt))
- * 					     handle Exn.Overflow => here ()
- * 				       else here ()
- * 				  | _ => here ()
- * 			      end
- *)
+	      main = insertFunction main}
 
 end

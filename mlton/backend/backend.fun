@@ -80,7 +80,6 @@ structure Chunk =
    struct
       datatype t = T of {blocks: M.Block.t list ref,
 			 chunkLabel: M.ChunkLabel.t,
-			 (* for each type, gives the max # registers used *)
 			 regMax: Type.t -> int ref}
 
       fun label (T {chunkLabel, ...}) = chunkLabel
@@ -107,6 +106,13 @@ structure Chunk =
 	 List.push (blocks, M.Block.T z)
    end
 
+val maxFrameSize = Int.^ (2, 16)
+
+val traceGenBlock =
+   Trace.trace ("Backend.genBlock",
+		Label.layout o R.Block.label,
+		Unit.layout)
+
 fun toMachine (program: Ssa.Program.t) =
    let
       val program =
@@ -123,7 +129,7 @@ fun toMachine (program: Ssa.Program.t) =
 				thunk = fn () => LimitCheck.insert program,
 				display = Control.Layouts Rssa.Program.layouts,
 				typeCheck = R.Program.typeCheck}
-      val R.Program.T {functions, main, ...} = program
+      val R.Program.T {functions, main} = program
       (* Chunk information *)
       val {get = labelChunk, set = setLabelChunk, ...} =
 	 Property.getSetOnce (Label.plist,
@@ -138,13 +144,6 @@ fun toMachine (program: Ssa.Program.t) =
 		     ty = ty}
       val globalPointerNonRootCounter = Counter.new 0
       val constantCounter = Type.memo (fn _ => Counter.new 0)
-      val maxStackOffset: int ref = ref 0
-      fun stackOffset {offset, ty} =
-	 let
-	    val n = offset + Type.size ty
-	    val _ = if n > !maxStackOffset then maxStackOffset := n else ()
-	 in M.Operand.StackOffset {offset = offset, ty = ty}
-	 end
       val chunks = ref []
       fun newChunk () =
 	 let
@@ -160,7 +159,6 @@ fun toMachine (program: Ssa.Program.t) =
 		   size: int} list ref = ref []
       fun newFrame (f as {chunkLabel, live, return, size}) = 
 	 let
-	    val maxFrameSize = Int.^ (2, 16)
 	    val _ =
 	       if size >= maxFrameSize
 		  then (Error.bug
@@ -224,6 +222,10 @@ fun toMachine (program: Ssa.Program.t) =
 	   set = setVarInfo, ...} =
 	 Property.getSetOnce (Var.plist,
 			      Property.initRaise ("Backend.info", Var.layout))
+      val setVarInfo =
+	 Trace.trace2 ("Backend.setVarInfo",
+		       Var.layout, VarOperand.layout o #operand, Unit.layout)
+	 setVarInfo
       val varInfo =
 	 Trace.trace ("Backend.varInfo",
 		      Var.layout,
@@ -325,11 +327,16 @@ fun toMachine (program: Ssa.Program.t) =
 		  M.Operand.Offset {base = varOperand base,
 				    offset = bytes,
 				    ty = ty}
+	     | Pointer n => M.Operand.Pointer n
 	     | Var {var, ...} => varOperand var
 	 end
       fun translateOperands ops = Vector.map (ops, translateOperand)
-      fun genStatement (s: R.Statement.t, handlerOffset): M.Statement.t =
+      fun genStatement (s: R.Statement.t,
+			handlerLinkOffset: {handler: int,
+					    link: int} option): M.Statement.t =
 	 let
+	    fun handlerOffset () = #handler (valOf handlerLinkOffset)
+	    fun linkOffset () = #link (valOf handlerLinkOffset)
 	    datatype z = datatype R.Statement.t
 	 in
 	    case s of
@@ -339,8 +346,15 @@ fun toMachine (program: Ssa.Program.t) =
 				     numElts = varOperand numElts,
 				     numPointers = numPointers}
 	     | Move {dst, src} =>
-		  M.Statement.move {dst = translateOperand dst,
-				    src = translateOperand src}
+		  if (case dst of
+			 R.Operand.Var {var, ...} =>
+			    (case #operand (varInfo var) of
+				VarOperand.Const _ => true
+			      | _ => false)
+		       | _ => false)
+		     then M.Statement.Noop
+		  else M.Statement.move {dst = translateOperand dst,
+					 src = translateOperand src}
 	     | Object {dst, numPointers, numWordsNonPointers, stores} =>
 		  M.Statement.Object
 		  {dst = varOperand dst,
@@ -354,16 +368,16 @@ fun toMachine (program: Ssa.Program.t) =
 				       dst = Option.map (dst, varOperand o #1),
 				       prim = prim}
 	     | SetExnStackLocal =>
-		  M.Statement.SetExnStackLocal {offset = valOf handlerOffset}
+		  M.Statement.SetExnStackLocal {offset = handlerOffset ()}
 	     | SetExnStackSlot =>
-		  M.Statement.SetExnStackSlot {offset = valOf handlerOffset}
+		  M.Statement.SetExnStackSlot {offset = linkOffset ()}
 	     | SetHandler h =>
 		  M.Statement.move
-		  {dst = stackOffset {offset = valOf handlerOffset,
+		  {dst = M.Operand.StackOffset {offset = handlerOffset (),
 						ty = Type.label},
 		   src = M.Operand.Label h}
 	     | SetSlotExnStack =>
-		  M.Statement.SetSlotExnStack {offset = valOf handlerOffset}
+		  M.Statement.SetSlotExnStack {offset = linkOffset ()}
 	 end
       val genStatement =
 	 Trace.trace ("Backend.genStatement",
@@ -373,6 +387,10 @@ fun toMachine (program: Ssa.Program.t) =
 	   set = setLabelInfo, ...} =
 	 Property.getSetOnce
 	 (Label.plist, Property.initRaise ("labelInfo", Label.layout))
+      val setLabelInfo =
+	 Trace.trace2 ("Backend.setLabelInfo",
+		       Label.layout, Layout.ignore, Unit.layout)
+	 setLabelInfo
       fun genFunc (f: Function.t, isMain: bool): unit =
 	 let
 	    val {args, blocks, name, start, ...} = Function.dest f
@@ -382,16 +400,17 @@ fun toMachine (program: Ssa.Program.t) =
 	    fun newVarInfo (x, ty) =
 	       setVarInfo
 	       (x, {operand = if isMain
-				 then VarOperand.Allocate {operand = ref NONE}
-			      else VarOperand.Const (M.Operand.Global
-						     (newGlobal ty)),
+				 then
+				    VarOperand.Const (M.Operand.Global
+						      (newGlobal ty))
+			      else VarOperand.Allocate {operand = ref NONE},
                     ty = ty})
 	    fun newVarInfos xts = Vector.foreach (xts, newVarInfo)
 	    (* Set the constant operands, labelInfo, and varInfo. *)
 	    val _ = newVarInfos args
 	    val _ =
 	       Vector.foreach
-	       (blocks, fn R.Block.T {label, args, statements, ...} =>
+	       (blocks, fn R.Block.T {args, label, statements, transfer, ...} =>
 		let
 		   val _ = setLabelInfo (label, {args = args})
 		   val _ = newVarInfos args
@@ -399,9 +418,7 @@ fun toMachine (program: Ssa.Program.t) =
 		      Vector.foreach
 		      (statements, fn s =>
 		       let
-			  fun normal () =
-			     R.Statement.foreachDef (s, fn {var, ty} =>
-						     newVarInfo (var, ty))
+			  fun normal () = R.Statement.foreachDef (s, newVarInfo)
 		       in
 			  case s of
 			     R.Statement.Move {dst = R.Operand.Var {var, ty}, src} =>
@@ -413,6 +430,8 @@ fun toMachine (program: Ssa.Program.t) =
 				in
 				   case src of
 				      R.Operand.Const c => set (constOperand c)
+				    | R.Operand.Pointer n =>
+					 set (M.Operand.Pointer n)
 				    | R.Operand.Var {var = var', ...} =>
 					 (case #operand (varInfo var') of
 					     VarOperand.Const oper => set oper
@@ -421,9 +440,24 @@ fun toMachine (program: Ssa.Program.t) =
 				end
 			   | _ => normal ()
 		       end)
+		   val _ = R.Transfer.foreachDef (transfer, newVarInfo)
 		in
 		   ()
 		end)
+	    fun callReturnOperands (xs: 'a vector,
+				    ty: 'a -> Type.t,
+				    shift: int): M.Operand.t vector =
+	       #1 (Vector.mapAndFold
+		   (xs, 0,
+		    fn (x, offset) =>
+		    let
+		       val ty = ty x
+		       val offset = Type.align (ty, offset)
+		    in
+		       (M.Operand.StackOffset {offset = shift + offset, 
+					       ty = ty},
+			offset + Type.size ty)
+		    end))
 	    (* Allocate stack slots. *)
 	    local
 	       val varInfo =
@@ -446,33 +480,20 @@ fun toMachine (program: Ssa.Program.t) =
 		     Chunk.register (chunk, n, ty)
 		  end
 	    in
-	       val {handlerOffset, labelInfo = labelRegInfo, ...} =
-		  AllocateRegisters.allocate {function = f,
-					      newRegister = newRegister,
-					      varInfo = varInfo}
+	       val {handlerLinkOffset, labelInfo = labelRegInfo, ...} =
+		  AllocateRegisters.allocate
+		  {argOperands = callReturnOperands (args, #2, 0),
+		   function = f,
+		   newRegister = newRegister,
+		   varInfo = varInfo}
 	    end
 	    val profileInfoFunc = Func.toString name
 	    (* ------------------------------------------------- *)
 	    (*                    genTransfer                    *)
 	    (* ------------------------------------------------- *)
-	    fun callReturnOperands (xs: 'a vector,
-				    ty: 'a -> Type.t,
-				    shift: int): M.Operand.t vector =
-	       #1 (Vector.mapAndFold
-		   (xs, labelSize, (* labelSize is for return address *)
-		    fn (x, offset) =>
-		    let
-		       val ty = ty x
-		       val offset = Type.align (ty, offset)
-		    in
-		       (stackOffset {offset = shift + offset, 
-					       ty = ty},
-			offset + Type.size ty)
-		    end))
 	    fun genTransfer (t: R.Transfer.t,
 			     chunk: Chunk.t,
-			     label: Label.t,
-			     handlerOffset: int option)
+			     label: Label.t)
 	       : M.Statement.t vector * M.Transfer.t =
 	       let
 		  fun simple t = (Vector.new0 (), t)
@@ -512,23 +533,22 @@ fun toMachine (program: Ssa.Program.t) =
 						let
 						   val {size = size', ...} =
 						      labelRegInfo h
-						   val handlerOffset =
-						      valOf handlerOffset
+						   val {handler, link} =
+						      valOf handlerLinkOffset
 						in
 						   (SOME h,
 						    Vector.new2
-						    (stackOffset 
-						     {offset = handlerOffset,
+						    (M.Operand.StackOffset 
+						     {offset = handler,
 						      ty = Type.label},
-						     stackOffset 
-						     {offset = (handlerOffset
-								+ labelSize),
+						     M.Operand.StackOffset 
+						     {offset = link,
 						      ty = Type.uint}))
 						end
 				       val size = 
 					  if !Control.newReturn
 					     then #size (adjustSize size)
-					  else Type.wordAlign size
+					  else size
 				    in
 				       (size, 
 					SOME {return = cont,
@@ -651,28 +671,19 @@ fun toMachine (program: Ssa.Program.t) =
 		  val chunk = labelChunk label
 		  val statements =
 		     Vector.map (statements, fn s =>
-				 genStatement (s, handlerOffset))
+				 genStatement (s, handlerLinkOffset))
 		  val (preTransfer, transfer) =
-		     genTransfer (transfer, chunk, label, handlerOffset)
+		     genTransfer (transfer, chunk, label)
+		  fun frame () =
+		     newFrame {chunkLabel = Chunk.label chunk,
+			       live = liveNoFormals,
+			       return = label,
+			       size = size}
 		  val (kind, pre) =
 		     case kind of
 			R.Kind.Cont {handler} =>
 			   let
-			      val size' =
-				 case handler of
-				    NONE => size
-				  | SOME h =>
-				       let
-					  val {size = size', ...} =
-					     labelRegInfo h
-				       in Int.max (size, size')
-				       end
-			      val size = Type.wordAlign size'
-			      val _ =
-				 newFrame {return = label,
-					   chunkLabel = Chunk.label chunk,
-					   size = size,
-					   live = liveNoFormals}
+			      val _ = frame ()
 			      val srcs = callReturnOperands (args, #2, 0)
 			   in
 			      (M.Kind.Cont {args = srcs,
@@ -700,9 +711,10 @@ fun toMachine (program: Ssa.Program.t) =
 				 List.push
 				 (handlers, {chunkLabel = Chunk.label chunk,
 					     label = label})
-			      val offset = valOf handlerOffset
+			      val {handler, ...} = valOf handlerLinkOffset
 			      val dsts = Vector.map (args, varOperand o #1)
-			   in (M.Kind.Handler {offset = offset},
+			   in
+			      (M.Kind.Handler {offset = handler},
 			       M.Statement.moves
 			       {dsts = dsts,
 				srcs = (raiseOperands
@@ -711,11 +723,7 @@ fun toMachine (program: Ssa.Program.t) =
 		      | R.Kind.Jump => (M.Kind.Jump, Vector.new0 ())
 		      | R.Kind.Runtime {prim} =>
 			   let
-			      val _ =
-				 newFrame {chunkLabel = Chunk.label chunk,
-					   live = liveNoFormals,
-					   return = label,
-					   size = size}
+			      val _ = frame ()
 			   in
 			      (M.Kind.Runtime {frameInfo = M.FrameInfo.bogus,
 					       prim = prim},
@@ -732,29 +740,24 @@ fun toMachine (program: Ssa.Program.t) =
 				   statements = statements,
 				   transfer = transfer})
 	       end
+	    val genBlock = traceGenBlock genBlock
 	    val _ = Vector.foreach (blocks, genBlock)
-	    val _ = Vector.foreach (blocks, R.Block.clear)
+	    val _ =
+	       if isMain
+		  then ()
+	       else Vector.foreach (blocks, R.Block.clear)
 	 in
 	    ()
 	 end
       val genFunc =
 	 Trace.trace2 ("Backend.genFunc",
-		       Func.layout o Function.name,
-		       Bool.layout,
-		       Unit.layout)
+		       Func.layout o Function.name, Bool.layout, Unit.layout)
 	 genFunc
       (* Generate the main function first.
        * Need to do this in order to set globals.
        *)
-      val _ =
-	 case List.peek (functions, fn f =>
-			 Func.equals (main, R.Function.name f)) of
-	    NONE => Error.bug "missing main function"
-	  | SOME f => genFunc (f, true)
-      val _ = List.foreach (functions, fn f =>
-			    if Func.equals (main, R.Function.name f)
-			       then ()
-			    else genFunc (f, false))
+      val _ = genFunc (main, true)
+      val _ = List.foreach (functions, fn f => genFunc (f, false))
       val chunks = !chunks
       val _ = IntSet.reset ()
       val c = Counter.new 0
@@ -811,15 +814,54 @@ fun toMachine (program: Ssa.Program.t) =
 	 Machine.Chunk.T {chunkLabel = chunkLabel,
 			  blocks = Vector.fromListMap (!blocks, blockToMachine),
 			  regMax = ! o regMax}
-      val main = {chunkLabel = Chunk.label (funcChunk main),
-		  label = funcToLabel main}
+      val mainName = R.Function.name main
+      val main = {chunkLabel = Chunk.label (funcChunk mainName),
+		  label = funcToLabel mainName}
       val chunks = List.revMap (chunks, chunkToMachine)
       (* The clear is necessary because properties have been attached to Funcs
        * and Labels, and they appear as labels in the resulting program.
        *)
       val _ = List.foreach (chunks, fn M.Chunk.T {blocks, ...} =>
 			    Vector.foreach (blocks, Label.clear o M.Block.label))
-
+      val maxFrameSize =
+	 List.fold
+	 (chunks, 0, fn (M.Chunk.T {blocks, ...}, max) =>
+	  Vector.fold
+	  (blocks, max, fn (M.Block.T {kind, statements, transfer, ...}, max) =>
+	   let
+	      fun doFrameInfo (M.FrameInfo.T {size, ...}, max) =
+		 Int.max (max, size)
+	      fun doOperand (z: M.Operand.t, max) =
+		 let
+		    datatype z = datatype M.Operand.t
+		 in
+		    case z of
+		       ArrayOffset {base, index, ...} =>
+			  doOperand (base, doOperand (index, max))
+		     | CastInt z => doOperand (z, max)
+		     | Contents {oper, ...} => doOperand (oper, max)
+		     | Offset {base, ...} => doOperand (base, max)
+		     | StackOffset {offset, ty} =>
+			  Int.max (offset + Type.size ty, max)
+		     | _ => max
+		 end
+	      val max =
+		 case kind of
+		    M.Kind.Cont {frameInfo, ...} =>
+		       doFrameInfo (frameInfo, max)
+		  | M.Kind.Runtime {frameInfo, ...} =>
+		       doFrameInfo (frameInfo, max)
+		  | _ => max
+	      val max =
+		 Vector.fold
+		 (statements, max, fn (s, max) =>
+		  M.Statement.foldOperands (s, max, doOperand))
+	      val max =
+		 M.Transfer.foldOperands (transfer, max, doOperand)
+	   in
+	      max
+	   end))
+      val maxFrameSize = Type.wordAlign maxFrameSize
    in
       Machine.Program.T 
       {chunks = chunks,
@@ -829,7 +871,7 @@ fun toMachine (program: Ssa.Program.t) =
        globalsNonRoot = Counter.value globalPointerNonRootCounter,
        intInfs = allIntInfs (), 
        main = main,
-       maxFrameSize = Type.wordAlign (!maxStackOffset),
+       maxFrameSize = maxFrameSize,
        strings = allStrings ()}
    end
 

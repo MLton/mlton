@@ -239,25 +239,6 @@ struct
 				  C.int),
 			 print);
 
-	      fun locals ty
-		= List.fold(chunks,
-			    0,
-			    fn (Machine.Chunk.T {regMax, ...},max)
-			     => if regMax ty > max
-				  then regMax ty
-				  else max)
-			  
-	      fun declareLocals()
-		= C.call("Locals",
-			 List.map(List.map(let 
-					     open Type
-					   in 
-					     [char, double, int, pointer, uint]
-					   end,
-					   locals),
-				  C.int),
-			 print);
-
 	      fun declareIntInfs() 
 		= (print "BeginIntInfs\n"; 
 		   List.foreach
@@ -360,7 +341,6 @@ struct
 	      print "#define X86CODEGEN\n\n";
 	      outputIncludes();
 	      declareGlobals();
-	      declareLocals();
 	      declareIntInfs();
 	      declareStrings();
 	      declareFloats();

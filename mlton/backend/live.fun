@@ -65,6 +65,9 @@ val traceConsider = Trace.trace ("Live.consider", LiveInfo.layout, Bool.layout)
 
 fun live (function, {shouldConsider: Var.t -> bool}) =
    let
+      val shouldConsider =
+	 Trace.trace ("Live.shouldConsider", Var.layout, Bool.layout)
+	 shouldConsider
       val _ =
 	 Control.diagnostic
 	 (fn () =>
@@ -73,12 +76,9 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 		  Func.layout (Function.name function)]
 	  end)
       val {args, blocks, start, ...} = Function.dest function
-      val {get = labelInfo: Label.t -> 
-	                    {
-			     argInfo: LiveInfo.t,
-			     block: Block.t,
-			     bodyInfo: LiveInfo.t
-			    },
+      val {get = labelInfo: Label.t -> {argInfo: LiveInfo.t,
+					block: Block.t,
+					bodyInfo: LiveInfo.t},
 	   set = setLabelInfo, ...} =
 	 Property.getSetOnce (Label.plist,
 			      Property.initRaise ("live info", Label.layout))
@@ -96,6 +96,10 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 	    then (List.push (allVars, x)
 		  ; #defined (varInfo x) := SOME defined)
 	 else ()
+      val setDefined =
+	 Trace.trace2 ("Live.setDefined",
+		       Var.layout, LiveInfo.layout, Unit.layout)
+	 setDefined
       (* Set the labelInfo for each block. *)
       val _ =
 	 Vector.foreach
@@ -124,7 +128,8 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
       val _ = Vector.foreach (args, fn (x, _) => setDefined (x, head))
       val _ =
 	 Vector.foreach
-	 (blocks, fn block as Block.T {kind, label, statements, transfer, ...} =>
+	 (blocks,
+	  fn block as Block.T {args, kind, label, statements, transfer, ...} =>
 	  let
 	    val {argInfo, bodyInfo = b, ...} = labelInfo label
 	    val _ = Vector.foreach (args, fn (x, _) => setDefined (x, argInfo))
@@ -141,99 +146,42 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 	       if shouldConsider x
 		  then
 		     let val {used, ...} = varInfo x
-		     in if (case !used of
+		     in
+			if (case !used of
 			       [] => false
 			     | b' :: _ => LiveInfo.equals (b, b'))
 			   then ()
 			else List.push (used, b)
 		     end
 	       else ()
-	    fun uses (xs: Var.t vector): unit = Vector.foreach (xs, use)
-	    fun useOperand (z: Operand.t): unit =
-	       let
-		  datatype z = datatype Operand.t
-	       in
-		  case z of
-		     ArrayOffset {base, index, ...} => (use base; use index)
-		   | CastInt x => use x
-		   | Const _ => ()
-		   | Offset {base, ...} => use base
-		   | Var {var, ...} => use var
-	       end
-	    fun useOperands zs = Vector.foreach (zs, useOperand)
+	    val use = Trace.trace ("Live.use", Var.layout, Unit.layout) use
 	    val _ =
 	       Vector.foreach
 	       (statements, fn s =>
-		case s of
-		   Array {dst, numElts, ...} =>
-		      (use numElts
-		       ; define dst)
-		 | Move {dst, src} =>
-		      ((case dst of
-			   Operand.Var {var, ...} => define var
-			 | _ => useOperand dst)
-		       ; useOperand src)
-		 | Object {dst, stores, ...} =>
-		      (Vector.foreach (stores, fn {value, ...} =>
-				       useOperand value)
-		       ; define dst)
-		 | PrimApp {dst, args, ...} =>
-		      (uses args
-		       ; Option.app (dst, define o #1))
-		 | SetExnStackLocal => ()
-		 | SetExnStackSlot => List.push (handlerLinkDefUses, Use b)
-		 | SetHandler _ => List.push (handlerCodeDefUses, Def b)
-		 | SetSlotExnStack => List.push (handlerLinkDefUses, Def b))
+		let
+		   val _ = Statement.foreachDefUse (s, {def = define o #1,
+							use = use})
+		   val _ =
+		      case s of
+			 SetExnStackSlot => List.push (handlerLinkDefUses, Use b)
+		       | SetHandler _ => List.push (handlerCodeDefUses, Def b)
+		       | SetSlotExnStack => List.push (handlerLinkDefUses, Def b)
+		       | _ => ()
+		in
+		   ()
+		end)
+	    fun label l =
+	       let
+		  val {block = Block.T {kind, ...}, ...} = labelInfo l
+	       in
+		  case kind of
+		     Kind.Handler => List.push (handlerCodeDefUses, Use b)
+		   | _ => goto l
+	       end
 	    val _ =
-	       case transfer of
-		  Arith {args, overflow, success, ...} =>
-		     (uses args
-		      ; goto overflow
-		      ; goto success)
-		| Bug => ()
-		| CCall {args, return, ...} =>
-		     (useOperands args
-		      ; goto return)
-		| Call {args, return, ...} =>
-		     (useOperands args
-		      ; (case return of
-			    Return.NonTail {cont, handler} =>
-			       let
-				  val _ = goto cont
-			       in
-				  Handler.foreachLabel
-				  (handler, fn h =>
-				   List.push (handlerCodeDefUses, Use b))
-			       end
-			  | _ => ()))
-		| Goto {dst, args, ...} =>
-		     let
-			val {block = Block.T {args = formals, ...}, ...} =
-			   labelInfo dst
-		     in
-			Vector.foreach2 (formals, args, fn ((f, _), a) =>
-					 if shouldConsider f
-					    then useOperand a
-					 else ())
-			; goto dst
-		     end
-		| LimitCheck {failure, kind, success, ...} =>
-		     (LimitCheck.foreachVar (kind, use)
-		      ; goto failure
-		      ; goto success)
-		| Raise xs => useOperands xs
-		| Return xs => useOperands xs
-		| Runtime {args, return, ...} =>
-		     (useOperands args
-		      ; goto return)
-		| Switch {cases, default, test, ...} => 
-		     (Cases.foreach (cases, goto)
-		      ; Option.app (default, goto)
-		      ; useOperand test)
-		| SwitchIP {int, pointer, test} =>
-		     (goto int
-		      ; goto pointer
-		      ; useOperand test)
+	       Transfer.foreachDefLabelUse (transfer, {def = define o #1,
+						       label = label,
+						       use = use})
 	  in ()
 	  end)
       (* Back-propagate every variable from uses to define point. *)

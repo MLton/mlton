@@ -16,7 +16,7 @@ signature ALLOCATE_REGISTERS =
       include ALLOCATE_REGISTERS_STRUCTS
 
       val allocate:
-	 {
+	 {argOperands: Machine.Operand.t vector,
 	  function: Rssa.Function.t,
 	  newRegister: (Rssa.Label.t option * int * Machine.Type.t
 			-> Machine.Register.t),
@@ -29,10 +29,11 @@ signature ALLOCATE_REGISTERS =
 				 ty: Machine.Type.t
 				 }
 	  }
-	 -> {(* If handlers are used, handlerOffset gives the stack offset where
-	      * the old exnStack and handler should be stored.
+	 -> {(* If handlers are used, handlerLinkOffset gives the stack offsets
+	      * where the handler and link (old exnStack) should be stored.
 	      *)
-	     handlerOffset: int option,
+	     handlerLinkOffset: {handler: int,
+				 link: int} option,
 	     labelInfo:
 	     Rssa.Label.t -> {
 			      (* Live operands at the beginning of the block. *)

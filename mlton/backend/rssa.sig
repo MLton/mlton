@@ -16,6 +16,7 @@ signature RSSA_STRUCTS =
 	     | Handle of Label.t (* label must be of Handler kind *)
 
 	    val foreachLabel: t * (Label.t -> unit) -> unit
+	    val layout: t -> Layout.t
 	    val map: t * (Label.t -> Label.t) -> t
 	 end
       structure Return:
@@ -28,6 +29,7 @@ signature RSSA_STRUCTS =
 						* associated with the cont. *)
 	     | Tail
 
+	    val foldLabel: t * 'a * (Label.t * 'a -> 'a) -> 'a
 	    val foreachLabel: t * (Label.t -> unit) -> unit
 	 end
       structure Type: MTYPE
@@ -49,6 +51,7 @@ signature RSSA =
 	     | Offset of {base: Var.t,
 			  bytes: int,
 			  ty: Type.t}
+	     | Pointer of int (* the int must be nonzero mod Runtime.wordSize. *)
 	     | Var of {var: Var.t,
 		       ty: Type.t}
 
@@ -85,10 +88,12 @@ signature RSSA =
 	    (* foldDef (s, a, f)
 	     * If s defines a variable x, then return f (x, a), else return a.
 	     *)
-	    val foldDef: t * 'a * ({var: Var.t, ty: Type.t} * 'a -> 'a) -> 'a
+	    val foldDef: t * 'a * (Var.t * Type.t * 'a -> 'a) -> 'a
 	    (* forDef (s, f) = foldDef (s, (), fn (x, ()) => f x) *)
-	    val foreachDef: t * ({var: Var.t, ty: Type.t} -> unit) -> unit
-	    val foldUses: t * 'a * (Var.t * 'a -> 'a) -> 'a
+	    val foreachDef: t * (Var.t * Type.t -> unit) -> unit
+	    val foreachDefUse: t * {def: (Var.t * Type.t) -> unit,
+				    use: Var.t -> unit} -> unit
+	    val foldUse: t * 'a * (Var.t * 'a -> 'a) -> 'a
 	    val foreachUse: t * (Var.t -> unit) -> unit
 	    val layout: t -> Layout.t
 	 end
@@ -130,8 +135,8 @@ signature RSSA =
 	     | Call of {args: Operand.t vector,
 			func: Func.t,
 			return: Return.t}
-	     | Goto of {dst: Label.t,
-			args: Operand.t vector}
+	     | Goto of {args: Operand.t vector,
+			dst: Label.t}
 	     | LimitCheck of {failure: Label.t, (* Must be nullary, Runtime. *)
 			      kind: LimitCheck.t,
 			      success: Label.t} (* Must be nullary, Normal. *)
@@ -150,7 +155,15 @@ signature RSSA =
 			    pointer: Label.t,
 			    test: Operand.t}
 
-	    val foreachDef: t * ({var: Var.t, ty: Type.t} -> unit) -> unit
+	    (* foldDef (t, a, f)
+	     * If t defines a variable x, then return f (x, a), else return a.
+	     *)
+	    val foldDef: t * 'a * (Var.t * Type.t * 'a -> 'a) -> 'a
+	    (* foreachDef (t, f) = foldDef (t, (), fn (x, ()) => f x) *)
+	    val foreachDef: t * (Var.t * Type.t -> unit) -> unit
+	    val foreachDefLabelUse: t * {def: Var.t * Type.t -> unit,
+					 label: Label.t -> unit,
+					 use: Var.t -> unit} -> unit
 	    val foreachLabel: t * (Label.t -> unit) -> unit
 	    val foreachUse: t * (Var.t -> unit) -> unit
 	    val layout: t -> Layout.t
@@ -208,11 +221,15 @@ signature RSSA =
      
       structure Program:
 	 sig
-	    (* The main function defines the globals. *)
 	    datatype t =
 	       T of {functions: Function.t list,
-		     main: Func.t} (* Must be nullary. *)
+		     (* main must be nullary and should not be called by other
+		      * functions. It defines global variables that are in scope
+		      * for the rest of the program.
+		      *)
+		     main: Function.t}
 
+	    val clear: t -> unit
 	    val layouts: t * (Layout.t -> unit) -> unit
 	    val typeCheck: t -> unit
 	 end

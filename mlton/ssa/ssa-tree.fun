@@ -457,10 +457,12 @@ structure Handler =
 	  | (Handle l, Handle l') => Label.equals (l, l')
 	  | _ => false
 
-      fun foreachLabel (h, f) =
+      fun foldLabel (h, a, f) =
 	 case h of
-	    Handle l => f l
-	  | _ => ()
+	    Handle l => f (l, a)
+	  | _ => a
+
+      fun foreachLabel (h, f) = foldLabel (h, (), f o #1)
 
       fun map (h, f) =
 	 case h of
@@ -504,12 +506,13 @@ structure Return =
 	    NonTail {handler, ...} => Handler.foreachLabel (handler, f)
 	  | _ => ()
 
-      fun foreachLabel (r, f) =
+      fun foldLabel (r, a, f) =
 	 case r of
 	    NonTail {cont, handler} =>
-	       (f cont
-		; Handler.foreachLabel (handler, f))
-	  | _ => ()
+	       f (cont, Handler.foldLabel (handler, a, f))
+	  | _ => a
+
+      fun foreachLabel (r, f) = foldLabel (r, (), f o #1)
 
       fun compose (c: t, r: t): t =
 	 case r of

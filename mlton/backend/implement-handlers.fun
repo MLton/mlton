@@ -73,10 +73,6 @@ fun doit (Program.T {datatypes, globals, functions, main}) =
 				    case exp of
 				       HandlerPop _ => true
 				     | HandlerPush _ => true
-				     | PrimApp {prim, ...} =>
-					  (Option.isNone var
-					   andalso (Prim.entersRuntime prim
-						    orelse Prim.impCall prim))
 				     | _ => false))
 			      (* An optimization to avoid recopying blocks
 			       * with no handlers.
@@ -119,18 +115,6 @@ fun doit (Program.T {datatypes, globals, functions, main}) =
 					      in
 						 (h :: hs, ac)
 					      end
-					 | PrimApp {prim, targs, args} =>
-					      (hs,
-					       if (Option.isNone var
-						   andalso
-						   (Prim.entersRuntime prim
-						    orelse Prim.impCall prim))
-						  then (Statement.T
-							{var = SOME (Var.newNoname()),
-							 ty = ty,
-							 exp = exp}
-							:: ac)
-					       else s :: ac)
 					 | _ => (hs, s :: ac)
 				     end)
 				 val _ =

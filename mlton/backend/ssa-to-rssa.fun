@@ -20,9 +20,9 @@ in
    structure ConRep = ConRep
 end
 
-fun convert (p: Ssa.Program.t): Rssa.Program.t =
+fun convert (p: S.Program.t): Rssa.Program.t =
    let
-      val program as Ssa.Program.T {datatypes, globals, functions, main} =
+      val program as S.Program.T {datatypes, globals, functions, main} =
 	 ImplementHandlers.doit p
       val {tyconRep, conRep, toMtype = toType} = Representation.compute program
       val {get = varInfo: Var.t -> {ty: S.Type.t},
@@ -166,14 +166,14 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 						   ty = ty}))
 	 end
       val extraBlocks = ref []
-      fun newBlock {args,
+      fun newBlock {args, kind,
 		    statements: Statement.t vector,
 		    transfer: Transfer.t}: Label.t =
 	 let
 	    val l = Label.newNoname ()
 	    val _ = List.push (extraBlocks,
 			       Block.T {args = args,
-					kind = Kind.Jump,
+					kind = kind,
 					label = l,
 					statements = statements,
 					transfer = transfer})
@@ -238,6 +238,7 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 				     0 = Vector.length args)
 		      ; dst)
 		| _ => newBlock {args = Vector.new0 (),
+				 kind = Kind.Jump,
 				 statements = Vector.new0 (),
 				 transfer = transfer}
 	    fun switchIP (numEnum, pointer: Label.t): Transfer.t =
@@ -253,6 +254,7 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 		     val xs = Vector.map (args, fn _ => Var.newNoname ())
 		  in
 		     newBlock {args = Vector.new0 (),
+			       kind = Kind.Jump,
 			       statements = Vector.new0 (),
 			       transfer = Goto {dst = l, args = args}}
 		  end
@@ -390,7 +392,13 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 	    val info as {handler, ...} = labelInfo l
 	 in
 	    case !handler of
-	       NONE => eta (l, Kind.Handler)
+	       NONE =>
+		  let
+		     val l' = eta (l, Kind.Handler)
+		     val _ = handler := SOME l'
+		  in
+		     l'
+		  end
 	     | SOME l => l
 	 end
       fun labelCont (l: Label.t, h: Handler.t): Label.t =
@@ -411,11 +419,17 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 			case h of
 			   CallerHandler => NONE
 			 | None => NONE
-			 | Handle l => SOME (labelHandler l)
+			 | Handle l => SOME l
+		     val l' = eta (l, Kind.Cont {handler = handler})
+		     val _ = List.push (cont, (handler, l'))
 		  in
-		     eta (l, Kind.Cont {handler = handler})
+		     l'
 		  end
 	 end
+      val labelCont =
+	 Trace.trace2 ("SsaToRssa.labelCont",
+		       Label.layout, Handler.layout, Label.layout)
+	 labelCont
       fun vos (xs: Var.t vector) =
 	 Vector.keepAllMap (xs, fn x =>
 			    Option.map (toType (varType x), fn _ =>
@@ -428,6 +442,7 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 		  val noOverflow =
 		     newBlock
 		     {args = Vector.new0 (),
+		      kind = Kind.Jump,
 		      statements = Vector.new0 (),
 		      transfer = (Transfer.Goto
 				  {dst = success,
@@ -449,9 +464,12 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 		  val return =
 		     case return of
 			NonTail {cont, handler} =>
-			   NonTail
-			   {cont = labelCont (cont, handler),
-			    handler = Handler.map (handler, labelHandler)}
+			   let
+			      val handler = Handler.map (handler, labelHandler)
+			   in
+			      NonTail {cont = labelCont (cont, handler),
+				       handler = handler}
+			   end
 		      | _ => return
 	       in
 		  Transfer.Call {func = func,
@@ -466,7 +484,8 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 	  | S.Transfer.Runtime {args, prim, return} =>
 	       Transfer.Runtime {args = vos args,
 				 prim = prim,
-				 return = return}
+				 return = eta (return,
+					       Kind.Runtime {prim = prim})}
       fun translateFormals v =
 	 Vector.keepAllMap (v, fn (x, t) =>
 			    Option.map (toType t, fn t => (x, t)))
@@ -477,15 +496,16 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 		  then (Vector.fromList ss, t)
 	       else
 		  let
-		     val Ssa.Statement.T {var, ty, exp} =
+		     val S.Statement.T {var, ty, exp} =
 			Vector.sub (statements, i)
 		     fun none () = loop (i - 1, ss, t)
 		     fun add s = loop (i - 1, s :: ss, t)
-		     fun split (args,
+		     fun split (args, kind,
 				ss: Statement.t list,
 				make: Label.t -> Transfer.t) =
 			let
 			   val l = newBlock {args = args,
+					     kind = kind,
 					     statements = Vector.fromList ss,
 					     transfer = t}
 			in
@@ -532,13 +552,15 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 		     case exp of
 			S.Exp.ConApp {con, args} =>
 			   (case conRep con of
-			       ConRep.Transparent _ =>
-				  move (varOp (Vector.sub (args, 0)))
-			     | ConRep.Tuple =>
-				  allocate (args, #info (conInfo con))
+			       ConRep.Void => none ()
+			     | ConRep.Int n => move (Operand.int n)
+			     | ConRep.IntCast n => move (Operand.Pointer n)
 			     | ConRep.TagTuple n =>
 				  allocateTagged (n, args, #info (conInfo con))
-			     | _ => Error.bug "strange ConApp")
+			     | ConRep.Transparent _ =>
+				  move (varOp (Vector.sub (args, 0)))
+			     | ConRep.Tuple =>
+				  allocate (args, #info (conInfo con)))
 		      | S.Exp.Const c => move (Operand.Const c)
 		      | S.Exp.PrimApp {prim, targs, args, ...} =>
 			   let
@@ -571,7 +593,10 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 						  (Vector.new1 (x, t), SOME t)
 				    in
 				       split
-				       (formals, ss, fn l =>
+				       (formals,
+					Kind.CReturn {prim = prim},
+					ss,
+					fn l =>
 					Transfer.CCall {args = vos args,
 							prim = prim,
 							return = l,
@@ -580,10 +605,12 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 			      else if Prim.entersRuntime prim
 				 then
 				    split
-				    (Vector.new0 (), ss, fn l =>
-				     Transfer.Runtime {args = vos args,
-						       prim = prim,
-						       return = l})
+				    (Vector.new0 (),
+				     Kind.Runtime {prim = prim},
+				     ss,
+				     fn l => Transfer.Runtime {args = vos args,
+							       prim = prim,
+							       return = l})
 			      else
 				 case Prim.name prim of
 				    Array_array =>
@@ -599,7 +626,7 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 					  val numElts = a 0
 				       in
 					  split
-					  (Vector.new0 (),
+					  (Vector.new0 (), Kind.Jump,
 					   Array {dst = valOf var,
 						  numElts = numElts,
 						  numBytesNonPointers = nbnp,
@@ -687,7 +714,7 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 						ty = ty}))
 		      | S.Exp.SetExnStackLocal => add SetExnStackLocal
 		      | S.Exp.SetExnStackSlot => add SetExnStackSlot
-		      | S.Exp.SetHandler h => add (SetHandler h)
+		      | S.Exp.SetHandler h => add (SetHandler (labelHandler h))
 		      | S.Exp.SetSlotExnStack => add SetSlotExnStack
 		      | S.Exp.Tuple ys => allocate (ys, tupleInfo ty)
 		      | S.Exp.Var y => move (varOp y)
@@ -696,7 +723,7 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 	 in
 	    loop (Vector.length statements - 1, [], transfer)
 	 end
-      fun translateBlock (Ssa.Block.T {label, args, statements, transfer}) =
+      fun translateBlock (S.Block.T {label, args, statements, transfer}) =
 	 let
 	    val (ss, t) =
 	       translateStatementsTransfer (statements,
@@ -708,35 +735,14 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 		     statements = ss,
 		     transfer = t}
 	 end
-      val globalsFun = Func.newNoname ()
-      val functions =
-	 let
-	    val start = Label.newNoname ()
-	    val block =
-	       Ssa.Block.T {label = start,
-			    args = Vector.new0 (),
-			    statements = globals,
-			    transfer = Ssa.Transfer.Call {func = main,
-							  args = Vector.new0 (),
-							  return = Return.Dead}}
-	 in
-	    Ssa.Function.new {args = Vector.new0 (),
-			      blocks = Vector.new1 block,
-			      name = globalsFun,
-			      raises = NONE,
-			      returns = NONE,
-			      start = start}
-	 end :: functions
-      val functions =
-	 List.revMap
-	 (functions, fn f =>
+      fun translateFunction (f: S.Function.t): Function.t =
 	  let
 	    val _ =
-	       Ssa.Function.foreachVar (f, fn (x, t) => setVarInfo (x, {ty = t}))
-	     val {args, blocks, name, start, ...} = Ssa.Function.dest f
-	     val _ =
-		Vector.foreach
-		(blocks, fn Ssa.Block.T {label, args, ...} =>
+	       S.Function.foreachVar (f, fn (x, t) => setVarInfo (x, {ty = t}))
+	     val {args, blocks, name, start, ...} = S.Function.dest f
+	    val _ =
+	       Vector.foreach
+		(blocks, fn S.Block.T {label, args, ...} =>
 		 setLabelInfo (label, {args = args,
 				       cont = ref [],
 				       handler = ref NONE}))
@@ -748,10 +754,33 @@ fun convert (p: Ssa.Program.t): Rssa.Program.t =
 			   blocks = blocks,
 			   name = name,
 			   start = start}
-	  end)
+	  end
+      val main =
+	  let
+	     val start = Label.newNoname ()
+	  in
+	     translateFunction
+	     (S.Function.new
+	      {args = Vector.new0 (),
+	       blocks = (Vector.new1
+			 (S.Block.T
+			  {label = start,
+			   args = Vector.new0 (),
+			   statements = globals,
+			   transfer = S.Transfer.Call {func = main,
+						       args = Vector.new0 (),
+						       return = Return.Dead}})),
+	       name = Func.newNoname (),
+	       raises = NONE,
+	       returns = NONE,
+	       start = start})
+	  end
+      val functions = List.revMap (functions, translateFunction)
+      val p = Program.T {functions = functions,
+			 main = main}
+      val _ = Program.clear p
    in
-      Program.T {functions = functions,
-		 main = globalsFun}
+      p
    end
 
 end

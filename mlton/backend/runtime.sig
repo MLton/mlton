@@ -13,6 +13,7 @@ signature RUNTIME =
 		       numWordsNonPointers: int} -> int
       val isValidArrayHeader: {numBytesNonPointers: int,
 			       numPointers: int} -> bool
+      val labelSize: int
       val objectHeaderSize: int
       val pointerSize: int
       val wordSize: int

@@ -14,6 +14,7 @@ structure Operand =
        | Offset of {base: Var.t,
 		    bytes: int,
 		    ty: Type.t}
+       | Pointer of int
        | Var of {var: Var.t,
 		 ty: Type.t}
     
@@ -28,6 +29,7 @@ structure Operand =
 	  | Offset {base, bytes, ty} =>
 	       concat ["O", Type.name ty,
 		       "(", Var.toString base, ",", Int.toString bytes, ")"]
+	  | Pointer n => concat ["IntAsPointer (", Int.toString n, ")"]
 	  | Var {var, ...} => Var.toString var
 
       val layout: t -> Layout.t = Layout.str o toString
@@ -57,6 +59,7 @@ structure Operand =
 			end
 	       end
 	  | Offset {ty, ...} => ty
+	  | Pointer _ => Type.pointer
 	  | Var {ty, ...} => ty
 
       fun 'a foldVars (z: t, a: 'a, f: Var.t * 'a -> 'a): 'a =
@@ -65,6 +68,7 @@ structure Operand =
 	  | CastInt x => f (x, a)
 	  | Const _ => a
 	  | Offset {base, ...} => f (base, a)
+	  | Pointer _ => a
 	  | Var {var, ...} => f (var, a)
 
       fun foreachVar (z: t, f: Var.t -> unit): unit =
@@ -93,40 +97,47 @@ structure Statement =
        | SetHandler of Label.t
        | SetSlotExnStack
 
-      fun foldDef (s, a, f) =
-	 case s of
-	    Array {dst, ...} => f ({var = dst, ty = Type.pointer}, a)
-	  | Move {dst, ...} =>
-	       (case dst of
-		   Operand.Var x => f (x, a)
-		 | _ => a)
-	  | Object {dst, ...} => f ({var = dst, ty = Type.pointer}, a)
-	  | PrimApp {dst, ...} =>
-	       Option.fold (dst, a, fn ((x, t), a) =>
-			    f ({var = x, ty = t}, a))
-	  | _ => a
-
-      fun foreachDef (s, f) = foldDef (s, (), fn (x, ()) => f x)
-
-      fun foldUses (s, a, f) =
+      fun 'a foldDefUse (s, a: 'a, {def: Var.t * Type.t * 'a -> 'a,
+				    use: Var.t * 'a -> 'a}): 'a =
 	 let
-	    fun oper (z, a) = Operand.foldVars (z, a, f)
+	    fun useOperand (z: Operand.t, a) = Operand.foldVars (z, a, use)
 	 in
 	    case s of
-	       Array {numElts, ...} => f (numElts, a)
+	       Array {dst, numElts, ...} =>
+		  use (numElts, def (dst, Type.pointer, a))
 	     | Move {dst, src} =>
-		  oper (src,
-			case dst of
-			   Operand.Var _ => a
-			 | _ => oper (dst, a))
-	     | Object {stores, ...} =>
-		  Vector.fold (stores, a, fn ({value, ...}, a) =>
-			       oper (value, a))
-	     | PrimApp {args, ...} => Vector.fold (args, a, f)
-	     | _ => a
+		  useOperand (src,
+			      case dst of
+				 Operand.Var {var, ty} => def (var, ty, a)
+			       | _ => useOperand (dst, a))
+	     | Object {dst, stores, ...} =>
+		  Vector.fold (stores, def (dst, Type.pointer, a),
+			       fn ({value, ...}, a) => useOperand (value, a))
+	     | PrimApp {dst, args, ...} =>
+		  Vector.fold (args,
+			       Option.fold (dst, a, fn ((x, t), a) =>
+					    def (x, t, a)),
+			       use)
+	     | SetExnStackLocal => a
+	     | SetExnStackSlot => a
+	     | SetHandler _ => a
+	     | SetSlotExnStack => a
 	 end
 
-      fun foreachUse (s, f) = foldUses (s, (), fn (x, ()) => f x)
+      fun foreachDefUse (s: t, {def, use}) =
+	 foldDefUse (s, (), {def = fn (x, t, ()) => def (x, t),
+			     use = use o #1})
+
+      fun 'a foldDef (s: t, a: 'a, f: Var.t * Type.t * 'a -> 'a): 'a =
+	 foldDefUse (s, a, {def = f, use = #2})
+
+      fun foreachDef (s:t , f: Var.t * Type.t -> unit) =
+	 foldDef (s, (), fn (x, t, ()) => f (x, t))
+
+      fun 'a foldUse (s: t, a: 'a, f: Var.t * 'a -> 'a) =
+	 foldDefUse (s, a, {def = #3, use = f})
+
+      fun foreachUse (s, f) = foldUse (s, (), f o #1)
 
       val layout =
 	 let
@@ -149,7 +160,7 @@ structure Statement =
 	 end
 
       fun clear (s: t) =
-	 foreachDef (s, Var.clear o #var)
+	 foreachDef (s, Var.clear o #1)
    end
 
 structure LimitCheck =
@@ -170,7 +181,7 @@ structure LimitCheck =
 	    Array {numElts, ...} => f (numElts, a)
 	  | _ => a
 
-      fun foreachVar (l, f) = foldVar (l, (), fn (x, ()) => f x)
+      fun foreachVar (l, f) = foldVar (l, (), f o #1)
 
       fun layout (l: t): Layout.t =
 	 let
@@ -294,54 +305,77 @@ structure Transfer =
 					       Label.layout pointer]]
 	 end
 
-      fun foreachLabel (t, f) =
-	 case t of
-	    Arith {overflow, success, ...} =>
-	       (f overflow; f success)
-	  | Bug => ()
-	  | CCall {return, ...} => f return
-	  | Call {return, ...} => Return.foreachLabel (return, f)
-	  | Goto {dst, ...} => f dst
-	  | LimitCheck {failure, success, ...} => (f failure; f success)
-	  | Raise _ => ()
-	  | Return _ => ()
-	  | Runtime {return, ...} => f return
-	  | Switch {cases, default, ...} =>
-	       (Option.app (default, f)
-		; Cases.foreach (cases, f))
-	  | SwitchIP {int, pointer, ...} =>
-	       (f int; f pointer)
-
-      fun foldDef (t, a, f) =
-	 case t of
-	    Arith {dst, ...} => f ({var = dst, ty = Type.int}, a)
-	  | _ => a
-
-      fun foreachDef (t, f) = foldDef (t, (), fn (x, ()) => f x)
-
-      fun foldUses (t, a, f) =
+      fun 'a foldDefLabelUse (t, a: 'a, {def: Var.t * Type.t * 'a -> 'a,
+					 label: Label.t * 'a -> 'a,
+					 use: Var.t * 'a -> 'a}): 'a =
 	 let
-	    fun oper (z, a) = Operand.foldVars (z, a, f)
-	    fun opers zs = Vector.fold (zs, a, oper)
+	    fun useVars (xs: Var.t vector, a) =
+	       Vector.fold (xs, a, use)
+	    fun useOperand (z, a) = Operand.foldVars (z, a, use)
+	    fun useOperands (zs: Operand.t vector, a) =
+	       Vector.fold (zs, a, useOperand)
 	 in
 	    case t of
-	       Arith {args, ...} => Vector.fold (args, a, f)
+	       Arith {args, dst, overflow, success, ...} =>
+		  let
+		     val a = label (overflow, a)
+		     val a = label (success, a)
+		     val a = def (dst, Type.int, a)
+		     val a = useVars (args, a)
+		  in
+		     a
+		  end
 	     | Bug => a
-	     | CCall {args, ...} => opers args
-	     | Call {args, ...} => opers args
-	     | Goto {args, ...} => opers args
-	     | LimitCheck {kind, ...} => LimitCheck.foldVar (kind, a, f)
-	     | Raise zs => opers zs
-	     | Return zs => opers zs
-	     | Runtime {args, ...} => opers args
-	     | Switch {test, ...} => oper (test, a)
-	     | SwitchIP {test, ...} => oper (test, a)
+	     | CCall {args, return, ...} => useOperands (args, label (return, a))
+	     | Call {args, return, ...} =>
+		  useOperands (args, Return.foldLabel (return, a, label))
+	     | Goto {args, dst, ...} => label (dst, useOperands (args, a))
+	     | LimitCheck {failure,  kind, success} =>
+		  LimitCheck.foldVar (kind,
+				      label (failure, label (success, a)),
+				      use)
+	     | Raise zs => useOperands (zs, a)
+	     | Return zs => useOperands (zs, a)
+	     | Runtime {args, return, ...} =>
+		  label (return, useOperands (args, a))
+	     | Switch {cases, default, test, ...} =>
+		  let
+		     val a = useOperand (test, a)
+		     val a = Option.fold (default, a, label)
+		     val a = Cases.fold (cases, a, label)
+		  in
+		     a
+		  end
+	     | SwitchIP {int, pointer, test, ...} =>
+		  label (int, label (pointer, useOperand (test, a)))
 	 end
 
-      fun foreachUse (t, f) = foldUses (t, (), fn (x, ()) => f x)
+      fun foreachDefLabelUse (t, {def, label, use}) =
+	 foldDefLabelUse (t, (), {def = fn (x, t, ()) => def (x, t),
+				  label = label o #1,
+				  use = use o #1})
+
+      fun foldLabel (t, a, f) = foldDefLabelUse (t, a, {def = #3,
+							label = f,
+							use = #2})
+
+      fun foreachLabel (t, f) = foldLabel (t, (), f o #1)
+
+      fun foldDef (t, a, f) = foldDefLabelUse (t, a, {def = f,
+						      label = #2,
+						      use = #2})
+
+      fun foreachDef (t, f) =
+	 foldDef (t, (), fn (x, t, ()) => f (x, t))
+
+      fun foldUse (t, a, f) = foldDefLabelUse (t, a, {def = #3,
+						      label = #2,
+						      use = f})
+
+      fun foreachUse (t, f) = foldUse (t, (), f o #1)
 
       fun clear (t: t): unit =
-	 foreachDef (t, Var.clear o #var)
+	 foreachDef (t, Var.clear o #1)
    end
 
 structure Kind =
@@ -498,7 +532,7 @@ structure Function =
       structure Node = Graph.Node
       structure Edge = Graph.Edge
 
-      fun dominatorTree (T {args, blocks, name, start, ...}): Block.t Tree.t =
+      fun dominatorTree' {blocks, start}: Block.t Tree.t =
 	 let
 	    open Dot
 	    val g = Graph.new ()
@@ -524,27 +558,32 @@ structure Function =
 		in
 		   ()
 		end)
-	    val root = labelNode start
 	 in
-	    Graph.dominatorTree (g, {root = root,
+	    Graph.dominatorTree (g, {root = labelNode start,
 				     nodeValue = #block o nodeInfo})
 	 end
+
+      fun dominatorTree (T {blocks, start, ...}): Block.t Tree.t =
+	 dominatorTree' {blocks = blocks,
+			 start = start}
    end
 
 structure Program =
    struct
       datatype t = T of {functions: Function.t list,
-			 main: Func.t}
+			 main: Function.t}
 
-      fun clear (T {functions, ...}) =
-	 List.foreach (functions, Function.clear)
+      fun clear (T {functions, main, ...}) =
+	 (List.foreach (functions, Function.clear)
+	  ; Function.clear main)
 	 
       fun layouts (T {functions, main}, output': Layout.t -> unit): unit =
 	 let
 	    open Layout
 	    val output = output'
 	 in
-	    output (seq [str "\n\nMain: ", Func.layout main])
+	    output (str "Main:")
+	    ; output (Function.layout main)
 	    ; output (str "\n\nFunctions:")
 	    ; List.foreach (functions, output o Function.layout)
 	 end
@@ -580,17 +619,18 @@ structure Program =
 	    val (bindLabel, getLabel, unbindLabel) =
 	       make (Label.layout, Label.plist)
 	    fun getVars xs = Vector.foreach (xs, getVar)
-	    fun loopFunc (f: Function.t, isMain) =
+	    fun loopFunc (f: Function.t, isMain: bool): unit =
 	       let
-		  val {name, args, start, blocks, ...} = Function.dest f
+		  val {args, blocks, start, ...} = Function.dest f
+		  val _ = Vector.foreach (args, bindVar o #1)
+		  val _ = Vector.foreach (blocks, bindLabel o Block.label)
 		  (* Descend the dominator tree, verifying that variable
 		   * definitions dominate variable uses.
 		   *)
-		  val _ = Vector.foreach (args, bindVar o #1)
-		  val _ = Vector.foreach (blocks, bindLabel o Block.label)
 		  val _ =
 		     Tree.traverse
-		     (Function.dominatorTree f,
+		     (Function.dominatorTree' {blocks = blocks,
+					       start = start},
 		      fn Block.T {args, statements, transfer, ...} =>
 		      let
 			 val _ = Vector.foreach (args, bindVar o #1)
@@ -598,9 +638,9 @@ structure Program =
 			    Vector.foreach
 			    (statements, fn s =>
 			     (Statement.foreachUse (s, getVar)
-			      ; Statement.foreachDef (s, bindVar o #var)))
+			      ; Statement.foreachDef (s, bindVar o #1)))
 			 val _ = Transfer.foreachUse (transfer, getVar)
-			 val _ = Transfer.foreachDef (transfer, bindVar o #var)
+			 val _ = Transfer.foreachDef (transfer, bindVar o #1)
 			 val _ = Transfer.foreachLabel (transfer, getLabel)
 		      in
 			 fn () =>
@@ -611,7 +651,9 @@ structure Program =
 			       val _ =
 				  Vector.foreach
 				  (statements, fn s =>
-				   Statement.foreachDef (s, unbindVar o #var))
+				   Statement.foreachDef (s, unbindVar o #1))
+			       val _ =
+				  Transfer.foreachDef (transfer, unbindVar o #1)
 			       val _ = Vector.foreach (args, unbindVar o #1)
 			    in
 			       ()
@@ -623,16 +665,8 @@ structure Program =
 		  ()
 	       end
 	    val _ = List.foreach (functions, bindFunc o Function.name)
-	    val mainF =
-	       case List.peek (functions, fn f =>
-			       Func.equals (main, Function.name f)) of
-		  NONE => Error.bug "missing main"
-		| SOME f => f
-	    val _ = loopFunc (mainF, true)
-	    val _ = List.foreach (functions, fn f =>
-				  if Func.equals (main, Function.name f)
-				     then ()
-				  else loopFunc (f, false))
+	    val _ = loopFunc (main, true)
+	    val _ = List.foreach (functions, fn f => loopFunc (f, false))
 	    val _ = clear program
 	 in ()
 	 end
@@ -650,37 +684,6 @@ structure Program =
 	    val {get = varType: Var.t -> Type.t, set = setVarType, ...} =
 	       Property.getSetOnce (Var.plist,
 				    Property.initRaise ("type", Var.layout))
-	    fun operandType (x: Operand.t): Type.t =
-	       let
-		  datatype z = datatype Operand.t
-	       in
-		  case x of
-		     ArrayOffset {ty, ...} => ty
-		   | CastInt x => Type.int
-		   | Const c =>
-			let
-			   datatype z = datatype Const.Node.t
-			in
-			   case Const.node c of
-			      Char _ => Type.char
-			    | Int _ => Type.int
-			    | IntInf _ => Type.pointer
-			    | Real _ => Type.double
-			    | String _ => Type.pointer
-			    | Word _ =>
-				 let
-				    val t = Const.tycon c
-				 in
-				    if Tycon.equals (t, Tycon.word)
-				       then Type.uint
-				    else if Tycon.equals (t, Tycon.word8)
-					    then Type.char
-					 else Error.bug "strange word"
-				 end
-			end
-		   | Offset {ty, ...} => ty
-		   | Var {var, ...} => varType var
-	       end
 	    fun checkOperand (x: Operand.t): unit =
 		let
 		   datatype z = datatype Operand.t
@@ -693,13 +696,19 @@ structure Program =
 		       | Const c => true
 		       | Offset {base, ...} =>
 			    Type.equals (varType base, Type.pointer)
-		       | Var _ => true
+		       | Pointer n => 0 < Int.rem (n, Runtime.wordSize)
+		       | Var {ty, var} => Type.equals (ty, varType var)
 		in
 		   Err.check ("operand", ok, fn () => Operand.layout x)
 		end
 	    fun checkOperands v = Vector.foreach (v, checkOperand)
 	    fun check' (x, name, isOk, layout) =
 	       Err.check (name, fn () => isOk x, fn () => layout x)
+	    val labelKind = Block.kind o labelBlock
+	    fun labelIsJump (l: Label.t): bool =
+	       case labelKind l of
+		  Kind.Jump => true
+		| _ => false
 	    fun statementOk (s: Statement.t): bool =
 	       let
 		  datatype z = datatype Statement.t
@@ -725,25 +734,23 @@ structure Program =
 		   | PrimApp {args, dst, prim} => true
 		   | SetExnStackLocal => true
 		   | SetExnStackSlot => true
-		   | SetHandler _ => true
+		   | SetHandler l =>
+			(case labelKind l of
+			    Kind.Handler => true
+			  | _ => false)
 		   | SetSlotExnStack => true
 	       end
-	    val labelKind = Block.kind o labelBlock
-	    fun labelIsJump (l: Label.t): bool =
-	       case labelKind l of
-		  Kind.Jump => true
-		| _ => false
 	    fun goto {dst, args} =
 	       let
 		  val Block.T {args = formals, kind, ...} = labelBlock dst
 	       in
 		  Vector.equals (args, formals, fn (z, (_, t)) =>
-				 Type.equals (t, operandType z))
+				 Type.equals (t, Operand.ty z))
 		  andalso (case kind of
 			      Kind.Jump => true
 			    | _ => false)
 	       end
-	    fun labelIsJump l = goto {dst = l, args = Vector.new0 ()}
+	    fun labelIsNullaryJump l = goto {dst = l, args = Vector.new0 ()}
 	    fun labelIsRuntime (l: Label.t, p: Prim.t): bool =
 	       case labelKind l of
 		  Kind.Runtime {prim, ...} => Prim.equals (p, prim)
@@ -755,8 +762,8 @@ structure Program =
 		  case t of
 		     Arith {args, dst, overflow, prim, success} =>
 			Prim.mayOverflow prim
-			andalso labelIsJump overflow
-			andalso labelIsJump success
+			andalso labelIsNullaryJump overflow
+			andalso labelIsNullaryJump success
 			andalso Vector.forall (args, fn x =>
 					       Type.equals (Type.int, varType x))
 		   | Bug => true
@@ -774,7 +781,7 @@ structure Program =
 			   val Function.T {args = formals, ...} = funcInfo func
 			in
 			   Vector.equals (args, formals, fn (z, (_, t)) =>
-					  Type.equals (t, operandType z))
+					  Type.equals (t, Operand.ty z))
 			   andalso
 			   (case return of
 			       Return.Dead => true
@@ -795,7 +802,7 @@ structure Program =
 		   | Goto z => goto z
 		   | LimitCheck {failure, kind, success} =>
 			labelIsRuntime (failure, Prim.gcCollect)
-			andalso labelIsJump success
+			andalso labelIsNullaryJump success
 			andalso let
 				   datatype z = datatype LimitCheck.t
 				in
@@ -816,20 +823,20 @@ structure Program =
 			   (Prim.entersRuntime prim
 			    andalso labelIsRuntime (return, prim))
 		      | Switch {cases, default, test} =>
-			   (Cases.forall (cases, labelIsJump)
-			    andalso Option.forall (default, labelIsJump)
+			   (Cases.forall (cases, labelIsNullaryJump)
+			    andalso Option.forall (default, labelIsNullaryJump)
 			    andalso (Type.equals
-				     (operandType test,
+				     (Operand.ty test,
 				      case cases of
 					 Cases.Char _ => Type.char
 				       | Cases.Int _ => Type.int
 				       | Cases.Word _ => Type.uint)))
 		      | SwitchIP {int, pointer, test} =>
 			   (checkOperand test
-			    ; (labelIsJump pointer
-			       andalso labelIsJump int
+			    ; (labelIsNullaryJump pointer
+			       andalso labelIsNullaryJump int
 			       andalso Type.equals (Type.pointer,
-						    operandType test)))
+						    Operand.ty test)))
 	       end
 	    fun blockOk (Block.T {args, kind, label, statements,
 				  transfer}): bool =
@@ -857,31 +864,47 @@ structure Program =
 	       in
 		  true
 	       end
+	    fun checkFunction (Function.T {args, blocks, start, ...}) =
+	       let
+		  val _ = Vector.foreach (args, setVarType)
+		  val _ =
+		     Vector.foreach
+		     (blocks, fn b as Block.T {args, label, statements,
+					       transfer, ...} =>
+		      (setLabelBlock (label, b)
+		       ; Vector.foreach (args, setVarType)
+		       ; Vector.foreach (statements, fn s =>
+					 Statement.foreachDef
+					 (s, setVarType))
+		       ; Transfer.foreachDef (transfer, setVarType)))
+		  val _ = labelIsNullaryJump start
+		  val _ = 
+		     Vector.foreach
+		     (blocks, fn b => check' (b, "block", blockOk, Block.layout))
+	       in
+		  ()
+	       end
 	    val _ =
 	       List.foreach
 	       (functions, fn f as Function.T {name, ...} =>
 		setFuncInfo (name, f))
+	    val _ = checkFunction main
+	    val _ = List.foreach (functions, checkFunction)
 	    val _ =
-	       List.foreach
-	       (functions, fn Function.T {args, blocks, start, ...} =>
-		(Vector.foreach (args, setVarType)
-		 ; (Vector.foreach
-		    (blocks, fn b as Block.T {args, label, statements,
-					      transfer, ...} =>
-		     (setLabelBlock (label, b)
-		      ; Vector.foreach (args, setVarType)
-		      ; Vector.foreach (statements, fn s =>
-					Statement.foreachDef
-					(s, fn {var, ty} =>
-					 setVarType (var, ty)))
-		      ; Transfer.foreachDef (transfer, fn {var, ty} =>
-					     setVarType (var, ty)))))
-		 ; Vector.foreach (blocks, fn b =>
-				   check' (b, "block", blockOk, Block.layout))))
+	       check'
+	       (main, "main function",
+		fn f =>
+		let
+		   val {args, ...} = Function.dest f
+		in
+		   0 = Vector.length args
+		end,
+		Function.layout)
+	    val _ = clear p
 	 in
 	    ()
 	 end handle Err.E e => (Layout.outputl (Err.layout e, Out.error)
-				; Error.bug "Machine type error")
+				; Error.bug "Rssa type error")
    end
 
 end

@@ -92,7 +92,12 @@
 #define Chunk(n)				\
 	static void ChunkName(n)() {		\
 		char *stackTop;			\
-		pointer frontier
+		pointer frontier;
+		char CReturnC;
+		double CReturnD;
+		int CReturnI;
+		char *CReturnP;
+		uint CReturnU;
 
 #define ChunkSwitch				\
 		CacheGC();			\
@@ -137,7 +142,7 @@ int main(int argc, char **argv) {					\
 		PrepFarJump(mc, ml);					\
 	} else {							\
 		/* Return to the saved world */				\
-		nextFun = *(int*)gcState.stackTop;			\
+		nextFun = *(int*)(gcState.stackTop - WORD_SIZE);	\
 		nextChunk = nextChunks[nextFun];			\
 	}								\
 	/* Trampoline */						\
@@ -153,7 +158,7 @@ int main(int argc, char **argv) {					\
 #define PrepFarJump(n, l)			\
 	do {					\
 		nextChunk = ChunkName(n);	\
-		nextFun = l ## _index;		\
+		nextFun = l;			\
 	} while (0)
 
 #define FarJump(n, l)	 			\
@@ -162,25 +167,18 @@ int main(int argc, char **argv) {					\
 		goto leaveChunk;		\
 	} while (0)
 
-
-#ifdef GLOBAL_REGS
-#define Reg(name, i) (local ## name [ i ])
-#define Declare(ty, name, i) 
-#else
 #define Reg(name, i) local ## name ## i
-#define Declare(ty, name, i) ty Reg(name, i)
-#endif 
-
 #define RC(n) Reg(c, n)
 #define RD(n) Reg(d, n)
 #define RI(n) Reg(i, n)
 #define RP(n) Reg(p, n)
 #define RU(n) Reg(u, n)
 
+#define Declare(ty, name, i) ty Reg(name, i)
 #define DC(n) Declare(uchar, c, n)
 #define DD(n) Declare(double, d, n)
 #define DI(n) Declare(int, i, n)
-#define DP(n) Declare(pointer, p, n)
+#define DP(n) Declare(Pointer, p, n)
 #define DU(n) Declare(uint, u, n)
 
 #define Slot(ty, i) *(ty*)(stackTop + (i))
@@ -222,13 +220,13 @@ int main(int argc, char **argv) {					\
 #define Push(bytes)							\
 	do {								\
 		stackTop += (bytes);					\
-		assert(gcState.stackBottom <= stackTop + WORD_SIZE);	\
+		assert(gcState.stackBottom <= stackTop);		\
 	} while (0)
 
-#define Return()				\
-	do {					\
-		nextFun = *(int*)stackTop;	\
-		goto top;			\
+#define Return()						\
+	do {							\
+		nextFun = *(word*)(stackTop - WORD_SIZE);	\
+		goto top;					\
 	} while (0)
 
 #define ExnStack gcState.currentThread->exnStack
@@ -246,14 +244,14 @@ int main(int argc, char **argv) {					\
 		ExnStack = stackTop + (offset) - StackBottom;	\
 	} while (0)
 
-#define SetSlotExnStack(offset)						\
-	do {								\
-		*(uint*)(stackTop + (offset) + WORD_SIZE) = ExnStack;	\
+#define SetSlotExnStack(offset)					\
+	do {							\
+		*(uint*)(stackTop + (offset)) = ExnStack;	\
 	} while (0)
 
-#define SetExnStackSlot(offset) 					\
-	do {								\
-		ExnStack = *(uint*)(stackTop + (offset) + WORD_SIZE);	\
+#define SetExnStackSlot(offset)					\
+	do {							\
+		ExnStack = *(uint*)(stackTop + (offset));	\
 	} while (0)
 
 /* ------------------------------------------------- */
@@ -278,7 +276,7 @@ int main(int argc, char **argv) {					\
 #define InvokeRuntime(call, frameSize, ret)		\
 	do {						\
 		stackTop += (frameSize);		\
-		*(uint*)stackTop = (ret ## _index);	\
+		*(uint*)(stackTop - WORD_SIZE) = ret;	\
 		FlushGC();				\
 		call;					\
 		CacheGC();				\
@@ -335,10 +333,10 @@ int main(int argc, char **argv) {					\
 			frameSize, ret);				\
 			clearFirst;					\
 		}							\
-		assert(gcState.stackBottom <= stackTop + WORD_SIZE);	\
+		assert(gcState.stackBottom <= stackTop);		\
 	} while (0)
 
-#define StackOverflowCheck (stackTop >= gcState.stackLimit)
+#define StackOverflowCheck (stackTop > gcState.stackLimit)
 
 /* ------------------------------------------------- */
 /*                      Arrays                       */
@@ -622,13 +620,13 @@ int Int_bogus;
 	do {									\
 		GC_thread t = thread;						\
 		stackTop += (frameSize);					\
-		*(uint*)stackTop = (ret ## _index);				\
+		*(uint*)(stackTop - WORD_SIZE) = (ret ## _index);		\
 	 	gcState.currentThread->stack->used =				\
-			stackTop + WORD_SIZE - gcState.stackBottom;		\
+			stackTop - gcState.stackBottom;				\
 	 	gcState.currentThread = t;					\
 		gcState.stackBottom =						\
 			((pointer)t->stack) + sizeof(struct GC_stack);		\
-		stackTop = gcState.stackBottom + t->stack->used - WORD_SIZE;	\
+		stackTop = gcState.stackBottom + t->stack->used;		\
 		gcState.stackLimit =						\
 			gcState.stackBottom + t->stack->reserved		\
 			- 2 * gcState.maxFrameSize;				\

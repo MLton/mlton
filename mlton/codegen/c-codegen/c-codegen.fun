@@ -114,8 +114,9 @@ structure C =
 		  else ()
 	    else ()
       end 
-   end
 
+      fun push (i, print) = call ("\tPush", [int i], print)
+   end
 structure Label =
    struct
       open Label
@@ -233,8 +234,6 @@ structure Statement =
 			 C.call ("SetSlotExnStack", [C.int offset], print)
 			 ))
 
-      fun push (i, print) = C.call ("Push", [C.int i], print)
-
       fun toString s =
 	 let
 	    val ss = ref []
@@ -263,16 +262,15 @@ fun output {program = Machine.Program.T {chunks,
 			      done: unit -> unit}} =
    let
       datatype status = None | One | Many
-      val {get =
-	   labelInfo: Label.t -> {block: Block.t,
-				  chunkLabel: ChunkLabel.t,
-				  frameIndex: int option,
-				  status: status ref,
-				  layedOut: bool ref},
+      val {get = labelInfo: Label.t -> {block: Block.t,
+					chunkLabel: ChunkLabel.t,
+					frameIndex: int option,
+					status: status ref,
+					layedOut: bool ref},
 	   set = setLabelInfo, ...} =
 	 Property.getSetOnce
 	 (Label.plist, Property.initRaise ("CCodeGen.info", Label.layout))
-      val allLabels = ref []
+      val entryLabels = ref []
       (* Assign the entries of each chunk consecutive integers so that
        * gcc will use a jump table.
        *)
@@ -287,12 +285,12 @@ fun output {program = Machine.Program.T {chunks,
 	     {block = b,
 	      chunkLabel = chunkLabel,
 	      frameIndex = if Kind.isEntry kind
-			      then SOME (Counter.next indexCounter)
+			      then (List.push (entryLabels, label)
+				    ; SOME (Counter.next indexCounter))
 			   else NONE,
               layedOut = ref false,
-	      status = ref None})
-	    ; List.push (allLabels, label))))
-      val allLabels = List.rev (!allLabels)
+	      status = ref None}))))
+      val entryLabels = Vector.fromListRev (!entryLabels)
       val maxFrameIndex = Counter.value indexCounter
       val labelChunk = #chunkLabel o labelInfo
       fun labelFrameInfo (l: Label.t): FrameInfo.t option =
@@ -314,13 +312,6 @@ fun output {program = Machine.Program.T {chunks,
 					globals) @ [globalsNonRoot],
 			   C.int),
 		 print);
-      fun locals ty =
-	 List.fold (chunks, 0, fn (Chunk.T {regMax, ...}, max) =>
-		    if regMax ty > max
-		       then regMax ty
-		    else max)
-      fun declareLocals () =
-	 C.call ("Locals", List.map (Type.all, C.int o locals), print)
       fun declareIntInfs () =
 	 (print "BeginIntInfs\n"; 
 	  List.foreach (intInfs, 
@@ -358,9 +349,9 @@ fun output {program = Machine.Program.T {chunks,
 			       print));
       fun make (name, pr) =
 	 (print (concat ["static ", name, " = {"])
-	  ; List.foreachi (allLabels, fn (i, x) =>
-			   (if i > 0 then print ",\n\t" else ()
-			       ; pr x))
+	  ; Vector.foreachi (entryLabels, fn (i, x) =>
+			     (if i > 0 then print ",\n\t" else ()
+				 ; pr x))
 	  ; print "};\n")
       fun declareNextChunks () =
 	 make ("void ( *nextChunks []) ()", fn l =>
@@ -393,8 +384,8 @@ fun output {program = Machine.Program.T {chunks,
 		  print (concat ["{", size, ",", offsetIndex, "}"])
 	       end)
       fun declareIndices () =
-	 List.foreach
-	 (allLabels, fn l =>
+	 Vector.foreach
+	 (entryLabels, fn l =>
 	  Option.app
 	  (#frameIndex (labelInfo l), fn i =>
 	   (print "#define "
@@ -485,24 +476,24 @@ fun output {program = Machine.Program.T {chunks,
 		  val _ =
 		     print (let open Layout
 			    in toString
-			       (seq [str "/* live: ",
+			       (seq [str "\t/* live: ",
 				     Vector.layout Operand.layout live,
 				     str " */\n"])
 			    end)
 		  val _ =
 		     case kind of
 			Kind.Cont {frameInfo, ...} =>
-			   Statement.push (~ (FrameInfo.size frameInfo), print)
+			   C.push (~ (FrameInfo.size frameInfo), print)
 		      | Kind.CReturn {dst, ...} =>
-			   Option.app (dst, fn x =>
-				       print (concat [Operand.toString x, " = ",
-						      creturn (Operand.ty x)]))
+			   Option.app
+			   (dst, fn x =>
+			    print (concat ["\t", Operand.toString x, " = ",
+					   creturn (Operand.ty x), ";\n"]))
 		      | Kind.Func {args} => ()
-		      | Kind.Handler {offset} =>
-			   Statement.push (~ offset, print)
+		      | Kind.Handler {offset} => C.push (~ offset, print)
 		      | Kind.Jump => ()
 		      | Kind.Runtime {frameInfo, ...} =>
-			   Statement.push (~ (FrameInfo.size frameInfo), print)
+			   C.push (~ (FrameInfo.size frameInfo), print)
 		  val _ =
 		     Vector.foreach (statements, fn s =>
 				     Statement.output (s, print))
@@ -512,7 +503,8 @@ fun output {program = Machine.Program.T {chunks,
 	    and outputTransfer (t, source: Label.t) =
 	       let
 		  fun iff (test, a, b) =
-		     (C.call ("\tBZ", [test, Label.toString b], print)
+		     (force b
+		      ; C.call ("\tBZ", [test, Label.toString b], print)
 		      ; gotoLabel a
 		      ; maybePrintLabel b)
 		  datatype z = datatype Transfer.t
@@ -531,6 +523,7 @@ fun output {program = Machine.Program.T {chunks,
 				  | Int_subCheck => "\tInt_subCheck"
 				  | _ => Error.bug "strange overflow prim"
 			      end
+			   val _ = force overflow
 			in
 			   C.call (prim,
 				   Operand.toString dst
@@ -543,6 +536,7 @@ fun output {program = Machine.Program.T {chunks,
 		   | Bug => (print "\t"; C.bug ("machine", print))
 		   | CCall {args, prim, return, returnTy} =>
 			let
+			   val _ = print "\t"
 			   val _ =
 			      case returnTy of
 				 NONE => ()
@@ -561,12 +555,12 @@ fun output {program = Machine.Program.T {chunks,
 			      case return of
 				 NONE => ()
 			       | SOME {return, handler, size} =>
-				    (Statement.push (size, print)
+				    (C.push (size, print)
 				     ; (Statement.output
 					(Statement.Move
 					 {dst = (Operand.StackOffset
-						 {offset = 0, 
-						  ty = Type.int}),
+						 {offset = ~Runtime.labelSize, 
+						  ty = Type.label}),
 					  src = Operand.Label return},
 					 print)))
 			   val dstChunk = labelChunk label
@@ -576,7 +570,7 @@ fun output {program = Machine.Program.T {chunks,
 			   else
 			      C.call ("\tFarJump", 
 				      [ChunkLabel.toString dstChunk, 
-				       Label.toString label],
+				       Label.toStringIndex label],
 				      print)
 			end
 		   | Goto dst => gotoLabel dst
@@ -600,9 +594,9 @@ fun output {program = Machine.Program.T {chunks,
 				 then "StackOverflowCheck"
 			      else "FALSE"
 			in
-			   C.call ("LimitCheck",
+			   C.call ("\tLimitCheck",
 				   [C.int (labelFrameSize failure),
-				    Label.toString failure,
+				    Label.toStringIndex failure,
 				    bytes,
 				    stack],
 				   print)
@@ -612,7 +606,8 @@ fun output {program = Machine.Program.T {chunks,
 		   | Return _ => C.call ("\tReturn", [], print)
 		   | Runtime {args, prim, return, ...} =>
 			C.call (Prim.toString prim,
-				[C.int (labelFrameSize return), Label.toString return]
+				[C.int (labelFrameSize return),
+				 Label.toStringIndex return]
 				@ Vector.toListMap (args, Operand.toString),
 				print)
 		   | Switch {test, cases, default} =>
@@ -660,7 +655,7 @@ fun output {program = Machine.Program.T {chunks,
 	       C.profile ("ChunkSwitch (magic)", overhead, print)
 	 in
 	    C.profile ("Chunk (magic)", overhead, print)
-	    ; C.call ("Chunk", [ChunkLabel.toString chunkLabel], print)
+	    ; C.callNoSemi ("Chunk", [ChunkLabel.toString chunkLabel], print)
 	    (* Declare registers. *)
 	    ; List.foreach (Type.all, fn ty =>
 			    Int.for (0, regMax ty,
@@ -703,8 +698,6 @@ fun output {program = Machine.Program.T {chunks,
 		      else ();
 			 (C.truee, n))
 	    val magic = C.word (Random.useed ())
-	    val (mainChunkId, mainLabel) 
-	       = (ChunkLabel.toString chunkLabel, Label.toString label) 
 	 in C.profile ("Main (magic)", overhead, print)
 	    ; C.callNoSemi ("Main",
 			    [useFixedHeap,
@@ -713,8 +706,8 @@ fun output {program = Machine.Program.T {chunks,
 			     C.int maxFrameSize,
 			     C.int maxFrameIndex,
 			     magic,
-			     mainChunkId,
-			     mainLabel],
+			     ChunkLabel.toString chunkLabel,
+			     Label.toStringIndex label],
 			    print)
 	    ; print "\n"
 	 end
@@ -722,7 +715,6 @@ fun output {program = Machine.Program.T {chunks,
       print "#define CCODEGEN\n\n"
       ; outputIncludes ()
       ; declareGlobals ()
-      ; declareLocals ()
       ; declareIntInfs ()
       ; declareStrings ()
       ; declareFloats ()

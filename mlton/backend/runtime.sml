@@ -2,9 +2,10 @@ structure Runtime: RUNTIME =
 struct
 
 val wordSize: int = 4
-val pointerSize = wordSize
-val objectHeaderSize = wordSize
 val arrayHeaderSize = 2 * wordSize
+val labelSize = wordSize
+val objectHeaderSize = wordSize
+val pointerSize = wordSize
 
 (* These checks, and in particular pointerBits and nonPointerBits
  * must agree with runtime/gc.h.

@@ -60,7 +60,7 @@ signature MACHINE =
 	     | Offset of {base: t,
 			  offset: int,
 			  ty: Type.t}
-	     | Pointer of int (* the int must be nonzero mod 4. *)
+	     | Pointer of int (* the int must be nonzero mod Runtime.wordSize. *)
 	     | Register of Register.t
 	     | StackOffset of {offset: int,
 			       ty: Type.t}
@@ -101,6 +101,7 @@ signature MACHINE =
 	     | SetExnStackSlot of {offset: int}
 	     | SetSlotExnStack of {offset: int}
 
+	    val foldOperands: t * 'a * (Operand.t * 'a -> 'a) -> 'a
 	    val layout: t -> Layout.t
 	    val move: {dst: Operand.t, src: Operand.t} -> t
 	    (* Error if dsts and srcs aren't of same length. *)
@@ -168,6 +169,7 @@ signature MACHINE =
 			    int: Label.t,
 			    pointer: Label.t}
 
+	    val foldOperands: t * 'a * (Operand.t * 'a -> 'a) -> 'a
 	    val layout: t -> Layout.t
 	 end
 
@@ -218,7 +220,6 @@ signature MACHINE =
 	 sig
 	    datatype t = T of {blocks: Block.t vector,
 			       chunkLabel: ChunkLabel.t,
-			       (* for each type, gives the max # regs used *)
 			       regMax: Type.t -> int}
 	 end
 

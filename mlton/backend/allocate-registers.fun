@@ -155,14 +155,12 @@ structure Info =
 	  ("size", Int.layout size)]
    end
 
-nonfix ^
-fun ^ r = valOf (!r)
-
 (* ------------------------------------------------- *)
 (*                     allocate                      *)
 (* ------------------------------------------------- *)
 
-fun allocate {function = f: Rssa.Function.t,
+fun allocate {argOperands: Machine.Operand.t vector,
+	      function = f: Rssa.Function.t,
 	      newRegister,
 	      varInfo: Var.t -> {operand: Machine.Operand.t option ref option,
 				 ty: Machine.Type.t}} =
@@ -179,7 +177,7 @@ fun allocate {function = f: Rssa.Function.t,
 			  (fn r => Option.layout Operand.layout (!r))
 			  (#operand (varInfo x))])
 	     fun diagStatement (s: R.Statement.t): unit =
-		R.Statement.foreachDef (s, diagVar o #var)
+		R.Statement.foreachDef (s, diagVar o #1)
 	  in
 	     f (display, diagVar, diagStatement)
 	  end)
@@ -191,79 +189,74 @@ fun allocate {function = f: Rssa.Function.t,
 			     end)
       val {get = labelInfo: R.Label.t -> Info.t, set = setLabelInfo, ...} =
 	 Property.getSetOnce (R.Label.plist,
-			      Property.initRaise ("label info", R.Label.layout))
+			      Property.initRaise ("labelInfo", R.Label.layout))
       val setLabelInfo =
 	 Trace.trace2
 	 ("Allocate.setLabelInfo", R.Label.layout, Info.layout, Unit.layout)
 	 setLabelInfo
-      val {get = funcInfo: Func.t -> {
-				      info: Info.t,
-				      handlerOffset: int option
-				      }, 
-	   set = setFuncInfo, ...} =
-	 Property.getSetOnce (Func.plist,
-			      Property.initRaise ("func info", Func.layout))
       val labelLive =
 	 Live.live (f, {shouldConsider = isSome o #operand o varInfo})
       val {args, blocks, name, start, ...} = Function.dest f
-	 (*
-	  * Decide which variables will live in stack slots and which
-	  * will live in registers.
-	  * Initially,
-	  *   - all formals are put in stack slots
-	  *   - everything else is put everything in a register.
-	  * Variables get moved to the stack if they are
-	  *   - live at the beginning of a basic block (i.e. Fun dec)
-	  *   - live at a primitive that enters the runtime system
-	  *)
-	 datatype place = Stack | Register
-	 val {get = place: Var.t -> place, set = setPlace, ...} =
-	    (* FIXME: could use destGetSetOnce? *)
-	    Property.getSet (Var.plist, Property.initConst Register)
-	 (* !hasHandler = true iff handlers are installed in this function. *)
-	 val hasHandler: bool ref = ref false
-	 fun forceStack (x: Var.t): unit = setPlace (x, Stack)
-	 val forceStack = traceForceStack forceStack
-	 val _ = Vector.foreach (args, forceStack o #1)
-	 val _ =
-	    Vector.foreach
-	    (blocks,
-	     fn R.Block.T {args, kind, label, statements, transfer, ...} =>
-	     let
-		val {begin, beginNoFormals, ...} = labelLive label
-	        val _ =
-		   case kind of
-		      Kind.Cont _ =>
-			 (Vector.foreach (args, forceStack o #1)
-			  ; List.foreach (beginNoFormals, forceStack))
-		    | Kind.Handler =>
-			 List.foreach (beginNoFormals, forceStack)
-		    | Kind.Runtime _ =>
-			 List.foreach (beginNoFormals, forceStack)
-		    | _ => ()
-		val _ =
-		   Vector.foreach
-		   (statements, fn s =>
-		    let
-		       datatype z = datatype R.Statement.t
-		    in
-		       case s of
-			  SetHandler h => hasHandler := true
-			| SetExnStackLocal => hasHandler := true
-			| SetExnStackSlot => hasHandler := true
-			| SetSlotExnStack => hasHandler := true
-			| _ => ()
-		    end)
-	     in
-		()
-	     end)
-	 (* The next available register number for each type. *)
-	 val nextReg = Type.memo (fn _ => ref 0)
-	 fun allocateVarInfo (x: Var.t,
-			      {operand, ty},
-			      l: Label.t option, 
-			      force: bool,
-			      s: Stack.t): Stack.t =
+      (*
+       * Decide which variables will live in stack slots and which
+       * will live in registers.
+       * Initially,
+       *   - all formals are put in stack slots
+       *   - everything else is put everything in a register.
+       * Variables get moved to the stack if they are
+       *   - live at the beginning of a basic block (i.e. Fun dec)
+       *   - live at a primitive that enters the runtime system
+       *)
+      datatype place = Stack | Register
+      val {get = place: Var.t -> place, set = setPlace, ...} =
+	 (* FIXME: could use destGetSetOnce? *)
+	 Property.getSet (Var.plist, Property.initConst Register)
+      (* !hasHandler = true iff handlers are installed in this function. *)
+      val hasHandler: bool ref = ref false
+      fun forceStack (x: Var.t): unit = setPlace (x, Stack)
+      val forceStack = traceForceStack forceStack
+      val _ = Vector.foreach (args, forceStack o #1)
+      val _ =
+	 Vector.foreach
+	 (blocks,
+	  fn R.Block.T {args, kind, label, statements, transfer, ...} =>
+	  let
+	     val {begin, beginNoFormals, ...} = labelLive label
+	     val _ =
+		case kind of
+		   Kind.Cont _ =>
+		      (Vector.foreach (args, forceStack o #1)
+		       ; List.foreach (beginNoFormals, forceStack))
+		 | Kind.Handler =>
+		      List.foreach (beginNoFormals, forceStack)
+		 | Kind.Runtime _ =>
+		      List.foreach (beginNoFormals, forceStack)
+		 | _ => ()
+	     val _ =
+		Vector.foreach
+		(statements, fn s =>
+		 let
+		    datatype z = datatype R.Statement.t
+		 in
+		    case s of
+		       SetHandler h => hasHandler := true
+		     | SetExnStackLocal => hasHandler := true
+		     | SetExnStackSlot => hasHandler := true
+		     | SetSlotExnStack => hasHandler := true
+		     | _ => ()
+		 end)
+	  in
+	     ()
+	  end)
+      (* The next available register number for each type. *)
+      val nextReg = Type.memo (fn _ => ref 0)
+      fun allocateVar (x: Var.t,
+		       l: Label.t option, 
+		       force: bool,
+		       s: Stack.t): Stack.t =
+	 let
+	    val {operand, ty} = varInfo x
+	 in
 	    if force orelse isSome operand
 	       then let
 		       val (s, oper) =
@@ -291,183 +284,142 @@ fun allocate {function = f: Rssa.Function.t,
 		       s
 		    end
 	    else s
-	 val allocateVarInfo =
-	    Trace.trace5
-	    ("Allocate.allocateVarInfo",
-	     Var.layout,
-	     fn {operand, ...} =>
-	     Option.layout (Ref.layout (Option.layout Operand.layout)) operand,
-	     Layout.ignore, Bool.layout, Stack.layout,
-	     Stack.layout)
-	    allocateVarInfo
-	 fun allocateVar (x, c, f, s) = allocateVarInfo (x, varInfo x, c, f, s)
-	 (* The initial stack has one element, a label, because the stack
-	  * pointer always points at the return label in the previous frame.
-	  *)
-	 val (stack, _) = Stack.get (Stack.empty, Type.label)
-	 (* Get the stack slots for the formals.  These are done in the
-	  * initial stack so that the calling convention is followed.
-	  *)
-	 val stack =
-	    Vector.fold (args, stack, fn ((x, _), s) =>
-			 allocateVar (x, NONE, true, s))
-	 (* Allocate slots for the link and handler, if necessary.
-	  * This code relies on Stack.get putting them together, since for now
-	  * the machine IL assumes they are and only has the ability to refer
-	  * to one of them.
-	  *)
-	 val (stack, handlerOffset) =
-	    if !hasHandler
-	       then
-		  let
-		     val (s, {offset}) = Stack.get (stack, Type.label)
-		     val (s, {...}) = Stack.get (s, Type.uint)
-		  in
-		     (s, SOME offset)
-		  end
-	    else (stack, NONE)
-	 local
-	    fun getOperands ((xs: Var.t list,
-			      (code, link): bool * bool),
-			     force: bool) =
-	       let
-		  val ops = []
-		  val ops =
-		     if code
-			then let
-				val handlerOffset = valOf handlerOffset
-			     in
-				(Operand.StackOffset {offset = handlerOffset,
-						      ty = Type.uint})
-				:: ops
-			     end
-		     else ops
-		  val ops =
-		     if link
-			then let
-				val handlerOffset = valOf handlerOffset
-			     in
-				(Operand.StackOffset
-				 {offset = handlerOffset + labelSize,
-				  ty = Type.uint})
-				:: ops
-			     end
-		     else ops
-	       in
-		  Vector.fromList
-		  (List.fold
-		   (xs, ops, fn (x, operands) =>
-		    let
-		       val {operand, ty, ...} = varInfo x
-		    in
-		       case operand of
-			  NONE => operands
-			| SOME r =>
-			     if force
-				then (case place x of
-					 Register =>
-					    Error.bug 
-					    (concat
-					     ["live register ",
-					      Layout.toString (Var.layout x)])
-				       | Stack =>
-					    case ^r of
-					       z as Operand.StackOffset _ =>
-						  z :: operands
-					     | _ => Error.bug "need live slot")
-			     else (^r)::operands
-		    end))
-	       end
-	 in
-	    val getOperands =
-	       Trace.trace ("Allocate.getOperands",
-			    fn ((xs, (code, link)), force) =>
-			    Layout.tuple [List.layout Var.layout xs,
-					  Bool.layout code,
-					  Bool.layout link,
-					  Bool.layout force],
-			    Vector.layout Operand.layout)
-	       getOperands
 	 end
-	 (* Do a DFS of the control-flow graph. *)
-	 val _ =
-	    Function.dfs
-	    (f, fn R.Block.T {args, label, kind, statements, ...} =>
-	     let
-		val {begin, beginNoFormals, handlerSlots = hs} = labelLive label
-		val live = getOperands ((begin, hs), false)
-		val liveNoFormals =
-		   getOperands ((beginNoFormals, hs), R.Kind.isOnStack kind)
-		val stack =
-		   Stack.new (Vector.fold (liveNoFormals, [], fn (oper, ac) =>
-					   case oper of
-					      Operand.StackOffset a => a :: ac
-					    | _ => ac))
-		fun adjustSize size =
-		   let
-		      val (offset, offset') =
-			 Vector.fold
-			 (args, (0, size), fn ((x, _), (offset, offset')) =>
-			  let val ty = #ty (varInfo x)
-			  in (Type.align (ty, offset) + Type.size ty,
-			      Type.align (ty, offset') + Type.size ty)
-			  end)
-		      val offset = Type.wordAlign offset
-		      val offset' = Type.wordAlign offset'
-		      val shift = Int.abs ((offset' - size) - offset)
-		   in
-		      {size = size + shift + offset,
-		       shift = shift}
-		   end
-		val _ =
-		   if !Control.newReturn
-		      andalso (case kind of
-				  Kind.Cont _ => true
-				| _ => false)
-		      then Error.bug "newReturn not implemented"
-		   else ()
-		val s =
-		   Vector.fold (args, stack, fn ((x, _), s) =>
-				allocateVar (x, SOME label, false, s))
-		val _ =
-		   Vector.fold
-		   (statements, s, fn (s, stack) =>
-		    R.Statement.foldDef
-		    (s, stack, fn ({var, ...}, stack) =>
-		     allocateVar (var, SOME label, false, stack)))
-		val _ = setLabelInfo (label, {live = live,
-					      liveNoFormals = liveNoFormals,
-					      size = Stack.size stack,
-					      adjustSize = adjustSize})
-	     in
-		fn () => ()
-	     end)
-	 val _ =
-	    diagnostics
-	    (fn (display, diagVar, diagStatement) =>
-	     let
-		open Layout
-		val _ =
-		   display (seq [str "function ", Func.layout name,
-				 str " handlerOffset ",
-				 Option.layout Int.layout handlerOffset])
-		val _ = Vector.foreach (args, diagVar o #1)
-		val _ =
-		   Vector.foreach
-		   (blocks, fn R.Block.T {label, args, statements, ...} =>
-		    (display (R.Label.layout label)
-		     ; Vector.foreach (args, diagVar o #1)
-		     ; Vector.foreach (statements, diagStatement)))
-	     in ()
-	     end)
-      in
-	 {handlerOffset = handlerOffset,
-	  labelInfo = labelInfo}
-      end
+      val allocateVar =
+	 Trace.trace4
+	 ("Allocate.allocateVar",
+	  Var.layout, Option.layout Label.layout, Bool.layout, Stack.layout,
+	  Stack.layout)
+	 allocateVar
+      val stack = Stack.empty
+      (* Create the initial stack and set the stack slots for the formals. *)
+      val _ =
+	 Stack.new
+	 (Vector.foldr2 (args, argOperands, [],
+			 fn ((x, t), oper, ac) =>
+			 case oper of
+			    M.Operand.StackOffset {offset, ...} =>
+			       (valOf (#operand (varInfo x)) := SOME oper
+				; {offset = offset, ty = t} :: ac)
+			  | _ => Error.bug "callReturnOperands"))
+      (* Allocate slots for the link and handler, if necessary. *)
+      val (stack, handlerLinkOffset) =
+	 if !hasHandler
+	    then
+	       let
+		  val (s, {offset = handler, ...}) =
+		     Stack.get (stack, Type.label)
+		  val (s, {offset = link, ...}) = Stack.get (s, Type.uint)
+	       in
+		  (s, SOME {handler = handler, link = link})
+	       end
+	 else (stack, NONE)
+      fun getOperands (xs: Var.t list): Operand.t list =
+	 List.fold
+	 (xs, [], fn (x, operands) =>
+	  valOf (! (valOf (#operand (varInfo x)))) :: operands)
+      val getOperands =
+	 Trace.trace ("Allocate.getOperands",
+		      List.layout Var.layout,
+		      List.layout Operand.layout)
+	 getOperands
+      (* Do a DFS of the control-flow graph. *)
+      val _ =
+	 Function.dfs
+	 (f, fn R.Block.T {args, label, kind, statements, transfer, ...} =>
+	  let
+	     val {begin, beginNoFormals,
+		  handlerSlots = (codeLive, linkLive)} = labelLive label
+	     fun addHS ops =
+		Vector.fromList
+		(case handlerLinkOffset of
+		    NONE => ops
+		  | SOME {handler, link} =>
+		       let
+			  val ops =
+			     if codeLive
+				then
+				   Operand.StackOffset {offset = handler,
+							ty = Type.label}
+				   :: ops
+			     else ops
+			  val ops =
+			     if linkLive
+				then
+				   Operand.StackOffset {offset = link,
+							ty = Type.uint}
+				   :: ops
+			     else ops
+		       in
+			  ops
+		       end)
+	     val liveNoFormals = getOperands beginNoFormals
+	     val stackInit =
+		List.fold (liveNoFormals, [], fn (oper, ac) =>
+			   case oper of
+			      Operand.StackOffset a => a :: ac
+			    | _ => ac)
+	     val stackInit =
+		case handlerLinkOffset of
+		   NONE => stackInit
+		 | SOME {handler, link} =>
+		      {offset = handler, ty = Type.label}
+		      :: {offset = link, ty = Type.uint}
+		      :: stackInit
+	     val stack = Stack.new stackInit
+	     val s =
+		Vector.fold (args, stack, fn ((x, _), s) =>
+			     allocateVar (x, SOME label, false, s))
+	     (* Must compute live after allocateVar'ing the args, since that
+	      * sets the operands for the args.
+	      *)
+	     val live = getOperands begin
+	     fun one (var, ty, stack) =
+		allocateVar (var, SOME label, false, stack)
+	     val s =
+		Vector.fold (statements, s, fn (s, stack) =>
+			     R.Statement.foldDef (s, stack, one))
+	     val s = R.Transfer.foldDef (transfer, stack, one)
+	     val size = Runtime.labelSize + Type.wordAlign (Stack.size stack)
+	     fun adjustSize _ = Error.unimplemented "adjustSize"
+	     val _ =
+		setLabelInfo (label, {live = addHS live,
+				      liveNoFormals = addHS liveNoFormals,
+				      size = size,
+				      adjustSize = adjustSize})
+	  in
+	     fn () => ()
+	  end)
+      val _ =
+	 diagnostics
+	 (fn (display, diagVar, diagStatement) =>
+	  let
+	     open Layout
+	     val _ =
+		display (seq [str "function ", Func.layout name,
+			      str " handlerLinkOffset ",
+			      Option.layout
+			      (fn {handler, link} =>
+			       record [("handler", Int.layout handler),
+				       ("link", Int.layout link)])
+			      handlerLinkOffset])
+	     val _ = Vector.foreach (args, diagVar o #1)
+	     val _ =
+		Vector.foreach
+		(blocks, fn R.Block.T {label, args, statements, ...} =>
+		 (display (R.Label.layout label)
+		  ; Vector.foreach (args, diagVar o #1)
+		  ; Vector.foreach (statements, diagStatement)))
+	  in ()
+	  end)
+   in
+      {handlerLinkOffset = handlerLinkOffset,
+       labelInfo = labelInfo}
+   end
 
 val allocate = 
    Trace.trace
-   ("AllocateRegisters.allocate",
+   ("Allocate.allocate",
     fn {function, ...} => Func.layout (Function.name function),
     Layout.ignore)
    allocate
