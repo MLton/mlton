@@ -325,12 +325,12 @@ int fixedGetrusage (int who, struct rusage *rup) {
 
 	if (first) {
 		first = FALSE;
-		hz = sysconf(_SC_CLK_TCK);
+		hz = sysconf (_SC_CLK_TCK);
 	}
-	res = getrusage(who, rup);
+	res = getrusage (who, rup);
 	unless (res == 0)
 		return (res);
-	if (times(&tbuff) == -1)
+	if (times (&tbuff) == -1)
 		diee ("Impossible: times() failed");
 	switch (who) {
 	case RUSAGE_SELF:
@@ -3148,10 +3148,10 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->bytesMarkCompacted = 0;
 	s->canHandle = 0;
 	s->cardSize = 0x1 << s->cardSizeLog2;
-	s->copyRatio = 5.0;
+	s->copyRatio = 4.0;
 	s->currentThread = BOGUS_THREAD;
 	s->generationalRatio = 5.0;
-	s->growRatio = 1.5;
+	s->growRatio = 8.0;
 	s->inSignalHandler = FALSE;
 	s->isOriginal = TRUE;
 	s->liveRatio = 8.0;
