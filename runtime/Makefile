@@ -87,6 +87,7 @@ OBJS =						\
 	basis/Real/round.o			\
 	basis/Real/signBit.o			\
 	basis/Real/strtod.o			\
+	basis/Real/toReal.o			\
 	basis/Stdio.o				\
 	basis/Thread.o				\
 	basis/Time.o				\
@@ -254,6 +255,7 @@ DEBUG_OBJS =					\
 	basis/Real/round-gdb.o			\
 	basis/Real/signBit-gdb.o		\
 	basis/Real/strtod-gdb.o			\
+	basis/Real/toReal-gdb.o			\
 	basis/Stdio-gdb.o			\
 	basis/Thread-gdb.o			\
 	basis/Time-gdb.o			\

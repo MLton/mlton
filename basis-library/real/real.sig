@@ -81,3 +81,11 @@ signature REAL =
       val toString: real -> string
       val unordered: real * real -> bool
    end
+
+signature REAL32 =
+   sig
+      type real
+
+      val toLarge: real -> LargeReal.real
+      val fromLarge: IEEEReal.rounding_mode -> LargeReal.real -> real
+   end

@@ -5,7 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-structure IEEEReal: IEEE_REAL =
+structure IEEEReal: IEEE_REAL_EXTRA =
    struct
       val op + = Int.+
       val op - = Int.-
@@ -44,7 +44,17 @@ structure IEEEReal: IEEE_REAL =
 
       val setRoundingMode = Prim.setRoundingMode o rounding_modeToInt
       val getRoundingMode = intToRounding_mode o Prim.getRoundingMode
-	       
+
+      fun withRoundingMode (m: rounding_mode, th: unit -> 'a): 'a =
+	 let
+	    val m' = getRoundingMode ()
+	    val _ = setRoundingMode m
+	    val res = th ()
+	    val _ = setRoundingMode m'
+	 in
+	    res
+	 end
+
       type decimal_approx = {class: float_class,
 			     digits: int list,
 			     exp: int,

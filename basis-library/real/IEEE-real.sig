@@ -17,17 +17,22 @@ signature IEEE_REAL =
        | TO_POSINF
        | TO_ZERO
 
-      val setRoundingMode: rounding_mode -> unit 
-      val getRoundingMode: unit -> rounding_mode
-	 
       type decimal_approx = {class: float_class,
 			     digits: int list,
 			     exp: int,
 			     sign: bool}
 	 
-      val toString: decimal_approx -> string 
-      val scan: (char, 'a) StringCvt.reader 
-                -> (decimal_approx, 'a) StringCvt.reader
       val fromString: string -> decimal_approx option
+      val getRoundingMode: unit -> rounding_mode
+      val scan: (char, 'a) StringCvt.reader
+	        -> (decimal_approx, 'a) StringCvt.reader
+      val setRoundingMode: rounding_mode -> unit 
+      val toString: decimal_approx -> string 
    end
 
+signature IEEE_REAL_EXTRA =
+   sig
+      include IEEE_REAL
+
+      val withRoundingMode: rounding_mode * (unit -> 'a) -> 'a
+   end

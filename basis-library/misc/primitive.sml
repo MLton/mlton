@@ -77,6 +77,7 @@ type nullString = string
 
 structure Int = Int32
 type int = Int.int
+structure LargeReal = Real64
 structure Real = Real64
 type real = Real.real
 structure Word = Word32
@@ -731,9 +732,17 @@ structure Primitive =
 	       _import "Ptrace_ptrace4": int * pid * word * word ref -> int;
 	 end
 
-      structure Real =
+      structure Real32 =
 	 struct
-	    type real = real64
+	    type real = Real32.real
+
+	    val fromLarge = _import "Real64_toReal32": LargeReal.real -> real;
+	    val toLarge = _import "Real32_toReal64": real -> LargeReal.real;
+	 end
+      
+      structure Real64 =
+	 struct
+	    type real = Real64.real
 
 	    structure Math =
 	       struct

@@ -1,6 +1,18 @@
+structure Real32: REAL32 =
+   struct
+      structure Prim = Primitive.Real32
+
+      type real = Prim.real
+
+      fun fromLarge m r =
+	 IEEEReal.withRoundingMode (m, fn () => Prim.fromLarge r)
+	 
+      val toLarge = Prim.toLarge
+   end
+
 structure Real64: REAL =
    struct
-      structure Prim = Primitive.Real
+      structure Prim = Primitive.Real64
       local
 	 open IEEEReal
       in
@@ -8,7 +20,7 @@ structure Real64: REAL =
 	 datatype z = datatype rounding_mode
       end
       infix 4 == != ?=
-      type real = real
+      type real = Prim.real
 
       local
 	 open Prim
@@ -169,23 +181,13 @@ structure Real64: REAL =
 	  | NAN => raise Div
 	  | _ => x
 
-      fun withRoundingMode (m, th) =
-	 let
-	    val m' = IEEEReal.getRoundingMode ()
-	    val _ = IEEEReal.setRoundingMode m
-	    val res = th ()
-	    val _ = IEEEReal.setRoundingMode m'
-	 in
-	    res
-	 end
-
       val maxInt = fromInt Int.maxInt'
       val minInt = fromInt Int.minInt'
 
       fun toInt mode x =
 	 let
-	    fun doit () = withRoundingMode (mode, fn () =>
-					    Prim.toInt (Prim.round x))
+	    fun doit () = IEEEReal.withRoundingMode (mode, fn () =>
+						     Prim.toInt (Prim.round x))
 	 in
 	    case class x of
 	       NAN => raise Domain
@@ -233,7 +235,7 @@ structure Real64: REAL =
 	    case class x of
 	       NAN => x
 	     | INF => x
-	     | _ => withRoundingMode (mode, fn () => Prim.round x)
+	     | _ => IEEEReal.withRoundingMode (mode, fn () => Prim.round x)
       in
 	 val realFloor = round TO_NEGINF
 	 val realCeil = round TO_POSINF

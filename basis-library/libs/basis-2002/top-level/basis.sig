@@ -187,7 +187,7 @@ signature BASIS_2002 =
       structure RealVector : MONO_VECTOR
       structure RealVectorSlice : MONO_VECTOR_SLICE
       structure RealArray2 : MONO_ARRAY2
-      (* structure Real32 : REAL *)
+      structure Real32 : REAL32
       structure Real32Array : MONO_ARRAY
       structure Real32ArraySlice : MONO_ARRAY_SLICE
       structure Real32Vector : MONO_VECTOR
