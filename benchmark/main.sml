@@ -416,6 +416,7 @@ fun main args =
        val _ =
 	  case MLton.hostType of
 	     MLton.Cygwin => ()
+	   | MLton.FreeBSD => ()
 	   | MLton.Linux => 
 		let
 		   open MLton.Rlimit
