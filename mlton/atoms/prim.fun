@@ -40,7 +40,6 @@ datatype 'a t =
  | Array_toVector (* backend *)
  | Array_update (* backend *)
  | Exn_extra (* implement exceptions *)
- | Exn_keepHistory (* a compile-time boolean *)
  | Exn_name (* implement exceptions *)
  | Exn_setExtendExtra (* implement exceptions *)
  | Exn_setInitExtra (* implement exceptions *)
@@ -213,7 +212,6 @@ fun toString (n: 'a t): string =
        | Array_toVector => "Array_toVector"
        | Array_update => "Array_update"
        | Exn_extra => "Exn_extra"
-       | Exn_keepHistory => "Exn_keepHistory"
        | Exn_name => "Exn_name"
        | Exn_setExtendExtra => "Exn_setExtendExtra"
        | Exn_setInitExtra => "Exn_setInitExtra"
@@ -347,7 +345,6 @@ val equals: 'a t * 'a t -> bool =
     | (Array_toVector, Array_toVector) => true
     | (Array_update, Array_update) => true
     | (Exn_extra, Exn_extra) => true
-    | (Exn_keepHistory, Exn_keepHistory) => true
     | (Exn_name, Exn_name) => true
     | (Exn_setExtendExtra, Exn_setExtendExtra) => true
     | (Exn_setInitExtra, Exn_setInitExtra) => true
@@ -502,7 +499,6 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Array_toVector => Array_toVector
     | Array_update => Array_update
     | Exn_extra => Exn_extra
-    | Exn_keepHistory => Exn_keepHistory
     | Exn_name => Exn_name
     | Exn_setExtendExtra => Exn_setExtendExtra
     | Exn_setInitExtra => Exn_setInitExtra
@@ -706,7 +702,6 @@ val kind: 'a t -> Kind.t =
        | Array_toVector => DependsOnState
        | Array_update => SideEffect
        | Exn_extra => Functional
-       | Exn_keepHistory => Functional
        | Exn_name => Functional
        | Exn_setExtendExtra => SideEffect
        | Exn_setInitExtra => SideEffect

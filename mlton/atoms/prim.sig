@@ -31,7 +31,6 @@ signature PRIM =
 	     | Array_toVector (* backend *)
 	     | Array_update (* backend *)
 	     | Exn_extra (* implement exceptions *)
-	     | Exn_keepHistory (* a compile-time boolean *)
 	     | Exn_name (* implement exceptions *)
 	     | Exn_setExtendExtra (* implement exceptions *)
 	     | Exn_setInitExtra (* implement exceptions *)
