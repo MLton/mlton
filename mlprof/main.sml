@@ -21,8 +21,6 @@ val showLine = ref false
 val thresh: real ref = ref 0.0
 val title: string option ref = ref NONE
 
-val die = Process.fail
-
 structure Source =
    struct
       datatype t =
@@ -44,7 +42,7 @@ structure Source =
 	 case String.tokens (s, fn c => Char.equals (c, #"\t")) of
 	    [s] => Simple s
 	  | [name, pos] => NamePos {name = name, pos = pos}
-	  | _ => die "strange source"
+	  | _ => Error.bug "strange source"
 
       fun toDotLabel s =
 	 case s of
@@ -82,65 +80,66 @@ structure AFile =
 
       fun new {afile: File.t}: t =
 	 if not (File.doesExist afile)
-	    then die (concat [afile, " does not exist"])
+	    then Error.bug "does not exist"
 	 else if not (File.canRun afile)
-	    then die (concat ["can not run ", afile])
+	    then Error.bug "can not run"
 	 else
-	 Process.callWithIn
-	 (afile, ["@MLton", "show-prof"],
-	  fn ins =>
-	  let
-	     fun line () = In.inputLine ins
-	     val magic = valOf (Word.fromString (line ()))
-	     val sourcesLength = valOf (Int.fromString (line ()))
-	     val _ =
-		if 0 = sourcesLength
-		   then die (concat [afile, " was not compiled for profiling"])
-		else ()
-	     val graph = Graph.new ()
-	     val {get = nodeIndex, set = setNodeIndex, ...} =
-		Property.getSetOnce (Node.plist,
-				     Property.initRaise ("index", Node.layout))
-	     val sources =
-		Vector.tabulate
-		(sourcesLength, fn i =>
-		 let
-		    val n = Graph.newNode graph
-		    val _ = setNodeIndex (n, i)
-		 in
-		    {node = n,
-		     source = Source.fromString (String.dropSuffix (line (), 1))}
-		 end)
-	     val _ =
-		Int.for
-		(0, sourcesLength, fn i =>
-		 let
-		    val from = #node (Vector.sub (sources, i))
-		 in
-		    List.foreach
-		    (String.tokens (line (), Char.isSpace), fn s =>
-		     let
-		     val suc = valOf (Int.fromString s)
-		     val _ =
-			Graph.addEdge
-			(graph, {from = from,
-				 to = #node (Vector.sub (sources, suc))})
-		     in
-			()
-		     end)
-		 end)
-	     val _ =
-		case line () of
-		   "" => ()
-		 | _ => Error.bug "mlmon file has extra line"
-	  in
-	     T {callGraph = graph,
-		magic = magic,
-		name = afile,
-		nodeIndex = nodeIndex,
-		sources = sources}
-	  end
-	  handle _ => die (concat [afile, " was not compiled for profiling"]))
+	    Process.callWithIn
+	    (afile, ["@MLton", "show-prof"],
+	     fn ins =>
+	     let
+		fun line () = In.inputLine ins
+		val magic = valOf (Word.fromString (line ()))
+		val sourcesLength = valOf (Int.fromString (line ()))
+		val _ =
+		   if 0 = sourcesLength
+		      then Error.bug "0 = sourcesLength"
+		   else ()
+		val graph = Graph.new ()
+		val {get = nodeIndex, set = setNodeIndex, ...} =
+		   Property.getSetOnce
+		   (Node.plist, Property.initRaise ("index", Node.layout))
+		val sources =
+		   Vector.tabulate
+		   (sourcesLength, fn i =>
+		    let
+		       val n = Graph.newNode graph
+		       val _ = setNodeIndex (n, i)
+		    in
+		       {node = n,
+			source = (Source.fromString
+				  (String.dropSuffix (line (), 1)))}
+		    end)
+		val _ =
+		   Int.for
+		   (0, sourcesLength, fn i =>
+		    let
+		       val from = #node (Vector.sub (sources, i))
+		    in
+		       List.foreach
+		       (String.tokens (line (), Char.isSpace), fn s =>
+			let
+			   val suc = valOf (Int.fromString s)
+			   val _ =
+			      Graph.addEdge
+			      (graph,
+			       {from = from,
+				to = #node (Vector.sub (sources, suc))})
+			in
+			   ()
+			end)
+		    end)
+		val _ =
+		   case line () of
+		      "" => ()
+		    | _ => Error.bug "expected end of file"
+	     in
+		T {callGraph = graph,
+		   magic = magic,
+		   name = afile,
+		   nodeIndex = nodeIndex,
+		   sources = sources}
+	     end)
    end
 
 structure Kind =
@@ -208,7 +207,9 @@ structure Counts =
 		       {current = IntInf.+ (c, c'),
 			stack = IntInf.+ (s, s'),
 			stackGC = IntInf.+ (g, g')}))
-	  | _ => die "cannot merge -profile-stack false with -profile-stack true"
+	  | _ =>
+	       Error.bug
+	       "cannot merge -profile-stack false with -profile-stack true"
    end
 
 structure ProfFile =
@@ -246,25 +247,30 @@ structure ProfFile =
 	     val _ =
 		if "MLton prof\n" = In.inputLine ins
 		   then ()
-		else die (concat [mlmonfile,
-				  " does not appear to be an mlmon file"])
+		else Error.bug "bad header"
 	     val kind =
 		case In.inputLine ins of
 		   "alloc\n" => Kind.Alloc
 		 | "time\n" => Kind.Time
-		 | _ => die "invalid profile kind"
+		 | _ => Error.bug "invalid profile kind"
 	     val style =
 		case In.inputLine ins of
 		   "current\n" => Style.Current
 		 | "stack\n" => Style.Stack
-		 | _ => die "invalid profile style"
+		 | _ => Error.bug "invalid profile style"
 	     fun line () = String.dropSuffix (In.inputLine ins, 1)
-	     val magic = valOf (Word.fromString (line ()))
-	     val s2i = valOf o IntInf.fromString
+	     val magic =
+		case Word.fromString (line ()) of
+		   NONE => Error.bug "invalid magic"
+		 | SOME w => w
+	     fun s2i s =
+		case IntInf.fromString s of
+		   NONE => Error.bug "invalid count"
+		 | SOME i => i
 	     val (total, totalGC) =
 		case String.tokens (line (), Char.isSpace) of
 		   [total, totalGC] => (s2i total, s2i totalGC)
-		 | _ => die "invalid totals"
+		 | _ => Error.bug "invalid totals"
 	     fun getCounts (fromLine: string -> 'a): 'a vector =
 		let
 		   fun loop ac =
@@ -279,13 +285,17 @@ structure ProfFile =
 		   Style.Current => Counts.Current (getCounts s2i)
 		 | Style.Stack =>
 		      Counts.Stack
-		      (getCounts (fn s =>
-				  case String.tokens (s, Char.isSpace) of
-				     [c, s, sGC] =>
-					{current = s2i c,
-					 stack = s2i s,
-					 stackGC = s2i sGC}
-				   | _ => die (concat ["strange line: ", s])))
+		      (getCounts
+		       (fn s =>
+			case String.tokens (s, Char.isSpace) of
+			   [c, s, sGC] =>
+			      {current = s2i c,
+			       stack = s2i s,
+			       stackGC = s2i sGC}
+			 | _ =>
+			      Error.bug
+			      (concat ["strange line: ",
+				       String.dropSuffix (s, 1)])))
 	  in
 	     T {counts = counts,
 		kind = kind,
@@ -293,12 +303,12 @@ structure ProfFile =
 		total = total,
 		totalGC = totalGC}
 	  end)
-
+   
       fun merge (T {counts = c, kind = k, magic = m, total = t, totalGC = g},
 		 T {counts = c', kind = k', magic = m', total = t', totalGC = g',
 		    ...}): t =
 	 if m <> m'
-	    then die "incompatible mlmon files"
+	    then Error.bug "wrong magic number"
 	 else
 	    T {counts = Counts.merge (c, c'),
 	       kind = Kind.merge (k, k'),
@@ -365,17 +375,16 @@ structure NodePred =
 
       val layout = Sexp.layout o toSexp
 
-      val fromString: string -> t Result.t =
+      val fromString: string -> t =
 	 fn s =>
 	 case Sexp.fromString s of
-	    Sexp.Eof => Result.No "empty"
-	  | Sexp.Error s => Result.No s
+	    Sexp.Eof => Error.bug "empty"
+	  | Sexp.Error s => Error.bug s
 	  | Sexp.Sexp s =>
 	       let
-		  exception Err of string
 		  fun parse (s: Sexp.t): t =
 		     let
-			fun err () = raise Err (Sexp.toString s)
+			fun err () = Error.bug (Sexp.toString s)
 		     in			   
 			case s of
 			   Sexp.Atom s =>
@@ -427,7 +436,7 @@ structure NodePred =
 				     (Atomic.Name (s, Regexp.compileNFA r)))
 		     end
 	       in
-		  Result.Yes (parse s) handle Err s => Result.No s
+		  parse s
 	       end
 
       fun nodes (p: t, g: Graph.t,
@@ -742,10 +751,9 @@ fun makeOptions {usage} =
       List.map
       ([(Normal, "graph", " <pred>", "show graph nodes",
 	 SpaceString (fn s =>
-		      case NodePred.fromString s of
-			 Result.No s =>
-			    usage (concat ["invalid -graph arg: ", s])
-		       | Result.Yes p => graphPred := SOME p)),
+		      graphPred := SOME (NodePred.fromString s)
+		      handle e => usage (concat ["invalid -graph arg: ",
+						 Exn.toString e]))),
 	(Normal, "graph-title", " <string>", "set call-graph title",
 	 SpaceString (fn s => title := SOME s)),
 	(Normal, "mlmon", " <file>", "file with list of mlmon files",
@@ -771,6 +779,8 @@ val {parse, usage} =
 		   makeOptions = makeOptions,
 		   showExpert = fn () => false}
 
+val die = Process.fail
+   
 fun commandLine args =
    let
       val rest = parse args
@@ -780,7 +790,10 @@ fun commandLine args =
 	| Result.Yes (afile :: files) =>
 	     let
 		val mlmonFiles = files @ !mlmonFiles 
-		val aInfo = AFile.new {afile = afile}
+		val aInfo =
+		   AFile.new {afile = afile}
+		   handle e => die (concat ["error in ", afile, ": ",
+					    Exn.toString e])
 		val _ =
 		   if debug
 		      then
@@ -791,8 +804,11 @@ fun commandLine args =
 		   List.fold
 		   (mlmonFiles, ProfFile.empty aInfo,
 		    fn (mlmonfile, profFile) =>
-		    ProfFile.merge (profFile,
-				    ProfFile.new {mlmonfile = mlmonfile}))
+		    ProfFile.merge
+		    (profFile, ProfFile.new {mlmonfile = mlmonfile})
+		    handle e =>
+		       die (concat ["error in ", mlmonfile, ": ",
+				    Exn.toString e]))
 		val _ =
 		   if debug
 		      then
