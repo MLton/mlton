@@ -151,7 +151,7 @@ libraries:
 		echo "Type checking $$f library.";		\
 		$(MLTON) -disable-ann deadCode 			\
 			-stop tc 				\
-			"$$(MLTON_ROOT)/$$f/$$f.mlb" 		\
+			'$$(MLTON_ROOT)/'"$$f/$$f.mlb" 		\
 			>/dev/null;				\
 	done
 
