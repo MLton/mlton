@@ -2592,21 +2592,34 @@ struct
 	[comment_begin,
 	 (case Prim.name prim
 	    of GC_collect
-	     => AppendList.single
-	        (Block.T'
-		 {entry = NONE,
-		  profileInfo = ProfileInfo.none,
-		  statements = [],
-		  transfer 
-		  = SOME (Transfer.runtime 
-			  {prim = prim,
-			   args = [(Operand.immediate_label gcState, pointerSize),
-				   (Operand.immediate_const_int 0, wordSize),
-				   (Operand.immediate_const_int 1, wordSize),
-				   (fileName, pointerSize),
-				   (fileLine (), wordSize)],
-			   return = return,
-			   size = frameSize})})
+	     => let
+		  val ((amount,amountsize),
+		       (force,forcesize)) = getSrc2 ()
+		  val _ 
+		    = Assert.assert
+		      ("runtimecall: GC_collect, amountsize",
+		       fn () => amountsize = wordSize)
+		  val _ 
+		    = Assert.assert
+		      ("runtimecall: GC_collect, forcesize",
+		       fn () => forcesize = wordSize)
+		in 
+		  AppendList.single
+		  (Block.T'
+		   {entry = NONE,
+		    profileInfo = ProfileInfo.none,
+		    statements = [],
+		    transfer 
+		    = SOME (Transfer.runtime 
+			    {prim = prim,
+			     args = [(Operand.immediate_label gcState, pointerSize),
+				     (amount,amountsize),
+				     (force,forcesize),
+				     (fileName, pointerSize),
+				     (fileLine (), wordSize)],
+			     return = return,
+			     size = frameSize})})
+		end
 	     | MLton_halt
 	     => let
 		  val (status,statussize) = getSrc1 ()
