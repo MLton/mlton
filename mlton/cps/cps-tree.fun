@@ -1397,7 +1397,11 @@ structure Function =
 					      Layout.toString
 					      (Layout.vector
 					       (Vector.map (args,
-							    Var.layout o #1)))])
+							    Var.layout o #1))),
+					      " ",
+					      Layout.toString
+					      (List.layout Jump.layout
+					       (jumpHandlers name))])
 				; ac)
 			  | HandlerPop => "HandlerPop\\l" :: ac
 			  | HandlerPush l =>
