@@ -344,16 +344,16 @@ fun commandLine (args: string list): unit =
       val _ = if not (!Native.native) andalso !Native.IEEEFP
 		 then usage "can't use -native false and -ieee-fp true"
 	      else ()
-      val _ = if not (!Native.native) andalso !profile <> ProfileNone
-		 then usage "can't profile with -native false"
+      val _ = if not (!Native.native) andalso !profile = ProfileTime
+		 then usage "can't use -profile time with -native false"
 	      else ()
       val _ =
 	 if !keepDot andalso List.isEmpty (!keepPasses)
 	    then keepSSA := true
 	 else ()
       val _ =
-	 if !hostType = Cygwin andalso !profile <> ProfileNone
-	    then usage "profiling not allowed on Cygwin"
+	 if !hostType = Cygwin andalso !profile = ProfileTime
+	    then usage "can't use -profile time on Cygwin"
 	 else ()
       fun printVersion () = print (concat [version, " ", build, "\n"])
    in

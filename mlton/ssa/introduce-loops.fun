@@ -19,13 +19,9 @@ structure Return =
    struct
       open Return
 
-      (* Can't use the usual definition of isTail because it includes Dead,
-       * which we can't turn into loops because the profile stack might be off.
-       *)
       fun isTail (z: t): bool =
 	 case z of
 	    Dead => false
-	  | HandleOnly => true
 	  | NonTail _ => false
 	  | Tail => true
    end

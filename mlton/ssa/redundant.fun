@@ -148,7 +148,6 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 			  in
 			     case ret of
 				Return.Dead => ()
-			      | Return.HandleOnly => ()
 			      | Return.NonTail {cont, ...} =>
 				   Option.app (return', fn e =>
 					       Eqrel.unify (e, labelInfo cont))

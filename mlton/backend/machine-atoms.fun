@@ -9,7 +9,7 @@ functor MachineAtoms (S: MACHINE_ATOMS_STRUCTS): MACHINE_ATOMS =
 struct
 
 open S
-   
+
 structure PointerTycon =
    struct
       datatype t = T of {index: int,
@@ -54,9 +54,10 @@ structure TypeAndMemChunk =
        | CPointer
        | EnumPointers of {enum: int vector,
 			  pointers: PointerTycon.t vector}
+       | ExnStack
        | Int
        | IntInf
-       | Label
+       | Label of Label.t
        | MemChunk of memChunk
        | Real
        | Word
@@ -81,9 +82,10 @@ structure TypeAndMemChunk =
 		     Vector.layout (fn x => x)
 		     (Vector.concat [Vector.map (enum, Int.layout),
 				     Vector.map (pointers, PointerTycon.layout)])
+	     | ExnStack => str "exnStack"
 	     | Int => str "int"
 	     | IntInf => str "intInf"
-	     | Label => str "Label"
+	     | Label l => seq [str "Label ", Label.layout l]
 	     | MemChunk m => seq [str "MemChunk ", layoutMemChunk m]
 	     | Real => str "real"
 	     | Word => str "word"
@@ -107,9 +109,10 @@ structure TypeAndMemChunk =
 	       e = e'
 	       andalso (MLton.eq (p, p')
 			orelse Vector.equals (p, p', PointerTycon.equals))
+          | (ExnStack, ExnStack) => true
 	  | (Int, Int) => true
 	  | (IntInf, IntInf) => true
-	  | (Label, Label) => true
+	  | (Label l, Label l') => Label.equals (l, l')
 	  | (MemChunk m, MemChunk m') => equalsMemChunk (m, m')
 	  | (Real, Real) => true
 	  | (Word, Word) => true
@@ -131,9 +134,10 @@ structure TypeAndMemChunk =
 	    fn Char => byte
 	     | CPointer => word
 	     | EnumPointers _ => word
+	     | ExnStack => word
 	     | Int => word
 	     | IntInf => word
-	     | Label => word
+	     | Label _ => word
 	     | MemChunk _ => word
 	     | Real => double
 	     | Word => word
@@ -148,9 +152,10 @@ structure TypeAndMemChunk =
 	       andalso Vector.isSorted (pointers, PointerTycon.<=)
 	       andalso (0 = Vector.length pointers
 			orelse Vector.forall (enum, Int.isOdd))
+	  | ExnStack => true
 	  | Int => true
 	  | IntInf => true
-	  | Label => true
+	  | Label _ => true
 	  | MemChunk m => isOkMemChunk m
 	  | Real => true
 	  | Word => true
@@ -216,6 +221,7 @@ structure Type =
 			       pointers = Vector.new0 ()}
       val char = Char
       val cpointer = CPointer
+      val exnStack = ExnStack
       val int = Int
       val intInf = IntInf
       val label = Label
@@ -265,9 +271,10 @@ structure Type =
 		  if 0 = Vector.length pointers
 		     then R.int
 		  else R.pointer
+	     | ExnStack => R.uint
 	     | Int => R.int
 	     | IntInf => R.pointer
-	     | Label => R.uint
+	     | Label _ => R.uint
 	     | MemChunk _ => R.pointer
 	     | Real => R.double
 	     | Word => R.word

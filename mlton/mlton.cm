@@ -215,6 +215,7 @@ atoms/atoms.fun
 atoms/hash-type.sig
 atoms/cases.sig
 ssa/source-info.sig
+ssa/profile-exp.sig
 ssa/ssa-tree.sig
 ssa/direct-exp.sig
 ssa/analyze.sig
@@ -309,8 +310,6 @@ backend/machine.fun
 ../lib/mlton/basic/unique-set.fun
 backend/rssa.sig
 backend/ssa-to-rssa.sig
-backend/implement-handlers.sig
-backend/implement-handlers.fun
 backend/representation.sig
 backend/representation.fun
 backend/ssa-to-rssa.fun
@@ -323,6 +322,8 @@ backend/parallel-move.sig
 backend/parallel-move.fun
 backend/limit-check.sig
 backend/limit-check.fun
+backend/implement-handlers.sig
+backend/implement-handlers.fun
 backend/equivalence-graph.sig
 backend/equivalence-graph.fun
 backend/chunkify.sig

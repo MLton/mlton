@@ -657,9 +657,10 @@ fun restoreFunction (globals: Statement.t vector)
 				    exp = HandlerPush handlerWrap}),
 		     transfer = Call {func = func,
 				      args = args,
-				      return = Return.NonTail
-				               {cont = contWrap,
-						handler = Handler.Handle handlerWrap}}}
+				      return =
+				      Return.NonTail
+				      {cont = contWrap,
+				       handler = Handler.Handle handlerWrap}}}
 		val _ = List.push (blocks, callWrapBlock)
 	      in
 		Goto {dst = callWrap, args = Vector.new0 ()}
@@ -671,8 +672,9 @@ fun restoreFunction (globals: Statement.t vector)
 	    in
 	      case t
 		of Call {func, args, 
-			 return = Return.NonTail {cont,
-						  handler = Handler.Handle handler}}
+			 return = (Return.NonTail
+				   {cont,
+				    handler = Handler.Handle handler})}
 		 => if Vector.length (LabelInfo.phiArgs' (labelInfo handler)) = 0
 		      then default ()
 		      else rewriteNonTailHandle {func = func,

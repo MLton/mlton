@@ -49,7 +49,6 @@ structure CFunction =
 	       modifiesFrontier = true,
 	       modifiesStackTop = false,
 	       name = name,
-	       needsProfileAllocIndex = true,
 	       returnTy = SOME Type.pointer}
       in
 	 val intInfAdd = make ("IntInf_do_add", 2)
@@ -84,7 +83,6 @@ structure CFunction =
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "GC_copyCurrentThread",
-	    needsProfileAllocIndex = true,
 	    returnTy = NONE}
 
       val copyThread =
@@ -95,7 +93,6 @@ structure CFunction =
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "GC_copyThread",
-	    needsProfileAllocIndex = true,
 	    returnTy = SOME Type.pointer}
 
       val exit =
@@ -106,7 +103,6 @@ structure CFunction =
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "MLton_exit",
-	    needsProfileAllocIndex = false,
 	    returnTy = NONE}
 
       val gcArrayAllocate =
@@ -117,7 +113,6 @@ structure CFunction =
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "GC_arrayAllocate",
-	    needsProfileAllocIndex = true,
 	    returnTy = SOME Type.pointer}
 
       local
@@ -129,7 +124,6 @@ structure CFunction =
 	       modifiesFrontier = true,
 	       modifiesStackTop = true,
 	       name = name,
-	       needsProfileAllocIndex = false,
 	       returnTy = NONE}
       in
 	 val pack = make "GC_pack"
@@ -144,7 +138,6 @@ structure CFunction =
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "Thread_switchTo",
-	    needsProfileAllocIndex = false,
 	    returnTy = NONE}
 
       val worldSave =
@@ -155,7 +148,6 @@ structure CFunction =
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "GC_saveWorld",
-	    needsProfileAllocIndex = false,
 	    returnTy = NONE}
    end
 
@@ -163,7 +155,6 @@ datatype z = datatype Operand.t
 datatype z = datatype Statement.t
 datatype z = datatype Transfer.t
 
-structure ImplementHandlers = ImplementHandlers (structure Ssa = Ssa)
 structure Representation = Representation (structure Rssa = Rssa
 					   structure Ssa = Ssa)
 local
@@ -174,10 +165,9 @@ in
    structure TyconRep = TyconRep
 end
 
-fun convert (p: S.Program.t): Rssa.Program.t =
+fun convert (program as S.Program.T {functions, globals, main, ...})
+   : Rssa.Program.t =
    let
-      val program as S.Program.T {datatypes, globals, functions, main} =
-	 ImplementHandlers.doit p
       val {conRep, objectTypes, refRep, toRtype, tupleRep, tyconRep} =
 	 Representation.compute program
       val conRep =
@@ -501,7 +491,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	 end
       val {get = labelInfo: (Label.t ->
 			     {args: (Var.t * S.Type.t) vector,
-			      cont: (Label.t option * Label.t) list ref,
+			      cont: (Handler.t * Label.t) list ref,
 			      handler: Label.t option ref}),
 	   set = setLabelInfo, ...} =
 	 Property.getSetOnce (Label.plist,
@@ -547,22 +537,12 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	    val info as {cont, ...} = labelInfo l
 	    datatype z = datatype Handler.t
 	 in
-	    case List.peek (!cont, fn (h', _) =>
-			    case (h, h') of
-			       (CallerHandler, NONE) => true
-			     | (None, NONE) => true
-			     | (Handle l, SOME l') => Label.equals (l, l')
-			     | _ => false) of
+	    case List.peek (!cont, fn (h', _) => Handler.equals (h, h')) of
 	       SOME (_, l) => l
 	     | NONE =>
 		  let
-		     val handler =
-			case h of
-			   CallerHandler => NONE
-			 | None => NONE
-			 | Handle l => SOME l
-		     val l' = eta (l, Kind.Cont {handler = handler})
-		     val _ = List.push (cont, (handler, l'))
+		     val l' = eta (l, Kind.Cont {handler = h})
+		     val _ = List.push (cont, (h, l'))
 		  in
 		     l'
 		  end
@@ -602,20 +582,23 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	  | S.Transfer.Bug => Transfer.bug
 	  | S.Transfer.Call {func, args, return} =>
 	       let
-		  datatype z = datatype Return.t
-		  datatype z = datatype Handler.t
+		  datatype z = datatype S.Return.t
 		  val return =
 		     case return of
-			NonTail {cont, handler} =>
+			Dead => Return.Dead
+		      | NonTail {cont, handler} =>
 			   let
-			      val handler = Handler.map 
-				            (handler, fn handler =>
-					     labelHandler handler)
+			      datatype z = datatype S.Handler.t
+			      val handler =
+				 case handler of
+				    Caller => Handler.Caller
+				  | Dead => Handler.Dead
+				  | Handle l => Handler.Handle (labelHandler l)
 			   in
-			      NonTail {cont = labelCont (cont, handler),
-				       handler = handler}
+			      Return.NonTail {cont = labelCont (cont, handler),
+					      handler = handler}
 			   end
-		      | _ => return
+		      | Tail => Return.Tail
 	       in
 		  Transfer.Call {func = func,
 				 args = vos args,
@@ -666,13 +649,13 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	    case t of
 	       Type.Char =>
 		  c (Const.fromChar #"\000")
-	     | Type.CPointer =>
-		  Error.bug "bogus CPointer"
+	     | Type.CPointer => Error.bug "bogus CPointer"
 	     | Type.EnumPointers (ep as {enum, ...})  =>
 		  Operand.Cast (Operand.int 1, t)
+	     | Type.ExnStack => Error.bug "bogus ExnStack"
 	     | Type.Int => c (Const.fromInt 0)
 	     | Type.IntInf => SmallIntInf 0wx1
-	     | Type.Label => Error.bug "bogus Label"
+	     | Type.Label _ => Error.bug "bogus Label"
 	     | Type.MemChunk _ => Error.bug "bogus MemChunk"
 	     | Type.Real => c (Const.fromReal "0.0")
 	     | Type.Word => c (Const.fromWord 0w0)
@@ -754,6 +737,10 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			     | ConRep.Tuple rep =>
 				  allocate (args, rep))
 		      | S.Exp.Const c => move (Operand.Const c)
+		      | S.Exp.HandlerPop l =>
+			   add (Statement.HandlerPop (labelHandler l))
+		      | S.Exp.HandlerPush l =>
+			   add (Statement.HandlerPush (labelHandler l))
 		      | S.Exp.PrimApp {prim, targs, args, ...} =>
 			   let
 			      fun a i = Vector.sub (args, i)
@@ -1195,7 +1182,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 					   func = CFunction.worldSave}
 			       | _ => normal ()
 			   end
-		      | S.Exp.Profile pe => add (Statement.Profile pe)
+		      | S.Exp.Profile e => add (Statement.Profile e)
 		      | S.Exp.Select {tuple, offset} =>
 			   let
 			      val TupleRep.T {offsets, ...} =
@@ -1208,11 +1195,6 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 						  offset = offset,
 						  ty = ty})
 			   end
-		      | S.Exp.SetExnStackLocal => add SetExnStackLocal
-		      | S.Exp.SetExnStackSlot => add SetExnStackSlot
-		      | S.Exp.SetHandler h => 
-			   add (SetHandler (labelHandler h))
-		      | S.Exp.SetSlotExnStack => add SetSlotExnStack
 		      | S.Exp.Tuple ys =>
 			   if 0 = Vector.length ys
 			      then none ()
@@ -1221,7 +1203,6 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			   (case toRtype ty of
 			       NONE => none ()
 			     | SOME _ => move (varOp y))
-		      | _ => Error.bug "translateStatement saw strange PrimExp"
 		  end
 	 in
 	    loop (Vector.length statements - 1, [], transfer)
@@ -1279,12 +1260,12 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			    args = Vector.new0 (),
 			    statements = globals,
 			    transfer = (S.Transfer.Call
-					{func = main,
-					 args = Vector.new0 (),
+					{args = Vector.new0 (),
+					 func = main,
 					 return =
-					 Return.NonTail
+					 S.Return.NonTail
 					 {cont = bug,
-					  handler = S.Handler.None}})},
+					  handler = S.Handler.Caller}})},
 			   S.Block.T
 			   {label = bug,
 			    args = Vector.new0 (),

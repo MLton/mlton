@@ -1031,9 +1031,9 @@ signature X86 =
 	  | Cont of {label: Label.t,
 		     live: MemLocSet.t,
 		     frameInfo: FrameInfo.t}
-	  | Handler of {label: Label.t,
-			live: MemLocSet.t,
-			offset: int}
+	  | Handler of {frameInfo: FrameInfo.t,
+			label: Label.t,
+			live: MemLocSet.t}
 	  | CReturn of {dst: (Operand.t * Size.t) option,
 			frameInfo: FrameInfo.t option,
 			func: Runtime.CFunction.t,
@@ -1048,9 +1048,9 @@ signature X86 =
 		      label: Label.t}  -> t
 	val func : {label: Label.t,
 		    live: MemLocSet.t} -> t
-	val handler : {label: Label.t,
-		       live: MemLocSet.t,
-		       offset: int} -> t
+	val handler : {frameInfo: FrameInfo.t,
+		       label: Label.t,
+		       live: MemLocSet.t} -> t
 	val isFunc : t -> bool
 	val isNear : t -> bool
 	val jump : {label: Label.t} -> t

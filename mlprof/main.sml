@@ -138,11 +138,23 @@ structure Kind =
       val layout = Layout.str o toString
    end
 
+structure Style =
+   struct
+      datatype t = Cumulative | Current
+
+      val toString =
+	 fn Cumulative => "Cumulative"
+	  | Current => "Current"
+
+      val layout = Layout.str o toString
+   end
+
 structure ProfFile =
    struct
       datatype t = T of {counts: IntInf.t vector,
 			 kind: Kind.t,
-			 magic: word}
+			 magic: word,
+			 total: IntInf.t}
 
       local
 	 fun make f (T r) = f r
@@ -150,9 +162,10 @@ structure ProfFile =
 	 val kind = make #kind
       end
 
-      fun layout (T {counts, kind, magic}) =
+      fun layout (T {counts, kind, magic, total}) =
 	 Layout.record [("kind", Kind.layout kind),
 			("magic", Word.layout magic),
+			("total", IntInf.layout total),
 			("counts", Vector.layout IntInf.layout counts)]
 
       fun new {mlmonfile: File.t}: t =
@@ -169,8 +182,14 @@ structure ProfFile =
 		   "alloc\n" => Kind.Alloc
 		 | "time\n" => Kind.Time
 		 | _ => die "invalid profile kind"
+	     val style =
+		case In.inputLine ins of
+		   "cumulative\n" => Style.Cumulative
+		 | "current\n" => Style.Current
+		 | _ => die "invalid profile style"
 	     fun line () = String.dropSuffix (In.inputLine ins, 1)
 	     val magic = valOf (Word.fromString (line ()))
+	     val total = valOf (IntInf.fromString (line ()))
 	     fun loop ac =
 		case In.inputLine ins of
 		   "" => Vector.fromListRev ac
@@ -179,24 +198,26 @@ structure ProfFile =
 	  in
 	     T {counts = counts,
 		kind = kind,
-		magic = magic}
+		magic = magic,
+		total = total}
 	  end)
 
       val new =
 	 Trace.trace ("ProfFile.new", File.layout o #mlmonfile, layout) new
 
-      fun merge (T {counts = c, kind = k, magic = m},
-		 T {counts = c', magic = m', ...}): t =
+      fun merge (T {counts = c, kind = k, magic = m, total = t},
+		 T {counts = c', magic = m', total = t', ...}): t =
 	 if m <> m'
 	    then die "incompatible mlmon files"
 	 else
 	    T {counts = Vector.map2 (c, c', IntInf.+),
 	       kind = k,
-	       magic = m}
+	       magic = m,
+	       total = IntInf.+ (t, t')}
    end
 
 fun attribute (AFile.T {magic = m, sources},
-	       ProfFile.T {counts, kind, magic = m'})
+	       ProfFile.T {counts, kind, magic = m', ...})
     : {name: string,
        ticks: IntInf.t} ProfileInfo.t option =
    if m <> m'
@@ -247,7 +268,7 @@ val replaceLine =
 	     end
     end)
 
-fun display (kind: Kind.t,
+fun display (ProfFile.T {kind, total, ...},
 	     counts: {name: string, ticks: IntInf.t} ProfileInfo.t,
 	     baseName: string,
 	     depth: int) =
@@ -265,11 +286,7 @@ fun display (kind: Kind.t,
 		stuffing: string list,
 		totals: real list) =
 	 let
-	    val totalInt =
-	       List.fold
-	       (profileInfo, IntInf.fromInt 0,
-		fn ({data = {ticks, ...}, ...}, total) =>
-		IntInf.+ (total, ticks))
+	    val totalInt = total
 	    val total = Real.fromIntInf totalInt
 	    val _ =
 	       if n = 0
@@ -486,7 +503,7 @@ fun commandLine args =
 		      NONE => die (concat [afile, " is incompatible with ",
 					   mlmonfile])
 		    | SOME z => z
-		val _ = display (ProfFile.kind profFile, info, afile, !depth)
+		val _ = display (profFile, info, afile, !depth)
 	     in
 		()
 	     end

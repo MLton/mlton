@@ -14,38 +14,12 @@ signature RSSA_STRUCTS =
 
       structure Const: CONST
       structure Func: HASH_ID
-      structure Handler:
-	 sig
-	    datatype t =
-	       CallerHandler
-	     | None
-	     | Handle of Label.t (* label must be of Handler kind *)
-
-	    val foreachLabel: t * (Label.t -> unit) -> unit
-	    val layout: t -> Layout.t
-	    val map: t * (Label.t -> Label.t) -> t
-	 end
-      structure ProfileStatement:
-	 sig
-	    datatype t =
-	       Enter of SourceInfo.t
-	     | Leave of SourceInfo.t
-
-	    val layout: t -> Layout.t
-	 end
-      structure Return:
-	 sig
-	    datatype t =
-	       Dead
-	     | HandleOnly
-	     | NonTail of {cont: Label.t, (* label must be of Cont kind *)
-			   handler: Handler.t} (* must agree with the handler
-						* associated with the cont. *)
-	     | Tail
-
-	    val foldLabel: t * 'a * (Label.t * 'a -> 'a) -> 'a
-	    val foreachLabel: t * (Label.t -> unit) -> unit
-	 end
+      structure Handler: HANDLER
+      sharing Handler.Label = Label
+      structure ProfileExp: PROFILE_EXP
+      sharing ProfileExp.SourceInfo = SourceInfo
+      structure Return: RETURN
+      sharing Return.Handler = Handler
       structure Var: VAR
    end
 
@@ -106,6 +80,8 @@ signature RSSA =
 	       Bind of {isMutable: bool,
 			oper: Operand.t,
 			var: Var.t}
+	     | HandlerPop of Label.t (* the label is redundant, but useful *)
+	     | HandlerPush of Label.t
 	     | Move of {dst: Operand.t,
 			src: Operand.t}
 	     | Object of {dst: Var.t,
@@ -118,7 +94,7 @@ signature RSSA =
 	     | PrimApp of {args: Operand.t vector,
 			   dst: (Var.t * Type.t) option,
 			   prim: Prim.t}
-	     | Profile of ProfileStatement.t
+	     | Profile of ProfileExp.t
 	     | ProfileLabel of ProfileLabel.t
 	     | SetExnStackLocal
 	     | SetExnStackSlot
@@ -136,8 +112,9 @@ signature RSSA =
 	    val foldUse: t * 'a * (Var.t * 'a -> 'a) -> 'a
 	    val foreachUse: t * (Var.t -> unit) -> unit
 	    val layout: t -> Layout.t
+	    val toString: t -> string
 	 end
-      
+
       structure Transfer:
 	 sig
 	    datatype t =
@@ -188,7 +165,7 @@ signature RSSA =
       structure Kind:
 	 sig
 	    datatype t =
-	       Cont of {handler: Label.t option}
+	       Cont of {handler: Handler.t}
 	     | CReturn of {func: CFunction.t}
 	     | Handler
 	     | Jump
@@ -248,6 +225,7 @@ signature RSSA =
 		     objectTypes: ObjectType.t vector}
 
 	    val clear: t -> unit
+	    val checkHandlers: t -> unit
 	    val handlesSignals: t -> bool
 	    val layouts: t * (Layout.t -> unit) -> unit
 	    val typeCheck: t -> unit

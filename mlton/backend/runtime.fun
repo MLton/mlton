@@ -19,11 +19,11 @@ structure GCField =
 	 CanHandle
        | CardMap
        | CurrentThread
+       | ExnStack
        | Frontier
        | Limit
        | LimitPlusSlop
        | MaxFrameSize
-       | ProfileAllocIndex
        | SignalIsPending
        | StackBottom
        | StackLimit
@@ -35,11 +35,11 @@ structure GCField =
 	 fn CanHandle => Type.int
 	  | CardMap => Type.pointer
 	  | CurrentThread => Type.pointer
+	  | ExnStack => Type.word
 	  | Frontier => Type.pointer
 	  | Limit => Type.pointer
 	  | LimitPlusSlop => Type.pointer
 	  | MaxFrameSize => Type.word
-	  | ProfileAllocIndex => Type.word
 	  | SignalIsPending => Type.int
 	  | StackBottom => Type.pointer
 	  | StackLimit => Type.pointer
@@ -52,15 +52,14 @@ structure GCField =
       val limitOffset: int ref = ref 0
       val limitPlusSlopOffset: int ref = ref 0
       val maxFrameSizeOffset: int ref = ref 0
-      val profileAllocIndexOffset: int ref = ref 0
       val signalIsPendingOffset: int ref = ref 0
       val stackBottomOffset: int ref = ref 0
       val stackLimitOffset: int ref = ref 0
       val stackTopOffset: int ref = ref 0
 
       fun setOffsets {canHandle, cardMap, currentThread, frontier, limit,
-		      limitPlusSlop, maxFrameSize, profileAllocIndex,
-		      signalIsPending, stackBottom, stackLimit, stackTop} =
+		      limitPlusSlop, maxFrameSize, signalIsPending, stackBottom,
+		      stackLimit, stackTop} =
 	 (canHandleOffset := canHandle
 	  ; cardMapOffset := cardMap
 	  ; currentThreadOffset := currentThread
@@ -68,7 +67,6 @@ structure GCField =
 	  ; limitOffset := limit
 	  ; limitPlusSlopOffset := limitPlusSlop
 	  ; maxFrameSizeOffset := maxFrameSize
-	  ; profileAllocIndexOffset := profileAllocIndex
 	  ; signalIsPendingOffset := signalIsPending
 	  ; stackBottomOffset := stackBottom
 	  ; stackLimitOffset := stackLimit
@@ -78,11 +76,11 @@ structure GCField =
 	 fn CanHandle => !canHandleOffset
 	  | CardMap => !cardMapOffset
 	  | CurrentThread => !currentThreadOffset
+	  | ExnStack => Error.bug "exn stack offset not defined"
 	  | Frontier => !frontierOffset
 	  | Limit => !limitOffset
 	  | LimitPlusSlop => !limitPlusSlopOffset
 	  | MaxFrameSize => !maxFrameSizeOffset
-	  | ProfileAllocIndex => !profileAllocIndexOffset
 	  | SignalIsPending => !signalIsPendingOffset
 	  | StackBottom => !stackBottomOffset
 	  | StackLimit => !stackLimitOffset
@@ -92,11 +90,11 @@ structure GCField =
 	 fn CanHandle => "CanHandle"
 	  | CardMap => "CardMap"
 	  | CurrentThread => "CurrentThread"
+	  | ExnStack => "ExnStack"
 	  | Frontier => "Frontier"
 	  | Limit => "Limit"
 	  | LimitPlusSlop => "LimitPlusSlop"
 	  | MaxFrameSize => "MaxFrameSize"
-	  | ProfileAllocIndex => "ProfileAllocIndex"
 	  | SignalIsPending => "SignalIsPending"
 	  | StackBottom => "StackBottom"
 	  | StackLimit => "StackLimit"

@@ -128,7 +128,6 @@ val gcFields =
     "limit",
     "limitPlusSlop",
     "maxFrameSize",
-    "profileAllocIndex",
     "signalIsPending",
     "stackBottom",
     "stackLimit",

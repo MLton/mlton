@@ -380,7 +380,6 @@ fun preCodegen {input, docc}: Machine.Program.t =
 	     limit = get "limit",
 	     limitPlusSlop = get "limitPlusSlop",
 	     maxFrameSize = get "maxFrameSize",
-	     profileAllocIndex = get "profileAllocIndex",
 	     signalIsPending = get "signalIsPending",
 	     stackBottom = get "stackBottom",
 	     stackLimit = get "stackLimit",

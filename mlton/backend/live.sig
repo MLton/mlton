@@ -21,5 +21,6 @@ signature LIVE =
 			(* live at the beginning of a block, except formals. *)
 			beginNoFormals: Var.t list,
 			(* live handler slots at beginning of block. *)
-			handlerSlots: bool * bool}
+			handler: Label.t option,
+			link: bool}
    end

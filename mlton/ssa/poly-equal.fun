@@ -165,8 +165,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 						 fn ((x, ty), (y, _), de) =>
 						 Dexp.conjoin (de, equal (x, y, ty)))})}}
 			    end))})
-		  val (start, blocks) =
-		     Dexp.linearize (body, Handler.CallerHandler)
+		  val (start, blocks) = Dexp.linearize (body, Handler.Caller)
 		  val blocks = Vector.fromList blocks
 		  val _ =
 		     newFunction {args = args,
@@ -214,8 +213,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 				      (Dexp.int 0, length dv1, dv1, dv2)),
 			      ty = Type.bool}))
 			end
-		     val (start, blocks) =
-			Dexp.linearize (body, Handler.CallerHandler)
+		     val (start, blocks) = Dexp.linearize (body, Handler.Caller)
 		     val blocks = Vector.fromList blocks
 		  in
 		     val _ =
@@ -255,8 +253,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 				       dlen, dv1, dv2)),
 			      ty = Type.bool}))
 			end
-		     val (start, blocks) =
-			Dexp.linearize (body, Handler.CallerHandler)
+		     val (start, blocks) = Dexp.linearize (body, Handler.Caller)
 		     val blocks = Vector.fromList blocks
 		  in
 		     val _ =
@@ -382,7 +379,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 					 val (start',bs') =
 					    Dexp.linearizeGoto
 					    (equal (arg 0, arg 1, ty),
-					     Handler.None,
+					     Handler.Dead,
 					     l)
 				      in
 					(finish (las, 

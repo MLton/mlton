@@ -169,18 +169,17 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 		      in
 			case return of
 			   Return.Dead => ()
-			 | Return.HandleOnly => unifyRaises ()
 			 | Return.NonTail {cont, handler} =>
 			      (Option.app 
 			       (funcReturns, fn rs =>
 				Rep.unifys (rs, labelArgs cont))
 			       ; case handler of
-			            Handler.CallerHandler => unifyRaises ()
+			            Handler.Caller => unifyRaises ()
+				  | Handler.Dead => ()
 				  | Handler.Handle handler =>
 				       Option.app
 				       (funcRaises, fn rs =>
-					Rep.unifys (rs, labelArgs handler))
-				  | Handler.None => ())
+					Rep.unifys (rs, labelArgs handler)))
 			 | Return.Tail => (unifyReturns (); unifyRaises ())
 		      end
 		 | Goto {dst, args} => coerces (args, labelArgs dst)

@@ -63,6 +63,8 @@ typedef W32 Header;
 
 /* Sizes are (almost) always measured in bytes. */
 enum {
+	DEBUG_PROFILE_ALLOC = 	FALSE,
+	DEBUG_PROFILE_TIME = 	FALSE,
 	WORD_SIZE = 		4,
 	COUNTER_MASK =		0x7FF00000,
 	COUNTER_SHIFT =		20,
@@ -73,6 +75,8 @@ enum {
 	LIMIT_SLOP = 		512,
 	MARK_MASK =		0x80000000,
 	POINTER_SIZE =		WORD_SIZE,
+	SOURCES_INDEX_UNKNOWN = 0,
+	SOURCES_INDEX_GC =	1,
 	SOURCE_SEQ_UNKNOWN = 	0,
 	STACK_TYPE_INDEX =	0,
 	STRING_TYPE_INDEX = 	1,
@@ -82,6 +86,11 @@ enum {
 };
 
 #define TWOPOWER(n) (1 << (n))
+
+typedef enum {
+	PROFILE_CURRENT,
+	PROFILE_CUMULATIVE,
+} ProfileStyle;
 
 /* ------------------------------------------------- */
 /*                    object type                    */
@@ -102,7 +111,6 @@ typedef struct {
 /* ------------------------------------------------- */
 /*                  initialization                   */
 /* ------------------------------------------------- */
-
 
 /*
  * GC_init uses the array of struct intInfInits in s at program start to 
@@ -128,11 +136,6 @@ struct GC_stringInit {
   char *str;
   uint size;
 };
-
-typedef struct GC_profileLabel {
-	pointer label;
-	uint sourceSeqsIndex;
-} *GC_profileLabel;
 
 /* ------------------------------------------------- */
 /*                  GC_frameLayout                   */
@@ -197,6 +200,52 @@ typedef struct GC_thread {
 } *GC_thread;
 
 /* ------------------------------------------------- */
+/*                     Profiling                     */
+/* ------------------------------------------------- */
+
+typedef struct GC_sourceLabel {
+	pointer label;
+	uint sourceSeqsIndex;
+} *GC_profileLabel;
+
+typedef struct GC_profileAlloc {
+	/* bytesAllocated is an array of length sourcesSize that counts for
+	 * each function the number of bytes that have been allocated.
+	 * If profileStyle == PROFILE_CURRENT, then it is the number while
+	 * that function was current.  If profileStyle == PROFILE_CUMULATIVE,
+	 * then it is the number while the function was on the stack.
+	 */
+	ullong *bytesAllocated;
+	/* lastTotal is an array of length sourcesSize that for each function, 
+	 * f, stores the value of totalBytesAllocated when the oldest occurrence
+	 * of f on the stack was pushed, i.e., the most recent time that 
+	 * stackCount[f] was changed from 0 to 1.  lastTotal is used to compute
+	 * the number of bytes to attribute to f when the oldest occurrence is
+	 * finally popped.  lastTotal is only used if 
+	 * profileStyle == PROFILE_CUMULATIVE.
+	 */
+	ullong *lastTotal;
+	/* stackCount is an array of length sourcesSize that counts the number 
+	 * of times each function is on the stack.  It is only used if 
+	 * profileStyle == PROFILE_CUMULATIVE.
+	 */
+ 	uint *stackCount;
+	ullong totalBytesAllocated;
+} *GC_profileAlloc;
+
+typedef struct GC_profileTime {
+	/* ticks is an array of length sourcesSize that counts for each function
+	 * the number of clock ticks that have happened while the function was
+	 * on top of the stack (if profileStyle == PROFILE_CURRENT) or anywhere
+	 * on the stack (if profileStyle == PROFILE_CUMULATIVE).
+ 	 * With a 32 bits, a counter cannot overflow for 2^32 / 100 seconds,
+	 * or a bit over 1 CPU year. 
+	 */
+	uint *ticks;
+	uint totalTicks;
+} *GC_profileTime;
+
+/* ------------------------------------------------- */
 /*                      GC_heap                      */
 /* ------------------------------------------------- */
 
@@ -257,10 +306,23 @@ typedef struct GC_state {
 	GC_heap crossMapHeap;	/* only used during GC. */
 	pointer crossMap;
 	uint crossMapSize;
+	/* currentSource is the index in sources of the currently executing
+	 * function.   This is only used when allocation profiling with
+	 * profileStyle = PROFILE_CURRENT;
+	 */
+	uint currentSource;
 	GC_thread currentThread; /* This points to a thread in the heap. */
 	uint fixedHeapSize; 	/* Only meaningful if useFixedHeap. */
 	GC_frameLayout *frameLayouts;
-	pointer *globals; 	/* An array of size numGlobals. */
+	uint frameLayoutsSize;
+	/* frameSources is an array of length frameLayoutsSize that for each
+	 * stack frame, gives an index into sourceSeqs of the sequence of 
+	 * source functions corresponding to the frame.
+	 */
+	uint *frameSources;
+	uint frameSourcesSize;
+	pointer *globals;
+	uint globalsSize;
 	float growRatio;
 	struct GC_heap heap;
 	struct GC_heap heap2;	/* Used for major copying collection. */
@@ -299,13 +361,10 @@ typedef struct GC_state {
  	 */
 	bool native;
 	uint numCopyingGCs;
-	uint numFrameLayouts; /* 0 <= frameIndex < numFrameLayouts */
-	uint numGlobals;	/* Number of pointers in globals array. */
  	ullong numLCs;
  	uint numMarkCompactGCs;
 	uint numMinorGCs;
 	uint numMinorsSinceLastMajor;
-	uint numObjectTypes; /* 0 <= typeIndex < numObjectTypes */
 	/* As long as the ratio of bytes live to nursery size is greater than
 	 * nurseryRatio, use minor GCs.
 	 */
@@ -313,30 +372,17 @@ typedef struct GC_state {
 	pointer nursery;
 	uint nurserySize;
 	GC_ObjectType *objectTypes; /* Array of object types. */
+	uint objectTypesSize;
 	/* Arrays larger than oldGenArraySize are allocated in the old generation
 	 * instead of the nursery, if possible.
 	 */
 	W32 oldGenArraySize; 
 	uint oldGenSize;
 	uint pageSize; /* bytes */
-	ullong *profileAllocCounts;	/* allocation profiling */
-	uint profileAllocIndex;
+	GC_profileAlloc profileAlloc;
 	bool profileAllocIsOn;
-	/* An array of strings identifying source positions. */
-	string *profileSources;
-	uint profileSourcesSize;
-	/* Each entry in profileFrameSources is an index into 
-	 * profileSourceSeq.
-	 */
-	int *profileFrameSources;
-	uint profileFrameSourcesSize;
-	struct GC_profileLabel *profileLabels;
-	uint profileLabelsSize;
-	/* Each entry in profileSourceSeqs is a vector, whose first element is
-         * a length, and subsequent elements index into profileSources.
-	 */
-	int **profileSourceSeqs;
-	uint profileSourceSeqsSize;
+	ProfileStyle profileStyle;
+	GC_profileTime profileTime;
 	bool profileTimeIsOn;
 	W32 ram;		/* ramSlop * totalRam */
 	float ramSlop;
@@ -366,6 +412,22 @@ typedef struct GC_state {
 	 * signal handler.
 	 */
 	sigset_t signalsPending;
+	/* sourceIsOnStack is an array of bools of length sourcesSize.  It is
+	 * used during stack walking (when time profiling with
+	 * profileStyle == PROFILE_CUMULATIVE) to count each source function
+	 * only once no matter how many times it appears on the stack.
+ 	 */
+	char *sourceIsOnStack;
+	struct GC_sourceLabel *sourceLabels;
+	uint sourceLabelsSize;
+	/* sources is an array of strings identifying source positions. */
+	string *sources;
+	uint sourcesSize;
+	/* Each entry in sourceSeqs is a vector, whose first element is
+         * a length, and subsequent elements index into sources.
+	 */
+	int **sourceSeqs;
+	uint sourceSeqsSize;
 	pointer stackBottom; /* The bottom of the stack in the current thread. */
  	uint startTime; /* The time when GC_init or GC_loadWorld was called. */
         /* The inits array should be NULL terminated, 
@@ -451,6 +513,11 @@ void GC_done (GC_state s);
  */
 void GC_finishHandler (GC_state s);
 
+/* GC_foreachStackFrame (s, f) applies f to the frameLayout index of each frame
+ * in the stack.
+ */
+void GC_foreachStackFrame (GC_state s, void (*f) (GC_state s, uint i));
+
 /* GC_gc does a gc.
  * This will also resize the stack if necessary.
  * It will also switch to the signal handler thread if there is a pending signal.
@@ -517,6 +584,19 @@ static inline bool GC_isValidSlot (GC_state s, pointer slot) {
 		and slot < s->stackBottom + s->currentThread->stack->reserved;
 }
 
+/* Write a profile data array out to a file descriptor.
+ *
+ * The `unknown ticks' is a count of the number of times that the monitored
+ * program counter was not in the range of a bin.  This almost certainly
+ * corresponds to times when it was pointing at shared library code.
+ */
+void GC_profileAllocFree (GC_state s, GC_profileAlloc pa);
+GC_profileAlloc GC_profileAllocNew (GC_state s);
+void GC_profileAllocWrite (GC_state s, GC_profileAlloc pa, int fd);
+void GC_profileTimeFree (GC_state s, GC_profileTime pt);
+GC_profileTime GC_profileTimeNew (GC_state s);
+void GC_profileTimeWrite (GC_state s, GC_profileTime pt, int fd);
+
 /*
  * Build the header for an object, given the index to its type info.
  */
@@ -527,6 +607,8 @@ static inline word GC_objectHeader (W32 t) {
 
 /* Pack the heap into a small amount of RAM. */
 void GC_pack (GC_state s);
+
+void GC_profile (GC_state s, uint sourceSeqsIndex);
 
 /* Write out the current world to the file descriptor. */
 void GC_saveWorld (GC_state s, int fd);

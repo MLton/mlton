@@ -7,10 +7,49 @@
  *)
 type int = Int.t
 type word = Word.t
-   
+
 signature SSA_TREE_STRUCTS = 
    sig
       include ATOMS
+   end
+
+signature LABEL = HASH_ID
+
+signature HANDLER =
+   sig
+      structure Label: LABEL
+
+      datatype t =
+	 Caller
+       | Dead
+       | Handle of Label.t
+
+      val equals: t * t -> bool
+      val foldLabel: t * 'a * (Label.t * 'a -> 'a) -> 'a
+      val foreachLabel: t * (Label.t -> unit) -> unit
+      val layout: t -> Layout.t
+      val map: t * (Label.t -> Label.t) -> t
+   end
+
+signature RETURN =
+   sig
+      structure Label: LABEL
+
+      structure Handler: HANDLER
+      sharing Label = Handler.Label
+
+      datatype t =
+	 Dead
+       | NonTail of {cont: Label.t,
+		     handler: Handler.t}
+       | Tail
+	       
+      val compose: t * t -> t
+      val foldLabel: t * 'a * (Label.t * 'a -> 'a) -> 'a
+      val foreachHandler: t * (Label.t -> unit) -> unit
+      val foreachLabel: t * (Label.t -> unit) -> unit
+      val layout: t -> Layout.t
+      val map: t * (Label.t -> Label.t) -> t
    end
 
 signature SSA_TREE = 
@@ -45,16 +84,9 @@ signature SSA_TREE =
       sharing Atoms = Type.Atoms
 
       structure Func: HASH_ID
-      structure Label: HASH_ID
-
-      structure ProfileExp:
-	 sig
-	    datatype t =
-	       Enter of SourceInfo.t
-	     | Leave of SourceInfo.t
-
-	    val layout: t -> Layout.t
-	 end
+      structure Label: LABEL
+      structure ProfileExp: PROFILE_EXP
+      sharing SourceInfo = ProfileExp.SourceInfo
       
       structure Exp:
 	 sig
@@ -75,10 +107,6 @@ signature SSA_TREE =
 	     | Profile of ProfileExp.t
 	     | Select of {tuple: Var.t,
 			  offset: int}
-	     | SetExnStackLocal
-	     | SetExnStackSlot
-	     | SetHandler of Label.t
-	     | SetSlotExnStack
 	     | Tuple of Var.t vector
 	     | Var of Var.t
 
@@ -89,6 +117,7 @@ signature SSA_TREE =
 	    val layout: t -> Layout.t
 	    val maySideEffect: t -> bool
 	    val replaceVar: t * (Var.t -> Var.t) -> t
+	    val toString: t -> string
 	    val unit: t
 	 end
 
@@ -104,74 +133,17 @@ signature SSA_TREE =
 	    val handlerPush: Label.t -> t
 	    val layout: t -> Layout.t
 	    val prettifyGlobals: t vector -> (Var.t -> string option)
-	    val setExnStackLocal: t
-	    val setExnStackSlot: t
-	    val setHandler: Label.t -> t
-	    val setSlotExnStack: t
 	    val var: t -> Var.t option
 	 end
       
       structure Cases: CASES sharing type Cases.con = Con.t
 
-      structure Handler:
-	 sig
-	    datatype t =
-	       CallerHandler
-	     | None
-	     | Handle of Label.t
+      structure Handler: HANDLER
+      sharing Handler.Label = Label
 
-	    val equals: t * t -> bool
-	    val foreachLabel: t * (Label.t -> unit) -> unit
-	    val layout: t -> Layout.t
-	    val map: t * (Label.t -> Label.t) -> t
-	 end
+      structure Return: RETURN
+      sharing Return.Handler = Handler
 
-      (*
-       * These correspond to 6 of the possible 9 combinations of continuation and
-       * handler each being one of {None, Caller, Some l}.  None means that it
-       * doesn't matter what the continuation (handler) is since the caller never
-       * returns (raises).  Caller means to keep the continuation (handler) the same
-       * as in the caller.  Some l means a nontail call in the case of continuations
-       * and an installed handler in the case of handlers.
-       *
-       * 3 of the 9 possibilities are disallowed, and the correspondence is as below.
-       *
-       * Cont    Handler         equivalent
-       * ------  -------         ---------------------------------------
-       * None    None            Dead
-       * None    Caller          HandleOnly
-       * None    Some h          *disallowed*
-       * Caller  None            *disallowed*
-       * Caller  Caller          Tail
-       * Caller  Some h          *disallowed*
-       * Some l  None            Nontail {cont = l, handler = None}
-       * Some l  Caller          Nontail {cont = l, handler = Caller}
-       * Some l  Some h          Nontail {cont = l, handler = Handle l}
-       *
-       * We could have allowed the (None, Some h) and (Caller, Some h) cases, and
-       * put some code in the backend to generate stubs, since if there is a handler
-       * there must be some continuation.  But I decided it was easier to just rule
-       * them out, essentially meaning that remove-unused, or any other optimization
-       * pass, needs to make stubs itself.
-       *)
-      structure Return:
-	 sig
-	    datatype t =
-	       Dead
-	     | HandleOnly
-	     | NonTail of {cont: Label.t, handler: Handler.t}
-	     | Tail
-
-	    val compose: t * t -> t
-	    val foldLabel: t * 'a * (Label.t * 'a -> 'a) -> 'a
-	    val foreachHandler: t * (Label.t -> unit) -> unit
-	    val foreachLabel: t * (Label.t -> unit) -> unit
-	    val isNonTail: t -> bool
-	    val isTail: t -> bool
-	    val layout: t -> Layout.t
-	    val map: t * (Label.t -> Label.t) -> t
-	 end
-      
       structure Transfer:
 	 sig
 	    datatype t =
@@ -181,8 +153,8 @@ signature SSA_TREE =
 			 success: Label.t, (* Must be unary. *)
 			 ty: Type.t} (* int or word *)
 	     | Bug  (* MLton thought control couldn't reach here. *)
-	     | Call of {func: Func.t,
-			args: Var.t vector,
+	     | Call of {args: Var.t vector,
+			func: Func.t,
 			return: Return.t}
 	     | Case of {test: Var.t,
 			cases: Label.t Cases.t,
@@ -252,7 +224,6 @@ signature SSA_TREE =
 
 	    val alphaRename: t -> t
 	    val blocks: t -> Block.t vector
-	    val checkHandlers: t -> unit
 	    (* clear the plists for all bound variables and labels that appear
 	     * in the function, but not the function name's plist.
 	     *)
@@ -273,10 +244,6 @@ signature SSA_TREE =
 	    val dfs: t * (Block.t -> unit -> unit) -> unit
 	    val dominatorTree: t -> Block.t Tree.t
 	    val foreachVar: t * (Var.t * Type.t -> unit) -> unit
-	    (* inferHandlers uses the HandlerPush and HandlerPop statements
-	     * to infer the handler stack at the beginning of each block.
-	     *)
-	    val inferHandlers: t -> Label.t list option array
 	    val layout: t -> Layout.t
 	    val layoutDot:
 	       t * (Var.t -> string option) -> {graph: Layout.t,
@@ -302,7 +269,6 @@ signature SSA_TREE =
 		     main: Func.t (* Must be nullary. *)
 		    } 
 
-	    val checkHandlers: t -> unit
 	    val clear: t -> unit
 	    val clearTop: t -> unit
 	    val foreachVar: t * (Var.t * Type.t -> unit) -> unit

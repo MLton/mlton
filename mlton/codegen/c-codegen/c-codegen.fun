@@ -237,27 +237,25 @@ fun outputDeclarations
 			  [C.int (!Control.cardSizeLog2),
 			   C.bool (!Control.markCards),
 			   C.int maxFrameSize,
-			   magic,
-			   C.bool (!Control.profile = Control.ProfileAlloc)]
+			   magic]
 			  @ additionalMainArgs,
 			  print)
 	    ; print "\n"
 	 end
       fun declareProfileInfo () =
 	 let
-	    val ProfileInfo.T {frameSources, labels, sourceSeqs,
-			       sources} =
+	    val ProfileInfo.T {frameSources, labels, sourceSeqs, sources} =
 	       profileInfo
 	 in
 	    Vector.foreach (labels, fn {label, ...} =>
 			    print (concat ["void ",
 					   ProfileLabel.toString label,
 					   "();\n"]))
-	    ; declareArray ("struct GC_profileLabel", "profileLabels", labels,
+	    ; declareArray ("struct GC_sourceLabel", "sourceLabels", labels,
 			    fn (_, {label, sourceSeqsIndex}) =>
 			    concat ["{(pointer)", ProfileLabel.toString label,
 				    ", ", C.int sourceSeqsIndex, "}"])
-	    ; declareArray ("string", "profileSources", sources,
+	    ; declareArray ("string", "sources", sources,
 			    C.string o SourceInfo.toString o #2)
 	    ; Vector.foreachi (sourceSeqs, fn (i, v) =>
 			       (print (concat ["static int sourceSeq",
@@ -268,10 +266,9 @@ fun outputDeclarations
 						  (print (concat [",", C.int i])))
 				; print "};\n"))
 				      
-	    ; declareArray ("int", "*profileSourceSeqs", sourceSeqs, fn (i, _) =>
+	    ; declareArray ("int", "*sourceSeqs", sourceSeqs, fn (i, _) =>
 			    concat ["sourceSeq", Int.toString i])
-	    ; declareArray ("int", "profileFrameSources", frameSources,
-			    C.int o #2)
+	    ; declareArray ("int", "frameSources", frameSources, C.int o #2)
 	 end
    in
       print (concat ["#define ", name, "CODEGEN\n\n"])
@@ -407,11 +404,11 @@ fun output {program as Machine.Program.T {chunks,
 			CanHandle => "gcState.canHandle"
 		      | CardMap => "gcState.cardMapForMutator"
 		      | CurrentThread => "gcState.currentThread"
+		      | ExnStack => "ExnStack"
 		      | Frontier => "frontier"
 		      | Limit => "gcState.limit"
 		      | LimitPlusSlop => "gcState.limitPlusSlop"
 		      | MaxFrameSize => "gcState.maxFrameSize"
-		      | ProfileAllocIndex => "gcState.profileAllocIndex"
 		      | SignalIsPending => "gcState.signalIsPending"
 		      | StackBottom => "gcState.stackBottom"
 		      | StackLimit => "gcState.stackLimit"
@@ -527,7 +524,7 @@ fun output {program as Machine.Program.T {chunks,
 		; print "\t"
 		; C.move ({dst = operandToString
 			   (Operand.StackOffset {offset = ~Runtime.labelSize,
-						 ty = Type.label}),
+						 ty = Type.label return}),
 			   src = operandToString (Operand.Label return)},
 			  print))
 	    fun copyArgs (args: Operand.t vector): string list * (unit -> unit) =
@@ -618,7 +615,7 @@ fun output {program as Machine.Program.T {chunks,
 					creturn (Type.toRuntime (Operand.ty x)),
 					";\n"]))))
 		      | Kind.Func => ()
-		      | Kind.Handler {offset, ...} => C.push (~offset, print)
+		      | Kind.Handler {frameInfo, ...} => pop frameInfo
 		      | Kind.Jump => ()
 		  val _ =
 		     if 0 = !Control.Native.commented
@@ -868,6 +865,7 @@ fun output {program as Machine.Program.T {chunks,
 	    ; declareRegisters ()
 	    ; C.callNoSemi ("ChunkSwitch", [ChunkLabel.toString chunkLabel],
 			    print)
+	    ; print "\n"
 	    ; Vector.foreach (blocks, fn Block.T {kind, label, ...} =>
 			      if Kind.isEntry kind
 				 then (print "case "

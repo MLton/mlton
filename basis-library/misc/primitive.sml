@@ -319,6 +319,7 @@ structure Primitive =
 		     end
 		  val current =
 		     _ffi "MLton_ProfileAlloc_current": unit -> Data.t;
+		  val done = _ffi "MLton_ProfileAlloc_done": unit -> unit;
 		  val setCurrent =
 		     _ffi "MLton_ProfileAlloc_setCurrent": Data.t -> unit;
 	       end

@@ -150,6 +150,8 @@ structure Var =
 
 structure ProfileExp =
    struct
+      structure SourceInfo = SourceInfo
+
       datatype t =
 	 Enter of SourceInfo.t
        | Leave of SourceInfo.t
@@ -190,10 +192,6 @@ structure Exp =
        | Profile of ProfileExp.t
        | Select of {tuple: Var.t,
 		    offset: int}
-       | SetExnStackLocal
-       | SetExnStackSlot
-       | SetSlotExnStack
-       | SetHandler of Label.t
        | Tuple of Var.t vector
        | Var of Var.t
 
@@ -211,10 +209,6 @@ structure Exp =
 	     | PrimApp {args, ...} => vs args
 	     | Profile _ => ()
 	     | Select {tuple, ...} => v tuple
-	     | SetExnStackLocal => ()
-	     | SetExnStackSlot => ()
-	     | SetSlotExnStack => ()
-	     | SetHandler h => j h
 	     | Tuple xs => vs xs
 	     | Var x => v x
 	 end
@@ -236,10 +230,6 @@ structure Exp =
 	     | Profile _ => e
 	     | Select {tuple, offset} =>
 		  Select {tuple = fx tuple, offset = offset}
-	     | SetExnStackLocal => e
-	     | SetExnStackSlot => e
-	     | SetHandler h => SetHandler (fl h)
-	     | SetSlotExnStack => e
 	     | Tuple xs => Tuple (fxs xs)
 	     | Var x => Var (fx x)
 	 end
@@ -271,10 +261,6 @@ structure Exp =
 	     | Select {tuple, offset} =>
 		  seq [str "#", Int.layout (offset + 1), str " ",
 		       Var.layout tuple]
-	     | SetExnStackLocal => str "SetExnStackLocal"
-	     | SetExnStackSlot => str "SetExnStackSlot"
-	     | SetHandler h => seq [str "SetHandler ", Label.layout h]
-	     | SetSlotExnStack => str "SetSlotExnStack"
 	     | Tuple xs => layoutTuple xs
 	     | Var x => Var.layout x
 	 end
@@ -288,10 +274,6 @@ structure Exp =
 	  | Profile _ =>
 	       Error.bug "doesn't make sense to ask isFunctional Profile"
 	  | Select _ => true
-	  | SetExnStackLocal => false
-	  | SetExnStackSlot => false
-	  | SetHandler _ => false
-	  | SetSlotExnStack => false
 	  | Tuple _ => true
 	  | Var _ => true
 	       
@@ -304,10 +286,6 @@ structure Exp =
 	  | PrimApp {prim,...} => Prim.maySideEffect prim
 	  | Profile _ => false
 	  | Select _ => false
-	  | SetExnStackLocal => true
-	  | SetExnStackSlot => true
-	  | SetHandler _ => true
-	  | SetSlotExnStack => true
 	  | Tuple _ => false
 	  | Var _ => false
 
@@ -326,10 +304,6 @@ structure Exp =
 	  | (Profile p, Profile p') => ProfileExp.equals (p, p')
 	  | (Select {tuple = t, offset = i}, Select {tuple = t', offset = i'}) =>
 	       Var.equals (t, t') andalso i = i'
-	  | (SetExnStackLocal, SetExnStackLocal) => true
-	  | (SetExnStackSlot, SetExnStackslot) => true
-	  | (SetHandler l, SetHandler l') => Label.equals (l, l')
-	  | (SetSlotExnStack, SetSlotExnStack) => true
 	  | (Tuple xs, Tuple xs') => varsEquals (xs, xs')
 	  | (Var x, Var x') => Var.equals (x, x')
 	  | _ => false
@@ -342,10 +316,6 @@ structure Exp =
 	 val primApp = newHash ()
 	 val profile = newHash ()
 	 val select = newHash ()
-	 val setExnStackLocal = newHash ()
-	 val setExnStackSlot = newHash ()
-	 val setHandler = newHash ()
-	 val setSlotExnStack = newHash ()
 	 val tuple = newHash ()
 	 fun hashVars (xs: Var.t vector, w: Word.t): Word.t =
 	    Vector.fold (xs, w, fn (x, w) => Word.xorb (w, Var.hash x))
@@ -359,10 +329,6 @@ structure Exp =
 	     | Profile p => Word.xorb (profile, ProfileExp.hash p)
 	     | Select {tuple, offset} =>
 		  Word.xorb (select, Var.hash tuple + Word.fromInt offset)
-	     | SetExnStackLocal => setExnStackLocal
-	     | SetExnStackSlot => setExnStackSlot
-	     | SetHandler h => Word.xorb (Label.hash h, setHandler)
-	     | SetSlotExnStack => setSlotExnStack
 	     | Tuple xs => hashVars (xs, tuple)
 	     | Var x => Var.hash x
       end
@@ -385,12 +351,8 @@ structure Exp =
 				   NONE => Var.layout x
 				 | SOME s => Layout.str s))
 	  | Profile p => ProfileExp.toString p
-	  | SetExnStackLocal => "SetExnStackLocal"
-	  | SetExnStackSlot => "SetExnStackSlot"
-	  | SetSlotExnStack => "SetSlotExnStack"
 	  | Select {tuple, offset} =>
 	       concat ["#", Int.toString (offset + 1), " ", Var.toString tuple]
-	  | SetHandler h => concat ["SetHandler ", Label.toString h]
 	  | Tuple xs => Var.prettys (xs, global)
 	  | Var x => Var.toString x
 
@@ -429,16 +391,14 @@ structure Statement =
                  Exp.layout exp]
 	 end
 
+      val toString = Layout.toString o layout
+
       local
 	 fun make (e: Exp.t) =
 	    T {var = NONE,
 	       ty = Type.unit,
 	       exp = e}
       in
-	 val setExnStackLocal = make Exp.SetExnStackLocal
-	 val setExnStackSlot = make Exp.SetExnStackSlot
-	 val setSlotExnStack = make Exp.SetSlotExnStack
-	 fun setHandler h = make (Exp.SetHandler h)
 	 fun handlerPop h = make (Exp.HandlerPop h)
 	 fun handlerPush h = make (Exp.HandlerPush h)
       end
@@ -481,138 +441,144 @@ structure Statement =
 
 structure Handler =
    struct
-      datatype t =
-	 CallerHandler
-       | Handle of Label.t
-       | None
+      structure Label = Label
 
-      fun layout h =
+      datatype t =
+	 Caller
+       | Dead
+       | Handle of Label.t
+
+      fun layout (h: t): Layout.t =
 	 let
 	    open Layout
 	 in
 	    case h of
-	       CallerHandler => str "CallerHandler"
+	       Caller => str "Caller"
+	     | Dead => str "Dead"
 	     | Handle l => seq [str "Handle ", Label.layout l]
-	     | None => str "None"
 	 end
 
       val equals =
-	 fn (CallerHandler, CallerHandler) => true
-	  | (None, None) => true
+	 fn (Caller, Caller) => true
+	  | (Dead, Dead) => true
 	  | (Handle l, Handle l') => Label.equals (l, l')
 	  | _ => false
 
-      local
-	 val newHash = Random.word
-	 val callerHandler = newHash ()
-	 val handlee = newHash ()
-	 val none = newHash ()
-      in
-	 val hash: t -> Word.t =
-	    fn CallerHandler => callerHandler
-	     | Handle l => Label.hash l
-	     | None => none
-      end
-
-      fun foldLabel (h, a, f) =
+      fun foldLabel (h: t, a: 'a, f: Label.t * 'a -> 'a): 'a =
 	 case h of
-	    Handle l => f (l, a)
-	  | _ => a
+	    Caller => a
+	  | Dead => a
+	  | Handle l => f (l, a)
 
       fun foreachLabel (h, f) = foldLabel (h, (), f o #1)
 
       fun map (h, f) =
 	 case h of
-	    Handle l => Handle (f l)
-	  | _ => h
+	    Caller => Caller
+	  | Dead => Dead
+	  | Handle l => Handle (f l)
+
+      local
+	 val newHash = Random.word
+	 val caller = newHash ()
+	 val dead = newHash ()
+	 val handlee = newHash ()
+      in
+	 fun hash (h: t): word =
+	    case h of
+	       Caller => caller
+	     | Dead => dead
+	     | Handle l => Word.xorb (handlee, Label.hash l)
+      end
    end
 
 structure Return =
    struct
+      structure Label = Label
+      structure Handler = Handler
+
       datatype t =
 	 Dead
-       | HandleOnly
        | NonTail of {cont: Label.t,
 		     handler: Handler.t}
        | Tail
 
-      val layout =
+      fun layout r =
 	 let
 	    open Layout
 	 in
-	    fn Dead => str "Dead"
-	     | HandleOnly => str "HandleOnly"
+	    case r of
+	       Dead => str "Dead"
 	     | NonTail {cont, handler} =>
 		  seq [str "NonTail ",
-		       record [("cont", Label.layout cont),
-			       ("handler", Handler.layout handler)]]
+		       Layout.record
+		       [("cont", Label.layout cont),
+			("handler", Handler.layout handler)]]
 	     | Tail => str "Tail"
 	 end
 
-      val isNonTail = fn NonTail _ => true | _ => false
-      val isTail = not o isNonTail
-	 
-      val equals =
-	 fn (Dead, Dead) => true
-	  | (HandleOnly, HandleOnly) => true
-	  | (NonTail {cont, handler}, 
-	     NonTail {cont = cont', handler = handler'}) =>
-	       Label.equals (cont, cont') andalso 
-	       Handler.equals (handler, handler')
-	  | (Tail, Tail) => true
-	  | _ => false
+      fun equals (r, r'): bool =
+	 case (r, r') of
+	    (Dead, Dead) => true
+	  | (NonTail {cont = c, handler = h},
+	     NonTail {cont = c', handler = h'}) =>
+	       Label.equals (c, c') andalso Handler.equals (h, h')
+	   | (Tail, Tail) => true
+	   | _ => false
+
+      fun foldLabel (r: t, a, f) =
+	 case r of
+	    Dead => a
+	  | NonTail {cont, handler} =>
+	       Handler.foldLabel (handler, f (cont, a), f)
+	  | Tail => a
+
+      fun foreachLabel (r, f) = foldLabel (r, (), f o #1)
+
+      fun foreachHandler (r, f) =
+	 case r of
+	    Dead => ()
+	  | NonTail {handler, ...} => Handler.foreachLabel (handler, f)
+	  | Tail => ()
+
+      fun map (r, f) =
+	 case r of
+	    Dead => Dead
+	  | NonTail {cont, handler} =>
+	       NonTail {cont = f cont,
+			handler = Handler.map (handler, f)}
+	  | Tail => Tail
+
+      fun compose (r, r') =
+	 case r' of
+	    Dead => Dead
+	  | NonTail {cont, handler} =>
+	       NonTail
+	       {cont = cont,
+		handler = (case handler of
+			      Handler.Caller =>
+				 (case r of
+				     Dead => Handler.Caller
+				   | NonTail {handler, ...} => handler
+				   | Tail => Handler.Caller)
+			    | Handler.Dead => handler
+			    | Handler.Handle _ => handler)}
+	  | Tail => r
 
       local
 	 val newHash = Random.word
 	 val dead = newHash ()
-	 val handleOnly = newHash ()
 	 val nonTail = newHash ()
 	 val tail = newHash ()
-	 fun hash2 (w1: Word.t, w2: Word.t) = Word.xorb (w1, w2)
       in
-	 val hash: t -> Word.t =
-	    fn Dead => dead
-	     | HandleOnly => handleOnly
+	 fun hash r =
+	    case r of
+	       Dead => dead
 	     | NonTail {cont, handler} =>
-	          hash2 (Label.hash cont, Handler.hash handler)
+		  Word.xorb (Word.xorb (nonTail, Label.hash cont),
+			     Handler.hash handler)
 	     | Tail => tail
       end
-
-      fun foreachHandler (r, f) =
-	 case r of
-	    NonTail {handler, ...} => Handler.foreachLabel (handler, f)
-	  | _ => ()
-
-      fun foldLabel (r, a, f) =
-	 case r of
-	    NonTail {cont, handler} =>
-	       f (cont, Handler.foldLabel (handler, a, f))
-	  | _ => a
-
-      fun foreachLabel (r, f) = foldLabel (r, (), f o #1)
-
-      fun map (r, f) =
-	 case r of
-	    NonTail {cont, handler} =>
-	       NonTail {cont = f cont,
-			handler = Handler.map (handler, f)}
-	  | _ => r
-
-      fun compose (c: t, r: t): t =
-	 case r of
-	    Dead => Dead
-	  | HandleOnly =>
-	       (case c of
-		   Dead => Dead
-		 | HandleOnly => HandleOnly
-		 | NonTail _ => c
-		 | Tail => HandleOnly)
-	  | NonTail {cont, handler, ...} =>
-	       (case (handler, c) of
-		   (Handler.CallerHandler, NonTail {handler = h1, ...}) =>
-		      NonTail {cont = cont, handler = h1}
-		 | _ => r)
-	  | Tail => c
    end
 
 structure Transfer =
@@ -624,8 +590,8 @@ structure Transfer =
 		   success: Label.t, (* Must be unary. *)
 		   ty: Type.t}
        | Bug (* MLton thought control couldn't reach here. *)
-       | Call of {func: Func.t,
-		  args: Var.t vector,
+       | Call of {args: Var.t vector,
+		  func: Func.t,
 		  return: Return.t}
        | Case of {test: Var.t,
 		  cases: Label.t Cases.t,
@@ -746,27 +712,8 @@ structure Transfer =
 		       Label.layout overflow, str " ()"]
 	     | Bug => str "Bug"
 	     | Call {func, args, return} =>
-		  let
-		     val call = seq [Func.layout func, str " ", layoutTuple args]
-		     val call =
-			case return of
-			   Return.Dead => seq [str "Dead ", call]
-			 | Return.HandleOnly => seq [str "HandleOnly ", call]
-			 | Return.Tail => call
-			 | Return.NonTail {cont, handler} => 
-			      let
-				 val call =
-				    seq [Label.layout cont, str " ", paren call]
-			      in
-				 case handler of
-				    Handler.CallerHandler => call
-				  | Handler.Handle l =>
-				       seq [call, str " handle ", Label.layout l]
-				  | Handler.None => seq [call, str " None"]
-			      end
-		  in
-		     call
-		  end
+		  seq [Func.layout func, str " ", layoutTuple args,
+		       str " ", Return.layout return]
 	     | Case arg => layoutCase arg
 	     | Goto {dst, args} =>
 		  seq [Label.layout dst, str " ", layoutTuple args]
@@ -913,52 +860,6 @@ structure Block =
 	  ; Vector.foreach (statements, Statement.clear))
    end
 
-structure ExnStack =
-   struct
-      structure ZPoint =
-	 struct
-	    datatype t = Caller | Me
-
-	    val equals: t * t -> bool = op =
-	       
-	    val toString =
-	       fn Caller => "Caller"
-		| Me => "Me"
-
-	    val layout = Layout.str o toString
-	 end
-
-      structure L = FlatLattice (structure Point = ZPoint)
-      open L
-      structure Point = ZPoint
-	 
-      val me = point Point.Me
-      val caller = point Point.Caller
-   end
-
-structure HandlerLat = FlatLattice (structure Point = Label)
-
-structure HandlerInfo =
-   struct
-      datatype t = T of {block: Block.t,
-			 global: ExnStack.t,
-			 handler: HandlerLat.t,
-			 slot: ExnStack.t,
-			 visited: bool ref}
-
-      fun new (b: Block.t): t =
-	 T {block = b,
-	    global = ExnStack.new (),
-	    handler = HandlerLat.new (),
-	    slot = ExnStack.new (),
-	    visited = ref false}
-
-      fun layout (T {global, handler, slot, ...}) =
-	 Layout.record [("global", ExnStack.layout global),
-			("slot", ExnStack.layout slot),
-			("handler", HandlerLat.layout handler)]
-   end
-
 structure Datatype =
    struct
       datatype t =
@@ -1087,256 +988,6 @@ structure Function =
 	       end
 	    val _ = visit start
 	    val _ = Vector.foreach (blocks, rem o Block.label)
-	 in
-	    ()
-	 end
-      
-      fun inferHandlers (f: t): Label.t list option array =
-	 let
-	    val {blocks, name, start, ...} = dest f
-	    val {get = labelIndex: Label.t -> int, set = setLabelIndex, ...} =
-	       Property.getSetOnce (Label.plist,
-				    Property.initRaise ("index", Label.layout))
-	    val _ =
-	       Vector.foreachi
-	       (blocks, fn (i, Block.T {label, ...}) =>
-		setLabelIndex (label, i))
-	    val numBlocks = Vector.length blocks
-	    val handlerStack = Array.array (numBlocks, NONE)
-	    val visited = Array.array (numBlocks, false)
-	    (* Do a dfs from the start, figuring out the handler stack at
-	     * each label.
-	     *)
-	    fun visit (l: Label.t, hs: Label.t list): unit =
-	       let
-		  val i = labelIndex l
-		  val Block.T {statements, transfer, ...} =
-		     Vector.sub (blocks, i)
-	       in
-		  if Array.sub (visited, i)
-		     then ()
-		  else
-		     let
-			val _ = Array.update (visited, i, true)
-			fun bug msg =
-			   (Layout.outputl
-			    (Vector.layout
-			     (fn Block.T {label, ...} =>
-			      let open Layout
-			      in seq [Label.layout label,
-				      str " ",
-				      Option.layout (List.layout Label.layout)
-				      (Array.sub (handlerStack,
-						  labelIndex label))]
-			      end)
-			     blocks,
-			     Out.error)
-			    ; (Error.bug
-			       (concat
-				["inferHandlers bug found in ", Label.toString l,
-				 ": ", msg])))
-			val _ =
-			   case Array.sub (handlerStack, i) of
-			      NONE => Array.update (handlerStack, i, SOME hs)
-			    | SOME hs' =>
-				 if List.equals (hs, hs', Label.equals)
-				    then ()
-				 else bug "handler stack mismatch"
-			val hs =
-			   Vector.fold
-			   (statements, hs, fn (s, hs) =>
-			    let
-			       val Statement.T {var, ty, exp, ...} = s
-			    in
-			       case Statement.exp s of
-				  HandlerPop _ =>
-				     (case hs of
-					 [] => bug "pop of empty handler stack"
-				       | _ :: hs => hs)
-				| HandlerPush h => h :: hs
-				| _ => hs
-			    end)
-			fun empty s =
-			   if List.isEmpty hs
-			      then ()
-			   else bug (concat ["nonempty stack ", s])
-			fun top l =
-			   case hs of
-			      l' :: _ =>
-				 if Label.equals (l, l')
-				    then ()
-				 else bug "wrong handler on top"
-			    | _ => bug "empty stack"
-			val _ =
-			   case transfer of
-			      Call {return, ...} =>
-				 (case return of
-				     Return.Dead => ()
-				   | Return.HandleOnly => empty "HandleOnly"
-				   | Return.NonTail {handler, ...} =>
-					(case handler of
-					    Handler.CallerHandler =>
-					       empty "CallerHandler"
-					  | Handler.Handle l => top l
-					  | Handler.None => ())
-				   | Return.Tail => empty "tail")
-			    | Raise _ => empty "raise"
-			    | Return _ => empty "return"
-			    | _ => ()
-			val _ = 
-			   Transfer.foreachLabel (transfer, fn l =>
-						  visit (l, hs))
-		     in
-			()
-		     end
-	       end
-	    val _ = visit (start, [])
-	 in
-	    handlerStack
-	 end
-
-      fun checkHandlers (f: t): unit =
-	 let
-	    val {name, start, blocks, ...} = dest f
-	    val {get = labelInfo: Label.t -> HandlerInfo.t,
-		 rem = remLabelInfo, 
-		 set = setLabelInfo} =
-	       Property.getSetOnce
-	       (Label.plist, Property.initRaise ("info", Label.layout))
-	    val _ =
-	       Vector.foreach
-	       (blocks, fn b => setLabelInfo (Block.label b, HandlerInfo.new b))
-	    (* Do a DFS of the control-flow graph. *)
-	    fun visitLabel l = visitInfo (labelInfo l)
-	    and visitInfo
-	       (hi as HandlerInfo.T {block, global, handler, slot, visited, ...})
-	       : unit =
-	       if !visited
-		  then ()
-	       else
-	       let
-		  val _ = visited := true
-		  val Block.T {label, statements, transfer, ...} = block
-		  datatype z = datatype ExnStack.t
-		  val {global, handler, slot} =
-		     Vector.fold
-		     (statements,
-		      {global = global, handler = handler, slot = slot},
-		      fn (Statement.T {exp, ...}, {global, handler, slot}) =>
-		      case exp of
-			 SetExnStackLocal => {global = ExnStack.me,
-					      handler = handler,
-					      slot = slot}
-		       | SetExnStackSlot => {global = slot,
-					     handler = handler,
-					     slot = slot}
-		       | SetSlotExnStack => {global = global,
-					     handler = handler,
-					     slot = slot}
-		       | SetHandler l => {global = global,
-					  handler = HandlerLat.point l,
-					  slot = slot}
-		       | _ => {global = global, handler = handler, slot = slot})
-		  fun fail msg =
-		     (Control.message
-		      (Control.Silent, fn () =>
-		       let open Layout
-		       in align
-			  [str "before: ", HandlerInfo.layout hi,
-			   str "block: ", Block.layout block,
-			   seq [str "after: ",
-				Layout.record
-				[("global", ExnStack.layout global),
-				 ("slot", ExnStack.layout slot),
-				 ("handler", HandlerLat.layout handler)]],
-			   Vector.layout
-			   (fn Block.T {label, ...} =>
-			    seq [Label.layout label,
-				 str " ",
-				 HandlerInfo.layout (labelInfo label)])
-			   blocks]
-		       end)
-		      ; Error.bug (concat ["handler mismatch at ", msg]))
-		  fun assert (msg, f) =
-		     if f
-			then ()
-		     else fail msg
-		  fun goto (l: Label.t): unit =
-		     let
-			val HandlerInfo.T {global = g, handler = h,
-					   slot = s, ...} =
-			   labelInfo l
-			val _ =
-			   assert ("goto",
-				   ExnStack.<= (global, g)
-				   andalso ExnStack.<= (slot, s)
-				   andalso HandlerLat.<= (handler, h))
-		     in
-			visitLabel l
-		     end
-		  fun tail name =
-		     assert (name,
-			     ExnStack.forcePoint
-			     (global, ExnStack.Point.Caller))
-		  fun caller () =
-		     ExnStack.forcePoint (global, ExnStack.Point.Caller)
-		in
-		   case transfer of
-		      Arith {overflow, success, ...} =>
-			(goto overflow; goto success)
-		    | Bug => ()
-		    | Call {return, ...} =>
-			 assert
-			 ("return",
-			  case return of
-			     Return.Dead => true
-			   | Return.HandleOnly => caller ()
-			   | Return.NonTail {cont, handler = h, ...} =>
-				(goto cont
-				 ; (case h of
-				       Handler.CallerHandler => caller ()
-				     | Handler.Handle l =>
-					  let
-					     val res =
-						ExnStack.forcePoint
-						(global, ExnStack.Point.Me)
-						andalso (HandlerLat.forcePoint
-							 (handler, l))
-					     val _ = goto l
-					  in
-					     res
-					  end
-				     | Handler.None => true))
-			   | Return.Tail => caller ())
-		    | Case {cases, default, ...} =>
-			 (Cases.foreach (cases, goto)
-			  ; Option.app (default, goto))
-		    | Goto {dst, ...} => goto dst
-		    | Raise _ => tail "raise"
-		    | Return _ => tail "return"
-		    | Runtime {return, ...} => goto return
-		end
-	    val info as HandlerInfo.T {global, ...} = labelInfo start
-	    val _ = ExnStack.forcePoint (global, ExnStack.Point.Caller)
-	    val _ = visitInfo info
-	    val _ =
-	       Control.diagnostics
-	       (fn display =>
-		let
-		   open Layout
-		   val _ = 
-		      display (seq [str "checkHandlers ",
-				    Func.layout name])
-		   val _ =
-		      Vector.foreach
-		      (blocks, fn Block.T {label, ...} =>
-		       display (seq [Label.layout label,
-				     str " ",
-				     HandlerInfo.layout (labelInfo label)]))
-		in
-		   ()
-		end)
-	    val _ = Vector.foreach (blocks, fn b => remLabelInfo (Block.label b))
 	 in
 	    ()
 	 end
@@ -1479,25 +1130,21 @@ structure Function =
 						    Layout.str
 						    (Var.pretty (x, global))))])
 			  | Bug => ["bug"]
-			  | Call {func, args, return, ...} =>
+			  | Call {func, args, return} =>
 			       let
 				  val f = Func.toString func
 				  val args = Var.prettys (args, global)
-				  val call = [f, " ", args]
+				  val _ =
+				     case return of
+					Return.Dead => ()
+				      | Return.NonTail {cont, handler} =>
+					   (edge (cont, "", Dotted)
+					    ; (Handler.foreachLabel
+					       (handler, fn l =>
+						edge (l, "", Dashed))))
+				      | Return.Tail => ()
 			       in
-				  case return of
-				     Return.Dead => "Dead " :: call
-				   | Return.HandleOnly =>
-					"HandleOnly " :: call
-				   | Return.NonTail {cont, handler} =>
-					(edge (cont, "", Dotted)
-					 ; (case handler of
-					       Handler.CallerHandler => call
-					     | Handler.Handle l =>
-						  (edge (l, "", Dashed)
-						   ; call)
-					     | Handler.None => call @ [" None"]))
-				   | Return.Tail => call
+				  [f, " ", args]
 			       end
 			  | Case {test, cases, default, ...} =>
 			       let
@@ -1751,6 +1398,7 @@ structure Function =
 	    then f
 	 else 
 	 let
+	    val _ = Control.diagnostic (fn () => layout f)
 	    val {args, blocks, name, raises, returns, start} = dest f
 	    val extraBlocks = ref []
 	    val {get = labelBlock, set = setLabelBlock, rem} =
@@ -1797,94 +1445,62 @@ structure Function =
 		      in
 			 c
 		      end
-		   fun genHandler (): Statement.t vector * Label.t option =
+		   fun genHandler (cont: Label.t)
+		      : Statement.t vector * Label.t * Handler.t =
 		      case raises of
-			 NONE => (statements, NONE)
+			 NONE => (statements, cont, Handler.Caller)
 		       | SOME ts => 
 			    let
 			       val xs = Vector.map (ts, fn _ => Var.newNoname ())
 			       val l = Label.newNoname ()
+			       val pop = make (HandlerPop l)
+			       val push = make (HandlerPush l)
 			       val _ =
 				  List.push
 				  (extraBlocks,
 				   Block.T
 				   {args = Vector.zip (xs, ts),
 				    label = l,
-				    statements = (Vector.new2
-						  (make (HandlerPop l),
-						   leave ())),
+				    statements = Vector.new2 (pop, leave ()),
 				    transfer = Transfer.Raise xs})
 			    in
-			       (Vector.concat
-				[statements,
-				 Vector.new1 (make (HandlerPush l))],
-				SOME l)
+			       (Vector.concat [statements, Vector.new1 push],
+				prefix (cont, Vector.new1 pop),
+				Handler.Handle l)
 			    end
-		   fun genCont () =
-		      let
-			 val l = Label.newNoname ()
-			 val _ = 
-			    List.push
-			    (extraBlocks,
-			     Block.T {args = Vector.new0 (),
-				      label = l,
-				      statements = Vector.new0 (),
-				      transfer = Transfer.Bug})
-		      in
-			 l
-		      end
 		   fun addLeave () =
 		      (Vector.concat [statements,
 				      Vector.new1 (leave ())],
 		       transfer)
-		   datatype z = datatype Return.t
-		   datatype z = datatype Handler.t
 		   val (statements, transfer) =
 		      case transfer of
 			 Call {args, func, return} =>
-			    (case return of
-				Dead => (statements, transfer)
-			      | HandleOnly =>
-				   let
-				      val (statements, h) = genHandler ()
-				      val return =
-					 case h of
-					    NONE => Dead
-					  | SOME h =>
-					       NonTail {cont = genCont (),
-							handler = Handle h}
-				   in
-				      (statements,
-				       Call {args = args,
-					     func = func,
-					     return = return})
-				   end
-			      | NonTail {cont, handler} =>
-				   (case handler of
-				       CallerHandler =>
-					  let
-					     val (statements, h) = genHandler ()
-					     val (cont, handler) =
-						case h of
-						   NONE =>
-						      (cont, None)
-						 | SOME h =>
-						      (prefix
-						       (cont,
-							Vector.new1
-							(make (HandlerPop h))),
-						       Handle h)
-					  in
-					     (statements,
-					      Call {args = args,
-						    func = func,
-						    return =
-						    NonTail {cont = cont,
-							     handler = handler}})
-					  end
-				     | None => (statements, transfer)
-				     | Handle l => (statements, transfer))
-			      | Tail => addLeave ())
+			    let
+			       datatype z = datatype Return.t
+			    in
+			       case return of
+				  Dead => (statements, transfer)
+				| NonTail {cont, handler} =>
+				     (case handler of
+					 Handler.Dead => (statements, transfer)
+				       | Handler.Caller =>
+					    let
+					       val (statements, cont, handler) =
+						  genHandler cont
+					       val return =
+						  Return.NonTail
+						  {cont = cont,
+						   handler = handler}
+					    in
+					       (statements,
+						Call {args = args,
+						      func = func,
+						      return = return})
+					    end
+				       | Handler.Handle l =>
+					    (statements, transfer))
+				| Tail => addLeave ()
+			    end
 		       | Raise _ => addLeave ()
 		       | Return _ => addLeave ()
 		       | _ => (statements, transfer)
@@ -1896,13 +1512,16 @@ structure Function =
 		end)
 	    val _ = Vector.foreach (blocks, rem o Block.label)
 	    val blocks = Vector.concat [Vector.fromList (!extraBlocks), blocks]
+	    val f = 
+	       new {args = args,
+		    blocks = blocks,
+		    name = name,
+		    raises = raises,
+		    returns = returns,
+		    start = start}
+	    val _ = Control.diagnostic (fn () => layout f)
 	 in
-	    new {args = args,
-		 blocks = blocks,
-		 name = name,
-		 raises = raises,
-		 returns = returns,
-		 start = start}
+	    f
 	 end
    end
 
@@ -1920,10 +1539,7 @@ structure Program =
 structure Program =
    struct
       open Program
-
-      fun checkHandlers (T {functions, ...}) =
-	 List.foreach (functions, Function.checkHandlers)
-	 
+ 
       local
 	 structure Graph = DirectedGraph
 	 structure Node = Graph.Node
@@ -1973,13 +1589,13 @@ structure Program =
 				let
 				   val to = funcNode func
 				   val {tail, nontail} = get to
+				   datatype z = datatype Return.t
 				   val is =
-				      (case return of
-					  Return.NonTail _ => true
-					| _ => false)
-				   val r = if is
-					      then nontail
-					   else tail
+				      case return of
+					 Dead => false
+				       | NonTail _ => true
+				       | Tail => false
+				   val r = if is then nontail else tail
 				in
 				   if !r
 				      then ()

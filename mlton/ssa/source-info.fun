@@ -10,7 +10,8 @@ val layout = Layout.str o toString
 val equals: t * t -> bool = op =
 
 val hash = String.hash
-   
+
+val gc = "<gc>"
 val main = "<main>"
 val polyEqual = "<poly-equal>"
 val unknown = "<unknown>"

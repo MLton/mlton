@@ -50,6 +50,17 @@ string boolToString (bool b) {
 	return b ? "TRUE" : "FALSE";
 }
 
+void *scalloc (size_t nmemb, size_t size) {
+	void *res;
+
+	res = calloc (nmemb, size);
+	if (NULL == res)
+		die ("calloc (%s, %s) failed.\n", 
+			uintToCommaString (nmemb),
+			uintToCommaString (size));
+	return res;
+}
+
 void sclose (int fd) {
 	unless (0 == close (fd)) 
 		diee ("unable to close %d", fd);
@@ -207,6 +218,15 @@ string ullongToCommaString(ullong n) {
  		}
  	}
  	return buf + i + 1;
+}
+
+void *smalloc(size_t length) {
+	void *res;
+
+	res = malloc (length);
+	if (NULL == res)
+		die ("Unable to malloc %s bytes.\n", uintToCommaString (length));
+	return res;
 }
 
 /* ------------------------------------------------- */

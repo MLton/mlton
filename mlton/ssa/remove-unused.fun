@@ -454,13 +454,12 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 		  val (cont, handler)
 		    = case return
 			of Return.Dead => (None, None)
-			 | Return.HandleOnly => (None, Caller)
 			 | Return.NonTail {cont, handler}
 			 => (Some cont,
-			     case handler
-			       of Handler.None => None
-				| Handler.CallerHandler => Caller
-				| Handler.Handle h => Some h)
+			     case handler of
+				Handler.Caller => Caller
+			      | Handler.Dead => None
+			      | Handler.Handle h => Some h)
 			 | Tail => (Caller, Caller)
 		  val fi' = funcInfo func
 		in
@@ -960,13 +959,12 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 		  val (cont, handler)
 		    = case return
 			of Return.Dead => (None, None)
-			 | Return.HandleOnly => (None, Caller)
 			 | Return.NonTail {cont, handler}
 			 => (Some cont,
-			     case handler
-			       of Handler.None => None
-				| Handler.CallerHandler => Caller
-				| Handler.Handle h => Some h)
+			     case handler of
+				Handler.Caller => Caller
+			      | Handler.Dead => None
+			      | Handler.Handle h => Some h)
 			 | Tail => (Caller, Caller)
 		  val cont 
 		    = if FuncInfo.mayReturn fi'
@@ -1011,7 +1009,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 		  val return
 		    = case (cont, handler)
 			of (None, None) => Return.Dead
-			 | (None, Caller) => Return.HandleOnly
+			 | (None, Caller) => Return.Tail
 			 | (None, Some h)
 			 => Return.NonTail
 			    {cont = getBugFunc fi,
@@ -1026,11 +1024,11 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 			 | (Some c, None)
 			 => Return.NonTail
 			    {cont = c,
-			     handler = Handler.None}
+			     handler = Handler.Dead}
 			 | (Some c, Caller)
 			 => Return.NonTail
 			    {cont = c,
-			     handler = Handler.CallerHandler}
+			     handler = Handler.Caller}
 			 | (Some c, Some h)
 			 => Return.NonTail 
 			    {cont = c,

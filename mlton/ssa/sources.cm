@@ -7,9 +7,13 @@
  *)
 Group
 
+signature HANDLER
+signature PROFILE_EXP
+signature RETURN
 signature SOURCE_INFO
 signature SSA
-   
+
+functor FlatLattice
 functor Ssa
 
 is
@@ -56,6 +60,7 @@ n-point-lattice.fun
 n-point-lattice.sig
 poly-equal.fun
 poly-equal.sig
+profile-exp.sig
 redundant.fun
 redundant.sig
 redundant-tests.fun

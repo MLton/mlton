@@ -37,29 +37,28 @@
 		sfread (globaluint, sizeof(uint), u, file);		\
 	}
 
-#define Initialize(cs, mmc, mfs, mg, pa)				\
+#define Initialize(cs, mmc, mfs, mg)					\
 	gcState.cardSizeLog2 = cs;					\
 	gcState.frameLayouts = frameLayouts;				\
+	gcState.frameLayoutsSize = cardof(frameLayouts); 		\
+	gcState.frameSources = frameSources;				\
+	gcState.frameSourcesSize = cardof(frameSources);		\
 	gcState.globals = globalpointer;				\
+	gcState.globalsSize = cardof(globalpointer);			\
 	gcState.intInfInits = intInfInits;				\
 	gcState.loadGlobals = loadGlobals;				\
 	gcState.magic = mg;						\
 	gcState.maxFrameSize = mfs;					\
 	gcState.mutatorMarksCards = mmc;				\
-	gcState.numFrameLayouts = cardof(frameLayouts);			\
-	gcState.numGlobals = cardof(globalpointer);			\
-	gcState.numObjectTypes = (uint)cardof(objectTypes);		\
 	gcState.objectTypes = objectTypes;				\
-	gcState.profileAllocIsOn = pa;					\
-	gcState.profileLabels = profileLabels;				\
-	gcState.profileLabelsSize = cardof(profileLabels);		\
-	gcState.profileSources = profileSources;			\
-	gcState.profileSourcesSize = cardof(profileSources);		\
-	gcState.profileFrameSources = profileFrameSources;		\
-	gcState.profileFrameSourcesSize = cardof(profileFrameSources);	\
-	gcState.profileSourceSeqs = profileSourceSeqs;			\
-	gcState.profileSourceSeqsSize = cardof(profileSourceSeqs);	\
+	gcState.objectTypesSize = cardof(objectTypes);			\
+	gcState.sourceLabels = sourceLabels;				\
+	gcState.sourceLabelsSize = cardof(sourceLabels);		\
 	gcState.saveGlobals = saveGlobals;				\
+	gcState.sources = sources;					\
+	gcState.sourcesSize = cardof(sources);				\
+	gcState.sourceSeqs = sourceSeqs;				\
+	gcState.sourceSeqsSize = cardof(sourceSeqs);			\
 	gcState.stringInits = stringInits;				\
 	MLton_init (argc, argv, &gcState);				\
 

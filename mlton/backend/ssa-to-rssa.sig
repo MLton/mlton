@@ -14,11 +14,9 @@ signature SSA_TO_RSSA_STRUCTS =
       structure Ssa: SSA
       sharing Rssa.Const = Ssa.Const
       sharing Rssa.Func = Ssa.Func
-      sharing Rssa.Handler = Ssa.Handler
       sharing Rssa.Label = Ssa.Label
       sharing Rssa.Prim = Ssa.Prim
-      sharing Rssa.ProfileStatement = Ssa.ProfileExp
-      sharing Rssa.Return = Ssa.Return
+      sharing Rssa.ProfileExp = Ssa.ProfileExp
       sharing Rssa.SourceInfo = Ssa.SourceInfo
       sharing Rssa.Var = Ssa.Var
    end

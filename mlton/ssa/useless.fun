@@ -548,41 +548,27 @@ fun useless (program: Program.t): Program.t =
 		 Call {func = g, return, ...} =>
 		    let
 		       val {raises = graisevs, ...} = func g
+		       fun coerceRaise () =
+			  case (graisevs, fraisevs) of
+			     (NONE, NONE) => ()
+			   | (NONE, SOME _) => ()
+			   | (SOME _, NONE) =>
+				Error.bug "raise mismatch at Caller"
+			   | (SOME vs, SOME vs') =>
+				Vector.foreach2 (vs', vs, coerce)
 		    in
 		      case return of
 		         Return.Dead => ()
-		       | Return.HandleOnly => 
-			    (case (graisevs, fraisevs) of
-			        (NONE, NONE) => ()
-			      | (NONE, SOME _) => ()
-			      | (SOME _, NONE) =>
-				   Error.bug "raise mismatch at HandleOnly"
-			      | (SOME vs, SOME vs') =>
-				   Vector.foreach2 (vs', vs, coerce))
 		       | Return.NonTail {handler, ...} =>
 			    (case handler of
-			        Handler.None => ()
-			      | Handler.CallerHandler => 
-				   (case (graisevs, fraisevs) of
-				       (NONE, NONE) => ()
-				     | (NONE, SOME _) => ()
-				     | (SOME _, NONE) =>
-					  Error.bug "raise mismatch at HandleOnly"
-				     | (SOME vs, SOME vs') =>
-					  Vector.foreach2 (vs', vs, coerce))
+				Handler.Caller => coerceRaise ()
+			      | Handler.Dead => ()
 			      | Handler.Handle h =>
 				   Option.app
 				   (graisevs, fn graisevs =>
 				    Vector.foreach2 
 				    (label h, graisevs, coerce)))
-		       | Return.Tail => 
-			    (case (graisevs, fraisevs) of
-			        (NONE, NONE) => ()
-			      | (NONE, SOME _) => ()
-			      | (SOME _, NONE) =>
-				   Error.bug "raise mismatch at HandleOnly"
-			      | (SOME vs, SOME vs') =>
-				   Vector.foreach2 (vs', vs, coerce))
+		       | Return.Tail => coerceRaise ()
 		    end
 	       | _ => ())
 	  end)
@@ -855,7 +841,6 @@ fun useless (program: Program.t): Program.t =
 		  val (blocks, return) =
 		     case return of
 			Return.Dead => ([], return)
-		      | Return.HandleOnly => ([], return)
 		      | Return.Tail =>
 			   (case (returns, freturns) of
 			       (NONE, NONE) => ([], Return.Tail)
@@ -872,7 +857,7 @@ fun useless (program: Program.t): Program.t =
 				     in ([b],
 					 Return.NonTail
 					 {cont = l,
-					  handler = Handler.CallerHandler})
+					  handler = Handler.Caller})
 				     end)
 		      | Return.NonTail {cont, handler} =>
 			   (case freturns of

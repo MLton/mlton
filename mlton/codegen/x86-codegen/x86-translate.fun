@@ -167,12 +167,12 @@ struct
 		      CanHandle => gcState_canHandleContentsOperand ()
 		    | CardMap => gcState_cardMapContentsOperand ()
 		    | CurrentThread => gcState_currentThreadContentsOperand ()
+		    | ExnStack =>
+			 gcState_currentThread_exnStackContentsOperand ()
 		    | Frontier => gcState_frontierContentsOperand ()
 		    | Limit => gcState_limitContentsOperand ()
 		    | LimitPlusSlop => gcState_limitPlusSlopContentsOperand ()
 		    | MaxFrameSize => gcState_maxFrameSizeContentsOperand ()
-		    | ProfileAllocIndex =>
-			 gcState_profileAllocIndexContentsOperand ()
 		    | SignalIsPending =>
 			 gcState_signalIsPendingContentsOperand ()
 		    | StackBottom => gcState_stackBottomContentsOperand ()
@@ -264,19 +264,20 @@ struct
 		     statements = [],
 		     transfer = NONE})
 		 end
-	      | Kind.Handler {offset, ...}
+	      | Kind.Handler {frameInfo, ...}
 	      => let
 		 in 
 		   AppendList.single
 		   (x86.Block.T'
-		    {entry = SOME (x86.Entry.handler {label = label,
-						      live = x86.MemLocSet.empty,
-						      offset = offset}),
+		    {entry = SOME (x86.Entry.handler
+				   {frameInfo = frameInfoToX86 frameInfo,
+				    label = label,
+				    live = x86.MemLocSet.empty}),
 		     statements = [],
 		     transfer = NONE})
 		 end
 	      | Kind.CReturn {dst, frameInfo, func}
-		=> let
+	      => let
 		   val dst = Option.map (dst, Operand.convert)
 		 in
 		   x86MLton.creturn

@@ -35,6 +35,11 @@
 #define	NULL	0			/* invalid pointer */
 #endif
 
+#define NEW(x) \
+	x = (typeof(x))smalloc(sizeof(*x))
+#define ARRAY(a, s) \
+	a = (typeof(a))scalloc(s, sizeof(*a))
+
 #define string char*
 
 #define	unless(p)	if (not (p))
@@ -66,6 +71,8 @@ extern void asfail(char *file, int line, char *prop);
 
 string boolToString (bool b);
 
+void *scalloc (size_t nmemb, size_t size);
+
 /* safe version of close, mkstemp, write */
 int smkstemp (char *template);
 void sclose (int fd);
@@ -75,20 +82,22 @@ void swriteUllong (int fd, ullong n);
 
 /* safe versions of fopen, fread, fwrite */
 void sfclose (FILE *file);
-FILE *sfopen(char *fileName, char *mode);
-void sfread(void *ptr, size_t size, size_t nmemb, FILE *file);
-uint sfreadUint(FILE *file);
-void sfwrite(void *ptr, size_t size, size_t nmemb, FILE *file);
-void sfwriteUint(uint n, FILE *file);
+FILE *sfopen (char *fileName, char *mode);
+void sfread (void *ptr, size_t size, size_t nmemb, FILE *file);
+uint sfreadUint (FILE *file);
+void sfwrite (void *ptr, size_t size, size_t nmemb, FILE *file);
+void sfwriteUint (uint n, FILE *file);
+
+void *smalloc (size_t length);
 
 /* safe mmap and munmap */
-void *smmap(size_t length);
-void smunmap(void *base, size_t length);
+void *smmap (size_t length);
+void smunmap (void *base, size_t length);
 void sunlink (char *path);
 
 /* Return a statically allocated comma separated string */
-string intToCommaString(int n);
-string uintToCommaString(uint n);
-string ullongToCommaString(ullong n);
+string intToCommaString (int n);
+string uintToCommaString (uint n);
+string ullongToCommaString (ullong n);
 
 #endif

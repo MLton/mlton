@@ -34,12 +34,12 @@ word threadTemp;
 	pointer localpointer[p];					\
 	uint localuint[u]
 
-#define Main(cs, mmc, mfs, mg, pa, ml, reserveEsp)			\
+#define Main(cs, mmc, mfs, mg, ml, reserveEsp)				\
 int main (int argc, char **argv) {					\
 	pointer jump;  							\
 	extern pointer ml;						\
 	gcState.native = TRUE;						\
-	Initialize(cs, mmc, mfs, mg, pa);				\
+	Initialize(cs, mmc, mfs, mg);					\
 	if (gcState.isOriginal) {					\
 		real_Init();						\
 		jump = (pointer)&ml;   					\

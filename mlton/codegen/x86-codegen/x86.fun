@@ -3618,9 +3618,9 @@ struct
         | Cont of {label: Label.t,
 		   live: MemLocSet.t,
 		   frameInfo: FrameInfo.t}
-	| Handler of {label: Label.t,
-		      live: MemLocSet.t,
-		      offset: int}
+	| Handler of {frameInfo: FrameInfo.t,
+		      label: Label.t,
+		      live: MemLocSet.t}
 	| CReturn of {dst: (Operand.t * Size.t) option,
 		      frameInfo: FrameInfo.t option,
 		      func: CFunction.t,
@@ -3652,7 +3652,7 @@ struct
 		       ", "),
 		      "] ",
 		      FrameInfo.toString frameInfo]
-	   | Handler {label, live, offset} 
+	   | Handler {frameInfo, label, live} 
            => concat ["Handler::",
 		      Label.toString label,
 		      " [",
@@ -3663,7 +3663,7 @@ struct
 			fn (memloc, l) => (MemLoc.toString memloc)::l),
 		       ", "),
 		      "] (",
-		      Int.toString offset,
+		      FrameInfo.toString frameInfo,
 		      ")"]
 	   | CReturn {dst, frameInfo, func, label} 
 	   => concat ["CReturn::",

@@ -16,121 +16,126 @@
 #define EIP	14
 #endif
 
-enum {
-	DEBUG_PROFILE = FALSE,
-};
-
 extern struct GC_state gcState;
 
-/* Current is an array of uints, one for each source position.
- * Counters cannot overflow for 2^32 / 100 seconds or a bit over 1 CPU year.
- */
-static uint *current = NULL;
-
 Pointer MLton_ProfileTime_current () {
-	if (DEBUG_PROFILE)
+	GC_state s;
+
+	s = &gcState;
+	if (DEBUG_PROFILE_TIME)
 		fprintf (stderr, "0x%08x = MLton_ProfileTime_current ()\n",
-				(uint)current);
-	return (Pointer)current;
+				(uint)s->profileTime);
+	return (Pointer)s->profileTime;
 }
 
 void MLton_ProfileTime_setCurrent (Pointer d) {
-	uint *data;
+	GC_state s;
 
-	if (DEBUG_PROFILE)
+	s = &gcState;
+	if (DEBUG_PROFILE_TIME)
 		fprintf (stderr, "MLton_ProfileTime_setCurrent (0x%08x)\n",
 				(uint)d);
-	data = (uint*)d;
-	assert (data != NULL);
-	current = data;
+	s->profileTime = (typeof(s->profileTime))d;
 }
 
 Pointer MLton_ProfileTime_Data_malloc (void) {
-	/* Note, perhaps this code should use mmap()/munmap() instead of
-	 * malloc()/free() for the array of bins.
-	 */
-	uint *data;
-	
-	data = (uint *)malloc (gcState.profileSourcesSize * sizeof(*data));
-	if (data == NULL)
-		die ("Out of memory");
-	MLton_ProfileTime_Data_reset ((Pointer)data);
-	if (DEBUG_PROFILE)
+	GC_state s;
+	GC_profileTime pt;
+
+	s = &gcState;
+	pt = GC_profileTimeNew (s);
+	if (DEBUG_PROFILE_TIME)
 		fprintf (stderr, "0x%08x = MLton_ProfileTimeData_malloc ()\n",
-				(uint)data);
-	return (Pointer)data;
+				(uint)pt);
+	return (Pointer)pt;
 }
 
 void MLton_ProfileTime_Data_free (Pointer d) {
-	uint *data;
+	GC_state s;
 
-	if (DEBUG_PROFILE)
+	s = &gcState;
+	if (DEBUG_PROFILE_TIME)
 		fprintf (stderr, "MLton_ProfileTime_Data_free (0x%08x)",
 				(uint)d);
-	data = (uint*)d;
-	assert (data != NULL);
-	free (data);
-	if (DEBUG_PROFILE)
+	GC_profileTimeFree (s, (GC_profileTime)d);
+	if (DEBUG_PROFILE_TIME)
 		fprintf (stderr, "\n");
 }
 
-void MLton_ProfileTime_Data_reset (Pointer d) {
-	uint *data;
-
-	data = (uint*)d;
-	assert (data != NULL); 
-	memset (data, 0, gcState.profileSourcesSize * sizeof(*data));
-}
-
-static void writeString (int fd, string s) {
-	swrite (fd, s, strlen(s));
-	swrite (fd, "\n", 1);
-}
-
-static void writeWord (int fd, word w) {
-	char buf[20];
-
-	sprintf (buf, "0x%08x", w);
-	writeString (fd, buf);
-}
-
-static void writeUint (int fd, uint w) {
-	char buf[20];
-
-	sprintf (buf, "%u", w);
-	writeString (fd, buf);
-}
-
 void MLton_ProfileTime_Data_write (Pointer d, Word fd) {
-/* Write a profile data array out to a file descriptor.
- *
- * The `unknown ticks' is a count of the number of times that the monitored
- * program counter was not in the range of a bin.  This almost certainly
- * corresponds to times when it was pointing at shared library code.
- * All values except for the initial string are unsigned integers in
- * the native machine format (4 bytes, little-endian).
- */
-	uint *data;
-	uint i;
+	GC_state s;
 
-	if (DEBUG_PROFILE) 
+	s = &gcState;
+	if (DEBUG_PROFILE_TIME) 
 		fprintf (stderr, "MLton_ProfileTime_Data_Write (0x%08x, %ld)\n",
 				(uint)d, fd);
-	data = (uint*)d;
-	writeString (fd, "MLton prof");
-	writeString (fd, "time");
-	writeWord (fd, gcState.magic);
-	for (i = 0; i < gcState.profileSourcesSize; ++i)
-		writeUint (fd, data[i]);
+	GC_profileTimeWrite (s, (GC_profileTime) d, fd);
+}
+
+static void incAndMark (GC_state s, uint sourceSeqsIndex) {
+	uint i;
+	uint length;
+	uint source;
+	uint *sourceSeq;
+
+	if (DEBUG_PROFILE_TIME)
+		fprintf (stderr, "incAndMark (%u)\n", sourceSeqsIndex);
+	assert (sourceSeqsIndex < s->sourceSeqsSize);
+	sourceSeq = s->sourceSeqs [sourceSeqsIndex];
+	length = sourceSeq[0];
+	for (i = 1; i <= length; ++i) {
+		source = sourceSeq[i];
+		if (DEBUG_PROFILE_TIME)
+			fprintf (stderr, "reached %s ", s->sources[source]);
+		if (s->sourceIsOnStack[source]) {
+			if (DEBUG_PROFILE_TIME)
+				fprintf (stderr, " already on stack\n");
+		} else {
+			if (DEBUG_PROFILE_TIME)
+				fprintf (stderr, "bumping\n");
+			s->sourceIsOnStack[source] = TRUE;
+			s->profileTime->ticks[source]++;
+		}
+	}
+}
+
+static void incAndMarkFrame (GC_state s, uint frameSourcesIndex) {
+	incAndMark (s, s->frameSources[frameSourcesIndex]);
+}
+
+static void unmark (GC_state s, uint sourceSeqsIndex) {
+	uint i;
+	uint length;
+	uint source;
+	uint *sourceSeq;
+
+	sourceSeq = s->sourceSeqs [sourceSeqsIndex];
+	length = sourceSeq[0];
+	for (i = 1; i <= length; ++i) {
+		source = sourceSeq[i];
+		s->sourceIsOnStack [source] = FALSE;
+	}
+}
+
+static void unmarkFrame (GC_state s, uint frameSourcesIndex) {
+	unmark (s, s->frameSources[frameSourcesIndex]);
 }
 
 /*
  * Called on each SIGPROF interrupt.
  */
 static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {
-	uint i;
+	GC_state s;
 	pointer pc;
+	uint *sourceSeq;
+	uint sourceSeqsIndex;
 
+	s = &gcState;
+	s->profileTime->totalTicks++;
+	if (s->amInGC) {
+		s->profileTime->ticks [SOURCES_INDEX_GC]++; 
+		return;
+	}
 #if (defined (__linux__))
         pc = (pointer) ucp->uc_mcontext.gregs[EIP];
 #elif (defined (__FreeBSD__))
@@ -138,15 +143,29 @@ static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {
 #else
 #error pc not defined
 #endif
-	if (gcState.textStart <= pc and pc < gcState.textEnd)
-		i = gcState.textSources [pc - gcState.textStart];
-	else
-		i = SOURCE_SEQ_UNKNOWN;
-	assert (i < gcState.profileSourceSeqsSize);
-
-	++current[gcState.profileSourceSeqs[i][1]];
-	unless (TRUE or gcState.amInGC)
-		free (GC_stackFrameIndices (&gcState));
+	if (DEBUG_PROFILE_TIME)
+		fprintf (stderr, "pc = 0x%08x\n", (uint)pc);
+	if (s->textStart <= pc and pc < s->textEnd) {
+		sourceSeqsIndex = s->textSources [pc - s->textStart];
+	} else {
+		sourceSeqsIndex = SOURCE_SEQ_UNKNOWN;
+	}
+	assert (sourceSeqsIndex < s->sourceSeqsSize);
+	switch (s->profileStyle) {
+	case PROFILE_CUMULATIVE:
+		/* Walk all the stack frames. */
+		incAndMark (s, sourceSeqsIndex);
+		GC_foreachStackFrame (s, incAndMarkFrame);
+		unmark (s, sourceSeqsIndex);
+		GC_foreachStackFrame (s, unmarkFrame);
+	break;
+	case PROFILE_CURRENT:
+		sourceSeq = s->sourceSeqs [sourceSeqsIndex];
+		assert (sourceSeq [0] > 0);
+		assert (sourceSeq [1] < s->sourcesSize);
+		s->profileTime->ticks [sourceSeq [1]]++;
+	break;
+	}
 }
 
 void MLton_ProfileTime_init (void) {

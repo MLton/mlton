@@ -582,8 +582,8 @@ struct
 				(* entry from far assumptions *)
 				(farEntry AppendList.empty))
 			    | Cont {label, 
-				    frameInfo as FrameInfo.T {size,
-							      frameLayoutsIndex},
+				    frameInfo = FrameInfo.T {size,
+							     frameLayoutsIndex},
 				    ...}
 			    =>
 			       AppendList.append
@@ -610,13 +610,16 @@ struct
 				       size = pointerSize},
 				      profileStackTopCommit)
 				  end)))
-		            | Handler {label,
-				       offset, 
+		            | Handler {frameInfo = (FrameInfo.T
+						    {frameLayoutsIndex, size}),
+				       label,
 				       ...}
 			    => AppendList.append
 			       (AppendList.fromList
 				[Assembly.pseudoop_p2align 
 				 (Immediate.const_int 4, NONE, NONE),
+				 Assembly.pseudoop_long
+				 [Immediate.const_int frameLayoutsIndex],
 				 Assembly.label label],
 				(* entry from far assumptions *)
 				(farEntry
@@ -624,7 +627,7 @@ struct
 				     val stackTop 
 					= x86MLton.gcState_stackTopContentsOperand ()
 				     val bytes 
-					= x86.Operand.immediate_const_int (~ offset)
+					= x86.Operand.immediate_const_int (~ size)
 				  in
 				     AppendList.cons
 				     ((* stackTop += bytes *)
@@ -1036,9 +1039,9 @@ val pre
 				  src = exnStack,
 				  size = pointerSize}]))
 		       (AppendList.single
-			(* jmp *(stackTop) *)
+			(* jmp *(stackTop - WORD_SIZE) *)
 			(x86.Assembly.instruction_jmp
-			 {target = stackTopDeref,
+			 {target = x86MLton.gcState_stackTopMinusWordDerefOperand (),
 			  absolute = true})))
 		    end
 	        | CCall {args, dstsize,

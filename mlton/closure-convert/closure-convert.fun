@@ -101,7 +101,7 @@ structure Accum =
 					     (globals, fn {var, ty, ...} =>
 					      Dexp.var (var, ty))),
 				     ty = Type.unit (* bogus *)}},
-		 Ssa.Handler.CallerHandler)
+		 Ssa.Handler.Caller)
 	     val {blocks, ...} =
 		Function.dest
 		(Ssa.shrinkFunction
@@ -684,7 +684,7 @@ fun closureConvert
       fun addFunc (ac, {args, body, name, returns, sourceInfo}) =
 	 let
 	    val (start, blocks) =
-	       Dexp.linearize (body, Ssa.Handler.CallerHandler)
+	       Dexp.linearize (body, Ssa.Handler.Caller)
 	    val f =
 	       Function.profile 
 	       (shrinkFunction

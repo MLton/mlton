@@ -38,7 +38,8 @@ datatype z = datatype Transfer.t
 structure LiveInfo =
    struct
       datatype t = T of {live: Var.t list ref,
-			 liveHS: bool ref * bool ref,
+			 liveHS: {handler: Label.t option ref,
+				  link: unit option ref},
 			 name: string,
 			 preds: t list ref}
 
@@ -46,13 +47,16 @@ structure LiveInfo =
 
       fun new (name: string) =
 	 T {live = ref [],
-	    liveHS = (ref false, ref false),
+	    liveHS = {handler = ref NONE,
+		      link = ref NONE},
 	    name = name,
 	    preds = ref []}
 
       fun live (T {live = r, ...}) = !r
 	 
-      fun liveHS (T {liveHS = (c, l), ...}) = (!c, !l)
+      fun liveHS (T {liveHS = {handler, link}, ...}) =
+	 {handler = !handler,
+	  link = isSome (!link)}
 
       fun equals (T {live = r, ...}, T {live = r', ...}) = r = r'
 
@@ -91,9 +95,9 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 	 Property.get (Var.plist,
 		       Property.initFun (fn _ => {defined = ref NONE,
 						  used = ref []}))
-      datatype u = Def of LiveInfo.t | Use of LiveInfo.t
-      val handlerCodeDefUses: u list ref = ref []
-      val handlerLinkDefUses: u list ref = ref []
+      datatype 'a defuse = Def of LiveInfo.t | Use of 'a * LiveInfo.t
+      val handlerCodeDefUses: Label.t defuse list ref = ref []
+      val handlerLinkDefUses: unit defuse list ref = ref []
       val allVars: Var.t list ref = ref []
       fun setDefined (x: Var.t, defined): unit =
 	 if shouldConsider x
@@ -143,7 +147,8 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 	     *)
 	    val _ =
 	       case kind of
-		  Kind.Cont {handler, ...} => Option.app (handler, goto)
+		  Kind.Cont {handler, ...} =>
+		     Handler.foreachLabel (handler, goto)
 		| _ => ()
 	    fun define (x: Var.t): unit = setDefined (x, b)
 	    fun use (x: Var.t): unit =
@@ -167,9 +172,12 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 							use = use})
 		   val _ =
 		      case s of
-			 SetExnStackSlot => List.push (handlerLinkDefUses, Use b)
-		       | SetHandler _ => List.push (handlerCodeDefUses, Def b)
-		       | SetSlotExnStack => List.push (handlerLinkDefUses, Def b)
+			 SetExnStackSlot =>
+			    List.push (handlerLinkDefUses, Use ((), b))
+		       | SetHandler _ =>
+			    List.push (handlerCodeDefUses, Def b)
+		       | SetSlotExnStack =>
+			    List.push (handlerLinkDefUses, Def b)
 		       | _ => ()
 		in
 		   ()
@@ -179,7 +187,8 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 		  val {block = Block.T {kind, ...}, ...} = labelInfo l
 	       in
 		  case kind of
-		     Kind.Handler => List.push (handlerCodeDefUses, Use b)
+		     Kind.Handler =>
+			List.push (handlerCodeDefUses, Use (l, b))
 		   | _ => goto l
 	       end
 	    val _ =
@@ -228,45 +237,55 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
        * occurs before the use.  But, a back propagated use will always
        * come after a def in the same block
        *)
-      fun handlerLink (defuse, sel) =
+      fun handlerLink (defuse: 'a defuse list ref,
+		       sel: {handler: Label.t option ref,
+			     link: unit option ref} -> 'a option ref) =
 	 let
-	    val todo: LiveInfo.t list ref = ref []
+	    val todo: ('a * LiveInfo.t) list ref = ref []
 	    val defs =
 	       List.foldr
-	       (!defuse, [],
-		fn (Def b, defs) => b::defs
-		 | (Use (b as LiveInfo.T {liveHS, ...}), defs) =>
-		      if List.exists (defs, fn b' => LiveInfo.equals (b, b'))
-			 then defs
-		      else (sel liveHS := true
-			    ; List.push (todo, b)
-			    ; defs))
-	    fun consider (b as LiveInfo.T {liveHS, ...}) =
+	       (!defuse, [], fn (du, defs) =>
+		case du of
+		   Def b => b::defs
+		 | Use (a, b as LiveInfo.T {liveHS, ...}) =>
+		      let
+			 val _ =
+			    if List.exists (defs, fn b' =>
+					    LiveInfo.equals (b, b'))
+			       then ()
+			    else (sel liveHS := SOME a
+				  ; List.push (todo, (a, b)))
+		      in
+			 defs
+		      end)
+	    fun consider (b as LiveInfo.T {liveHS, ...}, a: 'a) =
 	       if List.exists (defs, fn b' => LiveInfo.equals (b, b'))
-		  orelse !(sel liveHS)
+		  orelse isSome (!(sel liveHS))
 		  then ()
-	       else (sel liveHS := true
-		     ; List.push (todo, b))
+	       else (sel liveHS := SOME a
+		     ; List.push (todo, (a, b)))
 	    fun loop () =
 	       case !todo of
 		  [] => ()
-		| LiveInfo.T {preds, ...} :: bs =>
+		| (a, LiveInfo.T {preds, ...}) :: bs =>
 		     (todo := bs
-		      ; List.foreach (!preds, consider)
+		      ; List.foreach (!preds, fn b => consider (b, a))
 		      ; loop ())
 	    val _ = loop ()
 	 in
 	    ()
 	 end
-      val _ = handlerLink (handlerCodeDefUses, #1)
-      val _ = handlerLink (handlerLinkDefUses, #2)
+      val _ = handlerLink (handlerCodeDefUses, #handler)
+      val _ = handlerLink (handlerLinkDefUses, #link)
       fun labelLive (l: Label.t) =
 	 let
 	    val {bodyInfo, argInfo, ...} = labelInfo l
+	    val {handler, link} = LiveInfo.liveHS bodyInfo
 	 in
 	    {begin = LiveInfo.live bodyInfo,
 	     beginNoFormals = LiveInfo.live argInfo,
-	     handlerSlots = LiveInfo.liveHS bodyInfo}
+	     handler = handler,
+	     link = link}
 	 end
       val _ =
 	 Control.diagnostics
@@ -277,16 +296,16 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 	     (blocks, fn b =>
 	      let
 		 val l = Block.label b		 
-		 val {begin, beginNoFormals, handlerSlots} = labelLive l
+		 val {begin, beginNoFormals, handler, link} = labelLive l
 	      in
-		 display (seq [Label.layout l,
-			       str " ",
-			       record [("begin", List.layout Var.layout begin),
-				       ("beginNoFormals",
-					List.layout Var.layout beginNoFormals),
-				       ("handlerSlots",
-					Layout.tuple2 (Bool.layout, Bool.layout)
-					handlerSlots)]])
+		 display
+		 (seq [Label.layout l,
+		       str " ",
+		       record [("begin", List.layout Var.layout begin),
+			       ("beginNoFormals",
+				List.layout Var.layout beginNoFormals),
+			       ("handler", Option.layout Label.layout handler),
+			       ("link", Bool.layout link)]])
 	      end)
 	  end)
    in 

@@ -62,8 +62,6 @@ enum {
 	DEBUG_GENERATIONAL = FALSE,
 	DEBUG_MARK_COMPACT = FALSE,
 	DEBUG_MEM = FALSE,
-	DEBUG_PROFILE_ALLOC = FALSE,
-	DEBUG_PROF = FALSE,
 	DEBUG_RESIZING = FALSE,
 	DEBUG_SIGNALS = FALSE,
 	DEBUG_STACKS = FALSE,
@@ -93,7 +91,7 @@ typedef enum {
 		assert (1 == (header & 1));					\
 		objectTypeIndex = (header & TYPE_INDEX_MASK) >> 1;		\
 		assert (0 <= objectTypeIndex					\
-				and objectTypeIndex < s->numObjectTypes);	\
+				and objectTypeIndex < s->objectTypesSize);	\
 		t = &s->objectTypes [objectTypeIndex];				\
 		tag = t->tag;							\
 		numNonPointers = t->numNonPointers;				\
@@ -585,46 +583,6 @@ static inline bool stackIsEmpty (GC_stack stack) {
 	return 0 == stack->used;
 }
 
-word *GC_stackFrameIndices (GC_state s) {
-	pointer bottom;
-	int i;
-	word index;
-	GC_frameLayout *layout;
-	int numFrames;
-	word *res;
-	word returnAddress;
-	pointer top;
-
-	if (DEBUG_PROF)
-		fprintf (stderr, "walking stack\n");
-	assert (s->native);
-	bottom = stackBottom (s->currentThread->stack);
-	numFrames = 0;
-	for (top = s->stackTop; top > bottom; ++numFrames) {
-		returnAddress = *(word*)(top - WORD_SIZE);
-		index = *(word*)(returnAddress - WORD_SIZE);
-		if (DEBUG_PROF)
-			fprintf (stderr, "top = 0x%08x  index = %u\n",
-					(uint)top, index);
-		assert (0 <= index and index < s->numFrameLayouts);
-		layout = &(s->frameLayouts[index]);
-		assert (layout->numBytes > 0);
-		top -= layout->numBytes;
-	}
-	res = (word*) malloc ((numFrames + 1) * sizeof(word));
-	i = numFrames - 1;
-	for (top = s->stackTop; top > bottom; --i) {
-		returnAddress = *(word*)(top - WORD_SIZE);
-		index = *(word*)(returnAddress - WORD_SIZE);
-		res[i] = index;
-		top -= s->frameLayouts[index].numBytes;
-	}
-	res[numFrames] = 0xFFFFFFFF;
-	if (DEBUG_PROF)
-		fprintf (stderr, "done walking stack\n");
-	return res;
-}
-
 static inline GC_frameLayout * getFrameLayout (GC_state s, word returnAddress) {
 	GC_frameLayout *layout;
 	uint index;
@@ -634,9 +592,9 @@ static inline GC_frameLayout * getFrameLayout (GC_state s, word returnAddress) {
 	else
 		index = (uint)returnAddress;
 	if (DEBUG_DETAILED)
-		fprintf (stderr, "returnAddress = 0x%08x  index = %d  numFrameLayouts = %d\n",
-				returnAddress, index, s->numFrameLayouts);
-	assert (0 <= index and index < s->numFrameLayouts);
+		fprintf (stderr, "returnAddress = 0x%08x  index = %d  frameLayoutsSize = %d\n",
+				returnAddress, index, s->frameLayoutsSize);
+	assert (0 <= index and index < s->frameLayoutsSize);
 	layout = &(s->frameLayouts[index]);
 	assert (layout->numBytes > 0);
 	return layout;
@@ -679,13 +637,6 @@ static inline void setFrontier (GC_state s, pointer p) {
 	s->frontier = p;
 }
 
-/* Pre: s->profileAllocIndex is set. */
-void GC_incProfileAlloc (GC_state s, W32 amount) {
-	if (s->profileAllocIsOn)
-		MLton_ProfileAlloc_inc (amount);
-}
-
-/* Pre: s->profileAllocIndex is set. */
 static pointer object (GC_state s, uint header, W32 bytesRequested,
 				bool allocInOldGen) {
 	pointer frontier;
@@ -718,7 +669,6 @@ static pointer object (GC_state s, uint header, W32 bytesRequested,
 	return result;
 }
 
-/* Pre: s->profileAllocIndex is set. */
 static GC_stack newStack (GC_state s, uint size, bool allocInOldGen) {
 	GC_stack stack;
 
@@ -776,7 +726,7 @@ static inline void maybeCall (GC_pointerFun f, GC_state s, pointer *pp) {
 static inline void foreachGlobal (GC_state s, GC_pointerFun f) {
 	int i;
 
- 	for (i = 0; i < s->numGlobals; ++i) {
+ 	for (i = 0; i < s->globalsSize; ++i) {
 		if (DEBUG_DETAILED)
 			fprintf (stderr, "foreachGlobal %u\n", i);
 		maybeCall (f, s, &s->globals [i]);
@@ -886,18 +836,22 @@ static inline pointer foreachPointerInObject (GC_state s, GC_pointerFun f,
 		while (top > bottom) {
 			/* Invariant: top points just past a "return address". */
 			returnAddress = *(word*) (top - WORD_SIZE);
-			if (DEBUG)
-				fprintf(stderr, 
-					"  top = %d  return address = 0x%08x.\n", 
-					top - bottom, 
-					returnAddress);
+			if (DEBUG) {
+				fprintf (stderr, "  top = %d  return address = ",
+						top - bottom);
+				if (s->native)
+					fprintf (stderr, "0x%08x.\n", 
+							returnAddress);
+				else
+					fprintf (stderr, "%u\n", returnAddress);
+			}
 			layout = getFrameLayout (s, returnAddress); 
 			frameOffsets = layout->offsets;
 			top -= layout->numBytes;
 			for (i = 0 ; i < frameOffsets[0] ; ++i) {
 				if (DEBUG)
 					fprintf(stderr, 
-						"    offset %u  address %x\n", 
+						"    offset %u  address 0x%08x\n", 
 						frameOffsets[i + 1],
 						(uint)(*(pointer*)(top + frameOffsets[i + 1])));
 				maybeCall(f, s, 
@@ -1028,16 +982,20 @@ static bool invariant (GC_state s) {
 		fprintf (stderr, "invariant\n");
 	assert (ratiosOk (s));
 	/* Frame layouts */
-	for (i = 0; i < s->numFrameLayouts; ++i) {
+	for (i = 0; i < s->frameLayoutsSize; ++i) {
 		GC_frameLayout *layout;
-			layout = &(s->frameLayouts[i]);
+
+		layout = &(s->frameLayouts[i]);
 		if (layout->numBytes > 0) {
 			GC_offsets offsets;
-			int j;
-			assert(layout->numBytes <= s->maxFrameSize);
+//			int j;
+
+			assert (layout->numBytes <= s->maxFrameSize);
 			offsets = layout->offsets;
-			for (j = 0; j < offsets[0]; ++j)
-				assert(offsets[j + 1] < layout->numBytes);
+// No longer correct, since handler frames have a "size" (i.e. return address)
+// pointing into the middle of the frame.
+//			for (j = 0; j < offsets[0]; ++j)
+//				assert (offsets[j + 1] < layout->numBytes);
 		}
 	}
 	if (s->mutatorMarksCards) {
@@ -2456,7 +2414,6 @@ static void growStack (GC_state s) {
 		fprintf (stderr, "Growing stack to size %s.\n",
 				uintToCommaString (stackBytes (size)));
 	assert (hasBytesFree (s, stackBytes (size), 0));
-	s->profileAllocIndex = PROFILE_ALLOC_MISC;
 	stack = newStack (s, size, TRUE);
 	stackCopy (s->currentThread->stack, stack);
 	s->currentThread->stack = stack;
@@ -2658,7 +2615,6 @@ static inline W64 w64align (W64 w) {
  	return ((w + 3) & ~ 3);
 }
 
-/* Pre: s->profileAllocIndex is set. */
 pointer GC_arrayAllocate (GC_state s, W32 ensureBytesFree, W32 numElts, 
 				W32 header) {
 	uint numPointers;
@@ -2744,7 +2700,6 @@ static inline uint initialThreadBytes (GC_state s) {
 	return threadBytes () + stackBytes (initialStackSize (s));
 }
 
-/* Pre: s->profileAllocIndex is set. */
 static GC_thread newThreadOfSize (GC_state s, uint stackSize) {
 	GC_stack stack;
 	GC_thread t;
@@ -2761,7 +2716,6 @@ static GC_thread newThreadOfSize (GC_state s, uint stackSize) {
 	return t;
 }
 
-/* Pre: s->profileAllocIndex is set. */
 static GC_thread copyThread (GC_state s, GC_thread from, uint size) {
 	GC_thread to;
 
@@ -2785,7 +2739,6 @@ static GC_thread copyThread (GC_state s, GC_thread from, uint size) {
 	return to;
 }
 
-/* Pre: s->profileAllocIndex is set. */
 void GC_copyCurrentThread (GC_state s) {
 	GC_thread t;
 	GC_thread res;
@@ -2802,7 +2755,6 @@ void GC_copyCurrentThread (GC_state s) {
 	s->savedThread = res;
 }
 
-/* Pre: s->profileAllocIndex is set. */
 pointer GC_copyThread (GC_state s, pointer thread) {
 	GC_thread res;
 	GC_thread t;
@@ -2816,6 +2768,169 @@ pointer GC_copyThread (GC_state s, pointer thread) {
 	assert (stackTopIsOk (s, res->stack));
 	leave (s);
 	return (pointer)res;
+}
+
+/* ---------------------------------------------------------------- */
+/*                            Profiling                             */
+/* ---------------------------------------------------------------- */
+
+void GC_foreachStackFrame (GC_state s, void (*f) (GC_state s, uint i)) {
+	pointer bottom;
+	word index;
+	GC_frameLayout *layout;
+	word returnAddress;
+	pointer top;
+
+	if (DEBUG_PROFILE_TIME)
+		fprintf (stderr, "walking stack");
+	assert (s->native);
+	bottom = stackBottom (s->currentThread->stack);
+	if (DEBUG_PROFILE_TIME)
+		fprintf (stderr, "  bottom = 0x%08x  top = 0x%08x.\n",
+				(uint)bottom, (uint)s->stackTop);
+	for (top = s->stackTop; top > bottom; top -= layout->numBytes) {
+		returnAddress = *(word*)(top - WORD_SIZE);
+		index = *(word*)(returnAddress - WORD_SIZE);
+		if (DEBUG_PROFILE_TIME)
+			fprintf (stderr, "top = 0x%08x  index = %u\n",
+					(uint)top, index);
+		unless (0 <= index and index < s->frameLayoutsSize)
+			die ("top = 0x%08x  returnAddress = 0x%08x  index = %u\n",
+					(uint)top, returnAddress, index);
+		f (s, index);
+		layout = &(s->frameLayouts[index]);
+		assert (layout->numBytes > 0);
+	}
+	if (DEBUG_PROFILE_TIME)
+		fprintf (stderr, "done walking stack\n");
+}
+
+void GC_incProfileAlloc (GC_state s, W32 amount) {
+	if (s->profileAllocIsOn)
+		MLton_ProfileAlloc_inc (amount);
+}
+
+static void showProf (GC_state s) {
+	int i;
+
+	fprintf (stdout, "0x%08x\n", s->magic);
+	for (i = 0; i < s->sourcesSize; ++i)
+		fprintf (stdout, "%s\n", s->sources[i]);
+}
+
+static int compareProfileLabels (const void *v1, const void *v2) {
+	GC_profileLabel l1;
+	GC_profileLabel l2;
+
+	l1 = (GC_profileLabel)v1;
+	l2 = (GC_profileLabel)v2;
+	return (int)l1->label - (int)l2->label;
+}
+
+static void writeString (int fd, string s) {
+	swrite (fd, s, strlen(s));
+	swrite (fd, "\n", 1);
+}
+
+static void writeUint (int fd, uint w) {
+	char buf[20];
+
+	sprintf (buf, "%u", w);
+	writeString (fd, buf);
+}
+
+static void writeUllong (int fd, ullong u) {
+	char buf[20];
+
+	sprintf (buf, "%llu", u);
+	writeString (fd, buf);
+}
+
+static void writeWord (int fd, word w) {
+	char buf[20];
+
+	sprintf (buf, "0x%08x", w);
+	writeString (fd, buf);
+}
+
+static void profileHeaderWrite (GC_state s, string kind, int fd, ullong total) {
+	writeString (fd, "MLton prof");
+	writeString (fd, kind);
+	switch (s->profileStyle) {
+	case PROFILE_CUMULATIVE:
+		writeString (fd, "cumulative");
+	break;
+	case PROFILE_CURRENT:
+		writeString (fd, "current");
+	break;
+	}
+	writeWord (fd, s->magic);
+	writeUllong (fd, total);
+}
+
+void GC_profileAllocFree (GC_state s, GC_profileAlloc pa) {
+	free (pa->bytesAllocated);
+	switch (s->profileStyle) {
+	case PROFILE_CUMULATIVE:
+		free (pa->lastTotal);
+		free (pa->stackCount);
+	break;
+	case PROFILE_CURRENT:
+	break;
+	}
+	free (pa);
+}
+
+GC_profileAlloc GC_profileAllocNew (GC_state s) {
+	GC_profileAlloc pa;
+
+	NEW(pa);
+	pa->totalBytesAllocated = 0;
+	ARRAY (pa->bytesAllocated, s->sourcesSize);
+	switch (s->profileStyle) {
+	case PROFILE_CUMULATIVE:
+		ARRAY (pa->lastTotal, s->sourcesSize);
+		ARRAY (pa->stackCount, s->sourcesSize);
+	break;
+	case PROFILE_CURRENT:
+	break;
+	}
+	if (DEBUG_PROFILE_ALLOC)
+		fprintf (stderr, "0x%08x = GC_profileAllocNew()\n",
+				(uint)pa);
+	return pa;
+}
+
+void GC_profileAllocWrite (GC_state s, GC_profileAlloc pa, int fd) {
+	int i;
+
+	profileHeaderWrite (s, "alloc", fd, 
+				pa->totalBytesAllocated 
+				+ pa->bytesAllocated[SOURCES_INDEX_GC]);
+	for (i = 0; i < s->sourcesSize; ++i)
+		writeUllong (fd, pa->bytesAllocated[i]);
+}
+
+void GC_profileTimeFree (GC_state s, GC_profileTime pt) {
+	free (pt->ticks);
+	free (pt);
+}
+
+GC_profileTime GC_profileTimeNew (GC_state s) {
+	GC_profileTime pt;
+	
+	NEW(pt);
+	ARRAY(pt->ticks, s->sourcesSize);
+	pt->totalTicks = 0;
+	return pt;
+}
+
+void GC_profileTimeWrite (GC_state s, GC_profileTime pt, int fd) {
+	int i;
+
+	profileHeaderWrite (s, "time", fd, pt->totalTicks);
+	for (i = 0; i < s->sourcesSize; ++i)
+		writeUint (fd, pt->ticks[i]);
 }
 
 /* ---------------------------------------------------------------- */
@@ -3057,7 +3172,7 @@ static void initIntInfs (GC_state s) {
 	inits = s->intInfInits;
 	frontier = s->frontier;
 	for (; (str = inits->mlstr) != NULL; ++inits) {
-		assert (inits->globalIndex < s->numGlobals);
+		assert (inits->globalIndex < s->globalsSize);
 		neg = *str == '~';
 		if (neg)
 			++str;
@@ -3156,17 +3271,16 @@ static void initStrings (GC_state s) {
 	if (DEBUG_DETAILED)
 		fprintf (stderr, "frontier after string allocation is 0x%08x\n",
 				(uint)frontier);
-	s->frontier = frontier;
 	GC_incProfileAlloc (s, frontier - s->frontier);
 	s->bytesAllocated += frontier - s->frontier;
+	s->frontier = frontier;
 }
 
-/* Pre: s->profileAllocIndex is set. */
 static void newWorld (GC_state s) {
 	int i;
 
 	assert (isAligned (sizeof (struct GC_thread), WORD_SIZE));
-	for (i = 0; i < s->numGlobals; ++i)
+	for (i = 0; i < s->globalsSize; ++i)
 		s->globals[i] = (pointer)BOGUS_POINTER;
 	setInitialBytesLive (s);
 	heapCreate (s, &s->heap, heapDesiredSize (s, s->bytesLive, 0),
@@ -3218,32 +3332,19 @@ static void loadWorld (GC_state s, char *fileName) {
 	setStack (s);
 }
 
-static void showProf (GC_state s) {
-	int i;
-
-	fprintf (stdout, "0x%08x\n", s->magic);
-	for (i = 0; i < s->profileSourcesSize; ++i)
-		fprintf (stdout, "%s\n", s->profileSources[i]);
-}
+/* ---------------------------------------------------------------- */
+/*                             GC_init                              */
+/* ---------------------------------------------------------------- */
 
 /* To get the beginning and end of the text segment. */
 extern void	_start(void),
 		etext(void);
 
-static int compareProfileLabels (const void *v1, const void *v2) {
-	GC_profileLabel l1;
-	GC_profileLabel l2;
-
-	l1 = (GC_profileLabel)v1;
-	l2 = (GC_profileLabel)v2;
-	return (int)l1->label - (int)l2->label;
-}
-
 int GC_init (GC_state s, int argc, char **argv) {
 	char *worldFile;
 	int i;
 
-	s->amInGC = FALSE;
+	s->amInGC = TRUE;
 	s->bytesAllocated = 0;
 	s->bytesCopied = 0;
 	s->bytesCopiedMinor = 0;
@@ -3275,6 +3376,8 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->numMinorsSinceLastMajor = 0;
 	s->nurseryRatio = 10.0;
 	s->oldGenArraySize = 0x100000;
+	s->profileStyle = PROFILE_CURRENT;
+	s->profileStyle = PROFILE_CUMULATIVE;
 	s->pageSize = getpagesize ();
 	s->ramSlop = 0.80;
 	s->savedThread = BOGUS_THREAD;
@@ -3296,8 +3399,9 @@ int GC_init (GC_state s, int argc, char **argv) {
 	worldFile = NULL;
 	unless (isAligned (s->pageSize, s->cardSize))
 		die ("page size must be a multiple of card size");
-	if (s->profileSourcesSize > 0) {
-		if (s->profileLabelsSize > 0) {
+	/* Initialize profiling. */
+	if (s->sourcesSize > 0) {
+		if (s->sourceLabelsSize > 0) {
 			s->profileAllocIsOn = FALSE;
 			s->profileTimeIsOn = TRUE;
 		} else {
@@ -3306,35 +3410,35 @@ int GC_init (GC_state s, int argc, char **argv) {
 		}
 	}
 	if (s->profileAllocIsOn) {
-		s->profileAllocIndex = PROFILE_ALLOC_MISC;
-		MLton_ProfileAlloc_setCurrent 
-			(MLton_ProfileAlloc_Data_malloc ());
+		s->profileAlloc = GC_profileAllocNew (s);
 	}
 	if (s->profileTimeIsOn) {
 		pointer p;
 		uint sourceSeqsIndex;
 
+		if (PROFILE_CUMULATIVE == s->profileStyle)
+			ARRAY (s->sourceIsOnStack, s->sourcesSize);
 		/* Sort profileLabels by address. */
-		qsort (s->profileLabels, 
-			s->profileLabelsSize,
-			sizeof(*s->profileLabels),
+		qsort (s->sourceLabels, 
+			s->sourceLabelsSize,
+			sizeof(*s->sourceLabels),
 			compareProfileLabels);
-		if (DEBUG_PROF)
-			for (i = 0; i < s->profileLabelsSize; ++i)
+		if (DEBUG_PROFILE_TIME)
+			for (i = 0; i < s->sourceLabelsSize; ++i)
 				fprintf (stderr, "0x%08x  %u\n",
-						(uint)s->profileLabels[i].label,
-						s->profileLabels[i].sourceSeqsIndex);
+						(uint)s->sourceLabels[i].label,
+						s->sourceLabels[i].sourceSeqsIndex);
 		if (ASSERT)
-			for (i = 1; i < s->profileLabelsSize; ++i)
-				assert (s->profileLabels[i-1].label
-					<= s->profileLabels[i].label);
+			for (i = 1; i < s->sourceLabelsSize; ++i)
+				assert (s->sourceLabels[i-1].label
+					<= s->sourceLabels[i].label);
 		/* Initialize s->textSources. */
 		s->textEnd = (pointer)&etext;
 		s->textStart = (pointer)&_start;
 		if (DEBUG)
-			for (i = 0; i < s->profileLabelsSize; ++i)
-				assert (s->textStart <= s->profileLabels[i].label
-					and s->profileLabels[i].label < s->textEnd);
+			for (i = 0; i < s->sourceLabelsSize; ++i)
+				assert (s->textStart <= s->sourceLabels[i].label
+					and s->sourceLabels[i].label < s->textEnd);
 		s->textSources = 
 			(uint*)malloc ((s->textEnd - s->textStart) 
 						* sizeof(*s->textSources));
@@ -3342,17 +3446,18 @@ int GC_init (GC_state s, int argc, char **argv) {
 			die ("Out of memory: unable to allocate textSources");
 		p = s->textStart;
 		sourceSeqsIndex = SOURCE_SEQ_UNKNOWN;
-		for (i = 0; i < s->profileLabelsSize; ++i) {
-			while (p < s->profileLabels[i].label) {
+		for (i = 0; i < s->sourceLabelsSize; ++i) {
+			while (p < s->sourceLabels[i].label) {
 				s->textSources[p - s->textStart]
 					= sourceSeqsIndex;
 				++p;
 			}
-			sourceSeqsIndex = s->profileLabels[i].sourceSeqsIndex;
+			sourceSeqsIndex = s->sourceLabels[i].sourceSeqsIndex;
 		}
 		for ( ; p < s->textEnd; ++p)
 			s->textSources[p - s->textStart] = sourceSeqsIndex;
 	}
+	/* Process command-line arguments. */
 	i = 1;
 	if (argc > 1 and (0 == strcmp (argv [1], "@MLton"))) {
 		bool done;
@@ -3469,6 +3574,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 		newWorld (s);
 	else
 		loadWorld (s, worldFile);
+	s->amInGC = FALSE;
 	assert (mutatorInvariant (s));
 	return i;
 }

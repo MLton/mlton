@@ -537,12 +537,11 @@ fun linearize' (e: t, h: Handler.t, k: Cont.t): Label.t * Block.t list =
 		      {statements = [],
 		       transfer =
 		       (case h of
-			   Handler.CallerHandler =>
-			      Transfer.Raise (Vector.new1 x)
+			   Handler.Caller => Transfer.Raise (Vector.new1 x)
+			 | Handler.Dead => Error.bug "raise to dead handler"
 			 | Handler.Handle l =>
-			      Transfer.Goto {dst = l,
-					     args = Vector.new1 x}
-			 | Handler.None => Error.bug "raise to None")})
+			      Transfer.Goto {args = Vector.new1 x,
+					     dst = l})})
 	  | Runtime {args, prim, ty} =>
 	       loops
 	       (args, h, fn xs =>

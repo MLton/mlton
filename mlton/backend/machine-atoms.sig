@@ -48,9 +48,10 @@ signature MACHINE_ATOMS =
 	      *)
 	     | EnumPointers of {enum: int vector,
 				pointers: PointerTycon.t vector}
+	     | ExnStack
 	     | Int
 	     | IntInf
-	     | Label
+	     | Label of Label.t
 	     | MemChunk of memChunk (* An internal pointer. *)
 	     | Real
 	     | Word
@@ -62,11 +63,12 @@ signature MACHINE_ATOMS =
 	    val cpointer: t
 	    val dePointer: t -> PointerTycon.t option
 	    val equals: t * t -> bool
+	    val exnStack: t
 	    val fromRuntime: Runtime.Type.t -> t
 	    val int: t
 	    val intInf: t
 	    val isPointer: t -> bool
-	    val label: t
+	    val label: Label.t -> t
 	    val layout: t -> Layout.t
 	    val name: t -> string (* simple one letter abbreviation *)
 	    val pointer: PointerTycon.t -> t

@@ -251,12 +251,15 @@ structure Operand =
 	| GCState => Type.cpointer
 	| Global g => Global.ty g
 	| Int _ => Type.int
-	| Label _ => Type.label
+	| Label l => Type.label l
 	| Line => Type.int
 	| Offset {ty, ...} => ty
 	| Real _ => Type.real
 	| Register r => Register.ty r
-	| Runtime z => Type.fromRuntime (GCField.ty z)
+	| Runtime f =>
+	     (case f of
+		 GCField.ExnStack => Type.exnStack
+	       | _ => Type.fromRuntime (GCField.ty f))
 	| SmallIntInf _ => Type.intInf
 	| StackOffset {ty, ...} => ty
 	| Word _ => Type.word
@@ -503,8 +506,8 @@ structure Kind =
 		     frameInfo: FrameInfo.t option,
 		     func: CFunction.t}
        | Func
-       | Handler of {handles: Operand.t vector,
-		     offset: int}
+       | Handler of {frameInfo: FrameInfo.t,
+		     handles: Operand.t vector}
        | Jump
 
       fun layout k =
@@ -523,9 +526,9 @@ structure Kind =
 			("frameInfo", Option.layout FrameInfo.layout frameInfo),
 			("func", CFunction.layout func)]]
 	     | Func => str "Func"
-	     | Handler {handles, offset} =>
+	     | Handler {frameInfo, handles} =>
 		  seq [str "Handler ",
-		       record [("offset", Int.layout offset),
+		       record [("frameInfo", FrameInfo.layout frameInfo),
 			       ("handles",
 				Vector.layout Operand.layout handles)]]
 	     | Jump => str "Jump"
@@ -534,6 +537,7 @@ structure Kind =
       val frameInfoOpt =
 	 fn Cont {frameInfo, ...} => SOME frameInfo
 	  | CReturn {frameInfo, ...} => frameInfo
+	  | Handler {frameInfo, ...} => SOME frameInfo
 	  | _ => NONE
    end
 
@@ -654,7 +658,7 @@ structure Program =
 		     FrameInfo.T {frameLayoutsIndex, ...}) =
 	 #size (Vector.sub (frameLayouts, frameLayoutsIndex))
 
-      fun layouts (p as T {chunks, frameOffsets, handlesSignals,
+      fun layouts (p as T {chunks, frameLayouts, frameOffsets, handlesSignals,
 			   main = {label, ...},
 			   maxFrameSize, objectTypes, ...},
 		   output': Layout.t -> unit) =
@@ -667,7 +671,13 @@ structure Program =
 		     ("main", Label.layout label),
 		     ("maxFrameSize", Int.layout maxFrameSize),
 		     ("frameOffsets",
-		      Vector.layout (Vector.layout Int.layout) frameOffsets)])
+		      Vector.layout (Vector.layout Int.layout) frameOffsets),
+		     ("frameLayouts",
+		      Vector.layout (fn {frameOffsetsIndex, size} =>
+				     record [("frameOffsetsIndex",
+					      Int.layout frameOffsetsIndex),
+					     ("size", Int.layout size)])
+		      frameLayouts)])
 	    ; output (str "\nObjectTypes:")
 	    ; Vector.foreachi (objectTypes, fn (i, ty) =>
 			       output (seq [str "pt_", Int.layout i,
@@ -704,6 +714,15 @@ structure Program =
 	       Trace.trace2 ("Alloc.doesDefine", layout, Operand.layout,
 			     Bool.layout)
 	       doesDefine
+
+	    fun peekOffset (T zs, i: int): {offset: int,
+					    ty: Type.t} option =
+	       List.peekMap
+	       (zs, fn Operand.StackOffset (ot as {offset, ...}) =>
+		          if i = offset
+			     then SOME ot
+			  else NONE
+		     | _ => NONE)
 	 end
       
       fun typeCheck (program as
@@ -943,11 +962,6 @@ structure Program =
 	       Vector.foreach (v, fn z => checkOperand (z, a))
 	    fun check' (x, name, isOk, layout) =
 	       Err.check (name, fn () => isOk x, fn () => layout x)
-	    fun frameInfoOk (FrameInfo.T {frameLayoutsIndex, ...}) =
-	       0 <= frameLayoutsIndex
-	       andalso frameLayoutsIndex < Vector.length frameLayouts
-	    fun checkFrameInfo i =
-	       check' (i, "frame info", frameInfoOk, FrameInfo.layout)
 	    val labelKind = Block.kind o labelBlock
 	    fun labelIsJump (l: Label.t): bool =
 	       case labelKind l of
@@ -956,32 +970,66 @@ structure Program =
 	    fun checkKind (k: Kind.t, alloc: Alloc.t): Alloc.t option =
 	       let
 		  datatype z = datatype Kind.t
+		  exception No
+		  fun frame (FrameInfo.T {frameLayoutsIndex}): bool =
+		     let
+			val {frameOffsetsIndex, size} =
+			   Vector.sub (frameLayouts, frameLayoutsIndex)
+			   handle Subscript => raise No
+			val Alloc.T zs = alloc
+			val liveOffsets =
+			   List.fold
+			   (zs, [], fn (z, liveOffsets) =>
+			    case z of
+			       Operand.StackOffset {offset, ty} =>
+				  if Type.isPointer ty
+				     then offset :: liveOffsets
+				  else liveOffsets
+			     | _ => raise No)
+			val liveOffsets =
+			   Vector.fromArray
+			   (QuickSort.sortArray
+			    (Array.fromList liveOffsets, op <=))
+			val liveOffsets' =
+			   Vector.sub (frameOffsets, frameOffsetsIndex)
+			   handle Subscript => raise No
+		     in
+			liveOffsets = liveOffsets'
+		     end handle No => false
+		  fun slotsAreInFrame (fi: FrameInfo.t): bool =
+		     let
+			val {size, ...} = getFrameInfo fi
+		     in
+			Alloc.forall
+			(alloc, fn z =>
+			 case z of
+			    Operand.StackOffset {offset, ty} =>
+			       offset + Type.size ty <= size
+			  | _ => false)
+		     end
 	       in
 		  case k of
 		     Cont {args, frameInfo} =>
-			let
-			   val _ = checkFrameInfo frameInfo
-			   val {size, ...} = getFrameInfo frameInfo
-			in
-			   if (Alloc.forall
-			       (alloc, fn z =>
-				case z of
-				   Operand.StackOffset {offset, ty} =>
-				      offset + Type.size ty <= size
-				 | _ => false))
-			      then
-				 SOME (Vector.fold
-				       (args, alloc, fn (z, alloc) =>
-					Alloc.define (alloc, z)))
-			   else NONE
-			end
+			if frame frameInfo
+			   andalso slotsAreInFrame frameInfo
+			   then SOME (Vector.fold
+				      (args, alloc, fn (z, alloc) =>
+				       Alloc.define (alloc, z)))
+			else NONE
 		   | CReturn {dst, frameInfo, ...} =>
-			(Option.app (frameInfo, checkFrameInfo)
-			 ; SOME (case dst of
-				    NONE => alloc
-				  | SOME z => Alloc.define (alloc, z)))
+			if (case frameInfo of
+			       NONE => true
+			     | SOME fi => (frame fi
+					   andalso slotsAreInFrame fi))
+			   then SOME (case dst of
+					 NONE => alloc
+				       | SOME z => Alloc.define (alloc, z))
+			else NONE
 		   | Func => SOME alloc
-		   | Handler _ => SOME alloc
+		   | Handler {frameInfo, ...} =>
+			if frame frameInfo
+			   then SOME alloc
+			else NONE
 		   | Jump => SOME alloc
 	       end
 	    fun checkStatement (s: Statement.t, alloc: Alloc.t)
@@ -1051,11 +1099,27 @@ structure Program =
 				end
 			else SOME alloc
 		   | SetExnStackLocal {offset} =>
-			(checkOperand
-			 (Operand.StackOffset {offset = offset,
-					       ty = Type.label},
-			  alloc)
-			 ; SOME alloc)
+			(case Alloc.peekOffset (alloc, offset) of
+			    NONE => NONE
+			  | SOME {ty, ...} =>
+			       (case ty of
+				   Type.Label l =>
+				      let
+					 val Block.T {kind, ...} = labelBlock l
+				      in
+					 case kind of
+					    Kind.Handler {frameInfo, ...} =>
+					       let
+						  val {size, ...} =
+						     getFrameInfo frameInfo
+					       in
+						  if offset = size
+						     then SOME alloc
+						  else NONE
+					       end
+					  | _ => NONE
+				      end
+				 | _ => NONE))
 		   | SetExnStackSlot {offset} =>
 			(checkOperand
 			 (Operand.StackOffset {offset = offset,
@@ -1213,7 +1277,6 @@ structure Program =
 		   | CCall {args, frameInfo, func, return} =>
 			let
 			   val _ = checkOperands (args, alloc)
-			   val _ = Option.app (frameInfo, checkFrameInfo)
 			in
 			   case return of
 			      NONE => true

@@ -42,8 +42,7 @@ val traceForceStack =
 local
    open Type
 in
-   val labelSize = size label
-   val handlerSize = labelSize + size word
+   val handlerSize = Runtime.labelSize + size word
 end
 
 structure Live = Live (open Rssa)
@@ -458,9 +457,9 @@ fun allocate {argOperands,
 	    then
 	       let
 		  val (stack, {offset = handler, ...}) =
-		     Allocation.Stack.get (stack, Type.label)
-		  val (stack, {offset = link, ...}) = 
 		     Allocation.Stack.get (stack, Type.word)
+		  val (stack, {offset = link, ...}) = 
+		     Allocation.Stack.get (stack, Type.ExnStack)
 	       in
 		  (stack, SOME {handler = handler, link = link})
 	       end
@@ -479,8 +478,8 @@ fun allocate {argOperands,
 	 Function.dfs
 	 (f, fn R.Block.T {args, label, kind, statements, transfer, ...} =>
 	  let
-	     val {begin, beginNoFormals,
-		  handlerSlots = (codeLive, linkLive)} = labelLive label
+	     val {begin, beginNoFormals, handler = handlerLive,
+		  link = linkLive} = labelLive label
 	     fun addHS ops =
 		Vector.fromList
 		(case handlerLinkOffset of
@@ -488,17 +487,17 @@ fun allocate {argOperands,
 		  | SOME {handler, link} =>
 		       let
 			  val ops =
-			     if codeLive
-				then
+			     case handlerLive of
+				NONE => ops
+			      | SOME h => 
 				   Operand.StackOffset {offset = handler,
-							ty = Type.label}
+							ty = Type.label h}
 				   :: ops
-			     else ops
 			  val ops =
 			     if linkLive
 				then
 				   Operand.StackOffset {offset = link,
-							ty = Type.word}
+							ty = Type.ExnStack}
 				   :: ops
 			     else ops
 		       in
@@ -516,13 +515,18 @@ fun allocate {argOperands,
 		case handlerLinkOffset of
 		   NONE => stackInit
 		 | SOME {handler, link} =>
-		      {offset = handler, ty = Type.label}
-		      :: {offset = link, ty = Type.word}
+		      {offset = handler, ty = Type.word} (* should be label *)
+		      :: {offset = link, ty = Type.ExnStack}
 		      :: stackInit
 	     val a = Allocation.new (stackInit, registersInit)
 	     val size =
 		Runtime.labelSize
-		+ Runtime.wordAlignInt (Allocation.stackSize a)
+		+ (case kind of
+		      Kind.Handler =>
+			 (case handlerLinkOffset of
+			     NONE => Error.bug "Handler with no handler offset"
+			   | SOME {handler, ...} => handler)
+		    | _ => Runtime.wordAlignInt (Allocation.stackSize a))
 	     val a =
 		Vector.fold (args, a, fn ((x, _), a) =>
 			     allocateVar (x, SOME label, false, a))

@@ -799,9 +799,9 @@ fun shrinkFunction (globals: Statement.t vector) =
 				 val i = LabelMeaning.blockIndex m
 				 val isTail =
 				    (case handler of
-					Handler.CallerHandler => true
-				      | Handler.Handle _ => false
-				      | Handler.None => true)
+					Handler.Caller => true
+				      | Handler.Dead => true
+				      | Handler.Handle _ => false)
                                     andalso 
 				    (case LabelMeaning.aux m of
 					LabelMeaning.Bug => true

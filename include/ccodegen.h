@@ -90,11 +90,11 @@ struct cont {
 /*                       main                        */
 /* ------------------------------------------------- */
 
-#define Main(cs, mmc, mfs, mg, pa, mc, ml)				\
+#define Main(cs, mmc, mfs, mg, mc, ml)					\
 int main (int argc, char **argv) {					\
 	struct cont cont;						\
 	gcState.native = FALSE;						\
-	Initialize(cs, mmc, mfs, mg, pa);				\
+	Initialize(cs, mmc, mfs, mg);					\
 	if (gcState.isOriginal) {					\
 		real_Init();						\
 		PrepFarJump(mc, ml);					\
@@ -147,8 +147,6 @@ int main (int argc, char **argv) {					\
 #define DU(n) Declare(uint, u, n)
 
 #define Slot(ty, i) *(ty*)(stackTop + (i))
-
-
 #define SC(i) Slot(uchar, i)
 #define SD(i) Slot(double, i)
 #define SI(i) Slot(int, i)
@@ -156,7 +154,6 @@ int main (int argc, char **argv) {					\
 #define SU(i) Slot(uint, i)
 
 #define Global(ty, i) (global ## ty [ i ])
-
 #define GC(i) Global(uchar, i)
 #define GD(i) Global(double, i)
 #define GI(i) Global(int, i)
@@ -165,7 +162,6 @@ int main (int argc, char **argv) {					\
 #define GU(i) Global(uint, i)
 
 #define Offset(ty, b, o) (*(ty*)((b) + (o)))
-
 #define OC(b, i) Offset(uchar, b, i)
 #define OD(b, i) Offset(double, b, i)
 #define OI(b, i) Offset(int, b, i)
@@ -173,7 +169,6 @@ int main (int argc, char **argv) {					\
 #define OU(b, i) Offset(uint, b, i)
 
 #define Contents(t, x) (*(t*)(x))
-
 #define CC(x) Contents(uchar, x)
 #define CD(x) Contents(double, x)
 #define CI(x) Contents(int, x)
@@ -207,23 +202,7 @@ int main (int argc, char **argv) {					\
 		if (DEBUG_CCODEGEN)					\
 			fprintf (stderr, "%d  Raise\n", __LINE__);	\
 		stackTop = StackBottom + ExnStack;			\
-		l_nextFun = *(int*)stackTop;				\
-		goto top;						\
-	} while (0)
-
-#define SetExnStackLocal(offset)				\
-	do {							\
-		ExnStack = stackTop + (offset) - StackBottom;	\
-	} while (0)
-
-#define SetSlotExnStack(offset)					\
-	do {							\
-		*(uint*)(stackTop + (offset)) = ExnStack;	\
-	} while (0)
-
-#define SetExnStackSlot(offset)					\
-	do {							\
-		ExnStack = *(uint*)(stackTop + (offset));	\
+		Return();						\
 	} while (0)
 
 /* ------------------------------------------------- */

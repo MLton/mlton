@@ -389,7 +389,9 @@ signature X86_PSEUDO =
 
     structure FrameInfo:
        sig
-	  type t
+	  datatype t = T of {size: int, 
+			     frameLayoutsIndex: int}
+
 	  val frameInfo : {size: int, 
 			   frameLayoutsIndex: int} -> t
        end
@@ -407,9 +409,9 @@ signature X86_PSEUDO =
 		      label: Label.t} -> t
 	val func: {label: Label.t,
 		   live: MemLocSet.t} -> t
-	val handler: {label: Label.t,
-		      live: MemLocSet.t,
-		      offset: int} -> t
+	val handler: {frameInfo: FrameInfo.t,
+		      label: Label.t,
+		      live: MemLocSet.t} -> t
 	val jump: {label: Label.t} -> t
 	val label: t -> Label.t
       end

@@ -173,8 +173,8 @@ signature MACHINE =
 			   frameInfo: FrameInfo.t option,
 			   func: CFunction.t}
 	     | Func
-	     | Handler of {handles: Operand.t vector,
-			   offset: int}
+	     | Handler of {frameInfo: FrameInfo.t,
+			   handles: Operand.t vector}
 	     | Jump
 
 	    val frameInfoOpt: t -> FrameInfo.t option

@@ -12,6 +12,7 @@ signature SOURCE_INFO =
       type t
 
       val equals: t * t -> bool
+      val gc: t
       val fromRegion: Region.t -> t
       val hash: t -> word
       val isBasis: t -> bool

@@ -371,9 +371,6 @@ struct
   val (_, _, gcState_maxFrameSizeContentsOperand) =
      make (Field.MaxFrameSize, pointerSize, Classes.GCState)
 
-  val (_, _, gcState_profileAllocIndexContentsOperand) =
-     make (Field.ProfileAllocIndex, wordSize, Classes.GCState)
-
   val (_, _,  gcState_signalIsPendingContentsOperand) =
      make (Field.SignalIsPending, wordSize, Classes.GCState)
 

@@ -157,6 +157,8 @@ structure Statement =
 	 Bind of {isMutable: bool,
 		  oper: Operand.t,
 		  var: Var.t}
+       | HandlerPop of Label.t (* the label is redundant, but useful *)
+       | HandlerPush of Label.t
        | Move of {dst: Operand.t,
 		  src: Operand.t}
        | Object of {dst: Var.t,
@@ -168,7 +170,7 @@ structure Statement =
        | PrimApp of {args: Operand.t vector,
 		     dst: (Var.t * Type.t) option,
 		     prim: Prim.t}
-       | Profile of ProfileStatement.t
+       | Profile of ProfileExp.t
        | ProfileLabel of ProfileLabel.t
        | SetExnStackLocal
        | SetExnStackSlot
@@ -188,6 +190,8 @@ structure Statement =
 	    case s of
 	       Bind {oper, var, ...} =>
 		  def (var, Operand.ty oper, useOperand (oper, a))
+	     | HandlerPop _ => a
+	     | HandlerPush _ => a
 	     | Move {dst, src} => useOperand (src, useOperand (dst, a))
 	     | Object {dst, stores, ty, ...} =>
 		  Vector.fold (stores, def (dst, ty, a),
@@ -231,6 +235,8 @@ structure Statement =
 	    fn Bind {oper, var, ...} =>
 		  seq [Var.layout var, constrain (Operand.ty oper),
 		       str " = ", Operand.layout oper]
+	     | HandlerPop l => seq [str "HandlerPop ", Label.layout l]
+	     | HandlerPush l => seq [str "HandlerPush ", Label.layout l]
 	     | Move {dst, src} =>
 		  mayAlign [Operand.layout dst,
 			    seq [str " = ", Operand.layout src]]
@@ -259,13 +265,16 @@ structure Statement =
 			   mayAlign [seq [Var.layout x, constrain t],
 				     seq [str " = ", rest]]
 		  end
-	     | Profile p => ProfileStatement.layout p
-	     | ProfileLabel l => seq [str "ProfileLabel ", ProfileLabel.layout l]
+	     | Profile e => ProfileExp.layout e
+	     | ProfileLabel p =>
+		  seq [str "ProfileLabel ", ProfileLabel.layout p]
 	     | SetExnStackLocal => str "SetExnStackLocal"
 	     | SetExnStackSlot => str "SetExnStackSlot "
 	     | SetHandler l => seq [str "SetHandler ", Label.layout l]
 	     | SetSlotExnStack => str "SetSlotExnStack "
 	 end
+
+      val toString = Layout.toString o layout
 
       fun clear (s: t) =
 	 foreachDef (s, Var.clear o #1)
@@ -283,8 +292,8 @@ structure Transfer =
        | CCall of {args: Operand.t vector,
 		   func: CFunction.t,
 		   return: Label.t option}
-       | Call of {func: Func.t,
-		  args: Operand.t vector,
+       | Call of {args: Operand.t vector,
+		  func: Func.t,
 		  return: Return.t}
        | Goto of {dst: Label.t,
 		  args: Operand.t vector}
@@ -310,29 +319,10 @@ structure Transfer =
 		       record [("args", Vector.layout Operand.layout args),
 			       ("func", CFunction.layout func),
 			       ("return", Option.layout Label.layout return)]]
-	     | Call {args, func, return, ...} =>
-		  let
-		     val call = seq [Func.layout func, str " ",
-				     Vector.layout Operand.layout args]
-		     val call =
-			case return of
-			   Return.Dead => seq [str "Dead ", call]
-			 | Return.HandleOnly => seq [str "HandleOnly ", call]
-			 | Return.Tail => call
-			 | Return.NonTail {cont, handler} => 
-			      let
-				 val call =
-				    seq [Label.layout cont, str " ", paren call]
-			      in
-				 case handler of
-				    Handler.CallerHandler => call
-				  | Handler.Handle l =>
-				       seq [call, str " handle ", Label.layout l]
-				  | Handler.None => seq [call, str " None"]
-			      end
-		  in
-		     call
-		  end
+	     | Call {args, func, return} =>
+		  seq [Func.layout func, str " ",
+		       Vector.layout Operand.layout args,
+		       str " ", Return.layout return]
 	     | Goto {dst, args} =>
 		  seq [Label.layout dst, str " ",
 		       Vector.layout Operand.layout args]
@@ -426,7 +416,7 @@ structure Transfer =
 structure Kind =
    struct
       datatype t =
-	 Cont of {handler: Label.t option}
+	 Cont of {handler: Handler.t}
        | CReturn of {func: CFunction.t}
        | Handler
        | Jump
@@ -438,7 +428,7 @@ structure Kind =
 	    case k of
 	       Cont {handler} =>
 		  seq [str "Cont ",
-		       record [("handler", Option.layout Label.layout handler)]]
+		       record [("handler", Handler.layout handler)]]
 	     | CReturn {func} =>
 		  seq [str "CReturn ",
 		       record [("func", CFunction.layout func)]]
@@ -450,7 +440,8 @@ structure Kind =
 	 case k of
 	    Cont _ => true
 	  | CReturn {func = CFunction.T {mayGC, ...}, ...} => mayGC
-	  | _ => false
+	  | Handler => true
+	  | Jump => false
    end
 
 local
@@ -683,6 +674,213 @@ structure Program =
 	    ; output (str "\nFunctions:")
 	    ; List.foreach (functions, fn f => Function.layouts (f, output))
 	 end
+
+      structure ExnStack =
+	 struct
+	    structure ZPoint =
+	       struct
+		  datatype t = Caller | Me
+
+		  val equals: t * t -> bool = op =
+	       
+		  val toString =
+		     fn Caller => "Caller"
+		      | Me => "Me"
+
+		  val layout = Layout.str o toString
+	       end
+
+	    structure L = FlatLattice (structure Point = ZPoint)
+	    open L
+	    structure Point = ZPoint
+	 
+	    val me = point Point.Me
+	    val caller = point Point.Caller
+	 end
+
+      structure HandlerLat = FlatLattice (structure Point = Label)
+
+      structure HandlerInfo =
+	 struct
+	    datatype t = T of {block: Block.t,
+			       global: ExnStack.t,
+			       handler: HandlerLat.t,
+			       slot: ExnStack.t,
+			       visited: bool ref}
+
+	    fun new (b: Block.t): t =
+	       T {block = b,
+		  global = ExnStack.new (),
+		  handler = HandlerLat.new (),
+		  slot = ExnStack.new (),
+		  visited = ref false}
+
+	    fun layout (T {global, handler, slot, ...}) =
+	       Layout.record [("global", ExnStack.layout global),
+			      ("slot", ExnStack.layout slot),
+			      ("handler", HandlerLat.layout handler)]
+	 end
+
+      fun checkHandlers (T {functions, ...}) =
+	 let
+	    fun checkFunction (f: Function.t): unit =
+	       let
+		  val {name, start, blocks, ...} = Function.dest f
+		  val {get = labelInfo: Label.t -> HandlerInfo.t,
+		       rem = remLabelInfo, 
+		       set = setLabelInfo} =
+		     Property.getSetOnce
+		     (Label.plist, Property.initRaise ("info", Label.layout))
+		  val _ =
+		     Vector.foreach
+		     (blocks, fn b =>
+		      setLabelInfo (Block.label b, HandlerInfo.new b))
+		  (* Do a DFS of the control-flow graph. *)
+		  fun visitLabel l = visitInfo (labelInfo l)
+		  and visitInfo
+		     (hi as HandlerInfo.T {block, global, handler, slot,
+					   visited, ...}): unit =
+		     if !visited
+			then ()
+		     else
+			let
+			   val _ = visited := true
+			   val Block.T {label, statements, transfer, ...} = block
+			   datatype z = datatype ExnStack.t
+			   datatype z = datatype Statement.t
+			   val {global, handler, slot} =
+			      Vector.fold
+			      (statements,
+			       {global = global, handler = handler, slot = slot},
+			       fn (s, {global, handler, slot}) =>
+			       case s of
+				  SetExnStackLocal => {global = ExnStack.me,
+						       handler = handler,
+						       slot = slot}
+				| SetExnStackSlot => {global = slot,
+						      handler = handler,
+						      slot = slot}
+				| SetSlotExnStack => {global = global,
+						      handler = handler,
+						      slot = slot}
+				| SetHandler l => {global = global,
+						   handler = HandlerLat.point l,
+						   slot = slot}
+				| _ => {global = global,
+					handler = handler,
+					slot = slot})
+			   fun fail msg =
+			      (Control.message
+			       (Control.Silent, fn () =>
+				let open Layout
+				in align
+				   [str "before: ", HandlerInfo.layout hi,
+				    str "block: ", Block.layout block,
+				    seq [str "after: ",
+					 Layout.record
+					 [("global", ExnStack.layout global),
+					  ("slot", ExnStack.layout slot),
+					  ("handler",
+					   HandlerLat.layout handler)]],
+				    Vector.layout
+				    (fn Block.T {label, ...} =>
+				     seq [Label.layout label,
+					  str " ",
+					  HandlerInfo.layout (labelInfo label)])
+				    blocks]
+				end)
+			       ; Error.bug (concat ["handler mismatch at ", msg]))
+			   fun assert (msg, f) =
+			      if f
+				 then ()
+			      else fail msg
+			   fun goto (l: Label.t): unit =
+			      let
+				 val HandlerInfo.T {global = g, handler = h,
+						    slot = s, ...} =
+				    labelInfo l
+				 val _ =
+				    assert ("goto",
+					    ExnStack.<= (global, g)
+					    andalso ExnStack.<= (slot, s)
+					    andalso HandlerLat.<= (handler, h))
+			      in
+				 visitLabel l
+			      end
+			   fun tail name =
+			      assert (name,
+				      ExnStack.forcePoint
+				      (global, ExnStack.Point.Caller))
+			   datatype z = datatype Transfer.t
+			in
+			   case transfer of
+			      Arith {overflow, success, ...} =>
+				 (goto overflow; goto success)
+			    | CCall {return, ...} => Option.app (return, goto)
+			    | Call {func, return, ...} =>
+				 assert
+				 ("return",
+				  let
+				     datatype z = datatype Return.t
+				  in
+				     case (return) of
+					Dead => true
+				      | NonTail {handler = h, ...} =>
+					   (case h of
+					       Handler.Caller =>
+						  ExnStack.forcePoint
+						  (global, ExnStack.Point.Caller)
+					     | Handler.Dead => true
+					     | Handler.Handle l =>
+						  let
+						     val res =
+							ExnStack.forcePoint
+							(global,
+							 ExnStack.Point.Me)
+							andalso
+							HandlerLat.forcePoint
+							(handler, l)
+						     val _ = goto l
+						  in
+						     res
+						  end)
+				      | Tail => true
+				  end)
+			    | Goto {dst, ...} => goto dst
+			    | Raise _ => tail "raise"
+			    | Return _ => tail "return"
+			    | Switch s => Switch.foreachLabel (s, goto)
+			end
+		  val info as HandlerInfo.T {global, ...} = labelInfo start
+		  val _ = ExnStack.forcePoint (global, ExnStack.Point.Caller)
+		  val _ = visitInfo info
+		  val _ =
+		     Control.diagnostics
+		     (fn display =>
+		      let
+			 open Layout
+			 val _ = 
+			    display (seq [str "checkHandlers ",
+					  Func.layout name])
+			 val _ =
+			    Vector.foreach
+			    (blocks, fn Block.T {label, ...} =>
+			     display (seq
+				      [Label.layout label,
+				       str " ",
+				       HandlerInfo.layout (labelInfo label)]))
+		      in
+			 ()
+		      end)
+		  val _ = Vector.foreach (blocks, fn b =>
+					  remLabelInfo (Block.label b))
+	       in
+		  ()
+	       end
+	    val _ = List.foreach (functions, checkFunction)
+	 in
+	    ()
+	 end
 	    
       fun checkScopes (program as T {functions, main, ...}): unit =
 	 let
@@ -905,6 +1103,8 @@ structure Program =
 	       in
 		  case s of
 		     Bind {oper, ...} => (checkOperand oper; true)
+		   | HandlerPop _ => true
+		   | HandlerPush _ => true
 		   | Move {dst, src} =>
 			(checkOperand dst
 			 ; checkOperand src
@@ -946,12 +1146,26 @@ structure Program =
 			    | _ => false)
 	       end
 	    fun labelIsNullaryJump l = goto {dst = l, args = Vector.new0 ()}
+	    fun tailIsOk (caller: Type.t vector option,
+			  callee: Type.t vector option): bool =
+	       case (caller, callee) of
+		  (_, NONE) => true
+		| (SOME ts, SOME ts') => Vector.equals (ts, ts', Type.equals)
+		| _ => false
+	    fun nonTailIsOk (formals: (Var.t * Type.t) vector,
+			     returns: Type.t vector option): bool =
+	       case returns of
+		  NONE => true
+		| SOME ts => 
+		     Vector.equals (formals, ts, fn ((_, t), t') =>
+				    Type.equals (t, t'))
 	    fun callIsOk {args, func, raises, return, returns} =
 	       let
 		  val Function.T {args = formals,
 				  raises = raises',
 				  returns = returns', ...} =
 		     funcInfo func
+
 	       in
 		  Vector.equals (args, formals, fn (z, (_, t)) =>
 				 Type.equals (t, Operand.ty z))
@@ -960,71 +1174,41 @@ structure Program =
 		      Return.Dead =>
 			 Option.isNone raises'
 			 andalso Option.isNone returns'
-		    | Return.HandleOnly =>
-			 Option.isNone returns'
-			 andalso
-			 (case (raises, raises') of
-			     (_, NONE) => true
-			   | (SOME ts, SOME ts') =>
-				Vector.equals (ts, ts', Type.equals)
-			   | _ => false)
-		    | Return.NonTail {cont, handler = h} =>
+		    | Return.NonTail {cont, handler} =>
 			 let
-			    val Block.T {args = contArgs, kind = contKind, ...} =
+			    val Block.T {args = cArgs, kind = cKind, ...} =
 			       labelBlock cont
 			 in
-			    (case returns' of
-				NONE => true
-			      | SOME ts' =>
-				   Vector.equals
-				   (contArgs, ts', fn ((_, t), t') =>
-				    Type.equals (t, t')))
-		            andalso
-			    (case contKind of
-				Kind.Cont {handler = h'} =>
-				   (case (h, h') of
-				       (Handler.CallerHandler, NONE) =>
-					  true
-				     | (Handler.None, NONE) =>
-					  true
-				     | (Handler.Handle l, SOME l') =>
-					  Label.equals (l, l')
-					  andalso
+			    nonTailIsOk (cArgs, returns')
+			    andalso
+			    (case cKind of
+				Kind.Cont {handler = h} =>
+				   Handler.equals (handler, h)
+				   andalso
+				   (case h of
+				       Handler.Caller =>
+					  tailIsOk (raises, raises')
+				     | Handler.Dead => true
+				     | Handler.Handle l =>
 					  let
 					     val Block.T {args = hArgs,
-							  kind = hKind,
-							  ...} =
+							  kind = hKind, ...} =
 						labelBlock l
 					  in
+					     nonTailIsOk (hArgs, raises')
+					     andalso
 					     (case hKind of
 						 Kind.Handler => true
 					       | _ => false)
-				             andalso
-					     (case raises' of
-						 NONE => true
-					       | SOME ts =>
-						    Vector.equals
-						    (ts, hArgs,
-						     fn (t, (_, t')) =>
-						     Type.equals (t, t')))
-					  end
-				     | _ => false)
+					  end)
 			      | _ => false)
 			 end
 		    | Return.Tail =>
-			 (case (returns, returns') of
-			     (_, NONE) => true
-			   | (SOME ts, SOME ts') =>
-				Vector.equals (ts, ts', Type.equals)
-			   | _ => false)
-			 andalso
-			 (case (raises, raises') of
-			     (_, NONE) => true
-			   | (SOME ts, SOME ts') =>
-				Vector.equals (ts, ts', Type.equals)
-			   | _ => false))
+			 tailIsOk (raises, raises')
+			 andalso tailIsOk (returns, returns'))
 	       end
-      fun checkFunction (Function.T {args, blocks, raises, returns, start,
+
+	    fun checkFunction (Function.T {args, blocks, raises, returns, start,
 					   ...}) =
 	       let
 		  val _ = Vector.foreach (args, setVarType)

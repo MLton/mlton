@@ -72,40 +72,29 @@ fun 'a analyze
 	       let
 		  val {args = formals, raises, returns} = func f
 		  val _ = coerces (values args, formals)
+		  fun noHandler () =
+		     case (raises, shouldRaises) of
+			(NONE, NONE) => ()
+		      | (NONE, SOME _) => ()
+		      | (SOME _, NONE) => 
+			   Error.bug "raise mismatch"
+		      | (SOME vs, SOME vs') => coerces (vs, vs')
+		  datatype z = datatype Return.t
 	       in
 		  case return of
-		     Return.Dead =>
+		     Dead =>
 			if isSome returns orelse isSome raises
 			   then Error.bug "return mismatch at Dead"
 			else ()
-		   | Return.HandleOnly =>
-			let
-			   val _ =
-			      case (raises, shouldRaises) of
-				 (NONE, NONE) => ()
-			       | (NONE, SOME _) => ()
-			       | (SOME _, NONE) => 
-				    Error.bug "raise mismatch at HandleOnly"
-			       | (SOME vs, SOME vs') => coerces (vs, vs')
-			in
-			   ()
-			end
-		   | Return.NonTail {cont, handler} =>
+		   | NonTail {cont, handler} => 
 		        (Option.app (returns, fn vs =>
 				     coerces (vs, labelValues cont))
 			 ; (case handler of
-			       Handler.CallerHandler =>
-				  let
-				     val _ =
-				        case (raises, shouldRaises) of
-					   (NONE, NONE) => ()
-					 | (NONE, SOME _) => ()
-					 | (SOME _, NONE) => 
-					      Error.bug "raise mismatch at NonTail"
-					 | (SOME vs, SOME vs') => coerces (vs, vs')
-				  in
-				     ()
-				  end
+			       Handler.Caller => noHandler ()
+			     | Handler.Dead =>
+				  if isSome raises
+				     then Error.bug "raise mismatch at nontail"
+				  else ()
 			     | Handler.Handle h =>
 				  let
 				     val _ =
@@ -114,20 +103,10 @@ fun 'a analyze
 					 | SOME vs => coerces (vs, labelValues h)
 				  in
 				     ()
-				  end
-			     | Handler.None =>
-				  if isSome raises
-				     then Error.bug "raise mismatch at NonTail"
-				  else ()))
-		   | Return.Tail =>
+				  end))
+		   | Tail =>
 			let
-			   val _ =
-			      case (raises, shouldRaises) of
-				 (NONE, NONE) => ()
-			       | (NONE, SOME _) => ()
-			       | (SOME _, NONE) => 
-				    Error.bug "raise mismatch at Tail"
-			       | (SOME vs, SOME vs') => coerces (vs, vs')
+			   val _ = noHandler ()
 			   val _ =
 			      case (returns, shouldReturns) of
 				 (NONE, NONE) => ()
@@ -138,6 +117,7 @@ fun 'a analyze
 			in
 			   ()
 			end
+
 	       end
 	  | Case {test, cases, default, ...} =>
 	       let val test = value test
@@ -225,10 +205,6 @@ fun 'a analyze
 		     select {tuple = value tuple,
 			     offset = offset,
 			     resultType = ty}
-		| SetHandler h => unit
-		| SetExnStackLocal => unit
-		| SetExnStackSlot => unit
-		| SetSlotExnStack => unit
 		| Tuple xs =>
 		     if 1 = Vector.length xs
 			then Error.bug "unary tuple"

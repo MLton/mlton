@@ -339,7 +339,7 @@ DEBUG_OBJS =					\
 %-gdb.o: %.c
 	$(CC) $(DEBUGFLAGS) -DASSERT=1 -c -o $@ $<
 
-%.o: %.c
+%.o: %.c gc.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 %-gdb.o: %.S

@@ -31,7 +31,6 @@ signature C_FUNCTION =
 			 mayGC: bool,
 			 maySwitchThreads: bool,
 			 name: string,
-			 needsProfileAllocIndex: bool,
 			 returnTy: Type.t option}
 
       val bug: t
@@ -46,8 +45,8 @@ signature C_FUNCTION =
       val modifiesFrontier: t -> bool
       val modifiesStackTop: t -> bool
       val name: t -> string
-      val needsProfileAllocIndex: t -> bool
-      val profileAllocInc: t
+      val profileAllocIncLeaveEnter: t
+      val profileAllocSetCurrentSource: t
       val returnTy: t -> Type.t option
       val size: t
       val vanilla: {name: string, returnTy: Type.t option} -> t

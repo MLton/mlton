@@ -9,9 +9,7 @@ functor ImplementHandlers (S: IMPLEMENT_HANDLERS_STRUCTS): IMPLEMENT_HANDLERS =
 struct
 
 open S
-open Ssa
-datatype z = datatype Exp.t
-datatype z = datatype Transfer.t
+open Rssa
 
 structure LabelInfo =
    struct
@@ -27,7 +25,7 @@ structure LabelInfo =
 	  ("visited", Bool.layout (!visited))]
    end
 
-fun doit (Program.T {datatypes, globals, functions, main}) =
+fun doit (Program.T {functions, main, objectTypes}) =
    let
       fun implementFunction (f: Function.t): Function.t =
 	 let
@@ -75,10 +73,11 @@ fun doit (Program.T {datatypes, globals, functions, main}) =
 				 if List.equals (hs, hs', Label.equals)
 				    then ()
 				 else bug "handler stack mismatch"
+			datatype z = datatype Statement.t
 			val hs =
 			   if not (Vector.exists
-				   (statements, fn Statement.T {var, exp, ...} =>
-				    case exp of
+				   (statements, fn s =>
+				    case s of
 				       HandlerPop _ => true
 				     | HandlerPush _ => true
 				     | _ => false))
@@ -92,40 +91,36 @@ fun doit (Program.T {datatypes, globals, functions, main}) =
 				 val (hs, ac) =
 				    Vector.fold
 				    (statements, (hs, []), fn (s, (hs, ac)) =>
-				     let
-					val Statement.T {var, ty, exp, ...} = s
-				     in
-					case Statement.exp s of
-					   HandlerPop _ =>
-					      (case hs of
-						  [] => bug "pop of empty handler stack"
-						| _ :: hs =>
-						     let
-							val s =
-							   case hs of
-							      [] =>
-								 Statement.setExnStackSlot
-							    | h :: _ =>
-								 Statement.setHandler h
-						     in (hs, s :: ac)
-						     end)
-					 | HandlerPush h =>
-					      let
-						 val ac =
-						    Statement.setHandler h :: ac
-						 val ac =
-						    case hs of
-						       [] =>
-							  Statement.setExnStackLocal
-							  :: Statement.setSlotExnStack
-							  :: ac
-						     | _ => ac
-					      in
-						 (h :: hs, ac)
-					      end
-					 | _ => (hs, s :: ac)
-				     end)
-				 val _ =
+				     case s of
+					HandlerPop _ =>
+					   (case hs of
+					       [] => bug "pop of empty handler stack"
+					     | _ :: hs =>
+						  let
+						     val s =
+							case hs of
+							   [] =>
+							      Statement.SetExnStackSlot
+							 | h :: _ =>
+							      Statement.SetHandler h
+						  in (hs, s :: ac)
+						  end)
+				      | HandlerPush h =>
+					   let
+					      val ac =
+						 Statement.SetHandler h :: ac
+					      val ac =
+						 case hs of
+						    [] =>
+						       Statement.SetExnStackLocal
+						       :: Statement.SetSlotExnStack
+						       :: ac
+						  | _ => ac
+					   in
+					      (h :: hs, ac)
+					   end
+				      | _ => (hs, s :: ac))
+			val _ =
 				    replacement := SOME (Vector.fromListRev ac)
 			      in
 				 hs
@@ -138,15 +133,16 @@ fun doit (Program.T {datatypes, globals, functions, main}) =
 	    val _ = visit (start, [])
 	    val blocks =
 	       Vector.map
-	       (blocks, fn b as Block.T {label, args, transfer, ...} =>
+	       (blocks, fn b as Block.T {args, kind, label, transfer, ...} =>
 		let
 		   val {replacement, visited, ...} = labelInfo label
 		in
 		   if !visited
-		      then Block.T {label = label,
-				    args = args,
-				    transfer = transfer,
-				    statements = valOf (! replacement)}
+		      then Block.T {args = args,
+				    kind = kind,
+				    label = label,
+				    statements = valOf (! replacement),
+				    transfer = transfer}
 		   else b
 		end)
 	 in
@@ -158,10 +154,9 @@ fun doit (Program.T {datatypes, globals, functions, main}) =
 			  start = start}
 	 end
    in
-      Program.T {datatypes = datatypes,
-		 globals = globals,
-		 functions = List.revMap (functions, implementFunction),
-		 main = main}
+      Program.T {functions = List.revMap (functions, implementFunction),
+		 main = main,
+		 objectTypes = objectTypes}
    end
 
 end

@@ -48,13 +48,14 @@ in
    structure Var = Var
 end 
 
-structure Profile = Profile (structure Machine = Machine
-			     structure Rssa = Rssa)
 structure AllocateRegisters = AllocateRegisters (structure Machine = Machine
 						 structure Rssa = Rssa)
 structure Chunkify = Chunkify (Rssa)
+structure ImplementHandlers = ImplementHandlers (structure Rssa = Rssa)
 structure LimitCheck = LimitCheck (structure Rssa = Rssa)
 structure ParallelMove = ParallelMove ()
+structure Profile = Profile (structure Machine = Machine
+			     structure Rssa = Rssa)
 structure SignalCheck = SignalCheck(structure Rssa = Rssa)
 structure SsaToRssa = SsaToRssa (structure Rssa = Rssa
 				 structure Ssa = Ssa)
@@ -160,6 +161,8 @@ fun toMachine (program: Ssa.Program.t) =
 	  suffix = "rssa",
 	  thunk = fn () => Profile.profile program,
 	  typeCheck = R.Program.typeCheck o #program}
+      val program = pass ("implementHandlers", ImplementHandlers.doit, program)
+      val _ = R.Program.checkHandlers program
       val frameProfileIndex =
 	 if !Control.profile = Control.ProfileNone
 	    then fn _ => 0
@@ -221,7 +224,7 @@ fun toMachine (program: Ssa.Program.t) =
 	 val frameLayoutsCounter = Counter.new 0
 	 val _ = IntSet.reset ()
 	 val table = HashSet.new {hash = Word.fromInt o #frameOffsetsIndex}
-	 val frameOffsets = ref []
+	 val frameOffsets: int vector list ref = ref []
 	 val frameOffsetsCounter = Counter.new 0
 	 val {get = frameOffsetsIndex: IntSet.t -> int, ...} =
 	    Property.get
@@ -229,17 +232,18 @@ fun toMachine (program: Ssa.Program.t) =
 	     Property.initFun
 	     (fn offsets =>
 	      let
-		 val _ = List.push (frameOffsets, IntSet.toList offsets)
+		 val _ = List.push (frameOffsets,
+				    QuickSort.sortVector
+				    (Vector.fromList (IntSet.toList offsets),
+				     op <=))
 	      in
 		 Counter.next frameOffsetsCounter
 	      end))
       in
 	 fun allFrameInfo () =
 	    let
-	       (* Reverse both lists because the index is from back of list. *)
-	       val frameOffsets =
-		  Vector.rev
-		  (Vector.fromListMap (!frameOffsets, Vector.fromList))
+	       (* Reverse lists because the index is from back of list. *)
+	       val frameOffsets = Vector.fromListRev (!frameOffsets)
 	       val frameLayouts = Vector.fromListRev (!frameLayouts)
 	       val frameSources = Vector.fromListRev (!frameSources)
 	    in
@@ -479,23 +483,53 @@ fun toMachine (program: Ssa.Program.t) =
 			     dst = Option.map (dst, varOperand o #1),
 			     prim = prim})
 		  end
-	     | Profile p => Error.bug "backend saw strange profile statement"
 	     | ProfileLabel s => Vector.new1 (M.Statement.ProfileLabel s)
 	     | SetExnStackLocal =>
-		  Vector.new1
-		  (M.Statement.SetExnStackLocal {offset = handlerOffset ()})
+		  (* ExnStack = stackTop + (offset + WORD_SIZE) - StackBottom; *)
+		  let
+		     val tmp =
+			M.Operand.Register (Register.new (Type.word, NONE))
+		  in
+		     Vector.new2
+		     (M.Statement.PrimApp
+		      {args = (Vector.new2
+			       (M.Operand.Runtime GCField.StackTop,
+				M.Operand.Int
+				(handlerOffset () + Runtime.wordSize))),
+		       dst = SOME tmp,
+		       prim = Prim.word32Add},
+		      M.Statement.PrimApp
+		      {args = (Vector.new2
+			       (tmp,
+				M.Operand.Cast
+				(M.Operand.Runtime GCField.StackBottom,
+				 M.Type.word))),
+		       dst = SOME (M.Operand.Runtime GCField.ExnStack),
+		       prim = Prim.word32Sub})
+		  end
 	     | SetExnStackSlot =>
+		  (* ExnStack = *(uint* )(stackTop + offset);	*)
 		  Vector.new1
-		  (M.Statement.SetExnStackSlot {offset = linkOffset ()})
+		  (M.Statement.move
+		   {dst = M.Operand.Runtime GCField.ExnStack,
+		    src = M.Operand.StackOffset {offset = linkOffset (),
+						 ty = Type.ExnStack}})
 	     | SetHandler h =>
 		  Vector.new1
 		  (M.Statement.move
 		   {dst = M.Operand.StackOffset {offset = handlerOffset (),
-						 ty = Type.label},
+						 ty = Type.label h},
 		    src = M.Operand.Label h})
 	     | SetSlotExnStack =>
+		  (* *(uint* )(stackTop + offset) = ExnStack; *)
 		  Vector.new1
-		  (M.Statement.SetSlotExnStack {offset = linkOffset ()})
+		  (M.Statement.move
+		   {dst = M.Operand.StackOffset {offset = linkOffset (),
+						 ty = Type.ExnStack},
+		    src = M.Operand.Runtime GCField.ExnStack})
+	     | _ => Error.bug (concat
+			       ["backend saw strange statement: ",
+				R.Statement.toString s])
 	 end
       val genStatement =
 	 Trace.trace ("Backend.genStatement",
@@ -631,7 +665,7 @@ fun toMachine (program: Ssa.Program.t) =
 		   function = f,
 		   varInfo = varInfo}
 	    end
-	    (* Set the frameInfo for Conts and CReturns in this function. *)
+	    (* Set the frameInfo for blocks in this function. *)
 	    val _ =
 	       Vector.foreach
 	       (blocks, fn R.Block.T {kind, label, ...} =>
@@ -688,23 +722,21 @@ fun toMachine (program: Ssa.Program.t) =
 				 return = return})
 		   | R.Transfer.Call {func, args, return} =>
 			let
+			   datatype z = datatype R.Return.t
 			   val (contLive, frameSize, return) =
 			      case return of
-				 R.Return.Dead =>
-				    (Vector.new0 (), 0, NONE)
-			       | R.Return.Tail =>
-				    (Vector.new0 (), 0, NONE)
-			       | R.Return.HandleOnly =>
-				    (Vector.new0 (), 0, NONE)
-			       | R.Return.NonTail {cont, handler} =>
+				 Dead => (Vector.new0 (), 0, NONE)
+			       | Tail => (Vector.new0 (), 0, NONE)
+			       | NonTail {cont, handler} =>
 				    let
 				       val {liveNoFormals, size, ...} =
 					  labelRegInfo cont
+				       datatype z = datatype R.Handler.t
 				       val handler =
 					  case handler of
-					     R.Handler.CallerHandler => NONE
-					   | R.Handler.None => NONE
-					   | R.Handler.Handle h => SOME h
+					     Caller => NONE
+					   | Dead => NONE
+					   | Handle h => SOME h
 				    in
 				       (liveNoFormals,
 					size, 
@@ -864,8 +896,8 @@ fun toMachine (program: Ssa.Program.t) =
 				 else NONE
 			   in
 			      (M.Kind.CReturn {dst = dst,
-					      frameInfo = frameInfo,
-					      func = func},
+					       frameInfo = frameInfo,
+					       func = func},
 			       liveNoFormals,
 			       Vector.new0 ())
 			   end
@@ -875,14 +907,12 @@ fun toMachine (program: Ssa.Program.t) =
 				 List.push
 				 (handlers, {chunkLabel = Chunk.label chunk,
 					     label = label})
-			      val {handler = offset, ...} =
-				 valOf handlerLinkOffset
 			      val dsts = Vector.map (args, varOperand o #1)
 			      val handles =
 				 raiseOperands (Vector.map (dsts, M.Operand.ty))
 			   in
-			      (M.Kind.Handler {handles = handles,
-					       offset = offset},
+			      (M.Kind.Handler {frameInfo = frameInfo label,
+					       handles = handles},
 			       liveNoFormals,
 			       M.Statement.moves {dsts = dsts,
 						  srcs = handles})
