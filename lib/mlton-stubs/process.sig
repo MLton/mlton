@@ -1,6 +1,6 @@
 signature MLTON_PROCESS =
    sig
-      type pid = Posix.Process.pid
+      type pid
 
       val spawn: {path: string, args: string list} -> pid
       val spawne: {path: string, args: string list, env: string list} -> pid

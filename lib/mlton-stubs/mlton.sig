@@ -10,13 +10,13 @@ type word = Word.word
    
 signature MLTON =
    sig
-      val cleanAtExit: unit -> unit
+(*      val cleanAtExit: unit -> unit *)
 (*      val deserialize: Word8Vector.vector -> 'a *)
       (* Pointer equality.  The usual caveats about lack of a well-defined
        * semantics.
        *)
       val eq: 'a * 'a -> bool
-      val errno: unit -> int (* the value of the C errno global *)
+(*      val errno: unit -> int *) (* the value of the C errno global *)
       val isMLton: bool
       val safe: bool
 (*      val serialize: 'a -> Word8Vector.vector *)
@@ -46,12 +46,7 @@ signature MLTON =
       structure Thread: MLTON_THREAD
       structure Vector: MLTON_VECTOR
       structure Weak: MLTON_WEAK
-      structure Word:
-	 sig
-	    include MLTON_WORD
-	    val addCheck: t * word -> t (* may raise Overflow *)
-	    val mulCheck: t * word -> t (* may raise Overflow *)
-	 end
+      structure Word: MLTON_WORD
       structure Word8: MLTON_WORD
       structure World: MLTON_WORLD
    end

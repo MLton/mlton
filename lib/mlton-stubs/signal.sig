@@ -3,9 +3,6 @@ signature MLTON_SIGNAL =
       type t
       type signal = t
 
-      val prof: t
-      val vtalrm: t
-
       structure Handler:
 	 sig
 	    type t
@@ -15,6 +12,7 @@ signature MLTON_SIGNAL =
 	    val ignore: t
 	    val isDefault: t -> bool
 	    val isIgnore: t -> bool
+	    val simple: (unit -> unit) -> t
 	 end
 
       structure Mask:
@@ -25,30 +23,19 @@ signature MLTON_SIGNAL =
 	    val allBut: signal list -> t
 	    val block: t -> unit
 	    val none: t
-	    val set: t -> unit
+	    val setBlocked: t -> unit
 	    val some: signal list -> t
 	    val unblock: t -> unit
 	 end
 
       val getHandler: t -> Handler.t
-      val handleDefault: t -> unit
-      (*
-       * It is an error for a handler to raise an exception.
-       * It is an error to Thread.switch' to an interrupted thread
-       * with a thunk that raises an exception (either directly, or via
-       * Thread.prepend).  This is to avoid the possibility of
-       * aynchronous exceptions.
-       *)
-      val handleWith: t * (unit -> unit) -> unit
-      val handleWith': t * (unit MLtonThread.t -> unit MLtonThread.t) -> unit
-      val ignore: t -> unit
-      val isHandledDefault: t -> bool
-      val isIgnored: t -> bool
+      val prof: t
       val setHandler: t * Handler.t -> unit
       (* suspend m temporarily sets the signal mask to m and suspends until an
        * unmasked signal is received and handled, and then resets the mask.
        *)
       val suspend: Mask.t -> unit
+      val vtalrm: t
    end
 
 signature MLTON_SIGNAL_EXTRA =
