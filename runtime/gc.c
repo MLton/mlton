@@ -1613,10 +1613,10 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 
 void GC_gc(GC_state s, uint bytesRequested, bool force,
 		string file, int line) {
+	GC_enter(s);
 	s->currentThread->bytesNeeded = bytesRequested;
 	do {
 	uint stackBytesRequested;
-	GC_enter(s);
 	if (DEBUG) {
 		fprintf (stderr, "%s %d: ", file, line);
 		GC_display(s, stderr);
@@ -1672,9 +1672,15 @@ void GC_gc(GC_state s, uint bytesRequested, bool force,
 		s->canHandle = 2;
 		switchToThread(s, s->signalHandler);
 	}
-	GC_leave(s);
 	} while ((W64)(W32)s->frontier + (W64)s->currentThread->bytesNeeded 
 			> (W64)(W32)s->limit);
+	/* The GC_enter and GC_leave must be outside the while loop.  If they
+         * were inside and force == TRUE, a signal handler could intervene just
+         * before the GC_enter or just after the GC_leave, which would set 
+         * limit to 0 and cause the while loop to go forever, performing a GC 
+         * at each iteration and never switching to the signal handler.
+         */
+	GC_leave(s);
 }
 
 /* ------------------------------------------------- */
