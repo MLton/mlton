@@ -9098,24 +9098,13 @@ struct
 						   info = info,
 						   registerAllocation
 						   = registerAllocation}
-				       then case RA.fltallocated
-					         {memloc = memloc_src2,
-						  registerAllocation
-						  = registerAllocation}
-					      of SOME {sync,...}
-					       => if MemLocSet.contains
-						     (dead,
-						      memloc_src2)
-						     orelse
-						     (MemLocSet.contains
-						      (remove,
-						       memloc_src2)
-						      andalso
-						      sync)
-						    then default' ()
-						    else default true
-					       | NONE
-					       => default true
+				       then if removable
+					       {memloc = memloc_src2,
+						info = info,
+						registerAllocation
+						= registerAllocation}
+					      then default' ()
+					      else default true
 				       else default false
 				  | (Operand.MemLoc memloc_src1, _)
 				  => if removable {memloc = memloc_src1,
@@ -9200,6 +9189,8 @@ struct
 		*           fltreg add 
 		*             *
 		*   * only st(1) if pop and pop'
+		*
+		* Require size modifier class as follows: FLT(SNGL,DBLE)
 		*)
 	     => let
 		  val {uses,defs,kills} 
@@ -9219,6 +9210,63 @@ struct
 		       pop,
 		       pop',
 		       registerAllocation}
+(*
+		    = let
+			       fun default ()
+				 = let
+				     val {operand = final_src2,
+					  assembly = assembly_src2,
+					  fltrename = fltrename_src2,
+					  registerAllocation}
+				       = RA.allocateFltOperand 
+				         {operand = src2,
+					  options = {fltregister = true,
+						     address = false},
+					  info = info,
+					  size = size,
+					  move = true,
+					  supports = [src1],
+					  saves = [],
+					  top = SOME false,
+					  registerAllocation
+					  = registerAllocation}
+					 
+				     val {operand = final_src1,
+					  assembly = assembly_src1,
+					  fltrename = fltrename_src1,
+					  registerAllocation}
+				       = RA.allocateFltOperand 
+				       {operand = src1,
+					options = {fltregister = true,
+						   address = false},
+					info = info,
+					size = size,
+					move = true,	
+					supports = [],
+					saves = [src2,final_src2],
+					top = SOME true,
+					registerAllocation
+					= registerAllocation}
+		    
+				     val final_src2 
+				       = (RA.fltrenameLift fltrename_src1) final_src2
+				   in
+				     {final_src1 = final_src1,
+				      final_src2 = final_src2,
+				      assembly_src1_src2 
+				      = AppendList.appends
+				        [assembly_src2,
+					 assembly_src1],
+				      fltrename_src1_src2 = fltrename_src1 o 
+				                         fltrename_src2,
+				      pop = false,
+				      pop' = false,
+				      registerAllocation = registerAllocation}
+				   end
+		      in
+			default ()
+		      end
+*)
 		    = if Operand.eq(src1,src2)
 			then let
 			       fun default b
@@ -9306,7 +9354,7 @@ struct
 				        [assembly_src2,
 					 assembly_src1],
 				      fltrename_src1_src2 = fltrename_src1 o 
-				                         fltrename_src2,
+				                            fltrename_src2,
 				      pop = b,
 				      pop' = false,
 				      registerAllocation = registerAllocation}
@@ -9371,7 +9419,7 @@ struct
 						  = registerAllocation}
 						then default' ()
 						else default true
-					 else default true
+					 else default false
 				     end
 				  | (Operand.MemLoc memloc_src1, _)
 				  => if removable {memloc = memloc_src1,
