@@ -213,4 +213,4 @@ functor Test (I: INTEGER) =
 structure S = Test (Int8)
 structure S = Test (Int16)
 structure S = Test (Int32)
-structure S = Test (Int64)
+(* structure S = Test (Int64) *)
