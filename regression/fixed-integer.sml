@@ -15,7 +15,7 @@ functor Test (I: INTEGER) =
 		NONE => ac
 	      | SOME i => i :: ac)
 	    []
-	    [100, 10, 5, 2, 1, 0, ~1, ~2, 5, 10, 100])
+	    [100, 10, 5, 2, 1, 0, ~1, ~2, ~5, ~10, ~100])
 	 @ [I.+ (I.fromInt 1, valOf I.minInt),
 	    valOf I.minInt]
 
