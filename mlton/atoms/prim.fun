@@ -342,7 +342,7 @@ structure Name =
 	  (Real_ldexp, Functional, "Real_ldexp"),
 	  (Real_le, Functional, "Real_le"),
 	  (Real_lt, Functional, "Real_lt"),
-	  (Real_modf, Functional, "Real_modf"),
+	  (Real_modf, SideEffect, "Real_modf"),
 	  (Real_mul, Functional, "Real_mul"),
 	  (Real_muladd, Functional, "Real_muladd"),
 	  (Real_mulsub, Functional, "Real_mulsub"),

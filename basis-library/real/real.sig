@@ -67,17 +67,17 @@ signature REAL =
       val fromManExp: {man: real, exp: int} -> real 
       val split: real -> {whole: real, frac: real} 
       val realMod: real -> real 
-(*    val nextAfter: real * real -> real *)
+      val nextAfter: real * real -> real
       val checkFloat: real -> real 
       val realFloor: real -> real 
       val realCeil: real -> real 
       val realTrunc: real -> real 
       val toInt: IEEEReal.rounding_mode -> real -> int 
-(*    val toLargeInt: IEEEReal.rounding_mode -> real -> LargeInt.int   *)
+      val toLargeInt: IEEEReal.rounding_mode -> real -> LargeInt.int
       val fromInt: int -> real 
-(*    val fromLargeInt: LargeInt.int -> real  *)
+      val fromLargeInt: LargeInt.int -> real
       val toLarge: real -> LargeReal.real 
       val fromLarge: IEEEReal.rounding_mode -> LargeReal.real -> real 
-(*    val toDecimal: real -> IEEEReal.decimal_approx  *)
-(*    val fromDecimal: IEEEReal.decimal_approx -> real option *)
+      val toDecimal: real -> IEEEReal.decimal_approx
+      val fromDecimal: IEEEReal.decimal_approx -> real option
    end
