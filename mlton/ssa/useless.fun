@@ -339,51 +339,47 @@ structure Value =
 	 let
 	    val {value, ty, new, ...} = Set.! s
 	 in
-	    case !new of
-	       SOME z => z
-	     | NONE =>
-		  let 
-		     fun slot (arg: t, e: Exists.t) =
-			let val (t, b) = getNew arg
-			in (if Exists.doesExist e then t else Type.unit, b)
-			end
-		     fun wrap ((t, b), f) = (f t, b)
-		     fun or ((t, b), b') = (t, b orelse b')
-		     fun maybe (u: Useful.t, s: slot, make: Type.t -> Type.t) =
-			wrap (or (slot s, Useful.isUseful u), make)
-		     val z =
-			case value of
-			   Array {useful, elt, length, ...} =>
-			      or (wrap (slot elt, Type.array),
-				  Useful.isUseful useful orelse isUseful length)
-			 | Ground u => (ty, Useful.isUseful u)
-			 | Ref {arg, useful, ...} =>
-			      maybe (useful, arg, Type.reff)
-			 | Tuple vs =>
-			      let
-				 val (v, b) =
-				    Vector.mapAndFold
-				    (vs, false, fn ((v, e), useful) =>
-				     let
-					val (t, u) = getNew v
-					val t =
-					   if Exists.doesExist e
-					      then SOME t
-					   else NONE
-				     in (t, u orelse useful)
-				     end)
-				 val v = Vector.keepAllMap (v, fn t => t)
-			      in
-				 (Type.tuple v, b)
-			      end
-			 | Vector {elt, length, ...} =>
-			      or (wrap (slot elt, Type.vector), isUseful length)
-			 | Weak {arg, useful} =>
-			      maybe (useful, arg, Type.weak)
-		     val _ = new := SOME z
-		  in
-		     z
-		  end
+	    Ref.memoize
+	    (new, fn () =>
+	     let 
+		fun slot (arg: t, e: Exists.t) =
+		   let val (t, b) = getNew arg
+		   in (if Exists.doesExist e then t else Type.unit, b)
+		   end
+		fun wrap ((t, b), f) = (f t, b)
+		fun or ((t, b), b') = (t, b orelse b')
+		fun maybe (u: Useful.t, s: slot, make: Type.t -> Type.t) =
+		   wrap (or (slot s, Useful.isUseful u), make)
+	     in
+		case value of
+		   Array {useful, elt, length, ...} =>
+		      or (wrap (slot elt, Type.array),
+			  Useful.isUseful useful orelse isUseful length)
+		 | Ground u => (ty, Useful.isUseful u)
+		 | Ref {arg, useful, ...} =>
+		      maybe (useful, arg, Type.reff)
+		 | Tuple vs =>
+		      let
+			 val (v, b) =
+			    Vector.mapAndFold
+			    (vs, false, fn ((v, e), useful) =>
+			     let
+				val (t, u) = getNew v
+				val t =
+				   if Exists.doesExist e
+				      then SOME t
+				   else NONE
+			     in (t, u orelse useful)
+			     end)
+			 val v = Vector.keepAllMap (v, fn t => t)
+		      in
+			 (Type.tuple v, b)
+		      end
+		 | Vector {elt, length, ...} =>
+		      or (wrap (slot elt, Type.vector), isUseful length)
+		 | Weak {arg, useful} =>
+		      maybe (useful, arg, Type.weak)
+	     end)
 	 end
 
       val getNew =
