@@ -2939,12 +2939,16 @@ static void resizeHeap2 (GC_state s) {
 	assert (0 == s->heap2.size or s->heap.size == s->heap2.size);
 }
 
+static inline uint growStackSize (GC_state s) {
+	return max (2 * s->currentThread->stack->reserved, 
+			stackNeedsReserved (s, s->currentThread->stack));
+}
+
 static void growStack (GC_state s) {
 	uint size;
 	GC_stack stack;
 
-	size = max(2 * s->currentThread->stack->reserved, 
-			stackNeedsReserved (s, s->currentThread->stack));
+	size = growStackSize (s);
 	if (DEBUG_STACKS or s->messages)
 		fprintf (stderr, "Growing stack to size %s.\n",
 				uintToCommaString (stackBytes (s, size)));
@@ -3052,11 +3056,8 @@ static void doGC (GC_state s,
 		startTiming (&ru_start);
 	minorGC (s);
 	stackTopOk = mutatorStackInvariant (s);
-	stackBytesRequested =
-		stackTopOk
-		? 0 
-		: stackBytes (s, max (2 * s->currentThread->stack->reserved, 
-					stackNeedsReserved (s, s->currentThread->stack)));
+	stackBytesRequested = 
+		stackTopOk ? 0 : stackBytes (s, growStackSize (s));
 	totalBytesRequested = 
 		(W64)oldGenBytesRequested 
 		+ stackBytesRequested
