@@ -63,8 +63,6 @@ instantiate
 doInst ../mlton/control/control.sml
 sed "/^Version:/s;.*;Version: $version;" <mlton.spec >z
 sed "/^Release:/s;.*;Release: $release;" <z >$rpms/SPECS/mlton.spec
-sed "s/\(.*\)VERSION\(.*\)/\1$version\2/" <../mlton/control/control.sml >z
-mv z ../mlton/control/control.sml
 
 manvers=`date '+%B %d, %Y'`
 cd $src/man
