@@ -51,5 +51,6 @@ signature CONST =
       val node: t -> Node.t
       val toAstExp: t -> Ast.Exp.t
       val toAstPat: t -> Ast.Pat.t
+      val toString: t -> string
       val tycon: t -> Tycon.t
    end

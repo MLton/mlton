@@ -46,6 +46,7 @@ in
 end
 
 val layout = Node.layout o node
+val toString = Layout.toString o layout
    
 fun make (n, t) = T {node = n, tycon = t}
 

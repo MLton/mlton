@@ -139,9 +139,8 @@ structure LayoutDot =
       fun escapeString s =
 	 String.translate
 	 (s,
-	  fn #"\\" => "\\\\"
-	   | #"\n" => "\\n"
-	   | #"\t" => "\\"
+	  fn #"\n" => "\\n"
+	   | #"\t" => "\\t"
 	   | #"\"" => "\\\""
 	   | c => Char.toString c)
 

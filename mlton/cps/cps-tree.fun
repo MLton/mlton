@@ -116,6 +116,25 @@ in
    fun layoutTuple xs = Vector.layout Var.layout xs
 end
 
+structure Var =
+   struct
+      open Var
+
+      fun pretty (x, global) =
+	 case global x of
+	    NONE => toString x
+	  | SOME s => s
+
+
+      fun prettys (xs: Var.t vector, global: Var.t -> string option) =
+	 Layout.toString (Vector.layout
+			  (fn x =>
+			   case global x of
+			      NONE => layout x
+			    | SOME s => Layout.str s)
+			  xs)
+   end
+
 structure PrimInfo =
    struct
       datatype t =
@@ -207,6 +226,118 @@ structure PrimExp =
 							    Jump.layout j]]
       end
 
+      val toString = Layout.toString o layout
+
+      fun toPretty (e: t, global: Var.t -> string option): string =
+	 case e of
+	    Const c => Const.toString c
+	  | Var x => Var.toString x
+	  | Select {tuple, offset} =>
+	       concat ["#", Int.toString (offset + 1), " ", Var.toString tuple]
+	  | ConApp {con, args} =>
+	       concat [Con.toString con, " ", Var.prettys (args, global)]
+	  | Tuple xs => Var.prettys (xs, global)
+	  | PrimApp {prim, args, ...} =>
+	       let
+		  fun arg i = Var.pretty (Vector.sub (args, i), global)
+		  fun one name = concat [name, " ", arg 0]
+		  fun two name = concat [arg 0, " ", name, " ", arg 1]
+		  datatype z = datatype Prim.Name.t
+	       in
+		  case Prim.name prim of
+		     Char_lt => two "<"
+		   | Char_le => two "<="
+		   | Char_gt => two ">"
+		   | Char_ge => two ">="
+		   | Char_chr => one "chr"
+		   | Char_ord => one "ord"
+		   | Int_mul => two "*?"
+		   | Int_mulCheck => two "*"
+		   | Int_add => two "+?"
+		   | Int_addCheck => two "+"
+		   | Int_sub => two "-?"
+		   | Int_subCheck => two "-"
+		   | Int_lt => two "<"
+		   | Int_le => two "<="
+		   | Int_gt => two ">"
+		   | Int_ge => two ">="
+		   | Int_geu => two ">=u"
+		   | Int_gtu => two ">u"
+		   | Int_neg => one "-?"
+		   | Int_negCheck => one "-"
+		   | IntInf_add => two "+"
+		   | IntInf_equal => two "="
+		   | IntInf_mul => two "*"
+		   | IntInf_neg => one "-"
+		   | IntInf_sub => two "-"
+		   | MLton_eq => two "="
+		   | Real_Math_acos => one "acos"
+		   | Real_Math_asin => one "asin"
+		   | Real_Math_atan => one "atan"
+		   | Real_Math_cos => one "cos"
+		   | Real_Math_cosh => one "cosh"
+		   | Real_Math_exp => one "exp"
+		   | Real_Math_ln => one "ln"
+		   | Real_Math_log10  => one "log10"
+		   | Real_Math_pow => two "^"
+		   | Real_Math_sin => one "sin"
+		   | Real_Math_sinh => one "sinh"
+		   | Real_Math_sqrt => one "sqrt"
+		   | Real_Math_tan => one "tan"
+		   | Real_Math_tanh => one "tanh"
+		   | Real_mul => two "*"
+		   | Real_add => two "+"
+		   | Real_sub => two "-"
+		   | Real_div => two "/"
+		   | Real_lt => two "<"
+		   | Real_le => two "<="
+		   | Real_equal => two "=="
+		   | Real_gt => two ">"
+		   | Real_ge => two ">="
+		   | Real_qequal => two "?="
+		   | Real_neg => one "-"
+		   | Ref_assign => two ":="
+		   | Ref_deref => one "!"
+		   | Ref_ref => one "ref"
+		   | String_equal => two "="
+		   | String_size => one "size"
+		   | Vector_length => one "length"
+		   | Word32_add => two "+"
+		   | Word32_andb => two "&"
+		   | Word32_arshift => two "~>>"
+		   | Word32_ge => two ">="
+		   | Word32_gt => two ">"
+		   | Word32_le => two "<="
+		   | Word32_lshift => two "<<"
+		   | Word32_lt => two "<"
+		   | Word32_mul => two "*"
+		   | Word32_neg => two "-"
+		   | Word32_orb => two "|"
+		   | Word32_rol => two "rol"
+		   | Word32_ror => two "ror"
+		   | Word32_rshift => two ">>"
+		   | Word32_xorb => two "^"
+		   | Word8_add => two "+"
+		   | Word8_andb => two "&"
+		   | Word8_arshift => two "~>>"
+		   | Word8_ge => two ">="
+		   | Word8_gt => two ">"
+		   | Word8_le => two "<="
+		   | Word8_lshift => two "<<"
+		   | Word8_lt => two "<"
+		   | Word8_mul => two "*"
+		   | Word8_neg => two "-"
+		   | Word8_orb => two "|"
+		   | Word8_rol => two "rol"
+		   | Word8_ror => two "ror"
+		   | Word8_rshift => two ">>"
+		   | Word8_sub => two "-"
+		   | Word8_xorb => two "^"
+		   | _ => concat [Prim.toString prim,
+				  " ",
+				  Var.prettys (args, global)]
+	       end
+	    
       fun maySideEffect (e: t): bool =
 	 case e of
 	    PrimApp {prim,...} => Prim.maySideEffect prim
@@ -1118,20 +1249,26 @@ structure Function =
 	 structure Node = Graph.Node
 	 structure Edge = Graph.Edge
       in
-	 fun layoutDot ({name, args, body, returns}: t, jumpHandlers) =
+	 fun layoutDot ({name, args, body, returns}: t, jumpHandlers, global) =
 	    let
 	       open Graph.LayoutDot
-	       val {destroy, get = jumpNode, set = setJumpNode} =
-		  Property.destGetSet
-		  (Jump.plist,
-		   Property.initRaise ("node", Jump.layout))
-	       val {get = edgeOptions, set = setEdgeOptions} =
-		  Property.getSetOnce
-		  (Edge.plist, Property.initConst [])
+	       val g = Graph.new ()
 	       val {get = nodeOptions, ...} =
 		  Property.get
 		  (Node.plist, Property.initFun (fn _ => ref []))
-	       val g = Graph.new ()
+	       fun newNode () =
+		  let
+		     val n = Graph.newNode g
+		     val _ = List.push (nodeOptions n,
+					NodeOption.Shape Box)
+		  in n
+		  end
+	       val {destroy, get = jumpNode} =
+		  Property.destGet
+		  (Jump.plist, Property.initFun (fn _ => newNode ()))
+	       val {get = edgeOptions, set = setEdgeOptions} =
+		  Property.getSetOnce
+		  (Edge.plist, Property.initConst [])
 	       fun addEdge (from, to, opts) =
 		  let
 		     val e = Graph.addEdge (g, {from = from,
@@ -1140,9 +1277,6 @@ structure Function =
 		  in
 		     ()
 		  end
-	       fun nodeOption (n, opt) =
-		  List.push (nodeOptions n, opt)
-	       val main = Graph.newNode g
 	       fun loop (e: Exp.t, from: Node.t, name: string) =
 		  let
 		     val {decs, transfer} = Exp.dest e
@@ -1152,83 +1286,93 @@ structure Function =
 			addEdge (from, j,
 				 [EdgeOption.Label label,
 				  EdgeOption.Style style])
-		     val _ =
-			List.foreach
-			(decs,
-			 fn Bind {var, exp, ...} =>
-			 (case exp of
-			     PrimApp {info, ...} =>
-				PrimInfo.foreachJump
-				(info, fn j =>
-				 edge
-				 (j, "Overflow", Dashed))
-			   | _ => ())
-			  | Fun {name, body, ...} =>
-			       let
-				  val n = Graph.newNode g
-				  val _ = setJumpNode (name, n)
-			       in
-				  loop (body, n, Jump.toString name)
-			       end
-			  | _ => ())
 		     val rest =
 			case transfer of
-			   Bug => "\nbug"
-			 | Call {func, cont, ...} =>
+			   Bug => ["bug"]
+			 | Call {func, args, cont, ...} =>
 			      let
 				 val f = Func.toString func
+				 val args = Var.prettys (args, global)
 			      in
 				 case cont of
-				    NONE => concat ["\ntail ", f]
+				    NONE => [f, " ", args]
 				  | SOME j =>
-				       (edge (j, (concat
-						  ["nontail ", f]),
-					      Dotted)
+				       (edge (j, "", Dotted)
 					; (case jumpHandlers j of
 					      h :: _ =>
-						 edge
-						 (h, "", Dotted)
+						 edge (h, "", Dotted)
 					    | _ => ())
-					; "")
+					; [Jump.toString j, " (", f, args, ")"])
 			      end
-			 | Case {cases, default, ...} =>
-			      (nodeOption
-			       (from, NodeOption.Shape Diamond)
-			       ; let
-				    fun doit (v, toString) =
-				       Vector.foreach
-				       (v, fn (x, j) =>
-					edge (j, toString x, Solid))
-				 in case cases of
-				    Cases.Char v =>
-				       doit (v, Char.toString)
-				  | Cases.Con v =>
-				       doit (v, Con.toString)
-				  | Cases.Int v =>
-				       doit (v, Int.toString)
-				  | Cases.Word v =>
-				       doit (v, Word.toString)
-				  | Cases.Word8 v =>
-				       doit (v, Word8.toString)
-				 end
-			       ; (case default of
-				     NONE => ()
-				   | SOME j =>
-					edge (j, "default", Solid))
-				 ; "")
-			 | Jump {dst, ...} =>
+			 | Case {test, cases, default, ...} =>
+			      let
+				 fun doit (v, toString) =
+				    Vector.foreach
+				    (v, fn (x, j) =>
+				     edge (j, toString x, Solid))
+				 val _ =
+				    case cases of
+				       Cases.Char v =>
+					  doit (v, Char.toString)
+				     | Cases.Con v =>
+					  doit (v, Con.toString)
+				     | Cases.Int v =>
+					  doit (v, Int.toString)
+				     | Cases.Word v =>
+					  doit (v, Word.toString)
+				     | Cases.Word8 v =>
+					  doit (v, Word8.toString)
+				 val _ = 
+				    case default of
+				       NONE => ()
+				     | SOME j =>
+					  edge (j, "default", Solid)
+			      in
+				 ["case ", Var.toString test]
+			      end
+			 | Jump {dst, args} =>
 			      (edge (dst, "", Solid)
-			       ; "")
-			 | Raise _ => "\nraise"
-			 | Return _ => "\nreturn"
+			       ; [Jump.toString dst, " ",
+				  Var.prettys (args, global)])
+			 | Raise xs => ["raise ", Var.prettys (xs, global)]
+			 | Return xs => ["return ", Var.prettys (xs, global)]
+		     val lab =
+			List.fold
+			(rev decs, rest @ ["\\l"], fn (b, ac) =>
+			 case b of 
+			    Bind {var, exp, ...} =>
+			       let
+				  val _ =
+				     case exp of
+					PrimApp {info, ...} =>
+					   PrimInfo.foreachJump
+					   (info, fn j =>
+					    edge
+					    (j, "Overflow", Dashed))
+				      | _ => ()
+			       in
+				  [Var.toString var, " = ",
+				   PrimExp.toPretty (exp, global), "\\l"] @ ac
+			       end
+			  | Fun {name, args, body, ...} =>
+			       (loop (body, jumpNode name,
+				      concat [Jump.toString name,
+					      Layout.toString
+					      (Layout.vector
+					       (Vector.map (args,
+							    Var.layout o #1)))])
+				; ac)
+			  | HandlerPop => "HandlerPop\\l" :: ac
+			  | HandlerPush l =>
+			       ["HandlerPush ", Jump.toString l, "\\l"] @ ac)
 		     val _ = 
-			nodeOption
-			(from,
-			 NodeOption.Label (concat [name, rest]))
+			List.push
+			(nodeOptions from,
+			 NodeOption.Label (concat (name :: "\\l" :: lab)))
 		  in
 		     ()
 		  end
-	       val _ = loop (body, main, Func.toString name)
+	       val _ = loop (body, newNode (), Func.toString name)
 	       val l =
 		  Graph.LayoutDot.layout
 		  {graph = g,
@@ -1242,7 +1386,8 @@ structure Function =
 	    end
       end
    
-      fun layout (func as {name, args, body, returns}, jumpHandlers) =
+      fun layout (func as {name, args, body, returns},
+		  jumpHandlers, global: Var.t -> string option) =
 	 let
 	    val _ =
 	       if !Control.keepDot
@@ -1251,7 +1396,8 @@ structure Function =
 		     (concat [!Control.inputFile, ".",
 			      Func.toString name, ".dot"],
 		      fn out =>
-		      Layout.outputl (layoutDot (func, jumpHandlers), out))
+		      Layout.outputl (layoutDot (func, jumpHandlers, global),
+				      out))
 	       else ()
 	    open Layout
 	 in align [seq [str "fun ",
@@ -1272,8 +1418,8 @@ structure Function =
 		   end]
 	 end
       
-      fun layouts (fs, jumpHandlers, output: Layout.t -> unit): unit =
-	 Vector.foreach (fs, fn f => output (layout (f, jumpHandlers)))
+      fun layouts (fs, jumpHandlers, global, output: Layout.t -> unit): unit =
+	 Vector.foreach (fs, fn f => output (layout (f, jumpHandlers, global)))
    end
 
 structure Program =
@@ -1466,6 +1612,23 @@ structure Program =
       fun layouts (p as T {datatypes, globals, functions, main},
 		   output': Layout.t -> unit) =
 	 let
+	    val {get = global, set = setGlobal} =
+	       Property.getSet (Var.plist,
+				Property.initConst NONE)
+	    val _ = 
+	       Vector.foreach
+	       (globals, fn {var, exp, ...} =>
+		let
+		   fun set s = setGlobal (var, SOME s)
+		in
+		   case exp of
+		      Const c => set (Layout.toString (Const.layout c))
+		    | ConApp {con, args, ...} =>
+			 if Vector.isEmpty args
+			    then set (Con.toString con)
+			 else set (concat [Con.toString con, "(...)"])
+		    | _ => ()
+		end)
 	    val jumpHandlers = inferHandlers p
 	    open Layout
 	    val output = output'
@@ -1473,7 +1636,7 @@ structure Program =
 	    ; output (str "\n\nGlobals:")
 	    ; Vector.foreach (globals, output o Bind.layout)
 	    ; output (str "\n\nFunctions:")
-	    ; Function.layouts (functions, jumpHandlers, output)
+	    ; Function.layouts (functions, jumpHandlers, global, output)
 	    ; output (seq [str "\n\nMain: ", Func.layout main])
 	    ; if not (!Control.keepDot)
 	       then ()
@@ -1493,8 +1656,9 @@ structure Program =
 		   str "Globals:",
 		   align (Vector.toListMap (globals, Bind.layout)),
 		   str "Functions:",
-		   align (Vector.toListMap (functions, fn f =>
-					    Function.layout (f, jumpHandlers))),
+		   align (Vector.toListMap
+			  (functions, fn f =>
+			   Function.layout (f, jumpHandlers, fn _ => NONE))),
 		   seq [str "Main: ", Func.layout main]]
 	 end
 
