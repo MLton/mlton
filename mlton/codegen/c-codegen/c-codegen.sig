@@ -21,14 +21,10 @@ signature C_CODEGEN =
       val output: {program: Machine.Program.t,
 		   outputC: unit -> {file: File.t,
 				     print: string -> unit,
-				     done: unit -> unit},
-		   outputH: unit -> {done: unit -> unit,
-				     print: string -> unit}
+				     done: unit -> unit}
 		   } -> unit
       val outputDeclarations: {additionalMainArgs: string list,
 			       includes: string list,
-			       outputH: unit -> {done: unit -> unit,
-						 print: string -> unit},
 			       print: string -> unit,
 			       program: Machine.Program.t,
 			       rest: unit -> unit

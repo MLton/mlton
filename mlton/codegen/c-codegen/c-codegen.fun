@@ -232,7 +232,6 @@ fun declareGlobals (prefix: string, print) =
 fun outputDeclarations
    {additionalMainArgs: string list,
     includes: string list,
-    outputH,
     print: string -> unit,
     program = (Program.T
 	       {chunks, frameLayouts, frameOffsets, intInfs, maxFrameSize,
@@ -486,8 +485,7 @@ fun output {program as Machine.Program.T {chunks,
 					  main = {chunkLabel, label}, ...},
 	    outputC: unit -> {file: File.t,
 			      print: string -> unit,
-			      done: unit -> unit},
-	    outputH} =
+			      done: unit -> unit}} =
    let
       datatype status = None | One | Many
       val {get = labelInfo: Label.t -> {block: Block.t,
@@ -1252,7 +1250,6 @@ fun output {program as Machine.Program.T {chunks,
       val _ = 
 	 outputDeclarations {additionalMainArgs = additionalMainArgs,
 			     includes = ["c-main.h"],
-			     outputH = outputH,
 			     program = program,
 			     print = print,
 			     rest = rest}
