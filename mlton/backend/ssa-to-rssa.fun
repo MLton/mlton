@@ -1200,8 +1200,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			       | MLton_bug => simpleCCall CFunction.bug
 			       | MLton_eq =>
 				    (case targ () of
-					NONE => move (Operand.int
-						      (IntX.defaultInt 1))
+					NONE => move (Operand.bool true)
 				      | SOME _ => normal ())
 			       | MLton_size => simpleCCall CFunction.size
 			       | Ref_assign =>
