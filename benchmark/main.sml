@@ -387,7 +387,7 @@ fun main args =
 	       let open Signal
 	       in Handler.set (pipe, Handler.Ignore)
 	       end
-	    fun r2s r = Real.format (r, Real.Format.fix (SOME 1))
+	    fun r2s r = Real.format (r, Real.Format.fix (SOME 2))
 	    val i2s = Int.toCommaString
 	    fun show {compiles, runs, sizes} =
 	       let
