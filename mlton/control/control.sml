@@ -89,6 +89,22 @@ val gcCheck = control {name = "gc check",
 		       default = Limit,
 		       toString = GcCheck.toString}
 
+structure Handlers =
+   struct
+      datatype t = Flow | PushPop | Simple
+
+      val toString =
+	 fn Flow => "Flow"
+	  | PushPop => "PushPop"
+	  | Simple => "Simple"
+   end
+
+datatype handlers = datatype Handlers.t
+
+val handlers = control {name = "handlers",
+			default = Flow,
+			toString = Handlers.toString}
+
 structure Host =
    struct
       datatype t =
@@ -342,6 +358,21 @@ val profile = control {name = "profile",
 		       default = ProfileNone,
 		       toString = Profile.toString}
 
+structure ProfileIL =
+   struct
+      datatype t = ProfileSSA | ProfileXML
+
+      val toString =
+	 fn ProfileSSA => "ProfileSSA"
+	  | ProfileXML => "ProfileXML"
+   end
+
+datatype profileIL = datatype ProfileIL.t
+   
+val profileIL = control {name = "profile IL",
+			 default = ProfileXML,
+			 toString = ProfileIL.toString}
+   
 val profileStack = control {name = "profile stack",
 			    default = false,
 			    toString = Bool.toString}

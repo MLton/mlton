@@ -47,6 +47,7 @@ datatype t =
 	       targs: Type.t vector,
 	       args: t vector,
 	       ty: Type.t}
+ | Profile of ProfileExp.t
  | Raise of t
  | Runtime of {args: t vector,
 	       prim: Prim.t,
@@ -77,6 +78,7 @@ val detupleBind = DetupleBind
 val handlee = Handle
 val lett = Let
 val name = Name
+val profile = Profile
 val raisee = Raise
 val select = Select
 val seq = Seq
@@ -186,6 +188,7 @@ in
        | Name _ => str "Name"
        | PrimApp {prim, targs, args, ty} =>
 	    Prim.layoutApp (prim, args, layout)
+       | Profile e => ProfileExp.layout e
        | Raise e => seq [str "raise ", layout e]
        | Runtime {args, prim, ...} =>
 	    Prim.layoutApp (prim, args, layout)
@@ -532,6 +535,7 @@ fun linearize' (e: t, h: Handler.t, k: Cont.t): Label.t * Block.t list =
 		Cont.sendExp (k, ty, Exp.PrimApp {prim = prim,
 						  targs = targs,
 						  args = xs}))
+	  | Profile e => Cont.sendExp (k, Type.unit, Exp.Profile e)
 	  | Raise e =>
 	       loopf (e, h, fn (x, _) =>
 		      {statements = [],

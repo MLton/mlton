@@ -20,9 +20,11 @@ fun 'a analyze
     select, tuple, useFromTypeOnBinds} =
    let
       val unit = fromType Type.unit
-      fun coerces (from, to) =
-	 Vector.foreach2 (from, to, fn (from, to) =>
-			  coerce {from = from, to = to})
+      fun coerces (msg, from, to) =
+	 if Vector.length from = Vector.length to
+	    then Vector.foreach2 (from, to, fn (from, to) =>
+				  coerce {from = from, to = to})
+	 else Error.bug (concat ["coerces length mismatch: ", msg])
       val {get = value: Var.t -> 'a, set = setValue, ...} =
 	 Property.getSetOnce
 	 (Var.plist,
@@ -60,7 +62,7 @@ fun 'a analyze
 			shouldRaises: 'a vector option): unit =
 	(case t of
 	    Arith {prim, args, overflow, success, ty} =>
-	       (coerces (Vector.new0 (), labelValues overflow)
+	       (coerces ("arith", Vector.new0 (), labelValues overflow)
 		; coerce {from = primApp {prim = prim,
 					  targs = Vector.new0 (),
 					  args = values args,
@@ -71,14 +73,14 @@ fun 'a analyze
 	  | Call {func = f, args, return, ...} =>
 	       let
 		  val {args = formals, raises, returns} = func f
-		  val _ = coerces (values args, formals)
+		  val _ = coerces ("formals", values args, formals)
 		  fun noHandler () =
 		     case (raises, shouldRaises) of
 			(NONE, NONE) => ()
 		      | (NONE, SOME _) => ()
 		      | (SOME _, NONE) => 
 			   Error.bug "raise mismatch"
-		      | (SOME vs, SOME vs') => coerces (vs, vs')
+		      | (SOME vs, SOME vs') => coerces ("noHandler", vs, vs')
 		  datatype z = datatype Return.t
 	       in
 		  case return of
@@ -88,7 +90,7 @@ fun 'a analyze
 			else ()
 		   | NonTail {cont, handler} => 
 		        (Option.app (returns, fn vs =>
-				     coerces (vs, labelValues cont))
+				     coerces ("returns", vs, labelValues cont))
 			 ; (case handler of
 			       Handler.Caller => noHandler ()
 			     | Handler.Dead =>
@@ -100,7 +102,9 @@ fun 'a analyze
 				     val _ =
 				        case raises of
 					   NONE => ()
-					 | SOME vs => coerces (vs, labelValues h)
+					 | SOME vs =>
+					      coerces ("handle", vs,
+						       labelValues h)
 				  in
 				     ()
 				  end))
@@ -113,7 +117,8 @@ fun 'a analyze
 			       | (NONE, SOME _) => ()
 			       | (SOME _, NONE) =>
 				    Error.bug "return mismatch at Tail"
-			       | (SOME vs, SOME vs') => coerces (vs, vs')
+			       | (SOME vs, SOME vs') =>
+				    coerces ("tail", vs, vs')
 			in
 			   ()
 			end
@@ -142,15 +147,15 @@ fun 'a analyze
 		  val _ = Option.app (default, ensureNullary)
 	       in ()
 	       end
-	  | Goto {dst, args} => coerces (values args, labelValues dst)
+	  | Goto {dst, args} => coerces ("goto", values args, labelValues dst)
 	  | Raise xs =>
 	       (case shouldRaises of
 		   NONE => raise Fail "raise mismatch at raise"
-		 | SOME vs => coerces (values xs, vs))
+		 | SOME vs => coerces ("raise", values xs, vs))
 	  | Return xs =>
 	       (case shouldReturns of
 		   NONE => raise Fail "return mismatch at return"
-		 | SOME vs => coerces (values xs, vs))
+		 | SOME vs => coerces ("return", values xs, vs))
 	  | Runtime {prim, args, return} =>
 	       let
 		  val xts = labelArgs return
@@ -230,7 +235,7 @@ fun 'a analyze
 			       (case exn of 
 				   Fail msg => msg
 				 | _ => "")])
-      val _ = coerces (Vector.new0 (), #args (func main))
+      val _ = coerces ("main", Vector.new0 (), #args (func main))
       val _ = Vector.foreach (globals, loopStatement)
       val _ =
 	 List.foreach

@@ -289,143 +289,144 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 	    fun makeExp e = Dexp.vall {var = var, exp = e}
 	 in
 	    case exp of
-	    Lambda l => primExp (Lambda (loopLambda l))
-	  | PrimApp {prim, targs, args} =>
-	       let
-		  datatype z = datatype Prim.Name.t
-		  fun assign (var, ty) =
-		     primExp
-		     (PrimApp {prim = Prim.assign,
-			       targs = Vector.new1 ty,
-			       args = Vector.new2 (VarExp.mono var,
-						   Vector.sub (args, 0))})
-	       in
-		  case Prim.name prim of
-		     Exn_extra => makeExp (extra (VarExp.var
-						  (Vector.sub (args, 0))))
-		   | Exn_name =>
-			primExp (App {func = VarExp.mono exnName,
-				      arg = Vector.sub (args, 0)})
-		   | Exn_setExtendExtra => []
-		   | Exn_setInitExtra => []
-		   | Exn_setTopLevelHandler =>
-			assign (topLevelHandler,
-				Type.arrow (Type.exn, Type.unit))
-		   | _ => primExp exp
-	       end
-	  | ConApp {con, arg, ...} =>
-	       (case exconInfo con of
-		   NONE => keep ()
-		 | SOME {make, ...} => makeExp (make arg))
-	  | Handle {try, catch = (catch, ty), handler} =>
-	       primExp (Handle {try = loop try,
-				catch = (catch, ty),
-				handler = loop handler})
-	  | Case {test, cases, default} =>
-	       let
-		  fun normal () =
-		     primExp (Case {cases = Cases.map (cases, loop),
-				    default = Option.map (default, fn (e, r) =>
-							  (loop e, r)),
-				    test = test})
-	       in
-		  case cases of
-		     Cases.Con cases =>
-			if Vector.isEmpty cases
-			   then normal ()
-			else
-			   let
-			      val (Pat.T {con, ...}, _) = Vector.sub (cases, 0)
-			   in
-			      if not (isExcon con)
-				 then normal ()
-			      else (* convert to an exception match *)
-				 let
-				    open Dexp
-				    val defaultVar = Var.newString "default"
-				    fun callDefault () =
-				       app {func = monoVar (defaultVar,
-							    Type.arrow (Type.unit, ty)),
-					    arg = unit (),
-					    ty = ty}
-				    val unit = Var.newString "unit"
-				    val (body, region) =
-				       case default of
-					  NONE =>
-					     Error.bug "no default for exception case"
-					| SOME (e, r) =>
-					     (fromExp (loop e, ty), r)
-				    val decs =
-				       vall
-				       {var = defaultVar,
-					exp = lambda {arg = unit,
-						      argType = Type.unit,
-						      bodyType = ty,
-						      body = body,
-						      region = region}}
-				 in makeExp
-				    (lett
-				     {decs = decs,
-				      body =
-				      extract
-				      (VarExp.var test, ty, fn tuple =>
-				       casee
-				       {test = extractSum tuple,
-					ty = ty,
-					default = SOME (callDefault (), region),
-					cases =
-					Cases.Con
-					(Vector.map
-					 (cases, fn (Pat.T {con, arg, ...}, e) =>
-					  let
-					     val refVar = Var.newNoname ()
-					     val body =
-						iff {test =
-						     equal
-						     (monoVar
-						      (refVar, Type.unitRef),
-						      monoVar
-						      (#refVar (valOf (exconInfo con)),
-						       Type.unitRef)),
-						     ty = ty,
-						     thenn = fromExp (loop e, ty),
-						     elsee = callDefault ()}
-					     fun make (arg, body) = 
-						(Pat.T {con = con,
-							targs = Vector.new0 (),
-							arg = SOME arg},
-						 body)
-					  in case arg of
-					     NONE => make ((refVar, Type.unitRef), body)
-					   | SOME (x, t) =>
-						let
-						   val tuple =
-						      (Var.newNoname (),
-						       Type.tuple (Vector.new2
-								   (Type.unitRef, t)))
-						in make (tuple,
-							 detupleBind
-							 {tuple = monoVar tuple,
-							  components =
-							  Vector.new2 (refVar, x),
-							  body = body})
-						end
-					  end))})})
-				 end
-			   end
-		   | _ => normal ()
-	       end
-          | Raise {exn, filePos} =>
-	       raisee {var = var, ty = ty, exn = exn, filePos = filePos}
-	  | _ => keep ()
+	       Case {test, cases, default} =>
+		  let
+		     fun normal () =
+			primExp (Case {cases = Cases.map (cases, loop),
+				       default = Option.map (default, fn (e, r) =>
+							     (loop e, r)),
+				       test = test})
+		  in
+		     case cases of
+			Cases.Con cases =>
+			   if Vector.isEmpty cases
+			      then normal ()
+			   else
+			      let
+				 val (Pat.T {con, ...}, _) = Vector.sub (cases, 0)
+			      in
+				 if not (isExcon con)
+				    then normal ()
+				 else (* convert to an exception match *)
+				    let
+				       open Dexp
+				       val defaultVar = Var.newString "default"
+				       fun callDefault () =
+					  app {func = monoVar (defaultVar,
+							       Type.arrow (Type.unit, ty)),
+					       arg = unit (),
+					       ty = ty}
+				       val unit = Var.newString "unit"
+				       val (body, region) =
+					  case default of
+					     NONE =>
+						Error.bug "no default for exception case"
+					   | SOME (e, r) =>
+						(fromExp (loop e, ty), r)
+				       val decs =
+					  vall
+					  {var = defaultVar,
+					   exp = lambda {arg = unit,
+							 argType = Type.unit,
+							 bodyType = ty,
+							 body = body,
+							 region = region}}
+				    in makeExp
+				       (lett
+					{decs = decs,
+					 body =
+					 extract
+					 (VarExp.var test, ty, fn tuple =>
+					  casee
+					  {test = extractSum tuple,
+					   ty = ty,
+					   default = SOME (callDefault (), region),
+					   cases =
+					   Cases.Con
+					   (Vector.map
+					    (cases, fn (Pat.T {con, arg, ...}, e) =>
+					     let
+						val refVar = Var.newNoname ()
+						val body =
+						   iff {test =
+							equal
+							(monoVar
+							 (refVar, Type.unitRef),
+							 monoVar
+							 (#refVar (valOf (exconInfo con)),
+							  Type.unitRef)),
+							ty = ty,
+							thenn = fromExp (loop e, ty),
+							elsee = callDefault ()}
+						fun make (arg, body) = 
+						   (Pat.T {con = con,
+							   targs = Vector.new0 (),
+							   arg = SOME arg},
+						    body)
+					     in case arg of
+						NONE => make ((refVar, Type.unitRef), body)
+					      | SOME (x, t) =>
+						   let
+						      val tuple =
+							 (Var.newNoname (),
+							  Type.tuple (Vector.new2
+								      (Type.unitRef, t)))
+						   in make (tuple,
+							    detupleBind
+							    {tuple = monoVar tuple,
+							     components =
+							     Vector.new2 (refVar, x),
+							     body = body})
+						   end
+					     end))})})
+				    end
+			      end
+		      | _ => normal ()
+		  end
+	     | ConApp {con, arg, ...} =>
+		  (case exconInfo con of
+		      NONE => keep ()
+		    | SOME {make, ...} => makeExp (make arg))
+	     | Handle {try, catch = (catch, ty), handler} =>
+		  primExp (Handle {try = loop try,
+				   catch = (catch, ty),
+				   handler = loop handler})
+	     | Lambda l => primExp (Lambda (loopLambda l))
+	     | PrimApp {prim, targs, args} =>
+		  let
+		     datatype z = datatype Prim.Name.t
+		     fun assign (var, ty) =
+			primExp
+			(PrimApp {prim = Prim.assign,
+				  targs = Vector.new1 ty,
+				  args = Vector.new2 (VarExp.mono var,
+						      Vector.sub (args, 0))})
+		  in
+		     case Prim.name prim of
+			Exn_extra => makeExp (extra (VarExp.var
+						     (Vector.sub (args, 0))))
+		      | Exn_name =>
+			   primExp (App {func = VarExp.mono exnName,
+					 arg = Vector.sub (args, 0)})
+		      | Exn_setExtendExtra => primExp (Tuple (Vector.new0 ()))
+		      | Exn_setInitExtra => primExp (Tuple (Vector.new0 ()))
+		      | Exn_setTopLevelHandler =>
+			   assign (topLevelHandler,
+				   Type.arrow (Type.exn, Type.unit))
+		      | _ => primExp exp
+		  end
+	     | Raise {exn, filePos} =>
+		  raisee {var = var, ty = ty, exn = exn, filePos = filePos}
+	     | _ => keep ()
 	 end
       and loopLambda l =
 	 let
-	    val {arg, argType, body, region} = Lambda.dest l
+	    val {arg, argType, body, bodyType, region} = Lambda.dest l
 	 in
 	    Lambda.new {arg = arg,
 			argType = argType,
 			body = loop body,
+			bodyType = bodyType,
 			region = region}
 	 end
       val body =
@@ -500,6 +501,7 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 				 default = NONE,
 				 ty = Type.string}))
 			   end,
+			   bodyType = Type.string,
 			   region = Region.bogus})
 		       end}
 	       in

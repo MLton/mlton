@@ -152,6 +152,7 @@ fun toMachine (program: Ssa.Program.t) =
       val program = pass ("insertLimitChecks", LimitCheck.insert, program)
       val program = pass ("insertSignalChecks", SignalCheck.insert, program)
       val program = pass ("implementHandlers", ImplementHandlers.doit, program)
+      val _ = R.Program.checkHandlers program
       val {frameProfileIndices, labels = profileLabels, program, sources,
 	   sourceSeqs, sourceSuccessors} =
 	 Control.passTypeCheck
@@ -162,7 +163,6 @@ fun toMachine (program: Ssa.Program.t) =
 	  suffix = "rssa",
 	  thunk = fn () => Profile.profile program,
 	  typeCheck = R.Program.typeCheck o #program}
-      val _ = R.Program.checkHandlers program
       val profileStack =
 	 !Control.profile <> Control.ProfileNone
 	 andalso !Control.profileStack

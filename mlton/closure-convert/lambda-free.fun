@@ -108,30 +108,31 @@ fun lambdaFree (Program.T {body, ...},
 	 end
       and primExp (e, s) = 
 	 case e of
-	    Const _ => ()
-	  | Var x => varExp (x, s)
-	  | Tuple xs => varExps (xs, s)
-	  | Select {tuple, ...} => varExp (tuple, s)
-	  | Lambda l =>
-	       let val xs = lambda l
-	       in setFree (l, xs); vars (xs, s)
-	       end
-	  | ConApp {arg, ...} => varExpOpt (arg, s)
-	  | PrimApp {prim, args, ...} => 
-	       (if Prim.mayOverflow prim
-		  then var (overflowVar, s)
-		  else ();
-		varExps (args, s))
-	  | App {func, arg} => (varExp (func, s); varExp (arg, s))
-	  | Raise {exn, ...} => varExp (exn, s)
-	  | Handle {try, catch, handler} =>
-	       (exp (try, s); bind (#1 catch, s); exp (handler, s))
+	    App {func, arg} => (varExp (func, s); varExp (arg, s))
 	  | Case {test, cases, default} =>
 	       (varExp (test, s)
 		; Option.app (default, fn (e, _) => exp (e, s))
 		; Cases.foreach' (cases, fn e => exp (e, s),
 				  fn Pat.T {arg, ...} =>
 				  Option.app (arg, fn (x, _) => bind (x, s))))
+	  | ConApp {arg, ...} => varExpOpt (arg, s)
+	  | Const _ => ()
+	  | Handle {try, catch, handler} =>
+	       (exp (try, s); bind (#1 catch, s); exp (handler, s))
+	  | Lambda l =>
+	       let val xs = lambda l
+	       in setFree (l, xs); vars (xs, s)
+	       end
+	  | PrimApp {prim, args, ...} => 
+	       (if Prim.mayOverflow prim
+		  then var (overflowVar, s)
+		  else ();
+		varExps (args, s))
+	  | Profile _ => ()
+	  | Raise {exn, ...} => varExp (exn, s)
+	  | Select {tuple, ...} => varExp (tuple, s)
+	  | Tuple xs => varExps (xs, s)
+	  | Var x => varExp (x, s)
       and lambda (l: Lambda.t) : Var.t vector =
 	 let val {arg, body, ...} = Lambda.dest l
 	 in newScope (fn s => (bind (arg, s); exp (body, s)))

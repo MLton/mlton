@@ -8,9 +8,7 @@
 Group
 
 signature HANDLER
-signature PROFILE_EXP
 signature RETURN
-signature SOURCE_INFO
 signature SSA
 
 functor FlatLattice
@@ -60,7 +58,6 @@ n-point-lattice.fun
 n-point-lattice.sig
 poly-equal.fun
 poly-equal.sig
-profile-exp.sig
 redundant.fun
 redundant.sig
 redundant-tests.fun
@@ -75,8 +72,6 @@ simplify.fun
 simplify.sig
 simplify-types.fun
 simplify-types.sig
-source-info.fun
-source-info.sig
 ssa-tree.fun
 ssa-tree.sig
 ssa.fun

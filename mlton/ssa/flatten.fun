@@ -123,8 +123,11 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 
       fun doitStatement (Statement.T {var, ty, exp}) =
 	 case exp of
-	    Tuple xs => setVarInfo (valOf var, {rep = Rep.new (),
-						tuple = ref (SOME xs)})
+	    Tuple xs =>
+	       Option.app
+	       (var, fn var =>
+		setVarInfo (var, {rep = Rep.new (),
+				  tuple = ref (SOME xs)}))
 	  | ConApp {con, args} => coerces (args, conArgs con)
 	  | Var x => setVarInfo (valOf var, varInfo x)
 	  | _ => ()
@@ -384,12 +387,9 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 			cases = Cases.Con cases,
 			default = default}
 	       end 
-
 	    fun doitTransfer transfer =
 	       case transfer of
-		  Return xs => Return (flattens (xs, valOf returnsReps))
-		| Raise xs => Raise (flattens (xs, valOf raisesReps))
-		| Call {func, args, return} =>
+		  Call {func, args, return} =>
 		     Call {func = func, 
 			   args = flattens (args, funcArgs func),
 			   return = return}
@@ -400,6 +400,8 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 		| Goto {dst, args} =>
 		     Goto {dst = dst,
 			   args = flattens (args, labelArgs dst)}
+		| Raise xs => Raise (flattens (xs, valOf raisesReps))
+		| Return xs => Return (flattens (xs, valOf returnsReps))
 		| _ => transfer
 
 	    fun doitBlock (Block.T {label, args, statements, transfer}) =

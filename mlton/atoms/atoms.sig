@@ -14,32 +14,21 @@ signature ATOMS' =
    sig
       include ATOMS_STRUCTS
 
-      structure Con: CON sharing Con.AstId = Ast.Con
+      structure Con: CON
+      structure Cons: SET
       structure Const: CONST
-      structure Prim: PRIM sharing Con = Prim.Con sharing Const = Prim.Const
-      structure Tycon: TYCON sharing Tycon.AstId = Ast.Tycon
-      structure UnaryTycon: UNARY_TYCON sharing Tycon = UnaryTycon.Tycon
-      structure Scheme: SCHEME
-      structure Var: VAR sharing Var.AstId = Ast.Var
-      sharing Tycon = Const.Tycon
-      sharing Ast = Const.Ast = Prim.Type.Ast
-      sharing Tycon = Scheme.Tycon
-      sharing Ast.Tyvar = Scheme.Tyvar
-      sharing Scheme = Prim.Scheme
-
+      structure Prim: PRIM 
+      structure ProfileExp: PROFILE_EXP
       structure Record: RECORD
-      sharing Record = Ast.Record
+      structure Scheme: SCHEME
       structure SortedRecord: RECORD
-      sharing SortedRecord = Ast.SortedRecord
-
+      structure SourceInfo: SOURCE_INFO
+      structure Tycon: TYCON
+      structure Tycons: SET
       structure Tyvar: TYVAR
-      sharing Tyvar = Ast.Tyvar
-
-      structure Tyvars: SET sharing type Tyvars.Element.t = Tyvar.t
-      structure Cons: SET sharing type Cons.Element.t = Con.t
-      structure Vars: SET sharing type Vars.Element.t = Var.t
-      structure Tycons: SET sharing type Tycons.Element.t = Tycon.t
-
+      structure UnaryTycon: UNARY_TYCON
+      structure Var: VAR
+      structure Vars: SET
       structure TyvarEnv:
 	 sig
 	    include MONO_ENV 
@@ -50,8 +39,29 @@ signature ATOMS' =
 	     *)
             val rename: t * Tyvar.t vector -> t * Tyvar.t vector
 	 end
-      sharing type TyvarEnv.Domain.t = Tyvar.t
-      sharing type TyvarEnv.Range.t = Tyvar.t
+      structure Tyvars: SET
+
+      sharing Ast = Const.Ast = Prim.Type.Ast
+      sharing Ast.Con = Con.AstId
+      sharing Ast.Tycon = Tycon.AstId
+      sharing Ast.Tyvar = Scheme.Tyvar
+      sharing Ast.Var = Var.AstId
+      sharing Con = Prim.Con
+      sharing Const = Prim.Const
+      sharing Record = Ast.Record
+      sharing Scheme = Prim.Scheme
+      sharing SortedRecord = Ast.SortedRecord
+      sharing SourceInfo = ProfileExp.SourceInfo
+      sharing Tycon = Const.Tycon
+      sharing Tycon = Scheme.Tycon
+      sharing Tycon = UnaryTycon.Tycon
+      sharing Tyvar = Ast.Tyvar
+      sharing type Con.t = Cons.Element.t
+      sharing type Tycon.t = Tycons.Element.t
+      sharing type Tyvar.t = TyvarEnv.Domain.t
+      sharing type Tyvar.t = TyvarEnv.Range.t
+      sharing type Tyvar.t = Tyvars.Element.t
+      sharing type Var.t = Vars.Element.t
    end
 
 signature ATOMS =
@@ -65,9 +75,11 @@ signature ATOMS =
       sharing Var = Atoms.Var
       sharing Con = Atoms.Con
       sharing Prim = Atoms.Prim
+      sharing ProfileExp = Atoms.ProfileExp
       sharing Tycon = Atoms.Tycon
       sharing Tyvar = Atoms.Tyvar
       sharing Record = Atoms.Record
+      sharing SourceInfo = Atoms.SourceInfo
       sharing Vars = Atoms.Vars
       sharing Cons = Atoms.Cons
       sharing Tycons = Atoms.Tycons

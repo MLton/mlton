@@ -56,8 +56,6 @@ signature SSA_TREE =
    sig
       include SSA_TREE_STRUCTS
 
-      structure SourceInfo: SOURCE_INFO
-	 
       structure Type:
 	 sig
 	    include HASH_TYPE
@@ -85,8 +83,6 @@ signature SSA_TREE =
 
       structure Func: HASH_ID
       structure Label: LABEL
-      structure ProfileExp: PROFILE_EXP
-      sharing SourceInfo = ProfileExp.SourceInfo
       
       structure Exp:
 	 sig
@@ -128,11 +124,13 @@ signature SSA_TREE =
 			       exp: Exp.t}
 
 	    val clear: t -> unit (* clear the var *)
+	    val equals: t * t -> bool
 	    val exp: t -> Exp.t
 	    val handlerPop: Label.t -> t
 	    val handlerPush: Label.t -> t
 	    val layout: t -> Layout.t
 	    val prettifyGlobals: t vector -> (Var.t -> string option)
+	    val profile: ProfileExp.t -> t
 	    val var: t -> Var.t option
 	 end
       

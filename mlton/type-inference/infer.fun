@@ -527,6 +527,7 @@ fun infer {program = p: CoreML.Program.t,
 				{tuple = Xexp.monoVar (arg, argType),
 				 components = vars,
 				 body = e}),
+			       bodyType = caseType,
 			       region = region})}
 			 fun finish rename =
 			    Xexp.app
@@ -645,6 +646,7 @@ fun infer {program = p: CoreML.Program.t,
 						     resultType))]),
 			     caseType = resultType,
 			     region = region})),
+	     bodyType = resultType,
 	     region = region}
 	 end
       fun forceRulesMatch (rs, region) =
@@ -891,9 +893,28 @@ fun infer {program = p: CoreML.Program.t,
 			   {tyvars = bound (),
 			    decs = (Vector.map
 				    (decs, fn {var, region, rules, ty} =>
-				     {var = var,
-				      ty = Type.toXml (ty, region),
-				      lambda = forceRulesMatch (rules, region)}))}]),
+				     let
+					val {arg, argType, body, bodyType,
+					     ...} =
+					   Xlambda.dest
+					   (forceRulesMatch (rules, region))
+					val body =
+					   Xml.Exp.enterLeave
+					   (body,
+					    bodyType,
+					    SourceInfo.fromRegion region)
+					val lambda =
+					   Xlambda.new
+					   {arg = arg,
+					    argType = argType,
+					    body = body,
+					    bodyType = bodyType,
+					    region = region}
+				     in
+					{var = var,
+					 ty = Type.toXml (ty, region),
+					 lambda = lambda}
+				     end))}]),
 		    env)
 		end
 	   | Cdec.Overload {var, scheme = CoreML.Scheme.T {tyvars, ty}, ovlds} =>
@@ -923,7 +944,6 @@ fun infer {program = p: CoreML.Program.t,
       (*------------------------------------*)
       (*              inferExp              *)
       (*------------------------------------*)
-
       and inferExp arg: expCode =
 	 traceInferExp
 	 (fn (e, env) =>
@@ -977,18 +997,22 @@ fun infer {program = p: CoreML.Program.t,
 		   let
 		      val rs as {argType, resultType, rules, ...} =
 			 inferMatch (m, env)
-		   in (fn () =>
+		   in
+		      (fn () =>
 		       let
 			  val {arg, argType, body, ...} =
 			     Xlambda.dest (forceRulesMatch (rs, region))
 			  val resultType = Type.toXml (resultType, region)
+			  val body =
+			     Xml.Exp.enterLeave (body,
+						 resultType,
+						 SourceInfo.fromRegion region)
 		       in
-			  Xexp.lambda
-			  {arg = arg,
-			   argType = argType,
-			   body = Xexp.fromExp (body, resultType),
-			   bodyType = resultType,
-			   region = region}
+			  Xexp.lambda {arg = arg,
+				       argType = argType,
+				       body = Xexp.fromExp (body, resultType),
+				       bodyType = resultType,
+				       region = region}
 		       end,
 		       Type.arrow (argType, resultType),
 		       region)
@@ -1093,7 +1117,15 @@ fun infer {program = p: CoreML.Program.t,
 		     end
 	 in
 	    case Cexp.node e1 of
-	       Cexp.Con con =>
+	       Cexp.App (e1, e2) =>
+		  let
+		     val e = apply (e1, env, SOME (inferExp (e2, env)))
+		  in
+		     case arg of
+			NONE => e
+		      | SOME e' => applyOne (e, e')
+		  end
+	     | Cexp.Con con =>
 		  let
 		     val {instance, args} = instCon con
 		  in
@@ -1117,7 +1149,8 @@ fun infer {program = p: CoreML.Program.t,
 		  let
 		     val {instance, args = targs} =
 			instantiatePrim (Prim.scheme prim, region)
-		  in eta (instance, fn (arg, resultType) =>
+		  in
+		     eta (instance, fn (arg, resultType) =>
 			  let
 			     fun constant c =
 				let
@@ -1161,12 +1194,6 @@ fun infer {program = p: CoreML.Program.t,
 				   (* FIXME -- should use Control.error? *)
 				   Error.bug "primApp mismatch"
 			  end)
-		  end
-	     | Cexp.App (e1, e2) =>
-		  let val e = apply (e1, env, SOME (inferExp (e2, env)))
-		  in case arg of
-		     NONE => e
-		   | SOME e' => applyOne (e, e')
 		  end
 	     | _ =>
 		  let val e1 = inferExp (e1, env)

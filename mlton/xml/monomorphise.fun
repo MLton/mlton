@@ -355,30 +355,8 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
 	  end) arg
       and monoPrimExp (e: XprimExp.t): SprimExp.t =
 	 case e of
-	    XprimExp.Const c => SprimExp.Const c
-	  | XprimExp.Var x => SprimExp.Var (monoVarExp x)
-	  | XprimExp.Tuple xs => SprimExp.Tuple (monoVarExps xs)
-	  | XprimExp.Select {tuple, offset} =>
-	       SprimExp.Select {tuple = monoVarExp tuple, offset = offset}
-	  | XprimExp.Lambda l => SprimExp.Lambda (monoLambda l)
-	  | XprimExp.ConApp {con, targs, arg} =>
-	       let val con = monoCon (con, targs)
-	       in SprimExp.ConApp {con = con, targs = Vector.new0 (),
-				   arg = Option.map (arg, monoVarExp)}
-	       end
-	  | XprimExp.PrimApp {prim, targs, args} =>
-	       SprimExp.PrimApp {prim = prim,
-				 targs = monoTypes targs,
-				 args = monoVarExps args}
-	  | XprimExp.App {func, arg} =>
+	    XprimExp.App {func, arg} =>
 	       SprimExp.App {func = monoVarExp func, arg = monoVarExp arg}
-	  | XprimExp.Raise {exn, filePos} =>
-	       SprimExp.Raise {exn = monoVarExp exn,
-			       filePos = filePos}
-	  | XprimExp.Handle {try, catch, handler} =>
-	       SprimExp.Handle {try = monoExp try,
-				catch = renameMono catch,
-				handler = monoExp handler}
 	  | XprimExp.Case {test, cases, default} =>
 	       let
 		  fun doit cases =
@@ -399,14 +377,38 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
 		   default = Option.map (default, fn (e, r) =>
 					 (monoExp e, r))}
 	       end
+	  | XprimExp.ConApp {con, targs, arg} =>
+	       let val con = monoCon (con, targs)
+	       in SprimExp.ConApp {con = con, targs = Vector.new0 (),
+				   arg = Option.map (arg, monoVarExp)}
+	       end
+	  | XprimExp.Const c => SprimExp.Const c
+	  | XprimExp.Handle {try, catch, handler} =>
+	       SprimExp.Handle {try = monoExp try,
+				catch = renameMono catch,
+				handler = monoExp handler}
+	  | XprimExp.Lambda l => SprimExp.Lambda (monoLambda l)
+	  | XprimExp.PrimApp {prim, targs, args} =>
+	       SprimExp.PrimApp {prim = prim,
+				 targs = monoTypes targs,
+				 args = monoVarExps args}
+	  | XprimExp.Profile e => SprimExp.Profile  e
+	  | XprimExp.Raise {exn, filePos} =>
+	       SprimExp.Raise {exn = monoVarExp exn,
+			       filePos = filePos}
+	  | XprimExp.Select {tuple, offset} =>
+	       SprimExp.Select {tuple = monoVarExp tuple, offset = offset}
+	  | XprimExp.Tuple xs => SprimExp.Tuple (monoVarExps xs)
+	  | XprimExp.Var x => SprimExp.Var (monoVarExp x)
       and monoLambda l: Slambda.t =
 	 let
-	    val {arg, argType, body, region} = Xlambda.dest l
+	    val {arg, argType, body, bodyType, region} = Xlambda.dest l
 	    val (arg, argType) = renameMono (arg, argType)
 	 in
 	    Slambda.new {arg = arg,
 			 argType = argType,
 			 body = monoExp body,
+			 bodyType = monoType bodyType,
 			 region = region}
 	 end
       (*------------------------------------*)

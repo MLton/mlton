@@ -14,7 +14,8 @@ functor Polyvariance (S: POLYVARIANCE_STRUCTS): POLYVARIANCE =
 struct
 
 open S
-open Dec PrimExp
+datatype z = datatype Dec.t
+datatype z = datatype PrimExp.t
    
 structure Type =
    struct
@@ -53,16 +54,21 @@ fun lambdaSize (Program.T {body, ...}): Lambda.t -> int =
       and loopPrimExp (e: PrimExp.t, n: int): int =
 	 case e of
 	    Case {cases, default, ...} =>
-	       Cases.fold
-	       (cases,
-		(case default of
-		    NONE => n
-		  | SOME (e, _) => loopExp (e, n)),
-		    fn (e, n) => loopExp (e, n))
+	       let
+		  val n = n + 1
+	       in
+		  Cases.fold
+		  (cases,
+		   (case default of
+		       NONE => n
+		     | SOME (e, _) => loopExp (e, n)),
+		       fn (e, n) => loopExp (e, n))
+	       end
 	  | Handle {try, handler, ...} =>
-	       loopExp (try, loopExp (handler, n))
-	  | Lambda l => loopLambda (l, n)
-	  | _ => n
+	       loopExp (try, loopExp (handler, n + 1))
+	  | Lambda l => loopLambda (l, n + 1)
+	  | Profile _ => n
+	  | _ => n + 1
    in loopExp (body, 0)
       ; size
    end
@@ -122,25 +128,30 @@ fun shouldDuplicate (program as Program.T {body, ...}, small, product)
 				  let
 				     val loopExp =
 					fn e => loopExp (e, numDuplicates)
-				  in (case exp of
-					 Const _ => ()
-				       | Var x => loopVar x
-				       | Tuple xs => loopVars xs
-				       | Select {tuple, ...} => loopVar tuple
-				       | ConApp {arg, ...} =>
-					    Option.app (arg, loopVar)
-				       | PrimApp {args, ...} => loopVars args
-				       | App {func, arg} =>
-					    (loopVar func; loopVar arg)
-				       | Raise {exn, ...} => loopVar exn
-				       | Case {test, cases, default} =>
-					    (loopVar test
-					     ; Cases.foreach (cases, loopExp)
-					     ; Option.app (default, loopExp o #1))
-				       | Handle {try, handler, ...} =>
-					    (loopExp try; loopExp handler)
-				       | _ => Error.bug "unexpected primExp")
-				     ; loopDecs decs
+				     val _ =
+					case exp of
+					   App {func, arg} =>
+					      (loopVar func; loopVar arg)
+					 | Case {test, cases, default} =>
+					      (loopVar test
+					       ; Cases.foreach (cases, loopExp)
+					       ; (Option.app
+						  (default, loopExp o #1)))
+					 | ConApp {arg, ...} =>
+					      Option.app (arg, loopVar)
+					 | Const _ => ()
+					 | Handle {try, handler, ...} =>
+					      (loopExp try; loopExp handler)
+					 | Lambda _ =>
+					      Error.bug "unexpected Lambda"
+					 | PrimApp {args, ...} => loopVars args
+					 | Profile _ => ()
+					 | Raise {exn, ...} => loopVar exn
+					 | Select {tuple, ...} => loopVar tuple
+					 | Tuple xs => loopVars xs
+					 | Var x => loopVar x
+				  in
+				     loopDecs decs
 				  end)
 		      | Fun {decs = lambdas, ...} =>
 			   let
@@ -258,11 +269,12 @@ fun duplicate (program as Program.T {datatypes, body, overflow},
 	 end
       and loopLambda (l: Lambda.t): Lambda.t =
 	 let
-	    val {arg, argType, body, region} = Lambda.dest l
+	    val {arg, argType, body, bodyType, region} = Lambda.dest l
 	 in
 	    Lambda.new {arg = bind arg,
 			argType = argType,
 			body = loopExp body,
+			bodyType = bodyType,
 			region = region}
 	 end
       and loopDecs (ds: Dec.t list, result): {decs: Dec.t list,
@@ -295,26 +307,9 @@ fun duplicate (program as Program.T {datatypes, body, overflow},
 			    let
 			       val exp =
 				  case exp of
-				     Const _ => exp
-				   | Var x => Var (loopVar x)
-				   | Tuple xs => Tuple (loopVars xs)
-				   | Select {tuple, offset} =>
-					Select {tuple = loopVar tuple,
-						offset = offset}
-				   | ConApp {con, targs, arg} =>
-					ConApp {con = con,
-						targs = targs,
-						arg = Option.map (arg, loopVar)}
-				   | PrimApp {prim, targs, args} =>
-					PrimApp {prim = prim,
-						 targs = targs,
-						 args = loopVars args}
-				   | App {func, arg} =>
+				     App {func, arg} =>
 					App {func = loopVar func,
 					     arg = loopVar arg}
-				   | Raise {exn, filePos} =>
-					Raise {exn = loopVar exn,
-					       filePos = filePos}
 				   | Case {test, cases, default} =>
 					let
 					   datatype z = datatype Cases.t
@@ -341,11 +336,30 @@ fun duplicate (program as Program.T {datatypes, body, overflow},
 						 (default, fn (e, r) =>
 						  (loopExp e, r))}
 					end
+				   | ConApp {con, targs, arg} =>
+					ConApp {con = con,
+						targs = targs,
+						arg = Option.map (arg, loopVar)}
+				   | Const _ => exp
 				   | Handle {try, catch, handler} =>
 					Handle {try = loopExp try,
 						catch = bindVarType catch,
 						handler = loopExp handler}
-				   | _ => Error.bug "unexpected primExp"
+				   | Lambda _ =>
+					Error.bug "unexpected Lambda"
+				   | PrimApp {prim, targs, args} =>
+					PrimApp {prim = prim,
+						 targs = targs,
+						 args = loopVars args}
+				   | Profile _ => exp
+				   | Raise {exn, filePos} =>
+					Raise {exn = loopVar exn,
+					       filePos = filePos}
+				   | Select {tuple, offset} =>
+					Select {tuple = loopVar tuple,
+						offset = offset}
+				   | Tuple xs => Tuple (loopVars xs)
+				   | Var x => Var (loopVar x)
 			       val var = bind var
 			       val {decs, result} = loopDecs (ds, result)
 			    in {decs = (MonoVal {var = var, ty = ty, exp = exp}

@@ -153,56 +153,7 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 	       List.fold (es, t, fn (e, t) => checkApp (t, e))
 	 in
 	    case e of
-	       Var x => checkVarExp x
-	     | Const c => Type.ofConst c
-	     | Tuple xs =>
-		  if 1 = Vector.length xs
-		     then error "unary tuple"
-		  else Type.tuple (checkVarExps xs)
-	     | Select {tuple, offset} =>
-		  (case Type.detupleOpt (checkVarExp tuple) of
-		      SOME ts => Vector.sub (ts, offset)
-		    | NONE => error "selection from nontuple")
-	     | Lambda l => checkLambda l
-	     | PrimApp {prim, targs, args} =>
-		  let
-		     val _ = checkTypes targs
-		  in
-		     case Prim.checkApp {prim = prim,
-					 targs = targs,
-					 args = checkVarExps args,
-					 con = Type.con,
-					 equals = Type.equals,
-					 dearrowOpt = Type.dearrowOpt,
-					 detupleOpt = Type.detupleOpt,
-					 isUnit = Type.isUnit
-					 } of
-			NONE => error "bad primapp"
-		      | SOME t => t
-		  end
-	     | ConApp {con, targs, arg} =>
-		  let
-		     val t = checkConExp (con, targs)
-		  in case arg of
-		     NONE => t
-		   | SOME e => checkApp (t, e)
-		  end
-	     | App {func, arg} => checkApp (checkVarExp func, arg)
-	     | Raise {exn, ...} => if isExnType (checkVarExp exn)
-				      then ty
-				   else error "bad raise"
-	     | Handle {try, catch = (catch, catchType), handler, ...} =>
-		  let
-		     val _ = if isExnType catchType
-				then ()
-			     else error "handle with non-exn type for catch"
-		     val ty = checkExp try
-		     val _ = setVar (catch, {tyvars = Vector.new0 (),
-					     ty = catchType})
-		     val ty' = checkExp handler
-		  in if Type.equals (ty, ty') then ty
-		     else error "bad handle"
-		  end
+	       App {func, arg} => checkApp (checkVarExp func, arg)
 	     | Case {test, cases, default} =>
 		  let
 		     val ty = checkVarExp test
@@ -244,14 +195,69 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 				    else error "default of wrong type"
 			else error "test and patterns of different types"
 		  end
+	     | ConApp {con, targs, arg} =>
+		  let
+		     val t = checkConExp (con, targs)
+		  in case arg of
+		     NONE => t
+		   | SOME e => checkApp (t, e)
+		  end
+	     | Const c => Type.ofConst c
+	     | Handle {try, catch = (catch, catchType), handler, ...} =>
+		  let
+		     val _ = if isExnType catchType
+				then ()
+			     else error "handle with non-exn type for catch"
+		     val ty = checkExp try
+		     val _ = setVar (catch, {tyvars = Vector.new0 (),
+					     ty = catchType})
+		     val ty' = checkExp handler
+		  in if Type.equals (ty, ty') then ty
+		     else error "bad handle"
+		  end
+	     | Lambda l => checkLambda l
+	     | PrimApp {prim, targs, args} =>
+		  let
+		     val _ = checkTypes targs
+		  in
+		     case Prim.checkApp {prim = prim,
+					 targs = targs,
+					 args = checkVarExps args,
+					 con = Type.con,
+					 equals = Type.equals,
+					 dearrowOpt = Type.dearrowOpt,
+					 detupleOpt = Type.detupleOpt,
+					 isUnit = Type.isUnit
+					 } of
+			NONE => error "bad primapp"
+		      | SOME t => t
+		  end
+	     | Profile _ => Type.unit
+	     | Raise {exn, ...} => if isExnType (checkVarExp exn)
+				      then ty
+				   else error "bad raise"
+	     | Select {tuple, offset} =>
+		  (case Type.detupleOpt (checkVarExp tuple) of
+		      SOME ts => Vector.sub (ts, offset)
+		    | NONE => error "selection from nontuple")
+	     | Tuple xs =>
+		  if 1 = Vector.length xs
+		     then error "unary tuple"
+		  else Type.tuple (checkVarExps xs)
+	     | Var x => checkVarExp x
 	 end) arg
       and checkLambda l: Type.t =
 	 let
-	    val {arg, argType, body, ...} = Lambda.dest l
+	    val {arg, argType, body, bodyType, ...} = Lambda.dest l
 	    val _ = checkType argType
 	    val _ = setVar (arg, {tyvars = Vector.new0 (), ty = argType})
+	    val _ =
+	       if Type.equals (bodyType, checkExp body)
+		  then ()
+	       else Type.error ("lambda body of wrong type",
+				Lambda.layout l)
 	 in
-	    Type.arrow (argType, checkExp body)
+	    Type.arrow (argType, bodyType)
 	 end
       and checkDec d =
 	 let

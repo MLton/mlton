@@ -56,6 +56,9 @@ signature CONTROL =
        | Every
       val gcCheck: gcCheck ref
 
+      datatype handlers = Flow | PushPop | Simple
+      val handlers: handlers ref
+
       datatype host =
 	 Cross of string
        | Self
@@ -196,6 +199,9 @@ signature CONTROL =
       datatype profile = ProfileNone | ProfileAlloc | ProfileTime
       val profile: profile ref
 
+      datatype profileIL = ProfileXML | ProfileSSA
+      val profileIL: profileIL ref
+	 
       val profileStack: bool ref
 
       (* Array bounds checking. *)

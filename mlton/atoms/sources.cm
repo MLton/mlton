@@ -17,8 +17,10 @@ signature GENERIC_SCHEME
 signature HASH_ID
 signature HASH_TYPE
 signature PRIM
+signature PROFILE_EXP
 signature RECORD
 signature SCHEME
+signature SOURCE_INFO
 signature TYCON
 signature TYPE_OPS
 signature TYPE
@@ -56,7 +58,11 @@ id.fun
 id.sig
 prim.fun
 prim.sig
+profile-exp.fun
+profile-exp.sig
 scheme.sig
+source-info.fun
+source-info.sig
 tycon.fun
 tycon.sig
 type-ops.fun

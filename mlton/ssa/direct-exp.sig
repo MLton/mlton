@@ -71,7 +71,8 @@ signature DIRECT_EXP =
 	   val primApp: {args: t vector,
 			 prim: Prim.t,
 			 targs: Type.t vector, 
-			 ty: Type.t} -> t 
+			 ty: Type.t} -> t
+	   val profile: ProfileExp.t -> t
 	   val raisee: t -> t
 	   val select: {tuple: t, 
 			offset: int, 

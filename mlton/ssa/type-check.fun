@@ -307,7 +307,7 @@ structure Function =
 	 end
    end
 
-fun checkHandlers (program as Program.T {datatypes, functions, ...}): unit =
+fun checkHandlers (program as Program.T {functions, ...}): unit =
    let
       fun checkFunction (f: Function.t): unit =
 	 let
@@ -425,6 +425,30 @@ fun checkHandlers (program as Program.T {datatypes, functions, ...}): unit =
    in
       ()
    end
+
+val checkHandlers =
+   fn p =>
+   if !Control.handlers = Control.PushPop
+      then checkHandlers p
+   else let
+	   val Program.T {functions, ...} = p
+	in
+	   List.foreach (functions, fn f =>
+			 let
+			    val {blocks, ...} = Function.dest f
+			 in
+			    Vector.foreach
+			    (blocks, fn Block.T {statements, ...} =>
+			     Vector.foreach
+			     (statements, fn Statement.T {exp, ...} =>
+			      if (case exp of
+				     Exp.HandlerPop _ => true
+				   | Exp.HandlerPush _ => true
+				   | _ => false)
+				 then Error.bug "superfluous HandlerPush/Pop"
+			      else ()))
+			 end)
+	end
 
 val checkHandlers = Control.trace (Control.Pass, "checkHandlers") checkHandlers
 

@@ -24,6 +24,7 @@ signature FLAT_LATTICE =
 
       val <= : t * t -> bool
       val forcePoint: t * Point.t -> bool
+      val forceTop: t -> bool
       val layout: t -> Layout.t
       val lowerBound: t * Point.t -> bool
       val new: unit -> t

@@ -721,8 +721,12 @@ structure Program =
 			      ("handler", HandlerLat.layout handler)]
 	 end
 
+      val traceGoto =
+	 Trace.trace ("checkHandlers.goto", Label.layout, Unit.layout)
+	 
       fun checkHandlers (T {functions, ...}) =
 	 let
+	    val debug = false
 	    fun checkFunction (f: Function.t): unit =
 	       let
 		  val {name, start, blocks, ...} = Function.dest f
@@ -746,6 +750,18 @@ structure Program =
 			let
 			   val _ = visited := true
 			   val Block.T {label, statements, transfer, ...} = block
+			   val _ =
+			      if debug
+				 then
+				    let
+				       open Layout
+				    in
+				       outputl
+				       (seq [str "visiting ",
+					     Label.layout label],
+					Out.error)
+				    end
+			      else ()
 			   datatype z = datatype ExnStack.t
 			   datatype z = datatype Statement.t
 			   val {global, handler, slot} =
@@ -762,7 +778,7 @@ structure Program =
 						      slot = slot}
 				| SetSlotExnStack => {global = global,
 						      handler = handler,
-						      slot = slot}
+						      slot = global}
 				| SetHandler l => {global = global,
 						   handler = HandlerLat.point l,
 						   slot = slot}
@@ -807,6 +823,7 @@ structure Program =
 			      in
 				 visitLabel l
 			      end
+			   val goto = traceGoto goto
 			   fun tail name =
 			      assert (name,
 				      ExnStack.forcePoint
@@ -823,7 +840,7 @@ structure Program =
 				  let
 				     datatype z = datatype Return.t
 				  in
-				     case (return) of
+				     case return of
 					Dead => true
 				      | NonTail {handler = h, ...} =>
 					   (case h of

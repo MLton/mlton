@@ -37,7 +37,7 @@ fun layout (T {value, ...}) = Elt.layout (!value)
 fun new () = T {lessThan = ref [],
 		upperBound = ref NONE,
 		value = ref Bottom}
-
+   
 val isBottom =
    fn (T {value = ref Bottom, ...}) => true
     | _ => false
@@ -51,6 +51,11 @@ val isTop =
    fn (T {value = ref Top, ...}) => true
     | _ => false
 
+fun forceTop (T {upperBound, value, ...}): bool =
+   if isSome (!upperBound)
+      then false
+   else (value := Top; true)
+   
 fun up (T {lessThan, upperBound, value, ...}, e: Elt.t): bool =
    let
       fun continue e = List.forall (!lessThan, fn z => up (z, e))
@@ -76,6 +81,10 @@ val op <= : t * t -> bool =
    fn (T {lessThan, value, ...}, e) =>
    (List.push (lessThan, e)
     ; up (e, !value))
+
+val op <= =
+   Trace.trace2 ("FlatLattice.<=", layout, layout, Bool.layout)
+   (op <=)
 
 fun lowerBound (e, p): bool = up (e, Point p)
 

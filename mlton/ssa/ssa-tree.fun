@@ -10,8 +10,6 @@ struct
 
 open S
 
-structure SourceInfo = SourceInfo ()
-
 structure Type =
    struct
       local structure T = HashType (S)
@@ -146,36 +144,6 @@ structure Var =
 			      NONE => layout x
 			    | SOME s => Layout.str s)
 			  xs)
-   end
-
-structure ProfileExp =
-   struct
-      structure SourceInfo = SourceInfo
-
-      datatype t =
-	 Enter of SourceInfo.t
-       | Leave of SourceInfo.t
-
-      val toString =
-	 fn Enter si => concat ["Enter ", SourceInfo.toString si]
-	  | Leave si => concat ["Leave " , SourceInfo.toString si]
-
-      val layout = Layout.str o toString
-
-      val equals =
-	 fn (Enter si, Enter si') => SourceInfo.equals (si, si')
-	  | (Leave si, Leave si') => SourceInfo.equals (si, si')
-	  | _ => false
-
-      local
-	 val newHash = Random.word
-	 val enter = newHash ()
-	 val leave = newHash ()
-      in
-	 val hash =
-	    fn Enter si => Word.xorb (enter, SourceInfo.hash si)
-	     | Leave si => Word.xorb (leave, SourceInfo.hash si)
-      end
    end
 
 structure Exp =
@@ -393,14 +361,31 @@ structure Statement =
 
       val toString = Layout.toString o layout
 
+      fun equals (T {exp = e, ty = t, var = v},
+		  T {exp = e', ty = t', var = v'}): bool =
+	 Option.equals (v, v', Var.equals)
+	 andalso Type.equals (t, t')
+	 andalso Exp.equals (e, e')
+
       local
-	 fun make (e: Exp.t) =
+	 fun make f x =
 	    T {var = NONE,
 	       ty = Type.unit,
-	       exp = e}
+	       exp = f x}
       in
-	 fun handlerPop h = make (Exp.HandlerPop h)
-	 fun handlerPush h = make (Exp.HandlerPush h)
+	 val profile = make Exp.Profile
+      end
+
+      local
+	 fun make f x =
+	    T {var = NONE,
+	       ty = Type.unit,
+	       exp = if !Control.handlers = Control.PushPop
+			then f x
+		     else Exp.unit}
+      in
+	 val handlerPop = make Exp.HandlerPop
+	 val handlerPush = make Exp.HandlerPush
       end
 
       fun clear s = Option.app (var s, Var.clear)
@@ -1395,6 +1380,7 @@ structure Function =
 
       fun profile (f: t, sourceInfo): t =
 	 if !Control.profile = Control.ProfileNone
+	    orelse !Control.profileIL <> Control.ProfileSSA
 	    then f
 	 else 
 	 let
@@ -1453,8 +1439,8 @@ structure Function =
 			    let
 			       val xs = Vector.map (ts, fn _ => Var.newNoname ())
 			       val l = Label.newNoname ()
-			       val pop = make (HandlerPop l)
-			       val push = make (HandlerPush l)
+			       val pop = Statement.handlerPop l
+			       val push = Statement.handlerPush l
 			       val _ =
 				  List.push
 				  (extraBlocks,
@@ -1523,6 +1509,10 @@ structure Function =
 	 in
 	    f
 	 end
+
+      val profile =
+	 Trace.trace2 ("Ssa.Function.profile", layout, SourceInfo.layout, layout)
+	 profile
    end
 
 structure Program =

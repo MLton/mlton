@@ -54,12 +54,14 @@ signature XML_TREE =
 	    val dest: t -> {arg: Var.t,
 			    argType: Type.t,
 			    body: exp,
+			    bodyType: Type.t,
 			    region: Region.t}
 	    val equals: t * t -> bool
 	    val layout: t -> Layout.t
 	    val new: {arg: Var.t,
 		      argType: Type.t,
 		      body: exp,
+		      bodyType: Type.t,
 		      region: Region.t} -> t
 	    val plist: t -> PropertyList.t
 	    val region: t -> Region.t
@@ -83,27 +85,28 @@ signature XML_TREE =
 	 sig
 	    type exp = Lambda.exp
 	    datatype t =
-	       App of {func: VarExp.t,
-		       arg: VarExp.t}
-	     | Case of {test: VarExp.t,
-			cases: exp Cases.t,
-			default: (exp * Region.t) option}
-	     | ConApp of {con: Con.t,
-			  targs: Type.t vector,
-			  arg: VarExp.t option}
+	       App of {arg: VarExp.t,
+		       func: VarExp.t}
+	     | Case of {cases: exp Cases.t,
+			default: (exp * Region.t) option,
+			test: VarExp.t}
+	     | ConApp of {arg: VarExp.t option,
+			  con: Con.t,
+			  targs: Type.t vector}
 	     | Const of Const.t
-	     | Handle of {try: exp,
-			  (* catch binds the exception in the handler. *)
+	     | Handle of {(* catch binds the exception in the handler. *)
 			  catch: Var.t * Type.t,
-			  handler: exp}
+			  handler: exp,
+			  try: exp}
 	     | Lambda of Lambda.t
-	     | PrimApp of {prim: Prim.t,
-			   targs: Type.t vector,
-			   args: VarExp.t vector}
+	     | PrimApp of {args: VarExp.t vector,
+			   prim: Prim.t,
+			   targs: Type.t vector}
+	     | Profile of ProfileExp.t
 	     | Raise of {exn: VarExp.t,
 			 filePos: string}
-	     | Select of {tuple: VarExp.t,
-			  offset: int}
+	     | Select of {offset: int,
+			  tuple: VarExp.t}
 	     | Tuple of VarExp.t vector
 	     | Var of VarExp.t
 
@@ -117,17 +120,17 @@ signature XML_TREE =
 	    datatype t =
 	       Exception of {con: Con.t,
 			     arg: Type.t option}
-	     | Fun of {tyvars: Tyvar.t vector,
-		       decs: {var: Var.t,
+	     | Fun of {decs: {lambda: Lambda.t,
 			      ty: Type.t,
-			      lambda: Lambda.t} vector}
-	     | MonoVal of {var: Var.t,
+			      var: Var.t} vector,
+		       tyvars: Tyvar.t vector}
+	     | MonoVal of {exp: PrimExp.t,
 			   ty: Type.t,
-			   exp: PrimExp.t}
-	     | PolyVal of {var: Var.t,
+			   var: Var.t}
+	     | PolyVal of {exp: exp,
+			   ty: Type.t,
 			   tyvars: Tyvar.t vector,
-			   ty: Type.t,
-			   exp: exp}
+			   var: Var.t}
 
 	    val toAst: t -> Ast.Dec.t
 	    val layout: t -> Layout.t
@@ -140,6 +143,7 @@ signature XML_TREE =
 	    val clear: t -> unit
 	    val decs: t -> Dec.t list
 	    val dest: t -> {decs: Dec.t list, result: VarExp.t}
+	    val enterLeave: t * Type.t * SourceInfo.t -> t
 	    (* foreach {exp, handleExp, handleBoundVar, handleVarExp}
 	     * applies handleExp to each subexpresison of e (including e)
 	     * applies handleBoundVar to each variable bound in e

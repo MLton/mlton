@@ -125,6 +125,7 @@ and primExp =
   | PrimApp of {prim: Prim.t,
 		targs: Type.t vector,
 		args: VarExp.t vector}
+  | Profile of ProfileExp.t
   | Raise of {exn: VarExp.t,
 	      filePos: string}
   | Select of {tuple: VarExp.t,
@@ -148,6 +149,7 @@ and dec =
 and lambda = Lam of {arg: Var.t,
 		     argType: Type.t,
 		     body: exp,
+		     bodyType: Type.t,
 		     plist: PropertyList.t,
 		     region: Region.t}
 
@@ -200,40 +202,7 @@ and decToAst d : Adec.t =
    end
 and primExpToAst e : Aexp.t =
    case e of
-      Const c => Const.toAstExp c
-    | Var x => VarExp.toAst x
-    | Tuple xs => Aexp.tuple (Vector.map (xs, VarExp.toAst))
-    | Select {tuple, offset} =>
-	 Aexp.select {tuple = VarExp.toAst tuple,
-		      offset = offset}
-    | Lambda lambda => Aexp.fnn (lambdaToAst lambda)
-    | ConApp {con, arg, ...} =>
-	 let val con = Aexp.con (Con.toAst con)
-	 in case arg of
-	    NONE => con
-	  | SOME e => Aexp.app (con, VarExp.toAst e)
-	 end
-    | PrimApp {prim, args, ...} =>
-	 let
-	    val p = Aexp.longvid (Ast.Longvid.short
-				  (Ast.Longvid.Id.fromString
-				   (Prim.toString prim,
-				    Region.bogus)))
-	 in
-	    case Prim.numArgs prim of
-	       NONE => p
-	     | SOME _ => Aexp.app (p, Aexp.tuple (Vector.map
-						  (args, VarExp.toAst)))
-	 end
-    | App {func, arg} => Aexp.app (VarExp.toAst func, VarExp.toAst arg)
-    | Raise {exn, filePos} => Aexp.raisee {exn = VarExp.toAst exn,
-					   filePos = filePos}
-    | Handle {try, catch, handler} =>
-	 Aexp.handlee
-	 (expToAst try,
-	  Amatch.T {filePos = "",
-		    rules = Vector.new1 (Apat.var (Var.toAst (#1 catch)),
-					 expToAst handler)})
+      App {func, arg} => Aexp.app (VarExp.toAst func, VarExp.toAst arg)
     | Case {test, cases, default, ...} =>
 	 let
 	    fun doit (l, f) =
@@ -260,6 +229,52 @@ and primExpToAst e : Aexp.t =
 			Amatch.T {rules = cases,
 				  filePos = ""})
 	 end
+    | ConApp {con, arg, ...} =>
+	 let val con = Aexp.con (Con.toAst con)
+	 in case arg of
+	    NONE => con
+	  | SOME e => Aexp.app (con, VarExp.toAst e)
+	 end
+    | Const c => Const.toAstExp c
+    | Handle {try, catch, handler} =>
+	 Aexp.handlee
+	 (expToAst try,
+	  Amatch.T {filePos = "",
+		    rules = Vector.new1 (Apat.var (Var.toAst (#1 catch)),
+					 expToAst handler)})
+    | Lambda lambda => Aexp.fnn (lambdaToAst lambda)
+    | PrimApp {prim, args, ...} =>
+	 let
+	    val p = Aexp.longvid (Ast.Longvid.short
+				  (Ast.Longvid.Id.fromString
+				   (Prim.toString prim,
+				    Region.bogus)))
+	 in
+	    case Prim.numArgs prim of
+	       NONE => p
+	     | SOME _ => Aexp.app (p, Aexp.tuple (Vector.map
+						  (args, VarExp.toAst)))
+	 end
+    | Profile s =>
+	 let
+	    val (oper, si) =
+	       case s of
+		  ProfileExp.Enter si => ("ProfileEnter", si)
+		| ProfileExp.Leave si => ("ProfileLeave", si)
+	 in
+	    Aexp.app
+	    (Aexp.var (Ast.Var.fromString (oper, Region.bogus)),
+	     Aexp.const (Ast.Const.makeRegion
+			 (Ast.Const.String (SourceInfo.toString si),
+			  Region.bogus)))
+	 end
+    | Raise {exn, filePos} => Aexp.raisee {exn = VarExp.toAst exn,
+					   filePos = filePos}
+    | Select {tuple, offset} =>
+	 Aexp.select {tuple = VarExp.toAst tuple,
+		      offset = offset}
+    | Tuple xs => Aexp.tuple (Vector.map (xs, VarExp.toAst))
+    | Var x => VarExp.toAst x
 
 and lambdaToAst (Lam {arg, body, argType, ...}): Amatch.t =
    Amatch.T
@@ -324,6 +339,40 @@ structure Exp =
       val toAst = expToAst
       val layout = Ast.Exp.layout o toAst
 
+      fun enterLeave (e: t, ty: Type.t, si: SourceInfo.t): t =
+	 if !Control.profile = Control.ProfileNone
+	    orelse !Control.profileIL <> Control.ProfileXML
+	    then e
+	 else
+	 let
+	    datatype z = datatype Dec.t
+	    datatype z = datatype PrimExp.t
+	    fun prof f =
+	       MonoVal {exp = Profile (f si),
+			ty = Type.unit,
+			var = Var.newNoname ()}
+	    val exn = Var.newNoname ()
+	    val res = Var.newNoname ()
+	    val handler =
+	       new {decs = [prof ProfileExp.Leave,
+			    MonoVal {exp = Raise {exn = VarExp.mono exn,
+						  filePos = ""},
+				     ty = ty,
+				     var = res}],
+		    result = VarExp.mono res}
+	    val {decs, result} = dest e
+	    val decs =
+	       List.concat [[prof ProfileExp.Enter],
+			    decs,
+			    [prof ProfileExp.Leave]]
+	    val try = new {decs = decs, result = result}
+	 in
+	    fromPrimExp (Handle {catch = (exn, Type.exn),
+				 handler = handler,
+				 try = try},
+			 ty)
+	 end
+
       (*------------------------------------*)
       (*              foreach               *)
       (*------------------------------------*)
@@ -350,6 +399,7 @@ structure Exp =
 		    | Select {tuple, ...} => handleVarExp tuple
 		    | Lambda lambda => loopLambda lambda
 		    | PrimApp {args, ...} => handleVarExps args
+		    | Profile _ => ()
 		    | ConApp {arg, ...} => (case arg of
 					       NONE => ()
 					     | SOME x => handleVarExp x)
@@ -493,15 +543,18 @@ structure Lambda =
 	 val region = make #region
       end
 
-      fun new {arg, argType, body, region} =
+      fun new {arg, argType, body, bodyType, region} =
 	 Lam {arg = arg,
 	      argType = argType,
 	      body = body,
+	      bodyType = bodyType,
 	      plist = PropertyList.new (),
 	      region = region}
 
-      fun dest (Lam {arg, argType, body, region, ...}) =
-	 {arg = arg, argType = argType, body = body, region = region}
+      fun dest (Lam {arg, argType, body, bodyType, region, ...}) =
+	 {arg = arg, argType = argType,
+	  body = body, bodyType = bodyType,
+	  region = region}
 	 
       fun plist (Lam {plist, ...}) = plist
 	 
@@ -537,7 +590,7 @@ structure DirectExp =
 	 end
 
       type t = Cont.t -> Exp.t
-
+	 
       fun send (e: t, k: Cont.t): Exp.t = e k
 
       fun toExp e = send (e, Cont.id)
@@ -700,14 +753,14 @@ structure DirectExp =
 	       Exp.prefix (send (body, k),
 			   Dec.MonoVal {var = var, ty = ty, exp = exp}))
 	 
-
       fun lambda {arg, argType, body, bodyType, region} =
 	 simple (Lambda (Lambda.new {arg = arg,
 				     argType = argType,
 				     body = toExp body,
+				     bodyType = bodyType,
 				     region = region}),
 		 Type.arrow (argType, bodyType))
-
+      
       fun detupleGen (e: PrimExp.t,
 		      t: Type.t,
 		      components: Var.t vector,

@@ -138,6 +138,14 @@ fun makeOptions {usage} =
 		       | "first" => First
 		       | "every" => Every
 		       | _ => usage (concat ["invalid -gc-check flag: ", s])))),
+       (Expert, "handlers", " {flow|pushpop|simple}",
+	"how to implement handlers",
+	SpaceString (fn s =>
+		     case s of
+			"flow" => handlers := Flow
+		      | "pushpop" => handlers := PushPop
+		      | "simple" => handlers := Simple
+		      | _ => usage (concat ["invalid -handlers flag: ", s]))),
        (Normal, "host",
 	concat [" {",
 		concat (List.separate (List.map (hostMap (), #host), "|")),
@@ -253,6 +261,13 @@ fun makeOptions {usage} =
 		      | "alloc" => ProfileAlloc
 		      | "time" => ProfileTime
 		      | _ => usage (concat ["invalid -profile arg: ", s])))),
+       (Expert, "profile-il", " {xml|ssa}", "where to insert profile exps",
+	SpaceString
+	(fn s =>
+	 case s of
+	    "ssa" => profileIL := ProfileSSA
+	  | "xml" => profileIL := ProfileXML
+	  | _ => usage (concat ["invalid -profile-il arg: ", s]))),
        (Normal, "profile-stack", " {false|true}",
 	"profile the stack",
 	boolRef profileStack),

@@ -37,34 +37,36 @@ fun sccFuns (Program.T {datatypes, body, overflow}) =
       fun loopVarExps xs = Vector.foreach (xs, loopVarExp)
       fun loopLambda (l: Lambda.t): Lambda.t =
 	 let
-	    val {arg, argType, body, region} = Lambda.dest l
+	    val {arg, argType, body, bodyType, region} = Lambda.dest l
 	 in
 	    Lambda.new {arg = arg,
 			argType = argType,
 			body = loopExp body,
+			bodyType = bodyType,
 			region = region}
 	 end
       and loopPrimExp (e: PrimExp.t): PrimExp.t =
 	 case e of
-	    Const _ => e
-	  | Var x => (loopVarExp x; e)
-	  | Tuple xs => (loopVarExps xs; e)
-	  | Select {tuple, ...} => (loopVarExp tuple; e)
-	  | Lambda l => Lambda (loopLambda l)
-	  | ConApp {arg, ...} => (Option.app (arg, loopVarExp); e)
-	  | PrimApp {args, ...} => (loopVarExps args; e)
-	  | App {func, arg} => (loopVarExp func; loopVarExp arg; e)
-	  | Raise {exn, ...} => (loopVarExp exn; e)
+	    App {func, arg} => (loopVarExp func; loopVarExp arg; e)
 	  | Case {test, cases, default} =>
 	       (loopVarExp test
 		; Case {cases = Cases.map (cases, loopExp),
 			default = Option.map (default, fn (e, r) =>
 					      (loopExp e, r)),
 			test = test})
+	  | ConApp {arg, ...} => (Option.app (arg, loopVarExp); e)
+	  | Const _ => e
 	  | Handle {try, catch, handler} =>
 	       Handle {try = loopExp try,
 		       catch = catch,
 		       handler = loopExp handler}
+	  | Lambda l => Lambda (loopLambda l)
+	  | PrimApp {args, ...} => (loopVarExps args; e)
+	  | Profile _ => e
+	  | Raise {exn, ...} => (loopVarExp exn; e)
+	  | Select {tuple, ...} => (loopVarExp tuple; e)
+	  | Tuple xs => (loopVarExps xs; e)
+	  | Var x => (loopVarExp x; e)
       and loopExp (e: Exp.t): Exp.t =
 	 let val {decs, result} = Exp.dest e
 	    val decs =

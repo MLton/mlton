@@ -119,6 +119,7 @@ fun globalize {program = Program.T {datatypes, body, ...},
 			     in
 				(global, once)
 			     end
+			| Profile _ => (false, once)
 			| Raise _ => (false, once)
 			| Select {tuple, ...} => (isGlobal tuple, once)
 			| Tuple xs => (areGlobal xs, once)

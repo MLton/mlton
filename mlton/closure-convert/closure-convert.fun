@@ -334,6 +334,7 @@ fun closureConvert
 			set (Value.primApply {prim = prim,
 					      args = varExps args,
 					      resultTy = ty})
+		   | Profile _ => (new (); ())
 		   | Raise _ => (new (); ())
 		   | Select {tuple, offset} =>
 			set (Value.select (varExp tuple, offset))
@@ -771,211 +772,214 @@ fun closureConvert
 	       in (coerce (e', expValue e, v), ac)
 	       end
 	    fun simple e = (e, ac)
-	 in case e of
-	    SprimExp.Var y => simple (convertVarExp y)
-	  | SprimExp.Const c => simple (Dexp.const c)
-	  | SprimExp.PrimApp {prim, targs, args} =>
-	       let
-		  open Prim.Name
-		  fun arg i = Vector.sub (args, i)
-		  val v1 = Vector.new1
-		  val v2 = Vector.new2
-		  val v3 = Vector.new3
-		  fun primApp (targs, args) =
-		     Dexp.primApp {args = args,
-				   prim = prim,
-				   targs = targs,
-				   ty = ty}
-	       in
-   		 if Prim.mayOverflow prim
-		   then simple (Dexp.arith
-				{args = Vector.map (args, convertVarExp),
-				 overflow = Dexp.raisee (convertVar overflow),
-				 prim = prim,
-				 ty = ty})
-		 else
-		    let
-		       datatype z = datatype Prim.Name.t
-		    in
-		       simple
-		       (case Prim.name prim of
-			   Array_update =>
-			      let
-				 val a = varExpInfo (arg 0)
-				 val y = varExpInfo (arg 2)
-				 val v = Value.dearray (VarInfo.value a)
-			      in
-				 primApp (v1 (valueType v),
-					  v3 (convertVarInfo a,
-					      convertVarExp (arg 1),
-					      coerce (convertVarInfo y,
-						      VarInfo.value y, v)))
-			      end
-			 | MLton_eq =>
-			      let
-				 val a0 = varExpInfo (arg 0)
-				 val a1 = varExpInfo (arg 1)
-				 fun doit () =
-				    primApp (v1 (valueType (VarInfo.value a0)),
-					     v2 (convertVarInfo a0,
-						 convertVarInfo a1))
-			      in
-				 case (Value.dest (VarInfo.value a0),
-				       Value.dest (VarInfo.value a1)) of
-				    (Value.Lambdas l, Value.Lambdas l') =>
-				       if Lambdas.equals (l, l')
-					  then doit () 
-				       else Dexp.falsee
-				  | _ => doit ()
-			      end
-			 | MLton_handlesSignals =>
-			      if handlesSignals then Dexp.truee else Dexp.falsee
-			 | Ref_assign =>
-			      let
-				 val r = varExpInfo (arg 0)
-				 val y = varExpInfo (arg 1)
-				 val v = Value.deref (VarInfo.value r)
-			      in
-				 primApp (v1 (valueType v),
-					  v2 (convertVarInfo r,
-					      coerce (convertVarInfo y,
-						      VarInfo.value y, v)))
-			      end
-			 | Ref_ref =>
-			      let
-				 val y = varExpInfo (arg 0)
-				 val v = Value.deref v
-			      in
-				 primApp (v1 (valueType v),
-					  v1 (coerce (convertVarInfo y,
-						      VarInfo.value y, v)))
-			      end
-			 | MLton_serialize =>
-			      let
-				 val y = varExpInfo (arg 0)
-				 val v =
-				    Value.serialValue (Vector.sub (targs, 0))
-			      in
-				 primApp (v1 (valueType v),
-					  v1 (coerce (convertVarInfo y,
-						      VarInfo.value y, v)))
-			      end
-			 | _ =>
-			      let
-				 val args = Vector.map (args, varExpInfo)
-			      in
-				 primApp
-				 (Prim.extractTargs
-				  {prim = prim,
-				   args = Vector.map (args, varInfoType),
-				   result = ty,
-				   dearray = Type.dearray,
-				   dearrow = Type.dearrow,
-				   deref = Type.deref,
-				   devector = Type.devector},
-				  Vector.map (args, convertVarInfo))
-			      end)
-		    end
-	       end
-	  | SprimExp.Tuple xs =>
-	       simple (Dexp.tuple {exps = Vector.map (xs, convertVarExp),
-				   ty = ty})
-	  | SprimExp.Select {tuple, offset} =>
-	       simple (Dexp.select {tuple = convertVarExp tuple,
-				    offset = offset,
-				    ty = ty})
-	  | SprimExp.ConApp {con = con, arg, ...} =>
-	       simple
-	       (Dexp.conApp
-		{con = con,
-		 ty = ty,
-		 args = (case (arg, conArg con) of
-			    (NONE, NONE) => Vector.new0 ()
-			  | (SOME arg, SOME conArg) =>
+	 in
+	    case e of
+	       SprimExp.App {func, arg} =>
+		  (apply {func = func, arg = arg, resultVal = v},
+		   ac)
+	     | SprimExp.Case {test, cases, default} =>
+		  let
+		     val (default, ac) =
+			case default of
+			   NONE => (NONE, ac)
+			 | SOME (e, _) => let
+					     val (e, ac) =  convertJoin (e, ac)
+					  in
+					     (SOME e, ac)
+					  end
+		     fun doCases (cases, finish, make) =
+			let
+			   val (cases, ac) =
+			      Vector.mapAndFold
+			      (cases, ac, fn ((x, e), ac) =>
 			       let
-				  val arg = varExpInfo arg
-				  val argVal = VarInfo.value arg
-				  val arg = convertVarInfo arg
-			       in if Value.equals (argVal, conArg)
-				     then Vector.new1 arg
-				  else Vector.new1 (coerce (arg, argVal, conArg))
-			       end
-			  | _ => Error.bug "constructor mismatch")})
-	  | SprimExp.Raise {exn, ...} => simple (Dexp.raisee (convertVarExp exn))
-	  | SprimExp.Handle {try, catch = (catch, _), handler} =>
-	       let
-		  val catchInfo = varInfo catch
-		  val (try, ac) = convertJoin (try, ac)
-		  val catch = (newVarInfo (catch, catchInfo),
-			       varInfoType catchInfo)
-		  val (handler, ac) = convertJoin (handler, ac)
-	       in (Dexp.handlee {try = try, ty = ty,
-				 catch = catch, handler = handler},
-		   ac)
-	       end
-	  | SprimExp.Case {test, cases, default} =>
-	       let
-		  val (default, ac) =
-		     case default of
-			NONE => (NONE, ac)
-		      | SOME (e, _) => let
-					  val (e, ac) =  convertJoin (e, ac)
-				       in
-					  (SOME e, ac)
-				       end
-		  fun doCases (cases, finish, make) =
-		     let
-			val (cases, ac) =
-			   Vector.mapAndFold
-			   (cases, ac, fn ((x, e), ac) =>
-			    let
-			       val make = make x
-			       val (body, ac) = convertJoin (e, ac)
-			    in (make body, ac)
-			    end)
-		     in (finish cases, ac)
-		     end
-		  fun doit (l, f) = doCases (l, f, fn i => fn e => (i, e))
-		  val (cases, ac) =
-		     case cases of
-			Scases.Char l => doit (l, Dexp.Char)
-		      | Scases.Con cases =>
-			   doCases
-			   (cases, Dexp.Con,
-			    fn Spat.T {con, arg, ...} =>
-			    let
-			       val args =
-				  case (conArg con, arg) of
-				     (NONE, NONE) => Vector.new0 ()
-				   | (SOME v, SOME (arg, _)) =>
-					Vector.new1 (newVar arg, valueType v)
-				   | _ => Error.bug "constructor mismatch"
-			    in fn body => {con = con, args = args, body = body}
-			    end)
-		      | Scases.Int l => doit (l, Dexp.Int)
-		      | Scases.Word l => doit (l, Dexp.Word)
-		      | Scases.Word8 l => doit (l, Dexp.Word8)
-	       in (Dexp.casee
-		   {test = convertVarExp test,
-		    ty = ty, cases = cases, default = default},
-		   ac)
-	       end
-	  | SprimExp.Lambda l =>
-	       let
-		  val info = lambdaInfo l
-		  val ac = convertLambda (l, info, ac)
-		  val {cons, ...} = valueLambdasInfo v
-	       in case Vector.peek (cons, fn {lambda = l', ...} =>
-				    Slambda.equals (l, l')) of
-		  NONE => Error.bug "lambda must exist in its own set"
-		| SOME {con, ...} =>
-		     (Dexp.conApp {con = con, ty = ty,
-				   args = Vector.new1 (lambdaInfoTuple info)},
+				  val make = make x
+				  val (body, ac) = convertJoin (e, ac)
+			       in (make body, ac)
+			       end)
+			in (finish cases, ac)
+			end
+		     fun doit (l, f) = doCases (l, f, fn i => fn e => (i, e))
+		     val (cases, ac) =
+			case cases of
+			   Scases.Char l => doit (l, Dexp.Char)
+			 | Scases.Con cases =>
+			      doCases
+			      (cases, Dexp.Con,
+			       fn Spat.T {con, arg, ...} =>
+			       let
+				  val args =
+				     case (conArg con, arg) of
+					(NONE, NONE) => Vector.new0 ()
+				      | (SOME v, SOME (arg, _)) =>
+					   Vector.new1 (newVar arg, valueType v)
+				      | _ => Error.bug "constructor mismatch"
+			       in fn body => {con = con, args = args, body = body}
+			       end)
+			 | Scases.Int l => doit (l, Dexp.Int)
+			 | Scases.Word l => doit (l, Dexp.Word)
+			 | Scases.Word8 l => doit (l, Dexp.Word8)
+		  in (Dexp.casee
+		      {test = convertVarExp test,
+		       ty = ty, cases = cases, default = default},
 		      ac)
-	       end
-	  | SprimExp.App {func, arg} =>
-	       (apply {func = func, arg = arg, resultVal = v},
-		ac)
+		  end
+	     | SprimExp.ConApp {con = con, arg, ...} =>
+		  simple
+		  (Dexp.conApp
+		   {con = con,
+		    ty = ty,
+		    args = (case (arg, conArg con) of
+			       (NONE, NONE) => Vector.new0 ()
+			     | (SOME arg, SOME conArg) =>
+				  let
+				     val arg = varExpInfo arg
+				     val argVal = VarInfo.value arg
+				     val arg = convertVarInfo arg
+				  in if Value.equals (argVal, conArg)
+					then Vector.new1 arg
+				     else Vector.new1 (coerce (arg, argVal, conArg))
+				  end
+			     | _ => Error.bug "constructor mismatch")})
+	     | SprimExp.Const c => simple (Dexp.const c)
+	     | SprimExp.Handle {try, catch = (catch, _), handler} =>
+		  let
+		     val catchInfo = varInfo catch
+		     val (try, ac) = convertJoin (try, ac)
+		     val catch = (newVarInfo (catch, catchInfo),
+				  varInfoType catchInfo)
+		     val (handler, ac) = convertJoin (handler, ac)
+		  in (Dexp.handlee {try = try, ty = ty,
+				    catch = catch, handler = handler},
+		      ac)
+		  end
+	     | SprimExp.Lambda l =>
+		  let
+		     val info = lambdaInfo l
+		     val ac = convertLambda (l, info, ac)
+		     val {cons, ...} = valueLambdasInfo v
+		  in case Vector.peek (cons, fn {lambda = l', ...} =>
+				       Slambda.equals (l, l')) of
+		     NONE => Error.bug "lambda must exist in its own set"
+		   | SOME {con, ...} =>
+			(Dexp.conApp {con = con, ty = ty,
+				      args = Vector.new1 (lambdaInfoTuple info)},
+			 ac)
+		  end
+	     | SprimExp.PrimApp {prim, targs, args} =>
+		  let
+		     open Prim.Name
+		     fun arg i = Vector.sub (args, i)
+		     val v1 = Vector.new1
+		     val v2 = Vector.new2
+		     val v3 = Vector.new3
+		     fun primApp (targs, args) =
+			Dexp.primApp {args = args,
+				      prim = prim,
+				      targs = targs,
+				      ty = ty}
+		  in
+		     if Prim.mayOverflow prim
+			then simple (Dexp.arith
+				     {args = Vector.map (args, convertVarExp),
+				      overflow = Dexp.raisee (convertVar overflow),
+				      prim = prim,
+				      ty = ty})
+		     else
+			let
+			   datatype z = datatype Prim.Name.t
+			in
+			   simple
+			   (case Prim.name prim of
+			       Array_update =>
+				  let
+				     val a = varExpInfo (arg 0)
+				     val y = varExpInfo (arg 2)
+				     val v = Value.dearray (VarInfo.value a)
+				  in
+				     primApp (v1 (valueType v),
+					      v3 (convertVarInfo a,
+						  convertVarExp (arg 1),
+						  coerce (convertVarInfo y,
+							  VarInfo.value y, v)))
+				  end
+			     | MLton_eq =>
+				  let
+				     val a0 = varExpInfo (arg 0)
+				     val a1 = varExpInfo (arg 1)
+				     fun doit () =
+					primApp (v1 (valueType (VarInfo.value a0)),
+						 v2 (convertVarInfo a0,
+						     convertVarInfo a1))
+				  in
+				     case (Value.dest (VarInfo.value a0),
+					   Value.dest (VarInfo.value a1)) of
+					(Value.Lambdas l, Value.Lambdas l') =>
+					   if Lambdas.equals (l, l')
+					      then doit () 
+					   else Dexp.falsee
+				      | _ => doit ()
+				  end
+			     | MLton_handlesSignals =>
+				  if handlesSignals then Dexp.truee else Dexp.falsee
+			     | Ref_assign =>
+				  let
+				     val r = varExpInfo (arg 0)
+				     val y = varExpInfo (arg 1)
+				     val v = Value.deref (VarInfo.value r)
+				  in
+				     primApp (v1 (valueType v),
+					      v2 (convertVarInfo r,
+						  coerce (convertVarInfo y,
+							  VarInfo.value y, v)))
+				  end
+			     | Ref_ref =>
+				  let
+				     val y = varExpInfo (arg 0)
+				     val v = Value.deref v
+				  in
+				     primApp (v1 (valueType v),
+					      v1 (coerce (convertVarInfo y,
+							  VarInfo.value y, v)))
+				  end
+			     | MLton_serialize =>
+				  let
+				     val y = varExpInfo (arg 0)
+				     val v =
+					Value.serialValue (Vector.sub (targs, 0))
+				  in
+				     primApp (v1 (valueType v),
+					      v1 (coerce (convertVarInfo y,
+							  VarInfo.value y, v)))
+				  end
+			     | _ =>
+				  let
+				     val args = Vector.map (args, varExpInfo)
+				  in
+				     primApp
+				     (Prim.extractTargs
+				      {prim = prim,
+				       args = Vector.map (args, varInfoType),
+				       result = ty,
+				       dearray = Type.dearray,
+				       dearrow = Type.dearrow,
+				       deref = Type.deref,
+				       devector = Type.devector},
+				      Vector.map (args, convertVarInfo))
+				  end)
+			end
+		  end
+	     | SprimExp.Profile e => simple (Dexp.profile e)
+	     | SprimExp.Raise {exn, ...} =>
+		  simple (Dexp.raisee (convertVarExp exn))
+	     | SprimExp.Select {tuple, offset} =>
+		  simple (Dexp.select {tuple = convertVarExp tuple,
+				       offset = offset,
+				       ty = ty})
+	     | SprimExp.Tuple xs =>
+		  simple (Dexp.tuple {exps = Vector.map (xs, convertVarExp),
+				      ty = ty})
+	     | SprimExp.Var y => simple (convertVarExp y)
 	 end) arg
       and convertLambda (lambda: Slambda.t,
 			 info as LambdaInfo.T {frees, name, recs, ...},
