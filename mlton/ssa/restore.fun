@@ -577,6 +577,7 @@ fun restoreFunction (globals: Statement.t vector)
 	in
 	  fun rewriteNonTailHandle {func, args, cont, handler}
 	    = let
+		val args = Vector.map (args, rewriteVar)
 		val handlerRoute = route handler
 		val {handlerWrap, ...}
 		  = HashSet.lookupOrInsert
@@ -658,7 +659,7 @@ fun restoreFunction (globals: Statement.t vector)
 	end
 	fun rewriteTransfer (t: Transfer.t) 
 	  = let
-	      fun default () = Transfer.replaceLabel (t, route)
+	      fun default () = Transfer.replaceLabelVar (t, route, rewriteVar)
 	    in
 	      case t
 		of Call {func, args, 
