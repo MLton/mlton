@@ -94,8 +94,6 @@ structure List: LIST =
 
      fun app f = foldl (f o #1) ()
 
-     val _ = app (fn x: int => ()) [1, 2, 3]
-
      fun map f l = rev (foldl (fn (x, l) => f x :: l) [] l)
 
      fun mapPartial pred l =
