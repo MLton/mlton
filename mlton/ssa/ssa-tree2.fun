@@ -196,6 +196,12 @@ structure Type =
 	       | Word s => str (concat ["word", WordSize.toString s])))
       end
 
+      fun join (t, t') =
+	 case (dest t, dest t') of
+	    (Object _, Datatype _) => t'
+	  | (Datatype _, Object _) => t
+	  | _ => t
+
       fun checkPrimApp {args, isSubtype, prim, result, targs}: bool =
 	 let
 	    datatype z = datatype Prim.Name.t
@@ -274,7 +280,7 @@ structure Type =
 	     | MLton_halt => done ([defaultWord], unit)
 	     | MLton_handlesSignals => done ([], bool)
 	     | MLton_installSignalHandler => done ([], unit)
-	     | MLton_size => oneTarg (fn t => ([reff t], defaultWord))
+	     | MLton_size => oneTarg (fn t => ([t], defaultWord))
 	     | MLton_touch => oneTarg (fn t => ([t], unit))
 	     | Pointer_getPointer =>
 		  oneTarg (fn t => ([pointer, defaultWord], t))

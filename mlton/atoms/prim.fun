@@ -1049,9 +1049,9 @@ fun ('a, 'b) extractTargs (prim: 'b t,
       case prim of
 	 Array_array => one (deArray result)
        | Array_array0Const => one (deArray result)
-       | Array_sub => one result
+       | Array_sub => one (deArray (arg 0))
        | Array_toVector => one (deArray (arg 0))
-       | Array_update => one (arg 2)
+       | Array_update => one (deArray (arg 0))
        | Array_length => one (deArray (arg 0))
        | Exn_extra => one result
        | Exn_setExtendExtra => one (#2 (deArrow (arg 0)))
@@ -1061,7 +1061,7 @@ fun ('a, 'b) extractTargs (prim: 'b t,
        | MLton_eq => one (arg 0)
        | MLton_equal => one (arg 0)
        | MLton_serialize => one (arg 0)
-       | MLton_size => one (deRef (arg 0))
+       | MLton_size => one (arg 0)
        | MLton_touch => one (arg 0)
        | Pointer_getPointer => one result
        | Pointer_setPointer => one (arg 2)
@@ -1069,7 +1069,7 @@ fun ('a, 'b) extractTargs (prim: 'b t,
        | Ref_deref => one result
        | Ref_ref => one (arg 0)
        | Vector_length => one (deVector (arg 0))
-       | Vector_sub => one result
+       | Vector_sub => one (deVector (arg 0))
        | Weak_canGet => one (deWeak (arg 0))
        | Weak_get => one result
        | Weak_new => one (arg 0)

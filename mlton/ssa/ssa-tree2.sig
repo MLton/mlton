@@ -44,6 +44,7 @@ signature SSA_TREE2 =
 	    val dest: t -> dest
 	    val equals: t * t -> bool
 	    val intInf: t
+	    val join: t * t -> t
 	    val layout: t -> Layout.t
 	    val object: {args: {elt: t, isMutable: bool} vector,
 			 con: Con.t option} -> t
@@ -63,6 +64,7 @@ signature SSA_TREE2 =
 	 sig
 	    datatype t =
 	       Const of Const.t
+(*	     | Inject of Var.t * Tycon.t *)
 	     | Object of {args: Var.t vector,
 			  con: Con.t option}
 	     | PrimApp of {args: Var.t vector,
