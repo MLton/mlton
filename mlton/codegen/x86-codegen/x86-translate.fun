@@ -216,17 +216,37 @@ struct
   structure Entry =
     struct
       structure Kind = Machine.Kind
-      fun translateFrameInfo (Machine.FrameInfo.T {frameOffsetsIndex, size}) =
-	 x86.Entry.FrameInfo.frameInfo {frameLayoutsIndex = frameOffsetsIndex,
-					size = size}
+
+      structure FrameInfo =
+	struct
+	  fun toX86FrameInfo {label,
+			      frameInfo = Machine.FrameInfo.T {size = size', ...},
+			      transInfo as {frameLayouts, ...} : transInfo}
+	    = case frameLayouts label
+		of NONE => Error.bug "toX86FrameInfo: label"
+		 | SOME {size, frameLayoutsIndex}
+		 => let
+		      val _ = Assert.assert
+			      ("toX86FrameInfo: size",
+			       fn () => size = size')
+		    in
+		      x86.Entry.FrameInfo.frameInfo
+		      {size = size,
+		       frameLayoutsIndex = frameLayoutsIndex}
+		    end
+	end
 	 
       fun toX86Blocks {label, kind, 
 		       transInfo as {frameLayouts, live, liveInfo, ...} : transInfo}
 	= (case kind
 	     of Kind.Jump
 	      => let
+(*
 		   val _ = x86Liveness.LiveInfo.setLiveOperands
 		           (liveInfo, label, live label)
+*)
+		   val _ = x86Liveness.LiveInfo.setLiveOperands
+		           (liveInfo, label, [])
 		 in
 		   AppendList.single
 		   (x86.Block.T'
@@ -237,8 +257,12 @@ struct
 		 end
 	      | Kind.Func {args}
 	      => let
+(*
 		   val _ = x86Liveness.LiveInfo.setLiveOperands
 		           (liveInfo, label, live label)
+*)
+		   val _ = x86Liveness.LiveInfo.setLiveOperands
+		           (liveInfo, label, [])
 			   
 		   val args
 		     = Vector.fold
@@ -260,9 +284,15 @@ struct
 		 end
 	      | Kind.Cont {args, frameInfo}
 	      => let
+(*
 		   val _ = x86Liveness.LiveInfo.setLiveOperands
 		           (liveInfo, label, live label)
-	           val frameInfo = translateFrameInfo frameInfo
+*)
+		   val _ = x86Liveness.LiveInfo.setLiveOperands
+		           (liveInfo, label, [])
+	           val frameInfo = FrameInfo.toX86FrameInfo {label = label,
+							     frameInfo = frameInfo,
+							     transInfo = transInfo}
 		   val args
 		     = Vector.fold
 		       (args,
@@ -284,8 +314,12 @@ struct
 		 end
 	      | Kind.Handler {offset}
 	      => let
+(*
 		   val _ = x86Liveness.LiveInfo.setLiveOperands
 		           (liveInfo, label, live label)
+*)
+		   val _ = x86Liveness.LiveInfo.setLiveOperands
+		           (liveInfo, label, [])
 		 in 
 		   AppendList.single
 		   (x86.Block.T'
@@ -299,7 +333,11 @@ struct
 	      | Kind.CReturn {prim, dst}
 	      => let
 		   val _ = x86Liveness.LiveInfo.setLiveOperands
+		           (liveInfo, label, [])
+(*
+		   val _ = x86Liveness.LiveInfo.setLiveOperands
 		           (liveInfo, label, live label)
+*)
 
 		   fun convert x
 		     = (Operand.toX86Operand x,
@@ -314,9 +352,16 @@ struct
 		 end
 	      | Kind.Runtime {frameInfo, prim}
 	      => let
+(*
 		   val _ = x86Liveness.LiveInfo.setLiveOperands
 		           (liveInfo, label, live label)
-		   val frameInfo = translateFrameInfo frameInfo
+*)
+		   val _ = x86Liveness.LiveInfo.setLiveOperands
+		           (liveInfo, label, [])
+
+	           val frameInfo = FrameInfo.toX86FrameInfo {label = label,
+							     frameInfo = frameInfo,
+							     transInfo = transInfo}
 		 in
 		   x86MLton.runtimereturn
 		   {prim = prim,
@@ -635,7 +680,7 @@ struct
 		statements = statements,
 		transfer = transfer}
 	     end,
-             (* if (stackTop >= stackLimit) goto doGC *)
+             (* if (stackTop > stackLimit) goto doGC *)
 	     let
 	       val (statements, transfer)
 		 = if stackCheck
@@ -644,7 +689,7 @@ struct
 			     src2 = stackLimit,
 			     size = x86MLton.pointerSize}],			   
 			   SOME (x86.Transfer.iff 
-				 {condition = x86.Instruction.AE,
+				 {condition = x86.Instruction.A,
 				  truee = doGC,
 				  falsee = checkFrontier}))
 		     else ([], SOME (x86.Transfer.goto {target = checkFrontier}))
@@ -1306,7 +1351,7 @@ struct
 		   val stackBottom = x86MLton.gcState_stackBottomContentsOperand
 		   val tempP 
 		     = let
-			 val index = x86.Immediate.const_int (offset + wordBytes)
+			 val index = x86.Immediate.const_int offset
 			 val memloc
 			   = x86.MemLoc.simple 
 			     {base = x86MLton.gcState_stackTopContents, 
@@ -1325,7 +1370,7 @@ struct
 		     {entry = NONE,
 		      profileInfo = x86.ProfileInfo.none,
 		      statements =
-		      [(* *(stackTop + offset + wordSize) = exnStack *)
+		      [(* *(stackTop + offset) = exnStack *)
 		       x86.Assembly.instruction_mov 
 		       {dst = tempP,
 			src = exnStack,
@@ -1757,13 +1802,15 @@ struct
 		     = (Operand.toX86Operand x,
 			x86MLton.toX86Size (Operand.ty x))
 		   val args = Vector.map(args, convert)
+		   val dstsize = Option.map (returnTy, x86MLton.toX86Size)
 		 in
 		   AppendList.append
 		   (comments transfer,	
-		    x86MLton.runtimecall
+		    x86MLton.ccall
 		    {prim = prim,
 		     args = args,
 		     return = return,
+		     dstsize = dstsize,
 		     transInfo = transInfo})
 		 end
 	      | LimitCheck {kind, failure, success}

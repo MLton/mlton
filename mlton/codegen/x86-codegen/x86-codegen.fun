@@ -239,6 +239,25 @@ struct
 				  C.int),
 			 print);
 
+	      fun locals ty
+		= List.fold(chunks,
+			    0,
+			    fn (Machine.Chunk.T {regMax, ...},max)
+			     => if regMax ty > max
+				  then regMax ty
+				  else max)
+			  
+	      fun declareLocals()
+		= C.call("Locals",
+			 List.map(List.map(let 
+					     open Type
+					   in 
+					     [char, double, int, pointer, uint]
+					   end,
+					   locals),
+				  C.int),
+			 print);
+
 	      fun declareIntInfs() 
 		= (print "BeginIntInfs\n"; 
 		   List.foreach
@@ -282,7 +301,7 @@ struct
 		   fn (i,l) 
 		    => (print (concat["static ushort frameOffsets",
 				      C.int i,
-				      "[] = {"]);
+				      "[] = {\n"]);
 			print (C.int (Vector.length l));
 			Vector.foreach (l, fn i => (print ","; print (C.int i)));
 			print "};\n"));
@@ -341,6 +360,7 @@ struct
 	      print "#define X86CODEGEN\n\n";
 	      outputIncludes();
 	      declareGlobals();
+	      declareLocals();
 	      declareIntInfs();
 	      declareStrings();
 	      declareFloats();

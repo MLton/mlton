@@ -821,10 +821,10 @@ struct
 
 		     val stackTop 
 		       = x86MLton.gcState_stackTopContentsOperand
-		     val stackTopDeref'
-		       = x86MLton.gcState_stackTopDeref
-		     val stackTopDeref
-		       = x86MLton.gcState_stackTopDerefOperand
+		     val stackTopMinusWordDeref'
+		       = x86MLton.gcState_stackTopMinusWordDeref
+		     val stackTopMinusWordDeref
+		       = x86MLton.gcState_stackTopMinusWordDerefOperand
 		     val bytes 
 		       = x86.Operand.immediate_const_int size
 
@@ -847,13 +847,13 @@ struct
 			 dst = stackTop,
 			 src = bytes, 
 			 size = pointerSize},
-			(* *(stackTop) = return *)
+			(* *(stackTop - WORD_SIZE) = return *)
 			x86.Assembly.instruction_mov
-			{dst = stackTopDeref,
+			{dst = stackTopMinusWordDeref,
 			 src = Operand.immediate_label return,
 			 size = pointerSize},
 			x86.Assembly.directive_force
-			{commit_memlocs = MemLocSet.singleton stackTopDeref',
+			{commit_memlocs = MemLocSet.singleton stackTopMinusWordDeref',
 			 commit_classes = ClassSet.empty,
 			 remove_memlocs = MemLocSet.empty,
 			 remove_classes = ClassSet.empty,
@@ -866,16 +866,16 @@ struct
 		   end
 		| Return {live}
 		=> let
-		     val stackTopDeref
-		       = x86MLton.gcState_stackTopDerefOperand
+		     val stackTopMinusWordDeref
+		       = x86MLton.gcState_stackTopMinusWordDerefOperand
 		   in
 		     (* flushing at far transfer *)
 		     (farTransfer live
 		      AppendList.empty
 		      (AppendList.single
-		       (* jmp *(stackTop) *)
+		       (* jmp *(stackTop - WORD_SIZE) *)
 		       (x86.Assembly.instruction_jmp
-			{target = stackTopDeref,
+			{target = stackTopMinusWordDeref,
 			 absolute = true})))
 		   end
 		| Raise {live}
@@ -884,8 +884,8 @@ struct
 		       = x86MLton.gcState_currentThread_exnStackContentsOperand
 		     val stackTop 
 		       = x86MLton.gcState_stackTopContentsOperand
-		     val stackTopDeref
-		       = x86MLton.gcState_stackTopDerefOperand
+		     val stackTopMinusWordDeref
+		       = x86MLton.gcState_stackTopMinusWordDerefOperand
 		     val stackBottom 
 		       = x86MLton.gcState_stackBottomContentsOperand
 		    in
@@ -903,9 +903,9 @@ struct
 			  src = exnStack,
 			  size = pointerSize}])
 		       (AppendList.single
-			(* jmp *(stackTop) *)
+			(* jmp *(stackTop - WORD_SIZE) *)
 			(x86.Assembly.instruction_jmp
-			 {target = stackTopDeref,
+			 {target = stackTopMinusWordDeref,
 			  absolute = true})))
 		    end
 		| Runtime {prim, args, return, size}
@@ -922,8 +922,8 @@ struct
 		       = x86MLton.gcState_stackTopContentsOperand
 		     val bytes 
 		       = x86.Operand.immediate_const_int size
-		     val stackTopDeref
-		       = x86MLton.gcState_stackTopDerefOperand
+		     val stackTopMinusWordDeref
+		       = x86MLton.gcState_stackTopMinusWordDerefOperand
 
 		     val live = x86Liveness.LiveInfo.getLive(liveInfo, return)
 
@@ -997,9 +997,9 @@ struct
 			      dst = stackTop,
 			      src = bytes, 
 			      size = pointerSize},
-			     (* *(stackTop) = return *)
+			     (* *(stackTop - WORD_SIZE) = return *)
 			     x86.Assembly.instruction_mov
-			     {dst = stackTopDeref,
+			     {dst = stackTopMinusWordDeref,
 			      src = Operand.immediate_label return,
 			      size = pointerSize},
 			     (* flushing at Runtime *)
@@ -1036,9 +1036,9 @@ struct
 			    (farTransfer MemLocSet.empty
 			     AppendList.empty
 			     (AppendList.single
-			      (* jmp *(stackTop) *)
+			      (* jmp *(stackTop - WORD_SIZE) *)
 			      (x86.Assembly.instruction_jmp
-			       {target = stackTopDeref,
+			       {target = stackTopMinusWordDeref,
 				absolute = true})))]
 			 end
 
@@ -1090,9 +1090,9 @@ struct
 			      dst = stackTop,
 			      src = bytes, 
 			      size = pointerSize},
-			     (* *(stackTop) = return *)
+			     (* *(stackTop - WORD_SIZE) = return *)
 			     x86.Assembly.instruction_mov
-			     {dst = stackTopDeref,
+			     {dst = stackTopMinusWordDeref,
 			      src = Operand.immediate_label return,
 			      size = pointerSize},
 			     (* flushing at Runtime *)
@@ -1264,9 +1264,9 @@ struct
 			    (farTransfer MemLocSet.empty
 			     AppendList.empty
 			     (AppendList.single
-			      (* jmp *(stackTop) *)
+			      (* jmp *(stackTop - WORD_SIZE) *)
 			      (x86.Assembly.instruction_jmp
-			       {target = stackTopDeref,
+			       {target = stackTopMinusWordDeref,
 				absolute = true}))))
 			 end
 		       
@@ -3105,10 +3105,10 @@ struct
 
 		     val stackTop 
 		       = x86MLton.gcState_stackTopContentsOperand
-		     val stackTopDeref'
-		       = x86MLton.gcState_stackTopDeref
-		     val stackTopDeref
-		       = x86MLton.gcState_stackTopDerefOperand
+		     val stackTopMinusWordDeref'
+		       = x86MLton.gcState_stackTopMinusWordDeref
+		     val stackTopMinusWordDeref
+		       = x86MLton.gcState_stackTopMinusWordDerefOperand
 		     val bytes 
 		       = x86.Operand.immediate_const_int size
 
@@ -3131,13 +3131,13 @@ struct
 			 dst = stackTop,
 			 src = bytes, 
 			 size = pointerSize},
-			(* *(stackTop) = return *)
+			(* *(stackTop - WORD_SIZE) = return *)
 			x86.Assembly.instruction_mov
-			{dst = stackTopDeref,
+			{dst = stackTopMinusWordDeref,
 			 src = Operand.immediate_label return,
 			 size = pointerSize},
 			x86.Assembly.directive_force
-			{commit_memlocs = MemLocSet.singleton stackTopDeref',
+			{commit_memlocs = MemLocSet.singleton stackTopMinusWordDeref',
 			 commit_classes = ClassSet.empty,
 			 remove_memlocs = MemLocSet.empty,
 			 remove_classes = ClassSet.empty,
@@ -3150,16 +3150,16 @@ struct
 		   end
 		| Return {live}
 		=> let
-		     val stackTopDeref
-		       = x86MLton.gcState_stackTopDerefOperand
+		     val stackTopMinusWordDeref
+		       = x86MLton.gcState_stackTopMinusWordDerefOperand
 		   in
 		     (* flushing at far transfer *)
 		     (farTransfer live
 		      AppendList.empty
 		      (AppendList.single
-		       (* jmp *(stackTop) *)
+		       (* jmp *(stackTop - WORD_SIZE) *)
 		       (x86.Assembly.instruction_jmp
-			{target = stackTopDeref,
+			{target = stackTopMinusWordDeref,
 			 absolute = true})))
 		   end
 		| Raise {live}
@@ -3168,8 +3168,8 @@ struct
 		       = x86MLton.gcState_currentThread_exnStackContentsOperand
 		     val stackTop 
 		       = x86MLton.gcState_stackTopContentsOperand
-		     val stackTopDeref
-		       = x86MLton.gcState_stackTopDerefOperand
+		     val stackTopMinusWordDeref
+		       = x86MLton.gcState_stackTopMinusWordDerefOperand
 		     val stackBottom 
 		       = x86MLton.gcState_stackBottomContentsOperand
 		    in
@@ -3187,9 +3187,9 @@ struct
 			  src = exnStack,
 			  size = pointerSize}])
 		       (AppendList.single
-			(* jmp *(stackTop) *)
+			(* jmp *(stackTop - WORD_SIZE) *)
 			(x86.Assembly.instruction_jmp
-			 {target = stackTopDeref,
+			 {target = stackTopMinusWordDeref,
 			  absolute = true})))
 		    end
 		| Runtime {prim, args, return, size}
@@ -3207,8 +3207,8 @@ struct
 		       = x86MLton.gcState_stackTopContentsOperand
 		     val bytes 
 		       = x86.Operand.immediate_const_int size
-		     val stackTopDeref
-		       = x86MLton.gcState_stackTopDerefOperand
+		     val stackTopMinusWordDeref
+		       = x86MLton.gcState_stackTopMinusWordDerefOperand
 
 		     val live = x86Liveness.LiveInfo.getLive(liveInfo, return)
 
@@ -3282,9 +3282,9 @@ struct
 			      dst = stackTop,
 			      src = bytes, 
 			      size = pointerSize},
-			     (* *(stackTop) = return *)
+			     (* *(stackTop - WORD_SIZE) = return *)
 			     x86.Assembly.instruction_mov
-			     {dst = stackTopDeref,
+			     {dst = stackTopMinusWordDeref,
 			      src = Operand.immediate_label return,
 			      size = pointerSize},
 			     (* flushing at Runtime *)
@@ -3321,9 +3321,9 @@ struct
 			    (farTransfer MemLocSet.empty
 			     AppendList.empty
 			     (AppendList.single
-			      (* jmp *(stackTop) *)
+			      (* jmp *(stackTop - WORD_SIZE) *)
 			      (x86.Assembly.instruction_jmp
-			       {target = stackTopDeref,
+			       {target = stackTopMinusWordDeref,
 				absolute = true})))]
 			 end
 
@@ -3375,9 +3375,9 @@ struct
 			      dst = stackTop,
 			      src = bytes, 
 			      size = pointerSize},
-			     (* *(stackTop) = return *)
+			     (* *(stackTop - WORD_SIZE) = return *)
 			     x86.Assembly.instruction_mov
-			     {dst = stackTopDeref,
+			     {dst = stackTopMinusWordDeref,
 			      src = Operand.immediate_label return,
 			      size = pointerSize},
 			     (* flushing at Runtime *)
@@ -3549,9 +3549,9 @@ struct
 			    (farTransfer MemLocSet.empty
 			     AppendList.empty
 			     (AppendList.single
-			      (* jmp *(stackTop) *)
+			      (* jmp *(stackTop - WORD_SIZE) *)
 			      (x86.Assembly.instruction_jmp
-			       {target = stackTopDeref,
+			       {target = stackTopMinusWordDeref,
 				absolute = true}))))
 			 end
 		       

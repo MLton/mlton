@@ -142,6 +142,8 @@ signature X86_MLTON_BASIC =
     val gcState_stackTopContentsOperand : x86.Operand.t
     val gcState_stackTopDeref : x86.MemLoc.t
     val gcState_stackTopDerefOperand : x86.Operand.t
+    val gcState_stackTopMinusWordDeref : x86.MemLoc.t
+    val gcState_stackTopMinusWordDerefOperand : x86.Operand.t
     val gcState_stackBottomContents : x86.MemLoc.t
     val gcState_stackBottomContentsOperand : x86.Operand.t
     val gcState_stackLimitContents : x86.MemLoc.t
