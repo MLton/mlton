@@ -1,18 +1,29 @@
 Here are the changes from version 20010806 to version VERSION.
 
-* 2000-8-22
+* 2001-8-22
   - Added support for #line directives of the form
 	(*#line line.col "file"*)
     These directives only affect error messages produced by the parser and 
     elaborator.   
 
-* 2000-8-17
+* 2001-8-17
   - Fixed bug in removeUnused optimzation that caused the following program to
     fail to compile.
 	fun f l = case l of [] => f l | _ :: l => f l
 	val _ = f [13]
 
-* 2000-8-7
+* 2001-8-14
+  - New x86-codegen infrastructure.
+    o support for tracking liveness of stack slots and carrying them 
+       in registers across basic blocks
+    o more specific Entry and Transfer datatypes to make calling convention
+       distinctions more explicit
+    o new heuristic for carrying values in registers across basic blocks
+       (look Ma, no Overflows!)
+    o new "predict" model for generating register allocation hints
+    o additional bug fixes
+
+* 2001-8-7
   - MLton.Socket.shutdownWrite flushes the outstream.
 
 --------------------------------------------------------------------------------
@@ -27,22 +38,22 @@ Summary:
     + Added the "-keep dot" flag, which produces call graphs,
       intraprocedural control-flow graphs, and dominator trees.
 
-* 2000-8-6
+* 2001-8-6
   - Added simple common block elimination CPS optimization.
 
-* 2000-8-2
+* 2001-8-2
   - Took out -keep il.
 
-* 2000-7-31
+* 2001-7-31
   - Performance improvements to TextIO.{input, output, output1}
 
-* 2000-7-25
+* 2001-7-25
   - Added redundant-test elimination CPS optimization.
 
-* 2000-7-21
+* 2001-7-21
   - Added common-subexpression elimination CPS optimization.
 
-* 2000-7-20
+* 2001-7-20
   - Bug fix to x86 codegen.  The commuteBinALMD peephole optimization would
     rewrite  mov 2,Y; add Y,Y  as  mov Y,Y; add 2,Y.  Now the appropriate
     interference checks are made.
@@ -53,14 +64,14 @@ Summary:
     slowdowns.
   - Added -keep dot flag.
 
-* 2000-7-17
+* 2001-7-17
   - Modified grammar to properly handle val rec.  There were several problems.
     o MLton had accepted "val rec 'a ..." instead of "val 'a rec ..."
     o MLton had not accepted "val x = 13 and rec f = fn () => ()"
     o MLton had not accepted "val rec rec f = fn () => ()"
     o MLton had not accepted "val rec f = fn () => () and rec g = fn () => ()"
 
-* 2000-7-16
+* 2001-7-16
   - Workaround for Linux kernel bug that can cause getrusage to return a wrong
     system time value (low by one second).  See fixedGetrusage in gc.c.
   - Bug fix to x86 codegen.  The register allocator could get confused when
@@ -76,12 +87,12 @@ Summary:
   - Modified grammar to accept the empty program.
   - Added -type-check expert flag to turn on type checking in ILs.
 
-* 2000-7-15
+* 2001-7-15
   - Bug fix to the algebraic simplifier.  It had been rewriting
 		Word32.andb (w, 0wxFF) to w
     instead of  Word32.andb (w, 0wxFFFFFFFF) to w.
 
-* 2000-7-13
+* 2001-7-13
   - Improved CPS shrinker so that if-tests where the then and else branch jump
     to the same label is turned into a direct jump.
   - Improved CPS shrinker (Prim.apply) to handle constructors
