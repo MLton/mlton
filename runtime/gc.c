@@ -3143,6 +3143,11 @@ void GC_switchToThread (GC_state s, GC_thread t, uint ensureBytesFree) {
 		/* BEGIN: enter(s); */
 		s->currentThread->stack->used = currentStackUsed (s);
 		s->currentThread->exnStack = s->exnStack;
+		unless (s->inSignalHandler) {
+			blockSignals (s);
+			if (0 == s->limit)
+				s->limit = s->limitPlusSlop - LIMIT_SLOP;
+		}
 		/* END: enter(s); */
 		s->currentThread->bytesNeeded = ensureBytesFree;
 		switchToThread (s, t);
@@ -3154,14 +3159,17 @@ void GC_switchToThread (GC_state s, GC_thread t, uint ensureBytesFree) {
 		/* BEGIN: ensureMutatorInvariant */
 		if (not (mutatorFrontierInvariant(s))
 			or not (mutatorStackInvariant(s))) {
-			enter(s);
 			/* This GC will grow the stack, if necessary. */
 			doGC (s, 0, s->currentThread->bytesNeeded, FALSE, TRUE);
 			leave(s);
-		}
+		} 
 		/* END: ensureMutatorInvariant */
+		else {
 		/* BEGIN: leave(s); */
+		unless (s->inSignalHandler)
+			unblockSignals (s);
 		/* END: leave(s); */
+		}
 	}
 	assert (mutatorFrontierInvariant(s));
 	assert (mutatorStackInvariant(s));
