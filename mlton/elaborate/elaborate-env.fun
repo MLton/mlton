@@ -237,6 +237,13 @@ structure Info =
 	  in
 	     v
 	  end)
+
+      val map: ('a, 'b) t * ('b -> 'b) -> ('a, 'b) t =
+	 fn (T a, f) =>
+	 T (Array.map (a, fn {range, values, ...} =>
+		       {isUsed = ref false,
+			range = f range,
+			values = values}))
    end
 
 (* pre: arities are equal. *)
@@ -268,10 +275,17 @@ fun equalSchemes (s: Scheme.t, s': Scheme.t, name: unit -> Layout.t, r: Region.t
 
 structure Structure =
    struct
-      datatype t = T of {shapeId: ShapeId.t option,
+      datatype t = T of {plist: PropertyList.t,
+			 shapeId: ShapeId.t option,
 			 strs: (Ast.Strid.t, t) Info.t,
 			 types: (Ast.Tycon.t, TypeStr.t) Info.t,
 			 vals: (Ast.Vid.t, Vid.t * Scheme.t) Info.t}
+
+      local
+	 fun make f (T r) = f r
+      in
+	 val plist = make #plist
+      end
 
       fun layoutUsed (T {strs, types, vals, ...}) =
 	 let
@@ -344,7 +358,8 @@ structure Structure =
 	    end
       end
 
-      val bogus = T {shapeId = NONE,
+      val bogus = T {plist = PropertyList.new (),
+		     shapeId = NONE,
 		     strs = Info.bogus (),
 		     vals = Info.bogus (),
 		     types = Info.bogus ()}
@@ -420,7 +435,8 @@ structure Structure =
 	    val (addType, types) = make Ast.Tycon.<=
 	    val (addVal, vals) = make Ast.Vid.<=
 	    fun finish shapeId =
-	       T {shapeId = shapeId,
+	       T {plist = PropertyList.new (),
+		  shapeId = shapeId,
 		  strs = strs (), 
 		  types = types (),
 		  vals = vals ()}
@@ -1098,13 +1114,64 @@ fun snapshot (T {currentScope, fcts, fixs, sigs, strs, types, vals}):
 	 res
       end
    end
-      
+
+val useFunctorSummary = ref false
+val newTycons: (Tycon.t * Kind.t) list ref = ref []
+
+val newTycon: string * Kind.t -> Tycon.t =
+   fn (s, k) =>
+   let
+      val c = Tycon.fromString s
+      val _ = List.push (newTycons, (c, k))
+   in
+      c
+   end
+
+val propertyFun:
+   ('a -> PropertyList.t) * ('a * 'b * ('a * 'b -> 'c) -> 'c)
+   -> ('a * 'b -> 'c) * {destroy: unit -> unit} =
+   fn (plist, f) =>
+   let
+      fun uncurry g (a, b) = g a b 
+      val {destroy, get: 'a -> 'b -> 'c, ...} =
+	 Property.destGet
+	 (plist,
+	  Property.initRec
+	  (fn (a, get) =>
+	   let
+	      val done = ref NONE
+	   in
+	      fn b =>
+	      case !done of
+		 NONE =>
+		    let
+		       val c = f (a, b, uncurry get)
+		       val _ = done := SOME c
+		    in
+		       c
+		    end
+	       | SOME c => c
+	   end))
+   in
+      (uncurry get, {destroy = destroy})
+   end
+		     
 fun functorClosure
    (E: t,
     argInt: Interface.t,
     makeBody: Structure.t * string list -> Decs.t * Structure.t) =
    let
-      val _ = makeBody (dummyStructure (E, argInt), [])
+      val formal = dummyStructure (E, argInt)
+      val _ = useFunctorSummary := true
+      (* Keep track of all tycons created during the instantiation of the
+       * functor.  These will later become the generative tycons that will need
+       * to be recreated for each functor application.
+       *)
+      val _ = newTycons := []
+      val (_, res) = makeBody (formal, [])
+      val generative = !newTycons
+      val _ = newTycons := []
+      val _ = useFunctorSummary := false
       val restore = snapshot E
       fun apply (arg, nest, region) =
 	 let
@@ -1112,10 +1179,143 @@ fun functorClosure
 	       Structure.cut (arg, {interface = argInt,
 				    opaque = false,
 				    region = region})
-	    val (decs', str) = restore (fn () => makeBody (actual, nest))
 	 in
-	    (Decs.append (decs, decs'),
-	     str)
+	    if !useFunctorSummary
+	       then
+		  let
+		     val {destroy = destroy1,
+			  get = tyconTypeStr: Tycon.t -> TypeStr.t option,
+			  set = setTyconTypeStr, ...} =
+			Property.destGetSet (Tycon.plist,
+					     Property.initConst NONE)
+		     (* Match the actual against the formal, to set the
+		      * tycons.  Then duplicate the res, replacing tycons.
+		      * Want to generate new tycons just like the functor body
+		      * did.
+		      * Need to treat the formal as a DAG.
+		      *)
+		     val (setTycons, {destroy}) =
+			propertyFun
+			(Structure.plist,
+			 (fn (formal, actual, setTycons) =>
+			  let
+			     val Structure.T {strs = Info.T s,
+					      types = Info.T t, ...} =
+				formal
+			     val Structure.T {strs = Info.T s',
+					      types = Info.T t', ...} =
+				actual
+			     val _ =
+				Array.foreach2
+				(t, t',
+				 fn ({range = r, ...},
+				     {range = r', ...}) =>
+				 let
+				    fun doit tycon =
+				       setTyconTypeStr (tycon, SOME r')
+				 in
+				    case TypeStr.node r of
+				       TypeStr.Datatype {tycon, ...} =>
+					  doit tycon
+				     | TypeStr.Scheme _ => ()
+				     | TypeStr.Tycon tycon => doit tycon
+				 end)
+			     val _ =
+				Array.foreach2
+				(s, s', fn ({range = s, ...},
+					    {range = s', ...}) =>
+				 setTycons (s, s'))
+			  in
+			     ()
+			  end))
+		     val _ = setTycons (formal, actual)
+		     val _ = destroy ()
+		     val _ =
+			List.foreach
+			(generative, fn (c, k) =>
+			 setTyconTypeStr
+			 (c, SOME (TypeStr.tycon
+				   (newTycon (Tycon.originalName c, k),
+				    k))))
+		     fun replaceType (t: Type.t): Type.t =
+			let
+			   fun con (c, ts) =
+			      case tyconTypeStr c of
+				 NONE => Type.con (c, ts)
+			       | SOME s => TypeStr.apply (s, ts)
+			in
+			   Type.hom (t, {con = con,
+					 record = Type.record,
+					 var = Type.var})
+			end
+		     fun replaceScheme (s: Scheme.t): Scheme.t =
+			let
+			   val (tyvars, ty) = Scheme.dest s
+			in
+			   Scheme.make {canGeneralize = true,
+					ty = replaceType ty,
+					tyvars = tyvars}
+			end
+		     fun replaceCons (Cons.T v): Cons.t =
+			Cons.T
+			(Vector.map
+			 (v, fn {con, name, scheme} =>
+			  {con = con,
+			   name = name,
+			   scheme = replaceScheme scheme}))
+		     fun replaceTypeStr (s: TypeStr.t): TypeStr.t =
+			let
+			   val k = TypeStr.kind s
+			   datatype z = datatype TypeStr.node
+			in
+			   case TypeStr.node s of
+			      Datatype {cons, tycon} =>
+				 let
+				    val tycon =
+				       case tyconTypeStr tycon of
+					  NONE => tycon
+					| SOME s =>
+					     (case TypeStr.node s of
+						Datatype {tycon, ...} => tycon
+					      | Scheme _ =>
+						   Error.bug "bad datatype"
+					      | Tycon c => c)
+				 in
+				    TypeStr.data (tycon, k, replaceCons cons)
+				 end
+			    | Scheme s => TypeStr.def (replaceScheme s, k)
+			    | Tycon c =>
+				 (case tyconTypeStr c of
+				     NONE => s
+				   | SOME s' => s')
+			end
+		     val {destroy = destroy2,
+			  get = replacement: Structure.t -> Structure.t, ...} =
+			Property.destGet
+			(Structure.plist,
+			 Property.initRec
+			 (fn (Structure.T {shapeId, strs, types, vals, ... },
+			      replacement) =>
+			  Structure.T
+			  {plist = PropertyList.new (),
+			   shapeId = shapeId,
+			   strs = Info.map (strs, replacement),
+			   types = Info.map (types, replaceTypeStr),
+			   vals = Info.map (vals, fn (v, s) =>
+					    (v, replaceScheme s))}))
+		     val res = replacement res
+		     val _ = destroy1 ()
+		     val _ = destroy2 ()
+		  in
+		     (Decs.empty, res)
+		  end
+	    else
+	       let
+		  val (decs', str) = restore (fn () => makeBody (actual, nest))
+	       in
+		  (Decs.append (decs, decs'),
+		   str)
+	       end
 	 end
       val apply =
 	 Trace.trace ("functorApply",
@@ -1453,7 +1653,8 @@ fun makeStructure (T {currentScope, fixs, strs, types, vals, ...}, make) =
       val _ = currentScope := Scope.new ()
       val res = make ()
       val _ = f ()
-      val S = Structure.T {shapeId = NONE,
+      val S = Structure.T {plist = PropertyList.new (),
+			   shapeId = NONE,
 			   strs = s (),
 			   types = t (),
 			   vals = v ()}

@@ -885,15 +885,14 @@ fun elaborateDec (d, {env = E,
 	       Vector.map
 	       (datatypes, fn {cons, tycon = name, tyvars} =>
 		let
+		   val kind = Kind.Arity (Vector.length tyvars)
 		   val tycon =
-		      Tycon.fromString
+		      Env.newTycon
 		      (concat (List.separate
 			       (rev (Ast.Tycon.toString name :: nest),
-				".")))
-		   val _ =
-		      Env.extendTycon
-		      (E, name,
-		       TypeStr.tycon (tycon, Kind.Arity (Vector.length tyvars)))
+				".")),
+		       kind)
+		   val _ = Env.extendTycon (E, name, TypeStr.tycon (tycon, kind))
 		in
 		   tycon
 		end)

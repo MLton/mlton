@@ -27,6 +27,8 @@ signature ELABORATE_ENV =
       structure Decs: DECS
       sharing CoreML = Decs.CoreML
 
+      structure Tycon: TYCON
+      sharing Tycon = TypeEnv.Tycon
       structure Type:
 	 sig
 	    type t
@@ -52,6 +54,7 @@ signature ELABORATE_ENV =
 	 end
       structure TypeStr: TYPE_STR
       sharing TypeStr.Con = CoreML.Con
+      sharing TypeStr.Kind = Tycon.Kind
       sharing TypeStr.Name = Ast.Con
       sharing TypeStr.Scheme = Scheme
       sharing TypeStr.Tycon = CoreML.Tycon
@@ -116,6 +119,7 @@ signature ELABORATE_ENV =
       val lookupLongvid: t * Ast.Longvid.t -> Vid.t * Scheme.t
       val lookupSigid: t * Ast.Sigid.t -> Interface.t
       val makeStructure: t * (unit -> 'a) -> 'a * Structure.t
+      val newTycon: string * Tycon.Kind.t -> Tycon.t
       (* openStructure (E, S) opens S in the environment E. *) 
       val openStructure: t * Structure.t -> unit
       val peekFix: t * Ast.Vid.t -> Ast.Fixity.t option
