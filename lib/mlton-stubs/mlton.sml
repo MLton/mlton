@@ -114,7 +114,7 @@ structure MLton: MLTON =
       structure GC =
 	 struct
 	    fun collect _ = ()
-	    fun pack _ = ()
+	    val pack = MLton.GC.pack
 	    fun setMessages _ = ()
 	    fun setSummary _ = ()
 	    fun time _ = Time.zeroTime

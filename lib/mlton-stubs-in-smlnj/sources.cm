@@ -30,6 +30,7 @@ structure LargeWord
 structure List
 structure ListPair
 structure Math
+structure MLton
 structure OS
 structure Option
 structure Pack32Big
@@ -76,6 +77,7 @@ date.sml
 int-inf.sml
 int.sml
 list.sml
+mlton.sml
 open-int32.sml
 os.sml
 other.sml
