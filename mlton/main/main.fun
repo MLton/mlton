@@ -937,7 +937,7 @@ fun commandLine (args: string list): unit =
 			   (smlFile, fn out =>
 			    (outputHeader' (ML, out)
 			     ; (Vector.foreach
-				(Compile.filesMLB {input = file}, fn f =>
+				(Compile.sourceFilesMLB {input = file}, fn f =>
 				 (Out.output
 				  (out, concat ["(*#line 0.0 \"", f, "\"*)\n"])
 				  ; File.outputContents (f, out))))))
@@ -945,7 +945,7 @@ fun commandLine (args: string list): unit =
 			   case stop of
 			      Place.Files =>
 				 Vector.foreach
-				 (Compile.filesMLB {input = file}, fn f => 
+				 (Compile.sourceFilesMLB {input = file}, fn f => 
 				  print (concat [f, "\n"]))
 			    | Place.SML => saveSML (maybeOut ".sml")
 			    | Place.TypeCheck =>

@@ -285,15 +285,33 @@ val (lexAndParseMLB, lexAndParseMLBMsg) =
    Control.traceBatch (Control.Pass, "lex and parse")
    MLBFrontEnd.lexAndParseString
 
-val lexAndParseMLB : String.t -> Ast.Basdec.t * File.t vector = fn input => 
+val lexAndParseMLB : String.t * {parseImport: bool, 
+				 parseSource: bool} -> 
+                     Ast.Basdec.t * {importFiles: File.t vector, 
+				     sourceFiles: File.t vector} = 
+   fn (input, parse) => 
    let
-      val (ast, files) = lexAndParseMLB input
+      val (ast, files) = lexAndParseMLB (input, parse)
       val _ = Control.checkForErrors "parse"
    in (ast, files)
    end
 
-val filesMLB = fn {input} => #2 (lexAndParseMLB input)
-val lexAndParseMLB = #1 o lexAndParseMLB
+val sourceFilesMLB = fn {input} =>
+   let
+      val (_, {sourceFiles, ...}) =
+	 lexAndParseMLB (input, {parseImport = true, 
+				 parseSource = false})
+   in
+      sourceFiles
+   end
+val lexAndParseMLB = fn input =>
+   let
+      val (ast, _) =
+	 lexAndParseMLB (input, {parseImport = true, 
+				 parseSource = true})
+   in
+      ast
+   end
 
 val (elaborateMLB, elaborateMLBMsg) =
    Control.traceBatch (Control.Pass, "elaborate") Elaborate.elaborateMLB

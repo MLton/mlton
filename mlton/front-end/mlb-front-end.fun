@@ -75,13 +75,14 @@ val lexAndParseString =
     Trace.trace ("MLBFrontEnd.lexAndParseString", String.layout, Ast.Basdec.layout)
     lexAndParseString
 
-fun mkLexAndParse () =
+fun mkLexAndParse {parseSource, parseImport} =
    let
       val cwd = Dir.current ()
       val relativize = SOME cwd
       val state = {cwd = cwd, relativize = relativize, seen = []}
 
-      val files: File.t Buffer.t = Buffer.new {dummy = "<dummy>"}
+      val importFiles: File.t Buffer.t = Buffer.new {dummy = "<dummy>"}
+      val sourceFiles: File.t Buffer.t = Buffer.new {dummy = "<dummy>"}
 
       val psi : (OS.FileSys.file_id * Ast.Basdec.t Promise.t) HashSet.t =
 	 HashSet.new {hash = OS.FileSys.hash o #1}
@@ -176,91 +177,109 @@ fun mkLexAndParse () =
 		       ("relativize", Option.layout Dir.layout relativize)])
 	 regularize
 
-      fun lexAndParseProg {fileAbs: File.t, fileUse: File.t} =
-	 let
-	    val () = Buffer.add (files, fileUse)
-	    val prog = FrontEnd.lexAndParseFile fileUse
-	 in
-	    Ast.Basdec.Prog (fileAbs, prog)
-	 end
+      fun lexAndParseProg {fileAbs: File.t, fileOrig: File.t, fileUse: File.t, 
+			   fail: String.t -> Ast.Basdec.node} =
+	 if parseSource
+	    then if not (File.doesExist fileUse)
+		    then fail "does not exist"
+		 else if not (File.canRead fileUse)
+		    then fail "cannot be read"
+		 else let
+			 val () = Buffer.add (sourceFiles, fileUse)
+			 val prog = FrontEnd.lexAndParseFile fileUse
+		      in
+			 Ast.Basdec.Prog (fileAbs, prog)
+		      end
+	    else (Buffer.add (sourceFiles, fileUse)
+		  ; Ast.Basdec.Prog (fileAbs, Ast.Program.empty))
       and lexAndParseMLB {cwd: Dir.t, relativize: Dir.t option,
 			  seen: (OS.FileSys.file_id * File.t * Region.t) list,
-			  fileAbs: File.t, fileUse: File.t,
-			  reg: Region.t} =
-	 let
-	    val fid = OS.FileSys.fileId fileAbs
-	    val seen' = (fid, fileUse, reg)::seen
-	 in
-	    if List.exists (seen, fn (fid', _, _) => 
-			    OS.FileSys.compare (fid, fid') = EQUAL)
-	       then (let open Layout
-		     in 
-			Control.error 
-			(reg, seq [str "Basis forms a cycle with ", File.layout fileUse],
-			 align (List.map (seen', fn (_, f, r) => 
-					  seq [Region.layout r, 
-					       str ": ", 
-					       File.layout f])))
-			; Ast.Basdec.Seq []
-		     end)
-	       else 
-		  let
-		     val (_, basdec) =
-			HashSet.lookupOrInsert
-			(psi, OS.FileSys.hash fid, fn (fid', _) =>
-			 OS.FileSys.compare (fid, fid') = EQUAL, fn () =>
-			 let
-			    val cwd = OS.Path.dir fileAbs
-			    val basdec =
-			       Promise.delay
-			       (fn () =>
-				wrapLexAndParse
-				{cwd = cwd, relativize = relativize, seen = seen'}
-				(lexAndParseFile, fileUse))
-			 in
-			    (fid, basdec)
-			 end)
-		     val basdec = Promise.force basdec
-		  in
-		     Ast.Basdec.MLB (fileAbs, SOME fid, basdec)
-		  end
-	 end
+			  fileAbs: File.t, fileOrig: File.t, fileUse: File.t,
+			  fail: String.t -> Ast.Basdec.node, reg: Region.t} =
+	 if parseImport
+	    then if not (File.doesExist fileUse)
+		    then fail "does not exist"
+		 else if not (File.canRead fileUse)
+		    then fail "cannot be read"
+		 else let
+			 val fid = OS.FileSys.fileId fileAbs
+			 val seen' = (fid, fileUse, reg)::seen
+		      in
+			 if List.exists (seen, fn (fid', _, _) => 
+					 OS.FileSys.compare (fid, fid') = EQUAL)
+			    then (let open Layout
+				  in 
+				     Control.error 
+				     (reg, seq [str "Basis forms a cycle with ", File.layout fileUse],
+				      align (List.map (seen', fn (_, f, r) => 
+						       seq [Region.layout r, 
+							    str ": ", 
+							    File.layout f])))
+				     ; Ast.Basdec.Seq []
+				  end)
+			    else 
+			       let
+				  val (_, basdec) =
+				     HashSet.lookupOrInsert
+				     (psi, OS.FileSys.hash fid, fn (fid', _) =>
+				      OS.FileSys.compare (fid, fid') = EQUAL, fn () =>
+				      let
+					 val cwd = OS.Path.dir fileAbs
+					 val basdec =
+					    Promise.delay
+					    (fn () =>
+					     let
+						val () = Buffer.add (importFiles, fileUse)
+					     in
+						wrapLexAndParse
+						{cwd = cwd, relativize = relativize, seen = seen'}
+						(lexAndParseFile, fileUse)
+					     end)
+				      in
+					 (fid, basdec)
+				      end)
+				  val basdec = Promise.force basdec
+			       in
+				  Ast.Basdec.MLB (fileAbs, SOME fid, basdec)
+			       end
+		      end
+	    else (Buffer.add (importFiles, fileUse)
+		  ; Ast.Basdec.MLB (fileAbs, NONE, Ast.Basdec.empty))
       and lexAndParseProgOrMLB {cwd, relativize, seen}
 	                       (fileOrig: File.t, reg: Region.t) =
 	 let
 	    val {fileAbs, fileUse, relativize, ...} = 
 	       regularize {fileOrig = fileOrig, cwd = cwd, relativize = relativize}
+
 	    fun fail msg =
 	       (Control.error
 		(reg, Layout.seq [Layout.str "file ", Layout.str fileOrig,
 				  Layout.str " (", Layout.str fileUse, Layout.str ") ",
 				  Layout.str msg], Layout.empty)
 		;  Ast.Basdec.Seq [])
+	    
+	    val mlbExts = ["mlb"]
+	    val progExts = ["ML","fun","sig","sml"]
+	    fun err () = fail "has an unknown extension"
 	 in
-	    if not (File.doesExist fileUse)
-	       then fail "does not exist"
-	    else if not (File.canRead fileUse)
-	       then fail "cannot be read"
-	    else let
-		    val mlbExts = ["mlb"]
-		    val progExts = ["ML","fun","sig","sml"]
-		    fun err () = fail "has an unknown extension"
-		 in
-		    case File.extension fileUse of
-		       SOME s =>
-			  if List.contains (mlbExts, s, String.equals)
-			     then lexAndParseMLB {cwd = cwd,
-						  relativize = relativize,
-						  seen = seen,
-						  fileAbs = fileAbs,
-						  fileUse = fileUse,
-						  reg = reg}
-			  else if List.contains (progExts, s, String.equals)
-			     then lexAndParseProg {fileAbs = fileAbs,
-						   fileUse = fileUse}
-			  else err ()
-		     | NONE => err ()
-		 end
+	    case File.extension fileUse of
+	       SOME s =>
+		  if List.contains (mlbExts, s, String.equals)
+		     then lexAndParseMLB {cwd = cwd,
+					  relativize = relativize,
+					  seen = seen,
+					  fileAbs = fileAbs,
+					  fileOrig = fileOrig,
+					  fileUse = fileUse,
+					  fail = fail,
+					  reg = reg}
+		  else if List.contains (progExts, s, String.equals)
+		     then lexAndParseProg {fileAbs = fileAbs,
+					   fileOrig = fileOrig,
+					   fileUse = fileUse,
+					   fail = fail}
+		  else err ()
+	     | NONE => err ()
 	 end
       and wrapLexAndParse state (lexAndParse, arg) =
 	 let
@@ -273,10 +292,11 @@ fun mkLexAndParse () =
    in
       fn (s: String.t) => 
       (wrapLexAndParse state (lexAndParseString, s),
-       Buffer.toVector files before Buffer.reset files)
+       {importFiles = Buffer.toVector importFiles,
+	sourceFiles = Buffer.toVector sourceFiles})
    end
 
-val lexAndParseString = fn (s: String.t) =>
-   (mkLexAndParse ()) s
+val lexAndParseString = fn (s: String.t, {parseSource, parseImport}) =>
+   (mkLexAndParse {parseSource = parseSource, parseImport = parseImport}) s
 
 end
