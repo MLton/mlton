@@ -50,6 +50,7 @@ signature MACHINE =
 	    val int: int -> t
 	    val intInf: Word.t -> t
 	    val interfere: {write: t, read: t} -> bool
+	    val isPointer: t -> bool
 	    val label: Label.t -> t
 	    val layout: t -> Layout.t
 	    val offset: {base: t, offset: int, ty: Type.t} -> t

@@ -70,23 +70,28 @@ structure Operand =
 
       fun toMOut (x: t) = x
 
-      fun ensurePointer s (x: t): unit =
-	 Assert.assert ("ensurePointer:" ^ s ^ ":" ^ (toString x), fn () =>
-			Type.isPointer (ty x)
-			andalso (case x of
-				    ArrayOffset _ => true
-				  | Contents _ => true
-				  | Global _ => true
-				  | GlobalPointerNonRoot _ => true
-				  | Offset _ => true
-				  | Register _ => true
-				  | StackOffset _ => true
-				  | _ => false))
+      fun isPointer (x: t): bool =
+	 Type.isPointer (ty x)
+	 andalso (case x of
+		     ArrayOffset _ => true
+		   | Contents _ => true
+		   | Global _ => true
+		   | GlobalPointerNonRoot _ => true
+		   | Offset _ => true
+		   | Register _ => true
+		   | StackOffset _ => true
+		   | _ => false)
 
-      fun arrayOffset arg = (ensurePointer "arrayOffset" (#base arg); ArrayOffset arg)
+      fun ensurePointer s (x: t): unit =
+	 Assert.assert (concat ["ensurePointer:", s, ":", toString x], fn () =>
+			isPointer x)
+	 
+      fun arrayOffset arg =
+	 (ensurePointer "arrayOffset" (#base arg); ArrayOffset arg)
       val castInt = CastInt
       val char = Char
-      fun contents (z, t) = (ensurePointer "contents" z; Contents {oper = z, ty = t})
+      fun contents (z, t) =
+	 (ensurePointer "contents" z; Contents {oper = z, ty = t})
       val float = Float
       val global = Global
       val int = Int

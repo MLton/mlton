@@ -234,7 +234,7 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
       val varOperand = #operand o varInfo
       fun varOperands xs = List.map (xs, varOperand)
       val varOperandOpt = VarOperand.operandOpt o varOperand
-      val vo = fn x => (valOf o varOperandOpt) x
+      val vo: Var.t -> Operand.t = fn x => (valOf o varOperandOpt) x
 
       fun sortTypes (initialOffset: int,
 		     tys: Mtype.t vector): {size: int,
@@ -911,7 +911,8 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 		     in {live = live, 
 			 transfer = transfer}
 		     end
-		  fun enum (test: Operand.t, numEnum: int) =
+		  fun enum (test: Operand.t, numEnum: int)
+		     : {live: Operand.t list, transfer: Mtransfer.t} =
 		     let
 			val (live, cases, numLeft) =
 			   Vector.fold
@@ -940,8 +941,7 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 		     let
 			val test = vo test
 			val int =
-			   transferToLabel
-			   (enum (Operand.castInt test, numEnum))
+			   transferToLabel (enum (Operand.castInt test, numEnum))
 		     in Mtransfer.switchIP {test = test,
 					    int = int,
 					    pointer = pointer}
@@ -965,40 +965,56 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 		  fun enumAndOne (numEnum: int): Mtransfer.t =
 		     let
 			val test = vo test
-			val z =
-			   Vector.loop
-			   (cases,
-			    fn (c, j) =>
-			    case conRep c of
-			       ConRep.Transparent _ => SOME (j, Vector.new1 test)
-			     | ConRep.Tuple => SOME (j, conSelects (test, c))
-			     | _ => NONE,
-				  fn () =>
-				  case default of
-				     NONE => Error.bug "enumAndOne: no default"
-				   | SOME j => (j, Vector.new0 ()))
-		     in switchIP (numEnum, #2 (doTail z))
+		     in
+			if not (Operand.isPointer test)
+			   then #transfer (enum (Operand.castInt test, numEnum))
+			else
+			   let
+			      val z =
+				 Vector.loop
+				 (cases, fn (c, j) =>
+				  case conRep c of
+				     ConRep.Transparent _ =>
+					SOME (j, Vector.new1 test)
+				   | ConRep.Tuple =>
+					SOME (j, conSelects (test, c))
+				   | _ => NONE,
+					fn () =>
+					case default of
+					   NONE =>
+					      Error.bug "enumAndOne: no default"
+					 | SOME j => (j, Vector.new0 ()))
+			   in switchIP (numEnum, #2 (doTail z))
+			   end
 		     end
 		  fun indirectTag (numTag: int) =
 		     let
 			val test = vo test
-			val (live, cases, numLeft) =
-			   Vector.fold
-			   (cases, ([], [], numTag),
-			    fn ((c, j), (live, cases, numLeft)) =>
-			    case conRep c of
-			       ConRep.TagTuple n =>
-				  let
-				     val (live', l) =
-					doTail (j, conSelects (test, c))
-				  in (live' @ live, (n, l) :: cases, numLeft - 1)
-				  end
-			     | _ => (live, cases, numLeft))
-		     in switch {test = Operand.offset {base = test,
-						       offset = tagOffset,
-						       ty = tagType},
-				cases = Mcases.Int cases, default = default,
-				live = live, numLeft = numLeft}
+		     in
+			if not (Operand.isPointer test)
+			   then {live = [], transfer = Mtransfer.bug}
+			else
+			   let
+			      val (live, cases, numLeft) =
+				 Vector.fold
+				 (cases, ([], [], numTag),
+				  fn ((c, j), (live, cases, numLeft)) =>
+				  case conRep c of
+				     ConRep.TagTuple n =>
+					let
+					   val (live', l) =
+					      doTail (j, conSelects (test, c))
+					in (live' @ live,
+					    (n, l) :: cases, numLeft - 1)
+					end
+				   | _ => (live, cases, numLeft))
+			   in switch {test = Operand.offset {base = test,
+							     offset = tagOffset,
+							     ty = tagType},
+				      cases = Mcases.Int cases,
+				      default = default,
+				      live = live, numLeft = numLeft}
+			   end
 		     end
 	       in case testRep of
 		  TyconRep.Prim mtype =>
@@ -1009,13 +1025,14 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 			     *)
 			    let
 			       val (c, l) = Vector.sub (cases, 0)
-			    in case conRep c of
-			       ConRep.Void => tail (l, Vector.new0 (), id)
-			     | ConRep.Transparent _ =>
-				  tail (l, Vector.new1 test, vo)
-			     | ConRep.Tuple =>
-				  tail (l, conSelects (vo test, c), id)
-			     | _ => Error.bug "strange conRep for Prim"
+			    in
+			       case conRep c of
+				  ConRep.Void => tail (l, Vector.new0 (), id)
+				| ConRep.Transparent _ =>
+				     tail (l, Vector.new1 test, vo)
+				| ConRep.Tuple =>
+				     tail (l, conSelects (vo test, c), id)
+				| _ => Error.bug "strange conRep for Prim"
 			    end
 		       | (0, SOME j) => tail (j, Vector.new0 (), id)
 		       | _ => Error.bug "prim datatype with more than one case")
@@ -1283,28 +1300,29 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 					(l, fn (i, j) =>
 					 (branch i, labelToLabel j))),
 			     default = Option.map (default, labelToLabel)})
-		     in case cases of
-			Cases.Char l => doit (l, Mcases.Char, id)
-		      | Cases.Int l => doit (l, Mcases.Int, id)
-		      | Cases.Word l => doit (l, Mcases.Word, id)
-		      | Cases.Word8 l => doit (l, Mcases.Char, Word8.toChar)
-		      | Cases.Con cases =>
-			   (case (Vector.length cases, default) of
-			       (0, NONE) => ([], Mtransfer.bug)
-			     | _ => 
-				  let
-				     val (tycon, tys) =
-					Stype.tyconArgs (#ty (varInfo test))
-				  in
-				     if Vector.isEmpty tys
-					then genCase {cases = cases,
-						      chunk = chunk,
-						      label = label,
-						      default = default,
-						      test = test,
-						      testRep = tyconRep tycon}
-				     else Error.bug "strange type in case"
-				  end)
+		     in
+			case cases of
+			   Cases.Char l => doit (l, Mcases.Char, id)
+			 | Cases.Int l => doit (l, Mcases.Int, id)
+			 | Cases.Word l => doit (l, Mcases.Word, id)
+			 | Cases.Word8 l => doit (l, Mcases.Char, Word8.toChar)
+			 | Cases.Con cases =>
+			      (case (Vector.length cases, default) of
+				  (0, NONE) => ([], Mtransfer.bug)
+				| _ => 
+				     let
+					val (tycon, tys) =
+					   Stype.tyconArgs (#ty (varInfo test))
+				     in
+					if Vector.isEmpty tys
+					   then genCase {cases = cases,
+							 chunk = chunk,
+							 label = label,
+							 default = default,
+							 test = test,
+							 testRep = tyconRep tycon}
+					else Error.bug "strange type in case"
+				     end)
 		     end
 		| Stransfer.Goto {dst, args} => tail (dst, args, vo)
 		| Stransfer.Prim {prim, args, failure, success} =>
