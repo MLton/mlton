@@ -457,7 +457,7 @@ typedef struct GC_state {
 	sigset_t signalsPending;
 	struct GC_sourceLabel *sourceLabels;
 	uint sourceLabelsSize;
-	/* sources is an array of strings identifying source positions. */
+	/* sourcesNames is an array of strings identifying source positions. */
 	string *sourceNames;
 	uint sourceNamesSize;
 	/* Each entry in sourceSeqs is a vector, whose first element is
