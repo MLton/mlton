@@ -19,15 +19,7 @@ TEX_FILES = \
 
 WEB = ../web
 
-all:	$(WEB)/user-guide.ps.gz $(WEB)/HTML/main.html
-
-$(WEB)/HTML/main.html: main/main.html $(TEX_FILES)
-	rm -f $(WEB)/HTML/*						\
-		&& rm -f main/WARNINGS					\
-		&& cp -p main/main.css main/node*.html main/*.png	\
-			$(WEB)/HTML/					\
-		&& cp -p main/main.html $(WEB)/HTML/			\
-		&& ln -s main.html $(WEB)/HTML/index.html
+all:	main.ps main/main.html
 
 main/main.html: $(TEX_FILES)
 	latex2html -address '' -local_icons main.tex
@@ -35,9 +27,6 @@ main/main.html: $(TEX_FILES)
 main.dvi: $(TEX_FILES)
 	latex main; bibtex main; latex main; latex main
 	
-$(WEB)/user-guide.ps.gz: main.ps
-	gzip -c main.ps >$(WEB)/user-guide.ps.gz
-
 main.ps: main.dvi
 	dvips -o main.ps main
 

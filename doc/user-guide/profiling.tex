@@ -71,6 +71,10 @@ You can display profiling information at the assembly basic block level with
 which will limit {\tt mlprof} to only print information about functions (or
 blocks) whose percentage of time is above a certain threshold.
 
+You may find it useful to use the {\tt -keep dot} switch when compiling {\tt
+-p}, since this saves the call graph of the whole program and the control-flow
+graph for each CPS procedure.
+
 The profiler works by catching the {\tt SIGPROF} signal 100 times per second and
 recording where in the executable the program counter is.  Thus, if you compile
 {\tt -p}, your program should not use the following, which will interfere with

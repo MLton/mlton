@@ -85,11 +85,13 @@ Specify an additional directory to be searched for include files (included with
 \fB-i\fR).
 
 .TP
-\fB-keep \fI{\fBcps\fP|\fBg\fP|\fBil\fP|\fBo\fP|\fBsml\fP}\fR
+\fB-keep \fI{\fBcps\fP|\fBdot\fP|\fBg\fP|\fBil\fP|\fBo\fP|\fBsml\fP}\fR
 Save the intermediate files corresponding to the given arg.
 If no \fB-keep\fP argument is given, then only the final file is saved.
 .in +.5i
 \fBcps\fP  CPS file.
+.br
+\fBdot\fP  dot files.  Implies \fB-keep cps\fP. Do not use with \fB-keep il\fP.
 .br
 \fBg\fP    generated \fB.S\fP and \fB.c\fP files passed to gcc.
 .br

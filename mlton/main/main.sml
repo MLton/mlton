@@ -90,7 +90,7 @@ val options =
 	Int setInlineSize),
        (Normal, "I", "dir", "search dir for include files",
 	push includeDirs),
-       (Normal, "keep", " {cps|g|il|o|sml}", "save intermediate files",
+       (Normal, "keep", " {cps|dot|g|il|o|sml}", "save intermediate files",
 	SpaceString (fn s =>
 		     case s of
 			"cps" => keepCps := true
@@ -239,6 +239,9 @@ fun commandLine (args: string list): unit =
 	 List.push (defines,
 		    concat ["MLton_safe=", if !safe then "TRUE" else "FALSE"])
       val _ = if !debug then () else List.push (defines, "NODEBUG")
+      val _ = if !aux
+		 then usage "cannot use -keep dot and -keep il"
+	      else ()
       val _ = Control.includes := !includes
    in case result of
       Result.No switch => usage (concat ["invalid switch: ", switch])
