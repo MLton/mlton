@@ -392,6 +392,12 @@ fun primApply {prim: Prim.t, args: t vector, resultTy: Type.t}: t =
 		 | _ => typeError ())
 	       ; result ()
 	    end
+       | MLton_deserialize => serialValue resultTy
+       | MLton_serialize =>
+	    let val arg = oneArg ()
+	    in coerce {from = arg, to = serialValue (ty arg)}
+	       ; result ()
+	    end
        | Ref_assign =>
 	    let val (r, x) = twoArgs ()
 	    in (case dest r of
@@ -411,12 +417,6 @@ fun primApply {prim: Prim.t, args: t vector, resultTy: Type.t}: t =
 		 | Type _ => ()
 		 | _ => typeError ())
 	       ; r
-	    end
-       | MLton_deserialize => serialValue resultTy
-       | MLton_serialize =>
-	    let val arg = oneArg ()
-	    in coerce {from = arg, to = serialValue (ty arg)}
-	       ; result ()
 	    end
        | Vector_fromArray =>
 	    let val r = result ()
