@@ -31,6 +31,7 @@ structure Place =
       fun compare (p, p') = Int.compare (toInt p, toInt p')
    end
 
+val coalesce: int option ref = ref NONE
 val includes: string list ref = ref []
 val includeDirs: string list ref = ref []
 val keepGenerated = ref false
@@ -62,6 +63,8 @@ val options =
       open Control Popt
       fun push r = String (fn s => List.push (r, s))
    in [
+       (Expert, "coalesce", " n", "coalesce chunk size for C codegen",
+	Int (fn n => coalesce := SOME n)),
        (Normal, "detect-overflow", " {true|false}",
 	"overflow checking on integer arithmetic",
 	boolRef detectOverflow),
@@ -277,9 +280,14 @@ fun commandLine (args: string list): unit =
 	 Popt.parse {switches = args,
 		     opts = List.map (options, fn (_, a, _, _, c) => (a, c))}
       val _ =
-	 if !Native.native
-	    then chunk := ChunkPerFunc
-	 else chunk := Coalesce {limit = 2000}
+	 chunk := (if !Native.native
+		      then
+			 if isSome (!coalesce)
+			    then usage "can't use -coalesce and -native true"
+			 else  ChunkPerFunc
+		   else Coalesce {limit = (case !coalesce of
+					      NONE => 4096
+					    | SOME n => n)})
       val _ =
 	 if !keepDot andalso List.isEmpty (!keepPasses)
 	    then keepSSA := true

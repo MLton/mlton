@@ -24,7 +24,7 @@ structure Chunk =
 
 datatype chunk = datatype Chunk.t
 val chunk = control {name = "chunk",
-		     default = Coalesce {limit = 2000},
+		     default = Coalesce {limit = 4096},
 		     toString = Chunk.toString}
 
 val debug = control {name = "debug",
