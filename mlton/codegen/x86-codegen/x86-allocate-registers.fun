@@ -16,8 +16,9 @@ struct
 
   fun track memloc = let
 		       val trackClasses 
-			 = ClassSet.add(ClassSet.+(!x86MLton.Classes.livenessClasses,
-						 !x86MLton.Classes.holdClasses),
+			 = ClassSet.add(ClassSet.+
+					(!x86MLton.Classes.livenessClasses,
+					 !x86MLton.Classes.holdClasses),
 					x86MLton.Classes.StaticNonTemp)
 		     in
 		       ClassSet.contains(trackClasses, MemLoc.class memloc)
@@ -5833,7 +5834,7 @@ struct
 		       {assembly = AppendList.append (assembly,
 						      assembly_shuffle),
 			registerAllocation = registerAllocation,
-			saves = operand::saves}
+			saves = saves}
 		     end)
 		else {assembly = AppendList.empty,
 		      registerAllocation = registerAllocation,
