@@ -107,15 +107,14 @@ fun isOk (T {ensuresBytesFree, mayGC, maySwitchThreads, modifiesFrontier,
    (if maySwitchThreads
        then mayGC andalso isUnit return
     else true)
-       andalso
-       (if ensuresBytesFree orelse maySwitchThreads
-	   then mayGC
-	else true)
-	   andalso 
-	   (if mayGC
+   andalso (if ensuresBytesFree orelse maySwitchThreads
+	       then mayGC
+	    else true)
+   andalso (if mayGC
 	       then (modifiesFrontier
 		     andalso readsStackTop andalso writesStackTop)
 	    else true)
+   andalso (not writesStackTop orelse readsStackTop )
 
 fun vanilla {args, name, prototype, return} =
    T {args = args,
