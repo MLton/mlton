@@ -280,6 +280,13 @@ structure Primitive =
 
       structure MLton =
 	 struct
+	    structure Profile =
+	       struct
+		  val profile = _prim "MLton_profile": bool;
+		  val reset = _ffi "MLton_Profile_reset": unit -> unit;
+		  val write = _ffi "MLton_Profile_write": nullString -> unit;
+	       end
+
 	    structure Rlimit =
 	       struct
 		  type rlim = word

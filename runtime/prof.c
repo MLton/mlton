@@ -51,14 +51,12 @@ extern void	_start(void),
 		etext(void);
 
 
-static uint	*buff,
-		card,
-		unknown;
-
+static uint	*buff = NULL,
+		card = 0,
+		unknown = 0;
 
 static void	catcher(int sig, siginfo_t *sip, ucontext_t *ucp),
 		endProf(void);
-
 
 void
 startProf(void)
@@ -100,6 +98,33 @@ catcher(int sig, siginfo_t *sip, ucontext_t *ucp)
 		++unknown;
 }
 
+void
+resetProf(void)
+{
+	assert((card != 0) and (buff != NULL)); 
+	memset(buff, 0, card * sizeof(*buff));
+}
+
+void
+writeProf(char* filename)
+{
+	int			fd;
+	struct pdata		pd;
+
+	fd = creat(filename, 0666);
+	if (fd < 0)
+		diee("Cannot create mlmon.out");
+	assert(sizeof(pd.magic) == sizeof(MAGIC));
+	strcpy(pd.magic, MAGIC);
+	pd.start = (uint)&_start;
+	pd.limit = (uint)&etext;
+	pd.unknown = unknown;
+	unless ((write(fd, &pd, sizeof(pd)) == sizeof(pd))
+	and (write(fd, buff, card * sizeof(*buff)) == card * sizeof(*buff)))
+		diee("write() failed");
+	unless (close(fd) == 0)
+		diee("close() failed");
+}
 
 /*
  * Write out the accumulated profiling data.
@@ -113,24 +138,10 @@ static void
 endProf(void)
 {
 	struct itimerval	tv;
-	int			fd;
-	struct pdata		pd;
 
 	tv.it_value.tv_sec = 0;
 	tv.it_value.tv_usec = 0;
 	unless (setitimer(ITIMER_PROF, &tv, NULL) == 0)
 		diee("setitimer() failed");
-	fd = creat("mlmon.out", 0666);
-	if (fd < 0)
-		diee("Cannot create mlmon.out");
-	assert(sizeof(pd.magic) == sizeof(MAGIC));
-	strcpy(pd.magic, MAGIC);
-	pd.start = (uint)&_start;
-	pd.limit = (uint)&etext;
-	pd.unknown = unknown;
-	unless ((write(fd, &pd, sizeof(pd)) == sizeof(pd))
-	and (write(fd, buff, card * sizeof(*buff)) == card * sizeof(*buff)))
-		diee("write() failed");
-	unless (close(fd) == 0)
-		diee("close() failed");
+	writeProf("mlmon.out");
 }

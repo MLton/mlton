@@ -265,6 +265,7 @@ fun commandLine (args: string list): unit =
 	 List.foreach
 	 ([(detectOverflow, "MLton_detectOverflow"),
 	   (exnHistory, "Exn_keepHistory"),
+	   (profile, "MLton_profile"),
 	   (safe, "MLton_safe")],
 	  fn (b, x) =>
 	  List.push (defines, concat [x, if !b then "=TRUE" else "=FALSE"]))

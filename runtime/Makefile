@@ -25,6 +25,7 @@ OBJS =						\
 	basis/Itimer/set.o			\
 	basis/MLton/bug.o			\
 	basis/MLton/exit.o			\
+	basis/MLton/profile.o			\
 	basis/MLton/random.o			\
 	basis/MLton/rlimit.o			\
 	basis/MLton/rusage.o			\
@@ -172,6 +173,7 @@ DEBUG_OBJS =					\
 	basis/Itimer/set-gdb.o			\
 	basis/MLton/bug-gdb.o			\
 	basis/MLton/exit-gdb.o			\
+	basis/MLton/profile-gdb.o		\
 	basis/MLton/random-gdb.o		\
 	basis/MLton/rlimit-gdb.o		\
 	basis/MLton/rusage-gdb.o		\

@@ -138,6 +138,8 @@ mlton/gc.sml
 mlton/word.sig
 mlton/proc-env.sig
 mlton/proc-env.sml
+mlton/profile.sig
+mlton/profile.sml
 mlton/rlimit.sig
 mlton/rlimit.sml
 mlton/rusage.sig

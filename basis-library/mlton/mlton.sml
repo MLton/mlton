@@ -32,6 +32,7 @@ structure GC = GC
 structure Itimer = Itimer
 structure ProcEnv = ProcEnv
 structure Ptrace = Ptrace
+structure Profile = Profile
 structure Random = Random
 structure Rlimit = Rlimit
 structure Rusage = Rusage
