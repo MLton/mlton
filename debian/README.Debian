@@ -13,9 +13,9 @@ command-line switches haven't changed too much.  You can also
 bootstrap with SML/NJ.  See the User Guide for details.
 
 It is easy enough to manually build: fetch
-http://prdownloads.sourceforge.net/mlton/mlton-20020410-1.i386.tgz,
-symbolic link the binaries it contains into /usr/local/bin/ and its
-library directory as /usr/local/lib/mlton, and you're good to go.
+http://prdownloads.sourceforge.net/mlton/mlton-20020923-1.i386.tgz,
+symbolic link the binaries it contains into /usr/bin/ and its
+library directory as /usr/lib/mlton, and you're good to go.
 
 			HARDWARE REQUIREMENTS
 
