@@ -270,10 +270,8 @@ fun profile program =
 			  statements: Statement.t list,
 			  transfer: Transfer.t}: unit =
 	       let
-		  fun addCurrent (ss, ncs, sourceSeq) =
-		     if profileAlloc andalso ncs
-			then setCurrentSource (sourceSeqIndex sourceSeq) :: ss
-		     else ss
+		  fun addCurrent (statements, sourceSeq) =
+		     setCurrentSource (sourceSeqIndex sourceSeq) :: statements
 		  val (ncs, npl, sourceSeq, statements) =
 		     List.fold
 		     (statements,
@@ -297,24 +295,39 @@ fun profile program =
 						  then sis
 					       else Error.bug "mismatched Enter")
 				   | Leave si => sourceInfoIndex si :: sourceSeq
-			       val ss = addCurrent (ss, ncs, sourceSeq)
+			       val ss =
+				  if profileAlloc andalso ncs
+				     then addCurrent (ss, sourceSeq)
+				  else ss
 			    in
 			       (false, false, sourceSeq', ss)
 			    end
 		       | _ => (ncs, true, sourceSeq, s :: ss))
-		  val statements = addCurrent (statements, ncs, sourceSeq)
 		  val statements =
-		     if not ncs
-			andalso (case kind of
-				    Kind.CReturn {func, ...} =>
-				       funcNeedsCurrentSource func
-				  | _ => false)
-			then setCurrentSource ~1 :: statements
-		     else statements
-		  val statements =
-		     if profileTime andalso npl
-			then profileLabel sourceSeq :: statements
-		     else statements
+		     if profileAlloc
+			then
+			   if ncs
+			      then addCurrent (statements, sourceSeq)
+			   else statements
+		     else (* profileTime *)
+			let
+			   fun pl () = profileLabel sourceSeq
+			in
+			   if (case kind of
+				  Kind.CReturn {func, ...} => true
+				| _ => false)
+			      then
+				 (case statements of
+				     (s as Statement.ProfileLabel _) :: ss =>
+					s :: setCurrentSource ~1 :: ss
+				   | _ => 
+					pl ()
+					:: setCurrentSource ~1
+					:: statements)
+			   else if npl
+				   then pl () :: statements
+				else statements
+			end
 		  val {args, kind, label} =
 		     if profileStack andalso (case kind of
 						 Kind.Cont _ => true
