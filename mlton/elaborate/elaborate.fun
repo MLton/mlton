@@ -167,16 +167,24 @@ fun elaborateProgram (program,
 		  in
 		     case S of
 			NONE => (decs, NONE)
-		      | SOME S => 
-			   let
-			      val (decs', S) =
-				 FunctorClosure.apply
-				 (Env.lookupFctid (E, fctid),
-				  S,
-				  [Fctid.toString fctid],
-				  Strexp.region strexp)
+		      | SOME S =>
+			   case Env.lookupFctid (E, fctid) of
+			      NONE => (decs, NONE)
+			    | SOME fct  =>
+				 let
+				    val (S, decs') =
+				       Env.cut
+				       (E, S,
+					FunctorClosure.argInterface fct,
+					{isFunctor = true,
+					 opaque = false,
+					 prefix = ""},
+					Strexp.region strexp)
+				    val (decs'', S) =
+				       FunctorClosure.apply
+				       (fct, S, [Fctid.toString fctid])
 			   in
-			      (Decs.append (decs, decs'), S)
+			      (Decs.appends [decs, decs', decs''], S)
 			   end
 		  end
 	     | Strexp.Constrained (e, c) => (* rules 52, 53 *)

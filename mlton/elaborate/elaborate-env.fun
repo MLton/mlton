@@ -508,18 +508,28 @@ structure Structure =
 structure FunctorClosure =
    struct
       datatype t =
-	 T of {apply: (Structure.t * string list * Region.t
-		       -> Decs.t * Structure.t option),
-	       sizeMessage: unit -> Layout.t}
+	 T of {apply: Structure.t * string list -> Decs.t * Structure.t option,
+	       argInt: Interface.t,
+	       formal: Structure.t,
+	       result: Structure.t option}
 
-      val bogus = T {apply = fn _ => (Decs.empty, NONE),
- 		     sizeMessage = fn _ => Layout.str "<bogus>"}
+      local
+	 fun make f (T r) = f r
+      in
+	 val argInterface = make #argInt
+      end
 
-      fun apply (T {apply, ...}, s, nest, r) = apply (s, nest, r)
-
-      fun sizeMessage (T {sizeMessage, ...}) = sizeMessage ()
-	 
       fun layout _ = Layout.str "<functor closure>"
+
+      fun apply (T {apply, ...}, S, nest) = apply (S, nest)
+
+      val apply =
+	 Trace.trace3 ("FunctorClosure.apply",
+		       layout,
+		       Structure.layout,
+		       List.layout String.layout,
+		       (Option.layout Structure.layout) o #2)
+	 apply
    end
 
 (* ------------------------------------------------- *)
@@ -934,8 +944,8 @@ fun unbound (r: Region.t, className, x: Layout.t): unit =
 fun lookupFctid (E, x) =
    case peekFctid (E, x) of
       NONE => (unbound (Ast.Fctid.region x, "functor", Ast.Fctid.layout x)
-	       ; FunctorClosure.bogus)
-    | SOME f => f
+	       ; NONE)
+    | SOME f => SOME f
 
 fun lookupSigid (E, x) =
    case peekSigid (E, x) of
@@ -1985,139 +1995,117 @@ fun functorClosure
        * to be recreated for each functor application.
        *)
       val _ = newTycons := []
-      val (_, res) = makeBody (formal, [])
+      val (_, result) = makeBody (formal, [])
       val generative = !newTycons
       val _ = newTycons := []
       val _ = useFunctorSummary := false
-      val elabOnly = !Control.elaborateOnly
       val restore =
-	 if elabOnly
+	 if !Control.elaborateOnly
 	    then fn f => f ()
 	 else snapshot E
-      fun apply (arg, nest, region) =
-	 let
-	    val (actual, decs) =
-	       cut (E, arg, argInt,
-		    {isFunctor = true, opaque = false, prefix = ""}, region)
-	 in
-	    if !useFunctorSummary orelse elabOnly
-	       then
+      fun apply (actual, nest) =
+	 if not (!useFunctorSummary) andalso not (!Control.elaborateOnly)
+	    then restore (fn () => makeBody (actual, nest))
+	 else
+	    let
+	       val {destroy = destroy1,
+		    get = tyconTypeStr: Tycon.t -> TypeStr.t option,
+		    set = setTyconTypeStr, ...} =
+		  Property.destGetSet (Tycon.plist,
+				       Property.initConst NONE)
+	       (* Match the actual against the formal, to set the tycons.
+		* Then duplicate the result, replacing tycons.  Want to generate
+		* new tycons just like the functor body did.
+		*)
+	       val _ =
+		  instantiate (actual, fn (c, s) => setTyconTypeStr (c, SOME s))
+	       val _ =
+		  List.foreach
+		  (generative, fn (c, k) =>
+		   setTyconTypeStr
+		   (c, SOME (TypeStr.tycon
+			     (newTycon (Tycon.originalName c, k,
+					! (TypeEnv.tyconAdmitsEquality c)),
+			      k))))
+	       fun replaceType (t: Type.t): Type.t =
 		  let
-		     val {destroy = destroy1,
-			  get = tyconTypeStr: Tycon.t -> TypeStr.t option,
-			  set = setTyconTypeStr, ...} =
-			Property.destGetSet (Tycon.plist,
-					     Property.initConst NONE)
-		     (* Match the actual against the formal, to set the tycons.
-		      * Then duplicate the res, replacing tycons.
-		      * Want to generate new tycons just like the functor body
-		      * did.
-		      *)
-		     val _ =
-			instantiate (actual, fn (c, s) =>
-				     setTyconTypeStr (c, SOME s))
-		     val _ =
-			List.foreach
-			(generative, fn (c, k) =>
-			 setTyconTypeStr
-			 (c, SOME (TypeStr.tycon
-				   (newTycon (Tycon.originalName c, k,
-					      ! (TypeEnv.tyconAdmitsEquality c)),
-				    k))))
-		     fun replaceType (t: Type.t): Type.t =
-			let
-			   fun con (c, ts) =
-			      case tyconTypeStr c of
-				 NONE => Type.con (c, ts)
-			       | SOME s => TypeStr.apply (s, ts)
-			in
-			   Type.hom (t, {con = con,
-					 expandOpaque = false,
-					 record = Type.record,
-					 replaceCharWithWord8 = false,
-					 var = Type.var})
-			end
-		     fun replaceScheme (s: Scheme.t): Scheme.t =
-			let
-			   val (tyvars, ty) = Scheme.dest s
-			in
-			   Scheme.make {canGeneralize = true,
-					ty = replaceType ty,
-					tyvars = tyvars}
-			end
-		     fun replaceCons (Cons.T v): Cons.t =
-			Cons.T
-			(Vector.map
-			 (v, fn {con, name, scheme} =>
-			  {con = con,
-			   name = name,
-			   scheme = replaceScheme scheme}))
-		     fun replaceTypeStr (s: TypeStr.t): TypeStr.t =
-			let
-			   val k = TypeStr.kind s
-			   datatype z = datatype TypeStr.node
-			in
-			   case TypeStr.node s of
-			      Datatype {cons, tycon} =>
-				 let
-				    val tycon =
-				       case tyconTypeStr tycon of
-					  NONE => tycon
-					| SOME s =>
-					     (case TypeStr.node s of
-						Datatype {tycon, ...} => tycon
-					      | Scheme _ =>
-						   Error.bug "bad datatype"
-					      | Tycon c => c)
-				 in
-				    TypeStr.data (tycon, k, replaceCons cons)
-				 end
-			    | Scheme s => TypeStr.def (replaceScheme s, k)
-			    | Tycon c =>
-				 (case tyconTypeStr c of
-				     NONE => s
-				   | SOME s' => s')
-			end
-		     val {destroy = destroy2,
-			  get = replacement: Structure.t -> Structure.t, ...} =
-			Property.destGet
-			(Structure.plist,
-			 Property.initRec
-			 (fn (Structure.T {interface, strs, types, vals, ... },
-			      replacement) =>
-			  Structure.T
-			  {interface = interface,
-			   plist = PropertyList.new (),
-			   strs = Info.map (strs, replacement),
-			   types = Info.map (types, replaceTypeStr),
-			   vals = Info.map (vals, fn (v, s) =>
-					    (v, replaceScheme s))}))
-		     val res = Option.map (res, replacement)
-		     val _ = destroy1 ()
-		     val _ = destroy2 ()
+		     fun con (c, ts) =
+			case tyconTypeStr c of
+			   NONE => Type.con (c, ts)
+			 | SOME s => TypeStr.apply (s, ts)
 		  in
-		     (Decs.empty, res)
+		     Type.hom (t, {con = con,
+				   expandOpaque = false,
+				   record = Type.record,
+				   replaceCharWithWord8 = false,
+				   var = Type.var})
 		  end
-	    else
-	       let
-		  val (decs', str) = restore (fn () => makeBody (actual, nest))
-	       in
-		  (Decs.append (decs, decs'),
-		   str)
-	       end
-	 end
-      val apply =
-	 Trace.trace ("functorApply",
-		      Structure.layout o #1,
-		      Layout.tuple2 (Layout.ignore,
-				     Option.layout Structure.layout))
-	 apply
-      fun sizeMessage () = layoutSize apply
-      val fc =
-	 FunctorClosure.T {apply = apply,
-			   sizeMessage = sizeMessage}
+	       fun replaceScheme (s: Scheme.t): Scheme.t =
+		  let
+		     val (tyvars, ty) = Scheme.dest s
+		  in
+		     Scheme.make {canGeneralize = true,
+				  ty = replaceType ty,
+				  tyvars = tyvars}
+		  end
+	       fun replaceCons (Cons.T v): Cons.t =
+		  Cons.T
+		  (Vector.map
+		   (v, fn {con, name, scheme} =>
+		    {con = con,
+		     name = name,
+		     scheme = replaceScheme scheme}))
+	       fun replaceTypeStr (s: TypeStr.t): TypeStr.t =
+		  let
+		     val k = TypeStr.kind s
+		     datatype z = datatype TypeStr.node
+		  in
+		     case TypeStr.node s of
+			Datatype {cons, tycon} =>
+			   let
+			      val tycon =
+				 case tyconTypeStr tycon of
+				    NONE => tycon
+				  | SOME s =>
+				       (case TypeStr.node s of
+					   Datatype {tycon, ...} => tycon
+					 | Scheme _ =>
+					      Error.bug "bad datatype"
+					 | Tycon c => c)
+			   in
+			      TypeStr.data (tycon, k, replaceCons cons)
+			   end
+		      | Scheme s => TypeStr.def (replaceScheme s, k)
+		      | Tycon c =>
+			   (case tyconTypeStr c of
+			       NONE => s
+			     | SOME s' => s')
+		  end
+	       val {destroy = destroy2,
+		    get = replacement: Structure.t -> Structure.t, ...} =
+		  Property.destGet
+		  (Structure.plist,
+		   Property.initRec
+		   (fn (Structure.T {interface, strs, types, vals, ... },
+			replacement) =>
+		    Structure.T
+		    {interface = interface,
+		     plist = PropertyList.new (),
+		     strs = Info.map (strs, replacement),
+		     types = Info.map (types, replaceTypeStr),
+		     vals = Info.map (vals, fn (v, s) =>
+				      (v, replaceScheme s))}))
+	       val result = Option.map (result, replacement)
+	       val _ = destroy1 ()
+	       val _ = destroy2 ()
+	    in
+	       (Decs.empty, result)
+	    end
    in
-      fc
+      FunctorClosure.T {apply = apply,
+			argInt = argInt,
+			formal = formal,
+			result = result}
    end
 
 structure Env =
