@@ -125,14 +125,6 @@ val keepPasses = control {name = "keep passes",
 			  default = [],
 			  toString = List.toString (fn s => s)}
    
-val localFlatten = control {name = "local flatten",
-			    default = true,
-			    toString = Bool.toString}
-
-val unusedArgs = control {name = "unusedArgs",
-			  default = true,
-			  toString = Bool.toString}
-   
 structure Native =
    struct
       val native = control {name = "native",

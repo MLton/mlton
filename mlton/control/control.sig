@@ -70,10 +70,6 @@ signature CONTROL =
       (* List of pass names to save the result of. *)
       val keepPasses: string list ref
 
-      val localFlatten: bool ref
-
-      val unusedArgs: bool ref
-
       structure Native:
 	 sig
 	    (* whether or not to use native codegen *)

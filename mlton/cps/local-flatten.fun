@@ -64,9 +64,6 @@ structure VarInfo =
    end
 
 fun flatten (program as Program.T {globals, datatypes, functions, main}) =
-   if not (!Control.localFlatten)
-      then program
-   else
    let
       val {get = varInfo: Var.t -> VarInfo.t,
 	   set = setVarInfo} =

@@ -245,9 +245,4 @@ fun unusedArgs (program as Program.T {datatypes, globals, functions, main})
       ; program'
     end
 
-val unusedArgs 
-  = fn p => if !Control.unusedArgs
-	      then unusedArgs p
-	      else p
-
 end
