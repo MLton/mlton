@@ -53,10 +53,8 @@ structure SmallIntInf =
 					  0w1)))
 	 else NONE
 
-      fun fromWord (w: word): IntInf.t option =
-	 if w < 0wx80000000
-	    then SOME (IntInf.fromInt (Word.toIntX (Word.~>> (w, 0w1))))
-	 else NONE
+      fun fromWord (w: word): IntInf.t =
+	 IntInf.fromInt (Word.toIntX (Word.~>> (w, 0w1)))
    end
 
 datatype t =

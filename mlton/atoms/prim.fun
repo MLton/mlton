@@ -929,9 +929,7 @@ fun 'a apply (p, args, varEquals) =
 	   | (Word_toInt (_, s), [Word w]) =>
 		int (IntX.make (WordX.toIntInf w, s))
 	   | (Word_toIntInf, [Word w]) =>
-		(case SmallIntInf.fromWord (WordX.toWord w) of
-		    NONE => ApplyResult.Unknown
-		  | SOME i => intInf i)
+		intInf (SmallIntInf.fromWord (WordX.toWord w))
 	   | (Word_toIntX (_, s), [Word w]) =>
 		int (IntX.make (WordX.toIntInfX w, s))
 	   | (Word_toWord (_, s), [Word w]) => word (WordX.resize (w, s))
