@@ -11,5 +11,6 @@ else
 fi
 
 rm -f $tmp
+rm -f `basename $tmp .sml`
 
 echo $basis
