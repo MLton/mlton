@@ -284,7 +284,7 @@ install-docs:
 	for f in callcc command-line hello-world same-fringe signals	\
 			size taut thread1 thread2 thread-switch timeout \
 		; do 							\
- 		$(CP) $(SRC)/regression/$$f.sml $(TEXM)/; 		\
+		$(CP) $(SRC)/regression/$$f.sml $(TEXM)/; 		\
 	done
 	$(GZIP) -c $(LEX)/$(LEX).ps >$(TDOC)/$(LEX).ps.gz
 	$(GZIP) -c $(YACC)/$(YACC).ps >$(TDOC)/$(YACC).ps.gz
