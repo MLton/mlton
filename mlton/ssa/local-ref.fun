@@ -449,10 +449,10 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 		      display (Function.layout (f, fn _ => NONE)))
 	     val restore = Control.trace (Control.Detail, "restore")
                                          (restoreFunction globals)
+	     val f = restore f
 	     val _ = Control.diagnostics
 	             (fn display =>
 		      display (Function.layout (f, fn _ => NONE)))
-	     val f = restore f
 	   in
 	     ((f,true)::functions,globals)
 	   end
