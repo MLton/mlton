@@ -106,7 +106,7 @@ deb-spell:
 
 .PHONY: dirs
 dirs:
-	mkdir -p $(BIN) $(LIB)/$(TARGET) $(LIB)/include
+	mkdir -p $(BIN) $(LIB)/sml $(LIB)/$(TARGET) $(LIB)/include
 
 .PHONY: docs
 docs:
@@ -203,8 +203,9 @@ version:
 
 .PHONY: world
 world: 
-	@echo 'Processing basis library.'
-	$(LIB)/$(AOUT) @MLton -- $(SRC)/basis-library $(LIB)/world
+	@echo 'Making world.'
+	$(CP) $(SRC)/basis-library $(LIB)/sml
+	$(LIB)/$(AOUT) @MLton -- $(LIB)/world.mlton
 
 # The TBIN and TLIB are where the files are going to be after installing.
 # The DESTDIR and is added onto them to indicate where the Makefile actually

@@ -394,7 +394,10 @@ fun commandLine (args: string list): unit =
       open Control
       val args =
 	 case args of
-	    lib :: args => (libDir := lib; args)
+	    lib :: args =>
+	       (libDir := lib
+		; Compile.setBasisLibraryDir (concat [lib, "/sml/basis-library"])
+		; args)
 	  | _ => Error.bug "incorrect args from shell script"
       val _ = setTargetType ("self", usage)
       val result = parse args
@@ -789,7 +792,18 @@ fun exportNJ (root: Dir.t, file: File.t): unit =
    
 fun exportMLton (): unit =
    case CommandLine.arguments () of
-      [root, file] => exportNJ (root, file)
+      [worldFile] =>
+	 let
+	    datatype z = datatype MLton.World.status
+	 in
+	    OS.Process.exit
+	    (case MLton.World.save worldFile of
+		Clone =>
+		   (commandLine (CommandLine.arguments ())
+		    handle _ => OS.Process.failure)
+	     | Original =>
+		  OS.Process.success)
+	 end
     | _ => Error.bug "usage: exportMLton root file"
 
 end
