@@ -1,4 +1,4 @@
-#include "libmlton.h"
+#include "platform.h"
 
 Int FFI_INT = 13;
 
