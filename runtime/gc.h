@@ -358,6 +358,7 @@ static inline void GC_arrayShrink(pointer array, uint numElements) {
 /* Both copyThread and copyThreadShrink place the copy in s->savedThread. */
 void GC_copyThread(GC_state s, GC_thread t);
 void GC_copyThreadShrink(GC_state s, GC_thread t);
+void GC_threadSwitchTo(GC_state s, GC_thread t);
 
 /* ------------------------------------------------- */
 /*                      Worlds                       */

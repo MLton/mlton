@@ -756,6 +756,16 @@ GC_copyThread(GC_state s, GC_thread t)
 	leave(s);
 }
 
+inline void 
+GC_switchToThread(GC_state s, GC_thread t) {
+	s->currentThread->stack->used = s->stackTop + WORD_SIZE - s->stackBottom;
+	switchToThread(s, t);
+	s->canHandle--;
+	if (s->signalIsPending && 0 == s->canHandle)
+	s->limit = s->base;  
+}
+
+
 extern struct GC_state gcState;
 
 inline void
