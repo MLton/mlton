@@ -726,15 +726,18 @@ local
 					   EdgeOption.label (edgeLabel cs))
 			     end)
 		   end)
-	       val options =
-		  let open GraphOption
-		  in [RankDir LeftToRight]
-		  end
 	    in
-	       Graph.layoutDot (g, {title = title,
-				    options = options,
-				    edgeOptions = ! o edgeOptions,
-				    nodeOptions = ! o nodeOptions})
+	       Graph.layoutDot (g, fn {nodeName} => 
+				{title = title,
+				 options = 
+				 let open GraphOption
+				 in [
+				     RankDir LeftToRight,
+				     Rank (Min, [{nodeName = nodeName (node start)}])
+				     ]
+				 end,
+				 edgeOptions = ! o edgeOptions,
+				 nodeOptions = ! o nodeOptions})
 	    end
       end
 
@@ -1221,18 +1224,18 @@ local
 					 EdgeOption.label label)
 			   end))
 		   end)
-	       val options =
-		  let open GraphOption
-		  in [
-		      RankDir LeftToRight,
-		      Rank (Min, [(*node start*)])
-		      ]
-		  end
 	    in
-	       Graph.layoutDot (g, {title = title,
-				    options = options,
-				    edgeOptions = ! o edgeOptions,
-				    nodeOptions = ! o nodeOptions})
+	       Graph.layoutDot (g, fn {nodeName} => 
+				{title = title,
+				 options = 
+				 let open GraphOption
+				 in [
+				     RankDir LeftToRight,
+				     Rank (Min, [{nodeName = nodeName (node start)}])
+				     ]
+				 end,
+				 edgeOptions = ! o edgeOptions,
+				 nodeOptions = ! o nodeOptions})
 	    end
 
 	 fun minimize d = d
