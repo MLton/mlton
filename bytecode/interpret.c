@@ -1,5 +1,3 @@
-#include <stddef.h>
-#include "gc.h"
 #include "c-chunk.h"
 #include "interpret.h"
 

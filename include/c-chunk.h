@@ -1,9 +1,8 @@
 #ifndef _C_CHUNK_H_
 #define _C_CHUNK_H_
 
-#include "my-lib.h"
+#include "platform.h"
 #include "c-common.h"
-#include "types.h"
 
 #define WORD_SIZE 4
 
@@ -226,7 +225,7 @@ unaryReal(sqrt, sqrt)
 unaryReal(tan, tan)
 #undef unaryReal
 
-Real64 ldexp (Real64 x, Int32 i);
+//Real64 ldexp (Real64 x, Int32 i);
 static inline Real64 Real64_ldexp (Real64 x, Int32 i) {
 	return ldexp (x, i);
 }
