@@ -43,25 +43,25 @@ structure PosixIO: POSIX_IO =
 		checkReturnResult (read (fd, buf, i, max -? i))
 	      end
 	    
-	       fun readVec (fd, n) =
-		 let
-		   val a = Primitive.Array.array n
-		   val bytesRead = readArr (fd, {buf = a, i = 0, sz = SOME n})
-		 in 
-		   if n = bytesRead
-		     then Vector.fromArray a
-		     else Array.extract (a, 0, SOME bytesRead)
-		  end
+	    fun readVec (fd, n) =
+	      let
+		val a = Primitive.Array.array n
+		val bytesRead = readArr (fd, {buf = a, i = 0, sz = SOME n})
+	      in 
+		if n = bytesRead
+		  then Vector.fromArray a
+		  else Array.extract (a, 0, SOME bytesRead)
+	      end
 		
-	       fun writeVec (FD fd, {buf, i, sz}) =
-		 let
-		   val max = Vector.checkSlice (buf, i, sz)
-		 in
-		   checkReturnResult (write (fd, buf, i, max -? i))
-		 end
-	       
-	       fun writeArr (fd, {buf, i, sz}) =
-		  writeVec (fd, {buf = Vector.fromArray buf, i = i, sz = sz})
+	    fun writeVec (FD fd, {buf, i, sz}) =
+	      let
+		val max = Vector.checkSlice (buf, i, sz)
+	      in
+		checkReturnResult (write (fd, buf, i, max -? i))
+	      end
+	    
+	    fun writeArr (fd, {buf, i, sz}) =
+	      writeVec (fd, {buf = Vector.fromArray buf, i = i, sz = sz})
 	  in
 	    {readArr = readArr, readVec = readVec,
 	     writeVec = writeVec, writeArr = writeArr}
