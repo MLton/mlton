@@ -86,7 +86,7 @@ install:
 	mkdir -p $(TDOC) $(TLIB) $(TBIN) $(TMAN) &&			\
 	(								\
 		cd $(SRC)/doc &&					\
-		$(CP) -r CHANGES build-cross-gcc cmcat.sml examples	\
+		$(CP) -r CHANGES cmcat.sml examples			\
 			license README $(TDOC) &&			\
 		mv user-guide/main $(TDOC)/HTML &&			\
 		gzip -c user-guide/main.ps >$(TDOC)/user-guide.ps.gz	\
