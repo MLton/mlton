@@ -599,13 +599,13 @@ void GC_profileAllocInc (GC_state s, W32 amount);
 
 void GC_profileDone (GC_state s);
 
-void GC_profileEnter (GC_state s, W32 sourceSeqsIndex);
+void GC_profileEnter (GC_state s);
 
 void GC_profileFree (GC_state s, GC_profile p);
 
 void GC_profileInc (GC_state s, W32 amount);
 
-void GC_profileLeave (GC_state s, W32 sourceSeqsIndex);
+void GC_profileLeave (GC_state s);
 
 GC_profile GC_profileNew (GC_state s);
 

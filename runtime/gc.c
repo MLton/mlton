@@ -2470,7 +2470,7 @@ static void doGC (GC_state s,
 	if (s->profilingIsOn) {
 		oldSource = s->currentSource;
 		if (s->profileStack)
-			GC_profileEnter (s, s->currentSource);
+			GC_profileEnter (s);
 		s->currentSource = SOURCE_SEQ_GC;
 	}
 	if (DEBUG or s->messages)
@@ -2516,7 +2516,7 @@ static void doGC (GC_state s,
 	if (s->profilingIsOn) {
 		s->currentSource = oldSource;
 		if (s->profileStack)
-			GC_profileLeave (s, s->currentSource);
+			GC_profileLeave (s);
 	}
 }
 
@@ -2794,7 +2794,9 @@ pointer GC_copyThread (GC_state s, pointer thread) {
 /* ---------------------------------------------------------------- */
 
 static void enterFrame (GC_state s, uint i) {
-	GC_profileEnter (s, s->frameSources[i]);
+	s->currentSource = s->frameSources[i];
+	GC_profileEnter (s);
+	s->currentSource = CURRENT_SOURCE_UNDEFINED;
 }
 
 void GC_foreachStackFrame (GC_state s, void (*f) (GC_state s, uint i)) {
@@ -2870,19 +2872,19 @@ void GC_profileDone (GC_state s) {
 	}
 }
 
-void GC_profileEnter (GC_state s, Word sourceSeqsIndex) {
+void GC_profileEnter (GC_state s) {
 	int i;
 	GC_profile p;
 	uint sourceIndex;
 	uint *sourceSeq;
 
 	if (DEBUG_PROFILE)
-		fprintf (stderr, "GC_profileEnter (%u)\n",
-				(uint)sourceSeqsIndex);
+		fprintf (stderr, "GC_profileEnter  currentSource = %u\n",
+				(uint)s->currentSource);
 	assert (s->profileStack);
-	assert (sourceSeqsIndex < s->sourceSeqsSize);
+	assert (s->currentSource < s->sourceSeqsSize);
 	p = s->profile;
-	sourceSeq = s->sourceSeqs[sourceSeqsIndex];
+	sourceSeq = s->sourceSeqs[s->currentSource];
 	for (i = 1; i <= sourceSeq[0]; ++i) {
 		sourceIndex = sourceSeq[i];
 		if (DEBUG_PROFILE)
@@ -2907,19 +2909,22 @@ void GC_profileInc (GC_state s, W32 amount) {
 				s->currentSource);
 	assert (s->currentSource < s->sourceSeqsSize);
 	sourceSeq = s->sourceSeqs[s->currentSource];
-	source = sourceSeq[sourceSeq[0]];
+	
+	source = sourceSeq[0] > 0
+		? sourceSeq[sourceSeq[0]]
+		: SOURCES_INDEX_UNKNOWN;
 	if (DEBUG_PROFILE)
 		fprintf (stderr, "bumping %s by %u\n",
 				s->sources[source], (uint)amount);
 	s->profile->countTop[source] += amount;
 	if (s->profileStack)
-		GC_profileEnter (s, s->currentSource);
+		GC_profileEnter (s);
 	if (SOURCES_INDEX_GC == source)
 		s->profile->totalGC += amount;
 	else
 		s->profile->total += amount;
 	if (s->profileStack)
-		GC_profileLeave (s, s->currentSource);
+		GC_profileLeave (s);
 }
 
 /* s->currentSource must be set. */
@@ -2928,19 +2933,19 @@ void GC_profileAllocInc (GC_state s, W32 amount) {
 		GC_profileInc (s, amount);
 }
 
-void GC_profileLeave (GC_state s, Word sourceSeqsIndex) {
+void GC_profileLeave (GC_state s) {
 	int i;
 	GC_profile p;
 	uint sourceIndex;
 	uint *sourceSeq;
 
 	if (DEBUG_PROFILE)
-		fprintf (stderr, "GC_profileLeave (%u)\n",
-				(uint)sourceSeqsIndex);
+		fprintf (stderr, "GC_profileLeave  currentSource = %u\n",
+				s->currentSource);
 	assert (s->profileStack);
-	assert (sourceSeqsIndex < s->sourceSeqsSize);
+	assert (s->currentSource < s->sourceSeqsSize);
 	p = s->profile;
-	sourceSeq = s->sourceSeqs[sourceSeqsIndex];
+	sourceSeq = s->sourceSeqs[s->currentSource];
 	for (i = sourceSeq[0]; i > 0; --i) {
 		sourceIndex = sourceSeq[i];
 		if (DEBUG_PROFILE)
@@ -3064,6 +3069,7 @@ static GC_state catcherState;
 static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {
 	GC_state s;
 	pointer pc;
+	bool undef;
 
 	s = catcherState;
 #if (defined (__linux__))
@@ -3076,6 +3082,7 @@ static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {
 	if (DEBUG_PROFILE)
 		fprintf (stderr, "pc = 0x%08x\n", (uint)pc);
 	if (CURRENT_SOURCE_UNDEFINED == s->currentSource) {
+		undef = TRUE;
 		if (s->textStart <= pc and pc < s->textEnd) {
 			s->currentSource = s->textSources [pc - s->textStart];
 		} else {
@@ -3083,8 +3090,11 @@ static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {
 				fprintf (stderr, "pc out of bounds\n");
 		       	s->currentSource = SOURCE_SEQ_UNKNOWN;
 		}
-	}
+	} else
+		undef = FALSE;
 	GC_profileInc (s, 1);
+	if (undef)
+		s->currentSource = CURRENT_SOURCE_UNDEFINED;
 }
 
 /* To get the beginning and end of the text segment. */
