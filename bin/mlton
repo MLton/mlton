@@ -38,10 +38,13 @@ doit () {
 # You may need to add -L/path/to/libgmp before the "$@" so that the linker
 # can find the gmp.
 
+# -mcpu=pentiumpro is the same as -mcpu=i686
+
 doit "$lib" \
 	-cc "$gcc" \
 	-ccopt '-malign-functions=5
 		-malign-jumps=2 
+		-fno-strict-aliasing
 		-fno-strength-reduce
 		-fomit-frame-pointer
 		-fschedule-insns 
