@@ -20,8 +20,6 @@ structure Array: ARRAY_EXTRA =
       type 'a vector = 'a Vector.vector
       type 'a vector_slice = 'a Vector.VectorSlice.slice
 
-      val array = new
-
       structure ArraySlice =
 	 struct
 	    open Slice
@@ -32,7 +30,7 @@ structure Array: ARRAY_EXTRA =
 	       update' Primitive.Array.update (arr, i, x)
 	    fun unsafeUpdate (arr, i, x) = 
 	       unsafeUpdate' Primitive.Array.update (arr, i, x)
-	    fun vector sl = map' Vector.tabulate (fn x => x) sl
+	    fun vector sl = create Vector.tabulate (fn x => x) sl
 	    fun modifyi f sl = 
 	       appi (fn (i, x) => unsafeUpdate (sl, i, f (i, unsafeSub (sl, i)))) sl
 	    fun modify f sl = modifyi (f o #2) sl
@@ -57,7 +55,11 @@ structure Array: ARRAY_EXTRA =
 	       fun copyVec arg =
 		  make (Vector.VectorSlice.length, Vector.VectorSlice.unsafeSub) arg
 	    end
+
+	    val array = sequence
 	 end
+
+      val array = new
 
       local
 	fun make f arr = f (ArraySlice.full arr)

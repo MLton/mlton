@@ -53,11 +53,11 @@ signature SEQUENCE =
       val fields: ('a elt -> bool) -> 'a sequence -> 'a sequence list
 
       (* Extra *)
-      val copy: 'a sequence -> 'a sequence
       val createi: (int * (int -> 'b elt) -> 'c) ->
                    (int * 'a elt -> 'b elt) -> 'a sequence -> 'c
       val create: (int * (int -> 'b elt) -> 'c) ->
                   ('a elt -> 'b elt) -> 'a sequence -> 'c
+      val duplicate: 'a sequence -> 'a sequence
       val new: int * 'a elt -> 'a sequence
       val toList: 'a sequence -> 'a elt list
       val unfoldi: int * 'a * (int * 'a -> 'b elt * 'a) -> 'b sequence

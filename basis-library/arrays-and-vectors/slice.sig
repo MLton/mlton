@@ -61,21 +61,22 @@ signature SLICE =
       val taker: ('a elt -> bool) -> 'a slice -> 'a slice
       val position: ('a elt * 'a elt -> bool) -> 
                     'a sequence -> 'a slice -> 'a slice * 'a slice
-(*
-      val span: ('a elt * 'a elt -> bool) -> 'a slice * 'a slice -> 'a slice
-*)
+      (* span:
+       * 'a sequence * 'a sequence -> bool should be polymorphic equality
+       *)
+      val span: ('a sequence * 'a sequence -> bool) -> 'a slice * 'a slice -> 'a slice
       val translate: ('a elt -> 'a sequence) -> 'a slice -> 'a sequence
       val tokens: ('a elt -> bool) -> 'a slice -> 'a slice list
       val fields: ('a elt -> bool) -> 'a slice -> 'a slice list
 
       (* Extra *)
-      (* (int * (int -> 'b elt) -> 'c  should be a tabulate function;
-       * hence, 'c is really 'b sequence' for some sequence'. 
+      (* createi,create:
+       * (int * (int -> 'b elt) -> 'c  should be a tabulate function.
        *)
-      val copy: 'a slice -> 'a sequence
       val createi: (int * (int -> 'b elt) -> 'c) ->
 	           (int * 'a elt -> 'b elt) -> 'a slice -> 'c
       val create: (int * (int -> 'b elt) -> 'c) ->
 	          ('a elt -> 'b elt) -> 'a slice -> 'c
       val toList: 'a slice -> 'a elt list
+      val sequence: 'a slice -> 'a sequence
    end

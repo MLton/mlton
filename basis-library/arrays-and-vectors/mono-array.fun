@@ -5,7 +5,10 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-functor MonoArray (V: CONCRETE_MONO_VECTOR_EXTRA): MONO_ARRAY_EXTRA =
+functor MonoArray (type elem
+		   structure V: MONO_VECTOR_EXTRA
+		     where type elem = elem
+		       and type vector = elem Vector.vector): MONO_ARRAY_EXTRA =
    struct
       open Array
       type elem = V.elem

@@ -46,7 +46,7 @@ signature VECTOR_EXTRA =
       val tokens: ('a -> bool) -> 'a vector -> 'a vector list
       val fields: ('a -> bool) -> 'a vector -> 'a vector list
 
-      val copy: 'a vector -> 'a vector
+      val duplicate: 'a vector -> 'a vector
       val fromArray: 'a array -> 'a vector
       val toList: 'a vector -> 'a list
       val unfoldi: int * 'a * (int * 'a -> 'b * 'a) -> 'b vector

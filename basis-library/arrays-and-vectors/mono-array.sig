@@ -3,7 +3,6 @@ signature MONO_ARRAY =
       eqtype array
       type elem
       type vector
-
       val maxLen: int 
       val array: int * elem -> array 
       val fromList: elem list -> array
@@ -42,11 +41,11 @@ signature MONO_ARRAY_EXTRA =
 	  and type vector = vector
 	  and type vector_slice = vector_slice
 
-      val concat: array list -> array
-      val copy: array -> array
-      val toList: array -> elem list
-      val unfoldi: int * 'a * (int * 'a -> elem * 'a) -> array
-
       val unsafeSub: array * int -> elem
       val unsafeUpdate: array * int * elem -> unit
+
+      val concat: array list -> array
+      val duplicate: array -> array
+      val toList: array -> elem list
+      val unfoldi: int * 'a * (int * 'a -> elem * 'a) -> array
    end

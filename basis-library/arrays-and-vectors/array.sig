@@ -31,7 +31,6 @@ signature ARRAY =
       val exists: ('a -> bool) -> 'a array -> bool
       val all: ('a -> bool) -> 'a array -> bool
       val collate: ('a * 'a -> order) -> 'a array * 'a array -> order
-
    end
 
 signature ARRAY_EXTRA =
@@ -43,13 +42,13 @@ signature ARRAY_EXTRA =
 	  and type 'a vector = 'a vector
 	  and type 'a vector_slice = 'a vector_slice
 
-      val concat: 'a array list -> 'a array
-      val copy: 'a array -> 'a array
-      val toList: 'a array -> 'a list
-      val unfoldi: int * 'a * (int * 'a -> 'b * 'a) -> 'b array
-
       val unsafeSub: 'a array * int -> 'a
       val unsafeUpdate: 'a array * int * 'a -> unit
+
+      val concat: 'a array list -> 'a array
+      val duplicate: 'a array -> 'a array
+      val toList: 'a array -> 'a list
+      val unfoldi: int * 'a * (int * 'a -> 'b * 'a) -> 'b array
 
       (* Depreciated *)
       val checkSlice: 'a array * int * int option -> int

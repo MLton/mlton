@@ -9,20 +9,7 @@ structure String: STRING_EXTRA =
    struct
       open String0
 
-      fun explode s =
-	 let
-	    fun loop (i, l) =
-	       if i < 0 then l
-	       else loop (i -? 1, sub (s, i) :: l)
-	 in loop (size s -? 1, [])
-	 end
-
-      fun translate f s = concat (List.map f (explode s))
-
-      val isPrefix = fn s => fn s' => isPrefix (op =) s s'
-      val isSubstring = fn s => fn s' => isSubsequence (op =) s s'
-      val isSuffix = fn s => fn s' => isSuffix (op =) s s'
-
+(*
       local
 	 fun make (tokens,name) p s =
 	    case StringCvt.scanString (tokens p) s of
@@ -32,9 +19,11 @@ structure String: STRING_EXTRA =
 	 val tokens = make (Reader.tokens, "tokens")
 	 val fields = make (Reader.fields, "fields")
       end
-
+*)
+      val isPrefix = isPrefix (op =)
+      val isSubstring = isSubvector (op =)
+      val isSuffix = isPrefix (op =)
       val compare = collate Char.compare
-
       val {<, <=, >, >=} = Util.makeOrder compare
 
       val toString = translate Char.toString

@@ -32,14 +32,35 @@ signature MONO_VECTOR_SLICE_EXTRA =
    sig
       include MONO_VECTOR_SLICE
 
-      val copy: slice -> vector
-      val toList: slice -> elem list
-
-      val unsafeSub: slice * int -> 'elem
+      val unsafeSub: slice * int -> elem
       val unsafeSlice: vector * int * int option -> slice
       val unsafeSubslice: slice * int * int option -> slice
 
+      (* Used to implement Substring/String functions *)
+      val concatWith: vector -> slice list -> vector
+      val triml: int -> slice -> slice
+      val trimr: int -> slice -> slice
       val isPrefix: (elem * elem -> bool) -> vector -> slice -> bool
-      val isSubsequence: (elem * elem -> bool) -> vector -> slice -> bool
+      val isSubvector: (elem * elem -> bool) -> vector -> slice -> bool
       val isSuffix: (elem * elem -> bool) -> vector -> slice -> bool
+      val splitl: (elem -> bool) -> slice -> slice * slice
+      val splitr: (elem -> bool) -> slice -> slice * slice
+      val splitAt: slice * int -> slice * slice
+      val dropl: (elem -> bool) -> slice -> slice
+      val dropr: (elem -> bool) -> slice -> slice
+      val takel: (elem -> bool) -> slice -> slice
+      val taker: (elem -> bool) -> slice -> slice
+      val position: (elem * elem -> bool) -> 
+                    vector -> slice -> slice * slice
+      val translate: (elem -> vector) -> slice -> vector
+      val tokens: (elem -> bool) -> slice -> slice list
+      val fields: (elem -> bool) -> slice -> slice list
+
+      val toList: slice -> elem list
+   end
+
+signature EQTYPE_MONO_VECTOR_SLICE_EXTRA =
+   sig
+      include MONO_VECTOR_SLICE_EXTRA
+      val span: slice * slice -> slice
    end

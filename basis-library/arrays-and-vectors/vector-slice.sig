@@ -58,13 +58,10 @@ signature VECTOR_SLICE_EXTRA =
       val taker: ('a -> bool) -> 'a slice -> 'a slice
       val position: ('a * 'a -> bool) -> 
                     'a vector -> 'a slice -> 'a slice * 'a slice
-(*
-      val span: ('a * 'a -> bool) -> 'a slice * 'a slice -> 'a slice
-*)
+      val span: ''a slice * ''a slice -> ''a slice
       val translate: ('a -> 'a vector) -> 'a slice -> 'a vector
       val tokens: ('a -> bool) -> 'a slice -> 'a slice list
       val fields: ('a -> bool) -> 'a slice -> 'a slice list
 
-      val copy: 'a slice -> 'a vector
       val toList: 'a slice -> 'a list
    end

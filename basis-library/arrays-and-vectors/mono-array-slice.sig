@@ -37,11 +37,12 @@ signature MONO_ARRAY_SLICE_EXTRA =
       include MONO_ARRAY_SLICE
 
       val concat: slice list -> array
-      val copy: slice -> array
-      val toList: slice -> elem list
 
       val unsafeSub: slice * int -> elem
       val unsafeUpdate: slice * int * elem -> unit
       val unsafeSlice: array * int * int option -> slice
       val unsafeSubslice: slice * int * int option -> slice
+
+      val array: slice -> array
+      val toList: slice -> elem list
    end

@@ -29,7 +29,7 @@ type word = word
 type word8 = word8
 type word32 = word
 type 'a vector = 'a vector
-type string = string (* char vector *)
+type string = char vector
 type nullString = string
 
 exception Bind = Bind
