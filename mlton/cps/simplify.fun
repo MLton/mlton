@@ -109,14 +109,16 @@ fun simplify p =
 
 val typeCheck = S.typeCheck
 
-val simplify = fn p => let val p' = simplify p
-                       in
-			  (* Always want to type check the final CPS program,
-			   * even if type checking is turned off, just to catch
-			   * bugs.
-			   *)
-			  typeCheck p' 
-			  ; p'
-		       end 
+val simplify = fn p => let
+			 (* Always want to type check the initial and final CPS 
+			  * programs, even if type checking is turned off, just 
+			  * to catch bugs.
+			  *)
+(*			 val _ = typeCheck p *)
+			 val p' = simplify p
+			 val _ = typeCheck p'
+		       in
+			 p'
+		       end
 
 end
