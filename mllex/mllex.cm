@@ -20,8 +20,9 @@ Group is
 ../lib/mlton/basic/list.sml
 ../lib/mlton/basic/result.sig
 ../lib/mlton/basic/result.sml
-../lib/mlton/basic/word8.sml
 ../lib/mlton/basic/word.sig
+../lib/mlton/basic/word8.sml
+../lib/mlton/basic/word32.sig
 ../lib/mlton/basic/word.sml
 ../lib/mlton/basic/string1.sml
 ../lib/mlton/basic/substring.sig

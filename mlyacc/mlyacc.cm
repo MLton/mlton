@@ -47,8 +47,9 @@ src/link.sml
 ../lib/mlton/basic/assert.sml
 ../lib/mlton/basic/list.sig
 ../lib/mlton/basic/list.sml
-../lib/mlton/basic/word8.sml
 ../lib/mlton/basic/word.sig
+../lib/mlton/basic/word8.sml
+../lib/mlton/basic/word32.sig
 ../lib/mlton/basic/word.sml
 ../lib/mlton/basic/string1.sml
 ../lib/mlton/basic/substring.sig

@@ -366,6 +366,7 @@ vector.sml
 word.sig
 word.sml
 word8.sml
+word32.sig
 
 # if ( defined(SMLNJ_VERSION) )
 test.sml

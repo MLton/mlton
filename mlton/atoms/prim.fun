@@ -873,9 +873,9 @@ fun 'a apply (p, args, varEquals) =
 	   | (Word8_toInt, [Word w]) => int (Word8.toInt (Word8.fromWord w))
 	   | (Word8_toIntX, [Word w]) => int (Word8.toIntX (Word8.fromWord w))
 	   | (Word8_toLargeWord, [Word w]) =>
-		word (Word8.toLargeWord (Word8.fromWord w))
+		word (Word8.toWord (Word8.fromWord w))
 	   | (Word8_toLargeWordX, [Word w]) => 
-		word (Word8.toLargeWordX (Word8.fromWord w))
+		word (Word8.toWordX (Word8.fromWord w))
 	   | (Word8_xorb, [Word w1, Word w2]) => w8o (Word8.xorb, w1, w2)
 	   | (Word8_arshift, [Word w1, Word w2]) => w8w (Word8.~>>, w1, w2)
 	   | (Word32_mul, [Word w1, Word w2]) => wo (Word.*, w1, w2)
