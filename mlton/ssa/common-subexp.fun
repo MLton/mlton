@@ -327,9 +327,10 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 				   name = name,
 				   returns = returns,
 				   start = start}
+	     val f = shrink f
 	     val _ = Function.clear f
 	  in
-	     shrink f
+	     f
 	  end)
       val program = 
 	 Program.T {datatypes = datatypes,
