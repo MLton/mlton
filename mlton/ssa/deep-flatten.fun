@@ -1078,7 +1078,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		    main = main}
       val () = Program.clear program
    in
-      program
+      shrink program
    end
 
 end
