@@ -1,5 +1,10 @@
 Here are the changes since version 20030711.
 
+* 2003-07-14
+  - Fixed packaging for Cygwin and Sparc to include libgmp.a.
+  - Eliminated bootstrap target.  The Makefile automatically
+    determines whether to bootstrap or not.
+
 * 2003-07-12
   - Turned off FORCE_GENERATIONAL in gc.  It had been set, which
     caused the gc to always use generational collection.  This could

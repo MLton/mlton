@@ -22,21 +22,18 @@ GZIP = gzip --force --best
 VERSION = $(shell date +%Y%m%d)
 RELEASE = 1
 
-.PHONY: top
-top: bootstrap
-
 .PHONY: all
 all:
-	$(MAKE) compiler dirs
-	$(CP) $(COMP)/$(AOUT) $(LIB)/
-	$(MAKE) script world runtime hostmap constants tools docs
-	@echo 'Build of MLton succeeded.'
-
-.PHONY: bootstrap
-bootstrap:
-	$(MAKE) all
+	$(MAKE) dirs compiler world
+# If we're compiling with another version of MLton, then we want to do
+# another round of compilation so that we get a MLton built without
+# stubs .  Remove $(AOUT) so that the $(MAKE) compiler below will
+# remake MLton. 
+ifeq (other, $(shell if [ ! -x $(BIN)/mlton ]; then echo other; fi))
 	rm -f $(COMP)/$(AOUT)
-	$(MAKE) all
+endif
+	$(MAKE) script runtime hostmap constants compiler world tools docs
+	@echo 'Build of MLton succeeded.'
 
 .PHONY: bootstrap-nj
 bootstrap-nj:
@@ -62,6 +59,7 @@ cm:
 .PHONY: compiler
 compiler:
 	$(MAKE) -C $(COMP)
+	$(CP) $(COMP)/$(AOUT) $(LIB)/
 
 .PHONY: constants
 constants:

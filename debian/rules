@@ -12,7 +12,7 @@ configure-stamp:
 build: configure-stamp build-stamp
 build-stamp:
 	# Add here commands to compile the package.
-	$(MAKE) bootstrap
+	$(MAKE)
 	#/usr/bin/docbook-to-man debian/mlton.sgml > mlton.1
 	touch build-stamp
 

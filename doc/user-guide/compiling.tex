@@ -11,9 +11,9 @@ To compile with {\mlton}, you need the binary versions of {\tt mlton},
 {\tt mllex}, and {\tt mlyacc} that come with the {\mlton} binary
 package.  An older, the same, or a newer version of {\mlton} should
 work.  To build {\mlton}, run {\tt make} from within the root
-directory of the sources.  This will make the {\tt bootstrap} target,
-which will build {\mlton} first with the already installed binary
-version of {\mlton} and will then rebuild {\mlton} with itself.
+directory of the sources.  This will build {\mlton} first with the
+already installed binary version of {\mlton} and will then rebuild
+{\mlton} with itself.
 
 First, the Makefile calls {\tt mllex} and {\tt mlyacc} to build the
 lexer and parser, and then calls {\tt mlton} to compile itself.  When
