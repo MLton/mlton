@@ -16,7 +16,7 @@ SPEC = $(SRC)/doc/mlton.spec
 LEX = mllex
 PROF = mlprof
 YACC = mlyacc
-PATH = $(BIN):$(shell echo $$PATH)
+PATH = $(BIN):$(SRC)/bin:$(shell echo $$PATH)
 CP = /bin/cp -fpR
 GZIP = gzip --force --best
 RANLIB = ranlib
@@ -225,7 +225,8 @@ runtime:
 .PHONY: script
 script:
 	@echo 'Setting lib in mlton script.'
-	sed "/^lib=/s;'.*';\"\`dirname \$$0\`/../lib\";" <bin/mlton >$(MLTON)
+	sed "/^lib=/s;'.*';\"\`dirname \$$0\`/../lib\";" 	\
+		<bin/mlton-script >$(MLTON)
 	chmod a+x $(MLTON)
 	$(CP) $(SRC)/bin/platform $(LIB)
 
@@ -308,7 +309,7 @@ install-no-docs:
 	mkdir -p $(TLIB) $(TBIN) $(TMAN)
 	$(CP) $(LIB)/. $(TLIB)/
 	sed "/^lib=/s;'.*';'$(prefix)/$(ULIB)';" 			\
-			<$(SRC)/bin/mlton >$(TBIN)/mlton
+			<$(SRC)/bin/mlton-script >$(TBIN)/mlton
 	chmod +x $(TBIN)/mlton
 	$(CP) $(SRC)/bin/platform $(LIB)
 	$(CP) $(BIN)/$(LEX) $(BIN)/$(PROF) $(BIN)/$(YACC) $(TBIN)/
