@@ -111,9 +111,26 @@ structure Time: TIME_EXTRA =
 		 then Int.compare (u, u')
 	      else (* s < s' *) LESS
 
-      fun now (): time =
-	 (Prim.gettimeofday ()
-	  ; T {sec = Prim.sec (), usec = Prim.usec ()})
+      (* There's a mess here to work around a bug in 2.4 Linux kernels, which
+       * may return a decreasing(!) sequence of time values.  This will cause
+       * some programs to raise Time exceptions where it should be impossible.
+       *)
+      local
+	 fun getNow (): time =
+	    (Prim.gettimeofday ()
+	     ; T {sec = Prim.sec (), usec = Prim.usec ()})
+	 val prev = ref (getNow ())
+      in
+	 fun now (): time =
+	    let
+	       val old = !prev
+	       val t = getNow ()
+	    in
+	       case compare (old, t) of
+		  GREATER => old
+		| _ => (prev := t; t)
+	    end
+      end
 
       fun fmt (digits: int) (t: time): string =
 	 Real.fmt
