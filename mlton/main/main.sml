@@ -661,15 +661,9 @@ fun commandLine (args: string list): unit =
 			    (outputHeader' (ML, out)
 			     ; (List.foreach
 				(files, fn f =>
-				 let
-				    fun ss (m: string) =
-				       Out.output
-				       (out,
-					concat ["(* ", m, " of ", f, " *)\n"])
-				 in ss "start"
-				    ; File.outputContents (f, out)
-				    ; ss "stop"
-				 end))))
+				 (Out.output
+				  (out, concat ["(*#line 0.0 \"", f, "\"*)\n"])
+				  ; File.outputContents (f, out))))))
 		     in case stop of
 			Place.Files =>
 			   List.foreach (files, fn f => print (concat [f, "\n"]))
