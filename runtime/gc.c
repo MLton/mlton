@@ -2635,19 +2635,25 @@ static void growHeap (GC_state s, W32 desired, W32 minSize) {
 	/* Allocate a space of the desired size. */
 	if (heapCreate (s, &h2, desired, minSize)) {
 		pointer from;
+		uint remaining;
 		pointer to;
 
 		from = old + size;
 		to = h2.start + size;
+		remaining = size;
 copy:			
-		from -= COPY_CHUNK_SIZE;
-		to -= COPY_CHUNK_SIZE;
-		if (from > old) {
+		assert (remaining == from - old 
+				and from >= old and to >= h2.start);
+		if (remaining < COPY_CHUNK_SIZE) {
+			copy (old, h2.start, remaining);
+		} else {
+			remaining -= COPY_CHUNK_SIZE;
+			from -= COPY_CHUNK_SIZE;
+			to -= COPY_CHUNK_SIZE;
 			copy (from, to, COPY_CHUNK_SIZE);
-			heapShrink (s, h, from - old);
+			heapShrink (s, h, remaining);
 			goto copy;
 		}
-		copy (old, h2.start, from + COPY_CHUNK_SIZE - old);
 		heapRelease (s, h);
 		*h = h2;
 	} else {
