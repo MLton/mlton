@@ -112,7 +112,7 @@ void MLton_ProfileTime_Data_write (Pointer d, Word fd) {
 	uint i;
 
 	if (DEBUG_PROFILE) 
-		fprintf (stderr, "MLton_ProfileTime_Data_Write (0x%08x, %d)\n",
+		fprintf (stderr, "MLton_ProfileTime_Data_Write (0x%08x, %ld)\n",
 				(uint)d, fd);
 	data = (uint*)d;
 	swrite (fd, MAGIC, sizeof(MAGIC));
