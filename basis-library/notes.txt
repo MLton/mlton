@@ -330,3 +330,6 @@ PrimIO and PRIM_IO
   operations (other than close) raise IO.ClosedStream.
 - should synthesized operations handle and IO.Io exceptions and change
   the name field?
+
+functor arguments in PRIM_IO and STREAM_IO don't match
+ (PRIM_IO uses A: MONO_ARRAY while STREAM_IO uses Array: MONO_ARRAY).
