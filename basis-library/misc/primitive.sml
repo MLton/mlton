@@ -42,14 +42,6 @@ structure Char4 =
       type t = char32
    end
 
-(* Quell unused warnings. *)
-local
-   open Char2 Char4
-   val _ = #"a": Char2.t
-   val _ = #"a": Char4.t
-in
-end
-
 type exn = exn
 
 structure Int8 =
@@ -96,6 +88,16 @@ structure Real = Real64
 structure String =
    struct
       type string = char vector
+   end
+
+structure String2 =
+   struct
+      type t = Char2.t vector
+   end
+
+structure String4 =
+   struct
+      type t = Char4.t vector
    end
 
 type string = String.string
@@ -267,6 +269,24 @@ structure Primitive =
 	    in
 	       open S
 	    end
+	 end
+
+      structure Char2 =
+	 struct
+	    open Char2
+
+	    val op < = _prim "WordU16_lt": char * char -> bool;
+	    val chr = _prim "WordS32_toWord16": int -> char;
+	    val ord = _prim "WordU16_toWord32": char -> int;
+	 end
+      
+      structure Char4 =
+	 struct
+	    open Char4
+
+	    val op < = _prim "WordU16_lt": char * char -> bool;
+	    val chr = _prim "WordS32_toWord16": int -> char;
+	    val ord = _prim "WordU16_toWord32": char -> int;
 	 end
 
       structure CommandLine =
@@ -2093,3 +2113,21 @@ structure NullString =
 
       val empty = fromString "\000"
    end
+
+(* Quell unused warnings. *)
+local
+   val _ = #"a": Char2.t
+   val _ = #"a": Char4.t
+   val _ = "a": String2.t
+   val _ = "a": String4.t
+   open Primitive
+   open Char2
+   val _ = op <
+   val _ = chr
+   val _ = ord
+   open Char4
+   val _ = op <
+   val _ = chr
+   val _ = ord
+in
+end
