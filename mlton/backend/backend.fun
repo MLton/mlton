@@ -156,13 +156,11 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
       val jumpHandler = ^ o #handler o jumpInfo
       val jumpHandler =
 	 Trace.trace ("jumpHandler", Jump.layout, Label.layout) jumpHandler
-      val {get = funcInfo: Func.t -> {chunk: Chunk.t,
-				      nearEntry: Label.t},
+      val {get = funcInfo: Func.t -> {chunk: Chunk.t},
 	   set = setFuncInfo} =
 	 Property.getSetOnce (Func.plist,
 			      Property.initRaise ("func info", Func.layout))
       val funcChunk = #chunk o funcInfo
-      val funcNearEntry = #nearEntry o funcInfo
       val funcChunkLabel = Chunk.label o funcChunk
       val mprogram = Mprogram.new ()
       val raiseGlobal: Operand.t option ref = ref NONE
@@ -245,10 +243,7 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 		 entries = List.fold (funcs, conts, fn (f, ac) =>
 				      funcToLabel f :: ac)}
 	  in List.push (machineChunks, c)
-	     ; List.foreach (funcs, fn f => setFuncInfo (f, {chunk = c,
-							     nearEntry 
-							     = Label.new 
-							       (funcToLabel f)}))
+	     ; List.foreach (funcs, fn f => setFuncInfo (f, {chunk = c}))
 	     ; List.foreach (jumps, fn j => #chunk (jumpInfo j) := SOME c)
 	  end)
       (* primInfo is defined for primitives that enter the runtime system. *)
@@ -1176,30 +1171,11 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 		     end
 
 		  val chunk' = funcChunk func
-		  val transfer
-		    = if !Control.Native.native 
-			then if (* all non-tail calls *)
-			        (isSome return)
-			        orelse
-				(* all tail calls to other cps functions *)
-				not (Chunk.equals(chunk, chunk'))
-			       then Mtransfer.farJump
-				    {chunkLabel = Chunk.label chunk',
-				     label = funcToLabel func,
-				     live = live,
-				     return = return}
-			       else Mtransfer.nearJump
-				    {label = funcNearEntry func,
-				     return = NONE}
-			else if Chunk.equals (chunk, chunk')
-			       then Mtransfer.nearJump 
-				    {label = funcNearEntry func,
-				     return = return}
-			       else Mtransfer.farJump
-			            {chunkLabel = Chunk.label chunk',
-				     label = funcToLabel func,
-				     live = live,
-				     return = return}
+		  val transfer = Mtransfer.farJump
+			         {chunkLabel = Chunk.label chunk',
+				  label = funcToLabel func,
+				  live = live,
+				  return = return}
 	       in (setupArgs, transfer)
 	       end
 	  | Ctransfer.Case {test, cases, default, ...} =>
@@ -1385,7 +1361,6 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 	 end
       (* Build the initGlobals chunk. *)
       val initGlobals = Label.newString "initGlobals"
-      val initGlobalsNear = Label.new initGlobals
       val chunk = Mprogram.newChunk {program = mprogram,
 				     entries = [initGlobals]}
       val initGlobalsStatements =
@@ -1418,19 +1393,10 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 	 (functions, fn Function.T {name, body, ...} =>
 	  let val {info as Info.T {live, ...}, 
 		   handlerOffset, ...} = funcAllocateInfo name
-	  in Chunk.newBlock
-	     (funcChunk name, 
-	      {label = funcToLabel name,
-	       kind = Kind.func {args = live},
-	       live = live,
-	       profileName = Func.toString name,
-	       statements = [],
-	       transfer = Mtransfer.nearJump {label = funcNearEntry name,
-					      return = NONE}});
-	     genExp {exp = body,
+	  in genExp {exp = body,
 		     profileName = Func.toString name,
-		     label = funcNearEntry name,
-		     kind = Kind.jump,
+		     label = funcToLabel name,
+		     kind = Kind.func {args = live},
 		     chunk = funcChunk name,
 		     info = info,
 		     handlerOffset = handlerOffset,
