@@ -1,4 +1,8 @@
-all: CHANGES HTML
+all: benchmarks CHANGES HTML
+
+benchmarks:
+	mkdir benchmarks
+	cp -pR ../../benchmark/tests/*.sml benchmarks
 
 CHANGES: ../CHANGES
 	cp -p ../CHANGES .

@@ -17,7 +17,7 @@ language.  The MLton home page is http://www.sourcelight.com/MLton.
 %setup
 
 %build
-make
+make STUBS=no
 
 %install
 rm -rf $RPM_BUILD_ROOT

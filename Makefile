@@ -81,6 +81,23 @@ tools:
 	cd $(YACC) && $(MAKE)
 	$(CP) $(LEX)/$(LEX) $(PROF)/$(PROF) $(YACC)/$(YACC) $(BIN)
 
+VERSION=VERSION
+.PHONY: version
+version:
+	@echo 'Instantiating version numbers.'
+	for f in							\
+		doc/web/index.html 					\
+		doc/web/download.html					\
+		doc/user-guide/macros.tex				\
+		doc/ANNOUNCE 						\
+		doc/CHANGES 						\
+		doc/README						\
+		mlton/control/control.sml; 				\
+	do								\
+		sed "s/\(.*\)VERSION\(.*\)/\1$(VERSION)\2/" <$$f >z &&	\
+		mv z $$f;						\
+	done
+
 .PHONY: world
 world: 
 	@echo 'Processing basis library.'

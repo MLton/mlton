@@ -1,10 +1,14 @@
-#!/bin/bash
+#!/bin/bash -x
 
-# This script makes binary and source RPMs in topdir (your RPM _topdir).
-# It can either grab the sources from the CVS repository or from a local
-# directory.
+# 
+# make-rpms srcdir topdir
 #
-# Note that the build (rpm -ba) uses whatever mlton is in your PATH.
+# This script makes binary and source RPMs in topdir using the sources in
+# srcdir.
+#
+# Note that the build (rpm -ba) uses whatever mlton is in your PATH,
+# and assumes that that mlton's basis is capable of compiling this version,
+# since the make call in mlton.spec sets STUBS=no to bypass the stubs.
 
 name=`basename $0`
 
@@ -14,39 +18,32 @@ function die() {
 }
 
 function usage() {
-	die "usage: $name [-home dir] [-local dir] topdir"
+	die "usage: $name srcdir topdir"
 }
 
-home='no'
-local='no'
-topdir='unset'
 while [ "$#" -gt 0 ]; do
 	case "$1" in
-	-home)
-		home='yes'
-		shift
-		if [ "$#" -eq 0 ]; then
-			usage
-		fi
-		homeDir="$1"
-		shift
-		;;
 	-local)
 		local='yes'
 		shift
 		if [ "$#" -eq 0 ]; then
 			usage
 		fi
-		localDir="$1"
+		srcdir="$1"
 		shift
 		;;
 	*)
-		topdir="$1"
-		shift
-		if [ "$#" -gt 0 ]; then
+		case "$#" in
+		2)
+			srcdir="$1"
+			shift
+			topdir="$1"
+			shift
+			;;
+		*)
 			usage
-		fi
-		;;
+			;;
+		esac
 	esac
 done
 if [ "$topdir" = 'unset' ]; then
@@ -66,50 +63,23 @@ function tar.write {
 }
 
 echo 'Cleaning up'
-root="$topdir"
-src="$root/SOURCES/mlton-$version"
-cd $root
+src="$topdir/SOURCES/mlton-$version"
+cd $topdir
 mkdir -p BUILD RPMS/i386 SOURCES SPECS SRPMS
-cd $root/SOURCES
+cd $topdir/SOURCES
 rm -rf mlton-$version
-if [ $local = 'yes' ]; then
-	echo 'Getting local sources'
-	mkdir mlton-$version
-	(cd $localDir && tar.write .) | 
-		(cd mlton-$version && tar.read && make clean)
-else
- 	echo 'Checking out sources'
- 	cvs -Q co -d mlton-$version mlton
- 	if [ ! -d mlton-$version/basis-library ]; then
- 		echo >&2 'Could'\''t check out sources.'
-		exit 1
- 	fi
- 	cvs rtag -d "release-$version" mlton
- 	(cd mlton-$version && cvs tag "release-$version")
- 	cvs -Q release mlton-$version
-fi
+echo 'Getting sources'
+mkdir mlton-$version
+cd mlton-$version
+( cd $srcdir && tar.write . ) | tar.read
+make clean
 find mlton-$version -type d | grep CVS | xargs rm -rf
-find mlton-$version -type f | grep cvsignore | xargs rm -f
-
-function doInst() {
-	sed "s/\(.*\)VERSION\(.*\)/\1$version\2/" <$1 >z
-	mv z $1
-}
-	
-function instantiate() {
-	echo 'Instantiating version numbers'
-	for f in web/index.html web/download.html user-guide/macros.tex \
-	 		ANNOUNCE CHANGES README; do
-		doInst $f
-	done
-}
-cd $src/doc
-instantiate
-doInst ../mlton/control/control.sml
+make VERSION=$version version
+cd doc
 sed "/^Version:/s;.*;Version: $version;" <mlton.spec >z
-sed "/^Release:/s;.*;Release: $release;" <z >$root/SPECS/mlton.spec
+sed "/^Release:/s;.*;Release: $release;" <z >$topdir/SPECS/mlton.spec
 rm -f z
-(cd examples; make get)
+( cd examples; make get )
 
 manvers=`date '+%B %d, %Y'`
 cd $src/man
@@ -119,34 +89,14 @@ for f in mlprof.1 mlton.1; do
 done
 
 echo 'Creating source tgz'
-cd $root/SOURCES
+cd $topdir/SOURCES
 tar.write mlton-$version | gzip >mlton-$version.tgz
 rm -rf mlton-$version
 
 echo 'Building rpms'
 (
-	time rpm -ba --quiet --clean $root/SPECS/mlton.spec ||
+	time rpm -ba --quiet --clean $topdir/SPECS/mlton.spec ||
 		die 'rpm build failed'
-	touch $root/RPMS/i386/$package.i386.rpm $root/SRPMS/$package.src.rpm
 )
-
-if [ $home = 'yes' ]; then
-	echo 'Building web home'
-	cd $homeDir
-	cvs -Q co -d doc mlton/doc
-	cvs -Q release doc
-	cd doc
-	instantiate
-	cd web
-	make
-	cvs -Q co -d benchmarks mlton/benchmark/tests
-	cvs -Q release benchmarks
-	cp $root/RPMS/i386/$package.i386.rpm $root/SRPMS/$package.src.rpm .
-	find . -type d | grep CVS | xargs rm -rf
-	find . -type f | grep cvsignore | xargs rm -f
-	echo '  Building tgz'
-	tar.write -x Makefile . | gzip >$homeDir/mlton-home.tgz
-	rm -rf $homeDir/doc
-fi
 
 echo 'Success'
