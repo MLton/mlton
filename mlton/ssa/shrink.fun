@@ -1345,6 +1345,16 @@ val shrinkFunction =
 			    ; raise e))
    end
 
+fun shrink (Program.T {datatypes, globals, functions, main})
+  = let
+      val s = shrinkFunction globals
+    in
+      Program.T {datatypes = datatypes,
+		 globals = globals,
+		 functions = List.revMap (functions, s),
+		 main = main}
+    end
+
 fun eliminateDeadBlocksFunction f =
    let
       val {args, blocks, name, raises, returns, start} =

@@ -98,7 +98,8 @@ fun simplify p =
 	         (n + 1)
 		 (List.fold
 	          (passes, p, fn ((name, pass), p) =>
-		   if List.contains (!Control.dropPasses, name, String.equals)
+		   if List.exists (!Control.dropPasses, fn re =>
+				   Regexp.Compiled.matchesAll (re, name))
 		      then p
 		   else
 		     let

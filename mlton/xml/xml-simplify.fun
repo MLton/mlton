@@ -28,13 +28,13 @@ fun simplify p =
    (stats p
     ; (List.fold
        (passes, p, fn ((name, pass), p) =>
-      if List.contains (!Control.dropPasses, name, String.equals)
+      if List.exists (!Control.dropPasses, fn re =>
+		      Regexp.Compiled.matchesAll (re, name))
          then p
       else
          let
             val _ =
-	       let
-		  open Control
+	       let open Control
 	       in maybeSaveToFile
 		  ({name = name, suffix = "pre.xml"},
 		   Control.No, p, Control.Layout Program.layout)

@@ -45,7 +45,7 @@ signature CONTROL =
       val detectOverflow: bool ref
 
       (* List of optimization passes to skip. *)
-      val dropPasses: string list ref
+      val dropPasses: Regexp.Compiled.t list ref
 
       (* whether optimization passes should eliminate useless overflow tests *)
       val eliminateOverflow: bool ref
@@ -297,7 +297,7 @@ signature CONTROL =
 		 suffix: string,
 		 style: style,
 		 thunk: unit -> 'a,
-		 display: 'a display} ->'a
+		 display: 'a display} -> 'a
 	 
       val passTypeCheck: {name: string,
 			  suffix: string,

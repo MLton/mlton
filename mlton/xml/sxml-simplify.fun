@@ -12,6 +12,7 @@ open S
 
 structure ImplementExceptions = ImplementExceptions (open S)
 structure Polyvariance = Polyvariance (open S)
+structure Uncurry = Uncurry (open S)
 
 fun traces s p = (Trace.Immediate.on s; p)
 
@@ -20,6 +21,10 @@ val passes =
     ("sxmlShrink1", S.shrink),
     ("implementExceptions", ImplementExceptions.doit),
     ("sxmlShrink2", S.shrink),
+(*
+    ("uncurry", Uncurry.uncurry),
+    ("sxmlShrink3", S.shrink),
+*)
     ("polyvariance", Polyvariance.duplicate)
    ]
    
@@ -30,7 +35,8 @@ fun simplify p =
    (stats p
     ; (List.fold
        (passes, p, fn ((name, pass), p) =>
-      if List.contains (!Control.dropPasses, name, String.equals)
+      if List.exists (!Control.dropPasses, fn re =>
+		      Regexp.Compiled.matchesAll (re, name))
          then p
       else
          let

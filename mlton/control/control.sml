@@ -72,7 +72,9 @@ val detectOverflow = control {name = "detect overflow",
 val dropPasses =
    control {name = "drop passes",
 	    default = [],
-	    toString = List.toString String.toString}
+	    toString = List.toString
+	               (Layout.toString o
+			Regexp.Compiled.layout)}
 
 val eliminateOverflow =
    control {name = "eliminate overflow",

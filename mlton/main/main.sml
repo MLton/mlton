@@ -142,7 +142,7 @@ fun makeOptions {usage} =
        (Normal, "detect-overflow", " {true|false}",
 	"overflow checking on integer arithmetic",
 	boolRef detectOverflow),
-       (Expert, "diag", " <pass>", "keep diagnostic info for pass",
+       (Expert, "diag-pass", " <pass>", "keep diagnostic info for pass",
 	SpaceString (fn s =>
 		     (case Regexp.fromString s of
 			 SOME (re,_) => let val re = Regexp.compileDFA re
@@ -150,9 +150,14 @@ fun makeOptions {usage} =
 					   List.push (keepDiagnostics, re)
 					   ; List.push (keepPasses, re)
 					end
-		       | NONE => usage (concat ["invalid -diag flag: ", s])))),
+		       | NONE => usage (concat ["invalid -diag-pass flag: ", s])))),
        (Expert, "drop-pass", " <pass>", "omit optimization pass",
-	SpaceString (fn s => List.push (dropPasses, s))),
+	SpaceString
+	(fn s => (case Regexp.fromString s of
+		     SOME (re,_) => let val re = Regexp.compileDFA re
+				    in List.push (dropPasses, re)
+				    end
+		   | NONE => usage (concat ["invalid -drop-pass flag: ", s])))),
        (Expert, "eliminate-overflow", " {true|false}",
 	"eliminate useless overflow tests",
 	boolRef eliminateOverflow),
