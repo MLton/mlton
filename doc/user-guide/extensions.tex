@@ -169,24 +169,24 @@ is the same as the {\tt gc-summary} runtime system option.
 \begin{verbatim}
 signature MLTON_ITIMER =
    sig
-      datatype which =
+      datatype t =
          Prof
        | Real
        | Virtual
 
-      val set: which * {value: Time.time,
-                        interval: Time.time} -> unit
-      val whichSignal: which -> Posix.Signal.signal
+      val set: t * {value: Time.time,
+                    interval: Time.time} -> unit
+      val signal: t -> Posix.Signal.signal
    end
 \end{verbatim}
 
 \begin{description}
-\entry{set (w, \{value, interval\})}
-set the interval timer (using {\tt setitimer}) specified by {\tt w} to the given
+\entry{set (t, \{value, interval\})}
+set the interval timer (using {\tt setitimer}) specified by {\tt t} to the given
 {\tt value} and {\tt interval}.
 
-\entry{whichSignal w}
-return the signal corresponding to {\tt w}.
+\entry{signal t}
+return the signal corresponding to {\tt t}.
 \end{description}
 
 \subsubsec{{\tt MLton.Profile}}{profile}

@@ -1,11 +1,11 @@
 signature MLTON_ITIMER =
    sig
-      datatype which =
+      datatype t =
 	 Prof
        | Real
        | Virtual
 
-      val set: which * {value: Time.time,
-		        interval: Time.time} -> unit
-      val whichSignal: which -> Posix.Signal.signal
+      val set: t * {value: Time.time,
+		    interval: Time.time} -> unit
+      val signal: t -> Posix.Signal.signal
    end

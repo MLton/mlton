@@ -58,11 +58,24 @@ structure MLton: MLTON =
 	    fun time _ = Time.zeroTime
 	 end
 
+      structure IntInf =
+	 struct
+	    open IntInf
+
+	    datatype rep =
+	       Small of Word.word
+	     | Big of Word.word Vector.vector
+
+	    val gcd = fn _ => raise Fail "MLton.IntInf.gcd unimplemented"
+	    val rep = fn _ => raise Fail "MLton.IntInf.rep unimplemented"
+	    val size = fn _ => raise Fail "MLton.IntInf.size unimplemented"
+	 end
+
       structure Itimer =
 	 struct
-	    datatype which = Prof | Real | Virtual
+	    datatype t = Prof | Real | Virtual
 
-	    fun whichSignal _ = Posix.Signal.alrm
+	    fun signal _ = raise Fail "Itimer.signal"
 	    fun set _ = raise Fail "Itimer.set"
 	 end
 

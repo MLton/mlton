@@ -4,6 +4,8 @@ Here are the changes from version 20011006 to version VERSION.
   - Added MLton.IntInf.gcd.
   - Removed gmp from MLton sources.  We now link with /usr/lib/gmp.a.
   - Added TextIO.getPosOut.
+  - Renaming of type MLton.Itimer.which to MLton.Itimer.t and 
+    MLton.Itimer.whichSignal to MLton.Itimer.signal.
 
 * 2002-01-26
   - Added -show-basis-used, which prints out the parts of the basis library 
