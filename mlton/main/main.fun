@@ -202,7 +202,7 @@ fun makeOptions {usage} =
 	       ; Control.Elaborate.enabled Control.Elaborate.deadCode := b))),
        (Expert, "debug", " {false|true}", "produce executable with debug info",
 	boolRef debug),
-       (Expert, "deep-flatten-delay", " {false|true}",
+       (Expert, "deep-flatten-delay", " {true|false}",
 	"delay coercions during deepFlatten",
 	boolRef deepFlattenDelay),
        (Expert, "deep-flatten-unify", " {false|true}",
