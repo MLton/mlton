@@ -33,9 +33,7 @@ structure Pervasive =
       structure Position = Position
       structure Posix = Posix
       structure Real = Real
-(*
       structure SML90 = SML90
-*)
       structure SMLofNJ = SMLofNJ
       structure String = String
       structure StringCvt = StringCvt

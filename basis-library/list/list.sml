@@ -143,18 +143,6 @@ structure List: LIST =
 				   else loop (i + 1, f i :: ac)
 	     in loop (0, [])
 	     end
-
-     fun collate cmp =
-        let
-	   val rec loop =
-	     fn ([], []) => EQUAL
-	      | ([], _) => LESS
-	      | (_, []) => GREATER
-	      | (x1::l1,x2::l2) => (case cmp (x1, x2) of
-				      EQUAL => loop (l1, l2)
-				    | ans => ans)
-	in loop
-	end
   end
 
 structure ListGlobal: LIST_GLOBAL = List

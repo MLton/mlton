@@ -13,7 +13,8 @@ open IEEEReal
 infix 4 == != ?=
 
 val classToString =
-   fn NAN => "NAN"
+   fn NAN QUIET => "NAN QUIET"
+    | NAN SIGNALLING => "NAN SIGNALLING"
     | INF => "INF"
     | ZERO => "ZERO"
     | NORMAL => "NORMAL"
@@ -39,7 +40,7 @@ val _ =
     [(maxFinite, NORMAL),
      (minPos, SUBNORMAL),
      (minNormalPos, NORMAL),
-     (nan, NAN),
+     (nan, NAN QUIET),
      (posInf, INF),
      (negInf, INF),
      (1.0 / 0.0, INF),

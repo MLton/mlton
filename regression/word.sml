@@ -77,7 +77,7 @@ val _ = pr_ln "test8a" test8a
 val test8b = check (0 = w2i (notb (i2w ~1)));
 val _ = pr_ln "test8b" test8b
 val maxposint = valOf Int.maxInt;
-val maxnegint = (Int.~ maxposint)-1;
+val maxnegint = ~maxposint-1;
 fun pwr2 0 = 1 
   | pwr2 n = 2 * pwr2 (n-1);
 fun rwp i 0 = i
