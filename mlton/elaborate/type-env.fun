@@ -1173,11 +1173,6 @@ structure Type =
 			replaceCharWithWord8: bool,
 			var: t * Tyvar.t -> 'a} =
 	 let
-	    val con =
-	       fn (t, c, ts) =>
-	       if replaceCharWithWord8 andalso Tycon.equals (c, Tycon.char)
-		  then con (word8, Tycon.word WordSize.W8, Vector.new0 ())
-	       else con (t, c, ts)
 	    val unit = con (unit, Tycon.tuple, Vector.new0 ())
 	    val unknown = unit
 	    fun sortFields (fields: (Field.t * 'a) list) =
@@ -1204,24 +1199,29 @@ structure Type =
 			      (spine, fields, fields, fn (f, ac) =>
 			       (f, unit) :: ac))
 	    fun recursive t = Error.bug "Type.hom recursive"
-	    val int =
-	       con (int IntSize.default, Tycon.defaultInt, Vector.new0 ())
-	    val real =
-	       con (real RealSize.default, Tycon.defaultReal, Vector.new0 ())
-	    val word =
-	       con (word WordSize.default, Tycon.defaultWord, Vector.new0 ())
+	    fun default (t, tycon) =
+	       fn t' => (unify (t, t', fn _ => Error.bug "default unify")
+			 ; con (t, tycon, Vector.new0 ()))
+	    val int = default (int IntSize.default, Tycon.defaultInt)
+	    val real = default (real RealSize.default, Tycon.defaultReal)
+	    val word = default (word WordSize.default, Tycon.defaultWord)
+	    val con =
+	       fn (t, c, ts) =>
+	       if replaceCharWithWord8 andalso Tycon.equals (c, Tycon.char)
+		  then con (word8, Tycon.word WordSize.W8, Vector.new0 ())
+	       else con (t, c, ts)
 	 in
 	    makeHom {con = con,
 		     expandOpaque = expandOpaque,
-		     int = fn _ => int,
+		     int = int,
 		     flexRecord = flexRecord,
 		     genFlexRecord = genFlexRecord,
-		     real = fn _ => real,
+		     real = real,
 		     record = fn (t, r) => record (t, Srecord.toVector r),
 		     recursive = recursive,
 		     unknown = fn _ => unknown,
 		     var = var,
-		     word = fn _ => word}
+		     word = word}
 	 end
    end
 
