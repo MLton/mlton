@@ -138,7 +138,12 @@ structure Value =
 	       
       fun object {args, con} =
 	 let
-	    (* Only may flatten objects with mutable fields. *)
+	    (* Only may flatten objects with mutable fields, and where the field
+	     * isn't unit.  Flattening a unit field could lead to a problem
+	     * because the containing object might be otherwise immutable, and
+	     * hence the unit ref would lose its identity.  We can fix this
+	     * once objects have a notion of identity independent of mutability.
+	     *)
 	    val flat =
 	       ref
 	       (if Vector.exists (Prod.dest args, fn {elt, isMutable} =>
@@ -233,6 +238,10 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	  (fn (t, makeTypeValue) =>
 	   let
 	      fun const () = Const (Value.ground t)
+	      fun make f =
+		 if true
+		    then Make f
+		 else Const (f ())
 	      datatype z = datatype Type.dest
 	   in
 	      case Type.dest t of
@@ -296,22 +305,22 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		  (case m of
 		      Const v => v
 		    | Make _ => Value.tuple args)
-	  | SOME _ =>
-	       (case m of
-		   Const v =>
-		      let
-			 val () =
-			    case Value.deObject v of
-			       NONE => ()
-			     | SOME (Obj {args = args', ...}) =>
-				  Vector.foreach2
-				  (Prod.dest args, Prod.dest args',
-				   fn ({elt = a, ...}, {elt = a', ...}) =>
-				   coerce {from = a, to = a'})
-		      in
-			 v
-		      end
-		 | _ => Error.bug "strange con value")
+	     | SOME _ =>
+		  (case m of
+		      Const v =>
+			 let
+			    val () =
+			       case Value.deObject v of
+				  NONE => ()
+				| SOME (Obj {args = args', ...}) =>
+				     Vector.foreach2
+				     (Prod.dest args, Prod.dest args',
+				      fn ({elt = a, ...}, {elt = a', ...}) =>
+				      coerce {from = a, to = a'})
+			 in
+			    v
+			 end
+		    | _ => Error.bug "strange con value")
 	 end
       val object =
 	 Trace.trace
@@ -535,6 +544,30 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			  else notFlat ()
 		     | Unknown => flat := flat')
 	      | _ => notFlat ()
+	  end)
+      (* The following two disallows could be improved by disallowing only
+       * if the value is potentially big.
+       *)
+      (* Disallow flattening of globals. *)
+      val () =
+	 Vector.foreach
+	 (globals, fn s =>
+	  case s of
+	     Bind {var, ...} =>
+		Option.app (var, fn x => Value.dontFlatten (varValue x))
+	   | _ => ())
+      (* Disallow passing flattened refs across function boundaries. *)
+      val () =
+	 List.foreach
+	 (functions, fn f =>
+	  let
+	     val {args, raises, returns} = func (Function.name f)
+	     fun d vs = Vector.foreach (vs, Value.dontFlatten)
+	     val () = d args
+	     val () = Option.app (raises, d)
+	     val () = Option.app (returns, d)
+	  in
+	     ()
 	  end)
       (* Disallow flattening into object components that aren't explicitly
        * constructed.
