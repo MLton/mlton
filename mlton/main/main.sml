@@ -101,13 +101,14 @@ fun options () =
 	"overflow checking on integer arithmetic",
 	boolRef detectOverflow),
        (Expert, "diag", " pass", "keep diagnostic info for pass",
-	SpaceString (fn s => (case Regexp.fromString s of
-				 SOME (re,_) => let val re = Regexp.compileDFA re
-						in 
-						   List.push (keepDiagnostics, re)
-						   ; List.push (keepPasses, re)
-						end
-			       | NONE => usage (concat ["invalid -diag flag: ", s])))),
+	SpaceString (fn s =>
+		     (case Regexp.fromString s of
+			 SOME (re,_) => let val re = Regexp.compileDFA re
+					in 
+					   List.push (keepDiagnostics, re)
+					   ; List.push (keepPasses, re)
+					end
+		       | NONE => usage (concat ["invalid -diag flag: ", s])))),
        (Expert, "drop-pass", " pass", "omit optimization pass",
 	SpaceString (fn s => List.push (dropPasses, s))),
        (Expert, "D", "define", "define a constant for gcc",
@@ -216,7 +217,8 @@ fun options () =
         intRef Native.optimize),
        (Expert, "native-split", " n", "split assembly files at ~n lines",
 	Int (fn i => Native.split := SOME i)),
-       (Expert, "native-shuffle", " {true|false}", "shuffle registers at C-calls",
+       (Expert, "native-shuffle", " {true|false}",
+	"shuffle registers at C-calls",
 	Bool (fn b => Native.shuffle := b)),
        (Expert, "new-return", " {false|true}", "non-tail call return convention",
 	boolRef newReturn),
