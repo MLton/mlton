@@ -34,7 +34,7 @@ val _ =
 	 in 
 	    sleep 1
 	    ; print "sending 1"
-	    ; List.foreach ([hup, int, term, term, int, hup], signal)
+	    ; List.foreach ([hup, int, term], signal)
 	    ; sleep 3
 	    ; print "sending 2"
 	    ; List.foreach ([hup, int], signal)
