@@ -282,6 +282,10 @@ fun elaborateProgram (program,
 				      Option.app
 				      (closure, fn closure =>
 				       Env.extendFctid (E, name, closure)))
+		   (* Check for errors here so that we don't report duplicate
+		    * errors when re-elaborating the functor body.
+		    *)
+		   val () = Control.checkForErrors "elaborate"
 		in
 		   Decs.empty
 		end
