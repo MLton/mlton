@@ -145,7 +145,7 @@ local
 		 ; Vector.foreach (children, loop)
 		 ; set (label, false))
 	  in
-	     loop (Function.dominatorTree f)
+	     loop (Function.dfsTree f)
 	     ; false
 	  end)
 	 before (destroy ())

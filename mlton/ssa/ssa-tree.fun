@@ -626,7 +626,8 @@ structure Function =
        *)
       datatype t =
 	 T of {controlFlow:
-	       {dominatorTree: unit -> Block.t Tree.t,
+	       {dfsTree: unit -> Block.t Tree.t,
+		dominatorTree: unit -> Block.t Tree.t,
 		graph: DirectedGraph.t,
 		labelNode: Label.t -> DirectedGraph.Node.t,
 		nodeBlock: DirectedGraph.Node.t -> Block.t} CPromise.t,
@@ -648,8 +649,12 @@ structure Function =
 	    {graph = graph, labelNode = labelNode, nodeBlock = nodeBlock}
 	 end
 
-      fun dominatorTree (T {controlFlow, ...}) =
-	 #dominatorTree (CPromise.force controlFlow) ()
+      local
+	 fun make sel = fn T {controlFlow, ...} => sel (CPromise.force controlFlow) ()
+      in
+	 val dfsTree = make #dfsTree
+	 val dominatorTree = make #dominatorTree
+      end
 
       fun checkHandlers (f: t): unit =
 	 let
@@ -813,6 +818,17 @@ structure Function =
 		      ()
 		   end)
 	       val root = labelNode start
+	       val dfsTree =
+		  Promise.lazy
+		  (fn () =>
+		   Graph.dfsTree (g, {root = root,
+				      nodeValue = #block o nodeInfo})
+		   handle exn => Error.bug (concat ["dfsTree: ",
+						    Func.toString name,
+						    ":",
+						    case exn
+						      of Fail s => s
+						       | _ => "???"]))
 	       val dominatorTree =
 		  Promise.lazy
 		  (fn () =>
@@ -825,7 +841,8 @@ structure Function =
 						      of Fail s => s
 						       | _ => "???"]))
 	    in
-	       {dominatorTree = dominatorTree,
+	       {dfsTree = dfsTree,
+		dominatorTree = dominatorTree,
 		graph = g,
 		labelNode = labelNode,
 		nodeBlock = #block o nodeInfo}

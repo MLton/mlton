@@ -690,7 +690,7 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
 	     val args = simplifyFormals args
 	     val blocks = 
 	        Tree.foldPre 
-		(Function.dominatorTree f, [], fn (block, blocks) =>
+		(Function.dfsTree f, [], fn (block, blocks) =>
 		 (simplifyBlock block)::blocks)
 	     val returns = keepSimplifyTypes returns
 	 in Function.new {name = name,

@@ -199,6 +199,7 @@ signature SSA_TREE =
 			    name: Func.t,
 			    returns: Type.t vector,
 			    start: Label.t}
+	    val dfsTree: t -> Block.t Tree.t
 	    val dominatorTree: t -> Block.t Tree.t
 	    val layout: t * (Var.t -> string option) -> Layout.t
 	    val name: t -> Func.t

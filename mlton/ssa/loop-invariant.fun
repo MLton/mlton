@@ -69,7 +69,7 @@ fun loopInvariant (program as Program.T {globals, datatypes, functions, main}) =
 		  ; Vector.foreach (children, loop)
 		  ; visited := false
 	       end
-	    val _ = loop (Function.dominatorTree f)
+	    val _ = loop (Function.dfsTree f)
 
 	    fun remove (xs: 'a vector, invariant: ('b * bool ref) vector): 'a vector =
 	       Vector.keepAllMap2 (xs, invariant, fn (x, (_, b)) =>
@@ -147,7 +147,7 @@ fun loopInvariant (program as Program.T {globals, datatypes, functions, main}) =
 	       in
 		  ()
 	       end
-	    val _ = loop (Function.dominatorTree f)
+	    val _ = loop (Function.dfsTree f)
 	    val blocks = Vector.fromList (!newBlocks)
 	    val f = Function.new {name = name,
 				  args = args,
