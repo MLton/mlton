@@ -134,7 +134,7 @@ val keepPasses = control {name = "keep passes",
 structure Native =
    struct
       val native = control {name = "native",
-			    default = false,
+			    default = true,
 			    toString = Bool.toString}
 
       val commented = control {name = "native commented",
