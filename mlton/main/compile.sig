@@ -3,8 +3,6 @@
  *)
 signature COMPILE =
    sig
-      (* output a C file to print out the basis constants. *)
-      val outputBasisConstants: Out.t -> unit
       val compile: {input: File.t list,
 		    outputC: unit -> {file: File.t,
 				      print: string -> unit,
@@ -14,6 +12,8 @@ signature COMPILE =
 				      done: unit -> unit},
 		    docc: {input: File.t,
 			   output: File.t} -> unit} -> unit
+      val forceBasisLibrary: Dir.t -> unit
       val layoutBasisLibrary: unit -> Layout.t
-      val setBasisLibraryDir: Dir.t -> unit
+      (* output a C file to print out the basis constants. *)
+      val outputBasisConstants: Out.t -> unit
    end

@@ -5,6 +5,7 @@
 lib='lib unset'
 gcc='gcc'
 mlton="$lib/mlton-compile"
+world="$lib/world.mlton"
 nj='sml'
 njHeap="$lib/mlton.x86-linux"
 
@@ -23,8 +24,8 @@ esac
 # If $mlton is executable and $world exists and is not older than
 # $njHeap (which exists), then use MLton, otherwise use SML/NJ.
 doit () {
-	if [ -x "$mlton" -a ! "$njHeap" -nt "$mlton" ]; then
-		exec "$mlton" @MLton $rargs -- "$@"
+	if [ -x "$mlton" -a -s "$world" -a ! "$njHeap" -nt "$world" ]; then
+		exec "$mlton" @MLton load-world "$world" $rargs -- "$@"
 	elif [ -s "$njHeap" ]; then
 		exec "$nj" @SMLload="$njHeap" "$@"
 	fi

@@ -67,17 +67,14 @@ script:
 support:
 	$(MAKE) dirs
 	mv $(COMP)/$(AOUT) $(LIB)
-	cd basis-library && $(MAKE) clean
-	cp -pR basis-library $(LIB)
 	$(MAKE) script
+	$(MAKE) world
 	$(MAKE) runtime
 	$(MAKE) constants
 	cd $(LEX) && $(MAKE) && $(CP) $(LEX) $(BIN)
 	cd $(YACC) && $(MAKE) && $(CP) $(YACC) $(BIN)
 	cd $(PROF) && $(MAKE) && $(CP) $(PROF) $(BIN)
 	cd $(SRC)/doc/user-guide && $(MAKE)
-
-#	$(MAKE) world
 
 .PHONY: world
 world: 

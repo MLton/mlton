@@ -314,7 +314,6 @@ fun commandLine (args: string list): unit =
 		  (lib, gcc, gccSwitches, args)
 	       end
 	  | _ => error ()
-      val _ = Compile.setBasisLibraryDir (concat [lib, "/basis-library"])
       val _ = libRef := SOME lib
       val result =
 	 Popt.parse {switches = args,
@@ -656,14 +655,12 @@ val commandLine =
        end)
    
 fun exportNJ (root: Dir.t, file: File.t): unit =
-   (*Compile.forceBasisLibrary root *)
-   SMLofNJ.exportFn (file, fn (_, args) => commandLine args)
+   (Compile.forceBasisLibrary root
+    ; SMLofNJ.exportFn (file, fn (_, args) => commandLine args))
    
 fun exportMLton (): unit =
-   OS.Process.exit (commandLine (CommandLine.arguments ()))
-(*    case CommandLine.arguments () of
- *       [root, file] => exportNJ (root, file)
- *     | _ => Error.bug "usage: exportMLton root file"
- *)
+   case CommandLine.arguments () of
+      [root, file] => exportNJ (root, file)
+    | _ => Error.bug "usage: exportMLton root file"
 
 end

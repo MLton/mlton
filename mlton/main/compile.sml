@@ -208,6 +208,11 @@ in
 	   suffix = d3}
        end)
 end
+
+fun forceBasisLibrary d =
+   (setBasisLibraryDir d
+    ; basisLibrary ()
+    ; ())
    
 fun basisDecs () =
    let
