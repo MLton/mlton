@@ -11,6 +11,8 @@
  * This is "optimized" for restoration of functions with small numbers of violating
  * variables -- use bool vectors to represent sets of violating variables.
  * Also, we use a Promize.t to suspend part of the dominance frontier computation.
+ *
+ * Requirements: no violation in globals
  *)
 
 functor Restore (S: RESTORE_STRUCTS): RESTORE =
