@@ -9,9 +9,14 @@ val input =
    Trace.trace ("In.input", layout, String.layout) input
 	       
 fun outputAll (ins: t, out: Out.t): unit =
-   case input ins of
-      "" => ()
-    | s => Out.output (out, s)
+   let
+      fun loop () =
+         case input ins of
+	    "" => ()
+	  | s => (Out.output (out, s); loop ())
+   in
+      loop ()
+   end
 
 val inputLine =
    Trace.trace ("In.inputLine", layout, String.layout) inputLine
