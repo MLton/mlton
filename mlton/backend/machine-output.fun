@@ -297,7 +297,7 @@ structure Transfer =
 			    ("dst", Operand.layout dst),
 			    ("failure", Label.layout failure),
 			    ("prim", Prim.layout prim),
-			    ("success", Label.layout failure)]]
+			    ("success", Label.layout success)]]
 	  | Raise => str "Raise"
 	  | Return {live} => 
                seq [str "Return ",
