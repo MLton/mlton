@@ -122,56 +122,6 @@ structure Operand =
    struct
       open Operand
 	 
-      val rec toString =
-	 fn ArrayOffset {base, index, ty} =>
-	       concat ["X", Type.name ty,
-		       C.args [toString base, toString index]]
-          | Cast (z, ty) =>
-	       concat ["(", Runtime.Type.toString (Type.toRuntime ty), ")",
-		       toString z]
-          | Char c => C.char c
-          | Contents {oper, ty} =>
-	       concat ["C", Type.name ty, "(", toString oper, ")"]
-	  | File => "__FILE__"
-	  | GCState => "&gcState"
-          | Global g =>
-	       concat ["G", Type.name (Global.ty g),
-		       if Global.isRoot g
-			  then ""
-		       else "NR",
-		       "(", Int.toString (Global.index g), ")"]
-	  | Int n => C.int n
-          | Label l => Label.toStringIndex l
-	  | Line => "__LINE__"
-          | Offset {base, offset, ty} =>
-	       concat ["O", Type.name ty, C.args [toString base, C.int offset]]
-          | Real s => C.real s
-          | Register r =>
-	       concat ["R", Type.name (Register.ty r),
-		       "(", Int.toString (Register.index r), ")"]
-	  | Runtime r =>
-	       let
-		  datatype z = datatype GCField.t
-	       in
-		  case r of
-		     CanHandle => "gcState.canHandle"
-		   | CardMap => "gcState.cardMapForMutator"
-		   | CurrentThread => "gcState.currentThread"
-		   | Frontier => "frontier"
-		   | Limit => "gcState.limit"
-		   | LimitPlusSlop => "gcState.limitPlusSlop"
-		   | MaxFrameSize => "gcState.maxFrameSize"
-		   | ProfileAllocIndex => "gcState.profileAllocIndex"
-		   | SignalIsPending => "gcState.signalIsPending"
-		   | StackBottom => "gcState.stackBottom"
-		   | StackLimit => "gcState.stackLimit"
-		   | StackTop => "stackTop"
-	       end
-          | SmallIntInf w =>
-	       concat ["SmallIntInf", C.args [concat ["0x", Word.toString w]]]
-          | StackOffset {offset, ty} =>
-	       concat ["S", Type.name ty, "(", C.int offset, ")"]
-          | Word w => C.word w
 
       val layout = Layout.str o toString
    end
@@ -295,6 +245,9 @@ fun output {program as Machine.Program.T {chunks,
 			      done: unit -> unit}} =
    let
       datatype status = None | One | Many
+      val {get = registerIndex, set = setRegisterIndex, ...} =
+	 Property.getSetOnce (Register.plist,
+			      Property.initRaise ("index", Register.layout))
       val {get = labelInfo: Label.t -> {block: Block.t,
 					chunkLabel: ChunkLabel.t,
 					frameIndex: int option,
@@ -377,6 +330,62 @@ fun output {program as Machine.Program.T {chunks,
 	    ; print " "
 	    ; print (C.int i)
 	    ; print "\n")))
+      local
+	 datatype z = datatype Operand.t
+      	 val rec toString =
+	    fn ArrayOffset {base, index, ty} =>
+	    concat ["X", Type.name ty,
+		    C.args [toString base, toString index]]
+	     | Cast (z, ty) =>
+		  concat ["(", Runtime.Type.toString (Type.toRuntime ty), ")",
+			  toString z]
+	     | Char c => C.char c
+	     | Contents {oper, ty} =>
+		  concat ["C", Type.name ty, "(", toString oper, ")"]
+	     | File => "__FILE__"
+	     | GCState => "&gcState"
+	     | Global g =>
+		  concat ["G", Type.name (Global.ty g),
+			  if Global.isRoot g
+			     then ""
+			  else "NR",
+			     "(", Int.toString (Global.index g), ")"]
+	     | Int n => C.int n
+	     | Label l => Label.toStringIndex l
+	     | Line => "__LINE__"
+	     | Offset {base, offset, ty} =>
+		  concat ["O", Type.name ty, C.args [toString base, C.int offset]]
+	     | Real s => C.real s
+	     | Register r =>
+		  concat ["R", Type.name (Register.ty r),
+			  "(", Int.toString (registerIndex r), ")"]
+	     | Runtime r =>
+		  let
+		     datatype z = datatype GCField.t
+		  in
+		     case r of
+			CanHandle => "gcState.canHandle"
+		      | CardMap => "gcState.cardMapForMutator"
+		      | CurrentThread => "gcState.currentThread"
+		      | Frontier => "frontier"
+		      | Limit => "gcState.limit"
+		      | LimitPlusSlop => "gcState.limitPlusSlop"
+		      | MaxFrameSize => "gcState.maxFrameSize"
+		      | ProfileAllocIndex => "gcState.profileAllocIndex"
+		      | SignalIsPending => "gcState.signalIsPending"
+		      | StackBottom => "gcState.stackBottom"
+		      | StackLimit => "gcState.stackLimit"
+		      | StackTop => "stackTop"
+		  end
+	     | SmallIntInf w =>
+		  concat ["SmallIntInf", C.args [concat ["0x", Word.toString w]]]
+	     | StackOffset {offset, ty} =>
+		  concat ["S", Type.name ty, "(", C.int offset, ")"]
+	     | Word w => C.word w
+      in
+	 val operandToString = toString
+      end
+   
       fun outputStatement s =
 	 let
 	    datatype z = datatype Statement.t
@@ -387,12 +396,12 @@ fun output {program as Machine.Program.T {chunks,
 		  (print "\t"
 		   ; (case s of
 			 Move {dst, src} =>
-			    C.move ({dst = Operand.toString dst,
-				     src = Operand.toString src},
+			    C.move ({dst = operandToString dst,
+				     src = operandToString src},
 				    print)
 		       | Noop => ()
 		       | Object {dst, header, size, stores} =>
-			    (C.call ("Object", [Operand.toString dst,
+			    (C.call ("Object", [operandToString dst,
 						C.word header],
 				     print)
 			     ; print "\t"
@@ -400,7 +409,7 @@ fun output {program as Machine.Program.T {chunks,
 				(stores, fn {offset, value} =>
 				 (C.call
 				  (concat ["A", Type.name (Operand.ty value)],
-				   [C.int offset, Operand.toString value], 
+				   [C.int offset, operandToString value], 
 				   print)
 				  ; print "\t")))
 			     ; C.call ("EndObject", [C.int size], print))
@@ -411,11 +420,11 @@ fun output {program as Machine.Program.T {chunks,
 				     NONE => ()
 				   | SOME dst =>
 					print
-					(concat [Operand.toString dst, " = "])
+					(concat [operandToString dst, " = "])
 			       fun doit () =
 				  C.call
 				  (Prim.toString prim,
-				   Vector.toListMap (args, Operand.toString),
+				   Vector.toListMap (args, operandToString),
 				   print)
 			       val _ =
 				  case Prim.name prim of
@@ -474,10 +483,10 @@ fun output {program as Machine.Program.T {chunks,
 	    fun push (return: Label.t, size: int) =
 	       (C.push (size, print)
 		; print "\t"
-		; C.move ({dst = Operand.toString
+		; C.move ({dst = operandToString
 			   (Operand.StackOffset {offset = ~Runtime.labelSize,
 						 ty = Type.label}),
-			   src = Operand.toString (Operand.Label return)},
+			   src = operandToString (Operand.Label return)},
 			  print))
 	    fun copyArgs (args: Operand.t vector): string list * (unit -> unit) =
 	       if Vector.exists (args,
@@ -502,16 +511,16 @@ fun output {program as Machine.Program.T {chunks,
 						Runtime.Type.toString
 						(Type.toRuntime ty),
 						" ", tmp,
-						" = ", Operand.toString z,
+						" = ", operandToString z,
 						";\n"])
 				  in
 				     tmp
 				  end
-			     | _ => Operand.toString z)
+			     | _ => operandToString z)
 		     in
 			(args, fn () => print "\t}\n")
 		     end
-	       else (Vector.toListMap (args, Operand.toString),
+	       else (Vector.toListMap (args, operandToString),
 		     fn () => ())
 	    val tracePrintLabelCode =
 	       Trace.trace
@@ -562,7 +571,7 @@ fun output {program as Machine.Program.T {chunks,
 			    ; (Option.app
 			       (dst, fn x =>
 				print (concat
-				       ["\t", Operand.toString x, " = ",
+				       ["\t", operandToString x, " = ",
 					creturn (Type.toRuntime (Operand.ty x)),
 					";\n"]))))
 		      | Kind.Func _ => ()
@@ -580,7 +589,7 @@ fun output {program as Machine.Program.T {chunks,
 				  then
 				     print
 				     (concat ["\tCheckPointer(",
-					      Operand.toString z,
+					      operandToString z,
 					      ");\n"])
 			       else ())
 			else
@@ -643,8 +652,8 @@ fun output {program as Machine.Program.T {chunks,
 			   val _ = force overflow
 			in
 			   C.call (prim,
-				   Operand.toString dst
-				   :: (Vector.toListMap (args, Operand.toString)
+				   operandToString dst
+				   :: (Vector.toListMap (args, operandToString)
 				       @ [Label.toString overflow]),
 				   print)
 			   ; gotoLabel success 
@@ -673,7 +682,7 @@ fun output {program as Machine.Program.T {chunks,
 				       res
 				    end
 			      else
-				 (Vector.toListMap (args, Operand.toString),
+				 (Vector.toListMap (args, operandToString),
 				  fn () => ())
 			   val _ =
 			      if modifiesFrontier
@@ -728,12 +737,12 @@ fun output {program as Machine.Program.T {chunks,
 		   | Switch switch =>
 			let 
 			   fun bool (test: Operand.t, t, f) =
-			      iff (Operand.toString test, t, f)
+			      iff (operandToString test, t, f)
 			   fun doit {cases: (string * Label.t) vector,
 				     default: Label.t option,
 				     test: Operand.t}: unit =
 			      let
-				 val test = Operand.toString test
+				 val test = operandToString test
 				 fun switch (cases: (string * Label.t) vector,
 					     default: Label.t): unit =
 				    (print "switch ("
@@ -770,7 +779,7 @@ fun output {program as Machine.Program.T {chunks,
 			      Char z => simple (z, C.char)
 			    | EnumPointers {enum, pointers, test} =>
 			      iff (concat
-				   ["IsInt (", Operand.toString test, ")"],
+				   ["IsInt (", operandToString test, ")"],
 				   enum, pointers)
 			    | Int (z as {cases, default, test}) =>
 				 let
@@ -802,6 +811,7 @@ fun output {program as Machine.Program.T {chunks,
 	       end
 	    fun declareRegisters () =
 	       let
+		  val tyCounter = Runtime.Type.memo (fn _ => Counter.new 0)
 		  val {get = seen, rem, set = setSeen} =
 		     Property.getSetOnce (Register.plist,
 					  Property.initConst false)
@@ -815,15 +825,21 @@ fun output {program as Machine.Program.T {chunks,
 	       in
 		  List.foreach
 		  (all, fn r =>
-		   (rem r
-		    ; C.call (concat ["D", Type.name (Register.ty r)],
-			      [C.int (Register.index r)],
-			      print)))
+		   let
+		      val _ = rem r
+		      val ty = Register.ty r
+		      val index =
+			 Counter.next (tyCounter
+				       (Type.toRuntime (Register.ty r)))
+		      val _ = setRegisterIndex (r, index)
+		   in
+		      C.call (concat ["D", Type.name ty], [C.int index], print)
+		   end)
 	       end
 	 in
 	    C.callNoSemi ("Chunk", [ChunkLabel.toString chunkLabel], print)
-	    ; declareRegisters ()
 	    ; print "\n"
+	    ; declareRegisters ()
 	    ; print "ChunkSwitch\n"
 	    ; Vector.foreach (blocks, fn Block.T {kind, label, ...} =>
 			      if Kind.isEntry kind
