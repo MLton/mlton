@@ -407,32 +407,10 @@ struct
   val gcState = Label.fromString "gcState"
 
 
-  val gcState_base 
-    = Immediate.binexp {oper = Immediate.Addition,
-			exp1 = Immediate.label gcState,
-			exp2 = Immediate.const_int 4}
-  val gcState_baseContents 
-    = makeContents {base = gcState_base,
-		    size = pointerSize,
-		    class = Classes.GCState}
-  val gcState_baseContentsOperand
-    = Operand.memloc gcState_baseContents
-
-  val gcState_limit 
-    = Immediate.binexp {oper = Immediate.Addition,
-			exp1 = Immediate.label gcState,
-			exp2 = Immediate.const_int 8}
-  val gcState_limitContents 
-    = makeContents {base = gcState_limit,
-		    size = pointerSize,
-		    class = Classes.GCState}
-  val gcState_limitContentsOperand
-    = Operand.memloc gcState_limitContents
-
   val gcState_frontier
     = Immediate.binexp {oper = Immediate.Addition,
 			exp1 = Immediate.label gcState,
-			exp2 = Immediate.const_int 12}
+			exp2 = Immediate.const_int 0}
   val gcState_frontierContents 
     = makeContents {base = gcState_frontier,
 		    size = pointerSize,
@@ -448,10 +426,59 @@ struct
   val gcState_frontierDerefOperand
     = Operand.memloc gcState_frontierDeref
 
+  val gcState_limit 
+    = Immediate.binexp {oper = Immediate.Addition,
+			exp1 = Immediate.label gcState,
+			exp2 = Immediate.const_int 4}
+  val gcState_limitContents 
+    = makeContents {base = gcState_limit,
+		    size = pointerSize,
+		    class = Classes.GCState}
+  val gcState_limitContentsOperand
+    = Operand.memloc gcState_limitContents
+
+  val gcState_stackTop 
+    = Immediate.binexp {oper = Immediate.Addition,
+			exp1 = Immediate.label gcState,
+			exp2 = Immediate.const_int 8}
+  val gcState_stackTopContents 
+    = makeContents {base = gcState_stackTop,
+		    size = pointerSize,
+		    class = Classes.GCStateHold}
+  val gcState_stackTopContentsOperand
+    = Operand.memloc gcState_stackTopContents
+  val gcState_stackTopDeref
+    = MemLoc.simple {base = gcState_stackTopContents, 
+		     index = Immediate.const_int 0,
+		     scale = wordScale,
+		     size = pointerSize,
+		     class = Classes.Stack}
+  val gcState_stackTopDerefOperand
+    = Operand.memloc gcState_stackTopDeref
+  val gcState_stackTopMinusWordDeref
+    = MemLoc.simple {base = gcState_stackTopContents, 
+		     index = Immediate.const_int ~1,
+		     scale = wordScale,
+		     size = pointerSize,
+		     class = Classes.Stack}
+  val gcState_stackTopMinusWordDerefOperand
+    = Operand.memloc gcState_stackTopMinusWordDeref
+
+  val gcState_stackLimit 
+    = Immediate.binexp {oper = Immediate.Addition,
+			exp1 = Immediate.label gcState,
+			exp2 = Immediate.const_int 12}
+  val gcState_stackLimitContents 
+    = makeContents {base = gcState_stackLimit,
+		    size = pointerSize,
+		    class = Classes.GCState}
+  val gcState_stackLimitContentsOperand
+    = Operand.memloc gcState_stackLimitContents 
+
   val gcState_currentThread 
     = Immediate.binexp {oper = Immediate.Addition,
 			exp1 = Immediate.label gcState,
-			exp2 = Immediate.const_int 32}
+			exp2 = Immediate.const_int 16}
   val gcState_currentThreadContents 
     = makeContents {base = gcState_currentThread,
 		    size = pointerSize,
@@ -491,54 +518,27 @@ struct
   val gcState_currentThread_stack_usedContentsOperand
     = Operand.memloc gcState_currentThread_stack_usedContents
 
-  val gcState_stackTop 
+  val gcState_base 
     = Immediate.binexp {oper = Immediate.Addition,
 			exp1 = Immediate.label gcState,
-			exp2 = Immediate.const_int 40}
-  val gcState_stackTopContents 
-    = makeContents {base = gcState_stackTop,
+			exp2 = Immediate.const_int 24}
+  val gcState_baseContents 
+    = makeContents {base = gcState_base,
 		    size = pointerSize,
-		    class = Classes.GCStateHold}
-  val gcState_stackTopContentsOperand
-    = Operand.memloc gcState_stackTopContents
-  val gcState_stackTopDeref
-    = MemLoc.simple {base = gcState_stackTopContents, 
-		     index = Immediate.const_int 0,
-		     scale = wordScale,
-		     size = pointerSize,
-		     class = Classes.Stack}
-  val gcState_stackTopDerefOperand
-    = Operand.memloc gcState_stackTopDeref
-  val gcState_stackTopMinusWordDeref
-    = MemLoc.simple {base = gcState_stackTopContents, 
-		     index = Immediate.const_int ~1,
-		     scale = wordScale,
-		     size = pointerSize,
-		     class = Classes.Stack}
-  val gcState_stackTopMinusWordDerefOperand
-    = Operand.memloc gcState_stackTopMinusWordDeref
+		    class = Classes.GCState}
+  val gcState_baseContentsOperand
+    = Operand.memloc gcState_baseContents
 
   val gcState_stackBottom 
     = Immediate.binexp {oper = Immediate.Addition,
 			exp1 = Immediate.label gcState,
-			exp2 = Immediate.const_int 44}
+			exp2 = Immediate.const_int 48}
   val gcState_stackBottomContents 
     = makeContents {base = gcState_stackBottom,
 		    size = pointerSize,
 		    class = Classes.GCState}
   val gcState_stackBottomContentsOperand
     = Operand.memloc gcState_stackBottomContents 
-
-  val gcState_stackLimit 
-    = Immediate.binexp {oper = Immediate.Addition,
-			exp1 = Immediate.label gcState,
-			exp2 = Immediate.const_int 48}
-  val gcState_stackLimitContents 
-    = makeContents {base = gcState_stackLimit,
-		    size = pointerSize,
-		    class = Classes.GCState}
-  val gcState_stackLimitContentsOperand
-    = Operand.memloc gcState_stackLimitContents 
 
   val gcState_maxFrameSize
     = Immediate.binexp {oper = Immediate.Addition,

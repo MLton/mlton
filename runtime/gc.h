@@ -142,22 +142,29 @@ typedef struct GC_thread {
  *   directly rather than mucking with s->currentThread->stack.  Upon entering
  *   the runtime system, the GC will update s->currentThread->stack based on
  *   these values so that everything is consistent.
+ *
+ * If you change the order of the fields in this struct, then you must update
+ * x86-mlton.fun with the new offsets.
  */
 typedef struct GC_state {
+	/* These fields are at the front because they are the most commonly
+	 * referenced.
+         */
+	pointer frontier; 	/* base <= frontier < limit */
+	pointer limit; 		/* end of from space */
+	pointer stackTop;
+	pointer stackLimit;	/* stackBottom + stackSize - maxFrameSize */
+	GC_thread currentThread; /* This points to a thread in the heap. */
+
 	/* heap */
 	uint fromSize;		/* size (bytes) of from space */
 	pointer base;		/* start (lowest address) of from space */
-	pointer limit; 		/* end of from space */
-	pointer frontier; 	/* base <= frontier < limit */
 	uint toSize; 		/* size (bytes) of to space */
 	pointer toBase;		/* start (lowest address) of to space */
 	
 	/* globals */
 	uint numGlobals;
 	pointer *globals;	/* an array of size numGlobals */
-
-	/* This points to a thread somewhere in the heap. */
-	GC_thread currentThread;
 
 	/* savedThread is only set while either
          *   - executing a signal handler.  It is set to the thread that was
@@ -168,9 +175,7 @@ typedef struct GC_state {
 	GC_thread savedThread;
 
 	/* Stack in current thread */
-	pointer stackTop;
 	pointer stackBottom;	
-	pointer stackLimit;	/* stackBottom + stackSize - maxFrameSize */
 	uint maxFrameSize;
 	uint maxFrameIndex;     /* 0 <= frameIndex < maxFrameIndex */
 	GC_frameLayout *frameLayouts;
@@ -405,13 +410,6 @@ void GC_foreachPointerInRange(GC_state s, pointer front, pointer *back,
 					GC_pointerFun f);
 void GC_initCounters(GC_state s);
 void GC_setHeapParams(GC_state s, uint size);
-
-/* GC_computeHeapSize returns min(s->maxHeapSize, live * ratio).
- * It is careful not to overflow when doing the multiply.
- * It should only be called when not s->useFixedHeap, since s->maxHeapSize is
- * only set in that case.
- */
-uint GC_computeHeapSize(GC_state s, uint live, uint ratio);
 
 void GC_display(GC_state s, FILE *stream);
 

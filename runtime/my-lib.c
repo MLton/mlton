@@ -161,7 +161,7 @@ void *smmap(size_t length) {
 	result = mmap(NULL, length, PROT_READ | PROT_WRITE, 
 			MAP_PRIVATE | MAP_ANON, -1, 0);
 	if (result == (void*)-1) 
-		diee("mmap failed");
+		diee("Out of swap space.");
 	
 	return result;
 }

@@ -239,10 +239,13 @@ int main(int argc, char **argv) {					\
 /*                       Stack                       */
 /* ------------------------------------------------- */
 
-#define Push(bytes)							\
-	do {								\
-		stackTop += (bytes);					\
-		assert(gcState.stackBottom <= stackTop);		\
+#define ExnStack gcState.currentThread->exnStack
+#define StackBottom gcState.stackBottom
+
+#define Push(bytes)					\
+	do {						\
+		stackTop += (bytes);			\
+		assert(StackBottom <= stackTop);	\
 	} while (0)
 
 #define Return()						\
@@ -250,9 +253,6 @@ int main(int argc, char **argv) {					\
 		l_nextFun = *(word*)(stackTop - WORD_SIZE);	\
 		goto top;					\
 	} while (0)
-
-#define ExnStack gcState.currentThread->exnStack
-#define StackBottom gcState.stackBottom
 
 #define Raise()							\
 	do {							\
@@ -337,27 +337,31 @@ int main(int argc, char **argv) {					\
 		frontier += (bytes);				\
 	} while (0)
 
-#define LimitCheck(frameSize, ret, b, other)				\
-	do {								\
-		declareFirst;						\
-									\
-/*		fprintf(stderr, "%d  LimitCheck\n", __LINE__); 	*/	\
-		gcState.numLCs++;					\
-		if (GC_EVERY_CHECK					\
-		or (GC_FIRST_CHECK and gc_first)			\
-		or frontier + (b) > gcState.limit			\
-		or (other)) {						\
-			uint bytes = b;					\
-									\
-			InvokeRuntime					\
-			(GC_gc(&gcState, bytes,				\
-				GC_EVERY_CHECK or			\
-				(GC_FIRST_CHECK and gc_first),		\
-				__FILE__, __LINE__),			\
-			frameSize, ret);				\
-			clearFirst;					\
-		}							\
-		assert(gcState.stackBottom <= stackTop);		\
+#define LimitCheck(frameSize, ret, b, other)					\
+	do {									\
+		declareFirst;							\
+										\
+		if (FALSE)							\
+			fprintf(stderr, 					\
+				"%d  LimitCheck  frontier - base = %d\n",	\
+				__LINE__,					\
+				frontier - gcState.base);			\
+		gcState.numLCs++;						\
+		if (GC_EVERY_CHECK						\
+		or (GC_FIRST_CHECK and gc_first)				\
+		or frontier + (b) > gcState.limit				\
+		or (other)) {							\
+			uint bytes = b;						\
+										\
+			InvokeRuntime						\
+			(GC_gc(&gcState, bytes,					\
+				GC_EVERY_CHECK or				\
+				(GC_FIRST_CHECK and gc_first),			\
+				__FILE__, __LINE__),				\
+			frameSize, ret);					\
+			clearFirst;						\
+		}								\
+		assert(StackBottom <= stackTop);			\
 	} while (0)
 
 #define StackOverflowCheck (stackTop > gcState.stackLimit)
@@ -693,14 +697,11 @@ int Int_bogus;
 		GC_thread t = thread;						\
 		stackTop += (frameSize);					\
 		*(uint*)(stackTop - WORD_SIZE) = ret;				\
-	 	gcState.currentThread->stack->used =				\
-			stackTop - gcState.stackBottom;				\
+	 	gcState.currentThread->stack->used = stackTop - StackBottom;	\
 	 	gcState.currentThread = t;					\
-		gcState.stackBottom =						\
-			((pointer)t->stack) + sizeof(struct GC_stack);		\
-		stackTop = gcState.stackBottom + t->stack->used;		\
-		gcState.stackLimit =						\
-			gcState.stackBottom + t->stack->reserved		\
+		StackBottom = ((pointer)t->stack) + sizeof(struct GC_stack);	\
+		stackTop = StackBottom + t->stack->used;			\
+		gcState.stackLimit = StackBottom + t->stack->reserved		\
 			- 2 * gcState.maxFrameSize;				\
 		/* Thread_atomicEnd () */					\
 		gcState.canHandle--;						\

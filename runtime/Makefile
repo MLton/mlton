@@ -1,5 +1,5 @@
-CC =		gcc -Wall -I.
-CFLAGS =	-O2 -DNODEBUG
+CC =		gcc -Wall -I. -march=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=5 -fomit-frame-pointer
+CFLAGS =	-O9 -DNODEBUG
 AR =		ar rc
 
 OBJS =						\
@@ -142,6 +142,7 @@ OBJS =						\
 	Posix/TTY/setpgrp.o			\
 	GC_size.o				\
 	GC_world.o				\
+	bcopy.o					\
 	gc.o					\
 	libmlton.o				\
 	my-lib.o
@@ -286,6 +287,7 @@ DEBUG_OBJS =					\
 	Posix/TTY/setpgrp-gdb.o			\
 	GC_size-gdb.o				\
 	GC_world-gdb.o				\
+	bcopy.o					\
 	gc-gdb.o				\
 	libmlton-gdb.o				\
 	my-lib-gdb.o

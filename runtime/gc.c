@@ -14,6 +14,7 @@
 #include <time.h>
 #include <values.h>
 
+#define METER FALSE  /* Displays distribution of object sizes at program exit. */
 /* 
  * Object headers.
  *
@@ -141,17 +142,17 @@ roundPage(size_t size)
 /* ------------------------------------------------- */
 
 void GC_display(GC_state s, FILE *stream) {
-	fprintf(stream, "base = %x  frontier - base = %d  limit - frontier = %d\n",
+	fprintf(stream, "GC state\n\tbase = %x  frontier - base = %d  limit - frontier = %d\n",
 			(uint) s->base, 
 			s->frontier - s->base,
 			s->limit - s->frontier);
-	fprintf(stream, "canHandle = %d\n", s->canHandle);
-	fprintf(stream, "exnStack = %d  bytesNeeded = %d  reserved = %d  used = %d\n",
+	fprintf(stream, "\tcanHandle = %d\n", s->canHandle);
+	fprintf(stream, "\texnStack = %d  bytesNeeded = %d  reserved = %d  used = %d\n",
 			s->currentThread->exnStack,
 			s->currentThread->bytesNeeded,
 			s->currentThread->stack->reserved,
 			s->currentThread->stack->used);
-	fprintf(stream, "stackBottom = %x\nstackTop - stackBottom = %d\nstackLimit - stackTop = %d\n",
+	fprintf(stream, "\tstackBottom = %x\nstackTop - stackBottom = %d\nstackLimit - stackTop = %d\n",
 			(uint)s->stackBottom,
 			s->stackTop - s->stackBottom,
 			(s->stackLimit - s->stackTop));
@@ -329,14 +330,19 @@ stackCopy(GC_stack from, GC_stack to)
 /*                GC_computeHeapSize                 */
 /* ------------------------------------------------- */
 
-inline uint
-GC_computeHeapSize(GC_state s, uint live, uint ratio)
+/* GC_computeHeapSize returns min(s->maxHeapSize, live * ratio).
+ * It is careful not to overflow when doing the multiply.
+ * It should only be called when not s->useFixedHeap, since s->maxHeapSize is
+ * only set in that case.
+ */
+static uint
+computeHeapSize(GC_state s, uint live, uint ratio)
 {
 	ullong needed;
 
 	assert(not s->useFixedHeap);
 	needed = ((ullong)live) * ratio;
-	return ((needed > s->maxHeapSize)
+	return ((needed > (ullong)s->maxHeapSize)
 		? s->maxHeapSize
 		: roundPage(needed));
 }
@@ -520,10 +526,16 @@ inline void
 GC_foreachPointerInRange(GC_state s, pointer front, pointer *back,
 			 GC_pointerFun f)
 {
-	assert(front <= *back);
- 	while (front < *back) {
-		assert(isWordAligned((uint)front));
-		front = GC_foreachPointerInObject(s, f, toData(front));
+	pointer b;
+
+	b = *back;
+	assert(front <= b);
+ 	while (front < b) {
+		while (front < b) {
+			assert(isWordAligned((uint)front));
+			front = GC_foreachPointerInObject(s, f, toData(front));
+		}
+		b = *back;
 	}
 	assert(front == *back);
 }
@@ -803,12 +815,41 @@ GC_fromSpace(GC_state s)
 	setLimit(s);
 }
 
-inline void
+static void *smmap_dienot(size_t length, int direction) {
+	int i;
+	void *result = (void*)-1;
+
+	for (i = 0; i < 32; i++) {
+		unsigned long address;
+
+		address = i*0x08000000ul;
+		if (direction)
+			address = 0xf8000000ul - address;
+		result = mmap(address+(void*)0, length, PROT_READ | PROT_WRITE,
+				MAP_PRIVATE | MAP_ANON, -1, 0);
+	  if ((void*)-1 != result)
+		break;
+	}
+	return result;
+}
+
+static void 
+toSpace (GC_state s) {
+	static int direction = 1;
+	s->toBase = smmap_dienot(s->toSize, direction);
+	if (s->toBase != (void*)-1) {
+		direction = (direction==0);
+		if (s->toSize > s->maxHeapSizeSeen)
+			s->maxHeapSizeSeen = s->toSize;
+	}
+}
+
+void 
 GC_toSpace(GC_state s)
 {
-	s->toBase = smmap(s->toSize);
-	if (s->toSize > s->maxHeapSizeSeen)
-		s->maxHeapSizeSeen = s->toSize;
+	toSpace(s);
+ 	if (s->toBase == (void*)-1) 
+		diee("Out of swap space");
 }
 
 /* ------------------------------------------------- */
@@ -982,6 +1023,20 @@ initSignalStack(GC_state s)
 /*                  GC_initCounters                  */
 /* ------------------------------------------------- */
 
+static int processor_has_sse2=0;
+
+static void readProcessor() {
+#if 0
+	int status = system("/bin/cat /proc/cpuinfo | /bin/egrep -q '^flags.*:.* mmx .*xmm'");
+  
+	if (status==0)
+		processor_has_sse2=1;
+	else
+		processor_has_sse2=0;
+#endif
+	processor_has_sse2=0;
+}
+
 inline void
 GC_initCounters(GC_state s)
 {
@@ -1014,6 +1069,7 @@ GC_initCounters(GC_state s)
 			/* Nothing */ ;
 		s->liveRatio = i;
 	}
+ 	readProcessor();
 }
 
 /* ------------------------------------------------- */
@@ -1057,10 +1113,10 @@ GC_setHeapParams(GC_state s, uint size)
 		if (0 == s->maxHeapSize) 
 			s->maxHeapSize = getRAMsize();
 		s->maxHeapSize = roundPage(s->maxHeapSize / 2);
-		s->fromSize = GC_computeHeapSize(s, size, s->liveRatio);
+		s->fromSize = computeHeapSize(s, size, s->liveRatio);
 	}
 	if (size + LIMIT_SLOP > s->fromSize)
-		die("Out of memory.");
+		die("Out of memory (setHeapParams).");
 }
 
 /* ------------------------------------------------- */
@@ -1086,6 +1142,10 @@ inline void GC_init(GC_state s)
 	assert(s->frontier + s->bytesLive <= s->limit);
 	assert(GC_mutatorInvariant(s));
 }
+
+#if METER
+int sizes[25600];
+#endif
 
 /* ------------------------------------------------- */
 /*                      forward                      */
@@ -1144,10 +1204,17 @@ forward(GC_state s, pointer *pp)
 			if (0 == objectBytes) objectBytes = POINTER_SIZE;
 		} 
 		size = headerBytes + objectBytes;
+		/* This check is necessary, because toSpace may be smaller
+		 * than fromSpace, and so the copy may fail.
+		 */
   		if (s->back + size + skip > s->toLimit)
-  			die("Out of memory.");
+			die("Out of memory (forward).\nsize=%u skip=%u remaining=%d s->fromSize=%d s->toSize=%d headerBytes=%d objectBytes=%d header=%x\nDiagnostic: probably a RAM problem.",
+				size, skip, s->toLimit - s->back, s->fromSize, s->toSize, headerBytes, objectBytes, header);
   		/* Copy the object. */
-		{
+ 		if (FALSE and processor_has_sse2 and size >= 8192) {
+			extern void bcopy_simd(void *, void const *, int);
+			bcopy_simd(p - headerBytes, s->back, size);
+ 		} else {
 			uint	*to,
 				*from,
 				*limit;
@@ -1161,6 +1228,9 @@ forward(GC_state s, pointer *pp)
 			until (from == limit)
 				*to++ = *from++;
 		}
+#if METER
+		if (size < sizeof(sizes)/sizeof(sizes[0])) sizes[size]++;
+#endif
  		/* Store the forwarding pointer in the old object. */
 		*(word*)(p - WORD_SIZE) = FORWARDED;
 		*(pointer*)p = s->back + headerBytes;
@@ -1172,13 +1242,36 @@ forward(GC_state s, pointer *pp)
 	assert(isInToSpace(s, *pp));
 }
 
+static inline void forwardEachPointerInRange(GC_state s, pointer front,
+						pointer *back) {
+	pointer b;
+
+	b = *back;
+	assert(front <= b);
+	while (front < b) {
+		while (front < b) {
+			assert(isWordAligned((uint)front));
+			front = GC_foreachPointerInObject(s, forward, toData(front));
+		}
+		b = *back;
+	}
+	assert(front == *back);
+}
+
 /* ------------------------------------------------- */
 /*                       doGC                        */
 /* ------------------------------------------------- */
 
+static inline ulong meg (uint n) {
+	return n / (1024ul * 1024ul);
+}
+
 void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 	uint gcTime;
 	uint size;
+	uint live;
+	uint needed;
+	int try;
 	pointer front;
 	struct rusage ru_start, ru_finish, ru_total;
 
@@ -1186,35 +1279,69 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 	if (DEBUG or s->messages)
 		fprintf(stderr, "Starting gc.\n");
 	fixedGetrusage(RUSAGE_SELF, &ru_start);
-	unless (s->useFixedHeap) { /* Get toSpace ready. */
-		uint needed;
-
-		needed = GC_computeHeapSize
-			(s, s->bytesLive + bytesRequested + stackBytesRequested,
-				s->liveRatio);
-		/* toSpace must be at least as big as fromSpace */
-		if (needed < s->fromSize)
-			needed = s->fromSize;
-		/* Massage toSpace so that it is of needed size. */
-		if (s->toBase != NULL) {
-			 if (s->toSize < needed) {
-				if (DEBUG or s->messages)
-					fprintf(stderr, "Unmapping toSpace\n");
-				smunmap(s->toBase, s->toSize);
-				s->toBase = NULL;
-			 } else if (s->toSize > needed) {
-				uint delete;
-
-				delete = s->toSize - needed;
-				if (DEBUG or s->messages)
-					fprintf(stderr, "Shrinking toSpace by %u\n", delete);
-				smunmap(s->toBase + needed, delete);
-			 }
-		}
-		s->toSize = needed;
-		if (NULL == s->toBase)
-			GC_toSpace(s);
+	if (s->useFixedHeap)
+		goto toSpaceReady;
+	/* Get toSpace ready. */
+	live = s->bytesLive + bytesRequested + stackBytesRequested;
+	needed = computeHeapSize (s, live, s->liveRatio);
+	/* We would like toSpace to be as big as fromSpace. Although, if we are
+	 * unable to get space, then we will not insist on this.  See below.
+         */
+	if (needed < s->fromSize)
+		needed = s->fromSize;
+	/* Massage toSpace so that it is of needed size. */
+	if (s->toBase != NULL) {
+		 if (s->toSize < needed) {
+			if (DEBUG or s->messages)
+				fprintf(stderr, "Unmapping toSpace\n");
+			smunmap(s->toBase, s->toSize);
+			s->toBase = NULL;
+		 } else {
+			uint delete;
+			assert(s->toSize >= needed);
+			delete = s->toSize - needed;
+			if (DEBUG or s->messages)
+				fprintf(stderr, "Shrinking toSpace by %u\n",
+					 delete);
+			smunmap(s->toBase + needed, delete);
+			s->toSize = needed;
+			goto toSpaceReady;
+		 }
 	}
+	/* Allocate toSpace. */
+	assert(s->toBase == (void*)NULL);
+	try = 0;
+	/* Try to allocate toSpace with the initial needed, but if that fails,
+	 * then back off to small multiples of live (as specified by ks below).
+         * This may produce a toSpace that is smaller than fromSpace.
+         */
+	loop {
+		static double ks[13] = {1.99, 1.99, 1.8, 1.7, 1.6, 1.5, 
+					1.4, 1.3, 1.2, 1.15, 1.1, 1.05, 1.01};
+
+		s->toSize = needed;
+		toSpace(s);
+       		if (s->toBase != (void*)-1) 
+			goto toSpaceReady;
+		if (13 == try) {
+			static char buffer[256];
+			assert(13 == try);
+			sprintf(buffer, "/bin/cat /proc/%d/maps\n", getpid());
+			(void)system(buffer);
+			die("Out of swap space: cannot obtain %u bytes.", 
+				needed);
+		}
+		assert(0 <= try and try < 13);
+		s->toBase = (void*)NULL;
+		needed = roundPage(ks[try] * (double)live);
+		try++;
+		if (needed >= s->maxHeapSize) 
+			continue;
+		if (s->messages)
+			fprintf(stderr, "[Requested %luMb cannot be satisfied, allocating %luMb instead. Live = %luMb, k=%.2f]\n",
+			meg(s->toSize), meg(needed), meg(live), ks[try]);
+	}
+toSpaceReady:
  	s->numGCs++;
  	s->bytesAllocated += s->frontier - s->base - s->bytesLive;
 	s->back = s->toBase;
@@ -1226,7 +1353,7 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 	/* The actual GC. */
 	front = s->back;
 	GC_foreachGlobal(s, forward);
-	GC_foreachPointerInRange(s, front, &s->back, forward);
+	forwardEachPointerInRange(s, front, &s->back);
 	size = s->fromSize;
 	/* Swap fromSpace and toSpace. */
 	{
@@ -1251,11 +1378,11 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 		uint needed;
 
 		needed = s->bytesLive + bytesRequested;
-		if (GC_computeHeapSize(s, needed, s->minLive) < s->fromSize) {
+		if (computeHeapSize(s, needed, s->minLive) < s->fromSize) {
 			/* shrink heap */
 			uint keep;
 
-			keep = GC_computeHeapSize(s, needed, s->liveRatio);
+			keep = computeHeapSize(s, needed, s->liveRatio);
 			if (DEBUG or s->messages)
 				fprintf(stderr, "Shrinking heap to %u bytes.\n", keep);
 			assert(keep <= s->fromSize);
@@ -1264,8 +1391,7 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 		}
 	
 		if ((s->toSize < s->fromSize)
-		    or (GC_computeHeapSize(s, needed, s->maxLive)
-				> s->fromSize)) {
+		    or (computeHeapSize(s, needed, s->maxLive) > s->fromSize)) {
 			/* prepare to allocate new toSpace at next GC */
 			smunmap(s->toBase, s->toSize);
 			s->toBase = NULL;
@@ -1290,8 +1416,8 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 			100.0 * ((double) s->bytesLive) / size);
 	}
 	unless (s->frontier + bytesRequested <= s->limit) {
-		if (s->useFixedHeap or s->fromSize == s->maxHeapSize) {
-			die("Out of memory.");
+		if (s->useFixedHeap) {
+			die("Out of memory (doGC).");
 		} 
 		if (DEBUG)
 			fprintf(stderr, "Recursive call to doGC.\n");
@@ -1346,7 +1472,6 @@ void GC_gc(GC_state s, uint bytesRequested, bool force,
 		s->currentThread->stack = stack;
 		GC_setStack(s);
 		assert(s->frontier + bytesRequested <= s->limit);
-/*	} else if (0 == s->canHandle) { */
 	} else {
 		assert (0 == s->canHandle);
 		/* Switch to the signal handler thread. */
@@ -1439,6 +1564,16 @@ GC_done (GC_state s)
 				+ (s->frontier - s->base - s->bytesLive));
 		displayUllong("bytes copied", s->bytesCopied);
 		displayUint("max bytes live", s->maxBytesLive);
+#if METER
+		{
+			int i;
+			for(i = 0; i < cardof(sizes); ++i) {
+				if (0 != sizes[i])
+					fprintf(stderr, "COUNT[%d]=%d\n", i, sizes[i]);
+		  	}
+		}
+#endif
+
 	}	
 }
 
