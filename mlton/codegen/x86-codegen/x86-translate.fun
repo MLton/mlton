@@ -316,47 +316,13 @@ struct
 	      => let
 		   val _ = x86Liveness.LiveInfo.setLiveOperands
 		           (liveInfo, label, live label)
-		   val primName = Prim.toString prim
-		   datatype z = datatype Prim.Name.t
-		   fun default () =
-		      AppendList.single
-		      (x86.Block.T'
-		       {entry =
-			SOME (x86.Entry.runtime
-			      {label = label,
-			       frameInfo = translateFrameInfo frameInfo}),
-			profileInfo = x86.ProfileInfo.none,
-			statements = [],
-			transfer = NONE})
-		   val comment_end
-		      = if !Control.Native.commented > 0
-			   then let
-				   val comment = primName
-				in
-				   AppendList.single
-				   (x86.Block.T'
-				    {entry = NONE,
-				     profileInfo = x86.ProfileInfo.none,
-				     statements 
-				     = [x86.Assembly.comment 
-					("end runtimereturn: " ^ comment)],
-				     transfer = NONE})
-				end
-			else AppendList.empty
+		   val frameInfo = translateFrameInfo frameInfo
 		 in
-		    AppendList.appends
-		    [(case Prim.name prim
-			 of GC_collect => default ()
-		       | MLton_halt => default ()
-		       | Thread_copy => default ()
-		       | Thread_copyCurrent => default ()
-		       | Thread_finishHandler => default ()
-		       | Thread_switchTo => default ()
-		       | World_save => default ()
-		       | _ => Error.bug (concat
-					 ["runtimereturn: strange Prim.Name.t: ",
-					  primName])),
-		     comment_end]
+		   x86MLton.runtimereturn
+		   {prim = prim,
+		    label = label,
+		    frameInfo = frameInfo,
+		    transInfo = transInfo}
 		 end)
     end
 
