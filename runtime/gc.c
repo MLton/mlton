@@ -1703,7 +1703,8 @@ static void cheneyCopy (GC_state s) {
 	pointer toStart;
 
 	assert (s->heap2.size >= s->oldGenSize);
-	startTiming (&ru_start);
+	if (s->summary) 
+		startTiming (&ru_start);
 	s->numCopyingGCs++;
 	s->toSpace = s->heap2.start;
 	s->toLimit = s->heap2.start + s->heap2.size;
@@ -1734,7 +1735,8 @@ static void cheneyCopy (GC_state s) {
 				uintToCommaString (s->oldGenSize));
 	swapSemis (s);
 	clearCrossMap (s);
-	stopTiming (&ru_start, &s->ru_gcCopy);		
+	if (s->summary)
+		stopTiming (&ru_start, &s->ru_gcCopy);		
  	if (DEBUG or s->messages)
 		fprintf (stderr, "Major copying GC done.\n");
 }
@@ -1976,7 +1978,8 @@ static void minorGC (GC_state s) {
 	} else {
 		if (DEBUG_GENERATIONAL or s->messages)
 			fprintf (stderr, "Minor GC.\n");
-		startTiming (&ru_start);
+		if (s->summary)
+			startTiming (&ru_start);
 		s->amInMinorGC = TRUE;
 		s->toSpace = s->heap.start + s->oldGenSize;
 		if (DEBUG_GENERATIONAL)
@@ -2000,7 +2003,8 @@ static void minorGC (GC_state s) {
 		s->bytesCopiedMinor += bytesCopied;
 		s->oldGenSize += bytesCopied;
 		s->amInMinorGC = FALSE;
-		stopTiming (&ru_start, &s->ru_gcMinor);
+		if (s->summary)
+			stopTiming (&ru_start, &s->ru_gcMinor);
 		if (DEBUG_GENERATIONAL or s->messages)
 			fprintf (stderr, "Minor GC done.  %s bytes copied.\n",
 					uintToCommaString (bytesCopied));
@@ -2515,7 +2519,8 @@ static void markCompact (GC_state s) {
 
 	if (DEBUG or s->messages)
 		fprintf (stderr, "Major mark-compact GC.\n");
-	startTiming (&ru_start);		
+	if (s->summary)
+		startTiming (&ru_start);		
 	s->numMarkCompactGCs++;
 	foreachGlobal (s, markGlobal);
 	foreachGlobal (s, threadInternal);
@@ -2523,7 +2528,8 @@ static void markCompact (GC_state s) {
 	updateBackwardPointersAndSlide (s);
 	clearCrossMap (s);
 	s->bytesMarkCompacted += s->oldGenSize;
-	stopTiming (&ru_start, &s->ru_gcMarkCompact);
+	if (s->summary)
+		stopTiming (&ru_start, &s->ru_gcMarkCompact);
 	if (DEBUG or s->messages)
 		fprintf (stderr, "Major mark-compact GC done.\n");
 }
