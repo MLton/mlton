@@ -258,7 +258,11 @@ fun typeCheck (program as Program.T {datatypes, functions, ...}): unit =
 			     detupleOpt = Type.detupleOpt,
 			     isUnit = Type.isUnit
 			     } of
-	    NONE => error "bad primapp"
+	    NONE => error (concat
+			   ["bad primapp ",
+			    Prim.toString prim,
+			    ", args = ",
+			    Layout.toString (Vector.layout Type.layout args)])
 	  | SOME t => t
       val primApp =
 	 Trace.trace ("checkPrimApp",
