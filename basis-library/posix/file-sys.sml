@@ -157,7 +157,9 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 	    val fd =
 	       checkReturnResult
 	       (Prim.openn (String.nullTerm pathname,
-			    Flags.flags [openModeToWord openMode, flags, O.creat],
+			    Flags.flags [openModeToWord openMode,
+					 flags,
+					 O.creat],
 			    mode))
 	 in FD fd
 	 end
