@@ -137,6 +137,7 @@ struct
 
       datatype reg
 	= EAX | EBX | ECX | EDX | EDI | ESI | EBP | ESP
+      val allReg = [EAX, EBX, ECX, EDX, EDI, ESI, EBP, ESP]
 
       datatype part
 	= E | X | L | H
@@ -173,29 +174,6 @@ struct
       val toString = Layout.toString o layout
 
       fun eq(T r1, T r2) = r1 = r2
-
-      val contains 
-	= fn (E, E) => true | (E, X) => true | (E, L) => true | (E, H) => true
-	   | (X, X) => true | (X, L) => true | (X, H) => true
-	   | (L, L) => true 
-	   | (H, H) => true
-	   | _      => false
-
-      fun coincide (T {reg = reg1, part = part1}, 
-		    T {reg = reg2, part = part2}) 
-	= reg1 = reg2 andalso (contains(part1,part2) orelse 
-			       contains(part2,part1))
-
-      fun coincident (register as T {reg, ...})
-	= List.keepAllMap([E, X, L, H],
-			  fn part 
-			   => let
-				val register' = T {reg = reg, part = part}
-			      in 
-				if coincide(register,register')
-				  then SOME register'
-				  else NONE
-			      end)
 
       fun return size
 	= T {reg = EAX, part = case size
@@ -246,6 +224,36 @@ struct
 			   T {reg = EBP, part = E},
 			   T {reg = ESP, part = E}]
       val longRegisters = List.rev longRegisters
+
+      val all = List.concat [byteRegisters, wordRegisters, longRegisters]
+
+      fun valid r = List.contains(all, r, eq)
+
+      val contains 
+	= fn (E, E) => true | (E, X) => true | (E, L) => true | (E, H) => true
+	   | (X, X) => true | (X, L) => true | (X, H) => true
+	   | (L, L) => true 
+	   | (H, H) => true
+	   | _      => false
+
+      fun coincide (T {reg = reg1, part = part1}, 
+		    T {reg = reg2, part = part2}) 
+	= reg1 = reg2 andalso (contains(part1,part2) orelse 
+			       contains(part2,part1))
+
+      fun coincident' reg
+	= List.keepAllMap([E, X, L, H],
+			  fn part 
+			   => let
+				val register' = T {reg = reg, part = part}
+			      in 
+				if valid register' andalso 
+				   coincide(T {reg = reg, part = E}, register')
+				  then SOME register'
+				  else NONE
+			      end)
+
+      fun coincident (register as T {reg, ...}) = coincident' reg
 
       val registers
 	= fn Size.BYTE => byteRegisters

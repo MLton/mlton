@@ -42,15 +42,20 @@ signature X86 =
       sig
 	datatype reg
 	  = EAX | EBX | ECX | EDX | EDI | ESI | EBP | ESP
+	val allReg : reg list
 
 	datatype part
 	  = E | X | L | H
 
 	datatype t = T of {reg: reg, part: part}
+	val all : t list
+
 	val toString : t -> string
-	val size: t -> Size.t
-	val eq: t * t -> bool
+	val size : t -> Size.t
+	val eq : t * t -> bool
+	val valid  : t -> bool
 	val coincide : t * t -> bool
+	val coincident' : reg -> t list
 	val coincident : t -> t list
 
 	val return : Size.t -> t
