@@ -47,6 +47,9 @@ val isPoint =
 val isPointEq = 
    fn (T {value = ref (Point p), ...}, p') => Point.equals (p, p')
     | _ => false
+val getPoint =
+   fn (T {value = ref (Point p), ...}) => SOME p
+    | _ => NONE
 val isTop =
    fn (T {value = ref Top, ...}) => true
     | _ => false
