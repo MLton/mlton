@@ -676,15 +676,16 @@ structure Info =
    end
 
 val allTycons: Tycon.t list ref = ref (List.map (Tycon.prims, #1))
-val newTycons: (Tycon.t * Kind.t) list ref = ref []
+val newTycons: (Tycon.t * Kind.t * Region.t) list ref = ref []
 
-val newTycon: string * Kind.t * AdmitsEquality.t -> Tycon.t =
-   fn (s, k, a) =>
+val newTycon: string * Kind.t * AdmitsEquality.t * Region.t -> Tycon.t =
+   fn (s, k, a, r) =>
    let
       val c = Tycon.fromString s
       val _ = TypeEnv.initAdmitsEquality (c, a)
+      val _ = TypeEnv.tyconRegion c := SOME r
       val _ = List.push (allTycons, c)
-      val _ = List.push (newTycons, (c, k))
+      val _ = List.push (newTycons, (c, k, r))
    in
       c
    end
@@ -1480,7 +1481,7 @@ fun dummyStructure (I: Interface.t, {prefix: string})
 			      :: (List.fold (nest, [Ast.Tycon.toString tycon],
 					     fn (s, ss) =>
 					     Strid.toString s :: "." :: ss)))
-		   val c = newTycon (name, k, a)
+		   val c = newTycon (name, k, a, Ast.Tycon.region tycon)
 		   val () =
 		      FlexibleTycon.realize (flex, SOME (TypeStr.tycon (c, k)))
 		in
@@ -3137,11 +3138,12 @@ fun functorClosure
 		  instantiate (actual, fn (c, s) => setTyconTypeStr (c, SOME s))
 	       val _ =
 		  List.foreach
-		  (generative, fn (c, k) =>
+		  (generative, fn (c, k, r) =>
 		   setTyconTypeStr
 		   (c, SOME (TypeStr.tycon
 			     (newTycon (Tycon.originalName c, k,
-					! (TypeEnv.tyconAdmitsEquality c)),
+					! (TypeEnv.tyconAdmitsEquality c),
+					r),
 			      k))))
 	       fun replaceType (t: Type.t): Type.t =
 		  let

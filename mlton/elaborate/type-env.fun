@@ -103,6 +103,7 @@ structure UnifyResult =
    end
 
 val {get = tyconInfo: Tycon.t -> {admitsEquality: AdmitsEquality.t ref,
+				  region: Region.t option ref,
 				  time: Time.t ref},
      set = setTyconInfo, ...} =
    Property.getSet (Tycon.plist, Property.initRaise ("info", Tycon.layout))
@@ -111,11 +112,13 @@ local
    fun make f = f o tyconInfo
 in
    val tyconAdmitsEquality = make #admitsEquality
+   val tyconRegion = make #region
    val tyconTime = make #time
 end
 
 fun initAdmitsEquality (c, a) =
    setTyconInfo (c, {admitsEquality = ref a,
+		     region = ref NONE,
 		     time = ref (Time.now ())})
    
 val _ = List.foreach (Tycon.prims, fn (c, _, a) => initAdmitsEquality (c, a))

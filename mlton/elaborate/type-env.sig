@@ -98,6 +98,7 @@ signature TYPE_ENV =
       val setOpaqueTyconExpansion: Tycon.t * (Type.t vector -> Type.t) -> unit
       val tick: {useBeforeDef: Tycon.t -> unit} -> unit
       val tyconAdmitsEquality: Tycon.t -> Tycon.AdmitsEquality.t ref
+      val tyconRegion: Tycon.t -> Region.t option ref
    end
 
 signature INFER_TYPE_ENV = TYPE_ENV

@@ -1053,9 +1053,6 @@ val {get = recursiveTargs: Var.t -> (unit -> Type.t vector) option ref,
      ...} =
    Property.get (Var.plist, Property.initFun (fn _ => ref NONE))
 
-val {get = tyconRegion: Tycon.t -> Region.t, set = setTyconRegion, ...} =
-   Property.getSetOnce (Tycon.plist, Property.initRaise ("region", Tycon.layout))
-
 structure ElabControl = Control.Elaborate
    
 fun check (c: (bool,bool) ElabControl.t, keyword: string, region) =
@@ -1136,8 +1133,8 @@ fun elaborateDec (d, {env = E, nest}) =
 			       (rev (Ast.Tycon.toString name :: nest),
 				".")),
 		       kind,
-		       AdmitsEquality.Sometimes)
-		   val () = setTyconRegion (tycon, Ast.Tycon.region name)
+		       AdmitsEquality.Sometimes,
+		       Ast.Tycon.region name)
 		   val _ = Env.extendTycon (E, name, TypeStr.tycon (tycon, kind),
 					    {forceUsed = true,
 					     isRebind = false})
@@ -1272,9 +1269,12 @@ fun elaborateDec (d, {env = E, nest}) =
 		   Control.error
 		   (region,
 		    seq [str "type escapes the scope of its definition at ",
-			 str (case Region.left (tyconRegion c) of
+			 str (case ! (TypeEnv.tyconRegion c) of
 				 NONE => "<bogus>"
-			       | SOME p => SourcePos.toString p)],
+			       | SOME r =>
+				    case Region.left r of
+				       NONE => "<bogus>"
+				     | SOME p => SourcePos.toString p)],
 		    align [seq [str "type: ", Tycon.layout c],
 			   lay ()])
 		end
