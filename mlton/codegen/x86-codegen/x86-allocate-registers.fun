@@ -10274,13 +10274,14 @@ struct
 		     else assembly::assembly'
 		 end)
 
+	fun unroll label
+	  = case getInfo label
+	      of NONE => label
+	       | SOME label' => unroll label'
+
 	fun replacer _ oper
 	  = (case Operand.deLabel oper
-	       of SOME label 
-		=> (case getInfo label
-		      of NONE => oper
-	               | SOME label'
-		       => Operand.label label')
+	       of SOME label => Operand.label (unroll label)
 		| NONE => oper)
 
 	val assembly
