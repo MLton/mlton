@@ -765,6 +765,11 @@ structure Type =
 	 
       val unit = tuple (Vector.new0 ())
 
+      fun isChar t =
+	 case toType t of
+	    Con (c, _) => Tycon.equals (c, Tycon.char)
+	  | _ => false
+	       
       fun isUnit t =
 	 case toType t of
 	    Record r =>

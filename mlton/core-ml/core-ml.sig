@@ -19,6 +19,7 @@ signature CORE_ML_STRUCTS =
 	    val bool: t
 	    val deConOpt: t -> (Tycon.t * t vector) option
 	    val deRecord: t -> (Record.Field.t * t) vector
+	    val isChar: t -> bool
 	    val layout: t -> Layout.t
 	    val makeHom: {con: Tycon.t * 'a vector -> 'a,
 			  var: Tyvar.t -> 'a} -> {destroy: unit -> unit,
@@ -70,7 +71,8 @@ signature CORE_ML =
 	    datatype noMatch = Impossible | RaiseAgain | RaiseBind | RaiseMatch
 	    datatype node =
 	       App of t * t
-	     | Case of {kind: string,
+	     | Case of {hasExtraTuple: bool,
+			kind: string,
 			lay: unit -> Layout.t,
 			noMatch: noMatch,
 			region: Region.t,
@@ -97,7 +99,8 @@ signature CORE_ML =
 	     | Var of (unit -> Var.t) * (unit -> Type.t vector)
 
 	    val andAlso: t * t -> t
-	    val casee: {kind: string,
+	    val casee: {hasExtraTuple: bool,
+			kind: string,
 			lay: unit -> Layout.t,
 			noMatch: noMatch,
 			region: Region.t,

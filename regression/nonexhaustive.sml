@@ -1,5 +1,40 @@
-(* exhaustive.sml *)
+(* nonexhaustive.sml *)
 
+val _ =
+   case 1 of
+      2 => 3
+    | 3 => 4
+	 
+val _ =
+   case [] of
+      [] => 1
+
+val _ =
+   case [] of
+      [] => 0
+    | [_] => 1
+    | [_, _] => 2
+
+val _ =
+   case Fail "foo" of
+      Fail _ => false
+
+val _ =
+   case (1, []) of
+      (1, []) => true
+
+val _ =
+   case (1, []) of
+      (1, _) => true
+
+fun f 1 2 = 3
+
+fun f "" = ()
+
+fun f #"a" = 13
+   
+fun f (0w0: Word8.word) = 13
+   
 (* Checks for non-exhaustive pattern matches (compiler should warn). *)
 
 fun ord #"\000" = 0

@@ -20,6 +20,7 @@ signature MATCH_COMPILE_STRUCTS =
 	    val equals: t * t -> bool
 	    val int: IntSize.t -> t
 	    val layout: t -> Layout.t
+	    val unit: t
 	    val word: WordSize.t -> t
 	 end
       structure Cases:
@@ -66,11 +67,12 @@ signature MATCH_COMPILE =
 
       val matchCompile:
 	 {caseType: Type.t, (* type of entire expression *)
-	  cases: (NestedPat.t * ((Var.t -> Var.t) -> Exp.t)) vector,
+	  cases: (NestedPat.t
+		  * (NestedPat.t * (Var.t -> Var.t) -> Exp.t)) vector,
 	  conTycon: Con.t -> Tycon.t,
 	  region: Region.t,
 	  test: Var.t,
 	  testType: Type.t,
-	  tyconCons: Tycon.t -> Con.t vector}
+	  tyconCons: Tycon.t -> {con: Con.t, hasArg: bool} vector}
 	 -> Exp.t
    end

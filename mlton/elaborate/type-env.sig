@@ -35,6 +35,7 @@ signature TYPE_ENV =
 			  expandOpaque: expandOpaque,
 			  record: 'a SortedRecord.t -> 'a,
 			  var: Tyvar.t -> 'a} -> 'a
+	    val isChar: t -> bool
 	    val isUnit: t -> bool
 	    val layout: t -> Layout.t
 	    val layoutPretty: t -> Layout.t

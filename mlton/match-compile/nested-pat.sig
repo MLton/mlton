@@ -26,7 +26,8 @@ signature NESTED_PAT =
 	 Con of {arg: t option,
 		 con: Con.t,
 		 targs: Type.t vector}
-	| Const of Const.t
+	| Const of {const: Const.t,
+		    isChar: bool}
 	| Layered of Var.t * t
 	| Tuple of t vector
 	| Var of Var.t

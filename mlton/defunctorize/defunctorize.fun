@@ -16,6 +16,7 @@ in
    structure Record = Record
    structure Ctype = Type
    structure WordSize = WordSize
+   structure WordX = WordX
 end
 
 structure IntX = Const.IntX
@@ -46,6 +47,7 @@ structure Region =
    end
 
 structure NestedPat = NestedPat (open Xml)
+
 structure MatchCompile =
    MatchCompile (open CoreML
 		 structure Type = Xtype
@@ -103,6 +105,7 @@ fun casee {caseType: Xtype.t,
 		   lay: (unit -> Layout.t) option,
 		   pat: NestedPat.t} vector,
 	   conTycon,
+	   hasExtraTuple,
 	   kind: string,
 	   lay: unit -> Layout.t,
 	   mayWarn: bool,
@@ -112,7 +115,8 @@ fun casee {caseType: Xtype.t,
 	   tyconCons}: Xexp.t =
    let
       val cases = Vector.map (cases, fn {exp, lay, pat} =>
-			      {exp = exp,
+			      {example = ref NONE,
+			       exp = exp,
 			       isDefault = false,
 			       lay = lay,
 			       numUses = ref 0,
@@ -123,7 +127,8 @@ fun casee {caseType: Xtype.t,
 	 in
 	    Vector.concat
 	    [cases,
-	     Vector.new1 {exp =
+	     Vector.new1 {example = ref NONE,
+			  exp =
 			  Xexp.raisee ({exn = f e,
 					filePos = Region.toFilePos region},
 				       caseType),
@@ -147,7 +152,8 @@ fun casee {caseType: Xtype.t,
 	 let
 	    val (cases, decs) =
 	       Vector.mapAndFold
-	       (cases, [], fn ({exp = e, numUses, pat = p, ...}, decs) =>
+	       (cases, [],
+		fn ({example, exp = e, numUses, pat = p, ...}, decs) =>
 		let
 		   val args = Vector.fromList (NestedPat.varsAndTypes p)
 		   val (vars, tys) = Vector.unzip args
@@ -170,8 +176,9 @@ fun casee {caseType: Xtype.t,
 			  {tuple = Xexp.monoVar (arg, argType),
 			   components = vars,
 			   body = e})})}
-		   fun finish rename =
+		   fun finish (p, rename) =
 		      (Int.inc numUses
+		       ; example := SOME p
 		       ; (Xexp.app
 			  {func = Xexp.monoVar (func, funcType),
 			   arg =
@@ -252,13 +259,54 @@ fun casee {caseType: Xtype.t,
 	    val _ =
 	       if !Control.warnNonExhaustive
 		  andalso noMatch <> Cexp.RaiseAgain
-		  andalso Vector.exists (cases, fn {isDefault, numUses, ...} =>
-					 isDefault andalso !numUses > 0)
 		  then
-		     Control.warning (region,
-				      Layout.str (concat
-						  [kind, " is not exhaustive"]),
-				      lay ())
+		     case Vector.peek (cases, fn {isDefault, numUses, ...} =>
+				       isDefault andalso !numUses > 0) of
+			NONE => ()
+		      | SOME {example, ...} =>
+			   let
+			      open Layout
+			      fun layoutPat p =
+				 let
+				    val char =
+				       case NestedPat.node p of
+					  NestedPat.Const {const, isChar} =>
+					     (case const of
+						 Const.Word w =>
+						    if isChar
+						       then SOME (WordX.toChar w)
+						    else NONE
+					       | _ => NONE)
+					| _ => NONE
+				 in
+				    case char of
+				       NONE => NestedPat.layout p
+				     | SOME c => 
+					  seq [str "#\"",
+					       Char.layout c,
+					       str "\""]
+				 end
+			      val p = valOf (!example)
+			      val (suf, p) =
+				 if not hasExtraTuple
+				    then ("", layoutPat p)
+				 else
+				    case NestedPat.node p of
+				       NestedPat.Tuple ps =>
+					  ("s",
+					   seq (separate (Vector.toListMap
+							  (ps, layoutPat),
+							  " ")))
+				     | _ => Error.bug "hasExtraTuple needs tuple"
+			   in
+			      Control.warning
+			      (region,
+			       str (concat [kind, " is not exhaustive"]),
+			       align [seq [str (concat ["missing pattern",
+							suf, ": "]),
+					   p],
+				      lay ()])
+			   end
 	       else ()
 	    val redundant =
 	       Vector.keepAll (cases, fn {isDefault, numUses, ...} =>
@@ -320,7 +368,8 @@ fun defunctorize (CoreML.Program.T {decs}) =
       val {get = conTycon, set = setConTycon, ...} =
 	 Property.getSetOnce (Con.plist,
 			      Property.initRaise ("conTycon", Con.layout))
-      val {get = tyconCons: Tycon.t -> Con.t vector,
+      val {get = tyconCons: Tycon.t -> {con: Con.t,
+					hasArg: bool} vector,
 	   set = setTyconCons, ...} =
 	 Property.getSetOnce (Tycon.plist,
 			      Property.initRaise ("tyconCons", Tycon.layout))
@@ -331,6 +380,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
       (* Process all the datatypes. *)
       fun loopDec (d: Cdec.t) =
 	 let
+(* Use open Cdec instead of the following due to an SML/NJ bug *)
 (*	    datatype z = datatype Cdec.t *)
 	    open Cdec
 	 in
@@ -339,7 +389,11 @@ fun defunctorize (CoreML.Program.T {decs}) =
 		  Vector.foreach
 		  (dbs, fn {cons, tycon, tyvars} =>
 		   let
-		      val _ = setTyconCons (tycon, Vector.map (cons, #con))
+		      val _ =
+			 setTyconCons (tycon,
+				       Vector.map (cons, fn {arg, con} =>
+						   {con = con,
+						    hasArg = isSome arg}))
 		      val cons =
 			 Vector.map
 			 (cons, fn {arg, con} =>
@@ -397,7 +451,9 @@ fun defunctorize (CoreML.Program.T {decs}) =
 		     NestedPat.Con {arg = Option.map (arg, loopPat),
 				    con = con,
 				    targs = Vector.map (targs, loopTy)}
-		| Const f => NestedPat.Const (f ())
+		| Const f =>
+		     NestedPat.Const {const = f (),
+				      isChar = Ctype.isChar t}
 		| Layered (x, p) => NestedPat.Layered (x, loopPat p)
 		| List ps =>
 		     let
@@ -448,7 +504,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
 		    ty = Xtype.arrow (argType, bodyType),
 		    var = var}
 		end)
-(* Use open Cdec instead of the following due to an SML/NJ 110.43 bug *)
+(* Use open Cdec instead of the following due to an SML/NJ bug *)
 (*	    datatype z = datatype Cdec.t *)
 	    open Cdec
 	 in
@@ -479,6 +535,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
 							lay = SOME lay,
 							pat = p},
 				   conTycon = conTycon,
+				   hasExtraTuple = false,
 				   kind = "declaration",
 				   lay = lay,
 				   mayWarn = mayWarn,
@@ -621,13 +678,15 @@ fun defunctorize (CoreML.Program.T {decs}) =
 					func = #1 (loopExp e1),
 					ty = ty}
 		     end
-		| Case {kind, lay, noMatch, region, rules, test} =>
+		| Case {hasExtraTuple, kind, lay, noMatch, region, rules,
+			test} =>
 		     casee {caseType = ty,
 			    cases = Vector.map (rules, fn {exp, lay, pat} =>
 						{exp = #1 (loopExp exp),
 						 lay = lay,
 						 pat = loopPat pat}),
 			    conTycon = conTycon,
+			    hasExtraTuple = hasExtraTuple,
 			    kind = kind,
 			    lay = lay,
 			    mayWarn = true,

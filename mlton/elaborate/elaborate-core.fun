@@ -382,7 +382,7 @@ fun elaboratePat (p: Apat.t, E: Env.t, preError: unit -> unit, amInRvb: bool)
 		  align [seq [str "expects: ", l2],
 			 seq [str "but got: ", l1],
 			 seq [str "in: ", lay ()]]))
-	     fun lay () = Apat.layout p
+	     fun lay () = approximate (Apat.layout p)
 	  in
 	     case Apat.node p of
 		Apat.App (c, p) =>
@@ -415,17 +415,33 @@ fun elaboratePat (p: Apat.t, E: Env.t, preError: unit -> unit, amInRvb: bool)
 				 resultType)
 		   end
 	      | Apat.Const c =>
-		   (case Aconst.node c of
-		       Aconst.Bool b => if b then Cpat.truee else Cpat.falsee
-		     | _ => 
-			  let
-			     val ty = Aconst.ty c
-			     fun resolve () = resolveConst (c, ty)
-			     val _ = List.push (overloads, fn () =>
-						(resolve (); ()))
-			  in
-			     Cpat.make (Cpat.Const resolve, ty)
-			  end)
+		   let
+		      fun doit () =
+			 let
+			    val ty = Aconst.ty c
+			    fun resolve () = resolveConst (c, ty)
+			    val _ = List.push (overloads, fn () =>
+					       (resolve (); ()))
+			 in
+			    Cpat.make (Cpat.Const resolve, ty)
+			 end
+		   in
+		      case Aconst.node c of
+			 Aconst.Bool b => if b then Cpat.truee else Cpat.falsee
+		       | Aconst.Real r =>
+			    let
+			       open Layout
+			       val _ = 
+				  Control.error
+				  (region,
+				   seq [str "real constants are not allowed in patterns: ",
+					lay ()],
+				   empty)
+			    in
+			       doit ()
+			    end
+		       | _ => doit ()
+		   end
 	      | Apat.Constraint (p, t) =>
 		   let
 		      val p' = loop p
@@ -1314,7 +1330,8 @@ fun elaborateDec (d, {env = E,
 				      let
 					 val e =
 					    Cexp.casee
-					    {kind = "function",
+					    {hasExtraTuple = i > 1,
+					     kind = "function",
 					     lay = lay,
 					     noMatch = Cexp.RaiseMatch,
 					     region = region,
@@ -1445,9 +1462,10 @@ fun elaborateDec (d, {env = E,
 				let
 				   open Layout
 				in
-				   approximate
-				   (seq [str "in: ", Apat.layout pat,
-					 str " = ", Aexp.layout exp])
+				   seq [str "in: ",
+					approximate
+					(seq [Apat.layout pat,
+					      str " = ", Aexp.layout exp])]
 				end
 			  in
 			     {exp = elabExp (exp,
@@ -1535,7 +1553,8 @@ fun elaborateDec (d, {env = E,
 			     val arg = Var.newNoname ()
 			     val body =
 				Cexp.enterLeave
-				(Cexp.casee {kind = "function",
+				(Cexp.casee {hasExtraTuple = false,
+					     kind = "function",
 					     lay = lay,
 					     noMatch = Cexp.RaiseMatch,
 					     region = region,
@@ -1695,7 +1714,8 @@ fun elaborateDec (d, {env = E,
 			   align [seq [str "object type:  ", l1],
 				  seq [str "rules expect: ", l2]]))
 		   in
-		      Cexp.casee {kind = "case",
+		      Cexp.casee {hasExtraTuple = false,
+				  kind = "case",
 				  lay = lay,
 				  noMatch = Cexp.RaiseMatch,
 				  region = region,
@@ -1860,7 +1880,8 @@ fun elaborateDec (d, {env = E,
 						  (Var.newNoname (), t))
 					   in
 					      Cexp.casee
-					      {kind = "",
+					      {hasExtraTuple = false,
+					       kind = "",
 					       lay = fn _ => Layout.empty,
 					       noMatch = Cexp.Impossible,
 					       region = Region.bogus,
@@ -2033,7 +2054,8 @@ fun elaborateDec (d, {env = E,
 	    val {argType, region, resultType, rules} =
 	       elabMatch (m, preError, nest)
 	    val body =
-	       Cexp.casee {kind = kind,
+	       Cexp.casee {hasExtraTuple = false,
+			   kind = kind,
 			   lay = lay,
 			   noMatch = noMatch,
 			   region = region,

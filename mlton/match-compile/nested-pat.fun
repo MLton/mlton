@@ -15,7 +15,8 @@ and node =
    Con of {arg: t option,
 	   con: Con.t,
 	   targs: Type.t vector}
-  | Const of Const.t
+  | Const of {const: Const.t,
+	      isChar: bool}
   | Layered of Var.t * t
   | Tuple of t vector
   | Var of Var.t
@@ -40,11 +41,16 @@ fun layout p =
    in
       case node p of
 	 Con {arg, con, targs} =>
-	    Pretty.conApp {arg = Option.map (arg, layout),
-			   con = Con.layout con,
-			   targs = Vector.map (targs, Type.layout)}
-       | Const c => Const.layout c
-       | Layered (x, p) => seq [Var.layout x, str " as ", layout p]
+	    let
+	       val z =
+		  Pretty.conApp {arg = Option.map (arg, layout),
+				 con = Con.layout con,
+				 targs = Vector.map (targs, Type.layout)}
+	    in
+	       if isSome arg then paren z else z
+	    end
+       | Const {const = c, ...} => Const.layout c
+       | Layered (x, p) => paren (seq [Var.layout x, str " as ", layout p])
        | Tuple ps => tuple (Vector.toListMap (ps, layout))
        | Var x => Var.layout x
        | Wild => str "_"
