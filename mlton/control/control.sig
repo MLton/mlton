@@ -50,6 +50,8 @@ signature CONTROL =
       (* Generate an executable with debugging info. *)
       val debug: bool ref
 
+      val deepFlattenDelay: bool ref
+	 
       val deepFlattenUnify: bool ref
 	 
       val defines: string list ref
