@@ -22,7 +22,6 @@ done
 
 root="$HOME/mlton"
 rpms="$root/rpms"
-date='20010706'
 date=`date +%Y%m%d`
 version="mlton-$date"
 release="1"

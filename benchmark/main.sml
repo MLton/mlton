@@ -73,8 +73,8 @@ local
 			 doTextPlusData = true}
       end
 in
-   val mltonCompile  = make ("mlton", [])
-   val mltonStableCompile  = make ("mlton-stable", [])
+   val mltonCompile = make ("mlton", [])
+   val mltonStableCompile = make ("mlton-stable", [])
    val mltonTopCompile = make ("/usr/local/bin/mlton", [])
 (*   val mltonTopCompile = make ("mlton", ["-unused-args", "false"]) *)
 end
