@@ -274,7 +274,7 @@ fun makeOptions {usage} =
 	boolRef profileBasis),
        (Normal, "profile-combine", " {false|true}",
 	"combine all occurrences of a function",
-	boolRef profileCoalesce),
+	boolRef profileCombine),
        (Expert, "profile-il", " {source}", "where to insert profile exps",
 	SpaceString
 	(fn s =>

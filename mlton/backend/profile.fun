@@ -113,7 +113,7 @@ fun profile program =
 	    end
       in	 
 	 val sourceInfoNode =
-	    if !Control.profileCoalesce
+	    if !Control.profileCombine
 	       then
 		  #get (Property.get (SourceInfo.plist, Property.initFun new))
 	    else new
