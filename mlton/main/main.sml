@@ -119,7 +119,7 @@ val options =
        (Expert, "keep-pass", " pass", "keep the results of pass",
 	SpaceString (fn s => List.push (keepPasses, s))),
        (Normal, "l", "library", "link with library", push libs),
-       (Expert, "limit-check", " {pb|ebb|lh|lhf|lhle|lhfle}",
+       (Expert, "limit-check", " {lhle|pb|ebb|lh|lhf|lhfle}",
 	"limit check insertion algorithm",
 	SpaceString (fn s =>
 		     case s of
@@ -177,6 +177,8 @@ val options =
 	Bool (fn b => if b then () else polyvariance := NONE)),
        (Normal, "o", " file", "name of output file",
 	SpaceString (fn s => output := SOME s)),
+       (Expert, "O", "digit", "gcc optimization level",
+	Digit (fn d => optimization := d)),
        (Normal, "p", "", "produce executable suitable for profiling",
 	None (fn () => (profile := true; keepSSA := true))),
        (Expert, "print-at-fun-entry", " {false|true}",
