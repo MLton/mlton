@@ -7,44 +7,55 @@ enum {
 
 typedef char* String;
 
+typedef Word32 ArrayIndex;
+typedef Word16 DirectIndex;
+typedef Word16 GlobalIndex;
+typedef Word16 IndirectIndex;
+typedef Word32 Label;
+typedef WordS16 Offset;  // offset must be signed
+typedef Pointer ProgramCounter;
+typedef Word16 RegIndex;
+typedef Word8 Scale;
+typedef Word16 StackOffset;
+typedef Pointer StackTop;
+
 //----------------------------------------------------------------------
 // Imports
 //----------------------------------------------------------------------
 
-extern void callCFunction (Word16 f);
-
-void callCFunction (Word16 f) {
-	die ("callCFunction unimplemented");
-}
+void MLton_directCall (DirectIndex i) {}
+void MLton_indirectCall (IndirectIndex i) {}
 
 Pointer globalPointer [0];
 Pointer PointerReg [0];
 
-#define reals(size)				\
-	Real##size globalReal##size [0];	\
-	Real##size Real##size##Reg [0];		\
-	Real##size Real##size##InternalReg [0]
+#define regs(ty)				\
+	int ty##RegI;				\
+	ty global##ty[0];			\
+	ty ty##VReg[1000];			\
+	ty ty##Reg[1000]
 
-reals(32);
-reals(64);
+regs(Real32);
+regs(Real64);
+regs(Word8);
+regs(Word16);
+regs(Word32);
+regs(Word64);
 
-#undef reals
+#undef regs
 
-#define words(size)				\
-	Word##size globalWord##size [0];	\
-	Word##size globalWordS##size [0];	\
-	Word##size globalWordU##size [0];	\
-	Word##size Word##size##Reg [0];		\
-	Word##size WordS##size##Reg [0];	\
-	Word##size WordU##size##Reg [0];	\
-	Word##size Word##size##InternalReg [0]
+//
+// Virtual Registers.  Explicitly referenced by the Machine IL.
+//
 
-words(8);
-words(16);
-words(32);
-words(64);
+#define R(ty, i) (ty##VReg [i])
 
-#undef words
+//
+// Internal Registers.
+//
+
+#define PopReg(ty) ty##Reg [ty##RegI--]
+#define PushReg(ty) ty##Reg [ty##RegI++]
 
 #define quotRem1(qr, size)						\
 	Word##size WordS##size##_##qr (Word##size w1, Word##size w2);
@@ -93,7 +104,6 @@ quotRem2 (rem)
 #define loadStorePrimsOfSize(mode, ty, size)	\
 	loadStoreArrayOffset (mode, ty, size)	\
 	loadStoreContents (mode, ty, size)	\
-	loadStoreConstant (mode, ty, size)	\
 	loadStoreGlobal (mode, ty, size)	\
 	loadStoreOffset (mode, ty, size)	\
 	loadStoreRegister (mode, ty, size)	\
@@ -124,7 +134,7 @@ quotRem2 (rem)
 	unary (Real##size, Real##size##_round)		\
 	binary (Real##size, Real##size##_sub)
 
-#define wordPrimsOfSize(size)				\
+#define wordPrimsOfSizeNoMul(size)			\
 	binary (Word##size, Word##size##_add)		\
 	binary (Word##size, Word##size##_andb)		\
 	compare (Word##size, Word##size##_equal)	\
@@ -151,7 +161,18 @@ quotRem2 (rem)
 	shift (Word##size, WordS##size##_rshift)	\
 	shift (Word##size, WordU##size##_rshift)	\
 	binary (Word##size, Word##size##_sub)		\
-	binary (Word##size, Word##size##_xorb)
+	binary (Word##size, Word##size##_xorb)		\
+	binaryCheck (Word##size, WordS##size##_addCheck)	\
+	binaryCheck (Word##size, WordU##size##_addCheck)	\
+	unaryCheck (Word##size, Word##size##_negCheck)		\
+	binaryCheck (Word##size, WordS##size##_subCheck)	\
+	loadStoreConstant (load, Word, size)
+
+#define wordPrimsOfSize(size)					\
+	wordPrimsOfSizeNoMul(size)				\
+	binaryCheck (Word##size, WordS##size##_mulCheck)	\
+	binaryCheck (Word##size, WordU##size##_mulCheck)	\
+
 
 #define prims()						\
 	coercePrims ()					\
@@ -163,20 +184,14 @@ quotRem2 (rem)
 	wordPrimsOfSize (8)				\
 	wordPrimsOfSize (16)				\
 	wordPrimsOfSize (32)				\
-	wordPrimsOfSize (64)
+	wordPrimsOfSizeNoMul (64)
 
 #define opcodes()				\
 	prims()					\
-
-#define unimplementedOpcodes			\
-	opcodeGen (CacheFrontier)		\
-	opcodeGen (CacheStackTop)		\
-	opcodeGen (Call)			\
-	opcodeGen (CCall)			\
-	opcodeGen (FlushFrontier)		\
-	opcodeGen (FlushStackTop)		\
+	opcodeGen (DirectCall)			\
 	opcodeGen (Goto)			\
-	opcodeGen (Object)			\
+	opcodeGen (IndirectCall) 		\
+	opcodeGen (JumpOnOverflow)		\
 	opcodeGen (ProfileLabel)		\
 	opcodeGen (Raise)			\
 	opcodeGen (Return)			\
@@ -184,11 +199,12 @@ quotRem2 (rem)
 	opcodeGen (Switch16)			\
 	opcodeGen (Switch32)			\
 	opcodeGen (Switch64)			\
-        opcodeGen (Thread_returnToC)		\
+        opcodeGen (Thread_returnToC)
 
 #define opcodeName(ty, size, name) opcodeGen (ty##size##_##name)
 
 #define binary(ty, f)  opcodeGen (f)
+#define binaryCheck(ty, f)  opcodeGen (f)
 #define compare(ty, f)  opcodeGen (f)
 #define loadStoreArrayOffset(mode, ty, size) \
 	opcodeName (ty, size, mode##ArrayOffset)
@@ -207,6 +223,7 @@ quotRem2 (rem)
 #define shift(ty, f)  opcodeGen (f)
 #define ternary(ty, f)  opcodeGen (f)
 #define unary(ty, f)  opcodeGen (f)
+#define unaryCheck(ty, f)  opcodeGen (f)
 
 #define coerceOp(f, t)  opcodeGen (f##_to##t)
 
@@ -240,12 +257,11 @@ typedef enum {
 	opcodes ()
 } Opcode;
 
-typedef Opcode OperandCode;
-
 #undef opcodeName
 #undef coerce
 #undef coerceOp
 #undef binary
+#undef binaryCheck
 #undef compare
 #undef loadGCState
 #undef loadStoreArrayOffset
@@ -260,41 +276,14 @@ typedef Opcode OperandCode;
 #undef shift
 #undef ternary
 #undef unary
-
-//
-// Virtual Registers.  Explicitly referenced by the Machine IL.
-//
-
-#define R(ty, i) (ty##VReg [i])
-
-//
-// Internal Registers.
-//
+#undef unaryCheck
 
 #define Temp(ty, i) ty##_##i
 
-#define regs(ty)				\
-	int ty##RegI;				\
+#define temps(ty)				\
 	ty Temp (ty, 0);			\
 	ty Temp (ty, 1);			\
 	ty Temp (ty, 2);			\
-	ty ty##VReg[1000];			\
-	ty ty##Reg[1000]
-
-#define PopReg(ty) ty##Reg [ty##RegI--]
-#define PushReg(ty) ty##Reg [ty##RegI++]
-
-#define realRegs(size) 	regs (Real##size)
-
-#define wordRegs(size)	regs (Word##size)
-
-#define registers()				\
-	realRegs (32);				\
-	realRegs (64);				\
-	wordRegs (8);				\
-	wordRegs (16);				\
-	wordRegs (32);				\
-	wordRegs (64)
 
 #define Fetch(z)				\
 	do {					\
@@ -394,6 +383,27 @@ enum {
 		PushReg (ty) = f (Temp (ty, 0), Temp (ty, 1));		\
 	break;
 
+#define binaryCheck(ty, f)							\
+	case opcodeSym (f):							\
+		Temp (ty, 0) = PopReg (ty);					\
+		Temp (ty, 1) = PopReg (ty);					\
+		f (PushReg (ty), Temp (ty, 0), Temp (ty, 1), f##Overflow);	\
+		overflow = FALSE;						\
+		goto f##Continue;						\
+	f##Overflow:								\
+		overflow = TRUE;						\
+	f##Continue:
+
+#define unaryCheck(ty, f)							\
+	case opcodeSym (f):							\
+		Temp (ty, 0) = PopReg (ty);					\
+		f (PushReg (ty), Temp (ty, 0), f##Overflow);			\
+		overflow = FALSE;						\
+		goto f##Continue;						\
+	f##Overflow:								\
+		overflow = TRUE;						\
+	f##Continue:
+
 #define coerce(f1, t1, f2, t2)					\
 	case coerceOp (f2, t2):					\
 		PushReg (t1) = f2##_to##t2 (PopReg (f1));	\
@@ -434,70 +444,59 @@ enum {
 
 struct GC_state gcState;
 
-#define GOTO()					\
+#define Goto(l)					\
 	do {					\
-		Fetch (codeOffset);	\
-		pc = code + codeOffset;		\
+		pc = code + l;			\
 		goto mainLoop;			\
 	} while (0)
 
-
-#define RETURN()						\
-	do {							\
-		codeOffset = *(Word*)(StackTop - WORD_SIZE);	\
-		pc = code + codeOffset;				\
-		goto mainLoop;					\
-	} while (0)
-
-#define SWITCH(size)						\
+#define Switch(size)						\
 	case OPCODE_Switch##size:				\
-		Fetch (size, caseTest##size);		\
-		Fetch (numCases);			\
+		caseTest##size = PopReg (Word##size);		\
+		Fetch (numCases);				\
 		lastCase = pc + (4 + size/8) * numCases;	\
 		while (pc < lastCase) {				\
-			FetchZ (size, caseWord##size);	\
+			Fetch (caseWord##size);			\
+			Fetch (label);				\
 			if (caseTest##size == caseWord##size)	\
-				GOTO();				\
-			pc += 4;				\
+				Goto (label);			\
 		}						\
 		/* Default case. */				\
-		GOTO();
-
-typedef Word32 ArrayIndex;
-typedef Word16 GlobalIndex;
-typedef WordS16 Offset;  // must be signed
-typedef Word16 RegIndex;
-typedef Word8 Scale;
-typedef Word16 StackOffset;
-typedef Pointer StackTop;
+		Fetch (label);					\
+		Goto (label);
 
 void MLton_Bytecode_interpret (Pointer code, Word32 codeOffset) {
 	Pointer base;
-//	Word8 caseTest8;
-//	Word16 caseTest16;
-//	Word32 caseTest32;
-//	Word64 caseTest64;
-//	Word8 caseWord8;
-//	Word16 caseWord16;
-//	Word32 caseWord32;
-//	Word64 caseWord64;
-//	Word16 cFunc;
-//	Word16 frameSize;
+	Word8 caseTest8;
+	Word16 caseTest16;
+	Word32 caseTest32;
+	Word64 caseTest64;
+	Word8 caseWord8;
+	Word16 caseWord16;
+	Word32 caseWord32;
+	Word64 caseWord64;
+	DirectIndex directIndex;
 	Pointer frontier;
 	GlobalIndex globalIndex;
-//	Word32 header;
 	ArrayIndex index;
-//	Word16 objectSize;
+	IndirectIndex indirectIndex;
+	Label label;
+	ProgramCounter lastCase;
+	Word16 numCases;
 	Offset offset;
 	Opcode opc;
-//	OperandCode operandCode;
-	Pointer pc;
+	Bool overflow;
+	ProgramCounter pc;
 	RegIndex regIndex;
-//	Word32 returnAddress;
 	Scale scale;
 	StackOffset stackOffset;
 	StackTop stackTop;
-	registers ();	
+	temps (Real32);
+	temps (Real64);
+	temps (Word8);
+	temps (Word16);
+	temps (Word32);
+	temps (Word64)
 
 	// Quell unused variable warnings.
 	Word8_2 = 0;
@@ -514,47 +513,35 @@ mainLoop:
 				pc - code);
 	switch (opc) {
 	prims ();
-
-/* 	case opcodeSym (CacheFrontier): */
-/* 		CacheFrontier(); */
-/* 		goto mainLoop; */
-/* 	case opcodeSym (CacheStackTop): */
-/* 		CacheStackTop(); */
-/* 		goto mainLoop; */
-/* 	case opcodeSym (Call): */
-/* 		Fetch (frameSize); */
-/* 		Fetch (returnAddress); */
-/* 		stackTop += frameSize; */
-/* 		S(Word32, -4) = returnAddress; */
-/* 		GOTO (); */
-/* 	case opcodeSym (CCall): */
-/* 		Fetch (cFunc); */
-/* 		callCFunction (cFunc); */
-/* 		goto mainLoop; */
-/* 	case opcodeSym (FlushFrontier): */
-/* 		FlushFrontier(); */
-/* 		goto mainLoop; */
-/* 	case opcodeSym (FlushStackTop): */
-/* 		FlushStackTop(); */
-/* 		goto mainLoop; */
-/* 	case opcodeSym (Goto): */
-/* 		GOTO (); */
-/* 	case opcodeSym (Object): */
-/* 		Fetch (header); */
-/* 		*(Word32*)Frontier = header; */
-/* 		StoreZ (Word32, header + 4); */
-/* 		Fetch (objectSize); */
-/* 		Frontier += objectSize; */
-/* 		goto mainLoop; */
-/* 	case opcodeSym (ProfileLabel): */
-/* 		die ("ProfileLabel not implemented"); */
-/* 	case opcodeSym (Raise): */
-/* 		StackTop = StackBottom + ExnStack; */
-/* 		RETURN(); */
-/* 	case opcodeSym (Return): */
-/* 		RETURN(); */
-/* 	case opcodeSym (Thread_returnToC): */
-/*		return; */
+ 	case opcodeSym (DirectCall):
+ 		Fetch (directIndex);
+ 		MLton_directCall (directIndex);
+ 		goto mainLoop;
+ 	case opcodeSym (Goto):
+		Fetch (label);
+ 		Goto (label);
+ 	case opcodeSym (IndirectCall):
+ 		Fetch (indirectIndex);
+ 		MLton_indirectCall (indirectIndex);
+ 		goto mainLoop;
+	case opcodeSym (JumpOnOverflow):
+		Fetch (label);
+		if (overflow)
+			Goto (label);
+		goto mainLoop;
+ 	case opcodeSym (ProfileLabel):
+ 		die ("ProfileLabel not implemented");
+ 	case opcodeSym (Raise):
+ 		StackTop = StackBottom + ExnStack;
+		// fall through to Return
+ 	case opcodeSym (Return):
+		Goto (*(Label*)(StackTop - sizeof(Label)));
+	Switch(8);
+	Switch(16);
+	Switch(32);
+	Switch(64);
+ 	case opcodeSym (Thread_returnToC):
+ 		return;
 	}
 	goto mainLoop;
 }

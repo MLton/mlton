@@ -25,6 +25,7 @@ in
    structure Prim = Prim
    structure Program = Program
    structure Register = Register
+   structure Runtime = Runtime
    structure StackOffset = StackOffset
    structure Statement = Statement
    structure Switch = Switch
@@ -33,6 +34,8 @@ in
    structure WordSize = WordSize
    structure WordX = WordX
 end
+
+structure Target = CFunction.Target
 
 val implementsPrim = CCodegen.implementsPrim
 
@@ -58,8 +61,22 @@ structure CType =
 	 end
    end
 
-fun output {program, outputC} =
+structure LoadStore =
+   struct
+      datatype t = Load | Store
+
+      val toString =
+	 fn Load => "load"
+	  | Store => "store"
+
+      val layout = Layout.str o toString
+   end
+
+fun output {program as Program.T {chunks, main, ...}, outputC} =
    let
+      datatype z = datatype LoadStore.t
+      datatype z = datatype Statement.t
+      datatype z = datatype Transfer.t
       (* Build a table of the opcodes. *)
       val table = HashSet.new {hash = #hash}
       val _ =
@@ -93,6 +110,57 @@ fun output {program, outputC} =
       val cacheStackTop = opcode "CacheStackTop"
       val call = opcode "Call"
       val cCall = opcode "CCall"
+      local
+	 val directCalls = HashSet.new {hash = #hash}
+	 val counter = Counter.new 0
+      in
+	 val () =
+	    (* Visit each direct C Call in the program. *)
+	    List.foreach
+	    (chunks, fn Chunk.T {blocks, ...} =>
+	     Vector.foreach
+	     (blocks, fn Block.T {transfer, ...} =>
+	      case transfer of
+		 CCall {func, ...} =>
+		    let
+		       val CFunction.T {prototype, target, ...} = func
+		       datatype z = datatype Target.t
+		    in
+		       case target of
+			  Direct name =>
+			     let
+				val hash = String.hash name
+			     in
+				ignore
+				(HashSet.lookupOrInsert
+				 (directCalls, hash,
+				  fn {name = n, ...} => n = name,
+				  fn () => {hash = hash,
+					    index = Counter.next counter,
+					    name = name}))
+			     end
+			| Indirect => ()
+		    end
+	       | _ => ()))
+	 fun directIndex (name: string) =
+	    #index (HashSet.lookupOrInsert
+		    (directCalls, String.hash name,
+		     fn {name = n, ...} => n = name,
+		     fn () => Error.bug "directIndex"))
+      end
+      local
+	 val c = Counter.new 0
+	 val indirectCalls = ref []
+      in
+	 fun indirectIndex (prototype): int =
+	    let
+	       val () =
+		  List.push (indirectCalls, {prototype = prototype})
+	    in
+	       Counter.next c
+	    end
+      end
+      val jumpOnOverflow = opcode "JumpOnOverflow"
       val ffiSymbol =
 	 CType.memo (fn t => opcode (concat [CType.toString t, "_FFI_Symbol"]))
       local
@@ -132,12 +200,6 @@ fun output {program, outputC} =
 	     ; List.foreach (!inits, fn init => init print)
       	     ; print "}\n")
       end
-      val flushFrontier = opcode "FlushFrontier"
-      val flushStackTop = opcode "FlushStackTop"
-      val goto = opcode "Goto"
-      val move = CType.memo (fn t => opcode (concat [CType.toString t, "_move"]))
-      val move = move o Type.toCType
-      val object = opcode "Object"
       val primOp: 'a Prim.t -> Opcode.t = fn p => opcode (Prim.toString p)
       val profileLabel = opcode "ProfileLabel"
       val raisee = opcode "Raise"
@@ -158,17 +220,27 @@ fun output {program, outputC} =
 	     | W64 => s64
 	 end
       val thread_returnToC = opcode "Thread_returnToC"
-      val arrayOffset = opcode "ArrayOffset"
-      val contents = opcode "Contents"
-      val frontier = opcode "Frontier"
-      val gcState = opcode "GCState"
-      val global = opcode "Global"
-      val offsetOp = opcode "Offset"
-      val register = opcode "Register"
-      val stackOffset = opcode "StackOffset"
-      val stackTop = opcode "StackTop"
-      val wordOpcode = opcode "Word"
-      val Program.T {chunks, main, ...} = program
+      local
+	 fun make name (ls: LoadStore.t, cty: CType.t): Opcode.t =
+	    opcode
+	    (concat [CType.toString cty, "_", LoadStore.toString ls, name])
+      in
+	 val arrayOffset = make "ArrayOffset"
+	 val contents = make "Contents"
+	 val global = make "Global"
+	 val offsetOp = make "Offset"
+	 val register = make "Register"
+	 val stackOffset = make "StackOffset"
+	 val wordOpcode = make "Word"
+      end
+      local
+	 fun make name (ls: LoadStore.t): Opcode.t =
+	    opcode (concat [LoadStore.toString ls, name])
+      in
+   	 val frontier = make "Frontier"
+	 val gcState = make "GCState"
+	 val stackTop = make "StackTop"
+      end
       val backpatches: {label: Label.t, offset: int} list ref = ref []
       val code: Word8.t list ref = ref []
       val offset = ref 0
@@ -217,120 +289,159 @@ fun output {program, outputC} =
 	   | W16 => emitWord16
 	   | W32 => emitWord32
 	   | W64 => emitWord64) (WordX.toIntInf w)
+      val emitDirectIndex = emitWord16
+      val emitIndirectIndex = emitWord16
       val emitLabel: Label.t -> unit =
 	 fn l =>
 	 (List.push (backpatches, {label = l, offset = !offset})
 	  ; emitWord32 0)
       val emitLabel =
 	 Trace.trace ("emitLabel", Label.layout, Unit.layout) emitLabel
-      val rec emitOperand: Operand.t -> unit =
-	 fn z =>
+      val rec emitLoadOperand = fn z => emitOperand (z, Load)
+      and emitStoreOperand = fn z => emitOperand (z, Store)
+      and emitOperand: Operand.t * LoadStore.t -> unit =
+	 fn (z, ls) =>
 	 let
+	    val cty = Type.toCType (Operand.ty z)
 	    datatype z = datatype Operand.t
 	 in
 	    case z of
 	       ArrayOffset {base, index, ...} =>
-		  (emitOpcode arrayOffset
-		   ; emitOperand base
-		   ; emitOperand index)
-	     | Cast (z, _) => emitOperand z
+		  (emitLoadOperand base
+		   ; emitLoadOperand index
+		   ; emitOpcode (arrayOffset (ls, cty)))
+	     | Cast (z, _) => emitOperand (z, ls)
 	     | Contents {oper, ...} =>
-		  (emitOpcode contents
-		   ; emitOperand oper)
+		   (emitLoadOperand oper
+		    ; emitOpcode (contents (ls, cty)))
 	     | File => emitWord32 0
-	     | Frontier => emitOpcode frontier
-	     | GCState => emitOpcode gcState
+	     | Frontier => emitOpcode (frontier ls)
+	     | GCState => emitOpcode (gcState ls)
 	     | Global g =>
-		  (emitOpcode global
+		  (emitOpcode (global (ls, cty))
 		   ; emitWord16 (Int.toIntInf (Global.index g)))
 	     | Label l => emitLabel l
 	     | Line => emitWord32 0
 	     | Offset {base, offset = off, ...} =>
-		  (emitOpcode offsetOp
-		   ; emitOperand base
+		  (emitLoadOperand base
+		   ; emitOpcode (offsetOp (ls, cty))
 		   ; emitWordS16 (Bytes.toIntInf off))
 	     | Real _ => Error.bug "shouldn't see Real operands in bytecode"
 	     | Register r =>
-		  (emitOpcode register
+		  (emitOpcode (register (ls, cty))
 		   ; emitWord16 (Int.toIntInf (Register.index r)))
 	     | StackOffset (StackOffset.T {offset, ...}) =>
-		  (emitOpcode stackOffset
+		  (emitOpcode (stackOffset (ls, cty))
 		   ; emitWord16 (Bytes.toIntInf offset))
-	     | StackTop => emitOpcode stackTop
-	     | Word w => (emitOpcode wordOpcode; emitWordX w)
+	     | StackTop => emitOpcode (stackTop ls)
+	     | Word w =>
+		  case ls of
+		     Load => (emitOpcode (wordOpcode (ls, cty)); emitWordX w)
+		   | Store => Error.bug "can't store to word constant"
 	 end
       val emitOperand =
-	 Trace.trace ("emitOperand", Operand.layout, Unit.layout) emitOperand
-      val emitFFISymbol: string * CType.t -> unit =
-	 fn (name, ty) =>
-	 (emitOpcode (ffiSymbol ty)
-	  ; emitWord16 (Int.toIntInf (ffiSymbolIndex (ty, name))))
+	 Trace.trace2
+	 ("emitOperand", Operand.layout, LoadStore.layout, Unit.layout)
+	 emitOperand
+      fun move {dst, src} =
+	 (emitLoadOperand src
+	  ; emitStoreOperand dst)
+      fun emitArgs args = Vector.foreach (Vector.rev args, emitLoadOperand)
+      fun primApp {args, dst, prim} =
+	 (emitArgs args
+	  ; (case Prim.name prim of
+		Prim.Name.FFI_Symbol {name, ...} =>
+		   Option.app
+		   (dst, fn dst =>
+		    let
+		       val ty = Operand.ty dst
+		       val cty = Type.toCType ty
+		    in
+		       emitOpcode (ffiSymbol cty)
+		       ; emitWord16 (Int.toIntInf
+				     (ffiSymbolIndex (cty, name)))
+		       ; emitStoreOperand dst
+		    end)
+	      | _ => 
+		   (emitOpcode (primOp prim)
+		    ; Option.app (dst, emitStoreOperand))))
       val emitStatement: Statement.t -> unit =
 	 fn s =>
-	 let
-	    datatype z = datatype Statement.t
-	 in
-	    case s of
-	       Move {dst, src} =>
-		  (emitOpcode (move (Operand.ty dst))
-		   ; emitOperand src
-		   ; emitOperand dst)
-	     | Noop => ()
-	     | PrimApp {args, dst, prim} =>
-		  (case Prim.name prim of
-		      Prim.Name.FFI_Symbol {name, ...} =>
-			 Option.app
-			 (dst, fn dst =>
-			  let
-			     val ty = Operand.ty dst
-			  in
-			     emitOpcode (move ty)
-			     ; emitFFISymbol (name, Type.toCType ty)
-			     ; emitOperand dst
-			  end)
-		    | _ => 
-			 (emitOpcode (primOp prim)
-			  ; Vector.foreach (args, emitOperand)
-			  ; Option.app (dst, emitOperand)))
-	     | ProfileLabel _ => emitOpcode profileLabel
-	 end
+	 case s of
+	    Move z => move z
+	  | Noop => ()
+	  | PrimApp z => primApp z
+	  | ProfileLabel _ => emitOpcode profileLabel
       val emitStatement =
 	 Trace.trace ("emitStatement", Statement.layout, Unit.layout)
 	 emitStatement
+      local
+	 val gotoOp = opcode "Goto"
+      in
+	 fun goto (l: Label.t): unit =
+	    (emitOpcode gotoOp; emitLabel l)
+      end
+      val pointerSize = WordSize.pointer ()
+      fun push (label: Label.t, size: Bytes.t): unit =
+	 (move {dst = (Operand.StackOffset
+		       (StackOffset.T
+			{offset = Bytes.- (size, Runtime.labelSize),
+			 ty = Type.label label})),
+		src = Operand.Label label}
+	  ; primApp {args = (Vector.new2
+			     (Operand.StackTop,
+			      Operand.Word (WordX.fromIntInf
+					    (Bytes.toIntInf size,
+					     pointerSize)))),
+		     dst = SOME Operand.StackTop,
+		     prim = Prim.wordAdd pointerSize})
       fun emitTransfer (t: Transfer.t): unit =
 	 let
 	    datatype z = datatype Transfer.t
 	 in
 	    case t of
-	       Arith {args, dst, overflow, prim, success} => ()
+	       Arith {args, dst, overflow, prim, success} =>
+		  (emitArgs args
+		   ; emitOpcode (primOp prim)
+		   ; emitStoreOperand dst
+		   ; emitOpcode jumpOnOverflow
+		   ; emitLabel overflow
+		   ; goto success)
 	     | CCall {args, frameInfo, func, return} =>
 		  let
-		     val CFunction.T {maySwitchThreads,
-				      modifiesFrontier,
-				      return = returnTy, ...} = func
-		     val () = emitOpcode cCall
+		     val () = emitArgs args
+		     val CFunction.T {prototype, target, ...} = func
 		     val () =
-			Vector.foreach (args, fn a =>
-					(emitOpcode (move (Operand.ty a))
-					 ; emitOperand a))
+			Option.app
+			(frameInfo, fn frameInfo =>
+			 let
+			    val size = Program.frameSize (program, frameInfo)
+			    val () = push (valOf return, size)
+			 in
+			    ()
+			 end)
+		     val () = emitOpcode cCall
+		     datatype z = datatype Target.t
+		     val () =
+			case target of
+			   Direct name =>
+			      emitDirectIndex (Int.toIntInf (directIndex name))
+			 | Indirect =>
+			      emitIndirectIndex
+			      (Int.toIntInf (indirectIndex prototype))
 		  in
 		     ()
 		  end
 	     | Call {label, return, ...} =>
-		  (case return of
-		      NONE => (emitOpcode goto
-			       ; emitLabel label)
-		    | SOME {return, size, ...} =>
-			 (emitOpcode call
-			  ; emitWord16 (Bytes.toIntInf size)
-			  ; emitLabel return
-			  ; emitLabel label))
-	     | Goto l => (emitOpcode goto; emitLabel l)
+		  (Option.app (return, fn {return, size, ...} =>
+			       push (return, size))
+		   ; goto label)
+	     | Goto l => goto l
 	     | Raise => emitOpcode raisee
 	     | Return => emitOpcode return
 	     | Switch (Switch.T {cases, default, size, test}) =>
-		  (emitOpcode (switch size)
-		   ; emitOperand test
+		  (emitLoadOperand test
+		   ; emitOpcode (switch size)
 		   ; emitWord16 (Int.toIntInf (Vector.length cases))
 		   ; Vector.foreach (cases, fn (w, l) =>
 				     (emitWordX w; emitLabel l))

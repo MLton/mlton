@@ -564,11 +564,12 @@ mulOverflow(U32, U64)
 
 #define check(dst, n1, n2, l, f);						\
 	do {									\
-		int overflow;							\
+		Bool overflow;							\
 		dst = f (n1, n2, &overflow);					\
 		if (DEBUG_CCODEGEN)						\
 			fprintf (stderr, "%s:%d: " #f "(%d, %d) = %d\n",	\
-					__FILE__, __LINE__, n1, n2, dst);	\
+					__FILE__, __LINE__, 			\
+					(int)n1, (int)n2, (int)dst);		\
 		if (overflow) {							\
 			if (DEBUG_CCODEGEN)					\
 				fprintf (stderr, "%s:%d: overflow\n",		\
