@@ -785,7 +785,7 @@ val _ =
 	   else raise Fail "bug"
 	end)
 
-val _ = print "\nTesting {from,to}Large"
+val _ = print "\nTesting {from,to}Large\n"
 
 val _ =
    for

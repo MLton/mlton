@@ -1,9 +1,3 @@
-true
-~0.0
-0
-true
-~0.0
-0
 
 Testing Real32
 
@@ -8941,6 +8935,7 @@ Testing {from,to}ManExp
 Testing split
 
 Testing {from,to}Large
+
 Testing Real64
 
 Testing fmt
