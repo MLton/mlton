@@ -244,11 +244,14 @@ val lexAndParseString =
 		     let
 			open Layout
 		     in
-			Control.error (reg,
-				       seq [str "file ", str fileOrig,
-					    str " (", str fileUse, str ") ",
-					    str msg],
-				       empty)
+			Control.error
+			(reg,
+			 str (concat ["file ", fileOrig, " ",
+				      if fileOrig = fileUse
+					 then ""
+				      else concat [" (", fileUse, ")"],
+				      msg]),
+			 empty)
 		     end
 	       in
 		  default
