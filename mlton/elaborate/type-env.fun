@@ -252,7 +252,7 @@ structure Unknown =
 			 ("time", Time.layout (!time))]]
 	 end
 
-      fun minTime (u as T {time, ...}, t) =
+      fun minTime (T {time, ...}, t) =
 	 if Time.<= (!time, t)
 	    then ()
 	 else time := t
@@ -850,23 +850,24 @@ structure Type =
 
       fun minTime (t, time) =
 	 let
-	    fun doit r = r := Time.min (!r, time)
+	    fun doit r =
+	       if Time.<= (!r, time)
+		  then ()
+	       else r := time
 	    fun var (_, a) = doit (tyvarTime a)
-	    val {destroy, hom} =
-	       makeHom
-	       {con = fn _ => (),
-		expandOpaque = false,
-		flexRecord = fn (_, {time = r, ...}) => doit r,
-		genFlexRecord = fn _ => (),
-		int = fn _ => (),
-		real = fn _ => (),
-		record = fn _ => (),
-		recursive = fn _ => (),
-		unknown = fn (_, u) => Unknown.minTime (u, time),
-		var = var,
-		word = fn _ => ()}
-	    val _ = hom t
-	    val _ = destroy ()
+	    val _ =
+	       hom
+	       (t, {con = fn _ => (),
+		    expandOpaque = false,
+		    flexRecord = fn (_, {time = r, ...}) => doit r,
+		    genFlexRecord = fn _ => (),
+		    int = fn _ => (),
+		    real = fn _ => (),
+		    record = fn _ => (),
+		    recursive = fn _ => (),
+		    unknown = fn (_, u) => Unknown.minTime (u, time),
+		    var = var,
+		    word = fn _ => ()})
 	 in
 	    ()
 	 end
