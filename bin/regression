@@ -89,6 +89,23 @@ fi
 
 for f in `ls *.sml`; do
 	f=`basename $f .sml`
+	case `host-os` in
+	cygwin|mingw)
+		case "$f" in
+		echo|signals|socket|suspend|textio.2|thread2|world*)
+			continue
+		;;
+		esac
+	;;
+	esac
+	case `host-os` in
+	mingw)
+		case "$f" in
+		mutex|prodcons|signals2)
+			continue
+		;;
+		esac
+	esac
 	case "$f" in
 	serialize)
 		echo "skipping $f"
