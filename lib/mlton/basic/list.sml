@@ -125,8 +125,6 @@ val ('a, 'b) unfoldri: int * 'a * (int * 'a -> 'b * 'a) -> 'b list =
 	 loop (n - 1, a, [])
       end
 
-fun unfoldr (n, a, f) = unfoldri (n, a, f o #2)
-
 val ('a, 'b) unfoldi: int * 'a * (int * 'a -> 'b * 'a) -> 'b list =
    fn (n, a, f) =>
    if n < 0
@@ -146,7 +144,17 @@ val ('a, 'b) unfoldi: int * 'a * (int * 'a -> 'b * 'a) -> 'b list =
 	 loop (0, a, [])
       end
 
-fun unfold (n, a, f) = unfoldi (n, a, f o #2)
+fun unfoldr (a, f) =
+   let
+      fun loop (a, bs) =
+	 case f a of
+	    NONE => bs
+	  | SOME (b, a') => loop (a', b :: bs)
+   in
+      loop (a, [])
+   end
+
+fun unfold (a, f) = rev (unfoldr (a, f))
 
 fun tabulate (n: int, f) = unfoldri (n, (), fn (i, ()) => (f i, ()))
 

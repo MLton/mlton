@@ -95,7 +95,6 @@ signature VECTOR =
       val toList: 'a t -> 'a list
       val toListMap: 'a t * ('a -> 'b) -> 'b list
       val toListRev: 'a t -> 'a list
-      val unfold: int * 'a * ('a -> 'b * 'a) -> 'b t
       val unzip: ('a * 'b) t -> 'a t * 'b t
       val unzip3: ('a * 'b * 'c) t -> 'a t * 'b t * 'c t
       val zip: 'a t * 'b t -> ('a * 'b) t
