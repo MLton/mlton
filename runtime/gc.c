@@ -1272,8 +1272,8 @@ static void setCardMapForMutator (GC_state s) {
 	unless (s->mutatorMarksCards)
 		return;
 	if ((uint)s->cardMap < divCardSize (s, (uint)s->heap.start))
-		diee ("Unable to set cardMapForMutator.  heap.start = 0x%08x",
-			(uint)s->heap.start);
+		diee ("Unable to set cardMapForMutator.  cardmap = 0x%08x  heap.start = 0x%08x",
+			(uint)s->cardMap, (uint)s->heap.start);
 	s->cardMapForMutator = s->cardMap - divCardSize (s, (uint)s->heap.start);
 	if (DEBUG_CARD_MARKING)
 		fprintf (stderr, "cardMapForMutator = 0x%08x\n",
