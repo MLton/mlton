@@ -18,7 +18,7 @@ fun reportDuplicateFields (v, name: string, left, right) =
    Vector.foreachi
    (v, fn (i, (f, _)) =>
     if Vector.existsi (v, fn (i', (f', _)) =>
-		       i < i' andalso Field.equals (f, f'))
+		       i > i' andalso Field.equals (f, f'))
        then
 	  let
 	     open Layout
@@ -771,12 +771,32 @@ typBind' :              (TypBind.T [])
          | AND typBind  (TypBind.node typBind)
 
 
-tyvars	: tyvar			  (Vector.new1 tyvar)
-	| LPAREN tyvar_pc RPAREN  (Vector.fromList tyvar_pc)
-	|			  (Vector.new0 ())
+tyvars	: tyvarseq (tyvarseq)
+	|          (Vector.new0 ())
 
 tyvarseq: tyvar			  (Vector.new1 tyvar)
-	| LPAREN tyvar_pc RPAREN  (Vector.fromList tyvar_pc)
+	| LPAREN tyvar_pc RPAREN
+	  (let
+	      val v = Vector.fromList tyvar_pc
+	      val _ =
+		 Vector.foreachi
+		 (v, fn (i, a) =>
+		  if Vector.existsi (v, fn (i', a') =>
+				     i < i' andalso Tyvar.sameName (a, a'))
+		     then
+			let
+			   open Layout
+			in
+			   Control.error
+			   (Tyvar.region a,
+			    seq [str "duplicate type variable: ",
+				 Tyvar.layout a],
+			    empty)
+			end
+		  else ())
+	   in
+	      v
+	   end)
 
 tyvar_pc: tyvar                ([tyvar])
 	| tyvar COMMA tyvar_pc (tyvar :: tyvar_pc)
