@@ -516,7 +516,7 @@ fun multipart (boundary: string, files): int * (Out.t -> unit) =
 		   :: zs)
       val size = List.fold (zs, 0, fn (z, n) =>
 			    case z of
-			       File f => n + File.size f
+			       File f => n + Position.toInt (File.size f)
 			     | Strings ss =>
 				  List.fold (ss, n, fn (s, n) =>
 					     n + String.size s))
