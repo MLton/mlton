@@ -87,9 +87,10 @@ signature TYPE_ENV =
        * after unification is complete.
        *)
       val close:
-	 Tyvar.t vector * Region.t
+	 Tyvar.t vector
 	 -> {close: Type.t vector -> {bound: unit -> Tyvar.t vector,
-				      schemes: Scheme.t vector},
+				      schemes: Scheme.t vector,
+				      unable: Tyvar.t vector},
 	     dontClose: unit -> unit}
       val initAdmitsEquality: Tycon.t * Tycon.AdmitsEquality.t -> unit
       val setOpaqueTyconExpansion: Tycon.t * (Type.t vector -> Type.t) -> unit

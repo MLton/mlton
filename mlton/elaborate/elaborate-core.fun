@@ -1103,6 +1103,21 @@ fun elaborateDec (d, {env = E,
 	     val region = Adec.region d
 	     fun lay () = seq [str "in: ", approximate (Adec.layout d)]
 	     val preError = Promise.lazy (fn () => Env.setTyconNames E)
+	     fun reportUnable (unable: Tyvar.t vector) =
+	       if 0 = Vector.length unable
+		  then ()
+	       else
+		  let
+		     open Layout
+		  in
+		     Control.error
+		     (region,
+		      seq [str "unable to generalize ",
+			   seq (List.separate (Vector.toListMap (unable,
+								 Tyvar.layout),
+					       str ", "))],
+		      lay ())
+		  end
 	     fun useBeforeDef (c: Tycon.t) =
 		let
 		   val _ = preError ()
@@ -1252,7 +1267,7 @@ fun elaborateDec (d, {env = E,
 			       lay = lay,
 			       resultType = resultType}
 			   end))
-		      val {close, ...} = TypeEnv.close (tyvars, region)
+		      val {close, ...} = TypeEnv.close tyvars
 		      val {markFunc, setBound, unmarkFunc} = recursiveFun ()
 		      val fbs =
 			 Vector.map
@@ -1495,7 +1510,9 @@ fun elaborateDec (d, {env = E,
 			      ty = ty,
 			      var = var}
 			  end)
-		      val {bound, schemes} = close (Vector.map (decs, #ty))
+		      val {bound, schemes, unable} =
+			 close (Vector.map (decs, #ty))
+		      val () = reportUnable unable
 		      val _ = checkSchemes (Vector.zip
 					    (Vector.map (decs, #var),
 					     schemes))
@@ -1559,7 +1576,7 @@ fun elaborateDec (d, {env = E,
 		    ; Decs.empty)
 	      | Adec.Val {tyvars, rvbs, vbs} =>
 		   let
-		      val {close, dontClose} = TypeEnv.close (tyvars, region)
+		      val {close, dontClose} = TypeEnv.close tyvars
 		      (* Must do all the es and rvbs before the ps because of
 		       * scoping rules.
 		       *)
@@ -1612,8 +1629,9 @@ fun elaborateDec (d, {env = E,
 				  fn tys =>
 				  (dontClose ()
 				   ; {bound = fn () => Vector.new0 (),
-				      schemes =
-				      Vector.map (tys, Scheme.fromType)})
+				      schemes = (Vector.map
+						 (tys, Scheme.fromType)),
+				      unable = Vector.new0 ()})
 			       end
 		      val {markFunc, setBound, unmarkFunc} = recursiveFun ()
 		      val elaboratePat = elaboratePat ()
@@ -1731,8 +1749,9 @@ fun elaborateDec (d, {env = E,
 			  Vector.map
 			  (Vector.concatV (Vector.map (vbs, #bound)),
 			   fn x => (x, {isRebind = false}))]
-		      val {bound, schemes} =
+		      val {bound, schemes, unable} =
 			 close (Vector.map (boundVars, #3 o #1))
+		      val () = reportUnable unable
 		      val _ = checkSchemes (Vector.zip
 					    (Vector.map (boundVars, #2 o #1),
 					     schemes))

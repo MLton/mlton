@@ -2136,6 +2136,11 @@ fun makeOpaque (S: Structure.t, I: Interface.t, {prefix: string}) =
 fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 		    region: Region.t): Structure.t * Decs.t =
    let
+      (* This tick is so that the type schemes for any values that need to be
+       * instantiated and then re-generalized will be at a new time, so we can
+       * check if something should not be generalized.
+       *)
+      val () = TypeEnv.tick {useBeforeDef = fn _ => Error.bug "cut tick"}
       val sign =
 	 if isFunctor
 	    then "argument signature"
@@ -2491,9 +2496,23 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 		fn (name, (vid, strScheme), (status, sigScheme)) =>
 		let
 		   val sigScheme = Interface.Scheme.toEnv sigScheme
-		   val (tyvars, sigType) = Scheme.dest sigScheme
-		   val {args, instance = strType} = Scheme.instantiate strScheme
-		   fun error (l, l') =
+		   val (sigArgs, sigType) = Scheme.dest sigScheme
+		   val tyvars = Vector.map (sigArgs, fn a => Tyvar.newLike a)
+		   fun var a =
+		      case Vector.peeki (sigArgs, fn (_, a') =>
+					 Tyvar.equals (a, a')) of
+			 NONE => Error.bug "cut var"
+		       | SOME (i, _) => Type.var (Vector.sub (tyvars, i))
+		   val sigType =
+		      Type.hom (sigType, {con = Type.con,
+					  expandOpaque = false,
+					  record = Type.record,
+					  replaceSynonyms = false,
+					  var = var})
+		   val {close, ...} = TypeEnv.close tyvars
+		   val {args = strArgs, instance = strType} =
+		      Scheme.instantiate strScheme
+		   fun error rest =
 		      let
 			 open Layout
 		      in
@@ -2504,12 +2523,38 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 			  align [seq [str "variable: ",
 				      Longvid.layout	
 				      (Longvid.long (rev strids, name))],
-				 seq [str "structure: ", l],
-				 seq [str "signature: ", l']])
+				 rest])
 		      end
-		   val _ = Type.unify (strType, sigType,
-				       {error = error,
-					preError = preError})
+		   val _ =
+		      Type.unify
+		      (strType, sigType,
+		       {error = (fn (l, l') =>
+				 let
+				    open Layout
+				 in
+				    error (align [seq [str "structure: ", l],
+						  seq [str "signature: ", l']])
+				 end),
+			preError = preError})
+		   val {bound, unable, ...} = close (Vector.new1 strType)
+		   val () =
+		      if 0 = Vector.length unable
+			 then ()
+		      else
+			 let
+			    val () = preError ()
+			    open Layout
+			 in
+			    error
+			    (align
+			     [seq [str "unable to generalize: ",
+				   seq (List.separate (Vector.toListMap
+						       (unable, Tyvar.layout),
+						       str ", "))],
+			      seq [str "signature: ",
+				   Scheme.layoutPretty sigScheme]])
+
+			 end
 		   fun addDec (n: Exp.node): Vid.t =
 		      let
 			 val x = Var.newNoname ()
@@ -2518,7 +2563,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 			    List.push
 			    (decs,
 			     Dec.Val {rvbs = Vector.new0 (),
-				      tyvars = fn () => tyvars,
+				      tyvars = bound,
 				      vbs = (Vector.new1
 					     {exp = e,
 					      lay = fn _ => Layout.empty,
@@ -2528,17 +2573,16 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 			 Vid.Var x
 		      end
 		   fun con (c: Con.t): Vid.t =
-		      addDec (Exp.Con (c, args ()))
+		      addDec (Exp.Con (c, strArgs ()))
 		   val vid =
 		      case (vid, status) of
 			 (Vid.Con c, Status.Var) => con c
 		       | (Vid.Exn c, Status.Var) => con c
 		       | (Vid.Var x, Status.Var) =>
-			    (if 0 < Vector.length tyvars
-				orelse 0 < Vector.length (args ())
-				then
-				   addDec (Exp.Var (fn () => x, args))
-			     else vid)
+			    if 0 < Vector.length tyvars
+			       orelse 0 < Vector.length (strArgs ())
+			       then addDec (Exp.Var (fn () => x, strArgs))
+			    else vid
 		       | (Vid.Con _, Status.Con) => vid
 		       | (Vid.Exn _, Status.Exn) => vid
 		       | _ =>

@@ -1465,7 +1465,7 @@ structure Scheme =
 	 end
    end
 
-fun close (ensure: Tyvar.t vector, region) =
+fun close (ensure: Tyvar.t vector) =
    let
       val genTime = Time.now ()
       val _ = Vector.foreach (ensure, fn a => ignore (tyvarTime a))
@@ -1478,25 +1478,11 @@ fun close (ensure: Tyvar.t vector, region) =
 	    val unable =
 	       Vector.keepAll (ensure, fn a =>
 			       not (Time.<= (genTime, !(tyvarTime a))))
-	    val _ = 
-	       if Vector.length unable > 0
-		  then
-		     let
-			open Layout
-		     in
-			Control.error
-			(region,
-			 seq [str "unable to generalize ",
-			      seq (List.separate (Vector.toListMap (unable,
-								    Tyvar.layout),
-						  str ", "))],
-			 empty)
-		     end
-	       else ()
 	    val flexes = ref []
 	    val tyvars = ref (Vector.toList ensure)
 	    (* Convert all the unknown types bound at this level into tyvars.
-	     * Convert all the FlexRecords bound at this level into GenFlexRecords.
+	     * Convert all the FlexRecords bound at this level into
+	     * GenFlexRecords.
 	     *)
 	    val newCloses =
 	       List.fold
@@ -1575,8 +1561,8 @@ fun close (ensure: Tyvar.t vector, region) =
 	    val _ = Type.newCloses := newCloses
 	    val flexes = !flexes
 	    val tyvars = !tyvars
-	    (* For all fields that were added to the generalized flex records, add
-	     * a type variable.
+	    (* For all fields that were added to the generalized flex records,
+	     * add a type variable.
 	     *)
 	    fun bound () =
 	       Vector.fromList
@@ -1602,7 +1588,8 @@ fun close (ensure: Tyvar.t vector, region) =
 				ty = ty})
 	 in
 	    {bound = bound,
-	     schemes = schemes}
+	     schemes = schemes,
+	     unable = unable}
 	 end
    in
       {close = close,
