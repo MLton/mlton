@@ -184,6 +184,8 @@ fun existsi (a, f) = isSome (peeki (a, f))
 
 fun exists (a, f) = existsi (a, f o #2)
 
+fun contains (v, a, f) = exists (v, fn a' => f (a, a'))
+
 fun foralli (a, f) = not (existsi (a, not o f))
 
 fun forall (a, f) = foralli (a, f o #2)

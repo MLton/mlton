@@ -17,6 +17,7 @@ signature VECTOR =
       val compare: 'a t * 'a t * ('a * 'a -> order) -> order
       val concat: 'a t list -> 'a t
       val concatV: 'a t t -> 'a t
+      val contains: 'a t * 'a * ('a * 'a -> bool) -> bool
       val copy: 'a t -> 'a t
       val equals: 'a t * 'b t * ('a * 'b -> bool) -> bool
       val exists: 'a t * ('a -> bool) -> bool
