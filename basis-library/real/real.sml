@@ -89,14 +89,19 @@ structure Real: REAL =
 	  | 5 => SUBNORMAL
 	  | _ => raise Fail "Primitive.Real.class returned bogus integer"
 
-      local
-	 val r: int ref = ref 0
-      in
-	 fun toManExp x =
-	    let val man = frexp (x, r)
-	    in {man = man, exp = !r}
-	    end
-      end
+      val toManExp =
+	 let
+	    val r: int ref = ref 0
+	 in
+	    fn x => if x == 0.0
+		       then {exp = 0, man = 0.0}
+		    else
+		       let
+			  val man = frexp (x, r)
+		       in
+			  {man = man * 2.0, exp = Int.- (!r, 1)}
+		       end
+	 end
 
       fun fromManExp {man, exp} = ldexp (man, exp)
 
@@ -104,8 +109,10 @@ structure Real: REAL =
 	 val int = ref 0.0
       in
 	 fun split x =
-	    let val frac = modf (x, int)
-	    in {frac = frac,
+	    let
+	       val frac = modf (x, int)
+	    in
+	       {frac = frac,
 		whole = ! int}
 	    end
       end
@@ -120,53 +127,55 @@ structure Real: REAL =
 	      else raise Overflow
 
       fun withRoundingMode (m, th) =
-	 let val m' = getRoundingMode ()
-	 in setRoundingMode m ;
-	    th () before setRoundingMode m'
+	 let
+	    val m' = getRoundingMode ()
+	    val _ = setRoundingMode m
+	    val res = th ()
+	    val _ = setRoundingMode m'
+	 in
+	    res
 	 end
 
       val maxInt = fromInt Int.maxInt'
       val minInt = fromInt Int.minInt'
 
       fun toInt mode x =
-	 let fun doit () = withRoundingMode (mode, fn () =>
-					   Real.toInt (Real.round x))
-	 in case class x of
-	    NAN _ => raise Domain
-	  | INF => raise Overflow
-	  | ZERO => 0
-	  | NORMAL =>
-	       if minInt <= x
-		  then if x <= maxInt
-			  then doit ()
-		       else if x < maxInt + 1.0
-			       then (case mode of
-					TO_NEGINF => Int.maxInt'
-				      | TO_POSINF => raise Overflow
-				      | TO_ZERO => Int.maxInt'
-				      | TO_NEAREST =>
-					   (* Depends on maxInt being odd. *)
-					   if x - maxInt >= 0.5
-					      then raise Overflow
-					   else Int.maxInt')
-			    else raise Overflow
-	       else if x > minInt - 1.0
-		       then (case mode of
-				TO_NEGINF => raise Overflow
-			      | TO_POSINF => Int.minInt'
-			      | TO_ZERO => Int.minInt'
-			      | TO_NEAREST =>
-				   (* Depends on minInt being even. *)
-				   if x - minInt < ~0.5
-				      then raise Overflow
-				   else Int.minInt')
-		    else raise Overflow
-	  | SUBNORMAL => doit ()
+	 let
+	    fun doit () = withRoundingMode (mode, fn () =>
+					    Real.toInt (Real.round x))
+	 in
+	    case class x of
+	       NAN _ => raise Domain
+	     | INF => raise Overflow
+	     | ZERO => 0
+	     | NORMAL =>
+		  if minInt <= x
+		     then if x <= maxInt
+			     then doit ()
+			  else if x < maxInt + 1.0
+				  then (case mode of
+					   TO_NEGINF => Int.maxInt'
+					 | TO_POSINF => raise Overflow
+					 | TO_ZERO => Int.maxInt'
+					 | TO_NEAREST =>
+					      (* Depends on maxInt being odd. *)
+					      if x - maxInt >= 0.5
+						 then raise Overflow
+					      else Int.maxInt')
+			       else raise Overflow
+		  else if x > minInt - 1.0
+			  then (case mode of
+				   TO_NEGINF => raise Overflow
+				 | TO_POSINF => Int.minInt'
+				 | TO_ZERO => Int.minInt'
+				 | TO_NEAREST =>
+				      (* Depends on minInt being even. *)
+				      if x - minInt < ~0.5
+					 then raise Overflow
+				      else Int.minInt')
+		       else raise Overflow
+           | SUBNORMAL => doit ()
 	 end
-
-(*       val toLargeInt = toInt
- *       val fromLargeInt = fromInt
- *)
 
       fun toLarge x = x
       fun fromLarge _ x = x
@@ -353,6 +362,125 @@ structure Real: REAL =
 	 end
 
       fun fromString s = StringCvt.scanString scan s
+
+      local
+	 fun negateMode m =
+	    case m of
+	       TO_NEAREST => TO_NEAREST
+	     | TO_NEGINF => TO_POSINF
+	     | TO_POSINF => TO_NEGINF
+	     | TO_ZERO => TO_ZERO
+
+	 val m: int = 52 (* The number of mantissa bits in 64 bit IEEE 854. *)
+	 val half = Int.quot (m, 2)
+	 val two = IntInf.fromInt 2
+	 val twoPowHalf = IntInf.pow (two, half)
+      in
+	 fun fromLargeInt (i: IntInf.int): real =
+	    let
+	       fun pos (i: IntInf.int, mode): real = 
+		  case SOME (IntInf.log2 i) handle Overflow => NONE of
+		     NONE => posInf
+		   | SOME exp =>
+			if Int.< (exp, Int.- (valOf Int.precision, 1))
+			   then fromInt (IntInf.toInt i)
+			else if Int.>= (exp, 1024)
+		           then posInf
+			else
+			   let
+			      val shift = Int.- (exp, m)
+			      val (man: IntInf.int, extra: IntInf.int) =
+				 if Int.>= (shift, 0)
+				    then
+				       let
+					  val (q, r) =
+					     IntInf.quotRem
+					     (i, IntInf.pow (two, shift))
+					  val extra =
+					     case mode of
+						TO_NEAREST =>
+						   if IntInf.> (r, 0)
+						      andalso IntInf.log2 r =
+						      Int.- (shift, 1)
+						      then 1
+						   else 0
+					      | TO_NEGINF => 0
+					      | TO_POSINF =>
+						   if IntInf.> (r, 0)
+						      then 1
+						   else 0
+					      | TO_ZERO => 0
+				       in
+					  (q, extra)
+				       end
+				 else
+				    (IntInf.* (i, IntInf.pow (two, Int.~ shift)),
+				     0)
+			      (* 2^m <= man < 2^(m+1) *)
+			      val (q, r) = IntInf.quotRem (man, twoPowHalf)
+			      fun conv (man, exp) =
+				 fromManExp {man = fromInt (IntInf.toInt man),
+					     exp = exp}
+			   in
+			      conv (q, Int.+ (half, shift))
+			      + conv (IntInf.+ (r, extra), shift)
+			   end
+	       val mode = getRoundingMode ()
+	    in
+	       case IntInf.compare (i, IntInf.fromInt 0) of
+		  General.LESS => ~ (pos (IntInf.~ i, negateMode mode))
+		| General.EQUAL => 0.0
+		| General.GREATER => pos (i, mode)
+	    end
+
+	 val toLargeInt: IEEEReal.rounding_mode -> real -> IntInf.int =
+	    fn mode => fn x =>
+ 	    (IntInf.fromInt (toInt mode x)
+ 	     handle Overflow =>
+	     case class x of
+		INF => raise Overflow
+	      | _ => 
+		   let
+		      fun pos (x, mode) =
+			 let 
+			    val {frac, whole} = split x
+			    val extra =
+			       if mode = TO_NEAREST
+				  andalso Real.== (frac, 0.5)
+				  then
+				     if Real.== (0.5, realMod (whole / 2.0))
+					then 1
+				     else 0
+			       else IntInf.fromInt (toInt mode frac)
+			    val {man, exp} = toManExp whole
+			    (* 1 <= man < 2 *)
+			    val man = fromManExp {man = man, exp = half}
+			    (* 2^half <= man < 2^(half+1) *)
+			    val {frac = lower, whole = upper} = split man
+			    val upper = IntInf.* (IntInf.fromInt (floor upper),
+						  twoPowHalf)
+			    (* 2^m <= upper < 2^(m+1) *)
+			    val {whole = lower, ...} =
+			       split (fromManExp {man = lower, exp = half})
+			    (* 0 <= lower < 2^half *)
+			    val lower = IntInf.fromInt (floor lower)
+			    val int = IntInf.+ (upper, lower)
+			    (* 2^m <= int < 2^(m+1) *)
+			    val shift = Int.- (exp, m)
+			    val int =
+			       if Int.>= (shift, 0)
+				  then IntInf.* (int, IntInf.pow (2, shift))
+			       else IntInf.quot (int,
+						 IntInf.pow (2, Int.~ shift))
+			 in
+			    IntInf.+ (int, extra)
+			 end
+		   in
+		      if x > 0.0
+			 then pos (x, mode)
+		      else IntInf.~ (pos (~ x, negateMode mode))
+		   end)
+      end
    end
 
 structure RealGlobal: REAL_GLOBAL = Real

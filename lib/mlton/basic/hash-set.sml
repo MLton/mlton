@@ -23,7 +23,7 @@ fun 'a newWithBuckets {hash, numBuckets}: 'a t =
 	 mask = ref mask}
    end
 
-val initialSize: int = Int.^ (2, 6)
+val initialSize: int = Int.pow (2, 6)
 
 fun new {hash} = newWithBuckets {hash = hash,
 				 numBuckets = Word.fromInt initialSize}
@@ -196,5 +196,18 @@ end
 fun toList t = fold (t, [], fn (a, l) => a :: l)
 
 fun layout lay t = List.layout lay (toList t)
+
+fun fromList (l, {hash, equals}) =
+   let
+      val s = new {hash = hash}
+      val _ =
+	 List.foreach (l, fn a =>
+		       (lookupOrInsert (s, hash a,
+					fn b => equals (a, b),
+					fn _ => a)
+			; ()))
+   in
+      s
+   end
 
 end

@@ -13,13 +13,19 @@ type word = Word.t
 
 val busy = ref false : bool ref
 val color = ref false
+val depth: int ref = ref 0
+val raw = ref false
 val static = ref false (* include static C functions *)
-val thresh = ref 0 : int ref
-val extra = ref false
+val thresh: int ref = ref 0
 
 val die = Process.fail
 val warn = fn s => Out.output (Out.error, concat ["Warning: ", s, "\n"])
 
+fun die s =
+   (Out.output (Out.error, s)
+    ; Out.newline Out.error
+    ; Process.fail "die")
+   
 structure Regexp =
 struct
   open Regexp
@@ -31,7 +37,6 @@ struct
 			star (isChar (fn #"_" => true
 				       | #"'" => true
 				       | c => Char.isAlphaNum c))]
-		     
 end
 
 structure StringMap:
@@ -111,10 +116,12 @@ end
 
 structure AFile =
    struct
-      datatype t = T of {addr: word,
-			 profileInfo: {name: string} ProfileInfo.t} list
+      datatype t = T of {etext: word,
+			 start: word,
+			 data: {addr: word,
+				profileInfo: {name: string} ProfileInfo.t} list}
 
-      fun layout (T l) =
+      fun layout (T {data, ...}) =
 	 let 
 	    open Layout
 	 in 
@@ -123,7 +130,7 @@ structure AFile =
 	     => seq [Word.layout addr,
 		     str " ",
 		     ProfileInfo.layout (fn {name} => str name) profileInfo])
-	    l
+	    data
 	 end
 
       structure Match = Regexp.Match
@@ -153,11 +160,19 @@ structure AFile =
 	       val addr = Save.new ()
 	       val kind = Save.new ()
 	       val label = Save.new ()
+	       val start = Save.new ()
+	       val etext = Save.new ()
 	       val symbolC =
 		  compileDFA
-		  (or [seq [save (hexDigits, addr),
+		  (or [seq [save (hexDigits, start),
+			    string " T _start",
+			    eol],
+		       seq [save (hexDigits, etext),
+			    string " A etext",
+			    eol],
+		       seq [save (hexDigits, addr),
 			    char #" ",
-			    save (char #"t", kind),
+			    save (char #"T", kind),
 			    char #" ",
 			    profileLabelRegexp,
 			    eol],
@@ -173,6 +188,8 @@ structure AFile =
 		  else (Layout.outputl (Compiled.layout symbolC, Out.standard)
 			; Compiled.layoutDotToFile (symbolC, "symbol.dot"))
 	    end
+	    val startRef = ref NONE
+	    val etextRef = ref NONE
 	    val l
 	       = Process.callWithIn
 	       ("nm", ["-n", afile], fn ins =>
@@ -183,45 +200,61 @@ structure AFile =
 		  | SOME m =>
 		       let
 			  val {lookup, peek, ...} = Regexp.Match.stringFuns m
-			  val addr = valOf (Word.fromString (lookup addr))
-			  val profileInfo =
-			     case peek label of
-				SOME label =>
-				   let
-				      val kind = lookup kind
-				      val level = if kind = "T" then ~1 else ~2
-				   in [{profileLevel = level,
-					profileName = label}]
-				   end
-			      | NONE =>
-				   let
-				      val profileInfo = lookup profileInfo
-				      val length = String.size profileInfo
-				      fun loop pos =
-					 case (Regexp.Compiled.matchShort
-					       (profileInfoC,
-						profileInfo, pos)) of
-					    NONE => []
-					  | SOME m =>
-					       let
-						  val {lookup, ...} =
-						     Match.stringFuns m
-						  val level =
-						     valOf (Int.fromString
-							    (lookup level))
-						  val name = lookup name
-					       in
-						  {profileLevel = level,
-						   profileName = name}
-						  :: loop (pos + Match.length m)
-					       end	
-				   in loop 0
-				   end
+			  fun normal () =
+			     let
+				val addr = valOf (Word.fromString (lookup addr))
+				val profileInfo =
+				   case peek label of
+				      SOME label =>
+					 let
+					    val kind = lookup kind
+					    val level =
+					       if kind = "T" then ~1 else ~2
+					 in [{profileLevel = level,
+					      profileName = label}]
+					 end
+				    | NONE =>
+					 let
+					    val profileInfo = lookup profileInfo
+					    val length = String.size profileInfo
+					    fun loop pos =
+					       case (Regexp.Compiled.matchShort
+						     (profileInfoC,
+						      profileInfo, pos)) of
+						  NONE => []
+						| SOME m =>
+						     let
+							val {lookup, ...} =
+							   Match.stringFuns m
+							val level =
+							   valOf (Int.fromString
+								  (lookup level))
+							val name = lookup name
+						     in
+							{profileLevel = level,
+							 profileName = name}
+							:: loop (pos + Match.length m)
+						     end	
+					 in loop 0
+					 end
+			     in
+				{addr = addr, profileInfo = profileInfo} :: ac
+			     end
 		       in
-			  {addr = addr, profileInfo = profileInfo} :: ac
+			  case peek start of
+			     SOME s =>
+				(startRef := SOME (valOf (Word.fromString s))
+				 ; ac)
+			   | NONE =>
+				case peek etext of
+				   SOME s =>
+				      (etextRef :=
+				       SOME (valOf (Word.fromString s))
+				       ; ac)
+				 | NONE => normal ()
 		       end))
 
-	fun shrink {addr, profileInfo : {profileLevel: int,
+	    fun shrink {addr, profileInfo : {profileLevel: int,
 					 profileName: string} list}
 	  = let
 	      val profileInfo 
@@ -309,23 +342,52 @@ structure AFile =
 		  else (shrink v1):: (compress (v2::l))
 
 	val l = List.rev (compress l)
+	val start =
+	   case !startRef of
+	      NONE => die "couldn't find _start label"
+	    | SOME w => w
+	val etext =
+	   case !etextRef of
+	      NONE => die "couldn't find _etext label"
+	    | SOME w => w
       in
-	T l
+	T {data = l,
+	   etext = etext,
+	   start = start}
       end
 
   val new = Trace.trace ("AFile.new", File.layout o #afile, layout) new
 end
 
+structure Kind =
+   struct
+      datatype t = Alloc | Time
+   end
+
 structure ProfFile =
 struct
-  datatype t = T of {buckets: {addr: word, count: int} list}
+   (* Profile information is a list of buckets, sorted in increasing order of
+    * address, with count always greater than 0.
+    *)
+  datatype t = T of {buckets: {addr: word,
+			       count: IntInf.t} list,
+		     etext: word,
+		     kind: Kind.t,
+		     magic: word,
+		     start: word}
+
+  local
+     fun make f (T r) = f r
+  in
+     val kind = make #kind
+  end
 
   fun layout (T {buckets, ...}) 
     = let 
 	open Layout
       in 
 	List.layout
-	(fn {addr, count} => seq [Word.layout addr, str " ", Int.layout count])
+	(fn {addr, count} => seq [Word.layout addr, str " ", IntInf.layout count])
 	buckets
       end
 
@@ -342,7 +404,6 @@ struct
 		     then die "Unexpected EOF"
 		     else res
 		 end
-
 	     fun getString size = read size
 	     fun getChar ():char 
 	       = let val s = read 1
@@ -352,9 +413,9 @@ struct
 	       = let val s = read 4
 		     fun c i = Word.fromInt (Char.toInt (String.sub (s, i)))
 		 in Word.orb (Word.orb (Word.<< (c 3, 0w24),
-				      Word.<< (c 2, 0w16)),
-			     Word.orb (Word.<< (c 1, 0w8), 
-				      Word.<< (c 0, 0w0)))
+					Word.<< (c 2, 0w16)),
+			      Word.orb (Word.<< (c 1, 0w8), 
+					Word.<< (c 0, 0w0)))
 		 end
 	     fun getHWord (): word
 	       = let val s = read 2
@@ -367,111 +428,147 @@ struct
 		     fun c i = Word.fromInt (Char.toInt (String.sub (s, i)))
 		 in Word.<< (c 0, 0w0)
 		 end
+	     val _ =
+		if "MLton prof\n\000" <> getString 12
+		   then
+		      die (concat [mlmonfile,
+				   " does not appear to be a mlmon.out file"])
+		else ()
 	     val getAddr = getWord
-	     val _ 
-	       = if "MLton prof\n\000" <> getString 12
-		   then die 
-		        (concat
-			 [mlmonfile, " does not appear to be a mlmon.out file"])
-		   else ()
-	     val low = getAddr ()
-	     val high = getAddr ()
-
-	     val unknowns = getWord ()
-
-	     fun doit (addr, ac)
-	       = if In.endOf ins
-		   then (addr, ac)
-		   else let
-			  val count = getWord ()
-			  val count = Word.toInt count
-
-			  val ac = if count <> 0 
-				     then {addr = addr, count = count} :: ac
-				     else ac
-			in
-			  doit (Word.+ (addr, 0wx1), ac)
-			end
-
-	     val ac = if unknowns <> 0wx0 
-			then [{addr = 0wx0, count = Word.toInt unknowns}]
-			else []
-	     val (addr, ac) = doit (low, ac)
-
-	     val _ = if addr <> high
-		       then die (concat [mlmonfile, " truncated:",
-					 " low: ", Word.toString low,
-					 " high: ", Word.toString high,
-					 " addr: ", Word.toString addr])
-		       else ()
+	     val magic = getWord ()
+	     val start = getAddr ()
+	     val etext = getAddr ()
+	     val countSize = getWord ()
+	     val kind =
+		case getWord () of
+		   0w0 => Kind.Alloc
+		 | 0w1 => Kind.Time
+		 | _ => die "invalid mlmon.out kind"
+	     fun getCount4 () = Word.toIntInf (getWord ())
+	     fun getCount8 () =
+		let
+		   val low = getCount4 ()
+		   val high = getCount4 ()
+		   open IntInf
+		in
+		   low + high * pow (fromInt 2, Word.wordSize)
+		end
+	     fun getCount (): IntInf.t =
+		case countSize of
+		   0w4 => getCount4 ()
+		 | 0w8 => getCount8 ()
+		 | _ => die "invalid count size"
+	     fun loop ac =
+		if In.endOf ins
+		   then rev ac
+		else let
+			val addr = getAddr ()
+			val _ =
+			   if addr > 0w0
+			      andalso (addr < start orelse addr >= etext)
+			      then die "bad addr"
+			   else ()
+			val count = getCount ()
+			val _ =
+			   if count = IntInf.fromInt 0
+			      then die "zero count"
+			   else ()
+		     in
+			loop ({addr = addr, count = count} :: ac)
+		     end
+	     val buckets = loop []
+	     val buckets =
+		MergeSort.sort
+		(buckets, fn ({addr = a, ...}, {addr = a', ...}) => a <= a')
 	   in 
-	     T {buckets = rev ac}
+	     T {buckets = buckets,
+		etext = etext,
+		kind = kind,
+		magic = magic,
+		start = start}
 	   end)
 
   val new = Trace.trace ("ProfFile.new", File.layout o #mlmonfile, layout) new
 
-  fun addNew {profInfo as T {buckets}, 
-	      mlmonfile: File.t}: t
-    = let
-	val profInfo' as T {buckets = buckets'} = new {mlmonfile = mlmonfile}
-
-	fun loop (buckets, buckets', ac) 
-	  = case (buckets, buckets')
-	      of ([], buckets') => List.appendRev (ac, buckets')
+  fun merge (T {buckets = b, etext = e, kind = k, magic = m, start = s},
+	     T {buckets = b', etext = e', kind = k', magic = m', start = s'}) =
+     if m <> m' orelse e <> e' orelse k <> k' orelse s <> s'
+	then die "incompatible mlmon files"
+     else
+	let
+	   fun loop (buckets, buckets', ac) =
+	      case (buckets, buckets') of
+		 ([], buckets') => List.appendRev (ac, buckets')
 	       | (buckets, []) => List.appendRev (ac, buckets)
 	       | (buckets as {addr, count}::bs,
-		  buckets' as {addr = addr', count = count'}::bs')
-	       => (case Word.compare (addr, addr')
+		  buckets' as {addr = addr', count = count'}::bs') =>
+		 (case Word.compare (addr, addr')
 		     of LESS => loop (bs, buckets', 
 				      {addr = addr, count = count}::ac)
-		      | EQUAL => loop (bs, bs', 
-				       {addr = addr, count = count + count'}::ac)
-		      | GREATER => loop (buckets, bs', 
-					 {addr = addr', count = count'}::ac))
-      in
-	T {buckets = loop (buckets, buckets', [])}
-      end
+		   | EQUAL => loop (bs, bs', 
+				    {addr = addr,
+				     count = IntInf.+ (count, count')}
+				    :: ac)
+		   | GREATER => loop (buckets, bs', 
+				      {addr = addr', count = count'}::ac))
+	in
+	   T {buckets = loop (b, b', []),
+	      etext = e,
+	      kind = k,
+	      magic = m,
+	      start = s}
+	end
+	     
+  fun addNew (pi, mlmonfile: File.t): t =
+     merge (pi, new {mlmonfile = mlmonfile})
 
-  val addNew = Trace.trace ("ProfFile.addNew", File.layout o #mlmonfile, layout) addNew
+  val addNew = Trace.trace ("ProfFile.addNew", File.layout o #2, layout) addNew
 end
 
-fun attribute (AFile.T l, 
-	       ProfFile.T {buckets}) : 
+fun attribute (AFile.T {data, etext = e, start = s}, 
+	       ProfFile.T {buckets, etext = e', kind, start = s', ...}) : 
     {profileInfo: {name: string} ProfileInfo.t,
-     ticks: int} list
+     ticks: IntInf.t} list
   = let
+       val _ =
+	  if e <> e' orelse s <> s'
+	     then die "incompatible a.out and mlmon.out"
+	  else ()
       fun loop (profileInfoCurrent, ticks, l, buckets)
 	= let
 	    fun done (ticks, rest)
-	      = if ticks <> 0
-		  then {profileInfo = profileInfoCurrent,
-			ticks = ticks}::rest
-		  else rest
+	      = if IntInf.equals (IntInf.fromInt 0, ticks)
+		   then rest
+		else {profileInfo = profileInfoCurrent,
+		      ticks = ticks} :: rest
 	  in
 	    case (l, buckets)
 	      of (_, []) => done (ticks, [])
-	       | ([], _) => done (List.fold (buckets,
-					    ticks, 
-					    fn ({count, ...}, ticks) 
-					     => count + ticks),
+	       | ([], _) => done (List.fold (buckets, ticks, 
+					     fn ({count, ...}, ticks) =>
+					     IntInf.+ (count, ticks)),
 				  [])
 	       | ({addr = profileAddr, profileInfo}::l', 
 		  {addr = bucketAddr, count}::buckets')
 	       => if profileAddr <= bucketAddr
-		    then done (ticks, loop (profileInfo, 0, l', buckets))
-		    else loop (profileInfoCurrent, ticks + count, l, buckets')
+		    then done (ticks,
+			       loop (profileInfo, IntInf.fromInt 0, l', buckets))
+		    else loop (profileInfoCurrent,
+			       IntInf.+ (ticks, count), l, buckets')
 	  end
     in
-      loop (ProfileInfo.T ([{data = {name = "<unknown>"},
+      loop (ProfileInfo.T ([{data = {name = (case kind of
+						Kind.Alloc => "<runtime>"
+					      | Kind.Time => "<unknown>")},
 			     minor = ProfileInfo.T []}]),
-	   0, l, buckets)
+	    IntInf.fromInt 0, data, buckets)
     end
 
 fun coalesce (counts: {profileInfo: {name: string} ProfileInfo.t,
-		       ticks: int} list) :
-             {name: string, ticks: int} ProfileInfo.t
-  = let
-      datatype t = T of {ticks': int ref, map': t StringMap.t ref}
+		       ticks: IntInf.t} list)
+   : {name: string, ticks: IntInf.t} ProfileInfo.t =
+   let
+      datatype t = T of {ticks': IntInf.t ref, map': t StringMap.t ref}
       val map = StringMap.new ()
       val _ 
 	= List.foreach
@@ -487,10 +584,10 @@ fun coalesce (counts: {profileInfo: {name: string} ProfileInfo.t,
 			      = StringMap.lookupOrInsert
 			        (map, 
 				 name, 
-				 fn () => T {ticks' = ref 0,
+				 fn () => T {ticks' = ref (IntInf.fromInt 0),
 					     map' = ref (StringMap.new ())})
 			  in
-			    ticks' := !ticks' + ticks;
+			    ticks' := IntInf.+ (!ticks', ticks);
 			    doit (minor, !map')
 			  end)
 	       in
@@ -546,39 +643,50 @@ val replaceLine =
 	     end
     end)
 
-fun display (counts: {name: string, ticks: int} ProfileInfo.t,
+fun display (kind: Kind.t,
+	     counts: {name: string, ticks: IntInf.t} ProfileInfo.t,
 	     baseName: string,
 	     depth: int) =
    let
       val ticksPerSecond = 100.0
       val thresh = Real.fromInt (!thresh)
       datatype t = T of {name: string,
-			 ticks: int,
+			 ticks: IntInf.t,
 			 row: string list,
 			 minor: t} array
+      val mult = if !raw then 2 else 1
       fun doit (info as ProfileInfo.T profileInfo,
 		n: int,
 		dotFile: File.t,
 		stuffing: string list,
 		totals: real list) =
 	 let
-	    val total =
+	    val totalInt =
 	       List.fold
-	       (profileInfo, 0,
-		fn ({data = {ticks, ...}, ...}, total) => total + ticks)
-	    val total = Real.fromInt total
+	       (profileInfo, IntInf.fromInt 0,
+		fn ({data = {ticks, ...}, ...}, total) =>
+		IntInf.+ (total, ticks))
+	    val total = Real.fromIntInf totalInt
 	    val _ =
 	       if n = 0
-		  then print (concat ([Real.format (total / ticksPerSecond, 
-						    Real.Format.fix (SOME 2)),
-				       " seconds of CPU time\n"]))
+		  then
+		     print
+		     (concat
+		      (case kind of
+			  Kind.Alloc =>
+			     [IntInf.toCommaString totalInt,
+			      " bytes allocated\n"]
+			| Kind.Time => 
+			     [Real.format (total / ticksPerSecond, 
+					   Real.Format.fix (SOME 2)),
+			      " seconds of CPU time\n"]))
 	       else ()
 	    val space = String.make (5 * n, #" ")
 	    val profileInfo =
 	       List.fold
 	       (profileInfo, [], fn ({data = {name, ticks}, minor}, ac) =>
 		let
-		   val rticks = Real.fromInt ticks
+		   val rticks = Real.fromIntInf ticks
 		   fun per total = 100.0 * rticks / total
 		in
 		   if per total < thresh
@@ -587,32 +695,49 @@ fun display (counts: {name: string, ticks: int} ProfileInfo.t,
 		      let
 			 val per =
 			    fn total =>
-			    concat [Real.format (per total,
-						 Real.Format.fix (SOME 2)),
-				    "%",
-				    if !extra
-				      then concat [" (",
-						   Real.format
-						   (rticks / ticksPerSecond,
-						    Real.Format.fix (SOME 2)),
-						   "s)"]
-				      else ""]
+			    let
+			       val a =
+				  concat [Real.format (per total,
+						       Real.Format.fix (SOME 2)),
+					  "%"]
+			    in
+			       if !raw
+				  then
+				     [a,
+				      concat
+				      (case kind of
+					  Kind.Alloc =>
+					     ["(",
+					      IntInf.toCommaString ticks,
+					      ")"]
+					| Kind.Time =>
+					     ["(",
+					      Real.format
+					      (rticks / ticksPerSecond,
+					       Real.Format.fix (SOME 2)),
+					      "s)"])]
+			       else [a]
+			    end
 		      in			    
 			 {name = name,
 			  ticks = ticks,
 			  row = (List.concat
 				 [[concat [space, name]],
 				  stuffing,
-				  [per total],
+				  per total,
 				  if !busy
-				     then List.map (totals, per)
+				     then List.concatMap (totals, per)
 				  else (List.duplicate
-					(List.length totals, fn () => ""))]),
+					(List.length totals * mult,
+					 fn () => ""))]),
 			  minor = if n < depth
 				     then doit (minor, n + 1,
 						concat [baseName, ".",
 							name, ".cfg.dot"],
-						tl stuffing, total :: totals)
+						if !raw
+						   then tl (tl stuffing)
+						else tl stuffing,
+						total :: totals)
 				  else T (Array.new0 ())}
 			 :: ac
 		      end
@@ -620,15 +745,17 @@ fun display (counts: {name: string, ticks: int} ProfileInfo.t,
 	    val a = Array.fromList profileInfo
 	    val _ =
 	       QuickSort.sort
-	       (a, fn ({ticks = t1, ...}, {ticks = t2, ...}) => t1 >= t2)
+	       (a, fn ({ticks = t1, ...}, {ticks = t2, ...}) =>
+		IntInf.>= (t1, t2))
 	    (* Colorize. *)
 	    val _ =
 	       if n > 1 orelse not(!color) orelse 0 = Array.length a
 		  then ()
 	       else
 		  let
-		     val ticks = Int.toReal (#ticks (Array.sub (a, 0)))
-		     fun thresh r = Real.floor (ticks * r)
+		     val ticks: real =
+			Real.fromIntInf (#ticks (Array.sub (a, 0)))
+		     fun thresh r = Real.toIntInf (Real.* (ticks, r))
 		     val thresh1 = thresh (2.0 / 3.0)
 		     val thresh2 = thresh (1.0 / 3.0)
 		     datatype z = datatype DotColor.t
@@ -638,9 +765,9 @@ fun display (counts: {name: string, ticks: int} ProfileInfo.t,
 					  String.equals (l, name)) of
 			    NONE => Black
 			  | SOME {ticks, ...} =>
-			       if ticks >= thresh1
+			       if IntInf.>= (ticks, thresh1)
 				  then Red1
-			       else if ticks >= thresh2
+			       else if IntInf.>= (ticks, thresh2)
 				       then Orange2
 				    else Yellow3)
 		  in
@@ -663,74 +790,93 @@ fun display (counts: {name: string, ticks: int} ProfileInfo.t,
       fun toList (T a, ac) =
 	 Array.foldr (a, ac, fn ({row, minor, ...}, ac) =>
 		      row :: toList (minor, ac))
-      val rows = toList (doit (counts, 0, concat [baseName, ".call-graph.dot"],
-			       List.duplicate (depth, fn () => ""),
-			       []), [])
+      val rows = toList (doit (counts, 0,
+			       concat [baseName, ".call-graph.dot"],
+			       List.duplicate (depth * mult, fn () => ""),
+			       []),
+			 [])
       val _ =
 	 let
 	    open Justify
-	 in outputTable
-	    (table {justs = Left :: (List.duplicate (depth + 1, fn () => Right)),
+	 in
+	    outputTable
+	    (table {justs = (Left
+			     :: (List.duplicate ((depth + 1) * mult,
+						 fn () => Right))),
 		    rows = rows},
 	     Out.standard)
 	 end
    in
       ()
    end
+   
+fun makeOptions {usage} =
+   let
+      open Popt
+   in
+      List.map
+      ([(Normal, "busy", "{false|true}", "show all percentages",
+	 boolRef busy),
+	(Normal, "color", " {false|true}", "color .dot files",
+	 boolRef color),
+	(Normal, "depth", " {0|1|2}", "depth of detail",
+	 Int (fn i => if i < 0 orelse i > 2
+			 then usage "invalid depth"
+		      else depth := i)),
+	(Normal, "raw", " {false|true}", "show raw counts",
+	 boolRef raw),
+	(Normal, "static", " {false|true}", "show static C functions",
+	 boolRef static),
+	(Normal, "thresh", " {0|1|...|100}", "only show counts above threshold",
+	 Int (fn i => if i < 0 orelse i > 100
+			 then usage "invalid -thresh"
+		      else thresh := i))],
+       fn (style, name, arg, desc, opt) =>
+       {arg = arg, desc = desc, name = name, opt = opt, style = style})
+   end
 
-fun usage s
-  = Process.usage 
-    {usage = "[-color] [-d {0|1|2}] [-s] [-t n] [-x] a.out mlmon.out [mlmon.out ...]",
-     msg = s}
+val mainUsage = "mlprof [option ...] a.out mlmon.out [mlmon.out ...]"
+val {parse, usage} =
+   Popt.makeUsage {mainUsage = mainUsage,
+		   makeOptions = makeOptions,
+		   showExpert = fn () => false}
 
 fun main args =
    let
-      val depth = ref 0
-      val rest
-	= let
-	    open Popt
-	  in
-	    parse
-	    {switches = args,
-	     opts = [("b", trueRef busy),
-		     ("color", trueRef color),
-		     ("d", Int (fn i => if i < 0 orelse i > 2
-					  then die "invalid depth"
-					  else depth := i)),
-		     ("s", trueRef static),
-		     ("t", Int (fn i => if i < 0 orelse i > 100
-					  then die "invalid threshold"
-					  else thresh := i)),
-		     ("x", trueRef extra)]}
-	  end
+      val rest = parse args
     in
-      case rest 
-	of Result.No s => usage (concat ["invalid switch: ", s])
-	 | Result.Yes (afile::mlmonfile::mlmonfiles)
-	 => let
-	      val aInfo = AFile.new {afile = afile}
-	      val _ =
-		 if true
-		    then ()
-		 else (print "AFile:\n"
-		       ; Layout.outputl (AFile.layout aInfo, Out.standard))
-	      val profInfo = ProfFile.new {mlmonfile = mlmonfile}	
-	      val profInfo =
-		 List.fold
-		 (mlmonfiles, profInfo, fn (mlmonfile, profInfo) =>
-		  ProfFile.addNew {profInfo = profInfo, mlmonfile = mlmonfile})
-	      val _ =
-		 if true
-		    then ()
-		 else (print "ProfFile:\n"
-		       ; Layout.outputl (ProfFile.layout profInfo, Out.standard))
-	      val info = coalesce (attribute (aInfo, profInfo))
-	      val _ = display (info, afile, !depth)
-	    in
-	       ()
-	    end
-	 | Result.Yes _ => usage "wrong number of args"
-    end
+       case rest of
+	  Result.No s => usage (concat ["invalid switch: ", s])
+	| Result.Yes (afile::mlmonfile::mlmonfiles) =>
+	     let
+		val aInfo = AFile.new {afile = afile}
+		val _ =
+		   if true
+		      then ()
+		   else (print "AFile:\n"
+			 ; Layout.outputl (AFile.layout aInfo, Out.standard))
+		val profFile =
+		   List.fold
+		   (mlmonfiles, ProfFile.new {mlmonfile = mlmonfile},
+		    fn (mlmonfile, profFile) =>
+		    ProfFile.addNew (profFile, mlmonfile))
+		val _ =
+		   if true
+		      then ()
+		   else (print "ProfFile:\n"
+			 ; Layout.outputl (ProfFile.layout profFile, Out.standard))
+		val _ =
+		   if !depth = 2
+		      andalso ProfFile.kind profFile = Kind.Alloc
+		      then usage "-depth 2 is meaningless with allocation profiling"
+		   else ()
+		val info = coalesce (attribute (aInfo, profFile))
+		val _ = display (ProfFile.kind profFile, info, afile, !depth)
+	     in
+		()
+	     end
+	| Result.Yes _ => usage "wrong number of args"
+   end
 
 val main = Process.makeMain main
 

@@ -15,9 +15,6 @@ signature RING_WITH_IDENTITY =
    sig
       include RING_WITH_IDENTITY_STRUCTS
 
-      val ^ : t * Pervasive.Int.int -> t
-      val ^^ : t * Pervasive.IntInf.int -> t
-
       val add1: t -> t
       val dec: t ref -> unit
       (* fromInt n = 1 + ... + 1, n times. *)
@@ -25,8 +22,10 @@ signature RING_WITH_IDENTITY =
       val fromIntInf: Pervasive.IntInf.int -> t
       val inc: t ref -> unit
       val negOne: t
-      val power: (t * Pervasive.Int.int) list -> t (* simultaneous exponentiation *)
-      val powerInf: (t * Pervasive.IntInf.int) list -> t
+      val pow: t * Pervasive.Int.int -> t
+      val powInf : t * Pervasive.IntInf.int -> t
+      val pows: (t * Pervasive.Int.int) list -> t (* simultaneous exponentiation *)
+      val powsInf: (t * Pervasive.IntInf.int) list -> t
       val prod: t list -> t
       val sub1: t -> t
       val three: t

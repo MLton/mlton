@@ -1,4 +1,4 @@
-.TH mlton 1 "September 23, 2002"
+.TH mlton 1 "October 18, 2002"
 .SH NAME
 \fBmlton\fP \- whole-program compiler for the Standard ML (SML) programming
 language
@@ -122,11 +122,12 @@ The default name is the input file name with its suffix removed and an
 appropriate suffix added.
 
 .TP
-\fB-profile \fI{\fBfalse\fP|\fBtrue\fP}\fR
-Produce an executable that will gather profiling information.  
-When such an executable is run, it will produce a \fBmlmon.out\fP file.
+\fB-profile \fI{\fBno\fP|\fBspace\fP|\fBtime\fP}\fR
+Produce an executable that will gather space or time profiling information.  
+\fB-profile space\fP and \fB-profile time\fP imply \fB-keep ssa\fP.
+When such an executable is run, it will produce an \fBmlmon.out\fP file.
 The man page on \fBmlprof\fP describes how to extract information from this
-file.  \fB-profile true\fP implies \fB-keep ssa\fP.
+file. 
 
 .TP
 \fB-safe \fI{\fBtrue\fP|\fBfalse\fP}\fR

@@ -1,22 +1,18 @@
+structure Profile = MLton.ProfileTime
+   
+val topData = Profile.current ()
+val fibData = Profile.Data.malloc ()
+val takData = Profile.Data.malloc ()
 
-local
-   open MLton.Profile
-   open Data
-in
-   val topData = MLton.Profile.current ()
-   val fibData = MLton.Profile.Data.malloc ()
-   val takData = MLton.Profile.Data.malloc ()
-
-   fun wrap (f, d) x =
-      let
-	 val d' = MLton.Profile.current ()
-         val _ = MLton.Profile.setCurrent d
-	 val res = f x
-	 val _ = MLton.Profile.setCurrent d'
-      in
-	 res
-      end
-end
+fun wrap (f, d) x =
+   let
+      val d' = Profile.current ()
+      val _ = Profile.setCurrent d
+      val res = f x
+      val _ = Profile.setCurrent d'
+   in
+      res
+   end
 
 val rec fib =
    fn 0 => 0
@@ -42,8 +38,8 @@ val rec g =
     | n => (tak (18,12,6); g (n-1))
 val _ = g 500
 
-val _ = MLton.Profile.Data.write (fibData, "mlmon.fib.out")
-val _ = MLton.Profile.Data.free fibData
-val _ = MLton.Profile.Data.write (takData, "mlmon.tak.out")
-val _ = MLton.Profile.Data.free takData
+val _ = Profile.Data.write (fibData, "mlmon.fib.out")
+val _ = Profile.Data.free fibData
+val _ = Profile.Data.write (takData, "mlmon.tak.out")
+val _ = Profile.Data.free takData
 (* topData written to mlmon.out at program exit. *)

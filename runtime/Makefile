@@ -32,7 +32,8 @@ OBJS =						\
 	basis/MLton/bug.o			\
 	basis/MLton/errno.o			\
 	basis/MLton/exit.o			\
-	basis/MLton/profile.o			\
+	basis/MLton/profile-alloc.o		\
+	basis/MLton/profile-time.o		\
 	basis/MLton/rlimit.o			\
 	basis/MLton/rusage.o			\
 	basis/MLton/spawne.o			\
@@ -180,7 +181,8 @@ DEBUG_OBJS =					\
 	basis/MLton/bug-gdb.o			\
 	basis/MLton/errno-gdb.o			\
 	basis/MLton/exit-gdb.o			\
-	basis/MLton/profile-gdb.o		\
+	basis/MLton/profile-alloc.o		\
+	basis/MLton/profile-time-gdb.o		\
 	basis/MLton/rlimit-gdb.o		\
 	basis/MLton/rusage-gdb.o		\
 	basis/MLton/spawne-gdb.o		\

@@ -36,16 +36,16 @@ fun make (op <= : 'a * 'a -> bool) =
       fun sort l =
 	 let
 	    val numBuckets = 25
-	    val _ = assert (fn () => length l < Int.^ (2, numBuckets) - 1)
+	    val _ = assert (fn () => length l < Int.pow (2, numBuckets) - 1)
 	    val a: 'a list array = Array.new (numBuckets, [])
 	    fun invariant () =
 	       assert (fn () => Array.foralli (a, fn (i, l) =>
 					       case l of
 						  [] => true
-						| _ => (length l = Int.^ (2, i)
+						| _ => (length l = Int.pow (2, i)
 							andalso isSorted l)))
 	    fun mergeIn (i: int, l: 'a list): unit =
-	       (assert (fn () => length l = Int.^ (2, i))
+	       (assert (fn () => length l = Int.pow (2, i))
 		; (case Array.sub (a, i) of
 		      [] => Array.update (a, i, l)
 		    | l' => (Array.update (a, i, [])

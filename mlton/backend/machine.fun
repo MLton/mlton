@@ -500,11 +500,12 @@ structure Program =
 				label: Label.t},
 			 maxFrameSize: int,
 			 objectTypes: Runtime.ObjectType.t vector,
+			 profileAllocLabels: string vector,
 			 strings: (Global.t * string) list}
 
       fun layouts (p as T {chunks, frameOffsets, globals, globalsNonRoot,
 			   handlesSignals, main = {label, ...}, maxFrameSize,
-			   objectTypes, ...},
+			   objectTypes, profileAllocLabels, ...},
 		   output': Layout.t -> unit) =
 	 let
 	    open Layout
@@ -522,6 +523,8 @@ structure Program =
 		     ("maxFrameSize", Int.layout maxFrameSize),
 		     ("objectTypes",
 		      Vector.layout Runtime.ObjectType.layout objectTypes),
+		     ("profileAllocLabels",
+		      Vector.layout String.layout profileAllocLabels),
 		     ("frameOffsets",
 		      Vector.layout (Vector.layout Int.layout) frameOffsets)])
             ; List.foreach (chunks, fn chunk => Chunk.layouts (chunk, output))
@@ -727,7 +730,7 @@ structure Program =
 						 CFunction.equals (func, f)
 						 andalso
 						 (case (dst, CFunction.returnTy f) of
-						     (NONE, NONE) => true
+						     (NONE, _) => true
 						   | (SOME x, SOME ty) =>
 							Type.equals
 							(ty, Operand.ty x)

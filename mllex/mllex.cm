@@ -70,6 +70,8 @@ Group is
 ../lib/mlton/basic/euclidean-ring.fun
 ../lib/mlton/basic/integer.fun
 ../lib/mlton/basic/int.sml
+../lib/mlton/basic/int-inf.sig
+../lib/mlton/basic/int-inf.sml
 ../lib/mlton/basic/char.sig
 ../lib/mlton/basic/char.sml
 ../lib/mlton/basic/vector.sig
@@ -101,12 +103,12 @@ Group is
 ../lib/mlton/basic/function.sig
 ../lib/mlton/basic/function.sml
 ../lib/mlton/basic/signal.sml
-../lib/mlton/basic/int-inf.sig
-../lib/mlton/basic/int-inf.sml
 ../lib/mlton/basic/dir.sig
 ../lib/mlton/basic/dir.sml
 ../lib/mlton/basic/process.sig
 ../lib/mlton/basic/process.sml
+../lib/mlton/basic/justify.sig
+../lib/mlton/basic/justify.sml
 ../lib/mlton/basic/popt.sig
 ../lib/mlton/basic/popt.sml
 lexgen.sml

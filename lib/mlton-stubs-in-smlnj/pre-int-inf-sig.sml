@@ -8,5 +8,5 @@ structure LargeInt =
    end
 structure Word =
    struct
-      type word = Pervasive.Word32.word
+      type word = Word32.word
    end

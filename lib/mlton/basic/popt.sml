@@ -10,7 +10,7 @@ type int = Int.t
 structure Popt: POPT =
 struct
 
-datatype opt =
+datatype t =
    None of unit -> unit
  | Int of int -> unit
  | Bool of bool -> unit
@@ -21,17 +21,17 @@ datatype opt =
  | SpaceString2 of string * string -> unit
 
 local
-   fun make b (r: bool ref): opt = None (fn () => r := b)
+   fun make b (r: bool ref): t = None (fn () => r := b)
 in
    val trueRef = make true
    val falseRef = make false
 end
 
-fun boolRef (r: bool ref): opt = Bool (fn b => r := b)
+fun boolRef (r: bool ref): t = Bool (fn b => r := b)
    
-fun intRef (r: int ref): opt = Int (fn n => r := n)
+fun intRef (r: int ref): t = Int (fn n => r := n)
 
-fun stringRef (r: string ref): opt = String (fn s => r := s)
+fun stringRef (r: string ref): t = String (fn s => r := s)
 
 val trace = ("trace", SpaceString (fn s =>
 				   let open Trace.Immediate
@@ -64,7 +64,7 @@ fun memString (s: string): int option =
 
 (* Parse the command line opts and return any remaining args. *)
 fun parse {switches: string list,
-	   opts: (string * opt) list}: string list Result.t =
+	   opts: (string * t) list}: string list Result.t =
    let
       exception Error of string
       val rec loop =
@@ -134,4 +134,54 @@ fun parse {switches: string list,
    in
       Result.Yes (loop switches) handle Error s => Result.No s
    end
+
+datatype optionStyle = Normal | Expert
+   
+fun makeUsage {mainUsage, makeOptions, showExpert} =
+   let
+      val usageRef: (string -> unit) option ref = ref NONE
+      fun usage (s: string): unit = valOf (!usageRef) s
+      fun options () = makeOptions {usage = usage}
+      val _ =
+	 usageRef :=
+	 SOME
+	 (fn s =>
+	  let
+	     val out = Out.error
+	     fun message s = Out.outputl (out, s)
+	     val opts =
+		List.fold
+		(rev (options ()), [],
+		 fn ({arg, desc, name, opt, style}, rest) =>
+		 if style = Normal orelse showExpert ()
+		    then [concat ["    -", name, arg, " "], desc] :: rest
+		 else rest)
+	     val table =
+		let
+		   open Justify
+		in
+		   table {justs = [Left, Left],
+			  rows = opts}
+		end
+	  in
+	     message s
+	     ; message mainUsage
+	     ; List.foreach (table, fn ss =>
+			     message (String.removeTrailing
+				      (concat ss, Char.isSpace)))
+	     ; let open OS.Process
+	       in if MLton.isMLton
+		     then exit failure
+		  else raise Fail "failure"
+	       end
+	  end)
+      val parse =
+	 fn switches =>
+	 parse {opts = List.map (options (), fn {name, opt, ...} => (name, opt)),
+		switches = switches}
+   in
+      {parse = parse,
+       usage = usage}
+   end
+
 end

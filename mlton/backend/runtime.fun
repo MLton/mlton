@@ -23,6 +23,7 @@ structure GCField =
        | Limit
        | LimitPlusSlop
        | MaxFrameSize
+       | ProfileAllocIndex
        | SignalIsPending
        | StackBottom
        | StackLimit
@@ -36,6 +37,7 @@ structure GCField =
 	  | Limit => Type.pointer
 	  | LimitPlusSlop => Type.pointer
 	  | MaxFrameSize => Type.word
+	  | ProfileAllocIndex => Type.word
 	  | SignalIsPending => Type.int
 	  | StackBottom => Type.pointer
 	  | StackLimit => Type.pointer
@@ -48,14 +50,15 @@ structure GCField =
       val limitOffset: int ref = ref 0
       val limitPlusSlopOffset: int ref = ref 0
       val maxFrameSizeOffset: int ref = ref 0
+      val profileAllocIndexOffset: int ref = ref 0
       val signalIsPendingOffset: int ref = ref 0
       val stackBottomOffset: int ref = ref 0
       val stackLimitOffset: int ref = ref 0
       val stackTopOffset: int ref = ref 0
 
       fun setOffsets {canHandle, cardMap, currentThread, frontier, limit,
-		      limitPlusSlop, maxFrameSize, signalIsPending, stackBottom,
-		      stackLimit, stackTop} =
+		      limitPlusSlop, maxFrameSize, profileAllocIndex,
+		      signalIsPending, stackBottom, stackLimit, stackTop} =
 	 (canHandleOffset := canHandle
 	  ; cardMapOffset := cardMap
 	  ; currentThreadOffset := currentThread
@@ -63,6 +66,7 @@ structure GCField =
 	  ; limitOffset := limit
 	  ; limitPlusSlopOffset := limitPlusSlop
 	  ; maxFrameSizeOffset := maxFrameSize
+	  ; profileAllocIndexOffset := profileAllocIndex
 	  ; signalIsPendingOffset := signalIsPending
 	  ; stackBottomOffset := stackBottom
 	  ; stackLimitOffset := stackLimit
@@ -76,6 +80,7 @@ structure GCField =
 	  | Limit => !limitOffset
 	  | LimitPlusSlop => !limitPlusSlopOffset
 	  | MaxFrameSize => !maxFrameSizeOffset
+	  | ProfileAllocIndex => !profileAllocIndexOffset
 	  | SignalIsPending => !signalIsPendingOffset
 	  | StackBottom => !stackBottomOffset
 	  | StackLimit => !stackLimitOffset
@@ -89,6 +94,7 @@ structure GCField =
 	  | Limit => "Limit"
 	  | LimitPlusSlop => "LimitPlusSlop"
 	  | MaxFrameSize => "MaxFrameSize"
+	  | ProfileAllocIndex => "ProfileAllocIndex"
 	  | SignalIsPending => "SignalIsPending"
 	  | StackBottom => "StackBottom"
 	  | StackLimit => "StackLimit"
@@ -125,7 +131,7 @@ structure ObjectType =
 	 end
    end
 
-val maxTypeIndex = Int.^ (2, 19)
+val maxTypeIndex = Int.pow (2, 19)
    
 fun typeIndexToHeader typeIndex =
    (Assert.assert ("Runtime.header", fn () =>
@@ -163,6 +169,6 @@ fun isWordAligned (n: int): bool =
 fun isValidObjectSize (n: int): bool =
    n > 0 andalso isWordAligned n
 
-val maxFrameSize = Int.^ (2, 16)
+val maxFrameSize = Int.pow (2, 16)
 
 end

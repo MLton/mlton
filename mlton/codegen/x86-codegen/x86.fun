@@ -3712,6 +3712,11 @@ struct
 	            | _ => false
     end
 
+  val addProfileLabel: (string * Label.t -> unit) ref =
+     ref (fn _ => ())
+
+  fun setAddProfileLabel x = addProfileLabel := x
+     
   structure ProfileInfo =
     struct
       datatype t
@@ -3739,25 +3744,24 @@ struct
       val profileHeader = "MLtonProfile"
       val unique = Counter.new 0
       fun profile_assembly (T {zero, one, two})
-	= if !Control.profile
-	    then let
-		   val profileHeader 
-		     = profileHeader ^ (Int.toString (Counter.next unique))
-
-		   val profileString
-		     = concat
-		       [profileHeader,
-			"$$0.", zero,
-			"$$1.", one,
-			"$$2.", two]
-
-		   val profileBegin = profileString ^ "$$Begin"
-		   val profileBeginLabel = Label.fromString profileBegin
-		 in
-		   [Assembly.pseudoop_local profileBeginLabel,
-		    Assembly.label profileBeginLabel]
-		 end
-	    else []
+	= if !Control.profile = Control.ProfileNone
+	     then []
+	  else
+	    let
+	       val profileHeader =
+		  profileHeader ^ (Int.toString (Counter.next unique))
+	       val profileString =
+		  concat [profileHeader,
+			  "$$0.", zero,
+			  "$$1.", one,
+			  "$$2.", two]
+	       val profileBegin = profileString ^ "$$Begin"
+	       val profileBeginLabel = Label.fromString profileBegin
+	       val _ = !addProfileLabel (one, profileBeginLabel)
+	    in
+	       [Assembly.pseudoop_global profileBeginLabel,
+		Assembly.label profileBeginLabel]
+	    end
 
       fun combine (T {zero = zero1, 
 		      one = one1, 

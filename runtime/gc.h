@@ -268,7 +268,7 @@ typedef struct GC_state {
 	float liveRatio;	/* Desired ratio of heap size to live data. */
 	/* loadGlobals loads the globals from the stream. */
 	void (*loadGlobals)(FILE *file);
-	uint magic; /* The magic number required for a valid world file. */
+	uint magic; /* The magic number for this executable. */
 	/* Minimum live ratio to us mark-compact GC. */
 	float markCompactRatio; 
 	ullong markedCards; /* Number of marked cards seen during minor GCs. */
@@ -312,6 +312,11 @@ typedef struct GC_state {
 	W32 oldGenArraySize; 
 	uint oldGenSize;
 	uint pageSize; /* bytes */
+	ullong *profileAllocCounts;	/* allocation profiling */
+	uint profileAllocIndex;
+	bool profileAllocIsOn;
+	uint *profileAllocLabels;
+	uint profileAllocNumLabels;
 	W32 ram;		/* ramSlop * totalRam */
 	float ramSlop;
  	struct rusage ru_gc; /* total resource usage spent in gc */
@@ -381,8 +386,7 @@ int fixedGetrusage(int who, struct rusage *rup);
 /* Allocate an array with the specified header and number of elements.
  * Also ensure that frontier + bytesNeeded < limit after the array is allocated.
  */
-pointer GC_arrayAllocate (GC_state s, W32 bytesNeeded, W32 numElts, 
-				W32 header);
+pointer GC_arrayAllocate (GC_state s, W32 bytesNeeded, W32 numElts, W32 header);
 
 /* The array size is stored before the header */
 static inline uint* GC_arrayNumElementsp (pointer a) {
@@ -444,6 +448,8 @@ static inline Header GC_getHeader (pointer p) {
  * This, in turn, will cause the GC to run the SML signal handler.
  */
 void GC_handler (GC_state s, int signum);
+
+void GC_incProfileAlloc (GC_state s, W32 amount);
 
 /* GC_init must be called before doing any allocation.
  * It processes command line arguments, creates the heap, initializes the global

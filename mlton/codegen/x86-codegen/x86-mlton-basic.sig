@@ -116,6 +116,7 @@ signature X86_MLTON_BASIC =
     val gcState_limitContentsOperand: unit -> x86.Operand.t
     val gcState_limitPlusSlopContentsOperand: unit -> x86.Operand.t
     val gcState_maxFrameSizeContentsOperand: unit -> x86.Operand.t
+    val gcState_profileAllocIndexContentsOperand: unit -> x86.Operand.t
     val gcState_signalIsPendingContentsOperand: unit -> x86.Operand.t
     val gcState_stackBottomContents: unit -> x86.MemLoc.t
     val gcState_stackBottomContentsOperand: unit -> x86.Operand.t

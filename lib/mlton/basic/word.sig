@@ -40,6 +40,8 @@ signature WORD =
       val toChar: t -> char
       val toInt: t -> int
       val toIntX: t -> int
+      val toIntInf: t -> Pervasive.IntInf.int
+      val toIntInfX: t -> Pervasive.IntInf.int
       val toWord: t -> Pervasive.Word.word
       val toWordX: t -> Pervasive.Word.word
       val toString: t -> string

@@ -29,6 +29,7 @@ signature RUNTIME =
 	     | Limit (* frontier + heapSize - LIMIT_SLOP *)
 	     | LimitPlusSlop (* frontier + heapSize *)
 	     | MaxFrameSize
+	     | ProfileAllocIndex
 	     | SignalIsPending
 	     | StackBottom
 	     | StackLimit (* Must have  StackTop <= StackLimit *)
@@ -43,6 +44,7 @@ signature RUNTIME =
 			     limit: int,
 			     limitPlusSlop: int,
 			     maxFrameSize: int,
+			     profileAllocIndex: int,
 			     signalIsPending: int,
 			     stackBottom: int,
 			     stackLimit: int,

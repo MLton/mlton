@@ -140,6 +140,8 @@ struct
 		 | Limit => gcState_limitContentsOperand ()
 		 | LimitPlusSlop => gcState_limitPlusSlopContentsOperand ()
 		 | MaxFrameSize => gcState_maxFrameSizeContentsOperand ()
+		 | ProfileAllocIndex =>
+		      gcState_profileAllocIndexContentsOperand ()
 		 | SignalIsPending => gcState_signalIsPendingContentsOperand ()
 		 | StackBottom => gcState_stackBottomContentsOperand ()
 		 | StackLimit => gcState_stackLimitContentsOperand ()
@@ -1018,8 +1020,10 @@ struct
 		end
 
 	    val blocks
-	      = if !Control.profile
-		  then List.map
+	      = if !Control.profile = Control.ProfileNone
+		   then blocks
+		else
+		       List.map
 		       (blocks,
 			fn (x86.Block.T {entry, profileInfo, 
 					 statements, transfer})
@@ -1036,7 +1040,6 @@ struct
 					   statements = statements,
 					   transfer = transfer}
 			    end)
-		  else blocks
 	  in
 	    blocks
 	  end

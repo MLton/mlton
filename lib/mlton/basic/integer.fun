@@ -69,7 +69,7 @@ fun choose (n, k) =
    end
 
 fun output (n, out) = Out.output (out, toString n)
-   
+
 fun powerMod {base, exp, modulus} =
    Power.power {layout = layout,
 	       one = one,

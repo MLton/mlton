@@ -18,6 +18,8 @@ signature X86 =
   sig
     include X86_STRUCTS
 
+    val setAddProfileLabel: (string * Label.t -> unit) -> unit
+       
     val tracer : string -> ('a -> 'b) -> 
                  (('a -> 'b) * (unit -> unit))
     val tracerTop : string -> ('a -> 'b) -> 

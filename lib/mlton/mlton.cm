@@ -1,7 +1,0 @@
-Library
-
-structure MLton
-
-is
-
-../mlton-stubs-in-smlnj/sources.cm

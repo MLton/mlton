@@ -12,7 +12,7 @@ open S
 datatype z = datatype Transfer.t
    
 (* A chunkifier that puts each function in its own chunk. *)
-fun chunkPerFunc (Program.T {functions, main}) =
+fun chunkPerFunc (Program.T {functions, main, ...}) =
    Vector.fromListMap
    (main :: functions, fn f =>
     let

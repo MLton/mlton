@@ -23,8 +23,6 @@ is
 
 allocate-registers.fun
 allocate-registers.sig
-array-init.fun
-array-init.sig
 backend.fun
 backend.sig
 c-function.fun
@@ -48,6 +46,8 @@ mtype.fun
 mtype.sig
 parallel-move.fun
 parallel-move.sig
+profile-alloc.fun
+profile-alloc.sig
 representation.fun
 representation.sig
 rssa.fun

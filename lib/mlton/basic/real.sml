@@ -32,11 +32,17 @@ open Math
 
 exception Input 
 fun input i =
-   case fromString(In.inputToSpace i) of
+   case fromString (In.inputToSpace i) of
       SOME x => x
     | NONE => raise Input
-	 
-val fromInt = Pervasive.Real.fromInt
+
+local
+   open Pervasive.Real
+in
+   val fromInt = fromInt
+   val fromIntInf = fromLargeInt
+   val toIntInf = toLargeInt IEEEReal.TO_NEAREST
+end
 
 structure Format =
    struct
@@ -63,5 +69,5 @@ fun log2 x = ln x / ln2
 fun realPower(m, n) = exp(n * ln m)
 
 val ceiling = ceil
-   
+
 end

@@ -45,7 +45,7 @@ structure CFunction =
 	       modifiesFrontier = true,
 	       modifiesStackTop = false,
 	       name = name,
-	       needsArrayInit = false,
+	       needsProfileAllocIndex = true,
 	       returnTy = SOME Type.pointer}
       in
 	 val intInfAdd = make ("IntInf_do_add", 2)
@@ -74,7 +74,7 @@ structure CFunction =
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "GC_copyCurrentThread",
-	    needsArrayInit = false,
+	    needsProfileAllocIndex = true,
 	    returnTy = NONE}
 
       val copyThread =
@@ -85,7 +85,7 @@ structure CFunction =
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "GC_copyThread",
-	    needsArrayInit = false,
+	    needsProfileAllocIndex = true,
 	    returnTy = SOME Type.pointer}
 
       val exit =
@@ -96,7 +96,7 @@ structure CFunction =
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "MLton_exit",
-	    needsArrayInit = false,
+	    needsProfileAllocIndex = false,
 	    returnTy = NONE}
 
       val gcArrayAllocate =
@@ -107,7 +107,7 @@ structure CFunction =
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "GC_arrayAllocate",
-	    needsArrayInit = false,
+	    needsProfileAllocIndex = true,
 	    returnTy = SOME Type.pointer}
 
       local
@@ -119,7 +119,7 @@ structure CFunction =
 	       modifiesFrontier = true,
 	       modifiesStackTop = true,
 	       name = name,
-	       needsArrayInit = false,
+	       needsProfileAllocIndex = false,
 	       returnTy = NONE}
       in
 	 val pack = make "GC_pack"
@@ -134,7 +134,7 @@ structure CFunction =
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "Thread_switchTo",
-	    needsArrayInit = false,
+	    needsProfileAllocIndex = false,
 	    returnTy = NONE}
 
       val worldSave =
@@ -145,7 +145,7 @@ structure CFunction =
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "GC_saveWorld",
-	    needsArrayInit = false,
+	    needsProfileAllocIndex = false,
 	    returnTy = NONE}
    end
 
@@ -864,16 +864,9 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 					func = f}
 			      fun array0 (numElts: Operand.t) =
 				 add
-				 (PrimApp
-				  {args = (Vector.new3
-					   (numElts,
-					    Operand.word 
-					    (Word.fromInt Runtime.array0Size),
-					    Operand.ArrayHeader
-					    {numBytesNonPointers = 0,
-					     numPointers = 0})),
-				   dst = dst (),
-				   prim = Prim.arrayAllocate})
+				 (PrimApp {args = Vector.new1 numElts,
+					   dst = dst (),
+					   prim = Prim.array0})
 		     fun updateCard (addr: Operand.t, prefix, assign) =
 		        let
 			   val index = Var.newNoname ()
@@ -972,136 +965,13 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	   in
 	      if 0 = np andalso 0 = nbnp
 		 then array0 numEltsOp
-	      else if not (!Control.inlineArrayAllocation)
-                 then ccall {args = (Vector.new4
-				     (Operand.GCState,
-				      Operand.EnsuresBytesFree,
+	      else ccall {args = (Vector.new4
+				  (Operand.GCState,
+				   Operand.EnsuresBytesFree,
 				      numEltsOp,
 				      ArrayHeader {numBytesNonPointers = nbnp,
 						   numPointers = np})),
-			     func = CFunction.gcArrayAllocate}
-              else
-		 let
-		    val (shouldSplit, numBytes, numElts, continue) =
-		       case varInt numElts of
-			  SOME n =>
-			     (* Compute the number of bytes in the array now,
-			      * since the number of elements is a known constant.
-			      *)
-			     let
-				val numBytes =
-				   Runtime.wordAlign
-				   (MLton.Word.addCheck
-				    (Word.fromInt Runtime.arrayHeaderSize,
-				     (MLton.Word.mulCheck
-				      (Word.fromInt n,
-				       Word.fromInt bytesPerElt))))
-				   handle Overflow => Runtime.allocTooLarge
-			     in
-				(numBytes > 0w512,
-				 Operand.word numBytes,
-				 Operand.int n,
-				 fn l => ([], Goto {dst = l,
-						    args = Vector.new0 ()}))
-			     end 
-			| NONE =>
-			     let
-				val numBytes = Var.newNoname ()
-				val numBytes' = Var.newNoname ()
-				val numBytesOp' =
-				   Operand.Var {var = numBytes', ty = Type.word}
-				val numEltsWord = Var.newNoname ()
-				val numEltsWordOp =
-				   Operand.Var {var = numEltsWord,
-						ty = Type.word}
-				val conv =
-				   PrimApp {args = Vector.new1 numEltsOp,
-					    dst = SOME (numEltsWord, Type.word),
-					    prim = Prim.word32FromInt}
-			     in
-				(true,
-				 Operand.Var {var = numBytes, ty = Type.word},
-				 numEltsOp,
-				 fn alloc =>
-				 if 1 = nbnp
-				    then
-				       let
-					  val numEltsP3 = Var.newNoname ()
-				       in
-					  ([conv,
-					    PrimApp
-					    {args = (Vector.new2
-						     (Operand.word 0w3,
-						      numEltsWordOp)),
-					     dst = SOME (numEltsP3, Type.word),
-					     prim = Prim.word32Add},
-					    PrimApp
-					    {args = (Vector.new2
-						     (Operand.word
-						      (Word.notb 0w3),
-						      Operand.Var
-						      {var = numEltsP3,
-						       ty = Type.word})),
-					     dst = SOME (numBytes', Type.word),
-					     prim = Prim.word32Andb},
-					    PrimApp
-					    {args = (Vector.new2
-						     (Operand.word
-						      (Word.fromInt 
-						       Runtime.arrayHeaderSize),
-						      numBytesOp')),
-					     dst = SOME (numBytes, Type.word),
-					     prim = Prim.word32Add}],
-					   Goto {args = Vector.new0 (),
-						 dst = alloc})
-				       end
-				 else
-				    let
-				      val l = newBlock
-					      {args = Vector.new0 (),
-					       kind = Kind.Jump,
-					       profileInfo = profileInfo,
-					       statements = Vector.new0 (),
-					       transfer = 
-					       Transfer.Arith
-					       {args = Vector.new2
-						       (Operand.word
-							(Word.fromInt 
-							 Runtime.arrayHeaderSize),
-							numBytesOp'),
-					        dst = numBytes,
-						overflow = allocTooLarge (),
-						prim = Prim.word32AddCheck,
-						success = alloc,
-						ty = Type.word}}
-				    in
-				      ([conv],
-				       Transfer.Arith
-				       {args = (Vector.new2
-						(Operand.word
-						 (Word.fromInt bytesPerElt),
-						 numEltsWordOp)),
-					dst = numBytes',
-					overflow = allocTooLarge (),
-					prim = Prim.word32MulCheck,
-					success = l,
-					ty = Type.word})
-				    end)
-			     end
-		    val s =
-		       PrimApp {args = (Vector.new3
-					(numElts,
-					 numBytes,
-					 Operand.ArrayHeader
-					 {numBytesNonPointers = nbnp,
-					  numPointers = np})),
-				dst = dst (),
-				prim = Prim.arrayAllocate}
-		 in
-		    if shouldSplit
-		       then split (Vector.new0 (), Kind.Jump, s :: ss, continue)
-		    else add s
-		 end
+			  func = CFunction.gcArrayAllocate}
 	   end
   end
 			       | Array_array0 => array0 (Operand.int 0)
@@ -1414,7 +1284,8 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	  end
       val functions = List.revMap (functions, translateFunction)
       val p = Program.T {functions = functions,
-			 main = main}
+			 main = main,
+			 profileAllocLabels = Vector.new0 ()}
       val _ = Program.clear p
    in
       p

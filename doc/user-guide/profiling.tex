@@ -1,41 +1,66 @@
 \sec{Profiling}{profiling}
 
-{\mlton} has a profiling facility, {\tt mlprof}, that is similar in
-usage to {\tt gprof}.  Here is an example run from within the {\tt
-  examples/profiling} directory showing how to generate profiling
-information.
+{\mlton} has facility, {\tt mlprof}, for doing both allocation and
+time profiling.  Allocation profiling allows you to determine which
+functions and basic blocks are allocating the most in your program.
+Time profiling allows you to determine which functions and basic
+blocks time are spending the most time.
+
+To use {\tt mlprof}, you first compile the program with either {\tt
+-profile alloc} or {\tt -profile time}.  Then, you run the program,
+which produces an {\tt mlmon.out} file.  Finally, you run {\tt mlprof}
+on the executable and the {\tt mlmon.out} file to see the percentage
+of the total (allocation or time) spent in various functions.
+You can not do both allocation profiling and time profiling
+simultaneously on a program.
+
+Here is an example of allocation profiling, run from within the {\tt
+examples/profiling} directory.
 
 \begin{verbatim}
-% mlton -profile true -keep g profiling.sml
+% mlton -profile alloc profiling-alloc.sml
+% ./profiling-alloc
+% mlprof profiling-alloc mlmon.out
+124,440 bytes allocated
+rev_0     96.43%
+main_0     1.95%
+<runtime>  1.49%
+F_0        0.11%
+exit_0     0.02%
+\end{verbatim}
+
+Here is an example of time profiling, run from within the {\tt
+examples/profiling} directory.
+
+\begin{verbatim}
+% mlton -profile time -keep g profiling.sml
 % ./profiling
 % mlprof profiling mlmon.out
 0.12 seconds of CPU time
 tak_0               91.67%
 IntInf_smallMul (C)  8.33%
 \end{verbatim}
-In summary, generating profiling information takes three steps.
-\begin{enumerate}
-  
-\item Compile with {\tt -profile true}.  This saves a {\tt .ssa} file
-  (see below).  You can also use {\tt -keep g} to save the generated
-  assembly ({\tt .S}) files.
-  
-\item Run the executable.  This produces a file called {\tt
-    mlmon.out}.
-  
-\item Run {\tt mlprof} on the executable and the {\tt mlmon.out} file.
 
-\end{enumerate}
-Unfortunately, the profiling output of {\tt mlprof} {\em
-does not refer to the source program}.  Instead, {\tt mlprof} reports the
-percentage of time spent in each C and SSA function.  C functions are
+\subsection{Understand profiling output}
+
+Conceptually, both allocation profiling and time profiling work in the
+same way.  While the program is running, they associate counts (either
+clock ticks or byte counts) with addresses in the executable.  Then,
+when the program finishes, it writes the counts out to the {\tt
+mlmon.out} file.  Then, {\tt mlprof} uses debugging information in the
+executable to correlate the counts in the {\tt mlmon.out} file with
+human readable labels.
+
+Unfortunately, the profiling output of {\tt mlprof} {\em does not
+refer to the source program}.  Instead, {\tt mlprof} reports the
+percentages of counts spent in C and SSA functions.  C functions are
 used for the FFI and garbage collector.  SSA is an intermediate
 language used by MLton that has traditional first-order function
 definitions and calls and is similar to static-single assignment form.
 In the above example, {\tt tak\_0} is an SSA function (see {\tt
-  profiling.ssa}) corresponding to the source SML {\tt tak} function.
+profiling.ssa}) corresponding to the source SML {\tt tak} function.
 The C function {\tt IntInf\_smallMul} is used to implement {\tt
-  IntInf.*}.
+IntInf.*}.
 
 In translating from SML to SSA, {\mlton} attempts to preserve source
 names, but due to anonymous functions, inlining, monomorphisation,
@@ -47,11 +72,18 @@ some n (e.g. {\tt tak\_0}).  Names in the source may disappear (e.g.
 within main) or new names may appear from the SML basis library code
 that is prefixed to your program.
 
-You can display profiling information at the SSA basic block level
-with {\tt mlprof -d 1}.
+When you compile with with {\tt -profile alloc} or {\tt -profile
+time}, {\mlton} automatically saves the {\tt .ssa} file to which the
+profiling data refers.
+
+\subsection{Getting more detail}
+
+By default, {\tt mlprof} only displays information about functions.
+If you want more detail, you can use {\tt -depth 1}, which causes {\tt
+mlprof} to display profiling information at the SSA basic block level.
 
 \begin{verbatim}
-% mlprof -d 1 profiling mlmon.out
+% mlprof -depth 1 profiling mlmon.out
 0.40 seconds of CPU time
 tak_0                      90.00%
      loop_0         19.44%       
@@ -66,23 +98,50 @@ tak_0                      90.00%
      L_15            2.78%       
 IntInf_smallMul (C)        10.00%
 \end{verbatim}
+
 Each of the indented labels refers to a basic block in {\tt
-  profiling.ssa}, within the {\tt tak\_0} function.
+profiling.ssa}, within the {\tt tak\_0} function.
 
 You can display profiling information at the assembly basic block
-level with {\tt mlprof -d 2}.  Other {\tt mlprof} options are {\tt
-  -s}, which will print information about static C functions, {\tt
-  -t}, which will limit {\tt mlprof} to only print information about
-functions (or blocks) whose percentage of time is above a certain
-threshold, and {\tt -x}, which will annotate each percentage of time
-with its absolute time.
+level with {\tt mlprof -depth 2}.  This only makes sense for time
+profiling.  To use {\tt -depth 2}, you will want to compile the
+program {\tt -keep g} to save the generated assembly ({\tt .S}) files.
+
+With {\tt mlprof}, you can also use {\tt -raw true} to get raw counts
+(either seconds or bytes).  For example, here is detailed allocation
+profiling with raw counts.
+\begin{verbatim}
+% mlprof -depth 1 -raw true profiling-alloc mlmon.out
+124,440 bytes allocated
+rev_0                       96.43% (120,000)
+     L_101  49.50% (59,400)                 
+     L_103  49.50% (59,400)                 
+     L_108   1.00%  (1,200)                 
+main_0                       1.95%   (2,428)
+     L_127  49.42%  (1,200)                 
+     L_124  49.42%  (1,200)                 
+     L_111   1.15%     (28)                 
+<runtime>                    1.49%   (1,852)
+F_0                          0.11%     (136)
+     L_137 100.00%    (136)                 
+exit_0                       0.02%      (24)
+     L_91  100.00%     (24)
+\end{verbatim}
+
+Other {\tt mlprof} options are {\tt -static}, which will print
+information about static C functions, {\tt -thresh}, which will limit
+{\tt mlprof} to only print information about functions (or blocks)
+whose percentage of time is above a certain threshold, and {\tt -busy},
+which for each label will show the percentages at all levels of
+detail.
 
 \subsection{Creating colored control-flow graphs}
 
 You may find it useful to use the {\tt -keep dot} switch when
-compiling {\tt -profile true}, since this saves several dot files that
-can help you understand the structure of the program.  You can create
-nice postscript graphs from the dot files using the
+compiling {\tt -profile alloc} or {\tt -profile time}, since this
+saves several dot files that can help you understand the structure of
+the program.  You can create nice postscript graphs from the dot files
+using the
 \htmladdnormallink{{\tt graphviz}}
 		  {http://www.research.att.com/sw/tools/graphviz/}
 software package.
@@ -96,19 +155,25 @@ gotos with arguments, dashed edges indicate handling a raise coming
 from the callee, and dotted edges indicate a return from the callee.
 
 To visualize the profiling data in the graphs, you can execute the
-{\tt mlprof} with the {\tt -color} option in the presence of the {\tt
-.call-graph.dot} file.  This will color the nodes of the call graph
-red, orange, yellow, or black according to the percentage of time
-spent in the corresponding SSA functions (where red indicates the
-hottest code).  Likewise, executing {\tt mlprof} with the {\tt -color
--d 1} options in the presence of the {\tt .cfg.dot} files will color
-the nodes of the control-flow graphs.  Note that the effect of the
-{\tt -color} option is dependent upon the {\tt -t n} option; functions
+{\tt mlprof} with {\tt -color true} in the directory containing the
+{\tt .call-graph.dot} file.  This will color the nodes of the call
+graph red, orange, yellow, or black according to the percentage of
+time spent in the corresponding SSA functions (where red indicates the
+hottest code).  Likewise, executing {\tt mlprof} with {\tt -color true
+-depth 1} in the presence of the {\tt .cfg.dot} files will color the
+nodes of the control-flow graphs.  Note that the effect of the {\tt
+-color} option is dependent upon the {\tt -thresh} option; functions
 and blocks below the threshold are always colored black.
 
-\subsection{Using {\tt mlprof} and {\tt MLton.Profile}}
-To profile individual portions of your program, use the {\tt
-MLton.Profile} structure (see \secref{profile}).
+\subsection{Using {\tt MLton.ProfileAlloc} and {\tt MLton.ProfileTime}}
+
+To profile individual portions of your program, you can use the {\tt
+MLton.ProfileAlloc} and {\tt MLton.ProfileTime} structures (see
+\secref{profile-structures}).  These allow you to create many units of
+profiling data (essentially, mappings from addresses to counts) during
+a run of a program, to switch between them while the program is
+running, and to output multiple {\tt mlmon.out} files.
+
 Here is an example run from within the {\tt examples/profiling}
 directory showing how to profile the executions of the {\tt fib} and
 {\tt tak} functions separately.
@@ -134,15 +199,30 @@ information.
 
 \subsection{How profiling works}
 
-The profiler works by catching the {\tt SIGPROF} signal 100 times per
-second and recording where in the executable the program counter is.
-Thus, if you compile {\tt -profile true}, use of the following in your
-program will cause a run-time error, since they would interfere with
-profiling.
+Allocation profiling works in cooperation with the compiler, which
+inserts code in each basic block that allocates to call a C function,
+passing the location and the amount allocated.  The C function
+increments the counter in the profiling array.
+
+Time profiling works by catching the {\tt SIGPROF} signal 100 times
+per second and recording where in the executable the program counter
+is.  Thus, if you compile {\tt -profile time}, use of the following in
+your program will cause a run-time error, since they would interfere
+with profiling.
 
 \begin{tabular}{l}
 \tt MLton.Itimer.set (MLton.Itimer.Prof, ...)\}\\
 \tt MLton.Signal.setHandler (MLton.Signal.prof, ...)
 \end{tabular}\\
 It is best to have a long running program (at least tens of seconds)
-in order to get reasonable data.
+in order to get reasonable time data.
+
+For both forms of profiling, SML code in the basis library is
+responsible for writing out the profiling data.  So, if you call {\tt
+Posix.Process.exit}, you will bypass this and get no {\tt mlmon.out}
+file.  Also, there may be a few missed clock ticks or bytes allocated
+at the very end of the program.
+
+{\tt mlprof} has checks to make sure that the {\tt mlmon.out} file
+corresponds to the executable and to make sure that either all the
+files contain allocation data or all the files contain time data.

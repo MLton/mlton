@@ -237,7 +237,8 @@ signature RSSA =
 		      * functions. It defines global variables that are in scope
 		      * for the rest of the program.
 		      *)
-		     main: Function.t}
+		     main: Function.t,
+		     profileAllocLabels: string vector}
 
 	    val clear: t -> unit
 	    val handlesSignals: t -> bool

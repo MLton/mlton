@@ -46,9 +46,9 @@ in
    structure Var = Var
 end 
 
+structure ProfileAlloc = ProfileAlloc (structure Rssa = Rssa)
 structure AllocateRegisters = AllocateRegisters (structure Machine = Machine
 						 structure Rssa = Rssa)
-structure ArrayInit = ArrayInit (structure Rssa = Rssa)
 structure Chunkify = Chunkify (Rssa)
 structure LimitCheck = LimitCheck (structure Rssa = Rssa)
 structure ParallelMove = ParallelMove ()
@@ -158,8 +158,11 @@ fun toMachine (program: Ssa.Program.t) =
       val program = pass ("ssaToRssa", SsaToRssa.convert, program)
       val program = pass ("insertLimitChecks", LimitCheck.insert, program)
       val program = pass ("insertSignalChecks", SignalCheck.insert, program)
-      val program = pass ("insertArrayInits", ArrayInit.insert, program)
-      val program as R.Program.T {functions, main} = program
+      val program =
+	 if !Control.profile = Control.ProfileAlloc
+	    then pass ("profileAlloc", ProfileAlloc.doit, program)
+	 else program
+      val program as R.Program.T {functions, main, profileAllocLabels} = program
       val handlesSignals = Rssa.Program.handlesSignals program
       (* Chunk information *)
       val {get = labelChunk, set = setLabelChunk, ...} =
@@ -361,6 +364,10 @@ fun toMachine (program: Ssa.Program.t) =
 				temp = temp
 				})
 	 end
+      val array0Header =
+	 M.Operand.Uint (Runtime.typeIndexToHeader
+			 (arrayTypeIndex {numBytesNonPointers = 0,
+					  numPointers = 0}))
       fun translateOperand (oper: R.Operand.t): M.Operand.t =
 	 let
 	    datatype z = datatype R.Operand.t
@@ -432,12 +439,13 @@ fun toMachine (program: Ssa.Program.t) =
 		     datatype z = datatype Prim.Name.t
 		  in
 		     case Prim.name prim of
-			Array_allocate =>
+			Array_array0 =>
 			   let
 			      val frontier =
 				 M.Operand.Runtime GCField.Frontier
 			      fun arg i =
 				 translateOperand (Vector.sub (args, i))
+			      val numElts = arg 0
 			   in Vector.new5
 			      (M.Statement.Move
 			       {dst = M.Operand.Contents {oper = frontier,
@@ -447,12 +455,12 @@ fun toMachine (program: Ssa.Program.t) =
 			       {dst = M.Operand.Offset {base = frontier,
 							offset = wordSize,
 							ty = Type.int},
-				src = translateOperand (Vector.sub (args, 0))},
+				src = numElts},
 			       M.Statement.Move
 			       {dst = M.Operand.Offset {base = frontier,
 							offset = 2 * wordSize,
 							ty = Type.uint},
-				src = translateOperand (Vector.sub (args, 2))},
+				src = array0Header},
 			       M.Statement.PrimApp
 			       {args = Vector.new2 (frontier,
 						    M.Operand.Uint
@@ -461,7 +469,8 @@ fun toMachine (program: Ssa.Program.t) =
 				dst = SOME (varOperand (#1 (valOf dst))),
 				prim = Prim.word32Add},
 			       M.Statement.PrimApp
-			       {args = Vector.new2 (frontier, arg 1),
+			       {args = Vector.new2 (frontier,
+						    M.Operand.Uint (Word.fromInt Runtime.array0Size)),
 				dst = SOME frontier,
 				prim = Prim.word32Add})
 			   end
@@ -1005,6 +1014,7 @@ fun toMachine (program: Ssa.Program.t) =
        main = main,
        maxFrameSize = maxFrameSize,
        objectTypes = objectTypes (),
+       profileAllocLabels = profileAllocLabels,
        strings = allStrings ()}
    end
 

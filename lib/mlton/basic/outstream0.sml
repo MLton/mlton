@@ -11,7 +11,7 @@ structure TextIO = Pervasive.TextIO
 open TextIO
 
 (*val output = fn (out, s) => (output (out, s); flushOut out) *)
-   
+
 type t = outstream
    
 val standard = stdOut
@@ -21,6 +21,8 @@ fun outputc stream string = output (stream, string)
 val flush = flushOut
 
 fun newline s = output (s, "\n")
+
+fun outputl (s, x) = (output (s, x); newline s)
    
 fun print s = output (standard, s)
    

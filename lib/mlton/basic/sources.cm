@@ -140,7 +140,6 @@ functor UniqueSet
 
 is
 
-../../mlton-stubs-in-smlnj/sources.cm
 ../../mlton-stubs/sources.cm
 ../pervasive/sources.cm
 

@@ -75,8 +75,6 @@ signature CONTROL =
       val layoutInline: inline -> Layout.t
       val setInlineSize: int -> unit
 
-      val inlineArrayAllocation: bool ref
-
       (* The input file on the command line, minus path and extension *)
       val inputFile: File.t ref
 
@@ -182,7 +180,8 @@ signature CONTROL =
       val printAtFunEntry: bool ref
 
       (* Insert profiling information. *)
-      val profile: bool ref
+      datatype profile = ProfileNone | ProfileAlloc | ProfileTime
+      val profile: profile ref
 
       (* Array bounds checking. *)
       val safe: bool ref

@@ -1,9 +1,21 @@
 Here are the changes from version 20020923.
 
+* 2002-11-01
+  - Added allocation profiling.  Now, can compile with either -profile alloc
+    or -profile time.  Renamed MLton.Profile as MLton.ProfileTime.  Added
+    MLton.ProfileAlloc.  Cleaned up and changed most mlprof option names.
+
 * 2002-10-31
   - Eliminated MLton.debug.
   - Fixed bug in the optimizer that affected IntInf.fmt.  The optimizer
     had been always using base 10, instead of the passed in radix.
+
+* 2002-10-22
+  - Fixed Real.toManExp so that the mantissa is in [1, 2), not [0.5, 1).
+  - Added Real.fromLargeInt, Real.toLargeInt.
+  - Fixed Real.split, which would return an incorrect whole part due to
+    the underlying primitive, Real_modf, being treated as functional instead
+    of side-effecting.
 
 * 2002-09-30
   - Fixed rpath problem with packaging.  All executables in packages previously
@@ -11,7 +23,7 @@ Here are the changes from version 20020923.
 
 --------------------------------------------------------------------------------
 
-Here are the changes from version 20020410.
+Here are the changes from version 20020410 to 20020923.
 
 Summary:
   + MLton now runs on FreeBSD.

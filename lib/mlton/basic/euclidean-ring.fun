@@ -163,7 +163,7 @@ val factor =
    ("factor", layout, List.layout (Layout.tuple2(layout, Int.layout)),
     fn n => (not(isZero n), fn factors =>
 	     equals(n, List.fold(factors, one, fn ((p, k), prod) =>
-				 prod * (p ^ k)))))
+				 prod * pow (p, k)))))
    factor
 
 fun existsPrimeOfSmallerMetric(m: IntInf.int, f: t -> bool): bool =

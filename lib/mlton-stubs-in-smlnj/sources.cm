@@ -57,7 +57,7 @@ is
 
 #if (SMLNJ_VERSION == 110) && (SMLNJ_MINOR_VERSION >= 20)
 $/basis.cm
-#endif   
+#endif
 import.cm
 
 array.sml

@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include "gc.h"
 #include "mlton-basis.h"
 #include "my-lib.h"
 
@@ -17,11 +18,7 @@
 #endif
 #define	MAGIC	"MLton prof\n"
 
-struct	pdata {
-	char	magic[12];
-	uint	start,
-		limit;
-};
+extern struct GC_state gcState;
 
 extern void	_start(void),
 		etext(void);
@@ -33,99 +30,108 @@ extern void	_start(void),
 static uint	*current = NULL,
 		card = 0;
 
-void MLton_Profile_init (void)
-{
-	card = (uint)&etext - (uint)&_start + 1;
+#define START ((uint)&_start)
+#define END (uint)&etext
+
+Pointer MLton_ProfileTime_current () {
+	return (Pointer)current;
 }
 
-void MLton_Profile_setCurrent (Pointer d)
-{
-	uint *data = (uint*)d;
-
-	assert(data != NULL);
-	current = data;
-}
-
-Pointer MLton_Profile_Data_malloc (void)
-/* Note, perhaps this code should use mmap()/munmap() instead of
- * malloc()/free() for the array of bins.
- */
-{
-	uint *data;
-
-	assert(card != 0);
-	data = (uint *)malloc(card * sizeof(*data));
-	if (data == NULL)
-		die("Out of memory");
-	MLton_Profile_Data_reset((Pointer)data);
-	return((Pointer)data);
-}
-
-void MLton_Profile_Data_free (Pointer d)
-{
-	uint *data = (uint*)d;
-
-	assert((card != 0) and (data != NULL));
-	free(data);
-}
-
-void MLton_Profile_Data_reset (Pointer d)
-{
+void MLton_ProfileTime_setCurrent (Pointer d) {
 	uint *data;
 
 	data = (uint*)d;
-
-	assert((card != 0) and (data != NULL)); 
-	memset(data, 0, card * sizeof(*data));
+	assert (data != NULL);
+	current = data;
 }
 
-void MLton_Profile_Data_write (Pointer d, Word fd)
+Pointer MLton_ProfileTime_Data_malloc (void) {
+	/* Note, perhaps this code should use mmap()/munmap() instead of
+	 * malloc()/free() for the array of bins.
+	 */
+	uint *data;
+
+	assert(card != 0);
+	data = (uint *)malloc (card * sizeof(*data));
+	if (data == NULL)
+		die ("Out of memory");
+	MLton_ProfileTime_Data_reset ((Pointer)data);
+	return (Pointer)data;
+}
+
+void MLton_ProfileTime_Data_free (Pointer d) {
+	uint *data;
+
+	data = (uint*)d;
+	assert ((card != 0) and (data != NULL));
+	free (data);
+}
+
+void MLton_ProfileTime_Data_reset (Pointer d) {
+	uint *data;
+
+	data = (uint*)d;
+	assert ((card != 0) and (data != NULL)); 
+	memset (data, 0, card * sizeof(*data));
+}
+
+void MLton_ProfileTime_Data_write (Pointer d, Word fd) {
 /* Write a profile data array out to a file descriptor
  * The file consists of:
  *	a 12 byte magic value ("MLton prof\n\000")
  *	the lowest address corresponding to a bin
  *	just past the highest address corresponding to a bin
  *	unknown ticks
- *	the bins
+ *	the nonzero bins
+ *  		each bin is a 4 byte address followed by a 4 byte count
  * The `unknown ticks' is a count of the number of times that the monitored
  * program counter was not in the range of a bin.  This almost certainly
  * corresponds to times when it was pointing at shared library code.
  * All values except for the initial string are unsigned integers in
  * the native machine format (4 bytes, little-endian).
  */
-{
-	struct pdata		pd;
-	uint *data = (uint*)d;
+	uint *data;
+	uint i;
 
-	assert(sizeof(pd.magic) == sizeof(MAGIC));
-	strcpy(pd.magic, MAGIC);
-	pd.start = (uint)&_start;
-	pd.limit = (uint)&etext;
-	unless ((write(fd, &pd, sizeof(pd)) == sizeof(pd))
-	and (write(fd, data, card * sizeof(*data)) == card * sizeof(*data)))
-		diee("write() failed");
+	data = (uint*)d;
+	swrite (fd, MAGIC, sizeof(MAGIC));
+	swriteUint (fd, gcState.magic);
+	swriteUint (fd, START);
+	swriteUint (fd, END);
+	swriteUint (fd, sizeof(*data));
+	swriteUint (fd, MLPROF_KIND_TIME);
+	unless (0 == data[card]) {
+		swriteUint (fd, 0);
+		swriteUint (fd, data[card]);
+	}
+	for (i = 0; i < card - 1; ++i) {
+		unless (0 == data[i]) {
+			swriteUint (fd, START + i);
+			swriteUint (fd, data[i]); 
+		}
+	}
 }
 
 /*
  * Called on each SIGPROF interrupt.
  */
-static void
-catcher(int sig, siginfo_t *sip, ucontext_t *ucp)
-{
+static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {
 	uint	pc;
 
 #if (defined (__linux__))
         pc = ucp->uc_mcontext.gregs[EIP];
 #elif (defined (__FreeBSD__))
 	pc = ucp->uc_mcontext.mc_eip;
+#else
+#error pc not defined
 #endif
-	if (((uint)&_start <= pc) and (pc <= (uint)&etext))
-		++current[pc - (uint)&_start + 1];
+	if (START <= pc and pc < END)
+		++current[pc - START];
 	else
-		++current[0];
+		++current[card];
 }
 
-void MLton_Profile_installHandler (void)
+void MLton_ProfileTime_init (void) {
 /*
  * Install catcher, which handles SIGPROF and updates the entry in current
  * corresponding to the program counter.
@@ -140,19 +146,23 @@ void MLton_Profile_installHandler (void)
  * in order to have profiling cover as much as possible, you want it
  * to occur right after the sigaltstack() call.
  */
-{
 	struct sigaction	sa;
 
+
+	card = END - START + 1; /* +1 for bin for unknown ticks*/
 	sa.sa_handler = (void (*)(int))catcher;
-	sigemptyset(&sa.sa_mask);
+	sigemptyset (&sa.sa_mask);
 	sa.sa_flags = SA_ONSTACK | SA_RESTART | SA_SIGINFO;
-	unless (sigaction(SIGPROF, &sa, NULL) == 0)
-		diee("sigaction() failed");
+	unless (sigaction (SIGPROF, &sa, NULL) == 0)
+		diee ("sigaction() failed");
 }
 
 #elif (defined (__CYGWIN__))
 
-/* No profiling on Cygwin. */
+/* No profiling on Cygwin. 
+ * There is a check in mlton/main/main.sml to make sure that profiling is never
+ * turned on on Cygwin.
+ */
 
 #else
 

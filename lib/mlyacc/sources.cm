@@ -22,7 +22,7 @@ structure LrParser
 
 is
 
-../mlton-stubs-in-smlnj/sources.cm
+../mlton-stubs/sources.cm
 
 base.sig
 join.sml

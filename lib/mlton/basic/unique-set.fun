@@ -122,7 +122,7 @@ structure Tree: sig
 
 open Tree.Set
 
-val tableSize = Int.^(2, bits)
+val tableSize = Int.pow (2, bits)
 
 val maxIndex = tableSize - 1
 

@@ -39,7 +39,8 @@ structure MLton:
       structure Itimer: MLTON_ITIMER
       structure ProcEnv: MLTON_PROC_ENV
       structure Process: MLTON_PROCESS
-      structure Profile: MLTON_PROFILE
+      structure ProfileAlloc: MLTON_PROFILE
+      structure ProfileTime: MLTON_PROFILE
       structure Random: MLTON_RANDOM
       structure Rlimit: MLTON_RLIMIT
       structure Rusage: MLTON_RUSAGE
@@ -373,12 +374,14 @@ and start a new process running that executable with the arguments {\tt args}.
 Like {\tt Posix.Process.execp}.
 \end{description}
 
-\subsubsec{{\tt MLton.Profile}}{profile}
+\subsubsec{{\tt MLton.ProfileAlloc}, {\tt MLton.ProfileTime}}{profile-structures}
 This structure provides profiling control from within the program.
-For more on profiling as well as an example, see \secref{profiling}
-and {\tt examples/profiling}. In order to most efficiently execute
-non-profiled programs, all of the operations in {\tt MLton.Profile}
-are no-ops when compiling {\tt -profile false}.
+For more on profiling, see \secref{profiling} and {\tt
+examples/profiling}. In order to most efficiently execute
+non-profiled programs, all of the operations in {\tt
+MLton.ProfileAlloc} are no-ops except when compiling {\tt -profile
+alloc} and all the operations in {\tt MLton.ProfileTime} are no-ops
+except when compiling {\tt -profile time}.
 
 \begin{verbatim}
 signature MLTON_PROFILE =
@@ -401,8 +404,7 @@ signature MLTON_PROFILE =
 \begin{description}
 
 \entry{profile}
-a compile-time constant that reflects the value of the {\tt -profile} switch.
-The default is false.
+a compile-time constant that is true when compiling {\tt -profile time}.
 
 \entry{type Data.t} the type of a unit of profiling data.
 

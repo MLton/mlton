@@ -82,6 +82,8 @@ Group is
 ../lib/mlton/basic/field.sig
 ../lib/mlton/basic/field.fun
 ../lib/mlton/basic/ordered-field.fun
+../lib/mlton/basic/int-inf.sig
+../lib/mlton/basic/int-inf.sml
 ../lib/mlton/basic/real.sig
 ../lib/mlton/basic/real.sml
 ../lib/mlton/basic/random.sig
@@ -131,8 +133,6 @@ Group is
 ../lib/mlton/basic/justify.sml
 ../lib/mlton/basic/popt.sig
 ../lib/mlton/basic/popt.sml
-../lib/mlton/basic/int-inf.sig
-../lib/mlton/basic/int-inf.sml
 ../lib/mlton/basic/file-desc.sig
 ../lib/mlton/basic/file-desc.sml
 ../lib/mlton/basic/function.sig
@@ -309,6 +309,8 @@ backend/ssa-to-rssa.fun
 backend/signal-check.sig
 backend/signal-check.fun
 backend/rssa.fun
+backend/profile-alloc.sig
+backend/profile-alloc.fun
 backend/parallel-move.sig
 backend/parallel-move.fun
 backend/limit-check.sig
@@ -326,8 +328,6 @@ backend/live.sig
 backend/live.fun
 backend/allocate-registers.sig
 backend/allocate-registers.fun
-backend/array-init.sig
-backend/array-init.fun
 backend/backend.fun
 xml/xml-type.sig
 xml/xml-tree.sig

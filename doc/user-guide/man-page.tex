@@ -107,9 +107,11 @@ Specify the name of the final output file.
 The default name is the input file name with its
 suffix removed and an appropriate suffix added.
 
-\option{-profile \{false|true\}}
-Produce an executable that will gather profiling information.  {\tt -profile
-true} implies {\tt -keep ssa}.  See \secref{profiling} for details.
+\option{-profile \{no|space|time\}}
+Produce an executable that will gather space or time profiling information.
+{\tt -profile space} and {\tt -profile time} imply {\tt -keep ssa}.
+When such an executable is run, it will produce an {\tt mlmon.out} file.
+See \secref{profiling} for details.
 
 \option{-safe \{true|false\}}
 This switch determines the value of the SML variable {\tt MLton.safe}, which

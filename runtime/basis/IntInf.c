@@ -25,23 +25,17 @@ typedef struct	strng {
 	char	chars[0];	/* actual chars */
 }	strng;
 
-
 /*
  * Test if a intInf is a fixnum.
  */
-static inline	uint
-isSmall(pointer arg)
-{
+static inline uint isSmall (pointer arg) {
 	return ((uint)arg & 1);
 }
-
 
 /*
  * Convert a bignum intInf to a bignum pointer.
  */
-static inline bignum	*
-toBignum(pointer arg)
-{
+static inline bignum * toBignum (pointer arg) {
 	bignum	*bp;
 
 	assert(not isSmall(arg));
@@ -50,14 +44,11 @@ toBignum(pointer arg)
 	return (bp);
 }
 
-
 /*
  * Given an intInf, a pointer to an __mpz_struct and something large enough
  * to contain 2 limbs, fill in the __mpz_struct.
  */
-static inline void
-fill(pointer arg, __mpz_struct *res, mp_limb_t space[2])
-{
+static inline void fill (pointer arg, __mpz_struct *res, mp_limb_t space[2]) {
 	bignum	*bp;
 
 	if (isSmall(arg)) {
@@ -83,12 +74,10 @@ fill(pointer arg, __mpz_struct *res, mp_limb_t space[2])
 /*
  * Initialize an __mpz_struct to use the space provided by an ML array.
  */
-static inline void
-initRes(__mpz_struct *mpzp, uint bytes)
-{
+static inline void initRes (__mpz_struct *mpzp, uint bytes) {
 	struct bignum *bp;
 
-	assert(bytes <= gcState.limitPlusSlop - gcState.frontier);
+	assert (bytes <= gcState.limitPlusSlop - gcState.frontier);
 	bp = (bignum*)gcState.frontier;
 	/* We have as much space for the limbs as there is to the end of the 
          * heap.  Divide by 4 to get number of words. 
@@ -102,9 +91,7 @@ initRes(__mpz_struct *mpzp, uint bytes)
  * Count number of leading zeros.  The argument will not be zero.
  * This MUST be replaced with assembler.
  */
-static inline uint
-leadingZeros(mp_limb_t word)
-{
+static inline uint leadingZeros (mp_limb_t word) {
 	uint	res;
 
 	assert(word != 0);
@@ -116,6 +103,11 @@ leadingZeros(mp_limb_t word)
 	return (res);
 }
 
+static inline void setFrontier (pointer p) {
+	GC_incProfileAlloc (&gcState, p - gcState.frontier);
+	gcState.frontier = p;
+	assert (gcState.frontier <= gcState.limitPlusSlop);
+}
 
 /*
  * Given an __mpz_struct pointer which reflects the answer, set gcState.frontier
@@ -125,9 +117,7 @@ leadingZeros(mp_limb_t word)
  * If the answer doesn't need all of the space allocated, we adjust
  * the array size and roll the frontier slightly back.
  */
-static pointer
-answer(__mpz_struct *ans)
-{
+static pointer answer (__mpz_struct *ans) {
 	bignum			*bp;
 	int			size;
 
@@ -162,56 +152,47 @@ answer(__mpz_struct *ans)
 			return (pointer)(ans<<1 | 1);
 		}
 	}
-	gcState.frontier = (pointer)&bp->limbs[size];
-	assert(gcState.frontier <= gcState.limitPlusSlop);
+	setFrontier ((pointer)&bp->limbs[size]);
 	bp->counter = 0;
 	bp->card = size + 1; /* +1 for isNeg word */
 	bp->magic = BIGMAGIC;
 	return (pointer)&bp->isneg;
 }
 
-static pointer
-binary(pointer lhs, pointer rhs, uint bytes,
-	void(*binop)(__mpz_struct *resmpz, 
-			__gmp_const __mpz_struct *lhsspace,
-			__gmp_const __mpz_struct *rhsspace))
-{
+static pointer binary (pointer lhs, pointer rhs, uint bytes,
+				void(*binop)(__mpz_struct *resmpz, 
+					__gmp_const __mpz_struct *lhsspace,
+					__gmp_const __mpz_struct *rhsspace)) {
 	__mpz_struct	lhsmpz,
 			rhsmpz,
 			resmpz;
 	mp_limb_t	lhsspace[2],
 			rhsspace[2];
 
-	initRes(&resmpz, bytes);
-	fill(lhs, &lhsmpz, lhsspace);
-	fill(rhs, &rhsmpz, rhsspace);
-	binop(&resmpz, &lhsmpz, &rhsmpz);
-	return answer(&resmpz);
+	initRes (&resmpz, bytes);
+	fill (lhs, &lhsmpz, lhsspace);
+	fill (rhs, &rhsmpz, rhsspace);
+	binop (&resmpz, &lhsmpz, &rhsmpz);
+	return answer (&resmpz);
 }
 
-pointer IntInf_do_add(pointer lhs, pointer rhs, uint bytes)
-{
-	return binary(lhs, rhs, bytes, &mpz_add);
+pointer IntInf_do_add (pointer lhs, pointer rhs, uint bytes) {
+	return binary (lhs, rhs, bytes, &mpz_add);
 }
 
-pointer IntInf_do_gcd(pointer lhs, pointer rhs, uint bytes)
-{
-	return binary(lhs, rhs, bytes, &mpz_gcd);
+pointer IntInf_do_gcd (pointer lhs, pointer rhs, uint bytes) {
+	return binary (lhs, rhs, bytes, &mpz_gcd);
 }
 
-pointer IntInf_do_mul(pointer lhs, pointer rhs, uint bytes)
-{
-	return binary(lhs, rhs, bytes, &mpz_mul);
+pointer IntInf_do_mul (pointer lhs, pointer rhs, uint bytes) {
+	return binary (lhs, rhs, bytes, &mpz_mul);
 }
 
-pointer IntInf_do_sub(pointer lhs, pointer rhs, uint bytes)
-{
-	return binary(lhs, rhs, bytes, &mpz_sub);
+pointer IntInf_do_sub (pointer lhs, pointer rhs, uint bytes) {
+	return binary (lhs, rhs, bytes, &mpz_sub);
 }
 
-Word
-IntInf_smallMul(Word lhs, Word rhs, pointer carry)
-{
+Word IntInf_smallMul (Word lhs, Word rhs, pointer carry) {
 	llong	prod;
 
 	prod = (llong)(int)lhs * (int)rhs;
@@ -223,9 +204,7 @@ IntInf_smallMul(Word lhs, Word rhs, pointer carry)
  * Return an integer which compares to 0 as the two intInf args compare
  * to each other.
  */
-int
-IntInf_compare(pointer lhs, pointer rhs)
-{
+int IntInf_compare (pointer lhs, pointer rhs) {
 	__mpz_struct		lhsmpz,
 				rhsmpz;
 	mp_limb_t		lhsspace[2],
@@ -236,41 +215,37 @@ IntInf_compare(pointer lhs, pointer rhs)
 	return (mpz_cmp(&lhsmpz, &rhsmpz));
 }
 
-
 /*
  * Check if two IntInf.int's are equal.
  * (This should be partly in ML, but the compiler won't call ML code in the
  * middle of polymorphic equality.)
  */
-int IntInf_equal(pointer lhs, pointer rhs) {
-	if (isSmall(lhs))
-		if (isSmall(rhs))
+int IntInf_equal (pointer lhs, pointer rhs) {
+	if (isSmall (lhs))
+		if (isSmall (rhs))
 			return (lhs == rhs);
 		else
 			return (FALSE);
-	else if (isSmall(rhs))
+	else if (isSmall (rhs))
 		return (FALSE);
 	else
-		return (IntInf_compare(lhs, rhs) == 0);
+		return (IntInf_compare (lhs, rhs) == 0);
 }
-
 
 /*
  * Convert an intInf to a string.
  * Arg is an intInf, base is the base to use (2, 8, 10 or 16) and space is a
  * string (mutable) which is large enough.
  */
-pointer
-IntInf_do_toString(pointer arg, int base, uint bytes)
-{
+pointer IntInf_do_toString (pointer arg, int base, uint bytes) {
 	strng		*sp;
 	__mpz_struct	argmpz;
 	mp_limb_t	argspace[2];
 	char		*str;
 	uint		size;
 
-	assert(base == 2 || base == 8 || base == 10 || base == 16);
-	fill(arg, &argmpz, argspace);
+	assert (base == 2 || base == 8 || base == 10 || base == 16);
+	fill (arg, &argmpz, argspace);
 	sp = (strng*)gcState.frontier;
 	str = mpz_get_str(sp->chars, base, &argmpz);
 	assert(str == sp->chars);
@@ -280,22 +255,19 @@ IntInf_do_toString(pointer arg, int base, uint bytes)
 	sp->counter = 0;
 	sp->card = size;
 	sp->magic = STRMAGIC;
-	gcState.frontier = &sp->chars[wordAlign(size)];
-	assert(gcState.frontier <= gcState.limitPlusSlop);
+	setFrontier (&sp->chars[wordAlign(size)]);
 	return (pointer)str;
 }
 
-pointer
-IntInf_do_neg(pointer arg, uint bytes)
-{
+pointer IntInf_do_neg (pointer arg, uint bytes) {
 	__mpz_struct	argmpz,
 			resmpz;
 	mp_limb_t	argspace[2];
 
-	initRes(&resmpz, bytes);
-	fill(arg, &argmpz, argspace);
-	mpz_neg(&resmpz, &argmpz);
-	return answer(&resmpz);
+	initRes (&resmpz, bytes);
+	fill (arg, &argmpz, argspace);
+	mpz_neg (&resmpz, &argmpz);
+	return answer (&resmpz);
 }
 
 /*
@@ -311,9 +283,7 @@ IntInf_do_neg(pointer arg, uint bytes)
  * num is the numerator bignum, den is the denominator and frontier is
  * the current frontier.
  */
-pointer
-IntInf_do_quot(pointer num, pointer den, uint bytes)
-{
+pointer IntInf_do_quot (pointer num, pointer den, uint bytes) {
 	__mpz_struct	resmpz,
 			nmpz,
 			dmpz;
@@ -382,7 +352,7 @@ IntInf_do_quot(pointer num, pointer den, uint bytes)
 			resmpz._mp_d[qsize++] = carry;
 	}
 	resmpz._mp_size = resIsNeg ? - qsize : qsize;
-	return answer(&resmpz);
+	return answer (&resmpz);
 }
 
 
@@ -399,9 +369,7 @@ IntInf_do_quot(pointer num, pointer den, uint bytes)
  * num is the numerator bignum, den is the denominator and frontier is
  * the current frontier.
  */
-pointer
-IntInf_do_rem(pointer num, pointer den, uint bytes)
-{
+pointer IntInf_do_rem (pointer num, pointer den, uint bytes) {
 	__mpz_struct	resmpz,
 			nmpz,
 			dmpz;
@@ -474,5 +442,5 @@ IntInf_do_rem(pointer num, pointer den, uint bytes)
 		}
 	}
 	resmpz._mp_size = resIsNeg ? - nsize : nsize;
-	return answer(&resmpz);
+	return answer (&resmpz);
 }

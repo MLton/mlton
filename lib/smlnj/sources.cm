@@ -18,7 +18,7 @@ functor SplayMapFn
 
 is
 
-../mlton-stubs-in-smlnj/sources.cm
+../mlton-stubs/sources.cm
 
 splaytree-sig.sml
 splaytree.sml

@@ -89,7 +89,7 @@ val (get, set, handlers) =
 	  Array.modifyi (defaultOrIgnore o #1) (handlers, 0, NONE))
    in
       (fn s => Array.sub (handlers, s),
-       fn (s, h) => if Primitive.MLton.Profile.profile andalso s = prof
+       fn (s, h) => if Primitive.MLton.ProfileTime.isOn andalso s = prof
 		       then
 			  let
 			     open PosixError

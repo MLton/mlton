@@ -1,8 +1,10 @@
-mlmon.init.out
 mlmon.fib.out
-mlmon.tak.out
+mlmon.init.out
 mlmon.out
+mlmon.tak.out
 profiling
+profiling-alloc
+profiling-alloc.ssa
 profiling.0.S
 profiling.c
 profiling.ssa

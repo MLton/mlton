@@ -152,8 +152,11 @@ mlton/int-inf.sig
 mlton/word.sig
 mlton/proc-env.sig
 mlton/proc-env.sml
+mlton/profile-data.sig
 mlton/profile.sig
-mlton/profile.sml
+mlton/profile.fun
+mlton/profile-alloc.sml
+mlton/profile-time.sml
 mlton/rlimit.sig
 mlton/rlimit.sml
 mlton/rusage.sig

@@ -81,10 +81,8 @@ structure Statement =
 					     numWordsNonPointers = nwnp}))
 	  | PrimApp {args, prim, ...} =>
 	       (case Prim.name prim of
-		   Prim.Name.Array_allocate =>
-		      Operand.caseBytes (Vector.sub (args, 1),
-					 {big = big,
-					  small = small})
+		   Prim.Name.Array_array0 =>
+		      small (Word.fromInt Runtime.array0Size)
 		 | _ => small 0w0)
 	  | _ => small 0w0
    end
@@ -679,7 +677,7 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
       f
    end
 
-fun insert (p as Program.T {functions, main}) =
+fun insert (p as Program.T {functions, main, profileAllocLabels}) =
    let
       val _ = Control.diagnostic (fn () => Layout.str "Limit Check maxPaths")
       datatype z = datatype Control.limitCheck
@@ -710,7 +708,8 @@ fun insert (p as Program.T {functions, main}) =
 			       start = newStart}
    in
       Program.T {functions = functions,
-		 main = main}
+		 main = main,
+		 profileAllocLabels = profileAllocLabels}
    end
 
 end

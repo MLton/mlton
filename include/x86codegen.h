@@ -64,10 +64,13 @@
 #define Float(c, f) globaldouble[c] = f;
 #define EndFloats }
 
-#define Main(cs, mmc, mfs, mfi, mot, mg, ml, reserveEsp)		\
+#define Main(cs, mmc, mfs, mfi, mot, mg, ml, reserveEsp, a1, a2, a3) 	\
 extern pointer ml;							\
 int main (int argc, char **argv) {					\
 	pointer jump;  							\
+	gcState.profileAllocIsOn = a1;					\
+	gcState.profileAllocLabels = a2;				\
+	gcState.profileAllocNumLabels = a3;				\
 	gcState.cardSizeLog2 = cs;					\
 	gcState.frameLayouts = frameLayouts;				\
 	gcState.globals = globalpointer;				\
