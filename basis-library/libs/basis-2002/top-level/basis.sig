@@ -135,6 +135,7 @@ signature BASIS_2002 =
       structure FixedInt : INTEGER
       structure GenericSock : GENERIC_SOCK
       structure INetSock : INET_SOCK
+      structure Int1: INTEGER
       structure Int2: INTEGER
       structure Int3: INTEGER
       structure Int4: INTEGER
@@ -256,6 +257,7 @@ signature BASIS_2002 =
 (*
       structure Windows : WINDOWS
 *)
+      structure Word1: WORD
       structure Word2: WORD
       structure Word3: WORD
       structure Word4: WORD

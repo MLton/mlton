@@ -136,6 +136,7 @@ signature BASIS_1997 =
       structure CharArray2 : MONO_ARRAY2_1997
       structure FixedInt : INTEGER
       structure IntInf : INT_INF
+      structure Int1: INTEGER
       structure Int2: INTEGER
       structure Int3: INTEGER
       structure Int4: INTEGER
@@ -218,6 +219,7 @@ signature BASIS_1997 =
       structure WideTextPrimIO : PRIM_IO
       structure WideTextIO : TEXT_IO
 *)
+      structure Word1: WORD_1997
       structure Word2: WORD_1997
       structure Word3: WORD_1997
       structure Word4: WORD_1997

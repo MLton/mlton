@@ -1,5 +1,8 @@
 Here are the changes since version 20041109.
 
+* 2005-03-22
+  - Added structures Int1, Word1.
+
 * 2005-03-19
   - Fixed a bug that caused Socket.Ctl.{get,set}LINGER to raise
     Subscript.  The problem was in the use of PackWord32Little.update,

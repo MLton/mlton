@@ -147,6 +147,7 @@ functor EmbedWord32 (Small: EMBED_WORD where type big = Word32.word): WORD =
    EmbedWord (structure Big = Word32
 	      structure Small = Small)
 
+structure Word1 = EmbedWord8 (Primitive.Word1)
 structure Word2 = EmbedWord8 (Primitive.Word2)
 structure Word3 = EmbedWord8 (Primitive.Word3)
 structure Word4 = EmbedWord8 (Primitive.Word4)

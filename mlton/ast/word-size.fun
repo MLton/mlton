@@ -30,14 +30,6 @@ fun fromBits (b: Bits.t): t =
 fun isValidSize (i: int) =
    (1 <= i andalso i <= 32) orelse i = 64
 
-val all: t list =
-   Vector.toList
-   (Vector.keepAllMap
-    (Vector.tabulate (65, fn i => if isValidSize i
-				     then SOME (fromBits (Bits.fromInt i))
-				  else NONE),
-     fn so => so))
-
 val one = fromBits (Bits.fromInt 1)
    
 val byte = fromBits (Bits.fromInt 8)
@@ -46,6 +38,8 @@ val allVector = Vector.tabulate (65, fn i =>
 				  if isValidSize i
 				     then SOME (fromBits (Bits.fromInt i))
 				  else NONE)
+
+val all: t list = Vector.toList (Vector.keepAllMap (allVector, fn so => so))
 
 val prims = List.map ([8, 16, 32, 64], fromBits o Bits.fromInt)
 

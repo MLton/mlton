@@ -135,6 +135,7 @@ signature BASIS_EXTRA =
       structure FixedInt : INTEGER
       structure GenericSock : GENERIC_SOCK
       structure INetSock : INET_SOCK
+      structure Int1: INTEGER
       structure Int2: INTEGER
       structure Int3: INTEGER
       structure Int4: INTEGER
@@ -256,6 +257,7 @@ signature BASIS_EXTRA =
 (*
       structure Windows : WINDOWS
 *)
+      structure Word1: WORD
       structure Word2: WORD
       structure Word3: WORD
       structure Word4: WORD
@@ -695,6 +697,7 @@ signature BASIS_EXTRA =
    where type Word8Vector.vector = Word8Vector.vector
 
    (* Types that must be exposed because constants denote them. *)
+   where type Int1.int = Int1.int
    where type Int2.int = Int2.int
    where type Int3.int = Int3.int
    where type Int4.int = Int4.int
@@ -729,6 +732,7 @@ signature BASIS_EXTRA =
    where type Int64.int = Int64.int
    where type IntInf.int = IntInf.int
    where type Real32.real = Real32.real
+   where type Word1.word = Word1.word
    where type Word2.word = Word2.word
    where type Word3.word = Word3.word
    where type Word4.word = Word4.word

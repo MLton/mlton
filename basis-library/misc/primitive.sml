@@ -65,6 +65,7 @@ structure Int64 =
       type t = int64
       type int = t
    end
+structure Position = Int64
 structure IntInf =
    struct
       type t = intInf
@@ -87,16 +88,19 @@ type real = Real.real
 
 structure String =
    struct
-      type string = char vector
+      type t = char vector
+      type string = t
    end
 type string = String.string
 structure String2 =
    struct
       type t = Char2.t vector
+      type string = t
    end
 structure String4 =
    struct
       type t = Char4.t vector
+      type string = t
    end
 
 structure PreThread :> sig type t end = struct type t = thread end
@@ -164,8 +168,6 @@ structure Pid :> sig
       val toInt = fn i => i
       val _ = fromInt
    end
-
-structure Position = Int64
    
 exception Fail of string
 exception Match = Match
@@ -412,84 +414,13 @@ structure Primitive =
 	       _import "IEEEReal_setRoundingMode": int -> unit;
 	 end
 
-      structure Int8 =
+      structure Int1 =
 	 struct
-	    type t = Int8.int
-	    type int = t
-	       
-	    val precision' : Int.int = 8
-	    val maxInt' : int = 0x7f
-	    val minInt' : int = ~0x80
-
-	    val *? = _prim "WordS8_mul": int * int -> int;
-	    val * =
-	       if detectOverflow
-		  then _prim "WordS8_mulCheck": int * int -> int;
-	       else *?
-	    val +? = _prim "Word8_add": int * int -> int;
-	    val + =
-	       if detectOverflow
-		  then _prim "WordS8_addCheck": int * int -> int;
-	       else +?
-	    val -? = _prim "Word8_sub": int * int -> int;
-	    val - =
-	       if detectOverflow
-		  then _prim "WordS8_subCheck": int * int -> int;
-	       else -?
-	    val op < = _prim "WordS8_lt": int * int -> bool;
-	    val quot = _prim "WordS8_quot": int * int -> int;
-	    val rem = _prim "WordS8_rem": int * int -> int;
-	    val << = _prim "Word8_lshift": int * Word.word -> int;
-	    val >> = _prim "WordU8_rshift": int * Word.word -> int;
-	    val ~>> = _prim "WordS8_rshift": int * Word.word -> int;
-	    val ~? = _prim "Word8_neg": int -> int; 
-	    val ~ =
-	       if detectOverflow
-		  then _prim "Word8_negCheck": int -> int;
-	       else ~?
-	    val andb = _prim "Word8_andb": int * int -> int;
-	    val fromInt = _prim "WordS32_toWord8": Int.int -> int;
-	    val toInt = _prim "WordS8_toWord32": int -> Int.int;
-	 end
-    
-      structure Int16 =
-	 struct
-	    type t = Int16.int
-	    type int = t
-	       
-	    val precision' : Int.int = 16
-	    val maxInt' : int = 0x7fff
-	    val minInt' : int = ~0x8000
-
-	    val *? = _prim "WordS16_mul": int * int -> int;
-	    val * =
-	       if detectOverflow
-		  then _prim "WordS16_mulCheck": int * int -> int;
-	       else *?
-	    val +? = _prim "Word16_add": int * int -> int;
-	    val + =
-	       if detectOverflow
-		  then _prim "WordS16_addCheck": int * int -> int;
-	       else +?
-	    val -? = _prim "Word16_sub": int * int -> int;
-	    val - =
-	       if detectOverflow
-		  then _prim "WordS16_subCheck": int * int -> int;
-	       else -?
-	    val op < = _prim "WordS16_lt": int * int -> bool;
-	    val quot = _prim "WordS16_quot": int * int -> int;
-	    val rem = _prim "WordS16_rem": int * int -> int;
-	    val << = _prim "Word16_lshift": int * Word.word -> int;
-	    val >> = _prim "WordU16_rshift": int * Word.word -> int;
-	    val ~>> = _prim "WordS16_rshift": int * Word.word -> int;
-	    val ~? = _prim "Word16_neg": int -> int; 
-	    val ~ =
-	       if detectOverflow
-		  then _prim "Word16_negCheck": int -> int;
-	       else ~?
-	    val andb = _prim "Word16_andb": int * int -> int;
-	    val fromInt = _prim "WordS32_toWord16": Int.int -> int;
-	    val toInt = _prim "WordS16_toWord32": int -> Int.int;
+	    type big = Int8.int
+	    type int = int1
+	    val fromBigUnsafe = _prim "WordU8_toWord1": big -> int;
+	    val precision' = 1
+	    val toBig = _prim "WordU1_toWord8": int -> big;
 	 end
       structure Int2 =
 	 struct
@@ -538,6 +469,54 @@ structure Primitive =
 	    val fromBigUnsafe = _prim "WordU8_toWord7": big -> int;
 	    val precision' = 7
 	    val toBig = _prim "WordU7_toWord8": int -> big;
+	 end
+      structure Int8 =
+	 struct
+	    type t = Int8.int
+	    type int = t
+	       
+	    val precision' : Int.int = 8
+	    val maxInt' : int = 0x7f
+	    val minInt' : int = ~0x80
+
+	    val *? = _prim "WordS8_mul": int * int -> int;
+	    val * =
+	       if detectOverflow
+		  then _prim "WordS8_mulCheck": int * int -> int;
+	       else *?
+	    val +? = _prim "Word8_add": int * int -> int;
+	    val + =
+	       if detectOverflow
+		  then _prim "WordS8_addCheck": int * int -> int;
+	       else +?
+	    val -? = _prim "Word8_sub": int * int -> int;
+	    val - =
+	       if detectOverflow
+		  then _prim "WordS8_subCheck": int * int -> int;
+	       else -?
+	    val op < = _prim "WordS8_lt": int * int -> bool;
+	    val quot = _prim "WordS8_quot": int * int -> int;
+	    val rem = _prim "WordS8_rem": int * int -> int;
+	    val << = _prim "Word8_lshift": int * Word.word -> int;
+	    val >> = _prim "WordU8_rshift": int * Word.word -> int;
+	    val ~>> = _prim "WordS8_rshift": int * Word.word -> int;
+	    val ~? = _prim "Word8_neg": int -> int; 
+	    val ~ =
+	       if detectOverflow
+		  then _prim "Word8_negCheck": int -> int;
+	       else ~?
+	    val andb = _prim "Word8_andb": int * int -> int;
+	    val fromInt = _prim "WordS32_toWord8": Int.int -> int;
+	    val toInt = _prim "WordS8_toWord32": int -> Int.int;
+	 end
+      structure Int8 =
+	 struct
+	    open Int8
+	    local
+	       structure S = Comparisons (Int8)
+	    in
+	       open S
+	    end
 	 end
       structure Int9 =
 	 struct
@@ -594,6 +573,54 @@ structure Primitive =
 	    val fromBigUnsafe = _prim "WordU16_toWord15": big -> int;
 	    val precision' = 15
 	    val toBig = _prim "WordU15_toWord16": int -> big;
+	 end    
+      structure Int16 =
+	 struct
+	    type t = Int16.int
+	    type int = t
+	       
+	    val precision' : Int.int = 16
+	    val maxInt' : int = 0x7fff
+	    val minInt' : int = ~0x8000
+
+	    val *? = _prim "WordS16_mul": int * int -> int;
+	    val * =
+	       if detectOverflow
+		  then _prim "WordS16_mulCheck": int * int -> int;
+	       else *?
+	    val +? = _prim "Word16_add": int * int -> int;
+	    val + =
+	       if detectOverflow
+		  then _prim "WordS16_addCheck": int * int -> int;
+	       else +?
+	    val -? = _prim "Word16_sub": int * int -> int;
+	    val - =
+	       if detectOverflow
+		  then _prim "WordS16_subCheck": int * int -> int;
+	       else -?
+	    val op < = _prim "WordS16_lt": int * int -> bool;
+	    val quot = _prim "WordS16_quot": int * int -> int;
+	    val rem = _prim "WordS16_rem": int * int -> int;
+	    val << = _prim "Word16_lshift": int * Word.word -> int;
+	    val >> = _prim "WordU16_rshift": int * Word.word -> int;
+	    val ~>> = _prim "WordS16_rshift": int * Word.word -> int;
+	    val ~? = _prim "Word16_neg": int -> int; 
+	    val ~ =
+	       if detectOverflow
+		  then _prim "Word16_negCheck": int -> int;
+	       else ~?
+	    val andb = _prim "Word16_andb": int * int -> int;
+	    val fromInt = _prim "WordS32_toWord16": Int.int -> int;
+	    val toInt = _prim "WordS16_toWord32": int -> Int.int;
+	 end
+      structure Int16 =
+	 struct
+	    open Int16
+	    local
+	       structure S = Comparisons (Int16)
+	    in
+	       open S
+	    end
 	 end
       structure Int17 =
 	 struct
@@ -715,7 +742,6 @@ structure Primitive =
 	    val precision' = 31
 	    val toBig = _prim "WordU31_toWord32": int -> big;
 	 end
-      
       structure Int32 =
 	 struct
 	    type t = Int32.int
@@ -755,7 +781,16 @@ structure Primitive =
 	    val fromInt : int -> int = fn x => x
 	    val toInt : int -> int = fn x => x
 	 end
-
+      structure Int32 =
+	 struct
+	    open Int32
+	    local
+	       structure S = Comparisons (Int32)
+	    in
+	       open S
+	    end
+	 end
+      structure Int = Int32
       structure Int64 =
 	 struct
 	    type t = Int64.int
@@ -793,50 +828,7 @@ structure Primitive =
 	    val toInt = _prim "WordU64_toWord32": int -> Int.int;
 	    val toWord = _prim "WordU64_toWord32": int -> word;
 	    val * = fn _ => raise Fail "Int64.* unimplemented"
-	    (* quell unused warnings *)
-	    val () =
-	       let
-		  val _ = << 
-		  val _ = >>
-		  val _ = ~>>
-		  val _ = andb
-	       in
-		  ()
-	       end
 	 end
-
-      structure Int8 =
-	 struct
-	    open Int8
-	    local
-	       structure S = Comparisons (Int8)
-	    in
-	       open S
-	    end
-	 end
-      
-      structure Int16 =
-	 struct
-	    open Int16
-	    local
-	       structure S = Comparisons (Int16)
-	    in
-	       open S
-	    end
-	 end
-      
-      structure Int32 =
-	 struct
-	    open Int32
-	    local
-	       structure S = Comparisons (Int32)
-	    in
-	       open S
-	    end
-	 end
-      
-      structure Int = Int32
-
       structure Int64 =
 	 struct
 	    open Int64
@@ -1710,184 +1702,14 @@ structure Primitive =
 	       end
 	 end
 
-      structure Word8 =
+      structure Word1 =
 	 struct
-	    open Word8
-	       
-	    val wordSize: int = 8
-
-	    val + = _prim "Word8_add": word * word -> word;
-	    val andb = _prim "Word8_andb": word * word -> word;
-	    val ~>> = _prim "WordS8_rshift": word * Word.word -> word;
-	    val div = _prim "WordU8_quot": word * word -> word;
-	    val fromInt = _prim "WordU32_toWord8": int -> word;
-	    val fromLarge = _prim "WordU64_toWord8": LargeWord.word -> word;
-	    val << = _prim "Word8_lshift": word * Word.word -> word;
-	    val op < = _prim "WordU8_lt" : word * word -> bool;
-	    val mod = _prim "WordU8_rem": word * word -> word;
-	    val * = _prim "WordU8_mul": word * word -> word;
-	    val ~ = _prim "Word8_neg": word -> word;
-	    val notb = _prim "Word8_notb": word -> word;
-	    val orb = _prim "Word8_orb": word * word -> word;
-	    val rol = _prim "Word8_rol": word * Word.word -> word;
-	    val ror = _prim "Word8_ror": word * Word.word -> word;
-	    val >> = _prim "WordU8_rshift": word * Word.word -> word;
-	    val - = _prim "Word8_sub": word * word -> word;
-	    val toInt = _prim "WordU8_toWord32": word -> int;
-	    val toIntX = _prim "WordS8_toWord32": word -> int;
-	    val toLarge = _prim "WordU8_toWord64": word -> LargeWord.word;
-	    val toLargeX = _prim "WordS8_toWord64": word -> LargeWord.word;
-	    val xorb = _prim "Word8_xorb": word * word -> word;
+	    type big = Word8.word
+	    type word = word1
+	    val fromBigUnsafe = _prim "WordU8_toWord1": big -> word;
+	    val toBig = _prim "WordU1_toWord8": word -> big;
+	    val wordSize = 1
 	 end
-
-      structure Word8Array =
-	 struct
-	    val subWord =
-	       _prim "Word8Array_subWord": word8 array * int -> word;
-	    val subWordRev =
-	       _import "Word8Array_subWord32Rev": word8 array * int -> word;
-	    val updateWord =
-	       _prim "Word8Array_updateWord": word8 array * int * word -> unit;
-	    val updateWordRev =
-	       _import "Word8Array_updateWord32Rev": word8 array * int * word -> unit;
-	 end
-      
-      structure Word8Vector =
-	 struct
-	    val subWord =
-	       _prim "Word8Vector_subWord": word8 vector * int -> word;
-	    val subWordRev =
-	       _import "Word8Vector_subWord32Rev": word8 vector * int -> word;
-	 end
-
-      structure Word16 =
-	 struct
-	    open Word16
-	       
-	    val wordSize: int = 16
-
-	    val + = _prim "Word16_add": word * word -> word;
-	    val andb = _prim "Word16_andb": word * word -> word;
-	    val ~>> = _prim "WordS16_rshift": word * Word.word -> word;
-	    val div = _prim "WordU16_quot": word * word -> word;
-	    val fromInt = _prim "WordU32_toWord16": int -> word;
-	    val fromLarge = _prim "WordU64_toWord16": LargeWord.word -> word;
-	    val << = _prim "Word16_lshift": word * Word.word -> word;
-	    val op < = _prim "WordU16_lt" : word * word -> bool;
-	    val mod = _prim "WordU16_rem": word * word -> word;
-	    val * = _prim "WordU16_mul": word * word -> word;
-	    val ~ = _prim "Word16_neg": word -> word;
-	    val notb = _prim "Word16_notb": word -> word;
-	    val orb = _prim "Word16_orb": word * word -> word;
-	    val >> = _prim "WordU16_rshift": word * Word.word -> word;
-	    val - = _prim "Word16_sub": word * word -> word;
-	    val toInt = _prim "WordU16_toWord32": word -> int;
-	    val toIntX = _prim "WordS16_toWord32": word -> int;
-	    val toLarge = _prim "WordU16_toWord64": word -> LargeWord.word;
-	    val toLargeX = _prim "WordS16_toWord64": word -> LargeWord.word;
-	    val xorb = _prim "Word16_xorb": word * word -> word;
-	 end
-
-      structure Word32 =
-	 struct
-	    open Word32
-	       
-	    val wordSize: int = 32
-
-	    val + = _prim "Word32_add": word * word -> word;
-	    val andb = _prim "Word32_andb": word * word -> word;
-	    val ~>> = _prim "WordS32_rshift": word * word -> word;
-	    val div = _prim "WordU32_quot": word * word -> word;
-	    val fromInt = _prim "WordU32_toWord32": int -> word;
-	    val fromLarge = _prim "WordU64_toWord32": LargeWord.word -> word;
-	    val << = _prim "Word32_lshift": word * word -> word;
-	    val op < = _prim "WordU32_lt" : word * word -> bool;
-	    val mod = _prim "WordU32_rem": word * word -> word;
-	    val * = _prim "WordU32_mul": word * word -> word;
-	    val ~ = _prim "Word32_neg": word -> word;
-	    val notb = _prim "Word32_notb": word -> word;
-	    val orb = _prim "Word32_orb": word * word -> word;
-	    val rol = _prim "Word32_rol": word * word -> word;
-	    val ror = _prim "Word32_ror": word * word -> word;
-	    val >> = _prim "WordU32_rshift": word * word -> word;
-	    val - = _prim "Word32_sub": word * word -> word;
-	    val toInt = _prim "WordU32_toWord32": word -> int;
-	    val toIntX = _prim "WordS32_toWord32": word -> int;
-	    val toLarge = _prim "WordU32_toWord64": word -> LargeWord.word;
-	    val toLargeX = _prim "WordS32_toWord64": word -> LargeWord.word;
-	    val xorb = _prim "Word32_xorb": word * word -> word;
-	 end
-
-      structure Word64 =
-	 struct
-	    open Word64
-	       
-	    val wordSize: int = 64
-
-	    val + = _prim "Word64_add": word * word -> word;
-	    val andb = _prim "Word64_andb": word * word -> word;
-	    val ~>> = _prim "WordS64_rshift": word * Word.word -> word;
-	    val div = _prim "WordU64_quot": word * word -> word;
-	    val fromInt = _prim "WordS32_toWord64": int -> word;
-	    val fromLarge: LargeWord.word -> word = fn x => x
-	    val << = _prim "Word64_lshift": word * Word.word -> word;
-	    val op < = _prim "WordU64_lt" : word * word -> bool;
-	    val mod = _prim "WordU64_rem": word * word -> word;
-	    val * = _prim "WordU64_mul": word * word -> word;
-	    val ~ = _prim "Word64_neg": word -> word;
-	    val notb = _prim "Word64_notb": word -> word;
-	    val orb = _prim "Word64_orb": word * word -> word;
-	    val >> = _prim "WordU64_rshift": word * Word.word -> word;
-	    val - = _prim "Word64_sub": word * word -> word;
-	    val toInt = _prim "WordU64_toWord32": word -> int;
-	    val toIntX = _prim "WordU64_toWord32": word -> int;
-	    val toLarge: word -> LargeWord.word = fn x => x
-	    val toLargeX: word -> LargeWord.word = fn x => x
-	    val xorb = _prim "Word64_xorb": word * word -> word;
-	 end
-
-      structure Word8 =
-	 struct
-	    open Word8
-	    local
-	       structure S = Comparisons (Word8)
-	    in
-	       open S
-	    end
-	 end
-      
-      structure Word16 =
-	 struct
-	    open Word16
-	    local
-	       structure S = Comparisons (Word16)
-	    in
-	       open S
-	    end
-	 end
-      
-      structure Word32 =
-	 struct
-	    open Word32
-	    local
-	       structure S = Comparisons (Word32)
-	    in
-	       open S
-	    end
-	 end
-
-      structure Word = Word32
-	 
-      structure Word64 =
-	 struct
-	    open Word64
-	    local
-	       structure S = Comparisons (Word64)
-	    in
-	       open S
-	    end
-	 end
-
       structure Word2 =
 	 struct
 	    type big = Word8.word
@@ -1935,6 +1757,62 @@ structure Primitive =
 	    val fromBigUnsafe = _prim "WordU8_toWord7": big -> word;
 	    val toBig = _prim "WordU7_toWord8": word -> big;
 	    val wordSize = 7
+	 end
+      structure Word8 =
+	 struct
+	    open Word8
+	       
+	    val wordSize: int = 8
+
+	    val + = _prim "Word8_add": word * word -> word;
+	    val andb = _prim "Word8_andb": word * word -> word;
+	    val ~>> = _prim "WordS8_rshift": word * Word.word -> word;
+	    val div = _prim "WordU8_quot": word * word -> word;
+	    val fromInt = _prim "WordU32_toWord8": int -> word;
+	    val fromLarge = _prim "WordU64_toWord8": LargeWord.word -> word;
+	    val << = _prim "Word8_lshift": word * Word.word -> word;
+	    val op < = _prim "WordU8_lt" : word * word -> bool;
+	    val mod = _prim "WordU8_rem": word * word -> word;
+	    val * = _prim "WordU8_mul": word * word -> word;
+	    val ~ = _prim "Word8_neg": word -> word;
+	    val notb = _prim "Word8_notb": word -> word;
+	    val orb = _prim "Word8_orb": word * word -> word;
+	    val rol = _prim "Word8_rol": word * Word.word -> word;
+	    val ror = _prim "Word8_ror": word * Word.word -> word;
+	    val >> = _prim "WordU8_rshift": word * Word.word -> word;
+	    val - = _prim "Word8_sub": word * word -> word;
+	    val toInt = _prim "WordU8_toWord32": word -> int;
+	    val toIntX = _prim "WordS8_toWord32": word -> int;
+	    val toLarge = _prim "WordU8_toWord64": word -> LargeWord.word;
+	    val toLargeX = _prim "WordS8_toWord64": word -> LargeWord.word;
+	    val xorb = _prim "Word8_xorb": word * word -> word;
+	 end
+      structure Word8 =
+	 struct
+	    open Word8
+	    local
+	       structure S = Comparisons (Word8)
+	    in
+	       open S
+	    end
+	 end
+      structure Word8Array =
+	 struct
+	    val subWord =
+	       _prim "Word8Array_subWord": word8 array * int -> word;
+	    val subWordRev =
+	       _import "Word8Array_subWord32Rev": word8 array * int -> word;
+	    val updateWord =
+	       _prim "Word8Array_updateWord": word8 array * int * word -> unit;
+	    val updateWordRev =
+	       _import "Word8Array_updateWord32Rev": word8 array * int * word -> unit;
+	 end
+      structure Word8Vector =
+	 struct
+	    val subWord =
+	       _prim "Word8Vector_subWord": word8 vector * int -> word;
+	    val subWordRev =
+	       _import "Word8Vector_subWord32Rev": word8 vector * int -> word;
 	 end
       structure Word9 =
 	 struct
@@ -1991,6 +1869,42 @@ structure Primitive =
 	    val fromBigUnsafe = _prim "WordU16_toWord15": big -> word;
 	    val toBig = _prim "WordU15_toWord16": word -> big;
 	    val wordSize = 15
+	 end
+      structure Word16 =
+	 struct
+	    open Word16
+	       
+	    val wordSize: int = 16
+
+	    val + = _prim "Word16_add": word * word -> word;
+	    val andb = _prim "Word16_andb": word * word -> word;
+	    val ~>> = _prim "WordS16_rshift": word * Word.word -> word;
+	    val div = _prim "WordU16_quot": word * word -> word;
+	    val fromInt = _prim "WordU32_toWord16": int -> word;
+	    val fromLarge = _prim "WordU64_toWord16": LargeWord.word -> word;
+	    val << = _prim "Word16_lshift": word * Word.word -> word;
+	    val op < = _prim "WordU16_lt" : word * word -> bool;
+	    val mod = _prim "WordU16_rem": word * word -> word;
+	    val * = _prim "WordU16_mul": word * word -> word;
+	    val ~ = _prim "Word16_neg": word -> word;
+	    val notb = _prim "Word16_notb": word -> word;
+	    val orb = _prim "Word16_orb": word * word -> word;
+	    val >> = _prim "WordU16_rshift": word * Word.word -> word;
+	    val - = _prim "Word16_sub": word * word -> word;
+	    val toInt = _prim "WordU16_toWord32": word -> int;
+	    val toIntX = _prim "WordS16_toWord32": word -> int;
+	    val toLarge = _prim "WordU16_toWord64": word -> LargeWord.word;
+	    val toLargeX = _prim "WordS16_toWord64": word -> LargeWord.word;
+	    val xorb = _prim "Word16_xorb": word * word -> word;
+	 end
+      structure Word16 =
+	 struct
+	    open Word16
+	    local
+	       structure S = Comparisons (Word16)
+	    in
+	       open S
+	    end
 	 end
       structure Word17 =
 	 struct
@@ -2112,6 +2026,81 @@ structure Primitive =
 	    val toBig = _prim "WordU31_toWord32": word -> big;
 	    val wordSize = 31
 	 end
+      structure Word32 =
+	 struct
+	    open Word32
+	       
+	    val wordSize: int = 32
+
+	    val + = _prim "Word32_add": word * word -> word;
+	    val andb = _prim "Word32_andb": word * word -> word;
+	    val ~>> = _prim "WordS32_rshift": word * word -> word;
+	    val div = _prim "WordU32_quot": word * word -> word;
+	    val fromInt = _prim "WordU32_toWord32": int -> word;
+	    val fromLarge = _prim "WordU64_toWord32": LargeWord.word -> word;
+	    val << = _prim "Word32_lshift": word * word -> word;
+	    val op < = _prim "WordU32_lt" : word * word -> bool;
+	    val mod = _prim "WordU32_rem": word * word -> word;
+	    val * = _prim "WordU32_mul": word * word -> word;
+	    val ~ = _prim "Word32_neg": word -> word;
+	    val notb = _prim "Word32_notb": word -> word;
+	    val orb = _prim "Word32_orb": word * word -> word;
+	    val rol = _prim "Word32_rol": word * word -> word;
+	    val ror = _prim "Word32_ror": word * word -> word;
+	    val >> = _prim "WordU32_rshift": word * word -> word;
+	    val - = _prim "Word32_sub": word * word -> word;
+	    val toInt = _prim "WordU32_toWord32": word -> int;
+	    val toIntX = _prim "WordS32_toWord32": word -> int;
+	    val toLarge = _prim "WordU32_toWord64": word -> LargeWord.word;
+	    val toLargeX = _prim "WordS32_toWord64": word -> LargeWord.word;
+	    val xorb = _prim "Word32_xorb": word * word -> word;
+	 end
+      structure Word32 =
+	 struct
+	    open Word32
+	    local
+	       structure S = Comparisons (Word32)
+	    in
+	       open S
+	    end
+	 end
+      structure Word = Word32
+      structure Word64 =
+	 struct
+	    open Word64
+	       
+	    val wordSize: int = 64
+
+	    val + = _prim "Word64_add": word * word -> word;
+	    val andb = _prim "Word64_andb": word * word -> word;
+	    val ~>> = _prim "WordS64_rshift": word * Word.word -> word;
+	    val div = _prim "WordU64_quot": word * word -> word;
+	    val fromInt = _prim "WordS32_toWord64": int -> word;
+	    val fromLarge: LargeWord.word -> word = fn x => x
+	    val << = _prim "Word64_lshift": word * Word.word -> word;
+	    val op < = _prim "WordU64_lt" : word * word -> bool;
+	    val mod = _prim "WordU64_rem": word * word -> word;
+	    val * = _prim "WordU64_mul": word * word -> word;
+	    val ~ = _prim "Word64_neg": word -> word;
+	    val notb = _prim "Word64_notb": word -> word;
+	    val orb = _prim "Word64_orb": word * word -> word;
+	    val >> = _prim "WordU64_rshift": word * Word.word -> word;
+	    val - = _prim "Word64_sub": word * word -> word;
+	    val toInt = _prim "WordU64_toWord32": word -> int;
+	    val toIntX = _prim "WordU64_toWord32": word -> int;
+	    val toLarge: word -> LargeWord.word = fn x => x
+	    val toLargeX: word -> LargeWord.word = fn x => x
+	    val xorb = _prim "Word64_xorb": word * word -> word;
+	 end
+      structure Word64 =
+	 struct
+	    open Word64
+	    local
+	       structure S = Comparisons (Word64)
+	    in
+	       open S
+	    end
+	 end
 
       structure World =
 	 struct
@@ -2158,10 +2147,10 @@ structure NullString =
 
 (* Quell unused warnings. *)
 local
-   val _ = #"a": Char2.t
-   val _ = #"a": Char4.t
-   val _ = "a": String2.t
-   val _ = "a": String4.t
+   val _ = #"a": Char2.t: Char2.char
+   val _ = #"a": Char4.t: Char4.char
+   val _ = "a": String2.t: String2.string
+   val _ = "a": String4.t: String4.string
    open Primitive
    open Char2
    val _ = op <
@@ -2171,6 +2160,11 @@ local
    val _ = op <
    val _ = chr
    val _ = ord
+   open Int64
+   val _ = << 
+   val _ = >>
+   val _ = ~>>
+   val _ = andb
 in
 end
 

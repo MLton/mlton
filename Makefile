@@ -41,12 +41,21 @@ endif
 	$(MAKE) script mlbpathmap targetmap constants compiler world libraries tools
 	@echo 'Build of MLton succeeded.'
 
-.PHONY: basis
-basis:
+.PHONY: basis-no-check
+basis-no-check:
 	mkdir -p $(LIB)/sml
 	rm -rf $(LIB)/sml/basis
 	$(CP) $(SRC)/basis-library/. $(LIB)/sml/basis
 	find $(LIB)/sml -type f -name .cvsignore | xargs rm -rf
+
+.PHONY: basis
+basis:
+	$(MAKE) basis-no-check
+	@echo 'Type checking basis.'
+	$(MLTON) -disable-ann deadCode \
+		-stop tc \
+		'$$(SML_LIB)/basis/libs/all.mlb' \
+		>/dev/null
 
 .PHONY: bootstrap-nj
 bootstrap-nj:
@@ -160,21 +169,21 @@ libraries:
 nj-mlton:
 	$(MAKE) dirs runtime 
 	$(MAKE) -C $(COMP) nj-mlton
-	$(MAKE) script basis mlbpathmap targetmap constants libraries-no-check
+	$(MAKE) script basis-no-check mlbpathmap targetmap constants libraries-no-check
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: nj-mlton-dual
 nj-mlton-dual:
 	$(MAKE) dirs runtime
 	$(MAKE) -C $(COMP) nj-mlton-dual
-	$(MAKE) script basis mlbpathmap targetmap constants libraries-no-check
+	$(MAKE) script basis-no-check mlbpathmap targetmap constants libraries-no-check
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: nj-mlton-quad
 nj-mlton-quad:
 	$(MAKE) dirs runtime
 	$(MAKE) -C $(COMP) nj-mlton-dual
-	$(MAKE) script basis mlbpathmap targetmap constants libraries-no-check
+	$(MAKE) script basis-no-check mlbpathmap targetmap constants libraries-no-check
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: mlbpathmap
@@ -272,6 +281,12 @@ version:
 	sed <$(SPEC) >z "/^Release:/s;.*;Release: $(RELEASE);"
 	mv z $(SPEC)
 
+.PHONY: world-no-check
+world-no-check: 
+	@echo 'Making world.'
+	$(MAKE) basis-no-check
+	$(LIB)/$(AOUT) @MLton -- $(LIB)/world
+
 .PHONY: world
 world: 
 	$(MAKE) world-no-check
@@ -280,12 +295,6 @@ world:
 		-stop tc \
 		'$$(SML_LIB)/basis/libs/all.mlb' \
 		>/dev/null
-
-.PHONY: world-no-check
-world-no-check: 
-	@echo 'Making world.'
-	$(MAKE) basis
-	$(LIB)/$(AOUT) @MLton -- $(LIB)/world
 
 # The TBIN and TLIB are where the files are going to be after installing.
 # The DESTDIR and is added onto them to indicate where the Makefile actually

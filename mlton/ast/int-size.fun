@@ -23,7 +23,7 @@ fun compare (s, s') = Bits.compare (bits s, bits s')
 val {equals, ...} = Relation.compare compare
 
 fun isValidSize (i: int) =
-   (2 <= i andalso i <= 32) orelse i = 64
+   (1 <= i andalso i <= 32) orelse i = 64
 
 val sizes: Bits.t list =
    Vector.toList

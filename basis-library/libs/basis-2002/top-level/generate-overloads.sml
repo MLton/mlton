@@ -14,7 +14,7 @@ val real = ["Real", "Real32", "Real64", "LargeReal"]
 
 val word =
    ["Word", "LargeWord", "SysWord"]
-   @ List.map (List.tabulate (31, fn i => i + 2) @ [64],
+   @ List.map (List.tabulate (32, fn i => i + 1) @ [64],
 	       fn i => concat ["Word", Int.toString i])
 
 val text = ["Char", "String"]

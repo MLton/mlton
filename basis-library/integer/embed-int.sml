@@ -116,6 +116,7 @@ functor Embed32 (Small: EMBED_INT where type big = Int32.int): INTEGER =
    EmbedInt (structure Big = Int32
 	     structure Small = Small)
 
+structure Int1 = Embed8 (Primitive.Int1)
 structure Int2 = Embed8 (Primitive.Int2)
 structure Int3 = Embed8 (Primitive.Int3)
 structure Int4 = Embed8 (Primitive.Int4)

@@ -41,6 +41,7 @@ and Int64.~
 and Word.~
 and LargeWord.~
 and SysWord.~
+and Word1.~
 and Word2.~
 and Word3.~
 and Word4.~
@@ -119,6 +120,7 @@ and Int64.+
 and Word.+
 and LargeWord.+
 and SysWord.+
+and Word1.+
 and Word2.+
 and Word3.+
 and Word4.+
@@ -197,6 +199,7 @@ and Int64.-
 and Word.-
 and LargeWord.-
 and SysWord.-
+and Word1.-
 and Word2.-
 and Word3.-
 and Word4.-
@@ -275,6 +278,7 @@ and Int64.*
 and Word.*
 and LargeWord.*
 and SysWord.*
+and Word1.*
 and Word2.*
 and Word3.*
 and Word4.*
@@ -359,6 +363,7 @@ and Int64.div
 and Word.div
 and LargeWord.div
 and SysWord.div
+and Word1.div
 and Word2.div
 and Word3.div
 and Word4.div
@@ -433,6 +438,7 @@ and Int64.mod
 and Word.mod
 and LargeWord.mod
 and SysWord.mod
+and Word1.mod
 and Word2.mod
 and Word3.mod
 and Word4.mod
@@ -550,6 +556,7 @@ and Int64.<
 and Word.<
 and LargeWord.<
 and SysWord.<
+and Word1.<
 and Word2.<
 and Word3.<
 and Word4.<
@@ -630,6 +637,7 @@ and Int64.<=
 and Word.<=
 and LargeWord.<=
 and SysWord.<=
+and Word1.<=
 and Word2.<=
 and Word3.<=
 and Word4.<=
@@ -710,6 +718,7 @@ and Int64.>
 and Word.>
 and LargeWord.>
 and SysWord.>
+and Word1.>
 and Word2.>
 and Word3.>
 and Word4.>
@@ -790,6 +799,7 @@ and Int64.>=
 and Word.>=
 and LargeWord.>=
 and SysWord.>=
+and Word1.>=
 and Word2.>=
 and Word3.>=
 and Word4.>=
