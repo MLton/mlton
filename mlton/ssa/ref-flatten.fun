@@ -40,14 +40,16 @@ structure Value =
       and computed =
 	 ObjectC of object
 	| WeakC of {arg: t,
-		    finalType: Type.t option ref}
+		    finalType: Type.t option ref,
+		    originalType: Type.t}
       and object =
 	 Obj of {args: t Prod.t,
 		 con: ObjectCon.t,
 		 finalComponents: Type.t Prod.t option ref,
 		 finalOffsets: int vector option ref,
 		 finalType: Type.t option ref,
-		 flat: flat ref}
+		 flat: flat ref,
+		 originalType: Type.t}
       and flat =
 	 NotFlat
 	| Offset of {object: object,
@@ -60,7 +62,8 @@ structure Value =
 	 Ground of Type.t
 	| Object of object
 	| Weak of {arg: t,
-		   finalType: Type.t option ref}
+		   finalType: Type.t option ref,
+		   originalType: Type.t}
 
       val value: t -> value =
 	 fn GroundV t => Ground t
@@ -93,6 +96,12 @@ structure Value =
 			 ("con", ObjectCon.layout con),
 			 ("flat", layoutFlat (! flat))]]
       end
+
+      fun originalType (v: t) =
+	 case value v of
+	    Ground t => t
+	  | Object (Obj {originalType = t, ...}) => t
+	  | Weak {originalType = t, ...} => t
    end
 
 structure Flat =
@@ -148,7 +157,8 @@ structure Value =
 	    GroundV t => Type.isUnit t
 	  | _ => false
 	       
-      fun objectC {args: t Prod.t, con: ObjectCon.t}: computed =
+      fun objectC {args: t Prod.t, con: ObjectCon.t, originalType}
+	 : computed =
 	 let
 	     (* Only may flatten objects with mutable fields, and where the field
 	      * isn't unit.  Flattening a unit field could lead to a problem
@@ -169,23 +179,28 @@ structure Value =
 			   finalComponents = ref NONE,
 			   finalOffsets = ref NONE,
 			   finalType = ref NONE,
-			   flat = flat})
+			   flat = flat,
+			   originalType = originalType})
 	  end
 
       val computed: computed -> t =
 	 fn c => Complex (Equatable.new c)
 
       fun weakC (a: t): computed =
-	 WeakC {arg = a, finalType = ref NONE}
+	 WeakC {arg = a,
+		finalType = ref NONE,
+		originalType = Type.weak (originalType a)}
 
       val weak = computed o weakC
 
-      val tuple: t Prod.t -> t =
-	 fn args => computed (objectC {args = args,
-				       con = ObjectCon.Tuple})
+      fun tuple (args: t Prod.t, originalType: Type.t): t =
+	 computed (objectC {args = args,
+			    con = ObjectCon.Tuple,
+			    originalType = originalType})
 
       val tuple =
-	 Trace.trace ("Value.tuple", fn p => Prod.layout (p, layout), layout)
+	 Trace.trace ("Value.tuple", fn (p, _) => Prod.layout (p, layout),
+		      layout)
 	 tuple
 
       val rec unify: t * t -> unit =
@@ -234,6 +249,9 @@ structure Value =
 	 coerce
    end
 
+structure Size = TwoPointLattice (val bottom = "small"
+				  val top = "large")
+
 fun flatten (program as Program.T {datatypes, functions, globals, main}) =
    let
       val {get = conValue: Con.t -> Value.t option ref, ...} =
@@ -279,7 +297,8 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 					   Value.delay
 					   (fn () =>
 					    Value.objectC {args = makeProd args,
-							   con = con}))
+							   con = con,
+							   originalType = t}))
 			     else const ()
 			  end
 		       datatype z = datatype ObjectCon.t
@@ -328,7 +347,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	       NONE =>
 		  (case m of
 		      Const v => v
-		    | Make _ => Value.tuple args)
+		    | Make _ => Value.tuple (args, resultType))
 	     | SOME _ =>
 		  (case m of
 		      Const v =>
@@ -569,30 +588,6 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		     | Unknown => flat := flat')
 	      | _ => notFlat ()
 	  end)
-      (* The following two disallows could be improved by disallowing only
-       * if the value is potentially big.
-       *)
-      (* Disallow flattening of globals. *)
-      val () =
-	 Vector.foreach
-	 (globals, fn s =>
-	  case s of
-	     Bind {var, ...} =>
-		Option.app (var, fn x => Value.dontFlatten (varValue x))
-	   | _ => ())
-      (* Disallow passing flattened refs across function boundaries. *)
-      val () =
-	 List.foreach
-	 (functions, fn f =>
-	  let
-	     val {args, raises, returns} = func (Function.name f)
-	     fun d vs = Vector.foreach (vs, Value.dontFlatten)
-	     val () = d args
-	     val () = Option.app (raises, d)
-	     val () = Option.app (returns, d)
-	  in
-	     ()
-	  end)
       (* Disallow flattening into object components that aren't explicitly
        * constructed.
        *)
@@ -611,6 +606,101 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		    else ()
 		 end
 	    | Object _ => ()))
+      (*
+       * The following code disables flattening of some refs to ensure
+       * space safety.  Flattening a ref into an object that has
+       * another component that contains a value of unbounded size (a
+       * large object) could keep the large object alive beyond where
+       * it should be.  So, we first use a simple fixed point to
+       * figure out which types have values of unbounded size.  Then,
+       * for each reference to a mutable object, if we are trying to
+       * flatten it into an object that has another component with a
+       * large value and the container is not live in this block (we
+       * approximate liveness), then don't allow the flattening to
+       * happen.
+       *)
+      val {get = tyconSize: Tycon.t -> Size.t, ...} =
+	 Property.get (Tycon.plist, Property.initFun (fn _ => Size.new ()))
+      val {get = typeSize: Type.t -> Size.t, ...} =
+	 Property.get (Type.plist,
+		       Property.initRec
+		       (fn (t, typeSize) =>
+			let
+			   val s = Size.new ()
+			   fun dependsOn (t: Type.t): unit =
+			      Size.<= (typeSize t, s)
+			   datatype z = datatype Type.dest
+			   val () =
+			      case Type.dest t of
+				 Datatype c => Size.<= (tyconSize c, s)
+			       | IntInf => Size.makeTop s
+			       | Object {args, ...} =>
+				    Prod.foreach (args, dependsOn)
+			       | Real _ => ()
+			       | Thread => Size.makeTop s
+			       | Weak t => dependsOn t
+			       | Word _ => ()
+			in
+			   s
+			end))
+      val () =
+	 Vector.foreach
+	 (datatypes, fn Datatype.T {cons, tycon} =>
+	  let
+	     val s = tyconSize tycon
+	     fun dependsOn (t: Type.t): unit = Size.<= (typeSize t, s)
+	     val () = Vector.foreach (cons, fn {args, ...} =>
+				      Prod.foreach (args, dependsOn))
+	  in
+	     ()
+	  end)
+      fun typeIsLarge (t: Type.t): bool =
+	 Size.isTop (typeSize t)
+      fun objectHasAnotherLarge (Object.Obj {args, ...}, {offset: int}) =
+	 Vector.existsi (Prod.dest args, fn (i, {elt, ...}) =>
+			 i <> offset
+			 andalso typeIsLarge (Value.originalType elt))
+      val () =
+	 List.foreach
+	 (functions, fn f =>
+	  let
+	     val {args, blocks, ...} = Function.dest f
+	  in
+	     Vector.foreach
+	     (blocks, fn Block.T {statements, transfer, ...} =>
+	      let
+		 fun containerIsLive (x: Var.t) =
+		    Vector.exists
+		    (statements, fn s =>
+		     case s of
+			Bind {exp, var = SOME x', ...} =>
+			   Var.equals (x, x')
+			   andalso (case exp of
+				       Exp.Select _ => true
+				     | _ => false)
+		      | _ => false)
+		 fun use (x: Var.t) =
+		    case Value.value (varValue x) of
+		       Value.Object (Obj {flat, ...}) =>
+			  (case !flat of
+			      Flat.Offset {object, offset} =>
+				 if objectHasAnotherLarge (object,
+							   {offset = offset})
+				    andalso
+				    (case ! (varInfo x) of
+					Object _ => false
+				      | _ => not (containerIsLive x))
+				    then flat := Flat.NotFlat
+				 else ()
+			    | _ => ())
+		     | _ => ()
+		 val () = Vector.foreach (statements, fn s =>
+					  Statement.foreachUse (s, use))
+		 val () = Transfer.foreachVar (transfer, use)
+	      in
+		 ()
+	      end)
+	  end)
       val () =
 	 Control.diagnostics
 	 (fn display =>
@@ -652,7 +742,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	    case Value.value v of
 	       Ground t => t
 	     | Object z => objectType z
-	     | Weak {arg, finalType} =>
+	     | Weak {arg, finalType, ...} =>
 		  Ref.memoize (finalType, fn () => Type.weak (valueType arg))
 	 end) arg
       and objectFinalComponents (obj as Obj {args, finalComponents, ...}) =
