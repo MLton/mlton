@@ -363,6 +363,7 @@ structure TypeStr =
 	     | Scheme s => Scheme.explainDoesNotAdmitEquality s
 	     | Tycon c => Tycon.layout c
 	 end
+
       fun bogus (k: Kind.t): t =
 	 T {kind = k,
 	    node = Scheme (Scheme.bogus ())}
@@ -2556,6 +2557,68 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 	 in
 	    ()
 	 end
+      (* isPlausible checks if a type structure in a structure can plausibly be
+       * substituted for a type structure in a signature having the specified
+       * equality, arity, and constructors.
+       *)
+      fun isPlausible (structStr: TypeStr.t, strids, name,
+		       sigAdmits: AdmitsEquality.t,
+		       sigKind: Kind.t,
+		       consMismatch: bool): bool =
+	 if not (AdmitsEquality.<= (sigAdmits, TypeStr.admitsEquality structStr))
+	    then
+	       let
+		  val () = preError ()
+		  open Layout
+		  val () =
+		     Control.error
+		     (region,
+		      seq [str "type ", layout (strids, Ast.Tycon.layout name),
+			   str " admits equality in ", str sign,
+			   str " but not in structure"],
+		      seq [str "not equality: ",
+			   TypeStr.explainDoesNotAdmitEquality structStr])
+	       in
+		  false
+	       end
+	 else
+	    let
+	       val structKind = TypeStr.kind structStr
+	    in
+	       if not (Kind.equals (structKind, sigKind))
+		  then
+		     let
+			open Layout
+			val () =
+			   Control.error
+			   (region,
+			    seq [str "type ",
+				 layout (strids, Ast.Tycon.layout name),
+				 str " has arity ", Kind.layout structKind,
+				 str " in structure but arity ",
+				 Kind.layout sigKind, str " in ", str sign],
+			    empty)
+		     in
+			false
+		     end
+	       else
+		  if consMismatch
+		     then
+			let
+			   open Layout
+			   val () = 
+			      Control.error
+			      (region,
+			       seq [str "type ",
+				    layout (strids, Ast.Tycon.layout name),
+				    str " is a datatype in ", str sign,
+				    str " but not in structure"],
+			       Layout.empty)
+			in
+			   false
+			end
+		  else true
+	    end
       fun handleType (structStr: TypeStr.t,
 		      sigStr: Interface.TypeStr.t,
 		      strids: Strid.t list,
@@ -2564,8 +2627,6 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 	    NONE => structStr
 	  | SOME sigStr => 
 	       let
-		  val structKind = TypeStr.kind structStr
-		  val sigKind = TypeStr.kind sigStr
 		  fun tyconScheme (c: Tycon.t): Scheme.t =
 		     let
 			val tyvars =
@@ -2589,76 +2650,29 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 			      Datatype {tycon = c, ...} => tyconScheme c
 			    | Scheme s => s
 			    | Tycon c => tyconScheme c
-			val _ =
-			   equalSchemes
-			   (structScheme, sigScheme,
-			    "type", "type definition",
-			    fn () =>
-			    layout (strids, Ast.Tycon.layout name), region)
 		     in
-			sigStr
+			equalSchemes
+			(structScheme, sigScheme,
+			 "type", "type definition", fn () =>
+			 layout (strids, Ast.Tycon.layout name), region)
 		     end
-	       in
-		  if not (AdmitsEquality.<= (TypeStr.admitsEquality sigStr,
-					     TypeStr.admitsEquality structStr))
-		     then
-			let
-			   val () = preError ()
-			   open Layout
-			   val _ =
-			      Control.error
-			      (region,
-			       seq [str "type ",
-				    layout (strids, Ast.Tycon.layout name),
-				    str " admits equality in ", str sign,
-				    str " but not in structure"],
-			       seq [str "not equality: ",
-				    TypeStr.explainDoesNotAdmitEquality
-				    structStr])
-			in
-			   sigStr
-			end
-		  else if not (Kind.equals (structKind, sigKind))
-		     then
-			let
-			   open Layout
-			   val _ =
-			      Control.error
-			      (region,
-			       seq [str "type ",
-				    layout (strids, Ast.Tycon.layout name),
-				    str " has arity ", Kind.layout structKind,
-				    str " in structure but arity ",
-				    Kind.layout sigKind, str " in ",
-				    str sign],
-			       empty)
-			in
-			   sigStr
-			end
-		  else
+		  val (return, consMismatch) =
 		     case TypeStr.node sigStr of
 			Datatype {cons = sigCons, ...} =>
 			   (case TypeStr.node structStr of
 			       Datatype {cons = structCons, ...} =>
 				  (checkCons (structCons, sigCons, strids, name)
-				   ; structStr)
-			     | _ =>
-				  let
-				     open Layout
-				     val _ = 
-					Control.error
-					(region,
-					 seq [str "type ",
-					      layout (strids,
-						      Ast.Tycon.layout name),
-					      str " is a datatype in ", str sign,
-					      str " but not in structure"],
-					 Layout.empty)
-				  in
-				     sigStr
-				  end)
-		      | Scheme s => checkScheme s
-		      | Tycon c => checkScheme (tyconScheme c)
+				   ; (structStr, false))
+			     | _ => (sigStr, true))
+		      | Scheme s => (checkScheme s; (sigStr, false))
+		      | Tycon c => (checkScheme (tyconScheme c); (sigStr, false))
+	       in
+		  if not (isPlausible (structStr, strids, name,
+				       TypeStr.admitsEquality sigStr,
+				       TypeStr.kind sigStr,
+				       consMismatch))
+		     then sigStr
+		  else return
 	       end
       fun map (structInfo: ('a, 'b) Info.t,
 	       sigArray: ('a * 'c) array,
@@ -2938,7 +2952,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
       val () =
 	 Structure.realize
 	 (S, Interface.flexibleTycons I,
-	  fn (_, flex, typeStr, _) =>
+	  fn (name, flex, typeStr, {nest}) =>
 	  let
 	     val {admitsEquality = a, hasCons, kind = k, ...} =
 		FlexibleTycon.dest flex
@@ -2946,15 +2960,13 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 		case typeStr of
 		   NONE => NONE
 		 | SOME typeStr =>
-		      (* This if makes sure we only realize a plausible
-		       * candidate for typeStr, i.e. one that has the right
-		       * equality property, arity, and datatype aspect.
+		      (* Makes sure we only realize a plausible candidate for
+		       * typeStr.
 		       *)
-		      if AdmitsEquality.<= (a, TypeStr.admitsEquality typeStr)
-			 andalso Kind.equals (k, TypeStr.kind typeStr)
-			 andalso (not hasCons
-				  orelse (Option.isSome
-					  (TypeStr.toTyconOpt typeStr)))
+		      if isPlausible
+			 (typeStr, nest, name, a, k,
+			  hasCons
+			  andalso Option.isNone (TypeStr.toTyconOpt typeStr))
 			 then SOME typeStr
 		      else NONE
 	     val () = FlexibleTycon.realize (flex, typeStr)
