@@ -6,6 +6,13 @@ open Dec PrimExp Transfer
 
 fun eliminate (program as Program.T {globals, datatypes, functions, main})
   = let
+      val exnGlobals
+	= Vector.keepAll
+	  (globals, 
+	   fn {ty, ...} => case Type.dest ty
+			     of Type.Datatype tc => Tycon.equals(tc, Tycon.exn)
+			      | _ => false)
+
       val shrink = shrinkExp globals
       val jumpHandlers = inferHandlers program
 
@@ -20,13 +27,13 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 	   set = setVarInfo}
 	= Property.getSet(Var.plist, Property.initConst NONE)
 
-      fun resetGlobals ()
+      fun resetExnGlobals ()
 	= Vector.foreach
-	  (globals, fn {var, ...} => setVarInfo (var, SOME (ref NONE)))
+	  (exnGlobals, fn {var, ...} => setVarInfo (var, SOME (ref NONE)))
 
       fun eliminateFunction (f as Function.T {name, args, body, returns})
 	= let
-	    val _ = resetGlobals ()
+	    val _ = resetExnGlobals ()
 
 	    val newDecs = ref []
 	    fun commonBlock var
