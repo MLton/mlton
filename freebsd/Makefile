@@ -84,7 +84,7 @@ build-package:
 		( ${MKDIR} ${PORTDIR} && cd ${PORTDIR} && ${TAR} -xpf - )
 	shar `find ${PORTDIR}` >/tmp/mlton-${PORTVERSION}-portdir.shar
 
-TMP_PLIST=	/tmp/mlton.pkg-plist
+TMP_PLIST=	tmp-pkg-plist
 PLIST=		${.CURDIR}/pkg-plist
 
 pkg-plist:
@@ -99,5 +99,6 @@ pkg-plist:
 		<${PLIST} >${TMP_PLIST}
 	${SED} -e 's;share/doc/mlton;%%PORTDOCS%%%%DOCSDIR%%;'	\
 		<${TMP_PLIST} >${PLIST}
+	${RM} ${TMP_PLIST}
 
 .include <bsd.port.post.mk>
