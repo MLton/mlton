@@ -62,7 +62,7 @@
 
 enum {
 	BOGUS_EXN_STACK = 0xFFFFFFFF,
-	COPY_CHUNK_SIZE = 0x800000,
+	COPY_CHUNK_SIZE = 0x2000000, /* 32M */
 	CROSS_MAP_EMPTY = 255,
 	CURRENT_SOURCE_UNDEFINED = 0xFFFFFFFF,
 	DEBUG = FALSE,
@@ -79,7 +79,7 @@ enum {
 	DEBUG_THREADS = FALSE,
 	DEBUG_WEAK = FALSE,
 	DEBUG_WORLD = FALSE,
-	FORCE_GENERATIONAL = FALSE,
+	FORCE_GENERATIONAL = TRUE,
 	FORCE_MARK_COMPACT = FALSE,
 	FORWARDED = 0xFFFFFFFF,
 	STACK_HEADER_SIZE = WORD_SIZE,
@@ -353,7 +353,7 @@ static void *mmapAnon (void *start, size_t length) {
 				MAP_PRIVATE, fd, 0);
 	}
 #else
-#error smmap not defined
+#error mmapAnon not defined
 #endif	
 	if (DEBUG_MEM)
 		fprintf (stderr, "0x%08x = mmapAnon (0x%08x, %s)\n",
@@ -376,7 +376,7 @@ static void *smmap (size_t length) {
 
 static void smunmap (void *base, size_t length) {
 	if (DEBUG_MEM)
-		fprintf (stderr, "smunmap 0x%08x of length %s\n",
+		fprintf (stderr, "smunmap (0x%08x, %s)\n",
 				(uint)base,
 				uintToCommaString (length));
 	assert (base != NULL);
@@ -1523,20 +1523,18 @@ static void createCardMapAndCrossMap (GC_state s) {
 	h = &s->heap;
 	assert (isAligned (h->size, s->cardSize));
 	s->cardMapSize = align (divCardSize (s, h->size), s->pageSize);
-	if (DEBUG_MEM)
-		fprintf (stderr, "allocating card map of size %s\n",
-				uintToCommaString (s->cardMapSize));
-	s->cardMap = smmap (s->cardMapSize);
-	setCardMapForMutator (s);
-	if (DEBUG_CARD_MARKING)
-		fprintf (stderr, "cardMap = 0x%08x  size = %s\n", 
-				(uint)s->cardMap,
-				uintToCommaString (s->cardMapSize));
 	s->crossMapSize = s->cardMapSize;
 	if (DEBUG_MEM)
-		fprintf (stderr, "allocating cross map of size %s\n",
-				uintToCommaString (s->cardMapSize));
-	s->crossMap = smmap (s->crossMapSize);
+		fprintf (stderr, "Creating card/cross map of size %s\n",
+				uintToCommaString
+					(s->cardMapSize + s->crossMapSize));
+	s->cardMap = smmap (s->cardMapSize + s->crossMapSize);
+	s->crossMap = s->cardMap + s->cardMapSize;
+	if (DEBUG_CARD_MARKING)
+		fprintf (stderr, "cardMap = 0x%08x  crossMap = 0x%08x\n", 
+				(uint)s->cardMap,
+				(uint)s->crossMap);
+	setCardMapForMutator (s);
 	clearCrossMap (s);
 }
 
@@ -1865,7 +1863,7 @@ loopObjects:
 	}
 	for (i = 0; i < cardIndex; ++i)
 		assert (m[i] == s->crossMap[i]);
-	smunmap (m, s->crossMapSize);
+	release (m, s->crossMapSize);
 	return TRUE;
 }
 
@@ -2789,20 +2787,21 @@ static void resizeCardMapAndCrossMap (GC_state s) {
 	if (s->mutatorMarksCards 
 		and s->cardMapSize != 
 			align (divCardSize (s, s->heap.size), s->pageSize)) {
+		pointer oldCardMap;
 		pointer oldCrossMap;
+		uint oldCardMapSize;
 		uint oldCrossMapSize;
 
-		if (DEBUG_MEM)
-			fprintf (stderr, "releasing card map.\n");
-		release (s->cardMap, s->cardMapSize);
+		oldCardMap = s->cardMap;
+		oldCardMapSize = s->cardMapSize;
 		oldCrossMap = s->crossMap;
 		oldCrossMapSize = s->crossMapSize;
 		createCardMapAndCrossMap (s);
 		copy (oldCrossMap, s->crossMap,
 			min (s->crossMapSize, oldCrossMapSize));
 		if (DEBUG_MEM)
-			fprintf (stderr, "releasing cross map.\n");
-		release (oldCrossMap, oldCrossMapSize);
+			fprintf (stderr, "Releasing card/cross map.\n");
+		release (oldCardMap, oldCardMapSize + oldCrossMapSize);
 	}
 }
 
