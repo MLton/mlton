@@ -194,7 +194,8 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 		 end)
 	     val {graph, root, jumpNode} =
 		Function.controlFlowGraph (f, jumpHandlers)
-	     val {idom} = DirectedGraph.dominators (graph, {root = root})
+	     val {idom} = DirectedGraph.dominators {graph = graph,
+						    root = root}
 	     val {get = nodeInfo : Node.t -> NodeInfo.t} =
 		Property.get
 		(Node.plist, Property.initFun (fn _ => NodeInfo.new ()))

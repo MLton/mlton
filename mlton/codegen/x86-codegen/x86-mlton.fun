@@ -741,6 +741,7 @@ struct
     struct
       datatype t
 	= None
+        | Overflow of x86.Label.t * x86.Operand.t list
         | Runtime of {frameSize: int, 
 		      live: x86.Operand.t list,
 		      return: x86.Label.t}
@@ -777,10 +778,15 @@ struct
 	  = case pinfo
 	      of PrimInfo.Runtime gcInfo => gcInfo
 	       | _ => Error.bug "applyPrim: getRuntimeInfo"
+	fun getPrimInfoOverflow ()
+	  = case pinfo
+	      of PrimInfo.Overflow (label, live) => (label, live)
+	       | _ => Error.bug "applyPrim: getPrimInfoOverflow"
 	fun getPrimInfoNormal ()
 	  = case pinfo
 	      of PrimInfo.Normal live => live
 	       | _ => Error.bug "applyPrim: getPrimInfoNormal"
+
 	fun unimplemented s
 	  = AppendList.fromList
 	    [Block.T'
@@ -1212,6 +1218,84 @@ struct
 		transfer = NONE}]
 	    end
 
+	fun binal_check oper
+	  = let
+	      val ((src1,src1size),
+		   (src2,src2size)) = getSrc2 ()
+	      val (dst,dstsize)
+		= case dst
+		    of NONE => (NONE, src1size)
+		     | SOME (dst,dstsize) => (SOME dst,dstsize)
+	      val _ 
+		= Assert.assert
+		  ("applyPrim: binal_check, dstsize/src1size/src2size",
+		   fn () => src1size = dstsize andalso
+		            src2size = dstsize)
+	      val _ 
+		= Assert.assert
+		  ("applyPrim: binal_check, oper",
+		   fn () => oper = Instruction.ADD orelse
+		            oper = Instruction.SUB)
+	      val (OverflowLabel, 
+		   liveNoOverflow)
+		= getPrimInfoOverflow ()
+	      val noOverflowLabel = Label.newString "noOverflow"
+
+	      val _ = x86Liveness.LiveInfo.setLiveOperands
+	              (liveInfo, 
+		       noOverflowLabel, 
+		       case dst
+			 of SOME _
+			  => overflowCheckTempContentsOperand::liveNoOverflow
+			  | NONE => liveNoOverflow)
+		
+	      (* Reverse src1/src2 when src1 and src2 are temporaries
+	       * and the oper is commutative. 
+	       *)
+	      val (src1,src2)
+		= if (oper = Instruction.ADD)
+		    then case (Operand.deMemloc src1, Operand.deMemloc src2)
+			   of (SOME memloc_src1, SOME memloc_src2)
+			    => if x86Liveness.track memloc_src1
+			          andalso
+				  x86Liveness.track memloc_src2
+				 then (src2,src1)
+				 else (src1,src2)
+			    | _ => (src1,src2)
+		    else (src1,src2)
+	    in
+	      AppendList.fromList
+	      [Block.T'
+	       {entry = NONE,
+		profileInfo = ProfileInfo.none,
+		statements
+		= [Assembly.instruction_mov
+		   {dst = overflowCheckTempContentsOperand,
+		    src = src1,
+		    size = src1size},
+		   Assembly.instruction_binal
+		   {oper = oper,
+		    dst = overflowCheckTempContentsOperand,
+		    src = src2,
+		    size = dstsize}],
+		transfer
+		= SOME (Transfer.iff {condition = Instruction.O,
+				      truee = OverflowLabel,
+				      falsee = noOverflowLabel})},
+	       Block.T'
+	       {entry = SOME (Entry.jump {label = noOverflowLabel}),
+		profileInfo = ProfileInfo.none,
+		statements 
+		= case dst
+		    of NONE => []
+		     | SOME dst
+		     => [Assembly.instruction_mov
+			 {dst = dst,
+			  src = overflowCheckTempContentsOperand,
+			  size = dstsize}],
+		transfer = NONE}]
+	    end
+
 	fun pmd oper
 	  = let
 	      val ((src1,src1size),
@@ -1305,6 +1389,153 @@ struct
 		transfer = NONE}]
 	    end
 
+	fun pmd_check oper
+	  = let
+	      val ((src1,src1size),
+		   (src2,src2size)) = getSrc2 ()
+	      val (dst,dstsize)
+		= case dst
+		    of NONE => (NONE, src1size)
+		     | SOME (dst,dstsize) => (SOME dst, dstsize)
+	      val _ 
+		= Assert.assert
+		  ("applyPrim: pmd_check, dstsize/src1size/src2size",
+		   fn () => src1size = dstsize andalso
+		            src2size = dstsize)
+	      val _ 
+		= Assert.assert
+		  ("applyPrim: pmd_check, oper",
+		   fn () => oper = Instruction.IMUL)
+	      val (OverflowLabel, 
+		   liveNoOverflow)
+		= getPrimInfoOverflow ()
+	      val noOverflowLabel = Label.newString "noOverflow"
+
+	      val _ = x86Liveness.LiveInfo.setLiveOperands
+	              (liveInfo, 
+		       noOverflowLabel, 
+		       case dst
+			 of SOME _ 
+			  => overflowCheckTempContentsOperand::liveNoOverflow
+			  | NONE => liveNoOverflow)
+
+	      (* Reverse src1/src2 when src1 and src2 are temporaries
+	       * and the oper is commutative. 
+	       *)
+	      val (src1,src2)
+		= if (oper = Instruction.IMUL)
+		    then case (Operand.deMemloc src1, Operand.deMemloc src2)
+			   of (SOME memloc_src1, SOME memloc_src2)
+			    => if x86Liveness.track memloc_src1
+			          andalso
+				  x86Liveness.track memloc_src2
+				 then (src2,src1)
+				 else (src1,src2)
+			    | _ => (src1,src2)
+		    else (src1,src2)
+	    in
+	      AppendList.fromList
+	      [Block.T'
+	       {entry = NONE,	
+		profileInfo = ProfileInfo.none,
+		statements
+		= [Assembly.instruction_mov
+		   {dst = overflowCheckTempContentsOperand,
+		    src = src1,
+		    size = src1size},
+		   Assembly.instruction_pmd
+		   {oper = oper,
+		    dst = overflowCheckTempContentsOperand,
+		    src = src2,
+		    size = dstsize}],
+		transfer 
+		= SOME (Transfer.iff {condition = Instruction.O,
+				      truee = OverflowLabel,
+				      falsee = noOverflowLabel})},
+	       Block.T'
+	       {entry = SOME (Entry.jump {label = noOverflowLabel}),
+		profileInfo = ProfileInfo.none,
+		statements 
+		= case dst
+		    of NONE => []
+		     | SOME dst
+		     => [Assembly.instruction_mov
+			 {dst = dst,
+			  src = overflowCheckTempContentsOperand,
+			  size = dstsize}],
+		transfer = NONE}]
+	    end
+
+	fun imul2_check ()
+	  = let
+	      val ((src1,src1size),
+		   (src2,src2size)) = getSrc2 ()
+	      val (dst,dstsize)
+		= case dst
+		    of NONE => (NONE, src1size)
+		     | SOME (dst,dstsize) => (SOME dst, dstsize)
+	      val _ 
+		= Assert.assert
+		  ("applyPrim: pmd_check, dstsize/src1size/src2size",
+		   fn () => src1size = dstsize andalso
+		            src2size = dstsize)
+	      val (OverflowLabel, 
+		   liveNoOverflow)
+		= getPrimInfoOverflow ()
+	      val noOverflowLabel = Label.newString "noOverflow"
+
+	      val _ = x86Liveness.LiveInfo.setLiveOperands
+	              (liveInfo, 
+		       noOverflowLabel, 
+		       case dst
+			 of SOME _ 
+			  => overflowCheckTempContentsOperand::liveNoOverflow
+			  | NONE => liveNoOverflow)
+
+	      (* Reverse src1/src2 when src1 and src2 are temporaries
+	       * and the oper is commutative. 
+	       *)
+	      val (src1,src2)
+		= case (Operand.deMemloc src1, Operand.deMemloc src2)
+		    of (SOME memloc_src1, SOME memloc_src2)
+		     => if x86Liveness.track memloc_src1
+		           andalso
+			   x86Liveness.track memloc_src2
+			  then (src2,src1)
+			  else (src1,src2)
+		     | _ => (src1,src2)
+	    in
+	      AppendList.fromList
+	      [Block.T'
+	       {entry = NONE,	
+		profileInfo = ProfileInfo.none,
+		statements
+		= [Assembly.instruction_mov
+		   {dst = overflowCheckTempContentsOperand,
+		    src = src1,
+		    size = src1size},
+		   Assembly.instruction_imul2
+		   {dst = overflowCheckTempContentsOperand,
+		    src = src2,
+		    size = dstsize}],
+		transfer 
+		= SOME (Transfer.iff {condition = Instruction.O,
+				      truee = OverflowLabel,
+				      falsee = noOverflowLabel})},
+	       Block.T'
+	       {entry = SOME (Entry.jump {label = noOverflowLabel}),
+		profileInfo = ProfileInfo.none,
+		statements 
+		= case dst
+		    of NONE => []
+		     | SOME dst
+		     => [Assembly.instruction_mov
+			 {dst = dst,
+			  src = overflowCheckTempContentsOperand,
+			  size = dstsize}],
+		transfer = NONE}]
+	    end
+
 	fun unal oper
 	  = let
 	      val (src,srcsize) = getSrc1 ()
@@ -1331,6 +1562,65 @@ struct
 		   {oper = oper,
 		    dst = dst,
 		    size = dstsize}],
+		transfer = NONE}]
+	    end
+
+	fun unal_check oper
+	  = let
+	      val (src,srcsize) = getSrc1 ()
+	      val (dst,dstsize)
+		= case dst
+		    of NONE => (NONE, srcsize)
+		     | SOME (dst,dstsize) => (SOME dst,dstsize)
+	      val _ 
+		= Assert.assert
+		  ("applyPrim: unal_check, dstsize/srcsize",
+		   fn () => srcsize = dstsize)
+	      val _
+		= Assert.assert
+		  ("applyPrim: unal_check, oper",
+		   fn () => oper = Instruction.NEG)
+	      val (OverflowLabel, 
+		   liveNoOverflow)
+		= getPrimInfoOverflow ()
+	      val noOverflowLabel = Label.newString "noOverflow"
+
+	      val _ = x86Liveness.LiveInfo.setLiveOperands
+	              (liveInfo, 
+		       noOverflowLabel, 
+		       case dst
+			 of SOME _
+			  => overflowCheckTempContentsOperand::liveNoOverflow
+			  | NONE => liveNoOverflow)
+	    in
+	      AppendList.fromList
+	      [Block.T'
+	       {entry = NONE,
+		profileInfo = ProfileInfo.none,
+		statements
+		= [Assembly.instruction_mov
+		   {dst = overflowCheckTempContentsOperand,
+		    src = src,
+		    size = srcsize},
+		   Assembly.instruction_unal
+		   {oper = oper,
+		    dst = overflowCheckTempContentsOperand,
+		    size = dstsize}],
+		transfer
+		= SOME (Transfer.iff {condition = Instruction.O,
+				      truee = OverflowLabel,
+				      falsee = noOverflowLabel})},
+	       Block.T'
+	       {entry = SOME (Entry.jump {label = noOverflowLabel}),
+		profileInfo = ProfileInfo.none,
+		statements 
+		= case dst
+		    of NONE => []
+		     | SOME dst
+		     => [Assembly.instruction_mov
+			 {dst = dst,
+			  src = overflowCheckTempContentsOperand,
+			  size = dstsize}],
 		transfer = NONE}]
 	    end
 
@@ -1732,10 +2022,20 @@ struct
 		end
              | Int_add => binal Instruction.ADD
 	     | Int_sub => binal Instruction.SUB
+(*
+	     | Int_mul => pmd Instruction.IMUL
+*)
 	     | Int_mul => imul2 () 
+	     | Int_addCheck => binal_check Instruction.ADD
+	     | Int_subCheck => binal_check Instruction.SUB
+(*
+	     | Int_mulCheck => pmd_check Instruction.IMUL
+*)
+	     | Int_mulCheck => imul2_check ()
 	     | Int_quot => pmd Instruction.IDIV
 	     | Int_rem => pmd Instruction.IMOD
 	     | Int_neg => unal Instruction.NEG 
+	     | Int_negCheck => unal_check Instruction.NEG 
 	     | Int_lt => cmp Instruction.L
 	     | Int_le => cmp Instruction.LE
 	     | Int_gt => cmp Instruction.G

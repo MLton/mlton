@@ -241,21 +241,6 @@ int main(int argc, char **argv) {					\
 		goto top;					\
 	} while (0)
 
-#define SetExnStackLocal(offset)				\
-	do {							\
-		ExnStack = stackTop + (offset) - StackBottom;	\
-	} while (0)
-
-#define SetSlotExnStack(offset)						\
-	do {								\
-		*(uint*)(stackTop + (offset) + WORD_SIZE) = ExnStack;	\
-	} while (0)
-
-#define SetExnStackSlot(offset) 					\
-	do {								\
-		ExnStack = *(uint*)(stackTop + (offset) + WORD_SIZE);	\
-	} while (0)
-
 #define SaveExnStack(offset)					\
 	do {							\
 		pointer p;					\
@@ -443,7 +428,7 @@ int main(int argc, char **argv) {					\
 
 #define Int_add(n1, n2) ((n1) + (n2))
 #define Int_mul(n1, n2) ((n1) * (n2))
-#define Int_sub(n1, n2) (/*fprintf(stderr, "Int_sub(%d, %d) = %d\n", n1, n2, (n1) - (n2)),*/ (n1) - (n2))
+#define Int_sub(n1, n2) ((n1) - (n2))
 int Int_bogus;
 #define Int_addCheck(dst, n1, n2, l)				\
 	do {							\
@@ -468,30 +453,6 @@ int Int_bogus;
 		int res;					\
 		if (Int_subOverflow(n1, n2, &res)) goto l;	\
 		dst = res;					\
-	} while (0)
-#define checkNew(dst, n1, n2, l, f);						\
-	do {									\
-		int overflow;							\
-		dst = f(n1, n2, &overflow);					\
-		if (FALSE)							\
-			fprintf(stderr, #f "(%d, %d) = %d\n", n1, n2, dst);	\
-		if (overflow) {							\
-			if (FALSE)						\
-				fprintf(stderr, "overflow\n");			\
-			goto l;							\
-		}								\
-	} while (0)
-#define Int_addCheckNew(dst, n1, n2, l)				\
-	checkNew(dst, n1, n2, l, Int_addOverflowNew)
-#define Int_mulCheckNew(dst, n1, n2, l)				\
-	checkNew(dst, n1, n2, l, Int_mulOverflowNew)
-#define Int_subCheckNew(dst, n1, n2, l)				\
-	checkNew(dst, n1, n2, l, Int_subOverflowNew)
-#define Int_negCheckNew(dst, n, l)			\
-	do {						\
-		int overflow;				\
-		dst = Int_negOverflowNew(n, &overflow);	\
-		if (overflow) goto l;			\
 	} while (0)
 
 #define Int_lt(n1, n2) ((n1) < (n2))

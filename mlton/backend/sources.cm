@@ -12,7 +12,7 @@ is
 ../../lib/mlton/sources.cm
 ../atoms/sources.cm
 ../control/sources.cm
-../ssa/sources.cm
+../cps/sources.cm
 
 mtype.sig
 mtype.fun

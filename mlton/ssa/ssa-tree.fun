@@ -1,103 +1,6 @@
 (* Copyright (C) 1997-1999 NEC Research Institute.
  * Please see the file LICENSE for license information.
  *)
-functor FlatLattice (structure Point:
-		       sig
-			  type t
-
-			  val equals: t * t -> bool
-			  val layout: t -> Layout.t
-		       end):
-   sig
-      type t
-
-      val <= : t * t -> bool
-      val forcePoint: t * Point.t -> bool
-      val layout: t -> Layout.t
-      val lowerBound: t * Point.t -> bool
-      val new: unit -> t
-      val point: Point.t -> t
-      val upperBound: t * Point.t -> bool
-   end =
-   struct
-      structure Elt =
-	 struct
-	    datatype t =
-	       Bottom
-	     | Point of Point.t
-	     | Top
-
-	    local
-	       open Layout
-	    in
-	       val layout =
-		  fn Bottom => str "Bottom"
-		   | Point p => Point.layout p
-		   | Top => str "Top"
-	    end
-	 end
-      datatype z = datatype Elt.t
-	 
-      datatype t = T of {lessThan: t list ref,
-			 upperBound: Point.t option ref,
-			 value: Elt.t ref}
-
-      fun layout (T {value, ...}) = Elt.layout (!value)
-
-      fun new () = T {lessThan = ref [],
-		      upperBound = ref NONE,
-		      value = ref Bottom}
-
-      fun up (T {lessThan, upperBound, value, ...}, e: Elt.t): bool =
-	 let
-	    val e' = !value
-	    fun continue e = List.forall (!lessThan, fn z => up (z, e))
-	    fun setTop () =
-	       not (isSome (!upperBound))
-	       andalso (value := Top
-			; continue Top)
-	 in
-	    case (e, e') of
-	       (_, Bottom) => true
-	     | (Top, _) => true
-	     | (_, Top) => setTop ()
-	     | (Bottom, Point p) =>
-		  (value := Point p
-		   ; (case !upperBound of
-			 NONE => continue (Point p)
-		       | SOME p' =>
-			    Point.equals (p, p') andalso continue (Point p)))
-	     | (Point p, Point p') => Point.equals (p, p') orelse setTop ()
-	 end
-      
-      val op <= : t * t -> bool =
-	 fn (T {lessThan, value, ...}, e) =>
-	 (List.push (lessThan, e)
-	  ; up (e, !value))
-
-      fun lowerBound (e, p): bool = up (e, Point p)
-
-      fun upperBound (T {upperBound = r, value, ...}, p): bool =
-	 case !r of
-	    NONE => (r := SOME p
-		     ; (case !value of
-			   Bottom => true
-			 | Point p' => Point.equals (p, p')
-			 | Top => false))
-	  | SOME p' => Point.equals (p, p')
-
-      fun forcePoint (e, p) =
-	 lowerBound (e, p) andalso upperBound (e, p)
-
-      fun point p =
-	 let
-	    val e = new ()
-	    val _ = forcePoint (e, p)
-	 in
-	    e
-	 end
-   end
-
 functor SsaTree (S: SSA_TREE_STRUCTS): SSA_TREE = 
 struct
 
@@ -303,7 +206,7 @@ datatype z = datatype Exp.t
 
 structure Statement =
    struct
-      datatype t = T of {var: Var.t option,
+      datatype t = T of {var: Var.t option, (* NONE iff ty = unit. *)
 			 ty: Type.t,
 			 exp: Exp.t}
 
@@ -319,30 +222,28 @@ structure Statement =
 	 let
 	    open Layout
 	 in
-	    seq [seq [case var of
-			 NONE => empty
-		       | SOME var =>
-			    seq [Var.layout var,
-				 if !Control.showTypes
-				    then seq [str ": ", Type.layout ty]
-				 else empty,
-				 str " = "]],
+	    seq [case var of
+		    NONE => empty
+		  | SOME x =>
+		       seq [Var.layout x,
+			    if !Control.showTypes
+			       then seq [str ": ", Type.layout ty]
+			    else empty,
+			       str " = "],
                  Exp.layout exp]
-	 end
-
-      local
-	 fun make (e: Exp.t) =
-	    T {var = NONE,
-	       ty = Type.unit,
-	       exp = e}
-      in
-	 val setExnStackLocal = make Exp.SetExnStackLocal
-	 val setExnStackSlot = make Exp.SetExnStackSlot
-	 val setSlotExnStack = make Exp.SetSlotExnStack
-	 fun setHandler h = make (Exp.SetHandler h)
       end
 
-      fun clear s = Option.app (var s, Var.clear)
+      fun noVar (e: Exp.t): t =
+	  T {var = NONE,
+	     ty = Type.unit,
+	     exp = e}
+
+      val setExnStackLocal = noVar Exp.SetExnStackLocal
+      val setExnStackSlot = noVar Exp.SetExnStackSlot
+      val setSlotExnStack = noVar Exp.SetSlotExnStack
+      fun setHandler h = noVar (Exp.SetHandler h)
+
+      fun clear (T {var, ...}): unit = Option.app (var, Var.clear)
 
       fun lastHandler (ss: t vector, first: Label.t option) =
 	 Vector.fold
@@ -358,8 +259,7 @@ structure Transfer =
 	 Bug
        | Call of {func: Func.t,
 		  args: Var.t vector,
-		  return: {cont: Label.t,
-			   handler: Label.t option} option}
+		  return: Label.t option}
        | Case of {test: Var.t,
 		  cases: Label.t Cases.t,
 		  default: Label.t option}
@@ -372,8 +272,8 @@ structure Transfer =
 		  }
        | Raise of Var.t vector
        | Return of Var.t vector
-
-      fun foreachFuncLabelVar (t, func, label: Label.t -> unit, var) =
+	 
+      fun foreachFuncLabelVar (t, func, label, var) =
 	 let
 	    fun vars xs = Vector.foreach (xs, var)
 	 in
@@ -381,9 +281,7 @@ structure Transfer =
 	       Bug => ()
 	     | Call {func = f, args, return, ...} =>
 		  (func f
-		   ; Option.app (return, fn {cont, handler} =>
-				 (label cont
-				  ; Option.app (handler, label)))
+		   ; Option.app (return, label)
 		   ; vars args)
 	     | Case {test, cases, default, ...} =>
 		  (var test
@@ -455,21 +353,13 @@ structure Transfer =
 		  in
 		     case return of
 			NONE => call
-		      | SOME {cont, handler} =>
-			   seq [Label.layout cont, str " ", paren call,
-				case handler of
-				   NONE => empty
-				 | SOME l => seq [str " handle ",
-						  Label.layout l]]
+		      | SOME l => seq [Label.layout l, str " ", paren call]
 		  end
 	     | Case arg => layoutCase arg
 	     | Goto {dst, args} =>
 		  seq [Label.layout dst, str " ", layoutTuple args]
 	     | Prim {prim, args, failure, success} =>
-		  seq [Label.layout success,
-		       tuple [Prim.layoutApp (prim, args, Var.layout)],
-		       str " Overflow => ",
-		       Label.layout failure, str "()"]
+		  Prim.layoutApp (prim, args, Var.layout)
 	     | Raise xs => seq [str "raise ", layoutTuple xs]
 	     | Return xs => if 1 = Vector.length xs
 			       then Var.layout (Vector.sub (xs, 0))
@@ -477,6 +367,169 @@ structure Transfer =
       end
    end
 datatype z = datatype Transfer.t
+
+   
+structure Handler =
+   struct
+      (* A flat lattice.
+       * Unset <= Handler l <= Many
+       *)
+      datatype handler =
+	 Handler of Label.t
+       | Many
+       | Unset
+
+      datatype t = T of {handler: handler ref,
+			 lessThan: t list ref}
+
+      fun new () = T {handler = ref Unset,
+		      lessThan = ref []}
+
+      val isHandler =
+	 fn (T {handler = ref (Handler _), ...}) => true
+	  | _ => false
+	       
+      fun layout (T {handler, ...}) =
+	 let
+	    open Layout
+	 in
+	    case !handler of
+	       Handler l => Label.layout l
+	     | Many => str "Many"
+	     | Unset => str "Unset"
+	 end
+
+      val bottom = Unset
+      val isTop = fn Many => true | _ => false
+
+      fun up (T {handler, lessThan, ...}, h) =
+	 let
+	    fun change h = (handler := h
+			    ; List.foreach (!lessThan, fn i => up (i, h)))
+	 in
+	    case (h, !handler) of
+	       (Unset, _) => ()
+	     | (_, Unset) => change h
+	     | (Handler l, Handler l') =>
+		  if Label.equals (l, l')
+		     then ()
+		  else change Many
+	     | _ => ()
+	 end
+
+      fun set (h, l) = up (h, Handler l)
+
+      val op <= =
+	 fn (T {handler = ref h, lessThan}, i) =>
+	 (if isTop h
+	     then ()
+	  else List.push (lessThan, i)
+	     ; up (i, h))
+   end
+
+structure ExnStack =
+   struct
+      (* A flat lattice.
+       *)
+      datatype exnStack =
+	 Caller
+       | Me
+       | Unknown
+       | Unreachable
+ 
+      val bottom = Unreachable
+      val isTop = fn Unknown => true | _ => false
+
+      datatype t = T of {exnStack: exnStack ref,
+			 lessThan: t list ref}
+
+      fun layout (T {exnStack = ref e, ...}) =
+	 Layout.str
+	 (case e of
+	     Caller => "Caller"
+	   | Me => "Me"
+	   | Unknown => "Unknown"
+	   | Unreachable => "Unreachable")
+
+      local
+	 fun make e (T {exnStack, ...}) = e = !exnStack
+      in
+	 val isCaller = make Caller
+	 val isMe = make Me
+      end
+
+      fun new () = T {exnStack = ref bottom,
+		      lessThan = ref []}
+
+      fun up (T {exnStack, lessThan, ...}, e) =
+	 let
+	    fun change e = (exnStack := e
+			    ; List.foreach (!lessThan, fn i => up (i, e)))
+	 in
+	    case (e, !exnStack) of
+	       (Unreachable, _) => ()
+	     | (_, Unreachable) => change e
+	     | (Caller, Me) => change Unknown
+	     | (Me, Caller) => change Unknown
+	     | _ => ()
+	 end
+
+      val me =
+	 let
+	    val e = new ()
+	    val _ = up (e, Me)
+	 in
+	    e
+	 end
+
+      val op <= =
+	 fn (T {exnStack = ref e, lessThan}, i) =>
+	 (if isTop e
+	     then ()
+	  else List.push (lessThan, i)
+	     ; up (i, e))
+   end
+
+structure After =
+   struct
+      datatype t =
+	 None
+       | Some of Label.t
+       | Unset
+
+      fun toLabelOpt a =
+	 case a of
+	    None => NONE
+	  | Some l => SOME l
+	  | Unset => Error.bug "After.toLabelOpt of Unset"
+   end
+
+structure HandlerInfo =
+   struct
+      datatype t = T of {after: After.t ref,
+			 exnStack: ExnStack.t,
+			 handler: Handler.t,
+			 slot: ExnStack.t}
+
+      fun new () = T {after = ref After.Unset,
+		      exnStack = ExnStack.new (),
+		      handler = Handler.new (),
+		      slot = ExnStack.new ()}
+		      
+      fun after (T {after = ref a, ...}) = After.toLabelOpt a
+
+      fun beforeLay (T {exnStack, handler, slot, ...}) =
+	 Layout.tuple [ExnStack.layout exnStack,
+		       Handler.layout handler,
+		       ExnStack.layout slot]
+   end
+
+structure Handlers =
+   struct
+      type t = Label.t -> HandlerInfo.t
+
+      fun after (f: t, l) = HandlerInfo.after (f l)
+   end
 
 local open Layout
 in
@@ -498,7 +551,7 @@ structure Block =
 	       statements: Statement.t vector,
 	       transfer: Transfer.t
 	       }
-	 
+
       local
 	 fun make f (T r) = f r
       in
@@ -508,7 +561,7 @@ structure Block =
 	 val transfer = make #transfer
       end
    
-      fun layout (T {label, args, statements, transfer}) =
+      fun layout (T {label, args, statements, transfer}, handlers) =
 	 let
 	    open Layout
 	 in
@@ -517,7 +570,8 @@ structure Block =
 				       if !Control.showTypes
 					  then seq [Var.layout x, str ": ",
 						    Type.layout t]
-				       else Var.layout x) args],
+				       else Var.layout x) args,
+			HandlerInfo.beforeLay (handlers label)],
 		   indent (align
 			   [align
 			    (Vector.toListMap (statements, Statement.layout)),
@@ -529,51 +583,6 @@ structure Block =
 	 (Label.clear label
 	  ; Vector.foreach (args, Var.clear o #1)
 	  ; Vector.foreach (statements, Statement.clear))
-   end
-
-structure ExnStack =
-   struct
-      structure Point =
-	 struct
-	    datatype t = Caller | Me
-
-	    val equals: t * t -> bool = op =
-	       
-	    val toString =
-	       fn Caller => "Caller"
-		| Me => "Me"
-
-	    val layout = Layout.str o toString
-	 end
-      structure L = FlatLattice (structure Point = Point)
-      open L
-
-      val me = point Point.Me
-      val caller = point Point.Caller
-   end
-
-structure Handler = FlatLattice (structure Point = Label)
-
-structure HandlerInfo =
-   struct
-      datatype t = T of {block: Block.t,
-			 global: ExnStack.t,
-			 handler: Handler.t,
-			 slot: ExnStack.t,
-			 visited: bool ref}
-
-      fun new (b: Block.t): t =
-	 T {block = b,
-	    global = ExnStack.new (),
-	    handler = Handler.new (),
-	    slot = ExnStack.new (),
-	    visited = ref false}
-
-      fun beforeLay (T {global, handler, slot, ...}) =
-	 Layout.tuple [ExnStack.layout global,
-		       ExnStack.layout slot,
-		       Handler.layout handler]
-
    end
 
 structure Datatype =
@@ -609,166 +618,28 @@ structure Datatype =
 
 structure Function =
    struct
-      structure CPromise = ClearablePromise
-	 
-      type dest = {args: (Var.t * Type.t) vector,
-		   blocks: Block.t vector,
-		   name: Func.t,
-		   returns: Type.t vector,
-		   start: Label.t}
-
-      (* There is a messy interaction between the laziness used in controlFlow
-       * and the property lists on labels because the former stores
-       * stuff on the property lists.  So, if you force the laziness, then
-       * clear the property lists, then try to use the lazy stuff, you will
-       * get screwed with undefined properties.  The right thing to do is reset
-       * the laziness when the properties are cleared.
-       *)
-      datatype t =
-	 T of {controlFlow:
-	       {dominatorTree: unit -> Block.t Tree.t,
-		graph: DirectedGraph.t,
-		labelNode: Label.t -> DirectedGraph.Node.t,
-		nodeBlock: DirectedGraph.Node.t -> Block.t} CPromise.t,
-	       dest: dest}
-
-      local
-	 fun make f (T {dest, ...}) = f dest
-      in
-	 val blocks = make #blocks
-	 val dest = make (fn d => d)
-	 val name = make #name
-      end
-
-      fun controlFlow (T {controlFlow, ...}) =
-	 let
-	    val {graph, labelNode, nodeBlock, ...} = CPromise.force controlFlow
-	 in
-	    {graph = graph, labelNode = labelNode, nodeBlock = nodeBlock}
-	 end
-
-      fun dominatorTree (T {controlFlow, ...}) =
-	 #dominatorTree (CPromise.force controlFlow) ()
-
-      fun checkHandlers ({start, blocks, ...}: dest) =
-	 let
-	    val {get = labelInfo: Label.t -> HandlerInfo.t,
-		 set = setLabelInfo} =
-	       Property.getSetOnce
-	       (Label.plist, Property.initRaise ("info", Label.layout))
-	    val _ =
-	       Vector.foreach
-	       (blocks, fn b => setLabelInfo (Block.label b, HandlerInfo.new b))
-	    (* Do a DFS of the control-flow graph. *)
-	    fun loop (hi as HandlerInfo.T {block, global, handler, slot, visited,
-					   ...}): unit =
-	       if !visited
-		  then ()
-	       else
-	       let
-		  val _ = visited := true
-		  val Block.T {label, statements, transfer, ...} = block
-		  fun fail msg =
-		     (Control.message
-		      (Control.Silent, fn () =>
-		       let open Layout
-		       in align [seq [str "block: ", Block.layout block]]
-		       end)
-		      ; Error.bug (concat ["handler mismatch at ", msg]))
-		  fun assert (msg, f) =
-		     if f
-			then ()
-		     else fail msg
-		  datatype z = datatype ExnStack.t
-		  val hi as {global, handler, slot} =
-		     Vector.fold
-		     (statements,
-		      {global = global, handler = handler, slot = slot},
-		      fn (Statement.T {exp, ...}, {global, handler, slot}) =>
-		      case exp of
-			 SetExnStackLocal =>
-			    {global = ExnStack.me,
-			     handler = handler,
-			     slot = slot}
-		       | SetExnStackSlot =>
-			    {global = slot,
-			     handler = handler,
-			     slot = slot}
-		       | SetSlotExnStack =>
-			    {global = global,
-			     handler = handler,
-			     slot = slot}
-		       | SetHandler l =>
-			    {global = global,
-			     handler = Handler.point l,
-			     slot = slot}
-		       | _ => {global = global, handler = handler, slot = slot})
-		   fun goto (l: Label.t): unit =
-		      let
-			 val HandlerInfo.T {global = g, handler = h,
-					    slot = s, ...} =
-			    labelInfo l
-		      in
-			 assert ("goto",
-				 ExnStack.<= (global, g)
-				 andalso ExnStack.<= (slot, s)
-				 andalso Handler.<= (handler, h))
-		      end
-		   fun tail name =
-		      assert (name,
-			      ExnStack.forcePoint
-			      (global, ExnStack.Point.Caller))
-		in
-		   case transfer of
-		      Bug => ()
-		    | Call {return, ...} =>
-			 (case return of
-			     NONE => tail "tail call"
-			   | SOME {cont, handler = h} =>
-				(goto cont
-				 ; (assert
-				    ("nontail call",
-				     case h of
-					NONE => (ExnStack.forcePoint
-						 (global, ExnStack.Point.Caller))
-				      | SOME l =>
-					   ExnStack.forcePoint
-					   (global, ExnStack.Point.Me)
-					   andalso
-					   Handler.forcePoint (handler, l)))))
-		    | Case {cases, default, ...} =>
-			 (Cases.foreach (cases, goto)
-			  ; Option.app (default, goto))
-		    | Goto {dst, ...} => goto dst
-		    | Prim {failure, success, ...} =>
-			 (goto failure; goto success)
-		    | Raise _ => tail "raise"
-		    | Return _ => tail "return"
-		end
-	    val info as HandlerInfo.T {global, ...} = labelInfo start
-	    val _ = ExnStack.forcePoint (global, ExnStack.Point.Caller)
-	    val _ = loop info
-	    val _ =
-	       Control.diagnostics
-	       (fn display => Vector.foreach (blocks, display o Block.layout))
-	 in
-	    labelInfo
-	 end
+      datatype t = T of {name: Func.t,
+			 args: (Var.t * Type.t) vector,
+			 start: Label.t,
+			 blocks: Block.t vector,
+			 returns: Type.t vector}
 			    
       local
 	 structure Graph = DirectedGraph
 	 structure Node = Graph.Node
 	 structure Edge = Graph.Edge
       in
-	 fun determineControlFlow ({args, blocks, name, start, ...}: dest) =
+	 fun controlFlowGraph (T {name, args, start, blocks,...},
+			       handlers: Handlers.t) =
 	    let
-    	       open Dot
+    	       open Graph.LayoutDot
 	       val g = Graph.new ()
 	       fun newNode () = Graph.newNode g
 	       val {get = labelNode} =
 		  Property.get
 		  (Label.plist, Property.initFun (fn _ => newNode ()))
-	       val {get = nodeInfo: Node.t -> {block: Block.t},
+	       val {get = nodeInfo: Node.t -> {block: Block.t,
+					       children: Node.t list ref},
 		    set = setNodeInfo} =
 		  Property.getSetOnce
 		  (Node.plist, Property.initRaise ("info", Node.layout))
@@ -777,44 +648,62 @@ structure Function =
 		  (blocks, fn b as Block.T {label, statements, transfer, ...} =>
 		   let
 		      val from = labelNode label
-		      val _ = setNodeInfo (from, {block = b})
+		      val _ = setNodeInfo (from, {block = b,
+						  children = ref []})
 		      fun edge (to: Label.t): unit =
 			(Graph.addEdge (g, {from = from, to = labelNode to})
 			 ; ())
+		      fun after () =
+			 Option.app (Handlers.after (handlers, label), edge)
 		      val _ =
 			 case transfer of
 			   Bug => ()
 			 | Call {return, ...} =>
-			      Option.app (return, fn {cont, handler} =>
-					  (edge cont
-					   ; Option.app (handler, edge)))
+			      Option.app (return, fn l =>
+					  (edge l; after ()))
 			 | Case {cases, default, ...} =>
 			      (Cases.foreach (cases, edge)
 			       ; Option.app (default, edge))
 			 | Goto {dst, ...} => edge dst
 			 | Prim {failure, success, ...} =>
 			      (edge failure; edge success)
-			 | Raise _ => ()
+			 | Raise _ => after ()
 			 | Return _ => ()
 		   in
 		      ()
 		   end)
 	       val root = labelNode start
-	       val dominatorTree =
-		  Promise.lazy
-		  (fn () =>
-		   Graph.dominatorTree (g, {root = root,
-					    nodeValue = #block o nodeInfo}))
+	       fun dominatorTree () =
+		  let
+		     val {idom} = Graph.dominators {graph = g, root = root}
+		     val _ =
+			List.foreach
+			(Graph.nodes g, fn n =>
+			 if Node.equals (n, root)
+			    then ()
+			 else List.push (#children (nodeInfo (idom n)), n))
+		     fun treeAt (n: Node.t): Block.t Tree.t =
+			let
+			   val {block, children} = nodeInfo n
+			in
+			   Tree.T (block, List.revMap (!children, treeAt))
+			end
+		  in
+		     treeAt root
+		  end
 	    in
-	       {dominatorTree = dominatorTree,
-		graph = g,
+	       {graph = g,
 		labelNode = labelNode,
-		nodeBlock = #block o nodeInfo}
+		dominatorTree = dominatorTree}
 	    end
 
-	 fun layoutDot (f, global) =
+	 fun dominatorTree z =
+	    #dominatorTree (controlFlowGraph z) ()
+
+	 fun layoutDot (T {name, args, start, blocks, ...},
+			handlers: Handlers.t,
+			global) =
 	    let
-	       val {name, args, start, blocks, ...} = dest f
 	       fun makeName (name: string,
 			     formals: (Var.t * Type.t) vector): string =
 		  concat [name, " ",
@@ -831,7 +720,7 @@ structure Function =
 					     Type.layout ty]
 				else Var.layout var)))
 			  end]
-	       open Dot
+	       open Graph.LayoutDot
 	       val graph = Graph.new ()
 	       val {get = nodeOptions, ...} =
 		  Property.get (Node.plist, Property.initFun (fn _ => ref []))
@@ -869,11 +758,13 @@ structure Function =
 			       in
 				  case return of
 				     NONE => [f, " ", args]
-				   | SOME {cont, handler} =>
-					(edge (cont, "", Dotted)
-					 ; Option.app (handler, fn h => 
+				   | SOME l =>
+					(edge (l, "", Dotted)
+					 ; Option.app (Handlers.after
+						       (handlers, label),
+						       fn h => 
 						       edge (h, "", Dashed))
-					 ; [Label.toString cont,
+					 ; [Label.toString l,
 					    " (", f, args, ")"])
 			       end
 			  | Case {test, cases, default, ...} =>
@@ -908,7 +799,11 @@ structure Function =
 				   (Prim.layoutApp (prim, args, fn x =>
 						    Layout.str
 						    (Var.pretty (x, global))))])
-			  | Raise xs => ["raise ", Var.prettys (xs, global)]
+			  | Raise xs =>
+			       (Option.app
+				(Handlers.after (handlers, label),
+				 fn l => edge (l, "", Solid))
+				; ["raise ", Var.prettys (xs, global)])
 			  | Return xs => ["return ", Var.prettys (xs, global)]
 		      val lab =
 			 Vector.foldr
@@ -917,56 +812,58 @@ structure Function =
 			  let
 			     val exp = Exp.toPretty (exp, global)
 			     val s =
-				if Type.isUnit ty
-				   then exp
-				else
-				   case var of
-				      NONE => exp
-				    | SOME var =>
-					 concat [Var.toString var,
-						 if !Control.showTypes
-						    then concat [": ",
-								 Layout.toString
-								 (Type.layout ty)]
-						 else "",
-						    " = ", exp]
+				case var of
+				   NONE => exp
+				 | SOME x =>
+				      concat
+				      [Var.toString x,
+				       if !Control.showTypes
+					  then concat [": ",
+						       Layout.toString
+						       (Type.layout ty)]
+				       else "",
+				       " = ", exp]
 			  in
 			     (s, Left) :: ac
 			  end)
-		      val name = makeName (Label.toString label, args)
+		      val name =
+			 concat [makeName (Label.toString label, args), " ",
+				 Layout.toString
+				 (HandlerInfo.beforeLay (handlers label))]
 		      val _ = setNodeText (from, (name, Left) :: lab)
 		   in
 		      ()
 		   end)
 	       val root = labelNode start
 	       val graphLayout =
-		  Graph.layoutDot
-		  (graph,
-		   {title = concat [makeName (Func.toString name, args),
-				    " control-flow graph"],
-		    options = [GraphOption.Rank (Min, [(*root*)])],
-		    edgeOptions = edgeOptions,
-		    nodeOptions =
-		    fn n => let
-			       val l = ! (nodeOptions n)
-			       open NodeOption
-			    in FontColor Black :: Shape Box :: l
-			    end})
+		  Graph.LayoutDot.layout
+		  {graph = graph,
+		   title = concat [makeName (Func.toString name, args),
+				   " control-flow graph"],
+		   options = [GraphOption.Rank (Min, [root])],
+		   edgeOptions = edgeOptions,
+		   nodeOptions =
+		   fn n => let
+			      val l = ! (nodeOptions n)
+			      open NodeOption
+			   in FontColor Black :: Shape Box :: l
+			   end}
 	       fun treeLayout () =
 		  let
+		     val {tree, graphToTree} =
+			Graph.dominatorTree {graph = graph, root = root}
 		     val _ =
 			Vector.foreach
 			(blocks, fn Block.T {label, ...} =>
-			 nodeOptions (labelNode label)
-			 := [NodeOption.label (Label.toString label)])
+			 setNodeText (graphToTree (labelNode label),
+				      [(Label.toString label, Center)]))
 		     val treeLayout =
-			Tree.layoutDot
-			(Graph.dominatorTree (graph,
-					      {root = root,
-					       nodeValue = ! o nodeOptions}),
-			 {title = concat [Func.toString name, " dominator tree"],
-			  options = [],
-			  nodeOptions = fn z => z})
+			Graph.LayoutDot.layout
+			{graph = tree,
+			 title = concat [Func.toString name, " dominator tree"],
+			 options = [],
+			 edgeOptions = fn _ => [],
+			 nodeOptions = ! o nodeOptions}
 		     val _ = destroy ()
 		  in
 		     treeLayout
@@ -976,29 +873,11 @@ structure Function =
 		tree = treeLayout}
 	    end
       end
-
-      fun new (dest: dest) =
+   
+      fun layout (func as T {name, args, start, blocks, returns},
+		  handlers: Handlers.t,
+		  global: Var.t -> string option) =
 	 let
-	    val controlFlow = CPromise.delay (fn () => determineControlFlow dest)
-	 in
-	    T {controlFlow = controlFlow,
-	       dest = dest}
-	 end
-
-      fun clear (T {controlFlow, dest, ...}) =
-	 let
-	    val {name, args, blocks, ...} = dest
-	    val _ = (Func.clear name
-		     ; Vector.foreach (args, Var.clear o #1)
-		     ; Vector.foreach (blocks, Block.clear))
-	    val _ = CPromise.clear controlFlow
-	 in
-	    ()
-	 end
-
-      fun layout (f: t, global: Var.t -> string option) =
-	 let
-	    val {args, blocks, name, returns, start, ...} = dest f
 	    open Layout
 	 in
 	    align [seq [str "fun ",
@@ -1009,23 +888,26 @@ structure Function =
 			   then seq [str ": ", Vector.layout Type.layout returns]
 			else empty,
 			str " = ", Label.layout start, str "()"],
-		   indent (align (Vector.toListMap (blocks, Block.layout)),
+		   indent (align (Vector.toListMap
+				  (blocks, fn b =>
+				   Block.layout (b, handlers))),
 			   2)]
 	 end
       
-      fun layouts (fs: t list, global,
+      fun layouts (fs: t vector,
+		   handlers: Handlers.t,
+		   global,
 		   output: Layout.t -> unit): unit =
-	 List.foreach
-	 (fs, fn f =>
+	 Vector.foreach
+	 (fs, fn f as T {name, ...} =>
 	  let
-	     val name = name f
-	     val _ = output (layout (f, global))
+	     val _ = output (layout (f, handlers, global))
 	     val _ =
 		if not (!Control.keepDot)
 		   then ()
 		else
 		   let
-		      val {graph, tree} = layoutDot (f, global)
+		      val {graph, tree} = layoutDot (f, handlers, global)
 		      val name = Func.toString name
 		      fun doit (s, g) =
 			 Control.saveToFile
@@ -1046,14 +928,152 @@ structure Program =
 	 T of {
 	       datatypes: Datatype.t vector,
 	       globals: Statement.t vector,
-	       functions: Function.t list,
+	       functions: Function.t vector,
 	       main: Func.t
 	       }
    end
 
+fun inferHandlers (Program.T {functions, ...}) =
+   let
+      val {get = labelInfo: Label.t -> HandlerInfo.t} =
+	 Property.get (Label.plist,
+		       Property.initFun (fn _ => HandlerInfo.new ()))
+      val _ =
+	 Vector.foreach
+	 (functions, fn Function.T {start, blocks, ...} =>
+	  let
+	     val HandlerInfo.T {exnStack, ...} = labelInfo start
+	     val _ = ExnStack.up (exnStack, ExnStack.Caller)
+	     val constraints: (unit -> unit) list ref = ref []
+	     val _ =
+		Vector.foreach
+		(blocks, fn b as Block.T {label, statements, transfer, ...} =>
+		 let
+		    val hi as HandlerInfo.T {after, exnStack, handler, slot} =
+		       labelInfo label
+		    fun assert (msg, f) =
+		       List.push
+		       (constraints, fn () =>
+			if f ()
+			   then ()
+			else 
+			   (Control.message
+			    (Control.Silent, fn () =>
+			     let open Layout
+			     in align [seq [str "block: ",
+					    Block.layout (b, labelInfo),
+					    str "info: ",
+					    HandlerInfo.beforeLay hi]]
+			     end)
+			    ; Error.bug (concat ["handler mismatch at ", msg])))
+		    val {exnStack, handler, slot} =
+		       Vector.fold
+		       (statements,
+			{exnStack = exnStack, handler = handler, slot = slot},
+			fn (Statement.T {exp, ...}, {exnStack, handler, slot}) =>
+			case exp of
+			   SetExnStackLocal =>
+			      {exnStack = ExnStack.me,
+			       handler = handler,
+			       slot = slot}
+			 | SetExnStackSlot =>
+			      {exnStack = slot,
+			       handler = handler,
+			       slot = slot}
+			 | SetSlotExnStack =>
+			      {exnStack = exnStack,
+			       handler = handler,
+			       slot = exnStack}
+			 | SetHandler l =>
+			      let
+				 val handler = Handler.new ()
+				 val _ = Handler.set (handler, l)
+				 val HandlerInfo.T {exnStack = e,
+						    handler = h, slot = s, ...} =
+				    labelInfo l
+				 val _ = ExnStack.up (e, ExnStack.Me)
+				 val _ = Handler.set (h, l)
+				 val _ = ExnStack.up (s, ExnStack.Caller)
+			      in
+				 {exnStack = exnStack,
+				  handler = handler,
+				  slot = slot}
+			      end
+			 | _ => {exnStack = exnStack,
+				 handler = handler,
+				 slot = slot})
+		    fun goto l =
+		       let
+			  val HandlerInfo.T {exnStack = e, handler = h,
+					     slot = s, ...} =
+			     labelInfo l
+		       in
+			  ExnStack.<= (exnStack, e)
+			  ; Handler.<= (handler, h)
+			  ; ExnStack.<= (slot, s)
+		       end
+		    fun tail name =
+		       assert (name, fn () => ExnStack.isCaller exnStack)
+		    fun check name =
+		       assert
+		       (name, fn () =>
+			let
+			   val ExnStack.T {exnStack = ref e, ...} = exnStack
+			in
+			   case e of
+			      ExnStack.Caller =>
+				 (after := After.None; true)
+			    | ExnStack.Me => 
+				 (case handler of
+				     Handler.T
+				     {handler = ref (Handler.Handler l), ...} =>
+					(after := After.Some l; true)
+				   | _ => false)
+			    | _ => false
+			end)
+		 in
+		    case transfer of
+		       Bug => ()
+		     | Call {return, ...} =>
+			  (Option.app (return, goto)
+			   ; (case return of
+				 NONE => tail "tail call"
+			       | SOME l => check "nontail call"))
+		     | Case {cases, default, ...} =>
+			  (Cases.foreach (cases, goto)
+			   ; Option.app (default, goto))
+		     | Goto {dst, ...} => goto dst
+		     | Prim {failure, success, ...} =>
+			  (goto failure; goto success)
+		     | Raise _ => check "raise"
+		     | Return _ => tail "return"
+		 end)
+	     val _ =
+		if true
+		   then ()
+		else
+		   Vector.foreach
+		   (blocks, fn b =>
+		    Layout.outputl (Block.layout (b, labelInfo),
+				    Out.error))
+	     (* The dataflow equations have been solved.
+	      * Check the constraints.
+	      *)
+	     val _ = List.foreach (!constraints, fn f => f ())
+	  in
+	     ()
+	  end)
+   in
+      labelInfo
+   end
+
+val inferHandlers = Control.trace (Control.Pass, "inferHandlers") inferHandlers
+
 structure Program =
    struct
       open Program
+
+      val inferHandlers = inferHandlers
 
       local
 	 structure Graph = DirectedGraph
@@ -1063,7 +1083,7 @@ structure Program =
 	 fun layoutCallGraph (T {functions, main, ...},
 			      title: string): Layout.t =
 	    let
-	       open Dot
+	       open Graph.LayoutDot
 	       val graph = Graph.new ()
 	       val {get = nodeOptions, set = setNodeOptions, ...} =
 		  Property.getSetOnce
@@ -1086,10 +1106,9 @@ structure Program =
 	       val {get = edgeOptions, set = setEdgeOptions} =
 		  Property.getSetOnce (Edge.plist, Property.initConst [])
 	       val _ =
-		  List.foreach
-		  (functions, fn f =>
+		  Vector.foreach
+		  (functions, fn Function.T {name, blocks, ...} =>
 		   let
-		      val {name, blocks, ...} = Function.dest f
 		      val from = funcNode name
 		      val {get, destroy} =
 			 Property.destGet
@@ -1124,11 +1143,12 @@ structure Program =
 		      ()
 		   end)
 	       val l =
-		  Graph.layoutDot
-		  (graph, {title = title,
-			   options = [],
-			   edgeOptions = edgeOptions,
-			   nodeOptions = nodeOptions})
+		  Graph.LayoutDot.layout
+		  {graph = graph,
+		   title = title,
+		   options = [],
+		   edgeOptions = edgeOptions,
+		   nodeOptions = nodeOptions}
 	       val _ = destroy ()
 	    in
 	       l
@@ -1138,40 +1158,34 @@ structure Program =
       fun layouts (p as T {datatypes, globals, functions, main},
 		   output': Layout.t -> unit) =
 	 let
-	    val {get = global: Var.t -> string option, set = setGlobal} =
-	       Property.getSet (Var.plist, Property.initConst NONE)
+	    val {get = global, set = setGlobal} =
+	       Property.getSet (Var.plist,
+				Property.initConst NONE)
 	    val _ = 
 	       Vector.foreach
 	       (globals, fn Statement.T {var, exp, ...} =>
-		Option.app
-		(var, fn var =>
-		 let
-		    fun set s =
-		       let
-			  val maxSize = 10
-			  val s = 
-			     if String.size s > maxSize
-				then concat [String.prefix (s, maxSize), "..."]
-			     else s
-		       in
-			  setGlobal (var, SOME s)
-		       end
-		 in
-		    case exp of
-		       Const c => set (Layout.toString (Const.layout c))
-		     | ConApp {con, args, ...} =>
-			  if Vector.isEmpty args
-			     then set (Con.toString con)
-			  else set (concat [Con.toString con, "(...)"])
-		     | _ => ()
-		 end))
+		case var of
+		   NONE => ()
+		 | SOME x =>
+		      let
+			 fun set s = setGlobal (x, SOME s)
+		      in
+			 case exp of
+			    Const c => set (Layout.toString (Const.layout c))
+			  | ConApp {con, args, ...} =>
+			       if Vector.isEmpty args
+				  then set (Con.toString con)
+			       else set (concat [Con.toString con, "(...)"])
+			  | _ => ()
+		      end)
+	    val handlers = inferHandlers p
 	    open Layout
 	    val output = output'
 	 in output (align (Vector.toListMap (datatypes, Datatype.layout)))
 	    ; output (str "\n\nGlobals:")
 	    ; Vector.foreach (globals, output o Statement.layout)
 	    ; output (str "\n\nFunctions:")
-	    ; Function.layouts (functions, global, output)
+	    ; Function.layouts (functions, handlers, global, output)
 	    ; output (seq [str "\n\nMain: ", Func.layout main])
 	    ; if not (!Control.keepDot)
 		 then ()
@@ -1191,21 +1205,17 @@ structure Program =
 	    val numStatements = ref (Vector.length globals)
 	    val numBlocks = ref 0
 	    val _ =
-	       List.foreach
-	       (functions, fn f =>
-		let
-		   val {args, blocks, ...} = Function.dest f
-		in
-		   Vector.foreach (args, countType o #2)
-		   ; (Vector.foreach
-		      (blocks, fn Block.T {statements, ...} =>
-		       (Int.inc numBlocks
-			; (Vector.foreach
-			   (statements, fn Statement.T {ty, ...} =>
-			    (countType ty
-			     ; Int.inc numStatements))))))
-		end)
-	    val numFunctions = List.length functions
+	       Vector.foreach
+	       (functions, fn Function.T {args, blocks, ...} =>
+		(Vector.foreach (args, countType o #2)
+		 ; (Vector.foreach
+		    (blocks, fn Block.T {statements, ...} =>
+		     (Int.inc numBlocks
+		      ; (Vector.foreach
+			 (statements, fn Statement.T {ty, ...} =>
+			  (countType ty
+			   ; Int.inc numStatements))))))))
+	    val numFunctions = Vector.length functions
 	    open Layout
 	    val _ = destroy ()
 	 in
@@ -1218,13 +1228,18 @@ structure Program =
 	 end
 
       (* clear all property lists reachable from program *)
-      fun clear (T {datatypes, globals, functions, ...}) =
+      fun clear (T {datatypes, globals, functions, main}) =
 	 ((* Can't do Type.clear because it clears out the info needed for
-	   * Type.dest.
+	   * dest.
 	   *)
+	  (* Type.clear () *)
 	  Vector.foreach (datatypes, Datatype.clear)
 	  ; Vector.foreach (globals, Statement.clear)
-	  ; List.foreach (functions, Function.clear))
+	  ; (Vector.foreach
+	     (functions, fn Function.T {name, args, blocks, ...} =>
+	      (Func.clear name
+	       ; Vector.foreach (args, Var.clear o #1)
+	       ; Vector.foreach (blocks, Block.clear)))))
 
       fun hasPrim (T {globals, functions, ...},  f) =
 	 DynamicWind.withEscape
@@ -1239,10 +1254,10 @@ structure Program =
 		 | _ => ()
 	     val _ = Vector.foreach (globals, loopStatement)
 	     val _ =
-		List.foreach
-		(functions, fn f =>
+		Vector.foreach
+		(functions, fn Function.T {blocks, ...} =>
 		 Vector.foreach
-		 (Function.blocks f, fn Block.T {statements, ...} =>
+		 (blocks, fn Block.T {statements, ...} =>
 		  Vector.foreach (statements, loopStatement)))
 	  in
 	     false
@@ -1287,16 +1302,9 @@ structure Program =
 		  case t of
 		     Bug => Transfer.Bug
 		   | Call {func, args, cont} =>
-			Transfer.Call
-			{func = funcToFunc func,
-			 args = args,
-			 return = (Option.map
-				   (cont, fn l =>
-				    {cont = jumpToLabel l,
-				     handler = 
-				     case jumpHandlers l of
-					[] => NONE
-				      | h :: _ => SOME (jumpToLabel h)}))}
+			Transfer.Call {func = funcToFunc func,
+				       args = args,
+				       return = Option.map (cont, jumpToLabel)}
 		   | Case {test, cases, default, ...} =>
 			Transfer.Case {test = test,
 				       cases = cases,
@@ -1403,11 +1411,11 @@ structure Program =
 		  val start = Label.newNoname ()
 		  val _ = loop (body, start, Vector.new0 (), [])
 	       in
-		  Function.new {args = args,
-				blocks = Vector.fromList (!blocks),
-				name = funcToFunc name,
-				returns = returns,
-				start = start}
+		  Function.T {args = args,
+			      blocks = Vector.fromList (!blocks),
+			      name = funcToFunc name,
+			      returns = returns,
+			      start = start}
 	       end
 	    val program =
 	       T {datatypes = Vector.map (datatypes, Datatype.T),
@@ -1416,7 +1424,7 @@ structure Program =
 			      case bindToStatement b of
 				 Normal s => s
 			       | Overflow _ => Error.bug "overflow in globals")),
-		  functions = Vector.toListMap (functions, loopFunc),
+		  functions = Vector.map (functions, loopFunc),
 		  main = funcToFunc main}
 	    val _ = clear program
 	 in

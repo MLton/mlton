@@ -36,6 +36,7 @@ signature X86_MLTON =
       sig
 	datatype t
 	  = None
+	  | Overflow of x86.Label.t * x86.Operand.t list
 	  | Runtime of {frameSize: int, 
 			live: x86.Operand.t list,
 			return: x86.Label.t}

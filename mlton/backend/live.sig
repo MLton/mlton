@@ -3,31 +3,42 @@
  *)
 signature LIVE_STRUCTS = 
    sig
-      include SSA
+      include CPS
    end
 
 signature LIVE = 
    sig
       include LIVE_STRUCTS
 
+      type t
+
       val live:
-	 Function.t * {isCont: Label.t -> bool,
-		       shouldConsider: Var.t -> bool}
+	 {
+	  exp: Exp.t,
+	  formals: (Var.t * Type.t) vector,
+	  jumpHandlers: Jump.t -> Jump.t list,
+	  shouldConsider: Var.t -> bool
+	 }
 	 -> {
-	     labelLive:
-	     Label.t -> {
-                         (* live at beginning of block. *)
-                         begin: Var.t list,
-			 (* live at the beginning of a block, except formals. *)
-			 beginNoFormals: Var.t list,
-			 (* live at frame corresponding to the block. *)
-			 frame: Var.t list,
-			 (* live handler slots at beginning of block. *)
-			 handlerSlots: bool * bool
-			 },
+	     (* live variables at beginning of block 
+	      *)
+	     liveBegin: Jump.t -> Var.t list,
+	     (* live variables at the beginning of a block, 
+	      * excepting its formals
+	      *)
+	     liveBeginNoFormals: Jump.t -> Var.t list,
+	     (* live variables at the frame corresponding to the block
+	      *)
+	     liveBeginFrame: Jump.t -> Var.t list,
+	     (* live handler slots at beginning of block
+	      *)
+	     liveBeginHS: Jump.t -> (bool * bool),
 	     (* live variables at primitives that require live variables.
 	      *)
-	     primLive: Var.t -> {vars: Var.t list,
-				 handlerSlots: bool * bool}
+	     livePrim: Var.t -> Var.t list,
+	     (* live handler slots at primitives that require live variables
+	      *)
+	     livePrimHS: Var.t -> (bool * bool),
+	     destroy: unit -> unit
 	     }
    end

@@ -7,25 +7,17 @@ and 'a state =
   | Evaluating
   | Evaluated of 'a
 
-fun delay th = T (ref (Unevaluated th))
-
-fun reset (T r, th) =
-   case !r of
-      Evaluating => Error.bug "Promise.reset"
-    | _ => r := Unevaluated th
+fun delay th = T(ref(Unevaluated th))
 
 exception Force
-fun force (T r) =
+fun force(T r) =
    case !r of
       Evaluated x => x
-    | Unevaluated th =>
-	 (let
-	     val _ = r := Evaluating
-	     val x = th ()
-	     val _ = r := Evaluated x
-	  in
-	     x
-	  end handle exn => (r := Unevaluated th; raise exn))
+    | Unevaluated th => ((r := Evaluating ;
+			  let val x = th()
+			  in r := Evaluated x ; x
+			  end) handle exn => (r := Unevaluated th ;
+					      raise exn))
     | Evaluating => raise Force
 
 fun lazy th =

@@ -104,13 +104,9 @@ Group is
 ../lib/mlton/basic/ref.sml
 ../lib/mlton/basic/property-list.fun
 ../lib/mlton/basic/property.fun
-../lib/mlton/basic/dot.sig
-../lib/mlton/basic/dot.sml
+../lib/mlton/basic/directed-graph.sig
 ../lib/mlton/basic/counter.sig
 ../lib/mlton/basic/counter.sml
-../lib/mlton/basic/tree.sig
-../lib/mlton/basic/tree.sml
-../lib/mlton/basic/directed-graph.sig
 ../lib/mlton/basic/directed-graph.sml
 ../lib/mlton/basic/array2.sig
 ../lib/mlton/basic/array2.sml

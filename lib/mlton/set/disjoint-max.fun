@@ -1,9 +1,12 @@
+(*-------------------------------------------------------------------*)
+(*                           Disjoint Max                            *)
+(*-------------------------------------------------------------------*)
 (* Taken from
- * Applications of Path Compression on Balanced Trees
- * Robert Endre Tarjan
- * JACM, 26, 4
- * October 1979
- * 690-715
+ Applications of Path Compression on Balanced Trees
+ Robert Endre Tarjan
+ JACM, 26, 4
+ October 1979
+ 690-715
  *)
 
 functor DisjointMax(O: ORDER): DISJOINT_MAX =

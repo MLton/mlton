@@ -55,23 +55,26 @@ signature DIRECTED_GRAPH =
       (* dominators {graph, root}
        * Pre: All nodes in graph must be reachable from root.
        *      This condition is checked.
-       * Returns idom, where
-       *  idom n = the immediate dominator n.
-       *  idom root = root.
        *)
-      val dominators: t * {root: Node.t} -> {idom: Node.t -> Node.t}
-      val dominatorTree: t * {root: Node.t, nodeValue: Node.t -> 'a} -> 'a Tree.t
+      val dominators:
+	 {graph: t,
+	  root: Node.t}
+	 ->
+	 (* idom n = the immediate dominator n.
+	  * idom root = root.
+	  *)
+	 {idom: Node.t -> Node.t}
+      val dominatorTree:
+	 {graph: t, root: Node.t}
+	 -> {graphToTree: Node.t -> Node.t,
+	     tree: t}
       val foreachDescendent: t * Node.t * (Node.t -> unit) -> unit
       val foreachEdge: t * (Node.t * Edge.t -> unit) -> unit
       val foreachNode: t * (Node.t -> unit) -> unit
 (*      exception Input *)
 (*     val input: In.t * (In.t -> 'a)* (In.t -> 'b) -> t * 'a * (Edge.t -> 'b) *)
 (*      val isCyclic: t -> bool*)
-      val layoutDot:
-	 t * {title: string,
-	      options: Dot.GraphOption.t list,
-	      edgeOptions: Edge.t -> Dot.EdgeOption.t list,
-	      nodeOptions: Node.t -> Dot.NodeOption.t list} -> Layout.t
+
       val loopForest:
 	 {headers: (* graph *) Node.t list -> (* graph *) Node.t list,
 	  graph: t,
@@ -87,6 +90,7 @@ signature DIRECTED_GRAPH =
 	     graphToForest: (* graph *) Node.t -> (* forest *) Node.t,
 	     loopNodes: (* forest *) Node.t -> (* graph *) Node.t list,
 	     parent: (* forest *) Node.t -> (* forest *) Node.t option}
+
       val new: unit -> t
       val newNode: t -> Node.t
       val nodes: t -> Node.t list
@@ -102,6 +106,122 @@ signature DIRECTED_GRAPH =
       exception TopologicalSort
       val topologicalSort: t -> Node.t list
 (*      val transpose: t -> t *)
+
+      structure LayoutDot:
+	 sig
+	    datatype color = datatype DotColor.t
+	    datatype direction =
+	       Backward
+	     | Both
+	     | Forward
+	     | None
+	    datatype fontFamily =
+	       Courier
+	     | Helvetica
+	     | Symbol
+	     | Times
+	    datatype fontWeight =
+	       Bold
+	     | Italic
+	     | Roman
+	    type fontName = fontFamily * fontWeight
+	    datatype justify =
+	       Center
+	     | Left
+	     | Right
+	    datatype orientation =
+	       Landscape
+	     | Portrait
+	    datatype polygonOption =
+	       Distortion of real (* -1.0 <= r <= 1.0 *)
+	     | Orientation of int (* 0 <= i <= 360.  Clockwise rotation from
+				   * X axis in degrees.
+				   *)
+	     | Peripheries of int
+	     | Skew of real (* -1.0 <= r <= 1.0 *)
+	    datatype rank = Max | Min | Same
+	    datatype rankDir =
+	       LeftToRight
+	     | TopToBottom
+	    datatype ratio =
+	       Auto
+	     | Compress
+	     | Fill
+	     | WidthOverHeight of real
+	    datatype shape =
+	       Box
+	     | Circle
+	     | Diamond
+	     | Ellipse
+	     | Plaintext
+	     | Polygon of {sides: int,
+			   options: polygonOption list}
+	    datatype style =
+	       BoldStyle
+	     | Dashed
+	     | Dotted
+	     | Filled
+	     | Invisible
+	     | Solid
+	    structure EdgeOption:
+	       sig
+		  datatype t =
+		     Color of color
+		   | Decorate of bool (* connect edge label to edge *)
+		   | Dir of direction
+		   | FontColor of color
+		   | FontName of fontName
+		   | FontSize of int (* points *)
+		   | Label of (string * justify) list
+		   | Minlen of int
+		   | Style of style
+		   | Weight of int
+
+		  val label: string -> t (* label s = Label (s, Center) *)
+	       end
+	    structure NodeOption:
+	       sig
+		  datatype t =
+		     Color of color
+		   | FontColor of color
+		   | FontName of fontName
+		   | FontSize of int (* points *)
+		   | Height of real (* inches *)
+		   | Label of (string * justify) list
+		   | Shape of shape
+		   | Width of real (* inches *)
+
+		  val label: string -> t (* label s = Label (s, Center) *)
+	       end
+	    structure GraphOption:
+	       sig
+		  datatype t =
+		     Center of bool
+		   | Color of color (* *)
+		   | Concentrate of bool
+		   | FontColor of color
+		   | FontName of fontName
+		   | FontSize of int (* points *)
+		   | Label of string
+		   | Margin of real * real (* inches *)
+		   | Mclimit of real (* mincross iterations multiplier *)
+		   | NodeSep of real (* inches *)
+		   | Nslimit of int (* network simplex limit *)
+		   | Orientation of orientation
+		   | Page of {height: real, width: real} (* inches *)
+		   | Rank of rank * Node.t list
+		   | RankDir of rankDir
+		   | RankSep of real (* inches *)
+		   | Ratio of ratio
+		   | Size of {height: real, width: real} (* inches *)
+	       end
+	    
+	    val layout: {graph: t,
+			 title: string,
+			 options: GraphOption.t list,
+			 edgeOptions: Edge.t -> EdgeOption.t list,
+			 nodeOptions: Node.t -> NodeOption.t list} -> Layout.t
+	 end
    end
 
 
@@ -138,18 +258,18 @@ local
       File.withOut
       ("/tmp/z.dot", fn out =>
        let
-	  open Dot
+	  open LayoutDot
        in
-	  Layout.output (layoutDot
-			 (g,
-			  {title = "Muchnick",
-			   options = [],
-			   edgeOptions = fn _ => [],
-			   nodeOptions = fn n => [NodeOption.label (name n)]}),
+	  Layout.output (layout
+			 {graph = g,
+			  title = "Muchnick",
+			  options = [],
+			  edgeOptions = fn _ => [],
+			  nodeOptions = fn n => [NodeOption.label (name n)]},
 			 out)
 	  ; Out.newline out
        end)
-   val {idom} = dominators (g, {root = node "entry\nfoo"})
+   val {idom} = dominators {graph = g, root = node "entry\nfoo"}
    val g2 = new ()
    val {get = oldNode, set = setOldNode} =
       Property.getSetOnce (Node.plist,
@@ -170,14 +290,14 @@ local
       File.withOut
       ("/tmp/z2.dot", fn out =>
        let
-	  open Dot
+	  open LayoutDot
        in
 	  Layout.output
-	  (layoutDot
-	   (g2, {title = "dom",
-		 options = [],
-		 edgeOptions = fn _ => [],
-		 nodeOptions = fn n => [NodeOption.label (name (oldNode n))]}),
+	  (layout {graph = g2,
+		   title = "dom",
+		   options = [],
+		   edgeOptions = fn _ => [],
+		   nodeOptions = fn n => [NodeOption.label (name (oldNode n))]},
 	   out)
 	  ; Out.newline out
        end)

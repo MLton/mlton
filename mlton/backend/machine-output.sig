@@ -76,14 +76,29 @@ signature MACHINE_OUTPUT =
 	 sig
 	    datatype t =
 	       None
+	     | Overflow of Label.t * Operand.t list
 	     | Runtime of GCInfo.t
 	     | Normal of Operand.t list
+
+	    val foreachLabel: t * (Label.t -> unit) -> unit
 	 end
 
       structure Statement:
 	 sig
-	    datatype t =
-	       Allocate of {dst: Operand.t,
+	    datatype t = Noop
+	     | Move of {dst: Operand.t,
+			src: Operand.t}
+	     | Push of int
+	     | Assign of {dst: Operand.t option,
+			  oper: Prim.t, 
+			  pinfo: PrimInfo.t,
+			  args: Operand.t list}
+	     | LimitCheck of {info: GCInfo.t,
+			      bytes: int,
+			      stackCheck: bool}
+	     | SaveExnStack of {offset: int}
+	     | RestoreExnStack of {offset: int}
+	     | Allocate of {dst: Operand.t,
 			    size: int,
 			    numPointers: int,
 			    numWordsNonPointers: int,
@@ -97,21 +112,6 @@ signature MACHINE_OUTPUT =
 				 limitCheck: {gcInfo: GCInfo.t,
 					      bytesPerElt: int,
 					      bytesAllocated: int} option}
-	     | Assign of {dst: Operand.t option,
-			  oper: Prim.t, 
-			  pinfo: PrimInfo.t,
-			  args: Operand.t list}
-	     | LimitCheck of {info: GCInfo.t,
-			      bytes: int,
-			      stackCheck: bool}
-	     | Move of {dst: Operand.t,
-			src: Operand.t}
-	     | Noop
-	     | Push of int
-	     | SetExnStackLocal of {offset: int}
-	     | SetExnStackSlot of {offset: int}
-	     | SetSlotExnStack of {offset: int}
-	       
 	    val layout: t -> Layout.t
 	 end
 
@@ -119,31 +119,25 @@ signature MACHINE_OUTPUT =
 
       structure Transfer:
 	 sig
-	    datatype t =
-	       Bug
-	     | FarJump of {chunkLabel: ChunkLabel.t,
-			   label: Label.t,
-			   live: Operand.t list,
-			   return: {return: Label.t,
-				    handler: Label.t option,
-				    size: int} option}
-	     | NearJump of {label: Label.t,
-			    return: {return: Label.t,
-				     handler: Label.t option,
-				     size: int} option}
-	     | Overflow of {args: Operand.t vector,
-			    dst: Operand.t,
-			    failure: Label.t,
-			    prim: Prim.t,
-			    success: Label.t}
-	     | Raise
+	    datatype t = Bug
 	     | Return of {live: Operand.t list}
+	     | Raise
 	     | Switch of {test: Operand.t,
 			  cases: Cases.t,
 			  default: Label.t option}
 	     | SwitchIP of {test: Operand.t,
 			    int: Label.t,
 			    pointer: Label.t}
+	     | NearJump of {label: Label.t,
+			    return: {return: Label.t,
+				     handler: Label.t option,
+				     size: int} option}
+	     | FarJump of {chunkLabel: ChunkLabel.t,
+			   label: Label.t,
+			   live: Operand.t list,
+			   return: {return: Label.t,
+				    handler: Label.t option,
+				    size: int} option}
 
 	    val layout: t -> Layout.t
 	 end
@@ -158,7 +152,6 @@ signature MACHINE_OUTPUT =
 				     size: int}
 		          | Handler of {size: int}
 	     end
-	  
 	    datatype t = T of {label: Label.t,
 			       kind: Kind.t,
 			       (* Live registers and stack offsets at beginning of block. *)
@@ -166,8 +159,6 @@ signature MACHINE_OUTPUT =
 			       profileName: string,
 			       statements: Statement.t array,
 			       transfer: Transfer.t}
-
-	    val label: t -> Label.t
 	 end
 
       structure Chunk:

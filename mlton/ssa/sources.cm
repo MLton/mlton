@@ -1,7 +1,5 @@
 Group
 
-signature SSA
-   
 functor Ssa
    
 is

@@ -661,7 +661,7 @@ local
 			title: string): Layout.t =
 	    let
 	       val numStates = Array2.nRows next
-	       open Dot
+	       open Graph.LayoutDot
 	       val g = Graph.new ()
 	       val nodes = Vector.tabulate (numStates, fn _ => Graph.newNode g)
 	       fun node i = Vector.sub (nodes, i)
@@ -726,15 +726,17 @@ local
 					   EdgeOption.label (edgeLabel cs))
 			     end)
 		   end)
-	       val options =
-		  let open GraphOption
-		  in [RankDir LeftToRight]
-		  end
 	    in
-	       Graph.layoutDot (g, {title = title,
-				    options = options,
-				    edgeOptions = ! o edgeOptions,
-				    nodeOptions = ! o nodeOptions})
+	       layout
+	       {graph = g,
+		title = title,
+		options = let open GraphOption
+			  in [
+			      RankDir LeftToRight
+			      ]
+			  end,
+		       edgeOptions = ! o edgeOptions,
+		       nodeOptions = ! o nodeOptions}
 	    end
       end
 
@@ -1142,7 +1144,7 @@ local
 			showDead: bool}: Layout.t =
 	    let
 	       val numStates = numStates dfa
-	       open Dot
+	       open Graph.LayoutDot
 	       val g = Graph.new ()
 	       val nodes = Vector.tabulate (numStates, fn _ => Graph.newNode g)
 	       fun node i = Vector.sub (nodes, i)
@@ -1221,18 +1223,18 @@ local
 					 EdgeOption.label label)
 			   end))
 		   end)
-	       val options =
-		  let open GraphOption
-		  in [
-		      RankDir LeftToRight,
-		      Rank (Min, [(*node start*)])
-		      ]
-		  end
 	    in
-	       Graph.layoutDot (g, {title = title,
-				    options = options,
-				    edgeOptions = ! o edgeOptions,
-				    nodeOptions = ! o nodeOptions})
+	       layout
+	       {graph = g,
+		title = title,
+		options = let open GraphOption
+			  in [
+			      RankDir LeftToRight,
+			      Rank (Min, [node start])
+			      ]
+			  end,
+		       edgeOptions = ! o edgeOptions,
+		       nodeOptions = ! o nodeOptions}
 	    end
 
 	 fun minimize d = d

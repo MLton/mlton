@@ -35,9 +35,6 @@ signature SSA_TREE =
 	     | Datatype of Tycon.t
 	     | Tuple of t vector
 	     | Vector of t
-
-	    val dest: t -> dest
-	    val tyconArgs: t -> Tycon.t * t vector
 	 end
       sharing Atoms = Type.Atoms
 
@@ -57,22 +54,21 @@ signature SSA_TREE =
 			  offset: int}
 	     | SetExnStackLocal
 	     | SetExnStackSlot
-	     | SetHandler of Label.t
 	     | SetSlotExnStack
+	     | SetHandler of Label.t
 	     | Tuple of Var.t vector
 	     | Var of Var.t
 
-	    val foreachVar: t * (Var.t -> unit) -> unit
 	    val layout: t -> Layout.t
-	    val maySideEffect: t -> bool
 	 end
 
       structure Statement:
 	 sig
-	    datatype t = T of {var: Var.t option,
+	    datatype t = T of {var: Var.t option, (* NONE iff ty = unit. *)
 			       ty: Type.t,
 			       exp: Exp.t}
 
+	    val lastHandler: t vector * Label.t option -> Label.t option
 	    val layout: t -> Layout.t
 	    val setHandler: Label.t -> t
 	    val var: t -> Var.t option
@@ -87,18 +83,8 @@ signature SSA_TREE =
 	     | Call of {
 			func: Func.t,
 			args: Var.t vector,
-			(* Return specifies the continuation of the call.
-			 * NONE means a tail-call.
-			 * SOME {cont, handler} means a nontail-call, where cont
-			 * is the label that should be returned to for a normal
-			 * return, and handler is the label that should be
-			 * returned to for an exception.  If handler = NONE,
-			 * then, the current handler (for the caller of the
-			 * current function) should be preserved for the nontail
-			 * call.
-			 *)
-			return: {cont: Label.t,
-				 handler: Label.t option} option}
+			return: Label.t option (* NONE means tail-call *)
+		       }
 	     | Case of {
 			test: Var.t,
 			cases: Label.t Cases.t,
@@ -113,14 +99,10 @@ signature SSA_TREE =
 			failure: Label.t, (* Must be nullary. *)
 			success: Label.t (* Must be unary. *)
 			}
-	       (* Raise implicitly raises to the caller.  I.E. the local handler
-		* stack must be empty.
-		*)
 	     | Raise of Var.t vector
 	     | Return of Var.t vector
 
 	    val foreachLabel: t * (Label.t -> unit) -> unit
-	    val foreachVar: t * (Var.t -> unit) -> unit
 	    val layout: t -> Layout.t
 	 end
 
@@ -134,7 +116,6 @@ signature SSA_TREE =
 		     transfer: Transfer.t
 		     }
 
-	    val clear: t -> unit
 	    val label: t -> Label.t
 	 end
 
@@ -152,28 +133,30 @@ signature SSA_TREE =
 	    val layout: t -> Layout.t
 	 end
 
-      structure Function:
+      structure Handlers:
 	 sig
 	    type t
+	 end
 
-	    val blocks: t -> Block.t vector
-	    val clear: t -> unit
-	    val controlFlow: t -> {graph: DirectedGraph.t,
-				   labelNode: Label.t -> DirectedGraph.Node.t,
-				   nodeBlock: DirectedGraph.Node.t -> Block.t}
-	    val dest: t -> {args: (Var.t * Type.t) vector,
-			    blocks: Block.t vector,
-			    name: Func.t,
-			    returns: Type.t vector,
-			    start: Label.t}
-	    val dominatorTree: t -> Block.t Tree.t
-	    val layout: t * (Var.t -> string option) -> Layout.t
-	    val name: t -> Func.t
-	    val new: {args: (Var.t * Type.t) vector,
-		      blocks: Block.t vector,
-		      name: Func.t,
-		      returns: Type.t vector,
-		      start: Label.t} -> t
+      structure Function:
+	 sig
+	    datatype t =
+	       T of {
+		     name: Func.t,
+		     args: (Var.t * Type.t) vector,
+		     start: Label.t, (* Must be nullary. *)
+		     blocks: Block.t vector,
+		     returns: Type.t vector
+		     }
+
+	    val controlFlowGraph:
+	       t * Handlers.t
+	       -> {graph: DirectedGraph.t,
+		   labelNode: Label.t -> DirectedGraph.Node.t,
+		   dominatorTree: unit -> Block.t Tree.t}
+	    val dominatorTree:
+	       t * Handlers.t
+	       -> Block.t Tree.t
 	 end
      
       structure Program:
@@ -182,14 +165,14 @@ signature SSA_TREE =
 	       T of {
 		     datatypes: Datatype.t vector,
 		     globals: Statement.t vector,
-		     functions: Function.t list,
+		     functions: Function.t vector,
 		     main: Func.t (* Must be nullary. *)
 		    } 
 
 	    val clear: t -> unit
 	    val fromCps: Cps.Program.t * {jumpToLabel: Cps.Jump.t -> Label.t,
 					  funcToFunc: Cps.Func.t -> Func.t} -> t
-	    val hasPrim: t * (Prim.t -> bool) -> bool
+	    val inferHandlers: t -> Handlers.t
 	    val layouts: t * (Layout.t -> unit) -> unit
 	    val layoutStats: t -> Layout.t
 	 end
