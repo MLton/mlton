@@ -24,7 +24,7 @@ Should be `Chr':
   Chr
 Should be `Fail':
   Fail
-  Fail
+  Fail: demo
 Should be `Option':
   Option
   Option
@@ -33,4 +33,5 @@ Should be `Empty':
   Empty
 Should be `Io':
   Io
-  Io
+  Io: openOut "." failed with SysErr: Is a directory [isdir]
+
