@@ -126,6 +126,7 @@ signature BASIS_1997 =
       structure Word8 : WORD_1997
       structure Word8Array : MONO_ARRAY_1997
       structure Word8Vector : MONO_VECTOR_1997
+      structure Word64: WORD_1997
 
       (* Optional structures *)
       structure Array2 : ARRAY2
