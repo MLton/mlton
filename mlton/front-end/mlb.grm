@@ -54,8 +54,8 @@ type basbinds = {name: Basid.t, def: Basexp.t} list
 
 %nonterm
 	 ann of string list
-       | anns of Ann.t list
-       | anns' of Ann.t list
+       | anns of (string list * Region.t) list
+       | anns' of (string list * Region.t) list
        | basbinds of basbinds
        | basbinds' of Basexp.t * basbinds
        | basbinds'' of basbinds
@@ -261,7 +261,7 @@ sigid : id  (Sigid.fromSymbol id)
 strid : id  (Strid.fromSymbol id)
 id : ID     (Symbol.fromString ID, reg (IDleft, IDright))
 
-anns : ann anns'  ((Ann.makeRegion' (Ann.Ann ann, annleft, annright))::anns')
+anns : ann anns'  ((ann, reg (annleft, annright))::anns')
 
 anns' :             ([])
       | COMMA anns  (anns)

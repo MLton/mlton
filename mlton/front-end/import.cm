@@ -8,6 +8,7 @@
 Group
 
 structure Array
+structure Buffer
 structure Char
 structure Error
 structure Exn

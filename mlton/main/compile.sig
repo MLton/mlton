@@ -30,6 +30,7 @@ signature COMPILE =
 					 done: unit -> unit}} -> unit
       val elaborateMLB: {input: File.t} -> unit
       val elaborateSML: {input: File.t list} -> unit
+      val filesMLB: {input: File.t} -> File.t vector
       (* output a C file to print out the basis constants. *)
       val outputBasisConstants: Out.t -> unit
    end

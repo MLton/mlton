@@ -285,9 +285,9 @@ datatype input = File of File.t | String of String.t
 
 local
    val (lexAndParseMLBFile, lexAndParseMLBFileMsg) =
-      Control.traceBatch (Control.Pass, "lex and parse (mlb)") MLBFrontEnd.lexAndParseFile
+      Control.traceBatch (Control.Pass, "lex and parse") MLBFrontEnd.lexAndParseFile
    val (lexAndParseMLBString, lexAndParseMLBStringMsg) =
-      Control.traceBatch (Control.Pass, "lex and parse (mlb)") MLBFrontEnd.lexAndParseString
+      Control.traceBatch (Control.Pass, "lex and parse") MLBFrontEnd.lexAndParseString
       
    val lexAndParseMLBMsgRef = ref lexAndParseMLBFileMsg
 in
@@ -301,12 +301,15 @@ in
       (!lexAndParseMLBMsgRef) ()
 end
 
-val lexAndParseMLB : input -> Ast.Basdec.t = fn (fs: input) => 
+val lexAndParseMLB : input -> Ast.Basdec.t * File.t vector = fn (fs: input) => 
    let
-      val ast = lexAndParseMLB fs
+      val (ast, files) = lexAndParseMLB fs
       val _ = Control.checkForErrors "parse"
-   in ast
+   in (ast, files)
    end
+
+val filesMLB = fn {input} => #2 (lexAndParseMLB (File input))
+val lexAndParseMLB = #1 o lexAndParseMLB
 
 val (elaborateMLB, elaborateMLBMsg) =
    Control.traceBatch (Control.Pass, "elaborate") Elaborate.elaborateMLB

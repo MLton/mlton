@@ -14,20 +14,6 @@ signature AST_MLBS =
    sig
       include AST_PROGRAMS
 
-      structure Ann:
-	 sig
-	    type t
-	    datatype node =
-	       Ann of string list
-
-	    include WRAPPED sharing type node' = node
-	                    sharing type obj = t
-
-	    val ann : string list -> t
-
-	    val layout : t -> Layout.t
-	 end
-
       structure Basexp:
 	 sig
 	    type basdec
@@ -61,7 +47,7 @@ signature AST_MLBS =
 	     | Prog of File.t * Program.t
 	     | MLB of File.t * OS.FileSys.file_id option * t
 	     | Prim
-	     | Ann of Ann.t list * t
+	     | Ann of (string list * Region.t) list * t
 
 	    include WRAPPED sharing type node' = node
 	                    sharing type obj = t
@@ -75,7 +61,7 @@ signature AST_MLBS =
 	    val prog: File.t * Program.t -> t
 	    val mlb: File.t * OS.FileSys.file_id option * t -> t
 	    val prim: t
-	    val ann: Ann.t list * t -> t
+	    val ann: (string list * Region.t) list * t -> t
 
 	    val layout: t -> Layout.t
 	 end

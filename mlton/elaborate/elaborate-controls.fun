@@ -64,16 +64,16 @@ struct
       let
 	 val restore =
 	    List.fold
-	    (anns, fn () => (), fn (ann, restore) =>
+	    (anns, fn () => (), fn ((ann,reg), restore) =>
 	     let
 		fun warn () =
 		   if !Control.warnAnn
 		      then let open Layout
 			   in
 			      Control.warning
-			      (Ast.Ann.region ann,
+			      (reg,
 			       seq [str "unrecognized annotation: ",
-				    Ast.Ann.layout ann],
+				    (seq o separate) (List.map (ann, str), " ")],
 			       empty)
 			   end
 		      else ()
@@ -100,28 +100,28 @@ struct
 		fun incInt r =
 		   setCtrl' (r, fn i => i + 1)
 	     in
-		case Ast.Ann.node ann of
-		   Ast.Ann.Ann ["allowConstant", b] =>
+		case ann of
+		   ["allowConstant", b] =>
 		      setBool (allowConstant, b)
-		 | Ast.Ann.Ann ["allowExport", b] =>
+		 | ["allowExport", b] =>
 		      setBool (allowExport, b)
-		 | Ast.Ann.Ann ["allowImport", b] =>
+		 | ["allowImport", b] =>
 		      setBool (allowImport, b)
-		 | Ast.Ann.Ann ["allowOverload", b] =>
+		 | ["allowOverload", b] =>
 		      setBool (allowOverload, b)
-		 | Ast.Ann.Ann ["allowPrim", b] =>
+		 | ["allowPrim", b] =>
 		      setBool (allowPrim, b)
-		 | Ast.Ann.Ann ["allowRebindEquals", b] =>
+		 | ["allowRebindEquals", b] =>
 		      setBool (allowRebindEquals, b)
-		 | Ast.Ann.Ann ["deadCode", b] =>
+		 | ["deadCode", b] =>
 		      setBool'' (!Control.deadCodeAnn, deadCode, b)
-		 | Ast.Ann.Ann ["forceUsed"] =>
+		 | ["forceUsed"] =>
 		      incInt forceUsed
-		 | Ast.Ann.Ann ["sequenceUnit", b] =>
+		 | ["sequenceUnit", b] =>
 		      setBool'' (!Control.sequenceUnitAnn, sequenceUnit, b)
-		 | Ast.Ann.Ann ["warnMatch", b] =>
+		 | ["warnMatch", b] =>
 		      setBool'' (!Control.warnMatchAnn, warnMatch, b)
-		 | Ast.Ann.Ann ["warnUnused", b] =>
+		 | ["warnUnused", b] =>
 		      setBool'' (!Control.warnUnusedAnn, warnUnused, b)
 		 | _ => (warn (); restore)
 	     end)

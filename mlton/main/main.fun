@@ -18,8 +18,8 @@ structure Place =
       datatype t = CM | Files | Generated | MLB | O | OUT | SML | TypeCheck
 
       val toInt: t -> int =
-	 fn CM => 0
-	  | MLB => 1
+	 fn MLB => 1
+	  | CM => 1
 	  | Files => 2
 	  | SML => 3
 	  | TypeCheck => 4
@@ -900,9 +900,23 @@ fun commandLine (args: string list): unit =
 				  in Layout.output (l, out)
 				     ; Out.newline out
 				  end)
+			fun saveSML smlFile =
+			   File.withOut
+			   (smlFile, fn out =>
+			    (outputHeader' (ML, out)
+			     ; (Vector.foreach
+				(Compile.filesMLB {input = file}, fn f =>
+				 (Out.output
+				  (out, concat ["(*#line 0.0 \"", f, "\"*)\n"])
+				  ; File.outputContents (f, out))))))
 			val _ =
 			   case stop of
-			      Place.TypeCheck =>
+			      Place.Files =>
+				 Vector.foreach
+				 (Compile.filesMLB {input = file}, fn f => 
+				  print (concat [f, "\n"]))
+			    | Place.SML => saveSML (maybeOut ".sml")
+			    | Place.TypeCheck =>
 				 trace (Top, "Type Check SML")
 				 Compile.elaborateMLB {input = file}
 			    | _ => 
@@ -914,8 +928,10 @@ fun commandLine (args: string list): unit =
 						  if !debug then ".s" else ".S")}
 		     in
 			case stop of
-			   Place.Generated => ()
+			   Place.Files => ()
+			 | Place.SML => ()
 			 | Place.TypeCheck => ()
+			 | Place.Generated => ()
 			 | _ =>
 			      (* Shrink the heap before calling gcc. *)
 			      (MLton.GC.pack ()

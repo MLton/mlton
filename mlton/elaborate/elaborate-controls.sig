@@ -30,5 +30,5 @@ signature ELABORATE_CONTROLS =
       val warnUnused: bool ref
 
       val withDefault: (unit -> 'a) -> 'a
-      val withAnns: Ast.Ann.t list * (unit -> 'a) -> 'a
+      val withAnns: (string list * Region.t) list * (unit -> 'a) -> 'a
    end

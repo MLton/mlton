@@ -86,6 +86,8 @@ val lexAndParseString =
 
 fun mkLexAndParse () =
    let
+      val files: File.t Buffer.t = Buffer.new {dummy = "<dummy>"}
+
       val psi : (OS.FileSys.file_id * Ast.Basdec.t) HashSet.t =
 	 HashSet.new {hash = OS.FileSys.hash o #1}
 
@@ -141,7 +143,8 @@ fun mkLexAndParse () =
 	       then fail (concat [f, " does not exist"])
 	    else if not (File.canRead f)
 	       then fail (concat [f, " cannot be read"])
-	    else (fa, FrontEnd.lexAndParseFile f)
+	    else (Buffer.add (files, f)
+		  ; (fa, FrontEnd.lexAndParseFile f))
 	 end
 
       fun lexAndParseMLB (cwd: Dir.t, 
@@ -209,9 +212,11 @@ fun mkLexAndParse () =
       val cwd = Dir.current ()
       val relativize = SOME cwd
       val lexAndParseFile = fn (f: File.t) =>
-	 #3 (lexAndParseMLB (cwd, relativize, []) (f, Region.bogus))
+	 (#3 (lexAndParseMLB (cwd, relativize, []) (f, Region.bogus)),
+	  Buffer.toVector files before Buffer.reset files)
       val lexAndParseString = fn (s: String.t) => 
-	 wrapLexAndParse (cwd, relativize, []) (lexAndParseString, s)
+	 (wrapLexAndParse (cwd, relativize, []) (lexAndParseString, s),
+	  Buffer.toVector files before Buffer.reset files)
    in
       (lexAndParseFile, lexAndParseString)
    end

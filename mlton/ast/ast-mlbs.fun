@@ -22,8 +22,6 @@ val node = Wrap.node
 (*                Basdecs and Basexps                *)
 (*---------------------------------------------------*)
 
-datatype annNode =
-   Ann of string list
 datatype basexpNode =
    Bas of basdec
  | Var of Basid.t
@@ -38,18 +36,11 @@ and basdecNode =
  | Prog of File.t * Program.t
  | MLB of File.t * OS.FileSys.file_id option * basdec
  | Prim
- | Ann of ann list * basdec
-withtype ann = annNode Wrap.t
-     and basexp = basexpNode Wrap.t
+ | Ann of (string list * Region.t) list * basdec
+withtype basexp = basexpNode Wrap.t
      and basdec = basdecNode Wrap.t
 
-fun layoutAnn ann =
-   let datatype z = datatype annNode
-   in
-      case node ann of
-	 Ann ann => (seq o separate) (List.map (ann, str), " ")
-   end
-and layoutBasexp exp =
+fun layoutBasexp exp =
    case node exp of
       Bas dec => align [str "bas", indent (layoutBasdec dec, 3), str "end"]
     | Var basid => Basid.layout basid
@@ -72,27 +63,13 @@ and layoutBasdec dec =
     | Prim => str "_prim"
     | Ann (anns, dec) => align [str "ann", 
 				indent ((seq o separate)
-					(List.map (anns, layoutAnn), 
+					(List.map (anns, fn (ann,_) =>
+						   (seq o separate) (List.map (ann, str), " ")), 
 					 ","),
 					3),
 				str "in", 
 				indent (layoutBasdec dec, 3), str "end"]
 and layoutBasdecs decs = layouts (decs, layoutBasdec)
-
-structure Ann =
-   struct
-      open Wrap
-      type ann = ann
-      type t = ann
-      datatype node = datatype annNode
-      type node' = node
-      type obj = t
-
-      fun make n = makeRegion (n, Region.bogus)
-      val ann = make o Ann
-
-      val layout = layoutAnn
-   end
 
 structure Basexp =
    struct
