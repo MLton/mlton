@@ -174,7 +174,6 @@ fun multi (p as Program.T {functions, main, ...})
       val G = Graph.new ()
       fun newNode () = Graph.newNode G
       fun addEdge edge = ignore (Graph.addEdge (G, edge))
-      fun addEdge' edge = if Node.hasEdge edge then () else addEdge edge
       val _ = List.foreach
 	      (functions, fn f =>
 	       let
@@ -201,8 +200,8 @@ fun multi (p as Program.T {functions, main, ...})
 			    val gi = funcInfo g
 			  in 
 			    Calls.inc (FuncInfo.calls gi) ;
-			    addEdge' {from = funcNode f,
-				      to = funcNode g} ;
+			    addEdge {from = funcNode f,
+				     to = funcNode g} ;
 			    if usesThreadsOrConts
 			      then ThreadCopyCurrent.when
 				   (FuncInfo.threadCopyCurrent gi,
@@ -227,7 +226,7 @@ fun multi (p as Program.T {functions, main, ...})
 		      | _ => ()
 		  end)
 	       end)
-
+      val () = Graph.removeDuplicateEdges G
       val rec forceMultiThreadedVar
 	= fn x =>
 	  let
@@ -410,9 +409,8 @@ fun multi (p as Program.T {functions, main, ...})
       val _ = List.foreach
 	      (Graph.stronglyConnectedComponents G,
 	       fn [] => ()
-	        | [n] => if Node.hasEdge {from = n, to = n}
-			   then visitFunc true (nodeFunction n)
-			   else visitFunc false (nodeFunction n)
+	        | [n] =>
+		     visitFunc (Node.hasEdge {from = n, to = n}) (nodeFunction n)
 		| ns => List.foreach 
 			(ns, fn n =>
 			 visitFunc true (nodeFunction n)))
