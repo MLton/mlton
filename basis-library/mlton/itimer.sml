@@ -16,5 +16,12 @@ structure Itimer: MLTON_ITIMER =
 
       fun set (t, {interval = Time.T {sec = s1, usec = u1},
 		   value = Time.T {sec = s2, usec = u2}}) =
-	 Prim.set (toInt t, s1, u1, s2, u2)
+	 if Primitive.MLton.Profile.profile
+	    andalso t = Prof
+	    then let
+		    open PosixError
+		 in
+		    raiseSys inval
+		 end
+	 else Prim.set (toInt t, s1, u1, s2, u2)
    end

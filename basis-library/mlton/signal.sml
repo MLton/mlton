@@ -68,7 +68,14 @@ val (get, set, handlers) =
 	  (handlers, 0, NONE))
    in
       (fn s => Array.sub (handlers, s),
-       fn (s, h) => Array.update (handlers, s, h),
+       fn (s, h) => if Primitive.MLton.Profile.profile andalso s = prof
+		       then
+			  let
+			     open PosixError
+			  in
+			     raiseSys inval
+			  end
+		    else Array.update (handlers, s, h),
        handlers)
    end
 
