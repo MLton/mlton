@@ -60,10 +60,7 @@ val {compare, min, max, ...} = Relation0.lessEqual {< = PS.<, equals = equals}
 
 fun output (s, out) = Pervasive.TextIO.output (out, s)
 
-fun tabulate (n: int, f) =
-   let fun loop i = if Int.<= (i, 0) then [] else f i :: loop (i - 1)
-   in implode (loop n)
-   end
+val tabulate = CharVector.tabulate
 
 fun make (n, c) = tabulate (n, fn _ => c)
    
