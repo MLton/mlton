@@ -21,7 +21,7 @@ make STUBS=no
 
 %install
 rm -rf $RPM_BUILD_ROOT
-make prefix=$RPM_BUILD_ROOT/usr/local VERSION=%{version} install
+make DESTDIR=$RPM_BUILD_ROOT VERSION=%{version} install
 
 %files
 %attr(-, root, root)		/usr/local/share/doc/mlton

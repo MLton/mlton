@@ -131,20 +131,14 @@ install:
 	(								\
 		cd $(SRC)/doc &&					\
 		$(CP) -r CHANGES cmcat.sml examples			\
-			license README $(TDOC)/ &&			\
-		rm -rf $(TDOC)/user-guide &&				\
-		cp -a user-guide/main $(TDOC)/user-guide &&		\
-		gzip -c user-guide/main.ps >$(TDOC)/user-guide.ps.gz	\
+			license README $(TDOC)/				\
 	)
+	rm -rf $(TDOC)/user-guide
+	cp -a $(SRC)/doc/user-guide/main $(TDOC)/user-guide
+	gzip -c $(SRC)/doc/user-guide/main.ps >$(TDOC)/user-guide.ps.gz
 	$(CP) -r $(LIB)/. $(TLIB)
-	(								\
-		cd $(BIN) &&						\
-		sed "/^lib=/s;'.*';'$(prefix)/$(ULIB)';" 		\
-			<mlton >$(TBIN)/mlton &&			\
-		chmod +x $(TBIN)/mlton &&				\
-		$(CP) $(LEX) $(PROF) $(YACC) $(TBIN)/			\
-	)
-	(								\
-		cd $(SRC)/man &&					\
-		$(CP) mlton.1 mlprof.1 $(TMAN)/				\
-	)
+	sed "/^lib=/s;'.*';'$(prefix)/$(ULIB)';" 			\
+			<$(SRC)/bin/mlton >$(TBIN)/mlton
+	chmod +x $(TBIN)/mlton
+	$(CP) $(BIN)/$(LEX) $(BIN)/$(PROF) $(BIN)/$(YACC) $(TBIN)/
+	$(CP) $(SRC)/man/mlton.1 $(SRC)/man/mlprof.1 $(TMAN)/
