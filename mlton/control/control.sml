@@ -138,29 +138,33 @@ structure Native =
 			       default = 0,
 			       toString = Int.toString}
 
-      val copyProp = control {name = "native copy prop",
-			      default = true,
-			      toString = Bool.toString}
-
-      val future = control {name = "future",
-			    default = 64,
-			    toString = Int.toString}
-
-      val IEEEFP = control {name = "native ieee fp",
-			    default = false,
-			    toString = Bool.toString}
-
-      val liveTransfer = control {name = "native live transfer",
-				  default = true,
-				  toString = Bool.toString}
-
-      val moveHoist = control {name = "native move hoist",
+      val liveStack = control {name = "native live stack",
 			       default = true,
 			       toString = Bool.toString}
 
       val optimize = control {name = "native optimize",
 			      default = 1,
 			      toString = Int.toString}
+
+      val moveHoist = control {name = "native move hoist",
+			       default = true,
+			       toString = Bool.toString}
+
+      val copyProp = control {name = "native copy prop",
+			      default = true,
+			      toString = Bool.toString}
+
+      val liveTransfer = control {name = "native live transfer",
+				  default = true,
+				  toString = Bool.toString}
+
+      val future = control {name = "native future",
+			    default = 64,
+			    toString = Int.toString}
+
+      val IEEEFP = control {name = "native ieee fp",
+			    default = false,
+			    toString = Bool.toString}
 
       val split = control {name = "native split",
 			   default = SOME 20000,

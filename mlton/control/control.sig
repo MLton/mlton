@@ -76,24 +76,27 @@ signature CONTROL =
 	    (* whether or not to use comments in native codegen *)
 	    val commented: int ref
 
+	    (* whether or not to track liveness of stack slots *)
+	    val liveStack: bool ref 
+
+	    (* level of optimization to use in native codegen *)
+	    val optimize: int ref
+
+	    (* whether or not to use move hoisting in native codegen *)
+	    val moveHoist: bool ref
+	       
+	    (* whether or not to use copy propagation in native codegen *)
+	    val copyProp: bool ref
+	       
+	    (* whether or not to use live transfer in native codegen *)
+	    val liveTransfer: bool ref 
+
 	    (* size of future list for register allocation *)
 	    val future: int ref
 	       
 	    (* whether or not to use strict IEEE floating-point in native codegen *)
 	    val IEEEFP: bool ref
 
-	    (* whether or not to use live transfer in native codegen *)
-	    val liveTransfer: bool ref 
-
-	    (* level of optimization to use in native codegen *)
-	    val optimize: int ref
-
-	    (* whether or not to use copy propagation in native codegen *)
-	    val copyProp: bool ref
-	       
-	    (* whether or not to use move hoisting in native codegen *)
-	    val moveHoist: bool ref
-	       
 	    (* whether or not to split assembly file in native codegen *)
 	    val split: int option ref
 	 end
