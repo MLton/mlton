@@ -15,7 +15,15 @@ signature SEXP =
       datatype t =
 	 Atom of string
        | List of t list
+       | String of string
 
-      val input: In.t -> t option (* NONE if eof *)
+      datatype parseResult =
+	 Eof
+       | Error of string
+       | Sexp of t
+
+      val fromString: string -> parseResult
+      val input: In.t -> parseResult
       val layout: t -> Layout.t
+      val toString: t -> string
    end
