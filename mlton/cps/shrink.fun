@@ -61,7 +61,7 @@ structure JumpInfo =
        *)
       datatype t = T of {meaning: meaning,
 			 name: Jump.t,
-			 numArgs: int,
+			 args: (Var.t * Type.t) vector,
 			 numOccurrences: int ref}
       and meaning =
 	 Code of {body: Exp.t,
@@ -143,10 +143,10 @@ structure JumpInfo =
 	  | Return ps => Return (extract ps)
 	 end
 
-      fun isTail (T {numArgs, meaning, ...}): bool =
+      fun isTail (T {args, meaning, ...}): bool =
 	 case meaning of
 	    Return ps =>
-	       numArgs = Vector.length ps
+	       Vector.length args = Vector.length ps
 	       andalso Vector.foralli (ps,
 				      fn (i, Position.Formal i') => i = i'
 				       | _ => false)
@@ -347,7 +347,7 @@ fun shrinkExp globals =
 			       ; (setJumpInfo
 				  (name,
 				   JumpInfo.T {name = name,
-					       numArgs = Vector.length args,
+					       args = args,
 					       numOccurrences = numOccurrences,
 					       meaning = m})))
 			   fun normal () =
@@ -606,7 +606,38 @@ fun shrinkExp globals =
 	       Bind r => simplifyBind (r, rest)
 	     | Fun r => simplifyFun (r, rest)
 	     | HandlerPop => Exp.prefix (rest (), dec)
-	     | HandlerPush _ => Exp.prefix (rest (), dec)
+	     | HandlerPush h =>
+		  let
+		     val info as JumpInfo.T {args, meaning, name, ...} =
+			jumpInfo h
+		  in
+		     if (Jump.equals (h, name)
+			 andalso (case meaning of
+				     JumpInfo.Code _ => true
+				   | _ => false))
+			then Exp.prefix (rest (), dec)
+		     else
+			(* Need to create a wrapper. *)
+			let
+			   val _ = Out.output (Out.error, "creating wrapper\n")
+			   val formals =
+			      Vector.map (args, fn (x, t) =>
+					  (Var.new x, t))
+			   val handler = Jump.new h
+			in Exp.prefixs
+			   (rest (),
+			    [Fun {name = handler,
+				  args = formals,
+				  body = jump (info,
+					       Vector.map
+					       (formals, fn (x, _) =>
+						VarInfo.T
+						{var = x,
+						 numOccurrences = ref 1,
+						 value = ref NONE}))},
+			     HandlerPush handler])
+			end
+		  end
 	 and simplifyBind arg: Exp.t =
 	    traceSimplifyBind
 	    (fn ({var, ty, exp}, rest: unit -> Exp.t) =>
