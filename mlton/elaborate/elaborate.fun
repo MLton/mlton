@@ -69,6 +69,8 @@ structure ElaborateCore = ElaborateCore (structure Ast = Ast
 					 structure Decs = Decs
 					 structure Env = Env)
 
+val allowRebindEquals = ElaborateCore.allowRebindEquals
+
 val info = Trace.info "elaborateStrdec"
 val info' = Trace.info "elaborateTopdec"
 	  

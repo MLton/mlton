@@ -432,6 +432,7 @@ fun elaborate {input: File.t list} =
       val decs =
 	 let 
 	    val {basis, prefix, suffix, ...} = selectBasisLibrary ()
+	    val _ = Elaborate.allowRebindEquals := false
 	    fun parseAndElab () =
 	       parseAndElaborateFiles (input, basisEnv, lookupConstantError)
 	    val input =

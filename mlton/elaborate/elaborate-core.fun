@@ -303,15 +303,32 @@ structure Var =
       val fromAst = fromString o Avar.toString
    end
 
+val allowRebindEquals = ref true
+   
+local
+   val eq = Avar.fromString ("=", Region.bogus)
+in
+   fun extendVar (E, x, x', s, region) =
+      if not (!allowRebindEquals) andalso Avar.equals (x, eq)
+	 then
+	    let
+	       open Layout
+	    in
+	       Control.error (region, str "= can't be redefined", empty)
+	    end
+      else Env.extendVar (E, x, x', s)
+end
+
 fun elaboratePat (p: Apat.t, E: Env.t, amInRvb: bool)
    : Cpat.t * (Avar.t * Var.t * Type.t) vector =
    let
+      val region = Apat.region p
       val xts: (Avar.t * Var.t * Type.t) list ref = ref []
       fun bindToType (x: Avar.t, t: Type.t): Var.t =
 	 let
 	    val x' = Var.fromAst x
 	    val _ = List.push (xts, (x, x', t))
-	    val _ = Env.extendVar (E, x, x', Scheme.fromType t)
+	    val _ = extendVar (E, x, x', Scheme.fromType t, region)
 	 in
 	    x'
 	 end

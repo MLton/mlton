@@ -24,6 +24,7 @@ signature ELABORATE_CORE =
    sig
       include ELABORATE_CORE_STRUCTS
 
+      val allowRebindEquals: bool ref
       (* Elaborate dec in env, returning Core ML decs. *)
       val elaborateDec:
 	 Ast.Dec.t * {env: Env.t,

@@ -28,6 +28,7 @@ signature ELABORATE =
       structure Decs: DECS
       structure Env: ELABORATE_ENV
 
+      val allowRebindEquals: bool ref
       val elaborateProgram:
 	 Ast.Program.t * Env.t * (string * ConstType.t -> CoreML.Const.t)
 	 -> Decs.t
