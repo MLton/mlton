@@ -82,6 +82,7 @@ dirs:
 docs:
 	$(MAKE) -C $(SRC)/doc/user-guide
 	$(MAKE) -C $(LEX) docs
+	$(MAKE) -C $(YACC) docs
 
 BSDSRC = /tmp/mlton-$(VERSION)
 .PHONY: freebsd
@@ -201,12 +202,13 @@ install:
  		cp $(SRC)/regression/$$f.sml $(TDOC)/examples; \
 	done
 	gzip -c $(LEX)/$(LEX).ps >$(TDOC)/
+	gzip -c $(YACC)/$(YACC).ps >$(TDOC)/
 	$(CP) $(LIB)/. $(TLIB)/
 	sed "/^lib=/s;'.*';'$(prefix)/$(ULIB)';" 			\
 			<$(SRC)/bin/mlton >$(TBIN)/mlton
 	chmod +x $(TBIN)/mlton
 	$(CP) $(BIN)/$(LEX) $(BIN)/$(PROF) $(BIN)/$(YACC) $(TBIN)/
-	( cd $(SRC)/man && tar cf - mllex.1 mlprof.1 mlton.1 ) | \
+	( cd $(SRC)/man && tar cf - mllex.1 mlprof.1 mlton.1 mlyacc.1 ) | \
 		( cd $(TMAN)/ && tar xf - )
 	find $(TDOC) -name CVS -type d | xargs --no-run-if-empty rm -rf
 	find $(TDOC) -name .cvsignore -type f | xargs --no-run-if-empty rm -rf

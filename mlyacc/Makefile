@@ -41,9 +41,18 @@ src/yacc.grm.sig src/yacc.grm.sml: src/yacc.grm
 		mlyacc src/yacc.grm && \
 		chmod -w src/yacc.grm.*
 
+doc/mlyacc.dvi:
+	cd doc && latex mlyacc.tex && latex mlyacc.tex && latex mlyacc.tex
+
+mlyacc.ps: doc/mlyacc.dvi
+	dvips -o mlyacc.ps doc/mlyacc.dvi
+
 .PHONY: clean
 clean:
 	../bin/clean
+
+.PHONY: docs
+docs: mlyacc.ps
 
 .PHONY: test
 test: $(NAME)

@@ -15,9 +15,19 @@ Files: /usr/share/doc/mlton/user-guide/*.html
 Document: mllex
 Title: A lexical analyzer generator for Standard ML
 Author: Andrew W. Appel, James S. Mattson, David R. Tarditi
-Abstract: This document describes how to use mllex and how to write lexer
-specification files for mllex.
+Abstract: This document describes how write lexer specification files for
+mllex.
 Section: Apps/Programming
 
 Format: postscript
 Files: /usr/share/doc/mlton/mllex.ps.gz
+
+Document: mlyacc
+Title: ML-Yacc User's Manual
+Author: David R. Tarditi, Andrew W. Appel
+Abstract: This document describes how to write parser specification files for
+mlyacc.
+Section: Apps/Programming
+
+Format: postscript
+Files: /usr/share/doc/mlton/mlyacc.ps.gz

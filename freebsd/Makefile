@@ -24,8 +24,9 @@ LIB_DEPENDS= \
 	gmp.5:$(PORTSDIR)/math/libgmp4
 
 MAN1= 		mllex.1 \
+		mlprof.1 \
 		mlton.1 \
-		mlprof.1
+		mlyacc.1
 
 MASTER_SITE_SUBDIR = $(PORTNAME)
 
