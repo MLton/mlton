@@ -30,9 +30,9 @@ all:
 
 .PHONY: bootstrap
 bootstrap:
-	$(MAKE)
+	$(MAKE) all
 	rm -f mlton/mlton-compile
-	$(MAKE)
+	$(MAKE) all
 
 .PHONY: clean
 clean:
