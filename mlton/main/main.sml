@@ -435,9 +435,7 @@ fun commandLine (args: string list): unit =
 		     trace (Top, "Link")
 		     (fn () =>
 		      docc (inputs,
-			    maybeOut (case !hostType of
-					 Cygwin => ".exe"
-				       | Linux => ""),
+			    maybeOut "",
 			    List.concat [case host of
 					    Cross s => ["-b", s]
 					  | Self => [],
