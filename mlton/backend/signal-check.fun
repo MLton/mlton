@@ -90,11 +90,10 @@ fun insert p =
 				  dst = SOME (res, Type.bool),
 				  prim = Prim.eq})
 			     val compareTransfer =
-				Transfer.Switch
-				{cases = Cases.Int [(0, dontCollect),
-						    (1, collect)],
-				 default = NONE,
-				 test = Operand.Var {var = res, ty = Type.bool}}
+				Transfer.iff
+				(Operand.Var {var = res, ty = Type.bool},
+				 {falsee = dontCollect,
+				  truee = collect})
 			     val _ =
 				extra :=
  				Block.T {args = args,
@@ -112,7 +111,7 @@ fun insert p =
 				     transfer = (Transfer.Runtime
 						 {args = (Vector.new2
 							  (Operand.int 0,
-							   Operand.int 0)),
+							   Operand.bool false)),
 						  prim = Prim.gcCollect,
 						  return = collectReturn})})
 				:: Block.T {args = Vector.new0 (),

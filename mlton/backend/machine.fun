@@ -233,7 +233,15 @@ structure Statement =
 	     | Move {dst, src} =>
 		  seq [Operand.layout dst, str " = ", Operand.layout src]
 	     | Noop => str "Noop"
-	     | Object {dst, ...} => seq [Operand.layout dst, str " = Object"]
+	     | Object {dst, numPointers, numWordsNonPointers, stores} =>
+		  seq [Operand.layout dst, str " = Object ",
+		       tuple [Int.layout numWordsNonPointers,
+			      Int.layout numPointers],
+		       str " ",
+		       Vector.layout (fn {offset, value} =>
+				      record [("offset", Int.layout offset),
+					      ("value", Operand.layout value)])
+		       stores]
 	     | PrimApp {args, dst, prim, ...} =>
 		  seq [case dst of
 			  NONE => empty

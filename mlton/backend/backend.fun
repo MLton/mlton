@@ -328,16 +328,17 @@ fun toMachine (program: Ssa.Program.t) =
 						 numPointers = 0},
 		   numBytes = M.Operand.Uint (Word.fromInt Runtime.wordSize),
 		   numElts = M.Operand.Int 0}
+	     | Bind {isMutable, oper, var} =>
+		  if isMutable
+		     orelse (case #operand (varInfo var) of
+				VarOperand.Const _ => false
+			      | _ => true)
+		     then M.Statement.move {dst = varOperand var,
+					    src = translateOperand oper}
+		  else M.Statement.Noop
 	     | Move {dst, src} =>
-		  if (case dst of
-			 R.Operand.Var {var, ...} =>
-			    (case #operand (varInfo var) of
-				VarOperand.Const _ => true
-			      | _ => false)
-		       | _ => false)
-		     then M.Statement.Noop
-		  else M.Statement.move {dst = translateOperand dst,
-					 src = translateOperand src}
+		  M.Statement.move {dst = translateOperand dst,
+				    src = translateOperand src}
 	     | Object {dst, numPointers, numWordsNonPointers, stores} =>
 		  M.Statement.Object
 		  {dst = varOperand dst,
@@ -404,23 +405,26 @@ fun toMachine (program: Ssa.Program.t) =
 			  fun normal () = R.Statement.foreachDef (s, newVarInfo)
 		       in
 			  case s of
-			     R.Statement.Move {dst = R.Operand.Var {var, ty}, src} =>
-				let
-				   fun set oper =
-				      setVarInfo
-				      (var, {operand = VarOperand.Const oper,
-					     ty = ty})
-				in
-				   case src of
-				      R.Operand.Const c => set (constOperand c)
-				    | R.Operand.Pointer n =>
-					 set (M.Operand.Pointer n)
-				    | R.Operand.Var {var = var', ...} =>
-					 (case #operand (varInfo var') of
-					     VarOperand.Const oper => set oper
-					   | VarOperand.Allocate _ => normal ())
-				    | _ => normal ()
-				end
+			     R.Statement.Bind {isMutable, oper, var} =>
+				if isMutable
+				   then normal ()
+				else
+				   let
+				      fun set oper =
+					 setVarInfo
+					 (var, {operand = VarOperand.Const oper,
+						ty = M.Operand.ty oper})
+				   in
+				      case oper of
+					 R.Operand.Const c => set (constOperand c)
+				       | R.Operand.Pointer n =>
+					    set (M.Operand.Pointer n)
+				       | R.Operand.Var {var = var', ...} =>
+					    (case #operand (varInfo var') of
+						VarOperand.Const oper => set oper
+					      | VarOperand.Allocate _ => normal ())
+				       | _ => normal ()
+				   end
 			   | _ => normal ()
 		       end)
 		   val _ = R.Transfer.foreachDef (transfer, newVarInfo)

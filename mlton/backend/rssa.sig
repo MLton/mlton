@@ -57,6 +57,7 @@ signature RSSA =
 	     | Var of {var: Var.t,
 		       ty: Type.t}
 
+	    val bool: bool -> t
 	    val int: int -> t
 	    val layout: t -> Layout.t
 	    val foreachVar: t * (Var.t -> unit) -> unit
@@ -76,9 +77,10 @@ signature RSSA =
 			 numElts: Operand.t,
 			 numPointers: int}
 	     | Array0 of {dst: Var.t}
-	     | Move of {dst: Operand.t, (* If the dst is var, then it is the
-					 * SSA defining occurrence.
-					 *)
+	     | Bind of {isMutable: bool,
+			oper: Operand.t,
+			var: Var.t}
+	     | Move of {dst: Operand.t,
 			src: Operand.t}
 	     | Object of {dst: Var.t,
 			  numPointers: int,
@@ -157,6 +159,7 @@ signature RSSA =
 					 use: Var.t -> unit} -> unit
 	    val foreachLabel: t * (Label.t -> unit) -> unit
 	    val foreachUse: t * (Var.t -> unit) -> unit
+	    val iff: Operand.t * {falsee: Label.t, truee: Label.t} -> t
 	    val layout: t -> Layout.t
 	 end
 

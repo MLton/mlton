@@ -18,10 +18,11 @@ structure Operand =
        | Runtime of RuntimeOperand.t
        | Var of {var: Var.t,
 		 ty: Type.t}
-    
+
       val int = Const o Const.fromInt
       val word = Const o Const.fromWord
-
+      fun bool b = int (if b then 1 else 0)
+	 
       val toString =
 	 fn ArrayOffset {base, index, ty} =>
 	       concat ["X", Type.name ty, 
@@ -89,6 +90,9 @@ structure Statement =
 		   numElts: Operand.t,
 		   numPointers: int}
        | Array0 of {dst: Var.t}
+       | Bind of {isMutable: bool,
+		  oper: Operand.t,
+		  var: Var.t}
        | Move of {dst: Operand.t,
 		  src: Operand.t}
        | Object of {dst: Var.t,
@@ -119,11 +123,9 @@ structure Statement =
 		  useOperand (numElts,
 			      useOperand (numBytes, def (dst, Type.pointer, a)))
 	     | Array0 {dst} => def (dst, Type.pointer, a)
-	     | Move {dst, src} =>
-		  useOperand (src,
-			      case dst of
-				 Operand.Var {var, ty} => def (var, ty, a)
-			       | _ => useOperand (dst, a))
+	     | Bind {oper, var, ...} =>
+		  def (var, Operand.ty oper, useOperand (oper, a))
+	     | Move {dst, src} => useOperand (src, useOperand (dst, a))
 	     | Object {dst, stores, ...} =>
 		  Vector.fold (stores, def (dst, Type.pointer, a),
 			       fn ({value, ...}, a) => useOperand (value, a))
@@ -165,9 +167,19 @@ structure Statement =
 			 ("numElts", Operand.layout numElts),
 			 ("numPointers", Int.layout numPointers)]]
 	     | Array0 {dst} => seq [Var.layout dst, str " = Array0"]
+	     | Bind {oper, var, ...} =>
+		  seq [Var.layout var, str " = ", Operand.layout oper]
 	     | Move {dst, src} =>
 		  seq [Operand.layout dst, str " = ", Operand.layout src]
-	     | Object {dst, ...} => seq [Var.layout dst, str " = Object"]
+	     | Object {dst, numPointers, numWordsNonPointers, stores, ...} =>
+		  seq [Var.layout dst, str " = Object ",
+		       tuple [Int.layout numWordsNonPointers,
+			      Int.layout numPointers],
+		       str " ",
+		       Vector.layout (fn {offset, value} =>
+				      record [("offset", Int.layout offset),
+					      ("value", Operand.layout value)])
+		       stores]
 	     | PrimApp {dst, prim, args, ...} =>
 		  seq [(case dst of
 			   NONE => empty
@@ -353,6 +365,11 @@ structure Transfer =
 
       fun clear (t: t): unit =
 	 foreachDef (t, Var.clear o #1)
+
+      fun iff (test, {falsee, truee}) =
+	 Switch {cases = Cases.Int [(0, falsee), (1, truee)],
+		 default = NONE,
+		 test = test}
    end
 
 structure Kind =
@@ -627,36 +644,45 @@ structure Program =
       fun checkScopes (program as T {functions, main}): unit =
 	 let
 	    datatype status =
-	       Undefined
+	       Defined
+	     | Global
 	     | InScope
-	     | Defined
+	     | Undefined
 	    fun make (layout, plist) =
 	       let
 		  val {get, set, ...} =
 		     Property.getSet (plist, Property.initConst Undefined)
-		  fun bind x =
+		  fun bind (x, isGlobal) =
 		     case get x of
-			Undefined => set (x, InScope)
+			Global => ()
+		      | Undefined =>
+			   set (x, if isGlobal then Global else InScope)
 		      | _ => Error.bug ("duplicate definition of "
 					^ (Layout.toString (layout x)))
 		  fun reference x =
 		     case get x of
-			InScope => ()
+			Global => ()
+		      | InScope => ()
 		      | _ => Error.bug (concat
 					["reference to ",
 					 Layout.toString (layout x),
 					 " not in scope"])
-
-		  fun unbind x = set (x, Defined)
+		  fun unbind x =
+		     case get x of
+			Global => ()
+		      | _ => set (x, Defined)
 	       in (bind, reference, unbind)
 	       end
 	    val (bindVar, getVar, unbindVar) = make (Var.layout, Var.plist)
 	    val (bindFunc, getFunc, _) = make (Func.layout, Func.plist)
+	    val bindFunc = fn f => bindFunc (f, false)
 	    val (bindLabel, getLabel, unbindLabel) =
 	       make (Label.layout, Label.plist)
+	    val bindLabel = fn l => bindLabel (l, false)
 	    fun getVars xs = Vector.foreach (xs, getVar)
 	    fun loopFunc (f: Function.t, isMain: bool): unit =
 	       let
+		  val bindVar = fn x => bindVar (x, isMain)
 		  val {args, blocks, start, ...} = Function.dest f
 		  val _ = Vector.foreach (args, bindVar o #1)
 		  val _ = Vector.foreach (blocks, bindLabel o Block.label)
@@ -722,6 +748,10 @@ structure Program =
 	    val {get = varType: Var.t -> Type.t, set = setVarType, ...} =
 	       Property.getSetOnce (Var.plist,
 				    Property.initRaise ("type", Var.layout))
+	    val setVarType =
+	       Trace.trace2 ("setVarType", Var.layout, Type.layout,
+			     Unit.layout)
+	       setVarType
 	    fun checkOperand (x: Operand.t): unit =
 		let
 		   datatype z = datatype Operand.t
@@ -764,6 +794,7 @@ structure Program =
 			  numBytesNonPointers = numBytesNonPointers})
 		   | Array0 {dst} =>
 			Type.equals (varType dst, Type.pointer)
+		   | Bind {oper, ...} => (checkOperand oper; true)
 		   | Move {dst, src} =>
 			(checkOperand dst
 			 ; checkOperand src

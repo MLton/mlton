@@ -578,8 +578,9 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 						      value = Operand.int n},
 					 makeStores (ys, offsets)])})
 		     fun move (oper: Operand.t) =
-			add (Move {dst = varOp (valOf var),
-				   src = oper})
+			add (Bind {isMutable = false,
+				   oper = oper,
+				   var = valOf var})
 		  in
 		     case exp of
 			S.Exp.ConApp {con, args} =>

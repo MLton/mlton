@@ -94,6 +94,8 @@ structure BlockInfo =
 	 
    end
 
+val extraGlobals: Var.t list ref = ref []
+   
 fun insertFunction (f: Function.t,
 		    usesSignals: bool,
 		    blockInfo: {blockIndex: int} -> BlockInfo.t) =
@@ -117,11 +119,39 @@ fun insertFunction (f: Function.t,
 		   val collect = Label.newNoname ()
 		   val collectReturn = Label.newNoname ()
 		   val dontCollect = Label.newNoname ()
-		   val force =
+		   val (dontCollect', collectReturnStatements, force) =
 		      case !Control.gcCheck of
-			 Control.First => Error.unimplemented "-gc-check first"
-		       | Control.Limit => Operand.int 0
-		       | Control.Every => Operand.int 1
+			 Control.First =>
+			    let
+			       val global = Var.newNoname ()
+			       val _ = List.push (extraGlobals, global)
+			       val global =
+				  Operand.Var {var = global,
+					       ty = Type.bool}
+			       val dontCollect' = Label.newNoname ()
+			       val _ =
+				  List.push
+				  (newBlocks,
+				   Block.T
+				   {args = Vector.new0 (),
+				    kind = Kind.Jump,
+				    label = dontCollect',
+				    profileInfo = profileInfo,
+				    statements = Vector.new0 (),
+				    transfer =
+				    Transfer.iff (global, {falsee = dontCollect,
+							   truee = collect})})
+			    in
+			       (dontCollect',
+				Vector.new1
+				(Statement.Move {dst = global,
+						 src = Operand.bool false}),
+				global)
+			    end
+		       | Control.Limit =>
+			    (dontCollect, Vector.new0 (), Operand.bool false)
+		       | Control.Every =>
+			    (collect, Vector.new0 (), Operand.bool true)
 		   val _ = 
 		      newBlocks :=
 		      Block.T {args = Vector.new0 (),
@@ -137,7 +167,7 @@ fun insertFunction (f: Function.t,
 				  kind = Kind.Runtime {prim = Prim.gcCollect},
 				  label = collectReturn,
 				  profileInfo = profileInfo,
-				  statements = Vector.new0 (),
+				  statements = collectReturnStatements,
 				  transfer =
 				  Transfer.Goto {dst = dontCollect,
 						 args = Vector.new0 ()}}
@@ -148,14 +178,9 @@ fun insertFunction (f: Function.t,
 				  statements = statements,
 				  transfer = transfer}
 		      :: !newBlocks
-		   val dontCollect =
-		      case !Control.gcCheck of
-			 Control.First => Error.unimplemented "-gc-check first"
-		       | Control.Limit => dontCollect
-		       | Control.Every => collect
 		in
 		   {collect = collect,
-		    dontCollect = dontCollect}
+		    dontCollect = dontCollect'}
 		end
 	     fun newBlock (isFirst, statements, transfer) =
 		let
@@ -183,10 +208,10 @@ fun insertFunction (f: Function.t,
 					 dst = SOME (res, Type.bool),
 					 prim = prim}
 		   val transfer =
-		      Transfer.Switch
-		      {cases = Cases.Int [(0, dontCollect), (1, collect)],
-		       default = NONE,
-		       test = Operand.Var {var = res, ty = Type.bool}}
+		      Transfer.iff
+		      (Operand.Var {var = res, ty = Type.bool},
+		       {falsee = dontCollect,
+			truee = collect})
 		in
 		   (Vector.new1 s, transfer)
 		end
@@ -612,9 +637,29 @@ fun insert (p as Program.T {functions, main}) =
 	  | _ => insertCoalesce
       val usesSignals = Program.usesSignals p
       val insertFunction = fn f => insertFunction (f, usesSignals)
+      val functions = List.revMap (functions, insertFunction)
+      val {args, blocks, name, start} = Function.dest (insertFunction main)
+      val newStart = Label.newNoname ()
+      val block =
+	 Block.T {args = Vector.new0 (),
+		  kind = Kind.Jump,
+		  label = newStart,
+		  profileInfo = {ssa = {func = "", label = ""}},
+		  statements = (Vector.fromListMap
+				(!extraGlobals, fn x =>
+				 Statement.Bind {isMutable = true,
+						 oper = Operand.bool true,
+						 var = x})),
+		  transfer = Transfer.Goto {args = Vector.new0 (),
+					    dst = start}}
+      val blocks = Vector.concat [Vector.new1 block, blocks]
+      val main = Function.new {args = args,
+			       blocks = blocks,
+			       name = name,
+			       start = newStart}
    in
-      Program.T {functions = List.revMap (functions, insertFunction),
-		 main = insertFunction main}
+      Program.T {functions = functions,
+		 main = main}
    end
 
 
