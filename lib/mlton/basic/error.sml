@@ -7,9 +7,14 @@
 structure Error: ERROR =
 struct
    
-fun unimplemented msg = raise Fail(concat["unimplemented: ", msg])
-
 fun bug msg = raise(Fail msg)
+
+fun reraise (exn, msg) = bug (concat [msg, "::",
+				      case exn of
+					Fail msg => msg
+				      | _ => "?"])
+
+fun unimplemented msg = raise Fail(concat["unimplemented: ", msg])
 
 fun warning msg = TextIO.output(TextIO.stdErr, msg^"\n")
 
