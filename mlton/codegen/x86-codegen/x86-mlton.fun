@@ -1333,82 +1333,198 @@ struct
 		end
 	     | Real_neg _ => funa Instruction.FCHS
 	     | Real_round _ => funa Instruction.FRNDINT
-	     | Word_add _ => binal Instruction.ADD
-	     | Word_andb _ => binal Instruction.AND
-	     | Word_arshift _ => sral Instruction.SAR
-	     | Word_div _ => pmd Instruction.DIV
-	     | Word_equal _ => cmp Instruction.E
-	     | Word_ge _ => cmp Instruction.AE
-	     | Word_gt _ => cmp Instruction.A
-	     | Word_le _ => cmp Instruction.BE
-	     | Word_lshift _ => sral Instruction.SHL
-	     | Word_lt _ => cmp Instruction.B
-	     | Word_mod _ => pmd Instruction.MOD
+	     | Word_add s => 
+		(case s of
+		    W8 => binal Instruction.ADD
+		  | W16 => binal Instruction.ADD
+		  | W32 => binal Instruction.ADD
+		  | W64 => Error.bug "FIXME")
+	     | Word_andb s => 
+		(case s of
+		    W8 => binal Instruction.AND
+		  | W16 => binal Instruction.AND
+		  | W32 => binal Instruction.AND
+		  | W64 => Error.bug "FIXME")
+	     | Word_arshift s => 
+		(case s of
+		    W8 => sral Instruction.SAR
+		  | W16 => sral Instruction.SAR
+		  | W32 => sral Instruction.SAR
+		  | W64 => Error.bug "FIXME")
+	     | Word_div s => 
+		(case s of
+		    W8 => pmd Instruction.DIV
+		  | W16 => pmd Instruction.DIV
+		  | W32 => pmd Instruction.DIV
+		  | W64 => Error.bug "FIXME")
+	     | Word_equal s => 
+		(case s of
+		    W8 => cmp Instruction.E
+		  | W16 => cmp Instruction.E
+		  | W32 => cmp Instruction.E
+		  | W64 => Error.bug "FIXME")
+	     | Word_ge s => 
+		(case s of
+		    W8 => cmp Instruction.AE
+		  | W16 => cmp Instruction.AE
+		  | W32 => cmp Instruction.AE
+		  | W64 => Error.bug "FIXME")
+	     | Word_gt s => 
+		(case s of
+		    W8 => cmp Instruction.A
+		  | W16 => cmp Instruction.A
+		  | W32 => cmp Instruction.A
+		  | W64 => Error.bug "FIXME")
+	     | Word_le s => 
+		(case s of
+		    W8 => cmp Instruction.BE
+		  | W16 => cmp Instruction.BE
+		  | W32 => cmp Instruction.BE
+		  | W64 => Error.bug "FIXME")
+	     | Word_lshift s => 
+		(case s of
+		    W8 => sral Instruction.SHL
+		  | W16 => sral Instruction.SHL
+		  | W32 => sral Instruction.SHL
+		  | W64 => Error.bug "FIXME")
+	     | Word_lt s => 
+		(case s of
+		    W8 => cmp Instruction.B
+		  | W16 => cmp Instruction.B
+		  | W32 => cmp Instruction.B
+		  | W64 => Error.bug "FIXME")
+	     | Word_mod s => 
+		(case s of
+		    W8 => pmd Instruction.MOD
+		  | W16 => pmd Instruction.MOD
+		  | W32 => pmd Instruction.MOD
+		  | W64 => Error.bug "FIXME")
 	     | Word_mul s =>
-		  (case s of
-		      W8 => pmd Instruction.MUL
-		    | W16 => imul2 ()
-		    | W32 => imul2 ()
-		    | W64 => Error.bug "FIXME")
-	     | Word_neg _ => unal Instruction.NEG
-	     | Word_notb _ => unal Instruction.NOT
-	     | Word_orb _ => binal Instruction.OR
-	     | Word_rol _ => sral Instruction.ROL
-	     | Word_ror _ => sral Instruction.ROR
-	     | Word_rshift _ => sral Instruction.SHR
-	     | Word_sub _ => binal Instruction.SUB
+		(case s of
+		    W8 => pmd Instruction.MUL
+		  | W16 => imul2 ()
+		  | W32 => imul2 ()
+		  | W64 => Error.bug "FIXME")
+	     | Word_neg s => 
+		(case s of
+		    W8 => unal Instruction.NEG
+		  | W16 => unal Instruction.NEG
+		  | W32 => unal Instruction.NEG
+		  | W64 => Error.bug "FIXME")
+	     | Word_notb s => 
+		(case s of
+		    W8 => unal Instruction.NOT
+		  | W16 => unal Instruction.NOT
+		  | W32 => unal Instruction.NOT
+		  | W64 => Error.bug "FIXME")
+	     | Word_orb s => 
+		(case s of
+		    W8 => binal Instruction.OR
+		  | W16 => binal Instruction.OR
+		  | W32 => binal Instruction.OR
+		  | W64 => Error.bug "FIXME")
+	     | Word_rol s => 
+		(case s of
+		    W8 => sral Instruction.ROL
+		  | W16 => sral Instruction.ROL
+		  | W32 => sral Instruction.ROL
+		  | W64 => Error.bug "FIXME")
+	     | Word_ror s => 
+		(case s of
+		    W8 => sral Instruction.ROR
+		  | W16 => sral Instruction.ROR
+		  | W32 => sral Instruction.ROR
+		  | W64 => Error.bug "FIXME")
+	     | Word_rshift s => 
+		(case s of
+		    W8 => sral Instruction.SHR
+		  | W16 => sral Instruction.SHR
+		  | W32 => sral Instruction.SHR
+		  | W64 => Error.bug "FIXME")
+	     | Word_sub s => 
+		(case s of
+		    W8 => binal Instruction.SUB
+		  | W16 => binal Instruction.SUB
+		  | W32 => binal Instruction.SUB
+		  | W64 => Error.bug "FIXME")
 	     | Word_toInt (s, s') =>
 		(case (s, s') of
-		   (W32, I32) => mov ()
-		 | (W32, I16) => xvom ()
-		 | (W32, I8) => xvom ()
-		 | (W16, I32) => movx Instruction.MOVZX
-		 | (W16, I16) => mov ()
-		 | (W16, I8) => xvom ()
-		 | (W8, I32) => movx Instruction.MOVZX
-		 | (W8, I16) => movx Instruction.MOVZX
-		 | (W8, I8) => mov ()
-		 | _ => Error.bug (Prim.toString prim))
-	     | Word_toIntX (s, s') =>
-		(case (s, s') of
-		   (W64, _) => Error.bug "FIXME"
+		   (W64, I64) => Error.bug "FIXME"
+		 | (W64, I32) => Error.bug "FIXME"
+		 | (W64, I16) => Error.bug "FIXME"
+		 | (W64, I8) => Error.bug "FIXME"
+		 | (W32, I64) => Error.bug "FIXME"
 		 | (W32, I32) => mov ()
 		 | (W32, I16) => xvom ()
 		 | (W32, I8) => xvom ()
+		 | (W16, I64) => Error.bug "FIXME"
+		 | (W16, I32) => movx Instruction.MOVZX
+		 | (W16, I16) => mov ()
+		 | (W16, I8) => xvom ()
+		 | (W8, I64) => Error.bug "FIXME"
+		 | (W8, I32) => movx Instruction.MOVZX
+		 | (W8, I16) => movx Instruction.MOVZX
+		 | (W8, I8) => mov ())
+	     | Word_toIntX (s, s') =>
+		(case (s, s') of
+		   (W64, I64) => Error.bug "FIXME"
+		 | (W64, I32) => Error.bug "FIXME"
+		 | (W64, I16) => Error.bug "FIXME"
+		 | (W64, I8) => Error.bug "FIXME"
+		 | (W32, I64) => Error.bug "FIXME"
+		 | (W32, I32) => mov ()
+		 | (W32, I16) => xvom ()
+		 | (W32, I8) => xvom ()
+		 | (W16, I64) => Error.bug "FIXME"
 		 | (W16, I32) => movx Instruction.MOVSX
 		 | (W16, I16) => mov ()
 		 | (W16, I8) => xvom ()
+		 | (W8, I64) => Error.bug "FIXME"
 		 | (W8, I32) => movx Instruction.MOVSX
 		 | (W8, I16) => movx Instruction.MOVSX
-		 | (W8, I8) => mov ()
-		 | _ => Error.bug (Prim.toString prim))
+		 | (W8, I8) => mov ())
 	     | Word_toWord (s, s') =>
 	        (case (s, s') of
-		   (W64, _) => Error.bug "FIXME"
-		 | (_, W64) => Error.bug "FIXME"
-		 | (W32, W32) => mov ()
-		 | (W32, W16) => xvom ()
-		 | (W32, W8) => xvom ()
-		 | (W16, W32) => movx Instruction.MOVZX
-		 | (W16, W16) => mov ()
-		 | (W16, W8) => xvom ()
-		 | (W8, W32) => movx Instruction.MOVZX
-		 | (W8, W16) => movx Instruction.MOVZX
-		 | (W8, W8) => mov ())
+		    (W64, W64) => Error.bug "FIXME"
+		  | (W64, W32) => Error.bug "FIXME"
+		  | (W64, W16) => Error.bug "FIXME"
+		  | (W64, W8) => Error.bug "FIXME"
+		  | (W32, W64) => Error.bug "FIXME"
+		  | (W32, W32) => mov ()
+		  | (W32, W16) => xvom ()
+		  | (W32, W8) => xvom ()
+		  | (W16, W64) => Error.bug "FIXME"
+		  | (W16, W32) => movx Instruction.MOVZX
+		  | (W16, W16) => mov ()
+		  | (W16, W8) => xvom ()
+		  | (W8, W64) => Error.bug "FIXME"
+		  | (W8, W32) => movx Instruction.MOVZX
+		  | (W8, W16) => movx Instruction.MOVZX
+		  | (W8, W8) => mov ())
 	     | Word_toWordX (s, s') =>
 		(case (s, s') of
-		    (W64, _) => Error.bug "FIXME"
-		  | (_, W64) => Error.bug "FIXME"
+		    (W64, W64) => Error.bug "FIXME"
+		  | (W64, W32) => Error.bug "FIXME"
+		  | (W64, W16) => Error.bug "FIXME"
+		  | (W64, W8) => Error.bug "FIXME"
+		  | (W32, W64) => Error.bug "FIXME"
 		  | (W32, W32) => mov ()
-		 | (W32, W16) => xvom ()
-		 | (W32, W8) => xvom ()
-		 | (W16, W32) => movx Instruction.MOVSX
-		 | (W16, W16) => mov ()
-		 | (W16, W8) => xvom ()
-		 | (W8, W32) => movx Instruction.MOVSX
-		 | (W8, W16) => movx Instruction.MOVSX
-		 | (W8, W8) => mov ())
-	     | Word_xorb _ => binal Instruction.XOR
+		  | (W32, W16) => xvom ()
+		  | (W32, W8) => xvom ()
+		  | (W16, W64) => Error.bug "FIXME"
+		  | (W16, W32) => movx Instruction.MOVSX
+		  | (W16, W16) => mov ()
+		  | (W16, W8) => xvom ()
+		  | (W8, W64) => Error.bug "FIXME"
+		  | (W8, W32) => movx Instruction.MOVSX
+		  | (W8, W16) => movx Instruction.MOVSX
+		  | (W8, W8) => mov ())
+	     | Word_xorb s => 
+		(case s of
+		    W8 => binal Instruction.XOR
+		  | W16 => binal Instruction.XOR
+		  | W32 => binal Instruction.XOR
+		  | W64 => Error.bug "FIXME")
 	     | _ => Error.bug ("prim: strange Prim.Name.t: " ^ primName)),
 	 comment_end]
       end
@@ -1663,16 +1779,36 @@ struct
 	AppendList.appends
 	[comment_begin,
 	 (case Prim.name prim of
-	     Int_addCheck _ => binal (x86.Instruction.ADD, x86.Instruction.O)
-	   | Int_subCheck _ => binal (x86.Instruction.SUB, x86.Instruction.O)
-	   | Int_mulCheck s => 
+	     Int_addCheck s => 
+	       (case s of
+		  I8 => binal (x86.Instruction.ADD, x86.Instruction.O)
+		| I16 => binal (x86.Instruction.ADD, x86.Instruction.O)
+		| I32 => binal (x86.Instruction.ADD, x86.Instruction.O)
+		| I64 => Error.bug "FIXME")
+	   | Int_subCheck s => 
+	       (case s of
+		  I8 => binal (x86.Instruction.SUB, x86.Instruction.O)
+		| I16 => binal (x86.Instruction.SUB, x86.Instruction.O)
+		| I32 => binal (x86.Instruction.SUB, x86.Instruction.O)
+		| I64 => Error.bug "FIXME")
+	   | Int_mulCheck s => 	
 	       (case s of
 		  I8 => pmd (x86.Instruction.IMUL, x86.Instruction.O)
 		| I16 => imul2 x86.Instruction.O
 		| I32 => imul2 x86.Instruction.O
 		| I64 => Error.bug "FIXME")
-	   | Int_negCheck _ => unal (x86.Instruction.NEG, x86.Instruction.O)
-	   | Word_addCheck _ => binal (x86.Instruction.ADD, x86.Instruction.C)
+	   | Int_negCheck s => 
+	       (case s of
+		  I8 => unal (x86.Instruction.NEG, x86.Instruction.O)
+		| I16 => unal (x86.Instruction.NEG, x86.Instruction.O)
+		| I32 => unal (x86.Instruction.NEG, x86.Instruction.O)
+		| I64 => Error.bug "FIXME")
+	   | Word_addCheck s => 
+	       (case s of
+		   W8 => binal (x86.Instruction.ADD, x86.Instruction.C)
+		 | W16 => binal (x86.Instruction.ADD, x86.Instruction.C)
+		 | W32 => binal (x86.Instruction.ADD, x86.Instruction.C)
+		 | W64 => Error.bug "FIXME")
 	   | Word_mulCheck s => 
 	       (case s of
 		  W8 => pmd (x86.Instruction.MUL, x86.Instruction.C)
