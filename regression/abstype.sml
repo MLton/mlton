@@ -1,3 +1,39 @@
+abstype t = T
+with
+   val eq = op =
+end
+val _ = eq (3, 3)
+
+abstype t = T
+with
+   val t = T
+   val eq = op =
+end
+val _ = eq (t, t)
+
+abstype t = T
+with
+   val t = T
+   val eq = op =
+   val _ = eq (t, t)
+end
+val _ = eq (2, 3)
+
+abstype t = T
+with
+   val t = T
+   val eq = op =
+   val _ = eq (t, t)
+end
+val _ = eq (t, t)
+
+abstype t = T
+with
+   val t = T
+   val eq = op =
+   val _ = eq (t, t) andalso eq (2, 3)
+end
+val _ = eq (2, 3)
 
 (* with abstype *)
 
