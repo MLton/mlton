@@ -3,7 +3,6 @@ structure INetSock:> INET_SOCK =
       structure Prim = Primitive.Socket.INetSock
 	 
       datatype inet = INET (* a phantom type*)
-      val _ = INET (* to quell unused variable warnings *)
       type 'sock_type sock = (inet, 'sock_type) Socket.sock
       type 'mode stream_sock = 'mode Socket.stream sock
       type dgram_sock = Socket.dgram sock

@@ -1569,12 +1569,19 @@ fun processDefUse (E as T f) =
 
 fun newCons (T {vals, ...}, v) =
    let
+      val forceUsed = 1 = Vector.length v
       val v =
 	 Vector.map (v, fn {con, name} =>
-		     {con = con,
-		      name = name,
-		      uses = NameSpace.newUses (vals, Ast.Vid.fromCon name,
-						Time.now ())})
+		     let
+			val uses =
+			   NameSpace.newUses (vals, Ast.Vid.fromCon name,
+					      Time.now ())
+			val _ = if forceUsed then Uses.forceUsed uses else ()
+		     in
+			{con = con,
+			 name = name,
+			 uses = uses}
+		     end)
    in
       fn v' => Cons.T (Vector.map2
 		       (v, v', fn ({con, name, uses}, scheme) =>
@@ -1861,22 +1868,30 @@ in
    fun extendVals (E, d, r, eu) = extend (E, #vals, d, r, false, eu)
    fun extendTycon (E, d, s, ir) =
       let
-	 val forceUsed =
+	 val forceTyconUsed =
 	    let
 	       datatype z = datatype TypeStr.node
 	    in
 	       case TypeStr.node s of
-		  Datatype _ => true
+		  Datatype {cons, ...} =>
+		     let
+			val Cons.T v = TypeStr.cons s
+			val _ = 
+			   Vector.foreach
+			   (v, fn {con, name, scheme, uses} => 
+			    extendVals (E, Ast.Vid.fromCon name,
+					(Vid.Con con, scheme),
+					ExtendUses.Old uses))
+		     in
+			1 < Vector.length v
+		     end
 		| Scheme _ => false
 		| Tycon _ => true
 	    end
-	 val _ = extend (E, #types, d, s, forceUsed, ExtendUses.fromIsRebind ir)
-	 val Cons.T v = TypeStr.cons s
+	 val _ = extend (E, #types, d, s, forceTyconUsed,
+			 ExtendUses.fromIsRebind ir)
       in
-	 Vector.foreach
-	 (v, fn {con, name, scheme, uses} => 
-	  extendVals (E, Ast.Vid.fromCon name, (Vid.Con con, scheme),
-		      ExtendUses.Old uses))
+	 ()
       end
 end
        

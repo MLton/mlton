@@ -3,7 +3,6 @@ structure UnixSock : UNIX_SOCK =
       structure Prim = Primitive.Socket.UnixSock
 
       datatype unix = UNIX
-      val _ = UNIX (* quell unused variable warning *)
       type 'sock_type sock = (unix, 'sock_type) Socket.sock
       type 'mode stream_sock = 'mode Socket.stream sock
       type dgram_sock = Socket.dgram sock

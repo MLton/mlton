@@ -30,7 +30,6 @@ datatype dgram = DGRAM (* phantom *)
 datatype stream = MODE (* phantom *)
 datatype passive = PASSIVE (* phantom *)
 datatype active = ACTIVE (* phantom *)
-val _ = (DGRAM, MODE, PASSIVE, ACTIVE) (* quell unused warnings *)
 
 structure AF =
    struct
