@@ -24,6 +24,7 @@ signature SSA_TREE2 =
 	    val elt: 'a t * int -> 'a
 	    val empty: unit -> 'a t
 	    val isEmpty: 'a t -> bool
+	    val isMutable: 'a t -> bool
 	    val layout: 'a t * ('a -> Layout.t) -> Layout.t
 	    val length: 'a t -> int
 	    val make: {elt: 'a, isMutable: bool} vector -> 'a t

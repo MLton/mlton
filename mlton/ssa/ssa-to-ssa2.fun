@@ -275,11 +275,13 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 			      start = start}
 	  end)
       val globals = convertStatements globals
+      val program = 
+	 S2.Program.T {datatypes = datatypes,
+		       functions = functions,
+		       globals = globals,
+		       main = main}
    in
-      S2.Program.T {datatypes = datatypes,
-		    functions = functions,
-		    globals = globals,
-		    main = main}
+      S2.shrink program
    end
 
 end

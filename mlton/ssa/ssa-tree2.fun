@@ -42,6 +42,8 @@ structure Prod =
 
       fun isEmpty p = Vector.isEmpty (dest p)
 
+      fun isMutable (T v) = Vector.exists (v, #isMutable)
+
       fun sub (T p, i) = Vector.sub (p, i)
 
       fun elt (p, i) = #elt (sub (p, i))
@@ -636,13 +638,17 @@ structure Exp =
 		       str " := ", layoutVar value]
 	     | Var x => layoutVar x
 	     | VectorSub {index, offset, vector} =>
-		  seq [str "#", Int.layout (offset + 1), str " ",
+		  seq [if 0 = offset
+			  then empty
+		       else str "#", Int.layout (offset + 1), str " ",
 		       layoutVar vector,
 		       str "[", layoutVar index, str "]"]
 	     | VectorUpdates (x, us) =>
 		  align (Vector.toListMap
 			 (us, fn {index, offset, value} =>
-			  seq [str "#", Int.layout (offset + 1), str " ",
+			  seq [if 0 = offset
+				  then empty
+			       else str "#", Int.layout (offset + 1), str " ",
 			       layoutVar x,
 			       str "[", layoutVar index, str "]",
 			       str " := ", layoutVar value]))

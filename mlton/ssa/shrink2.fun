@@ -32,11 +32,12 @@ structure VarInfo =
 			 value: value option ref,
 			 var: Var.t}
       and value =
-	 Con of {con: Con.t,
-		 args: t vector}
-	| Const of Const.t
-	| Select of {tuple: t, offset: int}
-	| Tuple of t vector
+	 Const of Const.t
+	| Inject of {sum: Tycon.t,
+		     variant: t}
+	| Object of {args: t vector,
+		     con: Con.t option}
+	| Select of {object: t, offset: int}
 
       fun equals (T {var = x, ...}, T {var = y, ...}) = Var.equals (x, y)
 	 
@@ -49,26 +50,36 @@ structure VarInfo =
 		    ("var", Var.layout var)]
 	 end
       and layoutValue v =
-	 let open Layout
-	 in case v of
-	    Con {con, args} => seq [Con.layout con,
-				    Vector.layout layout args]
-	  | Const c => Const.layout c
-	  | Select {tuple, offset} => seq [str "#", Int.layout (offset + 1), 
-					   str " ", layout tuple]
-	  | Tuple vis => Vector.layout layout vis
+	 let
+	    open Layout
+	 in
+	    case v of
+	       Const c => Const.layout c
+	     | Inject {sum, variant} =>
+		  seq [layout variant, str ": ", Tycon.layout sum]
+	     | Object {args, con} =>
+		  let
+		     val args = Vector.layout layout args
+		  in
+		     case con of
+			NONE => args
+		      | SOME con => seq [Con.layout con, args]
+		  end
+	     | Select {object, offset} =>
+		  seq [str "#", Int.layout (offset + 1), 
+		       str " ", layout object]
 	 end
 
-      fun new (x: Var.t, ty: Type.t option) = T {isUsed = ref false,
-						 numOccurrences = ref 0,
-						 ty = ty,
-						 value = ref NONE,
-						 var = x}
+      fun new (x: Var.t, ty: Type.t option) =
+	 T {isUsed = ref false,
+	    numOccurrences = ref 0,
+	    ty = ty,
+	    value = ref NONE,
+	    var = x}
 
       fun setValue (T {value, ...}, v) =
 	 (Assert.assert ("VarInfo.setValue", fn () => Option.isNone (!value))
 	  ; value := SOME v)
-
 
       fun numOccurrences (T {numOccurrences = r, ...}) = r
       fun ty (T {ty, ...}): Type.t option = ty
@@ -164,7 +175,7 @@ structure State =
 
 val traceApplyInfo = Trace.info "Prim.apply"
 
-fun shrinkFunction (globals: Statement.t vector) =
+fun shrinkFunction {globals: Statement.t vector} =
    let
       fun use (VarInfo.T {isUsed, var, ...}): Var.t =
 	 (isUsed := true
@@ -174,7 +185,6 @@ fun shrinkFunction (globals: Statement.t vector) =
       val {get = varInfo: Var.t -> VarInfo.t, set = setVarInfo, ...} =
 	 Property.getSet (Var.plist, 
 			  Property.initFun (fn x => VarInfo.new (x, NONE)))
-(*	 Property.getSet (Var.plist, Property.initFun VarInfo.new) *)
       val setVarInfo =
 	 Trace.trace2 ("Shrink.setVarInfo",
 		       Var.layout, VarInfo.layout, Unit.layout)
@@ -190,42 +200,42 @@ fun shrinkFunction (globals: Statement.t vector) =
       fun incVars xs = Vector.foreach (xs, incVar)
       fun numVarOccurrences (x: Var.t): int =
 	 ! (VarInfo.numOccurrences (varInfo x))
-      val _ =
+      val () =
 	 Vector.foreach
 	 (globals, fn Statement.T {var, exp, ty} =>
 	  let
-	     val _ = Option.app
+	     val () = Option.app
 	             (var, fn x =>
 		      setVarInfo (x, VarInfo.new (x, SOME ty)))
 	     fun construct v =
 		Option.app (var, fn x => VarInfo.setValue (varInfo x, v))
-	  in case exp of
-	     ConApp {con, args} =>
-		construct (Value.Con {con = con,
-				      args = Vector.map (args, varInfo)})
-	   | Const c => construct (Value.Const c)
-	   | Select {tuple, offset} =>
-		construct (Value.Select {tuple = varInfo tuple,
-					 offset = offset})
-	   | Tuple xs => construct (Value.Tuple (Vector.map (xs, varInfo)))
-	   | Var y => Option.app (var, fn x => setVarInfo (x, varInfo y))
-	   | _ => ()
+	  in
+	     case exp of
+		Const c => construct (Value.Const c)
+	      | Object {args, con} =>
+		   construct
+		   (Value.Object {args = Vector.map (args, varInfo),
+				  con = con})
+	      | Select {object, offset} =>
+		   construct (Value.Select {object = varInfo object,
+					    offset = offset})
+	      | Var y => Option.app (var, fn x => setVarInfo (x, varInfo y))
+	      | _ => ()
 	  end)
    in
       fn f: Function.t =>
       let
-	 val _ = Function.clear f
-	 val {args, blocks, name, raises, returns, start, ...} =
+	 val () = Function.clear f
+	 val {args, blocks, mayInline, name, raises, returns, start, ...} =
 	    Function.dest f
-	 val _ = Vector.foreach
-	         (args, fn (x, ty) => 
-		  setVarInfo (x, VarInfo.new (x, SOME ty)))
+	 val () = Vector.foreach (args, fn (x, ty) => 
+				  setVarInfo (x, VarInfo.new (x, SOME ty)))
 	 (* Index the labels by their defining block in blocks. *)
 	 val {get = labelIndex, set = setLabelIndex, ...} =
 	    Property.getSetOnce (Label.plist,
 				 Property.initRaise ("index", Label.layout))
-	 val _ = Vector.foreachi (blocks, fn (i, Block.T {label, ...}) =>
-				  setLabelIndex (label, i))
+	 val () = Vector.foreachi (blocks, fn (i, Block.T {label, ...}) =>
+				   setLabelIndex (label, i))
 	 val numBlocks = Vector.length blocks
 	 (* Do a DFS to compute occurrence counts and set label meanings *)
 	 val states = Array.array (numBlocks, State.Unvisited)
@@ -251,7 +261,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 	    let
 	       val i = blockIndex
 	       val n = Array.sub (inDegree, i)
-	       val _ = Array.update (inDegree, i, 1 + n)
+	       val () = Array.update (inDegree, i, 1 + n)
 	    in
 	       if n = 0
 		  then incAux aux
@@ -271,9 +281,9 @@ fun shrinkFunction (globals: Statement.t vector) =
 			  label = Block.label (Vector.sub (blocks, i))}))
 		| State.Unvisited => 
 		     let
-			val _ = Array.update (states, i, State.Visiting)
+			val () = Array.update (states, i, State.Visiting)
 			val m = computeMeaning i
-			val _ = Array.update (states, i, State.Visited m)
+			val () = Array.update (states, i, State.Visited m)
 		     in
 			m
 		     end
@@ -282,21 +292,19 @@ fun shrinkFunction (globals: Statement.t vector) =
 	    let
 	       val Block.T {args, statements, transfer, ...} =
 		  Vector.sub (blocks, i)
-	       val _ =
-		  Vector.foreach (args, fn (x, ty) =>
-				  setVarInfo (x, VarInfo.new (x, SOME ty)))
-	       val _ =
-		  Vector.foreach
-		  (statements, fn s => Exp.foreachVar (Statement.exp s, incVar))
+	       val () = Vector.foreach (args, fn (x, ty) =>
+					setVarInfo (x, VarInfo.new (x, SOME ty)))
+	       val () = Vector.foreach (statements, fn s =>
+					Exp.foreachVar (Statement.exp s, incVar))
 	       fun extract (actuals: Var.t vector): Positions.t =
 		  let
 		     val {get: Var.t -> Position.t, set, destroy} =
 			Property.destGetSetOnce
 			(Var.plist, Property.initFun Position.Free)
-		     val _ = Vector.foreachi (args, fn (i, (x, _)) =>
+		     val () = Vector.foreachi (args, fn (i, (x, _)) =>
 					      set (x, Position.Formal i))
 		     val ps = Vector.map (actuals, get)
-		     val _ = destroy ()
+		     val () = destroy ()
 		  in ps
 		  end
 	       fun doit aux =
@@ -306,7 +314,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 	       fun normal () = doit LabelMeaning.Block
 	       fun rr (xs: Var.t vector, make) =
 		  let
-		     val _ = incVars xs
+		     val () = incVars xs
 		     val n = Vector.length statements
 		     fun loop (i, ac) =
 			if i = n
@@ -352,20 +360,20 @@ fun shrinkFunction (globals: Statement.t vector) =
 		     else normal ()
                 | Call {args, return, ...} =>
 		     let
-			val _ = incVars args
-			val _ =
+			val () = incVars args
+			val () =
 			   Return.foreachHandler
 			   (return, fn l =>
 			    Array.inc (numHandlerUses, labelIndex l))
-			val _ = Return.foreachLabel (return, incLabel)
+			val () = Return.foreachLabel (return, incLabel)
 		     in
 			normal ()
 		     end
 		| Case {test, cases, default} =>
 		     let
-			val _ = incVar test
-			val _ = Cases.foreach (cases, incLabel)
-			val _ = Option.app (default, incLabel)
+			val () = incVar test
+			val () = Cases.foreach (cases, incLabel)
+			val () = Option.app (default, incLabel)
 		     in
 			if 0 = Vector.length statements
 			   andalso not (Array.sub (isHeader, i))
@@ -380,7 +388,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 		     end
 		| Goto {dst, args = actuals} =>
 		     let
-			val _ = incVars actuals
+			val () = incVars actuals
 			val m = labelMeaning dst
 		     in
 			if 0 <> Vector.length statements
@@ -449,7 +457,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 		      ; incLabel return
 		      ; normal ())
 	    end
-	 val _ = incLabel start
+	 val () = incLabel start
 	 fun indexMeaning i =
 	    case Array.sub (states, i) of
 	       State.Visited m => m
@@ -472,9 +480,9 @@ fun shrinkFunction (globals: Statement.t vector) =
 	     Layout.outputl
 	     (#graph (Function.layoutDot (f, fn _ => NONE)),
 	      out))
-	 val _ = if true then () else save (f, "pre")
+	 val () = if true then () else save (f, "pre")
 	 (* *)
-	 val _ =
+	 val () =
 	    if true
 	       then ()
 	    else
@@ -488,7 +496,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 		   ("state", State.layout (Array.sub (states, i)))]))
 		(Vector.tabulate (numBlocks, fn i => i)),
 		Out.error)
-	 val _ =
+	 val () =
 	    Assert.assert
 	    ("Shrink.labelMeanings", fn () =>
 	     let
@@ -513,7 +521,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 		       | Raise _ => ()
 		       | Return _ => ()
 		   end
-		val _ =
+		val () =
 		   Array.foreachi
 		   (states, fn (i, s) =>
 		    if Array.sub (inDegree, i) > 0
@@ -522,12 +530,12 @@ fun shrinkFunction (globals: Statement.t vector) =
 			      State.Visited m => doit m
 			    | _ => ())
 		    else ())
-		val _ = bumpMeaning (labelMeaning start)
+		val () = bumpMeaning (labelMeaning start)
 	     in
 		Array.equals (inDegree, inDegree', Int.equals)
 		orelse
 		let
-		   val _ =
+		   val () =
 		      Layout.outputl
 		      (Vector.layout
 		       (fn i =>
@@ -566,8 +574,8 @@ fun shrinkFunction (globals: Statement.t vector) =
 	    let
 	       val i = LabelMeaning.blockIndex m
 	       val n = Array.sub (inDegree, i) - 1
-	       val _ = Array.update (inDegree, i, n)
-	       val _ = Assert.assert ("deleteLabelMeaning", fn () => n >= 0)
+	       val () = Array.update (inDegree, i, n)
+	       val () = Assert.assert ("deleteLabelMeaning", fn () => n >= 0)
 	    in
 	       if n = 0 (* andalso not (Array.sub (isBlock, i)) *)
 		  then
@@ -578,8 +586,8 @@ fun shrinkFunction (globals: Statement.t vector) =
 			   Block =>
 			      let
 				 val t = Block.transfer (Vector.sub (blocks, i))
-				 val _ = Transfer.foreachLabel (t, deleteLabel)
-				 val _ =
+				 val () = Transfer.foreachLabel (t, deleteLabel)
+				 val () =
 				    case t of
 				       Transfer.Call {return, ...} =>
 					  Return.foreachHandler
@@ -613,14 +621,13 @@ fun shrinkFunction (globals: Statement.t vector) =
 			 case vi of
 			    VarInfo.T {value = ref (SOME v), ...} =>
 			       (case v of
-				   Value.Con {con, args} =>
-				      if Vector.isEmpty args
-					 then
-					    Prim.ApplyArg.Con
-					    {con = con,
-					     hasArg = not (Vector.isEmpty args)}
-				      else Prim.ApplyArg.Var vi
-				 | Value.Const c => Prim.ApplyArg.Const c
+				   Value.Const c => Prim.ApplyArg.Const c
+				 | Value.Object {args, con} =>
+				      (case (con, Vector.length args) of
+					  (SOME con, 0) =>
+					     Prim.ApplyArg.Con {con = con,
+								hasArg = false}
+					| _ => Prim.ApplyArg.Var vi)
 				 | _ => Prim.ApplyArg.Var vi)
 			  | _ => Prim.ApplyArg.Var vi)
 		  in
@@ -670,7 +677,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 	 fun simplifyLabel l =
 	    let
 	       val m = labelMeaning l
-	       val _ = forceMeaningBlock m
+	       val () = forceMeaningBlock m
 	    in
 	       meaningLabel m
 	    end
@@ -681,7 +688,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 		then ()
 	     else
 		let
-		   val _ = Array.update (isBlock, i, true)
+		   val () = Array.update (isBlock, i, true)
 		   val block as Block.T {label, args, ...} =
 		      Vector.sub (blocks, i)
 		   fun extract (p: Position.t): VarInfo.t =
@@ -691,8 +698,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 		   val (statements, transfer) =
 		      let
 			 fun rr ({args, canMove}, make) =
-			    (canMove,
-			     make (Vector.map (args, use o extract)))
+			    (canMove, make (Vector.map (args, use o extract)))
 			 datatype z = datatype LabelMeaning.aux
 		      in
 			 case aux of
@@ -704,7 +710,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 			  | Raise z => rr (z, Transfer.Raise)
 			  | Return z => rr (z, Transfer.Return)
 		      end
-		   val _ =
+		   val () =
 		      List.push
 		      (newBlocks,
 		       Block.T {label = label,
@@ -735,7 +741,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 		      case primApp (prim, args) of
 			 Prim.ApplyResult.Const c =>
 			    let
-			       val _ = deleteLabel overflow
+			       val () = deleteLabel overflow
 			       val x = Var.newNoname ()
 			       val isUsed = ref false
 			       val vi =
@@ -757,18 +763,19 @@ fun shrinkFunction (globals: Statement.t vector) =
 			    end
 		       | Prim.ApplyResult.Var x =>
 			    let
-			       val _ = deleteLabel overflow
+			       val () = deleteLabel overflow
 			    in
 			       goto (success, Vector.new1 x)
 			    end
 		       | Prim.ApplyResult.Overflow =>
 			    let
-			       val _ = deleteLabel success
+			       val () = deleteLabel success
 			    in
 			       goto (overflow, Vector.new0 ())
 			    end
 		       | Prim.ApplyResult.Apply (prim, args) =>
-			    let val args = Vector.fromList args
+			    let
+			       val args = Vector.fromList args
 			    in
 			       ([], Arith {prim = prim,
 					   args = uses args,
@@ -805,13 +812,13 @@ fun shrinkFunction (globals: Statement.t vector) =
 				 val m = labelMeaning cont
 				 fun nonTail () =
 				    let
-				       val _ = forceMeaningBlock m
+				       val () = forceMeaningBlock m
 				       val handler =
 					  Handler.map
 					  (handler, fn l =>
 					   let
 					      val m = labelMeaning l
-					      val _ = forceMeaningBlock m
+					      val () = forceMeaningBlock m
 					   in
 					      meaningLabel m
 					   end)
@@ -895,8 +902,8 @@ fun shrinkFunction (globals: Statement.t vector) =
 			then cantSimplify ()
 		     else
 			let
-			   val _ = addLabelIndex i
-			   val _ = gone ()
+			   val () = addLabelIndex i
+			   val () = gone ()
 			in
 			   gotoMeaning (m, Vector.new0 ())
 			end
@@ -928,8 +935,8 @@ fun shrinkFunction (globals: Statement.t vector) =
 				 fun doit (j, args) =
 				    let
 				       val m = labelMeaning j
-				       val _ = addLabelMeaning m
-				       val _ = gone ()
+				       val () = addLabelMeaning m
+				       val () = gone ()
 				    in
 				       gotoMeaning (m, args)
 				    end
@@ -960,19 +967,19 @@ fun shrinkFunction (globals: Statement.t vector) =
 						  Vector.new0 ())
 				   | _ =>
 					Error.bug "strange constant for cases")
-			    | (SOME (Value.Con {con, args}), Cases.Con cases) =>
-				 findCase (cases,
-					   fn c => Con.equals (con, c),
-					   args)
+			    | (SOME (Value.Inject {variant, ...}),
+			       Cases.Con cases) =>
+				 let
+				    val VarInfo.T {value, ...} = variant
+				 in
+				    case !value of
+				       SOME (Value.Object {con = SOME con, ...}) => 
+					  findCase (cases,
+						    fn c => Con.equals (con, c),
+						    Vector.new1 variant)
+				     | _ => cantSimplify ()
+				 end
 			    | _ => cantSimplify ()
-(*
-			    | (NONE, _) => cantSimplify ()
-			    | (_, _) =>
-				 Error.bug
-				 (concat
-				  ["strange bind for case test: ",
-				   Layout.toString (VarInfo.layout test)])
-*)
 			end
 		  end
 	    end
@@ -985,14 +992,14 @@ fun shrinkFunction (globals: Statement.t vector) =
 		 args: VarInfo.t vector) =>
 	     let
 		val n = Array.sub (inDegree, i)
-		val _ = Assert.assert ("goto", fn () => n >= 1)
+		val () = Assert.assert ("goto", fn () => n >= 1)
 		fun normal () =
 		   if n = 1
 		      then
 			 let
-			    val _ = Array.update (inDegree, i, 0)
+			    val () = Array.update (inDegree, i, 0)
 			    val b = Vector.sub (blocks, i)
-			    val _ =
+			    val () =
 			       Vector.foreach2
 			       (Block.args b, args, fn ((x, _), vi) =>
 				setVarInfo (x, vi))
@@ -1001,7 +1008,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 			 end
 		   else
 		      let
-			 val _ = forceMeaningBlock m
+			 val () = forceMeaningBlock m
 		      in
 			 ([],
 			  Goto {dst = Block.label (Vector.sub (blocks, i)),
@@ -1031,8 +1038,8 @@ fun shrinkFunction (globals: Statement.t vector) =
 		      else
 			 let
 			    val n' = n - 1
-			    val _ = Array.update (inDegree, i, n')
-			    val _ = 
+			    val () = Array.update (inDegree, i, n')
+			    val () = 
 			       if n' > 0
 				  then addLabelMeaning dst
 			       else ()
@@ -1046,9 +1053,8 @@ fun shrinkFunction (globals: Statement.t vector) =
 	    traceEvalStatement
 	    (fn (Statement.T {var, ty, exp}) =>
 	    let
-	       val _ = Option.app 
-		       (var, fn x => 
-			setVarInfo (x, VarInfo.new (x, SOME ty)))
+	       val () = Option.app (var, fn x => 
+				    setVarInfo (x, VarInfo.new (x, SOME ty)))
 	       fun delete ss = ss
 	       fun doit {makeExp: unit -> Exp.t,
 			 sideEffect: bool,
@@ -1067,7 +1073,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 		      | SOME x =>
 			   let
 			      val VarInfo.T {isUsed, value = r, ...} = varInfo x
-			      val _ = r := value
+			      val () = r := value
 			   in
 			      fn ss =>
 			      if !isUsed
@@ -1077,6 +1083,14 @@ fun shrinkFunction (globals: Statement.t vector) =
 				   else ss
 			   end
 		  end
+	       fun simple {sideEffect} =
+		  let
+		     fun makeExp () = Exp.replaceVar (exp, use o varInfo)
+		  in
+		     doit {makeExp = makeExp,
+			   sideEffect = sideEffect,
+			   value = NONE}
+		  end
 	       fun setVar vi =
 		  (Option.app (var, fn x => setVarInfo (x, vi))
 		   ; delete)
@@ -1084,17 +1098,66 @@ fun shrinkFunction (globals: Statement.t vector) =
 		  doit {makeExp = makeExp,
 			sideEffect = false,
 			value = SOME v}
+	       fun tuple (xs: VarInfo.t vector) =
+		  case (DynamicWind.withEscape
+			(fn escape =>
+			 let
+			    fun no () = escape NONE
+			 in
+			    Vector.foldri
+			    (xs, NONE,
+			     fn (i, VarInfo.T {value, ...}, tuple') => 
+			     case !value of
+				SOME (Value.Select {object, offset}) =>
+				   (if i = offset
+				       then
+					  case tuple' of
+					     NONE => 
+						(case VarInfo.ty object of
+						    NONE => no ()
+						  | SOME ty =>
+						       (case Type.dest ty of
+							   Type.Object {args, con = NONE} =>
+							      if Prod.length args
+								 = Vector.length xs
+								 andalso
+								 not (Prod.isMutable args)
+								 then SOME object
+							      else no ()
+							 | _ => no ()))
+					   | SOME tuple'' => 
+						if VarInfo.equals (tuple'', object)
+						   then tuple'
+						else no ()
+				    else no ())
+			      | _ => no ())
+			 end)) of
+		     NONE =>
+			construct (Value.Object {args = xs, con = NONE},
+				   fn () => Object {args = uses xs, con = NONE})
+		   | SOME object => setVar object
 	    in
 	       case exp of
-		  ConApp {con, args} =>
+		  Const c => construct (Value.Const c, fn () => exp)
+		| Inject {sum, variant} =>
+		     let
+			val variant = varInfo variant
+		     in
+			construct (Value.Inject {sum = sum, variant = variant},
+				   fn () => Inject {sum = sum,
+						    variant = use variant})
+		     end
+		| Object {args, con} =>
 		     let
 			val args = varInfos args
 		     in
-			construct (Value.Con {con = con, args = args},
-				   fn () => ConApp {con = con,
-						    args = uses args})
+			if isSome con
+			   then
+			      construct (Value.Object {args = args, con = con},
+					 fn () => Object {args = uses args,
+							  con = con})
+			else tuple args
 		     end
-		| Const c => construct (Value.Const c, fn () => exp)
 		| PrimApp {prim, targs, args} =>
 		     let
 			val args = varInfos args
@@ -1112,13 +1175,13 @@ fun shrinkFunction (globals: Statement.t vector) =
 						     args = Vector.fromList args}
 			 | Bool b =>
 			      let
-				 val con = Con.fromBool b
+				 val con = SOME (Con.fromBool b)
 			      in
-				 construct (Value.Con {con = con,
-						       args = Vector.new0 ()},
+				 construct (Value.Object {args = Vector.new0 (),
+							  con = con},
 					    fn () =>
-					    ConApp {con = con,
-						    args = Vector.new0 ()})
+					    Object {args = Vector.new0 (),
+						    con = con})
 			      end
 			 | Const c => construct (Value.Const c,
 						 fn () => Exp.Const c)
@@ -1127,75 +1190,47 @@ fun shrinkFunction (globals: Statement.t vector) =
 				       targs = targs,
 				       args = args}
 		     end
-		| Select {tuple, offset} =>
+		| Profile _ => simple {sideEffect = true}
+		| Select {object, offset} =>
 		     let
-			val tuple as VarInfo.T {value, ...} = varInfo tuple
+			val object as VarInfo.T {ty, value, ...} = varInfo object
+			fun dontChange () =
+			   construct (Value.Select {object = object,
+						    offset = offset},
+				      fn () => Select {object = use object,
+						       offset = offset})
 		     in
-			case !value of
-			   SOME (Value.Tuple vs) =>
-			      setVar (Vector.sub (vs, offset))
-			 | _ =>
-			      construct (Value.Select {tuple = tuple, 
-						       offset = offset},
-					 fn () => Select {tuple = use tuple,
-							  offset = offset})
-(*
-			 | _ => Error.bug
-				(concat
-				  ["select of non-tuple: ",
-				   Layout.toString (VarInfo.layout tuple)])
-*)
+			case (ty, !value) of
+			   (SOME ty, SOME (Value.Object {args, ...})) =>
+			      (case Type.dest ty of
+				  Type.Object {args = targs, ...} =>
+				     (* Can't simplify the select if the field is
+				      * mutable.
+				      *)
+				     if #isMutable (Vector.sub
+						    (Prod.dest targs, offset))
+					then dontChange ()
+				     else setVar (Vector.sub (args, offset))
+				| _ => Error.bug "select of non object")
+			 | _ => dontChange ()
 		     end
-		| Tuple xs =>
-		     let
-			val xs = varInfos xs
-		     in
-                        case DynamicWind.withEscape
-			     (fn escape =>
-			      Vector.foldri
-			      (xs, NONE,
-			       fn (i, VarInfo.T {value, ...}, tuple') => 
-			       case !value of
-				  SOME (Value.Select {offset, tuple}) =>
-				     if offset = i
-				        then case tuple' of
-					        NONE => 
-						   (case VarInfo.ty tuple of
-						       SOME ty =>
-							  (case Type.deTupleOpt ty of
-							      SOME ts =>
-								 if Vector.length xs =
-								    Vector.length ts
-								    then SOME tuple
-								 else escape NONE
-							    | NONE => escape NONE)
-						     | NONE => escape NONE)
-					      | SOME tuple'' => 
-						   if VarInfo.equals (tuple'', tuple)
-						      then tuple'
-						   else escape NONE
-				     else escape NONE
-				| _ => escape NONE)) of
-			  SOME tuple => setVar tuple
-			| NONE => construct (Value.Tuple xs,
-					     fn () => Tuple (uses xs))
-		     end
+		| Update _ => simple {sideEffect = true}
 		| Var x => setVar (varInfo x)
-		| _ => doit {makeExp = fn () => exp,
-			     sideEffect = true,
-			     value = NONE}
+		| VectorSub _ => simple {sideEffect = false}
+		| VectorUpdates _ => simple {sideEffect = true}
 	    end) arg
 	 val start = labelMeaning start
-	 val _ = forceMeaningBlock start
+	 val () = forceMeaningBlock start
 	 val f = 
 	    Function.new {args = args,
 			  blocks = Vector.fromList (!newBlocks),
+			  mayInline = mayInline,
 			  name = name,
 			  raises = raises,
 			  returns = returns,
 			  start = meaningLabel start}
-(*	 val _ = save (f, "post") *)
-	 val _ = Function.clear f
+(*	 val () = save (f, "post") *)
+	 val () = Function.clear f
       in
 	 f
       end
@@ -1250,11 +1285,13 @@ fun eliminateUselessProfile (f: Function.t): Function.t =
 			   statements = statements,
 			   transfer = transfer}
 	       end
-	 val {args, blocks, name, raises, returns, start} = Function.dest f
+	 val {args, blocks, mayInline, name, raises, returns, start} =
+	    Function.dest f
 	 val blocks = Vector.map (blocks, eliminateInBlock)
       in
 	 Function.new {args = args,
 		       blocks = blocks,
+		       mayInline = mayInline,
 		       name = name,
 		       raises = raises,
 		       returns = returns,
@@ -1262,7 +1299,7 @@ fun eliminateUselessProfile (f: Function.t): Function.t =
       end
 
 val traceShrinkFunction =
-   Trace.trace ("Shrink.shrinkFunction", Function.layout, Function.layout)
+   Trace.trace ("Shrink2.shrinkFunction", Function.layout, Function.layout)
 
 val shrinkFunction =
    fn g =>
@@ -1275,23 +1312,26 @@ val shrinkFunction =
 			    ; raise e))
    end
 
-fun shrink (Program.T {datatypes, globals, functions, main})
-  = let
-      val s = shrinkFunction globals
-    in
-      Program.T {datatypes = datatypes,
-		 globals = globals,
-		 functions = List.revMap (functions, s),
-		 main = main}
-    end
+fun shrink (Program.T {datatypes, globals, functions, main}) =
+   let
+      val s = shrinkFunction {globals = globals}
+      val program = 
+	 Program.T {datatypes = datatypes,
+		    globals = globals,
+		    functions = List.revMap (functions, s),
+		    main = main}
+      val () = Program.clear program
+   in
+      program
+   end
 
 fun eliminateDeadBlocksFunction f =
    let
-      val {args, blocks, name, raises, returns, start} =
+      val {args, blocks, mayInline, name, raises, returns, start} =
 	 Function.dest f
       val {get = isLive, set = setLive, rem} =
 	 Property.getSetOnce (Label.plist, Property.initConst false)
-      val _ = Function.dfs (f, fn Block.T {label, ...} =>
+      val () = Function.dfs (f, fn Block.T {label, ...} =>
 			    (setLive (label, true)
 			     ; fn () => ()))
       val f =
@@ -1305,12 +1345,13 @@ fun eliminateDeadBlocksFunction f =
 	    in
 	       Function.new {args = args,
 			     blocks = blocks,
+			     mayInline = mayInline,
 			     name = name,
 			     raises = raises,
 			     returns = returns,
 			     start = start}
 	    end
-       val _ = Vector.foreach (blocks, rem o Block.label)
+       val () = Vector.foreach (blocks, rem o Block.label)
    in
      f
    end

@@ -179,8 +179,17 @@ structure Value =
 	 in
 	    case (v, v') of
 	       (Ground t, Ground t') => ()
-	     | (Object (Obj {args = a, ...}), Object (Obj {args = a', ...})) =>
-		  unifyProd (a, a')
+	     | (Object (Obj {args = a, flat = f, ...}),
+		Object (Obj {args = a', flat = f', ...})) =>
+	          let
+		     val () =
+			case (!f, !f') of
+			   (Flat, NotFlat) => f := NotFlat
+			 | (NotFlat, Flat) => f' := NotFlat
+			 | _ => ()
+		  in
+		     unifyProd (a, a')
+		  end
 	     | (Vector {elt = p, ...}, Vector {elt = p', ...}) =>
 		  unifyProd (p, p')
 	     | (Weak {arg = a, ...}, Weak {arg = a', ...}) => unify (a, a')
@@ -860,7 +869,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		    main = main}
       val () = Program.clear program
    in
-      program
+      shrink program
    end
 
 end
