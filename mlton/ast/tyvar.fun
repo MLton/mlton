@@ -45,7 +45,8 @@ fun newRegion ({name, equality}, region) =
 fun new f = newRegion (f, Region.bogus)
 
 fun newString (s, {left, right}) =
-   newRegion (if Char.equals (#"'", String.sub (s, 1))
+   newRegion (if String.size s > 1
+		 andalso Char.equals (#"'", String.sub (s, 1))
 		 then {name = String.dropPrefix (s, 2),
 		       equality = true}
 	      else {name = String.dropPrefix (s, 1),

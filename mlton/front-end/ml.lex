@@ -5,6 +5,12 @@
  * Copyright 1989 by AT&T Bell Laboratories
  *
  * $Log: ml.lex,v $
+ * Revision 1.2  2001/08/23 00:49:17  sweeks
+ * Added support for #line directives of the form
+ * 	(*#line line.col "file"*)
+ * These directives only affect error messages produced by the parser and
+ * elaborator.
+ *
  * Revision 1.1.1.1  2001/07/18 05:51:01  sweeks
  * initial import
  *
@@ -69,7 +75,22 @@ val eof: lexarg -> lexresult =
       Tokens.EOF (pos, pos)
    end
 
-fun tok (t, s, l, r) = t (Source.getPos (s, l), Source.getPos (s, r))
+fun tok (t, s, l, r) =
+   let
+      val l = Source.getPos (s, l)
+      val r = Source.getPos (s, r)
+      val _ =
+	 if true
+	    then ()
+	 else
+	    print (concat ["tok (",
+			   SourcePos.toString l,
+			   ", " ,
+			   SourcePos.toString r,
+			   ")\n"])
+   in
+      t (l, r)
+   end
 fun tok' (t, x, s, l) = tok (fn (l, r) => t (x, l, r), s, l, l + String.size x)
 
 local 
@@ -179,7 +200,7 @@ hexnum={hexDigit}+;
 <INITIAL>"withtype" => (tok (Tokens.WITHTYPE, source, yypos, yypos + 8));
 <INITIAL>"orelse" => (tok (Tokens.ORELSE, source, yypos, yypos + 6));
 <INITIAL>"andalso" => (tok (Tokens.ANDALSO, source, yypos, yypos + 7));
-<INITIAL>"'"{alphanum} => (tok' (Tokens.TYVAR, yytext, source, yypos));
+<INITIAL>"'"{alphanum}? => (tok' (Tokens.TYVAR, yytext, source, yypos));
 <INITIAL>{longid} => (case yytext of
 			 "*" => tok (Tokens.ASTERISK, source, yypos, yypos + 1)
 		       | _ => tok' (Tokens.LONGID, yytext, source, yypos));
@@ -205,6 +226,15 @@ hexnum={hexDigit}+;
 		    ; commentStart := Source.getPos (source, yypos)
 		    ; commentLevel := 1
 		    ; continue ());
+<INITIAL>"(*"	=> (YYBEGIN A
+                    ; commentLevel := 1
+                    ; commentStart := Source.getPos (source, yypos)
+                    ; continue ());
+<INITIAL>"*)"	=> (error (source, yypos, yypos + 2, "unmatched close comment") ;
+		    continue ());
+<INITIAL>.	=> (error (source, yypos, yypos + 1, "illegal token") ;
+		    continue ());
+
 <L>[0-9]+       => (YYBEGIN LL
                     ; (lineNum := valOf (Int.fromString yytext)
                        ; colNum := 1)
@@ -227,15 +257,6 @@ hexnum={hexDigit}+;
                     ; commentLevel := 0; charlist := []; continue ());
 <L,LLC,LLCQ>"*)" => (YYBEGIN INITIAL; commentLevel := 0; charlist := []; continue ());
 <L,LLC,LLCQ>.   => (YYBEGIN A; continue ());
-
-<INITIAL>"(*"	=> (YYBEGIN A
-                    ; commentLevel := 1
-                    ; commentStart := Source.getPos (source, yypos)
-                    ; continue ());
-<INITIAL>"*)"	=> (error (source, yypos, yypos + 2, "unmatched close comment") ;
-		    continue ());
-<INITIAL>.	=> (error (source, yypos, yypos + 1, "illegal token") ;
-		    continue ());
 
 <A>"(*"		=> (inc commentLevel; continue ());
 <A>\n		=> (Source.newline (source, yypos) ; continue ());

@@ -7,6 +7,9 @@ Here are the changes from version 20011003 to version VERSION.
     longstrid in the current environment, and then open them all in sequence. 
     This is now checked for in the open.sml regression test.  Thanks to Andreas
     Rossberg for pointing this bug out.
+  - Fixed bug that caused tyvars of length 1 (i.e. ') to be rejected.  This is
+    now checked in the id.sml regression test.  Again, thanks to Andreas
+    Rossberg for the test.
 
 --------------------------------------------------------------------------------
 
