@@ -149,6 +149,30 @@ structure Rep =
 	     | Pointer _ => Error.bug "Rep.padToWidth"
    end
 
+structure Statement =
+   struct
+      open Statement
+
+      local
+	 fun make (doType, prim) (z1: Operand.t, z2: Operand.t) =
+	    let
+	       val t1 = Operand.ty z1
+	       val tmp = Var.newNoname ()
+	       val tmpTy = doType (t1, Operand.ty z2)
+	    in
+	       (PrimApp {args = Vector.new2 (z1, z2),
+			 dst = SOME (tmp, tmpTy),
+			 prim = prim (WordSize.fromBits (Type.width t1))},
+		Var {ty = tmpTy, var = tmp})
+	    end
+      in
+	 val andb = make (valOf o Type.andb, Prim.wordAndb)
+	 val lshift = make (Type.lshift, Prim.wordLshift)
+	 val orb = make (valOf o Type.orb, Prim.wordOrb)
+	 val rshift = make (Type.rshift, Prim.wordRshift)
+      end
+   end
+
 structure WordRep =
    struct
       (* WordRep describes the representation of (some of) the components in a
@@ -206,50 +230,39 @@ structure WordRep =
 	    val bits = Type.width dstTy
 	    val wordSize = WordSize.fromBits bits
 	    val ty = Type.word bits
-	    val (res, statements) =
-	       valOf
-	       (Vector.foldr
-		(components, NONE, fn ({index, rep, ...}, z) =>
-		 let
-		    val (src, ss) = Statement.resize (src {index = index}, bits)
-		 in
-		    case z of
-		       NONE => SOME (src, ss)
-		     | SOME (ac, statements) =>
-			  let
-			     val width = Rep.width rep
-			     val shiftBits =
-				WordX.fromIntInf (Bits.toIntInf width,
-						  WordSize.default)
-			     val tmp = Var.newNoname ()
-			     val tmpTy = Type.lshift (Operand.ty ac,
-						      Type.constant shiftBits)
-			     val shift =
-				PrimApp
-				{args = Vector.new2 (ac, Operand.word shiftBits),
-				 dst = SOME (tmp, tmpTy),
-				 prim = Prim.wordLshift wordSize}
-			     val tmp' = Var.newNoname ()
-			     val tmp'Ty =
-				valOf (Type.orb (tmpTy, Operand.ty src))
-			     val orb =
-				PrimApp
-				{args = Vector.new2 (Var {ty = tmpTy, var = tmp},
-						     src),
-				 dst = SOME (tmp', tmp'Ty),
-				 prim = Prim.wordOrb wordSize}
-			  in
-			     SOME (Var {ty = tmp'Ty, var = tmp'},
-				   [orb, shift] @ rev ss @ statements)
-			  end
-		 end))
+	    val z =
+	       Vector.fold
+	       (components, NONE, fn ({index, rep, ...}, z) =>
+		let
+		   val (src, ss) = Statement.resize (src {index = index}, bits)
+		in
+		   case z of
+		      NONE => SOME (src, Rep.width rep, [rev ss])
+		    | SOME (ac, shift, statements) =>
+			 let
+			    val (s1, tmp) =
+			       Statement.lshift
+			       (src,
+				Operand.word
+				(WordX.fromIntInf (Bits.toIntInf shift,
+						   WordSize.default)))
+			    val (s2, ac) = Statement.orb (tmp, ac)
+			 in
+			    SOME (ac, Bits.+ (shift, Rep.width rep),
+				  ([s2, s1] @ rev ss) :: statements)
+			 end
+		end)
+	    val (src, statements) =
+	       case z of
+		  NONE => (Operand.word (WordX.zero wordSize), [])
+		| SOME (src, _, ss) => (src, ss)
 	    val statements =
-	       Bind {dst = (dstVar, dstTy),
-		     isMutable = false,
-		     src = res}
+	       [Bind {dst = (dstVar, dstTy),
+		      isMutable = false,
+		      src = src}]
 	       :: statements
 	 in
-	    List.rev statements
+	    List.fold (statements, [], fn (ss, ac) => List.fold (ss, ac, op ::))
 	 end
 
       val tuple =
@@ -369,42 +382,36 @@ structure Unpack =
 		  then (src, [])
 	       else
 		  let
-		     val wordSize =
-			WordSize.fromBits (Type.width (Operand.ty src))
-		     val shift = WordX.fromIntInf (Bits.toIntInf shift,
-						   WordSize.default)
-		     val tmpVar = Var.newNoname ()
-		     val tmpTy =
-			Type.rshift (Operand.ty src, Type.constant shift)
+		     val (s, tmp) =
+			Statement.rshift
+			(src,
+			 Operand.word (WordX.fromIntInf (Bits.toIntInf shift,
+							 WordSize.default)))
 		  in
-		     (Var {ty = tmpTy, var = tmpVar},
-		      [PrimApp {args = Vector.new2 (src, Operand.word shift),
-				dst = SOME (tmpVar, tmpTy),
-				prim = Prim.wordRshift wordSize}])
+		     (tmp, [s])
 		  end
 	    val w = Type.width ty
 	    val s = WordSize.fromBits w
 	    val w' = Type.width dstTy
 	    val s' = WordSize.fromBits w'
 	    val (src, ss2) = Statement.resize (src, w')
+	    val (src, ss3) = 
+	       if Bits.equals (w, w')
+		  orelse Type.isZero (Type.dropPrefix (Operand.ty src,
+						       WordSize.bits s))
+		  then (src, [])
+	       else
+		  let
+		     val (s, src) =
+			Statement.andb
+			(src, Operand.word (WordX.resize (WordX.max s, s')))
+		  in
+		     (src, [s])
+		  end
 	 in
-	    if Bits.equals (w, w')
-	       then
-		  ss1 @ ss2 @ [Bind {dst = (dst, dstTy),
+	    ss1 @ ss2 @ ss3 @ [Bind {dst = (dst, dstTy),
 				     isMutable = false,
 				     src = src}]
-	    else
-	       let
-		  val mask = WordX.resize (WordX.max s, s')
-	       in
-		  ss1 @ ss2
-		  @ [PrimApp {args = Vector.new2 (src, Operand.word mask),
-			      dst = SOME (dst,
-					  valOf (Type.andb
-						 (Operand.ty src,
-						  Type.constant mask))),
-			      prim = Prim.wordAndb s'}]
-	       end
 	 end
 
       val select =
@@ -895,6 +902,7 @@ structure TupleRep =
 			    select = s (Array.sub (selects, i))}))
 	    fun box () =
 	       let
+
 		  val components =
 		     Vector.map
 		     (components, fn {component = c, offset} =>
@@ -988,27 +996,23 @@ structure ConRep =
 		  val tmpVar = Var.newNoname ()
 		  val tmpTy =
 		     Type.padToWidth (Component.ty component, Type.width dstTy)
-		  val tmpOp = Var {ty = tmpTy, var = tmpVar}
+		  val tmp = Var {ty = tmpTy, var = tmpVar}
 		  val component =
 		     Component.tuple (component, {dst = (tmpVar, tmpTy),
 						  src = src})
-		  val tmpShift = Var.newNoname ()
-		  val tmpShiftTy = Type.lshift (tmpTy, Operand.ty shift)
-		  val wordSize = WordSize.fromBits (Type.width dstTy)
-		  val lshift =
-		     PrimApp {args = Vector.new2 (tmpOp, shift),
-			      dst = SOME (tmpShift, tmpShiftTy),
-			      prim = Prim.wordLshift wordSize}
-		  val orb =
-		     PrimApp
-		     {args = Vector.new2 (Var {ty = tmpShiftTy,
-					       var = tmpShift},
-					  Operand.word
-					  (WordX.resize (tag, wordSize))),
-		      dst = SOME (dstVar, dstTy),
-		      prim = Prim.wordOrb wordSize}
+
+		  val (s1, tmp) = Statement.lshift (tmp, shift)
+		  val (s2, tmp) =
+		     Statement.orb
+		     (tmp,
+		      Operand.word
+		      (WordX.resize
+		       (tag, WordSize.fromBits (Type.width (Operand.ty tmp)))))
+		  val s3 = Bind {dst = (dstVar, dstTy),
+				 isMutable = false,
+				 src = tmp}
 	       in
-		  component @ [lshift, orb]
+		  component @ [s1, s2, s3]
 	       end
 	  | Tag {tag} =>
 	       let
@@ -1144,21 +1148,16 @@ structure Pointers =
 	       QuickSort.sortVector 
 	       (cases, fn ((w, _), (w', _)) => WordX.<= (w, w'))
 	    val headerTy = headerTy ()
-	    val tagVar = Var.newNoname ()
-	    val tagTy = Type.rshift (headerTy,
-				     Type.constant (WordX.one WordSize.default))
+	    val (s, tag) =
+	       Statement.rshift (Offset {base = test,
+					 offset = Runtime.headerOffset,
+					 ty = headerTy},
+				 Operand.word (WordX.one wordSize))
 	 in
-	    ([PrimApp {args = (Vector.new2
-			       (Offset {base = test,
-					offset = Runtime.headerOffset,
-					ty = headerTy},
-				Operand.word (WordX.one wordSize))),
-		       dst = SOME (tagVar, tagTy),
-		       prim = Prim.wordRshift wordSize}],
-	     Switch (Switch.T {cases = cases,
-			       default = default,
-			       size = wordSize,
-			       test = Var {ty = tagTy, var = tagVar}}))
+	    ([s], Switch (Switch.T {cases = cases,
+				    default = default,
+				    size = wordSize,
+				    test = tag}))
 	 end
    end
 
@@ -1223,18 +1222,14 @@ structure Small =
 		  then (test, [])
 	       else
 		  let
-		     val mask =
-			Operand.word (WordX.resize
-				      (WordX.max (WordSize.fromBits tagBits),
-				       wordSize))
-		     val tagVar = Var.newNoname ()
-		     val tagTy =
-			valOf (Type.andb (Operand.ty test, Operand.ty mask))
+		     val (s, tag) =
+			Statement.andb
+			(test,
+			 Operand.word (WordX.resize
+				       (WordX.max (WordSize.fromBits tagBits),
+					wordSize)))
 		  in
-		     (Var {ty = tagTy, var = tagVar},
-		      [PrimApp {args = Vector.new2 (test, mask),
-				dst = SOME (tagVar, tagTy),
-				prim = Prim.wordAndb wordSize}])
+		     (tag, [s])
 		  end
 	    val tagOp =
 	       if isPointer
@@ -1249,17 +1244,10 @@ structure Small =
 		   | (_, NONE) => notSmall
 		   | (SOME notSmall, SOME smallDefault) =>
 			let
-			   val tmp = Var.newNoname ()
-			   val tmpTy = Type.defaultWord
-			   val ss =
-			      Vector.new1
-			      (PrimApp
-			       {args = (Vector.new2
-					(Operand.word
-					 (WordX.fromIntInf (3, wordSize)),
-					 Cast (test, Type.word testBits))),
-				dst = SOME (tmp, tmpTy),
-				prim = Prim.wordAndb wordSize})
+			   val (s, test) =
+			      Statement.andb
+			      (Cast (test, Type.word testBits),
+			       Operand.word (WordX.fromIntInf (3, wordSize)))
 			   val t =
 			      Switch
 			      (Switch.T
@@ -1267,9 +1255,9 @@ structure Small =
 						     notSmall),
 				default = SOME smallDefault,
 				size = wordSize,
-				test = Var {ty = tmpTy, var = tmp}})
+				test = test})
 			in
-			   SOME (Block.new {statements = ss,
+			   SOME (Block.new {statements = Vector.new1 s,
 					    transfer = t})
 			end
 	    val transfer =
