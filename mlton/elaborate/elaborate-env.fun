@@ -691,7 +691,7 @@ in
       List.foreach (!topSymbols, fn s => foreach (E, s, z))
 end
 
-fun collect (E as T r, f: {isUsed: bool} -> bool) =
+fun collect (E as T r, f: {isUsed: bool, scope: Scope.t} -> bool) =
    let
       val fcts = ref []
       val sigs = ref []
@@ -701,9 +701,9 @@ fun collect (E as T r, f: {isUsed: bool} -> bool) =
       fun doit ac vs =
 	 case Values.! vs of
 	    [] => ()
-	  | {domain, isUsed, range, ...} :: _ =>
-	       if f {isUsed = !isUsed}
-			    then List.push (ac, (domain, range))
+	  | {domain, isUsed, range, scope, ...} :: _ =>
+	       if f {isUsed = !isUsed, scope = scope}
+		  then List.push (ac, (domain, range))
 	       else ()
       val _ =
 	 foreachDefinedSymbol (E, {fcts = doit fcts,
@@ -724,9 +724,9 @@ fun collect (E as T r, f: {isUsed: bool} -> bool) =
        vals = finish (vals, Ast.Vid.toSymbol)}
    end
    
-fun layout (E: t): Layout.t =
+fun layout' (E: t, f): Layout.t =
    let
-      val {fcts, sigs, strs, types, vals} = collect (E, fn _ => true)
+      val {fcts, sigs, strs, types, vals} = collect (E, f)
       open Layout
       fun doit (a, layout) = align (Array.toListMap (a, layout))
    in
@@ -735,6 +735,15 @@ fun layout (E: t): Layout.t =
 	     doit (sigs, fn (s, _) => seq [str "signature ", Sigid.layout s]),
 	     doit (fcts, fn (s, _) => seq [str "functor ", Fctid.layout s]),
 	     doit (strs, Structure.layoutStrSpec)]
+   end
+
+fun layout E = layout' (E, fn _ => true)
+
+fun layoutCurrentScope (E as T {currentScope, ...}) =
+   let
+      val s = !currentScope
+   in
+      layout' (E, fn {scope, ...} => Scope.equals (s, scope))
    end
 
 fun layoutUsed (E: t): Layout.t =
@@ -1059,7 +1068,8 @@ in
 	    in
 	       b
 	    end
-      in (a, finish)
+      in
+	 (a, finish)
       end
 
    fun localModule (E as T {currentScope, fixs, strs, types, vals, ...},
@@ -1109,7 +1119,7 @@ fun makeStructure (T {currentScope, fixs, strs, types, vals, ...}, make) =
    in
       (res, S)
    end
-      
+
 fun scope (T {currentScope, fixs, strs, types, vals, ...}, th) =
    let
       fun doit (NameSpace.T {current, ...}) =

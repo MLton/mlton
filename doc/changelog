@@ -1,5 +1,9 @@
 Here are the changes since version 20030716.
 
+* 2004-02-09
+  - Extended -show-basis so that when used with an input program, it
+    shows the basis defined by the input program. 
+
 * 2004-01-20
   - Fixed a bug in IEEEReal.{fromString,scan}, which would improperly
     return INF instead of ZERO for things like "0.0000e123456789012345".

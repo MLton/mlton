@@ -136,10 +136,19 @@ signature ELABORATE_ENV =
 	 * (Structure.t * string list -> Decs.t * Structure.t option)
 	 -> FunctorClosure.t
       val layout: t -> Layout.t
+      val layoutCurrentScope: t -> Layout.t
       val layoutUsed: t -> Layout.t
       val localCore: t * (unit -> 'a) * ('a -> 'b) -> 'b
       val localModule: t * (unit -> 'a) * ('a -> 'b) -> 'b
-      val localTop: t * (unit -> 'a) -> ('a * ((unit -> 'b) -> 'b))
+      (* localTop (E, f) = (a, finish)
+       * evaluates f () in a new scope.  finish g can then be called later to
+       * finish the local, evaluating g () within the scope and eventually
+       * leaving only the bindings introduced by g.  Thus, the whole thing is
+       * very much like the following.
+       *
+       *   local f () in g () end
+       *)
+      val localTop: t * (unit -> 'a) -> 'a * ((unit -> 'b) -> 'b)
       val lookupFctid: t * Ast.Fctid.t -> FunctorClosure.t
       val lookupLongcon: t * Ast.Longcon.t -> CoreML.Con.t * Scheme.t
       val lookupLongstrid: t * Ast.Longstrid.t -> Structure.t option

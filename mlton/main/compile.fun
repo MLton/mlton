@@ -316,8 +316,8 @@ in
       dir := SOME d
    fun basisLibrary ()
       : {build: Decs.t,
-	 localTopFinish: (unit -> Decs.t * Decs.t * Decs.t) -> 
-	 Decs.t * Decs.t * Decs.t,
+	 localTopFinish: ((unit -> Decs.t * Decs.t * Decs.t)
+			  -> Decs.t * Decs.t * Decs.t),
 	 libs: {name: string,
 		bind: Ast.Program.t,
 		prefix: Ast.Program.t,
@@ -443,19 +443,22 @@ fun elaborate {input: File.t list}: Xml.Program.t =
 	 parseAndElaborateFiles (input, basisEnv, lookupConstantError)
       val _ =
 	 if !Control.showBasisUsed
-	    then (Elaborate.Env.scopeAll (basisEnv, parseAndElab)
-		  ; Layout.outputl (Elaborate.Env.layoutUsed basisEnv,
-				    Out.standard)
-		  ; Process.succeed ())
+	    then (Env.scopeAll (basisEnv, parseAndElab)
+		  ; Layout.outputl (Env.layoutUsed basisEnv, Out.standard)
+		  ; raise Done)
+	 else ()
+      val _ =
+	 if !Control.showBasis
+	    then
+	       Env.scopeAll
+	       (basisEnv, fn () =>
+		(parseAndElab ()
+		 ; Env.setTyconNames basisEnv
+		 ; Layout.outputl (Env.layoutCurrentScope basisEnv, Out.standard)
+		 ; raise Done))
 	 else ()
       val input = parseAndElab ()
       val _ = if !Control.elaborateOnly then raise Done else ()
-      val _ =
-	 if !Control.showBasis
-	    then (Env.setTyconNames basisEnv
-		  ; Layout.outputl (Env.layout basisEnv, Out.standard)
-		  ; Process.succeed ())
-	 else ()
       val _ =
 	 if not (!Control.exportHeader)
 	    then ()
@@ -468,7 +471,7 @@ fun elaborate {input: File.t list}: Xml.Program.t =
 	       val _ = print "\n"
 	       val _ = Ffi.declareHeaders {print = print}
 	    in
-	       Process.succeed ()
+	       raise Done
 	    end
       val user = Decs.toList (Decs.appends [prefix, input, suffix])
       val _ = parseElabMsg ()
@@ -615,7 +618,7 @@ fun compile {input: File.t list, outputC, outputS}: unit =
       val _ = Control.message (Control.Detail, HashSet.stats)
    in
       ()
-   end
+   end handle Done => ()
 
 val elaborate =
    fn {input: File.t list} =>
