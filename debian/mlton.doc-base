@@ -1,0 +1,14 @@
+Document: mlton
+Title: MLton User's Guide
+Author: Henry Cejtin, Matthew Fluet, Suresh Jagannathan, Stephen Weeks
+Abstract: This manual describes how to use MLton, a whole-program
+ optimizing compiler for the Standard ML Programming language.
+Section: Apps/Programming
+
+Format: postscript
+Files: /usr/share/doc/mlton/user-guide.ps.gz
+
+Format: HTML
+Index: /usr/share/doc/mlton/user-guide/index.html
+Files: /usr/share/doc/mlton/user-guide/*.html
+

@@ -13,7 +13,6 @@ all:	$(NAME)
 $(NAME): $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)
 	@echo 'Compiling $(NAME)'
 	time $(MLTON) $(FLAGS) $(NAME).cm
-	strip $(NAME)
 	size $(NAME)
 
 $(NAME).sml: $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)

@@ -16,6 +16,7 @@ PROF = mlprof
 YACC = mlyacc
 PATH = $(BIN):$(shell echo $$PATH)
 CP = /bin/cp -fpR
+GZIP = gzip --best
 
 VERSION = $(shell date +%Y%m%d)
 RELEASE = 1
@@ -67,9 +68,9 @@ deb:
 	$(MAKE) clean clean-cvs version
 	tar -cpf - . | \
 		( cd .. && mkdir $(DEBSRC) && cd $(DEBSRC) && tar -xpf - )
-	cd .. && tar -cpf - $(DEBSRC) | gzip >mlton_$(VERSION).orig.tar.gz
+	cd .. && tar -cpf - $(DEBSRC) | $(GZIP) >mlton_$(VERSION).orig.tar.gz
 	cd .. && mv $(DEBSRC) mlton-$(VERSION)
-	cd ../mlton-$(VERSION) && dpkg-buildpackage -rfakeroot -us -uc
+	cd ../mlton-$(VERSION) && pdebuild --pbuilderroot ss
 
 .PHONY: deb-binary
 deb-binary:
@@ -101,7 +102,7 @@ freebsd:
 	mkdir -p $(BSDSRC)
 	( cd $(SRC) && tar -cpf - . ) | ( cd $(BSDSRC) && tar -xpf - )
 	cd /tmp && tar -cpf - mlton-$(VERSION) | \
-		 gzip >/usr/ports/distfiles/mlton-$(VERSION)-1.src.tgz
+		 $(GZIP) >/usr/ports/distfiles/mlton-$(VERSION)-1.src.tgz
 	cd $(BSDSRC)/freebsd && make build-package
 
 #	rm -rf $(BSDSRC)
@@ -139,7 +140,7 @@ rpms:
 	( cd $(SRC) && tar -cpf - . ) | ( cd $(SOURCEDIR) && tar -xpf - )
 	$(CP) $(SOURCEDIR)/doc/mlton.spec $(TOPDIR)/SPECS/mlton.spec
 	( cd $(TOPDIR)/SOURCES && tar -cpf - mlton-$(VERSION) )		\
-		| gzip >$(SOURCEDIR).tgz
+		| $(GZIP) >$(SOURCEDIR).tgz
 	rm -rf $(SOURCEDIR)
 	rpm -ba --quiet --clean $(TOPDIR)/SPECS/mlton.spec
 
@@ -206,12 +207,12 @@ install:
 	)
 	rm -rf $(TDOC)/user-guide
 	$(CP) $(SRC)/doc/user-guide/main $(TDOC)/user-guide
-	gzip -c $(SRC)/doc/user-guide/main.ps >$(TDOC)/user-guide.ps.gz
+	$(GZIP) -c $(SRC)/doc/user-guide/main.ps >$(TDOC)/user-guide.ps.gz
 	for f in callcc command-line hello-world same-fringe signals size taut thread1 thread2 thread-switch timeout; do \
- 		cp $(SRC)/regression/$$f.sml $(TDOC)/examples; \
+ 		$(CP) $(SRC)/regression/$$f.sml $(TDOC)/examples; \
 	done
-	gzip -c $(LEX)/$(LEX).ps >$(TDOC)/$(LEX).ps.gz
-	gzip -c $(YACC)/$(YACC).ps >$(TDOC)/$(YACC).ps.gz
+	$(GZIP) -c $(LEX)/$(LEX).ps >$(TDOC)/$(LEX).ps.gz
+	$(GZIP) -c $(YACC)/$(YACC).ps >$(TDOC)/$(YACC).ps.gz
 	$(CP) $(LIB)/. $(TLIB)/
 	sed "/^lib=/s;'.*';'$(prefix)/$(ULIB)';" 			\
 			<$(SRC)/bin/mlton >$(TBIN)/mlton
@@ -219,9 +220,23 @@ install:
 	$(CP) $(BIN)/$(LEX) $(BIN)/$(PROF) $(BIN)/$(YACC) $(TBIN)/
 	( cd $(SRC)/man && tar cf - mllex.1 mlprof.1 mlton.1 mlyacc.1 ) | \
 		( cd $(TMAN)/ && tar xf - )
-	find $(TDOC) -name CVS -type d | xargs --no-run-if-empty rm -rf
-	find $(TDOC) -name .cvsignore -type f | xargs --no-run-if-empty rm -rf
+	cd $(TMAN) && $(GZIP) *
+	find $(TDOC)/ -name CVS -type d | xargs --no-run-if-empty rm -rf
+	find $(TDOC)/ -name .cvsignore -type f | xargs --no-run-if-empty rm -rf
+	for f in $(TLIB)/$(AOUT) \
+		$(TBIN)/$(LEX) $(TBIN)/$(PROF) $(TBIN)/$(YACC); do \
+		strip --remove-section=.comment --remove-section=.note $$f; \
+	done
+
+TDOCBASE = $(DESTDIR)$(prefix)/share/doc-base
 
 .PHONY: post-install-debian
 post-install-debian:	
-	cd $(TDOC) && rm -rf license
+	cd $(TDOC)/ && rm -rf license
+	$(CP) $(SRC)/debian/copyright $(SRC)/debian/README.Debian $(TDOC)/
+	$(CP) $(SRC)/debian/changelog $(TDOC)/changelog.Debian
+	mkdir -p $(TDOCBASE)
+	for f in mllex mlton mlyacc; do \
+		$(CP) $(SRC)/debian/$$f.doc-base $(TDOCBASE)/$$f; \
+	done
+	cd $(TDOC)/ && $(GZIP) changelog changelog.Debian

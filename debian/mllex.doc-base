@@ -1,0 +1,9 @@
+Document: mllex
+Title: A lexical analyzer generator for Standard ML
+Author: Andrew W. Appel, James S. Mattson, David R. Tarditi
+Abstract: This document describes how write lexer specification files for 
+ mllex.
+Section: Apps/Programming
+
+Format: postscript
+Files: /usr/share/doc/mlton/mllex.ps.gz

@@ -24,10 +24,10 @@ endif
 all: $(AOUT)
 
 $(AOUT): $(NAME).cm $(shell $(MLTON) -stop f mlton.cm)
+#	cp /usr/lib/mlton/mlton-compile .
 	@echo 'Compiling mlton (takes a while)'
 	$(MLTON) $(FLAGS) $(CM)
 	size $(AOUT)
-	strip $(AOUT)
 
 .PHONY:	$(NAME)_cm
 $(NAME)_cm: $(NAME)-stubs_cm

@@ -2,39 +2,29 @@
 # Sample debian/rules that uses debhelper.
 # GNU copyright 1997 to 1999 by Joey Hess.
 
-# Uncomment this to turn on verbose mode.
-#export DH_VERBOSE=1
-
-# This is the debhelper compatability version to use.
-export DH_COMPAT=3
+CP = cp -fpR
 
 configure: configure-stamp
 configure-stamp:
-	dh_testdir
 	# Add here commands to configure the package.
 	touch configure-stamp
 
 build: configure-stamp build-stamp
 build-stamp:
-	dh_testdir
 	# Add here commands to compile the package.
 	$(MAKE) bootstrap
 	#/usr/bin/docbook-to-man debian/mlton.sgml > mlton.1
 	touch build-stamp
 
 clean:
-	dh_testdir
 	rm -f build-stamp configure-stamp
 	# Add here commands to clean up after the build process.
 	-$(MAKE) clean
-	dh_clean -Pdebian/mlton
 
+BUILDDIR = $(CURDIR)/debian/mlton
 install: build
-	dh_testdir
-	dh_clean -k
-	dh_installdirs
 	# Add here commands to install the package into debian/mlton.
-	$(MAKE) install post-install-debian DESTDIR=$(CURDIR)/debian/mlton \
+	$(MAKE) install post-install-debian DESTDIR=$(BUILDDIR) \
 		MAN_PREFIX_EXTRA=/share
 
 # Build architecture-independent files here.
@@ -43,33 +33,25 @@ binary-indep: build install
 
 # Build architecture-dependent files here.
 binary-arch: build install
-	dh_testdir
-	dh_testroot
-#	dh_installdebconf	
-	dh_installdocs
-	dh_installexamples
-	dh_installmenu
-#	dh_installlogrotate
-#	dh_installemacsen
-#	dh_installpam
-#	dh_installmime
-#	dh_installinit
-	dh_installcron
-	dh_installman
-	dh_installinfo
-	dh_undocumented
-	dh_installchangelogs 
-	dh_link
-	dh_strip --exclude=libmlton
-	dh_compress
-	dh_fixperms
-#	dh_makeshlibs
-	dh_installdeb
-#	dh_perl
-	dh_shlibdeps
-	dh_gencontrol
-	dh_md5sums
-	dh_builddeb
+	# dh_installdeb
+	mkdir -p $(BUILDDIR)/DEBIAN
+	for f in postinst prerm; do \
+		$(CP) debian/mlton.$$f $(BUILDDIR)/DEBIAN/$$f; \
+	done
+	# dh_shlibdeps
+	dpkg-shlibdeps \
+		-e$(BUILDDIR)/usr/bin/mllex \
+		-e$(BUILDDIR)/usr/bin/mlprof \
+		-e$(BUILDDIR)/usr/bin/mlyacc \
+		-e$(BUILDDIR)/usr/lib/mlton/mlton-compile 
+	# dh_gencontrol
+	dpkg-gencontrol -isp -P$(BUILDDIR)
+	# dh_md5sums
+	cd $(BUILDDIR) && \
+		find * -type f ! -regex '^DEBIAN/.*' -print0 | \
+			xargs -r0 md5sum >DEBIAN/md5sums
+	# dh_builddeb
+	dpkg-deb --build $(BUILDDIR) ../
 
 binary: binary-indep binary-arch
 .PHONY: build clean binary-indep binary-arch binary install configure
