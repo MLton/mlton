@@ -6,6 +6,8 @@ Redirect permanent /CHANGES http://www.mlton.org/changelog
 
 Redirect permanent /MLton http://www.mlton.org/
 
+Redirect permanent /user-guide/cm.html http://www.mlton.org/user-guide/CM.html
+
 # The user guide used to be in the HTML directory.
 RedirectMatch permanent /HTML* http://www.mlton.org/user-guide/index.html
 
