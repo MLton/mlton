@@ -149,11 +149,46 @@ structure Operand =
 
       fun foreachVar (z: t, f: Var.t -> unit): unit =
 	 foldVars (z, (), f o #1)
+
+      fun replaceVar (z: t, f: Var.t -> Var.t): t =
+	 let
+	    fun loop (z: t): t =
+	       case z of
+		  ArrayOffset {base, index, offset, scale, ty} =>
+		     ArrayOffset {base = loop base,
+				  index = loop index,
+				  offset = offset,
+				  scale = scale,
+				  ty = ty}
+		| Cast (t, ty) => Cast (loop t, ty)
+		| Offset {base, offset, ty} =>
+		     Offset {base = loop base,
+			     offset = offset,
+			     ty = ty}
+		| Var {var, ty} => Var {var = f var, ty = ty}
+		| _ => z
+	 in
+	    loop z
+	 end
+
    end
 
-structure Switch = Switch (open S
-			   structure Type = Type
-			   structure Use = Operand)
+structure Switch =
+   struct
+      local
+	 structure S = Switch (open S
+			       structure Type = Type
+			       structure Use = Operand)
+      in
+	 open S
+      end
+
+      fun replaceVar (T {cases, default, size, test}, f) =
+	 T {cases = cases,
+	    default = default,
+	    size = size,
+	    test = Operand.replaceVar (test, f)}
+   end
 
 structure Statement =
    struct
@@ -212,6 +247,30 @@ structure Statement =
 	 foldDefUse (s, a, {def = #3, use = f})
 
       fun foreachUse (s, f) = foldUse (s, (), f o #1)
+
+      fun replaceUses (s: t, f: Var.t -> Var.t): t =
+	 let
+	    fun oper (z: Operand.t): Operand.t =
+	       Operand.replaceVar (z, f)
+	 in
+	    case s of
+	       Bind {dst, isMutable, src} =>
+		  Bind {dst = dst,
+			isMutable = isMutable,
+			src = oper src}
+	     | Move {dst, src} => Move {dst = oper dst, src = oper src}
+	     | Object _ => s
+	     | PrimApp {args, dst, prim} =>
+		  PrimApp {args = Vector.map (args, oper),
+			   dst = dst,
+			   prim = prim}
+	     | Profile _ => s
+	     | ProfileLabel _ => s
+	     | SetExnStackLocal => s
+	     | SetExnStackSlot => s
+	     | SetHandler _ => s
+	     | SetSlotExnStack => s
+	 end
 
       val layout =
 	 let
@@ -275,6 +334,7 @@ structure Statement =
 	       end
 	 end
    end
+datatype z = datatype Statement.t
 
 structure Transfer =
    struct
@@ -291,8 +351,8 @@ structure Transfer =
        | Call of {args: Operand.t vector,
 		  func: Func.t,
 		  return: Return.t}
-       | Goto of {dst: Label.t,
-		  args: Operand.t vector}
+       | Goto of {args: Operand.t vector,
+		  dst: Label.t}
        | Raise of Operand.t vector
        | Return of Operand.t vector
        | Switch of Switch.t
@@ -410,6 +470,35 @@ structure Transfer =
 		     size = WordSize.default,
 		     test = test})
       end
+
+      fun replaceUses (t: t, f: Var.t -> Var.t): t =
+	 let
+	    fun oper z = Operand.replaceVar (z, f)
+	    fun opers zs = Vector.map (zs, oper)
+	 in
+	    case t of
+	       Arith {args, dst, overflow, prim, success, ty} =>
+		  Arith {args = opers args,
+			 dst = dst,
+			 overflow = overflow,
+			 prim = prim,
+			 success = success,
+			 ty = ty}
+	     | CCall {args, func, return} =>
+		  CCall {args = opers args,
+			 func = func,
+			 return = return}
+	     | Call {args, func, return} =>
+		  Call {args = opers args,
+			func = func,
+			return = return}
+	     | Goto {args, dst} =>
+		  Goto {args = opers args,
+			dst = dst}
+	     | Raise zs => Raise (opers zs)
+	     | Return zs => Return (opers zs)
+	     | Switch s => Switch (Switch.replaceVar (s, f))
+	 end
    end
 
 structure Kind =
@@ -761,11 +850,88 @@ structure Program =
 	    ; List.foreach (functions, fn f => Function.layouts (f, output))
 	 end
 
+      fun copyProp (T {functions, handlesSignals, main, objectTypes, ...}): t =
+	 let
+	    val {get = varReplacement: Var.t -> Var.t option,
+		 set = setVarReplacement, ...} =
+	       Property.getSetOnce (Var.plist, Property.initConst NONE)
+	    fun replaceVar (x: Var.t): Var.t =
+	       case varReplacement x of
+		  NONE => x
+		| SOME y => y
+	    fun loopFunction (f: Function.t): unit =
+	       (* Use dfs to visit defs before uses. *)
+	       Function.dfs
+	       (f, fn Block.T {statements, ...} =>
+		let
+		   val () =
+		      Vector.foreach
+		      (statements, fn s =>
+		       case s of
+			  Bind {dst = (x, _), src = Operand.Var {var = y, ...},
+				...} =>
+			  setVarReplacement (x, SOME (replaceVar y))
+			      | _ => ())
+		in
+		   fn () => ()
+		end)
+	    (* Must process main first, because it defines globals that are
+	     * used in other functions.
+	     *)
+	    val () = loopFunction main
+	    val () = List.foreach (functions, loopFunction)
+	    fun replaceFunction (f: Function.t): Function.t =
+	       let
+		  val {args, blocks, name, raises, returns, start} =
+		     Function.dest f
+		  val blocks =
+		     Vector.map
+		     (blocks,
+		      fn Block.T {args, kind, label, statements, transfer} =>
+		      let
+			 val statements =
+			    Vector.keepAllMap
+			    (statements, fn s =>
+			     case s of
+				Bind {src = Operand.Var _, ...} => NONE
+			      | _ =>
+				   SOME (Statement.replaceUses (s, replaceVar)))
+			 val transfer =
+			    Transfer.replaceUses (transfer, replaceVar)
+		      in
+			 Block.T {args = args,
+				  kind = kind,
+				  label = label,
+				  statements = statements,
+				  transfer = transfer}
+		      end)
+	       in
+		  Function.new {args = args,
+				blocks = blocks,
+				name = name,
+				raises = raises,
+				returns = returns,
+				start = start}
+	       end
+	 in
+	    T {functions = List.revMap (functions, replaceFunction),
+	       handlesSignals = handlesSignals,
+	       main = replaceFunction main,
+	       objectTypes = objectTypes}
+	 end
+		  
       fun shrink (T {functions, handlesSignals, main, objectTypes}) =
-	 T {functions = List.map (functions, Function.shrink),
-	    handlesSignals = handlesSignals,
-	    main = Function.shrink main,
-	    objectTypes = objectTypes}
+	 let
+	    val p = 
+	       T {functions = List.map (functions, Function.shrink),
+		  handlesSignals = handlesSignals,
+		  main = Function.shrink main,
+		  objectTypes = objectTypes}
+	    val p = copyProp p
+	    val () = clear p
+	 in
+	    p
+	 end
 
       structure ExnStack =
 	 struct

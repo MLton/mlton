@@ -70,6 +70,7 @@ signature RSSA =
 	    val cast: t * Type.t -> t
 	    val layout: t -> Layout.t
 	    val foreachVar: t * (Var.t -> unit) -> unit
+	    val replaceVar: t * (Var.t -> Var.t) -> t
 	    val ty: t -> Type.t
 	    val word: WordX.t -> t
 	    val zero: WordSize.t -> t
@@ -108,6 +109,7 @@ signature RSSA =
 	    val foldUse: t * 'a * (Var.t * 'a -> 'a) -> 'a
 	    val foreachUse: t * (Var.t -> unit) -> unit
 	    val layout: t -> Layout.t
+	    val replaceUses: t * (Var.t -> Var.t) -> t
 	    val resize: Operand.t * Bits.t -> Operand.t * t list
 	    val toString: t -> string
 	 end
@@ -158,6 +160,7 @@ signature RSSA =
 	    (* in ifZero, the operand should be of type defaultWord *)
 	    val ifZero: Operand.t * {falsee: Label.t, truee: Label.t} -> t
 	    val layout: t -> Layout.t
+	    val replaceUses: t * (Var.t -> Var.t) -> t
 	 end
 
       structure Kind:

@@ -150,11 +150,12 @@ fun toMachine (program: Ssa.Program.t, codegen) =
 				thunk = fn () => doit program,
 				typeCheck = R.Program.typeCheck}
       val program = pass ("ssaToRssa", SsaToRssa.convert, (program, codegen))
-      val program = pass ("rssaShrink", Rssa.Program.shrink, program)
+      val program = pass ("rssaShrink1", Rssa.Program.shrink, program)
       val program = pass ("insertLimitChecks", LimitCheck.insert, program)
       val program = pass ("insertSignalChecks", SignalCheck.insert, program)
       val program = pass ("implementHandlers", ImplementHandlers.doit, program)
-      val _ = R.Program.checkHandlers program
+      val program = pass ("rssaShrink2", Rssa.Program.shrink, program)
+      val () = R.Program.checkHandlers program
       val (program, makeProfileInfo) =
 	 Control.passTypeCheck
 	 {display = Control.Layouts (fn ((program, _), output) =>
