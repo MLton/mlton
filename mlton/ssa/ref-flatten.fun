@@ -143,12 +143,20 @@ structure Value =
 	    Object {flat, ...} => Set.setValue (flat, NotFlat)
 	  | _ => ()
 
+      val unit = Ground Type.unit
+
+      fun isUnit v =
+	 case v of
+	    Ground t => Type.isUnit t
+	  | _ => false
+	       
       fun object {args, con} =
 	 let
 	    (* Only may flatten objects with mutable fields. *)
 	    val flat =
 	       Set.singleton
-	       (if Vector.exists (args, #isMutable)
+	       (if Vector.exists (args, fn {elt, isMutable} =>
+				  isMutable andalso not (isUnit elt))
 		   then Unknown
 		else NotFlat)
 	 in
@@ -171,8 +179,6 @@ structure Value =
 				      ("isMutable", Bool.layout isMutable)]),
 		      layout)
 	 tuple
-
-      val unit = tuple (Vector.new0 ())
 
       val rec unify: t * t -> unit =
 	 fn (v, v') =>
@@ -373,10 +379,11 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	    fun arg i = Vector.sub (args, i)
 	    fun result () = typeValue resultType
 	    datatype z = datatype Prim.Name.t
-	    fun equal () = (Value.unify (arg 0, arg 1)
-			    ; result ())
 	    fun dontFlatten () =
 	       (Vector.foreach (args, Value.dontFlatten)
+		; result ())
+	    fun equal () =
+	       (Value.unify (arg 0, arg 1)
 		; result ())
 	 in
 	    case Prim.name prim of
