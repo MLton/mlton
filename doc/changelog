@@ -1,5 +1,9 @@
 Here are the changes from version 20020923.
 
+* 2002-12-10
+  - Fixed bug in runtime that might cause the message
+	Unable to set cardMapForMutator.
+
 * 2002-11-23
   - Added support for the latest Basis Library specification.
   - Added option -basis to choose Basis Library version.  Currently available
@@ -10,7 +14,6 @@ Here are the changes from version 20020923.
   - Added OS.IO.{pollIn,pollOut,pollPri,poll,isIn,isOut,isPri} values.
   - Added BinPrimIO,TextPrimIO structures.
   - Added StreamIO,ImperativeIO functors.
-  
 	
 * 2002-11-22
   - Fixed bug that caused time profiling to fail (with a segfault) when resuming

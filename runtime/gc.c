@@ -1271,9 +1271,10 @@ static inline void clearCrossMap (GC_state s) {
 static void setCardMapForMutator (GC_state s) {
 	unless (s->mutatorMarksCards)
 		return;
-	if ((uint)s->cardMap < divCardSize (s, (uint)s->heap.start))
-		diee ("Unable to set cardMapForMutator.  cardmap = 0x%08x  heap.start = 0x%08x",
-			(uint)s->cardMap, (uint)s->heap.start);
+	/* It's OK if the subtraction below underflows because all the 
+         * subsequent additions to mark the cards will overflow and put us
+	 * in the right place.
+         */
 	s->cardMapForMutator = s->cardMap - divCardSize (s, (uint)s->heap.start);
 	if (DEBUG_CARD_MARKING)
 		fprintf (stderr, "cardMapForMutator = 0x%08x\n",
