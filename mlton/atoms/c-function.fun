@@ -49,7 +49,7 @@ datatype 'a t = T of {args: 'a vector,
 		      writesStackTop: bool}
    
 fun layout (T {args, bytesNeeded, convention, ensuresBytesFree, mayGC,
-	       maySwitchThreads, modifiesFrontier, readsStackTop,
+	       maySwitchThreads, modifiesFrontier, prototype, readsStackTop,
 	       return, target, writesStackTop, ...},
 	    layoutType) =
    Layout.record
@@ -60,6 +60,10 @@ fun layout (T {args, bytesNeeded, convention, ensuresBytesFree, mayGC,
     ("mayGC", Bool.layout mayGC),
     ("maySwitchThreads", Bool.layout maySwitchThreads),
     ("modifiesFrontier", Bool.layout modifiesFrontier),
+    ("prototype", (fn (args,ret) => 
+		   Layout.record
+		   [("args", Vector.layout CType.layout args),
+		    ("res", Option.layout CType.layout ret)]) prototype),
     ("readsStackTop", Bool.layout readsStackTop),
     ("return", layoutType return),
     ("target", Target.layout target),
