@@ -166,28 +166,31 @@ fun build (decs: CoreML.Dec.t vector, out: Out.t): unit =
 fun load (decs, ins: In.t): string -> Const.t =
    let
       val constants = constants decs
-      val valueLines =
-	 List.map2
-	 (constants, In.lines ins,
-	  fn ({name, ...}, s) =>
-	  case String.tokens (s, Char.isSpace) of
-	     [name', "=", value] =>
-		if name = name'
-		   then value
-		else Error.bug (concat ["expected ", name,
-					" but saw ", name'])
-	   | _ => Error.bug (concat ["strange constants line ", s]))
-      (* Parse the output. *)
+      val lines = In.lines ins
+      val _ = if List.length constants = List.length lines
+		 then ()
+	      else Error.bug "bad constants file"
       val values =
-	 List.map2 (constants,
-		    valueLines,
-		    fn ({ty, ...}, s) =>
-		    case ty of
-		       Bool => Const.Bool (valOf (Bool.fromString s))
-		     | Int => Const.Int (valOf (Int.fromString s))
-		     | String => Const.String (unescape s)
-		     | Real => Const.Real s
-		     | Word => Const.Word (valOf (Word.fromString s)))
+	 List.map2
+	  (constants, lines,
+	   fn ({name, ty, ...}, s) =>
+	   let
+	      val s =
+		 case String.tokens (s, Char.isSpace) of
+		    [name', "=", value] =>
+		       if name = name'
+			  then value
+		       else Error.bug (concat ["expected ", name,
+					       " but saw ", name'])
+		  | _ => Error.bug (concat ["strange constants line ", s])
+	   in
+	      case ty of
+		 Bool => Const.Bool (valOf (Bool.fromString s))
+	       | Int => Const.Int (valOf (Int.fromString s))
+	       | String => Const.String (unescape s)
+	       | Real => Const.Real s
+	       | Word => Const.Word (valOf (Word.fromString s))
+	   end)
       val lookupConstant =
 	 String.memoizeList
 	 (fn s => Error.bug (concat ["strange constant: ", s]),
