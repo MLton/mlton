@@ -16,7 +16,10 @@ $(AOUT): $(shell $(MLTON) -stop f mlton.cm)
 	size $(AOUT)
 	strip $(AOUT)
 
-$(NAME).cm: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
+$(NAME).cm: 
+	$(MAKE) front-end/ml.lex.sml && 				\
+	$(MAKE) front-end/ml.grm.sig && 				\
+	$(MAKE) front-end/ml.grm.sml &&					\
 	(								\
 		echo 'Group is'&&					\
 		cmcat sources.cm | grep -v 'mlton-stubs-in-smlnj' |	\

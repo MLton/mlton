@@ -11,7 +11,10 @@ $(NAME): $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)
 	strip $(NAME)
 	size $(NAME)
 
-$(NAME).cm: src/yacc.lex.sml src/yacc.grm.sig src/yacc.grm.sml
+$(NAME).cm:
+	$(MAKE) src/yacc.lex.sml &&					\
+	$(MAKE) src/yacc.grm.sig &&					\
+	$(MAKE) src/yacc.grm.sml &&					\
 	(								\
 		echo 'Group is' &&					\
 		cmcat sources.cm | grep -v 'mlton-stubs-in-smlnj' &&	\
