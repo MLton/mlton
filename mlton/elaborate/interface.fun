@@ -404,7 +404,7 @@ structure Defn =
       open Defn
 
       datatype dest =
-	 Realized of EtypeStr.t
+	 Realized of EtypeStr.t option
        | TypeStr of TypeStr.t
        | Undefined
 
@@ -594,7 +594,7 @@ structure FlexibleTycon =
       type typeStr = TypeStr.t
 	 
       datatype realization =
-	 ETypeStr of EnvTypeStr.t
+	 ETypeStr of EnvTypeStr.t option
 	| TypeStr of typeStr
 	  
       fun realization (f: t): realization =

@@ -329,7 +329,10 @@ structure Interface =
 	    datatype z = datatype FlexibleTycon.realization
 	 in
 	    case FlexibleTycon.realization c of
-	       ETypeStr s => s
+	       ETypeStr s =>
+		  (case s of
+		      NONE => EtypeStr.tycon (EtypeStr.Tycon.tuple, Kind.Nary)
+		    | SOME s => s)
 	     | TypeStr s => typeStrToEnv s
 	 end
       and tyconToEnv (t: Tycon.t): EtypeStr.t =
@@ -1263,7 +1266,8 @@ fun dummyStructure (I: Interface.t, {prefix: string})
 					     fn (s, ss) =>
 					     Strid.toString s :: "." :: ss)))
 		   val c = newTycon (name, k, a)
-		   val _ = FlexibleTycon.realize (flex, TypeStr.tycon (c, k))
+		   val () =
+		      FlexibleTycon.realize (flex, SOME (TypeStr.tycon (c, k)))
 		in
 		   (tycon, c)
 		end)
@@ -2622,15 +2626,19 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 		 k)
 	     val typeStr =
 		case typeStr of
-		   NONE => bad ()
+		   NONE => NONE
 		 | SOME typeStr =>
+		      (* This if makes sure we only realize a plausible
+		       * candidate for typeStr, i.e. one that has the right
+		       * equality property, arity, and datatype aspect.
+		       *)
 		      if AdmitsEquality.<= (a, TypeStr.admitsEquality typeStr)
 			 andalso Kind.equals (k, TypeStr.kind typeStr)
 			 andalso (not hasCons
 				  orelse (Option.isSome
 					  (TypeStr.toTyconOpt typeStr)))
-			 then typeStr
-		      else bad ()
+			 then SOME typeStr
+		      else NONE
 	     val () = FlexibleTycon.realize (flex, typeStr)
 	  in
 	     ()
