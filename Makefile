@@ -21,7 +21,7 @@ VERSION = $(shell echo `date +%Y%m%d`)
 .PHONY: all
 all:
 	$(MAKE) compiler dirs
-	$(CP) $(COMP)/$(AOUT) $(LIB)
+	$(CP) $(COMP)/$(AOUT) $(LIB)/
 	$(MAKE) script world runtime hostmap constants tools docs
 	@echo 'Build of MLton succeeded.'
 
@@ -135,7 +135,7 @@ install:
 	rm -rf $(TDOC)/user-guide
 	$(CP) $(SRC)/doc/user-guide/main $(TDOC)/user-guide
 	gzip -c $(SRC)/doc/user-guide/main.ps >$(TDOC)/user-guide.ps.gz
-	$(CP) $(LIB)/. $(TLIB)
+	$(CP) $(LIB)/. $(TLIB)/
 	sed "/^lib=/s;'.*';'$(prefix)/$(ULIB)';" 			\
 			<$(SRC)/bin/mlton >$(TBIN)/mlton
 	chmod +x $(TBIN)/mlton
