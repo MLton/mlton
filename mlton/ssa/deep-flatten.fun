@@ -266,52 +266,44 @@ datatype z = datatype Flat.t
    
 structure Value =
    struct
-      datatype t = T of {finalOffsets: int vector option ref,
-			 finalTree: TypeTree.t option ref,
-			 finalType: Type.t option ref,
-			 finalTypes: Type.t Prod.t option ref,
-			 value: value} Equatable.t
-      and value =
+      datatype t =
 	 Ground of Type.t
-       | Object of {args: t Prod.t,
+       | Complex of complex Equatable.t
+      and complex =
+	 Object of {args: t Prod.t,
 		    coercedFrom: t AppendList.t ref,
 		    con: ObjectCon.t,
+		    finalOffsets: int vector option ref,
+		    finalTree: TypeTree.t option ref,
+		    finalType: Type.t option ref,
+		    finalTypes: Type.t Prod.t option ref,
 		    flat: Flat.t ref}
-       | Weak of {arg: t}
+	| Weak of {arg: t}
 
-      fun new' v = {finalOffsets = ref NONE,
-		    finalTree = ref NONE,
-		    finalType = ref NONE,
-		    finalTypes = ref NONE,
-		    value = v}
-
-      fun delay (f: unit -> value): t =
-	 T (Equatable.delay (fn () => new' (f ())))
+      fun delay (f: unit -> complex): t = Complex (Equatable.delay f)
 	 
-      fun new (v: value) = T (Equatable.new (new' v))
+      fun new (v: complex) = Complex (Equatable.new v)
 
-      fun value (T e) = #value (Equatable.value e)
+      fun layout (v: t): Layout.t =
+	 let
+	    open Layout
+	 in
+	    case v of
+	       Ground t => Type.layout t
+	     | Complex e =>
+		  Equatable.layout
+		  (e, fn v =>
+		   case v of
+		      Object {args, con, flat, ...} => 
+			 seq [str "Object ",
+			      record [("args", Prod.layout (args, layout)),
+				      ("con", ObjectCon.layout con),
+				      ("flat", Flat.layout (! flat))]]
+		    | Weak {arg, ...} => seq [str "Weak ", layout arg])
+	 end
 
-      fun layout (T e): Layout.t =
-	 Equatable.layout
-	 (e, fn {value, ...} =>
-	  let
-	     open Layout
-	  in
-	     case value of
-		Ground t => Type.layout t
-	      | Object {args, con, flat, ...} => 
-		   seq [str "Object ",
-			record [("args", Prod.layout (args, layout)),
-				("con", ObjectCon.layout con),
-				("flat", Flat.layout (! flat))]]
-	      | Weak {arg, ...} => seq [str "Weak ", layout arg]
-	  end)
+      val ground = Ground
 
-      val ground = new o Ground
-
-      fun weak (a: t): value = Weak {arg = a}
-	       
       val traceCoerce =
 	 Trace.trace ("DeepFlatten.Value.coerce",
 		      fn {from, to} =>
@@ -325,36 +317,39 @@ structure Value =
       val rec unify: t * t -> unit =
 	 fn arg =>
 	 traceUnify
-	 (fn (v as T e, T e') =>
-	  let
-	     val callDont = ref false
-	     val () =
-		Equatable.equate
-		(e, e', fn (z as {value = v, ...}, {value = v', ...}) =>
-		 case (v, v') of
-		    (Ground _, Ground _) => z
-		  | (Object {args = a, coercedFrom = c, flat = f, ...},
-		     Object {args = a', coercedFrom = c', flat = f', ...}) =>
-		       let
-			  val () = unifyProd (a, a')
-		       in
-			  case (!f, !f') of
-			     (Flat, Flat) =>
-				(c := AppendList.append (!c', !c); new' v)
-			   | (Flat, NotFlat) =>
-				(callDont := true; new' v)
-			   | (NotFlat, Flat) =>
-				(callDont := true; new' v')
-			   | (NotFlat, NotFlat) => z
-		       end
-		  | (Weak {arg = a, ...}, Weak {arg = a', ...}) =>
-		       (unify (a, a'); z)
-		  | _ => Error.bug "strange unify")
-	  in
-	     if !callDont
-		then dontFlatten v
-	     else ()
-	  end) arg
+	 (fn (v, v') =>
+	  case (v, v') of
+	     (Ground _, Ground _) => ()
+	   | (Complex e, Complex e') =>
+		let
+		   val callDont = ref false
+		   val () =
+		      Equatable.equate
+		      (e, e', fn (v, v') =>
+		       case (v, v') of
+			  (Object {args = a, coercedFrom = c, flat = f, ...},
+			   Object {args = a', coercedFrom = c', flat = f', ...}) =>
+			  let
+			     val () = unifyProd (a, a')
+			  in
+			     case (!f, !f') of
+				(Flat, Flat) =>
+				   (c := AppendList.append (!c', !c); v)
+			      | (Flat, NotFlat) =>
+				   (callDont := true; v)
+			      | (NotFlat, Flat) =>
+				   (callDont := true; v')
+			      | (NotFlat, NotFlat) => v
+			  end
+			 | (Weak {arg = a, ...}, Weak {arg = a', ...}) =>
+			      (unify (a, a'); v)
+			 | _ => Error.bug "strange unify")
+		in
+		   if !callDont
+		      then dontFlatten v
+		   else ()
+		end
+	   | _ => Error.bug "unify Ground with Complex") arg
       and unifyProd =
 	 fn (p, p') =>
 	 Vector.foreach2
@@ -362,46 +357,48 @@ structure Value =
 	  fn ({elt = e, ...}, {elt = e', ...}) => unify (e, e'))
       and dontFlatten: t -> unit =
 	 fn v =>
-	 case value v of
-	    Object {coercedFrom, flat, ...} =>
-	       (case ! flat of
-		   Flat =>
-		      let
-			 val () = flat := NotFlat
-			 val from = !coercedFrom
-			 val () = coercedFrom := AppendList.empty
-		      in
-			 AppendList.foreach (from, fn v' => unify (v, v'))
-		      end
-		 | NotFlat => ())
-	  | _ => ()
+	 case v of
+	    Ground _ => ()
+	  | Complex e =>
+	       case Equatable.value e of
+		  Object {coercedFrom, flat, ...} =>
+		     (case ! flat of
+			 Flat =>
+			    let
+			       val () = flat := NotFlat
+			       val from = !coercedFrom
+			       val () = coercedFrom := AppendList.empty
+			    in
+			       AppendList.foreach (from, fn v' => unify (v, v'))
+			    end
+		       | NotFlat => ())
+		| _ => ()
 
       val rec coerce =
-	 fn arg as {from as T e, to as T e'} =>
+	 fn arg as {from, to} =>
 	 traceCoerce
 	 (fn _ =>
-	 if Equatable.equals (e, e')
-	    then ()
-	 else
-	    Equatable.whenComputed
-	    (e', fn {value = v', ...} =>
-	     let
-		val {value = v, ...} = Equatable.value e
-	     in
-		case (v, v') of
-		   (Ground _, Ground _) => ()
-		 | (Object {args = a, con, ...},
-		    Object {args = a', coercedFrom = c', flat = f', ...}) =>
-		      (if Prod.isMutable a orelse ObjectCon.isVector con
-			  then unify (from, to)
-		       else
-			  case !f' of
-			     Flat => (AppendList.push (c', from)
-				      ; coerceProd {from = a, to = a'})
-			   | NotFlat => unify (from, to))
-		  | (Weak _, Weak _) => unify (from, to)
-		  | _ => Error.bug "strange unify"
-	     end)) arg
+	  case (from, to) of
+	     (Ground _, Ground _) => ()
+	   | (Complex e, Complex e') =>
+		if Equatable.equals (e, e')
+		   then ()
+		else
+		   Equatable.whenComputed
+		   (e', fn v' =>
+		    case (Equatable.value e, v') of
+		       (Object {args = a, con, ...},
+			Object {args = a', coercedFrom = c', flat = f', ...}) =>
+		       (if Prod.isMutable a orelse ObjectCon.isVector con
+			   then unify (from, to)
+			else
+			   case !f' of
+			      Flat => (AppendList.push (c', from)
+				       ; coerceProd {from = a, to = a'})
+			    | NotFlat => unify (from, to))
+		      | (Weak _, Weak _) => unify (from, to)
+		      | _ => Error.bug "strange coerce")
+	   | _ => Error.bug "coerce Complex with Ground") arg
       and coerceProd =
 	 fn {from = p, to = p'} =>
 	 Vector.foreach2
@@ -442,6 +439,10 @@ structure Value =
 	    Object {args = args,
 		    coercedFrom = ref AppendList.empty,
 		    con = con,
+		    finalOffsets = ref NONE,
+		    finalTree = ref NONE,
+		    finalType = ref NONE,
+		    finalTypes = ref NONE,
 		    flat = ref flat}
 	 end
 	    
@@ -454,20 +455,33 @@ structure Value =
 		      layout)
 	 tuple
 
-      val deObject =
-	 fn v =>
-	 case value v of
-	    Object z => z
-	  | _ => Error.bug "Value.deObject"
+      fun weak (arg: t) = new (Weak {arg = arg})
 
+      val deObjectOpt =
+	 fn v =>
+	 case v of
+	    Ground _ => NONE
+	  | Complex e =>
+	       case Equatable.value e of
+		  Object z => SOME z
+		| _ => NONE
+
+      fun deObject v =
+	 case deObjectOpt v of
+	    NONE => Error.bug "Value.deObject"
+	  | SOME z => z
+	       
       fun select {base: t, offset: int}: t =
 	 Prod.elt (#args (deObject base), offset)
 
       val deWeak: t -> t =
 	 fn v =>
-	 case value v of
-	    Weak {arg, ...} => arg
-	  | _ => Error.bug "Value.deWeak"
+	 case v of
+	    Ground _ => Error.bug "Value.deWeak"
+	  | Complex e =>
+	       case Equatable.value e of
+		  Weak {arg, ...} => arg
+		| _ => Error.bug "Value.deWeak"
 
       val traceFinalType =
 	 Trace.trace ("DeepFlatten.Value.finalType", layout, Type.layout)
@@ -476,66 +490,56 @@ structure Value =
 		      layout,
 		      fn p => Prod.layout (p, Type.layout))
 
-      fun finalTree (v as T e): TypeTree.t =
+      fun finalTree (v: t): TypeTree.t =
 	 let
-	    val {finalTree = r, value, ...} = Equatable.value e
+	    fun notFlat (): TypeTree.info =
+	       TypeTree.NotFlat {ty = finalType v, var = NONE}
 	 in
-	    Ref.memoize
-	    (r, fn () =>
-	     let
-		fun notFlat () = TypeTree.NotFlat {ty = finalType v,
-						   var = NONE}
-	     in
-		case value of
-		   Object {args, flat, ...} =>
-		      let
-			 val info =
-			    case !flat of
-			       Flat => TypeTree.Flat
-			     | NotFlat => notFlat ()
-		      in
-			 Tree.T (info, Prod.map (args, finalTree))
-		      end
-		 | _ => Tree.T (notFlat (), Prod.empty ())
-	     end)
+	    case deObjectOpt v of
+	       NONE => Tree.T (notFlat (), Prod.empty ())
+	     | SOME {args, finalTree = r, flat, ...} =>
+		  Ref.memoize
+		  (r, fn () =>
+		   let
+		      val info =
+			 case !flat of
+			    Flat => TypeTree.Flat
+			  | NotFlat => notFlat ()
+		   in
+		      Tree.T (info, Prod.map (args, finalTree))
+		   end)
 	 end
       and finalType arg: Type.t =
 	 traceFinalType
-	 (fn v as T e =>
-	  let
-	     val {finalType = r, value, ...} = Equatable.value e
-	  in
-	     Ref.memoize
-	     (r, fn () =>
-	      case value of
-		 Ground t => t
-	       | Object _ => Prod.elt (finalTypes v, 0)
-	       | Weak {arg, ...} => Type.weak (finalType arg))
-	  end) arg
+	 (fn v =>
+	  case v of
+	     Ground t => t
+	   | Complex e =>
+		case Equatable.value e of
+		   Object {finalType = r, ...} =>
+		      Ref.memoize (r, fn () => Prod.elt (finalTypes v, 0))
+		 | Weak {arg, ...} => Type.weak (finalType arg)) arg
       and finalTypes arg: Type.t Prod.t =
 	 traceFinalTypes
-	 (fn v as T e =>
-	 let
-	     val {finalTypes, value, ...} = Equatable.value e
-	  in
-	     Ref.memoize
-	     (finalTypes, fn () =>
-	      case value of
-		 Object {args, con, flat, ...} =>
-		    let
-		       val args = prodFinalTypes args
-		    in
-		       case !flat of
-			  Flat => args
-			| NotFlat =>
-			     Prod.make
-			     (Vector.new1
-			      {elt = Type.object {args = args, con = con},
-			       isMutable = false})
-		    end
-	       | _ => Prod.make (Vector.new1 {elt = finalType v,
-					      isMutable = false}))
-	 end) arg
+	 (fn v =>
+	  case deObjectOpt v of
+	     NONE =>
+		Prod.make (Vector.new1 {elt = finalType v,
+					isMutable = false})
+	   | SOME {args, con, finalTypes, flat, ...} =>
+		Ref.memoize
+		(finalTypes, fn () =>
+		 let
+		    val args = prodFinalTypes args
+		 in
+		    case !flat of
+		       Flat => args
+		     | NotFlat =>
+			  Prod.make
+			  (Vector.new1
+			   {elt = Type.object {args = args, con = con},
+			    isMutable = false})
+		 end)) arg
       and prodFinalTypes (p: t Prod.t): Type.t Prod.t =
 	 Prod.make
 	 (Vector.fromList
@@ -545,20 +549,17 @@ structure Value =
 	    (Prod.dest (finalTypes elt), ac, fn ({elt, isMutable = i'}, ac) =>
 	     {elt = elt, isMutable = i orelse i'} :: ac))))
 
-      fun finalOffsets (T e): int vector =
+      fun finalOffsets (v: t): int vector =
 	 let
-	    val {finalOffsets = r, value, ...} = Equatable.value e
+	    val {args, finalOffsets = r, ...} = deObject v
 	 in
 	    Ref.memoize
 	    (r, fn () =>
-	     case value of
-		Object {args, ...} =>
-		   Vector.fromListRev
-		   (#2 (Prod.fold
-			(args, (0, []), fn (elt, (offset, offsets)) =>
-			 (offset + Prod.length (finalTypes elt),
-			  offset :: offsets))))
-	      | _ => Error.bug "finalOffsets of non object")
+	     Vector.fromListRev
+	     (#2 (Prod.fold
+		  (args, (0, []), fn (elt, (offset, offsets)) =>
+		   (offset + Prod.length (finalTypes elt),
+		    offset :: offsets)))))
 	 end
 
       fun finalOffset (object, offset) =
@@ -611,7 +612,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		     let
 			val t = makeTypeValue t
 		     in
-			fn () => Value.delay (fn () => Value.weak (t ()))
+			fn () => Value.weak (t ())
 		     end
 		| _ =>
 		     let
@@ -665,11 +666,11 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	       Array_toVector =>
 		  let
 		     val res = result ()
-		     datatype z = datatype Value.value
 		     val () =
-			case (Value.value (arg 0), Value.value res) of
-			   (Ground _, Ground _) => ()
-			 | (Object {args = a, ...}, Object {args = a', ...}) =>
+			case (Value.deObjectOpt (arg 0),
+			      Value.deObjectOpt res) of
+			   (NONE, NONE) => ()
+			 | (SOME {args = a, ...}, SOME {args = a', ...}) =>
 			      Vector.foreach2
 			      (Prod.dest a, Prod.dest a',
 			       fn ({elt = v, ...}, {elt = v', ...}) =>
@@ -688,7 +689,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	     | MLton_size => dontFlatten ()
 	     | MLton_share => dontFlatten ()
 	     | Weak_get => Value.deWeak (arg 0)
-	     | Weak_new => Value.new (Value.weak (arg 0))
+	     | Weak_new => Value.weak (arg 0)
 	     | _ => result ()
 	 end
       fun update {base, offset, value} =
@@ -826,58 +827,53 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		    | SOME var =>
 			 let
 			    val v = varValue var
+			    val {args = expects, flat, ...} = Value.deObject v
+			    val z =
+			       Vector.map2
+			       (args, Prod.dest expects,
+				fn (arg, {elt, isMutable}) =>
+				let
+				   val (vt, ss) =
+				      coerceTree
+				      {from = varTree arg,
+				       to = Value.finalTree elt}
+				in
+				   ({elt = vt,
+				     isMutable = isMutable},
+				    ss)
+				end)
+			    val vts = Vector.map (z, #1)
+			    fun set info =
+			       setVarTree (var,
+					   Tree.T (info,
+						   Prod.make vts))
 			 in
-			    case Value.value v of
-			       Value.Object {args = expects, flat, ...} =>
+			    case !flat of
+			       Flat => (set VarTree.Flat; none ())
+			     | NotFlat =>
 				  let
-				     val z =
-					Vector.map2
-					(args, Prod.dest expects,
-					 fn (arg, {elt, isMutable}) =>
-					 let
-					    val (vt, ss) =
-					       coerceTree
-					       {from = varTree arg,
-						to = Value.finalTree elt}
-					 in
-					    ({elt = vt,
-					      isMutable = isMutable},
-					     ss)
-					 end)
-				     val vts = Vector.map (z, #1)
-				     fun set info =
-					setVarTree (var,
-						    Tree.T (info,
-							    Prod.make vts))
+				     val ty = Value.finalType v
+				     val () =
+					set (VarTree.NotFlat
+					     {ty = ty,
+					      var = SOME var})
+				     val args =
+					Vector.fromList
+					(Vector.foldr
+					 (vts, [],
+					  fn ({elt = vt, ...}, ac) =>
+					  VarTree.rootsOnto (vt, ac)))
+				     val obj =
+					Bind
+					{exp = Object {args = args,
+						       con = con},
+					 ty = ty,
+					 var = SOME var}
 				  in
-				     case !flat of
-					Flat => (set VarTree.Flat; none ())
-				      | NotFlat =>
-					   let
-					      val ty = Value.finalType v
-					      val () =
-						 set (VarTree.NotFlat
-						      {ty = ty,
-						       var = SOME var})
-					      val args =
-						 Vector.fromList
-						 (Vector.foldr
-						  (vts, [],
-						   fn ({elt = vt, ...}, ac) =>
-						   VarTree.rootsOnto (vt, ac)))
-					      val obj =
-						 Bind
-						 {exp = Object {args = args,
-								con = con},
-						  ty = ty,
-						  var = SOME var}
-					   in
-					      Vector.foldr
-					      (z, [obj],
-					       fn ((_, ss), ac) => ss @ ac)
-					   end
+				     Vector.foldr
+				     (z, [obj],
+				      fn ((_, ss), ac) => ss @ ac)
 				  end
-			  | _ => Error.bug "transformStatement Object"
 			 end)
 	     | PrimApp {args, prim} =>
 		  let
