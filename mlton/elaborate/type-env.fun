@@ -1465,6 +1465,16 @@ structure Scheme =
 	 end
    end
 
+fun generalize (tyvars: Tyvar.t vector) =
+   let
+      val genTime = Time.now ()
+      val () = Vector.foreach (tyvars, fn a => tyvarTime a := genTime)
+   in
+      fn () => {unable = (Vector.keepAll
+			  (tyvars, fn a =>
+			   not (Time.<= (genTime, !(tyvarTime a)))))}
+   end
+
 fun close (ensure: Tyvar.t vector) =
    let
       val genTime = Time.now ()

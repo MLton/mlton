@@ -2497,19 +2497,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 		let
 		   val sigScheme = Interface.Scheme.toEnv sigScheme
 		   val (sigArgs, sigType) = Scheme.dest sigScheme
-		   val tyvars = Vector.map (sigArgs, fn a => Tyvar.newLike a)
-		   fun var a =
-		      case Vector.peeki (sigArgs, fn (_, a') =>
-					 Tyvar.equals (a, a')) of
-			 NONE => Error.bug "cut var"
-		       | SOME (i, _) => Type.var (Vector.sub (tyvars, i))
-		   val sigType =
-		      Type.hom (sigType, {con = Type.con,
-					  expandOpaque = false,
-					  record = Type.record,
-					  replaceSynonyms = false,
-					  var = var})
-		   val {close, ...} = TypeEnv.close tyvars
+		   val generalize = TypeEnv.generalize sigArgs
 		   val {args = strArgs, instance = strType} =
 		      Scheme.instantiate strScheme
 		   fun error rest =
@@ -2536,7 +2524,11 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 						  seq [str "signature: ", l']])
 				 end),
 			preError = preError})
-		   val {bound, unable, ...} = close (Vector.new1 strType)
+		   (* Now that we've unified, find any type variables that
+		    * can't be generalized because they occur at an earlier
+		    * point.
+		    *)
+		   val {unable} = generalize ()
 		   val () =
 		      if 0 = Vector.length unable
 			 then ()
@@ -2563,7 +2555,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 			    List.push
 			    (decs,
 			     Dec.Val {rvbs = Vector.new0 (),
-				      tyvars = bound,
+				      tyvars = fn () => sigArgs,
 				      vbs = (Vector.new1
 					     {exp = e,
 					      lay = fn _ => Layout.empty,
@@ -2579,7 +2571,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 			 (Vid.Con c, Status.Var) => con c
 		       | (Vid.Exn c, Status.Var) => con c
 		       | (Vid.Var x, Status.Var) =>
-			    if 0 < Vector.length tyvars
+			    if 0 < Vector.length sigArgs
 			       orelse 0 < Vector.length (strArgs ())
 			       then addDec (Exp.Var (fn () => x, strArgs))
 			    else vid

@@ -92,6 +92,7 @@ signature TYPE_ENV =
 				      schemes: Scheme.t vector,
 				      unable: Tyvar.t vector},
 	     dontClose: unit -> unit}
+      val generalize: Tyvar.t vector -> unit -> {unable: Tyvar.t vector}
       val initAdmitsEquality: Tycon.t * Tycon.AdmitsEquality.t -> unit
       val setOpaqueTyconExpansion: Tycon.t * (Type.t vector -> Type.t) -> unit
       val tick: {useBeforeDef: Tycon.t -> unit} -> unit
