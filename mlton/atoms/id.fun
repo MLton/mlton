@@ -51,20 +51,25 @@ in
    val printName = make #printName
 end
 
-fun clearPrintName x = printName x := NONE
+fun isAlphaNum (s: string): bool =
+   String.forall (s, fn c => Char.isAlphaNum c orelse c = #"_")
+   
+fun clearPrintName (T {originalName, printName, ...}): unit =
+   if isAlphaNum originalName
+      then ()
+   else printName := NONE
    
 fun setPrintName (x, s) = printName x := SOME s
 
 val printNameAlphaNumeric: bool ref = ref false
    
-fun toString (T {printName, originalName, ...}) =
+fun toString (T {originalName, printName, ...}) =
    case !printName of
       NONE =>
 	 let
 	    val s =
 	       if not (!printNameAlphaNumeric)
-		  orelse String.forall (originalName, fn c =>
-					Char.isAlphaNum c orelse c = #"_")
+		  orelse isAlphaNum originalName
 		  then originalName
 	       else
 		  String.translate
