@@ -197,7 +197,7 @@ world:
 # puts them.
 DESTDIR = $(CURDIR)/install
 PREFIX = /usr
-ifeq ($(HOST_OS), sun)
+ifeq ($(HOST_OS), sunos)
 PREFIX = /usr/local
 endif
 prefix = $(PREFIX)
@@ -207,12 +207,12 @@ ULIB = lib/mlton
 TLIB = $(DESTDIR)$(prefix)/$(ULIB)
 TMAN = $(DESTDIR)$(prefix)$(MAN_PREFIX_EXTRA)/man/man1
 TDOC = $(DESTDIR)$(prefix)/share/doc/mlton
-ifeq ($(HOST_OS), sun)
+ifeq ($(HOST_OS), sunos)
 TDOC = $(DESTDIR)$(prefix)/doc/mlton
 endif
 
 GZIP_MAN = true
-ifeq ($(HOST_OS), sun)
+ifeq ($(HOST_OS), sunos)
 GZIP_MAN = false
 endif
 

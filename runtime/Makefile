@@ -12,7 +12,7 @@ endif
 ifeq ($(HOST_ARCH), x86)
 ARCHFLAGS = -mcpu=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=5 -fomit-frame-pointer
 endif
-ifeq ($(HOST_ARCH), sun)
+ifeq ($(HOST_ARCH), sparc)
 ARCHFLAGS = 
 endif
 
