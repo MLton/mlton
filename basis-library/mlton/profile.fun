@@ -1,5 +1,6 @@
 functor Profile (S:
 		 sig
+		    val clean: unit -> unit
 		    val isOn: bool
 		    structure Data:
 		       sig
@@ -131,6 +132,7 @@ val _ =
       Cleaner.addNew
       (Cleaner.atExit, fn () =>
        let
+	  val _ = clean ()
 	  val _ = Data.write (current (), "mlmon.out")
 	  val _ = List.app (S.Data.free o Data.array) (!Data.all)
        in

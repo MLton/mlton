@@ -1,1 +1,2 @@
-structure ProfileAlloc = Profile (Primitive.MLton.ProfileAlloc)
+structure ProfileAlloc = Profile (open Primitive.MLton.ProfileAlloc
+				  fun clean _ = ())
