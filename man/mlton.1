@@ -128,8 +128,9 @@ This switch is passed unchanged to the linker.
 
 .TP
 \fB-native \fI{\fBtrue\fP|\fBfalse\fP}\fP
-Controls whether or not to use native code generation.  With native code
-generation, \fBMLton\fP typically compiles more quickly and generates better
+Controls whether or not to use native code generation as opposed to
+generating C and using \fBgcc\fP.  With native code generation,
+\fBMLton\fP typically compiles more quickly and generates better
 code.
 
 .TP
@@ -207,10 +208,10 @@ The optional arguments are \fInot\fP made available to the SML
 program via \fBCommandLine.arguments\fP.
 .TP
 \fBfixed-heap \fIn[\fBkm\fI]\fR
-Use a fixed size heap of n bytes.
-A trailing \fBk\fP means that n is in units of 1024 bytes.
-A trailing \fBm\fP means that n is in units of 1,048,576 bytes.
-If neither appears, then nn is in bytes.
+Use a fixed size heap of \fBn\fP bytes.
+A trailing \fBk\fP means that \fBn\fP is in units of 1024 bytes.
+A trailing \fBm\fP means that \fBn\fP is in units of 1,048,576 bytes.
+If neither appears, then \fBn\fP is in bytes.
 A value of \fB0\fP means to use almost all the RAM present on the machine.
 .TP
 \fBgc-messages\fP
@@ -231,7 +232,8 @@ The \fIworld\fP file must have been created by a call to
 .COM option.
 .TP
 \fBram-slop \fIx\fR
-Multiply \fBx\fP by the amount of RAM to obtain the max heap size.
+Multiply \fBx\fP by the amount of RAM on the machine to obtain what
+the runtime views as the amount of RAM it can use.
 
 .SH "SEE ALSO"
 .BR mlprof (1)
