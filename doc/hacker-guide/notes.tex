@@ -1,0 +1,46 @@
+
+\chap{Notes}{notes}
+
+This chapter contains random notes (usually old emails) on various
+subtle issues.
+
+\section{IntInf and Flattener}
+
+\begin{verbatim}
+From: "Stephen T. Weeks" <sweeks@intertrust.com>
+Date: Tue, 27 Jun 2000 18:52:19 -0700 (PDT)
+To: MLton@research.nj.nec.com
+Subject: safe for space ... and IntInf
+\end{verbatim}
+
+Your mail also came at a fortunate time, as I was trying to track down
+a seg fault I was getting in the smith-normal-form regression test.
+For stress testing, I turned off all the cps simplify passes (except
+for poly equal) and ran the regressions.  smith-normal-form failed
+with a seg fault when compiled normally, and failed with an assertion
+failure in \verb+IntInf_do_neg+ when compiled -g.  The assertion
+failure was right at the beginning, checking that the frontier is in
+the expected place.
+\begin{verbatim}
+         assert(frontier == (pointer)&bp->limbs[bp->card - 1]);
+\end{verbatim}
+I'd been tracking this bug for a couple hours when I received your
+mail about the flattener.  Do you see the connection? :-)  As a
+reminder, here is the code for \verb+bigNegate+
+\begin{verbatim}
+         fun bigNegate (arg: bigInt): bigInt =
+                if Prim.isSmall arg
+                      then let val argw = Prim.toWord arg
+                           in if argw = badw
+                                 then negBad
+                                 else Prim.fromWord (Word.- (0w2, argw))
+                           end
+                      else Prim.~ (arg, allocate (1 + bigSize arg))
+\end{verbatim}
+The problem is, when the flattener is turned off, there is an
+allocation in between the call to allocate and the \verb+Prim.~+ call.  The
+argument tuple allocation screws everything up.  So, we are relying on 
+the flattener for correctness of the IntInf implementation.  Any ideas 
+on how to improve the implementation to remove this reliance, or at
+least put an assert somewhere to avoid falling prey to this bug again?
+

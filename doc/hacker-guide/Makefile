@@ -4,6 +4,7 @@ TEX_FILES = \
 	main.tex		\
 	macros.tex		\
 	mlton.tex		\
+	notes.tex		\
 	runtime.tex		\
 	sources.tex		\
 
@@ -22,7 +23,7 @@ main/main.html: $(TEX_FILES)
 
 main.dvi: $(TEX_FILES) $(FIG_FILES)
 	latex main; bibtex main; latex main; latex main
-	
+
 main.ps: main.dvi
 	dvips -o main.ps main
 
