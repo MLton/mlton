@@ -31,9 +31,9 @@ fun getExn (f : unit -> 'a) =
     (f (); NoExceptionRaised) handle e => e
 
 fun prExn(exnStr, exn) =
-    (print "\nShould be `"; print exnStr; print "':\n  ";
+    (print "Should be `"; print exnStr; print "':\n  ";
      print (exnName exn); print "\n  ";
-     print (exnMessage exn));
+     print (exnMessage exn); print "\n");
 
 exception E1;
 exception E2 = E1;
