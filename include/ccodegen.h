@@ -444,6 +444,50 @@ int main(int argc, char **argv) {					\
 #define Int_add(n1, n2) ((n1) + (n2))
 #define Int_mul(n1, n2) ((n1) * (n2))
 #define Int_sub(n1, n2) ((n1) - (n2))
+
+#ifdef FAST_OVERFLOW
+static void MLton_overflow() {
+	die("Internal overflow detected. Halt.");
+}
+
+static inline Int Int_addCheckFast(Int n1, Int n2) {
+ 	__asm__ __volatile__ ("addl %1, %0\n\tjo MLton_overflow"
+			      : "+r" (n1) : "g" (n2) );
+
+	return n1;
+}
+
+static inline Int Int_mulCheckFast(Int n1, Int n2) {
+ 	__asm__ __volatile__ ("imull %1, %0\n\tjo MLton_overflow"
+			      : "+r" (n1) : "g" (n2) );
+
+	return n1;
+}
+
+static inline Int Int_subCheckFast(Int n1, Int n2) {
+ 	__asm__ __volatile__ ("subl %1, %0\n\tjo MLton_overflow"
+			      : "+r" (n1) : "g" (n2) );
+
+	return n1;
+}
+
+#define check(dst,n1,n2,l,f) dst = f(n1, n2)
+
+#define Int_addCheck(dst, n1, n2, l)			\
+	check(dst, n1, n2, l, Int_addCheckFast)
+#define Int_mulCheck(dst, n1, n2, l)			\
+	check(dst, n1, n2, l, Int_mulCheckFast)
+#define Int_subCheck(dst, n1, n2, l)			\
+	check(dst, n1, n2, l, Int_subCheckFast)
+
+static inline Int Int_negCheckFast(Int n) {
+	__asm__ __volatile__ ("negl %1\n\tjo MLton_overflow"
+				: "+r" (n) : );
+	return n;
+}
+#define Int_negCheck(dst, n, l) dst = Int_negCheckFast(n)
+
+#else /* FAST_OVERFLOW */
 int Int_bogus;
 #define check(dst, n1, n2, l, f);						\
 	do {									\
@@ -469,7 +513,7 @@ int Int_bogus;
 		dst = Int_negOverflow(n, &overflow);	\
 		if (overflow) goto l;			\
 	} while (0)
-
+#endif /* FAST_OVERFLOW */
 #define Int_lt(n1, n2) ((n1) < (n2))
 #define Int_le(n1, n2) ((n1) <= (n2))
 #define Int_gt(n1, n2) ((n1) > (n2))
@@ -477,6 +521,8 @@ int Int_bogus;
 #define Int_geu(x, y) ((uint)(x) >= (uint)(y))
 #define Int_gtu(x, y) ((uint)(x) > (uint)(y))
 #define Int_neg(n) (-(n))
+#define Int_quot(x, y) ((x)/(y))
+#define Int_rem(x, y) ((x)%(y))
 
 /* ------------------------------------------------- */
 /*                      IntInf                       */
