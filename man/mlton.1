@@ -204,6 +204,20 @@ install a cross compiler.  See the \fBMLton User Guide\fP for
 details.
 
 .TP
+\fB-target-link-opt \fIos\fP \fIopt\fR
+Like \fB-link-opt\fP, this passes \fIopt\fP to the linker, except it
+only passes \fIopt\fP when the target operating system is \fIos\fP.
+Valid values for \fIos\fP are:
+\fBcygwin\fP,
+\fBdarwin\fP,
+\fBfreebsd\fP,
+\fBlinux\fP,
+\fBmingw\fP,
+\fBnetbsd\fP,
+\fBopenbsd\fP,
+and \fBsolaris\fP.
+
+.TP
 \fB-verbose\fP \fI{\fB0\fP|\fB1\fP|\fB2\fP|\fB3\fP}\fP
 Be verbose about what passes are running.  The default is 0.
 .in +.5i

@@ -72,12 +72,11 @@ doit "$lib" \
 	-target-link-opt cygwin '-lgmp'				\
  	-target-link-opt darwin '-lgmp'				\
 	-target-link-opt freebsd '-L/usr/local/lib/ -lgmp'	\
-	-target-link-opt linux '-ldl'				\
 	-target-link-opt mingw 					\
 		'-lgmp -lws2_32 -lkernel32 -lpsapi -lnetapi32'	\
 	-target-link-opt netbsd					\
 		'-Wl,-R/usr/pkg/lib -L/usr/local/lib/ -lgmp'	\
 	-target-link-opt openbsd '-L/usr/local/lib/ -lgmp'	\
-	-target-link-opt solaris '-lgmp -ldl -lnsl -lsocket'	\
+	-target-link-opt solaris '-lgmp -lnsl -lsocket'		\
 	-link-opt '-lgdtoa -lm'					\
 	"$@"

@@ -20,7 +20,10 @@ ffi-import.o:
 	$(mlton) -stop o ffi-import.c
 
 iimport: iimport.sml
-	$(mlton) iimport.sml
+	$(mlton) 				\
+		-target-link-opt linux -ldl 	\
+		-target-link-opt solaris -ldl	\
+		iimport.sml
 
 clean:
 	../../../bin/clean

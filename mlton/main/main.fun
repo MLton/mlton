@@ -473,7 +473,7 @@ fun makeOptions {usage} =
 	(SpaceString2
 	 (fn (target, opt) =>
 	  List.push (ccOpts, {opt = opt, pred = OptPred.Target target})))),
-       (Expert, "target-link-opt", " <target> <opt>",
+       (Normal, "target-link-opt", " <os> <opt>",
 	"target-dependent link option",
 	(SpaceString2
 	 (fn (target, opt) =>

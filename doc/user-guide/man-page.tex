@@ -175,6 +175,19 @@ is {\tt self}, which means to compile for the machine that {\mlton} is
 running on.  To use any other target, you must first install a
 cross-compiler.  See \secref{cross-compiling}.
 
+\option{-target-link-opt {\it os} {\it opt}}
+Like {\tt -link-opt}, this passes {\it opt} to the linker, except it
+only passes {\it opt} when the target operating system is {\it os}.
+Valid values for {\it os} are:
+{\tt cygwin},
+{\tt darwin},
+{\tt freebsd},
+{\tt linux},
+{\tt mingw},
+{\tt netbsd},
+{\tt openbsd},
+and {\tt solaris}.
+
 \option{-verbose \choiceFour{0}{1}{2}{3}}
 How verbose to be about what passes are running.  The default is 0.\\
 \hspace*{0.5in}
