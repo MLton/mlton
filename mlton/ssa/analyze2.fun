@@ -16,7 +16,7 @@ datatype z = datatype Transfer.t
 fun 'a analyze
    {coerce, const, filter, filterWord, fromType, inject, layout, object, primApp,
     program = Program.T {functions, globals, main, ...},
-    select, update, useFromTypeOnBinds} =
+    select, update, useFromTypeOnBinds, vectorSub, vectorUpdate} =
    let
       val unit = fromType Type.unit
       fun coerces (msg, from, to) =
@@ -242,6 +242,17 @@ fun 'a analyze
 			      value = value v}
 		      ; unit)
 		| Var x => value x
+		| VectorSub {index, offset, vector} =>
+		     vectorSub {index = value index,
+				offset = offset,
+				vector = value vector}
+		| VectorUpdates (vector, us) =>
+		     (Vector.foreach (us, fn {index, offset, value = v} =>
+				      vectorUpdate {index = value index,
+						    offset = offset,
+						    value = value v,
+						    vector = value vector})
+		      ; unit)
 	 in
 	    Option.app
 	    (var, fn var =>

@@ -436,6 +436,30 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
 	 in
 	    resultType
 	 end
+      fun vectorSub {index, offset, vector} =
+	 let
+	    val error = fn s => error (s, Layout.empty)
+	 in
+	    case (Type.dest vector, Type.dest index) of
+	       (Type.Vector p, Type.Word s) =>
+		  if WordSize.equals (s, WordSize.default)
+		     then Prod.elt (p, offset)
+		  else error "vectorSub with bad index"
+	     | _ => error "vectorSub with bad index"
+	 end
+      fun vectorUpdate {index, offset, value, vector} =
+	 let
+	    val error = fn s => error (s, Layout.empty)
+	 in
+	    case (Type.dest vector, Type.dest index) of
+	       (Type.Vector p, Type.Word s) =>
+		  if WordSize.equals (s, WordSize.default)
+		     then if Type.equals (value, Prod.elt (p, offset))
+			     then ()
+			  else error "vectorUpdate with bad value"
+		  else error "vectorUpdate with bad index"
+	     | _ => error "vectorUpdate with bad index"
+	 end	 
       val _ =
 	 analyze {coerce = coerce,
 		  const = Type.ofConst,
@@ -449,7 +473,9 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
 		  program = program,
 		  select = select,
 		  update = update,
-		  useFromTypeOnBinds = true}
+		  useFromTypeOnBinds = true,
+		  vectorSub = vectorSub,
+		  vectorUpdate = vectorUpdate}
 	 handle e => error (concat ["analyze raised exception ",
 				    Layout.toString (Exn.layout e)],
 			    Layout.empty)

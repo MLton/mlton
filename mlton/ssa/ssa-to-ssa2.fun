@@ -104,10 +104,36 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 		  simple
 		  (let
 		      fun arg i = Vector.sub (args, i)
+		      fun targ i = convertType (Vector.sub (targs, i))
+		      fun sub () =
+			 S2.Exp.VectorSub {index = arg 1,
+					   offset = 0,
+					   vector = arg 0}
+		      fun doit targs =
+			 S2.Exp.PrimApp {args = args,
+					 prim = convertPrim prim,
+					 targs = targs}
+		      fun doArray () =
+			 doit (Vector.new1 (S2.Type.array (targ 0)))
 		      datatype z = datatype Prim.Name.t
 		   in
 		      case Prim.name prim of
-			 Ref_assign =>
+			 Array_array => doArray ()
+		       | Array_length => doArray ()
+		       | Array_sub => sub ()
+		       | Array_toVector =>
+			    let
+			       val t = targ 0
+			    in
+			       doit (Vector.new2 (S2.Type.array t,
+						  S2.Type.vector1 t))
+			    end
+		       | Array_update =>
+			    S2.Exp.VectorUpdates
+			    (arg 0, Vector.new1 {index = arg 1,
+						 offset = 0,
+						 value = arg 2})
+		       | Ref_assign =>
 			    S2.Exp.Update {object = arg 0,
 					   offset = 0,
 					   value = arg 1}
@@ -117,10 +143,13 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 		       | Ref_ref =>
 			    S2.Exp.Object {args = Vector.new1 (arg 0),
 					   con = NONE}
-		       | _ => 
-			    S2.Exp.PrimApp {args = args,
-					    prim = convertPrim prim,
-					    targs = convertTypes targs}
+		       | Vector_length =>
+			    S2.Exp.PrimApp
+			    {args = args,
+			     prim = Prim.arrayLength,
+			     targs = Vector.new1 (S2.Type.vector1 (targ 0))}
+		       | Vector_sub => sub ()
+		       | _ => doit (convertTypes targs)
 		   end)
 	     | S.Exp.Profile e => simple (S2.Exp.Profile e)
 	     | S.Exp.Select {offset, tuple} =>

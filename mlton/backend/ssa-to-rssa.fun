@@ -344,51 +344,6 @@ fun updateCard (addr: Operand.t): Statement.t list =
 	     src = Operand.word (WordX.one (WordSize.fromBits Bits.inByte))}]
    end
 
-fun arrayUpdate {array, arrayElementTy, index, elt}: Statement.t list =
-   let
-      val (elt, ss) = Statement.resize (elt, Type.width arrayElementTy)
-      val ty = Operand.ty elt
-   in
-      if not (!Control.markCards) orelse not (Type.isPointer ty)
-	 then
-	    ss @ [Move {dst = ArrayOffset {base = array,
-					   index = index,
-					   offset = Bytes.zero,
-					   ty = arrayElementTy},
-			src = elt}]
-      else
-	 let
-	    val bytes = Bytes.toIntInf (Type.bytes ty)
-	    val shift = IntInf.log2 bytes
-	    val _ =
-	       if bytes = IntInf.pow (2, shift)
-		  then ()
-	       else Error.bug "can't handle shift"
-	    val shift = Bits.fromInt shift
-	    val addr = Var.newNoname ()
-	    val addrTy = Type.address ty
-	    val addrOp = Var {ty = addrTy, var = addr}
-	    val temp = Var.newNoname ()
-	    val shiftOp = Operand.word (WordX.fromIntInf (Bits.toIntInf shift,
-							  WordSize.default))
-	    val tempTy = Type.lshift (Type.defaultWord, Operand.ty shiftOp)
-	    val tempOp = Var {ty = tempTy, var = temp}
-	 in
-	    ss
-	    @ [PrimApp {args = Vector.new2 (index, shiftOp),
-			dst = SOME (temp, tempTy),
-			prim = Prim.wordLshift WordSize.default},
-	       PrimApp {args = Vector.new2 (Cast (array, addrTy), tempOp),
-			dst = SOME (addr, addrTy),
-			prim = Prim.wordAdd WordSize.default}]
-	    @ updateCard addrOp
-	    @ [Move {dst = Offset {base = addrOp,
-				   offset = Bytes.zero,
-				   ty = arrayElementTy},
-		     src = elt}]
-	 end
-   end
-
 fun convertConst (c: Const.t): Const.t =
    let
       datatype z = datatype Const.t
@@ -403,7 +358,8 @@ val word = Type.word o WordSize.bits
 fun convert (program as S.Program.T {functions, globals, main, ...},
 	     {codegenImplementsPrim}): Rssa.Program.t =
    let
-      val {diagnostic, genCase, object, objectTypes, select, toRtype, update} =
+      val {diagnostic, genCase, object, objectTypes, select, toRtype, update,
+	   vectorSub, vectorUpdate} =
 	 PackedRepresentation.compute program
       val objectTypes = Vector.concat [ObjectType.basic, objectTypes]
       val () =
@@ -636,6 +592,12 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 				     ["strange prim in SSA Runtime transfer ",
 				      Prim.toString prim])
 	       end
+      val translateTransfer =
+	 Trace.trace ("SsaToRssa.translateTransfer",
+		      S.Transfer.layout,
+		      Layout.tuple2 (List.layout Statement.layout,
+				     Transfer.layout))
+	 translateTransfer
       fun translateFormals v =
 	 Vector.keepAllMap (v, fn (x, t) =>
 			    Option.map (toRtype t, fn t => (x, t)))
@@ -656,7 +618,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 		  then (Vector.fromList ss, t)
 	       else
 		  let
-		     val S.Statement.T {exp, ty, var} =
+		     val statement as S.Statement.T {exp, ty, var} =
 			Vector.sub (statements, i)
 		     fun none () = loop (i - 1, ss, t)
 		     fun add s = loop (i - 1, s :: ss, t)
@@ -712,23 +674,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 				       {base = a 0,
 					offset = Runtime.arrayLengthOffset,
 					ty = Type.defaultWord})
-			      fun sub (ty: Type.t) =
-				 let
-				    val base = a 0
-				    val index = a 1
-				    val (src, ss) =
-				       Statement.resize
-				       (ArrayOffset {base = base,
-						     index = index,
-						     offset = Bytes.zero,
-						     ty = arrayElementType base},
-					Type.width ty)
-				    val s = Bind {dst = (valOf var, ty),
-						  isMutable = false,
-						  src = src}
-				 in
-				    adds (ss @ [s])
-				 end
 			      fun subWord () =
 				 move (ArrayOffset {base = a 0,
 						    index = a 1,
@@ -829,10 +774,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 			      case Prim.name prim of
 				 Array_array => array (a 0)
 			       | Array_length => arrayOrVectorLength ()
-			       | Array_sub =>
-				    (case targ () of
-					NONE => none ()
-				      | SOME t => sub t)
 			       | Array_toVector =>
 				    let
 				       val array = a 0
@@ -856,21 +797,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 					:: ss,
 					t)
 				    end
-			       | Array_update =>
-				    if Option.isNone (targ ())
-				       then none ()
-				    else
-				       let
-					  val array = a 0
-				       in
-					  adds
-					  (arrayUpdate
-					   {array = array,
-					    arrayElementTy = (arrayElementType
-							      array),
-					    index = a 1,
-					    elt = a 2})
-				       end
 			       | FFI f => simpleCCall f
 			       | GC_collect =>
 				    ccall
@@ -1038,10 +964,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 						   (a 0, EnsuresBytesFree)),
 					   func = CFunction.threadSwitchTo}
 			       | Vector_length => arrayOrVectorLength ()
-			       | Vector_sub =>
-				    (case targ () of
-					NONE => none ()
-				      | SOME t => sub t)
 			       | Weak_canGet =>
 				    ifTargIsPointer
 				    (fn _ => simpleCCall (CFunction.weakCanGet
@@ -1119,11 +1041,11 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 		      | S.Exp.Select {object, offset} =>
 			   (case var of
 			       NONE => none ()
-			     | SOME var => 
+			     | SOME var =>
 				  (case toRtype ty of
 				      NONE => none ()
-				    | SOME _ => 
-					 adds (select {dst = var,
+				    | SOME ty => 
+					 adds (select {dst = (var, ty),
 						       object = varOp object,
 						       objectTy = varType object,
 						       offset = offset})))
@@ -1153,6 +1075,47 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 			   (case toRtype ty of
 			       NONE => none ()
 			     | SOME _ => move (varOp y))
+		      | S.Exp.VectorSub {index, offset, vector} =>
+			   (case var of
+			       NONE => none ()
+			     | SOME var =>
+				  (case toRtype ty of
+				      NONE => none ()
+				    | SOME ty => 
+					 adds (vectorSub
+					       {dst = (var, ty),
+						index = varOp index,
+						offset = offset,
+						vector = varOp vector,
+						vectorTy = varType vector})))
+		      | S.Exp.VectorUpdates (vector, us) =>
+			   let
+			      val vectorTy = varType vector
+			      val vector = varOp vector
+			      val ss =
+				 Vector.foldr
+				 (us, [], fn ({index, offset, value}, ac) =>
+				  case toRtype (varType value) of
+				     NONE => ac
+				   | SOME _ => 
+					vectorUpdate {index = varOp index,
+						      offset = offset,
+						      value = varOp value,
+						      vector = vector,
+						      vectorTy = vectorTy} @ ac)
+			      val ss =
+				 if !Control.markCards
+				    andalso
+				    Vector.exists
+				    (us, fn {value, ...} =>
+				     case toRtype (varType value) of
+					NONE => false
+				      | SOME t => Type.isPointer t)
+				    then updateCard vector @ ss
+				 else ss
+			   in
+			      adds ss
+			   end
 		  end
 	 in
 	    loop (Vector.length statements - 1, ss, transfer)

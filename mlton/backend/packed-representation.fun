@@ -8,6 +8,7 @@
 (* Has a special case to make sure that true is represented as 1
  * and false is represented as 0.
  *)
+
 functor PackedRepresentation (S: REPRESENTATION_STRUCTS): REPRESENTATION = 
 struct
 
@@ -449,6 +450,31 @@ structure Unpack =
 	 update
    end
 
+structure Base =
+   struct
+      datatype t =
+	 Object of Operand.t
+       | Vector of {index: Operand.t,
+		    vector: Operand.t}
+
+      fun getObject (b: t): Operand.t =
+	 case b of
+	    Object z => z
+	  | Vector _ => Error.bug "Base.getObject"
+
+      fun toOperand (b: t, offset: Bytes.t, ty: Type.t): Operand.t =
+	 case b of
+	    Object base =>
+	       Offset {base = base,
+		       offset = offset,
+		       ty = ty}
+	  | Vector {index, vector} =>
+	       ArrayOffset {base = vector,
+			    index = index,
+			    offset = offset,
+			    ty = ty}
+   end
+
 structure Select =
    struct
       datatype t =
@@ -501,8 +527,8 @@ structure Select =
 			      rest = rest,
 			      ty = ty}
 
-      fun select (s: t, {dst: Var.t * Type.t,
-			 object: Operand.t}): Statement.t list =
+      fun select (s: t, {base: Base.t,
+			 dst: Var.t * Type.t}): Statement.t list =
 	 let
 	    fun move src =
 	       let
@@ -516,11 +542,8 @@ structure Select =
 	 in
 	    case s of
 	       None => []
-	     | Direct _ => move object
-	     | Indirect {offset, ty} =>
-		  move (Offset {base = object,
-				offset = offset,
-				ty = ty})
+	     | Direct _ => move (Base.getObject base)
+	     | Indirect {offset, ty} => move (Base.toOperand (base, offset, ty))
 	     | IndirectUnpack {offset, rest, ty} =>
 		  let
 		     val tmpVar = Var.newNoname ()
@@ -528,33 +551,28 @@ structure Select =
 		  in
 		     Bind {dst = (tmpVar, ty),
 			   isMutable = false,
-			   src = Offset {base = object,
-					 offset = Words.toBytes offset,
-					 ty = ty}}
+			   src = Base.toOperand (base, Words.toBytes offset, ty)}
 		     :: Unpack.select (rest, {dst = dst, src = tmpOp})
 		  end
-	     | Unpack u => Unpack.select (u, {dst = dst, src = object})
+	     | Unpack u =>
+		  Unpack.select (u, {dst = dst, src = Base.getObject base})
 	 end
 
       val select =
 	 Trace.trace ("Select.select", layout o #1, List.layout Statement.layout)
 	 select
 
-      fun update (s: t, {object: Rssa.Operand.t,
+      fun update (s: t, {base: Base.t,
 			 value: Rssa.Operand.t}): Statement.t list =
 	 case s of
 	    Indirect {offset, ty} =>
-	       [Move {dst = Offset {base = object,
-				    offset = offset,
-				    ty = ty},
+	       [Move {dst = Base.toOperand (base, offset, ty),
 		      src = value}]
 	  | IndirectUnpack {offset, rest, ty} =>
 	       let
 		  val tmpVar = Var.newNoname ()
 		  val tmpOp = Var {ty = ty, var = tmpVar}
-		  val chunk = Offset {base = object,
-				      offset = Words.toBytes offset,
-				      ty = ty}
+		  val chunk = Base.toOperand (base, Words.toBytes offset, ty)
 		  val (newChunk, ss) = 
 		     Unpack.update (rest, {chunk = chunk,
 					   component = value})
@@ -582,15 +600,15 @@ structure Selects =
 			{orig = orig,
 			 select = f select}))
 
-      fun select (T v, {dst: Var.t * Type.t,
-			object: Operand.t,
+      fun select (T v, {base: Base.t,
+			dst: Var.t * Type.t,
 			offset: int}): Statement.t list =
 	 Select.select (#select (Vector.sub (v, offset)),
-			{dst = dst, object = object})
+			{base = base, dst = dst})
 
-      fun update (T v, {object, offset, value}) =
+      fun update (T v, {base, offset, value}) =
 	 Select.update (#select (Vector.sub (v, offset)),
-			{object = object, value = value})
+			{base = base, value = value})
 
       fun lshift (T v, b: Bits.t) =
 	 T (Vector.map (v, fn {orig, select} =>
@@ -822,10 +840,11 @@ structure TupleRep =
 		       List.layout Statement.layout)
 	 tuple
 
-      val make: PointerTycon.t * {isMutable: bool,
-				  rep: Rep.t,
-				  ty: S.Type.t} vector -> t =
-	 fn (pointerTycon, rs) =>
+      fun make (pointerTycon: PointerTycon.t,
+		{forceBox: bool},
+		rs: {isMutable: bool,
+		     rep: Rep.t,
+		     ty: S.Type.t} vector): t =
 	 let
 	    val pointers = ref []
 	    val doubleWords = ref []
@@ -973,7 +992,7 @@ structure TupleRep =
 					     tycon = pointerTycon})
 	       end
 	 in
-	    if Vector.exists (rs, #isMutable)
+	    if forceBox orelse Vector.exists (rs, #isMutable)
 	       then box ()
 	    else
 	       case Vector.length components of
@@ -985,9 +1004,10 @@ structure TupleRep =
 	 end
 
       val make =
-	 Trace.trace2
+	 Trace.trace3
 	 ("TupleRep.make",
 	  PointerTycon.layout,
+	  fn {forceBox} => Layout.record [("forceBox", Bool.layout forceBox)],
 	  Vector.layout (fn {isMutable, rep, ty} =>
 			 Layout.record [("isMutable", Bool.layout isMutable),
 					("rep", Rep.layout rep),
@@ -1484,7 +1504,8 @@ structure TyconRep =
 	    then
 	       let
 		  val {args, con, pointerTycon} = Vector.sub (variants, 0)
-		  val tupleRep = TupleRep.make (pointerTycon, args)
+		  val tupleRep =
+		     TupleRep.make (pointerTycon, {forceBox = false}, args)
 		  val conRep = ConRep.Tuple tupleRep
 	       in
 		  (One {con = con, tupleRep = tupleRep},
@@ -1508,7 +1529,8 @@ structure TyconRep =
 	       Vector.foreach
 	       (variants, fn {args, con, pointerTycon} =>
 		let
-		   val tr = TupleRep.make (pointerTycon, args)
+		   val tr =
+		      TupleRep.make (pointerTycon, {forceBox = false}, args)
 		   fun makeBig () =
 		      List.push (big,
 				 {con = con,
@@ -2056,6 +2078,15 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	   set = setTupleRep, ...} =
 	 Property.getSetOnce (S.Type.plist,
 			      Property.initRaise ("tupleRep", S.Type.layout))
+      fun vectorRep (t: S.Type.t): TupleRep.t = Value.get (tupleRep t)
+      fun setVectorRep (t: S.Type.t, tr: TupleRep.t): unit =
+	 setTupleRep (t, Value.new {compute = fn () => tr,
+				    equals = TupleRep.equals,
+				    init = tr})
+      val setVectorRep =
+	 Trace.trace2 ("setVectorRep",
+		       S.Type.layout, TupleRep.layout, Unit.layout)
+	 setVectorRep
       val {get = tyconRep: Tycon.t -> tyconRepAndCons, set = setTyconRep, ...} =
 	 Property.getSetOnce (Tycon.plist,
 			      Property.initRaise ("tyconRep", Tycon.layout))
@@ -2121,42 +2152,6 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	   let
 	      val constant = Value.constant
 	      val nonPointer = constant o Rep.nonPointer
-	      fun array {mutable: bool, ty: S.Type.t}: Rep.t Value.t =
-		 let
-		    fun new () =
-		       let
-			  val pt = PointerTycon.new ()
-			  val () =
-			     List.push
-			     (delayedObjectTypes, fn () =>
-			      let
-				 val ty = Rep.ty (Value.get (typeRep ty))
-				 val ty =
-				    if Type.isUnit ty
-				       then Type.zero Bits.inByte
-				    else Type.padToPrim ty
-			      in
-				 SOME (pt, ObjectType.Array ty)
-			      end)
-		       in
-			  Type.pointer pt
-		       end
-		    datatype z = datatype S.Type.dest
-		    val ty =
-		       if mutable
-			  then new ()
-		       else
-			  case S.Type.dest ty of
-			     Word s =>
-				(case Bits.toInt (WordSize.bits s) of
-				    8 => Type.word8Vector
-				  | 32 => Type.wordVector
-				  | _ => new ())
-			   | _ => new ()
-		 in
-		    constant (Rep.T {rep = Rep.Pointer {endsIn00 = true},
-				     ty = ty})
-		 end
 	      datatype z = datatype S.Type.dest
 	   in
 	      case S.Type.dest t of
@@ -2183,7 +2178,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 				 Vector.map (Prod.dest args, typeRep o #elt)
 			      fun compute () =
 				 TupleRep.make
-				 (pt,
+				 (pt, {forceBox = false},
 				  Vector.map2 (rs, Prod.dest args,
 					       fn (r, {elt, isMutable}) =>
 					       {isMutable = isMutable,
@@ -2193,7 +2188,8 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 				 Value.new {compute = compute,
 					    equals = TupleRep.equals,
 					    init = TupleRep.unit}
-			      val () = Vector.foreach (rs, fn r => Value.affect (r, tr))
+			      val () = Vector.foreach (rs, fn r =>
+						       Value.affect (r, tr))
 			      val () =
 				 List.push
 				 (delayedObjectTypes, fn () =>
@@ -2228,16 +2224,58 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 				     ty = Type.thread})
 	       | Vector p =>
 		    let
-		       val ts = Prod.dest p
+		       val p = Prod.dest p
+		       fun new () =
+			  let
+			     val pt = PointerTycon.new ()
+			     val () =
+				List.push
+				(delayedObjectTypes, fn () =>
+				 let
+				    val tr =
+				       TupleRep.make
+				       (pt, {forceBox = true},
+					Vector.map
+					(p, fn {elt, isMutable} =>
+					 {isMutable = isMutable,
+					  rep = Value.get (typeRep elt),
+					  ty = elt}))
+				    val () = setVectorRep (t, tr)
+				    val ty =
+				       case tr of
+					  TupleRep.Direct _ =>
+					     TupleRep.ty tr
+					| TupleRep.Indirect pr =>
+					     PointerRep.componentsTy pr
+				    val ty =
+				       if Type.isUnit ty
+					  then Type.zero Bits.inByte
+				       else ty
+				 in
+				    SOME (pt, ObjectType.Array ty)
+				 end)
+			  in
+			     Type.pointer pt
+			  end
+		       datatype z = datatype S.Type.dest
+		       val ty =
+			  if 1 = Vector.length p
+			     then
+				let
+				   val {elt, isMutable} = Vector.sub (p, 0)
+				in
+				   case S.Type.dest elt of
+				      Word s =>
+					 (case Bits.toInt (WordSize.bits s) of
+					     8 => Type.word8Vector
+					   | 32 => Type.wordVector
+					   | _ => new ())
+				    | _ => new ()
+				end
+			  else new ()
 		    in
-		       if 1 = Vector.length ts
-			  then
-			     let
-				val {elt, isMutable} = Vector.sub (ts, 0)
-			     in
-				array {mutable = isMutable, ty = elt}
-			     end
-		       else Error.bug "representation can't handle flat vectors"
+		       constant (Rep.T {rep = Rep.Pointer {endsIn00 = true},
+					ty = ty})
 		    end
 	       | Weak t =>
 		    let
@@ -2298,6 +2336,25 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		  ObjectType.Normal (PointerRep.componentsTy pr)) :: ac
 	    | _ => ac))
       val objectTypes = ref objectTypes
+      val () =
+	 List.foreach
+	 ([(WordSize.fromBits Bits.inByte, PointerTycon.word8Vector),
+	   (WordSize.default, PointerTycon.wordVector)],
+	  fn (size, pt) =>
+	  let
+	     val elt = S.Type.word size
+	  in
+	     List.foreach
+	     ([true, false], fn isMutable =>
+	      setVectorRep (S.Type.vector (Prod.make (Vector.new1
+						      {elt = elt,
+						       isMutable = isMutable})),
+			    TupleRep.make (pt, {forceBox = true},
+					   Vector.new1
+					   {isMutable = isMutable,
+					    rep = Value.get (typeRep elt),
+					    ty = elt})))
+	  end)
       val () =
 	 List.foreach (!delayedObjectTypes, fn f =>
 		       Option.app (f (), fn z => List.push (objectTypes, z)))
@@ -2362,18 +2419,31 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	    S.Type.Object {args, con} =>
 	       Selects.select
 	       (getSelects (con, objectTy),
-		{dst = (dst, valOf (toRtype (Prod.elt (args, offset)))),
-		 object = object,
+		{base = Base.Object object,
+		 dst = dst,
 		 offset = offset})
 	  | _ => Error.bug "select of non object"
       fun update {object, objectTy, offset, value} =
 	 case S.Type.dest objectTy of
 	    S.Type.Object {args, con} =>
 	       Selects.update (getSelects (con, objectTy),
-			       {object = object,
+			       {base = Base.Object object,
 				offset = offset,
 				value = value})
 	  | _ => Error.bug "update of non object"
+      fun vectorSelects t = TupleRep.selects (vectorRep t)
+      fun vectorSub {dst, index, offset, vector, vectorTy} =
+	 Selects.select
+	 (vectorSelects vectorTy,
+	  {base = Base.Vector {index = index, vector = vector},
+	   dst = dst,
+	   offset = offset})
+      fun vectorUpdate {index, offset, value, vector, vectorTy} =
+	 Selects.update
+	 (vectorSelects vectorTy,
+	  {base = Base.Vector {index = index, vector = vector},
+	   offset = offset,
+	   value = value})
    in
       {diagnostic = diagnostic,
        genCase = genCase,
@@ -2381,7 +2451,9 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
        objectTypes = objectTypes,
        select = select,
        toRtype = toRtype,
-       update = update}
+       update = update,
+       vectorSub = vectorSub,
+       vectorUpdate = vectorUpdate}
    end
 
 end

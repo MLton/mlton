@@ -42,7 +42,14 @@ signature ANALYZE2 =
 	  update: {object: 'a,
 		   offset: int,
 		   value: 'a} -> unit,
-	  useFromTypeOnBinds: bool}
+	  useFromTypeOnBinds: bool,
+	  vectorSub: {index: 'a,
+		      offset: int,
+		      vector: 'a} -> 'a,
+	  vectorUpdate: {index: 'a,
+			 offset: int,
+			 value: 'a,
+			 vector: 'a} -> unit}
 	 -> {func: Func.t -> {args: 'a vector,
 			      raises: 'a vector option,
 			      returns: 'a vector option},

@@ -13,6 +13,23 @@ open S
 
 type word = Word.t
 
+structure Prim =
+   struct
+      open Prim
+
+      fun extractTargs (p, z as {args, result, ...}) =
+	 let
+	    fun arg i = Vector.sub (args, i)
+	    datatype z = datatype Prim.Name.t
+	 in
+	    case name p of
+	       Array_array => Vector.new1 result
+	     | Array_length => Vector.new1 (arg 0)
+	     | Array_toVector => Vector.new2 (arg 0, result)
+	     | _ => Prim.extractTargs (p, z)
+	 end
+   end
+
 structure Prod =
    struct
       datatype 'a t = T of {elt: 'a, isMutable: bool} vector
@@ -277,13 +294,25 @@ structure Type =
 	    fun wordShift s = done ([word s, defaultWord], word s)
 	 in
 	    case Prim.name prim of
-	       Array_array => oneTarg (fn targ => ([defaultWord], array targ))
-	     | Array_array0Const => oneTarg (fn targ => ([], array targ))
-	     | Array_length => oneTarg (fn t => ([array t], defaultWord))
-	     | Array_sub => oneTarg (fn t => ([array t, defaultWord], t))
-	     | Array_toVector => oneTarg (fn t => ([array t], vector1 t))
-	     | Array_update =>
-		  oneTarg (fn t => ([array t, defaultWord, t], unit))
+	       Array_array => oneTarg (fn t => ([defaultWord], t))
+	     | Array_length => oneTarg (fn t => ([t], defaultWord))
+	     | Array_toVector =>
+		  2 = Vector.length targs
+		  andalso
+		  let
+		     val a = targ 0
+		     val v = targ 1
+		  in
+		     case (Type.dest a, Type.dest v) of
+			(Type.Vector ap, Type.Vector vp) =>
+			   (Vector.equals (Prod.dest ap, Prod.dest vp,
+					   fn ({elt = ae, isMutable = ai},
+					       {elt = ve, isMutable = vi}) =>
+					   (not vi orelse ai)
+					   andalso Type.equals (ae, ve))
+			    andalso done ([a], v))
+		      | _ => false
+		  end
 	     | FFI f => done (Vector.toList (CFunction.args f),
 			      CFunction.return f)
 	     | FFI_Symbol {ty, ...} => done ([], ty)
@@ -362,8 +391,6 @@ structure Type =
 	     | Thread_copyCurrent => done ([], unit)
 	     | Thread_returnToC => done ([], unit)
 	     | Thread_switchTo => done ([thread], unit)
-	     | Vector_length => oneTarg (fn t => ([vector1 t], defaultWord))
-	     | Vector_sub => oneTarg (fn t => ([vector1 t, defaultWord], t))
 	     | Weak_canGet => oneTarg (fn t => ([weak t], bool))
 	     | Weak_get => oneTarg (fn t => ([weak t], t))
 	     | Weak_new => oneTarg (fn t => ([t], weak t))
@@ -521,6 +548,12 @@ structure Exp =
 		    offset: int,
 		    value: Var.t}
        | Var of Var.t
+       | VectorSub of {index: Var.t,
+		       offset: int,
+		       vector: Var.t}
+       | VectorUpdates of Var.t * {index: Var.t,
+				   offset: int,
+				   value: Var.t} vector
 
       val unit = Object {con = NONE,
 			 args = Vector.new0 ()}
@@ -538,6 +571,10 @@ structure Exp =
 	     | Select {object, ...} => v object
 	     | Update {object, value, ...} => (v object; v value)
 	     | Var x => v x
+	     | VectorSub {index, vector, ...} => (v index; v vector)
+	     | VectorUpdates (x, us) =>
+		  (v x; Vector.foreach (us, fn {index, value, ...} =>
+					(v index; v value)))
 	 end
 
       fun replaceVar (e, fx) =
@@ -556,16 +593,26 @@ structure Exp =
 	     | Update {object, offset, value} =>
 		  Update {object = fx object, offset = offset, value = fx value}
 	     | Var x => Var (fx x)
+	     | VectorSub {index, offset, vector} =>
+		  VectorSub {index = fx index,
+			     offset = offset,
+			     vector = fx vector}
+	     | VectorUpdates (x, us) =>
+		  VectorUpdates (fx x,
+				 Vector.map (us, fn {index, offset, value} =>
+					     {index = fx index,
+					      offset = offset,
+					      value = fx value}))
 	 end
 
-      fun layout e =
+      fun layout' (e, layoutVar) =
 	 let
 	    open Layout
 	 in
 	    case e of
 	       Const c => Const.layout c
 	     | Inject {sum, variant} =>
-		  seq [Var.layout variant, str ": ", Tycon.layout sum]
+		  seq [layoutVar variant, str ": ", Tycon.layout sum]
 	     | Object {con, args} =>
 		  seq [(case con of
 			   NONE => empty
@@ -582,14 +629,35 @@ structure Exp =
 	     | Profile p => ProfileExp.layout p
 	     | Select {object, offset} =>
 		  seq [str "#", Int.layout (offset + 1), str " ",
-		       Var.layout object]
+		       layoutVar object]
 	     | Update {object, offset, value} =>
 		  seq [str "#", Int.layout (offset + 1), str " ",
-		       Var.layout object,
-		       str " := ", Var.layout value]
-	     | Var x => Var.layout x
+		       layoutVar object,
+		       str " := ", layoutVar value]
+	     | Var x => layoutVar x
+	     | VectorSub {index, offset, vector} =>
+		  seq [str "#", Int.layout (offset + 1), str " ",
+		       layoutVar vector,
+		       str "[", layoutVar index, str "]"]
+	     | VectorUpdates (x, us) =>
+		  align (Vector.toListMap
+			 (us, fn {index, offset, value} =>
+			  seq [str "#", Int.layout (offset + 1), str " ",
+			       layoutVar x,
+			       str "[", layoutVar index, str "]",
+			       str " := ", layoutVar value]))
 	 end
-	       
+
+      fun layout e = layout' (e, Var.layout)
+
+      val toString = Layout.toString o layout
+
+      fun toPretty (e, global: Var.t -> string option): string =
+	 Layout.toString (layout' (e, fn x =>
+				   case global x of
+				      NONE => Var.layout x
+				    | SOME s => Layout.str s))
+	 
       fun maySideEffect (e: t): bool =
 	 case e of
 	    Const _ => false
@@ -600,6 +668,8 @@ structure Exp =
 	  | Select _ => false
 	  | Update _ => true
 	  | Var _ => false
+	  | VectorSub _ => false
+	  | VectorUpdates _ => true
 
       fun varsEquals (xs, xs') = Vector.equals (xs, xs', Var.equals)
 
@@ -620,6 +690,20 @@ structure Exp =
 	     Update {object = o2, offset = i2, value = v2}) =>
 	     i1 = i2 andalso Var.equals (o1, o2) andalso Var.equals (v1, v2)
 	  | (Var x, Var x') => Var.equals (x, x')
+  	  | (VectorSub {index = i1, offset = o1, vector = v1},
+	     VectorSub {index = i2, offset = o2, vector = v2}) =>
+	       Var.equals (i1, i2)
+	       andalso o1 = o2
+	       andalso Var.equals (v1, v2)
+	  | (VectorUpdates (v1, us1), VectorUpdates (v2, us2)) =>
+	       Var.equals (v1, v2)
+	       andalso
+	       Vector.equals (us1, us2,
+			      fn ({index = i1, offset = o1, value = v1},
+				  {index = i2, offset = o2, value = v2}) =>
+			      Var.equals (i1, i2)
+			      andalso o1 = o2
+			      andalso Var.equals (v1, v2))
 	  | _ => false
 
       local
@@ -630,6 +714,8 @@ structure Exp =
 	 val select = newHash ()
 	 val tuple = newHash ()
 	 val update = newHash ()
+	 val vectorSub = newHash ()
+	 val vectorUpdate = newHash ()
 	 fun hashVars (xs: Var.t vector, w: Word.t): Word.t =
 	    Vector.fold (xs, w, fn (x, w) => Word.xorb (w, Var.hash x))
       in
@@ -652,42 +738,25 @@ structure Exp =
 			     Word.xorb (Var.hash object + Word.fromInt offset,
 					Var.hash value))
 	     | Var x => Var.hash x
+	     | VectorSub {index, offset, vector} =>
+		  Word.xorb
+		  (vectorSub,
+		   Word.xorb (Var.hash index + Word.fromInt offset,
+			     Var.hash vector))
+	     | VectorUpdates (v, us) =>
+		  Vector.fold
+		  (us, Word.xorb (Var.hash v, vectorUpdate),
+		   fn ({index, offset, value}, ac) =>
+		   Word.xorb (ac,
+			      Word.xorb (Var.hash index + Word.fromInt offset,
+					 Var.hash value)))
       end
 
       val hash = Trace.trace ("Exp.hash", layout, Word.layout) hash
 
-      val toString = Layout.toString o layout
-
-      local
-	 fun select (object, offset) =
-	    concat ["#", Int.toString (offset + 1), " ", Var.toString object]
-      in
-	 fun toPretty (e: t, global: Var.t -> string option): string =
-	    case e of
-	       Const c => Const.toString c
-	     | Inject {sum, variant} =>
-		  concat [Var.toString variant, ": ", Tycon.toString sum]
-	     | Object {con, args} =>
-		  concat [(case con of
-			      NONE => ""
-			    | SOME c => concat [Con.toString c, " "]),
-			  Var.prettys (args, global)]
-	     | PrimApp {prim, args, ...} =>
-		  Layout.toString
-		  (Prim.layoutApp (prim, args, fn x =>
-				   case global x of
-				      NONE => Var.layout x
-				    | SOME s => Layout.str s))
-	     | Profile p => ProfileExp.toString p
-	     | Select {object, offset} => select (object, offset)
-	     | Update {object, offset, value} => 
-		 concat [select (object, offset), " := ", Var.toString value]
-	     | Var x => Var.toString x
-
-	 val isProfile =
+      val isProfile =
 	 fn Profile _ => true
 	  | _ => false
-      end
    end
 datatype z = datatype Exp.t
 

@@ -335,22 +335,6 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			   | _ => Error.bug "deWeak")
 	  | Value.Weak {arg, ...} => arg
 	  | _ => Error.bug "deWeak"
-      val deVector: Value.t -> Value.t =
-	 fn v =>
-	 case v of
-	    Value.Ground t =>
-	       typeValue (case Type.dest t of
-			     Type.Vector p =>
-				if 1 = Prod.length p
-				   then Prod.elt (p, 0)
-				else Error.bug "refFlatten can't handle flat vectors"
-			   | _ => Error.bug "deUnary")
-	  | Value.Vector {elt = p, ...} =>
-	       if 1 = Prod.length p
-		  then Prod.elt (p, 0)
-	       else Error.bug "refFlatten can't handle flat vectors"
-	  | _ => Error.bug "deUnary"
-      val deArray = deVector
       fun primApp {args, prim, resultVar, resultType, targs} =
 	 let
 	    fun vector1 v =
@@ -374,12 +358,22 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		; result ())
 	 in
 	    case Prim.name prim of
-	       Array_sub => deArray (arg 0)
-	     | Array_toVector => vector1 (deArray (arg 0))
-	     | Array_update =>
-		  (coerce {from = arg 2,
-			   to = deArray (arg 0)}
-		   ; result ())
+	       Array_toVector =>
+		  let
+		     val res = result ()
+		     datatype z = datatype Value.t
+		     val () =
+			case (arg 0, res) of
+			   (Ground _, Ground _) => ()
+			 | (Vector {elt = p, ...}, Vector {elt = p', ...}) =>
+			      Vector.foreach2
+			      (Prod.dest p, Prod.dest p',
+			       fn ({elt = v, ...}, {elt = v', ...}) =>
+			       Value.unify (v, v'))
+			 | _ => Error.bug "Array_toVector"
+		  in
+		     res
+		  end
 	     | FFI _ =>
 		  (* Some imports, like Real64.modf, take ref cells that can not
 		   * be flattened.
@@ -388,7 +382,6 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	     | MLton_eq => equal ()
 	     | MLton_equal => equal ()
 	     | MLton_size => dontFlatten ()
-	     | Vector_sub => deVector (arg 0)
 	     | Weak_get => deWeak (arg 0)
 	     | Weak_new => weak (arg 0)
 	     | _ => result ()
@@ -398,17 +391,32 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	    datatype z = datatype Value.t
 	 in
 	    case object of
-		  Ground t =>
-		     (case Type.dest t of
-			 Type.Object {args, ...} =>
-			    typeValue (Prod.elt (args, offset))
-		       | _ => Error.bug "select Ground")
-		| Object ob => Object.select (ob, offset)
-		| _ => Error.bug "select"
+	       Ground t =>
+		  (case Type.dest t of
+		      Type.Object {args, ...} =>
+			 typeValue (Prod.elt (args, offset))
+		    | _ => Error.bug "select Ground")
+	     | Object ob => Object.select (ob, offset)
+	     | _ => Error.bug "select"
 	 end
       fun update {object, offset, value} =
 	 coerce {from = value,
 		 to = select {object = object, offset = offset}}
+      fun vectorSub {index = _, offset, vector} =
+	 case vector of
+	    Value.Ground t =>
+	        (case Type.dest t of
+		    Type.Vector p => typeValue (Prod.elt (p, offset))
+		  | _ => Error.bug "vectorSub Ground")
+	  | Value.Vector {elt, ...} => Prod.elt (elt, offset)
+	  | _ => Error.bug "vectorSub of non vector"
+      fun vectorUpdate {index = _, offset, value, vector} =
+	 case vector of
+	    Value.Ground _ => ()
+	  | Value.Vector {elt, ...} =>
+	       coerce {from = value,
+		       to = Prod.elt (elt, offset)}
+	  | _ => Error.bug "vectorUpdate of non vector"
       fun const c = typeValue (Type.ofConst c)
       val {func, label, value = varValue, ...} =
 	 analyze {coerce = coerce,
@@ -424,7 +432,9 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		  select = fn {object, offset, ...} => select {object = object,
 							       offset = offset},
 		  update = update,
-		  useFromTypeOnBinds = false}
+		  useFromTypeOnBinds = false,
+		  vectorSub = vectorSub,
+		  vectorUpdate = vectorUpdate}
       val varObject = Value.deObject o varValue
       (* Mark a variable as flat if it is used only once and that use is in an
        * object allocation.
@@ -738,15 +748,16 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	      | PrimApp {args, prim, targs} =>
 		   let
 		      val vargs = Vector.map (args, varValue)
+		      datatype z = datatype Prim.Name.t
 		      val targs =
 			 Vector.map
 			 (Prim.extractTargs
 			  (prim,
 			   {args = vargs,
-			    deArray = deArray,
+			    deArray = fn _ => Error.bug "deArray",
 			    deArrow = fn _ => Error.bug "deArrow",
 			    deRef = fn _ => Error.bug "deRef",
-			    deVector = deVector,
+			    deVector = fn _ => Error.bug "deVector",
 			    deWeak = deWeak,
 			    result = (case var of
 					 NONE => Value.unit

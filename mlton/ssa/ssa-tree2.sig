@@ -91,6 +91,12 @@ signature SSA_TREE2 =
 			  offset: int,
 			  value: Var.t}
 	     | Var of Var.t
+	     | VectorSub of {index: Var.t,
+			     offset: int,
+			     vector: Var.t}
+	     | VectorUpdates of Var.t * {index: Var.t,
+					 offset: int,
+					 value: Var.t} vector
 
 	    val equals: t * t -> bool
 	    val foreachVar: t * (Var.t -> unit) -> unit
