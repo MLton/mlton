@@ -300,13 +300,15 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 	 end
 
       local
-	 fun make (prim, f) arg =
-	    (SysCall.simple (fn () => prim (f arg))
-	     ; ST.fromC ())
+	 fun make prim arg =
+	    SysCall.syscall
+	    (fn () =>
+	     (prim arg, fn () => 
+	      ST.fromC ()))
       in
-	 val stat = make (Prim.Stat.stat, NullString.nullTerm)
-	 val lstat = make (Prim.Stat.lstat, NullString.nullTerm)
-	 val fstat = make (Prim.Stat.fstat, fn FD fd => fd)
+	 val stat = (make Prim.Stat.stat) o NullString.nullTerm
+	 val lstat = (make Prim.Stat.lstat) o NullString.nullTerm
+	 val fstat = (make Prim.Stat.fstat) o (fn FD fd => fd)
       end
 
       datatype access_mode = A_READ | A_WRITE | A_EXEC
