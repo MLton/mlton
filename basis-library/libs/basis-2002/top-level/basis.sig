@@ -261,6 +261,11 @@ signature BASIS_2002 =
       sharing type MLton.Signal.t = Posix.Signal.signal
       sharing type MLton.Word.t = Word.word
       sharing type MLton.Word8.t = Word8.word
+      sharing Unsafe.CharArray = CharArray
+      sharing Unsafe.CharVector = CharVector
+      sharing Unsafe.Real64Array = Real64Array
+      sharing Unsafe.Word8Array = Word8Array
+      sharing Unsafe.Word8Vector = Word8Vector
 	 
       (* ************************************************** *)
       (* ************************************************** *)
