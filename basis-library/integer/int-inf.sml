@@ -365,19 +365,26 @@ structure IntInf: INT_INF_EXTRA =
       (*
        * bigInt subtraction.
        *)
-      local fun expensive (lhs: bigInt, rhs: bigInt): bigInt =
-	 let val tsize = Int.max (size lhs, size rhs) +? 1
-	 in Prim.- (lhs, rhs, reserve tsize)
-	 end
-      in fun bigMinus (lhs: bigInt, rhs: bigInt): bigInt =
-	 if areSmall (lhs, rhs)
-	    then let val ansv = Word.- (stripTag lhs, stripTag rhs)
+      local
+	 fun expensive (lhs: bigInt, rhs: bigInt): bigInt =
+	    let
+	       val tsize = Int.max (size lhs, size rhs) +? 1
+	    in
+	       Prim.- (lhs, rhs, reserve tsize)
+	    end
+      in
+	 fun bigMinus (lhs: bigInt, rhs: bigInt): bigInt =
+	    if areSmall (lhs, rhs)
+	       then
+		  let
+		     val ansv = Word.- (stripTag lhs, stripTag rhs)
 		     val ans = addTag ansv
-		 in if sameSign (ans, ansv)
-		       then Prim.fromWord ans
-		    else expensive (lhs, rhs)
-		 end
-	 else expensive (lhs, rhs)
+		  in
+		     if sameSign (ans, ansv)
+			then Prim.fromWord ans
+		     else expensive (lhs, rhs)
+		  end
+	    else expensive (lhs, rhs)
       end
 
       (*
