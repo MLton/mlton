@@ -12,6 +12,4 @@ structure IntInf =
 	 fn _ => raise Fail "IntInf.notb"
       val << : int * Word.word -> int =
 	 fn _ => raise Fail "IntInf.<<"
-      val ~>> : int * Word.word -> int =
-	 fn _ => raise Fail "IntInf.~>>"
    end
