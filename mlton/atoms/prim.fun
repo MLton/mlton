@@ -295,7 +295,7 @@ structure Name =
 	   (Real_mulsub, Functional, "mulsub"),
 	   (Real_neg, Functional, "neg"),
 	   (Real_qequal, Functional, "qequal"),
-	   (Real_round, Functional, "round"),
+	   (Real_round, DependsOnState, "round"), (* depends on rounding mode *)
 	   (Real_sub, Functional, "sub")],
 	 fn (makeName, kind, str) =>
 	 (makeName s, kind, concat ["Real", RealSize.toString s, "_", str]))
