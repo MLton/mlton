@@ -54,8 +54,8 @@ fun checkScopes (program as
 		  ConApp {con, args, ...} => (getCon con
 					      ; Vector.foreach (args, getVar))
 		| Const _ => ()
-		| HandlerPop _ => ()
-		| HandlerPush _ => ()
+		| HandlerPop l => getLabel l
+		| HandlerPush l => getLabel l
 		| PrimApp {args, ...} => Vector.foreach (args, getVar)
 		| Select {tuple, ...} => getVar tuple
 		| SetExnStackLocal => ()
