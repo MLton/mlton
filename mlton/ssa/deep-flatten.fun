@@ -268,21 +268,15 @@ structure Value =
    struct
       datatype t =
 	 Ground of Type.t
-       | Complex of complex Equatable.t
-      and complex =
-	 Object of {args: t Prod.t,
+       | Object of {args: t Prod.t,
 		    coercedFrom: t AppendList.t ref,
 		    con: ObjectCon.t,
 		    finalOffsets: int vector option ref,
 		    finalTree: TypeTree.t option ref,
 		    finalType: Type.t option ref,
 		    finalTypes: Type.t Prod.t option ref,
-		    flat: Flat.t ref}
-	| Weak of {arg: t}
-
-      fun delay (f: unit -> complex): t = Complex (Equatable.delay f)
-	 
-      fun new (v: complex) = Complex (Equatable.new v)
+		    flat: Flat.t ref} Equatable.t
+       | Weak of {arg: t}
 
       fun layout (v: t): Layout.t =
 	 let
@@ -290,16 +284,14 @@ structure Value =
 	 in
 	    case v of
 	       Ground t => Type.layout t
-	     | Complex e =>
+	     | Object e =>
 		  Equatable.layout
-		  (e, fn v =>
-		   case v of
-		      Object {args, con, flat, ...} => 
-			 seq [str "Object ",
-			      record [("args", Prod.layout (args, layout)),
-				      ("con", ObjectCon.layout con),
-				      ("flat", Flat.layout (! flat))]]
-		    | Weak {arg, ...} => seq [str "Weak ", layout arg])
+		  (e, fn {args, con, flat, ...} => 
+		   seq [str "Object ",
+			record [("args", Prod.layout (args, layout)),
+				("con", ObjectCon.layout con),
+				("flat", Flat.layout (! flat))]])
+	     | Weak {arg, ...} => seq [str "Weak ", layout arg]
 	 end
 
       val ground = Ground
@@ -320,36 +312,34 @@ structure Value =
 	 (fn (v, v') =>
 	  case (v, v') of
 	     (Ground _, Ground _) => ()
-	   | (Complex e, Complex e') =>
+	   | (Object e, Object e') =>
 		let
 		   val callDont = ref false
 		   val () =
 		      Equatable.equate
-		      (e, e', fn (v, v') =>
-		       case (v, v') of
-			  (Object {args = a, coercedFrom = c, flat = f, ...},
-			   Object {args = a', coercedFrom = c', flat = f', ...}) =>
-			  let
-			     val () = unifyProd (a, a')
-			  in
-			     case (!f, !f') of
-				(Flat, Flat) =>
-				   (c := AppendList.append (!c', !c); v)
-			      | (Flat, NotFlat) =>
-				   (callDont := true; v)
-			      | (NotFlat, Flat) =>
-				   (callDont := true; v')
-			      | (NotFlat, NotFlat) => v
-			  end
-			 | (Weak {arg = a, ...}, Weak {arg = a', ...}) =>
-			      (unify (a, a'); v)
-			 | _ => Error.bug "strange unify")
+		      (e, e',
+		       fn (z as {args = a, coercedFrom = c, flat = f, ...},
+			   z' as {args = a', coercedFrom = c', flat = f', ...}) =>
+		       let
+			  val () = unifyProd (a, a')
+		       in
+			  case (!f, !f') of
+			     (Flat, Flat) =>
+				(c := AppendList.append (!c', !c); z)
+			   | (Flat, NotFlat) =>
+				(callDont := true; z)
+			   | (NotFlat, Flat) =>
+				(callDont := true; z')
+			   | (NotFlat, NotFlat) => z
+		       end)
 		in
 		   if !callDont
 		      then dontFlatten v
 		   else ()
 		end
-	   | _ => Error.bug "unify Ground with Complex") arg
+	   | (Weak {arg = a, ...}, Weak {arg = a', ...}) =>
+		unify (a, a')
+	   | _ => Error.bug "strange unify") arg
       and unifyProd =
 	 fn (p, p') =>
 	 Vector.foreach2
@@ -358,21 +348,22 @@ structure Value =
       and dontFlatten: t -> unit =
 	 fn v =>
 	 case v of
-	    Ground _ => ()
-	  | Complex e =>
-	       case Equatable.value e of
-		  Object {coercedFrom, flat, ...} =>
-		     (case ! flat of
-			 Flat =>
-			    let
-			       val () = flat := NotFlat
-			       val from = !coercedFrom
-			       val () = coercedFrom := AppendList.empty
-			    in
-			       AppendList.foreach (from, fn v' => unify (v, v'))
-			    end
-		       | NotFlat => ())
-		| _ => ()
+	    Object e =>
+	       let
+		  val {coercedFrom, flat, ...} = Equatable.value e
+	       in
+		  case ! flat of
+		     Flat =>
+			let
+			   val () = flat := NotFlat
+			   val from = !coercedFrom
+			   val () = coercedFrom := AppendList.empty
+			in
+			   AppendList.foreach (from, fn v' => unify (v, v'))
+			end
+		   | NotFlat => ()
+	       end
+	  | _ => ()
 
       val rec coerce =
 	 fn arg as {from, to} =>
@@ -380,74 +371,78 @@ structure Value =
 	 (fn _ =>
 	  case (from, to) of
 	     (Ground _, Ground _) => ()
-	   | (Complex e, Complex e') =>
+	   | (Object e, Object e') =>
 		if Equatable.equals (e, e')
 		   then ()
 		else
 		   Equatable.whenComputed
-		   (e', fn v' =>
-		    case (Equatable.value e, v') of
-		       (Object {args = a, con, ...},
-			Object {args = a', coercedFrom = c', flat = f', ...}) =>
-		       (if Prod.isMutable a orelse ObjectCon.isVector con
-			   then unify (from, to)
-			else
-			   case !f' of
-			      Flat => (AppendList.push (c', from)
-				       ; coerceProd {from = a, to = a'})
-			    | NotFlat => unify (from, to))
-		      | (Weak _, Weak _) => unify (from, to)
-		      | _ => Error.bug "strange coerce")
-	   | _ => Error.bug "coerce Complex with Ground") arg
+		   (e', fn {args = a', coercedFrom = c', flat = f', ...} =>
+		    let
+		       val {args = a, con, ...} = Equatable.value e
+		    in
+		       if Prod.isMutable a orelse ObjectCon.isVector con
+			  then unify (from, to)
+		       else
+			  case !f' of
+			     Flat => (AppendList.push (c', from)
+				      ; coerceProd {from = a, to = a'})
+			   | NotFlat => unify (from, to)
+		    end)
+	   | (Weak _, Weak _) => unify (from, to)
+	   | _ => Error.bug "strange coerce") arg
       and coerceProd =
 	 fn {from = p, to = p'} =>
 	 Vector.foreach2
 	 (Prod.dest p, Prod.dest p', fn ({elt = e, ...}, {elt = e', ...}) =>
 	  coerce {from = e, to = e'})
 
-      fun object {args, con} =
+      fun objectFields {args, con} =
 	 let
 	    (* Don't flatten object components that are immutable fields.  Those
-	     * have already had a chance to be flattened by other passes.
-	     *)
-	    val _  =
-	       if (case con  of
-		      ObjectCon.Con _ => true
-		    | ObjectCon.Tuple => true
-		    | ObjectCon.Vector => false)
-		  then Vector.foreach (Prod.dest args, fn {elt, isMutable} =>
-				       if isMutable
-					  then ()
-				       else dontFlatten elt)
-	       else ()
-	    (* Don't flatten constructors, since they are part of a sum type.
-	     * Don't flatten unit.
-	     * Don't flatten vectors (of course their components can be
-	     * flattened).
-	     * Don't flatten objects with mutable fields, since sharing must be
-	     * preserved.
-	     *)
-	    val dontFlatten =
-	       (case con of
-		   ObjectCon.Con _ => true
-		 | ObjectCon.Tuple => false
-		 | ObjectCon.Vector => true)
-	       orelse Prod.isEmpty args
-	       orelse Prod.isMutable args
-	    val flat = if dontFlatten then Flat.NotFlat else Flat.Flat
-	 in
-	    Object {args = args,
-		    coercedFrom = ref AppendList.empty,
-		    con = con,
-		    finalOffsets = ref NONE,
-		    finalTree = ref NONE,
-		    finalType = ref NONE,
-		    finalTypes = ref NONE,
-		    flat = ref flat}
-	 end
+	       * have already had a chance to be flattened by other passes.
+	       *)
+	      val _  =
+		 if (case con  of
+			ObjectCon.Con _ => true
+		      | ObjectCon.Tuple => true
+		      | ObjectCon.Vector => false)
+		    then Vector.foreach (Prod.dest args, fn {elt, isMutable} =>
+					 if isMutable
+					    then ()
+					 else dontFlatten elt)
+		 else ()
+	      (* Don't flatten constructors, since they are part of a sum type.
+	       * Don't flatten unit.
+	       * Don't flatten vectors (of course their components can be
+	       * flattened).
+	       * Don't flatten objects with mutable fields, since sharing must be
+	       * preserved.
+	       *)
+	      val dontFlatten =
+		 (case con of
+		     ObjectCon.Con _ => true
+		   | ObjectCon.Tuple => false
+		   | ObjectCon.Vector => true)
+		     orelse Prod.isEmpty args
+		     orelse Prod.isMutable args
+	      val flat = if dontFlatten then Flat.NotFlat else Flat.Flat
+	   in
+	      {args = args,
+	       coercedFrom = ref AppendList.empty,
+	       con = con,
+	       finalOffsets = ref NONE,
+	       finalTree = ref NONE,
+	       finalType = ref NONE,
+	       finalTypes = ref NONE,
+	       flat = ref flat}
+	   end
+
+      fun object f =
+	 Object (Equatable.delay (fn () => objectFields (f ())))
 	    
       val tuple: t Prod.t -> t =
-	 fn vs => new (object {args = vs, con = ObjectCon.Tuple})
+	 fn vs =>
+	 Object (Equatable.new (objectFields {args = vs, con = ObjectCon.Tuple}))
 
       val tuple =
 	 Trace.trace ("DeepFlatten.Value.tuple",
@@ -455,16 +450,13 @@ structure Value =
 		      layout)
 	 tuple
 
-      fun weak (arg: t) = new (Weak {arg = arg})
+      fun weak (arg: t) = Weak {arg = arg}
 
       val deObjectOpt =
 	 fn v =>
 	 case v of
-	    Ground _ => NONE
-	  | Complex e =>
-	       case Equatable.value e of
-		  Object z => SOME z
-		| _ => NONE
+	    Object e => SOME (Equatable.value e)
+	  | _ => NONE
 
       fun deObject v =
 	 case deObjectOpt v of
@@ -477,11 +469,8 @@ structure Value =
       val deWeak: t -> t =
 	 fn v =>
 	 case v of
-	    Ground _ => Error.bug "Value.deWeak"
-	  | Complex e =>
-	       case Equatable.value e of
-		  Weak {arg, ...} => arg
-		| _ => Error.bug "Value.deWeak"
+	    Weak {arg, ...} => arg
+	  | _ => Error.bug "Value.deWeak"
 
       val traceFinalType =
 	 Trace.trace ("DeepFlatten.Value.finalType", layout, Type.layout)
@@ -514,11 +503,13 @@ structure Value =
 	 (fn v =>
 	  case v of
 	     Ground t => t
-	   | Complex e =>
-		case Equatable.value e of
-		   Object {finalType = r, ...} =>
-		      Ref.memoize (r, fn () => Prod.elt (finalTypes v, 0))
-		 | Weak {arg, ...} => Type.weak (finalType arg)) arg
+	   | Object e =>
+		let
+		   val {finalType = r, ...} = Equatable.value e
+		in
+		   Ref.memoize (r, fn () => Prod.elt (finalTypes v, 0))
+		end
+	   | Weak {arg, ...} => Type.weak (finalType arg)) arg
       and finalTypes arg: Type.t Prod.t =
 	 traceFinalTypes
 	 (fn v =>
@@ -592,10 +583,9 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		     let
 			val args = Prod.map (args, makeTypeValue)
 			fun doit () =
-			   Value.delay
-			   (fn () =>
-			    Value.object {args = Prod.map (args, fn f => f ()),
-					  con = con})
+			   Value.object
+			   (fn () => {args = Prod.map (args, fn f => f ()),
+				      con = con})
 			datatype z = datatype ObjectCon.t
 		     in
 			case con of
