@@ -736,9 +736,70 @@ fun collect (E as T r, f: {isUsed: bool, scope: Scope.t} -> bool) =
        types = finish (types, Ast.Tycon.toSymbol),
        vals = finish (vals, Ast.Vid.toSymbol)}
    end
-   
+
+fun setTyconNames (E: t): unit =
+   let
+      val {get = shortest: Tycon.t -> int ref, ...} =
+	 Property.get (Tycon.plist, Property.initFun (fn _ => ref Int.maxInt))
+      fun doType (typeStr: TypeStr.t,
+		  name: Ast.Tycon.t,
+		  length: int,
+		  strids: Strid.t list): unit =
+	 case TypeStr.toTyconOpt typeStr of
+	    NONE => ()
+	  | SOME c => 
+	       let
+		  val r = shortest c
+	       in
+		  if length >= !r
+		     then ()
+		  else
+		     let
+			val _ = r := length
+			val name =
+			   Pretty.longid (List.map (strids, Strid.layout),
+					  Ast.Tycon.layout name)
+		     in
+			Tycon.setPrintName (c, Layout.toString name)
+		     end
+	       end
+      val {get = strShortest: Structure.t -> int ref, ...} =
+	 Property.get (Structure.plist,
+		       Property.initFun (fn _ => ref Int.maxInt))
+      fun loopStr (s as Structure.T {strs, types, ...},
+		   length: int,
+		   strids: Strid.t list)
+	 : unit =
+	 let
+	    val r = strShortest s
+	 in
+	    if length >= !r
+	       then ()
+	    else
+	       (r := length
+		; Info.foreach (types, fn (name, typeStr) =>
+				doType (typeStr, name, length, strids))
+		; Info.foreach (strs, fn (strid, str) =>
+				loopStr (str, 1 + length, strids @ [strid])))
+	 end
+      val {strs, types, ...} = collect (E, fn _ => true)
+      val _ = Array.foreach (types, fn (name, typeStr) =>
+			     doType (typeStr, name, 0, []))
+      val _ = Array.foreach (strs, fn (strid, str) => loopStr (str, 1, [strid]))
+      val _ =
+	 List.foreach
+	 (!allTycons, fn c =>
+	  if ! (shortest c) < Int.maxInt
+	     then ()
+	  else
+	     Tycon.setPrintName (c, concat ["?.", Tycon.originalName c]))
+   in
+      ()
+   end
+
 fun layout' (E: t, f, fStr): Layout.t =
    let
+      val _ = setTyconNames E
       val {fcts, sigs, strs, types, vals} = collect (E, f)
       open Layout
       fun doit (a, layout) = align (Array.toListMap (a, layout))
@@ -1176,66 +1237,6 @@ fun openStructure (E as T {currentScope, strs, vals, types, ...},
       val _ = doit (strs, strs')
       val _ = doit (vals, vals')
       val _ = doit (types, types')
-   in
-      ()
-   end
-
-fun setTyconNames (E: t): unit =
-   let
-      val {get = shortest: Tycon.t -> int ref, ...} =
-	 Property.get (Tycon.plist, Property.initFun (fn _ => ref Int.maxInt))
-      fun doType (typeStr: TypeStr.t,
-		  name: Ast.Tycon.t,
-		  length: int,
-		  strids: Strid.t list): unit =
-	 case TypeStr.toTyconOpt typeStr of
-	    NONE => ()
-	  | SOME c => 
-	       let
-		  val r = shortest c
-	       in
-		  if length >= !r
-		     then ()
-		  else
-		     let
-			val _ = r := length
-			val name =
-			   Pretty.longid (List.map (strids, Strid.layout),
-					  Ast.Tycon.layout name)
-		     in
-			Tycon.setPrintName (c, Layout.toString name)
-		     end
-	       end
-      val {get = strShortest: Structure.t -> int ref, ...} =
-	 Property.get (Structure.plist,
-		       Property.initFun (fn _ => ref Int.maxInt))
-      fun loopStr (s as Structure.T {strs, types, ...},
-		   length: int,
-		   strids: Strid.t list)
-	 : unit =
-	 let
-	    val r = strShortest s
-	 in
-	    if length >= !r
-	       then ()
-	    else
-	       (r := length
-		; Info.foreach (types, fn (name, typeStr) =>
-				doType (typeStr, name, length, strids))
-		; Info.foreach (strs, fn (strid, str) =>
-				loopStr (str, 1 + length, strids @ [strid])))
-	 end
-      val {strs, types, ...} = collect (E, fn _ => true)
-      val _ = Array.foreach (types, fn (name, typeStr) =>
-			     doType (typeStr, name, 0, []))
-      val _ = Array.foreach (strs, fn (strid, str) => loopStr (str, 1, [strid]))
-      val _ =
-	 List.foreach
-	 (!allTycons, fn c =>
-	  if ! (shortest c) < Int.maxInt
-	     then ()
-	  else
-	     Tycon.setPrintName (c, concat ["?.", Tycon.originalName c]))
    in
       ()
    end

@@ -453,13 +453,11 @@ fun elaborate {input: File.t list}: Xml.Program.t =
 	       let
 		  val lay =
 		     case input of
-			[] => (Env.setTyconNames basisEnv
-			       ; Env.layout basisEnv)
+			[] => Env.layout basisEnv
 		      | _ => 
 			   Env.scopeAll
 			   (basisEnv, fn () =>
 			    (parseAndElab ()
-			     ; Env.setTyconNames basisEnv
 			     ; Env.layoutCurrentScope basisEnv))
 		  val _ = Layout.outputl (lay, Out.standard)
 	       in
