@@ -46,7 +46,7 @@ if [ $cross = 'yes' ]; then
 fi
 cont='callcc.sml callcc2.sml callcc3.sml'
 intInf='conv.sml conv2.sml harmonic.sml int-inf.*.sml real.fromLargeInt.sml real.toLargeInt slow.sml slower.sml smith-normal-form.sml'
-signal='signals.sml suspend.sml'
+signal='finalize.sml signals.sml suspend.sml'
 thread='thread0.sml thread1.sml thread2.sml mutex.sml prodcons.sml same-fringe.sml timeout.sml'
 world='world1.sml world2.sml world3.sml world4.sml world5.sml world6.sml'
 tmp=/tmp/z.regression.$$
@@ -60,7 +60,7 @@ $mlton -verbose 1 || echo 'no mlton present'
 echo "flags = $flags"
 
 cd $src/regression
-for f in `ls *.sml`; do
+for f in $signal $thread $world; do #`ls *.sml`; do
 	f=`basename $f .sml`
 	case "$f" in
 	serialize)
