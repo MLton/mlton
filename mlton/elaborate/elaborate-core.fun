@@ -379,9 +379,9 @@ fun elaboratePat (p: Apat.t, E: Env.t, preError: unit -> unit, amInRvb: bool)
 		(p, c, fn (l1, l2) =>
 		 (region,
 		  str "pattern and constraint disagree",
-		  align [seq [str "pattern:    ", lay ()],
-			 seq [str "of type:    ", l1],
-			 seq [str "constraint: ", l2]]))
+		  align [seq [str "expects: ", l2],
+			 seq [str "but got: ", l1],
+			 seq [str "in: ", lay ()]]))
 	     fun lay () = Apat.layout p
 	  in
 	     case Apat.node p of
