@@ -1909,7 +1909,7 @@ in
 					(Vid.Con con, scheme),
 					ExtendUses.Old uses))
 		     in
-			1 < Vector.length v
+			true
 		     end
 		| Scheme _ => false
 		| Tycon _ => true
