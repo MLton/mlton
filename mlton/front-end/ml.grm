@@ -425,6 +425,14 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
         SEMICOLON -> COMMA | COMMA -> SEMICOLON |
         -> IN LONGID END | -> ELSE LONGID
 
+%value CHAR (#"a")
+%value INT (0)
+%value LONGID ("bogus")
+%value REAL ("13.0")
+%value STRING ("bogus")
+%value TYVAR ("'a")
+%value WORD (0)
+
 %%
 
 program : topdecs                   (Program.T topdecs)
