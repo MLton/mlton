@@ -320,13 +320,13 @@ fun ('down, 'up)
 	     | Local (d, d') =>
 		  do2 (loopDec (d, down), loopDec (d', down), Local)
 	     | Open _ => empty ()
-	     | Overload (x, tyvars, ty, ys) =>
+	     | Overload (i, x, tyvars, ty, ys) =>
 		  let
 		     val (down, finish) = bindFunVal (down, tyvars)
 		     val (ty, up) = loopTy (ty, down)
 		     val (tyvars, up) = finish up
 		  in
-		     (doit (Overload (x, tyvars, ty, ys)), up)
+		     (doit (Overload (i, x, tyvars, ty, ys)), up)
 		  end
 	     | SeqDec ds => doVec (ds, SeqDec)
 	     | Type tb => do1 (loopTypBind (tb, down), Type)

@@ -97,7 +97,15 @@ signature AST_CORE =
 	     | Import of Attribute.t list
 	     | Prim
 	 end
-      
+
+      structure Priority:
+	 sig
+	    datatype t = T of int option
+	    val <= : t * t -> bool
+	    val default: t
+	    val layout: t -> Layout.t
+	 end
+
       structure Exp:
 	 sig
 	    type dec
@@ -187,7 +195,10 @@ signature AST_CORE =
 					body: Exp.t} vector vector
 	     | Local of t * t
 	     | Open of Longstrid.t vector
-	     | Overload of Var.t * Tyvar.t vector * Type.t * Longvar.t vector
+	     | Overload of Priority.t *
+	                   Var.t * 
+			   Tyvar.t vector * Type.t * 
+			   Longvar.t vector
 	     | SeqDec of t vector
 	     | Type of TypBind.t
 	     | Val of {rvbs: {match: Match.t,

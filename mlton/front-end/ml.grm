@@ -342,6 +342,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | patitems of ((Field.t * Pat.Item.t) list * bool)
        | patnode of Pat.node
        | pats of Pat.t list
+       | priority of Priority.t
        | program of Program.t
        | repl of DatatypeRhs.node
        | rule of rule
@@ -784,8 +785,9 @@ decnolocal
 	| OPEN longstrids	(Dec.Open (Vector.fromList longstrids))
 	| fixity vids		(Dec.Fix {fixity = fixity,
 					  ops = Vector.fromList vids})
-	| OVERLOAD var COLON ty AS longvarands
-	                        (Dec.Overload (var,
+	| OVERLOAD priority var COLON ty AS longvarands
+	                        (Dec.Overload (priority, 
+                                               var,
 					       Vector.new0 (),
 					       ty,
 					       Vector.fromList longvarands))
@@ -899,6 +901,9 @@ fixity	: INFIX			(Fixity.Infix NONE)
 	| INFIXR		(Fixity.Infixr NONE)
 	| INFIXR digit		(Fixity.Infixr (SOME digit))
 	| NONFIX		(Fixity.Nonfix)
+
+priority :			(Priority.T NONE)
+         | digit		(Priority.T (SOME digit))
 
 int : INT
    (let

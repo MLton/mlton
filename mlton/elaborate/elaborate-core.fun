@@ -30,6 +30,7 @@ in
    structure Longtycon = Longtycon
    structure PrimKind = PrimKind
    structure Attribute = PrimKind.Attribute
+   structure Priority = Priority
    structure Record = Record
    structure SortedRecord = SortedRecord
    structure Strid = Strid
@@ -201,8 +202,7 @@ fun elaborateType (ty: Atype.t, lookup: Lookup.t): Type.t =
 fun elaborateTypeOpt (ty: Ast.Type.t option, lookup): Type.t option =
    Option.map (ty, fn ty => elaborateType (ty, lookup))
 
-val highPriorityOverloads: (unit -> unit) list ref = ref []
-val overloads: (unit -> unit) list ref = ref []
+val overloads: (Ast.Priority.t * (unit -> unit)) list ref = ref []
 val freeTyvarChecks: (unit -> unit) list ref = ref []
 
 val {hom = typeTycon: Type.t -> Tycon.t option, ...} =
@@ -241,7 +241,8 @@ fun 'a elabConst (c: Aconst.t,
 		in
 		   resolve tycon
 		end)
-	    val _ = List.push (overloads, fn () => (resolve (); ()))
+	    val _ = List.push (overloads, (Priority.default, fn () => 
+			       (resolve (); ())))
 	 in
 	    make (resolve, ty)
 	 end
@@ -557,7 +558,7 @@ val elaboratePat:
 					   (region,
 					    str "unresolved ... in record pattern",
 					    seq [str "pattern: ", lay ()])
-				     val _ = List.push (overloads, resolve)
+				     val _ = List.push (overloads, (Priority.default, resolve))
 				  in
 				     t
 				  end
@@ -1472,7 +1473,7 @@ fun elaborateDec (d, {env = E,
 		   in
 		      Decs.empty
 		   end
-	      | Adec.Overload (x, tyvars, ty, xs) =>
+	      | Adec.Overload (p, x, tyvars, ty, xs) =>
 		   let
 		      (* Lookup the overloads before extending the var in case
 		       * x appears in the xs.
@@ -1481,7 +1482,7 @@ fun elaborateDec (d, {env = E,
 			 Vector.map (xs, fn x => Env.lookupLongvar (E, x))
 		      val _ =
 			 Env.extendOverload
-			 (E, x, 
+			 (E, p, x, 
 			  Vector.map (ovlds, fn (x, s) => (x, Scheme.ty s)),
 			  Scheme.make {canGeneralize = false,
 				       tyvars = tyvars,
@@ -2089,20 +2090,8 @@ fun elaborateDec (d, {env = E,
 			 case vid of
 			    Vid.Con c => con c
 			  | Vid.Exn c => con c
-			  | Vid.Overload yts =>
+			  | Vid.Overload (p, yts) =>
 			       let
-				  (* There is a hack to handle cases like
-				   *   fun f (x, y) = x + y / y
-				   * The problem is that we need to resolve the
-				   * / before the +, because the default type
-				   * for + is int, which is not an allowed type
-				   * for /.  So, we treat / as a "high priority"
-				   * overload, meaning that we resolve it first.
-				   *)
-				  val overloads =
-				     if "/" = Longvid.toString id
-					then highPriorityOverloads
-				     else overloads
 				  val resolve =
 				     Promise.lazy
 				     (fn () =>
@@ -2125,8 +2114,8 @@ fun elaborateDec (d, {env = E,
 						    Error.bug "overload unify")
 					     ; y))
 				  val _ = 
-				     List.push (overloads, fn () =>
-						(resolve (); ()))
+				     List.push (overloads, (p, fn () =>
+						(resolve (); ())))
 			       in
 				  Cexp.Var (resolve, fn () => Vector.new0 ())
 			       end
@@ -2221,11 +2210,14 @@ fun elaborateDec (d, {env = E,
 	     rules = rules}
 	 end
       val ds = elabDec (Scope.scope d, nest, true)
-      fun resolve overloads =
-	 (List.foreach (rev (!overloads), fn p => (p (); ()))
-	  ; overloads := [])
-      val _ = resolve highPriorityOverloads
-      val _ = resolve overloads
+      (* List.insertionSort is anti-stable;
+       * hence, it sorts and reverses the overloads. 
+       *)
+      val _ = List.foreach (List.insertionSort
+			    (!overloads, fn ((x,_),(y,_)) =>
+			     Priority.<= (y, x)),
+			    fn (_,p) => (p (); ()))
+      val _ = overloads := []
       val _ = List.foreach (rev (!freeTyvarChecks), fn p => p ())
       val _ = freeTyvarChecks := []
       val _ = TypeEnv.closeTop (Adec.region d)

@@ -271,6 +271,22 @@ structure PrimKind =
        | Prim
    end
 
+structure Priority =
+   struct
+      datatype t = T of int option
+      val op <= = fn (T x, T y) =>
+	 case (x, y) of
+	    (NONE, NONE) => true
+	  | (NONE, _) => true
+	  | (_, NONE) => false
+	  | (SOME x, SOME y) => Int.<= (x, y)
+      val default = T NONE
+      fun layout (T x) =
+	 case x of
+	    NONE => Layout.empty
+	  | SOME x => Int.layout x
+   end
+
 datatype expNode =
    Var of {name: Longvid.t, fixop: Fixop.t}
   | Fn of match
@@ -305,7 +321,9 @@ and decNode =
 			     resultType: Type.t option} vector vector
   | Local of dec * dec
   | Open of Longstrid.t vector
-  | Overload of Var.t * Tyvar.t vector * Type.t * Longvar.t vector
+  | Overload of Priority.t * Var.t * 
+                Tyvar.t vector * Type.t * 
+                Longvar.t vector
   | SeqDec of dec vector
   | Type of TypBind.t
   | Val of {tyvars: Tyvar.t vector,
@@ -456,8 +474,8 @@ and layoutDec d =
     | Open ss => seq [str "open ",
 		      seq (separate (Vector.toListMap (ss, Longstrid.layout),
 				     " "))]
-    | Overload (x, _, t, xs) =>
-	 seq [str "_overload ",
+    | Overload (p, x, _, t, xs) =>
+	 seq [str "_overload ", Priority.layout p, str " ",
 	      align [layoutConstraint (Var.layout x, t),
 		     layoutAnds ("as", Vector.toList xs, fn (prefix, x) =>
 				 seq [prefix, Longvar.layout x])]]

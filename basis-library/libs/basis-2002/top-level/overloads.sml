@@ -103,7 +103,7 @@
  * and Char.f
  *)
 
-_overload ~ :   ('a -> 'a) (* num -> num *)
+_overload 2 ~ :   ('a -> 'a) (* num -> num *)
 as  Int.~
 and Int8.~
 and Int16.~
@@ -125,7 +125,7 @@ and Real32.~
 and Real64.~
 and LargeReal.~
 
-_overload + :   ('a * 'a -> 'a) (* num * num -> num *)
+_overload 2 + :   ('a * 'a -> 'a) (* num * num -> num *)
 as  Int.+
 and Int8.+
 and Int16.+
@@ -147,7 +147,7 @@ and Real32.+
 and Real64.+
 and LargeReal.+
 
-_overload - :   ('a * 'a -> 'a) (* num * num -> num *)
+_overload 2 - :   ('a * 'a -> 'a) (* num * num -> num *)
 as  Int.-
 and Int8.-
 and Int16.-
@@ -169,7 +169,7 @@ and Real32.-
 and Real64.-
 and LargeReal.-
 
-_overload * :   ('a * 'a -> 'a) (* num * num -> num *)
+_overload 2 * :   ('a * 'a -> 'a) (* num * num -> num *)
 as  Int.*
 and Int8.*
 and Int16.*
@@ -191,13 +191,13 @@ and Real32.*
 and Real64.*
 and LargeReal.*
 
-_overload / : ('a * 'a -> 'a)
+_overload 4 / : ('a * 'a -> 'a) (* real * real -> real *)
 as Real./
 and Real32./
 and Real64./
 and LargeReal./
 
-_overload div:   ('a * 'a -> 'a) (* wordint * wordint -> wordint *)
+_overload 3 div:   ('a * 'a -> 'a) (* wordint * wordint -> wordint *)
 as  Int.div
 and Int8.div
 and Int16.div
@@ -215,7 +215,7 @@ and Word64.div
 and LargeWord.div
 and SysWord.div
 
-_overload mod:   ('a * 'a -> 'a) (* wordint * wordint -> wordint *)
+_overload 3 mod:   ('a * 'a -> 'a) (* wordint * wordint -> wordint *)
 as  Int.mod
 and Int8.mod
 and Int16.mod
@@ -233,7 +233,7 @@ and Word64.mod
 and LargeWord.mod
 and SysWord.mod
 
-_overload abs:   ('a -> 'a) (* realint * realint -> realint *)
+_overload 3 abs:   ('a -> 'a) (* realint * realint -> realint *)
 as  Int.abs
 and Int8.abs
 and Int16.abs
@@ -248,7 +248,7 @@ and Real32.abs
 and Real64.abs
 and LargeReal.abs
 
-_overload < :   ('a * 'a -> bool) (* numtext * numtext -> bool *)
+_overload 1 < :   ('a * 'a -> bool) (* numtext * numtext -> bool *)
 as  Int.<
 and Int8.<
 and Int16.<
@@ -272,7 +272,7 @@ and LargeReal.<
 and String.<
 and Char.<
 
-_overload <= :   ('a * 'a -> bool) (* numtext * numtext -> bool *)
+_overload 1 <= :   ('a * 'a -> bool) (* numtext * numtext -> bool *)
 as  Int.<=
 and Int8.<=
 and Int16.<=
@@ -296,7 +296,7 @@ and LargeReal.<=
 and String.<=
 and Char.<=
 
-_overload > :   ('a * 'a -> bool) (* numtext * numtext -> bool *)
+_overload 1 > :   ('a * 'a -> bool) (* numtext * numtext -> bool *)
 as  Int.>
 and Int8.>
 and Int16.>
@@ -320,7 +320,7 @@ and LargeReal.>
 and String.>
 and Char.>
 
-_overload >= :   ('a * 'a -> bool) (* numtext * numtext -> bool *)
+_overload 1 >= :   ('a * 'a -> bool) (* numtext * numtext -> bool *)
 as  Int.>=
 and Int8.>=
 and Int16.>=
@@ -343,5 +343,3 @@ and Real64.>=
 and LargeReal.>=
 and String.>=
 and Char.>=
-
-

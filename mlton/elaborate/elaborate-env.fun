@@ -19,6 +19,7 @@ in
    structure Longvid = Longvid
    structure Longstrid = Longstrid
    structure Longtycon = Longtycon
+   structure Priority = Priority
 end
 
 local
@@ -69,7 +70,7 @@ structure Vid =
       datatype t =
 	 Con of Con.t
        | Exn of Con.t
-       | Overload of (Var.t * Type.t) vector
+       | Overload of Priority.t * (Var.t * Type.t) vector
        | Var of Var.t
 
       val statusPretty =
@@ -93,8 +94,8 @@ structure Vid =
 	       case vid of
 		  Con c => ("Con", Con.layout c)
 		| Exn c => ("Exn", Con.layout c)
-		| Overload xts =>
-		     ("Overload",
+		| Overload (p,xts) =>
+		     ("Overload(" ^ (Layout.toString (Priority.layout p)) ^ ")",
 		      Vector.layout (Layout.tuple2 (Var.layout, Type.layout))
 		      xts)
 		| Var v => ("Var", Var.layout v)
@@ -951,8 +952,8 @@ fun extendExn (E, c, c', s) =
 fun extendVar (E, x, x', s) =
    extendVals (E, Ast.Vid.fromVar x, (Vid.Var x', s))
 
-fun extendOverload (E, x, yts, s) =
-   extendVals (E, Ast.Vid.fromVar x, (Vid.Overload yts, s))
+fun extendOverload (E, p, x, yts, s) =
+   extendVals (E, Ast.Vid.fromVar x, (Vid.Overload (p, yts), s))
 
 val extendVar =
    Trace.trace4

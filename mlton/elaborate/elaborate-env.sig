@@ -47,7 +47,7 @@ signature ELABORATE_ENV =
 	    datatype t =
 	       Con of CoreML.Con.t
 	     | Exn of CoreML.Con.t
-	     | Overload of (CoreML.Var.t * Type.t) vector
+	     | Overload of Ast.Priority.t * (CoreML.Var.t * Type.t) vector
 	     | Var of CoreML.Var.t
 
 	    val layout: t -> Layout.t
@@ -101,7 +101,7 @@ signature ELABORATE_ENV =
       val extendTycon: t * Ast.Tycon.t * TypeStr.t -> unit
       val extendVar: t * Ast.Var.t * CoreML.Var.t * Scheme.t -> unit
       val extendOverload:
-	 t * Ast.Var.t * (CoreML.Var.t * Type.t) vector * Scheme.t
+	 t * Ast.Priority.t * Ast.Var.t * (CoreML.Var.t * Type.t) vector * Scheme.t
 	 -> unit
       val functorClosure:
 	 t * string * Interface.t
