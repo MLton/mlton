@@ -75,7 +75,7 @@ structure MLton: MLTON =
 	 struct
 	    datatype t = Prof | Real | Virtual
 
-	    fun signal _ = raise Fail "Itimer.signal"
+	    fun signal _ = Posix.Signal.alrm
 	    fun set _ = raise Fail "Itimer.set"
 	 end
 

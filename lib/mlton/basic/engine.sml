@@ -9,7 +9,7 @@ and 'a res =
  | TimeOut of 'a t
 
 val which = Itimer.Real
-val signal = Itimer.whichSignal which
+val signal = Itimer.signal which
 
 fun done (return): unit =
    (return := NONE
