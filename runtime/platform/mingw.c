@@ -14,7 +14,7 @@ int mkstemp (char *template) {
 	char templ[4];
 	DWORD size = sizeof(file_path);
 
-	if (0 == GetTempPath(size, file_path))
+	if (0 == GetTempPath (size, file_path))
 		diee ("unable to make temporary file");
 	strncpy (templ, template, 3);
 	templ[4] = 0x00;
