@@ -773,6 +773,57 @@ fun parseAttributes (attributes: Attribute.t list): Convention.t option =
 		     else Convention.Cdecl)
     | _ => NONE
 
+fun dimport {attributes: Attribute.t list,
+	     ty: Type.t,
+	     region: Region.t}: Type.t Prim.t =
+   let
+      fun error l = Control.error (region, l, Layout.empty)
+      fun invalidAttributes () =
+	 error (seq [str "invalid attributes for import: ",
+		     List.layout Attribute.layout attributes])
+   in
+      case Type.parse ty of
+	 NONE =>
+	    let
+	       val () =
+		  Control.error (region,
+				 str "invalid type for import: ",
+				 Type.layoutPretty ty)
+	    in
+	       Prim.bogus
+	    end
+       | SOME (args, result) =>
+	    let
+	       datatype z = datatype CFunction.Target.t
+	       val convention =
+		  case parseAttributes attributes of
+		     NONE => (invalidAttributes ()
+			      ; Convention.Cdecl)
+		   | SOME c => c
+	       val func =
+		  CFunction.T {args = Vector.concat 
+			              [Vector.new1 (Type.word (WordSize.pointer ())),
+				       Vector.map (args, #ty)],
+			       bytesNeeded = NONE,
+			       convention = convention,
+			       ensuresBytesFree = false,
+			       modifiesFrontier = true,
+			       mayGC = true,
+			       maySwitchThreads = false,
+			       prototype = (Vector.map (args, #ctype),
+					    Option.map (result, #ctype)),
+			       readsStackTop = true,
+			       return = (case result of
+					    NONE => Type.unit
+					  | SOME {ty, ...} => ty),
+			       target = Indirect,
+			       writesStackTop = true}
+
+	    in
+	       Prim.ffi func
+	    end
+   end
+
 fun import {attributes: Attribute.t list,
 	    name: string,
 	    ty: Type.t,
@@ -806,6 +857,7 @@ fun import {attributes: Attribute.t list,
 	       end
        | SOME (args, result) =>
 	    let
+	       datatype z = datatype CFunction.Target.t
 	       val convention =
 		  case parseAttributes attributes of
 		     NONE => (invalidAttributes ()
@@ -819,13 +871,13 @@ fun import {attributes: Attribute.t list,
 			       mayGC = true,
 			       maySwitchThreads = false,
 			       modifiesFrontier = true,
-			       name = name,
 			       prototype = (Vector.map (args, #ctype),
 					    Option.map (result, #ctype)),
 			       readsStackTop = true,
 			       return = (case result of
 					    NONE => Type.unit
 					  | SOME {ty, ...} => ty),
+			       target = Direct name,
 			       writesStackTop = true}
 
 	    in
@@ -2101,16 +2153,17 @@ fun elaborateDec (d, {env = E, nest}) =
 		   in
 		      Cexp.orElse (ce, ce')
 		   end
-	      | Aexp.Prim {kind, name, ty} => 
+	      | Aexp.Prim {kind, ty} => 
 		   let
 		      val ty = elabType ty
-		      val expandedTy =
+		      fun expandTy ty =
 			 Type.hom
 			 (ty, {con = Type.con,
 			       expandOpaque = true,
 			       record = Type.record,
 			       replaceSynonyms = true,
 			       var = Type.var})
+		      val expandedTy = expandTy ty
 		      (* We use expandedTy to get the underlying primitive right
 		       * but we use wrap in the end to make the result of the
 		       * final expression be ty, because that is what the rest
@@ -2134,10 +2187,11 @@ fun elaborateDec (d, {env = E, nest}) =
 						     targs = targs},
 				       result)
 			 end
-		      fun eta (p: Type.t Prim.t): Cexp.t =
+		      fun etaExtra (extra, ty, expandedTy,
+				    p: Type.t Prim.t): Cexp.t =
 			 case Type.deArrowOpt expandedTy of
 			    NONE =>
-			       wrap (primApp {args = Vector.new0 (),
+			       wrap (primApp {args = extra,
 					      prim = p,
 					      result = ty},
 				     ty)
@@ -2145,7 +2199,7 @@ fun elaborateDec (d, {env = E, nest}) =
 			       let
 				  val arg = Var.newNoname ()
 				  fun app args =
-				     primApp {args = args,
+				     primApp {args = Vector.concat [extra, args],
 					      prim = p,
 					      result = bodyType}
 				  val body =
@@ -2184,6 +2238,8 @@ fun elaborateDec (d, {env = E, nest}) =
 							   mayInline = true}),
 					     ty)
 			       end
+		      fun eta (p: Type.t Prim.t): Cexp.t =
+			 etaExtra (Vector.new0 (), ty, expandedTy, p)
 		      fun lookConst {default: string option, name: string} =
 			 let
 			    fun bug () =
@@ -2234,10 +2290,10 @@ fun elaborateDec (d, {env = E, nest}) =
 		      datatype z = datatype Ast.PrimKind.t
 		   in
 		      case kind of
-			 BuildConst =>
+			 BuildConst {name} =>
 			    (check (ElabControl.allowConstant, "_build_const")
 			     ; lookConst {default = NONE, name = name})
-		       | CommandLineConst {value} =>
+		       | CommandLineConst {name, value} =>
 			    let
 			       val () =
 				  check (ElabControl.allowConstant,
@@ -2254,10 +2310,10 @@ fun elaborateDec (d, {env = E, nest}) =
 			    in
 			       lookConst {default = SOME value, name = name}
 			    end
-		       | Const => 
+		       | Const {name} => 
 			    (check (ElabControl.allowConstant, "_const")
 			     ; lookConst {default = NONE, name = name})
-		       | Export attributes =>
+		       | Export {attributes, name} =>
 			    (check (ElabControl.allowExport, "_export")
 			     ; let
 				  val e =
@@ -2265,12 +2321,10 @@ fun elaborateDec (d, {env = E, nest}) =
 				     (E, fn () =>
 				      (Env.openStructure
 				       (E, valOf (!Env.Structure.ffi))
-				       ; elabExp (export {attributes = attributes,
-							  name = name,
-							  region = region,
-							  ty = expandedTy},
-						  nest,
-						  NONE)))
+				       ; elab (export {attributes = attributes,
+						       name = name,
+						       region = region,
+						       ty = expandedTy})))
 				  val _ =
 				     unify
 				     (Cexp.ty e,
@@ -2287,13 +2341,57 @@ fun elaborateDec (d, {env = E, nest}) =
 			       in
 				  wrap (e, Type.arrow (ty, Type.unit))
 			       end)
-		       | Import attributes =>
+		       | IImport {attributes} =>
+			    let
+			       val () =
+				  check (ElabControl.allowImport, "_import")
+			    in
+			       case (Type.deArrowOpt ty,
+				     Type.deArrowOpt expandedTy) of
+				  (SOME ty, SOME expandedTy) =>
+				     let
+					val ((fptrTy,ty), 
+					     (fptrExpandedTy,expandedTy)) =
+					   (ty, expandedTy)
+					val () =
+					   case Type.toCType fptrExpandedTy of
+					      SOME {ctype = CType.Word32, ...} => ()
+					    | _ => 
+						 Control.error
+						 (region,
+						  str "invalid type for import: ",
+						  Type.layoutPretty fptrExpandedTy)
+					val fptr = Var.newNoname ()
+					val fptrArg = Cexp.var (fptr, fptrTy)
+				     in
+					Cexp.make
+					(Cexp.Lambda
+					 (Lambda.make 
+					  {arg = fptr,
+					   argType = fptrTy,
+					   body = etaExtra (Vector.new1 fptrArg,
+							    ty, expandedTy,
+							    dimport 
+							    {attributes = attributes,
+							     region = region,
+							     ty = expandedTy}),
+					   mayInline = true}),
+					 Type.arrow (fptrTy, ty))
+				     end
+				| _ => 
+				     (Control.error
+				      (region,
+				       str "invalid type for import: ",
+				       Type.layoutPretty ty);
+				      eta Prim.bogus)
+			    end
+		       | Import {attributes, name} =>
 			    (check (ElabControl.allowImport, "_import")
 			     ; eta (import {attributes = attributes,
 					    name = name,
 					    region = region,
 					    ty = expandedTy}))
-		       | Prim => 
+		       | Prim {name} => 
 			    (check (ElabControl.allowPrim, "_prim")
 			     ; eta (Prim.fromString name))
 		   end

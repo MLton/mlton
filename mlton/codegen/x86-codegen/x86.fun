@@ -3783,7 +3783,7 @@ struct
 		      " ",
 		      Vector.toString (fn (dst,_) => Operand.toString dst) dsts,
 		      " ",
-		      CFunction.name func,
+		      (CFunction.Target.toString o CFunction.target) func,
 		      " ",
 		      case frameInfo of
 			 NONE => ""
@@ -3995,8 +3995,7 @@ struct
 	| CCall of {args: (Operand.t * Size.t) list,
 		    frameInfo: FrameInfo.t option,
 		    func: RepType.t CFunction.t,
-		    return: Label.t option,
-		    target: Label.t}
+		    return: Label.t option}
 
       val toString
 	= fn Goto {target}
@@ -4074,9 +4073,11 @@ struct
 			fn (memloc, l) => (MemLoc.toString memloc)::l),
 		       ", "),
 		      "]"]
-	   | CCall {args, return, target, ...}
+	   | CCall {args, func, return, ...}
 	   => concat ["CCALL ",
-		      Label.toString target,
+		      (CFunction.Convention.toString o CFunction.convention) func,
+		      " ",
+		      (CFunction.Target.toString o CFunction.target) func,
 		      "(",
 		      (concat o List.separate)
 		      (List.map(args, fn (oper,_) => Operand.toString oper),
@@ -4130,7 +4131,7 @@ struct
 	   => Switch {test = replacer {use = true, def = false} test,
 		      cases = cases,
 		      default = default}
-	   | CCall {args, frameInfo, func, return, target}
+	   | CCall {args, frameInfo, func, return}
 	   => CCall {args = List.map(args,
 				     fn (oper,size) => (replacer {use = true,
 								  def = false}
@@ -4138,8 +4139,7 @@ struct
 							size)),
 		     frameInfo = frameInfo,
 		     func = func,
-		     return = return,
-		     target = target}
+		     return = return}
            | transfer => transfer
 
       val goto = Goto

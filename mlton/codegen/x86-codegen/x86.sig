@@ -1166,8 +1166,7 @@ signature X86 =
 	  | CCall of {args: (Operand.t * Size.t) list,
 		      frameInfo: FrameInfo.t option,
 		      func: RepType.t CFunction.t,
-		      return: Label.t option,
-		      target: Label.t}
+		      return: Label.t option}
 
 	val toString : t -> string
 
@@ -1198,8 +1197,7 @@ signature X86 =
 	val ccall: {args: (Operand.t * Size.t) list,
 		    frameInfo: FrameInfo.t option,
 		    func: RepType.t CFunction.t,
-		    return: Label.t option,
-		    target: Label.t} -> t		       
+		    return: Label.t option} -> t 
       end
 
     structure ProfileLabel :

@@ -39,8 +39,11 @@ structure Kind =
 structure CFunction =
    struct
       open CFunction
-	 
-      fun prototype (T {convention, name, prototype = (args, return), ...}) =
+
+      datatype z = datatype Convention.t
+      datatype z = datatype Target.t
+	  
+      fun prototype (T {convention, prototype = (args, return), target, ...}) =
 	 let
 	    val attributes =
 	       if convention <> Convention.Cdecl
@@ -48,6 +51,10 @@ structure CFunction =
 			       Convention.toString convention,
 			       ")) "]
 	       else " "
+	    val name = 
+	       case target of
+		  Direct name => name
+		| Indirect => Error.bug "prototype of Indirect"
 	    val c = Counter.new 0
 	    fun arg t =
 	       concat [CType.toString t, " x", Int.toString (Counter.next c)]
@@ -58,8 +65,36 @@ structure CFunction =
 	 in
 	    concat
 	    [return, attributes, name,
-	     " (", concat (List.separate (Vector.toListMap (args, arg), ", ")),
+	     " (", 
+	     concat (List.separate (Vector.toListMap (args, arg), ", ")),
 	     ")"]
+	 end
+
+      fun fptrtype (T {convention, prototype = (args, return), target, ...}) =
+	 let
+	    val attributes =
+	       if convention <> Convention.Cdecl
+		  then concat [" __attribute__ ((",
+			       Convention.toString convention,
+			       ")) "]
+	       else " "
+	    val () = 
+	       case target of
+		  Direct _ => Error.bug "fptrtype of Direct"
+		| Indirect => ()
+	    val c = Counter.new 0
+	    fun arg t = CType.toString t
+	    val args = Vector.dropPrefix (args, 1)
+	    val return =
+	       case return of
+		  NONE => "void"
+		| SOME t => CType.toString t
+	 in
+	    concat
+	    ["(", return, attributes, 
+	     "(*)(", 	     
+	     concat (List.separate (Vector.toListMap (args, arg), ", ")),
+	     "))"]
 	 end
    end
 
@@ -681,14 +716,16 @@ fun output {program as Machine.Program.T {chunks,
 			 case transfer of
 			    Transfer.CCall {func, ...} =>
 			       let
-				  val CFunction.T {name, ...} = func
+				  datatype z = datatype CFunction.Target.t
+				  val CFunction.T {target, ...} = func
 			       in
-				  if name = "Thread_returnToC"
-				     then ()
-				  else
-				     doit (name, fn () =>
-					   concat [CFunction.prototype func,
-						   ";\n"])
+				  case target of
+				     Direct "Thread_returnToC" => ()
+				   | Direct name =>
+					doit (name, fn () =>
+					      concat [CFunction.prototype func,
+						      ";\n"])
+				   | Indirect => ()
 			       end
 			  | _ => ()
 		   in
@@ -956,9 +993,9 @@ fun output {program as Machine.Program.T {chunks,
 			let
 			   val CFunction.T {maySwitchThreads,
 					    modifiesFrontier,
-					    name,
 					    readsStackTop,
 					    return = returnTy,
+					    target,
 					    writesStackTop,...} = func
 			   val (args, afterCall) =
 			      case frameInfo of
@@ -987,7 +1024,23 @@ fun output {program as Machine.Program.T {chunks,
 			      if Type.isUnit returnTy
 				 then ()
 			      else print (concat [creturn returnTy, " = "])
-			   val _ = C.call (name, args, print)
+			   datatype z = datatype CFunction.Target.t
+			   val _ =
+			      case target of
+				 Direct name => C.call (name, args, print)
+			       | Indirect =>
+				    let
+				       val (fptr,args) =
+					  case args of
+					     (fptr::args) => (fptr, args)
+					   | _ => Error.bug "indirect ccall: empty args"
+				       val name =
+					  concat ["(*(", 
+						  CFunction.fptrtype func, " ", 
+						  fptr, "))"]
+				    in
+				       C.call (name, args, print)
+				    end
 			   val _ = afterCall ()
  			   val _ =
 			      if modifiesFrontier

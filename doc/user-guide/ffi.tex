@@ -26,8 +26,8 @@ char}, and {\tt i} of type {\tt int}.  Then, the C statement
 
 The general form of an \verb+_import+ expresion is:
 \begin{center}
-{\tt \_import "}C global variable or function name{\tt "} {\it
-attribute} ...{\tt : }{\it ty}{\tt ;}
+{\tt \_import "}C global variable or function name{\tt "} 
+{\it attribute} ...{\tt : }{\it ty}{\tt ;}
 \end{center}
 The semicolon is not optional.
 
@@ -47,11 +47,49 @@ output {\tt success} when run.
 
 \begin{verbatim}
 % make import
-mlton -stop o ffi-import.c
-mlton import.sml ffi-import.o
+mlton -default-ann 'allowExport true, allowImport true' -stop o ffi-import.c
+mlton -default-ann 'allowExport true, allowImport true' import.sml ffi-import.o
 % import
 13
 success
+\end{verbatim}
+
+\subsubsection{Indirect function calls}
+
+It is also possibe to make indirect function calls; that is, function
+calls through a function pointer.  Suppose that you would like to
+indirectly call the C function {\tt foo} described above; we will
+assume that the address of {\tt foo} has been acquired and is
+available in the SML variable {\tt foo\_addr}.  {\mlton} extends the
+syntax of SML to allow expressions like the following:
+\begin{verbatim}
+_import * : MLton.Pointer.t -> real * char -> int;
+\end{verbatim}
+This expression denotes a function of type {\tt MLton.Pointer.t -> real
+* char -> int} whose behavior is implemented by calling the C function
+at the address denoted by the {\tt MLton.Pointer.t} argument
+
+The general form of an indirect \verb+_import+ expresion is:
+\begin{center}
+{\tt \_import *} {\it attribute} ...{\tt : }{\it ty}{\tt ;}
+\end{center}
+The semicolon is not optional. {\it ty} must be a function type of the form
+\begin{center}
+{\tt MLton.Pointer.t -> {\it ty}$_1$ * ... * {\it ty}$_n$ -> {\it ty}$_r$}
+\end{center}
+$n$ can be zero, in which case the expression denotes the indirect
+call of an argumentless C function.
+
+An example in the {\tt examples/ffi} directory demonstrates the use of
+indirect {\import} expressions.  The example demonstrates how to call
+functions from a dynamic library.
+
+\begin{verbatim}
+% make dimport
+mlton -default-ann 'allowExport true, allowImport true' -link-opt '-ldl' dimport.sml
+% dimport
+    Math.cos(2.0) = ~0.416146836547
+libm.so::cos(2.0) = ~0.416146836547
 \end{verbatim}
 
 \subsec{Calling from C to SML}{export}
@@ -89,9 +127,9 @@ output {\tt success} when run.
 
 \begin{verbatim}
 % make export
-mlton -export-header export.h -stop tc export.sml
+mlton -default-ann 'allowExport true, allowImport true' -export-header export.h -stop tc export.sml
 gcc -c ffi-export.c
-mlton export.sml ffi-export.o
+mlton -default-ann 'allowExport true, allowImport true' export.sml ffi-export.o
 % ./export
 g starting
 ...

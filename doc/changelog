@@ -1,5 +1,8 @@
 Here are the changes since version 20040227.
 
+* 2004-09-22
+  - Extended _import to support indirect function calls.
+	
 * 2004-09-13
   - Made Date.{fromString,scan} accept a space (treated as zero) in
     the first character of the day of the month.

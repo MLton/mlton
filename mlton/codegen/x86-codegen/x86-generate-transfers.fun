@@ -1068,13 +1068,16 @@ struct
 			 {target = x86MLton.gcState_stackTopMinusWordDerefOperand (),
 			  absolute = true})))
 		    end
-	        | CCall {args, frameInfo, func, return, target}
+	        | CCall {args, frameInfo, func, return}
 		=> let
+		     datatype z = datatype CFunction.Convention.t
+		     datatype z = datatype CFunction.Target.t
 		     val CFunction.T {convention,
 				      maySwitchThreads,
 				      modifiesFrontier,
 				      readsStackTop, 
 				      return = returnTy,
+				      target,
 				      writesStackTop, ...} = func
 		     val stackTopMinusWordDeref
 		       = x86MLton.gcState_stackTopMinusWordDerefOperand ()
@@ -1085,6 +1088,24 @@ struct
 		     val c_stackPDerefFloat = x86MLton.c_stackPDerefFloatOperand
 		     val c_stackPDerefDouble = x86MLton.c_stackPDerefDoubleOperand
 		     val applyFFTemp = x86MLton.applyFFTempContentsOperand
+		     val applyFFTemp2 = x86MLton.applyFFTemp2ContentsOperand
+		     val (fptrArg, args) =
+			case target of 
+			   Direct _ => (AppendList.empty, args)
+			 | Indirect => 
+			      let
+				 val (fptrArg, args) =
+				    case args of
+				       fptrArg::args => (fptrArg, args)
+				     | _ => Error.bug "CCall"
+			      in
+				 (AppendList.single
+				  (Assembly.instruction_mov
+				   {src = #1 fptrArg,
+				    dst = applyFFTemp2,
+				    size = #2 fptrArg}),
+				  args)
+			      end
 		     val (pushArgs, size_args)
 		       = List.fold
 		         (args, (AppendList.empty, 0),
@@ -1245,12 +1266,27 @@ struct
 				  remove_classes = ClassSet.empty,
 				  dead_memlocs = LiveSet.toMemLocSet dead,
 				  dead_classes = ClassSet.empty})
-		     val call 
-		       = AppendList.fromList
-		         [Assembly.directive_ccall (),
-			  Assembly.instruction_call
-			  {target = Operand.label target,
-			   absolute = false}]
+		     val call =
+			case target of
+			   Direct name =>
+			      let
+				 val name = 
+				    case convention of
+				       Cdecl => name
+				     | Stdcall => concat [name, "@", Int.toString size_args]
+			      in
+				 AppendList.fromList
+				 [Assembly.directive_ccall (),
+				  Assembly.instruction_call
+				  {target = Operand.label (Label.fromString name),
+				   absolute = false}]
+			      end
+			 | Indirect =>
+			      AppendList.fromList
+			      [Assembly.directive_ccall (),
+			       Assembly.instruction_call
+			       {target = applyFFTemp2,
+				absolute = true}]
 		     val kill
 		       = if isSome frameInfo
 			   then AppendList.single
@@ -1324,6 +1360,7 @@ struct
 		   in
 		     AppendList.appends
 		     [cacheEsp (),
+		      fptrArg,
 		      pushArgs,
 		      flush,
 		      call,

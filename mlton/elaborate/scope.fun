@@ -389,10 +389,9 @@ fun ('down, 'up)
 		   | Let (dec, e) => do2 (loopDec (dec, d), loop e, Let)
 		   | List ts => doVec (ts, List)
 		   | Orelse (e1, e2) => do2 (loop e1, loop e2, Orelse)
-		   | Prim {kind, name, ty} =>
+		   | Prim {kind, ty} =>
 			do1 (loopTy (ty, d), fn ty =>
 			     Prim {kind = kind,
-				   name = name,
 				   ty = ty})
 		   | Raise exn => do1 (loop exn, Raise)
 		   | Record r =>

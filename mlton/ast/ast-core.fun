@@ -271,12 +271,24 @@ structure PrimKind =
 	 end
 
       datatype t =
-	 BuildConst
-       | CommandLineConst of {value: Const.t}
-       | Const
-       | Export of Attribute.t list
-       | Import of Attribute.t list
-       | Prim
+	 BuildConst of {name: string}
+       | CommandLineConst of {name: string, value: Const.t}
+       | Const of {name: string}
+       | Export of {attributes: Attribute.t list, name: string}
+       | IImport of {attributes: Attribute.t list}
+       | Import of {attributes: Attribute.t list, name: string}
+       | Prim of {name: string}
+
+      fun name pk =
+	 case pk of
+	    BuildConst {name, ...} => name
+	  | CommandLineConst {name, ...} => name
+	  | Const {name, ...} => name
+	  | Export {name, ...} => name
+	  | IImport {...} => "<iimport>"
+	  | Import {name, ...} => name
+	  | Prim {name, ...} => name
+
    end
 
 structure Priority =
@@ -315,7 +327,6 @@ datatype expNode =
   | Orelse of exp * exp
   | While of {test: exp, expr: exp}
   | Prim of {kind: PrimKind.t,
-	     name: string,
 	     ty: Type.t}
 and decNode =
    Abstype of {body: dec,
@@ -428,7 +439,7 @@ fun layoutExp arg =
        | Orelse (e, e') =>
 	    delimit (mayAlign [layoutExpF e,
 			       seq [str "orelse ", layoutExpF e']])
-       | Prim {name, ...} => str name
+       | Prim {kind, ...} => str (PrimKind.name kind)
        | Raise exn => delimit (seq [str "raise ", layoutExpF exn])
        | Record r =>
 	    let

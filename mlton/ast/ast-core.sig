@@ -93,12 +93,13 @@ signature AST_CORE =
 	       end
 	    
 	    datatype t =
-	       BuildConst
-	     | CommandLineConst of {value: Const.t}
-	     | Const
-	     | Export of Attribute.t list
-	     | Import of Attribute.t list
-	     | Prim
+	       BuildConst of {name: string}
+	     | CommandLineConst of {name: string, value: Const.t}
+	     | Const of {name: string}
+	     | Export of {attributes: Attribute.t list, name: string}
+	     | IImport of {attributes: Attribute.t list}
+	     | Import of {attributes: Attribute.t list, name: string}
+	     | Prim of {name: string}
 	 end
 
       structure Priority:
@@ -128,7 +129,6 @@ signature AST_CORE =
 	     | List of t vector
 	     | Orelse of t * t
 	     | Prim of {kind: PrimKind.t,
-			name: string,
 			ty: Type.t}
 	     | Raise of t
 	     | Record of t Record.t

@@ -16,6 +16,24 @@ structure Convention =
       val layout = Layout.str o toString
    end
 
+structure Target =
+   struct
+      datatype t =
+	 Direct of string
+       | Indirect
+
+      val toString =
+	 fn Direct name => name
+	  | Indirect => "*"
+
+      val layout = Layout.str o toString
+
+      val equals =
+	 fn (Direct name, Direct name') => name = name'
+	  | (Indirect, Indirect) => true
+	  | _ => false
+   end
+
 datatype 'a t = T of {args: 'a vector,
 		      bytesNeeded: int option,
 		      convention: Convention.t,
@@ -23,15 +41,15 @@ datatype 'a t = T of {args: 'a vector,
 		      mayGC: bool,
 		      maySwitchThreads: bool,
 		      modifiesFrontier: bool,
-		      name: string,
 		      prototype: CType.t vector * CType.t option,
 		      readsStackTop: bool,
 		      return: 'a,
+		      target: Target.t,
 		      writesStackTop: bool}
    
 fun layout (T {args, bytesNeeded, convention, ensuresBytesFree, mayGC,
-	       maySwitchThreads, modifiesFrontier, name, readsStackTop,
-	       return, writesStackTop, ...},
+	       maySwitchThreads, modifiesFrontier, readsStackTop,
+	       return, target, writesStackTop, ...},
 	    layoutType) =
    Layout.record
    [("args", Vector.layout layoutType args),
@@ -41,9 +59,9 @@ fun layout (T {args, bytesNeeded, convention, ensuresBytesFree, mayGC,
     ("mayGC", Bool.layout mayGC),
     ("maySwitchThreads", Bool.layout maySwitchThreads),
     ("modifiesFrontier", Bool.layout modifiesFrontier),
-    ("name", String.layout name),
     ("readsStackTop", Bool.layout readsStackTop),
     ("return", layoutType return),
+    ("target", Target.layout target),
     ("writesStackTop", Bool.layout writesStackTop)]
    
 local
@@ -51,21 +69,22 @@ local
 in
    fun args z = make #args z
    fun bytesNeeded z = make #bytesNeeded z
+   fun convention z = make #convention z
    fun ensuresBytesFree z = make #ensuresBytesFree z
    fun mayGC z = make #mayGC z
    fun maySwitchThreads z = make #maySwitchThreads z
    fun modifiesFrontier z = make #modifiesFrontier z
-   fun name z = make #name z
    fun readsStackTop z = make #readsStackTop z
    fun return z = make #return z
+   fun target z = make #target z
    fun writesStackTop z = make #writesStackTop z
 end
 
-fun equals (f, f') = name f = name f'
+fun equals (f, f') = Target.equals (target f, target f')
 
 fun map (T {args, bytesNeeded, convention, ensuresBytesFree, mayGC,
-	    maySwitchThreads, modifiesFrontier, name, prototype, readsStackTop,
-	    return, writesStackTop},
+	    maySwitchThreads, modifiesFrontier, prototype, readsStackTop, 
+	    return, target, writesStackTop},
 	 f) =
    T {args = Vector.map (args, f),
       bytesNeeded = bytesNeeded,
@@ -74,10 +93,10 @@ fun map (T {args, bytesNeeded, convention, ensuresBytesFree, mayGC,
       mayGC = mayGC,
       maySwitchThreads = maySwitchThreads,
       modifiesFrontier = modifiesFrontier,
-      name = name,
       prototype = prototype,
       readsStackTop = readsStackTop,
       return = f return,
+      target = target,
       writesStackTop = writesStackTop}
    
 fun isOk (T {ensuresBytesFree, mayGC, maySwitchThreads, modifiesFrontier,
@@ -104,10 +123,10 @@ fun vanilla {args, name, prototype, return} =
       mayGC = false,
       maySwitchThreads = false,
       modifiesFrontier = false,
-      name = name,
       prototype = prototype,
       readsStackTop = false,
       return = return,
+      target = Target.Direct name,
       writesStackTop = false}
 
 end

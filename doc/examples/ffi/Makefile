@@ -3,9 +3,10 @@ PATH = ../../../build/bin:$(shell echo $$PATH)
 mlton = mlton -default-ann 'allowExport true, allowImport true'
 
 .PHONY: all
-all: import export
+all: import export iimport
 	./import
 	./export
+	./iimport
 
 export: export.sml ffi-export.c
 	$(mlton) -export-header export.h -stop tc export.sml
@@ -17,6 +18,9 @@ import: import.sml ffi-import.o
 
 ffi-import.o:
 	$(mlton) -stop o ffi-import.c
+
+iimport: iimport.sml
+	$(mlton) -link-opt '-ldl' iimport.sml
 
 clean:
 	../../../bin/clean

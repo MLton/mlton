@@ -25,6 +25,7 @@ local
     c-function.sig
     c-function.fun
     const-type.sig
+    const-type.fun
     const.sig
     const.fun
     prim.sig

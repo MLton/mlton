@@ -25,10 +25,10 @@ structure CFunction =
 	       mayGC = false,
 	       maySwitchThreads = false,
 	       modifiesFrontier = false,
-	       name = name,
 	       prototype = (prototype, NONE),
 	       readsStackTop = true,
 	       return = unit,
+	       target = Target.Direct name,
 	       writesStackTop = false}
       in
 	 val profileEnter =
@@ -572,16 +572,18 @@ fun profile program =
 				 Cont _ => add pushes
 			       | CReturn {func, ...} =>
 				    let
-				       val name = CFunction.name func
+				       datatype z = datatype CFunction.Target.t
+				       val target = CFunction.target func
 				       fun doit si =
 					  add (#1 (enter (pushes, si)))
 				    in
-				       case name of
-					  "GC_gc" => doit SourceInfo.gc
-					| "GC_arrayAllocate" =>
+				       case target of
+					  Direct "GC_gc" => doit SourceInfo.gc
+					| Direct "GC_arrayAllocate" =>
 					     doit SourceInfo.gcArrayAllocate
-					| "MLton_bug" => add pushes
-					| _ => doit (SourceInfo.fromC name)
+					| Direct "MLton_bug" => add pushes
+					| Direct name => doit (SourceInfo.fromC name)
+					| Indirect => doit (SourceInfo.fromC "<indirect>")
 				    end
 			       | Handler => add pushes
 			       | Jump => ()

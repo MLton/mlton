@@ -228,23 +228,17 @@ structure Elaborate =
 	     setDef = fn _ => false,
 	     setAble = fn _ => false}
 	 val (allowConstant, ac) =
-	    makeBool ({name = "allowConstant", default = false, expert = true},
-		      ac)
+	    makeBool ({name = "allowConstant", default = false, expert = true}, ac)
 	 val (allowExport, ac) =
-	    makeBool ({name = "allowExport", default = false, expert = false},
-		      ac)
+	    makeBool ({name = "allowExport", default = false, expert = false}, ac)
 	 val (allowImport, ac) =
-	    makeBool ({name = "allowImport", default = false, expert = false},
-		      ac)
+	    makeBool ({name = "allowImport", default = false, expert = false}, ac)
 	 val (allowPrim, ac) =
 	    makeBool ({name = "allowPrim", default = false, expert = true}, ac)
 	 val (allowOverload, ac) =
-	    makeBool ({name = "allowOverload", default = false, expert = false},
-		      ac)
+	    makeBool ({name = "allowOverload", default = false, expert = false}, ac)
 	 val (allowRebindEquals, ac) =
-	    makeBool ({name = "allowRebindEquals", default = false,
-		       expert = true},
-		      ac)
+	    makeBool ({name = "allowRebindEquals", default = false, expert = true}, ac)
 	 val (deadCode, ac) =
 	    makeBool ({name = "deadCode", default = false, expert = false}, ac)
 	 val (forceUsed, ac) =
@@ -259,8 +253,7 @@ structure Elaborate =
 			 newCur = fn (i,()) => i + 1,
 			 newDef = fn (_,()) => 1}, ac)
 	 val (sequenceUnit, ac) =
-	    makeBool ({name = "sequenceUnit", default = false, expert = false},
-		      ac)
+	    makeBool ({name = "sequenceUnit", default = false, expert = false}, ac)
 	 val (warnMatch, ac) =
 	    makeBool ({name = "warnMatch", default = true, expert = false}, ac)
 	 val (warnUnused, {setAble, setDef, withAnn, withDef}) =

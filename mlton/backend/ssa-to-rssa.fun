@@ -51,6 +51,7 @@ structure CFunction =
       end
 
       datatype z = datatype Convention.t
+      datatype z = datatype Target.t
 	 
       val copyCurrentThread =
 	 T {args = Vector.new1 gcState,
@@ -60,7 +61,6 @@ structure CFunction =
 	    mayGC = true,
 	    maySwitchThreads = false,
 	    modifiesFrontier = true,
-	    name = "GC_copyCurrentThread",
 	    prototype = let
 			   open CType
 			in
@@ -68,6 +68,7 @@ structure CFunction =
 			end,
 	    readsStackTop = true,
 	    return = unit,
+	    target = Direct "GC_copyCurrentThread",
 	    writesStackTop = true}
 
       val copyThread =
@@ -78,7 +79,6 @@ structure CFunction =
 	    mayGC = true,
 	    maySwitchThreads = false,
 	    modifiesFrontier = true,
-	    name = "GC_copyThread",
 	    prototype = let
 			   open CType
 			in
@@ -86,6 +86,7 @@ structure CFunction =
 			end,
 	    readsStackTop = true,
 	    return = Type.thread,
+	    target = Direct "GC_copyThread",
 	    writesStackTop = true}
 
       val exit =
@@ -96,7 +97,6 @@ structure CFunction =
 	    mayGC = false,
 	    maySwitchThreads = false,
 	    modifiesFrontier = true,
-	    name = "MLton_exit",
 	    prototype = let
 			   open CType
 			in
@@ -104,6 +104,7 @@ structure CFunction =
 			end,
 	    readsStackTop = true,
 	    return = unit,
+	    target = Direct "MLton_exit",
 	    writesStackTop = true}
 
       fun gcArrayAllocate {return} =
@@ -114,7 +115,6 @@ structure CFunction =
 	    mayGC = true,
 	    maySwitchThreads = false,
 	    modifiesFrontier = true,
-	    name = "GC_arrayAllocate",
 	    prototype = let
 			   open CType
 			in
@@ -123,6 +123,7 @@ structure CFunction =
 			end,
 	    readsStackTop = true,
 	    return = return,
+	    target = Direct "GC_arrayAllocate",
 	    writesStackTop = true}
 
       val returnToC =
@@ -133,7 +134,6 @@ structure CFunction =
 	    mayGC = true,
 	    maySwitchThreads = true,
 	    modifiesFrontier = true,
-	    name = "Thread_returnToC",
 	    prototype = let
 			   open CType
 			in
@@ -141,6 +141,7 @@ structure CFunction =
 			end,
 	    readsStackTop = true,
 	    return = unit,
+	    target = Direct "Thread_returnToC",
 	    writesStackTop = true}
 
       val threadSwitchTo =
@@ -151,7 +152,6 @@ structure CFunction =
 	    mayGC = true,
 	    maySwitchThreads = true,
 	    modifiesFrontier = true,
-	    name = "Thread_switchTo",
 	    prototype = let
 			   open CType
 			in
@@ -159,6 +159,7 @@ structure CFunction =
 			end,
 	    readsStackTop = true,
 	    return = unit,
+	    target = Direct "Thread_switchTo",
 	    writesStackTop = true}
 
       fun weakCanGet t =
@@ -189,7 +190,6 @@ structure CFunction =
 	    mayGC = true,
 	    maySwitchThreads = false,
 	    modifiesFrontier = true,
-	    name = "GC_weakNew",
 	    prototype = let
 			   open CType
 			in
@@ -197,6 +197,7 @@ structure CFunction =
 			end,
             readsStackTop = true,
 	    return = return,
+	    target = Direct "GC_weakNew",
 	    writesStackTop = true}
 
       val worldSave =
@@ -207,7 +208,6 @@ structure CFunction =
 	    mayGC = true,
 	    maySwitchThreads = false,
 	    modifiesFrontier = true,
-	    name = "GC_saveWorld",
 	    prototype = let
 			   open CType
 			in
@@ -215,6 +215,7 @@ structure CFunction =
 			end,
 	    readsStackTop = true,
 	    return = unit,
+	    target = Direct "GC_saveWorld",
 	    writesStackTop = true}
 
       fun share t =
@@ -247,6 +248,7 @@ structure Name =
       fun cFunctionRaise (n: t): CFunction.t =
 	 let
 	    datatype z = datatype CFunction.Convention.t
+	    datatype z = datatype CFunction.Target.t
 	    val name = toString n
 	    val word = Type.word o WordSize.bits
 	    val vanilla = CFunction.vanilla
@@ -267,7 +269,6 @@ structure Name =
 			    mayGC = false,
 			    maySwitchThreads = false,
 			    modifiesFrontier = true,
-			    name = name,
 			    prototype = let
 					   open CType
 					in
@@ -276,6 +277,7 @@ structure Name =
 					end,
 			    readsStackTop = false,
 			    return = Type.intInf,
+			    target = Direct name,
 			    writesStackTop = false}
 	    fun intInfShift () =
 	       CFunction.T {args = Vector.new3 (Type.intInf,
@@ -287,7 +289,6 @@ structure Name =
 			    mayGC = false,
 			    maySwitchThreads = false,
 			    modifiesFrontier = true,
-			    name = name,
 			    prototype = let
 					   open CType
 					in
@@ -296,6 +297,7 @@ structure Name =
 					end,
 			    readsStackTop = false,
 			    return = Type.intInf,
+			    target = Direct name,
 			    writesStackTop = false}
 	    fun intInfToString () =
 	       CFunction.T {args = Vector.new3 (Type.intInf,
@@ -307,7 +309,6 @@ structure Name =
 			    mayGC = false,
 			    maySwitchThreads = false,
 			    modifiesFrontier = true,
-			    name = name,
 			    prototype = let
 					   open CType
 					in
@@ -316,6 +317,7 @@ structure Name =
 					end,
 			    readsStackTop = false,
 			    return = Type.string,
+			    target = Direct name,
 			    writesStackTop = false}
 	    fun intInfUnary () =
 	       CFunction.T {args = Vector.new2 (Type.intInf, Type.defaultWord),
@@ -325,7 +327,6 @@ structure Name =
 			    mayGC = false,
 			    maySwitchThreads = false,
 			    modifiesFrontier = true,
-			    name = name,
 			    prototype = let
 					   open CType
 					in
@@ -334,6 +335,7 @@ structure Name =
 					end,
 			    readsStackTop = false,
 			    return = Type.intInf,
+			    target = Direct name,
 			    writesStackTop = false}
 	    fun wordBinary (s, sg) =
 	       let

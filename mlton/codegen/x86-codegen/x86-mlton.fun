@@ -1430,26 +1430,20 @@ struct
 	     return: x86.Label.t option,
 	     transInfo = {...}: transInfo}
     = let
-	val CFunction.T {convention, name, ...} = func
-	val name =
-	   if convention = CFunction.Convention.Stdcall
-	      then
-		 let
-		    val argsSize =
-		       Vector.fold (args, 0, fn ((_, s), ac) =>
-				    ac + x86.Size.toBytes s)
-		 in
-		    concat [name, "@", Int.toString argsSize]
-		 end
-	   else name
+	val CFunction.T {convention, target, ...} = func
 	val comment_begin
 	  = if !Control.Native.commented > 0
-	      then AppendList.single (x86.Block.mkBlock'
-				      {entry = NONE,
-				       statements 
-				       = [x86.Assembly.comment
-					  ("begin ccall: " ^ name)],
-				       transfer = NONE})
+	      then AppendList.single 
+		   (x86.Block.mkBlock'
+		    {entry = NONE,
+		     statements = 
+		     [x86.Assembly.comment
+		      (concat 
+		       ["begin ccall: ",
+			CFunction.Convention.toString convention,
+			" ",
+			CFunction.Target.toString target])],
+		     transfer = NONE})
 	    else AppendList.empty
       in
 	AppendList.appends
@@ -1462,8 +1456,7 @@ struct
 			    {args = Vector.toList args,
 			     frameInfo = frameInfo,
 			     func = func,
-			     return = return,
-			     target = Label.fromString name})})]
+			     return = return})})]
       end
 
   fun creturn {dsts: (x86.Operand.t * x86.Size.t) vector,
@@ -1472,7 +1465,7 @@ struct
 	       label: x86.Label.t, 
 	       transInfo = {live, liveInfo, ...}: transInfo}
     = let
-	val name = CFunction.name func
+	val CFunction.T {convention, target, ...} = func
 	fun default ()
 	  = let
 	      val _ = x86Liveness.LiveInfo.setLiveOperands
@@ -1489,11 +1482,17 @@ struct
 	    end
 	val comment_end
 	  = if !Control.Native.commented > 0
-	      then (AppendList.single
-		    (x86.Block.mkBlock' {entry = NONE,
-				   statements = [x86.Assembly.comment 
-						 ("end creturn: " ^ name)],
-				   transfer = NONE}))
+	      then AppendList.single 
+		   (x86.Block.mkBlock'
+		    {entry = NONE,
+		     statements = 
+		     [x86.Assembly.comment
+		      (concat 
+		       ["begin creturn: ",
+			CFunction.Convention.toString convention,
+			" ",
+			CFunction.Target.toString target])],
+		     transfer = NONE})
 	      else AppendList.empty
       in
 	AppendList.appends [default (), comment_end]

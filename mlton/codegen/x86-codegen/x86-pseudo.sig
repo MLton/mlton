@@ -470,8 +470,7 @@ signature X86_PSEUDO =
 	val ccall : {args: (Operand.t * Size.t) list,
 		     frameInfo: FrameInfo.t option,
 		     func: RepType.t CFunction.t,
-		     return: Label.t option,
-		     target: Label.t} -> t
+		     return: Label.t option} -> t
       end
 
     structure ProfileLabel :

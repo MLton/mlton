@@ -710,6 +710,19 @@ struct
 			     = Liveness.livenessAssembly 
 			       {assembly = asm,
 				live = live}
+			   val eq = Liveness.eq(info, info')
+			   val () =
+			      if eq 
+				 then ()
+				 else (print "asm ::\n";
+				       print (Assembly.toString asm);
+				       print "\n";
+				       print "info ::\n";
+				       print (Liveness.toString info);
+				       print "\n";
+				       print "info' ::\n";
+				       print (Liveness.toString info');
+				       print "\n")
 			 in
 			   {verified = verified andalso 
 			               Liveness.eq(info, info'), 

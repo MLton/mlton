@@ -85,6 +85,7 @@ signature X86_MLTON_BASIC =
 
     (* Static temps defined in x86-main.h *)
     val applyFFTempContentsOperand : x86.Operand.t
+    val applyFFTemp2ContentsOperand : x86.Operand.t
     val threadTempContentsOperand : x86.Operand.t
     val fileTempContentsOperand : x86.Operand.t
     val realTemp1ContentsOperand : x86.Size.t -> x86.Operand.t

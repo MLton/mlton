@@ -1012,29 +1012,37 @@ aexp	: OP vid		(Exp.Var {name = Longvid.short vid,
 					     exp_psleft,
 					     exp_psright)))
         | BUILD_CONST STRING COLON ty SEMICOLON
-	  (Exp.Prim {kind = PrimKind.BuildConst, name = STRING, ty = ty})
+	  (Exp.Prim {kind = PrimKind.BuildConst {name = STRING}, 
+                     ty = ty})
 	| COMMAND_LINE_CONST STRING COLON ty EQUALOP constOrBool SEMICOLON
-	  (Exp.Prim {kind = PrimKind.CommandLineConst {value = constOrBool},
-		     name = STRING,
+	  (Exp.Prim {kind = PrimKind.CommandLineConst {name = STRING,
+                                                       value = constOrBool},
 		     ty = ty})
         | CONST STRING COLON ty SEMICOLON
-	  (Exp.Prim {kind = PrimKind.Const, name = STRING, ty = ty})
+	  (Exp.Prim {kind = PrimKind.Const {name = STRING}, 
+                     ty = ty})
         | FFI STRING COLON ty SEMICOLON
 	  (Control.warning
 	   (reg (FFIleft, SEMICOLONright),
 	    Layout.str "_ffi is deprecated.  Use _import.",
 	    Layout.empty)
-	   ; Exp.Prim {kind = PrimKind.Import [], name = STRING, ty = ty})
+	   ; Exp.Prim {kind = PrimKind.Import {attributes = [], 
+                                               name = STRING}, 
+                       ty = ty})
 	| EXPORT STRING attributes COLON ty SEMICOLON
-          (Exp.Prim {kind = PrimKind.Export attributes,
-		     name = STRING,
+          (Exp.Prim {kind = PrimKind.Export {attributes = attributes,
+                                             name = STRING},
 		     ty = ty})
 	| IMPORT STRING attributes COLON ty SEMICOLON
-	  (Exp.Prim {kind = PrimKind.Import attributes,
-		     name = STRING,
+	  (Exp.Prim {kind = PrimKind.Import {attributes = attributes,
+                                             name = STRING},
+		     ty = ty})
+	| IMPORT ASTERISK attributes COLON ty SEMICOLON
+	  (Exp.Prim {kind = PrimKind.IImport {attributes = attributes},
 		     ty = ty})
         | PRIM STRING COLON ty SEMICOLON
-	  (Exp.Prim {kind = PrimKind.Prim, name = STRING, ty = ty})
+	  (Exp.Prim {kind = PrimKind.Prim {name = STRING}, 
+                     ty = ty})
 
 attributes
    :

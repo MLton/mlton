@@ -5,6 +5,7 @@
 
 /* Globals */
 Word applyFFTemp;
+Word applyFFTemp2;
 Word checkTemp;
 Word cReturnTemp[16];
 Word c_stackP;

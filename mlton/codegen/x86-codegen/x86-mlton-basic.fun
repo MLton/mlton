@@ -208,6 +208,13 @@ struct
 		    class = Classes.StaticTemp}
   val applyFFTempContentsOperand
     = Operand.memloc applyFFTempContents
+  val applyFFTemp2 = Label.fromString "applyFFTemp2"
+  val applyFFTemp2Contents 
+    = makeContents {base = Immediate.label applyFFTemp2,
+		    size = wordSize,
+		    class = Classes.StaticTemp}
+  val applyFFTemp2ContentsOperand
+    = Operand.memloc applyFFTemp2Contents
 
   val realTemp1D = Label.fromString "realTemp1D"
   val realTemp1ContentsD

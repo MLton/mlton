@@ -468,6 +468,7 @@ structure BuiltInCFunction =
       open CFunction
 
       datatype z = datatype Convention.t
+      datatype z = datatype Target.t
 	 
       val bug = vanilla {args = Vector.new1 string,
 			 name = "MLton_bug",
@@ -494,7 +495,6 @@ structure BuiltInCFunction =
 		   mayGC = true,
 		   maySwitchThreads = b,
 		   modifiesFrontier = true,
-		   name = "GC_gc",
 		   prototype = let
 				  open CType
 			       in
@@ -502,7 +502,8 @@ structure BuiltInCFunction =
 				   NONE)
 			       end,
 		   readsStackTop = true,
-		   return = unit,
+		   return = unit,	
+		   target = Direct "GC_gc",
 		   writesStackTop = true}
 	 val t = make true
 	 val f = make false
