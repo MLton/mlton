@@ -347,11 +347,7 @@ struct
 			     | DEAD => DEAD
 			     | commit => check commit
 	  in
-	    if volatile memloc
-	      then case default
-		     of REMOVE => REMOVE
-		      | _ => COMMIT
-	      else default
+	    default
 	  end
 
       val split
@@ -3918,8 +3914,14 @@ struct
 			     val must_commit3
 			       = (MemLocSet.contains
 				  (MemLocSet.-(allKills, dead_memlocs), memloc))
+			     val sync
+			       = if volatile memloc
+				   then true
+				   else sync
 			     val commit
-			       = if must_commit3
+			       = if volatile memloc
+				   then REMOVE 0
+				 else if must_commit3
 				   then COMMIT 0
 				 else if must_commit2
 				   then if MemLocSet.contains
@@ -3977,8 +3979,14 @@ struct
 			     val must_commit3
 			       = (MemLocSet.contains
 				  (MemLocSet.-(allKills, dead_memlocs), memloc))
+			     val sync
+			       = if volatile memloc
+				   then true
+				   else sync
 			     val commit
-			       = if MemLocSet.contains(allDefs, memloc)
+			       = if volatile memloc
+			           then REMOVE 0
+				 else if MemLocSet.contains(allDefs, memloc)
 				   then if must_commit1 orelse must_commit0
 					  then case commit
 						 of TRYREMOVE _ => REMOVE 0
@@ -4141,58 +4149,73 @@ struct
 				    weight,
 				    sync,
 				    commit}
-		        => if MemLocSet.contains
-		              (dead_memlocs, memloc)
+		        => if volatile memloc
+		             then let
+				    val isDst
+				      = List.contains
+				        (final_defs_fltregisters,
+					 fltregister,
+				       FltRegister.eq)
+				    val isDef = isDst
+				  in
+				    {fltregister = fltregister,
+				     memloc = memloc,
+				     sync = sync andalso (not isDef),
+				     weight = weight - 500,
+				     commit = REMOVE 0}
+				  end
+			   else if MemLocSet.contains
+		                  (dead_memlocs, memloc)
 			     then {fltregister = fltregister,
 				   memloc = memloc,
 				   sync = true,
 				   weight = weight - 500,
 				   commit = TRYREMOVE 0}
-			     else let
-				    val isSrc
-				      = List.contains
-				        (final_uses_fltregisters,
-					 fltregister,
-					 FltRegister.eq)
-
-				    val isDst
-				      = List.contains
-				        (final_defs_fltregisters,
-					 fltregister,
-					 FltRegister.eq)
-			       
-				    val isDef = isDst
-				  in
-				    {fltregister = fltregister,
-				     memloc = memloc,
-				     weight = weight - 5
-				              + (if isSrc
-						   then 5
-						   else 0)
-				              + (if isDst
-						   then 10
-						   else 0),
-				     sync = sync andalso (not isDef),
-				     commit = if !Control.Native.IEEEFP
-				                 andalso
-						 not (sync andalso (not isDef))
-						then REMOVE 0
-						else if List.exists
-						        (MemLoc.utilized memloc,
-							 fn memloc'
-							  => MemLocSet.contains
-							     (allDest, memloc'))
-						       then REMOVE 0
-						     else if MemLocSet.contains
-						             (remove_memlocs,
-							      memloc)
-						       then TRYREMOVE 0
-						     else if MemLocSet.contains
-						             (commit_memlocs,
-							      memloc)
-						       then TRYCOMMIT 0
-						     else commit}
-				  end,
+			   else let
+				  val isSrc
+				    = List.contains
+				      (final_uses_fltregisters,
+				       fltregister,
+				       FltRegister.eq)
+				      
+				  val isDst
+				    = List.contains
+				      (final_defs_fltregisters,
+				       fltregister,
+				       FltRegister.eq)
+				      
+				  val isDef = isDst
+				in
+				  {fltregister = fltregister,
+				   memloc = memloc,
+				   weight = weight - 5
+				            + (if isSrc
+						 then 5
+						 else 0)
+				            + (if isDst
+						 then 10
+						 else 0),
+				   sync = sync andalso (not isDef),
+				   commit = if !Control.Native.IEEEFP
+				               andalso
+					       not (sync andalso (not isDef))
+					      then REMOVE 0
+					      else if List.exists
+						      (MemLoc.utilized memloc,
+						       fn memloc'
+						       => MemLocSet.contains
+						          (allDest, memloc'))
+						     then REMOVE 0
+						   else if MemLocSet.contains
+						           (remove_memlocs,
+						            memloc)
+						     then TRYREMOVE 0
+						   else if MemLocSet.contains
+						           (commit_memlocs,
+							    memloc)
+						     then TRYCOMMIT 0
+						   else commit}
+				end,
 		  registerAllocation = registerAllocation}
 
 	    val {assembly = assembly_commit_fltregisters,
@@ -4210,50 +4233,65 @@ struct
 				    weight,
 				    sync,
 				    commit}
-		        => if MemLocSet.contains
-		              (dead_memlocs, memloc)
-			     then value
-			     else let
-				    val isSrc
-				      = List.contains
-				        (final_uses_registers,
-					 register,
-					 Register.eq)
-
+		        => if volatile memloc
+		             then let
 				    val isDst
 				      = List.contains
 				        (final_defs_registers,
 					 register,
 					 Register.eq)
-			       
 				    val isDef = isDst
 				  in
 				    {register = register,
 				     memloc = memloc,
-				     weight = weight - 5
-				              + (if isSrc
-						   then 5
-						   else 0)
-				              + (if isDst
-						   then 10
-						   else 0),
 				     sync = sync andalso (not isDef),
-				     commit = if List.exists
-				                 (MemLoc.utilized memloc,
-						  fn memloc'
-						   => MemLocSet.contains
-						      (allDest, memloc'))
-						then REMOVE 0
-					      else if MemLocSet.contains
-						      (remove_memlocs,
-						       memloc)
-						then TRYREMOVE 0
-					      else if MemLocSet.contains
-						      (commit_memlocs,
-						       memloc)
-						then TRYCOMMIT 0
-					      else commit}
-				  end,
+				     weight = weight - 500,
+				     commit = REMOVE 0}
+				  end
+			   else if MemLocSet.contains
+		                   (dead_memlocs, memloc)
+			     then value
+			   else let
+				  val isSrc
+				    = List.contains
+				      (final_uses_registers,
+				       register,
+				       Register.eq)
+
+				  val isDst
+				    = List.contains
+			              (final_defs_registers,
+				       register,
+				       Register.eq)
+			       
+				  val isDef = isDst
+				in
+				  {register = register,
+				   memloc = memloc,
+				   weight = weight - 5
+				            + (if isSrc
+						 then 5
+						 else 0)
+				            + (if isDst
+						 then 10
+						 else 0),
+				   sync = sync andalso (not isDef),
+				   commit = if List.exists
+				               (MemLoc.utilized memloc,
+						fn memloc'
+						 => MemLocSet.contains
+						    (allDest, memloc'))
+					      then REMOVE 0
+					    else if MemLocSet.contains
+						    (remove_memlocs,
+						     memloc)
+					      then TRYREMOVE 0
+					    else if MemLocSet.contains
+						    (commit_memlocs,
+						     memloc)
+					      then TRYCOMMIT 0
+					    else commit}
+				end,
 		  registerAllocation = registerAllocation}
 
 	    val {assembly = assembly_commit_registers,
