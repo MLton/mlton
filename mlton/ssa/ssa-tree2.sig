@@ -281,7 +281,8 @@ signature SSA_TREE2 =
 
 	    val clear: t -> unit
 	    val clearTop: t -> unit
-	    val foreachPrim: t * (Type.t Prim.t -> unit) -> unit
+	    val foreachPrimApp:
+	       t * ({args: Var.t vector, prim: Type.t Prim.t} -> unit) -> unit
 	    val foreachVar: t * (Var.t * Type.t -> unit) -> unit
 	    val hasPrim: t * (Type.t Prim.t -> bool) -> bool
 	    val layouts: t * (Layout.t -> unit) -> unit

@@ -2119,16 +2119,17 @@ structure Program =
 	 (Vector.foreach (globals, fn s => Statement.foreachDef (s, f))
 	  ; List.foreach (functions, fn g => Function.foreachVar (g, f)))
 
-      fun foreachPrim (T {globals, functions, ...}, f) =
+      fun foreachPrimApp (T {globals, functions, ...}, f) =
 	 let
 	    fun loopStatement (s: Statement.t) =
 	       case s of
-		  Bind {exp = PrimApp {prim, ...}, ...} => f prim
+		  Bind {exp = PrimApp {args, prim}, ...} =>
+		     f {args = args, prim = prim}
 		 | _ => ()
 	     fun loopTransfer t =
 	        case t of
-		   Arith {prim, ...} => f prim
-		 | Runtime {prim, ...} => f prim
+		   Arith {args, prim, ...} => f {args = args, prim = prim}
+		 | Runtime {args, prim, ...} => f {args = args, prim = prim}
 		 | _ => ()
 	     val _ = Vector.foreach (globals, loopStatement)
 	     val _ =
@@ -2145,7 +2146,8 @@ structure Program =
       fun hasPrim (p, f) =
 	 DynamicWind.withEscape
 	 (fn escape =>
-	  (foreachPrim (p, fn prim => if f prim then escape true else ())
+	  (foreachPrimApp (p, fn {prim, ...} =>
+			   if f prim then escape true else ())
 	   ; false))
 
       fun profile (T {datatypes, functions, globals, main}) =
