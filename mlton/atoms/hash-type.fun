@@ -118,7 +118,8 @@ structure Type =
 		  Tycon.equals (c, c')
 		  andalso if Tycon.equals (c, Tycon.tuple)
 			     then Vector.equals (ts, ts', equals)
-			  else Vector.forall2 (ts, ts', equals)
+			  else (Vector.length ts = Vector.length ts'
+				andalso Vector.forall2 (ts, ts', equals))
 	     | _ => false
 	 val same =
 	    Trace.trace2 ("Type.same", layoutTree, layoutTree, Bool.layout)

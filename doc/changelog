@@ -1,13 +1,18 @@
 Here are the changes since version 20030312.
 
+* 2003-05-08
+  - Fixed bug in HashType that raised "Vector.forall2" when the 
+    arity of a type constructor is changed by simplifyTypes, but
+    a newly constructed type has the same hash value.
+	
 * 2003-05-02
   - Switched over to new layered IO implementation, which completes
     the implementation of the BinIO and TextIO modules.
 
 * 2003-04-28
   - Fixed bug that caused an assertion failure when generating a jump 
-     table for a case dispatch on a non-word sized index with non-zero
-     lower bound on the range.
+    table for a case dispatch on a non-word sized index with non-zero
+    lower bound on the range.
 	
 * 2003-04-24
   - Added -align {4|8}, which controls alignment of objects.  With
