@@ -98,7 +98,7 @@ SML	= sml
 
 .PHONY: nj-mlton
 nj-mlton: $(SOURCES)
-	@echo You must use SML/NJ $SMLNJ_VERSION.
+	@echo You must use SML/NJ $(SMLNJ_VERSION).
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
@@ -107,11 +107,11 @@ nj-mlton: $(SOURCES)
 		echo 'CM.make "sources.cm";';					\
 		echo 'Main.exportNJ ("$(SRC)/basis-library", "$(LIB)/mlton");'	\
 	) | $(SML)
-	@echo You must use SML/NJ $SMLNJ_VERSION.
+	@echo You must use SML/NJ $(SMLNJ_VERSION).
 
 .PHONY: nj-mlton-dual
 nj-mlton-dual: $(SOURCES)
-	@echo You must use SML/NJ $SMLNJ_VERSION.
+	@echo You must use SML/NJ $(SMLNJ_VERSION).
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
@@ -122,11 +122,11 @@ nj-mlton-dual: $(SOURCES)
 		echo 'CM.make "sources.cm";';					\
 		echo 'Main.exportNJ ("$(SRC)/basis-library", "$(LIB)/mlton");'	\
 	) | $(SML)
-	@echo You must use SML/NJ $SMLNJ_VERSION.
+	@echo You must use SML/NJ $(SMLNJ_VERSION).
 
 .PHONY: nj-whole
 nj-whole: $(SOURCES)
-	@echo You must use SML/NJ $SMLNJ_VERSION.
+	@echo You must use SML/NJ $(SMLNJ_VERSION).
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
@@ -142,4 +142,4 @@ nj-whole: $(SOURCES)
 		echo 'end';							\
 	) >mlton.whole.sml
 	$(SML) <mlton.whole.sml
-	@echo You must use SML/NJ $SMLNJ_VERSION.
+	@echo You must use SML/NJ $(SMLNJ_VERSION).
