@@ -149,7 +149,7 @@ fun toMachine (program: Ssa.Program.t, codegen) =
 				suffix = "rssa",
 				thunk = fn () => doit program,
 				typeCheck = R.Program.typeCheck}
-      val program = pass ("ssaToRssa", SsaToRssa.convert, (program, codegen))
+      val program = pass ("ToRssa", SsaToRssa.convert, (program, codegen))
       fun rssaSimplify program = 
 	 let
 	    val program = pass ("rssaShrink1", Rssa.Program.shrink, program)
