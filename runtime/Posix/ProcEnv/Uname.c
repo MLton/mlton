@@ -13,7 +13,8 @@ Int Posix_ProcEnv_Uname_uname() {
 	
 	res = uname(&utsname);
 	if (DEBUG)
-		fprintf (stderr, "%d = Posix_ProcEnv_Uname_uname ()\n", res);
+		fprintf (stderr, "%d = Posix_ProcEnv_Uname_uname ()\n",
+				(int)res);
 	return res;
 }
 

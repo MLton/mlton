@@ -14,7 +14,7 @@ Int Time_gettimeofday () {
 
 	res = gettimeofday (&timeval, (struct timezone*)NULL);
 	if (DEBUG)
-		fprintf (stderr, "%d = Time_gettimeofday ()\n", res);
+		fprintf (stderr, "%d = Time_gettimeofday ()\n", (int)res);
 	return res;
 }
 

@@ -39,7 +39,7 @@ Int Posix_FileSys_open (NullString p, Word w, Mode m) {
 	if (DEBUG)
 		fprintf (stderr, "%d = Posix_FileSys_open (%s, 0x%08x, 0x%08x)\n", 
 				(int)res, 
-				(unsigned int)p, 
+				(char *)p, 
 				(unsigned int)w,
 				(unsigned int)m);
 	return res;
