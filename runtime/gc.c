@@ -1279,27 +1279,30 @@ static void setNursery (GC_state s, W32 oldGenBytesRequested,
 	s->limitPlusSlop = h->start + h->size;
 	s->limit = s->limitPlusSlop - LIMIT_SLOP;
 	assert (isAligned (nurserySize, WORD_SIZE));
-	if (	(FORCE_GENERATIONAL
-		or ( 
-		/* The mutator marks cards. */
-		s->mutatorMarksCards
-		/* The live ratio is low enough to make generational GC
-		 * worthwhile.
+	if (	/* The mutator marks cards. */
+       		s->mutatorMarksCards
+		/* There is enough space in the nursery. */
+		and (nurseryBytesRequested 
+			<= s->limitPlusSlop
+				- alignFrontier (s, s->limitPlusSlop
+							- nurserySize/2 + 2))
+		/* The nursery is large enough to be worth it. */
+		and (((float)(h->size - s->bytesLive) 
+			/ (float)nurserySize) <= s->nurseryRatio)
+		and /* There is a reason to use generational GC. */
+		(
+		/* We must use it for debugging pruposes. */
+		FORCE_GENERATIONAL
+		/* We just did a mark compact, so it will be advantageous to
+		 * to use it.
 		 */
-		and (float)h->size / (float)s->bytesLive 
+		or (s->lastMajor == GC_MARK_COMPACT)
+		/* The live ratio is low enough to make it worthwhile. */
+		or (float)h->size / (float)s->bytesLive 
 			<= (h->size < s->ram
 				? s->copyGenerationalRatio
 				: s->markCompactGenerationalRatio)
-		/* The nursery is large enough to be worth it. */
-		and ((float)(h->size - s->bytesLive) 
-			/ (float)nurserySize) <= s->nurseryRatio
-		))
-		/* There is enough space in the nursery. */
-		and nurseryBytesRequested 
-			<= s->limitPlusSlop
-				- alignFrontier (s, s->limitPlusSlop
-							- nurserySize/2 + 2)
-		) {
+		)) {
 		s->canMinor = TRUE;
 		nurserySize /= 2;
 		unless (isAligned (nurserySize, WORD_SIZE))
@@ -1659,6 +1662,7 @@ static void cheneyCopy (GC_state s) {
 				uintToCommaString (s->oldGenSize));
 	swapSemis (s);
 	clearCrossMap (s);
+	s->lastMajor = GC_COPYING;
 	if (detailedGCTime (s))
 		stopTiming (&ru_start, &s->ru_gcCopy);		
  	if (DEBUG or s->messages)
@@ -2644,6 +2648,7 @@ static void markCompact (GC_state s) {
 	updateBackwardPointersAndSlide (s);
 	clearCrossMap (s);
 	s->bytesMarkCompacted += s->oldGenSize;
+	s->lastMajor = GC_MARK_COMPACT;
 	if (detailedGCTime (s))
 		stopTiming (&ru_start, &s->ru_gcMarkCompact);
 	if (DEBUG or s->messages)
@@ -4378,6 +4383,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->handleGCSignal = FALSE;
 	s->inSignalHandler = FALSE;
 	s->isOriginal = TRUE;
+	s->lastMajor = GC_COPYING;
 	s->liveRatio = 8.0;
 	s->markCompactRatio = 1.04;
 	s->markCompactGenerationalRatio = 8.0;

@@ -102,6 +102,11 @@ typedef struct {
 	ushort numPointers;
 } GC_ObjectType;
 
+typedef enum {
+	GC_COPYING,
+	GC_MARK_COMPACT,
+} GC_MajorKind;
+
 /* ------------------------------------------------- */
 /*                  initialization                   */
 /* ------------------------------------------------- */
@@ -384,6 +389,7 @@ typedef struct GC_state {
 	 */
 	volatile int canHandle;
 	bool isOriginal;
+	GC_MajorKind lastMajor;
 	pointer limitPlusSlop; /* limit + LIMIT_SLOP */
 	float liveRatio;	/* Desired ratio of heap size to live data. */
 	/* loadGlobals loads the globals from the stream. */
