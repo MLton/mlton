@@ -47,6 +47,17 @@ fun getSet layout =
    end
 
 fun layout layoutX r = layoutX (!r)
+
+fun memoize (r: 'a option ref, f: unit -> 'a): 'a =
+   case !r of
+      NONE =>
+	 let
+	    val a = f ()
+	    val () = r := SOME a
+	 in
+	    a
+	 end
+    | SOME a => a
    
 end
 

@@ -21,5 +21,6 @@ signature REF =
 					output: Out.t -> unit,
 					print: unit -> unit}
       val layout: ('a -> Layout.t) -> 'a t -> Layout.t
+      val memoize: 'a option t * (unit -> 'a) -> 'a
       val swap: 'a t * 'a t -> unit
    end
