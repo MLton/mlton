@@ -230,8 +230,8 @@ structure PosixIO: POSIX_IO =
 				      in
 					pos := curPos; curPos
 				      end
+		   val _ = verifyPos ()
 		 in
-		   verifyPos ();
 		   {pos = pos,
 		    getPos = SOME getPos,
 		    setPos = SOME setPos,

@@ -805,9 +805,9 @@ functor StreamIOExtra
 					let
 					   val curPos = getPos ()
 					in
-					   setPos b;
-					   readVec pos;
-					   getPos () before setPos curPos
+					   setPos b
+					   ; ignore (readVec pos)
+					   ; getPos () before setPos curPos
 					end
 				   | _ => 
 					liftExn (instreamName is) "filePosIn" IO.RandomAccessNotSupported))

@@ -75,23 +75,25 @@ structure Array2: ARRAY2 =
 	       let
 		  val cols = length row1
 		  val a as {array, ...} = arrayUninit (length rows, cols)
-	       in List.foldl
-		  (fn (row: 'a list, i) =>
-		   let
-		      val max = i +? cols
-		      val i' =
-			 List.foldl (fn (x: 'a, i) =>
-				     (if i >= max
-					 then raise Size
-				      else (Primitive.Array.update (array, i, x)
-					    ; i + 1)))
-			 i row
-		   in if i' = max
-			 then i'
-		      else raise Size
-		   end)
-		  0 rows
-		  ; a
+		  val _ =
+		     List.foldl
+		     (fn (row: 'a list, i) =>
+		      let
+			 val max = i +? cols
+			 val i' =
+			    List.foldl (fn (x: 'a, i) =>
+					(if i >= max
+					    then raise Size
+					 else (Primitive.Array.update (array, i, x)
+					       ; i + 1)))
+			    i row
+		      in if i' = max
+			    then i'
+			 else raise Size
+		      end)
+		     0 rows
+	       in
+		  a
 	       end
 
       fun row ({rows, cols, array}, r) =
@@ -171,23 +173,32 @@ structure Array2: ARRAY2 =
 		     (* The list holds the elements in row major order,
 		      * but reversed.
 		      *)
-		     (List.foldl (fn (x, i) => (Primitive.Array.update (a, i, x)
-						; i -? 1))
-		      (size -? 1) l
-		      ; ())
+		     let
+			val _ =
+			   List.foldl (fn (x, i) =>
+				       (Primitive.Array.update (a, i, x)
+					; i -? 1))
+			   (size -? 1) l
+		     in
+			()
+		     end
 		| ColMajor =>
 		     (* The list holds the elements in column major order,
 		      * but reversed.
 		      *)
-		     (List.foldl (fn (x, (spot, r)) =>
-				  (Primitive.Array.update (a, spot, x)
-				   ; if r = 0
-					then (spot -? 1 +? size -? cols,
-					      rows -? 1)
-				     else (spot -? cols, r -? 1)))
-		      (size -? 1, rows -? 1)
-		      l
-		      ; ())
+		     let
+			val _ =
+			   List.foldl (fn (x, (spot, r)) =>
+				       (Primitive.Array.update (a, spot, x)
+					; if r = 0
+					     then (spot -? 1 +? size -? cols,
+						   rows -? 1)
+					  else (spot -? cols, r -? 1)))
+			   (size -? 1, rows -? 1)
+			   l
+		     in
+			()
+		     end
 		  ; {rows = rows, cols = cols, array = a}
 	       end
 	 else

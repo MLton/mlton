@@ -134,8 +134,8 @@ structure PosixTTY: POSIX_TTY =
 		; Termios.setoflag oflag
 		; Termios.setcflag cflag
 		; Termios.setlflag lflag
-		; Termios.setospeed ospeed
-		; Termios.setispeed ispeed
+		; PosixError.checkResult (Termios.setospeed ospeed)
+		; PosixError.checkResult (Termios.setispeed ispeed)
 		; let val cs = Termios.cc () 
 		  in Util.naturalForeach
 		     (V.nccs, fn i => Cstring.update (cs, i, V.sub (cc, i)))

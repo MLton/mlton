@@ -19,9 +19,9 @@ val (sub, up) =
 fun update (a, i, r) =
    let
       val a = Word8Array.toPoly a
+      val _ = Array.checkSlice (a, i, SOME bytesPerElem)
    in
-      Array.checkSlice (a, i, SOME bytesPerElem)
-      ; up (a, i, r)
+      up (a, i, r)
    end
    
 local
@@ -35,9 +35,9 @@ end
 fun subVec (v, i) =
    let
       val v = Word8Vector.toPoly v
+      val _ = Vector.checkSlice (v, i, SOME bytesPerElem)
    in
-      Vector.checkSlice (v, i, SOME bytesPerElem)
-      ; sub (v, i)
+      sub (v, i)
    end
 
 fun fromBytes v = subVec (v, 0)

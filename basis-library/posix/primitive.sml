@@ -14,7 +14,6 @@ structure PosixPrimitive =
       type fd = int
       type uid = word
       type gid = word
-      type signal = int
       type size = int
       type ssize = int
       type mode = word
@@ -123,14 +122,14 @@ structure PosixPrimitive =
       
       structure Signal:>
 	 sig
-	    eqtype signal
+	    eqtype t
 	    type how
 
-	    val fromInt: int -> signal
-	    val toInt: signal -> int
+	    val fromInt: int -> t
+	    val toInt: t -> int
 	 end =
 	 struct
-	    type signal = signal
+	    type t = int
       	    type how = int
 
 	    val fromInt = fn s => s
@@ -141,46 +140,46 @@ structure PosixPrimitive =
 	 struct
 	    open Signal
 	       
-	    val abrt = _const "Posix_Signal_abrt": signal;
-	    val alrm = _const "Posix_Signal_alrm": signal;
-	    val bus = _const "Posix_Signal_bus": signal;
-	    val chld = _const "Posix_Signal_chld": signal;
-	    val cont = _const "Posix_Signal_cont": signal;
-	    val fpe = _const "Posix_Signal_fpe": signal;
-	    val hup = _const "Posix_Signal_hup": signal;
-	    val ill = _const "Posix_Signal_ill": signal;
-	    val int = _const "Posix_Signal_int": signal;
-	    val kill = _const "Posix_Signal_kill": signal;
-	    val pipe = _const "Posix_Signal_pipe": signal;
-	    val prof = _const "Posix_Signal_prof": signal;
-	    val quit = _const "Posix_Signal_quit": signal;
-	    val segv = _const "Posix_Signal_segv": signal;
-	    val stop = _const "Posix_Signal_stop": signal;
-	    val term = _const "Posix_Signal_term": signal;
-	    val tstp = _const "Posix_Signal_tstp": signal;
-	    val ttin = _const "Posix_Signal_ttin": signal;
-	    val ttou = _const "Posix_Signal_ttou": signal;
-	    val usr1 = _const "Posix_Signal_usr1": signal;
-	    val usr2 = _const "Posix_Signal_usr2": signal;
-	    val vtalrm = _const "Posix_Signal_vtalrm": signal;
+	    val abrt = _const "Posix_Signal_abrt": t;
+	    val alrm = _const "Posix_Signal_alrm": t;
+	    val bus = _const "Posix_Signal_bus": t;
+	    val chld = _const "Posix_Signal_chld": t;
+	    val cont = _const "Posix_Signal_cont": t;
+	    val fpe = _const "Posix_Signal_fpe": t;
+	    val hup = _const "Posix_Signal_hup": t;
+	    val ill = _const "Posix_Signal_ill": t;
+	    val int = _const "Posix_Signal_int": t;
+	    val kill = _const "Posix_Signal_kill": t;
+	    val pipe = _const "Posix_Signal_pipe": t;
+	    val prof = _const "Posix_Signal_prof": t;
+	    val quit = _const "Posix_Signal_quit": t;
+	    val segv = _const "Posix_Signal_segv": t;
+	    val stop = _const "Posix_Signal_stop": t;
+	    val term = _const "Posix_Signal_term": t;
+	    val tstp = _const "Posix_Signal_tstp": t;
+	    val ttin = _const "Posix_Signal_ttin": t;
+	    val ttou = _const "Posix_Signal_ttou": t;
+	    val usr1 = _const "Posix_Signal_usr1": t;
+	    val usr2 = _const "Posix_Signal_usr2": t;
+	    val vtalrm = _const "Posix_Signal_vtalrm": t;
 
 	    val block = _const "Posix_Signal_block": how;
-	    val default = _import "Posix_Signal_default": signal -> int;
+	    val default = _import "Posix_Signal_default": t -> int;
 	    val handleGC = _import "Posix_Signal_handleGC": unit -> unit;
-	    val handlee = _import "Posix_Signal_handle": signal -> int;
-	    val ignore = _import "Posix_Signal_ignore": signal -> int;
+	    val handlee = _import "Posix_Signal_handle": t -> int;
+	    val ignore = _import "Posix_Signal_ignore": t -> int;
 	    val isDefault =
-	       _import "Posix_Signal_isDefault": signal * bool ref -> int;
+	       _import "Posix_Signal_isDefault": t * bool ref -> int;
 	    val isGCPending = _import "Posix_Signal_isGCPending": unit -> bool;
-	    val isPending = _import "Posix_Signal_isPending": signal -> bool;
+	    val isPending = _import "Posix_Signal_isPending": t -> bool;
 	    val numSignals = _const "Posix_Signal_numSignals": int;
 	    val setmask = _const "Posix_Signal_setmask": how;
-	    val sigaddset = _import "Posix_Signal_sigaddset": signal -> int;
-	    val sigdelset = _import "Posix_Signal_sigdelset": signal -> int;
+	    val sigaddset = _import "Posix_Signal_sigaddset": t -> int;
+	    val sigdelset = _import "Posix_Signal_sigdelset": t -> int;
 	    val sigemptyset = _import "Posix_Signal_sigemptyset": unit -> int;
 	    val sigfillset = _import "Posix_Signal_sigfillset": unit -> int;
 	    val sigprocmask = _import "Posix_Signal_sigprocmask": how -> int;
-	    val suspend = _import "Posix_Signal_suspend": unit -> int;
+	    val suspend = _import "Posix_Signal_suspend": unit -> unit;
 	    val unblock = _const "Posix_Signal_unblock": how;
 	 end
       
@@ -209,11 +208,11 @@ structure PosixPrimitive =
 	    val ifSignaled = _import "Posix_Process_ifSignaled"
 	       : Status.t -> bool;
 	    val ifStopped = _import "Posix_Process_ifStopped": Status.t -> bool;
-	    val kill = _import "Posix_Process_kill": Pid.t * signal -> int;
+	    val kill = _import "Posix_Process_kill": Pid.t * Signal.t -> int;
 	    val pause = _import "Posix_Process_pause": unit -> int;
 	    val sleep = _import "Posix_Process_sleep": int -> int;
-	    val stopSig = _import "Posix_Process_stopSig": Status.t -> signal;
-	    val termSig = _import "Posix_Process_termSig": Status.t -> signal;
+	    val stopSig = _import "Posix_Process_stopSig": Status.t -> Signal.t;
+	    val termSig = _import "Posix_Process_termSig": Status.t -> Signal.t;
 	    val waitpid =
 	       _import "Posix_Process_waitpid"
 	       : Pid.t * Status.t ref * int -> Pid.t;

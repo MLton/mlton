@@ -204,9 +204,9 @@ fun fromList (l, {hash, equals}) =
       val s = new {hash = hash}
       val _ =
 	 List.foreach (l, fn a =>
-		       (lookupOrInsert (s, hash a,
-					fn b => equals (a, b),
-					fn _ => a)
+		       (ignore (lookupOrInsert (s, hash a,
+						fn b => equals (a, b),
+						fn _ => a)) 
 			; ()))
    in
       s

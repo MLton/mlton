@@ -15,7 +15,7 @@ fun map f =
    fn NONE => NONE
     | SOME a => SOME (f a)
 
-fun app f z = (map f z; ())
+fun app f z = (ignore (map f z); ())
 
 fun compose (f, g) c = map f (g c)
 

@@ -252,14 +252,16 @@ local
 in
    fun withNonBlock (fd, f: unit -> 'a) =
       let
-	 val flags = PIO.fcntl2 (fd, PIO.F_GETFL)
-	 val _ = PIO.fcntl3 (fd, PIO.F_SETFL,
-			     Word.toIntX
-			     (Word.orb (Word.fromInt flags,
-					PosixPrimitive.FileSys.O.nonblock)))
+	 val flags = PE.checkReturnResult (PIO.fcntl2 (fd, PIO.F_GETFL))
+	 val _ =
+	    PE.checkResult
+	    (PIO.fcntl3 (fd, PIO.F_SETFL,
+			 Word.toIntX
+			 (Word.orb (Word.fromInt flags,
+				    PosixPrimitive.FileSys.O.nonblock))))
       in
-	 DynamicWind.wind (f, fn () => (PIO.fcntl3 (fd, PIO.F_SETFL, flags)
-					; ()))
+	 DynamicWind.wind
+	 (f, fn () => PE.checkResult (PIO.fcntl3 (fd, PIO.F_SETFL, flags)))
       end
 end
 

@@ -63,5 +63,5 @@ structure OS_Process: OS_PROCESS_EXTRA =
 
       fun sleep t = if Time.<= (t, Time.zeroTime)
 		       then ()
-		    else (Posix.Process.sleep t; ())
+		    else (ignore (Posix.Process.sleep t); ())
    end

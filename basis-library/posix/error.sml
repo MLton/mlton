@@ -39,5 +39,5 @@ structure PosixError: POSIX_ERROR_EXTRA =
       fun checkReturnResult (n: int) = if n = ~1 then error () else n
       fun checkReturnPosition (n: Position.int) =
 	 if n = ~1 then error () else n
-      fun checkResult n = (checkReturnResult n; ())
+      fun checkResult n = (ignore (checkReturnResult n); ())
    end

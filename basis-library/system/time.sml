@@ -63,7 +63,9 @@ end
  *)
 local
    fun getNow (): time =
-      (Prim.gettimeofday ()
+      (if ~1 = Prim.gettimeofday ()
+	  then raise Fail "Time.now"
+       else ()
        ; T (LargeInt.+ (LargeInt.* (LargeInt.fromInt (Prim.sec ()),
 				    ticksPerSecond),
 			LargeInt.fromInt (Prim.usec ()))))

@@ -306,7 +306,7 @@ end
 
 val unify =
    fn (t, t', preError, error) =>
-   Type.unify (t, t', {error = error,
+   Type.unify (t, t', {error = Control.error o error,
 		       preError = preError})
    
 fun unifyList (trs: (Type.t * Region.t) vector,
@@ -2120,12 +2120,40 @@ fun elaborateDec (d, {env = E,
 	      | Aexp.Selector f => elab (Aexp.selector (f, region))
 	      | Aexp.Seq es =>
 		   let
-		      val es = Vector.map (es, elab)
-		   (* Could put warning here for expressions before a ; that
-		    * don't return unit.
-		    *)
+		      val es' = Vector.map (es, elab)
+		      val last = Vector.length es - 1
+		      (* Warning for expressions before a ; that don't return
+		       * unit.
+		       *)
+		      val _ =
+			 if not (!Control.sequenceUnit)
+			    then ()
+			 else
+			    Vector.foreachi
+			    (es', fn (i, e) =>
+			     if i = last
+				then ()
+			     else
+				let
+				   fun error _ =
+				      let
+					 val e = Vector.sub (es, i)
+					 open Layout
+				      in
+					 Control.warning
+					 (Aexp.region e,
+					  str "sequence expression not of type unit",
+					  seq [str "in: ",
+					       approximate (Aexp.layout e)])
+				      end
+				in
+				   Type.unify (Cexp.ty e, Type.unit,
+					       {error = error,
+						preError = preError})
+				end)
+
 		   in
-		      Cexp.make (Cexp.Seq es, Cexp.ty (Vector.last es))
+		      Cexp.make (Cexp.Seq es', Cexp.ty (Vector.sub (es', last)))
 		   end
 	      | Aexp.Var {name = id, ...} =>
 		   let

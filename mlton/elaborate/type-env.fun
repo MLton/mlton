@@ -1724,11 +1724,10 @@ structure Type =
 	 end
 
       val unify =
-	 fn (t1: t, t2: t,
-	     {error: Layout.t * Layout.t -> Region.t * Layout.t * Layout.t,
-	      preError: unit -> unit}) =>
+	 fn (t1: t, t2: t, {error: Layout.t * Layout.t -> unit,
+			    preError: unit -> unit}) =>
 	 case unify (t1, t2, {preError = preError}) of
-	    NotUnifiable z => Control.error (error z)
+	    NotUnifiable z => error z
 	  | Unified => ()
    end
 

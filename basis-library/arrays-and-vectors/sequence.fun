@@ -84,8 +84,11 @@ functor Sequence (S: sig
       fun new (n, x) = tabulate (n, fn _ => x)
 
       fun fromList l =
-	 let val a = array (List.length l)
-	 in List.foldl (fn (c, i) => (Array.update (a, i, c) ; i +? 1)) 0 l ;
+	 let
+	    val a = array (List.length l)
+	    val _ =
+	       List.foldl (fn (c, i) => (Array.update (a, i, c) ; i +? 1)) 0 l
+	 in
 	    fromArray a
 	 end
 

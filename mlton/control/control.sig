@@ -211,6 +211,9 @@ signature CONTROL =
       (* Array bounds checking. *)
       val safe: bool ref
 
+      (* in (e1; e2), require e1: unit. *)
+      val sequenceUnit: bool ref
+
       (* Show the basis library and exit. *)
       val showBasis: bool ref
 	 

@@ -1563,6 +1563,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 	       let
 		  open Layout
 	       in
+		  Control.error
 		  (r,
 		   seq [str (concat [thing, " in structure disagrees with ",
 				     sign])],
@@ -1851,6 +1852,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 		      let
 			 open Layout
 		      in
+			 Control.error
 			 (region,
 			  seq [str "variable type in structure disagrees with ",
 			       str sign],

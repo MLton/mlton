@@ -393,6 +393,10 @@ val safe = control {name = "safe",
 		    default = true,
 		    toString = Bool.toString}
 
+val sequenceUnit = control {name = "sequence unit",
+			    default = false,
+			    toString = Bool.toString}
+
 val showBasis = control {name = "show basis",
 			 default = false,
 			 toString = Bool.toString}

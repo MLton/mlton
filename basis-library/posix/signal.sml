@@ -9,6 +9,8 @@ structure PosixSignal: POSIX_SIGNAL_EXTRA =
    struct
       open PosixPrimitive.Signal
 
+      type signal = t
+
       val fromWord = fromInt o SysWord.toInt
       val toWord = SysWord.fromInt o toInt
    end

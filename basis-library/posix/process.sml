@@ -18,7 +18,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
       val pidToWord = SysWord.fromInt o Pid.toInt
 
       structure MLton = Primitive.MLton
-
+	 
       fun fork () =
 	 let
 	    val p = Prim.fork ()
@@ -49,10 +49,10 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 	       fun doit () =
 		  case fork () of
 		     NONE => 
-			(PosixIO.writeVec (outfd,
-					   Word8VectorSlice.full
-					   (Word8Vector.tabulate
-					    (1, fn _ => 0w0)))
+			(ignore (PosixIO.writeVec (outfd,
+						   Word8VectorSlice.full
+						   (Word8Vector.tabulate
+						    (1, fn _ => 0w0))))
 			 ; NONE)
 		   | SOME n =>
 			let
@@ -111,9 +111,9 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 		     0 => W_EXITED
 		   | n => W_EXITSTATUS (Word8.fromInt n))
 	 else if Prim.ifSignaled status
-	    then W_SIGNALED (PosixSignal.fromInt (Prim.termSig status))
+	    then W_SIGNALED (Prim.termSig status)
 	 else if Prim.ifStopped status
-	    then W_STOPPED (PosixSignal.fromInt (Prim.stopSig status))
+	    then W_STOPPED (Prim.stopSig status)
 	 else raise Fail "Posix.Process.fromStatus"
 
       structure W =
@@ -178,7 +178,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 		| K_SAME_GROUP => ~1
 		| K_GROUP pid => ~ (Pid.toInt pid)
 	 in
-	    Error.checkResult (Prim.kill (Pid.fromInt pid, PosixSignal.toInt s))
+	    Error.checkResult (Prim.kill (Pid.fromInt pid, s))
 	 end
 
       local

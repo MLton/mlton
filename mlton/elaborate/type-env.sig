@@ -50,10 +50,8 @@ signature TYPE_ENV =
 	    val toString: t -> string
 	    (* make two types identical (recursively).  side-effecting. *)
 	    val unify:
-	       t * t *
-	       {error: Layout.t * Layout.t -> Region.t * Layout.t * Layout.t,
-		preError: unit -> unit}
-	       -> unit 
+	       t * t * {error: Layout.t * Layout.t -> unit,
+			preError: unit -> unit} -> unit 
 	    val unresolvedInt: unit -> t
 	    val unresolvedReal: unit -> t
 	    val unresolvedWord: unit -> t
