@@ -16,7 +16,7 @@
     MLton is a whole-program optimizing compiler for the
     <a href="http://cm.bell-labs.com/cm/cs/what/smlnj/sml.html">Standard
       ML</a> programming language.  MLton runs on X86 machines with
-    Linux.
+    Linux or <a href = "http://www.cygwin.com">Cygwin</a>/Windows.
 
     <h3>Features of MLton</h3>
     MLton has the following features (for details, please see
@@ -32,49 +32,40 @@
 	<a href = "http://www.gnu.org/software/gmp/gmp.html">GNU
 	  multiprecision library (gmp)</a>
       <li> <a href = "HTML/node10.html">Fast C FFI</a>
-      <li> <a href = "HTML/node12.html">Profiling</a>
-      <li> Libraries for
-	<a href = "HTML/node22.html">continuations</a>,
-        <a href = "HTML/node24.html">interval timers</a>,
-	<a href = "HTML/node28.html">random numbers</a>,
-        <a href = "HTML/node29.html">resource limits</a>,
-	<a href = "HTML/node30.html">resource usage</a>,
-	<a href = "HTML/node31.html">signal handlers</a>,
-	<a href = "HTML/node32.html">sockets</a>,
-	<a href = "HTML/node33.html">system logging</a>,
-	<a href = "HTML/node35.html">threads</a>,
-	and <a href = "HTML/node37.html">heap save and restore</a>
+      <li> <a href = "HTML/node13.html">Profiling</a>
+      <li> <a href = "HTML/node21.html">Libraries</a> for
+	continuations,
+	interval timers,
+	random numbers,
+	resource limits,
+	resource usage,
+	signal handlers,
+	sockets,
+	system logging,
+	threads,
+	heap save and restore.
     </ul>
 
     <h3>What's new?</h3>
-    Version VERSION is mostly a bug-fix release over 20010806.  For a
+    Version VERSION is a major release over 20011006.  For a
     complete list of changes and bug fixes, see the <a href =
     "CHANGES">CHANGES</a> file.  Notable changes include:
     <ul>
-      <li> Added <tt>MLton.Exn.history</tt>, which is similar to
-	<tt>SMLofNJ.exnHistory</tt>.
-      </li>
-      <li> Support for <tt>#line</tt> directives of the form
-	<tt>(*#line line.col "file"*)</tt>.
-      </li>
-      <li> Performance improvements in native codegenerator.
-      <li> Bug fixes in front-end, optimizer, register allocator, and in
-	<tt>Real.</tt>{<tt>maxFinite</tt>, <tt>minPos</tt>, <tt>toManExp</tt>},
-        and heap save and restore.
-      </li>
-    </ul>
-
-    Version 20010806 was a bug-fix release over 20010706, and
-    included the following changes.
-    <ul> 
-      <li> <tt>Word.andb (w, 0xFF)</tt> now works correctly.
-      <li> <tt>MLton.Rusage.rusage</tt> has a patch to work around a linux
-	kernel bug.
-      <li> Programs of the form <tt>exp ; program</tt> are
-	now accepted.
-      <li> Added the <tt>MLton.Rlimit</tt> structure.
-      <li> Added the <tt>-keep dot</tt> flag, which produces call graphs,
-	intraprocedural control-flow graphs, and dominator trees.
+      <li>MLton now runs on Cygwin/Windows.
+      <li>There have been significant performance improvements in generated code.
+      <li>There have been several additions to the <tt>MLton</tt> structure: 
+	<tt>BinIO</tt>, <tt>Exn</tt>, <tt>IntInf</tt>, <tt>Process</tt>,
+	<tt>Profile</tt>.
+      <li>MLton's runtime system can now use large amounts of memory (up to 4G),
+	including more than the available RAM.
+      <li>Arrays (strings, vectors) can now have up to <tt>2^31 - 1</tt>
+	elements (provided there is enough memory).
+      <li>Command-line switches have been changed to be more regular,
+	and some have been removed.
+      <li>MLton no longer supports <tt>_prim</tt> for defining compile-time
+	constants.
+      <li>There were several bug fixes for type inference of flexible record
+	patterns.
     </ul>
 
     <h3><a href = "download.html">Download MLton</a></h3>
@@ -98,7 +89,8 @@
     with a message body (not subject) of <TT>subscribe MLton-discuss</TT>.
 
     <hr>
-    <!-- hhmts start -->
-<EM>Last Modified: 26-Oct-2001</EM>
+<!-- hhmts start -->
+Last modified: Sat Mar 30 16:01:24 PST 2002
+<!-- hhmts end -->
   </body>
 </html>
