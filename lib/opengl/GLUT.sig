@@ -84,18 +84,18 @@ signature GLUT =
         val GLUT_OVERLAY : GL.GLenum
 
         (* Stroke font constants (use these in GLUT program). *)
-        val GLUT_STROKE_ROMAN : unit -> glutfont
-        val GLUT_STROKE_MONO_ROMAN : unit -> glutfont
+        val GLUT_STROKE_ROMAN : glutfont
+        val GLUT_STROKE_MONO_ROMAN : glutfont
 
         (* Bitmap font constants (use these in GLUT program). *)
-        val GLUT_BITMAP_9_BY_15 : unit -> glutfont
-        val GLUT_BITMAP_8_BY_13 : unit -> glutfont
-        val GLUT_BITMAP_TIMES_ROMAN_10 : unit -> glutfont
-        val GLUT_BITMAP_TIMES_ROMAN_24 : unit -> glutfont
+        val GLUT_BITMAP_9_BY_15 : glutfont
+        val GLUT_BITMAP_8_BY_13 : glutfont
+        val GLUT_BITMAP_TIMES_ROMAN_10 : glutfont
+        val GLUT_BITMAP_TIMES_ROMAN_24 : glutfont
         (*#if (GLUT_API_VERSION >= 3)*)
-        val GLUT_BITMAP_HELVETICA_10 : unit -> glutfont
-        val GLUT_BITMAP_HELVETICA_12 : unit -> glutfont
-        val GLUT_BITMAP_HELVETICA_18 : unit -> glutfont
+        val GLUT_BITMAP_HELVETICA_10 : glutfont
+        val GLUT_BITMAP_HELVETICA_12 : glutfont
+        val GLUT_BITMAP_HELVETICA_18 : glutfont
         (*#endif *)
 
         (* glutGet parameters. *)
