@@ -89,7 +89,7 @@ val options =
 				    List.push(defines, "GC_FIRST_CHECK"))
 		      | "every" => (gcCheck := Every;
 				    List.push(defines, "GC_EVERY_CHECK"))
-		      | _ => usage (concat ["invalid -gcCheck flag: ", s]))),
+		      | _ => usage (concat ["invalid -gc-check flag: ", s]))),
        (Normal, "h", " heapSize [{k|m}]",
 	"heap size used by resulting executable",
 	Mem (fn n => fixedHeap := SOME n)),
