@@ -20,6 +20,7 @@ val raw = ref false
 val showLine = ref false
 val thresh: real ref = ref 0.0
 val title: string option ref = ref NONE
+val tolerant: bool ref = ref false
 
 structure Source =
    struct
@@ -768,7 +769,9 @@ fun makeOptions {usage} =
 	(Normal, "thresh", " {0|1|...|100}", "only show counts above threshold",
 	 Real (fn x => if x < 0.0 orelse x > 100.0
 			 then usage "invalid -thresh"
-		      else thresh := x))],
+		      else thresh := x)),
+	(Normal, "tolerant", " {false|true}", "ignore broken mlmon files",
+	 boolRef tolerant)],
        fn (style, name, arg, desc, opt) =>
        {arg = arg, desc = desc, name = name, opt = opt, style = style})
    end
@@ -807,8 +810,17 @@ fun commandLine args =
 		    ProfFile.merge
 		    (profFile, ProfFile.new {mlmonfile = mlmonfile})
 		    handle e =>
-		       die (concat ["error in ", mlmonfile, ": ",
-				    Exn.toString e]))
+		       let
+			  val msg =
+			     concat ["error in ", mlmonfile, ": ",
+				     Exn.toString e]
+		       in
+			  if !tolerant
+			     then
+				(Out.outputl (Out.error, msg)
+				 ; profFile)
+			  else die msg
+		       end)
 		val _ =
 		   if debug
 		      then
@@ -816,17 +828,6 @@ fun commandLine args =
 			  ; Layout.outputl (ProfFile.layout profFile,
 					    Out.standard))
 		   else ()
-		val _ =
-		   let
-		      val AFile.T {magic = m, sources, ...} = aInfo
-		      val ProfFile.T {magic = m', ...} = profFile
-		   in
-		      if m <> m'
-			 then
-			    die (concat [afile, " is incompatible with ",
-					 (hd mlmonFiles)])
-		      else ()
-		   end
 		val _ = display (aInfo, profFile)
 	     in
 		()
