@@ -22,20 +22,6 @@ all:
 	$(MAKE) script world runtime hostmap constants tools docs
 	@echo 'Build of MLton succeeded.'
 
-.PHONY: nj-mlton
-nj-mlton:
-	$(MAKE) dirs
-	cd $(COMP) && $(MAKE) nj-mlton
-	$(MAKE) script runtime hostmap constants
-	@echo 'Build of MLton succeeded.'
-
-.PHONY: nj-mlton-dual
-nj-mlton-dual:
-	$(MAKE) dirs	
-	cd $(COMP) && $(MAKE) nj-mlton-dual
-	$(MAKE) script runtime hostmap constants
-	@echo 'Build of MLton succeeded.'
-
 .PHONY: clean
 clean:
 	bin/clean
@@ -66,6 +52,20 @@ hostmap:
 	( sed '/$(HOST)/d' <$(HOSTMAP); echo '$(HOST) $(HOSTTYPE)' ) \
 		>>$(HOSTMAP).tmp
 	mv $(HOSTMAP).tmp $(HOSTMAP)
+
+.PHONY: nj-mlton
+nj-mlton:
+	$(MAKE) dirs
+	cd $(COMP) && $(MAKE) nj-mlton
+	$(MAKE) script runtime hostmap constants
+	@echo 'Build of MLton succeeded.'
+
+.PHONY: nj-mlton-dual
+nj-mlton-dual:
+	$(MAKE) dirs	
+	cd $(COMP) && $(MAKE) nj-mlton-dual
+	$(MAKE) script runtime hostmap constants
+	@echo 'Build of MLton succeeded.'
 
 .PHONY: runtime
 runtime:
