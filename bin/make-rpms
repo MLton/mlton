@@ -6,14 +6,14 @@
 
 name=`basename $0`
 
-# You must be root to run this script.
-# This is so that the installed RPMS will have files owned by root. 
-# Not doing so would be a security hole.
-#
-#if [ `whoami` != root ]; then
-#	echo >&2 "You must run $name as root."
-#	exit 1
-#fi
+# You must have ss to run this script.  ss lets us run commands as root.
+# This lets us set it up so that the installed RPMS will have files owned by 
+# root.  Not doing so would be a security hole.
+
+ss true 2>/dev/null || {
+	echo 'You must have ss.' >&2
+	exit 1
+}
 
 function usage() {
 	echo >&2 "usage: $name [-home]"
@@ -92,13 +92,14 @@ echo 'Building rpms'
 (
 	export HOME="$root"
 	echo "%_topdir $root" >$root/.rpmmacros
-	time rpm --quiet -ba --clean $root/SPECS/mlton.spec
+	time rpm -ba --quiet --clean --buildroot \
+		$root/install $root/SPECS/mlton.spec
 )
 
 echo 'Cleaning up'
 cd $root
 cp -p RPMS/i386/$package.i386.rpm SRPMS/$package.src.rpm .
-rm -rf BUILD RPMS/i386 SOURCES SPECS SRPMS
+rm -rf install BUILD RPMS SOURCES SPECS SRPMS
 
 if [ $home = 'yes' ]; then
 	echo 'Building web home'
