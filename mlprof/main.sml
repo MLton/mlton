@@ -572,7 +572,10 @@ fun display (AFile.T {callGraph, name = aname, sources, ...},
       fun per (ticks: IntInf.t): real * string list =
 	 let
 	    val rticks = Real.fromIntInf ticks
-	    val per = 100.0 * rticks / totalReal
+	    val per =
+	       if Real.equals (0.0, totalReal)
+		  then 0.0
+	       else 100.0 * rticks / totalReal
 	    val row =
 	       (concat [Real.format (per, Real.Format.fix (SOME 1)),
 			"%"])
@@ -635,8 +638,8 @@ fun display (AFile.T {callGraph, name = aname, sources, ...},
 			   Dot.NodeOption.Shape Dot.Box,
 			   if !gray
 			      then
-				 Dot.NodeOption.Color (DotColor.gray
-						       (100 - (Real.round perStack)))
+				 Dot.NodeOption.Color
+				 (DotColor.gray (100 - (Real.round perStack)))
 			   else Dot.NodeOption.Color DotColor.Black],
 			  !options)
 		      val showInTable =
