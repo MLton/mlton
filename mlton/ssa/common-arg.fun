@@ -503,59 +503,51 @@ fun eliminate (Program.T {datatypes, globals, functions, main}) =
 			in
 			  node
 			end
-	fun newRootedNode v = let
-				val node = newNode v
-				val _ = Graph.addEdge (G, {from = root, to = node})
-			      in
-				node
-			      end
-
+	fun newRootedNode v =
+	   let
+	      val node = newNode v
+	      val _ = Graph.addEdge (G, {from = root, to = node})
+	   in
+	      node
+	   end
 	val {get = varInfo: Var.t -> VarInfo.t, 
 	     set = setVarInfo, ...} =
 	  Property.getSetOnce
 	  (Var.plist,
 	   Property.initFun (VarInfo.new o newRootedNode))
-
 	(* Initialize *)
 	val _ = 
 	  Vector.foreach
 	  (blocks, fn Block.T {label, args, ...} =>
 	   (setLabelArgs (label, args);
-	    Vector.foreach(args, fn (v, _) =>
-			   setVarInfo (v, VarInfo.new (newNode v)))))
-
+	    Vector.foreach (args, fn (v, _) =>
+			    setVarInfo (v, VarInfo.new (newNode v)))))
 	(* Flow Transfer.Goto arguments. *)
 	fun flowVarVar (v, v') = 
-	  let
-	    val vi = varInfo v
-	    val node = VarInfo.node vi
-	    val vi' = varInfo v'
-	    val node' = VarInfo.node vi'
-	    val _ = if Node.hasEdge {from = node, to = node'}
-		      then ()
-		      else (ignore o Graph.addEdge) (G, {from = node, to = node'})
-	  in
-	    ()
-	  end
+	   let
+	      val vi = varInfo v
+	      val node = VarInfo.node vi
+	      val vi' = varInfo v'
+	      val node' = VarInfo.node vi'
+	      val _ = Graph.addEdge (G, {from = node, to = node'})
+	   in
+	      ()
+	   end
 	fun flowVarVarTy (v, (v', _)) = flowVarVar (v, v')
 	fun flowVarsVarTys (vs, vts') = Vector.foreach2 (vs, vts', flowVarVarTy)
 	fun flowVarsLabelArgs (vs, l) = flowVarsVarTys (vs, labelArgs l)
-	  
 	(* Visit in unknown contexts. *)
 	fun visitVar v = 
-	  let
-	    val vi = varInfo v
-	    val node = VarInfo.node vi
-	    val _ = if Node.hasEdge {from = root, to = node}
-		      then ()
-		      else (ignore o Graph.addEdge) (G, {from = root, to = node})
-	  in
-	    ()
-	  end
+	   let
+	      val vi = varInfo v
+	      val node = VarInfo.node vi
+	      val _ = Graph.addEdge (G, {from = root, to = node})
+	   in
+	      ()
+	   end
 	fun visitVarTy (v, _) = visitVar v
 	fun visitArgs args = Vector.foreach (args, visitVarTy)
 	fun visitLabelArgs l = visitArgs (labelArgs l)
-
 	(* Analyze *)
 	val _ = 
 	  Vector.foreach
@@ -584,16 +576,13 @@ fun eliminate (Program.T {datatypes, globals, functions, main}) =
 	    | Return _ => ()
 	    | Runtime {return, ...} => 
 		   (visitLabelArgs return)))
-	  
+	val () = Graph.removeDuplicateEdges G
 	(* Compute dominators. *)
 	fun computeDominators () = 
 	  let val {idom} = Graph.dominators (G, {root = root})
 	  in idom 
 	  end
-	val computeDominators = 
-	  Control.trace (Control.Detail, "computeDominators") computeDominators
 	val idom = computeDominators ()
-
 	fun getVar v =
 	  let
 	    val vi = varInfo v
