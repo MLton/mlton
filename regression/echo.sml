@@ -1,5 +1,5 @@
-(* -*- mode: sml -*-
- * $Id: echo.sml,v 1.6 2003/02/09 17:01:11 sweeks Exp $
+ (* -*- mode: sml -*-
+ * $Id: echo.sml,v 1.7 2003/02/09 17:20:00 sweeks Exp $
  * http://www.bagley.org/~doug/shootout/
  * from Tom 7
  *)
