@@ -51,6 +51,11 @@ signature CONTROL =
       (* List of optimization passes to skip. *)
       val dropPasses: Regexp.Compiled.t list ref
 
+      (* stop after elaboration.  So, no need for the elaborator to generate
+       * valid CoreML.
+       *)
+      val elaborateOnly: bool ref
+
       (* whether optimization passes should eliminate useless overflow tests *)
       val eliminateOverflow: bool ref
 

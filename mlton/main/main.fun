@@ -760,8 +760,9 @@ fun commandLine (args: string list): unit =
 			val _ =
 			   case stop of
 			      Place.TypeCheck =>
-				 trace (Top, "Type Check SML")
-				 Compile.elaborate {input = files}
+				 (elaborateOnly := not (!warnNonExhaustive)
+				  ; (trace (Top, "Type Check SML")
+				     Compile.elaborate {input = files}))
 			    | _ => 
 				 trace (Top, "Compile SML")
 				 Compile.compile

@@ -1811,14 +1811,18 @@ fun functorClosure
       val generative = !newTycons
       val _ = newTycons := []
       val _ = useFunctorSummary := false
-      val restore = snapshot E
+      val elabOnly = !Control.elaborateOnly
+      val restore =
+	 if elabOnly
+	    then fn f => f ()
+	 else snapshot E
       fun apply (arg, nest, region) =
 	 let
 	    val (actual, decs) =
 	       cut (E, arg, argInt,
 		    {isFunctor = true, opaque = false, prefix = ""}, region)
 	 in
-	    if !useFunctorSummary
+	    if !useFunctorSummary orelse elabOnly
 	       then
 		  let
 		     val {destroy = destroy1,

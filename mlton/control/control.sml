@@ -85,6 +85,11 @@ val dropPasses =
 	               (Layout.toString o
 			Regexp.Compiled.layout)}
 
+val elaborateOnly =
+   control {name = "elaborate only",
+	    default = false,
+	    toString = Bool.toString}
+
 val eliminateOverflow =
    control {name = "eliminate overflow",
 	    default = true,
