@@ -67,32 +67,42 @@ structure OS_Path : OS_PATH = struct
 	      vol = v}
      end
 
-  fun getVolume p = #2 (splitabsvolrest p);
-  fun validVolume {isAbs = _, vol} = validVol vol;
+  fun toArcOpt s =
+     case fromString s of
+	{arcs = [a], isAbs = false, vol = ""} => SOME a
+      | _ => NONE
 
-  fun toString {isAbs, vol, arcs} =
-      let fun h []        res = res
-	    | h (a :: ar) res = h ar (a :: slash :: res)
-      in
-	  if validVolume {isAbs = isAbs, vol = vol}
-	     then
-		if isAbs
-		   then
-		      (case arcs of
-			  [] => vol ^ volslash
-			| a1 :: arest =>
-			     String.concat
-			     (List.rev (h arest [a1, volslash, vol])))
-		else
-		   case arcs of
-		      [] => vol
-		    | a1 :: arest =>
-			 if a1 = ""
-			    then raise Path
-			 else String.concat (vol :: List.rev (h arest [a1]))
-	  else
-	      raise Path
-      end;
+  fun isArc s = s = "" orelse isSome (toArcOpt s)
+
+  fun getVolume p = #2 (splitabsvolrest p)
+
+  fun validVolume {isAbs = _, vol} = validVol vol
+
+  fun toString {arcs, isAbs, vol} =
+     if not (validVolume {isAbs = isAbs, vol = vol})
+	then raise Path
+     else if List.exists (not o isArc) arcs
+	then raise InvalidArc
+     else
+	let
+	   fun h ([], res) = res
+	     | h (a :: ar, res) = h (ar, a :: slash :: res)
+	in
+	   if isAbs
+	      then
+		 (case arcs of
+		     [] => vol ^ volslash
+		   | a1 :: arest =>
+			String.concat
+			(List.rev (h (arest, [a1, volslash, vol]))))
+	   else
+	      case arcs of
+		 [] => vol
+	       | a1 :: arest =>
+		    if a1 = ""
+		       then raise Path
+		    else String.concat (vol :: List.rev (h (arest, [a1])))
+      end
 
   fun concat (p1, p2) =
       let fun stripslash path =
@@ -191,13 +201,6 @@ structure OS_Path : OS_PATH = struct
       else mkCanonical(concat(p2, p1));
 
   fun isCanonical p = mkCanonical p = p;
-
-  fun toArcOpt s =
-     case fromString s of
-	{arcs = [a], isAbs = false, vol = ""} => SOME a
-      | _ => NONE
-
-  fun isArc s = s = "" orelse isSome (toArcOpt s)
 	
   fun joinDirFile {dir, file} =
      if isArc file then concat (dir, file) else raise InvalidArc
