@@ -310,6 +310,8 @@ structure Atomic =
       datatype t =
 	 Name of string * Regexp.Compiled.t
        | Thresh of real
+       | ThreshGC of real
+       | ThreshStack of real
 
       val toSexp: t -> Sexp.t =
 	 fn a =>
@@ -319,6 +321,9 @@ structure Atomic =
 	    case a of
 	       Name (s, _) => String s
 	     | Thresh x => List [Atom "thresh", Atom (Real.toString x)]
+	     | ThreshGC x => List [Atom "thresh-gc", Atom (Real.toString x)]
+	     | ThreshStack x =>
+		  List [Atom "thresh-stack", Atom (Real.toString x)]
 	 end
    end
 
@@ -386,6 +391,14 @@ structure NodePred =
 					   case ss of
 					      [s] => f (parse s)
 					    | _ => err ()
+					fun thresh f =
+					   case ss of
+					      [Sexp.Atom x] =>
+						 (case Real.fromString x of
+						     NONE => err ()
+						   | SOME x => Atomic (f x))
+					    | _ => err ()
+					datatype z = datatype Atomic.t
 				     in
 					case s of
 					   Sexp.Atom s =>
@@ -396,14 +409,10 @@ structure NodePred =
 						| "or" => nAry Or
 						| "pred" => unary Pred
 						| "succ" => unary Succ
-						| "thresh" =>
-						     (case ss of
-							 [Sexp.Atom x] =>
-							    (case Real.fromString x of
-								NONE => err ()
-							      | SOME x =>
-								   Atomic (Atomic.Thresh x))
-						       | _ => err ())
+						| "thresh" => thresh Thresh
+						| "thresh-gc" => thresh ThreshGC
+						| "thresh-stack" =>
+						     thresh ThreshStack
 						| "to" => unary PathTo
 						| _ => err ())
 					 | _ => err ()
@@ -562,7 +571,7 @@ fun display (AFile.T {callGraph, name = aname, sources, ...},
 	 Vector.mapi
 	 (v, fn (i, x) =>
 	  let
-	     val {per, row, sortPer} = f x
+	     val {per, perGC, perStack, row, sortPer} = f x
 	     val showInTable =
 		per > 0.0
 		andalso (per >= thresh
@@ -582,6 +591,8 @@ fun display (AFile.T {callGraph, name = aname, sources, ...},
 			      NONE => false
 			    | SOME _ => true)
 		     | Thresh x => per >= x
+		     | ThreshGC x => perGC >= x
+		     | ThreshStack x => perStack >= x
 		 end)
 	     val _ = 
 		List.push
@@ -605,23 +616,25 @@ fun display (AFile.T {callGraph, name = aname, sources, ...},
 		     let
 			val (p, r) = per z
 		     in
-			{per = p, row = r, sortPer = p}
+			{per = p, perGC = 0.0, perStack = 0.0,
+			 row = r, sortPer = p}
 		     end)
 	  | Counts.Empty =>
 	       let
 		  val (p, r) = per IntInf.zero
 	       in
 		  doit (Vector.new (Vector.length sources, ()),
-			fn () => {per = p, row = r, sortPer = p})
+			fn () => {per = p, perGC = 0.0, perStack = 0.0,
+				  row = r, sortPer = p})
 	       end
 	  | Counts.Stack v =>
 	       doit (v, fn {current, stack, stackGC} =>
 		     let
 			val (cp, cr) = per current
 			val (sp, sr) = per stack
-			val (_, gr) = per stackGC
+			val (gp, gr) = per stackGC
 		     in
-			{per = sp,
+			{per = sp, perGC = gp, perStack = sp,
 			 row = List.concat [cr, sr, gr],
 			 sortPer = cp}
 		     end)
