@@ -76,9 +76,8 @@ structure Basis1997: BASIS_1997 =
 
       structure Pack32Big = PackWord32Big
       structure Pack32Little = PackWord32Little
-      local open Pack32Big Pack32Little in end (* quell unused warning *)
 
-      structure Text = TextConvert(structure Text = Text)
+      structure Text = TextConvert (structure Text = Text)
       structure Char = Text.Char
       structure String = Text.String
       structure Substring = Text.Substring
@@ -99,3 +98,76 @@ structure Basis1997: BASIS_1997 =
 
       structure Unix = UnixConvert (structure Unix = Unix)
    end
+
+
+(* quell unused warning *)
+local
+   open Basis1997
+   open Array
+      Array2
+      BinIO
+      Bool
+      BoolArray
+      BoolArray2
+      BoolVector
+      Byte
+      Char
+      CharArray
+      CharArray2
+      CharVector
+      CommandLine
+      Date
+      FixedInt
+      General
+      IEEEReal
+      IO
+      Int
+      Int32
+      Int32Array
+      Int32Array2
+      Int32Vector
+      IntArray
+      IntArray2
+      IntInf
+      IntVector
+      LargeInt
+      LargeReal
+      LargeWord
+      List
+      ListPair
+      Math
+      OS
+      Option
+      Pack32Big
+      Pack32Little
+      PackReal64Little
+      PackRealLittle
+      Position
+      Posix
+      Real
+      Real64
+      Real64Array
+      Real64Array2
+      Real64Vector
+      RealArray
+      RealArray2
+      RealVector
+      SML90
+      String
+      StringCvt
+      Substring
+      SysWord
+      TextIO
+      Time
+      Timer
+      Unix
+      Vector
+      Word
+      Word32
+      Word64
+      Word8
+      Word8Array
+      Word8Array2
+      Word8Vector
+in
+end
