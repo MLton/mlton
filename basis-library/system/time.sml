@@ -98,13 +98,13 @@ fun scan getc src =
 	| pow10 n = 10 * pow10 (n-1)
       fun mkTime sign intv fracv decs =
 	 let
-	    val usec = (pow10 (10-decs) * fracv + 5) div 10
+	    val nsec = (pow10 (10-decs) * fracv + 5) div 10
 	    val t =
-	       timeAdd (fromSeconds (Int.toLarge intv),
-			fromMicroseconds (Int.toLarge usec))
-	    val t = if sign then t else timeSub (zeroTime, t)
+	       LargeInt.+ (LargeInt.* (Int.toLarge intv, ticksPerSecond),
+			   Int.toLarge nsec)
+	    val t = if sign then t else LargeInt.~ t 
 	 in
-	    t
+	    T t
 	 end
       fun frac' sign intv fracv decs src =
 	 if Int.>= (decs, 7)
