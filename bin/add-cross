@@ -92,13 +92,9 @@ ssh $machine "cd $tmp/runtime && tar cf - *.a" |
 exe='print-constants'
 echo "Compiling and running print-constants on $machine."
 cd $original
-$src/build/bin/mlton -build-constants true |
+$src/build/bin/mlton -build-constants true | 
 	ssh $machine "cd $tmp/runtime &&
 			cat >$exe.c && 
-			gcc -I. -o $exe $exe.c libmlton.a && 
-			./$exe" \
-		>"$lib/$crossTarget/constants"
-
+			gcc -I. -o $exe $exe.c libmlton.a"
+ssh $machine "$tmp/runtime/$exe" >"$lib/$crossTarget/constants"
 ssh $machine "rm -rf $tmp"
-
-
