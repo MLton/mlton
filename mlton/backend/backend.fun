@@ -441,9 +441,15 @@ fun toMachine (program: Ssa.Program.t, codegen) =
 	     | GCState => M.Operand.GCState
 	     | Line => M.Operand.Line
 	     | Offset {base, offset, ty} =>
-		  M.Operand.Offset {base = translateOperand base,
-				    offset = offset,
-				    ty = ty}
+		  let
+		     val base = translateOperand base
+		  in
+		     if M.Operand.isLocation base
+			then M.Operand.Offset {base = base,
+					       offset = offset,
+					       ty = ty}
+		     else M.Operand.bogus ty
+		  end
 	     | PointerTycon pt =>
 		  M.Operand.Word
 		  (WordX.fromIntInf

@@ -93,8 +93,10 @@ signature MACHINE =
 	     | StackTop
 	     | Word of WordX.t
 
+	    val bogus: Type.t -> t
 	    val equals: t * t -> bool
 	    val interfere: t * t -> bool
+	    val isLocation: t -> bool
 	    val layout: t -> Layout.t
 	    val stackOffset: {offset: Bytes.t, ty: Type.t} -> t
 	    val toString: t -> string
