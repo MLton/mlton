@@ -13,6 +13,7 @@
 #include <string.h>
 #if (defined (__FreeBSD__))
 #include <sys/types.h>
+#include <sys/sysctl.h>
 #endif
 #include <sys/mman.h>
 #include <sys/resource.h>
@@ -2866,22 +2867,18 @@ get_total_swap()
 }
 
 /* returns total amount of memory available */
-static int 
-get_total_mem() 
+static int
+get_total_mem()
 {
-        static char buffer[256];
-        FILE *file;
+	int i, mem, len;
 
-        file = popen("/sbin/sysctl hw.physmem | awk '{ print $2; }'\n", "r");
-        if (file == NULL) 
-                diee ("sysctl failed");
+	len = sizeof(int);
+	i = sysctlbyname("hw.physmem", &mem, &len, NULL, 0);
 
+	if (i == -1)
+		diee("sysctl failed");
 
-        fgets(buffer, 255, file);
-
-        pclose(file);
-
-        return atoi(buffer);
+	return mem;
 }
 
 static void setMemInfo (GC_state s) {
