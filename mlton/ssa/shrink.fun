@@ -242,7 +242,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 	   | _ => ()
 	  end)
    in
-      fn (f: Function.t, mayDelete: bool) =>
+      fn f: Function.t =>
       let
 	 val _ = Function.clear f
 	 val {args, blocks, name, raises, returns, start, ...} =
@@ -1255,35 +1255,80 @@ fun shrinkFunction (globals: Statement.t vector) =
       end
    end
 
-val traceShrinkFunction =
-   Trace.trace2 ("Shrink.shrinkFunction",
-		 Func.layout o Function.name,
-		 Bool.layout,
-		 Func.layout o Function.name)
+structure Exp =
+   struct
+      open Exp
 
-val shrinkFunctionNoDelete =
-   fn f => traceShrinkFunction (shrinkFunction (Vector.new0 ())) (f, false)
+      val isProfile =
+	 fn Profile _ => true
+	  | _ => false
+   end
+
+structure Statement =
+   struct
+      open Statement
+
+      fun isProfile (T {exp, ...}) = Exp.isProfile exp
+   end
+
+fun eliminateUselessProfile (f: Function.t): Function.t =
+   if !Control.profile = Control.ProfileNone
+      then f
+   else
+      let
+	 fun eliminateInBlock (b as Block.T {args, label, statements, transfer})
+	    : Block.t =
+	    if not (Vector.exists (statements, Statement.isProfile))
+	       then b
+	    else
+	       let
+		  datatype z = datatype Exp.t
+		  datatype z = datatype ProfileExp.t
+		  val stack =
+		     Vector.fold
+		     (statements, [], fn (s as Statement.T {exp, ...}, stack) =>
+		      case exp of
+			 Profile (Leave si) =>
+			    (case stack of
+				Statement.T {exp = Profile (Enter si'), ...}
+				:: rest =>
+				   if SourceInfo.equals (si, si')
+				      then rest
+				   else Error.bug "mismatched Leave\n"
+			      | _ => s :: stack)
+		       | _ => s :: stack)
+		  val statements = Vector.fromListRev stack
+	       in
+		  Block.T {args = args,
+			   label = label,
+			   statements = statements,
+			   transfer = transfer}
+	       end
+	 val {args, blocks, name, raises, returns, start} = Function.dest f
+	 val blocks = Vector.map (blocks, eliminateInBlock)
+      in
+	 Function.new {args = args,
+		       blocks = blocks,
+		       name = name,
+		       raises = raises,
+		       returns = returns,
+		       start = start}
+      end
+
+val traceShrinkFunction =
+   Trace.trace ("Shrink.shrinkFunction",
+		Func.layout o Function.name,
+		Func.layout o Function.name)
 
 val shrinkFunction =
    fn g =>
    let
       val s = shrinkFunction g
    in
-      fn f =>
-      (traceShrinkFunction s (f, true)
-       handle e => (Error.bug (concat ["shrinker raised ",
-				       Layout.toString (Exn.layout e)])
-		    ; raise e))
-   end
-
-fun shrink (Program.T {datatypes, globals, functions, main}) =
-   let
-      val s = shrinkFunction globals
-   in
-      Program.T {datatypes = datatypes,
-		 globals = globals,
-		 functions = List.revMap (functions, s),
-		 main = main}
+      fn f => (traceShrinkFunction s (eliminateUselessProfile f)
+	       handle e => (Error.bug (concat ["shrinker raised ",
+					       Layout.toString (Exn.layout e)])
+			    ; raise e))
    end
 
 fun eliminateDeadBlocksFunction f =

@@ -20,6 +20,4 @@ signature SHRINK =
       val eliminateDeadBlocksFunction: Function.t -> Function.t
       val eliminateDeadBlocks: Program.t -> Program.t
       val shrinkFunction: Statement.t vector -> Function.t -> Function.t
-(*      val shrinkFunctionNoDelete: Function.t -> Function.t *)
-      val shrink: Program.t -> Program.t
    end
