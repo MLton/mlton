@@ -8,7 +8,6 @@ typedef long long Int64;
 typedef char *Pointer;
 typedef float Real32;
 typedef double Real64;
-typedef void Unit;
 typedef unsigned char Word8;
 typedef unsigned short Word16;
 typedef unsigned long Word32;

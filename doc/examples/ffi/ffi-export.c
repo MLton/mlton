@@ -16,3 +16,9 @@ Pointer g2 () {
 	fprintf (stderr, "g2 done\n");
 	return res;
 }
+
+void g3 () {
+	fprintf (stderr, "g3 starting\n");
+	f3 ();
+	fprintf (stderr, "g3 done\n");
+}

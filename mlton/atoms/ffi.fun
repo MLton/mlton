@@ -45,7 +45,7 @@ structure Type =
 val exports: {args: Type.t vector,
 	      id: int,
 	      name: string,
-	      res: Type.t} list ref = ref []
+	      res: Type.t option} list ref = ref []
 
 fun numExports () = List.length (!exports)
 
@@ -85,7 +85,7 @@ fun declareExports {print} =
 	     val map = Type.memo (fn _ => Counter.new 0)
 	  in
 	     Vector.foreach (args, fn t => bump (t, Counter.next (map t)))
-	     ; bump (res, 0)
+	     ; Option.app (res, fn t => bump (t, 0))
 	  end)
       (* Declare the arrays and functions used for parameter passing. *)
       val _ =
@@ -135,7 +135,9 @@ fun declareExports {print} =
 			  x, ";\n"])
 	      end)
 	  val header =
-	     concat [Type.toString res,
+	     concat [case res of
+			NONE => "void"
+		      | SOME t => Type.toString t,
 		     " ", name, " (",
 		     concat (List.separate (Vector.toListMap (args, #2), ", ")),
 		     ")"]
@@ -145,7 +147,11 @@ fun declareExports {print} =
 	  ; print (concat ["\tMLton_FFI_op = ", Int.toString id, ";\n"])
 	  ; Vector.foreach (args, fn (_, _, set) => print set)
 	  ; print ("\tMLton_callFromC ();\n")
-	  ; print (concat ["\treturn MLton_FFI_", Type.toString res, "[0];\n"])
+	  ; (case res of
+		NONE => ()
+	      | SOME t =>
+		   print (concat
+			  ["\treturn MLton_FFI_", Type.toString t, "[0];\n"]))
 	  ; print "}\n"
        end)
    end

@@ -28,7 +28,7 @@ signature FFI =
 
       val addExport: {args: Type.t vector,
 		      name: string,
-		      res: Type.t} -> int
+		      res: Type.t option} -> int
       val declareExports: {print: string -> unit} -> unit
       (* declareHeaders should be called after declareExports. *)
       val declareHeaders: {print: string -> unit} -> unit

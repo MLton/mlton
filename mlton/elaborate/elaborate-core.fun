@@ -362,15 +362,18 @@ structure Ffi =
 		| SOME (t, _) => SOME t
 	 end
 	 
-      fun parseCtype (ty: Ctype.t): (Type.t vector * Type.t) option =
+      fun parseCtype (ty: Ctype.t): (Type.t vector * Type.t option) option =
 	 case Ctype.dearrowOpt ty of
 	    NONE => NONE
 	  | SOME (t1, t2) =>
 	       let
 		  fun finish (ts: Type.t vector) =
 		     case Type.fromCtype t2 of
-			NONE => NONE
-		      | SOME t => SOME (ts, t)
+			NONE =>
+			   if Ctype.equals (t2, Ctype.unit)
+			      then SOME (ts, NONE)
+			   else NONE
+		      | SOME t => SOME (ts, SOME t)
 	       in
 		  case Ctype.detupleOpt t1 of 
 		     NONE =>
@@ -402,7 +405,7 @@ fun export (name: string, ty: Type.t, region: Region.t): Aexp.t =
 			 Type.layout ty]
 		 end,
 		 Layout.empty)
-		; (Vector.new0 (), 0, Ffi.Type.bogus))
+		; (Vector.new0 (), 0, NONE))
 	  | SOME (us, t) =>
 	       let
 		  val id = Ffi.addExport {args = us,
@@ -475,8 +478,11 @@ fun export (name: string, ty: Type.t, region: Region.t): Aexp.t =
 					Exp.tuple (Vector.map (args, Exp.var)))),
 		      (newVar (), Exp.app (id "atomicBegin", Exp.unit)),
 		      (newVar (),
-		       Exp.app (id (concat ["set", Ffi.Type.toString res]),
-				Exp.var resVar))),
+		       (case res of
+			   NONE => Exp.unit
+			 | SOME t => 
+			      Exp.app (id (concat ["set", Ffi.Type.toString t]),
+				       Exp.var resVar)))),
 		     fn (x, e) => Dec.vall (Vector.new0 (), x, e))],
 		   Exp.tuple (Vector.new0 ()))
 	       end)})))))})
