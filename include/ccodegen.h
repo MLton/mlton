@@ -264,11 +264,14 @@ int main (int argc, char **argv) {					\
 /*                      Runtime                      */
 /* ------------------------------------------------- */
 
-#define CheckPointer(p)							\
-	do {								\
-		assert (not GC_isPointer (p) or				\
-				(gcState.heap.oldGen <= p 	        \
-					and p < gcState.heap.oldGen + gcState.heap.size)); \
+#define CheckPointer(p)						\
+	do {							\
+		assert (not GC_isPointer (p)			\
+			or (gcState.heap.start <= p 		\
+				and p < gcState.heap.start 	\
+					+ gcState.oldGenSize)	\
+			or (gcState.nursery <= p 		\
+				and p < frontier));		\
 	} while (0)
 
 #define FlushFrontier()				\

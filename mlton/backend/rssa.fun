@@ -330,8 +330,8 @@ structure Transfer =
 	     | Goto {dst, args} =>
 		  seq [Label.layout dst, str " ",
 		       Vector.layout Operand.layout args]
-	     | Raise xs => seq [str "Raise ", Vector.layout Operand.layout xs]
-	     | Return xs => seq [str "Return ", Vector.layout Operand.layout xs]
+	     | Raise xs => seq [str "raise ", Vector.layout Operand.layout xs]
+	     | Return xs => seq [str "return ", Vector.layout Operand.layout xs]
 	     | Switch s => Switch.layout s
 	 end
 
@@ -573,12 +573,21 @@ structure Function =
       fun hasPrim (T {blocks, ...}, pred) =
 	 Vector.exists (blocks, fn b => Block.hasPrim (b, pred))
 
-      fun layoutHeader (T {args, name, start, ...}): Layout.t =
+      fun layoutHeader (T {args, name, raises, returns, start, ...}): Layout.t =
 	 let
 	    open Layout
 	 in
 	    seq [str "fun ", Func.layout name,
 		 str " ", layoutFormals args,
+		 if !Control.showTypes
+		    then seq [str ": ",
+			      record [("raises",
+				       Option.layout
+				       (Vector.layout Type.layout) raises),
+				      ("returns",
+				       Option.layout
+				       (Vector.layout Type.layout) returns)]]
+		 else empty,
 		 str " = ", Label.layout start, str " ()"]
 	 end
 
@@ -966,7 +975,85 @@ structure Program =
 			    | _ => false)
 	       end
 	    fun labelIsNullaryJump l = goto {dst = l, args = Vector.new0 ()}
-	    fun checkFunction (Function.T {args, blocks, raises, returns, start,
+	    fun callIsOk {args, func, raises, return, returns} =
+	       let
+		  val Function.T {args = formals,
+				  raises = raises',
+				  returns = returns', ...} =
+		     funcInfo func
+	       in
+		  Vector.equals (args, formals, fn (z, (_, t)) =>
+				 Type.equals (t, Operand.ty z))
+		  andalso
+		  (case return of
+		      Return.Dead =>
+			 Option.isNone raises'
+			 andalso Option.isNone returns'
+		    | Return.HandleOnly =>
+			 Option.isNone returns'
+			 andalso
+			 (case (raises, raises') of
+			     (_, NONE) => true
+			   | (SOME ts, SOME ts') =>
+				Vector.equals (ts, ts', Type.equals)
+			   | _ => false)
+		    | Return.NonTail {cont, handler = h} =>
+			 let
+			    val Block.T {args = contArgs, kind = contKind, ...} =
+			       labelBlock cont
+			 in
+			    (case returns' of
+				NONE => true
+			      | SOME ts' =>
+				   Vector.equals
+				   (contArgs, ts', fn ((_, t), t') =>
+				    Type.equals (t, t')))
+		            andalso
+			    (case contKind of
+				Kind.Cont {handler = h'} =>
+				   (case (h, h') of
+				       (Handler.CallerHandler, NONE) =>
+					  true
+				     | (Handler.None, NONE) =>
+					  true
+				     | (Handler.Handle l, SOME l') =>
+					  Label.equals (l, l')
+					  andalso
+					  let
+					     val Block.T {args = hArgs,
+							  kind = hKind,
+							  ...} =
+						labelBlock l
+					  in
+					     (case hKind of
+						 Kind.Handler => true
+					       | _ => false)
+				             andalso
+					     (case raises' of
+						 NONE => true
+					       | SOME ts =>
+						    Vector.equals
+						    (ts, hArgs,
+						     fn (t, (_, t')) =>
+						     Type.equals (t, t')))
+					  end
+				     | _ => false)
+			      | _ => false)
+			 end
+		    | Return.Tail =>
+			 (case (returns, returns') of
+			     (_, NONE) => true
+			   | (SOME ts, SOME ts') =>
+				Vector.equals (ts, ts', Type.equals)
+			   | _ => false)
+			 andalso
+			 (case (raises, raises') of
+			     (_, NONE) => true
+			   | (SOME ts, SOME ts') =>
+				Vector.equals (ts, ts', Type.equals)
+			   | _ => false))
+	       end
+      fun checkFunction (Function.T {args, blocks, raises, returns, start,
 					   ...}) =
 	       let
 		  val _ = Vector.foreach (args, setVarType)
@@ -1014,26 +1101,12 @@ structure Program =
 			 | Call {args, func, return} =>
 			      let
 				 val _ = checkOperands args
-				 val Function.T {args = formals, ...} = funcInfo func
 			      in
-				 Vector.equals (args, formals, fn (z, (_, t)) =>
-						Type.equals (t, Operand.ty z))
-				 andalso
-				 (case return of
-				     Return.Dead => true
-				   | Return.HandleOnly => true
-				   | Return.NonTail {cont, handler = h} =>
-					(case labelKind cont of
-					    Kind.Cont {handler = h'} =>
-					       (case (h, h') of
-						   (Handler.CallerHandler, NONE) =>
-						      true
-						 | (Handler.None, NONE) => true
-						 | (Handler.Handle l, SOME l') =>
-						      Label.equals (l, l')
-						 | _ => false)
-					  | _ => false)
-				   | Return.Tail => true)
+				 callIsOk {args = args,
+					   func = func,
+					   raises = raises,
+					   return = return,
+					   returns = returns}
 			      end
 			 | Goto {args, dst} =>
 			      (checkOperands args
@@ -1056,7 +1129,8 @@ structure Program =
 					(zs, ts, fn (z, t) =>
 					 Type.equals (t, Operand.ty z))))
 			 | Switch s =>
-			      Switch.isOk (s, {labelIsOk = labelIsNullaryJump})
+			      Switch.isOk (s, {checkUse = checkOperand,
+					       labelIsOk = labelIsNullaryJump})
 		     end
 		  fun blockOk (Block.T {args, kind, label, 
 					statements, transfer, ...}): bool =

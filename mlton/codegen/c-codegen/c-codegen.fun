@@ -46,7 +46,7 @@ structure Kind =
 	 case k of
 	    Cont _ => true
 	  | CReturn {func = CFunction.T {mayGC, ...}, ...} => mayGC
-	  | Func _ => true
+	  | Func => true
 	  | Handler _ => true
 	  | _ => false
    end
@@ -441,7 +441,7 @@ fun output {program as Machine.Program.T {chunks,
 			    C.call ("SetSlotExnStack", [C.int offset], print)
 			    ))
 	 end
-      fun outputChunk (chunk as Chunk.T {chunkLabel, blocks, regs, ...}) =
+      fun outputChunk (chunk as Chunk.T {chunkLabel, blocks, regMax, ...}) =
 	 let
 	    fun labelFrameSize (l: Label.t): int =
 	       FrameInfo.size (valOf (labelFrameInfo l))
@@ -474,7 +474,7 @@ fun output {program as Machine.Program.T {chunks,
 		     | Call {label, ...} => jump label
 		     | Goto dst => jump dst
 		     | Raise => ()
-		     | Return _ => ()
+		     | Return => ()
 		     | Switch s => Switch.foreachLabel (s, jump)
 		 end)
 	    fun push (return: Label.t, size: int) =
@@ -571,8 +571,8 @@ fun output {program as Machine.Program.T {chunks,
 				       ["\t", operandToString x, " = ",
 					creturn (Type.toRuntime (Operand.ty x)),
 					";\n"]))))
-		      | Kind.Func _ => ()
-		      | Kind.Handler {offset} => C.push (~offset, print)
+		      | Kind.Func => ()
+		      | Kind.Handler {offset, ...} => C.push (~offset, print)
 		      | Kind.Jump => ()
 		  val _ =
 		     if 0 = !Control.Native.commented
@@ -730,7 +730,7 @@ fun output {program as Machine.Program.T {chunks,
 			end
 		   | Goto dst => gotoLabel dst
 		   | Raise => C.call ("\tRaise", [], print)
-		   | Return _ => C.call ("\tReturn", [], print)
+		   | Return => C.call ("\tReturn", [], print)
 		   | Switch switch =>
 			let 
 			   fun bool (test: Operand.t, t, f) =
@@ -807,11 +807,14 @@ fun output {program as Machine.Program.T {chunks,
 			end
 	       end
 	    fun declareRegisters () =
-	       Vector.foreach
-	       (regs, fn r =>
-		C.call (concat ["D", Type.name (Register.ty r)],
-			[C.int (Register.index r)],
-			print))
+	       List.foreach
+	       (Runtime.Type.all, fn t =>
+		let
+		   val d = concat ["D", Runtime.Type.name t]
+		in
+		   Int.for (0, 1 + regMax t, fn i =>
+			    C.call (d, [C.int i], print))
+		end)
 	 in
 	    C.callNoSemi ("Chunk", [ChunkLabel.toString chunkLabel], print)
 	    ; print "\n"

@@ -45,13 +45,15 @@ fun isNone opt =
 fun toString xToString opt =
    case opt of
       NONE => "None"
-    | SOME x => concat ["Some (", xToString x, ")"]
+    | SOME x => concat ["Some ", xToString x]
 
 fun layout layoutX opt =
-   let open Layout
-   in case opt of
-      NONE => str "None"
-    | SOME x => seq [str "Some (", layoutX x, str ")"]
+   let
+      open Layout
+   in
+      case opt of
+	 NONE => str "None"
+       | SOME x => seq [str "Some ", layoutX x]
    end
 
 end

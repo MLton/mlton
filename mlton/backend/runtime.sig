@@ -35,6 +35,7 @@ signature RUNTIME =
 	     | StackLimit (* Must have StackTop <= StackLimit *)
 	     | StackTop (* Points at the next available word on the stack. *)
 
+	    val equals: t * t -> bool
 	    val layout: t -> Layout.t
 	    val offset: t -> int (* Field offset in struct GC_state. *)
 	    val setOffsets: {canHandle: int,

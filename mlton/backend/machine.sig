@@ -32,9 +32,10 @@ signature MACHINE =
 
 	    val equals: t * t -> bool
 	    val index: t -> int
+	    val indexOpt: t -> int option
 	    val layout: t -> Layout.t
-	    val new: Type.t -> t
-	    val plist: t -> PropertyList.t
+	    val new: Type.t * int option -> t
+(*	    val plist: t -> PropertyList.t *)
 	    val setIndex: t * int -> unit
 	    val toString: t -> string
 	    val ty: t -> Type.t
@@ -83,7 +84,7 @@ signature MACHINE =
 	     | Word of Word.t
 
 	    val equals: t * t -> bool
-	    val interfere: {write: t, read: t} -> bool
+	    val interfere: t * t -> bool
 	    val layout: t -> Layout.t
 	    val toString: t -> string
 	    val ty: t -> Type.t
@@ -161,7 +162,7 @@ signature MACHINE =
 				 size: int} option}
 	     | Goto of Label.t (* label must be a Jump *)
 	     | Raise
-	     | Return of {live: Operand.t vector}
+	     | Return
 	     | Switch of Switch.t
 
 	    val foldOperands: t * 'a * (Operand.t * 'a -> 'a) -> 'a
@@ -176,8 +177,9 @@ signature MACHINE =
 	     | CReturn of {dst: Operand.t option,
 			   frameInfo: FrameInfo.t option,
 			   func: CFunction.t}
-	     | Func of {args: Operand.t vector}
-	     | Handler of {offset: int}
+	     | Func
+	     | Handler of {handles: Operand.t vector,
+			   offset: int}
 	     | Jump
 
 	    val frameInfoOpt: t -> FrameInfo.t option
@@ -188,10 +190,12 @@ signature MACHINE =
 	    datatype t =
 	       T of {kind: Kind.t,
 		     label: Label.t,
-		     (* Live registers and stack offsets at beginning of block. *)
+		     (* Live registers and stack offsets at start of block. *)
 		     live: Operand.t vector,
 		     profileInfo: {ssa: {func: string, label: string},
 				   rssa: {func: string, label: string}},
+		     raises: Operand.t vector option,
+		     returns: Operand.t vector option,
 		     statements: Statement.t vector,
 		     transfer: Transfer.t}
 
@@ -201,9 +205,14 @@ signature MACHINE =
 
       structure Chunk:
 	 sig
-	    datatype t = T of {blocks: Block.t vector,
-			       chunkLabel: ChunkLabel.t,
-			       regs: Register.t vector}
+	    datatype t =
+	       T of {blocks: Block.t vector,
+		     chunkLabel: ChunkLabel.t,
+		     (* Register.index r
+		      *    <= regMax (Type.toRuntime (Register.ty r))
+		      * for all registers in the chunk.
+		      *)
+		     regMax: Runtime.Type.t -> int}
 	 end
 
       structure Program:

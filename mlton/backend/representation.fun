@@ -222,8 +222,8 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	  Property.initRec
 	  (fn (t: S.Type.t, toRtype) =>
 	   let
-	      fun typesRep {isTagged: bool,
-			    kind: R.MemChunk.t -> R.ObjectType.t,
+	      fun typesRep {isNormal: bool,
+			    isTagged: bool,
 			    mutable: bool,
 			    pointerTycon: R.PointerTycon.t,
 			    ty: R.Type.t,
@@ -272,7 +272,9 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 			build (words, 4,
 			       build (doubleWords, 8, ([], initialOffset))))
 		    val offset =
-		       Runtime.Type.align (Runtime.Type.pointer, offset)
+		       if isNormal
+			  then Runtime.Type.align (Runtime.Type.pointer, offset)
+		       else offset
 		    val (components, size) = build (pointers, 4, (accum, offset))
 		    val size = if 0 = size then 4 else size
 		    val offsets =
@@ -303,27 +305,30 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 			(Array.fromList components,
 			 fn ({offset = i, ...}, {offset = i', ...}) =>
 			 i <= i'))
+		    val mc = R.MemChunk.T {components = components,
+					   size = size}
 		    val _ =
 		       List.push
 		       (objectTypes,
 			(pointerTycon,
-			 kind (R.MemChunk.T {components = components,
-					     size = size})))
+			 if isNormal
+			    then R.ObjectType.Normal mc
+			 else R.ObjectType.Array mc))
 		 in
 		    TupleRep.T {offsets = offsets,
 				size = size,
 				ty = ty,
 				tycon = pointerTycon}
 		 end
-	      fun pointer {fin, kind, mutable, tys}: R.Type.t =
+	      fun pointer {fin, isNormal, mutable, tys}: R.Type.t =
 		 let
 		    val pt = R.PointerTycon.new ()
 		    val ty = R.Type.pointer pt
 		    val _ =
 		       List.push
 		       (finish, fn () =>
-			fin (typesRep {isTagged = false,
-				       kind = kind,
+			fin (typesRep {isNormal = isNormal,
+				       isTagged = false,
 				       mutable = mutable,
 				       pointerTycon = pt,
 				       ty = ty,
@@ -346,8 +351,8 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 			(pointerTycons, haveArgs, fn (i, pt, {con, args}) =>
 			 let
 			    val rep =
-			       typesRep {isTagged = isTagged,
-					 kind = R.ObjectType.Normal,
+			       typesRep {isNormal = true,
+					 isTagged = isTagged,
 					 mutable = false,
 					 pointerTycon = pt,
 					 ty = ty,
@@ -408,7 +413,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 				    (pointer
 				     {fin = (fn r =>
 					     setConRep (con, ConRep.Tuple r)),
-				      kind = R.ObjectType.Normal,
+				      isNormal = true,
 				      mutable = false,
 				      tys = args})
 			    | _ =>
@@ -455,8 +460,8 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 					   (con,
 					    ConRep.Tuple
 					    (typesRep
-					     {isTagged = false,
-					      kind = R.ObjectType.Normal,
+					     {isNormal = true,
+					      isTagged = false,
 					      mutable = false,
 					      pointerTycon = pt,
 					      ty = ty,
@@ -494,18 +499,19 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		 let
 		    fun new () =
 		       pointer {fin = fn _ => (),  
-				kind = R.ObjectType.Array,
+				isNormal = false,
 				mutable = mutable,
 				tys = Vector.new1 ty}
 		    datatype z = datatype S.Type.dest
 		 in
-		    case S.Type.dest ty of
-		       Char => R.Type.string
-		     | Word => if mutable
-				  then new ()
-			       else R.Type.wordVector
-		     | Word8 => R.Type.string
-		     | _ => new ()
+		    if mutable
+		       then new ()
+		    else
+		       case S.Type.dest ty of
+			  Char => R.Type.string
+			| Word => R.Type.wordVector
+			| Word8 => R.Type.string
+			| _ => new ()
 		 end
 	      datatype z = datatype S.Type.dest
 	   in
@@ -520,7 +526,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	       | Real => SOME R.Type.real
 	       | Ref t =>
 		    SOME (pointer {fin = fn r => setRefRep (t, r),
-				   kind = R.ObjectType.Normal,
+				   isNormal = true,
 				   mutable = true,
 				   tys = Vector.new1 t})
 	       | Thread => SOME R.Type.thread
@@ -529,7 +535,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		       then NONE
 		    else
 		       SOME (pointer {fin = fn r => setTupleRep (t, r),
-				      kind = R.ObjectType.Normal,
+				      isNormal = true,
 				      mutable = false,
 				      tys = S.Type.detuple t})
 	       | Vector t => SOME (array {mutable = false, ty = t})

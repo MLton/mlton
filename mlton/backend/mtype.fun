@@ -21,7 +21,20 @@ datatype t = T of {dest: dest}
 
 fun dest (T {dest, ...}) = dest
 
+fun toString t =
+   case dest t of
+      Char => "uchar"
+    | Double => "double"
+    | Int => "int"
+    | Pointer => "pointer"
+    | Uint => "uint"
+
+val layout = Layout.str o toString
+
 fun equals (t, t') = dest t = dest t'
+
+val equals =
+   Trace.trace2 ("Runtime.Type.equals", layout, layout, Bool.layout) equals
 
 local
    fun new dest = T {dest = dest}
@@ -70,16 +83,6 @@ fun name t =
     | Int => "I"
     | Pointer => "P"
     | Uint => "U"
-
-fun toString t =
-   case dest t of
-      Char => "uchar"
-    | Double => "double"
-    | Int => "int"
-    | Pointer => "pointer"
-    | Uint => "uint"
-
-val layout = Layout.str o toString
 
 fun doubleWordAlign (i: int): int =
    let open Word

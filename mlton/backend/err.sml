@@ -22,15 +22,20 @@ structure Err =
 	 end
 
       exception E of t
+    
+      fun check' (name: string,
+		  ok: unit -> 'a option,
+		  layout: unit -> Layout.t): 'a =
+	 case ok () handle E e => raise E (T {inner = SOME e,
+					      name = name,
+					      obj = layout ()}) of
+	    NONE => raise E (T {inner = NONE,
+				name = name,
+				obj = layout ()})
+	  | SOME a => a
+	       
+      fun boolToUnitOpt b = if b then SOME () else NONE
 
-      fun check (name: string,
-		 ok: unit -> bool,
-		 layout: unit -> Layout.t): unit =
-	 if ok () handle E e => raise E (T {inner = SOME e,
-					    name = name,
-					    obj = layout ()})
-	    then ()
-	 else raise E (T {inner = NONE,
-			  name = name,
-			  obj = layout ()})
+      fun check (name, ok, layout) =
+	 check' (name, boolToUnitOpt o ok, layout)
    end

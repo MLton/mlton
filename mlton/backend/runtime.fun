@@ -29,6 +29,8 @@ structure GCField =
        | StackLimit
        | StackTop
 
+      val equals: t * t -> bool = op =
+	 
       val ty =
 	 fn CanHandle => Type.int
 	  | CardMap => Type.pointer

@@ -229,15 +229,14 @@ struct
 		     statements = [],
 		     transfer = NONE})
 		 end
-	      | Kind.Func {args}
+	      | Kind.Func
 	      => let
 		   val args
-		     = Vector.fold
-		       (args,
+		     = List.fold
+		       (live label,
 			x86.MemLocSet.empty,
 			fn (operand, args)
-			 => case x86.Operand.deMemloc
-			         (Operand.toX86Operand operand)
+			 => case x86.Operand.deMemloc operand
 			      of SOME memloc => x86.MemLocSet.add(args, memloc)
 			       | NONE => args)
 		 in
@@ -273,7 +272,7 @@ struct
 		     statements = [],
 		     transfer = NONE})
 		 end
-	      | Kind.Handler {offset}
+	      | Kind.Handler {offset, ...}
 	      => let
 		 in 
 		   AppendList.single
@@ -741,7 +740,7 @@ struct
 	    else AppendList.empty
 
 	 
-      fun toX86Blocks {transfer, transInfo as {...} : transInfo}
+      fun toX86Blocks {returns, transfer, transInfo as {...} : transInfo}
 	= (case transfer
 	     of Arith {prim, args, dst, overflow, success, ty}
 	      => let
@@ -774,7 +773,7 @@ struct
 				    return = return,
 				    transInfo = transInfo})
 		 end
-	      | Return {live}
+	      | Return
 	      => AppendList.append
 	         (comments transfer,
 		  AppendList.single
@@ -786,7 +785,9 @@ struct
 		    = SOME (x86.Transfer.return 
 			    {live 
 			     = Vector.fold
-			       (live,
+			       ((case returns of
+				    NONE => Error.bug "strange Return"
+				  | SOME zs => zs),
 				x86.MemLocSet.empty,
 				fn (operand, live)
 				 => case x86.Operand.deMemloc
@@ -866,53 +867,35 @@ struct
 		     statements = [],
 		     transfer = SOME (x86.Transfer.goto {target = label})})))
 	      | Call {label, live, return, ...}
-	      => (case return
-		    of SOME {return, handler, size}
-		     => AppendList.append
-		        (comments transfer,
-			 AppendList.single
-			 (x86.Block.T'
-			  {entry = NONE,
-			   profileInfo = x86.ProfileInfo.none,
-			   statements = [],
-			   transfer 
-			   = SOME (x86.Transfer.nontail 
-				   {target = label,
-				    live 
-				    = Vector.fold
-				      (live,
-				       x86.MemLocSet.empty,
-				       fn (operand,live)
-				        => case x86.Operand.deMemloc
-				                (Operand.toX86Operand operand)
-					     of SOME memloc 
-					      => x86.MemLocSet.add(live, memloc)
-					      | NONE => live),
-				    return = return,
-				    handler = handler,
-				    size = size})}))
-		     | NONE
-	             => AppendList.append
-			(comments transfer,
-			 AppendList.single
-			 ((* goto label *)
-			  x86.Block.T'
-			  {entry = NONE,
-			   profileInfo = x86.ProfileInfo.none,
-			   statements = [],
-			   transfer 
-			   = SOME (x86.Transfer.tail 
-				   {target = label,
-				    live 
-				    = Vector.fold
-				      (live,
-				       x86.MemLocSet.empty,
-				       fn (operand,live)
-				        => case x86.Operand.deMemloc
-				                (Operand.toX86Operand operand)
-					     of SOME memloc 
-					      => x86.MemLocSet.add(live, memloc)
-					      | NONE => live)})}))))
+	      =>
+		 let
+		    val live =
+		       Vector.fold
+		       (live, x86.MemLocSet.empty, fn (operand, live) =>
+			case (x86.Operand.deMemloc
+			      (Operand.toX86Operand operand)) of
+			   NONE => live
+			 | SOME memloc => x86.MemLocSet.add (live, memloc))
+		    val com = comments transfer
+		    val transfer =
+		       case return of
+			  NONE => x86.Transfer.tail {target = label,
+						     live = live}
+			| SOME {return, handler, size} =>
+			     x86.Transfer.nontail {target = label,
+						   live = live,
+						   return = return,
+						   handler = handler,
+						   size = size}
+		 in
+		    AppendList.append
+		    (com,
+		     AppendList.single
+		     (x86.Block.T' {entry = NONE,
+				    profileInfo = x86.ProfileInfo.none,
+				    statements = [],
+				    transfer = SOME transfer}))
+		 end)
 	  handle exn
 	   => Error.reraise (exn, "x86Translate.Transfer.toX86Blocks")
     end
@@ -927,6 +910,8 @@ struct
 				   profileInfo as 
 				   {ssa as {func = funcProfileInfo,
 					    label = labelProfileInfo}, ...},
+				   raises,
+				   returns,
 				   statements, 
 				   transfer,
 				   ...},
@@ -955,7 +940,8 @@ struct
 		       else [],
 		    transfer = NONE}),
 		 Vector.foldr(statements,
-			      (Transfer.toX86Blocks {transfer = transfer,
+			      (Transfer.toX86Blocks {returns = returns,
+						     transfer = transfer,
 						     transInfo = transInfo}),
 			      fn (statement,l)
 			       => AppendList.append

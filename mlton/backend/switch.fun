@@ -97,77 +97,84 @@ fun layout s =
 
 val allChars = Vector.tabulate (Char.numChars, Char.fromInt)
 
-fun isOk (s, {labelIsOk}): bool =
+fun isOk (s, {checkUse, labelIsOk}): bool =
    case s of
       Char {cases, default, test}  =>
-	 (Type.equals (Use.ty test, Type.char)
-	  andalso (case default of
-		      NONE => true
-		    | SOME l => labelIsOk l)
-	  andalso Vector.forall (cases, labelIsOk o #2)
-	  andalso Vector.isSorted (cases, fn ((c, _), (c', _)) => c <= c')
-	  andalso exhaustiveAndIrredundant {all = allChars,
-					    cases = Vector.map (cases, #1),
-					    default = default,
-					    equals = op =})
+	 (checkUse test
+	  ; (Type.equals (Use.ty test, Type.char)
+	     andalso (case default of
+			 NONE => true
+		       | SOME l => labelIsOk l)
+	     andalso Vector.forall (cases, labelIsOk o #2)
+	     andalso Vector.isSorted (cases, fn ((c, _), (c', _)) => c <= c')
+	     andalso exhaustiveAndIrredundant {all = allChars,
+					       cases = Vector.map (cases, #1),
+					       default = default,
+					       equals = op =}))
     | EnumPointers {enum, pointers, test, ...} =>
-	 labelIsOk enum
-	 andalso labelIsOk pointers
-	 andalso (case Use.ty test of
-		     Type.EnumPointers _ => true
-		   | _ => false)
+	 (checkUse test
+	  ; (labelIsOk enum
+	     andalso labelIsOk pointers
+	     andalso (case Use.ty test of
+			 Type.EnumPointers _ => true
+		       | _ => false)))
     | Int {cases, default, test} =>
-	 (case default of
-	     NONE => true
-	   | SOME l => labelIsOk l)
-	 andalso Vector.forall (cases, labelIsOk o #2)
-	 andalso Vector.isSorted (cases, fn ((i, _), (i', _)) => i <= i')
-	 andalso
-	 (case Use.ty test of
-	     Type.Int =>
-		Option.isSome default
-		andalso not (isRedundant
-			     {cases = cases,
-			      equals = fn ((i, _), (i', _)) => i = i'})
-	   | Type.EnumPointers {enum, pointers} =>
-		0 = Vector.length pointers
-		andalso
-		exhaustiveAndIrredundant
-		{all = enum,
-		 cases = Vector.map (cases, #1),
-		 default = default,
-		 equals = op =}
-	   | _ => false)
+	 (checkUse test
+	  ; ((case default of
+		 NONE => true
+	       | SOME l => labelIsOk l)
+	     andalso Vector.forall (cases, labelIsOk o #2)
+	     andalso Vector.isSorted (cases, fn ((i, _), (i', _)) => i <= i')
+	     andalso
+	     (case Use.ty test of
+		 Type.Int =>
+		    Option.isSome default
+		    andalso not (isRedundant
+				 {cases = cases,
+				  equals = fn ((i, _), (i', _)) => i = i'})
+	       | Type.EnumPointers {enum, pointers} =>
+		    0 = Vector.length pointers
+		    andalso
+		    exhaustiveAndIrredundant
+		    {all = enum,
+		     cases = Vector.map (cases, #1),
+		     default = default,
+		     equals = op =}
+	       | _ => false)))
     | Pointer {cases, default, tag, test} =>
-	 (Type.equals (Use.ty tag, Type.int)
-	  andalso (case default of
-		      NONE => true
-		    | SOME l => labelIsOk l)
-	  andalso Vector.forall (cases, labelIsOk o #dst)
-	  andalso Vector.isSorted (cases,
-				   fn ({tycon = t, ...}, {tycon = t', ...}) =>
-				   PointerTycon.index t <= PointerTycon.index t')
-	  andalso
-	  case Use.ty test of
-	     Type.EnumPointers {enum, pointers} =>
-		0 = Vector.length enum
-		andalso 
-		exhaustiveAndIrredundant {all = pointers,
-					  cases = Vector.map (cases, #tycon),
-					  default = default,
-					  equals = PointerTycon.equals}
-	   | _ => false)
+	  (checkUse tag
+	   ; checkUse test
+	   ; (Type.equals (Use.ty tag, Type.int)
+	      andalso (case default of
+			  NONE => true
+			| SOME l => labelIsOk l)
+	      andalso Vector.forall (cases, labelIsOk o #dst)
+	      andalso (Vector.isSorted
+		       (cases,
+			fn ({tycon = t, ...}, {tycon = t', ...}) =>
+			PointerTycon.index t <= PointerTycon.index t'))
+	      andalso
+	      case Use.ty test of
+		 Type.EnumPointers {enum, pointers} =>
+		    0 = Vector.length enum
+		    andalso 
+		    exhaustiveAndIrredundant {all = pointers,
+					      cases = Vector.map (cases, #tycon),
+					      default = default,
+					      equals = PointerTycon.equals}
+	       | _ => false))
     | Word {cases, default, test} =>
-	 Type.equals (Use.ty test, Type.word)
-	 andalso (case default of
-		     NONE => false
-		   | SOME l => labelIsOk l)
-	 andalso Vector.forall (cases, labelIsOk o #2)
-	 andalso Vector.isSorted (cases, fn ((w, _), (w', _)) => w <= w')
-	 andalso
-	 not (isRedundant
-	      {cases = cases,
-	       equals = fn ((w, _), (w', _)) => w = w'})
+	 (checkUse test
+	  ; (Type.equals (Use.ty test, Type.word)
+	     andalso (case default of
+			 NONE => false
+		       | SOME l => labelIsOk l)
+	     andalso Vector.forall (cases, labelIsOk o #2)
+	     andalso Vector.isSorted (cases, fn ((w, _), (w', _)) => w <= w')
+	     andalso
+	     not (isRedundant
+		  {cases = cases,
+		   equals = fn ((w, _), (w', _)) => w = w'})))
 
 fun foldLabelUse (s: t, a: 'a, {label, use}): 'a =
    let

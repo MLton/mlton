@@ -33,7 +33,7 @@ fun ('register, 'statement) move {moves, equals, move, interfere, temp}
 			       List.fold
 			       (hard', ([], moves),
 				fn (mv as {src = s, dst = d}, (hard, moves)) =>
-				if interfere {write = dst, read = s}
+				if interfere (dst, s)
 				   then let val temp = temp s
 					in ({src = temp, dst = d} :: hard,
 					    move {dst = temp, src = s}
@@ -47,7 +47,7 @@ fun ('register, 'statement) move {moves, equals, move, interfere, temp}
 	       let
 		  fun isHard l =
 		     List.exists (l, fn {src, dst = _} =>
-				 interfere {write = dst, read = src})
+				 interfere (dst, src))
 	       in if isHard mvs orelse isHard hard
 		     then loop (mvs, mv :: hard, moves, changed)
 		  else loop (mvs, hard,

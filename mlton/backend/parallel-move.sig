@@ -25,7 +25,7 @@ signature PARALLEL_MOVE =
 	  (* The moves to occur. *)
 	  moves: {src: 'register, dst: 'register} list,
 	  (* Would writing the write invalidate the read? *)
-	  interfere: {read: 'register, write: 'register} -> bool,
+	  interfere: 'register * 'register -> bool,
 	  (* Return a new temporary register like input register. *)
 	  temp: 'register -> 'register
 	 } -> 'statement list

@@ -267,27 +267,19 @@ struct
 		 end
 	      fun declareLocals () =
 		 let
-		    val tyMax = Runtime.Type.memo (fn _ => ref 0)
-		    val _ =
-		       List.foreach
-		       (chunks, fn Machine.Chunk.T {regs, ...} =>
-			Vector.foreach
-			(regs, fn r =>
-			 let
-			    val m = tyMax (Machine.Type.toRuntime
-					   (Machine.Register.ty r))
-			    val n = Machine.Register.index r
-			    val _ = if n > !m then m := n else ()
-			 in
-			    ()
-			 end))
+		    val tyMax =
+		       Runtime.Type.memo
+		       (fn t =>
+			List.fold
+			(chunks, ~1, fn (Machine.Chunk.T {regMax, ...}, max) =>
+			 Int.max (max, regMax t)))
 		 in
 		    print
 		    (concat ["Locals",
 			     Layout.toString
 			     (Layout.tuple (List.map
 					    (Runtime.Type.all, fn t =>
-					     Int.layout (! (tyMax t))))),
+					     Int.layout (1 + tyMax t)))),
 			     ";\n"])
 		 end
 	      fun rest () =

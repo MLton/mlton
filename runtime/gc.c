@@ -1039,7 +1039,7 @@ static bool invariant (GC_state s) {
 	assert (s->stackTop == stackTop (stack));
  	assert (s->stackLimit == stackLimit (s, stack));
 	assert (stack->used == currentStackUsed (s));
-	assert (stack->used < stack->reserved);
+	assert (stack->used <= stack->reserved);
  	assert (s->stackBottom <= s->stackTop);
 	if (DEBUG)
 		fprintf (stderr, "invariant passed\n");

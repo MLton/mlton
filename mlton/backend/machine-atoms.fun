@@ -206,6 +206,10 @@ structure Type =
 	 val size = size
       end
 
+      val equals =
+	 Trace.trace2 ("Machine.Type.equals", layout, layout, Bool.layout)
+	 equals
+
       val toString = Layout.toString o layout
 
       val bool = EnumPointers {enum = Vector.new2 (0, 1),
@@ -342,7 +346,7 @@ structure ObjectType =
 	 
       val stack = Stack
       val string =
-	 Array (MemChunk.T {components = Vector.new1 {mutable = true,
+	 Array (MemChunk.T {components = Vector.new1 {mutable = false,
 						      offset = 0,
 						      ty = Type.char},
 			    size = 1})
@@ -453,6 +457,8 @@ fun castIsOk {from: Type.t,
 	      andalso 0 = Vector.length e'))
       datatype z = datatype Type.t
    in
+      not (Type.equals (from, to))
+      andalso
       case from of
 	 CPointer =>
 	    (case to of

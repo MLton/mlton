@@ -43,7 +43,7 @@ signature SWITCH =
 		     default: Label.t option,
 		     tag: Use.t, (* of type int *)
 		     test: Use.t}
-       | Word of {(* Cases are in increasing order of tycon *)
+       | Word of {(* Cases are in increasing order of word. *)
 		  cases: (word * Label.t) vector,
 		  default: Label.t option,
 		  test: Use.t}
@@ -51,7 +51,8 @@ signature SWITCH =
       val foldLabelUse: t * 'a * {label: Label.t * 'a -> 'a,
 				  use: Use.t * 'a -> 'a} -> 'a
       val foreachLabel: t * (Label.t -> unit) -> unit
-      val isOk: t * {labelIsOk: Label.t -> bool} -> bool
+      val isOk: t * {checkUse: Use.t -> unit,
+		     labelIsOk: Label.t -> bool} -> bool
       val layout: t -> Layout.t
    end
 

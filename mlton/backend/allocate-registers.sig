@@ -12,6 +12,7 @@ signature ALLOCATE_REGISTERS_STRUCTS =
    sig
       structure Rssa: RSSA
       structure Machine: MACHINE
+      sharing Rssa.Runtime = Machine.Runtime
       sharing Rssa.Type = Machine.Type
    end
 

@@ -164,17 +164,91 @@ structure Allocation:
        end
        structure Registers =
        struct
-	  datatype t = T
+	  (* A register allocation keeps track of the registers that have
+	   * already been allocated, for each runtime type.  The reason that
+	   * we associate them with runtime types rather than Rssa types is
+	   * that the register indices that the codegens use are based on
+	   * runtime types.
+	   *)
+	  datatype t = T of Runtime.Type.t -> {alloc: Register.t list,
+					       next: int}
 
-	  val empty = T
+	  val empty = T (Runtime.Type.memo (fn _ => {alloc = [],
+						     next = 0}))
 
-	  fun layout T = Layout.str "<registers>"
+	  fun layout (T f) =
+	     List.layout
+	     (fn t =>
+	      let
+		 val {alloc, next} = f t
+	      in
+		 Layout.record [("ty", Runtime.Type.layout t),
+				("next", Int.layout next),
+				("alloc", List.layout Register.layout alloc)]
+	      end)
+	     Runtime.Type.all
 
-	  fun new _ = T
+	  fun compress {next, alloc} =
+	     let
+		fun loop (next, alloc) =
+		   let
+		      fun done () = {alloc = alloc,
+				     next = next}
+		   in
+		      case alloc of
+			 [] => done ()
+		       | r :: alloc =>
+			    if next = Register.index r
+			       then loop (next + 1, alloc)
+			    else done ()
+		   end
+	     in
+		loop (next, alloc)
+	     end
+	     
+	  fun new (rs: Register.t list): t =
+	     let
+		fun sameType (r, r') =
+		   Runtime.Type.equals
+		   (Type.toRuntime (Register.ty r),
+		    Type.toRuntime (Register.ty r'))
+	        val rss = List.equivalence (rs, sameType)
+	     in
+		T (Runtime.Type.memo
+		   (fn t =>
+		    case List.peek (rss, fn rs =>
+				    case rs of
+				       [] => false
+				     | r :: _ => 
+					  Runtime.Type.equals
+					  (t, Type.toRuntime (Register.ty r))) of
+		       NONE => {alloc = [], next = 0}
+		     | SOME rs =>
+			  compress
+			  {next = 0,
+			   alloc =
+			   Array.toList
+			   (QuickSort.sortArray
+			    (Array.fromList rs, fn (r, r') =>
+			     Register.index r <= Register.index r'))}))
+	     end
 
-	  fun get (rs, ty) = (rs, Register.new ty)
+	  fun get (T f, ty: Type.t) =
+	     let
+		val t = Type.toRuntime ty
+		val {alloc, next} = f t
+		val r = Register.new (ty, SOME next)
+		val new = compress {alloc = alloc,
+				    next = next + 1}
+	     in
+		(T (Runtime.Type.memo
+		    (fn t' => if Runtime.Type.equals (t, t')
+				 then new
+			      else f t')),
+		 r)
+	     end
        end
-       
+    
        datatype t = T of {registers: Registers.t,
 			  stack: Stack.t}
 
@@ -234,7 +308,7 @@ structure Info =
 (*                     allocate                      *)
 (* ------------------------------------------------- *)
 
-fun allocate {argOperands: Machine.Operand.t vector,
+fun allocate {argOperands,
 	      function = f: Rssa.Function.t,
 	      varInfo: Var.t -> {operand: Machine.Operand.t option ref option,
 				 ty: Type.t}} =
@@ -370,14 +444,14 @@ fun allocate {argOperands: Machine.Operand.t vector,
       (* Create the initial stack and set the stack slots for the formals. *)
       val stack =
 	 Allocation.Stack.new
-	 (Vector.foldr2 (args, argOperands, [],
-			 fn ((x, t), oper, ac) =>
-			 case oper of
-			    M.Operand.StackOffset {offset, ...} =>
-			       (valOf (#operand (varInfo x)) := SOME oper
-				; ({offset = offset, ty = t}
-				   :: ac))
-			  | _ => Error.bug "callReturnOperands"))
+	 (Vector.foldr2
+	  (args, argOperands, [],
+	   fn ((x, t), z, ac) =>
+	   case z of
+	      Operand.StackOffset {offset, ...} =>
+		 (valOf (#operand (varInfo x)) := SOME z
+		  ; {offset = offset, ty = t} :: ac)
+	    | _ => Error.bug "strange argOperand"))
       (* Allocate slots for the link and handler, if necessary. *)
       val (stack, handlerLinkOffset) =
 	 if !hasHandler

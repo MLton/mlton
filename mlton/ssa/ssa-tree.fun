@@ -724,9 +724,11 @@ structure Transfer =
 	     | Goto {dst, args} =>
 		  seq [Label.layout dst, str " ", layoutTuple args]
 	     | Raise xs => seq [str "raise ", layoutTuple xs]
-	     | Return xs => if 1 = Vector.length xs
-			       then Var.layout (Vector.sub (xs, 0))
-			    else layoutTuple xs
+	     | Return xs =>
+		  seq [str "return ",
+		       if 1 = Vector.length xs
+			  then Var.layout (Vector.sub (xs, 0))
+		       else layoutTuple xs]
 	     | Runtime {prim, args, return} =>
 		  seq [Label.layout return, str " ", 
 		       tuple [Prim.layoutApp (prim, args, Var.layout)]]
@@ -1578,12 +1580,12 @@ structure Function =
 		 layoutFormals args,
 		 if !Control.showTypes
 		    then seq [str ": ",
-			      Option.layout
-			      (Vector.layout Type.layout) returns,
-			      str " (",
-			      Option.layout
-			      (Vector.layout Type.layout) raises,
-			      str ")"]
+			      record [("raises",
+				       Option.layout
+				       (Vector.layout Type.layout) raises),
+				      ("returns",
+				       Option.layout
+				       (Vector.layout Type.layout) returns)]]
 		 else empty,
 		    str " = ", Label.layout start, str " ()"]
 	 end

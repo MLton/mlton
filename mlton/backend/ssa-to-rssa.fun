@@ -1293,18 +1293,27 @@ fun convert (p: S.Program.t): Rssa.Program.t =
       val main =
 	  let
 	     val start = Label.newNoname ()
+	     val bug = Label.newNoname ()
 	  in
 	     translateFunction
 	     (S.Function.new
 	      {args = Vector.new0 (),
-	       blocks = (Vector.new1
+	       blocks = (Vector.new2
 			 (S.Block.T
 			  {label = start,
 			   args = Vector.new0 (),
 			   statements = globals,
-			   transfer = S.Transfer.Call {func = main,
-						       args = Vector.new0 (),
-						       return = Return.Dead}})),
+			   transfer = (S.Transfer.Call
+				       {func = main,
+					args = Vector.new0 (),
+					return = (Return.NonTail
+						  {cont = bug,
+						   handler = S.Handler.None})})},
+			  S.Block.T
+			  {label = bug,
+			   args = Vector.new0 (),
+			   statements = Vector.new0 (),
+			   transfer = S.Transfer.Bug})),
 	       name = Func.newNoname (),
 	       raises = NONE,
 	       returns = NONE,
