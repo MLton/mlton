@@ -1,9 +1,11 @@
 *.call-graph.dot
 *.ssa
+html
 lexgen.aux
 lexgen.dvi
 lexgen.log
 lexgen.toc
 mllex
+mllex.pdf
 mllex.ps
 mllex.sml

@@ -28,11 +28,11 @@ src/yacc.grm.sig src/yacc.grm.sml: src/yacc.grm
 		mlyacc src/yacc.grm && \
 		chmod -w src/yacc.grm.*
 
-doc/mlyacc.dvi:
-	cd doc && latex mlyacc.tex && latex mlyacc.tex && latex mlyacc.tex
+doc/mlyacc.ps:
+	$(MAKE) -C doc mlyacc.ps
 
-mlyacc.ps: doc/mlyacc.dvi
-	dvips -o mlyacc.ps doc/mlyacc.dvi
+mlyacc.ps: doc/mlyacc.ps
+	cp doc/mlyacc.ps .
 
 .PHONY: clean
 clean:

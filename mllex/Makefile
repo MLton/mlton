@@ -18,8 +18,19 @@ $(NAME): $(NAME).mlb $(shell PATH=$(BIN):$$PATH && $(MLTON) -stop f $(NAME).mlb)
 $(NAME).sml: $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)
 	mlton -stop sml $(NAME).cm
 
+html/index.html: $(TEX_FILES)
+	mkdir -p html
+	hevea -fix -o html/mllex.html -exec xxdate.exe macros.hva lexgen.tex
+	cd html && hacha mllex.html && rm -f mllex.html
+
 lexgen.dvi: lexgen.tex
-	latex lexgen.tex; latex lexgen.tex
+	latex lexgen.tex
+	latex lexgen.tex
+
+mllex.pdf: lexgen.tex
+	latex lexgen.tex
+	pdflatex lexgen.tex
+	mv lexgen.pdf mllex.pdf
 
 mllex.ps: lexgen.dvi
 	dvips -o mllex.ps lexgen.dvi
