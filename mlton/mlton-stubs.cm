@@ -24,6 +24,7 @@ upgrade-basis.sml
 ../lib/mlton-stubs/profile.sig
 ../lib/mlton-stubs/process.sig
 ../lib/mlton-stubs/proc-env.sig
+../lib/mlton-stubs/pointer.sig
 ../lib/mlton-stubs/platform.sig
 ../lib/mlton-stubs/itimer.sig
 ../lib/mlton-stubs/int-inf.sig
