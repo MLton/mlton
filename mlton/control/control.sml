@@ -219,7 +219,7 @@ val libDir = control {name = "lib dir",
 		      default = "<libDir unset>",
 		      toString = fn s => s}
 
-val libTargetDir = control {name = "lib dir",
+val libTargetDir = control {name = "lib target dir",
 			    default = "<libTargetDir unset>",
 			    toString = fn s => s} 
    
