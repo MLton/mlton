@@ -279,20 +279,25 @@ Like the C {\tt setenv} function.
 \end{description}
 
 \subsubsection{\tt MLton.Process}
-This structure provides an alternative to the {\tt fork}/{\tt exec} idiom that
-is typically used on Linux to create a new process.  On Linux, the {\tt spawn}
-functions are simple wrappers around {\tt fork}/{\tt exec}.  However, on Cygwin,
-the {\tt spawn} functions are primitive and are both faster and more reliable
-than {\tt fork}/{\tt exec}.
 
 \begin{verbatim}
 signature MLTON_PROCESS =
    sig
-      val spawn: {path: string, args: string list} -> unit
-      val spawne: {path: string, args: string list, env: string list} -> unit
-      val spawnp: {file: string, args: string list} -> unit
+      type pid = Posix.Process.pid
+
+      val spawn: {path: string, args: string list} -> pid
+      val spawne: {path: string, args: string list, env: string list} -> pid
+      val spawnp: {file: string, args: string list} -> pid
    end
 \end{verbatim}
+
+The {\tt spawn} functions provide an alternative to the {\tt fork}/{\tt exec}
+idiom that is typically used on Linux to create a new process.  On Linux, the
+{\tt spawn} functions are simple wrappers around {\tt fork}/{\tt exec}.
+However, on Cygwin, the {\tt spawn} functions are primitive and are both faster
+and more reliable than {\tt fork}/{\tt exec}.  All {\tt spawn} functions return
+the process id of the spawned process.  They differ in how the executable is
+found and the environment that it uses.
 
 \begin{description}
 \entry{spawn \{path, args\}}
