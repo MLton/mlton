@@ -14,7 +14,8 @@ structure Error = PosixError
 
 type t = signal
    
-local open Prim
+local
+   open Prim
 in
    val prof = prof
    val vtalrm = vtalrm
@@ -64,38 +65,40 @@ structure Handler =
 	 Default
        | Handler of unit MLtonThread.t -> unit MLtonThread.t
        | Ignore
+       | InvalidSignal
    end
 
 datatype handler = datatype Handler.t
 
-(* Signal 0 is invalid, so we pretend it is default *)
 local
    val r = ref false
 in
-   fun defaultOrIgnore s =
-      if 0 = s
-	 orelse (PosixError.checkResult (Prim.isDefault (s, r))
-		 ; !r)
-	 then Default
-      else Ignore
+   fun initHandler s =
+      if 0 = Prim.isDefault (s, r)
+	 then if !r
+		 then Default
+	      else Ignore
+      else InvalidSignal
 end
-    
+
+fun raiseInval () =
+   let
+      open PosixError
+   in
+      raiseSys inval
+   end
+
 val (get, set, handlers) =
    let
-      val handlers = Array.tabulate (Prim.numSignals, defaultOrIgnore)
+      val handlers = Array.tabulate (Prim.numSignals, initHandler)
       val _ =
 	 Cleaner.addNew
 	 (Cleaner.atLoadWorld, fn () =>
-	  Array.modifyi (defaultOrIgnore o #1) handlers)
+	  Array.modifyi (initHandler o #1) handlers)
    in
       (fn s => Array.sub (handlers, s),
        fn (s, h) => if Primitive.MLton.Profile.isOn andalso s = prof
-		       then
-			  let
-			     open PosixError
-			  in
-			     raiseSys inval
-			  end
+		       then raiseInval ()
 		    else Array.update (handlers, s, h),
        handlers)
    end
@@ -105,12 +108,14 @@ val getHandler = get
 fun ignore s =
    case get s of
       Ignore => ()
+    | InvalidSignal => raiseInval ()
     | _ => (set (s, Ignore)
 	    ; checkResult (Prim.ignore s))
 
 fun handleDefault s =
    case getHandler s of
       Default => ()
+    | InvalidSignal => raiseInval ()
     | _ => (set (s, Default)
 	    ; checkResult (Prim.default s))
 
@@ -160,6 +165,7 @@ fun handleWithSafe (s, h) =
    in
       case old of
 	 Handler _ => ()
+       | InvalidSignal => raiseInval ()
        | _ => checkResult (Prim.handlee s)
    end
 
@@ -172,6 +178,7 @@ fun setHandler (s, h) =
       Default => handleDefault s
     | Handler f => handleWithSafe (s, Handler f)
     | Ignore => ignore s
+    | InvalidSignal => raiseInval ()
 
 fun suspend m =
    (Mask.create m
