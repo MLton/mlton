@@ -46,20 +46,21 @@ cvs -Q release src
 find src -type d | grep CVS | xargs rm -rf
 find src -type f | grep cvsignore | xargs rm -f
 
+function doInst() {
+	sed "s/\(.*\)VERSION\(.*\)/\1$version\2/" <$1 >z
+	mv z $1
+}
+	
 function instantiate() {
 	echo 'Instantiating version numbers'
-	for f in web/index.html \
-			user-guide/macros.tex \
-	 		ANNOUNCE \
-	 		CHANGES \
- 			README \
-	 		../mlton/control/control.sml; do
-		sed "s/\(.*\)VERSION\(.*\)/\1$version\2/" <$f >z
-		mv z $f
+	for f in web/index.html user-guide/macros.tex
+	 		ANNOUNCE CHANGES README; do
+		doInst $f
 	done
 }
 cd $src/doc
 instantiate
+doInst ../mlton/control/control.sml
 sed "/^Version:/s;.*;Version: $date;" <mlton.spec >z
 sed "/^Release:/s;.*;Release: $release;" <z >$rpms/SPECS/mlton.spec
 sed "s/\(.*\)VERSION\(.*\)/\1$version\2/" <../mlton/control/control.sml >z
@@ -92,6 +93,7 @@ if [ $home = 'yes' ]; then
 	cvs -Q release doc
 	cd $root/doc
 	instantiate
+	cd web
 	make
 	cp -p $rpms/RPMS/i386/$version-$release.i386.rpm \
 		$rpms/SRPMS/$version-$release.src.rpm .
