@@ -41,7 +41,6 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 					   raiser = ref NONE,
 					   gotoers = ref NONE}))
 
-
       fun eliminateFunction f
 	= let
 	    val {args, blocks, mayRaise, name, returns, start, ...} =
@@ -112,7 +111,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 		      end
 
 	    val blocks 
-	      = Vector.toListMap
+	      = Vector.map
 	        (blocks,
 		 fn Block.T {label, args, statements, transfer}
 		  => let
@@ -144,20 +143,20 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 				statements = statements,
 				transfer = transfer}
 		     end)
-	    val blocks = Vector.fromList ((!newBlocks) @ blocks)
+	    val blocks = Vector.concat [Vector.fromList (!newBlocks), blocks]
 	  in
-	     shrink (Function.new {name = name,
-				   start = start,
-				   args = args,
-				   mayRaise = mayRaise,
-				   blocks = blocks,
-				   returns = returns})
+	    shrink (Function.new {name = name,
+				  start = start,
+				  args = args,
+				  mayRaise = mayRaise,
+				  blocks = blocks,
+				  returns = returns})
 	  end
 
       val program 
 	= Program.T {datatypes = datatypes,
 		     globals = globals,
-		     functions = List.map(functions, eliminateFunction),
+		     functions = List.revMap (functions, eliminateFunction),
 		     main = main}
       val _ = Program.clear program
     in
