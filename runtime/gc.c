@@ -2968,7 +2968,7 @@ static inline void leaveGC (GC_state s) {
  */
 #if SUPPORTS_WEAK
 void MLton_Rusage_ru () __attribute__ ((weak));
-#elif
+#else
 void MLton_Rusage_ru ();
 #endif
 static inline bool needGCTime (GC_state s) {
