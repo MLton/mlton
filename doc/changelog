@@ -1,5 +1,8 @@
 Here are the changes since version 20030711.
 
+Summary:
+  + Fixed several serious bugs with the 20030711 release.
+
 * 2003-07-15
   - Fixed bug that caused a segfault when attempting to create an
     array that was too large, e.g
