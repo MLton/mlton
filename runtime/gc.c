@@ -380,7 +380,7 @@ static void *mmapAnon (void *start, size_t length) {
 	/* On Solaris 5.7, MAP_ANON causes EINVAL and mmap requires a file 
 	 * descriptor. 
 	 */ 
-	flags &= ^MAP_ANON;
+	flags &= ~MAP_ANON;
 	if (-1 == fd)
 		fd = open ("/dev/zero", O_RDONLY);
 #endif
