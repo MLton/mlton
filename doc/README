@@ -27,7 +27,7 @@ send mail to the MLton developers, use MLton@mlton.org.
 doc directory contents:
 	README			this file
 	changelog		changelog
-	cmcat.sml		a utility for producing whole programs in SML/NJ
+	cmcat/			a utility for producing whole programs in SML/NJ
 	examples/		example SML programs
 	license/		license information
 	mllex.ps.gz		user guide for mllex lexer generator
