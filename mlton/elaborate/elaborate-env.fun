@@ -129,6 +129,21 @@ structure Uses:
 	 !forceUsed orelse hasUse u
    end
 
+structure Class =
+   struct
+      datatype t = Con | Exn | Fix | Fct | Sig | Str | Typ | Var
+
+      val toString =
+	 fn Con => "constructor"
+	  | Exn => "exception"
+	  | Fix => "fixity"
+	  | Fct => "functor"
+	  | Sig => "signature"
+	  | Str => "structure"
+	  | Typ => "type"
+	  | Var => "variable"
+   end
+
 structure Vid =
    struct
       datatype t =
@@ -176,6 +191,12 @@ structure Vid =
 	  | Exn c => SOME c
 	  | _ => NONE
 	  
+      val class =
+	 fn Con _ => Class.Con
+	  | Exn _ => Class.Exn
+	  | Overload _ => Class.Var
+	  | Var _ => Class.Var
+
       fun output (r, out) = Layout.output (layout r, out)
    end
 
@@ -968,10 +989,10 @@ structure Values =
 structure NameSpace =
    struct
       datatype ('a, 'b) t =
-	 T of {class: string,
+	 T of {class: 'b -> Class.t,
 	       current: ('a, 'b) Values.t list ref,
-	       defUses: {def: 'a,
-			 time: Time.t,
+	       defUses: {class: Class.t,
+			 def: 'a,
 			 uses: 'a Uses.t} list ref,
 	       lookup: 'a -> ('a, 'b) Values.t,
 	       region: 'a -> Region.t,
@@ -987,11 +1008,11 @@ structure NameSpace =
 	    region = region,
 	    toSymbol = toSymbol}
 
-      fun newUses (T {defUses, ...}, def, time) =
+      fun newUses (T {defUses, ...}, class, def) =
 	 let
 	    val u = Uses.new ()
-	    val _ = List.push (defUses, {def = def,
-					 time = time,
+	    val _ = List.push (defUses, {class = class,
+					 def = def,
 					 uses = u})
 	 in
 	    u
@@ -1087,7 +1108,7 @@ fun empty () =
       val {get = maybeAddTop: Symbol.t -> unit, ...} =
 	 Property.get (Symbol.plist,
 		       Property.initFun (fn s => List.push (topSymbols, s)))
-      fun ('a, 'b) make (class: string,
+      fun ('a, 'b) make (class: 'b -> Class.t,
 			 region: 'a -> Region.t,
 			 toSymbol: 'a -> Symbol.t,
 			 extract: All.t -> ('a, 'b) Values.t option,
@@ -1114,17 +1135,17 @@ fun empty () =
 			   region = region,
 			   toSymbol = toSymbol}
 	 end
-      val fcts = make ("functor", Fctid.region, Fctid.toSymbol,
+      val fcts = make (fn _ => Class.Fct, Fctid.region, Fctid.toSymbol,
 		       All.fctOpt, All.Fct)
-      val fixs = make ("fixity", Ast.Vid.region, Ast.Vid.toSymbol,
+      val fixs = make (fn _ => Class.Fix, Ast.Vid.region, Ast.Vid.toSymbol,
 		       All.fixOpt, All.Fix)
-      val sigs = make ("signature", Sigid.region, Sigid.toSymbol,
+      val sigs = make (fn _ => Class.Sig, Sigid.region, Sigid.toSymbol,
 		       All.sigOpt, All.Sig)
-      val strs = make ("structure", Strid.region, Strid.toSymbol,
+      val strs = make (fn _ => Class.Str, Strid.region, Strid.toSymbol,
 		       All.strOpt, All.Str)
-      val types = make ("type", Ast.Tycon.region, Ast.Tycon.toSymbol,
+      val types = make (fn _ => Class.Typ, Ast.Tycon.region, Ast.Tycon.toSymbol,
 			All.tycOpt, All.Tyc)
-      val vals = make ("variable", Ast.Vid.region, Ast.Vid.toSymbol,
+      val vals = make (Vid.class o #1, Ast.Vid.region, Ast.Vid.toSymbol,
 		       All.valOpt, All.Val)
    in
       T {currentScope = ref (Scope.new {isTop = true}),
@@ -1466,17 +1487,17 @@ fun forceUsed (E as T f) =
 fun processDefUse (E as T f) =
    let
       val _ = forceUsed E
-      val all: {class: string,
+      val all: {class: Class.t,
 		def: Layout.t,
 		isUsed: bool,
 		region: Region.t,
 		uses: Region.t list} list ref = ref []
       fun doit sel =
 	 let
-	    val NameSpace.T {class, defUses, region, toSymbol, ...} = sel f
+	    val NameSpace.T {defUses, region, toSymbol, ...} = sel f
 	 in
 	    List.foreach
-	    (!defUses, fn {def, uses, ...} =>
+	    (!defUses, fn {class, def, uses, ...} =>
 	     List.push
 	     (all, {class = class,
 		    def = Symbol.layout (toSymbol def),
@@ -1521,7 +1542,8 @@ fun processDefUse (E as T f) =
 		in
 		   Control.warning
 		   (region,
-		    seq [str (concat ["unused ", class, ": "]), def],
+		    seq [str (concat ["unused ", Class.toString class, ": "]),
+			 def],
 		    empty)
 		end)
       val _ =
@@ -1531,7 +1553,7 @@ fun processDefUse (E as T f) =
 	       File.withOut
 	       (f, fn out =>
 		List.foreach
-		(l, fn {def, region, uses, ...} =>
+		(l, fn {class, def, region, uses, ...} =>
 		 case Region.left region of
 		    NONE => ()
 		  | SOME p =>
@@ -1550,8 +1572,11 @@ fun processDefUse (E as T f) =
 			  open Layout
 		       in
 			  outputl
-			  (align [seq [str (concat [SourcePos.toString p, " "]),
-				       def],
+			  (align [seq [str (Class.toString class),
+				       str " ",
+				       def,
+				       str " ",
+				       str (SourcePos.toString p)],
 				  indent
 				  (align
 				   (List.map
@@ -1574,9 +1599,8 @@ fun newCons (T {vals, ...}, v) =
       val v =
 	 Vector.map (v, fn {con, name} =>
 		     let
-			val uses =
-			   NameSpace.newUses (vals, Ast.Vid.fromCon name,
-					      Time.now ())
+			val uses = NameSpace.newUses (vals, Class.Con,
+						      Ast.Vid.fromCon name)
 			val _ = if forceUsed then Uses.forceUsed uses else ()
 		     in
 			{con = con,
@@ -1783,12 +1807,12 @@ val extend:
 			       time: Time.t,
 			       uses: 'a ExtendUses.t} -> unit =
    fn (T {maybeAddTop, ...},
-       ns as NameSpace.T {current, defUses, lookup, toSymbol, ...},
+       ns as NameSpace.T {class, current, defUses, lookup, toSymbol, ...},
        {domain, forceUsed, range, scope, time, uses}) =>
    let
       fun newUses () =
 	 let
-	    val u = NameSpace.newUses (ns, domain, time)
+	    val u = NameSpace.newUses (ns, class range, domain)
 	    val _ = if forceUsed then Uses.forceUsed u else ()
 	 in
 	    u
@@ -1843,6 +1867,7 @@ val extend:
 local
    val extend =
       fn (E as T (fields as {currentScope, ...}), get,
+	  class: Class.t,
 	  domain: 'a,
 	  range: 'b,
 	  forceUsed: bool,
@@ -1858,11 +1883,15 @@ local
 			 uses = uses})
       end
 in
-   fun extendFctid (E, d, r) = extend (E, #fcts, d, r, false, ExtendUses.New)
-   fun extendFix (E, d, r) = extend (E, #fixs, d, r, false, ExtendUses.New)
-   fun extendSigid (E, d, r) = extend (E, #sigs, d, r, false, ExtendUses.New)
-   fun extendStrid (E, d, r) = extend (E, #strs, d, r, false, ExtendUses.New)
-   fun extendVals (E, d, r, eu) = extend (E, #vals, d, r, false, eu)
+   fun extendFctid (E, d, r) =
+      extend (E, #fcts, Class.Fct, d, r, false, ExtendUses.New)
+   fun extendFix (E, d, r) =
+      extend (E, #fixs, Class.Fix, d, r, false, ExtendUses.New)
+   fun extendSigid (E, d, r) =
+      extend (E, #sigs, Class.Sig, d, r, false, ExtendUses.New)
+   fun extendStrid (E, d, r) =
+      extend (E, #strs, Class.Str, d, r, false, ExtendUses.New)
+   fun extendVals (E, c, d, r, eu) = extend (E, #vals, c, d, r, false, eu)
    fun extendTycon (E, d, s, ir) =
       let
 	 val forceTyconUsed =
@@ -1876,7 +1905,7 @@ in
 			val _ = 
 			   Vector.foreach
 			   (v, fn {con, name, scheme, uses} => 
-			    extendVals (E, Ast.Vid.fromCon name,
+			    extendVals (E, Class.Con, Ast.Vid.fromCon name,
 					(Vid.Con con, scheme),
 					ExtendUses.Old uses))
 		     in
@@ -1885,7 +1914,7 @@ in
 		| Scheme _ => false
 		| Tycon _ => true
 	    end
-	 val _ = extend (E, #types, d, s, forceTyconUsed,
+	 val _ = extend (E, #types, Class.Typ, d, s, forceTyconUsed,
 			 ExtendUses.fromIsRebind ir)
       in
 	 ()
@@ -1893,10 +1922,10 @@ in
 end
        
 fun extendExn (E, c, c', s) =
-   extendVals (E, Ast.Vid.fromCon c, (Vid.Exn c', s), ExtendUses.New)
+   extendVals (E, Class.Exn, Ast.Vid.fromCon c, (Vid.Exn c', s), ExtendUses.New)
 	       
 fun extendVar (E, x, x', s, ir) =
-   extendVals (E, Ast.Vid.fromVar x, (Vid.Var x', s),
+   extendVals (E, Class.Var, Ast.Vid.fromVar x, (Vid.Var x', s),
 	       ExtendUses.fromIsRebind ir)
 
 val extendVar =
@@ -1908,7 +1937,8 @@ val extendVar =
    extendVar
 
 fun extendOverload (E, p, x, yts, s) =
-   extendVals (E, Ast.Vid.fromVar x, (Vid.Overload (p, yts), s), ExtendUses.New)
+   extendVals (E, Class.Var, Ast.Vid.fromVar x, (Vid.Overload (p, yts), s),
+	       ExtendUses.New)
 
 (* ------------------------------------------------- *)   
 (*                       local                       *)
@@ -3079,7 +3109,7 @@ fun makeInterfaceEnv (env as T {currentScope, ...}): InterfaceEnv.t =
 				 vals = Values.new ()}))
       fun make (sel, class, region, toSymbol: 'a -> Symbol.t)
 	 : ('a, 'b) NameSpace.t =
-	 NameSpace.new {class = class,
+	 NameSpace.new {class = fn _ => class,
 			lookup = sel o lookupAll o toSymbol,
 			region = region,
 			toSymbol = toSymbol}
@@ -3087,9 +3117,9 @@ fun makeInterfaceEnv (env as T {currentScope, ...}): InterfaceEnv.t =
       InterfaceEnv.T
       {currentScope = currentScope,
        env = env,
-       strs = make (#strs, "structure", Strid.region, Strid.toSymbol),
-       types = make (#types, "type", Ast.Tycon.region, Ast.Tycon.toSymbol),
-       vals = make (#vals, "variable", Ast.Vid.region, Ast.Vid.toSymbol)}
+       strs = make (#strs, Class.Str, Strid.region, Strid.toSymbol),
+       types = make (#types, Class.Typ, Ast.Tycon.region, Ast.Tycon.toSymbol),
+       vals = make (#vals, Class.Var, Ast.Vid.region, Ast.Vid.toSymbol)}
    end
 
 val newTycon = fn (s, k, a) => newTycon (s, k, a, {newString = true})
