@@ -48,6 +48,11 @@ is performed on integer arithmetic.
 \newcommand{\falseTrue}{\choiceTwo{false}{true}}
 \newcommand{\trueFalse}{\choiceTwo{true}{false}}
 
+\option{-basis \choiceTwo{4}{8}}
+Aligns object sizes and doubles in memory by the specified alignment.
+On x86's, the default is {\tt 4} and on Sparc's the default is {\tt
+8}.
+
 \option{-basis \choices 2002\choice 2002-strict\choice 1997\choice none\choicesEnd}
 Selects a Basis Library to be used by the input program.  {\tt 2002}
 and {\tt 2002-strict} implement the 2002 Basis Library

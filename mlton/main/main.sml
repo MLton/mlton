@@ -83,11 +83,17 @@ fun setHostType (hostString: string, usage): unit =
    case List.peek (hostMap (), fn {host = h, ...} => h = hostString) of
       NONE => usage (concat ["invalid host ", hostString])
     | SOME {arch, os, ...} =>
-	 (Control.hostArch := arch
-	  ; Control.hostOS := os
-	  ; (case arch of
-		Control.Sparc => Control.Native.native := false
-	      | _ => ()))
+	 let
+	    open Control
+	 in
+	    hostArch := arch
+	    ; hostOS := os
+	    ; (case arch of
+		  Sparc =>
+		     (align := Align8
+		      ; Native.native := false)
+		| _ => ())
+	 end
    
 fun makeOptions {usage} = 
    let
@@ -98,7 +104,10 @@ fun makeOptions {usage} =
       List.map
       (
        [
-       (Expert, "align", " {4|8}",
+       (Normal, "align",
+	case !hostArch of
+	   Sparc => " {8|4}"
+	 | X86 => " {4|8}",
 	" object alignment",
 	(SpaceString (fn s =>
 		      align

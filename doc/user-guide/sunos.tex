@@ -1,5 +1,15 @@
 \subsec{Running on SunOS}{sunos}
 
+\begin{itemize}
+
+\item
+When running on Sparc's, {\mlton} uses {\tt -align 8} by default.
+While this speeds up reals, it also may increase object sizes.  If
+your program does not make significant use of reals, you might see a
+speedup with {\tt -align 4}.
+
+\end{itemize}
+
 Here are the known problems using {\mlton} on SunOS.
 
 \begin{itemize}
