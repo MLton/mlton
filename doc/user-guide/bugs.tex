@@ -13,9 +13,9 @@ This section lists the known unresolved bugs in MLton.
 \begin{itemize}
 
 \item
-Datatypes with free type variables are not accepted.  For example,
-the following program is rejected, although it is consistent with the
-Definition.
+{\mlton} rejects datatype declarations with type variables bound at
+an outer level.  For example, the following program is rejected,
+although it is consistent with the Definition.
 \begin{verbatim}
 fun 'a f (x : 'a) =
    let datatype foo = Foo of 'a * int
@@ -24,5 +24,31 @@ fun 'a f (x : 'a) =
 \end{verbatim}
 This may be an oversight in the Definition of SML, since unchecked use
 of this feature can lead to type unsoundness.
+
+\item
+In signatures, {\mlton} does not use {\tt where} clauses to simplify
+type definitions.  This may cause {\mlton} to reject certain
+redefinitions, as in the following example due to Martin Elsman.
+\begin{verbatim}
+signature T =	
+   sig
+      type s
+      structure U:
+	 sig
+	    type 'a t
+	    type u = (int * real) t
+	 end where type 'a t = s
+   end where type U.u = int;
+\end{verbatim}
+
+\item
+{\mlton} allows local type names to escape their scope, as in
+\begin{verbatim}
+let
+   datatype t = T
+in
+   T
+end
+\end{verbatim}
 
 \end{itemize}
