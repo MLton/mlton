@@ -129,8 +129,8 @@ void MLton_Profile_Data_write (Pointer data, Cstring name);
 void MLton_Profile_init (void);
 void MLton_Profile_installHandler (void);
 #if (defined (__CYGWIN__))
-Int MLton_Process_spawne(NullString p, Pointer a, Pointer e);
-Int MLton_Process_spawnp(NullString p, Pointer a);
+Int MLton_Process_spawne (NullString p, Pointer a, Pointer e);
+Int MLton_Process_spawnp (NullString p, Pointer a);
 #endif
 
 /* ------------------------------------------------- */
@@ -203,6 +203,8 @@ Int Real_signBit(Double d);
 #define MLton_Rlimit_virtualMemorySize RLIMIT_DATA
 #elif (defined (__CYGWIN__) || defined (__linux__))
 #define MLton_Rlimit_virtualMemorySize RLIMIT_AS
+#else
+#error MLton_Rlimit_virtualMemorySize not defined
 #endif
 
 #define MLton_Rlimit_infinity RLIM_INFINITY

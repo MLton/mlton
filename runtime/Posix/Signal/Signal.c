@@ -14,6 +14,8 @@ enum {
 	SA_FLAGS = SA_ONSTACK,
 #elif  (defined  (__CYGWIN__))
 	SA_FLAGS = 0,
+#else
+#error SA_FLAGS not defined
 #endif
 };
 

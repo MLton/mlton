@@ -68,8 +68,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-/* Cygwin/Windows distinguish between text and binary files, but Linux
- * does not.
+/* Cygwin/Windows distinguish between text and binary files, but Linux and
+ * FreeBSD do not.
  */
 #if (defined (__linux__) || defined (__FreeBSD__))
 #define O_BINARY 0
@@ -86,6 +86,8 @@
 #define Posix_FileSys_O_sync O_SYNC
 #elif (defined (__FreeBSD__))
 #define Posix_FileSys_O_sync 0
+#else
+#error Posix_FileSys_O_sync not defined
 #endif
 #define Posix_FileSys_O_text O_TEXT
 #define Posix_FileSys_O_trunc O_TRUNC
@@ -224,6 +226,8 @@ enum {
 #define Posix_Signal_numSignals NSIG
 #elif (defined (__linux__))
 #define Posix_Signal_numSignals _NSIG
+#else
+#error Posix_Signal_numSignals not defined
 #endif
 #define Posix_Signal_setmask SIG_SETMASK
 #define Posix_Signal_unblock SIG_UNBLOCK

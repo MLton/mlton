@@ -115,7 +115,6 @@ static inline uint min (uint x, uint y) {
 	return ((x < y) ? x : y);
 }
 
-
 static inline uint max (uint x, uint y) {
 	return ((x > y) ? x : y);
 }
@@ -172,6 +171,8 @@ static void release (void *base, size_t length) {
 		die ("VirtualFree release failed");
 #elif (defined (__linux__) || defined (__FreeBSD__))
 	smunmap (base, length);
+#else
+#error release not defined
 #endif
 }
 
@@ -184,6 +185,8 @@ static void decommit (void *base, size_t length) {
 		die ("VirtualFree decommit failed");
 #elif (defined (__linux__) || defined (__FreeBSD__))
 	smunmap (base, length);
+#else
+#error decommit not defined	
 #endif
 }
 
@@ -275,11 +278,11 @@ static void showMem() {
 
 #elif (defined (__FreeBSD__))
 
-static void showMem() {
+static void showMem () {
 	static char buffer[256];
 
-	sprintf(buffer, "/bin/cat /proc/%d/map\n", getpid());
-	(void)system(buffer);
+	sprintf (buffer, "/bin/cat /proc/%d/map\n", getpid ());
+	(void)system (buffer);
 }
 
 #endif
@@ -1309,6 +1312,8 @@ static bool heapCreate (GC_state s, GC_heap h, W32 desiredSize, W32 minSize) {
 						MAP_PRIVATE | MAP_ANON, -1, 0);
 			if ((void*)-1 == h->start)
 				h->start = (void*)NULL;
+#else
+#error heapCreate not defined
 #endif
 			unless ((void*)NULL == h->start) {
 				direction = (direction==0);
@@ -2206,6 +2211,10 @@ static bool heapRemap (GC_state s, GC_heap h, W32 desired, W32 minSize) {
 	return FALSE;
 }
 
+#else
+
+#error heapRemap not defined
+
 #endif
 
 /* ---------------------------------------------------------------- */
@@ -2719,7 +2728,9 @@ pointer GC_copyThread (GC_state s, pointer thread) {
 /* ---------------------------------------------------------------- */
 
 static void initSignalStack (GC_state s) {
-#if (defined (__linux__) || defined (__FreeBSD__))
+#if (defined (__CYGWIN__))
+	/* Nothing */
+#elif (defined (__linux__) || defined (__FreeBSD__))
         static stack_t altstack;
 	size_t ss_size = align (SIGSTKSZ, s->pageSize);
 	size_t psize = s->pageSize;
@@ -2728,6 +2739,8 @@ static void initSignalStack (GC_state s) {
 	altstack.ss_size = ss_size;
 	altstack.ss_flags = 0;
 	sigaltstack (&altstack, NULL);
+#else
+#error initSignalStack not defined
 #endif
 }
 
@@ -2754,6 +2767,7 @@ static void readProcessor() {
  */
 
 #if (defined (__linux__))
+
 #include <sys/sysinfo.h>
 /* struct sysinfo copied from /usr/include/linux/kernel.h on a 2.4 kernel
  * because we need mem_unit.
@@ -2796,7 +2810,9 @@ static void setMemInfo (GC_state s) {
 	tmp = memUnit * (W64)sbuf.totalswap;
 	s->totalSwap = (tmp > (W64)maxMem) ? maxMem : (W32)tmp;
 }
+
 #elif (defined (__CYGWIN__))
+
 #include <windows.h>
 static void setMemInfo (GC_state s) {
 	MEMORYSTATUS ms; 
@@ -2805,6 +2821,7 @@ static void setMemInfo (GC_state s) {
 	s->totalRam = ms.dwTotalPhys;
 	s->totalSwap = ms.dwTotalPageFile;
 }
+
 #elif (defined (__FreeBSD__))
 
 /* returns total amount of swap available */
@@ -2855,6 +2872,10 @@ static void setMemInfo (GC_state s) {
 	s->totalRam = get_total_mem();
 	s->totalSwap = get_total_swap();
 }
+
+#else
+
+#error setMemInfo not defined
 
 #endif /* definition of setMemInfo */
 

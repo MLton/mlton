@@ -19,6 +19,8 @@ Int Posix_FileSys_open (NullString p, Word w, Mode m) {
 	return open((char *) p, w, m);
 
 #else
-	fprintf (stderr, "Posix_FileSys_open not defined for platform.\n");
+
+#error Posix_FileSys_open not defined
+
 #endif
 }

@@ -3,7 +3,7 @@
 #include "gc.h"
 #include "mlton-basis.h"
 
-Int MLton_Process_spawnp(NullString p, Pointer a) {
+Int MLton_Process_spawnp (NullString p, Pointer a) {
 	char		*path;
 	char		*asaved;
 	char 		**args;

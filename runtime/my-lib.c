@@ -221,6 +221,8 @@ void *smmap (size_t length) {
 			MAP_PRIVATE | MAP_ANON, -1, 0);
 	if (result == (void*)-1) 
 		diee ("Out of swap space.");
+#else
+#error smmap not defined
 #endif	
 	return result;
 }
