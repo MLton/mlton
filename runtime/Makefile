@@ -337,7 +337,7 @@ clean:
 depend:
 	makedepend -f- -- $(CFLAGS) -- $(SRCS)
 
-LIBMLTON = /usr/local/lib/mlton/self
+LIBMLTON = /usr/lib/mlton/self
 .PHONY: ensure-gmp
 ensure-gmp:
 	if [ $(HOSTTYPE) = freebsd ] && ! [ -r gmp.h -a -r libgmp.a ]; then	\
