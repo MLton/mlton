@@ -1170,7 +1170,8 @@ static void setLimit (GC_state s) {
 	s->limit = s->limitPlusSlop - LIMIT_SLOP;
 }
 
-static inline void setNursery (GC_state s, W32 oldGenBytesRequested) {
+static inline void setNursery (GC_state s, W32 oldGenBytesRequested,
+				W32 nurseryBytesRequested) {
 	GC_heap h;
 
 	if (DEBUG_DETAILED)
@@ -1189,19 +1190,25 @@ static inline void setNursery (GC_state s, W32 oldGenBytesRequested) {
 			<= s->generationalRatio
 		/* The nursery is large enough to be worth it. */
 		and ((float)(h->size - s->bytesLive) 
-			/ (float)h->nurserySize) <= s->nurseryRatio) {
+			/ (float)h->nurserySize) <= s->nurseryRatio
+		/* There is enough space in the nursery. */
+		and h->nurserySize >= 2 * nurseryBytesRequested
+		) {
 		h->canMinor = TRUE;
 		h->nurserySize /= 2;
 		unless (isAligned (h->nurserySize, WORD_SIZE))
 			h->nurserySize -= 2;
-	} else
+	} else {
+		if (h->nurserySize < nurseryBytesRequested)
+			die ("Out of memory.  Insufficient space in nursery.");
 		h->canMinor = FALSE;
-	assert (isAligned (h->nurserySize, WORD_SIZE));
+	}
 	h->nursery = h->oldGen + h->size - h->nurserySize;
-	assert (isAligned ((uint)h->nursery, WORD_SIZE));
-	assert (h->oldGen + h->oldGenSize + oldGenBytesRequested <= h->nursery);
 	s->frontier = h->nursery;
 	setLimit (s);
+	assert (isAligned (h->nurserySize, WORD_SIZE));
+	assert (isAligned ((uint)h->nursery, WORD_SIZE));
+	assert (hasBytesFree (s, oldGenBytesRequested, nurseryBytesRequested));
 }
 
 static inline void heapClearCardMap (GC_heap h) {
@@ -1630,7 +1637,7 @@ static inline void minorGC (GC_state s) {
 			fprintf (stderr, "Minor GC done.  %s bytes copied.\n",
 					uintToCommaString (bytesCopied));
 	}
-	setNursery (s, 0);
+	setNursery (s, 0, 0);
 	setStack (s);
 	assert (invariant (s));
 }
@@ -2244,7 +2251,7 @@ static inline void resizeHeap (GC_state s, W64 need) {
 		heapRelease (s, &s->heap2);
 		heapGrow (s, &s->heap, desired, need);
 	}
-	setNursery (s, 0);
+	setNursery (s, 0, 0);
 	setStack (s);
 	/* Resize to space. */
 	if (0 == s->heap2.size)
@@ -2293,7 +2300,7 @@ static inline void majorGC (GC_state s, W32 bytesRequested) {
 		cheneyCopy (s);
 	else
 		markCompact (s);
-	setNursery (s, 0);
+	setNursery (s, 0, 0);
 	setStack (s);
 	if (s->bytesLive > s->maxBytesLive)
 		s->maxBytesLive = s->bytesLive;
@@ -2330,11 +2337,12 @@ void doGC (GC_state s,
 	totalBytesRequested = 
 		(W64)oldGenBytesRequested 
 		+ stackBytesRequested
-		+ (s->mutatorMarksCards ? 2 : 1) * nurseryBytesRequested;
+		+ nurseryBytesRequested;
 	if (forceMajor 
 		or totalBytesRequested > s->heap.size - s->heap.oldGenSize)
 		majorGC (s, totalBytesRequested);
-	setNursery (s, oldGenBytesRequested + stackBytesRequested);
+	setNursery (s, oldGenBytesRequested + stackBytesRequested,
+			nurseryBytesRequested);
 	assert (hasBytesFree (s, oldGenBytesRequested + stackBytesRequested,
 					nurseryBytesRequested));
 	unless (stackTopOk)
@@ -2973,7 +2981,7 @@ static void newWorld (GC_state s)
 	initStrings (s);
 	assert (s->frontier - s->heap.oldGen <= s->bytesLive);
 	s->heap.oldGenSize = s->frontier - s->heap.oldGen;
-	setNursery (s, 0);
+	setNursery (s, 0, 0);
 	switchToThread (s, newThreadOfSize (s, initialStackSize (s)));
 }
 
@@ -3000,7 +3008,7 @@ static void loadWorld (GC_state s, char *fileName) {
 	s->signalHandler = (GC_thread) sfreadUint (file);
        	heapCreate (s, &s->heap, heapDesiredSize (s, s->heap.oldGenSize, 0),
 			s->heap.oldGenSize);
-	setNursery (s, 0);
+	setNursery (s, 0, 0);
 	sfread (s->heap.oldGen, 1, s->heap.oldGenSize, file);
 	(*s->loadGlobals) (file);
 	unless (EOF == fgetc (file))
@@ -3327,7 +3335,7 @@ void GC_pack (GC_state s) {
  	 */
 	doGC (s, 0, 0, TRUE);
 	heapShrink (s, &s->heap, s->bytesLive * 1.1);
-	setNursery (s, 0);
+	setNursery (s, 0, 0);
 	heapRelease (s, &s->heap2);
 	if (DEBUG or s->messages)
 		fprintf (stderr, "Packed heap to size %s.\n",
