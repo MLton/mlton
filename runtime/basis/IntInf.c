@@ -229,6 +229,46 @@ pointer IntInf_do_sub(pointer lhs, pointer rhs, uint bytes)
 	return binary(lhs, rhs, bytes, &mpz_sub);
 }
 
+pointer IntInf_do_and(pointer lhs, pointer rhs, uint bytes)
+{
+	return binary(lhs, rhs, bytes, &mpz_and);
+}
+
+pointer IntInf_do_ior(pointer lhs, pointer rhs, uint bytes)
+{
+	return binary(lhs, rhs, bytes, &mpz_ior);
+}
+
+pointer IntInf_do_xor(pointer lhs, pointer rhs, uint bytes)
+{
+	return binary(lhs, rhs, bytes, &mpz_xor);
+}
+
+static pointer
+unary(pointer arg, uint bytes,
+      void(*unop)(__mpz_struct *resmpz, 
+		  __gmp_const __mpz_struct *argspace))
+{
+	__mpz_struct	argmpz,
+			resmpz;
+	mp_limb_t	argspace[2];
+
+	initRes(&resmpz, bytes);
+	fill(arg, &argmpz, argspace);
+	unop(&resmpz, &argmpz);
+	return answer(&resmpz);
+}
+
+pointer IntInf_do_neg(pointer arg, uint bytes)
+{
+	return unary(arg, bytes, &mpz_neg);
+}
+
+pointer IntInf_do_com(pointer arg, uint bytes)
+{
+	return unary(arg, bytes, &mpz_com);
+}
+
 Word
 IntInf_smallMul(Word lhs, Word rhs, pointer carry)
 {
@@ -303,19 +343,6 @@ IntInf_do_toString(pointer arg, int base, uint bytes)
 	gcState.frontier = &sp->chars[wordAlign(size)];
 	assert(gcState.frontier <= gcState.limitPlusSlop);
 	return (pointer)str;
-}
-
-pointer
-IntInf_do_neg(pointer arg, uint bytes)
-{
-	__mpz_struct	argmpz,
-			resmpz;
-	mp_limb_t	argspace[2];
-
-	initRes(&resmpz, bytes);
-	fill(arg, &argmpz, argspace);
-	mpz_neg(&resmpz, &argmpz);
-	return answer(&resmpz);
 }
 
 /*
