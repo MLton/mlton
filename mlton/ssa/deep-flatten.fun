@@ -22,34 +22,6 @@ structure Tree = Tree (structure Seq = Prod)
 structure TypeTree =
    struct
       datatype t = datatype Tree.t
-
-      datatype info =
-	 Flat
-       | NotFlat of {ty: Type.t}
-	 
-      type t = info Tree.t
-
-      fun layout (t: t): Layout.t =
-	 Tree.layout
-	 (t,
-	  let
-	     open Layout
-	  in
-	     fn Flat => str "Flat"
-	      | NotFlat {ty} => seq [str "NotFlat ",
-				     record [("ty", Type.layout ty)]]
-	  end)
-
-      val isFlat: t -> bool =
-	 fn T (i, _) =>
-	 case i of
-	    Flat => true
-	  | NotFlat _ => false
-   end
-
-structure VarTree =
-   struct
-      datatype t = datatype Tree.t
 	 
       datatype info =
 	 Flat
@@ -71,18 +43,24 @@ structure VarTree =
 				("var", Option.layout Var.layout var)]]
 	  end)
 
+      val isFlat: t -> bool =
+	 fn T (i, _) =>
+	 case i of
+	    Flat => true
+	  | NotFlat _ => false
+   end
+
+structure VarTree =
+   struct
+      open TypeTree
+
       val labelRoot: t * Var.t -> t =
 	 fn (t as T (info, ts), x) =>
 	 case info of
 	    Flat => t
 	  | NotFlat {ty, ...} => T (NotFlat {ty = ty, var = SOME x}, ts)
 
-      val fromTypeTree: TypeTree.t -> t =
-	 fn t =>
-	 Tree.map (t, fn i =>
-		   case i of
-		      TypeTree.Flat => Flat
-		    | TypeTree.NotFlat {ty} => NotFlat {ty = ty, var = NONE})
+      val fromTypeTree: TypeTree.t -> t = fn t => t
 
       val foldRoots: t * 'a * (Var.t * 'a -> 'a) -> 'a =
 	 fn (t, a, f) =>
@@ -498,7 +476,8 @@ structure Value =
 	    Ref.memoize
 	    (r, fn () =>
 	     let
-		fun notFlat () = TypeTree.NotFlat {ty = finalType v}
+		fun notFlat () = TypeTree.NotFlat {ty = finalType v,
+						   var = NONE}
 	     in
 		case value of
 		   Object {args, flat, ...} =>
