@@ -225,11 +225,15 @@ void *smmap (size_t length) {
 	return result;
 }
 
-void smunmap(void *base, size_t length) {
-	assert(base != NULL);
+void smunmap (void *base, size_t length) {
+	if (FALSE)
+		fprintf (stderr, "smunmap 0x%08x of length %s\n",
+				(uint)base,
+				uintToCommaString (length));
+	assert (base != NULL);
 	if (0 == length)
 		return;
-	if (0 != munmap(base, length))
+	if (0 != munmap (base, length))
 		diee("munmap failed");
 }
 
