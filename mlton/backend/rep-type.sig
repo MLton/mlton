@@ -123,10 +123,11 @@ signature REP_TYPE =
       val toString: t -> string
       val unit: t
       val width: t -> Bits.t
-      val word: Bits.t -> t
       val word8: t
-      val wordVector: t
       val word8Vector: t
+      val word: Bits.t -> t
+      val wordVector: t
+      val words: t -> Words.t
       val zero: Bits.t -> t
 
       structure BuiltInCFunction:

@@ -34,6 +34,8 @@ signature RSSA =
       structure Switch: SWITCH
       sharing Atoms = Switch
 
+      val byteOffset: {offset: Bytes.t, ty: Type.t} -> Bytes.t
+	 
       structure Operand:
 	 sig
 	    datatype t =
@@ -82,7 +84,7 @@ signature RSSA =
 			src: Operand.t}
 	     | Object of {dst: Var.t * Type.t,
 			  header: word,
-			  size: Bytes.t, (* including header *)
+			  size: Words.t, (* including header *)
 			  (* The stores are in increasing order of offset. *)
 			  stores: {offset: Bytes.t,
 				   value: Operand.t} vector}

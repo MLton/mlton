@@ -134,7 +134,7 @@ structure TupleRep =
 	    [R.Statement.Object {dst = (dst, ty),
 				 header = (Runtime.typeIndexToHeader
 					   (PointerTycon.index tycon)),
-				 size = size,
+				 size = Bytes.toWords size,
 				 stores = stores}]
 	 end
 

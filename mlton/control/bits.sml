@@ -39,6 +39,7 @@ local
 	       val toIntInf: t -> IntInf.t
 	       val toString: t -> string
 	       val toWord: t -> word
+	       val toWords: t -> words
 	       val zero: t
 	    end
 	 
@@ -79,9 +80,15 @@ local
 	    sig
 	       type t
 
+	       val + : t * t -> t
+	       val equals: t * t -> bool
+	       val fromInt: int -> t
+	       val inPointer: t
 	       val layout: t -> Layout.t
+	       val one: t
 	       val toInt: t -> int
 	       val toBytes: t -> Bytes.t
+	       val zero: t
 	    end
 	 
 	 sharing type bytes = Bytes.t
@@ -119,6 +126,11 @@ local
 		  else Error.bug "Bits.toBytes"
 
 	       val toWord = Word.fromIntInf
+
+	       fun toWords b =
+		  if isWordAligned b
+		     then quot (b, inWord)
+		  else Error.bug "Bits.toWords"
 	    end
 
 	 structure Bytes =
@@ -155,6 +167,8 @@ local
 	    struct
 	       open IntInf
 
+	       val inPointer = Bytes.toWords Bytes.inPointer
+		  
 	       fun toBytes w = w * Bytes.inWord
 	    end
 

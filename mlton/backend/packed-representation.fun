@@ -430,7 +430,7 @@ structure Select =
        | Direct of {ty: Type.t}
        | Indirect of {offset: Bytes.t,
 		      ty: Type.t}
-       | IndirectUnpack of {offset: Bytes.t,
+       | IndirectUnpack of {offset: Words.t,
 			    rest: Unpack.t,
 			    ty: Type.t}
        | Unpack of Unpack.t
@@ -449,7 +449,7 @@ structure Select =
 			       ("ty", Type.layout ty)]]
 	     | IndirectUnpack {offset, rest, ty} =>
 		  seq [str "IndirectUnpack ",
-		       record [("offset", Bytes.layout offset),
+		       record [("offset", Words.layout offset),
 			       ("rest", Unpack.layout rest),
 			       ("ty", Type.layout ty)]]
 	     | Unpack u => seq [str "Unpack ", Unpack.layout u]
@@ -473,17 +473,11 @@ structure Select =
       fun indirectUnpack {offset, rest as Unpack.T {shift, ty = ty'}, ty} =
 	 if Bits.isByteAligned shift
 	    andalso Bits.equals (Type.width ty', Bits.inByte)
-	    then
-	       let
-		  val offset' = Bits.toBytes shift
-		  val offset' =
-		     if Control.targetIsBigEndian ()
-			then Bytes.- (Bytes.inWord, offset')
-		     else offset'
-	       in
-		  Indirect {offset = Bytes.+ (offset, offset'),
-			    ty = ty'}
-	       end
+	    then Indirect {offset = (Rssa.byteOffset
+				     {offset = Bytes.+ (Words.toBytes offset,
+							Bits.toBytes shift),
+				      ty = ty'}),
+			   ty = ty'}
 	 else IndirectUnpack {offset = offset,
 			      rest = rest,
 			      ty = ty}
@@ -491,14 +485,10 @@ structure Select =
       fun select (s: t, {dst: unit -> Var.t * Type.t,
 			 tuple: unit -> Operand.t}): Statement.t list =
 	 let
-	    fun move oper =
+	    fun move src =
 	       let
 		  val (dst, dstTy) = dst ()
-		  val (src, ss) =
-		     if Bits.equals (Type.width dstTy,
-				     Type.width (Operand.ty oper))
-			then (oper, [])
-		     else Statement.resize (oper, Type.width dstTy)
+		  val (src, ss) = Statement.resize (src, Type.width dstTy)
 	       in
 		  ss @ [Bind {dst = (dst, dstTy),
 			      isMutable = false,
@@ -509,9 +499,9 @@ structure Select =
 	       None => []
 	     | Direct {ty} => move (tuple ())
 	     | Indirect {offset, ty} =>
-		  move (Operand.Offset {base = tuple (),
-					offset = offset,
-					ty = ty})
+		  move (Offset {base = tuple (),
+				offset = offset,
+				ty = ty})
 	     | IndirectUnpack {offset, rest, ty} =>
 		  let
 		     val tmpVar = Var.newNoname ()
@@ -519,9 +509,9 @@ structure Select =
 		  in
 		     Bind {dst = (tmpVar, ty),
 			   isMutable = false,
-			   src = Operand.Offset {base = tuple (),
-						 offset = offset,
-						 ty = ty}}
+			   src = Offset {base = tuple (),
+					 offset = Words.toBytes offset,
+					 ty = ty}}
 		     :: Unpack.select (rest, {dst = dst (), src = tmpOp})
 		  end
 	     | Unpack u => Unpack.select (u, {dst = dst (), src = tuple ()})
@@ -584,10 +574,10 @@ structure Selects =
 structure PointerRep =
    struct
       datatype t = T of {components: {component: Component.t,
-				      offset: Bytes.t} vector,
+				      offset: Words.t} vector,
 			 componentsTy: Type.t,
 			 selects: Selects.t,
-			 size: Bytes.t,
+			 size: Words.t,
 			 ty: Type.t,
 			 tycon: PointerTycon.t}
 
@@ -599,11 +589,11 @@ structure PointerRep =
 	    [("components",
 	      Vector.layout (fn {component, offset} =>
 			     record [("component", Component.layout component),
-				     ("offset", Bytes.layout offset)])
+				     ("offset", Words.layout offset)])
 	      components),
 	     ("componentsTy", Type.layout componentsTy),
 	     ("selects", Selects.layout selects),
-	     ("size", Bytes.layout size),
+	     ("size", Words.layout size),
 	     ("ty", Type.layout ty),
 	     ("tycon", PointerTycon.layout tycon)]
 	 end
@@ -628,14 +618,15 @@ structure PointerRep =
 	 let
 	    val width =
 	       Vector.fold
-	       (components, Bytes.zero, fn ({component = c, ...}, ac) =>
-		Bytes.+ (ac, Type.bytes (Component.ty c)))
-	    val totalWidth = Bytes.+ (Runtime.normalHeaderSize, width)
+	       (components, Words.zero, fn ({component = c, ...}, ac) =>
+		Words.+ (ac, Type.words (Component.ty c)))
+	    val totalWidth = Words.+ (width,
+				      Bytes.toWords Runtime.normalHeaderSize)
 	    val (components, selects) =
 	       if !Control.align = Control.Align4
 		  orelse (Bytes.equals
-			  (totalWidth,
-			   Bytes.align (totalWidth,
+			  (Words.toBytes totalWidth,
+			   Bytes.align (Words.toBytes totalWidth,
 					{alignment = Bytes.fromInt 8})))
 		  then (components, selects)
 	       else
@@ -656,7 +647,7 @@ structure PointerRep =
 		     val pointers =
 			Vector.map (pointers, fn {component = c, offset} =>
 				    {component = c,
-				     offset = Bytes.+ (offset, Bytes.inWord)})
+				     offset = Words.+ (offset, Words.one)})
 		     val components = 
 			Vector.concat [nonPointers, Vector.new1 pad, pointers]
 		     val selects =
@@ -664,7 +655,7 @@ structure PointerRep =
 			(selects, fn s =>
 			 case s of
 			    Select.Indirect {offset, ty} =>
-			       if Bytes.>= (offset, padOffset)
+			       if Bytes.>= (offset, Words.toBytes padOffset)
 				  then
 				     Select.Indirect
 				     {offset = Bytes.+ (offset, Bytes.inWord),
@@ -682,8 +673,8 @@ structure PointerRep =
 	    T {components = components,
 	       componentsTy = componentsTy,
 	       selects = selects,
-	       size = Bytes.+ (Type.bytes componentsTy,
-			       Runtime.normalHeaderSize),
+	       size = Bytes.toWords (Bytes.+ (Type.bytes componentsTy,
+					      Runtime.normalHeaderSize)),
 	       ty = Type.pointer tycon,
 	       tycon = tycon}
 	 end
@@ -700,14 +691,14 @@ structure PointerRep =
 		      None => None
 		    | Direct {ty} => Indirect {offset = Bytes.zero, ty = ty}
 		    | Unpack u =>
-			 IndirectUnpack {offset = Bytes.zero,
+			 IndirectUnpack {offset = Words.zero,
 					 rest = u,
 					 ty = Component.ty component}
 		    | _ => Error.bug "PointerRep.box cannot lift selects"
 		end)
 	 in
 	    make {components = Vector.new1 {component = component,
-					    offset = Bytes.zero},
+					    offset = Words.zero},
 		  selects = selects,
 		  tycon = pt}
 	 end
@@ -726,10 +717,10 @@ structure PointerRep =
 		in
 		   Component.tuple (component,
 				    {dst = (tmpVar, tmpTy), src = src})
-		   @ (Move {dst = Operand.Offset {base = object,
-						  offset = offset,
-						  ty = tmpTy},
-			    src = Operand.Var {ty = tmpTy, var = tmpVar}}
+		   @ (Move {dst = Offset {base = object,
+					  offset = Words.toBytes offset,
+					  ty = tmpTy},
+			    src = Var {ty = tmpTy, var = tmpVar}}
 		      :: ac)
 		end)
 	 in
@@ -848,30 +839,29 @@ structure TupleRep =
 			index = i}))
 	    val selects = Array.array (Vector.length rs,
 				       (Select.None, Select.None))
-	    fun simple (l, width, offset, components) =
+	    fun simple (l, width: Words.t, offset: Words.t, components) =
 	       List.fold
 	       (l, (offset, components),
 		fn ({component, index}, (offset, ac)) =>
-		(Bytes.+ (offset, width),
+		(Words.+ (offset, width),
 		 let
 		    val ty = Component.ty component
 		    val () =
 		       Array.update
 		       (selects, index,
 			(Select.Direct {ty = ty},
-			 Select.Indirect {offset = offset,
+			 Select.Indirect {offset = Words.toBytes offset,
 					  ty = ty}))
 		 in
 		    {component = component, offset = offset} :: ac
 		 end))
-	    val offset = Bytes.zero
+	    val offset = Words.zero
 	    val components = []
 	    (* Start with all the doubleWords followed by all the words. *)
 	    val (offset, components) =
-	       simple (!doubleWords, Bytes.scale (Bytes.inWord, 2),
-		       offset, components)
+	       simple (!doubleWords, Words.fromInt 2, offset, components)
 	    val (offset, components) =
-	       simple (!words, Bytes.inWord, offset, components)
+	       simple (!words, Words.one, offset, components)
 	    (* j is the maximum index <= remainingWidth at which an element of a
 	     * may be nonempty.
 	     *)
@@ -900,7 +890,7 @@ structure TupleRep =
 		  end
 	    (* max is the maximum index at which an element of a may be nonempty.
 	     *)
-	    fun makeWords (max: int, offset: Bytes.t, ac) =
+	    fun makeWords (max: int, offset: Words.t, ac) =
 	       if 0 = max
 		  then (offset, ac)
 	       else
@@ -936,13 +926,13 @@ structure TupleRep =
 						    ty = componentTy}})
 			val ac = {component = component, offset = offset} :: ac
 		     in
-			makeWords (max, Bytes.+ (offset, Bytes.inWord), ac)
+			makeWords (max, Words.+ (offset, Words.one), ac)
 		     end
 	    val (offset, components) =
 	       makeWords (Bits.toInt Bits.inWord - 1, offset, components)
 	    (* Add the pointers at the end. *)
 	    val (offset, components) =
-	       simple (!pointers, Bytes.inPointer, offset, components)
+	       simple (!pointers, Words.inPointer, offset, components)
 	    val components = Vector.fromListRev components
 	    fun getSelects s =
 	       Selects.T (Vector.tabulate
@@ -951,7 +941,6 @@ structure TupleRep =
 			    select = s (Array.sub (selects, i))}))
 	    fun box () =
 	       let
-
 		  val components =
 		     Vector.map
 		     (components, fn {component = c, offset} =>

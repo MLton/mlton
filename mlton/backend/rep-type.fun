@@ -111,6 +111,7 @@ structure Type =
       end
 
       val bytes = Bits.toBytes o width
+      val words = Bits.toWords o width
 
       val address = T o Address
       val constant = T o Constant

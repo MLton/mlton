@@ -79,7 +79,7 @@ structure Statement =
 		     {big = _: Operand.t -> 'a,
 		      small: Bytes.t -> 'a}): 'a =
 	 case s of
-	    Object {size, ...} => small size
+	    Object {size, ...} => small (Words.toBytes size)
 	  | _ => small Bytes.zero
    end
 

@@ -602,7 +602,7 @@ fun profile program =
 			       Object {size, ...} =>
 				  {args = args,
 				   bytesAllocated = Bytes.+ (bytesAllocated,
-							     size),
+							     Words.toBytes size),
 				   kind = kind,
 				   label = label,
 				   leaves = leaves,

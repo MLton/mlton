@@ -26,6 +26,26 @@ fun constrain (ty: Type.t): Layout.t =
       else empty
    end
 
+fun byteOffset {offset: Bytes.t, ty: Type.t}: Bytes.t =
+   if not (Control.targetIsBigEndian ())
+      then offset
+   else
+      let
+	 val b = Type.bytes ty
+      in
+	 if Bytes.equals (b, Bytes.fromInt 1)
+	    then
+	       let
+		  val start = Bytes.toInt offset
+		  val r = Int.rem (start, Bytes.toInt Bytes.inWord)
+	       in
+		  Bytes.fromInt (start - r + (Bytes.toInt Bytes.inWord - 1 - r))
+	       end
+	 else if Bytes.equals (b, Bytes.fromInt 2)
+		 then Error.bug "can't handle two-byte offset"
+	      else offset
+      end 
+
 structure Operand =
    struct
       datatype t =
@@ -106,7 +126,12 @@ structure Operand =
 	 else Cast (z, t)
 
       val cast = Trace.trace2 ("Operand.cast", layout, Type.layout, layout) cast
-	 
+
+      fun offset {base, offset, ty} =
+	 Offset {base = base,
+		 offset = byteOffset {offset = offset, ty = ty},
+		 ty = ty}
+
       val rec isLocation =
 	 fn ArrayOffset _ => true
 	  | Cast (z, _) => isLocation z
@@ -158,7 +183,7 @@ structure Statement =
 		  src: Operand.t}
        | Object of {dst: Var.t * Type.t,
 		    header: word,
-		    size: Bytes.t,
+		    size: Words.t,
 		    stores: {offset: Bytes.t,
 			     value: Operand.t} vector}
        | PrimApp of {args: Operand.t vector,
@@ -225,7 +250,7 @@ structure Statement =
 		   seq [str "= Object ",
 			record
 			[("header", seq [str "0x", Word.layout header]),
-			 ("size", Bytes.layout size),
+			 ("size", Words.layout size),
 			 ("stores",
 			  Vector.layout
 			  (fn {offset, value} =>
@@ -1076,6 +1101,7 @@ structure Program =
 			   val tycon =
 			      PointerTycon.fromIndex
 			      (Runtime.headerToTypeIndex header)
+			   val size = Words.toBytes size
 			in
 			   Type.isSubtype (Type.pointer tycon, ty)
 			   andalso

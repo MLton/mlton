@@ -476,7 +476,7 @@ fun toMachine (program: Ssa.Program.t) =
 		  (M.Statement.Object
 		   {dst = varOperand (#1 dst),
 		    header = header,
-		    size = size,
+		    size = Words.toBytes size,
 		    stores = Vector.map (stores, fn {offset, value} =>
 					 {offset = offset,
 					  value = translateOperand value})})

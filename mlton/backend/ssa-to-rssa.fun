@@ -565,9 +565,9 @@ fun updateCard (addr: Operand.t): Statement.t list =
 					    WordSize.default)))),
 		dst = SOME (index, indexTy),
 		prim = Prim.wordRshift WordSize.default},
-       Move {dst = (Operand.ArrayOffset
-		    {base = Operand.Runtime GCField.CardMap,
-		     index = Operand.Var {ty = indexTy, var = index},
+       Move {dst = (ArrayOffset
+		    {base = Runtime GCField.CardMap,
+		     index = Var {ty = indexTy, var = index},
 		     ty = Type.word Bits.inByte}),
 	     src = Operand.word (WordX.one (WordSize.fromBits Bits.inByte))}]
    end
@@ -592,12 +592,12 @@ fun arrayUpdate {array, arrayElementTy, index, elt}: Statement.t list =
 	    val shift = Bits.fromInt shift
 	    val addr = Var.newNoname ()
 	    val addrTy = Type.address ty
-	    val addrOp = Operand.Var {ty = addrTy, var = addr}
+	    val addrOp = Var {ty = addrTy, var = addr}
 	    val temp = Var.newNoname ()
 	    val shiftOp = Operand.word (WordX.fromIntInf (Bits.toIntInf shift,
 							  WordSize.default))
 	    val tempTy = Type.lshift (Type.defaultWord, Operand.ty shiftOp)
-	    val tempOp = Operand.Var {ty = tempTy, var = temp}
+	    val tempOp = Var {ty = tempTy, var = temp}
 	 in
 	    ss
 	    @ [PrimApp {args = Vector.new2 (index, shiftOp),
@@ -607,9 +607,9 @@ fun arrayUpdate {array, arrayElementTy, index, elt}: Statement.t list =
 			dst = SOME (addr, addrTy),
 			prim = Prim.wordAdd WordSize.default}]
 	    @ updateCard addrOp
-	    @ [Move {dst = Operand.Offset {base = addrOp,
-					   offset = Bytes.zero,
-					   ty = ty},
+	    @ [Move {dst = Offset {base = addrOp,
+				   offset = Bytes.zero,
+				   ty = ty},
 		     src = elt}]
 	 end
    end
@@ -836,8 +836,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 		      transfer = (Transfer.Goto
 				  {dst = success,
 				   args = (Vector.new1
-					   (Operand.Var {var = temp,
-							 ty = ty}))})}
+					   (Var {var = temp, ty = ty}))})}
 	       in
 		  ([], Transfer.Arith {dst = temp,
 				       args = vos args,
@@ -898,8 +897,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			in
 			   ([],
 			    Transfer.CCall
-			    {args = (Vector.concat
-				     [Vector.new1 Operand.GCState, vos args]),
+			    {args = Vector.concat [Vector.new1 GCState,
+						   vos args],
 			     func = func,
 			     return = SOME l})
 			end
@@ -917,8 +916,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 	 in
 	    case Type.dest t of
 	       Constant w => c (Const.word w)
-	     | Pointer _ =>
-		  Operand.Cast (Operand.int (IntX.one IntSize.default), t)
+	     | Pointer _ => Cast (Operand.int (IntX.one IntSize.default), t)
 	     | Real s => c (Const.real (RealX.zero s))
 	     | Sum ts => bogus (Vector.sub (ts, 0))
 	     | Word s => c (Const.word (WordX.zero (WordSize.fromBits s)))
@@ -968,7 +966,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				  dst = fn () => valOf var,
 				  oper = varOp,
 				  ty = fn () => valOf (toRtype ty)})
-		      | S.Exp.Const c => move (Operand.Const (convertConst c))
+		      | S.Exp.Const c => move (Const (convertConst c))
 		      | S.Exp.PrimApp {prim, targs, args, ...} =>
 			   let
 			      val prim = translatePrim prim
@@ -984,7 +982,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					  then yes t
 				       else no ()
 			      fun arrayOrVectorLength () =
-				 move (Operand.Offset
+				 move (Offset
 				       {base = a 0,
 					offset = Runtime.arrayLengthOffset,
 					ty = Type.defaultInt})
@@ -1021,8 +1019,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			      datatype z = datatype Prim.Name.t
 			      fun bumpCanHandle n =
 				 let
-				    val canHandle =
-				       Operand.Runtime GCField.CanHandle
+				    val canHandle = Runtime GCField.CanHandle
 				    val res = Var.newNoname ()
 				    val resTy = Operand.ty canHandle
 				 in
@@ -1037,8 +1034,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				      prim = Prim.wordAdd WordSize.default},
 				     Statement.Move
 				     {dst = canHandle,
-				      src = Operand.Var {var = res,
-							 ty = resTy}}]
+				      src = Var {ty = resTy, var = res}}]
 				 end
 			      fun ccallGen
 				 {args: Operand.t vector,
@@ -1103,8 +1099,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					  Type.Pointer pt => PointerTycon pt
 					| _ => Error.bug "strange array"
 				    val args =
-				       Vector.new4 (Operand.GCState,
-						    Operand.EnsuresBytesFree,
+				       Vector.new4 (GCState,
+						    EnsuresBytesFree,
 						    numElts,
 						    pt)
 				    val func =
@@ -1125,10 +1121,13 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 		     fun refAssign (ty, src) =
 		        let
 			   val addr = a 0
+			   val offset =
+			      Rssa.byteOffset {offset = Bytes.zero,
+					       ty = ty}
 			   val ss =
-			      Move {dst = Operand.Offset {base = addr,
-							  offset = Bytes.zero,
-							  ty = ty},
+			      Move {dst = Offset {base = addr,
+						  offset = offset,
+						  ty = ty},
 				    src = src}
 			      :: ss
 			   val ss =
@@ -1196,8 +1195,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					 src = PointerTycon pt}
 					:: Bind {dst = (valOf var, vecTy),
 						 isMutable = false,
-						 src = (Operand.Cast
-							(array, vecTy))}
+						 src = Cast (array, vecTy)}
 					:: ss,
 					t)
 				    end
@@ -1220,19 +1218,19 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			       | GC_collect =>
 				    ccall
 				    {args = (Vector.new5
-					     (Operand.GCState,
+					     (GCState,
 					      Operand.int (IntX.zero
 							   IntSize.default),
 					      Operand.bool true,
-					      Operand.File,
-					      Operand.Line)),
+					      File,
+					      Line)),
 				     func = (CFunction.gc
 					     {maySwitchThreads = false})}
 			       | GC_pack =>
-				    ccall {args = Vector.new1 Operand.GCState,
+				    ccall {args = Vector.new1 GCState,
 					   func = CFunction.pack}
 			       | GC_unpack =>
-				    ccall {args = Vector.new1 Operand.GCState,
+				    ccall {args = Vector.new1 GCState,
 					   func = CFunction.unpack}
 			       | Int_add s =>
 				    nativeOrC (Prim.wordAdd
@@ -1301,9 +1299,16 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				    (case targ () of
 					NONE => none ()
 				      | SOME ty =>
-					   move (Offset {base = a 0,
-							 offset = Bytes.zero,
-							 ty = ty}))
+					   let
+					      val offset =
+						 Rssa.byteOffset
+						 {offset = Bytes.zero,
+						  ty = ty}
+					   in
+					      move (Offset {base = a 0,
+							    offset = offset,
+							    ty = ty})
+					   end)
 			       | Ref_ref =>
 				    adds (reff {arg = fn () => a 0,
 						dst = valOf var,
@@ -1325,7 +1330,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					   Vector.new2
 					   (Statement.PrimApp
 					    {args = (Vector.new2
-						     (Operand.Runtime LimitPlusSlop,
+						     (Runtime LimitPlusSlop,
 						      Operand.word
 						      (WordX.fromIntInf
 						       (IntInf.fromInt
@@ -1334,9 +1339,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					     dst = SOME (tmp, ty),
 					     prim = Prim.wordSub size},
 					    Statement.Move
-					    {dst = Operand.Runtime Limit,
-					     src = Operand.Var {var = tmp,
-								ty = ty}})
+					    {dst = Runtime Limit,
+					     src = Var {ty = ty, var = tmp}})
 					val signalIsPending =
 					   newBlock
 					   {args = Vector.new0 (),
@@ -1350,7 +1354,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					 if handlesSignals 
 					    then
 					       Transfer.ifBool
-					       (Operand.Runtime SignalIsPending,
+					       (Runtime SignalIsPending,
 						{falsee = continue,
 						 truee = signalIsPending})
 					 else 
@@ -1380,12 +1384,12 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 						  dst = continue}}
 					val args = 
 					   Vector.new5
-					   (Operand.GCState,
+					   (GCState,
 					    Operand.int (IntX.zero
 							 IntSize.default),
 					    Operand.bool false,
-					    Operand.File,
-					    Operand.Line)
+					    File,
+					    Line)
 					val switchToHandler =
 					   newBlock
 					   {args = Vector.new0 (),
@@ -1403,7 +1407,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					    statements = Vector.new0 (),
 					    transfer =
 					    Transfer.ifZero
-					    (Operand.Runtime CanHandle,
+					    (Runtime CanHandle,
 					     {falsee = continue,
 					      truee = switchToHandler})}
 				     in
@@ -1411,7 +1415,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					 if handlesSignals 
 					    then 
 					       Transfer.ifBool
-					       (Operand.Runtime SignalIsPending,
+					       (Runtime SignalIsPending,
 						{falsee = continue,
 						 truee = testCanHandle})
 					 else 
@@ -1419,16 +1423,15 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 							   dst = continue})
 				     end)
 			       | Thread_canHandle =>
-				    move (Operand.Runtime GCField.CanHandle)
+				    move (Runtime GCField.CanHandle)
 			       | Thread_copy =>
 				    ccall {args = (Vector.concat
-						   [Vector.new1 Operand.GCState,
+						   [Vector.new1 GCState,
 						    vos args]),
 					   func = CFunction.copyThread}
 			       | Thread_switchTo =>
 				    ccall {args = (Vector.new2
-						   (a 0,
-						    Operand.EnsuresBytesFree)),
+						   (a 0, EnsuresBytesFree)),
 					   func = CFunction.threadSwitchTo}
 			       | Vector_length => arrayOrVectorLength ()
 			       | Vector_sub =>
@@ -1453,7 +1456,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				     let
 					val result = valOf (toRtype ty)
 					val header =
-					   Operand.PointerTycon
+					   PointerTycon
 					   (case Type.dest result of
 					       Type.Pointer pt => pt
 					     | _ => Error.bug "Weak_new")
@@ -1463,8 +1466,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				     in
 					ccall {args = (Vector.concat
 						       [Vector.new2
-							(Operand.GCState,
-							 header),
+							(GCState, header),
 							vos args]),
 					       func = func}
 				     end,
@@ -1491,7 +1493,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			       | Word8Vector_subWord => subWord ()
 			       | World_save =>
 				    ccall {args = (Vector.new2
-						   (Operand.GCState,
+						   (GCState,
 						    Vector.sub (vos args, 0))),
 					   func = CFunction.worldSave}
 			       | _ => nativeOrC prim
