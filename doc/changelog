@@ -3,6 +3,9 @@ Here are the changes from version 20020923.
 * 2002-10-22
   - Fixed Real.toManExp so that the mantissa is in [1, 2), not [0.5, 1).
   - Added Real.fromLargeInt.
+  - Fixed Real.split, which would return an incorrect whole part due to
+    the underlying primitive, Real_modf, being treated as functional instead
+    of side-effecting.
 
 * 2002-09-30
   - Fixed rpath problem with packaging.  All executables in packages previously
