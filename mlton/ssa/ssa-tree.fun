@@ -1374,9 +1374,7 @@ structure Function =
 	       val graphLayout =
 		  Graph.layoutDot
 		  (graph, fn {nodeName} => 
-		   {title = concat [makeName' (Func.toString name, 
-					       args, returns, raises),
-				    " control-flow graph"],
+		   {title = concat [Func.toString name, " control-flow graph"],
 		    options = [GraphOption.Rank (Min, [{nodeName = nodeName root}])],
 		    edgeOptions = edgeOptions,
 		    nodeOptions =
