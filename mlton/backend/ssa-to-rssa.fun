@@ -1482,7 +1482,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				       datatype z = datatype WordSize.t
 				    in
 				       if (case (s1, s2) of
-					      (W64, I32) => true
+					      (W32, I64) => true
 					    | _ => false)
 					  andalso !Control.Native.native
 					  then simpleCCall (CFunction.wordToInt (s1, s2))
