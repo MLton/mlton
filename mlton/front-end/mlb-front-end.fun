@@ -83,7 +83,7 @@ fun mkLexAndParse () =
 
       val files: File.t Buffer.t = Buffer.new {dummy = "<dummy>"}
 
-      val psi : (OS.FileSys.file_id * Ast.Basdec.t) HashSet.t =
+      val psi : (OS.FileSys.file_id * Ast.Basdec.t Promise.t) HashSet.t =
 	 HashSet.new {hash = OS.FileSys.hash o #1}
 
       local
@@ -212,12 +212,15 @@ fun mkLexAndParse () =
 			 let
 			    val cwd = OS.Path.dir fileAbs
 			    val basdec =
-			       wrapLexAndParse
-			       {cwd = cwd, relativize = relativize, seen = seen'}
-			       (lexAndParseFile, fileUse)
+			       Promise.delay
+			       (fn () =>
+				wrapLexAndParse
+				{cwd = cwd, relativize = relativize, seen = seen'}
+				(lexAndParseFile, fileUse))
 			 in
 			    (fid, basdec)
 			 end)
+		     val basdec = Promise.force basdec
 		  in
 		     Ast.Basdec.MLB (fileAbs, SOME fid, basdec)
 		  end
