@@ -7,18 +7,16 @@ language
 [file\fB.\fP{\fBS\fP|\fBo\fP} ...] [library ...]\fR
 .SH DESCRIPTION
 .PP
-\fBMLton\fP requires the entire SML program before it can start
-compilation so that it can perform various optimizations.
-Thus typical use is simply
+Typical use of \fBMLton\fP is
 .br
 .EX
 \fBmlton \fIxxx\fB.sml\fR
 .EE
 .br
 which will produce the executable \fIxxx\fP.
-The file \fIxxx\fB.sml\fR must consist of a sequence of toplevel declarations.
-These may refer to signatures and structures defined in the SML basis
-library. 
+\fBMLton\fP has no notion of separate compilation.
+The program must be the entire program you wish to compile; however, it may
+refer to signatures and structures defined in the SML basis library.
 
 \fBMLton\fP's options allow you to control the name of the output file, the
 verbosity of compile-time messages, and whether or not certain optimizations are
@@ -59,25 +57,9 @@ of exceptions and in runtime, because of additional work that must be performed
 at each exception construction, raise, and handle.
 
 .TP
-\fB-fixed-heap \fI n[\fBkm\fP]\fR
-The resulting executable will use a fixed size heap of size \fBn\fP\.
-A value of 0 means that the heap size should be almost as large as the amount
-of RAM in the machine.
-A trailing \fBk\fP means that heapSize is in units of 1024 bytes.
-A trailing \fBm\fP means that heapSize is in units of 1,048,576 bytes.
-If neither appears, then heapSize is in bytes.
-If no \fB-h\fP is used then the executable will use an automatically
-resized heap.
-(Note, regardless of whether \fB-fixed-heap\fP is used or not, the resulting
-executable can be told to use a different heap size on its command line.
-See Runtime system options.)
-.br
-This option only makes sense when the input file suffix is \fB.sml\fP.
-
-.TP
 \fB-host \fI{\fBself\fP|\fI...}\fR
 Generate an executable that runs on the specified host.  The default is
-\fBself\FP, which means to compile for the machine that \fBMLton\fP is running
+\fBself\fP, which means to compile for the machine that \fBMLton\fP is running
 on.  To use any other host, you must first install a cross compiler.  See the
 user guide for details.
 
@@ -138,11 +120,6 @@ code.
 Specify the name of the final output file.
 The default name is the input file name with its suffix removed and an
 appropriate suffix added.
-
-.TP
-\fB-polyvariance \fI{\fBtrue\fP|\fBfalse\fP}\fR
-Control whether the optimizer runs polyvariance, which is a pass that duplicates
-small, higher-order functions to improve performance.
 
 .TP
 \fB-profile \fI{\fBfalse\fP|\fBtrue\fP}\fR

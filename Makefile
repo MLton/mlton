@@ -26,7 +26,7 @@ all:
 
 .PHONY: clean
 clean:
-	$(MAKE) -c regression clean
+	$(MAKE) -C regression clean
 	bin/clean
 
 .PHONY: cm
@@ -120,14 +120,14 @@ world:
 # puts them.  (PREFIX is mainly used when building RPMs.)
 prefix = /usr/local
 TBIN = $(DESTDIR)$(prefix)/bin
-ULIB = /usr/local/lib/mlton
-TLIB = $(DESTDIR)$(prefix)$(ULIB)
+ULIB = lib/mlton
+TLIB = $(DESTDIR)$(prefix)/$(ULIB)
 TMAN = $(DESTDIR)$(prefix)/share/man/man1
 TDOC = $(DESTDIR)$(prefix)/share/doc/mlton
 
 .PHONY: install
 install:
-	mkdir -p $(TDOC) $(TLIB) $(TBIN) $(TMAN) &&			\
+	mkdir -p $(TDOC) $(TLIB) $(TBIN) $(TMAN)
 	(								\
 		cd $(SRC)/doc &&					\
 		$(CP) -r CHANGES cmcat.sml examples			\
@@ -135,14 +135,15 @@ install:
 		rm -rf $(TDOC)/user-guide &&				\
 		cp -a user-guide/main $(TDOC)/user-guide &&		\
 		gzip -c user-guide/main.ps >$(TDOC)/user-guide.ps.gz	\
-	) &&								\
-	$(CP) -r $(LIB)/. $(TLIB) &&					\
+	)
+	$(CP) -r $(LIB)/. $(TLIB)
 	(								\
 		cd $(BIN) &&						\
-		sed "/^lib=/s;\".*\";'$(ULIB)';" <mlton >$(TBIN)/mlton &&	\
+		sed "/^lib=/s;\".*\";'$(prefix)/$(ULIB)';" 		\
+			<mlton >$(TBIN)/mlton &&			\
 		chmod +x $(TBIN)/mlton &&				\
 		$(CP) $(LEX) $(PROF) $(YACC) $(TBIN)/			\
-	) &&								\
+	)
 	(								\
 		cd $(SRC)/man &&					\
 		$(CP) mlton.1 mlprof.1 $(TMAN)/				\

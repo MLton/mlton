@@ -52,24 +52,27 @@
     </ul>
 
     <h3>What's new?</h3>
-    Version 20020410 is a major release over 20011006.  For a
-    complete list of changes and bug fixes, see the <a href =
-    "CHANGES">CHANGES</a> file.  Notable changes include:
+    Version 2002???? is the latest stable release.  For a complete list of
+    changes and bug fixes since the last release, see the <a href = 
+    "CHANGES">CHANGES</a> file.  Notable changes since the last stable release,
+    20020410, include:
+
     <ul>
-      <li>MLton now runs on Cygwin/Windows.
-      <li>There have been significant performance improvements in generated code.
-      <li>There have been several additions to the <tt>MLton</tt> structure: 
-	<tt>Exn</tt>, <tt>IntInf</tt>, <tt>Process</tt>, <tt>Profile</tt>.
-      <li>MLton's runtime system can now use large amounts of memory (up to 4G),
-	including more than the available RAM.
-      <li>Arrays (strings, vectors) can now have up to <tt>2^31 - 1</tt>
-	elements (provided there is enough memory).
-      <li>Command-line switches have been changed to be more regular,
-	and some have been removed.
-      <li>MLton no longer supports <tt>_prim</tt> for defining compile-time
-	constants.
-      <li>There were several bug fixes for type inference of flexible record
-	patterns.
+      <li> Major runtime system improvements.  The runtime now implements
+      mark-compact and generational collection, in addition to the copying
+      collection that was there before.  It automatically switches between the
+      the collection strategies to improve performance and to try to avoid
+      paging.
+
+      <li> Performance when compiling "-exn-history true" has been improved.
+
+      <li> Added <tt>IntInf.log2</tt>, <tt>MLton.GC.pack</tt>, and
+	    <tt>MLton.GC.unpack</tt>. 
+
+      <li> Fixed bug in load world that could cause <tt>sread failed</tt> on 
+	      Cygwin.
+      <li> Fixed optimizer bug that could cause </tt> no analyze var value
+		property</tt> message. 
     </ul>
 
 <!--    <h3>How do you pronounce MLton?</h3>
@@ -89,7 +92,7 @@
     <hr>
 <a href = "http://www.mlton.org">MLton</a><br>
 <!-- hhmts start -->
-Last modified: Thu Aug 22 10:37:24 PDT 2002
+Last modified: Sun Aug 25 17:39:17 PDT 2002
 <!-- hhmts end -->
 <p><a href="http://sourceforge.net">
     <img src="http://sourceforge.net/sflogo.php?group_id=50419&type=4"

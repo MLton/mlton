@@ -21,15 +21,15 @@ make STUBS=no
 
 %install
 rm -rf $RPM_BUILD_ROOT
-make prefix=$RPM_BUILD_ROOT VERSION=%{version} install
+make prefix=$RPM_BUILD_ROOT/usr/local VERSION=%{version} install
 
 %files
-%attr(-, root, root)		/usr/share/doc/mlton-%{version}
+%attr(-, root, root)		/usr/local/share/doc/mlton
 %attr(-, root, root)		/usr/local/bin/mllex
 %attr(-, root, root)		/usr/local/bin/mlprof
 %attr(-, root, root)		/usr/local/bin/mlton
 %attr(-, root, root)		/usr/local/bin/mlyacc
 %attr(-, root, root)		/usr/local/lib/mlton
-%attr(-, root, root)		/usr/local/man/man1/mlprof.1
-%attr(-, root, root)		/usr/local/man/man1/mlton.1
+%attr(-, root, root)		/usr/local/share/man/man1/mlprof.1
+%attr(-, root, root)		/usr/local/share/man/man1/mlton.1
 

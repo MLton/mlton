@@ -5,7 +5,9 @@ this interface will change.  That having been said, it is easy to access C
 global variables and make calls to C functions from within SML using {\mlton},
 at least when dealing with simple types like {\tt char}, {\tt double}, {\tt
 int}, and {\tt word}.  It is not possible to call C macros or to call SML from
-C.  Suppose you would like to call a C function with the following prototype
+C.
+
+Suppose you would like to call a C function with the following prototype
 from SML:
 \begin{verbatim}
 int foo(double d, unsigned char c);
@@ -14,12 +16,13 @@ int foo(double d, unsigned char c);
 \begin{verbatim}
 _ffi "foo": real * char -> int;
 \end{verbatim}
-This expression returns a function of type {\tt real * char -> int}
+This expression denotes a function of type {\tt real * char -> int}
 whose behavior is implemented by calling the C function whose name is
 {\tt foo}.  Thinking in terms of C, imagine that there are C
 variables {\tt d} of type {\tt double}, {\tt c} of type {\tt unsigned
 char}, and {\tt i} of type {\tt int}.  Then, the C statement
 \mbox{\tt i = foo(d, c)} is executed and {\tt i} is returned.
+
 The general form of an \verb+_ffi+ declaration is:
 \begin{verbatim}
 _ffi "C global variable or function name": ty;

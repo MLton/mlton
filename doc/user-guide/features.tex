@@ -32,15 +32,23 @@ For a comparison with other SML compilers, see
 For a comparison of many compilers, including {\mlton}, see
 \link{http://www.bagley.org/\~{}doug/shootout/}.
 
-\feature{runtime system tries to avoid paging}
-{\mlton} generated executables use copying collection when the amount
-of live data is small and mark-compact collection when the amount of
-live data is large.  The copying collection is fast but requires a
-high ratio of memory used to live data size.  The mark-compact
-collection is slower, but performs better with a lower ratio of memory
-used to live data size.  The runtime system decides on a per-gc basis 
-between copying and mark-compact collection in an effort to avoid
-paging.
+\feature{native integers}
+In {\mlton}, integers are use 32 bits and integer arithmetic does not have any
+overhead due to tagging.
+
+\feature{unboxed native arrays}
+In {\mlton}, an array of integers or reals uses the natural C-like
+representation.  This is fast and supports easy exchange of data with C.
+
+\feature{runtime system supports large arrays}
+In {\mlton}, array lengths can be up to $2^31 - 1$, the largest possible 32 bit
+integer.
+
+\feature{runtime system supports large heaps}
+The {\mlton} runtime system uses copying, mark-compact, and generational
+collection, automatically deciding which to use based on the amount of live
+data relative to the amount of RAM.  The runtime system tries to keep the heap
+within RAM if at all possible.
 
 \feature{standalone executables}
 {\mlton} generates standalone executables.  No additional code or

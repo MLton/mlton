@@ -1,5 +1,17 @@
 Here are the changes from version 20020410 to version VERSION.
 
+Summary:
+  + Major runtime system improvements.  The runtime now implements
+    mark-compact and generational collection, in addition to the copying
+    collection that was there before.  It automatically switches between
+    the the collection strategies to improve performance and to try to avoid
+    paging.
+  + Performance when compiling "-exn-history true" has been improved.
+  + Added IntInf.log2, MLton.GC.pack, MLton.GC.unpack.
+  + Fixed bug in load world that could cause "sread failed" on Cygwin.
+  + Fixed optimizer bug that could cause "no analyze var value property"
+    message. 
+
 * 2002-08-25
   - Changed the implementation of exception history to be completely functional.
     Now, the extra field in exceptions (when compiling -exn-history true) is a

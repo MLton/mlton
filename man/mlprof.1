@@ -10,15 +10,15 @@ by running a program compiled by \fBMLton\fP with the \fB-p\fP option.
 In order to do this, it needs the executable (a.out) file produced by
 \fBMLton\fP and the mlmon.out file produced by running the executable.
 In addition, the results printed by \fBmlprof\fP relate most
-closely to the CPS intermediate language of compilation, so having the
-\fI*\fB.cps\fR file is useful.
+closely to the SSA intermediate language of compilation, so having the
+\fI*\fB.ssa\fR file is useful.
 
 The output of mlprof consists of an initial line indicating how much CPU time
 the program used.  After this the various routines will be listed along with the
 percentage of this time that they used, in decreasing order.
 
 The fact that the relation between CPU time use and the original ML program is
-only done as far as the output of the CPS pass is quite unfortunate, but
+only done as far as the output of the SSA pass is quite unfortunate, but
 hopefully still useful.
 .SH OPTIONS
 .TP
@@ -26,9 +26,9 @@ hopefully still useful.
 Control the level of detail of profiling.  The default is 0.
 .br
 .in +.5i
-\fB0\fP  CPS functions.
+\fB0\fP  SSA functions.
 .br
-\fB1\fP  CPS basic blocks.
+\fB1\fP  SSA basic blocks.
 .br
 \fB2\fP  Assembly basic blocks.
 .in -.5i

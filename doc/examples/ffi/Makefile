@@ -1,5 +1,9 @@
 mlton = mlton
 
+.PHONY: all
+all: main
+	main
+
 main: ffi.o main.sml ffi.h
 	$(mlton) main.sml ffi.o
 

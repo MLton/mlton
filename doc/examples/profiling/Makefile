@@ -1,6 +1,7 @@
 mlton = mlton
 mlprof = mlprof
 
+.PHONY: all
 all: profile profile2
 
 .PHONY: profile

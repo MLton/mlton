@@ -58,9 +58,10 @@ specification.  If a module does not appear, it is completely unimplemented.
 \fullmodule{LargeInt}{INTEGER}
 \module{LargeReal}{REAL}{Same as {\tt Real}}
 \fullmodule{LargeWord}{WORD}
-\fullmodule{ListPair}{LIST\_PAIR}
 \fullmodule{List}{LIST}
+\fullmodule{ListPair}{LIST\_PAIR}
 \fullmodule{Math}{MATH}
+\fullmodule{Option}{OPTION}
 \fullmodule{OS.FileSys}{OS\_FILE\_SYS}
 \extra{Use of {\tt OS.FileSys.tmpName} causes a link-time warning.}
 \extra{You can use {\tt MLton.TextIO.mkstemp} instead.}
@@ -85,7 +86,6 @@ specification.  If a module does not appear, it is completely unimplemented.
        {Missing: {\tt exception InvalidArc}, {\tt toUnixPath},
         {\tt fromUnixPath}.}
 \fullmodule{OS.Process}{OS\_PROCESS}
-\fullmodule{Option}{OPTION}
 \fullmodule{Pack32Big}{PACK\_WORD}
 \fullmodule{Pack32Little}{PACK\_WORD}
 \fullmodule{PackReal64Little}{PACK\_REAL}
@@ -99,12 +99,13 @@ specification.  If a module does not appear, it is completely unimplemented.
 \extra{{\tt toDecimal}, {\tt fromDecimal}.}
 \extra{Do not match spec: {\tt scan}, {\tt fmt}, {\tt toString}, {\tt
         fromString}.}
+\fullmodule{Real64Array}{MONO\_ARRAY}
 \fullmodule{RealArray}{MONO\_ARRAY}
 \fullmodule{RealArray2}{MONO\_ARRAY2}
 \fullmodule{RealVector}{MONO\_VECTOR}
 \fullmodule{SML90}{SML90}
-\fullmodule{StringCvt}{STRING\_CVT}
 \fullmodule{String}{STRING}
+\fullmodule{StringCvt}{STRING\_CVT}
 \fullmodule{Substring}{SUBSTRING}
 \fullmodule{SysWord}{WORD}
 \module{TextIO}{TEXT\_IO}
@@ -113,8 +114,8 @@ specification.  If a module does not appear, it is completely unimplemented.
  {\tt openString},
  {\tt setPosIn},
  {\tt setPosOut}.}
-\fullmodule{Timer}{TIMER}
 \fullmodule{Time}{TIME}
+\fullmodule{Timer}{TIMER}
 \fullmodule{Unix}{UNIX}
 \fullmodule{Vector}{VECTOR}
 \fullmodule{Word}{WORD}

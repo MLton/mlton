@@ -7,6 +7,7 @@ Linux or Cygwin/Windows.  MLton has the following features.
    + Fast IntInf based on the GNU multiprecision library (gmp)
    + Fast C FFI
    + Profiling
+   + Supports large amounts of memory and large arrays.
    + Libraries for continuations, interval timers, random numbers,
        resource limits, resource usage, signal handlers, sockets, system
        logging, threads, and heap save and restore
@@ -19,9 +20,9 @@ Send comments, questions, and bug reports to MLton@mlton.org.
 
 doc directory contents:
 	CHANGES			changelog
-	HTML/			html user guide
 	README			this file
 	cmcat.sml		a utility for producing whole programs in SML/NJ
 	examples/		example SML programs
 	license/		license information
+	user-guide/		html user guide
 	user-guide.ps.gz	postscript user guide

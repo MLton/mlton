@@ -8,7 +8,7 @@ cross compiler, you need to do several things.
 
 \begin{enumerate}
 
-\item Install the Cygwin dll in the Windows machine.
+\item Install the Cygwin {\tt dll} in the Windows machine.
 
 \item Install the GCC cross-compiler tools on your Linux machine.
 
@@ -46,8 +46,10 @@ Running {\tt add-cross} installs the cross-compiled runtime and creates a
 cross-compiled executable, {\tt print-constants.exe}, which prints out all of
 the constants that {\mlton} needs in order to implement the basis library.  The
 final step is to run {\tt print-constants.exe} on your Windows machine, and save
-the output in the file indicated by {\tt add-cross}.  Once you have done this,
-you should be able to cross compile SML applications.  For example
+the output in the file indicated by {\tt add-cross}.
+
+Once you have done all this, you should be able to cross compile SML
+applications.  For example
 \begin{verbatim}
 mlton -host i386-pc-cygwin hello-world.sml
 \end{verbatim}

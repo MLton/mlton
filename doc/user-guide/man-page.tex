@@ -54,15 +54,6 @@ performance impact, both in memory usage of exceptions and in runtime,
 because of additional work that must be performed at each exception
 construction, raise, and handle.
 
-\option{-fixed-heap \mbox{\rm n[}km\mbox{\rm ]}}
-The resulting executable will use a heap of fixed size {\tt n}.  A value
-of {\tt 0} means that the heap size should be chosen almost as large as the
-amount of
-RAM in the machine.  A trailing {\tt k} means that {\tt heapSize} is in units of
-1024 bytes.  A trailing {\tt m} means that {\tt heapSize} is in megabytes.  If
-neither appears, then {\tt heapSize} is in bytes.  By default the executable
-will use an automatically resized heap.
-
 \option{-host \{self|...\}}
 Generate an executable that runs on the specified host.  The default is {\tt
 self}, which means to compile for the machine that {\mlton} is running on.  To
@@ -115,10 +106,6 @@ generating C and using {\tt gcc}.  With native code generation,
 Specify the name of the final output file.
 The default name is the input file name with its
 suffix removed and an appropriate suffix added.
-
-\option{-polyvariance \{true|false\}}
-Control whether the optimizer runs polyvariance, which is a pass that duplicates
-small, higher-order functions to improve performance.
 
 \option{-profile \{false|true\}}
 Produce an executable that will gather profiling information.  {\tt -profile

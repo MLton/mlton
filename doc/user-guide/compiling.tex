@@ -14,13 +14,16 @@ sources.
 % make
 mlyacc front-end/ml.grm
 1 shift/reduce conflict
+chmod -w front-end/ml.grm.*
+rm -f front-end/ml.lex.sml
 mllex front-end/ml.lex
 
-Number of states = 278
-Number of distinct rows = 183
-Approx. memory size of trans. table = 188856 bytes
+Number of states = 329
+Number of distinct rows = 216
+Approx. memory size of trans. table = 222912 bytes
+chmod -w front-end/ml.lex.sml
 Compiling mlton (takes a while)
-time mlton @MLton -- -v -o mlton-compile mlton-stubs.cm
+time mlton @MLton  gc-summary -- -host self -v -o mlton-compile mlton.cm
 MLton starting
    Compile SML starting
       pre codegen starting
@@ -37,12 +40,9 @@ structure from the basis library.
 Compiling {\mlton} requires at least 256m of memory.  Thus, if your machine has
 less than this, it is likely that self-compilation will take a very long time
 due to paging.  Even if you have enough memory, there simply may not be enough
-available, due to memory consumed by other processes.  In this case, you will
-likely see the following error during self-compilation.
-\begin{verbatim}
-Out of swap space
-\end{verbatim}
-The only fix is to make sure that enough virtual memory is available.
+available, due to memory consumed by other processes.  In this case, you may
+see an ``Out of memory'' during self compilation.  The only fix is to make sure
+that enough memory is available.
 
 \subsection{Compiling with {\smlnj}}
 

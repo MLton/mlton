@@ -32,7 +32,7 @@ percentage of time spent in each C and SSA function.  C functions are
 used for the FFI and garbage collector.  SSA is an intermediate
 language used by MLton that has traditional first-order function
 definitions and calls and is similar to static-single assignment form.
-In the above example, {\tt tak\_0} is a SSA function (see {\tt
+In the above example, {\tt tak\_0} is an SSA function (see {\tt
   profiling.ssa}) corresponding to the source SML {\tt tak} function.
 The C function {\tt IntInf\_smallMul} is used to implement {\tt
   IntInf.*}.
@@ -90,7 +90,7 @@ software package.
 Compiling {\tt foo.sml} with {\tt -keep dot} saves the SSA function
 call graph for the whole program in {\tt foo.call-graph.dot}.  Also,
 for each SSA function {\tt f}, it saves the intraprocedural
-control-flow graph in {\tt foo.f.cfg.dot}) and dominator tree in ({\tt
+control-flow graph (in {\tt foo.f.cfg.dot}) and dominator tree in ({\tt
 foo.f.dom.dot}).  In the control-flow graph, solid edges indicate
 gotos with arguments, dashed edges indicate handling a raise coming
 from the callee, and dotted edges indicate a return from the callee.
