@@ -888,7 +888,22 @@ fun toMachine (program: Ssa.Program.t) =
 						  srcs = handles})
 			   end
 		      | R.Kind.Jump => (M.Kind.Jump, live, Vector.new0 ())
-		  val statements = Vector.concat [pre, statements, preTransfer]
+		  val (first, statements) =
+		     if !Control.profile = Control.ProfileTime
+			then
+			   case (if 0 = Vector.length statements
+				    then NONE
+				 else (case Vector.sub (statements, 0) of
+					  s as M.Statement.ProfileLabel _ =>
+					     SOME s
+					| _ => NONE)) of
+			      NONE => Error.bug "missing ProfileLabel"
+			    | SOME s =>
+				 (Vector.new1 s,
+				  Vector.dropPrefix (statements, 1))
+		     else (Vector.new0 (), statements)
+		  val statements =
+		     Vector.concat [first, pre, statements, preTransfer]
 	       in
 		  Chunk.newBlock (chunk,
 				  {kind = kind,
