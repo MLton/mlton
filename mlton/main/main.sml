@@ -556,7 +556,7 @@ fun commandLine (args: string list): unit =
 					     String.isSuffix {string = s,
 							      suffix = suffix})
 				orelse
-				List.exists (["-l", "-L"], fn prefix =>
+				List.exists (["-l", "-L", "-Wl,"], fn prefix =>
 					     String.isPrefix {prefix = prefix,
 							      string = s}))) of
 		  NONE => ()
