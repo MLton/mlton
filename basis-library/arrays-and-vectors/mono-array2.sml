@@ -19,6 +19,7 @@ functor MonoArray2 (V: CONCRETE_MONO_VECTOR): MONO_ARRAY2 =
    end
 
 structure Word8Array2 = MonoArray2 (Word8Vector)
+(*
 structure CharArray2: MONO_ARRAY2 =
    struct
       structure Vector = CharVector
@@ -33,6 +34,7 @@ structure CharArray2: MONO_ARRAY2 =
       val row = Primitive.String.fromCharVector o row
       val column = Primitive.String.fromCharVector o column
    end
+*)
 structure BoolArray2 = MonoArray2 (BoolVector)
 structure IntArray2 = MonoArray2 (IntVector)
 structure RealArray2 = MonoArray2 (RealVector)

@@ -24,5 +24,8 @@ structure CharVector =
 
 structure BoolVector = MonoVector(type elem = bool)
 structure IntVector = MonoVector(type elem = int)
+structure Int32Vector = IntVector
 structure RealVector = MonoVector(type elem = real)
-
+structure Real64Vector = RealVector
+structure WordVector = MonoVector(type elem = word)
+structure Word32Vector = WordVector

@@ -15,8 +15,10 @@ list/list-pair.sig
 list/list-pair.sml
 arrays-and-vectors/sequence.sig
 arrays-and-vectors/sequence.fun
+arrays-and-vectors/vector-slice.sig
 arrays-and-vectors/vector.sig
 arrays-and-vectors/vector.sml
+arrays-and-vectors/array-slice.sig
 arrays-and-vectors/array.sig
 arrays-and-vectors/array.sml
 text/string0.sml

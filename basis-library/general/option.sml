@@ -1,4 +1,5 @@
 (* Modified from SML/NJ sources by sweeks@research.nj.nec.com on 4/18/98. *)
+(* Modified by fluet@cs.cornell.edu on 7/19/02. *)
 
 (* option.sml
  *
@@ -28,6 +29,10 @@ structure Option: OPTION =
      val join =
 	fn SOME opt => opt
 	 | NONE => NONE
+
+     fun app f =
+        fn SOME x => f x
+	 | NONE => ()
 
      fun map f =
 	fn SOME x => SOME(f x)

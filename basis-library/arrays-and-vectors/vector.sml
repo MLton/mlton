@@ -11,14 +11,30 @@ structure Vector: VECTOR_EXTRA =
 			      type 'a elt = 'a
 			      val fromArray = Primitive.Vector.fromArray
 			      val isMutable = false
-			      open Primitive.Vector)
+			      val length = Primitive.Vector.length
+			      val sub = Primitive.Vector.sub)
       open V
 
       type 'a vector = 'a vector
+      val vector = new
+
+      structure VectorSlice = 
+	 struct
+	    open Slice
+	    type 'a vector = 'a vector
+	    fun vector sl = copy sl
+	 end
+
+      fun update (v, i, x) = 
+	tabulate (length v,
+		  fn j => if i = j 
+			     then x
+			  else unsafeSub (v, j))
 
       val fromArray = Primitive.Vector.fromArray
       val unsafeSub = Primitive.Vector.sub
    end
+structure VectorSlice: VECTOR_SLICE_EXTRA = Vector.VectorSlice
 
 structure VectorGlobal: VECTOR_GLOBAL = Vector
 open VectorGlobal

@@ -1,0 +1,91 @@
+
+What is the rationale for Word8Array2 being required?
+MONO_ARRAY2 isn't required.
+Word8Array2 is marked optional in mono-array2.html
+
+With the addition of Word.~, presumably ~ should be overloaded at num,
+rather than intreal.
+
+Non-opaque signature match on structure IntInf.
+
+Ordering of comparison functions (<,>, etc.) and unary negation are
+different within INTEGER and WORD.
+
+ListPair discussion:
+"Note that a function requiring equal length arguments may determine
+this lazily, i.e. , it may act as though the lists have equal length
+and invoke the user-supplied function argument, but raise the
+exception when it arrives at the end of one list before the end of the
+other."
+
+Math:
+"The top-level structure Math provides these functions for the default
+real type Real.real."
+But, structure Math :> MATH has an opaque signature;
+either the top-level Math structure is equal to Real.Math (which
+includes the type sharing constraint), or this instance of Math should
+have a sharing constraint.
+
+IEEEReal:
+toString prepends a #"~" even when the class is NAN?
+
+PACK_REAL:
+syntax/scope of where clauses in structure bindings is incorrect.
+
+Array2:
+Why no ARRAY2_REGION analagous to ARRAY_SLICE?
+Types of Array2 operations don't match corresponding Array ops.
+How about Matrix (== Vector2) and MATRIX_REGION?
+
+VECTOR_SLICE:
+Description of subslice references |arr| when it should reference |sl|.
+
+ARRAY, ARRAY_SLICE, VECTOR, VECTOR_SLICE, 
+MONO_VECTOR, MONO_ARRAY:
+Description of findi references appi when it should reference findi.
+
+MONO_ARRAY:
+CharArray has where type elem = char, not Char.char.
+
+SLICES:
+Why not existsi, alli?
+Should signature matching be opaque to hide implementation of 'a slice?
+Rationale: maintaining the slice invariants in {Array,Vector}Slice structures
+ allows use of unsafe sub and updates when iterating through elements;
+ if arbitrary slices can be passed to appi, then unsafe subs aren't allowed.
+ (In fact, Basis doesn't discuss what should happen in this case.)
+Ordering of full, slice, subslice different in ArraySlice and VectorSlice
+
+Array includes 'a vector;
+ArraySlice references 'a VectorSlice.slice and 'a Vector.vector.
+VectorSlice references 'a Vector.vector.
+Presumably, 'a Array.vector = 'a Vector.vector, but no sharing constraint makes
+this explicit.
+
+Probably Vector and Array signatures matching should be opaque as well.
+
+Vector:
+Why no vector: int * 'a -> 'a vector?
+
+
+Question: 
+
+If one defines VECTOR_SLICE by including a type 'a vector and replace
+'a Vector.vector with the local 'a vector, but then binds
+structure Vector: VECTOR
+structure VectorSlice: VECTOR_SLICE where type 'a vector = 'a Vector.vector
+at the top-level, does one violate the basis spec?
+Rationale: it's easiset to implement Vector and VectorSlice simultaneously, say 
+with VectorSlice as a substructure of Vector (in fact, with all of the Vector operations
+being dispatched to the corresponding VectorSlice ops with full slices),
+so Vector isn't in scope for the VECTOR_SLICE.
+
+
+
+
+MLton specific:
+ + why are Int32_gtu and Int32_geu primitive?
+   Why not just Word.fromInt and use Word comparisons?
+ + Real:>REAL doesn't match basis because it may peform
+    arithmetic at extended precision.  Should this be mentioned
+    in the user guide?

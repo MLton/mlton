@@ -76,7 +76,7 @@ structure Pack32Big =
  *)
 
 (* Depends on being on a little-endian machine. *)
-structure Pack32Little: PACK_WORD =
+structure Pack32Little: PACK_WORD_EXTRA =
    struct
       val start = Pack32Big.start
       val _ = if Primitive.isLittleEndian

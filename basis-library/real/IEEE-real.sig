@@ -4,10 +4,8 @@ signature IEEE_REAL =
       
       datatype real_order = LESS | EQUAL | GREATER | UNORDERED
 	 
-      datatype nan_mode = QUIET | SIGNALLING
-	 
       datatype float_class =
-	 NAN of nan_mode 
+	 NAN
        | INF
        | ZERO
        | NORMAL
@@ -22,12 +20,14 @@ signature IEEE_REAL =
       val setRoundingMode: rounding_mode -> unit 
       val getRoundingMode: unit -> rounding_mode
 	 
-      type decimal_approx = {kind: float_class,
+      type decimal_approx = {class: float_class,
 			     sign: bool,
 			     digits: int list,
 			     exp: int}
 	 
       val toString: decimal_approx -> string 
-(*      val fromString: string -> decimal_approx option*)
+(*    val scan: (char, 'a) StringCvt.reader 
+                -> (decimal_approx, 'a) StringCvt.reader *)
+(*    val fromString: string -> decimal_approx option *)
    end
 
