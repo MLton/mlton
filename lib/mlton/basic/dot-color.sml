@@ -155,6 +155,16 @@ structure DotColor =
        | Yellow1 | Yellow2 | Yellow3 | Yellow4
        | Yellowgreen
 
+
+      val grays =
+	 Vector.fromList
+	 [Gray0, Gray1, Gray2, Gray3, Gray4, Gray5, Gray6, Gray7, Gray8, Gray9, Gray10, Gray11, Gray12, Gray13, Gray14, Gray15, Gray16, Gray17, Gray18, Gray19, Gray20, Gray21, Gray22, Gray23, Gray24, Gray25, Gray26, Gray27, Gray28, Gray29, Gray30, Gray31, Gray32, Gray33, Gray34, Gray35, Gray36, Gray37, Gray38, Gray39, Gray40, Gray41, Gray42, Gray43, Gray44, Gray45, Gray46, Gray47, Gray48, Gray49, Gray50, Gray51, Gray52, Gray53, Gray54, Gray55, Gray56, Gray57, Gray58, Gray59, Gray60, Gray61, Gray62, Gray63, Gray64, Gray65, Gray66, Gray67, Gray68, Gray69, Gray70, Gray71, Gray72, Gray73, Gray74, Gray75, Gray76, Gray77, Gray78, Gray79, Gray80, Gray81, Gray82, Gray83, Gray84, Gray85, Gray86, Gray87, Gray88, Gray89, Gray90, Gray91, Gray92, Gray93, Gray94, Gray95, Gray96, Gray97, Gray98, Gray99, Gray100]
+
+      fun gray i =
+	 if 0 <= i andalso i < Vector.length grays
+	    then Vector.sub (grays, i)
+	 else Error.bug "invalid gray index"
+
       fun realToString x = Real.format (x, Real.Format.fix (SOME 2))
 	 
       val toString =
