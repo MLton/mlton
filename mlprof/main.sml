@@ -728,7 +728,10 @@ fun display (AFile.T {callGraph, master, name = aname, split, ...},
 		  val pc = per current
 		  val isNonZero = current > 0 orelse stack > 0 orelse stackGC > 0
 		  val tableInfo = 
-		     if isNonZero orelse kind = Kind.Count
+		     if isNonZero orelse (kind = Kind.Count
+					  andalso (case source of
+						      Source.NamePos _ => true
+						    | _ => false))
 			then SOME {per = pc,
 				   row = Source.toStringMaybeLine source :: row}
 		     else NONE
