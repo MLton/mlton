@@ -1667,9 +1667,9 @@ fun elaborateDec (d, {env = E, nest}) =
 				unify
 				(Cexp.ty lambda, ty, fn (l1, l2) =>
 				 (Avar.region func,
-				  str "function type disagrees with recursive use",
-				  align [seq [str "function type: ", l1],
-					 seq [str "recursive use: ", l2],
+				  str "Recursive use of function disagrees with its type",
+				  align [seq [str "expects: ", l1],
+					 seq [str "bug got: ", l2],
 					 lay ()]))
 			     val lambda =
 				case Cexp.node lambda of
