@@ -12,7 +12,7 @@ open S
 
 structure ImplementExceptions = ImplementExceptions (open S)
 structure Polyvariance = Polyvariance (open S)
-structure Uncurry = Uncurry (open S)
+(* structure Uncurry = Uncurry (open S) *)
 
 fun traces s p = (Trace.Immediate.on s; p)
 
