@@ -25,7 +25,7 @@ structure MLton:
    sig
       val debug: bool
       val eq: 'a * 'a -> bool
-      datatype hostType = Cygwin | Linux
+      datatype hostType = Cygwin | FreeBSD | Linux
       val hostType: hostType
       val isMLton: bool
       val safe: bool
@@ -70,7 +70,7 @@ like {\tt char}, {\tt int}, and {\tt word}, this is the same as equals.  For
 arrays, datatypes, strings, tuples, and vectors, this is a simple pointer
 equality.  The semantics is a bit murky.
 
-\entry{datatype hostType = Cygwin | Linux}
+\entry{datatype hostType}
 the possible host types that {\mlton} can generate executables for.
 
 \entry{hostType}
