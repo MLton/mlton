@@ -6,7 +6,7 @@ all: import export
 	./export
 
 export: export.sml ffi-export.c
-	$(mlton) -export-header true export.sml >export.h
+	$(mlton) -export-header export.h -stop tc export.sml
 	gcc -c ffi-export.c
 	$(mlton) export.sml ffi-export.o
 
