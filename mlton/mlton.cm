@@ -204,6 +204,7 @@ atoms/const.fun
 atoms/prim.fun
 atoms/use-name.fun
 atoms/atoms.fun
+../lib/mlton/basic/dot-color.sml
 ../lib/mlton/basic/directed-graph.sig
 ../lib/mlton/basic/directed-graph.sml
 cps/cps-tree.sig

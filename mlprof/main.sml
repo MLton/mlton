@@ -4,9 +4,10 @@ struct
 type int = Int.t
 type word = Word.t
 
+val busy = ref false : bool ref
+val color = ref false
 val static = ref false (* include static C functions *)
 val thresh = ref 0 : int ref
-val busy = ref false : bool ref
 
 val die = Process.fail
 val warn = fn s => Out.output (Out.error, concat ["Warning: ", s, "\n"])
@@ -22,6 +23,7 @@ struct
 			star (isChar (fn #"_" => true
 				       | #"'" => true
 				       | c => Char.isAlphaNum c))]
+		     
 end
 
 structure StringMap:
@@ -83,7 +85,8 @@ end
 
 structure ProfileInfo =
 struct
-   datatype 'a t = T of {data: 'a, minor: 'a t} list
+   datatype 'a t = T of {data: 'a,
+			 minor: 'a t} list
 
    local
       open Layout
@@ -250,15 +253,6 @@ structure AFile =
 							  " (C @ 0x",
 							  Word.toString addr,
 							  ")"]
-(*
-					          if !static
-						    then concat 
-						         [profileName,
-							  " (C @ 0x",
-							  Word.toString addr,
-							  ")"]
-						    else "<static>"
-*)
 				     in
 				       {profileLevel = 0,
 					profileName = profileName}::
@@ -485,16 +479,54 @@ fun coalesce (counts: {profileInfo: {name: string} ProfileInfo.t,
       doit map
     end
 
+val replaceLine =
+   Promise.lazy
+   (fn () =>
+    let
+       open Regexp
+       val beforeColor = Save.new ()
+       val label = Save.new ()
+       val afterColor = Save.new ()
+       val nodeLine =
+	  seq [save (seq [anys, string "fontcolor = ", dquote], beforeColor),
+	       star (notOneOf String.dquote),
+	       save (seq [dquote,
+			  anys,
+			  string "label = ", dquote,
+			  save (star (notOneOf " \\"), label),
+			  oneOf " \\",
+			  anys,
+			  string "\n"],
+		     afterColor)]
+       val dfa = compileNFA nodeLine
+       val _ = Compiled.layoutDotToFile (dfa, "/tmp/dfa.dot")
+    in
+       fn (l, color) =>
+       case Compiled.matchAll (dfa, l) of
+	  NONE => l
+	| SOME m =>
+	     let
+		val {lookup, ...} = Match.stringFuns m
+	     in
+		concat [lookup beforeColor,
+			color (lookup label),
+			lookup afterColor]
+	     end
+    end)
+
 fun display (counts: {name: string, ticks: int} ProfileInfo.t,
+	     baseName: string,
 	     depth: int) =
    let
       val ticksPerSecond = 100.0
       val thresh = Real.fromInt (!thresh)
-      datatype t = T of {ticks: int,
+      datatype t = T of {name: string,
+			 ticks: int,
 			 row: string list,
 			 minor: t} array
       fun doit (info as ProfileInfo.T profileInfo,
 		n: int,
+		dotFile: File.t,
 		stuffing: string list,
 		totals: real list) =
 	 let
@@ -527,7 +559,8 @@ fun display (counts: {name: string, ticks: int} ProfileInfo.t,
 						 Real.Format.fix (SOME 2)),
 				    "%"]
 		      in			    
-			 {ticks = ticks,
+			 {name = name,
+			  ticks = ticks,
 			  row = (List.concat
 				 [[concat [space, name]],
 				  stuffing,
@@ -538,6 +571,8 @@ fun display (counts: {name: string, ticks: int} ProfileInfo.t,
 					(List.length totals, fn () => ""))]),
 			  minor = if n < depth
 				     then doit (minor, n + 1,
+						concat [baseName, ".",
+							name, ".cfg.dot"],
 						tl stuffing, total :: totals)
 				  else T (Array.new0 ())}
 			 :: ac
@@ -547,12 +582,63 @@ fun display (counts: {name: string, ticks: int} ProfileInfo.t,
 	    val _ =
 	       QuickSort.sort
 	       (a, fn ({ticks = t1, ...}, {ticks = t2, ...}) => t1 >= t2)
+	    (* Colorize. *)
+	    val _ =
+	       if n > 1 orelse not(!color) orelse 0 = Array.length a
+		  then ()
+	       else
+		  let
+		     val ticks = Int.toReal (#ticks (Array.sub (a, 0)))
+		     fun thresh r = Real.floor (ticks * r)
+		     val thresh1 = thresh (2.0 / 3.0)
+		     val thresh2 = thresh (1.0 / 3.0)
+		     datatype z = datatype DotColor.t
+		     fun color l =
+			DotColor.toString
+			(case Array.peek (a, fn {name, ...} =>
+					  String.equals (l, name)) of
+			    NONE => Black
+			  | SOME {ticks, ...} =>
+			       if ticks >= thresh1
+				  then Red1
+			       else if ticks >= thresh2
+				       then Orange2
+				    else Yellow3)
+		     val replaceLine = replaceLine ()
+		  in
+		     if File.doesExist dotFile
+			then
+			   let
+			      val (tmp, out) =
+				 File.temp {prefix = "/tmp/file", suffix = ""}
+			      val _ =
+				 Out.withClose
+				 (out, fn () =>
+				  File.withIn
+				  (dotFile, fn ins =>
+				   let
+				      fun loop () =
+					 case In.inputLine ins of
+					    "" => ()
+					  | l =>
+					       (Out.output
+						(out, replaceLine (l, color))
+						; loop ())
+				   in
+				      loop ()
+				   end))
+			      val _ = File.move {from = tmp, to = dotFile}
+			   in
+			      ()
+			   end
+		     else ()
+		  end
 	 in T a
 	 end
       fun toList (T a, ac) =
 	 Array.foldr (a, ac, fn ({row, minor, ...}, ac) =>
 		      row :: toList (minor, ac))
-      val rows = toList (doit (counts, 0,
+      val rows = toList (doit (counts, 0, concat [baseName, ".call-graph.dot"],
 			       List.duplicate (depth, fn () => ""),
 			       []), [])
       val _ =
@@ -581,6 +667,7 @@ fun main args =
 	    parse
 	    {switches = args,
 	     opts = [("b", trueRef busy),
+		     ("color", trueRef color),
 		     ("d", Int (fn i => if i < 0 orelse i > 2
 					  then die "invalid depth"
 					  else depth := i)),
@@ -606,12 +693,14 @@ fun main args =
 		    then ()
 		 else (print "ProfFile:\n"
 		       ; Layout.outputl (ProfFile.layout profInfo, Out.standard))
+	      val info = coalesce (attribute (aInfo, profInfo))
+	      val _ = display (info, afile, !depth)
 	    in
-	      display (coalesce (attribute (aInfo, profInfo)),
-		       !depth)
+	       ()
 	    end
 	 | Result.Yes _ => usage "wrong number of args"
     end
 
 val main = Process.makeMain main
+
 end

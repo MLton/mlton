@@ -1481,8 +1481,10 @@ structure Function =
 		   options = [GraphOption.Rank (Min, [root])],
 		   edgeOptions = edgeOptions,
 		   nodeOptions =
-		   fn n => let val l = ! (nodeOptions n)
-			   in NodeOption.Shape Box :: l
+		   fn n => let
+			      val l = ! (nodeOptions n)
+			      open NodeOption
+			   in FontColor Black :: Shape Box :: l
 			   end}
 	       fun treeLayout () =
 		  let
@@ -1684,8 +1686,12 @@ structure Program =
 		   (fn f =>
 		    let
 		       val n = Graph.newNode graph
-		       val _ = setNodeOptions (n, [NodeOption.label
-						   (Func.toString f)])
+		       val _ =
+			  setNodeOptions
+			  (n,
+			   let open NodeOption
+			   in [FontColor Black, label (Func.toString f)]
+			   end)
 		    in
 		       n
 		    end))
