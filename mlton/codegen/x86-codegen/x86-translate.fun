@@ -31,6 +31,11 @@ struct
      structure Prim = Prim
      structure Register = Register
      structure Runtime = Runtime
+     local
+       open Runtime
+     in
+       structure GCField = GCField
+     end
      structure Type = Type
   end
   
@@ -126,24 +131,30 @@ struct
 	  | Int i => x86.Operand.immediate_const_int i
 	  | Label l => x86.Operand.immediate_label l
 	  | Line => x86MLton.fileLine ()
+	  | Offset {base = GCState, offset, ty} =>
+	       let
+		 val ty = Type.toRuntime ty
+	       in
+		 x86MLton.gcState_offset {offset = offset, ty = ty}
+	       end
 	  | Offset {base, offset, ty} =>
 	       let
-		  val base = toX86Operand base
-		  val ty = Type.toRuntime ty
-		  val memloc =
-		     case x86.Operand.deMemloc base of
-			SOME base =>
-			   x86.MemLoc.simple 
-			   {base = base,
-			    index = x86.Immediate.const_int offset,
-			    scale = x86.Scale.One,
-			    size = x86MLton.toX86Size ty,
-			    class = x86MLton.Classes.Heap}
-		      | _ => Error.bug (concat ["toX86Operand: strange Offset:",
-						" base: ",
-						x86.Operand.toString base])
+		 val base = toX86Operand base
+		 val ty = Type.toRuntime ty
+		 val memloc =
+		   case x86.Operand.deMemloc base of
+		     SOME base =>
+		       x86.MemLoc.simple 
+		       {base = base,
+			index = x86.Immediate.const_int offset,
+			scale = x86.Scale.One,
+			size = x86MLton.toX86Size ty,
+			class = x86MLton.Classes.Heap}
+		   | _ => Error.bug (concat ["toX86Operand: strange Offset:",
+					     " base: ",
+					     x86.Operand.toString base])
 	       in
-		  x86.Operand.memloc memloc
+		 x86.Operand.memloc memloc
 	       end
 	  | Real _ => Error.bug "toX86Operand: Real unimplemented"
 	  | Register r =>
@@ -159,27 +170,6 @@ struct
 				   size = x86MLton.toX86Size ty,
 				   class = x86MLton.Classes.Locals})
 	       end
-	  | Runtime oper =>
-		let
-		   datatype z = datatype Machine.Runtime.GCField.t
-		   open x86MLton
-		in
-		   case oper of
-		      CanHandle => gcState_canHandleContentsOperand ()
-		    | CardMap => gcState_cardMapContentsOperand ()
-		    | CurrentThread => gcState_currentThreadContentsOperand ()
-		    | ExnStack =>
-			 gcState_currentThread_exnStackContentsOperand ()
-		    | Frontier => gcState_frontierContentsOperand ()
-		    | Limit => gcState_limitContentsOperand ()
-		    | LimitPlusSlop => gcState_limitPlusSlopContentsOperand ()
-		    | MaxFrameSize => gcState_maxFrameSizeContentsOperand ()
-		    | SignalIsPending =>
-			 gcState_signalIsPendingContentsOperand ()
-		    | StackBottom => gcState_stackBottomContentsOperand ()
-		    | StackLimit => gcState_stackLimitContentsOperand ()
-		    | StackTop => gcState_stackTopContentsOperand ()
-		end
 	  | SmallIntInf ii => x86.Operand.immediate_const_word ii
 	  | StackOffset {offset, ty} =>
 	       let
@@ -680,7 +670,7 @@ struct
 			       (x86.MemLocSet.add
 				(x86.MemLocSet.empty,
 				 x86MLton.gcState_stackBottomContents ()),
-				x86MLton.gcState_currentThread_exnStackContents ())})}))
+				x86MLton.gcState_exnStackContents ())})}))
 	      | Switch switch
               => let
 		    datatype z = datatype Machine.Switch.t

@@ -494,7 +494,6 @@ fun output {program as Machine.Program.T {chunks,
 	     | Register r =>
 		  concat ["R", Type.name (Register.ty r),
 			  "(", Int.toString (Register.index r), ")"]
-	     | Runtime _ => Error.bug "C codegen saw Runtime operand"
 	     | SmallIntInf w =>
 		  concat ["SmallIntInf", C.args [concat ["0x", Word.toString w]]]
 	     | StackOffset {offset, ty} =>

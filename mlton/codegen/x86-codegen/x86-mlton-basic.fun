@@ -73,8 +73,6 @@ struct
 	val GCState = new "GCState"
 	val GCStateHold = new "GCStateHold"
 	val GCStateVolatile = new "GCStateVolatile"
-	  
-	val ThreadStack = new "ThreadStack"
       end
 
       val allClasses = ref x86.ClassSet.empty 
@@ -103,7 +101,6 @@ struct
 		     GCState::
 		     GCStateHold::
 		     GCStateVolatile::
-		     ThreadStack::
 		     nil)
 
 	    val _ = livenessClasses :=
@@ -146,7 +143,6 @@ struct
 		     GCState::
 		     GCStateHold::
 		     GCStateVolatile::
-		     ThreadStack::
 		     nil)
 
 	    val _ = heapClasses :=
@@ -330,6 +326,21 @@ struct
   val gcState_label = Label.fromString "gcState"
 
   structure Field = Runtime.GCField
+  fun make' (offset: int, size, class) =
+     let
+	fun imm () =
+	   Immediate.binexp
+	   {oper = Immediate.Addition,
+	    exp1 = Immediate.label gcState_label,
+	    exp2 = Immediate.const_int offset}
+	fun contents () =
+	   makeContents {base = imm (),
+			 size = size,
+			 class = class}
+	fun operand () = Operand.memloc (contents ())
+     in
+	(imm, contents, operand)
+     end
   fun make (f: Field.t, size, class) =
      let
 	fun imm () =
@@ -346,43 +357,19 @@ struct
 	(imm, contents, operand)
      end
 
-  val gcState_operand =
-     Operand.memloc (makeContents {base = Immediate.label gcState_label,
-				   size = pointerSize,
-				   class = Classes.StaticNonTemp})
+  val (_, gcState_exnStackContents,
+       gcState_exnStackContentsOperand) =
+     make (Field.ExnStack, wordSize, Classes.GCState)
   
-  val (_, _, gcState_canHandleContentsOperand) =
-     make (Field.CanHandle, wordSize, Classes.GCState)
-
-  val (_, _, gcState_cardMapContentsOperand) =
-     make (Field.CardMap, wordSize, Classes.GCState)
-
-  val (gcState_currentThread, gcState_currentThreadContents,
-        gcState_currentThreadContentsOperand) =
-      make (Field.CurrentThread, pointerSize, Classes.GCState)
-
-  val (_, gcState_frontierContents, gcState_frontierContentsOperand) =
+  val (_, gcState_frontierContents, 
+       gcState_frontierContentsOperand) =
      make (Field.Frontier, pointerSize, Classes.GCStateHold)
 
-  val (_, _, gcState_limitContentsOperand) =
-     make (Field.Limit, pointerSize, Classes.GCState)
-
-  val (_, _, gcState_limitPlusSlopContentsOperand) =
-     make (Field.LimitPlusSlop, pointerSize, Classes.GCState)
-
-  val (_, _, gcState_maxFrameSizeContentsOperand) =
-     make (Field.MaxFrameSize, pointerSize, Classes.GCState)
-
-  val (_, _,  gcState_signalIsPendingContentsOperand) =
-     make (Field.SignalIsPending, wordSize, Classes.GCState)
-
-  val (_, gcState_stackBottomContents, gcState_stackBottomContentsOperand) =
+  val (_, gcState_stackBottomContents, 
+       gcState_stackBottomContentsOperand) =
      make (Field.StackBottom, pointerSize, Classes.GCState)
 
-  val (_, _, gcState_stackLimitContentsOperand) =
-     make (Field.StackLimit, pointerSize, Classes.GCState)
-
-  val (gcState_stackTop, gcState_stackTopContents,
+  val (_, gcState_stackTopContents,
        gcState_stackTopContentsOperand) =
      make (Field.StackTop, pointerSize, Classes.GCStateHold)
 
@@ -435,9 +422,13 @@ struct
   fun stackTopTempMinusWordDerefOperand () =
      Operand.memloc (stackTopTempMinusWordDeref ())
 
-  val (_, gcState_currentThread_exnStackContents,
-       gcState_currentThread_exnStackContentsOperand) =
-     make (Field.ExnStack, wordSize, Classes.GCState)
+  fun gcState_offset {offset, ty} =
+    let
+      val (_,_,operand) = 
+	make' (offset, toX86Size ty, Classes.GCState)
+    in
+      operand ()
+    end
 
   (* init *)
   fun init () = let

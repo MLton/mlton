@@ -188,7 +188,6 @@ structure Operand =
        | Offset of {base: t, offset: int, ty: Type.t}
        | Register of Register.t
        | Real of string
-       | Runtime of GCField.t
        | StackOffset of StackOffset.t
        | StackTop
        | Word of Word.t
@@ -200,7 +199,6 @@ structure Operand =
 	  | Global _ => true
 	  | Offset _ => true
 	  | Register _ => true
-	  | Runtime z => true
 	  | StackOffset _ => true
 	  | _ => false
 
@@ -236,7 +234,6 @@ structure Operand =
 		       constrain ty]
 	     | Real s => str s
 	     | Register r => Register.layout r
-	     | Runtime r => GCField.layout r
 	     | SmallIntInf w => seq [str "SmallIntInf ", paren (Word.layout w)]
 	     | StackOffset so => StackOffset.layout so
 	     | StackTop => str "<StackTop>"
@@ -260,10 +257,6 @@ structure Operand =
 	| Offset {ty, ...} => ty
 	| Real _ => Type.real
 	| Register r => Register.ty r
-	| Runtime f =>
-	     (case f of
-		 GCField.ExnStack => Type.exnStack
-	       | _ => Type.fromRuntime (GCField.ty f))
 	| SmallIntInf _ => Type.intInf
 	| StackOffset {ty, ...} => ty
 	| StackTop => Type.word
@@ -289,7 +282,6 @@ structure Operand =
 	        equals (b, b') andalso i = i' 
 	   | (Real s, Real s') => s = s'
 	   | (Register r, Register r') => Register.equals (r, r')
-	   | (Runtime f, Runtime f') => GCField.equals (f, f')
 	   | (SmallIntInf w, SmallIntInf w') => Word.equals (w, w')
 	   | (StackOffset so, StackOffset so') => StackOffset.equals (so, so')
 	   | (Word w, Word w') => w = w'
@@ -972,7 +964,6 @@ structure Program =
 			    ; offsetIsOk z)
 		      | Real _ => true
 		      | Register _ => Alloc.doesDefine (alloc, x)
-		      | Runtime _ => true
 		      | SmallIntInf w => 0wx1 = Word.andb (w, 0wx1)
 		      | StackOffset {offset, ty, ...} =>
 			   offset + Type.size ty <= maxFrameSize

@@ -203,6 +203,7 @@ signature X86 =
 		  size: Size.t,
 		  class: Class.t}
 
+	val layout : t -> Layout.t
 	val toString : t -> string
 
 	val imm : {base: Immediate.t,
@@ -264,6 +265,7 @@ signature X86 =
 	  | Address of Address.t
 	  | MemLoc of MemLoc.t
 
+	val layout : t -> Layout.t
 	val toString : t -> string
 
 	val register : Register.t -> t

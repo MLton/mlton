@@ -426,12 +426,9 @@ fun toMachine (program: Ssa.Program.t) =
 	    GCField.Frontier => M.Operand.Frontier
 	  | GCField.StackTop => M.Operand.StackTop
 	  | _ => 
-	       if !Control.Native.native
-		  then M.Operand.Runtime field
-	       else
-		  M.Operand.Offset {base = M.Operand.GCState,
-				    offset = GCField.offset field,
-				    ty = ty}
+	       M.Operand.Offset {base = M.Operand.GCState,
+				 offset = GCField.offset field,
+				 ty = ty}
       val exnStackOp = runtimeOp (GCField.ExnStack, Type.ExnStack)
       val stackBottomOp = runtimeOp (GCField.StackBottom, Type.Word)
       val stackTopOp = runtimeOp (GCField.StackTop, Type.Word)
@@ -459,9 +456,7 @@ fun toMachine (program: Ssa.Program.t) =
 		  M.Operand.Word (Runtime.typeIndexToHeader
 				  (PointerTycon.index pt))
 	     | Runtime f =>
-		  if !Control.Native.native
-		     then M.Operand.Runtime f
-		  else runtimeOp (f, R.Operand.ty oper)
+		  runtimeOp (f, R.Operand.ty oper)
 	     | SmallIntInf w => M.Operand.SmallIntInf w
 	     | Var {var, ...} => varOperand var
 	 end

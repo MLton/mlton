@@ -61,8 +61,6 @@ signature X86_MLTON_BASIC =
 	val GCStateHold : x86.MemLoc.Class.t
 	val GCStateVolatile : x86.MemLoc.Class.t
 	  
-	val ThreadStack : x86.MemLoc.Class.t
-	  
 	val allClasses : x86.ClassSet.t ref
 	val livenessClasses : x86.ClassSet.t ref
 	val holdClasses : x86.ClassSet.t ref
@@ -78,7 +76,7 @@ signature X86_MLTON_BASIC =
     val c_stackPDerefOperand : x86.Operand.t
     val c_stackPDerefDoubleOperand : x86.Operand.t
 
-    (* Static temps defined in x86codegen.h *)
+    (* Static temps defined in x86-main.h *)
     val applyFFTempContentsOperand : x86.Operand.t
     val threadTempContentsOperand : x86.Operand.t
     val fileTempContentsOperand : x86.Operand.t
@@ -88,12 +86,12 @@ signature X86_MLTON_BASIC =
     val fpswTempContentsOperand : x86.Operand.t
     val statusTempContentsOperand : x86.Operand.t
 
-    (* Static arrays defined in x86codegen.h *)
+    (* Static arrays defined in main.h and x86-main.h *)
     val local_base : x86.Runtime.Type.t -> x86.Label.t
     val global_base : x86.Runtime.Type.t -> x86.Label.t
     val globalPointerNonRoot_base : x86.Label.t
 
-    (* Static functions defined in x86codegen.h *)
+    (* Static functions defined in main.h *)
     val saveGlobals : x86.Label.t
     val loadGlobals : x86.Label.t
 
@@ -103,31 +101,21 @@ signature X86_MLTON_BASIC =
     val fileLine : unit -> x86.Operand.t
 
     (* gcState relative locations defined in gc.h *)
-    val gcState_canHandleContentsOperand: unit -> x86.Operand.t
-    val gcState_cardMapContentsOperand: unit -> x86.Operand.t
-    val gcState_currentThreadContentsOperand: unit -> x86.Operand.t
-    val gcState_currentThread_exnStackContents: unit -> x86.MemLoc.t
-    val gcState_currentThread_exnStackContentsOperand: unit -> x86.Operand.t
+    val gcState_label: x86.Label.t
+    val gcState_offset: {offset: int, ty: x86.Runtime.Type.t} -> x86.Operand.t
+    val gcState_exnStackContents: unit -> x86.MemLoc.t
+    val gcState_exnStackContentsOperand: unit -> x86.Operand.t
     val gcState_frontierContents: unit -> x86.MemLoc.t
     val gcState_frontierContentsOperand: unit -> x86.Operand.t
     val gcState_frontierDerefOperand: unit -> x86.Operand.t
-    val gcState_label: x86.Label.t
-    val gcState_limitContentsOperand: unit -> x86.Operand.t
-    val gcState_limitPlusSlopContentsOperand: unit -> x86.Operand.t
-    val gcState_maxFrameSizeContentsOperand: unit -> x86.Operand.t
-    val gcState_signalIsPendingContentsOperand: unit -> x86.Operand.t
     val gcState_stackBottomContents: unit -> x86.MemLoc.t
     val gcState_stackBottomContentsOperand: unit -> x86.Operand.t
-    val gcState_stackLimitContentsOperand: unit -> x86.Operand.t
-    val gcState_stackTop: unit -> x86.Immediate.t
     val gcState_stackTopContents: unit -> x86.MemLoc.t
     val gcState_stackTopContentsOperand: unit -> x86.Operand.t
     val gcState_stackTopDerefOperand: unit -> x86.Operand.t
     val gcState_stackTopMinusWordDeref: unit -> x86.MemLoc.t
     val gcState_stackTopMinusWordDerefOperand: unit -> x86.Operand.t
 
-    val stackTopTemp: unit -> x86.Immediate.t
-    val stackTopTempContents: unit -> x86.MemLoc.t
     val stackTopTempContentsOperand: unit -> x86.Operand.t
     val stackTopTempDerefOperand: unit -> x86.Operand.t
     val stackTopTempMinusWordDeref: unit -> x86.MemLoc.t

@@ -1026,7 +1026,7 @@ struct
 		| Raise {live}
 		=> let
 		     val exnStack 
-		       = x86MLton.gcState_currentThread_exnStackContentsOperand ()
+		       = x86MLton.gcState_exnStackContentsOperand ()
 		     val stackTopTemp
 		       = x86MLton.stackTopTempContentsOperand ()
 		     val stackTop 

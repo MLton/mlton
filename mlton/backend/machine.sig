@@ -78,7 +78,6 @@ signature MACHINE =
 			  ty: Type.t}
 	     | Real of string
 	     | Register of Register.t
-	     | Runtime of Runtime.GCField.t
 	     | SmallIntInf of word
 	     | StackOffset of {offset: int,
 			       ty: Type.t}

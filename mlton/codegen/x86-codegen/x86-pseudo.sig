@@ -89,6 +89,7 @@ signature X86_PSEUDO =
 	  end
 
 	type t
+	val layout : t -> Layout.t
 
 	val imm : {base: Immediate.t,
 		   index: Immediate.t,
@@ -130,6 +131,7 @@ signature X86_PSEUDO =
       sig
 	type t
 
+	val layout : t -> Layout.t
 	val toString : t -> string
 
 	val immediate : Immediate.t -> t
@@ -139,6 +141,7 @@ signature X86_PSEUDO =
 	val immediate_label : Label.t -> t
 	val deImmediate : t -> Immediate.t option
 	val label : Label.t -> t
+	val deLabel : t -> Label.t option
 	val memloc : MemLoc.t -> t
 	val deMemloc : t -> MemLoc.t option
 
