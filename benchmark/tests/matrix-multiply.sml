@@ -38,8 +38,10 @@ structure Main =
       fun doit () =
 	 let
 	    val dim = 200
-	    val a = Array.array (dim, dim, 1.0)
-	 in if Real.== (200.0, Array2.sub (mult (a, a), 0, 0))
+	    val a = Array.tabulate Array.RowMajor (dim, dim, fn (r, c) =>
+						   Real.fromInt (r + c))
+	 in
+	    if Real.== (2646700.0, Array2.sub (mult (a, a), 0, 0))
 	       then ()
 	    else raise Fail "bug"
 	 end
