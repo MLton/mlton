@@ -841,10 +841,13 @@ val doMany
     ("KnownCase.doMany",
      Layout.ignore, Layout.ignore)
     doMany
-    
+
 		 in
+(*
 		   (if Vector.forall
 		       (conValues, ConValue.isTop)
+*)
+		   (if false
 		      then NONE
 		      else case Vector.foldi
 			        (conValues, None, 
