@@ -648,8 +648,7 @@ fun matchCompile {caseType: Type.t,
 		   end)
    in
       (res,
-       fn () =>
-       Vector.map (examples, fn r => Layout.seq (Layout.separate (! r, " | "))))
+       fn () => Vector.map (examples, fn r => Layout.alignPrefix (! r, "| ")))
    end
 
 val matchCompile =
