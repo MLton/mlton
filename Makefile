@@ -18,7 +18,7 @@ PATH = $(BIN):$(shell echo $$PATH)
 CP = /bin/cp -fpR
 
 VERSION = $(shell date +%Y%m%d)
-DATE = $(shell date '+%a, %d %b %Y %H:%M:%S %z')
+DATE = $(shell date -R)
 RELEASE = 1
 
 .PHONY: all
@@ -64,7 +64,15 @@ constants:
 .PHONY: deb
 deb:
 	$(MAKE) clean version
+	debuild
+
+.PHONY: deb-binary
+deb-binary:
 	fakeroot debian/rules binary
+
+.PHONY: deb-lint
+deb-lint:
+	lintian ../mlton_$(VERSION).1-1_i386.deb
 
 .PHONY: dirs
 dirs:
