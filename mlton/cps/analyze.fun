@@ -17,16 +17,16 @@ fun 'a analyze
       fun coerces (from, to) =
 	 Vector.foreach2 (from, to, fn (from, to) =>
 			 coerce {from = from, to = to})
-      val {get = value: Var.t -> 'a, set = setValue} =
+      val {get = value: Var.t -> 'a, set = setValue, ...} =
 	 Property.getSetOnce
 	 (Var.plist,
 	  Property.initRaise ("analyze var value", Var.layout))
       val value = Trace.trace ("Analyze.value", Var.layout, layout) value
       fun values xs = Vector.map (xs, value)
-      val {get = func, set = setFunc} =
+      val {get = func, set = setFunc, ...} =
 	 Property.getSetOnce
 	 (Func.plist, Property.initRaise ("analyze func name", Func.layout))
-      val {get = jump, set = setJump} =
+      val {get = jump, set = setJump, ...} =
 	 Property.getSetOnce
 	 (Jump.plist, Property.initRaise ("analyze jump", Jump.layout))
       fun loopArgs args =

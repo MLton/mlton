@@ -509,7 +509,7 @@ val empty: t = T (ref Empty)
  * The property can not be getSetOnce, because it is set twice for fun
  * declarations.
  *)
-val {get = getVarRange: Var.t -> VarRange.t, set = setVarRange} =
+val {get = getVarRange: Var.t -> VarRange.t, set = setVarRange, ...} =
    Property.getSet (Var.plist, Property.initRaise ("range", Var.layout))
 
 val setVarRange =

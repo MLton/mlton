@@ -20,9 +20,9 @@ fun sccFuns (Program.T {datatypes, body, overflow}) =
 				    node: Node.t,
 				    visit: (unit -> unit) ref
 				    } option,
-	   set = setFunInfo} =
+	   set = setFunInfo, ...} =
 	 Property.getSetOnce (Var.plist, Property.initConst NONE)
-      val {get = nodeLambda, set = setNodeLambda} =
+      val {get = nodeLambda, set = setNodeLambda, ...} =
 	 Property.getSetOnce (Node.plist,
 			      Property.initRaise ("lambda", Node.layout))
       fun loopVar x =

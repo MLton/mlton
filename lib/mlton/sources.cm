@@ -53,6 +53,7 @@ structure Char
 structure CharArray
 structure CharBuffer
 structure CharVector
+structure ClearablePromise
 structure CommandLine
 structure Computation
 structure Console
@@ -62,6 +63,7 @@ structure Dir
 structure DirectedGraph
 structure DisjointSet
 structure DotColor
+structure Dot
 structure DynamicWind
 structure Engine
 structure Error

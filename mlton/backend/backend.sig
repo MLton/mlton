@@ -5,17 +5,17 @@ type int = Int.t
    
 signature BACKEND_STRUCTS = 
    sig
-      structure Cps: CPS
+      structure Ssa: SSA
       structure Machine: MACHINE
-      sharing Cps.Prim = Machine.Prim
-	 
-      val funcToLabel: Cps.Func.t -> Machine.Label.t
-      val jumpToLabel: Cps.Jump.t -> Machine.Label.t
+      sharing Ssa.Prim = Machine.Prim
+
+      val funcToLabel: Ssa.Func.t -> Machine.Label.t
+      val labelToLabel: Ssa.Label.t -> Machine.Label.t
    end
 
 signature BACKEND = 
    sig
       include BACKEND_STRUCTS
       
-      val generate: Cps.Program.t -> Machine.Program.t
+      val generate: Ssa.Program.t -> Machine.Program.t
    end

@@ -20,7 +20,7 @@ fun simplifyTypes (p as Program.T {datatypes, body, ...}) =
 					} option,
 	   set = setTyconInfo, destroy = destroyTycon} =
 	 Property.destGetSetOnce (Tycon.plist, Property.initConst NONE)
-      val {get = nodeTycon, set = setNodeTycon} =
+      val {get = nodeTycon, set = setNodeTycon, ...} =
 	 Property.getSetOnce (Node.plist,
 			      Property.initRaise ("tycon", Node.layout))
       val _ =

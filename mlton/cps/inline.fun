@@ -80,7 +80,7 @@ local
    fun 'a make (dontInlineBody: Exp.t * 'a -> bool)
       (Program.T {functions, ...}, a: 'a): Func.t -> bool =
       let
-	 val {get = shouldInline, set = setShouldInline} =
+	 val {get = shouldInline, set = setShouldInline, ...} =
 	    Property.getSetOnce (Func.plist, Property.initConst false)
       in
 	 Vector.foreach (functions, fn Function.T {name, body, ...} =>
@@ -141,10 +141,10 @@ fun nonRecursive (program as Program.T {functions, ...}, {size: int option}) =
 				      isBig: bool,
 				      node: Node.t,
 				      numCalls: int ref},
-	   set = setFuncInfo} =
+	   set = setFuncInfo, ...} =
 	 Property.getSetOnce
 	 (Func.plist, Property.initRaise ("func info", Func.layout))
-      val {set = setNodeFunc, get = nodeFunc} =
+      val {set = setNodeFunc, get = nodeFunc, ...} =
 	 Property.getSetOnce (Node.plist,
 			      Property.initRaise ("func", Node.layout))
       val graph = Graph.new ()
@@ -234,10 +234,10 @@ fun product (program as Program.T {functions, ...},
 		   numCalls: int ref,
 		   shouldInline: bool ref,
 		   size: int ref}
-      val {get = funcInfo: Func.t -> info, set = setFuncInfo} =
+      val {get = funcInfo: Func.t -> info, set = setFuncInfo, ...} =
 	 Property.getSetOnce (Func.plist,
 			      Property.initRaise ("func info", Func.layout))
-      val {set = setNodeFunc, get = nodeFunc} =
+      val {set = setNodeFunc, get = nodeFunc, ...} =
 	 Property.getSetOnce (Node.plist,
 			      Property.initRaise ("func", Node.layout))
       (* expSize returns the size of an expression, taking into account the sizes
@@ -375,7 +375,7 @@ fun inline (p as Program.T {datatypes, globals, functions, main}) =
 	 end
       val {get = funInfo: Func.t -> {args: Var.t vector,
 				     body: Exp.t},
-	   set = setFunInfo} =
+	   set = setFunInfo, ...} =
 	 Property.getSetOnce (Func.plist,
 			      Property.initRaise ("Inline.info", Func.layout))
       val _ = Vector.foreach (functions, fn Function.T {name, args, body, ...} =>

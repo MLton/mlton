@@ -114,7 +114,7 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
    let
       val {get = conInfo: Con.t -> {rep: ConRep.t ref,
 				    args: Type.t vector},
-	   set = setConInfo} =
+	   set = setConInfo, ...} =
 	 Property.getSetOnce
 	 (Con.plist, Property.initRaise ("SimplifyTypes.info", Con.layout))
       val conInfo =
@@ -142,7 +142,7 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
 			  setConInfo (con, {rep = ref ConRep.Useless,
 					    args = args})))
       val {get = tyconReplacement: Tycon.t -> Type.t option,
-	   set = setTyconReplacement} =
+	   set = setTyconReplacement, ...} =
 	 Property.getSet (Tycon.plist, Property.initConst NONE)
       val setTyconReplacement = fn (c, t) => setTyconReplacement (c, SOME t)
       val {get = tyconInfo: Tycon.t -> {
@@ -156,7 +156,7 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
 					dependents: Tycon.t list ref,
 					isOnWorklist: bool ref
 					},
-	   set = setTyconInfo} =
+	   set = setTyconInfo, ...} =
 	 Property.getSetOnce
 	 (Tycon.plist, Property.initRaise ("SimplifyTypes.info", Tycon.layout))
 
@@ -478,7 +478,7 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
 				{con = con,
 				 args = keepSimplifyTypes args})}))
       val unitVar = Var.newNoname ()
-      val {get = varInfo: Var.t -> Type.t, set = setVarInfo} =
+      val {get = varInfo: Var.t -> Type.t, set = setVarInfo, ...} =
 	 Property.getSetOnce (Var.plist,
 			      Property.initRaise ("varInfo", Var.layout))
       fun simplifyVarType (x: Var.t, t: Type.t): Type.t =

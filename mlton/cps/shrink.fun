@@ -240,7 +240,7 @@ val traceSimplifyCase =
 fun shrinkExp globals =
    let
       (* varInfo can't be getSetOnce because of setReplacement. *)
-      val {get = varInfo: Var.t -> VarInfo.t, set = setVarInfo} =
+      val {get = varInfo: Var.t -> VarInfo.t, set = setVarInfo, ...} =
 	 Property.getSet (Var.plist, Property.initFun VarInfo.new)
       val varInfo =
 	 Trace.trace ("Shrink.varInfo", Var.layout, VarInfo.layout) varInfo
@@ -248,7 +248,7 @@ fun shrinkExp globals =
 	 Trace.trace2 ("setVarInfo", Var.layout, VarInfo.layout, Unit.layout)
 	 setVarInfo
       fun varInfos xs = Vector.map (xs, varInfo)
-      val {get = jumpInfo: Jump.t -> JumpInfo.t, set = setJumpInfo} =
+      val {get = jumpInfo: Jump.t -> JumpInfo.t, set = setJumpInfo, ...} =
 	 Property.getSetOnce (Jump.plist,
 			      Property.initRaise ("Shrink.info", Jump.layout))
       val jumpInfo =
@@ -422,7 +422,7 @@ fun shrinkExp globals =
 	    in loopExp exp
 	    end
 	 local
-	    val {get: Jump.t -> bool ref} =
+	    val {get: Jump.t -> bool ref, ...} =
 	       Property.get (Jump.plist, Property.initFun (fn _ => ref false))
 	 in
 	    val amInJump = ! o get

@@ -30,7 +30,7 @@ structure Type =
 
 fun lambdaSize (Program.T {body, ...}): Lambda.t -> int =
    let
-      val {get = size: Lambda.t -> int, set} =
+      val {get = size: Lambda.t -> int, set, ...} =
 	 Property.getSetOnce (Lambda.plist,
 			      Property.initRaise ("size", Lambda.layout))
       fun loopExp (e: Exp.t, n: int): int =
@@ -75,7 +75,7 @@ fun shouldDuplicate (program as Program.T {body, ...}, small, product)
 	 end
       type info = {numOccurrences: int ref,
 		   shouldDuplicate: bool ref}
-      val {get = varInfo: Var.t -> info option, set = setVarInfo} =
+      val {get = varInfo: Var.t -> info option, set = setVarInfo, ...} =
 	 Property.getSetOnce (Var.plist, Property.initConst NONE)
       fun new {var, ty, lambda}: unit =
 	 if Type.isHigherOrder ty
@@ -219,7 +219,7 @@ fun duplicate (program as Program.T {datatypes, body, overflow},
        | Dup of {
 		 duplicates: Var.t list ref
 		 }
-      val {get = varInfo: Var.t -> info, set = setVarInfo} =
+      val {get = varInfo: Var.t -> info, set = setVarInfo, ...} =
 	 Property.getSet (Var.plist,
 			  Property.initRaise ("Polyvariance.info", Var.layout))
       fun loopVar (x: VarExp.t): VarExp.t =

@@ -25,11 +25,11 @@ struct
       
   fun newJumpInfo ()
     = let
-	val jumpInfo as {get : Label.t -> status ref}
+	val {get : Label.t -> status ref, ...}
 	  = Property.get(Label.plist, 
 			 Property.initFun (fn _ => ref (Count 0)))
       in
-	T jumpInfo
+	T {get = get}
       end
 
   fun resetNear (jumpInfo as T {get}, label) = (get label) := Count 0

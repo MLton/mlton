@@ -76,18 +76,18 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 				      arg: Eqrel.t,
 				      return: Eqrel.t
 				      },
-	   set = setFuncInfo} =
+	   set = setFuncInfo, ...} =
 	 Property.getSetOnce
 	 (Func.plist, Property.initRaise ("Redundant.info", Func.layout))
       val {get = jumpInfo: Jump.t -> Eqrel.t,
-	   set = setJumpInfo} =
+	   set = setJumpInfo, ...} =
 	 Property.getSetOnce
 	 (Jump.plist, Property.initRaise ("Redundant.info", Jump.layout))
       val {get = varInfo : Var.t -> {
 				     index: int,
 				     arg: Eqrel.t
 				     } option,
-	   set = setVarInfo} =
+	   set = setVarInfo, ...} =
 	 Property.getSetOnce (Var.plist, Property.initConst NONE)
       fun varEquiv (x, y) =
 	 Var.equals (x, y)
@@ -167,7 +167,7 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 		    Eqrel.layout arg,
 		    Eqrel.layout return]
 	    end)))
-      val {get = replacement : Var.t -> Var.t option, set = setReplacement} =
+      val {get = replacement : Var.t -> Var.t option, set = setReplacement, ...} =
 	 Property.getSetOnce (Var.plist, Property.initConst NONE)
       datatype red =
 	 Useful
@@ -218,7 +218,7 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 			      | _ => NONE)
       val {get = funcReds : Func.t -> {args: red vector,
 				       returns: red vector},
-	   set = setFuncReds} =
+	   set = setFuncReds, ...} =
 	 Property.getSetOnce (Func.plist,
 			      Property.initRaise ("reds", Func.layout))
       val functions =
@@ -234,7 +234,7 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 			 args = args,
 			 returns = keepUseful (return, returns)}
 	  end)
-      val {get = jumpReds : Jump.t -> red vector, set = setJumpReds} =
+      val {get = jumpReds : Jump.t -> red vector, set = setJumpReds, ...} =
 	 Property.getSetOnce (Jump.plist,
 			      Property.initRaise ("red", Jump.layout))
       fun loopVar x =

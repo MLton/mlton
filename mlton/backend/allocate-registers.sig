@@ -5,7 +5,7 @@ type int = Int.t
    
 signature ALLOCATE_REGISTERS_STRUCTS = 
    sig
-      structure Cps: CPS
+      structure Ssa: SSA
       structure Machine: MACHINE
    end
 
@@ -35,6 +35,8 @@ signature ALLOCATE_REGISTERS =
 		      *)
 		     handler: {size: int} option
 		     }
+
+	    val live: t -> Machine.Operand.t list
 	 end
       
       (* Use Machine.Chunk.newRegister with the appropriate chunk to get a new
@@ -42,12 +44,13 @@ signature ALLOCATE_REGISTERS =
        *)
       val allocate:
 	 {
-	  funcChunk: Cps.Func.t -> Machine.Chunk.t,
-	  jumpChunk: Cps.Jump.t -> Machine.Chunk.t,
-	  jumpToLabel: Cps.Jump.t -> Machine.Label.t,
-	  jumpHandlers: Cps.Jump.t -> Cps.Jump.t list,
-	  program: Cps.Program.t,
-	  varInfo: Cps.Var.t -> {
+	  funcChunk: Ssa.Func.t -> Machine.Chunk.t,
+	  isCont: Ssa.Label.t -> bool,
+	  isHandler: Ssa.Label.t -> bool, 
+	  labelChunk: Ssa.Label.t -> Machine.Chunk.t,
+	  labelToLabel: Ssa.Label.t -> Machine.Label.t,
+	  program: Ssa.Program.t,
+	  varInfo: Ssa.Var.t -> {
                                  (* If (isSome operand) then a stack slot or
 				  * register needs to be allocated for the
 				  * variable.
@@ -60,16 +63,12 @@ signature ALLOCATE_REGISTERS =
 				 ty: Machine.Type.t
 				 }
 	  }
-	 ->
-	 {
-	  funcInfo: Cps.Func.t -> {
-				   info: Info.t,
-				   (* If handlers are used, this gives the stack
-				    * offset where the old exnStack and handler
-				    * should be stored.
-				    *)
-				   handlerOffset: int option
-				   },
-	  jumpInfo: Cps.Jump.t -> Info.t
-	  }
+	 -> Ssa.Function.t
+	 -> {(* If handlers are used, this gives the stack
+	      * offset where the old exnStack and handler
+	      * should be stored.
+	      *)
+	     handlerOffset: int option,
+	     labelInfo: Ssa.Label.t -> Info.t,
+	     limitCheck: Machine.LimitCheck.t}
    end

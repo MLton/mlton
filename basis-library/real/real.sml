@@ -250,19 +250,19 @@ structure Real: REAL =
 			in (concat ["%.", Int.toString n, "f"],
 			    Int.+ (n, fixExtra))
 			end
-		| GEN opt =>
-		     let
-			val n =
-			   case opt of
-			      NONE => 12
-			    | SOME n =>
-				 if Primitive.safe andalso Int.< (n, 1)
-				    then raise Size
-				 else n
-		     in (concat ["%.", Int.toString n, "g"],
-			 Int.+ (n, genExtra))
-		     end
-		| EXACT => raise Fail "Real.fmt EXACT unimplemented"
+		   | GEN opt =>
+			let
+			   val n =
+			      case opt of
+				 NONE => 12
+			       | SOME n =>
+				    if Primitive.safe andalso Int.< (n, 1)
+				       then raise Size
+				    else n
+			in (concat ["%.", Int.toString n, "g"],
+			    Int.+ (n, genExtra))
+			end
+		   | EXACT => raise Fail "Real.fmt EXACT unimplemented"
 	    in fn x =>
 	       case class x of
 		  NAN _ => "nan" (* this is wrong *)

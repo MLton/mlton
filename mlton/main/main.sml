@@ -99,7 +99,7 @@ val options =
 	Int setInlineSize),
        (Normal, "I", "dir", "search dir for include files",
 	push includeDirs),
-       (Normal, "keep", " {cps|dot|g|o|sml}", "save intermediate files",
+       (Normal, "keep", " {cps|dot|g|o|sml|ssa}", "save intermediate files",
 	SpaceString (fn s =>
 		     case s of
 			"cps" => keepCps := true
@@ -107,6 +107,7 @@ val options =
 		      | "g" => keepGenerated := true
 		      | "o" => keepO := true
 		      | "sml" => keepSML := true
+		      | "ssa" => keepSSA := true
 		      | _ => usage (concat ["invalid -keep flag: ", s]))),
        (Expert, "keep-pass", " pass", "keep the results of pass",
 	SpaceString (fn s => List.push (keepPasses, s))),
@@ -141,7 +142,7 @@ val options =
        (Normal, "o", " file", "name of output file",
 	SpaceString (fn s => output := SOME s)),
        (Normal, "p", "", "produce executable suitable for profiling",
-	None (fn () => (profile := true; keepCps := true))),
+	None (fn () => (profile := true; keepCps := true; keepSSA := true))),
        (Expert, "print-at-fun-entry", "",
 	"print debugging message at every call",
 	trueRef printAtFunEntry),
@@ -239,22 +240,15 @@ fun commandLine (args: string list): unit =
 	 else chunk := Coalesce {limit = 2000}
       val _ =
 	 if !keepDot andalso List.isEmpty (!keepPasses)
-	    then keepCps := true
+	    then keepSSA := true
 	 else ()
-      val _ =
-	 if !detectOverflowSet
-	    then ()
-	 else if !Native.native
-		 then detectOverflow := true
-	      else detectOverflow := false
       val _ =
 	 List.foreach
 	 ([(detectOverflow, "MLton_detectOverflow"),
 	   (exnHistory, "Exn_keepHistory"),
 	   (safe, "MLton_safe")],
 	  fn (b, x) =>
-	  List.push (defines,
-		     concat [x, if !b then "=TRUE" else "=FALSE"]))
+	  List.push (defines, concat [x, if !b then "=TRUE" else "=FALSE"]))
       val _ = if !debug then () else List.push (defines, "NODEBUG")
       val _ = Control.includes := !includes
    in case result of
@@ -310,8 +304,9 @@ fun commandLine (args: string list): unit =
 			val (f, out) = File.temp {prefix = "/tmp/file",
 						  suffix = suf}
 			val _ = Out.close out
-		     in List.push (tempFiles, f)
-			; f
+			val _ = List.push (tempFiles, f)
+		     in
+			f
 		     end
 		  fun suffix s = concat [base, s]
 		  fun file (b, suf) = (if b then suffix else temp) suf

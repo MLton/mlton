@@ -40,11 +40,11 @@ struct
       fun newLiveInfo ()
 	= let
 	    val liveInfo as {get : Label.t -> LiveSet.t,
-			     set : Label.t * LiveSet.t -> unit}
+			     set : Label.t * LiveSet.t -> unit, ...}
 	      = Property.getSet
 	        (Label.plist, Property.initRaise ("liveInfo", Label.layout))
 	  in
-	    T liveInfo
+	    T {get = get, set = set}
 	  end
 
       fun setLiveOperands (liveInfo as T {get, set}, label, live)

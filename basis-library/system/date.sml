@@ -390,10 +390,11 @@ structure Date :> DATE =
     fun compare 
 	(DATE {year=y1,month=mo1,day=d1,hour=h1,minute=mi1,second=s1, ...},
 	 DATE {year=y2,month=mo2,day=d2,hour=h2,minute=mi2,second=s2, ...}) =
-	let fun cmp (v1, v2, cmpnext) = 
-	    if v1 < v2 then LESS 
-	    else if v1 > v2 then GREATER
-	    else (* EQUAL *) cmpnext ()
+	let
+	   fun cmp (v1, v2, cmpnext) = 
+	      case Int.compare (v1, v2) of
+		 EQUAL => cmpnext ()
+	       | r => r
 	in 
 	    cmp (y1, y2, 
 	    fn _ => cmp (frommonth mo1, frommonth mo2, 

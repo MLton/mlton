@@ -26,10 +26,10 @@ fun raiseToJump (program as Program.T {datatypes, globals, functions, main}) =
        *  or 2. It calls a function that can raise while the handler stack is
        *        empty.
        *)
-      val {get = funcInfo: Func.t -> {canRaise: CanRaise.t}} =
+      val {get = funcInfo: Func.t -> {canRaise: CanRaise.t}, ...} =
 	 Property.get (Func.plist,
 		       Property.initFun (fn _ => {canRaise = CanRaise.new ()}))
-      val {get = keepHandler: Jump.t -> bool ref} =
+      val {get = keepHandler: Jump.t -> bool ref, ...} =
 	 Property.get (Jump.plist,
 		       Property.initFun (fn _ => ref false))
       val funcCanRaise = #canRaise o funcInfo

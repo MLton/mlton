@@ -113,7 +113,7 @@ structure Value =
 
 fun simplifyOnce (Program.T {datatypes, body, overflow}) =
    let
-      val {get = varInfo: Var.t -> VarInfo.t, set = setVarInfo} =
+      val {get = varInfo: Var.t -> VarInfo.t, set = setVarInfo, ...} =
 	 Property.getSet (Var.plist,
 			  Property.initRaise ("simplify info", Var.layout))
       val varInfo =

@@ -19,16 +19,16 @@ fun 'a analyze
       fun coerces (from, to) =
 	 Vector.foreach2 (from, to, fn (from, to) =>
 			 coerce {from = from, to = to})
-      val {get = value: Var.t -> 'a, set = setValue} =
+      val {get = value: Var.t -> 'a, set = setValue, ...} =
 	 Property.getSetOnce
 	 (Var.plist,
 	  Property.initRaise ("analyze var value", Var.layout))
       val value = Trace.trace ("Analyze.value", Var.layout, layout) value
       fun values xs = Vector.map (xs, value)
-      val {get = func, set = setFunc} =
+      val {get = func, set = setFunc, ...} =
 	 Property.getSetOnce
 	 (Func.plist, Property.initRaise ("analyze func name", Func.layout))
-      val {get = labelInfo, set = setLabelInfo} =
+      val {get = labelInfo, set = setLabelInfo, ...} =
 	 Property.getSetOnce
 	 (Label.plist, Property.initRaise ("analyze label", Label.layout))
       val labelArgs = #args o labelInfo
@@ -39,10 +39,14 @@ fun 'a analyze
 			; v
 		     end)
       val _ =
-	 Vector.foreach
-	 (functions, fn Function.T {name, args, returns, ...} =>
-	  setFunc (name, {args = loopArgs args,
-			  returns = Vector.map (returns, fromType)}))
+	 List.foreach
+	 (functions, fn f =>
+	  let
+	     val {name, args, returns, ...} = Function.dest f
+	  in
+	     setFunc (name, {args = loopArgs args,
+			     returns = Vector.map (returns, fromType)})
+	  end)
       val exnVals: 'a vector option ref = ref NONE
       fun getExnVals vs =
 	 case !exnVals of
@@ -51,7 +55,7 @@ fun 'a analyze
 		    end
 	  | SOME vs => vs
       fun loopTransfer (t, shouldReturns): unit =
-	 case t of
+	(case t of
 	    Bug => ()
 	  | Call {func = f, args, return} =>
 	       let
@@ -59,7 +63,7 @@ fun 'a analyze
 		  val shouldReturns =
 		     case return of
 			NONE => shouldReturns
-		      | SOME l => labelArgs l
+		      | SOME {cont, ...} => labelArgs cont
 	       in coerces (values args, formals)
 		  ; coerces (returns, shouldReturns)
 	       end
@@ -97,12 +101,17 @@ fun 'a analyze
 	  | Raise xs => let val vs = values xs
 			in coerces (vs, getExnVals vs)
 			end
-	  | Return xs => coerces (values xs, shouldReturns)
+	  | Return xs => coerces (values xs, shouldReturns))
+	   handle exn => Error.bug ("loopTransfer:" ^ 
+				    (Layout.toString (Transfer.layout t)) ^ ":" ^
+				    (case exn
+				       of Fail msg => msg
+					| _ => ""))
       val loopTransfer =
 	 Trace.trace2
 	 ("Analyze.loopTransfer",
 	  Transfer.layout, Layout.ignore, Layout.ignore) loopTransfer
-      fun loopStatement (Statement.T {var, exp, ty}): unit =
+      fun loopStatement (s as Statement.T {var, exp, ty}): unit =
 	 let
 	    val v =
 	       case exp of
@@ -143,14 +152,20 @@ fun 'a analyze
 		     in
 			()
 		     end
-	     else ())
+	     else setValue (var, v))
 	 end
+         handle exn => Error.bug ("loopStatement:" ^ 
+				  (Layout.toString (Statement.layout s)) ^ ":" ^
+				  (case exn
+				     of Fail msg => msg
+				      | _ => ""))
       val _ = coerces (Vector.new0 (), #args (func main))
       val _ = Vector.foreach (globals, loopStatement)
       val _ =
-	 Vector.foreach
-	 (functions, fn Function.T {name, blocks, start, ...} =>
+	 List.foreach
+	 (functions, fn f =>
 	  let
+	     val {name, blocks, start, ...} = Function.dest f
 	     val _ =
 		Vector.foreach
 		(blocks, fn b as Block.T {label, args, ...} =>

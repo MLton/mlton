@@ -28,14 +28,14 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 			   jumpers: (Func.t * {inside: (Jump.t * Jump.t) list ref,
 					       outside: (Jump.t * Jump.t) list ref}) option ref} 
 			  option,
-	   set = setVarInfo}
+	   set = setVarInfo, ...}
 	= Property.getSetOnce
           (Var.plist, Property.initConst NONE)
 
       val {get = jumpInfo: Jump.t -> {nest: bool ref,
 				      inside: Dec.t list ref,
 				      outside: Dec.t list ref},
-	   set = setJumpInfo}
+	   set = setJumpInfo, ...}
 	= Property.getSetOnce
 	  (Jump.plist, Property.initFun (fn _ => {nest = ref false,
 						  inside = ref [],

@@ -72,6 +72,11 @@ Summary:
     would attempt to use as much memory as was on the machine used to build
     world.mlton.
 
+* 2001-8-29
+  - Overlow checking is now on by default in the C backend.  This is a huge
+    performance hit, but who cares, since we never use the C backend except for
+    testing anyways.
+
 * 2001-8-22
   - Added support for #line directives of the form
 	(*#line line.col "file"*)

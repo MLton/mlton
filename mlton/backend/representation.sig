@@ -5,7 +5,7 @@ type int = Int.t
    
 signature REPRESENTATION_STRUCTS = 
    sig
-      structure Cps: CPS
+      structure Ssa: SSA
       structure Mtype: MTYPE
    end
 
@@ -71,10 +71,10 @@ signature REPRESENTATION =
 	 end
       
       val compute:
-	 Cps.Program.t
+	 Ssa.Program.t
 	 -> {
-	     tyconRep: Cps.Tycon.t -> TyconRep.t,
-	     conRep: Cps.Con.t -> ConRep.t,
-	     toMtype: Cps.Type.t -> Mtype.t
+	     tyconRep: Ssa.Tycon.t -> TyconRep.t,
+	     conRep: Ssa.Con.t -> ConRep.t,
+	     toMtype: Ssa.Type.t -> Mtype.t
 	    }
    end

@@ -109,7 +109,7 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
        | Fact of Fact.t
        | None
        | Or of Fact.t * Fact.t
-      val {get = varInfo: Var.t -> varInfo, set = setVarInfo} =
+      val {get = varInfo: Var.t -> varInfo, set = setVarInfo, ...} =
 	 Property.getSetOnce (Var.plist, Property.initConst None)
       datatype z = datatype Fact.result
       datatype z = datatype Rel.t
@@ -194,9 +194,8 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 		 end)
 	     val {graph, root, jumpNode} =
 		Function.controlFlowGraph (f, jumpHandlers)
-	     val {idom} = DirectedGraph.dominators {graph = graph,
-						    root = root}
-	     val {get = nodeInfo : Node.t -> NodeInfo.t} =
+	     val {idom} = DirectedGraph.dominators (graph, {root = root})
+	     val {get = nodeInfo: Node.t -> NodeInfo.t, ...} =
 		Property.get
 		(Node.plist, Property.initFun (fn _ => NodeInfo.new ()))
 	     val jumpInfo = nodeInfo o jumpNode
