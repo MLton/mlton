@@ -329,8 +329,34 @@ fun valDec (tyvars: Tyvar.t vector,
 
 fun defunctorize (CoreML.Program.T {decs}) =
    let
-      val {destroy, hom = loopTy} =
-	 Ctype.makeHom {con = Xtype.con, var = Xtype.var}
+      val {get = conExtraArgs: Con.t -> Xtype.t vector option,
+	   set = setConExtraArgs, destroy = destroy1, ...} =
+	 Property.destGetSetOnce (Con.plist, Property.initConst NONE)
+      val {get = tyconExtraArgs: Tycon.t -> Xtype.t vector option,
+	   set = setTyconExtraArgs, destroy = destroy2, ...} =
+	 Property.destGetSetOnce (Tycon.plist, Property.initConst NONE)
+      val {destroy = destroy3, hom = loopTy} =
+	 let
+	    fun con (c, ts) =
+	       let
+		  val ts =
+		     case tyconExtraArgs c of
+			NONE => ts
+		      | SOME ts' => Vector.concat [ts', ts]
+	       in
+		  Xtype.con (c, ts)
+	       end
+	 in
+	    Ctype.makeHom {con = con, var = Xtype.var}
+	 end
+      fun conTargs (c: Con.t, ts: Ctype.t vector): Xtype.t vector =
+	 let
+	    val ts = Vector.map (ts, loopTy)
+	 in
+	    case conExtraArgs c of
+	       NONE => ts
+	     | SOME ts' => Vector.concat [ts', ts]
+	 end
       val {get = conTycon, set = setConTycon, ...} =
 	 Property.getSetOnce (Con.plist,
 			      Property.initRaise ("conTycon", Con.layout))
@@ -352,30 +378,81 @@ fun defunctorize (CoreML.Program.T {decs}) =
 	 in
 	    case d of
 	       Datatype dbs =>
-		  Vector.foreach
-		  (dbs, fn {cons, tycon, tyvars} =>
-		   let
-		      val _ =
-			 setTyconCons (tycon,
-				       Vector.map (cons, fn {arg, con} =>
-						   {con = con,
-						    hasArg = isSome arg}))
-		      val cons =
-			 Vector.map
-			 (cons, fn {arg, con} =>
-			  (setConTycon (con, tycon)
-			   ; {arg = Option.map (arg, loopTy),
-			      con = con}))
-		      val _ = 
-			 if Tycon.equals (tycon, Tycon.reff)
-			    then ()
-			 else
-			    List.push (datatypes, {cons = cons,
-						   tycon = tycon,
-						   tyvars = tyvars})
-		   in
-		      ()
-		   end)
+		  let
+		     val frees: Tyvar.t list ref = ref []
+		     val _ =
+			Vector.foreach
+			(dbs, fn {cons, tycon, tyvars} =>
+			 let
+			    fun var (a: Tyvar.t): unit =
+			       let
+				  fun eq a' = Tyvar.equals (a, a')
+			       in
+				  if Vector.exists (tyvars, eq)
+				     orelse List.exists (!frees, eq)
+				     then ()
+				  else List.push (frees, a)
+			       end
+			    val {destroy, hom} =
+			       Ctype.makeHom {con = fn _ => (),
+					      var = var}
+			    val _ =
+			       Vector.foreach (cons, fn {arg, ...} =>
+					       Option.app (arg, hom))
+			    val _ = destroy ()
+			 in
+			    ()
+			 end)
+		     val frees = !frees
+		     val dbs =
+			if List.isEmpty frees
+			   then dbs
+			else
+			   let
+			      val frees = Vector.fromList frees
+			      val extra = Vector.map (frees, Xtype.var)
+			   in
+			      Vector.map
+			      (dbs, fn {cons, tycon, tyvars} =>
+			       let
+				  val _ = setTyconExtraArgs (tycon, SOME extra)
+				  val _ =
+				     Vector.foreach
+				     (cons, fn {con, ...} =>
+				      setConExtraArgs (con, SOME extra))
+			       in
+				  {cons = cons,
+				   tycon = tycon,
+				   tyvars = Vector.concat [frees, tyvars]}
+			       end)
+			   end
+		  in
+		     Vector.foreach
+		     (dbs, fn {cons, tycon, tyvars} =>
+		      let
+			 val _ =
+			    setTyconCons (tycon,
+					  Vector.map (cons, fn {arg, con} =>
+						      {con = con,
+						       hasArg = isSome arg}))
+			 val cons =
+			    Vector.map
+			    (cons, fn {arg, con} =>
+			     (setConTycon (con, tycon)
+			      ; {arg = Option.map (arg, loopTy),
+				 con = con}))
+			 
+			 val _ = 
+			    if Tycon.equals (tycon, Tycon.reff)
+			       then ()
+			    else
+			       List.push (datatypes, {cons = cons,
+						      tycon = tycon,
+						      tyvars = tyvars})
+		      in
+			 ()
+		      end)
+		  end
 	     | Exception {con, ...} => setConTycon (con, Tycon.exn)
 	     | Fun {decs, ...} => Vector.foreach (decs, loopLambda o #lambda)
 	     | Val {rvbs, vbs, ...} =>
@@ -416,7 +493,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
 		  Con {arg, con, targs} =>
 		     NestedPat.Con {arg = Option.map (arg, loopPat),
 				    con = con,
-				    targs = Vector.map (targs, loopTy)}
+				    targs = conTargs (con, targs)}
 		| Const f =>
 		     NestedPat.Const {const = f (),
 				      isChar = Ctype.isChar t}
@@ -637,7 +714,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
 			   Con (con, targs) =>
 			      conApp {arg = e2,
 				      con = con,
-				      targs = Vector.map (targs, loopTy),
+				      targs = conTargs (con, targs),
 				      ty = ty}
 			 | _ => 
 			      Xexp.app {arg = e2,
@@ -662,7 +739,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
 			    tyconCons = tyconCons}
 		| Con (con, targs) =>
 		     let
-			val targs = Vector.map (targs, loopTy)
+			val targs = conTargs (con, targs)
 		     in
 			case Xtype.deArrowOpt ty of
 			   NONE =>
@@ -794,7 +871,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
 	 end
       val body = Xexp.toExp (loopDecs (decs, (Xexp.unit (), Xtype.unit)))
       val _ = List.foreach (!warnings, fn f => f ())
-      val _ = destroy ()
+      val _ = (destroy1 (); destroy2 (); destroy3 ())
    in
       Xml.Program.T {body = body,
 		     datatypes = Vector.fromList (!datatypes),

@@ -14,19 +14,6 @@ Definition of SML.
 \begin{itemize}
 
 \item
-{\mlton} rejects datatype declarations with type variables bound at
-an outer level.  For example, the following program is rejected,
-although it is allowed by the Definition.
-\begin{verbatim}
-fun 'a f (x : 'a) =
-   let datatype t = T of 'a * int
-   in 13
-   end
-\end{verbatim}
-This may be an oversight in the Definition, since unchecked use of
-this feature can lead to type unsoundness.
-
-\item
 {\mlton} rejects rebinding of constructors with {\tt val rec}
 declarations, as in
 \begin{verbatim}
