@@ -1915,7 +1915,6 @@ structure Program =
        *)
       fun printArithStats (T {functions, globals, ...}): unit =
 	 let
-	    open Ssa
 	    val {get = isConst, set = setIsConst, ...} =
 	       Property.getSetOnce (Var.plist, Property.initConst false)
 	    val _ =
