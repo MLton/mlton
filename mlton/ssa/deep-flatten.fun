@@ -137,7 +137,7 @@ structure VarTree =
 	 end
 
       val fillInRoots =
-	 Trace.trace2 ("VarTree.fillInRoots",
+	 Trace.trace2 ("DeepFlatten.VarTree.fillInRoots",
 		       layout,
 		       fn {base, offset} =>
 		       Layout.record [("base", Base.layout (base, Var.layout)),
@@ -274,7 +274,7 @@ structure Value =
       and value =
 	 Ground of Type.t
        | Object of {args: t Prod.t,
-		    coercedFrom: t list ref,
+		    coercedFrom: t AppendList.t ref,
 		    con: ObjectCon.t,
 		    flat: Flat.t ref}
        | Weak of {arg: t}
@@ -311,14 +311,14 @@ structure Value =
       fun weak (a: t): value = Weak {arg = a}
 	       
       val traceCoerce =
-	 Trace.trace ("Value.coerce",
+	 Trace.trace ("DeepFlatten.Value.coerce",
 		      fn {from, to} =>
 		      Layout.record [("from", layout from),
 				     ("to", layout to)],
 		      Unit.layout)
 
       val traceUnify =
-	 Trace.trace2 ("Value.unify", layout, layout, Unit.layout)
+	 Trace.trace2 ("DeepFlatten.Value.unify", layout, layout, Unit.layout)
 
       val rec unify: t * t -> unit =
 	 fn arg =>
@@ -331,13 +331,14 @@ structure Value =
 		(e, e', fn (z as {value = v, ...}, {value = v', ...}) =>
 		 case (v, v') of
 		    (Ground _, Ground _) => z
-		  | (Object {args = a, coercedFrom = c, flat = f, ...}, Object {args = a', coercedFrom = c', flat = f', ...}) =>
+		  | (Object {args = a, coercedFrom = c, flat = f, ...},
+		     Object {args = a', coercedFrom = c', flat = f', ...}) =>
 		       let
 			  val () = unifyProd (a, a')
 		       in
 			  case (!f, !f') of
 			     (Flat, Flat) =>
-				(c := List.fold (!c', !c, op ::); new' v)
+				(c := AppendList.append (!c', !c); new' v)
 			   | (Flat, NotFlat) =>
 				(callDont := true; new' v)
 			   | (NotFlat, Flat) =>
@@ -376,7 +377,7 @@ structure Value =
 			 then unify (from, to)
 		      else
 			 case !f' of
-			    Flat => (List.push (c', from)
+			    Flat => (AppendList.push (c', from)
 				     ; coerceProd {from = a, to = a'})
 			  | NotFlat => unify (from, to))
 		| (Weak _, Weak _) => unify (from, to)
@@ -396,9 +397,9 @@ structure Value =
 		      let
 			 val () = flat := NotFlat
 			 val from = !coercedFrom
-			 val () = coercedFrom := []
+			 val () = coercedFrom := AppendList.empty
 		      in
-			 List.foreach (from, fn v' => unify (v, v'))
+			 AppendList.foreach (from, fn v' => unify (v, v'))
 		      end
 		 | NotFlat => ())
 	  | _ => ()
@@ -435,7 +436,7 @@ structure Value =
 	    val flat = if dontFlatten then Flat.NotFlat else Flat.Flat
 	 in
 	    Object {args = args,
-		    coercedFrom = ref [],
+		    coercedFrom = ref AppendList.empty,
 		    con = con,
 		    flat = ref flat}
 	 end
@@ -444,7 +445,9 @@ structure Value =
 	 fn vs => new (object {args = vs, con = ObjectCon.Tuple})
 
       val tuple =
-	 Trace.trace ("Value.tuple", fn p => Prod.layout (p, layout), layout)
+	 Trace.trace ("DeepFlatten.Value.tuple",
+		      fn p => Prod.layout (p, layout),
+		      layout)
 	 tuple
 
       val deObject =
@@ -462,9 +465,11 @@ structure Value =
 	    Weak {arg, ...} => arg
 	  | _ => Error.bug "Value.deWeak"
 
-      val traceFinalType = Trace.trace ("Value.finalType", layout, Type.layout)
+      val traceFinalType =
+	 Trace.trace ("DeepFlatten.Value.finalType", layout, Type.layout)
       val traceFinalTypes =
-	 Trace.trace ("Value.finalTypes", layout,
+	 Trace.trace ("DeepFlatten.Value.finalTypes",
+		      layout,
 		      fn p => Prod.layout (p, Type.layout))
 
       fun finalTree (v as T e): TypeTree.t =
@@ -561,7 +566,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
       val {get = conValue: Con.t -> Value.t option ref, ...} =
 	 Property.get (Con.plist, Property.initFun (fn _ => ref NONE))
       val conValue =
-	 Trace.trace ("conValue",
+	 Trace.trace ("DeepFlatten.conValue",
 		      Con.layout, Ref.layout (Option.layout Value.layout))
 	 conValue
       val {get = makeTypeValue: Type.t -> unit -> Value.t, ...} =
@@ -608,7 +613,8 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	   end))
       fun typeValue (t: Type.t): Value.t = makeTypeValue t ()
       val typeValue =
-	 Trace.trace ("typeValue", Type.layout, Value.layout) typeValue
+	 Trace.trace ("DeepFlatten.typeValue", Type.layout, Value.layout)
+	 typeValue
       val coerce = Value.coerce
       fun inject {sum, variant = _} = typeValue (Type.datatypee sum)
       fun object {args, con, resultType} =
@@ -625,7 +631,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	       end
       val object =
 	 Trace.trace
-	 ("object",
+	 ("DeepFlatten.object",
 	  fn {args, con, ...} =>
 	  Layout.record [("args", Prod.layout (args, Value.layout)),
 			 ("con", Option.layout Con.layout con)],
