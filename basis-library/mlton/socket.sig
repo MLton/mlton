@@ -29,4 +29,6 @@ signature MLTON_SOCKET =
       val listenAt: Port.t -> t
       val shutdownRead: TextIO.instream -> unit
       val shutdownWrite: TextIO.outstream -> unit
+
+      val fdToSock: Posix.FileSys.file_desc -> ('af, 'sock_type) Socket.sock
    end

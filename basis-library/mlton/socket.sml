@@ -91,4 +91,7 @@ fun shutdownRead ins =
 fun shutdownWrite out =
    (TextIO.flushOut out
     ; shutdown (TextIO.outFd out, Socket.NO_SENDS))
+
+val fdToSock = Socket.fdToSock
+   
 end
