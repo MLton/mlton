@@ -206,7 +206,11 @@ version:
 world: 
 	$(MAKE) world-no-check
 	@echo 'Type checking basis.'
-	$(MLTON) -dead-code false -sequence-unit true -stop tc >/dev/null
+	$(MLTON) -dead-code false	\
+		-sequence-unit true 	\
+		-stop tc 		\
+		-warn-unused true	\
+		>/dev/null
 
 .PHONY: world-no-check
 world-no-check: 
