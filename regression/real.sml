@@ -555,7 +555,7 @@ val _ =
 	     then ()
 	  else
 	     print (concat [(*name, " ", exact r, " = ", *)
-			    exact (f r), "\n"]))
+			    fmt (StringCvt.GEN (SOME 10)) (f r), "\n"]))
 	 let
 	    open Real.Math
 	 in
