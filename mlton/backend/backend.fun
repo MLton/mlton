@@ -217,7 +217,8 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 		     in new (h, #handler)
 		     end
 		| _ => ()
-	    val _ = Vector.foreach (functions, loopExp o #body)
+	    val _ = Vector.foreach (functions, 
+				    fn Function.T {body, ...} => loopExp body)
 	 in ()
 	 end
       val machineChunks = ref []
@@ -474,7 +475,7 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 			else set (var, ty))
 		| Cdec.Fun {args, body, ...} => (sets args; loopExp body)
 		| _ => ()
-	    val _ = Vector.foreach (functions, fn {args, body, ...} =>
+	    val _ = Vector.foreach (functions, fn Function.T {args, body, ...} =>
 				   (sets args; loopExp body))
 	 in ()
 	 end
@@ -1412,7 +1413,7 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
       val _ =
 	 Control.trace (Control.Pass, "generate")
 	 Vector.foreach
-	 (functions, fn {name, body, ...} =>
+	 (functions, fn Function.T {name, body, ...} =>
 	  let val {info as Info.T {live, ...}, 
 		   handlerOffset, ...} = funcAllocateInfo name
 	  in Chunk.newBlock
