@@ -209,12 +209,6 @@ int main (int argc, char **argv) {					\
 /*                      Runtime                      */
 /* ------------------------------------------------- */
 
-/* The label must be declared as weak because gcc's optimizer may prove that
- * the code that declares the label is dead and hence eliminate declaration.
- */
-#define DeclareProfileLabel(l)			\
-	void l() __attribute__ ((weak))
-
 #define ProfileLabel(l)				\
 	__asm__ __volatile__ (#l ## ":" : : )
 

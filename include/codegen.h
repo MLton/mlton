@@ -1,6 +1,12 @@
 #ifndef _CODEGEN_H_
 #define _CODEGEN_H_
 
+/* The label must be declared as weak because gcc's optimizer may prove that
+ * the code that declares the label is dead and hence eliminate declaration.
+ */
+#define DeclareProfileLabel(l)			\
+	void l() __attribute__ ((weak))
+
 #define BeginIntInfs static struct GC_intInfInit intInfInits[] = {
 #define IntInf(g, n) { g, n },
 #define EndIntInfs };
