@@ -28,7 +28,7 @@ backup:	clean
 clean:
 	find . -type f | grep '.*~$$' | xargs rm -f
 	find . -type d | grep 'CM$$' | xargs rm -rf
-	rm -f junk $(NAME) $(NAME).sml
+	rm -rf PM *.batch.sml a.out junk run $(NAME) $(NAME).sml
 	cd tests && make clean
 
 .PHONY: install
