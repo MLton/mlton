@@ -21,7 +21,7 @@ gccTar="gcc-core-$gccVers.tar"
 w32api='w32api-1.2-1'
 
 root=`pwd`
-target='i686-pc-cygwin'
+target='i386-pc-cygwin'
 prefix='/usr/local'
 
 name=`basename $0`
