@@ -32,7 +32,7 @@ _Real_minPos:
 	.long 0x00000001
 	.long 0x00000000
 
-#elif (defined (__linux__))
+#elif (defined (__linux__) || defined(__FreeBSD__))
 .data
 
 .globl Real_maxFinite
