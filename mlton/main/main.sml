@@ -452,8 +452,11 @@ fun commandLine (args: string list): unit =
 			val _ =
 			   case MLton.hostType of
 			      MLton.Cygwin =>
-				 File.move {from = concat [output, ".exe"],
-					    to = output}
+				 if String.contains (output, #".")
+				    then ()
+				 else
+				    File.move {from = concat [output, ".exe"],
+					       to = output}
 			    | MLton.Linux => ()
 		     in
 			()
