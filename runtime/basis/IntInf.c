@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -117,8 +117,9 @@ static inline uint leadingZeros (mp_limb_t word) {
 	return (res);
 }
 
-static inline void setFrontier (pointer p) {
+static inline void setFrontier (pointer p, uint bytes) {
 	p = GC_alignFrontier (&gcState, p);
+	assert (p - gcState.frontier <= bytes);
 	GC_profileAllocInc (&gcState, p - gcState.frontier);
 	gcState.frontier = p;
 	assert (gcState.frontier <= gcState.limitPlusSlop);
@@ -132,7 +133,7 @@ static inline void setFrontier (pointer p) {
  * If the answer doesn't need all of the space allocated, we adjust
  * the array size and roll the frontier slightly back.
  */
-static pointer answer (__mpz_struct *ans) {
+static pointer answer (__mpz_struct *ans, uint bytes) {
 	bignum			*bp;
 	int			size;
 
@@ -167,14 +168,14 @@ static pointer answer (__mpz_struct *ans) {
 			return (pointer)(ans<<1 | 1);
 		}
 	}
-	setFrontier ((pointer)&bp->limbs[size]);
+	setFrontier ((pointer)&bp->limbs[size], bytes);
 	bp->counter = 0;
 	bp->card = size + 1; /* +1 for isNeg word */
 	bp->magic = BIGMAGIC;
 	return (pointer)&bp->isneg;
 }
 
-static pointer binary (pointer lhs, pointer rhs, uint bytes,
+static inline pointer binary (pointer lhs, pointer rhs, uint bytes,
 				void(*binop)(__mpz_struct *resmpz, 
 					__gmp_const __mpz_struct *lhsspace,
 					__gmp_const __mpz_struct *rhsspace)) {
@@ -188,7 +189,7 @@ static pointer binary (pointer lhs, pointer rhs, uint bytes,
 	fill (lhs, &lhsmpz, lhsspace);
 	fill (rhs, &rhsmpz, rhsspace);
 	binop (&resmpz, &lhsmpz, &rhsmpz);
-	return answer (&resmpz);
+	return answer (&resmpz, bytes);
 }
 
 pointer IntInf_add (pointer lhs, pointer rhs, uint bytes) {
@@ -252,7 +253,7 @@ unary(pointer arg, uint bytes,
 	initRes(&resmpz, bytes);
 	fill(arg, &argmpz, argspace);
 	unop(&resmpz, &argmpz);
-	return answer(&resmpz);
+	return answer (&resmpz, bytes);
 }
 
 pointer IntInf_neg(pointer arg, uint bytes) {
@@ -282,7 +283,7 @@ shary(pointer arg, uint shift, uint bytes,
 	initRes(&resmpz, bytes);
 	fill(arg, &argmpz, argspace);
 	shop(&resmpz, &argmpz, (ulong)shift);
-	return answer(&resmpz);
+	return answer (&resmpz, bytes);
 }
 
 pointer IntInf_arshift(pointer arg, uint shift, uint bytes) {
@@ -373,7 +374,7 @@ pointer IntInf_toString (pointer arg, int base, uint bytes) {
 	sp->counter = 0;
 	sp->card = size;
 	sp->magic = STRMAGIC;
-	setFrontier (&sp->chars[wordAlign(size)]);
+	setFrontier (&sp->chars[wordAlign(size)], bytes);
 	return (pointer)str;
 }
 
@@ -459,7 +460,7 @@ pointer IntInf_quot (pointer num, pointer den, uint bytes) {
 			resmpz._mp_d[qsize++] = carry;
 	}
 	resmpz._mp_size = resIsNeg ? - qsize : qsize;
-	return answer (&resmpz);
+	return answer (&resmpz, bytes);
 }
 
 
@@ -549,5 +550,5 @@ pointer IntInf_rem (pointer num, pointer den, uint bytes) {
 		}
 	}
 	resmpz._mp_size = resIsNeg ? - nsize : nsize;
-	return answer (&resmpz);
+	return answer (&resmpz, bytes);
 }

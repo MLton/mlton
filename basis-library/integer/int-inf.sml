@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -63,7 +63,7 @@ structure IntInf: INT_INF_EXTRA =
 	 Vector.length (Prim.toVector arg) -? 1
       fun size (arg: bigInt): smallInt =
 	 if isSmall arg
-	    then 0
+	    then 1
 	 else bigSize arg
 
       val bytesPerWord = 0w4
@@ -1002,7 +1002,6 @@ structure IntInf: INT_INF_EXTRA =
       val sameSign = bigSameSign
       val scan = bigScan
       val sign = bigSign
-      val size = size
       val toInt = bigToInt
       val toInt64 = bigToInt64
       val toLarge = fn x => x

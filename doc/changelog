@@ -1,5 +1,9 @@
 Here are the changes since version 20040227.
 
+* 2004-09-12
+  - Fixed bug in IntInf that could cause a seg fault.
+  - Remove MLton.IntInf.size.
+
 * 2004-09-05
   - Made -detect-overflow and -safe expert options.
 

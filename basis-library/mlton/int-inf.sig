@@ -12,5 +12,4 @@ signature MLTON_INT_INF =
 	 Big of word vector
        | Small of int
       val rep: t -> rep
-      val size: t -> int
    end

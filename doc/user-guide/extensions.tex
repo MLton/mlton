@@ -294,7 +294,6 @@ signature MLTON_INT_INF =
          Big of word vector
        | Small of int
       val rep: t -> rep
-      val size: t -> int
    end
 \end{verbatim}
 
@@ -323,10 +322,6 @@ the underlying representation of an IntInf.
 
 \entry{rep i}
 return the underlying representation of i.
-
-\entry{size i}
-return the number of heap words taken by {\tt i}.  Returns {\tt 0} if
-{\tt i} is small.
 
 \end{description}
 
