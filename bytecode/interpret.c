@@ -248,7 +248,7 @@ typedef Opcode OperandCode;
 	case OPCODE_ArrayOffset:				\
 		LoadSimple (Pointer, base);			\
 		LoadSimple (Word32, arrayIndex);		\
-		regZ (ty, i) = X (ty, base, arrayIndex, 0);	\
+		regZ (ty, i) = X (ty, base, arrayIndex, 0, 0);	\
 	break;							\
 	case OPCODE_Contents:					\
 		LoadSimple (Pointer, base);			\
@@ -290,7 +290,7 @@ typedef Opcode OperandCode;
 	case OPCODE_ArrayOffset:				\
 		LoadSimple (Pointer, base);			\
 		LoadSimple (Word32, arrayIndex);		\
-		X (ty, base, arrayIndex, 0) = x;		\
+		X (ty, base, arrayIndex, 0, 0) = x;		\
 	break;							\
 	case OPCODE_Contents:					\
 		LoadSimple (Pointer, base);			\
