@@ -25,14 +25,8 @@ structure NeedsArgs =
     val needsArgs = isTop
   end
 
-val stats = true
-
 fun unusedArgs (program as Program.T {datatypes, globals, functions, main})
   = let
-      val removedBinds : Int.t ref = ref 0
-      val removedArgs : Int.t ref = ref 0
-      val wrappers : Int.t ref = ref 0
-
       val {get = varInfo : Var.t -> {used: Used.t}}
 	= Property.get (Var.plist,
 			Property.initFun (fn _ => {used = Used.new ()}))
