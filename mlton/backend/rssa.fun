@@ -5,11 +5,18 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor Rssa (S: RSSA_STRUCTS): RSSA =
 struct
 
 open S
 
+local
+   open Prim
+in
+   structure ApplyArg = ApplyArg
+   structure ApplyResult = ApplyResult
+end
 local
    open Runtime
 in
@@ -105,8 +112,7 @@ structure Operand =
 	       ArrayOffset {base, index, offset, scale, ty} =>
 		  seq [str (concat ["X", Type.name ty, " "]),
 		       tuple [layout base, layout index, Scale.layout scale,
-			      Bytes.layout offset],
-		       constrain ty]
+			      Bytes.layout offset]]
 	     | Cast (z, ty) =>
 		  seq [str "Cast ", tuple [layout z, Type.layout ty]]
 	     | Const c => Const.layout c
@@ -116,11 +122,10 @@ structure Operand =
 	     | Line => str "<Line>"
 	     | Offset {base, offset, ty} =>
 		  seq [str (concat ["O", Type.name ty, " "]),
-		       tuple [layout base, Bytes.layout offset],
-		       constrain ty]
+		       tuple [layout base, Bytes.layout offset]]
 	     | PointerTycon pt => PointerTycon.layout pt
 	     | Runtime r => GCField.layout r
-	     | Var {var, ty} => seq [Var.layout var, constrain ty]
+	     | Var {var, ...} => Var.layout var
 	 end
 
       fun cast (z: t, t: Type.t): t =
@@ -150,7 +155,7 @@ structure Operand =
       fun foreachVar (z: t, f: Var.t -> unit): unit =
 	 foldVars (z, (), f o #1)
 
-      fun replaceVar (z: t, f: Var.t -> Var.t): t =
+      fun replaceVar (z: t, f: Var.t -> t): t =
 	 let
 	    fun loop (z: t): t =
 	       case z of
@@ -165,7 +170,7 @@ structure Operand =
 		     Offset {base = loop base,
 			     offset = offset,
 			     ty = ty}
-		| Var {var, ty} => Var {var = f var, ty = ty}
+		| Var {var, ...} => f var
 		| _ => z
 	 in
 	    loop z
@@ -248,7 +253,7 @@ structure Statement =
 
       fun foreachUse (s, f) = foldUse (s, (), f o #1)
 
-      fun replaceUses (s: t, f: Var.t -> Var.t): t =
+      fun replaceUses (s: t, f: Var.t -> Operand.t): t =
 	 let
 	    fun oper (z: Operand.t): Operand.t =
 	       Operand.replaceVar (z, f)
@@ -297,7 +302,7 @@ structure Statement =
 			NONE => rest
 		      | SOME (x, t) =>
 			   mayAlign [seq [Var.layout x, constrain t],
-				     seq [str " = ", rest]]
+				     seq [str "= ", rest]]
 		  end
 	     | Profile e => ProfileExp.layout e
 	     | ProfileLabel p =>
@@ -471,7 +476,7 @@ structure Transfer =
 		     test = test})
       end
 
-      fun replaceUses (t: t, f: Var.t -> Var.t): t =
+      fun replaceUses (t: t, f: Var.t -> Operand.t): t =
 	 let
 	    fun oper z = Operand.replaceVar (z, f)
 	    fun opers zs = Vector.map (zs, oper)
@@ -852,59 +857,112 @@ structure Program =
 
       fun copyProp (T {functions, handlesSignals, main, objectTypes, ...}): t =
 	 let
-	    val {get = varReplacement: Var.t -> Var.t option,
-		 set = setVarReplacement, ...} =
-	       Property.getSetOnce (Var.plist, Property.initConst NONE)
-	    fun replaceVar (x: Var.t): Var.t =
-	       case varReplacement x of
-		  NONE => x
-		| SOME y => y
-	    fun loopFunction (f: Function.t): unit =
-	       (* Use dfs to visit defs before uses. *)
-	       Function.dfs
-	       (f, fn Block.T {statements, ...} =>
-		let
-		   val () =
-		      Vector.foreach
-		      (statements, fn s =>
-		       case s of
-			  Bind {dst = (x, _), src = Operand.Var {var = y, ...},
-				...} =>
-			  setVarReplacement (x, SOME (replaceVar y))
-			      | _ => ())
-		in
-		   fn () => ()
-		end)
-	    (* Must process main first, because it defines globals that are
-	     * used in other functions.
-	     *)
-	    val () = loopFunction main
-	    val () = List.foreach (functions, loopFunction)
-	    fun replaceFunction (f: Function.t): Function.t =
+	    val tracePrimApply =
+	       Trace.trace3
+	       ("Rssa.primApply",
+		Prim.layout,
+		List.layout (ApplyArg.layout (Var.layout o #var)),
+		Layout.ignore,
+		ApplyResult.layout (Var.layout o #var))
+	    val {get = replaceVar: Var.t -> Operand.t,
+		 set = setReplaceVar, ...} =
+	       Property.getSetOnce
+	       (Var.plist, Property.initRaise ("replacement", Var.layout))
+	    fun dontReplace (x: Var.t, t: Type.t): unit =
+	       setReplaceVar (x, Operand.Var {var = x, ty = t})
+	    fun loopStatement (s: Statement.t): Statement.t option =
+	       let
+		  val s = Statement.replaceUses (s, replaceVar)
+		  fun keep () =
+		     (Statement.foreachDef (s, dontReplace)
+		      ; SOME s)
+	       in
+		  case s of
+		     Bind {dst = (x, _), isMutable, src} =>
+			if isMutable
+			   then keep ()
+			else
+			   let
+			      datatype z = datatype Operand.t
+			   in
+			      if (case src of
+				     Const _ => true
+				   | Var _ => true
+				   | _ => false)
+				 then (setReplaceVar (x, src)
+				       ; NONE)
+			      else keep ()
+			   end
+		   | PrimApp {args, dst, prim} =>
+			let
+			   fun replace (z: Operand.t): Statement.t option =
+			      (Option.app (dst, fn (x, _) =>
+					   setReplaceVar (x, z))
+			       ; NONE)
+			   val applyArgs =
+			      Vector.keepAllMap
+			      (args, fn z =>
+			       case z of
+				  Operand.Const c => SOME (ApplyArg.Const c)
+				| Operand.Var x => SOME (ApplyArg.Var x)
+				| _ => NONE)
+			   datatype z = datatype ApplyResult.t
+			in
+			   if Vector.length args <> Vector.length applyArgs
+			      then keep ()
+			   else
+			      case (tracePrimApply
+				    Prim.apply
+				    (prim, Vector.toList applyArgs,
+				     fn ({var = x, ...}, {var = y, ...}) =>
+				     Var.equals (x, y))) of
+				 Apply (p, args) =>
+				    let
+				       val args =
+					  Vector.fromListMap (args, Operand.Var)
+				       val () = Option.app (dst, dontReplace)
+				    in
+				       SOME (PrimApp {args = args,
+						      dst = dst,
+						      prim = prim})
+				    end
+			       | Bool b => replace (Operand.bool b)
+			       | Const c => replace (Operand.Const c)
+			       | Overflow => keep ()
+			       | Unknown => keep ()
+			       | Var x => replace (Operand.Var x)
+			end
+		| _ => keep ()
+	       end
+	    fun loopTransfer t =
+	       (Transfer.foreachDef (t, dontReplace)
+		; Transfer.replaceUses (t, replaceVar))
+	    fun loopFormals args = Vector.foreach (args, dontReplace)
+	    fun loopFunction (f: Function.t): Function.t =
 	       let
 		  val {args, blocks, name, raises, returns, start} =
 		     Function.dest f
-		  val blocks =
-		     Vector.map
-		     (blocks,
-		      fn Block.T {args, kind, label, statements, transfer} =>
+		  val () = loopFormals args
+		  val blocks = ref []
+		  val () =
+		     Function.dfs
+		     (f, fn Block.T {args, kind, label, statements, transfer} =>
 		      let
+			 val () = loopFormals args
 			 val statements =
-			    Vector.keepAllMap
-			    (statements, fn s =>
-			     case s of
-				Bind {src = Operand.Var _, ...} => NONE
-			      | _ =>
-				   SOME (Statement.replaceUses (s, replaceVar)))
-			 val transfer =
-			    Transfer.replaceUses (transfer, replaceVar)
+			    Vector.keepAllMap (statements, loopStatement)
+			 val transfer = loopTransfer transfer
+			 val () =
+			    List.push
+			    (blocks, Block.T {args = args,
+					      kind = kind,
+					      label = label,
+					      statements = statements,
+					      transfer = transfer})
 		      in
-			 Block.T {args = args,
-				  kind = kind,
-				  label = label,
-				  statements = statements,
-				  transfer = transfer}
+			 fn () => ()
 		      end)
+		  val blocks = Vector.fromList (!blocks)
 	       in
 		  Function.new {args = args,
 				blocks = blocks,
@@ -913,10 +971,15 @@ structure Program =
 				returns = returns,
 				start = start}
 	       end
+	    (* Must process main first, because it defines globals that are
+	     * used in other functions.
+	     *)
+	    val main = loopFunction main
+	    val functions = List.revMap (functions, loopFunction)
 	 in
-	    T {functions = List.revMap (functions, replaceFunction),
+	    T {functions = functions,
 	       handlesSignals = handlesSignals,
-	       main = replaceFunction main,
+	       main = main,
 	       objectTypes = objectTypes}
 	 end
 		  
