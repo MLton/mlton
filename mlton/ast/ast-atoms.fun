@@ -184,7 +184,7 @@ fun reportDuplicates (v: 'a vector,
 	     then ()
 	  else
 	     if not (equals (a, Vector.sub (v, i')))
-		then ()
+		then loop (i' + 1)
 	     else
 		let
 		   open Layout
