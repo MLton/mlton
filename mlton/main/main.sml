@@ -470,13 +470,14 @@ fun commandLine (args: string list): unit =
 	    (* Emit exit code inline at every function exit. *)
 	    "-mno-epilogue"]
       val sparcLinkLibs = ["dl", "nsl", "socket"]
-      val (cFlags, defaultLibs) =
+      val (ccDefaultOpts, defaultLibs) =
 	 case !hostArch of
 	    X86 => (x86CFlags, x86LinkLibs)
 	  | Sparc => (sparcCFlags, sparcLinkLibs)
       fun prefixAll (prefix: string, l: string list): string list =
 	 List.map (l, fn s => concat [prefix, s])
-      val defaultLibs = prefixAll ("-l", defaultLibs @ ["gdtoa", "m"])
+      val defaultLibs =
+	 prefixAll ("-l", defaultLibs @ ["gdtoa", "m"])
       fun tokenize l =
 	 String.tokens (concat (List.separate (rev (!l), " ")), Char.isSpace)
       val ccOpts = tokenize ccOpts
@@ -709,6 +710,7 @@ fun commandLine (args: string list): unit =
 						 [concat
 						  ["-O", (Int.toString
 							  (!optimization))]],
+						 ccDefaultOpts,
 						 ccOpts])
 					 else ([asDebug], [])
 				      val switches =
