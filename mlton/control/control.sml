@@ -134,6 +134,10 @@ val keepPasses = control {name = "keep passes",
 val limitCheckPerBlock = control {name = "limit check per block",
 				  default = true,
 				  toString = Bool.toString}
+
+val newReturn = control {name = "new return",
+			 default = false,
+			 toString = Bool.toString}
    
 structure Native =
    struct
@@ -211,6 +215,10 @@ val safe = control {name = "safe",
 
 
 val showTypes = control {name = "show types",
+			 default = false,
+			 toString = Bool.toString}
+
+val stackCont = control {name = "stack cont",
 			 default = false,
 			 toString = Bool.toString}
 

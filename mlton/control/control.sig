@@ -77,7 +77,7 @@ signature CONTROL =
        * to coalesce checks across blocks.
        *)
       val limitCheckPerBlock: bool ref
-	 
+
       structure Native:
 	 sig
 	    (* whether or not to use native codegen *)
@@ -114,6 +114,10 @@ signature CONTROL =
 	    val split: int option ref
 	 end
 
+      (* Whether or not to use the new non-tail call return convention.
+       *)
+      val newReturn: bool ref
+	 
       (* Only duplicate big functions when
        * (size - small) * (number of occurrences - 1) <= product
        *)
@@ -138,6 +142,9 @@ signature CONTROL =
 	 
       (* Should types be printed in ILs. *)
       val showTypes: bool ref
+
+      (* Force continuation formals to stack. *)
+      val stackCont: bool ref 
 
       (* Generate a statically linked executable. *)
       val static: bool ref

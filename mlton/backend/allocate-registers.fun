@@ -69,7 +69,8 @@ structure Info =
 	       live: Operand.t list,
 	       liveNoFormals: Operand.t list,
 	       liveFrame: (Handler.t * Operand.t list) list,
-	       size: int
+	       size: int,
+	       adjustSize: int -> {size: int, shift: int}
 	       }
 
       local
@@ -80,7 +81,7 @@ structure Info =
 
       fun layout (T {limitCheck, 
 		     live, liveNoFormals, liveFrame,
-		     size}) =
+		     size, adjustSize}) =
 	 Layout.record
 	 [("limitCheck", Machine.LimitCheck.layout limitCheck),
 	  ("live", List.layout Operand.layout live),
@@ -215,8 +216,11 @@ fun allocate {program = program as Program.T {globals, ...},
 	 val _ = Vector.foreach (args, forceStack o #1)
 	 val _ =
 	    Vector.foreach
-	    (blocks, fn Sblock.T {label, statements, transfer, ...} =>
+	    (blocks, fn Sblock.T {label, args, statements, transfer, ...} =>
 	     let
+	        val _ = if isCont label andalso !Control.stackCont
+			  then Vector.foreach(args, forceStack o #1)
+			else ()
 		val _ =
 		   case limitCheck label of
 		      LimitCheck.No => ()
@@ -448,7 +452,9 @@ fun allocate {program = program as Program.T {globals, ...},
 	    traceAllocateBlock
 	    (fn (Tree.T (Sblock.T {args, label, statements, ...}, children),
 		 c: Chunk.t) =>
-	    let
+	    let	
+	       val isCont = isCont label
+	       val isHandler = isHandler label
 	       val c' = labelChunk label
 	       val saveReg = Mtype.memo (! o nextReg)
 	       val saveOffset = !nextOffset
@@ -461,6 +467,29 @@ fun allocate {program = program as Program.T {globals, ...},
 			* across a chunk boundary.
 			*)
 		     List.foreach (Mtype.all, fn t => nextReg t := 0)
+	       fun adjustSize size
+		 = let
+		     val (offset,offset') =
+		        Vector.fold
+			(args, (0,size), fn ((x, _), (offset, offset')) =>
+			 let val ty = #ty (varInfo x)
+			 in (Mtype.align (ty, offset) + Mtype.size ty,
+			     Mtype.align (ty, offset') + Mtype.size ty)
+			 end)
+		     val (offset,offset') = (Mtype.wordAlign offset,
+					     Mtype.wordAlign offset')
+		     val shift = Int.abs((offset' - size) - offset)
+		   in
+		     {size = size + shift + offset,
+		      shift = shift}
+		   end
+	       val _ = if isCont andalso !Control.newReturn
+			 then let
+				val {shift, ...} = adjustSize saveOffset
+			      in
+				nextOffset := saveOffset + shift
+			      end
+		       else ()
 	       val _ = Vector.foreach (args, fn (x, _) =>
 				       allocateVar (x, c', false))
 	       (* This must occur after allocating slots for the
@@ -478,22 +507,23 @@ fun allocate {program = program as Program.T {globals, ...},
 		  end
 	       val _ = Vector.foreach (statements, fn s =>
 				       allocateStatement (s, c'))
+	       val bodyOffset = !nextOffset
 	       val _ = Vector.foreach (children, fn n => loop (n, c'))
 	       val _ = List.foreach (Mtype.all, fn t => nextReg t := saveReg t)
 	       val _ = nextOffset := saveOffset
-	       val isCont = isCont label
-	       val isHandler = isHandler label
-	       val size = Mtype.wordAlign saveOffset
+	       val size = saveOffset
 	       val th = fn () => let
 				   val {live, liveNoFormals, liveFrame} =
-				      getLiveOperands (label, isCont orelse isHandler)
+				      getLiveOperands (label, 
+						       isCont orelse isHandler)
 				 in 
 				    setSlabelInfo
 				    (label, Info.T {limitCheck = limitCheck,
 						    live = live,
 						    liveNoFormals = liveNoFormals,
 						    liveFrame = liveFrame,
-						    size = size})
+						    size = size,
+						    adjustSize = adjustSize})
 				 end
 	       val _ = if isCont
 			  then (* If this is a cont, then some handlers paired

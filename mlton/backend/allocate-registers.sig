@@ -31,7 +31,10 @@ signature ALLOCATE_REGISTERS =
 		     liveFrame: (Ssa.Handler.t * Machine.Operand.t list) list,
 		     (* Number of bytes in frame including return address.
 		      *)
-		     size: int
+		     size: int,
+		     (* Adjust the number of bytes in a frame size
+		      *)
+		     adjustSize: int -> {size: int, shift: int}
 		     }
 
 	    val live: t -> Machine.Operand.t list

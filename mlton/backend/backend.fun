@@ -1047,7 +1047,7 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 			 h: Handler.t,
 			 args: (Var.t * Stype.t) vector): unit =
 	       let
-		  val Info.T {liveFrame, liveNoFormals, size, ...} =
+		  val Info.T {liveFrame, liveNoFormals, size, adjustSize, ...} =
 		     labelRegInfo j
 		  val liveFrame =
 		     #2 (valOf (List.peek (liveFrame, fn (h', liveFrame) =>
@@ -1060,12 +1060,40 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 			   end
 		      | Handler.None => size
 		      | Handler.CallerHandler => size
+		  val size' = size
+		  val {size, shift} = if !Control.newReturn
+					then adjustSize size
+				      else {size = Mtype.wordAlign size, shift = 0}
 		  val _ = Mprogram.newFrame (mprogram,
 					     {return = l,
 					      chunkLabel = Chunk.label c,
 					      size = size,
 					      live = liveFrame})
 		  val (args, (argsl, offset)) =
+		     if !Control.newReturn
+		       then 
+		       Vector.mapAndFold
+		       (args, ([], 0),
+			fn ((var, ty), (argsl, offset)) =>
+			let
+			   val ty = toMtype ty
+			   val offset = Mtype.align (ty, offset)
+			   val arg =
+			      Operand.stackOffset
+			      {offset = size' + shift + offset,
+			       ty = ty}
+			   val isUsed
+			     = case varInfo var of 
+			          {operand = VarOperand.Allocate {isUsed, ...}, ...} 
+				    => !isUsed
+				| _ => false
+			in (arg,
+			    (if isUsed
+			       then arg::argsl
+			     else argsl,
+			     offset + Mtype.size ty))
+			end)
+		     else
 		     Vector.mapAndFold
 		     (args, ([], 4),
 		      fn ((var, ty), (argsl, offset)) =>
@@ -1089,7 +1117,9 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 		  val (statements, transfer) = tail (j, args, id)
 		  val limitCheck =
 		     MlimitCheck.Maybe (GCInfo.make 
-					{frameSize = size + offset,
+					{frameSize = if !Control.newReturn
+						       then size
+						     else size + offset,
 					 live = argsl @ liveNoFormals})
 		  val statements =
 		     Mstatement.limitCheck limitCheck
@@ -1162,7 +1192,8 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 			    | SOME {cont, handler} =>
 				 let
 				    val return = labelCont (cont, handler)
-				    val Info.T {size, ...} = labelRegInfo cont
+				    val Info.T {size, adjustSize, ...} = 
+				       labelRegInfo cont
 				    val (size, handler, handlerLive) =
 				       case handler of
 					  Handler.CallerHandler =>
@@ -1186,6 +1217,10 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 						   ty = Mtype.uint})::
 						 nil)
 					     end
+				    val size = 
+				       if !Control.newReturn
+					 then #size (adjustSize size)
+				       else Mtype.wordAlign size
 				 in
 				    (size, 
 				     SOME {return = return,
@@ -1324,6 +1359,42 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 		| Stransfer.Return xs =>
 		     let
 			val (_, live, moves) =
+			   if !Control.newReturn
+			   then let
+			          val shift =
+				     Vector.fold
+				     (xs, 0, fn (x, shift) =>
+				      case varOperandOpt x of
+					 NONE => shift
+				       | SOME x => 
+					    let val ty = Operand.ty x
+					    in Mtype.align (ty, shift) + 
+					       Mtype.size ty
+					    end)
+				  val shift = Mtype.wordAlign shift
+				  val shift = ~shift
+				in
+			   Vector.fold
+			   (xs, (0, [], []), fn (x, (offset, live, moves)) =>
+			    case varOperandOpt x of
+			       NONE => (offset, live, moves)
+			     | SOME x =>
+				  let 
+				     val ty = Operand.ty x
+				     val offset = Mtype.align (ty, offset)
+				     val so =
+				        Operand.stackOffset
+					{offset = offset + shift,
+					 ty = ty}
+				  in
+				     (offset + Mtype.size ty,
+				      so::live,
+				      {src = x,
+				       dst = so}
+				      :: moves)
+				  end)
+				end
+			   else
 			   Vector.fold
 			   (xs, (4, [], []), fn (x, (offset, live, moves)) =>
 			    case varOperandOpt x of
