@@ -193,7 +193,7 @@ for f in mllex mlyacc mlprof; do
     *)
 	    echo "testing $f"
 	    gmake -W $f >/dev/null
-	    $mlton $flags -output $tmpf $f.cm
+	    $mlton $flags -output $tmpf $f.mlb
 	    if [ $? -ne 0 ]; then
 			compFail $f
 	    fi
