@@ -124,41 +124,63 @@ fun unusedArgs (program as Program.T {datatypes, globals, functions, main})
 			      then let
 				     val name = name
 				     val name' = Jump.new name
+				     val name'' = Jump.new name
 
-				     val (args, args', acts)
+				     val (args, args', args'', acts', acts'')
 				       = Vector.fold
 				         (args,
-					  ([],[],[]),
+					  ([],[],[], [], []),
 					  fn ((x,ty),
-					      (args,args',acts))
+					      (args,args',args'',acts',acts''))
 					   => let
 						val x' = Var.new x
+						val x'' = Var.new x
 					      in 
 						if isUsed x
 						  then ((x,ty)::args,
 							(x',ty)::args',
-							x'::acts)
+							(x'',ty)::args'',
+							x'::acts',
+							x''::acts'')
 						  else (args,
 							(x',ty)::args',
-							acts)
+							(x'',ty)::args'',
+							acts',
+							acts'')
 					      end)
 				     val args = Vector.fromListRev args
 				     val args' = Vector.fromListRev args'
-				     val acts = Vector.fromListRev acts
+				     val args'' = Vector.fromListRev args''
+				     val acts' = Vector.fromListRev acts'
+				     val acts'' = Vector.fromListRev acts''
 				       
-				     val body = loopExp body
 				     val body' 
 				       = Exp.make
 				         {decs = [],
 					  transfer
 					  = Jump {dst = name,
-						  args = acts}}
+						  args = acts'}}
+				     val body'' 
+				       = Exp.make
+				         {decs = [],
+					  transfer
+					  = Jump {dst = name,
+						  args = acts''}}
+
+				     val inner
+				       = Fun {name = name',
+					      args = args',
+					      body = body'}
+				     val outer
+				       = Fun {name = name'',
+					      args = args'',
+					      body = body''}
 
 				     val _ = setWrapper(name, name')
+				     val body = Exp.prefix(loopExp body, inner)
+				     val _ = setWrapper(name, name'')
 				   in
-				     Fun {name = name',
-					  args = args',
-					  body = body'} ::
+				     outer ::
 				     Fun {name = name,
 					  args = args,
 					  body = body} ::
