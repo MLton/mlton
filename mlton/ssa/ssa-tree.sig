@@ -64,6 +64,7 @@ signature SSA_TREE =
 
 	    val foreachVar: t * (Var.t -> unit) -> unit
 	    val layout: t -> Layout.t
+	    val mayAllocate: t -> bool
 	    val maySideEffect: t -> bool
 	 end
 
@@ -74,6 +75,7 @@ signature SSA_TREE =
 			       exp: Exp.t}
 
 	    val layout: t -> Layout.t
+	    val mayAllocate: t -> bool
 	    val setHandler: Label.t -> t
 	    val var: t -> Var.t option
 	    val exp: t -> Exp.t

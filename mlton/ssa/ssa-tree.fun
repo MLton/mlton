@@ -149,6 +149,12 @@ structure Exp =
        | Tuple of Var.t vector
        | Var of Var.t
 
+      val mayAllocate =
+	 fn ConApp {args, ...} => Vector.length args > 0
+	  | PrimApp {prim, ...} => Prim.mayAllocate prim
+	  | Tuple vs => Vector.length vs > 1
+	  | _ => false
+
       val unit = Tuple (Vector.new0 ())
 	 
       fun foreachLabelVar (e, j, v) =
@@ -342,6 +348,8 @@ structure Statement =
 	 fun setHandler h = make (Exp.SetHandler h)
       end
 
+      val mayAllocate = Exp.mayAllocate o exp
+	 
       fun clear s = Option.app (var s, Var.clear)
 
       fun lastHandler (ss: t vector, first: Label.t option) =

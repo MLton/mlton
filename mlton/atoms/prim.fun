@@ -255,6 +255,8 @@ structure Name =
 	 fn Array_array => true
 	  | Array_array0 => true
 	  | _ => false
+	       
+      val mayAllocate = isArrayAllocation
 
       val impCall
 	= fn FFI _ => true
@@ -496,6 +498,7 @@ end
 val isFunctional = Trace.trace ("isFunctional", layout, Bool.layout) isFunctional
 
 val isCommutative = Name.isCommutative o name
+val mayAllocate = Name.mayAllocate o name
 val mayOverflow = Name.mayOverflow o name
 val mayRaise = Name.mayRaise o name
 val isArrayAllocation = Name.isArrayAllocation o name

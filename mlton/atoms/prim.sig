@@ -275,6 +275,7 @@ signature PRIM =
       val isFunctional: t -> bool
       val layout: t -> Layout.t
       val layoutApp: t * 'a vector * ('a -> Layout.t) -> Layout.t
+      val mayAllocate: t -> bool
       (* Int_addCheck, Int_mulCheck, Int_subCheck *)
       val mayOverflow: t -> bool
       val mayRaise: t -> bool
