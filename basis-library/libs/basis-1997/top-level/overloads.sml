@@ -9,7 +9,6 @@
 _overload ~ :   ('a -> 'a)
 as  Int.~
 and IntInf.~
-and Word.~
 and Word8.~
 and Real.~
 
