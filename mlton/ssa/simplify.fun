@@ -17,7 +17,7 @@ structure IntroduceLoops = IntroduceLoops (S)
 structure LocalFlatten = LocalFlatten (S)
 (* structure LoopInvariant = LoopInvariant (S) *)
 (* structure PolyEqual = PolyEqual (S) *)
-(* structure Redundant = Redundant (S) *)
+structure Redundant = Redundant (S)
 (* structure RedundantTests = RedundantTests (S) *)
 structure RemoveUnused = RemoveUnused (S)
 (* structure SimplifyTypes = SimplifyTypes (S) *)
@@ -76,8 +76,9 @@ val passes =
      ("commonSubexp", CommonSubexp.eliminate),
      ("removeUnusedX6", RemoveUnused.remove),
      ("commonBlock", CommonBlock.eliminate),
+     ("removeUnusedX7", RemoveUnused.remove),
 (*    ("redundantTests", RedundantTests.simplify), *)
-(*    ("redundant", Redundant.redundant), *)
+     ("redundant", Redundant.redundant),
      (* removeUnused cannot be omitted.
       * The final shrink pass ensures that constant operands are
       * not used in dead switch branches in a type-unsafe way.

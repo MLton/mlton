@@ -19,6 +19,8 @@ common-subexp.fun
 common-subexp.sig
 contify.fun
 contify.sig
+equivalence-relation.fun
+equivalence-relation.sig
 flat-lattice.fun
 flat-lattice.sig
 implement-handlers.fun
@@ -27,6 +29,8 @@ introduce-loops.sig
 introduce-loops.fun
 local-flatten.fun
 local-flatten.sig
+redundant.fun
+redundant.sig
 remove-unused.fun
 remove-unused.sig
 shrink.fun

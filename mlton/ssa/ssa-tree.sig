@@ -75,6 +75,7 @@ signature SSA_TREE =
 	    val layout: t -> Layout.t
 	    val mayAllocate: t -> bool
 	    val maySideEffect: t -> bool
+	    val replaceVar: t * (Var.t -> Var.t) -> t
 	 end
 
       structure Statement:
