@@ -3,9 +3,14 @@ struct
 
 type t = exn
 
-val history = (* fn _ => [] *) MLton.Exn.history
+val history = MLton.Exn.history
    
 val name = General.exnName
+
+exception Bind = Bind
+exception Match = Match
+exception Overflow = Overflow
+exception Subscript = Subscript
    
 fun layout e =
    let open Layout
