@@ -320,9 +320,9 @@ structure InitReachCallersCallees =
 	  Graph.dfsNodes (G, [fm_node], dfs_param);
 	  reset (fn _ => true)
 	end
-    val initReachCallersCallees =
-       Control.trace (Control.Detail, "initReachCallerCallees")
-       initReachCallersCallees 
+    val initReachCallersCallees
+       = Control.trace (Control.Detail, "initReachCallerCallees") 
+                       initReachCallersCallees 
   end
 
 structure AnalyzeDom =
@@ -709,7 +709,7 @@ structure Transform =
 		       args = f_args, 
 		       blocks = f_blocks,
 		       returns = f_returns,
-		       mayRaise = f_mayRaise, ...} = Function.dest func
+		       raises = f_raises, ...} = Function.dest func
 	       in
 		  case FuncData.A (getFuncData f)
 		     of Unknown
@@ -730,7 +730,7 @@ structure Transform =
 						    args = f_args,
 						    blocks = f_blocks,
 						    returns = f_returns,
-						    mayRaise = f_mayRaise})
+						    raises = f_raises})
 			      :: ac
 			   end
 		      | _ => ac
@@ -752,9 +752,8 @@ fun contify (program as Program.T {functions, ...})
   = let
       val {get = getLabelInfo : Label.t -> (Handler.t * ContData.t) list ref,
 	   ...}
-	= Property.get (Label.plist,
-			Property.initFun
-			(fn _ => ref []))
+	= Property.get 
+	  (Label.plist, Property.initFun (fn _ => ref []))
       val getContData : Cont.t -> ContData.t
 	= fn {cont, handler}
 	   => let 
@@ -770,12 +769,6 @@ fun contify (program as Program.T {functions, ...})
 			       cd
 			     end
 	      end
-(*
-      val {get = getContData : Cont.t -> ContData.t, ...}
-	= Property.get (Cont.plist,
-			Property.initFun
-			(fn _ => ContData.new ()))
-*)
       val {get = getFuncData : Func.t -> FuncData.t, ...}
 	= Property.get (Func.plist,
 			Property.initFun

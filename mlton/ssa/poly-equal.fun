@@ -160,7 +160,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 						    start = start,
 						    blocks = blocks,
 						    returns = returns,
-						    mayRaise = false}))
+						    raises = NONE}))
 		  end
 	       in
 		  name
@@ -222,7 +222,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 						    start = start,
 						    blocks = blocks,
 						    returns = returns,
-						    mayRaise = false}))
+						    raises = NONE}))
 		  end
 
 		  local
@@ -270,7 +270,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 						    start = start,
 						    blocks = blocks,
 						    returns = returns,
-						    mayRaise = false}))
+						    raises = NONE}))
 		  end
 	       in
 		  name
@@ -414,14 +414,14 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 	 List.revMap 
 	 (functions, fn f =>
 	  let
-	     val {name, args, start, blocks, returns, mayRaise} = Function.dest f
+	     val {name, args, start, blocks, returns, raises} = Function.dest f
 	  in
 	     shrink (Function.new {name = name,
 				   args = args,
 				   start = start,
 				   blocks = doit blocks,
 				   returns = returns,
-				   mayRaise = mayRaise})
+				   raises = raises})
 	  end)
       val program =
 	 Program.T {datatypes = datatypes,

@@ -217,7 +217,7 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 
       fun doitFunction f =
 	 let
-	    val {name, args, start, blocks, returns, mayRaise} = Function.dest f
+	    val {name, args, start, blocks, returns, raises} = Function.dest f
 	    val {args = argsReps, returns = returnsReps} = funcInfo name
 
 	    val newBlocks = ref []
@@ -402,7 +402,7 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 			  start = start,
 			  blocks = blocks,
 			  returns = returns,
-			  mayRaise = mayRaise}
+			  raises = raises}
 	 end
 
       val shrink = shrinkFunction globals

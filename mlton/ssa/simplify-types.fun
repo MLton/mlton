@@ -685,7 +685,7 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
 		  end
 	 end
       fun simplifyFunction f =
-	 let val {name, args, start, returns, mayRaise, ...} = Function.dest f
+	 let val {name, args, start, returns, raises, ...} = Function.dest f
 	     val args = simplifyFormals args
 	     val blocks = ref []
 	     val _ =
@@ -693,12 +693,13 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
 			      (List.push (blocks, simplifyBlock block)
 			       ; fn () => ()))
 	     val returns = Option.map (returns, keepSimplifyTypes)
+	     val raises = Option.map (raises, keepSimplifyTypes)
 	 in Function.new {name = name,
 			  args = args,
 			  start = start,
 			  blocks = Vector.fromList (!blocks),
 			  returns = returns,
-			  mayRaise = mayRaise}
+			  raises = raises}
 	 end
       val globals =
 	 Vector.concat
@@ -711,7 +712,7 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
 			      | Delete => NONE
 			      | Keep b => SOME b)]
       val shrink = shrinkFunction globals
-      val functions = List.map (functions, shrink o simplifyFunction)
+      val functions = List.revMap (functions, shrink o simplifyFunction)
       val program =
 	 Program.T {datatypes = datatypes,
 		    globals = globals,

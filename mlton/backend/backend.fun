@@ -195,6 +195,42 @@ fun generate (p as Sprogram.T {functions, ...}): Mprogram.t =
 	     ; Vector.foreach (funcs, fn f => setFuncChunk (f, c))
 	     ; Vector.foreach (labels, fn l => setLabelChunk (l, c))
 	  end)
+      (* The global raise operands. *)
+      local
+	 val table: {hash: word, 
+		     ts: Stype.t vector,
+		     raiseGlobals: Operand.t vector} HashSet.t =
+	    HashSet.new {hash = #hash}
+      in
+	 fun raiseOperands (ts: Stype.t vector): Operand.t vector =
+	    let
+	       val hash = Vector.fold (ts, 0wx0, fn (t, hash) => 
+				       Word.xorb(hash, Stype.hash t))
+	       val {raiseGlobals, ...} =
+		  HashSet.lookupOrInsert
+		  (table, hash, 
+		   fn {ts = ts', ...} => Vector.equals (ts, ts', Stype.equals),
+		   fn () => let
+			       val opers =
+				  Vector.map
+				  (ts, fn t =>
+				   let
+				      val t = toMtype t
+				   in
+				      if Mtype.isPointer t
+				         then Mprogram.newGlobalPointerNonRoot mprogram
+				      else Mprogram.newGlobal (mprogram, t)
+				   end)
+			    in
+			       {hash = hash,
+				ts = ts,
+				raiseGlobals = opers}
+			    end)
+	    in
+	       raiseGlobals
+	    end
+      end
+(*	   
       (* The global raise operand. *)
       local
 	 val raiseGlobals: Operand.t vector option ref = ref NONE
@@ -220,6 +256,7 @@ fun generate (p as Sprogram.T {functions, ...}): Mprogram.t =
 		     opers
 		  end
       end
+*)
       (* labelInfo, which is only set while processing each function. *)
       val {get = labelInfo: Label.t -> {args: (Var.t * Stype.t) vector,
 					cont: (Handler.t * Mlabel.t) list ref,

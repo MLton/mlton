@@ -112,6 +112,34 @@ signature SSA_TREE =
 	    val map: t * (Label.t -> Label.t) -> t
 	 end
 
+      (*
+       * These correspond to 6 of the possible 9 combinations of continuation and
+       * handler each being one of {None, Caller, Some l}.  None means that it
+       * doesn't matter what the continuation (handler) is since the caller never
+       * returns (raises).  Caller means to keep the continuation (handler) the same
+       * as in the caller.  Some l means a nontail call in the case of continuations
+       * and an installed handler in the case of handlers.
+       *
+       * 3 of the 9 possibilities are disallowed, and the correspondence is as below.
+       *
+       * Cont    Handler         equivalent
+       * ------  -------         ---------------------------------------
+       * None    None            Dead
+       * None    Caller          HandleOnly
+       * None    Some h          *disallowed*
+       * Caller  None            *disallowed*
+       * Caller  Caller          Tail
+       * Caller  Some h          *disallowed*
+       * Some l  None            Nontail {cont = l, handler = None}
+       * Some l  Caller          Nontail {cont = l, handler = Caller}
+       * Some l  Some h          Nontail {cont = l, handler = Handle l}
+       *
+       * We could have allowed the (None, Some h) and (Caller, Some h) cases, and
+       * put some code in the backend to generate stubs, since if there is a handler
+       * there must be some continuation.  But I decided it was easier to just rule
+       * them out, essentially meaning that remove-unused, or any other optimization
+       * pass, needs to make stubs itself.
+       *)
       structure Return:
 	 sig
 	    datatype t =
@@ -206,8 +234,8 @@ signature SSA_TREE =
 				   nodeBlock: DirectedGraph.Node.t -> Block.t}
 	    val dest: t -> {args: (Var.t * Type.t) vector,
 			    blocks: Block.t vector,
-			    mayRaise: bool,
 			    name: Func.t,
+			    raises: Type.t vector option,
 			    returns: Type.t vector option,
 			    start: Label.t}
 	    (* dfs (f, v) visits the blocks in depth-first order, applying v b
@@ -228,8 +256,8 @@ signature SSA_TREE =
 	    val name: t -> Func.t
 	    val new: {args: (Var.t * Type.t) vector,
 		      blocks: Block.t vector,
-		      mayRaise: bool,
 		      name: Func.t,
+		      raises: Type.t vector option,
 		      returns: Type.t vector option,
 		      start: Label.t} -> t
 	    val start: t -> Label.t

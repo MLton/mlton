@@ -493,12 +493,12 @@ fun inline (program as Program.T {datatypes, globals, functions, main}) =
 	    Vector.concat (blocks::(!newBlocks))
 	 end
 
-      val shrink = shrinkFunction globals
+      val shrink = shrinkFunction globals 
       val functions =
 	 List.fold
 	 (functions, [], fn (f, ac) =>
 	  let
-	     val {name, args, start, blocks, returns, mayRaise} = Function.dest f
+	     val {name, args, start, blocks, returns, raises} = Function.dest f
 	  in
 	     if Func.equals (name, main)
 	        orelse
@@ -511,7 +511,7 @@ fun inline (program as Program.T {datatypes, globals, functions, main}) =
 					      start = start,
 					      blocks = blocks,
 					      returns = returns,
-					      mayRaise = mayRaise})
+					      raises = raises})
 			:: ac
 		     end
 	      else ac

@@ -169,7 +169,7 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
       val numSimplified = ref 0
       fun simplifyFunction f =
 	  let
-	     val {name, args, start, blocks, returns, mayRaise} = Function.dest f
+	     val {name, args, start, blocks, returns, raises} = Function.dest f
 	     val _ =
 		Control.diagnostic
 		(fn () => 
@@ -353,12 +353,12 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 				   start = start,
 				   blocks = blocks,
 				   returns = returns,
-				   mayRaise = mayRaise}
+				   raises = raises}
 	     val _ = Function.clear f
 	  in
 	     f
 	  end
-      val functions = List.map (functions, shrink o simplifyFunction)
+      val functions = List.revMap (functions, shrink o simplifyFunction)
       val _ =
 	 Control.diagnostic
 	 (fn () =>

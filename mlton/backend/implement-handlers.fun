@@ -24,7 +24,7 @@ fun doit (Program.T {datatypes, globals, functions, main}) =
    let
       fun implementFunction (f: Function.t): Function.t =
 	 let
-	    val {args, blocks, mayRaise, name, returns, start} = Function.dest f
+	    val {args, blocks, name, raises, returns, start} = Function.dest f
 	    val {get = labelInfo: Label.t -> LabelInfo.t,
 		 set = setLabelInfo, ...} =
 	       Property.getSetOnce
@@ -160,8 +160,8 @@ fun doit (Program.T {datatypes, globals, functions, main}) =
 	 in
 	    Function.new {args = args,
 			  blocks = blocks,
-			  mayRaise = mayRaise,
 			  name = name,
+			  raises = raises,
 			  returns = returns,
 			  start = start}
 	 end

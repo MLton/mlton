@@ -506,7 +506,7 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
 	     layout)
 	    primApp
       end
-      val {value, func, label, exnVals, ...} =
+      val {value, func, label, ...} =
 	 analyze {
 		  coerce = Value.coerce,
 		  conApp = conApp,
@@ -529,22 +529,57 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
       (* Unify all handler args so that raise/handle has a consistent calling
        * convention.
        *)
-      val exnVals = fn () => (case exnVals of
-				 NONE => Error.bug "no exnVals"
-			       | SOME vs => vs)
       val _ =
 	 List.foreach
 	 (functions, fn f =>
-	  Vector.foreach
-	  (Function.blocks f, fn Block.T {transfer, ...} =>
-	   case transfer of
-	      Call {return = Return.NonTail {handler = Handler.Handle h, ...}, ...} =>
-		 Vector.foreach2 (label h, exnVals (), Value.unify)
-(*
-	    | Prim {success, ...} =>
-		 Value.unify (Vector.sub (label success, 0), )
-*)
-	    | _ => ()))
+	  let
+	     val {raises = fraisevs, ...} = func (Function.name f)
+	     fun coerce (x, y) = Value.coerce {from = x, to = y}
+	  in
+	     Vector.foreach
+	     (Function.blocks f, fn Block.T {transfer, ...} =>
+	      case transfer of
+		 Call {func = g, return, ...} =>
+		    let
+		       val {raises = graisevs, ...} = func g
+		    in
+		      case return of
+		         Return.Dead => ()
+		       | Return.HandleOnly => 
+			    (case (graisevs, fraisevs) of
+			        (NONE, NONE) => ()
+			      | (NONE, SOME _) => ()
+			      | (SOME _, NONE) =>
+				   Error.bug "raise mismatch at HandleOnly"
+			      | (SOME vs, SOME vs') =>
+				   Vector.foreach2 (vs', vs, coerce))
+		       | Return.NonTail {handler, ...} =>
+			    (case handler of
+			        Handler.None => ()
+			      | Handler.CallerHandler => 
+				   (case (graisevs, fraisevs) of
+				       (NONE, NONE) => ()
+				     | (NONE, SOME _) => ()
+				     | (SOME _, NONE) =>
+					  Error.bug "raise mismatch at HandleOnly"
+				     | (SOME vs, SOME vs') =>
+					  Vector.foreach2 (vs', vs, coerce))
+			      | Handler.Handle h =>
+				   Option.app
+				   (graisevs, fn graisevs =>
+				    Vector.foreach2 
+				    (label h, graisevs, coerce)))
+		       | Return.Tail => 
+			    (case (graisevs, fraisevs) of
+			        (NONE, NONE) => ()
+			      | (NONE, SOME _) => ()
+			      | (SOME _, NONE) =>
+				   Error.bug "raise mismatch at HandleOnly"
+			      | (SOME vs, SOME vs') =>
+				   Vector.foreach2 (vs', vs, coerce))
+		    end
+	       | _ => ())
+	  end)
       val _ =
 	 Control.diagnostics
 	 (fn display =>
@@ -569,14 +604,16 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
 		    val {name, ...} = Function.dest f
 		    val _ = display (seq [str "Useless info for ",
 					  Func.layout name])
-		    val {args, returns, mayRaise} = func name
+		    val {args, returns, raises} = func name
 		    val _ =
 		       display
 		       (record [("args", Vector.layout Value.layout args),
 				("returns",
 				 Option.layout (Vector.layout Value.layout)
 				 returns),
-				("mayRaise", Bool.layout mayRaise)])
+				("raises", 
+				 Option.layout (Vector.layout Value.layout)
+				 raises)])
 		    val _ =
 		       Function.foreachVar
 		       (f, fn (x, _) => 
@@ -777,7 +814,9 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
 		       Vector.layout Value.layout,
 		       Bool.layout)
 	 agrees
-      fun doitTransfer (t: Transfer.t, returns: Value.t vector option)
+      fun doitTransfer (t: Transfer.t, 
+			returns: Value.t vector option,
+			raises: Value.t vector option)
 	 : Block.t list * Transfer.t =
 	 case t of
 	    Bug => ([], Bug)
@@ -893,22 +932,24 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
 				 success = l})
 		       end
 	       end
-	  | Raise xs => ([], Raise (keepUseful (xs, exnVals ())))
+	  | Raise xs => ([], Raise (keepUseful (xs, valOf raises)))
 	  | Return xs => ([], Return (keepUseful (xs, valOf returns)))
       val doitTransfer =
-	 Trace.trace2 ("Useless.doitTransfer",
+	 Trace.trace3 ("Useless.doitTransfer",
 		       Transfer.layout,
+		       Option.layout (Vector.layout Value.layout),
 		       Option.layout (Vector.layout Value.layout),
 		       Layout.tuple2 (List.layout (Label.layout o Block.label), 
 				      Transfer.layout))
 	 doitTransfer
       fun doitBlock (Block.T {label, args, statements, transfer},
-		     returns: Value.t vector option)
+		     returns: Value.t vector option,
+		     raises: Value.t vector option)
 	 : Block.t list * Block.t =
 	 let
 	    val args = keepUsefulArgs args
 	    val statements = Vector.keepAllMap (statements, doitStatement)
-	    val (blocks, transfer) = doitTransfer (transfer, returns)
+	    val (blocks, transfer) = doitTransfer (transfer, returns, raises)
 	 in
 	   (blocks, Block.T {label = label,
 			     args = args,
@@ -916,33 +957,35 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
 			     transfer = transfer})
 	 end
       val doitBlock =
-	 Trace.trace2 ("Useless.doitBlock",
+	 Trace.trace3 ("Useless.doitBlock",
 		       Label.layout o Block.label,
+		       Option.layout (Vector.layout Value.layout),
 		       Option.layout (Vector.layout Value.layout),
 		       Layout.tuple2 (List.layout (Label.layout o Block.label), 
 				      (Label.layout o Block.label)))
 	 doitBlock
       fun doitFunction f =
 	 let
-	    val {name, args, start, blocks, returns, mayRaise} = Function.dest f
-	    val {args = argsvs, returns = returnvs, ...} = func name
+	    val {name, args, start, blocks, returns, raises} = Function.dest f
+	    val {args = argsvs, returns = returnvs, raises = raisevs, ...} = func name
 	    val args = keepUsefulArgs args
 	    val (blocks, blocks') =
 	       Vector.mapAndFold
 	       (blocks, [], fn (block, blocks') =>
-		let val (blocks'', block) = doitBlock (block, returnvs)
+		let val (blocks'', block) = doitBlock (block, returnvs, raisevs)
 		in (block, blocks''::blocks')
 		end)
 	    val blocks =
 	       Vector.concat (blocks :: List.map (blocks', Vector.fromList))
 	    val returns = Option.map (returnvs, Value.newTypes)
+	    val raises = Option.map (raisevs, Value.newTypes)
 	 in
 	    Function.new {name = name,
 			  args = args,
 			  start = start,
 			  blocks = blocks,
 			  returns = returns,
-			  mayRaise = mayRaise}
+			  raises = raises}
 	 end
       val datatypes =
 	 Vector.map

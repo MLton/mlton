@@ -233,21 +233,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 		  val transfer = Transfer.replaceVar (transfer, canonVar)
 		  val transfer =
 		     case transfer of 
-		        (* The entire Goto case is probably redundant, as the
-			 * shrinker should do this kind of propagation.
-			 *)
-		        Goto {dst, args} =>
-			   let
-			      val {args = args', inDeg, ...} = labelInfo dst
-			   in
-			      if !inDeg = 1
-				 then (Vector.foreach2
-				       (args, args', fn (var, (var', _)) =>
-					setReplace (var', SOME var))
-				       ; transfer)
-			      else transfer
-			   end
-		      | Prim {prim, args, failure, success} =>
+		        Prim {prim, args, failure, success} =>
                            let
 			      val {args = succArgs, 
 				   inDeg = succInDeg,
@@ -270,14 +256,8 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 				    if failureVar var'
 				       then Goto {dst = failure,
 						  args = Vector.new0 ()}
-				    else ((* This setReplace might be redundant,
-					   * depending on what the shrinker does.
-					   *)
-					  if !succInDeg = 1
-					     then setReplace(var, SOME var')
-					  else ()
-					  ; Goto {dst = success,
-						  args = Vector.new1 var'})
+				    else Goto {dst = success,
+					       args = Vector.new1 var'}
 			       | NONE => (if !succInDeg = 1
 					     then succ := SOME exp
 					  else () ;
@@ -309,7 +289,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 	 List.revMap
 	 (functions, fn f => 
 	  let
-	     val {args, blocks, mayRaise, name, returns, start} = Function.dest f
+	     val {name, args, start, blocks, raises, returns} = Function.dest f
 	     val _ =
 		Vector.foreach
 		(blocks, fn Block.T {label, args, ...} =>
@@ -322,15 +302,17 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 		(blocks, fn Block.T {transfer, ...} =>
 		 Transfer.foreachLabel (transfer, fn label' => 
 					Int.inc (#inDeg (labelInfo label'))))
-	     val t = Function.dominatorTree f
-	     val blocks = doitTree t
-	  in
-	     shrink (Function.new {args = args,
+	     val blocks = doitTree (Function.dominatorTree f)
+	     val f = Function.new {name = name,
+				   args = args,
+				   start = start,
 				   blocks = blocks,
-				   mayRaise = mayRaise,
-				   name = name,
 				   returns = returns,
-				   start = start})
+				   raises = raises}
+	     val f = shrink f
+	     val _ = Function.clear f
+	  in
+	     f
 	  end)
       val _ = Vector.foreach (globals, Statement.clear)
       val program = 
@@ -341,6 +323,5 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
    in
       program
    end
-
 
 end

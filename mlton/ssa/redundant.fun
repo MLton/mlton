@@ -288,10 +288,10 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 	  | SOME y => y
       fun loopVars xs = Vector.map (xs, loopVar)
       val functions =
-	 List.map
+	 List.revMap
 	 (functions, fn f =>
 	  let
-	     val {name, args, start, blocks, returns, mayRaise} = Function.dest f
+	     val {name, args, start, blocks, returns, raises} = Function.dest f
 	     val {args, returns, returnsRed, ...} = funcReds name
 
 	     val blocks =
@@ -341,13 +341,12 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 			     statements = statements,
 			     transfer = transfer}
 		 end)
-	     val f = 
-		Function.new {name = name,
-			      args = args,
-			      start = start,
-			      blocks = blocks,
-			      returns = returns,
-			      mayRaise = mayRaise}
+	     val f = Function.new {name = name,
+				   args = args,
+				   start = start,
+				   blocks = blocks,
+				   returns = returns,
+				   raises = raises}
 	     val _ = Function.clear f
 	  in
 	     f

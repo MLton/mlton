@@ -184,7 +184,7 @@ fun shrinkFunction (globals: Statement.t vector) =
       fn (f: Function.t, mayDelete: bool) =>
       let
 	 val _ = Function.clear f
-	 val {args, blocks, mayRaise, name, returns, start, ...} =
+	 val {args, blocks, name, raises, returns, start, ...} =
 	    Function.dest f
 	 (* Index the labels by their defining block in blocks. *)
 	 val {get = labelIndex, set = setLabelIndex, ...} =
@@ -531,6 +531,13 @@ fun shrinkFunction (globals: Statement.t vector) =
 			    in
 			       (ss, t)
 			    end
+		       | Prim.ApplyResult.Var x =>
+			    let
+			       val _ = deleteLabel failure
+			       val (ss, t) = goto (success, Vector.new1 x)
+			    in
+			       (ss, t)
+			    end
 		       | _ =>
 			    let
 			       val _ = forceBlock failure
@@ -862,8 +869,8 @@ fun shrinkFunction (globals: Statement.t vector) =
 	 val f = 
 	    Function.new {args = args,
 			  blocks = Vector.fromList (!newBlocks),
-			  mayRaise = mayRaise,
 			  name = name,
+			  raises = raises,
 			  returns = returns,
 			  start = start}
 	 val _ = Function.clear f

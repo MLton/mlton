@@ -809,14 +809,13 @@ fun simplify (program as Program.T {datatypes, globals, functions, main})
 		  statements = Vector.keepAllMap (statements, doitStatement),
 		  transfer = doitTransfer transfer}
       fun doitFunction f =
-	 let val {name, args, start, blocks, returns, mayRaise} = Function.dest f
-	 in
-	    Function.new {name = name,
+	 let val {name, args, start, blocks, returns, raises} = Function.dest f
+	 in Function.new {name = name,
 			  args = args,
 			  start = start,
 			  blocks = Vector.map (blocks, doitBlock),
 			  returns = returns,
-			  mayRaise = mayRaise}
+			  raises = raises}
 	 end
       val functions = List.revMap (functions, doitFunction)
       val globals = Vector.keepAllMap (globals, doitStatement)

@@ -43,8 +43,8 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 
       fun eliminateFunction f
 	= let
-	    val {args, blocks, mayRaise, name, returns, start, ...} =
-	       Function.dest f
+	    val {name, args, start, blocks, returns, raises} 
+	      = Function.dest f
 
 	    val newBlocks = ref []
 
@@ -148,9 +148,9 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 	    shrink (Function.new {name = name,
 				  start = start,
 				  args = args,
-				  mayRaise = mayRaise,
 				  blocks = blocks,
-				  returns = returns})
+				  returns = returns,
+				  raises = raises})
 	  end
 
       val program 

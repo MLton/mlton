@@ -551,7 +551,7 @@ structure Transfer =
 		  seq [Label.layout success,
 		       tuple [Prim.layoutApp (prim, args, Var.layout)],
 		       str " Overflow => ",
-		       Label.layout failure, str "()"]
+		       Label.layout failure, str " ()"]
 	     | Raise xs => seq [str "raise ", layoutTuple xs]
 	     | Return xs => if 1 = Vector.length xs
 			       then Var.layout (Vector.sub (xs, 0))
@@ -696,8 +696,8 @@ structure Function =
 	 
       type dest = {args: (Var.t * Type.t) vector,
 		   blocks: Block.t vector,
-		   mayRaise: bool,
 		   name: Func.t,
+		   raises: Type.t vector option,
 		   returns: Type.t vector option,
 		   start: Label.t}
 
@@ -722,8 +722,8 @@ structure Function =
       in
 	 val blocks = make #blocks
 	 val dest = make (fn d => d)
-	 val mayRaise = make #mayRaise
 	 val name = make #name
+	 val raises = make #raises
 	 val returns = make #returns
 	 val start = make #start
       end
@@ -1303,7 +1303,7 @@ structure Function =
 
       fun layout (f: t, global: Var.t -> string option) =
 	 let
-	    val {args, blocks, mayRaise, name, returns, start, ...} = dest f
+	    val {args, blocks, name, raises, returns, start, ...} = dest f
 	    open Layout
 	 in
 	    align [seq [str "fun ",
@@ -1314,13 +1314,13 @@ structure Function =
 			   then seq [str ": ",
 				     Option.layout
 				     (Vector.layout Type.layout) returns,
-				     str " {mayRaise = ",
-				     Bool.layout mayRaise,
-				     str "}"]
+				     str " (",
+				     Option.layout
+				     (Vector.layout Type.layout) raises,
+				     str ")"]
 			else empty,
-			str " = ", Label.layout start, str "()"],
-		   indent (align (Vector.toListMap (blocks, Block.layout)),
-			   2)]
+			str " = ", Label.layout start, str " ()"],
+		   indent (align (Vector.toListMap (blocks, Block.layout)), 2)]
 	 end
       
       fun layouts (fs: t list, global,
@@ -1383,7 +1383,8 @@ structure Function =
 		  make (Label.new, Label.plist, Label.layout)
 	    end
 	    fun lookupVars xs = Vector.map (xs, lookupVar)
-	    val {args, blocks, mayRaise, name, returns, start, ...} = dest f
+
+	    val {args, blocks, name, raises, returns, start, ...} = dest f
 	    val args = Vector.map (args, fn (x, ty) => (bindVar x, ty))
 	    val bindLabel = ignore o bindLabel
 	    val bindVar = ignore o bindVar
@@ -1417,10 +1418,10 @@ structure Function =
 	 in
 	    new {name = name,
 		 args = args,
-		 mayRaise = mayRaise,
+		 start = start,
 		 blocks = blocks,
 		 returns = returns,
-		 start = start}
+		 raises = raises}
 	 end
    end
 
@@ -1780,9 +1781,9 @@ structure Program =
 	       in
 		  Function.new {args = args,
 				blocks = Vector.fromList (!blocks),
-				mayRaise = true,
 				name = funcToFunc name,
 				returns = SOME returns,
+				raises = SOME (Vector.new1 (Type.exn)),
 				start = start}
 	       end
 	    val program =
