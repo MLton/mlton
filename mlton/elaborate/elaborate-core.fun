@@ -684,7 +684,7 @@ fun import {attributes: Attribute.t list,
 		      val _ =
 			 Control.error
 			 (region,
-			  str "invalid type for import:",
+			  str "invalid type for import: ",
 			  Type.layoutPretty ty)
 		   in
 		      Prim.bogus
@@ -1716,7 +1716,7 @@ fun elaborateDec (d, {env = E,
 			  (region,
 			   str "expression and handler of different types",
 			   align [seq [str "expression: ", l1],
-				  seq [str "handler: ", l2]]))
+				  seq [str "handler:    ", l2]]))
 		      val _ =
 			 unify
 			 (argType, Type.exn, fn (l1, _) =>
@@ -1990,8 +1990,8 @@ fun elaborateDec (d, {env = E,
 			 unify
 			 (Cexp.ty test', Type.bool, fn (l1, _) =>
 			  (Aexp.region test,
-			   str "while-test not a bool",
-			   seq [str "test: ", l1]))
+			   str "while test not a bool",
+			   seq [str "test type: ", l1]))
 		      (* Could put warning here if the expr is not of type unit.
 		       *)
 		      val expr = elab expr
