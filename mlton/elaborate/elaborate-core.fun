@@ -877,7 +877,7 @@ fun elaborateDec (d, {env = E,
 	       (datatypes, fn {cons, tycon = name, tyvars} =>
 		let
 		   val tycon =
-		      Tycon.fromString
+		      Tycon.newString
 		      (concat (List.separate
 			       (rev (Ast.Tycon.toString name :: nest),
 				".")))

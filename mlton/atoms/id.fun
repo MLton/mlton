@@ -36,8 +36,11 @@ fun toString (T {printName, originalName, ...}) =
       NONE =>
 	 let
 	    val s =
-	       concat [String.translate (originalName,
-					 fn #"'" => "P" | c => str c),
+	       concat [String.translate (originalName, fn c =>
+					 case c of
+					    #"'" => "P"
+					  | #"." => "D"
+					  | c => str c),
 		       "_",
 		       Int.toString (Counter.next
 				     (IdCounter.getCounter originalName))]
@@ -55,8 +58,8 @@ fun equals (id, id') = Plist.equals (plist id, plist id')
 
 fun fromString s =
    T {originalName = s,
-     printName = ref (SOME s),
-     plist = Plist.new ()}
+      printName = ref (SOME s),
+      plist = Plist.new ()}
    
 fun isOperator s =
    let val c = String.sub (s, 0)
@@ -149,8 +152,11 @@ fun toString (T {printName, originalName, ...}) =
       NONE =>
 	 let
 	    val s =
-	       concat [String.translate (originalName,
-					fn #"'" => "P" | c => str c),
+	       concat [String.translate (originalName, fn c =>
+					 case c of
+					    #"'" => "P"
+					  | #"." => "D"
+					  | c => str c),
 		       "_",
 		       Int.toString (Counter.next
 				     (IdCounter.getCounter originalName))]
