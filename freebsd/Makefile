@@ -2,7 +2,7 @@
 # Date created:                1 Oct 2002
 # Whom:                        Stephen Weeks <sweeks@sweeks.com>
 #
-# $FreeBSD$
+# $FreeBSD: /repoman/r/pcvs/ports/lang/mlton/Makefile,v 1.4 2004/12/18 23:02:28 kris Exp $
 #
 
 # Because MLton is written in SML, it needs an SML compiler to build.
@@ -11,7 +11,7 @@
 # alread-built version of MLton, BOOT_DIST, to use for bootstrapping.
 
 PORTNAME=	mlton
-PORTVERSION=	MLTONVERSION
+PORTVERSION=	20041109
 CATEGORIES=	lang
 MASTER_SITES=	http://mlton.org/pages/Download/attachments/ \
 		http://mlton.org/pages/Experimental/attachments/
@@ -49,9 +49,9 @@ PORTDIR=	usr/ports/lang/mlton
 
 .include <bsd.port.pre.mk>
 
-BOOT_EXTRACT=	--gzip
-BOOT_SUF=	tgz
-BOOT_VER=	20040429
+BOOT_EXTRACT=	--bzip
+BOOT_SUF=	tbz
+BOOT_VER=	20041109
 .if ${OSVERSION} >= 500000
 LIB_DEPENDS+=	c.4:${PORTSDIR}/misc/compat4x
 .endif
@@ -64,11 +64,11 @@ post-extract:
 	${BOOT_WRKSRC}/bin/mlton
 
 post-install:
-.for f in mllex mlprof mlton mlyacc
-	${CHOWN} ${SHAREOWN}:${SHAREGRP}	\
-		${PREFIX}/bin/${f}		\
-		${MAN1PREFIX}/${f}.1.gz
+.for bin in mllex mlprof mlton mlyacc
+	${CHOWN} ${SHAREOWN}:${SHAREGRP} ${PREFIX}/bin/${bin}	\
+		${MAN1PREFIX}/man/man1/${bin}.1.gz
 .endfor
+	${CHOWN} -R ${SHAREOWN}:${SHAREGRP} ${PREFIX}/lib/mlton	${DOCSDIR}
 
 # Stuff below this line is for maintainer use only.
 
@@ -99,7 +99,7 @@ pkg-plist:
 	cd ${WRKSRC} && ${GMAKE} install
 	cd ${WRKSRC}/install/usr && \
 		${FIND} -d * \! -type d | ${GREP} -v man/man | \
-		sort >${PLIST}  # do not use ${SORT}
+		${SORT} >${PLIST}
 	cd ${WRKSRC}/install/usr && \
 		${FIND} -d * -type d | ${GREP} mlton | \
 			${SED} -e 's/^/@dirrm /' >>${PLIST}
