@@ -34,9 +34,9 @@ structure MLtonExn =
 		      (message "with history:\n"
 		       ; (List.app (fn s => message (concat ["\t", s, "\n"]))
 			  l)))
-	     ; MLtonProcess.exit MLtonProcess.failure)
+	     ; MLtonProcess.exit MLtonProcess.Status.failure)
 	    handle _ => (message "Toplevel handler raised exception.\n"
-			 ; Primitive.halt MLtonProcess.failure
+			 ; Primitive.halt MLtonProcess.Status.failure
 			 ; raise Fail "bug")
       end
    end
