@@ -91,7 +91,8 @@ structure Lines
 structure List
 structure Layout
 structure List
-structure MergeSort
+structure MergeSortList
+structure MergeSortVector
 structure MLton
 structure Net
 structure Option

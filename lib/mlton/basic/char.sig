@@ -48,6 +48,7 @@ signature CHAR =
       val min: t * t -> t
       val minChar: t
       val newline: t
+      val numChars: int
       val ord: t -> int
       val output: t * TextIO.outstream -> unit
       val pred: t -> t

@@ -68,7 +68,8 @@ structure Lines
 structure List
 structure List
 structure MLton
-structure MergeSort
+structure MergeSortList
+structure MergeSortVector
 structure Net
 structure OS
 structure Option

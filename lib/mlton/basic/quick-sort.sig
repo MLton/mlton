@@ -13,7 +13,10 @@ signature QUICK_SORT =
        * not just <.
        * This is necessary to handle duplicate elements.
        *)
-      val sort: 'a array * ('a * 'a -> bool) -> unit
+      (* sortArray mutates the array it is passed and returns the same array *)
+      val sortArray: 'a array * ('a * 'a -> bool) -> 'a array
+      val sortList: 'a list * ('a * 'a -> bool) -> 'a list
+      val sortVector: 'a vector * ('a * 'a -> bool) -> 'a vector
    end
 
 functor TestQuickSort (S: QUICK_SORT): sig end =
@@ -27,6 +30,6 @@ val _ =
    List.foreach
    ([Array.array (0, 0),
      Array.tabulate (100, fn _ => Random.int ())],
-    fn a => sort (a, op <=))
+    fn a => (sortArray (a, op <=); ()))
    
 end

@@ -18,6 +18,7 @@ signature ARRAY =
       include VECTOR
 
       val array: int * 'a -> 'a t (* synonym for new *)
+      val fromVector: 'a vector -> 'a t
       val getAndSet: 'a t -> (int -> 'a) * (int * 'a -> unit)
       val modify: 'a t * ('a -> 'a) -> unit
       val shuffle: 'a t -> unit

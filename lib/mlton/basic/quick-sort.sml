@@ -47,7 +47,7 @@ fun randInt (lo, hi) = lo + Int.mod (rand(), hi - lo + 1)
  * the cutoff.  Then, it does an insertion sort over the whole array to fix up
  * the unsorted segments.
  *)
-fun 'a sort (a: 'a array, op <= : 'a * 'a -> bool): unit =
+fun 'a sortArray (a: 'a array, op <= : 'a * 'a -> bool): 'a array =
    let
       fun x i = sub (a, i)
       fun swap (i, j) =
@@ -85,7 +85,13 @@ fun 'a sort (a: 'a array, op <= : 'a * 'a -> bool): unit =
       val _ = qsort (0, max)
       val _ = InsertionSort.sort (a, op <=)
    in
-      ()
+      a
    end
 
+fun sortList (l, f) =
+   Array.toList (sortArray (Array.fromList l, f))
+
+fun sortVector (v, f) =
+   Array.toVector (sortArray (Array.fromVector v, f))
+   
 end

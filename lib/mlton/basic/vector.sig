@@ -31,7 +31,6 @@ signature VECTOR =
       val exists: 'a t * ('a -> bool) -> bool
       val existsi: 'a t * (int * 'a -> bool) -> bool
       val existsR: 'a t * int * int * ('a -> bool) -> bool
-      val fold2From: 'a t * 'b t * int * 'c * ('a * 'b * 'c -> 'c) -> 'c
       val fold2: 'a t * 'b t * 'c * ('a * 'b * 'c -> 'c) -> 'c
       val fold3From:
 	 'a t * 'b t * 'c t * int * 'd * ('a * 'b * 'c * 'd -> 'd) -> 'd
@@ -51,6 +50,7 @@ signature VECTOR =
       val fold: 'a t * 'b * ('a * 'b -> 'b) -> 'b
       val foldFrom: 'a t * int * 'b * ('a * 'b -> 'b) -> 'b
       val foldi: 'a t * 'b * (int * 'a * 'b -> 'b) -> 'b
+      val foldi2From: 'a t * 'b t * int * 'c * (int * 'a * 'b * 'c -> 'c) -> 'c
       val foldr: 'a t * 'b * ('a * 'b -> 'b) -> 'b
       val foldri: 'a t * 'b * (int * 'a * 'b -> 'b) -> 'b
       val foldr2: 'a t * 'b t * 'c * ('a * 'b * 'c -> 'c) -> 'c
@@ -59,6 +59,7 @@ signature VECTOR =
       val foralli: 'a t * (int * 'a -> bool) -> bool
       val foreach: 'a t * ('a -> unit) -> unit
       val foreachi: 'a t * (int * 'a -> unit) -> unit
+      val foreachi2: 'a t * 'b t * (int * 'a * 'b -> unit) -> unit
       val foreachr: 'a t * ('a -> unit) -> unit
       val foreachri: 'a t * (int * 'a -> unit) -> unit
       val foreach2: 'a t * 'b t * ('a * 'b -> unit) -> unit
@@ -74,6 +75,7 @@ signature VECTOR =
       val isSorted: 'a t * ('a * 'a -> bool) -> bool
       (* isSortedRange (v, l, u, <=) checks if [l, u) is sorted. *)
       val isSortedRange: 'a t * int * int * ('a * 'a -> bool) -> bool
+      val isSubsequence: 'a t * 'b t * ('a * 'b -> bool) -> bool
       val keepAll: 'a t * ('a -> bool) -> 'a t
       val keepAllMap: 'a t * ('a -> 'b option) -> 'b t
       val keepAllMapi: 'a t * (int * 'a -> 'b option) -> 'b t
@@ -101,13 +103,10 @@ signature VECTOR =
       val peekMap: 'a t * ('a -> 'b option) -> 'b option
       val peekMapi: 'a t * ('a -> 'b option) -> (int * 'b) option
       val rev: 'a t -> 'a t
-      (* Merge sort.  You should pass the <= function, not the < function,
-       * so that the result can be verified as isSorted.
-       *)
-      val sort: 'a t * ('a * 'a -> bool) -> 'a t
       val splitLast: 'a t -> 'a t * 'a
       val tabulate: int * (int -> 'a) -> 'a t
       val tabulator: int * (('a -> unit) -> unit) -> 'a t
+      val toArray: 'a t -> 'a array
       val toList: 'a t -> 'a list
       val toListMap: 'a t * ('a -> 'b) -> 'b list
       val toListRev: 'a t -> 'a list
@@ -124,20 +123,6 @@ open S
 val _ =
    Assert.assert
    ("Vector", fn () =>
-    let
-       fun check (l: int list): bool =
-	  List.insertionSort (l, op <=) = toList (sort (fromList l, op <=))
-    in
-       List.forall
-       ([[],
-	 [1],
-	 [1,2],
-	 [1,2,3],
-	 [2,1,3],
-	 [1,2,3,4,5],
-	 [3,5,6,7,8,1,2,3,6,4]],
-	check)
-    end andalso
     let
        fun check ls =
 	  List.concat ls = toList (concat (List.map (ls, fromList)))

@@ -38,6 +38,8 @@ signature PROPERTY =
 	     destroy: unit -> unit
 	    }
 
+      (* For all of the rem functions, it is OK if the property isn't there. *)
+
       val get:
 	 ('sym -> Plist.t) * ('sym, 'val) init
 	 -> {

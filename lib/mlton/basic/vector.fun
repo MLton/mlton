@@ -19,6 +19,9 @@ fun tabulate (n, f) = unfoldi (n, (), fn (i, ()) => (f i, ()))
 fun fromArray a =
    tabulate (Pervasive.Array.length a, fn i => Pervasive.Array.sub (a, i))
 
+fun toArray v =
+   Pervasive.Array.tabulate (length v, fn i => sub (v, i))
+
 datatype ('a, 'b) continue =
    Continue of 'a
   | Done of 'b
@@ -122,21 +125,27 @@ fun foldr2 (a, a', b, f) =
       else raise Fail "Vector.foldr2"
    end
    
-fun fold2From (a, a', start, b, f) =
+fun foldi2From (a, a', start, b, f) =
    let
       val n = length a
       val n' = length a'
       fun loop (i, b) =
 	 if i >= n
 	    then b
-	 else loop (i + 1, f (unsafeSub (a, i), unsafeSub (a', i), b))
+	 else loop (i + 1, f (i, unsafeSub (a, i), unsafeSub (a', i), b))
    in
       if n = n' andalso 0 <= start andalso start <= n 
 	 then loop (start, b)
       else Error.bug "Vector.fold2"
    end
 
-fun fold2 (a, a', b, f) = fold2From (a, a', 0, b, f)
+fun foldi2 (a, a', b, f) = foldi2From (a, a', 0, b, f)
+
+fun foreachi2 (v, v', f) =
+   foldi2 (v, v', (), fn (i, x, x', ()) => f (i, x, x'))
+   
+fun fold2 (a, a', b, f) =
+   foldi2 (a, a', b, fn (_, x, x', b) => f (x, x', b))
    
 fun fold3From (a, a', a'', start, b, f) =
    let
@@ -467,81 +476,6 @@ fun isSortedRange (v: 'a t,
 
 fun isSorted (v, op <=) = isSortedRange (v, 0, length v, op <=)
 
-fun merge (v, v', op <=) =
-   let
-      val _ = Assert.assert ("Vector.merge pre", fn () =>
-			     isSorted (v, op <=) andalso isSorted (v', op <=))
-      val n = length v
-      val n' = length v'
-      val r = ref 0
-      val r' = ref 0
-      fun next _ =
-	 let
-	    val i = !r
-	    val i' = !r'
-	    (* 0 <= i <= n andalso 0 <= i' <= n' *)
-	 in
-	    if i = n
-	       then
-		  let
-		     val res = sub (v', i')
-		     val _ = Int.inc r'
-		  in res
-		  end
-	    else if i' = n'
-		    then 
-		       let
-			  val res = sub (v, i)
-			  val _ = Int.inc r
-		       in res
-		       end
-		 else
-		    let
-		       val a = sub (v, i)
-		       val a' = sub (v', i')
-		    in
-		       if a <= a'
-			  then (Int.inc r; a)
-		       else (Int.inc r'; a')
-		    end
-	 end
-      val v = tabulate (n + n', fn _ => next ())
-      val _ = Assert.assert ("Vector.merge post", fn () =>
-			     isSorted (v, op <=))
-   in
-      v
-   end
-
-fun sort (v, op <=) =
-   let
-      fun loop v =
-	 if isSorted (v, op <=)
-	    then v
-	 else
-	    let
-	       val n = length v
-	       val m = n div 2
-	       val m' = n - m
-	       fun get (m, start) =
-		  loop
-		  (tabulate (m, 
-			     let val r = ref start
-			     in fn _ =>
-				let
-				   val i = !r
-				   val res = sub (v, i)
-				   val _ = r := 2 + i
-				in res
-				end
-			     end))
-	    in merge (get (m', 0), get (m, 1), op <=)
-	    end
-      val v = loop v
-      val _ = Assert.assert ("Vector.sort", fn () => isSorted (v, op <=))
-   in
-      v
-   end
-
 fun indexi (v, f) =
    fold' (v, 0, (),
 	  fn (i, a, _) => if f (i, a) then Done (SOME i) else Continue (),
@@ -558,5 +492,25 @@ fun indices (a: bool t): int t =
 val indices =
    Trace.trace ("indices", layout Bool.layout, layout Int.layout)
    indices
+
+fun isSubsequence (va, vb, f) =
+   let
+      val na = length va
+      val nb = length vb
+      fun loop (ia, ib) =
+	 ia >= na
+	 orelse let
+		   val a = sub (va, ia)
+		   fun loop' ib =
+		      ib < nb
+		      andalso if f (a, sub (vb, ib))
+				 then loop (ia + 1, ib + 1)
+			      else loop' (ib + 1)
+		in
+		   loop' ib
+		end
+   in
+      loop (0, 0)
+   end
 
 end
