@@ -52,6 +52,9 @@ fun fromVector v =
 
 val single = Single
 
+fun snoc (l, a) =
+   append(l, single a)
+
 fun fold (l, b, f) =
    let
       fun loop (l, b) =

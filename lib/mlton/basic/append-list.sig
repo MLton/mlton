@@ -17,6 +17,7 @@ signature APPEND_LIST =
       val length: 'a t -> int
       val map: 'a t * ('a -> 'b) -> 'b t
       val single: 'a -> 'a t
+      val snoc: 'a t * 'a -> 'a t
       val toList: 'a t -> 'a list
       val toVector: 'a t -> 'a vector
    end
