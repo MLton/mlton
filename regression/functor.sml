@@ -36,3 +36,11 @@ structure B2 =
 
 structure H1 = H(B1)
 structure H2 = H(B2)
+
+signature S = sig end
+
+functor F (): S = struct end
+
+signature S = sig val y: int end
+
+structure C = F ()
