@@ -739,19 +739,18 @@ structure TupleRep =
 	 Selects.select (selects tr, z)
 
       fun tuple (tr: t,
-		 {dst: Var.t,
+		 {dst: Var.t * Type.t,
 		  src: {index: int} -> Operand.t}): Statement.t list =
 	 case tr of
 	    Direct {component = c, ...} =>
-	       Component.tuple (c, {dst = (dst, Component.ty c),
-				    src = src})
+	       Component.tuple (c, {dst = dst, src = src})
 	  | Indirect pr =>
-	       PointerRep.tuple (pr, {dst = dst, src = src})
+	       PointerRep.tuple (pr, {dst = #1 dst, src = src})
  
       val tuple =
 	 Trace.trace2 ("TupleRep.tuple",
 		       layout,
-		       Var.layout o #dst,
+		       Var.layout o #1 o #dst,
 		       List.layout Statement.layout)
 	 tuple
 
@@ -2255,9 +2254,12 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	   test = test,
 	   toRtype = toRtype})
       fun reff {arg: unit -> Rssa.Operand.t, dst: Rssa.Var.t, ty} =
-	 TupleRep.tuple (Value.get (refRep ty),
-			 {dst = dst,
-			  src = fn _ => arg ()})
+	 let
+	    val tr = Value.get (refRep ty)
+	 in
+	    TupleRep.tuple (tr, {dst = (dst, TupleRep.ty tr),
+				 src = fn _ => arg ()})
+	 end
       fun select {dst, offset, tuple, tupleTy} =
 	 let
 	    val dst =
@@ -2273,9 +2275,12 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 			      tuple = tuple})
 	 end
       fun tuple {components, dst = (dstVar, dstTy), oper} =
-	 TupleRep.tuple (Value.get (tupleRep dstTy),
-			 {dst = dstVar,
-			  src = makeSrc (components, oper)})
+	 case toRtype dstTy of
+	    NONE => []
+	  | SOME t => 
+	       TupleRep.tuple (Value.get (tupleRep dstTy),
+			       {dst = (dstVar, t),
+				src = makeSrc (components, oper)})
    in
       {conApp = conApp,
        diagnostic = diagnostic,

@@ -1213,15 +1213,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 							  Name.toString n])
 				  | SOME f => simpleCCall f)
 			end
-		     val arrayUpdate =
-			fn elementTy =>
-			loop (i - 1,
-			      arrayUpdate {array = a 0,
-					   arrayElementTy = elementTy,
-					   index = a 1,
-					   elt = a 2}
-			      @ ss,
-			      t)
 		     datatype z = datatype Prim.Name.t
 			   in
 			      case Prim.name prim of
@@ -1256,9 +1247,20 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					t)
 				    end
 			       | Array_update =>
-				    (case targ () of
-					NONE => none ()
-				      | SOME t => arrayUpdate t)
+				    if Option.isNone (targ ())
+				       then none ()
+				    else
+				       let
+					  val array = a 0
+				       in
+					  adds
+					  (arrayUpdate
+					   {array = array,
+					    arrayElementTy = (arrayElementType
+							      array),
+					    index = a 1,
+					    elt = a 2})
+				       end
 			       | FFI f => simpleCCall f
 			       | GC_collect =>
 				    ccall
@@ -1512,7 +1514,11 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			       | WordVector_toIntInf => cast ()
 			       | Word8Array_subWord => subWord ()
 			       | Word8Array_updateWord =>
-				    arrayUpdate Type.defaultWord
+				    add (Move {dst = (ArrayOffset
+						      {base = a 0,
+						       index = a 1,
+						       ty = Type.defaultWord}),
+					       src = a 2})
 			       | Word8Vector_subWord => subWord ()
 			       | World_save =>
 				    ccall {args = (Vector.new2
