@@ -77,6 +77,6 @@ fun new v =
    end
 
 fun finalizeBefore (T {afters, ...}, f) =
-   List.push (afters, fn () => withValue (f, fn _ => ()))
+   List.push (afters, fn () => Primitive.touch f)
 
 end
