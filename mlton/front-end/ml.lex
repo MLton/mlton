@@ -141,6 +141,7 @@ hexnum={hexDigit}+;
 				 yypos + size yytext));
 <INITIAL>"_export" => (tok (Tokens.EXPORT, source, yypos, yypos + size yytext));
 <INITIAL>"_ffi" => (tok (Tokens.FFI, source, yypos, yypos + size yytext));
+<INITIAL>"_import" => (tok (Tokens.IMPORT, source, yypos, yypos + size yytext));
 <INITIAL>"_overload" => (tok (Tokens.OVERLOAD, source, yypos,
 			      yypos + size yytext));
 <INITIAL>"_prim" => (tok (Tokens.PRIM, source, yypos,

@@ -28,6 +28,7 @@ end
 local
    open Machine
 in
+   structure CType = CType
    structure Operand = Operand
    structure Register = Register
    structure Runtime = Runtime
@@ -158,8 +159,8 @@ structure Allocation:
 	   * that the register indices that the codegens use are based on
 	   * runtime types.
 	   *)
-	  datatype t = T of Runtime.Type.t -> {alloc: Register.t list,
-					       next: int} ref
+	  datatype t = T of CType.t -> {alloc: Register.t list,
+					next: int} ref
 
 	  fun layout (T f) =
 	     List.layout
@@ -167,11 +168,11 @@ structure Allocation:
 	      let
 		 val {alloc, next} = ! (f t)
 	      in
-		 Layout.record [("ty", Runtime.Type.layout t),
+		 Layout.record [("ty", CType.layout t),
 				("next", Int.layout next),
 				("alloc", List.layout Register.layout alloc)]
 	      end)
-	     Runtime.Type.all
+	     CType.all
 
 	  fun compress {next, alloc} =
 	     let
@@ -194,19 +195,19 @@ structure Allocation:
 	  fun new (rs: Register.t list): t =
 	     let
 		fun sameType (r, r') =
-		   Runtime.Type.equals
-		   (Type.toRuntime (Register.ty r),
-		    Type.toRuntime (Register.ty r'))
+		   CType.equals
+		   (Type.toCType (Register.ty r),
+		    Type.toCType (Register.ty r'))
 	        val rss = List.equivalence (rs, sameType)
 	     in
-		T (Runtime.Type.memo
+		T (CType.memo
 		   (fn t =>
 		    case List.peek (rss, fn rs =>
 				    case rs of
 				       [] => false
 				     | r :: _ => 
-					  Runtime.Type.equals
-					  (t, Type.toRuntime (Register.ty r))) of
+					  CType.equals
+					  (t, Type.toCType (Register.ty r))) of
 		       NONE => ref {alloc = [], next = 0}
 		     | SOME rs =>
 			  ref
@@ -221,7 +222,7 @@ structure Allocation:
 
 	  fun get (T f, ty: Type.t) =
 	     let
-		val t = Type.toRuntime ty
+		val t = Type.toCType ty
 		val r = f t
 		val {alloc, next} = !r
 		val reg = Register.new (ty, SOME next)
@@ -504,7 +505,7 @@ fun allocate {argOperands,
 		      in
 			 case !Control.align of
 			    Control.Align4 => size
-			  | Control.Align8 => Runtime.Type.align8 size
+			  | Control.Align8 => CType.align8 size
 		      end
 	     val _ =
 		Vector.foreach (args, fn (x, _) =>

@@ -9,10 +9,13 @@ functor x86Codegen(S: X86_CODEGEN_STRUCTS): X86_CODEGEN =
 struct
   open S
 
+  structure CType = Machine.CType
+     
   structure x86 
-    = x86(structure Label = Machine.Label
-	  structure ProfileLabel = Machine.ProfileLabel
-	  structure Runtime = Machine.Runtime)
+     = x86 (structure CFunction = Machine.CFunction
+	    structure Label = Machine.Label
+	    structure ProfileLabel = Machine.ProfileLabel
+	    structure Runtime = Machine.Runtime)
 
   structure x86MLtonBasic
     = x86MLtonBasic(structure x86 = x86
@@ -73,7 +76,7 @@ struct
             then Int.toString n
 	    else if n = Int.minInt
 		   then "(int)0x80000000" (* because of goofy gcc warning *)
-		   else "-" ^ String.dropPrefix(Int.toString n, 1)
+		   else concat ["-", String.dropPrefix (Int.toString n, 1)]
       (* This overflows on Int32.minInt: Int32.toString(~ n) *)
     end
 
@@ -164,7 +167,7 @@ struct
 		 end
 	      fun declareLocals () =
 		 List.foreach
-		 (Runtime.Type.all,
+		 (CType.all,
 		  fn t =>
 		  let
 		     val m =
@@ -173,8 +176,8 @@ struct
 			 Int.max (max, regMax t))
 		     val m = m + 1
 		  in
-		     print (concat [Runtime.Type.toString t, 
-				    " local", Runtime.Type.toString t,
+		     print (concat [CType.toString t, 
+				    " local", CType.toString t,
 				    "[", Int.toString m, "];\n"])
 		  end)
 	      fun rest () =

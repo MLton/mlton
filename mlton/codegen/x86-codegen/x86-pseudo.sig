@@ -10,8 +10,10 @@ type word = Word.t
 
 signature X86_PSEUDO =
   sig
+     structure CFunction: C_FUNCTION
     structure Label : HASH_ID
     structure Runtime: RUNTIME
+    sharing CFunction.CType = Runtime.CType
 
     val tracer : string -> ('a -> 'b) -> 
                  (('a -> 'b) * (unit -> unit))
@@ -408,7 +410,7 @@ signature X86_PSEUDO =
 		   frameInfo: FrameInfo.t} -> t
 	val creturn: {dst: (Operand.t * Size.t) option,
 		      frameInfo: FrameInfo.t option,
-		      func: Runtime.CFunction.t,
+		      func: CFunction.t,
 		      label: Label.t} -> t
 	val func: {label: Label.t,
 		   live: MemLocSet.t} -> t
@@ -451,7 +453,7 @@ signature X86_PSEUDO =
 	val ccall : {args: (Operand.t * Size.t) list,
 		     dstsize: Size.t option,
 		     frameInfo: FrameInfo.t option,
-		     func: Runtime.CFunction.t,
+		     func: CFunction.t,
 		     return: Label.t option,
 		     target: Label.t} -> t
       end

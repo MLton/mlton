@@ -56,19 +56,19 @@ fun openlog (s, opt, fac) =
    let 
       val optf = 
 	 Word32.toInt (foldl Word32.orb 0w0 (map Word32.fromInt opt))
-      val sys_strdup  = _ffi "strdup" : string -> word ;
-      val sys_openlog = _ffi "openlog" : word * int * int -> unit ;
+      val sys_strdup  = _import "strdup" : string -> word ;
+      val sys_openlog = _import "openlog" : word * int * int -> unit ;
    in
       sys_openlog (sys_strdup (zt s), optf, fac)
    end
 
 fun closelog () =
-   let val sys_closelog = _ffi "closelog" : unit -> unit ;
+   let val sys_closelog = _import "closelog" : unit -> unit ;
    in sys_closelog ()
    end
 
 fun log (lev, msg) =
-   let val sys_syslog = _ffi "syslog" : int * string * string -> unit ;
+   let val sys_syslog = _import "syslog" : int * string * string -> unit ;
    in sys_syslog (lev, "%s\000", zt msg)
    end
 

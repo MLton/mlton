@@ -41,7 +41,7 @@ struct
 			     | _ => false
 	fun isCReturn l f = case get l
 			      of SOME (Block.T {entry = Entry.CReturn {func, ...}, ...})
-			       => Runtime.CFunction.equals (f, func)
+			       => CFunction.equals (f, func)
 			       | _ => false
 	val b = List.forall
 	        (blocks,

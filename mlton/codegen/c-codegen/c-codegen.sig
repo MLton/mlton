@@ -12,6 +12,8 @@ signature C_CODEGEN_STRUCTS =
    sig
       structure Ffi: FFI
       structure Machine: MACHINE
+      sharing Machine.CType = Machine.Prim.CFunction.CType
+      sharing Ffi.CFunction = Machine.CFunction
    end
 
 signature C_CODEGEN =

@@ -1,4 +1,13 @@
-Here are the changes since version 20030711.
+Here are the changes since version 20030716.
+
+* 2003-07-??
+  - Renamed _ffi as _import.  The old _ffi will remain for a while,
+    but is deprecated and should be replaced with _import.
+  - Added attributes to _export and _import.  For now, the only
+    attributes are "cdecl" and "stdcall".
+
+--------------------------------------------------------------------------------
+Here are the changes from version 20030711 to 20030716.
 
 Summary:
   + Fixed several serious bugs with the 20030711 release.

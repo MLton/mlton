@@ -27,8 +27,8 @@ rewrite () {
 	sed 's/_const/PRIM/' |
 	sed 's/_prim\(.*\);/(PRIM\1)/' |
 	sed 's/_prim/PRIM/' |
-	sed 's/_ffi\(.*\);/(PRIM\1)/' |
-	sed 's/_ffi/PRIM/' |
+	sed 's/_import\(.*\);/(PRIM\1)/' |
+	sed 's/_import/PRIM/' |
 	sed 's/fun bigIntConstant x = x/fun bigIntConstant(x:smallInt):bigInt = raise Fail "bigIntConstant"/' |
 	sed 's/#"\([^"\]*\(\\.[^"\]*\)*\)"/#ZZZ\1ZZZ/g' |
 	sed 's/\([^\]\)"\([^"\]*\(\\.[^"\]*\)*\)"/\1(STRING_CONST "\2")/g' |

@@ -16,6 +16,7 @@ structure R = Rssa
 local
    open Rssa
 in
+   structure CType = CType
    structure IntSize = IntSize
    structure ObjectType = ObjectType
    structure PointerTycon = PointerTycon
@@ -282,9 +283,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		       if isNormal
 			  then
 			     let
-				val offset =
-				   Runtime.Type.align
-				   (Runtime.Type.pointer, offset)
+				val offset = CType.align (CType.pointer, offset)
 			     in
 				if !Control.align = Control.Align8
 				andalso

@@ -31,6 +31,8 @@ in
    structure Fixop = Fixop
    structure Longvid = Longvid
    structure Longtycon = Longtycon
+   structure PrimKind = PrimKind
+   structure Attribute = PrimKind.Attribute
    structure Record = Record
    structure SortedRecord = SortedRecord
    structure Strid = Strid
@@ -39,19 +41,21 @@ end
 
 local open CoreML
 in
+   structure CFunction = CFunction
+   structure Convention	 = CFunction.Convention	
+   structure CType = CType
    structure Con = Con
    structure Cdec = Dec
    structure Cexp = Exp
-   structure Ffi = Ffi
    structure Cmatch = Match
    structure Cpat = Pat
    structure Cprim = Prim
    structure Cvar = Var
+   structure Ffi = Ffi
    structure Scheme = Scheme
    structure SourceInfo = SourceInfo
    structure Tycon = Tycon
    structure Type = Type
-   structure Ctype = Type
    structure Tyvar = Tyvar
 end
 
@@ -324,66 +328,57 @@ structure Nest =
 val info = Trace.info "elaborateDec"
 val elabExpInfo = Trace.info "elaborateExp"
 
-structure Ffi =
+structure CType =
    struct
-      open Ffi
-	 
-      structure Type =
-	 struct
-	    open Type
+      open CoreML.CType
 	       
-	    val bogus = Bool
-	       
-	    val nullary =
-	       [(Bool, Ctype.bool),
-		(Char, Ctype.con (Tycon.char, Vector.new0 ())),
-		(Pointer, Ctype.pointer)]
-	       @ List.map (IntSize.all, fn s => (Int s, Ctype.int s))
-	       @ List.map (RealSize.all, fn s => (Real s, Ctype.real s))
-	       @ List.map (WordSize.all, fn s => (Word s, Ctype.word s))
+      val nullary =
+	 [(bool, Type.bool),
+	  (char, Type.con (Tycon.char, Vector.new0 ())),
+	  (pointer, Type.pointer),
+	  (pointer, Type.preThread),
+	  (pointer, Type.thread)]
+	 @ List.map (IntSize.all, fn s => (Int s, Type.int s))
+	 @ List.map (RealSize.all, fn s => (Real s, Type.real s))
+	 @ List.map (WordSize.all, fn s => (Word s, Type.word s))
 
-	    fun peekNullary t =
-	       List.peek (nullary, fn (_, t') => Ctype.equals (t, t'))
+      val unary = [Tycon.array, Tycon.reff, Tycon.vector]
 
-	    val unary = [Tycon.array, Tycon.reff, Tycon.vector]
+      fun fromType (t: Type.t): t option =
+	 case List.peek (nullary, fn (_, t') => Type.equals (t, t')) of
+	    NONE =>
+	       (case Type.deconOpt t of
+		   NONE => NONE
+		 | SOME (tycon, ts) =>
+		      if List.exists (unary, fn tycon' =>
+				      Tycon.equals (tycon, tycon'))
+			 andalso 1 = Vector.length ts
+			 andalso isSome (fromType (Vector.sub (ts, 0)))
+			 then SOME Pointer
+		      else NONE)
+	  | SOME (t, _) => SOME t
 
-	    fun fromCtype (t: Ctype.t): t option =
-	       case peekNullary t of
-		  NONE =>
-		     (case Ctype.deconOpt t of
-			 NONE => NONE
-		       | SOME (tycon, ts) =>
-			    if List.exists (unary, fn tycon' =>
-					    Tycon.equals (tycon, tycon'))
-			       andalso 1 = Vector.length ts
-			       andalso isSome (peekNullary
-					       (Vector.sub (ts, 0)))
-			       then SOME Pointer
-			    else NONE)
-		| SOME (t, _) => SOME t
-	 end
-	 
-      fun parseCtype (ty: Ctype.t): (Type.t vector * Type.t option) option =
-	 case Ctype.dearrowOpt ty of
+      fun parse (ty: Type.t): (t vector * t option) option =
+	 case Type.dearrowOpt ty of
 	    NONE => NONE
 	  | SOME (t1, t2) =>
 	       let
-		  fun finish (ts: Type.t vector) =
-		     case Type.fromCtype t2 of
+		  fun finish (ts: t vector) =
+		     case fromType t2 of
 			NONE =>
-			   if Ctype.equals (t2, Ctype.unit)
+			   if Type.equals (t2, Type.unit)
 			      then SOME (ts, NONE)
 			   else NONE
 		      | SOME t => SOME (ts, SOME t)
 	       in
-		  case Ctype.detupleOpt t1 of 
+		  case Type.detupleOpt t1 of 
 		     NONE =>
-			(case Type.fromCtype t1 of
+			(case fromType t1 of
 			    NONE => NONE
 			  | SOME u => finish (Vector.new1 u))
 		   | SOME ts =>
 			let
-			   val us = Vector.map (ts, Type.fromCtype)
+			   val us = Vector.map (ts, fromType)
 			in
 			   if Vector.forall (us, isSome)
 			      then finish (Vector.map (us, valOf))
@@ -392,10 +387,92 @@ structure Ffi =
 	       end
    end
 
-fun export (name: string, ty: Type.t, region: Region.t): Aexp.t =
+fun parseAttributes (attributes: Attribute.t list): Convention.t option =
+   case attributes of
+      [] => SOME Convention.Cdecl
+    | [a] =>
+	 SOME (case a of
+		  Attribute.Cdecl => Convention.Cdecl
+		| Attribute.Stdcall =>
+		     if !Control.hostOS = Control.Cygwin
+			then Convention.Stdcall
+		     else Convention.Cdecl)
+    | _ => NONE
+
+fun import {attributes: Attribute.t list,
+	    name: string,
+	    ty: Type.t,
+	    region: Region.t}: Cprim.t =
    let
+      fun error l = Control.error (region, l, Layout.empty)
+      fun invalidAttributes () =
+	 error (let
+		   open Layout
+		in
+		   seq [str "invalid attributes for import: ",
+			List.layout Attribute.layout attributes]
+		end)
+   in
+      case CType.parse ty of
+	 NONE =>
+	    (case CType.fromType ty of
+		NONE => 
+		   (error (let
+			      open Layout
+			   in
+			      seq [str "invalid type for import: ",
+				   Type.layout ty]
+			   end)
+		    ; Cprim.bogus)
+	      | SOME t =>
+		   case attributes of
+		      [] => Cprim.ffiSymbol {name = name, ty = t}
+		    | _ => 
+			 let
+			    val _ = invalidAttributes ()
+			 in
+			    Cprim.bogus
+			 end)
+       | SOME (args, result) =>
+	    let
+	       val convention =
+		  case parseAttributes attributes of
+		     NONE => (invalidAttributes ()
+			      ; Convention.Cdecl)
+		   | SOME c => c
+	       val func =
+		  CFunction.T {args = args,
+			       bytesNeeded = NONE,
+			       convention = convention,
+			       ensuresBytesFree = false,
+			       modifiesFrontier = true (* callsFromC *),
+			       modifiesStackTop = true (* callsFromC *),
+			       mayGC = true (* callsFromC *),
+			       maySwitchThreads = false,
+			       name = name,
+			       return = result}
+	    in
+	       Cprim.ffi (func, Scheme.fromType ty)
+	    end
+   end
+
+fun export {attributes, name: string, region: Region.t, ty: Type.t}: Aexp.t =
+   let
+      fun error l = Control.error (region, l, Layout.empty)
+      fun invalidAttributes () =
+	 error (let
+		   open Layout
+		in
+		   seq [str "invalid attributes for export: ",
+			List.layout Attribute.layout attributes]
+		end)
+      val convention =
+	 case parseAttributes attributes of
+	    NONE => (invalidAttributes ()
+		     ; Convention.Cdecl)
+	  | SOME c => c
       val (args, exportId, res) =
-	 case Ffi.parseCtype ty of
+	 case CType.parse ty of
 	    NONE =>
 	       (Control.error
 		(region,
@@ -410,6 +487,7 @@ fun export (name: string, ty: Type.t, region: Region.t): Aexp.t =
 	  | SOME (us, t) =>
 	       let
 		  val id = Ffi.addExport {args = us,
+					  convention = convention,
 					  name = name,
 					  res = t}
 	       in
@@ -441,7 +519,7 @@ fun export (name: string, ty: Type.t, region: Region.t): Aexp.t =
 	      Vector.new1
 	      (Pat.tuple (Vector.new0 ()),
 	       let
-		  val map = Ffi.Type.memo (fn _ => Counter.new 0)
+		  val map = CType.memo (fn _ => Counter.new 0)
 		  val varCounter = Counter.new 0
 		  val (args, decs) =
 		     Vector.unzip
@@ -458,7 +536,7 @@ fun export (name: string, ty: Type.t, region: Region.t): Aexp.t =
 				       x,
 				       Exp.app
 				       (id (concat
-					    ["get", Ffi.Type.toString u]),
+					    ["get", CType.toString u]),
 					int (Counter.next (map u))))
 		       in
 			  (x, dec)
@@ -479,7 +557,7 @@ fun export (name: string, ty: Type.t, region: Region.t): Aexp.t =
 		       (case res of
 			   NONE => Exp.unit
 			 | SOME t => 
-			      Exp.app (id (concat ["set", Ffi.Type.toString t]),
+			      Exp.app (id (concat ["set", CType.toString t]),
 				       Exp.var resVar)))),
 		     fn (x, e) => Dec.vall (Vector.new0 (), x, e))],
 		   Exp.tuple (Vector.new0 ()))
@@ -947,7 +1025,7 @@ fun elaborateDec (d, nest, E) =
 		      case kind of
 			 BuildConst => simple (Cprim.buildConstant (name, ty))
 		       | Const => simple (Cprim.constant (name, ty))
-		       | Export =>
+		       | Export attributes =>
 			    let
 			       val ty = Scheme.ty ty
 			    in
@@ -957,11 +1035,18 @@ fun elaborateDec (d, nest, E) =
 				 (E, fn () =>
 				  (Env.openStructure (E,
 						      valOf (!Env.Structure.ffi))
-				   ; elabExp' (export (name, ty, region),
+				   ; elabExp' (export {attributes = attributes,
+						       name = name,
+						       region = region,
+						       ty = ty},
 					       nest))),
 				 Type.arrow (ty, Type.unit)))
 			    end
-		       | FFI => simple (Cprim.ffi (name, ty))
+		       | Import attributes =>
+			    simple (import {attributes = attributes,
+					    name = name,
+					    region = region,
+					    ty = Scheme.ty ty})
 		       | Prim => simple (Cprim.new (name, ty))
 		   end
 	      | Aexp.Raise {exn, filePos} =>

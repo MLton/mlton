@@ -55,7 +55,7 @@ struct
 
 	fun toX86MemLoc (g: t) =
 	   let
-	      val ty = Machine.Type.toRuntime (ty g)
+	      val ty = Machine.Type.toCType (ty g)
 	      val base =
 		 x86.Immediate.label
 		 (if isRoot g
@@ -76,14 +76,14 @@ struct
     struct
       open Machine.Operand
 
-      val toX86Size = x86MLton.toX86Size o Type.toRuntime o ty
+      val toX86Size = x86MLton.toX86Size o Type.toCType o ty
 
       val rec toX86Operand =
 	 fn ArrayOffset {base, index, ty} =>
 	       let
 		  val base = toX86Operand base
 		  val index = toX86Operand index
-		  val ty = Type.toRuntime ty
+		  val ty = Type.toCType ty
 		  val memloc =
 		     case (x86.Operand.deMemloc base,
 			   x86.Operand.deImmediate index,
@@ -113,7 +113,7 @@ struct
 	  | Cast (z, _) => toX86Operand z
 	  | Contents {oper, ty} =>
 	       let
-		  val ty = Type.toRuntime ty
+		  val ty = Type.toCType ty
 		  val base = toX86Operand oper
 		  val offset = x86.Immediate.const_int 0
 		  val size = x86MLton.toX86Size ty
@@ -147,14 +147,14 @@ struct
 	  | Line => x86MLton.fileLine ()
 	  | Offset {base = GCState, offset, ty} =>
 	       let
-		 val ty = Type.toRuntime ty
+		 val ty = Type.toCType ty
 	       in
 		 x86MLton.gcState_offset {offset = offset, ty = ty}
 	       end
 	  | Offset {base, offset, ty} =>
 	       let
 		 val base = toX86Operand base
-		 val ty = Type.toRuntime ty
+		 val ty = Type.toCType ty
 		 val memloc =
 		   case x86.Operand.deMemloc base of
 		     SOME base =>
@@ -173,7 +173,7 @@ struct
 	  | Real _ => Error.bug "toX86Operand: Real unimplemented"
 	  | Register r =>
 	       let
-		  val ty = Machine.Type.toRuntime (Register.ty r)
+		  val ty = Machine.Type.toCType (Register.ty r)
 		  val base = x86.Immediate.label (x86MLton.local_base ty)
 	       in
 		  x86.Operand.memloc
@@ -187,7 +187,7 @@ struct
 	  | SmallIntInf ii => x86.Operand.immediate_const_word ii
 	  | StackOffset {offset, ty} =>
 	       let
-		  val ty = Type.toRuntime ty
+		  val ty = Type.toCType ty
 		  val memloc =
 		     x86.MemLoc.simple 
 		     {base = x86MLton.gcState_stackTopContents (), 
@@ -414,7 +414,7 @@ struct
 		     = let
 			 val size =
 			    x86MLton.toX86Size
-			    (Type.toRuntime (Operand.ty value))
+			    (Type.toCType (Operand.ty value))
 			 val value = Operand.toX86Operand value
 			 val dst
 			   = let

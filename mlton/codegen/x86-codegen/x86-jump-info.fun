@@ -66,7 +66,7 @@ struct
 	       | Entry.Cont {label, ...} => forceNear (jumpInfo, label)
 	       | Entry.Handler {label, ...} => forceNear (jumpInfo, label)
 	       | Entry.CReturn {label, func, ...}
-	       => if Runtime.CFunction.maySwitchThreads func
+	       => if CFunction.maySwitchThreads func
 		    then forceNear (jumpInfo, label)
 		    else ();
 	    List.foreach

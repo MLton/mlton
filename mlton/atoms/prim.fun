@@ -68,7 +68,9 @@ structure Name =
        | Exn_setExtendExtra (* implement exceptions *)
        | Exn_setInitExtra (* implement exceptions *)
        | Exn_setTopLevelHandler (* implement exceptions *)
-       | FFI of string (* ssa to rssa *)
+       | FFI of CFunction.t (* ssa to rssa *)
+       | FFI_Symbol of {name: string,
+			ty: CType.t}
        | FFI_getPointer
        | FFI_setPointer
        | GC_collect (* ssa to rssa *)
@@ -451,7 +453,8 @@ structure Name =
 	 case n of
 	    BuildConstant s => s
 	  | Constant s => s
-	  | FFI s => s
+	  | FFI f => CFunction.name f
+	  | FFI_Symbol {name, ...} => name
 	  | _ => (case List.peek (strings, fn (n', _, _) => n = n') of
 		     NONE => Error.bug "Prim.toString missing name"
 		   | SOME (_, _, s) => s)
@@ -489,6 +492,19 @@ val isFunctional = Trace.trace ("isFunctional", layout, Bool.layout) isFunctiona
 val isCommutative = Name.isCommutative o name
 val mayOverflow = Name.mayOverflow o name
 val mayRaise = Name.mayRaise o name
+
+structure CType =
+   struct
+      open CType
+
+      val toType =
+	 memo (fn t =>
+	       case t of
+		  Int s => Type.int s
+		| Pointer => Type.pointer
+		| Real s => Type.real s
+		| Word s => Type.word s)
+   end
 
 structure Scheme =
    struct
@@ -533,12 +549,11 @@ local
       let
 	 val k =
 	    case n of
-	       Name.FFI _ =>
-		  (if isSome (Scheme.numArgs s)
-		      then Kind.SideEffect
-		   else Kind.DependsOnState)
+	       Name.FFI _ => Kind.SideEffect
+	     | Name.FFI_Symbol _ => Kind.DependsOnState
 	     | _ => (case List.peek (Name.strings, fn (n', _, _) => n = n') of
-			NONE => Error.bug "strange name"
+			NONE => Error.bug (concat ["strange name: ",
+						   Name.toString n])
 		      | SOME (_, k, _) => k)
       in
 	 new (n, k, s)
@@ -631,14 +646,17 @@ in
       val wordToIntX = make (Name.Word_toIntX, word, int)
    end
       
-   fun ffi (name: string, s: Scheme.t) =
-      new (Name.FFI name, s)
+   fun ffi (f: CFunction.t, s: Scheme.t) =
+      new (Name.FFI f, s)
 
-   fun newNullary (name: string) = new0 (Name.FFI name, unit --> unit)
+   fun newNullary f = new0 (Name.FFI f, unit --> unit)
 
-   val allocTooLarge = newNullary "MLton_allocTooLarge"
+   val allocTooLarge = newNullary CFunction.allocTooLarge
+
+   fun ffiSymbol (z as {ty, ...}) =
+      new (Name.FFI_Symbol z, Scheme.fromType (CType.toType ty))
 end
-   
+
 val new: string * Scheme.t -> t =
    fn (name, scheme) =>
    let

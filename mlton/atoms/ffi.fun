@@ -3,59 +3,24 @@ struct
 
 open S
 
-structure Type =
-   struct
-      datatype t =
-	 Bool
-       | Char
-       | Int of IntSize.t
-       | Pointer
-       | Real of RealSize.t
-       | Word of WordSize.t
+structure Convention = CFunction.Convention
 
-      fun memo (f: t -> 'a): t -> 'a =
-	 let
-	    val bool = f Bool
-	    val char = f Char
-	    val int = IntSize.memoize (f o Int)
-	    val pointer = f Pointer
-	    val real = RealSize.memoize (f o Real)
-	    val word = WordSize.memoize (f o Word)
-	 in
-	    fn Bool => bool
-	     | Char => char
-	     | Int s => int s
-	     | Pointer => pointer
-	     | Real s => real s
-	     | Word s => word s
-	 end
-
-      val toString =
-	 memo
-	 (fn u =>
-	  case u of
-	     Bool => "Bool"
-	   | Char => "Char"
-	   | Int s => concat ["Int", IntSize.toString s]
-	   | Pointer => "Pointer"
-	   | Real s => concat ["Real", RealSize.toString s]
-	   | Word s => concat ["Word", WordSize.toString s])
-   end
-
-val exports: {args: Type.t vector,
+val exports: {args: CType.t vector,
+	      convention: Convention.t,
 	      id: int,
 	      name: string,
-	      res: Type.t option} list ref = ref []
+	      res: CType.t option} list ref = ref []
 
 fun numExports () = List.length (!exports)
 
 local
    val exportCounter = Counter.new 0
 in
-   fun addExport {args, name, res} =
+   fun addExport {args, convention, name, res} =
       let
 	 val id = Counter.next exportCounter
 	 val _ = List.push (exports, {args = args,
+				      convention = convention,
 				      id = id,
 				      name = name,
 				      res = res})
@@ -68,7 +33,7 @@ val headers: string list ref = ref []
       
 fun declareExports {print} =
    let
-      val maxMap = Type.memo (fn _ => ref ~1)
+      val maxMap = CType.memo (fn _ => ref ~1)
       fun bump (t, i) =
 	 let
 	    val r = maxMap t
@@ -79,14 +44,14 @@ fun declareExports {print} =
 	 List.foreach
 	 (!exports, fn {args, res, ...} =>
 	  let
-	     val map = Type.memo (fn _ => Counter.new 0)
+	     val map = CType.memo (fn _ => Counter.new 0)
 	  in
 	     Vector.foreach (args, fn t => bump (t, Counter.next (map t)))
 	     ; Option.app (res, fn t => bump (t, 0))
 	  end)
       (* Declare the arrays and functions used for parameter passing. *)
       val _ =
-	 Type.memo
+	 CType.memo
 	 (fn t =>
 	  let
 	     val n = !(maxMap t)
@@ -95,7 +60,7 @@ fun declareExports {print} =
 		then
 		   let
 		      val size = Int.toString (1 + n)
-		      val t = Type.toString t
+		      val t = CType.toString t
 		   in
 		      print (concat [t, " MLton_FFI_", t, "[", size, "];\n"])
 		      ; print (concat [t, " MLton_FFI_get", t, " (Int i) {\n",
@@ -114,17 +79,17 @@ fun declareExports {print} =
 			     "}\n"])
    in
       List.foreach
-      (!exports, fn {args, id, name, res} =>
+      (!exports, fn {args, convention, id, name, res} =>
        let
 	  val varCounter = Counter.new 0
-	  val map = Type.memo (fn _ => Counter.new 0)
+	  val map = CType.memo (fn _ => Counter.new 0)
 	  val args =
 	     Vector.map
 	     (args, fn t =>
 	      let
 		 val index = Counter.next (map t)
 		 val x = concat ["x", Int.toString (Counter.next varCounter)]
-		 val t = Type.toString t
+		 val t = CType.toString t
 	      in
 		 (x,
 		  concat [t, " ", x],
@@ -134,8 +99,13 @@ fun declareExports {print} =
 	  val header =
 	     concat [case res of
 			NONE => "void"
-		      | SOME t => Type.toString t,
-		     " ", name, " (",
+		      | SOME t => CType.toString t,
+	             if convention <> Convention.Cdecl
+			then concat [" __attribute__ ((",
+				     Convention.toString convention,
+				     ")) "]
+		     else " ",
+		     name, " (",
 		     concat (List.separate (Vector.toListMap (args, #2), ", ")),
 		     ")"]
 	  val _ = List.push (headers, header)
@@ -148,7 +118,7 @@ fun declareExports {print} =
 		NONE => ()
 	      | SOME t =>
 		   print (concat
-			  ["\treturn MLton_FFI_", Type.toString t, "[0];\n"]))
+			  ["\treturn MLton_FFI_", CType.toString t, "[0];\n"]))
 	  ; print "}\n"
        end)
    end

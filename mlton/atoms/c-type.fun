@@ -1,14 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
- *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
- *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
- *)
-functor Mtype (S: MTYPE_STRUCTS): MTYPE = 
+functor CType (S: C_TYPE_STRUCTS): C_TYPE = 
 struct
 
 open S
+
+datatype z = datatype IntSize.t
+datatype z = datatype WordSize.t
 
 datatype t =
    Int of IntSize.t
@@ -16,15 +12,31 @@ datatype t =
  | Real of RealSize.t
  | Word of WordSize.t
 
-datatype dest = datatype t
+val bool = Int I32
+val char = Word W8
+val defaultInt = Int IntSize.default
+val defaultReal = Real RealSize.default
+val defaultWord = Word WordSize.default
+val pointer = Pointer
 
-fun dest t = t
+val all =
+   List.map (IntSize.all, Int)
+   @ [Pointer]
+   @ List.map (RealSize.all, Real)
+   @ List.map (WordSize.all, Word)
 
-val isReal =
-   fn Real _ => true
+val equals: t * t -> bool =
+   fn (Int s, Int s') => IntSize.equals (s, s')
+    | (Pointer, Pointer) => true
+    | (Real s, Real s') => RealSize.equals (s, s')
+    | (Word s, Word s') => WordSize.equals (s, s')
     | _ => false
 
-fun memo f =
+val isPointer: t -> bool =
+   fn Pointer => true
+    | _ => false
+   
+fun memo (f: t -> 'a): t -> 'a =
    let
       val int = IntSize.memoize (f o Int)
       val pointer = f Pointer
@@ -39,45 +51,14 @@ fun memo f =
 
 val toString =
    memo
-   (fn t =>
-    case t of
+   (fn u =>
+    case u of
        Int s => concat ["Int", IntSize.toString s]
      | Pointer => "Pointer"
      | Real s => concat ["Real", RealSize.toString s]
      | Word s => concat ["Word", WordSize.toString s])
 
 val layout = Layout.str o toString
-
-fun equals (t, t') = t = t'
-
-val equals =
-   Trace.trace2 ("Runtime.Type.equals", layout, layout, Bool.layout) equals
-
-val int = IntSize.memoize Int
-val pointer = Pointer
-val real = RealSize.memoize Real
-val word = WordSize.memoize Word
-
-val all =
-   List.map (IntSize.all, int)
-   @ [pointer]
-   @ List.map (RealSize.all, real)
-   @ List.map (WordSize.all, word)
-
-val bool = int IntSize.I32
-
-val defaultInt = int IntSize.default
-
-val defaultReal = real RealSize.default
-   
-val defaultWord = word WordSize.default
-
-val label = word WordSize.W32
-  
-fun isPointer t =
-   case t of
-      Pointer => true
-    | _ => false
 
 fun size (t: t): int =
    case t of

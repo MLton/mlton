@@ -568,37 +568,33 @@ struct
 			size = dstsize}],
 		    transfer = NONE}]
 		end
-	     | FFI s 
-	     => (case Prim.numArgs prim
-		   of NONE 
-		    => let
-			 val (dst,dstsize) = getDst ()
-
-			 val memloc
-			   = x86.MemLoc.makeContents 
-			     {base = Immediate.label (Label.fromString s),
-			      size = dstsize,
-			      class = Classes.CStatic}
-		       in
-			 AppendList.fromList
-			 [Block.mkBlock'
-			  {entry = NONE,
-			   statements
-			   = [case Size.class dstsize
-				of Size.INT 
-				 => Assembly.instruction_mov 
-				    {dst = dst,
-				     src = Operand.memloc memloc,
-				     size = dstsize}
-				 | Size.FLT 
+	     | FFI_Symbol {name, ...}
+	     => let
+		   val (dst,dstsize) = getDst ()
+		   val memloc
+		      = x86.MemLoc.makeContents 
+		      {base = Immediate.label (Label.fromString name),
+		       size = dstsize,
+		       class = Classes.CStatic}
+		in
+		   AppendList.fromList
+		   [Block.mkBlock'
+		    {entry = NONE,
+		     statements
+		     = [case Size.class dstsize
+			   of Size.INT 
+			      => Assembly.instruction_mov 
+				 {dst = dst,
+				  src = Operand.memloc memloc,
+				  size = dstsize}
+			       | Size.FLT 
 				 => Assembly.instruction_pfmov
 				    {dst = dst,
 				     src = Operand.memloc memloc,
 				     size = dstsize}
-				 | _ => Error.bug "prim: FFI"],
-			   transfer = NONE}]
-		       end
- 	            | SOME _ => Error.bug "prim: FFI")
+			       | _ => Error.bug "prim: FFI"],
+		     transfer = NONE}]
+		end
 	     | Int_ge _ => cmp Instruction.GE
 	     | Int_gt _ => cmp Instruction.G
 	     | Int_le _ => cmp Instruction.LE
@@ -1216,7 +1212,18 @@ struct
 	     return: x86.Label.t option,
 	     transInfo: transInfo}
     = let
-	val {name, returnTy, ...} = CFunction.dest func
+	val CFunction.T {convention, name, return = returnTy, ...} = func
+	val name =
+	   if convention = CFunction.Convention.Stdcall
+	      then
+		 let
+		    val argsSize =
+		       Vector.fold (args, 0, fn ((_, s), ac) =>
+				    ac + x86.Size.toBytes s)
+		 in
+		    concat [name, "@", Int.toString argsSize]
+		 end
+	   else name
 	val dstsize = Option.map (returnTy, toX86Size)
 	val comment_begin
 	  = if !Control.Native.commented > 0

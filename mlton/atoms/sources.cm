@@ -12,6 +12,8 @@ signature ATOMS
 signature ID
 signature ID_NO_AST
 signature INT_X
+signature C_FUNCTION
+signature C_TYPE
 signature CON
 signature CONST
 signature FFI
@@ -47,6 +49,10 @@ is
 
 atoms.fun
 atoms.sig
+c-function.sig
+c-function.fun
+c-type.sig
+c-type.fun
 cons.fun
 cons.sig
 const.fun

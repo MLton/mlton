@@ -67,7 +67,7 @@ structure Operand =
 	  | Line => Type.int IntSize.default
 	  | Offset {ty, ...} => ty
 	  | PointerTycon _ => Type.word WordSize.default
-	  | Runtime z => Type.fromRuntime (GCField.ty z)
+	  | Runtime z => Type.fromCType (GCField.ty z)
 	  | SmallIntInf _ => Type.IntInf
 	  | Var {ty, ...} => ty
 

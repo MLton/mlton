@@ -259,33 +259,31 @@ structure Type =
 	  pointers = {enum = Vector.new0 (), pointers = pointers}}
 
       local
-	 structure R = Runtime.Type
+	 structure C = CType
       in
-	 val fromRuntime: Runtime.Type.t -> t =
-	    fn t =>
-	    case R.dest t of
-	       R.Int s => int s
-	     | R.Pointer => cpointer
-	     | R.Real s => real s
-	     | R.Word s => word s
+	 val fromCType: CType.t -> t =
+	    fn C.Int s => int s
+	     | C.Pointer => cpointer
+	     | C.Real s => real s
+	     | C.Word s => word s
 
-	 val toRuntime: t -> Runtime.Type.t =
-	    fn CPointer => R.pointer
+	 val toCType: t -> CType.t =
+	    fn CPointer => C.pointer
 	     | EnumPointers {enum, pointers} =>
 		  if 0 = Vector.length pointers
-		     then R.defaultInt
-		  else R.pointer
-	     | ExnStack => R.defaultWord
-	     | Int s => R.int s
-	     | IntInf => R.pointer
-	     | Label _ => R.defaultWord
-	     | MemChunk _ => R.pointer
-	     | Real s => R.real s
-	     | Word s => R.word s
+		     then C.defaultInt
+		  else C.pointer
+	     | ExnStack => C.defaultWord
+	     | Int s => C.Int s
+	     | IntInf => C.Pointer
+	     | Label _ => C.defaultWord
+	     | MemChunk _ => C.pointer
+	     | Real s => C.Real s
+	     | Word s => C.Word s
 
-	 val name = R.name o toRuntime
+	 val name = C.name o toCType
 
-	 fun align (t: t, n: int): int = R.align (toRuntime t, n)
+	 fun align (t: t, n: int): int = C.align (toCType t, n)
       end
 
       val equals =

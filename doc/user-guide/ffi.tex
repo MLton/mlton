@@ -14,7 +14,7 @@ int foo (double d, unsigned char c);
 \end{verbatim}
 {\mlton} extends the syntax of SML to allow expressions like the following:
 \begin{verbatim}
-_ffi "foo": real * char -> int;
+_import "foo": real * char -> int;
 \end{verbatim}
 This expression denotes a function of type {\tt real * char -> int}
 whose behavior is implemented by calling the C function whose name is
@@ -23,11 +23,20 @@ variables {\tt d} of type {\tt double}, {\tt c} of type {\tt unsigned
 char}, and {\tt i} of type {\tt int}.  Then, the C statement
 \mbox{\tt i = foo(d, c)} is executed and {\tt i} is returned.
 
-The general form of an \verb+_ffi+ expresion is:
+The general form of an \verb+_import+ expresion is:
 \begin{center}
-{\tt \_ffi "}C global variable or function name{\tt ": }ty{\tt ;}
+{\tt \_import "}C global variable or function name{\tt "}{\it attribute}
+...{\tt : }{\it ty}{\tt ;}
 \end{center}
 The semicolon is not optional.
+
+The function name is followed by a (possiblye empty) sequence of
+``attributes'', analogous to C {\tt\_\_attribute\_\_} specifiers.  For
+now, the only attributes supported are {\tt cdecl} and {\tt stdcall}.
+These specify the calling convention of the C function on a
+Cygwin/Windows system, and are ignored on all other systems.  The
+default is {\tt cdecl}.  But you must use {\tt stdcall} in order to
+correctly call Windows API functions.
 
 An example in the {\tt examples/ffi} directory demonstrates the use of
 {\ffi} expressions.  The {\tt Makefile} demonstrates how to call
@@ -51,7 +60,9 @@ of SML to allow expressions like the following:
 \begin{verbatim}
 _export "foo": real * char -> int;
 \end{verbatim}
-This expression exports a C function named {\tt foo}, with prototype
+As with {\tt \_import}, a sequence of attributes may follow the
+function name.  The above expression exports a C function named {\tt
+foo}, with prototype
 \begin{verbatim}
 Int32 foo (Real64 x0, Char x1);
 \end{verbatim}
@@ -133,19 +144,19 @@ Pointer}, in reality, the object is layed out in the natural C
 representation.  Your C code should cast to the appropriate C type if
 you want to keep the C compiler from complaining.
 
-\subsection{Type checking programs that use {\tt \_ffi}}
+\subsection{Type checking programs that use {\tt \_import}}
 
 Because {\mlton} has relaxed type checking, it is necessary to
-type check programs that use {\tt \_ffi} with another SML compiler.
+type check programs that use {\tt \_import} with another SML compiler.
 This can be done by a standard process using a Makefile and {\tt sed}.
 Suppose that you have a file, {\tt mlxtest.cm}, that describes your
 {\mlton} project, and that it refers to a file, {\tt mlx.sml}, that
-uses {\tt \_ffi}.  The following Makefile will let you type-check your
+uses {\tt \_import}.  The following Makefile will let you type-check your
 code with {\smlnj} by typing {\tt make typecheck}.
 
 \begin{verbatim}
 nj: *.sml *.cm
-        cat mlx.sml | sed -e 's/_ffi/Unsafe.cast/' >mlx-nj.sml
+        cat mlx.sml | sed -e 's/_import/Unsafe.cast/' >mlx-nj.sml
         cat mlxtest.cm | sed -e 's/mlx.sml/mlx-nj.sml/' >sources.cm
 
 typecheck: nj

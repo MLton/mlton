@@ -10,15 +10,19 @@ type word = Word.t
    
 signature MACHINE_STRUCTS = 
    sig
+      structure CFunction: C_FUNCTION
+      structure CType: C_TYPE
       structure IntX: INT_X
       structure Label: HASH_ID
       structure Prim: PRIM
       structure SourceInfo: SOURCE_INFO
       structure RealX: REAL_X
       structure WordX: WORD_X
-      sharing IntX.IntSize = Prim.IntSize
-      sharing RealX.RealSize = Prim.RealSize
-      sharing WordX.WordSize = Prim.WordSize
+      sharing CFunction = Prim.CFunction
+      sharing CFunction.CType = CType = Prim.CType = Prim.CFunction.CType
+      sharing CType.IntSize = IntX.IntSize = Prim.IntSize
+      sharing CType.RealSize = RealX.RealSize = Prim.RealSize
+      sharing CType.WordSize = WordX.WordSize = Prim.WordSize
    end
 
 signature MACHINE = 
@@ -31,8 +35,6 @@ signature MACHINE =
       sharing PointerTycon = Switch.PointerTycon
       sharing Type = Switch.Type
       sharing WordX = Switch.WordX
-      structure CFunction: C_FUNCTION
-      sharing CFunction = Runtime.CFunction
       structure ChunkLabel: ID_NO_AST
 
       structure Register:
@@ -59,7 +61,7 @@ signature MACHINE =
 	    val layout: t -> Layout.t
 	    val new: {isRoot: bool, ty: Type.t} -> t
 	    val numberOfNonRoot: unit -> int
-	    val numberOfType: Runtime.Type.t -> int
+	    val numberOfType: CType.t -> int
 	    val toString: t -> string
 	    val ty: t -> Type.t
 	 end
@@ -208,10 +210,10 @@ signature MACHINE =
 	       T of {blocks: Block.t vector,
 		     chunkLabel: ChunkLabel.t,
 		     (* Register.index r
-		      *    <= regMax (Type.toRuntime (Register.ty r))
+		      *    <= regMax (Type.toCType (Register.ty r))
 		      * for all registers in the chunk.
 		      *)
-		     regMax: Runtime.Type.t -> int}
+		     regMax: CType.t -> int}
 	 end
 
       structure ProfileInfo:

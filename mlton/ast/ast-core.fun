@@ -244,7 +244,23 @@ structure EbRhs = Eb.Rhs
 
 structure PrimKind =
    struct
-      datatype t = BuildConst | Const | Export | FFI | Prim
+      structure Attribute =
+	 struct
+	    datatype t = Cdecl | Stdcall
+
+	    val toString: t -> string =
+	       fn Cdecl => "cdecl"
+		| Stdcall => "stdcall"
+
+	    val layout = Layout.str o toString
+	 end
+
+      datatype t =
+	 BuildConst
+       | Const
+       | Export of Attribute.t list
+       | Import of Attribute.t list
+       | Prim
    end
 
 datatype expNode =

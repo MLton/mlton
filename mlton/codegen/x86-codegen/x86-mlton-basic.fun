@@ -12,8 +12,10 @@ struct
   open x86
 
   structure Runtime = Machine.Runtime
+  structure CFunction = Machine.CFunction
+  structure CType = CFunction.CType
   local
-     open Runtime
+     open CType
   in
      structure IntSize = IntSize
      structure RealSize = RealSize
@@ -36,7 +38,7 @@ struct
   val intInfOverheadBytes = Runtime.intInfOverheadSize
    
   local
-     datatype z = datatype Runtime.Type.dest
+     datatype z = datatype CType.t
      datatype z = datatype x86.Size.t
   in
     fun toX86Size' t =
@@ -69,8 +71,8 @@ struct
 		 | W16 => WORD 
 		 | W32 => LONG
 	     end
-    val toX86Size = fn t => toX86Size' (Runtime.Type.dest t)
-    fun toX86Scale t = x86.Scale.fromBytes (Runtime.Type.size t)
+    val toX86Size = toX86Size'
+    fun toX86Scale t = x86.Scale.fromBytes (CType.size t)
   end
 
   (*
@@ -285,10 +287,11 @@ struct
     val localW_base =
        WordSize.memoize
        (fn s => Label.fromString (concat ["localWord", WordSize.toString s]))
-    datatype z = datatype Runtime.Type.dest
+    datatype z = datatype CType.t
+    datatype z = datatype IntSize.t
   in
     fun local_base ty =
-       case Runtime.Type.dest ty of
+       case ty of
 	  Int s => localI_base s
 	| Pointer => localP_base
 	| Real s => localR_base s
@@ -309,10 +312,11 @@ struct
 	make ("Real", RealSize.memoize, RealSize.toString)
      val (globalW_base, globalW_num) =
 	make ("Word", WordSize.memoize, WordSize.toString)
-    datatype z = datatype Runtime.Type.dest
+    datatype z = datatype CType.t
+    datatype z = datatype IntSize.t
   in
      fun global_base ty =
-	case Runtime.Type.dest ty of
+	case ty of
 	   Int s => globalI_base s
 	 | Pointer => globalP_base
 	 | Real s => globalR_base s

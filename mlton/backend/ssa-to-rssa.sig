@@ -12,6 +12,7 @@ signature SSA_TO_RSSA_STRUCTS =
    sig
       structure Rssa: RSSA
       structure Ssa: SSA
+      sharing Rssa.CFunction = Ssa.CFunction
       sharing Rssa.Const = Ssa.Const
       sharing Rssa.Func = Ssa.Func
       sharing Rssa.Label = Ssa.Label

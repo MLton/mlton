@@ -12,6 +12,7 @@ signature BACKEND_STRUCTS =
    sig
       structure Machine: MACHINE
       structure Ssa: SSA
+      sharing Machine.CFunction = Ssa.CFunction
       sharing Machine.IntX = Ssa.IntX
       sharing Machine.Label = Ssa.Label
       sharing Machine.Prim = Ssa.Prim

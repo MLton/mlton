@@ -19,13 +19,10 @@ datatype z = datatype IntSize.t
 datatype z = datatype RealSize.t
 datatype z = datatype WordSize.t
 
-structure Runtime = Runtime (structure IntSize = IntSize
-			     structure RealSize = RealSize
-			     structure WordSize = WordSize)
+structure Runtime = Runtime (structure CType = CType)
 local
    open Runtime
 in
-   structure CFunction = CFunction
    structure GCField = GCField
 end
 
@@ -92,8 +89,7 @@ structure Register =
 	 (case (indexOpt r, indexOpt r') of
 	     (SOME i, SOME i') => i = i'
 	   | _ => false)
-	 andalso Runtime.Type.equals (Type.toRuntime (ty r),
-				      Type.toRuntime (ty r'))
+	 andalso CType.equals (Type.toCType (ty r), Type.toCType (ty r'))
 
       val equals =
 	 Trace.trace2 ("Register.equals", layout, layout, Bool.layout) equals
@@ -128,7 +124,7 @@ structure Global =
       val nonRootCounter = Counter.new 0
       fun numberOfNonRoot () = Counter.value nonRootCounter
 
-      val memo = Runtime.Type.memo (fn _ => Counter.new 0)
+      val memo = CType.memo (fn _ => Counter.new 0)
       fun numberOfType t = Counter.value (memo t)
 	 
       fun new {isRoot, ty} =
@@ -136,7 +132,7 @@ structure Global =
 	    val isRoot = isRoot orelse not (Type.isPointer ty)
 	    val counter =
 	       if isRoot
-		  then memo (Type.toRuntime ty)
+		  then memo (Type.toCType ty)
 	       else nonRootCounter
 	    val g = T {index = Counter.next counter,
 		       isRoot = isRoot,
@@ -603,7 +599,7 @@ structure Chunk =
    struct
       datatype t = T of {blocks: Block.t vector,
 			 chunkLabel: ChunkLabel.t,
-			 regMax: Runtime.Type.t -> int}
+			 regMax: CType.t -> int}
 
       fun layout (T {blocks, ...}) =
 	 let
@@ -1409,13 +1405,12 @@ structure Program =
 					  andalso (Option.equals
 						   (fi, fi', FrameInfo.equals))
 					  andalso
-					  (case (dst, CFunction.returnTy f) of
+					  (case (dst, CFunction.return f) of
 					      (NONE, _) => true
 					    | (SOME x, SOME ty) =>
-						 Runtime.Type.equals
+						 CType.equals
 						 (ty,
-						  Type.toRuntime
-						  (Operand.ty x))
+						  Type.toCType (Operand.ty x))
 					    | _ => false)
 				     | _ => false
 				 end

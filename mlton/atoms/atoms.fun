@@ -40,9 +40,12 @@ structure Atoms =
 	 end
       structure Con = Con (structure AstId = Ast.Con
 			  structure Var = Var)
-      structure Ffi = Ffi (structure IntSize = IntSize
-			   structure RealSize = RealSize
-			   structure WordSize = WordSize)
+      structure CType = CType (structure IntSize = IntSize
+			       structure RealSize = RealSize
+			       structure WordSize = WordSize)
+      structure CFunction = CFunction (structure CType = CType)
+      structure Ffi = Ffi (structure CFunction = CFunction
+			   structure CType = CType)
       structure IntX = IntX (structure IntSize = IntSize)
       structure RealX = RealX (structure RealSize = RealSize)
       structure WordX = WordX (structure WordSize = WordSize)
@@ -50,7 +53,9 @@ structure Atoms =
 			       structure IntX = IntX
 			       structure RealX = RealX
 			       structure WordX = WordX)
-      structure Prim = Prim (structure Con = Con
+      structure Prim = Prim (structure CFunction = CFunction
+			     structure CType = CType
+			     structure Con = Con
 			     structure Const = Const
 			     structure IntSize = IntSize
 			     structure Longid = Ast.Longvid

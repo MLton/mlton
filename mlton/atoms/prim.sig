@@ -9,6 +9,8 @@ type int = Int.t
    
 signature PRIM_STRUCTS = 
    sig
+      structure CFunction: C_FUNCTION
+      structure CType: C_TYPE
       structure Con: CON
       structure Const: CONST
       structure IntSize: INT_SIZE
@@ -16,10 +18,13 @@ signature PRIM_STRUCTS =
       structure Scheme: SCHEME
       structure Type: TYPE
       structure WordSize: WORD_SIZE
-      sharing IntSize = Const.IntX.IntSize = Type.Tycon.IntSize
-      sharing RealSize = Const.RealX.RealSize = Type.Tycon.RealSize
+      sharing CFunction.CType = CType
+      sharing IntSize = CType.IntSize = Const.IntX.IntSize = Type.Tycon.IntSize
+      sharing RealSize = CType.RealSize = Const.RealX.RealSize
+	 = Type.Tycon.RealSize
       sharing Type = Scheme.Type
-      sharing WordSize = Const.WordX.WordSize = Type.Tycon.WordSize
+      sharing WordSize = CType.WordSize = Const.WordX.WordSize
+	 = Type.Tycon.WordSize
    end
 
 signature PRIM = 
@@ -53,9 +58,11 @@ signature PRIM =
 	     | Exn_setExtendExtra (* implement exceptions *)
 	     | Exn_setInitExtra (* implement exceptions *)
 	     | Exn_setTopLevelHandler (* implement exceptions *)
-	     | FFI of string (* ssa to rssa *)
-	     | FFI_getPointer
-	     | FFI_setPointer
+	     | FFI of CFunction.t (* ssa to rssa *)
+	     | FFI_Symbol of {name: string,
+			      ty: CType.t} (* codegen *)
+	     | FFI_getPointer (* ssa to rssa *)
+	     | FFI_setPointer (* ssa to rssa *)
 	     | GC_collect (* ssa to rssa *)
 	     | GC_pack (* ssa to rssa *)
 	     | GC_unpack (* ssa to rssa *)
@@ -261,7 +268,8 @@ signature PRIM =
 			 deref: 'a -> 'a,
 			 devector: 'a -> 'a,
 			 deweak: 'a -> 'a} -> 'a vector
-      val ffi: string * Scheme.t -> t
+      val ffi: CFunction.t * Scheme.t -> t
+      val ffiSymbol: {name: string, ty: CType.t} -> t
       val gcCollect: t
       val intInfEqual: t
       val intAdd: IntSize.t -> t
@@ -291,7 +299,7 @@ signature PRIM =
       val maySideEffect: t -> bool
       val name: t -> Name.t
       val new: string * Scheme.t -> t
-      val newNullary: string -> t (* new of type unit -> unit *)
+      val newNullary: CFunction.t -> t (* new of type unit -> unit *)
       val numArgs: t -> int option
       val reff: t
       val scheme: t -> Scheme.t

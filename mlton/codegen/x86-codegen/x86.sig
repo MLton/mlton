@@ -10,15 +10,19 @@ type word = Word.t
 
 signature X86_STRUCTS =
   sig
+    structure CFunction: C_FUNCTION
     structure Label: HASH_ID
     structure ProfileLabel: PROFILE_LABEL
     structure Runtime: RUNTIME
+    sharing CFunction.CType = Runtime.CType
   end
 
 signature X86 =
   sig
+    structure CFunction: C_FUNCTION
     structure Label: HASH_ID
     structure Runtime: RUNTIME
+    sharing CFunction.CType = Runtime.CType
 
     val tracer : string -> ('a -> 'b) -> 
                  (('a -> 'b) * (unit -> unit))
@@ -1038,7 +1042,7 @@ signature X86 =
 			live: MemLocSet.t}
 	  | CReturn of {dst: (Operand.t * Size.t) option,
 			frameInfo: FrameInfo.t option,
-			func: Runtime.CFunction.t,
+			func: CFunction.t,
 			label: Label.t}
 
 	val cont : {label: Label.t,
@@ -1046,7 +1050,7 @@ signature X86 =
 		    frameInfo: FrameInfo.t} -> t
 	val creturn: {dst: (Operand.t * Size.t) option,
 		      frameInfo: FrameInfo.t option,
-		      func: Runtime.CFunction.t,
+		      func: CFunction.t,
 		      label: Label.t}  -> t
 	val func : {label: Label.t,
 		    live: MemLocSet.t} -> t
@@ -1127,7 +1131,7 @@ signature X86 =
 	  | CCall of {args: (Operand.t * Size.t) list,
 		      dstsize: Size.t option,
 		      frameInfo: FrameInfo.t option,
-		      func: Runtime.CFunction.t,
+		      func: CFunction.t,
 		      return: Label.t option,
 		      target: Label.t}
 
@@ -1160,7 +1164,7 @@ signature X86 =
 	val ccall: {args: (Operand.t * Size.t) list,
 		    dstsize: Size.t option,
 		    frameInfo: FrameInfo.t option,
-		    func: Runtime.CFunction.t,
+		    func: CFunction.t,
 		    return: Label.t option,
 		    target: Label.t} -> t		       
       end

@@ -23,148 +23,222 @@ in
    structure GCField = GCField
 end
 
+datatype z = datatype IntSize.t
 datatype z = datatype WordSize.t
 
 structure CFunction =
    struct
-      open CFunction
+      open CFunction 
+
+      local
+	 open CType
+      in
+	 val Int32 = Int I32
+	 val Word32 = Word W32
+      end
+
+      datatype z = datatype CType.t
+      datatype z = datatype Convention.t
 
       local
 	 fun make (name, i) =
-	    CFunction.make {bytesNeeded = SOME i,
-			    ensuresBytesFree = false,
-			    mayGC = false,
-			    maySwitchThreads = false,
-			    modifiesFrontier = true,
-			    modifiesStackTop = false,
-			    name = name,
-			    returnTy = SOME Type.pointer}
+	    CFunction.T {args = Vector.new3 (Pointer, Pointer, Word32),
+			 bytesNeeded = SOME i,
+			 convention = Cdecl,
+			 ensuresBytesFree = false,
+			 mayGC = false,
+			 maySwitchThreads = false,
+			 modifiesFrontier = true,
+			 modifiesStackTop = false,
+			 name = name,
+			 return = SOME CType.pointer}
       in
 	 val intInfAdd = make ("IntInf_do_add", 2)
 	 val intInfAndb = make ("IntInf_do_andb", 2)
-	 val intInfArshift = make ("IntInf_do_arshift", 2)
 	 val intInfGcd = make ("IntInf_do_gcd", 2)
-	 val intInfLshift = make ("IntInf_do_lshift", 2)
 	 val intInfMul = make ("IntInf_do_mul", 2)
-	 val intInfNeg = make ("IntInf_do_neg", 1)
-	 val intInfNotb = make ("IntInf_do_notb", 1)
 	 val intInfOrb = make ("IntInf_do_orb", 2)
 	 val intInfQuot = make ("IntInf_do_quot", 2)
 	 val intInfRem = make ("IntInf_do_rem", 2)
 	 val intInfSub = make ("IntInf_do_sub", 2)
-	 val intInfToString = make ("IntInf_do_toString", 2)
 	 val intInfXorb = make ("IntInf_do_xorb", 2)
       end
 
-      val getPointer =
-	 vanilla {name = "MLton_FFI_getPointer",
-		  returnTy = SOME Type.pointer}
-
-      val setPointer =
-	 vanilla {name = "MLton_FFI_setPointer",
-		  returnTy = NONE}
-			 
+      local
+	 fun make (name, i) =
+	    CFunction.T {args = Vector.new3 (Pointer, Word32, Word32),
+			 bytesNeeded = SOME i,
+			 convention = Cdecl,
+			 ensuresBytesFree = false,
+			 mayGC = false,
+			 maySwitchThreads = false,
+			 modifiesFrontier = true,
+			 modifiesStackTop = false,
+			 name = name,
+			 return = SOME CType.pointer}
+      in
+	 val intInfArshift = make ("IntInf_do_arshift", 2)
+	 val intInfLshift = make ("IntInf_do_lshift", 2)
+      end
 
       local
-	 fun make name = vanilla {name = name,
-				  returnTy = SOME Type.defaultInt}
+	 fun make (name, i) =
+	    CFunction.T {args = Vector.new2 (Pointer, Word32),
+			 bytesNeeded = SOME i,
+			 convention = Cdecl,
+			 ensuresBytesFree = false,
+			 mayGC = false,
+			 maySwitchThreads = false,
+			 modifiesFrontier = true,
+			 modifiesStackTop = false,
+			 name = name,
+			 return = SOME CType.pointer}
+      in
+	 val intInfNeg = make ("IntInf_do_neg", 1)
+	 val intInfNotb = make ("IntInf_do_notb", 1)
+      end
+
+      val intInfToString =
+	 CFunction.T {args = Vector.new3 (Pointer, Int32, Word32),
+		      bytesNeeded = SOME 2,
+		      convention = Cdecl,
+		      ensuresBytesFree = false,
+		      mayGC = false,
+		      maySwitchThreads = false,
+		      modifiesFrontier = true,
+		      modifiesStackTop = false,
+		      name = "IntInf_do_toString",
+		      return = SOME Pointer}
+
+      local
+	 fun make name = vanilla {args = Vector.new2 (Pointer, Pointer),
+				  name = name,
+				  return = SOME CType.defaultInt}
       in
 	 val intInfCompare = make "IntInf_compare"
 	 val intInfEqual = make "IntInf_equal"
       end
- 
+
+      val getPointer =
+	 vanilla {args = Vector.new1 Int32,
+		  name = "MLton_FFI_getPointer",
+		  return = SOME Pointer}
+
+      val setPointer =
+	 vanilla {args = Vector.new1 Pointer,
+		  name = "MLton_FFI_setPointer",
+		  return = NONE}
+
       val copyCurrentThread =
-	 make {bytesNeeded = NONE,
-	       ensuresBytesFree = false,
-	       mayGC = true,
-	       maySwitchThreads = false,
-	       modifiesFrontier = true,
-	       modifiesStackTop = true,
-	       name = "GC_copyCurrentThread",
-	       returnTy = NONE}
+	 T {args = Vector.new1 Pointer,
+	    bytesNeeded = NONE,
+	    convention = Cdecl,
+	    ensuresBytesFree = false,
+	    mayGC = true,
+	    maySwitchThreads = false,
+	    modifiesFrontier = true,
+	    modifiesStackTop = true,
+	    name = "GC_copyCurrentThread",
+	    return = NONE}
 
       val copyThread =
-	 make {bytesNeeded = NONE,
-	       ensuresBytesFree = false,
-	       mayGC = true,
-	       maySwitchThreads = false,
-	       modifiesFrontier = true,
-	       modifiesStackTop = true,
-	       name = "GC_copyThread",
-	       returnTy = SOME Type.pointer}
+	 T {args = Vector.new2 (Pointer, Pointer),
+	    bytesNeeded = NONE,
+	    convention = Cdecl,
+	    ensuresBytesFree = false,
+	    mayGC = true,
+	    maySwitchThreads = false,
+	    modifiesFrontier = true,
+	    modifiesStackTop = true,
+	    name = "GC_copyThread",
+	    return = SOME Pointer}
 
       val exit =
-	 make {bytesNeeded = NONE,
+	 T {args = Vector.new1 Int32,
+	    bytesNeeded = NONE,
+	    convention = Cdecl,
 	    ensuresBytesFree = false,
 	    mayGC = false,
 	    maySwitchThreads = false,
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "MLton_exit",
-	    returnTy = NONE}
+	    return = NONE}
 
       val gcArrayAllocate =
-	 make {bytesNeeded = NONE,
-	       ensuresBytesFree = true,
+	 T {args = Vector.new4 (Pointer, Word32, Word32, Word32),
+	    bytesNeeded = NONE,
+	    convention = Cdecl,
+	    ensuresBytesFree = true,
+	    mayGC = true,
+	    maySwitchThreads = false,
+	    modifiesFrontier = true,
+	    modifiesStackTop = true,
+	    name = "GC_arrayAllocate",
+	    return = SOME Pointer}
+
+      local
+	 fun make name =
+	    T {args = Vector.new1 Pointer,
+	       bytesNeeded = NONE,
+	       convention = Cdecl,
+	       ensuresBytesFree = false,
 	       mayGC = true,
 	       maySwitchThreads = false,
 	       modifiesFrontier = true,
 	       modifiesStackTop = true,
-	       name = "GC_arrayAllocate",
-	       returnTy = SOME Type.pointer}
-
-      local
-	 fun make name =
-	    CFunction.make {bytesNeeded = NONE,
-			    ensuresBytesFree = false,
-			    mayGC = true,
-			    maySwitchThreads = false,
-			    modifiesFrontier = true,
-			    modifiesStackTop = true,
-			    name = name,
-			    returnTy = NONE}
+	       name = name,
+	       return = NONE}
       in
 	 val pack = make "GC_pack"
 	 val unpack = make "GC_unpack"
       end
 
       val threadSwitchTo =
-	 make {bytesNeeded = NONE,
+	 T {args = Vector.new2 (Pointer, Word32),
+	    bytesNeeded = NONE,
+	    convention = Cdecl,
 	    ensuresBytesFree = true,
 	    mayGC = true,
 	    maySwitchThreads = true,
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "Thread_switchTo",
-	    returnTy = NONE}
+	    return = NONE}
 
       val weakCanGet =
-	 vanilla {name = "GC_weakCanGet",
-		  returnTy = SOME Type.bool}
+	 vanilla {args = Vector.new1 Pointer,
+		  name = "GC_weakCanGet",
+		  return = SOME CType.bool}
 	 
       val weakGet =
-	 vanilla {name = "GC_weakGet",
-		  returnTy = SOME Type.pointer}
+	 vanilla {args = Vector.new1 Pointer,
+		  name = "GC_weakGet",
+		  return = SOME Pointer}
 		  
       val weakNew =
-	 make {bytesNeeded = NONE,
-	       ensuresBytesFree = false,
-	       mayGC = true,
-	       maySwitchThreads = false,
-	       modifiesFrontier = true,
-	       modifiesStackTop = true,
-	       name = "GC_weakNew",
-	       returnTy = SOME Type.pointer}
+	 T {args = Vector.new3 (Pointer, Word32, Pointer),
+	    bytesNeeded = NONE,
+	    convention = Cdecl,
+	    ensuresBytesFree = false,
+	    mayGC = true,
+	    maySwitchThreads = false,
+	    modifiesFrontier = true,
+	    modifiesStackTop = true,
+	    name = "GC_weakNew",
+	    return = SOME Pointer}
 
       val worldSave =
-	 make {bytesNeeded = NONE,
-	       ensuresBytesFree = false,
-	       mayGC = true,
-	       maySwitchThreads = false,
-	       modifiesFrontier = true,
-	       modifiesStackTop = true,
-	       name = "GC_saveWorld",
-	       returnTy = NONE}
+	 T {args = Vector.new2 (Pointer, Int32),
+	    bytesNeeded = NONE,
+	    convention = Cdecl,
+	    ensuresBytesFree = false,
+	    mayGC = true,
+	    maySwitchThreads = false,
+	    modifiesFrontier = true,
+	    modifiesStackTop = true,
+	    name = "GC_saveWorld",
+	    return = NONE}
    end
 
 datatype z = datatype Operand.t
@@ -863,7 +937,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				  prefix: Transfer.t -> (Statement.t list
 							 * Transfer.t)} =
 				 let
-				    val (formals, returnTy) =
+				    val (formals, return) =
 				       case dst () of
 					  NONE => (Vector.new0 (), NONE)
 					| SOME (x, t) =>
@@ -1058,21 +1132,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				    (case targ () of
 					NONE => none ()
 				      | SOME ty => arrayUpdate ty)
-			       | FFI name =>
+			       | FFI f =>
 				    if Option.isNone (Prim.numArgs prim)
 				       then normal ()
-				    else
-				       simpleCCall
-				       (CFunction.make
-					{bytesNeeded = NONE,
-					 ensuresBytesFree = false,
-					 modifiesFrontier = callsFromC,
-					 modifiesStackTop = callsFromC,
-					 mayGC = callsFromC,
-					 maySwitchThreads = false,
-					 name = name,
-					 returnTy = Option.map (toRtype ty,
-								Type.toRuntime)})
+				    else simpleCCall f
 			       | FFI_getPointer =>
 				    simpleCCall CFunction.getPointer
 			       | FFI_setPointer =>

@@ -17,6 +17,8 @@ signature ATOMS' =
    sig
       include ATOMS_STRUCTS
 
+      structure CFunction: C_FUNCTION
+      structure CType: C_TYPE
       structure Con: CON
       structure Cons: SET
       structure Const: CONST
@@ -52,11 +54,14 @@ signature ATOMS' =
       sharing Ast.Tycon = Tycon.AstId
       sharing Ast.Tyvar = Scheme.Tyvar
       sharing Ast.Var = Var.AstId
+      sharing CFunction = Ffi.CFunction = Prim.CFunction
+      sharing CFunction.CType = CType = Ffi.CType = Prim.CType
       sharing Con = Prim.Con
       sharing Const = Prim.Const
-      sharing IntSize = Ffi.IntSize = IntX.IntSize = Prim.IntSize = Tycon.IntSize
+      sharing IntSize = CType.IntSize = IntX.IntSize = Prim.IntSize =
+	 Tycon.IntSize
       sharing IntX = Const.IntX
-      sharing RealSize = Ffi.RealSize = Prim.RealSize = RealX.RealSize
+      sharing RealSize = CType.RealSize = Prim.RealSize = RealX.RealSize
 	 = Tycon.RealSize
       sharing RealX = Const.RealX
       sharing Record = Ast.Record
@@ -65,7 +70,7 @@ signature ATOMS' =
       sharing SourceInfo = ProfileExp.SourceInfo
       sharing Tycon = Scheme.Tycon
       sharing Tyvar = Ast.Tyvar
-      sharing WordSize = Ffi.WordSize = Prim.WordSize = Tycon.WordSize
+      sharing WordSize = CType.WordSize = Prim.WordSize = Tycon.WordSize
 	 = WordX.WordSize
       sharing WordX = Const.WordX
       sharing type Con.t = Cons.Element.t

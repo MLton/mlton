@@ -81,7 +81,19 @@ signature AST_CORE =
 
       structure PrimKind:
 	 sig
-	    datatype t = BuildConst | Const | Export | FFI | Prim
+	    structure Attribute:
+	       sig
+		  datatype t = Cdecl | Stdcall
+		     
+		  val layout: t -> Layout.t
+	       end
+	    
+	    datatype t =
+	       BuildConst
+	     | Const
+	     | Export of Attribute.t list
+	     | Import of Attribute.t list
+	     | Prim
 	 end
       
       structure Exp:

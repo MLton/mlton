@@ -26,8 +26,6 @@ allocate-registers.fun
 allocate-registers.sig
 backend.fun
 backend.sig
-c-function.fun
-c-function.sig
 chunkify.fun
 chunkify.sig
 equivalence-graph.fun
@@ -43,8 +41,6 @@ machine.fun
 machine.sig
 machine-atoms.fun
 machine-atoms.sig
-mtype.fun
-mtype.sig
 parallel-move.fun
 parallel-move.sig
 profile.fun

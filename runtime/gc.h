@@ -671,6 +671,8 @@ void GC_startHandler (GC_state s);
 
 void GC_switchToThread (GC_state s, GC_thread t);
 
+void GC_unpack (GC_state s);
+
 bool GC_weakCanGet (pointer p);
 pointer GC_weakGet (pointer p);
 pointer GC_weakNew (GC_state s, W32 header, pointer p);

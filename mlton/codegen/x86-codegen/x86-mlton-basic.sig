@@ -12,8 +12,9 @@ signature X86_MLTON_BASIC_STRUCTS =
   sig
     structure x86 : X86_PSEUDO
     structure Machine: MACHINE
+    sharing x86.CFunction = Machine.CFunction
     sharing x86.Label = Machine.Label
-    sharing type x86.ProfileLabel.t = Machine.ProfileLabel.t
+    sharing x86.ProfileLabel = Machine.ProfileLabel
     sharing x86.Runtime = Machine.Runtime
   end
 
@@ -36,8 +37,8 @@ signature X86_MLTON_BASIC =
     val arrayHeaderBytes : int
     val intInfOverheadBytes : int
 
-    val toX86Size : x86.Runtime.Type.t -> x86.Size.t
-    val toX86Scale : x86.Runtime.Type.t -> x86.Scale.t
+    val toX86Size : x86.CFunction.CType.t -> x86.Size.t
+    val toX86Scale : x86.CFunction.CType.t -> x86.Scale.t
 
     (*
      * Memory classes
@@ -87,8 +88,8 @@ signature X86_MLTON_BASIC =
     val statusTempContentsOperand : x86.Operand.t
 
     (* Static arrays defined in main.h and x86-main.h *)
-    val local_base : x86.Runtime.Type.t -> x86.Label.t
-    val global_base : x86.Runtime.Type.t -> x86.Label.t
+    val local_base : x86.CFunction.CType.t -> x86.Label.t
+    val global_base : x86.CFunction.CType.t -> x86.Label.t
     val globalPointerNonRoot_base : x86.Label.t
 
     (* Static functions defined in main.h *)
@@ -102,7 +103,7 @@ signature X86_MLTON_BASIC =
 
     (* gcState relative locations defined in gc.h *)
     val gcState_label: x86.Label.t
-    val gcState_offset: {offset: int, ty: x86.Runtime.Type.t} -> x86.Operand.t
+    val gcState_offset: {offset: int, ty: x86.CFunction.CType.t} -> x86.Operand.t
     val gcState_exnStackContents: unit -> x86.MemLoc.t
     val gcState_exnStackContentsOperand: unit -> x86.Operand.t
     val gcState_frontierContents: unit -> x86.MemLoc.t

@@ -9,10 +9,6 @@ struct
 
 open S
 
-structure Type = Mtype (S)
-
-structure CFunction = CFunction (structure Type = Type)
-
 structure GCField =
    struct
       datatype t =
@@ -32,18 +28,18 @@ structure GCField =
       val equals: t * t -> bool = op =
 	 
       val ty =
-	 fn CanHandle => Type.defaultInt
-	  | CardMap => Type.pointer
-	  | CurrentThread => Type.pointer
-	  | ExnStack => Type.defaultWord
-	  | Frontier => Type.pointer
-	  | Limit => Type.pointer
-	  | LimitPlusSlop => Type.pointer
-	  | MaxFrameSize => Type.defaultWord
-	  | SignalIsPending => Type.defaultInt
-	  | StackBottom => Type.pointer
-	  | StackLimit => Type.pointer
-	  | StackTop => Type.pointer
+	 fn CanHandle => CType.defaultInt
+	  | CardMap => CType.pointer
+	  | CurrentThread => CType.pointer
+	  | ExnStack => CType.defaultWord
+	  | Frontier => CType.pointer
+	  | Limit => CType.pointer
+	  | LimitPlusSlop => CType.pointer
+	  | MaxFrameSize => CType.defaultWord
+	  | SignalIsPending => CType.defaultInt
+	  | StackBottom => CType.pointer
+	  | StackLimit => CType.pointer
+	  | StackTop => CType.pointer
 
       val canHandleOffset: int ref = ref 0
       val cardMapOffset: int ref = ref 0

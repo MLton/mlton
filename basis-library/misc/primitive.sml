@@ -92,17 +92,17 @@ structure Primitive =
    struct
       structure Debug =
 	 struct
-	    val enter = _ffi "Debug_enter": string -> unit;
-	    val leave = _ffi "Debug_leave": string -> unit;
+	    val enter = _import "Debug_enter": string -> unit;
+	    val leave = _import "Debug_leave": string -> unit;
 	 end
    end
    
 structure Primitive =
    struct
       val detectOverflow = _build_const "MLton_detectOverflow": bool;
-      val enterLeave = _ffi "MLton_enterLeave": unit -> unit;
+      val enterLeave = _import "MLton_enterLeave": unit -> unit;
       val eq = fn z => _prim "MLton_eq": 'a * 'a -> bool; z
-      val errno = _ffi "MLton_errno": unit -> int;
+      val errno = _import "MLton_errno": unit -> int;
       val halt = _prim "MLton_halt": int -> unit;
       val handlesSignals = _prim "MLton_handlesSignals": bool;
       val installSignalHandler =
@@ -113,9 +113,9 @@ structure Primitive =
 
       structure Stdio =
 	 struct
-	    val print = _ffi "Stdio_print": string -> unit;
+	    val print = _import "Stdio_print": string -> unit;
 	    val sprintf =
-	       _ffi "Stdio_sprintf": char array * nullString * real -> int;
+	       _import "Stdio_sprintf": char array * nullString * real -> int;
 	 end
 
       structure Array =
@@ -143,9 +143,9 @@ structure Primitive =
 	       struct
 		  type t = pointer
 
-		  val sub = _ffi "C_CS_sub": t * int -> char;
+		  val sub = _import "C_CS_sub": t * int -> char;
 		  val update =
-		     _ffi "C_CS_update": t * int * char -> unit; (* primitive *)
+		     _import "C_CS_update": t * int * char -> unit; (* primitive *)
 		  val charArrayToWord8Array =
 		     _prim "C_CS_charArrayToWord8Array":
 		     char array -> word8 array;
@@ -156,7 +156,7 @@ structure Primitive =
 	       struct
 		  type t = pointer
 		     
-		  val sub = _ffi "C_CSS_sub": t * int -> CS.t;
+		  val sub = _import "C_CSS_sub": t * int -> CS.t;
 	       end
 	 end
 
@@ -176,9 +176,9 @@ structure Primitive =
 
       structure CommandLine =
 	 struct
-	    val argc = fn () => _ffi "CommandLine_argc": int;
-	    val argv = fn () => _ffi "CommandLine_argv": cstringArray;
-	    val commandName = fn () => _ffi "CommandLine_commandName": cstring;
+	    val argc = fn () => _import "CommandLine_argc": int;
+	    val argv = fn () => _import "CommandLine_argv": cstringArray;
+	    val commandName = fn () => _import "CommandLine_commandName": cstring;
 	 end
 
       structure Cpointer =
@@ -193,34 +193,34 @@ structure Primitive =
 
 	    structure Tm =
 	       struct
-		  val sec = _ffi "Date_Tm_sec": unit -> int;
-		  val min = _ffi "Date_Tm_min": unit -> int;
-		  val hour = _ffi "Date_Tm_hour": unit -> int;
-		  val mday = _ffi "Date_Tm_mday": unit -> int;
-		  val mon = _ffi "Date_Tm_mon": unit -> int;
-		  val year = _ffi "Date_Tm_year": unit -> int;
-		  val wday = _ffi "Date_Tm_wday": unit -> int;
-		  val yday = _ffi "Date_Tm_yday": unit -> int;
-		  val isdst = _ffi "Date_Tm_isdst": unit -> int;
+		  val sec = _import "Date_Tm_sec": unit -> int;
+		  val min = _import "Date_Tm_min": unit -> int;
+		  val hour = _import "Date_Tm_hour": unit -> int;
+		  val mday = _import "Date_Tm_mday": unit -> int;
+		  val mon = _import "Date_Tm_mon": unit -> int;
+		  val year = _import "Date_Tm_year": unit -> int;
+		  val wday = _import "Date_Tm_wday": unit -> int;
+		  val yday = _import "Date_Tm_yday": unit -> int;
+		  val isdst = _import "Date_Tm_isdst": unit -> int;
 
-		  val setSec = _ffi "Date_Tm_setSec": int -> unit;
-		  val setMin = _ffi "Date_Tm_setMin": int -> unit;
-		  val setHour = _ffi "Date_Tm_setHour": int -> unit;
-		  val setMday = _ffi "Date_Tm_setMday": int -> unit;
-		  val setMon = _ffi "Date_Tm_setMon": int -> unit;
-		  val setYear = _ffi "Date_Tm_setYear": int -> unit;
-		  val setWday = _ffi "Date_Tm_setWday": int -> unit;
-		  val setYday = _ffi "Date_Tm_setYday": int -> unit;
-		  val setIsdst = _ffi "Date_Tm_setIsdst": int -> unit;
+		  val setSec = _import "Date_Tm_setSec": int -> unit;
+		  val setMin = _import "Date_Tm_setMin": int -> unit;
+		  val setHour = _import "Date_Tm_setHour": int -> unit;
+		  val setMday = _import "Date_Tm_setMday": int -> unit;
+		  val setMon = _import "Date_Tm_setMon": int -> unit;
+		  val setYear = _import "Date_Tm_setYear": int -> unit;
+		  val setWday = _import "Date_Tm_setWday": int -> unit;
+		  val setYday = _import "Date_Tm_setYday": int -> unit;
+		  val setIsdst = _import "Date_Tm_setIsdst": int -> unit;
 	       end
 	       
-	    val ascTime = _ffi "Date_ascTime": unit -> cstring;
-	    val gmTime = _ffi "Date_gmTime": time ref -> unit;
-	    val localOffset = _ffi "Date_localOffset": unit -> int;
-	    val localTime = _ffi "Date_localTime": time ref -> unit;
-	    val mkTime = _ffi "Date_mkTime": unit -> time;
+	    val ascTime = _import "Date_ascTime": unit -> cstring;
+	    val gmTime = _import "Date_gmTime": time ref -> unit;
+	    val localOffset = _import "Date_localOffset": unit -> int;
+	    val localTime = _import "Date_localTime": time ref -> unit;
+	    val mkTime = _import "Date_mkTime": unit -> time;
 	    val strfTime =
-	       _ffi "Date_strfTime": char array * size * nullString -> size;
+	       _import "Date_strfTime": char array * size * nullString -> size;
 	 end
 
       structure Debug = Primitive.Debug
@@ -250,47 +250,47 @@ structure Primitive =
 
       structure FFI =
 	 struct
-	    val getBool = _ffi "MLton_FFI_getBool": int -> bool;
-	    val getChar = _ffi "MLton_FFI_getChar": int -> char;
-	    val getInt8 = _ffi "MLton_FFI_getInt8": int -> Int8.int;
-	    val getInt16 = _ffi "MLton_FFI_getInt16": int -> Int16.int;
-	    val getInt32 = _ffi "MLton_FFI_getInt32": int -> Int32.int;
-	    val getInt64 = _ffi "MLton_FFI_getInt64": int -> Int64.int;
-	    val getOp = _ffi "MLton_FFI_getOp": unit -> int;
+	    val getBool = _import "MLton_IMPORT_getBool": int -> bool;
+	    val getChar = _import "MLton_IMPORT_getChar": int -> char;
+	    val getInt8 = _import "MLton_IMPORT_getInt8": int -> Int8.int;
+	    val getInt16 = _import "MLton_IMPORT_getInt16": int -> Int16.int;
+	    val getInt32 = _import "MLton_IMPORT_getInt32": int -> Int32.int;
+	    val getInt64 = _import "MLton_IMPORT_getInt64": int -> Int64.int;
+	    val getOp = _import "MLton_IMPORT_getOp": unit -> int;
 	    val getPointer = fn z => _prim "FFI_getPointer": int -> 'a; z
-	    val getReal32 = _ffi "MLton_FFI_getReal32": int -> Real32.real;
-	    val getReal64 = _ffi "MLton_FFI_getReal64": int -> Real64.real;
-	    val getWord8 = _ffi "MLton_FFI_getWord8": int -> Word8.word;
-	    val getWord16 = _ffi "MLton_FFI_getWord16": int -> Word16.word;
-	    val getWord32 = _ffi "MLton_FFI_getWord32": int -> Word32.word;
-	    val numExports = _build_const "MLton_FFI_numExports": int;
-	    val setBool = _ffi "MLton_FFI_setBool": bool -> unit;
-	    val setChar = _ffi "MLton_FFI_setChar": char -> unit;
-	    val setInt8 = _ffi "MLton_FFI_setInt8": Int8.int -> unit;
-	    val setInt16 = _ffi "MLton_FFI_setInt16": Int16.int -> unit;
-	    val setInt32 = _ffi "MLton_FFI_setInt32": Int32.int -> unit;
-	    val setInt64 = _ffi "MLton_FFI_setInt64": Int64.int -> unit;
+	    val getReal32 = _import "MLton_IMPORT_getReal32": int -> Real32.real;
+	    val getReal64 = _import "MLton_IMPORT_getReal64": int -> Real64.real;
+	    val getWord8 = _import "MLton_IMPORT_getWord8": int -> Word8.word;
+	    val getWord16 = _import "MLton_IMPORT_getWord16": int -> Word16.word;
+	    val getWord32 = _import "MLton_IMPORT_getWord32": int -> Word32.word;
+	    val numExports = _build_const "MLton_IMPORT_numExports": int;
+	    val setBool = _import "MLton_IMPORT_setBool": bool -> unit;
+	    val setChar = _import "MLton_IMPORT_setChar": char -> unit;
+	    val setInt8 = _import "MLton_IMPORT_setInt8": Int8.int -> unit;
+	    val setInt16 = _import "MLton_IMPORT_setInt16": Int16.int -> unit;
+	    val setInt32 = _import "MLton_IMPORT_setInt32": Int32.int -> unit;
+	    val setInt64 = _import "MLton_IMPORT_setInt64": Int64.int -> unit;
 	    val setPointer = fn z => _prim "FFI_setPointer": 'a -> unit; z
-	    val setReal32 = _ffi "MLton_FFI_setReal32": Real32.real -> unit;
-	    val setReal64 = _ffi "MLton_FFI_setReal64": Real64.real -> unit;
-  	    val setWord8 = _ffi "MLton_FFI_setWord8": Word8.word -> unit;
-	    val setWord16 = _ffi "MLton_FFI_setWord16": Word16.word -> unit;
-	    val setWord32 = _ffi "MLton_FFI_setWord32": Word32.word -> unit;
+	    val setReal32 = _import "MLton_IMPORT_setReal32": Real32.real -> unit;
+	    val setReal64 = _import "MLton_IMPORT_setReal64": Real64.real -> unit;
+  	    val setWord8 = _import "MLton_IMPORT_setWord8": Word8.word -> unit;
+	    val setWord16 = _import "MLton_IMPORT_setWord16": Word16.word -> unit;
+	    val setWord32 = _import "MLton_IMPORT_setWord32": Word32.word -> unit;
 	 end
 
       structure GC =
 	 struct
 	    val collect = _prim "GC_collect": unit -> unit;
 	    val pack = _prim "GC_pack": unit -> unit;
-	    val setMessages = _ffi "GC_setMessages": bool -> unit;
-	    val setSummary = _ffi "GC_setSummary": bool -> unit;
+	    val setMessages = _import "GC_setMessages": bool -> unit;
+	    val setSummary = _import "GC_setSummary": bool -> unit;
 	    val unpack = _prim "GC_unpack": unit -> unit;
 	 end
       
       structure IEEEReal =
 	 struct
-	    val getRoundingMode = _ffi "IEEEReal_getRoundingMode": unit -> int;
-	    val setRoundingMode = _ffi "IEEEReal_setRoundingMode": int -> unit;
+	    val getRoundingMode = _import "IEEEReal_getRoundingMode": unit -> int;
+	    val setRoundingMode = _import "IEEEReal_setRoundingMode": int -> unit;
 	 end
 
       structure Int8 =
@@ -416,22 +416,22 @@ structure Primitive =
 	    val maxInt' : int = 0x7FFFFFFFFFFFFFFF
 	    val minInt' : int = ~0x8000000000000000
 
-	    val op +? = _ffi "Int64_add": int * int -> int;
-	    val op *? = _ffi "Int64_mul": int * int -> int;
-	    val op -? = _ffi "Int64_sub": int * int -> int;
+	    val op +? = _import "Int64_add": int * int -> int;
+	    val op *? = _import "Int64_mul": int * int -> int;
+	    val op -? = _import "Int64_sub": int * int -> int;
 	    val ~? = fn i => 0 -? i
-	    val op < = _ffi "Int64_lt": int * int -> bool;
-	    val op <= = _ffi "Int64_le": int * int -> bool;
-	    val op > = _ffi "Int64_gt": int * int -> bool;
-	    val op >= = _ffi "Int64_ge": int * int -> bool;
-	    val quot = _ffi "Int64_quot": int * int -> int;
-	    val rem = _ffi "Int64_rem": int * int -> int;
-	    val geu = _ffi "Int64_geu": int * int -> bool;
-	    val gtu = _ffi "Int64_gtu": int * int -> bool;
-	    val fromInt = _ffi "Int32_toInt64": Int.int -> int;
-	    val fromWord = _ffi "Word32_toInt64": word -> int;
-	    val toInt = _ffi "Int64_toInt32": int -> Int.int;
-	    val toWord = _ffi "Int64_toWord32": int -> word;
+	    val op < = _import "Int64_lt": int * int -> bool;
+	    val op <= = _import "Int64_le": int * int -> bool;
+	    val op > = _import "Int64_gt": int * int -> bool;
+	    val op >= = _import "Int64_ge": int * int -> bool;
+	    val quot = _import "Int64_quot": int * int -> int;
+	    val rem = _import "Int64_rem": int * int -> int;
+	    val geu = _import "Int64_geu": int * int -> bool;
+	    val gtu = _import "Int64_gtu": int * int -> bool;
+	    val fromInt = _import "Int32_toInt64": Int.int -> int;
+	    val fromWord = _import "Word32_toInt64": word -> int;
+	    val toInt = _import "Int64_toInt32": int -> Int.int;
+	    val toWord = _import "Int64_toWord32": int -> word;
 
 	    val ~ =
 	       if detectOverflow
@@ -495,7 +495,7 @@ structure Primitive =
 	    val quot = _prim "IntInf_quot": int * int * word -> int;
 	    val rem = _prim "IntInf_rem": int * int * word -> int;
 	    val smallMul =
-	       _ffi "IntInf_smallMul": word * word * word ref -> word;
+	       _import "IntInf_smallMul": word * word * word ref -> word;
 	    val - = _prim "IntInf_sub": int * int * word -> int; 
  	    val toString
 	       = _prim "IntInf_toString": int * Int.int * word -> string;
@@ -510,7 +510,7 @@ structure Primitive =
 	       
 	    val prof = _const "Itimer_prof": which;
 	    val real = _const "Itimer_real": which;
-	    val set = _ffi "Itimer_set": which * int * int * int * int -> unit;
+	    val set = _import "Itimer_set": which * int * int * int * int -> unit;
 	    val virtual = _const "Itimer_virtual": which;
 	 end
 
@@ -555,16 +555,16 @@ structure Primitive =
 		        type t = word
 
 			val dummy:t = 0w0
-			val free = _ffi "MLton_Profile_Data_free": t -> unit;
-			val malloc = _ffi "MLton_Profile_Data_malloc": unit -> t;
+			val free = _import "MLton_Profile_Data_free": t -> unit;
+			val malloc = _import "MLton_Profile_Data_malloc": unit -> t;
 			val write =
-			   _ffi "MLton_Profile_Data_write"
+			   _import "MLton_Profile_Data_write"
 			   : t * word (* fd *) -> unit;
 		     end
-		  val current = _ffi "MLton_Profile_current": unit -> Data.t;
-		  val done = _ffi "MLton_Profile_done": unit -> unit;
+		  val current = _import "MLton_Profile_current": unit -> Data.t;
+		  val done = _import "MLton_Profile_done": unit -> unit;
 		  val setCurrent =
-		     _ffi "MLton_Profile_setCurrent": Data.t -> unit;
+		     _import "MLton_Profile_setCurrent": Data.t -> unit;
 	       end
 	    
 	    structure Rlimit =
@@ -588,36 +588,36 @@ structure Primitive =
 		  val virtualMemorySize =
 		     _const "MLton_Rlimit_virtualMemorySize": t;
 		     
-		  val get = _ffi "MLton_Rlimit_get": t -> int;
-		  val getHard = _ffi "MLton_Rlimit_getHard": unit -> rlim;
-		  val getSoft = _ffi "MLton_Rlimit_getSoft": unit -> rlim;
-		  val set = _ffi "MLton_Rlimit_set": t * rlim * rlim -> int;
+		  val get = _import "MLton_Rlimit_get": t -> int;
+		  val getHard = _import "MLton_Rlimit_getHard": unit -> rlim;
+		  val getSoft = _import "MLton_Rlimit_getSoft": unit -> rlim;
+		  val set = _import "MLton_Rlimit_set": t * rlim * rlim -> int;
 	       end
 	    
 	    structure Rusage =
                struct
-		 val ru = _ffi "MLton_Rusage_ru": unit -> unit;
-		 val self_utime_sec = _ffi "MLton_Rusage_self_utime_sec": unit -> int;
-		 val self_utime_usec = _ffi "MLton_Rusage_self_utime_usec": unit -> int;
-		 val self_stime_sec = _ffi "MLton_Rusage_self_stime_sec": unit -> int;
-		 val self_stime_usec = _ffi "MLton_Rusage_self_stime_usec": unit -> int;
-		 val children_utime_sec = _ffi "MLton_Rusage_children_utime_sec": unit -> int;
-		 val children_utime_usec = _ffi "MLton_Rusage_children_utime_usec": unit -> int;
-		 val children_stime_sec = _ffi "MLton_Rusage_children_stime_sec": unit -> int;
-		 val children_stime_usec = _ffi "MLton_Rusage_children_stime_usec": unit -> int;
-		 val gc_utime_sec = _ffi "MLton_Rusage_gc_utime_sec": unit -> int;
-		 val gc_utime_usec = _ffi "MLton_Rusage_gc_utime_usec": unit -> int;
-		 val gc_stime_sec = _ffi "MLton_Rusage_gc_stime_sec": unit -> int;
-		 val gc_stime_usec = _ffi "MLton_Rusage_gc_stime_usec": unit -> int;
+		 val ru = _import "MLton_Rusage_ru": unit -> unit;
+		 val self_utime_sec = _import "MLton_Rusage_self_utime_sec": unit -> int;
+		 val self_utime_usec = _import "MLton_Rusage_self_utime_usec": unit -> int;
+		 val self_stime_sec = _import "MLton_Rusage_self_stime_sec": unit -> int;
+		 val self_stime_usec = _import "MLton_Rusage_self_stime_usec": unit -> int;
+		 val children_utime_sec = _import "MLton_Rusage_children_utime_sec": unit -> int;
+		 val children_utime_usec = _import "MLton_Rusage_children_utime_usec": unit -> int;
+		 val children_stime_sec = _import "MLton_Rusage_children_stime_sec": unit -> int;
+		 val children_stime_usec = _import "MLton_Rusage_children_stime_usec": unit -> int;
+		 val gc_utime_sec = _import "MLton_Rusage_gc_utime_sec": unit -> int;
+		 val gc_utime_usec = _import "MLton_Rusage_gc_utime_usec": unit -> int;
+		 val gc_stime_sec = _import "MLton_Rusage_gc_stime_sec": unit -> int;
+		 val gc_stime_usec = _import "MLton_Rusage_gc_stime_usec": unit -> int;
 	       end
 
 	    structure Process =
 	       struct
 		  val spawne =
-		     _ffi "MLton_Process_spawne"
+		     _import "MLton_Process_spawne"
 		     : nullString * nullString array * nullString array -> int;
 		  val spawnp =
-		     _ffi "MLton_Process_spawnp"
+		     _import "MLton_Process_spawnp"
 		     : nullString * nullString array -> int;
 	       end
 	    
@@ -633,10 +633,10 @@ structure Primitive =
 
       structure Net =
 	 struct
- 	    val htonl = _ffi "Net_htonl": int -> int;
-	    val ntohl = _ffi "Net_ntohl": int -> int;
- 	    val htons = _ffi "Net_htons": int -> int;
-	    val ntohs = _ffi "Net_ntohs": int -> int;
+ 	    val htonl = _import "Net_htonl": int -> int;
+	    val ntohl = _import "Net_ntohl": int -> int;
+ 	    val htons = _import "Net_htons": int -> int;
+	    val ntohs = _import "Net_ntohs": int -> int;
 	 end
 
       structure NetHostDB =
@@ -647,65 +647,65 @@ structure Primitive =
 	    val inAddrLen = _const "NetHostDB_inAddrLen": int;
 	    val INADDR_ANY = _const "NetHostDB_INADDR_ANY": int;
 	    type addr_family = int
-	    val entryName = _ffi "NetHostDB_Entry_name": unit -> cstring;
-	    val entryNumAliases = _ffi "NetHostDB_Entry_numAliases": unit -> int;
-	    val entryAliasesN = _ffi "NetHostDB_Entry_aliasesN": int -> cstring;
-	    val entryAddrType = _ffi "NetHostDB_Entry_addrType": unit -> int;
-	    val entryLength = _ffi "NetHostDB_Entry_length": unit -> int;
-	    val entryNumAddrs = _ffi "NetHostDB_Entry_numAddrs": unit -> int;
+	    val entryName = _import "NetHostDB_Entry_name": unit -> cstring;
+	    val entryNumAliases = _import "NetHostDB_Entry_numAliases": unit -> int;
+	    val entryAliasesN = _import "NetHostDB_Entry_aliasesN": int -> cstring;
+	    val entryAddrType = _import "NetHostDB_Entry_addrType": unit -> int;
+	    val entryLength = _import "NetHostDB_Entry_length": unit -> int;
+	    val entryNumAddrs = _import "NetHostDB_Entry_numAddrs": unit -> int;
 	    val entryAddrsN =
-	       _ffi "NetHostDB_Entry_addrsN": int * pre_in_addr -> unit;
+	       _import "NetHostDB_Entry_addrsN": int * pre_in_addr -> unit;
 	    val getByAddress =
-	       _ffi "NetHostDB_getByAddress": in_addr * int -> bool;
-	    val getByName = _ffi "NetHostDB_getByName": nullString -> bool;
+	       _import "NetHostDB_getByAddress": in_addr * int -> bool;
+	    val getByName = _import "NetHostDB_getByName": nullString -> bool;
 	    val getHostName =
-	       _ffi "NetHostDB_getHostName": char array * int -> int;
+	       _import "NetHostDB_getHostName": char array * int -> int;
 	 end
 
       structure NetProtDB =
 	 struct
-	    val entryName = _ffi "NetProtDB_Entry_name": unit -> cstring;
-	    val entryNumAliases = _ffi "NetProtDB_Entry_numAliases": unit -> int;
-	    val entryAliasesN = _ffi "NetProtDB_Entry_aliasesN": int -> cstring;
-	    val entryProtocol = _ffi "NetProtDB_Entry_protocol": unit -> int;
-	    val getByName = _ffi "NetProtDB_getByName": nullString -> bool;
-	    val getByNumber = _ffi "NetProtDB_getByNumber": int -> bool;
+	    val entryName = _import "NetProtDB_Entry_name": unit -> cstring;
+	    val entryNumAliases = _import "NetProtDB_Entry_numAliases": unit -> int;
+	    val entryAliasesN = _import "NetProtDB_Entry_aliasesN": int -> cstring;
+	    val entryProtocol = _import "NetProtDB_Entry_protocol": unit -> int;
+	    val getByName = _import "NetProtDB_getByName": nullString -> bool;
+	    val getByNumber = _import "NetProtDB_getByNumber": int -> bool;
 	 end
 
       structure NetServDB =
 	 struct
-	    val entryName = _ffi "NetServDB_Entry_name": unit -> cstring;
-	    val entryNumAliases = _ffi "NetServDB_Entry_numAliases": unit -> int;
-	    val entryAliasesN = _ffi "NetServDB_Entry_aliasesN": int -> cstring;
-	    val entryPort = _ffi "NetServDB_Entry_port": unit -> int;
-	    val entryProtocol = _ffi "NetServDB_Entry_protocol": unit -> cstring;
-	    val getByName = _ffi "NetServDB_getByName": nullString * nullString -> bool;
-	    val getByNameNull = _ffi "NetServDB_getByNameNull": nullString -> bool;
-	    val getByPort = _ffi "NetServDB_getByPort": int * nullString -> bool;
-	    val getByPortNull = _ffi "NetServDB_getByPortNull": int -> bool;
+	    val entryName = _import "NetServDB_Entry_name": unit -> cstring;
+	    val entryNumAliases = _import "NetServDB_Entry_numAliases": unit -> int;
+	    val entryAliasesN = _import "NetServDB_Entry_aliasesN": int -> cstring;
+	    val entryPort = _import "NetServDB_Entry_port": unit -> int;
+	    val entryProtocol = _import "NetServDB_Entry_protocol": unit -> cstring;
+	    val getByName = _import "NetServDB_getByName": nullString * nullString -> bool;
+	    val getByNameNull = _import "NetServDB_getByNameNull": nullString -> bool;
+	    val getByPort = _import "NetServDB_getByPort": int * nullString -> bool;
+	    val getByPortNull = _import "NetServDB_getByPortNull": int -> bool;
 	 end
 
       structure OS =
 	 struct
 	    structure FileSys =
 	       struct
-		  val tmpnam = _ffi "OS_FileSys_tmpnam": unit -> cstring;
+		  val tmpnam = _import "OS_FileSys_tmpnam": unit -> cstring;
 	       end
 	    structure IO =
 	       struct
 		  val POLLIN = _const "OS_IO_POLLIN": word;
 		  val POLLPRI = _const "OS_IO_POLLPRI": word;
 		  val POLLOUT = _const "OS_IO_POLLOUT": word;
-		  val poll = _ffi "OS_IO_poll": int vector * word vector * 
+		  val poll = _import "OS_IO_poll": int vector * word vector * 
                                                 int * int * word array -> int;
 	       end
 	 end
 
       structure PackReal =
 	 struct
-	    val subVec = _ffi "PackReal_subVec": word8 vector * int -> real;
+	    val subVec = _import "PackReal_subVec": word8 vector * int -> real;
 	    val update =
-	       _ffi "PackReal_update": word8 array * int * real -> unit;
+	       _import "PackReal_update": word8 array * int * real -> unit;
 	 end
 
       structure Ptrace =
@@ -735,9 +735,9 @@ structure Primitive =
 	    val SETFPREGS = _const "Ptrace_SETFPREGS": int;
 	    val SYSCALL = _const "Ptrace_SYSCALL": int;
 
-	    val ptrace2 = _ffi "Ptrace_ptrace2": int * pid -> int;
+	    val ptrace2 = _import "Ptrace_ptrace2": int * pid -> int;
 	    val ptrace4 =
-	       _ffi "Ptrace_ptrace4": int * pid * word * word ref -> int;
+	       _import "Ptrace_ptrace4": int * pid * word * word ref -> int;
 	 end
 
       structure Real =
@@ -753,18 +753,18 @@ structure Primitive =
 		  val atan = _prim "Real64_Math_atan": real -> real;
 		  val atan2 = _prim "Real64_Math_atan2": real * real -> real;
 		  val cos = _prim "Real64_Math_cos": real -> real;
-		  val cosh = _ffi "cosh": real -> real;
-		  val e = _ffi "Real64_Math_e": real;
+		  val cosh = _import "cosh": real -> real;
+		  val e = _import "Real64_Math_e": real;
 		  val exp = _prim "Real64_Math_exp": real -> real;
 		  val ln = _prim "Real64_Math_ln": real -> real;
 		  val log10 = _prim "Real64_Math_log10": real -> real;
-		  val pi = _ffi "Real64_Math_pi": real;
-		  val pow = _ffi "pow": real * real -> real;
+		  val pi = _import "Real64_Math_pi": real;
+		  val pow = _import "pow": real * real -> real;
 		  val sin = _prim "Real64_Math_sin": real -> real;
-		  val sinh = _ffi "sinh": real -> real;
+		  val sinh = _import "sinh": real -> real;
 		  val sqrt = _prim "Real64_Math_sqrt": real -> real;
 		  val tan = _prim "Real64_Math_tan": real -> real;
-		  val tanh = _ffi "tanh": real -> real;
+		  val tanh = _import "tanh": real -> real;
 	       end
 
 	    val * = _prim "Real64_mul": real * real -> real;
@@ -780,24 +780,24 @@ structure Primitive =
 	    val >= = _prim "Real64_ge": real * real -> bool;
 	    val ?= = _prim "Real64_qequal": real * real -> bool;
 	    val abs = _prim "Real64_abs": real -> real;
-	    val class = _ffi "Real64_class": real -> int;
-	    val copySign = _ffi "copysign": real * real -> real;
-	    val frexp = _ffi "frexp": real * int ref -> real;
+	    val class = _import "Real64_class": real -> int;
+	    val copySign = _import "copysign": real * real -> real;
+	    val frexp = _import "frexp": real * int ref -> real;
 	    val gdtoa =
-	       _ffi "Real64_gdtoa": real * int * int * int ref -> cstring;
+	       _import "Real64_gdtoa": real * int * int * int ref -> cstring;
 	    val fromInt = _prim "Int32_toReal64": int -> real;
-	    val isFinite = _ffi "Real64_isFinite": real -> bool;
-	    val isNan = _ffi "Real64_isNan": real -> bool;
-	    val isNormal = _ffi "Real64_isNormal": real -> bool;
+	    val isFinite = _import "Real64_isFinite": real -> bool;
+	    val isNan = _import "Real64_isNan": real -> bool;
+	    val isNormal = _import "Real64_isNormal": real -> bool;
 	    val ldexp = _prim "Real64_ldexp": real * int -> real;
-	    val maxFinite = _ffi "Real64_maxFinite": real;
-	    val minNormalPos = _ffi "Real64_minNormalPos": real;
-	    val minPos = _ffi "Real64_minPos": real;
-	    val modf = _ffi "modf": real * real ref -> real;
-	    val nextAfter = _ffi "Real64_nextAfter": real * real -> real;
+	    val maxFinite = _import "Real64_maxFinite": real;
+	    val minNormalPos = _import "Real64_minNormalPos": real;
+	    val minPos = _import "Real64_minPos": real;
+	    val modf = _import "modf": real * real ref -> real;
+	    val nextAfter = _import "Real64_nextAfter": real * real -> real;
 	    val round = _prim "Real64_round": real -> real;
-	    val signBit = _ffi "Real64_signBit": real -> bool;
-	    val strtod = _ffi "Real64_strtod": nullString -> real;
+	    val signBit = _import "Real64_signBit": real -> bool;
+	    val strtod = _import "Real64_strtod": nullString -> real;
 	    val toInt = _prim "Real64_toInt": real -> int;
 	    val ~ = _prim "Real64_neg": real -> real;
 	 end
@@ -838,19 +838,19 @@ structure Primitive =
 		  type write_data = word8 array
 
 		  val setSockOpt = 
-		     _ffi "Socket_Ctl_setSockOpt": sock * level * optname * 
+		     _import "Socket_Ctl_setSockOpt": sock * level * optname * 
 		                                   read_data * int -> 
                                                    int;
 		  val getSockOpt = 
-		     _ffi "Socket_Ctl_getSockOpt": sock * level * optname * 
+		     _import "Socket_Ctl_getSockOpt": sock * level * optname * 
 		                                   write_data * int ref -> 
                                                    int;
 		  val setIOCtl =
-		     _ffi "Socket_Ctl_getsetIOCtl": sock * request *
+		     _import "Socket_Ctl_getsetIOCtl": sock * request *
 		                                    read_data ->
 						    int;
 		  val getIOCtl =
-		     _ffi "Socket_Ctl_getsetIOCtl": sock * request *
+		     _import "Socket_Ctl_getsetIOCtl": sock * request *
 		                                    write_data ->
 						    int;
 	       end
@@ -871,52 +871,52 @@ structure Primitive =
 		  val ERROR = _const "Socket_Ctl_SO_ERROR": optname;
 
 		  val getPeerName =
-		     _ffi "Socket_Ctl_getPeerName": sock * pre_sock_addr * int ref -> int;
+		     _import "Socket_Ctl_getPeerName": sock * pre_sock_addr * int ref -> int;
 		  val getSockName =
-		     _ffi "Socket_Ctl_getSockName": sock * pre_sock_addr * int ref -> int;
+		     _import "Socket_Ctl_getSockName": sock * pre_sock_addr * int ref -> int;
 
 		  val NBIO = _const "Socket_Ctl_FIONBIO": request;
 		  val NREAD = _const "Socket_Ctl_FIONREAD": request;
 		  val ATMARK = _const "Socket_Ctl_SIOCATMARK": request;
 	       end
 
-	    val familyOfAddr = _ffi "Socket_familyOfAddr": sock_addr -> AF.addr_family;
-	    val bind = _ffi "Socket_bind": sock * sock_addr * int -> int;
-	    val listen = _ffi "Socket_listen": sock * int -> int;
-	    val connect = _ffi "Socket_connect": sock * sock_addr * int -> int;
-	    val accept = _ffi "Socket_accept": sock * pre_sock_addr * int ref -> int;
-	    val close = _ffi "Socket_close": sock -> int;
+	    val familyOfAddr = _import "Socket_familyOfAddr": sock_addr -> AF.addr_family;
+	    val bind = _import "Socket_bind": sock * sock_addr * int -> int;
+	    val listen = _import "Socket_listen": sock * int -> int;
+	    val connect = _import "Socket_connect": sock * sock_addr * int -> int;
+	    val accept = _import "Socket_accept": sock * pre_sock_addr * int ref -> int;
+	    val close = _import "Socket_close": sock -> int;
 
 	    type how = int
 	    val SHUT_RD = _const "Socket_SHUT_RD": how;
 	    val SHUT_WR = _const "Socket_SHUT_WR": how;
 	    val SHUT_RDWR = _const "Socket_SHUT_RDWR": how;
-	    val shutdown = _ffi "Socket_shutdown": sock * how -> int;
+	    val shutdown = _import "Socket_shutdown": sock * how -> int;
 
 	    type flags = word
 	    val MSG_DONTROUTE = _const "Socket_MSG_DONTROUTE": flags;
 	    val MSG_OOB = _const "Socket_MSG_OOB": flags;
 	    val MSG_PEEK = _const "Socket_MSG_PEEK": flags;
 
-	    val send = _ffi "Socket_send": sock * word8 vector * 
+	    val send = _import "Socket_send": sock * word8 vector * 
                                            int * int * word -> int;
-	    val sendTo = _ffi "Socket_sendTo": sock * word8 vector * 
+	    val sendTo = _import "Socket_sendTo": sock * word8 vector * 
                                                int * int * word *
                                                sock_addr * int -> int;
-	    val recv = _ffi "Socket_recv": sock * word8 array * 
+	    val recv = _import "Socket_recv": sock * word8 array * 
                                            int * int * word -> int;
-	    val recvFrom = _ffi "Socket_recvFrom": sock * word8 array * 
+	    val recvFrom = _import "Socket_recvFrom": sock * word8 array * 
 	                                           int * int * word *
                                                    pre_sock_addr * int ref -> int;
 
 	    structure GenericSock =
 	       struct
 		  val socket = 
-		     _ffi "GenericSock_socket": AF.addr_family * 
+		     _import "GenericSock_socket": AF.addr_family * 
 		                                SOCK.sock_type * 
 						int -> int;
 		  val socketPair = 
-		     _ffi "GenericSock_socketPair": AF.addr_family * 
+		     _import "GenericSock_socketPair": AF.addr_family * 
 		                                    SOCK.sock_type * 
 						    int * 
 						    int ref * int ref -> int;
@@ -924,12 +924,12 @@ structure Primitive =
 
 	    structure INetSock =
 	       struct
-		  val toAddr = _ffi "INetSock_toAddr": NetHostDB.in_addr * int * 
+		  val toAddr = _import "INetSock_toAddr": NetHostDB.in_addr * int * 
                                                        pre_sock_addr * int ref -> unit;
-		  val fromAddr = _ffi "INetSock_fromAddr": sock_addr -> unit;
-		  val getInAddr = _ffi "INetSock_getInAddr": NetHostDB.pre_in_addr -> 
+		  val fromAddr = _import "INetSock_fromAddr": sock_addr -> unit;
+		  val getInAddr = _import "INetSock_getInAddr": NetHostDB.pre_in_addr -> 
                                                              unit;
-		  val getPort = _ffi "INetSock_getPort": unit -> int;
+		  val getPort = _import "INetSock_getPort": unit -> int;
 		  structure UDP =
 		     struct
 		     end
@@ -942,11 +942,11 @@ structure Primitive =
 	       end
 	    structure UnixSock =
 	       struct
-		  val toAddr = _ffi "UnixSock_toAddr": nullString * int *
+		  val toAddr = _import "UnixSock_toAddr": nullString * int *
                                                        pre_sock_addr * int ref -> unit;
-		  val pathLen = _ffi "UnixSock_pathLen": sock_addr -> int;
+		  val pathLen = _import "UnixSock_pathLen": sock_addr -> int;
 		  val fromAddr =
-		     _ffi "UnixSock_fromAddr"
+		     _import "UnixSock_fromAddr"
 		     : sock_addr * char array * int -> unit;
 		  structure Strm =
 		     struct
@@ -996,24 +996,24 @@ structure Primitive =
 	     * switching to a copy.
 	     *)
 	    val copyCurrent = _prim "Thread_copyCurrent": unit -> unit;
-	    val current = _ffi "Thread_current": unit -> thread;
-	    val finishHandler = _ffi "Thread_finishHandler": unit -> unit;
+	    val current = _import "Thread_current": unit -> thread;
+	    val finishHandler = _import "Thread_finishHandler": unit -> unit;
 	    val returnToC = _prim "Thread_returnToC": unit -> unit;
-	    val saved = _ffi "Thread_saved": unit -> thread;
-	    val savedPre = _ffi "Thread_saved": unit -> preThread;
+	    val saved = _import "Thread_saved": unit -> thread;
+	    val savedPre = _import "Thread_saved": unit -> preThread;
 	    val setCallFromCHandler =
-	       _ffi "Thread_setCallFromCHandler": thread -> unit;
-	    val setHandler = _ffi "Thread_setHandler": thread -> unit;
-	    val setSaved = _ffi "Thread_setSaved": thread -> unit;
-	    val startHandler = _ffi "Thread_startHandler": unit -> unit;
+	       _import "Thread_setCallFromCHandler": thread -> unit;
+	    val setHandler = _import "Thread_setHandler": thread -> unit;
+	    val setSaved = _import "Thread_setSaved": thread -> unit;
+	    val startHandler = _import "Thread_startHandler": unit -> unit;
 	    val switchTo = _prim "Thread_switchTo": thread -> unit;
 	 end      
 
       structure Time =
 	 struct
-	    val gettimeofday = _ffi "Time_gettimeofday": unit -> int;
-	    val sec = _ffi "Time_sec": unit -> int;
-	    val usec = _ffi "Time_usec": unit -> int;
+	    val gettimeofday = _import "Time_gettimeofday": unit -> int;
+	    val sec = _import "Time_sec": unit -> int;
+	    val usec = _import "Time_usec": unit -> int;
 	 end
 
       structure Vector =
@@ -1147,8 +1147,8 @@ structure Primitive =
 
       structure World =
 	 struct
-	    val isOriginal = _ffi "World_isOriginal": unit -> bool;
-	    val makeOriginal = _ffi "World_makeOriginal": unit -> unit;
+	    val isOriginal = _import "World_isOriginal": unit -> bool;
+	    val makeOriginal = _import "World_makeOriginal": unit -> unit;
 	    val save = _prim "World_save": word (* filedes *) -> unit;
 	 end
    end

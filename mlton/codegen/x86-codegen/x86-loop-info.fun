@@ -113,7 +113,7 @@ struct
 		      | Raise {...}
 		      => ()
 		      | CCall {return, func, ...}
-		      => Option.app (return, if Runtime.CFunction.mayGC func
+		      => Option.app (return, if CFunction.mayGC func
 					       then doit''
 					       else doit')
 		 end)

@@ -9,6 +9,8 @@ type word = Word.t
    
 signature MACHINE_ATOMS_STRUCTS =
    sig
+      structure CFunction: C_FUNCTION
+      structure CType: C_TYPE
       structure IntSize: INT_SIZE
       structure IntX: INT_X
       structure Label: HASH_ID
@@ -19,9 +21,10 @@ signature MACHINE_ATOMS_STRUCTS =
       structure SourceInfo: SOURCE_INFO
       structure WordSize: WORD_SIZE
       structure WordX: WORD_X
-      sharing IntSize = IntX.IntSize = Prim.IntSize = Runtime.IntSize
-      sharing RealSize = Prim.RealSize = RealX.RealSize = Runtime.RealSize
-      sharing WordSize = Prim.WordSize = Runtime.WordSize = WordX.WordSize
+      sharing CType = CFunction.CType = Runtime.CType
+      sharing IntSize = CType.IntSize = IntX.IntSize = Prim.IntSize
+      sharing RealSize = CType.RealSize = Prim.RealSize = RealX.RealSize
+      sharing WordSize = CType.WordSize = Prim.WordSize = WordX.WordSize
    end
 
 signature MACHINE_ATOMS =
@@ -75,7 +78,7 @@ signature MACHINE_ATOMS =
 	    val defaultWord: t
 	    val equals: t * t -> bool
 	    val exnStack: t
-	    val fromRuntime: Runtime.Type.t -> t
+	    val fromCType: CType.t -> t
 	    val int: IntSize.t -> t
 	    val intInf: t
 	    val isPointer: t -> bool
@@ -88,7 +91,7 @@ signature MACHINE_ATOMS =
 	    val size: t -> int
 	    val stack: t
 	    val thread: t
-	    val toRuntime: t -> Runtime.Type.t
+	    val toCType: t -> CType.t
 	    val toString: t -> string
 	    val word: WordSize.t -> t
 	    val wordVector: t

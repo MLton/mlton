@@ -129,14 +129,16 @@ fun insertFunction (f: Function.t,
 		     val l = Label.newNoname ()
 		     val _ = r := SOME l
 		     val cfunc =
-			CFunction.make {bytesNeeded = NONE,
-					ensuresBytesFree = false,
-					mayGC = false,
-					maySwitchThreads = false,
-					modifiesFrontier = false,
-					modifiesStackTop = false,
-					name = "MLton_allocTooLarge",
-					returnTy = NONE}
+			CFunction.T {args = Vector.new0 (),
+				     bytesNeeded = NONE,
+				     convention = CFunction.Convention.Cdecl,
+				     ensuresBytesFree = false,
+				     mayGC = false,
+				     maySwitchThreads = false,
+				     modifiesFrontier = false,
+				     modifiesStackTop = false,
+				     name = "MLton_allocTooLarge",
+				     return = NONE}
 		     val _ =
 			newBlocks :=
 			Block.T {args = Vector.new0 (),

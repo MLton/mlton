@@ -33,7 +33,6 @@ end
 local
    open Runtime
 in
-   structure CFunction = CFunction
    structure GCField = GCField
 end
 val wordSize = Runtime.wordSize
@@ -44,6 +43,8 @@ structure R = Rssa
 local
    open Rssa
 in
+   structure CFunction = CFunction
+   structure CType = CType
    structure Const = Const
    structure Func = Func
    structure Function = Function
@@ -1000,7 +1001,7 @@ fun toMachine (program: Ssa.Program.t) =
       fun chunkToMachine (Chunk.T {chunkLabel, blocks}) =
 	 let
 	    val blocks = Vector.fromList (!blocks)
-	    val regMax = Runtime.Type.memo (fn _ => ref ~1)
+	    val regMax = CType.memo (fn _ => ref ~1)
 	    val regsNeedingIndex =
 	       Vector.fold
 	       (blocks, [], fn (b, ac) =>
@@ -1012,7 +1013,7 @@ fun toMachine (program: Ssa.Program.t) =
 			   NONE => r :: ac
 			 | SOME i =>
 			      let
-				 val z = regMax (Type.toRuntime (Register.ty r))
+				 val z = regMax (Type.toCType (Register.ty r))
 				 val _ =
 				    if i > !z
 				       then z := i
@@ -1025,7 +1026,7 @@ fun toMachine (program: Ssa.Program.t) =
 	       List.foreach
 	       (regsNeedingIndex, fn r =>
 		let
-		   val z = regMax (Type.toRuntime (Register.ty r))
+		   val z = regMax (Type.toCType (Register.ty r))
 		   val i = 1 + !z
 		   val _ = z := i
 		   val _ = Register.setIndex (r, i)

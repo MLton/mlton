@@ -1075,10 +1075,10 @@ struct
 		    end
 	        | CCall {args, dstsize, frameInfo, func, return, target}
 		=> let
-		     val {maySwitchThreads,
-			  modifiesFrontier,
-			  modifiesStackTop,
-			  name, ...} = CFunction.dest func
+		     val CFunction.T {convention,
+				      maySwitchThreads,
+				      modifiesFrontier,
+				      modifiesStackTop, ...} = func
 		     val stackTopMinusWordDeref
 		       = x86MLton.gcState_stackTopMinusWordDerefOperand ()
 		     val {dead, ...}
@@ -1087,7 +1087,6 @@ struct
 		     val c_stackP = x86MLton.c_stackPContentsOperand
 		     val c_stackPDerefDouble = x86MLton.c_stackPDerefDoubleOperand
 		     val applyFFTemp = x86MLton.applyFFTempContentsOperand
-		       
 		     val (pushArgs, size_args)
 		       = List.fold
 		         (args, (AppendList.empty, 0),
@@ -1287,8 +1286,9 @@ struct
 				      (Assembly.directive_fltreturn
 				       {memloc = MemLoc.cReturnTempContents dstsize})
 				   | _ => Error.bug "CCall")
-		     val fixCStack 
-		       = if size_args > 0
+		     val fixCStack =
+			if size_args > 0
+			   andalso convention = CFunction.Convention.Cdecl
 			   then (AppendList.single
 				 (Assembly.instruction_binal
 				  {oper = Instruction.ADD,

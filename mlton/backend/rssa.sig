@@ -36,8 +36,6 @@ signature RSSA =
       sharing PointerTycon = Switch.PointerTycon
       sharing Type = Switch.Type
       sharing WordX = Switch.WordX
-      structure CFunction: C_FUNCTION
-      sharing CFunction = Runtime.CFunction
      
       structure Operand:
 	 sig

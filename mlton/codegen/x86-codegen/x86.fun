@@ -49,6 +49,8 @@ struct
       structure CFunction = CFunction
    end
 
+   structure CType = CFunction.CType
+   
   structure Label =
      struct
 	open Label
@@ -1198,7 +1200,7 @@ struct
 	       size = size,
 	       class = class}
       local
-	open Runtime.Type
+	open CType
 	val cReturnTempBYTE = Label.fromString "cReturnTempB"
 	val cReturnTempBYTEContents 
 	  = makeContents {base = Immediate.label cReturnTempBYTE,

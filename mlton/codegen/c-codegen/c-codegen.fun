@@ -14,6 +14,8 @@ local
    open Machine
 in
    structure Block = Block
+   structure CFunction = CFunction
+   structure CType = CType
    structure Chunk = Chunk
    structure ChunkLabel = ChunkLabel
    structure FrameInfo = FrameInfo
@@ -48,7 +50,6 @@ datatype z = datatype WordSize.t
 local
    open Runtime
 in
-   structure CFunction = CFunction
    structure GCField = GCField
 end
 
@@ -193,8 +194,8 @@ structure Operand =
 	  | _ => false
    end
 
-fun creturn (t: Runtime.Type.t): string =
-   concat ["CReturn", Runtime.Type.name t]
+fun creturn (t: CType.t): string =
+   concat ["CReturn", CType.name t]
 
 fun outputIncludes (includes, print) =
    (List.foreach (includes, fn i => (print "#include <";
@@ -213,13 +214,13 @@ fun declareGlobals (prefix: string, print) =
       val _ = print (concat [prefix, "struct GC_state gcState;\n"])
       val _ =
 	 List.foreach
-	 (Runtime.Type.all, fn t =>
+	 (CType.all, fn t =>
 	  let
-	     val s = Runtime.Type.toString t
+	     val s = CType.toString t
 	  in		
 	     print (concat [prefix, s, " global", s,
 			    " [", C.int (Global.numberOfType t), "];\n"])
-	     ; print (concat [prefix, s, " CReturn", Runtime.Type.name t, ";\n"])
+	     ; print (concat [prefix, s, " CReturn", CType.name t, ";\n"])
 	  end)
       val _ =	       			    
 	 print (concat [prefix, "Pointer globalPointerNonRoot [",
@@ -248,16 +249,16 @@ fun outputDeclarations
 	    val _ =
 	       (print "static void saveGlobals (int fd) {\n"
 		; (List.foreach
-		   (Runtime.Type.all, fn t =>
+		   (CType.all, fn t =>
 		    print (concat ["\tSaveArray (global",
-				   Runtime.Type.toString t, ", fd);\n"])))
+				   CType.toString t, ", fd);\n"])))
 		; print "}\n")
 	    val _ =
 	       (print "static void loadGlobals (FILE *file) {\n"
 		; (List.foreach
-		   (Runtime.Type.all, fn t =>
+		   (CType.all, fn t =>
 		    print (concat ["\tLoadArray (global",
-				   Runtime.Type.toString t, ", file);\n"])))
+				   CType.toString t, ", file);\n"])))
 		; print "}\n")
 	 in
 	    ()
@@ -680,10 +681,7 @@ fun output {program as Machine.Program.T {chunks,
 				   ")"]
 			       fun app (): string =
 				  case Prim.name prim of
-				     Prim.Name.FFI s =>
-					(case Prim.numArgs prim of
-					    NONE => s
-					  | SOME _ => call ())
+				     Prim.Name.FFI_Symbol {name, ...} => name
 				   | _ => call ()
 			    in
 			       case dst of
@@ -726,51 +724,26 @@ fun output {program as Machine.Program.T {chunks,
 			  case s of
 			     Statement.PrimApp {prim, ...} =>
 				(case Prim.name prim of
-				    Prim.Name.FFI name =>
+				    Prim.Name.FFI_Symbol {name, ty} =>
 				       doit
 				       (name, fn () =>
-					let
-					   val ty =
-					      Prim.Type.toC
-					      (Prim.Scheme.ty
-					       (Prim.scheme prim))
-					in
-					   concat
-					   ["extern ", ty, " ", name, ";\n"]
-					end)
+					concat
+					["extern ", CType.toString ty,
+					    " ", name, ";\n"])
 				  | _ => ())
 			   | _ => ())
 		      val _ =
 			 case transfer of
 			    Transfer.CCall {args, func, ...} =>
 			       let
-				  val {name, returnTy, ...} = CFunction.dest func
+				  val CFunction.T {name, ...} = func
 			       in
 				  if name = "Thread_returnToC"
 				     then ()
 				  else
-				  doit
-				  (name, fn () =>
-				   let
-				      val res =
-					 case returnTy of
-					    NONE => "void"
-					  | SOME t => CFunction.Type.toString t
-				      val c = Counter.new 0
-				      fun arg z =
-					 concat [Type.toC (Operand.ty z),
-						 " x",
-						 Int.toString (Counter.next c)]
-				   in
-				      (concat
-				       [res, " ",
-					CFunction.name func,
-					" (",
-					concat (List.separate
-						(Vector.toListMap (args, arg),
-						 ", ")),
-					");\n"])
-				   end)
+				     doit (name, fn () =>
+					   concat [CFunction.prototype func,
+						   ";\n"])
 			       end
 			  | _ => ()
 		   in
@@ -944,7 +917,7 @@ fun output {program as Machine.Program.T {chunks,
 				    ["\t",
 				     move {dst = operandToString x,
 					   dstIsMem = Operand.isMem x,
-					   src = creturn (Type.toRuntime ty),
+					   src = creturn (Type.toCType ty),
 					   srcIsMem = false,
 					   ty = ty}])
 				end)))
@@ -1040,11 +1013,10 @@ fun output {program as Machine.Program.T {chunks,
 			end
 		   | CCall {args, frameInfo, func, return} =>
 			let
-			   val {maySwitchThreads,
-				modifiesFrontier,
-				modifiesStackTop,
-				name, returnTy, ...} =
-			      CFunction.dest func
+			   val CFunction.T {maySwitchThreads,
+					    modifiesFrontier,
+					    modifiesStackTop,
+					    name, return = returnTy, ...} = func
 			   val (args, afterCall) =
 			      case frameInfo of
 				 NONE =>
@@ -1189,10 +1161,10 @@ fun output {program as Machine.Program.T {chunks,
 	       end
 	    fun declareRegisters () =
 	       List.foreach
-	       (Runtime.Type.all, fn t =>
+	       (CType.all, fn t =>
 		let
-		   val pre = concat ["\t", Runtime.Type.toString t, " ",
-				     Runtime.Type.name t, "_"]
+		   val pre = concat ["\t", CType.toString t, " ",
+				     CType.name t, "_"]
 		in
 		   Int.for (0, 1 + regMax t, fn i =>
 			    print (concat [pre, C.int i, ";\n"]))
