@@ -31,21 +31,12 @@ functor Z (S: sig
 			  end
 		       structure Signal:
 			  sig
-			     type signal
+			     type t
 
-			     val alrm: signal
-
-			     structure Handler:
-				sig
-				   datatype t =
-				      Default
-				    | Ignore
-				    | Handler of unit Thread.t -> unit Thread.t
-
-				   val get: signal -> t
-				   val set: signal * t -> unit
-				   val simple: (unit -> unit) -> t
-				end
+			     val alrm: t
+			     val handleWith':
+				t * (unit Thread.t -> unit Thread.t) -> unit
+			     val ignore: t -> unit
 			  end
 		    end
 	      end) =
@@ -155,11 +146,11 @@ structure Thread:
       fun run (): unit =
 	 (switch (fn t =>
 		  (topLevel := SOME t
-		   ; (new (fn () => (Handler.set (alrm, Handler.Handler schedule)
+		   ; (new (fn () => (handleWith' (alrm, schedule)
 				     ; setItimer (Time.fromMilliseconds 20))),
 		      ())))
 	  ; setItimer Time.zeroTime
-	  ; Handler.set (alrm, Handler.Ignore)
+	  ; ignore alrm
 	  ; topLevel := NONE)
 	 
       structure Mutex =

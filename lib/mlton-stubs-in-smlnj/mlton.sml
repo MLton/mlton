@@ -183,6 +183,8 @@ structure MLton: MLTON =
 	 struct
 	    open Posix.Signal
 
+	    type t = signal
+
 	    val prof = alrm
 	    val vtalrm = alrm
 
@@ -197,17 +199,17 @@ structure MLton: MLTON =
 		  fun set _ = raise Fail "set"
 	       end
 
-	    structure Handler =
-	       struct
-		  datatype t =
-		     Default
-		   | Ignore
-		   | Handler of unit Thread.t -> unit Thread.t
+	    datatype handler =
+	       Default
+	     | Ignore
+	     | Handler of unit Thread.t -> unit Thread.t
 
-		  fun simple _ = Default
-		  fun get _ = Default
-		  fun set _ = ()
-	       end
+	    fun getHandler _ = raise Fail "getHandler"
+	    fun handleDefault _ = raise Fail "handleDefault"
+	    fun handleWith' _ = raise Fail "handleWith'"
+	    fun handleWith _ = raise Fail "handleWith"
+	    fun ignore _ = raise Fail "ignore"
+	    fun setHandler _ = raise Fail "setHandler"
 	 end
 
       structure Socket =

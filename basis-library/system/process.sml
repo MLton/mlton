@@ -16,7 +16,6 @@ structure OS_Process: OS_PROCESS_EXTRA =
       open Posix.Process
 
       structure Signal = MLton.Signal
-      structure Handler = Signal.Handler
       type status = int
 
       val success: status = 0
@@ -36,13 +35,14 @@ structure OS_Process: OS_PROCESS_EXTRA =
 	       let
 		  val old =
 		     List.map (fn s => 
-			       let val old = Handler.get s
-				  val _ = Handler.set (s, Handler.Ignore)
+			       let
+				  val old = Signal.getHandler s
+				  val _ = Signal.ignore s
 			       in (s, old)
 			       end)
 		     [Signal.int, Signal.quit]
 	       in DynamicWind.wind (fn () => wait pid,
-				   fn () => List.app Handler.set old)
+				    fn () => List.app Signal.setHandler old)
 	       end
 
       fun atExit f = Cleaner.addNew (Cleaner.atExit, f)

@@ -26,14 +26,14 @@ val childReady = ref false
 
 fun print s = TextIO.output (TextIO.stdErr, s)
 
-val _ = Handler.set (usr1, Handler.simple (fn () => childReady := true))
+val _ = handleWith (usr1, fn () => childReady := true)
    
 val parent = getpid ()
 
 val _ =
    case fork () of
       NONE => 
-	 (Handler.set (usr1, Handler.simple (fn () => save w))
+	 (handleWith (usr1, fn () => save w)
 	  ; kill (K_PROC parent, usr1)
 	  ; let
 	       val rec loop =

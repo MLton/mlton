@@ -11,13 +11,11 @@ and 'a res =
 val which = Itimer.Real
 val signal = Itimer.whichSignal which
 
-structure Handler = Signal.Handler
-
 fun done (return): unit =
    (return := NONE
     ; Itimer.set (which, {value = Time.zero,
 			  interval = Time.zero})
-    ; Handler.set (signal, Handler.Default))
+    ; Signal.handleDefault signal)
 
 fun new (f: unit -> 'a): 'a t =
    let
@@ -41,9 +39,9 @@ fun run (T {return, thread}, time: Time.t): 'a res =
        val _ = return := SOME cur
        fun handler (me: unit Thread.t): unit Thread.t =
 	  Thread.prepend (cur, fn () => (done return
-					; TimeOut (T {return = return,
-						    thread = me})))
-       val _ = Handler.set (signal, Handler.Handler handler)
+					 ; TimeOut (T {return = return,
+						       thread = me})))
+       val _ = Signal.handleWith' (signal, handler)
        val _ = Itimer.set (which, {value = time,
 				   interval = Time.zero})
     in (thread, ())

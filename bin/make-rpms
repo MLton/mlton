@@ -70,6 +70,7 @@ doInst ../mlton/control/control.sml
 sed "/^Version:/s;.*;Version: $version;" <mlton.spec >z
 sed "/^Release:/s;.*;Release: $release;" <z >$root/SPECS/mlton.spec
 rm -f z
+(cd examples; make get)
 
 manvers=`date '+%B %d, %Y'`
 cd $src/man

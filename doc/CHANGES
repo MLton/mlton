@@ -1,5 +1,11 @@
 Here are the changes from version 20011006 to version VERSION.
 
+* 2001-12-06
+  - Changed the interface for MLton.Signal.  There is no longer a separate
+    Handler substructure.  This was done so that programs that just use
+    default and ignore signal handlers don't bring in the entire thread
+    mechanism.
+
 * 2001-12-05
   - Added local ref elimination SSA optimization.
 

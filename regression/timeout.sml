@@ -1,5 +1,4 @@
 open MLton
-structure Handler = Signal.Handler
 
 fun timeLimit (t: Time.time, f: unit -> 'a): 'a option =
    let
@@ -9,8 +8,8 @@ fun timeLimit (t: Time.time, f: unit -> 'a): 'a option =
 	 Thread.switch
 	 (fn cur: 'a option Thread.t =>
 	  let
-	     fun handler _ = Thread.prepend (cur, fn () => NONE)
-	     val _ = Handler.set (signal, Handler.Handler handler)
+	     val _ = Signal.handleWith' (signal, fn _ =>
+					 Thread.prepend (cur, fn () => NONE))
 	     val _ =
 		Itimer.set (which, {value = t,
 				    interval = Time.zeroTime})
@@ -20,8 +19,9 @@ fun timeLimit (t: Time.time, f: unit -> 'a): 'a option =
 				end)
 	  in (t, ())
 	  end)
-   in Handler.set (signal, Handler.Default)
-      ; res
+      val _ = Signal.handleDefault signal
+   in
+      res
    end
 		 
 val _ =

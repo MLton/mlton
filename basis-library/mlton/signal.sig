@@ -2,8 +2,11 @@ signature MLTON_SIGNAL =
    sig
       include POSIX_SIGNAL
 
-      val prof: signal
-      val vtalrm: signal
+      type t
+      sharing type t = signal
+
+      val prof: t
+      val vtalrm: t
 
       structure Mask:
 	 sig
@@ -16,27 +19,22 @@ signature MLTON_SIGNAL =
 	    val set: t -> unit
 	 end
 
-      structure Handler:
-	 sig
-	    datatype t =
-	       Default
-	     | Ignore
-	       (*
-		* It is an error for a handler to raise an exception.
-		* It is an error to Thread.switch' to an interrupted thread
-		* with a thunk that raises an exception (either directly, or via
-		* Thread.prepend).  This is to avoid the possibility of
-		* aynchronous exceptions.
-		*)
-	     | Handler of unit Thread.t -> unit Thread.t
+      datatype handler =
+	 Default
+       | Ignore
+       | Handler of unit Thread.t -> unit Thread.t
 
-	    (* Get the current handler for a signal. *)
-	    val get: signal -> t
-	 
-	    (* Set the handler for a signal. *)
-	    val set: signal * t -> unit
-
-	    (* simple f = Handler (fn t => (f (); t)) *)
-	    val simple: (unit -> unit) -> t
-	 end
+      val getHandler: t -> handler
+      val handleDefault: t -> unit
+      (*
+       * It is an error for a handler to raise an exception.
+       * It is an error to Thread.switch' to an interrupted thread
+       * with a thunk that raises an exception (either directly, or via
+       * Thread.prepend).  This is to avoid the possibility of
+       * aynchronous exceptions.
+       *)
+      val handleWith': t * (unit Thread.t -> unit Thread.t) -> unit
+      val handleWith: t * (unit -> unit) -> unit
+      val ignore: t -> unit
+      val setHandler: t * handler -> unit
    end

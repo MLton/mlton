@@ -312,8 +312,11 @@ signature MLTON_SIGNAL =
    sig
       include POSIX_SIGNAL
 
-      val prof: signal
-      val vtalrm: signal
+      type t
+      sharing type t = signal
+
+      val prof: t
+      val vtalrm: t
 
       structure Mask:
          sig
@@ -326,21 +329,23 @@ signature MLTON_SIGNAL =
             val set: t -> unit
          end
 
-      structure Handler:
-         sig
-            datatype t =
-               Default
-             | Ignore
-             | Handler of unit Thread.t -> unit Thread.t
+      datatype handler =
+         Default
+       | Ignore
+       | Handler of unit Thread.t -> unit Thread.t
 
-            val get: signal -> t
-            val set: signal * t -> unit
-            val simple: (unit -> unit) -> t
-         end
+      val getHandler: t -> handler
+      val handleDefault: t -> unit
+      val handleWith': t * (unit Thread.t -> unit Thread.t) -> unit
+      val handleWith: t * (unit -> unit) -> unit
+      val ignore: t -> unit
+      val setHandler: t * handler -> unit
    end
 \end{verbatim}
 
 \begin{description}
+
+\entry{type t} the type of signals.
 
 \entry{prof}
 {\tt SIGPROF}, the profiling signal.
@@ -348,7 +353,7 @@ signature MLTON_SIGNAL =
 \entry{vtalrm}
 {\tt SIGVTALRM}, the signal for virtual timers.
 
-\entry{Mask.t} the type of signal masks
+\entry{type Mask.t} the type of signal masks.
 
 \entry{Mask.all} a mask of all signals.
 
@@ -360,13 +365,23 @@ signature MLTON_SIGNAL =
 
 \entry{Mask.set m} set the signal mask to {\tt m}.
 
-\entry{Handler.get s} return the current handler for signal {\tt s}.
+\entry{type handler} the type of signal handlers.
 
-\entry{Handler.set (s, h)} set the handler for signal {\tt s} to
-be {\tt h}.
+\entry{getHandler s} return the current handler for signal {\tt s}.
 
-\entry{Handler.simple f} return a handler that executes {\tt f ()}
-and then lets the interrupted thread continue.
+\entry{handleDefault s} set the handler for signal {\tt s} to default.
+
+\entry{handleWith' (s, f)} set the handler for signal {\tt s} to be the
+function {\tt f}.  When run, {\tt f} will be passed the thread that was
+interrupted by signal {\tt s}, and should return the thread that will resume
+execution.
+
+\entry{handleWith (s, f)} like {\tt handleWith'}, but always resumes with the
+interrupted thread.
+
+\entry{ignore s} set the handler for signal {\tt s} to ignore the signal.
+
+\entry{setHandler (s, h)} set the handler for signal {\tt s} to {\tt h}.
 \end{description}
 
 \subsubsection{{\tt MLton.Socket}}
