@@ -73,7 +73,7 @@ val options =
 		     (List.push (keepDiagnostics, s)
 		      ; List.push (keepPasses, s)))),
        (Expert, "drop-cps-pass", " pass", "omit CPS optimization pass",
-	SpaceString (fn s => List.push (dropCpsPasses, s))),
+	SpaceString (fn s => List.push (dropPasses, s))),
        (Normal, "D", "define", "define compile-time constant",
 	String (fn s => (List.push (defines, s)
 			 ; if s = "INSTRUMENT"

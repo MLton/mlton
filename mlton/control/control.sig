@@ -31,8 +31,8 @@ signature CONTROL =
 
       val detectOverflow: bool ref
 
-      (* List of CPS optimization passes to skip. *)
-      val dropCpsPasses: string list ref
+      (* List of optimization passes to skip. *)
+      val dropPasses: string list ref
 
       (* SOME n means that the executable should use a fixed heap of size n *)
       val fixedHeap: int option ref

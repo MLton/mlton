@@ -250,7 +250,10 @@ signature PRIM =
        *)
       val impCall: t -> bool
       val intInfEqual: t
-      val intPlus: t
+      val intAdd: t
+      val intAddCheck: t
+      val intMulCheck: t
+      val intSubCheck: t
       val isCommutative: t -> bool
       (*
        * isFunctional p = true iff p always returns same result when given

@@ -90,7 +90,7 @@ fun simplify p =
    (stats p
     ; (List.fold
        (passes, p, fn ((name, pass), p) =>
-	if List.contains (!Control.dropCpsPasses, name, String.equals)
+	if List.contains (!Control.dropPasses, name, String.equals)
 	   then p
 	else
 	   let

@@ -1,6 +1,6 @@
 Group
 
-(*functor Ssa *)
+functor Ssa
    
 is
 
@@ -9,9 +9,15 @@ is
 ../cps/sources.cm
 ../../lib/mlton/sources.cm
 
-analyze.sig
 analyze.fun
-ssa-tree.sig
+analyze.sig
+shrink.fun
+shrink.sig
+simplify.fun
+simplify.sig
 ssa-tree.fun
-type-check.sig
+ssa-tree.sig
+ssa.fun
+ssa.sig
 type-check.fun
+type-check.sig

@@ -1,0 +1,12 @@
+(* Copyright (C) 1997-1999 NEC Research Institute.
+ * Please see the file LICENSE for license information.
+ *)
+signature SHRINK_STRUCTS = 
+   sig
+      include TYPE_CHECK
+   end
+
+signature SHRINK = 
+   sig
+      include SHRINK_STRUCTS
+   end

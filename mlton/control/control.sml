@@ -41,8 +41,8 @@ val detectOverflow = control {name = "detect overflow",
 			      default = true,
 			      toString = Bool.toString}
 
-val dropCpsPasses =
-   control {name = "drop CPS passes",
+val dropPasses =
+   control {name = "drop passes",
 	    default = [],
 	    toString = List.toString String.toString}
 

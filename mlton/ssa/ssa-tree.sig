@@ -41,13 +41,6 @@ signature SSA_TREE =
       structure Func: HASH_ID
       structure Label: HASH_ID
 
-      structure PrimInfo:
-	 sig
-	    datatype t =
-	       None
-	     | Overflow of Label.t (* Must be nullary. *)
-	 end
-
       structure Exp:
 	 sig
 	    datatype t =
@@ -55,7 +48,6 @@ signature SSA_TREE =
 			  args: Var.t vector}
 	     | Const of Const.t
 	     | PrimApp of {prim: Prim.t,
-			   info: PrimInfo.t,
 			   targs: Type.t vector,
 			   args: Var.t vector}
 	     | RestoreExnStack
@@ -80,10 +72,11 @@ signature SSA_TREE =
 	    val restoreExnStack: t
 	    val saveExnStack: t
 	    val setHandler: Label.t -> t
+	    val var: t -> Var.t option
 	 end
       
       structure Cases: CASES sharing type Cases.con = Con.t
-	 
+
       structure Transfer:
 	 sig
 	    datatype t =
@@ -102,6 +95,11 @@ signature SSA_TREE =
 			dst: Label.t,
 			args: Var.t vector
 			}
+	     | Prim of {prim: Prim.t,
+			args: Var.t vector,
+			failure: Label.t, (* Must be nullary. *)
+			success: Label.t (* Must be unary. *)
+			}
 	     | Raise of Var.t vector
 	     | Return of Var.t vector
 
@@ -118,6 +116,7 @@ signature SSA_TREE =
 		     transfer: Transfer.t
 		     }
 
+	    val label: t -> Label.t
 	    val layout: t -> Layout.t
 	 end
 
@@ -147,9 +146,13 @@ signature SSA_TREE =
 		     }
 
 	    val controlFlowGraph:
-	       t -> {graph: DirectedGraph.t,
-		     root: DirectedGraph.Node.t,
-		     labelNode: Label.t -> DirectedGraph.Node.t}
+	       t * {labelHandler: Label.t -> Label.t option}
+	       -> {graph: DirectedGraph.t,
+		   labelNode: Label.t -> DirectedGraph.Node.t,
+		   dominatorTree: unit -> Block.t Tree.t}
+	    val dominatorTree:
+	       t * {labelHandler: Label.t -> Label.t option}
+	       -> Block.t Tree.t
 	 end
       
       structure Program:
@@ -162,8 +165,11 @@ signature SSA_TREE =
 		     main: Func.t (* Must be nullary. *)
 		    } 
 
+	    val clear: t -> unit
 	    val fromCps: Cps.Program.t * {jumpToLabel: Cps.Jump.t -> Label.t,
 					  funcToFunc: Cps.Func.t -> Func.t} -> t
 	    val inferHandlers: t -> Label.t -> Label.t option
+	    val layouts: t * (Layout.t -> unit) -> unit
+	    val layoutStats: t -> Layout.t
 	 end
    end

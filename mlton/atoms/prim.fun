@@ -566,13 +566,21 @@ in
    val intInfNeg =
       new0 (Name.IntInf_neg, tuple [intInf, Type.array word] --> intInf)
    val intInfEqual = new0 (Name.IntInf_equal, tuple [intInf, intInf] --> bool)
-   val intPlus = new0 (Name.Int_add, tuple [int, int] --> int)
    val stringEqual = new0 (Name.String_equal, tuple [string, string] --> bool)
    val word8Neg = new0 (Name.Word8_neg, word8 --> word8)
    val word8Notb = new0 (Name.Word8_notb, word8 --> word8)
    val word32Notb = new0 (Name.Word32_notb, word --> word)
    val word32Neg = new0 (Name.Word32_neg, word --> word)
 
+   local
+      fun make n = new0 (n, tuple [int, int] --> int)
+   in
+      val intAdd = make Name.Int_add
+      val intAddCheck = make Name.Int_addCheck
+      val intMulCheck = make Name.Int_mulCheck
+      val intSubCheck = make Name.Int_subCheck
+   end
+      
    fun newNullary (name: string) = new0 (Name.FFI name, unit --> unit)
 
    fun ffi (name: string, s: Scheme.t) =
