@@ -24,12 +24,11 @@ enum {
 	GC_OBJECT_HEADER_SIZE = WORD_SIZE,
 	GC_ARRAY_HEADER_SIZE = WORD_SIZE + GC_OBJECT_HEADER_SIZE,
 /*
- * Array lengths can't have the top two bits set because the high bit is used
- * to distinguish between objects and arrays, and the next bit is the mark bit.
- * They also can't be 30 one bits, because that is reserved for the stack object
- * header, which must be distinguishable from an array length.
+ * Array lengths can't have any of the top three bits set, because bit 31 and 29
+ * are used as tag bits and bit 30 is used as a mark bit.
+ * An array is too long if its length is >= GC_MAX_ARRAY_LENGTH.
  */
-	GC_MAX_ARRAY_LENGTH = 0x3FFFFFFF,
+	GC_MAX_ARRAY_LENGTH = 0x20000000,
 	/* High bit in an object identifies its type.
 	 * Normal objects have a high bit of 1.
 	 * Arrays and stacks have a high bit of 0.

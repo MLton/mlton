@@ -78,9 +78,9 @@ static inline bool isNormal(word header) {
 	return header & HIGH_BIT;
 }
 
-static inline bool isStackHeader(word header) {
+static inline bool isStackOrContHeader(word header) {
 	assert(not(isNormal(header)));
-	return header & 0x30000000;
+	return header & 0x20000000;
 }
 
 static inline uint toBytes(uint n) {
@@ -407,7 +407,7 @@ GC_foreachPointerInObject(GC_state s, GC_pointerFun f, pointer p)
 		/* Apply f to all internal pointers. */
 		for ( ; p < max; p += POINTER_SIZE) 
 			maybeCall(f, s, (pointer*)p);
-	} else if (isStackHeader(header)) {
+	} else if (isStackOrContHeader(header)) {
 		GC_stack stack;
 		pointer top, bottom;
 		int i;
@@ -499,7 +499,7 @@ toData(pointer p)
 
 	header = *(word*)p;
 
-	return ((isNormal(header) or isStackHeader(header))
+	return ((isNormal(header) or isStackOrContHeader(header))
 		? p + WORD_SIZE
 		: p + 2 * WORD_SIZE);
 }
@@ -1129,7 +1129,7 @@ forward(GC_state s, pointer *pp)
 			headerBytes = GC_OBJECT_HEADER_SIZE;
 			objectBytes = toBytes(numPointers + numNonPointers);
 			skip = 0;
-		} else if (isStackHeader(header)) { /* Stack. */
+		} else if (isStackOrContHeader(header)) { /* Stack. */
 			GC_stack stack;
 
 			headerBytes = STACK_HEADER_SIZE;
@@ -1508,7 +1508,7 @@ GC_objectSize(pointer p)
 	if (isNormal(header)) { /* Fixed size object. */
 		headerBytes = GC_OBJECT_HEADER_SIZE;
 		objectBytes = toBytes(numPointers + numNonPointers);
-	} else if (isStackHeader(header)) { /* Stack. */
+	} else if (isStackOrContHeader(header)) { /* Stack. */
 		headerBytes = STACK_HEADER_SIZE;
 		objectBytes = sizeof(struct GC_stack) + ((GC_stack)p)->reserved;
 	} else { /* Array. */
