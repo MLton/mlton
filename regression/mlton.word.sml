@@ -17,6 +17,9 @@ functor F (S: sig
       val rots = List.tabulate (wordSize + 1, Word.fromInt)
 
       fun p w = print (concat [toString w, "\n"])
+
+      (* Test ~ *)
+      val _ = List.app (p o ~) trials
 	 
       (* Test Algebraic simplifications. *)
       val _ = List.app (fn w => p (rol (w, 0w0))) trials
