@@ -73,10 +73,38 @@ struct
 
   structure Liveness =
     struct
+
+      datatype futureTag = FLIVE 
+                         | FCOMMIT | FREMOVE | FDEAD 
+                         | FUSE | FUSEDEF | FDEF
+
+      val futureTag_toString
+	= fn FLIVE => "FLIVE"
+	   | FCOMMIT => "FCOMMIT"
+	   | FREMOVE => "FREMOVE"
+	   | FDEAD => "FDEAD"
+	   | FUSE => "FUSE"
+	   | FUSEDEF => "FUSEDEF"
+	   | FDEF => "FDEF"
+
+      val futureTag_eq
+	= fn (tag1, tag2) => tag1 = tag2
+
+      type future = futureTag * MemLoc.t
+
+      val future_toString
+	= fn (tag, memloc) 
+	   => concat [futureTag_toString tag, " ", MemLoc.toString memloc]
+
+      val future_eq
+	= fn ((tag1, memloc1), (tag2, memloc2))
+	   => futureTag_eq(tag1, tag2) andalso MemLoc.eq(memloc1, memloc2)
+
+(*
       datatype future = NEED of MemLoc.t
 	              | USE of MemLoc.t
-	              | DEF of MemLoc.t
-	              | USEDEF of MemLoc.t
+                      | USEDEF of MemLoc.t
+                      | DEF of MemLoc.t
 
       val future_toString
 	= fn NEED memloc => concat ["NEED ", MemLoc.toString memloc]
@@ -90,6 +118,7 @@ struct
 	   | (USEDEF memloc1, USEDEF memloc2) => MemLoc.eq(memloc1,memloc2)
 	   | (DEF memloc1, DEF memloc2) => MemLoc.eq(memloc1,memloc2)
 	   | _ => false
+*)
 
       type hint = Register.t * MemLoc.t * MemLocSet.t
 
@@ -134,13 +163,15 @@ struct
 	    fun doit (name, l, toString, ac)
 	      = List.fold(l, ac, 
 			  fn (x, ac) 
-			   => (Assembly.comment (concat [name, toString x]))::
-			      ac)
+		           => (Assembly.comment (concat [name, toString x]))::
+		              ac)
+	    val doit = fn arg => List.rev (doit arg)
 	    fun doit' (name, l, toString, ac)
 	      = MemLocSet.fold(l, ac, 
 			       fn (x, ac) 
 			        => (Assembly.comment (concat [name, toString x]))::
 			           ac)
+	    val doit' = fn arg => List.rev (doit' arg)
 	  in
 	    doit'("dead: ", dead, MemLoc.toString,
 	    doit'("commit: ", commit, MemLoc.toString,
@@ -208,6 +239,58 @@ struct
 	    val current_def
 	      = MemLocSet.-(allDefs, current_usedef)
 
+	    local
+	      fun doit (future as (tag, memloc))
+		= let
+		    val def
+		      = MemLocSet.contains(allDefs, memloc)
+		    val utilized_alias_def
+		      = List.exists
+		        (memloc::(MemLoc.utilized memloc),
+			 fn memloc'
+			  => MemLocSet.exists
+			     (allDefs,
+			      fn memloc'' 
+			       => MemLoc.mayAlias(memloc', memloc'')))
+		    val use 
+		      = MemLocSet.contains(allUses, memloc)
+		    val alias_use
+		      = MemLocSet.exists
+		        (allUses, 
+			 fn memloc' => MemLoc.mayAlias(memloc, memloc'))
+		  in
+		    case tag
+		      of FLIVE => if not def andalso utilized_alias_def
+				    then NONE
+				    else SOME future
+		       | FCOMMIT => if not def andalso utilized_alias_def
+				      then NONE
+				      else SOME future
+		       | FREMOVE => if not def andalso utilized_alias_def
+				      then NONE
+				      else SOME future
+		       | FDEAD => if not def andalso utilized_alias_def
+				    then NONE
+				    else SOME future
+		       | FUSE => if not def andalso utilized_alias_def
+				   then NONE
+				   else SOME future
+		       | FUSEDEF => if not def andalso utilized_alias_def
+				      then NONE
+				    else if not use andalso alias_use
+				      then SOME (FUSE, memloc)
+				    else SOME future
+		       | FDEF => if (not def andalso utilized_alias_def)
+				    orelse
+				    (not use andalso alias_use)
+				   then NONE
+				   else SOME future
+		  end
+	    in
+	      val future = List.keepAllMap(future, doit)
+	    end
+
+(*
 	    local
 	      fun doit (NEED memloc)
 		= if not (MemLocSet.contains
@@ -286,7 +369,145 @@ struct
 	    in
 	      val future = List.keepAllMap(future, doit)
 	    end
+*)
 
+	    val (no_use,commit_use,remove_use,dead_use)
+	      = split
+	        (current_use,
+		 fn memloc
+		  => scan
+		     (future,
+		      if track memloc
+			then DEAD
+			else REMOVE,
+		      fn (default, (tag, memloc'))
+		       => let
+			    fun doit commit
+			      = if MemLoc.eq(memloc, memloc')
+				  then RETURN commit
+				  else CONTINUE default
+			    fun use ()
+			      = if MemLoc.eq(memloc, memloc')
+				  then RETURN NO
+				  else if MemLoc.mayAlias(memloc, memloc')
+					 then CONTINUE default
+					 else CONTINUE default
+			    fun usedef ()
+			      = if MemLoc.eq(memloc, memloc')
+				  then RETURN NO
+				  else if MemLoc.mayAlias(memloc, memloc')
+					 then RETURN REMOVE
+					 else CONTINUE default
+			    fun def ()
+			      = if MemLoc.eq(memloc, memloc')
+				  then RETURN DEAD
+				  else if MemLoc.mayAlias(memloc, memloc')
+					 then RETURN REMOVE
+					 else CONTINUE default
+			  in
+			    case tag
+			      of FLIVE => use ()
+			       | FCOMMIT => doit COMMIT
+			       | FREMOVE => doit REMOVE
+			       | FDEAD => doit DEAD
+			       | FUSE => use ()
+			       | FUSEDEF => usedef ()
+			       | FDEF => def ()
+			  end))
+
+	    val (no_usedef,commit_usedef,remove_usedef,dead_usedef)
+	      = split
+	        (current_usedef,
+		 fn memloc
+		  => scan
+		     (future,
+		      if track memloc
+			then DEAD
+			else REMOVE,
+		      fn (default, (tag, memloc'))
+		       => let
+			    fun doit commit
+			      = if MemLoc.eq(memloc, memloc')
+				  then RETURN commit
+				  else CONTINUE default
+			    fun use ()
+			      = if MemLoc.eq(memloc, memloc')
+				  then if track memloc
+					 then RETURN NO
+					 else CONTINUE COMMIT
+				  else if MemLoc.mayAlias(memloc, memloc')
+					 then RETURN COMMIT
+					 else CONTINUE default
+			    fun usedef ()
+			      = if MemLoc.eq(memloc, memloc')
+				  then RETURN NO
+				  else if MemLoc.mayAlias(memloc, memloc')
+					 then RETURN REMOVE
+					 else CONTINUE default
+			    fun def ()
+			      = if MemLoc.eq(memloc, memloc')
+				  then RETURN DEAD
+				  else if MemLoc.mayAlias(memloc, memloc')
+					 then RETURN REMOVE
+					 else CONTINUE default
+			  in
+			    case tag
+			      of FLIVE => use ()
+			       | FCOMMIT => doit COMMIT
+			       | FREMOVE => doit REMOVE
+			       | FDEAD => doit DEAD
+			       | FUSE => use ()
+			       | FUSEDEF => usedef ()
+			       | FDEF => def ()
+			  end))
+
+	    val (no_def,commit_def,remove_def,dead_def)
+	      = split
+	        (current_usedef,
+		 fn memloc
+		  => scan
+		     (future,
+		      if track memloc
+			then DEAD
+			else REMOVE,
+		      fn (default, (tag, memloc'))
+		       => let
+			    fun doit commit
+			      = if MemLoc.eq(memloc, memloc')
+				  then RETURN commit
+				  else CONTINUE default
+			    fun use ()
+			      = if MemLoc.eq(memloc, memloc')
+				  then if track memloc
+					 then RETURN NO
+					 else CONTINUE COMMIT
+				  else if MemLoc.mayAlias(memloc, memloc')
+					 then RETURN COMMIT
+					 else CONTINUE default
+			    fun usedef ()
+			      = if MemLoc.eq(memloc, memloc')
+				  then RETURN NO
+				  else if MemLoc.mayAlias(memloc, memloc')
+					 then RETURN REMOVE
+					 else CONTINUE default
+			    fun def ()
+			      = if MemLoc.eq(memloc, memloc')
+				  then RETURN DEAD
+				  else if MemLoc.mayAlias(memloc, memloc')
+					 then RETURN REMOVE
+					 else CONTINUE default
+			  in
+			    case tag
+			      of FLIVE => use ()
+			       | FCOMMIT => doit COMMIT
+			       | FREMOVE => doit REMOVE
+			       | FDEAD => doit DEAD
+			       | FUSE => use ()
+			       | FUSEDEF => usedef ()
+			       | FDEF => def ()
+			  end))
+
+(*
 	    val (no_use,commit_use,remove_use,dead_use)
 	      = split(current_use,
 		      fn memloc
@@ -389,6 +610,7 @@ struct
 				 else if MemLoc.mayAlias(memloc,memloc')
 					then RETURN REMOVE
 					else CONTINUE default))
+*)
 
 	    val no = MemLocSet.unions [no_use,no_usedef,no_def]
 	    val commit = MemLocSet.unions [commit_use,commit_usedef,commit_def]
@@ -400,31 +622,32 @@ struct
 		  val future
 		    = List.removeAll
 		      (future,
-		       fn NEED memloc => MemLocSet.contains(current_use,
-							    memloc)
-		                         orelse
-					 MemLocSet.contains(current_usedef,
-							    memloc)
-					 orelse
-					 MemLocSet.contains(current_def,
-							    memloc)
-			| USE memloc => MemLocSet.contains(current_use,
-							   memloc)
-		        | USEDEF memloc => MemLocSet.contains(current_usedef,
-							      memloc)
-		        | DEF memloc => MemLocSet.contains(current_def,
-							   memloc))
+		       fn (tag, memloc)
+		        => let
+			     val def = MemLocSet.contains(current_usedef, memloc)
+			     val usedef = MemLocSet.contains(current_def, memloc)
+			     val use = MemLocSet.contains(current_use, memloc)
+			   in
+			     case tag
+			       of FLIVE => use
+				| FCOMMIT => def orelse usedef
+				| FREMOVE => def orelse usedef
+				| FDEAD => def orelse usedef
+				| FUSE => use
+				| FUSEDEF => usedef
+				| FDEF => def
+			   end)
 
-		  fun doit(memlocs, constructor, future)
+		  fun doit(memlocs, tag, future)
 		    = MemLocSet.fold
 		      (memlocs,
 		       future,
 		       fn (memloc,future) 
-		        => (constructor memloc)::future)
+		        => (tag, memloc)::future)
 		in
-		  doit(current_use, USE,
-		  doit(current_usedef, USEDEF,
-		  doit(current_def, DEF,
+		  doit(current_use, FUSE,
+		  doit(current_usedef, FUSEDEF,
+		  doit(current_def, FDEF,
 		       future)))
 		end
 
@@ -435,10 +658,7 @@ struct
 		       | (future,0) 
 		       => List.keepAll
 		          (future,
-			   track o (fn NEED memloc => memloc
-				     | USE memloc => memloc
-			             | USEDEF memloc => memloc
-				     | DEF memloc => memloc))
+			   track o (fn (tag, memloc) => memloc))
 		       | (h::future,n) => h::(cut(future,n-1))
 		in 
 		  cut(future, !Control.Native.future)
@@ -460,116 +680,90 @@ struct
 	    val cstaticClasses = !x86MLton.Classes.cstaticClasses
 	    val {uses,defs,...} 
 	      = case assembly
-		  of Assembly.Directive (Directive.Commit {...})
-		   => {uses = [], defs = [], kills = []}
-		   | Assembly.Directive (Directive.SaveRegAlloc {...})
+	          of Assembly.Directive _
 		   => {uses = [], defs = [], kills = []}
 		   | _ => Assembly.uses_defs_kills assembly
 	    val future
 	      = case assembly
 		  of Assembly.Directive Directive.Reset 
 		   => []
-		   | Assembly.Directive (Directive.Commit {memlocs,
-							   classes, 
-							   remove_memlocs,
-							   remove_classes,
-							   eject_classes,
-							   ...})
-		   => List.map(memlocs @ remove_memlocs, fn memloc => NEED memloc) @
-                      List.keepAllMap
-		      (future,
-		       fn NEED memloc
-		        => if List.contains(eject_classes,
-					    MemLoc.class memloc,
-					    MemLoc.Class.eq)
-			     then NONE
-			     else if List.contains(classes @ remove_classes,
-						   MemLoc.class memloc,
-						   MemLoc.Class.eq)
-				    then SOME (USE memloc)
-				    else SOME (USE memloc)
-		        | USE memloc
-		        => if List.contains(eject_classes,
-					    MemLoc.class memloc,
-					    MemLoc.Class.eq)
-			     then NONE
-			     else if List.contains(classes @ remove_classes,
-						   MemLoc.class memloc,
-						   MemLoc.Class.eq)
-				    then SOME (USE memloc)
-				    else SOME (USE memloc)
-		        | USEDEF memloc
-		        => if List.contains(eject_classes,
-					    MemLoc.class memloc,
-					    MemLoc.Class.eq)
-			     then NONE
-			     else if List.contains(classes @ remove_classes,
-						   MemLoc.class memloc,
-						   MemLoc.Class.eq)
-				    then SOME (USE memloc)
-				    else SOME (USEDEF memloc)
-			| DEF memloc
-			=> if List.contains(eject_classes,
-					    MemLoc.class memloc,
-					    MemLoc.Class.eq)
-			     then NONE
-			     else if List.contains(classes @ remove_classes,
-						   MemLoc.class memloc,
-						   MemLoc.Class.eq)
-				    then NONE
-				    else SOME (DEF memloc))
+		   | Assembly.Directive (Directive.Cache {caches, ...})
+		   => (List.map(caches, fn {memloc, ...} => (FLIVE, memloc))) @
+		      future
+		   | Assembly.Directive (Directive.FltCache {caches, ...})
+		   => (List.map(caches, fn {memloc, ...} => (FLIVE, memloc))) @
+		      future
+		   | Assembly.Directive (Directive.Force {commit_memlocs,
+							  commit_classes, 
+							  remove_memlocs,
+							  remove_classes,
+							  dead_memlocs,
+							  dead_classes,
+							  ...})
+		   => List.concat
+		      [List.map(commit_memlocs, fn memloc => (FCOMMIT, memloc)),
+		       List.map(remove_memlocs, fn memloc => (FREMOVE, memloc)),
+		       List.map(dead_memlocs, fn memloc => (FDEAD, memloc)),
+		       List.keepAllMap
+		       (future,
+			fn (future as (tag, memloc))
+			 => let
+			      val commit 
+				= List.contains(commit_memlocs,
+						memloc,
+						MemLoc.eq)
+			      val commit_class
+				= List.contains(commit_classes,
+						MemLoc.class memloc,
+						MemLoc.Class.eq)
+			      val remove 
+				= List.contains(remove_memlocs,
+						memloc,
+						MemLoc.eq)
+			      val remove_class
+				= List.contains(remove_classes,
+						MemLoc.class memloc,
+						MemLoc.Class.eq)
+			      val dead = List.contains(dead_memlocs,
+						       memloc,
+						       MemLoc.eq)
+			      val dead_class
+				= List.contains(dead_classes,
+						MemLoc.class memloc,
+						MemLoc.Class.eq)
+			      val force 
+				= commit orelse remove orelse dead
+			      val force_class 
+				= commit_class orelse remove_class orelse dead_class
+			    in
+			      if force
+				then NONE
+				else if commit_class
+				       then SOME (FCOMMIT, memloc)
+				     else if remove_class
+				       then SOME (FREMOVE, memloc)
+				     else if dead_class
+				       then SOME (FDEAD, memloc)
+				     else SOME future
+			    end)]
 		   | Assembly.Directive Directive.CCall
-		   => List.keepAllMap
+		   => List.map
 		      (future,
-		       fn NEED memloc 
-		        => (case Size.class (MemLoc.size memloc)
-			      of Size.INT => if ClassSet.contains(cstaticClasses,
-								  MemLoc.class memloc)
-					       then NONE
-					       else SOME (USE memloc)
-			       | _ => SOME (USE memloc))
-		        | USE memloc 
-		        => (case Size.class (MemLoc.size memloc)
-			      of Size.INT => if ClassSet.contains(cstaticClasses,
-								  MemLoc.class memloc)
-					       then NONE
-					       else SOME (USE memloc)
-			       | _ => SOME (USE memloc))
-			| USEDEF memloc 
-			=> (case Size.class (MemLoc.size memloc)
-			      of Size.INT => if ClassSet.contains(cstaticClasses,
-								  MemLoc.class memloc)
-					       then NONE
-					       else SOME (USEDEF memloc)
-			       | _ => SOME (USEDEF memloc))
-			| DEF memloc 
-		        => (case Size.class (MemLoc.size memloc)
-			      of Size.INT => if ClassSet.contains(cstaticClasses,
-								  MemLoc.class memloc)
-					       then NONE
-					       else SOME (DEF memloc)
-			       | _ => NONE))
+		       fn (future as (tag, memloc))
+		        => if (Size.class (MemLoc.size memloc) <> Size.INT)
+		              orelse
+			      (ClassSet.contains(cstaticClasses, MemLoc.class memloc))
+			     then (FREMOVE, memloc)
+			     else future)
 		   | Assembly.Directive Directive.ClearFlt
-		   => List.keepAllMap
+		   => List.map
 		      (future,
-		       fn NEED memloc 
-		        => (case Size.class (MemLoc.size memloc)
-			      of Size.INT => SOME (USE memloc)
-			       | _ => SOME (USE memloc))
-		        | USE memloc 
-		        => (case Size.class (MemLoc.size memloc)
-			      of Size.INT => SOME (USE memloc)
-			       | _ => SOME (USE memloc))
-			| USEDEF memloc 
-			=> (case Size.class (MemLoc.size memloc)
-			      of Size.INT => SOME (USEDEF memloc)
-			       | _ => SOME (USE memloc))
-			| DEF memloc
-			=> (case Size.class (MemLoc.size memloc)
-			      of Size.INT => SOME (DEF memloc)
-			       | _ => NONE))
+		       fn (future as (tag, memloc))
+		        => if (Size.class (MemLoc.size memloc) <> Size.INT)
+			     then (FREMOVE, memloc)
+			     else future)
                    | Assembly.Directive (Directive.SaveRegAlloc {live, ...})
-		   => List.map(live, fn memloc => NEED memloc) @ future
+		   => List.map(live, fn memloc => (FLIVE, memloc)) @ future
 		   | _ => future
 
 	    local 
@@ -590,6 +784,11 @@ struct
 	      = liveness {uses = uses,
 			  defs = defs,
 			  future = future}
+
+	    val hint 
+	      = case assembly
+		  of Assembly.Directive Directive.Reset => []
+		   | _ => hint
 
 	    val hint' = Assembly.hints assembly
 	    val hint
@@ -1374,11 +1573,16 @@ struct
 					 val future_cost'
 					   = List.index
 					     (future,
-					      fn Liveness.USE memloc'
-					       => MemLoc.eq(memloc,memloc')
-					       | Liveness.USEDEF memloc'
-					       => MemLoc.eq(memloc,memloc')
-					       | _ => false)
+					      fn (tag, memloc')
+					       => let
+						    val eq = MemLoc.eq(memloc, memloc')
+						  in 
+						    case tag
+						      of Liveness.FLIVE => eq
+						       | Liveness.FUSE => eq
+						       | Liveness.FUSEDEF => eq
+						       | _ => false
+						  end)
 
 					 val utilized_cost'
 					   = List.fold
@@ -1696,12 +1900,18 @@ struct
 				       | _ => true
 
 				val future_cost
-				  = List.index(future,
-					       fn Liveness.USE memloc'
-					        => MemLoc.eq(memloc,memloc')
-					        | Liveness.USEDEF memloc'
-					        => MemLoc.eq(memloc,memloc')
-					        | _ => false)
+				  = List.index
+				    (future,
+				     fn (tag, memloc')
+				      => let
+					   val eq = MemLoc.eq(memloc, memloc')
+					 in
+					   case tag
+					     of Liveness.FLIVE => eq
+					      | Liveness.FUSE => eq
+					      | Liveness.FUSEDEF => eq
+					      | _ => false
+					 end)
 
 				val sync_cost = sync
 
@@ -2713,6 +2923,32 @@ struct
 				  saves = (Operand.register register)::saves,
 				  force = force,
 				  registerAllocation = registerAllocation}
+(*
+			     val {memloc, 
+				  registerAllocation}
+			       = if List.contains(saves, 
+						  Operand.register final_register,
+						  Operand.eq)
+			            orelse
+                                    List.contains(saves,
+						  Operand.memloc memloc,
+						  Operand.eq)
+				   then {memloc 
+					 = MemLoc.imm
+					   {base = Immediate.label
+					           (Label.fromString "BUG"),
+					    index = Immediate.const_int 0,
+					    scale = Scale.One,
+					    size = MemLoc.size memloc,
+					    class = MemLoc.Class.Temp},
+					   registerAllocation
+					   = registerAllocation}
+				   else {memloc = memloc,
+					 registerAllocation
+					 = delete {register = register,
+						   registerAllocation
+						   = registerAllocation}}
+*)
 			     val registerAllocation
 			       = delete {register = register,
 					 registerAllocation
@@ -5130,14 +5366,14 @@ struct
 	= {assembly = AppendList.empty,
 	   registerAllocation = empty ()}
 
-      fun commit {memlocs: MemLoc.t list,
-		  classes: MemLoc.Class.t list,
-		  remove_memlocs: MemLoc.t list,
-		  remove_classes: MemLoc.Class.t list,
-		  eject_memlocs: MemLoc.t list,
-		  eject_classes: MemLoc.Class.t list,
-		  info: Liveness.t,
-		  registerAllocation: t}
+      fun force {commit_memlocs: MemLoc.t list,
+		 commit_classes: MemLoc.Class.t list,
+		 remove_memlocs: MemLoc.t list,
+		 remove_classes: MemLoc.Class.t list,
+		 dead_memlocs: MemLoc.t list,
+		 dead_classes: MemLoc.Class.t list,
+		 info: Liveness.t,
+		 registerAllocation: t}
 	= let
 	    val toCommit 
 	      = fn TRYREMOVE _ => REMOVE 0
@@ -5153,10 +5389,10 @@ struct
 					 weight,
 					 sync,
 					 commit}
-			     => case (List.contains(memlocs,
+			     => case (List.contains(commit_memlocs,
 						    memloc,
 						    MemLoc.eq),
-				      List.contains(classes,
+				      List.contains(commit_classes,
 						    MemLoc.class memloc,
 						    MemLoc.Class.eq),
 				      List.contains(remove_memlocs,
@@ -5165,10 +5401,10 @@ struct
 				      List.contains(remove_classes,
 						    MemLoc.class memloc,
 						    MemLoc.Class.eq),
-				      List.contains(eject_memlocs,
+				      List.contains(dead_memlocs,
 						    memloc,
 						    MemLoc.eq),
-				      List.contains(eject_classes,
+				      List.contains(dead_classes,
 						    MemLoc.class memloc,
 						    MemLoc.Class.eq))
 				  of (true,_,false,false,false,false)
@@ -5219,10 +5455,10 @@ struct
 					    weight,
 					    sync,
 					    commit}
-				 => case (List.contains(memlocs,
+				 => case (List.contains(commit_memlocs,
 							memloc,
 							MemLoc.eq),
-					  List.contains(classes,
+					  List.contains(commit_classes,
 							MemLoc.class memloc,
 							MemLoc.Class.eq),
 					  List.contains(remove_memlocs,
@@ -5231,10 +5467,10 @@ struct
 					  List.contains(remove_classes,
 							MemLoc.class memloc,
 							MemLoc.Class.eq),
-					  List.contains(eject_memlocs,
+					  List.contains(dead_memlocs,
 							memloc,
 							MemLoc.eq),
-					  List.contains(eject_classes,
+					  List.contains(dead_classes,
 							MemLoc.class memloc,
 							MemLoc.Class.eq))
 				      of (true,_,false,false,false,false)
@@ -6047,18 +6283,18 @@ struct
 		*      add  X
 		*)
 	     => let
+		  val {uses,defs,kills} 
+		    = Instruction.uses_defs_kills instruction
+		  val {assembly = assembly_pre,
+		       registerAllocation}
+		    = RA.pre {uses = uses,
+			      defs = defs,
+			      kills = kills,
+			      info = info,
+			      registerAllocation = registerAllocation}
+
 		  fun default ()
 		    = let
-			val {uses,defs,kills} 
-			  = Instruction.uses_defs_kills instruction
-			val {assembly = assembly_pre,
-			     registerAllocation}
-			  = RA.pre {uses = uses,
-				    defs = defs,
-				    kills = kills,
-				    info = info,
-				    registerAllocation = registerAllocation}
-			  
 			val {final_src,
 			     final_dst,
 			     assembly_src_dst,
@@ -6103,16 +6339,6 @@ struct
 
 		  fun default' ()
 		    = let
-			val {uses,defs,kills} 
-			  = Instruction.uses_defs_kills instruction
-			val {assembly = assembly_pre,
-			     registerAllocation}
-			  = RA.pre {uses = uses,
-				    defs = defs,
-				    kills = kills,
-				    info = info,
-				    registerAllocation = registerAllocation}
-			  
 			val instruction 
 			  = Instruction.NOP
 
@@ -7102,18 +7328,18 @@ struct
 		*      add  X
 		*)
 	     => let
+		  val {uses,defs,kills} 
+		    = Instruction.uses_defs_kills instruction
+		  val {assembly = assembly_pre,
+		       registerAllocation}
+		    = RA.pre {uses = uses,
+			      defs = defs,
+			      kills = kills,
+			      info = info,
+			      registerAllocation = registerAllocation}
+
 		  fun default ()
 		    = let
-			val {uses,defs,kills} 
-			  = Instruction.uses_defs_kills instruction
-			val {assembly = assembly_pre,
-			     registerAllocation}
-			  = RA.pre {uses = uses,
-				    defs = defs,
-				    kills = kills,
-				    info = info,
-				    registerAllocation = registerAllocation}
-			  
 			val {final_src,
 			     final_dst,
 			     assembly_src_dst,
@@ -7184,16 +7410,6 @@ struct
 				 commit = commit_src},
 				memloc_dst)
 		    = let
-			val {uses,defs,kills} 
-			  = Instruction.uses_defs_kills instruction
-			val {assembly = assembly_pre,
-			     registerAllocation}
-			  = RA.pre {uses = uses,
-				    defs = defs,
-				    kills = kills,
-				    info = info,
-				    registerAllocation = registerAllocation}
-
 			val registerAllocation
 			  = RA.remove
 			    {memloc = memloc_dst,
@@ -7229,16 +7445,6 @@ struct
 
 		  fun default'' (memloc_dst)
 		    = let
-			val {uses,defs,kills} 
-			  = Instruction.uses_defs_kills instruction
-			val {assembly = assembly_pre,
-			     registerAllocation}
-			  = RA.pre {uses = uses,
-				    defs = defs,
-				    kills = kills,
-				    info = info,
-				    registerAllocation = registerAllocation}
-
 			val registerAllocation
 			  = RA.remove
 			    {memloc = memloc_dst,
@@ -8330,18 +8536,18 @@ struct
 	     (* Pseudo floating-point to integer.
 	      *)
 	     => let
+		  val {uses,defs,kills} 
+		    = Instruction.uses_defs_kills instruction
+		  val {assembly = assembly_pre,
+		       registerAllocation}
+		    = RA.pre {uses = uses,
+			      defs = defs,
+			      kills = kills,
+			      info = info,
+			      registerAllocation = registerAllocation}
+
 		  fun default ()
 		    = let
-			val {uses,defs,kills} 
-			  = Instruction.uses_defs_kills instruction
-			val {assembly = assembly_pre,
-			     registerAllocation}
-			  = RA.pre {uses = uses,
-				    defs = defs,
-				    kills = kills,
-				    info = info,
-				    registerAllocation = registerAllocation}
-
 			val {operand = final_src,
 			     assembly = assembly_src,
 			     rename = rename_src,
@@ -8408,16 +8614,6 @@ struct
 
 		  fun default' ()
 		    = let
-			val {uses,defs,kills} 
-			  = Instruction.uses_defs_kills instruction
-			val {assembly = assembly_pre,
-			     registerAllocation}
-			  = RA.pre {uses = uses,
-				    defs = defs,
-				    kills = kills,
-				    info = info,
-				    registerAllocation = registerAllocation}
-
 			val {operand = final_src,
 			     assembly = assembly_src,
 			     rename = rename_src,
@@ -10017,16 +10213,16 @@ struct
 		   | Reset
 		   => RegisterAllocation.reset 
 		      {registerAllocation = registerAllocation}
-		   | Commit {memlocs, classes, 
-			     remove_memlocs, remove_classes, 
-			     eject_memlocs, eject_classes}
-		   => RegisterAllocation.commit
-		      {memlocs = memlocs,
-		       classes = classes,
+		   | Force {commit_memlocs, commit_classes, 
+			    remove_memlocs, remove_classes, 
+			    dead_memlocs, dead_classes}
+		   => RegisterAllocation.force
+		      {commit_memlocs = commit_memlocs,
+		       commit_classes = commit_classes,
 		       remove_memlocs = remove_memlocs,
 		       remove_classes = remove_classes,
-		       eject_memlocs = eject_memlocs,
-		       eject_classes = eject_classes,
+		       dead_memlocs = dead_memlocs,
+		       dead_classes = dead_classes,
 		       info = info,
 		       registerAllocation = registerAllocation}
 		   | CCall
@@ -10124,10 +10320,12 @@ struct
 				     (Assembly.comment
 				      (Directive.toString d))]
 			       else AppendList.empty,
+(*
 			     if !Control.Native.commented > 4
 			       then AppendList.fromList
 				    (Liveness.toComments info)
 			       else AppendList.empty,
+*)
 			     assembly',
 			     if !Control.Native.commented > 5
 			       then (RegisterAllocation.toComments 
@@ -10181,10 +10379,12 @@ struct
 				     (Assembly.comment
 				      (Instruction.toString i))]
 			       else AppendList.empty,
+(*
 			     if !Control.Native.commented > 4
 			       then AppendList.fromList
 				    (Liveness.toComments info)
 			       else AppendList.empty,
+*)
 			     assembly',
 			     if !Control.Native.commented > 5
 			       then (RegisterAllocation.toComments 
@@ -10196,8 +10396,17 @@ struct
 				     assembly''),
 			 registerAllocation = registerAllocation}
 		      end)
+		
+	    val assembly = AppendList.toList assembly
+	    val assembly = if !Control.Native.commented > 1
+			     then (Assembly.comment
+				   (String.make (60, #"&"))::
+				   Assembly.comment
+				   (String.make (60, #"&"))::
+				   assembly)
+			     else assembly
 	  in
-	    {assembly = AppendList.toList assembly,
+	    {assembly = assembly,
 	     registerAllocation = registerAllocation}
 	  end
 

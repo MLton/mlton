@@ -3231,6 +3231,7 @@ struct
 		finish, 
 		transfer}
 	     => let
+(*
 		  val label = let
 				val (entry,_) = entry
 			      in 
@@ -3248,6 +3249,7 @@ struct
 				 => (print (Operand.toString operand);
 				     print " ")))
 		  val _ = print "\n"
+*)
 
 		  val {statements, live}
 		    = LivenessBlock.reLivenessStatements

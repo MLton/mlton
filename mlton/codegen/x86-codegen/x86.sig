@@ -654,12 +654,12 @@ signature X86 =
 	    (* Ensure that memlocs are commited to memory;
 	     * used at bot of basic blocks to establish passing conventions
 	     *)
-	  | Commit of {memlocs: MemLoc.t list,
-		       classes: MemLoc.Class.t list,
-		       remove_memlocs: MemLoc.t list,
-		       remove_classes: MemLoc.Class.t list,
-		       eject_memlocs: MemLoc.t list,
-		       eject_classes: MemLoc.Class.t list}
+	  | Force of {commit_memlocs: MemLoc.t list,
+		      commit_classes: MemLoc.Class.t list,
+		      remove_memlocs: MemLoc.t list,
+		      remove_classes: MemLoc.Class.t list,
+		      dead_memlocs: MemLoc.t list,
+		      dead_classes: MemLoc.Class.t list}
 	  (* C calls *)
 	    (* Prepare for a C call; i.e., clear all caller save registers;
 	     * also, clear the flt. register stack;
@@ -723,12 +723,12 @@ signature X86 =
 			      reserve: bool} list} -> t
 	val fltcache : {caches: {memloc: MemLoc.t} list} -> t
 	val reset : unit -> t
-	val commit : {memlocs: MemLoc.t list,
-		      classes: MemLoc.Class.t list,
-		      remove_memlocs: MemLoc.t list,
-		      remove_classes: MemLoc.Class.t list,
-		      eject_memlocs: MemLoc.t list,
-		      eject_classes: MemLoc.Class.t list} -> t
+	val force : {commit_memlocs: MemLoc.t list,
+		     commit_classes: MemLoc.Class.t list,
+		     remove_memlocs: MemLoc.t list,
+		     remove_classes: MemLoc.Class.t list,
+		     dead_memlocs: MemLoc.t list,
+		     dead_classes: MemLoc.Class.t list} -> t
 	val ccall : unit -> t
 	val return : {memloc: MemLoc.t} -> t
 	val fltreturn : {memloc: MemLoc.t} -> t
@@ -807,12 +807,12 @@ signature X86 =
 					reserve: bool} list} -> t
 	val directive_fltcache : {caches: {memloc: MemLoc.t} list} -> t
 	val directive_reset : unit -> t
-	val directive_commit : {memlocs: MemLoc.t list,
-				classes: MemLoc.Class.t list,
-				remove_memlocs: MemLoc.t list,
-				remove_classes: MemLoc.Class.t list,
-				eject_memlocs: MemLoc.t list,
-				eject_classes: MemLoc.Class.t list} -> t
+	val directive_force : {commit_memlocs: MemLoc.t list,
+			       commit_classes: MemLoc.Class.t list,
+			       remove_memlocs: MemLoc.t list,
+			       remove_classes: MemLoc.Class.t list,
+			       dead_memlocs: MemLoc.t list,
+			       dead_classes: MemLoc.Class.t list} -> t
 	val directive_ccall : unit -> t
 	val directive_return : {memloc: MemLoc.t} -> t
 	val directive_fltreturn : {memloc: MemLoc.t} -> t

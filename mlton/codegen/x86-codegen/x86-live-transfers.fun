@@ -335,6 +335,8 @@ struct
 				     then Position I.PosInfinity
 				     else Length (I'.+(n, I'.one))
 			  end
+			| posF' ((Assembly.Comment _)::assembly,n)
+			= posF (assembly, n)
 			| posF' (asm::assembly,n)
 			= let
 			    val {uses,defs,...} 

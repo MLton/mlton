@@ -2741,12 +2741,12 @@ struct
 	  (* Ensure that memlocs are commited to memory;
 	   * used at bot of basic blocks to establish passing conventions
 	   *)
-	| Commit of {memlocs: MemLoc.t list,
-		     classes: MemLoc.Class.t list,
-		     remove_memlocs: MemLoc.t list,
-		     remove_classes: MemLoc.Class.t list,
-		     eject_memlocs: MemLoc.t list,
-		     eject_classes: MemLoc.Class.t list}
+	| Force of {commit_memlocs: MemLoc.t list,
+		    commit_classes: MemLoc.Class.t list,
+		    remove_memlocs: MemLoc.t list,
+		    remove_classes: MemLoc.Class.t list,
+		    dead_memlocs: MemLoc.t list,
+		    dead_classes: MemLoc.Class.t list}
 	(* C calls *)
 	  (* Prepare for a C call; i.e., clear all caller save registers;
 	   * also, clear the flt. register stack;
@@ -2837,17 +2837,17 @@ struct
 		       => concat[MemLoc.toString memloc, 
 				 " ",
 				 s])]
-	   | Commit {memlocs, classes,
-		     remove_memlocs, remove_classes,
-		     eject_memlocs, eject_classes}
-	   => concat["Commit: ", 
-		     "memlocs: ",
-		     List.fold(memlocs,
+	   | Force {commit_memlocs, commit_classes,
+		    remove_memlocs, remove_classes,
+		    dead_memlocs, dead_classes}
+	   => concat["Force: ", 
+		     "commit_memlocs: ",
+		     List.fold(commit_memlocs,
 			       "",
 			       fn (memloc,s)
 			        => concat[MemLoc.toString memloc, " ", s]),
-		     "classes: ",
-		     List.fold(classes,
+		     "commit_classes: ",
+		     List.fold(commit_classes,
 			       "",
 			       fn (class,s)
 			        => concat[MemLoc.Class.toString class, " ", s]),
@@ -2861,13 +2861,13 @@ struct
 			       "",
 			       fn (class,s)
 			        => concat[MemLoc.Class.toString class, " ", s]),
-		     "eject_memlocs: ",
-		     List.fold(eject_memlocs,
+		     "dead_memlocs: ",
+		     List.fold(dead_memlocs,
 			       "",
 			       fn (memloc,s)
 			        => concat[MemLoc.toString memloc, " ", s]),
-		     "eject_classes: ",
-		     List.fold(eject_classes,
+		     "dead_classes: ",
+		     List.fold(dead_classes,
 			       "",
 			       fn (class,s)
 			        => concat[MemLoc.Class.toString class, " ", s])]
@@ -2951,8 +2951,8 @@ struct
 		    defs = defs, 
 		    kills = []})
 	   | Reset => {uses = [], defs = [], kills = []}
-           | Commit {memlocs, remove_memlocs, eject_memlocs, ...}
-	   => {uses = List.map(memlocs @ remove_memlocs, 
+           | Force {commit_memlocs, remove_memlocs, dead_memlocs, ...}
+	   => {uses = List.map(commit_memlocs @ remove_memlocs, 
 			       Operand.memloc), 
 	       defs = [], 
 	       kills = []}
@@ -3020,42 +3020,42 @@ struct
 					   of Operand.MemLoc memloc => memloc
 					    | _ => Error.bug "Directive.replace"})}
 	   | Reset => Reset
-	   | Commit {memlocs, classes, 
-		     remove_memlocs, remove_classes,
-		     eject_memlocs, eject_classes}
-           => Commit {memlocs = List.map(memlocs,
-					 fn memloc
-					  => case replacer 
-                                                  {use = true, def = false}
-                                                  (Operand.memloc memloc)
-					       of Operand.MemLoc memloc 
-					        => memloc
-					        | _ 
-					        => Error.bug 
-                                                   "Directive.replace"),
-		      classes = classes,
-		      remove_memlocs = List.map(remove_memlocs,
-						fn memloc
-						 => case replacer 
-						         {use = true, def = false}
-							 (Operand.memloc memloc)
-						      of Operand.MemLoc memloc 
-						       => memloc
-						       | _ 
-						       => Error.bug 
-							  "Directive.replace"),
-		      remove_classes = remove_classes,
-		      eject_memlocs = List.map(memlocs,
+	   | Force {commit_memlocs, commit_classes, 
+		    remove_memlocs, remove_classes,
+		    dead_memlocs, dead_classes}
+           => Force {commit_memlocs = List.map(commit_memlocs,
 					       fn memloc
 					        => case replacer 
-					                {use = false, def = false}
+					                {use = true, def = false}
 							(Operand.memloc memloc)
 						     of Operand.MemLoc memloc 
 						      => memloc
 					              | _ 
+					              => Error.bug 
+                                                         "Directive.replace"),
+		     commit_classes = commit_classes,
+		     remove_memlocs = List.map(remove_memlocs,
+					       fn memloc
+					        => case replacer 
+					                {use = true, def = false}
+							(Operand.memloc memloc)
+						     of Operand.MemLoc memloc 
+						      => memloc
+						      | _ 
 						      => Error.bug 
 						         "Directive.replace"),
-		      eject_classes = eject_classes}
+		     remove_classes = remove_classes,
+		     dead_memlocs = List.map(dead_memlocs,
+					     fn memloc
+					      => case replacer 
+					              {use = false, def = false}
+						      (Operand.memloc memloc)
+						   of Operand.MemLoc memloc 
+						    => memloc
+					            | _ 
+						    => Error.bug 
+						       "Directive.replace"),
+		     dead_classes = dead_classes}
 	   | CCall => CCall
            | Return {memloc}
            => Return {memloc = case replacer {use = true, def = false}
@@ -3078,7 +3078,7 @@ struct
       val cache = Cache
       val fltcache = FltCache
       val reset = fn () => Reset
-      val commit = Commit
+      val force = Force
       val ccall = fn () => CCall
       val return = Return
       val fltreturn = FltReturn
@@ -3250,7 +3250,7 @@ struct
       val directive_cache = Directive o Directive.cache
       val directive_fltcache = Directive o Directive.fltcache
       val directive_reset = Directive o Directive.reset
-      val directive_commit = Directive o Directive.commit
+      val directive_force = Directive o Directive.force
       val directive_ccall = Directive o Directive.ccall
       val directive_return = Directive o Directive.return
       val directive_fltreturn = Directive o Directive.fltreturn

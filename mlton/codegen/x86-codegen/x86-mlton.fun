@@ -672,7 +672,7 @@ struct
 	  transfer = SOME (Transfer.ccall {target = target,
 					   args = args,
 					   dst = dst,
-					   live = [c_stackPContents],
+					   live = [],
 					   return = return})},
 	 Block.T'
 	 {entry = SOME (Entry.jump {label = return}),
