@@ -257,6 +257,12 @@ structure Unknown =
       datatype t = T of {canGeneralize: bool,
 			 id: int}
 
+      local
+	 fun make f (T r) = f r
+      in
+	 val id = make #id
+      end
+
       fun layout (T {canGeneralize, id, ...}) =
 	 let
 	    open Layout
@@ -265,6 +271,8 @@ structure Unknown =
 		 record [("canGeneralize", Bool.layout canGeneralize),
 			 ("id", Int.layout id)]]
 	 end
+
+      fun equals (u, u') = id u = id u'
 
       local
 	 val r: int ref = ref 0
@@ -988,11 +996,46 @@ structure Type =
 				  else not ()
 			     | _ => not ()
 			 end
-		      fun oneUnknown (_, time, t, outer, _) =
+		      fun oneUnknown (u: Unknown.t, time,
+				      t: Type.ty,
+				      outer: Type.t,
+				      swap: bool) =
 			 let
-			    val _ = minTime (outer, time)
+			    (* This should fail if the unknown occurs in t.
+			     *)
+			    fun con (_, _, ts) =
+			       Vector.exists (ts, fn b => b)
+			    fun doFields fields =
+			       List.exists (fields, fn (_, b) => b)
+			    fun flexRecord (_, {fields, spine}) =
+			       doFields fields
+			    fun genFlexRecord (_, {extra, fields, spine}) =
+			       doFields fields
+			    fun record (_, r) = Srecord.exists (r, fn b => b)
+			    fun unknown (_, u') = Unknown.equals (u, u')
+			    fun no _ = false
+			    val isCircular =
+			       hom (outer,
+				    {con = con,
+				     expandOpaque = false,
+				     flexRecord = flexRecord,
+				     genFlexRecord = genFlexRecord,
+				     int = no,
+				     real = no,
+				     record = record,
+				     recursive = fn _ => Error.bug "oneUnknown recursive",
+				     unknown = unknown,
+				     var = no,
+				     word = no})
 			 in
-			    (Unified, t)
+			    if isCircular
+			       then not ()
+			    else
+			       let
+				  val () = minTime (outer, time)
+			       in
+				  (Unified, t)
+			       end
 			 end
 		      val (res, t) =
 			 case (t, t') of

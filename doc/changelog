@@ -3,6 +3,8 @@ Here are the changes since version 20040227.
 * 2004-04-12
   - Fix bug that mistakenly generalized variable types containing
     unknown types when matching against a signature.
+  - Reasonable front-end error message when unification causes
+    recursive (circular) type.
 
 * 2004-04-03
   - Fixed bug in sharing constraints so that A = B = C means that all
