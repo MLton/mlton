@@ -272,5 +272,3 @@ structure Main =
    struct
       val doit = Test.time_test
    end
-
-val _ = Main.doit ()
