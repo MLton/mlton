@@ -22,13 +22,11 @@ int mkstemp (char *template) {
 	char file_path[255];
 	char file_name[255];
 	char templ[4];
-	DWORD size;
 
-	size = sizeof (file_path);
-	if (0 == GetTempPath (size, file_path))
+	if (0 == GetTempPath (sizeof (file_path), file_path))
 		diee ("unable to make temporary file");
-	strncpy (templ, template, 3);
-	templ[3] = 0x00;
+	strncpy (templ, template, sizeof (templ) - 1);
+	templ[sizeof (templ) - 1] = 0x00;
 	if (0 == GetTempFileName (file_path, templ, 0, file_name))
 		diee ("unable to make temporary file");
 	return _open (file_name, _O_CREAT | _O_RDWR, _S_IREAD | _S_IWRITE);
