@@ -24,13 +24,6 @@ ifeq ($(TARGET_ARCH), sparc)
 FLAGS += -Wa,-xarch=v8plusa -fcall-used-g5 -fcall-used-g7 -funroll-all-loops -m32 -mv8 -mcpu=ultrasparc
 endif
 
-# The following defines are a hack to work around the fact the
-# strto{d,f} are defined in libc on Darwin, and hence cannot be also
-# defined by libgdtoa.
-ifeq ($(TARGET_OS), darwin)
-FLAGS += -Dstrtod=mlton_strtod -Dstrtof=mlton_strtof
-endif
-
 ifeq ($(TARGET), self)
 AR = ar rc
 RANLIB = ranlib
@@ -80,8 +73,17 @@ DEBUG_OBJS += $(foreach f, $(EXTRA_FILES), $(f)-gdb.o)
 
 all:  libgdtoa.a libmlton.a libmlton-gdb.a
 
+# When compiling gdtoa, we use defines to replace strto{d,f} with
+# gdtoa_strto{d,f} to avoid conflicts with the C library on some
+# platforms that define their own strto{d,f}.
+
 libgdtoa.a: gdtoa/arith.h
-	cd gdtoa && $(CC) $(CFLAGS) -w -O1 -c -DINFNAN_CHECK *.c
+	cd gdtoa && 					\
+		$(CC) $(CFLAGS) 			\
+			-Dstrtod=gdtoa_strtod		\
+			-Dstrtof=gdtoa_strtof		\
+			-w -O1 -c -DINFNAN_CHECK 	\
+			*.c
 	$(AR) libgdtoa.a gdtoa/*.o
 	$(RANLIB) libgdtoa.a
 
