@@ -82,7 +82,11 @@ fun simplify p =
    let
       fun simplify' n p =
 	 let
-	    val n' = Int.toString n
+	    val mkSuffix = if n = 0
+			     then fn s => s
+			     else let val n' = Int.toString n
+				  in fn s => concat [n',".",s]
+				  end
 	 in
 	    if n = !Control.loopPasses
 	       then p
@@ -102,13 +106,13 @@ fun simplify p =
 			  let
 			     open Control
 			  in maybeSaveToFile
-			     ({name = name, suffix = n' ^ ".pre.ssa"},
+			     ({name = name, suffix = mkSuffix "pre.ssa"},
 			      Control.No, p, Control.Layouts Program.layouts)
 			  end
 		       val p =
 			  Control.passTypeCheck
 			  {name = name,
-			   suffix = n' ^ ".post.ssa",
+			   suffix = mkSuffix "post.ssa",
 			   style = Control.No,
 			   thunk = fn () => pass p,
 			   display = Control.Layouts Program.layouts,
@@ -132,10 +136,6 @@ fun simplify p =
          then p
       else
          let
-(*
-	    val _ = List.push(Control.keepPasses, name)
-	    val _ = List.push(Control.keepDiagnostics, name)
-*)
             val _ =
 	       let
 		  open Control
