@@ -479,12 +479,13 @@ fun commandLine (args: string list): unit =
 					    :: !libs),
 				  linkWithGmp]
 		  datatype debugFormat =
-		     Dwarf | Stabs
+		     Dwarf | Dwarf2 | Stabs
 		  val debugFormat = Stabs
 		  val (gccDebug, asDebug) =
 		     case debugFormat of
-			Dwarf => ("-gdwarf-2", "-Wa,--gdwarf2")
-		      | Stabs => ("-g", "-Wa,--gstabs")
+			Dwarf => (["-gdwarf", "-g2"], "-Wa,--gdwarf2")
+		      | Dwarf2 => (["-gdwarf-2"], "-Wa,--gdwarf2")
+		      | Stabs => (["-g"], "-Wa,--gstabs")
 		  fun compileO (inputs: File.t list) =
 		     let
 			val output = maybeOut ""
@@ -496,7 +497,7 @@ fun commandLine (args: string list): unit =
 				  [case host of
 				      Cross s => ["-b", s]
 				    | Self => [],
-					 if !debug then [gccDebug] else [],
+					 if !debug then gccDebug else [],
 					    if !static then ["-static"] else []],
 				  rest @ linkLibs))
 			   ()
@@ -533,7 +534,7 @@ fun commandLine (args: string list): unit =
 					*)
 				       (if isMain
 					   then gccDebug
-					else asDebug) :: switches
+					else [asDebug]) @ switches
 				 else switches
 			      val switches =
 				 case host of
@@ -575,7 +576,7 @@ fun commandLine (args: string list): unit =
 			val switches =
 			   List.concat
 			   [["-S"],
-			    if !debug then [gccDebug] else [],
+			    if !debug then gccDebug else [],
 			    definesAndIncludes,
 			    [concat ["-O", Int.toString (!optimization)]],
 			    if !Native.native
