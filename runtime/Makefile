@@ -1,5 +1,7 @@
 CC =		gcc -Wall -I. -mcpu=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=5 -fomit-frame-pointer -b $(HOST)
-CFLAGS =	-O9 -DNODEBUG
+# Can't use more optimization than -O1 because gcc doesn't correctly compile
+#  Real_class in basis/Real.c
+CFLAGS =	-O1 -DNODEBUG
 ifeq ($(HOST), i686-pc-cygwin)
 AR = 		/usr/local/i686-pc-cygwin/bin/ar rc
 else

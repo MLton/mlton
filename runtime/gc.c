@@ -324,10 +324,13 @@ computeSemiSize(GC_state s, W64 live, uint used, int try)
 	else {
 		W64 maybe;
 		uint n;
-
 		static double ks[13] = {1.99, 1.99, 1.8, 1.7, 1.6, 1.5, 
 					1.4, 1.3, 1.2, 1.15, 1.1, 1.05, 1.01};
+		double k;
+
 		assert (0 <= try and try < 13);
+		k = ks[try];
+		k = ((k-1)/2)+1;
 		maybe = (W64)(ks[try] * (double)live);
 		n = roundPage(s, maybe > (W64)(s->totalRam + s->totalSwap)
 				? s->totalRam + s->totalSwap
@@ -1509,16 +1512,28 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 			 * so shrink new space.
 			 */
 			keep = roundPage(s, needed * s->liveRatio);
-		else if (s->fromSize > s->maxSemi
-				and needed * 2 <= (W64)s->maxSemi)
-			/* The live data fits in a semispace that is half of the
-			 * RAM size, with a factor of two to spare, so shrink
-			 * down to maxSemi.
-			 */
-			keep = s->maxSemi;
-		else
+		else if (s->fromSize > s->maxSemi) {
+			if (2 * needed <= (W64)s->maxSemi)
+				/* The live data fits in a semispace that is half
+				 * of the RAM size, with a factor of two to 
+				 * spare, so shrink down to maxSemi.
+ 				 */
+				keep = s->maxSemi;
+			else {
+				/* Needed is large.  Allocate a factor of two
+				 * provided that the semispace will still fit
+				 * in RAM.
+ 				 */
+				double mult;
+
+				mult = (2 * needed > s->ramSlop * s->totalRam)
+					? 1.25 : 2.0;
+				keep = roundPage(s, (size_t)needed * mult);
+			}
+		} else
 			/* The heap is about right -- leave new space alone. */
 			keep = s->fromSize;
+		assert (keep <= s->fromSize);
 		if (keep < s->fromSize) {
 			if (DEBUG or s->messages)
 				fprintf(stderr, 

@@ -79,10 +79,6 @@ inline Int Real_isNan(Double d) {
 	return isnan(d); /* isnan is from math.h */
 }
 
-Int Real_isPositive(Double d) {
-	return (d > 0);
-}
-
 Int Real_qequal(Double x1, Double x2) {
 	return Real_isNan(x1) || Real_isNan(x2) || x1 == x2;
 }
