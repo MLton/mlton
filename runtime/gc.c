@@ -3082,6 +3082,12 @@ int GC_init (GC_state s, int argc, char **argv) {
 				} else if (0 == strcmp (arg, "gc-summary")) {
 					++i;
 					s->summary = TRUE;
+				} else if (0 == strcmp (arg, "generational-ratio")) {
+					++i;
+					if (i == argc)
+						usage (argv[0]);
+					s->generationalRatio =
+						stringToFloat (argv[i++]);
 				} else if (0 == strcmp (arg, "grow-ratio")) {
 					++i;
 					if (i == argc)
