@@ -224,7 +224,6 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			      offset = offset,
 			      ty = ty}))
       val extraBlocks = ref []
-      val (resetAllocTooLarge, allocTooLarge) = Block.allocTooLarge extraBlocks
       fun newBlock {args, kind, profileInfo,
 		    statements: Statement.t vector,
 		    transfer: Transfer.t}: Label.t =
@@ -1260,7 +1259,6 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	 end
       fun translateFunction (f: S.Function.t): Function.t =
 	 let
-	    val _ = resetAllocTooLarge ()
 	    val _ =
 	       S.Function.foreachVar (f, fn (x, t) => setVarInfo (x, {ty = t}))
 	    val {args, blocks, name, raises, returns, sourceInfo, start, ...} =

@@ -500,48 +500,6 @@ structure Block =
 			    Transfer.layout transfer],
 			   2)]
 	 end
-
-      fun allocTooLarge newBlocks =
-	 let
-	    val r: Label.t option ref = ref NONE
-	 in
-	    (fn () => r := NONE,
-	     fn () =>
-	     case !r of
-		SOME l => l
-	      | NONE =>
-		   let
-		      val l = Label.newNoname ()
-		      val _ = r := SOME l
-		      val profileInfo =
-			 {ssa = {func = "AllocTooLarge",
-				 label = "AllocTooLarge"}}
-		      val cfunc =
-			 CFunction.T {bytesNeeded = NONE,
-				      ensuresBytesFree = false,
-				      mayGC = false,
-				      maySwitchThreads = false,
-				      modifiesFrontier = false,
-				      modifiesStackTop = false,
-				      name = "MLton_allocTooLarge",
-				      needsProfileAllocIndex = false,
-				      returnTy = NONE}
-		      val _ =
-			 newBlocks :=
-			 T {args = Vector.new0 (),
-			    kind = Kind.Jump,
-			    label = l,
-			    profileInfo = profileInfo,
-			    statements = Vector.new0 (),
-			    transfer =
-			    Transfer.CCall {args = Vector.new0 (),
-					    func = cfunc,
-					    return = NONE}}
-			 :: !newBlocks
-		   in
-		      l
-		   end)
-	 end
    end
 
 structure Function =

@@ -194,7 +194,6 @@ signature RSSA =
 		     statements: Statement.t vector,
 		     transfer: Transfer.t}
 
-	    val allocTooLarge: t list ref -> (unit -> unit) * (unit -> Label.t)
 	    val args: t -> (Var.t * Type.t) vector
 	    val clear: t -> unit
 	    val kind: t -> Kind.t
