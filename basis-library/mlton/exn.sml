@@ -26,7 +26,7 @@ structure MLtonExn =
       local
 	 val message = Primitive.Stdio.print
       in
-	 fun topLevelHandler exn =
+	 fun 'a topLevelHandler (exn: exn): 'a =
 	    (message (concat ["unhandled exception: ", exnMessage exn, "\n"])
 	     ; (case history exn of
 		   [] => ()
@@ -36,7 +36,8 @@ structure MLtonExn =
 			  l)))
 	     ; MLtonProcess.exit 1)
 	    handle _ => (message "Toplevel handler raised exception.\n"
-			 ; Primitive.halt 1)
+			 ; Primitive.halt 1
+			 ; raise Fail "bug")
       end
 
       val _ = Primitive.Exn.setTopLevelHandler topLevelHandler
