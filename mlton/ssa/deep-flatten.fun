@@ -358,36 +358,6 @@ structure Value =
 	 Vector.foreach2
 	 (Prod.dest p, Prod.dest p',
 	  fn ({elt = e, ...}, {elt = e', ...}) => unify (e, e'))
-      and coerce =
-	 fn arg as {from as T e, to as T e'} =>
-	 traceCoerce
-	 (fn _ =>
-	 if Equatable.equals (e, e')
-	    then ()
-	 else
-	    let
-	       val {value = v, ...} = Equatable.value e
-	       val {value = v', ...} = Equatable.value e'
-	    in
-	       case (v, v') of
-		  (Ground _, Ground _) => ()
-		| (Object {args = a, con, ...},
-		   Object {args = a', coercedFrom = c', flat = f', ...}) =>
-		     (if Prod.isMutable a orelse ObjectCon.isVector con
-			 then unify (from, to)
-		      else
-			 case !f' of
-			    Flat => (AppendList.push (c', from)
-				     ; coerceProd {from = a, to = a'})
-			  | NotFlat => unify (from, to))
-		| (Weak _, Weak _) => unify (from, to)
-		| _ => Error.bug "strange unify"
-	    end) arg
-      and coerceProd =
-	 fn {from = p, to = p'} =>
-	 Vector.foreach2
-	 (Prod.dest p, Prod.dest p', fn ({elt = e, ...}, {elt = e', ...}) =>
-	  coerce {from = e, to = e'})
       and dontFlatten: t -> unit =
 	 fn v =>
 	 case value v of
@@ -403,6 +373,38 @@ structure Value =
 		      end
 		 | NotFlat => ())
 	  | _ => ()
+
+      val rec coerce =
+	 fn arg as {from as T e, to as T e'} =>
+	 traceCoerce
+	 (fn _ =>
+	 if Equatable.equals (e, e')
+	    then ()
+	 else
+	    Equatable.whenComputed
+	    (e', fn {value = v', ...} =>
+	     let
+		val {value = v, ...} = Equatable.value e
+	     in
+		case (v, v') of
+		   (Ground _, Ground _) => ()
+		 | (Object {args = a, con, ...},
+		    Object {args = a', coercedFrom = c', flat = f', ...}) =>
+		      (if Prod.isMutable a orelse ObjectCon.isVector con
+			  then unify (from, to)
+		       else
+			  case !f' of
+			     Flat => (AppendList.push (c', from)
+				      ; coerceProd {from = a, to = a'})
+			   | NotFlat => unify (from, to))
+		  | (Weak _, Weak _) => unify (from, to)
+		  | _ => Error.bug "strange unify"
+	     end)) arg
+      and coerceProd =
+	 fn {from = p, to = p'} =>
+	 Vector.foreach2
+	 (Prod.dest p, Prod.dest p', fn ({elt = e, ...}, {elt = e', ...}) =>
+	  coerce {from = e, to = e'})
 
       fun object {args, con} =
 	 let

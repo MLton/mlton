@@ -12,7 +12,8 @@ structure Set = DisjointSet
 
 datatype 'a delay =
    Computed of 'a
- | Uncomputed of unit -> 'a
+ | Uncomputed of {compute: unit -> 'a,
+		  whenComputed: ('a -> unit) AppendList.t ref}
 
 datatype 'a t = T of 'a delay Set.t
 
@@ -21,8 +22,10 @@ fun layout f (T s) =
       Computed a => f a
     | Uncomputed _ => Layout.str "<uncomputed>"
 
-fun delay f = T (Set.singleton (Uncomputed f))
-	 
+fun delay f =
+   T (Set.singleton (Uncomputed {compute = f,
+				 whenComputed = ref AppendList.empty}))
+					    
 fun new a = T (Set.singleton (Computed a))
 
 fun equals (T s, T s') = Set.equals (s, s')
@@ -30,10 +33,11 @@ fun equals (T s, T s') = Set.equals (s, s')
 fun value (T s) =
    case Set.! s of
       Computed a => a
-    | Uncomputed f =>
+    | Uncomputed {compute, whenComputed} =>
 	 let
-	    val a = f ()
+	    val a = compute ()
 	    val () = Set.:= (s, Computed a)
+	    val () = AppendList.foreach (!whenComputed, fn f => f a)
 	 in
 	    a
 	 end
@@ -46,12 +50,25 @@ fun equate (T s, T s', combine) =
 	 val d = Set.! s
 	 val d' = Set.! s'
 	 val () = Set.union (s, s')
+	 fun one (a, {compute = _, whenComputed}) =
+	    (AppendList.foreach (!whenComputed, fn f => f a)
+	     ; Set.:= (s, Computed a))
       in
 	 case (d, d') of
 	    (Computed a, Computed a') =>
 	       Set.:= (s, Computed (combine (a, a')))
-	  | (Uncomputed _, _) => Set.:= (s, d')
-	  | (_, Uncomputed _) => Set.:= (s, d)
+	  | (Computed a, Uncomputed u) => one (a, u)
+	  | (Uncomputed u, Computed a) => one (a, u)
+	  | (Uncomputed {compute, whenComputed = w},
+	     Uncomputed {whenComputed = w', ...}) =>
+	       Set.:=
+	       (s, Uncomputed {compute = compute,
+			       whenComputed = ref (AppendList.append (!w, !w'))})
       end
+
+fun whenComputed (T s, f): unit =
+   case Set.! s of
+      Computed a => f a
+    | Uncomputed {whenComputed = w, ...} => AppendList.push (w, f)
 
 end

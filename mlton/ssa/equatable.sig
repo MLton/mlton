@@ -6,7 +6,7 @@
  *)
 
 (*
- * Equatable values can be equated, after which they are equals.  In equating
+ * Equatable values can be equated, after which they are equals.  Equating
  * two value requires the client to specify how to compute the new value from
  * the old.
  *
@@ -28,4 +28,5 @@ signature EQUATABLE =
       val layout: ('a -> Layout.t) -> 'a t -> Layout.t
       val new: 'a -> 'a t
       val value: 'a t -> 'a
+      val whenComputed: 'a t * ('a -> unit) -> unit
    end
