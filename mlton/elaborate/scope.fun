@@ -515,13 +515,18 @@ fun scope (dec: Dec.t): Dec.t =
 	    end
       else
 	 let
-	    open Layout
-	    val _ = 
-	       Control.error (Dec.region dec,
-			      seq [str "free type variables: ",
-				   List.layout Tyvar.layout
-				   (Tyvars.toList unguarded)],
-			      empty)
+	    val _ =
+	       List.foreach
+	       (Tyvars.toList unguarded, fn a =>
+		let
+		   open Layout
+		in
+		   Control.error
+		   (Tyvar.region a,
+		    seq [str "undefined type variable: ",
+			 Tyvar.layout a],
+		    empty)
+		end)
 	 in
 	    dec
 	 end

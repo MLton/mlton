@@ -159,7 +159,7 @@ fun elaborateScheme (tyvars: Tyvar.t vector, ty: Atype.t, E, I): Scheme.t =
 	       open Layout
 	    in
 	       Control.error (Tyvar.region (Vector.sub (tyvars', 0)),
-			      seq [str (concat ["unbound type variable",
+			      seq [str (concat ["undefined type variable",
 						if Vector.length unbound > 1
 						   then "s"
 						else "",
