@@ -36,7 +36,7 @@ function rewrite_file() {
 
 REWRITE_FILES=""
 function rewrite_files() {
-for f in `cat $REWRITE_FILES | grep -v overload | grep -v Group`; do
+for f in `cat $REWRITE_FILES | grep -v "^#" | grep -v overload | grep -v Group`; do
 	echo "(*#line 0.0 $f*)"
         cat $f
 done | rewrite
