@@ -15,6 +15,7 @@ val debug = false
 
 val sourcesIndexGC: int = 1
 
+val mlmonFiles: string list ref = ref []
 val raw = ref false
 val showLine = ref false
 val thresh: real ref = ref 0.0
@@ -740,6 +741,11 @@ fun makeOptions {usage} =
 			 Result.No s =>
 			    usage (concat ["invalid -graph arg: ", s])
 		       | Result.Yes p => graphPred := SOME p)),
+	(Normal, "mlmon", " <file>", " file with list of mlmon files",
+	 SpaceString (fn s =>
+		      mlmonFiles :=
+		      List.concat [String.tokens (File.contents s, Char.isSpace),
+				   !mlmonFiles])),
 	(Normal, "raw", " {false|true}", "show raw counts",
 	 boolRef raw),
 	(Normal, "show-line", " {false|true}", " show line numbers",
@@ -764,8 +770,9 @@ fun commandLine args =
     in
        case rest of
 	  Result.No msg => usage msg
-	| Result.Yes (afile :: mlmonfiles) =>
+	| Result.Yes (afile :: files) =>
 	     let
+		val mlmonFiles = files @ !mlmonFiles 
 		val aInfo = AFile.new {afile = afile}
 		val _ =
 		   if debug
@@ -775,7 +782,7 @@ fun commandLine args =
 		   else ()
 		val profFile =
 		   List.fold
-		   (mlmonfiles, ProfFile.empty aInfo,
+		   (mlmonFiles, ProfFile.empty aInfo,
 		    fn (mlmonfile, profFile) =>
 		    ProfFile.merge (profFile,
 				    ProfFile.new {mlmonfile = mlmonfile}))
@@ -794,7 +801,7 @@ fun commandLine args =
 		      if m <> m'
 			 then
 			    die (concat [afile, " is incompatible with ",
-					 (hd mlmonfiles)])
+					 (hd mlmonFiles)])
 		      else ()
 		   end
 		val _ = display (aInfo, profFile)
