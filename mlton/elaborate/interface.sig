@@ -47,10 +47,14 @@ signature INTERFACE =
 	    type typeStr
 	    type t
 
-	    datatype dest =
+	    val dest: t -> {admitsEquality: AdmitsEquality.t,
+			    hasCons: bool,
+			    kind: Kind.t}
+	    val realize: t * EnvTypeStr.t -> unit
+	    datatype realization =
 	       ETypeStr of EnvTypeStr.t
 	     | TypeStr of typeStr
-	    val dest: t -> dest
+	    val realization: t -> realization
 	 end
       structure Tycon:
 	 sig
@@ -152,6 +156,14 @@ signature INTERFACE =
 	    val equals: t * t -> bool
 	    val plist: t -> PropertyList.t
 	 end
+      structure TyconMap:
+	 sig
+	    datatype 'a t = T of {strs: (Ast.Strid.t * 'a t) array,
+				  types: (Ast.Tycon.t * 'a) array}
+
+	    val layout: ('a -> Layout.t) -> 'a t -> Layout.t
+	    val map: 'a t * ('a -> 'b) -> 'b t
+	 end
 
       type t
       
@@ -161,6 +173,7 @@ signature INTERFACE =
 		      types: (Ast.Tycon.t * TypeStr.t) array,
 		      vals: (Ast.Vid.t * (Status.t * Scheme.t)) array}
       val empty: t
+      val flexibleTycons: t -> FlexibleTycon.t TyconMap.t
       val layout: t -> Layout.t
       val lookupLongtycon:
 	 t * Ast.Longtycon.t * Region.t * {prefix: Ast.Strid.t list}
@@ -175,15 +188,6 @@ signature INTERFACE =
       val peekStrids: t * Ast.Strid.t list -> t peekResult
       val peekTycon: t * Ast.Tycon.t -> TypeStr.t option
       val plist: t -> PropertyList.t
-      (* realize makes a copy, and instantiate longtycons *)
-      val realize:
-	 t * {followStrid: 'a * Ast.Strid.t -> 'a,
-	      init: 'a,
-	      realizeTycon: ('a * Ast.Tycon.t
-			     * AdmitsEquality.t
-			     * Kind.t
-			     * {hasCons: bool} -> EnvTypeStr.t)}
-	 -> t
       val renameTycons: (unit -> unit) ref
       val shape: t -> Shape.t
       val share: t * Ast.Longstrid.t * t * Ast.Longstrid.t * Time.t -> unit

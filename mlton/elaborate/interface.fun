@@ -133,8 +133,19 @@ structure FlexibleTycon =
       in
 	 val admitsEquality = make #admitsEquality
 	 val defn = ! o make #defn
+	 val hasCons = make #hasCons
+	 val kind = make #kind
 	 val plist = make #plist
       end
+
+      fun dest (T s) =
+	 let
+	    val {admitsEquality, hasCons, kind, ...} = Set.value s
+	 in
+	    {admitsEquality = !admitsEquality,
+	     hasCons = hasCons,
+	     kind = kind}
+	 end
 
       val equals = fn (T s, T s') => Set.equals (s, s')
 
@@ -561,6 +572,15 @@ structure FlexibleTycon =
    struct
       open FlexibleTycon
 
+      fun realize (T s, typeStr) =
+	 let
+	    val {defn, ...} = Set.value s
+	 in
+	    case Defn.dest (!defn) of
+	       Defn.Undefined => defn := Defn.realized typeStr
+	     | _ => Error.bug "FlexibleTycon.realize"
+	 end
+
       fun share (T s, T s') =
 	 let
 	    val {admitsEquality = a, creationTime = t, hasCons = h, id, kind,
@@ -585,15 +605,15 @@ structure FlexibleTycon =
 
       type typeStr = TypeStr.t
 	 
-      datatype dest =
+      datatype realization =
 	 ETypeStr of EnvTypeStr.t
 	| TypeStr of typeStr
 	  
-      fun dest (f: t): dest =
+      fun realization (f: t): realization =
 	 case Defn.dest (defn f) of
 	    Defn.Realized s => ETypeStr s
 	  | Defn.TypeStr s => TypeStr s
-	  | _ => Error.bug "FlexiblTycon.dest"
+	  | _ => Error.bug "FlexiblTycon.realization"
    end
 
 structure Tycon =
@@ -1067,14 +1087,36 @@ structure TyconMap =
       datatype 'a t = T of {strs: (Strid.t * 'a t) array,
 			    types: (Ast.Tycon.t * 'a) array}
 
+      fun layout layoutA =
+	 let
+	    open Layout
+	    fun loop (T {strs, types}) =
+	       record [("strs",
+			Array.layout (Layout.tuple2 (Strid.layout, loop)) strs),
+		       ("types",
+			Array.layout (Layout.tuple2 (Ast.Tycon.layout, layoutA))
+			types)]
+	 in
+	    loop
+	 end
+	 
       fun empty (): 'a t = T {strs = Array.new0 (),
 			      types = Array.new0 ()}
 
       fun isEmpty (T {strs, types}) =
 	 0 = Array.length strs andalso 0 = Array.length types
+
+      fun map (tm, f) =
+	 let
+	    fun loop (T {strs, types}) =
+	       T {strs = Array.map (strs, fn (s, tm) => (s, loop tm)),
+		  types = Array.map (types, fn (t, a) => (t, f a))}
+	 in
+	    loop tm
+	 end
    end
 
-fun tyconMap (I: t): FlexibleTycon.t TyconMap.t =
+fun flexibleTycons (I: t): FlexibleTycon.t TyconMap.t =
    let
       val {destroy = destroy1,
 	   get = tyconShortest: (FlexibleTycon.t
@@ -1154,30 +1196,9 @@ fun tyconMap (I: t): FlexibleTycon.t TyconMap.t =
       collapse tm
    end
 
-fun 'a realize (I, {init, followStrid, realizeTycon}) =
-   let
-      val I = copy I
-      fun loop (TyconMap.T {strs, types}, a: 'a): unit =
-	 let
-	    val _ =
-	       Array.foreach
-	       (types, fn (name, FlexibleTycon.T s) =>
-		let
-		   val {admitsEquality, defn, hasCons, kind, ...} = Set.value s
-		in
-		   defn := (Defn.realized
-			    (realizeTycon (a, name, !admitsEquality, kind,
-					   {hasCons = hasCons})))
-		end)
-	    val _ =
-	       Array.foreach
-	       (strs, fn (strid, tm) => loop (tm, followStrid (a, strid)))
-	 in
-	    ()
-	 end
-      val _ = loop (tyconMap I, init)
-   in
-      I
-   end
+val flexibleTycons =
+   Trace.trace ("Interface.flexibleTycons", layout,
+		TyconMap.layout FlexibleTycon.layout)
+   flexibleTycons
 
 end

@@ -306,8 +306,10 @@ structure Interface = Interface (structure Ast = Ast
 local
    open Interface
 in
+   structure FlexibleTycon = FlexibleTycon
    structure Shape = Shape
    structure Status = Status
+   structure TyconMap = TyconMap
 end
 
 structure Interface =
@@ -321,9 +323,9 @@ structure Interface =
 
       fun flexibleTyconToEnv (c: FlexibleTycon.t): EtypeStr.t =
 	 let
-	    datatype z = datatype FlexibleTycon.dest
+	    datatype z = datatype FlexibleTycon.realization
 	 in
-	    case FlexibleTycon.dest c of
+	    case FlexibleTycon.realization c of
 	       ETypeStr s => s
 	     | TypeStr s => typeStrToEnv s
 	 end
@@ -626,17 +628,67 @@ structure Structure =
 	 val forceUsed = make Force
       end
 
-      fun realize (S: t, I: Interface.t, realizeTycon) =
+      fun foreach2Sorted (abs: ('a * 'b) array,
+			  info: ('a, 'c) Info.t,
+			  equals: ('a * 'a -> bool),
+			  f: ('a * 'b * 'c option -> unit)): unit =
 	 let
-	    fun followStrid ({nest, str}, s) =
-	       {nest = s :: nest,
-		str = (case str of
-			  NONE => NONE
-			| SOME S => peekStrid (S, s))}
+	    val Info.T acs = info
+	    val _ =
+	       Array.fold
+	       (abs, 0, fn ((a, b), i) =>
+		let
+		   fun find j =
+		      if j = Array.length acs
+			 then (i, NONE)
+		      else
+			 let
+			    val {domain = a', range = c, ...} =
+			       Array.sub (acs, j)
+			 in
+			    if equals (a, a')
+			       then (j + 1, SOME c)
+			    else find (j + 1)
+			 end
+		   val (i, co) = find i
+		   val () = f (a, b, co)
+		in
+		   i
+		end)
 	 in
-	    Interface.realize (I, {followStrid = followStrid,
-				   init = {nest = [], str = SOME S},
-				   realizeTycon = realizeTycon})
+	    ()
+	 end
+      
+      fun realize (S: t, tm: 'a TyconMap.t,
+		   f: (Ast.Tycon.t
+		       * 'a
+		       * TypeStr.t option
+		       * {nest: Strid.t list}) -> unit): unit =
+	 let
+	    fun allNone (TyconMap.T {strs, types}, nest) =
+	       (Array.foreach (strs, fn (name, tm) => allNone (tm, name :: nest))
+		; Array.foreach (types, fn (name, flex) =>
+				 f (name, flex, NONE, {nest = nest})))
+	    fun loop (TyconMap.T {strs, types},
+		      S as T {strs = strs', types = types', ...},
+		      nest: Strid.t list) =
+	       let
+		  val () =
+		     foreach2Sorted
+		     (strs, strs', Ast.Strid.equals,
+		      fn (name, tm, S) =>
+		      case S of
+			 NONE => allNone (tm, nest)
+		       | SOME S => loop (tm, S, name :: nest))
+		  val () =
+		     foreach2Sorted
+		     (types, types', Ast.Tycon.equals,
+		      fn (name, flex, opt) => f (name, flex, opt, {nest = nest}))
+	       in
+		   ()
+	       end
+	 in
+	    loop (tm, S, [])
 	 end
 
       local
@@ -769,24 +821,22 @@ structure Structure =
 		   | SOME (s, I) =>
 			let
 			   val wheres = ref []
-			   fun realizeTycon ({nest, str = S}, c, _, _, _) =
-			      case S of
-				 NONE => Error.bug "missing structure"
-			       | SOME S =>
-				    case peekTycon (S, c) of
-				       NONE => Error.bug "missing tycon"
-				     | SOME typeStr =>
-					  (List.push
-					   (wheres,
-					    seq [str "where ",
-						 layoutTypeSpec'
-						 (Ast.Longtycon.layout
-						  (Ast.Longtycon.long
-						   (rev nest, c)),
-						  typeStr,
-						  {isWhere = true})])
-					   ; typeStr)
-			   val _ = realize (S, I, realizeTycon)
+			   val () =
+			      realize
+			      (S, Interface.flexibleTycons I,
+			       fn (name, flex, typeStr, {nest}) =>
+			       case typeStr of
+				  NONE => Error.bug "missing typeStr"
+				| SOME typeStr =>
+				     List.push
+				     (wheres,
+				      seq [str "where ",
+					   layoutTypeSpec'
+					   (Ast.Longtycon.layout
+					    (Ast.Longtycon.long (rev nest,
+								 name)),
+					    typeStr,
+					    {isWhere = true})]))
 			in
 			   (align (Sigid.layout s :: (rev (!wheres))),
 			    {messy = false})
@@ -1204,26 +1254,32 @@ fun setTyconNames (E: t): unit =
 fun dummyStructure (I: Interface.t, {prefix: string})
    : Structure.t * (Structure.t * (Tycon.t * TypeStr.t -> unit) -> unit) =
    let
-      val tycons: (Longtycon.t * Tycon.t) list ref = ref []
-      fun followStrid ({nest}, s) =
-	 {nest = s :: nest}
-      fun realizeTycon ({nest}, c: Ast.Tycon.t, a, k, _) =
+      val I = Interface.copy I
+      fun realize (TyconMap.T {strs, types}, nest) =
 	 let
-	    val name =
-	       concat (prefix
-		       :: (List.fold (nest, [Ast.Tycon.toString c], fn (s, ss) =>
-				      Strid.toString s :: "." :: ss)))
-	    val c' = newTycon (name, k, a)
-	    val _ = List.push (tycons, (Longtycon.long (rev nest, c), c'))
-	  in
-	     TypeStr.tycon (c', k)
-	  end
-      val I =
-	 Interface.realize
-	 (I, {followStrid = followStrid,
-	      init = {nest = []},
-	      realizeTycon = realizeTycon})
-      val tycons = !tycons
+	    val strs =
+	       Array.map (strs, fn (name, tm) =>
+			  (name, realize (tm, name :: nest)))
+	    val types =
+	       Array.map
+	       (types, fn (tycon, flex) =>
+		let
+		   val {admitsEquality = a, kind = k, ...} =
+		      FlexibleTycon.dest flex
+		   val name =
+		      concat (prefix
+			      :: (List.fold (nest, [Ast.Tycon.toString tycon],
+					     fn (s, ss) =>
+					     Strid.toString s :: "." :: ss)))
+		   val c = newTycon (name, k, a)
+		   val _ = FlexibleTycon.realize (flex, TypeStr.tycon (c, k))
+		in
+		   (tycon, c)
+		end)
+	 in
+	    TyconMap.T {strs = strs, types = types}
+	 end
+      val flexible = realize (Interface.flexibleTycons I, [])
       val {get, ...} =
 	 Property.get
 	 (Interface.plist,
@@ -1264,11 +1320,11 @@ fun dummyStructure (I: Interface.t, {prefix: string})
 			   vals = Info.T vals}
 	   end))
       val S = get I
-      fun instantiate (S', f) =
-	 List.foreach (tycons, fn (long, c) =>
-		       case Structure.peekLongtycon (S', long) of
-			  NONE => Error.bug "structure missing longtycon"
-			| SOME s => f (c, s))
+      fun instantiate (S, f) =
+	 Structure.realize (S, flexible, fn (_, c, so, _) =>
+			    case so of
+			       NONE => Error.bug "instantiate"
+			     | SOME s => f (c, s))
    in
       (S, instantiate)
    end
@@ -2484,76 +2540,88 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 			 types = types,
 			 vals = vals}
 	 end
-      fun realizeTycon ({nest, str}, c, a, k, {hasCons}) =
-	 let
-	    fun long () = Longtycon.long (rev nest, c)
-	    fun bad () =
-	       TypeStr.tycon (newTycon (Longtycon.toString (long ()), k, a), k)
-	 in
-	    case str of
-	       NONE => bad ()
-	     | SOME S =>
-		  case Structure.peekTycon (S, c) of
-		     NONE => bad ()
-		   | SOME typeStr =>
-			if not (AdmitsEquality.<=
-				(a, TypeStr.admitsEquality typeStr))
-			   then 
-			      let
-				 open Layout
-				 val _ =
-				    Control.error
-				    (region,
-				     seq [str "type ", Longtycon.layout (long ()),
-					  str " admits equality in ", str sign,
-					  str " but not in structure"],
-				     empty)
-			      in
-				 bad ()
-			      end
-			else if (hasCons andalso
-				 Option.isNone (TypeStr.toTyconOpt typeStr))
-			   then
-			      let
-				 open Layout
-				 val _ =
-				    Control.error
-				    (region,
-				     seq [str "type ", Longtycon.layout (long ()),
-					  str " is a datatype in ", str sign,
-					  str " but not in structure"],
-				     empty)
-			      in
-				 bad ()
-			      end
-			else
-			   let
-			      val k' = TypeStr.kind typeStr
-			   in
-			      if not (Kind.equals (k, k'))
-				 then
-				    let
-				       open Layout
-				       val _ =
-					  Control.error
-					  (region,
-					   seq [str "type ",
-						Longtycon.layout (long ()),
-						str " has arity ",
-						Kind.layout k',
-						str " in structure but arity ",
-						Kind.layout k,
-						str " in ", str sign],
-					   empty)
-				    in
-				       bad ()
-				    end
-			      else typeStr
-			   end
-	 end
-      val I' = Structure.realize (S, I, realizeTycon)
-      val S = cut (S, I', [])
-      val _ = destroy ()
+      fun typeStrIsConsistent (typeStr: TypeStr.t,
+			       long,
+			       a: AdmitsEquality.t,
+			       k: Kind.t,
+			       {hasCons: bool}): bool =
+	 if not (AdmitsEquality.<= (a, TypeStr.admitsEquality typeStr))
+	    then 
+	       let
+		  open Layout
+		  val _ =
+		     Control.error
+		     (region,
+		      seq [str "type ", Longtycon.layout (long ()),
+			   str " admits equality in ", str sign,
+			   str " but not in structure"],
+		      empty)
+	       in
+		  false
+	       end
+	 else if hasCons andalso Option.isNone (TypeStr.toTyconOpt typeStr)
+            then
+	       let
+		  open Layout
+		  val _ =
+		     Control.error
+		     (region,
+		      seq [str "type ", Longtycon.layout (long ()),
+			   str " is a datatype in ", str sign,
+			   str " but not in structure"],
+		      empty)
+	       in
+		  false
+	       end
+	 else
+	    let
+	       val k' = TypeStr.kind typeStr
+	    in
+	       if not (Kind.equals (k, k'))
+		  then
+		     let
+			open Layout
+			val _ =
+			   Control.error
+			   (region,
+			    seq [str "type ",
+				 Longtycon.layout (long ()),
+				 str " has arity ",
+				 Kind.layout k',
+				 str " in structure but arity ",
+				 Kind.layout k,
+				 str " in ", str sign],
+			    empty)
+		     in
+			false
+		     end
+	       else true
+	    end
+      val I = Interface.copy I
+      val () =
+	 Structure.realize
+	 (S, Interface.flexibleTycons I,
+	  fn (name, flex, typeStr, {nest}) =>
+	  let
+	     val {admitsEquality = a, hasCons, kind = k, ...} =
+		FlexibleTycon.dest flex
+	     fun long () = Longtycon.long (rev nest, name)
+	     fun bad () =
+		TypeStr.tycon (newTycon (Longtycon.toString (long ()), k, a), k)
+	     val typeStr =
+		case typeStr of
+		   NONE => bad ()
+		 | SOME typeStr =>
+		      if typeStrIsConsistent (typeStr, long, a, k,
+					      {hasCons = hasCons})
+			 then typeStr
+		      else bad ()
+	     val () = FlexibleTycon.realize (flex, typeStr)
+	  in
+	     ()
+	  end)
+      val S = cut (S, I, [])
+      val () = destroy ()
    in
       (S, Decs.fromList (!decs))
    end
@@ -2723,8 +2791,7 @@ fun functorClosure
 	       val {destroy = destroy1,
 		    get = tyconTypeStr: Tycon.t -> TypeStr.t option,
 		    set = setTyconTypeStr, ...} =
-		  Property.destGetSet (Tycon.plist,
-				       Property.initConst NONE)
+		  Property.destGetSet (Tycon.plist, Property.initConst NONE)
 	       (* Match the actual against the formal, to set the tycons.
 		* Then duplicate the result, replacing tycons.  Want to generate
 		* new tycons just like the functor body did.
@@ -2839,6 +2906,7 @@ structure InterfaceEnv =
       end
 
       type env = Env.t
+	 
       datatype t = T of {currentScope: Scope.t ref,
 			 env: Env.t,
 			 strs: (Strid.t, Interface.t) NameSpace.t,
