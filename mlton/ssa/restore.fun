@@ -34,9 +34,10 @@ structure LabelInfo =
 		       phiArgs: Var.t vector ref,
 		       queued: bool ref}
 
-    fun layout (T {defs, uses, live, dtindex, df, phiArgs, ...})
+    fun layout (T {preds, defs, uses, live, dtindex, df, phiArgs, ...})
       = let open Layout
-	in record [("defs", Vector.layout Bool.layout (!defs)),
+	in record [("preds", List.layout Label.layout (!preds)),
+		   ("defs", Vector.layout Bool.layout (!defs)),
 		   ("uses", Vector.layout Bool.layout (!uses)),
 		   ("live", Array.layout Bool.layout (!live)),
 		   ("dtindex", Int.layout (!dtindex)),
@@ -221,7 +222,7 @@ fun restoreFunction (globals: Statement.t vector)
 	val _ = Function.foreachVar (f, addDef)
 
 	(* escape early *)
-	val _ = if List.length (!violations) = 0
+	val _ = if List.isEmpty (!violations)
 		  then (Control.diagnostics
 			(fn display =>
 			 let
@@ -332,7 +333,7 @@ fun restoreFunction (globals: Statement.t vector)
 	      val dtindexMax = !dtindex
 	      fun dominates l 
 		= let val dtindex = LabelInfo.dtindex' (labelInfo l)
-		  in dtindexMin <= dtindex andalso dtindex <= dtindexMax
+		  in dtindexMin < dtindex andalso dtindex <= dtindexMax
 		  end
 
 	      fun promise ()
