@@ -24,19 +24,33 @@ structure Date :> DATE =
     datatype month = Jan | Feb | Mar | Apr | May | Jun
                    | Jul | Aug | Sep | Oct | Nov | Dec
 
-    datatype date = DATE of {
-	year   : int,			(* e.g. 1995 *)
-	month  : month,
-	day    : int,       		(* 1-31  *)
-	hour   : int,       		(* 0-23  *)
-	minute : int,       		(* 0-59  *)
-	second : int,       		(* 0-61 (allowing for leap seconds) *)
-	wday   : weekday,
-	yday   : int,		        (* 0-365 *)
-	isDst  : bool option,		(* daylight savings time in force *)
-	offset : int option		(* signed seconds East of UTC:
-				           this zone = UTC+t; ~82800 < t <= 82800 *)
-      }
+    datatype t =
+       T of {day: int, (* 1-31 *)
+	     hour: int, (* 0-23 *)
+	     isDst: bool option, (* daylight savings time in force *)
+	     minute: int, (* 0-59 *)
+	     month: month,
+	     offset: int option, (* signed seconds East of UTC:
+				  * this zone = UTC+t; ~82800 < t <= 82800 *)
+	     second: int, (* 0-61 (allowing for leap seconds) *)
+	     weekDay: weekday,
+	     year: int, (* e.g. 1995 *)
+	     yearDay: int} (* 0-365 *)
+    type date = t
+
+    local
+       fun make f (T r) = f r
+    in
+       val day = make #day
+       val hour = make #hour
+       val isDst = make #isDst
+       val minute = make #minute
+       val month = make #month
+       val second = make #second
+       val weekDay = make #weekDay
+       val year = make #year
+       val yearDay = make #yearDay
+    end
 
     exception Date
 
@@ -50,14 +64,12 @@ structure Date :> DATE =
 		 tm_sec    : int, 
 		 tm_wday   : int,
 		 tm_yday   : int,
-		 tm_year   : int
-		 }
+		 tm_year   : int}
 
     local
        fun make f (n: int): tmoz =
 	  (f (ref n)
-	   ; {
-	      tm_hour = Tm.hour (),
+	   ; {tm_hour = Tm.hour (),
 	      tm_isdst = Tm.isdst (),
 	      tm_mday = Tm.mday (),
 	      tm_min = Tm.min (),
@@ -65,8 +77,7 @@ structure Date :> DATE =
 	      tm_sec = Tm.sec (),
 	      tm_wday = Tm.wday (),
 	      tm_yday = Tm.yday (),
-	      tm_year = Tm.year ()
-	      })
+	      tm_year = Tm.year ()})
     in
        val getlocaltime_ = make Prim.localTime
        val getunivtime_ = make Prim.gmTime
@@ -111,15 +122,19 @@ structure Date :> DATE =
 	
     fun tmozToDate ({tm_hour, tm_isdst, tm_mday, tm_min, tm_mon, tm_sec,
 		    tm_wday, tm_yday, tm_year}: tmoz) offset = 
-	DATE {year = tm_year + 1900, month = tomonth tm_mon, 
-	      day = tm_mday, hour = tm_hour, minute = tm_min, 
-	      second = tm_sec, wday = toweekday tm_wday,
-	      yday = tm_yday, 
-	      isDst = (case tm_isdst of
-			  0 => SOME false 
-			| 1 => SOME true
-			| _ => NONE),
-	      offset = offset }
+       T {day = tm_mday,
+	  hour = tm_hour,
+	  isDst = (case tm_isdst of
+		      0 => SOME false 
+		    | 1 => SOME true
+		    | _ => NONE),
+	  minute = tm_min, 
+	  month = tomonth tm_mon, 
+	  offset = offset,
+	  second = tm_sec,
+	  weekDay = toweekday tm_wday,
+	  year = tm_year + 1900,
+	  yearDay = tm_yday}
 
     fun leapyear (y: int) =
        y mod 4 = 0 andalso y mod 100 <> 0 orelse y mod 400 = 0   
@@ -141,30 +156,36 @@ structure Date :> DATE =
 
     (* Check whether date may be passed to ISO/ANSI C functions: *)
 
-    fun okDate (DATE {year, month, day, hour, minute, second, ...}) =
+    fun okDate (T {year, month, day, hour, minute, second, ...}) =
 	1900 <= year 
 	andalso 1 <= day    andalso day    <= monthdays year month
 	andalso 0 <= hour   andalso hour   <= 23
 	andalso 0 <= minute andalso minute <= 59
 	andalso 0 <= second andalso second <= 61 (* leap seconds *)
 
-    fun dateToTmoz (dt as DATE {year, month, day, hour, minute, second,
-				wday, yday, isDst, ...}): tmoz =
-	if okDate dt then 
-	    {tm_hour = hour, tm_mday = day, tm_min = minute, 
-	     tm_mon = frommonth month, tm_sec = second, 
-	     tm_year = year -? 1900, 
-	     tm_isdst = case isDst of SOME false=>0 | SOME true=>1 | NONE=> ~1,
- 	     tm_wday = fromwday wday, tm_yday = yday} 
-	else
-	    raise Date;
+    fun dateToTmoz (dt as T {year, month, day, hour, minute, second,
+			     weekDay, yearDay, isDst, ...}): tmoz =
+	if not (okDate dt)
+	   then raise Date
+	else {tm_hour = hour,
+	      tm_mday = day,
+	      tm_min = minute, 
+	      tm_mon = frommonth month,
+	      tm_sec = second, 
+	      tm_year = year -? 1900, 
+	      tm_isdst = (case isDst of
+			     SOME false => 0
+			   | SOME true => 1
+			   | NONE=> ~1),
+	      tm_wday = fromwday weekDay,
+	      tm_yday = yearDay}
 
     (* -------------------------------------------------- *)
     (* Translated from Emacs's calendar.el:               *)
 
     (* Reingold: Number of the day within the year: *)
 
-    fun dayinyear (year: int) (month: month) (day: int): int = 
+    fun dayinyear (year: int, month: month, day: int): int = 
 	let val monthno = frommonth month
 	in
 	    day - 1 + 31 * monthno
@@ -179,7 +200,7 @@ structure Date :> DATE =
     fun todaynumber year month day = 
         let val prioryears = year - 1
 	in
-	    dayinyear year month day 
+	    dayinyear (year, month, day)
 	  + 1
 	  + 365 * prioryears
 	  + prioryears div 4
@@ -227,45 +248,44 @@ structure Date :> DATE =
 	    val dayno  = todaynumber yr0 mo0 dy0 + hr1 div 24
 	    val hour   = hr1 mod 24
 	    val (year, month, day) = fromdaynumber dayno
-	    val date1 = DATE {
-			      year   = year,
-			      month  = month,
-			      day    = day,
-			      hour   = hour,
-			      minute = minute,
-			      second = second,
-			      wday   = weekday dayno,
-			      yday   = dayinyear year month day,
-			      offset = offset,
-			      isDst  = case offset of 
-			                   NONE   => NONE 
-					 | SOME _ => SOME false }
+	    val date1 = T {day = day,
+			   hour = hour,
+			   isDst = (case offset of 
+				       NONE   => NONE 
+				     | SOME _ => SOME false),
+			   minute = minute,
+			   month = month,
+			   offset = offset,
+			   second = second,
+			   weekDay = weekday dayno,
+			   year = year,
+			   yearDay = dayinyear (year, month, day)}
 	in 
             (* One cannot reliably compute DST in non-local timezones,
 	    not even given the offset from UTC.  Countries in the
 	    Northern hemisphere have DST during Mar-Oct, those around
 	    Equator do not have DST, and those in the Southern
 	    hemisphere have DST during Oct-Mar. *)
-
 	    if year < 1970 orelse year > 2037 then date1
 	    else 
 		case offset of 
 		    NONE   => 
 			tmozToDate (getlocaltime_ (mktime_ (dateToTmoz date1)))
-			           offset
+			offset
 		  | SOME _ => date1
 	end
 
     fun fromTimeLocal t = 
-	tmozToDate (getlocaltime_ (Time.toSeconds t)) NONE;
+	tmozToDate (getlocaltime_ (Time.toSeconds t)) NONE
 
     fun fromTimeUniv t = 
-	tmozToDate (getunivtime_ (Time.toSeconds t)) (SOME 0);
+	tmozToDate (getunivtime_ (Time.toSeconds t)) (SOME 0)
 
     (* The following implements conversion from a local date to 
-       a Time.time.  It IGNORES wday and yday.  *)
+     * a Time.time.  It IGNORES wday and yday.
+     *)
 
-    fun toTime (date as DATE {offset, ...}) = 
+    fun toTime (date as T {offset, ...}) = 
 	let
 	   val secoffset = 
 	      case offset of
@@ -275,7 +295,7 @@ structure Date :> DATE =
 	in
 	    if clock < 0 then raise Date
 	    else Time.fromSeconds clock
-	end;
+	end
 
     fun localOffset () = Time.fromSeconds (localoffset mod 86400)
 
@@ -343,99 +363,139 @@ structure Date :> DATE =
 
     val toString = fmt "%a %b %d %H:%M:%S %Y"
 
-    (* To scan dates in the format "Wed Mar  8 19:06:45 1995" *)
-
-    exception BadFormat;
-    fun getVal (SOME v) = v
-      | getVal NONE     = raise BadFormat;
-	
-    fun scan getc src =
-    let val getstring  = StringCvt.splitl Char.isAlpha getc
-	fun getint src = getVal (Int.scan StringCvt.DEC getc src)
-	fun drop p     = StringCvt.dropl p getc
-	fun isColon c  = (c = #":")
-
-	local
-	   fun err () = raise BadFormat
-	   fun check1 (s, c1, r) = if String.sub(s,1) = c1
-	                              then r
-				   else err ()
-	   fun check2 (s, c2, r) = if String.sub(s,2) = c2
-	                              then r
-				   else err ()
-	   fun check12 (s, c1, c2, r) = if String.sub(s,1) = c1
-	                                   andalso 
-					   String.sub(s,2) = c2
-					   then r
-					else err ()
- 	in
-	  val getMonth = fn m =>
-	     if String.size m <> 3
-	        then err ()
-	     else
-	        (case String.sub (m, 0) of
-		    #"J" => (case String.sub (m, 1) of
-			        #"a" => check2 (m, #"n", Jan)
-			      | #"u" => (case String.sub (m, 2) of
-					    #"n" => Jun
-					  | #"l" => Jul
-					  | _ => err ())
-			      | _ => err ())
-		  | #"F" => check12 (m, #"e", #"b", Feb)
-		  | #"M" => check1 (m, #"a", case String.sub (m, 2) of
-				                #"r" => Mar
-					      | #"y" => May
-					      | _ => err ())
-		  | #"A" => (case String.sub (m, 1) of
-			        #"p" => check2 (m, #"r", Apr)
-			      | #"u" => check2 (m, #"g", Aug)
-			      | _ => err ())
-		  | #"S" => check12 (m, #"e", #"p", Sep)
-		  | #"O" => check12 (m, #"c", #"t", Oct)
-		  | #"N" => check12 (m, #"o", #"v", Nov)
-		  | #"D" => check12 (m, #"e", #"c", Dec)
-		  | _ => err ())
-	  val getWday = fn w =>
-	     if String.size w <> 3
-	        then err ()
-	     else
-	        (case String.sub (w, 0) of
-		    #"S" => (case String.sub (w,1) of
-			        #"u" => check2 (w, #"n", Sun)
-			      | #"a" => check2 (w, #"t", Sat)
-			      | _ => err ())
-		  | #"M" => check12 (w, #"o", #"n", Mon)
-		  | #"T" => (case String.sub (w,1) of
-			        #"u" => check2 (w, #"e", Tue)
-			      | #"h" => check2 (w, #"u", Thu)
-			      | _ => err ())
-		  | #"W" => check12 (w, #"e", #"d", Wed)
-		  | #"F" => check12 (w, #"r", #"i", Fri)
-		  | _ => err ())
-	end
-
-	val (wday, src1)  = getstring src
-	val (month, src2) = getstring (drop Char.isSpace src1)
-	val (day, src3)   = getint src2
-	val (hour, src4)  = getint src3
-	val (min, src5)   = getint (drop isColon src4)
-	val (sec, src6)   = getint (drop isColon src5)
-	val (year, src7)  = getint src6
-	val month         = getMonth month
-    in SOME (DATE {year = year, month = month,
-		   day = day,  hour = hour, minute = min, 
-		   second = sec, wday = getWday wday, 
-		   yday = dayinyear year month day, 
-		   isDst = NONE, offset = NONE}, src7) 
-    end
-    handle BadFormat => NONE
-
+    type ('a, 'b) reader = ('a, 'b) Reader.reader
+       
+    fun scan (reader: (char, 'a) reader): (t, 'a) reader =
+       let
+	  type 'b t = ('b, 'a) reader
+	  val none: 'b t = fn _ => NONE
+	  fun done (b: 'b): 'b t = fn a => SOME (b, a)
+	  fun peek1 (f: char -> 'b t): 'b t =
+	     fn a =>
+	     case reader a of
+		NONE => NONE
+	      | SOME (c, _) => f c a
+	  fun read1 (f: char -> 'b t): 'b t =
+	     fn a =>
+	     case reader a of
+		NONE => NONE
+	      | SOME (c, a) => f c a
+	  fun skipSpace (r: 'b t): 'b t =
+	     let
+		fun loop (): 'b t =
+		   peek1 (fn c =>
+			  if Char.isSpace c
+			     then read1 (fn _ => loop ())
+			  else r)
+	     in
+		loop ()
+	     end
+	  fun readN (n: int, f: string -> 'b t): 'b t =
+	     let
+		fun loop (n: int, ac: char list): 'b t =
+		   if 0 = n
+		      then f (implode (rev ac))
+		   else read1 (fn c => loop (n - 1, c :: ac))
+	     in
+		loop (n, [])
+	     end
+	  fun readChar (c: char, r: 'b t): 'b t =
+	     read1 (fn c' => if c = c' then r else none)
+	  fun readWeekDay (f: weekday -> 'b t): 'b t =
+	     readN (3, fn s =>
+		    case s of
+		       "Mon" => f Mon
+		     | "Tue" => f Tue
+		     | "Wed" => f Wed
+		     | "Thu" => f Thu
+		     | "Fri" => f Fri
+		     | "Sat" => f Sat
+		     | "Sun" => f Sun
+		     | _ => none)
+	  fun readMonth (f: month -> 'b t): 'b t =
+	     readN (3, fn s =>
+		    case s of
+		       "Jan" => f Jan
+		     | "Feb" => f Feb
+		     | "Mar" => f Mar
+		     | "Apr" => f Apr
+		     | "May" => f May
+		     | "Jun" => f Jun
+		     | "Jul" => f Jul
+		     | "Aug" => f Aug
+		     | "Sep" => f Sep
+		     | "Oct" => f Oct
+		     | "Nov" => f Nov
+		     | "Dec" => f Dec
+		     | _ => none)
+	  fun readDigs (n: int, lower: int, upper: int, f: int -> 'b t): 'b t =
+	     readN (n, fn s =>
+		    if not (CharVector.all Char.isDigit s)
+		       then none
+		    else
+		       let
+			  val v =
+			     CharVector.foldl
+			     (fn (c, ac) =>
+			      ac * 10 + (Char.ord c - Char.ord #"0"))
+			     0 s
+		       in
+			  if lower <= v andalso v <= upper
+			     then f v
+			  else none
+		       end)
+	  fun readDay f = readDigs (2, 1, 31, f)
+	  fun readHour f = readDigs (2, 0, 23, f)
+	  fun readMinute f = readDigs (2, 0, 59, f)
+	  fun readSeconds f = readDigs (2, 0, 61, f)
+	  fun readYear f = readDigs (4, 0, 9999, f)
+       in
+	  skipSpace
+	  (readWeekDay
+	   (fn weekDay =>
+	    readChar
+	    (#" ",
+	     readMonth
+	     (fn month =>
+	      readChar
+	      (#" ",
+	       readDay
+	       (fn day =>
+		readChar
+		(#" ",
+		 readHour
+		 (fn hour =>
+		  readChar
+		  (#":",
+		   readMinute
+		   (fn minute =>
+		    (readChar
+		     (#":",
+		      readSeconds
+		      (fn second =>
+		       readChar
+		       (#" ",
+			readYear
+			(fn year =>
+			 done (T {day = day,
+				  hour = hour,
+				  isDst = NONE,
+				  minute = minute,
+				  month = month,
+				  offset = NONE,
+				  second = second,
+				  weekDay = weekDay,
+				  year = year,
+				  yearDay = dayinyear (year, month, day)}
+			       ))))))))))))))))
+       end
+       
     fun fromString s = StringCvt.scanString scan s
 
     (* Ignore timezone and DST when comparing dates: *)
     fun compare 
-	(DATE {year=y1,month=mo1,day=d1,hour=h1,minute=mi1,second=s1, ...},
-	 DATE {year=y2,month=mo2,day=d2,hour=h2,minute=mi2,second=s2, ...}) =
+	(T {year=y1,month=mo1,day=d1,hour=h1,minute=mi1,second=s1, ...},
+	 T {year=y2,month=mo2,day=d2,hour=h2,minute=mi2,second=s2, ...}) =
 	let
 	   fun cmp (v1, v2, cmpnext) = 
 	      case Int.compare (v1, v2) of
@@ -452,40 +512,26 @@ structure Date :> DATE =
 	end
 
     fun date { year, month, day, hour, minute, second, offset } =
-	if year < 0 then raise Date 
-	else
-	    let val (dayoffset, offset') = 
-	        case offset of
-		    NONE      => (0, NONE)
-		  | SOME time => 
-			let val secs      = Time.toSeconds time
-			    val secoffset = 
-				if secs <= 82800 then ~secs else 86400 - secs
-			in (Int.quot (secs, 86400), SOME secoffset) end
-		val day' = day + dayoffset
-	    in
-		normalizedate year month day' hour minute second offset'
-	    end
+       if year < 0 then raise Date 
+       else
+	  let
+	     val (dayoffset, offset') = 
+		case offset of
+		   NONE => (0, NONE)
+		 | SOME time => 
+		      let
+			 val secs = Time.toSeconds time
+			 val secoffset = 
+			    if secs <= 82800 then ~secs else 86400 - secs
+		      in
+			 (Int.quot (secs, 86400), SOME secoffset)
+		      end
+	     val day' = day + dayoffset
+	  in
+	     normalizedate year month day' hour minute second offset'
+	  end
 
-    fun year (DATE { year, ... }) = year
-	
-    fun month (DATE { month, ... }) = month
-	
-    fun day (DATE { day, ... }) = day
-
-    fun hour (DATE { hour, ... }) = hour
-
-    fun minute (DATE { minute, ... }) = minute
-
-    fun second (DATE { second, ... }) = second
-
-    fun weekDay (DATE { wday, ... }) = wday
-
-    fun yearDay (DATE { yday, ... }) = yday
-
-    fun isDst (DATE { isDst, ... }) = isDst
-
-    fun offset (DATE { offset, ... }) = 
+    fun offset (T {offset, ...}) = 
 	Option.map
 	(fn secs => Time.fromSeconds ((86400 + secs) mod 86400)) 
 	offset

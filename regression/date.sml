@@ -125,9 +125,9 @@ val test3 =
 val test4 = 
     tst' "test4" (fn _ => 
 	   List.all tofrom 
-	   ["Fri Jul  5 14:25:16 1996",
-	   "Mon Feb  5 04:25:16 1996",
-	   "Sat Jan  6 04:25:16 1996"])
+	   ["Fri Jul 05 14:25:16 1996",
+	   "Mon Feb 05 04:25:16 1996",
+	   "Sat Jan 06 04:25:16 1996"])
 
 val test5 = 
     tst' "test5" (fn _ => 
