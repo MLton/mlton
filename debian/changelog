@@ -1,4 +1,10 @@
-mlton (MLTONVERSION-1) unstable; urgency=low
+mlton (20030711-1) unstable; urgency=low
+
+  * new upstream version
+
+ -- Stephen Weeks <sweeks@sweeks.com>  Fri, 11 Jul 2003 11:15:17 -0700
+
+mlton (20030710-1) unstable; urgency=low
 
   * new upstream version
 

@@ -12,10 +12,10 @@ You can build MLton with older versions of itself, as long as the
 command-line switches haven't changed too much.  You can also
 bootstrap with SML/NJ.  See the User Guide for details.
 
-It is easy enough to manually build: fetch
-http://prdownloads.sourceforge.net/mlton/mlton-20020923-1.i386.tgz,
-symbolic link the binaries it contains into /usr/bin/ and its
-library directory as /usr/lib/mlton, and you're good to go.
+It is easy enough to manually build: fetch the latest linux binary tgz
+from www.mlton.org, symbolic link the binaries it contains into
+/usr/bin/ and its library directory as /usr/lib/mlton, and you're good
+to go.
 
 			HARDWARE REQUIREMENTS
 
@@ -30,4 +30,4 @@ is to make sure that enough memory is available.
 Now, get out there and have a MLton of fun!
 
  -- Barak Pearlmutter <bap@cs.unm.edu>, Fri, 12 Oct 2001 11:31:16 -0600
- -- Stephen Weeks <sweeks@sweek.com>, Sun, 22 Sep 2002 12:16:54 -0700
+ -- Stephen Weeks <sweeks@sweeks.com>, Fri, 11 Jul 2003 12:27:26 -0700

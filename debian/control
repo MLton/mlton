@@ -10,11 +10,10 @@ Architecture: i386
 Depends: ${shlibs:Depends}, libgmp3-dev (>= 4.0.1)
 Description: Optimizing compiler for Standard ML
  MLton (www.mlton.org) is a whole-program
- optimizing compiler for Standard ML that runs on
- X86 machines under Linux, FreeBSD and
- Cygwin/Windows.  MLton generates standalone
- executables with excellent runtime performance,
- is SML 97 compliant, and has a mostly complete
- basis library.  MLton has profiling, a fast C
- FFI, an interface to the GNU multiprecision
- library, and lots of useful libraries.
+ optimizing compiler for Standard ML.  MLton
+ generates standalone executables with excellent 
+ runtime performance, is SML 97 compliant, and 
+ has a  complete basis library.  MLton has 
+ source-level profiling, a fast C  FFI, an
+ interface to the GNU multiprecision library, 
+ and lots of useful libraries.

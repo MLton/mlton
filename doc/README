@@ -4,10 +4,11 @@ programming language. MLton has the following features.
    + Runs on a variety of platforms
      o X86: Linux, FreeBSD, or Cygwin/Windows
      o Sparc: SunOS
-   + Generates standalone executables with good runtime performance
-   + SML 97 compliant, with a complete basis library (except for use)
-   + Untagged native integers and unboxed native arrays
-   + Fast C FFI for calling from SML to C or from C to SML
+   + Generates standalone executables with excellent running times
+   + Supports the full SML 97 language
+   + Has a complete basis library (except for use)
+   + Untagged native integers and reals, and unboxed native arrays
+   + Fast C FFI for calling from SML to C and from C to SML
    + Source-level profiling of both time and allocation
    + Multiple garbage collection strategies
    + Supports large amounts of memory and large arrays

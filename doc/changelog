@@ -8,7 +8,7 @@ Summary:
   + Added weak pointers (via MLton.Weak) and finalization (via
     MLton.Finalizable).
   + Added new integer modules: Int8, Int16.
-  + Improved profiling, allowing splitting to be determined in mlprof.
+  + Better profiling call graphs
   + Fixed conversions between reals and their decimal representations
     to be correct using the gdtoa library.
 
