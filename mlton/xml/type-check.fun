@@ -189,6 +189,9 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 				   else error "bad raise"
 	     | Handle {try, catch = (catch, catchType), handler, ...} =>
 		  let
+		     val _ = if isExnType catchType
+				then ()
+			     else error "handle with non-exn type for catch"
 		     val ty = checkExp try
 		     val _ = setVar (catch, {tyvars = Vector.new0 (),
 					     ty = catchType})
