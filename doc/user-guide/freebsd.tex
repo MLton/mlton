@@ -1,12 +1,19 @@
 \sec{Running on FreeBSD}{freebsd}
 
-We have noticed a few issues when running {\mlton} on FreeBSD.  These
-only arise if you are working with the {\mlton} sources.
+We have noticed a few issues when running {\mlton} on FreeBSD.  
 
 \begin{itemize}
 
-%\item Because some of the {\mlton} scripts use bash, you may have to add a
-%symbolic link from {\tt /bin/bash} to {\tt /usr/local/bin/bash}.
+\item The executables often run more slowly than on a comparable Linux machine.
+We conjecture that part of this is due to costs due to heap resizing and kernel
+zeroing of pages.
+
+\end{itemize}
+
+We have also noticed a few issues when compiling {\mlton} on FreeBSD.  These
+only arise if you are working with the {\mlton} sources.
+
+\begin{itemize}
 
 \item {\mlton} {\tt Makefile}s use GNU extensions, so you should use {\tt gmake}
 instead of {\tt make}.
