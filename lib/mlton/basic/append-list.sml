@@ -13,6 +13,7 @@ struct
 datatype 'a t =
    Append of 'a t * 'a t (* Neither is empty. *)
  | Appends of 'a t list (* None is empty and list is nonempty. *)
+ | AppendsV of 'a t vector (* None is empty and vector is nonempty. *)
  | Cons of 'a * 'a t (* Nonempty. *)
  | Empty
  | List of 'a list (* Nonempty. *)
@@ -36,6 +37,15 @@ fun appends l =
       if List.isEmpty l
 	 then Empty
       else Appends l
+   end
+
+fun appendsV v =
+   let
+      val v = Vector.keepAll (v, not o isEmpty)
+   in
+      if Vector.isEmpty v
+	 then Empty
+      else AppendsV v
    end
 
 fun cons (a, l) =
@@ -68,6 +78,7 @@ fun fold (l, b, f) =
 	 case l of
 	    Append (l, l') => loop (l', loop (l, b))
 	  | Appends l => List.fold (l, b, loop)
+	  | AppendsV v => Vector.fold (v, b, loop)
 	  | Cons (x, l) => loop (l, f (x, b))
 	  | Empty => b
 	  | List l => List.fold (l, b, f)
@@ -87,6 +98,7 @@ fun foldr (l, b, f) =
 	 case l of
 	    Append (l, l') => loop (l, loop (l', b))
 	  | Appends l => List.foldr (l, b, loop)
+	  | AppendsV v => Vector.foldr (v, b, loop)
 	  | Cons (x, l) => f (x, loop (l, b))
 	  | Empty => b
 	  | List l => List.foldr (l, b, f)
@@ -101,6 +113,7 @@ fun map (l, f) =
       val rec loop =
 	 fn Append (l, l') => Append (loop l, loop l')
 	  | Appends l => Appends (List.map (l, loop))
+	  | AppendsV v => AppendsV (Vector.map (v, loop))
 	  | Cons (x, l) => Cons (f x, loop l)
 	  | Empty => Empty
 	  | List l => List (List.map (l, f))

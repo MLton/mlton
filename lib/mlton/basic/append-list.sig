@@ -12,6 +12,7 @@ signature APPEND_LIST =
 
       val append: 'a t * 'a t -> 'a t
       val appends: 'a t list -> 'a t
+      val appendsV: 'a t vector -> 'a t
       val cons: 'a * 'a t -> 'a t
       val empty: 'a t
       val fold: 'a t * 'b * ('a * 'b -> 'b) -> 'b
