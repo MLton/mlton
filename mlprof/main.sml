@@ -82,6 +82,10 @@ structure AFile =
 	     fun line () = In.inputLine ins
 	     val magic = valOf (Word.fromString (line ()))
 	     val sourcesLength = valOf (Int.fromString (line ()))
+	     val _ =
+		if 0 = sourcesLength
+		   then die (concat [afile, " not compiled for profiling"])
+		else ()
 	     val sources =
 		Vector.tabulate (sourcesLength, fn _ =>
 				 Source.fromString
