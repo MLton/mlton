@@ -571,14 +571,16 @@ fun commandLine (args: string list): unit =
 				andalso not (!warnMatch)
 				andalso not (!keepDefUse))
       val _ =
-	 if (case targetOS of
-		Cygwin => true
-	      | OpenBSD => true
-	      | _ => false)
-	    andalso !profile = ProfileTime
-	    then usage (concat ["can't use -profile time on ",
-				MLton.Platform.OS.toString targetOS])
-	 else ()
+	 case targetOS of
+	    FreeBSD => ()
+	  | Linux => ()
+	  | NetBSD => ()
+	  | Solaris => ()
+	  | _ =>
+	       if !profile = ProfileTime
+		  then usage (concat ["can't use -profile time on ",
+				      MLton.Platform.OS.toString targetOS])
+	       else ()
       fun printVersion (out: Out.t): unit =
 	 Out.output (out, concat [version, " ", build, "\n"])
    in
