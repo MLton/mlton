@@ -158,6 +158,22 @@ signature SIG =
      structure T : sig type t end where type t = S.t
   end
 \end{verbatim}
+%
+\item
+{\smlnj} disallows binding non-datatypes with datatype replication.
+For example, it rejects the following program that should be allowed
+according to The Definition.
+\begin{verbatim}
+type ('a, 'b) t = 'a * 'b
+datatype u = datatype t
+\end{verbatim}
+This idiom can be useful when one wants to rename a type without
+rewriting all the type arguments.  For example, the above would have
+to be written in SML/NJ as follows.
+\begin{verbatim}
+type ('a, 'b) t = 'a * 'b
+type ('a, 'b) u = ('a, 'b) t
+\end{verbatim}
 
 \end{itemize}
 
