@@ -1,5 +1,9 @@
 Here are the changes from version 20020923.
 
+* 2002-12-28
+  - Added NetHostDB,NetProtDB,NetServDB structures.
+  - Added Socket,GenericSock,INetSock,UnixSock structures.
+
 * 2002-12-19
   - Fixed bug in signal check insertion that could cause some signals
     to be missed.  The fix was to add a signal check on entry to each
@@ -12,7 +16,7 @@ Here are the changes from version 20020923.
 * 2002-11-23
   - Added support for the latest Basis Library specification.
   - Added option -basis to choose Basis Library version.  Currently available
-    basis libraries are basis-2002, basis-2002-strict, basis-1997, and none.
+    basis libraries are 2002, 2002-strict, 1997, and none.
   - Added IntInf.{orb,xorb,andb,notb,<<,~>>} values.
   - Added OS.IO.{poll_desc,poll_info} types.
   - Added OS.IO.{pollDesc,pollToIODesc,infoToPollDesc,Poll} values.
