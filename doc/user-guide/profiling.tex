@@ -113,13 +113,15 @@ graph of the program, in {\tt .dot} format, containing the table data.
 You can create a postscript graph from the dot file using the
 \htmladdnormallink{{\tt graphviz}}
 		  {http://www.research.att.com/sw/tools/graphviz/}
-software package.  Technically speaking, the graph is a call-stack
-graph rather than a call graph because it describes the set of
-possible call stacks.  Thedifference is in how tail calls are
-displayed.  For example if {\tt f} nontail calls {\tt g} and {\tt g}
-tail calls {\tt h}, then the call-stack graph has edges from {\tt f}
-to {\tt g} and {\tt f} to {\tt h}, while the call-graph would have
-edges from {\tt f} to {\tt g} and {\tt g} to {\tt h}.
+software package.  If you want to see the entire call-graph for a
+program, you can use {\tt mlprof -graph all a.out}. Technically
+speaking, the graph is a call-stack graph rather than a call graph
+because it describes the set of possible call stacks.  Thedifference
+is in how tail calls are displayed.  For example if {\tt f} nontail
+calls {\tt g} and {\tt g} tail calls {\tt h}, then the call-stack
+graph has edges from {\tt f} to {\tt g} and {\tt f} to {\tt h}, while
+the call-graph would have edges from {\tt f} to {\tt g} and {\tt g} to
+{\tt h}.
 
 The performance impact of {\tt -profile-stack true} can be noticeable
 since there is some extra bookkeeping at every nontail call.

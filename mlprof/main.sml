@@ -15,7 +15,7 @@ val sourcesIndexGC: int = 1
 
 structure GraphShow =
    struct
-      datatype t = Above
+      datatype t = Above | All
    end
 
 val graphShow = ref GraphShow.Above
@@ -112,13 +112,23 @@ structure AFile =
 
 structure Kind =
    struct
-      datatype t = Alloc | Time
+      datatype t = Alloc | Empty | Time
 
       val toString =
 	 fn Alloc => "Alloc"
+	  | Empty => "Empty"
 	  | Time => "Time"
 
       val layout = Layout.str o toString
+
+      val merge: t * t -> t =
+	 fn (k, k') =>
+	 case (k, k') of
+	    (Alloc, Alloc) => Alloc
+	  | (_, Empty) => k
+	  | (Empty, _) => k'
+	  | (Time, Time) => Time
+	  | _ => Error.bug "Kind.merge"
    end
 
 structure Style =
@@ -136,12 +146,14 @@ structure Counts =
    struct
       datatype t =
 	 Current of IntInf.t vector
+       | Empty
        | Stack of {current: IntInf.t,
 		   stack: IntInf.t,
 		   stackGC: IntInf.t} vector
 
       val layout =
 	 fn Current v => Vector.layout IntInf.layout v
+	  | Empty => Layout.str "empty"
 	  | Stack v =>
 	       Vector.layout
 	       (fn {current, stack, stackGC} =>
@@ -154,6 +166,8 @@ structure Counts =
 	 case (c, c') of
 	    (Current v, Current v') =>
 	       Current (Vector.map2 (v, v', IntInf.+))
+	  | (Empty, _) => c'
+	  | (_, Empty) => c
 	  | (Stack v, Stack v') =>
 	       Stack (Vector.map2
 		      (v, v', fn ({current = c, stack = s, stackGC = g},
@@ -171,6 +185,13 @@ structure ProfFile =
 			 magic: word,
 			 total: IntInf.t,
 			 totalGC: IntInf.t}
+
+      fun empty (AFile.T {magic, sources, ...}) =
+	 T {counts = Counts.Empty,
+	    kind = Kind.Empty,
+	    magic = magic,
+	    total = IntInf.zero,
+	    totalGC = IntInf.zero}
 
       local
 	 fun make f (T r) = f r
@@ -244,12 +265,13 @@ structure ProfFile =
 	 Trace.trace ("ProfFile.new", File.layout o #mlmonfile, layout) new
 
       fun merge (T {counts = c, kind = k, magic = m, total = t, totalGC = g},
-		 T {counts = c', magic = m', total = t', totalGC = g', ...}): t =
+		 T {counts = c', kind = k', magic = m', total = t', totalGC = g',
+		    ...}): t =
 	 if m <> m'
 	    then die "incompatible mlmon files"
 	 else
 	    T {counts = Counts.merge (c, c'),
-	       kind = k,
+	       kind = Kind.merge (k, k'),
 	       magic = m,
 	       total = IntInf.+ (t, t'),
 	       totalGC = IntInf.+ (g, g')}
@@ -271,7 +293,7 @@ fun display (AFile.T {name = aname, sources, sourceSuccessors, ...},
       val ticksPerSecond = 100.0
       val thresh = Real.fromInt (!thresh)
       val totalReal = Real.fromIntInf (IntInf.+ (total, totalGC))
-      fun per (ticks: IntInf.t): real * string list =
+      fun per (ticks: IntInf.t): {per: real, row: string list} =
 	 let
 	    val rticks = Real.fromIntInf ticks
 	    val per = 100.0 * rticks / totalReal
@@ -284,6 +306,7 @@ fun display (AFile.T {name = aname, sources, sourceSuccessors, ...},
 			  (case kind of
 			      Kind.Alloc =>
 				 ["(", IntInf.toCommaString ticks, ")"]
+			    | Kind.Empty => []
 			    | Kind.Time =>
 				 ["(",
 				  Real.format
@@ -292,11 +315,12 @@ fun display (AFile.T {name = aname, sources, sourceSuccessors, ...},
 				  "s)"])]
 		   else [])
 	 in
-	    (per, row)
+	    {per = per, row = row}
 	 end
       val profileStack =
 	 case counts of
 	    Counts.Current _ => false
+	  | Counts.Empty => false
 	  | Counts.Stack _ => true
       fun doit (v, f) =
 	 Vector.mapi
@@ -304,14 +328,17 @@ fun display (AFile.T {name = aname, sources, sourceSuccessors, ...},
 	  let
 	     val {per, row} = f x
 	     val showInTable =
-		(per > 0.0 andalso per >= thresh)
-		orelse (not profileStack andalso i = sourcesIndexGC)
+		per > 0.0
+		andalso (per >= thresh
+			 orelse (not profileStack andalso i = sourcesIndexGC))
 	     val source = Vector.sub (sources, i)
 	     val node =
-		if (not profileStack orelse i <> sourcesIndexGC)
-		   andalso (case !graphShow of
-			       GraphShow.Above => per >= thresh)
-		   andalso per > 0.0
+		if (case !graphShow of
+		       GraphShow.Above =>
+			  (not profileStack orelse i <> sourcesIndexGC)
+			  andalso per > 0.0
+			  andalso per >= thresh
+		     | GraphShow.All => true)
 		   then
 		      let
 			 val node = Graph.newNode graph
@@ -321,8 +348,10 @@ fun display (AFile.T {name = aname, sources, sourceSuccessors, ...},
 			    (no,
 			     Dot.NodeOption.Label
 			     (Source.toDotLabel source
-			      @ [(concat (List.separate (row, " ")),
-				  Dot.Center)]))
+			      @ (if per > 0.0
+				    then [(concat (List.separate (row, " ")),
+					   Dot.Center)]
+				 else [])))
 			 val _ =
 			    List.push (no, Dot.NodeOption.Shape Dot.Box)
 		      in
@@ -337,19 +366,16 @@ fun display (AFile.T {name = aname, sources, sourceSuccessors, ...},
 	  end)
       val counts =
 	 case counts of
-	    Counts.Current v =>
-	       doit (v, fn i =>
-		     let
-			val (per, row) = per i
-		     in
-			{per = per, row = row}
-		     end)
+	    Counts.Current v => doit (v, per)
+	  | Counts.Empty =>
+	       doit (Vector.new (Vector.length sources, ()),
+		     fn () => per IntInf.zero)
 	  | Counts.Stack v =>
 	       doit (v, fn {current, stack, stackGC} =>
 		     let
-			val (cp, cr) = per current
-			val (sp, sr) = per stack
-			val (_, gr) = per stackGC
+			val {per = cp, row = cr} = per current
+			val {row = sr, ...} = per stack
+			val {row = gr, ...} = per stackGC
 		     in
 			{per = cp, row = List.concat [cr, sr, gr]}
 		     end)
@@ -392,6 +418,7 @@ fun display (AFile.T {name = aname, sources, sourceSuccessors, ...},
 	      Kind.Alloc =>
 		 [IntInf.toCommaString total, " bytes allocated (",
 		  IntInf.toCommaString totalGC, " bytes by GC)\n"]
+	    | Kind.Empty => []
 	    | Kind.Time =>
 		 let
 		    fun t2s i = 
@@ -434,10 +461,11 @@ fun makeOptions {usage} =
       open Popt
    in
       List.map
-      ([(Expert, "graph", " {above|all}", " show graph nodes",
+      ([(Normal, "graph", " {above|all}", " show graph nodes",
 	 SpaceString (fn s =>
 		      case s of
 			 "above" => graphShow := GraphShow.Above
+		       | "all" => graphShow := GraphShow.All
 		       | _ => usage "invalid -graph arg")),
 	(Normal, "raw", " {false|true}", "show raw counts",
 	 boolRef raw),
@@ -451,7 +479,7 @@ fun makeOptions {usage} =
        {arg = arg, desc = desc, name = name, opt = opt, style = style})
    end
 
-val mainUsage = "mlprof [option ...] a.out mlmon.out [mlmon.out ...]"
+val mainUsage = "mlprof [option ...] a.out [mlmon.out ...]"
 val {parse, usage} =
    Popt.makeUsage {mainUsage = mainUsage,
 		   makeOptions = makeOptions,
@@ -463,7 +491,7 @@ fun commandLine args =
     in
        case rest of
 	  Result.No msg => usage msg
-	| Result.Yes (afile::mlmonfile::mlmonfiles) =>
+	| Result.Yes (afile :: mlmonfiles) =>
 	     let
 		val aInfo = AFile.new {afile = afile}
 		val _ =
@@ -473,7 +501,7 @@ fun commandLine args =
 			 ; Layout.outputl (AFile.layout aInfo, Out.standard))
 		val profFile =
 		   List.fold
-		   (mlmonfiles, ProfFile.new {mlmonfile = mlmonfile},
+		   (mlmonfiles, ProfFile.empty aInfo,
 		    fn (mlmonfile, profFile) =>
 		    ProfFile.merge (profFile,
 				    ProfFile.new {mlmonfile = mlmonfile}))
@@ -491,7 +519,7 @@ fun commandLine args =
 		      if m <> m'
 			 then
 			    die (concat [afile, " is incompatible with ",
-					 mlmonfile])
+					 (hd mlmonfiles)])
 		      else ()
 		   end
 		val _ = display (aInfo, profFile)
