@@ -16,7 +16,7 @@ endif
 GL_OBJS  = GL_c.o GLUT_c.o
 
 %_h.h: %.cm %.sig %.sml
-	$(mlton) -export-header $@ -stop tc $<
+	$(mlton) -export-header true > $@ -stop tc $<
 
 %.o: %.c
 
