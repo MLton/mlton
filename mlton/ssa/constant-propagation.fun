@@ -32,10 +32,10 @@ structure Type =
       fun isSmall t =
 	 case dest t of
 	    Array _ => false
-	  | Vector _ => false
 	  | Datatype _ => false
 	  | Ref t => isSmall t
 	  | Tuple ts => Vector.forall (ts, isSmall)
+	  | Vector _ => false
 	  | _ => true
    end
 
@@ -54,34 +54,44 @@ structure Value =
 	    datatype t = T of {const: const ref,
 			       coercedTo: t list ref}
 	    and const =
-	       Undefined (* no possible value *)
-	     | Const of Const.t
-	     | Unknown (* many possible values *)
+	       Const of Const.t
+	      | Undefined (* no possible value *)
+	      | Unknown (* many possible values *)
+
+	    fun layout (T {const, ...}) = layoutConst (!const)
+	    and layoutConst c =
+	       let
+		  open Layout
+	       in
+		  case c of
+		     Const c => Const.layout c
+		   | Undefined => str "undefined constant"
+		   | Unknown => str "unknown constant"
+	       end
 
 	    fun new c = T {const = ref c,
 			   coercedTo = ref []}
 
 	    fun equals (T {const = r, ...}, T {const = r', ...}) = r = r'
 
+	    val equals =
+	       Trace.trace2 ("Const.equals", layout, layout, Bool.layout) equals
+
 	    val const = new o Const
 
 	    fun undefined () = new Undefined
-	    fun unknown () = new Unknown
 
-	    fun layout (T {const, ...}) =
-	       let open Layout
-	       in case !const of
-		  Undefined => str "undefined constant"
-		| Const c => Const.layout c
-		| Unknown => str "unknown constant"
-	       end
-	    
+	    fun unknown () = new Unknown
+    
 	    fun makeUnknown (T {const, coercedTo}): unit =
 	       case !const of
 		  Unknown => ()
 		| _ => (const := Unknown
 			; List.foreach (!coercedTo, makeUnknown)
 			; coercedTo := [])
+
+	    val makeUnknown =
+	       Trace.trace ("Const.makeUnknown", layout, Unit.layout) makeUnknown
 
 	    fun send (c: t, c': const): unit =
 	       let
@@ -95,23 +105,40 @@ structure Value =
 			      then ()
 			   else makeUnknown c
 		      | _ => makeUnknown c
-	       in loop c
+	       in
+		  loop c
 	       end
+
+	    val send =
+	       Trace.trace2 ("Const.send", layout, layoutConst, Unit.layout) send
 
 	    fun coerce {from = from as T {const, coercedTo}, to: t}: unit =
 	       if equals (from, to)
 		  then ()
 	       else
-		  let fun push () = List.push (coercedTo, to)
-		  in case !const of
-		     Unknown => makeUnknown to
-		   | Undefined => push ()
-		   | c as Const _ => (push (); send (to, c))
+		  let
+		     fun push () = List.push (coercedTo, to)
+		  in
+		     case !const of
+			c as Const _ => (push (); send (to, c))
+		      | Undefined => push ()
+		      | Unknown => makeUnknown to
 		  end
+
+	    val coerce =
+	       Trace.trace
+	       ("Const.coerce",
+		fn {from, to} => Layout.record [("from", layout from),
+						("to", layout to)],
+		Unit.layout)
+	       coerce
 
 	    fun unify (c, c') =
 	       (coerce {from = c, to = c'}
 		; coerce {from = c', to = c})
+
+	    val unify =
+	       Trace.trace2 ("Const.unify", layout, layout, Unit.layout) unify
 	 end
 
       structure One =
@@ -119,24 +146,38 @@ structure Value =
 	    datatype 'a t = T of {global: Var.t option ref,
 				  extra: 'a}
 
+	    local
+	       fun make f (T r) = f r
+	    in
+	       val global = fn z => make #global z
+	    end
+
+	    fun layout (one: 'a t): Layout.t =
+	       Option.layout Var.layout (! (global one))
+
 	    fun new (a: 'a): 'a t = T {global = ref NONE,
 				       extra = a}
 
-	    fun global (T {global = g, ...}) = g
-	       
-	    fun equals (n, n') = global n = global n'
+	    val traceEquals = Trace.info "One.equals"
+	       	       
+	    val equals: 'a t * 'a t -> bool =
+	       fn arg =>
+	       Trace.traceInfo' (traceEquals,
+				 Layout.tuple2 (layout, layout),
+				 Bool.layout)
+	       (fn (n, n') => global n = global n') arg
 	 end
       
       structure Place =
 	 struct
 	    datatype 'a t =
-	       Undefined
-	     | One of 'a One.t
+	       One of 'a One.t
+	     | Undefined
 	     | Unknown
 
 	    val toString =
-	       fn Undefined => "Undefined"
-		| One _ => "One"
+	       fn One _ => "One"
+		| Undefined => "Undefined"
 		| Unknown => "Unknown"
 
 	    fun layout b = Layout.str (toString b)
@@ -144,12 +185,13 @@ structure Value =
 
       structure Birth =
 	 struct
-	    datatype 'a t = T of {place: 'a Place.t ref,
-				  coercedTo: 'a t list ref}
+	    datatype 'a t = T of {coercedTo: 'a t list ref,
+				  place: 'a Place.t ref}
 
 	    fun layout (T {place, ...}) = Place.layout (!place)
 
 	    fun equals (T {place = r, ...}, T {place = r', ...}) = r = r'
+
 	    fun new p = T {place = ref p,
 			   coercedTo = ref []}
 
@@ -157,40 +199,65 @@ structure Value =
 	    fun unknown (): 'a t = new Place.Unknown
 	    fun here (a: 'a): 'a t = new (Place.One (One.new a))
 
-	    fun makeUnknown (T {place, coercedTo, ...}) =
-	       case !place of
-		  Place.Unknown => ()
-		| _ => (place := Place.Unknown
-			; List.foreach (!coercedTo, makeUnknown)
-			; coercedTo := [])
+	    val traceMakeUnknown = Trace.info "Birth.makeUnknown"
+	       
+	    fun makeUnknown arg =
+	       Trace.traceInfo'
+	       (traceMakeUnknown, layout, Unit.layout)
+	       (fn T {place, coercedTo, ...} =>
+		case !place of
+		   Place.Unknown => ()
+		 | _ => (place := Place.Unknown
+			 ; List.foreach (!coercedTo, makeUnknown)
+			 ; coercedTo := [])) arg
 
-	    fun send (b: 'a t, one): unit =
-	       let
-		  fun loop (b as T {place, coercedTo, ...}) =
-		     case !place of
-			Place.Undefined => (place := Place.One one
-					    ; List.foreach (!coercedTo, loop))
-		      | Place.One one' => if One.equals (one, one')
-					     then ()
-					  else makeUnknown b
-		      | Place.Unknown => ()
-	       in loop b
-	       end
+	    val traceSend = Trace.info "Birth.send"
+	       
+	    fun send arg =
+	       Trace.traceInfo'
+	       (traceSend, Layout.tuple2 (layout, One.layout), Unit.layout)
+	       (fn (b, one) =>
+		let
+		   fun loop (b as T {place, coercedTo, ...}) =
+		      case !place of
+			 Place.Undefined => (place := Place.One one
+					     ; List.foreach (!coercedTo, loop))
+		       | Place.One one' => if One.equals (one, one')
+					      then ()
+					   else makeUnknown b
+		       | Place.Unknown => ()
+		in
+		   loop b
+		end) arg
+	
+	    val traceCoerce = Trace.info "Birth.coerce"
+	    fun coerce arg =
+	       Trace.traceInfo'
+	       (traceCoerce,
+		fn {from, to} => Layout.record [("from", layout from),
+						("to", layout to)],
+		Unit.layout)
+	       (fn {from = from as T {place, coercedTo, ...}, to} =>
+		if equals (from, to)
+		   then ()
+		else
+		   let
+		      fun push () = List.push (coercedTo, to)
+		   in
+		      case !place of
+			 Place.Unknown => makeUnknown to
+		       | Place.One one => (push (); send (to, one))
+		       | Place.Undefined => push ()
+		   end) arg
 
-	    fun coerce {from = from as T {place, coercedTo, ...}, to} =
-	       if equals (from, to)
-		  then ()
-	       else
-		  let fun push () = List.push (coercedTo, to)
-		  in case !place of
-		     Place.Unknown => makeUnknown to
-		   | Place.One one => (push (); send (to, one))
-		   | Place.Undefined => push ()
-		  end
-
-	    fun unify (c, c') =
-	       (coerce {from = c, to = c'}
-		; coerce {from = c', to = c})
+	    val traceUnify = Trace.info "Birth.unify"
+	       
+	    fun unify arg =
+	       Trace.traceInfo'
+	       (traceUnify, Layout.tuple2 (layout, layout), Unit.layout)
+	       (fn (c, c') =>
+		(coerce {from = c, to = c'}
+		 ; coerce {from = c', to = c})) arg
 	 end
 
       structure Set = DisjointSet
@@ -237,8 +304,6 @@ structure Value =
 	 val ty = make #ty
       end
 
-      fun equals (T s, T s') = Set.equals (s, s')
-
       local
 	 open Layout
       in
@@ -267,9 +332,14 @@ structure Value =
 	     | Unknown => str "unknown datatype"
       end
 
-      val globalsInfo = Trace.info "globals"
-      val globalInfo = Trace.info "global"
-	 
+      fun equals (T s, T s') = Set.equals (s, s')
+
+      val equals =
+	 Trace.trace2 ("Value.equals", layout, layout, Bool.layout) equals
+
+      val globalsInfo = Trace.info "Value.globals"
+      val globalInfo = Trace.info "Value.global"
+
       fun globals arg: (Var.t * Type.t) vector option =
 	 Trace.traceInfo
 	 (globalsInfo,
@@ -380,6 +450,7 @@ structure Value =
 	 new (Tuple vs, Type.tuple (Vector.map (vs, ty)))
 
       fun const' (c, ty) = new (Const c, ty)
+
       fun const c = let val c' = Const.const c
 		    in new (Const c', Type.ofConst c)
 		    end
@@ -464,7 +535,8 @@ structure Value =
 	       fun make v () = Data {value = ref v,
 				     coercedTo = ref [],
 				     filters = ref []}
-	    in val undefined = make Undefined
+	    in
+	       val undefined = make Undefined
 	       val unknown = make Unknown
 	    end
 	 end
@@ -558,8 +630,8 @@ fun simplify (program: Program.t): Program.t =
 			   types = args,
 			   values = Vector.map (args, Value.fromType)}))
 	  end)
-	 
-      local open Value
+      local
+	 open Value
       in
  	 val traceCoerce =
  	    Trace.trace ("Value.coerce",
