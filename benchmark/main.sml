@@ -428,7 +428,12 @@ fun main args =
 	    let
 	       val compilers = List.rev (!compilers)
 	       val base = #name (hd compilers)
-	       val _ = Signal.ignore Posix.Signal.pipe
+	       val _ =
+		  let
+		     open MLton.Signal
+		  in
+		     setHandler (Posix.Signal.pipe, Handler.ignore)
+		  end
 	       fun r2s r = Real.format (r, Real.Format.fix (SOME 2))
 	       val i2s = Int.toCommaString
 	       val p2s = i2s o Position.toInt
@@ -572,7 +577,7 @@ fun main args =
 		      val foundOne = ref false
 		      val res =
 			 List.fold
-			 (compilers, ac, fn ({name, abbrv, test},
+			 (compilers, ac, fn ({name, abbrv = _, test},
 					     ac as {compiles: real data,
 						    runs: real data,
 						    sizes: Position.int data,
@@ -581,12 +586,10 @@ fun main args =
 			  if true
 			     then
 				let
-				   val (outTmpFile, outTmpOut) =
-				      File.temp
-				      {prefix = "tmp", suffix = "out"}
-				   val (errTmpFile, errTmpOut) =
-				      File.temp
-				      {prefix = "tmp", suffix = "err"}
+				   val (outTmpFile, _) =
+				      File.temp {prefix = "tmp", suffix = "out"}
+				   val (errTmpFile, _) =
+				      File.temp {prefix = "tmp", suffix = "err"}
 				   val {compile, run, size} =
 				     ignoreOutput
 				     (fn () => test {bench = bench})
