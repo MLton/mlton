@@ -85,9 +85,7 @@ tar.write mlton-$version | gzip >mlton-$version.tgz
 rm -rf mlton-$version
 
 echo 'Building rpms'
-(
-	time rpm -ba --quiet --clean $topdir/SPECS/mlton.spec ||
+time rpm -ba --quiet --clean $topdir/SPECS/mlton.spec ||
 		die 'rpm build failed'
-)
 
 echo 'Success'
