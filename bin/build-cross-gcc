@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # This script builds and installs a gcc cross-compiler with a cygwin target.
 #
@@ -26,12 +26,12 @@ prefix='/usr/local'
 
 name=`basename $0`
 
-function die() {
+die () {
 	echo >&2 "$1"
 	exit 1
 }
 
-function usage() {
+usage () {
 	die "usage: $name"
 }
 
@@ -43,7 +43,7 @@ case "$#" in
 	;;
 esac
 
-function exists() {
+exists () {
 	if [ ! -r "$1" ]; then
 		die "$1 does not exist"
 	fi

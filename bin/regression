@@ -1,11 +1,11 @@
-#!/bin/bash
+#!/bin/sh
 
 # This script runs the regression tests in src/regression.
 # It also compiles the tests in benchmark/tests
 
 name=`basename $0`
 
-function usage {
+usage () {
 	echo >&2 "usage: $name [-cross host] [-run-only] [mlton flags ...]"
 	exit 1
 }
@@ -52,7 +52,7 @@ world='world1.sml world2.sml world3.sml world4.sml world5.sml world6.sml'
 tmp=/tmp/z.regression.$$
 PATH=$bin:.:$PATH
 
-function compFail () {
+compFail () {
 	echo "compilation of $f failed with $flags"
 }
 

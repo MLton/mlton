@@ -1,11 +1,11 @@
-#!/bin/bash
+#!/bin/sh
 
 # This script checks MLton's basis library implementation for type errors using
 # SML/NJ.
 
 name=`basename $0`
 
-function usage() {
+usage () {
 	echo >&2 "usage: $name"
 	exit 1
 }

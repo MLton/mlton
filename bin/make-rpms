@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # 
 # make-rpms srcdir topdir
@@ -12,12 +12,12 @@
 
 name=`basename $0`
 
-function die() {
+die () {
 	echo >&2 $1
 	exit 1
 }
 
-function usage() {
+usage () {
 	die "usage: $name srcdir topdir"
 }
 
@@ -45,11 +45,11 @@ version=`date +%Y%m%d`
 release="1"
 package="mlton-$version-$release"
 
-function tar.read {
+tar.read () {
 	tar -p -xf - "$@"
 }
 
-function tar.write {
+tar.write () {
 	tar -p -cf - "$@"
 }
 

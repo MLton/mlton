@@ -1,12 +1,12 @@
 \sec{Running on FreeBSD}{freebsd}
 
-We have noticed a couple of issues when running {\mlton} on FreeBSD.  These
-only arise if you are working with compiling {\mlton} from sources.
+We have noticed a few issues when running {\mlton} on FreeBSD.  These
+only arise if you are working with the {\mlton} sources.
 
 \begin{itemize}
 
-\item Because some of the {\mlton} scripts use bash, you may have to add a
-symbolic link from {\tt /bin/bash} to {\tt /usr/local/bin/bash}.
+%\item Because some of the {\mlton} scripts use bash, you may have to add a
+%symbolic link from {\tt /bin/bash} to {\tt /usr/local/bin/bash}.
 
 \item {\mlton} {\tt Makefile}s use GNU extensions, so you should use {\tt gmake}
 instead of {\tt make}.

@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 
-function doit () {
+doit () {
 	rm -rf .*~ *~ *.a *.o CM core mlmon.out
 	if [ -r .cvsignore ]; then
 		for f in `cat .cvsignore`; do rm -rf $f; done
