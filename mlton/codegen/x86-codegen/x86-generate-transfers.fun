@@ -171,14 +171,24 @@ struct
 	  = #2 o x86LiveTransfers.getLiveTransfers
 
 	val layoutInfo as {get : Label.t -> Block.t option,
-			   set}
-	  = Property.getSet(Label.plist, Property.initConst NONE)
+			   set = setLayoutInfo}
+	  = Property.getSet(Label.plist, 
+			    Property.initRaise (Label.layout, "layoutInfo"))
+	val profileInfo as {get : Label.t -> ProfileInfo.t,
+			    set = setProfileInfo}
+	  = Property.getSet(Label.plist, 
+			    Property.initRaise (Label.layout, "profileInfo"))
 
 	val _ 
 	  = List.foreach
 	    (blocks,
-	     fn block as Block.T {entry,...}
-	      => set(Entry.label entry, SOME block))
+	     fn block as Block.T {entry,profileInfo,...}
+	      => let
+		   val label = Entry.label entry
+		 in 
+		   setLayoutInfo(label, SOME block);
+		   setProfileInfo(label, profileInfo)
+		 end)
 
 	local
 	  val queue = ref (Queue.empty ())
@@ -193,15 +203,12 @@ struct
 	fun enqueCompensationBlock {label, id}
 	  = let
 	      val label' = Label.new label
+	      val profileInfo = getProfileInfo label
 	      val profileInfo
-		= case get label
-		    of SOME (Block.T {profileInfo, ...})
-		     => profileInfo
-		     | NONE 
-		     => ProfileInfo.add
-		        (ProfileInfo.none,
-			 {profileLevel = 0,
-			  profileName = Label.toString label'})
+		= ProfileInfo.add
+		  (getProfileInfo label,
+		   {profileLevel = 3,
+		    profileName = Label.toString label'})
 
 	      val live = getLive(liveInfo, label)
 	      val block
