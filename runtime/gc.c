@@ -1769,7 +1769,7 @@ static inline void resizeHeap (GC_state s, W64 need) {
 		else
 			keep = s->fromSize;
 	}
-	if (DEBUG_RESIZING);
+	if (DEBUG_RESIZING)
 		fprintf (stderr, "need = %u  keep = %u\n",
 				(uint)need, (uint)keep);
 	/* Shrink or grow the heap. */
