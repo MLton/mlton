@@ -12,23 +12,11 @@ nj='sml'
 eval `$lib/platform`
 njHeap="$lib/mlton.$HOST_ARCH-$HOST_OS"
 
-rargs=""
-case "$1" in
-@MLton)
-	shift
-	while [ $# -gt 0 -a "$1" != "--" ]; do
-		rargs="$rargs $1"
-		shift
-	done
-	shift
-	;;
-esac
-
 # If $mlton is executable and $world exists and is not older than
 # $njHeap (which exists), then use MLton, otherwise use SML/NJ.
 doit () {
 	if [ -x "$mlton" -a -s "$world" -a ! "$njHeap" -nt "$world" ]; then
-		exec "$mlton" @MLton load-world "$world" $rargs -- "$@"
+		exec "$mlton" @MLton load-world "$world" -- "$@"
 	elif [ -s "$njHeap" ]; then
 		exec "$nj" @SMLload="$njHeap" "$@"
 	fi

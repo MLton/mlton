@@ -4188,10 +4188,10 @@ static int processAtMLton (GC_state s, int argc, char **argv,
 	int i;
 
 	i = 1;
-	if (argc > 1 and (0 == strcmp (argv [1], "@MLton"))) {
+	while (i < argc and (0 == strcmp (argv [i], "@MLton"))) {
 		bool done;
 
-		i = 2;
+		i++;
 		done = FALSE;
 		while (!done) {
 			if (i == argc)

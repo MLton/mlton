@@ -1,5 +1,10 @@
 Here are the changes since version 20030716.
 
+* 2003-12-10
+  - Allow multiple @MLton -- runtime args in sequnce.  This makes it
+    easier for scripts to prefix @MLton args without having to splice
+    them with other ones.
+
 * 2003-12-04
   - Added support for files larger than 2G.  This included changing
     Position from Int32 to Int64.

@@ -198,15 +198,19 @@ To control the runtime system, executables produced by {\mlton} take
 several optional command line arguments before their usual arguments.
 To use these options, the first argument to the executable must be
 \verb+@MLton+.  The optional arguments then follow, must be
-terminated by \verb+--+, and are followed by any arguments to the program.
-The optional arguments are {\em not} made available to the SML
-program via {\tt CommandLine.arguments}.  For example, a valid call
-to {\tt hello-world} is: 
+terminated by \verb+--+, and are followed by any arguments to the
+program.  The optional arguments are {\em not} made available to the
+SML program via {\tt CommandLine.arguments}.  For example, a valid
+call to {\tt hello-world} is:
 \begin{verbatim}
 hello-world @MLton gc-summary fixed-heap 10k -- a b c
 \end{verbatim}
 In the above example, {\tt CommandLine.arguments () = ["a", "b",
-"c"]}.
+"c"]}.  It is also allowed to have a sequence of \verb+@MLton+
+arguments, as in:
+\begin{verbatim}
+hello-world @MLton gc-summary -- @MLton fixed-heap 10k -- a b c
+\end{verbatim}
 
 \begin{description}
 \option{fixed-heap \mbox{\rm n[}km\mbox{\rm ]}}
