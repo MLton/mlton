@@ -22,10 +22,14 @@ $(NAME).sml: $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)
 $(NAME)_cm: src/yacc.lex.sml src/yacc.grm.sig src/yacc.grm.sml
 	(								\
 		echo 'Group is' &&					\
+		cmcat sources.cm | grep 'lib/mlyacc' &&			\
+		cmcat sources.cm | grep 'src/' &&			\
 		cmcat sources.cm | 					\
 			grep -v 'basis-stubs' | 			\
+			grep -v 'lib/mlyacc' |				\
 			grep -v 'mlton-stubs' | 			\
-			grep -v 'mlton-stubs-in-smlnj' &&		\
+			grep -v 'mlton-stubs-in-smlnj' |		\
+			grep -v 'src/' &&				\
 		echo 'call-main.sml';					\
 	) >$(NAME).cm
 
