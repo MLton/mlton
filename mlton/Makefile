@@ -64,6 +64,18 @@ nj-mlton: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 		echo 'Main.exportNJ("$(SRC)/basis-library", "$(LIB)/mlton");'	\
 	) | time $(SML)
 
+.PHONY: nj-mlton-dual
+nj-mlton-dual: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
+	(									\
+		echo 'SMLofNJ.Internals.GC.messages false;';			\
+		echo '#set CM.Control.verbose false;';				\
+		echo '#set CM.Control.warn_obsolete false;';			\
+		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server1", pathtrans = NONE, pref = 0};';\
+		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server2", pathtrans = NONE, pref = 0};';\
+		echo 'CM.make "sources.cm";';					\
+		echo 'Main.exportNJ("$(SRC)/basis-library", "$(LIB)/mlton");'	\
+	) | time $(SML)
+
 .PHONY: nj-mlton-110.9.1
 nj-mlton-110.9.1: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 	(									\
