@@ -9,10 +9,26 @@ Pid Posix_Process_fork() {
 
 #elif (defined (__CYGWIN__))
 
+
 /* There is a bug in Cygwin in that they don't wait in the parent so that the
  * child can copy the memory.  So, we make the parent wait on a signal from
  * the child.
  */
+
+/* Unfortunately, there are some other Cygwin problems with signals that make
+ * that approach not work either.  So, for now, I just have the parent sleep
+ * in the hope that that gives the child time.
+ */
+Pid Posix_Process_fork() {
+ 	pid_t pid;
+
+	pid = fork();
+	if (0 != pid)
+		sleep(1);
+	return pid;
+}
+
+#if 0
 #include <signal.h>
 #include <stdio.h>
 #define PARENT_CHILD_SIGNAL SIGUSR1
@@ -43,5 +59,6 @@ Pid Posix_Process_fork() {
 		return pid;
 	}
 }
+#endif
 
 #endif

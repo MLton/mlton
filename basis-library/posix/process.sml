@@ -15,9 +15,10 @@ structure PosixProcess: POSIX_PROCESS =
 
       structure MLton = Primitive.MLton
       fun fork () =
-	 if MLton.hostType = MLton.Cygwin
-	    then raise Fail "fork does not work correctly on Cygwin"
-	 else
+(* 	 if MLton.hostType = MLton.Cygwin
+ * 	    then raise Fail "fork does not work correctly on Cygwin"
+ * 	 else
+ *)
 	    case Prim.fork () of
 	       ~1 => Error.error ()
 	     | 0 => NONE
