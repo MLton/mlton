@@ -113,6 +113,19 @@ in
    val isWordX = is [word8, word16, word32, word64]
 end
 
+val renames =
+   [(int8, "Int8.int"),
+    (int16, "Int16.int"),
+    (int32, "int"),
+    (int64, "Int64.int"),
+    (intInf, "IntInf.int"),
+    (real32, "Real32.real"),
+    (real64, "real")   ,
+    (word8, "Word8.word"),
+    (word16, "Word16.word"),
+    (word32, "word"),
+    (word64, "Word64.word")]
+
 fun layoutApp (c: t,
 	       args: (Layout.t * {isChar: bool, needsParen: bool}) vector) =
    let
@@ -155,7 +168,10 @@ fun layoutApp (c: t,
          then if #isChar (#2 (Vector.sub (args, 0)))
 		 then (str "string", {isChar = false, needsParen = false})
 	      else normal ()
-      else normal ()
+      else
+	 case List.peek (renames, fn (c', _) => equals (c, c')) of
+	    NONE => normal ()
+	  | SOME (_, s) => (str s, {isChar = false, needsParen = false})
    end
 
 end
