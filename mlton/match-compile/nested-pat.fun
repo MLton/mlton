@@ -141,8 +141,8 @@ fun replaceTypes (p: t, f: Type.t -> Type.t): t =
 		| Const _ => pat
 		| Layered (x, p) => Layered (x, loop p)
 		| Tuple ps => Tuple (Vector.map (ps, loop))
-		| Var x => Var x
-		| Wild => Wild
+		| Var _ => pat
+		| Wild => pat
 	 in
 	    T {pat = pat, ty = f ty}
 	 end

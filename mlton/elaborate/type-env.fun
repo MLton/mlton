@@ -1586,20 +1586,20 @@ fun close (ensure: Tyvar.t vector) =
        let
 	  open Layout
        in
-	  fn {expansives, varTypes} =>
-	  record [("expansives", Vector.layout Type.layout expansives),
-		  ("varTypes",
-		   Vector.layout
-		   (fn {isExpansive, ty} =>
-		    Layout.record [("isExpansive", Bool.layout isExpansive),
-				   ("ty", Type.layout ty)])
-		   varTypes)]
+	  Vector.layout
+	  (fn {isExpansive, ty} =>
+	   Layout.record [("isExpansive", Bool.layout isExpansive),
+			  ("ty", Type.layout ty)])
        end,
        Layout.ignore)
-      (fn {expansives, varTypes} =>
+      (fn varTypes =>
       let
-	 val () = Vector.foreach (expansives, fn t =>
-				  Type.minTime (t, beforeGen))
+	 val () =
+	    Vector.foreach
+	    (varTypes, fn {isExpansive, ty} =>
+	     if isExpansive
+		then Type.minTime (ty, beforeGen)
+	     else ())
 	 val unable = Vector.keepAll (ensure, fn a =>
 				      not (Time.<= (genTime, !(tyvarTime a))))
 	 val flexes = ref []

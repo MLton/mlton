@@ -12,4 +12,7 @@ val 'a x = let exception E of 'a in () end
 
 val 'a id = fn x: 'a => x
 and     x = let exception E of 'a in () end
-;
+
+val 'a _ = let exception E of 'a in E end
+
+val 'a (f: int -> int, _) = (fn x => x, let exception E of 'a in E end);

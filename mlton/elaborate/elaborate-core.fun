@@ -1750,10 +1750,9 @@ fun elaborateDec (d, {env = E, nest}) =
 			      var = var}
 			  end)
 		      val {bound, schemes, unable} =
-			 close {expansives = Vector.new0 (),
-				varTypes = Vector.map (decs, fn {ty, ...} =>
-						       {isExpansive = false,
-							ty = ty})}
+			 close (Vector.map (decs, fn {ty, ...} =>
+					    {isExpansive = false,
+					     ty = ty}))
 		      val () = reportUnable unable
 		      val _ = checkSchemes (Vector.zip
 					    (Vector.map (decs, #var),
@@ -1973,15 +1972,9 @@ fun elaborateDec (d, {env = E, nest}) =
 				   isRebind = false})))))]
 		      val {bound, schemes, unable} =
 			 close
-			 {expansives = (Vector.keepAllMap
-					(vbs, fn {exp, ...} =>
-					 if Cexp.isExpansive exp
-					    then SOME (Cexp.ty exp)
-					 else NONE)),
-			  varTypes = (Vector.map
-				      (boundVars,
-				       fn ((_, _, ty), {isExpansive, ...}) =>
-				       {isExpansive = isExpansive, ty = ty}))}
+			 (Vector.map
+			  (boundVars, fn ((_, _, ty), {isExpansive, ...}) =>
+			   {isExpansive = isExpansive, ty = ty}))
 		      val () = reportUnable unable
 		      val () = checkSchemes (Vector.zip
 					    (Vector.map (boundVars, #2 o #1),

@@ -715,9 +715,9 @@ fun defunctorize (CoreML.Program.T {decs}) =
 			 if Vector.isEmpty tyvars orelse isExpansive
 			    then
 			       let
-				  val exp =
+				  val (pat, exp) =
 				     if Vector.isEmpty tyvars
-					then exp
+					then (pat, exp)
 				     else
 					let
 					   val x = Var.newNoname ()
@@ -735,6 +735,10 @@ fun defunctorize (CoreML.Program.T {decs}) =
 					      end
 					   val thunkTy =
 					      Xtype.arrow (Xtype.unit, expType)
+					   fun subst t =
+					      Xtype.substitute
+					      (t, Vector.map (tyvars, fn a =>
+							      (a, Xtype.unit)))
 					   val body =
 					      Xexp.app
 					      {arg = Xexp.unit (),
@@ -743,16 +747,17 @@ fun defunctorize (CoreML.Program.T {decs}) =
 					       {targs = (Vector.map
 							 (tyvars, fn _ =>
 							  Xtype.unit)),
-						ty = thunkTy,
+						ty = subst thunkTy,
 						var = x},
-					       ty = expType}
+					       ty = subst expType}
 					   val decs =
 					      [Xdec.PolyVal {exp = thunk, 
 							     ty = thunkTy,
 							     tyvars = tyvars,
 							     var = x}]
 					in
-					   Xexp.lett {body = body, decs = decs}
+					   (NestedPat.replaceTypes (pat, subst),
+					    Xexp.lett {body = body, decs = decs})
 					end
 			       in
 				  patDec (pat, exp, patRegion, e, bodyType, true)

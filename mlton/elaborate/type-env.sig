@@ -84,8 +84,7 @@ signature TYPE_ENV =
 
       val close:
 	 Tyvar.t vector
-	 -> {expansives: Type.t vector,
-	     varTypes: {isExpansive: bool, ty: Type.t} vector}
+	 -> {isExpansive: bool, ty: Type.t} vector
 	 -> {bound: unit -> Tyvar.t vector,
 	     schemes: Scheme.t vector,
 	     unable: Tyvar.t vector}
