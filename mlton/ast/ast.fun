@@ -378,7 +378,7 @@ structure Topdec =
 	       layoutAndsBind ("functor", "=", Vector.toList fctbs,
 			       fn {name, arg, result, body} =>
 			       (Split 0,
-				seq [Fctid.layout name,
+				seq [Fctid.layout name, str " ",
 				     paren (FctArg.layout arg),
 				     layoutSigConst result],
 				layoutStrexp body))
