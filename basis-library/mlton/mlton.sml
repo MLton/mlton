@@ -59,8 +59,9 @@ structure Itimer = Itimer
 structure ProcEnv = ProcEnv
 structure Process = Process
 structure Ptrace = Ptrace
-structure Profile = Profile (structure Cleaner = Cleaner
-			     structure Profile = Prim.Profile)
+structure ProfileTime =
+   ProfileTime (structure Cleaner = Cleaner
+		structure Profile = Prim.ProfileTime)
 structure Random = Random
 structure Rlimit = Rlimit
 structure Rusage = Rusage

@@ -3739,7 +3739,7 @@ struct
       val profileHeader = "MLtonProfile"
       val unique = Counter.new 0
       fun profile_assembly (T {zero, one, two})
-	= if !Control.profile
+	= if !Control.profile = Control.TimeProf
 	    then let
 		   val profileHeader 
 		     = profileHeader ^ (Int.toString (Counter.next unique))

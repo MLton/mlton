@@ -1018,7 +1018,7 @@ struct
 		end
 
 	    val blocks
-	      = if !Control.profile
+	      = if !Control.profile = Control.TimeProf
 		  then List.map
 		       (blocks,
 			fn (x86.Block.T {entry, profileInfo, 

@@ -20,6 +20,11 @@ val extra = ref false
 val die = Process.fail
 val warn = fn s => Out.output (Out.error, concat ["Warning: ", s, "\n"])
 
+fun die s =
+   (Out.output (Out.error, s)
+    ; Out.newline Out.error
+    ; Process.fail "die")
+   
 structure Regexp =
 struct
   open Regexp
@@ -111,10 +116,12 @@ end
 
 structure AFile =
    struct
-      datatype t = T of {addr: word,
-			 profileInfo: {name: string} ProfileInfo.t} list
+      datatype t = T of {etext: word,
+			 start: word,
+			 data: {addr: word,
+				profileInfo: {name: string} ProfileInfo.t} list}
 
-      fun layout (T l) =
+      fun layout (T {data, ...}) =
 	 let 
 	    open Layout
 	 in 
@@ -123,7 +130,7 @@ structure AFile =
 	     => seq [Word.layout addr,
 		     str " ",
 		     ProfileInfo.layout (fn {name} => str name) profileInfo])
-	    l
+	    data
 	 end
 
       structure Match = Regexp.Match
@@ -153,9 +160,17 @@ structure AFile =
 	       val addr = Save.new ()
 	       val kind = Save.new ()
 	       val label = Save.new ()
+	       val start = Save.new ()
+	       val etext = Save.new ()
 	       val symbolC =
 		  compileDFA
-		  (or [seq [save (hexDigits, addr),
+		  (or [seq [save (hexDigits, start),
+			    string " T _start",
+			    eol],
+		       seq [save (hexDigits, etext),
+			    string " A etext",
+			    eol],
+		       seq [save (hexDigits, addr),
 			    char #" ",
 			    save (char #"t", kind),
 			    char #" ",
@@ -173,6 +188,8 @@ structure AFile =
 		  else (Layout.outputl (Compiled.layout symbolC, Out.standard)
 			; Compiled.layoutDotToFile (symbolC, "symbol.dot"))
 	    end
+	    val startRef = ref NONE
+	    val etextRef = ref NONE
 	    val l
 	       = Process.callWithIn
 	       ("nm", ["-n", afile], fn ins =>
@@ -183,45 +200,61 @@ structure AFile =
 		  | SOME m =>
 		       let
 			  val {lookup, peek, ...} = Regexp.Match.stringFuns m
-			  val addr = valOf (Word.fromString (lookup addr))
-			  val profileInfo =
-			     case peek label of
-				SOME label =>
-				   let
-				      val kind = lookup kind
-				      val level = if kind = "T" then ~1 else ~2
-				   in [{profileLevel = level,
-					profileName = label}]
-				   end
-			      | NONE =>
-				   let
-				      val profileInfo = lookup profileInfo
-				      val length = String.size profileInfo
-				      fun loop pos =
-					 case (Regexp.Compiled.matchShort
-					       (profileInfoC,
-						profileInfo, pos)) of
-					    NONE => []
-					  | SOME m =>
-					       let
-						  val {lookup, ...} =
-						     Match.stringFuns m
-						  val level =
-						     valOf (Int.fromString
-							    (lookup level))
-						  val name = lookup name
-					       in
-						  {profileLevel = level,
-						   profileName = name}
-						  :: loop (pos + Match.length m)
-					       end	
-				   in loop 0
-				   end
+			  fun normal () =
+			     let
+				val addr = valOf (Word.fromString (lookup addr))
+				val profileInfo =
+				   case peek label of
+				      SOME label =>
+					 let
+					    val kind = lookup kind
+					    val level =
+					       if kind = "T" then ~1 else ~2
+					 in [{profileLevel = level,
+					      profileName = label}]
+					 end
+				    | NONE =>
+					 let
+					    val profileInfo = lookup profileInfo
+					    val length = String.size profileInfo
+					    fun loop pos =
+					       case (Regexp.Compiled.matchShort
+						     (profileInfoC,
+						      profileInfo, pos)) of
+						  NONE => []
+						| SOME m =>
+						     let
+							val {lookup, ...} =
+							   Match.stringFuns m
+							val level =
+							   valOf (Int.fromString
+								  (lookup level))
+							val name = lookup name
+						     in
+							{profileLevel = level,
+							 profileName = name}
+							:: loop (pos + Match.length m)
+						     end	
+					 in loop 0
+					 end
+			     in
+				{addr = addr, profileInfo = profileInfo} :: ac
+			     end
 		       in
-			  {addr = addr, profileInfo = profileInfo} :: ac
+			  case peek start of
+			     SOME s =>
+				(startRef := SOME (valOf (Word.fromString s))
+				 ; ac)
+			   | NONE =>
+				case peek etext of
+				   SOME s =>
+				      (etextRef :=
+				       SOME (valOf (Word.fromString s))
+				       ; ac)
+				 | NONE => normal ()
 		       end))
 
-	fun shrink {addr, profileInfo : {profileLevel: int,
+	    fun shrink {addr, profileInfo : {profileLevel: int,
 					 profileName: string} list}
 	  = let
 	      val profileInfo 
@@ -309,8 +342,18 @@ structure AFile =
 		  else (shrink v1):: (compress (v2::l))
 
 	val l = List.rev (compress l)
+	val start =
+	   case !startRef of
+	      NONE => die "couldn't find _start label"
+	    | SOME w => w
+	val etext =
+	   case !etextRef of
+	      NONE => die "couldn't find _etext label"
+	    | SOME w => w
       in
-	T l
+	T {data = l,
+	   etext = etext,
+	   start = start}
       end
 
   val new = Trace.trace ("AFile.new", File.layout o #afile, layout) new
@@ -318,7 +361,14 @@ end
 
 structure ProfFile =
 struct
-  datatype t = T of {buckets: {addr: word, count: int} list}
+   (* Profile information is a list of buckets, sorted in increasing order of
+    * address, with count always greater than 0.
+    *)
+  datatype t = T of {buckets: {addr: word,
+			       count: int} list,
+		     etext: word,
+		     magic: word,
+		     start: word}
 
   fun layout (T {buckets, ...}) 
     = let 
@@ -342,7 +392,6 @@ struct
 		     then die "Unexpected EOF"
 		     else res
 		 end
-
 	     fun getString size = read size
 	     fun getChar ():char 
 	       = let val s = read 1
@@ -352,9 +401,9 @@ struct
 	       = let val s = read 4
 		     fun c i = Word.fromInt (Char.toInt (String.sub (s, i)))
 		 in Word.orb (Word.orb (Word.<< (c 3, 0w24),
-				      Word.<< (c 2, 0w16)),
-			     Word.orb (Word.<< (c 1, 0w8), 
-				      Word.<< (c 0, 0w0)))
+					Word.<< (c 2, 0w16)),
+			      Word.orb (Word.<< (c 1, 0w8), 
+					Word.<< (c 0, 0w0)))
 		 end
 	     fun getHWord (): word
 	       = let val s = read 2
@@ -367,79 +416,80 @@ struct
 		     fun c i = Word.fromInt (Char.toInt (String.sub (s, i)))
 		 in Word.<< (c 0, 0w0)
 		 end
+	     val _ =
+		if "MLton prof\n\000" <> getString 12
+		   then
+		      die (concat [mlmonfile,
+				   " does not appear to be a mlmon.out file"])
+		else ()
 	     val getAddr = getWord
-	     val _ 
-	       = if "MLton prof\n\000" <> getString 12
-		   then die 
-		        (concat
-			 [mlmonfile, " does not appear to be a mlmon.out file"])
-		   else ()
-	     val low = getAddr ()
-	     val high = getAddr ()
-
-	     val unknowns = getWord ()
-
-	     fun doit (addr, ac)
-	       = if In.endOf ins
-		   then (addr, ac)
-		   else let
-			  val count = getWord ()
-			  val count = Word.toInt count
-
-			  val ac = if count <> 0 
-				     then {addr = addr, count = count} :: ac
-				     else ac
-			in
-			  doit (Word.+ (addr, 0wx1), ac)
-			end
-
-	     val ac = if unknowns <> 0wx0 
-			then [{addr = 0wx0, count = Word.toInt unknowns}]
-			else []
-	     val (addr, ac) = doit (low, ac)
-
-	     val _ = if addr <> high
-		       then die (concat [mlmonfile, " truncated:",
-					 " low: ", Word.toString low,
-					 " high: ", Word.toString high,
-					 " addr: ", Word.toString addr])
-		       else ()
+	     fun loop ac =
+		if In.endOf ins
+		   then rev ac
+		else let
+			val addr = getAddr ()
+			val count = Word.toInt (getWord ())
+			val _ =
+			   if count > 0
+			      then ()
+			   else die "zero count"
+		     in
+			loop ({addr = addr, count = count} :: ac)
+		     end
+	     val magic = getWord ()
+	     val start = getAddr ()
+	     val etext = getAddr ()
+	     val buckets = loop []
 	   in 
-	     T {buckets = rev ac}
+	     T {buckets = buckets,
+		etext = etext,
+		magic = magic,
+		start = start}
 	   end)
 
   val new = Trace.trace ("ProfFile.new", File.layout o #mlmonfile, layout) new
 
-  fun addNew {profInfo as T {buckets}, 
-	      mlmonfile: File.t}: t
-    = let
-	val profInfo' as T {buckets = buckets'} = new {mlmonfile = mlmonfile}
-
-	fun loop (buckets, buckets', ac) 
-	  = case (buckets, buckets')
-	      of ([], buckets') => List.appendRev (ac, buckets')
+  fun merge (T {buckets = b, etext = e, magic = m, start = s},
+	     T {buckets = b', etext = e', magic = m', start = s'}) =
+     if m <> m' orelse e <> e' orelse s <> s'
+	then die "incompatible mlmon files"
+     else
+	let
+	   fun loop (buckets, buckets', ac) =
+	      case (buckets, buckets') of
+		 ([], buckets') => List.appendRev (ac, buckets')
 	       | (buckets, []) => List.appendRev (ac, buckets)
 	       | (buckets as {addr, count}::bs,
-		  buckets' as {addr = addr', count = count'}::bs')
-	       => (case Word.compare (addr, addr')
+		  buckets' as {addr = addr', count = count'}::bs') =>
+		 (case Word.compare (addr, addr')
 		     of LESS => loop (bs, buckets', 
 				      {addr = addr, count = count}::ac)
-		      | EQUAL => loop (bs, bs', 
-				       {addr = addr, count = count + count'}::ac)
-		      | GREATER => loop (buckets, bs', 
-					 {addr = addr', count = count'}::ac))
-      in
-	T {buckets = loop (buckets, buckets', [])}
-      end
+		   | EQUAL => loop (bs, bs', 
+				    {addr = addr, count = count + count'}::ac)
+		   | GREATER => loop (buckets, bs', 
+				      {addr = addr', count = count'}::ac))
+	in
+	   T {buckets = loop (b, b', []),
+	      etext = e,
+	      magic = m,
+	      start = s}
+	end
+	     
+  fun addNew (pi, mlmonfile: File.t): t =
+     merge (pi, new {mlmonfile = mlmonfile})
 
-  val addNew = Trace.trace ("ProfFile.addNew", File.layout o #mlmonfile, layout) addNew
+  val addNew = Trace.trace ("ProfFile.addNew", File.layout o #2, layout) addNew
 end
 
-fun attribute (AFile.T l, 
-	       ProfFile.T {buckets}) : 
+fun attribute (AFile.T {data, etext = e, start = s}, 
+	       ProfFile.T {buckets, etext = e', start = s', ...}) : 
     {profileInfo: {name: string} ProfileInfo.t,
      ticks: int} list
   = let
+       val _ =
+	  if e <> e' orelse s <> s'
+	     then die "incompatible a.out and mlmon.out"
+	  else ()
       fun loop (profileInfoCurrent, ticks, l, buckets)
 	= let
 	    fun done (ticks, rest)
@@ -464,7 +514,7 @@ fun attribute (AFile.T l,
     in
       loop (ProfileInfo.T ([{data = {name = "<unknown>"},
 			     minor = ProfileInfo.T []}]),
-	   0, l, buckets)
+	    0, data, buckets)
     end
 
 fun coalesce (counts: {profileInfo: {name: string} ProfileInfo.t,
@@ -718,7 +768,7 @@ fun main args =
 	      val profInfo =
 		 List.fold
 		 (mlmonfiles, profInfo, fn (mlmonfile, profInfo) =>
-		  ProfFile.addNew {profInfo = profInfo, mlmonfile = mlmonfile})
+		  ProfFile.addNew (profInfo, mlmonfile))
 	      val _ =
 		 if true
 		    then ()

@@ -268,7 +268,7 @@ typedef struct GC_state {
 	float liveRatio;	/* Desired ratio of heap size to live data. */
 	/* loadGlobals loads the globals from the stream. */
 	void (*loadGlobals)(FILE *file);
-	uint magic; /* The magic number required for a valid world file. */
+	uint magic; /* The magic number for this executable. */
 	/* Minimum live ratio to us mark-compact GC. */
 	float markCompactRatio; 
 	ullong markedCards; /* Number of marked cards seen during minor GCs. */

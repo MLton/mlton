@@ -182,7 +182,8 @@ signature CONTROL =
       val printAtFunEntry: bool ref
 
       (* Insert profiling information. *)
-      val profile: bool ref
+      datatype profile = NoProf | SpaceProf | TimeProf
+      val profile: profile ref
 
       (* Array bounds checking. *)
       val safe: bool ref

@@ -128,11 +128,11 @@ Int MLton_errno ();
 void MLton_exit (Int status);
 Word MLton_random ();
 Word MLton_size (Pointer p);
-Pointer MLton_Profile_Data_malloc (void);
-void MLton_Profile_Data_reset (Pointer data);
-void MLton_Profile_Data_write (Pointer data, Cstring name);
-void MLton_Profile_init (void);
-void MLton_Profile_installHandler (void);
+Pointer MLton_ProfileTime_Data_malloc (void);
+void MLton_ProfileTime_Data_reset (Pointer data);
+void MLton_ProfileTime_Data_write (Pointer data, Cstring name);
+void MLton_ProfileTime_init (void);
+void MLton_ProfileTime_installHandler (void);
 #if (defined (__CYGWIN__))
 Int MLton_Process_spawne (NullString p, Pointer a, Pointer e);
 Int MLton_Process_spawnp (NullString p, Pointer a);

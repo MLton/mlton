@@ -110,16 +110,14 @@ structure C =
       in
 	 fun profile (detailed: string, nonDetailed: string,
 		      print: string -> unit): unit =
-	    if !Control.profile
-	       then
-		  if detailed <> !current
-		     then (print "/* PROFILE: "
-			   ; print detailed
-			   ; print " & "
-			   ; print nonDetailed
-			   ; print " */\n"
-			   ; current := detailed)
-		  else ()
+	    if !Control.profile = Control.TimeProf
+	       andalso detailed <> !current
+	       then (print "/* PROFILE: "
+		     ; print detailed
+		     ; print " & "
+		     ; print nonDetailed
+		     ; print " */\n"
+		     ; current := detailed)
 	    else ()
       end 
 

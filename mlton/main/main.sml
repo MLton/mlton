@@ -228,9 +228,15 @@ fun options () =
 	SpaceString (fn s => output := SOME s)),
        (Expert, "O", "digit", "gcc optimization level",
 	Digit (fn d => optimization := d)),
-       (Normal, "profile", " {false|true}",
+       (Normal, "profile", " {no|space|time}",
 	"produce executable suitable for profiling",
-	Bool (fn b => if b then (profile := true; keepSSA := true) else ())),
+	SpaceString
+	(fn s =>
+	 case s of
+	    "no" => profile := NoProf
+	  | "space" => (profile := SpaceProf; keepSSA := true)
+	  | "time" => (profile := TimeProf; keepSSA := true)
+	  | _ => usage (concat ["invalid -profile arg: ", s]))),
        (Expert, "print-at-fun-entry", " {false|true}",
 	"print debugging message at every call",
 	boolRef printAtFunEntry),
@@ -364,8 +370,8 @@ fun commandLine (args: string list): unit =
 	 else ()
       val _ =
 	 case !hostType of
-	    Cygwin => if !profile
-			 then usage "-profile true not allowed on Cygwin"
+	    Cygwin => if !profile = TimeProf
+			 then usage "-profile time not allowed on Cygwin"
 		      else ()
 	  | FreeBSD => ()
 	  | Linux => ()

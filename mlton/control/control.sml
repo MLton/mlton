@@ -313,9 +313,21 @@ val printAtFunEntry = control {name = "print at fun entry",
 			       default = false,
 			       toString = Bool.toString}
 
+structure Profile =
+   struct
+      datatype t = NoProf | SpaceProf | TimeProf
+
+      val toString =
+	 fn NoProf => "No"
+	  | SpaceProf => "Space"
+	  | TimeProf => "Time"
+   end
+
+datatype profile = datatype Profile.t
+   
 val profile = control {name = "profile",
-		       default = false,
-		       toString = Bool.toString}
+		       default = NoProf,
+		       toString = Profile.toString}
 
 val safe = control {name = "safe",
 		    default = true,

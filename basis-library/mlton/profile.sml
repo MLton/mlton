@@ -1,4 +1,4 @@
-functor Profile
+functor ProfileTime
    (structure Cleaner:
        sig
           type t

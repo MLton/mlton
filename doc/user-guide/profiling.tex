@@ -6,7 +6,7 @@ usage to {\tt gprof}.  Here is an example run from within the {\tt
 information.
 
 \begin{verbatim}
-% mlton -profile true -keep g profiling.sml
+% mlton -profile time -keep g profiling.sml
 % ./profiling
 % mlprof profiling mlmon.out
 0.12 seconds of CPU time
@@ -16,7 +16,7 @@ IntInf_smallMul (C)  8.33%
 In summary, generating profiling information takes three steps.
 \begin{enumerate}
   
-\item Compile with {\tt -profile true}.  This saves a {\tt .ssa} file
+\item Compile with {\tt -profile time}.  This saves a {\tt .ssa} file
   (see below).  You can also use {\tt -keep g} to save the generated
   assembly ({\tt .S}) files.
   
@@ -80,7 +80,7 @@ with its absolute time.
 \subsection{Creating colored control-flow graphs}
 
 You may find it useful to use the {\tt -keep dot} switch when
-compiling {\tt -profile true}, since this saves several dot files that
+compiling {\tt -profile time}, since this saves several dot files that
 can help you understand the structure of the program.  You can create
 nice postscript graphs from the dot files using the
 \htmladdnormallink{{\tt graphviz}}
@@ -108,7 +108,7 @@ and blocks below the threshold are always colored black.
 
 \subsection{Using {\tt mlprof} and {\tt MLton.Profile}}
 To profile individual portions of your program, use the {\tt
-MLton.Profile} structure (see \secref{profile}).
+MLton.Profile} structure (see \secref{profile-time}).
 Here is an example run from within the {\tt examples/profiling}
 directory showing how to profile the executions of the {\tt fib} and
 {\tt tak} functions separately.
@@ -136,7 +136,7 @@ information.
 
 The profiler works by catching the {\tt SIGPROF} signal 100 times per
 second and recording where in the executable the program counter is.
-Thus, if you compile {\tt -profile true}, use of the following in your
+Thus, if you compile {\tt -profile time}, use of the following in your
 program will cause a run-time error, since they would interfere with
 profiling.
 
