@@ -373,7 +373,8 @@ struct
 
 	fun file_begin file
 	  = [x86.Assembly.pseudoop_data (),
-	     x86.Assembly.pseudoop_p2align 2,
+	     x86.Assembly.pseudoop_p2align 
+	     (x86.Immediate.const_int 2, NONE, NONE),
 	     x86.Assembly.label x86MLton.fileNameLabel,
 	     x86.Assembly.pseudoop_string [file],
 	     x86.Assembly.pseudoop_text ()]

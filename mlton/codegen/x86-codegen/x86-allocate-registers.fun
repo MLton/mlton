@@ -10783,7 +10783,7 @@ struct
 		   val rec doit 
 		     = fn (Assembly.Comment _)::assembly 
 		        => doit assembly
-			| (Assembly.PseudoOp (PseudoOp.P2align 2))::assembly
+			| (Assembly.PseudoOp (PseudoOp.P2align _))::assembly
 		        => doit' (assembly, [])
 		        | _ => false
 		   and doit'
