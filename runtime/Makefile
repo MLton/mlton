@@ -302,7 +302,7 @@ DEBUG_OBJS =					\
 %.o: %.S
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-all: gmp libmlton.a libmlton-gdb.a prof.o
+all: gmp libmlton.a libmlton-gdb.a
 
 libmlton.a: $(OBJS) 
 	$(AR) libmlton.a $(OBJS)

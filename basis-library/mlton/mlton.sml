@@ -32,40 +32,15 @@ structure GC = GC
 structure Itimer = Itimer
 structure ProcEnv = ProcEnv
 structure Ptrace = Ptrace
-structure Profile = Profile
+structure Profile = Profile (structure Cleaner = Cleaner
+			     structure Profile = Prim.Profile)
 structure Random = Random
 structure Rlimit = Rlimit
 structure Rusage = Rusage
 structure Signal = Signal
 structure Socket = Socket
 structure Syslog = Syslog
-structure TextIO =
-   struct
-      open TextIO
-
-      fun mkstemps {prefix, suffix}: string * outstream =
-	 let
-	    fun loop () =
-	       let
-		  val name = concat [prefix, Random.alphaNumString 6, suffix]
-		  open Posix.FileSys
-	       in
-		  (name,
-		   newOut (createf (name, O_WRONLY, O.flags [O.excl],
-				    let open S
-				    in flags [irusr, iwusr]
-				    end)))
-	       end handle e as PosixError.SysErr (_, SOME s) =>
-		  if s = Posix.Error.exist
-		     then loop ()
-		  else raise e
-	 in
-	    loop ()
-	 end
-
-      fun mkstemp s = mkstemps {prefix = s, suffix = ""}
-   end
-
+structure TextIO = TextIO
 structure Thread = Thread
 structure Vector = Vector
 structure World = World

@@ -283,8 +283,22 @@ structure Primitive =
 	    structure Profile =
 	       struct
 		  val profile = _prim "MLton_profile": bool;
-		  val reset = _ffi "MLton_Profile_reset": unit -> unit;
-		  val write = _ffi "MLton_Profile_write": nullString -> unit;
+		  structure Data =
+		     struct
+		        type t = word
+			val dummy = 0wx0: t;
+			val free = _ffi "MLton_Profile_Data_free": t -> unit;
+			val malloc = _ffi "MLton_Profile_Data_malloc": unit -> t;
+			val reset = _ffi "MLton_Profile_Data_reset": t -> unit;
+			val write =
+			   _ffi "MLton_Profile_Data_write"
+			   : t * word (* fd *) -> unit;
+		     end
+		  val init = _ffi "MLton_Profile_init": unit -> unit;
+		  val setCurrent =
+		     _ffi "MLton_Profile_setCurrent": Data.t -> unit;
+		  val installHandler =
+		     _ffi "MLton_Profile_installHandler": unit -> unit;
 	       end
 
 	    structure Rlimit =

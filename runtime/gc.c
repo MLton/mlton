@@ -968,8 +968,6 @@ currentTime()
 static inline void
 initSignalStack(GC_state s)
 {
-	extern void	startProf(void)
-				__attribute__((weak));
         static stack_t altstack;
 	size_t ss_size = roundPage(SIGSTKSZ);
 	size_t psize = getpagesize();
@@ -978,19 +976,6 @@ initSignalStack(GC_state s)
 	altstack.ss_size = ss_size;
 	altstack.ss_flags = 0;
 	sigaltstack(&altstack, NULL);
-	/* 
-	 * One thing I should point out that I discovered the hard way: If
-	 * the call to sigaction does NOT specify the SA_ONSTACK flag, then
-	 * even if you have called sigaltstack(), it will NOT switch stacks,
-	 * so you will probably die.  Worse, if the call to sigaction DOES
-	 * have SA_ONSTACK and you have NOT called sigaltstack(), it still
-	 * switches stacks (to location 0) and you die of a SEGV.  Thus the
-	 * sigaction() call MUST occur after the call to sigaltstack(), and
-	 * in order to have profiling cover as much as possible, you want it
-	 * to occur right after the sigaltstack() call.
-	 */
-	unless (startProf == NULL)
-		startProf();
 }
 
 /* ------------------------------------------------- */

@@ -1,5 +1,10 @@
 Here are the changes from version 20011006 to version VERSION.
 
+* 2002-01-22
+  - Improved MLton.profile so that multiple profile arrays can exist
+    simultaneously and so that the current one being used can be set from
+    the SML side.
+
 * 2002-01-18
   - The MACHINE IL has been replaced with an RSSA (representation explicit SSA)
     IL and an improved MACHINE IL.  
