@@ -522,8 +522,12 @@ structure C :> C_INT = struct
 	fun |+! s (p, i) = p ++ (Word.toInt s * i)
 	fun |-! s (p, p') = (p -- p') div Word.toInt s
 
-	fun |+| ((p, t), i) = (|+! (T.sizeof t) (p, i), t)
-	fun |-| ((p, t), (p', _: 'f objt)) = |-! (T.sizeof t) (p, p')
+	val |+| : ('t, 'c) obj ptr * int -> ('t, 'c) obj ptr =
+	   fn ((p, t as PTR (_, t')), i) => (|+! (T.sizeof t') (p, i), t)
+	    | _ => bug "Ptr.|+| (non-pointer-type)"
+	val |-| : ('t, 'c) obj ptr * ('t, 'c) obj ptr -> int =
+	   fn ((p, t as PTR (_, t')), (p', _)) => |-! (T.sizeof t') (p, p')
+	    | _ => bug "Ptr.|-| (non-pointer-type"
 
 	val sub : ('t, 'c) obj ptr * int -> ('t, 'c) obj =
 	   fn (p, i) => |*| (|+| (p, i))
