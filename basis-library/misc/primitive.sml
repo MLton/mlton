@@ -846,7 +846,7 @@ structure Primitive =
 
 	    val fromLarge : real -> real = fn x => x
 	    val toLarge : real -> real = fn x => x
-	    val precision : int = 52
+	    val precision : int = 53
 	    val radix : int = 2
 	 end
       
@@ -854,7 +854,7 @@ structure Primitive =
 	 struct
 	    type real = Real32.real
 
-	    val precision : int = 23
+	    val precision : int = 24
 	    val radix : int = 2
 
 	    val fromLarge = _prim "Real64_toReal32": real64 -> real;
