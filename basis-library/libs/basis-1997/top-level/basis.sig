@@ -83,10 +83,8 @@ signature BASIS_1997 =
 
       (* Required structures *)
       structure Array : ARRAY_1997
-(*
       structure BinIO : BIN_IO
       structure BinPrimIO : PRIM_IO
-*)
       structure Bool : BOOL
       structure Byte : BYTE
       structure Char : CHAR
@@ -118,10 +116,8 @@ signature BASIS_1997 =
       structure String : STRING_1997
       structure StringCvt : STRING_CVT
       structure Substring : SUBSTRING_1997
-(*
       structure TextIO : TEXT_IO
       structure TextPrimIO : PRIM_IO
-*)
       structure Time : TIME
       structure Timer : TIMER_1997
       structure Vector : VECTOR_1997
@@ -192,6 +188,11 @@ signature BASIS_1997 =
       structure Word32 : WORD
       structure Word8Array2 : MONO_ARRAY2_1997
       structure Unix : UNIX
+
+      (* Non-standard structures *)
+      structure MLton : MLTON
+      structure SMLofNJ : SML_OF_NJ
+      structure Unsafe : UNSAFE
 
       (* ************************************************** *)
       (* ************************************************** *)

@@ -6,4 +6,5 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 
+structure Primitive = Primitive
 open Basis2002

@@ -21,7 +21,7 @@ signature BYTE = BYTE
 signature COMMAND_LINE = COMMAND_LINE
 signature DATE = DATE
 signature GENERAL = GENERAL
-signature IEEE_REAL = IEEE_REAL
+signature IEEE_REAL = IEEE_REAL_1997
 signature IO = IO_1997
 signature LIST = LIST
 signature LIST_PAIR = LIST_PAIR
@@ -49,7 +49,7 @@ signature MULTIBYTE = MULTIBYTE
 *)
 signature PACK_REAL = PACK_REAL
 signature PACK_WORD = PACK_WORD
-signature POSIX_FLAGS = POSIX_FLAGS
+signature POSIX_FLAGS = POSIX_FLAGS_1997
 signature POSIX = POSIX_1997
 signature POSIX_ERROR = POSIX_ERROR
 signature POSIX_SIGNAL = POSIX_SIGNAL
