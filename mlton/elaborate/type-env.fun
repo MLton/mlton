@@ -127,7 +127,6 @@ structure Equality:>
       val applyTycon: Tycon.t * t vector -> t
       val falsee: t
       val fromBool: bool -> t
-      val toBool: t -> bool
       val toBoolOpt: t -> bool option
       val truee: t
       val unify: t * t -> UnifyResult.t
@@ -219,11 +218,6 @@ structure Equality:>
 		 | Unknown _ => NONE)
 	  | True => SOME true
 
-      fun toBool e =
-	 case toBoolOpt e of
-	    NONE => Error.bug "Equality.toBool"
-	  | SOME b => b
-
       fun andd (es: t vector): t = Vector.fold (es, truee, and2)
 
       val applyTycon: Tycon.t * t vector -> t =
@@ -245,9 +239,12 @@ structure Equality:>
 	    let
 	       fun lay e =
 		  Lay.simple
-		  (Layout.str (if toBool e
-				  then "[<equality>]"
-			       else "[<non-equality>]"))
+		  (Layout.str (case toBoolOpt e of
+				  NONE => Error.bug "Equality.unify"
+				| SOME b =>
+				     if b
+					then "[<equality>]"
+				     else "[<non-equality>]"))
 	    in
 	       UnifyResult.NotUnifiable (lay e, lay e')
 	    end
@@ -471,7 +468,16 @@ structure Type =
 
       val toString = Layout.toString o layout
 
-      val admitsEquality = Equality.toBool o equality
+      fun admitsEquality t =
+	 case Equality.toBoolOpt (equality t) of
+	    NONE =>
+	       (* Could report an error here, but sometimes in a type-incorrect
+		* program, there will be unknown equalities.  So it is better
+		* to conservatively return equality true, which will cause fewer
+		* spurious errors.
+		*)
+	       true
+	  | SOME b => b
 
       val admitsEquality =
 	 Trace.trace ("admitsEquality", layout, Bool.layout) admitsEquality
