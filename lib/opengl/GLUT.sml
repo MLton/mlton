@@ -20,9 +20,9 @@ signature GL =
         type GLdouble = real
 
         type GLenum = Word.word
-        datatype realspec = realRGB of real * real * real
-        type realvertex = real * real * real
-        type realrgbacolour = real * real * real * real
+        datatype realspec = realRGB of GLreal * GLreal * GLreal
+        type realvertex = GLreal * GLreal * GLreal
+        type realrgbacolour = GLreal list
 
         datatype intspec = intRGB of Word.word * Word.word * Word.word
         type intvertex = Word.word * Word.word * Word.word
@@ -743,6 +743,9 @@ signature GL =
         val c_glColor4ub : Word8.word * Word8.word * Word8.word * Word8.word -> unit
         val glColor4ub : Word8.word -> Word8.word -> Word8.word -> Word8.word -> unit
 
+        val c_glColorMaterial : GLenum * GLenum -> unit
+        val glColorMaterial : GLenum -> GLenum -> unit
+
         val c_glEnable : GLenum -> unit
         val glEnable : GLenum -> unit
 
@@ -760,6 +763,15 @@ signature GL =
 
         val c_glFlush: unit -> unit
         val glFlush: unit -> unit
+
+        val c_glFrontFace : GLenum -> unit
+        val glFrontFace : GLenum -> unit
+
+        val c_glLightfv : GLenum * GLenum * GLreal array -> unit
+        val glLightfv : GLenum -> GLenum -> realrgbacolour -> unit
+
+        val c_glLightModelfv : GLenum * GLreal array -> unit
+        val glLightModelfv : GLenum -> realrgbacolour -> unit
 
         val c_glLineWidth : GLreal -> unit
         val glLineWidth : GLreal -> unit
@@ -781,6 +793,12 @@ signature GL =
 
         val c_glPopMatrix : unit -> unit
         val glPopMatrix : unit -> unit
+
+        val c_glRotatef: GLreal * GLreal * GLreal * GLreal -> unit
+        val glRotatef: GLreal -> GLreal -> GLreal -> GLreal -> unit
+
+        val c_glViewport : int * int * int * int -> unit
+        val glViewport : int -> int -> int -> int -> unit
     end
 
 
@@ -803,9 +821,9 @@ structure GL :> GL =
         (* Specify attributes of (part) of a primitive *)
         (* needs to be extensible to different attributes and different formats,
          eg. ints and reals *)
-        datatype realspec = realRGB of real * real * real
-        type realvertex = real * real * real
-        type realrgbacolour = real * real * real * real
+        datatype realspec = realRGB of GLreal * GLreal * GLreal
+        type realvertex = GLreal * GLreal * GLreal
+        type realrgbacolour = GLreal list
 
         datatype intspec = intRGB of Word.word * Word.word * Word.word
         type intvertex = Word.word * Word.word * Word.word
@@ -1546,6 +1564,9 @@ structure GL :> GL =
         fun glColor4ub (a:Word8.word) (b:Word8.word) (c:Word8.word) (d:Word8.word)
           = c_glColor4ub (a,b,c,d) : unit
 
+        val c_glColorMaterial = _import "glColorMaterial" stdcall: GLenum * GLenum -> unit;
+        fun glColorMaterial (a:GLenum) (b:GLenum) = c_glColorMaterial (a,b) : unit
+
         val c_glEnable = _import "glEnable" stdcall: GLenum -> unit;
         fun glEnable (a:GLenum)= c_glEnable (a): unit;
 
@@ -1567,6 +1588,25 @@ structure GL :> GL =
         val c_glFlush = _import "glFlush" stdcall: unit -> unit;
         fun glFlush () = c_glFlush (): unit;
 
+        val c_glFrontFace = _import "glFrontFace" stdcall: GLenum -> unit;
+        fun glFrontFace (a:GLenum)= c_glFrontFace (a): unit;
+
+        val c_glLightfv = _import "glLightfv" stdcall: GLenum * GLenum * GLreal array -> unit;
+        fun glLightfv (a:GLenum) (c:GLenum) (b:realrgbacolour) =
+            let
+                val rgba = Array.fromList b
+            in
+                c_glLightfv (a, c, rgba)
+            end :unit
+
+        val c_glLightModelfv = _import "glLightModelfv" stdcall: GLenum * GLreal array -> unit;
+        fun glLightModelfv (a:GLenum) (b:realrgbacolour) =
+            let
+                val rgba = Array.fromList b
+            in
+                c_glLightModelfv (a, rgba)
+            end :unit
+
         val c_glLoadIdentity = _import "glLoadIdentity" stdcall: unit -> unit;
         fun glLoadIdentity () = c_glLoadIdentity (): unit;
 
@@ -1586,6 +1626,13 @@ structure GL :> GL =
         val c_glTranslatef = _import "glTranslatef" stdcall: GLreal * GLreal * GLreal -> unit;
         fun glTranslatef (a:GLreal) (b:GLreal) (c:GLreal)
           = c_glTranslatef (a,b,c) : unit
+
+        val c_glViewport = _import "glViewport" stdcall: int * int * int * int -> unit;
+        fun glViewport (a:int) (b:int) (c:int) (d:int) = c_glViewport (a,b,c,d) : unit
+
+        val c_glRotatef = _import "glRotatef" stdcall: GLreal * GLreal * GLreal * GLreal -> unit;
+        fun glRotatef (a:GLreal) (b:GLreal) (c:GLreal) (d:GLreal)
+          = c_glRotatef (a,b,c,d) : unit
     end
 
 
@@ -1843,6 +1890,9 @@ signature GLUT =
         val GLUT_GAME_MODE_REFRESH_RATE : GL.GLenum
         val GLUT_GAME_MODE_DISPLAY_CHANGED : GL.GLenum
         val glutDisplayFunc: (unit -> unit) -> unit
+        val glutIdleFunc : (unit -> unit ) -> unit
+        val glutReshapeFunc : (int * int -> unit) -> unit
+
         val glutInit: unit -> unit;
         val glutInitDisplayMode : GLenum -> unit
         (*val glutInit: int -> string list -> unit;*)
@@ -1851,6 +1901,8 @@ signature GLUT =
         val glutMainLoop: unit -> unit;
         val glutBitmapCharacter : glutfont -> int -> unit
         val glutStrokeCharacter : glutfont -> int -> unit
+        val glutSolidSphere : GLdouble -> int -> int -> unit
+        val glutSwapBuffers: unit -> unit;
     end
 
 open GL
@@ -2099,9 +2151,21 @@ structure GLUT :> GLUT =
 
 
 
-            val e = _export "glutDisplayFuncArgument": unit -> unit;
-            val f = _import "callGlutDisplayFunc": unit -> unit;
-            val g = _import "callGlutInit": unit -> unit;
+            (* Display function callback *)
+            val gDisplayFA = _export "glutDisplayFuncArgument": unit -> unit;
+            val callGDisplayF = _import "callGlutDisplayFunc": unit -> unit;
+
+            (* Idle function callback *)
+            val gIdleFA = _export "glutIdleFuncArgument": unit -> unit;
+            val callGIdleF = _import "callGlutIdleFunc": unit -> unit;
+
+            (* Reshape function callback *)
+            val gReshapeFA = _export "glutReshapeFuncArgument": int * int -> unit;
+            val callGReshapeF = _import "callGlutReshapeFunc": unit -> unit;
+
+
+            (* GLUT initialisation *)
+            val cGI = _import "callGlutInit": unit -> unit;
 
         in
             (* Stroke font constants (use these in GLUT program). *)
@@ -2134,9 +2198,11 @@ structure GLUT :> GLUT =
             val GLUT_BITMAP_HELVETICA_18 = c_GLUT_BITMAP_HELVETICA_18()
 
 
-            fun glutDisplayFunc (display: unit -> unit) = (e display; f ())
+            fun glutDisplayFunc (display: unit -> unit) = (gDisplayFA display; callGDisplayF ())
+            fun glutIdleFunc (idle: unit -> unit) = (gIdleFA idle; callGIdleF ())
+            fun glutReshapeFunc (reshape: int * int -> unit) = ( gReshapeFA reshape; callGReshapeF ())
 
-            fun glutInit () = g ()
+            fun glutInit () = cGI ()
 
             (*val init = _import "glutInit" : int -> string list -> unit;*)
             val c_glutInitDisplayMode = _import "glutInitDisplayMode" stdcall: GL.GLenum -> unit;
@@ -2164,6 +2230,11 @@ structure GLUT :> GLUT =
 
             val c_glutStrokeCharacter = _import "glutStrokeCharacter" stdcall: glutfont * int -> unit;
             fun glutStrokeCharacter (a:glutfont) (b:int) = c_glutStrokeCharacter (a,b)
+
+            val c_glutSolidSphere = _import "glutSolidSphere" stdcall: GLdouble * int * int -> unit;
+            fun glutSolidSphere (a:GLdouble) (b:int) (c:int) = c_glutSolidSphere (a,b,c)
+
+            val glutSwapBuffers = _import "glutSwapBuffers" stdcall: unit -> unit;
         end
 
 

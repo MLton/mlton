@@ -8,6 +8,16 @@ void callGlutDisplayFunc ()
   glutDisplayFunc (glutDisplayFuncArgument);
 }
 
+void callGlutReshapeFunc ()
+{
+  glutReshapeFunc (glutReshapeFuncArgument);
+}
+
+void callGlutIdleFunc ()
+{
+  glutIdleFunc (glutIdleFuncArgument);
+}
+
 void callGlutInit ()
 {
   int argc = 1;

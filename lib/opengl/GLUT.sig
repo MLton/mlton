@@ -251,6 +251,9 @@ signature GLUT =
         val GLUT_GAME_MODE_REFRESH_RATE : GL.GLenum
         val GLUT_GAME_MODE_DISPLAY_CHANGED : GL.GLenum
         val glutDisplayFunc: (unit -> unit) -> unit
+        val glutIdleFunc : (unit -> unit ) -> unit
+        val glutReshapeFunc : (int * int -> unit) -> unit
+
         val glutInit: unit -> unit;
         val glutInitDisplayMode : GLenum -> unit
         (*val glutInit: int -> string list -> unit;*)
@@ -259,4 +262,6 @@ signature GLUT =
         val glutMainLoop: unit -> unit;
         val glutBitmapCharacter : glutfont -> int -> unit
         val glutStrokeCharacter : glutfont -> int -> unit
+        val glutSolidSphere : GLdouble -> int -> int -> unit
+        val glutSwapBuffers: unit -> unit;
     end

@@ -13,9 +13,9 @@ signature GL =
         type GLdouble = real
 
         type GLenum = Word.word
-        datatype realspec = realRGB of real * real * real
-        type realvertex = real * real * real
-        type realrgbacolour = real * real * real * real
+        datatype realspec = realRGB of GLreal * GLreal * GLreal
+        type realvertex = GLreal * GLreal * GLreal
+        type realrgbacolour = GLreal list
 
         datatype intspec = intRGB of Word.word * Word.word * Word.word
         type intvertex = Word.word * Word.word * Word.word
@@ -736,6 +736,9 @@ signature GL =
         val c_glColor4ub : Word8.word * Word8.word * Word8.word * Word8.word -> unit
         val glColor4ub : Word8.word -> Word8.word -> Word8.word -> Word8.word -> unit
 
+        val c_glColorMaterial : GLenum * GLenum -> unit
+        val glColorMaterial : GLenum -> GLenum -> unit
+
         val c_glEnable : GLenum -> unit
         val glEnable : GLenum -> unit
 
@@ -753,6 +756,15 @@ signature GL =
 
         val c_glFlush: unit -> unit
         val glFlush: unit -> unit
+
+        val c_glFrontFace : GLenum -> unit
+        val glFrontFace : GLenum -> unit
+
+        val c_glLightfv : GLenum * GLenum * GLreal array -> unit
+        val glLightfv : GLenum -> GLenum -> realrgbacolour -> unit
+
+        val c_glLightModelfv : GLenum * GLreal array -> unit
+        val glLightModelfv : GLenum -> realrgbacolour -> unit
 
         val c_glLineWidth : GLreal -> unit
         val glLineWidth : GLreal -> unit
@@ -774,6 +786,12 @@ signature GL =
 
         val c_glPopMatrix : unit -> unit
         val glPopMatrix : unit -> unit
+
+        val c_glRotatef: GLreal * GLreal * GLreal * GLreal -> unit
+        val glRotatef: GLreal -> GLreal -> GLreal -> GLreal -> unit
+
+        val c_glViewport : int * int * int * int -> unit
+        val glViewport : int -> int -> int -> int -> unit
     end
 
 
@@ -801,9 +819,9 @@ signature GL =
         type GLdouble = real
 
         type GLenum = Word.word
-        datatype realspec = realRGB of real * real * real
-        type realvertex = real * real * real
-        type realrgbacolour = real * real * real * real
+        datatype realspec = realRGB of GLreal * GLreal * GLreal
+        type realvertex = GLreal * GLreal * GLreal
+        type realrgbacolour = GLreal list
 
         datatype intspec = intRGB of Word.word * Word.word * Word.word
         type intvertex = Word.word * Word.word * Word.word
@@ -1524,6 +1542,9 @@ signature GL =
         val c_glColor4ub : Word8.word * Word8.word * Word8.word * Word8.word -> unit
         val glColor4ub : Word8.word -> Word8.word -> Word8.word -> Word8.word -> unit
 
+        val c_glColorMaterial : GLenum * GLenum -> unit
+        val glColorMaterial : GLenum -> GLenum -> unit
+
         val c_glEnable : GLenum -> unit
         val glEnable : GLenum -> unit
 
@@ -1541,6 +1562,15 @@ signature GL =
 
         val c_glFlush: unit -> unit
         val glFlush: unit -> unit
+
+        val c_glFrontFace : GLenum -> unit
+        val glFrontFace : GLenum -> unit
+
+        val c_glLightfv : GLenum * GLenum * GLreal array -> unit
+        val glLightfv : GLenum -> GLenum -> realrgbacolour -> unit
+
+        val c_glLightModelfv : GLenum * GLreal array -> unit
+        val glLightModelfv : GLenum -> realrgbacolour -> unit
 
         val c_glLineWidth : GLreal -> unit
         val glLineWidth : GLreal -> unit
@@ -1562,6 +1592,12 @@ signature GL =
 
         val c_glPopMatrix : unit -> unit
         val glPopMatrix : unit -> unit
+
+        val c_glRotatef: GLreal * GLreal * GLreal * GLreal -> unit
+        val glRotatef: GLreal -> GLreal -> GLreal -> GLreal -> unit
+
+        val c_glViewport : int * int * int * int -> unit
+        val glViewport : int -> int -> int -> int -> unit
     end
 
 
@@ -1584,9 +1620,9 @@ structure GL :> GL =
         (* Specify attributes of (part) of a primitive *)
         (* needs to be extensible to different attributes and different formats,
          eg. ints and reals *)
-        datatype realspec = realRGB of real * real * real
-        type realvertex = real * real * real
-        type realrgbacolour = real * real * real * real
+        datatype realspec = realRGB of GLreal * GLreal * GLreal
+        type realvertex = GLreal * GLreal * GLreal
+        type realrgbacolour = GLreal list
 
         datatype intspec = intRGB of Word.word * Word.word * Word.word
         type intvertex = Word.word * Word.word * Word.word
@@ -2327,6 +2363,9 @@ structure GL :> GL =
         fun glColor4ub (a:Word8.word) (b:Word8.word) (c:Word8.word) (d:Word8.word)
           = c_glColor4ub (a,b,c,d) : unit
 
+        val c_glColorMaterial = _import "glColorMaterial" stdcall: GLenum * GLenum -> unit;
+        fun glColorMaterial (a:GLenum) (b:GLenum) = c_glColorMaterial (a,b) : unit
+
         val c_glEnable = _import "glEnable" stdcall: GLenum -> unit;
         fun glEnable (a:GLenum)= c_glEnable (a): unit;
 
@@ -2348,6 +2387,25 @@ structure GL :> GL =
         val c_glFlush = _import "glFlush" stdcall: unit -> unit;
         fun glFlush () = c_glFlush (): unit;
 
+        val c_glFrontFace = _import "glFrontFace" stdcall: GLenum -> unit;
+        fun glFrontFace (a:GLenum)= c_glFrontFace (a): unit;
+
+        val c_glLightfv = _import "glLightfv" stdcall: GLenum * GLenum * GLreal array -> unit;
+        fun glLightfv (a:GLenum) (c:GLenum) (b:realrgbacolour) =
+            let
+                val rgba = Array.fromList b
+            in
+                c_glLightfv (a, c, rgba)
+            end :unit
+
+        val c_glLightModelfv = _import "glLightModelfv" stdcall: GLenum * GLreal array -> unit;
+        fun glLightModelfv (a:GLenum) (b:realrgbacolour) =
+            let
+                val rgba = Array.fromList b
+            in
+                c_glLightModelfv (a, rgba)
+            end :unit
+
         val c_glLoadIdentity = _import "glLoadIdentity" stdcall: unit -> unit;
         fun glLoadIdentity () = c_glLoadIdentity (): unit;
 
@@ -2367,6 +2425,13 @@ structure GL :> GL =
         val c_glTranslatef = _import "glTranslatef" stdcall: GLreal * GLreal * GLreal -> unit;
         fun glTranslatef (a:GLreal) (b:GLreal) (c:GLreal)
           = c_glTranslatef (a,b,c) : unit
+
+        val c_glViewport = _import "glViewport" stdcall: int * int * int * int -> unit;
+        fun glViewport (a:int) (b:int) (c:int) (d:int) = c_glViewport (a,b,c,d) : unit
+
+        val c_glRotatef = _import "glRotatef" stdcall: GLreal * GLreal * GLreal * GLreal -> unit;
+        fun glRotatef (a:GLreal) (b:GLreal) (c:GLreal) (d:GLreal)
+          = c_glRotatef (a,b,c,d) : unit
     end
 
 
@@ -2388,9 +2453,9 @@ signature GL =
         type GLdouble = real
 
         type GLenum = Word.word
-        datatype realspec = realRGB of real * real * real
-        type realvertex = real * real * real
-        type realrgbacolour = real * real * real * real
+        datatype realspec = realRGB of GLreal * GLreal * GLreal
+        type realvertex = GLreal * GLreal * GLreal
+        type realrgbacolour = GLreal list
 
         datatype intspec = intRGB of Word.word * Word.word * Word.word
         type intvertex = Word.word * Word.word * Word.word
@@ -3111,6 +3176,9 @@ signature GL =
         val c_glColor4ub : Word8.word * Word8.word * Word8.word * Word8.word -> unit
         val glColor4ub : Word8.word -> Word8.word -> Word8.word -> Word8.word -> unit
 
+        val c_glColorMaterial : GLenum * GLenum -> unit
+        val glColorMaterial : GLenum -> GLenum -> unit
+
         val c_glEnable : GLenum -> unit
         val glEnable : GLenum -> unit
 
@@ -3128,6 +3196,15 @@ signature GL =
 
         val c_glFlush: unit -> unit
         val glFlush: unit -> unit
+
+        val c_glFrontFace : GLenum -> unit
+        val glFrontFace : GLenum -> unit
+
+        val c_glLightfv : GLenum * GLenum * GLreal array -> unit
+        val glLightfv : GLenum -> GLenum -> realrgbacolour -> unit
+
+        val c_glLightModelfv : GLenum * GLreal array -> unit
+        val glLightModelfv : GLenum -> realrgbacolour -> unit
 
         val c_glLineWidth : GLreal -> unit
         val glLineWidth : GLreal -> unit
@@ -3149,6 +3226,12 @@ signature GL =
 
         val c_glPopMatrix : unit -> unit
         val glPopMatrix : unit -> unit
+
+        val c_glRotatef: GLreal * GLreal * GLreal * GLreal -> unit
+        val glRotatef: GLreal -> GLreal -> GLreal -> GLreal -> unit
+
+        val c_glViewport : int * int * int * int -> unit
+        val glViewport : int -> int -> int -> int -> unit
     end
 
 
@@ -3325,8 +3408,8 @@ signature GLU =
           val c_gluOrtho2D : GLdouble * GLdouble * GLdouble * GLdouble -> unit
           val gluOrtho2D : GLdouble -> GLdouble -> GLdouble -> GLdouble -> unit
 
-          val c_gluPerspective : GLreal * GLreal * GLreal * GLreal -> unit
-          val gluPerspective : GLreal -> GLreal -> GLreal -> GLreal -> unit
+          val c_gluPerspective : GLdouble * GLdouble * GLdouble * GLdouble -> unit
+          val gluPerspective : GLdouble -> GLdouble -> GLdouble -> GLdouble -> unit
 
           (*val c_gluLookAt : GLreal * GLreal * GLreal * GLreal *
                           GLreal * GLreal * GLreal * GLreal * GLreal -> unit
@@ -3504,8 +3587,8 @@ structure GLU :> GLU =
             fun gluOrtho2D (a:GLdouble) (b:GLdouble) (c:GLdouble) (d:GLdouble)
               = c_gluOrtho2D (a,b,c,d):unit
 
-            val c_gluPerspective = _import "gluPerspective" stdcall: GL.GLreal * GL.GLreal * GL.GLreal * GL.GLreal -> unit;
-            fun gluPerspective (a:GL.GLreal) (b:GL.GLreal) (c:GL.GLreal) (d:GL.GLreal)
+            val c_gluPerspective = _import "gluPerspective" stdcall: GLdouble * GLdouble * GLdouble * GLdouble -> unit;
+            fun gluPerspective (a:GLdouble) (b:GLdouble) (c:GLdouble) (d:GLdouble)
               = c_gluPerspective (a,b,c,d):unit
 
             (*val gluLookAt_ : real * real * real * real *
