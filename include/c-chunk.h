@@ -435,7 +435,7 @@ coerce (WordU8, Word64)
 #define Word8_max (Word8)0xFF
 #define Word16_max (Word16)0xFFFF
 #define Word32_max (Word32)0xFFFFFFFF
-#define Word64_max (Word64)0xFFFFFFFFFFFFFFFFll
+#define Word64_max (Word64)0xFFFFFFFFFFFFFFFFull
 
 #define WordS_addCheckXC(size, dst, xW, cW, l)		\
 	do {						\
