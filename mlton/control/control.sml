@@ -11,7 +11,7 @@ val aux = control {name = "aux",
 		   default = false,
 		   toString = Bool.toString}
 
-val commonSubexp = control {name = "common-subexpression elimintation",
+val commonSubexp = control {name = "common-subexpression elimination",
 			    default = true,
 			    toString = Bool.toString}
 
@@ -201,6 +201,10 @@ val printAtFunEntry = control {name = "print at fun entry",
 val profile = control {name = "profile",
 		       default = false,
 		       toString = Bool.toString}
+
+val redundantTests = control {name = "redundant test elimination",
+			      default = false,
+			      toString = Bool.toString}
 
 val safe = control {name = "safe",
 		    default = true,
@@ -431,7 +435,7 @@ val ('a, 'b) traceBatch: string -> ('a -> 'b) ->
 					       timeToString {total = !total,
 							     gc = !totalGC}]))
 	   end
-	
+
 fun displays (name: string, thunk: (Layout.t -> unit) -> unit): unit =
    trace (Pass, "display")
    File.withOut (concat [File.base (!inputFile), ".", name], fn out =>

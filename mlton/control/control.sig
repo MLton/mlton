@@ -125,6 +125,9 @@ signature CONTROL =
       (* Insert profiling information. *)
       val profile: bool ref
 
+      (* CPS redundant test*)
+      val redundantTests: bool ref
+	 
       (* Array bounds checking. *)
       val safe: bool ref
 	 

@@ -77,10 +77,10 @@ fun raiseToJump (program as Program.T {datatypes, globals, functions, main}) =
 	  in display (str "Input program:\n")
 	     ; Program.layouts (program, display)
 	     ; Vector.foreach (functions, fn Function.T {name, ...} =>
-			      display (seq
-				       [Func.layout name,
-					str " ",
-					CanRaise.layout (funcCanRaise name)]))
+			       display (seq
+					[Func.layout name,
+					 str " ",
+					 CanRaise.layout (funcCanRaise name)]))
 	  end)
       (* Translate. *)
       fun loopExp (e: Exp.t, hs: Jump.t list): Exp.t =
@@ -135,8 +135,9 @@ fun raiseToJump (program as Program.T {datatypes, globals, functions, main}) =
 		    globals = globals,
 		    functions = functions,
 		    main = main}
-   in Program.clear program
-      ; program
+      val _ = Program.clear program
+   in
+      program
    end
 
 end

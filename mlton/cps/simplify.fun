@@ -65,6 +65,9 @@ val raiseToJump = trace ("raise-to-jump", RaiseToJump.raiseToJump)
 structure Redundant = Redundant (S)
 val redundant = trace ("redundant", Redundant.redundant)
 
+structure RedundantTests = RedundantTests (S)
+val redundantTests = trace ("redundant tests", RedundantTests.simplify)
+
 structure RemoveUnused = RemoveUnused (S)
 val removeUnused = trace ("removeUnused", RemoveUnused.remove)
    
@@ -133,6 +136,7 @@ val passes =
     flatten,
     localFlatten,
     commonSubexp,
+    redundantTests,
     redundant,
     unusedArgs,
     removeUnused  (* removeUnused cannot be omitted.

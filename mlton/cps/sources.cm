@@ -52,6 +52,8 @@ remove-unused.sig
 remove-unused.fun
 common-subexp.sig
 common-subexp.fun
+redundant-tests.sig
+redundant-tests.fun
 unused-args.sig
 unused-args.fun
 simplify.fun

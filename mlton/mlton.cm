@@ -323,6 +323,8 @@ cps/redundant.sig
 cps/equivalence-relation.sig
 cps/equivalence-relation.fun
 cps/redundant.fun
+cps/redundant-tests.sig
+cps/redundant-tests.fun
 cps/remove-unused.sig
 cps/remove-unused.fun
 cps/simplify-types.sig

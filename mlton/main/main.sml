@@ -140,8 +140,12 @@ val options =
        (Normal, "p", "", "produce executable suitable for profiling",
 	None (fn () => (profile := true
 			; keepCps := true))),
-       (Expert, "print-at-fun-entry", "", "print debuggin message at every call",
+       (Expert, "print-at-fun-entry", "",
+	"print debugging message at every call",
 	trueRef printAtFunEntry),
+       (Expert, "redundant-tests", " {false|true}",
+	"CPS redundant test optimization",
+	boolRef redundantTests),
        (Normal, "safe", " {true|false}", "bounds checking and other checks",
 	boolRef safe),
        (Normal, "show-basis", "", "display the basis library",

@@ -1,5 +1,8 @@
 Here are the changes from the 20010706 version to the VERSION version.
 
+* 2000-7-25
+  - Added redundant-test elimination CPS optimization.
+
 * 2000-7-21
   - Added common-supexpression elimination CPS optimization.
 
