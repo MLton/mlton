@@ -99,7 +99,8 @@ struct
 
       fun validate {instruction: t}
 	= case instruction
-	    of BinAL {oper, src, dst, size}
+	    of NOP => true
+	     | BinAL {oper, src, dst, size}
 	       (* Integer binary arithmetic(w/o mult & div)/logic instructions.
 		* Require src/dst operands as follows:
 		*
