@@ -175,6 +175,8 @@ static inline W64 w64align (W64 a, uint b) {
 	assert (b >= 1);
 	res = a + b - 1;
 	res = res - res % b;
+	if (FALSE)
+		fprintf (stderr, "%llu = w64Align (%llu, %u)\n", res, a, b);
 	return res;
 }
 
