@@ -24,12 +24,14 @@ local
 in
    structure Basid = Basid
    structure Fctid = Fctid
+   structure Field = SortedRecord.Field
    structure Strid = Strid
    structure Longvid = Longvid
    structure Longstrid = Longstrid
    structure Longtycon = Longtycon
    structure Priority = Priority
    structure Sigid = Sigid
+   structure SortedRecord = SortedRecord
    structure Strid = Strid
    structure Symbol = Symbol
 end
@@ -64,11 +66,91 @@ end
 
 structure Decs = Decs (structure CoreML = CoreML)
 
+structure Tycon =
+   struct
+      open Tycon
+	 
+      val admitsEquality = TypeEnv.tyconAdmitsEquality
+   end
+
+structure Type =
+   struct
+      open Type
+	 
+      fun explainDoesNotAdmitEquality (t: t): Layout.t =
+	 let
+	    open Layout
+	    val wild = (str "_", {isChar = false, needsParen = false})
+	    fun con (c, ts) =
+	       let
+		  fun keep {showInside: bool} =
+		     Tycon.layoutApp
+		     (c, Vector.map (ts, fn t =>
+				     if showInside
+					then
+					   case t of
+					      NONE => wild
+					    | SOME t => t
+				     else wild))
+		  datatype z = datatype AdmitsEquality.t
+	       in
+		  case ! (Tycon.admitsEquality c) of
+		     Always => NONE
+		   | Never => SOME (keep {showInside = false})
+		   | Sometimes =>
+			if Vector.exists (ts, Option.isSome)
+			   then SOME (keep {showInside = true})
+			else NONE
+	       end
+	    fun record r =
+	       if SortedRecord.forall (r, Option.isNone)
+		  then NONE
+	       else
+		  SOME
+		  (case SortedRecord.detupleOpt r of
+		      NONE =>
+			 let
+			    val v = SortedRecord.toVector r
+			 in
+			    (seq
+			     [str "{",
+			      mayAlign
+			      (separateRight
+			       (Vector.foldr
+				(v, [], fn ((f, z), ac) =>
+				 case z of
+				    NONE => ac
+				  | SOME (z, _) =>
+				       seq [Field.layout f, str ": ", z] :: ac),
+				",")),
+			      str "}"],
+			     {isChar = false, needsParen = false})
+			 end
+		    | SOME v =>
+			 Tycon.layoutApp
+			 (Tycon.tuple,
+			  Vector.map (v, fn NONE => wild | SOME t => t)))
+	    val exp =
+	       hom (t, {con = con,
+			expandOpaque = false,
+			record = record,
+			replaceSynonyms = false,
+			var = fn _ => NONE})
+	 in
+	    case exp of
+	       NONE => str "???"
+	     | SOME (exp, _) => exp
+	 end
+   end
+
 structure Scheme =
    struct
       open Scheme
 	 
       fun bogus () = fromType (Type.new ())
+
+      fun explainDoesNotAdmitEquality (s: t): Layout.t =
+	 Type.explainDoesNotAdmitEquality (ty s)
    end
 
 val insideFunctor = ref false
@@ -197,13 +279,7 @@ structure TypeStr =
    struct
       structure AdmitsEquality = AdmitsEquality
       structure Kind = Kind
-
-      structure Tycon =
-	 struct
-	    open Tycon
-
-	    val admitsEquality = TypeEnv.tyconAdmitsEquality
-	 end
+      structure Tycon = Tycon
 
       structure Cons =
 	 struct
@@ -262,6 +338,29 @@ structure TypeStr =
 			else AdmitsEquality.Never
 	  | Tycon c =>  ! (Tycon.admitsEquality c)
 
+      fun explainDoesNotAdmitEquality (s: t): Layout.t =
+	 let
+	    open Layout
+	 in
+	    case node s of
+	       Datatype {cons = Cons.T v, ...} =>
+		  align
+		  (Vector.toList
+		   (Vector.keepAllMap
+		    (v, fn {name, scheme, ...} =>
+		     let
+			val arg =
+			   Type.arg (#instance (Scheme.instantiate scheme))
+		     in
+			if Type.admitsEquality arg
+			   then NONE
+			else 
+			   SOME (seq [Ast.Con.layout name, str " of ",
+				      Type.explainDoesNotAdmitEquality arg])
+		     end)))
+	     | Scheme s => Scheme.explainDoesNotAdmitEquality s
+	     | Tycon c => Tycon.layout c
+	 end
       fun bogus (k: Kind.t): t =
 	 T {kind = k,
 	    node = Scheme (Scheme.bogus ())}
@@ -2470,6 +2569,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 				       TypeStr.admitsEquality structStr))
 	       then
 		  let
+		     val () = preError ()
 		     open Layout
 		     val _ =
 			Control.error
@@ -2478,7 +2578,8 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 			      layout (strids, Ast.Tycon.layout name),
 			      str " admits equality in ", str sign,
 			      str " but not in structure"],
-			 empty)
+			 seq [str "not equality: ",
+			      TypeStr.explainDoesNotAdmitEquality structStr])
 		  in
 		     sigStr
 		  end
