@@ -135,7 +135,7 @@ structure Inline =
 
 val includes: string list ref =
    control {name = "includes",
-	    default = [],
+	    default = ["mlton.h"],
 	    toString = List.toString String.toString}
    
 datatype inline = datatype Inline.t

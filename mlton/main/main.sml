@@ -33,7 +33,6 @@ structure Place =
 
 val buildConstants: bool ref = ref false
 val coalesce: int option ref = ref NONE
-val includes: string list ref = ref []
 val includeDirs: string list ref = ref []
 val keepGenerated = ref false
 val keepO = ref false
@@ -118,13 +117,12 @@ fun options () =
 	Mem (fn n => fixedHeap := SOME n)),
        (Expert, "gc-check", " {limit|first|every}", "force GCs",
 	SpaceString (fn s =>
-		     case s of
-		        "limit" => gcCheck := Limit
-		      | "first" => (gcCheck := First;
-				    List.push(defines, "GC_FIRST_CHECK"))
-		      | "every" => (gcCheck := Every;
-				    List.push(defines, "GC_EVERY_CHECK"))
-		      | _ => usage (concat ["invalid -gc-check flag: ", s]))),
+		     gcCheck :=
+		     (case s of
+			 "limit" => Limit
+		       | "first" => First
+		       | "every" => Every
+		       | _ => usage (concat ["invalid -gc-check flag: ", s])))),
        (Normal, "host",
 	concat [" {",
 		concat (List.separate (List.map (hostMap (), #host), "|")),
@@ -351,8 +349,6 @@ fun commandLine (args: string list): unit =
 	 if !keepDot andalso List.isEmpty (!keepPasses)
 	    then keepSSA := true
 	 else ()
-      val _ = if !debug then () else List.push (defines, "NODEBUG")
-      val _ = Control.includes := !includes
    in case result of
       Result.No switch => usage (concat ["invalid switch: ", switch])
     | Result.Yes [] =>
