@@ -46,12 +46,13 @@ PATH=.:$PATH
  			echo "testing $f"
 			case "$f" in
 			exnHistory*)
-				flags="-exn-history true $flags"
+				extraFlags="-exn-history true"
 			;;
 			*)
+				extraFlags=""
 			;;
 			esac
-			$mlton $flags $f.sml
+			$mlton $flags $extraFlags $f.sml
 			if [ $? -ne 0 ]; then
 				echo "compilation of $f failed"
 #				exit 1
