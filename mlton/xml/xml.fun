@@ -13,15 +13,12 @@ functor Xml (S: XML_STRUCTS): XML =
       structure TypeCheck = TypeCheck (structure XmlTree = XmlTree)
       val typeCheck = TypeCheck.typeCheck
 
-      structure SimplifyTypes = SimplifyTypes (open XmlTree)
+      structure SimplifyTypes = SimplifyTypes (structure Input = XmlTree
+					       structure Output = XmlTree)
 
       structure SccFuns = SccFuns (open XmlTree)
 
       structure Simplify = Simplify (structure XmlTree = XmlTree)
-      val simplify =
-	 Simplify.simplify
-(* SimplifyTypes doesn't do anything yet.
- *       o SimplifyTypes.simplifyTypes
- *)
-	 o SccFuns.sccFuns
+      val simplify = Simplify.simplify o SccFuns.sccFuns
+      val simplifyTypes = SimplifyTypes.simplifyTypes
    end

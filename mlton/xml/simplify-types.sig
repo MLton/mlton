@@ -5,14 +5,19 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
+type int = Int.t
+   
 signature SIMPLIFY_TYPES_STRUCTS = 
    sig
-      include XML_TREE
+      structure Input: XML_TREE
+      structure Output: XML_TREE
+      sharing Input.Atoms = Output.Atoms
    end
 
 signature SIMPLIFY_TYPES = 
    sig
       include SIMPLIFY_TYPES_STRUCTS
       
-      val simplifyTypes: Program.t -> Program.t
+      val simplifyTypes: Input.Program.t -> Output.Program.t
    end

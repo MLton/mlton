@@ -124,7 +124,9 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 	  let val {decs, result} = Exp.dest exp
 	  in List.foreach (decs, checkDec)
 	     ; checkVarExp result
-	  end) arg
+	  end handle e => (Layout.outputl (Exp.layout exp, Out.error)
+			   ; raise e))
+	 arg
       and checkPrimExp arg: Type.t =
 	 traceCheckPrimExp
 	 (fn (e: PrimExp.t, ty: Type.t) => 
@@ -282,7 +284,8 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 		   ; Vector.foreach (decs, fn {ty, lambda, ...} =>
 				     check (ty, checkLambda lambda))
 		   ; unbindTyvars tyvars)
-	 end
+	 end handle e => (Layout.outputl (Dec.layout d, Out.error)
+			  ; raise e)
       val _ =
 	 Vector.foreach
 	 (datatypes, fn {tycon, tyvars, cons} =>

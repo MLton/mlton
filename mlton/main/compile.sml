@@ -397,6 +397,14 @@ fun preCodegen {input, docc}: Machine.Program.t =
 	  display = Control.Layout Xml.Program.layout,
 	  typeCheck = Xml.typeCheck,
 	  simplify = Xml.simplify}
+      val xml =
+	 Control.passTypeCheck
+	 {name = "simplifyTypes",
+	  suffix = "xml",
+	  style = Control.ML,
+	  thunk = fn () => Xml.simplifyTypes xml,
+	  display = Control.Layout Xml.Program.layout,
+	  typeCheck = Xml.typeCheck}
       val _ = Control.message (Control.Detail, fn () =>
 			       Xml.Program.layoutStats xml)
       val sxml =

@@ -30,9 +30,9 @@ signature XML_TREE =
 	 
       structure Pat:
 	 sig
-	    datatype t = T of {con: Con.t,
-			       targs: Type.t vector,
-			       arg: (Var.t * Type.t) option}
+	    datatype t = T of {arg: (Var.t * Type.t) option,
+			       con: Con.t,
+			       targs: Type.t vector}
 	 
 	    val falsee: t
 	    val truee: t
@@ -111,8 +111,8 @@ signature XML_TREE =
 	    type exp = Lambda.exp
 	       
 	    datatype t =
-	       Exception of {con: Con.t,
-			     arg: Type.t option}
+	       Exception of {arg: Type.t option,
+			     con: Con.t}
 	     | Fun of {decs: {lambda: Lambda.t,
 			      ty: Type.t,
 			      var: Var.t} vector,
@@ -225,14 +225,10 @@ signature XML_TREE =
       structure Program:
 	 sig
 	    datatype t =
-	       T of {datatypes: {
+	       T of {datatypes: {cons: {arg: Type.t option,
+					con: Con.t} vector,
 				 tycon: Tycon.t,
-				 tyvars: Tyvar.t vector,
-				 cons: {
-					con: Con.t,
-					arg: Type.t option
-					} vector
-				 } vector,
+				 tyvars: Tyvar.t vector} vector,
 		     body: Exp.t,
 		     (* overflow is SOME only after exceptions have been
 		      * implemented.
