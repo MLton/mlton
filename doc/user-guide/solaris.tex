@@ -5,7 +5,7 @@ Here are some things that may affect performance on Sparc.
 
 \item
 When compiling for Sparc, {\mlton} only supports the C code generator
-({\tt -native false}).  Hence, performance is not as good as it might
+({\tt -codegen c}).  Hence, performance is not as good as it might
 be and compile times are longer.  Also, the quality of code generated
 by {\tt gcc} is important.  By default, {\mlton} calls {\tt gcc -O1}.
 You can change this by calling {\mlton} with {\tt -cc-opt -O2}.  We
