@@ -753,8 +753,6 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		Vector.map
 		(cons, fn {con, args} =>
 		 let
-		    val _ = print (concat ["transforming ", Con.toString con,
-					   "\n"])
 		    val args =
 		       case ! (conValue con) of
 			  NONE => args
