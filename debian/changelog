@@ -1,6 +1,12 @@
 mlton (MLTONVERSION-1) unstable; urgency=low
 
   * new upstream version
+
+-- Stephen Weeks <sweeks@sweeks.com>  Fri, 14 Mar 2003 00:23:46 -0800
+
+mlton (20021122-1) unstable; urgency=low
+
+  * new upstream version
   * build in an unstable environment instead of testing
   * renaming original source package -- treating as nonnative package
   * added man page for mllex, closes: #166880
