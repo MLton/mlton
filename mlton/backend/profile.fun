@@ -16,20 +16,29 @@ structure CFunction =
 	 val unit = unit
       end
 
-      val profileEnter =
-	 vanilla {args = Vector.new1 gcState,
-		  name = "GC_profileEnter",
-		  return = unit}
-
-      val profileInc =
-	 vanilla {args = Vector.new2 (gcState, Word32),
-		  name = "GC_profileInc",
-		  return = unit}
-	 
-      val profileLeave =
-	 vanilla {args = Vector.new1 gcState,
-		  name = "GC_profileLeave",
-		  return = unit}
+      local
+	 fun make {args, name} =
+	    T {args = args,
+	       bytesNeeded = NONE,
+	       convention = Convention.Cdecl,
+	       ensuresBytesFree = false,
+	       mayGC = false,
+	       maySwitchThreads = false,
+	       modifiesFrontier = false,
+	       modifiesStackTop = true,
+	       name = name,
+	       return = unit}
+      in
+	 val profileEnter =
+	    make {args = Vector.new1 gcState,
+		  name = "GC_profileEnter"}
+	 val profileInc =
+	    make {args = Vector.new2 (gcState, Word32),
+		  name = "GC_profileInc"}
+	 val profileLeave =
+	    make {args = Vector.new1 gcState,
+		  name = "GC_profileLeave"}
+      end
    end
 
 type sourceSeq = int list
