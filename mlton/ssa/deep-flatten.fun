@@ -266,13 +266,64 @@ structure Flat =
 
 datatype z = datatype Flat.t
 
+structure Equatable:
+   sig
+      type 'a t
+
+      val equals: 'a t * 'a t -> bool
+      val delay: (unit -> 'a) -> 'a t
+      val equate: 'a t * 'a t * ('a * 'a -> 'a) -> unit
+      val new: 'a -> 'a t
+      val value: 'a t -> 'a
+   end =
+   struct
+      datatype 'a delay =
+	 Computed of 'a
+       | Uncomputed of unit -> 'a
+
+      datatype 'a t = T of 'a delay Set.t
+
+      fun delay f = T (Set.singleton (Uncomputed f))
+	 
+      fun new a = T (Set.singleton (Computed a))
+
+      fun equals (T s, T s') = Set.equals (s, s')
+
+      fun value (T s) =
+	 case Set.! s of
+	    Computed a => a
+	  | Uncomputed f =>
+	       let
+		  val a = f ()
+		  val () = Set.:= (s, Computed a)
+	       in
+		  a
+	       end
+	    
+      fun equate (T s, T s', combine) =
+	 if Set.equals (s, s')
+	    then ()
+	 else
+	    let
+	       val d = Set.! s
+	       val d' = Set.! s'
+	       val () = Set.union (s, s')
+	    in
+	       case (d, d') of
+		  (Computed a, Computed a') =>
+		     Set.:= (s, Computed (combine (a, a')))
+		| (Uncomputed _, _) => Set.:= (s, d')
+		| (_, Uncomputed _) => Set.:= (s, d)
+	    end
+   end
+   
 structure Value =
    struct
       datatype t = T of {finalOffsets: int vector option ref,
 			 finalTree: TypeTree.t option ref,
 			 finalType: Type.t option ref,
 			 finalTypes: Type.t Prod.t option ref,
-			 value: value} Set.t
+			 value: value} Equatable.t
       and value =
 	 Ground of Type.t
        | Object of {args: t Prod.t,
@@ -287,9 +338,9 @@ structure Value =
 		    finalTypes = ref NONE,
 		    value = v}
 
-      fun new v = T (Set.singleton (new' v))
+      fun new v = T (Equatable.new (new' v))
 
-      fun value (T s) = #value (Set.! s)
+      fun value (T e) = #value (Equatable.value e)
 
       fun layout v: Layout.t =
 	 let
@@ -320,52 +371,52 @@ structure Value =
 	 Trace.trace2 ("Value.unify", layout, layout, Unit.layout)
 
       val rec unify: t * t -> unit =
-	 fn arg as (T s, T s') =>
+	 fn arg =>
 	 traceUnify
-	 (fn _ =>
-	 if Set.equals (s, s')
-	    then ()
-	 else
-	    let
-	       val {value = v, ...} = Set.! s
-	       val {value = v', ...} = Set.! s'
-	       val () = Set.union (s, s')
-	    in
-	       case (v, v') of
-		  (Ground _, Ground _) => ()
-		| (Object {args = a, coercedFrom = c, flat = f, ...},
-		   Object {args = a', coercedFrom = c', flat = f', ...}) =>
-		     let
-			val () = unifyProd (a, a')
-			fun set v = Set.:= (s, new' v)
-		     in
-			case (!f, !f') of
-			   (Flat, Flat) =>
-			      (set v; c := List.fold (!c', !c, op ::))
-			 | (Flat, NotFlat) =>
-			      (set v; dontFlatten (T s))
-			 | (NotFlat, Flat) =>
-			      (set v'; dontFlatten (T s))
-			 | (NotFlat, NotFlat) => ()
-		     end
-		| (Weak {arg = a, ...}, Weak {arg = a', ...}) => unify (a, a')
-		| _ => Error.bug "strange unify"
-	    end) arg
+	 (fn (v as T e, T e') =>
+	  let
+	     val callDont = ref false
+	     val () =
+		Equatable.equate
+		(e, e', fn (z as {value = v, ...}, {value = v', ...}) =>
+		 case (v, v') of
+		    (Ground _, Ground _) => z
+		  | (Object {args = a, coercedFrom = c, flat = f, ...}, Object {args = a', coercedFrom = c', flat = f', ...}) =>
+		       let
+			  val () = unifyProd (a, a')
+		       in
+			  case (!f, !f') of
+			     (Flat, Flat) =>
+				(c := List.fold (!c', !c, op ::); new' v)
+			   | (Flat, NotFlat) =>
+				(callDont := true; new' v)
+			   | (NotFlat, Flat) =>
+				(callDont := true; new' v')
+			   | (NotFlat, NotFlat) => z
+		       end
+		  | (Weak {arg = a, ...}, Weak {arg = a', ...}) =>
+		       (unify (a, a'); z)
+		  | _ => Error.bug "strange unify")
+	  in
+	     if !callDont
+		then dontFlatten v
+	     else ()
+	  end) arg
       and unifyProd =
 	 fn (p, p') =>
 	 Vector.foreach2
 	 (Prod.dest p, Prod.dest p',
 	  fn ({elt = e, ...}, {elt = e', ...}) => unify (e, e'))
       and coerce =
-	 fn arg as {from as T s, to as T s'} =>
+	 fn arg as {from as T e, to as T e'} =>
 	 traceCoerce
 	 (fn _ =>
-	 if Set.equals (s, s')
+	 if Equatable.equals (e, e')
 	    then ()
 	 else
 	    let
-	       val {value = v, ...} = Set.! s
-	       val {value = v', ...} = Set.! s'
+	       val {value = v, ...} = Equatable.value e
+	       val {value = v', ...} = Equatable.value e'
 	    in
 	       case (v, v') of
 		  (Ground _, Ground _) => ()
@@ -466,9 +517,9 @@ structure Value =
 	 Trace.trace ("Value.finalTypes", layout,
 		      fn p => Prod.layout (p, Type.layout))
 
-      fun finalTree (v as T s): TypeTree.t =
+      fun finalTree (v as T e): TypeTree.t =
 	 let
-	    val {finalTree = r, value, ...} = Set.! s
+	    val {finalTree = r, value, ...} = Equatable.value e
 	 in
 	    Ref.memoize
 	    (r, fn () =>
@@ -491,9 +542,9 @@ structure Value =
 	 end
       and finalType arg: Type.t =
 	 traceFinalType
-	 (fn v as T s =>
+	 (fn v as T e =>
 	  let
-	     val {finalType = r, value, ...} = Set.! s
+	     val {finalType = r, value, ...} = Equatable.value e
 	  in
 	     Ref.memoize
 	     (r, fn () =>
@@ -504,9 +555,9 @@ structure Value =
 	  end) arg
       and finalTypes arg: Type.t Prod.t =
 	 traceFinalTypes
-	 (fn v as T s =>
+	 (fn v as T e =>
 	 let
-	     val {finalTypes, value, ...} = Set.! s
+	     val {finalTypes, value, ...} = Equatable.value e
 	  in
 	     Ref.memoize
 	     (finalTypes, fn () =>
@@ -535,9 +586,9 @@ structure Value =
 	    (Prod.dest (finalTypes elt), ac, fn ({elt, isMutable = i'}, ac) =>
 	     {elt = elt, isMutable = i orelse i'} :: ac))))
 
-      fun finalOffsets (T s): int vector =
+      fun finalOffsets (T e): int vector =
 	 let
-	    val {finalOffsets = r, value, ...} = Set.! s
+	    val {finalOffsets = r, value, ...} = Equatable.value e
 	 in
 	    Ref.memoize
 	    (r, fn () =>
