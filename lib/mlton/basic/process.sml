@@ -25,7 +25,7 @@ type command = Command.t
 
 structure Pid = Pid
 
-structure Status =
+structure PosixStatus =
    struct
       open Posix.Process
 
@@ -44,6 +44,11 @@ structure Status =
 
       val success = W_EXITED
       val failure = W_EXITSTATUS 0w1
+   end
+
+structure Status =
+   struct
+      type t = OS.Process.status
    end
 
 fun succeed (): 'a =
@@ -110,8 +115,8 @@ fun wait (p: Pid.t): unit =
 				  Pid.toString p'])
       else ()
 	 ; (case s of
-	       Status.W_EXITED => ()
-	     | _ => raise Fail (concat [Status.toString s]))
+	       PosixStatus.W_EXITED => ()
+	     | _ => raise Fail (concat [PosixStatus.toString s]))
    end
 
 val wait = Trace.trace ("Process.wait", Pid.layout, Unit.layout) wait
@@ -131,7 +136,7 @@ structure Posix =
 
 	    val wait =
 	       Trace.trace ("Posix.Process.wait", Unit.layout,
-			   Layout.tuple2 (Pid.layout, Status.layout))
+			   Layout.tuple2 (Pid.layout, PosixStatus.layout))
 	       wait
 	 end
    end
@@ -147,9 +152,9 @@ fun waits (pids: Pid.t list): unit =
 		  Posix.Process.W_EXITED =>
 		     List.keepAll (pids, fn p => p <> pid)
 		| _ => raise Fail (concat ["child ",
-					 Pid.toString pid,
-					 " failed with ",
-					 Status.toString status])
+					   Pid.toString pid,
+					   " failed with ",
+					   PosixStatus.toString status])
 	 in waits pids
 	 end
 
@@ -217,18 +222,23 @@ val doesSucceed =
    Trace.trace ("Process.doesSucceed", Function.layout, Bool.layout)
    doesSucceed
 
-fun makeMain main () =
-   (main (CommandLine.arguments ())
-    ; succeed ())
-   handle e =>
-      ((* You shouldn't use Trace.Immediate.message here, because that only
-	* outputs if MLton.debug = true.
-	*)
-       Layout.output (Exn.layout e, Out.error)
-       ; Out.newline Out.error
-       ; let open OS.Process
-	 in exit failure
-	 end)
+fun makeCommandLine commandLine args =
+   ((commandLine args; OS.Process.success)
+    handle e =>
+       let
+	  val out = Out.error
+	  open Layout
+       in
+	  output (Exn.layout e, out)
+	  ; List.foreach (Exn.history e, fn s =>
+			  (Out.output (out, "\n\t")
+			   ; Out.output (out, s)))
+	  ; Out.newline out
+	  ; OS.Process.failure
+       end)
+
+fun makeMain z () =
+   OS.Process.exit (makeCommandLine z (CommandLine.arguments ()))
 
 fun basename s = #file (OS.Path.splitDirFile s)
    

@@ -693,6 +693,6 @@ fun main args =
 	    end
    end
 
-val main = Process.makeMain main
+val main = Process.makeMain ("benchmark", main)
 
 end

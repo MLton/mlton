@@ -697,21 +697,7 @@ fun commandLine (args: string list): unit =
 	 end
    end
 
-val commandLine =
-   fn args =>
-   ((commandLine args; OS.Process.success)
-    handle e =>
-       let
-	  val out = Out.error
-	  open Layout
-       in
-	  output (seq [str "mlton: ", Exn.layout e], out)
-	  ; List.foreach (Exn.history e, fn s =>
-			  (Out.output (out, "\n\t")
-			   ; Out.output (out, s)))
-	  ; Out.newline out
-	  ; OS.Process.failure
-       end)
+val commandLine = Process.makeCommandLine commandLine
    
 fun exportNJ (root: Dir.t, file: File.t): unit =
    (Compile.forceBasisLibrary root

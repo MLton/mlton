@@ -16,8 +16,6 @@ signature PROCESS =
       structure Status:
 	 sig
 	    type t
-	    val layout: t -> Layout.t
-	    val toString: t -> string
 	 end
 
       (* Execute a program in a subprocess and wait for it to finish.
@@ -51,6 +49,7 @@ signature PROCESS =
        *)
       val glob: string -> string list
       val hostName: unit -> string
+      val makeCommandLine: (string list -> unit) -> (string list -> Status.t)
       val makeMain: (string list -> unit) -> (unit -> unit)
       (* pipe [c_1, ..., c_n] runs the commands c_1, ..., c_n in
        * subprocesses in parallel, with the standard output of c_i hooked

@@ -19,13 +19,7 @@ val static = ref false (* include static C functions *)
 val thresh: int ref = ref 0
 
 val die = Process.fail
-val warn = fn s => Out.output (Out.error, concat ["Warning: ", s, "\n"])
 
-fun die s =
-   (Out.output (Out.error, s)
-    ; Out.newline Out.error
-    ; Process.fail "die")
-   
 structure Regexp =
 struct
   open Regexp
@@ -841,7 +835,7 @@ val {parse, usage} =
 		   makeOptions = makeOptions,
 		   showExpert = fn () => false}
 
-fun main args =
+fun commandLine args =
    let
       val rest = parse args
     in
@@ -878,6 +872,6 @@ fun main args =
 	| Result.Yes _ => usage "wrong number of args"
    end
 
-val main = Process.makeMain main
+val main = Process.makeMain commandLine
 
 end
