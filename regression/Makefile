@@ -3,7 +3,7 @@ all:
 .PHONY: clean
 clean:
 	../bin/clean
-	rm -f *.c *.s
+	rm -f *.[csS]
 	for f in `ls`; do 			\
 		if [ -x $$f -a ! -d $$f ]; then	\
 			rm -f $$f;		\
