@@ -1964,7 +1964,6 @@ static inline void markCompact (GC_state s) {
 	s->heapp = &s->heap;
 	heapClearCardMap (&s->heap);
 	heapClearCrossMap (&s->heap);
-	fprintf (stderr, "Marking.\n");
 	foreachGlobal (s, markGlobal);
 	foreachGlobal (s, threadInternal);
 	updateForwardPointers (s);
