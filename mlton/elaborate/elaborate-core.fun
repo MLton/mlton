@@ -1346,7 +1346,7 @@ fun elaborateDec (d, {env = E,
 				   open Layout
 				in
 				   approximate
-				   (seq [str "val ", Apat.layout pat,
+				   (seq [str "in: ", Apat.layout pat,
 					 str " = ", Aexp.layout exp])
 				end
 			  in
