@@ -570,6 +570,7 @@ signature BASIS_2002 =
    where type Int32.int = Int32.int
    where type Int64.int = Int64.int
    where type IntInf.int = IntInf.int
+   where type IO.buffer_mode = IO.buffer_mode
    where type LargeInt.int = LargeInt.int
    where type LargeReal.real = LargeReal.real
    where type LargeWord.word = LargeWord.word
