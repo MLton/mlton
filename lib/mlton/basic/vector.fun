@@ -254,6 +254,9 @@ fun toListMap (a, f) = foldr (a, [], fn (a, ac) => f a :: ac)
 
 fun layout l v = Layout.tuple (toListMap (v, l))
 
+fun toString xToString l =
+   Layout.toString (layout (Layout.str o xToString) l)
+
 fun maxIndex a = Int.sub1 (length a)
 
 fun new0 () = tabulate (0, fn _ => Error.bug "Vector.new0")
