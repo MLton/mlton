@@ -242,13 +242,17 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
 			       Cons.T cons))
 	  in
 	     ()
-	  end)
+	  end) 
+      (* We don't want to re-elaborate the datatypes if there has been a type
+       * error, because that will cause duplicate error messages.
+       *)
+     val numErrors = !Control.numErrors
       (* Maximize equality. *)
       fun loop (): unit =
 	 let
 	    val _ = elabAll ()
 	 in
-	    if !change
+	    if !change andalso numErrors = !Control.numErrors
 	       then (change := false; loop ())
 	    else ()
 	 end
