@@ -9,6 +9,7 @@ structure GenericSock : GENERIC_SOCK =
 	intToSock
 	(PE.checkReturnResult
 	 (Prim.socket (NetHostDB.addrFamilyToInt af, st, p)))
+
       fun socketPair' (af, st, p) =
 	let
 	  val s1 = ref 0
@@ -19,6 +20,8 @@ structure GenericSock : GENERIC_SOCK =
 	in
 	  (intToSock (!s1), intToSock (!s2))
 	end
+
       fun socket (af, st) = socket' (af, st, 0)
+
       fun socketPair (af, st) = socketPair' (af, st, 0)
    end
