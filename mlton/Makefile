@@ -5,7 +5,7 @@ SRC = $(ROOT)/src
 MLTON = mlton
 NAME = mlton
 AOUT = mlton-compile
-FLAGS = @MLton -- -v2 -native-live-transfer false -o $(AOUT)
+FLAGS = @MLton -- -native-live-transfer false -o $(AOUT)
 PATH = $(BIN):$(shell echo $$PATH)
 
 all: $(AOUT)
@@ -27,13 +27,17 @@ $(NAME).cm: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 	) >$(NAME).cm
 
 mlton.sml: $(NAME).cm $(shell $(MLTON) -stop f mlton.cm)
-	mlton -stop sml mlton.cm
+	rm -f mlton.sml && mlton -stop sml mlton.cm && chmod -w mlton.sml
 
 front-end/ml.lex.sml: front-end/ml.lex
-	mllex front-end/ml.lex
+	rm -f front-end/ml.lex.sml && \
+		mllex front-end/ml.lex && \
+		chmod -w front-end/ml.lex.sml
 
 front-end/ml.grm.sig front-end/ml.grm.sml: front-end/ml.grm
-	mlyacc front-end/ml.grm
+	rm -f front-end/ml.grm.* && \
+		mlyacc front-end/ml.grm && \
+		chmod -w front-end/ml.grm.*
 
 .PHONY: clean
 clean:

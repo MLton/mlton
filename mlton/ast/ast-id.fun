@@ -17,8 +17,8 @@ fun makeRegion (s, r) = T {string = s,
 			  hash = String.hash s,
 			  region = r}
 
-fun makeRegion'(s, x, y) =
-   makeRegion(s, Region.T{left = x, right = y})
+fun makeRegion' (s, x, y) =
+   makeRegion (s, Region.make {left = x, right = y})
 
 fun make s = makeRegion (s, Region.bogus)
 
@@ -35,11 +35,11 @@ val layout = String.layout o toString
 
 fun region (T {region, ...}) = region
 
-fun hash (T{hash, ...}) = hash
+fun hash (T {hash, ...}) = hash
 val hash = Trace.trace ("AstId.hash", layout, Word.layout) hash
 
-val left = Region.left o region
-val right = Region.left o region
+(* val left = Region.left o region *)
+(* val right = Region.left o region *)
 
 local
    fun binary (f: string * string -> 'a) (x :t, y: t): 'a =
@@ -60,7 +60,7 @@ val equals = fn (T {string = s, hash = h, ...},
 
 val equals = Trace.trace2 ("AstId.equals", layout, layout, Bool.layout) equals
 
-fun unbound(x: t): unit =
+fun unbound (x: t): unit =
    Control.error
    (region x,
     let open Layout

@@ -151,14 +151,11 @@ fun elaborateProgram (Ast.Program.T decs, E: Env.t) =
 				   body))
 			      end
 		     val argInt = elabSigexp argSig
-		     val source = !Control.currentSource
 		     val closure =
 			Env.functorClosure
 			(E, argInt,
 			 fn formal => (Env.extendStrid (E, arg, formal)
-				       ; (Ref.fluidLet
-					  (Control.currentSource, source,
-					   fn () => elabStrexp body))))
+				       ; elabStrexp body))
 		  in Env.extendFctid (E, name, closure)
 		  end)
 		 ; Decs.empty)

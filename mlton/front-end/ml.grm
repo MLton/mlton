@@ -7,7 +7,7 @@
 
 type int = Int.t
 
-fun reg (left, right) = Region.T {left = left, right = right}
+fun reg (left, right) = Region.make {left = left, right = right}
 fun error (reg, msg) = Control.error (reg, Layout.str msg)
 
 open Ast
@@ -100,14 +100,14 @@ structure Dec =
       open Dec
 	 
       fun sequence (d1 : t, d2 : t) : t =
-	 makeRegion' (case (node d1, node d2) of
+	 makeRegion (case (node d1, node d2) of
 			(SeqDec d1, SeqDec d2) => SeqDec (Vector.concat [d1, d2])
 		      | (SeqDec d1, _) =>
 			   SeqDec (Vector.concat [d1, Vector.new1 d2])
 		      | (_, SeqDec d2) =>
 			   SeqDec (Vector.concat [Vector.new1 d1, d2])
 		      | _ => SeqDec (Vector.new2 (d1, d2)),
-		      left d1, right d2)
+		     Region.append (region d1, region d2))
    end
 
 structure Spec =
@@ -118,14 +118,16 @@ structure Spec =
        * many specs as possible in its scope.
        *)
       fun seq (s: t, s': t): t =
-	 let fun reg s'' = makeRegion' (s'', left s, right s')
-	 in case (node s, node s') of
-	    (Empty,  _)     => s'
-	  | (_,      Empty) => s
-	  | (_,      Seq (s1, s2)) => reg (Seq (seq (s, s1), s2))
-	  | (_,      Sharing {spec, equations}) =>
-	       reg (Sharing {spec = seq (s, spec), equations = equations})
-	  | _               => reg (Seq (s, s'))
+	 let
+	    fun reg s'' = makeRegion (s'', Region.append (region s, region s'))
+	 in
+	    case (node s, node s') of
+	       (Empty, _) => s'
+	     | (_, Empty) => s
+	     | (_, Seq (s1, s2)) => reg (Seq (seq (s, s1), s2))
+	     | (_, Sharing {spec, equations}) =>
+		  reg (Sharing {spec = seq (s, spec), equations = equations})
+	     | _ => reg (Seq (s, s'))
 	 end
 
 (*      val seq = Trace.trace2 ("Spec.seq", layout, layout, layout) seq *)
@@ -180,30 +182,28 @@ fun ensureNonqualified (s,region) =
 	    "<bogus>")
    else s
 
-fun cons1 (x,(l,r,y)) = (x::l,r,y)
+fun cons1 (x, (l, r, y)) = (x :: l, r, y)
 
-fun augment (id, sigexp, (wherespecs,right,binds)) =
-   (id, Sigexp.makeRegion' (Sigexp.Where (sigexp, wherespecs),
-			   Sigexp.left sigexp, right))
+fun augment (id, sigexp, (wherespecs, right, binds)) =
+   (id, Sigexp.makeRegion (Sigexp.Where (sigexp, wherespecs),
+			   Region.extendRight (Sigexp.region sigexp, right)))
    :: binds
 
-fun 'a augment1 ((strexp : Strexp.t,
-		 makesigconst : Sigexp.t -> SigConst.t,
-		 sigexp : Sigexp.t),
-		(wherespecs : wherespec list,
-		 right : int,
-		 z : 'a)) : Strexp.t * 'a =
-   (Strexp.makeRegion'
+fun 'a augment1 ((strexp: Strexp.t,
+		  makesigconst: Sigexp.t -> SigConst.t,
+		  sigexp: Sigexp.t),
+		 (wherespecs: wherespec list,
+		  right: SourcePos.t,
+		  z: 'a)): Strexp.t * 'a =
+   (Strexp.makeRegion
     (Strexp.Constrained
-     (strexp, makesigconst (Sigexp.makeRegion'
+     (strexp, makesigconst (Sigexp.makeRegion
 			    (Sigexp.Where (sigexp, wherespecs),
-			     Sigexp.left sigexp,
-			     right))),
-     Strexp.left strexp,
-     right),
+			     Region.extendRight (Sigexp.region sigexp, right)))),
+     Region.extendRight (Strexp.region strexp, right)),
     z)
 
-type 'a whereAnd = wherespec list * int * 'a list
+type 'a whereAnd = wherespec list * SourcePos.t * 'a list
 
   %%
   %term
@@ -404,7 +404,7 @@ type 'a whereAnd = wherespec list * int * 'a list
        | strexp2node of Strexp.node
 
 %verbose
-%pos int
+%pos SourcePos.t
 %eop EOF
 %noshift EOF
 
@@ -511,10 +511,11 @@ strexpnode
        | strexp1 wherespecs  (let val (strexp,sigconst,sigexp) = strexp1
 			      in Strexp.Constrained
 				 (strexp,
-				  sigconst (Sigexp.makeRegion'
-					   (Sigexp.Where (sigexp, wherespecs),
-					    Sigexp.left sigexp,
-					    wherespecsright)))
+				  sigconst (Sigexp.makeRegion
+					    (Sigexp.Where (sigexp, wherespecs),
+					     Region.extendRight
+					     (Sigexp.region sigexp,
+					      wherespecsright))))
 			      end)
        | strexp2node             (strexp2node)
     
@@ -1033,7 +1034,8 @@ vids : vid                     ([vid])
 var : idEqual                  (Var.fromString idEqual)
 con : id 		       (Con.fromString id)
 tycon : idNoAsterisk 	       (Tycon.fromString idNoAsterisk)
-tyvar : TYVAR 		       (Tyvar.newString (TYVAR, TYVARleft, TYVARright))
+tyvar : TYVAR 		       (Tyvar.newString (TYVAR, {left = TYVARleft,
+							 right = TYVARright}))
 field : id  		       (Field.String id)
       | int 		       (Field.Int
 				(if int <= 0

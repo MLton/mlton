@@ -27,8 +27,6 @@ val chunk = control {name = "chunk",
 		     default = Coalesce {limit = 2000},
 		     toString = Chunk.toString}
 
-val currentSource = ref (Source.new "<bogus>")
-
 val debug = control {name = "debug",
 		     default = false,
 		     toString = Bool.toString}
@@ -437,22 +435,10 @@ val errorThreshhold: int ref = ref 20
 
 val die = Process.fail
 
-fun error (Region.T {left, right}, msg: Layout.t): unit =
+fun error (r: Region.t, msg: Layout.t): unit =
    (Int.inc numErrors
-    ; Out.output (Out.error,
-		  let
-		     val source = !currentSource
-		     fun indexToString i =
-			let
-			   val {line, column} = Source.indexPosition (source, i)
-			in concat [Int.toString line, ".", Int.toString column]
-			end
-		  in
-		     concat
-		     [Source.file source, ":",
-		      indexToString left, "-", indexToString right, 
-		      " Error: ", Layout.toString msg]
-		  end)
+    ; Out.output (Out.error, 
+		  concat [Region.toString r, " Error: ", Layout.toString msg])
     ; Out.newline Out.error
     ; if !numErrors = !errorThreshhold
 	 then die "compilation aborted: too many errors"

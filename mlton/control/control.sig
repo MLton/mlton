@@ -21,9 +21,6 @@ signature CONTROL =
 
       val chunk: chunk ref
 
-      (* The current SML source being processed. *)
-      val currentSource: Source.t ref
-
       (* Generate an executable with debugging info. *)
       val debug: bool ref
 

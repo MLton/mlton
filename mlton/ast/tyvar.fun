@@ -44,13 +44,13 @@ fun newRegion ({name, equality}, region) =
 
 fun new f = newRegion (f, Region.bogus)
 
-fun newString (s, left, right) =
+fun newString (s, {left, right}) =
    newRegion (if Char.equals (#"'", String.sub (s, 1))
-		then {name = String.dropPrefix (s, 2),
-		      equality = true}
-	     else {name = String.dropPrefix (s, 1),
-		   equality = false},
-	     Region.T {left = left, right = right})
+		 then {name = String.dropPrefix (s, 2),
+		       equality = true}
+	      else {name = String.dropPrefix (s, 1),
+		    equality = false},
+	      Region.make {left = left, right = right})
 
 (*val make = Trace.trace2 ("Tyvar.make", String.layout, Bool.layout,
  *			layout) make

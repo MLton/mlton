@@ -1,52 +1,59 @@
-(* Copyright (C) 1997-1999 NEC Research Institute.
- * Please see the file LICENSE for license information.
- *)
-structure Region: REGION = 
+structure Region: REGION =
 struct
 
-datatype t = T of {left: int, right: int}
+datatype t =
+   Bogus
+ | T of {left: SourcePos.t,
+	 right: SourcePos.t}
 
-fun left (T {left, ...}) = left
-fun right (T {right, ...}) = right
+val bogus = Bogus
+
+val extendRight =
+   fn (Bogus, _) => Bogus
+    | (T {left, ...}, right) => T {left = left, right = right}
    
-val bogus = T {left = ~1, right = ~1}
+val toString =
+   fn Bogus => "Bogus"
+    | T {left, right} =>
+	 let
+	    fun posToString p =
+	       let
+		  val SourcePos.T {line, column, ...} = p
+	       in concat [Int.toString line, ".", Int.toString column]
+	       end
+	 in
+	    concat [SourcePos.file left, ":",
+		    posToString left, "-", posToString right]
+	 end
 
-fun list (xs, reg) =
-   case xs of	       
-      [] => bogus
-    | x :: _ => T {left = left (reg x),
-		   right = right (reg (List.last xs))}
-
-val isBogus =
-   fn (T {left = ~1, ...}) => true
-    | _ => false
-
-fun layout (T {left, right}) =
-   let
-      open Layout
-   in
-      if left = ~1
-	 then str "<bogus>"
-      else seq [Int.layout left, str "-", Int.layout right]
-   end
+val layout = Layout.str o toString
 
 val make = T
+
+val append =
+   fn (Bogus, r) => r
+    | (r, Bogus) => r
+    | (T {left, ...}, T {right, ...}) => T {left = left, right = right}
+
+fun list (xs, reg) = List.fold (xs, Bogus, fn (x, r) => append (reg x, r))
 
 structure Wrap =
    struct
       type region = t
-      datatype 'a t = T of {node: 'a, region: region}
+      datatype 'a t = T of {node: 'a,
+			    region: region}
 
       fun node (T {node, ...}) = node
       fun region (T {region, ...}) = region
       fun makeRegion (node, region) = T {node = node, region = region}
       fun makeRegion' (node, left, right) = T {node = node,
-					   region = make {left = left,
-							 right = right}}
+					       region = make {left = left,
+							      right = right}}
       fun make node = makeRegion (node, bogus)
       fun dest (T {node, region}) = (node, region)
-      val left = fn T {region, ...} => left region
-      val right = fn T {region, ...} => right region
+(*      val left = fn T {region, ...} => left region *)
+(*      val right = fn T {region, ...} => right region *)
    end
-   
+
 end
+

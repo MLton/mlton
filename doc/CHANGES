@@ -1,5 +1,11 @@
 Here are the changes from version 20010806 to version VERSION.
 
+* 2000-8-22
+  - Added support for #line directives of the form
+	(*#line line.col "file"*)
+    These directives only affect error messages produced by the parser and 
+    elaborator.   
+
 * 2000-8-17
   - Fixed bug in removeUnused optimzation that caused the following program to
     fail to compile.

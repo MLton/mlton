@@ -64,21 +64,12 @@ val (elaborate, elaborateMsg) =
 
 fun parseAndElaborateFile (f: File.t, E): Decs.t =
    let
-      val source = Source.new f
-   in
-      Ref.fluidLet
-      (Control.currentSource, source, fn () =>
-       (File.withIn
-	(f, fn ins =>
-	 let
-	    val ast =
-	       Ref.fluidLet (Ast.isInfix, fn _ => false, fn () =>
-			     lexAndParse (ins, source))
-	    val _ = Control.checkForErrors "parse"
-	    val res = elaborate (ast, E)
-	    val _ = Control.checkForErrors "elaborate"
-	 in res
-	 end)))
+      val ast = Ref.fluidLet (Ast.isInfix, fn _ => false, fn () =>
+			      lexAndParse f)
+      val _ = Control.checkForErrors "parse"
+      val res = elaborate (ast, E)
+      val _ = Control.checkForErrors "elaborate"
+   in res
    end
 
 val displayDecs =

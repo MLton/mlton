@@ -132,8 +132,8 @@ Group is
 ../lib/mlton/basic/net.sml
 ../lib/mlton/basic/control.sig
 ../lib/mlton/basic/control.fun
-control/source.sig
-control/source.sml
+control/source-pos.sig
+control/source-pos.sml
 control/region.sig
 control/region.sml
 control/control.sig
@@ -146,6 +146,8 @@ cm/parse.sig
 cm/parse.sml
 cm/cm.sig
 cm/cm.sml
+control/source.sig
+control/source.sml
 ast/wrapped.sig
 ast/ast-const.sig
 ast/field.sig
@@ -341,7 +343,6 @@ codegen/c-codegen/c-codegen.fun
 codegen/x86-codegen/word.sml
 codegen/x86-codegen/x86-codegen.sig
 ../lib/mlton/set/ordered-unique-set.fun
-../lib/mlton/set/hashed-unique-set.fun
 codegen/x86-codegen/x86.sig
 codegen/x86-codegen/x86.fun
 codegen/x86-codegen/x86-pseudo.sig
