@@ -1232,8 +1232,7 @@ structure Type =
 
       val () =
 	 List.foreach
-	 ([(Tycon.char, Tycon.word WordSize.byte),
-	   (Tycon.preThread, Tycon.thread)],
+	 ([(Tycon.char, Tycon.word WordSize.byte)],
 	  setSynonym)
 
       val () =

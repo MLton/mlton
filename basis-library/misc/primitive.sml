@@ -79,8 +79,8 @@ structure String =
 
 type string = String.string
 
-type preThread = preThread
-type thread = thread
+structure PreThread:> sig type t end = struct type t = thread end
+structure Thread:> sig type t end = struct type t = thread end
 
 structure Word8 =
    struct
@@ -1391,8 +1391,8 @@ structure Primitive =
       
       structure Thread =
 	 struct
-	    type preThread = preThread
-	    type thread = thread
+	    type preThread = PreThread.t
+	    type thread = Thread.t
 
 	    val atomicBegin = _prim "Thread_atomicBegin": unit -> unit;
 	    val canHandle = _prim "Thread_canHandle": unit -> int;

@@ -34,8 +34,6 @@ val char = Int8
 
 val pointer = Pointer
 
-val preThread = Pointer
-   
 val thread = Pointer
 
 val equals: t * t -> bool = op =

@@ -672,7 +672,6 @@ structure Type =
 	 in
 	    [("Bool", CType.bool, Tycon.bool),
 	     ("Char", CType.char, Tycon.char),
-	     ("Pointer", CType.preThread, Tycon.preThread),
 	     ("Thread", CType.thread, Tycon.thread)]
 	    @ sized (Tycon.int o IntSize.I,
 		     let

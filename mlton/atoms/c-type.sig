@@ -37,7 +37,6 @@ signature C_TYPE =
       val name: t -> string
       val layout: t -> Layout.t
       val pointer: t
-      val preThread: t
       val size: t -> Bytes.t
       val thread: t
       val toString: t -> string
