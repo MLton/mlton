@@ -47,46 +47,46 @@
 
 \begin{document}
 
-\title{Formal Specification of MLBs}
+\title{Formal Specification of the ML Basis system}
 \author{Copyright \copyright\ 2004\\
         Henry Cejtin, Matthew Fluet, Suresh Jagannathan, and Stephen Weeks}
 \date{\today}
 \maketitle
 %
-This document formally specifies the ML Basis system (MLBs) in {\mlton}
+This document formally specifies the ML Basis system (MLB) in {\mlton}
 used to program in the large.  The system has been designed to be a
 natural extension of Standard ML, and the specification is given in
 the style of The Definition of Standard ML~\cite{MTHM97} (henceforeth,
 the Definition).  This section adopts (often silently) abbreviations,
 conventions, definitions, and notation from the Definition.
 %
-\section{Syntax of MLBs}
-For MLBs there are further reserved words, identifier classes and
+\section{Syntax of MLB}
+For MLB there are further reserved words, identifier classes and
 derived forms.  There are no further special constants; comments and
 lexical analysis are as for the Core and Modules.  The derived forms
 appear in Appendix~\ref{sec:mlb:DerivedForms}.
 %
 \subsection{Reserved Words}
-The following are the additional reserved words used in MLBs.
+The following are the additional reserved words used in MLB.
 \begin{displaymath}
 \mtt{bas} \quad\quad \mtt{basis}
 \end{displaymath}
 Note that many of the reserved words from the Core and Modules are not
-used by the grammar of MLBs.  However, as the grammar includes
+used by the grammar of MLB.  However, as the grammar includes
 identifiers from the grammars of the Core and Modules, it is useful to
 consider the reserved words from the Core and Modules to be reserved
-in MLBs as well.
+in MLB as well.
 %
 \subsection{Identifiers}
-The additional identifier class for MLBs are $\mrm{BasId}$ (basis
+The additional identifier class for MLB are $\mrm{BasId}$ (basis
 identifiers).  Basis identifiers must be alphanumeric, not starting
 with a prime.  The class of each identifier occurence is determined by
 the grammatical rules which follow.  Henceforth, therefore, we
 consider all identifier classes to be disjoint.
 %
 \subsection{Infixed operators}
-The grammar of MLBs does not directly admit fixity directives.
-However, the static and dynamic semantics for MLBs will import source
+The grammar of MLB does not directly admit fixity directives.
+However, the static and dynamic semantics for MLB will import source
 files that must be parsed in the scope of fixity directives and that
 may introduce additional fixity directives into scope.
 Figure~\ref{fig:mlb:S:FixityEnv} formalizes the Definition's notion of
@@ -100,8 +100,8 @@ Figure~\ref{fig:mlb:S:FixityEnv} formalizes the Definition's notion of
 \caption{Fixity Environment}\label{fig:mlb:S:FixityEnv}
 \end{figure}
 %
-\subsection{Grammar for MLBs}
-The phrase classes for MLBs are shown in
+\subsection{Grammar for MLB}
+The phrase classes for MLB are shown in
 Figure~\ref{fig:mlb:S:PhraseClasses}.
 \begin{figure}[h]
 \begin{displaymath}
@@ -114,10 +114,10 @@ Figure~\ref{fig:mlb:S:PhraseClasses}.
 \mrm{BFunBind} & \mbox{(basis) functor bindings}
 \end{array}
 \end{displaymath}
-\caption{MLBs Phrase Classes}\label{fig:mlb:S:PhraseClasses}
+\caption{MLB Phrase Classes}\label{fig:mlb:S:PhraseClasses}
 \end{figure}
 We use the variable $\mit{basexp}$ to range over $\mrm{BasExp}$, etc.
-The conventions adopted in presenting the grammatical rulse for MLBs
+The conventions adopted in presenting the grammatical rulse for MLB
 are the same as for the Core and Modules.  The grammatical rules are
 showin in Figure~\ref{fig:mlb:S:GrammaticalRules}.
 \begin{figure}[h]
@@ -170,12 +170,12 @@ showin in Figure~\ref{fig:mlb:S:GrammaticalRules}.
 \begin{itemize}
 \item No binding $\mit{basbind}$ may bind the same identifier twice.
 \item No binding $\mit{bstrbind}$, $\mit{bsigbind}$ or $\mit{bfunbind}$ may bind the same identifier twice.
-\item MLBs may not be cyclic; i.e., successively replacing
+\item MLB may not be cyclic; i.e., successively replacing
   $\msf{path.mlb}$ with it's parsed $\mrm{BasDec}$ must terminate.
 \end{itemize}
 %
 \subsection{Parsing}
-The static and dynamic semantics for MLBs will interpret
+The static and dynamic semantics for MLB will interpret
 $\msf{path.sml}$ as a parsed $\mrm{TopDec}$ and
 $\msf{path.mlb}$ as a parsed $\mrm{BasDec}$.  Parsing a $\mrm{TopDec}$
 takes a fixity environment as input and returns a fixity environment
@@ -219,10 +219,10 @@ and an \emph{path map}, to formally specify the
 interpretation of path variables, but the above suffices
 for the development in the following sections.
 %
-\section{Static Semantics for MLBs}
+\section{Static Semantics for MLB}
 %
 \subsection{Semantic Objects}
-The simple objects for the MLBs static semantics are exactly as for
+The simple objects for the MLB static semantics are exactly as for
 Modules.  The compound objects are those for Modules, augmented by
 those in Figure~\ref{fig:mlb:SS:CompoundObjects}.
 \begin{figure}[h]
@@ -240,7 +240,7 @@ The operations of projection, injection and modification are as for
 Modules.
 %
 \subsection{Inference Rules}
-As for the Core and for Modules, the rules for MLBs static semantics
+As for the Core and for Modules, the rules for MLB static semantics
 allow sentences of the form
 \begin{displaymath}
 A \vdash \mit{phrase} \longrightarrow A'
@@ -503,15 +503,15 @@ satisfy $\mit{T} \cap (\mit{T}~\mrm{of}~\mit{B}) = \emptyset$, if necessary.
 }
 \end{equation}
 %
-\section{Dynamic Semantics for MLBs}
+\section{Dynamic Semantics for MLB}
 %
 \subsection{Reduced Syntax}
-The syntax of MLBs is unchanged for the purposes of the dynamic
-semantics for MLBs.  However, the $\mrm{Parser}$ $\mcal{P}$ returns a
+The syntax of MLB is unchanged for the purposes of the dynamic
+semantics for MLB.  However, the $\mrm{Parser}$ $\mcal{P}$ returns a
 $\mit{topdec}$ in the reduced syntax of Modules.
 %
 \subsection{Compound Objects}
-The compound objects for the MLBs dynamic semantics, extra to those
+The compound objects for the MLB dynamic semantics, extra to those
 for the Modules dynamic semantics, are shown in Figure~\ref{fig:mlb:DS:CompoundObjects}.
 \begin{figure}[h]
 \begin{displaymath}
@@ -537,7 +537,7 @@ convention for options is as in the Core and Modules semantics.
 
 The state and exception conventions are adopted as in the Core and
 Modules dynamic semantics.  However, it can be shown that the only
-MLBs phrases whose evaluation may cause a side-effect or generate an
+MLB phrases whose evaluation may cause a side-effect or generate an
 exception packet are of the form $\mit{basexp}$, $\mit{basdec}$ or
 $\mit{basbind}$.
 
@@ -779,7 +779,7 @@ exception packet.
 \section{Derived Forms}
 \label{sec:mlb:DerivedForms}
 Figure~\ref{fig:mlb:DF:bindings} shows derived forms for structure,
-signature, and functor bindings in MLBs.  These derived forms are
+signature, and functor bindings in MLB.  These derived forms are
 a useful shorthand for specifying import and export filters.
 
 \begin{figure}[h]
