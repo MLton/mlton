@@ -59,7 +59,6 @@ runtime:
 	cd runtime && $(MAKE)
 	$(CP) $(RUN)/*.a $(LIB)/$(HOST)
 	$(CP) runtime/*.h include/*.h $(LIB)/$(HOST)/include
-	cd runtime && $(MAKE) clean
 
 .PHONY: script
 script:
@@ -94,7 +93,7 @@ version:
 .PHONY: world
 world: 
 	@echo 'Processing basis library.'
-	$(LIB)/$(AOUT) @MLton fixed-heap 30m -- $(SRC)/basis-library $(LIB)/world
+	$(LIB)/$(AOUT) @MLton -- $(SRC)/basis-library $(LIB)/world
 
 # The TBIN and TLIB are where the files are going to be after installing.
 # The PREFIX is added onto them to indicate where the Makefile actually
