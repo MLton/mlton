@@ -17,7 +17,6 @@ in
    structure RealSize = RealSize
    structure WordSize = WordSize
 end
-type intSize = IntSize.t
 datatype realSize = datatype RealSize.t
 type tycon = Tycon.t
 type wordSize = WordSize.t

@@ -144,21 +144,6 @@ structure Pat =
 	    else default
 	 end
       
-      fun isWild p =
-	 case node p of
-	    Wild => true
-	  | _ => false
-
-      local
-	 fun isLongvid x p =
-	    case node p of
-	       Var {name=x', ...} => Longvid.equals (x, x')
-	     | _ => false
-      in
-	 val isTrue = isLongvid Longvid.truee
-	 val isFalse = isLongvid Longvid.falsee
-      end
-   
       fun tuple ps =
 	 if 1 = Vector.length ps
 	    then Vector.sub (ps, 0)
@@ -529,16 +514,6 @@ structure Exp =
 	 
       val var = longvid o Longvid.short o Vid.fromVar
 
-      local
-	 fun isLongvid x e =
-	    case node e of
-	       Var {name=x', ...} => Longvid.equals (x, x')
-	     | _ => false
-      in
-	 val isFalse = isLongvid Longvid.falsee
-	 val isTrue = isLongvid Longvid.truee
-      end
-			    
       fun app (e1: t, e2: t): t =
 	 makeRegion (App (e1, e2),
 		     Region.append (region e1, region e2))

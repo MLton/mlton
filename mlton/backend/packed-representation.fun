@@ -17,7 +17,6 @@ local
    open Rssa
 in
    structure Block = Block
-   structure IntSize = IntSize
    structure Kind = Kind
    structure Label = Label
    structure ObjectType = ObjectType

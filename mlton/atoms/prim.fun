@@ -1226,7 +1226,7 @@ fun ('a, 'b) apply (p: 'a t,
 	   | (Word_lt s, [Word w1, Word w2]) => wordCmp (WordX.lt, s, w1, w2)
 	   | (Word_mul s, [Word w1, Word w2]) => wordS (WordX.mul, s, w1, w2)
 	   | (Word_mulCheck s, [Word w1, Word w2]) => wcheck (op *, s, w1, w2)
-	   | (Word_neg s, [Word w]) => word (WordX.neg w)
+	   | (Word_neg _, [Word w]) => word (WordX.neg w)
 	   | (Word_negCheck s, [Word w]) =>
 		wordOrOverflow (s, {signed = true}, ~ (WordX.toIntInfX w))
 	   | (Word_notb _, [Word w]) => word (WordX.notb w)
@@ -1608,7 +1608,7 @@ fun ('a, 'b) layoutApp (p: 'a t,
        | Word_le _ => two "<="
        | Word_lshift _ => two "<<"
        | Word_lt _ => two "<"
-       | Word_mul (_, {signed}) => two "*"
+       | Word_mul _ => two "*"
        | Word_mulCheck _ => two "*"
        | Word_neg _ => one "-"
        | Word_negCheck _ => one "-"
@@ -1617,7 +1617,7 @@ fun ('a, 'b) layoutApp (p: 'a t,
        | Word_ror _ => two "ror"
        | Word_rshift (_, {signed}) => two (if signed then "~>>" else ">>")
        | Word_sub _ => two "-"
-       | Word_subCheck (_, {signed}) => two "-"
+       | Word_subCheck _ => two "-"
        | Word_xorb _ => two "^"
        | _ => seq [layout p, str " ", Vector.layout layoutArg args]
    end

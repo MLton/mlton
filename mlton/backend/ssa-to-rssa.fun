@@ -186,9 +186,6 @@ structure Name =
 	    val name = toString n
 	    val word = Type.word o WordSize.bits
 	    val vanilla = CFunction.vanilla
-	    val intC = ("Int", Type.word, IntSize.toString)
-	    val realC = ("Real", Type.real, RealSize.toString)
-	    val wordC = ("Word", word, WordSize.toString)
 	    fun coerce (t1, t2) =
 	       vanilla {args = Vector.new1 t1,
 			name = name,
@@ -327,9 +324,6 @@ structure Representation = Representation (structure Rssa = Rssa
 structure PackedRepresentation = PackedRepresentation (structure Rssa = Rssa
 						       structure Ssa = Ssa)
 
-fun intSizeToWordSize (s: IntSize.t): WordSize.t =
-   WordSize.fromBits (IntSize.bits s)
-   
 fun updateCard (addr: Operand.t): Statement.t list =
    let
       val index = Var.newNoname ()
@@ -693,7 +687,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 		  then (Vector.fromList ss, t)
 	       else
 		  let
-		     val s as S.Statement.T {exp, ty, var} =
+		     val S.Statement.T {exp, ty, var} =
 			Vector.sub (statements, i)
 		     fun none () = loop (i - 1, ss, t)
 		     fun add s = loop (i - 1, s :: ss, t)
@@ -1192,8 +1186,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 					     signed
 					     andalso Bits.< (WordSize.bits s1,
 							     WordSize.bits s2)
-					  val b1 = WordSize.bits s1
-					  val b2 = WordSize.bits s2
 					  val s1 = WordSize.roundUpToPrim s1
 					  val s2 = WordSize.roundUpToPrim s2
 				       in

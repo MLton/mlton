@@ -15,7 +15,6 @@ structure PointerTycon = PointerTycon ()
 structure Runtime = Runtime ()
 structure RepType = RepType (structure CFunction = CFunction
 			     structure CType = CType
-			     structure IntSize = IntSize
 			     structure Label = Label
 			     structure PointerTycon = PointerTycon
 			     structure Prim = Prim

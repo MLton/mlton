@@ -711,7 +711,7 @@ fun profile program =
 				     val shouldSplit =
 					profile = Count
 					andalso (case ps of
-						    Enter si => keep
+						    Enter _ => keep
 						  | _ => false)
 				     val {args, bytesAllocated, kind, label,
 					  leaves, statements} =

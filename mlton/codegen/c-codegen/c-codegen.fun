@@ -22,7 +22,6 @@ in
    structure ChunkLabel = ChunkLabel
    structure FrameInfo = FrameInfo
    structure Global = Global
-   structure IntSize = IntSize
    structure Kind = Kind
    structure Label = Label
    structure ObjectType = ObjectType

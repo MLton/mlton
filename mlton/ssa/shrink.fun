@@ -95,20 +95,9 @@ structure Position =
 	 fn (Formal i, Formal i') => i = i'
 	  | (Free x, Free x') => Var.equals (x, x')
 	  | _ => false
-
-      val usesFormal = fn Formal _ => true | _ => false
    end
 
-structure Positions =
-   struct
-      local
-	 structure A = MonoVector (Position)
-      in
-	 open A
-      end
-
-      fun usesFormal (ps: t): bool = exists (ps, Position.usesFormal)
-   end
+structure Positions = MonoVector (Position)
 
 structure LabelMeaning =
    struct

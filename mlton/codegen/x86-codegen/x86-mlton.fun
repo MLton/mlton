@@ -1308,7 +1308,7 @@ struct
 		  | W32 => binal Instruction.ADD
 		  | W64 => binal64 (Instruction.ADD, Instruction.ADC))
 	     | Word_andb s => bitop (s, Instruction.AND)
-	     | Word_equal s => cmp Instruction.E
+	     | Word_equal _ => cmp Instruction.E
 	     | Word_ge (s, sg) => compare (s, sg, Instruction.GE, Instruction.AE)
 	     | Word_gt (s, sg) => compare (s, sg, Instruction.G, Instruction.A)
 	     | Word_le (s, sg) => compare (s, sg, Instruction.LE, Instruction.BE)
@@ -1340,9 +1340,9 @@ struct
 		  | W32 => unal Instruction.NOT
 		  | W64 => unal64 (Instruction.NOT, fn _ => []))
 	     | Word_orb s => bitop (s, Instruction.OR)
-	     | Word_quot (s, {signed}) =>
+	     | Word_quot (_, {signed}) =>
 		  pmd (if signed then Instruction.IDIV else Instruction.DIV)
-	     | Word_rem (s, {signed}) =>
+	     | Word_rem (_, {signed}) =>
 		  pmd (if signed then Instruction.IMOD else Instruction.MOD)
 	     | Word_rol s => shift (s, Instruction.ROL)
 	     | Word_ror s => shift (s, Instruction.ROR)
@@ -1354,7 +1354,7 @@ struct
 		  | W16 => binal Instruction.SUB
 		  | W32 => binal Instruction.SUB
 		  | W64 => binal64 (Instruction.SUB, Instruction.SBB))
-	     | Word_toReal (s, s', {signed})
+	     | Word_toReal (s, s', _)
 	     => let
 		  fun default () =
 		    let
