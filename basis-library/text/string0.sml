@@ -17,13 +17,23 @@ structure String0 =
 			      open Primitive.String
 			      val length = size)
       open S
-      structure String0Slice = Slice
-
       open Primitive.Int
 	 
-      type string = string
       type char = char
-      type array = string
+      type string = string
+      type elem = char
+      type vector = string
+
+      structure Substring0 = 
+	 struct
+	    open Slice
+	    type char = char
+	    type string = string
+	    type elem = char
+	    type vector = string
+	    type substring = elem slice
+	 end
+
 
       val maxSize = maxLen
 
@@ -56,3 +66,4 @@ structure String0 =
 
       fun str c = new (1, c)
    end
+structure Substring0 = String0.Substring0

@@ -35,7 +35,7 @@ structure CharArray: MONO_ARRAY_EXTRA =
       type elem = char
       type array = elem array
       type vector = CharVector.vector
-      type vector_slice = Substring.substring
+      type vector_slice = CharVectorSlice.slice
       structure MonoArraySlice =
 	 struct
 	    open ArraySlice
@@ -43,7 +43,11 @@ structure CharArray: MONO_ARRAY_EXTRA =
 	    type array = elem array
 	    type slice = elem slice
 	    type vector = CharVector.vector
-	    type vector_slice = Substring.substring
+	    type vector_slice = CharVectorSlice.slice
+	    val vector = Primitive.String.fromCharVector o vector
+	    fun copyVec {src, dst, di} =
+	       ArraySlice.copyVec {src = Primitive.String.toCharVector src,
+				   dst = dst, di = di}
 	 end
       val vector = Primitive.String.fromCharVector o vector
       fun copyVec {src, dst, di} =

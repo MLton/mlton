@@ -8,9 +8,10 @@
 structure Substring: SUBSTRING =
    struct
       open Int
-	 
-      structure String = String
 
+      open Substring0
+
+(*
       datatype t = T of {str: string,
 			 start: int,
 			 size: int}
@@ -263,6 +264,7 @@ structure Substring: SUBSTRING =
 
       fun translate f ss =
 	 String.concat (rev (foldl (fn (c, l) => f c :: l) [] ss))
+*)
    end
 
 structure SubstringGlobal: SUBSTRING_GLOBAL = Substring
