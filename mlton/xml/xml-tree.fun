@@ -173,7 +173,7 @@ and primExp =
 		prim: Type.t Prim.t,
 		targs: Type.t vector}
   | Profile of ProfileExp.t
-  | Raise of VarExp.t
+  | Raise of {exn: VarExp.t, extend: bool}
   | Select of {tuple: VarExp.t,
 	       offset: int}
   | Tuple of VarExp.t vector
@@ -272,7 +272,7 @@ in
 		 layoutTargs targs,
 		 str " ", tuple (Vector.toListMap (args, VarExp.layout))]
        | Profile e => ProfileExp.layout e
-       | Raise exn => seq [str "raise ", VarExp.layout exn]
+       | Raise {exn, ...} => seq [str "raise ", VarExp.layout exn]
        | Select {offset, tuple} =>
 	    seq [str "#", Int.layout offset, str " ", VarExp.layout tuple]
        | Tuple xs => tuple (Vector.toListMap (xs, VarExp.layout))
@@ -336,7 +336,8 @@ structure Exp =
 	    val res = Var.newNoname ()
 	    val handler =
 	       make {decs = [prof ProfileExp.Leave,
-			     MonoVal {exp = Raise (VarExp.mono exn),
+			     MonoVal {exp = Raise {exn = VarExp.mono exn,
+						   extend = false},
 				      ty = ty,
 				      var = res}],
 		     result = VarExp.mono res}
@@ -403,7 +404,7 @@ structure Exp =
 					     | SOME x => handleVarExp x)
 		    | App {func, arg} => (handleVarExp func
 					  ; handleVarExp arg)
-		    | Raise exn => handleVarExp exn
+		    | Raise {exn, ...} => handleVarExp exn
 		    | Handle {try, catch, handler, ...} =>
 			 (loopExp try
 			  ; monoVar catch
@@ -682,8 +683,8 @@ structure DirectExp =
 			       (default, fn (e, r) => (toExp e, r)))},
 		   ty))
 
-      fun raisee (exn: t, t: Type.t): t =
-	 convert (exn, fn (x, _) => (Raise x, t))
+      fun raisee (exn: t, {extend: bool}, t: Type.t): t =
+	 convert (exn, fn (x, _) => (Raise {exn = x, extend = extend}, t))
 	 
       fun handlee {try, catch, handler, ty} =
 	 simple (Handle {try = toExp try,
@@ -749,6 +750,7 @@ structure DirectExp =
 				     targs = Vector.new1 Type.exn,
 				     args = Vector.new0 (),
 				     ty = Type.exn},
+			    {extend = false},
 			    ty)))
 
       fun seq (es, make) =

@@ -44,9 +44,10 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 		  extract = fn (exn, _, f) => f (Dexp.monoVar (exn, Type.exn)),
 		  extractSum = fn e => e,
 		  inject = fn e => e,
-		  raisee = (fn {var, ty, exn} =>
+		  raisee = (fn {exn, extend, ty, var} =>
 			    [MonoVal {var = var, ty = ty,
-				      exp = Raise exn}]),
+				      exp = Raise {exn = exn,
+						   extend = extend}}]),
 		  sumTycon = Tycon.exn,
 		  sumType = Type.exn,
 		  wrapBody = Dexp.toExp}
@@ -159,32 +160,38 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 					offset = 0,
 					ty = extraType})
 	       fun raisee {exn: VarExp.t,
+			   extend: bool,
 			   ty: Type.t,
 			   var = x : Var.t}: Dec.t list =
 		  let
 		     open Dexp
+		     val exp =
+			if not extend
+			   then raisee (varExp (exn, Type.exn),
+					{extend = false}, ty)
+			else
+			   extract
+			   (VarExp.var exn, ty, fn tup =>
+			    raisee
+			    (makeExn
+			     {exn = select {tuple = tup,
+					    offset = 1,
+					    ty = sumType},
+			      extra =
+			      app
+			      {func = deref (monoVar
+					     (extendExtraVar,
+					      Type.reff extendExtraType)),
+			       arg = tuple {exps = (Vector.new1
+						    (select {tuple = tup,
+							     offset = 0,
+							     ty = extraType})),
+					    ty = seType},
+			       ty = extraType}},
+			     {extend = false},
+			     ty))
 		  in
-		     vall
-		     {var = x,
-		      exp = (extract
-			     (VarExp.var exn, ty, fn tup =>
-			      raisee
-			      (makeExn
-			       {exn = select {tuple = tup,
-					      offset = 1,
-					      ty = sumType},
-				extra =
-				app
-				{func = deref (monoVar
-					       (extendExtraVar,
-						Type.reff extendExtraType)),
-				 arg = tuple {exps = (Vector.new1
-						      (select {tuple = tup,
-							       offset = 0,
-							       ty = extraType})),
-					      ty = seType},
-				 ty = extraType}},
-			       ty)))}
+		     vall {exp = exp, var = x}
 		  end
 	       val extraDatatypes =
 		  Vector.new1 {tycon = Tycon.exn,
@@ -433,7 +440,8 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 				   Type.arrow (Type.exn, Type.unit))
 		      | _ => primExp exp
 		  end
-	     | Raise exn => raisee {var = var, ty = ty, exn = exn}
+	     | Raise {exn, extend} =>
+		  raisee {exn = exn, extend = extend, ty = ty, var = var}
 	     | _ => keep ()
 	 end
       and loopLambda l =

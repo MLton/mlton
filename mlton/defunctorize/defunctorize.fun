@@ -130,7 +130,7 @@ fun casee {caseType: Xtype.t,
 	 in
 	    Vector.concat
 	    [cases,
-	     Vector.new1 {exp = Xexp.raisee (f e, caseType),
+	     Vector.new1 {exp = Xexp.raisee (f e, {extend = true}, caseType),
 			  isDefault = true,
 			  lay = NONE,
 			  numUses = ref 0,
@@ -940,7 +940,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
 					 ty = ty}
 
 		     end
-		| Raise e => Xexp.raisee (#1 (loopExp e), ty)
+		| Raise e => Xexp.raisee (#1 (loopExp e), {extend = true}, ty)
 		| Record r =>
 		     (* The components of the record have to be evaluated left to 
 		      * right as they appeared in the source program, but then
