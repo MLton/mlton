@@ -97,20 +97,6 @@ structure Parse = PrecedenceParse (structure Ast = Ast
 
 structure Scope = Scope (structure Ast = Ast)
 
-structure Aconst =
-   struct
-      open Aconst
-
-      fun ty (c: t): Type.t =
-	 case node c of
-	    Bool _ => Type.bool
-	  | Char _ => Type.char
-	  | Int _ => Type.unresolvedInt ()
-	  | Real _ => Type.unresolvedReal ()
-	  | String _ => Type.string
-	  | Word _ => Type.unresolvedWord ()
-   end
-
 structure Apat =
    struct
       open Apat
@@ -215,6 +201,7 @@ fun elaborateType (ty: Atype.t, lookup: Lookup.t): Type.t =
 fun elaborateTypeOpt (ty: Ast.Type.t option, lookup): Type.t option =
    Option.map (ty, fn ty => elaborateType (ty, lookup))
 
+val highPriorityOverloads: (unit -> unit) list ref = ref []
 val overloads: (unit -> unit) list ref = ref []
 val freeTyvarChecks: (unit -> unit) list ref = ref []
 
@@ -222,52 +209,83 @@ val {hom = typeTycon: Type.t -> Tycon.t option, ...} =
    Type.makeHom {con = fn (c, _) => SOME c,
 		 expandOpaque = false,
 		 var = fn _ => NONE}
- 
-fun resolveConst (c: Aconst.t, ty: Type.t): Const.t =
+
+fun 'a elabConst (c: Aconst.t,
+		  make: (unit -> Const.t) * Type.t -> 'a,
+		  {false = f: 'a, true = t: 'a}): 'a =
    let
       fun error m =
 	 Control.error (Aconst.region c,
 			Layout.str (concat [m, ": ", Aconst.toString c]),
 			Layout.empty)
-      val tycon =
-	 case typeTycon ty of
-	    NONE => Tycon.bogus
-	  | SOME c => c
-      fun choose (all, sizeTycon, name, make) =
+      fun choose (tycon, all, sizeTycon, name, make) =
 	 case List.peek (all, fn s => Tycon.equals (tycon, sizeTycon s)) of
 	    NONE => Const.string "<bogus>"
 	  | SOME s => make s
+      fun now (c: Const.t, ty: Type.t): 'a = make (fn () => c, ty)
+      fun delay (ty: Type.t, resolve: Tycon.t -> Const.t): 'a =
+	 let
+	    val resolve =
+	       Promise.lazy
+	       (fn () =>
+		let
+		   val tycon =
+		      case typeTycon ty of
+			 NONE => Tycon.bogus
+		       | SOME c => c
+		in
+		   resolve tycon
+		end)
+	    val _ = List.push (overloads, fn () => (resolve (); ()))
+	 in
+	    make (resolve, ty)
+	 end
    in
       case Aconst.node c of
-	 Aconst.Bool _ => Error.bug "resolveConst can't handle bools"
+	 Aconst.Bool b => if b then t else f
        | Aconst.Char c =>
-	    Const.Word (WordX.make (LargeWord.fromChar c, WordSize.W8))
+	    now (Const.Word (WordX.make (LargeWord.fromChar c, WordSize.W8)),
+		 Type.char)
        | Aconst.Int i =>
-	    if Tycon.equals (tycon, Tycon.intInf)
-	       then Const.IntInf i
-	    else
-	       choose (IntSize.all, Tycon.int, "int", fn s =>
-		       Const.Int
-		       (IntX.make (i, s)
-			handle Overflow =>
-			   (error (concat [Type.toString ty, " too big"])
-			    ; IntX.zero s)))
+	    let
+	       val ty = Type.unresolvedInt ()
+	    in
+	       delay
+	       (ty, fn tycon =>
+		if Tycon.equals (tycon, Tycon.intInf)
+		   then Const.IntInf i
+		else
+		   choose (tycon, IntSize.all, Tycon.int, "int", fn s =>
+			   Const.Int
+			   (IntX.make (i, s)
+			    handle Overflow =>
+			       (error (concat [Layout.toString
+					       (Type.layoutPretty ty),
+					       " too big"])
+				; IntX.zero s))))
+	    end
        | Aconst.Real r =>
-	    choose (RealSize.all, Tycon.real, "real", fn s =>
-		    Const.Real (RealX.make (r, s)))
-       | Aconst.String s => Const.string s
+	    delay (Type.unresolvedReal (),
+		   fn tycon =>
+		   choose (tycon, RealSize.all, Tycon.real, "real", fn s =>
+			   Const.Real (RealX.make (r, s))))
+       | Aconst.String s => now (Const.string s, Type.string)
        | Aconst.Word w =>
-	    choose (WordSize.all, Tycon.word, "word", fn s =>
-		    Const.Word
-		    (if w <= LargeWord.toIntInf (WordSize.max s)
-			then WordX.fromLargeInt (w, s)
-		     else (error (concat [Type.toString ty, " too big"])
-			   ; WordX.zero s)))
+	    let
+	       val ty = Type.unresolvedWord ()
+	    in
+	       delay
+	       (ty, fn tycon =>
+		choose (tycon, WordSize.all, Tycon.word, "word", fn s =>
+			Const.Word
+			(if w <= LargeWord.toIntInf (WordSize.max s)
+			    then WordX.fromLargeInt (w, s)
+			 else (error (concat [Layout.toString
+					      (Type.layoutPretty ty),
+					      " too big"])
+			       ; WordX.zero s))))
+	    end	       
    end
-
-val resolveConst =
-   Trace.trace2 ("resolveConst", Aconst.layout, Type.layout, Const.layout)
-   resolveConst
 
 local
    open Layout
@@ -447,21 +465,11 @@ val elaboratePat:
 				    resultType)
 		      end
 		 | Apat.Const c =>
-		      let
-			 fun doit () =
-			    let
-			       val ty = Aconst.ty c
-			       fun resolve () = resolveConst (c, ty)
-			       val _ = List.push (overloads, fn () =>
-						  (resolve (); ()))
-			    in
-			       Cpat.make (Cpat.Const resolve, ty)
-			    end
-		      in
-			 case Aconst.node c of
-			    Aconst.Bool b => if b then Cpat.truee else Cpat.falsee
-			  | _ => doit ()
-		      end
+		      elabConst
+		      (c,
+		       fn (resolve, ty) => Cpat.make (Cpat.Const resolve, ty),
+		       {false = Cpat.falsee,
+			true = Cpat.truee})
 		 | Apat.Constraint (p, t) =>
 		      let
 			 val p' = loop p
@@ -1685,17 +1693,6 @@ fun elaborateDec (d, {env = E,
 					  (r, l, align [l', lay ()])
 				       end)
 	     val region = Aexp.region e
-	     fun constant (c: Aconst.t) =
-		case Aconst.node c of
-		   Aconst.Bool b => if b then Cexp.truee else Cexp.falsee
-		 | _ => 
-		      let
-			 val ty = Aconst.ty c
-			 fun resolve () = resolveConst (c, ty)
-			 val _ = List.push (overloads, fn () => (resolve (); ()))
-		      in
-			 Cexp.make (Cexp.Const resolve, ty)
-		      end
 	     fun elab e = elabExp (e, nest)
 	  in
 	     case Aexp.node e of
@@ -1759,7 +1756,12 @@ fun elaborateDec (d, {env = E,
 				  rules = rules,
 				  test = e}
 		   end
-	      | Aexp.Const c => constant c
+	      | Aexp.Const c =>
+		   elabConst
+		   (c,
+		    fn (resolve, ty) => Cexp.make (Cexp.Const resolve, ty),
+		    {false = Cexp.falsee,
+		     true = Cexp.truee})
 	      | Aexp.Constraint (e, t') =>
 		   let
 		      val e = elab e
@@ -2084,6 +2086,18 @@ fun elaborateDec (d, {env = E,
 			  | Vid.Exn c => con c
 			  | Vid.Overload yts =>
 			       let
+				  (* There is a hack to handle cases like
+				   *   fun f (x, y) = x + y / y
+				   * The problem is that we need to resolve the
+				   * / before the +, because the default type
+				   * for + is int, which is not an allowed type
+				   * for /.  So, we treat / as a "high priority"
+				   * overload, meaning that we resolve it first.
+				   *)
+				  val overloads =
+				     if "/" = Longvid.toString id
+					then highPriorityOverloads
+				     else overloads
 				  val resolve =
 				     Promise.lazy
 				     (fn () =>
@@ -2202,8 +2216,11 @@ fun elaborateDec (d, {env = E,
 	     rules = rules}
 	 end
       val ds = elabDec (Scope.scope d, nest, true)
-      val _ = List.foreach (rev (!overloads), fn p => (p (); ()))
-      val _ = overloads := []
+      fun resolve overloads =
+	 (List.foreach (rev (!overloads), fn p => (p (); ()))
+	  ; overloads := [])
+      val _ = resolve highPriorityOverloads
+      val _ = resolve overloads
       val _ = List.foreach (rev (!freeTyvarChecks), fn p => p ())
       val _ = freeTyvarChecks := []
       val _ = TypeEnv.closeTop (Adec.region d)
