@@ -4,6 +4,10 @@
 
 extern struct GC_state gcState;
 
+enum {
+	DEBUG_THREAD = FALSE,
+};
+
 Thread Thread_current () {
 	return (Thread)gcState.currentThread;
 }
@@ -12,11 +16,13 @@ void Thread_finishHandler () {
 	GC_finishHandler (&gcState);
 }
 
-Thread Thread_saved() {
+Thread Thread_saved () {
 	Thread t;
 
 	t = (Thread)gcState.savedThread;
 	gcState.savedThread = (GC_thread)0x1;
+	if (DEBUG_THREAD)
+		fprintf (stderr, "0x%08x = Thread_saved ()\n", (uint)t);
 	return t;
 }
 
