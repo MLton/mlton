@@ -7,7 +7,7 @@ structure Thread: MLTON_THREAD =
       open SMLofNJ.Cont
 	 
       type 'a t = ((unit -> 'a) -> unit)
-	 
+
       val base: (unit -> unit) cont =
 	 callcc (fn k =>
 		 let val f = callcc (fn k' => throw k k')
@@ -30,4 +30,6 @@ structure Thread: MLTON_THREAD =
 			  end)
 
       fun prepend _ = raise Fail "prepend"
+      fun atomicBegin _ = raise Fail "atomicBegin"
+      fun atomicEnd _ = raise Fail "atomicEnd"
    end
