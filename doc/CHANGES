@@ -1,4 +1,13 @@
-Here are the changes from version 20010806 to version VERSION.
+Here are the changes from version 20011006 to version VERSION.
+
+* 2001-10-11
+  - Fixed a bug in the type inference that caused type variables to be
+    mistakenly generalized.  The bug was exposed in Norman Ramsey's sled.sml.
+    Added a test to regression/flexrecord.sml to catch the problem.
+
+--------------------------------------------------------------------------------
+
+Here are the changes from version 20010806 to version 20011006.
 
 Summary:
    + Added MLton.Exn.history, which is similar to SMLofNJ.exnHistory.

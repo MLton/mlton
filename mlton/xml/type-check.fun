@@ -10,27 +10,57 @@ open Dec PrimExp
 
 fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
    let
+      (* tyvarInScope is used to ensure that tyvars never shadow themselves. *)
+      val {get = tyvarInScope: Tyvar.t -> bool ref, ...} =
+	 Property.get (Tyvar.plist,
+		       Property.initFun (fn _ => ref false))
+      fun bindTyvars (vs: Tyvar.t vector): unit =
+	 Vector.foreach (vs, fn v =>
+			 let
+			    val r = tyvarInScope v
+			 in
+			    if !r
+			       then Type.error ("tyvar already in scope",
+						Tyvar.layout v)
+			    else r := true
+			 end)
+      fun unbindTyvars (vs: Tyvar.t vector): unit =
+	 Vector.foreach (vs, fn v => tyvarInScope v := false)
+      (* checkType makes sure all tyvars are bound. *)
+      fun checkType (ty: Type.t): unit =
+	 Type.hom {ty = ty,
+		   con = fn _ => (),
+		   var = fn a => if !(tyvarInScope a)
+				    then ()
+				 else Type.error ("tyvar not in scope",
+						  Tyvar.layout a)}
+      fun checkTypes v = Vector.foreach (v, checkType)
       val {get = getCon: Con.t -> {tyvars: Tyvar.t vector, ty: Type.t},
-	   set, destroy = destroyCon} =
-	 Property.destGetSetOnce (Con.plist,
-				  Property.initRaise ("scheme", Con.layout))
-      fun setCon ({con, arg}, tyvars, result) =
-	 set (con, {tyvars = tyvars,
-		    ty = (case arg of
-			     NONE => result
-			   | SOME ty => Type.arrow (ty, result))})
+	   set, ...} =
+	 Property.getSetOnce (Con.plist,
+			      Property.initRaise ("scheme", Con.layout))
+      fun setCon ({con, arg}, tyvars, result: Type.t): unit =
+	 (checkType result
+	  ; set (con, {tyvars = tyvars,
+		       ty = (case arg of
+				NONE => result
+			      | SOME ty => Type.arrow (ty, result))}))
       fun checkConExp (c: Con.t, ts: Type.t vector): Type.t =
-	 let val {tyvars, ty} = getCon c
-	 in Type.substitute (ty, Vector.zip (tyvars, ts))
+	 let
+	    val _ = checkTypes ts
+	    val {tyvars, ty} = getCon c
+	 in
+	    Type.substitute (ty, Vector.zip (tyvars, ts))
 	 end
       val {get = getVar: Var.t -> {tyvars: Tyvar.t vector, ty: Type.t},
-	   set = setVar, destroy = destroyVar} =
-	 Property.destGetSetOnce (Var.plist,
-				  Property.initRaise ("var scheme", Var.layout))
+	   set = setVar, ...} =
+	 Property.getSetOnce (Var.plist,
+			      Property.initRaise ("var scheme", Var.layout))
       (* val getVar = Trace.trace ("getVar", Var.layout, Layout.ignore) getVar *)
       (* val setVar = Trace.trace2 ("setVar", Var.layout, Layout.ignore, Layout.ignore) setVar *)
       fun checkVarExp (VarExp.T {var, targs}): Type.t =
 	 let
+	    val _ = checkTypes targs
 	    val {tyvars, ty} = getVar var
 	 in if Vector.length targs = Vector.length tyvars
 	       then Type.substitute (ty, Vector.zip (tyvars, targs))
@@ -46,20 +76,23 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 	 end
       fun checkVarExps xs = Vector.map (xs, checkVarExp)
       fun checkPat (p as Pat.T {con, targs, arg}): Type.t =
-	 let val t = checkConExp (con, targs)
+	 let
+	    val t = checkConExp (con, targs)
 	 in
-	    case (arg,         Type.dearrowOpt t) of
-	         (NONE,        NONE)              => t
-	       | (SOME (x, ty), SOME (t1, t2))      => 
-		    if Type.equals (t1, ty)
-		       then (setVar (x, {tyvars = Vector.new0 (),
-					 ty = t1}) ; t2)
-		    else Type.error ("argument constraint of wrong type",
-				    let open Layout
-				    in align [seq [str "t1: ", Type.layout t1],
-					     seq [str "ty: ", Type.layout ty],
-					     seq [str "p: ", Pat.layout p]]
-				    end)
+	    case (arg, Type.dearrowOpt t) of
+	         (NONE, NONE) => t
+	       | (SOME (x, ty), SOME (t1, t2)) =>
+		    (checkType ty
+		     ; if Type.equals (t1, ty)
+			  then (setVar (x, {tyvars = Vector.new0 (),
+					    ty = t1}) ; t2)
+		       else (Type.error
+			     ("argument constraint of wrong type",
+			      let open Layout
+			      in align [seq [str "t1: ", Type.layout t1],
+					seq [str "ty: ", Type.layout ty],
+					seq [str "p: ", Pat.layout p]]
+			      end)))
 	       | _ => Type.error ("constructor pattern mismatch", Pat.layout p)
 	 end
       val traceCheckExp =
@@ -75,14 +108,12 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 	       NONE => (exnType := SOME t; true)
 	     | SOME t' => Type.equals (t, t')
       end
-
       fun check (t: Type.t, t': Type.t, layout: unit -> Layout.t): unit =
 	 if Type.equals (t, t')
 	    then ()
 	 else Type.error ("type mismatch",
 			 Layout.align [Type.layout t,
 				      Type.layout t'])
-
       fun checkExp arg: Type.t =
 	 traceCheckExp
 	 (fn (exp: Exp.t) =>
@@ -130,19 +161,24 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 		    | NONE => error "selection from nontuple")
 	     | Lambda l => checkLambda l
 	     | PrimApp {prim, targs, args} =>
-		  (case Prim.checkApp {prim = prim,
-				       targs = targs,
-				       args = checkVarExps args,
-				       con = Type.con,
-				       equals = Type.equals,
-				       dearrowOpt = Type.dearrowOpt,
-				       detupleOpt = Type.detupleOpt,
-				       isUnit = Type.isUnit
-				       } of
-		      NONE => error "bad primapp"
-		    | SOME t => t)
+		  let
+		     val _ = checkTypes targs
+		  in
+		     case Prim.checkApp {prim = prim,
+					 targs = targs,
+					 args = checkVarExps args,
+					 con = Type.con,
+					 equals = Type.equals,
+					 dearrowOpt = Type.dearrowOpt,
+					 detupleOpt = Type.detupleOpt,
+					 isUnit = Type.isUnit
+					 } of
+			NONE => error "bad primapp"
+		      | SOME t => t
+		  end
 	     | ConApp {con, targs, arg} =>
-		  let val t = checkConExp (con, targs)
+		  let
+		     val t = checkConExp (con, targs)
 		  in case arg of
 		     NONE => t
 		   | SOME e => checkApp (t, e)
@@ -203,39 +239,52 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 		  end
 	 end) arg
       and checkLambda l: Type.t =
-	 let val {arg, argType, body} = Lambda.dest l
-	 in setVar (arg, {tyvars = Vector.new0 (), ty = argType})
-	    ; Type.arrow (argType, checkExp body)
+	 let
+	    val {arg, argType, body} = Lambda.dest l
+	    val _ = checkType argType
+	    val _ = setVar (arg, {tyvars = Vector.new0 (), ty = argType})
+	 in
+	    Type.arrow (argType, checkExp body)
 	 end
       and checkDec d =
-	 let val check = fn (t, t') => check (t, t', fn () => Dec.layout d)
-	 in case d of
-	    Exception c => setCon (c, Vector.new0 (), Type.exn)
-	  | MonoVal {var, ty, exp} =>
-	       (check (ty, checkPrimExp (exp, ty));
-		setVar (var, {tyvars = Vector.new0 (), ty = ty}))
-	  | PolyVal {tyvars, var, ty, exp} =>
-	       (if Vector.isEmpty tyvars
-		   then Error.bug "empty tyvars in PolyVal dec"
-		else ()
-		; check (ty, checkExp exp)
-		; setVar (var, {tyvars = tyvars, ty = ty}))
-	  | Fun {tyvars, decs} =>
-	       (Vector.foreach (decs, fn {var, ty, lambda} =>
-				setVar (var, {tyvars = tyvars, ty = ty}));
-		Vector.foreach
-		(decs, fn {ty, lambda, ...} =>
-		 let val {arg, argType, body} = Lambda.dest lambda
-		 in setVar (arg, {tyvars = Vector.new0 (), ty = argType});
-		    check (ty, Type.arrow (argType, checkExp body))
-		 end))
+	 let
+	    val check = fn (t, t') => check (t, t', fn () => Dec.layout d)
+	 in
+	    case d of
+	       Exception c => setCon (c, Vector.new0 (), Type.exn)
+	     | MonoVal {var, ty, exp} =>
+		  (checkType ty
+		   ; check (ty, checkPrimExp (exp, ty))
+		   ; setVar (var, {tyvars = Vector.new0 (), ty = ty}))
+	     | PolyVal {tyvars, var, ty, exp} =>
+		  (bindTyvars tyvars
+		   ; checkType ty
+		   ; if Vector.isEmpty tyvars
+			then Error.bug "empty tyvars in PolyVal dec"
+		     else ()
+			; check (ty, checkExp exp)
+			; unbindTyvars tyvars
+			; setVar (var, {tyvars = tyvars, ty = ty}))
+	     | Fun {tyvars, decs} =>
+		  (bindTyvars tyvars
+		   ; (Vector.foreach
+		      (decs, fn {var, ty, lambda} =>
+		       (checkType ty
+			; setVar (var, {tyvars = tyvars, ty = ty}))))
+		   ; Vector.foreach (decs, fn {ty, lambda, ...} =>
+				     check (ty, checkLambda lambda))
+		   ; unbindTyvars tyvars)
 	 end
       val _ =
 	 Vector.foreach
 	 (datatypes, fn {tycon, tyvars, cons} =>
 	  let
+	     val _ = bindTyvars tyvars
 	     val ty = Type.con (tycon, Vector.map (tyvars, Type.var))
-	  in Vector.foreach (cons, fn c => setCon (c, tyvars, ty))
+	     val _ = Vector.foreach (cons, fn c => setCon (c, tyvars, ty))
+	     val _ = unbindTyvars tyvars
+	  in
+	     ()
 	  end)
       val _ =
 	 if Type.equals (checkExp body, Type.unit)
@@ -250,8 +299,7 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 		  0 = Vector.length tyvars
 		  andalso Type.equals (ty, Type.exn)
 	       end
-      val _ = destroyCon ()
-      val _ = destroyVar ()
+      val _ = Program.clear program
    in
       ()
    end

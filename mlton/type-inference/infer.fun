@@ -14,7 +14,7 @@ structure Scope = Scope (structure CoreML = CoreML)
 structure Env = TypeEnv (open CoreML
 			 structure XmlType = Xml.Type)
 structure Scheme = Env.InferScheme
-structure Type = Env.InferType
+structure Type = Env.Type
 
 structure PScheme = Prim.Scheme
 
@@ -72,7 +72,6 @@ fun instantiatePrim (PScheme.T {tyvars, ty}) =
    instantiate {scheme = Scheme.T {tyvars = tyvars, ty = Type.fromCoreML ty},
 		canGeneralize = true}
 
-structure Frees = Type.Frees
 structure VarRange = Env.VarRange
 
 structure NestedPat = NestedPat (open Xml)
@@ -344,7 +343,6 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 		    (x, t) :: ac)
 		end) arg
 
-
       fun delayExp (e as (_, t): expCode): expCode =
 	 (fn () => Xexp.lambda {arg = Var.newNoname (),
 			       argType = Xtype.unit,
@@ -433,11 +431,6 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 		  end
 	 end
       val varExp = Trace.trace ("varExp", Var.layout o #1, layoutExpCode) varExp
-      fun tyvarsDifference (t1, t2) =
-	 List.fold (t1, [], fn (a, ac) =>
-		    if List.exists (t2, fn a' => Tyvar.equals (a, a'))
-		       then a :: ac
-		    else ac)
       (*------------------------------------*)
       (*               casee                *)
       (*------------------------------------*)
@@ -631,19 +624,6 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 						ty))))},
 		 ty)
 	     end))
-      fun checkTyvars (tyvars: Tyvar.t vector,
-		       tyvarsClose: Tyvar.t list,
-		       frees) =
-	 let
-	    val tyvars = Vector.toList tyvars
-	 in
-	    case tyvarsDifference (tyvars, tyvarsClose) of
-	       _ :: _ =>
-		  if Frees.areDisjoint (Frees.fromTyvars tyvars, frees ())
-		     then ()
-		  else Error.bug "can't generalize tyvars"
-	     | _ => ()
-	 end
       fun multiExtend (env, xts) =
 	 List.fold (xts, env, fn ((x, t), env) =>
 		    Env.extendVar (env, x, Scheme.fromType t))
@@ -665,9 +645,7 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 			  ; Error.bug "can't generalize an expansive exp")
 	    else
 	       let
-		  val frees = Promise.lazy (fn () => Env.frees env)
-		  val tyvarsClose = Type.close (te, frees)
-		  val _ = checkTyvars (tyvars, tyvarsClose, frees)
+		  val tyvarsClose = Env.close (env, te, tyvars)
 		  fun vd x = valDec (tyvarsClose, x, e, VarRange.Normal, env)
 	       in case (tyvarsClose, pat) of
 		  ([], _) => simple ()
@@ -708,7 +686,7 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 			       (letExp (patDec (p, varExp (x, env), filePos),
 					varExp (y', multiExtend (env, xts))))
 			    val (d', env) =
-			       valDec (Type.close (te, fn () => Env.frees env),
+			       valDec (Env.close (env, te, Vector.new0 ()),
 				       y, e, VarRange.Delayed, env)
 			 in (appendDec (d, d'), env)
 			 end)
@@ -808,13 +786,13 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 			   ty = Type.arrow (argType, resultType),
 			   rules = rs}
 		       end)
-		   val frees = Promise.lazy (fn () => Env.frees env)
 		   val tyvarsClose =
 		      Tyvars.toList
 		      (Vector.fold
-		       (decs, Tyvars.empty, fn ({ty, ...}, tyvars) =>
-			Tyvars.+ (tyvars,
-				  Tyvars.fromList (Type.close (ty, frees)))))
+		       (decs, Tyvars.empty, fn ({ty, ...}, ac) =>
+			Tyvars.+ (ac,
+				  Tyvars.fromList
+				  (Env.close (env, ty, tyvars)))))
 		   val tyvarsCloseV = Vector.fromList tyvarsClose
 		   val _ = args := tyvarsCloseV
 		   val env =
@@ -823,7 +801,6 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 		       Env.extendVar (env, var,
 				      Scheme.T {tyvars = tyvarsCloseV,
 						ty = ty}))
-		   val _ = checkTyvars (tyvars, tyvarsClose, frees)
 		in (cons (fn () =>
 			  [Xdec.Fun
 			   {tyvars = Vector.fromList tyvarsClose,

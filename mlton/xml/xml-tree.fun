@@ -85,7 +85,7 @@ structure VarExp =
 		 in
 		    if Vector.isEmpty targs
 		       then Var.layout var
-		    else seq [Var.layout var,
+		    else seq [Var.layout var, str " ",
 			      Vector.layout Type.layout targs]
 		 end
 	 else Var.layout var

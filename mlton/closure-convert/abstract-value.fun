@@ -244,7 +244,7 @@ in
    fun fromType t = #make (hom t) ()
 end
 
-(* val fromType = Trace.trace ("Value.fromType", Type.layout, layout) fromType *)
+val fromType = Trace.trace ("Value.fromType", Type.layout, layout) fromType
 
 fun tuple (vs: t vector): t = new (Tuple vs,
 				   Type.tuple (Vector.map (vs, ty)))
@@ -270,7 +270,7 @@ fun dearray v =
 fun lambda (l: Sxml.Lambda.t, t: Type.t): t =
    new (Lambdas (LambdaNode.lambda l), t)       
 
-(* val traceUnify = Trace.trace2 ("Value.unify", layout, layout, Unit.layout) *)
+val traceUnify = Trace.trace2 ("Value.unify", layout, layout, Unit.layout)
 
 fun unify (v, v') =
    if Dset.equals (v, v')
@@ -289,7 +289,7 @@ fun unify (v, v') =
 	       | _                               => Error.bug "impossible unify")
 	end
 
-(*val unify = Trace.trace2 ("Value.unify", layout, layout, Unit.layout) unify *)
+val unify = Trace.trace2 ("Value.unify", layout, layout, Unit.layout) unify
 
 fun coerce {from: t, to: t}: unit =
    if Dset.equals (from, to)
@@ -309,13 +309,12 @@ fun coerce {from: t, to: t}: unit =
 	  | (Lambdas l, Lambdas l') => LambdaNode.coerce {from = l, to = l'}
 	  | _ => Error.bug "impossible coerce")
 
-(* val coerce = Trace.trace ("Value.coerce",
- * 			 fn {from, to} =>
- * 			 let open Layout
- * 			 in record [("from", layout from),
- * 				   ("to" , layout to)]
- * 			 end, Unit.layout) coerce
- *)
+val coerce = Trace.trace ("Value.coerce",
+			  fn {from, to} =>
+			  let open Layout
+			  in record [("from", layout from),
+				     ("to" , layout to)]
+			  end, Unit.layout) coerce
 
 structure Dest =
    struct

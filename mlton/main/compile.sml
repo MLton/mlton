@@ -276,7 +276,7 @@ fun preCodegen {input, docc}: MachineOutput.Program.t =
       val sxml =
 	 Control.passSimplify
 	 {name = "mono",
-	  suffix = "mono",
+	  suffix = "sxml",
 	  style = Control.ML,
 	  thunk = fn () => Monomorphise.monomorphise xml,
 	  display = Control.Layout Sxml.Program.layout,
