@@ -168,6 +168,7 @@ structure VarInfo =
    struct
       type t = {frees: Var.t list ref ref,
 		isGlobal: bool ref,
+		lambda: Slambda.t option,
 		replacement: Var.t ref,
 		status: Status.t ref,
 		value: Value.t}
@@ -175,6 +176,7 @@ structure VarInfo =
       local
 	 fun make sel (r: t) = sel r
       in
+	 val lambda = valOf o make #lambda
 	 val value = make #value
       end
    end
@@ -231,12 +233,14 @@ fun closureConvert
 	 let
 	    open Sxml
 	    val bogusFrees = ref []
-	    fun newVar (x, v) =
+	    fun newVar' (x, v, lambda) =
 	       setVarInfo (x, {frees = ref bogusFrees,
 			       isGlobal = ref false,
+			       lambda = lambda,
 			       replacement = ref x,
 			       status = ref Status.init,
 			       value = v})
+	    fun newVar (x, v) = newVar' (x, v, NONE)
 	    val newVar =
 	       Trace.trace2 ("ClosureConvert.newVar",
 			     Var.layout, Layout.ignore, Unit.layout)
@@ -258,8 +262,9 @@ fun closureConvert
 	       in
 		  case d of
 		     Fun {decs, ...} =>
-			(Vector.foreach (decs, fn {var, ty, ...} =>
-					 newVar (var, Value.fromType ty))
+			(Vector.foreach (decs, fn {var, lambda, ty, ...} =>
+					 newVar' (var, Value.fromType ty,
+						  SOME lambda))
 			 ; (Vector.foreach
 			    (decs, fn {var, lambda, ...} =>
 			     Value.unify (value var,
@@ -642,18 +647,17 @@ fun closureConvert
 	 (old, new, [], fn (old, new, ac) =>
 	  let
 	     val {cons, ty, ...} = varLambdasInfo old
+	     val l = VarInfo.lambda (varInfo old)
 	  in
-	     if 1 = Vector.length cons
-		then
-		   let val {con, ...} = Vector.sub (cons, 0)
-		   in
-		      {var = new,
-		       ty = ty,
-		       exp = Dexp.conApp {con = con, ty = ty,
-					  args = Vector.new1 (Dexp.var env)}}
-		      :: ac
-		   end
-	     else Error.bug "val rec lambda must be singleton"
+	     case Vector.peek (cons, fn {lambda = l', ...} =>
+			       Slambda.equals (l, l')) of
+		NONE => Error.bug "lambda must exist in its own set"
+	      | SOME {con, ...} =>
+		   {var = new,
+		    ty = ty,
+		    exp = Dexp.conApp {con = con, ty = ty,
+				       args = Vector.new1 (Dexp.var env)}}
+		   :: ac
 	  end)
       val recursives =
 	 Trace.trace ("recursives",
@@ -773,62 +777,15 @@ fun closureConvert
 		  val v1 = Vector.new1
 		  val v2 = Vector.new2
 		  val v3 = Vector.new3
-		  val (targs, args) =
-		     case Prim.name prim of
-			Array_update =>
-			   let
-			      val a = varExpInfo (arg 0)
-			      val y = varExpInfo (arg 2)
-			      val v = Value.dearray (VarInfo.value a)
-			   in (v1 (valueType v),
-			       v3 (convertVarInfo a,
-				   convertVarExp (arg 1),
-				   coerce (convertVarInfo y,
-					   VarInfo.value y, v)))
-			   end
-		      | Ref_assign =>
-			   let
-			      val r = varExpInfo (arg 0)
-			      val y = varExpInfo (arg 1)
-			      val v = Value.deref (VarInfo.value r)
-			   in (v1 (valueType v),
-			       v2 (convertVarInfo r,
-				   coerce (convertVarInfo y,
-					   VarInfo.value y, v)))
-			   end
-		      | Ref_ref =>
-			   let
-			      val y = varExpInfo (arg 0)
-			      val v = Value.deref v
-			   in (v1 (valueType v),
-			       v1 (coerce
-				   (convertVarInfo y, VarInfo.value y, v)))
-			   end
-		      | MLton_serialize =>
-			   let
-			      val y = varExpInfo (arg 0)
-			      val v = Value.serialValue (Vector.sub (targs, 0))
-			   in (v1 (valueType v),
-			       v1 (coerce
-				   (convertVarInfo y, VarInfo.value y, v)))
-			   end
-		      | _ =>
-			   let
-			      val args = Vector.map (args, varExpInfo)
-			   in (Prim.extractTargs
-			       {prim = prim,
-				args = Vector.map (args, varInfoType),
-				result = ty,
-				dearray = Type.dearray,
-				dearrow = Type.dearrow,
-				deref = Type.deref,
-				devector = Type.devector},
-			       Vector.map (args, convertVarInfo))
-			   end
+		  fun primApp (targs, args) =
+		     Dexp.primApp {args = args,
+				   prim = prim,
+				   targs = targs,
+				   ty = ty}
 	       in
    		 if Prim.mayOverflow prim
 		   then simple (Dexp.arith
-				{args = args,
+				{args = Vector.map (args, convertVarExp),
 				 overflow = Dexp.raisee (convertVar overflow),
 				 prim = prim,
 				 ty = ty})
@@ -838,13 +795,82 @@ fun closureConvert
 		    in
 		       simple
 		       (case Prim.name prim of
-			   MLton_handlesSignals =>
+			   Array_update =>
+			      let
+				 val a = varExpInfo (arg 0)
+				 val y = varExpInfo (arg 2)
+				 val v = Value.dearray (VarInfo.value a)
+			      in
+				 primApp (v1 (valueType v),
+					  v3 (convertVarInfo a,
+					      convertVarExp (arg 1),
+					      coerce (convertVarInfo y,
+						      VarInfo.value y, v)))
+			      end
+			 | MLton_eq =>
+			      let
+				 val a0 = varExpInfo (arg 0)
+				 val a1 = varExpInfo (arg 1)
+				 fun doit () =
+				    primApp (v1 (valueType (VarInfo.value a0)),
+					     v2 (convertVarInfo a0,
+						 convertVarInfo a1))
+			      in
+				 case (Value.dest (VarInfo.value a0),
+				       Value.dest (VarInfo.value a1)) of
+				    (Value.Lambdas l, Value.Lambdas l') =>
+				       if Lambdas.equals (l, l')
+					  then doit () 
+				       else Dexp.falsee
+				  | _ => doit ()
+			      end
+			 | MLton_handlesSignals =>
 			      if handlesSignals then Dexp.truee else Dexp.falsee
-			 | _ => 
-			      Dexp.primApp {args = args,
-					    prim = prim,
-					    targs = targs,
-					    ty = ty})
+			 | Ref_assign =>
+			      let
+				 val r = varExpInfo (arg 0)
+				 val y = varExpInfo (arg 1)
+				 val v = Value.deref (VarInfo.value r)
+			      in
+				 primApp (v1 (valueType v),
+					  v2 (convertVarInfo r,
+					      coerce (convertVarInfo y,
+						      VarInfo.value y, v)))
+			      end
+			 | Ref_ref =>
+			      let
+				 val y = varExpInfo (arg 0)
+				 val v = Value.deref v
+			      in
+				 primApp (v1 (valueType v),
+					  v1 (coerce (convertVarInfo y,
+						      VarInfo.value y, v)))
+			      end
+			 | MLton_serialize =>
+			      let
+				 val y = varExpInfo (arg 0)
+				 val v =
+				    Value.serialValue (Vector.sub (targs, 0))
+			      in
+				 primApp (v1 (valueType v),
+					  v1 (coerce (convertVarInfo y,
+						      VarInfo.value y, v)))
+			      end
+			 | _ =>
+			      let
+				 val args = Vector.map (args, varExpInfo)
+			      in
+				 primApp
+				 (Prim.extractTargs
+				  {prim = prim,
+				   args = Vector.map (args, varInfoType),
+				   result = ty,
+				   dearray = Type.dearray,
+				   dearrow = Type.dearrow,
+				   deref = Type.deref,
+				   devector = Type.devector},
+				  Vector.map (args, convertVarInfo))
+			      end)
 		    end
 	       end
 	  | SprimExp.Tuple xs =>
@@ -933,7 +959,7 @@ fun closureConvert
 		  val info = lambdaInfo l
 		  val ac = convertLambda (l, info, ac)
 		  val {cons, ...} = valueLambdasInfo v
-	       in case Vector.peek (cons, fn {con, lambda = l'} =>
+	       in case Vector.peek (cons, fn {lambda = l', ...} =>
 				    Slambda.equals (l, l')) of
 		  NONE => Error.bug "lambda must exist in its own set"
 		| SOME {con, ...} =>

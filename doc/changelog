@@ -1,5 +1,8 @@
 Here are the changes from version 20020923.
 
+* 2002-11-07
+  - Fixed bug in MLton.eq that could arise when using eq on functions.
+
 * 2002-11-05
   - Improvements to polymorphic equality.  Equality on IntInfs, vectors,
     and dataypes all do an eq test first before a more expensive comparison.
