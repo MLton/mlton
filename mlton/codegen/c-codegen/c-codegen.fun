@@ -295,7 +295,7 @@ fun outputDeclarations
 			  [C.int (!Control.cardSizeLog2),
 			   usedFixedHeap,
 			   C.int fixedHeapSize,
-			   C.bool (!Control.generational),
+			   C.bool (!Control.markCards),
 			   C.int maxFrameSize,
 			   C.int maxFrameIndex,
 			   C.int (Vector.length objectTypes),

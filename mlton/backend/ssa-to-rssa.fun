@@ -902,7 +902,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			  loop (i - 1, prefix ss, t)
 			end
 		     fun arrayUpdate (ty, src) =
-		        if !Control.generational andalso Type.isPointer ty
+		        if !Control.markCards andalso Type.isPointer ty
 			   then let
 				   val temp = Var.newNoname ()
 				   val tempOp = Operand.Var {var = temp,
@@ -944,7 +944,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 								    ty = ty},
 					      src = src}
 			in
-			   if !Control.generational andalso Type.isPointer ty
+			   if !Control.markCards andalso Type.isPointer ty
 			      then updateCard (varOp addr, fn ss => ss, assign)
 			   else loop (i - 1, assign::ss, t)
 			end

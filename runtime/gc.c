@@ -329,7 +329,7 @@ int fixedGetrusage (int who, struct rusage *rup) {
 	unless (res == 0)
 		return (res);
 	if (times(&tbuff) == -1)
-		diee("Impossible: times() failed");
+		diee ("Impossible: times() failed");
 	switch (who) {
 	case RUSAGE_SELF:
 		user = tbuff.tms_utime;
@@ -340,8 +340,8 @@ int fixedGetrusage (int who, struct rusage *rup) {
 		sys = tbuff.tms_cstime;
 		break;
 	default:
-		die("getrusage() accepted unknown who: %d", who);
-		exit(1);  /* needed to keep gcc from whining. */
+		die ("getrusage() accepted unknown who: %d", who);
+		exit (1);  /* needed to keep gcc from whining. */
 	}
 	rup->ru_utime.tv_sec = user / hz;
 	rup->ru_utime.tv_usec = (user % hz) * (1000000 / hz);
@@ -495,7 +495,7 @@ static inline bool cardIsMarked (GC_state s, pointer p) {
 }
 
 static inline void markCard (GC_state s, pointer p) {
-	if (s->generational)
+	if (s->mutatorMarksCards)
 		s->heap.cardMap[divCardSize (s, (uint)p)] = '\001';
 }
 
@@ -837,10 +837,12 @@ static inline pointer foreachPointerInRange (GC_state s,
 /*                            invariant                             */
 /* ---------------------------------------------------------------- */
 
-static bool liveRatiosOk (GC_state s) {
-	return 1.0 < s->liveRatioMarkCompact
-			and s->liveRatioMarkCompact <= s->liveRatioCopy
-			and s->liveRatioCopy <= s->liveRatioDesired;
+static bool ratiosOk (GC_state s) {
+	return 1.0 < s->growRatio
+			and 1.0 < s->nurseryRatio
+			and 1.0 < s->markCompactRatio
+			and s->markCompactRatio <= s->copyRatio
+			and s->copyRatio <= s->liveRatio;
 }
 
 #ifndef NODEBUG
@@ -867,7 +869,7 @@ static inline void assertIsInFromSpace (GC_state s, pointer *p) {
 	 * for stacks, the card containing the beginning of the stack is marked,
 	 * but any remaining cards aren't.
 	 */
-	if (FALSE and s->generational 
+	if (FALSE and s->mutatorMarksCards 
 		and isInOldGen (s, (pointer)p) 
  		and isInNursery (s, *p)
 		and not cardIsMarked (s, (pointer)p)) {
@@ -888,7 +890,7 @@ static bool invariant (GC_state s) {
 	pointer back;
 	GC_stack stack;
 
-	assert (liveRatiosOk (s));
+	assert (ratiosOk (s));
 	if (DEBUG)
 		fprintf (stderr, "invariant\n");
 	/* Frame layouts */
@@ -998,30 +1000,60 @@ void leave (GC_state s) {
 /*                              Heaps                               */
 /* ---------------------------------------------------------------- */
 
-static W32 heapDesiredSize (GC_state s, W64 live) {
+/* heapDesiredSize (s, l, c) returns the desired heap size for a heap with
+ * l bytes live, given that the current heap size is c.
+ */
+static W32 heapDesiredSize (GC_state s, W64 live, W32 currentSize) {
 	W32 res;
 	float ratio;
 
 	if (live > s->totalRam + s->totalSwap)
-		die ("out of memory: %s bytes live", ullongToCommaString (live));
+		die ("Out of memory: %s bytes live.", 
+				ullongToCommaString (live));
 	ratio = (float)s->ram / (float)live;
 	if (s->useFixedHeap)
 		res = s->fixedHeapSize;
-        else if (s->liveRatioDesired + 1 <= ratio)
+        else if (ratio >= s->liveRatio + s->growRatio) {
 		/* Cheney copying fits in RAM with desired liveRatio. */
-		res = live * s->liveRatioDesired;
-	else if (s->liveRatioCopy <= ratio)
-		/* Cheney copying fits in RAM */
-		res = s->ram - live;
-	else if (s->liveRatioMarkCompact <= ratio)
-		/* Mark compact fits in ram */
+		res = live * s->liveRatio;
+		/* If the heap is currently close in size to what we want, leave
+		 * it alone.  Favor growing over shrinking.
+		 */
+		unless (currentSize <= 0.8 * res
+				or currentSize >= 2.0 * res)
+			res = currentSize;
+	} else if (ratio >= s->copyRatio + s->growRatio) {
+		/* Cheney copying fits in RAM. */
+		res = s->ram - s->growRatio * live;
+		/* If the heap isn't too much smaller than what we want, leave
+		 * it alone.  On the other hand, if it is bigger we want to
+		 * leave res as is so that the heap is shrunk, to try to avoid
+		 * paging.
+		 */
+		if (0.9 * res <= currentSize and currentSize <= res)
+			res = currentSize;
+	} else if (ratio >= s->markCompactRatio) {
+		/* Mark compact fits in ram.  It doesn't matter what the current
+		 * size is.  If the heap is currently smaller, we are using
+		 * copying and should switch to mark-compact.  If the heap is
+		 * currently bigger, we want to shrink back to ram size to avoid
+		 * paging.
+		 */
 		res = s->ram;
-	else 	/* Required live ratio. */
-		res = min64 (live * s->liveRatioMarkCompact, 
+	} else { /* Required live ratio. */
+		res = min64 (live * s->markCompactRatio, 
 				s->totalRam + s->totalSwap);
+		/* If the current heap is bigger than res, the shrinking always
+		 * sounds like a good idea.  However, depending on what pages
+		 * the VM keeps around, growing could be very expensive, if it
+		 * involves paging the entire heap.  Hopefully the copy loop
+		 * in growFromSpace will make the right thing happen.
+		 */ 
+	}
 	if (DEBUG_RESIZING)
-		fprintf (stderr, "%u = heapDesiredSize (%llu)\n",
-				(uint)res, live);
+		fprintf (stderr, "%s = heapDesiredSize (%s)\n",
+				uintToCommaString (res),
+				ullongToCommaString (live));
 	assert (res >= live);
 	return res;
 }
@@ -1086,15 +1118,15 @@ static inline void setNursery (GC_state s) {
 	h->nurserySize = h->size - h->oldGenSize;
 	assert (isAligned (h->nurserySize, WORD_SIZE));
 	if ( 	/* The mutator marks cards. */
-		s->generational
+		s->mutatorMarksCards
 		/* The live ratio is low enough to make generational GC
 		 * worthwhile.
 		 */
 		and (float)s->heap.size / (float)s->bytesLive 
-			<= s->liveRatioGenerational
+			<= s->generationalRatio
 		/* The nursery is large enough to be worth it. */
-		and (float)h->nurserySize 
-			>= (float)s->bytesLive / s->nurseryRatio) {
+		and (float)s->heap.size / (float)h->nurserySize  
+			<= s->nurseryRatio) {
 		h->nurserySize /= 2;
 		unless (isAligned (h->nurserySize, WORD_SIZE))
 			h->nurserySize -= 2;
@@ -1130,24 +1162,24 @@ static inline void heapClearCrossMap (GC_heap h) {
  * is unable.  If a reasonable size to space is already there, then heapCreate
  * leaves it.
  */
-static inline bool heapCreate (GC_state s, GC_heap h, W64 need, W32 minSize) {
+static inline bool heapCreate (GC_state s, GC_heap h, 
+				W32 desiredSize, W32 minSize) {
 	W32 backoff;
-	W32 requested;
 
 	if (DEBUG)
-		fprintf (stderr, "heapCreate  need = %llu  minSize = %u\n",
-				need, (uint)minSize);
-	requested = heapDesiredSize (s, need);
-	if (requested < minSize)
-		requested = minSize;
-	requested = align (requested, s->cardSize);
-	if (h->size >= minSize and h->size >= requested / 2)
+		fprintf (stderr, "heapCreate  desired size = %s  min size = %s\n",
+				uintToCommaString (desiredSize),
+				uintToCommaString (minSize));
+	if (desiredSize < minSize)
+		desiredSize = minSize;
+	desiredSize = align (desiredSize, s->cardSize);
+	if (h->size >= minSize and h->size >= desiredSize / 2)
 		/* Tospace is big enough.  Keep it. */
 		return TRUE;
 	else
 		heapRelease (s, h);
 	assert (0 == h->size and NULL == h->start);
-	backoff = (requested - minSize) / 20;
+	backoff = (desiredSize - minSize) / 20;
 	if (0 == backoff)
 		backoff = 1; /* enough to terminate the loop below */
 	backoff = align (backoff, s->cardSize);
@@ -1155,13 +1187,13 @@ static inline bool heapCreate (GC_state s, GC_heap h, W64 need, W32 minSize) {
          * decrease the chance of virtual memory fragmentation causing an mmap
 	 * to fail.  This is important for large heaps.
 	 */
-	for (h->size = requested; h->size >= minSize; h->size -= backoff) {
+	for (h->size = desiredSize; h->size >= minSize; h->size -= backoff) {
 		uint cardMapSpace;
 		static int direction = 1;
 		int i;
 
 		assert (isAligned (h->size, s->cardSize));
-		if (s->generational)
+		if (s->mutatorMarksCards)
 			h->numCards = divCardSize (s, h->size);
 		else
 			h->numCards = 0;
@@ -1204,7 +1236,7 @@ static inline bool heapCreate (GC_state s, GC_heap h, W64 need, W32 minSize) {
 					s->maxHeapSizeSeen = h->totalSize;
 				h->oldGen = h->start + cardMapSpace;
 				assert (isAligned ((uint)h->oldGen, s->cardSize));
-				if (s->generational) {
+				if (s->mutatorMarksCards) {
 					assert (divCardSize (s, (uint)h->oldGen) <= (uint)h->start);
 					h->cardMap = h->start 
 						- divCardSize (s, (uint)h->oldGen);
@@ -1224,8 +1256,8 @@ static inline bool heapCreate (GC_state s, GC_heap h, W64 need, W32 minSize) {
 			}
 		}
 		if (s->messages)
-			fprintf(stderr, "[Requested %luM cannot be satisfied, backing off by %luM (need = %luM).\n",
-				meg (h->totalSize), meg (backoff), meg (need));
+			fprintf(stderr, "[Requested %luM cannot be satisfied, backing off by %luM (min size = %luM).\n",
+				meg (h->totalSize), meg (backoff), meg (minSize));
 	}
 	h->totalSize = 0;
 	h->size = 0;
@@ -1233,7 +1265,7 @@ static inline bool heapCreate (GC_state s, GC_heap h, W64 need, W32 minSize) {
 }
 
 static inline void setCrossMap (GC_state s, pointer p) {
-	if (s->generational and isAligned ((uint)p, s->cardSize)) {
+	if (s->mutatorMarksCards and isAligned ((uint)p, s->cardSize)) {
 		GC_heap h;	
 
 		h = s->crossMapHeap;
@@ -1378,7 +1410,8 @@ static inline void cheneyCopy (GC_state s) {
 	s->bytesLive = s->back - s->heap2.oldGen;
 	s->heap2.oldGenSize = s->bytesLive;
 	if (DEBUG)
-		fprintf (stderr, "bytesLive = %u\n", s->bytesLive);
+		fprintf (stderr, "%s bytes live.\n", 
+				uintToCommaString (s->bytesLive));
 	swapSemis (s);
 	s->bytesCopied += s->bytesLive;
  	if (DEBUG or s->messages)
@@ -2039,107 +2072,93 @@ static void translateHeap (GC_state s, pointer from, pointer to, uint size) {
 }
 
 /* ---------------------------------------------------------------- */
-/*                            resizeHeap                            */
+/*                          growFromSpace                           */
 /* ---------------------------------------------------------------- */
 
+static inline void growFromSpace (GC_state s, W32 desired, W32 minSize) {
+	pointer old;
+	uint size;
+
+	assert (desired >= s->heap.size);
+	if (DEBUG_RESIZING)
+		fprintf (stderr, "Growing from space.  oldGenSize = %s\n",
+				uintToCommaString (s->heap.oldGenSize));
+	releaseToSpace (s);
+	old = s->heap.oldGen;
+	size = s->heap.oldGenSize;
+	assert (size <= s->heap.size);
+	shrinkFromSpace (s, size);
+	/* Allocate a space of the desired size. */
+	if (heapCreate (s, &s->heap2, desired, minSize)) {
+		pointer from;
+		pointer to;
+
+		from = old + size;
+		to = s->heap2.oldGen + size;
+copy:			
+		from -= COPY_CHUNK_SIZE;
+		to -= COPY_CHUNK_SIZE;
+		if (from > old) {
+			copy (from, to, COPY_CHUNK_SIZE);
+			heapShrink (s, &s->heap, from - old);
+			goto copy;
+		}
+		copy (old, s->heap2.oldGen, from + COPY_CHUNK_SIZE - old);
+		heapRelease (s, &s->heap);
+		swapSemis (s);
+	} else {
+		/* Write the heap to a file and try again. */
+		FILE *stream;
+		char template[80] = "/tmp/FromSpaceXXXXXX";
+		int fd;
+
+		fd = smkstemp (template);
+		sclose (fd);
+		if (s->messages)
+			fprintf (stderr, "Paging from space to %s.\n", 
+					template);
+		stream = sfopen (template, "wb");
+		sfwrite (old, 1, size, stream);
+		sfclose (stream);
+		heapRelease (s, &s->heap);
+		if (heapCreate (s, &s->heap, desired, minSize)) {
+			stream = sfopen (template, "rb");
+			sfread (s->heap.oldGen, 1, size, stream);
+			sfclose (stream);
+			sunlink (template);
+		} else {
+			sunlink (template);
+			if (s->messages)
+				showMem ();
+			die ("Out of memory.  Unable to allocate %s bytes.\n",
+				uintToCommaString (minSize));
+		}
+	}
+	s->heap.oldGenSize = size;
+	translateHeap (s, old, s->heap.oldGen, size);
+}
+
+/* ---------------------------------------------------------------- */
+/*                            resizeHeap                            */
+/* ---------------------------------------------------------------- */
 /* Resize from space and to space, guaranteeing that at least 'need' bytes are
  * available in from space and that to space is either the same size as from
  * space or is unmapped.
  */
 static inline void resizeHeap (GC_state s, W64 need) {
-	bool grow;
-	W32 keep;
+	W32 desired;
 
-	grow = FALSE;
-	keep = 0;
 	if (DEBUG_RESIZING)
-		fprintf (stderr, "resizeHeap  need = %llu  fromSize = %s\n",
-				need, uintToCommaString (s->heap.totalSize));
-	if (need >= s->heap.size)
-		grow = TRUE;
-	else  {
-		W32 desired;
-
-		desired = heapDesiredSize (s, need);
-		assert (desired >= need);
-		if ((s->heap.size >= s->ram and desired <= s->ram)
-			or desired < 0.75 * s->heap.size)
-			keep = desired;
-		else if (desired > 1.25 * s->heap.size)
-			grow = TRUE;
-		else
-			keep = max (s->heap.size, need);
-	}
-	if (DEBUG_RESIZING)
-		fprintf (stderr, "size = %s  need = %s  keep = %s\n",
-				uintToCommaString ((uint)s->heap.totalSize), 
-				uintToCommaString ((uint)need), 
-				uintToCommaString ((uint)keep));
+		fprintf (stderr, "resizeHeap  need = %s fromSize = %s\n",
+				ullongToCommaString (need), 
+				uintToCommaString (s->heap.totalSize));
+	desired = heapDesiredSize (s, need, s->heap.size);
+	assert (need <= desired);
 	/* Shrink or grow the heap. */
-	if (not grow) {
-		assert (need <= keep and keep <= s->heap.size);
-		shrinkFromSpace (s, keep);
-	} else {
-		pointer old;
-		uint size;
-
-		if (DEBUG_RESIZING)
-			fprintf (stderr, "Growing from space.  oldGenSize = %u\n",
-					(uint)s->heap.oldGenSize);
-		releaseToSpace (s);
-		old = s->heap.oldGen;
-		size = s->heap.oldGenSize;
-		assert (size <= s->heap.size);
-		shrinkFromSpace (s, size);
-		/* Allocate a space of the desired size. */
-		if (heapCreate (s, &s->heap2, need, need)) {
-			pointer from;
-			pointer to;
-
-			from = old + size;
-			to = s->heap2.oldGen + size;
-copy:			
-			from -= COPY_CHUNK_SIZE;
-			to -= COPY_CHUNK_SIZE;
-			if (from > old) {
-				copy (from, to, COPY_CHUNK_SIZE);
-				heapShrink (s, &s->heap, from - old);
-				goto copy;
-			}
-			copy (old, s->heap2.oldGen, 
-				from + COPY_CHUNK_SIZE - old);
-			heapRelease (s, &s->heap);
-			swapSemis (s);
-		} else {
-			/* Write the heap to a file and try again. */
-			FILE *stream;
-			char template[80] = "/tmp/FromSpaceXXXXXX";
-			int fd;
-	
-			fd = smkstemp (template);
-			sclose (fd);
-			if (s->messages)
-				fprintf (stderr, "Paging from space to %s.\n", 
-						template);
-			stream = sfopen (template, "wb");
-			sfwrite (old, 1, size, stream);
-			sfclose (stream);
-			heapRelease (s, &s->heap);
-			if (heapCreate (s, &s->heap, need, need)) {
-				stream = sfopen (template, "rb");
-				sfread (s->heap.oldGen, 1, size, stream);
-				sfclose (stream);
-				sunlink (template);
-			} else {
-				sunlink (template);
-				if (s->messages)
-					showMem ();
-				die ("Out of memory.  Need %llu bytes.\n", need);
-			}
-		}
-		s->heap.oldGenSize = size;
-		translateHeap (s, old, s->heap.oldGen, size);
-	}
+	if (desired <= s->heap.size)
+		shrinkFromSpace (s, desired);
+	else
+		growFromSpace (s, desired, need);
 	setNursery (s);
 	setStack (s);
 	/* Resize to space. */
@@ -2192,12 +2211,12 @@ static inline void majorGC (GC_state s, uint totalBytesRequested) {
 	 * requested by 2 since the heap space remaining is split in half, with
 	 * half for the nursery and half for the to space of a minor GC.
 	 */
-	if (s->generational)
+	if (s->mutatorMarksCards)
 		totalBytesRequested *= 2;
         if (not s->useFixedHeap
  		and s->heap.size < s->ram
 		and heapCreate (s, &s->heap2,
-					(W64)s->bytesLive + totalBytesRequested,
+					heapDesiredSize (s, (W64)s->bytesLive + totalBytesRequested, 0),
 					s->heap.oldGenSize))
 		cheneyCopy (s);
 	else
@@ -2222,8 +2241,8 @@ void doGC (GC_state s, uint bytesRequested, bool forceMajor) {
 	
 	assert (invariant (s));
 	if (DEBUG or s->messages)
-		fprintf (stderr, "Starting gc.  bytesRequested = %u\n",
-					bytesRequested);
+		fprintf (stderr, "Starting gc.  %s bytes requested.\n",
+					uintToCommaString (bytesRequested));
 	fixedGetrusage (RUSAGE_SELF, &ru_start);
 	minorGC (s);
 	stackBytesRequested = getStackBytesRequested (s);
@@ -2399,8 +2418,8 @@ pointer GC_arrayAllocate (GC_state s, W32 ensureBytesFree, W32 numElts,
 		w64align((W64)eltSize * (W64)numElts + GC_ARRAY_HEADER_SIZE);
 	require64 = arraySize64 + (W64)ensureBytesFree;
 	if (require64 >= 0x100000000llu)
-		die ("Out of memory: cannot allocate %llu bytes.\n",
-			require64);
+		die ("Out of memory: cannot allocate %s bytes.\n",
+			ullongToCommaString (require64));
 	require = (W32)require64;
 	arraySize = (W32)arraySize64;
 	if (DEBUG)
@@ -2589,7 +2608,7 @@ setMemInfo (GC_state s)
 
 	maxMem = 0x100000000llu - s->pageSize;
 	unless (0 == sysinfo((struct sysinfo*)&sbuf))
-		diee("sysinfo failed");
+		diee ("sysinfo failed");
 	memUnit = sbuf.mem_unit;
 	/* On 2.2 kernels, mem_unit is not defined, but will be zero, so go
 	 * ahead and pretend it is one.
@@ -2624,7 +2643,7 @@ get_total_swap()
 
         file = popen("/usr/sbin/swapinfo -k | awk '{ print $4; }'\n", "r");
         if (file == NULL) 
-                diee("swapinfo failed");
+                diee ("swapinfo failed");
 
         /* skip header */
         fgets(buffer, 255, file);
@@ -2648,7 +2667,7 @@ get_total_mem()
 
         file = popen("/sbin/sysctl hw.physmem | awk '{ print $2; }'\n", "r");
         if (file == NULL) 
-                diee("sysctl failed");
+                diee ("sysctl failed");
 
 
         fgets(buffer, 255, file);
@@ -2665,8 +2684,8 @@ static inline void setMemInfo (GC_state s) {
 
 #endif /* definition of setMemInfo */
 
-static void usage(string s) {
-	die("Usage: %s [@MLton [fixed-heap n[{k|m}]] [gc-messages] [gc-summary] [load-world file] [ram-slop x] --] args", 
+static void usage (string s) {
+	die ("Usage: %s [@MLton [fixed-heap n[{k|m}]] [gc-messages] [gc-summary] [load-world file] [ram-slop x] --] args", 
 		s);
 }
 
@@ -2865,7 +2884,9 @@ static void newWorld (GC_state s)
 	for (i = 0; i < s->numGlobals; ++i)
 		s->globals[i] = (pointer)BOGUS_POINTER;
 	setInitialBytesLive (s);
-	heapCreate (s, &s->heap, s->bytesLive, s->bytesLive);
+	heapCreate (s, &s->heap, 
+			heapDesiredSize (s, s->bytesLive, 0),
+			s->bytesLive);
 	s->frontier = s->heap.oldGen;
 	initIntInfs (s);
 	initStrings (s);
@@ -2892,12 +2913,14 @@ static void loadWorld (GC_state s, char *fileName) {
 	if (EOF == c) die ("Invalid world.");
 	magic = sfreadUint (file);
 	unless (s->magic == magic)
-		die("Invalid world: wrong magic number.");
+		die ("Invalid world: wrong magic number.");
 	oldGen = (pointer) sfreadUint (file);
 	s->heap.oldGenSize = sfreadUint (file);
 	s->currentThread = (GC_thread) sfreadUint (file);
 	s->signalHandler = (GC_thread) sfreadUint (file);
-       	heapCreate (s, &s->heap, s->heap.oldGenSize, s->heap.oldGenSize);
+       	heapCreate (s, &s->heap, 
+			heapDesiredSize (s, s->heap.oldGenSize, 0),
+			s->heap.oldGenSize);
 	setNursery (s);
 	heapInit (s, &s->heap2);
 	sfread (s->heap.oldGen, 1, s->heap.oldGenSize, file);
@@ -2916,22 +2939,20 @@ int GC_init (GC_state s, int argc, char **argv) {
 	char *worldFile;
 	int i;
 
-	s->pageSize = getpagesize ();
-	initSignalStack (s);
 	s->bytesAllocated = 0;
 	s->bytesCopied = 0;
 	s->bytesCopiedMinor = 0;
 	s->bytesMarkCompacted = 0;
 	s->canHandle = 0;
 	s->cardSize = 0x1 << s->cardSizeLog2;
+	s->copyRatio = 2.0;
 	s->currentThread = BOGUS_THREAD;
-	rusageZero (&s->ru_gc);
+	s->generationalRatio = 5.0;
+	s->growRatio = 1.5;
 	s->inSignalHandler = FALSE;
 	s->isOriginal = TRUE;
-	s->liveRatioCopy = 3.0;
-	s->liveRatioDesired = 8.0;
-	s->liveRatioGenerational = 5.0;
-	s->liveRatioMarkCompact = 1.5;
+	s->liveRatio = 8.0;
+	s->markCompactRatio = 1.5;
 	s->markedCards = 0;
 	s->maxBytesLive = 0;
 	s->maxHeap = 0;
@@ -2947,14 +2968,17 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->numMinorGCs = 0;
 	s->numMinorsSinceLastMajor = 0;
 	s->nurseryRatio = 10.0;
+	s->pageSize = getpagesize ();
 	s->ramSlop = 0.80;
 	s->savedThread = BOGUS_THREAD;
 	s->signalHandler = BOGUS_THREAD;
-	sigemptyset (&s->signalsHandled);
 	s->signalIsPending = FALSE;
-	sigemptyset (&s->signalsPending);
 	s->startTime = currentTime ();
 	s->summary = FALSE;
+	sigemptyset (&s->signalsHandled);
+	initSignalStack (s);
+	sigemptyset (&s->signalsPending);
+	rusageZero (&s->ru_gc);
  	readProcessor ();
 	worldFile = NULL;
 	i = 1;
@@ -2975,7 +2999,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 					++i;
 					if (i == argc)
 						usage (argv[0]);
-					s->liveRatioCopy =
+					s->copyRatio =
 						stringToFloat (argv[i++]);
 				} else if (0 == strcmp(arg, "fixed-heap")) {
 					++i;
@@ -2990,11 +3014,17 @@ int GC_init (GC_state s, int argc, char **argv) {
 				} else if (0 == strcmp (arg, "gc-summary")) {
 					++i;
 					s->summary = TRUE;
+				} else if (0 == strcmp (arg, "grow-ratio")) {
+					++i;
+					if (i == argc)
+						usage (argv[0]);
+					s->growRatio =
+						stringToFloat (argv[i++]);
 				} else if (0 == strcmp (arg, "live-ratio")) {
 					++i;
 					if (i == argc)
 						usage (argv[0]);
-					s->liveRatioDesired =
+					s->liveRatio =
 						stringToFloat (argv[i++]);
 				} else if (0 == strcmp (arg, "load-world")) {
 					++i;
@@ -3012,7 +3042,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 					++i;
 					if (i == argc)
 						usage (argv[0]);
-					s->liveRatioMarkCompact =
+					s->markCompactRatio =
 						stringToFloat (argv[i++]);
 				} else if (0 == strcmp (arg, "nursery-ratio")) {
 					++i;
@@ -3035,8 +3065,8 @@ int GC_init (GC_state s, int argc, char **argv) {
 			}
 		}
 	}
-	unless (liveRatiosOk (s))
-		die ("invalid live ratios");
+	unless (ratiosOk (s))
+		die ("invalid ratios");
 	setMemInfo (s);
 	s->ram = s->ramSlop * s->totalRam;
 	if (DEBUG or DEBUG_RESIZING)
@@ -3075,16 +3105,16 @@ inline void GC_done (GC_state s) {
 			(0.0 == time) ? 0.0 
 			: 100.0 * ((double) gcTime) / time);
 		displayUint ("maxPause(ms)", s->maxPause);
-		displayUint ("number of minor GCs", s->numMinorGCs);
-		displayUint ("number of copying GCs", s->numCopyingGCs);
-		displayUint ("number of mark compact GCs", s->numMarkCompactGCs);
 		displayUllong ("bytes allocated",
 	 			s->bytesAllocated 
 				+ (s->frontier - s->heap.nursery));
-		displayUllong ("bytes copied (minor)", s->bytesCopiedMinor);
-		displayUllong ("bytes copied (major)", s->bytesCopied);
-		displayUllong ("bytes mark-compacted", s->bytesMarkCompacted);
 		displayUint ("max bytes live", s->maxBytesLive);
+		displayUint ("number of copying GCs", s->numCopyingGCs);
+		displayUllong ("bytes copied", s->bytesCopied);
+		displayUint ("number of mark compact GCs", s->numMarkCompactGCs);
+		displayUllong ("bytes mark-compacted", s->bytesMarkCompacted);
+		displayUint ("number of minor GCs", s->numMinorGCs);
+		displayUllong ("bytes copied (minor)", s->bytesCopiedMinor);
 		displayUllong ("marked cards", s->markedCards);
 		displayUllong ("minor bytes scanned", s->minorBytesScanned);
 		displayUllong ("minor bytes skipped", s->minorBytesSkipped);

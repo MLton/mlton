@@ -64,14 +64,13 @@
 #define Float(c, f) globaldouble[c] = f;
 #define EndFloats }
 
-#define Main(cs, ufh, fhs, g, mfs, mfi, mot, mg, ml, reserveEsp)	\
+#define Main(cs, ufh, fhs, mmc, mfs, mfi, mot, mg, ml, reserveEsp)	\
 extern pointer ml;							\
 int main (int argc, char **argv) {					\
 	pointer jump;  							\
 	gcState.cardSizeLog2 = cs;					\
 	gcState.fixedHeapSize = fhs;					\
 	gcState.frameLayouts = frameLayouts;				\
-	gcState.generational = g;					\
 	gcState.globals = globalpointer;				\
 	gcState.intInfInits = intInfInits;				\
 	gcState.loadGlobals = &loadGlobals;				\
@@ -79,6 +78,7 @@ int main (int argc, char **argv) {					\
 	gcState.maxFrameIndex = mfi;					\
 	gcState.maxFrameSize = mfs;					\
 	gcState.maxObjectTypeIndex = mot;				\
+	gcState.mutatorMarksCards = mmc;				\
 	gcState.native = TRUE;       					\
 	gcState.numGlobals = cardof(globalpointer);			\
 	gcState.objectTypes = objectTypes;				\

@@ -83,10 +83,6 @@ val gcCheck = control {name = "gc check",
 		       default = Limit,
 		       toString = GcCheck.toString}
 
-val generational = control {name = "generational",
-			    default = true,
-			    toString = Bool.toString}
-
 structure Host =
    struct
       datatype t =
@@ -240,6 +236,10 @@ val limitCheckCounts = control {name = "limit check counts",
 val loopPasses = control {name = "loop passes",
 			  default = 1,
 			  toString = Int.toString}
+
+val markCards = control {name = "mark cards",
+			 default = true,
+			 toString = Bool.toString}
 
 structure Native =
    struct

@@ -118,14 +118,13 @@ struct cont {
 /*                       main                        */
 /* ------------------------------------------------- */
 
-#define Main(cs, ufh, fhs, g, mfs, mfi, mot, mg, mc, ml) 		\
+#define Main(cs, ufh, fhs, mmc, mfs, mfi, mot, mg, mc, ml) 		\
 int main (int argc, char **argv) {					\
 	struct cont cont;						\
 	int l_nextFun;							\
 	gcState.cardSizeLog2 = cs;					\
 	gcState.fixedHeapSize = fhs;					\
 	gcState.frameLayouts = frameLayouts;				\
-	gcState.generational = g;					\
 	gcState.globals = globalpointer;				\
 	gcState.intInfInits = intInfInits;				\
 	gcState.loadGlobals = &loadGlobals;				\
@@ -133,6 +132,7 @@ int main (int argc, char **argv) {					\
 	gcState.maxFrameIndex = mfi;					\
 	gcState.maxFrameSize = mfs;					\
 	gcState.maxObjectTypeIndex = mot;				\
+	gcState.mutatorMarksCards = mmc;				\
 	gcState.native = FALSE;						\
 	gcState.numGlobals = cardof(globalpointer);			\
 	gcState.objectTypes = objectTypes;				\

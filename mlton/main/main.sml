@@ -126,8 +126,8 @@ fun options () =
 		       | "first" => First
 		       | "every" => Every
 		       | _ => usage (concat ["invalid -gc-check flag: ", s])))),
-       (Expert, "generational", " {true|false}", "use generational GC",
-	boolRef Control.generational),
+       (Expert, "mark-cards", " {true|false}", "mutator marks cards",
+	boolRef Control.markCards),
        (Normal, "host",
 	concat [" {",
 		concat (List.separate (List.map (hostMap (), #host), "|")),

@@ -49,9 +49,6 @@ signature CONTROL =
        | Every
       val gcCheck: gcCheck ref
 
-      (* Does the runtime use generational GC. *)
-      val generational: bool ref
-
       datatype host =
 	 Cross of string
        | Self
@@ -120,6 +117,9 @@ signature CONTROL =
 
       (* Number of times to loop through optimization passes. *)
       val loopPasses: int ref
+
+      (* Should the mutator mark cards? *)
+      val markCards: bool ref
 
       structure Native:
 	 sig

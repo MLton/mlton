@@ -254,14 +254,18 @@ typedef struct GC_state {
 	ullong bytesMarkCompacted;
 	uint cardSize;
 	uint cardSizeLog2;
+	float copyRatio;	/* Minimum live ratio to use copying GC. */
 	GC_heap crossMapHeap;	/* only used during GC. */
 	GC_thread currentThread; /* This points to a thread in the heap. */
 	uint fixedHeapSize; 	/* Only meaningful if useFixedHeap. */
 	GC_frameLayout *frameLayouts;
-	bool generational;	/* Whether or not to use generational gc. */
+	/* Only use generational GC if the live ratio is below generationalRatio.
+	 */
+	float generationalRatio;
 	pointer *globals; 	/* An array of size numGlobals. */
+	float growRatio;
 	struct GC_heap heap;
-	struct GC_heap heap2;
+	struct GC_heap heap2;	/* Used for major copying collection. */
 	bool inSignalHandler; 	/* TRUE iff a signal handler is running. */
 	/* canHandle == 0 iff GC may switch to the signal handler
  	 * thread.  This is used to implement critical sections.
@@ -270,17 +274,12 @@ typedef struct GC_state {
 	volatile int canHandle;
 	bool isOriginal;
 	pointer limitPlusSlop; /* limit + LIMIT_SLOP */
-	float liveRatioCopy;	/* Minimum live ratio to use copying GC. */
-	float liveRatioDesired;	/* Desired ratio of heap size to live data. */
-	/* Only use generational GC if the live ratio is below 
-	 * liveRatioGenerational.
-	 */
-	float liveRatioGenerational;
-	/* Minimum live ratio to us mark-compact GC. */
-	float liveRatioMarkCompact; 
+	float liveRatio;	/* Desired ratio of heap size to live data. */
 	/* loadGlobals loads the globals from the stream. */
 	void (*loadGlobals)(FILE *file);
 	uint magic; /* The magic number required for a valid world file. */
+	/* Minimum live ratio to us mark-compact GC. */
+	float markCompactRatio; 
 	ullong markedCards; /* Number of marked cards seen during minor GCs. */
 	uint maxBytesLive;
 	uint maxFrameIndex; /* 0 <= frameIndex < maxFrameIndex */
@@ -293,6 +292,7 @@ typedef struct GC_state {
 	bool messages; /* Print out a message at the start and end of each gc. */
 	ullong minorBytesScanned;
 	ullong minorBytesSkipped;
+	bool mutatorMarksCards;
 	/* native is true iff the native codegen was used.
 	 * The GC needs to know this because it affects how it finds the
 	 * layout of stack frames.
