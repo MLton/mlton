@@ -850,10 +850,6 @@ fun commandLine (args: string list): unit =
 					    then debugSwitches @ switches
 					 else switches
 				      val switches =
-					 case target of
-					    Cross s => "-b" :: s :: switches
-					  | Self => switches
-				      val switches =
 					 targetOpts @ ("-c" :: switches)
 				      val output =
 					 if stop = Place.O orelse !keepO
