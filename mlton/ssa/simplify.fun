@@ -67,10 +67,6 @@ val passes =
     ("introduceLoops", IntroduceLoops.introduceLoops),
     ("loopInvariant", LoopInvariant.loopInvariant),
     ("localRef", LocalRef.eliminate),
-    (* flatten cannot be omitted.  It ensures(?) that no spurious
-     * allocations occur between allocation of an intInf return 
-     * and the call to the primitive.
-     *)
     ("flatten", Flatten.flatten),
     ("localFlatten3", LocalFlatten.flatten),
     ("commonSubexp", CommonSubexp.eliminate),
