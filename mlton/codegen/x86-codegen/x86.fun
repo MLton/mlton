@@ -585,11 +585,7 @@ struct
 	  = fn T {immediate, ...} => immediate
 
 	fun clearAll ()
-	  = ((* Control.message
-	        (Control.Detail,
-	         fn () => Layout.seq [Layout.str "immediate table: ",
-			  	      HashSet.stats' (!table)]); *)
-	     table := HashSet.new {hash = hash})
+	  = (table := HashSet.new {hash = hash})
       end
 
       val const = construct o Const
@@ -729,12 +725,11 @@ struct
 	  val Code = new {name = "Code"}
 	end
 
-      datatype u'
-	= Imm of Immediate.t
-	| Mem of t
-      and u
-	= U of {base: u',
-		index: u',
+      datatype u
+	= U of {immBase: Immediate.t option,
+		memBase: t option,
+		immIndex: Immediate.t option,
+		memIndex: t option,
 		scale: Scale.t,
 		size: Size.t,
 		class: Class.t}
@@ -754,54 +749,74 @@ struct
       local
 	open Layout
       in
-	val rec layoutU'
-	  = fn Imm i => Immediate.layout i
-	     | Mem m => layout m
+	val rec layoutImmMem 
+	  = fn (NONE, NONE) => str "0"
+	     | (SOME imm, NONE) => Immediate.layout imm
+	     | (NONE, SOME mem) => layout mem
+	     | (SOME imm, SOME mem) => seq [Immediate.layout imm,
+					    str "+",
+					    layout mem]
 	and layoutU
-	= fn U {base, index, 
-		scale, size, 
-		class}
-	   => seq [str "MEM<",
-		   Size.layout size,
-		   str ">{",
-		   Class.layout class,
-		   str "}[(",
-		   layoutU' base,
-		   str ")+(",
-		   layoutU' index,
-		   str "*",
-		   Scale.layout scale,
-		   str ")]"]
+	  = fn U {immBase, memBase,
+		  immIndex, memIndex,
+		  scale,
+		  size, class}
+	     => seq [str "MEM<",
+		     Size.layout size,
+		     str ">{",
+		     Class.layout class,
+		     str "}[(",
+		     layoutImmMem (immBase, memBase),
+		     str ")+((",
+		     layoutImmMem (immIndex, memIndex),
+		     str ")*",
+		     Scale.layout scale,
+		     str ")]"]
 	and layout
 	  = fn T {memloc, ...} => layoutU memloc
       end
-      val toStringU' = Layout.toString o layoutU'
       val toStringU = Layout.toString o layoutU
       val toString = Layout.toString o layout
 
-      val rec hashU'
-	= fn Imm i => Immediate.hash i
-	   | Mem m => hash m
+      val rec hashImmMem
+	= fn (NONE, NONE) => 0wx55555555
+	   | (SOME imm, NONE) => Immediate.hash imm
+	   | (NONE, SOME mem) => hash mem
+	   | (SOME imm, SOME mem)
+	   => Word.xorb(0wx5555 * (Immediate.hash imm), hash mem)
       and hashU
-	= fn U {base, index, ...}
-	   => Word.xorb(0wx5555 * (hashU' base), hashU' index)
+	= fn U {immBase, memBase, immIndex, memIndex, ...}
+	   => let
+		val hashBase = hashImmMem(immBase, memBase)
+		val hashIndex = hashImmMem(immIndex, memIndex)
+	      in
+		Word.xorb(0wx5555 * hashBase, hashIndex)
+	      end
       and hash
 	= fn T {hash, ...} => hash
 
-      val rec eqU'
-	= fn (Imm i1, Imm i2) => Immediate.eq(i1, i2)
-	   | (Mem m1, Mem m2) => eq(m1, m2)
+      val rec eqImm
+	= fn (NONE, NONE) => true
+	   | (SOME imm1, SOME imm2) => Immediate.eq(imm1, imm2)
+           | _ => false
+      and eqMem
+	= fn (NONE, NONE) => true
+	   | (SOME mem1, SOME mem2) => eq(mem1, mem2)
 	   | _ => false
       and eqU
-	= fn (U {base = base1, index = index1, 
+	= fn (U {immBase = immBase1, memBase = memBase1,
+		 immIndex = immIndex1, memIndex = memIndex1,
 		 scale = scale1, size = size1, 
 		 class = class1},
-	      U {base = base2, index = index2, 
+	      U {immBase = immBase2, memBase = memBase2,
+		 immIndex = immIndex2, memIndex = memIndex2,
 		 scale = scale2, size = size2, 
 		 class = class2})
 	   => Class.eq(class1, class2) andalso
-	      eqU'(base1, base2) andalso
-	      eqU'(index1, index2) andalso
+	      eqImm(immBase1, immBase2) andalso
+	      eqMem(memBase1, memBase2) andalso
+	      eqImm(immIndex1, immIndex2) andalso
+	      eqMem(memIndex1, memIndex2) andalso
 	      Scale.eq(scale1, scale2) andalso
 	      Size.eq(size1, size2)
       and eq
@@ -809,12 +824,12 @@ struct
 	      T {plist = plist2, ...})
 	   => PropertyList.equals(plist1, plist2)
 
-      val rec utilizedU'
-	= fn Imm i => []
-	   | Mem m => m::(utilized m)
+      val rec utilizedMem
+	= fn NONE => []
+	   | SOME m => m::(utilized m)
       and utilizedU
-	= fn U {base, index, ...} 
-	   => (utilizedU' base) @ (utilizedU' index)
+	= fn U {memBase, memIndex, ...} 
+	   => (utilizedMem memBase) @ (utilizedMem memIndex)
       and utilized
 	= fn T {utilized, ...}
 	   => utilized
@@ -844,87 +859,91 @@ struct
 	     => memloc
 
 	fun clearAll ()
-	  = ((* Control.message
-	        (Control.Detail,
-	         fn () => Layout.seq [Layout.str "memloc table size: ",
-			  	      HashSet.stats' (!table)]); *)
-	     HashSet.foreach
+	  = (HashSet.foreach
 	     (!table, 
 	      fn T {plist, ...} 
 	       => PropertyList.clear plist) ;
 	     table := HashSet.new {hash = hash})
       end
 
-      val rec mayAliasU
-	= fn (U {base = Imm base1, index = Imm index1, 
+      val rec mayAliasImmIndex 
+	= fn ({immIndex = immIndex1, size = size1},
+	      {immIndex = immIndex2, size = size2})
+	   => let
+		val size1 = Size.toBytes size1
+		val size2 = Size.toBytes size2
+	      in
+		case (Immediate.eval (case immIndex1
+					of NONE => Immediate.const_int 0
+					 | SOME immIndex => immIndex),
+		      Immediate.eval (case immIndex2
+					of NONE => Immediate.const_int 0
+					 | SOME immIndex => immIndex))
+		  of (SOME pos1, SOME pos2)
+		   => (let
+			 val pos1 = Word.toInt pos1
+			 val pos2 = Word.toInt pos2
+		       in 
+			 if pos1 < pos2 
+			   then pos2 < (pos1 + size1) 
+			   else pos1 < (pos2 + size2)
+		       end
+		       handle Overflow => false)
+	           | _ => true
+	  end
+      and mayAliasU
+	= fn (U {immBase = SOME immBase1, memBase = NONE,
+		 immIndex = immIndex1, memIndex = NONE,
 		 scale = scale1, size = size1, ...},
-	      U {base = Imm base2, index = Imm index2, 
+	      U {immBase = SOME immBase2, memBase = NONE,
+		 immIndex = immIndex2, memIndex = NONE,
 		 scale = scale2, size = size2, ...})
-	   => Immediate.eq(base1, base2)
+	   => Immediate.eq(immBase1, immBase2)
 	      andalso
-	      let
-		val size1 = Size.toBytes size1
-		val size2 = Size.toBytes size2
-		val scale1 = Scale.toImmediate scale1
-		val scale2 = Scale.toImmediate scale2
-	      in
-		case (Immediate.evalU (Immediate.ImmedBinExp 
-				       {oper = Immediate.Multiplication, 
-					exp1 = index1, 
-					exp2 = scale1}),
-		      Immediate.evalU (Immediate.ImmedBinExp 
-				       {oper = Immediate.Multiplication, 
-					exp1 = index2, 
-					exp2 = scale2}))
-		  of (SOME pos1, SOME pos2)
-		   => (let
-			 val pos1 = Word.toInt pos1
-			 val pos2 = Word.toInt pos2
-		       in 
-			 if pos1 < pos2 
-			   then pos2 < (pos1 + size1) 
-			   else pos1 < (pos2 + size2)
-		       end
-		       handle Overflow => false)
-		   | _ => true
-	      end
-	   | (U {base = Imm base1, index = Mem index1, 
+	      mayAliasImmIndex ({immIndex = immIndex1, 
+				 size = size1},
+				{immIndex = immIndex2,
+				 size = size2})
+	   | (U {immBase = SOME immBase1, memBase = NONE,
+		 immIndex = immIndex1, memIndex = SOME memIndex1,
 		 scale = scale1, size = size1, ...},
-	      U {base = Imm base2, index = Mem index2, 
+	      U {immBase = SOME immBase2, memBase = NONE,
+		 immIndex = immIndex2, memIndex = SOME memIndex2,
 		 scale = scale2, size = size2, ...})
-	   => Immediate.eq(base1, base2)
-	   | (U {base = Mem base1, index = Imm index1, 
+	   => Immediate.eq(immBase1, immBase2)
+	      andalso
+	      (not (eq(memIndex1, memIndex2))
+	       orelse
+	       mayAliasImmIndex ({immIndex = immIndex1,
+				  size = size1},
+				 {immIndex = immIndex2,
+				  size = size2}))
+	   | (U {immBase = NONE, memBase = SOME memBase1,
+		 immIndex = immIndex1, memIndex = NONE,
 		 scale = scale1, size = size1, ...},
-	      U {base = Mem base2, index = Imm index2, 
+	      U {immBase = NONE, memBase = SOME memBase2,
+		 immIndex = immIndex2, memIndex = NONE,
 		 scale = scale2, size = size2, ...})
-	   => not (eq(base1, base2))
+	   => not (eq(memBase1, memBase2))
 	      orelse
-	      let
-		val size1 = Size.toBytes size1
-		val size2 = Size.toBytes size2
-		val scale1 = Scale.toImmediate scale1
-		val scale2 = Scale.toImmediate scale2
-	      in
-		case (Immediate.evalU (Immediate.ImmedBinExp 
-				       {oper = Immediate.Multiplication, 
-					exp1 = index1, 
-					exp2 = scale1}),
-		      Immediate.evalU (Immediate.ImmedBinExp 
-				       {oper = Immediate.Multiplication, 
-					exp1 = index2, 
-					exp2 = scale2}))
-		  of (SOME pos1, SOME pos2)
-		   => (let
-			 val pos1 = Word.toInt pos1
-			 val pos2 = Word.toInt pos2
-		       in 
-			 if pos1 < pos2 
-			   then pos2 < (pos1 + size1) 
-			   else pos1 < (pos2 + size2)
-		       end
-		       handle Overflow => false)
-		   | _ => true
-	      end
+	      mayAliasImmIndex ({immIndex = immIndex1,
+				 size = size1},
+				{immIndex = immIndex2,
+				 size = size2})
+	   | (U {immBase = NONE, memBase = SOME memBase1,
+		 immIndex = immIndex1, memIndex = SOME memIndex1,
+		 scale = scale1, size = size1, ...},
+	      U {immBase = NONE, memBase = SOME memBase2,
+		 immIndex = immIndex2, memIndex = SOME memIndex2,
+		 scale = scale2, size = size2, ...})
+	   => not (eq(memBase1, memBase2))
+	      orelse
+	      (not (eq(memIndex1, memIndex2))
+	       orelse
+	       mayAliasImmIndex ({immIndex = immIndex1,
+				  size = size1},
+				 {immIndex = immIndex2,
+				  size = size2}))
 	   | _ => true
       and mayAlias
 	= fn (T {memloc = memloc1 as U {class = class1, ...}, ...},
@@ -939,19 +958,22 @@ struct
       val counter
 	= fn (T {counter, ...}) => counter
 
-      fun replaceU' replacer
-	= fn Imm i => Imm i
-	   | Mem m => Mem (replace replacer m)
+      fun replaceMem replacer
+	= fn NONE => NONE
+	   | SOME mem => SOME (replace replacer mem)
       and replaceU replacer
-	= fn memloc as T {memloc = U {base, index, scale, size, class}, ...}
+	= fn memloc as T {memloc = U {immBase, memBase, immIndex, memIndex,
+				      scale, size, class}, ...}
 	   => let
-		val base' = replaceU' replacer base
-		val index' = replaceU' replacer index
+		val memBase' = replaceMem replacer memBase
+		val memIndex' = replaceMem replacer memIndex
 	      in 
-		if eqU'(base, base') andalso eqU'(index, index')
+		if eqMem(memBase, memBase') andalso eqMem(memIndex, memIndex')
 		  then memloc
-		  else construct (U {base = base',
-				     index = index',
+		  else construct (U {immBase = immBase,
+				     memBase = memBase',
+				     immIndex = immIndex,
+				     memIndex = memIndex',
 				     scale = scale,
 				     size = size,
 				     class = class})
@@ -961,7 +983,7 @@ struct
 	   => let
 		val memloc' = replacer memloc
 	      in
-		if eq(memloc',memloc)
+		if eq(memloc', memloc)
 		  then replaceU replacer memloc
 		  else memloc'
 	      end
@@ -971,34 +993,46 @@ struct
       val rec classU = fn U {class, ...} => class
       and class = fn T {memloc, ...} => classU memloc
 
-      val imm = fn {base, index,
-		    scale, size,
-		    class} => construct (U {base = Imm base,
-					    index = Imm index,
-					    scale = scale,
-					    size = size,
-					    class = class})
-      val basic = fn {base, index,
-		      scale, size,
-		      class} => construct (U {base = Imm base,
-					      index = Mem index, 
-					      scale = scale,
-					      size = size,
-					      class = class})
-      val simple = fn {base, index,
-		       scale, size,
-		       class} => construct (U {base = Mem base,
-					       index = Imm index,
-					       scale = scale,
-					       size = size,
-					       class = class})
-      val complex = fn {base, index,
-			scale, size,
-			class} => construct (U {base = Mem base,
-						index = Mem index,
-						scale = scale,
-						size = size,
-						class = class})
+      val imm = fn {base, index, scale, size, class} 
+	=> construct (U {immBase = SOME base,
+			 memBase = NONE,
+			 immIndex = SOME (Immediate.binexp
+					  {oper = Immediate.Multiplication,
+					   exp1 = index,
+					   exp2 = Scale.toImmediate scale}),
+			 memIndex = NONE,
+			 scale = scale,
+			 size = size,
+			 class = class})
+      val basic = fn {base, index, scale, size, class} 
+	=> construct (U {immBase = SOME base,
+			 memBase = NONE,
+			 immIndex = NONE,
+			 memIndex = SOME index, 
+			 scale = scale,
+			 size = size,
+			 class = class})
+      val simple = fn {base, index, scale, size, class} 
+	=> construct (U {immBase = NONE,
+			 memBase = SOME base,
+			 immIndex 
+			 = SOME (Immediate.binexp
+				 {oper = Immediate.Multiplication,
+				  exp1 = index,
+				  exp2 = Scale.toImmediate scale}),
+			 memIndex = NONE,
+			 scale = scale,
+			 size = size,
+			 class = class})
+
+      val complex = fn {base, index, scale, size, class} 
+	=> construct (U {immBase = NONE,
+			 memBase = SOME base,
+			 immIndex = NONE,
+			 memIndex = SOME index,
+			 scale = scale,
+			 size = size,
+			 class = class})
       local
 	val num : int ref = ref 0
       in

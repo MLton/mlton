@@ -1610,16 +1610,17 @@ struct
 			  Assert.assert
 			  ("applyPrim: Overflow dstsize/srcsize",
 			   fn () => src1size = dstsize)
-		       fun check s =
-			  AppendList.single
-			  (x86.Block.T'
+		       fun check src statement =
+			  AppendList.snoc
+			  (comments transfer,
+			   x86.Block.T'
 			   {entry = NONE,	
 			    profileInfo = x86.ProfileInfo.none,
 			    statements = [x86.Assembly.instruction_mov
 					  {dst = dst,
-					   src = src1,
+					   src = src,
 					   size = src1size},
-					  s],
+					  statement],
 			    transfer = SOME (x86.Transfer.iff
 					     {condition = x86.Instruction.O,
 					      truee = failure,
@@ -1648,7 +1649,8 @@ struct
 				       | _ => (src1,src2)
 				else (src1,src2)
 			  in
-			     check (x86.Assembly.instruction_binal
+			     check src1
+			           (x86.Assembly.instruction_binal
 				    {oper = oper,
 				     dst = dst,
 				     src = src2,
@@ -1678,17 +1680,22 @@ struct
 				       | _ => (src1,src2)
 				else (src1,src2)
 			  in
-			     check (x86.Assembly.instruction_pmd
+			     check src1
+			           (x86.Assembly.instruction_pmd
 				    {oper = oper,
 				     dst = dst,
 				     src = src2,
 				     size = dstsize})
 			  end
 		       fun unal (oper: x86.Instruction.unal) =
-			  check
-			  (x86.Assembly.instruction_unal {oper = oper,
-							  dst = dst,
-							  size = dstsize})
+			  let
+			  in
+			    check src1 
+			          (x86.Assembly.instruction_unal 
+				   {oper = oper,
+				    dst = dst,
+				    size = dstsize})
+			  end
 		       fun imul2_check () =
 			  let
 			     val (src2, src2size) = arg 1
@@ -1710,7 +1717,8 @@ struct
 				      else (src1,src2)
 				 | _ => (src1,src2)
 			  in
-			     check (x86.Assembly.instruction_imul2
+			     check src1
+			           (x86.Assembly.instruction_imul2
 				    {dst = dst,
 				     src = src2,
 				     size = dstsize})

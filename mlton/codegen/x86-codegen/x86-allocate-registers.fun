@@ -3471,6 +3471,94 @@ struct
 			   assembly: Assembly.t AppendList.t,
 			   registerAllocation: t}
         = (Int.inc depth;
+	   (let
+	      val MemLoc.U {immBase, memBase, immIndex, memIndex, scale, size, ...}
+		= MemLoc.destruct memloc
+
+	      val disp 
+		= Immediate.binexp
+		  {oper = Immediate.Addition,
+		   exp1 = case immBase
+			    of NONE => Immediate.const_int 0
+			     | SOME immBase => immBase,
+		   exp2 = case immIndex
+			    of NONE => Immediate.const_int 0
+			     | SOME immIndex => immIndex}
+
+	      val {register = register_base,
+		   assembly = assembly_base,
+		   registerAllocation}
+		= case memBase
+		    of NONE => {register = NONE,
+				assembly = AppendList.empty,
+				registerAllocation = registerAllocation}
+		     | SOME memBase
+		     => let
+			  val {register, assembly, registerAllocation}
+			    = toRegisterMemLoc 
+			      {memloc = memBase,
+			       info = info,
+			       size = MemLoc.size memBase,
+			       move = true,
+			       supports 
+			       = case memIndex
+				   of NONE => supports
+				    | SOME memIndex
+				    => (Operand.memloc memIndex)::
+				       supports,
+			       saves = saves,
+			       force = Register.baseRegisters,
+			       registerAllocation = registerAllocation}
+			in
+			  {register = SOME register,
+			   assembly = assembly,
+			   registerAllocation = registerAllocation}
+			end
+
+	      val {register = register_index,
+		   assembly = assembly_index,
+		   registerAllocation}
+		= case memIndex
+		    of NONE => {register = NONE,
+				assembly = AppendList.empty,
+				registerAllocation = registerAllocation}
+		     | SOME memIndex
+		     => let
+			  val {register, assembly, registerAllocation}
+			    = toRegisterMemLoc 
+			      {memloc = memIndex,
+			       info = info,
+			       size = MemLoc.size memIndex,
+			       move = true,
+			       supports = supports,
+			       saves 
+			       = case (memBase, register_base)
+				   of (NONE, NONE) => saves
+				    | (SOME memBase, SOME register_base)
+				    => (Operand.memloc memBase)::
+				       (Operand.register register_base)::
+				       saves
+				    | _ => Error.bug "toAddressMemLoc",
+			       force = Register.indexRegisters,
+			       registerAllocation = registerAllocation}
+			in
+			  {register = SOME register,
+			   assembly = assembly,
+			   registerAllocation = registerAllocation}
+			end
+	    in
+	      {address = Address.T {disp = SOME disp,
+				    base = register_base,
+				    index = register_index,
+				    scale = case memIndex
+					      of SOME _ => SOME scale
+					       | NONE => NONE},
+	       assembly = AppendList.append (assembly_base, 
+					     assembly_index),
+	       registerAllocation = registerAllocation}
+	    end)
+
+(*
 	   (case MemLoc.destruct memloc
 	      of MemLoc.U {base = MemLoc.Imm base, index = MemLoc.Imm index,
 			   scale, size, ...}
@@ -3594,6 +3682,7 @@ struct
 						   assembly_index),
 		     registerAllocation = registerAllocation}
 		  end)
+*)
 	      before (Int.dec depth))
 	  handle Spill 
 	   => spillAndReissue 

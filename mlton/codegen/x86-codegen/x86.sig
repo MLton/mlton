@@ -184,12 +184,11 @@ signature X86 =
 
 	type t
 
-	datatype u'
-	  = Imm of Immediate.t
-	  | Mem of t
-	and u
-	  = U of {base: u',
-		  index: u',
+	datatype u
+	  = U of {immBase: Immediate.t option,
+		  memBase: t option,
+		  immIndex: Immediate.t option,
+		  memIndex: t option,
 		  scale: Scale.t,
 		  size: Size.t,
 		  class: Class.t}
