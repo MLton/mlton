@@ -1,23 +1,25 @@
 MLton is a whole-program optimizing compiler for the Standard ML
 programming language. MLton has the following features.
 
-   + Runs on a variety of platforms
-     o X86: Cygwin/Windows, FreeBSD, Linux, and NetBSD
-     o Sparc: Solaris
-   + Generates standalone executables with excellent running times
-   + Supports the full SML 97 language
-   + A complete basis library
-   + Untagged native integers and words
-   + Unboxed reals
+   + Runs on a variety of platforms.
+     o X86: Linux, Cygwin/Windows, FreeBSD, and NetBSD.
+     o Sparc: Solaris.
+   + Generates standalone executables with excellent running times.
+   + Supports the full SML 97 language.
+   + A complete basis library matching the latest specification.
+   + Untagged native integers and words.
+   + Unboxed reals.
    + Unboxed arrays
-   + Fast C FFI for calling from SML to C and from C to SML
-   + Source-level profiling of both time and allocation
-   + Multiple garbage collection strategies
-   + Supports large amounts of memory and large arrays
-   + Fast IntInf based on the GNU multiprecision library (gmp)
-   + Libraries for continuations, interval timers, random numbers,
-       resource limits, resource usage, signal handlers, system
-       logging, threads, and heap save and restore
+   + Fast C FFI for calling from SML to C and from C to SML.
+   + Source-level profiling of both time and allocation.
+   + Multiple garbage collection strategies.
+   + Support for large amounts of memory (up to 4G), large arrays (up
+     to 2G elements), and large files (using 64-bit integers for file
+     positions).
+   + Fast IntInf based on the GNU multiprecision library (gmp).
+   + Libraries for C pointers, continuations, interval timers, random
+       numbers, resource limits, resource usage, signal handlers,
+       system logging, threads, and heap save and restore.
 
 For more information, go to the MLton home page. 
 
