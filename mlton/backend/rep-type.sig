@@ -114,6 +114,7 @@ signature REP_TYPE =
       val resize: t * Bits.t -> t
       val rshift: t * t -> t
       val seq: t vector -> t
+      val split: t * {lo: Bits.t} -> {hi: t, lo: t}
       val string: t
       val suffix: t * Bits.t -> t
       val sum: t vector -> t
