@@ -172,6 +172,8 @@ local
     escape.sml
     buffer.sig
     buffer.sml
+    base64.sig
+    base64.sml
 in
     signature ARRAY
     signature ENV
@@ -195,6 +197,7 @@ in
     structure Array
     structure Array2
     structure Assert
+    structure Base64
     structure BinarySearch
     structure Bool
     structure Buffer

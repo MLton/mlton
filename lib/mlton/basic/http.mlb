@@ -2,8 +2,6 @@ local
    $(SML_LIB)/basis/basis.mlb
    $(SML_LIB)/basis/mlton.mlb
    sources.mlb
-   base64.sig
-   base64.sml
    port.sig
    port.sml
    itimer.sml
