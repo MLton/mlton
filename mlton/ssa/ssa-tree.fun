@@ -425,9 +425,9 @@ structure Transfer =
 			   seq [Label.layout cont, str " ", paren call,
 				case handler of
 				   Handler.CallerHandler => empty
-				 | Handler.Handle l => seq [str "handle ",
+				 | Handler.Handle l => seq [str " handle ",
 							    Label.layout l]
-				 | Handler.None => str "None"]
+				 | Handler.None => str " None"]
 		  end
 	     | Case arg => layoutCase arg
 	     | Goto {dst, args} =>
@@ -785,7 +785,13 @@ structure Function =
 		  Promise.lazy
 		  (fn () =>
 		   Graph.dominatorTree (g, {root = root,
-					    nodeValue = #block o nodeInfo}))
+					    nodeValue = #block o nodeInfo})
+		   handle exn => Error.bug (concat ["dominatorTree:",
+						    Func.toString name,
+						    ":",
+						    case exn
+						      of Fail s => s
+						       | _ => "???"]))
 	    in
 	       {dominatorTree = dominatorTree,
 		graph = g,
@@ -1018,7 +1024,9 @@ structure Function =
 			     Dot, (), Layout (fn () => g))
 			 end
 		      val _ = doit ("cfg", graph)
+			      handle _ => Error.warning "couldn't layout cfg"
 		      val _ = doit ("dom", tree ())
+			      handle _ => Error.warning "couldn't layout dom"
 		   in
 		      ()
 		   end
