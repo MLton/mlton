@@ -261,6 +261,8 @@ structure Program =
 			 main: {chunkLabel: ChunkLabel.t,
 				label: Label.t}}
 
+
+      fun layouts (_,output) = output (Layout.str "no MachineOutput.layouts")
    end
 
 end

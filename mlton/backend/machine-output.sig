@@ -167,5 +167,6 @@ signature MACHINE_OUTPUT =
 		     maxFrameSize: int,
 		     chunks: Chunk.t list,
 		     main: {chunkLabel: ChunkLabel.t, label: Label.t}}
+	    val layouts: t * (Layout.t -> unit) -> unit
 	 end
    end
