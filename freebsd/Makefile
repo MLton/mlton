@@ -13,6 +13,9 @@ EXTRACT_SUFX=	-1.src.tgz
 
 MAINTAINER=	MLton@mlton.org
 
+# MLton build depends on itself.  There is no easy way to avoid this.  So, in
+# order to build MLton, you must have installed a binary MLton package, which
+# you can get from www.mlton.org.
 BUILD_DEPENDS= \
 	latex:$(PORTSDIR)/print/teTeX: 				\
 	latex2html:$(PORTSDIR)/textproc/latex2html:		\
