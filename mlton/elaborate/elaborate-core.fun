@@ -214,10 +214,15 @@ fun 'a elabConst (c: Aconst.t,
 		  make: (unit -> Const.t) * Type.t -> 'a,
 		  {false = f: 'a, true = t: 'a}): 'a =
    let
-      fun error m =
-	 Control.error (Aconst.region c,
-			Layout.str (concat [m, ": ", Aconst.toString c]),
-			Layout.empty)
+      fun error (ty: Type.t): unit =
+	 let
+	    open Layout
+	 in
+	    Control.error
+	    (Aconst.region c,
+	     seq [Type.layoutPretty ty, str " too big: ", Aconst.layout c],
+	     empty)
+	 end
       fun choose (tycon, all, sizeTycon, name, make) =
 	 case List.peek (all, fn s => Tycon.equals (tycon, sizeTycon s)) of
 	    NONE => Const.string "<bogus>"
@@ -258,17 +263,19 @@ fun 'a elabConst (c: Aconst.t,
 		   choose (tycon, IntSize.all, Tycon.int, "int", fn s =>
 			   Const.Int
 			   (IntX.make (i, s)
-			    handle Overflow =>
-			       (error (concat [Layout.toString
-					       (Type.layoutPretty ty),
-					       " too big"])
-				; IntX.zero s))))
+			    handle Overflow => (error ty; IntX.zero s))))
 	    end
        | Aconst.Real r =>
-	    delay (Type.unresolvedReal (),
-		   fn tycon =>
-		   choose (tycon, RealSize.all, Tycon.real, "real", fn s =>
-			   Const.Real (RealX.make (r, s))))
+	    let
+	       val ty = Type.unresolvedReal ()
+	    in
+	       delay
+	       (ty, fn tycon =>
+		choose (tycon, RealSize.all, Tycon.real, "real", fn s =>
+			Const.Real (case RealX.make (r, s) of
+				       NONE => (error ty; RealX.zero s)
+				     | SOME r => r)))
+	    end
        | Aconst.String s => now (Const.string s, Type.string)
        | Aconst.Word w =>
 	    let
@@ -280,9 +287,7 @@ fun 'a elabConst (c: Aconst.t,
 			Const.Word
 			(if w <= LargeWord.toIntInf (WordSize.max s)
 			    then WordX.fromLargeInt (w, s)
-			 else (error (concat [Layout.toString
-					      (Type.layoutPretty ty),
-					      " too big"])
+			 else (error ty
 			       ; WordX.zero s))))
 	    end	       
    end

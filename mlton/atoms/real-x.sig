@@ -16,7 +16,8 @@ signature REAL_X =
       val equals: t * t -> bool
       val hash: t -> word
       val layout: t -> Layout.t
-      val make: string * RealSize.t -> t
+      val make: string * RealSize.t -> t option
       val size: t -> RealSize.t
       val toString: t -> string
+      val zero: RealSize.t -> t
    end

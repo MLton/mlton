@@ -841,7 +841,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 	     | Type.IntInf => SmallIntInf 0wx1
 	     | Type.Label _ => Error.bug "bogus Label"
 	     | Type.MemChunk _ => Error.bug "bogus MemChunk"
-	     | Type.Real s => c (Const.real (RealX.make ("0.0", s)))
+	     | Type.Real s => c (Const.real (RealX.zero s))
 	     | Type.Word s => c (Const.word (WordX.zero s))
 	 end
       fun translateStatementsTransfer (statements, ss, transfer) =

@@ -157,13 +157,16 @@ fun load (ins: In.t): string * ConstType.t -> Const.t =
 	    case ty of
 	       Bool =>
 		  (case Bool.fromString value of
-		      NONE => Error.bug "strange Bool constante"
+		      NONE => Error.bug "strange Bool constant"
 		    | SOME b => int (if b then 1 else 0))
 	     | Int => 
 		  (case IntInf.fromString value of
 		      NONE => Error.bug "strange Int constant"
 		    | SOME i => int i)
-	     | Real => Const.Real (RealX.make (value, RealSize.default))
+	     | Real =>
+		  (case RealX.make (value, RealSize.default) of
+		      NONE => Error.bug "strange Real constant"
+		    | SOME r => Const.Real r)
 	     | String => Const.string (unescape value)
 	     | Word =>
 		  (case IntInf.fromString value of

@@ -3,22 +3,47 @@ struct
 
 open S
 
-datatype t = T of {real: string,
-		   size: RealSize.t}
+datatype z = datatype RealSize.t
+   
+datatype t =
+   Real32 of Real32.t
+ | Real64 of Real64.t
 
-local
-   fun make f (T r) = f r
-in
-   val size = make #size
-end
+fun zero s =
+   case s of
+      R32 => Real32 0.0
+    | R64 => Real64 0.0
 
-fun make (r, s) = T {real = r, size = s}
+fun size r =
+   case r of
+      Real32 _ => R32
+    | Real64 _ => R64
+	 
+fun make (r: string, s: RealSize.t): t option =
+   let
+      fun doit (fromString, isFinite, con): t option =
+	 case fromString r of
+	    NONE => Error.bug "unexpected real constant"
+	  | SOME r =>
+	       if isFinite r
+		  then SOME (con r)
+	       else NONE
+   in
+      case s of
+	 R32 => doit (Real32.fromString, Real32.isFinite, Real32)
+       | R64 => doit (Real64.fromString, Real64.isFinite, Real64)
+   end
 
-fun equals (T {real = r, size = s, ...}, 
-	    T {real = r', size = s',  ...}) = 
-   r = r' andalso s = s'
+fun equals (r, r') =
+   case (r, r') of
+      (Real32 r, Real32 r') => Real32.equals (r, r')
+    | (Real64 r, Real64 r') => Real64.equals (r, r')
+    | _ => false
 
-fun toString (T {real = r, ...}) = r
+fun toString r =
+   case r of
+      Real32 r => Real32.format (r, Real32.Format.exact)
+    | Real64 r => Real64.format (r, Real64.Format.exact)
 
 val layout = Layout.str o toString
 
