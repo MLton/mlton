@@ -40,15 +40,16 @@ end
 val hostname = hd (String.tokens (fullHostname, fn c => c = #"."))
 
 fun ethernetIsUp (): bool =
-   String.isSubstring {string = Process.collect (Process.call ("ifconfig", [])),
-		      substring = "eth0"}
+   String.hasSubstring (Process.collect (Process.call ("ifconfig", [])),
+			{substring = "eth0"})
 
 val message = Trace.Immediate.messageStr
 
 structure Socket = MLton.Socket
    
 fun connect {host: string, port: port}: In.t * Out.t =
-   let val _ = message (concat ["connect ", host, ":", Int.toString port])
+   let
+      val _ = message (concat ["connect ", host, ":", Int.toString port])
       fun con () = Socket.connect (host, port)
       val io =
 	 case !repeat of

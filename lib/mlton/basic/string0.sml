@@ -88,7 +88,7 @@ fun dropLast s = dropSuffix (s, 1)
 fun dropPrefix (s, n) =
    substring2 (s, {start = n, finish = length s})
 
-fun isPrefix {string, prefix} = PS.isPrefix prefix string
+fun hasPrefix (string, {prefix}) = PS.isPrefix prefix string
 
 fun removeTrailing (s: t, p: char -> bool): t =
    let
@@ -101,7 +101,7 @@ fun removeTrailing (s: t, p: char -> bool): t =
    in substring (s, 0, 1 + (loop (size s - 1)))
    end
 
-fun isSuffix {string, suffix} =
+fun hasSuffix (string, {suffix}) =
    let
       val n = length string
       val n' = length suffix
@@ -111,7 +111,7 @@ fun isSuffix {string, suffix} =
    in n' <= n andalso loop (n - n', 0)
    end
 
-fun findSubstring {string: t, substring: t} =
+fun findSubstring (string: t, {substring: t}) =
    let
       val n = length substring
       val maxIndex = length string - n
@@ -135,10 +135,10 @@ fun findSubstring {string: t, substring: t} =
       loopString 0
    end
 
-val isSubstring = isSome o findSubstring
+val hasSubstring = isSome o findSubstring
 
 fun baseName (x, y) =
-   if isSuffix {string = x, suffix = y}
+   if hasSuffix (x, {suffix = y})
       then dropSuffix (x, size y)
    else Error.bug "baseName"
 

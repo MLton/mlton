@@ -184,12 +184,15 @@ local
 	    fun loop i =
 	       if i >= cacheSize
 		  then
-		     let val s'' = fromList(oper(toList s, toList s'))
-		     in Int.inc cacheMisses
-			; Array.update(cache,
-				       Random.intRange(0, cacheSize - 1)(),
-				       SOME(s, s', s''))
-			; s''
+		     let
+			val s'' = fromList(oper(toList s, toList s'))
+			val () = Int.inc cacheMisses
+			val () =
+			   Array.update (cache,
+					 Random.natLessThan cacheSize,
+					 SOME (s, s', s''))
+		     in
+			s''
 		     end
 	       else case Array.sub(cache, i) of
 		  NONE => loop(i + 1)

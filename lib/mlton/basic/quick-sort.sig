@@ -26,7 +26,7 @@ open S
 val _ =
    List.foreach
    ([Array.array (0, 0),
-     Array.tabulate (100, fn _ => Random.int ())],
+     Array.tabulate (100, fn _ => Random.natLessThan 10000)],
     fn a => ignore (sortArray (a, op <=)))
    
 end

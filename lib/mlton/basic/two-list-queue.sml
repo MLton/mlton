@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 structure TwoListQueue:> QUEUE =
 struct
 
@@ -18,12 +19,14 @@ fun foldr (T (l, r), ac, f) =
 fun toList q = foldr (q, [], op ::)
 
 fun deque (T (l, r)) =
-   let val (l, r) = (case l of
-			[] => (rev r, [])
-		      | _ =>  (l, r))
-   in case l of
-      [] => NONE
-    | x :: l => SOME (x, T (l, r))
+   let
+      val (l, r) = (case l of
+		       [] => (rev r, [])
+		     | _ =>  (l, r))
+   in
+      case l of
+	 [] => NONE
+       | x :: l => SOME (T (l, r), x)
    end
 
 fun empty () = T ([], [])

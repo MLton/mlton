@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 structure Http: HTTP =
 struct
 
@@ -85,14 +86,14 @@ structure Regexp =
       val method' = Save.new ()
       val method = save (token, method')
       val star' = Save.new ()
-      val absoluteUri' = Save.new ()
+      val absoluteUrl' = Save.new ()
       val absPath' = Save.new ()
       val authority' = Save.new ()
       val query' = Save.new ()
-      val requestUri =
-	 let open Uri.Regexp
+      val requestUrl =
+	 let open Url.Regexp
 	 in or [save (char #"*", star'),
-		save (absoluteUri, absoluteUri'),
+		save (absoluteUrl, absoluteUrl'),
 		seq [save (absPath, absPath'),
 		     optional (seq [char #"?", save (query, query')])],
 		save (authority, authority')]
@@ -100,7 +101,7 @@ structure Regexp =
       val requestLine =
 	 Promise.lazy
 	 (fn () =>
-	  compileDFA (seq [method, SP, requestUri, SP, version, CRLF]))
+	  compileDFA (seq [method, SP, requestUrl, SP, version, CRLF]))
       val contentLength =
 	 Promise.lazy (fn () => compileDFA (oneOrMore DIGIT))
       val status' = Save.new ()
@@ -174,25 +175,25 @@ structure Version =
 	   end)
    end
 
-structure RequestUri =
+structure RequestUrl =
    struct
-      structure Path = Uri.Path
+      structure Path = Url.Path
       datatype t =
 	 Star
-       | Uri of Uri.t
+       | Url of Url.t
        | Path of {path: Path.t,
 		  query: string option}
        | Authority of string
 
       val toString =
 	 fn Star => "*"
-	  | Uri uri => Uri.toString uri
+	  | Url url => Url.toString url
 	  | Path {path, query} =>
 	       concat [Path.toString path,
 		      case query of
 			 NONE => ""
-		       | SOME q => concat ["?", if !Uri.escapeQuery
-						  then Uri.escape q
+		       | SOME q => concat ["?", if !Url.escapeQuery
+						  then Url.escape q
 					       else q]]
 	  | Authority s => s
 
@@ -226,7 +227,7 @@ structure Header =
        | ETag of string
        | Expect of string
        | Expires of string
-       | Extension of string * string
+       | Extension of {name: string, value: string}
        | From of string
        | Host of string
        | IfMatch of string
@@ -270,7 +271,7 @@ structure Header =
 	  | ETag s => concat ["Etag: ", s]
 	  | Expect s => concat ["Expect: ", s]
 	  | Expires s => concat ["Expires: ", s]
-	  | Extension (s, s') => concat [s, ": ", s']
+	  | Extension {name, value} => concat [name, ": ", value]
 	  | From s => concat ["From: ", s]
 	  | Host s => concat ["Host: ", s]
 	  | IfMatch s => concat ["If-Match: ", s]
@@ -298,7 +299,7 @@ structure Header =
 
       val cons: string -> string -> t option =
 	 String.memoizeList
-	 (fn s => fn s' => SOME (Extension (s, s')),
+	 (fn s => fn s' => SOME (Extension {name = s, value = s'}),
 	  [("accept", SOME o Accept),
 	   ("accept-charset", SOME o AcceptCharset),
 	   ("accept-encoding", SOME o AcceptEncoding),
@@ -408,16 +409,16 @@ structure Header =
 structure Request =
    struct
       datatype t = T of {method: Method.t,
-			 uri: RequestUri.t,
+			 url: RequestUrl.t,
 			 version: Version.t,
 			 headers: Header.t list}
 
       val regexp = Regexp.requestLine
 	 
-      fun toString (T {method, uri, version, headers}) =
+      fun toString (T {method, url, version, headers}) =
 	 concat ([Method.toString method,
 		 " ",
-		 RequestUri.toString uri,
+		 RequestUrl.toString url,
 		 " ",
 		 Version.toString version,
 		 "\r\n"]
@@ -436,21 +437,21 @@ structure Request =
 	     let
 		val {peek, lookup, exists, ...} = Match.stringFuns m
 		val method = Method.fromString (lookup method')
-		open RequestUri
-		val uri =
+		open RequestUrl
+		val url =
 		   if exists star'
 		      then Star
-		   else if exists absoluteUri'
-			   then Uri (Uri.getMatch m)
+		   else if exists absoluteUrl'
+			   then Url (Url.getMatch m)
 			else
 			   (case peek authority' of
 			       NONE =>
-				  Path {path = Uri.Regexp.getAbsPath m,
-				       query = Uri.Regexp.peekQuery m}
+				  Path {path = Url.Regexp.getAbsPath m,
+				       query = Url.Regexp.peekQuery m}
 			     | SOME s => Authority s)
 		val version = Version.extract m
 	     in {method = method,
-		 uri = uri,
+		 url = url,
 		 version = version}
 	     end)
 	 end
@@ -458,10 +459,10 @@ structure Request =
       val requestLine =
 	 Trace.trace ("requestLine",
 		      String.layout,
-		      Option.layout (fn {method, uri, version} =>
+		      Option.layout (fn {method, url, version} =>
 				     Layout.record
 				     [("method", Method.layout method),
-				      ("uri", RequestUri.layout uri),
+				      ("url", RequestUrl.layout url),
 				      ("version", Version.layout version)]))
 	 requestLine
 
@@ -473,11 +474,11 @@ structure Request =
 	  | SOME l =>
 	       case requestLine l of
 		  NONE => Result.No l
-		| SOME {method, uri, version} =>
+		| SOME {method, url, version} =>
 		     Result.map
 		     (Header.input ins, fn hs =>
 		      T {method = method,
-			 uri = uri,
+			 url = url,
 			 version = version,
 			 headers = hs})
 
@@ -485,61 +486,151 @@ structure Request =
 	 Trace.trace ("Request.input", In.layout, Result.layout layout) input
    end
 
-structure Post =
+structure Rope =
    struct
       datatype t =
-	 Simple of string
-       | Multipart of {tag: string,
-		       file: File.t} list
+	 Appends of t list
+       | File of File.t
+       | String of string
+
+      val appends = Appends
+      val file = File
+      val string = String
+
+      val empty = String ""
+
+      fun sizePlus (r: t, ac: int): int =
+	 case r of
+	    Appends rs => List.fold (rs, ac, sizePlus)
+	  | File f => ac + Int64.toInt (File.size f)
+	  | String s => ac + String.size s
+
+      fun size (r: t): int = sizePlus (r, 0)
+	       
+      fun toStrings (r: t, ac: string list): string list =
+	 case r of
+	    Appends rs => List.fold (rev rs, ac, toStrings)
+	  | File f => File.contents f :: ac
+	  | String s => s :: ac
+
+      fun toString (r: t): string = concat (toStrings (r, []))
+
+      fun output (r: t, out: Out.t): unit =
+	 let
+	    fun loop (r: t): unit =
+	       case r of
+		  Appends rs => List.foreach (rs, loop)
+		| File f => File.outputContents (f, out)
+		| String s => Out.output (out, s)
+	 in
+	    loop r
+	 end
+   end
+      
+structure Post =
+   struct
+      structure Encoding =
+	 struct
+	    datatype t = Url | Multipart
+	 end
+
+      structure Value =
+	 struct
+	    datatype t =
+	       File of File.t
+	     | String of string
+
+	    val file = File
+	    val string = String
+
+	    fun toString (v: t): string =
+	       case v of
+		  File f => File.contents f
+		| String s => s
+
+	    fun toRope (v: t): Rope.t =
+	       case v of
+		  File f => Rope.file f
+		| String s => Rope.string s
+	 end
+
+      datatype t =
+	 T of {encoding: Encoding.t,
+	       fields: {name: string,
+			value: Value.t} list}
+
+      fun dquote s = concat ["\"", s, "\""]
+
+      fun encode (T {encoding, fields}): {contentType: string} * Rope.t =
+	 case encoding of
+	    Encoding.Url =>
+	       ({contentType = "application/x-www-form-urlencoded"},
+		List.fold
+		(rev fields, Rope.empty, fn ({name, value}, r) =>
+		 let
+		    val value =
+		       String.translate
+		       (Value.toString value, fn c =>
+			if Char.isAlphaNum c
+			   then Char.toString c
+			else
+			   (case c of
+			       #" " => "+"
+			     | #"\n" => "%0D%0A"
+			     | _ => Url.Char.escapeHex c))
+		 in
+		    Rope.appends [Rope.string (concat [name, "="]),
+				  Rope.string value,
+				  Rope.string "&",
+				  r]
+		 end))
+	  | Encoding.Multipart =>
+	       let
+		  val boundary =
+		     String.tabulate
+		     (56, fn i =>
+		      if i < 28 then #"-" else Random.charFrom "0123456789")
+	       in
+		  ({contentType = concat ["multipart/form-data; boundary=",
+					  boundary]},
+		   List.foldr
+		   (fields, Rope.string (concat ["--", boundary, "--"]),
+		    fn ({name, value}, rope) =>
+		    let
+		       val extra =
+			  case value of
+			     Value.File f => concat ["; filename=", dquote f]
+			   | Value.String _ => ""
+		    in
+		       Rope.appends
+		       [Rope.string
+			(concat
+			 ["--", boundary, "\r\n",
+			  "Content-Disposition: form-data; name=", dquote name,
+			  extra, "\r\n\r\n"]),
+			Value.toRope value, Rope.string "\r\n", rope]
+		    end))
+	     end
    end
 
 (* ------------------------------------------------- *)
 (*                       fetch                       *)
 (* ------------------------------------------------- *)
 
-structure Path = Uri.Path
+structure Path = Url.Path
 
-fun multipart (boundary: string, files): int * (Out.t -> unit) =
+fun fetch {head: bool,
+	   headers: Header.t list,
+	   post: Post.t option,
+	   proxy: {host: string, port: int} option,
+	   url: Url.t}: In.t =
    let
-      datatype z =
-	 File of File.t
-       | Strings of string list
-      val zs =
-	 List.foldr
-	 (files, [Strings ["--", boundary, "--"]],
-	  fn ({tag, file}, zs) =>
-	  Strings ["--", boundary, "\r\n",
-		   "Content-Disposition: form-data; name=\"", tag,
-		   "\"; filename=\"", file, "\"\r\n\r\n"]
-		   :: File file
-		   :: Strings ["\r\n"]
-		   :: zs)
-      val size = List.fold (zs, 0, fn (z, n) =>
-			    case z of
-			       File f => n + Position.toInt (File.size f)
-			     | Strings ss =>
-				  List.fold (ss, n, fn (s, n) =>
-					     n + String.size s))
-      fun output out =
-         List.foreach (zs, fn z =>
-		       case z of
-			  File f => File.outputContents (f, out)
-			| Strings ss =>
-			     List.foreach (ss, fn s => Out.output (out, s)))
+      open Url
    in
-      (size, output)
-   end
-
-fun fetch {uri: Uri.t,
-	  headers: Header.t list,
-	  head: bool,
-          post: Post.t option,
-	  proxy: {host: string, port: int} option}: In.t =
-   let open Uri
-   in case uri of
-      Uri.T {scheme = SOME Scheme.Http,
-	    authority = SOME {user, host, port},
-	    path, query, fragment} =>
+      case url of
+	 Url.T {authority = SOME {user, host, port},
+		fragment, path, query,
+		scheme = SOME Scheme.Http} =>
 	 let
 	    val headers = Header.Host host :: headers
 	    val (method, headers, postit) =
@@ -548,73 +639,59 @@ fun fetch {uri: Uri.t,
 		     (if head then Method.Head else Method.Get,
 			 headers,
 			 fn _ => ())
-		| SOME (Post.Simple s) =>
-		     (Method.Post,
-		      headers
-		      @ [Header.ContentType "application/x-www-form-urlencoded",
-			 Header.ContentLength (String.size s)],
-		      fn out =>
-		      (Out.output (out, s)
-		       ; Out.output (out, "\r\n")))
-		| SOME (Post.Multipart (parts)) =>
-                     let
-			val boundary =
-			   "---------------------------1152020049741332361890637729"
-			val (size, write) = multipart (boundary, parts)
-			val header =
+		| SOME post =>
+		     let
+			datatype z = datatype Post.Encoding.t
+			val ({contentType}, rope) = Post.encode post
+			val headers =
 			   headers
-			   @ [Header.ContentType
-			      (concat ["multipart/form-data; boundary=",
-				       boundary]),
-			      Header.ContentLength size]
-                     in
-                        (Method.Post, headers,
-			 fn out => (write out
+			   @ [Header.ContentType contentType,
+			      Header.ContentLength (Rope.size rope)]
+		     in
+			(Method.Post, headers,
+			 fn out => (Rope.output (rope, out)
 				    ; Out.output (out, "\r\n")))
-                     end
+		     end
 	    val (scheme, authority) =
 	       if Option.isSome proxy
 		  then (SOME Scheme.Http,
 			SOME {user = NONE,
-			     host = host,
-			     port = port})
+			      host = host,
+			      port = port})
 	       else (NONE, NONE)
-	    val uri =
-	       Uri.T {scheme = scheme,
-		     authority = authority,
-		     path = path,
-		     query = query,
-		     fragment = NONE}
+	    val url =
+	       Url.T {scheme = scheme,
+		      authority = authority,
+		      path = path,
+		      query = query,
+		      fragment = NONE}
 	    val headers =
 	       case user of
 		  NONE => headers
 		| SOME user => Header.Authorization user :: headers
 	    val request =
 	       Request.T {method = method,
-			 uri = RequestUri.Uri uri,
-			 version = Version.v10,
-			 headers = headers}
+			  url = RequestUrl.Url url,
+			  version = Version.v10,
+			  headers = headers}
 	    val (ins, out) =
 	       Net.connect (case proxy of
-			      NONE => {host = host,
-				       port = (case port of
-						  NONE => 80
-						| SOME p => p)}
-			    | SOME hp => hp)
+			       NONE => {host = host,
+					port = (case port of
+						   NONE => 80
+						 | SOME p => p)}
+			     | SOME hp => hp)
 	    val print = Out.outputc out
-	    val _ = Request.output (request, out)
-            val _ = postit out
-	    val _ = Out.close out
+	    val () = Request.output (request, out)
+            val () = postit out
+	    val () = Out.close out
 	 in ins
 	 end
-    | _ => Error.bug (concat ["can't fetch Uri: ", Uri.toString uri])
+	      | _ => Error.bug (concat ["can't fetch Url: ", Url.toString url])
    end
 
 val fetch =
-   Trace.trace
-   ("Http.fetch",
-    fn {uri, ...} => Uri.layout uri,
-    Layout.ignore)
+   Trace.trace ("Http.fetch", fn {url, ...} => Url.layout url, Layout.ignore)
    fetch
 
 (* ------------------------------------------------- *)

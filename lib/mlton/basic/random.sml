@@ -59,19 +59,35 @@ fun real () = scale (natReal () + scale (natReal ()))
 
 val real = Trace.trace0 ("Random.real", Real.layout) real
 
-fun intRange (lo: int, hi: int): unit -> int =
-   let
-      val rlo = Real.fromInt lo
-      val R = Real.fromInt hi - rlo + 1.0
-   in
-      fn () => Real.trunc (rlo + R * real ())
-   end
+local
+   val r: word ref = ref 0w0
+   val max: word ref = ref 0w0
+in
+   fun wordLessThan (w: word): word =
+      if w = 0w0
+	 then Error.bug "Random.word"
+      else
+	 let
+	    val () =
+	       if w - 0w1 <= !max
+		  then ()
+	       else (r := MLton.Random.rand ()
+		     ; max := 0wxFFFFFFFF)
+	    val w' = !r
+	    val () = r := Word.div (w', w)
+	    val () = max := Word.div (!max, w)
+	 in
+	    Word.mod (w', w)
+	 end
+end
 
-val intRange =
-   Assert.assertFun2
-   ("Random.intRange", intRange,
-    fn (lo, hi) =>
-    (lo <= hi, fn () => (true, fn n => lo <= n andalso n <= hi)))
+fun natLessThan (n: int): int =
+   if n <= 0
+      then Error.bug "Random.int"
+   else Word.toInt (wordLessThan (Word.fromInt n))
+
+fun charFrom (s: string): char =
+   String.sub (s, natLessThan (String.size s))
 
 fun nRandom {list, length, n} =
    let
@@ -82,7 +98,7 @@ fun nRandom {list, length, n} =
 	    else (case xs of
 		     [] => Error.bug "nRandom"
 		   | x :: xs =>
-			if intRange (0, length - 1) () < need
+			if natLessThan length < need
 			   then loop (need - 1, length - 1, xs, x :: ac)
 			else loop (need, length - 1, xs, ac)))
    in loop (n, length, list, [])
@@ -98,10 +114,12 @@ val nRandom = fn x =>
    x
 
 fun list l =
-   let val n = List.length l
-   in if n = 0
+   let
+      val n = List.length l
+   in
+      if n = 0
 	 then NONE
-      else SOME (List.nth (l, intRange (0, n - 1) ()))
+      else SOME (List.nth (l, natLessThan n))
    end
 
 end

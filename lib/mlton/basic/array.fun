@@ -30,8 +30,10 @@ fun swap (a, i, j) =
    end
    
 fun shuffleN (a, n) =
-   let val max = length a - 1
-   in Int.for (0, n, fn i => swap (a, i, Random.intRange (i, max) ()))
+   let
+      val m = length a
+   in
+      Int.for (0, n, fn i => swap (a, i, i + Random.natLessThan (m - i)))
    end
 
 fun shuffle a = shuffleN (a, length a)

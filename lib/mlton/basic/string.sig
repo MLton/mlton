@@ -44,7 +44,7 @@ signature STRING =
        *)
       val extract: t * int * int option -> t
       val fields: t * (char -> bool) -> t list
-      val findSubstring: {string: t, substring: t} -> int option
+      val findSubstring: t * {substring: t} -> int option
       val fold: t * 'a * (char * 'a -> 'a) -> 'a
       val foldi: t * 'a * (int * char * 'a -> 'a) -> 'a
       val foreach: t * (char -> unit) -> unit
@@ -57,9 +57,9 @@ signature STRING =
       val hash: t -> Word.t
       val implode: char list -> t
       val isEmpty: t -> bool
-      val isPrefix: {string: t, prefix: t} -> bool
-      val isSubstring: {string: t, substring: t} -> bool
-      val isSuffix: {string: t, suffix: t} -> bool
+      val hasPrefix: t * {prefix: t} -> bool
+      val hasSubstring: t * {substring: t} -> bool
+      val hasSuffix: t * {suffix: t} -> bool
       val keepAll: t * (char -> bool) -> t
       val last: t -> char
       val layout: t -> Layout.t

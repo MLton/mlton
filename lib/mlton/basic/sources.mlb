@@ -162,25 +162,6 @@ local
     result.sml
     regexp.sig
     regexp.sml
-    base64.sig
-    base64.sml
-    port.sig
-    port.sml
-    itimer.sml
-(* Including threads causes all of MLton.Thread to be drawn in, which causes
- * a big slowdown on self compiles.
- *)
-(*     thread.sig
- *     thread.sml
- *     engine.sig
- *     engine.sml
- *     net.sig
- *     net.sml
- *     uri.sig
- *     uri.sml
- *     http.sig
- *     http.sml
- *)
     popt.sig
     popt.sml
     sexp.sig
@@ -260,6 +241,7 @@ in
     structure Pervasive
     structure Pid
     structure Popt
+    structure Position
     structure Power
     structure Process
     structure Promise

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under the GNU General Public License (GPL).
@@ -24,12 +24,12 @@ signature HTTP =
 	     | Extension of string
 	 end
       
-      structure RequestUri:
+      structure RequestUrl:
 	 sig
 	    datatype t =
 	       Star
-	     | Uri of Uri.t
-	     | Path of {path: Uri.Path.t,
+	     | Url of Url.t
+	     | Path of {path: Url.Path.t,
 			query: string option}
 	     | Authority of string
 
@@ -69,7 +69,7 @@ signature HTTP =
 	     | ETag of string
 	     | Expect of string
 	     | Expires of string
-	     | Extension of string * string
+	     | Extension of {name: string, value: string}
 	     | From of string
 	     | Host of string
 	     | IfMatch of string
@@ -92,12 +92,13 @@ signature HTTP =
 
 	    val fromString: string -> t list Result.t
 	    val input: In.t -> t list Result.t
+	    val toString: t -> string
 	 end
 
       structure Request:
 	 sig
 	    datatype t = T of {method: Method.t,
-			       uri: RequestUri.t,
+			       url: RequestUrl.t,
 			       version: Version.t,
 			       headers: Header.t list}
 
@@ -106,7 +107,7 @@ signature HTTP =
 	    val output: t * Out.t -> unit
 	    val regexp: unit -> Regexp.Compiled.t
 	    val requestLine: string -> {method: Method.t,
-					uri: RequestUri.t,
+					url: RequestUrl.t,
 					version: Version.t} option
 	    val toString: t -> string
 	 end
@@ -162,9 +163,9 @@ signature HTTP =
 
       structure Response:
 	 sig
-	    datatype t = T of {version: Version.t,
+	    datatype t = T of {headers: Header.t list,
 			       status: Status.t,
-			       headers: Header.t list}
+			       version: Version.t}
 
 	    val input: In.t -> t Result.t
 	    val layout: t -> Layout.t
@@ -175,20 +176,31 @@ signature HTTP =
       
       structure Post:
          sig
+	    structure Encoding:
+	       sig
+		  datatype t = Url | Multipart
+	       end
+
+	    structure Value:
+	       sig
+		  type t
+
+		  val file: File.t -> t
+		  val string: string -> t
+	       end
+		       
 	    datatype t =
-	       Simple of string
-	     | Multipart of {tag: string,
-			     file: File.t} list
+	       T of {encoding: Encoding.t,
+		     fields: {name: string,
+			      value: Value.t} list}
          end
 
       val fetch:
-	 {uri: Uri.t,
+	 {head: bool,
 	  headers: Header.t list,
-	  head: bool,
 	  post: Post.t option,
-	  proxy: {host: string,
-		  port: int} option} -> In.t
-	 
+	  proxy: {host: string, port: int} option,
+	  url: Url.t} -> In.t
    end
 
 

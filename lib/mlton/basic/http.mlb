@@ -1,0 +1,26 @@
+local
+   $(MLTON_ROOT)/basis/basis.mlb
+   $(MLTON_ROOT)/basis/mlton.mlb
+   sources.mlb
+   base64.sig
+   base64.sml
+   port.sig
+   port.sml
+   itimer.sml
+   thread.sig
+   thread.sml
+   engine.sig
+   engine.sml
+   net.sig
+   net.sml
+   url.sig
+   url.sml
+   http.sig
+   http.sml
+in
+   signature HTTP
+   signature URL
+   structure Http
+   structure Url
+end
+     

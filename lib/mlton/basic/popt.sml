@@ -90,8 +90,8 @@ fun parse {switches: string list,
 				  | (switch', arg) :: opts =>
 				       let
 					  fun doit f =
-					     if String.isPrefix
-						{string = switch, prefix = switch'}
+					     if String.hasPrefix
+						(switch, {prefix = switch'})
 						then f (String.dropPrefix
 							(switch, String.size switch'))
 					     else loop' opts
