@@ -206,6 +206,8 @@ world:
 	@echo 'Making world.'
 	$(CP) $(SRC)/basis-library $(LIB)/sml
 	$(LIB)/$(AOUT) @MLton -- $(LIB)/world
+	@echo 'Type checking basis.'
+	$(MLTON) -show-basis true >/dev/null
 
 # The TBIN and TLIB are where the files are going to be after installing.
 # The DESTDIR and is added onto them to indicate where the Makefile actually
