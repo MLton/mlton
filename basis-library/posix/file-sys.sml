@@ -320,11 +320,15 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 	       NONE => Error.raiseSys Error.inval
 	     | SOME (n, _) => n
 
-	 (* QUESTION: is this o.k.? *)
 	 fun make prim (f, s) =
-	    let val n = prim (f, convertProperty s)
-	    in if n < 0
-		  then Error.error ()
+	    let
+	       val _ = Error.clearErrno ()
+	       val n = prim (f, convertProperty s)
+	    in
+	       if n < 0
+		  then if Error.getErrno () = 0
+			  then NONE
+		       else Error.error ()
 	       else SOME (SysWord.fromInt n)
 	    end
 	       
