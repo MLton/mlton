@@ -7,9 +7,13 @@ TARGET = self
 AOUT = mlton-compile
 UP = upgrade-basis.sml
 PATH = $(BIN):$(shell echo $$PATH)
+
+FLAGS = @MLton ram-slop 0.7 gc-summary $(RUNTIME_ARGS) --
+
 ifeq (self, $(shell if [ -x $(BIN)/mlton ]; then echo self; fi))
   # We're compiling MLton with itself, so don't use any stubs.
   CM = mlton.cm
+  FLAGS += -sequence-unit true
 else
 ifeq (cygwin, $(shell $(SRC)/bin/host-os))
   # The stubs don't work on Cygwin, since they define spawn in terms of
@@ -22,7 +26,6 @@ else
 endif
 endif
 
-FLAGS = @MLton ram-slop 0.7 gc-summary $(RUNTIME_ARGS) --
 ifeq (new,$(shell PATH=$(BIN):$$PATH; mlton -target self >/dev/null 2>&1 && echo new))
   FLAGS += -target $(TARGET)
 else
