@@ -2442,7 +2442,7 @@ void GC_share (GC_state s, Pointer object) {
 	mark (s, object, UNMARK_MODE, TRUE);
 	destroyTable (s->objectHashTable);
 	if (DEBUG_SHARE or s->messages)
-		fprintf (stderr, "%s bytes hash-consed.\n",
+		fprintf (stderr, "%s bytes hash consed.\n",
 				ullongToCommaString (s->bytesHashConsed));
 
 }
@@ -2717,8 +2717,10 @@ static void markCompact (GC_state s) {
 	if (DEBUG or s->messages) {
 		fprintf (stderr, "Major mark-compact GC done.\n");
 		if (s->hashConsDuringGC)
-			fprintf (stderr, "%s bytes hash-consed.\n",
-					ullongToCommaString (s->bytesHashConsed));
+			fprintf (stderr, "%s bytes hash consed (%.1f%%).\n",
+					ullongToCommaString (s->bytesHashConsed),
+					100.0 * (double)s->bytesHashConsed
+						/ (double)s->oldGenSize);
 	}
 }
 
