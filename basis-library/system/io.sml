@@ -17,7 +17,7 @@ structure OS_IO: OS_IO =
   (* an iodesc is an abstract descriptor for an OS object that
    * supports I/O (e.g., file, tty device, socket, ...).
    *)
-    datatype iodesc = datatype PreOS.IO.iodesc
+     type iodesc = PreOS.IO.iodesc
 
     datatype iodesc_kind = K of string
 
