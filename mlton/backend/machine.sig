@@ -123,7 +123,7 @@ signature MACHINE =
 	    datatype t =
 	       Array of {bytesPerElt: int, (* > 0 *)
 			 extraBytes: int, (* for subsequent allocation *)
-			 numElts: Operand.t, (* not an int *)
+			 numElts: Operand.t, (* of type int, but not an immediate *)
 			 stackToo: bool}
 	     | Heap of {bytes: int,
 			stackToo: bool}
@@ -137,36 +137,31 @@ signature MACHINE =
 	       (* In an arith transfer, dst is modified whether or not the
 		* prim succeeds.
 		*)
-	       Arith of {prim: Prim.t,
-			 args: Operand.t vector,
+	       Arith of {args: Operand.t vector,
 			 dst: Operand.t,
 			 overflow: Label.t,
+			 prim: Prim.t,
 			 success: Label.t}
 	     | Bug
 	     | CCall of {args: Operand.t vector,
 			 prim: Prim.t,
-			 return: Label.t, (* return should be nullary if the
-					   * C function returns void.  Else,
-					   * return should be either nullary or
-					   * unary with a var of the appropriate
-					   * type to accept the result.
-					   *)
+			 (* return must be CReturn with matching prim. *)
+			 return: Label.t,
+			 (* returnTy must CReturn dst. *)
 			 returnTy: Type.t option}
-	     | FarJump of {chunkLabel: ChunkLabel.t,
-			   label: Label.t,
-			   live: Operand.t list,
-			   return: {return: Label.t,
-				    handler: Label.t option,
-				    size: int} option}
-	     | LimitCheck of {failure: Label.t, (* Must be of Runtime kind. *)
+	     | Call of {label: Label.t, (* label must be a Func *)
+			live: Operand.t vector,
+			return: {return: Label.t,
+				 handler: Label.t option,
+				 size: int} option}
+	     | Goto of Label.t (* label must be a Jump *)
+	     | LimitCheck of {(* failure must be Runtime. *)
+			      failure: Label.t, 
 			      kind: LimitCheck.t,
-			      success: Label.t} (* Must be of Jump kind. *)
-	     | NearJump of {label: Label.t,
-			    return: {return: Label.t,
-				     handler: Label.t option,
-				     size: int} option}
+			      (* success must be Jump. *)
+			      success: Label.t} 
 	     | Raise
-	     | Return of {live: Operand.t list}
+	     | Return of {live: Operand.t vector}
 	     | Runtime of {args: Operand.t vector,
 			   prim: Prim.t,
 			   return: Label.t} (* Must be of Runtime kind. *)
@@ -199,11 +194,11 @@ signature MACHINE =
       structure Kind:
 	 sig
 	    datatype t =
-	       Cont of {args: Operand.t list,
+	       Cont of {args: Operand.t vector,
 			frameInfo: FrameInfo.t}
 	     | CReturn of {dst: Operand.t option,
 			   prim: Prim.t}
-	     | Func of {args: Operand.t list}
+	     | Func of {args: Operand.t vector}
 	     | Handler of {offset: int}
 	     | Jump
 	     | Runtime of {frameInfo: FrameInfo.t,
@@ -218,7 +213,7 @@ signature MACHINE =
 	       T of {kind: Kind.t,
 		     label: Label.t,
 		     (* Live registers and stack offsets at beginning of block. *)
-		     live: Operand.t list,
+		     live: Operand.t vector,
 		     profileInfo: {func: string, label: string},
 		     statements: Statement.t vector,
 		     transfer: Transfer.t}

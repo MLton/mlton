@@ -351,21 +351,17 @@ structure Transfer =
 		   prim: Prim.t,
 		   return: Label.t,
 		   returnTy: Type.t option}
-       | FarJump of {chunkLabel: ChunkLabel.t,
-		     label: Label.t,
-		     live: Operand.t list,
-		     return: {return: Label.t,
-			      handler: Label.t option,
-			      size: int} option}
+       | Call of {label: Label.t,
+		  live: Operand.t vector,
+		  return: {return: Label.t,
+			   handler: Label.t option,
+			   size: int} option}
+       | Goto of Label.t
        | LimitCheck of {failure: Label.t,
 			kind: LimitCheck.t,
 			success: Label.t}
-       | NearJump of {label: Label.t,
-		      return: {return: Label.t,
-			       handler: Label.t option,
-			       size: int} option}
        | Raise
-       | Return of {live: Operand.t list}
+       | Return of {live: Operand.t vector}
        | Runtime of {args: Operand.t vector,
 		     prim: Prim.t,
 		     return: Label.t}
@@ -395,10 +391,10 @@ structure Transfer =
 			       ("prim", Prim.layout prim),
 			       ("return", Label.layout return),
 			       ("returnTy", Option.layout Type.layout returnTy)]]
-	     | FarJump {label, live, return, ...} => 
-		  seq [str "FarJump ", 
+	     | Call {label, live, return} => 
+		  seq [str "Call ", 
 		       record [("label", Label.layout label),
-			       ("live", List.layout Operand.layout live),
+			       ("live", Vector.layout Operand.layout live),
 			       ("return", Option.layout 
 				(fn {return, handler, size} =>
 				 record [("return", Label.layout return),
@@ -406,25 +402,16 @@ structure Transfer =
 					  Option.layout Label.layout handler),
 					 ("size", Int.layout size)])
 				return)]]
+	     | Goto l => seq [str "Goto ", Label.layout l]
 	     | LimitCheck {failure, kind, success} =>
 		  seq [str "LimitCheck",
 		       record [("failure", Label.layout failure),
 			       ("kind", LimitCheck.layout kind),
 			       ("success", Label.layout success)]]
-	     | NearJump {label, return} => 
-		  seq [str "NearJump ", 
-		       record [("label", Label.layout label),
-			       ("return", Option.layout 
-				(fn {return, handler, size} =>
-				 record [("return", Label.layout return),
-					 ("handler",
-					  Option.layout Label.layout handler),
-					 ("size", Int.layout size)])
-				return)]]
 	     | Raise => str "Raise"
 	     | Return {live} => 
 		  seq [str "Return ",
-		       record [("live", List.layout Operand.layout live)]]
+		       record [("live", Vector.layout Operand.layout live)]]
 	     | Runtime {args, prim, return} =>
 		  seq [str "Runtime ",
 		       record [("args", Vector.layout Operand.layout args),
@@ -444,32 +431,6 @@ structure Transfer =
       val isSwitch =
 	 fn Switch _ => true
 	  | _ => false
-
-      val arith = Arith
-      val bug = Bug
-      val ccall = CCall
-      val farJump = FarJump
-      val limitCheck = LimitCheck
-      val nearJump = NearJump
-      val raisee = Raise
-      val return = Return
-      val runtime = Runtime
-      val switchIP = SwitchIP
-
-      fun switch (arg as {cases, default, ...}) =
-	 let
-	    fun doit cases =
-	       case (cases, default) of
-		  ([], NONE) => bug
-		| ([(_, l)], NONE) => nearJump {label = l, return = NONE}
-		| ([], SOME l) => nearJump {label = l, return = NONE}
-		| _ => Switch arg
-	 in
-	    case cases of
-	       Cases.Char l => doit l
-	     | Cases.Int l => doit l
-	     | Cases.Word l => doit l
-	 end
    end
 
 structure FrameInfo =
@@ -489,16 +450,17 @@ structure FrameInfo =
 			("size", Int.layout size)]
 
       val bogus = T {frameOffsetsIndex = ~1, size = ~1}
+
    end
 
 structure Kind =
    struct
       datatype t =
-	 Cont of {args: Operand.t list,
+	 Cont of {args: Operand.t vector,
 		  frameInfo: FrameInfo.t}
        | CReturn of {dst: Operand.t option,
 		     prim: Prim.t}
-       | Func of {args: Operand.t list}
+       | Func of {args: Operand.t vector}
        | Handler of {offset: int}
        | Jump
        | Runtime of {frameInfo: FrameInfo.t,
@@ -511,7 +473,7 @@ structure Kind =
 	    case k of
 	       Cont {args, frameInfo} =>
 		  seq [str "Cont ",
-		       record [("args", List.layout Operand.layout args),
+		       record [("args", Vector.layout Operand.layout args),
 			       ("frameInfo", FrameInfo.layout frameInfo)]]
 	     | CReturn {dst, prim} =>
 		  seq [str "CReturn ",
@@ -519,7 +481,7 @@ structure Kind =
 			       ("prim", Prim.layout prim)]]
 	     | Func {args} =>
 		  seq [str "Func ",
-		       record [("args", List.layout Operand.layout args)]]
+		       record [("args", Vector.layout Operand.layout args)]]
 	     | Handler {offset} =>
 		  seq [str "Handler", paren(Int.layout offset)]
 	     | Jump => str "Jump"
@@ -537,9 +499,9 @@ structure Kind =
 
 structure Block =
    struct
-      datatype t = T of {label: Label.t,
-			 kind: Kind.t,
-			 live: Operand.t list,
+      datatype t = T of {kind: Kind.t,
+			 label: Label.t,
+			 live: Operand.t vector,
 			 profileInfo: {func: string, label: string},
 			 statements: Statement.t vector,
 			 transfer: Transfer.t}
@@ -549,6 +511,7 @@ structure Block =
       local
 	 fun make g (T r) = g r
       in
+	 val kind = make #kind
 	 val label = make #label
       end
 
@@ -559,7 +522,7 @@ structure Block =
 	    align [seq [Label.layout label, 
 			str " ",
 			record [("kind", Kind.layout kind),
-				("live", List.layout Operand.layout live)],
+				("live", Vector.layout Operand.layout live)],
 			str ":"],		   
 		   align (Vector.toListMap (statements, Statement.layout)),
 		   Transfer.layout transfer]
@@ -612,67 +575,281 @@ structure Program =
 	    List.foreach (chunks, fn chunk => Chunk.layouts (chunk, output'))
 	 end
 
-      fun typeCheck _ = ()
-(*       fun typeCheck (T {chunks, floats, frameOffsets, frameOffsets,
- * 			globals, globalsNonRoot, intInfs, main,
- * 			maxFrameSize, nextChunks, strings}) =
- * 	 let
- * 	    fun error ss =
- * 	       raise Fail (concat ss)
- * 	    fun globals (name, gs, ty) =
- * 	       List.foreach
- * 	       (gs, fn (g, s) =>
- * 		if Type.equals (ty, Global.ty g)
- * 		   then ()
- * 		else error ["invalid global ", name, ": ", s, " of type ",
- * 			    Type.toString ty])
- * 	    val _ = globals ("float", floats, Type.double)
- * 	    val _ = globals ("intInf", intInfs, Type.pointer)
- * 	    val _ = globals ("string", string, Type.pointer)
- * 	    val _ =
- * 	       List.foreach
- * 	       (chunks,
- * 		fn Chunk.T {chunkLabel, entries, gcReturns, blocks, regMax} =>
- * 		let
- * 		   val {get = labelBlock: Label.t -> Block.t option,
- * 			set = setLabelBlock, ...} =
- * 		      Property.getSetOnce (Label.plist, Property.initConst NONE)
- * 		   val _ =
- * 		      List.foreach
- * 		      (blocks, fn b as Block.T {label, ...} =>
- * 		       setLabelBlock (label, b))
- * 		   val _ =
- * 		      List.foreach
- * 		      (entries, fn l =>
- * 		       case labelBlock l of
- * 			  NONE => error ["undefined entry: ", Label.toString l]
- * 			| SOME (Block.T {kind, ...}) =>
- * 			     let datatype z = datatype Block.Kind.t
- * 			     in
- * 				if (case kind of
- * 				       Cont _ => true
- * 				     | CReturn _ => false
- * 				     | Func _ => true
- * 				     | Handler _ => true
- * 				     | Jump => false)
- * 				   then ()
- * 				else error ["entry of wrong kind: ",
- * 					    Label.toString l]
- * 			     end)
- * 		   val _ =
- * 		      List.foreach
- * 		      (gcReturns, fn l =>
- * 		       
- * 		   val _ =
- * 		      List.foreach
- * 		      (blocks,
- * 		       fn Block.T {label, kind, live, profileInfo,
- * 				   statements, transfer} =>
- * 		       
- * 			 
- * 	 in
- * 	 end
- *)
+      structure Err =
+	 struct
+	    datatype t = T of {inner: t option,
+			       name: string,
+			       obj: Layout.t}
+
+	    fun layout (T {inner, name, obj}) =
+	       let
+		  open Layout
+	       in
+		  align [seq [str (concat ["invalid ", name, ": "]),
+			      obj],
+			 case inner of
+			    NONE => empty
+			  | SOME e => seq [str "in ", layout e]]
+	       end
+
+	    exception E of t
+
+	    fun check (name: string,
+		       ok: unit -> bool,
+		       layout: unit -> Layout.t): unit =
+	       if ok () handle E e => raise E (T {inner = SOME e,
+						  name = name,
+						  obj = layout ()})
+		  then ()
+	       else raise E (T {inner = NONE,
+				name = name,
+				obj = layout ()})
+
+	 end
+	    
+      fun typeCheck (T {chunks, floats, frameOffsets, globals, globalsNonRoot,
+			intInfs, main, maxFrameSize, strings}) =
+	 let
+	    open Layout
+	    fun globals (name, gs, ty) =
+	       List.foreach
+	       (gs, fn (g, s) =>
+		Err.check (concat ["global ", name],
+			   fn () => Type.equals (ty, Global.ty g),
+			   fn () =>
+			   seq [String.layout s, str ": ", Type.layout ty]))
+	    val _ = globals ("float", floats, Type.double)
+	    val _ = globals ("intInf", intInfs, Type.pointer)
+	    val _ = globals ("string", strings, Type.pointer)
+	    val {get = labelBlock: Label.t -> Block.t,
+		 set = setLabelBlock, ...} =
+	       Property.getSetOnce (Label.plist,
+				    Property.initRaise ("block", Label.layout))
+	    val _ =
+	       List.foreach
+	       (chunks, fn Chunk.T {blocks, ...} =>
+		Vector.foreach
+		(blocks, fn b as Block.T {label, ...} =>
+		 setLabelBlock (label, b)))
+	    fun checkOperand (x: Operand.t): unit =
+		let
+		   datatype z = datatype Operand.t
+		   fun ok () =
+		      case x of
+			 ArrayOffset {base, offset, ty} =>
+			    (checkOperand base
+			     ; checkOperand offset
+			     ; (Type.equals (Operand.ty base, Type.pointer)
+				andalso Type.equals (Operand.ty offset, Type.int)))
+		       | CastInt x =>
+			    (checkOperand x
+			     ; Type.equals (Operand.ty x, Type.pointer))
+		       | Char _ => true
+		       | Contents {oper, ...} =>
+			    (checkOperand oper
+			     ; Type.equals (Operand.ty oper, Type.pointer))
+		       | Float _ => true
+		       | Global _ => true
+		       | GlobalPointerNonRoot n =>
+			    0 <= n andalso n < globalsNonRoot
+		       | Int _ => true
+		       | IntInf w => 0wx1 = Word.andb (w, 0wx1)
+		       | Label l => (labelBlock l; true)
+		       | Offset {base, ...} =>
+			    (checkOperand base
+			     ; Type.equals (Operand.ty base, Type.pointer))
+		       | Pointer n => 0 < Int.rem (n, 4)
+		       | Register _ => true
+		       | StackOffset {offset, ...} => true
+		       | Uint _ => true
+		in
+		   Err.check ("operand", ok, fn () => Operand.layout x)
+		end
+	    fun checkOperands v = Vector.foreach (v, checkOperand)
+	    fun check' (x, name, isOk, layout) =
+	       Err.check (name, fn () => isOk x, fn () => layout x)
+	    fun frameInfoOk (FrameInfo.T {frameOffsetsIndex, size}) =
+	       0 <= frameOffsetsIndex
+	       andalso frameOffsetsIndex <= Vector.length frameOffsets
+	       andalso 0 <= size
+	       andalso size <= maxFrameSize
+	       andalso 0 = Int.rem (size, 4)
+	    fun checkFrameInfo i =
+	       check' (i, "frame info", frameInfoOk, FrameInfo.layout)
+	    (* These checks, and in particular POINTER_BITS and NON_POINTER_BITS
+	     * must agree with runtime/gc.h.
+	     *)
+	    local
+	       val POINTER_BITS: int = 15
+	       val NON_POINTER_BITS: int = 15
+	       fun make (p', np') (p, np) =
+		  let
+		     val p' = Int.^ (2, p')
+		     val np' = Int.^ (2, np')
+		  in (if p < p'
+			 then ()
+		      else Error.bug "object with too many pointers")
+		     ; if np < np'
+			  then ()
+		       else Error.bug "object with too many non pointers"
+		  end
+	    in
+	       val checkObjectHeader = make (POINTER_BITS, NON_POINTER_BITS)
+	       val checkArrayHeader = make (POINTER_BITS, NON_POINTER_BITS - 1)
+	    end
+	    fun kindOk (k: Kind.t): bool =
+	       let
+		  datatype z = datatype Kind.t
+		  val _ =
+		     case k of
+			Cont {args, frameInfo} =>
+			   (checkOperands args
+			    ; checkFrameInfo frameInfo)
+		      | CReturn {dst, ...} => Option.app (dst, checkOperand)
+		      | Func {args, ...} => checkOperands args
+		      | Handler _ => ()
+		      | Jump => ()
+		      | Runtime {frameInfo, ...} => checkFrameInfo frameInfo
+	       in
+		  true
+	       end
+	    fun statementOk (s: Statement.t): bool =
+	       let
+		  datatype z = datatype Statement.t
+	       in
+		  case s of
+		     Allocate {dst, numPointers, numWordsNonPointers, size,
+			       stores} =>
+		        (checkObjectHeader (numPointers, numWordsNonPointers)
+			 ; checkOperand dst
+			 ; Vector.foreach (stores, fn {offset, value} =>
+					   checkOperand value)
+			 ; true)
+		   | Array {dst, numElts, numPointers, numBytesNonPointers} =>
+			(checkOperand dst
+			 ; checkOperand numElts
+			 ; checkArrayHeader (numPointers, numBytesNonPointers)
+			 ; (Type.equals (Operand.ty dst, Type.pointer)
+			    andalso Type.equals (Operand.ty numElts, Type.int)))
+		   | Assign {dst, prim, args} =>
+			(Option.app (dst, checkOperand)
+			 ; checkOperands args
+			 ; true)
+		   | Move {dst, src} =>
+			(checkOperand dst
+			 ; checkOperand src
+			 ; Type.equals (Operand.ty dst, Operand.ty src))
+		   | Noop => true
+		   | SetExnStackLocal _ => true
+		   | SetExnStackSlot _ => true
+		   | SetSlotExnStack _ => true
+	       end
+	    val labelKind = Block.kind o labelBlock
+	    fun labelIsJump (l: Label.t): bool =
+	       case labelKind l of
+		  Kind.Jump => true
+		| _ => false
+	    fun labelIsRuntime (l: Label.t, p: Prim.t): bool =
+	       case labelKind l of
+		  Kind.Runtime {prim, ...} => Prim.equals (p, prim)
+		| _ => false
+	    fun transferOk (t: Transfer.t): bool =
+	       let
+		  datatype z = datatype Transfer.t
+	       in
+		  case t of
+		     Arith {args, dst, overflow, prim, success} =>
+			(checkOperands args
+			 ; checkOperand dst
+			 ; (Type.equals (Type.int, Operand.ty dst)
+			    andalso labelIsJump overflow
+			    andalso labelIsJump success))
+		      | Bug => true
+		      | CCall {args, prim = p, return, returnTy} =>
+			   let
+			      val _ = checkOperands args
+			      val Block.T {kind, ...} = labelBlock return
+			   in
+			      case labelKind return of
+				 Kind.CReturn {dst, prim = p'} =>
+				    Prim.equals (p, p')
+				    andalso (case (dst, returnTy) of
+						(NONE, NONE) => true
+					      | (SOME x, SOME ty) =>
+						   Type.equals
+						   (ty, Operand.ty x)
+					      | _ => false)
+			       | _ => false
+			   end
+		      | Call {label, live, return} =>
+			   (case labelKind label of
+			       Kind.Func _ => true
+			     | _ => false)
+			   andalso (case return of
+				       NONE => true
+				     | SOME {handler, return, size} =>
+					  (case labelKind return of
+					      Kind.Handler _ => true
+					    | _ => false)
+					  andalso
+					  (case labelKind return of
+					      Kind.Cont {frameInfo, ...} =>
+						 size = FrameInfo.size frameInfo
+					    | _ => false))
+		      | Goto l => labelIsJump l
+		      | LimitCheck {failure, kind, success} =>
+			   labelIsRuntime (failure, Prim.gcCollect)
+			   andalso labelIsJump success
+			   andalso let
+				      datatype z = datatype LimitCheck.t
+				   in
+				      case kind of
+					 Array {bytesPerElt, numElts, ...} =>
+					    (checkOperand numElts
+					     ; (Type.equals (Type.int,
+							     Operand.ty numElts)
+						andalso bytesPerElt > 0))
+				       | Heap {bytes, ...} => bytes >= 0
+				       | _ => true
+				   end
+		      | Raise => true
+		      | Return {live} => (checkOperands live; true)
+		      | Runtime {args, prim, return} =>
+			   (checkOperands args
+			    ; (Prim.entersRuntime prim
+			       andalso labelIsRuntime (return, prim)))
+		      | Switch {cases, default, test} =>
+			   (checkOperand test
+			    ; (Cases.forall (cases, labelIsJump)
+			       andalso Option.forall (default, labelIsJump)))
+		      | SwitchIP {int, pointer, test} =>
+			   (checkOperand test
+			    ; (labelIsJump pointer
+			       andalso labelIsJump int))
+	       end
+	    fun blockOk (Block.T {label, kind, live, profileInfo,
+				  statements, transfer}): bool =
+	       let
+		  val _ = check' (kind, "kind", kindOk, Kind.layout)
+		  val _ =
+		     Vector.foreach
+		     (statements, fn s =>
+		      check' (s, "statement", statementOk, Statement.layout))
+		  val _ = check' (transfer, "transfer", transferOk,
+				  Transfer.layout)
+	       in
+		  true
+	       end
+	    val _ =
+	       List.foreach
+	       (chunks,
+		fn Chunk.T {chunkLabel, blocks, regMax} =>
+		Vector.foreach
+		(blocks, fn b => check' (b, "block", blockOk, Block.layout)))
+	 in
+	    ()
+	 end handle Err.E e => (Layout.outputl (Err.layout e, Out.error)
+				; Error.bug "Machine type error")
    end
 
 end

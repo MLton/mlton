@@ -142,16 +142,16 @@ structure Stack:
 structure Info =
    struct
       type t = {
-		live: Operand.t list,
-		liveNoFormals: Operand.t list,
+		live: Operand.t vector,
+		liveNoFormals: Operand.t vector,
 		size: int,
 		adjustSize: int -> {size: int, shift: int}
 		}
 
       fun layout ({live, liveNoFormals, size, ...}: t) =
 	 Layout.record
-	 [("live", List.layout Operand.layout live),
-	  ("liveNoFormals", List.layout Operand.layout liveNoFormals),
+	 [("live", Vector.layout Operand.layout live),
+	  ("liveNoFormals", Vector.layout Operand.layout liveNoFormals),
 	  ("size", Int.layout size)]
    end
 
@@ -354,27 +354,28 @@ fun allocate {function = f: Rssa.Function.t,
 			     end
 		     else ops
 	       in
-		  List.fold
-		  (xs, ops, fn (x, operands) =>
-		   let
-		      val {operand, ty, ...} = varInfo x
-		   in
-		      case operand of
-			 NONE => operands
-		       | SOME r =>
-			    if force
-			       then (case place x of
-					Register =>
-					   Error.bug 
-					   (concat
-					    ["live register ",
-					     Layout.toString (Var.layout x)])
-				      | Stack =>
-					   case Operand.deStackOffset (^r) of
-					      NONE => Error.bug "live slot"
-					    | SOME _ => (^r)::operands)
-			    else (^r)::operands
-		   end)
+		  Vector.fromList
+		  (List.fold
+		   (xs, ops, fn (x, operands) =>
+		    let
+		       val {operand, ty, ...} = varInfo x
+		    in
+		       case operand of
+			  NONE => operands
+			| SOME r =>
+			     if force
+				then (case place x of
+					 Register =>
+					    Error.bug 
+					    (concat
+					     ["live register ",
+					      Layout.toString (Var.layout x)])
+				       | Stack =>
+					    case Operand.deStackOffset (^r) of
+					       NONE => Error.bug "live slot"
+					     | SOME _ => (^r)::operands)
+			     else (^r)::operands
+		    end))
 	       end
 	 in
 	    val getOperands =
@@ -384,7 +385,7 @@ fun allocate {function = f: Rssa.Function.t,
 					  Bool.layout code,
 					  Bool.layout link,
 					  Bool.layout force],
-			    List.layout Operand.layout)
+			    Vector.layout Operand.layout)
 	       getOperands
 	 end
 	 (* Do a DFS of the control-flow graph. *)
@@ -397,10 +398,10 @@ fun allocate {function = f: Rssa.Function.t,
 		val liveNoFormals =
 		   getOperands ((beginNoFormals, hs), R.Kind.isOnStack kind)
 		val stack =
-		   Stack.new (List.fold (liveNoFormals, [], fn (oper, ac) =>
-					 case Operand.deStackOffset oper of
-					    NONE => ac
-					  | SOME a => a :: ac))
+		   Stack.new (Vector.fold (liveNoFormals, [], fn (oper, ac) =>
+					   case Operand.deStackOffset oper of
+					      NONE => ac
+					    | SOME a => a :: ac))
 		fun adjustSize size =
 		   let
 		      val (offset, offset') =
@@ -434,9 +435,9 @@ fun allocate {function = f: Rssa.Function.t,
 		    (s, stack, fn ({var, ...}, stack) =>
 		     allocateVar (var, SOME label, false, stack)))
 		val _ = setLabelInfo (label, {live = live,
-					       liveNoFormals = liveNoFormals,
-					       size = Stack.size stack,
-					       adjustSize = adjustSize})
+					      liveNoFormals = liveNoFormals,
+					      size = Stack.size stack,
+					      adjustSize = adjustSize})
 	     in
 		fn () => ()
 	     end)

@@ -36,11 +36,11 @@ signature ALLOCATE_REGISTERS =
 	     labelInfo:
 	     Rssa.Label.t -> {
 			      (* Live operands at the beginning of the block. *)
-			      live: Machine.Operand.t list,
+			      live: Machine.Operand.t vector,
 			      (* Live operands at the beginning of the block, 
 			       * excepting its formals.
 			       *)
-			      liveNoFormals: Machine.Operand.t list,
+			      liveNoFormals: Machine.Operand.t vector,
 			      (* Number of bytes in frame including return
 			       * address.
 			       *)

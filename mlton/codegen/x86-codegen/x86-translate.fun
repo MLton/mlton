@@ -241,7 +241,7 @@ struct
 		           (liveInfo, label, live label)
 			   
 		   val args
-		     = List.fold
+		     = Vector.fold
 		       (args,
 			x86.MemLocSet.empty,
 			fn (operand, args)
@@ -264,7 +264,7 @@ struct
 		           (liveInfo, label, live label)
 	           val frameInfo = translateFrameInfo frameInfo
 		   val args
-		     = List.fold
+		     = Vector.fold
 		       (args,
 			x86.MemLocSet.empty,
 			fn (operand, args)
@@ -1796,7 +1796,7 @@ struct
 		    transfer 
 		    = SOME (x86.Transfer.return 
 			    {live 
-			     = List.fold
+			     = Vector.fold
 			       (live,
 				x86.MemLocSet.empty,
 				fn (operand, live)
@@ -1855,22 +1855,17 @@ struct
 			       truee = int,
 			       falsee = pointer})}))
 		 end
-	      | NearJump {label, return}
-	      => (case return
-		    of SOME {return, handler, size}
-		     => Error.bug (concat ["toX86Blocks: NearJump, return ",
-					   Label.toString return])
-		     | NONE
-		     => AppendList.append
-		        (comments transfer,
-			 AppendList.single
-			 ((* goto label *)
-			  x86.Block.T'
-			  {entry = NONE,
-			   profileInfo = x86.ProfileInfo.none,
-			   statements = [],
-			   transfer = SOME (x86.Transfer.goto {target = label})})))
-	      | FarJump {label, live, return, ...}
+	      | Goto label
+	      => (AppendList.append
+		  (comments transfer,
+		   AppendList.single
+		   ((* goto label *)
+		    x86.Block.T'
+		    {entry = NONE,
+		     profileInfo = x86.ProfileInfo.none,
+		     statements = [],
+		     transfer = SOME (x86.Transfer.goto {target = label})})))
+	      | Call {label, live, return, ...}
 	      => (case return
 		    of SOME {return, handler, size}
 		     => AppendList.append
@@ -1884,7 +1879,7 @@ struct
 			   = SOME (x86.Transfer.nontail 
 				   {target = label,
 				    live 
-				    = List.fold
+				    = Vector.fold
 				      (live,
 				       x86.MemLocSet.empty,
 				       fn (operand,live)
@@ -1909,7 +1904,7 @@ struct
 			   = SOME (x86.Transfer.tail 
 				   {target = label,
 				    live 
-				    = List.fold
+				    = Vector.fold
 				      (live,
 				       x86.MemLocSet.empty,
 				       fn (operand,live)
@@ -1954,7 +1949,8 @@ struct
 			      val comment
 				= "Live: " ^
 				  (argsToString
-				   (List.map(live, fn l => Operand.toString l)))
+				   (Vector.toListMap
+				    (live, fn l => Operand.toString l)))
 			    in
 			      [x86.Assembly.comment comment]
 			    end
@@ -2039,7 +2035,8 @@ struct
 	        (Label.plist, Property.initRaise ("live", Label.layout))
 	    val _ = Vector.foreach
 	            (blocks, fn Block.T {label, live, ...} =>
-		     setLive (label, List.map (live, Operand.toX86Operand)))
+		     setLive (label,
+			      Vector.toListMap (live, Operand.toX86Operand)))
 	    val transInfo = {addData = addData,
 			     frameLayouts = frameLayouts,
 			     live = live,

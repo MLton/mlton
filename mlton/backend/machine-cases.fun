@@ -17,13 +17,23 @@ fun length c =
 fun fold (c, a, f) =
    let
       fun doit cs = List.fold (cs, a, fn ((_, l), a) => f (l, a))
-   in case c of
-      Char cs => doit cs
-    | Int cs => doit cs
-    | Word cs => doit cs
+   in
+      case c of
+	 Char cs => doit cs
+       | Int cs => doit cs
+       | Word cs => doit cs
    end
 
 fun foreach (c, f) = fold (c, (), fn (l, ()) => f l)
+
+fun forall (c, f) =
+   let
+      exception No
+   in
+      (foreach (c, fn x => if f x then () else raise No)
+       ; true)
+      handle No => false
+   end
 
 fun layout c =
    let

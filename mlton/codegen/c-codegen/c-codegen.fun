@@ -259,15 +259,15 @@ fun output {program = Machine.Program.T {chunks,
       datatype status = None | One | Many
       val {get =
 	   labelInfo: Label.t -> {block: Block.t,
-				  frameInfo: {index: int,
-					      nextChunk: ChunkLabel.t} option,
+				  chunkLabel: ChunkLabel.t,
+				  frameIndex: int option,
 				  status: status ref,
 				  layedOut: bool ref},
 	   set = setLabelInfo, ...} =
 	 Property.getSetOnce
 	 (Label.plist, Property.initRaise ("CCodeGen.info", Label.layout))
       val allLabels = ref []
-      (* Assign the entries of a chunk consecutive integers so that
+      (* Assign the entries of each chunk consecutive integers so that
        * gcc will use a jump table.
        *)
       val indexCounter = Counter.new 0
@@ -279,15 +279,16 @@ fun output {program = Machine.Program.T {chunks,
 	   (setLabelInfo
 	    (label,
 	     {block = b,
-	      frameInfo = if Kind.isEntry kind
-			     then SOME {index = Counter.next indexCounter,
-					nextChunk = chunkLabel}
-			  else NONE,
+	      chunkLabel = chunkLabel,
+	      frameIndex = if Kind.isEntry kind
+			      then SOME (Counter.next indexCounter)
+			   else NONE,
               layedOut = ref false,
 	      status = ref None})
 	    ; List.push (allLabels, label))))
       val allLabels = List.rev (!allLabels)
       val maxFrameIndex = Counter.value indexCounter
+      val labelChunk = #chunkLabel o labelInfo
       fun labelFrameInfo (l: Label.t): FrameInfo.t option =
 	 let
 	    val {block = Block.T {kind, ...}, ...} = labelInfo l
@@ -358,13 +359,13 @@ fun output {program = Machine.Program.T {chunks,
       fun declareNextChunks () =
 	 make ("void ( *nextChunks []) ()", fn l =>
 	       let
-		  val {frameInfo, ...} = labelInfo l
+		  val {chunkLabel, frameIndex, ...} = labelInfo l
 	       in
-		  case frameInfo of
+		  case frameIndex of
 		     NONE => print "NULL"
-		   | SOME {nextChunk, ...} =>
+		   | SOME _ =>
 			C.callNoSemi ("Chunkp",
-				      [ChunkLabel.toString nextChunk],
+				      [ChunkLabel.toString chunkLabel],
 				      print)
 	       end)
       fun declareFrameOffsets () =
@@ -389,11 +390,11 @@ fun output {program = Machine.Program.T {chunks,
 	 List.foreach
 	 (allLabels, fn l =>
 	  Option.app
-	  (#frameInfo (labelInfo l), fn {index, ...} => 
+	  (#frameIndex (labelInfo l), fn i =>
 	   (print "#define "
 	    ; print (Label.toStringIndex l)
 	    ; print " "
-	    ; print (C.int index)
+	    ; print (C.int i)
 	    ; print "\n")))
       fun outputChunk (Chunk.T {chunkLabel, blocks, regMax, ...}) =
 	 let
@@ -421,9 +422,9 @@ fun output {program = Machine.Program.T {chunks,
 			  (force overflow; jump success)
 		     | Bug => ()
 		     | CCall _ => ()
-		     | FarJump _ => ()
+		     | Call _ => ()
+		     | Goto dst => jump dst
 		     | LimitCheck {success, ...} => jump success
-		     | NearJump {label, ...} => jump label
 		     | Raise => ()
 		     | Return _ => ()
 		     | Runtime _ => ()
@@ -451,7 +452,8 @@ fun output {program = Machine.Program.T {chunks,
 	       (fn l =>
 		let
 		   val info as {layedOut, ...} = labelInfo l
-		in if !layedOut 
+		in
+		   if !layedOut 
 		      then printGotoLabel l
 		   else printLabelCode info
 		end) arg
@@ -480,7 +482,7 @@ fun output {program = Machine.Program.T {chunks,
 		     print (let open Layout
 			    in toString
 			       (seq [str "/* live: ",
-				     List.layout Operand.layout live,
+				     Vector.layout Operand.layout live,
 				     str " */\n"])
 			    end)
 		  val _ =
@@ -500,10 +502,10 @@ fun output {program = Machine.Program.T {chunks,
 		  val _ =
 		     Vector.foreach (statements, fn s =>
 				     Statement.output (s, print))
-		  val _ = outputTransfer transfer
+		  val _ = outputTransfer (transfer, l)
 	       in ()
 	       end) arg
-	    and outputTransfer t =
+	    and outputTransfer (t, source: Label.t) =
 	       let
 		  fun iff (test, a, b) =
 		     (C.call ("\tBZ", [test, Label.toString b], print)
@@ -549,21 +551,31 @@ fun output {program = Machine.Program.T {chunks,
 			in
 			   ()
 			end
-		   | FarJump {chunkLabel, label, return, ...} =>
-			(case return
-			    of SOME {return, handler, size}
-			       => (Statement.push (size, print);
-				   Statement.output
-				   (Statement.Move
-				    {dst = Operand.StackOffset {offset = 0, 
-								ty = Type.int},
-				     src = Operand.Label return},
-				    print))
-			     | NONE => ();
-				  C.call ("\tFarJump", 
-					  [ChunkLabel.toString chunkLabel, 
-					   Label.toString label], 
-					  print))
+		   | Call {label, return, ...} =>
+			let
+			   val _ =
+			      case return of
+				 NONE => ()
+			       | SOME {return, handler, size} =>
+				    (Statement.push (size, print)
+				     ; (Statement.output
+					(Statement.Move
+					 {dst = (Operand.StackOffset
+						 {offset = 0, 
+						  ty = Type.int}),
+					  src = Operand.Label return},
+					 print)))
+			   val dstChunk = labelChunk label
+			in
+			   if ChunkLabel.equals (labelChunk source, dstChunk)
+			      then gotoLabel label
+			   else
+			      C.call ("\tFarJump", 
+				      [ChunkLabel.toString dstChunk, 
+				       Label.toString label],
+				      print)
+			end
+		   | Goto dst => gotoLabel dst
 		   | LimitCheck {failure, kind, success, ...} =>
 			let
 			   datatype z = datatype LimitCheck.t
@@ -592,18 +604,6 @@ fun output {program = Machine.Program.T {chunks,
 				   print)
 			   ; gotoLabel success
 			end
-		   | NearJump {label, return} => 
-			(case return
-			    of SOME {return, handler, size}
-			       => (Statement.push (size, print);
-				   Statement.output (Statement.Move
-						     {dst = Operand.StackOffset 
-						      {offset = 0, 
-						       ty = Type.int},
-						      src = Operand.Label return},
-						     print))
-			     | NONE => ();
-				  gotoLabel label)
 		   | Raise => C.call ("\tRaise", [], print)
 		   | Return {...} => C.call ("\tReturn", [], print)
 		   | Runtime {args, prim, return, ...} =>

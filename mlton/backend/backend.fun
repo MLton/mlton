@@ -167,7 +167,7 @@ fun toMachine (program: Ssa.Program.t) =
 				 " bytes."]))
 	       else ()
 	    val offsets =
-	       List.fold
+	       Vector.fold
 	       (live, [], fn (oper, liveOffsets) =>
 		case M.Operand.deStackOffset oper of
 		   NONE => liveOffsets
@@ -557,25 +557,17 @@ fun toMachine (program: Ssa.Program.t) =
 					    srcs = translateOperands args}
 			   val chunk' = funcChunk func
 			   val transfer =
-			      if !Control.Native.native
-				 orelse (not (Chunk.equals (chunk, chunk')))
-				 then
-				    M.Transfer.FarJump
-				    {chunkLabel = Chunk.label chunk',
-				     label = funcToLabel func,
-				     live = (Vector.toList
-					     (Vector.concat [handlerLive, dsts])),
-				     return = return}
-			      else M.Transfer.NearJump {label = funcToLabel func,
-							return = return}
+			      M.Transfer.Call
+			      {label = funcToLabel func,
+			       live = Vector.concat [handlerLive, dsts],
+			       return = return}
 			in (setupArgs, transfer)
 			end
 		   | R.Transfer.Goto {dst, args} =>
 			(parallelMove {srcs = translateOperands args,
 				       dsts = labelArgOperands dst,
 				       chunk = labelChunk dst},
-			 M.Transfer.NearJump {label = dst,
-					      return = NONE})
+			 M.Transfer.Goto dst)
 		   | R.Transfer.LimitCheck {failure, kind, success} =>
 			let
 			   datatype z = datatype R.LimitCheck.t
@@ -612,7 +604,7 @@ fun toMachine (program: Ssa.Program.t) =
 			   (parallelMove {chunk = chunk,
 					  srcs = translateOperands xs,
 					  dsts = dsts},
-			    M.Transfer.Return {live = Vector.toList dsts})
+			    M.Transfer.Return {live = dsts})
 			end
 		   | R.Transfer.Runtime {prim, args, return} => 
 			simple
@@ -621,9 +613,24 @@ fun toMachine (program: Ssa.Program.t) =
 			  prim = prim,
 			  return = return})
 		   | R.Transfer.Switch {cases, default, test} =>
-			simple (M.Transfer.Switch {cases = cases,
-						   default = default,
-						   test = translateOperand test})
+			let
+			   fun doit l =
+			      simple
+			      (case (l, default) of
+				  ([], NONE) => M.Transfer.Bug
+				| ([(_, dst)], NONE) => M.Transfer.Goto dst
+				| ([], SOME dst) => M.Transfer.Goto dst
+				| _ =>
+				     M.Transfer.Switch
+				     {cases = cases,
+				      default = default,
+				      test = translateOperand test})
+			in
+			   case cases of
+			      Cases.Char l => doit l
+			    | Cases.Int l => doit l
+			    | Cases.Word l => doit l
+			end
 		   | R.Transfer.SwitchIP {int, pointer, test} =>
 			simple (M.Transfer.SwitchIP
 				{int = int,
@@ -647,9 +654,7 @@ fun toMachine (program: Ssa.Program.t) =
 			   profileInfo = {func = profileInfoFunc,
 					  label = profileInfoFunc},
 			   statements = Vector.new0 (),
-			   transfer = (M.Transfer.NearJump
-				       {label = start,
-					return = NONE})})
+			   transfer = M.Transfer.Goto start})
 	       end
 	    fun genBlock (R.Block.T {args, kind, label, statements, transfer,
 				     ...}) : unit =
@@ -683,7 +688,7 @@ fun toMachine (program: Ssa.Program.t) =
 					   live = liveNoFormals}
 			      val srcs = callReturnOperands (args, #2, 0)
 			   in
-			      (M.Kind.Cont {args = Vector.toList srcs,
+			      (M.Kind.Cont {args = srcs,
 					    frameInfo = M.FrameInfo.bogus},
 			       parallelMove
 			       {chunk = chunk,
