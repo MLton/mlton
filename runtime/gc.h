@@ -485,7 +485,6 @@ typedef struct GC_state {
 	pointer toSpace;	/* used during copying */
 	pointer toLimit;	/* used during copying */
 	uint totalRam;		/* bytes */
-	uint totalSwap; 	/* bytes */
 	uint translateDiff;	/* used by translateHeap */
  	bool translateUp;	/* used by translateHeap */
 	GC_weak weaks;
@@ -504,7 +503,7 @@ static inline bool isWordAligned(uint x) {
  * I.e., it does not suffer from the Linux kernel bugs associated with the user
  * and system times.
  */
-int fixedGetrusage(int who, struct rusage *rup);
+int fixedGetrusage (int who, struct rusage *rup);
 
 /* ---------------------------------------------------------------- */
 /*                           GC functions                           */

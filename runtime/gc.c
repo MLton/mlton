@@ -47,10 +47,6 @@
 #include <ucontext.h>
 #endif
 
-#if (defined (__sun__))
-#include <sys/swap.h>  /* For swapctl. */
-#endif
-
 #include "IntInf.h"
 
 /* On Linux, We need the value of MREMAP_MAYMOVE, which should come from
@@ -317,7 +313,7 @@ static void showMem () {
 	showMaps();
 }
 
-#elif (defined (__FreeBSD__) || defined (__NetBSD__))
+#elif (defined (__FreeBSD__))
 
 static void showMem () {
 	static char buffer[256];
@@ -326,7 +322,7 @@ static void showMem () {
 	(void)system (buffer);
 }
 
-#elif (defined (__linux__))
+#elif (defined (__linux__) || defined (__NetBSD__))
 
 static void showMem () {
 	static char buffer[256];
@@ -1344,9 +1340,6 @@ static W32 heapDesiredSize (GC_state s, W64 live, W32 currentSize) {
 	W32 res;
 	float ratio;
 
-	if (live > s->totalRam + s->totalSwap)
-		die ("Out of memory: %s bytes live.", 
-				ullongToCommaString (live));
 	ratio = (float)s->ram / (float)live;
         if (ratio >= s->liveRatio + s->growRatio) {
 		/* Cheney copying fits in RAM with desired liveRatio. */
@@ -1384,8 +1377,7 @@ static W32 heapDesiredSize (GC_state s, W64 live, W32 currentSize) {
 		 */
 		res = s->ram;
 	} else { /* Required live ratio. */
-		res = min64 (live * s->markCompactRatio, 
-				s->totalRam + s->totalSwap);
+		res = live * s->markCompactRatio;
 		/* If the current heap is bigger than res, the shrinking always
 		 * sounds like a good idea.  However, depending on what pages
 		 * the VM keeps around, growing could be very expensive, if it
@@ -3870,89 +3862,24 @@ static void readProcessor() {
 }
 
 /*
- * Set RAM and SWAP size.
- * Note the total amount of RAM is multiplied by ramSlop so that we don't
- * use all of memory or start paging.
- *
- * Ensure that s->totalRam + s->totalSwap < 4G.
+ * totalRam returns the amount of physical memory on the machine.  This is
+ * later multiplied by ramSlop to cut down on using all memory and paging.
  */
 
-#if (defined (__linux__))
+#if (defined (__CYGWIN__) || defined (__linux__) || defined (__sun__))
 
-/* struct sysinfo copied from /usr/include/linux/kernel.h on a 2.4 kernel
- * because we need mem_unit.
- * On older kernels, it will be guaranteed to be zero, and we test for that
- * below.
- */
-struct Msysinfo {
-	long uptime;			/* Seconds since boot */
-	unsigned long loads[3];		/* 1, 5, and 15 minute load averages */
-	unsigned long totalram;		/* Total usable main memory size */
-	unsigned long freeram;		/* Available memory size */
-	unsigned long sharedram;	/* Amount of shared memory */
-	unsigned long bufferram;	/* Memory used by buffers */
-	unsigned long totalswap;	/* Total swap space size */
-	unsigned long freeswap;		/* swap space still available */
-	unsigned short procs;		/* Number of current processes */
-	unsigned long totalhigh;	/* Total high memory size */
-	unsigned long freehigh;		/* Available high memory size */
-	unsigned int mem_unit;		/* Memory unit size in bytes */
-	char _f[20-2*sizeof(long)-sizeof(int)];	/* Padding: libc5 uses this.. */
-};
-static void setMemInfo (GC_state s) {
-	struct Msysinfo	sbuf;
+static W32 totalRam (GC_state s) {
 	W32 maxMem;
 	W64 tmp;
-	uint memUnit;
 
 	maxMem = 0x100000000llu - s->pageSize;
-	unless (0 == sysinfo((struct sysinfo*)&sbuf))
-		diee ("sysinfo failed");
-	memUnit = sbuf.mem_unit;
-	/* On 2.2 kernels, mem_unit is not defined, but will be zero, so go
-	 * ahead and pretend it is one.
-	 */
-	if (0 == memUnit)
-		memUnit = 1;
-	tmp = memUnit * (W64)sbuf.totalram;
-	s->totalRam = (tmp > (W64)maxMem) ? maxMem : (W32)tmp;
-	maxMem = maxMem - s->totalRam;
-	tmp = memUnit * (W64)sbuf.totalswap;
-	s->totalSwap = (tmp > (W64)maxMem) ? maxMem : (W32)tmp;
-}
-
-#elif (defined (__CYGWIN__))
-
-static void setMemInfo (GC_state s) {
-	MEMORYSTATUS ms; 
-
-	GlobalMemoryStatus (&ms); 
-	s->totalRam = ms.dwTotalPhys;
-	s->totalSwap = ms.dwTotalPageFile;
+	tmp = sysconf (_SC_PHYS_PAGES) * (W64)s->pageSize;
+	return (tmp >= maxMem) ? maxMem: (W32)tmp;
 }
 
 #elif (defined (__FreeBSD__))
 
-/* returns total amount of swap available */
-static int totalSwap () {
-        static char buffer[256];
-        FILE *file;
-        int total_size = 0;
-
-        file = popen ("/usr/sbin/swapinfo -k | awk '{ print $4; }'\n", "r");
-        if (file == NULL) 
-                diee ("swapinfo failed");
-        /* skip header */
-        fgets (buffer, 255, file);
-        while (fgets(buffer, 255, file) != NULL) { 
-                total_size += atoi(buffer);
-        }
-        pclose (file);
-        return total_size * 1024;
-}
-
-/* returns total amount of memory available */
-static int totalRam () {
+static W32 totalRam (GC_state s) {
 	int mem, len;
 
 	len = sizeof (int);
@@ -3961,31 +3888,9 @@ static int totalRam () {
 	return mem;
 }
 
-static void setMemInfo (GC_state s) {
-	s->totalRam = totalRam ();
-	s->totalSwap = totalSwap ();
-}
-
 #elif (defined (__NetBSD__))
 
-/* returns total amount of swap available */
-static int totalSwap () {
-	static char buffer[256];
-	FILE *file;
-	uint total_size = 0;
-
-	file = popen ("/sbin/swapctl -s | awk '{ print $8; }'\n", "r");
-	if (file == NULL)
-	    diee ("swapinfo failed");
-	/* read in data */
-	fgets (buffer, 255, file);
-	total_size = atoi (buffer);
-	pclose (file);
-	return total_size * 1024;
-}
-
-/* returns total amount of memory available */
-static int totalRam () {
+static W32 totalRam (GC_state s) {
 	uint mem;
 	int len, mib[2];
 	
@@ -3993,35 +3898,15 @@ static int totalRam () {
 	mib[1] = HW_PHYSMEM;
 	len = sizeof(mem);
 	if (-1 == sysctl (mib, 2, &mem, &len, NULL, 0))
-	    diee ("sysctl failed");
+		diee ("sysctl failed");
  	return mem;
-}
-
-static void setMemInfo (GC_state s) {
-	s->totalRam = totalRam ();
-	s->totalSwap = totalSwap ();
-}
-
-#elif (defined (__sun__))
-
-static void setMemInfo (GC_state s) {
-	struct anoninfo anon;
-
-	s->totalRam = sysconf (_SC_PHYS_PAGES) * s->pageSize;
-	if (-1 == swapctl (SC_AINFO, &anon))
-		/* Couldn't get swap, so assume that there's as much swap as
-		 * there is RAM.
-		 */
-		s->totalSwap = s->totalRam;
-	else
-		s->totalSwap = anon.ani_max * s->pageSize;
 }
 
 #else
 
-#error setMemInfo not defined
+#error totalRam not defined
 
-#endif /* definition of setMemInfo */
+#endif /* definition of totalRam */
 
 #if FALSE
 static bool stringToBool (string s) {
@@ -4482,16 +4367,15 @@ int GC_init (GC_state s, int argc, char **argv) {
 		die ("Cannot use both fixed-heap and max-heap.\n");
 	unless (ratiosOk (s))
 		die ("invalid ratios");
-	setMemInfo (s);
+	s->totalRam = totalRam (s);
 	/* We align s->ram by pageSize so that we can test whether or not we
 	 * we are using mark-compact by comparing heap size to ram size.  If 
 	 * we didn't round, the size might be slightly off.
          */
 	s->ram = align (s->ramSlop * s->totalRam, s->pageSize);
 	if (DEBUG or DEBUG_RESIZING or s->messages)
-		fprintf (stderr, "total RAM = %s  total swap = %s  RAM = %s\n",
+		fprintf (stderr, "total RAM = %s  RAM = %s\n",
 				uintToCommaString (s->totalRam), 
-				uintToCommaString (s->totalSwap),
 				uintToCommaString (s->ram));
 	/* Initialize profiling.  This must occur after processing command-line 
          * arguments, because those may just be doing a show prof, in which 
