@@ -68,13 +68,13 @@ signature CONTROL =
       val keepSSA: bool ref
 	 
       (* List of pass names to keep diagnostic info on. *)
-      val keepDiagnostics: string list ref
+      val keepDiagnostics: Regexp.Compiled.t list ref
 
       (* Keep dot files for whatever SSA files are produced. *)
       val keepDot: bool ref
 
       (* List of pass names to save the result of. *)
-      val keepPasses: string list ref
+      val keepPasses: Regexp.Compiled.t list ref
 
       datatype limitCheck =
 	 (* per block *)

@@ -69,9 +69,13 @@ val options =
 	"overflow checking on integer arithmetic",
 	boolRef detectOverflow),
        (Expert, "diag", " pass", "keep diagnostic info for pass",
-	SpaceString (fn s =>
-		     (List.push (keepDiagnostics, s)
-		      ; List.push (keepPasses, s)))),
+	SpaceString (fn s => (case Regexp.fromString s of
+				 SOME (re,_) => let val re = Regexp.compileDFA re
+						in 
+						   List.push (keepDiagnostics, re)
+						   ; List.push (keepPasses, re)
+						end
+			       | NONE => usage (concat ["invalid -diag flag: ", s])))),
        (Expert, "drop-pass", " pass", "omit optimization pass",
 	SpaceString (fn s => List.push (dropPasses, s))),
        (Normal, "D", "define", "define compile-time constant",
@@ -117,7 +121,11 @@ val options =
 		      | "ssa" => keepSSA := true
 		      | _ => usage (concat ["invalid -keep flag: ", s]))),
        (Expert, "keep-pass", " pass", "keep the results of pass",
-	SpaceString (fn s => List.push (keepPasses, s))),
+	SpaceString (fn s => (case Regexp.fromString s of
+				 SOME (re,_) => let val re = Regexp.compileDFA re
+						in List.push (keepPasses, re)
+						end
+			       | NONE => usage (concat ["invalid -keep-pass flag: ", s])))),
        (Normal, "l", "library", "link with library", push libs),
        (Expert, "limit-check", " {lhle|pb|ebb|lh|lhf|lhfle}",
 	"limit check insertion algorithm",
@@ -283,7 +291,7 @@ fun commandLine (args: string list): unit =
 		      then
 			 if isSome (!coalesce)
 			    then usage "can't use -coalesce and -native true"
-			 else  ChunkPerFunc
+			 else ChunkPerFunc
 		   else Coalesce {limit = (case !coalesce of
 					      NONE => 4096
 					    | SOME n => n)})

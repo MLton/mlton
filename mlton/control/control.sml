@@ -140,7 +140,9 @@ val keepSSA = control {name = "keepSSA",
 
 val keepDiagnostics = control {name = "keep diagnostics",
 			       default = [],
-			       toString = List.toString (fn s => s)}
+			       toString = List.toString 
+			                  (Layout.toString o 
+					   Regexp.Compiled.layout)}
 
 val keepDot = control {name = "keep dot",
 		       default = false,
@@ -148,7 +150,9 @@ val keepDot = control {name = "keep dot",
 
 val keepPasses = control {name = "keep passes",
 			  default = [],
-			  toString = List.toString (fn s => s)}
+			  toString = List.toString 
+			             (Layout.toString o 
+				      Regexp.Compiled.layout)}
 
 structure LimitCheck =
    struct
@@ -614,7 +618,8 @@ fun maybeSaveToFile ({name: string, suffix: string},
 		     style: style,
 		     a: 'a,
 		     d: 'a display): unit =
-   if not (List.contains (!keepPasses, name, String.equals))
+   if not (List.exists (!keepPasses, fn re =>
+			Regexp.Compiled.matchesAll (re, name)))
       then ()
    else saveToFile ({suffix = concat [name, ".", suffix]}, style, a, d)
 
@@ -625,7 +630,8 @@ fun pass {name: string,
 	  thunk: unit -> 'a}: 'a =
    let
       val result =
-	 if not (List.contains (!keepDiagnostics, name, String.equals))
+	 if not (List.exists (!keepDiagnostics, fn re =>
+			      Regexp.Compiled.matchesAll (re, name)))
 	    then trace (Pass, name) thunk ()
 	 else
 	    let
