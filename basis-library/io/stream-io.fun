@@ -298,10 +298,12 @@ functor StreamIOExtra
 		    is2 as In {common = {tail = tail2, ...}, ...}) = 
 	tail1 = tail2
 
-      fun updateState (In {common, ...}, pos, state) =
+      fun update (In {common, ...}, pos, state) =
 	In {common = common,
 	    pos = pos,
 	    state = state}
+      fun updatePos (is as In {state, ...}, pos) = update (is, pos, state)
+      fun updateState (is, state) = update (is, 0, state)
 
       fun instreamSel (In v, sel) = sel v
       fun instreamCommon is = instreamSel (is, #common)
@@ -328,7 +330,7 @@ functor StreamIOExtra
 			       val _ = !tail := this
 			       val _ = tail := next
 			     in
-			       SOME (inp, updateState (is, 0, next))
+			       SOME (inp, updateState (is, next))
 			     end
 	      fun doit readVec =
 		let
@@ -366,9 +368,9 @@ functor StreamIOExtra
 		        (V.length inp - pos, 
 			 fn i => V.sub (inp, pos + i))
 	    in
-	      (inp, updateState (is, 0, next))
+	      (inp, updateState (is, next))
 	    end
-	| Eos {next} => (empty, updateState (is, 0, next))
+	| Eos {next} => (empty, updateState (is, next))
 	| End => extendB "input" is
 	| Truncated => (empty, is)
 	| Closed => (empty, is)
@@ -390,7 +392,7 @@ functor StreamIOExtra
 				           (n, fn i => V.sub (inp, pos + i))
 				val inps = inp'::inps
 			      in
-				finish (inps, updateState (is, pos + n, state))
+				finish (inps, updatePos (is, pos + n))
 			      end
 			 else let
 				val inp' = V.tabulate
@@ -398,12 +400,12 @@ functor StreamIOExtra
 					    fn i => V.sub (inp, pos + i))
 				val inps = inp'::inps
 			      in
-				loop (updateState (is, 0, next), 
+				loop (updateState (is, next), 
 				      inps, n - (V.length inp - pos))
 			      end
 		   | Eos {next} => 
 		       finish (inps, if n > 0
-				       then updateState(is, 0, next)
+				       then updateState (is, next)
 				       else is)
 		   | End => 
 		       let val _ = extendB "inputN" is 
@@ -417,13 +419,23 @@ functor StreamIOExtra
       fun input1 (is as In {pos, state, ...}) =
 	case !state of
 	  Link {inp, next} =>
+(*
+	    let
+	      val update = if pos + 1 < V.length inp
+			     then fn () => updatePos (is, pos + 1)
+			     else fn () => updateState (is, next)
+	    in
+	      SOME (V.sub (inp, pos), update ())
+	    end
+*)
 	    let
 	      val (k, next) = if pos + 1 < V.length inp
 				then (pos + 1, state)
 				else (0, next)
 	    in
-	      SOME (V.sub (inp, pos), updateState (is, k, next))
+	      SOME (V.sub (inp, pos), update (is, k, next))
 	    end
+
 	| End => 
 	    let val _ = extendB "input1" is 
 	    in input1 is
@@ -472,7 +484,7 @@ functor StreamIOExtra
 					   fn i => V.sub (inp, pos + i))
 			       val inps = inp'::inps
 			     in
-			       finish (inps, updateState (is, k, next), false)
+			       finish (inps, update (is, k, next), false)
 			     end
 		 | NONE => let
 			     val inp' = V.tabulate
@@ -480,7 +492,7 @@ functor StreamIOExtra
 					 fn i => V.sub (inp, pos + i))
 			     val inps = inp'::inps
 			   in
-			     loop (updateState (is, 0, next), inps)
+			     loop (updateState (is, next), inps)
 			   end)
 	    | Eos {next} => 
 		finish (inps, is, List.length inps > 0)
