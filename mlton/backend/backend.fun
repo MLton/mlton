@@ -373,9 +373,8 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 		      Prim.Name.MLton_bogus =>
 			 set (case Mtype.dest (toMtype ty) of
 				 Mtype.Char => Operand.char #"\000"
-			       (*				  | Mtype.Double => Operand.float "0.0" *)
+(*			       | Mtype.Double => Operand.float "0.0" *)
 			       | Mtype.Int => Operand.int 0
-
 			       | Mtype.Uint => Operand.uint 0w0
 			       | Mtype.Pointer => Operand.pointer 1
 			       | _ => Error.bug "bogus not implemented for type")

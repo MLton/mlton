@@ -70,8 +70,8 @@ structure Operand =
 
       fun toMOut (x: t) = x
 
-      fun ensurePointer (x: t): unit =
-	 Assert.assert ("ensurePointer", fn () =>
+      fun ensurePointer s (x: t): unit =
+	 Assert.assert ("ensurePointer:" ^ s ^ ":" ^ (toString x), fn () =>
 			Type.isPointer (ty x)
 			andalso (case x of
 				    ArrayOffset _ => true
@@ -83,16 +83,16 @@ structure Operand =
 				  | StackOffset _ => true
 				  | _ => false))
 
-      fun arrayOffset arg = (ensurePointer (#base arg); ArrayOffset arg)
+      fun arrayOffset arg = (ensurePointer "arrayOffset" (#base arg); ArrayOffset arg)
       val castInt = CastInt
       val char = Char
-      fun contents (z, t) = (ensurePointer z; Contents {oper = z, ty = t})
+      fun contents (z, t) = (ensurePointer "contents" z; Contents {oper = z, ty = t})
       val float = Float
       val global = Global
       val int = Int
       val intInf = IntInf
       val label = Label
-      fun offset arg = (ensurePointer (#base arg); Offset arg)
+      fun offset arg = (ensurePointer "offset" (#base arg); Offset arg)
       val pointer = Pointer
       val register = Register
       val maxStackOffset: int ref = ref 0
@@ -115,15 +115,15 @@ structure Operand =
       val rec equals =
 	 fn (ArrayOffset {base = b, offset = i, ...},
 	     ArrayOffset {base = b', offset = i', ...}) =>
-	 equals (b, b') andalso equals (i, i') 
+	        equals (b, b') andalso equals (i, i') 
 	   | (CastInt z, CastInt z') => equals (z, z')
 	   | (Char c, Char c') => c = c'
 	   | (Contents {oper = z, ...}, Contents {oper = z', ...}) => equals (z, z')
 	   | (Float f, Float f') => f = f'
 	   | (Int n, Int n') => n = n'
 	   | (IntInf w, IntInf w') => Word.equals (w, w')
-	  | (Offset {base = b, offset = i, ...},
-	     Offset {base = b', offset = i', ...}) => equals (b, b') andalso i = i' 
+	   | (Offset {base = b, offset = i, ...},
+	      Offset {base = b', offset = i', ...}) => equals (b, b') andalso i = i' 
 	   | (Pointer n, Pointer n') => n = n'
 	   | (Register r, Register r') => Register.equals (r, r')
 	   | (StackOffset {offset = n, ...}, StackOffset {offset = n', ...}) =>
@@ -141,14 +141,14 @@ structure Operand =
 	  | (GlobalPointerNonRoot i, GlobalPointerNonRoot j) => i = j
 	  | (Offset {base, offset, ...}, _) => inter base
 	  | (Register r, Register r') => Register.equals (r, r')
-	       | (StackOffset {offset = off, ty = ty},
-		  StackOffset {offset = off', ty = ty'}) =>
-		 let 
-		    val max = off + Type.size ty
-		    val max' = off' + Type.size ty'
-		 in max > off' andalso max' > off
-		 end
-		| _ => false
+	  | (StackOffset {offset = off, ty = ty},
+	     StackOffset {offset = off', ty = ty'}) =>
+	       let 
+		  val max = off + Type.size ty
+		  val max' = off' + Type.size ty'
+	       in max > off' andalso max' > off
+	       end
+	  | _ => false
 	 end
    end
 
