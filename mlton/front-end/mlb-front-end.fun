@@ -5,24 +5,21 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor MLBFrontEnd (S: MLB_FRONT_END_STRUCTS): MLB_FRONT_END = 
 struct
 
 open S
 
-local
-   val lexAndParseProgOrMLBFail = fn _ => Error.bug "lexAndParseProgOrMLB"
-   val lexAndParseProgOrMLBs : (File.t * Region.t -> Ast.Basdec.node) list ref =
-      ref [lexAndParseProgOrMLBFail]
-in
-   fun pushLexAndParseProgOrMLB lexAndParseProgOrMLB = 
-      List.push (lexAndParseProgOrMLBs, lexAndParseProgOrMLB)
-   fun popLexAndParseProgOrMLB () = 
-      ignore (List.pop lexAndParseProgOrMLBs)
+(* The lexer recursively invokes the lexer/parser when it encounters a file
+ * reference.  So, we need a stub here to feed to the lexer.  The stub is 
+ * overridden after the lexer is defined.
+ *)
 
-   val lexAndParseProgOrMLB = fn f => 
-      List.first (!lexAndParseProgOrMLBs) f
-end
+val lexAndParseProgOrMLBRef: (File.t * Region.t -> Ast.Basdec.node) ref =
+   ref (fn _ => Error.bug "lexAndParseProgOrMLB")
+
+val lexAndParseProgOrMLB = fn f => !lexAndParseProgOrMLBRef f
 
 structure LrVals = MLBLrValsFun (structure Token = LrParser.Token
 			 	 structure Ast = Ast
@@ -57,50 +54,48 @@ fun lexAndParse (source: Source.t, ins: In.t) =
    end
 
 fun lexAndParseFile (f: File.t) =
-   File.withIn
-   (f, fn ins => lexAndParse (Source.new f, ins))
+   File.withIn (f, fn ins => lexAndParse (Source.new f, ins))
 
 val lexAndParseFile =
     Trace.trace ("MLBFrontEnd.lexAndParseFile", File.layout, Ast.Basdec.layout)
     lexAndParseFile
 
-fun lexAndParseString (s: String.t) =
+fun lexAndParseString' (s: String.t) =
    let 
       val source = Source.new "<string>"
       val ins = In.openString s
-   in lexAndParse (source, ins)
+   in
+      lexAndParse (source, ins)
    end
 
-val lexAndParseString =
-    Trace.trace ("MLBFrontEnd.lexAndParseString", String.layout, Ast.Basdec.layout)
-    lexAndParseString
+val lexAndParseString' =
+    Trace.trace ("MLBFrontEnd.lexAndParseString", String.layout,
+		 Ast.Basdec.layout)
+    lexAndParseString'
 
-fun mkLexAndParse {parseSource, parseImport} =
+fun lexAndParseString (s: string, {parseSource, parseImport}) =
    let
       val cwd = Dir.current ()
       val relativize = SOME cwd
       val state = {cwd = cwd, relativize = relativize, seen = []}
-
       val importFiles: File.t Buffer.t = Buffer.new {dummy = "<dummy>"}
       val sourceFiles: File.t Buffer.t = Buffer.new {dummy = "<dummy>"}
-
       val psi : (OS.FileSys.file_id * Ast.Basdec.t Promise.t) HashSet.t =
 	 HashSet.new {hash = OS.FileSys.hash o #1}
-
       local
-	 fun make (file : File.t) =
+	 fun make (file: File.t) =
 	    if File.canRead file
-	       then List.keepAllMap
-		    (File.lines file, fn line =>
-		     if String.forall (line, Char.isSpace)
-			then NONE
-			else 
-			   case String.tokens (line, Char.isSpace) of
-			      [var, path] => SOME {var = var, path = path}
-			    | _ => Error.bug (concat ["strange mlb path mapping: ", 
-						      file, ":: ", line]))
-	       else []
-
+	       then
+		  List.keepAllMap
+		  (File.lines file, fn line =>
+		   if String.forall (line, Char.isSpace)
+		      then NONE
+		   else 
+		      case String.tokens (line, Char.isSpace) of
+			 [var, path] => SOME {var = var, path = path}
+		       | _ => Error.bug (concat ["strange mlb path mapping: ", 
+						 file, ":: ", line]))
+	    else []
 	 val pathMap =
 	    (List.rev o List.concat)
 	    [make (concat [!Control.libDir, "/mlb-path-map"]),
@@ -122,14 +117,14 @@ fun mkLexAndParse {parseSource, parseImport} =
 			 Option.layout Dir.layout)
 	    peekPathMap
       end
-
       fun regularize {fileOrig, cwd, relativize} =
 	 let
 	    val fileExp = 
 	       let
 		  fun loop (s, acc, accs) =
 		     case s of
-			[] => String.concat (List.rev ((String.fromListRev acc)::accs))
+			[] => String.concat (List.rev
+					     (String.fromListRev acc :: accs))
 		      | (#"$")::(#"(")::s => 
 			   let
 			      val accs = (String.fromListRev acc)::accs
@@ -176,7 +171,6 @@ fun mkLexAndParse {parseSource, parseImport} =
 		       ("fileUse", File.layout fileUse),
 		       ("relativize", Option.layout Dir.layout relativize)])
 	 regularize
-
       fun lexAndParseProg {fileAbs: File.t, fileOrig: File.t, fileUse: File.t, 
 			   fail: String.t -> Ast.Basdec.node} =
 	 if parseSource
@@ -203,14 +197,15 @@ fun mkLexAndParse {parseSource, parseImport} =
 		    then fail "cannot be read"
 		 else let
 			 val fid = OS.FileSys.fileId fileAbs
-			 val seen' = (fid, fileUse, reg)::seen
+			 val seen' = (fid, fileUse, reg) :: seen
 		      in
 			 if List.exists (seen, fn (fid', _, _) => 
 					 OS.FileSys.compare (fid, fid') = EQUAL)
 			    then (let open Layout
 				  in 
 				     Control.error 
-				     (reg, seq [str "Basis forms a cycle with ", File.layout fileUse],
+				     (reg, seq [str "Basis forms a cycle with ",
+						File.layout fileUse],
 				      align (List.map (seen', fn (_, f, r) => 
 						       seq [Region.layout r, 
 							    str ": ", 
@@ -222,18 +217,22 @@ fun mkLexAndParse {parseSource, parseImport} =
 				  val (_, basdec) =
 				     HashSet.lookupOrInsert
 				     (psi, OS.FileSys.hash fid, fn (fid', _) =>
-				      OS.FileSys.compare (fid, fid') = EQUAL, fn () =>
+				      OS.FileSys.compare (fid, fid') = EQUAL,
+				      fn () =>
 				      let
 					 val cwd = OS.Path.dir fileAbs
 					 val basdec =
 					    Promise.delay
 					    (fn () =>
 					     let
-						val () = Buffer.add (importFiles, fileUse)
+						val () = Buffer.add (importFiles,
+								     fileUse)
 					     in
 						wrapLexAndParse
-						{cwd = cwd, relativize = relativize, seen = seen'}
-						(lexAndParseFile, fileUse)
+						({cwd = cwd,
+						  relativize = relativize,
+						  seen = seen'},
+						 lexAndParseFile, fileUse)
 					     end)
 				      in
 					 (fid, basdec)
@@ -250,21 +249,31 @@ fun mkLexAndParse {parseSource, parseImport} =
 	                       (fileOrig: File.t, reg: Region.t) =
 	 let
 	    val {fileAbs, fileUse, relativize, ...} = 
-	       regularize {fileOrig = fileOrig, cwd = cwd, relativize = relativize}
-
+	       regularize {cwd = cwd,
+			   fileOrig = fileOrig,
+			   relativize = relativize}
 	    fun fail msg =
-	       (Control.error
-		(reg, Layout.seq [Layout.str "file ", Layout.str fileOrig,
-				  Layout.str " (", Layout.str fileUse, Layout.str ") ",
-				  Layout.str msg], Layout.empty)
-		;  Ast.Basdec.Seq [])
-	    
+	       let
+		  val () =
+		     let
+			open Layout
+		     in
+			Control.error (reg,
+				       seq [str "file ", str fileOrig,
+					    str " (", str fileUse, str ") ",
+					    str msg],
+				       empty)
+		     end
+	       in
+		  Ast.Basdec.Seq []
+	       end
 	    val mlbExts = ["mlb"]
 	    val progExts = ["ML","fun","sig","sml"]
 	    fun err () = fail "has an unknown extension"
 	 in
 	    case File.extension fileUse of
-	       SOME s =>
+	       NONE => err ()
+	     | SOME s =>
 		  if List.contains (mlbExts, s, String.equals)
 		     then lexAndParseMLB {cwd = cwd,
 					  relativize = relativize,
@@ -280,24 +289,15 @@ fun mkLexAndParse {parseSource, parseImport} =
 					   fileUse = fileUse,
 					   fail = fail}
 		  else err ()
-	     | NONE => err ()
 	 end
-      and wrapLexAndParse state (lexAndParse, arg) =
-	 let
-	    val () = pushLexAndParseProgOrMLB (lexAndParseProgOrMLB state)
-	    val basdec = lexAndParse arg
-	    val () = popLexAndParseProgOrMLB ()
-	 in
-	    basdec
-	 end
+      and wrapLexAndParse (state, lexAndParse, arg) =
+	 Ref.fluidLet
+	 (lexAndParseProgOrMLBRef, lexAndParseProgOrMLB state, fn () =>
+	  lexAndParse arg)
+      val dec = wrapLexAndParse (state, lexAndParseString', s)
    in
-      fn (s: String.t) => 
-      (wrapLexAndParse state (lexAndParseString, s),
-       {importFiles = Buffer.toVector importFiles,
-	sourceFiles = Buffer.toVector sourceFiles})
+      (dec, {importFiles = Buffer.toVector importFiles,
+	     sourceFiles = Buffer.toVector sourceFiles})
    end
-
-val lexAndParseString = fn (s: String.t, {parseSource, parseImport}) =>
-   (mkLexAndParse {parseSource = parseSource, parseImport = parseImport}) s
 
 end

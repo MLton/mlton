@@ -39,16 +39,15 @@ signature AST_MLBS =
 	 sig
 	    type t
 	    datatype node =
-	       Defs of ModIdBind.t
-	     | Basis of {name: Basid.t,
-			 def: Basexp.t} vector
+	       Ann of (string list * Region.t) list * t
+	     | Basis of {name: Basid.t, def: Basexp.t} vector
+	     | Defs of ModIdBind.t
 	     | Local of t * t
-	     | Seq of t list
-	     | Open of Basid.t vector
-	     | Prog of File.t * Program.t
 	     | MLB of File.t * OS.FileSys.file_id option * t
+	     | Open of Basid.t vector
 	     | Prim
-	     | Ann of (string list * Region.t) list * t
+	     | Prog of File.t * Program.t
+	     | Seq of t list
 
 	    include WRAPPED sharing type node' = node
 	                    sharing type obj = t
