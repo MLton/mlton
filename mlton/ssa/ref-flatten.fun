@@ -252,6 +252,45 @@ structure Value =
 structure Size = TwoPointLattice (val bottom = "small"
 				  val top = "large")
 
+structure VarInfo =
+   struct
+      datatype useStatus =
+	 InTuple of {object: Object.t,
+		     objectVar: Var.t,
+		     offset: int}
+       | Unused
+	 
+      datatype t =
+	 Flattenable of {components: Var.t vector,
+			 defBlock: Label.t,
+			 useStatus: useStatus ref}
+       | Unflattenable
+
+      fun layout (i: t): Layout.t =
+	 let
+	    open Layout
+	 in
+	    case i of
+	       Flattenable {components, defBlock, useStatus} =>
+		  seq [str "Flattenable ",
+		       record [("components",
+				Vector.layout Var.layout components),
+			       ("defBlock", Label.layout defBlock),
+			       ("useStatus",
+				(case !useStatus of
+				    InTuple {object, objectVar, offset} =>
+				       seq [str "InTuple ",
+					    record [("object",
+						     Object.layout object),
+						    ("objectVar",
+						     Var.layout objectVar),
+						    ("offset",
+						     Int.layout offset)]]
+				  | Unused => str "Unused"))]]
+	     | Unflattenable => str "Unflattenable"
+	 end
+   end
+
 fun flatten (program as Program.T {datatypes, functions, globals, main}) =
    let
       val {get = conValue: Con.t -> Value.t option ref, ...} =
@@ -461,37 +500,30 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		  update = update,
 		  useFromTypeOnBinds = false}
       val varObject = Value.deObject o varValue
-      (* Mark a variable as flat if it is used only once and that use is in an
-       * object allocation.
+      (* Mark a variable as Flattenable if all its uses are contained in a single
+       * basic block, there is a single use in an object construction, and
+       * all other uses follow the object construction.
+       *
+       * ...
+       * r: (t ref) = (t)
+       * ... <no uses of r> ...
+       * x: (... * (t ref) * ...) = (..., r, ...)
+       * ... <othere assignments to r> ...
+       *
        *)
-      datatype varInfo =
-	 NonObject
-	| Object of {components: Var.t vector,
-		     flat: Flat.t ref}
-      val layoutVarInfo =
-	 let
-	    open Layout
-	 in
-	    fn NonObject => str "NonObject"
-	     | Object {components, flat} =>
-		  seq [str "Object ",
-		       record [("components",
-				Vector.layout Var.layout components),
-			       ("flat", Flat.layout (!flat))]]
-	 end
-      val {get = varInfo: Var.t -> varInfo ref, ...} =
-	 Property.get (Var.plist, Property.initFun (fn _ => ref NonObject))
+      datatype z = datatype VarInfo.t
+      datatype z = datatype VarInfo.useStatus
+      val {get = varInfo: Var.t -> VarInfo.t ref, ...} =
+	 Property.get (Var.plist,
+		       Property.initFun (fn _ => ref VarInfo.Unflattenable))
       val varInfo =
 	 Trace.trace ("RefFlatten.varInfo",
-		      Var.layout, Ref.layout layoutVarInfo)
+		      Var.layout, Ref.layout VarInfo.layout)
 	 varInfo
-      fun use x =
-	 case ! (varInfo x) of
-	    Object {flat, ...} => flat := Flat.NotFlat
-	  | _ => ()
+      fun use x = varInfo x := Unflattenable
       val use = Trace.trace ("RefFlatten.use", Var.layout, Unit.layout) use
       fun uses xs = Vector.foreach (xs, use)
-      fun loopStatement (s: Statement.t): unit =
+      fun loopStatement (s: Statement.t, current: Label.t): unit =
 	 case s of
 	    Bind {exp = Exp.Object {args, ...}, var, ...} =>
 	       (case var of
@@ -503,38 +535,65 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			    let
 			       val () =
 				  varInfo var
-				  := Object {components = args,
-					     flat = ref Flat.Unknown}
+				  := Flattenable {components = args,
+						  defBlock = current,
+						  useStatus = ref Unused}
 			    in
 			       Vector.foreachi
 			       (args, fn (offset, x) =>
-				case ! (varInfo x) of
-				   NonObject => ()
-				 | Object {flat, ...} => 
-				      let
-					 datatype z = datatype Flat.t
-				      in
-					 case !flat of
-					    Unknown =>
-					       flat :=
-					       Offset {object = object,
-						       offset = offset}
-					  | _ => flat := NotFlat
-				      end)
+				let
+				   val r = varInfo x
+				in
+				   case !r of
+				      Flattenable {defBlock, useStatus, ...} =>
+					 (if Label.equals (current, defBlock)
+					     andalso (case !useStatus of
+							 InTuple _ => false
+						       | Unused => true)
+					     then (useStatus
+						   := (InTuple
+						       {object = object,
+							objectVar = var,
+							offset = offset}))
+					  else r := Unflattenable)
+				    | Unflattenable => ()
+				end)
 			    end)
+	  | Statement.Updates (base, us) =>
+	       (Vector.foreach (us, use o #value)
+		; (case base of
+		      Base.Object r =>
+			 let
+			    val i = varInfo r
+			 in
+			    case ! i of
+			       Flattenable {defBlock, useStatus, ...} =>
+				  if Label.equals (current, defBlock)
+				     andalso (case !useStatus of
+						 InTuple _ => true
+					       | Unused => false)
+				     then ()
+				  else i := Unflattenable
+			     | Unflattenable => ()
+			 end
+		    | Base.VectorSub _ => ()))
 	  | _ => Statement.foreachUse (s, use)
       val loopStatement =
-	 Trace.trace ("RefFlatten.loopStatement", Statement.layout, Unit.layout)
+	 Trace.trace2
+	 ("RefFlatten.loopStatement", Statement.layout, Label.layout,
+	  Unit.layout)
 	 loopStatement
-      fun loopStatements ss = Vector.foreach (ss, loopStatement)
+      fun loopStatements (ss, label) =
+	 Vector.foreach (ss, fn s => loopStatement (s, label))
       fun loopTransfer t = Transfer.foreachVar (t, use)
-      val () = loopStatements globals
+      val globalLabel = Label.newNoname ()
+      val () = loopStatements (globals, globalLabel)
       val () =
 	 List.foreach
 	 (functions, fn f =>
 	  Function.dfs
-	  (f, fn Block.T {statements, transfer, ...} =>
-	   (loopStatements statements
+	  (f, fn Block.T {label, statements, transfer, ...} =>
+	   (loopStatements (statements, label)
 	    ; loopTransfer transfer
 	    ; fn () => ())))
       fun foreachObject (f): unit =
@@ -566,46 +625,39 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
       (* Try to flatten each ref. *)
       val () =
 	 foreachObject
-	 (fn (var, _, Obj {flat, ...}) =>
+	 (fn (var, args, obj as Obj {flat, ...}) =>
 	  let
 	     datatype z = datatype Flat.t
-	     val flat'Ref as ref flat' =
-		case ! (varInfo var) of
-		   NonObject => Error.bug "Object with NonObject"
-		 | Object {flat, ...} => flat
-	     fun notFlat () =
-		(flat := NotFlat
-		 ; flat'Ref := NotFlat)
+	     (* Check that all arguments that are represented by flattening them
+	      * into the object are available as an explicit allocation.
+	      *)
+	     val () =
+		Vector.foreach
+		(args, fn a =>
+		 case Value.deFlat {inner = varValue a, outer = obj} of
+		    NONE => ()
+		  | SOME (Obj {flat, ...}) =>
+		       case ! (varInfo a) of
+			  Flattenable _ => ()
+			| Unflattenable =>
+			     flat := NotFlat)
+	     fun notFlat () = flat := NotFlat
 	  in
-	     case flat' of
-		Offset {object = obj, offset = i} =>
-		   (case ! flat of
-		       NotFlat => notFlat ()
-		     | Offset {object = obj', offset = i'} =>
-			  if i = i' andalso Object.equals (obj, obj')
-			     then ()
-			  else notFlat ()
-		     | Unknown => flat := flat')
-	      | _ => notFlat ()
+	     case ! (varInfo var) of
+		Flattenable {useStatus, ...} =>
+		   (case !useStatus of
+		       InTuple {object = obj, offset = i, ...} =>
+			  (case ! flat of
+			      NotFlat => ()
+			    | Offset {object = obj', offset = i'} =>
+				 if i = i' andalso Object.equals (obj, obj')
+				    then ()
+				 else notFlat ()
+			    | Unknown => flat := Offset {object = obj,
+							 offset = i})
+		     | Unused => notFlat ())
+	      | Unflattenable => notFlat ()
 	  end)
-      (* Disallow flattening into object components that aren't explicitly
-       * constructed.
-       *)
-      val () =
-	 foreachObject
-	 (fn (_, args, obj) =>
-	  Vector.foreach
-	  (args, fn arg =>
-	   case ! (varInfo arg) of
-	      NonObject =>
-		 let
-		    val v = varValue arg
-		 in
-		    if isSome (Value.deFlat {inner = v, outer = obj})
-		       then Value.dontFlatten v
-		    else ()
-		 end
-	    | Object _ => ()))
       (*
        * The following code disables flattening of some refs to ensure
        * space safety.  Flattening a ref into an object that has
@@ -686,10 +738,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			      Flat.Offset {object, offset} =>
 				 if objectHasAnotherLarge (object,
 							   {offset = offset})
-				    andalso
-				    (case ! (varInfo x) of
-					Object _ => false
-				      | _ => not (containerIsLive x))
+				    andalso not (containerIsLive x)
 				    then flat := Flat.NotFlat
 				 else ()
 			    | _ => ())
@@ -700,6 +749,26 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	      in
 		 ()
 	      end)
+	  end)
+      (* Mark varInfo as Unflattenable if varValue is.  This done after all the
+       * other parts of the analysis so that varInfo is consistent with the
+       * varValue.
+       *)
+      val () =
+	 Program.foreachVar
+	 (program, fn (x, _) =>
+	  let
+	     val r = varInfo x
+	  in
+	     case !r of
+		Flattenable _ =>
+		   (case Value.deObject (varValue x) of
+		       NONE => ()
+		     | SOME (Obj {flat, ...}) =>
+			  (case !flat of
+			      Flat.NotFlat => r := Unflattenable
+			    | _ => ()))
+	      | Unflattenable => ()
 	  end)
       val () =
 	 Control.diagnostics
@@ -715,18 +784,10 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	     val () =
 		Program.foreachVar
 		(program, fn (x, _) =>
-		 let
-		    val vi =
-		       case ! (varInfo x) of
-			  NonObject => str "NonObject"
-			| Object {flat, ...} =>
-			     seq [str "Object ", Flat.layout (!flat)]
-		 in
-		    display
-		    (seq [Var.layout x, str " ",
-			  record [("value", Value.layout (varValue x)),
-				  ("varInfo", vi)]])
-		 end)
+		 display
+		 (seq [Var.layout x, str " ",
+		       record [("value", Value.layout (varValue x)),
+			       ("varInfo", VarInfo.layout (! (varInfo x)))]]))
 	  in
 	     ()
 	  end)
@@ -826,9 +887,9 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		NONE => x :: ac
 	      | SOME obj =>
 		   (case ! (varInfo x) of
-		       NonObject => flattenValues (x, obj, ac)
-		     | Object {components, ...} =>
-			  flattenArgs (components, obj, ac))
+		       Flattenable {components, ...} =>
+			  flattenArgs (components, obj, ac)
+		     | Unflattenable => flattenValues (x, obj, ac))
 	  end)
       val flattenArgs =
 	 Trace.trace3 ("flattenArgs",
@@ -905,11 +966,22 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		      (case varObject object of
 			  NONE => s
 			| SOME obj =>
-			     Updates
-			     (base,
-			      Vector.map (us, fn {offset, value} =>
-					  {offset = objectOffset (obj, offset),
-					   value = value})))
+			     let
+				val base =
+				   case ! (varInfo object) of
+				      Flattenable {useStatus, ...} =>
+					 (case ! useStatus of
+					     InTuple {objectVar, ...} =>
+						Base.Object objectVar
+					   | _ => base)
+				    | Unflattenable => base
+			     in
+				Updates
+				(base,
+				 Vector.map (us, fn {offset, value} =>
+					     {offset = objectOffset (obj, offset),
+					      value = value}))
+			     end)
 		 | Base.VectorSub _ => Vector.new1 s)
       val transformStatement =
 	 Trace.trace ("transformStatement",

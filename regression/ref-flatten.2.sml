@@ -3,9 +3,13 @@ datatype t =
  | B
 
 val a = Array.tabulate (100, fn i =>
-			case i mod 2 of
-			   0 => A (ref 0w13, ref 0w123, [100 + i, 2, 3])
-			 | 1 => B)
+			let
+			   val l = [100 + i, 2, 3]
+			in
+			   case i mod 2 of
+			      0 => A (ref 0w13, ref 0w123, l)
+			    | 1 => B
+			end)
 
 val _ =
    Array.app
