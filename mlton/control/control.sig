@@ -144,9 +144,6 @@ signature CONTROL =
 
 	    (* whether or not to split assembly file in native codegen *)
 	    val split: int option ref
-
-	    (* whether or not to reserve esp *)
-	    val reserveEsp: bool ref
 	 end
 
       (* Whether or not to use the new non-tail call return convention.

@@ -204,8 +204,6 @@ fun options () =
 	boolRef Native.moveHoist),
        (Expert, "native-optimize", " n", "level of optimizations",
         intRef Native.optimize),
-       (Expert, "native-reserve-esp", " {false|true}", "reserve esp register",
-	boolRef Native.reserveEsp),
        (Expert, "native-split", " n", "split assembly files at ~n lines",
 	Int (fn i => Native.split := SOME i)),
        (Expert, "new-return", " {false|true}", "non-tail call return convention",

@@ -269,10 +269,6 @@ structure Native =
       val split = control {name = "native split",
 			   default = SOME 20000,
 			   toString = Option.toString Int.toString}
-
-      val reserveEsp = control {name = "reserve esp",
-				default = false,
-				toString = Bool.toString}
    end
 
 val newReturn = control {name = "new return",

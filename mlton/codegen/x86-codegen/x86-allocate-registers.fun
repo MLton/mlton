@@ -6529,51 +6529,8 @@ struct
 			    assembly_post],
 			   registerAllocation = registerAllocation}
 		      end
-
-		  fun default' ()
-		    = let
-			val instruction 
-			  = Instruction.NOP
-
-			val {uses = final_uses,
-			     defs = final_defs,
-			     ...}
-			  = Instruction.uses_defs_kills instruction
-			  
-			val {assembly = assembly_post,
-			     registerAllocation}
-			  = RA.post {uses = uses,
-				     final_uses = final_uses,
-				     defs = defs,
-				     final_defs = final_defs,
-				     kills = kills,
-				     info = info,
-				     registerAllocation = registerAllocation}
-		      in
-			{assembly
-			 = AppendList.appends 
-			   [assembly_pre,
-			    assembly_post],
-			   registerAllocation = registerAllocation}
-		      end
 		in
 		  default ()
-(*
-		  case (oper, src, dst)
-		    of (Instruction.ADD,
-			Operand.Immediate immediate_src,
-			Operand.MemLoc memloc_dst)
-		     => if MemLoc.eq(memloc_dst, x86MLton.c_stackPContents)
-		           andalso
-			   MemLocSet.contains(dead, memloc_dst)
-			   andalso
-			   (case Immediate.deConst immediate_src
-			      of SOME (Immediate.Int _) => true
-			       | _ => false)
-			  then default' ()
-			  else default ()
-		     | _ => default ()
-*)
 		end
 	     | pMD {oper, dst, src, size}
 	       (* Integer multiplication and division.
