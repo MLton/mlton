@@ -114,19 +114,19 @@ static inline uint min(uint x, uint y) {
 	return ((x < y) ? x : y);
 }
 
-static inline W64 min64 (W64 x, W64 y) {
-	return ((x < y) ? x : y);
-}
 
 static inline uint max(uint x, uint y) {
 	return ((x > y) ? x : y);
+}
+#endif
+
+static inline W64 min64 (W64 x, W64 y) {
+	return ((x < y) ? x : y);
 }
 
 static inline W64 max64 (W64 x, W64 y) {
 	return ((x > y) ? x : y);
 }
-#endif
-
 
 /*
  * Round size up to a multiple of the size of a page.
