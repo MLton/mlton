@@ -13,6 +13,7 @@ LEX = mllex
 PROF = mlprof
 YACC = mlyacc
 PATH = $(BIN):$(shell echo $$PATH)
+CP = /bin/cp -fp
 
 all:	$(MLTON) $(BIN)/$(LEX) $(BIN)/$(PROF) $(BIN)/$(YACC)
 	cd $(SRC)/doc/user-guide && $(MAKE)
@@ -20,19 +21,19 @@ all:	$(MLTON) $(BIN)/$(LEX) $(BIN)/$(PROF) $(BIN)/$(YACC)
 	@echo 'Build of MLton succeeded'
 
 $(BIN)/$(LEX): $(LEX)/$(LEX)
-	cp -p $(LEX)/$(LEX) $(BIN)
+	$(CP) $(LEX)/$(LEX) $(BIN)
 
 $(LEX)/$(LEX): $(MLTON) 
 	cd $(LEX) && $(MAKE) clean && $(MAKE)
 
 $(BIN)/$(PROF): $(PROF)/$(PROF)
-	cp -p $(PROF)/$(PROF) $(BIN)
+	$(CP) $(PROF)/$(PROF) $(BIN)
 
 $(PROF)/$(PROF): $(MLTON) 
 	cd $(PROF) && $(MAKE) clean && $(MAKE)
 
 $(BIN)/$(YACC): $(YACC)/$(YACC)
-	 cp -p $(YACC)/$(YACC) $(BIN)
+	$(CP) $(YACC)/$(YACC) $(BIN)
 
 $(YACC)/$(YACC): $(MLTON) $(BIN)/$(LEX)
 	cd $(YACC) && $(MAKE) clean && $(MAKE)
@@ -47,27 +48,27 @@ $(MLTON): bin/mlton $(LIB)/$(AOUT) $(LIB)/world.mlton $(RUNTIME)
 	chmod a+x-w $(MLTON) 
 
 $(LIB)/$(AOUT): $(COMP)/$(AOUT)
-	cp -p $(COMP)/$(AOUT) $(LIB)
+	$(CP) $(COMP)/$(AOUT) $(LIB)
 
 $(COMP)/$(AOUT):
 	cd $(COMP) && $(MAKE)
 
 $(LIB)/libmlton.a: $(RUN)/libmlton.a
-	cp -p $(RUN)/libmlton.a $(LIB)
+	$(CP) $(RUN)/libmlton.a $(LIB)
 
 $(LIB)/libmlton-gdb.a: $(RUN)/libmlton-gdb.a
-	cp -p $(RUN)/libmlton-gdb.a $(LIB)
+	$(CP) $(RUN)/libmlton-gdb.a $(LIB)
 
 $(LIB)/libgmp.a: $(RUN)/libgmp.a
-	cp -p $(RUN)/libgmp.a $(LIB)
+	$(CP) $(RUN)/libgmp.a $(LIB)
 
 $(RUN)/libmlton.a $(RUN)/libmlton-gdb.a $(RUN)/libgmp.a:
 	@echo 'Compiling MLton runtime system'
 	cd runtime && $(MAKE)
 
 $(INC)/mlton.h: include/mlton.h runtime/*.h
-	cp -fp include/*.h $(INC)
-	cp -fp runtime/*.h $(INC)
+	$(CP) include/*.h $(INC)
+	$(CP) runtime/*.h $(INC)
 
 .PHONY: world
 world: 
@@ -98,27 +99,27 @@ install:
 	mkdir -p $(TDOC) $(TBIN) $(TLIB)/lib $(TLIB)/include $(TMAN) &&	\
 	(								\
 		cd $(SRC)/doc &&					\
-		cp -pr CHANGES cmcat.sml examples license README 	\
+		$(CP) -r CHANGES cmcat.sml examples license README 	\
 			$(TDOC) && 					\
 		mv user-guide/main $(TDOC)/HTML &&			\
 		gzip -c user-guide/main.ps >$(TDOC)/user-guide.ps.gz	\
 	) &&								\
 	(								\
 		cd $(LIB) &&						\
-		cp -p *.a $(AOUT) world.mlton $(TLIB)/lib	\
+		$(CP) *.a $(AOUT) world.mlton $(TLIB)/lib		\
 	) &&								\
 	(								\
 		cd $(INC) &&						\
-		cp -p *.h $(TLIB)/include &&				\
+		$(CP) *.h $(TLIB)/include &&				\
 		chmod u+w $(TLIB)/include/*				\
 	) &&								\
 	(								\
 		cd $(BIN) &&						\
 		sed "/^root=/s;'.*';'$(ULIB)';" <mlton >$(TBIN)/mlton &&	\
 		chmod +x $(TBIN)/mlton &&				\
-		cp -p $(LEX) $(PROF) $(YACC) $(TBIN)			\
+		$(CP) $(LEX) $(PROF) $(YACC) $(TBIN)			\
 	) &&								\
 	(								\
 		cd $(SRC)/man &&					\
-		cp -p mlton.1 mlprof.1 $(TMAN)				\
+		$(CP) mlton.1 mlprof.1 $(TMAN)				\
 	)
