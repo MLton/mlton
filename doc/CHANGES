@@ -1,5 +1,10 @@
 Here are the changes from the 20010706 version to the 200????? version.
 
+* 2000-7-20
+  - Added intraprocedural flattener.  This avoids some stupid tuple allocations 
+    in loops.  Decent speedup on a few benchmarks (count-graphs, psdes-random,
+    wc-scanStream) and no noticeable slowdowns.
+
 * 2000-7-17
   - Modified grammar to properly handle val rec.  There were several problems.
     o MLton had accepted "val rec 'a ..." instead of "val 'a rec ..."
