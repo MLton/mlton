@@ -1209,7 +1209,7 @@ struct
 		      = reissue {assembly = assembly,
 				 registerAllocation = registerAllocation}
 		        handle Spill
-			 => (print (concat ["handling respill in",
+			 => (print (concat ["handling respill in ",
 					    msg,
 					    "\n"]);
 			     print (toString registerAllocation);
@@ -5218,7 +5218,12 @@ struct
 
 	    val {assembly = assembly_reserve,
 		 registerAllocation}
-	      = reserve {registers = List.map(caches, fn {register, ...} => register),
+	      = reserve {registers = List.keepAllMap
+                                     (caches, 
+				      fn {register, reserve, ...} 
+				       => if reserve 
+                                            then SOME register 
+                                            else NONE),
 			 registerAllocation = registerAllocation}
 
 	  in
@@ -5878,7 +5883,7 @@ struct
 			      then {fltregister = fltregister,
 				    memloc = memloc,
 				    weight = weight,
-				    sync = true,
+				    sync = sync,
 				    commit = TRYREMOVE 0}
 			   else value,
 		 registerAllocation = registerAllocation}
@@ -5908,7 +5913,7 @@ struct
 			      then {register = register,
 				    memloc = memloc,
 				    weight = weight,
-				    sync = true,
+				    sync = sync,
 				    commit = TRYREMOVE 0}
 			   else value,
 		 registerAllocation = registerAllocation}
