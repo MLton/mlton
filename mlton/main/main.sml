@@ -448,12 +448,12 @@ fun commandLine (args: string list): unit =
 			    | SOME lib => lib
 		  val linkLibs: string list =
 		     List.concat [list ("-L", rev (libDirs)),
-				  [linkWithGmp],
 				  list ("-l",
 					(if !debug
 					    then "mlton-gdb"
 					 else "mlton")
-					    :: !libs)]
+					    :: !libs),
+				  [linkWithGmp]]
 		  fun compileO (inputs: File.t list) =
 		     let
 			val output = maybeOut ""
