@@ -123,6 +123,10 @@ functor ImperativeIOExtraFile(S: IMPERATIVE_IO_EXTRA_FILE_ARG): IMPERATIVE_IO_EX
       structure PIO = Posix.IO
       structure PFS = Posix.FileSys
 
+      fun liftExn name function cause = raise IO.Io {name = name,
+						     function = function,
+						     cause = cause}
+
       val empty = V.fromList []
 
       (*---------------*)
@@ -158,6 +162,7 @@ functor ImperativeIOExtraFile(S: IMPERATIVE_IO_EXTRA_FILE_ARG): IMPERATIVE_IO_EX
 	  in 
 	    newOut (fd, file, false)
 	  end
+          handle exn => liftExn file "openOut" exn
 	fun openAppend file =
 	  let
 	    val fd = PFS.createf (file, PIO.O_WRONLY,
@@ -166,6 +171,7 @@ functor ImperativeIOExtraFile(S: IMPERATIVE_IO_EXTRA_FILE_ARG): IMPERATIVE_IO_EX
 	  in
 	    newOut (fd, file, true)
 	  end
+          handle exn => liftExn file "openAppend" exn
       end
       val newOut = fn fd => newOut (fd, "<not implemented>", false)
       val outFd = SIO.outFd o getOutstream
@@ -189,6 +195,7 @@ functor ImperativeIOExtraFile(S: IMPERATIVE_IO_EXTRA_FILE_ARG): IMPERATIVE_IO_EX
 	in 
 	  newIn (fd, file)
 	end
+        handle exn => liftExn file "newIn" exn
       val newIn = fn fd => newIn (fd, "<not implemented>")
       val inFd = SIO.inFd o getInstream
    end
