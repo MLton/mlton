@@ -72,6 +72,7 @@ structure CharArray2: MONO_ARRAY2 = CharArray2
 structure CharVector: MONO_VECTOR = CharVector
 structure CommandLine: COMMAND_LINE = CommandLine
 structure Date: DATE = Date
+structure FixedInt: INTEGER = Int32
 structure General: GENERAL = General
 structure IEEEReal: IEEE_REAL = IEEEReal
 structure Int: INTEGER = Int
