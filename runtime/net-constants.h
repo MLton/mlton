@@ -15,6 +15,12 @@
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 
+#if (defined __CYGWIN__)
+#define MSG_DONTWAIT 0
+#define PF_INET6 0
+struct sockaddr_in6 {};
+#endif
+
 #define NetHostDB_inAddrLen sizeof(struct in_addr)
 #define NetHostDB_INADDR_ANY INADDR_ANY
 #define max(x,y) (((x) > (y)) ? (x) : (y))
