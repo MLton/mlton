@@ -8,7 +8,9 @@ benchmarks:
 CHANGES: ../CHANGES
 	cp -p ../CHANGES ./
 
+.PHONY: user-guide
 user-guide:
+	rm -rf user-guide
 	$(MAKE) -C ../user-guide
 	gzip -c ../user-guide/main.ps >user-guide.ps.gz
 	(cd ../user-guide/main && tar.write .) | \
