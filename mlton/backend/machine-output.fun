@@ -231,7 +231,7 @@ structure Statement =
 			       record [("bytesPerElt", Int.layout bytesPerElt),
 				       ("bytesAllocated",
 					Int.layout bytesAllocated),
-				       ("gcInfo", GCInfo.layout gcInfo),
+				       ("gcInfo", GCInfo.layout gcInfo)
 				       ]]
 	 end
 
