@@ -337,6 +337,9 @@ fun commandLine (args: string list): unit =
       val _ = if not (!Native.native) andalso !profile <> ProfileNone
 		 then usage "can't profile with -native false"
 	      else ()
+      val _ = if not (!debug) andalso !profile <> ProfileNone
+		 then usage "can't profile with -debug false"
+	      else ()
       val _ =
 	 if !keepDot andalso List.isEmpty (!keepPasses)
 	    then keepSSA := true
