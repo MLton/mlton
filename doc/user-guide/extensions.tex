@@ -200,7 +200,7 @@ will run {\tt f ()} when {\tt a} becomes unreachable.  The finalizer
 runs after a garbage collection determines that {\tt a} is
 unreachable, which is done by keeping a weak pointer to {\tt a} (see
 \secref{weak}).  The finalizer is treated like a signal handler, in
-that it runs asynchronously in a separate thread with signals blocked.
+that it runs asynchronously in a separate thread with signals blocked
 and will not run within a critical section (see \secref{thread}).
 
 \end{description}
