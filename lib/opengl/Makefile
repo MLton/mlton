@@ -9,53 +9,47 @@ all:  gl glu glut test
 smlgllib: gl glut
 	ar rv libmltongl.a Gl.*.o Gl_c.o Glut.*.o Glut_c.o
 
-gl: gl_sml gl_sig gl_h gl_c_o
+gl: GL.sml GL.sig GL_h.h GL_c.o
 
-gl_sml: ../gl/gl.sml
+GL.sml: ../gl/gl.sml
 	gcc -DMLTON_SOURCE $(CPPFLAGS) ../gl/gl.sml > GL.sml
 
-gl_sig: ../gl/gl.sig
+GL.sig: ../gl/gl.sig
 	gcc -DMLTON_SOURCE $(CPPFLAGS) ../gl/gl.sig > GL.sig
 
-gl_h: GL.sml
+GL_h.h: GL.sml
 	$(mlton) -export-header true GL.sml > GL_h.h
 
-gl_c_o: GL_c.c
+GL_c.o: GL_c.c
 	gcc -c GL_c.c
 
-glu: glu_sml glu_sig glu_h glu_c_o
+glu: GLU.sml GLU.sig GLU_h.h GLU_c.o
 
-glu_sml: ../glu/glu.sml
+GLU.sml: ../glu/glu.sml
 	gcc -DMLTON_SOURCE $(CPPFLAGS) ../glu/glu.sml > GLU.sml
 
-glu_sig: ../glu/glu.sig
+GLU.sig: ../glu/glu.sig
 	gcc -DMLTON_SOURCE $(CPPFLAGS) ../glu/glu.sig > GLU.sig
 
-glu_h: GLU.sml
+GLU_h.h: GLU.sml
 	$(mlton) -export-header true GLU.sml > GLU_h.h
 
-glu_c_o: GLU_c.c
+GLU_c.o: GLU_c.c
 	gcc -c GLU_c.c
 
-glut: glut_sml glut_sig glut_h glut_c_o
+glut: GLUT.sml GLUT.sig GLUT_h.h GLUT_c.o
 
-glut_sml: ../glut/glut.sml
+GLUT.sml: ../glut/glut.sml
 	gcc -DMLTON_SOURCE $(CPPFLAGS) ../glut/glut.sml > GLUT.sml
 
-glut_sig: ../glut/glut.sig
+GLUT.sig: ../glut/glut.sig
 	gcc -DMLTON_SOURCE $(CPPFLAGS) ../glut/glut.sig > GLUT.sig
 
-glut_h: GLUT.sml
+GLUT_h.h: GLUT.sml
 	$(mlton) $(MLTONFLAGS) -export-header true GLUT.sml > GLUT_h.h
 
-glut_c_o: GLUT_c.c
+GLUT_c.o: GLUT_c.c
 	gcc -c GLUT_c.c
-
-nj: *.sml
-	cat Glut.sml | sed -e 's/_ffi/Unsafe.cast/' -e 's/_export/Unsafe.cast/' > Glut_nj.sml
-
-typecheck: nj
-	echo "CM.make();" | sml.bat
 
 test: shortest hello
 
@@ -66,4 +60,4 @@ hello: gl glut hello.sml
 	mlton $(GL_LINK_OPTS) hello.cm Gl_c.c Glut_c.c
 
 clean:
-	rm -f *_h.h *.stackdump *~ *.o *.exe Glut *.a
+	rm -f *_h.h *.stackdump *~ *.o *.exe Glut *.a hello shortest
