@@ -17,30 +17,22 @@ datatype z = datatype Transfer.t
 
 structure Set = DisjointSet
 
-structure Flat =
-   struct
-      datatype t = Flat | NotFlat
-
-      val toString: t -> string =
-	 fn Flat => "Flat"
-	  | NotFlat => "NotFlat"
-
-      val layout = Layout.str o toString
-   end
-
-datatype z = datatype Flat.t
+structure Tree = Tree (structure Seq = Prod)
 
 structure TypeTree =
    struct
+      datatype t = datatype Tree.t
+
       datatype info =
 	 Flat
        | NotFlat of {ty: Type.t}
 	 
       type t = info Tree.t
 
-      val layout: t -> Layout.t =
+      fun layout (t: t): Layout.t =
 	 Tree.layout
-	 (let
+	 (t,
+	  let
 	     open Layout
 	  in
 	     fn Flat => str "Flat"
@@ -49,7 +41,7 @@ structure TypeTree =
 	  end)
 
       val isFlat: t -> bool =
-	 fn Tree.T (i, _) =>
+	 fn T (i, _) =>
 	 case i of
 	    Flat => true
 	  | NotFlat _ => false
@@ -57,6 +49,8 @@ structure TypeTree =
 
 structure VarTree =
    struct
+      datatype t = datatype Tree.t
+	 
       datatype info =
 	 Flat
        | NotFlat of {ty: Type.t,
@@ -64,9 +58,10 @@ structure VarTree =
 
       type t = info Tree.t
 
-      val layout: t -> Layout.t =
+      fun layout (t: t): Layout.t =
 	 Tree.layout
-	 (let
+	 (t,
+	  let
 	     open Layout
 	  in
 	     fn Flat => str "Flat"
@@ -77,10 +72,10 @@ structure VarTree =
 	  end)
 
       val labelRoot: t * Var.t -> t =
-	 fn (t as Tree.T (info, ts), x) =>
+	 fn (t as T (info, ts), x) =>
 	 case info of
 	    Flat => t
-	  | NotFlat {ty, ...} => Tree.T (NotFlat {ty = ty, var = SOME x}, ts)
+	  | NotFlat {ty, ...} => T (NotFlat {ty = ty, var = SOME x}, ts)
 
       val fromTypeTree: TypeTree.t -> t =
 	 fn t =>
@@ -92,9 +87,9 @@ structure VarTree =
       val foldRoots: t * 'a * (Var.t * 'a -> 'a) -> 'a =
 	 fn (t, a, f) =>
 	 let
-	    fun loop (Tree.T (info, children), a: 'a): 'a =
+	    fun loop (T (info, children), a: 'a): 'a =
 	       case info of
-		  Flat => Vector.fold (children, a, loop)
+		  Flat => Prod.fold (children, a, loop)
 		| NotFlat {var, ...} =>
 		     case var of
 			NONE => Error.bug "foldRoots"
@@ -109,23 +104,36 @@ structure VarTree =
 	 fn (t, ac) =>
 	 List.appendRev (foldRoots (t, [], op ::), ac)
 
+      val dropRoot: t -> t =
+	 fn T (info, ts) =>
+	 let
+	    val info =
+	       case info of
+		  Flat => Flat
+		| NotFlat {ty, ...} => NotFlat {ty = ty, var = NONE}
+	 in
+	    T (info, ts)
+	 end
+	 
       fun fillInRoots (t: t, {object: Var.t, offset: int})
 	 : t * Statement.t list =
 	 let
-	    fun loop (t as Tree.T (info, ts), offset, ac) =
+	    fun loop (t as T (info, ts), offset, ac) =
 	       case info of
 		  Flat =>
 		     let
-			val (ts, offset, ac) =
-			   Vector.fold
-			   (ts, ([], offset, ac), fn (t, (ts, offset, ac)) =>
+			val (ts, (offset, ac)) =
+			   Vector.mapAndFold
+			   (Prod.dest ts, (offset, ac),
+			    fn ({elt = t, isMutable}, (offset, ac)) =>
 			    let
 			       val (t, offset, ac) = loop (t, offset, ac)
 			    in
-			       (t :: ts, offset, ac)
+			       ({elt = t, isMutable = isMutable},
+				(offset, ac))
 			    end)
 		     in
-			(Tree.T (Flat, Vector.fromListRev ts), offset, ac)
+			(T (Flat, Prod.make ts), offset, ac)
 		     end
 		| NotFlat {ty, var} =>
 		     let
@@ -135,8 +143,7 @@ structure VarTree =
 				 let
 				    val var = Var.newNoname ()
 				 in
-				    (Tree.T (NotFlat {ty = ty, var = SOME var},
-					     ts),
+				    (T (NotFlat {ty = ty, var = SOME var}, ts),
 				     Statement.T
 				     {exp = Select {object = object,
 						    offset = offset},
@@ -215,15 +222,15 @@ fun flatten {from: VarTree.t,
 	       ({offset = 1 + offset}, r, ss)
 	    end
    end
-and flattensAt {froms: VarTree.t vector,
+and flattensAt {froms: VarTree.t Prod.t,
 		object: Var.t option,
 		offset: int,
-		tos: TypeTree.t vector} =
+		tos: TypeTree.t Prod.t} =
    let
-      val (off, ts, ss) =
-	 Vector.fold2
-	 (froms, tos, ({offset = offset}, [], []),
-	  fn (f, t, ({offset}, ts, ss)) =>
+      val (ts, (off, ss)) =
+	 Vector.map2AndFold
+	 (Prod.dest froms, Prod.dest tos, ({offset = offset}, []),
+	  fn ({elt = f, isMutable}, {elt = t, ...}, ({offset}, ss)) =>
 	  let
 	     val ({offset}, t, ss') =
 		flatten {from = f,
@@ -231,10 +238,11 @@ and flattensAt {froms: VarTree.t vector,
 			 offset = offset,
 			 to = t}
 	  in
-	     ({offset = offset}, t :: ts, ss' @ ss)
+	     ({elt = t, isMutable = isMutable},
+	      ({offset = offset}, ss' @ ss))
 	  end)
    in
-      (off, Tree.T (VarTree.Flat, Vector.fromListRev ts), ss)
+      (off, Tree.T (VarTree.Flat, Prod.make ts), ss)
    end
 
 fun coerceTree {from: VarTree.t, to: TypeTree.t}: VarTree.t * Statement.t list =
@@ -261,6 +269,19 @@ val coerceTree =
 			  List.layout Statement.layout ss])
       coerceTree
    end
+
+structure Flat =
+   struct
+      datatype t = Flat | NotFlat
+
+      val toString: t -> string =
+	 fn Flat => "Flat"
+	  | NotFlat => "NotFlat"
+
+      val layout = Layout.str o toString
+   end
+
+datatype z = datatype Flat.t
 
 structure Value =
    struct
@@ -487,10 +508,9 @@ structure Value =
 			       Flat => TypeTree.Flat
 			     | NotFlat => notFlat ()
 		      in
-			 Tree.T (info,
-				 Vector.map (Prod.dest args, finalTree o # elt))
+			 Tree.T (info, Prod.map (args, finalTree))
 		      end
-		 | _ => Tree.T (notFlat (), Vector.new0 ())
+		 | _ => Tree.T (notFlat (), Prod.empty ())
 	     end)
 	 end
       and finalType arg: Type.t =
@@ -601,7 +621,18 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		    let
 		       val p = Prod.map (p, makeTypeValue)
 		    in
-		       fn () => Value.vector (Prod.map (p, fn f => f ()))
+		       fn () =>
+		       Value.vector
+		       (Prod.map (p, fn f =>
+				  let
+				     val v = f ()
+				     (* FIXME: This should go once flat vectors
+				      * are supported.
+				      *)
+				     val () = Value.dontFlatten v
+				  in
+				     v
+				  end))
 		    end
 	       | Weak t =>
 		    let
@@ -766,6 +797,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	  in
 	     Datatype.T {cons = cons, tycon = tycon}
 	  end)
+      val valueType = Value.finalType
       fun valuesTypes vs = Vector.map (vs, Value.finalType)
       val {get = varTree: Var.t -> VarTree.t, set = setVarTree, ...} =
 	 Property.getSetOnce (Var.plist,
@@ -798,11 +830,21 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		     NONE => bug ()
 		   | SOME y => y
 	 end
+      fun replaceVars xs = Vector.map (xs, replaceVar)
       fun transformStatement (Statement.T {exp, ty, var}): Statement.t list =
 	 let
-	    fun doit e = [Statement.T {exp = e, ty = ty, var = var}]
+	    fun simpleTree () = Option.app (var, simpleVarTree)
+	    fun doit (e: Exp.t) =
+	       let
+		  val ty =
+		     case var of
+			NONE => ty
+		      | SOME var => valueType (varValue var)
+	       in
+		  [Statement.T {exp = e, ty = ty, var = var}]
+	       end
 	    fun simple () =
-	       (Option.app (var, simpleVarTree)
+	       (simpleTree ()
 		; doit (Exp.replaceVar (exp, replaceVar)))
 	    fun none () = []
 	 in
@@ -822,12 +864,22 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 				     val z =
 					Vector.map2
 					(args, Prod.dest expects,
-					 fn (arg, {elt, ...}) =>
-					 coerceTree {from = varTree arg,
-						     to = Value.finalTree elt})
+					 fn (arg, {elt, isMutable}) =>
+					 let
+					    val (vt, ss) =
+					       coerceTree
+					       {from = varTree arg,
+						to = Value.finalTree elt}
+					 in
+					    ({elt = vt,
+					      isMutable = isMutable},
+					     ss)
+					 end)
 				     val vts = Vector.map (z, #1)
 				     fun set info =
-					setVarTree (var, Tree.T (info, vts))
+					setVarTree (var,
+						    Tree.T (info,
+							    Prod.make vts))
 				  in
 				     case !flat of
 					Flat => (set VarTree.Flat; none ())
@@ -841,7 +893,8 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 					      val args =
 						 Vector.fromList
 						 (Vector.foldr
-						  (vts, [], fn (vt, ac) =>
+						  (vts, [],
+						   fn ({elt = vt, ...}, ac) =>
 						   VarTree.rootsOnto (vt, ac)))
 					      val obj =
 						 Statement.T
@@ -857,7 +910,30 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 				  end
 			  | _ => Error.bug "transformStatement Object"
 			 end)
-	     | PrimApp {args, prim, targs} => simple ()
+	     | PrimApp {args, prim, targs} =>
+		  let
+		     val vargs = Vector.map (args, varValue)
+		     datatype z = datatype Prim.Name.t
+		     val targs =
+			Vector.map
+			(Prim.extractTargs
+			 (prim,
+			  {args = vargs,
+			   deArray = fn _ => Error.bug "deArray",
+			   deArrow = fn _ => Error.bug "deArrow",
+			   deRef = fn _ => Error.bug "deRef",
+			   deVector = fn _ => Error.bug "deVector",
+			   deWeak = Value.deWeak,
+			   result = (case var of
+					NONE => Value.unit
+				      | SOME x => varValue x)}),
+			 valueType)
+		     val () = simpleTree ()
+		  in
+		     doit (PrimApp {args = replaceVars args,
+				    prim = prim,
+				    targs = targs})
+		  end
 	     | Profile _ => simple ()
 	     | Select {object, offset} =>
 		  (case var of
@@ -865,14 +941,22 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		    | SOME var =>
 			 let
 			    val Tree.T (info, children) = varTree object
-			    val child = Vector.sub (children, offset)
+			    val {elt = child, isMutable} =
+			       Prod.sub (children, offset)
+			    val child =
+			       (* Don't simplify a select out of a mutable field.
+				* Something may have mutated it.
+				*)
+			       if isMutable
+				  then VarTree.dropRoot child
+			       else child
 			    val (child, ss) =
 			       case info of
 				  VarTree.Flat => (child, [])
 				| VarTree.NotFlat {var, ...} =>
 				     (case var of
 					 NONE => Error.bug "select missing var"
-				       | SOME var => 
+				       | SOME var =>
 					    VarTree.fillInRoots
 					    (child,
 					     {object = var,
