@@ -48,7 +48,15 @@ signature IMPERATIVE_IO_EXTRA_ARG =
 		      fromInt : Position.int -> PrimIO.pos} option
    end
 
-functor ImperativeIOExtra (S: IMPERATIVE_IO_EXTRA_ARG): IMPERATIVE_IO_EXTRA =
+functor ImperativeIOExtra (S: IMPERATIVE_IO_EXTRA_ARG):>
+   IMPERATIVE_IO_EXTRA
+   where type StreamIO.pos = S.PrimIO.pos
+   where type StreamIO.reader = S.PrimIO.reader
+   where type StreamIO.writer = S.PrimIO.writer
+   where type elem = S.Vector.elem
+   where type vector = S.Vector.vector
+   where type vector_slice = S.VectorSlice.slice
+   =
 struct
 
 open S
