@@ -14,8 +14,8 @@ fun map3d f sizex sizey sizez from =
 (
  let val size2d = sizey * sizez
      val x = from div size2d
-     val y = (from mod size2d) div sizez
-     val z = from mod sizez
+     val y = (Int.rem (from, size2d)) div sizez
+     val z = (Int.rem (from, sizez))
  in f x y z
  end
 )
@@ -30,13 +30,15 @@ fun initRedControlPoints u v w =
 (
     if w = 0 then ( 2.0 * (Real32.fromInt u) ) else
     if w = 1 then ( 2.0 * (Real32.fromInt v) ) else
-    if ( u = 1 orelse u = 2 ) andalso ( v = 1 orelse v = 2 ) then 6.0 else 0.0
+    if ( u = 1 orelse u = 2 ) andalso ( v = 1 orelse v = 2 ) then
+	6.0
+    else 0.0
 )
     
 fun initGreenControlPoints u v w =
 (
-    if w = 0 then ( 2.0 * (Real32.fromInt u) - 3.0 ) else
-    if w = 1 then ( 2.0 * (Real32.fromInt v) - 3.0 ) else
+    if w = 0 then ( 2.0 * ((Real32.fromInt u) - 3.0 )) else
+    if w = 1 then ( 2.0 * ((Real32.fromInt v) - 3.0 )) else
     if ( u = 1 orelse u = 2 ) andalso ( v = 1 orelse v = 2 ) then
 	if u = 1 andalso v = 1 then 15.0
 	else (~2.0)
@@ -45,7 +47,7 @@ fun initGreenControlPoints u v w =
     
 fun initBlueControlPoints u v w =
 (
-    if w = 0 then ( 2.0 * (Real32.fromInt u) - 3.0 ) else
+    if w = 0 then ( 2.0 * ((Real32.fromInt u) - 3.0 )) else
     if w = 1 then ( 2.0 * (Real32.fromInt v) ) else
     if ( u = 1 orelse u = 2 ) andalso ( v = 1 orelse v = 2 ) then
 	if u = 1 andalso v = 2 then 11.0
@@ -56,11 +58,21 @@ fun initBlueControlPoints u v w =
 fun initYellowControlPoints u v w =
 (
     if w = 0 then ( 2.0 * (Real32.fromInt u) ) else
-    if w = 1 then ( 2.0 * (Real32.fromInt v) - 3.0 ) else
+    if w = 1 then ( 2.0 * ((Real32.fromInt v) - 3.0) ) else
     if ( u = 1 orelse u = 2 orelse u = 3 ) andalso ( v = 1 orelse v = 2 ) then
 	if v = 1 then (~2.0)
 	else 5.0
     else 0.0
+)
+
+fun renderHill nurb knots diffuse controlpts =
+(
+ glMaterialfv GL_FRONT GL_DIFFUSE diffuse;
+ gluBeginSurface nurb;
+ gluNurbsSurface nurb 8 knots 8 knots
+		 (4 * 3) 3 controlpts
+		 4 4 GL_MAP2_VERTEX_3;
+ gluEndSurface nurb
 )
 
 fun display() =
@@ -92,16 +104,16 @@ fun main() =
       gluNurbsProperty nurb GLU_DISPLAY_MODE (Real32.fromInt (Word.toInt GLU_FILL));
 
       (* Stretch up red's far right corner. *)
-      Array.update (redctlpts, (toControlArray 3 3 2), 6.0); (* pts1[3][3][2] = 6; *)
+      Array.update (redctlpts, (toControlArray 3 3 2), 6.0);
 
       (* Pull down green's near left corner a little. *)
-      Array.update (greenctlpts, (toControlArray 0 0 2), ~2.0); (*pts2[0][0][2] = -2;*)
+      Array.update (greenctlpts, (toControlArray 0 0 2), ~2.0);
 
       (* Turn up meeting of four corners. *)
-      Array.update (redctlpts, (toControlArray 0 0 2), 1.0); (* pts1[0][0][2] = 1;*)
-      Array.update (greenctlpts, (toControlArray 3 3 2), 1.0);                  (*pts2[3][3][2] = 1;*)
-      Array.update (bluectlpts, (toControlArray 3 0 2), 1.0);                    (*pts3[3][0][2] = 1;*)
-      Array.update (yellowctlpts, (toControlArray 0 3 2), 1.0);                 (*pts4[0][3][2] = 1;*)
+      Array.update (redctlpts, (toControlArray 0 0 2), 1.0);
+      Array.update (greenctlpts, (toControlArray 3 3 2), 1.0);
+      Array.update (bluectlpts, (toControlArray 3 0 2), 1.0);
+      Array.update (yellowctlpts, (toControlArray 0 3 2), 1.0);
       
       glMatrixMode GL_PROJECTION;
       gluPerspective 55.0  1.0  2.0  24.0;
@@ -110,37 +122,11 @@ fun main() =
       glRotatef 330.0  1.0 0.0 0.0;
 
       glNewList 1 GL_COMPILE;
-      (* Render red hill. *)
-      glMaterialfv GL_FRONT GL_DIFFUSE mat_red_diffuse;
-      gluBeginSurface nurb;
-      gluNurbsSurface nurb 8 knots 8 knots
-		      (4 * 3) 3 redctlpts
-		      4 4 GL_MAP2_VERTEX_3;
-      gluEndSurface nurb;
-
-      (* Render green hill. *)
-      glMaterialfv GL_FRONT GL_DIFFUSE mat_green_diffuse;
-      gluBeginSurface nurb;
-      gluNurbsSurface nurb 8 knots 8 knots
-		      (4 * 3) 3 greenctlpts
-		      4 4 GL_MAP2_VERTEX_3;
-      gluEndSurface nurb;
-
-      (* Render blue hill. *)
-      glMaterialfv GL_FRONT GL_DIFFUSE mat_blue_diffuse;
-      gluBeginSurface nurb;
-      gluNurbsSurface nurb 8 knots 8 knots
-		      (4 * 3) 3 bluectlpts
-		      4 4 GL_MAP2_VERTEX_3;
-      gluEndSurface nurb;
-
-      (* Render yellow hill. *)
-      glMaterialfv GL_FRONT GL_DIFFUSE mat_yellow_diffuse;
-      gluBeginSurface nurb;
-      gluNurbsSurface nurb  8 knots 8 knots
-		      (4 * 3) 3 yellowctlpts
-		      4 4 GL_MAP2_VERTEX_3;
-      gluEndSurface nurb;
+      (* Render hills. *)
+      renderHill nurb knots mat_red_diffuse redctlpts;
+      renderHill nurb knots mat_green_diffuse greenctlpts;
+      renderHill nurb knots mat_blue_diffuse bluectlpts;
+      renderHill nurb knots mat_yellow_diffuse yellowctlpts;
       glEndList();
 
       glutDisplayFunc display;
