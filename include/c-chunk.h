@@ -678,4 +678,4 @@ static inline void Real_store (double *dp, double d) {
 #define Word32_sub(w1, w2) ((w1) - (w2))
 #define Word32_xorb(w1, w2) ((w1) ^ (w2))
 
-#endif /* #ifndef _CCODEGEN_H_ */
+#endif /* #ifndef _C_CHUNK_H_ */

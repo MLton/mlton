@@ -103,4 +103,5 @@ int main (int argc, char **argv) {					\
 	return 1;							\
 }
 
-#endif /* #ifndef _X86CODEGEN_H_ */
+#endif /* #ifndef _X86_MAIN_H_ */
+

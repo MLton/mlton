@@ -80,4 +80,4 @@
 	gcState.stringInitsSize = cardof(stringInits);			\
 	MLton_init (argc, argv, &gcState);				\
 
-#endif /* #ifndef _CODEGEN_H_ */
+#endif /* #ifndef _MAIN_H_ */

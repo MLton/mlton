@@ -59,4 +59,4 @@ int main (int argc, char **argv) {						\
 	}									\
 }
 
-#endif
+#endif /* #ifndef _C_MAIN_H */

@@ -22,4 +22,4 @@ struct cont {
 		nextFun = l;				\
 	} while (0)
 
-#endif
+#endif /* #ifndef _C_COMMON_H_ */
