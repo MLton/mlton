@@ -147,17 +147,14 @@ fun loopInvariant (program as Program.T {globals, datatypes, functions, main}) =
 	       end
 	    val _ = Function.dfs (f, visit)
 	    val blocks = Vector.fromList (!newBlocks)
-	    val f = Function.new {name = name,
+	 in
+	    shrink (Function.new {name = name,
 				  args = args,
 				  start = start,
 				  blocks = blocks,
 				  returns = returns,
-				  raises = raises}
-	    val _ = Function.clear f
-	 in
-	    f
+				  raises = raises})
 	 end
-      val functions = List.revMap (functions, shrink o simplifyFunction)
       val program = 
 	 Program.T {datatypes = datatypes,
 		    globals = globals,

@@ -1165,16 +1165,13 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 					       then SOME t
 					       else NONE))
 				 else NONE
-		     val f = Function.new {name = name,
-					   args = args,
-					   start = start,
-					   blocks = blocks,
-					   returns = returns,
-					   raises = raises}
-		     val f = shrink f
-		     val _ = Function.clear f
 		   in
-		     SOME f
+		      SOME (shrink (Function.new {name = name,
+						  args = args,
+						  start = start,
+						  blocks = blocks,
+						  returns = returns,
+						  raises = raises}))
 		   end
 	      else NONE
 	  end

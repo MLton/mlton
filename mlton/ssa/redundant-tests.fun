@@ -348,17 +348,14 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 			    statements = statements,
 			    transfer = transfer}
 		 end)
-	     val f = Function.new {name = name,
+	  in
+	     shrink (Function.new {name = name,
 				   args = args,
 				   start = start,
 				   blocks = blocks,
 				   returns = returns,
-				   raises = raises}
-	     val _ = Function.clear f
-	  in
-	     f
+				   raises = raises})
 	  end
-      val functions = List.revMap (functions, shrink o simplifyFunction)
       val _ =
 	 Control.diagnostic
 	 (fn () =>

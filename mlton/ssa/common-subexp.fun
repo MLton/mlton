@@ -301,23 +301,20 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 		 Transfer.foreachLabel (transfer, fn label' => 
 					Int.inc (#inDeg (labelInfo label'))))
 	     val blocks = doitTree (Function.dominatorTree f)
-	     val f = Function.new {name = name,
+	  in
+	     shrink (Function.new {name = name,
 				   args = args,
 				   start = start,
 				   blocks = blocks,
 				   returns = returns,
-				   raises = raises}
-	     val f = shrink f
-	     val _ = Function.clear f
-	  in
-	     f
+				   raises = raises})
 	  end)
-      val _ = Vector.foreach (globals, Statement.clear)
       val program = 
 	 Program.T {datatypes = datatypes,
 		    globals = globals,
 		    functions = functions,
 		    main = main}
+      val _ = Program.clearTop program
    in
       program
    end

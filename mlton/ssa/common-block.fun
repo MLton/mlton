@@ -158,7 +158,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 		     globals = globals,
 		     functions = List.revMap (functions, eliminateFunction),
 		     main = main}
-      val _ = Vector.foreach (globals, Statement.clear)
+      val _ = Program.clearTop program
     in
       program
     end
