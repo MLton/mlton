@@ -1,3 +1,9 @@
+(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under the GNU General Public License (GPL).
+ * Please see the file MLton-LICENSE for license information.
+ *)
 (* Many of the algorithms in this module are based on
  * Compilers: Principles, Techniques, and Tools by Aho, Sethi, and Ullman,
  * which I will refer to in comments as the Dragon Book.
