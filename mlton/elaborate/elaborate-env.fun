@@ -1872,7 +1872,7 @@ fun functorClosure
 			 setTyconTypeStr
 			 (c, SOME (TypeStr.tycon
 				   (newTycon (Tycon.originalName c, k,
-					      AdmitsEquality.Sometimes),
+					      ! (TypeEnv.tyconAdmitsEquality c)),
 				    k))))
 		     fun replaceType (t: Type.t): Type.t =
 			let
