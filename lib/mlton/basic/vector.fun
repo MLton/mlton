@@ -201,6 +201,22 @@ fun forall2 (v, v', f) =
       else Error.bug "Vector.forall2"
    end
 
+fun foreach3 (v1, v2, v3, f) =
+   let
+      val n = length v1
+      val _ =
+	 if n = length v2 andalso n = length v3
+	    then ()
+	 else Error.bug "Vector.foreach3"
+      fun loop i =
+	 if i = n
+	    then ()
+	 else (f (sub (v1, i), sub (v2, i), sub (v3, i))
+	       ; loop (i + 1))
+   in
+      loop 0
+   end
+
 fun foreachi (a, f) = foldi (a, (), fn (i, x, ()) => f (i, x))
 
 fun foreach (a, f) = foreachi (a, f o #2)

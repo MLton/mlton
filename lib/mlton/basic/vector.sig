@@ -64,6 +64,7 @@ signature VECTOR =
       val foreachri: 'a t * (int * 'a -> unit) -> unit
       val foreach2: 'a t * 'b t * ('a * 'b -> unit) -> unit
       val foreachR: 'a t * int * int * ('a -> unit) -> unit
+      val foreach3: 'a t * 'b t * 'c t * ('a * 'b * 'c -> unit) -> unit
       val fromArray: 'a array -> 'a t
       val fromList: 'a list -> 'a t
       val fromListMap: 'a list * ('a -> 'b) -> 'b t
