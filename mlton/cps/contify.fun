@@ -449,8 +449,8 @@ structure AnalyzeDom =
 		       else let
 			      (* Use this for the ancestor version *)
                               val l_node = ancestor f_node
-			      (* Use this for the parent version
-			      val l_node = idom f_node *)
+			      (* Use this for the parent version *)
+			      (* val l_node = idom f_node *)
 			      val l = getNodeInfo l_node
 			    in
 			      case getNodeInfo l_node
@@ -515,7 +515,7 @@ structure Transform =
 	      (functions,
 	       fn Function.T {name = f, ...}
 	        => let
-		     val FuncData.T {A, contify, ...} 
+		     val FuncData.T {A, contify, callers, callees, ...} 
 		       = getFuncData f
 		     val f_node = getFuncNode f
 		   in
@@ -546,36 +546,33 @@ structure Transform =
 
 	  fun cascade fs
 	    = let
-		val {yes = contifiable, no = uncontifiable}
-		  = List.partition
-		    (List.rev fs, fn g => FuncData.contify (getFuncData g))
-
 		fun doit f
 		  = let
 		      val FuncData.T {callees, prefixes, ...} = getFuncData f
 		    in
 		      List.foreach
 		      (!(#tail callees),
-		       fn g => if (FuncData.status (getFuncData g)) <> DONE
-				 then let
-					val contify 
-					  = FuncData.contify' (getFuncData g)
-				      in
-					contify := false
-				      end
-				 else ());
-		      List.foreach (!prefixes, doit)
+		       fn g => let
+				 val FuncData.T {contify, status, ...} = getFuncData g
+			       in
+				 if !status <> DONE
+				   then (contify := false;
+					 status := DONE;
+					 doit g)
+				   else ()
+			       end) ;
+		      List.foreach(!prefixes, doit)
 		    end
 	      in
-		case uncontifiable
-		  of [] 
-		   => contifiable
-		   | _ 
-		   => let
-			val _ = List.foreach (uncontifiable, doit)
-		      in
-			cascade contifiable
-		      end
+		List.foreach
+		(fs,
+		 fn f => let
+			   val FuncData.T {contify, status, ...} = getFuncData f
+			 in 
+			   contify := false;
+			   status := DONE;
+			   doit f
+			 end)
 	      end
 
 	  (* Strongly connected components of a group of functions. *)
@@ -624,156 +621,86 @@ structure Transform =
 		val sccs = Graph.stronglyConnectedComponents G
 		val _ = reset (fn _ => true)
 	      in
-		List.map (sccs, fn scc => List.revMap (scc, getNodeInfo))
+		List.revMap (sccs, fn scc => List.revMap (scc, getNodeInfo))
 	      end
 
 	  exception Nope
 	  val nested = ref 0
 	  val rejected = ref 0
-	  val rec getSCCSHeads: Func.t list -> Func.t list
-	    = fn fs as [] => []
-	       | fs as [f] => cascade fs
-	       | fs
-	       => (cascade o List.concatMap)
-	          (getSCCS fs,
-		   fn fs as [] => []
-		    | fs as [f] => [f]
-		    | fs
-		    => let
-			 val outsideCallee = ref NONE
-			 val insideFunctions
-			   = let
-			       fun doit f
-				 = let
-				     val prefixes
-				       = FuncData.prefixes (getFuncData f)
-				   in
-				     f :: List.concatMap (prefixes, doit)
-				   end
-			     in
-			       List.concatMap (fs, doit)
-			     end
-			 fun check g
-			   = not (List.contains (insideFunctions, 
-						g,
-						Func.equals))
-			 val _
-			   = List.foreach
-			     (fs,
-			      fn f => let
-					val callers
-					  = FuncData.callers' (getFuncData f)
-				      in
-					if List.exists
-					   (!(#nontail callers),
-					    fn (g,_) => check g)
-					   orelse
-					   List.exists
-					   (!(#tail callers),
-					    fn g => check g)
-					  then case !outsideCallee
-						 of NONE
-						  => outsideCallee := SOME f
-						  | SOME _ => raise Nope
-					  else ()
-				      end)
-		       in
-			 case !outsideCallee
-			   of NONE => Error.bug "getSCCSHeads"
-			    | SOME f
-			    => let
-				 val prefixes
-				   = FuncData.prefixes' (getFuncData f)
-				 val rest 
-				   = List.removeFirst
-				     (fs,
-				      fn g => Func.equals (f, g))
-				 val _ = nested := !nested + (List.length rest)
-			       in
-				 prefixes := (getSCCSHeads rest) @ !prefixes;
-				 [f]
-			       end
-		       end
-		       handle Nope
-		       => (rejected := !rejected + (List.length fs);
-			   List.foreach
-			   (fs,
-			    fn f => let
-				      val contify 
-					= FuncData.contify' (getFuncData f)
-				    in
-				      contify := false
-				    end);
-			   fs))
-
-(*
-	  fun getSCCSHeads (fs : Func.t list) : Func.t list
-	    = (cascade o List.concatMap)
-	      (getSCCS fs,
-	       fn fs
-	        => let
-		     val outsideCallee = ref NONE
-		     val insideFunctions
-		       = let
-			   fun doit f
-			     = let
-				 val prefixes 
-				   = FuncData.prefixes (getFuncData f)
-			       in
-				 f :: List.concatMap (prefixes, doit)
-			       end
-			 in
-			   List.concatMap (fs, doit)
-			 end
-		     fun check g
-		       = not (List.contains (insideFunctions, g, Func.equals))
-		     val _
-		       = List.foreach
-		         (fs,
-			  fn f => let
-				    val callers 
-				      = FuncData.callers' (getFuncData f)
-				  in
-				    if List.exists
-				       (!(#nontail callers),
-					fn (g,_) => check g)
-				       orelse
-				       List.exists
-				       (!(#tail callers),
-					fn g => check g)
-				      then case !outsideCallee
-					     of NONE => outsideCallee := SOME f
-					      | SOME _ => raise Nope
-				      else ()
-				  end)
-		   in
-		     case !outsideCallee
-		       of NONE => Error.bug "getSCCHeads"
-			| SOME f 
-			=> let
-			     val prefixes = FuncData.prefixes' (getFuncData f)
-			     val rest = List.removeFirst 
-			                (fs, fn g => Func.equals (f, g))
+	  fun prefixSCCSHeads (prefix, fs)
+	    = let
+	      in
+		List.foreach
+		(getSCCS fs,
+		 fn fs as [] => ()
+		  | fs as [f] 
+		  => let
+		       val FuncData.T {contify, status, ...} = getFuncData f
+		     in
+		       status := DONE;
+		       if !contify
+			 then prefix f
+			 else ()
+		     end
+		  | fs
+		  => let
+		       val outsideCallee = ref NONE
+		       val insideFunctions
+			 = let
+			     fun doit f
+			       = let
+				   val prefixes = FuncData.prefixes (getFuncData f)
+				 in 
+				   f :: List.concatMap (prefixes, doit)
+				 end
 			   in
-			     case rest
-			       of [] => ()
-				| [g] => prefixes := g :: (!prefixes)
-				| _ => prefixes := (getSCCSHeads rest) @ 
-				                   !prefixes;
-			     [f]
+			     List.concatMap (fs, doit)
 			   end
-		   end
-		   handle Nope
-		    => (List.foreach
-			(fs,
-			 fn f => let
-				   val contify 
-				     = FuncData.contify' (getFuncData f)
-				 in
-				   contify := false
-				 end);
-			fs))
-*)
+		       fun check g
+			 = not (List.contains (insideFunctions, g, Func.equals))
+		     in
+		       List.foreach
+		       (fs,
+			fn f => let
+				  val callers = FuncData.callers' (getFuncData f)
+				in
+				  if List.exists(!(#nontail callers), 
+						 fn (g, _) => check g)
+				     orelse
+				     List.exists(!(#tail callers),
+						 fn g => check g)
+				    then case !outsideCallee
+					   of NONE => outsideCallee := SOME f
+					    | SOME _ => raise Nope
+				    else ()
+				end) ;
+		       case !outsideCallee
+			 of NONE => Error.bug "getSCCSHeads"
+			  | SOME f
+			  => let
+			       val FuncData.T {contify, status, prefixes, ...}
+				 = getFuncData f
+			       val rest 
+				 = List.removeFirst(fs, fn g => Func.equals (f, g))
+			     in
+			       nested := !nested + (List.length rest);
+			       if !contify
+				 then (prefixSCCSHeads
+				       (fn f => List.push(prefixes, f), rest);
+				       status := DONE;
+				       if !contify
+					 then prefix f
+					 else ())
+				 else ()
+			     end
+		     end
+		     handle Nope
+		     => let
+			in
+			  rejected := !rejected + (List.length fs);
+			  cascade fs
+			end)
+	      end
 
 	  datatype z = datatype JumpFuncGraph.t
 	  fun processNode n
@@ -790,44 +717,47 @@ structure Transform =
 				of JumpNode j
 				 => JumpData.status (getJumpData j) = CURRENT
 			         | FuncNode f
-				 => FuncData.status (getFuncData f) = CURRENT))
+				 => FuncData.status (getFuncData f) = CURRENT
+				    orelse
+				    (FuncData.status (getFuncData f) = DONE
+				     andalso
+				     FuncData.contify (getFuncData f) = false)))
 
 		val succs = List.keepAllMap
 		            (succs,
 			     fn n => case getNodeInfo n
 				       of JumpNode j => NONE
-				        | FuncNode f => SOME f)
+				        | FuncNode f 
+					=> if FuncData.contify (getFuncData f)
+					     then SOME f
+					     else NONE)
 
-(*
 		fun doit (prefixes, status)
-		  = (case succs
-		       of [] => ()
-			| [g] => prefixes := g :: (!prefixes)
-			| _ => prefixes := (getSCCSHeads succs) @ !prefixes;
-		     List.foreach
-		     (succs,
-		      fn f => (FuncData.status' (getFuncData f)) := DONE);
-		     status := CURRENT)
-*)
-		fun doit (prefixes, status)
-		  = (prefixes := (getSCCSHeads succs) @ !prefixes;
-		     List.foreach
-		     (succs,
-		      fn f => (FuncData.status' (getFuncData f)) := DONE);
-		     status := CURRENT)
+		  = let
+		    in
+		      prefixSCCSHeads(fn f => List.push(prefixes, f), succs);
+		      Assert.assert
+		      ("Transform.transform: processNode",
+		       fn () 
+		        => List.forall
+		           (succs,
+			    fn f
+			     => FuncData.status (getFuncData f) = DONE));
+		      if !status <> DONE
+			then status := CURRENT
+			else ()
+		    end
 	      in 
 		case getNodeInfo n
 		  of JumpNode j 
 		   => let
-			val prefixes = JumpData.prefixes' (getJumpData j)
-			val status = JumpData.status' (getJumpData j)
+			val JumpData.T {prefixes, status, ...} = getJumpData j
 		      in 
 			doit (prefixes, status)
 		      end 
 		   | FuncNode f
 		   => let
-			val prefixes = FuncData.prefixes' (getFuncData f)
-			val status = FuncData.status' (getFuncData f)
+			val FuncData.T {prefixes, status, ...} = getFuncData f
 		      in 
 			doit (prefixes, status)
 		      end
@@ -835,13 +765,6 @@ structure Transform =
 
 	  val dfs_param = DfsParam.finishNode processNode
 	  val _ = Graph.dfsNodes (G, !roots, dfs_param)
-	  val _ = if false (* !Control.contifyDiag *)
-		    then print (concat ["nested: ",
-				       Int.toString (!nested),
-				       "  rejected: ",
-				       Int.toString (!rejected),
-				       "\n"])
-		    else ()
 
 	  (* For functions turned into continuations,
 	   *  record their args, body, and new name.
@@ -851,7 +774,7 @@ structure Transform =
 	      (functions,
 	       fn Function.T {name = f, args = f_args, body = f_body, ...} 
 	        => let
-		     val FuncData.T {contify, replace, ...} = getFuncData f
+		     val FuncData.T {contify, replace, prefixes, ...} = getFuncData f
 		     val _ 
 		       = Assert.assert
 		         ("Transform.transform: DONE or CURRENT",
@@ -932,7 +855,10 @@ structure Transform =
 	        => let
 		     val FuncData.T {replace, prefixes, ...}
 		       = getFuncData f
-		     val {jump, args, body} = valOf (!replace)
+		     val {jump, args, body} 
+		       = valOf (!replace)
+		         handle Option => Error.bug (concat ["valOf (!replace): ",
+							     Func.toString f])
 		     val body = prefix_exp (!prefixes, c, walkExp (f, body, c))
 		   in
 		     Fun {name = jump, args = args, body = body} :: ds
@@ -1009,9 +935,10 @@ fun contify (program as Program.T {functions, ...})
 	      {program = program,
 	       getFuncData = getFuncData,
 	       getJumpData = getJumpData}
-      val program = Transform.transform {program = program,
-					 getFuncData = getFuncData,
-					 getJumpData = getJumpData}
+      val program = Transform.transform 
+	            {program = program,
+		     getFuncData = getFuncData,
+		     getJumpData = getJumpData}
       val _ = Program.clear program
     in
       program
