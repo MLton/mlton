@@ -176,5 +176,10 @@ end
 *)
    
 val typeCheck = S.typeCheck
-   
+
+val simplify = fn p => let val p' = simplify p
+                       in (typeCheck p' 
+			   ; p')
+		       end 
+
 end
