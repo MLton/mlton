@@ -53,7 +53,7 @@ datatype z = datatype ConstType.t
 
 type res = (string * ConstType.t) list
 
-fun constants (decs: CoreML.Dec.t vector): res =
+fun decsConstants (decs: CoreML.Dec.t vector): res =
    let
       open CoreML
       open Exp Dec
@@ -109,29 +109,55 @@ fun constants (decs: CoreML.Dec.t vector): res =
    in
       loopDecs (decs, [])
    end
-   
+
+val gcFields =
+   [
+    "base",
+    "canHandle",
+    "currentThread",
+    "frontier",
+    "limit",
+    "limitPlusSlop",
+    "maxFrameSize",
+    "signalIsPending",
+    "stackBottom",
+    "stackLimit",
+    "stackTop"
+    ]
+
+fun constants decs =
+   List.append
+   (List.map (decsConstants decs, fn (s, t) =>
+	      {name = s,
+	       value = s,
+	       ty = t}),
+    List.map (gcFields, fn s =>
+	      {name = s,
+	       value = concat ["offsetof (struct GC_state, ", s, ")"],
+	       ty = ConstType.Int}))
+	       
 fun build (decs: CoreML.Dec.t vector, out: Out.t): unit =
    List.foreach
    (List.concat
-    [["#include <stdio.h>"],
+    [["#include <stddef.h>", (* for offsetof *)
+      "#include <stdio.h>"],
      List.map (!Control.includes, fn i =>
 	       concat ["#include <", i, ">"]),
      ["struct GC_state gcState;",
       "int main (int argc, char **argv) {"],
      List.map
-     (constants decs, fn (s, t) =>
+     (constants decs, fn {name, value, ty} =>
       let
 	 fun doit (format, value) =
-	    concat ["fprintf (stdout, \"", s, " = ", format, "\\n\", ",
+	    concat ["fprintf (stdout, \"", name, " = ", format, "\\n\", ",
 		    value, ");"]
       in
-	 case t of
-	    Bool => doit ("%s", concat [s, "? \"true\" : \"false\""])
-	  | Int => doit ("%d", s)
-	  | Real => doit ("%.20f", s)
-	  | String =>
-	       concat ["MLton_printStringEscaped (f, ", s, ");"]
-	  | Word => doit ("%x", s)
+	 case ty of
+	    Bool => doit ("%s", concat [value, "? \"true\" : \"false\""])
+	  | Int => doit ("%d", value)
+	  | Real => doit ("%.20f", value)
+	  | String => concat ["MLton_printStringEscaped (f, ", value, ");"]
+	  | Word => doit ("%x", value)
       end),
      ["return 0;}"]],
     fn l => (Out.output (out, l); Out.newline out))
@@ -142,7 +168,7 @@ fun load (decs, ins: In.t): string -> Const.t =
       val valueLines =
 	 List.map2
 	 (constants, In.lines ins,
-	  fn ((name, _), s) =>
+	  fn ({name, ...}, s) =>
 	  case String.tokens (s, Char.isSpace) of
 	     [name', "=", value] =>
 		if name = name'
@@ -154,8 +180,8 @@ fun load (decs, ins: In.t): string -> Const.t =
       val values =
 	 List.map2 (constants,
 		    valueLines,
-		    fn ((_, t), s) =>
-		    case t of
+		    fn ({ty, ...}, s) =>
+		    case ty of
 		       Bool => Const.Bool (valOf (Bool.fromString s))
 		     | Int => Const.Int (valOf (Int.fromString s))
 		     | String => Const.String (unescape s)
@@ -165,7 +191,7 @@ fun load (decs, ins: In.t): string -> Const.t =
 	 String.memoizeList
 	 (fn s => Error.bug (concat ["strange constant: ", s]),
 	  List.fold2 (constants, values, [],
-		      fn ((s, _), v, ac) => (s, v) :: ac))
+		      fn ({name, ...}, v, ac) => (name, v) :: ac))
    in
       lookupConstant      
    end
