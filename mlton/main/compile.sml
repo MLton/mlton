@@ -464,7 +464,9 @@ fun preCodegen {input, docc}: Machine.Program.t =
 				 Layouts Machine.Program.layouts)
 	    else ()
 	 end
-      val _ = Machine.Program.typeCheck machine
+      val _ =
+	 Control.trace (Control.Pass, "machine type check")
+	 Machine.Program.typeCheck machine
    in
       machine
    end
