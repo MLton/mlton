@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -508,20 +508,28 @@ structure Exp =
       type node' = node
       type obj = t
 
-      fun make n = makeRegion (n, Region.bogus)
-      val const = make o Const
-      val constraint = make o Constraint
+(*      fun make n = makeRegion (n, Region.bogus) *)
+
+      fun const c = makeRegion (Const c, Const.region c)
+
+      fun constraint (e, t) = makeRegion (Constraint (e, t), region e)
+
       fun fnn rs =
-	 make (Fn (Match.makeRegion (Match.T rs, Region.bogus)))
-      val handlee = make o Handle
-      val raisee = make o Raise
-      val record = make o Record
+	 let
+	    val r =
+	       if 0 = Vector.length rs
+		  then Region.bogus
+	       else Region.append (Pat.region (#1 (Vector.sub (rs, 0))),
+				   region (#2 (Vector.last rs)))
+	 in
+	    makeRegion (Fn (Match.makeRegion (Match.T rs, r)), r)
+	 end
 
-      fun longvid name = make (Var {name = name, fixop = Fixop.None})
+      fun longvid name =
+	 makeRegion (Var {name = name, fixop = Fixop.None},
+		     Longvid.region name)
+	 
       val var = longvid o Longvid.short o Vid.fromVar
-
-      fun select {tuple, offset}: t =
-	 make (App (make (Selector (Field.Int offset)), tuple))
 
       local
 	 fun isLongvid x e =
@@ -533,105 +541,26 @@ structure Exp =
 	 val isTrue = isLongvid Longvid.truee
       end
 			    
-      fun iff (a: t, b: t, c: t): t =
-	 make (if isTrue b then Orelse (a, c)
-	      else if isFalse c then Andalso (a, b)
-		   else If (a, b, c))
-		 
-      fun casee (e: t, m: Match.t) =
-	 let
-	    val Match.T rules = Match.node m
-	    val default = make (Case (e, m))
-	 in
-	    if 2 = Vector.length rules
-	       then
-		  let
-		     val (p0, e0) = Vector.sub (rules, 0)
-		     val (p1, e1) = Vector.sub (rules, 1)
-		  in
-		     if Pat.isTrue p0 andalso Pat.isFalse p1
-			then iff (e, e0, e1)
-		     else if Pat.isFalse p0 andalso Pat.isTrue p1
-			     then iff (e, e1, e0)
-			  else default
-		  end
-	    else default
-	 end
-
-      val emptyList: t = make (List (Vector.new0 ()))
-	 
-      fun con c: t = if Con.equals (c, Con.nill) then emptyList
-		      else longvid (Longvid.short (Vid.fromCon c))
-
       fun app (e1: t, e2: t): t =
-	 let
-	    val e = makeRegion (App (e1, e2),
-				Region.append (region e1, region e2))
-	 in
-	    case node e1 of
-	       Fn m => casee (e2, m)
-	     | Var {name = x, ...} =>
-		  if Longvid.equals (x, Longvid.cons)
-		     then case node e2 of
-			Record r =>
-			   (case Record.detupleOpt r of
-			       SOME v =>
-				  if 2 = Vector.length v
-				     then
-					let
-					   val e1 = Vector.sub (v, 0)
-					   val es = Vector.sub (v, 1)
-					in
-					   case node es of
-					      List es =>
-						 make (List (Vector.cons
-							     (e1, es)))
-					    | _ => e
-					end
-				  else e
-					    | _ => e)
-		      | _ => e
-		  else e
-		      | _ => e
-	 end
-
-      val seq = make o Seq
+	 makeRegion (App (e1, e2),
+		     Region.append (region e1, region e2))
 	 
-      fun lett (ds: dec vector, e: t): t =
-	 let
-	    val es =
-	       Vector.keepAllMap
-	       (ds, fn d =>
-		case node d of
-		   Val {tyvars, vbs, rvbs} =>
-		      if 1 = Vector.length vbs
-			 andalso 0 = Vector.length rvbs
-			 then
-			    let
-			       val {pat, exp, ...} = Vector.sub (vbs, 0)
-			    in
-			       if Vector.isEmpty tyvars andalso Pat.isWild pat
-				  then SOME exp
-			       else NONE
-			    end
-		      else NONE
-		 | _ => NONE)
-	 in
-	    make
-	    (if Vector.length ds = Vector.length es
-		then Seq (Vector.concat [es, Vector.new1 e])
-	     else
-		case node e of
-		   Let (d, e) => Let (make (SeqDec (Vector.concat
-						    [ds, Vector.new1 d])),
-				      e)
-		 | _ => Let (make (SeqDec ds), e))
-	 end
+      fun lett (ds: dec vector, e: t, r: Region.t): t =
+	 makeRegion (Let (makeRegion (SeqDec ds, r), e), r)
 
       fun tuple (es: t vector): t =
 	 if 1 = Vector.length es
 	    then Vector.sub (es, 0)
-	 else make (Record (Record.tuple es))
+	 else
+	    let
+	       val r =
+		  if 0 = Vector.length es
+		     then Region.bogus
+		  else Region.append (region (Vector.sub (es, 0)),
+				      region (Vector.last es))
+	    in
+	       makeRegion (Record (Record.tuple es), r)
+	    end
 
       val unit: t = tuple (Vector.new0 ())
 
@@ -664,6 +593,7 @@ structure Dec =
 	    Region.bogus)))
 
       val seq = make o SeqDec
+	 
       val empty = seq (Vector.new0 ())
 
       fun vall (tyvars, var, exp): t =

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -142,20 +142,12 @@ signature AST_CORE =
 			    sharing type obj = t
 	       
 	    val app: t * t -> t
-	    val casee: t * match -> t
-	    val con: Con.t -> t
 	    val const: Const.t -> t
 	    val constraint: t * Type.t -> t
 	    val fnn: (Pat.t * t) vector -> t
-	    val handlee: t * match -> t
-	    val iff: t * t * t -> t
-	    val layout: t -> Layout.t
-	    val lett: dec vector * t -> t
+            val layout: t -> Layout.t
+	    val lett: dec vector * t * Region.t -> t
 	    val longvid: Longvid.t -> t
-	    val raisee: t -> t
-	    val record: t Record.t -> t
-	    val select: {tuple: t, offset: int} -> t
-	    val seq: t vector -> t
 	    val tuple: t vector -> t
 	    val unit: t
 	    val var: Var.t -> t

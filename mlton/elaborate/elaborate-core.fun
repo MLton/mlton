@@ -888,7 +888,8 @@ fun export {attributes, name: string, region: Region.t, ty: Type.t}: Aexp.t =
 			    Exp.app (id (concat ["set", name]),
 				     Exp.var resVar)))),
 		   fn (x, e) => Dec.vall (Vector.new0 (), x, e))],
-		 Exp.tuple (Vector.new0 ()))
+		 Exp.tuple (Vector.new0 ()),
+		 region)
 	     end)))))))
    end
 
