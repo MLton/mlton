@@ -188,7 +188,8 @@ in
    fun setBasisLibraryDir (d: Dir.t): unit =
       dir := SOME d
    val basisLibrary : unit -> {build: Decs.t,
-			       localTopFinish: (unit -> Decs.t) -> Decs.t,
+			       localTopFinish: (unit -> Decs.t * Decs.t * Decs.t) -> 
+			                       Decs.t * Decs.t * Decs.t,
 			       libs: {name: string,
 				      bind: Ast.Program.t,
 				      prefix: Ast.Program.t,
@@ -266,7 +267,11 @@ fun selectBasisLibrary () =
 	 NONE => Error.bug ("Missing basis library: " ^ lib)
        | SOME {bind, prefix, suffix, ...} =>
 	   let
-	     val bind = localTopFinish (fn () => elaborateProg (bind, basisEnv))
+	     val (bind, prefix, suffix) = 
+	        localTopFinish 
+		(fn () => (elaborateProg (bind, basisEnv),
+			   elaborateProg (prefix, basisEnv),
+			   elaborateProg (suffix, basisEnv)))
 	   in
 	     {basis = Decs.append (build, bind),
 	      prefix = prefix,
@@ -299,7 +304,6 @@ fun preCodegen {input, docc}: Machine.Program.t =
       val decs =
 	 let 
 	    val {basis, prefix, suffix, ...} = selectBasisLibrary ()
-	    val prefix = elaborateProg (prefix, basisEnv)
 	    val input =
 	       if !Control.showBasisUsed
 		  then let
@@ -315,7 +319,6 @@ fun preCodegen {input, docc}: Machine.Program.t =
 			 Process.succeed ()
 		       end
 	       else parseAndElaborateFiles (input, basisEnv)
-	    val suffix = elaborateProg (suffix, basisEnv)
 	    val user = Decs.appends [prefix, input, suffix]
 	    val _ = parseElabMsg ()
 	    val basis = Decs.toList basis

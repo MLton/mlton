@@ -35,15 +35,14 @@ example, by default, overflow checking on is performed on integer arithmetic.
 
 \begin{description}
 
-\option{-basis \{basis-2002|basis-2002-strict|basis-1997|none\}}
-Selects a Basis Library to be used by the input program.  {\tt
-basis-2002} and {\tt basis-2002-strict} implement the current Basis
-Library specification; {\tt basis-2002-strict} removes all extensions
-described in \secref{mlton}.  {\tt basis-1997} implements a previous
-version of the Basis Library specification; see \secref{basis1997} for
-more information.  {\tt none} removes all Basis Library functionality;
-the only bound identifier is {\tt =} corresponding to polymorphic
-equality.
+\option{-basis \{2002|2002-strict|1997|none\}}
+Selects a Basis Library to be used by the input program.  {\tt 2002}
+and {\tt 2002-strict} implement the current Basis Library
+specification; {\tt 2002-strict} removes all extensions described in
+\secref{mlton}.  {\tt 1997} implements a previous version of the Basis
+Library specification; see \secref{basis1997} for more information.
+{\tt none} removes all Basis Library functionality; the only bound
+identifier is {\tt =} corresponding to polymorphic equality.
 
 \option{-detect-overflow \{true|false\}}
 This flag controls whether or not overflow checking is performed on integer
