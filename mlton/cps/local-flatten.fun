@@ -4,13 +4,10 @@ struct
 open S
 open Dec PrimExp Transfer
 
-(* Flatten a jump arg as long as it is only flows to selects and only flows
- * from tuples.
+(* Flatten a jump arg as long as it is only flows to selects and there some
+ * tuple constructed in this function that flows to it.
  *)
    
-structure Lattice = TwoPointLattice (val bottom = "true"
-				     val top = "false")
-
 structure ArgInfo =
    struct
       datatype t = T of {fromTuple: bool ref,
@@ -26,15 +23,15 @@ structure ArgInfo =
       fun layout (i: t): Layout.t =
 	 Layout.str (if isFlat i then "flat" else "tupled")
 
-      fun new () = T {fromTuple = ref true,
+      fun new () = T {fromTuple = ref false,
 		      fromForce = ref [],
 		      toSelect = ref true,
 		      toForce = ref []}
 
-      fun nonTuple (T {fromTuple = f, fromForce, ...}) =
+      fun tuple (T {fromTuple = f, fromForce, ...}) =
 	 if !f
-	    then (f := false; List.foreach (!fromForce, nonTuple))
-	 else ()
+	    then ()
+	 else (f := true; List.foreach (!fromForce, tuple))
 
       fun nonSelect (T {toSelect = t, toForce, ...}) =
 	 if !t
@@ -47,8 +44,8 @@ structure ArgInfo =
 	 let
 	    val _ =
 	       if !f
-		  then List.push (fromForce, rhs)
-	       else nonTuple rhs
+		  then tuple rhs
+	       else List.push (fromForce, rhs)
 	    val _ =
 	       if !t
 		  then List.push (toForce, lhs)
@@ -142,8 +139,8 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 			      | (x, SOME (i, _)) =>
 				   (case varInfo x of
 				       VarInfo.Arg i' => ArgInfo.<= (i', i)
-				     | VarInfo.None => ArgInfo.nonTuple i
-				     | VarInfo.Tuple => ()))
+				     | VarInfo.None => ()
+				     | VarInfo.Tuple => ArgInfo.tuple i))
 		       | Raise xs => forces xs
 		       | Return xs => forces xs
 		in
