@@ -9,11 +9,41 @@ val doHtml = ref false
 val doOnce = ref false
 val runArgs : string list ref = ref []
 
+fun withInput (file, f: unit -> 'a): 'a =
+   let
+      open FileDesc
+      val inFd =
+	 let
+	    open Pervasive.Posix.FileSys
+	 in
+	    openf (file, O_RDONLY, O.flags [])
+	 end
+   in
+      DynamicWind.wind
+      (fn () => FileDesc.fluidLet (FileDesc.stdin, inFd, f),
+       fn () => FileDesc.close inFd)
+   end
+
+fun ignoreOutput f =
+   let
+      val nullFd =
+	 let
+	    open Pervasive.Posix.FileSys
+	 in
+	    openf ("/dev/null", O_WRONLY, O.flags [])
+	 end
+      open FileDesc
+   in
+      DynamicWind.wind
+      (fn () => fluidLet (stderr, nullFd, fn () =>
+			  fluidLet (stdout, nullFd, f)),
+       fn () => close nullFd)
+   end
+
 fun timeIt (com, args) =
-   (print "timing\n"
-    ; Process.time (fn () =>
-		    (Process.wait
-		     (MLton.Process.spawnp {file = com, args = com :: args}))))
+   Process.time (fn () =>
+		 Process.wait
+		 (Process.spawnp {file = com, args = com :: args}))
 
 local
    val trialTime = Time.seconds (IntInf.fromInt 60)
@@ -233,19 +263,18 @@ fun njCompile {bench} =
        (* sml should start SML/NJ *)
        val sml = "sml"
        val {system, user} =
-	  Process.time
-	  (fn () =>
-	   Process.callWithOut
-	   (sml, [], fn out =>
-	    (Out.output
-	     (out, "local\nval _ = SMLofNJ.Internals.GC.messages false\n")
-	     ; File.outputContents (concat [bench, ".sml"], out)
-	     ; (Out.output
-		(out,
-		 concat
-		 ["in val _ = SMLofNJ.exportFn (\"", bench,
-		  "\", fn _ =>\n (Main.doit () ; OS.Process.success))\nend\n"]
-		  )))))
+	  File.withTempOut
+	  (fn out =>
+	   (Out.output
+	    (out, "local\nval _ = SMLofNJ.Internals.GC.messages false\n")
+	    ; File.outputContents (concat [bench, ".sml"], out)
+	    ; (Out.output
+	       (out,
+		concat
+		["in val _ = SMLofNJ.exportFn (\"", bench,
+		 "\", fn _ =>\n (Main.doit () ; OS.Process.success))\nend\n"]
+		 ))),
+           fn input => withInput (input, fn () => timeIt (sml, [])))
          handle _ => Escape.escape (e, {compile = NONE,
 					run = NONE,
 					size = NONE})
@@ -270,67 +299,49 @@ fun njCompile {bench} =
 	  end
     end)
 		
-(* fun polyCompile {bench} =
- *    Escape.new
- *    (fn e =>
- *     let
- *        val op / = String./
- *        val root = "/usr/lib/polyml"
- *        val originalDbase = root/"ML_dbase"
- *     in File.withTemp
- *        (fn dbase =>
- * 	File.withTemp
- * 	(fn times =>
- * 	 (File.copy (originalDbase, dbase)
- * 	  ; (Process.callWithOut
- * 	     (root/"poly", [dbase], fn out =>
- * 	      (Out.output
- * 	       (out, concat ["\
- * 		\val out = TextIO.openOut \"", times, "\";\n\
- * 		\fun disp r =\n\
- * 		\    TextIO.output (out, concat [Real.toString r, \"\\n\"]);\n\
- * 		\fun time () =\n\
- * 		\   let val {utime, stime, ...} = Posix.ProcEnv.times ()\n\
- * 		\   in Time.+ (utime, stime)\n\
- * 		\   end;\n\
- * 		\val t = time ();\n"])
- * 			     ; File.outputContents (concat [bench, ".sml"], out)
- * 			     ; Out.output (out, "\
- * 			      \val _ = disp (Time.toReal (Time.- (time (), t)));\n\
- * 			      \val _ = PolyML.commit ();\n\
- * 			      \val max = Time.fromSeconds 5\n\
- * 			      \fun loop (n, ac: Time.time): unit =\n\
- * 			      \   if Time.> (ac, max)\n\
- * 			      \   then disp (Time.toReal ac / Real.fromInt n)\n\
- * 			      \   else loop (n + 1, let val t = time () val _ = Main.doit ()\n\
- * 			      \                     in Time.+ (ac, Time.- (time (), t))\n\
- * 			      \                     end)\n\
- * 			      \val _ = loop (0, Time.zeroTime);\n\
- * 			      \val _ = TextIO.closeOut out;\n\
- * 			      \val _ = PolyML.quit ();\n"))))
- * 					   handle _ => Escape.escape
- * 					      (e, {compile = NONE,
- * 						   run = NONE,
- * 						   size = NONE})
- * 					   ; let
- * 						val lines = File.lines times
- * 						fun size () =
- * 						   let
- * 						      val _ = Process.call' (root/"discgarb", [dbase])
- * 						   in File.size dbase - File.size originalDbase
- * 						   end
- * 						val s2r = valOf o Real.fromString
- * 					     in case lines of
- * 						[compile] => {compile = SOME (s2r compile),
- * 							      run = NONE,
- * 							      size = SOME (size ())}
- * 					      | [compile, run] => {compile = SOME (s2r compile),
- * 								   run = SOME (s2r run),
- * 								   size = SOME (size ())}
- * 					      | _ => {compile = NONE, run = NONE, size = NONE}
- * 					     end)))
- *     end)
- *)
+fun polyCompile {bench} =
+   Escape.new
+   (fn e =>
+    let
+       val originalDbase = "/usr/lib/poly/ML_dbase"
+       val poly = "poly"
+    in File.withTemp
+       (fn dbase =>
+	let
+	   val _ = File.copy (originalDbase, dbase)
+	   val original = File.size dbase
+
+	   val {system, user} =
+	      File.withTempOut
+	      (fn out =>
+	       Out.output
+	       (out,
+		concat ["use \"", bench, ".sml\" handle _ => PolyML.quit ();\n",
+			"if PolyML.commit() then () else (Main.doit(); ());\n",
+			"PolyML.quit();\n"]),
+	       fn input => withInput (input, fn () => timeIt ("poly", [dbase])))
+	   val after = File.size dbase
+	in
+	   if original = after
+	      then {compile = NONE,
+		    run = NONE,
+		    size = NONE}
+	   else
+	       let
+		  val compile = SOME (Time.toReal (Time.+ (user, system)))
+		  val size = SOME (after - original)
+		  val run =
+		     timeCall (poly, [dbase])
+		     handle _ => Escape.escape (e, {compile = compile,
+						    run = NONE,
+						    size = size})
+	       in
+		  {compile = compile,
+		   run = SOME run,
+		   size = size}
+	       end
+	end)
+    end)
 
 fun usage msg =
    Process.usage {usage = "[-mlkit] [-mosml] [-smlnj] bench1 bench2 ...",
@@ -339,6 +350,7 @@ fun usage msg =
 type 'a data = {bench: string,
 		compiler: string,
 		value: 'a} list
+
 
 fun main args =
    let
@@ -431,6 +443,11 @@ fun main args =
 				   (makeMLton arg))),
 		     ("once", trueRef doOnce),
 		     ("out", SpaceString setOutData),
+		     ("poly",
+		      None (fn () => pushCompiler
+			    {name = "Poly/ML",
+			     abbrv = "Poly/ML",
+			     test = polyCompile})),
 		     ("smlnj",
 		      None (fn () => pushCompiler
 			    {name = "SML/NJ",
@@ -449,7 +466,7 @@ fun main args =
 		  let open Signal
 		  in setHandler (pipe, Ignore)
 		  end
-	       fun r2s r = Real.format (r, Real.Format.fix (SOME 2))
+	       fun r2s r = Real.format (r, Real.Format.fix (SOME 1))
 	       val i2s = Int.toCommaString
 	       val s2s = fn s => s
 	       fun show {compiles, runs, sizes, errs, outs} =
@@ -577,11 +594,8 @@ fun main args =
 				      File.temp
 				      {prefix = "tmp", suffix = "err"}
 				   val {compile, run, size} =
-				      Out.fluidLet
-				      (Out.standard, outTmpOut, fn () =>
-				       Out.fluidLet
-				       (Out.error, errTmpOut, fn () =>
-					test {bench = bench}))
+				      ignoreOutput
+				      (fn () => test {bench = bench})
 				   val out = 
 				      case !outData of 
 					 NONE => NONE

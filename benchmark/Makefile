@@ -36,9 +36,9 @@ tags:
 BENCH = barnes-hut checksum count-graphs DLXSimulator fft fib hamlet imp-for knuth-bendix lexgen life logic mandelbrot matrix-multiply md5 merge mlyacc mpuz nucleic peek psdes-random ratio-regions ray raytrace simple smith-normal-form tailfib tak tensor tsp tyan vector-concat vector-rev vliw wc-input1 wc-scanStream zebra zern
 FPBENCH = barnes-hut fft hamlet mandelbrot matrix-multiply nucleic ray raytrace simple tensor tsp tyan vliw zern
 
-BFLAGS = -mlton "mlton" -mlkit -mosml -smlnj
 BFLAGS = -mlton "/usr/local/bin/mlton" -mlton "mlton -optimize-ssa {false,true}"
 BFLAGS = -mlton "mlton"
+BFLAGS = -html -mlton "mlton" -mlkit -mosml -poly -smlnj
 
 .PHONY: test
 test: $(NAME)
