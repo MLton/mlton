@@ -738,10 +738,8 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
 				in case Prim.name prim of
 				   Array_update => array ()
 				 | Ref_assign =>
-				      (Out.output (Out.error, "FUCK\n")
-				       ;
 				      Value.isUseful 
-				      (Value.deref (value (arg 0))))
+				      (Value.deref (value (arg 0)))
 				 | Word8Array_updateWord => array ()
 				 | _ => true
 				end
