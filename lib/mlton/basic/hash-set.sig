@@ -19,6 +19,7 @@ signature HASH_SET =
        * satisfying predicate p.  If the entry is there, it is returned after
        * being applied to g.  Otherwise, the function f is called to create a
        * new entry, which is inserted and returned.
+       * NOTE: f must not modify the hash set during it's evaluation.
        *)
       val insertIfNew:
 	 'a t * word * ('a -> bool) * (unit -> 'a) * ('a -> unit) -> 'a
@@ -27,6 +28,7 @@ signature HASH_SET =
        * satisfying predicate p.  If the entry is there, it is returned.
        * Otherwise, the function f is called to create a new entry, which is
        * inserted and returned.
+       * NOTE: f must not modify the hash set during it's evaluation.
        *)
       val lookupOrInsert: 'a t * word * ('a -> bool) * (unit -> 'a) -> 'a
       val new: {hash: 'a -> word} -> 'a t
