@@ -27,7 +27,7 @@ mlton="$bin/mlton"
 thread='thread0.sml thread1.sml thread2.sml mutex.sml prodcons.sml'
 world='world1.sml world2.sml world3.sml world4.sml world5.sml world6.sml'
 tmp=/tmp/z.regression.$$
-log=$src/regression/log
+log=$src/log
 PATH=.:$PATH
 
 (
@@ -46,6 +46,7 @@ PATH=.:$PATH
 				flags='-exn-history true'
 			;;
 			*)
+				flags=''
 			;;
 			esac
 			$mlton -native true -type-check true $flags $f.sml
