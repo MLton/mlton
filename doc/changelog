@@ -1,5 +1,10 @@
 Here are the changes from version 20020923.
 
+* 2002-12-19
+  - Fixed bug in signal check insertion that could cause some signals
+    to be missed.  The fix was to add a signal check on entry to each
+    function in addition to at each loop header.
+
 * 2002-12-10
   - Fixed bug in runtime that might cause the message
 	Unable to set cardMapForMutator.

@@ -250,8 +250,7 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 
       fun doitFunction f =
 	 let
-	    val {args, blocks, name, raises, returns, sourceInfo, start} =
-	       Function.dest f
+	    val {args, blocks, name, raises, returns, start} = Function.dest f
 	    val {args = argsReps, returns = returnsReps, raises = raisesReps} = 
 	      funcInfo name
 
@@ -446,7 +445,6 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 			  name = name,
 			  raises = raises,
 			  returns = returns,
-			  sourceInfo = sourceInfo,
 			  start = start}
 	 end
 

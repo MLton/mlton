@@ -23,8 +23,12 @@ in
    structure ObjectType = ObjectType
    structure Operand = Operand
    structure Prim = Prim
+   structure ProfileInfo = ProfileInfo
+   structure ProfileLabel = ProfileLabel
+   structure Program = Program
    structure Register = Register
    structure Runtime = Runtime
+   structure SourceInfo = SourceInfo
    structure Statement = Statement
    structure Switch = Switch
    structure Transfer = Transfer
@@ -132,11 +136,12 @@ fun creturn (t: Runtime.Type.t): string =
 fun outputDeclarations
    {additionalMainArgs: string list,
     includes: string list,
-    maxFrameIndex: int,
     name: string,
     print: string -> unit,
-    program = (Machine.Program.T
-	       {chunks, frameOffsets, intInfs, maxFrameSize, objectTypes,
+    program = (Program.T
+	       {chunks, frameLayouts, frameOffsets, intInfs, maxFrameSize,
+		objectTypes,
+		profileInfo,
 		reals, strings, ...}),
     rest: unit -> unit
     }: unit =
@@ -190,26 +195,40 @@ fun outputDeclarations
 	   ; print (C.int (Vector.length v))
 	   ; Vector.foreach (v, fn i => (print ","; print (C.int i)))
 	   ; print "};\n"))
-      fun declareObjectTypes () =
-	 (print (concat ["static GC_ObjectType objectTypes[] = {\n"])
-	  ; (Vector.foreach
-	     (objectTypes, fn ty =>
-	      let
-		 datatype z = datatype Runtime.ObjectType.t
-		 val (tag, nonPointers, pointers) =
-		    case ObjectType.toRuntime ty of
-		       Array {numBytesNonPointers, numPointers} =>
-			  (0, numBytesNonPointers, numPointers)
-		     | Normal {numPointers, numWordsNonPointers} =>
-			  (1, numWordsNonPointers, numPointers)
-		     | Stack =>
-			  (2, 0, 0)
-	      in
-		 print (concat ["\t{ ", Int.toString tag, ", ",
-				Int.toString nonPointers, ", ",
-				Int.toString pointers, " },\n"])
-	      end))
+      fun declareArray (ty: string,
+			name: string,
+			v: 'a vector,
+			toString: int * 'a -> string) =
+	 (print (concat ["static ", ty, " ", name, "[] = {\n"])
+	  ; Vector.foreachi (v, fn (i, x) =>
+			     print (concat ["\t", toString (i, x), ",\n"]))
 	  ; print "};\n")
+      fun declareFrameLayouts () =
+	 declareArray ("GC_frameLayout", "frameLayouts", frameLayouts,
+		       fn (_, {frameOffsetsIndex, size}) =>
+		       concat ["{",
+			       C.int size,
+			       ", frameOffsets", C.int frameOffsetsIndex,
+			       "}"])
+      fun declareObjectTypes () =
+	 declareArray
+	 ("GC_ObjectType", "objectTypes", objectTypes,
+	  fn (_, ty) =>
+	  let
+	     datatype z = datatype Runtime.ObjectType.t
+	     val (tag, nonPointers, pointers) =
+		case ObjectType.toRuntime ty of
+		   Array {numBytesNonPointers, numPointers} =>
+		      (0, numBytesNonPointers, numPointers)
+		 | Normal {numPointers, numWordsNonPointers} =>
+		      (1, numWordsNonPointers, numPointers)
+		 | Stack =>
+		      (2, 0, 0)
+	  in
+	     concat ["{ ", Int.toString tag, ", ",
+		     Int.toString nonPointers, ", ",
+		     Int.toString pointers, " }"]
+	  end)
       fun declareMain () =
 	 let
 	    val magic = C.word (Random.useed ())
@@ -218,11 +237,41 @@ fun outputDeclarations
 			  [C.int (!Control.cardSizeLog2),
 			   C.bool (!Control.markCards),
 			   C.int maxFrameSize,
-			   C.int maxFrameIndex,
-			   C.int (Vector.length objectTypes),
-			   magic] @ additionalMainArgs,
+			   magic,
+			   C.bool (!Control.profile = Control.ProfileAlloc)]
+			  @ additionalMainArgs,
 			  print)
 	    ; print "\n"
+	 end
+      fun declareProfileInfo () =
+	 let
+	    val ProfileInfo.T {frameSources, labels, sourceSeqs,
+			       sources} =
+	       profileInfo
+	 in
+	    Vector.foreach (labels, fn {label, ...} =>
+			    print (concat ["void ",
+					   ProfileLabel.toString label,
+					   "();\n"]))
+	    ; declareArray ("struct GC_profileLabel", "profileLabels", labels,
+			    fn (_, {label, sourceSeqsIndex}) =>
+			    concat ["{(pointer)", ProfileLabel.toString label,
+				    ", ", C.int sourceSeqsIndex, "}"])
+	    ; declareArray ("string", "profileSources", sources,
+			    C.string o SourceInfo.toString o #2)
+	    ; Vector.foreachi (sourceSeqs, fn (i, v) =>
+			       (print (concat ["static int sourceSeq",
+					       Int.toString i,
+					       "[] = {"])
+				; print (C.int (Vector.length v))
+				; Vector.foreach (v, fn i =>
+						  (print (concat [",", C.int i])))
+				; print "};\n"))
+				      
+	    ; declareArray ("int", "*profileSourceSeqs", sourceSeqs, fn (i, _) =>
+			    concat ["sourceSeq", Int.toString i])
+	    ; declareArray ("int", "profileFrameSources", frameSources,
+			    C.int o #2)
 	 end
    in
       print (concat ["#define ", name, "CODEGEN\n\n"])
@@ -232,12 +281,15 @@ fun outputDeclarations
       ; declareStrings ()
       ; declareReals ()
       ; declareFrameOffsets ()
+      ; declareFrameLayouts ()
       ; declareObjectTypes ()
+      ; declareProfileInfo ()
       ; rest ()
       ; declareMain ()
    end
 
 fun output {program as Machine.Program.T {chunks,
+					  frameLayouts,
 					  main = {chunkLabel, label}, ...},
             includes,
 	    outputC: unit -> {file: File.t,
@@ -253,28 +305,38 @@ fun output {program as Machine.Program.T {chunks,
 	   set = setLabelInfo, ...} =
 	 Property.getSetOnce
 	 (Label.plist, Property.initRaise ("CCodeGen.info", Label.layout))
-      val entryLabels = ref []
-      (* Assign the entries of each chunk consecutive integers so that
-       * gcc will use a jump table.
-       *)
-      val indexCounter = Counter.new 0
+      val entryLabels: (Label.t * int) list ref = ref []
+      val indexCounter = Counter.new (Vector.length frameLayouts)
       val _ =
 	 List.foreach
 	 (chunks, fn Chunk.T {blocks, chunkLabel, ...} =>
 	  Vector.foreach
 	  (blocks, fn b as Block.T {kind, label, ...} =>
-	   (setLabelInfo
-	    (label,
-	     {block = b,
-	      chunkLabel = chunkLabel,
-	      frameIndex = if Kind.isEntry kind
-			      then (List.push (entryLabels, label)
-				    ; SOME (Counter.next indexCounter))
-			   else NONE,
-              layedOut = ref false,
-	      status = ref None}))))
-      val entryLabels = Vector.fromListRev (!entryLabels)
-      val maxFrameIndex = Counter.value indexCounter
+	   let
+	      fun entry (index: int) =
+		 List.push (entryLabels, (label, index))
+	      val frameIndex = 
+		 case Kind.frameInfoOpt kind of
+		    NONE => (if Kind.isEntry kind
+				then entry (Counter.next indexCounter)
+			     else ()
+		             ; NONE)
+		  | SOME (FrameInfo.T {frameLayoutsIndex, ...}) =>
+		       (entry frameLayoutsIndex
+			; SOME frameLayoutsIndex)
+	   in
+	      setLabelInfo (label, {block = b,
+				    chunkLabel = chunkLabel,
+				    frameIndex = frameIndex,
+				    layedOut = ref false,
+				    status = ref None})
+	   end))
+      val entryLabels =
+	 Vector.map
+	 (Vector.fromArray
+	  (QuickSort.sortArray
+	   (Array.fromList (!entryLabels), fn ((_, i), (_, i')) => i <= i')),
+	  #1)
       val labelChunk = #chunkLabel o labelInfo
       fun labelFrameInfo (l: Label.t): FrameInfo.t option =
 	 let
@@ -287,52 +349,32 @@ fun output {program as Machine.Program.T {chunks,
 	 List.foreach (chunks, fn Chunk.T {chunkLabel, ...} =>
 		       C.call ("DeclareChunk",
 			       [ChunkLabel.toString chunkLabel],
-			       print));
-      fun make (name, pr) =
-	 (print (concat ["static ", name, " = {"])
-	  ; Vector.foreachi (entryLabels, fn (i, x) =>
-			     (if i > 0 then print ",\n\t" else ()
-				 ; pr x))
-	  ; print "};\n")
-      fun declareFrameLayouts () =
-	 make ("GC_frameLayout frameLayouts []", fn l =>
-	       let
-		  val (size, offsetIndex) =
-		     case labelFrameInfo l of
-			NONE => ("0", "NULL")
-		      | SOME (FrameInfo.T {size, frameOffsetsIndex, ...}) =>
-			   (C.int size, "frameOffsets" ^ C.int frameOffsetsIndex)
-	       in 
-		  print (concat ["{", size, ",", offsetIndex, "}"])
-	       end)
+			       print))
       fun declareNextChunks () =
-	 make ("struct cont ( *nextChunks []) ()", fn l =>
-	       let
-		  val {chunkLabel, frameIndex, ...} = labelInfo l
-	       in
-		  case frameIndex of
-		     NONE => print "NULL"
-		   | SOME _ =>
-			C.callNoSemi ("Chunkp",
-				      [ChunkLabel.toString chunkLabel],
-				      print)
-	       end)
+	 (print "static struct cont ( *nextChunks []) () = {"
+	  ; Vector.foreach (entryLabels, fn l =>
+			    let
+			       val {chunkLabel, ...} = labelInfo l
+			    in
+			       print "\t"
+			       ; C.callNoSemi ("Chunkp",
+					       [ChunkLabel.toString chunkLabel],
+					       print)
+			       ; print ",\n"
+			    end)
+	  ; print "};\n")
       fun declareIndices () =
-	 Vector.foreach
-	 (entryLabels, fn l =>
-	  Option.app
-	  (#frameIndex (labelInfo l), fn i =>
-	   (print "#define "
-	    ; print (Label.toStringIndex l)
-	    ; print " "
-	    ; print (C.int i)
-	    ; print "\n")))
+	 Vector.foreachi
+	 (entryLabels, fn (i, l) =>
+	  (print (concat ["#define ", Label.toStringIndex l, " ",
+			  C.int i, "\n"])))
       local
 	 datatype z = datatype Operand.t
-      	 val rec toString =
-	    fn ArrayOffset {base, index, ty} =>
-	    concat ["X", Type.name ty,
-		    C.args [toString base, toString index]]
+      	 fun toString (z: Operand.t): string =
+	    case z of
+	       ArrayOffset {base, index, ty} =>
+		  concat ["X", Type.name ty,
+			  C.args [toString base, toString index]]
 	     | Cast (z, ty) =>
 		  concat ["(", Runtime.Type.toString (Type.toRuntime ty), ")",
 			  toString z]
@@ -351,7 +393,8 @@ fun output {program as Machine.Program.T {chunks,
 	     | Label l => Label.toStringIndex l
 	     | Line => "__LINE__"
 	     | Offset {base, offset, ty} =>
-		  concat ["O", Type.name ty, C.args [toString base, C.int offset]]
+		  concat ["O", Type.name ty,
+			  C.args [toString base, C.int offset]]
 	     | Real s => C.real s
 	     | Register r =>
 		  concat ["R", Type.name (Register.ty r),
@@ -433,6 +476,8 @@ fun output {program as Machine.Program.T {chunks,
 			    in 
 			       ()
 			    end
+		       | ProfileLabel _ =>
+			    Error.bug "C codegen can't do profiling"
 		       | SetExnStackLocal {offset} =>
 			    C.call ("SetExnStackLocal", [C.int offset], print)
 		       | SetExnStackSlot {offset} =>
@@ -444,7 +489,7 @@ fun output {program as Machine.Program.T {chunks,
       fun outputChunk (chunk as Chunk.T {chunkLabel, blocks, regMax, ...}) =
 	 let
 	    fun labelFrameSize (l: Label.t): int =
-	       FrameInfo.size (valOf (labelFrameInfo l))
+	       Program.frameSize (program, valOf (labelFrameInfo l))
 	    (* Count how many times each label is jumped to. *)
 	    fun jump l =
 	       let
@@ -557,7 +602,8 @@ fun output {program as Machine.Program.T {chunks,
 			      ; print ":\n"
 			   end 
 		      | _ => ()
-		  fun pop (FrameInfo.T {size, ...}) = C.push (~ size, print)
+		  fun pop (fi: FrameInfo.t) =
+		     C.push (~ (Program.frameSize (program, fi)), print)
 		  val _ =
 		     case kind of
 			Kind.Cont {frameInfo, ...} => pop frameInfo
@@ -671,8 +717,9 @@ fun output {program as Machine.Program.T {chunks,
 			      if mayGC
 				 then
 				    let
-				       val FrameInfo.T {size, ...} =
-					  valOf frameInfo
+				       val size =
+					  Program.frameSize (program,
+							     valOf frameInfo)
 				       val res = copyArgs args
 				       val _ = push (valOf return, size)
 				    in
@@ -819,7 +866,8 @@ fun output {program as Machine.Program.T {chunks,
 	    C.callNoSemi ("Chunk", [ChunkLabel.toString chunkLabel], print)
 	    ; print "\n"
 	    ; declareRegisters ()
-	    ; print "ChunkSwitch\n"
+	    ; C.callNoSemi ("ChunkSwitch", [ChunkLabel.toString chunkLabel],
+			    print)
 	    ; Vector.foreach (blocks, fn Block.T {kind, label, ...} =>
 			      if Kind.isEntry kind
 				 then (print "case "
@@ -835,13 +883,11 @@ fun output {program as Machine.Program.T {chunks,
       fun rest () =
 	 (declareChunks ()
 	  ; declareNextChunks ()
-	  ; declareFrameLayouts ()
 	  ; declareIndices ()
 	  ; List.foreach (chunks, outputChunk))
    in
       outputDeclarations {additionalMainArgs = additionalMainArgs,
 			  includes = includes,
-			  maxFrameIndex = maxFrameIndex,
 			  name = "C",
 			  program = program,
 			  print = print,

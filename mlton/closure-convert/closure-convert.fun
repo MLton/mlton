@@ -111,7 +111,6 @@ structure Accum =
 				name = Func.newNoname (),
 				raises = NONE,
 				returns = NONE, (* bogus *)
-				sourceInfo = SourceInfo.bogus,
 				start = start}))
 	  in
 	     if 1 <> Vector.length blocks
@@ -686,16 +685,18 @@ fun closureConvert
 	 let
 	    val (start, blocks) =
 	       Dexp.linearize (body, Ssa.Handler.CallerHandler)
+	    val f =
+	       Function.profile 
+	       (shrinkFunction
+		(Function.new {args = args,
+			       blocks = Vector.fromList blocks,
+			       name = name,
+			       raises = raises,
+			       returns = SOME returns,
+			       start = start}),
+		sourceInfo)
 	 in
-	    Accum.addFunc (ac,
-			   shrinkFunction
-			   (Function.new {args = args,
-					  blocks = Vector.fromList blocks,
-					  name = name,
-					  raises = raises,
-					  returns = SOME returns,
-					  sourceInfo = sourceInfo,
-					  start = start}))
+	    Accum.addFunc (ac, f)
 	 end
       (* Closure convert an expression, returning:
        *   - the target ssa expression

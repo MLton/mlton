@@ -113,8 +113,7 @@ fun insertFunction (f: Function.t,
 		    blockCheckAmount: {blockIndex: int} -> word,
 		    ensureBytesFree: Label.t -> word) =
    let
-      val {args, blocks, name, raises, returns, sourceInfo, start} =
-	 Function.dest f
+      val {args, blocks, name, raises, returns, start} = Function.dest f
       val newBlocks = ref []
       local
 	 val r: Label.t option ref = ref NONE
@@ -429,7 +428,6 @@ fun insertFunction (f: Function.t,
 		    name = name,
 		    raises = raises,
 		    returns = returns,
-		    sourceInfo = sourceInfo,
 		    start = start}
    end
 
@@ -451,8 +449,7 @@ val traceMaxPath = Trace.trace ("maxPath", Int.layout, Word.layout)
 
 fun insertCoalesce (f: Function.t, handlesSignals) =
    let
-      val {args, blocks, name, raises, returns, sourceInfo, start} =
-	 Function.dest f
+      val {args, blocks, name, raises, returns, start} = Function.dest f
       val n = Vector.length blocks
       val {get = labelIndex, set = setLabelIndex, rem = remLabelIndex, ...} =
 	 Property.getSetOnce
@@ -712,7 +709,7 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
       f
    end
 
-fun insert (p as Program.T {functions, main, objectTypes, profileAllocLabels}) =
+fun insert (p as Program.T {functions, main, objectTypes}) =
    let
       val _ = Control.diagnostic (fn () => Layout.str "Limit Check maxPaths")
       datatype z = datatype Control.limitCheck
@@ -722,7 +719,7 @@ fun insert (p as Program.T {functions, main, objectTypes, profileAllocLabels}) =
 	    PerBlock => insertPerBlock (f, handlesSignals)
 	  | _ => insertCoalesce (f, handlesSignals)
       val functions = List.revMap (functions, insert)
-      val {args, blocks, name, raises, returns, sourceInfo, start} =
+      val {args, blocks, name, raises, returns, start} =
 	 Function.dest (insert main)
       val newStart = Label.newNoname ()
       val block =
@@ -744,13 +741,11 @@ fun insert (p as Program.T {functions, main, objectTypes, profileAllocLabels}) =
 			       name = name,
 			       raises = raises,
 			       returns = returns,
-			       sourceInfo = sourceInfo,
 			       start = newStart}
    in
       Program.T {functions = functions,
 		 main = main,
-		 objectTypes = objectTypes,
-		 profileAllocLabels = profileAllocLabels}
+		 objectTypes = objectTypes}
    end
 
 end

@@ -27,7 +27,7 @@ structure Atoms = MachineAtoms (structure Label = Label
 open Atoms
 
 structure ChunkLabel = IntUniqueId ()
-   
+
 structure SmallIntInf =
    struct
       type t = word
@@ -321,6 +321,7 @@ structure Statement =
        | PrimApp of {args: Operand.t vector,
 		     dst: Operand.t option,
 		     prim: Prim.t}
+       | ProfileLabel of ProfileLabel.t
        | SetExnStackLocal of {offset: int}
        | SetExnStackSlot of {offset: int}
        | SetSlotExnStack of {offset: int}
@@ -356,6 +357,8 @@ structure Statement =
 			   mayAlign [Operand.layout z,
 				     seq [str " = ", rest]]
 		  end
+	     | ProfileLabel l =>
+		  seq [str "ProfileLabel ", ProfileLabel.layout l]
 	     | SetExnStackLocal {offset} =>
 		  seq [str "SetExnStackLocal ", Int.layout offset]
 	     | SetExnStackSlot {offset} =>
@@ -404,24 +407,16 @@ structure Statement =
 
 structure FrameInfo =
    struct
-      datatype t = T of {frameOffsetsIndex: int,
-			 func: string,
-			 size: int}
+      datatype t = T of {frameLayoutsIndex: int}
 
       local
 	 fun make f (T r) = f r
       in
-	 val frameOffsetsIndex = make #frameOffsetsIndex
-	 val size = make #size
+	 val frameLayoutsIndex = make #frameLayoutsIndex
       end
    
-      fun layout (T {frameOffsetsIndex, size, ...}) =
-	 Layout.record [("frameOffsetsIndex", Int.layout frameOffsetsIndex),
-			("size", Int.layout size)]
-
-      val bogus = T {frameOffsetsIndex = ~1,
-		     func = "<unknown>",
- 		     size = ~1}
+      fun layout (T {frameLayoutsIndex, ...}) =
+	 Layout.record [("frameLayoutsIndex", Int.layout frameLayoutsIndex)]
    end
 
 structure Transfer =
@@ -622,26 +617,39 @@ structure Chunk =
 	 Vector.foreach (blocks, fn block => Block.layouts (block, output))
    end
 
+structure ProfileInfo =
+   struct
+      datatype t =
+	 T of {frameSources: int vector,
+	       labels: {label: ProfileLabel.t,
+			sourceSeqsIndex: int} vector,
+	       sourceSeqs: int vector vector,
+	       sources: SourceInfo.t vector}
+   end
+
 structure Program =
    struct
       datatype t = T of {chunks: Chunk.t list,
+			 frameLayouts: {frameOffsetsIndex: int,
+					size: int} vector,
 			 frameOffsets: int vector vector,
-			 funcSources: {func: string,
-				       sourceInfo: SourceInfo.t} vector,
 			 handlesSignals: bool,
 			 intInfs: (Global.t * string) list,
 			 main: {chunkLabel: ChunkLabel.t,
 				label: Label.t},
 			 maxFrameSize: int,
 			 objectTypes: ObjectType.t vector,
-			 profileAllocLabels: string vector,
+			 profileInfo: ProfileInfo.t,
 			 reals: (Global.t * string) list,
 			 strings: (Global.t * string) list}
 
+      fun frameSize (T {frameLayouts, ...},
+		     FrameInfo.T {frameLayoutsIndex, ...}) =
+	 #size (Vector.sub (frameLayouts, frameLayoutsIndex))
+
       fun layouts (p as T {chunks, frameOffsets, handlesSignals,
 			   main = {label, ...},
-			   maxFrameSize, objectTypes,
-			   profileAllocLabels, ...},
+			   maxFrameSize, objectTypes, ...},
 		   output': Layout.t -> unit) =
 	 let
 	    open Layout
@@ -651,14 +659,13 @@ structure Program =
 		    [("handlesSignals", Bool.layout handlesSignals),
 		     ("main", Label.layout label),
 		     ("maxFrameSize", Int.layout maxFrameSize),
-		     ("profileAllocLabels",
-		      Vector.layout String.layout profileAllocLabels),
 		     ("frameOffsets",
 		      Vector.layout (Vector.layout Int.layout) frameOffsets)])
 	    ; output (str "\nObjectTypes:")
 	    ; Vector.foreachi (objectTypes, fn (i, ty) =>
 			       output (seq [str "pt_", Int.layout i,
 					    str " = ", ObjectType.layout ty]))
+	    ; output (str "\n")
             ; List.foreach (chunks, fn chunk => Chunk.layouts (chunk, output))
 	 end
 
@@ -692,10 +699,61 @@ structure Program =
 	       doesDefine
 	 end
       
-      fun typeCheck (T {chunks, frameOffsets, intInfs, main,
-			maxFrameSize, objectTypes, reals, strings, ...}) =
+      fun typeCheck (T {chunks, frameLayouts, frameOffsets, intInfs, main,
+			maxFrameSize, objectTypes,
+			profileInfo = ProfileInfo.T {frameSources,
+						     labels = profileLabels,
+						     sources,
+						     sourceSeqs},
+			reals, strings, ...}) =
 	 let
+	    val maxProfileLabel = Vector.length sourceSeqs
+	    val _ =
+	       Vector.foreach
+	       (profileLabels, fn {sourceSeqsIndex = i, ...} =>
+		Err.check
+		("profileLabes",
+		 fn () => 0 <= i andalso i < maxProfileLabel,
+		 fn () => Int.layout i))
+	    val _ =
+	       let
+		  val maxFrameSourceSeq = Vector.length sourceSeqs
+		  val _ =
+		     Vector.foreach
+		     (frameSources, fn i =>
+		      Err.check
+		      ("frameSources", 
+		       fn () => 0 <= i andalso i <= maxFrameSourceSeq,
+		       fn () => Int.layout i))
+		  val maxSource = Vector.length sources
+		  val _ =
+		     Vector.foreach
+		     (sourceSeqs, fn v =>
+		      Vector.foreach
+		      (v, fn i =>
+		       Err.check
+		       ("sourceSeq",
+			fn () => 0 <= i andalso i < maxSource,
+			fn () => Int.layout i)))
+	       in
+		  ()
+	       end
+	    fun getFrameInfo (FrameInfo.T {frameLayoutsIndex, ...}) =
+	       Vector.sub (frameLayouts, frameLayoutsIndex)
 	    fun boolToUnitOpt b = if b then SOME () else NONE
+	    val _ =
+	       Vector.foreach
+	       (frameLayouts, fn {frameOffsetsIndex, size} =>
+		Err.check
+		("frameLayouts",
+		 fn () => (0 <= frameOffsetsIndex
+			   andalso frameOffsetsIndex < Vector.length frameOffsets
+			   andalso size <= maxFrameSize
+			   andalso size <= Runtime.maxFrameSize
+			   andalso 0 = Int.rem (size, 4)),
+		 fn () => Layout.record [("frameOffsetsIndex",
+					  Int.layout frameOffsetsIndex),
+					 ("size", Int.layout size)]))
 	    val _ =
 	       Vector.foreach
 	       (objectTypes, fn ty =>
@@ -828,17 +886,11 @@ structure Program =
 	       Vector.foreach (v, fn z => checkOperand (z, a))
 	    fun check' (x, name, isOk, layout) =
 	       Err.check (name, fn () => isOk x, fn () => layout x)
-	    fun frameInfoOk (FrameInfo.T {frameOffsetsIndex, size, ...}) =
-	       0 <= frameOffsetsIndex
-	       andalso frameOffsetsIndex <= Vector.length frameOffsets
-	       andalso 0 <= size
-	       andalso size <= maxFrameSize
-	       andalso size <= Runtime.maxFrameSize
-	       andalso 0 = Int.rem (size, 4)
+	    fun frameInfoOk (FrameInfo.T {frameLayoutsIndex, ...}) =
+	       0 <= frameLayoutsIndex
+	       andalso frameLayoutsIndex < Vector.length frameLayouts
 	    fun checkFrameInfo i =
-	       check' (i, "frame info",
-		       frameInfoOk,
-		       FrameInfo.layout)
+	       check' (i, "frame info", frameInfoOk, FrameInfo.layout)
 	    val labelKind = Block.kind o labelBlock
 	    fun labelIsJump (l: Label.t): bool =
 	       case labelKind l of
@@ -852,7 +904,7 @@ structure Program =
 		     Cont {args, frameInfo} =>
 			let
 			   val _ = checkFrameInfo frameInfo
-			   val FrameInfo.T {size, ...} = frameInfo
+			   val {size, ...} = getFrameInfo frameInfo
 			in
 			   if (Alloc.forall
 			       (alloc, fn z =>
@@ -931,6 +983,15 @@ structure Program =
 				    SOME alloc
 				 end
 			end
+		   | ProfileLabel l =>
+			if !Control.profile = Control.ProfileTime
+			   then
+			      if Vector.exists
+				 (profileLabels, fn {label, ...} =>
+				  ProfileLabel.equals (l, label))
+				 then SOME alloc
+			      else NONE
+			else SOME alloc
 		   | SetExnStackLocal {offset} =>
 			(checkOperand
 			 (Operand.StackOffset {offset = offset,
@@ -985,7 +1046,7 @@ structure Program =
 		     then
 			(case kind of
 			    Kind.Cont {args, frameInfo, ...} =>
-			       (if size = FrameInfo.size frameInfo
+			       (if size = #size (getFrameInfo frameInfo)
 				   then
 				      SOME
 				      (live,
@@ -1158,8 +1219,8 @@ structure Program =
 		Layout.tuple [Transfer.layout t, Alloc.layout a],
 		Bool.layout)
 	       transferOk
-	    fun blockOk (Block.T {kind, label, live, profileInfo, raises,
-				  returns, statements, transfer}): bool =
+	    fun blockOk (Block.T {kind, label, live, raises, returns, statements,
+				  transfer, ...}): bool =
 	       let
 		  val live = Vector.toList live
 		  val _ =

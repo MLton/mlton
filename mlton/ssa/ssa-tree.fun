@@ -148,6 +148,34 @@ structure Var =
 			  xs)
    end
 
+structure ProfileExp =
+   struct
+      datatype t =
+	 Enter of SourceInfo.t
+       | Leave of SourceInfo.t
+
+      val toString =
+	 fn Enter si => concat ["Enter ", SourceInfo.toString si]
+	  | Leave si => concat ["Leave " , SourceInfo.toString si]
+
+      val layout = Layout.str o toString
+
+      val equals =
+	 fn (Enter si, Enter si') => SourceInfo.equals (si, si')
+	  | (Leave si, Leave si') => SourceInfo.equals (si, si')
+	  | _ => false
+
+      local
+	 val newHash = Random.word
+	 val enter = newHash ()
+	 val leave = newHash ()
+      in
+	 val hash =
+	    fn Enter si => Word.xorb (enter, SourceInfo.hash si)
+	     | Leave si => Word.xorb (leave, SourceInfo.hash si)
+      end
+   end
+
 structure Exp =
    struct
       datatype t =
@@ -159,6 +187,7 @@ structure Exp =
        | PrimApp of {prim: Prim.t,
 		     targs: Type.t vector,
 		     args: Var.t vector}
+       | Profile of ProfileExp.t
        | Select of {tuple: Var.t,
 		    offset: int}
        | SetExnStackLocal
@@ -180,6 +209,7 @@ structure Exp =
 	     | HandlerPop l => j l
 	     | HandlerPush l => j l
 	     | PrimApp {args, ...} => vs args
+	     | Profile _ => ()
 	     | Select {tuple, ...} => v tuple
 	     | SetExnStackLocal => ()
 	     | SetExnStackSlot => ()
@@ -203,6 +233,7 @@ structure Exp =
 	     | HandlerPush l => HandlerPush (fl l)
 	     | PrimApp {prim, targs, args} =>
 		  PrimApp {prim = prim, targs = targs, args = fxs args}
+	     | Profile _ => e
 	     | Select {tuple, offset} =>
 		  Select {tuple = fx tuple, offset = offset}
 	     | SetExnStackLocal => e
@@ -236,6 +267,7 @@ structure Exp =
 		       if isSome (Prim.numArgs prim)
 			  then seq [str " ", layoutTuple args]
 		       else empty]
+	     | Profile p => ProfileExp.layout p
 	     | Select {tuple, offset} =>
 		  seq [str "#", Int.layout (offset + 1), str " ",
 		       Var.layout tuple]
@@ -253,6 +285,8 @@ structure Exp =
 	  | HandlerPop _ => false
 	  | HandlerPush _ => false
 	  | PrimApp {prim, ...} => Prim.isFunctional prim
+	  | Profile _ =>
+	       Error.bug "doesn't make sense to ask isFunctional Profile"
 	  | Select _ => true
 	  | SetExnStackLocal => false
 	  | SetExnStackSlot => false
@@ -268,6 +302,7 @@ structure Exp =
 	  | HandlerPop _ => true
 	  | HandlerPush _ => true
 	  | PrimApp {prim,...} => Prim.maySideEffect prim
+	  | Profile _ => false
 	  | Select _ => false
 	  | SetExnStackLocal => true
 	  | SetExnStackSlot => true
@@ -285,10 +320,12 @@ structure Exp =
 	  | (Const c, Const c') => Const.equals (c, c')
 	  | (HandlerPop l, HandlerPop l') => Label.equals (l, l')
 	  | (HandlerPush l, HandlerPush l') => Label.equals (l, l')
-	  | (PrimApp {prim, args, ...}, PrimApp {prim = prim', args = args', ...}) =>
+	  | (PrimApp {prim, args, ...},
+	     PrimApp {prim = prim', args = args', ...}) =>
 	       Prim.equals (prim, prim') andalso varsEquals (args, args')
-	  | (Select {tuple, offset}, Select {tuple = tuple', offset = offset'}) =>
-	       Var.equals (tuple, tuple') andalso offset = offset'
+	  | (Profile p, Profile p') => ProfileExp.equals (p, p')
+	  | (Select {tuple = t, offset = i}, Select {tuple = t', offset = i'}) =>
+	       Var.equals (t, t') andalso i = i'
 	  | (SetExnStackLocal, SetExnStackLocal) => true
 	  | (SetExnStackSlot, SetExnStackslot) => true
 	  | (SetHandler l, SetHandler l') => Label.equals (l, l')
@@ -303,6 +340,7 @@ structure Exp =
 	 val handlerPop = newHash ()
 	 val handlerPush = newHash ()
 	 val primApp = newHash ()
+	 val profile = newHash ()
 	 val select = newHash ()
 	 val setExnStackLocal = newHash ()
 	 val setExnStackSlot = newHash ()
@@ -318,6 +356,7 @@ structure Exp =
 	     | HandlerPop l => Word.xorb (handlerPop, Label.hash l)
 	     | HandlerPush l => Word.xorb (handlerPush, Label.hash l)
 	     | PrimApp {args, ...} => hashVars (args, primApp)
+	     | Profile p => Word.xorb (profile, ProfileExp.hash p)
 	     | Select {tuple, offset} =>
 		  Word.xorb (select, Var.hash tuple + Word.fromInt offset)
 	     | SetExnStackLocal => setExnStackLocal
@@ -345,6 +384,7 @@ structure Exp =
 				case global x of
 				   NONE => Var.layout x
 				 | SOME s => Layout.str s))
+	  | Profile p => ProfileExp.toString p
 	  | SetExnStackLocal => "SetExnStackLocal"
 	  | SetExnStackSlot => "SetExnStackSlot"
 	  | SetSlotExnStack => "SetSlotExnStack"
@@ -353,6 +393,10 @@ structure Exp =
 	  | SetHandler h => concat ["SetHandler ", Label.toString h]
 	  | Tuple xs => Var.prettys (xs, global)
 	  | Var x => Var.toString x
+
+      val isProfile =
+	 fn Profile _ => true
+	  | _ => false
    end
 datatype z = datatype Exp.t
 
@@ -506,6 +550,7 @@ structure Return =
 	 end
 
       val isNonTail = fn NonTail _ => true | _ => false
+      val isTail = not o isNonTail
 	 
       val equals =
 	 fn (Dead, Dead) => true
@@ -948,13 +993,12 @@ structure Datatype =
 structure Function =
    struct
       structure CPromise = ClearablePromise
-	 
+     
       type dest = {args: (Var.t * Type.t) vector,
 		   blocks: Block.t vector,
 		   name: Func.t,
 		   raises: Type.t vector option,
 		   returns: Type.t vector option,
-		   sourceInfo: SourceInfo.t,
 		   start: Label.t}
 
       (* There is a messy interaction between the laziness used in controlFlow
@@ -1661,7 +1705,7 @@ structure Function =
 		  make (Label.new, Label.plist, Label.layout)
 	    end
 	    fun lookupVars xs = Vector.map (xs, lookupVar)
-	    val {args, blocks, name, raises, returns, sourceInfo, start, ...} =
+	    val {args, blocks, name, raises, returns, start, ...} =
 	       dest f
 	    val args = Vector.map (args, fn (x, ty) => (bindVar x, ty))
 	    val bindLabel = ignore o bindLabel
@@ -1699,7 +1743,165 @@ structure Function =
 		 name = name,
 		 raises = raises,
 		 returns = returns,
-		 sourceInfo = sourceInfo,
+		 start = start}
+	 end
+
+      fun profile (f: t, sourceInfo): t =
+	 if !Control.profile = Control.ProfileNone
+	    then f
+	 else 
+	 let
+	    val {args, blocks, name, raises, returns, start} = dest f
+	    val extraBlocks = ref []
+	    val {get = labelBlock, set = setLabelBlock, rem} =
+	       Property.getSetOnce
+	       (Label.plist, Property.initRaise ("block", Label.layout))
+	    val _ =
+	       Vector.foreach
+	       (blocks, fn block as Block.T {label, ...} =>
+		setLabelBlock (label, block))
+	    val blocks =
+	       Vector.map
+	       (blocks, fn Block.T {args, label, statements, transfer} =>
+		let
+		   fun make (exp: Exp.t): Statement.t =
+		      Statement.T {exp = exp,
+				   ty = Type.unit,
+				   var = NONE}
+		   val statements =
+		      if Label.equals (label, start)
+			 then (Vector.concat
+			       [Vector.new1
+				(make (Exp.Profile
+				       (ProfileExp.Enter sourceInfo))),
+				statements])
+		      else statements
+		   fun leave () =
+		      make (Exp.Profile (ProfileExp.Leave sourceInfo))
+		   fun prefix (l: Label.t,
+			       statements: Statement.t vector): Label.t =
+		      let
+			 val Block.T {args, ...} = labelBlock l
+			 val c = Label.newNoname ()
+			 val xs = Vector.map (args, fn (x, _) => Var.new x)
+			 val _ =
+			    List.push
+			    (extraBlocks,
+			     Block.T
+			     {args = Vector.map2 (xs, args, fn (x, (_, t)) =>
+						  (x, t)),
+			      label = c,
+			      statements = statements,
+			      transfer = Goto {args = xs,
+					       dst = l}})
+		      in
+			 c
+		      end
+		   fun genHandler (): Statement.t vector * Label.t option =
+		      case raises of
+			 NONE => (statements, NONE)
+		       | SOME ts => 
+			    let
+			       val xs = Vector.map (ts, fn _ => Var.newNoname ())
+			       val l = Label.newNoname ()
+			       val _ =
+				  List.push
+				  (extraBlocks,
+				   Block.T
+				   {args = Vector.zip (xs, ts),
+				    label = l,
+				    statements = (Vector.new2
+						  (make (HandlerPop l),
+						   leave ())),
+				    transfer = Transfer.Raise xs})
+			    in
+			       (Vector.concat
+				[statements,
+				 Vector.new1 (make (HandlerPush l))],
+				SOME l)
+			    end
+		   fun genCont () =
+		      let
+			 val l = Label.newNoname ()
+			 val _ = 
+			    List.push
+			    (extraBlocks,
+			     Block.T {args = Vector.new0 (),
+				      label = l,
+				      statements = Vector.new0 (),
+				      transfer = Transfer.Bug})
+		      in
+			 l
+		      end
+		   fun addLeave () =
+		      (Vector.concat [statements,
+				      Vector.new1 (leave ())],
+		       transfer)
+		   datatype z = datatype Return.t
+		   datatype z = datatype Handler.t
+		   val (statements, transfer) =
+		      case transfer of
+			 Call {args, func, return} =>
+			    (case return of
+				Dead => (statements, transfer)
+			      | HandleOnly =>
+				   let
+				      val (statements, h) = genHandler ()
+				      val return =
+					 case h of
+					    NONE => Dead
+					  | SOME h =>
+					       NonTail {cont = genCont (),
+							handler = Handle h}
+				   in
+				      (statements,
+				       Call {args = args,
+					     func = func,
+					     return = return})
+				   end
+			      | NonTail {cont, handler} =>
+				   (case handler of
+				       CallerHandler =>
+					  let
+					     val (statements, h) = genHandler ()
+					     val (cont, handler) =
+						case h of
+						   NONE =>
+						      (cont, None)
+						 | SOME h =>
+						      (prefix
+						       (cont,
+							Vector.new1
+							(make (HandlerPop h))),
+						       Handle h)
+					  in
+					     (statements,
+					      Call {args = args,
+						    func = func,
+						    return =
+						    NonTail {cont = cont,
+							     handler = handler}})
+					  end
+				     | None => (statements, transfer)
+				     | Handle l => (statements, transfer))
+			      | Tail => addLeave ())
+		       | Raise _ => addLeave ()
+		       | Return _ => addLeave ()
+		       | _ => (statements, transfer)
+		in
+		   Block.T {args = args,
+			    label = label,
+			    statements = statements,
+			    transfer = transfer}
+		end)
+	    val _ = Vector.foreach (blocks, rem o Block.label)
+	    val blocks = Vector.concat [Vector.fromList (!extraBlocks), blocks]
+	 in
+	    new {args = args,
+		 blocks = blocks,
+		 name = name,
+		 raises = raises,
+		 returns = returns,
 		 start = start}
 	 end
    end

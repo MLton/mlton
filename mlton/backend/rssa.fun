@@ -168,6 +168,8 @@ structure Statement =
        | PrimApp of {args: Operand.t vector,
 		     dst: (Var.t * Type.t) option,
 		     prim: Prim.t}
+       | Profile of ProfileStatement.t
+       | ProfileLabel of ProfileLabel.t
        | SetExnStackLocal
        | SetExnStackSlot
        | SetHandler of Label.t
@@ -195,6 +197,8 @@ structure Statement =
 			       Option.fold (dst, a, fn ((x, t), a) =>
 					    def (x, t, a)),
 			       useOperand)
+	     | Profile _ => a
+	     | ProfileLabel _ => a
 	     | SetExnStackLocal => a
 	     | SetExnStackSlot => a
 	     | SetHandler _ => a
@@ -255,6 +259,8 @@ structure Statement =
 			   mayAlign [seq [Var.layout x, constrain t],
 				     seq [str " = ", rest]]
 		  end
+	     | Profile p => ProfileStatement.layout p
+	     | ProfileLabel l => seq [str "ProfileLabel ", ProfileLabel.layout l]
 	     | SetExnStackLocal => str "SetExnStackLocal"
 	     | SetExnStackSlot => str "SetExnStackSlot "
 	     | SetHandler l => seq [str "SetHandler ", Label.layout l]
@@ -439,6 +445,12 @@ structure Kind =
 	     | Handler => str "Handler"
 	     | Jump => str "Jump"
 	 end
+
+      fun isFrame (k: t): bool =
+	 case k of
+	    Cont _ => true
+	  | CReturn {func = CFunction.T {mayGC, ...}, ...} => mayGC
+	  | _ => false
    end
 
 local
@@ -509,7 +521,6 @@ structure Function =
 			 name: Func.t,
 			 raises: Type.t vector option,
 			 returns: Type.t vector option,
-			 sourceInfo: SourceInfo.t,
 			 start: Label.t}
 
       local
@@ -520,7 +531,6 @@ structure Function =
 	 val name = make #name
 	 val raises = make #raises
 	 val returns = make #returns
-	 val sourceInfo = make #sourceInfo
 	 val start = make #start
       end
 
@@ -643,8 +653,7 @@ structure Program =
       datatype t =
 	 T of {functions: Function.t list,
 	       main: Function.t,
-	       objectTypes: ObjectType.t vector,
-	       profileAllocLabels: string vector}
+	       objectTypes: ObjectType.t vector}
 
       fun clear (T {functions, main, ...}) =
 	 (List.foreach (functions, Function.clear)
@@ -917,6 +926,8 @@ structure Program =
 		   | PrimApp {args, ...} =>
 			(Vector.foreach (args, checkOperand)
 			 ; true)
+		   | Profile _ => true
+		   | ProfileLabel _ => true
 		   | SetExnStackLocal => true
 		   | SetExnStackSlot => true
 		   | SetHandler l =>

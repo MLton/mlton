@@ -182,6 +182,10 @@ val instrumentSxml = control {name = "instrument Sxml",
 			      default = false,
 			      toString = Bool.toString}
 
+val keepMachine = control {name = "keep Machine",
+			   default = false,
+			   toString = Bool.toString}
+   
 val keepRSSA = control {name = "keep RSSA",
 			default = false,
 			toString = Bool.toString}

@@ -411,8 +411,7 @@ fun simplify (program as Program.T {globals, datatypes, functions, main})
 	= List.revMap
 	  (functions, fn f =>
 	   let
-	     val {args, blocks, name, raises, returns, sourceInfo, start} =
-		Function.dest f
+	     val {args, blocks, name, raises, returns, start} = Function.dest f
 	     val _ = Vector.foreach
 	             (blocks, fn block as Block.T {label, ...} =>
 		      setLabelInfo (label, LabelInfo.new block))
@@ -448,7 +447,26 @@ fun simplify (program as Program.T {globals, datatypes, functions, main})
 			   label: Label.t} HashSet.t
 		 = HashSet.new {hash = #hash}
 	     in
-	       fun newBlock transfer
+		fun newBlock transfer =
+		   let
+		      val label = Label.newNoname ()
+		      val block = Block.T {label = label,
+					   args = Vector.new0 (),
+					   statements = Vector.new0 (),
+					   transfer = transfer}
+		      val _ = addNewBlock block
+		   in
+		      label
+		   end
+		(* newBlock' isn't used, because it shares blocks that causes
+		 * violation of the requirements for profiling information --
+		 * namely that each block correspond to a unique sequence of
+		 * source infos at it' start.
+		 *
+		 * I left the code in case we want to enable it when compiling
+		 * without profiling.
+		 *)
+		fun newBlock' transfer
 		 = let
 		     val hash = Transfer.hash transfer
 		     val {label, ...}
@@ -456,20 +474,9 @@ fun simplify (program as Program.T {globals, datatypes, functions, main})
 		         (table, hash,
 			  fn {transfer = transfer', ...} =>
 			  Transfer.equals (transfer, transfer'),
-			  fn () => 
-			  let
-			    val label = Label.newNoname ()
-			    val block = Block.T
-			                {label = label,
-					 args = Vector.new0 (),
-					 statements = Vector.new0 (),
-					 transfer = transfer}
-			    val _ = addNewBlock block
-			  in
-			    {hash = hash,
-			     label = label,
-			     transfer = transfer}
-			  end)
+			  fn () => {hash = hash,
+				    label = newBlock transfer,
+				    transfer = transfer})
 		   in
 		     label
 		   end
@@ -1009,7 +1016,6 @@ val doMany
 				   name = name,
 				   raises = raises,
 				   returns = returns,
-				   sourceInfo = sourceInfo,
 				   start = start}
 	     val _ = Control.diagnostics
 	             (fn display =>

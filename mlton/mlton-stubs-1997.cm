@@ -347,8 +347,8 @@ backend/ssa-to-rssa.fun
 backend/signal-check.sig
 backend/signal-check.fun
 backend/rssa.fun
-backend/profile-alloc.sig
-backend/profile-alloc.fun
+backend/profile.sig
+backend/profile.fun
 backend/parallel-move.sig
 backend/parallel-move.fun
 backend/limit-check.sig

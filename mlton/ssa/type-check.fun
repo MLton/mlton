@@ -64,6 +64,7 @@ fun checkScopes (program as
 		| HandlerPop l => getLabel l
 		| HandlerPush l => getLabel l
 		| PrimApp {args, ...} => Vector.foreach (args, getVar)
+		| Profile _ => ()
 		| Select {tuple, ...} => getVar tuple
 		| SetExnStackLocal => ()
 		| SetExnStackSlot => ()
@@ -185,11 +186,119 @@ fun checkScopes (program as
    end
 
 val checkScopes = Control.trace (Control.Pass, "checkScopes") checkScopes
-   
+
+structure Function =
+   struct
+      open Function
+	 
+      fun checkProf (f: t): unit =
+	 let
+	    val debug = false
+	    val {blocks, start, ...} = dest f
+	    val {get = labelInfo, rem, set = setLabelInfo, ...} =
+	       Property.getSetOnce
+	       (Label.plist,
+		Property.initRaise ("info", Label.layout))
+	    val _ = Vector.foreach (blocks, fn b as Block.T {label, ...} =>
+				    setLabelInfo (label,
+						  {block = b,
+						   sources = ref NONE}))
+	    fun goto (l: Label.t, sources: SourceInfo.t list) =
+	       let
+		  val _ =
+		     if not debug
+			then ()
+		     else
+		     let
+			open Layout
+		     in
+			outputl (seq [str "goto (",
+				      Label.layout l,
+				      str ", ",
+				      List.layout SourceInfo.layout sources,
+				      str ")"],
+				 Out.error)
+		     end
+		  val {block, sources = r} = labelInfo l
+	       in
+		  case !r of
+		     NONE =>
+			let
+			   val _ = r := SOME sources
+			   val Block.T {statements, transfer, ...} = block
+			   datatype z = datatype Statement.t
+			   datatype z = datatype ProfileExp.t
+			   val sources =
+			      Vector.fold
+			      (statements, sources,
+			       fn (Statement.T {exp, ...}, sources) =>
+			       case exp of
+				  Profile pe =>
+				     (case pe of
+					 Enter s => s :: sources
+				       | Leave s =>
+					    (case sources of
+						[] => Error.bug "unmatched Leave"
+					      | s' :: sources =>
+						   if SourceInfo.equals (s, s')
+						      then sources
+						   else Error.bug "mismatched Leave"))
+				| _ => sources)
+			   datatype z = datatype Handler.t
+			   datatype z = datatype Return.t
+			   val _ =
+			      if not debug
+				 then ()
+			      else
+			      let
+				 open Layout
+			      in
+				 outputl (List.layout SourceInfo.layout sources,
+					  Out.error)
+			      end
+			   val _ = 
+			      if (case transfer of
+				     Call {return, ...} =>
+					(case return of
+					    Dead => false
+					  | HandleOnly => true
+					  | NonTail {handler, ...} =>
+					       (case handler of
+						   CallerHandler => true
+						 | None => false
+						 | Handle _ => false)
+					  | Tail => true)
+				   | Raise _ => true
+				   | Return _ => true
+				   | _ => false)
+				 then (case sources of
+					  [] => ()
+					| _ => Error.bug "nonempty sources when leaving function")
+			      else ()
+			in
+			   Transfer.foreachLabel
+			   (transfer, fn l => goto (l, sources))
+			end
+		   | SOME sources' =>
+			if List.equals (sources, sources', SourceInfo.equals)
+			   then ()
+			else Error.bug "mismatched block"
+	       end
+	    val _ = goto (start, [])
+	    val _ = Vector.foreach (blocks, fn Block.T {label, ...} => rem label)
+	 in
+	    ()
+	 end
+   end
+
 fun typeCheck (program as Program.T {datatypes, functions, ...}): unit =
    let
       val _ = checkScopes program
       val _ = List.foreach (functions, fn f => (Function.inferHandlers f; ()))
+      val _ =
+	 if !Control.profile <> Control.ProfileNone
+	    then List.foreach (functions, fn f => Function.checkProf f)
+	 else ()
       val out = Out.error
       val print = Out.outputc out
       exception TypeError

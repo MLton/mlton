@@ -245,7 +245,7 @@ fun shrinkFunction (globals: Statement.t vector) =
       fn (f: Function.t, mayDelete: bool) =>
       let
 	 val _ = Function.clear f
-	 val {args, blocks, name, raises, returns, sourceInfo, start, ...} =
+	 val {args, blocks, name, raises, returns, start, ...} =
 	    Function.dest f
 	 val _ = Vector.foreach
 	         (args, fn (x, ty) => 
@@ -1247,7 +1247,6 @@ fun shrinkFunction (globals: Statement.t vector) =
 			  name = name,
 			  raises = raises,
 			  returns = returns,
-			  sourceInfo = sourceInfo,
 			  start = meaningLabel start}
 (*	 val _ = save (f, "post") *)
 	 val _ = Function.clear f
@@ -1289,7 +1288,7 @@ fun shrink (Program.T {datatypes, globals, functions, main}) =
 
 fun eliminateDeadBlocksFunction f =
    let
-      val {args, blocks, name, raises, returns, sourceInfo, start} =
+      val {args, blocks, name, raises, returns, start} =
 	 Function.dest f
       val {get = isLive, set = setLive, rem} =
 	 Property.getSetOnce (Label.plist, Property.initConst false)
@@ -1334,7 +1333,6 @@ fun eliminateDeadBlocksFunction f =
 			     name = name,
 			     raises = raises,
 			     returns = returns,
-			     sourceInfo = sourceInfo,
 			     start = start}
 	    end
        val _ = Vector.foreach (blocks, rem o Block.label)
@@ -1344,9 +1342,7 @@ fun eliminateDeadBlocksFunction f =
 
 fun eliminateDeadBlocks (Program.T {datatypes, globals, functions, main}) =
    let
-      val functions =
-	 List.revMap
-	 (functions, eliminateDeadBlocksFunction)
+      val functions = List.revMap (functions, eliminateDeadBlocksFunction)
    in
       Program.T {datatypes = datatypes,
 		 globals = globals,

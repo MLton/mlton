@@ -809,25 +809,20 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
       val getArithOverflowWrapperLabel = getOriginalWrapperLabel
       val getArithSuccessWrapperLabel = getOriginalWrapperLabel
       val getRuntimeWrapperLabel = getOriginalWrapperLabel
-      fun getBugFunc (fi: FuncInfo.t): Label.t
-	= let
-	    val r = FuncInfo.bugLabel fi
-	  in
-	    case !r 
-	      of SOME l => l
-	       | NONE
-	       => let
-		    val l = Label.newNoname ()
-		    val block = Block.T {label = l,
-					 args = Vector.new0 (),
-					 statements = Vector.new0 (),
-					 transfer = Bug}
-		    val _ = r := SOME l
-		    val _ = List.push (FuncInfo.wrappers' fi, block)
-		  in
-		    l
-		  end
-	  end
+      fun getBugFunc (fi: FuncInfo.t): Label.t =
+	 (* Can't share the Bug block across different places because the
+	  * profile sourceInfo stack might be different.
+	  *)
+	 let
+	    val l = Label.newNoname ()
+	    val block = Block.T {label = l,
+				 args = Vector.new0 (),
+				 statements = Vector.new0 (),
+				 transfer = Bug}
+	    val _ = List.push (FuncInfo.wrappers' fi, block)
+	 in
+	    l
+	 end
       fun getReturnFunc (fi: FuncInfo.t): Label.t 
 	= let
 	    val r = FuncInfo.returnLabel fi
@@ -924,6 +919,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	       => maybe (l, fn () => HandlerPop (getHandlerWrapperLabel' l))
 	       | HandlerPush l 
 	       => maybe (l, fn () => HandlerPush (getHandlerWrapperLabel' l))
+	       | Profile _ => SOME s
 	       | _ => let
 			fun doit' var
 			  = SOME (Statement.T {var = var,
@@ -1151,7 +1147,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
       val shrink = shrinkFunction globals
       fun simplifyFunction (f: Function.t): Function.t option
 	= let
-	    val {args, blocks, name, sourceInfo, start, ...} = Function.dest f
+	    val {args, blocks, name, start, ...} = Function.dest f
 	    val fi = funcInfo name
 	  in
 	    if FuncInfo.isUsed fi
@@ -1193,7 +1189,6 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 						  name = name,
 						  raises = raises,
 						  returns = returns,
-						  sourceInfo = sourceInfo,
 						  start = start}))
 		   end
 	      else NONE

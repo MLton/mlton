@@ -93,7 +93,7 @@ typedef enum {
 		assert (1 == (header & 1));					\
 		objectTypeIndex = (header & TYPE_INDEX_MASK) >> 1;		\
 		assert (0 <= objectTypeIndex					\
-				and objectTypeIndex < s->maxObjectTypeIndex);	\
+				and objectTypeIndex < s->numObjectTypes);	\
 		t = &s->objectTypes [objectTypeIndex];				\
 		tag = t->tag;							\
 		numNonPointers = t->numNonPointers;				\
@@ -606,7 +606,7 @@ word *GC_stackFrameIndices (GC_state s) {
 		if (DEBUG_PROF)
 			fprintf (stderr, "top = 0x%08x  index = %u\n",
 					(uint)top, index);
-		assert (0 <= index and index <= s->maxFrameIndex);
+		assert (0 <= index and index < s->numFrameLayouts);
 		layout = &(s->frameLayouts[index]);
 		assert (layout->numBytes > 0);
 		top -= layout->numBytes;
@@ -630,10 +630,13 @@ static inline GC_frameLayout * getFrameLayout (GC_state s, word returnAddress) {
 	uint index;
 
 	if (s->native)
-		index = *((uint*)(returnAddress - 4));
+		index = *((uint*)(returnAddress - WORD_SIZE));
 	else
 		index = (uint)returnAddress;
-	assert (0 <= index and index <= s->maxFrameIndex);
+	if (DEBUG_DETAILED)
+		fprintf (stderr, "returnAddress = 0x%08x  index = %d  numFrameLayouts = %d\n",
+				returnAddress, index, s->numFrameLayouts);
+	assert (0 <= index and index < s->numFrameLayouts);
 	layout = &(s->frameLayouts[index]);
 	assert (layout->numBytes > 0);
 	return layout;
@@ -1030,7 +1033,7 @@ static bool invariant (GC_state s) {
 		fprintf (stderr, "invariant\n");
 	assert (ratiosOk (s));
 	/* Frame layouts */
-	for (i = 0; i < s->maxFrameIndex; ++i) {
+	for (i = 0; i < s->numFrameLayouts; ++i) {
 		GC_frameLayout *layout;
 			layout = &(s->frameLayouts[i]);
 		if (layout->numBytes > 0) {
@@ -3221,14 +3224,21 @@ static void loadWorld (GC_state s, char *fileName) {
 }
 
 static void showProf (GC_state s) {
-	if (NULL == s->profileInfo)
-		die ("executable missing profiling info\n");
-	fprintf (stdout, "%s", s->profileInfo);
+	int i;
+
+	fprintf (stdout, "0x%08x\n", s->magic);
+	for (i = 0; i < s->profileSourcesSize; ++i)
+		fprintf (stdout, "%s\n", s->profileSources[i]);
 }
+
+/* To get the beginning and end of the text segment. */
+extern void	_start(void),
+		etext(void);
 
 int GC_init (GC_state s, int argc, char **argv) {
 	char *worldFile;
 	int i;
+	int j;
 
 	s->amInGC = FALSE;
 	s->bytesAllocated = 0;
@@ -3283,17 +3293,63 @@ int GC_init (GC_state s, int argc, char **argv) {
 	worldFile = NULL;
 	unless (isAligned (s->pageSize, s->cardSize))
 		die ("page size must be a multiple of card size");
+	if (s->profileSourcesSize > 0) {
+		if (s->profileLabelsSize > 0) {
+			s->profileAllocIsOn = FALSE;
+			s->profileTimeIsOn = TRUE;
+		} else {
+			s->profileAllocIsOn = TRUE;
+			s->profileTimeIsOn = FALSE;
+		}
+	}
 	if (s->profileAllocIsOn) {
 		s->profileAllocIndex = PROFILE_ALLOC_MISC;
 		MLton_ProfileAlloc_setCurrent 
 			(MLton_ProfileAlloc_Data_malloc ());
-		if (DEBUG_PROFILE_ALLOC) {
-			fprintf (stderr, "s->profileAllocLabels = 0x%08x\n",
-					(uint)s->profileAllocLabels);
-			for (i = 0; i < s->profileAllocNumLabels; ++i)
-				fprintf (stderr, "profileAllocLabels[%d] = 0x%08x\n",
-						i, s->profileAllocLabels[i]);
+	}
+	if (s->profileTimeIsOn) {
+		pointer p;
+		uint sourceSeqsIndex;
+
+		/* Sort profileLabels by address. */
+		for (i = 1; i < s->profileLabelsSize; ++i)
+			for (j = i; s->profileLabels[j - 1].label
+					> s->profileLabels[j].label; --j) {
+				struct GC_profileLabel tmp;
+
+				tmp = s->profileLabels[j];
+				s->profileLabels[j] = s->profileLabels[j - 1];
+				s->profileLabels[j - 1] = tmp;
+			}
+		if (DEBUG_PROF)
+			for (i = 0; i < s->profileLabelsSize; ++i)
+				fprintf (stderr, "0x%08x  %u\n",
+						(uint)s->profileLabels[i].label,
+						s->profileLabels[i].sourceSeqsIndex);
+		/* Initialize s->textSources. */
+		s->textEnd = (pointer)&etext;
+		s->textStart = (pointer)&_start;
+		if (DEBUG)
+			for (i = 0; i < s->profileLabelsSize; ++i)
+				assert (s->textStart <= s->profileLabels[i].label
+					and s->profileLabels[i].label < s->textEnd);
+		s->textSources = 
+			(uint*)malloc ((s->textEnd - s->textStart) 
+						* sizeof(*s->textSources));
+		if (NULL == s->textSources)
+			die ("Out of memory: unable to allocate textSources");
+		p = s->textStart;
+		sourceSeqsIndex = SOURCE_SEQ_UNKNOWN;
+		for (i = 0; i < s->profileLabelsSize; ++i) {
+			while (p < s->profileLabels[i].label) {
+				s->textSources[p - s->textStart]
+					= sourceSeqsIndex;
+				++p;
+			}
+			sourceSeqsIndex = s->profileLabels[i].sourceSeqsIndex;
 		}
+		for ( ; p < s->textEnd; ++p)
+			s->textSources[p - s->textStart] = sourceSeqsIndex;
 	}
 	i = 1;
 	if (argc > 1 and (0 == strcmp (argv [1], "@MLton"))) {

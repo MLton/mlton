@@ -220,6 +220,7 @@ fun 'a analyze
 			      args = values args,
 			      resultType = ty,
 			      resultVar = var}
+		| Profile _ => unit
 		| Select {tuple, offset} =>
 		     select {tuple = value tuple,
 			     offset = offset,

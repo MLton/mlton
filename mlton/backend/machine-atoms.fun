@@ -406,6 +406,23 @@ structure ObjectType =
 	  (PointerTycon.wordVector, wordVector)]
    end
 
+structure ProfileLabel =
+   struct
+      datatype t = T of int
+
+      local
+	 val c = Counter.new 0
+      in
+	 fun new () = T (Counter.next c)
+      end
+
+      fun toString (T n) = concat ["MLtonProfile", Int.toString n]
+
+      val layout = Layout.str o toString
+
+      fun equals (T n, T n') = n = n'
+   end
+
 fun castIsOk {from: Type.t,
 	      fromInt: int option,
 	      to: Type.t,

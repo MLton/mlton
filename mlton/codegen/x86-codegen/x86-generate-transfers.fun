@@ -608,7 +608,8 @@ struct
 				    frameInfo as FrameInfo.T {size,
 							      frameLayoutsIndex},
 				    ...}
-			    => AppendList.append
+			    =>
+			       AppendList.append
 			       (AppendList.fromList
 				[Assembly.pseudoop_p2align
 				 (Immediate.const_int 4, NONE, NONE),

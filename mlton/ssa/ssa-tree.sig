@@ -47,6 +47,15 @@ signature SSA_TREE =
       structure Func: HASH_ID
       structure Label: HASH_ID
 
+      structure ProfileExp:
+	 sig
+	    datatype t =
+	       Enter of SourceInfo.t
+	     | Leave of SourceInfo.t
+
+	    val layout: t -> Layout.t
+	 end
+      
       structure Exp:
 	 sig
 	    datatype t =
@@ -63,6 +72,7 @@ signature SSA_TREE =
 	     | PrimApp of {prim: Prim.t,
 			   targs: Type.t vector,
 			   args: Var.t vector}
+	     | Profile of ProfileExp.t
 	     | Select of {tuple: Var.t,
 			  offset: int}
 	     | SetExnStackLocal
@@ -74,6 +84,7 @@ signature SSA_TREE =
 
 	    val equals: t * t -> bool
 	    val foreachVar: t * (Var.t -> unit) -> unit
+	    val isProfile: t -> bool
 	    val hash: t -> Word.t
 	    val layout: t -> Layout.t
 	    val maySideEffect: t -> bool
@@ -156,6 +167,7 @@ signature SSA_TREE =
 	    val foreachHandler: t * (Label.t -> unit) -> unit
 	    val foreachLabel: t * (Label.t -> unit) -> unit
 	    val isNonTail: t -> bool
+	    val isTail: t -> bool
 	    val layout: t -> Layout.t
 	    val map: t * (Label.t -> Label.t) -> t
 	 end
@@ -253,7 +265,6 @@ signature SSA_TREE =
 			    name: Func.t,
 			    raises: Type.t vector option,
 			    returns: Type.t vector option,
-			    sourceInfo: SourceInfo.t,
 			    start: Label.t}
 	    (* dfs (f, v) visits the blocks in depth-first order, applying v b
 	     * for block b to yield v', then visiting b's descendents,
@@ -276,8 +287,8 @@ signature SSA_TREE =
 		      name: Func.t,
 		      raises: Type.t vector option,
 		      returns: Type.t vector option,
-		      sourceInfo: SourceInfo.t,
 		      start: Label.t} -> t
+	    val profile: t * SourceInfo.t -> t
 	    val start: t -> Label.t
 	 end
      

@@ -205,16 +205,13 @@ struct
 
   type transInfo = x86MLton.transInfo
 
-  fun toX86FrameInfo {label,
-		      transInfo as {frameLayouts, ...} : transInfo} =
-     Option.map (frameLayouts label, x86.FrameInfo.frameInfo)
-
   structure Entry =
     struct
       structure Kind = Machine.Kind
 	 
       fun toX86Blocks {label, kind, 
-		       transInfo as {frameLayouts, live, liveInfo, ...} : transInfo}
+		       transInfo as {frameInfoToX86, live, liveInfo,
+				     ...}: transInfo}
 	= (
 	   x86Liveness.LiveInfo.setLiveOperands
 	   (liveInfo, label, live label);
@@ -248,11 +245,9 @@ struct
 		     statements = [],
 		     transfer = NONE})
 		 end
-	      | Kind.Cont {args, ...}
+	      | Kind.Cont {args, frameInfo, ...}
 	      => let
-	           val frameInfo =
-		      valOf (toX86FrameInfo {label = label,
-					     transInfo = transInfo})
+		    val frameInfo = frameInfoToX86 frameInfo
 		   val args
 		     = Vector.fold
 		       (args,
@@ -290,8 +285,7 @@ struct
 		 in
 		   x86MLton.creturn
 		   {dst = dst,
-		    frameInfo = toX86FrameInfo {label = label,
-						transInfo = transInfo},
+		    frameInfo = Option.map (frameInfo, frameInfoToX86),
 		    func = func,
 		    label = label,
 		    transInfo = transInfo}
@@ -382,6 +376,19 @@ struct
 				    transInfo = transInfo}),
 		    comment_end]
 		 end
+	      | ProfileLabel l =>
+		   let
+		      val label =
+			 Label.fromString (Machine.ProfileLabel.toString l)
+		   in
+		      AppendList.single
+		      (x86.Block.T'
+		       {entry = NONE,
+			profileInfo = x86.ProfileInfo.none,
+			statements = [x86.Assembly.pseudoop_global label,
+				      x86.Assembly.label label],
+			transfer = NONE})
+		   end
  	      | SetSlotExnStack {offset}
 	      => let
 		   val (comment_begin, comment_end) = comments statement
@@ -740,7 +747,8 @@ struct
 	    else AppendList.empty
 
 	 
-      fun toX86Blocks {returns, transfer, transInfo as {...} : transInfo}
+      fun toX86Blocks {returns, transfer,
+		       transInfo as {frameInfoToX86, ...}: transInfo}
 	= (case transfer
 	     of Arith {prim, args, dst, overflow, success, ty}
 	      => let
@@ -763,12 +771,8 @@ struct
 		   AppendList.append
 		   (comments transfer,	
 		    x86MLton.ccall {args = args,
-				    frameInfo = (case return of
-						    NONE => NONE
-						  | SOME l =>
-						       toX86FrameInfo
-						       {label = l,
-							transInfo = transInfo}),
+				    frameInfo = (Option.map
+						 (frameInfo, frameInfoToX86)),
 				    func = func,
 				    return = return,
 				    transInfo = transInfo})
@@ -1002,7 +1006,7 @@ struct
       open Machine.Chunk
 
       fun toX86Chunk {chunk as T {blocks, ...}, 
-		      frameLayouts, 
+		      frameInfoToX86,
 		      liveInfo}
 	= let
 	    val data = ref []
@@ -1018,7 +1022,7 @@ struct
 		     setLive (label,
 			      Vector.toListMap (live, Operand.toX86Operand)))
 	    val transInfo = {addData = addData,
-			     frameLayouts = frameLayouts,
+			     frameInfoToX86 = frameInfoToX86,
 			     live = live,
 			     liveInfo = liveInfo}
 	    val x86Blocks 
@@ -1039,33 +1043,12 @@ struct
 	   => Error.reraise (exn, "x86Translate.Chunk.toX86Chunk")
     end
 
-  structure Program =
-    struct
-      open Machine.Program
-
-      fun toX86Chunks {program as T {chunks,...},
-		       frameLayouts,
-		       liveInfo} 
-	= let
-	    val chunks
-	      = List.map(chunks,
-			 fn chunk
-			  => Chunk.toX86Chunk {chunk = chunk,
-					       frameLayouts = frameLayouts,
-					       liveInfo = liveInfo})
-	  in 
-	    chunks
-	  end
-    end
-
   fun translateChunk {chunk: x86MLton.Machine.Chunk.t,
-		      frameLayouts: x86MLton.Machine.Label.t ->
-		                    {size: int, frameLayoutsIndex: int} option,
-		      liveInfo: x86Liveness.LiveInfo.t} :
+		      frameInfoToX86,
+		      liveInfo: x86Liveness.LiveInfo.t}:
                      {chunk: x86.Chunk.t}
-		      
     = {chunk = Chunk.toX86Chunk {chunk = chunk,
-				 frameLayouts = frameLayouts,
+				 frameInfoToX86 = frameInfoToX86,
 				 liveInfo = liveInfo}}
 
   val (translateChunk, translateChunk_msg)
@@ -1078,23 +1061,4 @@ struct
        Control.indent ();
        Control.unindent ())
 
-
-  fun translateProgram {program: x86MLton.Machine.Program.t,
-			frameLayouts: x86MLton.Machine.Label.t ->
-			              {size: int, frameLayoutsIndex: int} option,
-			liveInfo: x86Liveness.LiveInfo.t} :
-                       {chunks: x86.Chunk.t list}
-    = {chunks = Program.toX86Chunks {program = program,
-				     frameLayouts = frameLayouts,
-				     liveInfo = liveInfo}}
-
-  val (translateProgram, translateProgram_msg)
-    = tracerTop
-      "translateProgram"
-      translateProgram
-
-  fun translateProgram_totals ()
-    = (translateProgram_msg ();
-       Control.indent ();
-       Control.unindent ())
 end

@@ -455,6 +455,15 @@ fun preCodegen {input, docc}: Machine.Program.t =
 	  style = Control.No,
 	  thunk = fn () => Backend.toMachine ssa,
 	  display = Control.Layouts Machine.Program.layouts}
+      val _ =
+	 let
+	    open Control
+	 in
+	    if !keepMachine
+	       then saveToFile ({suffix = "machine"}, No, machine,
+				 Layouts Machine.Program.layouts)
+	    else ()
+	 end
       val _ = Machine.Program.typeCheck machine
    in
       machine

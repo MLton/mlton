@@ -395,7 +395,17 @@ structure AnalyzeDom =
 					  val g_node = getFuncNode g
 					in
 					  case return of
-					     Return.NonTail c =>
+					     Return.Dead =>
+						(* When compiling with profiling,
+						 * Dead returns are allowed to
+						 * have nonempty source stacks
+						 * (see type-check.fun).  So, we
+						 * can't contify functions that
+						 * are called with a Dead cont.
+						 *)
+						addEdge {from = Root,
+							 to = g_node}
+					   | Return.NonTail c =>
 						let
 						   val c_node = getContNode c
 						   val rootEdge 
@@ -711,9 +721,8 @@ structure Transform =
 		  val {args = f_args, 
 		       blocks = f_blocks,
 		       name = f, 
-		       returns = f_returns,
 		       raises = f_raises,
-		       sourceInfo = f_sourceInfo,
+		       returns = f_returns,
 		       start = f_start} = Function.dest func
 	       in
 		  case FuncData.A (getFuncData f)
@@ -733,9 +742,8 @@ structure Transform =
 			      shrink (Function.new {args = f_args,
 						    blocks = f_blocks,
 						    name = f,
-						    returns = f_returns,
 						    raises = f_raises,
-						    sourceInfo = f_sourceInfo,
+						    returns = f_returns,
 						    start = f_start})
 			      :: ac
 			   end

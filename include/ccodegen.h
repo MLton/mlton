@@ -1,68 +1,44 @@
 #ifndef _CCODEGEN_H_
 #define _CCODEGEN_H_
 
-#define Globals(c, d, i, p, u, nr)						\
-	/* gcState can't be static because stuff in mlton-lib.c refers to it */	\
-	struct GC_state gcState;						\
-	static int sizeRes;							\
-	static pointer serializeRes;						\
-	static pointer deserializeRes;						\
-	static pointer stackRes;						\
-	static pointer arrayAllocateRes;					\
-	static struct intInfRes_t *intInfRes;					\
-	static int nextFun;							\
-	static char globaluchar[c];						\
-	static double globaldouble[d];						\
-	static int globalint[i];						\
-	static pointer globalpointer[p];					\
-	static uint globaluint[u];						\
-	static pointer globalpointerNonRoot[nr];				\
-	/* The CReturn's must be globals and cannot be per chunk because 	\
-	 * they may be assigned in one chunk and read in another.  See		\
-	 * Array_allocate.							\
-	 */									\
-	static char CReturnC;							\
-	static double CReturnD;							\
-	static int CReturnI;							\
-	static char *CReturnP;							\
-	static uint CReturnU;							\
-	void saveGlobals(int fd) {						\
-		swrite(fd, globaluchar, sizeof(char) * c);			\
-		swrite(fd, globaldouble, sizeof(double) * d);			\
-		swrite(fd, globalint, sizeof(int) * i);				\
-		swrite(fd, globalpointer, sizeof(pointer) * p);			\
-		swrite(fd, globaluint, sizeof(uint) * u);			\
-	}									\
-	static void loadGlobals(FILE *file) {					\
-		sfread(globaluchar, sizeof(char), c, file);			\
-		sfread(globaldouble, sizeof(double), d, file);			\
-		sfread(globalint, sizeof(int), i, file);			\
-		sfread(globalpointer, sizeof(pointer), p, file);		\
-		sfread(globaluint, sizeof(uint), u, file);			\
-	}
+#include "codegen.h"
 
-#define BeginIntInfs static struct GC_intInfInit intInfInits[] = {
-#define IntInf(g, n) { g, n },
-#define EndIntInfs { 0, NULL }};
+/* Globals */
+static pointer arrayAllocateRes;
+static int nextFun;
+static int sizeRes;
+static pointer stackRes;
 
-#define BeginStrings static struct GC_stringInit stringInits[] = {
-#define String(g, s, l) { g, s, l },
-#define EndStrings { 0, NULL, 0 }};
+/* The CReturn's must be globals and cannot be per chunk because
+ * they may be assigned in one chunk and read in another.  See, e.g.
+ * Array_allocate.
+ */
+static char CReturnC;
+static double CReturnD;
+static int CReturnI;
+static char *CReturnP;
+static uint CReturnU;
 
-#define BeginReals static void real_Init() {
-#define Real(c, f) globaldouble[c] = f;
-#define EndReals }
+#ifndef DEBUG_CCODEGEN
+#define DEBUG_CCODEGEN FALSE
+#endif
 
 #define IsInt(p) (0x3 & (int)(p))
 
-#define BZ(x, l)				\
-	do {					\
-		if (x == 0) goto l;		\
+#define BZ(x, l)						\
+	do {							\
+		if (DEBUG_CCODEGEN)				\
+			fprintf (stderr, "%d  BZ(%d, %s)\n", 	\
+					__LINE__, (x), #l); 	\
+		if (0 == (x)) goto l;				\
 	} while (0)
 
-#define BNZ(x, l)				\
-	do {					\
-		if (x) goto l;		        \
+#define BNZ(x, l)						\
+	do {							\
+		if (DEBUG_CCODEGEN)				\
+			fprintf (stderr, "%d  BNZ(%d, %s)\n",	\
+					__LINE__, (x), #l);	\
+		if (x) goto l;					\
 	} while (0)
 
 /* ------------------------------------------------- */
@@ -87,11 +63,14 @@ struct cont {
 		char *stackTop;			\
 		pointer frontier;		\
 
-#define ChunkSwitch				\
-		CacheFrontier();		\
-		CacheStackTop();		\
-		while (1) {			\
-		top:				\
+#define ChunkSwitch(n)							\
+		if (DEBUG_CCODEGEN)					\
+			fprintf (stderr, "%d  entering chunk %d\n",	\
+					__LINE__, n);			\
+		CacheFrontier();					\
+		CacheStackTop();					\
+		while (1) {						\
+		top:							\
 		switch (l_nextFun) {
 
 #define EndChunk							\
@@ -111,28 +90,11 @@ struct cont {
 /*                       main                        */
 /* ------------------------------------------------- */
 
-#define Main(cs, mmc, mfs, mfi, mot, mg, mc, ml)			\
+#define Main(cs, mmc, mfs, mg, pa, mc, ml)				\
 int main (int argc, char **argv) {					\
 	struct cont cont;						\
-	int l_nextFun;							\
-	gcState.profileAllocIsOn = FALSE;				\
-	gcState.cardSizeLog2 = cs;					\
-	gcState.frameLayouts = frameLayouts;				\
-	gcState.globals = globalpointer;				\
-	gcState.intInfInits = intInfInits;				\
-	gcState.loadGlobals = &loadGlobals;				\
-	gcState.magic = mg;						\
-	gcState.maxFrameIndex = mfi;					\
-	gcState.maxFrameSize = mfs;					\
-	gcState.maxObjectTypeIndex = mot;				\
-	gcState.mutatorMarksCards = mmc;				\
 	gcState.native = FALSE;						\
-	gcState.numGlobals = cardof(globalpointer);			\
-	gcState.objectTypes = objectTypes;				\
-	gcState.profileInfo = NULL;					\
-	gcState.saveGlobals = &saveGlobals;				\
-	gcState.stringInits = stringInits;				\
-	MLton_init (argc, argv, &gcState);				\
+	Initialize(cs, mmc, mfs, mg, pa);				\
 	if (gcState.isOriginal) {					\
 		real_Init();						\
 		PrepFarJump(mc, ml);					\
@@ -231,15 +193,18 @@ int main (int argc, char **argv) {					\
 		assert(StackBottom <= stackTop);	\
 	} while (0)
 
-#define Return()						\
-	do {							\
-		l_nextFun = *(word*)(stackTop - WORD_SIZE);	\
-		goto top;					\
+#define Return()								\
+	do {									\
+		l_nextFun = *(word*)(stackTop - WORD_SIZE);			\
+		if (DEBUG_CCODEGEN)						\
+			fprintf (stderr, "%d  Return()  l_nextFun = %d\n",	\
+					__LINE__, l_nextFun);			\
+		goto top;							\
 	} while (0)
 
 #define Raise()								\
 	do {								\
-		if (FALSE)						\
+		if (DEBUG_CCODEGEN)					\
 			fprintf (stderr, "%d  Raise\n", __LINE__);	\
 		stackTop = StackBottom + ExnStack;			\
 		l_nextFun = *(int*)stackTop;				\
@@ -303,7 +268,7 @@ int main (int argc, char **argv) {					\
 	do {								\
 		*(word*)frontier = (h);					\
 		x = frontier + GC_NORMAL_HEADER_SIZE;			\
-		if (FALSE)						\
+		if (DEBUG_CCODEGEN)					\
 			fprintf (stderr, "%d  0x%x = Object(%d)\n",	\
 				 __LINE__, x, h);			\
 		assert (frontier <= gcState.limitPlusSlop);		\
@@ -455,10 +420,10 @@ static inline Int Int_subOverflow(Int lhs, Int rhs, Bool *overflow) {
 	do {									\
 		int overflow;							\
 		dst = f(n1, n2, &overflow);					\
-		if (FALSE)							\
+		if (DEBUG_CCODEGEN)						\
 			fprintf(stderr, #f "(%d, %d) = %d\n", n1, n2, dst);	\
 		if (overflow) {							\
-			if (FALSE)						\
+			if (DEBUG_CCODEGEN)					\
 				fprintf(stderr, "overflow\n");			\
 			goto l;							\
 		}								\

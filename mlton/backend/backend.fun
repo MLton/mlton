@@ -20,6 +20,7 @@ in
    structure MemChunk = MemChunk
    structure ObjectType = ObjectType
    structure PointerTycon = PointerTycon
+   structure ProfileInfo = ProfileInfo
    structure Register = Register
    structure Runtime = Runtime
    structure SourceInfo = SourceInfo
@@ -33,7 +34,8 @@ in
 end
 val wordSize = Runtime.wordSize
 
-structure Rssa = Rssa (open Ssa Machine)
+structure Rssa = Rssa (open Ssa Machine
+		       structure ProfileStatement = ProfileExp)
 structure R = Rssa
 local
    open Rssa
@@ -46,7 +48,8 @@ in
    structure Var = Var
 end 
 
-structure ProfileAlloc = ProfileAlloc (structure Rssa = Rssa)
+structure Profile = Profile (structure Machine = Machine
+			     structure Rssa = Rssa)
 structure AllocateRegisters = AllocateRegisters (structure Machine = Machine
 						 structure Rssa = Rssa)
 structure Chunkify = Chunkify (Rssa)
@@ -114,8 +117,7 @@ val traceGenBlock =
 
 fun eliminateDeadCode (f: R.Function.t): R.Function.t =
    let
-      val {args, blocks, name, returns, raises, sourceInfo, start} =
-	 R.Function.dest f
+      val {args, blocks, name, returns, raises, start} = R.Function.dest f
       val {get, set, ...} =
 	 Property.getSetOnce (Label.plist, Property.initConst false)
       val get = Trace.trace ("Backend.labelIsReachable",
@@ -133,7 +135,6 @@ fun eliminateDeadCode (f: R.Function.t): R.Function.t =
 		      name = name,
 		      returns = returns,
 		      raises = raises,
-		      sourceInfo = sourceInfo,
 		      start = start}
    end
 
@@ -149,10 +150,29 @@ fun toMachine (program: Ssa.Program.t) =
       val program = pass ("ssaToRssa", SsaToRssa.convert, program)
       val program = pass ("insertLimitChecks", LimitCheck.insert, program)
       val program = pass ("insertSignalChecks", SignalCheck.insert, program)
-      val program =
-	 if !Control.profile = Control.ProfileAlloc
-	    then pass ("profileAlloc", ProfileAlloc.doit, program)
-	 else program
+      val {frameProfileIndices, labels = profileLabels, program, sources,
+	   sourceSeqs} =
+	 Control.passTypeCheck
+	 {display = Control.Layouts (fn ({program, ...}, output) =>
+				     Rssa.Program.layouts (program, output)),
+	  name = "profile",
+	  style = Control.No,
+	  suffix = "rssa",
+	  thunk = fn () => Profile.profile program,
+	  typeCheck = R.Program.typeCheck o #program}
+      val frameProfileIndex =
+	 if !Control.profile = Control.ProfileNone
+	    then fn _ => 0
+	 else
+	    let
+	       val {get, set, ...} =
+		  Property.getSetOnce
+		  (Label.plist,
+		   Property.initRaise ("frameProfileIndex", Label.layout))
+	       val _ = Vector.foreach (frameProfileIndices, set)
+	    in
+	       get
+	    end
       val _ =
 	 let
 	    open Control
@@ -164,8 +184,7 @@ fun toMachine (program: Ssa.Program.t) =
 				Layouts Rssa.Program.layouts)
 	    else ()
 	 end
-      val program as R.Program.T {functions, main, objectTypes,
-				  profileAllocLabels} = program
+      val program as R.Program.T {functions, main, objectTypes} = program
       val handlesSignals = Rssa.Program.handlesSignals program
       (* Chunk information *)
       val {get = labelChunk, set = setLabelChunk, ...} =
@@ -184,11 +203,6 @@ fun toMachine (program: Ssa.Program.t) =
 	    c
 	 end
       val handlers = ref []
-      val frames: {chunkLabel: M.ChunkLabel.t,
-		   func: string,
-		   offsets: int list,
-		   return: Label.t,
-		   size: int} list ref = ref []
       (* Set funcChunk and labelChunk. *)
       val _ =
 	 Vector.foreach
@@ -200,6 +214,81 @@ fun toMachine (program: Ssa.Program.t) =
 	  in
 	     ()
 	  end)
+      (* FrameInfo. *)
+      local
+	 val frameSources = ref []
+	 val frameLayouts = ref []
+	 val frameLayoutsCounter = Counter.new 0
+	 val _ = IntSet.reset ()
+	 val table = HashSet.new {hash = Word.fromInt o #frameOffsetsIndex}
+	 val frameOffsets = ref []
+	 val frameOffsetsCounter = Counter.new 0
+	 val {get = frameOffsetsIndex: IntSet.t -> int, ...} =
+	    Property.get
+	    (IntSet.plist,
+	     Property.initFun
+	     (fn offsets =>
+	      let
+		 val _ = List.push (frameOffsets, IntSet.toList offsets)
+	      in
+		 Counter.next frameOffsetsCounter
+	      end))
+      in
+	 fun allFrameInfo () =
+	    let
+	       (* Reverse both lists because the index is from back of list. *)
+	       val frameOffsets =
+		  Vector.rev
+		  (Vector.fromListMap (!frameOffsets, Vector.fromList))
+	       val frameLayouts = Vector.fromListRev (!frameLayouts)
+	       val frameSources = Vector.fromListRev (!frameSources)
+	    in
+	       (frameLayouts, frameOffsets, frameSources)
+	    end
+	 fun getFrameLayoutsIndex {label: Label.t,
+				   offsets: int list,
+				   size: int}: int =
+	    let
+	       val profileIndex = frameProfileIndex label
+	       val foi = frameOffsetsIndex (IntSet.fromList offsets)
+	       fun new () =
+		  let
+		     val _ =
+			List.push (frameLayouts,
+				   {frameOffsetsIndex = foi,
+				    size = size})
+		     val _ = List.push (frameSources, profileIndex)
+		  in
+		     Counter.next frameLayoutsCounter
+		  end
+	    in
+	       if not (!Control.Native.native)
+		  then
+		     (* Assign the entries of each chunk consecutive integers
+		      * so that gcc will use a jump table.
+		      *)
+		     new ()
+	       else
+	       #frameLayoutsIndex
+	       (HashSet.lookupOrInsert
+		(table, Word.fromInt foi,
+		 fn {frameOffsetsIndex = foi',
+		     profileIndex = pi', size = s', ...} =>
+		 foi = foi' andalso profileIndex = pi' andalso size = s',
+		 fn () => {frameLayoutsIndex = new (),
+			   frameOffsetsIndex = foi,
+			   profileIndex = profileIndex,
+			   size = size}))
+	    end
+      end
+      val {get = frameInfo: Label.t -> M.FrameInfo.t,
+	   set = setFrameInfo, ...} = 
+	 Property.getSetOnce (Label.plist,
+			      Property.initRaise ("frameInfo", Label.layout))
+      val setFrameInfo =
+	 Trace.trace2 ("Backend.setFrameInfo",
+		       Label.layout, M.FrameInfo.layout, Unit.layout)
+	 setFrameInfo
       (* The global raise operands. *)
       local
 	 val table: (Type.t vector * M.Operand.t vector) list ref = ref []
@@ -390,6 +479,8 @@ fun toMachine (program: Ssa.Program.t) =
 			     dst = Option.map (dst, varOperand o #1),
 			     prim = prim})
 		  end
+	     | Profile p => Error.bug "backend saw strange profile statement"
+	     | ProfileLabel s => Vector.new1 (M.Statement.ProfileLabel s)
 	     | SetExnStackLocal =>
 		  Vector.new1
 		  (M.Statement.SetExnStackLocal {offset = handlerOffset ()})
@@ -445,6 +536,7 @@ fun toMachine (program: Ssa.Program.t) =
 	    val {args, blocks, name, raises, returns, start, ...} =
 	       Function.dest f
 	    val func = Func.toString name
+	    val profileInfoFunc = Func.toString name
 	    val raises = Option.map (raises, fn ts => raiseOperands ts)
 	    val returns =
 	       Option.map (returns, fn ts =>
@@ -539,7 +631,33 @@ fun toMachine (program: Ssa.Program.t) =
 		   function = f,
 		   varInfo = varInfo}
 	    end
-	    val profileInfoFunc = Func.toString name
+	    (* Set the frameInfo for Conts and CReturns in this function. *)
+	    val _ =
+	       Vector.foreach
+	       (blocks, fn R.Block.T {kind, label, ...} =>
+		if not (R.Kind.isFrame kind)
+		   then ()
+		else
+		   let
+		      val {liveNoFormals, size, ...} = labelRegInfo label
+		      val offsets =
+			 Vector.fold
+			 (liveNoFormals, [], fn (oper, ac) =>
+			  case oper of
+			     M.Operand.StackOffset {offset, ty} =>
+				if Type.isPointer ty
+				   then offset :: ac
+				else ac
+			   | _ => ac)
+		      val frameLayoutsIndex =
+			 getFrameLayoutsIndex {label = label,
+					       offsets = offsets,
+					       size = size}
+		   in
+		      setFrameInfo (label,
+				    M.FrameInfo.T
+				    {frameLayoutsIndex = frameLayoutsIndex})
+		   end)
 	    (* ------------------------------------------------- *)
 	    (*                    genTransfer                    *)
 	    (* ------------------------------------------------- *)
@@ -563,7 +681,8 @@ fun toMachine (program: Ssa.Program.t) =
 			simple (M.Transfer.CCall
 				{args = translateOperands args,
 				 frameInfo = if CFunction.mayGC func
-						then SOME M.FrameInfo.bogus
+						then SOME (frameInfo
+							   (valOf return))
 					     else NONE,
 				 func = func,
 				 return = return})
@@ -722,33 +841,14 @@ fun toMachine (program: Ssa.Program.t) =
 				  genStatement (s, handlerLinkOffset)))
 		  val (preTransfer, transfer) =
 		     genTransfer (transfer, chunk, label)
-		  fun frame () =
-		     let
-			val offsets =
-			   Vector.fold
-			   (liveNoFormals, [], fn (oper, ac) =>
-			    case oper of
-			       M.Operand.StackOffset {offset, ty} =>
-				  if Type.isPointer ty
-				     then offset :: ac
-				  else ac
-			     | _ => ac)
-		     in
-			List.push (frames, {chunkLabel = Chunk.label chunk,
-					    func = func,
-					    offsets = offsets,
-					    return = label,
-					    size = size})
-		     end
 		  val (kind, live, pre) =
 		     case kind of
 			R.Kind.Cont _ =>
 			   let
-			      val _ = frame ()
 			      val srcs = callReturnOperands (args, #2, size)
 			   in
 			      (M.Kind.Cont {args = srcs,
-					    frameInfo = M.FrameInfo.bogus},
+					    frameInfo = frameInfo label},
 			       liveNoFormals,
 			       parallelMove
 			       {chunk = chunk,
@@ -765,12 +865,7 @@ fun toMachine (program: Ssa.Program.t) =
 				  | _ => Error.bug "strange CReturn"
 			      val frameInfo =
 				 if mayGC
-				    then
-				       let
-					  val _ = frame ()
-				       in
-					  SOME M.FrameInfo.bogus
-				       end
+				    then SOME (frameInfo label)
 				 else NONE
 			   in
 			      (M.Kind.CReturn {dst = dst,
@@ -831,86 +926,10 @@ fun toMachine (program: Ssa.Program.t) =
        *)
       val _ = genFunc (main, true)
       val _ = List.foreach (functions, fn f => genFunc (f, false))
-      val funcSources =
-	 Vector.fromListMap
-	 (main :: functions, fn f =>
-	  let
-	     val {name, sourceInfo, ...} = R.Function.dest f
-	  in
-	     {func = Func.toString name,
-	      sourceInfo = sourceInfo}
-	  end)
       val chunks = !chunks
-      val _ = IntSet.reset ()
-      val c = Counter.new 0
-      val frameOffsets = ref []
-      val {get: IntSet.t -> int, ...} =
-	 Property.get
-	 (IntSet.plist,
-	  Property.initFun
-	  (fn offsets =>
-	   let val index = Counter.next c
-	   in
-	      List.push (frameOffsets, IntSet.toList offsets)
-	      ; index
-	   end))
-      val {get = frameInfo: Label.t -> M.FrameInfo.t, set = setFrameInfo, ...} = 
-	 Property.getSetOnce (Label.plist,
-			      Property.initRaise ("frameInfo", Label.layout))
-      val setFrameInfo =
-	 Trace.trace2 ("Backend.setFrameInfo",
-		       Label.layout, M.FrameInfo.layout, Unit.layout)
-	 setFrameInfo
-      val _ =
-	 List.foreach
-	 (!frames, fn {func, offsets, return, size, ...} =>
-	  setFrameInfo
-	  (return,
-	   M.FrameInfo.T {frameOffsetsIndex = get (IntSet.fromList offsets),
-			  func = func,
-			  size = size}))
-      (* Reverse the list of frameOffsets because offsetIndex 
-       * is from back of list.
-       *)
-      val frameOffsets =
-	 Vector.rev (Vector.fromListMap (!frameOffsets, Vector.fromList))
-      fun blockToMachine (M.Block.T {kind, label, live, profileInfo,
-				     raises, returns, statements, transfer}) =
-	 let
-	    datatype z = datatype M.Kind.t
-	    val kind =
-	       case kind of
-		  Cont {args, ...} => Cont {args = args,
-					    frameInfo = frameInfo label}
-		| CReturn {dst, frameInfo = f, func} =>
-		     CReturn {dst = dst,
-			      frameInfo = Option.map (f, fn _ =>
-						      frameInfo label),
-			      func = func}
-		| _ => kind
-	    val transfer =
-	       case transfer of
-		  M.Transfer.CCall {args, frameInfo = f, func, return} =>
-		     M.Transfer.CCall
-		     {args = args,
-		      frameInfo = Option.map (f, fn _ =>
-					      frameInfo (valOf return)),
-		      func = func,
-		      return = return}
-		| _ => transfer
-	 in
-	    M.Block.T {kind = kind,
-		       label = label,
-		       live = live,
-		       profileInfo = profileInfo,
-		       raises = raises,
-		       returns = returns,
-		       statements = statements,
-		       transfer = transfer}
-	 end
       fun chunkToMachine (Chunk.T {chunkLabel, blocks}) =
 	 let
-	    val blocks = Vector.fromListMap (!blocks, blockToMachine)
+	    val blocks = Vector.fromList (!blocks)
 	    val regMax = Runtime.Type.memo (fn _ => ref ~1)
 	    val regsNeedingIndex =
 	       Vector.fold
@@ -957,6 +976,7 @@ fun toMachine (program: Ssa.Program.t) =
        *)
       val _ = List.foreach (chunks, fn M.Chunk.T {blocks, ...} =>
 			    Vector.foreach (blocks, Label.clear o M.Block.label))
+      val (frameLayouts, frameOffsets, frameSources) = allFrameInfo ()
       val maxFrameSize =
 	 List.fold
 	 (chunks, 0, fn (M.Chunk.T {blocks, ...}, max) =>
@@ -980,7 +1000,10 @@ fun toMachine (program: Ssa.Program.t) =
 	      val max =
 		 case M.Kind.frameInfoOpt kind of
 		    NONE => max
-		  | SOME (M.FrameInfo.T {size, ...}) => Int.max (max, size)
+		  | SOME (M.FrameInfo.T {frameLayoutsIndex, ...}) =>
+		       Int.max
+		       (max,
+			#size (Vector.sub (frameLayouts, frameLayoutsIndex)))
 	      val max =
 		 Vector.fold
 		 (statements, max, fn (s, max) =>
@@ -991,17 +1014,22 @@ fun toMachine (program: Ssa.Program.t) =
 	      max
 	   end))
       val maxFrameSize = Runtime.wordAlignInt maxFrameSize
+      val profileInfo =
+	 ProfileInfo.T {frameSources = frameSources,
+			labels = profileLabels,
+			sources = sources,
+			sourceSeqs = sourceSeqs}
    in
       Machine.Program.T 
       {chunks = chunks,
+       frameLayouts = frameLayouts,
        frameOffsets = frameOffsets,
-       funcSources = funcSources,
        handlesSignals = handlesSignals,
        intInfs = allIntInfs (), 
        main = main,
        maxFrameSize = maxFrameSize,
        objectTypes = objectTypes,
-       profileAllocLabels = profileAllocLabels,
+       profileInfo = profileInfo,
        reals = allReals (),
        strings = allStrings ()}
    end

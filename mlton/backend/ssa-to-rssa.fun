@@ -1211,6 +1211,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 					   func = CFunction.worldSave}
 			       | _ => normal ()
 			   end
+		      | S.Exp.Profile pe => add (Statement.Profile pe)
 		      | S.Exp.Select {tuple, offset} =>
 			   let
 			      val TupleRep.T {offsets, ...} =
@@ -1261,7 +1262,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	 let
 	    val _ =
 	       S.Function.foreachVar (f, fn (x, t) => setVarInfo (x, {ty = t}))
-	    val {args, blocks, name, raises, returns, sourceInfo, start, ...} =
+	    val {args, blocks, name, raises, returns, start, ...} =
 	       S.Function.dest f
 	    val _ =
 	       Vector.foreach
@@ -1292,7 +1293,6 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			  name = name,
 			  raises = transTypes raises,
 			  returns = transTypes returns,
-			  sourceInfo = sourceInfo,
 			  start = start}
 	 end
       val main =
@@ -1301,35 +1301,36 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	     val bug = Label.newNoname ()
 	  in
 	     translateFunction
-	     (S.Function.new
-	      {args = Vector.new0 (),
-	       blocks = (Vector.new2
-			 (S.Block.T
-			  {label = start,
-			   args = Vector.new0 (),
-			   statements = globals,
-			   transfer = (S.Transfer.Call
-				       {func = main,
-					args = Vector.new0 (),
-					return = (Return.NonTail
-						  {cont = bug,
-						   handler = S.Handler.None})})},
-			  S.Block.T
-			  {label = bug,
-			   args = Vector.new0 (),
-			   statements = Vector.new0 (),
-			   transfer = S.Transfer.Bug})),
-	       name = Func.newNoname (),
-	       raises = NONE,
-	       returns = NONE,
-	       sourceInfo = S.SourceInfo.main,
-	       start = start})
+	     (S.Function.profile
+	      (S.Function.new
+	       {args = Vector.new0 (),
+		blocks = (Vector.new2
+			  (S.Block.T
+			   {label = start,
+			    args = Vector.new0 (),
+			    statements = globals,
+			    transfer = (S.Transfer.Call
+					{func = main,
+					 args = Vector.new0 (),
+					 return =
+					 Return.NonTail
+					 {cont = bug,
+					  handler = S.Handler.None}})},
+			   S.Block.T
+			   {label = bug,
+			    args = Vector.new0 (),
+			    statements = Vector.new0 (),
+			    transfer = S.Transfer.Bug})),
+		name = Func.newNoname (),
+		raises = NONE,
+		returns = NONE,
+		start = start},
+	       S.SourceInfo.main))
 	  end
       val functions = List.revMap (functions, translateFunction)
       val p = Program.T {functions = functions,
 			 main = main,
-			 objectTypes = objectTypes,
-			 profileAllocLabels = Vector.new0 ()}
+			 objectTypes = objectTypes}
       val _ = Program.clear p
    in
       p

@@ -275,6 +275,7 @@ signature X86_PSEUDO =
 	val pseudoop_text : unit -> t
 	val pseudoop_p2align : Immediate.t * Immediate.t option * Immediate.t option -> t
 	val pseudoop_byte : Immediate.t list -> t
+	val pseudoop_global: Label.t -> t
 	val pseudoop_word : Immediate.t list -> t
 	val pseudoop_long : Immediate.t list -> t
 	val label : Label.t -> t

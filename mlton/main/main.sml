@@ -168,6 +168,7 @@ fun makeOptions {usage} =
 		     case s of
 			"dot" => keepDot := true
 		      | "g" => keepGenerated := true
+		      | "machine" => keepMachine := true
 		      | "o" => keepO := true
 		      | "sml" => keepSML := true
 		      | "rssa" => keepRSSA := true
@@ -247,11 +248,11 @@ fun makeOptions {usage} =
 	"produce executable suitable for profiling",
 	SpaceString
 	(fn s =>
-	 case s of
-	    "no" => profile := ProfileNone
-	  | "alloc" => (profile := ProfileAlloc; keepSSA := true)
-	  | "time" => (profile := ProfileTime; keepSSA := true)
-	  | _ => usage (concat ["invalid -profile arg: ", s]))),
+	 profile := (case s of
+			"no" => ProfileNone
+		      | "alloc" => ProfileAlloc
+		      | "time" => ProfileTime
+		      | _ => usage (concat ["invalid -profile arg: ", s])))),
        (Expert, "print-at-fun-entry", " {false|true}",
 	"print debugging message at every call",
 	boolRef printAtFunEntry),

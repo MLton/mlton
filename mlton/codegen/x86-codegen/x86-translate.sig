@@ -23,17 +23,10 @@ signature X86_TRANSLATE =
     include X86_TRANSLATE_STRUCTS
 
     val translateChunk : {chunk: x86MLton.Machine.Chunk.t,
-			  frameLayouts: x86MLton.Machine.Label.t ->
-			                {size: int, frameLayoutsIndex: int} option,
-			  liveInfo: x86Liveness.LiveInfo.t} ->
-                         {chunk: x86.Chunk.t}
-
-    val translateProgram : {program: x86MLton.Machine.Program.t,
-			    frameLayouts: x86MLton.Machine.Label.t ->
-			                  {size: int, frameLayoutsIndex: int} option,
-			    liveInfo: x86Liveness.LiveInfo.t} ->
-                           {chunks: x86.Chunk.t list}
+			  frameInfoToX86: (x86MLton.Machine.FrameInfo.t
+					   -> x86.FrameInfo.t),
+			  liveInfo: x86Liveness.LiveInfo.t}
+                         -> {chunk: x86.Chunk.t}
 
     val translateChunk_totals : unit -> unit
-    val translateProgram_totals : unit -> unit
   end

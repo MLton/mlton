@@ -47,6 +47,8 @@ in
    val returnTy = make #returnTy
 end
 
+fun equals (f, f') = name f = name f'
+
 fun isOk (T {ensuresBytesFree, mayGC, maySwitchThreads, modifiesFrontier,
 	     modifiesStackTop, returnTy, ...}): bool =
    (if maySwitchThreads
@@ -60,32 +62,10 @@ fun isOk (T {ensuresBytesFree, mayGC, maySwitchThreads, modifiesFrontier,
     else true)
    andalso 
    (if mayGC
-       then modifiesFrontier andalso modifiesStackTop
+       then (modifiesFrontier andalso modifiesStackTop)
     else true)
 
 val isOk = Trace.trace ("CFunction.isOk", layout, Bool.layout) isOk
-
-fun equals (T {bytesNeeded = b,
-	       ensuresBytesFree = e,
-	       mayGC = g,
-	       maySwitchThreads = s,
-	       modifiesFrontier = f,
-	       modifiesStackTop = t,
-	       name = n,
-	       needsProfileAllocIndex = np,
-	       returnTy = r},
-	    T {bytesNeeded = b',
-	       ensuresBytesFree = e',
-	       mayGC = g',
-	       maySwitchThreads = s',
-	       modifiesFrontier = f',
-	       modifiesStackTop = t',
-	       name = n',
-	       needsProfileAllocIndex = np',
-	       returnTy = r'}) =
-   b = b' andalso e = e' andalso g = g' andalso s = s' andalso f = f'
-   andalso t = t' andalso n = n' andalso np = np'
-   andalso Option.equals (r, r', Type.equals)
 
 val equals =
    Trace.trace2 ("CFunction.equals", layout, layout, Bool.layout) equals
@@ -123,4 +103,19 @@ val bug = vanilla {name = "MLton_bug",
 
 val size = vanilla {name = "MLton_size",
 		    returnTy = SOME Type.int}
+
+val profileAllocInc =
+   T {bytesNeeded = NONE,
+      ensuresBytesFree = false,
+      modifiesFrontier = false,
+      (* Acutally, it just reads the stackTop, but we have no way to read and
+       * not modify.
+       *)
+      modifiesStackTop = true,
+      mayGC = false,
+      maySwitchThreads = false,
+      name = "MLton_ProfileAlloc_inc",
+      needsProfileAllocIndex = true,
+      returnTy = NONE}
+
 end

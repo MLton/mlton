@@ -5,31 +5,41 @@
 #include "mlton-basis.h"
 #include "my-lib.h"
 
+enum {
+	DEBUG_PROFILE_ALLOC = FALSE,
+};
+
 extern struct GC_state gcState;
 
-#define	MAGIC	"MLton prof\n"
-
-extern void	_start(void),
-		etext(void);
-
-#define START ((uint)&_start)
-#define END (uint)&etext
-
 Pointer MLton_ProfileAlloc_current (void) {
-	return (Pointer)gcState.profileAllocCounts;
+	Pointer res;
+
+	res = (Pointer)gcState.profileAllocCounts;
+	if (DEBUG_PROFILE_ALLOC)
+		fprintf (stderr, "0x%0x8 = MLton_ProfileAlloc_current ()\n",
+				(uint)res);
+	return res;
 }
 
 void MLton_ProfileAlloc_setCurrent (Pointer d) {
+	if (DEBUG_PROFILE_ALLOC)
+		fprintf (stderr, "MLton_ProfileAlloc_setCurrent (0x%08x)\n",
+				(uint)d);
 	gcState.profileAllocCounts = (ullong*)d;
 }
 
 void MLton_ProfileAlloc_inc (Word amount) {
-	assert (gcState.profileAllocIsOn);
-	if (FALSE)
+	GC_state s;
+
+	s = &gcState;
+	if (DEBUG_PROFILE_ALLOC)
 		fprintf (stderr, "MLton_ProfileAlloc_inc (%u, %u)\n",
-				gcState.profileAllocIndex,
+				s->profileAllocIndex,
 				(uint)amount);
-	gcState.profileAllocCounts[gcState.profileAllocIndex] += amount;
+	assert (s->profileAllocIsOn);
+	assert (s->profileAllocIndex < s->profileSourceSeqsSize);
+	s->profileAllocCounts [s->profileSourceSeqs [s->profileAllocIndex] [1]] 
+		+= amount;
 }
 
 Pointer MLton_ProfileAlloc_Data_malloc (void) {
@@ -39,16 +49,22 @@ Pointer MLton_ProfileAlloc_Data_malloc (void) {
 	ullong *data;
 
 	assert (gcState.profileAllocIsOn);
-	data = (ullong*) malloc (gcState.profileAllocNumLabels * sizeof (*data));
+	data = (ullong*) malloc (gcState.profileSourcesSize * sizeof (*data));
 	if (data == NULL)
 		die ("Out of memory");
 	MLton_ProfileAlloc_Data_reset ((Pointer)data);
+	if (DEBUG_PROFILE_ALLOC)
+		fprintf (stderr, "0x%08x = MLton_ProfileAlloc_Data_malloc ()\n",
+				(uint)data);
 	return (Pointer)data;
 }
 
 void MLton_ProfileAlloc_Data_free (Pointer d) {
 	ullong *data;
 
+	if (DEBUG_PROFILE_ALLOC)
+		fprintf (stderr, "MLton_ProfileAlloc_Data_free (0x%08x)\n",
+				(uint)d);
 	assert (gcState.profileAllocIsOn);
 	data = (ullong*)d;
 	assert (data != NULL);
@@ -58,38 +74,49 @@ void MLton_ProfileAlloc_Data_free (Pointer d) {
 void MLton_ProfileAlloc_Data_reset (Pointer d) {
 	uint *data;
 
+	if (DEBUG_PROFILE_ALLOC)
+		fprintf (stderr, "MLton_ProfileAlloc_Data_reset (0x%08x)\n",
+				(uint)data);
 	assert (gcState.profileAllocIsOn);
 	data = (uint*)d;
 	assert (data != NULL);
-	memset (data, 0, gcState.profileAllocNumLabels * sizeof(*data));
+	memset (data, 0, gcState.profileSourcesSize * sizeof(*data));
+}
+
+static void writeString (int fd, string s) {
+	swrite (fd, s, strlen(s));
+	swrite (fd, "\n", 1);
+}
+
+static void writeWord (int fd, word w) {
+	char buf[20];
+
+	sprintf (buf, "0x%08x", w);
+	writeString (fd, buf);
+}
+
+static void writeUllong (int fd, ullong u) {
+	char buf[20];
+
+	sprintf (buf, "%llu", u);
+	writeString (fd, buf);
 }
 
 void MLton_ProfileAlloc_Data_write (Pointer d, Word fd) {
-/* Write a profile data array out to a file descriptor
- * The file consists of:
- *	a 12 byte magic value ("MLton prof\n\000")
- *	the lowest address corresponding to a bin
- *	just past the highest address corresponding to a bin
- *	the counter size in bytes (4 or 8)
- *	the bins
- */
+/* Write a profile data array out to a file descriptor */
 	ullong *data;
 	uint i;
 
+	if (DEBUG_PROFILE_ALLOC)
+		fprintf (stderr, "MLton_ProfileAlloc_Data_write (0x%08x, %d)\n",
+				(uint)d, fd);
 	assert (gcState.profileAllocIsOn);
 	data = (ullong*)d;
-	swrite (fd, MAGIC, sizeof(MAGIC));
-	swriteUint (fd, gcState.magic);
-	swriteUint (fd, START);
-	swriteUint (fd, END);
-	swriteUint (fd, sizeof(*data));
-	swriteUint (fd, MLPROF_KIND_ALLOC);
-	for (i = 0; i < gcState.profileAllocNumLabels; ++i) {
-		if (data[i] > 0) {
-			swriteUint (fd, gcState.profileAllocLabels[i]);
-			swriteUllong (fd, data[i]);
-		}
-	}
+	writeString (fd, "MLton prof");
+	writeString (fd, "alloc");
+	writeWord (fd, gcState.magic);
+	for (i = 0; i < gcState.profileSourcesSize; ++i)
+		writeUllong (fd, data[i]);
 }
 
 #elif (defined (__CYGWIN__))

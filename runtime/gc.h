@@ -73,6 +73,7 @@ enum {
 	LIMIT_SLOP = 		512,
 	MARK_MASK =		0x80000000,
 	POINTER_SIZE =		WORD_SIZE,
+	SOURCE_SEQ_UNKNOWN = 	0,
 	STACK_TYPE_INDEX =	0,
 	STRING_TYPE_INDEX = 	1,
 	THREAD_TYPE_INDEX =	2,
@@ -126,6 +127,11 @@ struct GC_stringInit {
   uint globalIndex;
   char *str;
   uint size;
+};
+
+struct GC_profileLabel {
+	pointer label;
+	uint sourceSeqsIndex;
 };
 
 /* ------------------------------------------------- */
@@ -278,11 +284,9 @@ typedef struct GC_state {
 	 */
 	float markCompactGenerationalRatio;
 	uint maxBytesLive;
-	uint maxFrameIndex; /* 0 <= frameIndex < maxFrameIndex */
 	uint maxFrameSize;
 	uint maxHeap; /* if zero, then unlimited, else limit total heap */
 	uint maxHeapSizeSeen;
-	uint maxObjectTypeIndex; /* 0 <= typeIndex < maxObjectTypeIndex */
 	uint maxPause;		/* max time spent in any gc in milliseconds. */
 	uint maxStackSizeSeen;
 	bool messages; /* Print out a message at the start and end of each gc. */
@@ -295,11 +299,13 @@ typedef struct GC_state {
  	 */
 	bool native;
 	uint numCopyingGCs;
+	uint numFrameLayouts; /* 0 <= frameIndex < numFrameLayouts */
 	uint numGlobals;	/* Number of pointers in globals array. */
  	ullong numLCs;
  	uint numMarkCompactGCs;
 	uint numMinorGCs;
 	uint numMinorsSinceLastMajor;
+	uint numObjectTypes; /* 0 <= typeIndex < numObjectTypes */
 	/* As long as the ratio of bytes live to nursery size is greater than
 	 * nurseryRatio, use minor GCs.
 	 */
@@ -316,9 +322,22 @@ typedef struct GC_state {
 	ullong *profileAllocCounts;	/* allocation profiling */
 	uint profileAllocIndex;
 	bool profileAllocIsOn;
-	uint *profileAllocLabels;
-	uint profileAllocNumLabels;
-	string profileInfo;
+	/* An array of strings identifying source positions. */
+	string *profileSources;
+	uint profileSourcesSize;
+	/* Each entry in profileFrameSources is an index into 
+	 * profileSourceSeq.
+	 */
+	int *profileFrameSources;
+	uint profileFrameSourcesSize;
+	struct GC_profileLabel *profileLabels;
+	uint profileLabelsSize;
+	/* Each entry in profileSourceSeqs is a vector, whose first element is
+         * a length, and subsequent elements index into profileSources.
+	 */
+	int **profileSourceSeqs;
+	uint profileSourceSeqsSize;
+	bool profileTimeIsOn;
 	W32 ram;		/* ramSlop * totalRam */
 	float ramSlop;
  	struct rusage ru_gc; /* total resource usage spent in gc */
@@ -357,6 +376,12 @@ typedef struct GC_state {
 	 * is done .
 	 */
 	bool summary; 
+	pointer textEnd;
+	/* An array of indices, one entry for each address in the text segment,
+	 * giving and index into profileSourceSeqs.
+	 */
+	uint *textSources;
+	pointer textStart;
 	pointer toSpace;	/* used during copying */
 	pointer toLimit;	/* used during copying */
 	uint totalRam;		/* bytes */
@@ -464,10 +489,10 @@ void GC_incProfileAlloc (GC_state s, W32 amount);
  *   intInfInits
  *   loadGlobals
  *   magic
- *   maxFrameIndex
  *   maxFrameSize
  *   maxObjectTypeIndex
  *   native
+ *   numFrameLayouts
  *   numGlobals
  *   objectTypes
  *   saveGlobals

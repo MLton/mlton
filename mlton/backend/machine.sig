@@ -110,6 +110,7 @@ signature MACHINE =
 	     | PrimApp of {args: Operand.t vector,
 			   dst: Operand.t option,
 			   prim: Prim.t}
+	     | ProfileLabel of ProfileLabel.t
 	     | SetExnStackLocal of {offset: int}
 	     | SetExnStackSlot of {offset: int}
 	     | SetSlotExnStack of {offset: int}
@@ -124,16 +125,9 @@ signature MACHINE =
 
       structure FrameInfo:
 	 sig
-	    datatype t =
-	       T of {(* Index into frameOffsets *)
-		     frameOffsetsIndex: int,
-		     func: string,
-		     (* Size of frame in bytes, including return address. *)
-		     size: int}
+	    datatype t = T of {frameLayoutsIndex: int}
 
-	    val bogus: t
 	    val layout: t -> Layout.t
-	    val size: t -> int
 	 end
 
       structure Transfer:
@@ -216,27 +210,44 @@ signature MACHINE =
 		     regMax: Runtime.Type.t -> int}
 	 end
 
+      structure ProfileInfo:
+	 sig
+	    datatype t =
+	       T of {(* For each frame, gives the index into sourceSeqs of the
+		      * source functions corresponding to the frame.
+		      *)
+	             frameSources: int vector,
+		     labels: {label: ProfileLabel.t,
+			      sourceSeqsIndex: int} vector,
+		     (* Each sourceSeq describes a sequence of source functions,
+		      * each given as an index into the source vector.
+		      *)
+		     sourceSeqs: int vector vector,
+		     sources: SourceInfo.t vector}
+	 end
+
       structure Program:
 	 sig
 	    datatype t =
 	       T of {chunks: Chunk.t list,
+		     frameLayouts: {frameOffsetsIndex: int,
+				    size: int} vector,
 		     (* Each vector in frame Offsets specifies the offsets
 		      * of live pointers in a stack frame.  A vector is referred
-		      * to by index as the frameOffsetsIndex in a block kind.
+		      * to by index as the offsetsIndex in frameLayouts.
 		      *)
 		     frameOffsets: int vector vector,
-		     funcSources: {func: string,
-				   sourceInfo: SourceInfo.t} vector,
 		     handlesSignals: bool,
 		     intInfs: (Global.t * string) list,
 		     main: {chunkLabel: ChunkLabel.t,
 			    label: Label.t},
 		     maxFrameSize: int,
 		     objectTypes: ObjectType.t vector,
-		     profileAllocLabels: string vector,
+		     profileInfo: ProfileInfo.t,
 		     reals: (Global.t * string) list,
 		     strings: (Global.t * string) list}
 
+	    val frameSize: t * FrameInfo.t -> int
 	    val layouts: t * (Layout.t -> unit) -> unit
 	    val typeCheck: t -> unit
 	 end

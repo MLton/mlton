@@ -20,16 +20,15 @@ struct
   end
 
   type transInfo = {addData : x86.Assembly.t list -> unit,
-		    frameLayouts: x86.Label.t ->
-		                  {size: int,
-				   frameLayoutsIndex: int} option,
+		    frameInfoToX86: (x86MLtonBasic.Machine.FrameInfo.t
+				     -> x86.FrameInfo.t),
 		    live: x86.Label.t -> x86.Operand.t list,
 		    liveInfo: x86Liveness.LiveInfo.t}
 
   fun prim {prim : Prim.t,
 	    args : (Operand.t * Size.t) vector,
 	    dst : (Operand.t * Size.t) option,
-	    transInfo as {addData, frameLayouts, live, liveInfo} : transInfo}
+	    transInfo as {live, liveInfo, ...} : transInfo}
     = let
 	val primName = Prim.toString prim
 	datatype z = datatype Prim.Name.t
@@ -1430,7 +1429,7 @@ struct
 	     dst : (Operand.t * Size.t),
 	     overflow : Label.t,
 	     success : Label.t,
-	     transInfo as {addData, frameLayouts, live, liveInfo, ...} : transInfo}
+	     transInfo as {live, liveInfo, ...} : transInfo}
     = let
 	val primName = Prim.toString prim
 	datatype z = datatype Prim.Name.t

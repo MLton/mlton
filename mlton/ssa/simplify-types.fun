@@ -517,7 +517,6 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
 		      Keep (ConApp {con = con,
 				    args = removeUselessVars args})
 		 | ConRep.Useless => Bugg)
-	  | Const _ => Keep e
 	  | PrimApp {prim, targs, args} =>
 	       Keep
 	       (let 
@@ -561,7 +560,6 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
 		      fn _ => Error.bug "newOffset")
 	       end
 	  | Tuple xs => Keep (tuple xs)
-	  | Var _ => Keep e
 	  | _ => Keep e
       val simplifyExp =
 	 Trace.trace ("SimplifyTypes.simplifyExp",
@@ -656,7 +654,11 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
 	    (* It is wrong to omit calling simplifyExp when var = NONE because
 	     * targs in a PrimApp may still need to be simplified.
 	     *)
-	    if not (Type.isUnit ty) orelse Exp.maySideEffect exp
+	    if not (Type.isUnit ty)
+	       orelse Exp.maySideEffect exp
+	       orelse (case exp of
+			  Profile _ => true
+			| _ => false)
 	       then
 		  (case simplifyExp exp of
 		      Bugg => Bugg
@@ -695,8 +697,7 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
 	 end
       fun simplifyFunction f =
 	 let
-	    val {args, name, raises, returns, sourceInfo, start, ...} =
-	       Function.dest f
+	    val {args, name, raises, returns, start, ...} = Function.dest f
 	     val args = simplifyFormals args
 	     val blocks = ref []
 	     val _ =
@@ -711,7 +712,6 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
 			  name = name,
 			  raises = raises,
 			  returns = returns,
-			  sourceInfo = sourceInfo,
 			  start = start}
 	 end
       val globals =

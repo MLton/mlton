@@ -25,6 +25,14 @@ signature RSSA_STRUCTS =
 	    val layout: t -> Layout.t
 	    val map: t * (Label.t -> Label.t) -> t
 	 end
+      structure ProfileStatement:
+	 sig
+	    datatype t =
+	       Enter of SourceInfo.t
+	     | Leave of SourceInfo.t
+
+	    val layout: t -> Layout.t
+	 end
       structure Return:
 	 sig
 	    datatype t =
@@ -91,7 +99,7 @@ signature RSSA =
 	    val word: word -> t
 	 end
       sharing Operand = Switch.Use
-      
+    
       structure Statement:
 	 sig
 	    datatype t =
@@ -110,6 +118,8 @@ signature RSSA =
 	     | PrimApp of {args: Operand.t vector,
 			   dst: (Var.t * Type.t) option,
 			   prim: Prim.t}
+	     | Profile of ProfileStatement.t
+	     | ProfileLabel of ProfileLabel.t
 	     | SetExnStackLocal
 	     | SetExnStackSlot
 	     | SetHandler of Label.t (* label must be of Handler kind. *)
@@ -182,6 +192,8 @@ signature RSSA =
 	     | CReturn of {func: CFunction.t}
 	     | Handler
 	     | Jump
+
+	    val isFrame: t -> bool
 	 end
 
       structure Block:
@@ -214,7 +226,6 @@ signature RSSA =
 			    name: Func.t,
 			    raises: Type.t vector option,
 			    returns: Type.t vector option,
-			    sourceInfo: SourceInfo.t,
 			    start: Label.t}
 	    (* dfs (f, v) visits the blocks in depth-first order, applying v b
 	     * for block b to yield v', then visiting b's descendents,
@@ -227,7 +238,6 @@ signature RSSA =
 		      name: Func.t,
 		      raises: Type.t vector option,
 		      returns: Type.t vector option,
-		      sourceInfo: SourceInfo.t,
 		      start: Label.t} -> t
 	    val start: t -> Label.t
 	 end
@@ -237,8 +247,7 @@ signature RSSA =
 	    datatype t =
 	       T of {functions: Function.t list,
 		     main: Function.t,
-		     objectTypes: ObjectType.t vector,
-		     profileAllocLabels: string vector}
+		     objectTypes: ObjectType.t vector}
 
 	    val clear: t -> unit
 	    val handlesSignals: t -> bool

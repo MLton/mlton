@@ -25,7 +25,6 @@ signature C_CODEGEN =
 		   } -> unit
       val outputDeclarations: {additionalMainArgs: string list,
 			       includes: string list,
-			       maxFrameIndex: int,
 			       name: string,
 			       print: string -> unit,
 			       program: Machine.Program.t,

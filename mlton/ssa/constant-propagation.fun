@@ -892,15 +892,13 @@ fun simplify (program: Program.t): Program.t =
 		  transfer = doitTransfer transfer}
       fun doitFunction f =
 	 let
-	    val {args, blocks, name, returns, raises, sourceInfo, start} =
-	       Function.dest f
+	    val {args, blocks, name, raises, returns, start} = Function.dest f
 	 in
 	    Function.new {args = args,
 			  blocks = Vector.map (blocks, doitBlock),
 			  name = name,
-			  returns = returns,
 			  raises = raises,
-			  sourceInfo = sourceInfo,
+			  returns = returns,
 			  start = start}
 	 end
       val functions = List.revMap (functions, doitFunction)

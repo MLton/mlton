@@ -23,12 +23,17 @@ structure Size =
       val defaultExpSize : Exp.t -> int = 
 	 fn ConApp {args, ...} => 1 + Vector.length args
 	  | Const _ => 0
+	  | HandlerPop _ => 0
+	  | HandlerPush _ => 0
 	  | PrimApp {args, ...} => 1 + Vector.length args
+	  | Profile _ => 0
 	  | Select _ => 1 + 1
+	  | SetExnStackLocal => 0
+	  | SetExnStackSlot => 0
+	  | SetHandler _ => 0
+	  | SetSlotExnStack => 0
 	  | Tuple xs => 1 + Vector.length xs
 	  | Var _ => 0
-	  (* Handler* / Set* *)
-	  | _ => 0
       fun expSize (size, max) (doExp, doTransfer) exp =
 	 let
 	    val size' = doExp exp
@@ -503,8 +508,7 @@ fun inline (program as Program.T {datatypes, globals, functions, main}) =
 	 List.fold
 	 (functions, [], fn (f, ac) =>
 	  let
-	     val {args, blocks, name, raises, returns, sourceInfo, start} =
-		Function.dest f
+	     val {args, blocks, name, raises, returns, start} = Function.dest f
 	  in
 	     if Func.equals (name, main)
 	        orelse not (shouldInline name)
@@ -516,7 +520,6 @@ fun inline (program as Program.T {datatypes, globals, functions, main}) =
 					      name = name,
 					      raises = raises,
 					      returns = returns,
-					      sourceInfo = sourceInfo,
 					      start = start})
 			:: ac
 		     end

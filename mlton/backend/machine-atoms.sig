@@ -112,6 +112,16 @@ signature MACHINE_ATOMS =
 	    val wordVector: t
 	 end
 
+      structure ProfileLabel:
+	 sig
+	    type t
+
+	    val equals: t * t -> bool
+	    val layout: t -> Layout.t
+	    val new: unit -> t
+	    val toString: t -> string
+	 end
+
       val castIsOk: {from: Type.t,
 		     fromInt: int option,
 		     to: Type.t,

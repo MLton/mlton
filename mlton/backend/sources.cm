@@ -45,8 +45,8 @@ mtype.fun
 mtype.sig
 parallel-move.fun
 parallel-move.sig
-profile-alloc.fun
-profile-alloc.sig
+profile.fun
+profile.sig
 representation.fun
 representation.sig
 rssa.fun

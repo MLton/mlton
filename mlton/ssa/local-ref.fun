@@ -234,8 +234,8 @@ fun eliminate (program: Program.t): Program.t
 	   if funcIsMultiUsed (Function.name f)
 	     then (f::functions,globals)
 	     else let
-		    val {args, blocks, name, raises, returns, sourceInfo, start}
-		      = Function.dest f
+		    val {args, blocks, name, raises, returns, start} =
+		       Function.dest f
 
 		    val (globals, locals)
 		      = List.fold
@@ -276,7 +276,6 @@ fun eliminate (program: Program.t): Program.t
 						   name = name,
 						   raises = raises,
 						   returns = returns,
-						   sourceInfo = sourceInfo,
 						   start = localsLabel}
 				   end
 		  in
@@ -306,8 +305,7 @@ fun eliminate (program: Program.t): Program.t
 	= List.revMap
 	  (functions, fn f =>
 	   let
-	     val {args, blocks, name, raises, returns, sourceInfo, start} =
-		Function.dest f
+	     val {args, blocks, name, raises, returns, start} = Function.dest f
 
 	     (* Find all localizable refs. *)
 	     val refs = ref []
@@ -526,7 +524,6 @@ fun eliminate (program: Program.t): Program.t
 				   name = name,
 				   raises = raises,
 				   returns = returns,
-				   sourceInfo = sourceInfo,
 				   start = start}
 	     val f = restore f
 	     val f = shrink f

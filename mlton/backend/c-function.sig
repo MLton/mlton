@@ -47,6 +47,7 @@ signature C_FUNCTION =
       val modifiesStackTop: t -> bool
       val name: t -> string
       val needsProfileAllocIndex: t -> bool
+      val profileAllocInc: t
       val returnTy: t -> Type.t option
       val size: t
       val vanilla: {name: string, returnTy: Type.t option} -> t

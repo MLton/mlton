@@ -22,11 +22,11 @@ signature X86_MLTON =
     sharing x86 = x86MLtonBasic.x86
     sharing x86 = x86Liveness.x86
     sharing x86.Label = Machine.Label
+    sharing Machine = x86MLtonBasic.Machine
 
     type transInfo = {addData : x86.Assembly.t list -> unit,
-		      frameLayouts: x86.Label.t ->
-		                    {size: int,
-				     frameLayoutsIndex: int} option,
+		      frameInfoToX86: (x86MLtonBasic.Machine.FrameInfo.t
+				       -> x86.FrameInfo.t),
 		      live: x86.Label.t -> x86.Operand.t list,
 		      liveInfo: x86Liveness.LiveInfo.t}
 

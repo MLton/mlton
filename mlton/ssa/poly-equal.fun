@@ -102,6 +102,10 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 	   destroy = destroyType} =
 	 Property.destGetSet (Type.plist, Property.initConst NONE)
       val returns = SOME (Vector.new1 Type.bool)
+      fun newFunction z =
+	 List.push (newFunctions,
+		    Function.profile (shrink (Function.new z),
+				      SourceInfo.polyEqual))
       fun equalFunc (tycon: Tycon.t): Func.t =
 	 case getEqualFunc tycon of
 	    SOME f => f
@@ -109,74 +113,68 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 	       let
 		  val name = Func.newString ("equal_" ^ Tycon.originalName tycon)
 		  val _ = setEqualFunc (tycon, SOME name)
-		  local
-		     val ty = Type.con (tycon, Vector.new0 ())
-		     val arg1 = (Var.newNoname (), ty)
-		     val arg2 = (Var.newNoname (), ty)
-		     val args = Vector.new2 (arg1, arg2)
-		     val darg1 = Dexp.var arg1
-		     val darg2 = Dexp.var arg2
-		     val cons = tyconCons tycon
-		     val body =
-			Dexp.disjoin
-			(Dexp.eq (Dexp.var arg1, Dexp.var arg2, ty),
-			 Dexp.casee
-			 {test = darg1,
-			  ty = Type.bool,
-			  default = (if Vector.exists (cons, fn {args, ...} =>
-						       0 = Vector.length args)
-					then SOME Dexp.falsee
-				     else NONE),
-			  cases =
-			  Dexp.Con
-			  (Vector.keepAllMap
-			   (cons, fn {con, args} =>
-			    if 0 = Vector.length args
-			       then NONE
-			    else
-			       let
-				  fun makeArgs () =
-				     Vector.map (args, fn ty =>
-						 (Var.newNoname (), ty))
-				  val xs = makeArgs ()
-				  val ys = makeArgs ()
-			       in
-				  SOME
-				  {con = con,
-				   args = xs,
-				   body = 
-				   Dexp.casee
-				   {test = darg2,
-				    ty = Type.bool,
-				    default = if 1 = Vector.length cons
-						 then NONE
-					      else SOME Dexp.falsee,
-				    cases =
-				    Dexp.Con
-				    (Vector.new1
-				     {con = con,
-				      args = ys,
-				      body =
-				      Vector.fold2
-				      (xs, ys, Dexp.truee,
-				       fn ((x, ty), (y, _), de) =>
-				       Dexp.conjoin (de, equal (x, y, ty)))})}}
-			       end))})
-		     val (start, blocks) =
-			Dexp.linearize (body, Handler.CallerHandler)
-		     val blocks = Vector.fromList blocks
-		  in
-		     val _ = List.push
-		             (newFunctions,
-			      shrink (Function.new
-				      {args = args,
-				       blocks = blocks,
-				       name = name,
-				       raises = NONE,
-				       returns = returns,
-				       sourceInfo = SourceInfo.polyEqual,
-				       start = start}))
-		  end
+		  val ty = Type.con (tycon, Vector.new0 ())
+		  val arg1 = (Var.newNoname (), ty)
+		  val arg2 = (Var.newNoname (), ty)
+		  val args = Vector.new2 (arg1, arg2)
+		  val darg1 = Dexp.var arg1
+		  val darg2 = Dexp.var arg2
+		  val cons = tyconCons tycon
+		  val body =
+		     Dexp.disjoin
+		     (Dexp.eq (Dexp.var arg1, Dexp.var arg2, ty),
+		      Dexp.casee
+		      {test = darg1,
+		       ty = Type.bool,
+		       default = (if Vector.exists (cons, fn {args, ...} =>
+						    0 = Vector.length args)
+				     then SOME Dexp.falsee
+				  else NONE),
+		       cases =
+		       Dexp.Con
+		       (Vector.keepAllMap
+			(cons, fn {con, args} =>
+			 if 0 = Vector.length args
+			    then NONE
+			 else
+			    let
+			       fun makeArgs () =
+				  Vector.map (args, fn ty =>
+					      (Var.newNoname (), ty))
+			       val xs = makeArgs ()
+			       val ys = makeArgs ()
+			    in
+			       SOME
+			       {con = con,
+				args = xs,
+				body = 
+				Dexp.casee
+				{test = darg2,
+				 ty = Type.bool,
+				 default = if 1 = Vector.length cons
+					      then NONE
+					   else SOME Dexp.falsee,
+					      cases =
+					      Dexp.Con
+					      (Vector.new1
+					       {con = con,
+						args = ys,
+						body =
+						Vector.fold2
+						(xs, ys, Dexp.truee,
+						 fn ((x, ty), (y, _), de) =>
+						 Dexp.conjoin (de, equal (x, y, ty)))})}}
+			    end))})
+		  val (start, blocks) =
+		     Dexp.linearize (body, Handler.CallerHandler)
+		  val blocks = Vector.fromList blocks
+		  val _ =
+		     newFunction {args = args,
+				  blocks = blocks,
+				  name = name,
+				  raises = NONE,
+				  returns = returns,
+				  start = start}
 	       in
 		  name
 	       end
@@ -220,16 +218,13 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 			Dexp.linearize (body, Handler.CallerHandler)
 		     val blocks = Vector.fromList blocks
 		  in
-		     val _ = List.push
-		             (newFunctions,
-			      shrink (Function.new
-				      {args = args,
-				       blocks = blocks,
-				       name = name,
-				       raises = NONE,
-				       returns = returns,
-				       sourceInfo = SourceInfo.polyEqual,
-				       start = start}))
+		     val _ =
+			newFunction {args = args,
+				     blocks = blocks,
+				     name = name,
+				     raises = NONE,
+				     returns = returns,
+				     start = start}
 		  end
 		  local
 		     val i = (Var.newNoname (), Type.int)
@@ -264,16 +259,13 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 			Dexp.linearize (body, Handler.CallerHandler)
 		     val blocks = Vector.fromList blocks
 		  in
-		     val _ = List.push
-		             (newFunctions,
-			      shrink (Function.new
-				      {args = args,
-				       blocks = blocks,
-				       name = loop,
-				       raises = NONE,
-				       returns = returns,
-				       sourceInfo = SourceInfo.polyEqual,
-				       start = start}))
+		     val _ =
+			newFunction {args = args,
+				     blocks = blocks,
+				     name = loop,
+				     raises = NONE,
+				     returns = returns,
+				     start = start}
 		  end
 	       in
 		  name
@@ -415,7 +407,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 	 List.revMap 
 	 (functions, fn f =>
 	  let
-	     val {args, blocks, name, raises, returns, sourceInfo, start} =
+	     val {args, blocks, name, raises, returns, start} =
 		Function.dest f
 	  in
 	     shrink (Function.new {args = args,
@@ -423,7 +415,6 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 				   name = name,
 				   raises = raises,
 				   returns = returns,
-				   sourceInfo = sourceInfo,
 				   start = start})
 	  end)
       val program =

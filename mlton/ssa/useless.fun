@@ -805,6 +805,7 @@ fun useless (program: Program.t): Program.t =
 				end
 			then yes ty
 		     else NONE
+		| Profile _ => yes ty
 		| _ => NONE
 	 end
       val doitStatement =
@@ -975,8 +976,7 @@ fun useless (program: Program.t): Program.t =
 	 doitBlock
       fun doitFunction f =
 	 let
-	    val {args, blocks, name, raises, returns, sourceInfo, start} =
-	       Function.dest f
+	    val {args, blocks, name, raises, returns, start} = Function.dest f
 	    val {args = argsvs, returns = returnvs, raises = raisevs, ...} =
 	       func name
 	    val args = keepUsefulArgs args
@@ -996,7 +996,6 @@ fun useless (program: Program.t): Program.t =
 			  name = name,
 			  raises = raises,
 			  returns = returns,
-			  sourceInfo = sourceInfo,
 			  start = start}
 	 end
       val datatypes =
