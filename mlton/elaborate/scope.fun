@@ -510,7 +510,6 @@ fun scope (dec: Dec.t): Dec.t =
 			   initDown = Env.empty,
 			   initUp = Tyvars.empty,
 			   tyvar = tyvar})
-      val _ = Control.checkForErrors "elaborate"
    in
       if Tyvars.isEmpty unguarded
 	 then
