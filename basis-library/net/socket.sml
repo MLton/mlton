@@ -368,8 +368,47 @@ structure Socket : SOCKET_EXTRA =
       fun shutdown (S s, m) =
 	PE.checkResult
 	(Prim.shutdown (s, shutdownModeToHow m))
-      fun pollDesc sock = 
-	Option.valOf (OS.IO.pollDesc (sockToFD sock))
+      type sock_desc = OS.IO.iodesc
+      fun sockDesc sock = PFS.fdToIOD (sockToFD sock)
+      fun sameDesc (desc1, desc2) =
+	 OS.IO.compare (desc1, desc2) = EQUAL
+      fun select {rds: sock_desc list, 
+		  wrs: sock_desc list, 
+		  exs: sock_desc list, 
+		  timeout: Time.time option} =
+	 let
+	    fun mk poll (sd,pds) =
+	       let
+		  val pd = Option.valOf (OS.IO.pollDesc sd)
+		  val pd = poll pd
+	       in
+		  pd::pds
+	       end
+	    val pds =
+	       (List.foldr (mk OS.IO.pollIn)
+		(List.foldr (mk OS.IO.pollOut)
+		 (List.foldr (mk OS.IO.pollPri)
+		  [] exs) wrs) rds)
+	    val pis = OS.IO.poll (pds, timeout)
+	    val {rds, wrs, exs} =
+	       List.foldr
+	       (fn (pi,{rds,wrs,exs}) =>
+		let
+		   fun mk (is,l) =
+		      if is pi
+			 then (OS.IO.pollToIODesc (OS.IO.infoToPollDesc pi))::l
+			 else l
+		in
+		   {rds = mk (OS.IO.isIn, rds),
+		    wrs = mk (OS.IO.isOut, wrs),
+		    exs = mk (OS.IO.isPri, exs)}
+		end) 
+	       {rds = [], wrs = [], exs = []}
+	       pis
+	 in
+	    {rds = rds, wrs = wrs, exs = exs}
+	 end
+      val ioDesc = sockDesc
  
       type 'a buf = {buf : 'a, i : int, sz : int option}
 

@@ -65,7 +65,17 @@ signature SOCKET =
       | NO_SENDS
       | NO_RECVS_OR_SENDS
      val shutdown: ('af, 'sock_type stream) sock * shutdown_mode -> unit
-     val pollDesc: ('af, 'sock_type) sock -> OS.IO.poll_desc
+     type sock_desc
+     val sockDesc : ('af, 'sock_type) sock -> sock_desc
+     val sameDesc : sock_desc * sock_desc -> bool
+     val select : {rds : sock_desc list,
+		   wrs : sock_desc list,
+		   exs : sock_desc list,
+		   timeout : Time.time option} -> 
+	          {rds : sock_desc list,
+		   wrs : sock_desc list,
+		   exs : sock_desc list}
+     val ioDesc : ('af, 'sock_type) sock -> OS.IO.iodesc
      type out_flags = {don't_route : bool, oob : bool}
      type in_flags = {peek : bool, oob : bool}
      type 'a buf = {buf : 'a, i : int, sz : int option}
