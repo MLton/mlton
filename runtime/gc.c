@@ -1290,37 +1290,13 @@ static bool mutatorInvariant (GC_state s, bool frontier, bool stack) {
 }
 #endif /* #if ASSERT */
 
-/* The purpose of blocking signals in GC is to prevent GC_handler from running,
- * which would muck with s->limit.  However, if the program doesn't handle 
- * signals, we don't need to block them.  This can be tested via the weak symbol
- * Posix_Signal_handle.
- */
-#if SUPPORTS_WEAK
-void Posix_Signal_handle () __attribute__ ((weak)); 
-#else
-void Posix_Signal_handle ();
-#endif
-static inline bool shouldBlockSignals () {
-	return 0 != Posix_Signal_handle;
-}
-
-static inline void blockSignals (GC_state s) {
-	if (shouldBlockSignals ())
-		sigprocmask (SIG_BLOCK, &s->signalsHandled, NULL);
-}
-
-static inline void unblockSignals (GC_state s) {
-	if (shouldBlockSignals ())
-		sigprocmask (SIG_SETMASK, &s->signalsBlocked, NULL);
-}
-
 /* ---------------------------------------------------------------- */
 /*                         enter and leave                          */
 /* ---------------------------------------------------------------- */
 
 /* enter and leave should be called at the start and end of every GC function
- * that is exported to the outside world.  They make sure that signals are
- * blocked for the duration of the function and check the GC invariant
+ * that is exported to the outside world.  They make sure that the function
+ * is run in a critical section and check the GC invariant.
  * They are a bit tricky because of the case when the runtime system is invoked
  * from within an ML signal handler.
  */
@@ -1332,8 +1308,8 @@ void enter (GC_state s) {
 	s->currentThread->exnStack = s->exnStack;
 	if (DEBUG) 
 		GC_display (s, stderr);
+	s->canHandle++;
 	unless (s->inSignalHandler) {
-		blockSignals (s);
 		if (0 == s->limit)
 			s->limit = s->limitPlusSlop - LIMIT_SLOP;
 	}
@@ -1349,10 +1325,9 @@ void leave (GC_state s) {
 	 * for functions that don't ensureBytesFree.
 	 */
 	assert (mutatorInvariant (s, FALSE, TRUE));
-	if (s->canHandle == 0 and s->signalIsPending)
+	if (s->canHandle == 1 and s->signalIsPending)
 		s->limit = 0;
-	unless (s->inSignalHandler)
-		unblockSignals (s);
+	s->canHandle--;
 	if (DEBUG)
 		fprintf (stderr, "leave ok\n");
 }
@@ -3106,16 +3081,18 @@ static void startHandler (GC_state s) {
 		fprintf (stderr, "switching to signal handler\n");
 		GC_display (s, stderr);
 	}
-	assert (s->canHandle == 0);
+	assert (s->canHandle == 1);
 	assert (s->signalIsPending);
 	s->signalIsPending = FALSE;
 	s->inSignalHandler = TRUE;
 	s->savedThread = s->currentThread;
-	/* Set s->canHandle to 1 when switching to the signal handler thread, 
-	 * which will then run atomically and will finish by switching to 
-	 * the thread to continue with, which will decrement s->canHandle to 0.
+	/* Set s->canHandle to 2 when switching to the signal handler thread;
+	 * leaving the runtime will decrement s->canHandle to 1,
+         * the signal handler will then run atomically and will finish by
+         * switching to the thread to continue with, which will decrement
+	 * s->canHandle to 0.
  	 */
-	s->canHandle = 1;
+	s->canHandle = 2;
 }
 
 void GC_switchToThread (GC_state s, GC_thread t, uint ensureBytesFree) {
@@ -3131,7 +3108,7 @@ void GC_switchToThread (GC_state s, GC_thread t, uint ensureBytesFree) {
 		s->currentThread->bytesNeeded = ensureBytesFree;
 		switchToThread (s, t);
 		s->canHandle--;
-		if (s->canHandle == 0 and s->signalIsPending) {
+		if (s->canHandle == 1 and s->signalIsPending) {
 			startHandler (s);
 			switchToThread (s, s->signalHandler);
 		}
@@ -3143,8 +3120,8 @@ void GC_switchToThread (GC_state s, GC_thread t, uint ensureBytesFree) {
 		/* BEGIN: enter(s); */
 		s->currentThread->stack->used = currentStackUsed (s);
 		s->currentThread->exnStack = s->exnStack;
+		s->canHandle++;
 		unless (s->inSignalHandler) {
-			blockSignals (s);
 			if (0 == s->limit)
 				s->limit = s->limitPlusSlop - LIMIT_SLOP;
 		}
@@ -3152,7 +3129,7 @@ void GC_switchToThread (GC_state s, GC_thread t, uint ensureBytesFree) {
 		s->currentThread->bytesNeeded = ensureBytesFree;
 		switchToThread (s, t);
 		s->canHandle--;
-		if (s->canHandle == 0 and s->signalIsPending) {
+		if (s->canHandle == 1 and s->signalIsPending) {
 			startHandler (s);
 			switchToThread (s, s->signalHandler);
 		}
@@ -3166,8 +3143,7 @@ void GC_switchToThread (GC_state s, GC_thread t, uint ensureBytesFree) {
 		/* END: ensureMutatorInvariant */
 		else {
 		/* BEGIN: leave(s); */
-		unless (s->inSignalHandler)
-			unblockSignals (s);
+		s->canHandle--;
 		/* END: leave(s); */
 		}
 	}
@@ -3178,15 +3154,15 @@ void GC_switchToThread (GC_state s, GC_thread t, uint ensureBytesFree) {
 /* GC_startHandler does not do an enter()/leave(), even though it is exported.
  * The basis library uses it via _ffi, not _prim, and so does not treat it as a
  * runtime call -- so the invariant in enter would fail miserably. It simulates
- * the relevant part of enter() by blocking signals and resetting the limit.
- * The leave() wouldn't do anything upon exit because we are in a signal
- * handler.
+ * the relevant part of enter() by incrementing s->canHandle and resetting the 
+ * limit; it simulates the leave by decrementing s->canHandle.
  */
 void GC_startHandler (GC_state s) {
-	blockSignals (s);
+	s->canHandle++;
 	if (0 == s->limit)
 		s->limit = s->limitPlusSlop - LIMIT_SLOP;
 	startHandler (s);
+	s->canHandle--;
 }
 
 void GC_gc (GC_state s, uint bytesRequested, bool force,
@@ -3200,7 +3176,7 @@ void GC_gc (GC_state s, uint bytesRequested, bool force,
 	if (0 == bytesRequested)
 		bytesRequested = LIMIT_SLOP;
 	s->currentThread->bytesNeeded = bytesRequested;
-	if (s->canHandle == 0 and s->signalIsPending) {
+	if (s->canHandle == 1 and s->signalIsPending) {
 		startHandler(s);
 		switchToThread (s, s->signalHandler);
 	}
@@ -4595,9 +4571,6 @@ void GC_finishHandler (GC_state s) {
 		fprintf (stderr, "GC_finishHandler ()\n");
 	assert (s->canHandle == 1);
 	s->inSignalHandler = FALSE;	
-	sigemptyset (&s->signalsPending);
-	s->gcSignalIsPending = FALSE;
-	unblockSignals (s);
 }
 
 /* GC_handler sets s->limit = 0 so that the next limit check will fail. 

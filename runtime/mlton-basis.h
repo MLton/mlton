@@ -200,6 +200,7 @@ int String_equal (char * s1, char * s2);
 
 Thread Thread_current ();
 void Thread_finishHandler ();
+void Thread_resetSignals ();
 Thread Thread_saved ();
 void Thread_setHandler (Thread t);
 void Thread_startHandler ();

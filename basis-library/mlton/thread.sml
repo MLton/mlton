@@ -224,7 +224,7 @@ local
    val state: state ref = ref Normal
 in
    fun amInSignalHandler () = InHandler = !state
-   
+
    fun setHandler (f: unit t -> unit t): unit =
       let
 	 val _ = Primitive.installSignalHandler ()

@@ -556,6 +556,10 @@ void GC_display (GC_state s, FILE *stream);
  */
 void GC_done (GC_state s);
 
+/* GC_resetSignals should be called by the mutator signal handler thread when
+ * it is fetching the pending signals.
+ */
+void GC_resetSignals (GC_state s);
 
 /* GC_finishHandler should be called by the mutator signal handler thread when
  * it is done handling the signal.

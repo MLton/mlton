@@ -180,6 +180,7 @@ OBJS =						\
 	Posix/Process/waitpid.o			\
 	Posix/Signal/Signal.o			\
 	Posix/Signal/isPending.o		\
+	Posix/Signal/resetPending.o		\
 	Posix/SysDB/Group.o			\
 	Posix/SysDB/Passwd.o			\
 	Posix/TTY/Termios.o			\
@@ -345,6 +346,7 @@ DEBUG_OBJS =					\
 	Posix/Process/waitpid-gdb.o		\
 	Posix/Signal/Signal-gdb.o		\
 	Posix/Signal/isPending-gdb.o		\
+	Posix/Signal/resetPending-gdb.o		\
 	Posix/SysDB/Group-gdb.o			\
 	Posix/SysDB/Passwd-gdb.o		\
 	Posix/TTY/Termios-gdb.o			\

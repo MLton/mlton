@@ -89,11 +89,8 @@ Int Posix_Signal_sigismember (Int signum) {
 	return sigismember (&set, signum);
 }
 
-Int Posix_Signal_sigprocmask () {
-	gcState.signalsBlocked = set;
-	if (gcState.inSignalHandler)
-		return 0;
-	return sigprocmask (SIG_SETMASK, &set, (sigset_t*)NULL);
+Int Posix_Signal_sigprocmask (Int how) {
+	return sigprocmask (how, &set, &set);
 }
 
 void Posix_Signal_suspend () {
