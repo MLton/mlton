@@ -565,11 +565,11 @@ fun output {program as Machine.Program.T {chunks,
 	 !Control.align = Control.Align4
 	 andalso !Control.hostArch = Control.Sparc
       fun addr z = concat ["&(", z, ")"]
-      fun realFetch z = concat ["Real_fetch(", addr z, ")"]
+      fun realFetch z = concat ["Real64_fetch(", addr z, ")"]
       fun realMove {dst, src} =
-	 concat ["Real_move(", addr dst, ", ", addr src, ");\n"]
+	 concat ["Real64_move(", addr dst, ", ", addr src, ");\n"]
       fun realStore {dst, src} =
-	 concat ["Real_store(", addr dst, ", ", src, ");\n"]
+	 concat ["Real64_store(", addr dst, ", ", src, ");\n"]
       fun move {dst: string, dstIsMem: bool,
 		src: string, srcIsMem: bool,
 		ty: Type.t}: string =

@@ -1,5 +1,9 @@
 Here are the changes since version 20030716.
 
+* 2003-08-21
+  - Fixed bug in C codegen that would cause undefined references to
+    Real_{fetch,move,store} when compiling on Sparcs with -align 4.
+
 * 2003-08-17
   - Eliminated -link and -lib-search, which are no longer needed.
     Eliminated support for passing -l*, -L*, and *.a on the command
