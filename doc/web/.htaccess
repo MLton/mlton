@@ -5,8 +5,8 @@ Options FollowSymLinks Indexes
 Redirect permanent /MLton http://www.mlton.org/
 
 # ViewCVS
-Redirect permanent /cvs http://cvs.mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton
-Redirect permanent /cvs/ http://cvs.mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton
+Redirect /cvs http://cvs.mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton
+Redirect /cvs/ http://cvs.mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton
 
 # Moved on 2003-07-07
 Redirect permanent /download.html http://www.mlton.org/download/index.html
