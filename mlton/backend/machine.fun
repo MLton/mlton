@@ -814,7 +814,7 @@ structure Program =
 			  else NONE
 		     | _ => NONE)
 	 end
-      
+
       fun typeCheck (program as
 		     T {chunks, frameLayouts, frameOffsets, intInfs, main,
 			maxFrameSize, objectTypes,
@@ -970,6 +970,33 @@ structure Program =
 		      | StackOffset {offset, ty, ...} =>
 			   offset + Type.size ty <= maxFrameSize
 			   andalso Alloc.doesDefine (alloc, x)
+			   andalso (case ty of
+				       Type.Label l =>
+					  let
+					     val Block.T {kind, ...} =
+						labelBlock l
+					     fun doit fi =
+						let
+						   val {size, ...} =
+						      getFrameInfo fi
+						in
+						   size
+						   = offset + Runtime.labelSize
+						end
+					  in
+					     case kind of
+						Kind.Cont {frameInfo, ...} =>
+						   doit frameInfo
+					      | Kind.CReturn {frameInfo, ...} =>
+						   (case frameInfo of
+						       NONE => true
+						     | SOME fi => doit fi)
+					      | Kind.Func => true
+					      | Kind.Handler {frameInfo, ...} =>
+						   doit frameInfo
+					      | Kind.Jump => true
+					  end
+				     | _ => true)
 		      | Word _ => true
 	       in
 		  Err.check ("operand", ok, fn () => Operand.layout x)

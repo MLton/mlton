@@ -289,12 +289,9 @@ structure Allocation:
 
 structure Info =
    struct
-      type t = {
-		live: Operand.t vector,
+      type t = {live: Operand.t vector,
 		liveNoFormals: Operand.t vector,
-		size: int,
-		adjustSize: int -> {size: int, shift: int}
-		}
+		size: int}
 
       fun layout ({live, liveNoFormals, size, ...}: t) =
 	 Layout.record
@@ -380,18 +377,21 @@ fun allocate {argOperands,
 		   Kind.Cont _ => Vector.foreach (args, forceStack o #1)
 		 | _ => ()
 	     val _ =
-		Vector.foreach
-		(statements, fn s =>
-		 let
-		    datatype z = datatype R.Statement.t
-		 in
-		    case s of
-		       SetHandler h => hasHandler := true
-		     | SetExnStackLocal => hasHandler := true
-		     | SetExnStackSlot => hasHandler := true
-		     | SetSlotExnStack => hasHandler := true
-		     | _ => ()
-		 end)
+		if not (!hasHandler)
+		   andalso (Vector.exists
+			    (statements, fn s =>
+			     let
+				datatype z = datatype R.Statement.t
+			     in
+				case s of
+				   SetHandler h => true
+				 | SetExnStackLocal => true
+				 | SetExnStackSlot => true
+				 | SetSlotExnStack => true
+				 | _ => false
+			     end))
+		   then hasHandler := true
+		else ()
 	  in
 	     ()
 	  end)
@@ -518,13 +518,22 @@ fun allocate {argOperands,
 		      :: stackInit
 	     val a = Allocation.new (stackInit, registersInit)
 	     val size =
-		Runtime.labelSize
-		+ (case kind of
-		      Kind.Handler =>
-			 (case handlerLinkOffset of
-			     NONE => Error.bug "Handler with no handler offset"
-			   | SOME {handler, ...} => handler)
-		    | _ => Runtime.wordAlignInt (Allocation.stackSize a))
+		case kind of
+		   Kind.Handler =>
+		      (case handlerLinkOffset of
+			  NONE => Error.bug "Handler with no handler offset"
+			| SOME {handler, ...} =>
+			     Runtime.labelSize + handler)
+		 | _ =>
+		      let
+			 val size =
+			    Runtime.labelSize
+			    + Runtime.wordAlignInt (Allocation.stackSize a)
+		      in
+			 case !Control.align of
+			    Control.Align4 => size
+			  | Control.Align8 => Runtime.Type.align8 size
+		      end
 	     val a =
 		Vector.fold (args, a, fn ((x, _), a) =>
 			     allocateVar (x, SOME label, false, a))
@@ -537,12 +546,10 @@ fun allocate {argOperands,
 		Vector.fold (statements, a, fn (statement, a) =>
 			     R.Statement.foldDef (statement, a, one))
 	     val a = R.Transfer.foldDef (transfer, a, one)
-	     fun adjustSize _ = Error.unimplemented "adjustSize"
 	     val _ =
 		setLabelInfo (label, {live = addHS live,
 				      liveNoFormals = addHS liveNoFormals,
-				      size = size,
-				      adjustSize = adjustSize})
+				      size = size})
 	  in
 	     fn () => ()
 	  end)

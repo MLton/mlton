@@ -54,7 +54,8 @@ extern pointer globalpointerNonRoot[];
 		LoadArray (globaluint, file);		\
 	}
 
-#define Initialize(cs, mg, mfs, mlw, mmc, ps)				\
+#define Initialize(al, cs, mg, mfs, mlw, mmc, ps)			\
+	gcState.alignment = al;						\
 	gcState.cardSizeLog2 = cs;					\
 	gcState.frameLayouts = frameLayouts;				\
 	gcState.frameLayoutsSize = cardof(frameLayouts); 		\

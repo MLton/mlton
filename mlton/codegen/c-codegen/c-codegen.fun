@@ -138,7 +138,10 @@ fun outputIncludes (includes, print) =
 				     print i;
 				     print ">\n"))
     ; print "\n")
-   
+
+fun declareProfileLabel (l, print) =
+   C.call ("DeclareProfileLabel", [ProfileLabel.toString l], print)
+
 fun outputDeclarations
    {additionalMainArgs: string list,
     includes: string list,
@@ -146,9 +149,7 @@ fun outputDeclarations
     print: string -> unit,
     program = (Program.T
 	       {chunks, frameLayouts, frameOffsets, intInfs, maxFrameSize,
-		objectTypes,
-		profileInfo,
-		reals, strings, ...}),
+		objectTypes, profileInfo, reals, strings, ...}),
     rest: unit -> unit
     }: unit =
    let
@@ -227,22 +228,27 @@ fun outputDeclarations
 		 | Stack =>
 		      (2, 0, 0)
 		 | Weak =>
-		      (3, 1, 1)
+		      (3, 2, 1)
 		 | WeakGone =>
-		      (3, 2, 0)
+		      (3, 3, 0)
 	  in
-	     concat ["{ ", Int.toString tag, ", ",
-		     Int.toString nonPointers, ", ",
-		     Int.toString pointers, " }"]
+	     concat ["{ ", C.int tag, ", ",
+		     C.int nonPointers, ", ",
+		     C.int pointers, " }"]
 	  end)
       fun declareMain () =
 	 let
+	    val align =
+	       case !Control.align of
+		  Control.Align4 => 4
+		| Control.Align8 => 8
 	    val magic = C.word (case Random.useed () of
 				   NONE => String.hash (!Control.inputFile)
 				 | SOME w => w)
 	 in 
 	    C.callNoSemi ("Main",
-			  [C.int (!Control.cardSizeLog2),
+			  [C.int align,
+			   C.int (!Control.cardSizeLog2),
 			   magic,
 			   C.int maxFrameSize,
 			   C.bool (!Control.mayLoadWorld),
@@ -255,13 +261,11 @@ fun outputDeclarations
       fun declareProfileInfo () =
 	 let
 	    val ProfileInfo.T {frameSources, labels, sourceSeqs,
-			       sourceSuccessors, sources} =
+			       sourceSuccessors, sources, ...} =
 	       profileInfo
 	 in
 	    Vector.foreach (labels, fn {label, ...} =>
-			    C.call ("DeclareProfileLabel",
-				    [ProfileLabel.toString label],
-				    print))
+			    declareProfileLabel (label, print))
 	    ; declareArray ("struct GC_sourceLabel", "sourceLabels", labels,
 			    fn (_, {label, sourceSeqsIndex}) =>
 			    concat ["{(pointer)", ProfileLabel.toString label,
@@ -381,7 +385,7 @@ fun output {program as Machine.Program.T {chunks,
 	    else concat [s, " /* ", Label.toString l, " */"]
 	 end
       val handleMisalignedReals =
-	 !Control.alignDoubles = Control.AlignNo
+	 !Control.align = Control.Align4
 	 andalso !Control.hostArch = Control.Sparc
       fun addr z = concat ["&(", z, ")"]
       fun realFetch z = concat ["Real_fetch(", addr z, ")"]
@@ -566,6 +570,14 @@ fun output {program as Machine.Program.T {chunks,
 	       in
 		  ()
 	       end
+	    fun declareProfileLabels () =
+	       Vector.foreach
+	       (blocks, fn Block.T {statements, ...} =>
+		Vector.foreach
+		(statements, fn s =>
+		 case s of
+		    Statement.ProfileLabel l => declareProfileLabel (l, print)
+		  | _ => ()))
 	    fun labelFrameSize (l: Label.t): int =
 	       Program.frameSize (program, valOf (labelFrameInfo l))
 	    (* Count how many times each label is jumped to. *)
@@ -960,6 +972,7 @@ fun output {program as Machine.Program.T {chunks,
 	    print (concat ["#define CCODEGEN\n\n"])
 	    ; outputIncludes (includes, print)
 	    ; declareChunks ()
+	    ; declareProfileLabels ()
 	    ; C.callNoSemi ("Chunk", [chunkLabelToString chunkLabel], print)
 	    ; print "\n"
 	    ; declareRegisters ()

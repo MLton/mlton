@@ -11,23 +11,23 @@ struct
 structure C = Control ()
 open C
 
-structure AlignDoubles =
+structure Align =
    struct
-      datatype t = AlignNo | AlignPad | AlignSkip
+      datatype t = Align4 | Align8
 
       val toString =
-	 fn AlignNo => "no"
-	  | AlignPad => "pad"
-	  | AlignSkip => "skip"
+	 fn Align4 => "4"
+	  | Align8 => "8"
    end
 
-datatype alignDoubles = datatype AlignDoubles.t
+datatype align = datatype Align.t
 
-val alignDoubles = control {name = "align doubles",
-			    default = AlignNo,
-			    toString = AlignDoubles.toString}
+val align = control {name = "align",
+		     default = Align4,
+		     toString = Align.toString}
    
 val basisLibs = ["basis-2002", "basis-2002-strict", "basis-1997", "basis-none"]
+   
 val basisLibrary = control {name = "basis library",
 			    default = "basis-2002",
 			    toString = fn s => s}

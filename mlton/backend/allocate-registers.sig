@@ -38,8 +38,7 @@ signature ALLOCATE_REGISTERS =
 	     handlerLinkOffset: {handler: int,
 				 link: int} option,
 	     labelInfo:
-	     Rssa.Label.t -> {
-			      (* Live operands at the beginning of the block. *)
+	     Rssa.Label.t -> {(* Live operands at the beginning of the block. *)
 			      live: Machine.Operand.t vector,
 			      (* Live operands at the beginning of the block, 
 			       * excepting its formals.
@@ -48,8 +47,6 @@ signature ALLOCATE_REGISTERS =
 			      (* Number of bytes in frame including return
 			       * address.
 			       *)
-			      size: int,
-			      (* Adjust the number of bytes in a frame size. *)
-			      adjustSize: int -> {size: int, shift: int}
+			      size: int
 			      }}
    end

@@ -105,6 +105,7 @@ typedef enum {
 } GC_ObjectTypeTag;
 
 typedef struct {
+	/* Keep tag first, at zero offset, since it is referenced most often. */
 	GC_ObjectTypeTag tag;
 	ushort numNonPointers;
 	ushort numPointers;
@@ -208,6 +209,7 @@ typedef struct GC_thread {
 /* ------------------------------------------------- */
 
 typedef struct GC_weak {
+	uint unused;
 	struct GC_weak *link;
 	pointer object;
 } *GC_weak;
@@ -309,6 +311,7 @@ typedef struct GC_state {
 	pointer stackTop;
 	pointer stackLimit;	/* stackBottom + stackSize - maxFrameSize */
 
+	uint alignment;		/* Either WORD_SIZE or 2 * WORD_SIZE. */
 	bool amInGC;
 	bool amInMinorGC;
 	pointer back;     	/* Points at next available word in toSpace. */
@@ -330,7 +333,7 @@ typedef struct GC_state {
 	float copyGenerationalRatio;
 	float copyRatio;	/* Minimum live ratio to use copying GC. */
 	GC_heap crossMapHeap;	/* only used during GC. */
-	pointer crossMap;
+	uchar *crossMap;
 	uint crossMapSize;
 	GC_thread currentThread; /* This points to a thread in the heap. */
 	uint fixedHeapSize; 	/* Only meaningful if useFixedHeap. */
@@ -348,11 +351,11 @@ typedef struct GC_state {
 	struct GC_heap heap;
 	struct GC_heap heap2;	/* Used for major copying collection. */
 	bool inSignalHandler; 	/* TRUE iff a signal handler is running. */
+	struct GC_intInfInit *intInfInits;
+	uint intInfInitsSize;
 	/* canHandle == 0 iff GC may switch to the signal handler
  	 * thread.  This is used to implement critical sections.
 	 */
-	struct GC_intInfInit *intInfInits;
-	uint intInfInitsSize;
 	volatile int canHandle;
 	bool isOriginal;
 	pointer limitPlusSlop; /* limit + LIMIT_SLOP */
@@ -393,7 +396,6 @@ typedef struct GC_state {
 	 */
 	float nurseryRatio;
 	pointer nursery;
-	uint nurserySize;
 	GC_ObjectType *objectTypes; /* Array of object types. */
 	uint objectTypesSize;
 	/* Arrays larger than oldGenArraySize are allocated in the old generation
@@ -420,10 +422,6 @@ typedef struct GC_state {
 	GC_thread savedThread;
 	/* saveGlobals writes out the values of all of the globals to fd. */
 	void (*saveGlobals)(int fd);
-	/* serializeStart holds the frontier at the start of the serialized
-         * object during object serialization.
-         */
-	pointer serializeStart;
 	GC_thread signalHandler; /* The mutator signal handler thread. */
 	sigset_t signalsHandled; /* The signals handler expects to be handled. */
 	/* signalIsPending is TRUE iff a signal has been received but not
@@ -491,6 +489,11 @@ int fixedGetrusage(int who, struct rusage *rup);
 /* ---------------------------------------------------------------- */
 /*                           GC functions                           */
 /* ---------------------------------------------------------------- */
+
+/* GC_alignFrontier (s, p) returns the next properly aligned object start after
+ * p, possibly p itself.
+ */
+pointer GC_alignFrontier (GC_state s, pointer p);
 
 /* Allocate an array with the specified header and number of elements.
  * Also ensure that frontier + bytesNeeded < limit after the array is allocated.

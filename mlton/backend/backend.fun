@@ -885,8 +885,7 @@ fun toMachine (program: Ssa.Program.t) =
 				  transfer = M.Transfer.Goto start})
 			     end
 		     else ()
-		  val {adjustSize, live, liveNoFormals, size, ...} =
-		     labelRegInfo label
+		  val {live, liveNoFormals, size, ...} = labelRegInfo label
 		  val chunk = labelChunk label
 		  val statements =
 		     Vector.concatV

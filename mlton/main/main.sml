@@ -98,15 +98,14 @@ fun makeOptions {usage} =
       List.map
       (
        [
-       (Expert, "align-doubles", " {no|pad|skip}",
-	" how to align doubles",
+       (Expert, "align", " {4|8}",
+	" object alignment",
 	(SpaceString (fn s =>
-		      alignDoubles
+		      align
 		      := (case s of
-			     "no" => AlignNo
-			   | "pad" => AlignPad
-			   | "skip" => AlignSkip
-			   | _ => usage (concat ["invalid -align-doubles flag: ",
+			     "4" => Align4
+			   | "8" => Align8
+			   | _ => usage (concat ["invalid -align flag: ",
 						 s]))))),
        (Normal, "basis", " {2002|1997|...}",
 	"select basis library to prefix to the program",
@@ -645,7 +644,7 @@ fun commandLine (args: string list): unit =
 				      val (debugSwitches, switches) =
 					 if SOME "c" = extension
 					    then
-					       (gccDebug,
+					       (gccDebug @ ["-DASSERT=1"],
 						List.concat
 						[definesAndIncludes,
 						 [concat

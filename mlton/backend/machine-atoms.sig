@@ -111,7 +111,6 @@ signature MACHINE_ATOMS =
 	    val basic: (PointerTycon.t * t) vector
 	    val isOk: t -> bool
 	    val layout: t -> Layout.t
-	    val stack: t
 	    val string: t
 	    val thread: t
 	    val toRuntime: t -> Runtime.ObjectType.t

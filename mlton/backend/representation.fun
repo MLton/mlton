@@ -273,7 +273,22 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 			       build (doubleWords, 8, ([], initialOffset))))
 		    val offset =
 		       if isNormal
-			  then Runtime.Type.align (Runtime.Type.pointer, offset)
+			  then
+			     let
+				val offset =
+				   Runtime.Type.align
+				   (Runtime.Type.pointer, offset)
+			     in
+				if !Control.align = Control.Align8
+				andalso
+				   0 < Int.rem (Runtime.normalHeaderSize
+						+ offset
+						+ (Runtime.pointerSize
+						   * List.length (!pointers)),
+						8)
+				   then offset + 4
+				else offset
+			     end
 		       else offset
 		    val (components, size) = build (pointers, 4, (accum, offset))
 		    val size = if 0 = size then 4 else size
@@ -576,8 +591,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	 (QuickSort.sortVector
 	  (Vector.concat [ObjectType.basic,
 			  Vector.fromList (!objectTypes)],
-	   fn ((pt, _), (pt', _)) =>
-	   PointerTycon.<= (pt, pt')),
+	   fn ((pt, _), (pt', _)) => PointerTycon.<= (pt, pt')),
 	  #2)
       val _ =
 	 Control.diagnostics

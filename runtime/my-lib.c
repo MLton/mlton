@@ -39,10 +39,9 @@ void diee (char * fmt, ...)
 	exit(1);
 }
 
-void asfail(char *file, int line, char *prop)
-{
+void asfail(char *file, int line, char *prop) {
 	fflush(stdout);
-	fprintf(stderr, "%s %d: assert(%s) failed.\n", file, line, prop);
+	fprintf(stderr, "%s:%d: assert(%s) failed.\n", file, line, prop);
 	abort();
 }
 

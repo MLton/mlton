@@ -21,7 +21,7 @@ extern bool returnToC;
 #define BZ(x, l)							\
 	do {								\
 		if (DEBUG_CCODEGEN)					\
-			fprintf (stderr, "%s: %d  BZ(%d, %s)\n",	\
+			fprintf (stderr, "%s:%d: BZ(%d, %s)\n",	\
 					__FILE__, __LINE__, (x), #l);	\
 		if (0 == (x)) goto l;					\
 	} while (0)
@@ -29,7 +29,7 @@ extern bool returnToC;
 #define BNZ(x, l)							\
 	do {								\
 		if (DEBUG_CCODEGEN)					\
-			fprintf (stderr, "%s: %d  BNZ(%d, %s)\n",	\
+			fprintf (stderr, "%s:%d: BNZ(%d, %s)\n",	\
 					__FILE__, __LINE__, (x), #l);	\
 		if (x) goto l;						\
 	} while (0)
@@ -58,7 +58,7 @@ struct cont {
 
 #define ChunkSwitch(n)							\
 		if (DEBUG_CCODEGEN)					\
-			fprintf (stderr, "%s: %d  entering chunk %d\n",	\
+			fprintf (stderr, "%s:%d: entering chunk %d\n",	\
 					__FILE__, __LINE__, n);		\
 		CacheFrontier();					\
 		CacheStackTop();					\
@@ -86,7 +86,7 @@ struct cont {
 #define Thread_returnToC()							\
 	do {									\
 		if (DEBUG_CCODEGEN)						\
-			fprintf (stderr, "%s: %d  Thread_returnToC()\n",	\
+			fprintf (stderr, "%s:%d: Thread_returnToC()\n",	\
 					__FILE__, __LINE__);			\
 		returnToC = TRUE;						\
 		return cont;							\
@@ -96,7 +96,7 @@ struct cont {
 /*                       main                        */
 /* ------------------------------------------------- */
 
-#define Main(cs, mg, mfs, mlw, mmc, ps, mc, ml)					\
+#define Main(al, cs, mg, mfs, mlw, mmc, ps, mc, ml)				\
 /* Globals */									\
 char CReturnC;   /* The CReturn's must be globals and cannot be per chunk */	\
 double CReturnD; /* because they may be assigned in one chunk and read in */	\
@@ -129,7 +129,7 @@ void MLton_callFromC () {							\
 int main (int argc, char **argv) {						\
 	struct cont cont;							\
 	gcState.native = FALSE;							\
-	Initialize(cs, mg, mfs, mlw, mmc, ps);					\
+	Initialize (al, cs, mg, mfs, mlw, mmc, ps);				\
 	if (gcState.isOriginal) {						\
 		real_Init();							\
 		PrepFarJump(mc, ml);						\
@@ -167,26 +167,10 @@ int main (int argc, char **argv) {						\
 		goto leaveChunk;		\
 	} while (0)
 
-#define Reg(name, i) local ## name ## i
-#define RC(n) Reg(c, n)
-#define RD(n) Reg(d, n)
-#define RI(n) Reg(i, n)
-#define RP(n) Reg(p, n)
-#define RU(n) Reg(u, n)
 
-#define Declare(ty, name, i) ty Reg(name, i)
-#define DC(n) Declare(uchar, c, n)
-#define DD(n) Declare(double, d, n)
-#define DI(n) Declare(int, i, n)
-#define DP(n) Declare(pointer, p, n)
-#define DU(n) Declare(uint, u, n)
-
-#define Slot(ty, i) *(ty*)(stackTop + (i))
-#define SC(i) Slot(uchar, i)
-#define SD(i) Slot(double, i)
-#define SI(i) Slot(int, i)
-#define SP(i) Slot(pointer, i)
-#define SU(i) Slot(uint, i)
+/* ------------------------------------------------- */
+/*                      Globals                      */
+/* ------------------------------------------------- */
 
 #define Global(ty, i) (global ## ty [ i ])
 #define GC(i) Global(uchar, i)
@@ -195,6 +179,28 @@ int main (int argc, char **argv) {						\
 #define GP(i) Global(pointer, i)
 #define GPNR(i) Global(pointerNonRoot, i)
 #define GU(i) Global(uint, i)
+
+/* ------------------------------------------------- */
+/*                     Registers                     */
+/* ------------------------------------------------- */
+
+#define Declare(ty, name, i) ty Reg(name, i)
+#define DC(n) Declare(uchar, c, n)
+#define DD(n) Declare(double, d, n)
+#define DI(n) Declare(int, i, n)
+#define DP(n) Declare(pointer, p, n)
+#define DU(n) Declare(uint, u, n)
+
+#define Reg(name, i) local ## name ## i
+#define RC(n) Reg(c, n)
+#define RD(n) Reg(d, n)
+#define RI(n) Reg(i, n)
+#define RP(n) Reg(p, n)
+#define RU(n) Reg(u, n)
+
+/* ------------------------------------------------- */
+/*                      Memory                       */
+/* ------------------------------------------------- */
 
 #define Offset(ty, b, o) (*(ty*)((b) + (o)))
 #define OC(b, i) Offset(uchar, b, i)
@@ -214,20 +220,33 @@ int main (int argc, char **argv) {						\
 /*                       Stack                       */
 /* ------------------------------------------------- */
 
+#define Slot(ty, i) *(ty*)(stackTop + (i))
+#define SC(i) Slot(uchar, i)
+#define SD(i)							\
+	(assert (0 == ((uint)stackTop + (i)) % gcState.alignment),	\
+	Slot(double, i))
+#define SI(i) Slot(int, i)
+#define SP(i) Slot(pointer, i)
+#define SU(i) Slot(uint, i)
+
 #define ExnStack gcState.currentThread->exnStack
 #define StackBottom gcState.stackBottom
 
-#define Push(bytes)					\
-	do {						\
-		stackTop += (bytes);			\
-		assert(StackBottom <= stackTop);	\
+#define Push(bytes)							\
+	do {								\
+		if (DEBUG_CCODEGEN)					\
+			fprintf (stderr, "%s:%d: Push (%d)\n",		\
+					__FILE__, __LINE__, bytes);	\
+		stackTop += (bytes);					\
+		assert (0 == (uint)stackTop % gcState.alignment);	\
+		assert (StackBottom <= stackTop);			\
 	} while (0)
 
 #define Return()								\
 	do {									\
 		l_nextFun = *(word*)(stackTop - WORD_SIZE);			\
 		if (DEBUG_CCODEGEN)						\
-			fprintf (stderr, "%s: %d  Return()  l_nextFun = %d\n",	\
+			fprintf (stderr, "%s:%d: Return()  l_nextFun = %d\n",	\
 					__FILE__, __LINE__, l_nextFun);		\
 		goto top;							\
 	} while (0)
@@ -235,7 +254,7 @@ int main (int argc, char **argv) {						\
 #define Raise()							\
 	do {							\
 		if (DEBUG_CCODEGEN)				\
-			fprintf (stderr, "%s: %d  Raise\n", 	\
+			fprintf (stderr, "%s:%d: Raise\n", 	\
 					__FILE__, __LINE__);	\
 		stackTop = StackBottom + ExnStack;		\
 		Return();					\
@@ -268,14 +287,20 @@ int main (int argc, char **argv) {						\
 		gcState.stackTop = stackTop;	\
 	} while (0)
 
-#define CacheFrontier()				\
-	do {					\
-		frontier = gcState.frontier;	\
+#define CacheFrontier()							\
+	do {								\
+		frontier = gcState.frontier;				\
+		assert (0 == ((uint)frontier + GC_NORMAL_HEADER_SIZE)	\
+				% gcState.alignment);			\
 	} while (0)
 
-#define CacheStackTop()				\
-	do {					\
-		stackTop = gcState.stackTop;	\
+#define CacheStackTop()							\
+	do {								\
+		stackTop = gcState.stackTop;				\
+/* The following assert is not true when trampolining from one chunk	\
+ * to another as part of a Raise.					\
+ */									\
+/*		assert (0 == (uint)stackTop % gcState.alignment); */	\
 	} while (0)
 
 #define SmallIntInf(n) ((pointer)(n))
@@ -286,8 +311,9 @@ int main (int argc, char **argv) {						\
 	do {								\
 		*(word*)frontier = (h);					\
 		x = frontier + GC_NORMAL_HEADER_SIZE;			\
+		assert (0 == (uint)x % gcState.alignment);		\
 		if (DEBUG_CCODEGEN)					\
-			fprintf (stderr, "%s: %d  0x%x = Object(%d)\n",	\
+			fprintf (stderr, "%s:%d: 0x%x = Object(%d)\n",	\
 					__FILE__, __LINE__, x, h);	\
 		assert (frontier <= gcState.limitPlusSlop);		\
 	} while (0)
@@ -442,11 +468,11 @@ static inline Word32 Word32_mulOverflow (Word32 lhs, Word32 rhs, Bool *overflow)
 		int overflow;							\
 		dst = f(n1, n2, &overflow);					\
 		if (DEBUG_CCODEGEN)						\
-			fprintf (stderr, "%s: %d " #f "(%d, %d) = %d\n",	\
+			fprintf (stderr, "%s:%d: " #f "(%d, %d) = %d\n",	\
 					__FILE__, __LINE__, n1, n2, dst);	\
 		if (overflow) {							\
 			if (DEBUG_CCODEGEN)					\
-				fprintf (stderr, "%s: %d overflow\n",		\
+				fprintf (stderr, "%s:%d: overflow\n",		\
 						__FILE__, __LINE__);		\
 			goto l;							\
 		}								\

@@ -18,8 +18,8 @@ signature CONTROL =
       (*            Begin Flags             *)
       (*------------------------------------*)
 
-      datatype alignDoubles = AlignNo | AlignPad | AlignSkip
-      val alignDoubles: alignDoubles ref
+      datatype align = Align4 | Align8
+      val align: align ref
 	 
       val basisLibs: string list
       val basisLibrary: string ref

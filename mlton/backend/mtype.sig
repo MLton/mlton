@@ -24,6 +24,8 @@ signature MTYPE =
        | Pointer
        | Uint
 
+      val align4: int -> int
+      val align8: int -> int
       val align: t * int -> int       (* align an address *)	 
       val all: t list
       val bool: t (* same as int *)
@@ -42,5 +44,4 @@ signature MTYPE =
       val toString: t -> string
       val uint: t
       val word: t (* synonym for uint *)
-      val wordAlign: int -> int
    end

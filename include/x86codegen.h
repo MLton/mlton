@@ -39,7 +39,7 @@ word threadTemp;
 	pointer localpointer[p];					\
 	uint localuint[u]
 
-#define Main(cs, mg, mfs, mlw, mmc, ps, ml, reserveEsp)			\
+#define Main(al, cs, mg, mfs, mlw, mmc, ps, ml, reserveEsp)		\
 void MLton_jumpToSML (pointer jump) {					\
 	word lc_stackP;							\
 			       						\
@@ -85,7 +85,7 @@ int main (int argc, char **argv) {					\
 	pointer jump;  							\
 	extern pointer ml;						\
 	gcState.native = TRUE;						\
-	Initialize(cs, mg, mfs, mlw, mmc, ps);				\
+	Initialize (al, cs, mg, mfs, mlw, mmc, ps);			\
 	if (gcState.isOriginal) {					\
 		real_Init();						\
 		jump = (pointer)&ml;   					\

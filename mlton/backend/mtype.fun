@@ -84,22 +84,25 @@ fun name t =
     | Pointer => "P"
     | Uint => "U"
 
-fun doubleWordAlign (i: int): int =
-   let open Word
-   in toInt (andb (notb 0w7, (0w7 + fromInt i)))
-   end
-   
-fun wordAlign (i: int): int =
-   let open Word
-   in toInt (andb (notb 0w3, (0w3 + fromInt i)))
-   end
+local
+   fun align a b =
+      let
+	 open Word
+	 val a = fromInt a - 0w1
+      in
+	 toInt (andb (notb a, a + fromInt b))
+      end
+in
+   val align4 = align 4
+   val align8 = align 8
+end
 
 fun align (ty: t, n: int): int =
    case dest ty of
       Char => n
-    | Double => doubleWordAlign n
-    | Int => wordAlign n
-    | Pointer => wordAlign n
-    | Uint => wordAlign n
+    | Double => align8 n
+    | Int => align4 n
+    | Pointer => align4 n
+    | Uint => align4 n
 
 end

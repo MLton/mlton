@@ -1,5 +1,17 @@
 Here are the changes since version 20030312.
 
+* 2003-04-24
+  - Added -align {4|8}, which controls alignment of objects.  With
+    -align 8, memory accesses to doubles are guaranteed to be aligned
+    mod 8, and so don't need special routines to load or store.
+
+* 2003-04-22
+  - Fixed bug that caused a total failure of time profiling with
+    -native false.  The bug was introduced with the C codegen
+    improvements that split the C into multiple files.  Now, the C
+    codegen declares all profile labels used in each file so that they
+    are global symbols. 
+
 * 2003-04-18
   - Added MLton.Weak, which supports weak pointers.
 
