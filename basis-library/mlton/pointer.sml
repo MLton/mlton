@@ -3,8 +3,8 @@ struct
 
 open Primitive.Pointer
 
-val add = Word.+
-val diff = Word.-
-val sub = Word.-
+fun add (p, t) = fromWord (Word.+ (toWord p, t))
+fun diff (p, p') = Word.- (toWord p, toWord p')
+fun sub (p, t) = fromWord (Word.- (toWord p, t))
    
 end

@@ -32,11 +32,9 @@ structure C: C =
 	    a
 	 end
 
-      structure Prim = Primitive.C
-
       structure CS =
 	 struct
-	    open Prim.CS
+	    type t = Pointer.t
 
 	    fun sub (cs, i) =
 	       Primitive.Word8.toChar (Primitive.Pointer.getWord8 (cs, i))
@@ -59,9 +57,9 @@ structure C: C =
       
       structure CSS =
 	 struct
-	    open Prim.CSS
+	    type t = Pointer.t
 
-	    fun sub (css, i) = Primitive.Pointer.getPointer (css, i)
+	    fun sub (css: t, i) = Primitive.Pointer.getPointer (css, i)
 
 	    val length = makeLength (sub, Primitive.Pointer.isNull)
 

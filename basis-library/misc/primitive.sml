@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -127,7 +127,7 @@ type word = Word.word
 
 structure Pointer =
    struct
-      type t = Word32.word
+      type t = word
    end
 
 structure Pid :> sig
@@ -178,28 +178,8 @@ structure Primitive =
 	    val update = _prim "Array_update": 'a array * int * 'a -> unit;
 	 end
 
-      structure C =
-	 struct
-	    (* char* *)
-	    structure CS =
-	       struct
-		  type t = Pointer.t
-
-(*		  val sub = _import "C_CS_sub": t * int -> char; *)
-(*		  val update = _import "C_CS_update": t * int * char -> unit; *)
-	       end
-	    
-	    (* char** *)
-	    structure CSS =
-	       struct
-		  type t = Pointer.t
-		     
-(*		  val sub = _import "C_CSS_sub": t * int -> CS.t; *)
-	       end
-	 end
-
-      type cstring = C.CS.t
-      type cstringArray = C.CSS.t
+      type cstring = Pointer.t
+      type cstringArray = Pointer.t
 
       structure Char =
 	 struct
@@ -956,7 +936,13 @@ structure Primitive =
 	 struct
 	    open Pointer
 
-	    val null: t = 0w0
+(*	    val fromWord = _prim "Word_toPointer": word -> t; *)
+(*	    val toWord = _prim "Pointer_toWord": t -> word; *)
+
+	    val fromWord = fn w => w
+	    val toWord = fn w => w
+	       
+	    val null: t = fromWord 0w0
 
 	    fun isNull p = p = null
 

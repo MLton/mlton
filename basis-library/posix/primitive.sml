@@ -7,8 +7,8 @@
  *)
 structure PosixPrimitive =
    struct
-      type cstring = Primitive.C.CS.t
-      type cstringArray = Primitive.C.CSS.t
+      type cstring = Pointer.t
+      type cstringArray = Pointer.t
 
       type fd = int
       type uid = word
