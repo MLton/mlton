@@ -1,5 +1,6 @@
 \sec{Deviations of {\smlnj} from Standard ML}{nj-deviations}
-
+    {Deviations_SML_NJ_from.html}
+%
 This section lists some deviations of {\smlnj} from The Definition of
 Standard ML.  Some of these are documented in the 
 \htmladdnormallink
@@ -30,7 +31,7 @@ vector expressions and patterns like the following:
 val v = #[1,2,3]
 val #[x,y,z] = v
 \end{verbatim}
-
+%
 \item 
 {\smlnj} extends the syntax of the language to allow {\em or patterns}
 like the following:
@@ -38,7 +39,7 @@ like the following:
 datatype foo = Foo of int | Bar of int
 val (Foo x | Bar x) = Foo 13
 \end{verbatim}
-
+%
 \item
 {\smlnj} allows higher-order functors, that is, functors can be
 components of structures and can be passed as functor arguments and
@@ -74,7 +75,7 @@ signature S =
       and type u = v
    end
 \end{verbatim}
-
+%
 \item
 {\smlnj} does not expand the {\tt withtype} derived form as described by
 the Definition.  According to page 55 of the Definition, the type
@@ -104,7 +105,7 @@ datatype a =
     A of int
   | B of int
 \end{verbatim}
-
+%
 \item
 {\smlnj} allows {\tt withtype} specifications in signatures.
 

@@ -1,5 +1,5 @@
-\sec{Basis library}{basis-library}
-
+\sec{Basis library}{basis-library}{Basis_library.html}
+%
 This section describes {\mlton}'s implementation of the 2002 Standard ML
 Basis Library specification, available at
 \link{http://www.standardml.org/Basis/}.
@@ -14,7 +14,7 @@ Basis Library.  {\mlton} also implements some of the optional
 structures, as described below.  You can always obtain a complete and
 current list of what's available by calling {\tt mlton -show-basis
 true}.
-
+%
 \subsection{Toplevel types and constructors}
 {
 \tt eqtype 'a array\\
@@ -33,7 +33,7 @@ true}.
 \tt eqtype 'a vector\\
 \tt eqtype word\\
 }
-
+%
 \subsection{Top level exception constructors}
 {\tt Bind},
 {\tt Chr},
@@ -47,10 +47,10 @@ true}.
 {\tt Size},
 {\tt Span},
 {\tt Subscript}.
-
+%
 \subsection{Top level values}
 
-{\mlton does not implement the optional top level value
+{\mlton} does not implement the optional top level value
 \verb+use: string -> unit+, which conflicts with whole
 program compilation because it allows new code to be loaded
 dynamically.
@@ -106,7 +106,7 @@ dynamically.
 {\tt trunc},
 {\tt valOf},
 {\tt vector}.
-
+%
 \newcommand{\signature}[1]{{\tt #1}\\}
 \subsection{Top level signatures}
 \signature{ARRAY}
@@ -172,7 +172,7 @@ dynamically.
 \signature{VECTOR}
 \signature{VECTOR\_SLICE}
 {\tt WORD}.
-
+%
 \newcommand{\fullmodule}[2]{{\tt #1: #2}\\ }
 \subsection{Top level structures}
 \fullmodule{Array}{ARRAY}
@@ -335,6 +335,8 @@ dynamically.
 \fullmodule{Word64Vector}{MONO\_VECTOR}
 \fullmodule{Word64VectorSlice}{MONO\_VECTOR\_SLICE}
 
+% extra space for HeVeA
+
 The following structures equivalences hold.\\
 \begin{tabular}{l}
 \tt Int = Int32 = FixedInt = Position\\
@@ -360,8 +362,9 @@ is done at 32 or 64 bits.  If you require strict IEEE compliance, you
 can compile with {\tt -ieee-fp true}, which will cause intermediate
 results to be stored after each operation.  This may cause a
 substantial performance penalty.
-
+%
 \subsection{Top level functors}
+
 {\tt ImperativeIO}\\
 {\tt PrimIO}\\
 {\tt StreamIO}

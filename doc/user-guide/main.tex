@@ -1,5 +1,5 @@
 \documentclass[12pt]{article}
-\usepackage{alltt,html,latexsym,longtable,psfrag}
+\usepackage{alltt,latexsym,longtable,psfrag}
 
 \setlength{\topmargin}{-0.5in}
 \setlength{\textheight}{8.5in}
@@ -9,19 +9,23 @@
 
 \hyphenation{stan-dard}
 
+\include{macros}
+
 \title{{\mlton} User Guide}
 \author{Copyright \copyright\ 2003 Henry Cejtin, Matthew Fluet, Suresh
 Jagannathan, and Stephen Weeks}
 \date{\today}
 
-\include{macros}
+% For HeVeA.
+\setcounter{cuttingdepth}{2}
 
 \begin{document}
-
 \maketitle
 
 \input{abstract}
+\begin{latexonly}
 \tableofcontents
+\end{latexonly}
 \input{getting-started}
 \input{features}
 \input{drawbacks}

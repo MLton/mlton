@@ -1,5 +1,5 @@
-\sec{Profiling}{profiling}
-
+\sec{Profiling}{profiling}{Profiling.html}
+%
 With {\mlton} and {\tt mlprof}, you can profile your program to find
 out for each function how much time it spends or how many bytes it
 allocates.  To profile your program, compile with either {\tt -profile
@@ -80,7 +80,7 @@ the garbage collector is due to it growing the stack.
 Time profiling typically has a very small performance impact.
 However, the performance impact of allocation profiling is noticeable,
 because it inserts additional C calls for object allocation.
-
+%
 \subsection{Profiling the stack}
 
 For both allocation and time profiling, you can use {\tt
@@ -107,7 +107,7 @@ garbage collector.
 
 The performance impact of {\tt -profile-stack true} can be noticeable
 since there is some extra bookkeeping at every nontail call.
-
+%
 \subsection{Call graphs}
 
 For easier visualization of profiling data, {\tt mlprof} creates a
@@ -212,7 +212,7 @@ you can use {\tt mlprof -split} {\it regexp}, which will cause all
 duplicates of functions whose name has a prefix matching the regular
 expression to be treated separately.  This can be especially useful
 for higher-order utility functions like {\tt General.o}.
-
+%
 \subsection{Using {\tt MLton.Profile}}
 
 To profile individual portions of your program, you can use the {\tt
@@ -250,7 +250,7 @@ fib       86.7%
 tak       10.5%
 <unknown>  2.8%
 \end{verbatim}
-
+%
 \subsection{Profiling details}
 
 Technically speaking, {\tt mlprof} produces a call-stack graph rather

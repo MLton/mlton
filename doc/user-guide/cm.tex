@@ -1,5 +1,5 @@
-\sec{CM}{cm}
-
+\sec{CM}{cm}{CM.html}
+%
 For porting code from SML/NJ and for developing code for MLton under SML/NJ,
 {\mlton} supports a very limited subset of
 \htmladdnormallink{Compilation Manager}
@@ -67,7 +67,7 @@ the CM file.  If a CM file refers either directly or indirectly to an SML source
 file in more than one way, only the first occurrence of the file is included.
 Finally, the only valid file suffixes in a CM file are {\tt .cm}, {\tt .fun},
 {\tt .sig}, and {\tt .sml}.
-
+%
 \subsec{Comparison with CM}{comparison}
 
 If you are unfamiliar with CM under {\smlnj}, then you should skip this
@@ -88,7 +88,7 @@ CM performs cutoff recompilation to avoid recompiling the entire program, while
 groups and libraries, which {\mlton} does not.  CM supports other tools like lex
 and yacc, while {\mlton} does not.  {\mlton} relies on traditional makefiles to
 use other tools.
-
+%
 \subsec{Porting {\smlnj} CM files to {\mlton}}{porting-cm}
 
 If you have already created large projects using {\smlnj} and CM, there may be a

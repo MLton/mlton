@@ -1,5 +1,5 @@
-\sec{Manual page}{manual-page}
-
+\sec{Manual page}{manual-page}{Manual_page.html}
+%
 {\mlton} is run from the command line with a collection of options
 followed by a file name and a list of files to compile, assemble, and
 link with.
@@ -18,7 +18,7 @@ limited subset of SML/NJ Compilation Manager (CM) files.  For example,
 {\tt mlton foo.cm} will compile the complete SML program consisting of
 the concatenatation of all the SML files referred to (either directly
 or indirectly) by {\tt foo.cm}.  See \secref{cm} for details.
-
+%
 \subsec{Compile-time options}{compile-time-options}
 
 {\mlton}'s options allow you to control the name of the output file,
@@ -96,7 +96,7 @@ Set the inlining threshold used in the optimizer.  The default is 320.
 \option{-keep \choiceThree{g}{o}{sml}}
 Save the intermediate file(s) corresponding to the given arg.  If
 no {\tt -keep} argument is given, then only the final file(s) is saved.\\
-\begin{tabular}{ll}
+\begin{tabular}{l|l}
 {\tt g} & generated {\tt .S} and {\tt .c} files passed to gcc and the assembler\\
 {\tt o} & object files\\
 {\tt sml} & SML file\\
@@ -161,7 +161,7 @@ only affects linking.
 
 \option{-stop \choiceFour{f}{g}{o}{sml}}
 Secify pass to stop at.\\
-\begin{tabular}{ll}
+\begin{tabular}{l|l}
 {\tt f} & list of files on stdout (only makes sense when input is {\tt foo.cm})\\
 {\tt g} & generated {\tt .S} and {\tt .c} files\\
 {\tt o} & object file\\
@@ -180,7 +180,7 @@ cross-compiler.  See \secref{cross-compiling}.
 
 \option{-verbose \choiceFour{0}{1}{2}{3}}
 How verbose to be about what passes are running.  The default is 0.\\
-\begin{tabular}{ll}
+\begin{tabular}{l|l}
 {\tt 0} & silent\\
 {\tt 1} & calls to compiler, assembler, and linker\\
 {\tt 2} & 1 + intermediate compiler passes\\

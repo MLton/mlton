@@ -1,6 +1,7 @@
-\sec{{\mlton} extensions}{mlton}
-
+\sec{{\mlton} extensions}{mlton}{MLton_extensions.html}
+%
 \subsection{{\nline} directives}
+
 To aid in the debugging of code produced by program genenerators such as
 \htmladdnormallink{Noweb}{http://www.eecs.harvard.edu/~nr/noweb/},
 {\mlton} supports comments with {\nline} directives of the form {\tt (*\#line
@@ -12,7 +13,7 @@ the right parenthesis is at the line and column of the specified file.  A
 affect program semantics (except for functions like {\tt MLton.Exn.history}
 which report source file positions).  Syntactically invalid {\nline} directives
 are ignored.
-
+%
 \subsection{The {\tt MLton} structure}
 
 The remainder of this section describes the modules {\mlton} makes
@@ -57,7 +58,7 @@ structure MLton:
       structure World: MLTON_WORLD
    end
 \end{verbatim}
-
+%
 \subsubsection{{\tt MLton}}
 
 \newcommand{\entry}[1]{\item[\tt #1]\hspace{1in}\\}
@@ -101,6 +102,7 @@ see {\tt examples/size.sml}.
 \end{description}
 
 \subsubsec{{\tt MLton.Array}}{array}
+
 \begin{verbatim}
 signature MLTON_ARRAY =
    sig
@@ -115,8 +117,9 @@ construct an array $a$ of a length {\tt n}, whose elements $a_i$ are determined
 by the equations $b_0 = b$ and $(a_i, b_{i+1}) = f (i, b_i)$.
 
 \end{description}
-
+%
 \subsubsection{{\tt MLton.BinIO}}
+
 \begin{verbatim}
 signature MLTON_BIN_IO =
    MLTON_IO
@@ -234,6 +237,7 @@ completes.
 \end{description}
 
 \subsubsection{{\tt MLton.GC}}
+%
 \begin{verbatim}
 signature MLTON_GC =
    sig
@@ -267,7 +271,7 @@ is the same as the {\tt gc-summary} runtime system option.
 resizes the heap to the desired size.
 
 \end{description}
-
+%
 \subsubsection{{\tt MLton.IntInf}}
 
 {\mlton} represents an arbitrary precision integer either as an
@@ -379,8 +383,9 @@ the given {\tt interval} and {\tt value}.
 \entry{signal t}
 return the signal corresponding to {\tt t}.
 \end{description}
-
+%
 \subsubsection{\tt MLton.Platform}
+
 \begin{verbatim}
 signature MLTON_PLATFORM =
    sig
@@ -431,8 +436,9 @@ convert from lower case string to operating system.
 lower case string for operating system.
 
 \end{description}
-
+%
 \subsubsection{\tt MLton.ProcEnv}
+
 \begin{verbatim}
 signature MLTON_PROC_ENV =
    sig
@@ -444,7 +450,7 @@ signature MLTON_PROC_ENV =
 \entry{setenv \{name, value\}}
 Like the C {\tt setenv} function.
 \end{description}
-
+%
 \subsubsection{\tt MLton.Process}
 
 \begin{verbatim}
@@ -540,8 +546,9 @@ the result of {\tt f} after restoring the current unit of profiling
 data.
 
 \end{description}
-
+%
 \subsubsection{\tt MLton.Random}
+
 \begin{verbatim}
 signature MLTON_RANDOM =
    sig
@@ -574,8 +581,9 @@ return a random word from {\tt /dev/urandom}.  Useful as an arg to
 ()} returns {\tt NONE}.
 
 \end{description}
-
+%
 \subsubsection{\tt MLton.Rlimit}
+
 This structure provides a wrapper around the C {\tt getrlimit} and {\tt
 setrlimit}.
 \begin{verbatim}
@@ -620,8 +628,9 @@ raise {\tt OS.SysErr}.
 \entry{set (r, \{hard, soft\})}
 sets the hard and soft limits for resource {\tt r}.  May raise {\tt OS.SysErr}.
 \end{description}
-
+%
 \subsubsection{\tt MLton.Rusage}
+
 \begin{verbatim}
 signature MLTON_RUSAGE =
    sig
@@ -766,8 +775,9 @@ is installed for {\tt s}.
 temporarily sets the signal mask to {\tt m} and suspends until an
 unmasked signal is received and handled, and then resets the mask.
 \end{description}
-
+%
 \subsubsection{{\tt MLton.Socket}}
+
 This module contains a bare minimum of functionality to do TCP/IP
 programming.  This module is implemented on top of the {\tt Socket}
 module of the Standard Basis Library.  We encourage you to use the
@@ -841,8 +851,9 @@ cause the read part of the socket associated with {\tt ins} to be shutdown.
 \entry{shutdownWrite out}
 cause the write part of the socket associated with {\tt out} to be shutdown.
 \end{description}
-
+%
 \subsubsection{\tt MLton.Syslog}
+
 A complete interface to the system logging facilities.  See {\tt man 3 syslog}
 for more details.
 \begin{verbatim}
@@ -905,8 +916,9 @@ open a connection to the system logger. {\tt name} will be prefixed to each
 message, and is typically set to the program name.
 
 \end{description}
-
+%
 \subsubsection{{\tt MLton.TextIO}}
+
 \begin{verbatim}
 signature MLTON_TEXT_IO =
    MLTON_IO
@@ -967,8 +979,9 @@ apply {\tt f} to the current thread to get {\tt (t, g)}, and then
 start running thread {\tt t} computing the value {\tt g ()}.
 
 \end{description}
-
+%
 \subsubsection{\tt MLton.Vector}
+
 \begin{verbatim}
 signature MLTON_VECTOR =
    sig
@@ -1015,8 +1028,9 @@ exists.  Otherwise, returns {\tt SOME} of the object pointed to by
 \entry{new x}
 returns a weak pointer to {\tt x}.
 \end{description}
-
+%
 \subsubsection{\tt MLton.Word, MLton.Word8}
+
 \begin{verbatim}
 signature MLTON_WORD =
    sig
@@ -1074,7 +1088,7 @@ save the entire state of the computation to
 the file {\tt f} that will resume with thread {\tt t} upon restart.
 
 \end{description}
-
+%
 \subsection{{\tt SMLofNJ: SML\_OF\_NJ}}
 
 {\tt SMLofNJ} implements a subset of the structure of the same name
@@ -1155,7 +1169,7 @@ Return {\tt true} in the restarted computation and {\tt false} in the
 continuing computation.
 
 \end{description}
-
+%
 \subsection{{\tt Unsafe: UNSAFE}}
 
 This module is a subset of the {\tt Unsafe} module provided by

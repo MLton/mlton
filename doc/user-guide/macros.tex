@@ -1,3 +1,6 @@
+\usepackage{hevea}
+\newcommand{\htmladdnormallink}[2]{\ahref{#2}{#1}}
+
 \newcommand{\absolutelink}[1]{\link{\makeurl{#1}}}
 \newcommand{\addr}{mlton.org}
 \newcommand{\alternative}[1]{    &  |  & #1\\}
@@ -8,7 +11,7 @@
 \newcommand{\filelink}[1]{\htmladdnormallink{{\tt #1}}{file:#1}}
 \newcommand{\kit}{ML Kit}
 \newcommand{\link}[1]{\htmladdnormallink{{\tt #1}}{#1}}
-\newcommand{\mailto}[2]{{\tt #1 at #2}}
+\renewcommand{\mailto}[2]{{\tt #1 at #2}}
 \newcommand{\makeurl}[1]{http://www.\addr/#1}
 \newcommand{\mlprof}{{\tt mlprof}}
 \newcommand{\mltonmail}{{\tt MLton@\addr}}
@@ -26,4 +29,4 @@
 \newcommand{\subsubsec}[2]{\subsubsection{#1}\label{section:#2}}
 \newcommand{\version}{MLTONVERSION}
 \newcommand{\intel}{X86}
-\renewcommand{\sec}[2]{\section{#1}\label{section:#2}}
+\renewcommand{\sec}[3]{\section{#1}\label{section:#2}{\cutname{#3}}}
