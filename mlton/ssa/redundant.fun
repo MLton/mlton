@@ -309,11 +309,12 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 
 		    val transfer =
 		       case transfer of
-			  Arith {prim, args, overflow, success} =>
+			  Arith {prim, args, overflow, success, ty} =>
 			     Arith {prim = prim,
 				    args = loopVars args,
 				    overflow = overflow,
-				    success = success}
+				    success = success,
+				    ty = ty}
 			| Bug => Bug
 			| Call {func, args, return} =>
 			     Call {func = func, 

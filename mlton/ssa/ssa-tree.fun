@@ -160,12 +160,6 @@ structure Exp =
        | Tuple of Var.t vector
        | Var of Var.t
 
-      val mayAllocate =
-	 fn ConApp {args, ...} => Vector.length args > 0
-	  | PrimApp {prim, ...} => Prim.mayAllocate prim
-	  | Tuple vs => Vector.length vs > 1
-	  | _ => false
-
       val unit = Tuple (Vector.new0 ())
 	 
       fun foreachLabelVar (e, j, v) =
@@ -397,8 +391,6 @@ structure Statement =
 	 fun handlerPush h = make (Exp.HandlerPush h)
       end
 
-      val mayAllocate = Exp.mayAllocate o exp
-	 
       fun clear s = Option.app (var s, Var.clear)
 
       fun prettifyGlobals (v: t vector): Var.t -> string option =
@@ -576,7 +568,8 @@ structure Transfer =
          Arith of {prim: Prim.t,
 		   args: Var.t vector,
 		   overflow: Label.t, (* Must be nullary. *)
-		   success: Label.t} (* Must be unary. *)
+		   success: Label.t, (* Must be unary. *)
+		   ty: Type.t}
        | Bug (* MLton thought control couldn't reach here. *)
        | Call of {func: Func.t,
 		  args: Var.t vector,
@@ -632,11 +625,12 @@ structure Transfer =
 	    fun fxs xs = Vector.map (xs, fx)
 	 in
 	    case t of
-	       Arith {prim, args, overflow, success} =>
+	       Arith {prim, args, overflow, success, ty} =>
 		  Arith {prim = prim,
 			 args = fxs args,
 			 overflow = fl overflow,
-			 success = fl success}
+			 success = fl success,
+			 ty = ty}
 	     | Bug => Bug
 	     | Call {func, args, return} =>
 		  Call {func = func, 
@@ -686,7 +680,7 @@ structure Transfer =
 	    end
 
 	 val layout =
-	    fn Arith {prim, args, overflow, success} =>
+	    fn Arith {prim, args, overflow, success, ty} =>
 		  seq [Label.layout success,
 		       tuple [Prim.layoutApp (prim, args, Var.layout)],
 		       str " Overflow => ",
@@ -730,9 +724,9 @@ structure Transfer =
 
       fun equals (e: t, e': t): bool =
 	 case (e, e') of
-	    (Arith {prim, args, overflow, success},
+	    (Arith {prim, args, overflow, success, ...},
 	     Arith {prim = prim', args = args', 
-		    overflow = overflow', success = success'}) =>
+		    overflow = overflow', success = success', ...}) =>
 	       Prim.equals (prim, prim') andalso
 	       varsEquals (args, args') andalso
 	       Label.equals (overflow, overflow') andalso
@@ -778,7 +772,8 @@ structure Transfer =
       in
 	 val hash: t -> Word.t =
 	    fn Arith {args, overflow, success, ...} =>
-	          hashVars (args, hash2 (Label.hash overflow, Label.hash success))
+	          hashVars (args, hash2 (Label.hash overflow,
+					 Label.hash success))
 	     | Bug => bug
 	     | Call {func, args, return} =>
 		  hashVars (args, hash2 (Func.hash func, Return.hash return))
@@ -1414,7 +1409,7 @@ structure Function =
 			 end
 		      val rest =
 			 case transfer of
-			    Arith {prim, args, overflow, success} =>
+			    Arith {prim, args, overflow, success, ...} =>
 			       (edge (success, "", Solid)
 				; edge (overflow, "Overflow", Dashed)
 				; [Layout.toString

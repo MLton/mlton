@@ -37,5 +37,6 @@ signature MTYPE =
       val size: t -> int (* bytes *)
       val toString: t -> string
       val uint: t
+      val word: t (* synonym for uint *)
       val wordAlign: int -> int
    end

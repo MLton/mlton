@@ -18,6 +18,7 @@
 	word gcFirstAuxTemp;						\
 	word arrayAllocateTemp;						\
 	word arrayAllocateLoopTemp;    					\
+	word heapCheckTemp;						\
 	word overflowCheckTemp;						\
 	word switchTemp;						\
 	word intInfTemp;						\

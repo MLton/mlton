@@ -115,6 +115,7 @@ void Itimer_set(Int which,
 /*                       MLton                       */
 /* ------------------------------------------------- */
 
+void MLton_arrayTooLarge ();
 /* print a bug message and exit (2) */
 void MLton_bug (Pointer msg);
 /* halt the machine */

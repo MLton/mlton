@@ -941,11 +941,12 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	= Vector.keepAllMap (ss, fn s => simplifyStatement (s, fi))
       fun simplifyTransfer (t: Transfer.t, fi: FuncInfo.t): Transfer.t
 	= case t
-	    of Arith {prim, args, overflow, success} 
+	    of Arith {prim, args, overflow, success, ty} 
 	     => Arith {prim = prim,
 		       args = args,
 		       overflow = getArithOverflowWrapperLabel overflow,
-		       success = getArithSuccessWrapperLabel success}
+		       success = getArithSuccessWrapperLabel success,
+		       ty = ty}
 	     | Bug => Bug
 	     | Call {func, args, return}
 	     => let

@@ -71,7 +71,6 @@ signature SSA_TREE =
 	    val foreachVar: t * (Var.t -> unit) -> unit
 	    val hash: t -> Word.t
 	    val layout: t -> Layout.t
-	    val mayAllocate: t -> bool
 	    val maySideEffect: t -> bool
 	    val replaceVar: t * (Var.t -> Var.t) -> t
 	    val unit: t
@@ -88,7 +87,6 @@ signature SSA_TREE =
 	    val handlerPop: Label.t -> t
 	    val handlerPush: Label.t -> t
 	    val layout: t -> Layout.t
-	    val mayAllocate: t -> bool
 	    val prettifyGlobals: t vector -> (Var.t -> string option)
 	    val setExnStackLocal: t
 	    val setExnStackSlot: t
@@ -163,8 +161,8 @@ signature SSA_TREE =
 	       Arith of {prim: Prim.t,
 			 args: Var.t vector,
 			 overflow: Label.t, (* Must be nullary. *)
-			 success: Label.t (* Must be unary. *)
-			}
+			 success: Label.t, (* Must be unary. *)
+			 ty: Type.t} (* int or word *)
 	     | Bug  (* MLton thought control couldn't reach here. *)
 	     | Call of {func: Func.t,
 			args: Var.t vector,

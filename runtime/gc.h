@@ -64,13 +64,7 @@ enum {
 	WORD_SIZE = 4,
 	GC_OBJECT_HEADER_SIZE = WORD_SIZE,
 	GC_ARRAY_HEADER_SIZE = WORD_SIZE + GC_OBJECT_HEADER_SIZE,
-	/* High bit in an object identifies its type.
-	 * Normal objects have a high bit of 1.
-	 * Arrays and stacks have a high bit of 0.
-	 */
-	/* The mark bit in an object is used by runtime utilities that need to 
-	 * perform a depth first search of objects.
-	 */
+	LIMIT_SLOP = 512,
 	/* Number of bits specifying the number of nonpointers in an object. */
 	NON_POINTER_BITS = 14,
 	/* Number of bits specifying the number of pointers in an object. */
@@ -92,9 +86,6 @@ enum {
 };
 
 #define TWOPOWER(n) (1 << (n))
-
-/* ONES(n) is a word with n one bits at the bottom. */
-#define ONES(n) (TWOPOWER(n) - 1)
 
 /*
  * Build the one word header for an object, given the number of words of
@@ -130,6 +121,10 @@ static inline bool GC_isPointer(pointer p) {
 
 static inline uint wordAlign(uint p) {
  	return ((p + 3) & ~ 3);
+}
+
+static inline bool isWordAligned(uint x) {
+	return 0 == (x & 0x3);
 }
 
 /* ------------------------------------------------- */
@@ -209,6 +204,7 @@ typedef struct GC_state {
 	pointer base;		/* start (lowest address) of from space */
 	uint toSize; 		/* size (bytes) of to space */
 	pointer toBase;		/* start (lowest address) of to space */
+	pointer limitPlusSlop;     /* limit + LIMIT_SLOP */
 	
 	/* globals */
 	uint numGlobals;
@@ -300,6 +296,7 @@ typedef struct GC_state {
 	float ramSlop;
 	uint totalRam; /* bytes */
 	uint totalSwap; /* bytes */
+	uint maxSemi; /* bytes */
 } *GC_state;
 
 /* ------------------------------------------------- */

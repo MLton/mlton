@@ -15,10 +15,12 @@ structure Operand =
 		    bytes: int,
 		    ty: Type.t}
        | Pointer of int
+       | Runtime of RuntimeOperand.t
        | Var of {var: Var.t,
 		 ty: Type.t}
     
       val int = Const o Const.fromInt
+      val word = Const o Const.fromWord
 
       val toString =
 	 fn ArrayOffset {base, index, ty} =>
@@ -30,6 +32,7 @@ structure Operand =
 	       concat ["O", Type.name ty,
 		       "(", Var.toString base, ",", Int.toString bytes, ")"]
 	  | Pointer n => concat ["IntAsPointer (", Int.toString n, ")"]
+	  | Runtime r => RuntimeOperand.toString r
 	  | Var {var, ...} => Var.toString var
 
       val layout: t -> Layout.t = Layout.str o toString
@@ -60,6 +63,7 @@ structure Operand =
 	       end
 	  | Offset {ty, ...} => ty
 	  | Pointer _ => Type.pointer
+	  | Runtime _ => Type.uint
 	  | Var {ty, ...} => ty
 
       fun 'a foldVars (z: t, a: 'a, f: Var.t * 'a -> 'a): 'a =
@@ -69,6 +73,7 @@ structure Operand =
 	  | Const _ => a
 	  | Offset {base, ...} => f (base, a)
 	  | Pointer _ => a
+	  | Runtime _ => a
 	  | Var {var, ...} => f (var, a)
 
       fun foreachVar (z: t, f: Var.t -> unit): unit =
@@ -79,9 +84,11 @@ structure Statement =
    struct
       datatype t =
 	 Array of {dst: Var.t,
+		   numBytes: Operand.t,
 		   numBytesNonPointers: int,
-		   numElts: Var.t,
+		   numElts: Operand.t,
 		   numPointers: int}
+       | Array0 of {dst: Var.t}
        | Move of {dst: Operand.t,
 		  src: Operand.t}
        | Object of {dst: Var.t,
@@ -108,8 +115,10 @@ structure Statement =
 	    fun useOperand (z: Operand.t, a) = Operand.foldVars (z, a, use)
 	 in
 	    case s of
-	       Array {dst, numElts, ...} =>
-		  use (numElts, def (dst, Type.pointer, a))
+	       Array {dst, numBytes, numElts, ...} =>
+		  useOperand (numElts,
+			      useOperand (numBytes, def (dst, Type.pointer, a)))
+	     | Array0 {dst} => def (dst, Type.pointer, a)
 	     | Move {dst, src} =>
 		  useOperand (src,
 			      case dst of
@@ -148,12 +157,14 @@ structure Statement =
 	 let
 	    open Layout
 	 in
-	    fn Array {dst, numBytesNonPointers, numElts, numPointers} =>
+	    fn Array {dst, numBytes, numBytesNonPointers, numElts, numPointers} =>
 	    seq [Var.layout dst,
 		 str " = Array ",
-		 record [("numBytesNonPointers", Int.layout numBytesNonPointers),
-			 ("numElts", Var.layout numElts),
+		 record [("numBytes", Operand.layout numBytes),
+			 ("numBytesNonPointers", Int.layout numBytesNonPointers),
+			 ("numElts", Operand.layout numElts),
 			 ("numPointers", Int.layout numPointers)]]
+	     | Array0 {dst} => seq [Var.layout dst, str " = Array0"]
 	     | Move {dst, src} =>
 		  seq [Operand.layout dst, str " = ", Operand.layout src]
 	     | Object {dst, ...} => seq [Var.layout dst, str " = Object"]
@@ -173,55 +184,15 @@ structure Statement =
 	 foreachDef (s, Var.clear o #1)
    end
 
-structure LimitCheck =
-   struct
-      datatype t =
-	 Array of {bytesPerElt: int,
-		   extraBytes: int,
-		   numElts: Var.t,
-		   stackToo: bool}
-
-       | Heap of {bytes: int,
-		  stackToo: bool}
-       | Signal
-       | Stack
-
-      fun foldVar (l, a, f) =
-	 case l of
-	    Array {numElts, ...} => f (numElts, a)
-	  | _ => a
-
-      fun foreachVar (l, f) = foldVar (l, (), f o #1)
-
-      fun layout (l: t): Layout.t =
-	 let
-	    open Layout
-	 in
-	    case l of
-	       Array {bytesPerElt, extraBytes, numElts, stackToo} =>
-		  seq [str "Array ",
-		       record [("bytesPerElt", Int.layout bytesPerElt),
-			       ("extraBytes", Int.layout extraBytes),
-			       ("numElts", Var.layout numElts),
-			       ("stackToo", Bool.layout stackToo)]]
-	     | Heap {bytes, stackToo} =>
-		  seq [str "Heap ",
-		       record [("bytes", Int.layout bytes),
-			       ("stackToo", Bool.layout stackToo)]]
-	     | Signal => str "Signal"
-	     | Stack => str "Stack"
-	 end
-   end
-
 structure Transfer =
    struct
       datatype t =
-	 Arith of {dst: Var.t,
-		   prim: Prim.t,
-		   args: Var.t vector,
+	 Arith of {args: Operand.t vector,
+		   dst: Var.t,
 		   overflow: Label.t,
-		   success: Label.t
-		   }
+		   prim: Prim.t,
+		   success: Label.t,
+		   ty: Type.t}
        | Bug
        | CCall of {args: Operand.t vector,
 		   prim: Prim.t,
@@ -232,9 +203,6 @@ structure Transfer =
 		  return: Return.t}
        | Goto of {dst: Label.t,
 		  args: Operand.t vector}
-       | LimitCheck of {failure: Label.t,
-			kind: LimitCheck.t,
-			success: Label.t}
        | Raise of Operand.t vector
        | Return of Operand.t vector
        | Runtime of {args: Operand.t vector,
@@ -259,13 +227,14 @@ structure Transfer =
 	    open Layout
 	 in
 	    case t of
-	       Arith {prim, args, dst, overflow, success} =>
+	       Arith {args, dst, overflow, prim, success, ty} =>
 		  seq [str "Arith ",
-		       record [("prim", Prim.layout prim),
-			       ("args", Vector.layout Var.layout args),
+		       record [("args", Vector.layout Operand.layout args),
 			       ("dst", Var.layout dst),
 			       ("overflow", Label.layout overflow),
-			       ("success", Label.layout success)]]
+			       ("prim", Prim.layout prim),
+			       ("success", Label.layout success),
+			       ("ty", Type.layout ty)]]
 	     | Bug => str "Bug"
 	     | CCall {args, prim, return, returnTy} =>
 		  seq [str "CCall ",
@@ -299,11 +268,6 @@ structure Transfer =
 	     | Goto {dst, args} =>
 		  seq [Label.layout dst, str " ",
 		       Vector.layout Operand.layout args]
-	     | LimitCheck {failure, kind, success} =>
-		  seq [str "LimitCheck ",
-		       record [("failure", Label.layout failure),
-			       ("kind", LimitCheck.layout kind),
-			       ("success", Label.layout success)]]
 	     | Raise xs => seq [str "Raise", Vector.layout Operand.layout xs]
 	     | Return xs => seq [str "Return ", Vector.layout Operand.layout xs]
 	     | Runtime {args, prim, return} =>
@@ -333,12 +297,12 @@ structure Transfer =
 	       Vector.fold (zs, a, useOperand)
 	 in
 	    case t of
-	       Arith {args, dst, overflow, success, ...} =>
+	       Arith {args, dst, overflow, success, ty, ...} =>
 		  let
 		     val a = label (overflow, a)
 		     val a = label (success, a)
-		     val a = def (dst, Type.int, a)
-		     val a = useVars (args, a)
+		     val a = def (dst, ty, a)
+		     val a = useOperands (args, a)
 		  in
 		     a
 		  end
@@ -347,10 +311,6 @@ structure Transfer =
 	     | Call {args, return, ...} =>
 		  useOperands (args, Return.foldLabel (return, a, label))
 	     | Goto {args, dst, ...} => label (dst, useOperands (args, a))
-	     | LimitCheck {failure,  kind, success} =>
-		  LimitCheck.foldVar (kind,
-				      label (failure, label (success, a)),
-				      use)
 	     | Raise zs => useOperands (zs, a)
 	     | Return zs => useOperands (zs, a)
 	     | Runtime {args, return, ...} =>
@@ -478,6 +438,47 @@ structure Block =
 			    Transfer.layout transfer],
 			   2)]
 	 end
+
+      fun allocTooLarge newBlocks =
+	 let
+	    val r: Label.t option ref = ref NONE
+	 in
+	    (fn () => r := NONE,
+	     fn () =>
+	     case !r of
+		SOME l => l
+	      | NONE =>
+		   let
+		      val l = Label.newNoname ()
+		      val _ = r := SOME l
+		      val return = Label.newNoname ()
+		      val profileInfo =
+			 {ssa = {func = "AllocTooLarge",
+				 label = "AllocTooLarge"}}
+		      val prim = Prim.allocTooLarge
+		      val _ =
+			 newBlocks :=
+			 T {args = Vector.new0 (),
+			    kind = Kind.Jump,
+			    label = l,
+			    profileInfo = profileInfo,
+			    statements = Vector.new0 (),
+			    transfer =
+			    Transfer.CCall {args = Vector.new0 (),
+					    prim = prim,
+					    return = return,
+					    returnTy = NONE}}
+			 :: T {args = Vector.new0 (),
+			       kind = Kind.CReturn {prim = prim},
+			       label = return,
+			       profileInfo = profileInfo,
+			       statements = Vector.new0 (),
+			       transfer = Transfer.Bug}
+			 :: !newBlocks
+		   in
+		      l
+		   end)
+	 end
    end
 
 structure Function =
@@ -572,10 +573,13 @@ structure Function =
 	       (Node.plist, Property.initRaise ("info", Node.layout))
 	    val _ =
 	       Vector.foreach
+	       (blocks, fn b as Block.T {label, ...}=>
+		setNodeInfo (labelNode label, {block = b}))
+	    val _ =
+	       Vector.foreach
 	       (blocks, fn b as Block.T {label, transfer, ...} =>
 		let
 		   val from = labelNode label
-		   val _ = setNodeInfo (from, {block = b})
 		   val _ =
 		      Transfer.foreachLabel
 		      (transfer, fn to =>
@@ -605,6 +609,9 @@ structure Program =
 	 in
 	    has main orelse List.exists (functions, has)
 	 end
+
+      fun usesSignals p =
+	 hasPrim (p, fn p => Prim.name p = Prim.Name.Thread_finishHandler)
 	 
       fun layouts (T {functions, main}, output': Layout.t -> unit): unit =
 	 let
@@ -653,6 +660,10 @@ structure Program =
 		  val {args, blocks, start, ...} = Function.dest f
 		  val _ = Vector.foreach (args, bindVar o #1)
 		  val _ = Vector.foreach (blocks, bindLabel o Block.label)
+		  val _ =
+		     Vector.foreach
+		     (blocks, fn Block.T {transfer, ...} =>
+		      Transfer.foreachLabel (transfer, getLabel))
 		  (* Descend the dominator tree, verifying that variable
 		   * definitions dominate variable uses.
 		   *)
@@ -669,7 +680,6 @@ structure Program =
 			      ; Statement.foreachDef (s, bindVar o #1)))
 			 val _ = Transfer.foreachUse (transfer, getVar)
 			 val _ = Transfer.foreachDef (transfer, bindVar o #1)
-			 val _ = Transfer.foreachLabel (transfer, getLabel)
 		      in
 			 fn () =>
 			 if isMain
@@ -721,10 +731,11 @@ structure Program =
 			    Type.equals (varType base, Type.pointer)
 			    andalso Type.equals (varType index, Type.int)
 		       | CastInt x => Type.equals (varType x, Type.pointer)
-		       | Const c => true
+		       | Const _ => true
 		       | Offset {base, ...} =>
 			    Type.equals (varType base, Type.pointer)
 		       | Pointer n => 0 < Int.rem (n, Runtime.wordSize)
+		       | Runtime _ => true
 		       | Var {ty, var} => Type.equals (ty, varType var)
 		in
 		   Err.check ("operand", ok, fn () => Operand.layout x)
@@ -742,13 +753,17 @@ structure Program =
 		  datatype z = datatype Statement.t
 	       in
 		  case s of
-		     Array {dst, numElts, numPointers, numBytesNonPointers} =>
+		     Array {dst, numBytes, numBytesNonPointers, numElts,
+			    numPointers} =>
 			(Type.equals (varType dst, Type.pointer)
-			 andalso Type.equals (varType numElts, Type.int)
+			 andalso Type.equals (Operand.ty numBytes, Type.word)
+			 andalso Type.equals (Operand.ty numElts, Type.int)
 			 andalso
 			 Runtime.isValidArrayHeader
 			 {numPointers = numPointers,
 			  numBytesNonPointers = numBytesNonPointers})
+		   | Array0 {dst} =>
+			Type.equals (varType dst, Type.pointer)
 		   | Move {dst, src} =>
 			(checkOperand dst
 			 ; checkOperand src
@@ -790,12 +805,13 @@ structure Program =
 		  datatype z = datatype Transfer.t
 	       in
 		  case t of
-		     Arith {args, dst, overflow, prim, success} =>
+		     Arith {args, dst, overflow, prim, success, ty} =>
 			Prim.mayOverflow prim
 			andalso labelIsNullaryJump overflow
 			andalso labelIsNullaryJump success
-			andalso Vector.forall (args, fn x =>
-					       Type.equals (Type.int, varType x))
+			andalso
+			Vector.forall (args, fn x =>
+				       Type.equals (ty, Operand.ty x))
 		   | Bug => true
 		   | CCall {args, prim = p, return, returnTy} =>
 			let
@@ -830,43 +846,26 @@ structure Program =
 			     | Return.Tail => true)
 			end
 		   | Goto z => goto z
-		   | LimitCheck {failure, kind, success} =>
-			labelIsRuntime (failure, Prim.gcCollect)
-			andalso labelIsNullaryJump success
-			andalso let
-				   datatype z = datatype LimitCheck.t
-				in
-				   case kind of
-				      Array {bytesPerElt, extraBytes, numElts,
-					     ...} =>
-					 bytesPerElt > 0
-					 andalso extraBytes >= 0
-					 andalso Type.equals (Type.int,
-							      varType numElts)
-				    | Heap {bytes, ...} => bytes >= 0
-				    | Signal => true
-				    | Stack => true
-				end
-		      | Raise _ => true
-		      | Return _ => true
-		      | Runtime {args, prim, return} =>
-			   (Prim.entersRuntime prim
-			    andalso labelIsRuntime (return, prim))
-		      | Switch {cases, default, test} =>
-			   (Cases.forall (cases, labelIsNullaryJump)
-			    andalso Option.forall (default, labelIsNullaryJump)
-			    andalso (Type.equals
-				     (Operand.ty test,
-				      case cases of
-					 Cases.Char _ => Type.char
-				       | Cases.Int _ => Type.int
-				       | Cases.Word _ => Type.uint)))
-		      | SwitchIP {int, pointer, test} =>
-			   (checkOperand test
-			    ; (labelIsNullaryJump pointer
-			       andalso labelIsNullaryJump int
-			       andalso Type.equals (Type.pointer,
-						    Operand.ty test)))
+		   | Raise _ => true
+		   | Return _ => true
+		   | Runtime {args, prim, return} =>
+			(Prim.entersRuntime prim
+			 andalso labelIsRuntime (return, prim))
+		   | Switch {cases, default, test} =>
+			(Cases.forall (cases, labelIsNullaryJump)
+			 andalso Option.forall (default, labelIsNullaryJump)
+			 andalso (Type.equals
+				  (Operand.ty test,
+				   case cases of
+				      Cases.Char _ => Type.char
+				    | Cases.Int _ => Type.int
+				    | Cases.Word _ => Type.uint)))
+		   | SwitchIP {int, pointer, test} =>
+			(checkOperand test
+			 ; (labelIsNullaryJump pointer
+			    andalso labelIsNullaryJump int
+			    andalso Type.equals (Type.pointer,
+						 Operand.ty test)))
 	       end
 	    fun blockOk (Block.T {args, kind, label, 
 				  statements, transfer, ...}): bool =

@@ -7,6 +7,7 @@ val labelSize = wordSize
 val limitSlop: int = 512
 val objectHeaderSize = wordSize
 val pointerSize = wordSize
+val array0Size = arrayHeaderSize + wordSize (* for the forwarding pointer *)
 
 (* These checks, and in particular pointerBits and nonPointerBits
  * must agree with runtime/gc.h.
@@ -64,6 +65,13 @@ fun arrayHeader (z as {numBytesNonPointers, numPointers}) =
    in
       orb (orb (arrayTag, fromInt numPointers),
 	   << (fromInt numBytesNonPointers, fromInt nonPointersShift))
+   end
+
+fun wordAlign (w: word): word =
+   let
+      open Word
+   in
+      andb (w + 0w3, notb 0w3)
    end
    
 fun isWordAligned (n: int): bool =

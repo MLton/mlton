@@ -389,7 +389,8 @@ fun linearize' (e: t, h: Handler.t, k: Cont.t): Label.t * Block.t list =
 		    Transfer.Arith {prim = prim,
 				    args = xs,
 				    overflow = newLabel0 (overflow, h, k),
-				    success = l}}
+				    success = l,
+				    ty = ty}}
 		end)
 	  | Call {func, args, ty} =>
 	       loops

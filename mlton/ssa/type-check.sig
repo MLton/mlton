@@ -2,6 +2,7 @@
  * Please see the file LICENSE for license information.
  *)
 type int = Int.t
+type word = Word.t
 
 signature TYPE_CHECK_STRUCTS = 
    sig

@@ -20,7 +20,8 @@ val expEquals =
 	    val n' = Prim.name p'
 	 in
 	    case (n, n') of
-	       (Array_array0, Array_array0) => Vector.equals (t, t', Type.equals)
+	       (Array_array0Const, Array_array0Const) =>
+		  Vector.equals (t, t', Type.equals)
 	     | _ => false
 	 end
     | (Tuple xs, Tuple xs') => equalss (xs, xs')

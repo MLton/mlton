@@ -8,6 +8,7 @@ signature RUNTIME =
       val arrayHeader: {numBytesNonPointers: int,
 			numPointers: int} -> word
       val arrayHeaderSize: int
+      val array0Size: int
       val isValidObjectHeader: {numPointers: int,
 				numWordsNonPointers: int} -> bool
       val isValidArrayHeader: {numBytesNonPointers: int,
@@ -23,5 +24,6 @@ signature RUNTIME =
       val objectSize: {numPointers: int,
 		       numWordsNonPointers: int} -> int
       val pointerSize: int
+      val wordAlign: word -> word
       val wordSize: int
    end

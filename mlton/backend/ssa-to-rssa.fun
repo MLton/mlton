@@ -25,6 +25,22 @@ fun convert (p: S.Program.t): Rssa.Program.t =
       val program as S.Program.T {datatypes, globals, functions, main} =
 	 ImplementHandlers.doit p
       val {tyconRep, conRep, toMtype = toType} = Representation.compute program
+      (* varInt is set for variables that are constant integers.  It is used
+       * so that we can precompute array numBytes when numElts is known.
+       *)
+      val {get = varInt: Var.t -> int option,
+	   set = setVarInt, ...} =
+	 Property.getSetOnce (Var.plist, Property.initConst NONE)
+      val _ =
+	 Vector.foreach (globals, fn S.Statement.T {var, exp, ...} =>
+			 case exp of
+			    S.Exp.Const c =>
+			       (case Const.node c of
+				   Const.Node.Int n =>
+				      Option.app (var, fn x =>
+						  setVarInt (x, SOME n))
+				 | _ => ())
+			  | _ => ())
       val {get = varInfo: Var.t -> {ty: S.Type.t},
 	   set = setVarInfo, ...} =
 	 Property.getSetOnce (Var.plist,
@@ -58,7 +74,6 @@ fun convert (p: S.Program.t): Rssa.Program.t =
       fun toTypes ts = Vector.map (ts, toType)
       val labelSize = Type.size Type.label
       val tagOffset = 0
-      val tagType = Type.int
       fun sortTypes (initialOffset: int,
 		     tys: Type.t option vector)
 	 : {numPointers: int,
@@ -167,6 +182,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 						   ty = ty}))
 	 end
       val extraBlocks = ref []
+      val (resetAllocTooLarge, allocTooLarge) = Block.allocTooLarge extraBlocks
       fun newBlock {args, kind, profileInfo,
 		    statements: Statement.t vector,
 		    transfer: Transfer.t}: Label.t =
@@ -444,8 +460,9 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 					varOp x))
       fun translateTransfer (profileInfo, t: S.Transfer.t): Transfer.t =
 	 case t of
-	    S.Transfer.Arith {args, overflow, prim, success} =>
+	    S.Transfer.Arith {args, overflow, prim, success, ty} =>
 	       let
+		  val ty = valOf (toType ty)
 		  val temp = Var.newNoname ()
 		  val noOverflow =
 		     newBlock
@@ -457,13 +474,14 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 				  {dst = success,
 				   args = (Vector.new1
 					   (Operand.Var {var = temp,
-							 ty = Type.int}))})}
+							 ty = ty}))})}
 	       in
 		  Transfer.Arith {dst = temp,
-				  args = args,
+				  args = vos args,
 				  overflow = overflow,
 				  prim = prim,
-				  success = noOverflow}
+				  success = noOverflow,
+				  ty = ty}
 	       end
 	  | S.Transfer.Bug => Transfer.Bug
 	  | S.Transfer.Call {func, args, return} =>
@@ -514,15 +532,16 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 		     fun add s = loop (i - 1, s :: ss, t)
 		     fun split (args, kind,
 				ss: Statement.t list,
-				make: Label.t -> Transfer.t) =
+				make: Label.t -> Statement.t list * Transfer.t) =
 			let
 			   val l = newBlock {args = args,
 					     kind = kind,
 					     profileInfo = profileInfo,
 					     statements = Vector.fromList ss,
 					     transfer = t}
+			   val (ss, t) = make l
 			in
-			   loop (i - 1, [], make l)
+			   loop (i - 1, ss, t)
 			end
 		     fun makeStores (ys: Var.t vector, offsets) =
 			Vector.keepAllMap2
@@ -594,6 +613,8 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 				 add (PrimApp {dst = dst (),
 					       prim = prim,
 					       args = varOps args})
+			      fun array0 () =
+				 add (Array0 {dst = valOf var})
 			      datatype z = datatype Prim.Name.t
 			   in
 			      if Prim.impCall prim
@@ -610,10 +631,11 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 					Kind.CReturn {prim = prim},
 					ss,
 					fn l =>
-					Transfer.CCall {args = vos args,
-							prim = prim,
-							return = l,
-							returnTy = returnTy})
+					([],
+					 Transfer.CCall {args = vos args,
+							 prim = prim,
+							 return = l,
+							 returnTy = returnTy}))
 				    end
 			      else if Prim.entersRuntime prim
 				 then
@@ -621,34 +643,127 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 				    (Vector.new0 (),
 				     Kind.Runtime {prim = prim},
 				     ss,
-				     fn l => Transfer.Runtime {args = vos args,
-							       prim = prim,
-							       return = l})
+				     fn l =>
+				     ([], Transfer.Runtime {args = vos args,
+							    prim = prim,
+							    return = l}))
 			      else
 				 case Prim.name prim of
 				    Array_array =>
-				       let
-					  val (nbnp, np, bytesPerElt) =
-					     case targ () of
-						NONE => (0, 0, 0)
-					      | SOME t => 
-						   if Type.isPointer t
-						      then (0, 1, Type.size t)
-						   else (Type.size t, 0,
-							 Type.size t)
-					  val numElts = a 0
-				       in
-					  split
-					  (Vector.new0 (), Kind.Jump,
-					   Array {dst = valOf var,
-						  numElts = numElts,
-						  numBytesNonPointers = nbnp,
-						  numPointers = np}
-					   :: ss,
-					   fn return => 
-					   Goto {args = Vector.new0 (),
-						 dst = return})
-				       end
+  (case targ () of
+      NONE => array0 ()
+    | SOME t =>
+	 let
+	    val (nbnp, np, bytesPerElt) =
+	       if Type.isPointer t
+		  then (0, 1, Runtime.pointerSize)
+	       else
+		  let val n = Type.size t
+		  in (n, 0, n)
+		  end
+	 in
+	    if 0 = np andalso 0 = nbnp
+	       then array0 ()
+	    else
+	       let
+		  val numElts = a 0
+		  fun normal (numBytes, numElts, continue) =
+		     split (Vector.new0 (), Kind.Jump,
+			    Array {dst = valOf var,
+				   numBytes = numBytes,
+				   numBytesNonPointers = nbnp,
+				   numElts = numElts,
+				   numPointers = np}
+			    :: ss,
+			    continue)
+	       in
+		  case varInt numElts of
+		     SOME n =>
+			(* Compute the number of bytes in the array now, since
+			 * the number of elements is a known constant.
+			 *)
+			let
+			   fun doit (numBytes: word) =
+			      normal (Operand.word numBytes,
+				      Operand.int n,
+				      fn alloc =>
+				      ([], Goto {args = Vector.new0 (),
+						 dst = alloc}))
+			in
+			   doit (Runtime.wordAlign (Word.fromInt
+						    (n * bytesPerElt)))
+			   handle Overflow =>
+			      (* We would like to call allocTooLarge, but we
+			       * can't, because it makes code dead, and
+			       * the backend depends on there being no
+			       * dead code.  So, instead we put an amount
+			       * of bytes that will cause the GC to report
+			       * out of memory.
+			       * We use 0wxFFFFFFFC instead of 0wxFFFFFFFF
+			       * because it is word aligned.
+			       *)
+			      doit 0wxFFFFFFFC
+(* 				  split (Vector.new0 (), Kind.Jump,
+ * 					 Array0 {dst = valOf var} :: ss,
+ * 					 fn _ =>
+ * 					 ([], Goto {dst = allocTooLarge (),
+ * 						    args = Vector.new0 ()}))
+ *)
+			   end 
+		   | NONE =>
+			let
+			   val numEltsOp =
+			      Operand.Var {var = numElts, ty = Type.int}
+			   val numBytes = Var.newNoname ()
+			   val numEltsWord = Var.newNoname ()
+			   val numEltsWordOp =
+			      Operand.Var {var = numEltsWord, ty = Type.word}
+			   val conv =
+			      PrimApp {args = Vector.new1 numEltsOp,
+				       dst = SOME (numEltsWord, Type.word),
+				       prim = Prim.word32FromInt}
+			in
+			   normal
+			   (Operand.Var {var = numBytes, ty = Type.word},
+			    numEltsOp,
+			    fn alloc =>
+			    if 1 = nbnp
+			       then
+				  let
+				     val numBytesWord = Var.newNoname ()
+				     val numEltsP3 = Var.newNoname ()
+				  in
+				     ([conv,
+				       PrimApp
+				       {args = (Vector.new2 (Operand.word 0w3,
+							     numEltsWordOp)),
+					dst = SOME (numEltsP3, Type.word),
+					prim = Prim.word32Add},
+				       PrimApp
+				       {args = (Vector.new2
+						(Operand.word (Word.notb 0w3),
+						 Operand.Var {var = numEltsP3,
+							      ty = Type.word})),
+					dst = SOME (numBytes, Type.word),
+					prim = Prim.word32Andb}],
+				      Goto {args = Vector.new0 (),
+					    dst = alloc})
+				  end
+			    else
+			       ([conv],
+				Transfer.Arith
+				{args = Vector.new2 (Operand.word
+						     (Word.fromInt bytesPerElt),
+						     numEltsWordOp),
+				 dst = numBytes,
+				 overflow = allocTooLarge (),
+				 prim = Prim.word32MulCheck,
+				 success = alloc,
+				 ty = Type.word}))
+			end
+	       end
+	 end)
+				  | Array_array0 => array0 ()
 				  | Array_sub =>
 				       (case targ () of
 					   NONE => none ()
@@ -754,30 +869,31 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 		     transfer = t}
 	 end
       fun translateFunction (f: S.Function.t): Function.t =
-	  let
+	 let
+	    val _ = resetAllocTooLarge ()
 	    val _ =
 	       S.Function.foreachVar (f, fn (x, t) => setVarInfo (x, {ty = t}))
 	    val {args, blocks, name, start, ...} = S.Function.dest f
 	    val _ =
 	       Vector.foreach
-		(blocks, fn S.Block.T {label, args, ...} =>
-		 setLabelInfo (label, {args = args,
-				       cont = ref [],
-				       handler = ref NONE}))
-	     val profileInfoFunc = Func.toString name
-	     fun profileInfo label =
-	        {ssa = {func = profileInfoFunc,
-			label = Label.toString label}}
-	     val blocks = Vector.map (blocks, fn block =>
-				      translateBlock (profileInfo, block))
-	     val blocks = Vector.concat [Vector.fromList (!extraBlocks), blocks]
-	     val _ = extraBlocks := []
-	  in
-	     Function.new {args = translateFormals args,
-			   blocks = blocks,
-			   name = name,
-			   start = start}
-	  end
+	       (blocks, fn S.Block.T {label, args, ...} =>
+		setLabelInfo (label, {args = args,
+				      cont = ref [],
+				      handler = ref NONE}))
+	    val profileInfoFunc = Func.toString name
+	    fun profileInfo label =
+	       {ssa = {func = profileInfoFunc,
+		       label = Label.toString label}}
+	    val blocks = Vector.map (blocks, fn block =>
+				     translateBlock (profileInfo, block))
+	    val blocks = Vector.concat [Vector.fromList (!extraBlocks), blocks]
+	    val _ = extraBlocks := []
+	 in
+	    Function.new {args = translateFormals args,
+			  blocks = blocks,
+			  name = name,
+			  start = start}
+	 end
       val main =
 	  let
 	     val start = Label.newNoname ()

@@ -38,6 +38,7 @@ fun memo f =
 
 val bool = int
 val label = uint
+val word = uint
   
 fun isPointer t =
    case dest t of

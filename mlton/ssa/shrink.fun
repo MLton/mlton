@@ -737,7 +737,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 	    traceSimplifyTransfer
 	    (fn (t: Transfer.t) =>
 	    case t of
-	        Arith {prim, args, overflow, success} =>
+	        Arith {prim, args, overflow, success, ty} =>
 		   let
 		      val args = varInfos args
 		   in
@@ -750,7 +750,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 			       val vi =
 				  VarInfo.T {isUsed = isUsed,
 					     numOccurrences = ref 0,
-					     ty = SOME Type.int,
+					     ty = SOME ty,
 					     value = ref (SOME (Value.Const c)),
 					     var = x}
 			       val (ss, t) = goto (success, Vector.new1 vi)
@@ -780,7 +780,8 @@ fun shrinkFunction (globals: Statement.t vector) =
 			    ([], Arith {prim = prim,
 					args = uses args,
 					overflow = simplifyLabel overflow,
-					success = simplifyLabel success})
+					success = simplifyLabel success,
+					ty = ty})
 		   end
 	     | Bug => ([], Bug)
 	     | Call {func, args, return} =>

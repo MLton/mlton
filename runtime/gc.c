@@ -33,7 +33,6 @@ enum {
 	DEBUG_DETAILED = FALSE,
 	FORWARDED = 0xFFFFFFFF,
 	HEADER_SIZE = WORD_SIZE,
-	LIMIT_SLOP = 512,
 	STACK_HEADER_SIZE = WORD_SIZE,
 };
 
@@ -54,10 +53,6 @@ static void leave(GC_state s);
 
 static inline uint toBytes(uint n) {
 	return n << 2;
-}
-
-static inline bool isWordAligned(uint x) {
-	return 0 == (x & 0x3);
 }
 
 static inline uint min(uint x, uint y) {
@@ -114,17 +109,17 @@ roundPage(size_t size)
 /* ------------------------------------------------- */
 
 void GC_display(GC_state s, FILE *stream) {
-	fprintf(stream, "GC state\n\tbase = %x  frontier - base = %d  limit - frontier = %d\n",
+	fprintf(stream, "GC state\n\tbase = %x  frontier - base = %u  limit - frontier = %u\n",
 			(uint) s->base, 
 			s->frontier - s->base,
 			s->limit - s->frontier);
 	fprintf(stream, "\tcanHandle = %d\n", s->canHandle);
-	fprintf(stream, "\texnStack = %d  bytesNeeded = %d  reserved = %d  used = %d\n",
+	fprintf(stream, "\texnStack = %u  bytesNeeded = %u  reserved = %u  used = %u\n",
 			s->currentThread->exnStack,
 			s->currentThread->bytesNeeded,
 			s->currentThread->stack->reserved,
 			s->currentThread->stack->used);
-	fprintf(stream, "\tstackBottom = %x\nstackTop - stackBottom = %d\nstackLimit - stackTop = %d\n",
+	fprintf(stream, "\tstackBottom = %x\nstackTop - stackBottom = %u\nstackLimit - stackTop = %u\n",
 			(uint)s->stackBottom,
 			s->stackTop - s->stackBottom,
 			(s->stackLimit - s->stackTop));
@@ -302,6 +297,9 @@ stackCopy(GC_stack from, GC_stack to)
 /*                 computeSemiSize                   */
 /* ------------------------------------------------- */
 
+typedef unsigned long long W64;
+typedef unsigned long W32;
+
 static inline ulong meg (uint n) {
 	return n / (1024ul * 1024ul);
 }
@@ -316,29 +314,35 @@ static inline ulong meg (uint n) {
  * It is careful not to overflow when doing the multiply.
  */
 static uint
-computeSemiSize(GC_state s, uint live, uint used, int try)
+computeSemiSize(GC_state s, W64 live, uint used, int try)
 {
-	uint maxSemi;
-	ullong neededLong;
+	W64 neededLong;
 	uint needed;
 
+	if (DEBUG)
+		fprintf(stderr, "computeSemiSize  live = %llu  used = %u\n", 
+			live, used);
 	assert(not s->useFixedHeap);
-	neededLong = ((ullong)live) * s->liveRatio;
-	maxSemi = s->ramSlop * s->totalRam / 2;
-	if (neededLong <= (ullong)maxSemi)
-		needed = roundPage(neededLong);
+	neededLong = live * s->liveRatio;
+	if (neededLong <= (W64)s->maxSemi)
+		needed = roundPage((W32)neededLong);
 	else {
+		W64 maybe;
 		uint n;
 
 		static double ks[13] = {1.99, 1.99, 1.8, 1.7, 1.6, 1.5, 
 					1.4, 1.3, 1.2, 1.15, 1.1, 1.05, 1.01};
 		assert (0 <= try and try < 13);
-		n = roundPage(ks[try]*((double)live));
-		if (n <= maxSemi)
-			n = maxSemi;
+		maybe = (W64)(ks[try] * (double)live);
+		n = roundPage(maybe > (W64)(s->totalRam + s->totalSwap)
+				? s->totalRam + s->totalSwap
+				: (W32)maybe);
+		if (n <= s->maxSemi)
+			n = s->maxSemi;
 		else if (s->messages and try > 0)
 				fprintf(stderr, "[Requested %lluMb (> %luMb) cannot be satisfied, allocating %luMb instead. Live = %luMb, k=%.2f]\n",
-					neededLong / (1024 * 1024), meg(maxSemi),
+					neededLong / (1024 * 1024), 
+					meg(s->maxSemi),
 					meg(n), meg(live), ks[try]);
 		needed = n;
 	}
@@ -437,7 +441,7 @@ GC_foreachPointerInObject(GC_state s, GC_pointerFun f, pointer p)
 			returnAddress = *(word*) (top - WORD_SIZE);
 			if (DEBUG)
 				fprintf(stderr, 
-					"  top = %d  return address = %d.\n", 
+					"  top = %d  return address = %u.\n", 
 					top - bottom, 
 					returnAddress);
 			layout = getFrameLayout(s, returnAddress); 
@@ -446,7 +450,7 @@ GC_foreachPointerInObject(GC_state s, GC_pointerFun f, pointer p)
 			for (i = 0 ; i < frameOffsets[0] ; ++i) {
 				if (DEBUG)
 					fprintf(stderr, 
-						"    offset %d  address %x\n", 
+						"    offset %u  address %x\n", 
 						frameOffsets[i + 1],
 						(uint)(*(pointer*)(top + frameOffsets[i + 1])));
 				maybeCall(f, s, 
@@ -700,7 +704,8 @@ copyThread(GC_state s, GC_thread from, uint size)
 /* ------------------------------------------------- */
 
 static inline void setLimit(GC_state s) {
-	s->limit = s->base + s->fromSize - LIMIT_SLOP;
+	s->limitPlusSlop = s->base + s->fromSize;
+	s->limit = s->limitPlusSlop - LIMIT_SLOP;
 }
 
 /* ------------------------------------------------- */
@@ -1063,6 +1068,8 @@ setMemInfo(GC_state s)
 		diee("sysinfo failed");
 	s->totalRam = sbuf.totalram;
 	s->totalSwap = sbuf.totalswap;
+	assert(s->ramSlop <= 1.0);
+	s->maxSemi = roundPage(s->ramSlop * s->totalRam / 2);
 }
 
 void
@@ -1120,8 +1127,9 @@ GC_setHeapParams(GC_state s, uint size)
 		if (0 == s->fromSize)
 			s->fromSize = roundPage(s->ramSlop * s->totalRam);
 	        s->fromSize = roundPage(s->fromSize / 2);
-	} else
+	} else {
 		s->fromSize = computeSemiSize(s, size, 0, 0);
+	}
 	if (size + LIMIT_SLOP > s->fromSize)
 		die("Out of memory (setHeapParams).");
 }
@@ -1218,7 +1226,7 @@ forward(GC_state s, pointer *pp)
 		 * than fromSpace, and so the copy may fail.
 		 */
   		if (s->back + size + skip > s->toLimit)
-			die("Out of memory (forward).\nsize=%u skip=%u remaining=%d s->fromSize=%d s->toSize=%d headerBytes=%d objectBytes=%d header=%x\nDiagnostic: probably a RAM problem.",
+			die("Out of memory (forward).\nsize=%u skip=%u remaining=%u s->fromSize=%u s->toSize=%u headerBytes=%d objectBytes=%u header=%x\nDiagnostic: probably a RAM problem.",
 				size, skip, s->toLimit - s->back, s->fromSize, s->toSize, headerBytes, objectBytes, header);
   		/* Copy the object. */
  		if (FALSE and processor_has_sse2 and size >= 8192) {
@@ -1275,7 +1283,7 @@ static inline void forwardEachPointerInRange(GC_state s, pointer front,
 void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 	uint gcTime;
 	uint size;
-	uint live;
+	W64 live;
 	uint needed;
 	int try;
 	pointer front;
@@ -1283,10 +1291,11 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 
 	assert(invariant(s));
 	if (DEBUG or s->messages)
-		fprintf(stderr, "Starting gc.  bytesRequested = %d\n",
+		fprintf(stderr, "Starting gc.  bytesRequested = %u\n",
 				bytesRequested);
 	fixedGetrusage(RUSAGE_SELF, &ru_start);
-	live = s->bytesLive + bytesRequested + stackBytesRequested;
+	live = (W64)s->bytesLive + (W64)bytesRequested 
+		+ (W64)stackBytesRequested;
 	unless (s->useFixedHeap) { /* Get toSpace ready. */
 		try = 0;
 	retry:
@@ -1372,23 +1381,32 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 		s->maxBytesLive = s->bytesLive;
 	/* Resize heap, if necessary. */
 	unless (s->useFixedHeap) {
-		uint needed;
+		W64 needed;
+		uint keep;
 
-		needed = s->bytesLive + bytesRequested;
-		/* Shrink new space (now fromSpace) if the ratio of live data to
-		 * semispace size is too low.
+		needed = (W64)s->bytesLive + bytesRequested;
+		/* Shrink new space (now fromSpace) if one of the following 
+		 * holds.
+		 * 1. The ratio of live data to semispace size is too low.
+ 		 * 2. The live data fits in a semispace that is half of the
+		 *    RAM size.
 		 */
-		if (needed < s->fromSize / s->minLive) {
-			uint keep;
-
+		if (needed < (W64)s->fromSize / s->minLive)
 			keep = roundPage(needed * s->liveRatio);
-			if (DEBUG or s->messages)
+		else if (s->fromSize > s->maxSemi
+				and needed * 2 <= (W64)s->maxSemi)
+			keep = s->maxSemi;
+		else
+			keep = s->fromSize;
+		if (keep < s->fromSize) {
+			if (DEBUG or s->messages) {
 				fprintf(stderr, 
 					"Shrinking new space at %x to %u bytes.\n",
 					(uint)s->base , keep);
 			assert(keep <= s->fromSize);
 			smunmap(s->base + keep, s->fromSize - keep);
 			s->fromSize = keep;
+			}
 		}
 		/* Unmap old space (now toSpace) so that it will be allocated at
                  * the next GC if one of the following holds.
@@ -1426,7 +1444,7 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 			intToCommaString(s->bytesLive),
 			100.0 * ((double) s->bytesLive) / size);
 	}
-	unless (s->frontier + bytesRequested <= s->limit) {
+	unless (bytesRequested <= s->limit - s->frontier) {
 		if (s->useFixedHeap) {
 			die("Out of memory (doGC).");
 		} 
@@ -1434,7 +1452,7 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 			fprintf(stderr, "Recursive call to doGC.\n");
 		GC_doGC(s, bytesRequested, 0);
 	}
-	assert(s->frontier + bytesRequested <= s->limit);
+	assert(bytesRequested <= s->limit - s->frontier);
 	assert(invariant(s));
 }
 
@@ -1457,15 +1475,16 @@ void GC_gc(GC_state s, uint bytesRequested, bool force,
 		? 0 
 		: stackBytes(2 * s->currentThread->stack->reserved);
 	if (DEBUG)
-		fprintf(stderr, "bytesRequested = %d  stackBytesRequested = %d\n",
+		fprintf(stderr, "bytesRequested = %u  stackBytesRequested = %u\n",
 				bytesRequested, stackBytesRequested);
-	if (force or (s->frontier + bytesRequested + stackBytesRequested 
-			> s->limit)) {
+	if (force or
+		(W64)(W32)s->frontier + (W64)bytesRequested 
+			+ (W64)stackBytesRequested > (W64)(W32)s->limit) {
 		if (s->messages)
 			fprintf(stderr, "%s %d: GC_doGC\n", file, line);
 		/* This GC will grow the stack, if necessary. */
 		GC_doGC (s, bytesRequested, s->currentThread->stack->reserved);
-		assert (s->frontier + bytesRequested <= s->limit);
+		assert (bytesRequested <= s->limit - s->frontier);
 	} else if (not (stackTopIsOk (s, s->currentThread->stack))) {
 		uint size;
 		GC_stack stack;
@@ -1482,7 +1501,7 @@ void GC_gc(GC_state s, uint bytesRequested, bool force,
 		stackCopy(s->currentThread->stack, stack);
 		s->currentThread->stack = stack;
 		GC_setStack(s);
-		assert(s->frontier + bytesRequested <= s->limit);
+		assert (bytesRequested <= s->limit - s->frontier);
 	} else {
 		assert (0 == s->canHandle);
 		/* Switch to the signal handler thread. */
@@ -1497,7 +1516,8 @@ void GC_gc(GC_state s, uint bytesRequested, bool force,
 		switchToThread(s, s->signalHandler);
 	}
 	leave(s);
-	} while (s->frontier + s->currentThread->bytesNeeded > s->limit);
+	} while ((W64)(W32)s->frontier + (W64)s->currentThread->bytesNeeded 
+			> (W64)(W32)s->limit);
 }
 
 /* ------------------------------------------------- */

@@ -20,7 +20,8 @@ signature PRIM =
 	 sig
 	    datatype t =
 	       Array_array (* implemented in backend.fun *)
-	     | Array_array0 (* implemented in constant-propagation.fun *)
+	     | Array_array0 (* implemented in backend.fun *)
+	     | Array_array0Const (* implemented in constant-propagation.fun *)
 	     | Array_length
 	     | Array_sub (* implemented in backend.fun *)
 	     | Array_update (* implemented in backend.fun *)
@@ -147,6 +148,7 @@ signature PRIM =
 	     | Vector_length
 	     | Vector_sub (* implemented in backend/backend.fun *)
 	     | Word32_add
+	     | Word32_addCheck
 	     | Word32_andb
 	     | Word32_arshift
 	     | Word32_div
@@ -158,6 +160,7 @@ signature PRIM =
 	     | Word32_lt
 	     | Word32_mod
 	     | Word32_mul
+	     | Word32_mulCheck
 	     | Word32_neg
 	     | Word32_notb
 	     | Word32_orb
@@ -226,8 +229,10 @@ signature PRIM =
 	    val layout: ('a -> Layout.t) -> 'a t -> Layout.t
 	 end where type prim = t
 
+      val allocTooLarge: t
       val apply: t * 'a ApplyArg.t list * ('a * 'a -> bool) -> 'a ApplyResult.t
       val array: t
+      val array0: t
       val assign: t
       val bogus: t
       val bug: t
@@ -276,7 +281,6 @@ signature PRIM =
       val isFunctional: t -> bool
       val layout: t -> Layout.t
       val layoutApp: t * 'a vector * ('a -> Layout.t) -> Layout.t
-      val mayAllocate: t -> bool
       (* Int_addCheck, Int_mulCheck, Int_subCheck *)
       val mayOverflow: t -> bool
       val mayRaise: t -> bool
@@ -295,4 +299,12 @@ signature PRIM =
       val toString: t -> string
       val vectorLength: t
       val vectorSub: t
+      val word32Add: t
+      val word32AddCheck: t
+      val word32Andb: t
+      val word32FromInt: t
+      val word32Gt: t
+      val word32MulCheck: t
+      val word32Sub: t
+      val word32ToIntX: t
    end

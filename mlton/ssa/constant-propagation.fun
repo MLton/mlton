@@ -53,6 +53,14 @@ structure Value =
 	     | Const of Const.t
 	     | Unknown (* many possible values *)
 
+	    fun isZero (T {const, ...}) =
+	       case !const of
+		  Const c =>
+		     (case Const.node c of
+			 Const.Node.Int 0 => true
+		       | _ => false)
+		| _ => false
+
 	    fun new c = T {const = ref c,
 			   coercedTo = ref []}
 
@@ -261,6 +269,11 @@ structure Value =
 	     | Unknown => str "unknown datatype"
       end
 
+      fun isZero v =
+	 case value v of
+	    Const c => Const.isZero c
+	  | _ => false
+
       val globalsInfo = Trace.info "globals"
       val globalInfo = Trace.info "global"
 	 
@@ -295,7 +308,8 @@ structure Value =
 		      fun yes e = Yes (newGlobal (ty, e))
 		      fun unary (Birth.T {place, ...},
 				 makeInit: 'a -> t,
-				 prim: Prim.t,
+				 primApp: {targs: Type.t vector,
+					   args: Var.t vector} -> Exp.t,
 				 targ: Type.t) =
 			 case !place of
 			    Place.One (One.T {global = glob, extra}) =>
@@ -304,17 +318,18 @@ structure Value =
 			       in
 				  case global (init, newGlobal) of
 				     SOME (x, _) =>
-				        Yes (case !glob of
-					        NONE => 
-						   let
-						      val exp =
-							  Exp.PrimApp
-							  {prim = prim,
-							   targs = Vector.new1 targ,
-							   args = Vector.new1 x}
-						      val g = newGlobal (ty, exp)
-						   in glob := SOME g; g
-						   end
+				        Yes
+					(case !glob of
+					    NONE => 
+					       let
+						  val exp =
+						     primApp
+						     {targs = Vector.new1 targ,
+						      args = Vector.new1 x}
+						  val g = newGlobal (ty, exp)
+					       in
+						  glob := SOME g; g
+					       end
 					      | SOME g => g)
 				   | _ => No
 			       end
@@ -337,10 +352,22 @@ structure Value =
 				 | _ => No)
 			  | Ref {birth, ...} =>
 			       unary (birth, fn {init} => init,
-				      Prim.reff, Type.deref ty)
+				      fn {args, targs} =>
+				      Exp.PrimApp {args = args,
+						   prim = Prim.reff,
+						   targs = targs},
+				      Type.deref ty)
 			  | Array {birth, length, ...} =>
 			       unary (birth, fn _ => length,
-				      Prim.array, Type.dearray ty)
+				      fn {args, targs} =>
+				      if isZero length
+					 then Exp.PrimApp {args = Vector.new0 (),
+							   prim = Prim.array0,
+							   targs = targs}
+				      else Exp.PrimApp {args = args,
+							prim = Prim.array,
+							targs = targs},
+				      Type.dearray ty)
 			  | Vector _ => No
 			  | Tuple vs =>
 			       (case globals (vs, newGlobal) of
@@ -674,42 +701,40 @@ fun simplify (program as Program.T {datatypes, globals, functions, main})
 		   ; unit ())
 	       fun arg i = Vector.sub (args, i)
 	       datatype z = datatype Prim.Name.t
-	    in case Prim.name prim of
-	       Array_array =>
-		  let val a = fromType resultType
-		  in coerce {from = arg 0, to = arrayLength a}
-		     ; Birth.coerce {from = bear (), to = arrayBirth a}
-		     ; a
-		  end
-	     | Array_array0 =>
+	       fun array (length, birth) =
 		  let
 		     val a = fromType resultType
-		     val _ = coerce {from = zero, to = arrayLength a}
-		     val _ = Birth.coerce {from = Birth.here (),
-					   to = arrayBirth a}
-		  in a
+		     val _ = coerce {from = length, to = arrayLength a}
+		     val _ = Birth.coerce {from = birth, to = arrayBirth a}
+		  in
+		     a
 		  end
-	     | Array_length => arrayLength (arg 0)
-	     | Array_sub => dearray (arg 0)
-	     | Array_update => update (arg 0, arg 2)
-	     | Ref_assign =>
-		  (coerce {from = arg 1, to = deref (arg 0)}; unit ())
-	     | Ref_deref => deref (arg 0)
-	     | Ref_ref =>
-		  let
-		     val v = arg 0
-		     val r = fromType resultType
-		  in coerce {from = v, to = deref r}
-		     ; Birth.coerce {from = bear {init = v}, to = refBirth r}
-		     ; r
-		  end
-	     | Vector_fromArray => vectorFromArray (arg 0)
-	     | Vector_length => vectorLength (arg 0)
-	     | Vector_sub => devector (arg 0)
-	     | _ => (if Prim.maySideEffect prim
-			then Vector.foreach (args, sideEffect)
-		     else ()
-			; unknown resultType)
+	    in
+	       case Prim.name prim of
+		  Array_array => array (arg 0, bear ())
+		| Array_array0 => array (zero, bear ())
+		| Array_array0Const => array (zero, Birth.here ())
+		| Array_length => arrayLength (arg 0)
+		| Array_sub => dearray (arg 0)
+		| Array_update => update (arg 0, arg 2)
+		| Ref_assign =>
+		     (coerce {from = arg 1, to = deref (arg 0)}; unit ())
+		| Ref_deref => deref (arg 0)
+		| Ref_ref =>
+		     let
+			val v = arg 0
+			val r = fromType resultType
+		     in coerce {from = v, to = deref r}
+			; Birth.coerce {from = bear {init = v}, to = refBirth r}
+			; r
+		     end
+		| Vector_fromArray => vectorFromArray (arg 0)
+		| Vector_length => vectorLength (arg 0)
+		| Vector_sub => devector (arg 0)
+		| _ => (if Prim.maySideEffect prim
+			   then Vector.foreach (args, sideEffect)
+			else ()
+			   ; unknown resultType)
 	    end
 	 fun filter (variant, con, args) =
 	    case value variant of

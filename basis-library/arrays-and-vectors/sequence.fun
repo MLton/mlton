@@ -21,9 +21,9 @@ functor Sequence (S: sig
       val maxLen = Array.maxLen
 
       fun array n =
-	 if isMutable orelse n <> 0 (* can't use n > 0.  need to raise Size *)
-	    then Array.array n
-	 else Array.array0 ()
+	 if not isMutable andalso n = 0
+	    then Array.array0Const ()
+	 else Array.array n
 
       fun sub (s, i) =
 	 if Primitive.safe andalso Primitive.Int.geu (i, length s)
@@ -162,7 +162,7 @@ functor Sequence (S: sig
 
       fun 'a concat (vs: 'a sequence list): 'a sequence =
 	 case vs of
-	    [] => fromArray (Primitive.Array.array0 ())
+	    [] => fromArray (array 0)
 	  | [v] => if isMutable then copy v else v
 	  | v :: vs' => 
 	       let

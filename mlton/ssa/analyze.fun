@@ -54,12 +54,12 @@ fun 'a analyze
 			shouldReturns: 'a vector option,
 			shouldRaises: 'a vector option): unit =
 	(case t of
-	    Arith {prim, args, overflow, success} =>
+	    Arith {prim, args, overflow, success, ty} =>
 	       (coerces (Vector.new0 (), labelArgs overflow)
 		; coerce {from = primApp {prim = prim,
 					  targs = Vector.new0 (),
 					  args = values args,
-					  resultType = Type.int,
+					  resultType = ty,
 					  resultVar = NONE},
 			  to = Vector.sub (labelArgs success, 0)})
 	  | Bug => ()

@@ -19,8 +19,7 @@ fun insertFunction (f: Function.t) =
 	    val isZero = Var.newNoname ()
 	    val compare =
 	       Statement.PrimApp
-	       {args = Vector.new2 (Operand.Var {var = numElts, ty = Type.int},
-				    Operand.int 0),
+	       {args = Vector.new2 (numElts, Operand.int 0),
 		dst = SOME (isZero, Type.bool),
 		prim = Prim.eq}
 	    val continue = Label.newNoname ()
@@ -43,7 +42,7 @@ fun insertFunction (f: Function.t) =
 		 dst = SOME (i', Type.int),
 		 prim = Prim.intAdd},
 		Statement.PrimApp
-		{args = Vector.new2 (Operand.Var {var = numElts, ty = Type.int},
+		{args = Vector.new2 (numElts,
 				     Operand.Var {var = i', ty = Type.int}),
 		 dst = SOME (isNumElts, Type.bool),
 		 prim = Prim.eq})

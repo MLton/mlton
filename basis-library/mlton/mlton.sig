@@ -36,7 +36,12 @@ signature MLTON =
       structure Thread: MLTON_THREAD
       structure TextIO: MLTON_TEXT_IO
       structure Vector: MLTON_VECTOR
-      structure Word: MLTON_WORD where type word = Word.word
+      structure Word:
+	 sig
+	    include MLTON_WORD
+	    val addCheck: word * Word.word -> word (* may raise Overflow *)
+	    val mulCheck: word * Word.word -> word (* may raise Overflow *)
+	 end where type word = Word.word
       structure Word8: MLTON_WORD where type word = Word8.word
       structure World: MLTON_WORLD
    end

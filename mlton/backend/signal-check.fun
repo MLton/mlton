@@ -10,8 +10,7 @@ structure Edge = Graph.Edge
 structure Forest = Graph.LoopForest
 
 fun insert p =
-   if not (Program.hasPrim (p, fn p =>
-			    Prim.name p = Prim.Name.Thread_finishHandler))
+   if not (Program.usesSignals p)
       then p
    else
       let
@@ -49,12 +48,7 @@ fun insert p =
 		      val from = indexNode i
 		   in
 		      if (case transfer of
-			     Transfer.LimitCheck {kind, ...} =>
-				(case kind of
-				    LimitCheck.Array _ => true
-				  | LimitCheck.Heap _ => true
-				  | _ => false)
-			   | Transfer.Runtime _ => true
+			     Transfer.Runtime _ => true
 			   | _ => false)
 			 then ()
 		      else
@@ -83,28 +77,55 @@ fun insert p =
 				Vector.sub (blocks, i)
 			     val failure = Label.newNoname ()
 			     val success = Label.newNoname ()
+			     val collect = Label.newNoname ()
+			     val collectReturn = Label.newNoname ()
+			     val dontCollect = Label.newNoname ()
+			     val res = Var.newNoname ()
+			     val compare =
+				Vector.new1
+				(Statement.PrimApp
+				 {args = Vector.new2 (Operand.Runtime
+						      RuntimeOperand.Limit,
+						      Operand.int 0),
+				  dst = SOME (res, Type.bool),
+				  prim = Prim.eq})
+			     val compareTransfer =
+				Transfer.Switch
+				{cases = Cases.Int [(0, dontCollect),
+						    (1, collect)],
+				 default = NONE,
+				 test = Operand.Var {var = res, ty = Type.bool}}
 			     val _ =
 				extra :=
-				Block.T {args = args,
-					 kind = kind,
+ 				Block.T {args = args,
+ 					 kind = kind,
 					 label = label,
-					 profileInfo = profileInfo,
-					 statements = Vector.new0 (),
-					 transfer = (Transfer.LimitCheck
-						     {failure = failure,
-						      kind = LimitCheck.Signal,
-						      success = success})}
+ 					 profileInfo = profileInfo,
+ 					 statements = compare,
+ 					 transfer = compareTransfer}
+				:: (Block.T
+				    {args = Vector.new0 (),
+				     kind = Kind.Jump,
+				     label = collect,
+				     profileInfo = profileInfo,
+				     statements = Vector.new0 (),
+				     transfer = (Transfer.Runtime
+						 {args = (Vector.new2
+							  (Operand.int 0,
+							   Operand.int 0)),
+						  prim = Prim.gcCollect,
+						  return = collectReturn})})
 				:: Block.T {args = Vector.new0 (),
 					    kind = Kind.Runtime {prim = Prim.gcCollect},
-					    label = failure,
+					    label = collectReturn,
 					    profileInfo = profileInfo,
 					    statements = Vector.new0 (),
-					    transfer = (Transfer.Goto
-							{args = Vector.new0 (),
-							 dst = success})}
+					    transfer =
+					    Transfer.Goto {dst = dontCollect,
+							   args = Vector.new0 ()}}
 				:: Block.T {args = Vector.new0 (),
 					    kind = Kind.Jump,
-					    label = success,
+					    label = dontCollect,
 					    profileInfo = profileInfo,
 					    statements = statements,
 					    transfer = transfer}

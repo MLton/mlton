@@ -19,6 +19,7 @@ OBJS =						\
 	basis/Int/rem.o				\
 	basis/Int/subOverflow.o			\
 	basis/Itimer/set.o			\
+	basis/MLton/allocTooLarge.o		\
 	basis/MLton/bug.o			\
 	basis/MLton/exit.o			\
 	basis/MLton/profile.o			\
@@ -42,7 +43,9 @@ OBJS =						\
 	basis/String/equal.o			\
 	basis/Thread.o				\
 	basis/Time.o				\
+	basis/Word32/addOverflow.o		\
 	basis/Word32/arshiftAsm.o		\
+	basis/Word32/mulOverflow.o		\
 	basis/Word8/arshiftAsm.o		\
 	Posix/Error/clearErrno.o		\
 	Posix/Error/getErrno.o			\
@@ -164,6 +167,7 @@ DEBUG_OBJS =					\
 	basis/Int/rem-gdb.o			\
 	basis/Int/subOverflow-gdb.o		\
 	basis/Itimer/set-gdb.o			\
+	basis/MLton/allocTooLarge-gdb.o		\
 	basis/MLton/bug-gdb.o			\
 	basis/MLton/exit-gdb.o			\
 	basis/MLton/profile-gdb.o		\
@@ -187,7 +191,9 @@ DEBUG_OBJS =					\
 	basis/String/equal-gdb.o		\
 	basis/Thread-gdb.o			\
 	basis/Time-gdb.o			\
+	basis/Word32/addOverflow-gdb.o		\
 	basis/Word32/arshiftAsm-gdb.o		\
+	basis/Word32/mulOverflow-gdb.o		\
 	basis/Word8/arshiftAsm-gdb.o		\
 	Posix/Error/clearErrno-gdb.o		\
 	Posix/Error/getErrno-gdb.o		\
