@@ -41,7 +41,7 @@ local
 in
    val fromInt = fromInt
    val fromIntInf = fromLargeInt
-   val toIntInf = fromLargeInt
+   val toIntInf = toLargeInt IEEEReal.TO_NEAREST
 end
 
 structure Format =

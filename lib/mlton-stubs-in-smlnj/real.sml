@@ -20,6 +20,9 @@ structure Real =
 	 fun toInt m x = fromInt(Real.toInt m x)
 	 val fromInt = Real.fromLargeInt
       end
-      fun fromLargeInt _ = raise Fail "Real.fromLargeInt"
-      fun toLargeInt _ = raise Fail "Real.toLargeInt"
+
+      val fromLargeInt: IntInf.int -> real =
+	 fn _ => raise Fail "Real.fromLargeInt"
+      val toLargeInt: IEEEReal.rounding_mode -> real -> IntInf.int =
+	 fn _ => fn _ => raise Fail "Real.toLargeInt"
    end
