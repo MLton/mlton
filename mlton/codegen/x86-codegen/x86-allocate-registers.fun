@@ -10664,6 +10664,11 @@ struct
 	    (Label.plist,
 	     Property.initConst NONE)
 
+	fun unroll label
+	  = case getInfo label
+	      of NONE => label
+	       | SOME label' => unroll label'
+
 	val assembly
 	  = List.fold
 	    (assembly,
@@ -10714,10 +10719,16 @@ struct
 		        | _ => false
 		   and doit'''
 		     = fn ([], labels, label)
-		        => (List.foreach
-			    (labels, 
-			     fn label' => setInfo(label', SOME label))
-			    ; true)
+		        => let
+			     val label' = unroll label
+			   in
+			     if List.contains(labels, label', Label.equals)
+			       then false
+			       else (List.foreach
+				     (labels,
+				      fn label'' => setInfo(label'', SOME label'));
+				     true)
+			   end
 			| ((Assembly.Comment _)::assembly, labels, label)
 		        => doit''' (assembly, labels, label)
 		        | _ => false
@@ -10726,11 +10737,6 @@ struct
 		     then assembly'
 		     else assembly::assembly'
 		 end)
-
-	fun unroll label
-	  = case getInfo label
-	      of NONE => label
-	       | SOME label' => unroll label'
 
 	fun replacer _ oper
 	  = (case (Operand.deImmediate oper, Operand.deLabel oper)

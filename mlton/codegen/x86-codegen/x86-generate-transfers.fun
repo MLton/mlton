@@ -1183,10 +1183,6 @@ struct
 			| Thread_copy => default "GC_copyThread"
 			| Thread_copyShrink => default "GC_copyThreadShrink"
 			| Thread_finishHandler => default "GC_finishHandler"
-(*
-			| Thread_switchTo => default "GC_switchToThread"
-			| Thread_switchToCont => default "GC_switchToThread"
-*)
 			| Thread_switchTo => thread ()
 			| Thread_switchToCont => thread ()
 			| World_save => default "GC_saveWorld"

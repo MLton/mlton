@@ -9,6 +9,7 @@ struct
 (*
     = fn s => fn f => (Control.trace (Control.Detail, s) f, fn () => ())
 *)
+
     val tracerTop
     = fn s => Control.traceBatch (Control.Pass, s)
 (*

@@ -398,10 +398,7 @@ struct
 				 (case exn
 				    of Fail s => s
 				     | _ => "?"))
-
-	      val chunk' = chunk
-	      val blocks' = blocks
-
+		  
 	      val chunk : x86.Chunk.t
 		= x86Simplify.simplify 
 		  {chunk = chunk,

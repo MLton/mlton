@@ -2422,8 +2422,10 @@ struct
 		  => if List.forall(statements,
 				    fn Assembly.Comment _ => true
 				     | _ => false)
+(*
 		        andalso
 			not (Label.equals(label, target))
+*)
 		       then (set(label, SOME target); SOME label)
 		       else NONE
 		  | _ => NONE)
@@ -2438,8 +2440,11 @@ struct
 				    => (case get target
 					  of NONE => b
 					   | SOME target'
-					   => (set(label, SOME target');
-					       true)))
+					   => if Label.equals(label, target')
+						then (set(label, NONE);
+						      b)
+						else (set(label, SOME target');
+						      true)))
 		  then loop ()
 		  else ()
 		    
@@ -2615,7 +2620,7 @@ struct
 		       {blocks = [], changed' = false},
 		       fn (block as Block.T {entry,transfer,...},
 			   {blocks, changed'})
-		        => if x86JumpInfo.getNear(jumpInfo, Entry.label entry) = Count 0 
+		        => if x86JumpInfo.getNear(jumpInfo, Entry.label entry) = Count 0
 			     then let
 				    val _ = List.foreach
 				            (Transfer.nearTargets transfer,
@@ -2689,6 +2694,7 @@ struct
 		 changed = changed_elimComplexGoto} 
 	      = elimComplexGoto {chunk = chunk,
 				 jumpInfo = jumpInfo}
+
 	  in
 	    {chunk = chunk,
 	     changed = changed_loop orelse changed_elimComplexGoto}
