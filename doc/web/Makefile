@@ -1,13 +1,12 @@
 UG = ../user-guide
 
 all:
-	cd $(UG) && $(MAKE)
 	cp -p ../CHANGES .
+	cd $(UG) && $(MAKE)
 	gzip -c $(UG)/main.ps >user-guide.ps.gz
 	rm -f HTML/*
 	mkdir -p HTML
-	cd $(UG)/main && \
-		cp -p main.css main.html node*.html *.png ../../web/HTML
+	mv $(UG)/main HTML
 	cvs -Q co -d benchmarks mlton/benchmark/tests
 	cvs -Q release benchmarks
 	find benchmarks -type d | grep CVS | xargs rm -rf

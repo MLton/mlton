@@ -15,7 +15,7 @@ YACC = mlyacc
 PATH = $(BIN):$(shell echo $$PATH)
 
 all:	$(MLTON) $(BIN)/$(LEX) $(BIN)/$(PROF) $(BIN)/$(YACC)
-	cd doc && $(MAKE)
+	cd $(SRC)/doc/user-guide && $(MAKE)
 	chmod a-w $(INC)/*
 	@echo 'Build of MLton succeeded'
 
@@ -103,12 +103,13 @@ TDOC = $(PREFIX)/usr/share/doc/mlton-$(VERSION)
 .PHONY: install
 install:
 	mkdir -p $(TDOC) $(TBIN) $(TLIB)/lib $(TLIB)/include $(TMAN) &&	\
-	(
-		cd $(DOC)
-		cp -p CHANGES cmcat.sml README $(TDOC)
-		
-		gzip -c main.ps >$(TDOC)/user-guide.ps.gz
-	)
+	(								\
+		cd $(SRC)/doc &&					\
+		cp -pr CHANGES cmcat.sml examples license README 	\
+			$(TDOC) && 					\
+		mv user-guide/main $(TDOC)/HTML &&			\
+		gzip -c user-guide/main.ps >$(TDOC)/user-guide.ps.gz	\
+	) &&								\
 	(								\
 		cd $(LIB) &&						\
 		cp -p *.a prof.o $(AOUT) world.mlton $(TLIB)/lib	\

@@ -23,7 +23,8 @@ all:	main.ps main/main.html
 
 main/main.html: $(TEX_FILES)
 	latex2html -address '' -local_icons main.tex
-	rm -f main/WARNINGS
+	cd main && rm -f WARNINGS images.* *.pl
+	cd main && rm -f index.html && ln -s main.html index.html
 
 main.dvi: $(TEX_FILES)
 	latex main; bibtex main; latex main; latex main
