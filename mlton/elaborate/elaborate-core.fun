@@ -1163,7 +1163,7 @@ fun elaborateDec (d, {env = E,
 					    (separate
 					     (Vector.toListMap
 					      (clauses, fn {lay, ...} => lay ()),
-					      "| ")))]
+					      " | ")))]
 				   end
 				val {args, func, ...} = Vector.sub (clauses, 0)
 				val numArgs = Vector.length args
