@@ -11,6 +11,8 @@ struct
 type int = Int.t
 type word = Word.t
 
+val debug = false
+
 val sourcesIndexGC: int = 1
 
 structure GraphShow =
@@ -106,8 +108,6 @@ structure AFile =
 		sourceSuccessors = sourceSuccessors,
 		sources = sources}
 	  end)
-	 
-      val new = Trace.trace ("AFile.new", File.layout o #afile, layout) new
    end
 
 structure Kind =
@@ -261,9 +261,6 @@ structure ProfFile =
 		totalGC = totalGC}
 	  end)
 
-      val new =
-	 Trace.trace ("ProfFile.new", File.layout o #mlmonfile, layout) new
-
       fun merge (T {counts = c, kind = k, magic = m, total = t, totalGC = g},
 		 T {counts = c', kind = k', magic = m', total = t', totalGC = g',
 		    ...}): t =
@@ -341,6 +338,13 @@ fun display (AFile.T {name = aname, sources, sourceSuccessors, ...},
 		     | GraphShow.All => true)
 		   then
 		      let
+			 val _ =
+			    if debug
+			       then
+				  print (concat ["node for ",
+						 Source.toString source,
+						 "\n"])
+			    else ()
 			 val node = Graph.newNode graph
 			 val no = nodeOptions node
 			 val _ = 
@@ -495,10 +499,11 @@ fun commandLine args =
 	     let
 		val aInfo = AFile.new {afile = afile}
 		val _ =
-		   if true
-		      then ()
-		   else (print "AFile:\n"
-			 ; Layout.outputl (AFile.layout aInfo, Out.standard))
+		   if debug
+		      then
+			 (print "AFile:\n"
+			  ; Layout.outputl (AFile.layout aInfo, Out.standard))
+		   else ()
 		val profFile =
 		   List.fold
 		   (mlmonfiles, ProfFile.empty aInfo,
@@ -506,11 +511,12 @@ fun commandLine args =
 		    ProfFile.merge (profFile,
 				    ProfFile.new {mlmonfile = mlmonfile}))
 		val _ =
-		   if true
-		      then ()
-		   else (print "ProfFile:\n"
-			 ; Layout.outputl (ProfFile.layout profFile,
-					   Out.standard))
+		   if debug
+		      then
+			 (print "ProfFile:\n"
+			  ; Layout.outputl (ProfFile.layout profFile,
+					    Out.standard))
+		   else ()
 		val _ =
 		   let
 		      val AFile.T {magic = m, sources, ...} = aInfo
