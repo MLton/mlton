@@ -27,7 +27,8 @@ rm -f $basis
 (
 cat <<-EOF
 	val _ = SMLofNJ.Internals.GC.messages false;
-	fun PRIM x = raise Fail "_prim"
+	fun PRIM (x:string) = raise Fail "_prim"
+	fun STRING_CONST (x:string) : char vector = raise Fail "<string constant>"
 	datatype pointer = T
         datatype preThread = T
 	datatype thread = T

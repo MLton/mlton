@@ -5,35 +5,27 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
+structure CharVector = MonoVector(type elem = char)
+structure CharVectorSlice = CharVector.MonoVectorSlice
+
 structure String0 =
    struct
-      val fromArray =
-	 Primitive.String.fromCharVector o Primitive.Vector.fromArray
-
-      structure S = Sequence (type 'a sequence = string
-			      type 'a elt = char
-			      val fromArray = fromArray
-			      val isMutable = false
-			      open Primitive.String
-			      val length = size)
-      open S
+      open CharVector
       open Primitive.Int
 	 
-      type char = char
-      type string = string
-      type elem = char
-      type vector = string
+      type char = elem
+      type string = vector
 
       structure Substring0 = 
 	 struct
-	    open Slice
-	    type char = char
-	    type string = string
-	    type substring = elem slice
-	    type elem = char
-	    type vector = string
-	    type slice = elem slice
+	    open CharVectorSlice
+	    type char = elem
+	    type string = vector
+	    type substring = slice
+	    val extract = slice
 	    val unsafeExtract = unsafeSlice
+	    fun substring (s, i, j) = extract (s, i, SOME j)
 	    fun unsafeSubstring (s, i, j) = unsafeExtract (s, i, SOME j)
 	 end
 
@@ -47,7 +39,7 @@ structure String0 =
 
       val size = length
 
-      fun extract (s, i, j) = Slice.copy (Slice.slice (s, i, j))
+      fun extract (s, i, j) = Substring0.copy (Substring0.extract (s, i, j))
       fun substring (s, i, j) = extract (s, i, SOME j)
 
       (* QUESTION: is it worth writing a concat2 that doesn't need to build and
@@ -66,6 +58,7 @@ structure String0 =
 	    fromArray a
 	 end
 
+      fun new (l, c) = vector (l, c)
       fun str c = new (1, c)
    end
 structure Substring0 = String0.Substring0

@@ -21,6 +21,16 @@ arrays-and-vectors/vector.sml
 arrays-and-vectors/array-slice.sig
 arrays-and-vectors/array.sig
 arrays-and-vectors/array.sml
+arrays-and-vectors/array2.sig
+arrays-and-vectors/array2.sml
+arrays-and-vectors/mono-vector-slice.sig
+arrays-and-vectors/mono-vector.sig
+arrays-and-vectors/mono-vector.fun
+arrays-and-vectors/mono-array-slice.sig
+arrays-and-vectors/mono-array.sig
+arrays-and-vectors/mono-array.fun
+arrays-and-vectors/mono-array2.sig
+arrays-and-vectors/mono-array2.fun
 text/string0.sml
 text/char0.sml
 misc/reader.sig
@@ -51,18 +61,11 @@ real/math.sig
 real/real.sig
 real/real.sml
 integer/patch.sml
-arrays-and-vectors/array2.sig
-arrays-and-vectors/array2.sml
 
 top-level/overloads.sml
 
-arrays-and-vectors/mono-vector-slice.sig
-arrays-and-vectors/mono-vector.sig
 arrays-and-vectors/mono-vector.sml
-arrays-and-vectors/mono-array-slice.sig
-arrays-and-vectors/mono-array.sig
 arrays-and-vectors/mono-array.sml
-arrays-and-vectors/mono-array2.sig
 arrays-and-vectors/mono-array2.sml
 integer/pack-word.sig
 integer/pack32.sml

@@ -54,10 +54,11 @@ signature SLICE =
 
       (* Extra *)
       val copy: 'a slice -> 'a sequence
+      val toList: 'a slice -> 'a elt list
+
       val isPrefix: ('a elt * 'a elt -> bool) -> 'a sequence -> 'a slice -> bool
       val isSubsequence: ('a elt * 'a elt -> bool) -> 'a sequence -> 'a slice -> bool
       val isSuffix: ('a elt * 'a elt -> bool) -> 'a sequence -> 'a slice -> bool
-      val toList: 'a slice -> 'a elt list
    end
 
 signature SEQUENCE =
@@ -106,12 +107,13 @@ signature SEQUENCE =
 
       (* Extra *)
       val copy: 'a sequence -> 'a sequence
+      val toList: 'a sequence -> 'a elt list
+      val new: int * 'a elt -> 'a sequence
+      val unfoldi: int * 'a * (int * 'a -> 'b elt * 'a) -> 'b sequence
+
       val isPrefix: ('a elt * 'a elt -> bool) -> 'a sequence -> 'a sequence -> bool
       val isSubsequence: ('a elt * 'a elt -> bool) -> 'a sequence -> 'a sequence -> bool
       val isSuffix: ('a elt * 'a elt -> bool) -> 'a sequence -> 'a sequence -> bool
-      val new: int * 'a elt -> 'a sequence
-      val toList: 'a sequence -> 'a elt list
-      val unfoldi: int * 'a * (int * 'a -> 'b elt * 'a) -> 'b sequence
 
       (* Depreciated *)
       val checkSlice: 'a sequence * int * int option -> int

@@ -39,6 +39,8 @@ signature TYPE_OPS =
       val dearrow: t -> t * t
       val dearrowOpt: t -> (t * t) option
       val deconOpt: t -> (tycon * t vector) option
+      val deconConstOpt: t -> (tycon * tycon vector) option
+      val deconConst: t -> (tycon * tycon vector)
       val defaultInt: t
       val defaultWord: t
       val deref: t -> t

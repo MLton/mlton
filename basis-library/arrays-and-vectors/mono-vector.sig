@@ -29,10 +29,33 @@ signature MONO_VECTOR =
 signature MONO_VECTOR_EXTRA =
    sig
       include MONO_VECTOR
-      structure MonoVectorSlice: MONO_VECTOR_SLICE where type elem = elem
-	                                             and type vector = vector
+      structure MonoVectorSlice: MONO_VECTOR_SLICE_EXTRA 
+	where type elem = elem
+	  and type vector = vector
+
+      val copy: vector -> vector
+      val fromArray: elem array -> vector
+      val toList: vector -> elem list
+      val unfoldi: int * 'a * (int * 'a -> elem * 'a) -> vector
+      val vector: int * elem -> vector
+
+      val unsafeSub: vector * int -> elem
+
+      val isPrefix: (elem * elem -> bool) -> vector -> vector -> bool
+      val isSubsequence: (elem * elem -> bool) -> vector -> vector -> bool
+      val isSuffix: (elem * elem -> bool) -> vector -> vector -> bool
    end
 
+signature CONCRETE_MONO_VECTOR = MONO_VECTOR 
+  where type vector = elem Vector.vector
+    and type MonoVectorSlice.vector = elem Vector.vector
+    and type MonoVectorSlice.vector = elem Vector.VectorSlice.slice
+signature CONCRETE_MONO_VECTOR_EXTRA = MONO_VECTOR_EXTRA 
+  where type vector = elem Vector.vector
+    and type MonoVectorSlice.vector = elem Vector.vector
+    and type MonoVectorSlice.vector = elem Vector.VectorSlice.slice
+
+(*
 (* The only difference between CONCRETE_MONO_VECTOR and MONO_VECTOR is that
  * the former specifies the type of vector.  I couldn't figure out a way to do
  * this in SML using sharing/with, so I had to duplicate the signature.
@@ -71,7 +94,7 @@ signature CONCRETE_MONO_VECTOR_EXTRA =
       structure MonoVectorSlice: MONO_VECTOR_SLICE where type elem = elem
 	                                             and type vector = vector
    end
-
+*)
 (* Depreciated *)
 (*
 signature EQTYPE_MONO_VECTOR =

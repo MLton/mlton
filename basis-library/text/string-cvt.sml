@@ -34,7 +34,7 @@ structure StringCvt: STRING_CVT_EXTRA =
 	 fun pad f c i s =
 	    let val n = String.size s
 	    in if n >= i then s
-	       else f (s, String0.new (i -? n, c))
+	       else f (s, String0.vector (i -? n, c))
 	    end
       in
 	 val padLeft = pad (fn (s, pad) => String.^ (pad, s))

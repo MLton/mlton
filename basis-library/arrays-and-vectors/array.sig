@@ -38,12 +38,16 @@ signature ARRAY_EXTRA =
    sig
       include ARRAY
       type 'a vector_slice
-      structure ArraySlice: ARRAY_SLICE_EXTRA where type 'a array = 'a array
-	                                        and type 'a vector = 'a vector
-                                                and type 'a vector_slice = 'a vector_slice
+      structure ArraySlice: ARRAY_SLICE_EXTRA 
+	where type 'a array = 'a array
+	  and type 'a vector = 'a vector
+	  and type 'a vector_slice = 'a vector_slice
 
+      val concat: 'a array list -> 'a array
+      val copy: 'a array -> 'a array
       val toList: 'a array -> 'a list
       val unfoldi: int * 'a * (int * 'a -> 'b * 'a) -> 'b array
+
       val unsafeSub: 'a array * int -> 'a
       val unsafeUpdate: 'a array * int * 'a -> unit
 

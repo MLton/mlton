@@ -38,8 +38,14 @@ signature VECTOR_SLICE_EXTRA =
    sig
       include VECTOR_SLICE
 
+      val copy: 'a slice -> 'a vector
       val toList: 'a slice -> 'a list
+
       val unsafeSub: 'a slice * int -> 'a
       val unsafeSlice: 'a vector * int * int option -> 'a slice
       val unsafeSubslice: 'a slice * int * int option -> 'a slice
+
+      val isPrefix: ('a * 'a -> bool) -> 'a vector -> 'a slice -> bool
+      val isSubsequence: ('a * 'a -> bool) -> 'a vector -> 'a slice -> bool
+      val isSuffix: ('a * 'a -> bool) -> 'a vector -> 'a slice -> bool
    end

@@ -5,39 +5,12 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-functor MonoVector(type elem): MONO_VECTOR_EXTRA =
-   struct
-      open Vector
-      type elem = elem
-      type vector = elem vector
-      structure MonoVectorSlice = 
-	 struct
-	    open VectorSlice
-	    type elem = elem
-	    type vector = elem vector
-	    type slice = elem slice
-	 end
-   end
-
 structure Word8Vector = MonoVector(type elem = Word8.word)
 structure Word8VectorSlice = Word8Vector.MonoVectorSlice
-
-(* Basis Library spec requires type CharVector.vector = string *)
-structure CharVector =
-   struct
-      open String0
-      type elem = char
-      type vector = string
-      structure MonoVectorSlice =
-	 struct
-	    open Substring0
-	    type elem = char
-	    type vector = string
-	    type slice = substring
-	    fun vector sl = copy sl
-	 end
-   end
+(* Moved to string0.sml
+structure CharVector = MonoVector(type elem = char)
 structure CharVectorSlice = CharVector.MonoVectorSlice
+*)
 
 structure BoolVector = MonoVector(type elem = bool)
 structure BoolVectorSlice = BoolVector.MonoVectorSlice

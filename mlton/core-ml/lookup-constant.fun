@@ -74,24 +74,26 @@ fun decsConstants (decs: CoreML.Dec.t vector): res =
 			    Error.bug
 			    (concat ["constant with strange type: ", c])
 		      in case Prim.scheme p of
-			 Scheme.T {tyvars, ty = Type.Con (tc, ts)} =>
-			    if 0 = Vector.length ts
-			       andalso 0 = Vector.length tyvars
-			       then 
-				  let
-				     val tycons = [(Tycon.bool, Bool),
-						   (Tycon.int, Int),
-						   (Tycon.real, Real),
-						   (Tycon.string, String),
-						   (Tycon.word, Word)]
-				  in case (List.peek
-					   (tycons, fn (tc', _) =>
-					    Tycon.equals (tc, tc'))) of
-				     NONE => strange ()
-				   | SOME (_, t) => (c, t) :: ac
-				  end
-			    else strange ()
-				   | _ => strange ()
+			   Scheme.T {tyvars, ty as Type.Con (tc, ts)} =>
+			      if 0 = Vector.length tyvars
+				 then
+				    let
+				       val ty = Const.Type.make
+					        (Type.deconConst ty)
+				       val tys = [(Const.Type.bool, Bool),
+						  (Const.Type.int, Int),
+						  (Const.Type.real, Real),
+						  (Const.Type.string, String),
+						  (Const.Type.word, Word)]
+				    in case (List.peek
+					     (tys, fn (ty', _) =>
+					      Const.Type.equals (ty, ty'))) of
+				          NONE => strange ()
+					| SOME (_,t) => (c,t) :: ac
+
+				    end
+			      else strange ()
+			  | _ => strange ()
 		      end
 		 | _ => ac)
 	  | Record r => Record.fold (r, ac, loopExp)

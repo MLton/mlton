@@ -27,3 +27,19 @@ signature MONO_VECTOR_SLICE =
       val all: (elem -> bool) -> slice -> bool
       val collate: (elem * elem -> order) -> slice * slice -> order
    end
+
+signature MONO_VECTOR_SLICE_EXTRA =
+   sig
+      include MONO_VECTOR_SLICE
+
+      val copy: slice -> vector
+      val toList: slice -> elem list
+
+      val unsafeSub: slice * int -> 'elem
+      val unsafeSlice: vector * int * int option -> slice
+      val unsafeSubslice: slice * int * int option -> slice
+
+      val isPrefix: (elem * elem -> bool) -> vector -> slice -> bool
+      val isSubsequence: (elem * elem -> bool) -> vector -> slice -> bool
+      val isSuffix: (elem * elem -> bool) -> vector -> slice -> bool
+   end

@@ -20,17 +20,17 @@ type exn = exn
 type int = int
 type intInf = intInf
 datatype list = datatype list
-type nullString = string
 type pointer = pointer (* C integer, not SML heap pointer *)
 type real = real
 datatype ref = datatype ref
-type string = string
 type preThread = preThread
 type thread = thread
 type word = word
 type word8 = word8
 type word32 = word
 type 'a vector = 'a vector
+type string = char vector
+type nullString = string
 
 exception Bind = Bind
 exception Fail of string

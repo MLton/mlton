@@ -43,7 +43,9 @@ signature ARRAY_SLICE_EXTRA =
       include ARRAY_SLICE
 
       val concat: 'a slice list -> 'a array
+      val copy: 'a slice -> 'a array
       val toList: 'a slice -> 'a list
+
       val unsafeSub: 'a slice * int -> 'a
       val unsafeUpdate: 'a slice * int * 'a -> unit
       val unsafeSlice: 'a array * int * int option -> 'a slice

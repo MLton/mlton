@@ -36,8 +36,17 @@ signature MONO_ARRAY_EXTRA =
    sig
       include MONO_ARRAY
       type vector_slice
-      structure MonoArraySlice: MONO_ARRAY_SLICE where type elem = elem
-	                                           and type array = array
-						   and type vector = vector
-						   and type vector_slice = vector_slice
+      structure MonoArraySlice: MONO_ARRAY_SLICE_EXTRA 
+	where type elem = elem
+	  and type array = array
+	  and type vector = vector
+	  and type vector_slice = vector_slice
+
+      val concat: array list -> array
+      val copy: array -> array
+      val toList: array -> elem list
+      val unfoldi: int * 'a * (int * 'a -> elem * 'a) -> array
+
+      val unsafeSub: array * int -> elem
+      val unsafeUpdate: array * int * elem -> unit
    end

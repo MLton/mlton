@@ -284,7 +284,6 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 			   else prim (Prim.intInfEqual, Vector.new0 ())
 	  | Type.Word => eq ()
 	  | Type.Word8 => eq ()
-	  | Type.String => prim (Prim.stringEqual, Vector.new0 ())
 	  | Type.Array _ => eq ()
 	  | Type.Vector ty =>
 	       Dexp.call {func = vectorEqualFunc ty,

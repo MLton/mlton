@@ -321,7 +321,7 @@ structure WordArraySlice:> MONO_ARRAY_SLICE where type vector = WordVector.vecto
                                             where type elem = word
 structure WordArray2:> MONO_ARRAY2 where type vector = WordVector.vector
                                    where type elem = word
-
+*)
 structure Word8: WORD = Word8
 structure Word8Vector: MONO_VECTOR where type elem = Word8.word = Word8Vector
 structure Word8VectorSlice: MONO_VECTOR_SLICE where type vector = Word8Vector.vector

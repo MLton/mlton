@@ -31,3 +31,17 @@ signature MONO_ARRAY_SLICE =
       val all: (elem -> bool) -> slice -> bool
       val collate: (elem * elem -> order) -> slice * slice -> order
    end
+
+signature MONO_ARRAY_SLICE_EXTRA =
+   sig
+      include MONO_ARRAY_SLICE
+
+      val concat: slice list -> array
+      val copy: slice -> array
+      val toList: slice -> elem list
+
+      val unsafeSub: slice * int -> elem
+      val unsafeUpdate: slice * int * elem -> unit
+      val unsafeSlice: array * int * int option -> slice
+      val unsafeSubslice: slice * int * int option -> slice
+   end

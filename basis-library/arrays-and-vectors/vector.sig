@@ -32,13 +32,20 @@ signature VECTOR =
 signature VECTOR_EXTRA =
    sig
       include VECTOR
-      structure VectorSlice: VECTOR_SLICE_EXTRA where type 'a vector = 'a vector
+      structure VectorSlice: VECTOR_SLICE_EXTRA 
+	where type 'a vector = 'a vector
 
-      val vector: int * 'a -> 'a vector
+      val copy: vector -> vector
       val fromArray: 'a array -> 'a vector
       val toList: 'a vector -> 'a list
       val unfoldi: int * 'a * (int * 'a -> 'b * 'a) -> 'b vector
+      val vector: int * 'a -> 'a vector
+
       val unsafeSub: 'a vector * int -> 'a
+
+      val isPrefix: ('a * 'a -> bool) -> 'a vector -> 'a vector -> bool
+      val isSubsequence: ('a * 'a -> bool) -> 'a vector -> 'a vector -> bool
+      val isSuffix: ('a * 'a -> bool) -> 'a vector -> 'a vector -> bool
 
       (* Depreciated *)
       val checkSlice: 'a vector * int * int option -> int
