@@ -244,7 +244,8 @@ fun elaboratePat (p: Apat.t, E: Env.t): Cpat.t =
 			  (case Ast.Longvid.split x of
 			      ([], x) =>
 				 doit (Cpat.Var (bind (Ast.Vid.toVar x)))
-			    | _ => Error.bug "longid in var pat"))
+			    | _ => Error.bug (concat ["longid in var pat: ",
+						      Ast.Longvid.toString x])))
 	      | Apat.Const c => doit (Cpat.Const c)
 	      | Apat.Tuple ps =>
 		   loopsContV (ps, fn ps => Cpat.tuple (ps, region))
