@@ -1,3 +1,4 @@
+*.call-graph.dot
 *.ssa
 mlyacc.ps
 mlyacc.sml

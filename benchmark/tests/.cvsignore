@@ -1,4 +1,5 @@
 *.batch.sml
+*.dot
 *.mlton.sml
 *.ssa
 *.ui

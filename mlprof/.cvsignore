@@ -1,3 +1,4 @@
+*.call-graph.dot
 *.ssa
 mlprof
 mlprof.sml
