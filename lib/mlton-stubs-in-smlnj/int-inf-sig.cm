@@ -1,7 +1,6 @@
 Library
 
 signature INT_INF
-signature MLTON_INT_INF
 
 is
 

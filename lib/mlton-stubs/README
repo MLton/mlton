@@ -1,0 +1,3 @@
+The files in this directory define the MLton structure within the context of a
+Standard basis library.  Many things are defined to raise exceptions, but enough
+is emulated so that we can compile MLton itself.

@@ -1,0 +1,34 @@
+Library
+
+signature MLTON_THREAD
+
+structure MLton
+
+is
+
+../mlton-stubs-in-smlnj/sources.cm
+
+array.sig
+cont.sig
+exn.sig
+gc.sig
+int-inf.sig
+itimer.sig
+mlton.sig
+mlton.sml
+proc-env.sig
+process.sig
+profile.sig
+ptrace.sig
+random.sig
+rlimit.sig
+rusage.sig
+signal.sig
+socket.sig
+syslog.sig
+text-io.sig
+thread.sig
+thread.sml
+vector.sig
+word.sig
+world.sig

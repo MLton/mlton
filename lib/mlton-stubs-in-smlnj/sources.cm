@@ -1,18 +1,9 @@
 Library
 
 signature INT_INF
-signature MLTON_CONT
-signature MLTON_GC
-signature MLTON_INT_INF
-signature MLTON_ITIMER
-signature MLTON_PROFILE
-signature MLTON_PTRACE
-signature MLTON_SIGNAL
-signature MLTON_SOCKET
-signature MLTON_THREAD
-signature MLTON_TEXT_IO
-signature MLTON_WORLD
-
+#if (SMLNJ_VERSION == 110) && (SMLNJ_MINOR_VERSION >= 20)
+signature POSIX_SIGNAL
+#endif   
 structure Array
 structure Array2
 structure Bool
@@ -33,7 +24,6 @@ structure LargeReal
 structure LargeWord
 structure List
 structure ListPair
-structure MLton
 structure Math
 structure OS
 structure Option
@@ -64,52 +54,28 @@ structure Word8Vector
 
 is
 
-
 #if (SMLNJ_VERSION == 110) && (SMLNJ_MINOR_VERSION >= 20)
 $/basis.cm
 #endif   
 import.cm
 
-array.sig
 array.sml
 array2.sml
 char.sml
-cont.sig
 date.sml
-exn.sig
-gc.sig
 int-inf-sig.cm
 int-inf.sml
 int.sml
-itimer.sig
 list.sml
-mlton.sig
-mlton.sml
 open-int32.sml
 os.sml
 other.sml
-proc-env.sig
-profile.sig
-ptrace.sig
-random.sig
 real.sml
-rlimit.sig
-rusage.sig
-signal.sig
-socket.sig
 string-cvt.sml
 string.sml
 substring.sml
-syslog.sig
-syslog.sml
-text-io.sig
 text-io.sml
-thread.sig
-thread.sml
 time.sml
 unsafe.sml
-vector.sig
 vector.sml
-word.sig
 word.sml
-world.sig

@@ -8,17 +8,30 @@ AOUT = mlton-compile
 HOST = self
 FLAGS = @MLton gc-summary -- -host $(HOST) -v -o $(AOUT)
 PATH = $(BIN):$(shell echo $$PATH)
+# If we're compiling MLton with an older version of itself, use the stubs for
+# the MLton structure.  If we're compiling it with itself, don't.
+ifeq (self, $(shell if [ -x $(BIN)/mlton ]; then echo self; fi))
+  CM = $(NAME).cm
+else
+  CM = $(NAME)-stubs.cm
+endif
 
 all: $(AOUT)
 
 $(AOUT): $(NAME).cm $(shell $(MLTON) -stop f mlton.cm)
 	@echo 'Compiling mlton (takes a while)'
-	time $(MLTON) $(FLAGS) $(NAME).cm
+	time $(MLTON) $(FLAGS) $(CM)
 	size $(AOUT)
 	strip $(AOUT)
 
-.PHONY:	$(NAME)_cm
-$(NAME)_cm: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
+.PHONY:	cm
+cm: cm-stubs
+	grep -v mlton-stubs $(NAME)-stubs.cm >$(NAME).cm
+
+# This makes a version of MLton that can be compiled in the standard basis
+# library.  I.E. it doesn't require a MLton structure.
+.PHONY:	cm-stubs
+cm-stubs: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 	(								\
 		echo 'Group is'&&					\
 		cmcat sources.cm | grep -v 'mlton-stubs-in-smlnj' |	\
@@ -26,7 +39,7 @@ $(NAME)_cm: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 		cmcat sources.cm | grep -v 'mlton-stubs-in-smlnj' |	\
 			grep -v mlyacc &&				\
 		echo 'call-main.sml';					\
-	) >$(NAME).cm
+	) >$(NAME)-stubs.cm
 
 .PHONY: nj-whole
 nj-whole: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml

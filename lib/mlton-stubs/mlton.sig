@@ -8,11 +8,12 @@ signature MLTON =
    sig
       val cleanAtExit: unit -> unit
       val debug: bool
+(*      val deserialize: Word8Vector.vector -> 'a *)
       (* Pointer equality.  The usual caveats about lack of a well-defined
        * semantics.
        *)
       val eq: 'a * 'a -> bool
-(*      val deserialize: Word8Vector.vector -> 'a *)
+      val errno: unit -> int (* the value of the C errno global *)
       val isMLton: bool
       val safe: bool
 (*      val serialize: 'a -> Word8Vector.vector *)
@@ -25,6 +26,7 @@ signature MLTON =
       structure IntInf: MLTON_INT_INF
       structure Itimer: MLTON_ITIMER
       structure ProcEnv: MLTON_PROC_ENV
+      structure Process: MLTON_PROCESS
       structure Profile: MLTON_PROFILE
       structure Ptrace: MLTON_PTRACE
       structure Random: MLTON_RANDOM

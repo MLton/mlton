@@ -1,5 +1,11 @@
 Here are the changes from version 20011006 to version VERSION.
 
+* 2002-03-22
+  - Set up the stubs so that MLton can be compiled in the standard basis
+    library, with no MLton structure.  Thus it is now easy to compile MLton
+    with an older (or newer) version of itself that has a different MLton 
+    structure.
+
 * 2002-03-17
   - Added MLton.Process.{spawn,spawne,spawnp}, which use primitives when 
     running on Cygwin and fork/exec when running on Linux.

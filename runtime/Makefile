@@ -1,9 +1,11 @@
 HOST = self
 ifeq ($(HOST), self)
 AR = ar rc
+CONFIG_HOST =
 HOSTFLAGS =
 else
 AR = $(HOST)-ar rc
+CONFIG_HOST = --host=$(HOST)
 HOSTFLAGS = -b $(HOST)
 endif
 CC =		gcc -Wall -I. -mcpu=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=5 -fomit-frame-pointer $(HOSTFLAGS)
@@ -331,7 +333,7 @@ libmlton.a: $(OBJS)
 libmlton-gdb.a: $(DEBUG_OBJS)
 	$(AR) libmlton-gdb.a $(DEBUG_OBJS)
 
-ifneq ($(HOST), self)
+ifeq ($(HOSTTYPE), cygwin)
 basis/IntInf.o: gmp.h
 endif
 
@@ -345,7 +347,7 @@ gmp.h:
 			{ [ -d $(GMP) ] ||					\
 				zcat <$(GMP).tgz | tar xf -; } &&		\
 				cd $(GMP) &&					\
-				./configure --host=$(HOST) --prefix=`pwd`/../gmp-stuff &&	\
+				./configure $(CONFIG_HOST) --prefix=`pwd`/../gmp-stuff &&	\
 				make CFLAGS=-O install distclean &&		\
 				cd .. &&					\
 				rm -rf $(GMP) &&				\

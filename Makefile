@@ -1,3 +1,5 @@
+export HOST = self
+export HOSTTYPE = linux
 ROOT = $(shell pwd)
 BUILD = $(ROOT)/build
 SRC = $(ROOT)
@@ -12,16 +14,22 @@ PROF = mlprof
 YACC = mlyacc
 PATH = $(BIN):$(shell echo $$PATH)
 CP = /bin/cp -fp
-HOST=self
-HOSTTYPE=linux
 
 all:
+	$(MAKE) compiler
+	$(MAKE) support
+
+.PHONY: compiler
+compiler:
+	cd $(COMP) && $(MAKE)
+
+.PHONY: support
+support:
 	$(MAKE) dirs
-	cd $(COMP) && $(MAKE) HOST=$(HOST)
 	mv $(COMP)/$(AOUT) $(LIB)
 	$(MAKE) world
 	$(MAKE) script
-	$(MAKE) runtime HOST=$(HOST) HOSTTYPE=$(HOSTTYPE)
+	$(MAKE) runtime
 	cd $(LEX) && $(MAKE) && $(CP) $(LEX) $(BIN)
 	cd $(YACC) && $(MAKE) && $(CP) $(YACC) $(BIN)
 	cd $(PROF) && $(MAKE) && $(CP) $(PROF) $(BIN)
@@ -30,14 +38,14 @@ all:
 
 .PHONY: dirs
 dirs:
-	mkdir -p $(BUILD) $(BIN) $(LIB)/$(HOST)/include
+	mkdir -p $(BIN) $(LIB)/$(HOST)/include
 
 HOSTMAP=$(LIB)/hostmap
 .PHONY: runtime
 runtime:
 	@echo 'Making runtime system.'
 	@echo 'Compiling MLton runtime system for $(HOST).'
-	cd runtime && $(MAKE) HOST=$(HOST)
+	cd runtime && $(MAKE)
 	$(CP) $(RUN)/*.a $(LIB)/$(HOST)
 	$(CP) runtime/*.h include/*.h $(LIB)/$(HOST)/include
 	cd runtime && $(MAKE) clean
@@ -45,7 +53,7 @@ runtime:
 	( sed '/$(HOST)/d' <$(HOSTMAP); echo '$(HOST) $(HOSTTYPE)' ) \
 		>>$(HOSTMAP).tmp
 	mv $(HOSTMAP).tmp $(HOSTMAP)
-	$(MAKE) constants HOST=$(HOST)
+	$(MAKE) constants
 
 .PHONY: script
 script:
@@ -56,7 +64,7 @@ script:
 .PHONY: world
 world: 
 	@echo 'Processing basis library.'
-	$(LIB)/$(AOUT) $(SRC)/basis-library $(LIB)/world
+	$(LIB)/$(AOUT) @MLton fixed-heap 30m -- $(SRC)/basis-library $(LIB)/world
 
 .PHONY: constants
 constants:

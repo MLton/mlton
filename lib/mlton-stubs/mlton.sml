@@ -7,14 +7,15 @@
  *) 
 structure MLton: MLTON =
    struct
+      val cleanAtExit = fn _ => raise Fail "cleanAtExit"
+      val debug = false
+      val deserialize = fn _ => raise Fail "deserialize"
+      val eq = fn _ => raise Fail "eq"
+      val errno = fn _ => raise Fail "errno"
       val isMLton = false
-      fun serialize _ = raise Fail "serialize"
-      fun deserialize _ = raise Fail "deserialize"
-      fun cleanAtExit _ = raise Fail "cleanAtExit"
-      fun eq _ = raise Fail "eq"
-      val debug = true
       val safe = true
-      fun size _ = ~1: int
+      val serialize = fn _ => raise Fail "serialize"
+      val size = fn _ => ~1: int
 
       structure Array =
 	 struct
@@ -36,19 +37,17 @@ structure MLton: MLTON =
       
       structure Cont =
 	 struct
-	    structure Cont = SMLofNJ.Cont
-	       
-	    type 'a t = 'a Cont.cont
+	    type 'a t = unit
 
-	    val callcc = Cont.callcc
-	    fun throw (k, v) = Cont.throw k v
-	    fun throw' _ = raise Fail "Cont.throw'"
-	    fun prepend _ = raise Fail "Cont.prepend"
+	    val callcc = fn _ => raise Fail "Cont.callcc"
+	    val prepend = fn _ => raise Fail "Cont.prepend"
+	    val throw = fn _ => raise Fail "Cont.throw"
+	    val throw' = fn _ => raise Fail "Cont.throw'"
 	 end
 
       structure Exn =
 	 struct
-	    val history = SMLofNJ.exnHistory
+	    val history = fn _ => raise Fail "Exn.history"
 	 end
 
       structure GC =
@@ -85,11 +84,40 @@ structure MLton: MLTON =
 	    fun setenv _ = raise Fail "setenv"
 	 end
 
+      structure Process =
+	 struct
+	    type pid = Posix.Process.pid
+
+	    fun spawne {path, args, env} =
+	       case Posix.Process.fork () of
+		  NONE => Posix.Process.exece (path, args, env)
+		| SOME pid => pid
+
+	    fun spawn {path, args} =
+	       spawne {path = path, args = args, env = Posix.ProcEnv.environ ()}
+
+	    fun spawnp {file, args} =
+	       case Posix.Process.fork () of
+		  NONE => Posix.Process.execp (file, args)
+		| SOME pid => pid
+	 end
+      
       structure Profile =
 	 struct
 	    val profile = false
-	    val reset = fn () => ()
-	    val write = fn f => ()
+
+	    structure Data =
+	       struct
+		  type t = unit
+
+		  val equals = fn _ => raise Fail "Profile.Data.equals"
+		  val free = fn _ => raise Fail "Profile.Data.free"
+		  val malloc = fn _ => raise Fail "Profile.Data.malloc"
+		  val reset = fn _ => raise Fail "Profile.Data.reset"
+		  val write = fn _ => raise Fail "Profile.Data.write"
+	       end
+	    val current = fn _ => raise Fail "Profile.current"
+	    val setCurrent = fn _ => raise Fail "Profile.setCurrent"
 	 end
       
       structure Ptrace =
@@ -263,7 +291,55 @@ structure MLton: MLTON =
 	    fun shutdownWrite _ = raise Fail "Socket.shutdownWrite"
 	 end
 
-      structure Syslog = Syslog
+      (* From Tom 7 <twm@andrew.cmu.edu>. *)
+      (* Implementation of Syslog which doesn't log anything. *)
+    
+      structure Syslog =
+	 struct
+
+	    type openflag = unit
+	       
+	    val CONS = ()
+	    val NDELAY = ()
+	    val PERROR = ()
+	    val PID = ()
+
+	    type facility = unit
+
+	    val AUTHPRIV = ()
+	    val CRON = ()
+	    val DAEMON = ()
+	    val KERN = ()
+	    val LOCAL0 = ()
+	    val LOCAL1 = ()
+	    val LOCAL2 = ()
+	    val LOCAL3 = ()
+	    val LOCAL4 = ()
+	    val LOCAL5 = ()
+	    val LOCAL6 = ()
+	    val LOCAL7 = ()
+	    val LPR = ()
+	    val MAIL = ()
+	    val NEWS = ()
+	    val SYSLOG = ()
+	    val USER = ()
+	    val UUCP = ()
+
+	    type loglevel = unit
+
+	    val EMERG = ()
+	    val ALERT = ()
+	    val CRIT = ()
+	    val ERR = ()
+	    val WARNING = ()
+	    val NOTICE = ()
+	    val INFO = ()
+	    val DEBUG = ()
+
+	    val closelog = fn _ => raise Fail "Syslog.closelog"
+	    val log = fn _ => raise Fail "Syslog.log"
+	    val openlog = fn _ => raise Fail "Syslog.openlog"
+	 end
 
       structure TextIO =
 	 struct
@@ -277,28 +353,7 @@ structure MLton: MLTON =
 	       in (name, TextIO.openOut name)
 	       end
 	    fun mkstemp s = mkstemps {prefix = s, suffix = ""}
-	    fun newIn (fd: Posix.IO.file_desc): TextIO.instream =
-	       let
-		  val reader =
-		     TextPrimIO.RD
-		     {name = "<fd>",
-		      chunkSize = 4096,
-		      readVec =
-		      SOME (fn i => Byte.bytesToString (Posix.IO.readVec (fd, i))),
-		      readArr = NONE,
-		      readVecNB = NONE,
-		      readArrNB = NONE,
-		      block = NONE,
-		      canInput = NONE,
-		      avail = fn _ => NONE,
-		      getPos = NONE,
-		      setPos = NONE,
-		      endPos = NONE,
-		      verifyPos = NONE,
-		      close = fn () => Posix.IO.close fd,
-		      ioDesc = NONE}
-	       in TextIO.mkInstream (TextIO.StreamIO.mkInstream (reader, ""))
-	       end
+	    fun newIn _ = raise Fail "newIn"
 	    fun newOut _ = raise Fail "newOut"
 	    fun outFd _ = raise Fail "outFd"
 	    fun setIn _ = raise Fail "setIn"

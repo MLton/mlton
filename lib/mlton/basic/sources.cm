@@ -39,8 +39,8 @@ structure Date
 structure Dir
 structure DirectedGraph
 structure DirectedSubGraph
-structure DotColor
 structure Dot
+structure DotColor
 structure DynamicWind
 structure Engine
 structure Error
@@ -61,15 +61,15 @@ structure Iterate
 structure Itimer
 structure Justify
 structure LargeInt
+structure Layout
 structure Lines
 structure List
-structure Layout
 structure List
-structure MergeSort
 structure MLton
+structure MergeSort
 structure Net
-structure Option
 structure OS
+structure Option
 structure Out
 structure Parse
 structure Pervasive
@@ -85,8 +85,8 @@ structure Property
 structure PropertyList
 structure Queue
 structure QuickSort
-structure Random
 structure RDB
+structure Random
 structure Reader
 structure Real
 structure RealVector
@@ -95,8 +95,8 @@ structure Regexp
 structure Relation
 structure ResizableArray
 structure Result
-structure Signal
 structure SMLofNJ
+structure Signal
 structure Stream
 structure String
 structure StringCvt
@@ -113,10 +113,10 @@ structure Unsafe
 structure Uri
 structure Vector
 structure Word
+structure Word32
 structure Word8
 structure Word8Array
 structure Word8Vector
-structure Word32
 
 functor AlphaBeta
 functor Control
@@ -139,6 +139,8 @@ functor UniqueSet
 
 is
 
+../../mlton-stubs-in-smlnj/sources.cm
+../../mlton-stubs/sources.cm
 ../pervasive/sources.cm
 
 alpha-beta.fun
