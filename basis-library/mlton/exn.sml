@@ -19,17 +19,14 @@ structure MLtonExn: MLTON_EXN =
 	     ; let
 		  fun loop e =
 		     case e of
-			Fail s => 
-			  (message "Fail "; message s)
-		      | IO.Io {name, function, cause, ...} => 
-			  (message "IO "
-			   ; message function
-			   ; message " on "
+			Fail s => message s
+		      | IO.Io {cause, function, name, ...} => 
+			  (message function
+			   ; message " "
 			   ; message name
 			   ; message ": "
 			   ; loop cause)
-		      | PosixError.SysErr (s, _) =>
-			   (message "SysErr "; message s)
+		      | PosixError.SysErr (s, _) => message s
 		      | _ => message (exnName e)
 	       in
 		  loop exn
