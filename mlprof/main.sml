@@ -94,11 +94,11 @@ struct
    in
       fun layout lay (T l)
 	 = List.layout 
-	 (fn {data, minor} => seq [str "{",
-				   lay data,
-				   layout lay minor,
-				   str "}"])
-	 l
+	   (fn {data, minor} => seq [str "{",
+				     lay data,
+				     layout lay minor,
+				     str "}"])
+	   l
    end
 end
 
@@ -368,9 +368,7 @@ struct
 			 [mlmonfile, " does not appear to be a mlmon.out file"])
 		   else ()
 	     val low = getAddr ()
-(*	     val _ = print (concat ["low: ", Word.toString low, "\n"]) *)
 	     val high = getAddr ()
-(*	     val _ = print (concat ["high: ", Word.toString high, "\n"]) *)
 
 	     val unknowns = getWord ()
 
@@ -404,10 +402,29 @@ struct
 	   end)
 
   val new = Trace.trace ("ProfFile.new", File.layout o #mlmonfile, layout) new
+
+  fun addNew {profInfo as T {buckets}, 
+	      mlmonfile: File.t}: t
+    = let
+	val profInfo' as T {buckets = buckets'} = new {mlmonfile = mlmonfile}
+	val die = fn () => die (concat [mlmonfile, "does not match"])
+      in
+	T {buckets = List.map2
+	             (buckets, buckets',
+		      fn ({addr, count},
+			  {addr = addr', count = count'}) =>
+		      if addr = addr'
+			then {addr = addr,
+			      count = count + count'}
+			else die ())
+		     handle _ => die ()}
+      end
+
+  val addNew = Trace.trace ("ProfFile.addNew", File.layout o #mlmonfile, layout) addNew
 end
 
 fun attribute (AFile.T l, 
-	      ProfFile.T {buckets}) : 
+	       ProfFile.T {buckets}) : 
     {profileInfo: {name: string} ProfileInfo.t,
      ticks: int} list
   = let
@@ -662,8 +679,9 @@ fun display (counts: {name: string, ticks: int} ProfileInfo.t,
    end
 
 fun usage s
-  = Process.usage {usage = "[-d {0|1|2}] [-s] [-t n] [-x] a.out mlmon.out",
-		   msg = s}
+  = Process.usage 
+    {usage = "[-d {0|1|2}] [-s] [-t n] [-x] a.out mlmon.out [mlmon.out]...",
+     msg = s}
 
 fun main args =
    let
@@ -688,7 +706,7 @@ fun main args =
     in
       case rest 
 	of Result.No s => usage (concat ["invalid switch: ", s])
-	 | Result.Yes [afile, mlmonfile]
+	 | Result.Yes (afile::mlmonfile::mlmonfiles)
 	 => let
 	      val aInfo = AFile.new {afile = afile}
 	      val _ =
@@ -697,6 +715,10 @@ fun main args =
 		 else (print "AFile:\n"
 		       ; Layout.outputl (AFile.layout aInfo, Out.standard))
 	      val profInfo = ProfFile.new {mlmonfile = mlmonfile}	
+	      val profInfo =
+		 List.fold
+		 (mlmonfiles, profInfo, fn (mlmonfile, profInfo) =>
+		  ProfFile.addNew {profInfo = profInfo, mlmonfile = mlmonfile})
 	      val _ =
 		 if true
 		    then ()
