@@ -19,7 +19,6 @@ fun 'a analyze
     program = Program.T {functions, globals, main, ...},
     select, update, useFromTypeOnBinds} =
    let
-      val unit = fromType Type.unit
       fun coerces (msg, from, to) =
 	 if Vector.length from = Vector.length to
 	    then Vector.foreach2 (from, to, fn (from, to) =>

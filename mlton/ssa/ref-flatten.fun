@@ -23,9 +23,7 @@ structure Finish =
       datatype t = T of {flat: Type.t Prod.t option, 
 			 ty: Type.t}
 
-      fun notFlat ty = T {flat = NONE, ty = ty}
-
-      val layout: t -> Layout.t =
+      val _: t -> Layout.t =
 	 fn T {flat, ty} =>
 	 let
 	    open Layout
@@ -133,8 +131,6 @@ structure Value =
 	    Object (Obj {flat, ...}) => flat := NotFlat
 	  | _ => ()
 
-      val unit = ground Type.unit
-
       fun isUnit v =
 	 case value v of
 	    Ground t => Type.isUnit t
@@ -166,8 +162,6 @@ structure Value =
 	 Trace.trace ("Value.tuple", fn p => Prod.layout (p, layout), layout)
 	 tuple
 
-      fun vector (args): t = object {args = args, con = ObjectCon.Vector}
-
       val rec unify: t * t -> unit =
 	 fn (T s, T s') =>
 	 if Set.equals (s, s') then () else
@@ -177,14 +171,16 @@ structure Value =
 	    val () = Set.union (s, s')
 	 in
 	    case (v, v') of
-	       (Ground t, Ground t') => ()
+	       (Ground _, Ground _) => ()
 	     | (Object (Obj {args = a, flat = f, ...}),
 		Object (Obj {args = a', flat = f', ...})) =>
 	          let
 		     val () =
 			case (!f, !f') of
-			   (Flat, NotFlat) => f := NotFlat
-			 | (NotFlat, Flat) => f' := NotFlat
+			   (_, NotFlat) => f := NotFlat
+			 | (NotFlat, _) => f' := NotFlat
+			 | (Offset _, _) => Error.bug "unify saw Offset"
+			 | (_, Offset _) => Error.bug "unify saw Offset"
 			 | _ => ()
 		  in
 		     unifyProd (a, a')
@@ -290,7 +286,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
       val typeValue =
 	 Trace.trace ("typeValue", Type.layout, Value.layout) typeValue
       val coerce = Value.coerce
-      fun inject {sum, variant} = typeValue (Type.datatypee sum)
+      fun inject {sum, variant = _} = typeValue (Type.datatypee sum)
       fun object {args, con, resultType} =
 	 let
 	    val m = makeTypeValue resultType
@@ -300,7 +296,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		  (case m of
 		      Const v => v
 		    | Make _ => Value.tuple args)
-	  | SOME c =>
+	  | SOME _ =>
 	       (case m of
 		   Const v =>
 		      let
@@ -334,14 +330,8 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			   | _ => Error.bug "deWeak")
 	  | Value.Weak {arg, ...} => arg
 	  | _ => Error.bug "deWeak"
-      fun primApp {args, prim, resultVar, resultType} =
+      fun primApp {args, prim, resultVar = _, resultType} =
 	 let
-	    fun vector1 v =
-	       case makeTypeValue resultType of
-		  Const v => v
-		| Make _ =>
-		     Value.vector (Prod.make (Vector.new1 {elt = v,
-							   isMutable = false}))
 	    fun weak v =
 	       case makeTypeValue resultType of
 		  Const v => v
@@ -403,7 +393,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	 coerce {from = value,
 		 to = select {base = base, offset = offset}}
       fun const c = typeValue (Type.ofConst c)
-      val {func, label, value = varValue, ...} =
+      val {func, value = varValue, ...} =
 	 analyze {coerce = coerce,
 		  const = const,
 		  filter = fn _ => (),
@@ -451,7 +441,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
       fun uses xs = Vector.foreach (xs, use)
       fun loopStatement (s: Statement.t): unit =
 	 case s of
-	    Bind {exp = Exp.Object {args, ...}, ty, var} =>
+	    Bind {exp = Exp.Object {args, ...}, var, ...} =>
 	       (case var of
 		   NONE => uses args
 		 | SOME var =>
@@ -468,7 +458,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			       (args, fn (offset, x) =>
 				case ! (varInfo x) of
 				   NonObject => ()
-				 | Object {components, flat} => 
+				 | Object {flat, ...} => 
 				      let
 					 datatype z = datatype Flat.t
 				      in
@@ -486,19 +476,13 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	 loopStatement
       fun loopStatements ss = Vector.foreach (ss, loopStatement)
       fun loopTransfer t = Transfer.foreachVar (t, use)
-      val {get = labelInfo: Label.t -> {args: (Var.t * Type.t) vector},
-	   set = setLabelInfo, ...} =
-	 Property.getSetOnce (Label.plist,
-			      Property.initRaise ("info", Label.layout))
-      val labelArgs = #args o labelInfo
       val () = loopStatements globals
       val () =
 	 List.foreach
 	 (functions, fn f =>
 	  Function.dfs
-	  (f, fn Block.T {args, label, statements, transfer, ...} =>
-	   (setLabelInfo (label, {args = args})
-	    ; loopStatements statements
+	  (f, fn Block.T {statements, transfer, ...} =>
+	   (loopStatements statements
 	    ; loopTransfer transfer
 	    ; fn () => ())))
       fun foreachObject (f): unit =
@@ -530,7 +514,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
       (* Try to flatten each ref. *)
       val () =
 	 foreachObject
-	 (fn (var, _, obj as Obj {flat, ...}) =>
+	 (fn (var, _, Obj {flat, ...}) =>
 	  let
 	     datatype z = datatype Flat.t
 	     val flat'Ref as ref flat' =

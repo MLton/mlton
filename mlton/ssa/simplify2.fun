@@ -115,26 +115,27 @@ local
    
    val inlinePassGen =
       let
-	 val count = Counter.new 1
-	 fun nums s =
-	    if s = ""
-	       then SOME []
-	    else if String.sub (s, 0) = #"(" 
-		  andalso String.sub (s, String.size s - 1)= #")"
-	       then let
-		       val s = String.dropFirst (String.dropLast s)
-		    in
-		       case List.fold (String.split (s, #","), SOME [],
-				       fn (s,SOME nums) => (case Int.fromString s of
-							       SOME i => SOME (i::nums)
-							     | NONE => NONE)
-					| (_, NONE) => NONE) of
-			  SOME (l as _::_) => SOME (List.rev l)
-			| _ => NONE
-		    end
-	    else NONE
+(*	 val count = Counter.new 1 *)
+(* 	 fun nums s =
+ * 	    if s = ""
+ * 	       then SOME []
+ * 	    else if String.sub (s, 0) = #"(" 
+ * 		  andalso String.sub (s, String.size s - 1)= #")"
+ * 	       then let
+ * 		       val s = String.dropFirst (String.dropLast s)
+ * 		    in
+ * 		       case List.fold (String.split (s, #","), SOME [],
+ * 				       fn (s,SOME nums) => (case Int.fromString s of
+ * 							       SOME i => SOME (i::nums)
+ * 							     | NONE => NONE)
+ * 					| (_, NONE) => NONE) of
+ * 			  SOME (l as _::_) => SOME (List.rev l)
+ * 			| _ => NONE
+ * 		    end
+ * 	    else NONE
+ *)
       in
-	 fn s =>
+	 fn _ =>
 (* 	 if String.isPrefix {string = s, prefix = "inlineNonRecursive"}
  * 	    then let
  * 		    fun mk (product, small) =

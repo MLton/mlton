@@ -12,8 +12,6 @@ struct
 
   val tracerTop = x86.tracerTop
 
-  val normalHeaderBytes = x86MLton.normalHeaderBytes
-
   fun argsToString(ss: string list): string
     = "(" ^ (concat (List.separate(ss, ", "))) ^ ")"
 

@@ -1038,7 +1038,6 @@ fun ('a, 'b) extractTargs (prim: 'b t,
 			   {args: 'a vector,
 			    deArray: 'a -> 'a,
 			    deArrow: 'a -> 'a * 'a,
-			    deRef: 'a -> 'a,
 			    deVector: 'a -> 'a,
 			    deWeak: 'a -> 'a,
 			    result: 'a}) =

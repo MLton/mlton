@@ -12,13 +12,10 @@ open S
 
 type int = Int.t
 
-structure Set = DisjointSet
-
 structure Graph = DirectedGraph
 local
    open Graph
 in
-   structure LoopForest = LoopForest
    structure Node = Node
 end
 

@@ -561,7 +561,7 @@ and checkSyntaxDec (d: dec): unit =
 		  region = Con.region o #1,
 		  term = fn () => layoutDec d})))
     | Fix _ => () (* The Definition allows, e.g., "infix + +". *)
-    | Fun (tyvars, fs) =>
+    | Fun (_, fs) =>
 	 Vector.foreach (fs, fn clauses =>
 			 Vector.foreach
 			 (clauses, fn {body, pats, resultType} =>

@@ -758,7 +758,6 @@ fun useless (program: Program.t): Program.t =
 					       result = resultType,
 					       deArray = Type.deArray,
 					       deArrow = Type.deArrow,
-					       deRef = Type.deRef,
 					       deVector = Type.deVector,
 					       deWeak = Type.deWeak})}
 	       end

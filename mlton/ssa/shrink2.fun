@@ -1263,15 +1263,6 @@ fun shrinkFunction {globals: Statement.t vector} =
       end
    end
 
-structure Exp =
-   struct
-      open Exp
-
-      val isProfile =
-	 fn Profile _ => true
-	  | _ => false
-   end
-
 structure Statement =
    struct
       open Statement

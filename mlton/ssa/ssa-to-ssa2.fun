@@ -101,10 +101,9 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 					 var = var})
 		  end
 	     | S.Exp.Const c => simple (S2.Exp.Const c)
-	     | S.Exp.PrimApp {args, prim, targs} =>
+	     | S.Exp.PrimApp {args, prim, ...} =>
 		  let
 		     fun arg i = Vector.sub (args, i)
-		     fun targ i = convertType (Vector.sub (targs, i))
 		     fun sub () =
 			simple
 			(S2.Exp.Select {base = Base.VectorSub {index = arg 1,

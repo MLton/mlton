@@ -371,8 +371,6 @@ fun convertConst (c: Const.t): Const.t =
        | _ => c
    end
 
-val word = Type.word o WordSize.bits
-
 fun convert (program as S.Program.T {functions, globals, main, ...},
 	     {codegenImplementsPrim}): Rssa.Program.t =
    let
@@ -383,13 +381,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 	 Vector.foreachi
 	 (objectTypes, fn (i, (pt, _)) => PointerTycon.setIndex (pt, i))
       val objectTypes = Vector.map (objectTypes, #2)
-      fun arrayElementType (z: Operand.t): Type.t =
-	 case Type.dePointer (Operand.ty z) of
-	    NONE => Error.bug "arrayElementType of non pointer"
-	  | SOME pt =>
-	       (case Vector.sub (objectTypes, PointerTycon.index pt) of
-		   ObjectType.Array t => t
-		 | _ => Error.bug "arrayElementType of non array")
       val () = diagnostic ()
       val {get = varInfo: Var.t -> {ty: S.Type.t},
 	   set = setVarInfo, ...} =
@@ -897,11 +888,11 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 				    (CFunction.size (Operand.ty (a 0)))
 			       | MLton_touch => none ()
 			       | Pointer_getPointer => pointerGet ()
-			       | Pointer_getReal s => pointerGet ()
-			       | Pointer_getWord s => pointerGet ()
+			       | Pointer_getReal _ => pointerGet ()
+			       | Pointer_getWord _ => pointerGet ()
 			       | Pointer_setPointer => pointerSet ()
-			       | Pointer_setReal s => pointerSet ()
-			       | Pointer_setWord s => pointerSet ()
+			       | Pointer_setReal _ => pointerSet ()
+			       | Pointer_setWord _ => pointerSet ()
 			       | Thread_atomicBegin =>
 				    (* gcState.canHandle++;
 				     * if (gcState.signalIsPending)

@@ -660,7 +660,6 @@ structure Structure =
 	       loop
 	    end
       in
-	 val clearUsed = make Clear
 	 val forceUsed = make Force
       end
       
@@ -931,27 +930,6 @@ structure Basis =
 			 strs: (Ast.Strid.t, Structure.t) Info.t,
 			 types: (Ast.Tycon.t, TypeStr.t) Info.t,
 			 vals: (Ast.Vid.t, Vid.t * Scheme.t) Info.t}
-
-      local
-	 fun make f (T r) = f r
-      in
-	 val plist = make #plist
-      end
-
-      fun eq (s: t, s': t): bool = PropertyList.equals (plist s, plist s')
-
-      local
-	 fun make (field, toSymbol) (T fields, domain) =
-	    Info.peek (field fields, domain, toSymbol)
-      in
-	 val peekFctid' = make (#fcts, Ast.Fctid.toSymbol)
-	 val peekSigid' = make (#sigs, Ast.Sigid.toSymbol)
-	 val peekStrid' = make (#strs, Ast.Strid.toSymbol)
-      end
- 
-      fun peekFctid z = Option.map (peekFctid' z, #range)
-      fun peekSigid z = Option.map (peekSigid' z, #range)
-      fun peekStrid z = Option.map (peekStrid' z, #range)
 
       fun layout (T {bass, fcts, sigs, strs, types, vals, ...}) =
 	 Layout.record
@@ -1450,7 +1428,7 @@ fun layout' (E: t, keep, showUsed): Layout.t =
       val {layoutAbbrev, layoutStr, ...} =
 	 Structure.layouts ({showUsed = false}, interfaceSigid)
       val bass =
-	 doit (bass, fn {domain = basid, range = B, ...} =>
+	 doit (bass, fn {domain = basid, ...} =>
 	       seq [str "basis ", Basid.layout basid, str " = "])
       val sigs =
 	 doit (sigs, fn {domain = sigid, range = I, ...} =>
@@ -1492,39 +1470,6 @@ fun layoutCurrentScope (E as T {currentScope, ...}) =
    end
 
 fun layoutUsed (E: t): Layout.t = layout' (E, #hasUse, {showUsed = true})
-
-fun clearDefUses (E as T f) =
-   let
-      fun doit sel =
-	 let
-	    val NameSpace.T {defUses, ...} = sel f
-	 in
-	    defUses := []
-	 end
-      val _ = doit #fcts
-      val _ = doit #fixs
-      val _ = doit #sigs
-      val _ = doit #strs
-      val _ = doit #types
-      val _ = doit #vals
-      fun doit clearRange (Values.T r) =
-	 case !r of
-	    [] => ()
-	  | {range, uses, ...} :: _ =>
-	       (Uses.clear uses
-		; clearRange range)
-      val _ =
-	 foreachDefinedSymbol
-	 (E, {bass = doit ignore,
-	      fcts = doit ignore,
-	      fixs = doit ignore,
-	      sigs = doit ignore,
-	      strs = doit Structure.clearUsed,
-	      types = doit ignore,
-	      vals = doit ignore})
-   in
-      ()
-   end
 
 (* Force everything that is currently in scope to be marked as used. *)
 fun forceUsed E =
@@ -2836,13 +2781,6 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 	  let
 	     val {admitsEquality = a, hasCons, kind = k, ...} =
 		FlexibleTycon.dest flex
-	     fun bad () =
-		(* Use a new type to avoid spurious errors. *)
-		TypeStr.def
-		(Scheme.make {canGeneralize = true,
-			      ty = Type.new (),
-			      tyvars = Vector.new0 ()},
-		 k)
 	     val typeStr =
 		case typeStr of
 		   NONE => NONE
@@ -3134,8 +3072,6 @@ fun functorClosure
 
 structure Env =
    struct
-      type t = t
-
       val lookupLongtycon = lookupLongtycon
    end
 

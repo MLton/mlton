@@ -558,8 +558,7 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
 	 Array.tabulate
 	 (n, fn i =>
 	  let
-	     val Block.T {kind, statements, transfer, ...} =
-		Vector.sub (blocks, i)
+	     val Block.T {kind, transfer, ...} = Vector.sub (blocks, i)
 	     datatype z = datatype Kind.t
 	     val isBigAlloc =
 		case Transfer.bytesAllocated transfer of

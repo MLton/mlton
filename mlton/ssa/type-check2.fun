@@ -371,9 +371,6 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
 						  ("to", Type.layout to)]
 				       end,
 				    Unit.layout) coerce
-      fun coerces (from, to) =
-	 Vector.foreach2 (from, to, fn (from, to) =>
-			  coerce {from = from, to = to})
       fun object {args, con, resultType} =
 	 let
 	    fun err () = error ("bad object", Layout.empty)

@@ -94,8 +94,7 @@ fun eliminate (Program.T {datatypes, globals, functions, main}) =
 	 List.foreach
 	 (functions, fn f =>
 	  let
-	     val {args, blocks, mayInline, name, start, returns, raises} =
-		Function.dest f
+	     val {blocks, ...} = Function.dest f
 	     val () = 
 		Vector.foreach
 		(blocks, fn Block.T {label, args, ...} =>

@@ -4212,7 +4212,7 @@ struct
 	 (rev l, [],
 	  fn (b' as T' {entry, profileLabel, statements, transfer}, ac) =>
 	  case transfer of
-	     SOME transfer => b' :: ac
+	     SOME _ => b' :: ac
 	   | NONE =>
 		case ac of
 		   [] => Error.bug "compress' with dangling transfer"

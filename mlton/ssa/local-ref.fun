@@ -143,7 +143,6 @@ fun eliminate (program: Program.t): Program.t =
    let
       val program as Program.T {datatypes, globals, functions, main} =
 	 eliminateDeadBlocks program
-      exception NoLocalRefs
       (* Compute multi *)
       val multi = Control.trace (Control.Detail, "multi") Multi.multi
       val {usesThreadsOrConts: bool,

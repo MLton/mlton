@@ -48,7 +48,6 @@ end
 local
    open Ast
 in
-   structure Basid = Basid
    structure Basexp = Basexp
    structure Basdec = Basdec
    structure ModIdBind = ModIdBind

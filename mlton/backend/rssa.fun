@@ -659,7 +659,7 @@ structure Function =
 	       Vector.foreach
 	       (blocks, fn Block.T {transfer, ...} =>
 		case transfer of
-		   Goto {args, dst} =>
+		   Goto {dst, ...} =>
 		      let
 			 val {inline, occurrences, ...} = labelInfo dst
 		      in

@@ -847,8 +847,6 @@ structure Program =
 
 	    fun layout (T ds) = List.layout Live.layout ds
 
-	    val empty = T []
-	       
 	    fun forall (T ds, f) = List.forall (ds, f o Live.toOperand)
 
 	    fun defineLive (T ls, l) = T (l :: ls)

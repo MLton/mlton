@@ -21,7 +21,6 @@ in
    val allowRebindEquals = fn () => current allowRebindEquals
    val sequenceUnit = fn () => current sequenceUnit
    val warnMatch = fn () => current warnMatch
-   val warnUnused = fn () => current warnUnused
 end
 val lookupConstant : (string * ConstType.t -> CoreML.Const.t) ref = 
    ref (fn _ => Error.bug "lookupConstant not set")
@@ -2100,7 +2099,6 @@ fun elaborateDec (d, {env = E, nest}) =
 				{args = Vector.map (args, Cexp.ty),
 				 deArray = Type.deArray,
 				 deArrow = Type.deArrow,
-				 deRef = Type.deRef,
 				 deVector = Type.deVector,
 				 deWeak = Type.deWeak,
 				 result = result})

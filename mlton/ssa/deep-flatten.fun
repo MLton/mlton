@@ -308,13 +308,6 @@ structure Value =
       val ground = new o Ground
 
       fun weak (a: t): t = new (Weak {arg = a})
-
-      val unit = ground Type.unit
-
-      fun isUnit v =
-	 case value v of
-	    Ground t => Type.isUnit t
-	  | _ => false
 	       
       val traceCoerce =
 	 Trace.trace ("Value.coerce",
@@ -340,9 +333,8 @@ structure Value =
 	    in
 	       case (v, v') of
 		  (Ground _, Ground _) => ()
-		| (Object (obj as {args = a, coercedFrom = c, flat = f, ...}),
-		   Object (obj' as {args = a', coercedFrom = c', flat = f',
-				    ...})) =>
+		| (Object {args = a, coercedFrom = c, flat = f, ...},
+		   Object {args = a', coercedFrom = c', flat = f', ...}) =>
 		     let
 			val () = unifyProd (a, a')
 			fun set v = Set.:= (s, new' v)
@@ -397,7 +389,7 @@ structure Value =
       and dontFlatten: t -> unit =
 	 fn v =>
 	 case value v of
-	    Object (z as {coercedFrom, flat, ...}) =>
+	    Object {coercedFrom, flat, ...} =>
 	       (case ! flat of
 		   Flat =>
 		      let
@@ -453,9 +445,6 @@ structure Value =
       val tuple =
 	 Trace.trace ("Value.tuple", fn p => Prod.layout (p, layout), layout)
 	 tuple
-
-      fun vector (args: t Prod.t): t =
-	 object {args = args, con = ObjectCon.Vector}
 
       val deObject =
 	 fn v =>
@@ -546,7 +535,7 @@ structure Value =
 	    (Prod.dest (finalTypes elt), ac, fn ({elt, isMutable = i'}, ac) =>
 	     {elt = elt, isMutable = i orelse i'} :: ac))))
 
-      fun finalOffsets (v as T s): int vector =
+      fun finalOffsets (T s): int vector =
 	 let
 	    val {finalOffsets = r, value, ...} = Set.! s
 	 in
@@ -622,11 +611,11 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
       val typeValue =
 	 Trace.trace ("typeValue", Type.layout, Value.layout) typeValue
       val coerce = Value.coerce
-      fun inject {sum, variant} = typeValue (Type.datatypee sum)
+      fun inject {sum, variant = _} = typeValue (Type.datatypee sum)
       fun object {args, con, resultType} =
 	 case con of
 	    NONE => Value.tuple args
-	  | SOME c =>
+	  | SOME _ =>
 	       let
 		  val res = typeValue resultType
 		  val () =
@@ -643,7 +632,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			 ("con", Option.layout Con.layout con)],
 	  Value.layout)
 	 object
-      fun primApp {args, prim, resultVar, resultType} =
+      fun primApp {args, prim, resultVar = _, resultType} =
 	 let
 	    fun arg i = Vector.sub (args, i)
 	    fun result () = typeValue resultType
@@ -688,7 +677,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	 coerce {from = value,
 		 to = Value.select {base = base, offset = offset}}
       fun const c = typeValue (Type.ofConst c)
-      val {func, label, value = varValue, ...} =
+      val {func, value = varValue, ...} =
 	 analyze {coerce = coerce,
 		  const = const,
 		  filter = fn _ => (),
@@ -891,7 +880,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			    val (child, ss) =
 			       case info of
 				  VarTree.Flat => (child, [])
-				| VarTree.NotFlat {var, ...} =>
+				| VarTree.NotFlat _ =>
 				     let
 					val child =
 					   (* Don't simplify a select out
@@ -993,7 +982,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		  transfer = transformTransfer transfer}
       fun transformFunction (f: Function.t): Function.t =
 	  let
-	     val {args, blocks, mayInline, name, start, ...} = Function.dest f
+	     val {args, mayInline, name, start, ...} = Function.dest f
 	     val {raises, returns, ...} = func name
 	     val args = transformFormals args
 	     val raises = Option.map (raises, valuesTypes)

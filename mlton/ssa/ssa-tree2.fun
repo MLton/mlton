@@ -440,7 +440,7 @@ structure Type =
 	     | Thread_switchTo => done ([thread], unit)
 	     | Weak_canGet =>
 		  oneArg (fn w => isWeak w andalso equals (result, bool))
-	     | Weak_get => oneArg (fn w => done ([weak result], result))
+	     | Weak_get => oneArg (fn _ => done ([weak result], result))
 	     | Weak_new => oneArg (fn x => done ([x], weak x))
 	     | Word8Array_subWord =>
 		  done ([word8Array, defaultWord], defaultWord)
@@ -808,12 +808,6 @@ structure Statement =
 				   case global x of
 				      NONE => Var.layout x
 				    | SOME s => Layout.str s))
-
-      fun maySideEffect (s: t): bool =
-	 case s of
-	    Bind {exp, ...} => Exp.maySideEffect exp
-	  | Profile _ => false
-	  | Updates _ => true
 
       val profile = Profile
 
@@ -2080,7 +2074,7 @@ structure Program =
 	       List.foreach
 	       (functions, fn f =>
 		let
-		   val {args, blocks, ...} = Function.dest f
+		   val {blocks, ...} = Function.dest f
 		in
 		   Vector.foreach
 		   (blocks, fn Block.T {statements, ...} =>
