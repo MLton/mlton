@@ -320,9 +320,19 @@ pid_t getppid (void) {
 uid_t getuid (void) {
 	die ("getuid not implemented");
 }
+
 int setenv (const char *name, const char *value, int overwrite) {
-	die ("setenv not implemented");
+	/* We could use _putenv, but then we'd need a temporary buffer for
+	 * use to concat name=value. 
+         */
+	if (overwrite or not (getenv (name)))
+		unless (SetEnvironmentVariable (name, value)) {
+			errno = ENOMEM; /* this happens often in Windows.. */
+			return -1;
+		}
+	return 0;
 }
+
 int setgid (gid_t gid) {
 	die ("setgid not implemented");
 }
@@ -345,31 +355,66 @@ char *ttyname (int desc) {
 	die ("*ttyname not implemented");
 }
 
-/* This is just enough of uname so that MLton can self compile.  Someday it would
- * be nice to add stuff to fill in the fields currently set to "unknown".
- *
- * machine
- *   Use the Windows API function GetSystemInfo.
- * 
- * sysname
- *   For now this is hardcoded as MINGW32, but this should be suffixed with the
- *   windows verision info, which can be obtained with the Windows API function
- *   GetVersion (or GetVersionEx).  For example, on my MinGW system, uname -s
- *   displays MINGW32_NT-4.0.
- *
- * release, version
- *   On MinGW, uname -r and uname -v indicate the release and version of MinGW,
- *   not of the underlying Windows system.  So, we need to find some 
- *   MinGW-specific constants or functions to get those.
- */
+static void setMachine (struct utsname *buf) {
+	int level;
+	const char* platform = "unknown";
+	SYSTEM_INFO si;
+
+	GetSystemInfo (&si);
+	level = si.dwProcessorType;
+	switch (si.wProcessorArchitecture) {
+	case PROCESSOR_ARCHITECTURE_INTEL:
+		if (level < 3) level = 3;
+		if (level > 6) level = 6;
+		platform = "i%d86"; 
+		break;
+	case PROCESSOR_ARCHITECTURE_IA64:  platform = "ia64";  break;
+#ifdef PROCESSOR_ARCHITECTURE_AMD64
+	case PROCESSOR_ARCHITECTURE_AMD64: platform = "amd64"; break; 
+#endif
+	case PROCESSOR_ARCHITECTURE_ALPHA: platform = "alpha"; break;
+	case PROCESSOR_ARCHITECTURE_MIPS:  platform = "mips";  break;
+	}
+	sprintf (buf->machine, platform, level);
+}
+
+static void setSysname (struct utsname *buf) {
+	OSVERSIONINFO osv;
+	const char* os = "??";
+
+	osv.dwOSVersionInfoSize = sizeof (osv);
+	GetVersionEx (&osv);
+	switch (osv.dwPlatformId) {
+	case VER_PLATFORM_WIN32_NT:
+		if (osv.dwMinorVersion == 0) {
+			if (osv.dwMajorVersion <= 4)	os = "NT";
+			else				os = "2000";
+		} else if (osv.dwMinorVersion <= 1)	os = "XP";
+		else if (osv.dwMinorVersion <= 2)	os = "2003";
+		else					os = "NTx";
+		break;
+	case VER_PLATFORM_WIN32_WINDOWS:
+		if (osv.dwMinorVersion == 0)		os = "95";
+		else if (osv.dwMinorVersion < 90)	os = "98";
+		else if (osv.dwMinorVersion == 90)	os = "Me";
+		else					os = "9X";
+		break;
+	case VER_PLATFORM_WIN32s:
+		os = "31"; /* aka DOS + Windows 3.1 */
+		break;
+	}
+	sprintf (buf->sysname, "MINGW32_%s-%d.%d",
+		os, (int)osv.dwMajorVersion, (int)osv.dwMinorVersion);
+}
+
 int uname (struct utsname *buf) {
-	strcpy (buf->machine, "unknown");
+	setMachine (buf);
 	unless (0 == gethostname (buf->nodename, sizeof (buf->nodename))) {
 		strcpy (buf->nodename, "unknown");
 	}
-	strcpy (buf->release, "unknown"); 
-	strcpy (buf->sysname, "MINGW32");
-	strcpy (buf->version, "unknown");
+	sprintf (buf->release, "%d", __MINGW32_MINOR_VERSION);
+	setSysname (buf);
+	sprintf (buf->version, "%d", __MINGW32_MAJOR_VERSION);
 	return 0;
 }
 
