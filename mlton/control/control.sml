@@ -495,25 +495,6 @@ val useBasisLibrary = control {name = "use basis library",
 			       default = true,
 			       toString = Bool.toString}
 
-structure Variant =
-   struct
-      datatype t =
-	 FirstWord
-       | Header
-       | HeaderIndirect
-
-      val toString =
-	 fn FirstWord => "first word"
-	  | Header => "header"
-	  | HeaderIndirect => "header indirect"
-   end
-
-datatype variant = datatype Variant.t
-
-val variant = control {name = "variant",
-		       default = Header,
-		       toString = Variant.toString}
-
 structure Verbosity =
    struct
       datatype t =

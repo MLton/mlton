@@ -20,69 +20,45 @@ signature REPRESENTATION =
    sig
       include REPRESENTATION_STRUCTS
 
-      structure TyconRep:
-	 sig
-	    datatype t =
-	     (* Datatype has no representation (Void) or contains a single
-	      * variant, and hence constructor requires no additional
-	      * representation.
-	      *) 
-	       Direct
-	     (* All cons are non-value-carrying and are represented as ints. *)
-	     | Enum
-	     (* All cons except for one are non-value-carrying and are
-	      * represented as ints that are nonzero mod 4.  The value carrying
-	      * con is represented transparently, i.e. the value is known to be a
-	      * pointer and is left as such.
-	      *)
-	     | EnumDirect
-	     (* All cons except for one are non-value-carrying and are
-	      * represented as ints that are nonzero mod 4.  The value carrying
-	      * con is represented by boxing its arg.
-	      *)
-	     | EnumIndirect
-	     (* Non-value-carrying and are represented as ints that are nonzero
-	      * mod 4.  Value carrying cons are represented by boxing the args
-	      * and adding an integer tag.
-	      *)
-	     | EnumIndirectTag
-	     (* All cons are value carrying and are represented by boxing the
-	      * args and adding an integer tag.
-	      *)
-	     | IndirectTag
-	     | Void
-	 end
-
       structure TupleRep:
 	 sig
-	    datatype t = T of {offsets: {offset: int,
-					 ty: Rssa.Type.t} option vector,
-			       size: int,
-			       ty: Rssa.Type.t,
-			       tycon: Rssa.PointerTycon.t}
+	    type t
 
 	    val layout: t -> Layout.t
+	    val select:
+	       t * {dst: unit -> Rssa.Var.t,
+		    offset: int,
+		    tuple: unit -> Rssa.Operand.t} -> Rssa.Statement.t list
+	    val tuple:
+	       t * {components: 'a vector,
+		    dst: Rssa.Var.t,
+		    oper: 'a -> Rssa.Operand.t} -> Rssa.Statement.t list
 	    val tycon: t -> Rssa.PointerTycon.t
 	 end
 
       (* How a constructor variant of a datatype is represented. *)
       structure ConRep:
 	 sig
-	    datatype t =
-	     (* an integer representing a variant in a datatype *)
-	       IntAsTy of {int: int,
-			   ty: Rssa.Type.t}
-	     (* box the arg(s) and add the integer tag as the first word *)
-	     | TagTuple of {rep: TupleRep.t,
-			    tag: int}
-	     (* just keep the value itself *)
-	     | Transparent of Rssa.Type.t
-	     (* box the arg(s) *)
-	     | Tuple of TupleRep.t
-	     (* need no representation *)
-	     | Void
+	    type t
 
+	    val con: t * {args: 'a vector,
+			  dst: unit -> Rssa.Var.t,
+			  oper: 'a -> Rssa.Operand.t,
+			  ty: unit -> Rssa.Type.t} -> Rssa.Statement.t list
 	    val layout: t -> Layout.t
+	 end
+
+      structure TyconRep:
+	 sig
+	    type t
+
+	    val genCase:
+	       t * {cases: (ConRep.t * Rssa.Label.t) vector,
+		    default: Rssa.Label.t option,
+		    test: unit -> Rssa.Operand.t}
+	       -> (Rssa.Statement.t list
+		   * Rssa.Transfer.t
+		   * Rssa.Block.t list)
 	 end
 
       val compute:

@@ -626,14 +626,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
       val varOp =
 	 Trace.trace ("SsaToRssa.varOp", Var.layout, Operand.layout) varOp
       fun varOps xs = Vector.map (xs, varOp)
-      fun conSelects {rep = TupleRep.T {offsets, ...},
-		      variant: Operand.t}: Operand.t vector =
-	 Vector.keepAllMap
-	 (offsets, fn off =>
-	  Option.map (off, fn {offset, ty} =>
-		      Offset {base = variant,
-			      offset = offset,
-			      ty = ty}))
       val extraBlocks = ref []
       fun newBlock {args, kind,
 		    statements: Statement.t vector,
@@ -650,246 +642,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 	    l
 	 end
       val tagOffset = 0
-      fun genCase {cases: (Con.t * Label.t) vector,
-		   default: Label.t option,
-		   test: Var.t,
-		   testRep: TyconRep.t}: Statement.t list * Transfer.t =
-	 let
-	    fun enum (test: Operand.t): Transfer.t =
-	       let
-		  val cases =
-		     Vector.keepAllMap
-		     (cases, fn (c, j) =>
-		      case conRep c of
-			 ConRep.IntAsTy {int, ...} => SOME (int, j)
-		       | _ => NONE)
-		  val numEnum =
-		     case Operand.ty test of
-			Type.EnumPointers {enum, ...} => Vector.length enum
-		      | _ => Error.bug "strage enum"
-		  val default =
-		     if numEnum = Vector.length cases
-			then NONE
-		     else default
-	       in
-		  if 0 = Vector.length cases
-		     then
-			(case default of
-			    NONE => Error.bug "no targets"
-			  | SOME l => Goto {dst = l,
-					    args = Vector.new0 ()})
-		  else
-		     let
-			val l = #2 (Vector.sub (cases, 0))
-		     in
-			if Vector.forall (cases, fn (_, l') =>
-					  Label.equals (l, l'))
-			   andalso (case default of
-				       NONE => true
-				     | SOME l' => Label.equals (l, l'))
-			   then Goto {dst = l,
-				      args = Vector.new0 ()}
-			else
-			   let
-			      val cases =
-				 QuickSort.sortVector
-				 (cases, fn ((i, _), (i', _)) => i <= i')
-			      val cases =
-				 Vector.map (cases, fn (i, l) =>
-					     (IntX.make (IntInf.fromInt i,
-							 IntSize.default),
-					      l))
-			   in
-			      Switch (Switch.Int {cases = cases,
-						  default = default,
-						  size = IntSize.default,
-						  test = test})
-			   end
-		     end
-	       end
-	    fun switchEP
-	       (makePointersTransfer: Operand.t -> Statement.t list * Transfer.t)
-	       : Transfer.t =
-	       let
-		  val test = varOp test
-		  val {enum = e, pointers = p} =
-		     case Operand.ty test of
-			Type.EnumPointers ep => ep
-		      | _ => Error.bug "strange switchEP"
-		  val enumTy = Type.EnumPointers {enum = e,
-						  pointers = Vector.new0 ()}
-		  val enumVar = Var.newNoname ()
-		  val enumOp = Operand.Var {var = enumVar,
-					    ty = enumTy}
-		  val pointersTy = Type.EnumPointers {enum = Vector.new0 (),
-						      pointers = p}
-		  val pointersVar = Var.newNoname ()
-		  val pointersOp = Operand.Var {ty = pointersTy,
-						var = pointersVar}
-		  fun block (var, ty, statements, transfer) =
-		     newBlock {args = Vector.new0 (),
-			       kind = Kind.Jump,
-			       statements = (Vector.fromList
-					     (Statement.Bind
-					      {isMutable = false,
-					       oper = Operand.Cast (test, ty),
-					       var = var}
-					      :: statements)),
-			       transfer = transfer}
-		  val (s, t) = makePointersTransfer pointersOp
-		  val pointers = block (pointersVar, pointersTy, s, t)
-		  val enum = block (enumVar, enumTy, [], enum enumOp)
-	       in
-		  Switch (Switch.EnumPointers
-			  {enum = enum,
-			   pointers = pointers,
-			   test = test})
-	       end
-	    fun enumAndOne (): Transfer.t =
-	       let
-		  fun make (pointersOp: Operand.t)
-		     : Statement.t list * Transfer.t =
-		     let
-			val (dst, args: Operand.t vector) =
-			   case Vector.peekMap
-			      (cases, fn (c, j) =>
-			       case conRep c of
-				  ConRep.Transparent _ =>
-				     SOME (j, Vector.new1 pointersOp)
-				| ConRep.Tuple r =>
-				     SOME (j, conSelects {rep = r,
-							  variant = pointersOp})
-				| _ => NONE) of
-			      NONE =>
-				 (case default of
-				     NONE => Error.bug "enumAndOne: no default"
-				   | SOME j => (j, Vector.new0 ()))
-			    | SOME z => z
-		     in
-			([], Transfer.Goto {args = args,
-					    dst = dst})
-		     end
-	       in
-		  switchEP make
-	       end
-	    fun indirectTag (test: Operand.t): Statement.t list * Transfer.t =
-	       let
-		  val cases =
-		     Vector.keepAllMap
-		     (cases, fn (c, l) =>
-		      case conRep c of
-			 ConRep.TagTuple {rep, tag} =>
-			    let
-			       val tycon = TupleRep.tycon rep
-			       val tag =
-				  if !Control.variant = Control.FirstWord
-				     then tag
-				  else PointerTycon.index tycon
-			       val pointerVar = Var.newNoname ()
-			       val pointerTy = Type.pointer tycon
-			       val pointerOp =
-				  Operand.Var {ty = pointerTy,
-					       var = pointerVar}
-			       val statements =
-				  Vector.new1
-				  (Statement.Bind
-				   {isMutable = false,
-				    oper = Operand.Cast (test, pointerTy),
-				    var = pointerVar})
-			       val dst =
-				  newBlock
-				  {args = Vector.new0 (),
-				   kind = Kind.Jump,
-				   statements = statements,
-				   transfer =
-				   Goto {args = conSelects {rep = rep,
-							    variant = pointerOp},
-					 dst = l}}
-			    in
-			       SOME {dst = dst,
-				     tag = tag,
-				     tycon = tycon}
-			    end
-		       | _ => NONE)
-		  val numTag =
-		     case Operand.ty test of
-			Type.EnumPointers {pointers, ...} =>
-			   Vector.length pointers
-		      | _ => Error.bug "strange indirecTag"
-		  val default =
-		     if numTag = Vector.length cases
-			then NONE
-		     else default
-		  val cases =
-		     QuickSort.sortVector
-		     (cases, fn ({tycon = t, ...}, {tycon = t', ...}) =>
-		      PointerTycon.<= (t, t'))
-		  val (ss, tag) =
-		     case !Control.variant of
-			Control.FirstWord =>
-			   ([], Offset {base = test,
-					offset = tagOffset,
-					ty = Type.defaultInt})
-		      | Control.Header =>
-			   let
-			      val headerOffset = ~4
-			      val tagVar = Var.newNoname ()
-			      val s =
-				 PrimApp {args = (Vector.new2
-						  (Offset {base = test,
-							   offset = headerOffset,
-							   ty = Type.defaultWord},
-						   Operand.word (WordX.one WordSize.default))),
-					  dst = SOME (tagVar, Type.defaultWord),
-					  prim = Prim.wordRshift WordSize.default}
-			   in
-			      ([s], Cast (Var {ty = Type.defaultWord,
-					       var = tagVar},
-					  Type.defaultInt))
-			   end
-		      | Control.HeaderIndirect =>
-			   Error.bug "HeaderIndirect unimplemented"
-	       in
-		  (ss,
-		   Switch (Switch.Pointer {cases = cases,
-					   default = default,
-					   tag = tag,
-					   test = test}))
-	       end
-	    fun prim () =
-	       case (Vector.length cases, default) of
-		  (1, _) =>
-		     (* We use _ instead of NONE for the default becuase
-		      * there may be an unreachable default case.
-		      *)
-		     let
-			val (c, l) = Vector.sub (cases, 0)
-		     in
-			case conRep c of
-			   ConRep.Void =>
-			      Goto {dst = l,
-				    args = Vector.new0 ()}
-			 | ConRep.Transparent _ =>
-			      Goto {dst = l,
-				    args = Vector.new1 (varOp test)}
-			 | ConRep.Tuple r =>
-			      Goto {dst = l,
-				    args = conSelects {rep = r,
-						       variant = (varOp test)}}
-			 | _ => Error.bug "strange conRep for Prim"
-		     end
-		| (0, SOME l) => Goto {dst = l, args = Vector.new0 ()}
-		| _ => Error.bug "prim datatype with more than one case"
-	 in
-	    case testRep of
-	       TyconRep.Direct => ([], prim ())
-	     | TyconRep.Enum => ([], enum (varOp test))
-	     | TyconRep.EnumDirect => ([], enumAndOne ())
-	     | TyconRep.EnumIndirect => ([], enumAndOne ())
-	     | TyconRep.EnumIndirectTag => ([], switchEP indirectTag)
-	     | TyconRep.IndirectTag => indirectTag (varOp test)
-	     | TyconRep.Void => ([], prim ())
-	 end
       fun translateCase ({test: Var.t,
 			  cases: S.Cases.t,
 			  default: Label.t option})
@@ -915,10 +667,24 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			    val (tycon, tys) = S.Type.tyconArgs (varType test)
 			 in
 			    if Vector.isEmpty tys
-			       then genCase {cases = cases,
-					     default = default,
-					     test = test,
-					     testRep = tyconRep tycon}
+			       then
+				  let
+				     val cases =
+					Vector.map
+					(cases, fn (c, l) =>
+					 (conRep c, l))
+				     val test = fn () => varOp test
+				     val (ss, t, blocks) =
+					TyconRep.genCase
+					(tyconRep tycon,
+					 {cases = cases,
+					  default = default,
+					  test = test})
+				     val () =
+					extraBlocks := blocks @ !extraBlocks
+				  in
+				     (ss, t)
+				  end
 			    else Error.bug "strange type in case"
 			 end)
 	     | S.Cases.Int (s, cs) => simple (s, cs, Switch.Int, id, IntX.<=)
@@ -1105,6 +871,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			Vector.sub (statements, i)
 		     fun none () = loop (i - 1, ss, t)
 		     fun add s = loop (i - 1, s :: ss, t)
+		     fun adds ss' = loop (i - 1, ss' @ ss, t)
 		     fun split (args, kind,
 				ss: Statement.t list,
 				make: Label.t -> Statement.t list * Transfer.t) =
@@ -1117,44 +884,11 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			in
 			   loop (i - 1, ss, t)
 			end
-		     fun makeStores (ys: Var.t vector, offsets) =
-			QuickSort.sortVector
-			(Vector.keepAllMap2
-			 (ys, offsets, fn (y, offset) =>
-			  Option.map (offset, fn {offset, ty = _} =>
-				      {offset = offset,
-				       value = varOp y})),
-			 fn ({offset = i, ...}, {offset = i', ...}) => i <= i')
-		     fun allocate (ys: Var.t vector,
-				   TupleRep.T {size, offsets, ty, tycon, ...}) =
-			add (Object {dst = valOf var,
-				     size = size + Runtime.normalHeaderSize,
-				     stores = makeStores (ys, offsets),
-				     ty = ty,
-				     tycon = tycon})
-		     val allocate =
-			Trace.trace2
-			("allocate",
-			 Vector.layout Var.layout,
-			 TupleRep.layout,
-			 Layout.ignore)
-			allocate
-		     fun allocateTagged (n: int,
-					 ys: Var.t vector,
-					 TupleRep.T {size, offsets, ty, tycon}) =
-			add (Object
-			     {dst = valOf var,
-			      size = size + Runtime.normalHeaderSize,
-			      stores = (Vector.concat
-					[Vector.new1
-					 {offset = tagOffset,
-					  value = (Operand.int
-						   (IntX.make
-						    (IntInf.fromInt n,
-						     IntSize.default)))},
-					 makeStores (ys, offsets)]),
-			      ty = ty,
-			      tycon = tycon})
+		     fun allocate (ys: Var.t vector, tr) =
+			adds (TupleRep.tuple
+			      (tr, {components = ys,
+				    dst = valOf var,
+				    oper = varOp}))
 		     fun move (oper: Operand.t) =
 			add (Bind {isMutable = false,
 				   oper = oper,
@@ -1162,24 +896,12 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 		  in
 		     case exp of
 			S.Exp.ConApp {con, args} =>
-			   (case conRep con of
-			       ConRep.Void => none ()
-			     | ConRep.IntAsTy {int, ty} =>
-				  move (Operand.Cast
-					(Operand.int
-					 (IntX.make (IntInf.fromInt int,
-						     IntSize.default)),
-					 ty))
-			     | ConRep.TagTuple {rep, tag} =>
-				  if !Control.variant = Control.FirstWord
-				     then allocateTagged (tag, args, rep)
-				  else allocate (args, rep)
-			     | ConRep.Transparent _ =>
-				  move (Operand.cast
-					(varOp (Vector.sub (args, 0)),
-					 valOf (toRtype ty)))
-			     | ConRep.Tuple rep =>
-				  allocate (args, rep))
+			   adds (ConRep.con
+				 (conRep con,
+				  {args = args,
+				   dst = fn () => valOf var,
+				   oper = varOp,
+				   ty = fn () => valOf (toRtype ty)}))
 		      | S.Exp.Const c =>
 			   let
 			      datatype z = datatype Const.t
@@ -1707,17 +1429,11 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			   end
 		      | S.Exp.Profile e => add (Statement.Profile e)
 		      | S.Exp.Select {tuple, offset} =>
-			   let
-			      val TupleRep.T {offsets, ...} =
-				 tupleRep (varType tuple)
-			   in
-			      case Vector.sub (offsets, offset) of
-				 NONE => none ()
-			       | SOME {offset, ty} =>
-				    move (Offset {base = varOp tuple,
-						  offset = offset,
-						  ty = ty})
-			   end
+			   adds (TupleRep.select
+				 (tupleRep (varType tuple),
+				  {dst = fn () => valOf var,
+				   offset = offset,
+				   tuple = fn () => varOp tuple}))
 		      | S.Exp.Tuple ys =>
 			   if 0 = Vector.length ys
 			      then none ()

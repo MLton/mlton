@@ -394,14 +394,6 @@ fun makeOptions {usage} =
 			| "2" => Pass
 			| "3" =>  Detail
 			| _ => usage (concat ["invalid -verbose arg: ", s])))),
-       (Expert, "variant", " {header|first-word}",
-	"how to represent variant tags",
-	SpaceString
-	(fn s =>
-	 variant := (case s of
-			"first-word" => FirstWord
-		      | "header" => Header
-		      | _ => usage (concat ["invalid -variant arg: ", s])))),
        (Normal, "warn-match", " {true|false}",
 	"nonexhaustive and redundant match warnings",
 	boolRef warnMatch),
