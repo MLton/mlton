@@ -169,6 +169,7 @@ continuation.
 \end{description}
 
 \subsubsec{{\tt MLton.Exn}}{exn}
+
 \begin{verbatim}
 signature MLTON_EXN =
    sig
@@ -198,16 +199,6 @@ exit.
 \end{description}
 
 \subsubsec{{\tt MLton.Finalizable}}{finalizable}
-A finalizable value is a value to which {\em finalizers} can be
-attached.  A finalizer is a function that runs after a garbage
-collection determines that the value to which it is attached is
-unreachable.  Reachability is the same as with weak pointers (see
-\secref{weak}).  The finalizer is treated like a signal handler, in
-that it runs asynchronously in a separate thread, with signals
-blocked, and will not run within a critical section (see
-\secref{thread}).
-
-For an example, see the {\tt examples/finalizable} directory.
 
 \begin{verbatim}
 signature MLTON_FINALIZABLE =
@@ -221,6 +212,17 @@ signature MLTON_FINALIZABLE =
       val withValue: 'a t * ('a -> 'b) -> 'b
    end
 \end{verbatim}
+
+A finalizable value is a value to which {\em finalizers} can be
+attached.  A finalizer is a function that runs after a garbage
+collection determines that the value to which it is attached is
+unreachable.  Reachability is the same as with weak pointers (see
+\secref{weak}).  The finalizer is treated like a signal handler, in
+that it runs asynchronously in a separate thread, with signals
+blocked, and will not run within a critical section (see
+\secref{thread}).
+
+For an example, see the {\tt examples/finalizable} directory.
 
 \begin{description}
 
@@ -254,7 +256,7 @@ completes.  The call to {\tt f} is a nontail call.
 \end{description}
 
 \subsubsection{{\tt MLton.GC}}
-%
+
 \begin{verbatim}
 signature MLTON_GC =
    sig
@@ -291,11 +293,6 @@ resizes a packed heap to the size desired by the runtime.
 %
 \subsubsection{{\tt MLton.IntInf}}
 
-{\mlton} represents an arbitrary precision integer either as an
-unboxed 32 bit word with the bottom bit set to 1 and the top 31 bits
-representing a small integer in $[-2^{30}, 2^{30})$, or as a pointer
-to a vector of words where the first word indicates the sign and the
-rest are the limbs of {\gmp} big integer.
 \begin{verbatim}
 signature MLTON_INT_INF =
    sig
@@ -311,6 +308,12 @@ signature MLTON_INT_INF =
       val size: t -> int
    end
 \end{verbatim}
+
+{\mlton} represents an arbitrary precision integer either as an
+unboxed 32 bit word with the bottom bit set to 1 and the top 31 bits
+representing a small integer in $[-2^{30}, 2^{30})$, or as a pointer
+to a vector of words where the first word indicates the sign and the
+rest are the limbs of {\gmp} big integer.
 
 \begin{description}
 
@@ -575,12 +578,6 @@ Like {\tt Posix.Process.execp}.
 
 \subsubsec{{\tt MLton.Profile}}{profile-structure}
 
-This structure provides profiling control from within the program.
-For more on profiling, see \secref{profiling}.  In order to most
-efficiently execute non-profiled programs, when compiling {\tt
--profile no} (the default), type {\tt Data.t} is equivalent to {\tt
-unit ref}.
-
 \begin{verbatim}
 signature MLTON_PROFILE =
    sig
@@ -598,6 +595,12 @@ signature MLTON_PROFILE =
       val withData: Data.t * (unit -> 'a) -> 'a
    end
 \end{verbatim}
+
+{\tt MLton.Profile} provides profiling control from within the
+program.  For more on profiling, see \secref{profiling}.  In order to
+most efficiently execute non-profiled programs, when compiling {\tt
+-profile no} (the default), type {\tt Data.t} is equivalent to {\tt
+unit ref}.
 
 \begin{description}
 
@@ -683,8 +686,6 @@ will instead return lower quality random bits.
 %
 \subsubsection{\tt MLton.Rlimit}
 
-This structure provides a wrapper around the C {\tt getrlimit} and {\tt
-setrlimit}.
 \begin{verbatim}
 signature MLTON_RLIMIT =
    sig
@@ -709,6 +710,9 @@ signature MLTON_RLIMIT =
       val set: t * {hard: rlim, soft: rlim} -> unit
    end
 \end{verbatim}
+
+{\tt MLton.Rlimit} provides a wrapper around the C {\tt getrlimit} and
+{\tt setrlimit} functions.
 
 \begin{description}
 \entry{type rlim}
@@ -753,46 +757,6 @@ process itself.  The process time ({\tt self}) includes the gc time.
 \end{description}
 
 \subsubsec{{\tt MLton.Signal}}{signal}
-Signals handlers are functions from (ready) threads to (ready)
-threads.  When a signal handler is invoked, it receives as an argument
-the thread that was interrupted by the signal.  The signal handler
-returns the thread that it would like to resume execution (this is
-often the thread that it was passed).  It is an error for a signal
-handler to raise an unhandled exception.
-
-A signal handler is never invoked while the running thread is in a
-critical section (see \secref{thread}).  Invoking a signal handler
-implicitly enters a critical section and the normal return of a signal
-handler implicitly exits the critical section; hence, a signal handler
-is never interrupted by another signal handler.
-
-Signal handling interacts in a non-trivial way with those functions in
-the Basis Library that correspond directly to interruptable system
-calls (a subset of those functions that may raise {\tt OS.SysError}).
-The desire is that these functions should have predictable semantics.
-The principal concerns are:
-\begin{enumerate}
-\item 
-  system calls that are interrupted by signals should, by default, be
-  restarted; the alternative is to raise {\tt
-    OS.SysError(Posix.Error.errorMsg Posix.Error.intr, SOME
-    Posix.Error.intr)}.  This behavior is determined dynamically by
-  the value of {\tt Signal.restart}.
-\item 
-  signal handlers should always get a chance to run (when outside a
-  critical region).  If a system call is interrupted by a signal, then
-  the signal handler will run before the call is restarted or {\tt
-    OS.SysError} is raised; that is, before the {\tt Signal.restart}
-  check.
-\item 
-  a system call that must be restarted while in a critical section
-  will be restarted with the handled signals blocked (and the
-  previously blocked signals remembered).  This encourages the system
-  call to complete, allowing the program to make progess towards
-  leaving the critical section where the signal can be handled.  If
-  the system call completes, the set of blocked signals are restored
-  to those previously blocked.
-\end{enumerate}
 
 \begin{verbatim}
 signature MLTON_SIGNAL =
@@ -836,6 +800,47 @@ signature MLTON_SIGNAL =
       val vtalrm: t
    end
 \end{verbatim}
+
+Signals handlers are functions from (ready) threads to (ready)
+threads.  When a signal handler is invoked, it receives as an argument
+the thread that was interrupted by the signal.  The signal handler
+returns the thread that it would like to resume execution (this is
+often the thread that it was passed).  It is an error for a signal
+handler to raise an unhandled exception.
+
+A signal handler is never invoked while the running thread is in a
+critical section (see \secref{thread}).  Invoking a signal handler
+implicitly enters a critical section and the normal return of a signal
+handler implicitly exits the critical section; hence, a signal handler
+is never interrupted by another signal handler.
+
+Signal handling interacts in a non-trivial way with those functions in
+the Basis Library that correspond directly to interruptable system
+calls (a subset of those functions that may raise {\tt OS.SysError}).
+The desire is that these functions should have predictable semantics.
+The principal concerns are:
+\begin{enumerate}
+\item 
+  system calls that are interrupted by signals should, by default, be
+  restarted; the alternative is to raise {\tt
+    OS.SysError(Posix.Error.errorMsg Posix.Error.intr, SOME
+    Posix.Error.intr)}.  This behavior is determined dynamically by
+  the value of {\tt Signal.restart}.
+\item 
+  signal handlers should always get a chance to run (when outside a
+  critical region).  If a system call is interrupted by a signal, then
+  the signal handler will run before the call is restarted or {\tt
+    OS.SysError} is raised; that is, before the {\tt Signal.restart}
+  check.
+\item 
+  a system call that must be restarted while in a critical section
+  will be restarted with the handled signals blocked (and the
+  previously blocked signals remembered).  This encourages the system
+  call to complete, allowing the program to make progess towards
+  leaving the critical section where the signal can be handled.  If
+  the system call completes, the set of blocked signals are restored
+  to those previously blocked.
+\end{enumerate}
 
 \begin{description}
 
@@ -926,11 +931,6 @@ the mask and returns.
 %
 \subsubsection{{\tt MLton.Socket}}
 
-This module contains a bare minimum of functionality to do TCP/IP
-programming.  This module is implemented on top of the {\tt Socket}
-module of the Standard Basis Library.  We encourage you to use the
-standard {\tt Socket} module, since we may eliminate {\tt
-MLton.Socket} some day.
 \begin{verbatim}
 signature MLTON_SOCKET =
    sig
@@ -960,6 +960,12 @@ signature MLTON_SOCKET =
       val shutdownWrite: TextIO.outstream -> unit
    end
 \end{verbatim}
+
+This module contains a bare minimum of functionality to do TCP/IP
+programming.  This module is implemented on top of the {\tt Socket}
+module of the Standard Basis Library.  We encourage you to use the
+standard {\tt Socket} module, since we may eliminate {\tt
+MLton.Socket} some day.
 
 \begin{description}
 
@@ -1002,8 +1008,6 @@ cause the write part of the socket associated with {\tt out} to be shutdown.
 %
 \subsubsection{\tt MLton.Syslog}
 
-A complete interface to the system logging facilities.  See {\tt man 3 syslog}
-for more details.
 \begin{verbatim}
 signature MLTON_SYSLOG =
    sig
@@ -1052,6 +1056,9 @@ signature MLTON_SYSLOG =
    end
 \end{verbatim}
 
+{\tt MLton.Syslog} is a complete interface to the system logging
+facilities.  See {\tt man 3 syslog} for more details.
+
 \begin{description}
 \entry{closelog ()}
 close the connection to the system logger.
@@ -1077,12 +1084,7 @@ signature MLTON_TEXT_IO =
 See \secref{mlton-io}.
 
 \subsubsec{{\tt MLton.Thread}}{thread}
-Threads are data structures that represent a paused computation.
-Ready threads are threads that will begin or continue computing when
-{\tt switch}ed to.  {\tt MLton.Thread} does not include a default
-scheduling mechanism, but it can be used to implement both preemptive
-and non-preemptive threads.  For examples, see {\tt thread1.sml} and
-{\tt thread2.sml} in the {\tt examples} directory.
+
 \begin{verbatim}
 signature MLTON_THREAD =
    sig
@@ -1107,6 +1109,13 @@ signature MLTON_THREAD =
       val atomicSwitch: ('a t -> ready_t) -> 'a
    end
 \end{verbatim}
+
+Threads are data structures that represent a paused computation.
+Ready threads are threads that will begin or continue computing when
+{\tt switch}ed to.  {\tt MLton.Thread} does not include a default
+scheduling mechanism, but it can be used to implement both preemptive
+and non-preemptive threads.  For examples, see {\tt thread1.sml} and
+{\tt thread2.sml} in the {\tt examples} directory.
 
 \begin{description}
 
@@ -1184,13 +1193,6 @@ by the equations $b_0 = b$ and $(v_i, b_{i+1}) = f (i, b_i)$.
 \end{description}
 
 \subsubsec{\tt MLton.Weak}{weak}
-A weak pointer is a pointer to an object that is nulled if the
-object becomes unreachable due to garbage collection.  The weak
-pointer does not itself cause the object it points to be retained by
-the garbage collector -- only other strong pointers can do that.
-For objects that are not allocated in the heap, like integers, a weak
-pointer will always be nulled.  So, if {\tt w: int Weak.t} then
-{\tt Weak.get w = NONE}.
 \begin{verbatim}
 signature MLTON_WEAK =
    sig
@@ -1200,6 +1202,14 @@ signature MLTON_WEAK =
       val new: 'a -> 'a t
    end
 \end{verbatim}
+
+A weak pointer is a pointer to an object that is nulled if the
+object becomes unreachable due to garbage collection.  The weak
+pointer does not itself cause the object it points to be retained by
+the garbage collector -- only other strong pointers can do that.
+For objects that are not allocated in the heap, like integers, a weak
+pointer will always be nulled.  So, if {\tt w: int Weak.t} then
+{\tt Weak.get w = NONE}.
 
 \begin{description}
 \entry{type 'a t}
@@ -1239,6 +1249,7 @@ rotate right (circular).
 \end{description}
 
 \subsubsec{{\tt MLton.World}}{world}
+
 \begin{verbatim}
 signature MLTON_WORLD =
    sig
@@ -1281,11 +1292,6 @@ the file {\tt f} that will resume with thread {\tt t} upon restart.
 %
 \subsec{{\tt SMLofNJ: SML\_OF\_NJ}}{sml-nj-ext}
 
-{\tt SMLofNJ} implements a subset of the structure of the same name
-provided in Standard ML of New Jersey.  It is included to make it
-easier to port programs between the two systems.  The semantics of
-these functions may be different than in {\smlnj}.
-
 \begin{verbatim}
 signature SML_OF_NJ =
    sig
@@ -1313,6 +1319,11 @@ signature SML_OF_NJ =
       val getCmdName: unit -> string
    end
 \end{verbatim}
+
+{\tt SMLofNJ} implements a subset of the structure of the same name
+provided in Standard ML of New Jersey.  It is included to make it
+easier to port programs between the two systems.  The semantics of
+these functions may be different than in {\smlnj}.
 
 \begin{description}
 
