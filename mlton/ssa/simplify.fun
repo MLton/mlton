@@ -64,7 +64,7 @@ val passes =
 (*    ("localFlatten2", LocalFlatten.flatten), *)
 (*    ("removeUnused3", RemoveUnused.remove), *)
 (*    ("raiseToJump2", RaiseToJump.raiseToJump), *)
-(*    ("contify4", Contify.contify), *)
+     ("contify4", Contify.contify),
 (*    ("unusedArgs2", UnusedArgs.unusedArgs), *)
 (*    ("introduceLoops", IntroduceLoops.introduceLoops), *)
 (*    ("loopInvariant", LoopInvariant.loopInvariant), *)

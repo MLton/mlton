@@ -5,10 +5,25 @@ open S
 
 open Exp Transfer
 
+type int = Int.t
 type word = Word.t
 
 fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
    let
+      (* Keep track of arguments and in-degree of blocks. *)
+      val {get = labelInfo: Label.t -> {args: (Var.t * Type.t) vector ref,
+					inDeg: int ref,
+					success: Exp.t option ref,
+					failure: Exp.t option ref},
+	   set = setLabelInfo, ...} =
+	 Property.getSetOnce (Label.plist, 
+			      Property.initFun (fn _ => {args = ref (Vector.new0 ()),
+							 success = ref NONE,
+							 failure = ref NONE,
+							 inDeg = ref 0}))
+      (* Keep track of variables used as failure variables. *)
+      val {get = failureVar: Var.t -> bool, set = setFailureVar, ...} =
+	 Property.getSetOnce (Var.plist, Property.initConst false)
       (* Keep track of the replacements of variables. *)
       val {get = replace: Var.t -> Var.t option, set = setReplace, ...} =
 	 Property.getSetOnce (Var.plist, Property.initConst NONE)
@@ -108,6 +123,45 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 			      children)): unit =
 	       let
 		  val removes = ref []
+		  val {success, failure, ...} = labelInfo label
+		  val _ = Option.app
+		          (!success, fn exp =>
+			   let
+			      val hash = Exp.hash exp
+			      val var = #1 (Vector.sub(args, 0))
+			      val {var = var', ...} = 
+				 HashSet.lookupOrInsert
+				 (table, hash, 
+				  fn {exp = exp', ...} => Exp.equals (exp, exp'),
+				  fn () => {exp = exp,
+					    hash = hash,
+					    var = var})
+			      val _ = if Var.equals(var, var')
+					 then List.push(removes, (var, hash))
+				      else ()
+			   in
+			      ()
+			   end)
+		  val _ = Option.app
+		          (!failure, fn exp =>
+			   let
+			      val hash = Exp.hash exp
+			      val var = Var.newNoname ()
+			      val {var = var', ...} = 
+				 HashSet.lookupOrInsert
+				 (table, hash, 
+				  fn {exp = exp', ...} => Exp.equals (exp, exp'),
+				  fn () => {exp = exp,
+					    hash = hash,
+					    var = var})
+			      val _ = if Var.equals(var, var')
+					 then (setFailureVar(var, true) 
+					       ; List.push(removes, (var, hash)))
+				      else ()
+			   in
+			      ()
+			   end)
+
 		  val statements =
 		     Vector.keepAllMap
 		     (statements,
@@ -180,6 +234,63 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 			       end
 		      end)
 		  val transfer = Transfer.replaceVar (transfer, canonVar)
+		  val transfer =
+		     case transfer of 
+		        (* The entire Goto case is probably redundant, as the
+			 * shrinker should do this kind of propagation.
+			 *)
+		        Goto {dst, args} =>
+			   let
+			      val {args = args', inDeg, ...} = labelInfo dst
+			   in
+			      if !inDeg = 1
+				 then (Vector.foreach2
+				       (args,!args',
+					fn (var, (var',_)) =>
+					setReplace (var', SOME var))
+				       ; transfer)
+			      else transfer
+			   end
+		      | Prim {prim, args, failure, success} =>
+                           let
+			      val {args = succArgs, 
+				   inDeg = succInDeg,
+				   success = succ, ...} =
+				 labelInfo success
+			      val var = #1 (Vector.sub(!succArgs, 0))
+			      val {args = failArgs,
+				   inDeg = failInDeg,
+				   failure = fail, ...} =
+				 labelInfo failure
+			      val exp = canon (PrimApp {prim = prim,
+							targs = Vector.new0 (),
+							args = args})
+			      val hash = Exp.hash exp
+			   in
+			      case HashSet.peek
+				   (table, hash,
+				    fn {exp = exp', ...} => Exp.equals(exp, exp')) of
+				 SOME {var = var', ...} =>
+				    if failureVar var'
+				       then Goto {dst = failure,
+						  args = Vector.new0 ()}
+				    else ((* This setReplace might be redundant,
+					   * depending on what the shrinker does.
+					   *)
+					  if !succInDeg = 1
+					     then setReplace(var, SOME var')
+					  else ()
+					  ; Goto {dst = success,
+						  args = Vector.new1 var'})
+			       | NONE => (if !succInDeg = 1
+					     then succ := SOME exp
+					  else () ;
+					  if !failInDeg = 1
+					     then fail := SOME exp
+					  else () ;
+					  transfer)
+			   end
+		      | _ => transfer
 		  val block = Block.T {args = args,
 				       label = label,
 				       statements = statements,
@@ -204,6 +315,13 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 	 (functions, fn f => 
 	  let
 	     val {name, args, start, blocks, returns} = Function.dest f
+	     val _ = Vector.foreach
+	             (blocks, fn Block.T {label, args, transfer, ...} =>
+		      (#args (labelInfo label) := args
+		       ; Transfer.foreachLabel
+		         (transfer, fn label' => 
+			  Int.inc(#inDeg (labelInfo label')))))
+
 	     val blocks = (* shrink *) doitTree (Function.dominatorTree f)
 	     val _ = Function.clear f
 	  in
