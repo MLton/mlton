@@ -260,9 +260,9 @@ in
    fun switchToHandler () =
       let
 	 (* Atomic 0 *)
-	 val () = Prim.startHandler () (* implicit atomicBegin() *)
-         (* Atomic 1 *)
 	 val () = atomicBegin ()
+         (* Atomic 1 *)
+	 val () = Prim.startHandler ()
          (* Atomic 2 *)
       in
 	 case !signalHandler of

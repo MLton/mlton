@@ -1294,13 +1294,23 @@ static bool mutatorInvariant (GC_state s, bool frontier, bool stack) {
 /*                         enter and leave                          */
 /* ---------------------------------------------------------------- */
 
+static inline void atomicBegin (GC_state s) {
+	s->canHandle++;
+	if (0 == s->limit)
+		s->limit = s->limitPlusSlop - LIMIT_SLOP;
+}
+
+static inline void atomicEnd (GC_state s) {
+	s->canHandle--;
+	if (0 == s->canHandle and s->signalIsPending)
+		s->limit = 0;
+}
+
 /* enter and leave should be called at the start and end of every GC function
  * that is exported to the outside world.  They make sure that the function
  * is run in a critical section and check the GC invariant.
- * They are a bit tricky because of the case when the runtime system is invoked
- * from within an ML signal handler.
  */
-void enter (GC_state s) {
+static void enter (GC_state s) {
 	if (DEBUG)
 		fprintf (stderr, "enter\n");
 	/* used needs to be set because the mutator has changed s->stackTop. */
@@ -1308,26 +1318,20 @@ void enter (GC_state s) {
 	s->currentThread->exnStack = s->exnStack;
 	if (DEBUG) 
 		GC_display (s, stderr);
-	s->canHandle++;
-	unless (s->inSignalHandler) {
-		if (0 == s->limit)
-			s->limit = s->limitPlusSlop - LIMIT_SLOP;
-	}
+	atomicBegin (s);
 	assert (invariant (s));
 	if (DEBUG)
 		fprintf (stderr, "enter ok\n");
 }
 
-void leave (GC_state s) {
+static void leave (GC_state s) {
 	if (DEBUG)
 		fprintf (stderr, "leave\n");
 	/* The mutator frontier invariant may not hold
 	 * for functions that don't ensureBytesFree.
 	 */
 	assert (mutatorInvariant (s, FALSE, TRUE));
-	s->canHandle--;
-	if (s->canHandle == 0 and s->signalIsPending)
-		s->limit = 0;
+	atomicEnd (s);
 	if (DEBUG)
 		fprintf (stderr, "leave ok\n");
 }
@@ -3075,7 +3079,12 @@ static void switchToThread (GC_state s, GC_thread t) {
 	setStack (s);
 }
 
-static void startHandler (GC_state s) {
+/* GC_startHandler does not do an enter()/leave(), even though it is exported.
+ * The basis library uses it via _ffi, not _prim, and so does not treat it as a
+ * runtime call -- so the invariant in enter would fail miserably.  It is OK
+ * because GC_startHandler must be called from within a critical section.
+ */
+inline void GC_startHandler (GC_state s) {
 	/* Switch to the signal handler thread. */
 	if (DEBUG_SIGNALS) {
 		fprintf (stderr, "switching to signal handler\n");
@@ -3095,6 +3104,13 @@ static void startHandler (GC_state s) {
 	s->canHandle = 2;
 }
 
+static inline void maybeSwitchToHandler (GC_state s) {
+	if (s->canHandle == 1 and s->signalIsPending) {
+		GC_startHandler (s);
+		switchToThread (s, s->signalHandler);
+	}
+}
+
 void GC_switchToThread (GC_state s, GC_thread t, uint ensureBytesFree) {
 	if (DEBUG_THREADS)
 		fprintf (stderr, "GC_switchToThread (0x%08x, %u)\n", (uint)t, ensureBytesFree);
@@ -3108,10 +3124,7 @@ void GC_switchToThread (GC_state s, GC_thread t, uint ensureBytesFree) {
 		s->currentThread->bytesNeeded = ensureBytesFree;
 		switchToThread (s, t);
 		s->canHandle--;
-		if (s->canHandle == 1 and s->signalIsPending) {
-			startHandler (s);
-			switchToThread (s, s->signalHandler);
-		}
+		maybeSwitchToHandler (s);
 		ensureMutatorInvariant (s, FALSE);
 		assert (mutatorFrontierInvariant(s));
 		assert (mutatorStackInvariant(s));
@@ -3120,19 +3133,12 @@ void GC_switchToThread (GC_state s, GC_thread t, uint ensureBytesFree) {
 		/* BEGIN: enter(s); */
 		s->currentThread->stack->used = currentStackUsed (s);
 		s->currentThread->exnStack = s->exnStack;
-		s->canHandle++;
-		unless (s->inSignalHandler) {
-			if (0 == s->limit)
-				s->limit = s->limitPlusSlop - LIMIT_SLOP;
-		}
+		atomicBegin (s);
 		/* END: enter(s); */
 		s->currentThread->bytesNeeded = ensureBytesFree;
 		switchToThread (s, t);
 		s->canHandle--;
-		if (s->canHandle == 1 and s->signalIsPending) {
-			startHandler (s);
-			switchToThread (s, s->signalHandler);
-		}
+		maybeSwitchToHandler (s);
 		/* BEGIN: ensureMutatorInvariant */
 		if (not (mutatorFrontierInvariant(s))
 			or not (mutatorStackInvariant(s))) {
@@ -3142,29 +3148,13 @@ void GC_switchToThread (GC_state s, GC_thread t, uint ensureBytesFree) {
 		} 
 		/* END: ensureMutatorInvariant */
 		else {
-		/* BEGIN: leave(s); */
-		s->canHandle--;
-		if (s->canHandle == 0 and s->signalIsPending)
-			s->limit = 0;
-		/* END: leave(s); */
+			/* BEGIN: leave(s); */
+			atomicEnd (s);
+			/* END: leave(s); */
 		}
 	}
 	assert (mutatorFrontierInvariant(s));
 	assert (mutatorStackInvariant(s));
-}
-
-/* GC_startHandler does not do an enter()/leave(), even though it is exported.
- * The basis library uses it via _ffi, not _prim, and so does not treat it as a
- * runtime call -- so the invariant in enter would fail miserably. It simulates
- * the relevant part of enter() by incrementing s->canHandle and resetting the 
- * limit; it simulates the leave by decrementing s->canHandle.
- */
-void GC_startHandler (GC_state s) {
-	s->canHandle++;
-	if (0 == s->limit)
-		s->limit = s->limitPlusSlop - LIMIT_SLOP;
-	startHandler (s);
-	s->canHandle--;
 }
 
 void GC_gc (GC_state s, uint bytesRequested, bool force,
@@ -3178,10 +3168,7 @@ void GC_gc (GC_state s, uint bytesRequested, bool force,
 	if (0 == bytesRequested)
 		bytesRequested = LIMIT_SLOP;
 	s->currentThread->bytesNeeded = bytesRequested;
-	if (s->canHandle == 1 and s->signalIsPending) {
-		startHandler(s);
-		switchToThread (s, s->signalHandler);
-	}
+ 	maybeSwitchToHandler (s);
 	ensureMutatorInvariant (s, force);
 	assert (mutatorFrontierInvariant(s));
 	assert (mutatorStackInvariant(s));
