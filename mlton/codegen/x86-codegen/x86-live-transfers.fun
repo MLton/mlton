@@ -144,6 +144,8 @@ struct
 			    liveInfo : x86Liveness.LiveInfo.t,
 			    jumpInfo : x86JumpInfo.t}
     = let
+	val cutoff = !Native.cutoff
+
 	val info
 	  as {get = getInfo : 
 	      Label.t -> {block: Block.t,
@@ -310,7 +312,11 @@ struct
 		      val Block.T {statements, transfer, ...} = block
 
 		      datatype t = Position of I.t | Length of I'.t
-		      fun posF ([],n) 
+		      fun posF (assembly,n as I.Finite n')
+			= if n < cutoff
+			    then posF'(assembly,n)
+			    else Position I.PosInfinity
+		      and posF' ([],n) 
 			= let
 			    val live = Transfer.live transfer
 			    val {uses,defs,...} 
@@ -329,7 +335,7 @@ struct
 				     then Position I.PosInfinity
 				     else Length (I'.+(n, I'.one))
 			  end
-			| posF (asm::assembly,n)
+			| posF' (asm::assembly,n)
 			= let
 			    val {uses,defs,...} 
 			      = Assembly.uses_defs_kills asm
@@ -425,7 +431,9 @@ struct
 				  of I.NegInfinity
 				   => Error.bug "computeLiveTransfers::NegInfinity"
 				   | I.Finite n'
-				   => SOME (temp, sync, n')
+				   => if n' < cutoff
+					then SOME (temp, sync, n')
+					else NONE
 				   | I.PosInfinity
 				   => NONE
 			      end)
