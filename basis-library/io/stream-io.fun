@@ -285,29 +285,32 @@ functor StreamIOExtra
       fun truncated state = not (active state)
       fun closed state = case state of Closed => true | _ => false
 
-      datatype instream = In of {reader: reader,
-				 augmented_reader: reader,
-				 state: state ref,
-				 tail: state ref ref}
+      datatype instream = In of {common: {reader: reader,
+					  augmented_reader: reader,
+					  tail: state ref ref},
+				 state: state ref}
 
-      fun equalsIn (is1 as In {tail = tail1, ...}, 
-		    is2 as In {tail = tail2, ...}) = tail1 = tail2
+      fun equalsIn (is1 as In {common = {tail = tail1, ...}, ...}, 
+		    is2 as In {common = {tail = tail2, ...}, ...}) = 
+	tail1 = tail2
 
-      fun updateState (In {reader, augmented_reader, tail, ...}, state) =
-	In {reader = reader,
-	    augmented_reader = augmented_reader,
-	    tail = tail,
+      fun updateState (In {common, ...}, state) =
+	In {common = common,
 	    state = state}
 
       fun instreamSel (In v, sel) = sel v
-      fun instreamReader is = instreamSel (is, #reader)
+      fun instreamCommon is = instreamSel (is, #common)
+      fun instreamCommonSel (is, sel) = sel (instreamCommon is)
+      fun instreamReader is = instreamCommonSel (is, #reader)
       fun readerSel (PIO.RD v, sel) = sel v
       fun instreamName is = readerSel (instreamReader is, #name)
 
       val empty = V.tabulate (0, fn _ => someElem)
       val line = V.tabulate (1, fn _ => lineElem)
 
-      fun extend function (is as In {augmented_reader, tail, ...}) blocking =
+      fun extend function 
+                 (is as In {common = {augmented_reader, tail, ...}, ...}) 
+		 blocking =
 	case !(!tail) of
 	  Active (r as ref End) =>
 	    let
@@ -547,7 +550,7 @@ functor StreamIOExtra
 		 | _ => SOME 0
 	       end
 
-      fun closeIn (is as In {state, tail, ...}) =
+      fun closeIn (is as In {common = {tail, ...}, state, ...}) =
 	case !(!tail) of
 	  Active (ref (End)) =>
 	    (!tail := Closed;
@@ -577,10 +580,10 @@ functor StreamIOExtra
 			  this
 			end
 	in
-	  In {reader = reader,
-	      augmented_reader = PIO.augmentReader reader,
-	      state = this,
-	      tail = ref next}
+	  In {common = {reader = reader,
+			augmented_reader = PIO.augmentReader reader,
+			tail = ref next},
+	      state = this}
 	end
       fun mkInstream (reader, buffer_contents) =
 	mkInstream' {reader = reader, closed = false, 
@@ -592,13 +595,13 @@ functor StreamIOExtra
 		     closed = false,
 		     buffer_contents = NONE}
 
-      fun getReader (is as In {reader, tail, ...}) =
+      fun getReader (is as In {common = {reader, tail, ...}, ...}) =
 	(case !(!tail) of
 	   Active (ref End) => !tail := Truncated
 	 | _ => liftExn (instreamName is) "getReader" IO.ClosedStream;
 	 (reader, empty))
 
-      fun filePosIn (is as In {reader, tail, ...}) =
+      fun filePosIn (is as In {common = {reader, tail, ...}, ...}) =
 	case !(!tail) of
 	  Active (ref End) =>
 	    (case readerSel (reader, #getPos) of
