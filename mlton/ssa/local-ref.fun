@@ -275,7 +275,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 
       (* restore and shrink *)
       val restore = restoreFunction globals
-      val restore = Control.trace (Control.Pass, "restore") restore
+      val restore = Control.trace (Control.Detail, "restore") restore
       val shrink = shrinkFunction globals
 
       (* varInfo *)
