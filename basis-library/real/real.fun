@@ -308,8 +308,9 @@ functor Real (R: PRE_REAL): REAL =
 	     | NAN => x
 	     | _ => roundReal (x, mode)
       in
-	 val realFloor = round TO_NEGINF
 	 val realCeil = round TO_POSINF
+	 val realFloor = round TO_NEGINF
+	 val realRound = round TO_NEAREST
 	 val realTrunc = round TO_ZERO
       end
 

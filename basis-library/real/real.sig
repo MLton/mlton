@@ -110,6 +110,7 @@ signature REAL =
       val realCeil: real -> real
       val realFloor: real -> real
       val realMod: real -> real
+      val realRound: real -> real
       val realTrunc: real -> real
       val rem: real * real -> real
       val sameSign: real * real -> bool

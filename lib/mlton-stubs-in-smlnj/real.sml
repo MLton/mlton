@@ -48,6 +48,7 @@ signature REAL =
       val realCeil: real -> real
       val realFloor: real -> real
       val realMod: real -> real
+      val realRound: real -> real
       val realTrunc: real -> real
       val rem: real * real -> real
       val round: real -> Int.int
@@ -79,6 +80,16 @@ structure Real: REAL =
       fun fromLargeInt i =
 	 valOf (Real.fromString (LargeInt.toString i))
 
+      fun realRound x =
+	 let
+	    val x1 = realFloor x
+	    val x2 = realCeil x
+	 in
+	    if abs (x - x1) < abs (x - x2)
+	       then x1
+	    else x2
+	 end
+
       val toLargeInt: IEEEReal.rounding_mode -> real -> LargeInt.int =
 	 fn mode => fn x =>
 	 case class x of
@@ -89,15 +100,7 @@ structure Real: REAL =
 	       let
 		  val x =
 		     case mode of
-			TO_NEAREST =>
-			   let
-			      val x1 = realFloor x
-			      val x2 = realCeil x
-			   in
-			      if abs (x - x1) < abs (x - x2)
-				 then x1
-			      else x2
-			   end
+			TO_NEAREST => realRound x
 		      | TO_NEGINF => realFloor x
 		      | TO_POSINF => realCeil x
 		      | TO_ZERO => realTrunc x
