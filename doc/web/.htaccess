@@ -5,8 +5,34 @@ Options FollowSymLinks Indexes
 Redirect permanent /CHANGES http://www.mlton.org/changelog
 
 # The user guide used to be in the HTML directory.
+# Redirect heavily searched for nodes to their new place, and anything else
+# to the user guide.
+Redirect permanent /HTML/node3.html http://www.mlton.org/user-guide/Installation.html
+Redirect permanent /HTML/node5.html http://www.mlton.org/user-guide/Features_MLton.html
+Redirect permanent /HTML/node8.html http://www.mlton.org/user-guide/Type_checking_programs.html
+Redirect permanent /HTML/node11.html http://www.mlton.org/user-guide/Compile_time_options.html
+Redirect permanent /HTML/node17.html http://www.mlton.org/user-guide/Running_on_Cygwin_windows.html
+Redirect permanent /HTML/node18.html http://www.mlton.org/user-guide/Cross_compiling_application.html
+Redirect permanent /HTML/node33.html http://www.mlton.org/user-guide/MLton_Process.html
+Redirect permanent /HTML/node59.html http://www.mlton.org/user-guide/Deviations_SML_NJ_from.html
 RedirectMatch permanent /HTML* http://www.mlton.org/user-guide/index.html
+
+# The user guide used to use node names like user-guide/node??.html
+# Redirect those as well.
+Redirect permanent /user-guide/node3.html http://www.mlton.org/user-guide/Installation.html
+Redirect permanent /user-guide/node5.html http://www.mlton.org/user-guide/Features_MLton.html
+Redirect permanent /user-guide/node11.html http://www.mlton.org/user-guide/Type_checking_programs.html
+Redirect permanent /user-guide/node14.html http://www.mlton.org/user-guide/Creating_colored_control_fl.html
+Redirect permanent /user-guide/node17.html http://www.mlton.org/user-guide/Running_on_Cygwin_windows.html
+Redirect permanent /user-guide/node18.html http://www.mlton.org/user-guide/Cross_compiling_application.html
+Redirect permanent /user-guide/node33.html http://www.mlton.org/user-guide/MLton_Process.html
+Redirect permanent /user-guide/node52.html http://www.mlton.org/user-guide/Compiling_with_MLton.html
+Redirect permanent /user-guide/node57.html http://www.mlton.org/user-guide/Credits.html
+Redirect permanent /user-guide/node59.html http://www.mlton.org/user-guide/Deviations_SML_NJ_from.html
+RedirectMatch permanent /user-guide/node* http://www.mlton.org/user-guide/index.html
 
 #ErrorDocument 401 
 #ErrorDocument 403
-ErrorDocument 404 /not-found.html
+
+# If you do the following, then you can't see 404's in the error_log.
+#ErrorDocument 404 /not-found.html
