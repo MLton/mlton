@@ -91,7 +91,13 @@ fun makeOptions {usage} =
        (Expert, "coalesce", " n", "coalesce chunk size for C codegen",
 	Int (fn n => coalesce := SOME n)),
        (Expert, "ccopt", " opt", "pass option to C compiler",
-	SpaceString (fn s => List.push (gccSwitches, s))),
+	SpaceString (fn s =>
+		     if 3 = String.size s
+			andalso String.isPrefix {string = s, prefix = "-O"}
+			then (optimization
+			      := Char.toInt (String.sub (s, 2))
+			         - Char.toInt #"0")
+		     else List.push (gccSwitches, s))),
        (Expert, "debug", " {false|true}", "produce executable with debug info",
 	boolRef debug),
        (Normal, "detect-overflow", " {true|false}",
