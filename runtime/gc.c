@@ -411,15 +411,15 @@ GC_foreachPointerInObject(GC_state s, GC_pointerFun f, pointer p)
 	header = GC_getHeader(p);
 	SPLIT_HEADER();
 	if (DEBUG_DETAILED)
-		fprintf(stderr, "foreachPointerInObject p = %x  header = %x  tag = %x  numNonPointers = %d  numPointers = %d\n", 
-			(uint)p, header, tag, numPointers, numNonPointers);
+		fprintf(stderr, "foreachPointerInObject p = 0x%x  header = 0x%x  tag = 0x%x  numNonPointers = %d  numPointers = %d\n", 
+			(uint)p, header, tag, numNonPointers, numPointers);
 	if (NORMAL_TAG == tag) { /* It's a normal object. */
 		pointer max;
 
 		p += toBytes(numNonPointers);
 		max = p + toBytes(numPointers);
 		/* Apply f to all internal pointers. */
-		for ( ; p < max; p += POINTER_SIZE) 
+		for ( ; p < max; p += POINTER_SIZE)
 			maybeCall(f, s, (pointer*)p);
 	} else if (STACK_TAG == tag) {
 		GC_stack stack;
@@ -1172,7 +1172,7 @@ forward(GC_state s, pointer *pp)
 	word tag;
 
 	if (DEBUG_DETAILED)
-		fprintf(stderr, "forward  pp = %x  *pp = %x\n", (uint)pp, (uint)*pp);
+		fprintf(stderr, "forward  pp = 0x%x  *pp = 0x%x\n", (uint)pp, (uint)*pp);
 	assert(isInFromSpace(s, *pp));
 	p = *pp;
 	header = GC_getHeader(p);
@@ -1398,14 +1398,13 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 			/* The heap is about right -- leave new space alone. */
 			keep = s->fromSize;
 		if (keep < s->fromSize) {
-			if (DEBUG or s->messages) {
+			if (DEBUG or s->messages)
 				fprintf(stderr, 
 					"Shrinking new space at %x to %u bytes.\n",
 					(uint)s->base , keep);
 			assert(keep <= s->fromSize);
 			smunmap(s->base + keep, s->fromSize - keep);
 			s->fromSize = keep;
-			}
 		}
 		/* Determine the size of old space, and possibly unmap it. */
 		if (s->toSize < s->fromSize)
