@@ -125,29 +125,6 @@ structure CFunction =
 	    return = return,
 	    writesStackTop = true}
 
-      local
-	 fun make name =
-	    T {args = Vector.new1 gcState,
-	       bytesNeeded = NONE,
-	       convention = Cdecl,
-	       ensuresBytesFree = false,
-	       mayGC = true,
-	       maySwitchThreads = false,
-	       modifiesFrontier = true,
-	       name = name,
-	       prototype = let
-			      open CType
-			   in
-			      (Vector.new1 Pointer, NONE)
-			   end,
-	       readsStackTop = true,
-	       return = unit,
-	       writesStackTop = true}
-      in
-	 val pack = make "GC_pack"
-	 val unpack = make "GC_unpack"
-      end
-
       val returnToC =
 	 T {args = Vector.new0 (),
 	    bytesNeeded = NONE,
@@ -1010,12 +987,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 					      Line)),
 				     func = (CFunction.gc
 					     {maySwitchThreads = handlesSignals})}
-			       | GC_pack =>
-				    ccall {args = Vector.new1 GCState,
-					   func = CFunction.pack}
-			       | GC_unpack =>
-				    ccall {args = Vector.new1 GCState,
-					   func = CFunction.unpack}
 			       | IntInf_toVector => cast ()
 			       | IntInf_toWord => cast ()
 			       | MLton_bogus =>

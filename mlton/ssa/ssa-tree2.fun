@@ -370,8 +370,6 @@ structure Type =
 			      CFunction.return f)
 	     | FFI_Symbol {ty, ...} => done ([], ty)
 	     | GC_collect => done ([], unit)
-	     | GC_pack => done ([], unit)
-	     | GC_unpack => done ([], unit)
 	     | IntInf_add => intInfBinary ()
 	     | IntInf_andb => intInfBinary ()
 	     | IntInf_arshift => intInfShift ()

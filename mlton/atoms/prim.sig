@@ -39,8 +39,6 @@ signature PRIM =
 	     | FFI_Symbol of {name: string,
 			      ty: 'a} (* codegen *)
 	     | GC_collect (* ssa to rssa *)
-	     | GC_pack (* ssa to rssa *)
-	     | GC_unpack (* ssa to rssa *)
 	     | IntInf_add (* ssa to rssa *)
 	     | IntInf_andb (* ssa to rssa *)
 	     | IntInf_arshift (* ssa to rssa *)

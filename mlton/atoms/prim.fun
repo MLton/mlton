@@ -48,8 +48,6 @@ datatype 'a t =
  | FFI_Symbol of {name: string,
 		  ty: 'a} (* codegen *)
  | GC_collect (* ssa to rssa *)
- | GC_pack (* ssa to rssa *)
- | GC_unpack (* ssa to rssa *)
  | IntInf_add (* ssa to rssa *)
  | IntInf_andb (* ssa to rssa *)
  | IntInf_arshift (* ssa to rssa *)
@@ -222,8 +220,6 @@ fun toString (n: 'a t): string =
        | FFI f => CFunction.name f
        | FFI_Symbol {name, ...} => name
        | GC_collect => "GC_collect"
-       | GC_pack => "GC_pack"
-       | GC_unpack => "GC_unpack"
        | IntInf_add => "IntInf_add"
        | IntInf_andb => "IntInf_andb"
        | IntInf_arshift => "IntInf_arshift"
@@ -358,8 +354,6 @@ val equals: 'a t * 'a t -> bool =
     | (FFI f, FFI f') => CFunction.equals (f, f')
     | (FFI_Symbol {name = n, ...}, FFI_Symbol {name = n', ...}) => n = n'
     | (GC_collect, GC_collect) => true
-    | (GC_pack, GC_pack) => true
-    | (GC_unpack, GC_unpack) => true
     | (IntInf_add, IntInf_add) => true
     | (IntInf_andb, IntInf_andb) => true
     | (IntInf_arshift, IntInf_arshift) => true
@@ -515,8 +509,6 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | FFI func => FFI (CFunction.map (func, f))
     | FFI_Symbol {name, ty} => FFI_Symbol {name = name, ty = f ty}
     | GC_collect => GC_collect
-    | GC_pack => GC_pack
-    | GC_unpack => GC_unpack
     | IntInf_add => IntInf_add
     | IntInf_andb => IntInf_andb
     | IntInf_arshift => IntInf_arshift
@@ -721,8 +713,6 @@ val kind: 'a t -> Kind.t =
        | FFI _ => Kind.SideEffect
        | FFI_Symbol _ => Kind.DependsOnState
        | GC_collect => SideEffect
-       | GC_pack => SideEffect
-       | GC_unpack => SideEffect
        | IntInf_add => Functional
        | IntInf_andb => Functional
        | IntInf_arshift => Functional
@@ -920,8 +910,6 @@ in
        Exn_setExtendExtra,
        Exn_setInitExtra,
        GC_collect,
-       GC_pack,
-       GC_unpack,
        IntInf_add,
        IntInf_andb,
        IntInf_arshift,

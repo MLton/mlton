@@ -279,10 +279,10 @@ structure Primitive =
       structure GC =
 	 struct
 	    val collect = _prim "GC_collect": unit -> unit;
-	    val pack = _prim "GC_pack": unit -> unit;
+	    val pack = _import "MLton_GC_pack": unit -> unit;
 	    val setMessages = _import "GC_setMessages": bool -> unit;
 	    val setSummary = _import "GC_setSummary": bool -> unit;
-	    val unpack = _prim "GC_unpack": unit -> unit;
+	    val unpack = _import "MLton_GC_unpack": unit -> unit;
 	 end
       
       structure IEEEReal =
