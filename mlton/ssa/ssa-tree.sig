@@ -76,6 +76,7 @@ signature SSA_TREE =
 	    val layout: t -> Layout.t
 	    val setHandler: Label.t -> t
 	    val var: t -> Var.t option
+	    val exp: t -> Exp.t
 	 end
       
       structure Cases: CASES sharing type Cases.con = Con.t
@@ -174,6 +175,7 @@ signature SSA_TREE =
 		      name: Func.t,
 		      returns: Type.t vector,
 		      start: Label.t} -> t
+	    val start: t -> Label.t
 	 end
      
       structure Program:

@@ -638,6 +638,7 @@ structure Function =
 	 val blocks = make #blocks
 	 val dest = make (fn d => d)
 	 val name = make #name
+	 val start = make #start
       end
 
       fun controlFlow (T {controlFlow, ...}) =

@@ -23,3 +23,6 @@ ssa.fun
 ssa.sig
 type-check.fun
 type-check.sig
+
+remove-unused.sig
+remove-unused.fun

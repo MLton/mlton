@@ -19,7 +19,7 @@ open S
 (* structure RaiseToJump = RaiseToJump (S) *)
 (* structure Redundant = Redundant (S) *)
 (* structure RedundantTests = RedundantTests (S) *)
-(* structure RemoveUnused = RemoveUnused (S) *)
+structure RemoveUnused = RemoveUnused (S)
 (* structure SimplifyTypes = SimplifyTypes (S) *)
 (* structure UnusedArgs = UnusedArgs (S) *)
 (* structure Useless = Useless (S) *)
@@ -81,7 +81,7 @@ val passes =
       * are expected in the Operand.offsets generated in the
       * backend.
       *)
-(*    ("removeUnused4", RemoveUnused.remove) *)
+    ("removeUnused4", RemoveUnused.remove)
     ]
 
 fun stats p =
@@ -108,16 +108,49 @@ fun simplify p =
 	      p
 	   end)))
 
+(*
+fun simplify p =
+   (stats p
+    ; (List.fold
+       (passes, p, fn ((name, pass), p) =>
+      if List.contains (!Control.dropPasses, name, String.equals)
+         then p
+      else
+         let
+            val p =
+               Control.passTypeCheck
+               {name = name,
+                suffix = "pre.ssa",
+                style = Control.No,
+                thunk = fn () => p,
+                display = Control.Layouts Program.layouts,
+                typeCheck = typeCheck}
+            val p =
+               Control.passTypeCheck
+               {name = name,
+                suffix = "post.ssa",
+                style = Control.No,
+                thunk = fn () => pass p,
+                display = Control.Layouts Program.layouts,
+                typeCheck = typeCheck}
+            val _ = stats p
+         in
+            p
+         end)))
+*)
+
 val typeCheck = S.typeCheck
 
-val simplify = fn p => let val p' = simplify p
-                       in
-			  (* Always want to type check the final SSA program,
-			   * even if type checking is turned off, just to catch
-			   * bugs.
-			   *)
-			  typeCheck p' 
-			  ; p'
-		       end 
+val simplify = fn p => let
+			 (* Always want to type check the initial and final SSA 
+			  * programs, even if type checking is turned off, just
+			  * to catch bugs.
+			  *)
+			 val _ = typeCheck p
+			 val p' = simplify p
+			 val _ = typeCheck p'
+		       in
+			 p'
+		       end
 
 end

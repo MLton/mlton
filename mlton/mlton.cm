@@ -282,6 +282,8 @@ ssa/type-check.fun
 ssa/shrink.sig
 ssa/simplify.sig
 ssa/ssa.sig
+ssa/remove-unused.sig
+ssa/remove-unused.fun
 ssa/simplify.fun
 ssa/shrink.fun
 ssa/analyze.fun
