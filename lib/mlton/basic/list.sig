@@ -31,6 +31,8 @@ signature LIST =
        *  [3, 4, 6], [3, 4, 7], [3, 5, 6], [3, 5, 7]]
        *)
       val cross: 'a t t -> 'a t t
+      val dropPrefix: 'a t * int -> 'a t
+      val dropSuffix: 'a t * int -> 'a t
       (* duplicate (3, f) = [f (), f (), f ()] *)
       val duplicate: int * (unit -> 'a) -> 'a t
       (* Extract each element paired with the elements before it

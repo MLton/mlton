@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 structure List: LIST =
 struct
 
@@ -27,6 +28,16 @@ structure F = Fold (open F
 		    type 'a elt = 'a)
 open F
 
+fun dropPrefix (l: 'a t, n: int): 'a t =
+   if n = 0
+      then l
+   else
+      case l of
+	 [] => Error.bug "dropPrefix"
+       | _ :: l => dropPrefix (l, n - 1)
+	 
+fun dropSuffix (l, n: int) = rev (dropPrefix (rev l, n))
+   
 fun nth (l, i: int) =
    let
       fun loop (l, i) =
