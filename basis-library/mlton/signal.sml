@@ -130,7 +130,6 @@ val handleWith' =
 	 case old of
 	    Handler _ => ()
 	  | _ => checkResult (Prim.handlee s)
-
       end
    end
 
