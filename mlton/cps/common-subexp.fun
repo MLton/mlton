@@ -75,6 +75,28 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
       (* Keep a hash table of canonicalized PrimExps that are in scope. *)
       val table: {hash: word, exp: PrimExp.t, var: Var.t} HashSet.t =
 	 HashSet.new {hash = #hash}
+      (* All of the globals are in scope, and never go out of scope. *)
+      (* The hash-cons'ing of globals in ConstantPropagation ensures
+       *  that each global is unique.
+       *)
+      val _
+	= Vector.foreach
+	  (globals,
+	   fn {var, exp, ...}
+	    => let
+		 val exp = canon exp
+		 val hash = PrimExp.hash exp
+		 val {var = var', ...}
+		   = HashSet.lookupOrInsert
+		     (table, hash, 
+		      fn {exp = exp', ...} => PrimExp.equals (exp, exp'),
+		      fn () => {exp = exp,
+				hash = hash,
+				var = var})
+	       in
+		 ()
+	       end)
+
       fun loopExp (e: Exp.t): Exp.t =
 	 let
 	    val {decs, transfer} = Exp.dest e
