@@ -9,7 +9,6 @@ functor TypeCheck (S: TYPE_CHECK_STRUCTS): TYPE_CHECK =
 struct
 
 open S
-open XmlTree   
 open Dec PrimExp
 
 fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =

@@ -14,7 +14,7 @@ signature XML =
    sig
       include XML_TREE
 
+      val shrink: Program.t -> Program.t
       val simplify: Program.t -> Program.t
-      val simplifyTypes: Program.t -> Program.t
       val typeCheck: Program.t -> unit
    end

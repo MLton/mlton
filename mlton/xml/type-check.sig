@@ -7,13 +7,13 @@
  *)
 signature TYPE_CHECK_STRUCTS = 
    sig
-      structure XmlTree: XML_TREE
+      include XML_TREE
    end
 
 signature TYPE_CHECK = 
    sig
       include TYPE_CHECK_STRUCTS
       
-      val typeCheck: XmlTree.Program.t -> unit
+      val typeCheck: Program.t -> unit
    end
 

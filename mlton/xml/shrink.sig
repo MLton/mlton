@@ -7,14 +7,14 @@
  *)
 type int = Int.t
    
-signature POLYVARIANCE_STRUCTS = 
+signature SHRINK_STRUCTS = 
    sig
-      include SHRINK
+     include TYPE_CHECK
    end
 
-signature POLYVARIANCE = 
+signature SHRINK = 
    sig
-      include POLYVARIANCE_STRUCTS
+      include SHRINK_STRUCTS
       
-      val duplicate: Program.t -> Program.t
+      val shrink: Program.t -> Program.t
    end

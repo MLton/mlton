@@ -434,7 +434,7 @@ val duplicate =
 	       if n = 0
 		  then p
 	       else let
-		       val p = simplify (duplicate (p, small, product))
+		       val p = shrink (duplicate (p, small, product))
 		       val _ =
 			  Control.message (Control.Detail, fn () =>
 					   Program.layoutStats p)

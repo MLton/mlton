@@ -5,12 +5,12 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-signature SXML_STRUCTS =
+signature SXML_TREE_STRUCTS =
   sig
-    include XML
+    include XML_TREE
   end
 
-signature SXML = XML
+signature SXML_TREE = XML_TREE
 
 (*
  invariants:
@@ -21,3 +21,4 @@ signature SXML = XML
  * type lists are empty for variable args and for non-built-in-constructor args
  * no tyvars in types
  *)
+

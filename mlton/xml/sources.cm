@@ -12,10 +12,9 @@ signature XML
 signature XML_TYPE
 
 (*functor CallCount *)
-functor ImplementExceptions
 functor Monomorphise
-functor Polyvariance
 functor Xml
+functor Sxml
 
 is
 
@@ -33,14 +32,21 @@ scc-funs.fun
 scc-funs.sig
 simplify-types.fun
 simplify-types.sig
-simplify.fun
-simplify.sig
+shrink.fun
+shrink.sig
 sxml-exns.sig
+sxml-simplify.fun
+sxml-simplify.sig
+sxml-tree.sig
+sxml-tree.fun
 sxml.sig
+sxml.fun
 type-check.fun
 type-check.sig
 xml-tree.fun
 xml-tree.sig
 xml-type.sig
+xml-simplify.fun
+xml-simplify.sig
 xml.fun
 xml.sig

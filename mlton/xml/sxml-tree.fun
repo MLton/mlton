@@ -5,16 +5,4 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-type int = Int.t
-   
-signature POLYVARIANCE_STRUCTS = 
-   sig
-      include SHRINK
-   end
-
-signature POLYVARIANCE = 
-   sig
-      include POLYVARIANCE_STRUCTS
-      
-      val duplicate: Program.t -> Program.t
-   end
+functor SxmlTree (S: SXML_TREE_STRUCTS): SXML_TREE = S

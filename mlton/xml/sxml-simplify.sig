@@ -5,16 +5,16 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-type int = Int.t
-   
-signature SIMPLIFY_STRUCTS = 
+signature SXML_SIMPLIFY_STRUCTS = 
    sig
-      structure XmlTree: XML_TREE
+      include SXML_TREE
+      val shrink: Program.t -> Program.t
+      val typeCheck: Program.t -> unit
    end
 
-signature SIMPLIFY = 
+signature SXML_SIMPLIFY = 
    sig
-      include SIMPLIFY_STRUCTS
+      include SXML_SIMPLIFY_STRUCTS
       
-      val simplify: XmlTree.Program.t -> XmlTree.Program.t
+      val simplify: Program.t -> Program.t
    end

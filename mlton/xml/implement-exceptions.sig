@@ -7,7 +7,7 @@
  *)
 signature IMPLEMENT_EXCEPTIONS_STRUCTS = 
    sig
-      include SXML
+      include SXML_TREE
    end
 
 signature IMPLEMENT_EXCEPTIONS = 

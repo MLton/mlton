@@ -10,24 +10,23 @@
  *   Journal of Functional Programming. Vol 7, no 5, 1997.
  *)
 
-functor Simplify (S: SIMPLIFY_STRUCTS): SIMPLIFY = 
+functor Shrink (S: SHRINK_STRUCTS): SHRINK = 
 struct
 
 open S
-open XmlTree
 open Dec PrimExp
 
 fun msg s = Out.output (Out.error, s)
 
-val traceSimplifyExp =
-   Trace.trace ("Xml.simplifyExp", Exp.layout, Exp.layout)
+val traceShrinkExp =
+   Trace.trace ("Xml.shrinkExp", Exp.layout, Exp.layout)
 
-val traceSimplifyDecs =
+val traceShrinkDecs =
    Trace.trace
-   ("Xml.simplifyDecs", List.layout Dec.layout, List.layout Dec.layout)
+   ("Xml.shrinkDecs", List.layout Dec.layout, List.layout Dec.layout)
 
-val traceSimplifyLambda =
-   Trace.trace ("Xml.simplifyLambda", Lambda.layout, Lambda.layout)
+val traceShrinkLambda =
+   Trace.trace ("Xml.shrinkLambda", Lambda.layout, Lambda.layout)
    
 fun inc (r: int ref, n) =
    let val n = !r + n
@@ -115,7 +114,7 @@ structure Value =
 	  | Tuple vs => PrimExp.Tuple (Vector.map (vs, VarInfo.varExp))
    end
 
-fun simplifyOnce (Program.T {datatypes, body, overflow}) =
+fun shrinkOnce (Program.T {datatypes, body, overflow}) =
    let
       (* Keep track of the number of constuctors in each datatype so that
        * we can eliminate redundant defaults.
@@ -139,9 +138,9 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
 	  | _ => false
       val {get = varInfo: Var.t -> VarInfo.t, set = setVarInfo, ...} =
 	 Property.getSet (Var.plist,
-			  Property.initRaise ("simplify varInfo", Var.layout))
+			  Property.initRaise ("shrink varInfo", Var.layout))
       val varInfo =
-	 Trace.trace ("Xml.Simplify.varInfo", Var.layout, VarInfo.layout) varInfo
+	 Trace.trace ("Xml.Shrink.varInfo", Var.layout, VarInfo.layout) varInfo
       fun monoVarInfo x =
 	 case varInfo x of
 	    VarInfo.Mono i => i
@@ -166,8 +165,8 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
 		      Unit.layout)
 	 replaceInfo
       fun replace (x, i) = replaceInfo (x, monoVarInfo x, i)
-      val simplifyVarExp = VarInfo.varExp o varExpInfo
-      fun simplifyVarExps xs = Vector.map (xs, simplifyVarExp)
+      val shrinkVarExp = VarInfo.varExp o varExpInfo
+      fun shrinkVarExps xs = Vector.map (xs, shrinkVarExp)
       val dummyVarExp = VarExp.mono (Var.newString "dummy")
       local
 	 fun handleBoundVar (x, ts, ty) =
@@ -193,25 +192,25 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
 	 Trace.trace ("deleteExp", Exp.layout, Unit.layout) deleteExp
       fun deleteLambda l = deleteExp (Lambda.body l)
       (*---------------------------------------------------*)
-      (*                    simplifyExp                    *)
+      (*                    shrinkExp                    *)
       (*---------------------------------------------------*)
-      fun simplifyExp arg: Exp.t =
-	 traceSimplifyExp
+      fun shrinkExp arg: Exp.t =
+	 traceShrinkExp
 	 (fn (e: Exp.t) =>
 	  let val {decs, result} = Exp.dest e
-	  in Exp.new {decs = simplifyDecs decs,
-		      result = simplifyVarExp result}
+	  in Exp.new {decs = shrinkDecs decs,
+		      result = shrinkVarExp result}
 	  end) arg
-      and simplifyDecs (decs: Dec.t list): Dec.t list =
+      and shrinkDecs (decs: Dec.t list): Dec.t list =
 	 case decs of
 	    [] => []
 	  | dec :: decs =>
 	       case dec of
-		  Exception _ => dec :: simplifyDecs decs
+		  Exception _ => dec :: shrinkDecs decs
 		| PolyVal {var, tyvars, ty, exp} =>
 		     Dec.PolyVal {var = var, tyvars = tyvars, ty = ty,
-				  exp = simplifyExp exp}
-		     :: simplifyDecs decs
+				  exp = shrinkExp exp}
+		     :: shrinkDecs decs
 		| Fun {tyvars, decs = decs'} =>
 		     if Vector.isEmpty tyvars
 			then
@@ -230,9 +229,9 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
 						       lam = lambda}))
 					   ; true)
 				  end)
-			      val decs = simplifyDecs decs
+			      val decs = shrinkDecs decs
 			      (* Need to walk over all the decs and remove
-			       * their value before simplifying any of them
+			       * their value before shrinking any of them
 			       * because they are mutually recursive.
 			       *)
 			      val decs' =
@@ -261,7 +260,7 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
 					  (decs', fn {var, ty, lambda} =>
 					   {var = var,
 					    ty = ty,
-					    lambda = simplifyLambda lambda})}
+					    lambda = shrinkLambda lambda})}
 				 :: decs
 			   end
 		     else
@@ -271,11 +270,11 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
 				 (decs', fn {var, ty, lambda} =>
 				  {var = var,
 				   ty = ty,
-				   lambda = simplifyLambda lambda})}
-			:: simplifyDecs decs
+				   lambda = shrinkLambda lambda})}
+			:: shrinkDecs decs
 		| MonoVal b =>
-		     simplifyMonoVal (b, fn () => simplifyDecs decs)
-      and simplifyMonoVal ({var, ty, exp},
+		     shrinkMonoVal (b, fn () => shrinkDecs decs)
+      and shrinkMonoVal ({var, ty, exp},
 			   rest: unit -> Dec.t list) =
 	 let
 	    val info as {numOccurrences, value, ...} = monoVarInfo var
@@ -302,7 +301,7 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
 			  ; SOME (fn () => Value.toPrimExp v)))
 	    fun expression (e: Exp.t): Dec.t list =
 	       let
-		  val {decs = decs', result} = Exp.dest (simplifyExp e)
+		  val {decs = decs', result} = Exp.dest (shrinkExp e)
 		  val _ = replaceInfo (var, info, varExpInfo result)
 		  val decs = rest ()
 	       in decs' @ decs
@@ -326,7 +325,7 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
 			   fun done () =
 			      case default of
 				 SOME (e, _) => expression e
-			       | NONE => Error.bug "simplifyPrimExp: Case"
+			       | NONE => Error.bug "shrinkPrimExp: Case"
 			in Vector.fold' (cases, 0, (), step, done)
 			end
 		     fun normal test =
@@ -337,11 +336,11 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
 				 then (Option.app (default, deleteExp o #1)
 				       ; NONE)
 			      else Option.map (default, fn (e, r) =>
-					       (simplifyExp e, r))
+					       (shrinkExp e, r))
 			in
 			   expansive
 			   (Case {test = test,
-				  cases = Cases.map (cases, simplifyExp),
+				  cases = Cases.map (cases, shrinkExp),
 				  default = default})
 			end
 		  in
@@ -380,7 +379,7 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
 				   | _ => Error.bug "strange case"
 				  end
 			     | (_, NONE) => normal varExp
-			     | _ => Error.bug "simplifyMonoVal"
+			     | _ => Error.bug "shrinkMonoVal"
 		  end
 	     | ConApp {con, targs, arg} =>
 		  if Con.equals (con, Con.overflow)
@@ -389,7 +388,7 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
 			(ConApp
 			 {con = con,
 			  targs = targs,
-			  arg = Option.map (arg, simplifyVarExp)})
+			  arg = Option.map (arg, shrinkVarExp)})
 		  else
 		     let
 			val arg = Option.map (arg, varExpInfo)
@@ -399,29 +398,29 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
 		     end			     
 	     | Const c => nonExpansiveCon (fn () => (), Value.Const c)
 	     | Handle {try, catch, handler} =>
-		  expansive (Handle {try = simplifyExp try,
+		  expansive (Handle {try = shrinkExp try,
 				     catch = catch,
-				     handler = simplifyExp handler})
+				     handler = shrinkExp handler})
 	     | Lambda l =>
 		  let val isInlined = ref false
 		  in nonExpansive
 		     (fn () => if !isInlined then () else deleteLambda l,
 		      fn () => (value := SOME (Value.Lambda {isInlined = isInlined,
 							     lam = l})
-				; SOME (fn () => Lambda (simplifyLambda l))))
+				; SOME (fn () => Lambda (shrinkLambda l))))
 		  end
 	     | PrimApp {prim, args, targs} =>
 		  let
 		     fun make () =
 			PrimApp {prim = prim, targs = targs,
-				 args = simplifyVarExps args}
+				 args = shrinkVarExps args}
 		  in if Prim.maySideEffect prim
 			then expansive (make ())
 		     else nonExpansive (fn () => (), fn () => SOME make)
 		  end
 	     | Profile _ => expansive exp
 	     | Raise {exn, filePos} =>
-		  expansive (Raise {exn = simplifyVarExp exn,
+		  expansive (Raise {exn = shrinkVarExp exn,
 				    filePos = filePos})
 	     | Select {tuple, offset} =>
 		  let
@@ -438,7 +437,7 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
 			       (inc (numOccurrences, ~1)
 				; replaceInfo (var, info, Vector.sub (vs, offset))
 				; NONE)
-			  | _ => Error.bug "simplifyMonoVal: Select")
+			  | _ => Error.bug "shrinkMonoVal: Select")
 		  end
 	     | Tuple xs =>
 		  let val xs = varExpInfos xs
@@ -472,19 +471,19 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
 			 | _ => normal varExp
 		  end
 	 end
-      and simplifyLambda l: Lambda.t =
-	 traceSimplifyLambda
+      and shrinkLambda l: Lambda.t =
+	 traceShrinkLambda
 	 (fn l => 
 	  let
 	     val {arg, argType, body} = Lambda.dest l
 	  in
 	     Lambda.new {arg = arg,
 			 argType = argType,
-			 body = simplifyExp body}
+			 body = shrinkExp body}
 	  end) l
       val _ = countExp body
       val _ = Option.app (overflow, fn x => VarInfo.inc (varInfo x, 1))
-      val body = simplifyExp body
+      val body = shrinkExp body
       val overflow =
 	 Option.map (overflow, fn x =>
 		     VarExp.var (VarInfo.varExp (varInfo x)))
@@ -497,12 +496,16 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
 		 overflow = overflow}
    end
 
-val simplifyOnce =
-   Trace.trace ("Xml.simplifyOnce", Program.layout, Program.layout) simplifyOnce
+val shrinkOnce =
+   Trace.trace ("Xml.shrinkOnce", Program.layout, Program.layout) shrinkOnce
 
-val simplify = simplifyOnce o simplifyOnce
+val shrink = shrinkOnce o shrinkOnce
 
-val simplify =
-   Trace.trace ("Xml.simplify", Program.layout, Program.layout) simplify
+structure SccFuns = SccFuns (open S)
+
+val shrink = shrink o SccFuns.sccFuns
+
+val shrink =
+   Trace.trace ("Xml.shrink", Program.layout, Program.layout) shrink
 
 end

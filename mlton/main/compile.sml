@@ -17,7 +17,7 @@ structure Atoms = Atoms (structure Ast = Ast)
 structure CoreML = CoreML (open Atoms
 			   structure Type = Prim.Type)
 structure Xml = Xml (open Atoms)
-structure Sxml = Xml
+structure Sxml = Sxml (open Xml)
 structure Ssa = Ssa (open Atoms)
 structure Machine = Machine (structure Label = Ssa.Label
 			     structure Prim = Atoms.Prim
@@ -42,8 +42,6 @@ structure Infer = Infer (structure CoreML = CoreML
 			 structure Xml = Xml)
 structure Monomorphise = Monomorphise (structure Xml = Xml
 				       structure Sxml = Sxml)
-structure ImplementExceptions = ImplementExceptions (open Sxml)
-structure Polyvariance = Polyvariance (open Sxml)
 structure ClosureConvert = ClosureConvert (structure Ssa = Ssa
 					   structure Sxml = Sxml)
 structure Backend = Backend (structure Ssa = Ssa
@@ -397,14 +395,6 @@ fun preCodegen {input, docc}: Machine.Program.t =
 	  display = Control.Layout Xml.Program.layout,
 	  typeCheck = Xml.typeCheck,
 	  simplify = Xml.simplify}
-      val xml =
-	 Control.passTypeCheck
-	 {name = "simplifyTypes",
-	  suffix = "xml",
-	  style = Control.ML,
-	  thunk = fn () => Xml.simplifyTypes xml,
-	  display = Control.Layout Xml.Program.layout,
-	  typeCheck = Xml.typeCheck}
       val _ = Control.message (Control.Detail, fn () =>
 			       Xml.Program.layoutStats xml)
       val sxml =
@@ -416,24 +406,6 @@ fun preCodegen {input, docc}: Machine.Program.t =
 	  display = Control.Layout Sxml.Program.layout,
 	  typeCheck = Sxml.typeCheck,
 	  simplify = Sxml.simplify}
-      val _ = Control.message (Control.Detail, fn () =>
-			       Sxml.Program.layoutStats sxml)
-      val sxml =
-	 Control.passSimplify
-	 {name = "implementExceptions",
-	  suffix = "sxml",
-	  style = Control.ML,
-	  thunk = fn () => ImplementExceptions.doit sxml,
-	  typeCheck = Sxml.typeCheck,
-	  display = Control.Layout Sxml.Program.layout,
-	  simplify = Sxml.simplify}
-      val sxml =
-	 Control.pass (* polyvariance has simplify built in *)
-	 {name = "polyvariance",
-	  suffix = "sxml.poly",
-	  style = Control.ML,
-	  thunk = fn () => Polyvariance.duplicate sxml,
-	  display = Control.Layout Sxml.Program.layout}
       val _ = Control.message (Control.Detail, fn () =>
 			       Sxml.Program.layoutStats sxml)
       val ssa =

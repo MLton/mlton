@@ -11,7 +11,7 @@
 
 signature SCC_FUNS_STRUCTS = 
    sig
-      include XML_TREE
+      include TYPE_CHECK
    end
 
 signature SCC_FUNS = 
