@@ -162,6 +162,21 @@ local
     result.sml
     regexp.sig
     regexp.sml
+    base64.sig
+    base64.sml
+    port.sig
+    port.sml
+    itimer.sml
+    thread.sig
+    thread.sml
+    engine.sig
+    engine.sml
+    net.sig
+    net.sml
+    uri.sig
+    uri.sml
+    http.sig
+    http.sml
     popt.sig
     popt.sml
     sexp.sig
@@ -220,6 +235,7 @@ in
     structure FixedPoint
     structure Function
     structure HashSet
+    structure Http
     structure In
     structure Int
     structure Int32

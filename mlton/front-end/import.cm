@@ -30,6 +30,7 @@ structure Ref
 structure String
 structure StringCvt
 structure Trace
+structure Unsafe
 structure Vector
 structure Word32
 
