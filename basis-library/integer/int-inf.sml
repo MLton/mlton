@@ -877,10 +877,12 @@ structure IntInf: INT_INF_EXTRA =
 	 else expensive arg
       end
 
+      local
+	 val bitsPerLimb : Word.word = 0w32
+	 fun shiftSize shift = Word.toIntX (Word.div (shift, bitsPerLimb))
+      in
       local fun expensive (arg: bigInt, shift: word): bigInt =
-	 let val tsize = Int.max (1, 
-                                  (size arg) -? 
-				  (Word.toIntX (Word.div (shift, 0w32))))
+	 let val tsize = Int.max (1, (size arg) -? (shiftSize shift))
 	 in Prim.~>> (arg, shift, reserve tsize)
 	 end
       in fun bigArshift (arg: bigInt, shift: word): bigInt =
@@ -890,15 +892,14 @@ structure IntInf: INT_INF_EXTRA =
       end
 
       local fun expensive (arg: bigInt, shift: word): bigInt =
-	 let val tsize = (size arg) +? 
-                         (Word.toIntX (Word.div (shift, 0w32))) +? 
-                         1
+	 let val tsize = (size arg) +? (shiftSize shift) +? 1
 	 in Prim.<< (arg, shift, reserve tsize)
 	 end
       in fun bigLshift (arg: bigInt, shift: word): bigInt =
 	 if shift = 0wx0
 	    then arg
 	 else expensive (arg, shift)
+      end
       end
    
       type int = bigInt
