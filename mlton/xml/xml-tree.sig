@@ -108,19 +108,19 @@ signature XML_TREE =
 	    type exp = Lambda.exp
 	       
 	    datatype t =
-	       MonoVal of {var: Var.t,
+	       Exception of {con: Con.t,
+			     arg: Type.t option}
+	     | Fun of {tyvars: Tyvar.t vector,
+		       decs: {var: Var.t,
+			      ty: Type.t,
+			      lambda: Lambda.t} vector}
+	     | MonoVal of {var: Var.t,
 			   ty: Type.t,
 			   exp: PrimExp.t}
 	     | PolyVal of {var: Var.t,
 			   tyvars: Tyvar.t vector,
 			   ty: Type.t,
 			   exp: exp}
-	     | Fun of {tyvars: Tyvar.t vector,
-		       decs: {var: Var.t,
-			      ty: Type.t,
-			      lambda: Lambda.t} vector}
-	     | Exception of {con: Con.t,
-			     arg: Type.t option}
 
 	    val toAst: t -> Ast.Dec.t
 	    val layout: t -> Layout.t

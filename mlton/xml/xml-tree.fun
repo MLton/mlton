@@ -132,19 +132,19 @@ and primExp =
   | Tuple of VarExp.t vector
   | Var of VarExp.t
 and dec =
-   MonoVal of {var: Var.t,
+   Exception of {con: Con.t,
+		 arg: Type.t option}
+  | Fun of {tyvars: Tyvar.t vector,
+	    decs: {var: Var.t,
+		   ty: Type.t,
+		   lambda: lambda} vector}
+  | MonoVal of {var: Var.t,
 	       ty: Type.t,
 	       exp: primExp}
   | PolyVal of {tyvars: Tyvar.t vector,
 		ty: Type.t,
 		var: Var.t,
 		exp: exp}
-  | Fun of {tyvars: Tyvar.t vector,
-	    decs: {var: Var.t,
-		   ty: Type.t,
-		   lambda: lambda} vector}
-  | Exception of {con: Con.t,
-		  arg: Type.t option}
 and lambda = Lam of {plist: PropertyList.t,
 		     arg: Var.t,
 		     argType: Type.t,
