@@ -268,15 +268,16 @@ structure Value =
    struct
       datatype t =
 	 Ground of Type.t
-       | Object of {args: t Prod.t,
-		    coercedFrom: t AppendList.t ref,
-		    con: ObjectCon.t,
-		    finalOffsets: int vector option ref,
-		    finalTree: TypeTree.t option ref,
-		    finalType: Type.t option ref,
-		    finalTypes: Type.t Prod.t option ref,
-		    flat: Flat.t ref} Equatable.t
+       | Object of object Equatable.t
        | Weak of {arg: t}
+      withtype object = {args: t Prod.t,
+			 coercedFrom: t AppendList.t ref,
+			 con: ObjectCon.t,
+			 finalOffsets: int vector option ref,
+			 finalTree: TypeTree.t option ref,
+			 finalType: Type.t option ref,
+			 finalTypes: Type.t Prod.t option ref,
+			 flat: Flat.t ref}
 
       fun layout (v: t): Layout.t =
 	 let
@@ -396,46 +397,50 @@ structure Value =
 	 (Prod.dest p, Prod.dest p', fn ({elt = e, ...}, {elt = e', ...}) =>
 	  coerce {from = e, to = e'})
 
+      fun mayFlatten {args, con}: bool =
+	 (* Don't flatten constructors, since they are part of a sum type.
+	  * Don't flatten unit.
+	  * Don't flatten vectors (of course their components can be
+	  * flattened).
+	  * Don't flatten objects with mutable fields, since sharing must be
+	  * preserved.
+	  *)
+	 not (Prod.isEmpty args)
+	 andalso not (Prod.isMutable args)
+	 andalso (case con of
+		     ObjectCon.Con _ => false
+		   | ObjectCon.Tuple => true
+		   | ObjectCon.Vector => false)
+
       fun objectFields {args, con} =
 	 let
 	    (* Don't flatten object components that are immutable fields.  Those
-	       * have already had a chance to be flattened by other passes.
-	       *)
-	      val _  =
-		 if (case con  of
-			ObjectCon.Con _ => true
-		      | ObjectCon.Tuple => true
-		      | ObjectCon.Vector => false)
-		    then Vector.foreach (Prod.dest args, fn {elt, isMutable} =>
-					 if isMutable
-					    then ()
-					 else dontFlatten elt)
-		 else ()
-	      (* Don't flatten constructors, since they are part of a sum type.
-	       * Don't flatten unit.
-	       * Don't flatten vectors (of course their components can be
-	       * flattened).
-	       * Don't flatten objects with mutable fields, since sharing must be
-	       * preserved.
-	       *)
-	      val dontFlatten =
-		 (case con of
-		     ObjectCon.Con _ => true
-		   | ObjectCon.Tuple => false
-		   | ObjectCon.Vector => true)
-		     orelse Prod.isEmpty args
-		     orelse Prod.isMutable args
-	      val flat = if dontFlatten then Flat.NotFlat else Flat.Flat
-	   in
-	      {args = args,
-	       coercedFrom = ref AppendList.empty,
-	       con = con,
-	       finalOffsets = ref NONE,
-	       finalTree = ref NONE,
-	       finalType = ref NONE,
-	       finalTypes = ref NONE,
-	       flat = ref flat}
-	   end
+	     * have already had a chance to be flattened by other passes.
+	     *)
+	    val _  =
+	       if (case con  of
+		      ObjectCon.Con _ => true
+		    | ObjectCon.Tuple => true
+		    | ObjectCon.Vector => false)
+		  then Vector.foreach (Prod.dest args, fn {elt, isMutable} =>
+				       if isMutable
+					  then ()
+				       else dontFlatten elt)
+	       else ()
+	    val flat =
+	       if mayFlatten {args = args, con = con}
+		  then Flat.Flat
+	       else Flat.NotFlat
+	 in
+	    {args = args,
+	     coercedFrom = ref AppendList.empty,
+	     con = con,
+	     finalOffsets = ref NONE,
+	     finalTree = ref NONE,
+	     finalType = ref NONE,
+	     finalTypes = ref NONE,
+	     flat = ref flat}
+	 end
 
       fun object f =
 	 Object (Equatable.delay (fn () => objectFields (f ())))
@@ -452,25 +457,11 @@ structure Value =
 
       fun weak (arg: t) = Weak {arg = arg}
 
-      val deObjectOpt =
+      val deObject: t -> object option =
 	 fn v =>
 	 case v of
 	    Object e => SOME (Equatable.value e)
 	  | _ => NONE
-
-      fun deObject v =
-	 case deObjectOpt v of
-	    NONE => Error.bug "Value.deObject"
-	  | SOME z => z
-	       
-      fun select {base: t, offset: int}: t =
-	 Prod.elt (#args (deObject base), offset)
-
-      val deWeak: t -> t =
-	 fn v =>
-	 case v of
-	    Weak {arg, ...} => arg
-	  | _ => Error.bug "Value.deWeak"
 
       val traceFinalType =
 	 Trace.trace ("DeepFlatten.Value.finalType", layout, Type.layout)
@@ -484,7 +475,7 @@ structure Value =
 	    fun notFlat (): TypeTree.info =
 	       TypeTree.NotFlat {ty = finalType v, var = NONE}
 	 in
-	    case deObjectOpt v of
+	    case deObject v of
 	       NONE => Tree.T (notFlat (), Prod.empty ())
 	     | SOME {args, finalTree = r, flat, ...} =>
 		  Ref.memoize
@@ -513,7 +504,7 @@ structure Value =
       and finalTypes arg: Type.t Prod.t =
 	 traceFinalTypes
 	 (fn v =>
-	  case deObjectOpt v of
+	  case deObject v of
 	     NONE =>
 		Prod.make (Vector.new1 {elt = finalType v,
 					isMutable = false})
@@ -539,19 +530,23 @@ structure Value =
 	    Vector.foldr
 	    (Prod.dest (finalTypes elt), ac, fn ({elt, isMutable = i'}, ac) =>
 	     {elt = elt, isMutable = i orelse i'} :: ac))))
+   end
 
-      fun finalOffsets (v: t): int vector =
-	 let
-	    val {args, finalOffsets = r, ...} = deObject v
-	 in
-	    Ref.memoize
-	    (r, fn () =>
-	     Vector.fromListRev
-	     (#2 (Prod.fold
-		  (args, (0, []), fn (elt, (offset, offsets)) =>
-		   (offset + Prod.length (finalTypes elt),
-		    offset :: offsets)))))
-	 end
+structure Object =
+   struct
+      type t = Value.object
+
+      fun select ({args, ...}: t, offset): Value.t =
+	 Prod.elt (args, offset)
+
+      fun finalOffsets ({args, finalOffsets = r, ...}: t): int vector =
+	 Ref.memoize
+	 (r, fn () =>
+	  Vector.fromListRev
+	  (#2 (Prod.fold
+	       (args, (0, []), fn (elt, (offset, offsets)) =>
+		(offset + Prod.length (Value.finalTypes elt),
+		 offset :: offsets)))))
 
       fun finalOffset (object, offset) =
 	 Vector.sub (finalOffsets object, offset)
@@ -565,17 +560,35 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	 Trace.trace ("DeepFlatten.conValue",
 		      Con.layout, Ref.layout (Option.layout Value.layout))
 	 conValue
+      datatype 'a make =
+	 Const of 'a
+       | Make of unit -> 'a
       val traceMakeTypeValue =
 	 Trace.trace ("DeepFlatten.makeTypeValue",
 		      Type.layout o #1,
 		      Layout.ignore)
-      val {get = makeTypeValue: Type.t -> unit -> Value.t, ...} =
+      fun makeValue m =
+	 case m of
+	    Const v => v
+	  | Make f => f ()
+      fun needToMakeProd p =
+	 Vector.exists (Prod.dest p, fn {elt, ...} =>
+			case elt of
+			   Const _ => false
+			 | Make _ => true)
+      fun makeProd p =
+	 Prod.map (p, fn m =>
+		   case m of
+		      Const v => v
+		    | Make f => f ())
+      val {get = makeTypeValue: Type.t -> Value.t make, ...} =
 	 Property.get
 	 (Type.plist,
 	  Property.initRec
 	  (traceMakeTypeValue
 	   (fn (t, makeTypeValue) =>
 	    let
+	       fun const () = Const (Value.ground t)
 	       datatype z = datatype Type.dest
 	    in
 	       case Type.dest t of
@@ -583,35 +596,32 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		     let
 			val args = Prod.map (args, makeTypeValue)
 			fun doit () =
-			   Value.object
-			   (fn () => {args = Prod.map (args, fn f => f ()),
-				      con = con})
+			   if needToMakeProd args
+			      orelse Value.mayFlatten {args = args, con = con}
+			      then
+				 Make
+				 (fn () =>
+				  Value.object (fn () => {args = makeProd args,
+							  con = con}))
+			   else const ()
 			datatype z = datatype ObjectCon.t
 		     in
 			case con of
 			   Con c =>
-			      let
-				 val v = conValue c
-			      in
-				 fn () => Ref.memoize (v, doit)
-			      end
-			 | Tuple => doit
-			 | Vector =>  doit
+			      Const (Ref.memoize
+				     (conValue c, fn () =>
+				      makeValue (doit ())))
+			 | Tuple => doit ()
+			 | Vector => doit ()
 		     end
 		| Weak t =>
-		     let
-			val t = makeTypeValue t
-		     in
-			fn () => Value.weak (t ())
-		     end
-		| _ =>
-		     let
-			val v = Value.ground t
-		     in
-			fn () => v
-		     end
+		     (case makeTypeValue t of
+			 Const _ => const ()
+		       | Make f => Make (fn () => Value.weak (f ())))
+		| _ => const ()
 	    end)))
-      fun typeValue (t: Type.t): Value.t = makeTypeValue t ()
+      fun typeValue (t: Type.t): Value.t =
+	 makeValue (makeTypeValue t)
       val typeValue =
 	 Trace.trace ("DeepFlatten.typeValue", Type.layout, Value.layout)
 	 typeValue
@@ -622,16 +632,28 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	 else (Value.coerce, Value.coerceProd)
       fun inject {sum, variant = _} = typeValue (Type.datatypee sum)
       fun object {args, con, resultType} =
-	 case con of
-	    NONE => Value.tuple args
-	  | SOME _ =>
-	       let
-		  val res = typeValue resultType
-		  val () = coerceProd {from = args,
-				       to = #args (Value.deObject res)}
-	       in
-		  res
-	       end
+	 let
+	    val m = makeTypeValue resultType
+	 in
+	    case con of
+	       NONE =>
+		  (case m of
+		      Const v => v
+		    | Make _ => Value.tuple args)
+	     | SOME _ =>
+		  (case m of
+		      Const v =>
+			 let
+			    val () =
+			       case Value.deObject v of
+				  NONE => ()
+				| SOME {args = args', ...} =>
+				     coerceProd {from = args, to = args'}
+			 in
+			    v
+			 end
+		    | _ => Error.bug "strangs con value")
+	 end
       val object =
 	 Trace.trace
 	 ("DeepFlatten.object",
@@ -657,8 +679,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		  let
 		     val res = result ()
 		     val () =
-			case (Value.deObjectOpt (arg 0),
-			      Value.deObjectOpt res) of
+			case (Value.deObject (arg 0), Value.deObject res) of
 			   (NONE, NONE) => ()
 			 | (SOME {args = a, ...}, SOME {args = a', ...}) =>
 			      Vector.foreach2
@@ -678,13 +699,36 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	     | MLton_equal => equal ()
 	     | MLton_size => dontFlatten ()
 	     | MLton_share => dontFlatten ()
-	     | Weak_get => Value.deWeak (arg 0)
-	     | Weak_new => Value.weak (arg 0)
+	     | Weak_get =>
+		  (case arg 0 of
+		      Value.Ground t =>
+			 typeValue (case Type.dest t of
+				       Type.Weak t => t
+				     | _ => Error.bug "deWeak")
+		    | Value.Weak {arg, ...} => arg
+		    | _ => Error.bug "Value.deWeak")
+	     | Weak_new =>
+		  (case makeTypeValue resultType of
+		      Const v => v
+		    | Make _ => Value.weak (arg 0))
 	     | _ => result ()
+	 end
+      fun select {base, offset} =
+	 let
+	    datatype z = datatype Value.t
+	 in
+	    case base of
+	       Ground t =>
+		  (case Type.dest t of
+		      Type.Object {args, ...} =>
+			 typeValue (Prod.elt (args, offset))
+		    | _ => Error.bug "select Ground")
+	     | Object e => Object.select (Equatable.value e, offset)
+	     | _ => Error.bug "select"
 	 end
       fun update {base, offset, value} =
 	 coerce {from = value,
-		 to = Value.select {base = base, offset = offset}}
+		 to = select {base = base, offset = offset}}
       fun const c = typeValue (Type.ofConst c)
       val {func, value = varValue, ...} =
 	 analyze {coerce = coerce,
@@ -697,9 +741,8 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		  object = object,
 		  primApp = primApp,
 		  program = program,
-		  select = fn {base, offset, ...} => (Value.select
-						      {base = base,
-						       offset = offset}),
+		  select = fn {base, offset, ...} => select {base = base,
+							     offset = offset},
 		  update = update,
 		  useFromTypeOnBinds = false}
       (* Don't flatten outermost part of formal parameters. *)
@@ -809,7 +852,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	    fun none () = []
 	 in
 	    case exp of
-	       Const _ => simple ()
+	       Exp.Const _ => simple ()
 	     | Inject _ => simple ()
 	     | Object {args, con} =>
 		  (case var of
@@ -817,52 +860,57 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		    | SOME var =>
 			 let
 			    val v = varValue var
-			    val {args = expects, flat, ...} = Value.deObject v
-			    val z =
-			       Vector.map2
-			       (args, Prod.dest expects,
-				fn (arg, {elt, isMutable}) =>
-				let
-				   val (vt, ss) =
-				      coerceTree
-				      {from = varTree arg,
-				       to = Value.finalTree elt}
-				in
-				   ({elt = vt,
-				     isMutable = isMutable},
-				    ss)
-				end)
-			    val vts = Vector.map (z, #1)
-			    fun set info =
-			       setVarTree (var,
-					   Tree.T (info,
-						   Prod.make vts))
 			 in
-			    case !flat of
-			       Flat => (set VarTree.Flat; none ())
-			     | NotFlat =>
+			    case Value.deObject v of
+			       NONE => simple ()
+			     | SOME {args = expects, flat, ...} =>
 				  let
-				     val ty = Value.finalType v
-				     val () =
-					set (VarTree.NotFlat
-					     {ty = ty,
-					      var = SOME var})
-				     val args =
-					Vector.fromList
-					(Vector.foldr
-					 (vts, [],
-					  fn ({elt = vt, ...}, ac) =>
-					  VarTree.rootsOnto (vt, ac)))
-				     val obj =
-					Bind
-					{exp = Object {args = args,
-						       con = con},
-					 ty = ty,
-					 var = SOME var}
+				     val z =
+					Vector.map2
+					(args, Prod.dest expects,
+					 fn (arg, {elt, isMutable}) =>
+					 let
+					    val (vt, ss) =
+					       coerceTree
+					       {from = varTree arg,
+						to = Value.finalTree elt}
+					 in
+					    ({elt = vt,
+					      isMutable = isMutable},
+					     ss)
+					 end)
+				     val vts = Vector.map (z, #1)
+				     fun set info =
+					setVarTree (var,
+						    Tree.T (info,
+							    Prod.make vts))
 				  in
-				     Vector.foldr
-				     (z, [obj],
-				      fn ((_, ss), ac) => ss @ ac)
+				     case !flat of
+					Flat => (set VarTree.Flat; none ())
+				      | NotFlat =>
+					   let
+					      val ty = Value.finalType v
+					      val () =
+						 set (VarTree.NotFlat
+						      {ty = ty,
+						       var = SOME var})
+					      val args =
+						 Vector.fromList
+						 (Vector.foldr
+						  (vts, [],
+						   fn ({elt = vt, ...}, ac) =>
+						   VarTree.rootsOnto (vt, ac)))
+					      val obj =
+						 Bind
+						 {exp = Object {args = args,
+								con = con},
+						  ty = ty,
+						  var = SOME var}
+					   in
+					      Vector.foldr
+					      (z, [obj],
+					       fn ((_, ss), ac) => ss @ ac)
+					   end
 				  end
 			 end)
 	     | PrimApp {args, prim} =>
@@ -878,34 +926,40 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		    | SOME var =>
 			 let
 			    val baseVar = Base.object base
-			    val Tree.T (info, children) = varTree baseVar
-			    val {elt = child, isMutable} =
-			       Prod.sub (children, offset)
-			    val (child, ss) =
-			       case info of
-				  VarTree.Flat => (child, [])
-				| VarTree.NotFlat _ =>
-				     let
-					val child =
-					   (* Don't simplify a select out
-					    * of a mutable field.
-					    * Something may have mutated
-					    * it.
-					    *)
-					   if isMutable
-					      then VarTree.dropVars child
-					   else child
-				     in
-					VarTree.fillInRoots
-					(child,
-					 {base = Base.map (base, replaceVar),
-					  offset = (Value.finalOffset
-						    (varValue baseVar,
-						     offset))})
-				     end
-			    val () = setVarTree (var, child)
 			 in
-			    ss
+			    case Value.deObject (varValue baseVar) of
+			       NONE => simple ()
+			     | SOME obj => 
+				  let
+				     val Tree.T (info, children) =
+					varTree baseVar
+				     val {elt = child, isMutable} =
+					Prod.sub (children, offset)
+				     val (child, ss) =
+					case info of
+					   VarTree.Flat => (child, [])
+					 | VarTree.NotFlat _ =>
+					      let
+						 val child =
+						    (* Don't simplify a select out
+						     * of a mutable field.
+						     * Something may have mutated
+						     * it.
+						     *)
+						    if isMutable
+						       then VarTree.dropVars child
+						    else child
+					      in
+						 VarTree.fillInRoots
+						 (child,
+						  {base = Base.map (base, replaceVar),
+						   offset = (Object.finalOffset
+							     (obj, offset))})
+					      end
+				     val () = setVarTree (var, child)
+				  in
+				     ss
+				  end
 			 end)
 	     | Var x =>
 		  (Option.app (var, fn y => setVarTree (y, varTree x))
@@ -924,44 +978,47 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			case base of
 			   Base.Object x => x
 			 | Base.VectorSub {vector = x, ...} => x
-		     val objectValue = varValue baseVar
-		     val ss = ref []
-		     val child =
-			Value.finalTree
-			(Value.select {base = objectValue,
-				       offset = offset})
-		     val offset = Value.finalOffset (objectValue, offset)
-		     val base = Base.map (base, replaceVar)
-		     val us =
-			if not (TypeTree.isFlat child)
-			   then [Update {base = base,
-					 offset = offset,
-					 value = replaceVar value}]
-			else
-			   let
-			      val (vt, ss') =
-				 coerceTree {from = varTree value,
-					     to = child}
-			      val () = ss := ss' @ (!ss)
-			      val r = ref offset
-			      val us = ref []
-			      val () =
-				 VarTree.foreachRoot
-				 (vt, fn var =>
-				  let
-				     val offset = !r
-				     val () = r := 1 + !r
-				  in
-				     List.push (us,
-						Update {base = base,
-							offset = offset,
-							value = var})
-				  end)
-			   in
-			      !us
-			   end
 		  in
-		     !ss @ us
+		     case Value.deObject (varValue baseVar) of
+			NONE => simple ()
+		      | SOME object => 
+			   let
+			      val ss = ref []
+			      val child =
+				 Value.finalTree (Object.select (object, offset))
+			      val offset = Object.finalOffset (object, offset)
+			      val base = Base.map (base, replaceVar)
+			      val us =
+				 if not (TypeTree.isFlat child)
+				    then [Update {base = base,
+						  offset = offset,
+						  value = replaceVar value}]
+				 else
+				    let
+				       val (vt, ss') =
+					  coerceTree {from = varTree value,
+						      to = child}
+				       val () = ss := ss' @ (!ss)
+				       val r = ref offset
+				       val us = ref []
+				       val () =
+					  VarTree.foreachRoot
+					  (vt, fn var =>
+					   let
+					      val offset = !r
+					      val () = r := 1 + !r
+					   in
+					      List.push (us,
+							 Update {base = base,
+								 offset = offset,
+								 value = var})
+					   end)
+				    in
+				       !us
+				    end
+			   in
+			      !ss @ us
+			   end
 		  end
 	 end
       val transformStatement =
