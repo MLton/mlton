@@ -43,12 +43,15 @@ signature VECTOR =
       val foldFrom: 'a t * int * 'b * ('a * 'b -> 'b) -> 'b
       val foldi: 'a t * 'b * (int * 'a * 'b -> 'b) -> 'b
       val foldr: 'a t * 'b * ('a * 'b -> 'b) -> 'b
+      val foldri: 'a t * 'b * (int * 'a * 'b -> 'b) -> 'b
       val foldr2: 'a t * 'b t * 'c * ('a * 'b * 'c -> 'c) -> 'c
       val forall: 'a t * ('a -> bool) -> bool
       val forall2: 'a t * 'b t * ('a * 'b -> bool) -> bool
       val foralli: 'a t * (int * 'a -> bool) -> bool
       val foreach: 'a t * ('a -> unit) -> unit
       val foreachi: 'a t * (int * 'a -> unit) -> unit
+      val foreachr: 'a t * ('a -> unit) -> unit
+      val foreachri: 'a t * (int * 'a -> unit) -> unit
       val foreach2: 'a t * 'b t * ('a * 'b -> unit) -> unit
       val foreachR: 'a t * int * int * ('a -> unit) -> unit
       val fromList: 'a list -> 'a t

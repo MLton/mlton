@@ -194,9 +194,16 @@ fun equals (a, a', equals) =
    length a = length a'
    andalso foralli (a, fn (i, x) => equals (x, unsafeSub (a', i)))
 
+fun foldri (a, b, f) =
+   Int.foldDown (0, length a, b, fn (i, b) => f (i, unsafeSub (a, i), b))
+
 fun foldr (a, b, f) =
-   Int.foldDown (0, length a, b, fn (i, b) => f (unsafeSub (a, i), b))
+   foldri (a, b, fn (i, a, b) => f (a, b))
    
+fun foreachri (a, f) = foldri (a, (), fn (i, x, ()) => f (i, x))
+
+fun foreachr (a, f) = foreachri (a, f o #2)
+
 fun toList a = foldr (a, [], op ::)
 
 fun toListMap (a, f) = foldr (a, [], fn (a, ac) => f a :: ac)
