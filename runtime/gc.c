@@ -1056,19 +1056,21 @@ setMemInfo(GC_state s)
 	struct sysinfo	sbuf;
 	W32 maxMem;
 	W64 tmp;
+	uint memUnit;
 
 	maxMem = 0x100000000llu - s->pageSize;
 	unless (0 == sysinfo(&sbuf))
 		diee("sysinfo failed");
-	if (0 == sbuf.mem_unit)
-		/* On 2.2 kernels, mem_unit was not defined, but will be zero
-		 * so go ahead and pretend it is one.
-		 */
-		sbuf.mem_unit = 1;
-	tmp = sbuf.mem_unit * (W64)sbuf.totalram;
+	memUnit = sbuf.mem_unit;
+	/* On 2.2 kernels, mem_unit is not defined, but will be zero, so go
+	 * ahead and pretend it is one.
+	 */
+	if (0 == memUnit)
+		memUnit = 1;
+	tmp = memUnit * (W64)sbuf.totalram;
 	s->totalRam = (tmp > (W64)maxMem) ? maxMem : (W32)tmp;
 	maxMem = maxMem - s->totalRam;
-	tmp = sbuf.mem_unit * (W64)sbuf.totalswap;
+	tmp = memUnit * (W64)sbuf.totalswap;
 	s->totalSwap = (tmp > (W64)maxMem) ? maxMem : (W32)tmp;
 }
 #elif (defined (__CYGWIN__))
