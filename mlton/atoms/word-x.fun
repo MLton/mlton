@@ -66,7 +66,7 @@ local
 	 else make (f (value w, Word.fromIntInf v'), s)
       end
 in
-   val << = make IntInf.<<
+   val lshift = make IntInf.<<
    val >> = make IntInf.~>> (* OK because we know the value is positive. *)
 end
 
@@ -92,6 +92,8 @@ in
    val max = make WordSize.max
    val min = make WordSize.min
 end
+
+fun allOnes s = max (s, {signed = false})
 
 local
    fun make f (w, sg) = equals (w, f (size w, sg))

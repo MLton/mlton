@@ -9,7 +9,7 @@ type int = Int.t
    
 signature ANALYZE2_STRUCTS = 
    sig
-      include DIRECT_EXP2
+      include SSA_TREE2
    end
 
 signature ANALYZE2 = 
@@ -19,23 +19,28 @@ signature ANALYZE2 =
       val analyze:
 	 {coerce: {from: 'a,
 		   to: 'a} -> unit,
-	  conApp: {args: 'a vector,
-		   con: Con.t} -> 'a,
 	  const: Const.t -> 'a,
-	  filter: 'a * Con.t * 'a vector -> unit,
+	  filter: {con: Con.t,
+		   test: 'a,
+		   variant: 'a option} -> unit,
 	  filterWord: 'a * WordSize.t -> unit,
 	  fromType: Type.t -> 'a,
 	  layout: 'a -> Layout.t,
+	  object: {args: 'a vector,
+		   con: Con.t option,
+		   resultType: Type.t} -> 'a,
 	  primApp: {args: 'a vector,
 		    prim: Type.t Prim.t,
 		    resultType: Type.t,
 		    resultVar: Var.t option,
 		    targs: Type.t vector} -> 'a,
 	  program: Program.t,
-	  select: {offset: int,
-		   resultType: Type.t,
-		   tuple: 'a} -> 'a,
-	  tuple: 'a vector -> 'a,
+	  select: {object: 'a,
+		   offset: int,
+		   resultType: Type.t} -> 'a,
+	  update: {object: 'a,
+		   offset: int,
+		   value: 'a} -> unit,
 	  useFromTypeOnBinds: bool
 	 }
 	 -> {

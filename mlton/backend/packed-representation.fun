@@ -119,6 +119,8 @@ structure Rep =
 
       fun nonPointer ty = T {rep = NonPointer,
 			     ty = ty}
+
+      val bool = nonPointer Type.bool
 	 
       val width = Type.width o ty
 
@@ -415,6 +417,41 @@ structure Unpack =
 				      ("src", Operand.layout src)],
 		       List.layout Statement.layout)
 	 select
+
+      fun update (T {shift, ty},
+		  {chunk: Operand.t,
+		   component: Operand.t}): Operand.t * Statement.t list =
+	 let
+	    val shift =
+	       WordX.fromIntInf (Bits.toIntInf shift, WordSize.default)
+	    val chunkWidth = Type.width (Operand.ty chunk)
+	    val mask =
+	       Operand.word
+	       (WordX.notb
+		(WordX.resize
+		 (WordX.lshift (WordX.allOnes
+				(WordSize.fromBits (Type.width ty)),
+				shift),
+		  WordSize.fromBits chunkWidth)))
+	    val (s1, chunk) = Statement.andb (chunk, mask)
+	    val (component, s2) = Statement.resize (component, chunkWidth)
+	    val (s3, component) =
+	       Statement.lshift (component, Operand.word shift)
+	    val (s4, result) = Statement.orb (chunk, component)
+	 in
+	    (result, [s1] @ s2 @ [s3, s4])
+	 end
+
+      val update =
+	 Trace.trace2
+	 ("Unpack.update",
+	  layout,
+	  fn {chunk, component} =>
+	  Layout.record [("chunk", Operand.layout chunk),
+			 ("component", Operand.layout component)],
+	  Layout.tuple2 (Operand.layout,
+			 List.layout Statement.layout))
+	 update
    end
 
 structure Select =
@@ -469,12 +506,12 @@ structure Select =
 			      rest = rest,
 			      ty = ty}
 
-      fun select (s: t, {dst: unit -> Var.t * Type.t,
-			 tuple: unit -> Operand.t}): Statement.t list =
+      fun select (s: t, {dst: Var.t * Type.t,
+			 object: Operand.t}): Statement.t list =
 	 let
 	    fun move src =
 	       let
-		  val (dst, dstTy) = dst ()
+		  val (dst, dstTy) = dst
 		  val (src, ss) = Statement.resize (src, Type.width dstTy)
 	       in
 		  ss @ [Bind {dst = (dst, dstTy),
@@ -484,9 +521,9 @@ structure Select =
 	 in
 	    case s of
 	       None => []
-	     | Direct _ => move (tuple ())
+	     | Direct _ => move object
 	     | Indirect {offset, ty} =>
-		  move (Offset {base = tuple (),
+		  move (Offset {base = object,
 				offset = offset,
 				ty = ty})
 	     | IndirectUnpack {offset, rest, ty} =>
@@ -496,17 +533,44 @@ structure Select =
 		  in
 		     Bind {dst = (tmpVar, ty),
 			   isMutable = false,
-			   src = Offset {base = tuple (),
+			   src = Offset {base = object,
 					 offset = Words.toBytes offset,
 					 ty = ty}}
-		     :: Unpack.select (rest, {dst = dst (), src = tmpOp})
+		     :: Unpack.select (rest, {dst = dst, src = tmpOp})
 		  end
-	     | Unpack u => Unpack.select (u, {dst = dst (), src = tuple ()})
+	     | Unpack u => Unpack.select (u, {dst = dst, src = object})
 	 end
 
       val select =
 	 Trace.trace ("Select.select", layout o #1, List.layout Statement.layout)
 	 select
+
+      fun update (s: t, {object: Rssa.Operand.t,
+			 value: Rssa.Operand.t}): Statement.t list =
+	 case s of
+	    Indirect {offset, ty} =>
+	       [Move {dst = Offset {base = object,
+				    offset = offset,
+				    ty = ty},
+		      src = value}]
+	  | IndirectUnpack {offset, rest, ty} =>
+	       let
+		  val tmpVar = Var.newNoname ()
+		  val tmpOp = Var {ty = ty, var = tmpVar}
+		  val chunk = Offset {base = object,
+				      offset = Words.toBytes offset,
+				      ty = ty}
+		  val (newChunk, ss) = 
+		     Unpack.update (rest, {chunk = chunk,
+					   component = value})
+	       in
+		  ss @ [Move {dst = chunk, src = newChunk}]
+	       end
+	  | _ => Error.bug "Select.update of non indirect"
+
+      val update =
+	 Trace.trace ("Select.update", layout o #1, List.layout Statement.layout)
+	 update
    end
 
 structure Selects =
@@ -523,39 +587,20 @@ structure Selects =
 			{orig = orig,
 			 select = f select}))
 
-      fun select (T v, {dst: unit -> Var.t * Type.t,
-			offset: int,
-			tuple: unit -> Operand.t}): Statement.t list =
+      fun select (T v, {dst: Var.t * Type.t,
+			object: Operand.t,
+			offset: int}): Statement.t list =
 	 Select.select (#select (Vector.sub (v, offset)),
-			{dst = dst, tuple = tuple})
+			{dst = dst, object = object})
+
+      fun update (T v, {object, offset, value}) =
+	 Select.update (#select (Vector.sub (v, offset)),
+			{object = object, value = value})
 
       fun lshift (T v, b: Bits.t) =
 	 T (Vector.map (v, fn {orig, select} =>
 			{orig = orig,
 			 select = Select.lshift (select, b)}))
-
-      fun goto (T v,
-		l: Label.t,
-		toRtype: S.Type.t -> R.Type.t option,
-		tuple: unit -> Operand.t): Statement.t list * Transfer.t =
-	 let
-	    val args = ref []
-	    val statements =
-	       Vector.foldr
-	       (v, [], fn ({orig, select}, ac) =>
-		case toRtype orig of
-		   NONE => ac
-		 | SOME ty =>
-		      let
-			 val x = Var.newNoname ()
-			 val () = List.push (args, Var {ty = ty, var = x})
-			 fun dst () = (x, ty)
-		      in
-			 Select.select (select, {dst = dst, tuple = tuple}) @ ac
-		      end)
-	 in
-	    (statements, Goto {args = Vector.fromList (!args), dst = l})
-	 end
    end
 
 structure PointerRep =
@@ -767,9 +812,6 @@ structure TupleRep =
 	    Direct {selects, ...} => selects
 	  | Indirect (PointerRep.T {selects, ...}) => selects
 
-      fun select (tr: t, z) =
-	 Selects.select (selects tr, z)
-
       fun tuple (tr: t,
 		 {dst: Var.t * Type.t,
 		  src: {index: int} -> Operand.t}): Statement.t list =
@@ -786,9 +828,10 @@ structure TupleRep =
 		       List.layout Statement.layout)
 	 tuple
 
-      val make: ((Rep.t * S.Type.t) vector * PointerTycon.t * {forceBox: bool}
-		 -> t) =
-	 fn (rs, pointerTycon, {forceBox}) =>
+      val make: PointerTycon.t * {isMutable: bool,
+				  rep: Rep.t,
+				  ty: S.Type.t} vector -> t =
+	 fn (pointerTycon, rs) =>
 	 let
 	    val pointers = ref []
 	    val doubleWords = ref []
@@ -796,7 +839,7 @@ structure TupleRep =
 	    val a = Array.array (Bits.toInt Bits.inWord, [])
 	    val () =
 	       Vector.foreachi
-	       (rs, fn (i, (r as Rep.T {rep, ty}, _)) =>
+	       (rs, fn (i, {rep = r as Rep.T {rep, ty}, ...}) =>
 		case rep of
 		   Rep.NonPointer =>
 		      let
@@ -921,7 +964,7 @@ structure TupleRep =
 	    fun getSelects s =
 	       Selects.T (Vector.tabulate
 			  (Array.length selects, fn i =>
-			   {orig = #2 (Vector.sub (rs, i)),
+			   {orig = #ty (Vector.sub (rs, i)),
 			    select = s (Array.sub (selects, i))}))
 	    fun box () =
 	       let
@@ -936,7 +979,7 @@ structure TupleRep =
 					     tycon = pointerTycon})
 	       end
 	 in
-	    if forceBox
+	    if Vector.exists (rs, #isMutable)
 	       then box ()
 	    else
 	       case Vector.length components of
@@ -948,9 +991,10 @@ structure TupleRep =
 	 end
 
       val make =
-	 Trace.trace ("TupleRep.make",
-		      (Vector.layout (Rep.layout o #1)) o #1,
-		      layout)
+	 Trace.trace2 ("TupleRep.make",
+		       PointerTycon.layout,
+		       Vector.layout (Rep.layout o #rep),
+		       layout)
 	 make
    end
 
@@ -979,41 +1023,64 @@ fun tagShift (tagBits: Bits.t): Operand.t =
 structure ConRep =
    struct
       datatype t =
-	 Box of PointerRep.t
-       | ShiftAndTag of {component: Component.t,
+	 ShiftAndTag of {component: Component.t,
 			 selects: Selects.t,
 			 tag: WordX.t,
 			 ty: Type.t (* alread padded to prim *)}
-       | Tag of {tag: WordX.t}
-       | Transparent
-       | Unit
+       | Tag of {tag: WordX.t,
+		 ty: Type.t}
+       | Tuple of TupleRep.t
 
       val layout =
 	 let
 	    open Layout
 	 in
-	    fn Box pr => seq [str "Box ", PointerRep.layout pr]
-	     | ShiftAndTag {component, selects, tag, ty} =>
+	    fn ShiftAndTag {component, selects, tag, ty} =>
 		  seq [str "ShiftAndTag ",
 		       record [("component", Component.layout component),
 			       ("selects", Selects.layout selects),
 			       ("tag", WordX.layout tag),
 			       ("ty", Type.layout ty)]]
-	     | Tag {tag} =>
-		  seq [str "Tag ", WordX.layout tag]
-	     | Transparent => str "Transparent"
-	     | Unit => str "Unit"
+	     | Tag {tag, ...} => seq [str "Tag ", WordX.layout tag]
+	     | Tuple tr => TupleRep.layout tr
 	 end
 
-      fun conApp (r: t, {src: {index: int} -> Operand.t,
-			 dst: unit -> Var.t * Type.t}): Statement.t list =
+      val equals: t * t -> bool =
+	 fn (ShiftAndTag {component = c1, tag = t1, ...},
+	     ShiftAndTag {component = c2, tag = t2, ...}) =>
+	      Component.equals (c1, c2) andalso WordX.equals (t1, t2)
+	  | (Tag {tag = t1, ty = ty1}, Tag {tag = t2, ty = ty2}) =>
+	       WordX.equals (t1, t2) andalso Type.equals (ty1, ty2)
+	  | (Tuple tr1, Tuple tr2) => TupleRep.equals (tr1, tr2)
+	  | _ => false
+
+      val rep: t -> Rep.t =
+	 fn ShiftAndTag {ty, ...} => Rep.nonPointer ty
+	  | Tag {ty, ...} => Rep.nonPointer ty
+	  | Tuple tr => TupleRep.rep tr
+
+      val box = Tuple o TupleRep.Indirect
+
+      local
+	 fun make i = 
+	    let
+	       val tag = WordX.fromIntInf (i, WordSize.default)
+	    in
+	       Tag {tag = tag, ty = Type.constant tag}
+	    end
+      in
+	 val falsee = make 0
+	 val truee = make 1
+      end
+
+      val unit = Tuple TupleRep.unit
+	       
+      fun conApp (r: t, {dst: Var.t * Type.t,
+			 src: {index: int} -> Operand.t}): Statement.t list =
 	 case r of
-	    Box pr =>
-	       PointerRep.tuple (pr, {dst = #1 (dst ()),
-				      src = src})
-	  | ShiftAndTag {component, tag, ...} =>
+	    ShiftAndTag {component, tag, ...} =>
 	       let
-		  val (dstVar, dstTy) = dst ()
+		  val (dstVar, dstTy) = dst
 		  val shift = tagShift (WordSize.bits (WordX.size tag))
 		  val tmpVar = Var.newNoname ()
 		  val tmpTy =
@@ -1036,9 +1103,9 @@ structure ConRep =
 	       in
 		  component @ [s1, s2, s3]
 	       end
-	  | Tag {tag} =>
+	  | Tag {tag, ...} =>
 	       let
-		  val (dstVar, dstTy) = dst ()
+		  val (dstVar, dstTy) = dst
 	       in
 		  [Bind {dst = (dstVar, dstTy),
 			 isMutable = false,
@@ -1046,11 +1113,7 @@ structure ConRep =
 				(WordX.resize
 				 (tag, WordSize.fromBits (Type.width dstTy))))}]
 	       end
-	  | Transparent =>
-	       [Bind {dst = dst (),
-		      isMutable = false,
-		      src = src {index = 0}}]
-	  | Unit => []
+	  | Tuple tr => TupleRep.tuple (tr, {dst = dst, src = src})
 
       val conApp =
 	 Trace.trace ("ConRep.conApp", layout o #1, List.layout Statement.layout)
@@ -1139,37 +1202,24 @@ structure Pointers =
 	       Vector.keepAllMap
 	       (cases, fn (c, l) =>
 		case conRep c of
-		   ConRep.Box (PointerRep.T {selects, tycon, ...}) =>
-		      let
-			 val tag = PointerTycon.index tycon
-			 val pointerVar = Var.newNoname ()
-			 val pointerTy = Type.pointer tycon
-			 val pointerOp = Var {ty = pointerTy, var = pointerVar}
-			 val (ss, transfer) =
-			    Selects.goto (selects, l, toRtype,
-					  fn () => pointerOp)
-			 val ss =
-			    Vector.fromList
-			    (Bind {dst = (pointerVar, pointerTy),
-				   isMutable = false,
-				   src = Cast (test, pointerTy)}
-			     :: ss)
-			 val dst =
-			    Block.new {statements = ss,
-				       transfer = transfer}
-		      in
-			 SOME (WordX.fromIntInf (Int.toIntInf tag, wordSize),
-			       dst)
-		      end
+		   ConRep.Tuple (TupleRep.Indirect
+				 (PointerRep.T {ty, tycon, ...})) =>
+		      SOME (WordX.fromIntInf (Int.toIntInf
+					      (PointerTycon.index tycon),
+					      wordSize),
+			    Block.new
+			    {statements = Vector.new0 (),
+			     transfer =
+			     Goto {args = Vector.new1 (Cast (test, ty)),
+				   dst = l}})
 		 | _ => NONE)
 	    val default =
 	       if Vector.length variants = Vector.length cases
 		  then NONE
 	       else default
 	    val cases =
-	       QuickSort.sortVector 
-	       (cases, fn ((w, _), (w', _)) =>
-		WordX.le (w, w', {signed = false}))
+	       QuickSort.sortVector (cases, fn ((w, _), (w', _)) =>
+				     WordX.le (w, w', {signed = false}))
 	    val headerTy = headerTy ()
 	    val (s, tag) =
 	       Statement.rshift (Offset {base = test,
@@ -1207,6 +1257,12 @@ structure Small =
 	 val rep = make #rep
       end
 
+      val bool =
+	 T {isEnum = true,
+	    rep = Rep.bool,
+	    tagBits = Bits.fromInt 1,
+	    variants = Vector.new2 (Con.falsee, Con.truee)}
+
       fun genCase (T {isEnum, tagBits, variants, ...},
 		   {cases: (Con.t * Label.t) vector,
 		    conRep: Con.t -> ConRep.t,
@@ -1223,19 +1279,17 @@ structure Small =
 	       Vector.keepAllMap
 	       (cases, fn (c, l) =>
 		case conRep c of
-		   ConRep.ShiftAndTag {selects, tag, ty, ...} =>
+		   ConRep.ShiftAndTag {tag, ty, ...} =>
 		      let
 			 val test = Cast (test, Type.padToWidth (ty, testBits))
 			 val (test, ss) = Statement.resize (test, Type.width ty)
-			 val (ss', transfer) =
-			    Selects.goto (selects, l, toRtype, fn () => test)
-			 val statements = Vector.fromList (ss @ ss')
+			 val transfer = Goto {args = Vector.new1 test, dst = l}
 		      in
 			 SOME (WordX.resize (tag, wordSize),
-			       Block.new {statements = statements,
+			       Block.new {statements = Vector.fromList ss,
 					  transfer = transfer})
 		      end
-		 | ConRep.Tag {tag} =>
+		 | ConRep.Tag {tag, ...} =>
 		      SOME (WordX.resize (tag, wordSize), l)
 		 | _ => NONE)
 	    val cases = QuickSort.sortVector (cases, fn ((w, _), (w', _)) =>
@@ -1359,6 +1413,8 @@ structure TyconRep =
 	     | Unit => str "Unit"
 	 end
 
+      val bool = Small Small.bool
+
       val unit = Unit
 
       val rep: t -> Rep.t =
@@ -1418,7 +1474,9 @@ structure TyconRep =
 	    tagBitsNeeded
       end
 
-      fun make (variants: {args: (Rep.t * S.Type.t) vector,
+      fun make (variants: {args: {isMutable: bool,
+				  rep: Rep.t,
+				  ty: S.Type.t} vector,
 			   con: Con.t,
 			   pointerTycon: PointerTycon.t} vector)
 	 : t * {con: Con.t, rep: ConRep.t} vector =
@@ -1428,32 +1486,23 @@ structure TyconRep =
 	    then
 	       let
 		  val {args, con, pointerTycon} = Vector.sub (variants, 0)
-		  val tupleRep = TupleRep.make (args, pointerTycon,
-						{forceBox = false})
-		  val conRep =
-		     case tupleRep of
-			TupleRep.Direct {component, ...} =>
-			   if Component.isUnit component
-			      then ConRep.Unit
-			   else ConRep.Transparent
-		      | TupleRep.Indirect pr => ConRep.Box pr
+		  val tupleRep = TupleRep.make (pointerTycon, args)
+		  val conRep = ConRep.Tuple tupleRep
 	       in
 		  (One {con = con, tupleRep = tupleRep},
 		   Vector.new1 {con = con, rep = conRep})
 	       end
+	 else if (2 = Vector.length variants
+		  andalso let
+			     val c = #con (Vector.sub (variants, 0))
+			  in
+			     Con.equals (c, Con.falsee)
+			     orelse Con.equals (c, Con.truee)
+			  end)
+	    then (bool, Vector.new2 ({con = Con.falsee, rep = ConRep.falsee},
+				     {con = Con.truee, rep = ConRep.truee}))
 	 else
 	 let
-	    val variants =
-	       if 2 = Vector.length variants
-		  then
-		     let
-			val c = Vector.sub (variants, 0)
-		     in
-			if Con.equals (#con c, Con.falsee)
-			   then Vector.new2 (Vector.sub (variants, 1), c)
-			else variants
-		     end
-	       else variants
 	    val numSmall = ref 0
 	    val small = Array.array (wordBits, [])
 	    val big = ref []
@@ -1461,8 +1510,7 @@ structure TyconRep =
 	       Vector.foreach
 	       (variants, fn {args, con, pointerTycon} =>
 		let
-		   val tr = TupleRep.make (args, pointerTycon,
-					   {forceBox = false})
+		   val tr = TupleRep.make (pointerTycon, args)
 		   fun makeBig () =
 		      List.push (big,
 				 {con = con,
@@ -1506,8 +1554,8 @@ structure TyconRep =
 		  then ac
 	       else noLargerThan (i - 1,
 				  List.fold (Array.sub (small, i), ac, op ::))
-	    (* Box as few things as possible so that the number of
-	     * tags available is >= the number of unboxed variants.
+	    (* Box as few things as possible so that the number of tags available
+	     * is >= the number of unboxed variants.
 	     *)
 	    fun loop (maxSmallWidth: int,
 		      forced,
@@ -1566,7 +1614,7 @@ structure TyconRep =
 		     not (List.isEmpty big),
 		     Int.toIntInf numSmall)
 	    val maxSmallWidth = Bits.fromInt maxSmallWidth
-	    val withPointer = not (List.isEmpty big)
+	    val withPointer = not (List.isEmpty big andalso List.isEmpty forced)
 	    (* ShiftAndTag all the small. *)
 	    val (small: Small.t option, smallReps) =
 	       let
@@ -1607,6 +1655,10 @@ structure TyconRep =
 				  Type.seq
 				  (Vector.new2 (Type.constant tag,
 						Component.ty component))
+			       val ty =
+				  if withPointer
+				     then Type.resize (ty, Bits.inPointer)
+				  else Type.padToPrim ty
 			    in
 			       {component = component,
 				con = con,
@@ -1621,12 +1673,12 @@ structure TyconRep =
 			   (small, fn {component, con, selects, tag, ty, ...} =>
 			    {con = con,
 			     rep = if Component.isUseless component
-				      then ConRep.Tag {tag = tag}
+				      then ConRep.Tag {tag = tag, ty = ty}
 				   else (ConRep.ShiftAndTag
 					 {component = component,
 					  selects = selects,
 					  tag = tag,
-					  ty = Type.padToPrim ty})})
+					  ty = ty})})
 			val isEnum =
 			   Vector.forall
 			   (reps, fn {rep, ...} =>
@@ -1642,13 +1694,10 @@ structure TyconRep =
 		     end
 	       end
 	    fun makeSmallPointer {component, con, pointerTycon, selects} =
-	       let
-		  val component =
-		     Component.padToWidth (component, Bits.inWord)
-	       in
-		  {con = con,
-		   pointer = PointerRep.box (component, pointerTycon, selects)}
-	       end
+	       {con = con,
+		pointer = (PointerRep.box
+			   (Component.padToWidth (component, Bits.inWord),
+			    pointerTycon, selects))}
 	    fun makeBigPointer {con, pointerTycon, tupleRep} =
 	       let
 		  val pr =
@@ -1659,14 +1708,11 @@ structure TyconRep =
 	       in
 		  {con = con, pointer = pr}
 	       end
-	    fun sumWithSmall r =
-	       let
-		  val t = Type.resize (Rep.ty (Small.rep (valOf small)),
-				       Bits.inPointer)
-	       in
-		  Rep.T {rep = Rep.Pointer {endsIn00 = false},
-			 ty = Type.sum (Vector.new2 (Rep.ty r, t))}
-	       end
+	    fun sumWithSmall (r: Rep.t): Rep.t =
+	       Rep.T {rep = Rep.Pointer {endsIn00 = false},
+		      ty = Type.sum (Vector.new2
+				     (Rep.ty r,
+				      Rep.ty (Small.rep (valOf small))))}
 	    fun box () =
 	       let
 		  val pointers =
@@ -1709,7 +1755,7 @@ structure TyconRep =
 		  (sumRep,
 		   Vector.map (pointers, fn {con, pointer} =>
 			       {con = con,
-				rep = ConRep.Box pointer}))
+				rep = ConRep.box pointer}))
 	       end
 	    val (sumRep, pointerReps) =
 	       case (forced, big) of
@@ -1733,8 +1779,9 @@ structure TyconRep =
 						     con = con},
 					  rep = sumWithSmall rep,
 					  small = small},
-					 Vector.new1 {con = con,
-						      rep = ConRep.Transparent})
+					 Vector.new1
+					 {con = con,
+					  rep = ConRep.Tuple tupleRep})
 				     end
 			       else box ()
 			    end
@@ -1749,9 +1796,13 @@ structure TyconRep =
 	 ("TyconRep.make",
 	  Vector.layout
 	  (fn {args, con, ...} =>
-	   Layout.record [("args", Vector.layout (Rep.layout o #1) args),
+	   Layout.record [("args", Vector.layout (Rep.layout o #rep) args),
 			  ("con", Con.layout con)]),
-	  layout o #1)
+	  Layout.tuple2 (layout,
+			 Vector.layout
+			 (fn {con, rep} =>
+			  Layout.record [("con", Con.layout con),
+					 ("rep", ConRep.layout rep)])))
 	 make
 
       fun genCase (r: t,
@@ -1775,8 +1826,9 @@ structure TyconRep =
 			    in
 			       if not (Con.equals (c, con))
 				  then Error.bug "genCase One"
-			       else Selects.goto (TupleRep.selects tupleRep,
-						  l, toRtype, test)
+			       else
+				  ([], Goto {args = Vector.new1 (test ()),
+					     dst = l})
 			    end
 		       | (0, SOME l) =>
 			    ([], Goto {dst = l, args = Vector.new0 ()})
@@ -1805,13 +1857,12 @@ structure TyconRep =
 				 let
 				    val test =
 				       Cast (test (), PointerRep.ty pointer)
-				    val (ss, t) =
-				       Selects.goto (PointerRep.selects pointer,
-						     l, toRtype, fn () => test)
 				 in
-				    SOME (Block.new
-					  {statements = Vector.fromList ss,
-					   transfer = t})
+				    SOME
+				    (Block.new
+				     {statements = Vector.new0 (),
+				      transfer = Goto {args = Vector.new1 test,
+						       dst = l}})
 				 end
 		     in
 			Small.genCase (small, {cases = cases,
@@ -1902,6 +1953,7 @@ structure Value:
       val new: {compute: unit -> 'a,
 		equals: 'a * 'a -> bool,
 		init: 'a} -> 'a t
+      val set: 'a t * 'a -> unit
    end =
    struct
       structure Dep =
@@ -1969,6 +2021,13 @@ structure Value:
 	 fn Constant a => a
 	  | Variable (_, r) => !r
 
+      fun set (v, a) =
+	 case v of
+	    Constant _ => Error.bug "Value.set"
+	  | Variable (Dep.T {affects, ...}, r) =>
+	       (r := a
+		; List.foreach (!affects, Dep.recompute))
+
       val constant = Constant
 
       fun new z = Variable (Dep.new z)
@@ -1983,35 +2042,66 @@ structure Value:
 
 fun compute (program as Ssa.Program.T {datatypes, ...}) =
    let
-      val {get = refRep: S.Type.t -> TupleRep.t Value.t,
-	   set = setRefRep, ...} =
-	 Property.getSetOnce (S.Type.plist,
-			      Property.initRaise ("refRep", S.Type.layout))
+      type tyconRepAndCons =
+	 (TyconRep.t * {con: Con.t, rep: ConRep.t} vector) Value.t
+      val {get = conInfo: Con.t -> {rep: ConRep.t ref,
+				    tyconRep: tyconRepAndCons},
+	   set = setConInfo, ...} =
+	 Property.getSetOnce (Con.plist, Property.initRaise ("info", Con.layout))
       val {get = tupleRep: S.Type.t -> TupleRep.t Value.t,
 	   set = setTupleRep, ...} =
 	 Property.getSetOnce (S.Type.plist,
 			      Property.initRaise ("tupleRep", S.Type.layout))
-      val {get = tyconRep: (Tycon.t
-			    -> (TyconRep.t
-				* {con: Con.t, rep: ConRep.t} vector) Value.t),
-	   set = setTyconRep, ...} =
+      val {get = tyconRep: Tycon.t -> tyconRepAndCons, set = setTyconRep, ...} =
 	 Property.getSetOnce (Tycon.plist,
 			      Property.initRaise ("tyconRep", Tycon.layout))
       (* Initialize the datatypes. *)
+      val typeRepRef = ref (fn _ => raise Fail "typeRepRef not set")
+      fun typeRep t = !typeRepRef t
       val datatypes =
 	 Vector.map
 	 (datatypes, fn S.Datatype.T {cons, tycon} =>
 	  let
-	     val computeRef = ref (fn () => raise Fail "can't compute")
+	     val cons =
+		Vector.map
+		(cons, fn {args, con} =>
+		 {args = args,
+		  con = con,
+		  pointerTycon = PointerTycon.new ()})
+	     fun compute () =
+		let
+		   val (tr, cons) =
+		      TyconRep.make
+		      (Vector.map
+		       (cons, fn {args, con, pointerTycon} =>
+			{args = Vector.map (args, fn {elt, isMutable} =>
+					    {isMutable = isMutable,
+					     rep = Value.get (typeRep elt),
+					     ty = elt}),
+			 con = con,
+			 pointerTycon = pointerTycon}))
+		   val () =
+		      Vector.foreach
+		      (cons, fn {con, rep} => #rep (conInfo con) := rep)
+		in
+		   (tr, cons)
+		end
+	     fun equals ((r, v), (r', v')) =
+		TyconRep.equals (r, r')
+		andalso Vector.equals (v, v', fn ({con = c, rep = r},
+						  {con = c', rep = r'}) =>
+				       Con.equals (c, c')
+				       andalso ConRep.equals (r, r'))
 	     val rep =
-		Value.new
-		{compute = fn () => ! computeRef (),
-		 equals = fn ((r, _), (r', _)) => TyconRep.equals (r, r'),
-		 init = (TyconRep.unit, Vector.new0 ())}
+		Value.new {compute = compute,
+			   equals = equals,
+			   init = (TyconRep.unit, Vector.new0 ())}
 	     val () = setTyconRep (tycon, rep)
+	     val () = Vector.foreach (cons, fn {con, ...} =>
+				      setConInfo (con, {rep = ref ConRep.unit,
+							tyconRep = rep}))
 	  in
-	     {computeRef = computeRef,
-	      cons = cons,
+	     {cons = cons,
 	      rep = rep,
 	      tycon = tycon}
 	  end)
@@ -2062,31 +2152,6 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		    constant (Rep.T {rep = Rep.Pointer {endsIn00 = true},
 				     ty = ty})
 		 end
-	      fun tuple (ts: S.Type.t vector,
-			 pt: PointerTycon.t,
-			 {forceBox: bool}): TupleRep.t Value.t =
-		 let
-		    val rs = Vector.map (ts, typeRep)
-		    fun compute () =
-		       TupleRep.make (Vector.map2 (rs, ts, fn (r, t) =>
-						   (Value.get r, t)),
-				      pt, {forceBox = forceBox})
-		    val tr =
-		       Value.new {compute = compute,
-				  equals = TupleRep.equals,
-				  init = TupleRep.unit}
-		    val () = Vector.foreach (rs, fn r => Value.affect (r, tr))
-		    val () =
-		       List.push
-		       (delayedObjectTypes, fn () =>
-			case Value.get tr of
-			   TupleRep.Indirect pr =>
-			      SOME (pt, (ObjectType.Normal
-					 (PointerRep.componentsTy pr)))
-			 | _ => NONE)
-		 in
-		    tr
-		 end
 	      datatype z = datatype S.Type.dest
 	   in
 	      case S.Type.dest t of
@@ -2105,32 +2170,57 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	       | IntInf =>
 		    constant (Rep.T {rep = Rep.Pointer {endsIn00 = false},
 				     ty = Type.intInf})
+	       | Object {args, con} =>
+		    (case con of
+			NONE =>
+			   let
+			      val pt = PointerTycon.new ()
+			      val rs = Vector.map (args, typeRep o #elt)
+			      fun compute () =
+				 TupleRep.make
+				 (pt,
+				  Vector.map2
+				  (rs, args, fn (r, {elt, isMutable}) =>
+				   {isMutable = isMutable,
+				    rep = Value.get r,
+				    ty = elt}))
+			      val tr =
+				 Value.new {compute = compute,
+					    equals = TupleRep.equals,
+					    init = TupleRep.unit}
+			      val () = Vector.foreach (rs, fn r => Value.affect (r, tr))
+			      val () =
+				 List.push
+				 (delayedObjectTypes, fn () =>
+				  case Value.get tr of
+				     TupleRep.Indirect pr =>
+					SOME (pt, (ObjectType.Normal
+						   (PointerRep.componentsTy pr)))
+				   | _ => NONE)
+			      val () = setTupleRep (t, tr)
+			      fun compute () = TupleRep.rep (Value.get tr)
+			      val r = Value.new {compute = compute,
+						 equals = Rep.equals,
+						 init = Rep.unit}
+			      val () = Value.affect (tr, r)
+			   in
+			      r
+			   end
+		      | SOME con =>
+			   let
+			      val {rep, tyconRep} = conInfo con
+			      fun compute () = ConRep.rep (!rep)
+			      val r = Value.new {compute = compute,
+						 equals = Rep.equals,
+						 init = Rep.unit}
+			      val () = Value.affect (tyconRep, r)
+			   in
+			      r
+			   end)
 	       | Real s => nonPointer (Type.real s)
-	       | Ref t =>
-		    let
-		       val pt = PointerTycon.new ()
-		       val tr = tuple (Vector.new1 t, pt, {forceBox = true})
-		       val () = setRefRep (t, tr)
-		    in
-		       constant (Rep.T {rep = Rep.Pointer {endsIn00 = true},
-					ty = Type.pointer pt})
-		    end
 	       | Thread =>
 		    constant (Rep.T {rep = Rep.Pointer {endsIn00 = true},
 				     ty = Type.thread})
-	       | Tuple ts =>
-		    let
-		       val pt = PointerTycon.new ()
-		       val tr = tuple (ts, pt, {forceBox = false})
-		       val () = setTupleRep (t, tr)
-		       fun compute () = TupleRep.rep (Value.get tr)
-		       val r = Value.new {compute = compute,
-					  equals = Rep.equals,
-					  init = Rep.unit}
-		       val () = Value.affect (tr, r)
-		    in
-		       r
-		    end
 	       | Vector t => array {mutable = false, ty = t}
 	       | Weak t =>
 		    let
@@ -2162,59 +2252,31 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		    end
 	     | Word s => nonPointer (Type.word (WordSize.bits s))
 	   end))
+      val () = typeRepRef := typeRep
+      (* Establish dependence between constructor argument type representations
+       * and tycon representations.
+       *)
+      val () =
+	 Vector.foreach
+	 (datatypes, fn {cons, rep, ...} =>
+	  Vector.foreach
+	  (cons, fn {args, con, ...} =>
+	   Vector.foreach (args, fn {elt, ...} =>
+			   Value.affect (typeRep elt, rep))))
       val () = S.Program.foreachVar (program, fn (_, t) => ignore (typeRep t))
-      val datatypes =
-	 Vector.map
-	 (datatypes, fn {computeRef, cons, rep, tycon} =>
-	  let
-	     val cons =
-		Vector.map
-		(cons, fn {args, con} =>
-		 let
-		    val pt = PointerTycon.new ()
-		 in
-		    {args = Vector.map (args, fn t =>
-					let
-					   val r = typeRep t
-					   val () = Value.affect (r, rep)
-					in
-					   (t, r)
-					end),
-		     con = con,
-		     pointerTycon = pt}
-		 end)
-	     fun compute () =
-		TyconRep.make
-		(Vector.map (cons, fn {args, con, pointerTycon} =>
-			     {args = Vector.map (args, fn (t, r) =>
-						 (Value.get r, t)), 
-			      con = con,
-			      pointerTycon = pointerTycon}))
-	     val () = computeRef := compute
-	  in
-	     {cons = cons,
-	      rep = rep,
-	      tycon = tycon}
-	  end)
       val () = Value.fixedPoint ()
-      val {get = conRep, set = setConRep, ...} =
-	 Property.getSetOnce (Con.plist, Property.initRaise ("rep", Con.layout))
+      val conRep = ! o #rep o conInfo
+      val tyconRep = #1 o Value.get o tyconRep
       val objectTypes =
 	 Vector.fold
 	 (datatypes, [], fn ({cons, rep, ...}, ac) =>
-	  let
-	     val (_, conReps) = Value.get rep
-	     val () =
-		Vector.foreach (conReps, fn {con, rep} => setConRep (con, rep))
-	  in
-	     Vector.fold
-	     (cons, ac, fn ({con, pointerTycon, ...}, ac) =>
-	      case conRep con of
-		 ConRep.Box pr =>
-		    (pointerTycon,
-		     ObjectType.Normal (PointerRep.componentsTy pr)) :: ac
-	       | _ => ac)
-	  end)
+	  Vector.fold
+	  (cons, ac, fn ({con, pointerTycon, ...}, ac) =>
+	   case conRep con of
+	      ConRep.Tuple (TupleRep.Indirect pr) =>
+		 (pointerTycon,
+		  ObjectType.Normal (PointerRep.componentsTy pr)) :: ac
+	    | _ => ac))
       val objectTypes = ref objectTypes
       val () =
 	 List.foreach (!delayedObjectTypes, fn f =>
@@ -2230,90 +2292,74 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		  open Layout
 	       in
 		  display (seq [Tycon.layout tycon,
-				str " ",
-				TyconRep.layout
-				(#1 (Value.get (tyconRep tycon)))])
+				str " ", TyconRep.layout (tyconRep tycon)])
 		  ; display (indent
-			     (Vector.layout (fn {con, ...} =>
-					     record
-					     [("con", Con.layout con),
-					      ("rep",
-					       ConRep.layout (conRep con))])
+			     (Vector.layout
+			      (fn {con, ...} =>
+			       record [("con", Con.layout con),
+				       ("rep", ConRep.layout (conRep con))])
 			      cons,
 			      2))
 	       end))))
       fun toRtype (t: S.Type.t): Type.t option =
 	 let
-	    fun normal () =
-	       let
-		  val ty = Rep.ty (Value.get (typeRep t))
-	       in
-		  if Type.isUnit ty
-		     then NONE
-		  else SOME (Type.padToPrim ty)
-	       end
-	    datatype z = datatype S.Type.dest
+	    val ty = Rep.ty (Value.get (typeRep t))
 	 in
-	    case S.Type.dest t of
-	       Datatype c =>
-		  if Tycon.equals (c, Tycon.bool)
-		     then SOME Type.bool
-		  else normal ()
-	     | _ => normal ()
+	    if Type.isUnit ty
+	       then NONE
+	    else SOME (Type.padToPrim ty)
 	 end
       fun makeSrc (v, oper) {index} = oper (Vector.sub (v, index))
-      fun conApp {args, con, dst, oper, ty} =
-	 ConRep.conApp (conRep con,
-			{src = makeSrc (args, oper),
-			 dst = fn () => (dst (), ty ())})
-      val conApp =
-	 Trace.trace ("conApp", Con.layout o #con, List.layout Statement.layout)
-	 conApp
       fun genCase {cases, default, test, tycon} =
 	 TyconRep.genCase
-	 (#1 (Value.get (tyconRep tycon)),
+	 (tyconRep tycon,
 	  {cases = cases,
 	   conRep = conRep,
 	   default = default,
 	   test = test,
 	   toRtype = toRtype})
-      fun reff {arg: unit -> Rssa.Operand.t, dst: Rssa.Var.t, ty} =
+      fun object {args, con, dst, objectTy, oper} =
 	 let
-	    val tr = Value.get (refRep ty)
+	    val src = makeSrc (args, oper)
 	 in
-	    TupleRep.tuple (tr, {dst = (dst, TupleRep.ty tr),
-				 src = fn _ => arg ()})
+	    case con of
+	       NONE => TupleRep.tuple (Value.get (tupleRep objectTy),
+				       {dst = dst, src = src})
+	     | SOME con => ConRep.conApp (conRep con, {dst = dst, src = src})
 	 end
-      fun select {dst, offset, tuple, tupleTy} =
-	 let
-	    val dst =
-	       fn () =>
-	       case S.Type.dest tupleTy of
-		  S.Type.Tuple ts =>
-		     (dst (), valOf (toRtype (Vector.sub (ts, offset))))
-		| _ => Error.bug "select"
-	 in
-	    TupleRep.select (Value.get (tupleRep tupleTy),
-			     {dst = dst,
-			      offset = offset,
-			      tuple = tuple})
-	 end
-      fun tuple {components, dst = (dstVar, dstTy), oper} =
-	 case toRtype dstTy of
-	    NONE => []
-	  | SOME t => 
-	       TupleRep.tuple (Value.get (tupleRep dstTy),
-			       {dst = (dstVar, t),
-				src = makeSrc (components, oper)})
+      fun getSelects (con, objectTy) =
+	 case con of
+	    NONE => TupleRep.selects (Value.get (tupleRep objectTy))
+	  | SOME con =>
+	       case conRep con of
+		  ConRep.ShiftAndTag {selects, ...} => selects
+		| ConRep.Tuple tr => TupleRep.selects tr
+		| _ => Error.bug "can't get con selects"
+      fun select {dst, object, objectTy, offset} =
+	 case S.Type.dest objectTy of
+	    S.Type.Object {args, con} =>
+	       Selects.select
+	       (getSelects (con, objectTy),
+		{dst = (dst, valOf (toRtype (#elt (Vector.sub (args, offset))))),
+		 object = object,
+		 offset = offset})
+	  | _ => Error.bug "select of non object"
+      fun update {object, objectTy, offset, value} =
+	 case S.Type.dest objectTy of
+	    S.Type.Object {args, con} =>
+	       Selects.update (getSelects (con, objectTy),
+			       {object = object,
+				offset = offset,
+				value = value})
+	  | _ => Error.bug "update of non object"
    in
-      {conApp = conApp,
-       diagnostic = diagnostic,
+      {diagnostic = diagnostic,
        genCase = genCase,
+       object = object,
        objectTypes = objectTypes,
-       reff = reff,
        select = select,
        toRtype = toRtype,
-       tuple = tuple}
+       update = update}
    end
 
 end

@@ -30,6 +30,7 @@ in
    structure Operand = Operand
    structure Register = Register
    structure Runtime = Runtime
+   structure StackOffset = StackOffset
 end
 
 structure Live = Live (Rssa)
@@ -42,7 +43,7 @@ structure Allocation:
 
             val get: t * Type.t -> t * {offset: Bytes.t}
             val layout: t -> Layout.t
-            val new: {offset: Bytes.t, ty: Type.t} list -> t
+            val new: StackOffset.t list -> t
             val size: t -> Bytes.t
          end
 
@@ -51,7 +52,7 @@ structure Allocation:
       val getRegister: t * Type.t -> Register.t
       val getStack: t * Type.t -> {offset: Bytes.t}
       val layout: t -> Layout.t
-      val new: {offset: Bytes.t, ty: Type.t} list * Register.t list -> t
+      val new: StackOffset.t list * Register.t list -> t
       val stack: t -> Stack.t
       val stackSize: t -> Bytes.t
    end =
@@ -80,7 +81,7 @@ structure Allocation:
 	  fun new (alloc): t =
 	     T (Array.toList
 		(QuickSort.sortArray
-		 (Array.fromListMap (alloc, fn {offset, ty} =>
+		 (Array.fromListMap (alloc, fn StackOffset.T {offset, ty} =>
 				     {offset = offset,
 				      size = Type.bytes ty}),
 		  fn (r, r') => Bytes.<= (#offset r, #offset r'))))
@@ -372,7 +373,8 @@ fun allocate {argOperands,
 				let
 				   val {offset} = Allocation.getStack (a, ty)
 				in
-				   Operand.StackOffset {offset = offset, ty = ty}
+				   Operand.StackOffset
+				   (StackOffset.T {offset = offset, ty = ty})
 				end
 			   | Register =>
 				Operand.Register
@@ -397,9 +399,9 @@ fun allocate {argOperands,
 	  (args, argOperands, [],
 	   fn ((x, t), z, ac) =>
 	   case z of
-	      Operand.StackOffset {offset, ...} =>
+	      Operand.StackOffset (StackOffset.T {offset, ...}) =>
 		 (valOf (#operand (varInfo x)) := SOME z
-		  ; {offset = offset, ty = t} :: ac)
+		  ; StackOffset.T {offset = offset, ty = t} :: ac)
 	    | _ => Error.bug "strange argOperand"))
       (* Allocate slots for the link and handler, if necessary. *)
       val handlerLinkOffset =
@@ -440,13 +442,13 @@ fun allocate {argOperands,
 			     case handlerLive of
 				NONE => ops
 			      | SOME h => 
-				   Operand.StackOffset {offset = handler,
+				   Operand.stackOffset {offset = handler,
 							ty = Type.label h}
 				   :: ops
 			  val ops =
 			     if linkLive
 				then
-				   Operand.StackOffset {offset = link,
+				   Operand.stackOffset {offset = link,
 							ty = Type.exnStack}
 				   :: ops
 			     else ops
@@ -458,15 +460,15 @@ fun allocate {argOperands,
 	        List.fold
 		(liveNoFormals, ([],[]), fn (oper, (stack, registers)) =>
 		 case oper of
-		    Operand.StackOffset a => (a::stack, registers)
+		    Operand.StackOffset s => (s::stack, registers)
 		  | Operand.Register r => (stack, r::registers)
 		  | _ => (stack, registers))
 	     val stackInit =
 		case handlerLinkOffset of
 		   NONE => stackInit
 		 | SOME {handler, link} =>
-		      {offset = handler, ty = Type.defaultWord} (* should be label *)
-		      :: {offset = link, ty = Type.exnStack}
+		      StackOffset.T {offset = handler, ty = Type.defaultWord} (* should be label *)
+		      :: StackOffset.T {offset = link, ty = Type.exnStack}
 		      :: stackInit
 	     val a = Allocation.new (stackInit, registersInit)
 	     val size =

@@ -7,7 +7,7 @@
 
 signature REF_FLATTEN_STRUCTS = 
    sig
-      include SHRINK2
+      include TYPE_CHECK2
    end
 
 signature REF_FLATTEN = 

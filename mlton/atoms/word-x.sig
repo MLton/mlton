@@ -19,8 +19,8 @@ signature WORD_X =
       (* Words of all WordSize.t sizes. *)
       type t
 
-      val << : t * t -> t
       val add: t * t -> t
+      val allOnes: WordSize.t -> t
       val andb: t * t -> t
       val bitIsSet: t * Int.t -> bool
       val equals: t * t -> bool
@@ -37,6 +37,7 @@ signature WORD_X =
       val isZero: t -> bool
       val layout: t -> Layout.t
       val le: t * t * {signed: bool} -> bool
+      val lshift: t * t -> t
       val lt: t * t * {signed: bool} -> bool
       val max: WordSize.t * {signed: bool} -> t
       val min: WordSize.t * {signed: bool} -> t

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -32,15 +32,14 @@ fun checkScopes (program as
 	    fun bind (x, v) =
 	       case get x of
 		  Undefined => set (x, InScope v)
-		| _ => Error.bug ("duplicate definition of "
-				  ^ (Layout.toString (layout x)))
+		| _ => Error.bug (concat ["duplicate definition of ",
+					  Layout.toString (layout x)])
 	    fun reference x =
 	       case get x of
 		  InScope v => v
-		| _ => Error.bug (concat
-				  ["reference to ",
-				   Layout.toString (layout x),
-				   " not in scope"])
+		| _ => Error.bug (concat ["reference to ",
+					  Layout.toString (layout x),
+					  " not in scope"])
 
 	    fun unbind x = set (x, Defined)
 	 in (bind, ignore o reference, reference, unbind)
@@ -49,7 +48,6 @@ fun checkScopes (program as
 	 let val (bind, reference, _, unbind) = make' (layout, plist)
 	 in (fn x => bind (x, ()), reference, unbind)
 	 end
-
       val (bindTycon, _, getTycon', _) = make' (Tycon.layout, Tycon.plist)
       val (bindCon, getCon, getCon', _) = make' (Con.layout, Con.plist)
       val (bindVar, getVar, getVar', unbindVar) = make' (Var.layout, Var.plist)
@@ -58,17 +56,12 @@ fun checkScopes (program as
       val (bindLabel, getLabel, unbindLabel) = make (Label.layout, Label.plist)
       fun loopStatement (Statement.T {var, ty, exp, ...}) =
 	 let
-	    val _ =
+	    val () = Exp.foreachVar (exp, getVar)
+	    val () =
 	       case exp of
-		  ConApp {con, args, ...} => (getCon con
-					      ; Vector.foreach (args, getVar))
-		| Const _ => ()
-		| PrimApp {args, ...} => Vector.foreach (args, getVar)
-		| Profile _ => ()
-		| Select {tuple, ...} => getVar tuple
-		| Tuple xs => Vector.foreach (xs, getVar)
-		| Var x => getVar x
-	    val _ = Option.app (var, fn x => bindVar (x, ty))
+		  Object {con, ...} => Option.app (con, getCon)
+		| _ => ()
+	    val () = Option.app (var, fn x => bindVar (x, ty))
 	 in
 	    ()
 	 end
@@ -327,15 +320,38 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
 	  ; Layout.output (lay, out)
 	  ; print "\n"
 	  ; raise TypeError)
+      val {get = conInfo: Con.t -> {result: Type.t,
+				    ty: Type.t,
+				    tycon: Tycon.t},
+	   set = setConInfo, ...} =
+	 Property.getSetOnce
+	 (Con.plist, Property.initRaise ("TypeCheck.info", Con.layout))
+      val conTycon = #tycon o conInfo
+      val _ =
+	 Vector.foreach
+	 (datatypes, fn Datatype.T {tycon, cons} =>
+	  let
+	     val result = Type.datatypee tycon
+	  in
+	     Vector.foreach (cons, fn {con, args} =>
+			     setConInfo (con, {result = result,
+					       ty = Type.conApp (con, args),
+					       tycon = tycon}))
+	  end)
+      fun isSubtype (t1: Type.t, t2: Type.t): bool =
+	 Type.equals (t1, t2)
+	 orelse (case (Type.dest t1, Type.dest t2) of
+		    (Type.Object {con, ...}, Type.Datatype tyc) =>
+		       (case con of
+			   NONE => false
+			 | SOME c => Tycon.equals (conTycon c, tyc))
+		  | _ => false)
       fun coerce {from: Type.t, to: Type.t}: unit =
-	 if Type.equals (from, to)
+	 if isSubtype (from, to)
 	    then ()
-	 else error ("Type.equals",
+	 else error ("TypeCheck.coerce",
 		     Layout.record [("from", Type.layout from),
 				    ("to", Type.layout to)])
-      fun coerces (from, to) =
-	 Vector.foreach2 (from, to, fn (from, to) =>
-			 coerce {from = from, to = to})
       val coerce =
 	 Trace.trace ("TypeCheck.coerce",
 		      fn {from, to} => let open Layout
@@ -343,43 +359,57 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
 						  ("to", Type.layout to)]
 				       end,
 				    Unit.layout) coerce
-      fun select {tuple: Type.t, offset: int, resultType = _}: Type.t =
-	 case Type.deTupleOpt tuple of
-	    NONE => error ("select of non tuple", Layout.empty)
-	  | SOME ts => Vector.sub (ts, offset)
-      val {get = conInfo: Con.t -> {args: Type.t vector,
-				    result: Type.t},
-	   set = setConInfo, ...} =
-	 Property.getSetOnce
-	 (Con.plist, Property.initRaise ("TypeCheck.info", Con.layout))
-      val _ =
-	 Vector.foreach
-	 (datatypes, fn Datatype.T {tycon, cons} =>
-	  let val result = Type.con (tycon, Vector.new0 ())
-	  in Vector.foreach
-	     (cons, fn {con, args} =>
-	      setConInfo (con, {args = args,
-				result = result}))
-	  end)
-      fun conApp {con, args} =
+      fun coerces (from, to) =
+	 Vector.foreach2 (from, to, fn (from, to) =>
+			  coerce {from = from, to = to})
+      fun object {args, con, resultType} =
 	 let
-	    val {args = args', result, ...} = conInfo con
-	    val _ = coerces (args', args)
+	    fun err () = error ("bad object", Layout.empty)
 	 in
-	    result
+	    case Type.dest resultType of
+	       Type.Object {args = args', con = con'} =>
+		  (if Option.equals (con, con', Con.equals)
+		      andalso (Vector.foreach2
+			       (args, args', fn (t, {elt = t', ...}) =>
+				coerce {from = t, to = t'})
+			       ; true)
+		      then resultType
+		   else err ())
+	     | _ => err ()
 	 end
-      fun filter (test, con, args) =
+      fun select {object: Type.t, offset: int, resultType = _}: Type.t =
+	 case Type.dest object of
+	    Type.Object {args, ...} => #elt (Vector.sub (args, offset))
+	  | _ => error ("select of non object", Layout.empty)
+      fun update {object, offset, value} =
+	 case Type.dest object of
+	    Type.Object {args, ...} =>
+	       let
+		  val {elt, isMutable} = Vector.sub (args, offset)
+		  val () = coerce {from = value, to = elt}
+		  val () =
+		     if isMutable
+			then ()
+		     else error ("update of non-mutable field", Layout.empty)
+	       in
+		  ()
+	       end
+	  | _ => error ("update of non object", Layout.empty)
+      fun filter {con, test, variant} =
 	 let
-	    val {result, args = args'} = conInfo con
-	    val _ = coerce {from = test, to = result}
-	    val _ = coerces (args', args)
-	 in ()
+	    val {result, ty, ...} = conInfo con
+	    val () = coerce {from = test, to = result}
+	    val () = Option.app (variant, fn to => coerce {from = ty, to = to})
+	 in
+	    ()
 	 end
+      fun filterWord (from, s) = coerce {from = from, to = Type.word s}
       fun primApp {args, prim, resultType, resultVar = _, targs} =
 	 let
 	    datatype z = datatype Prim.Name.t
 	    val () =
 	       if Type.checkPrimApp {args = args,
+				     isSubtype = isSubtype,
 				     prim = prim,
 				     result = resultType,
 				     targs = targs}
@@ -395,21 +425,18 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
 	    resultType
 	 end
       val _ =
-	 analyze {
-		  coerce = coerce,
-		  conApp = conApp,
+	 analyze {coerce = coerce,
 		  const = Type.ofConst,
 		  filter = filter,
-		  filterWord = fn (from, s) => coerce {from = from,
-						       to = Type.word s},
+		  filterWord = filterWord,
 		  fromType = fn x => x,
 		  layout = Type.layout,
+		  object = object,
 		  primApp = primApp,
 		  program = program,
 		  select = select,
-		  tuple = Type.tuple,
-		  useFromTypeOnBinds = true
-		  }
+		  update = update,
+		  useFromTypeOnBinds = true}
 	 handle e => error (concat ["analyze raised exception ",
 				    Layout.toString (Exn.layout e)],
 			    Layout.empty)

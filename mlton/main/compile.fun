@@ -618,11 +618,11 @@ fun preCodegen {input}: Machine.Program.t =
 	 (*
 	  * For now, machine type check is too slow to run.
 	  *)
-	 if true
-	    then ()
-	 else
-	    Control.trace (Control.Pass, "machine type check")
-	    Machine.Program.typeCheck machine
+	 if !Control.typeCheck
+	    then
+	       Control.trace (Control.Pass, "machine type check")
+	       Machine.Program.typeCheck machine
+	 else ()
    in
       machine
    end

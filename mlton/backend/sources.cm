@@ -35,7 +35,7 @@ err.sml
 rssa.sig
 rssa.fun
 representation.sig
-representation.fun
+(* representation.fun *)
 packed-representation.fun
 ssa-to-rssa.sig
 ssa-to-rssa.fun

@@ -1222,7 +1222,7 @@ fun ('a, 'b) apply (p: 'a t,
 	   | (Word_ge s, [Word w1, Word w2]) => wordCmp (WordX.ge, s, w1, w2)
 	   | (Word_gt s, [Word w1, Word w2]) => wordCmp (WordX.gt, s, w1, w2)
 	   | (Word_le s, [Word w1, Word w2]) => wordCmp (WordX.le, s, w1, w2)
-	   | (Word_lshift _, [Word w1, Word w2]) => word (WordX.<< (w1, w2))
+	   | (Word_lshift _, [Word w1, Word w2]) => word (WordX.lshift (w1, w2))
 	   | (Word_lt s, [Word w1, Word w2]) => wordCmp (WordX.lt, s, w1, w2)
 	   | (Word_mul s, [Word w1, Word w2]) => wordS (WordX.mul, s, w1, w2)
 	   | (Word_mulCheck s, [Word w1, Word w2]) => wcheck (op *, s, w1, w2)

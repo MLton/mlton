@@ -54,42 +54,54 @@ structure Type =
 
       val toString = Layout.toString o layout
 
-      fun compare (t, t') =
-	 case (dest t, dest t') of
-	    (Address t, Address t') => compare (t, t')
-	  | (Address _, _) => LESS
-	  | (Constant w, Constant w') =>
-	       Relation.lexico
-	       (WordSize.compare (WordX.size w, WordX.size w'), fn () =>
-		IntInf.compare (WordX.toIntInf w, WordX.toIntInf w'))
-	  | (Constant _, _) => LESS
-	  | (ExnStack, ExnStack) => EQUAL
-	  | (ExnStack, _) => LESS
-	  | (GCState, GCState) => EQUAL
-	  | (GCState, _) => LESS
-	  | (Junk b, Junk b') => Bits.compare (b, b')
-	  | (Junk _, _) => LESS
-	  | (Label l, Label l') =>
-	       String.compare (Label.originalName l, Label.originalName l')
-	  | (Label _, _) => LESS
-	  | (Pointer p, Pointer p') => PointerTycon.compare (p, p')
-	  | (Pointer _, _) => LESS
-	  | (Real s, Real s') => RealSize.compare (s, s')
-	  | (Real _, _) => LESS
-	  | (Seq ts, Seq ts') => compares (ts, ts')
-	  | (Seq _, _) => LESS
-	  | (Sum ts, Sum ts') => compares (ts, ts')
-	  | (Sum _, _) => LESS
-	  | (Word s, Word s') => Bits.compare (s, s')
-	  | _ => GREATER
-      and compares (ts: t vector, ts': t vector): Relation.t =
-	 Vector.compare (ts, ts', compare)
+      val toInt: t -> int =
+	 fn t =>
+	 case dest t of
+	    Address _ => 0
+	  | Constant _ => 1
+	  | ExnStack => 2
+	  | GCState => 3
+	  | Junk _ => 4
+	  | Label _ => 5
+	  | Pointer _ => 6
+	  | Real _ => 7
+	  | Seq _ => 8
+	  | Sum _ => 9
+	  | Word _ => 10
+
+      val rec compare: t * t -> Relation.t =
+	 fn (t, t') =>
+	 Relation.lexico
+	 (Int.compare (toInt t, toInt t'), fn () =>
+	  case (dest t, dest t') of
+	     (Address t, Address t') => compare (t, t')
+	   | (Constant w, Constant w') =>
+		Relation.lexico
+		(WordSize.compare (WordX.size w, WordX.size w'), fn () =>
+		 IntInf.compare (WordX.toIntInf w, WordX.toIntInf w'))
+	   | (ExnStack, ExnStack) => EQUAL
+	   | (GCState, GCState) => EQUAL
+	   | (Junk b, Junk b') => Bits.compare (b, b')
+	   | (Label l, Label l') =>
+		String.compare (Label.originalName l, Label.originalName l')
+	   | (Pointer p, Pointer p') => PointerTycon.compare (p, p')
+	   | (Real s, Real s') => RealSize.compare (s, s')
+	   | (Seq ts, Seq ts') => compares (ts, ts')
+	   | (Sum ts, Sum ts') => compares (ts, ts')
+	   | (Word s, Word s') => Bits.compare (s, s')
+	   | _ => Error.bug "RepType.compare")
+      and compares: t vector * t vector -> Relation.t =
+	 fn (ts, ts') => Vector.compare (ts, ts', compare)
 
       val {<= = lessEq, equals, ...} = Relation.compare compare
 
       val equals =
 	 Trace.trace2 ("RepType.equals", layout, layout, Bool.layout)
 	 equals
+
+      val lessEq =
+	 Trace.trace2 ("RepType.lessEq", layout, layout, Bool.layout)
+	 lessEq
 
       local
 	 val word = Bits.inWord

@@ -15,62 +15,148 @@ type word = Word.t
 
 structure Type =
    struct
-      local structure T = HashType (S)
-      in open  T
-      end
-
-      fun tyconArgs t =
-	 case Dest.dest t of
-	    Dest.Con x => x
-	  | _ => Error.bug "FirstOrderType.tyconArgs"
-	       
-      datatype dest =
-	  Array of t
+      datatype t =
+	 T of {hash: Word.t,
+	       plist: PropertyList.t,
+	       tree: tree}
+      and tree =
+	 Array of t
 	| Datatype of Tycon.t
 	| IntInf
+	| Object of {args: {elt: t, isMutable: bool} vector,
+		     con: Con.t option}
 	| Real of RealSize.t
-	| Ref of t
 	| Thread
-	| Tuple of t vector
 	| Vector of t
 	| Weak of t
 	| Word of WordSize.t
 
       local
-	 val {get, set, ...} =
-	    Property.getSetOnce (Tycon.plist, Property.initConst NONE)
-
-	 fun nullary c v =
-	    if Vector.isEmpty v
-	       then c
-	    else Error.bug "bogus application of nullary tycon"
-
-	 fun unary make v =
-	    if 1 = Vector.length v
-	       then make (Vector.sub (v, 0))
-	    else Error.bug "bogus application of unary tycon"
-
-	 val tycons =
-	    [(Tycon.array, unary Array)]
-	    @ [(Tycon.intInf, nullary IntInf)]
-	    @ Vector.toListMap (Tycon.reals, fn (t, s) => (t, nullary (Real s)))
-	    @ [(Tycon.reff, unary Ref),
-	       (Tycon.thread, nullary Thread),
-	       (Tycon.tuple, Tuple),
-	       (Tycon.vector, unary Vector),
-	       (Tycon.weak, unary Weak)]
-	    @ Vector.toListMap (Tycon.words, fn (t, s) => (t, nullary (Word s)))
+	 fun make f (T r) = f r
       in
-	 val _ = List.foreach (tycons, fn (tycon, f) => set (tycon, SOME f))
-
-	 fun dest t =
-	    case Dest.dest t of
-	       Dest.Con (tycon, ts) =>
-		  (case get tycon of
-		      NONE => Datatype tycon
-		    | SOME f => f ts)
-	     | _ => Error.bug "dest"
+	 val hash = make #hash
+	 val plist = make #plist
+	 val tree = make #tree
       end
+
+      datatype dest = datatype tree
+
+      val dest = tree
+
+      fun equals (t, t') = PropertyList.equals (plist t, plist t')
+
+      local
+	 val same: tree * tree -> bool =
+	    fn (Array t1, Array t2) => equals (t1, t2)
+	     | (Datatype t1, Datatype t2) => Tycon.equals (t1, t2)
+	     | (IntInf, IntInf) => true
+	     | (Object {args = a1, con = c1}, Object {args = a2, con = c2}) =>
+		  Option.equals (c1, c2, Con.equals)
+		  andalso
+		  Vector.equals (a1, a2, fn ({elt = e1, isMutable = m1},
+					     {elt = e2, isMutable = m2}) =>
+				 m1 = m2 andalso equals (e1, e2))
+	     | (Real s1, Real s2) => RealSize.equals (s1, s2)
+	     | (Thread, Thread) => true
+	     | (Vector t1, Vector t2) => equals (t1, t2)
+	     | (Weak t1, Weak t2) => equals (t1, t2)
+	     | (Word s1, Word s2) => WordSize.equals (s1, s2)
+	     | _ => false
+	 val table: t HashSet.t = HashSet.new {hash = hash}
+      in
+	 val lookup: word * tree -> t =
+	    fn (hash, tr) =>
+	    HashSet.lookupOrInsert (table, hash,
+				    fn t => same (tr, tree t),
+				    fn () => T {hash = hash,
+						plist = PropertyList.new (),
+						tree = tr})
+      end
+
+      val newHash = Random.word
+
+      local
+	 fun make f : t -> t =
+	    let
+	       val w = newHash ()
+	    in
+	       fn t => lookup (Word.xorb (w, hash t), f t)
+	    end
+      in
+	 val array = make Array
+	 val vector = make Vector
+	 val weak = make Weak
+      end
+
+      val datatypee: Tycon.t -> t =
+	 fn t => lookup (Tycon.hash t, Datatype t)
+
+      val bool = datatypee Tycon.bool
+
+      local
+	 fun make (tycon, tree) = lookup (Tycon.hash tycon, tree)
+      in
+	 val intInf = make (Tycon.intInf, IntInf)
+	 val thread = make (Tycon.thread, Thread)
+      end
+
+      val real: RealSize.t -> t =
+	 fn s => lookup (Tycon.hash (Tycon.real s), Real s)
+	 
+      val word: WordSize.t -> t =
+	 fn s => lookup (Tycon.hash (Tycon.word s), Word s)
+
+      val defaultWord = word WordSize.default
+
+      val word8 = word WordSize.byte
+
+      val word8Vector = vector word8
+
+      val string = word8Vector
+
+      fun ofConst c =
+	 let
+	    datatype z = datatype Const.t
+	 in
+	    case c of
+	       IntInf _ => intInf
+	     | Real r => real (RealX.size r)
+	     | Word w => word (WordX.size w)
+	     | Word8Vector _ => word8Vector
+	 end
+
+      local
+	 val generator: Word.t = 0wx5555
+	 val tuple = newHash ()
+      in
+	 fun object {args, con}: t =
+	    let
+	       val base =
+		  case con of
+		     NONE => tuple
+		   | SOME c => Con.hash c
+	       val hash =
+		  Vector.fold (args, base, fn ({elt, ...}, w) =>
+			       Word.xorb (w * generator, hash elt))
+	    in
+	       lookup (hash, Object {args = args, con = con})
+	    end
+      end
+   
+      fun conApp (con, args) = object {args = args, con = SOME con}
+	 
+      fun tuple ts = object {args = ts, con = NONE}
+
+      fun reff t = object {args = Vector.new1 {elt = t, isMutable = true},
+			   con = NONE}
+	 
+      val unit = tuple (Vector.new0 ())
+
+      val isUnit: t -> bool =
+	 fn t =>
+	 case dest t of
+	    Object {args, con} => Vector.isEmpty args andalso Option.isNone con
+	  | _ => false
 
       local
 	 open Layout
@@ -84,18 +170,198 @@ structure Type =
 		 Array t => seq [layout t, str " array"]
 	       | Datatype t => Tycon.layout t
 	       | IntInf => str "IntInf.int"
-	       | Real s => str (concat ["real", RealSize.toString s])
-	       | Ref t => seq [layout t, str " ref"]
-	       | Thread => str "thread"
-	       | Tuple ts =>
-		    if Vector.isEmpty ts
+	       | Object {args, con} =>
+		    if isUnit t
 		       then str "unit"
-		    else paren (seq (separate (Vector.toListMap (ts, layout),
-					       " * ")))
+		    else
+		       let
+			  val args =
+			     paren
+			     (seq (separate (Vector.toListMap
+					     (args, fn {elt, isMutable} =>
+					      if isMutable
+						 then seq [layout elt,
+							   str " ref"]
+					      else layout elt),
+					     " * ")))
+		       in
+			  case con of
+			     NONE => args
+			   | SOME c => seq [Con.layout c, str " ", args]
+		       end
+	       | Real s => str (concat ["real", RealSize.toString s])
+	       | Thread => str "thread"
 	       | Vector t => seq [layout t, str " vector"]
 	       | Weak t => seq [layout t, str " weak"]
 	       | Word s => str (concat ["word", WordSize.toString s])))
       end
+
+      fun checkPrimApp {args, isSubtype, prim, result, targs}: bool =
+	 let
+	    datatype z = datatype Prim.Name.t
+	    fun done (args', result') =
+	       Vector.equals (args, Vector.fromList args', isSubtype)
+	       andalso isSubtype (result, result')
+	    fun targ i = Vector.sub (targs, i)
+	    fun oneTarg f =
+	       1 = Vector.length targs
+	       andalso done (f (targ 0))
+	    local
+	       fun make f s = let val t = f s in done ([t], t) end
+	    in
+	       val realUnary = make real
+	       val wordUnary = make word
+	    end
+	    local
+	       fun make f s = let val t = f s in done ([t, t], t) end
+	    in
+	       val realBinary = make real
+	       val wordBinary = make word
+	    end
+	    local
+	       fun make f s = let val t = f s in done ([t, t], bool) end
+	    in
+	       val realCompare = make real
+	       val wordCompare = make word
+	    end
+	    fun intInfBinary () = done ([intInf, intInf, defaultWord], intInf)
+	    fun intInfShift () =
+	       done ([intInf, defaultWord, defaultWord], intInf)
+	    fun intInfUnary () = done ([intInf, defaultWord], intInf)
+	    fun real3 s = done ([real s, real s, real s], real s)
+	    val pointer = defaultWord
+	    val word8Array = array word8
+	    val wordVector = vector defaultWord
+	    fun wordShift s = done ([word s, defaultWord], word s)
+	 in
+	    case Prim.name prim of
+	       Array_array => oneTarg (fn targ => ([defaultWord], array targ))
+	     | Array_array0Const => oneTarg (fn targ => ([], array targ))
+	     | Array_length => oneTarg (fn t => ([array t], defaultWord))
+	     | Array_sub => oneTarg (fn t => ([array t, defaultWord], t))
+	     | Array_toVector => oneTarg (fn t => ([array t], vector t))
+	     | Array_update =>
+		  oneTarg (fn t => ([array t, defaultWord, t], unit))
+	     | FFI f => done (Vector.toList (CFunction.args f),
+			      CFunction.return f)
+	     | FFI_Symbol {ty, ...} => done ([], ty)
+	     | GC_collect => done ([], unit)
+	     | GC_pack => done ([], unit)
+	     | GC_unpack => done ([], unit)
+	     | IntInf_add => intInfBinary ()
+	     | IntInf_andb => intInfBinary ()
+	     | IntInf_arshift => intInfShift ()
+	     | IntInf_compare => done ([intInf, intInf], defaultWord)
+	     | IntInf_equal => done ([intInf, intInf], bool)
+	     | IntInf_gcd => intInfBinary ()
+	     | IntInf_lshift => intInfShift ()
+	     | IntInf_mul => intInfBinary ()
+	     | IntInf_neg => intInfUnary ()
+	     | IntInf_notb => intInfUnary ()
+	     | IntInf_orb => intInfBinary ()
+	     | IntInf_quot => intInfBinary ()
+	     | IntInf_rem => intInfBinary ()
+	     | IntInf_sub => intInfBinary ()
+	     | IntInf_toString =>
+		  done ([intInf, defaultWord, defaultWord], string)
+	     | IntInf_toVector => done ([intInf], vector defaultWord)
+	     | IntInf_toWord => done ([intInf], defaultWord)
+	     | IntInf_xorb => intInfBinary ()
+	     | MLton_bogus => oneTarg (fn t => ([], t))
+	     | MLton_bug => done ([string], unit)
+	     | MLton_eq => oneTarg (fn t => ([t, t], bool))
+	     | MLton_equal => oneTarg (fn t => ([t, t], bool))
+	     | MLton_halt => done ([defaultWord], unit)
+	     | MLton_handlesSignals => done ([], bool)
+	     | MLton_installSignalHandler => done ([], unit)
+	     | MLton_size => oneTarg (fn t => ([reff t], defaultWord))
+	     | MLton_touch => oneTarg (fn t => ([t], unit))
+	     | Pointer_getPointer =>
+		  oneTarg (fn t => ([pointer, defaultWord], t))
+	     | Pointer_getReal s => done ([pointer, defaultWord], real s)
+	     | Pointer_getWord s => done ([pointer, defaultWord], word s)
+	     | Pointer_setPointer =>
+		  oneTarg (fn t => ([pointer, defaultWord, t], unit))
+	     | Pointer_setReal s => done ([pointer, defaultWord, real s], unit)
+	     | Pointer_setWord s => done ([pointer, defaultWord, word s], unit)
+	     | Real_Math_acos s => realUnary s
+	     | Real_Math_asin s => realUnary s
+	     | Real_Math_atan s => realUnary s
+	     | Real_Math_atan2 s => realBinary s
+	     | Real_Math_cos s => realUnary s
+	     | Real_Math_exp s => realUnary s
+	     | Real_Math_ln s => realUnary s
+	     | Real_Math_log10 s => realUnary s
+	     | Real_Math_sin s => realUnary s
+	     | Real_Math_sqrt s => realUnary s
+	     | Real_Math_tan s => realUnary s
+	     | Real_abs s => realUnary s
+	     | Real_add s => realBinary s
+	     | Real_div s => realBinary s
+	     | Real_equal s => realCompare s
+	     | Real_ge s => realCompare s
+	     | Real_gt s => realCompare s
+	     | Real_ldexp s => done ([real s, defaultWord], real s)
+	     | Real_le s => realCompare s
+	     | Real_lt s => realCompare s
+	     | Real_mul s => realBinary s
+	     | Real_muladd s => real3 s
+	     | Real_mulsub s => real3 s
+	     | Real_neg s => realUnary s
+	     | Real_qequal s => realCompare s
+	     | Real_round s => realUnary s
+	     | Real_sub s => realBinary s
+	     | Real_toReal (s, s') => done ([real s], real s')
+	     | Real_toWord (s, s', _) => done ([real s], word s')
+	     | Thread_atomicBegin => done ([], unit)
+	     | Thread_atomicEnd => done ([], unit)
+	     | Thread_canHandle => done ([], defaultWord)
+	     | Thread_copy => done ([thread], thread)
+	     | Thread_copyCurrent => done ([], unit)
+	     | Thread_returnToC => done ([], unit)
+	     | Thread_switchTo => done ([thread], unit)
+	     | Vector_length => oneTarg (fn t => ([vector t], defaultWord))
+	     | Vector_sub => oneTarg (fn t => ([vector t, defaultWord], t))
+	     | Weak_canGet => oneTarg (fn t => ([weak t], bool))
+	     | Weak_get => oneTarg (fn t => ([weak t], t))
+	     | Weak_new => oneTarg (fn t => ([t], weak t))
+	     | Word8Array_subWord =>
+		  done ([word8Array, defaultWord], defaultWord)
+	     | Word8Array_updateWord =>
+		  done ([word8Array, defaultWord, defaultWord], unit)
+	     | Word8Vector_subWord =>
+		  done ([word8Vector, defaultWord], defaultWord)
+	     | WordVector_toIntInf => done ([wordVector], intInf)
+	     | Word_add s => wordBinary s
+	     | Word_addCheck (s, _) => wordBinary s
+	     | Word_andb s => wordBinary s
+	     | Word_equal s => wordCompare s
+	     | Word_ge (s, _) => wordCompare s
+	     | Word_gt (s, _) => wordCompare s
+	     | Word_le (s, _) => wordCompare s
+	     | Word_lshift s => wordShift s
+	     | Word_lt (s, _) => wordCompare s
+	     | Word_mul (s, _) => wordBinary s
+	     | Word_mulCheck (s, _) => wordBinary s
+	     | Word_neg s => wordUnary s
+	     | Word_negCheck s => wordUnary s
+	     | Word_notb s => wordUnary s
+	     | Word_orb s => wordBinary s
+	     | Word_quot (s, _) => wordBinary s
+	     | Word_rem (s, _) => wordBinary s
+	     | Word_rol s => wordShift s
+	     | Word_ror s => wordShift s
+	     | Word_rshift (s, _) => wordShift s
+	     | Word_sub s => wordBinary s
+	     | Word_subCheck (s, _) => wordBinary s
+	     | Word_toIntInf => done ([defaultWord], intInf)
+	     | Word_toReal (s, s', _) => done ([word s], real s')
+	     | Word_toWord (s, s', _) => done ([word s], word s')
+	     | Word_xorb s => wordBinary s
+	     | World_save => done ([defaultWord], unit)
+	     | _ => Error.bug (concat ["Type.checkPrimApp got strange prim: ",
+				       Prim.toString prim])
+	 end
    end
 
 structure Cases =
@@ -198,31 +464,34 @@ structure Var =
 structure Exp =
    struct
       datatype t =
-	 ConApp of {con: Con.t,
+	 Const of Const.t
+       | Object of {con: Con.t option,
 		    args: Var.t vector}
-       | Const of Const.t
        | PrimApp of {prim: Type.t Prim.t,
 		     targs: Type.t vector,
 		     args: Var.t vector}
        | Profile of ProfileExp.t
-       | Select of {tuple: Var.t,
+       | Select of {object: Var.t,
 		    offset: int}
-       | Tuple of Var.t vector
+       | Update of {object: Var.t,
+		    offset: int,
+		    value: Var.t}
        | Var of Var.t
 
-      val unit = Tuple (Vector.new0 ())
+      val unit = Object {con = NONE,
+			 args = Vector.new0 ()}
 	 
       fun foreachVar (e, v) =
 	 let
 	    fun vs xs = Vector.foreach (xs, v)
 	 in
 	    case e of
-	       ConApp {args, ...} => vs args
-	     | Const _ => ()
+	       Const _ => ()
+	     | Object {args, ...} => vs args
 	     | PrimApp {args, ...} => vs args
 	     | Profile _ => ()
-	     | Select {tuple, ...} => v tuple
-	     | Tuple xs => vs xs
+	     | Select {object, ...} => v object
+	     | Update {object, value, ...} => (v object; v value)
 	     | Var x => v x
 	 end
 
@@ -231,14 +500,15 @@ structure Exp =
 	    fun fxs xs = Vector.map (xs, fx)
 	 in
 	    case e of
-	       ConApp {con, args} => ConApp {con = con, args = fxs args}
-	     | Const _ => e
+	       Const _ => e
 	     | PrimApp {prim, targs, args} =>
 		  PrimApp {prim = prim, targs = targs, args = fxs args}
+	     | Object {con, args} => Object {con = con, args = fxs args}
 	     | Profile _ => e
-	     | Select {tuple, offset} =>
-		  Select {tuple = fx tuple, offset = offset}
-	     | Tuple xs => Tuple (fxs xs)
+	     | Select {object, offset} =>
+		  Select {object = fx object, offset = offset}
+	     | Update {object, offset, value} =>
+		  Update {object = fx object, offset = offset, value = fx value}
 	     | Var x => Var (fx x)
 	 end
 
@@ -247,9 +517,12 @@ structure Exp =
 	    open Layout
 	 in
 	    case e of
-	       ConApp {con, args} =>
-		  seq [Con.layout con, str " ", layoutTuple args]
-	     | Const c => Const.layout c
+	       Const c => Const.layout c
+	     | Object {con, args} =>
+		  seq [(case con of
+			   NONE => empty
+			 | SOME c => seq [Con.layout c, str " "]),
+		       layoutTuple args]
 	     | PrimApp {prim, targs, args} =>
 		  seq [Prim.layout prim,
 		       if !Control.showTypes
@@ -259,37 +532,44 @@ structure Exp =
 		       else empty,
 		       seq [str " ", layoutTuple args]]
 	     | Profile p => ProfileExp.layout p
-	     | Select {tuple, offset} =>
+	     | Select {object, offset} =>
 		  seq [str "#", Int.layout (offset + 1), str " ",
-		       Var.layout tuple]
-	     | Tuple xs => layoutTuple xs
+		       Var.layout object]
+	     | Update {object, offset, value} =>
+		  seq [str "#", Int.layout (offset + 1), str " ",
+		       Var.layout object,
+		       str " := ", Var.layout value]
 	     | Var x => Var.layout x
 	 end
 	       
       fun maySideEffect (e: t): bool =
 	 case e of
-	    ConApp _ => false
-	  | Const _ => false
+	    Const _ => false
+	  | Object _ => false
 	  | PrimApp {prim,...} => Prim.maySideEffect prim
 	  | Profile _ => false
 	  | Select _ => false
-	  | Tuple _ => false
+	  | Update _ => true
 	  | Var _ => false
 
       fun varsEquals (xs, xs') = Vector.equals (xs, xs', Var.equals)
 
       fun equals (e: t, e': t): bool =
 	 case (e, e') of
-	    (ConApp {con, args}, ConApp {con = con', args = args'}) =>
-	       Con.equals (con, con') andalso varsEquals (args, args')
-	  | (Const c, Const c') => Const.equals (c, c')
+	    (Const c, Const c') => Const.equals (c, c')
+	  | (Object {con, args}, Object {con = con', args = args'}) =>
+	       Option.equals (con, con', Con.equals)
+	       andalso varsEquals (args, args')
 	  | (PrimApp {prim, args, ...},
 	     PrimApp {prim = prim', args = args', ...}) =>
 	       Prim.equals (prim, prim') andalso varsEquals (args, args')
 	  | (Profile p, Profile p') => ProfileExp.equals (p, p')
-	  | (Select {tuple = t, offset = i}, Select {tuple = t', offset = i'}) =>
-	       Var.equals (t, t') andalso i = i'
-	  | (Tuple xs, Tuple xs') => varsEquals (xs, xs')
+	  | (Select {object = o1, offset = i1},
+	     Select {object = o2, offset = i2}) =>
+	       Var.equals (o1, o2) andalso i1 = i2
+	  | (Update {object = o1, offset = i1, value = v1},
+	     Update {object = o2, offset = i2, value = v2}) =>
+	     i1 = i2 andalso Var.equals (o1, o2) andalso Var.equals (v1, v2)
 	  | (Var x, Var x') => Var.equals (x, x')
 	  | _ => false
 
@@ -299,17 +579,25 @@ structure Exp =
 	 val profile = newHash ()
 	 val select = newHash ()
 	 val tuple = newHash ()
+	 val update = newHash ()
 	 fun hashVars (xs: Var.t vector, w: Word.t): Word.t =
 	    Vector.fold (xs, w, fn (x, w) => Word.xorb (w, Var.hash x))
       in
 	 val hash: t -> Word.t =
-	    fn ConApp {con, args, ...} => hashVars (args, Con.hash con)
-	     | Const c => Const.hash c
+	    fn Const c => Const.hash c
+	     | Object {con, args, ...} =>
+		  hashVars (args,
+			    case con of
+			       NONE => tuple
+			     | SOME c => Con.hash c)
 	     | PrimApp {args, ...} => hashVars (args, primApp)
 	     | Profile p => Word.xorb (profile, ProfileExp.hash p)
-	     | Select {tuple, offset} =>
-		  Word.xorb (select, Var.hash tuple + Word.fromInt offset)
-	     | Tuple xs => hashVars (xs, tuple)
+	     | Select {object, offset} =>
+		  Word.xorb (select, Var.hash object + Word.fromInt offset)
+	     | Update {object, offset, value} =>
+		  Word.xorb (update,
+			     Word.xorb (Var.hash object + Word.fromInt offset,
+					Var.hash value))
 	     | Var x => Var.hash x
       end
 
@@ -317,26 +605,34 @@ structure Exp =
 
       val toString = Layout.toString o layout
 
-      fun toPretty (e: t, global: Var.t -> string option): string =
-	 case e of
-	    ConApp {con, args} =>
-	       concat [Con.toString con, " ", Var.prettys (args, global)]
-	  | Const c => Const.toString c
-	  | PrimApp {prim, args, ...} =>
-	       Layout.toString
-	       (Prim.layoutApp (prim, args, fn x =>
-				case global x of
-				   NONE => Var.layout x
-				 | SOME s => Layout.str s))
-	  | Profile p => ProfileExp.toString p
-	  | Select {tuple, offset} =>
-	       concat ["#", Int.toString (offset + 1), " ", Var.toString tuple]
-	  | Tuple xs => Var.prettys (xs, global)
-	  | Var x => Var.toString x
+      local
+	 fun select (object, offset) =
+	    concat ["#", Int.toString (offset + 1), " ", Var.toString object]
+      in
+	 fun toPretty (e: t, global: Var.t -> string option): string =
+	    case e of
+	       Const c => Const.toString c
+	     | Object {con, args} =>
+		  concat [(case con of
+			      NONE => ""
+			    | SOME c => concat [Con.toString c, " "]),
+			  Var.prettys (args, global)]
+	     | PrimApp {prim, args, ...} =>
+		  Layout.toString
+		  (Prim.layoutApp (prim, args, fn x =>
+				   case global x of
+				      NONE => Var.layout x
+				    | SOME s => Layout.str s))
+	     | Profile p => ProfileExp.toString p
+	     | Select {object, offset} => select (object, offset)
+	     | Update {object, offset, value} => 
+		 concat [select (object, offset), " := ", Var.toString value]
+	     | Var x => Var.toString x
 
-      val isProfile =
+	 val isProfile =
 	 fn Profile _ => true
 	  | _ => false
+      end
    end
 datatype z = datatype Exp.t
 
@@ -408,10 +704,13 @@ structure Statement =
 		 in
 		    case exp of
 		       Const c => set (Layout.toString (Const.layout c))
-		     | ConApp {con, args, ...} =>
-			  if Vector.isEmpty args
-			     then set (Con.toString con)
-			  else set (concat [Con.toString con, "(...)"])
+		     | Object {con, args, ...} =>
+			  (case con of
+			      NONE => ()
+			    | SOME c =>
+				 set (if Vector.isEmpty args
+					 then Con.toString c
+				      else concat [Con.toString c, "(...)"]))
 		     | _ => ()
 		 end))
 	 in
@@ -837,13 +1136,12 @@ structure Block =
 structure Datatype =
    struct
       datatype t =
-	 T of {
-	       tycon: Tycon.t,
-	       cons: {con: Con.t,
-		      args: Type.t vector} vector
-	       }
+	 T of {cons: {args: {elt: Type.t,
+			     isMutable: bool} vector,
+		      con: Con.t} vector,
+	       tycon: Tycon.t}
 
-      fun layout (T {tycon, cons}) =
+      fun layout (T {cons, tycon}) =
 	 let
 	    open Layout
 	 in
@@ -856,11 +1154,16 @@ structure Datatype =
 			if Vector.isEmpty args
 			   then empty
 			else seq [str " of ",
-				  Vector.layout Type.layout args]]),
+				  Vector.layout
+				  (fn {elt, isMutable} =>
+				   if isMutable
+				      then seq [Type.layout elt, str " ref"]
+				   else Type.layout elt)
+				  args]]),
 		  "| ")]
 	 end
 
-      fun clear (T {tycon, cons}) =
+      fun clear (T {cons, tycon}) =
 	 (Tycon.clear tycon
 	  ; Vector.foreach (cons, Con.clear o #con))
    end
@@ -1611,12 +1914,6 @@ structure Program =
 
       fun layoutStats (T {globals, functions, ...}) =
 	 let
-	    val numTypes = ref 0
-	    fun inc _ = Int.inc numTypes
-	    val {hom = countType, destroy} =
-	       Type.makeHom
-	       {var = fn _ => Error.bug "ssa-tree saw var",
-		con = inc}
 	    val numStatements = ref (Vector.length globals)
 	    val numBlocks = ref 0
 	    val _ =
@@ -1625,18 +1922,13 @@ structure Program =
 		let
 		   val {args, blocks, ...} = Function.dest f
 		in
-		   Vector.foreach (args, countType o #2)
-		   ; (Vector.foreach
-		      (blocks, fn Block.T {statements, ...} =>
-		       (Int.inc numBlocks
-			; (Vector.foreach
-			   (statements, fn Statement.T {ty, ...} =>
-			    (countType ty
-			     ; Int.inc numStatements))))))
+		   Vector.foreach
+		   (blocks, fn Block.T {statements, ...} =>
+		    (Int.inc numBlocks
+		     ; numStatements := !numStatements + Vector.length statements))
 		end)
 	    val numFunctions = List.length functions
 	    open Layout
-	    val _ = destroy ()
 	 in
 	    align
 	    (List.map

@@ -6,5 +6,4 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 functor Ssa2 (S: SSA2_STRUCTS): SSA2 = 
-   Simplify2 (Restore2 (Shrink2 (TypeCheck2 (Analyze2 (DirectExp2
-						       (SsaTree2 (S)))))))
+   Simplify2 (TypeCheck2 (Analyze2 (SsaTree2 (S))))

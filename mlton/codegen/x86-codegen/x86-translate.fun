@@ -23,7 +23,9 @@ struct
      open Machine
   in
      structure Label = Label
+     structure Live = Live
      structure Register = Register
+     structure StackOffset = StackOffset
      structure Type = Type
      structure WordSize = WordSize
      structure WordX = WordX
@@ -226,7 +228,7 @@ struct
 		      scale = x86.Scale.One,
 		      size = size}, size), offset + x86.Size.toBytes size))
 	       end
-	  | StackOffset {offset, ty} =>
+	  | StackOffset (StackOffset.T {offset, ty}) =>
 	       let
 		  val offset = Bytes.toInt offset
 		  val ty = Type.toCType ty
@@ -331,7 +333,7 @@ struct
 		       (args, x86.MemLocSet.empty,
 			fn (operand,args) =>
 			Vector.fold
-			(Operand.toX86Operand operand, args,
+			(Operand.toX86Operand (Live.toOperand operand), args,
 			 fn ((operand,_),args) =>
 			 case x86.Operand.deMemloc operand of
 			    SOME memloc => x86.MemLocSet.add(args, memloc)
@@ -362,7 +364,7 @@ struct
 		   val dsts =
 		      case dst of
 			 NONE => Vector.new0 ()
-		       | SOME dst => Operand.toX86Operand dst
+		       | SOME dst => Operand.toX86Operand (Live.toOperand dst)
 		 in
 		   x86MLton.creturn
 		   {dsts = dsts,
@@ -756,7 +758,8 @@ struct
 		       Vector.fold
 		       (live, x86.MemLocSet.empty, fn (operand, live) =>
 			Vector.fold
-			(Operand.toX86Operand operand, live, fn ((operand,_),live) =>
+			(Operand.toX86Operand (Live.toOperand operand), live,
+			 fn ((operand, _), live) =>
 			 case x86.Operand.deMemloc operand of
 			    NONE => live
 			  | SOME memloc => x86.MemLocSet.add (live, memloc)))
@@ -807,20 +810,24 @@ struct
 		   statements 
 		   = if !Control.Native.commented > 0
 		       then let
-			      val comment
-				= "Live: " ^
-				  (argsToString
-				   (Vector.toListMap
-				    (live, fn l => Operand.toString l)))
+			      val comment =
+				 concat ["Live: ",
+					 argsToString
+					 (Vector.toListMap
+					  (live, fn l =>
+					   Operand.toString (Live.toOperand l)))]
 			    in
 			      [x86.Assembly.comment comment]
 			    end
 		       else [],
 		    transfer = NONE}),
 		 Vector.foldr(statements,
-			      (Transfer.toX86Blocks {returns = returns,
-						     transfer = transfer,
-						     transInfo = transInfo}),
+			      (Transfer.toX86Blocks
+			       {returns = (Option.map
+					   (returns, fn v =>
+					    Vector.map (v, Live.toOperand))),
+				transfer = transfer,
+				transInfo = transInfo}),
 			      fn (statement,l)
 			       => AppendList.append
 			          (Statement.toX86Blocks 
@@ -858,7 +865,7 @@ struct
 		     setLive (label,
 			      (Vector.toList o #1 o Vector.unzip o 
 			       Vector.concatV o Vector.map)
-			      (live, Operand.toX86Operand)))
+			      (live, Operand.toX86Operand o Live.toOperand)))
 	    val transInfo = {addData = addData,
 			     frameInfoToX86 = frameInfoToX86,
 			     live = live,

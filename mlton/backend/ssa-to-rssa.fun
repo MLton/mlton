@@ -319,8 +319,9 @@ datatype z = datatype Operand.t
 datatype z = datatype Statement.t
 datatype z = datatype Transfer.t
 
-structure Representation = Representation (structure Rssa = Rssa
-					   structure Ssa = Ssa)
+(* structure Representation = Representation (structure Rssa = Rssa
+ * 					   structure Ssa = Ssa)
+ *)
 structure PackedRepresentation = PackedRepresentation (structure Rssa = Rssa
 						       structure Ssa = Ssa)
 
@@ -352,7 +353,9 @@ fun arrayUpdate {array, arrayElementTy, index, elt}: Statement.t list =
    in
       if not (!Control.markCards) orelse not (Type.isPointer ty)
 	 then
-	    ss @ [Move {dst = ArrayOffset {base = array, index = index, ty = ty},
+	    ss @ [Move {dst = ArrayOffset {base = array,
+					   index = index,
+					   ty = arrayElementTy},
 			src = elt}]
       else
 	 let
@@ -382,7 +385,7 @@ fun arrayUpdate {array, arrayElementTy, index, elt}: Statement.t list =
 	    @ updateCard addrOp
 	    @ [Move {dst = Offset {base = addrOp,
 				   offset = Bytes.zero,
-				   ty = ty},
+				   ty = arrayElementTy},
 		     src = elt}]
 	 end
    end
@@ -401,11 +404,12 @@ val word = Type.word o WordSize.bits
 fun convert (program as S.Program.T {functions, globals, main, ...},
 	     {codegenImplementsPrim}): Rssa.Program.t =
    let
-      val {conApp, diagnostic, genCase, objectTypes, reff, select, toRtype,
-	   tuple} =
+      val {diagnostic, genCase, object, objectTypes, select, toRtype, update} =
 	 (case !Control.representation of
 	     Control.Packed => PackedRepresentation.compute
-	   | Control.Unpacked => Representation.compute) program
+	   | Control.Unpacked =>
+		Error.bug "-representation unpacked is not implemented"
+		(*Representation.compute*)) program
       val objectTypes = Vector.concat [ObjectType.basic, objectTypes]
       val () =
 	 Vector.foreachi
@@ -456,26 +460,22 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 	    S.Cases.Con cases =>
 	       (case (Vector.length cases, default) of
 		   (0, NONE) => ([], Transfer.bug)
-		 | _ => 
-		      let
-			 val (tycon, tys) = S.Type.tyconArgs (varType test)
-		      in
-			 if Vector.isEmpty tys
-			    then
-			       let
-				  val test = fn () => varOp test
-				  val (ss, t, blocks) =
-				     genCase {cases = cases,
-					      default = default,
-					      test = test,
-					      tycon = tycon}
-				  val () =
-				     extraBlocks := blocks @ !extraBlocks
-			       in
-				  (ss, t)
-			       end
-			 else Error.bug "strange type in case"
-		      end)
+		 | _ =>
+		      (case S.Type.dest (varType test) of
+			  S.Type.Datatype tycon =>
+			     let
+				val test = fn () => varOp test
+				val (ss, t, blocks) =
+				   genCase {cases = cases,
+					    default = default,
+					    test = test,
+					    tycon = tycon}
+				val () =
+				   extraBlocks := blocks @ !extraBlocks
+			     in
+				(ss, t)
+			     end
+			| _ => Error.bug "strange type in case"))
 	  | S.Cases.Word (s, cs) =>
 	       ([],
 		Switch
@@ -710,14 +710,16 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 				   src = src})				   
 		  in
 		     case exp of
-			S.Exp.ConApp {con, args} =>
-			   adds (conApp
-				 {args = args,
-				  con = con,
-				  dst = fn () => valOf var,
-				  oper = varOp,
-				  ty = fn () => valOf (toRtype ty)})
-		      | S.Exp.Const c => move (Const (convertConst c))
+			S.Exp.Const c => move (Const (convertConst c))
+		      | S.Exp.Object {args, con} =>
+			   (case toRtype ty of
+			       NONE => none ()
+			     | SOME dstTy => 
+				  adds (object {args = args,
+						con = con,
+						dst = (valOf var, dstTy),
+						objectTy = ty,
+						oper = varOp}))
 		      | S.Exp.PrimApp {prim, targs, args, ...} =>
 			   let
 			      val prim = translatePrim prim
@@ -869,25 +871,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 						      index = a 1,
 						      ty = ty},
 				   src = a 2})
-		     fun refAssign (ty, src) =
-		        let
-			   val addr = a 0
-			   val offset =
-			      Rssa.byteOffset {offset = Bytes.zero,
-					       ty = ty}
-			   val ss =
-			      Move {dst = Offset {base = addr,
-						  offset = offset,
-						  ty = ty},
-				    src = src}
-			      :: ss
-			   val ss =
-			      if !Control.markCards andalso Type.isPointer ty
-				 then updateCard addr @ ss
-			      else ss
-			in
-			   loop (i - 1, ss, t)
-			end
 		     fun codegenOrC (p: Prim.t) =
 			let
 			   val n = Prim.name p
@@ -994,28 +977,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 				      | SOME t => pointerSet t)
 			       | Pointer_setReal s => pointerSet (Type.real s)
 			       | Pointer_setWord s => pointerSet (word s)
-			       | Ref_assign =>
-				    (case targ () of
-					NONE => none ()
-				      | SOME ty => refAssign (ty, a 1))
-			       | Ref_deref =>
-				    (case targ () of
-					NONE => none ()
-				      | SOME ty =>
-					   let
-					      val offset =
-						 Rssa.byteOffset
-						 {offset = Bytes.zero,
-						  ty = ty}
-					   in
-					      move (Offset {base = a 0,
-							    offset = offset,
-							    ty = ty})
-					   end)
-			       | Ref_ref =>
-				    adds (reff {arg = fn () => a 0,
-						dst = valOf var,
-						ty = Vector.sub (targs, 0)})
 			       | Thread_atomicBegin =>
 				    (* gcState.canHandle++;
 				     * if (gcState.signalIsPending)
@@ -1213,17 +1174,39 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 			       | _ => codegenOrC prim
 			   end
 		      | S.Exp.Profile e => add (Statement.Profile e)
-		      | S.Exp.Select {tuple, offset} =>
-			   adds (select {dst = fn () => valOf var,
-					 offset = offset,
-					 tuple = fn () => varOp tuple,
-					 tupleTy = varType tuple})
-		      | S.Exp.Tuple ys =>
-			   if 0 = Vector.length ys
-			      then none ()
-			   else adds (tuple {components = ys,
-					     dst = (valOf var, ty),
-					     oper = varOp})
+		      | S.Exp.Select {object, offset} =>
+			   (case var of
+			       NONE => none ()
+			     | SOME var => 
+				  (case toRtype ty of
+				      NONE => none ()
+				    | SOME _ => 
+					 adds (select {dst = var,
+						       object = varOp object,
+						       objectTy = varType object,
+						       offset = offset})))
+		      | S.Exp.Update {object, offset, value} =>
+			   (case toRtype (varType value) of
+			       NONE => none ()
+			     | SOME _ => 
+				  let
+				     val objectTy = varType object
+				     val object = varOp object
+				     val value = varOp value
+				     val ss =
+					update {object = object,
+						objectTy = objectTy,
+						offset = offset,
+						value = value}
+				     val ss =
+					if !Control.markCards
+					   andalso
+					   Type.isPointer (Operand.ty value)
+					   then updateCard object @ ss
+					else ss
+				  in
+				     adds ss
+				  end)
 		      | S.Exp.Var y =>
 			   (case toRtype ty of
 			       NONE => none ()

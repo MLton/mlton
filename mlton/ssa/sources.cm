@@ -9,10 +9,13 @@ Group
 
 signature HANDLER
 signature RETURN
+signature SSA
 signature SSA2
 
 functor FlatLattice
 functor Ssa
+functor Ssa2
+functor SsaToSsa2
 
 is
 
@@ -25,9 +28,7 @@ ssa-tree2.sig
 ssa-tree.fun
 ssa-tree2.fun
 direct-exp.sig
-direct-exp2.sig
 direct-exp.fun
-direct-exp2.fun
 analyze.sig
 analyze2.sig
 analyze.fun
@@ -37,9 +38,7 @@ type-check2.sig
 type-check.fun
 type-check2.fun
 shrink.sig
-shrink2.sig
 shrink.fun
-shrink2.fun
 flat-lattice.sig
 flat-lattice.fun
 common-arg.sig
@@ -69,9 +68,7 @@ n-point-lattice.fun
 three-point-lattice.sig
 three-point-lattice.fun
 restore.sig
-restore2.sig
 restore.fun
-restore2.fun
 known-case.sig
 known-case.fun
 local-flatten.sig
@@ -86,8 +83,8 @@ redundant-tests.sig
 redundant-tests.fun
 redundant.sig
 redundant.fun
-ref-flatten.sig
-ref-flatten.fun
+(* ref-flatten.sig *)
+(* ref-flatten.fun *)
 remove-unused.sig
 remove-unused.fun
 simplify-types.sig

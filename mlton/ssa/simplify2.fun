@@ -26,7 +26,7 @@ open S
 (* structure PolyEqual = PolyEqual (S) *)
 (* structure Redundant = Redundant (S) *)
 (* structure RedundantTests = RedundantTests (S) *)
-structure RefFlatten = RefFlatten (S)
+(* structure RefFlatten = RefFlatten (S) *)
 (* structure RemoveUnused = RemoveUnused (S) *)
 (* structure SimplifyTypes = SimplifyTypes (S) *)
 (* structure Useless = Useless (S) *)
@@ -94,7 +94,7 @@ val ssaPasses : pass list ref = ref
     (* For now, do ref flattening last, because each pass that follows it will
      * have to be modified to correctly handle mutable fields.
      *)
-    {name = "refFlatten", doit = RefFlatten.flatten}
+(*    {name = "refFlatten", doit = RefFlatten.flatten} *)
     ]
 
 local

@@ -13,35 +13,102 @@ open S
 structure S = Ssa
 structure S2 = Ssa2
 
+local
+   open S
+in
+   structure Con = Con
+   structure Label = Label
+   structure Prim = Prim
+   structure Var = Var
+end
+
 fun convert (S.Program.T {datatypes, functions, globals, main}) =
    let
-      val {destroy, hom = convertType: S.Type.t -> S2.Type.t, ...} =
-	 S.Type.makeMonoHom {con = fn (_, c, ts) => S2.Type.con (c, ts)}
+      val {get = convertType: S.Type.t -> S2.Type.t, ...} =
+	 Property.get
+	 (S.Type.plist,
+	  Property.initRec
+	  (fn (t, convertType)  =>
+	   case S.Type.dest t of
+	      S.Type.Array t => S2.Type.array (convertType t)
+	    | S.Type.Datatype tycon => S2.Type.datatypee tycon
+	    | S.Type.IntInf => S2.Type.intInf
+	    | S.Type.Real s => S2.Type.real s
+	    | S.Type.Ref t => S2.Type.reff (convertType t)
+	    | S.Type.Thread => S2.Type.thread
+	    | S.Type.Tuple ts =>
+		 S2.Type.tuple (Vector.map (ts, fn t =>
+					    {elt = convertType t,
+					     isMutable = false}))
+	    | S.Type.Vector t => S2.Type.vector (convertType t)
+	    | S.Type.Weak t => S2.Type.weak (convertType t)
+	    | S.Type.Word s => S2.Type.word s))
       fun convertTypes ts = Vector.map (ts, convertType)
+      val {get = conType: Con.t -> S2.Type.t, set = setConType, ...} =
+	 Property.getSetOnce (Con.plist,
+			      Property.initRaise ("type", Con.layout))
       val datatypes =
 	 Vector.map
 	 (datatypes, fn S.Datatype.T {cons, tycon} =>
-	  S2.Datatype.T {cons = Vector.map (cons, fn {args, con} =>
-					    {args = convertTypes args,
-					     con = con}),
-			 tycon = tycon})
+	  S2.Datatype.T
+	  {cons = Vector.map (cons, fn {args, con} =>
+			      let
+				 val args = Vector.map (args, fn t =>
+							{elt = convertType t,
+							 isMutable = false})
+				 val () =
+				    setConType (con, S2.Type.conApp (con, args))
+			      in
+				 {args = args,
+				  con = con}
+			      end),
+	   tycon = tycon})
       fun convertPrim p = S.Prim.map (p, convertType)
-      fun convertExp (e: S.Exp.t): S2.Exp.t =
-	 case e of
-	    S.Exp.ConApp r => S2.Exp.ConApp r
-	  | S.Exp.Const c => S2.Exp.Const c
-	  | S.Exp.PrimApp {args, prim, targs} =>
-	       S2.Exp.PrimApp {args = args,
-			       prim = convertPrim prim,
-			       targs = convertTypes targs}
-	  | S.Exp.Profile e => S2.Exp.Profile e
-	  | S.Exp.Select r => S2.Exp.Select r
-	  | S.Exp.Tuple v => S2.Exp.Tuple v
-	  | S.Exp.Var x => S2.Exp.Var x
+      fun convertExp (e: S.Exp.t, t: S.Type.t): S2.Exp.t * S2.Type.t =
+	 let
+	    fun simple e = (e, convertType t)
+	 in
+	    case e of
+	       S.Exp.ConApp {args, con} =>
+		  (S2.Exp.Object {args = args, con = SOME con},
+		   conType con)
+	     | S.Exp.Const c => simple (S2.Exp.Const c)
+	     | S.Exp.PrimApp {args, prim, targs} =>
+		  simple
+		  (let
+		      fun arg i = Vector.sub (args, i)
+		      datatype z = datatype Prim.Name.t
+		   in
+		      case Prim.name prim of
+			 Ref_assign =>
+			    S2.Exp.Update {object = arg 0,
+					   offset = 0,
+					   value = arg 1}
+		       | Ref_deref =>
+			    S2.Exp.Select {object = arg 0,
+					   offset = 0}
+		       | Ref_ref =>
+			    S2.Exp.Object {args = Vector.new1 (arg 0),
+					   con = NONE}
+		       | _ => 
+			    S2.Exp.PrimApp {args = args,
+					    prim = convertPrim prim,
+					    targs = convertTypes targs}
+		   end)
+	     | S.Exp.Profile e => simple (S2.Exp.Profile e)
+	     | S.Exp.Select {offset, tuple} =>
+		  simple (S2.Exp.Select {object = tuple, offset = offset})
+	     | S.Exp.Tuple v => simple (S2.Exp.Object {args = v, con = NONE})
+	     | S.Exp.Var x => simple (S2.Exp.Var x)
+	 end
       fun convertStatement (S.Statement.T {exp, ty, var}) =
-	 S2.Statement.T {exp = convertExp exp,
-			 ty = convertType ty,
-			 var = var}
+	 let
+	    val (exp, ty) = convertExp (exp, ty)
+	 in
+	    S2.Statement.T {exp = exp,
+			    ty = ty,
+			    var = var}
+	 end
       fun convertHandler (h: S.Handler.t): S2.Handler.t =
 	 case h of
 	    S.Handler.Caller => S2.Handler.Caller
@@ -54,9 +121,54 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 	       S2.Return.NonTail {cont = cont,
 				  handler = convertHandler handler}
 	  | S.Return.Tail => S2.Return.Tail
+      val extraBlocks: S2.Block.t list ref = ref []
       fun convertCases (cs: S.Cases.t): S2.Cases.t =
 	 case cs of
-	    S.Cases.Con v => S2.Cases.Con v
+	    S.Cases.Con v =>
+	       S2.Cases.Con
+	       (Vector.map
+		(v, fn (c, l) =>
+		 let
+		    val objectTy = conType c
+		 in
+		    case S2.Type.dest objectTy of
+		       S2.Type.Object {args, ...} =>
+			  if 0 = Vector.length args
+			     then (c, l)
+			  else
+			     let
+				val l' = Label.newNoname ()
+				val object = Var.newNoname ()
+				val (xs, statements) =
+				   Vector.unzip
+				   (Vector.mapi
+				    (args, fn (i, {elt = ty, ...}) =>
+				     let
+					val x = Var.newNoname ()
+					val exp =
+					   S2.Exp.Select {object = object,
+							  offset = i}
+				     in
+					(x,
+					 S2.Statement.T {exp = exp,
+							 ty = ty,
+							 var = SOME x})
+				     end))
+				val transfer =
+				   S2.Transfer.Goto {args = xs, dst = l}
+				val args = Vector.new1 (object, objectTy)
+				val () =
+				   List.push
+				   (extraBlocks,
+				    S2.Block.T {args = args,
+						label = l',
+						statements = statements,
+						transfer = transfer})
+			     in
+				(c, l')
+			     end
+		     | _ => Error.bug "strange object type"
+		 end))
 	  | S.Cases.Word v => S2.Cases.Word v
       fun convertTransfer (t: S.Transfer.t): S2.Transfer.t =
 	 case t of
@@ -95,9 +207,12 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 	     val {args, blocks, name, raises, returns, start} =
 		S.Function.dest f
 	     fun rr tvo = Option.map (tvo, convertTypes)
+	     val blocks = Vector.map (blocks, convertBlock)
+	     val blocks = Vector.concat [blocks, Vector.fromList (!extraBlocks)]
+	     val () = extraBlocks := []
 	  in
 	     S2.Function.new {args = convertFormals args,
-			      blocks = Vector.map (blocks, convertBlock),
+			      blocks = blocks,
 			      name = name,
 			      raises = rr raises,
 			      returns = rr returns,

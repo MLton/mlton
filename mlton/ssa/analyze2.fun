@@ -14,11 +14,9 @@ datatype z = datatype Exp.t
 datatype z = datatype Transfer.t
    
 fun 'a analyze
-   {coerce, conApp, const,
-    filter, filterWord,
-    fromType, layout, primApp,
-    program = Program.T {main, globals, functions, ...},
-    select, tuple, useFromTypeOnBinds} =
+   {coerce, const, filter, filterWord, fromType, layout, object, primApp,
+    program = Program.T {functions, globals, main, ...},
+    select, update, useFromTypeOnBinds} =
    let
       val unit = fromType Type.unit
       fun coerces (msg, from, to) =
@@ -139,8 +137,20 @@ fun 'a analyze
 		  val _ =
 		     case cases of
 			Con cases =>
-			   Vector.foreach (cases, fn (c, j) =>
-					   filter (test, c, labelValues j))
+			   Vector.foreach
+			   (cases, fn (c, j) =>
+			    let
+			       val v = labelValues j
+			       val variant =
+				  case Vector.length v of
+				     0 => NONE
+				   | 1 => SOME (Vector.sub (v, 0))
+				   | _ => Error.bug "conApp with >1 arg"
+			    in
+			       filter {con = c,
+				       test = test,
+				       variant = variant}
+			    end)
 		      | Word (s, cs) => doit (s, cs, filterWord)
 		  val _ = Option.app (default, ensureNullary)
 	       in ()
@@ -194,8 +204,11 @@ fun 'a analyze
 	 let
 	    val v =
 	       case exp of
-		  ConApp {con, args} => conApp {con = con, args = values args}
-		| Const c => const c
+		  Const c => const c
+		| Object {args, con} =>
+		     object {args = values args,
+			     con = con,
+			     resultType = ty}
 		| PrimApp {prim, targs, args, ...} =>
 		     primApp {prim = prim,
 			      targs = targs,
@@ -203,14 +216,15 @@ fun 'a analyze
 			      resultType = ty,
 			      resultVar = var}
 		| Profile _ => unit
-		| Select {tuple, offset} =>
-		     select {tuple = value tuple,
+		| Select {object, offset} =>
+		     select {object = value object,
 			     offset = offset,
 			     resultType = ty}
-		| Tuple xs =>
-		     if 1 = Vector.length xs
-			then Error.bug "unary tuple"
-		     else tuple (values xs)
+		| Update {object, offset, value = v} =>
+		     (update {object = value object,
+			      offset = offset,
+			      value = value v}
+		      ; unit)
 		| Var x => value x
 	 in
 	    Option.app

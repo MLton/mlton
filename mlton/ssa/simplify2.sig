@@ -7,7 +7,7 @@
  *)
 signature SIMPLIFY2_STRUCTS = 
    sig
-      include RESTORE2
+      include TYPE_CHECK2
    end
 
 signature SIMPLIFY2 = 

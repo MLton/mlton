@@ -24,6 +24,7 @@ in
    structure Global = Global
    structure Kind = Kind
    structure Label = Label
+   structure Live = Live
    structure ObjectType = ObjectType
    structure Operand = Operand
    structure Prim = Prim
@@ -34,6 +35,7 @@ in
    structure RealX = RealX
    structure Register = Register
    structure Runtime = Runtime
+   structure StackOffset = StackOffset
    structure Statement = Statement
    structure Switch = Switch
    structure Transfer = Transfer
@@ -469,6 +471,14 @@ structure Type =
 	 CType.toString (Type.toCType t)
    end
 
+structure StackOffset =
+   struct
+      open StackOffset
+
+      fun toString (T {offset, ty}): string =
+	 concat ["S", C.args [Type.toC ty, C.bytes offset]]
+   end
+
 fun contents (ty, z) = concat ["C", C.args [Type.toC ty, z]]
 
 fun output {program as Machine.Program.T {chunks,
@@ -598,8 +608,7 @@ fun output {program as Machine.Program.T {chunks,
 	     | Register r =>
 		  concat [Type.name (Register.ty r), "_",
 			  Int.toString (Register.index r)]
-	     | StackOffset {offset, ty} =>
-		  concat ["S", C.args [Type.toC ty, C.bytes offset]]
+	     | StackOffset s => StackOffset.toString s
 	     | StackTop => "StackTop"
 	     | Word w => WordX.toC w
       in
@@ -800,8 +809,8 @@ fun output {program as Machine.Program.T {chunks,
 		 end)
 	    fun push (return: Label.t, size: Bytes.t) =
 	       (print "\t"
-		; print (move {dst = (operandToString
-				      (Operand.StackOffset
+		; print (move {dst = (StackOffset.toString
+				      (StackOffset.T
 				       {offset = Bytes.- (size, Runtime.labelSize),
 					ty = Type.label return})),
 			       dstIsMem = true,
@@ -824,8 +833,9 @@ fun output {program as Machine.Program.T {chunks,
 			   Vector.toListMap
 			   (args, fn z =>
 			    case z of
-			       Operand.StackOffset {ty, ...} =>
+			       Operand.StackOffset s =>
 				  let
+				     val ty = StackOffset.ty s
 				     val tmp =
 					concat ["tmp",
 						Int.toString (Counter.next c)]
@@ -896,6 +906,7 @@ fun output {program as Machine.Program.T {chunks,
 			    ; (Option.app
 			       (dst, fn x =>
 				let
+				   val x = Live.toOperand x
 				   val ty = Operand.ty x
 				in
 				   print
@@ -918,18 +929,22 @@ fun output {program as Machine.Program.T {chunks,
 			   then
 			      Vector.foreach
 			      (live, fn z =>
-			       if Type.isPointer (Operand.ty z)
-				  then
-				     print
-				     (concat ["\tCheckPointer(",
-					      operandToString z,
-					      ");\n"])
-			       else ())
+			       let
+				  val z = Live.toOperand z
+			       in
+				  if Type.isPointer (Operand.ty z)
+				     then
+					print
+					(concat ["\tCheckPointer(",
+						 operandToString z,
+						 ");\n"])
+				  else ()
+			       end)
 			else
 			   print (let open Layout
 				  in toString
 				     (seq [str "\t/* live: ",
-					   Vector.layout Operand.layout live,
+					   Vector.layout Live.layout live,
 					   str " */\n"])
 				  end)
 		  val _ = Vector.foreach (statements, fn s =>

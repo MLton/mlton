@@ -77,6 +77,14 @@ structure Register =
 
       val equals =
 	 Trace.trace2 ("Register.equals", layout, layout, Bool.layout) equals
+
+      val isSubtype: t * t -> bool =
+	 fn (T {index = i, ty = t}, T {index = i', ty = t'}) =>
+	 (case (!i, !i') of
+	     (SOME i, SOME i') => i = i'
+	   | _ => false)
+	 andalso Type.isSubtype (t, t')
+	 andalso CType.equals (Type.toCType t, Type.toCType t')
    end
 
 structure Global =
@@ -130,14 +138,29 @@ structure Global =
 	 i = i'
 	 andalso r = r'
 	 andalso Type.equals (ty, ty')
+
+      val isSubtype: t * t -> bool =
+	 fn (T {index = i, isRoot = r, ty},
+	     T {index = i', isRoot = r', ty = ty'}) =>
+	 i = i'
+	 andalso r = r'
+	 andalso Type.isSubtype (ty, ty')
+	 andalso CType.equals (Type.toCType ty, Type.toCType ty')
    end
 
 structure StackOffset =
    struct
-      type t = {offset: Bytes.t,
-		ty: Type.t}
+      datatype t = T of {offset: Bytes.t,
+			 ty: Type.t}
 
-      fun layout ({offset, ty}: t): Layout.t =
+      local
+	 fun make f (T r) = f r
+      in
+	 val offset = make #offset
+	 val ty = make #ty
+      end
+
+      fun layout (T {offset, ty}): Layout.t =
 	 let
 	    open Layout
 	 in
@@ -147,17 +170,25 @@ structure StackOffset =
 	 end
 
       val equals: t * t -> bool =
-	 fn ({offset = b, ty}, {offset = b', ty = ty'}) =>
+	 fn (T {offset = b, ty}, T {offset = b', ty = ty'}) =>
 	 Bytes.equals (b, b') andalso Type.equals (ty, ty')
 
+      val isSubtype: t * t -> bool =
+	 fn (T {offset = b, ty = t}, T {offset = b', ty = t'}) =>
+	 Bytes.equals (b, b') andalso Type.isSubtype (t, t')
+
       val interfere: t * t -> bool =
-	 fn ({offset = b, ty = ty}, {offset = b', ty = ty'}) =>
+	 fn (T {offset = b, ty = ty}, T {offset = b', ty = ty'}) =>
 	 let 
 	    val max = Bytes.+ (b, Type.bytes ty)
 	    val max' = Bytes.+ (b', Type.bytes ty')
 	 in
 	    Bytes.> (max, b') andalso Bytes.> (max', b)
 	 end
+
+      fun shift (T {offset, ty}, size): t =
+	 T {offset = Bytes.- (offset, size),
+	    ty = ty}
    end
 
 structure Operand =
@@ -183,16 +214,6 @@ structure Operand =
        | StackOffset of StackOffset.t
        | StackTop
        | Word of WordX.t
-    
-      val rec isLocation =
-	 fn ArrayOffset _ => true
-	  | Cast (z, _) => isLocation z
-	  | Contents _ => true
-	  | Global _ => true
-	  | Offset _ => true
-	  | Register _ => true
-	  | StackOffset _ => true
-	  | _ => false
 
     val ty =
        fn ArrayOffset {ty, ...} => ty
@@ -207,7 +228,7 @@ structure Operand =
 	| Offset {ty, ...} => ty
 	| Real r => Type.real (RealX.size r)
 	| Register r => Register.ty r
-	| StackOffset {ty, ...} => ty
+	| StackOffset s => StackOffset.ty s
 	| StackTop => Type.defaultWord
 	| Word w => Type.constant w
 
@@ -270,6 +291,8 @@ structure Operand =
 	   | (Word w, Word w') => WordX.equals (w, w')
 	   | _ => false
 
+      val stackOffset = StackOffset o StackOffset.T
+    
       fun interfere (write: t, read: t): bool =
 	 let
 	    fun inter read = interfere (write, read)
@@ -285,6 +308,16 @@ structure Operand =
 		  StackOffset.interfere (so, so')
 	     | _ => false
 	 end
+
+      val rec isLocation =
+	 fn ArrayOffset _ => true
+	  | Cast (z, _) => isLocation z
+	  | Contents _ => true
+	  | Global _ => true
+	  | Offset _ => true
+	  | Register _ => true
+	  | StackOffset _ => true
+	  | _ => false
    end
 
 structure Switch = Switch (open Atoms
@@ -392,6 +425,55 @@ structure FrameInfo =
 	 i = i'
    end
 
+structure Live =
+   struct
+      datatype t =
+	 Global of Global.t
+       | Register of Register.t
+       | StackOffset of StackOffset.t
+
+      val layout: t -> Layout.t =
+	 fn Global g => Global.layout g
+	  | Register r => Register.layout r
+	  | StackOffset s => StackOffset.layout s
+
+      val equals: t * t -> bool =
+	 fn (Global g, Global g') => Global.equals (g, g')
+	  | (Register r, Register r') => Register.equals (r, r')
+	  | (StackOffset s, StackOffset s') => StackOffset.equals (s, s')
+	  | _ => false
+
+      val ty =
+	 fn Global g => Global.ty g
+	  | Register r => Register.ty r
+	  | StackOffset s => StackOffset.ty s
+
+      val isSubtype: t * t -> bool =
+	 fn (Global g, Global g') => Global.isSubtype (g, g')
+	  | (Register r, Register r') => Register.isSubtype (r, r')
+	  | (StackOffset s, StackOffset s') => StackOffset.isSubtype (s, s')
+	  | _ => false
+
+      val interfere: t * t -> bool =
+	 fn (l, l') =>
+	 equals (l, l')
+	 orelse (case (l, l') of
+		    (StackOffset s, StackOffset s') =>
+		       StackOffset.interfere (s, s')
+		  | _ => false)
+
+      val fromOperand: Operand.t -> t option =
+	 fn Operand.Global g => SOME (Global g)
+	  | Operand.Register r => SOME (Register r)
+	  | Operand.StackOffset s => SOME (StackOffset s)
+	  | _ => NONE
+
+      val toOperand: t -> Operand.t =
+	 fn Global g => Operand.Global g
+	  | Register r => Operand.Register r
+	  | StackOffset s => Operand.StackOffset s
+   end
+
 structure Transfer =
    struct
       datatype t =
@@ -405,7 +487,7 @@ structure Transfer =
 		   func: Type.t CFunction.t,
 		   return: Label.t option}
        | Call of {label: Label.t,
-		  live: Operand.t vector,
+		  live: Live.t vector,
 		  return: {return: Label.t,
 			   handler: Label.t option,
 			   size: Bytes.t} option}
@@ -436,7 +518,7 @@ structure Transfer =
 	     | Call {label, live, return} => 
 		  seq [str "Call ", 
 		       record [("label", Label.layout label),
-			       ("live", Vector.layout Operand.layout live),
+			       ("live", Vector.layout Live.layout live),
 			       ("return", Option.layout 
 				(fn {return, handler, size} =>
 				 record [("return", Label.layout return),
@@ -469,14 +551,14 @@ structure Transfer =
 structure Kind =
    struct
       datatype t =
-	 Cont of {args: Operand.t vector,
+	 Cont of {args: Live.t vector,
 		  frameInfo: FrameInfo.t}
-       | CReturn of {dst: Operand.t option,
+       | CReturn of {dst: Live.t option,
 		     frameInfo: FrameInfo.t option,
 		     func: Type.t CFunction.t}
        | Func
        | Handler of {frameInfo: FrameInfo.t,
-		     handles: Operand.t vector}
+		     handles: Live.t vector}
        | Jump
 
       fun layout k =
@@ -486,12 +568,12 @@ structure Kind =
 	    case k of
 	       Cont {args, frameInfo} =>
 		  seq [str "Cont ",
-		       record [("args", Vector.layout Operand.layout args),
+		       record [("args", Vector.layout Live.layout args),
 			       ("frameInfo", FrameInfo.layout frameInfo)]]
 	     | CReturn {dst, frameInfo, func} =>
 		  seq [str "CReturn ",
 		       record
-		       [("dst", Option.layout Operand.layout dst),
+		       [("dst", Option.layout Live.layout dst),
 			("frameInfo", Option.layout FrameInfo.layout frameInfo),
 			("func", CFunction.layout (func, Type.layout))]]
 	     | Func => str "Func"
@@ -499,7 +581,7 @@ structure Kind =
 		  seq [str "Handler ",
 		       record [("frameInfo", FrameInfo.layout frameInfo),
 			       ("handles",
-				Vector.layout Operand.layout handles)]]
+				Vector.layout Live.layout handles)]]
 	     | Jump => str "Jump"
 	 end
 
@@ -514,9 +596,9 @@ structure Block =
    struct
       datatype t = T of {kind: Kind.t,
 			 label: Label.t,
-			 live: Operand.t vector,
-			 raises: Operand.t vector option,
-			 returns: Operand.t vector option,
+			 live: Live.t vector,
+			 raises: Live.t vector option,
+			 returns: Live.t vector option,
 			 statements: Statement.t vector,
 			 transfer: Transfer.t}
 
@@ -536,12 +618,12 @@ structure Block =
 	    align [seq [Label.layout label, 
 			str ": ",
 			record [("kind", Kind.layout kind),
-				("live", Vector.layout Operand.layout live),
+				("live", Vector.layout Live.layout live),
 				("raises",
-				 Option.layout (Vector.layout Operand.layout)
+				 Option.layout (Vector.layout Live.layout)
 				 raises),
 				("returns",
-				 Option.layout (Vector.layout Operand.layout)
+				 Option.layout (Vector.layout Live.layout)
 				 returns)]],
 		   indent (align
 			   [align (Vector.toListMap
@@ -559,7 +641,7 @@ structure Block =
 		  Kind.CReturn {dst, ...} =>
 		     (case dst of
 			 NONE => a
-		       | SOME z => f (z, a))
+		       | SOME z => f (Live.toOperand z, a))
 		| _ => a
 	    val a =
 	       Vector.fold (statements, a, fn (s, a) =>
@@ -756,30 +838,35 @@ structure Program =
 
       structure Alloc =
 	 struct
-	    datatype t = T of Operand.t list
+	    datatype t = T of Live.t list
 
-	    fun layout (T zs) = List.layout Operand.layout zs
+	    fun layout (T ds) = List.layout Live.layout ds
+
+	    val empty = T []
 	       
-	    val new = T
+	    fun forall (T ds, f) = List.forall (ds, f o Live.toOperand)
 
-	    fun forall (T zs, f) = List.forall (zs, f)
+	    fun defineLive (T ls, l) = T (l :: ls)
 	       
-	    fun define (T zs, z) =
-	       if (case z of
-		      Operand.Global _ => true
-		    | Operand.Register _ => true
-		    | Operand.StackOffset _ => true
-		    | _ => false)
-		  then T (z :: zs)
-	       else T zs
+	    fun define (T ds, z) =
+	       case Live.fromOperand z of
+		  NONE => T ds
+		| SOME d => T (d :: ds)
 
-	    fun doesDefine (T zs, z): bool =
-	       case List.peek (zs, fn z' => Operand.interfere (z, z')) of
-		  NONE => false
-		| SOME z' => Operand.equals (z, z')
+	    val new: Live.t list -> t = T
+
+	    fun doesDefine (T ls, l': Live.t): bool =
+	       let
+		  val oper' = Live.toOperand l'
+	       in
+		  case List.peek (ls, fn l =>
+				  Operand.interfere (Live.toOperand l, oper')) of
+		     NONE => false
+		   | SOME l => Live.isSubtype (l, l')
+	       end
 
 	    val doesDefine =
-	       Trace.trace2 ("Alloc.doesDefine", layout, Operand.layout,
+	       Trace.trace2 ("Alloc.doesDefine", layout, Live.layout,
 			     Bool.layout)
 	       doesDefine
 	 end
@@ -941,12 +1028,11 @@ structure Program =
 		      | Frontier => true
 		      | GCState => true
 		      | Global _ =>
-			   (* For now, we don't check that globals are
-			    * defined, because they aren't captured by
-			    * liveness info.
+			   (* We don't check that globals are defined because
+			    * they aren't captured by liveness info.  It would
+			    * be nice to fix this.
 			    *)
 			   true
-			   orelse Alloc.doesDefine (alloc, x)
 		      | Label l => 
 			   (let val _ = labelBlock l
 			    in true
@@ -962,11 +1048,11 @@ structure Program =
 						      pointerTy = tyconTy,
 						      result = ty}))
 		      | Real _ => true
-		      | Register _ => Alloc.doesDefine (alloc, x)
-		      | StackOffset {offset, ty, ...} =>
+		      | Register r => Alloc.doesDefine (alloc, Live.Register r)
+		      | StackOffset (so as StackOffset.T {offset, ty, ...}) =>
 			   Bytes.<= (Bytes.+ (offset, Type.bytes ty),
 				     maxFrameSize)
-			   andalso Alloc.doesDefine (alloc, x)
+			   andalso Alloc.doesDefine (alloc, Live.StackOffset so)
 			   andalso (case Type.dest ty of
 				       Type.Label l =>
 					  let
@@ -1028,7 +1114,7 @@ structure Program =
 			       List.fold
 			       (zs, [], fn (z, liveOffsets) =>
 				case z of
-				   Operand.StackOffset {offset, ty} =>
+				   Live.StackOffset (StackOffset.T {offset, ty}) =>
 				      if Type.isPointer ty
 					 then offset :: liveOffsets
 				      else liveOffsets
@@ -1052,7 +1138,7 @@ structure Program =
 			Alloc.forall
 			(alloc, fn z =>
 			 case z of
-			    Operand.StackOffset {offset, ty} =>
+			    Operand.StackOffset (StackOffset.T {offset, ty}) =>
 			       Bytes.<= (Bytes.+ (offset, Type.bytes ty), size)
 			  | _ => false)
 		     end
@@ -1063,7 +1149,7 @@ structure Program =
 			   andalso slotsAreInFrame frameInfo
 			   then SOME (Vector.fold
 				      (args, alloc, fn (z, alloc) =>
-				       Alloc.define (alloc, z)))
+				       Alloc.defineLive (alloc, z)))
 			else NONE
 		   | CReturn {dst, frameInfo, func, ...} =>
 			let
@@ -1072,7 +1158,7 @@ structure Program =
 				  NONE => true
 				| SOME z =>
 				     Type.isSubtype (CFunction.return func,
-						     Operand.ty z))
+						     Live.ty z))
                               andalso
 			      (if CFunction.mayGC func
 				  then (case frameInfo of
@@ -1089,7 +1175,7 @@ structure Program =
 			   if ok
 			      then SOME (case dst of
 					    NONE => alloc
-					  | SOME z => Alloc.define (alloc, z))
+					  | SOME z => Alloc.defineLive (alloc, z))
 			   else NONE
 			end
 		   | Func => SOME alloc
@@ -1168,33 +1254,32 @@ structure Program =
 			   then SOME alloc
 			else NONE
 	       end
-	    fun liveIsOk (live: Operand.t vector,
+	    fun liveIsOk (live: Live.t vector,
 			  a: Alloc.t): bool =
 	       Vector.forall (live, fn z => Alloc.doesDefine (a, z))
-	    fun liveSubset (live: Operand.t vector,
-			    live': Operand.t vector): bool =
+	    fun liveSubset (live: Live.t vector,
+			    live': Live.t vector): bool =
 	       Vector.forall
-	       (live, fn z =>
-		Vector.exists (live', fn z' =>
-			       Operand.equals (z, z')))
+	       (live, fn z => Vector.exists (live', fn z' =>
+					     Live.equals (z, z')))
 	    fun goto (Block.T {live,
 			       raises = raises',
 			       returns = returns', ...},
-		      raises,
-		      returns,
+		      raises: Live.t vector option,
+		      returns: Live.t vector option,
 		      alloc: Alloc.t): bool =
 	       liveIsOk (live, alloc)
 	       andalso
 	       (case (raises, raises') of
 		   (_, NONE) => true
 		 | (SOME gs, SOME gs') =>
-		      Vector.equals (gs, gs', Operand.equals)
+		      Vector.equals (gs', gs, Live.isSubtype)
 		 | _ => false)
 		   andalso
 		   (case (returns, returns') of
 		       (_, NONE) => true
 		     | (SOME os, SOME os') =>
-			  Vector.equals (os, os', Operand.equals)
+			  Vector.equals (os', os, Live.isSubtype)
 		     | _ => false)
 	    fun checkCont (cont: Label.t, size: Bytes.t, alloc: Alloc.t) =
 	       let
@@ -1213,10 +1298,9 @@ structure Program =
 				       (Vector.map
 					(args, fn z =>
 					 case z of
-					    Operand.StackOffset {offset, ty} =>
-					       Operand.StackOffset
-					       {offset = Bytes.- (offset, size),
-						ty = ty}
+					    Live.StackOffset s =>
+					       Live.StackOffset
+					       (StackOffset.shift (s, size))
 					  | _ => z)))
 				else NONE)
 			  | _ => NONE)
@@ -1224,10 +1308,10 @@ structure Program =
 	       end
 	    fun callIsOk {alloc: Alloc.t,
 			  dst: Label.t,
-			  live,
-			  raises,
+			  live: Live.t vector,
+			  raises: Live.t vector option,
 			  return,
-			  returns} =
+			  returns: Live.t vector option} =
 	       let
 		  val {raises, returns, size} =
 		     case return of
@@ -1273,20 +1357,21 @@ structure Program =
 		     (Vector.fold
 		      (live, [], fn (z, ac) =>
 		       case z of
-			  Operand.StackOffset {offset, ty} =>
+			  Live.StackOffset (StackOffset.T {offset, ty}) =>
 			     if Bytes.< (offset, size)
 				then ac
-			     else (Operand.StackOffset
-				   {offset = Bytes.- (offset, size),
-				    ty = ty} :: ac)
+			     else (Live.StackOffset
+				   (StackOffset.T
+				    {offset = Bytes.- (offset, size),
+				     ty = ty})) :: ac
 			| _ => ac))
 	       in
 		  goto (b, raises, returns, alloc)
 	       end
 	    fun transferOk
 	       (t: Transfer.t,
-		raises: Operand.t vector option,
-		returns: Operand.t vector option,
+		raises: Live.t vector option,
+		returns: Live.t vector option,
 		alloc: Alloc.t): bool =
 	       let
 		  fun jump (l: Label.t, a: Alloc.t) =
@@ -1358,16 +1443,14 @@ structure Program =
 			   (case raises of
 			       NONE => false
 			     | SOME zs =>
-				  Vector.forall (zs, fn z =>
-						 Alloc.doesDefine
-						 (alloc, z)))
+				  Vector.forall
+				  (zs, fn z => Alloc.doesDefine (alloc, z)))
 		      | Return =>
 			   (case returns of
 			       NONE => false
 			     | SOME zs =>
 				  Vector.forall
-				  (zs, fn z =>
-				   Alloc.doesDefine (alloc, z)))
+				  (zs, fn z => Alloc.doesDefine (alloc, z)))
 		      | Switch s =>
 			   Switch.isOk
 			   (s, {checkUse = fn z => checkOperand (z, alloc),
@@ -1395,11 +1478,11 @@ structure Program =
 			     | z :: zs =>
 				  List.forall
 				  (zs, fn z' =>
-				   not (Operand.interfere (z, z')))
+				   not (Live.interfere (z, z')))
 		      in
 			 loop live
 		      end,
-		      fn () => List.layout Operand.layout live)
+		      fn () => List.layout Live.layout live)
 		  val alloc = Alloc.new live
 		  val alloc =
 		     Err.check'

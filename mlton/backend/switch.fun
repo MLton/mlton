@@ -44,9 +44,7 @@ fun layout (T {cases, default, test, ...})=
 	   record [("test", Use.layout test),
 		   ("default", Option.layout Label.layout default),
 		   ("cases",
-		    Vector.layout
-		    (Layout.tuple2 (fn w => seq [str "0x", WordX.layout w],
-				    Label.layout))
+		    Vector.layout (Layout.tuple2 (WordX.layout, Label.layout))
 		    cases)]]
    end
 

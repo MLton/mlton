@@ -18,38 +18,60 @@ signature SSA_TREE2 =
 
       structure Type:
 	 sig
-	    include HASH_TYPE
+	    type t
 	       
 	    datatype dest =
 	       Array of t
 	     | Datatype of Tycon.t
 	     | IntInf
+	     | Object of {args: {elt: t, isMutable: bool} vector,
+			  con: Con.t option}
 	     | Real of RealSize.t
-	     | Ref of t
 	     | Thread
-	     | Tuple of t vector
 	     | Vector of t
 	     | Weak of t
 	     | Word of WordSize.t
 
+	    val array: t -> t
+	    val bool: t
+	    val conApp: Con.t * {elt: t, isMutable: bool} vector -> t
+	    val checkPrimApp: {args: t vector,
+			       isSubtype: t * t -> bool,
+			       prim: t Prim.t,
+			       result: t,
+			       targs: t vector} -> bool
+	    val datatypee: Tycon.t -> t
 	    val dest: t -> dest
-	    val tyconArgs: t -> Tycon.t * t vector
+	    val equals: t * t -> bool
+	    val intInf: t
+	    val layout: t -> Layout.t
+	    val ofConst: Const.t -> t
+	    val plist: t -> PropertyList.t
+	    val real: RealSize.t -> t
+	    val reff: t -> t
+	    val thread: t
+	    val tuple: {elt: t, isMutable: bool} vector -> t
+	    val vector: t -> t
+	    val weak: t -> t
+	    val word: WordSize.t -> t
+	    val unit: t
 	 end
-      sharing Atoms = Type.Atoms
 
       structure Exp:
 	 sig
 	    datatype t =
-	       ConApp of {args: Var.t vector,
-			  con: Con.t}
-	     | Const of Const.t
+	       Const of Const.t
+	     | Object of {args: Var.t vector,
+			  con: Con.t option}
 	     | PrimApp of {args: Var.t vector,
 			   prim: Type.t Prim.t,
 			   targs: Type.t vector}
 	     | Profile of ProfileExp.t
-	     | Select of {offset: int,
-			  tuple: Var.t}
-	     | Tuple of Var.t vector
+	     | Select of {object: Var.t,
+			  offset: int}
+	     | Update of {object: Var.t,
+			  offset: int,
+			  value: Var.t}
 	     | Var of Var.t
 
 	    val equals: t * t -> bool
@@ -156,7 +178,8 @@ signature SSA_TREE2 =
       structure Datatype:
 	 sig
 	    datatype t =
-	       T of {cons: {args: Type.t vector,
+	       T of {cons: {args: {elt: Type.t,
+				   isMutable: bool} vector,
 			    con: Con.t} vector,
 		     tycon: Tycon.t}
 

@@ -16,10 +16,12 @@ local
 in
    structure Global = Global
    structure Label = Label
+   structure Live = Live
    structure PointerTycon = PointerTycon
    structure RealX = RealX
    structure Register = Register
    structure Runtime = Runtime
+   structure StackOffset = StackOffset
    structure WordSize = WordSize
    structure WordX = WordX
 end
@@ -284,16 +286,16 @@ fun toMachine (program: Ssa.Program.t, codegen) =
 	 setFrameInfo
       (* The global raise operands. *)
       local
-	 val table: (Type.t vector * M.Operand.t vector) list ref = ref []
+	 val table: (Type.t vector * M.Live.t vector) list ref = ref []
       in
-	 fun raiseOperands (ts: Type.t vector): M.Operand.t vector =
+	 fun raiseOperands (ts: Type.t vector): M.Live.t vector =
 	    case List.peek (!table, fn (ts', _) =>
 			    Vector.equals (ts, ts', Type.equals)) of
 	       NONE =>
 		  let
 		     val gs =
 			Vector.map (ts, fn ty =>
-				    M.Operand.Global
+				    M.Live.Global
 				    (Global.new {isRoot = false,
 						 ty = ty}))
 		     val _ = List.push (table, (ts, gs))
@@ -514,19 +516,19 @@ fun toMachine (program: Ssa.Program.t, codegen) =
 		  Vector.new1
 		  (M.Statement.move
 		   {dst = exnStackOp,
-		    src = M.Operand.StackOffset {offset = linkOffset (),
+		    src = M.Operand.stackOffset {offset = linkOffset (),
 						 ty = Type.exnStack}})
 	     | SetHandler h =>
 		  Vector.new1
 		  (M.Statement.move
-		   {dst = M.Operand.StackOffset {offset = handlerOffset (),
+		   {dst = M.Operand.stackOffset {offset = handlerOffset (),
 						 ty = Type.label h},
 		    src = M.Operand.Label h})
 	     | SetSlotExnStack =>
 		  (* *(uint* )(stackTop + offset) = ExnStack; *)
 		  Vector.new1
 		  (M.Statement.move
-		   {dst = M.Operand.StackOffset {offset = linkOffset (),
+		   {dst = M.Operand.stackOffset {offset = linkOffset (),
 						 ty = Type.exnStack},
 		    src = exnStackOp})
 	     | _ => Error.bug (concat
@@ -554,7 +556,7 @@ fun toMachine (program: Ssa.Program.t, codegen) =
 	 setLabelInfo
       fun callReturnOperands (xs: 'a vector,
 			      ty: 'a -> Type.t,
-			      shift: Bytes.t): M.Operand.t vector =
+			      shift: Bytes.t): StackOffset.t vector =
 	 #1 (Vector.mapAndFold
 	     (xs, Bytes.zero,
 	      fn (x, offset) =>
@@ -562,10 +564,13 @@ fun toMachine (program: Ssa.Program.t, codegen) =
 		 val ty = ty x
 		 val offset = Type.align (ty, offset)
 	      in
-		 (M.Operand.StackOffset {offset = Bytes.+ (shift, offset),
-					 ty = ty},
+		 (StackOffset.T {offset = Bytes.+ (shift, offset), ty = ty},
 		  Bytes.+ (offset, Type.bytes ty))
 	      end))
+      val operandLive: M.Operand.t -> M.Live.t =
+	 valOf o M.Live.fromOperand
+      val operandsLive: M.Operand.t vector -> M.Live.t vector =
+	 fn ops => Vector.map (ops, operandLive)
       fun genFunc (f: Function.t, isMain: bool): unit =
 	 let
 	    val f = eliminateDeadCode f
@@ -660,10 +665,16 @@ fun toMachine (program: Ssa.Program.t, codegen) =
 		  end
 	    in
 	       val {handlerLinkOffset, labelInfo = labelRegInfo, ...} =
-		  AllocateRegisters.allocate
-		  {argOperands = callReturnOperands (args, #2, Bytes.zero),
-		   function = f,
-		   varInfo = varInfo}
+		  let
+		     val argOperands =
+			Vector.map
+			(callReturnOperands (args, #2, Bytes.zero),
+			 M.Operand.StackOffset)
+		  in
+		     AllocateRegisters.allocate {argOperands = argOperands,
+						 function = f,
+						 varInfo = varInfo}
+		  end
 	    end
 	    (* Set the frameInfo for blocks in this function. *)
 	    val _ =
@@ -679,7 +690,7 @@ fun toMachine (program: Ssa.Program.t, codegen) =
 				  Vector.fold
 				  (liveNoFormals, [], fn (oper, ac) =>
 				   case oper of
-				      M.Operand.StackOffset {offset, ty} =>
+				      M.Operand.StackOffset (StackOffset.T {offset, ty}) =>
 					 if Type.isPointer ty
 					    then offset :: ac
 					 else ac
@@ -762,13 +773,15 @@ fun toMachine (program: Ssa.Program.t, codegen) =
 			   val setupArgs =
 			      parallelMove
 			      {chunk = chunk,
-			       dsts = dsts,
+			       dsts = Vector.map (dsts, M.Operand.StackOffset),
 			       srcs = translateOperands args}
+			   val live =
+			      Vector.concat [operandsLive contLive,
+					     Vector.map (dsts, Live.StackOffset)]
 			   val transfer =
-			      M.Transfer.Call
-			      {label = funcToLabel func,
-			       live = Vector.concat [contLive, dsts],
-			       return = return}
+			      M.Transfer.Call {label = funcToLabel func,
+					       live = live,
+					       return = return}
 			in
 			   (setupArgs, transfer)
 			end
@@ -778,22 +791,16 @@ fun toMachine (program: Ssa.Program.t, codegen) =
 				       chunk = labelChunk dst},
 			 M.Transfer.Goto dst)
 		   | R.Transfer.Raise srcs =>
-			(M.Statement.moves
-			 {dsts = (raiseOperands
-				  (Vector.map (srcs, R.Operand.ty))),
-			  srcs = translateOperands srcs},
+			(M.Statement.moves {dsts = Vector.map (valOf raises,
+							       Live.toOperand),
+					    srcs = translateOperands srcs},
 			 M.Transfer.Raise)
 		   | R.Transfer.Return xs =>
-			let
-			   val dsts =
-			      callReturnOperands (xs, R.Operand.ty, Bytes.zero)
-			in
-			   (parallelMove
-			    {chunk = chunk,
-			     dsts = dsts,
-			     srcs = translateOperands xs},
-			    M.Transfer.Return)
-			end
+			(parallelMove {chunk = chunk,
+				       dsts = Vector.map (valOf returns,
+							  M.Operand.StackOffset),
+				       srcs = translateOperands xs},
+			 M.Transfer.Return)
 		   | R.Transfer.Switch switch =>
 			let
 			   val R.Switch.T {cases, default, size, test} =
@@ -827,12 +834,16 @@ fun toMachine (program: Ssa.Program.t, codegen) =
 		     if Label.equals (label, start)
 			then let
 				val live = #live (labelRegInfo start)
+				val returns =
+				   Option.map
+				   (returns, fn returns =>
+				    Vector.map (returns, Live.StackOffset))
 			     in
 				Chunk.newBlock
 				(chunk, 
 				 {label = funcToLabel name,
 				  kind = M.Kind.Func,
-				  live = live,
+				  live = operandsLive live,
 				  raises = raises,
 				  returns = returns,
 				  statements = Vector.new0 (),
@@ -845,28 +856,30 @@ fun toMachine (program: Ssa.Program.t, codegen) =
 		     Vector.concatV
 		     (Vector.map (statements, fn s =>
 				  genStatement (s, handlerLinkOffset)))
-		  val (preTransfer, transfer) = genTransfer (transfer, chunk)
+		  val (preTransfer, transfer) = genTransfer (transfer, chunk)	
 		  val (kind, live, pre) =
 		     case kind of
 			R.Kind.Cont _ =>
 			   let
 			      val srcs = callReturnOperands (args, #2, size)
 			   in
-			      (M.Kind.Cont {args = srcs,
+			      (M.Kind.Cont {args = Vector.map (srcs,
+							       Live.StackOffset),
 					    frameInfo = valOf (frameInfo label)},
 			       liveNoFormals,
 			       parallelMove
 			       {chunk = chunk,
 				dsts = Vector.map (args, varOperand o #1),
-				srcs = srcs})
+				srcs = Vector.map (srcs, M.Operand.StackOffset)})
 			   end
 		      | R.Kind.CReturn {func, ...} =>
 			   let
 			      val dst =
 				 case Vector.length args of
 				    0 => NONE
-				  | 1 => SOME (varOperand
-					       (#1 (Vector.sub (args, 0))))
+				  | 1 => SOME (operandLive
+					       (varOperand
+						(#1 (Vector.sub (args, 0)))))
 				  | _ => Error.bug "strange CReturn"
 			   in
 			      (M.Kind.CReturn {dst = dst,
@@ -889,8 +902,9 @@ fun toMachine (program: Ssa.Program.t, codegen) =
 			       {frameInfo = valOf (frameInfo label),
 				handles = handles},
 			       liveNoFormals,
-			       M.Statement.moves {dsts = dsts,
-						  srcs = handles})
+			       M.Statement.moves
+			       {dsts = dsts,
+				srcs = Vector.map (handles, Live.toOperand)})
 			   end
 		      | R.Kind.Jump => (M.Kind.Jump, live, Vector.new0 ())
 		  val (first, statements) =
@@ -912,11 +926,14 @@ fun toMachine (program: Ssa.Program.t, codegen) =
 		     else (Vector.new0 (), statements)
 		  val statements =
 		     Vector.concat [first, pre, statements, preTransfer]
+		  val returns =
+		     Option.map (returns, fn returns =>
+				 Vector.map (returns, Live.StackOffset))
 	       in
 		  Chunk.newBlock (chunk,
 				  {kind = kind,
 				   label = label,
-				   live = live,
+				   live = operandsLive live,
 				   raises = raises,
 				   returns = returns,
 				   statements = statements,
@@ -1007,7 +1024,7 @@ fun toMachine (program: Ssa.Program.t, codegen) =
 		     | Cast (z, _) => doOperand (z, max)
 		     | Contents {oper, ...} => doOperand (oper, max)
 		     | Offset {base, ...} => doOperand (base, max)
-		     | StackOffset {offset, ty} =>
+		     | StackOffset (StackOffset.T {offset, ty}) =>
 			  Bytes.max (Bytes.+ (offset, Type.bytes ty), max)
 		     | _ => max
 		 end

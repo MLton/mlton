@@ -60,6 +60,15 @@ signature MACHINE =
 	    val ty: t -> Type.t
 	 end
 
+      structure StackOffset:
+	 sig
+	    datatype t = T of {offset: Bytes.t,
+			       ty: Type.t}
+
+	    val offset: t -> Bytes.t
+	    val ty: t -> Type.t
+	 end
+
       structure Operand:
 	 sig
 	    datatype t =
@@ -80,18 +89,32 @@ signature MACHINE =
 			  ty: Type.t}
 	     | Real of RealX.t
 	     | Register of Register.t
-	     | StackOffset of {offset: Bytes.t,
-			       ty: Type.t}
+	     | StackOffset of StackOffset.t
 	     | StackTop
 	     | Word of WordX.t
 
 	    val equals: t * t -> bool
 	    val interfere: t * t -> bool
 	    val layout: t -> Layout.t
+	    val stackOffset: {offset: Bytes.t, ty: Type.t} -> t
 	    val toString: t -> string
 	    val ty: t -> Type.t
 	 end
       sharing Operand = Switch.Use
+
+      structure Live:
+	 sig
+	    datatype t =
+	       Global of Global.t
+	     | Register of Register.t
+	     | StackOffset of StackOffset.t
+
+	    val equals: t * t -> bool
+	    val fromOperand: Operand.t -> t option
+	    val layout: t -> Layout.t
+	    val toOperand: t -> Operand.t
+	    val ty: t -> Type.t
+	 end
 
       structure Statement:
 	 sig
@@ -150,7 +173,7 @@ signature MACHINE =
 			  *)
 			 return: Label.t option}
 	     | Call of {label: Label.t, (* label must be a Func *)
-			live: Operand.t vector,
+			live: Live.t vector,
 			return: {return: Label.t,
 				 handler: Label.t option,
 				 size: Bytes.t} option}
@@ -166,14 +189,14 @@ signature MACHINE =
       structure Kind:
 	 sig
 	    datatype t =
-	       Cont of {args: Operand.t vector,
+	       Cont of {args: Live.t vector,
 			frameInfo: FrameInfo.t}
-	     | CReturn of {dst: Operand.t option,
+	     | CReturn of {dst: Live.t option,
 			   frameInfo: FrameInfo.t option,
 			   func: Type.t CFunction.t}
 	     | Func
 	     | Handler of {frameInfo: FrameInfo.t,
-			   handles: Operand.t vector}
+			   handles: Live.t vector}
 	     | Jump
 
 	    val frameInfoOpt: t -> FrameInfo.t option
@@ -185,9 +208,9 @@ signature MACHINE =
 	       T of {kind: Kind.t,
 		     label: Label.t,
 		     (* Live registers and stack offsets at start of block. *)
-		     live: Operand.t vector,
-		     raises: Operand.t vector option,
-		     returns: Operand.t vector option,
+		     live: Live.t vector,
+		     raises: Live.t vector option,
+		     returns: Live.t vector option,
 		     statements: Statement.t vector,
 		     transfer: Transfer.t}
 
