@@ -41,6 +41,12 @@ CFILES = 							\
 	gc.c							\
 	platform.c
 
+HFILES = 				\
+	gc.h				\
+	types.h				\
+	platform.h			\
+	platform/$(TARGET_OS).h
+
 FILES = $(basename $(CFILES))
 
 # EXTRA_CFILES is for files that we don't want compiled in the big
@@ -93,10 +99,10 @@ runtime.c: $(CFILES)
 basis/Real/class.o: basis/Real/class.c
 	$(CC) $(CFLAGS) -O1 -c -o $@ $<
 
-%-gdb.o: %.c
+%-gdb.o: %.c $(HFILES)
 	$(CC) $(DEBUGFLAGS) -DASSERT=1 -c -o $@ $<
 
-%.o: %.c
+%.o: %.c $(HFILES)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 %-gdb.o: %.S
