@@ -2,6 +2,8 @@
  * Author: Stephen Weeks (sweeks@acm.org)
  *
  * This requires that you have SML/NJ installed.
+ * It works with SML/NJ 110.9.1, and may require changes to work with other
+ * versions, since it depends on the CM structure.
  *
  * cmcat takes a ".cm" file and prints on stdout a list of files in the order
  * deduced by CM.
@@ -19,12 +21,17 @@
  * 3. mv cmcat.x86-linux <smlnj>/bin/.heap
  *
  * Once it is installed, the usage is as follows:
- *   cmcat sources.cm
+ *   cmcat [-Dsym ...] sources.cm
+ *
+ * -Dsym can be used to define CM preprocessor symbols.
  *)
 
 structure Cmcat:
    sig
-      val cmcat: {(* The ".cm" filename *)
+      val cmcat: {
+		  (* CM preprocessor defines *)
+		  defines: string list,
+		  (* The ".cm" filename *)
 		  sources: string,
 		  (* Where to write the output *)
 		  out: TextIO.outstream
@@ -75,8 +82,10 @@ structure Cmcat:
 		fn () => (system ("/bin/rm -r " ^ dir); chDir cur)))
 	 end
 
-      fun cmcat {out, sources} =
+      fun cmcat {defines, out, sources} =
 	 let
+	    (* Define preprocessor symbols *)
+            val _ = List.app (fn n => CM.SymVal.define (n, 0)) defines
 	    val dir = getDir ()
 	 in
 	    CM.verbose (SOME false)
@@ -101,20 +110,32 @@ structure Cmcat:
       fun export () =
 	 SMLofNJ.exportFn
 	 ("cmcat", fn (_, args) =>
-	  case args of
-	     [file] =>
-		(cmcat {
-			out = stdOut,
-			(* Some versions of SML/NJ have a different type for
-			 * mkAbsolute, which will cause a type error here.  If
-			 * you get such an error, try the following:
-			 * mkAbsolute (file, getDir ())
-			 *)
-			sources = mkAbsolute {path = file,
-					      relativeTo = getDir ()}}
-		handle _ => die "cmcat failed"
-		   ; 0)
-	   | _ => die "wrong number of arguments")
-
+	  let
+	     val defines = ref []
+	     fun loop args = 
+		case args of
+		   [file] =>
+		      cmcat {
+			     defines = !defines,
+			     out = stdOut,
+			     (* Some versions of SML/NJ have a different type
+			      * for mkAbsolute, which will cause a type error
+			      * here.  If you get such an error, try the
+			      * following: mkAbsolute (file, getDir ())
+			      *)
+			     sources = mkAbsolute {path = file,
+						   relativeTo = getDir ()}}
+	       | flag :: args =>
+		    if String.isPrefix "-D" flag
+		       then
+			  (defines := String.extract (flag, 2, NONE) :: !defines
+			   ; loop args)
+		    else die (String.concat ["invalid flag ", flag])
+	       | _ => die "wrong number of arguments"
+	  in
+	     loop args handle _ => die "cmcat failed"
+	     ; 0
+	  end)
    end
+
 

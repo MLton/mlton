@@ -1,5 +1,9 @@
 Here are the changes from version 20011006 to version VERSION.
 
+* 2001-10-23
+  - Added -D option to cmcat for preprocessor defines.  Thanks to Anoq for
+    sending the code.
+
 * 2001-10-18
   - Fixed type inference of flexrecord so that it now follows the Definition.
     Many programs containing flexrecords were incorrectly rejected.  Added many
