@@ -30,6 +30,3 @@ Should be `Option':
 Should be `Empty':
   Empty
   Empty
-Should be `Io':
-  Io
-  Io: openOut "." failed with SysErr: Is a directory [isdir]

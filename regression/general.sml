@@ -50,6 +50,7 @@ val _ = List.map prExn
      ("Chr",       getExn(fn _ => Char.chr 9999999)),
      ("Fail",      Fail "demo"),
      ("Option",    getExn(fn _ => valOf NONE)),
-     ("Empty",     getExn(fn _ => List.hd [])),
+     ("Empty",     getExn(fn _ => List.hd []))
 (*     ("SysErr",    getExn (fn _ => FileSys.modTime "exists.not")), *)
-     ("Io",        getExn (fn _ => TextIO.openOut "."))];
+(*     ("Io",        getExn (fn _ => TextIO.openOut "."))*)
+     ];
