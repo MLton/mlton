@@ -12,8 +12,9 @@ struct
 
   fun track memloc = let
 		       val trackClasses 
-			 = ClassSet.+(!x86MLton.Classes.livenessClasses,
-				      !x86MLton.Classes.holdClasses)
+			 = ClassSet.add(ClassSet.+(!x86MLton.Classes.livenessClasses,
+						 !x86MLton.Classes.holdClasses),
+					x86MLton.Classes.StaticNonTemp)
 		     in
 		       ClassSet.contains(trackClasses, MemLoc.class memloc)
 		     end
@@ -297,7 +298,9 @@ struct
 			   REMOVE,
 			   fn (default, USE memloc')
 			    => if MemLoc.eq(memloc,memloc')
-				 then CONTINUE COMMIT
+				 then if track memloc
+					then RETURN NO
+					else CONTINUE COMMIT
 				 else if MemLoc.mayAlias(memloc,memloc')
 					then RETURN COMMIT
 					else CONTINUE default
@@ -322,7 +325,9 @@ struct
 			   REMOVE,
 			   fn (default, USE memloc')
 			    => if MemLoc.eq(memloc,memloc')
-				 then CONTINUE COMMIT
+				 then if track memloc
+					then RETURN NO
+					else CONTINUE COMMIT
 				 else if MemLoc.mayAlias(memloc,memloc')
 					then RETURN COMMIT
 					else CONTINUE default
@@ -4703,8 +4708,8 @@ struct
 			 = if reserve
 			     then reserve' {register = register,
 					    registerAllocation = registerAllocation}
-			     else {assembly = AppendList.empty,
-				   registerAllocation = registerAllocation}
+			     else unreserve' {register = register,
+					      registerAllocation = registerAllocation}
 		     in
 		       {assembly = AppendList.append (assembly,
 						      assembly_reserve),
@@ -5953,56 +5958,110 @@ struct
 		*      add  X
 		*)
 	     => let
-		  val {uses,defs,kills} 
-		    = Instruction.uses_defs_kills instruction
-		  val {assembly = assembly_pre,
-		       registerAllocation}
-		    = RA.pre {uses = uses,
-			      defs = defs,
-			      kills = kills,
-			      info = info,
-			      registerAllocation = registerAllocation}
+		  fun default ()
+		    = let
+			val {uses,defs,kills} 
+			  = Instruction.uses_defs_kills instruction
+			val {assembly = assembly_pre,
+			     registerAllocation}
+			  = RA.pre {uses = uses,
+				    defs = defs,
+				    kills = kills,
+				    info = info,
+				    registerAllocation = registerAllocation}
+			  
+			val {final_src,
+			     final_dst,
+			     assembly_src_dst,
+			     registerAllocation}
+			  = allocateSrcDst {src = src,
+					    dst = dst,
+					    move_dst = true,
+					    size = size,
+					    info = info,
+					    registerAllocation = registerAllocation}
+			  
+			val instruction 
+			  = Instruction.BinAL
+			    {oper = oper,
+			     src = final_src,
+			     dst = final_dst,
+			     size = size}
+			    
+			val {uses = final_uses,
+			     defs = final_defs,
+			     ...}
+			  = Instruction.uses_defs_kills instruction
+			  
+			val {assembly = assembly_post,
+			     registerAllocation}
+			  = RA.post {uses = uses,
+				     final_uses = final_uses,
+				     defs = defs,
+				     final_defs = final_defs,
+				     info = info,
+				     registerAllocation = registerAllocation}
+		      in
+			{assembly
+			 = AppendList.appends 
+			   [assembly_pre,
+			    assembly_src_dst,
+			    AppendList.single
+			    (Assembly.instruction instruction),
+			    assembly_post],
+			   registerAllocation = registerAllocation}
+		      end
 
-		  val {final_src,
-		       final_dst,
-		       assembly_src_dst,
-		       registerAllocation}
-		    = allocateSrcDst {src = src,
-				      dst = dst,
-				      move_dst = true,
-				      size = size,
-				      info = info,
-				      registerAllocation = registerAllocation}
+		  fun default' ()
+		    = let
+			val {uses,defs,kills} 
+			  = Instruction.uses_defs_kills instruction
+			val {assembly = assembly_pre,
+			     registerAllocation}
+			  = RA.pre {uses = uses,
+				    defs = defs,
+				    kills = kills,
+				    info = info,
+				    registerAllocation = registerAllocation}
+			  
+			val instruction 
+			  = Instruction.NOP
 
-		  val instruction 
-		    = Instruction.BinAL
-		      {oper = oper,
-		       src = final_src,
-		       dst = final_dst,
-		       size = size}
-
-		  val {uses = final_uses,
-		       defs = final_defs,
-		       ...}
-		    = Instruction.uses_defs_kills instruction
-
-		  val {assembly = assembly_post,
-		       registerAllocation}
-		    = RA.post {uses = uses,
-			       final_uses = final_uses,
-			       defs = defs,
-			       final_defs = final_defs,
-			       info = info,
-			       registerAllocation = registerAllocation}
+			val {uses = final_uses,
+			     defs = final_defs,
+			     ...}
+			  = Instruction.uses_defs_kills instruction
+			  
+			val {assembly = assembly_post,
+			     registerAllocation}
+			  = RA.post {uses = uses,
+				     final_uses = final_uses,
+				     defs = defs,
+				     final_defs = final_defs,
+				     info = info,
+				     registerAllocation = registerAllocation}
+		      in
+			{assembly
+			 = AppendList.appends 
+			   [assembly_pre,
+			    assembly_post],
+			   registerAllocation = registerAllocation}
+		      end
 		in
-		  {assembly
-		   = AppendList.appends 
-		     [assembly_pre,
-		      assembly_src_dst,
-		      AppendList.single
-		      (Assembly.instruction instruction),
-		      assembly_post],
-		   registerAllocation = registerAllocation}
+		  case (oper, src, dst)
+		    of (Instruction.ADD,
+			Operand.Immediate immediate_src,
+			Operand.MemLoc memloc_dst)
+		     => if MemLoc.eq(memloc_dst, x86MLton.c_stackPContents)
+		           andalso
+			   MemLocSet.contains(dead, memloc_dst)
+			   andalso
+			   (case Immediate.deConst immediate_src
+			      of SOME (Immediate.Int _) => true
+			       | _ => false)
+			  then default' ()
+			  else default ()
+		     | _ => default ()
 		end
 	     | pMD {oper, dst, src, size}
 	       (* Integer multiplication and division.
@@ -7028,74 +7087,142 @@ struct
 			    assembly_post],
 			 registerAllocation = registerAllocation}
 		      end
+
+		  fun default' ({register = register_src,
+				 memloc = memloc_src,
+				 weight = weight_src,
+				 sync = sync_src,
+				 commit = commit_src},
+				memloc_dst)
+		    = let
+			val {uses,defs,kills} 
+			  = Instruction.uses_defs_kills instruction
+			val {assembly = assembly_pre,
+			     registerAllocation}
+			  = RA.pre {uses = uses,
+				    defs = defs,
+				    kills = kills,
+				    info = info,
+				    registerAllocation = registerAllocation}
+
+			val registerAllocation
+			  = RA.remove
+			    {memloc = memloc_dst,
+			     registerAllocation = registerAllocation}
+			    
+			val registerAllocation
+			  = RA.update
+			    {value = {register = register_src,
+				      memloc = memloc_dst,
+				      weight = 1024,
+				      sync = false,
+				      commit = commit_src},
+			     registerAllocation = registerAllocation}
+
+			val final_uses = []
+			val final_defs 
+			  = [Operand.register register_src]
+
+			val {assembly = assembly_post,
+			     registerAllocation}
+			  = RA.post {uses = uses,
+				     final_uses = final_uses,
+				     defs = defs,
+				     final_defs = final_defs,
+				     info = info,
+				     registerAllocation = registerAllocation}
+		      in
+			{assembly 
+			 = AppendList.appends [assembly_pre,
+					       assembly_post],
+			 registerAllocation = registerAllocation}
+		      end
+
+		  fun default'' (memloc_dst)
+		    = let
+			val {uses,defs,kills} 
+			  = Instruction.uses_defs_kills instruction
+			val {assembly = assembly_pre,
+			     registerAllocation}
+			  = RA.pre {uses = uses,
+				    defs = defs,
+				    kills = kills,
+				    info = info,
+				    registerAllocation = registerAllocation}
+
+			val registerAllocation
+			  = RA.remove
+			    {memloc = memloc_dst,
+			     registerAllocation = registerAllocation}
+
+			val {final_src,
+			     final_dst,
+			     assembly_src_dst,
+			     registerAllocation}
+			  = allocateSrcDst
+			    {src = src,
+			     dst = dst,
+			     move_dst = false,
+			     size = size,
+			     info = info,
+			     registerAllocation = registerAllocation}
+
+			val instruction
+			  = Instruction.MOV
+			    {src = final_src,
+			     dst = final_dst,
+			     size = size}
+
+			val {uses = final_uses,
+			     defs = final_defs,  
+			     ...}
+			  = Instruction.uses_defs_kills instruction
+
+			val {assembly = assembly_post,
+			     registerAllocation}
+			  = RA.post {uses = uses,
+				     final_uses = final_uses,
+				     defs = defs,
+				     final_defs = final_defs,
+				     info = info,
+				     registerAllocation = registerAllocation}
+		      in
+			{assembly 
+			 = AppendList.appends 
+			   [assembly_pre,
+			    assembly_src_dst,
+			    AppendList.single
+			    (Assembly.instruction instruction),
+			    assembly_post],
+			 registerAllocation = registerAllocation}
+		      end
+
+		  val memloc_src = Operand.deMemloc src
+		  val value_src 
+		    = case memloc_src
+			of NONE => NONE
+			 | SOME memloc_src
+			 => RA.allocated {memloc = memloc_src,
+					  registerAllocation 
+					  = registerAllocation}
+		  val memloc_dst = Operand.deMemloc dst
 		in
-		  case (src,dst)
-		    of (Operand.MemLoc memloc_src, Operand.MemLoc memloc_dst)
-		     => (case RA.allocated
-			      {memloc = memloc_src,
-			       registerAllocation = registerAllocation}
-			   of SOME {register = register_src,
-				    sync = sync_src,
-				    commit = commit_src,
-				    ...}
-			    => if MemLocSet.contains(dead,memloc_src)
-			          orelse
-				  (MemLocSet.contains(remove,memloc_src)
-				   andalso
-				   sync_src)
-				 then let
-					val {uses,defs,kills} 
-					  = Instruction.uses_defs_kills 
-					    instruction
-					val {assembly = assembly_pre,
-					     registerAllocation}
-					  = RA.pre {uses = uses,
-						    defs = defs,
-						    kills = kills,
-						    info = info,
-						    registerAllocation 
-						    = registerAllocation}
-
-					val registerAllocation
-					  = RA.remove
-					    {memloc = memloc_dst,
-					     registerAllocation
-					     = registerAllocation}
-			  
-					val registerAllocation
-					  = RA.update
-					    {value = {register = register_src,
-						      memloc = memloc_dst,
-						      weight = 1024,
-						      sync = false,
-						      commit = commit_src},
-					     registerAllocation 
-					     = registerAllocation}
-
-					val final_uses = []
-					val final_defs 
-					  = [Operand.register register_src]
-
-					val {assembly = assembly_post,
-					     registerAllocation}
-					  = RA.post {uses = uses,
-						     final_uses = final_uses,
-						     defs = defs,
-						     final_defs = final_defs,
-						     info = info,
-						     registerAllocation 
-						     = registerAllocation}
-				      in
-					{assembly 
-					 = AppendList.appends 
-					   [assembly_pre,
-					    assembly_post],
-					 registerAllocation 
-					 = registerAllocation}
-				      end
-				 else default ()
-			    | _ => default ())
-		     | _ => default ()
+		  case memloc_dst
+		    of SOME memloc_dst
+		     => if MemLocSet.contains(remove,memloc_dst)
+			  then default'' memloc_dst
+			  else (case value_src
+				  of SOME (value_src as {memloc = memloc_src,
+							 sync = sync_src, ...})
+				    => if MemLocSet.contains(dead,memloc_src)
+				          orelse
+					  (MemLocSet.contains(remove,memloc_src)
+					   andalso
+					   sync_src)
+					 then default' (value_src, memloc_dst)
+					 else default ()
+				    | NONE => default ())
+		     | NONE => default ()
 		end
              | CMOVcc {condition, src, dst, size}
                (* Conditional move; p. 112
@@ -8467,9 +8594,6 @@ struct
 				  | _ => default false
 			     end
 
-		  val RA = registerAllocation
-		  val RAc = RegisterAllocation.toComments RA
- 
 		  val instruction
 		    = Instruction.FCOM
 		      {src = final_src2,
@@ -8529,7 +8653,6 @@ struct
 		   = AppendList.appends 
 		     [assembly_pre,
 		      assembly_src1_src2,
-		      RAc,
 		      AppendList.single
 		      (Assembly.instruction instruction),
 		      assembly_post],
