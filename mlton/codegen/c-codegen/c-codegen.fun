@@ -235,9 +235,10 @@ fun outputDeclarations
 	 in 
 	    C.callNoSemi ("Main",
 			  [C.int (!Control.cardSizeLog2),
-			   C.bool (!Control.markCards),
-			   C.int maxFrameSize,
 			   magic,
+			   C.int maxFrameSize,
+			   C.bool (!Control.mayLoadWorld),
+			   C.bool (!Control.markCards),
 			   C.bool (!Control.profileStack)]
 			  @ additionalMainArgs,
 			  print)

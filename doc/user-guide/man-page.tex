@@ -102,6 +102,10 @@ This switch is passed unchanged to the linker.
 Specify an additional directory to be searched for libraries.
 This switch is passed unchanged to the linker.
 
+\option{-may-load-world \{true|false\}}
+Controls whether or not the generated executable supports the {\tt
+@MLton load-world} runtime system option.
+
 \option{-native \{true|false\}}
 Controls whether or not to use native code generation, as opposed to
 generating C and using {\tt gcc}.  With native code generation,

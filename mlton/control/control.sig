@@ -136,6 +136,9 @@ signature CONTROL =
       (* Should the mutator mark cards? *)
       val markCards: bool ref
 
+      (* May the executable use @MLton load-world -- *)
+      val mayLoadWorld: bool ref
+
       structure Native:
 	 sig
 	    (* whether or not to use native codegen *)

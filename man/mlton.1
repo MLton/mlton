@@ -105,6 +105,11 @@ Specify an additional directory to be searched for libraries.
 This switch is passed unchanged to the linker.
 
 .TP
+\fB-may-load-world \fI{\fBtrue\fP|\fBfalse\fP}\fP
+Controls whether or not the generated executable supports the
+\fB@MLton load-world\fP runtime system option. 
+
+.TP
 \fB-native \fI{\fBtrue\fP|\fBfalse\fP}\fP
 Controls whether or not to use native code generation as opposed to
 generating C and using \fBgcc\fP.  With native code generation,

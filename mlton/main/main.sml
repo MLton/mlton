@@ -82,7 +82,7 @@ fun makeOptions {usage} =
 		     let
 			val s' = concat ["basis-", s]
 		     in
-			if List.contains (Control.basisLibs, s', String.equals)
+			if List.contains (basisLibs, s', String.equals)
 			   then basisLibrary := s'
 			else usage (concat ["invalid -basis flag: ", s])
 		     end)),
@@ -124,10 +124,10 @@ fun makeOptions {usage} =
 	String (fn s => (List.push (defines, s)))),
        (Expert, "eliminate-overflow", " {true|false}",
 	"eliminate useless overflow tests",
-	boolRef Control.eliminateOverflow),
+	boolRef eliminateOverflow),
        (Normal, "exn-history", " {false|true}",
 	"enable Exn.history",
-	boolRef Control.exnHistory),
+	boolRef exnHistory),
        (Expert, "expert", " {false|true}",
 	"enable expert status",
 	boolRef expert),
@@ -219,7 +219,10 @@ fun makeOptions {usage} =
        (Normal, "L", "dir", "search dir for libraries",
 	push libDirs),
        (Expert, "mark-cards", " {true|false}", "mutator marks cards",
-	boolRef Control.markCards),
+	boolRef markCards),
+       (Normal, "may-load-world", " {true|false}",
+	"may @MLton load-world be used",
+	boolRef mayLoadWorld),
        (Normal, "native", " {true|false}", "use native x86 code generator",
 	boolRef Native.native),
        (Expert, "native-commented", " n", "level of comments  (0)",

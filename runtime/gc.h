@@ -354,6 +354,7 @@ typedef struct GC_state {
 	uint maxHeapSizeSeen;
 	uint maxPause;		/* max time spent in any gc in milliseconds. */
 	uint maxStackSizeSeen;
+	bool mayLoadWorld;
 	bool messages; /* Print out a message at the start and end of each gc. */
 	ullong minorBytesScanned;
 	ullong minorBytesSkipped;

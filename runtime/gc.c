@@ -3710,6 +3710,8 @@ int GC_init (GC_state s, int argc, char **argv) {
 					s->liveRatio =
 						stringToFloat (argv[i++]);
 				} else if (0 == strcmp (arg, "load-world")) {
+					unless (s->mayLoadWorld)
+						die ("may not load world");
 					++i;
 					s->isOriginal = FALSE;
 					if (i == argc) 

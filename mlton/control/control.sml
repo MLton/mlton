@@ -267,6 +267,10 @@ val markCards = control {name = "mark cards",
 			 default = true,
 			 toString = Bool.toString}
 
+val mayLoadWorld = control {name = "may load world",
+			    default = true,
+			    toString = Bool.toString}
+
 structure Native =
    struct
       val native = control {name = "native",
