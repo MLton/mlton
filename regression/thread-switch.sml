@@ -12,32 +12,34 @@ open Thread
 
 datatype t = T of (int * t) Thread.t
 
-val done: Thread.ready_t option ref = ref NONE
+val done: Thread.Runnable.t option ref = ref NONE
    
-fun loop(n: int, T t): unit =
+fun loop (n: int, T t): unit =
    if n = 0
-      then switch(fn _ => valOf(!done))
-   else let val (n, t) = switch(fn t' => readyVal (t, (n - 1, T t')))
-	in loop(n, t)
-	end
+      then switch (fn _ => valOf (!done))
+   else
+      let
+	 val (n, t) = switch (fn t' => prepare (t, (n - 1, T t')))
+      in
+	 loop(n, t)
+      end
    
-fun main() =
+fun main () =
    let
       val numSwitches =
 	 case CommandLine.arguments () of
 	    [] => 1000
 	  | s :: _ => valOf (Int.fromString s)
    in
-      switch(fn cur =>
-	     (done := SOME (ready cur)
-	      ; readyVal (new loop,
-			  (numSwitches, T(new loop)))))
+      switch (fn cur =>
+	      (done := SOME (ready cur)
+	       ; prepare (new loop, (numSwitches, T (new loop)))))
       ; print "ok\n"
    end
 
 end
 
-val _ = Main.main()
+val _ = Main.main ()
 (*    SMLofNJ.exportFn
  *    ("thread-switch", fn _ => (Main.main(); OS.Process.success))
  *)
