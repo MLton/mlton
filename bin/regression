@@ -6,12 +6,13 @@
 name=`basename $0`
 
 function usage {
-	echo >&2 "usage: $name [-cross host] [-run-only]"
+	echo >&2 "usage: $name [-cross host] [-run-only] [mlton flag ...]"
 	exit 1
 }
 
 cross='no'
 runOnly='no'
+flags=''
 while [ "$#" -gt 0 ]; do
 	case "$1" in
 	-cross)
@@ -28,29 +29,35 @@ while [ "$#" -gt 0 ]; do
 		shift
 		;;
 	*)
-		usage
+		flags="$@"
+		break
 		;;
 	esac
 done
+
+echo "flags = $flags"
 
 dir=`dirname $0`
 src=`cd $dir/.. && pwd`
 bin="$src/build/bin"
 mlton="$bin/mlton"
-flags='-debug true -gc-check first -native true -type-check true'
 if [ $cross = 'yes' ]; then
 	flags="$flags -host $crossHost"
 fi
 cont='callcc.sml callcc2.sml callcc3.sml'
+intinf='int-inf.0.sml int-inf.1.sml int-inf.2.sml int-inf.3.sml int-inf.4.sml int-inf.5.sml conv.sml conv2.sml harmonic.sml slow.sml slower.sml smith-normal-form.sml'
 signal='signals.sml'
 thread='thread0.sml thread1.sml thread2.sml mutex.sml prodcons.sml same-fringe.sml timeout.sml'
 world='world1.sml world2.sml world3.sml world4.sml world5.sml world6.sml'
 tmp=/tmp/z.regression.$$
 PATH=$bin:.:$PATH
 
+function compFail () {
+	echo "compilation of $f failed with $flags"
+}
+
 cd $src/regression
-for f in `ls *.sml`;
-do
+for f in `ls *.sml`; do
 	f=`basename $f .sml`
 	case "$f" in
 	serialize)
@@ -69,14 +76,14 @@ do
 		if [ $runOnly = 'no' ]; then
 			$mlton $flags $extraFlags $f.sml
 			if [ $? -ne 0 ]; then
-				echo "compilation of $f failed"
+				compFail $f
 				exit 1
 			fi
 		fi
 		if [ ! -r $f.nonterm -a $cross = 'no' ]; then
 			$f >$tmp 2>&1
-			if [ -r $f.ok ]; then
-				diff $f.ok $tmp
+			if [ -r $f.ok ] && ! diff $f.ok $tmp ; then
+				echo "difference with $flags"
 			fi
 		fi
 	;;
@@ -97,9 +104,9 @@ for f in `ls *.sml`; do
 	*)
 			echo "testing $f"
 		echo "val _ = Main.doit ()" | cat $f.sml - > $tmpf.sml
-		$mlton $flags $tmpf.sml
+		$mlton -o $tmpf $flags $tmpf.sml
 		if [ $? -ne 0 ]; then
-			echo "compilation of $f failed"
+			compFail $f
 		fi
 		rm -f $tmpf $tmpf.sml
 	;;
@@ -119,7 +126,7 @@ for f in mllex mlyacc mlprof; do
 	    make -W $f > /dev/null
 	    $mlton $flags -o $tmpf $f.cm
 	    if [ $? -ne 0 ]; then
-			echo "compilation of $f failed"
+			compFail $f
 	    fi
 	    rm -f $tmpf
     ;;
