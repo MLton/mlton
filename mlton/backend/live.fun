@@ -322,6 +322,8 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 	       handler = handler,
 	       link = link}
 	   end))
+      val () = Vector.foreach (blocks, fn b =>
+			       ignore (labelLive (Block.label b)))
       val _ =
 	 Control.diagnostics
 	 (fn display =>
