@@ -700,12 +700,13 @@ typdesc	: tyvars tycon ({tyvars = tyvars,
 valdescs : valdesc                ([valdesc])
          | valdesc AND valdescs	  (valdesc :: valdescs)
 	     
-valdesc	: var COLON ty            ((var,ty))
+valdesc	: var COLON ty  (Con.ensureRedefine (Vid.toCon (Vid.fromVar var))
+			 ; (var, ty))
 
 exndescs : exndesc                ([exndesc])
          | exndesc AND exndescs	  (exndesc :: exndescs)
 
-exndesc : con tyOpt             ((con, tyOpt))
+exndesc : con tyOpt  (Con.ensureRedefine con; (con, tyOpt))
 
 tyOpt :         (NONE)
       | OF ty   (SOME ty)
