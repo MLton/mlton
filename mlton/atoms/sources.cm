@@ -53,8 +53,9 @@ c-function.sig
 c-function.fun
 c-type.sig
 c-type.fun
-con.fun
-con.sig
+(* Windows doesn't like files named con, so use con- instead. *)
+con-.fun
+con-.sig
 const.fun
 const.sig
 ffi.fun
