@@ -9,4 +9,8 @@ signature SHRINK_STRUCTS =
 signature SHRINK = 
    sig
       include SHRINK_STRUCTS
+(*
+      val shrinkFunction: Statement.t vector -> Function.t -> Function.t
+      val shrink: Program.t -> Program.t
+*)
    end

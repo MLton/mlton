@@ -76,9 +76,8 @@ structure Fails =
 
 fun remove (program as Program.T {datatypes, globals, functions, main})
   = let
-      val {get = varInfo: Var.t -> {used: Used.t}, 
-	   set = setVarInfo, ...}
-	= Property.getSet 
+      val {get = varInfo: Var.t -> {used: Used.t}, ...}
+	= Property.get
 	  (Var.plist,
 	   Property.initFun (fn _ => {used = Used.new ()}))
       local
@@ -99,9 +98,8 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	fun flowVarTysVarTys (xs, ys) = Vector.foreach2(xs, ys, flowVarTyVarTy)
       end
 
-      val {get = tyInfo: Type.t -> {deconed: bool ref}, 
-	   set = setTyInfo, ...}
-	= Property.getSetOnce 
+      val {get = tyInfo: Type.t -> {deconed: bool ref}, ...}
+	= Property.get
 	  (Type.plist,
 	   Property.initFun (fn _ => {deconed = ref false}))
       local
@@ -113,7 +111,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
       val {get = tyconInfo: Tycon.t -> {cons: {con: Con.t, args: Type.t vector} vector,
 					numCons: int ref},
 	   set = setTyconInfo, ...}
-	= Property.getSetOnce 
+	= Property.getSetOnce
 	  (Tycon.plist, 
 	   Property.initRaise ("RemovedUnused.tyconInfo", Tycon.layout))
       local
@@ -129,7 +127,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 				    dummy: Exp.t option ref,
 				    tycon: Tycon.t},
 	   set = setConInfo, ...}
-	= Property.getSetOnce 
+	= Property.getSetOnce
 	  (Con.plist, 
 	   Property.initRaise ("RemoveUnused.conInfo", Con.layout))
       local
@@ -417,7 +415,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
       val _ = let
 		fun doit c = (conCon c; deconCon c)
 	      in
-		doit Con.truee ; doit Con.falsee (* ; doit Con.overflow *)
+		doit Con.truee ; doit Con.falsee 
 	      end
       val _ = Vector.foreach
 	      (globals,

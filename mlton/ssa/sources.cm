@@ -24,9 +24,10 @@ ssa.sig
 type-check.fun
 type-check.sig
 
+contify.sig
+contify.fun
 two-point-lattice.sig
 two-point-lattice.fun
 remove-unused.sig
 remove-unused.fun
-(* remove-unused.new.fun *)
 
