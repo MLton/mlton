@@ -172,7 +172,12 @@ fun njCompile {bench} =
          handle _ => Escape.escape (e, {compile = NONE,
 					run = NONE,
 					size = NONE})
-       val heap = concat [bench, ".x86-linux"]
+       val suffix =
+		 case MLton.hostType of
+		    MLton.Linux => ".x86-linux"
+		  | MLton.Sun => ".sparc-solaris"
+		  | _ => raise Fail "don't know SML/NJ suffix for host type"
+       val heap = concat [bench, suffix]
     in
        if not (File.doesExist heap)
 	  then {compile = NONE,
