@@ -127,7 +127,7 @@ fun 'a parse {apply: 'a * 'a -> 'a,
 	 end
    end
 
-fun parsePat (ps, lay, E) =
+fun parsePat (ps, E, lay) =
    let
       fun apply (p1, p2) =
 	 case Pat.node p1 of
@@ -164,7 +164,7 @@ val parsePat =
 		Ast.Pat.layout)
    parsePat
 
-fun parseExp (es, lay, E) =
+fun parseExp (es, E, lay) =
    parse {apply = Exp.app,
 	  fixval = fn e => Fixval.makeExp (e, E),
 	  items = es,
@@ -184,23 +184,28 @@ val parseExp =
 (*                    parseClause                    *)
 (*---------------------------------------------------*)
 
-fun parseClause (pats: Pat.t vector, E: Env.t) =
+fun parseClause (pats: Pat.t vector, E: Env.t, region, lay) =
    let
       val pats = Vector.toList pats
       fun empty () = Error.bug "parseClause: empty clause"
       fun error msg =
-	 (Control.errorStr (Region.list (pats, Pat.region), msg)
+	 (Control.error (region, msg, lay ())
 	  ; {func = Ast.Var.bogus,
 	     args = Vector.new0 ()})
-      fun illegal () = error "illegal function symbol in clause"
       fun done (func: Pat.t, args: Pat.t list) =
-	 case Pat.node func of
-	    Pat.Var {name, ...} =>
-	       (case Longvid.split name of
-		   ([], x) => {func = Vid.toVar x,
-			       args = Vector.fromList args}
-		 | _ => illegal ())
-	  | _ => illegal ()
+	 let
+	    fun illegal () =
+	       error (Layout.seq [Layout.str "illegal function symbol: ",
+				  Pat.layout func])
+	 in
+	    case Pat.node func of
+	       Pat.Var {name, ...} =>
+		  (case Longvid.split name of
+		      ([], x) => {func = Vid.toVar x,
+				  args = Vector.fromList args}
+		    | _ => illegal ())
+	     | _ => illegal ()
+	 end
       val tuple = Pat.tuple o Vector.new2
       fun parse (ps : Pat.t list) =
 	 case ps of
@@ -208,7 +213,7 @@ fun parseClause (pats: Pat.t vector, E: Env.t) =
 	       let
 		  fun continue () =
 		     case rest of
-			[] => error "can't find function arguments in clause"
+			[] => error (Layout.str "function with no arguments")
 		      | _ => done (p, rest)
 	       in
 		  case Pat.node p of

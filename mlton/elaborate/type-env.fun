@@ -866,8 +866,12 @@ structure Type =
 			       else not ()
 			  | (Word, Word) => (Unified, Word)
 			  | _ => not ()
-		      val _ = Set.union (s, s')
-		      val _ = Set.setValue (s, {ty = t, plist = plist})
+		      val _ =
+			 case res of
+			    NotUnifiable _ => ()
+			  | Unified =>
+			       (Set.union (s, s')
+				;  Set.setValue (s, {ty = t, plist = plist}))
 		   in
 		      res
 		   end) arg

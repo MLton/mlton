@@ -307,7 +307,7 @@ fun elaboratePat (p: Apat.t, E: Env.t, amInRvb: bool)
    : Cpat.t * (Avar.t * Var.t * Type.t) vector =
    let
       val xts: (Avar.t * Var.t * Type.t) list ref = ref []
-      fun bindToType (x: Ast.Var.t, t: Type.t): Var.t =
+      fun bindToType (x: Avar.t, t: Type.t): Var.t =
 	 let
 	    val x' = Var.fromAst x
 	    val _ = List.push (xts, (x, x', t))
@@ -315,7 +315,7 @@ fun elaboratePat (p: Apat.t, E: Env.t, amInRvb: bool)
 	 in
 	    x'
 	 end
-      fun bind (x: Ast.Var.t): Var.t * Type.t =
+      fun bind (x: Avar.t): Var.t * Type.t =
 	 let
 	    val t = newType ()
 	 in
@@ -389,7 +389,7 @@ fun elaboratePat (p: Apat.t, E: Env.t, amInRvb: bool)
 		   end
 	      | Apat.FlatApp items =>
 		   loop (Parse.parsePat
-			 (items, fn () => seq [str "pattern: ", lay ()], E))
+			 (items, E, fn () => seq [str "pattern: ", lay ()]))
 	      | Apat.Layered {var = x, constraint, pat, ...} =>
 		   let
 		      val t =
@@ -791,13 +791,15 @@ structure Con =
       val fromAst = fromString o Ast.Con.toString
    end
 
-fun approximate (s: string): string =
+fun approximate (l: Layout.t): Layout.t =
    let
+      val s = Layout.toString l
       val n = String.size s
    in
-      if n <= 60
-	 then s
-      else concat [String.prefix (s, 35), "  ...  ", String.suffix (s, 25)]
+      Layout.str
+      (if n <= 60
+	  then s
+       else concat [String.prefix (s, 35), "  ...  ", String.suffix (s, 25)])
    end
    
 fun elaborateDec (d, {env = E,
@@ -925,6 +927,7 @@ fun elaborateDec (d, {env = E,
 	  Layout.ignore, Trace.assertTrue)
 	 (fn (d, nest, isTop) =>
 	  let
+	     fun lay () = seq [str "dec: ", approximate (Adec.layout d)]
 	     val region = Adec.region d
 	     fun checkSchemes (v: (Var.t * Scheme.t) vector): unit =
 		if isTop
@@ -944,7 +947,8 @@ fun elaborateDec (d, {env = E,
 				 (region,
 				  seq [str "unable to infer type for ",
 				       Var.layout x],
-				  seq [str "type: ", Scheme.layoutPretty s])
+				  align [seq [str "type: ", Scheme.layoutPretty s],
+					 lay ()])
 			      end
 			else ()))
 		else ()
@@ -1034,7 +1038,8 @@ fun elaborateDec (d, {env = E,
 			  Vector.map
 			  (clauses, fn {body, pats, resultType} =>
 			   let
-			      val {args, func} = Parse.parseClause (pats, E)
+			      val {args, func} =
+				 Parse.parseClause (pats, E, region, lay)
 			   in
 			      {args = args,
 			       body = body,
@@ -1060,19 +1065,32 @@ fun elaborateDec (d, {env = E,
 				    else
 				       Control.error
 				       (region,
-					seq [str "clauses don't all have the same number of patterns"],
-					empty))
+					seq [str "function defined with different numbers of arguments"],
+					lay ()))
+				val diff =
+				   Vector.fold
+				   (clauses, [], fn ({func = func', ...}, ac) =>
+				    if Avar.equals (func, func')
+				       then ac
+				    else func' :: ac)
 				val _ =
-				   Vector.foreach
-				   (clauses, fn {func = func', ...} =>
-				    if Ast.Var.equals (func, func')
-				       then ()
-				    else
-				       Control.error
-				       (region,
-					seq [str "clauses don't all have same function name"],
-					seq [Avar.layout func,
-					     str ", ", Avar.layout func']))
+				   case diff of
+				      [] => ()
+				    | fs =>
+					 let
+					    val diff =
+					       List.removeDuplicates
+					       (func :: diff, Avar.equals)
+					 in
+					    Control.error
+					    (region,
+					     seq [str "function defined with multiple names: ",
+						  seq (Layout.separateRight
+						       (List.map (diff,
+								  Avar.layout),
+							", "))],
+					     lay ())
+					 end
 				val var = Var.fromAst func
 				val ty = newType ()
 				val _ = Env.extendVar (E, func, var,
@@ -1120,7 +1138,8 @@ fun elaborateDec (d, {env = E,
 					   str "function result type does not agree with expression",
 					   align
 					   [seq [str "result type: ", l1],
-					    seq [str "expression:  ", l2]])))
+					    seq [str "expression:  ", l2],
+					    lay ()])))
 				  in
 				     {body = body,
 				      bodyRegion = bodyRegion,
@@ -1147,9 +1166,10 @@ fun elaborateDec (d, {env = E,
 					   unify
 					   (t, Cpat.ty pat, fn (l1, l2) =>
 					    (region,
-					     str "function argument patterns must be of same type",
-					     align [seq [str "pattern:  ", l2],
-						    seq [str "previous: ", l1]]))
+					     str "function with argument of different types",
+					     align [seq [str "argument: ", l2],
+						    seq [str "previous: ", l1],
+						    lay ()]))
 					end)
 				 in
 				    t
@@ -1163,9 +1183,10 @@ fun elaborateDec (d, {env = E,
 				       unify
 				       (t, Cexp.ty body, fn (l1, l2) =>
 					(bodyRegion,
-					 str "function results must be of same type",
+					 str "function with results of different types",
 					 align [seq [str "result:   ", l2],
-						seq [str "previous: ", l1]])))
+						seq [str "previous: ", l1],
+						lay ()])))
 				in
 				   t
 				end
@@ -1220,11 +1241,12 @@ fun elaborateDec (d, {env = E,
 				 (Avar.region func,
 				  str "function type does not match recursive uses",
 				  align [seq [str "function type:  ", l1],
-					 seq [str "recursive uses: ", l2]]))
+					 seq [str "recursive uses: ", l2],
+					 lay ()]))
 			     val lambda =
 				case Cexp.node lambda of
 				   Cexp.Lambda l => l
-				 | _ => Error.bug "not a lambda"
+				 | _ => Lambda.bogus
 			  in
 			     {lambda = lambda,
 			      ty = ty,
@@ -1317,8 +1339,11 @@ fun elaborateDec (d, {env = E,
 				     else
 					Control.error
 					(expRegion,
-					 str "value restriction prevents generalization",
-					 empty)
+					 seq [str "can't bind type variables: ",
+					      seq (Layout.separateRight
+						   (Vector.toListMap (tyvars, Tyvar.layout),
+						    ", "))],
+					 lay ())
 			       in
 				  fn tys => {bound = fn () => Vector.new0 (),
 					     schemes =
@@ -1333,7 +1358,7 @@ fun elaborateDec (d, {env = E,
 			     val (pat, bound) = elaboratePat (pat, E, true)
 			     val (nest, var, ty) =
 				if 0 = Vector.length bound
-				   then ("<anon>" :: nest,
+				   then ("anon" :: nest,
 					 Var.newNoname (),
 					 newType ())
 				else
@@ -1371,9 +1396,10 @@ fun elaborateDec (d, {env = E,
 				 Type.arrow (argType, resultType),
 				 fn (l1, l2) =>
 				 (region,
-				  str "pattern does not match function type",
-				  align [seq [str "pattern:    ", l1],
-					 seq [str "function type: ", l2]]))
+				  str "function type does not match recursive uses",
+				  align [seq [str "function type:  ", l1],
+					 seq [str "recursive uses: ", l2],
+					 lay ()]))
 			     val arg = Var.newNoname ()
 			     val body =
 				Cexp.enterLeave
@@ -1409,7 +1435,8 @@ fun elaborateDec (d, {env = E,
 				 (Apat.region pat,
 				  str "pattern and expression don't agree",
 				  align [seq [str "pattern:    ", p],
-					 seq [str "expression: ", e]]))
+					 seq [str "expression: ", e],
+					 lay ()]))
 			  in
 			     {bound = bound,
 			      exp = e,
@@ -1448,8 +1475,7 @@ fun elaborateDec (d, {env = E,
 			  Trace.assertTrue)
 	 (fn (e: Aexp.t, nest) =>
 	  let
-	     fun lay () =
-		Layout.str (approximate (Layout.toString (Aexp.layout e)))
+	     fun lay () = seq [str "exp: ", approximate (Aexp.layout e)]
 	     val region = Aexp.region e
 	     fun constant (c: Aconst.t) =
 		case Aconst.node c of
@@ -1536,7 +1562,9 @@ fun elaborateDec (d, {env = E,
 		   in
 		      e
 		   end
-	      | Aexp.FlatApp items => elab (Parse.parseExp (items, lay, E))
+	      | Aexp.FlatApp items =>
+		   elab (Parse.parseExp (items, E, fn () =>
+					 seq [str "expression: ", lay ()]))
 	      | Aexp.Fn m =>
 		   let
 		      val {arg, argType, body} =
@@ -1613,8 +1641,7 @@ fun elaborateDec (d, {env = E,
 				 unifyList
 				 (Vector.map2 (es, es', fn (e, e') =>
 					       (Cexp.ty e', Aexp.region e)),
-				  fn () => seq [str "expression: ",
-						lay ()]))
+				  lay))
 		   end
 	      | Aexp.Orelse (e, e') =>
 		   let
@@ -1754,7 +1781,7 @@ fun elaborateDec (d, {env = E,
 			 (Cexp.ty exn, Type.exn, fn (l1, _) =>
 			  (region,
 			   str "raise must get an exception",
-			   seq [str "expression: ", l1]))
+			   seq [str "exp: ", l1]))
 		      val resultType = newType ()
 		   in
 		      Cexp.make (Cexp.Raise {exn = exn, region = region},
@@ -1895,9 +1922,9 @@ fun elaborateDec (d, {env = E,
 	     rules = rules}
 	 end
       val ds = elabDec (Scope.scope d, nest, true)
-      val _ = List.foreach (!overloads, fn p => (p (); ()))
+      val _ = List.foreach (rev (!overloads), fn p => (p (); ()))
       val _ = overloads := []
-      val _ = List.foreach (!freeTyvarChecks, fn p => p ())
+      val _ = List.foreach (rev (!freeTyvarChecks), fn p => p ())
       val _ = freeTyvarChecks := []
       val _ = TypeEnv.closeTop (Adec.region d)
    in
