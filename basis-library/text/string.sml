@@ -9,17 +9,6 @@ structure String: STRING_EXTRA =
    struct
       open String0
 
-(*
-      local
-	 fun make (tokens,name) p s =
-	    case StringCvt.scanString (tokens p) s of
-	       SOME l => List.map implode l
-	     | NONE => raise Fail ("String." ^ name)
-      in
-	 val tokens = make (Reader.tokens, "tokens")
-	 val fields = make (Reader.fields, "fields")
-      end
-*)
       local
 	 fun make f = f (op = : char * char -> bool)
       in
