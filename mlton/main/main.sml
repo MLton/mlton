@@ -281,7 +281,7 @@ fun makeOptions {usage} =
 	    "source" => profileIL := ProfileSource
 	  | _ => usage (concat ["invalid -profile-il arg: ", s]))),
        (Normal, "profile-split", " <regexp>",
-	"split occurrences of function",
+	"split duplicates of functions",
 	SpaceString
 	(fn s =>
 	 case Regexp.fromString s of
