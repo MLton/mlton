@@ -74,7 +74,7 @@ PATH=$src/build/bin:$PATH
 
 rm -rf "$lib/$crossTarget"
 
-mkdir -p "$lib/$crossTarget/include" ||
+mkdir -p "$lib/$crossTarget" ||
 	die "Cannot write to $lib."
 
 echo 'Making runtime.' 
