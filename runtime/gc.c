@@ -128,6 +128,9 @@ static inline W64 max64 (W64 x, W64 y) {
 	return ((x > y) ? x : y);
 }
 
+static inline uint roundDown (uint a, uint b) {
+	return a - (a % b);
+}
 
 static inline uint align (uint a, uint b) {
 	assert (a >= 0);
@@ -1093,6 +1096,14 @@ static W32 heapDesiredSize (GC_state s, W64 live, W32 currentSize) {
 		unless (res >= 1.1 * currentSize 
 				or res <= .5 * currentSize)
 			res = currentSize;
+	} else if (s->growRatio >= s->copyRatio
+			and ratio >= 2 * s->copyRatio) {
+		/* Split RAM in half.  Round down by pageSize so that the total
+		 * amount of space taken isn't greater than RAM once rounding
+		 * happens.  This is so resizeHeap2 doesn't get confused and
+		 * free a semispace in a misguided attempt to avoid paging.
+		 */
+		res = roundDown (s->ram / 2, s->pageSize) ;
 	} else if (ratio >= s->copyRatio + s->growRatio) {
 		/* Cheney copying fits in RAM. */
 		res = s->ram - s->growRatio * live;
