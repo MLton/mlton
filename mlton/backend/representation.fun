@@ -284,8 +284,9 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 			(ty, fn ty =>
 			 let
 			    val {offset, ty, ...} =
-			       List.lookup
-			       (components, fn {index, ...} => i = index)
+			       valOf
+			       (List.peek
+				(components, fn {index, ...} => i = index))
 			 in
 			    {offset = offset, ty = ty}
 			 end))

@@ -50,7 +50,7 @@ val all = [char, double, int, pointer, uint]
 
 fun memo f =
    let val all = List.revMap (all, fn t => (t, f t))
-   in fn t => #2 (List.lookup (all, fn (t', _) => equals (t, t')))
+   in fn t => #2 (valOf (List.peek (all, fn (t', _) => equals (t, t'))))
    end
 
 val bool = int
