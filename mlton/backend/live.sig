@@ -22,7 +22,8 @@ signature LIVE =
 	 -> {
 	     (* live variables at beginning of block *)
 	     liveBegin: Jump.t -> Var.t list,
-	     (* live variables at the beginning of a block, excepting its formals
+	     (* live variables at the beginning of a block, 
+	      * excepting its formals
 	      *)
 	     liveBeginNoFormals: Jump.t -> Var.t list,
 	     (* live variables at primitives that enter the runtime. *)
