@@ -271,7 +271,7 @@ structure LimitCheck =
 	 let
 	    fun yes i =
 	       (newFrame i
-		; bytes := SOME (if n >= limitSlop then n else 0)
+		; bytes := SOME (if n >= limitSlop then n - limitSlop else 0)
 		; 0)
 	 in case info 
 	    of No => n
