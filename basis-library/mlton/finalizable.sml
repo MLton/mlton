@@ -59,7 +59,7 @@ val finalize =
       fn z => r := z :: !r
    end
 
-fun new v =
+fun new (v: 'a): 'a t =
    let
       val afters = ref []
       val finalizers = ref []
