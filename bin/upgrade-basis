@@ -133,7 +133,7 @@ structure MLton =
          struct
             fun peek (l, f) = List.find f l
             fun omap (opt, f) = Option.map f opt
-	    val toLower = String.translate (str o Char.toLower)
+            val toLower = String.translate (str o Char.toLower)
 
             structure Arch =
                struct
