@@ -971,6 +971,9 @@ structure Cexp =
 val {get = recursiveTargs: Var.t -> (unit -> Type.t vector) option ref,
      ...} =
    Property.get (Var.plist, Property.initFun (fn _ => ref NONE))
+
+val {get = tyconRegion: Tycon.t -> Region.t, set = setTyconRegion, ...} =
+   Property.getSetOnce (Tycon.plist, Property.initRaise ("region", Tycon.layout))
    
 fun elaborateDec (d, {env = E, nest}) =
    let
@@ -1030,6 +1033,7 @@ fun elaborateDec (d, {env = E, nest}) =
 				".")),
 		       kind,
 		       AdmitsEquality.Sometimes)
+		   val () = setTyconRegion (tycon, Ast.Tycon.region name)
 		   val _ = Env.extendTycon (E, name, TypeStr.tycon (tycon, kind),
 					    {forceUsed = true,
 					     isRebind = false})
@@ -1164,7 +1168,10 @@ fun elaborateDec (d, {env = E, nest}) =
 		   Control.error
 		   (region,
 		    seq [str "type ", Tycon.layout c,
-			 str " escapes the scope of its definition"],
+			 str " escapes the scope of its definition at ",
+			 str (case Region.left (tyconRegion c) of
+				 NONE => "<bogus>"
+			       | SOME p => SourcePos.toString p)],
 		    lay ())
 		end
 	     val _ = TypeEnv.tick {useBeforeDef = useBeforeDef}
