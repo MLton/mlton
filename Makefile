@@ -248,7 +248,7 @@ world:
 	@echo 'Type checking basis.'
 	$(MLTON) -disable-ann deadCode \
 		-stop tc \
-		$(LIB)/sml/basis/basis.mlb \
+		'$$(MLTON_ROOT)/basis/libs/all.mlb' \
 		>/dev/null
 
 .PHONY: world-no-check

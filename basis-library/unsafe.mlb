@@ -1,0 +1,13 @@
+ann  
+   deadCode true,
+   sequenceUnit true,
+   warnMatch true,
+   warnUnused true, forceUsed
+in
+   local
+      libs/basis-extra/basis-extra.mlb
+   in
+      signature UNSAFE
+      structure Unsafe
+   end
+end

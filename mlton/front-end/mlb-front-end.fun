@@ -143,6 +143,19 @@ fun mkLexAndParse () =
 	     fileUse = fileUse,
 	     relativize = relativize}
 	 end
+      val regularize =
+	 Trace.trace ("MLBFrontEnd.regularize", 
+		      fn {fileOrig, cwd, relativize} =>
+		      Layout.record
+		      [("fileOrig", File.layout fileOrig),
+		       ("cwd", Dir.layout cwd),
+		       ("relativize", Option.layout Dir.layout relativize)],
+		      fn {fileAbs, fileUse, relativize} =>
+		      Layout.record
+		      [("fileAbs", File.layout fileAbs),
+		       ("fileUse", File.layout fileUse),
+		       ("relativize", Option.layout Dir.layout relativize)])
+	 regularize
 
       fun lexAndParseProg {fileAbs: File.t, fileUse: File.t} =
 	 let
@@ -209,8 +222,7 @@ fun mkLexAndParse () =
 	    else let
 		    val mlbExts = ["mlb"]
 		    val progExts = ["ML","fun","sig","sml"]
-		    fun err () =
-		       fail "has an invalid extension"
+		    fun err () = fail "has an unknown extension"
 		 in
 		    case File.extension fileUse of
 		       SOME s =>
@@ -239,7 +251,7 @@ fun mkLexAndParse () =
 
       val cwd = Dir.current ()
       val relativize = SOME cwd
-      val state = {cwd = cwd, relativize = SOME cwd, seen = []}
+      val state = {cwd = cwd, relativize = relativize, seen = []}
       val lexAndParseFile = fn (f: File.t) =>
 	 (case lexAndParseProgOrMLB state (f, Region.bogus) of
 	     Ast.Basdec.MLB (_, _, basdec) => basdec

@@ -20,6 +20,7 @@ structure Int
 structure IntInf
 structure Layout
 structure List
+structure Option
 structure OS
 structure Out
 structure Pervasive

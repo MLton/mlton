@@ -5,7 +5,8 @@ ann
    warnUnused true, forceUsed
 in
    local
-      libs/build.mlb
+      libs/basis-extra/basis-extra.mlb
+      libs/basis-2002/basis-2002.mlb
    in
       libs/basis-2002/top-level/basis-funs.sml
       libs/basis-2002/top-level/basis-sigs.sml

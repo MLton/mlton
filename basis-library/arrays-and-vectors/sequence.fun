@@ -463,10 +463,8 @@ functor Sequence (S: sig
 	fun findi p = make (Slice.findi p)
 	fun find p = make (Slice.find p)
 	fun existsi p = make (Slice.existsi p)
-	val _ = existsi (* quell unused variable warning *)
 	fun exists p = make (Slice.exists p)
 	fun alli p = make (Slice.alli p)
-	val _ = alli (* quell unused variable warning *)
 	fun all p = make (Slice.all p)
 	fun collate cmp = make2 (Slice.collate cmp)
 	fun concatWith sep seqs = Slice.concatWith sep (List.map Slice.full seqs)
@@ -477,11 +475,8 @@ functor Sequence (S: sig
 	fun tokens f seq = List.map Slice.sequence (make (Slice.tokens f) seq)
 	fun fields f seq = List.map Slice.sequence (make (Slice.fields f) seq)
 	fun createi tabulate f seq = make (Slice.createi tabulate f) seq
-	val _ = createi (* quell unused variable warning *)
 	fun create tabulate f seq = make (Slice.create tabulate f) seq
-	val _ = create (* quell unused variable warning *)
 	fun duplicate seq = make Slice.sequence seq
-	val _ = duplicate (* quell unused variable warning *)
 	fun toList seq = make Slice.toList seq
       end
     

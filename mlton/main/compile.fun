@@ -578,17 +578,17 @@ local
       let
 	 val basis =
 	    String.concat
-	    ["$(MLTON_ROOT)/basis/",!Control.basisLibrary,".mlb\n"]
+	    ["$(MLTON_ROOT)/basis/",!Control.basisLibrary,".mlb\n",
+	     "$(MLTON_ROOT)/basis/mlton.mlb\n",
+	     "$(MLTON_ROOT)/basis/sml-nj.mlb\n",
+	     "$(MLTON_ROOT)/basis/unsafe.mlb\n"]
 	 val s =
-	    if List.length input = 0
-	       then basis
-	       else 
-		  String.concat
-		  ["local\n",
-		   basis,
-		   "in\n",
-		   String.concat (List.separate(input, "\n")), "\n",
-		   "end\n"]
+	    String.concat
+	    ["local\n",
+	     basis,
+	     "in\n",
+	     String.concat (List.separate(input, "\n")), "\n",
+	     "end\n"]
       in
 	 String s
       end

@@ -3,26 +3,9 @@ The files are grouped in directories in the same way that the
 corresponding modules are grouped in the basis library documentation.
 All other implementation files are in the misc/ and libs/ directories.
 
-The basis is constructed in two steps.  First, all of the files in
-libs/build are concatenated together and evaluated to produce an
-environment E.  Then, depending on compile time options, all of the
-files in libs/basis-*/bind evaluated in the environment E to produce a
-new environment E', which is the top-level environment.
+The basis is constructed using the ML Basis system.
 
-Another way to view it is that every program is prefixed by the
-following program.
-
-local
-  <concatenate files in libs/build>
-in
-  <concatenate files in libs/basis-*/bind>
-end
-
-This is not strictly accurate because some of the files are not
-Standard ML (see below) and because Standard ML does not allow local
-functor or signature declarations.
-
-Other than bind-basis and build-basis, there are several special files:
+There are several special files that make use of non-SML extensions.
 
 misc/primitive.sml
 posix/primitve.sml

@@ -5,7 +5,8 @@ ann
    warnUnused true, forceUsed
 in
    local
-      libs/build.mlb
+      libs/basis-2002/basis-2002.mlb
+      basis-2002.mlb
       libs/basis-2002/top-level/basis-exns.sig
    in
       libs/basis-2002/top-level/pervasive-exns.sml

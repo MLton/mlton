@@ -1,5 +1,5 @@
 local
-   structure B = Basis2002 : BASIS_2002_TYPES
+   structure B : BASIS_2002_TYPES = Basis2002
 in
    open B
 end

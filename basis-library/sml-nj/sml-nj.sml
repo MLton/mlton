@@ -9,7 +9,7 @@ structure SMLofNJ: SML_OF_NJ =
    struct
       structure Cont =
 	 struct
-	    structure C = MLtonCont
+	    structure C = MLton.Cont
 
 	    type 'a cont = 'a C.t
 	    val callcc = C.callcc
@@ -34,11 +34,11 @@ structure SMLofNJ: SML_OF_NJ =
 
       fun getAllArgs () = getCmdName () :: getArgs ()
 
-      val exnHistory = MLtonExn.history
+      val exnHistory = MLton.Exn.history
 
       fun exportFn (file: string, f) =
 	 let
-	    open MLtonWorld OS.Process
+	    open MLton.World OS.Process
 	 in
 	    case save (file ^ ".mlton") of
 	       Original => exit success
@@ -47,7 +47,7 @@ structure SMLofNJ: SML_OF_NJ =
 
       fun exportML (f: string): bool =
 	 let
-	    open MLtonWorld
+	    open MLton.World
 	 in
 	    case save (f ^ ".mlton") of
 	       Clone => true

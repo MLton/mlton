@@ -1,5 +1,5 @@
 local
-   structure B = Basis2002 : BASIS_2002_EXNS
+   structure B : BASIS_2002_EXNS = Basis2002
 in
    open B
 end

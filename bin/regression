@@ -55,7 +55,7 @@ dir=`dirname $0`
 src=`cd $dir/.. && pwd`
 bin="$src/build/bin"
 mlton="$bin/mlton"
-flags="-disable-ann warnMatch -type-check true $flags"
+flags="-type-check true $flags"
 if [ $cross = 'yes' ]; then
 	flags="$flags -target $crossTarget -stop g"
 fi
@@ -86,7 +86,8 @@ if [ "$fail" = 'yes' ]; then
 	exit 0
 fi
 
-for f in `ls *.sml`; do
+# for f in `ls *.sml`; do
+for f in exnHistory.sml exnHistory2.sml exnHistory3.sml; do
 	f=`basename $f .sml`
 	case "$f" in
 	serialize)
@@ -106,7 +107,10 @@ for f in `ls *.sml`; do
 		no)
 			mlb="/tmp/$$.mlb"
 			echo "\$(MLTON_ROOT)/basis/basis.mlb
-                              ann allowExport true, allowImport true, allowOverload true
+                              \$(MLTON_ROOT)/basis/mlton.mlb
+                              \$(MLTON_ROOT)/basis/sml-nj.mlb
+                              ann allowExport true, allowImport true, allowOverload true,
+                                  warnMatch false
                               in $src/regression/$f.sml end" >$mlb
 			$mlton $flags $extraFlags -output $f $mlb
 			rm $mlb

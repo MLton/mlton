@@ -5,7 +5,9 @@ ann
    warnUnused true, forceUsed
 in
    local
-      ann forceUsed in libs/build.mlb end
+      libs/basis-extra/basis-extra.mlb
+      libs/basis-none/top-level/basis.sig
+      libs/basis-none/top-level/basis.sml
    in
       libs/basis-none/top-level/top-level.sml
       libs/basis-none/top-level/infixes.sml

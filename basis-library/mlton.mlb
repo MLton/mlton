@@ -1,0 +1,40 @@
+ann  
+   deadCode true,
+   sequenceUnit true,
+   warnMatch true,
+   warnUnused true, forceUsed
+in
+   local
+      libs/basis-extra/basis-extra.mlb
+   in
+      signature MLTON
+      signature MLTON_ARRAY
+      signature MLTON_BIN_IO
+      signature MLTON_CONT
+      signature MLTON_EXN
+      signature MLTON_FINALIZABLE
+      signature MLTON_GC
+      signature MLTON_INT_INF
+      signature MLTON_IO
+      signature MLTON_ITIMER
+      signature MLTON_PLATFORM
+      signature MLTON_POINTER
+      signature MLTON_PROC_ENV
+      signature MLTON_PROCESS
+      signature MLTON_PROFILE
+      signature MLTON_RANDOM
+      signature MLTON_RLIMIT
+      signature MLTON_RUSAGE
+      signature MLTON_SIGNAL
+      signature MLTON_SOCKET
+      signature MLTON_SYSLOG
+      signature MLTON_TEXT_IO
+      signature MLTON_THREAD
+      signature MLTON_VECTOR
+      signature MLTON_WEAK
+      signature MLTON_WORD
+      signature MLTON_WORLD
+   
+      structure MLton
+   end
+end

@@ -1,15 +1,15 @@
-signature BASIS_2002 =
+signature BASIS_EXTRA =
    sig
       (* Top-level types *)
       eqtype 'a array
-      datatype bool = datatype BasisExtra.bool
+      datatype bool = datatype bool
       eqtype char
       type exn
       eqtype int 
       datatype 'a option = NONE | SOME of 'a 
       datatype order = LESS | EQUAL | GREATER 
-      datatype list = datatype BasisExtra.list
-      datatype ref = datatype BasisExtra.ref
+      datatype list = datatype list
+      datatype ref = datatype ref
       type real
       eqtype string
       type substring 
@@ -34,7 +34,7 @@ signature BASIS_2002 =
       (* Top-level values *)
       val = : ''a * ''a -> bool
       val <> : ''a * ''a -> bool
-	
+
       val ! : 'a ref -> 'a
       val := : 'a ref * 'a -> unit
       val @ : ('a list * 'a list) -> 'a list
@@ -78,7 +78,7 @@ signature BASIS_2002 =
 *)
       val valOf : 'a option -> 'a 
       val vector : 'a list -> 'a vector
-
+	
       (* Required structures *)
       structure Array : ARRAY	
       structure ArraySlice : ARRAY_SLICE	
@@ -308,6 +308,23 @@ signature BASIS_2002 =
       structure Word64ArraySlice : MONO_ARRAY_SLICE
       structure Word64Vector : MONO_VECTOR
       structure Word64VectorSlice : MONO_VECTOR_SLICE
+
+      (* Non-standard structures *)
+      structure SML90: SML90
+      structure MLton: MLTON
+      structure SMLofNJ: SML_OF_NJ
+      structure Unsafe: UNSAFE
+
+      sharing type MLton.IntInf.t = IntInf.int
+      sharing type MLton.Process.pid = Posix.Process.pid
+      sharing type MLton.Signal.t = Posix.Signal.signal
+      sharing type MLton.Word.t = Word.word
+      sharing type MLton.Word8.t = Word8.word
+      sharing Unsafe.CharArray = CharArray
+      sharing Unsafe.CharVector = CharVector
+      sharing Unsafe.Real64Array = Real64Array
+      sharing Unsafe.Word8Array = Word8Array
+      sharing Unsafe.Word8Vector = Word8Vector
 	 
       (* ************************************************** *)
       (* ************************************************** *)
@@ -326,29 +343,35 @@ signature BASIS_2002 =
 (* Can't use sharing on type array or vector, because they are rigid tycons.
  * Don't need it anyways, since it's built into the ARRAY and VECTOR signatures.
  *)
-(*      sharing type array = Array.array *)
-(*      sharing type vector = Vector.vector *)
-      (*
+(*
+      sharing type array = Array.array
+      sharing type vector = Vector.vector 
+*)
+(*
       sharing type ref = General.ref
-      *)
-      (*
+*)
+(*
       sharing type bool = Bool.bool
-      *)
+*)
       sharing type option = Option.option
       sharing type order = General.order
-      (*
+(*
       sharing type list = List.list
-      *)
+*)
 
       sharing type int = Int32.int
       sharing type real = Real64.real
       sharing type word = Word32.word
 
       (* Required structures *)
-(*      sharing type BinIO.StreamIO.elem = Word8.word *)
+(*
+      sharing type BinIO.StreamIO.elem = Word8.word 
+*)
       sharing type BinIO.StreamIO.reader = BinPrimIO.reader
       sharing type BinIO.StreamIO.pos = BinPrimIO.pos
-(*      sharing type BinIO.StreamIO.vector = Word8Vector.vector *)
+(*
+      sharing type BinIO.StreamIO.vector = Word8Vector.vector 
+*)
       sharing type BinIO.StreamIO.writer = BinPrimIO.writer
       sharing type BinPrimIO.array = Word8Array.array
       sharing type BinPrimIO.array_slice = Word8ArraySlice.slice
@@ -386,8 +409,10 @@ signature BASIS_2002 =
       sharing type Text.CharArraySlice.slice = CharArraySlice.slice
       sharing type Text.CharVectorSlice.slice = CharVectorSlice.slice
 (* redundant *)
-(*      sharing type TextIO.elem = char  *)
-(*      sharing type TextIO.vector = string *)
+(*
+      sharing type TextIO.elem = char
+      sharing type TextIO.vector = string 
+*)
       sharing type TextPrimIO.array = CharArray.array
       sharing type TextPrimIO.array_slice = CharArraySlice.slice
       sharing type TextPrimIO.elem = Char.char
@@ -596,3 +621,145 @@ signature BASIS_2002 =
       sharing type Word64Array2.elem = Word64.word
       sharing type Word64Array2.vector = Word64Vector.vector
    end
+   (* bool is already defined as bool and so cannot be shared.
+    * So, we where these to get the needed sharing.
+    *)
+   where type BoolArray.elem = bool
+   where type BoolArray2.elem = bool
+   where type BoolArraySlice.elem = bool
+   where type BoolVector.elem = bool
+   where type BoolVectorSlice.elem = bool
+
+   (* Top-level types.  These appear free in basis signatures and hence must be
+    * the same in the basis as at the top level.
+    *)
+   where type 'a array = 'a array
+   where type 'a option = 'a option
+   where type 'a vector = 'a vector
+   where type char = char
+   where type exn = exn
+   where type order = order
+   where type real = real
+   where type string = string
+   where type substring = substring
+   where type unit = unit
+
+   (* Types referenced in signatures by structure name *)
+(*
+   where type 'a Array.array = 'a Array.array
+*)
+   where type Array2.traversal = Array2.traversal
+   where type 'a ArraySlice.slice = 'a ArraySlice.slice
+   where type BinIO.instream = BinIO.instream
+   where type BinIO.outstream = BinIO.outstream
+   where type BinPrimIO.reader = BinPrimIO.reader
+   where type BinPrimIO.writer = BinPrimIO.writer
+   where type FixedInt.int = FixedInt.int
+   where type IO.buffer_mode = IO.buffer_mode
+   where type LargeInt.int = LargeInt.int
+   where type LargeReal.real = LargeReal.real
+   where type LargeWord.word = LargeWord.word
+   where type IEEEReal.real_order = IEEEReal.real_order
+   where type IEEEReal.float_class = IEEEReal.float_class
+   where type IEEEReal.rounding_mode = IEEEReal.rounding_mode
+   where type NetHostDB.in_addr = NetHostDB.in_addr
+   where type NetHostDB.addr_family = NetHostDB.addr_family
+   where type OS.IO.iodesc = OS.IO.iodesc
+   where type OS.Process.status = OS.Process.status (* UNIX *)
+   where type Position.int = Position.int
+   where type Posix.IO.file_desc = Posix.IO.file_desc
+   where type Posix.Signal.signal = Posix.Signal.signal
+   where type Socket.dgram = Socket.dgram
+   where type ('a, 'b) Socket.sock = ('a, 'b) Socket.sock
+   where type 'a Socket.sock_addr = 'a Socket.sock_addr
+   where type Socket.SOCK.sock_type = Socket.SOCK.sock_type (* GENERIC_SOCK *)
+   where type 'a Socket.stream = 'a Socket.stream
+   where type StringCvt.radix = StringCvt.radix
+   where type StringCvt.realfmt = StringCvt.realfmt
+(*
+   where type ('a, 'b) StringCvt.reader = ('a, 'b) StringCvt.reader
+*)
+   where type SysWord.word = SysWord.word
+   where type TextIO.instream = TextIO.instream
+   where type TextIO.outstream = TextIO.outstream
+   where type TextPrimIO.reader = TextPrimIO.reader
+   where type TextPrimIO.writer = TextPrimIO.writer
+   where type Time.time = Time.time
+(*
+   where type 'a Vector.vector = 'a Vector.vector
+*)
+   where type 'a VectorSlice.slice = 'a VectorSlice.slice
+   where type Word8Array.array = Word8Array.array
+   where type Word8ArraySlice.slice = Word8ArraySlice.slice
+   where type Word8ArraySlice.vector_slice = Word8ArraySlice.vector_slice
+   where type Word8Vector.vector = Word8Vector.vector
+
+   (* Types that must be exposed because constants denote them. *)
+   where type Int2.int = Int2.int
+   where type Int3.int = Int3.int
+   where type Int4.int = Int4.int
+   where type Int5.int = Int5.int
+   where type Int6.int = Int6.int
+   where type Int7.int = Int7.int
+   where type Int8.int = Int8.int
+   where type Int9.int = Int9.int
+   where type Int10.int = Int10.int
+   where type Int11.int = Int11.int
+   where type Int12.int = Int12.int
+   where type Int13.int = Int13.int
+   where type Int14.int = Int14.int
+   where type Int15.int = Int15.int
+   where type Int16.int = Int16.int
+   where type Int17.int = Int17.int
+   where type Int18.int = Int18.int
+   where type Int19.int = Int19.int
+   where type Int20.int = Int20.int
+   where type Int21.int = Int21.int
+   where type Int22.int = Int22.int
+   where type Int23.int = Int23.int
+   where type Int24.int = Int24.int
+   where type Int25.int = Int25.int
+   where type Int26.int = Int26.int
+   where type Int27.int = Int27.int
+   where type Int28.int = Int28.int
+   where type Int29.int = Int29.int
+   where type Int30.int = Int30.int
+   where type Int31.int = Int31.int
+   where type Int32.int = Int32.int
+   where type Int64.int = Int64.int
+   where type IntInf.int = IntInf.int
+   where type Real32.real = Real32.real
+   where type Word2.word = Word2.word
+   where type Word3.word = Word3.word
+   where type Word4.word = Word4.word
+   where type Word5.word = Word5.word
+   where type Word6.word = Word6.word
+   where type Word7.word = Word7.word
+   where type Word8.word = Word8.word
+   where type Word9.word = Word9.word
+   where type Word10.word = Word10.word
+   where type Word11.word = Word11.word
+   where type Word12.word = Word12.word
+   where type Word13.word = Word13.word
+   where type Word14.word = Word14.word
+   where type Word15.word = Word15.word
+   where type Word16.word = Word16.word
+   where type Word17.word = Word17.word
+   where type Word18.word = Word18.word
+   where type Word19.word = Word19.word
+   where type Word20.word = Word20.word
+   where type Word21.word = Word21.word
+   where type Word22.word = Word22.word
+   where type Word23.word = Word23.word
+   where type Word24.word = Word24.word
+   where type Word25.word = Word25.word
+   where type Word26.word = Word26.word
+   where type Word27.word = Word27.word
+   where type Word28.word = Word28.word
+   where type Word29.word = Word29.word
+   where type Word30.word = Word30.word
+   where type Word31.word = Word31.word
+   where type Word32.word = Word32.word
+   where type Word64.word = Word64.word
+
+   where type 'a MLton.Thread.t = 'a MLton.Thread.t

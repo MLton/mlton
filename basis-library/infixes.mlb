@@ -4,9 +4,5 @@ ann
    warnMatch true,
    warnUnused true, forceUsed
 in
-   local 
-      basis-2002.mlb 
-   in
-      libs/basis-2002/top-level/infixes.sml
-   end
+   libs/basis-2002/top-level/infixes.sml
 end

@@ -31,7 +31,7 @@ val atMLtons = control {name = "atMLtons",
 			toString = fn v => Layout.toString (Vector.layout
 							    String.layout v)}
    
-val basisLibs = ["basis-2002", "basis-2002-strict", "basis-1997", "basis-none"]
+val basisLibs = ["basis-2002", "basis-1997", "basis-none"]
    
 val basisLibrary = control {name = "basis library",
 			    default = "basis-2002",

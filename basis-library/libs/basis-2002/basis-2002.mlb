@@ -1,0 +1,14 @@
+ann  
+   deadCode true,
+   sequenceUnit true,
+   warnMatch true,
+   warnUnused true, forceUsed
+in
+   local
+      ../basis-extra/basis-extra.mlb
+      top-level/basis.sig
+      top-level/basis.sml
+   in
+      structure Basis2002
+    end
+end
