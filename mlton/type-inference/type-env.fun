@@ -457,7 +457,11 @@ structure Type =
 					final = final,
 					spine = s}
 			 end
-		    | _ => Error.bug "unify mismatch"
+		    | _ => Error.bug (concat ["unify mismatch ",
+					      " t1 = ",
+					      Layout.toString (layout (T s)),
+					      ", t2 = ",
+					      Layout.toString (layout (T s'))])
 		val _ = Set.union (s, s')
 		val _ = Set.setValue (s, {ty = t, plist = plist})
 	     in
