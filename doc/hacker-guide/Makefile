@@ -4,6 +4,7 @@ TEX_FILES = \
 	main.tex		\
 	macros.tex		\
 	mlton.tex		\
+	runtime.tex		\
 	sources.tex		\
 
 FIG_FILES = \

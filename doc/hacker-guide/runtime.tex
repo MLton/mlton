@@ -1,0 +1,10 @@
+\chap{The runtime}{runtime}
+
+There are multiple, possibly orthogonal issues.  Limit checks and garbage
+collections are a little overloaded in their roles, because they also
+support preemptive thread switching and interupt handling.  Forcing
+frontier to be 0 and hitting a limit check (even a zero byte limit check)
+will invoke the GC, which will switch to the pending thread.
+
+Recall that a limit check with bytes = 0 really means a check for LIMIT\_SLOP
+bytes (currently LIMIT\_SLOP = 512).
