@@ -272,12 +272,12 @@ structure MLton: MLTON =
 	       struct
 		  type ('use, 'dir) t = unit
 
-		  val binIOin = fn _ => raise Fail "Child.binIOin"
-		  val binIOout = fn _ => raise Fail "Child.binIOout"
+		  val binIn = fn _ => raise Fail "Child.binIn"
+		  val binOut = fn _ => raise Fail "Child.binOut"
 		  val fd = fn _ => raise Fail "Child.fd"
 		  val remember = fn _ => raise Fail "Child.remember"
-		  val textIOin = fn _ => raise Fail "Child.textIOin"
-		  val textIOout = fn _ => raise Fail "Child.textIOout"
+		  val textIn = fn _ => raise Fail "Child.textIn"
+		  val textOut = fn _ => raise Fail "Child.textOut"
 	       end
             
             structure Param =
