@@ -1231,7 +1231,7 @@ fun lexGen infile =
 	 say "\n\t\t) end ";
 	 say ")\n\n";
 	 if (!UsesTrailingContext) then say skel_mid2 else ();
-	 sayln "\tval {fin,trans} = Unsafe.Vector.sub(Internal.tab, s)";
+	 sayln "\tval {fin,trans} = Vector.sub (Internal.tab, s)";
 	 sayln "\tval NewAcceptingLeaves = fin::AcceptingLeaves";
 	 sayln "\tin if l = !yybl then";
 	 sayln "\t     if trans = #trans(Vector.sub(Internal.tab,0))";
@@ -1252,14 +1252,14 @@ fun lexGen infile =
 	 sayln "\t\t     yybl := String.size (!yyb);";
 	 sayln "\t\t     scan (s,AcceptingLeaves,l-i0,0))";
 	 sayln "\t    end";
-	 sayln "\t  else let val NewChar = Char.ord(Unsafe.CharVector.sub(!yyb,l))";
+	 sayln "\t  else let val NewChar = Char.ord (CharVector.sub (!yyb,l))";
          if !CharSetSize=129
            then sayln "\t\tval NewChar = if NewChar<128 then NewChar else 128" 
            else ();
 	 say "\t\tval NewState = ";
 	 sayln (if !CharFormat 
-                then "Char.ord(Unsafe.CharVector.sub(trans,NewChar))"
-                else "Unsafe.Vector.sub(trans, NewChar)");
+                then "Char.ord (CharVector.sub (trans,NewChar))"
+                else "Vector.sub (trans, NewChar)");
 	 say "\t\tin if NewState=0 then action(l,NewAcceptingLeaves";
 	 if !UsesTrailingContext then sayln ",nil)" else sayln ")";
 	 sayln "\t\telse scan(NewState,NewAcceptingLeaves,l+1,i0)";

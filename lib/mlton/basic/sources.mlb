@@ -269,7 +269,6 @@ in
     structure Tree
     structure TwoListQueue
     structure Unit
-    structure Unsafe
     structure Vector
     structure Word
     structure Word32

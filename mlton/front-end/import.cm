@@ -10,6 +10,7 @@ Group
 structure Array
 structure Buffer
 structure Char
+structure CharVector
 structure Error
 structure Exn
 structure Dir
@@ -29,7 +30,6 @@ structure Ref
 structure String
 structure StringCvt
 structure Trace
-structure Unsafe
 structure Vector
 structure Word32
 
