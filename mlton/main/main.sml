@@ -686,6 +686,7 @@ fun commandLine (args: string list): unit =
 			then compileO inputs
 		     else
 		     let
+			val c = Counter.new 0
 			val oFiles =
 			   trace (Top, "Compile C and Assemble")
 			   (fn () =>
@@ -721,9 +722,17 @@ fun commandLine (args: string list): unit =
 				      val output =
 					 if stop = Place.O orelse !keepO
 					    then
-					       concat [String.dropSuffix
-						       (input, 1),
-						       "o"]
+					       if !keepGenerated
+						  then
+						     concat [String.dropSuffix
+							     (input, 1),
+							     "o"]
+					       else
+						  suffix
+						  (concat [".",
+							   Int.toString
+							   (Counter.next c),
+							   ".o"])
 					 else temp ".o"
 				      val _ =
 					 docc ([input], output, switches, [])
