@@ -2284,7 +2284,6 @@ static void growStack (GC_state s) {
 
 static inline void majorGC (GC_state s, W32 bytesRequested) {
 	s->numMinorsSinceLastMajor = 0;
-	s->bytesAllocated += s->frontier - s->heap.nursery;
         if (not s->useFixedHeap
  		and s->heap.size < s->ram
 		and (not heapIsInit (&s->heap2)
@@ -3203,6 +3202,7 @@ inline void GC_done (GC_state s) {
 	FILE *out;
 
 	enter (s);
+	minorGC (s);
 	out = stderr;
 	if (s->summary) {
 		double time;
@@ -3229,9 +3229,7 @@ inline void GC_done (GC_state s) {
 		fprintf (out, "max pause: %s ms\n",
 				uintToCommaString (s->maxPause));
 		fprintf (out, "total allocated: %s bytes\n",
-	 			uintToCommaString 
-				(s->bytesAllocated 
-					+ (s->frontier - s->heap.nursery)));
+	 			ullongToCommaString (s->bytesAllocated));
 		fprintf (out, "max live: %s bytes\n",
 				uintToCommaString (s->maxBytesLive));
 		fprintf (out, "max semispace: %s bytes\n", 
