@@ -78,8 +78,8 @@ enum {
 	DEBUG_STACKS = FALSE,
 	DEBUG_THREADS = FALSE,
 	DEBUG_WEAK = FALSE,
+	FORCE_GENERATIONAL = FALSE,
 	FORWARDED = 0xFFFFFFFF,
-	PROFILE_ALLOC_MISC = 0,
 	STACK_HEADER_SIZE = WORD_SIZE,
 };
 
@@ -1364,7 +1364,9 @@ static void setNursery (GC_state s, W32 oldGenBytesRequested,
 	s->limitPlusSlop = h->start + h->size;
 	s->limit = s->limitPlusSlop - LIMIT_SLOP;
 	assert (isAligned (nurserySize, WORD_SIZE));
-	if (	/* The mutator marks cards. */
+	if (	(FORCE_GENERATIONAL
+		or ( 
+		/* The mutator marks cards. */
 		s->mutatorMarksCards
 		/* The live ratio is low enough to make generational GC
 		 * worthwhile.
@@ -1376,6 +1378,7 @@ static void setNursery (GC_state s, W32 oldGenBytesRequested,
 		/* The nursery is large enough to be worth it. */
 		and ((float)(h->size - s->bytesLive) 
 			/ (float)nurserySize) <= s->nurseryRatio
+		))
 		/* There is enough space in the nursery. */
 		and nurseryBytesRequested 
 			<= s->limitPlusSlop
@@ -1409,6 +1412,7 @@ static void setNursery (GC_state s, W32 oldGenBytesRequested,
 static inline void clearCrossMap (GC_state s) {
 	if (DEBUG_GENERATIONAL and DEBUG_DETAILED)
 		fprintf (stderr, "clearCrossMap ()\n");
+	s->crossMapValidSize = 0;
 	memset (s->crossMap, CROSS_MAP_EMPTY, s->crossMapSize);
 }
 
@@ -1525,31 +1529,6 @@ static bool heapCreate (GC_state s, GC_heap h, W32 desiredSize, W32 minSize) {
 	}
 	h->size = 0;
 	return FALSE;
-}
-
-static inline void setCrossMap (GC_state s, pointer p) {
-	if (s->mutatorMarksCards) {
-		GC_heap h;
-		uint cardIndex;
-		pointer cardStart;
-		uint offset;
-
-		h = s->crossMapHeap;
-		/* The p - 1 is so that a pointer to the beginning of a card
-		 * falls into the index for the previous crossMap entry.
-		 */
-		cardStart =
-			(p == h->start)
-			? h->start
-			: (p - 1) - ((uint)(p - 1) % s->cardSize);
-		cardIndex = divCardSize (s, cardStart - h->start);
-		offset = (p - cardStart) / WORD_SIZE;
-		assert (offset < CROSS_MAP_EMPTY);
-		if (DEBUG_GENERATIONAL)
-			fprintf (stderr, "crossMap[%u] = %u\n", 
-					cardIndex, offset);
-		s->crossMap[cardIndex] = offset;
-	}
 }
 
 static inline uint objectSize (GC_state s, pointer p) {
@@ -1673,7 +1652,6 @@ static inline void forward (GC_state s, pointer *pp) {
  		/* Store the forwarding pointer in the old object. */
 		*(word*)(p - WORD_SIZE) = FORWARDED;
 		*(pointer*)p = s->back + headerBytes;
-		setCrossMap (s, s->back);
 		/* Update the back of the queue. */
 		s->back += size + skip;
 		assert (isAligned ((uint)s->back + GC_NORMAL_HEADER_SIZE,
@@ -1721,7 +1699,6 @@ static void cheneyCopy (GC_state s) {
 	assert (s->heap2.size >= s->oldGenSize);
 	startTiming (&ru_start);
 	s->numCopyingGCs++;
- 	s->crossMapHeap = &s->heap2;
 	s->toSpace = s->heap2.start;
 	s->toLimit = s->heap2.start + s->heap2.size;
  	if (DEBUG or s->messages) {
@@ -1739,7 +1716,6 @@ static void cheneyCopy (GC_state s) {
          * is too strong.
 	 */
 	assert (s->heap2.size >= s->oldGenSize);
-	clearCrossMap (s);
 	toStart = alignFrontier (s, s->heap2.start);
 	s->back = toStart;
 	foreachGlobal (s, forward);
@@ -1751,6 +1727,7 @@ static void cheneyCopy (GC_state s) {
 		fprintf (stderr, "%s bytes live.\n", 
 				uintToCommaString (s->oldGenSize));
 	swapSemis (s);
+	clearCrossMap (s);
 	stopTiming (&ru_start, &s->ru_gcCopy);		
  	if (DEBUG or s->messages)
 		fprintf (stderr, "Major copying GC done.\n");
@@ -1759,6 +1736,109 @@ static void cheneyCopy (GC_state s) {
 /* ---------------------------------------------------------------- */
 /*                     Minor copying collection                     */
 /* ---------------------------------------------------------------- */
+
+#if ASSERT
+
+static inline pointer crossMapCardStart (GC_state s, pointer p) {
+	/* The p - 1 is so that a pointer to the beginning of a card
+	 * falls into the index for the previous crossMap entry.
+	 */
+	return (p == s->heap.start)
+		? s->heap.start
+		: (p - 1) - ((uint)(p - 1) % s->cardSize);
+}
+
+/* crossMapIsOK is a slower, but easier to understand, way of computing the
+ * crossMap.  updateCrossMap (below) incrementally updates the crossMap, checking
+ * only the part of the old generation that it hasn't seen before.  crossMapIsOK
+ * simply walks through the entire old generation.  It is useful to check that
+ * the incremental update is working correctly.
+ */
+static bool crossMapIsOK (GC_state s) {
+	pointer back;
+	uint cardIndex;
+	pointer cardStart;
+	pointer front;
+	uint i;
+	static uchar *m;
+
+	if (DEBUG)
+		fprintf (stderr, "crossMapIsOK ()\n");
+	m = smmap (s->crossMapSize);
+	memset (m, CROSS_MAP_EMPTY, s->crossMapSize);
+	back = s->heap.start + s->oldGenSize;
+	cardIndex = 0;
+	front = alignFrontier (s, s->heap.start);
+loopObjects:
+	assert (front <= back);
+	cardStart = crossMapCardStart (s, front);
+	cardIndex = divCardSize (s, cardStart - s->heap.start);
+	m[cardIndex] = (front - cardStart) / WORD_SIZE;
+	if (front < back) {
+		front += objectSize (s, toData (s, front));
+		goto loopObjects;
+	}
+	for (i = 0; i < cardIndex; ++i)
+		assert (m[i] == s->crossMap[i]);
+	smunmap (m, s->crossMapSize);
+	return TRUE;
+}
+
+#endif /* ASSERT */
+
+static void updateCrossMap (GC_state s) {
+	GC_heap h;
+	pointer cardEnd;
+	uint cardIndex;
+	pointer cardStart;
+	pointer next;
+	pointer objectStart;
+	pointer oldGenEnd;
+
+	h = &(s->heap);
+	if (s->crossMapValidSize == s->oldGenSize)
+		goto done;
+	oldGenEnd = h->start + s->oldGenSize;
+	objectStart = h->start + s->crossMapValidSize;
+	if (objectStart == h->start) {
+		cardIndex = 0;
+		objectStart = alignFrontier (s, objectStart);
+	} else
+		cardIndex = divCardSize (s, (uint)(objectStart - 1 - h->start));
+	cardStart = h->start + cardNumToSize (s, cardIndex);
+	cardEnd = cardStart + s->cardSize;
+loopObjects:
+	assert (objectStart < oldGenEnd);
+	assert ((objectStart == h->start or cardStart < objectStart)
+			and objectStart <= cardEnd);
+	next = objectStart + objectSize (s, toData (s, objectStart));
+	if (next > cardEnd) {
+		/* We're about to move to a new card, so we are looking at the
+		 * last object boundary in the current card.  Store it in the 
+		 * crossMap.
+		 */
+		uint offset;
+
+		offset = (objectStart - cardStart) / WORD_SIZE;
+		assert (offset < CROSS_MAP_EMPTY);
+		if (DEBUG_GENERATIONAL)
+			fprintf (stderr, "crossMap[%u] = %u\n", 
+					cardIndex, offset);
+		s->crossMap[cardIndex] = offset;
+		cardIndex = divCardSize (s, next - 1 - h->start);
+		cardStart = h->start + cardNumToSize (s, cardIndex);
+		cardEnd = cardStart + s->cardSize;
+	}
+	objectStart = next;
+	if (objectStart < oldGenEnd) 
+		goto loopObjects;
+	assert (objectStart == oldGenEnd);
+	s->crossMap[cardIndex] = (oldGenEnd - cardStart) / WORD_SIZE;
+	s->crossMapValidSize = s->oldGenSize;
+done:
+	assert (s->crossMapValidSize == s->oldGenSize);
+	assert (crossMapIsOK (s));
+}
 
 static inline void forwardIfInNursery (GC_state s, pointer *pp) {
 	pointer p;
@@ -1772,6 +1852,7 @@ static inline void forwardIfInNursery (GC_state s, pointer *pp) {
 	assert (s->nursery <= p and p < s->limitPlusSlop);
 	forward (s, pp);
 }
+
 
 /* Walk through all the cards and forward all intergenerational pointers. */
 static void forwardInterGenerationalPointers (GC_state s) {
@@ -1787,6 +1868,7 @@ static void forwardInterGenerationalPointers (GC_state s) {
 
 	if (DEBUG_GENERATIONAL)
 		fprintf (stderr, "Forwarding inter-generational pointers.\n");
+	updateCrossMap (s);
 	h = &s->heap;
 	/* Constants. */
 	cardMap = s->cardMap;
@@ -1899,7 +1981,6 @@ static void minorGC (GC_state s) {
 		assert (invariant (s));
 		s->numMinorGCs++;
 		s->numMinorsSinceLastMajor++;
-		s->crossMapHeap = &s->heap;
 		s->back = s->toSpace;
 		/* Forward all globals.  Would like to avoid doing this once all
 	 	 * the globals have been assigned.
@@ -2380,7 +2461,6 @@ unmark:
 			if (DEBUG_MARK_COMPACT)
 				fprintf (stderr, "unmarking 0x%08x of size %u\n", 
 						(uint)p, size);
-			setCrossMap (s, front - gap);
 			/* slide */
 			if (DEBUG_MARK_COMPACT)
 				fprintf (stderr, "sliding 0x%08x down %u\n",
@@ -2431,12 +2511,11 @@ static void markCompact (GC_state s) {
 		fprintf (stderr, "Major mark-compact GC.\n");
 	startTiming (&ru_start);		
 	s->numMarkCompactGCs++;
-	s->crossMapHeap = &s->heap;
-	clearCrossMap (s);
 	foreachGlobal (s, markGlobal);
 	foreachGlobal (s, threadInternal);
 	updateForwardPointers (s);
 	updateBackwardPointersAndSlide (s);
+	clearCrossMap (s);
 	s->bytesMarkCompacted += s->oldGenSize;
 	stopTiming (&ru_start, &s->ru_gcMarkCompact);
 	if (DEBUG or s->messages)

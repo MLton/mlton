@@ -332,9 +332,12 @@ typedef struct GC_state {
 	 */
 	float copyGenerationalRatio;
 	float copyRatio;	/* Minimum live ratio to use copying GC. */
-	GC_heap crossMapHeap;	/* only used during GC. */
 	uchar *crossMap;
 	uint crossMapSize;
+	/* crossMapValidEnd is the size of the prefix of the old generation for
+	 * which the crossMap is valid.
+	 */
+	uint crossMapValidSize;
 	GC_thread currentThread; /* This points to a thread in the heap. */
 	uint fixedHeapSize; 	/* Only meaningful if useFixedHeap. */
 	GC_frameLayout *frameLayouts;
