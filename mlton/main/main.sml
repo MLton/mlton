@@ -734,12 +734,13 @@ fun commandLine (args: string list): unit =
 				      val output =
 					 if stop = Place.O orelse !keepO
 					    then
-					       if !keepGenerated
+					       if !keepGenerated 
+						  orelse start = Place.Generated
 						  then
 						     concat [String.dropSuffix
 							     (input, 1),
 							     "o"]
-					       else
+					       else 
 						  suffix
 						  (concat [".",
 							   Int.toString
