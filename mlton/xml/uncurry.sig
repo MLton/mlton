@@ -5,14 +5,16 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+type int = Int.t
+
 signature UNCURRY_STRUCTS = 
    sig
-      structure	Sxml: SXML
+      include SHRINK
    end
 
 signature UNCURRY = 
    sig
       include UNCURRY_STRUCTS
 	 
-      val uncurry: Sxml.Program.t -> Sxml.Program.t
+      val uncurry: Program.t -> Program.t
    end
