@@ -263,6 +263,12 @@ dynamically.
 \fullmodule{RealArraySlice}{MONO\_ARRAY\_SLICE}
 \fullmodule{RealVector}{MONO\_VECTOR}
 \fullmodule{RealVectorSlice}{MONO\_VECTOR\_SLICE}
+\fullmodule{Real32}{REAL}
+\fullmodule{Real32Array}{MONO\_ARRAY}
+\fullmodule{Real32Array2}{MONO\_ARRAY2}
+\fullmodule{Real32ArraySlice}{MONO\_ARRAY\_SLICE}
+\fullmodule{Real32Vector}{MONO\_VECTOR}
+\fullmodule{Real32VectorSlice}{MONO\_VECTOR\_SLICE}
 \fullmodule{Real64}{REAL}
 \fullmodule{Real64Array}{MONO\_ARRAY}
 \fullmodule{Real64Array2}{MONO\_ARRAY2}
@@ -310,6 +316,24 @@ The following structures equivalences hold.\\
 \tt Real = Real64 = LargeReal\\
 \tt Word = Word32 = LargeWord = SysWord
 \end{tabular}
+
+The {\tt Real}, {\tt Real32}, and {\tt Real64} modules are implemented
+using the {\tt C} math library and so the SML functions will often
+reflect the behavior of the underlying library function.  We have made
+some effort to unify the differences between the math libraries on
+different platforms, and in particular to handle exceptional cases
+according to the basis library specification.  However, there will be
+differences due to different numerical algorithms and cases we may
+have missed.  Please submit a bug report if you encounter an error in
+the handling of an exceptional case.
+
+On x86, real arithmetic is implemented internally using 80 bits of
+precision.  Using higher precision for intermediate results in
+computations can lead to different results than if all the computation
+is done at 32 or 64 bits.  If you require strict IEEE compliance, you
+can compile with {\tt -ieee-fp true}, which will cause intermediate
+results to be stored after each operation.  This may cause a
+substantial performance penalty.
 
 \subsection{Top level functors}
 {\tt ImperativeIO}\\
