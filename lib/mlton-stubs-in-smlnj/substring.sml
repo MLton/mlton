@@ -2,6 +2,8 @@ structure Substring =
    struct
       open OpenInt32 Substring
 
+      val full = all
+	 
       fun base ss =
 	 let val (s, i, j) = Substring.base ss
 	 in (s, fromInt i, fromInt j)
