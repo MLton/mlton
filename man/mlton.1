@@ -4,16 +4,22 @@
 language
 .SH SYNOPSIS
 \fBmlton\fP \fI[option ...] file\fB.\fP{\fBcm\fP|\fBsml\fP|\fBc\fP|\fBo\fP} 
-[file\fB.\fP{\fBS\fP|\fBo\fP} ...] [linker arg ...]\fR
+[file\fB.\fP{\fBc\fP|\fBS\fP|\fBo\fP} ...]\fR
 .SH DESCRIPTION
 .PP
-Typical use of \fBMLton\fP is \fBmlton \fIxxx\fB.sml\fR, which will
-produce the executable \fIxxx\fP.
-\fBMLton\fP has no notion of separate compilation.
-The program must be the entire program you wish to compile; however, it may
-refer to signatures and structures defined in the SML basis library.
-The linker arguments are passed unchanged to the linker, and must have
-a suffix of \fB.a\fP or \fB.o\fP or a prefix of \fB-l\fP or \fB-L\fP.
+\fBMLton\fP is run from the command line with a collection of options
+followed by a file name and a list of files to compile, assemble, and
+link with.  The simplest case is to run \fBmlton foo.sml\fP, which
+will produce an executable \fBfoo\fP.  Since \fBMLton\fP has no notion
+of separate compilation, the program must be the entire program you
+wish to compile.  However, the program may refer to signatures and
+structures defined in the SML basis library.
+
+For developing large programs spanning many files, \fBMLton\fP supports
+a limited subset of SML/NJ Compilation Manager (CM) files.  For example,
+\fBmlton foo.cm\fP will compile the complete SML program consisting of
+the concatenatation of all the SML files referred to (either directly
+or indirectly) by \fBfoo.cm\fP.
 
 \fBMLton\fP's options allow you to control the name of the output
 file, the verbosity of compile-time messages, and whether or not
@@ -23,15 +29,6 @@ early, at some intermediate pass, in which case compilation can be
 resumed by passing the resulting files to \fBMLton\fP.  \fBMLton\fP
 uses the input file suffix to determine the type of input program.
 The possibilities are \fB.cm\fR, \fB.sml\fR, \fB.c\fR, \fB.S\fR, and \fB.o\fR.
-
-For developing large programs spanning many files, \fBMLton\fP upports
-a limited subset of SML/NJ Compilation Manager (CM) files.  From
-\fBMLton\fP's point of view, a CM file \fBfoo.cm\fR defines a list of
-SML source files.  The call \fBmlton foo.cm\fR is equivalent to
-compiling an SML program consisting of the concatenation of these
-files.  As always with \fBMLton\fP, the concatenation must be the
-whole program you wish to compile.  See the \fBMLton User Guide\fP for
-details.
 
 With no arguments, \fBMLton\fP prints the version number and exits.
 For a usage message, run \fBMLton\fP with an invalid switch, e.g.,
@@ -110,14 +107,13 @@ If no \fB-keep\fP argument is given, then only the final file is saved.
 .in -.5i
 
 .TP
-\fB-lib-search \fIdir\fR
-Specify an additional directory to be searched for libraries when
-linking.  Like \fBgcc -L\fP\fIdir\fP.
-
-.TP
-\fB-link \fIlib\fR
-Specify an additional library to link with.  Like \fBgcc
--l\fP\fIlib\fP.
+\fB-link-opt \fIopt\fR
+Pass the option to \fBgcc\fP when linking.  You can use this to
+specify library search paths, e.g. \fB-link-opt -Lpath\fP, and
+libraries to link with, e.g. \fB-link-opt -lfoo\fP, or even both at
+the same time, e.g. \fB-link-opt '-Lpath -lfoo'\fP.  If you wish to
+pash an option to the linker, you must use \fBgcc\fP's \fB-Wl,\fP
+syntax, e.g., \fB-link-opt '-Wl,--export-dynamic'\fP.
 
 .TP
 \fB-may-load-world \fI{\fBtrue\fP|\fBfalse\fP}\fP

@@ -1,5 +1,10 @@
 Here are the changes since version 20030716.
 
+* 2003-08-17
+  - Eliminated -link and -lib-search, which are no longer needed.
+    Eliminated support for passing -l*, -L*, and *.a on the command
+    line.  Use -link-opt instead. 
+
 * 2003-08-16
   - Added -link-opt, for passing options to gcc when linking.
 

@@ -1,34 +1,35 @@
 \sec{Manual page}{manual-page}
 
 {\mlton} is run from the command line with a collection of options
-followed by a file name and a list of files to assemble and to link
-with.
+followed by a file name and a list of files to compile, assemble, and
+link with.
 \begin{verbatim}
-mlton [option ...] file.{cm|sml|c|o} [file.{S|o} ...] [linker arg ...]
+mlton [option ...] file.{cm|sml|c|o} [file.{c|S|o} ...]
 \end{verbatim}
 The simplest case is to run {\tt mlton foo.sml}, where {\tt foo.sml}
 contains a valid SML program, in which case {\mlton} compiles the
-program to produce an executable called {\tt foo}.  Since {\mlton} has
+program to produce an executable {\tt foo}.  Since {\mlton} has
 no notion of separate compilation, the program must be the entire
 program you wish to compile.  However, the program may refer to
 signatures and structures defined in the SML basis library.
-The linker arguments are passed unchanged to the linker, and must have
-a suffix of {\tt .a} or {\tt .o} or a prefix of {\tt -l} or {\tt -L}.
 
-For developing large programs spanning many files, {\mlton} supports a limited
-subset of SML/NJ Compilation Manager (CM) files.  For example, {\tt mlton
-foo.cm} will compile the complete SML program consisting of the concatenatation
-of all the SML files referred to (either directly or indirectly) by {\tt
-foo.cm}.  See \secref{cm} for details.
+For developing large programs spanning many files, {\mlton} supports a
+limited subset of SML/NJ Compilation Manager (CM) files.  For example,
+{\tt mlton foo.cm} will compile the complete SML program consisting of
+the concatenatation of all the SML files referred to (either directly
+or indirectly) by {\tt foo.cm}.  See \secref{cm} for details.
 
 \subsec{Compile-time options}{compile-time-options}
 
-{\mlton}'s options allow you to control the name of the output file, the
-verbosity of compile-time messages, and whether or not certain optimizations are
-performed.  They also allow you to specify which intermediate files are saved
-and to stop the compilation process early, at some intermediate pass.  {\mlton}
-uses the input file suffix to determine the type of input program.  The
-possibilities are {\tt .cm}, {\tt .sml}, {\tt .c}, {\tt .S} and {\tt .o}.
+{\mlton}'s options allow you to control the name of the output file,
+the verbosity of compile-time messages, and whether or not certain
+optimizations are performed.  They also allow you to specify which
+intermediate files are saved and to stop the compilation process
+early, at some intermediate pass, in which case compilation can be
+resumed by passing the resulting files to {\mlton}.  {\mlton} uses the
+input file suffix to determine the type of input program.  The
+possibilities are {\tt .cm}, {\tt .sml}, {\tt .c}, {\tt .S} and {\tt
+.o}.
 
 With no arguments, {\mlton} prints the version number and exits.  For
 a usage message, run {\mlton} with an invalid switch, e.g. {\tt mlton
@@ -107,13 +108,13 @@ no {\tt -keep} argument is given, then only the final file(s) is saved.\\
 {\tt sml} & SML file\\
 \end{tabular}
 
-\option{-lib-search {\it dir}}
-Specify an additional directory to be searched for libraries when
-linking.  Like {\tt gcc -L}{\it dir}.
-
-\option{-link {\it lib}}
-Specify an additional library to link with.  Like {\tt gcc -l}{\it
-lib}.
+\option{-link-opt {\it opt}}
+Pass the option to {\tt gcc} when linking.  You can use this to
+specify library search paths, e.g. {\tt -link-opt -Lpath}, and
+libraries to link with, e.g. {\tt -link-opt -lfoo}, or even both at
+the same time, e.g. {\tt -link-opt '-Lpath -lfoo'}.  If you wish to
+pash an option to the linker, you must use {\tt gcc}'s {\tt -Wl,}
+syntax, e.g., {\tt -link-opt '-Wl,--export-dynamic'}.
 
 \option{-may-load-world \trueFalse}
 Controls whether or not the generated executable supports the {\tt

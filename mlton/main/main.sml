@@ -228,8 +228,6 @@ fun makeOptions {usage} =
 		   | NONE => usage (concat ["invalid -keep-pass flag: ", s])))),
        (Expert, "lib", " <lib>", "set MLton lib directory",
 	SpaceString (fn s => libDir := s)),
-       (Normal, "lib-search", " <dir>", "search dir for libraries (like gcc -L)",
-	SpaceString (fn s => List.push (linkOpts, concat ["-L", s]))),
        (Expert, "limit-check", " {lhle|pb|ebb|lh|lhf|lhfle}",
 	"limit check insertion algorithm",
 	SpaceString (fn s =>
@@ -248,8 +246,6 @@ fun makeOptions {usage} =
        (Expert, "limit-check-counts", " {false|true}",
 	"compute dynamic counts of limit checks",
 	boolRef limitCheckCounts),
-       (Normal, "link", " <library>", "link with library (like gcc -l)",
-	SpaceString (fn s => List.push (linkOpts, concat ["-l", s]))),
        (Normal, "link-opt", " <opt>", "pass option to linker",
 	SpaceString (fn s =>
 		     if s = ""
@@ -377,7 +373,7 @@ fun makeOptions {usage} =
    end
 
 val mainUsage =
-   "mlton [option ...] file.{cm|sml|c|o} [file.{c|S|o} ...] [linker arg ...]"
+   "mlton [option ...] file.{cm|sml|c|o} [file.{c|S|o} ...]"
 
 val {parse, usage} =
    Popt.makeUsage {mainUsage = mainUsage,
@@ -584,24 +580,15 @@ fun commandLine (args: string list): unit =
 			(".c", Generated, true),
 			(".o", O, true)]
 	       end
-	    val (csoFiles, rest) =
-	       List.splitPrefix (rest, fn s =>
-				 List.exists
-				 ([".c", ".o", ".s", ".S"], fn suffix =>
-				  String.isSuffix {string = s,
-						   suffix = suffix}))
 	    val _ =
-	       case List.peek (rest, fn s =>
-			       not
-			       (List.exists ([".a", ".o"], fn suffix =>
-					     String.isSuffix {string = s,
-							      suffix = suffix})
-				orelse
-				List.exists (["-l", "-L"], fn prefix =>
-					     String.isPrefix {prefix = prefix,
-							      string = s}))) of
-		  NONE => ()
-		| SOME s => usage (concat ["invalid linker argument: ", s])
+	       List.foreach
+	       (rest, fn f =>
+		if List.exists ([".c", ".o", ".s", ".S"], fn suffix =>
+				String.isSuffix {string = f, suffix = suffix})
+		   andalso File.canRead f
+		   then ()
+		else usage (concat ["invalid file: ", f]))
+	    val csoFiles = rest
 	    val stop = !stop
 	 in
 	    case Place.compare (start, stop) of
@@ -672,7 +659,7 @@ fun commandLine (args: string list): unit =
 				       | Self => [],
 				      if !debug then gccDebug else [],
 				      if !static then ["-static"] else []],
-				     rest @ linkOpts))
+				     linkOpts))
 			      ()
 			   (* gcc on Cygwin appends .exe, which I don't want, so
 			    * move the output file to it's rightful place.
