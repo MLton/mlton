@@ -31,9 +31,7 @@ MAKE_ARGS=	DESTDIR='' PREFIX=$(PREFIX)
 
 .PHONY: build-package
 build-package:
-	$(MAKE) makesum build
-	cd $(WRKSRC) && $(GMAKE) install
-	$(MAKE) pkg-plist
+	$(MAKE) makesum build pkg-plist
 	portlint .
 	$(MAKE) deinstall
 	$(MAKE) install
@@ -46,6 +44,7 @@ build-package:
 
 .PHONY: pkg-plist
 pkg-plist:
+	cd $(WRKSRC) && $(GMAKE) install
 	cd $(WRKSRC)/install/usr && 				\
 		find -d * \! -type d | $(GREP) -v man/man | 	\
 		sort >$(.CURDIR)/pkg-plist
