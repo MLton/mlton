@@ -50,6 +50,7 @@ signature INTERFACE =
 	    val dest: t -> {admitsEquality: AdmitsEquality.t,
 			    hasCons: bool,
 			    kind: Kind.t}
+	    val layout: t -> Layout.t
 	    val realize: t * EnvTypeStr.t -> unit
 	    datatype realization =
 	       ETypeStr of EnvTypeStr.t
@@ -149,13 +150,6 @@ signature INTERFACE =
 	    val wheree: t * Region.t * (unit -> Layout.t) * Time.t * t -> unit
 	 end
       sharing type FlexibleTycon.typeStr = TypeStr.t
-      structure Shape:
-	 sig
-	    type t
-
-	    val equals: t * t -> bool
-	    val plist: t -> PropertyList.t
-	 end
       structure TyconMap:
 	 sig
 	    datatype 'a t = T of {strs: (Ast.Strid.t * 'a t) array,
@@ -181,6 +175,7 @@ signature INTERFACE =
       val new: {strs: (Ast.Strid.t * t) array,
 		types: (Ast.Tycon.t * TypeStr.t) array,
 		vals: (Ast.Vid.t * (Status.t * Scheme.t)) array} -> t
+      val original: t -> t
       val peekStrid: t * Ast.Strid.t -> t option
       datatype 'a peekResult =
 	 Found of 'a
@@ -189,6 +184,5 @@ signature INTERFACE =
       val peekTycon: t * Ast.Tycon.t -> TypeStr.t option
       val plist: t -> PropertyList.t
       val renameTycons: (unit -> unit) ref
-      val shape: t -> Shape.t
       val share: t * Ast.Longstrid.t * t * Ast.Longstrid.t * Time.t -> unit
    end

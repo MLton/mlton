@@ -34,23 +34,6 @@ end
 
 structure Set = DisjointSet
 
-structure Shape =
-   struct
-      datatype t = T of {plist: PropertyList.t}
-
-      local
-	 fun make f (T r) = f r
-      in
-	 val plist = make #plist
-      end
-
-      fun layout (T _) = Layout.str "<shape>"
-
-      fun new () = T {plist = PropertyList.new ()}
-
-      fun equals (s, s') = PropertyList.equals (plist s, plist s')
-   end
-
 structure Status:
    sig
       datatype t = Con | Exn | Var
@@ -829,13 +812,11 @@ structure UniqueId = IntUniqueId ()
 (*---------------------------------------------------*)
 (*                   Main Datatype                   *)
 (*---------------------------------------------------*)
-(* Invariant: only ever union two envs if they have the same shape. *)
-(* The shape of interface is the set of longtycons that are accessible in it. *)
 
 datatype t = T of {copy: copy,
 		   flexible: FlexibleTycon.t TyconMap.t option ref,
+		   original: t option,
 		   plist: PropertyList.t,
-		   shape: Shape.t,
 		   strs: (Strid.t * t) array,
 		   types: (Ast.Tycon.t * TypeStr.t) array,
 		   uniqueId: UniqueId.t,
@@ -848,14 +829,18 @@ local
    fun make f = f o dest
 in
    val plist = make #plist
-   val shape = make #shape
 end
 
+fun original I =
+   case #original (dest I) of
+      NONE => I
+    | SOME I => I
+	 
 fun new {strs, types, vals} =
    T (Set.singleton {copy = ref NONE,
 		     flexible = ref NONE,
+		     original = NONE,
 		     plist = PropertyList.new (),
-		     shape = Shape.new (),
 		     strs = strs,
 		     types = types,
 		     uniqueId = UniqueId.new (),
@@ -870,11 +855,9 @@ local
 in
    fun layout (T s) =
       let
-	 val {shape, strs, types, uniqueId = u, vals, ...} = Set.value s
+	 val {strs, types, uniqueId = u, vals, ...} = Set.value s
       in
-	 record [("shape", Shape.layout shape),
-		 ("uniqueId", UniqueId.layout u),
-
+	 record [("uniqueId", UniqueId.layout u),
 		 ("strs",
 		  Array.layout (Layout.tuple2 (Strid.layout, layout)) strs),
 		 ("types",
@@ -888,19 +871,16 @@ in
       end
 end
 
-fun dest (T s) =
-   let
-      val {strs, types, vals, ...} = Set.value s
-   in
-      {strs = strs,
-       types = types,
-       vals = vals}
-   end
-
 fun equals (T s, T s') = Set.equals (s, s')
 
 val equals =
    Trace.trace2 ("Interface.equals", layout, layout, Bool.layout) equals
+
+fun sameShape (I, I') =
+   case (#original (dest I), #original (dest I')) of
+      (SOME I, SOME I') => equals (I, I')
+    | _ => false
+
 
 fun peekStrid (T s, strid: Strid.t): t option =
    let
@@ -980,8 +960,48 @@ fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, time): unit =
 	     (Ast.Longtycon.long (List.concat [ss, [s], rev strids],
 				  name))
 	  end)
+      fun ensureFlexible (I: t, strids): unit =
+	 let
+	    val {get: t -> bool ref, destroy, ...} =
+	       Property.destGet (plist, Property.initFun (fn _ => ref false))
+	    fun loop (I: t, strids): unit =
+	       let
+		  val r = get I
+	       in
+		  if !r
+		     then ()
+		  else
+		     let
+			val _ = r := true
+			val T s = I
+			val {strs, types, ...} = Set.value s
+			val _ =
+			   Array.foreach
+			   (strs, fn (strid, I) =>
+			    ensureFlexible (I, strid :: strids))
+			val _ =
+			   Array.foreach
+			   (types, fn (name, s) =>
+			    let
+			       val (_, r, lay) = lay (s, ls, strids, name)
+			       val _ =
+				  TypeStr.getFlex (s, time, "shared", r, lay)
+			    in
+			       ()
+			    end)
+		     in
+			()
+		     end
+	       end
+	    val () = loop (I, strids)
+	    val _ = destroy ()
+	 in
+	    ()
+	 end
       fun share (I, I', strids): unit = 
-	 if Shape.equals (shape I, shape I')
+	 if equals (I, I')
+	    then ensureFlexible (I, strids)
+	 else if sameShape (I, I')
 	    then
 	       let
 		  fun loop (T s, T s', strids): unit =
@@ -1075,14 +1095,14 @@ fun copy (I: t): t =
        * that we can gc them when done.
        *)
       val copies: copy list ref = ref []
-      fun loop (T s): t =
+      fun loop (I as T s): t =
 	 let
 	    val r as {copy, ...} = Set.value s
 	 in
 	    case !copy of
 	       NONE =>
 		  let
-		     val {shape, strs, types, vals, ...} = r
+		     val {original, strs, types, vals, ...} = r
 		     val types =
 			Array.map (types, fn (name, typeStr) =>
 				   (name, TypeStr.copy typeStr))
@@ -1091,10 +1111,14 @@ fun copy (I: t): t =
 				   (name, (status, Scheme.copy scheme)))
 		     val strs =
 			Array.map (strs, fn (name, I) => (name, loop I))
+		     val original =
+			SOME (case original of
+				 NONE => I
+			       | SOME I => I)
 		     val I = T (Set.singleton {copy = ref NONE,
 					       flexible = ref NONE,
+					       original = original,
 					       plist = PropertyList.new (),
-					       shape = shape,
 					       strs = strs,
 					       types = types,
 					       uniqueId = UniqueId.new (),
@@ -1217,5 +1241,14 @@ val flexibleTycons =
    Trace.trace ("Interface.flexibleTycons", layout,
 		TyconMap.layout FlexibleTycon.layout)
    flexibleTycons
+
+fun dest (T s) =
+   let
+      val {strs, types, vals, ...} = Set.value s
+   in
+      {strs = strs,
+       types = types,
+       vals = vals}
+   end
 
 end

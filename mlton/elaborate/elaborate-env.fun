@@ -307,7 +307,6 @@ local
    open Interface
 in
    structure FlexibleTycon = FlexibleTycon
-   structure Shape = Shape
    structure Status = Status
    structure TyconMap = TyconMap
 end
@@ -531,6 +530,36 @@ val newTycon: string * Kind.t * AdmitsEquality.t -> Tycon.t =
       c
    end
 
+fun foreach2Sorted (abs: ('a * 'b) array,
+		    info: ('a, 'c) Info.t,
+		    equals: ('a * 'a -> bool),
+		    f: ('a * 'b * (int * 'c) option -> unit)): unit =
+   let
+      val Info.T acs = info
+      val _ =
+	 Array.fold
+	 (abs, 0, fn ((a, b), i) =>
+	  let
+	     fun find j =
+		if j = Array.length acs
+		   then (i, NONE)
+		else
+		   let
+		      val {domain = a', range = c, ...} = Array.sub (acs, j)
+		   in
+		      if equals (a, a')
+			 then (j + 1, SOME (j, c))
+		      else find (j + 1)
+		   end
+	     val (i, co) = find i
+	     val () = f (a, b, co)
+	  in
+	     i
+	  end)
+   in
+      ()
+   end
+
 (* ------------------------------------------------- *)
 (*                     Structure                     *)
 (* ------------------------------------------------- *)
@@ -583,15 +612,6 @@ structure Structure =
 		    vals)),
 	  ("strs", Info.layout (Strid.layout, layout) strs)]
 
-      fun hasInterface (S: t, I: Interface.t): bool =
-	 case interface S of
-	    NONE => false
-	  | SOME I' => Shape.equals (Interface.shape I, Interface.shape I')
-
-      val hasInterface =
-	 Trace.trace2 ("Structure.hasInterface", layout, Interface.layout,
-		       Bool.layout) hasInterface
-
       local
 	 datatype handleUses = Clear | Force
 	 fun make handleUses =
@@ -627,37 +647,6 @@ structure Structure =
 	 val clearUsed = make Clear
 	 val forceUsed = make Force
       end
-
-      fun foreach2Sorted (abs: ('a * 'b) array,
-			  info: ('a, 'c) Info.t,
-			  equals: ('a * 'a -> bool),
-			  f: ('a * 'b * 'c option -> unit)): unit =
-	 let
-	    val Info.T acs = info
-	    val _ =
-	       Array.fold
-	       (abs, 0, fn ((a, b), i) =>
-		let
-		   fun find j =
-		      if j = Array.length acs
-			 then (i, NONE)
-		      else
-			 let
-			    val {domain = a', range = c, ...} =
-			       Array.sub (acs, j)
-			 in
-			    if equals (a, a')
-			       then (j + 1, SOME c)
-			    else find (j + 1)
-			 end
-		   val (i, co) = find i
-		   val () = f (a, b, co)
-		in
-		   i
-		end)
-	 in
-	    ()
-	 end
       
       fun realize (S: t, tm: 'a TyconMap.t,
 		   f: (Ast.Tycon.t
@@ -679,11 +668,12 @@ structure Structure =
 		      fn (name, tm, S) =>
 		      case S of
 			 NONE => allNone (tm, nest)
-		       | SOME S => loop (tm, S, name :: nest))
+		       | SOME (_, S) => loop (tm, S, name :: nest))
 		  val () =
 		     foreach2Sorted
 		     (types, types', Ast.Tycon.equals,
-		      fn (name, flex, opt) => f (name, flex, opt, {nest = nest}))
+		      fn (name, flex, opt) =>
+		      f (name, flex, Option.map (opt, #2), {nest = nest}))
 	       in
 		   ()
 	       end
@@ -695,7 +685,7 @@ structure Structure =
 	 open Layout
       in
 	 fun layouts ({showUsed: bool},
-		      shapeSigid: Shape.t -> (Sigid.t * Interface.t) option) =
+		      interfaceSigid: Interface.t -> Sigid.t option) =
 	    let
 	       fun layoutTypeSpec (n, s) =
 		  layoutTypeSpec' (Ast.Tycon.layout n, s, {isWhere = false})
@@ -816,7 +806,13 @@ structure Structure =
 			  then NONE
 		       else (case interface of
 				NONE => NONE
-			      | SOME I => shapeSigid (Interface.shape I)) of
+			      | SOME I =>
+				   let
+				      val I = Interface.original I
+				   in
+				      Option.map (interfaceSigid I, fn s =>
+						  (s, I))
+				   end) of
 		     NONE => (layoutStr S, {messy = true})
 		   | SOME (s, I) =>
 			let
@@ -1335,15 +1331,15 @@ fun layout' (E: t, keep, showUsed): Layout.t =
 		  Symbol.<= (d, d'))
       open Layout
       fun doit (a, layout) = align (Array.toListMap (a, layout))
-      val {get = shapeSigid: Shape.t -> (Sigid.t * Interface.t) option,
-	   set = setShapeSigid, ...} =
-	 Property.getSet (Shape.plist, Property.initConst NONE)
+      val {get = interfaceSigid: Interface.t -> Sigid.t option,
+	   set = setInterfaceSigid, ...} =
+	 Property.getSet (Interface.plist, Property.initConst NONE)
       val _ = Array.foreach (sigs, fn {domain = s, range = I, ...} =>
-			     setShapeSigid (Interface.shape I, SOME (s, I)))
+			     setInterfaceSigid (I, SOME s))
       val {strSpec, typeSpec, valSpec, ...} =
-	 Structure.layouts (showUsed, shapeSigid)
+	 Structure.layouts (showUsed, interfaceSigid)
       val {layoutAbbrev, layoutStr, ...} =
-	 Structure.layouts ({showUsed = false}, shapeSigid)
+	 Structure.layouts ({showUsed = false}, interfaceSigid)
       val sigs =
 	 doit (sigs, fn {domain = sigid, range = I, ...} =>
 	       let
@@ -2385,43 +2381,73 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 	 in
 	    Info.T array
 	 end
-      fun checkMatch (Structure.T {strs, types, ...}, I, strids): unit =
+      fun checkMatch (TyconMap.T {strs, types},
+		      Structure.T {strs = strsS, types = typesS, ...},
+		      I: Interface.t,
+		      strids): unit =
 	 let
-	    val {strs = strs', types = types', ...} = Interface.dest I
+	    val {strs = strsI, types = typesI, ...} = Interface.dest I
 	    val _ =
-	       map (strs, strs', strids,
-		    "structure", Strid.equals, Strid.layout,
-		    fn _ => (),
-		    fn (name, S, I) => checkMatch (S, I, name :: strids))
-	    val _ = 
-	       map (types, types', strids,
-		    "type", Ast.Tycon.equals, Ast.Tycon.layout,
-		    fn _ => (),
-		    fn (name, s, s') =>
-		    ignore (handleType (s, s', strids, name)))
+	       foreach2Sorted
+	       (strs, strsS, Strid.equals,
+		fn (strid, tm, opt) =>
+		case opt of
+		   NONE => Error.bug "checkMatch str"
+		 | SOME (i, S) => 
+		      checkMatch (tm, S, #2 (Array.sub (strsI, i)),
+				  strid :: strids))
+	    val _ =
+	       foreach2Sorted
+	       (types, typesS, Ast.Tycon.equals,
+		fn (name, _, opt) =>
+		case opt of
+		   NONE => Error.bug "checkMatch type"
+		 | SOME (i, typeStr) =>
+		      ignore (handleType
+			      (typeStr, #2 (Array.sub (typesI, i)),
+			       strids, name)))
 	 in
 	    ()
 	 end
+      val checkMatch =
+	 Trace.trace4 ("checkMatch",
+		       TyconMap.layout FlexibleTycon.layout,
+		       Structure.layout,
+		       Interface.layout,
+		       List.layout Strid.layout,
+		       Unit.layout)
+	 checkMatch
       val {destroy, get: Structure.t -> (Interface.t * Structure.t) list ref,
 	   ...} =
 	 Property.destGet (Structure.plist, Property.initFun (fn _ => ref []))
       fun cut (S, I, strids): Structure.t =
-	 if Structure.hasInterface (S, I)
-	    then (checkMatch (S, I, strids); S)
-	 else
-	    let
-	       val seen = get S
-	    in
-	       case List.peek (!seen, fn (I', _) => Interface.equals (I, I')) of
-		  NONE =>
-		     let
-			val S' = reallyCut (S, I, strids)
-			val _ = List.push (seen, (I, S'))
-		     in
-			S'
-		     end
-		| SOME (_, S) => S
-	    end
+	 let
+	    val seen = get S
+	 in
+	    case List.peek (!seen, fn (I', _) => Interface.equals (I, I')) of
+	       NONE =>
+		  let
+		     fun really () = reallyCut (S, I, strids)
+		     val S =
+			case Structure.interface S of
+			   NONE => really ()
+			 | SOME I' =>
+			      let
+				 val I'' = Interface.original I
+			      in
+				 if Interface.equals (I'', Interface.original I')
+				    then (checkMatch
+					  (Interface.flexibleTycons I'',
+					   S, I, strids)
+					  ; S)
+				 else really ()
+			      end
+		     val _ = List.push (seen, (I, S))
+		  in
+		     S
+		  end
+	     | SOME (_, S) => S
+	 end
       and reallyCut (Structure.T {strs = structStrs,
 				  types = structTypes,
 				  vals = structVals, ...},
