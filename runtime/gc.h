@@ -120,7 +120,7 @@ typedef struct GC_stack {
 /* ------------------------------------------------- */
 
 typedef struct GC_thread {
-	/* The order of these two fields is important.  The nonpointer field
+	/* The order of these fields is important.  The nonpointer fields
 	 * must be first, because this object must appear to be a normal heap
 	 * object.
 	 */
