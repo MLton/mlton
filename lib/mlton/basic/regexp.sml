@@ -1912,20 +1912,24 @@ in
 		     cs: char list, cps: (char -> bool) list, ces: string list,
 		     k: char list * t -> res) =
 	       let
-		 fun finish (s, cs, cps, ces) =
+		 fun finish (s: char list,
+			     cs: char list,
+			     cps: (char -> bool) list,
+			     ces: string list) =
 		    let
 		       fun finish' re = k (s, re)
 		       val s = implode cs
-		       val cp = fn c =>
-			        List.fold(cps, false, fn (cp, b) =>
-					  b orelse (cp c))
+		       val cp = fn c => List.exists (cps, fn cp => cp c)
 		    in
 		       if inv
-		          then finish' (List.fold
-					(ces, or [isNotChar cp,
-						  notOneOf s],
-					 fn (ce, re) =>
-					 or [notString ce, re]))
+		          then
+			     (case ces of
+				 [] =>
+				    finish'
+				    (isNotChar
+				     (fn c =>
+				      cp c orelse String.contains (s, c)))
+			       | _ => Error.bug "Regexp.fromString can't handle collating elements in negated bracket expressions")
 		       else finish' (List.fold
 				     (ces, or [isChar cp,
 					       oneOf s],

@@ -168,6 +168,12 @@ val tests =
 	     end)
    @
    [
+    (#1 (valOf (fromString "a")), "a", SOME 1, SOME 1),
+    (#1 (valOf (fromString "a*")), "a", SOME 0, SOME 1),
+    (#1 (valOf (fromString "a+")), "a", SOME 1, SOME 1),
+    (#1 (valOf (fromString "a+")), "aa", SOME 1, SOME 2),
+    (#1 (valOf (fromString "[^a]")), "a", NONE, NONE),
+    (#1 (valOf (fromString "[^a]")), "b", SOME 1, SOME 1),
     (stringIgnoreCase "abc", "abc", SOME (3: int), SOME (3: int)),
     (stringIgnoreCase "abc", "aBC", SOME 3, SOME 3),
     (stringIgnoreCase "ab", "abab", SOME 2, SOME 2),
