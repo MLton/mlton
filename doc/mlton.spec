@@ -7,6 +7,7 @@ Group: Development/Languages
 Source: mlton-%{version}.tgz
 URL: http://www.sourcelight.com/MLton
 Buildroot: %{_tmppath}/%{name}/mlton
+Prefix: /usr
 
 %description
 MLton is a whole-program optimizing compiler for the Standard ML programming
