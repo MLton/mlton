@@ -51,8 +51,8 @@ fun declareExports {print} =
 	  end)
       (* Declare the arrays and functions used for parameter passing. *)
       val _ =
-	 CType.memo
-	 (fn t =>
+	 List.foreach
+	 (CType.all, fn t =>
 	  let
 	     val n = !(maxMap t)
 	  in
