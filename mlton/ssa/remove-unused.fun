@@ -327,7 +327,6 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	    of Bug => ()
 	     | Call {func, args, return}
 	     => let
-
 		in
 		  flowVarTysVars(argsFunc func, args);
 		  flowSideEffects(func, f);
@@ -762,6 +761,30 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 						    then Handler.CallerHandler
 						 else Handler.None}
 		       | SOME {cont, handler} =>
+(*
+			    if not (doesTerminateFunc func)
+			       andalso
+			       (not (doesFailFunc func)
+				orelse
+				case handler of
+				   Handler.CallerHandler => true
+				 | _ => false)
+			       andalso
+			       Vector.equals
+			       (Vector.keepAllMap
+				(returnsFunc func, fn (x, ty) =>
+				 if isUsedVar x
+				    then SOME ty
+				 else NONE),
+				Vector.keepAllMap
+				(returnsFunc f, fn (x, ty) =>
+				 if isUsedVar x
+				    then SOME ty
+				 else NONE),
+				Type.equals)
+			       then NONE
+			    else
+*)
 			    let
 			       val cont =
 				  if doesTerminateFunc func
