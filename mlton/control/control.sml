@@ -448,7 +448,7 @@ val instrument = control {name = "instrument",
 val instrumentSxml = control {name = "instrument Sxml",
 			      default = false,
 			      toString = Bool.toString}
-
+	     
 val keepMachine = control {name = "keep Machine",
 			   default = false,
 			   toString = Bool.toString}
@@ -612,11 +612,17 @@ val profPasses =
 
 structure Profile =
    struct
-      datatype t = ProfileNone | ProfileAlloc | ProfileCount | ProfileTime
+      datatype t =
+	 ProfileNone
+       | ProfileAlloc
+       | ProfileCallStack
+       | ProfileCount
+       | ProfileTime
 
       val toString =
 	 fn ProfileNone => "None"
 	  | ProfileAlloc => "Alloc"
+	  | ProfileCallStack => "CallStack"
 	  | ProfileCount => "Count"
 	  | ProfileTime => "Time"
    end

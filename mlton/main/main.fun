@@ -254,9 +254,6 @@ fun makeOptions {usage} =
 	    else usage (concat ["invalid -enable-ann flag: ", s]))),
        (Expert, "error-threshhold", " 20", "error threshhold",
 	intRef errorThreshhold),
-       (Expert, "exn-history", " {false|true}", "enable Exn.history",
-	Bool (fn b => setConst ("exn-history", "Exn.keepHistory",
-				Bool.toString b))),
        (Expert, "expert", " {false|true}", "enable expert status",
 	boolRef expert),
        (Normal, "export-header", " <file>", "write C header file for _export's",
@@ -388,6 +385,7 @@ fun makeOptions {usage} =
 	     ; profile := (case s of
 			      "no" => ProfileNone
 			    | "alloc" => ProfileAlloc
+			    | "call" => ProfileCallStack
 			    | "count" => ProfileCount
 			    | "time" => ProfileTime
 			    | _ => usage (concat
@@ -547,6 +545,16 @@ fun commandLine (args: string list): unit =
 	  | _ => Error.bug "incorrect args from shell script"
       val _ = setTargetType ("self", usage)
       val result = parse args
+      val () = if !exnHistory
+		  then (case !profile of
+			   ProfileNone => profile := ProfileCallStack
+			 | ProfileCallStack => ()
+			 | _ => usage "can't use -profile with Exn.keepHistory")
+	       else ()
+      val () =
+	 Compile.setCommandLineConstant
+	 {name = "CallStack.keep",
+	  value = Bool.toString (!Control.profile = Control.ProfileCallStack)}
       val gcc = !gcc
       val stop = !stop
       val target = !target
@@ -614,13 +622,13 @@ fun commandLine (args: string list): unit =
 		      linkWithGmp,
 		      addTargetOpts linkOpts]
       val _ =
-	 if !Control.codegen = Native andalso not (hasNative ())
+	 if !codegen = Native andalso not (hasNative ())
 	    then usage (concat ["can't use native codegen on ",
 				MLton.Platform.Arch.toString targetArch])
 	 else ()
       val _ =
 	 chunk :=
-	 (case !Control.codegen of
+	 (case !codegen of
 	     Bytecode => OneChunk
 	   | CCodegen => Coalesce {limit = (case !coalesce of
 					       NONE => 4096

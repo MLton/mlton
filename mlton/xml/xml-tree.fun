@@ -5,6 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
+
 functor XmlTree (S: XML_TREE_STRUCTS): XML_TREE =
 struct
 
@@ -172,8 +173,7 @@ and primExp =
 		prim: Type.t Prim.t,
 		targs: Type.t vector}
   | Profile of ProfileExp.t
-  | Raise of {exn: VarExp.t,
-	      filePos: string option}
+  | Raise of VarExp.t
   | Select of {tuple: VarExp.t,
 	       offset: int}
   | Tuple of VarExp.t vector
@@ -272,7 +272,7 @@ in
 		 layoutTargs targs,
 		 str " ", tuple (Vector.toListMap (args, VarExp.layout))]
        | Profile e => ProfileExp.layout e
-       | Raise {exn, ...} => seq [str "raise ", VarExp.layout exn]
+       | Raise exn => seq [str "raise ", VarExp.layout exn]
        | Select {offset, tuple} =>
 	    seq [str "#", Int.layout offset, str " ", VarExp.layout tuple]
        | Tuple xs => tuple (Vector.toListMap (xs, VarExp.layout))
@@ -336,8 +336,7 @@ structure Exp =
 	    val res = Var.newNoname ()
 	    val handler =
 	       make {decs = [prof ProfileExp.Leave,
-			     MonoVal {exp = Raise {exn = VarExp.mono exn,
-						   filePos = NONE},
+			     MonoVal {exp = Raise (VarExp.mono exn),
 				      ty = ty,
 				      var = res}],
 		     result = VarExp.mono res}
@@ -404,7 +403,7 @@ structure Exp =
 					     | SOME x => handleVarExp x)
 		    | App {func, arg} => (handleVarExp func
 					  ; handleVarExp arg)
-		    | Raise {exn, ...} => handleVarExp exn
+		    | Raise exn => handleVarExp exn
 		    | Handle {try, catch, handler, ...} =>
 			 (loopExp try
 			  ; monoVar catch
@@ -683,8 +682,8 @@ structure DirectExp =
 			       (default, fn (e, r) => (toExp e, r)))},
 		   ty))
 
-      fun raisee ({exn: t, filePos}, t: Type.t): t =
-	 convert (exn, fn (x, _) => (Raise {exn = x, filePos = filePos}, t))
+      fun raisee (exn: t, t: Type.t): t =
+	 convert (exn, fn (x, _) => (Raise x, t))
 	 
       fun handlee {try, catch, handler, ty} =
 	 simple (Handle {try = toExp try,
@@ -738,6 +737,19 @@ structure DirectExp =
     	 converts (es, fn xs => let val (x, t) = Vector.last xs
 				in (Var x, t)
 				end)
+
+      val bug: string * Type.t -> t =
+	 fn (s, ty) =>
+	 sequence (Vector.new2
+		   (primApp {prim = Prim.bug,
+			     targs = Vector.new0 (),
+			     args = Vector.new1 (string s),
+			     ty = Type.unit},
+		    raisee (primApp {prim = Prim.bogus,
+				     targs = Vector.new1 Type.exn,
+				     args = Vector.new0 (),
+				     ty = Type.exn},
+			    ty)))
 
       fun seq (es, make) =
 	 fn k => convertsGen (es, fn xts =>

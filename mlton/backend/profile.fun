@@ -137,13 +137,8 @@ fun profile program =
    let
       val Program.T {functions, handlesSignals, main, objectTypes} = program
       val debug = false
-      datatype profile = Alloc | Count | Time
-      val profile =
-	 (case !Control.profile of
-	     Control.ProfileAlloc => Alloc
-	   | Control.ProfileCount => Count
-	   | Control.ProfileTime => Time
-	   | _ => Error.bug "impossible Control.profile")
+      datatype z = datatype Control.profile
+      val profile = !Control.profile
       val profileStack: bool = !Control.profileStack
       val frameProfileIndices: (Label.t * int) list ref = ref []
       val infoNodes: InfoNode.t list ref = ref []
@@ -151,11 +146,15 @@ fun profile program =
       val names: string list ref = ref []
       local
 	 val sourceCounter = Counter.new 0
+	 val sep =
+	    if profile = ProfileCallStack
+	       then " "
+	    else "\t"
 	 val {get = nameIndex, ...} =
 	    Property.get (SourceInfo.plist,
 			  Property.initFun
 			  (fn si =>
-			   (List.push (names, SourceInfo.toString' (si, "\t"))
+			   (List.push (names, SourceInfo.toString' (si, sep))
 			    ; Counter.next nameCounter)))
       in	 
 	 fun sourceInfoNode (si: SourceInfo.t) =
@@ -182,14 +181,14 @@ fun profile program =
       val mainInfoNode = sourceInfoNode SourceInfo.main
       fun keepSource (si: SourceInfo.t): bool =
 	 !Control.profileBasis
-	 orelse profile <> Count
+	 orelse profile <> ProfileCount
 	 orelse not (SourceInfo.isBasis si orelse SourceInfo.isC si)
       (* With -profile count, we want to get zero counts for all functions,
        * whether or not they made it into the final executable.
        *)
       val () =
 	 case profile of
-	    Count =>
+	    ProfileCount =>
 	       List.foreach (SourceInfo.all (), fn si =>
 			     if keepSource si
 				then ignore (sourceInfoNode si)
@@ -406,7 +405,7 @@ fun profile program =
 		       | Profile ps =>
 			    let
 			       val (npl, ss) =
-				  if profile = Time
+				  if profile = ProfileTime
 				     then
 					if npl
 					   andalso not (List.isEmpty sourceSeq)
@@ -432,7 +431,7 @@ fun profile program =
 			    end
 		       | _ => (leaves, true, sourceSeq, s :: ss))
 		  val statements =
-		     if profile = Time andalso npl
+		     if profile = ProfileTime andalso npl
 			then profileLabel sourceSeq :: statements
 		     else statements
 		  val {args, kind, label} =
@@ -448,7 +447,7 @@ fun profile program =
 				 addFrameProfileIndex
 				 (newLabel, sourceSeqIndex sourceSeq)
 			      val statements =
-				 if profile = Time
+				 if profile = ProfileTime
 				    then (Vector.new1
 					  (profileLabelIndex
 					   (sourceSeqIndex sourceSeq)))
@@ -471,9 +470,10 @@ fun profile program =
 			       kind = Kind.CReturn {func = func},
 			       label = newLabel}
 			   end
-		     else {args = args,
-			   kind = kind,
-			   label = label}
+		     else
+			{args = args,
+			 kind = kind,
+			 label = label}
 	       in		       
 		  List.push (blocks,
 			     Block.T {args = args,
@@ -504,7 +504,7 @@ fun profile program =
 		  val index = sourceSeqIndex (Push.toSources pushes)
 		  val _ = addFrameProfileIndex (newLabel, index)
 		  val statements =
-		     if profile = Time
+		     if profile = ProfileTime
 			then Vector.new1 (profileLabelIndex index)
 		     else Vector.new0 ()
 		  val _ =
@@ -611,9 +611,9 @@ fun profile program =
 				 val func = CFunction.profileInc
 				 val bytesAllocated =
 				    case profile of
-				       Alloc => Bytes.toInt bytesAllocated
-				     | Count => 1
-				     | Time => Error.bug "imposible"
+				       ProfileAlloc => Bytes.toInt bytesAllocated
+				     | ProfileCount => 1
+				     | _ => Error.bug "imposible"
 				 val transfer =
 				    Transfer.CCall
 				    {args = (Vector.new2
@@ -682,7 +682,7 @@ fun profile program =
 			     | Profile ps =>
 				  let
 				     val shouldSplit =
-					profile = Alloc
+					profile = ProfileAlloc
 					andalso Bytes.> (bytesAllocated,
 							 Bytes.zero)
 				     val {args, bytesAllocated, kind, label,
@@ -731,7 +731,7 @@ fun profile program =
 							else Error.bug "mismatched Leave"
 						     end)
 				     val shouldSplit =
-					profile = Count
+					profile = ProfileCount
 					andalso (case ps of
 						    Enter _ => keep
 						  | _ => false)
@@ -769,7 +769,7 @@ fun profile program =
 				   statements = s :: statements})
 			    )
 			val shouldSplit =
-			   profile = Alloc
+			   profile = ProfileAlloc
 			   andalso Bytes.> (bytesAllocated, Bytes.zero)
 			val {args, kind, label, leaves, statements, ...} =
 			   maybeSplit {args = args,

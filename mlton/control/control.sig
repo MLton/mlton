@@ -265,7 +265,12 @@ signature CONTROL =
       val profPasses: Regexp.Compiled.t list ref
 
       (* Insert profiling information. *)
-      datatype profile = ProfileNone | ProfileAlloc | ProfileCount | ProfileTime
+      datatype profile =
+	 ProfileNone
+       | ProfileAlloc
+       | ProfileCallStack
+       | ProfileCount
+       | ProfileTime
       val profile: profile ref
 
       val profileBasis: bool ref

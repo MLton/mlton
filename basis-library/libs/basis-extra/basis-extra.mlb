@@ -152,6 +152,10 @@ in
 
     ../../mlton/process.sig
     ../../mlton/process.sml
+    ../../mlton/pointer.sig
+    ../../mlton/pointer.sml
+    ../../mlton/call-stack.sig
+    ../../mlton/call-stack.sml
     ../../mlton/exn.sig
     ../../mlton/exn.sml
     ../../mlton/thread.sig
@@ -209,8 +213,6 @@ in
     ../../mlton/int-inf.sig
     ../../mlton/platform.sig
     ../../mlton/platform.sml
-    ../../mlton/pointer.sig
-    ../../mlton/pointer.sml
     ../../mlton/proc-env.sig
     ../../mlton/proc-env.sml
     ../../mlton/profile.sig

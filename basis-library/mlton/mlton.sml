@@ -38,6 +38,7 @@ val safe = Primitive.safe
 
 structure Array = Array
 structure BinIO = MLtonIO (BinIO)
+structure CallStack = MLtonCallStack
 structure Cont = MLtonCont
 structure Exn = MLtonExn
 structure Finalizable = MLtonFinalizable

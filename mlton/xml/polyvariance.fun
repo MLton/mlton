@@ -147,7 +147,7 @@ fun shouldDuplicate (program as Program.T {body, ...}, small, product)
 					      Error.bug "unexpected Lambda"
 					 | PrimApp {args, ...} => loopVars args
 					 | Profile _ => ()
-					 | Raise {exn, ...} => loopVar exn
+					 | Raise exn => loopVar exn
 					 | Select {tuple, ...} => loopVar tuple
 					 | Tuple xs => loopVars xs
 					 | Var x => loopVar x
@@ -350,9 +350,7 @@ fun duplicate (program as Program.T {datatypes, body, overflow},
 						 targs = targs,
 						 args = loopVars args}
 				   | Profile _ => exp
-				   | Raise {exn, filePos} =>
-					Raise {exn = loopVar exn,
-					       filePos = filePos}
+				   | Raise exn => Raise (loopVar exn)
 				   | Select {tuple, offset} =>
 					Select {tuple = loopVar tuple,
 						offset = offset}

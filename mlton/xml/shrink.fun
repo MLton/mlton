@@ -448,9 +448,7 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
 		     else nonExpansive (fn () => (), fn () => SOME make)
 		  end
 	     | Profile _ => expansive exp
-	     | Raise {exn, filePos} =>
-		  expansive (Raise {exn = shrinkVarExp exn,
-				    filePos = filePos})
+	     | Raise exn => expansive (Raise (shrinkVarExp exn))
 	     | Select {tuple, offset} =>
 		  let
 		     fun normal x = Select {tuple = x, offset = offset}

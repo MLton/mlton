@@ -984,11 +984,10 @@ fun closureConvert
 			end
 		  end
 	     | SprimExp.Profile e => simple (Dexp.profile e)
-	     | SprimExp.Raise {exn, ...} =>
-		  simple (Dexp.raisee (convertVarExp exn))
-	     | SprimExp.Select {tuple, offset} =>
-		  simple (Dexp.select {tuple = convertVarExp tuple,
-				       offset = offset,
+	     | SprimExp.Raise e => simple (Dexp.raisee (convertVarExp e))
+	     | SprimExp.Select {offset, tuple} =>
+		  simple (Dexp.select {offset = offset,
+				       tuple = convertVarExp tuple,
 				       ty = ty})
 	     | SprimExp.Tuple xs =>
 		  simple (Dexp.tuple {exps = Vector.map (xs, convertVarExp),

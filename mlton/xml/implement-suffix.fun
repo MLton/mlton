@@ -88,7 +88,7 @@ fun doit (Program.T {datatypes, body, overflow, ...}): Program.t =
 	 end
       fun bug s =
 	 Dexp.primApp {prim = Prim.bug,
-		       targs = Vector.new0 (),
+		       targs = Vector.new1 Type.unit,
 		       args = Vector.new1 (Dexp.string s),
 		       ty = Type.unit}
       val body =

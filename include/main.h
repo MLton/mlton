@@ -20,7 +20,10 @@
 #define LoadArray(a, f) sfread (a, sizeof(*a), cardof(a), f)
 #define SaveArray(a, fd) swrite (fd, a, sizeof(*a) * cardof(a))
 
+Pointer gcStateAddress;
+
 #define Initialize(al, cs, mg, mfs, mmc, pk, ps)			\
+	gcStateAddress = &gcState;					\
 	gcState.alignment = al;						\
 	gcState.atMLtons = atMLtons;					\
 	gcState.atMLtonsSize = cardof(atMLtons);		       	\

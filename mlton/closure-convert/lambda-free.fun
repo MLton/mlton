@@ -122,7 +122,7 @@ fun lambdaFree (Program.T {body, ...},
 		  else ();
 		varExps (args, s))
 	  | Profile _ => ()
-	  | Raise {exn, ...} => varExp (exn, s)
+	  | Raise e => varExp (e, s)
 	  | Select {tuple, ...} => varExp (tuple, s)
 	  | Tuple xs => varExps (xs, s)
 	  | Var x => varExp (x, s)

@@ -235,9 +235,9 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 		     ty
 		  end
 	     | Profile _ => Type.unit
-	     | Raise {exn, ...} => if isExnType (checkVarExp exn)
-				      then ty
-				   else error "bad raise"
+	     | Raise exn => if isExnType (checkVarExp exn)
+			       then ty
+			    else error "bad raise"
 	     | Select {tuple, offset} =>
 		  (case Type.deTupleOpt (checkVarExp tuple) of
 		      NONE => error "selection from nontuple"

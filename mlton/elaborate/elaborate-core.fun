@@ -1031,15 +1031,14 @@ structure Cexp =
    struct
       open Cexp
 
-      fun enterLeave (e, si) =
-	 if (* Don't create the sourceInfo if we're in the middle of elaborating
+      fun enterLeave (e: t, doit: bool, si): t =
+	 if not doit
+	    (* Don't create the sourceInfo if we're in the middle of elaborating
 	     * a functor body.  Count profiling keeps track of all sourceInfos
 	     * created and would show it with a count of zero, which would be
 	     * bad.
 	     *)
-	    Env.amInsideFunctor ()
-	    (* Don't create the source info if we're not profiling. *)
-	    orelse !Control.profile = Control.ProfileNone
+	    orelse Env.amInsideFunctor ()
 	    (* Don't create the source info if we're profiling some IL. *)
 	    orelse !Control.profileIL <> Control.ProfileSource
 	    then e
@@ -1076,6 +1075,12 @@ fun check (c: (bool,bool) ElabControl.t, keyword: string, region) =
 
 fun elaborateDec (d, {env = E, nest}) =
    let
+      val profileBody =
+	 let
+	    open Control
+	 in
+	    !profile <> ProfileNone
+	 end
       fun recursiveFun () =
 	 let
 	    val boundRef: (unit -> Tyvar.t vector) option ref = ref NONE
@@ -1542,14 +1547,12 @@ fun elaborateDec (d, {env = E, nest}) =
 				     val bodyRegion = Aexp.region body
 				     val body = elabExp (body, nest, NONE)
 				     val body =
-					if not (!Control.profileBranch)
-					   then body
-					else
-					   Cexp.enterLeave
-					   (body, fn () =>
-					    SourceInfo.function
-					    {name = "<branch>" :: nest,
-					     region = bodyRegion})
+					Cexp.enterLeave
+					(body, !Control.profileBranch,
+					 fn () =>
+					 SourceInfo.function
+					 {name = "<branch>" :: nest,
+					  region = bodyRegion})
 				     val _ =
 					Option.app
 					(resultType, fn t =>
@@ -1642,7 +1645,8 @@ fun elaborateDec (d, {env = E, nest}) =
 					      (xs, argTypes, Cexp.var)),
 					     warnMatch = warnMatch ()}
 				      in
-					 Cexp.enterLeave (e, sourceInfo)
+					 Cexp.enterLeave
+					 (e, profileBody, sourceInfo)
 				      end
 				else
 				   let
@@ -1867,6 +1871,7 @@ fun elaborateDec (d, {env = E, nest}) =
 					     rules = rules,
 					     test = Cexp.var (arg, argType),
 					     warnMatch = warnMatch ()},
+				 profileBody,
 				 fn () => SourceInfo.function {name = nest,
 							       region = region})
 			     val lambda =
@@ -2060,8 +2065,9 @@ fun elaborateDec (d, {env = E, nest}) =
 				      Cexp.RaiseMatch)
 		      val body =
 			 Cexp.enterLeave
-			 (body, fn () => SourceInfo.function {name = nest,
-							      region = region})
+			 (body, profileBody,
+			  fn () => SourceInfo.function {name = nest,
+							region = region})
 		   in
 		      Cexp.make (Cexp.Lambda (Lambda.make {arg = arg,
 							   argType = argType,
@@ -2119,7 +2125,7 @@ fun elaborateDec (d, {env = E, nest}) =
 			    let
 			       fun wrap (e, e', name) =
 				  Cexp.enterLeave
-				  (e', fn () =>
+				  (e', profileBody, fn () =>
 				   SourceInfo.function
 				   {name = name :: nest,
 				    region = Aexp.region e})
@@ -2430,8 +2436,7 @@ fun elaborateDec (d, {env = E, nest}) =
 			   seq [str "exp type: ", l1]))
 		      val resultType = Type.new ()
 		   in
-		      Cexp.make (Cexp.Raise {exn = exn, region = region},
-				 resultType)
+		      Cexp.make (Cexp.Raise exn, resultType)
 		   end
 	      | Aexp.Record r =>
 		   let
@@ -2619,13 +2624,10 @@ fun elaborateDec (d, {env = E, nest}) =
 				seq [str "previous: ", l2],
 				seq [str "in: ", lay ()]]))
 		    val e =
-		       if not (!Control.profileBranch)
-			  then e
-		       else
-			  Cexp.enterLeave
-			  (e, fn () =>
-			   SourceInfo.function {name = "<branch>" :: nest,
-						region = Aexp.region exp})
+		       Cexp.enterLeave
+		       (e, !Control.profileBranch, fn () =>
+			SourceInfo.function {name = "<branch>" :: nest,
+					     region = Aexp.region exp})
 		 in
 		    {exp = e,
 		     lay = SOME lay,

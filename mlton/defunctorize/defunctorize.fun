@@ -130,10 +130,7 @@ fun casee {caseType: Xtype.t,
 	 in
 	    Vector.concat
 	    [cases,
-	     Vector.new1 {exp =
-			  Xexp.raisee ({exn = f e,
-					filePos = Region.toFilePos region},
-				       caseType),
+	     Vector.new1 {exp = Xexp.raisee (f e, caseType),
 			  isDefault = true,
 			  lay = NONE,
 			  numUses = ref 0,
@@ -597,7 +594,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
 	     | Let (ds, e) => (Vector.foreach (ds, loopDec); loopExp e)
 	     | List es => Vector.foreach (es, loopExp)
 	     | PrimApp {args, ...} => Vector.foreach (args, loopExp)
-	     | Raise {exn, ...} => loopExp exn
+	     | Raise e => loopExp e
 	     | Record r => Record.foreach (r, loopExp)
 	     | Seq es => Vector.foreach (es, loopExp)
 	     | Var _ => ()
@@ -943,10 +940,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
 					 ty = ty}
 
 		     end
-		| Raise {exn, region} =>
-		     Xexp.raisee ({exn = #1 (loopExp exn),
-				   filePos = Region.toFilePos region},
-				  ty)
+		| Raise e => Xexp.raisee (#1 (loopExp e), ty)
 		| Record r =>
 		     (* The components of the record have to be evaluated left to 
 		      * right as they appeared in the source program, but then

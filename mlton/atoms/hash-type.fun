@@ -250,9 +250,7 @@ fun checkPrimApp {args, prim, result, targs}: bool =
        | Array_update => oneTarg (fn t => ([array t, defaultWord, t], unit))
        | Exn_extra => oneTarg (fn t => ([exn], t))
        | Exn_name => done ([exn], string)
-       | Exn_setExtendExtra =>
-	    oneTarg (fn t => ([arrow (tuple (Vector.new2 (string, t)), t)],
-			      unit))
+       | Exn_setExtendExtra => oneTarg (fn t => ([arrow (t, t)], unit))
        | Exn_setInitExtra => oneTarg (fn t => ([t], unit))
        | FFI f => done (Vector.toList (CFunction.args f), CFunction.return f)
        | FFI_Symbol {ty, ...} => done ([], ty)

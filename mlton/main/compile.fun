@@ -118,7 +118,19 @@ structure x86Codegen = x86Codegen (structure CCodegen = CCodegen
 (* ------------------------------------------------- *)
 
 val commandLineConstants: {name: string, value: string} list ref = ref []
-fun setCommandLineConstant c = List.push (commandLineConstants, c)
+fun setCommandLineConstant (c as {name, value}) =
+   let
+      val () =
+	 case List.peek ([("Exn.keepHistory", Control.exnHistory)],
+			 fn (s, _) => s = name) of
+	    NONE => ()
+	  | SOME (_, r) =>
+	       (case Bool.fromString value of
+		   NONE => Error.bug (concat ["bad value for ", name])
+		 | SOME b => r := b)
+   in
+      List.push (commandLineConstants, c)
+   end
    
 val allConstants: (string * ConstType.t) list ref = ref []
 val amBuildingConstants: bool ref = ref false

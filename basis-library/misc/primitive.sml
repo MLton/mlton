@@ -209,6 +209,28 @@ structure Primitive =
       type cstring = Pointer.t
       type cstringArray = Pointer.t
 
+      structure GCState =
+	 struct
+	    type t = Pointer.t
+
+	    val gcState = _import "gcStateAddress": t;
+	 end
+      
+      structure CallStack =
+	 struct
+	    (* The most recent caller is at index 0 in the array. *)
+	    datatype t = T of int array
+
+	    val callStack =
+	       _import "GC_callStack": GCState.t * int array -> unit;
+	    val frameIndexSourceSeq =
+	       _import "GC_frameIndexSourceSeq": GCState.t * int -> Pointer.t;
+	    val keep = _command_line_const "CallStack.keep": bool = false;
+	    val numStackFrames =
+	       _import "GC_numStackFrames": GCState.t -> int;
+	    val sourceName = _import "GC_sourceName": GCState.t * int -> cstring;
+	 end
+
       structure Char =
 	 struct
 	    open Char
@@ -272,7 +294,7 @@ structure Primitive =
 	    val strfTime =
 	       _import "Date_strfTime": char array * size * NullString.t -> size;
 	 end
-
+    
       structure Exn =
 	 struct
 	    (* The polymorphism with extra and setInitExtra is because primitives
@@ -280,17 +302,15 @@ structure Primitive =
 	     * allows the various passes like monomorphisation to translate
 	     * the types appropriately.
 	     *)
-	    type extra = string list
+	    type extra = CallStack.t option
 
 	    val extra = _prim "Exn_extra": exn -> 'a;
 	    val extra: exn -> extra = extra
 	    val name = _prim "Exn_name": exn -> string;
 	    val keepHistory =
 	       _command_line_const "Exn.keepHistory": bool = false;
-	    val setExtendExtra =
-	       _prim "Exn_setExtendExtra": (string * 'a -> 'a) -> unit;
-	    val setExtendExtra: (string * extra -> extra) -> unit =
-	       setExtendExtra
+	    val setExtendExtra = _prim "Exn_setExtendExtra": ('a -> 'a) -> unit;
+	    val setExtendExtra: (extra -> extra) -> unit = setExtendExtra
 	    val setInitExtra = _prim "Exn_setInitExtra": 'a -> unit;
 	    val setInitExtra: extra -> unit = setInitExtra
 	 end
@@ -1115,6 +1135,7 @@ structure Primitive =
 
 	    fun isNull p = p = null
 
+	    val free = _import "free": Pointer.t -> unit;
 	    val getInt8 = _prim "Pointer_getWord8": t * int -> Int8.int;
 	    val getInt16 = _prim "Pointer_getWord16": t * int -> Int16.int;
 	    val getInt32 = _prim "Pointer_getWord32": t * int -> Int32.int;

@@ -29,7 +29,10 @@ val buildConstants: (string * (unit -> string)) list =
 					  Bytecode => 0
 					| CCodegen => 1
 					| Native => 2)),
-       ("MLton_profile_isOn", fn () => bool (!profile <> ProfileNone)),
+       ("MLton_profile_isOn", fn () => bool (case !profile of
+						ProfileCallStack => false
+					      | ProfileNone => false
+					      | _ => true)),
        ("MLton_FFI_numExports", fn () => int (Ffi.numExports ()))]
    end
 
@@ -140,12 +143,6 @@ fun load (ins: In.t, commandLineConstants)
 	 List.foreach
 	 (commandLineConstants, fn {name, value} =>
 	  let
-	     val () =
-		if name = "Exn.keepHistory"
-		   then (case Bool.fromString value of
-			    NONE => Error.bug "bad value for Exn.history"
-			  | SOME b => Control.exnHistory := b)
-		else ()
 	  in
 	     add {name = name, value = value}
 	  end)

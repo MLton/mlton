@@ -32,6 +32,7 @@ enum {
 	CROSS_MAP_EMPTY = 255,
 	CURRENT_SOURCE_UNDEFINED = 0xFFFFFFFF,
 	DEBUG_ARRAY = FALSE,
+	DEBUG_CALL_STACK = FALSE,
 	DEBUG_CARD_MARKING = FALSE,
 	DEBUG_DETAILED = FALSE,
 	DEBUG_ENTER_LEAVE = FALSE,
@@ -495,7 +496,7 @@ static inline uint getFrameIndex (GC_state s, word returnAddress) {
 	uint res;
 
 	res = s->returnAddressToFrameIndex (returnAddress);
-	if (DEBUG_PROFILE)
+	if (DEBUG_DETAILED)
 		fprintf (stderr, "%u = getFrameIndex (0x%08x)\n",
 				returnAddress, res);
 	return res;
@@ -3529,7 +3530,47 @@ void GC_foreachStackFrame (GC_state s, void (*f) (GC_state s, uint i)) {
 		fprintf (stderr, "done walking stack\n");
 }
 
-static inline string sourceName (GC_state s, uint i) {
+static int numStackFrames;
+static int *callStack;
+
+static void addToCallStack (GC_state s, uint i) {
+	if (DEBUG_CALL_STACK)
+		fprintf (stderr, "addToCallStack (%u)\n", i);
+	callStack[numStackFrames] = i;
+	numStackFrames++;
+}
+
+void GC_callStack (GC_state s, Pointer p) {
+	if (DEBUG_CALL_STACK)
+		fprintf (stderr, "GC_callStack\n");
+	numStackFrames = 0;
+	callStack = (int*)p;
+	GC_foreachStackFrame (s, addToCallStack);
+}
+
+uint * GC_frameIndexSourceSeq (GC_state s, int frameIndex) {
+	uint *res;
+
+	res = s->sourceSeqs[s->frameSources[frameIndex]];
+	if (DEBUG_CALL_STACK)
+		fprintf (stderr, "0x%08x = GC_frameIndexSourceSeq (%u)\n",
+				(uint)res, frameIndex);
+	return res;
+}
+
+static void bumpStackFrameCount (GC_state s, uint i) {
+	numStackFrames++;
+}
+
+int GC_numStackFrames (GC_state s) {
+	numStackFrames = 0;
+	GC_foreachStackFrame (s, bumpStackFrameCount);
+	if (DEBUG_CALL_STACK)
+		fprintf (stderr, "%u = GC_numStackFrames\n", numStackFrames);
+	return numStackFrames;
+}
+
+inline string GC_sourceName (GC_state s, uint i) {
 	if (i < s->sourcesSize)
 		return s->sourceNames[s->sources[i].nameIndex];
 	else
@@ -3554,7 +3595,7 @@ static inline void removeFromStack (GC_state s, uint i) {
 	totalInc = p->total - ps->lastTotal;
 	if (DEBUG_PROFILE)
 		fprintf (stderr, "removing %s from stack  ticksInc = %llu  ticksInGCInc = %llu\n",
-				sourceName (s, i), totalInc,
+				GC_sourceName (s, i), totalInc,
 				p->totalGC - ps->lastTotalGC);
 	ps->ticks += totalInc;
 	ps->ticksInGC += p->totalGC - ps->lastTotalGC;
@@ -3589,7 +3630,7 @@ void GC_profileDone (GC_state s) {
 			if (p->stack[sourceIndex].numOccurrences > 0) {
 				if (DEBUG_PROFILE)
 					fprintf (stderr, "done leaving %s\n", 
-							sourceName (s, sourceIndex));
+							GC_sourceName (s, sourceIndex));
 				removeFromStack (s, sourceIndex);
 			}
 		}
@@ -3635,7 +3676,7 @@ static void profileEnter (GC_state s, uint sourceSeqIndex) {
 		if (DEBUG_ENTER_LEAVE or DEBUG_PROFILE) {
 			profileIndent ();
 			fprintf (stderr, "(entering %s\n", 
-					sourceName (s, sourceIndex));
+					GC_sourceName (s, sourceIndex));
 			profileDepth++;
 		}
 		profileEnterSource (s, sourceIndex);
@@ -3679,7 +3720,7 @@ static void profileLeave (GC_state s, uint sourceSeqIndex) {
 			profileDepth--;
 			profileIndent ();
 			fprintf (stderr, "leaving %s)\n",
-					sourceName (s, sourceIndex));
+					GC_sourceName (s, sourceIndex));
 		}
 		profileLeaveSource (s, sourceIndex);
 		profileLeaveSource (s, profileMaster (s, sourceIndex));
@@ -3701,7 +3742,7 @@ static inline void profileInc (GC_state s, W32 amount, uint sourceSeqIndex) {
 	if (DEBUG_PROFILE) {
 		profileIndent ();
 		fprintf (stderr, "bumping %s by %u\n",
-				sourceName (s, topSourceIndex), (uint)amount);
+				GC_sourceName (s, topSourceIndex), (uint)amount);
 	}
 	s->profile->countTop[topSourceIndex] += amount;
 	s->profile->countTop[profileMaster (s, topSourceIndex)] += amount;
@@ -3733,10 +3774,11 @@ void GC_profileInc (GC_state s, W32 amount) {
 }
 
 void GC_profileAllocInc (GC_state s, W32 amount) {
-	if (DEBUG_PROFILE)
-		fprintf (stderr, "GC_profileAllocInc (%u)\n", (uint)amount);
-	if (s->profilingIsOn and (PROFILE_ALLOC == s->profileKind))
+	if (s->profilingIsOn and (PROFILE_ALLOC == s->profileKind)) {
+		if (DEBUG_PROFILE)
+			fprintf (stderr, "GC_profileAllocInc (%u)\n", (uint)amount);
 		GC_profileInc (s, amount);
+	}
 }
 
 static void showProf (GC_state s) {
@@ -4564,6 +4606,18 @@ int GC_init (GC_state s, int argc, char **argv) {
 		fprintf (stderr, "total RAM = %s  RAM = %s\n",
 				uintToCommaString (s->totalRam), 
 				uintToCommaString (s->ram));
+	if (DEBUG_PROFILE) {
+		int i;
+			for (i = 0; i < s->frameSourcesSize; ++i) {
+			int j;
+			uint *sourceSeq;
+				fprintf (stderr, "%d\n", i);
+			sourceSeq = s->sourceSeqs[s->frameSources[i]];
+			for (j = 1; j <= sourceSeq[0]; ++j)
+				fprintf (stderr, "\t%s\n",
+						s->sourceNames[s->sources[sourceSeq[j]].nameIndex]);
+		}
+	}
 	/* Initialize profiling.  This must occur after processing command-line 
          * arguments, because those may just be doing a show prof, in which 
          * case we don't want to initialize the atExit.
@@ -4571,20 +4625,6 @@ int GC_init (GC_state s, int argc, char **argv) {
 	if (PROFILE_NONE == s->profileKind)
 		s->profilingIsOn = FALSE;
 	else {
-		if (DEBUG_PROFILE) {
-			int i;
-
-			for (i = 0; i < s->frameSourcesSize; ++i) {
-				int j;
-				uint *sourceSeq;
-
-				fprintf (stderr, "%d\n", i);
-				sourceSeq = s->sourceSeqs[s->frameSources[i]];
-				for (j = 1; j <= sourceSeq[0]; ++j)
-					fprintf (stderr, "\t%s\n",
-							s->sourceNames[s->sources[sourceSeq[j]].nameIndex]);
-			}
-		}
 		s->profilingIsOn = TRUE;
 		assert (s->frameSourcesSize == s->frameLayoutsSize);
 		switch (s->profileKind) {

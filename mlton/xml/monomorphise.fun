@@ -310,9 +310,7 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
 				 prim = Prim.map (prim, monoType),
 				 targs = monoTypes targs}
 	  | XprimExp.Profile e => SprimExp.Profile  e
-	  | XprimExp.Raise {exn, filePos} =>
-	       SprimExp.Raise {exn = monoVarExp exn,
-			       filePos = filePos}
+	  | XprimExp.Raise e => SprimExp.Raise (monoVarExp e)
 	  | XprimExp.Select {tuple, offset} =>
 	       SprimExp.Select {tuple = monoVarExp tuple, offset = offset}
 	  | XprimExp.Tuple xs => SprimExp.Tuple (monoVarExps xs)

@@ -12,8 +12,10 @@ structure Pos =
       fun toString p =
 	 case p of
 	    Known p =>
-	       concat [SourcePos.file p, ": ",
-		       Int.toString (SourcePos.line p)]
+	       if !Control.profile = Control.ProfileCallStack
+		  then SourcePos.toString p
+	       else concat [SourcePos.file p, ": ",
+			    Int.toString (SourcePos.line p)]
 	  | Unknown => "<unknown>"
 
       fun fromRegion r =

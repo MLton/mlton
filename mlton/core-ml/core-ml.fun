@@ -177,8 +177,7 @@ and expNode =
   | PrimApp of {args: exp vector,
 		prim: Type.t Prim.t,
 		targs: Type.t vector}
-  | Raise of {exn: exp,
-	      region: Region.t}
+  | Raise of exp
   | Record of exp Record.t
   | Seq of exp vector
   | Var of (unit -> Var.t) * (unit -> Type.t vector)
@@ -250,7 +249,7 @@ in
 	    Pretty.primApp {args = Vector.map (args, layoutExp),
 			    prim = Prim.layout prim,
 			    targs = Vector.map (targs, Type.layout)}
-       | Raise {exn, ...} => Pretty.raisee (layoutExp exn)
+       | Raise e => Pretty.raisee (layoutExp e)
        | Record r =>
 	    Record.layout
 	    {extra = "",
@@ -419,7 +418,7 @@ structure Exp =
 		      ; loop e)
 		| List es => Vector.foreach (es, loop)
 		| PrimApp {args, ...} => Vector.foreach (args, loop)
-		| Raise {exn, ...} => loop exn
+		| Raise e => loop e
 		| Record r => Record.foreach (r, loop)
 		| Seq es => Vector.foreach (es, loop)
 		| Var (x, _) => f (x ())
