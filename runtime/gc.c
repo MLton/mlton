@@ -1027,9 +1027,8 @@ static void *allocateSemi (GC_state s, size_t length) {
  * prepareToSpace leaves it.
  */
 static inline bool prepareToSpace (GC_state s, W64 need, W32 minSize) {
-	W32 backoff, requested;
-	int i;
-	int backoffTries;
+	W32 backoff;
+	W32 requested;
 
 	requested = computeSemiSize (s, need);
 	if (requested < minSize)
@@ -1040,15 +1039,10 @@ static inline bool prepareToSpace (GC_state s, W64 need, W32 minSize) {
 	else
 		releaseToSpace (s);
 	assert (0 == s->toSize and NULL == s->toBase);
-	s->toSize = requested;
-	if (requested == minSize) {
-		backoff = 0;
-		backoffTries = 1;
-	} else	{
-		backoffTries = 20;
-		backoff = roundPage (s, (requested - minSize) / backoffTries);
-	}
-	for (i = 0; i < backoffTries; ++i) {
+	backoff = (requested == minSize)
+		? s->pageSize
+		: roundPage (s, (requested - minSize) / 20);
+	for (s->toSize = requested; s->toSize >= minSize; s->toSize -= backoff) {
 		s->toBase = allocateSemi (s, s->toSize);
 		unless ((void*)-1 == s->toBase)
 			return TRUE;
@@ -1056,7 +1050,6 @@ static inline bool prepareToSpace (GC_state s, W64 need, W32 minSize) {
 		if (s->messages)
 			fprintf(stderr, "[Requested %luM cannot be satisfied, backing off by %luM (need = %luM).\n",
 				meg (s->toSize), meg (backoff), meg (need));
-		s->toSize -= backoff;
 	}
 	s->toSize = 0;
 	return FALSE;
@@ -1094,7 +1087,6 @@ static inline void forward (GC_state s, pointer *pp) {
 			objectBytes = toBytes (numPointers + numNonPointers);
 			skip = 0;
 		} else if (ARRAY_TAG == tag) {
-			assert (ARRAY_TAG == tag);
 			headerBytes = GC_ARRAY_HEADER_SIZE;
 			objectBytes = arrayNumBytes (p, numPointers,
 								numNonPointers);
@@ -1102,6 +1094,7 @@ static inline void forward (GC_state s, pointer *pp) {
 		} else { /* Stack. */
 			GC_stack stack;
 
+			assert (STACK_TAG == tag);
 			headerBytes = STACK_HEADER_SIZE;
 			/* Shrink stacks that don't use a lot of their reserved
 		 	 * space.
