@@ -3187,10 +3187,15 @@ static void displayCol (FILE *out, int width, string s) {
 
 static void displayCollectionStats (FILE *out, string name, struct rusage *ru, 
 					uint num, ullong bytes) {
+	uint ms;
+
+	ms = rusageTime (ru);
 	fprintf (out, "%s", name);
-	displayCol (out, 7, intToCommaString (rusageTime (ru)));
+	displayCol (out, 7, uintToCommaString (ms));
 	displayCol (out, 7, uintToCommaString (num));
 	displayCol (out, 15, ullongToCommaString (bytes));
+	displayCol (out, 15, 
+			uintToCommaString (1000.0 * (float)bytes/(float)ms));
 	fprintf (out, "\n");
 }
 
@@ -3204,8 +3209,8 @@ inline void GC_done (GC_state s) {
 		uint gcTime;
 
 		gcTime = rusageTime (&s->ru_gc);
-		fprintf (out, "GC type\t\ttime ms\t number\t          bytes\n");
-		fprintf (out, "-------------\t-------\t-------\t---------------\n");
+		fprintf (out, "GC type\t\ttime ms\t number\t\t  bytes\t      bytes/sec\n");
+		fprintf (out, "-------------\t-------\t-------\t---------------\t---------------\n");
 		displayCollectionStats
 			(out, "copying\t\t", &s->ru_gcCopy, s->numCopyingGCs, 
 				s->bytesCopied);
