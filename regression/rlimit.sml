@@ -4,4 +4,5 @@ val _ =
    (fn r => set (r, get r) handle _ => ())
    [cpuTime, coreFileSize, dataSize, fileSize, lockedInMemorySize, numFiles,
     numProcesses, residentSetSize, stackSize, virtualMemorySize]
-val _ = print (concat [Word.toString infinity, "\n"])
+
+val _ = print (concat [Bool.toString (infinity >= 0wxFFFF), "\n"])
