@@ -105,11 +105,13 @@ fun 'a analyze
 		       in coerce {from = v, to = getExnVal v}
 		       end
 	  | Return xs => coerces (values xs, shouldReturns))
-	   handle exn => Error.bug ("loopTransfer:" ^ 
-				    (Layout.toString (Transfer.layout t)) ^ ":" ^
-				    (case exn
-				       of Fail msg => msg
-					| _ => ""))
+	   handle exn => 
+	      Error.bug (concat ["loopTransfer:", 
+				 Layout.toString (Transfer.layout t),
+				 ": ",
+				 (case exn of 
+				     Fail msg => msg
+				   | _ => "")])
       val loopTransfer =
 	 Trace.trace2
 	 ("Analyze.loopTransfer",
@@ -162,9 +164,9 @@ fun 'a analyze
          handle exn =>
 	    Error.bug (concat ["loopStatement: ",
 			       Layout.toString (Statement.layout s),
-			       ":",
-			       (case exn
-				   of Fail msg => msg
+			       ": ",
+			       (case exn of 
+				   Fail msg => msg
 				 | _ => "")])
       val _ = coerces (Vector.new0 (), #args (func main))
       val _ = Vector.foreach (globals, loopStatement)
@@ -197,6 +199,12 @@ fun 'a analyze
 		      end
 		end
 	     val _ = visit start
+	             handle exn => 
+		        Error.bug (concat [Func.toString name,
+					   ": ",
+					   (case exn of 
+					       Fail msg => msg
+					     | _ => "")])
 	  in
 	     ()
 	  end)

@@ -27,8 +27,10 @@ flat-lattice.fun
 flat-lattice.sig
 implement-handlers.fun
 implement-handlers.sig
-introduce-loops.sig
+inline.fun
+inline.sig
 introduce-loops.fun
+introduce-loops.sig
 local-flatten.fun
 local-flatten.sig
 poly-equal.fun

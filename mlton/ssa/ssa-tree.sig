@@ -186,6 +186,7 @@ signature SSA_TREE =
 	 sig
 	    type t
 
+	    val alphaRename: t -> t
 	    val blocks: t -> Block.t vector
 	    val checkHandlers: t -> unit
 	    val clear: t -> unit

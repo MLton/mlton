@@ -84,28 +84,29 @@ structure Exp =
       fun foreachLabel (e, j) = foreachLabelVar (e, j, fn _ => ())
       fun foreachVar (e, v) = foreachLabelVar (e, fn _ => (), v)
 
-      fun replaceLabelVar (e, fj, f) =
+      fun replaceLabelVar (e, fl, fx) =
 	 let
-	    fun fs xs = Vector.map (xs, f)
+	    fun fxs xs = Vector.map (xs, fx)
 	 in
 	    case e of
-	       ConApp {con, args} => ConApp {con = con, args = fs args}
+	       ConApp {con, args} => ConApp {con = con, args = fxs args}
 	     | Const _ => e
-	     | HandlerPop l => HandlerPop (fj l)
-	     | HandlerPush l => HandlerPush (fj l)
+	     | HandlerPop l => HandlerPop (fl l)
+	     | HandlerPush l => HandlerPush (fl l)
 	     | PrimApp {prim, targs, args} =>
-		  PrimApp {prim = prim, targs = targs, args = fs args}
+		  PrimApp {prim = prim, targs = targs, args = fxs args}
 	     | Select {tuple, offset} =>
-		  Select {tuple = f tuple, offset = offset}
+		  Select {tuple = fx tuple, offset = offset}
 	     | SetExnStackLocal => e
 	     | SetExnStackSlot => e
-	     | SetHandler h => SetHandler (fj h)
+	     | SetHandler h => SetHandler (fl h)
 	     | SetSlotExnStack => e
-	     | Tuple xs => Tuple (fs xs)
-	     | Var x => Var (f x)
+	     | Tuple xs => Tuple (fxs xs)
+	     | Var x => Var (fx x)
 	 end
 
-      fun replaceVar (e, f) = replaceLabelVar (e, fn j => j, f)
+      fun replaceVar (e, f) = replaceLabelVar (e, fn l => l, f)
+      fun replaceLabel (e, f) = replaceLabelVar (e, f, fn x => x)
 
       fun layout e =
 	 let
@@ -387,25 +388,37 @@ structure Transfer =
       fun foreachLabel (t, j) = foreachLabelVar (t, j, fn _ => ())
       fun foreachVar (t, v) = foreachLabelVar (t, fn _ => (), v)
 
-      fun replaceVar (t, f) =
+      fun replaceLabelVar (t, fl, fx) =
 	 let
-	    fun fs xs = Vector.map (xs, f)
+	    fun fxs xs = Vector.map (xs, fx)
 	 in
 	    case t of
 	       Bug => Bug
 	     | Call {func, args, return} =>
-		  Call {func = func, args = fs args, return = return}
+		  Call {func = func, 
+			args = fxs args, 
+			return = Option.map
+			         (return, fn {cont, handler} => 
+				  {cont = fl cont,
+				   handler = Handler.map(handler, fl)})}
 	     | Case {test, cases, default} =>
-		  Case {test = f test, cases = cases, default = default}
-	     | Goto {dst, args} => Goto {dst = dst, args = fs args}
+		  Case {test = fx test, 
+			cases = Cases.map(cases, fl),
+			default = Option.map(default, fl)}
+	     | Goto {dst, args} => 
+		  Goto {dst = fl dst, 
+			args = fxs args}
 	     | Prim {prim, args, failure, success} =>
 		  Prim {prim = prim,
-			args = fs args,
-			failure = failure,
-			success = success}
-	     | Raise x => Raise (f x)
-	     | Return xs => Return (fs xs)
+			args = fxs args,
+			failure = fl failure,
+			success = fl success}
+	     | Raise x => Raise (fx x)
+	     | Return xs => Return (fxs xs)
 	 end
+
+      fun replaceVar (t, f) = replaceLabelVar (t, fn l => l, f)
+      fun replaceLabel (t, f) = replaceLabelVar (t, f, fn x => x)
 
       local open Layout
       in
@@ -1052,6 +1065,99 @@ structure Function =
 	  in
 	     ()
 	  end)
+
+      fun alphaRename f =
+	 let
+	    local
+	       fun make (new, plist, layout) =
+		  let
+		     val {get, set, destroy} = 
+		        Property.destGetSetOnce (plist, Property.initConst NONE)
+		     fun bind x = let val x' = new x
+				  in set (x, SOME x'); x'
+				  end
+		     fun lookup x =
+		        case get x of
+			   NONE => x
+			 | SOME y => y
+		  in (set, bind, lookup, destroy)
+		  end
+	    in
+	       val (setVar, bindVar, lookupVar, destroyVar) =
+		  make (Var.new, Var.plist, Var.layout)
+	       val (setLabel, bindLabel, lookupLabel, destroyLabel) =
+		  make (Label.new, Label.plist, Label.layout)
+	    end
+	    fun lookupVars xs = Vector.map (xs, lookupVar)
+
+(*
+	    val {name, args, start, blocks, returns, ...} = dest f
+	    val args = Vector.map (args, fn (x, ty) => (bindVar x, ty))
+	    val _ = 
+	       Vector.foreach
+	       (blocks, fn Block.T {label, ...} => 
+		ignore (bindLabel label))
+	    val newBlocks = ref []
+	    fun loop (Tree.T (Block.T {label, args, statements, transfer},
+			      children)) =
+	       let
+		  val label = lookupLabel label
+		  val args = Vector.map (args, fn (x, ty) => (bindVar x, ty))
+		  val statements = 
+		     Vector.map
+		     (statements, fn Statement.T {var, ty, exp} =>
+		      Statement.T {var = Option.map (var, bindVar),
+				   ty = ty,
+				   exp = Exp.replaceLabelVar 
+				         (exp, lookupLabel, lookupVar)})
+		  val transfer = Transfer.replaceLabelVar
+		                 (transfer, lookupLabel, lookupVar)
+	       in
+		  List.push (newBlocks, 
+			     Block.T {label = label,
+				      args = args,
+				      statements = statements,
+				      transfer = transfer})
+		  ; Vector.foreach (children, loop)
+	       end
+	    val _ = loop (dominatorTree f)
+	    val blocks = Vector.fromList (!newBlocks)
+*)
+
+	    val {name, args, start, blocks, returns, ...} = dest f
+	    val args = Vector.map (args, fn (x, ty) => (bindVar x, ty))
+	    val bindLabel = ignore o bindLabel
+	    val bindVar = ignore o bindVar
+	    val _ = 
+	       Vector.foreach
+	       (blocks, fn Block.T {label, args, statements, ...} => 
+		(bindLabel label
+		 ; Vector.foreach (args, fn (x, _) => bindVar x)
+		 ; Vector.foreach (statements, 
+				   fn Statement.T {var, ...} => 
+				   Option.app (var, bindVar))))
+	    val blocks = 
+	       Vector.map
+	       (blocks, fn Block.T {label, args, statements, transfer} =>
+		Block.T {label = lookupLabel label,
+			 args = Vector.map (args, fn (x, ty) => (lookupVar x, ty)),
+			 statements = Vector.map
+			              (statements, 
+				       fn Statement.T {var, ty, exp} =>
+				       Statement.T 
+				       {var = Option.map (var, lookupVar),
+					ty = ty,
+					exp = Exp.replaceLabelVar
+					      (exp, lookupLabel, lookupVar)}),
+			 transfer = Transfer.replaceLabelVar
+			            (transfer, lookupLabel, lookupVar)})
+	 in
+	    new {name = name,
+		 args = args,
+		 start = lookupLabel start,
+		 blocks = blocks,
+		 returns = returns}
+	 end
    end
 
 structure Program =
