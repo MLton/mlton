@@ -178,7 +178,7 @@ extern struct GC_state gcState;
 	void l() __attribute__ ((weak))
 
 #define ProfileLabel(l)				\
-	__asm__ __volatile__ (#l ## ":" : : )
+	__asm__ __volatile__ (#l ":" : : )
 
 #define SmallIntInf(n) ((Pointer)(n))
 
