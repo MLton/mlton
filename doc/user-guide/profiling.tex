@@ -89,7 +89,7 @@ mlprof} with the {\tt -color} option in the presence of the {\tt
 .call-graph.dot} file will color the nodes of the call graph red,
 orange, yellow, or black according to the percentage of time spent in
 the corresponding SSA functions.  Likewise, executing {\tt mlprof}
-with the {\tt -color -d 2} options in the presence of the {\tt
+with the {\tt -color -d 1} options in the presence of the {\tt
 .cfg.dot} files will color the nodes of the control-flow graphs.  Note
 that the effect of the {\tt -color} option is dependent upon the {\tt
 -t n} option; functions and blocks below the threshold are always
@@ -130,9 +130,8 @@ program will cause a run-time error, since they would interfere with
 profiling.
 
 \begin{tabular}{l}
-\tt MLton.Itimer.set \{which = MLton.Itimer.Prof, ...\}\\
+\tt MLton.Itimer.set (MLton.Itimer.Prof, ...)\}\\
 \tt MLton.Signal.Handler.set (MLton.Signal.prof, ...)
 \end{tabular}
-
 It is best to have a long running program (at least tens of seconds)
 in order to get reasonable data.

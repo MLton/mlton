@@ -21,13 +21,13 @@ program that is valid according to The Definition that is rejected by
 
 \feature{basis library mostly complete}
 {\mlton} contains a mostly complete implementation of the basis library.
-Missing are some IO modules ({\tt BinIO}, {\tt ImperativeIO}, {\tt StreamIO},
+Missing are some IO modules ({\tt ImperativeIO}, {\tt StreamIO},
 {\tt PrimIO}), and a few functions in the {\tt IntInf}, {\tt Os.IO}, {\tt Real},
 and {\tt TextIO} structures.  See \secref{basis-library} for details.
 
 \feature{good run-time performance}
 {\mlton} generated executables have good run-time performance.
-For a comparison of several SML compilers, see
+For a comparison with other SML compilers, see
 \link{http://www.sourcelight.com/MLton/performance.html}.
 For a comparison of many compilers, including {\mlton}, see
 \link{http://www.bagley.org/\~{}doug/shootout/}.
@@ -62,8 +62,10 @@ of magnitude faster than {\smlnj}.
 \feature{fast C FFI}
 {\mlton} has a straightforward and fast FFI for calling C routines
 from SML.  In fact, much of the {\tt Posix} structure in the basis library is
-implemented using the C FFI.  The FFI also supports the definition of
-compile-time constants.  See \secref{ffi} for details.
+implemented using the C FFI.
+%The FFI also supports the definition of
+%compile-time constants.
+See \secref{ffi} for details.
 
 \feature{profiling}
 {\mlton} has support for profiling similar to {\tt gprof}.  See
@@ -110,9 +112,9 @@ threads to implement preemptive multitasking.
 
 \feature{threads}
 {\mlton} has preliminary support for threads, upon which either
-preemptive or non-preemptive multitasking can be implemented.  Threads
-are still experimental.  At some point in the future, {\mlton} may
-support CML, but there is still a ways to go.
+preemptive or non-preemptive multitasking can be implemented.  At some
+point in the future, {\mlton} may support CML, but there is still a
+ways to go.
 
 \feature{world save and restore}
 {\mlton} has a facility for saving the entire state of a computation

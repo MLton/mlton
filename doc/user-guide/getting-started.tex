@@ -5,7 +5,7 @@
 {\mlton} runs on X86 machines under either Linux or Cygwin/Windows.
 and is distributed in source and binary RPM and gzipped tar ({\tt
 tgz}) format.  You can install either the binary RPM with {\tt rpm -i
-rpm -i mlton-\version-1.i386.rpm} or the binary tgz with {\tt zcat
+mlton-\version-1.i386.rpm} or the binary tgz with {\tt zcat
 mlton-\version-1.i386.tgz | tar x}.  Or, if your distribution doesn't
 use rpm, but you have {\tt rpm2cpio}, you can use {\tt rpm2cpio
 mlton-\version-1.i386.rpm | cpio -id}.
@@ -57,13 +57,14 @@ Once you have installed {\mlton}, create a file called {\tt
 hello-world.sml} with the following contents.
 
 \begin{verbatim}
-print "Hello, world!;\n"
+print "Hello, world!\n";
 \end{verbatim}
-Now, create an executable called {\tt hello-world} with the following command.
+Now, create an executable, {\tt hello-world}, with the following command.
 \begin{verbatim}
 mlton hello-world.sml
 \end{verbatim}
-You can now run this executable to verify that it works.  There are several
-other small examples in {\tt examples}.  In particular, there are examples that
-demonstrate world save and restore, callcc, object size primitive, threads,
-profiling, and the FFI.
+You can now run this executable to verify that it works.  There are
+several other small examples in the {\tt examples} subdirectory of the
+{\tt doc} directory.  In particular, there are examples that
+demonstrate world save and restore, callcc, object size primitive,
+threads, profiling, and the FFI.

@@ -187,12 +187,12 @@ signature MLTON_GC =
 \entry{GC.collect ()}
 causes a garbage collection to occur.
 
-\entry{GC.setMessages}
+\entry{GC.setMessages b}
 controls whether diagnostic messages are
 printed at the beginning and end of each garbage collection.  It is
 the same as the {\tt gc-messages} runtime system option.
 
-\entry{GC.setSummary}
+\entry{GC.setSummary b}
 controls whether a summary of garbage
 collection statistics is printed upon termination of the program.  It
 is the same as the {\tt gc-summary} runtime system option.
@@ -242,16 +242,16 @@ signature MLTON_ITIMER =
        | Real
        | Virtual
 
-      val set: t * {value: Time.time,
-                    interval: Time.time} -> unit
+      val set: t * {interval: Time.time,
+                    value: Time.time} -> unit
       val signal: t -> Posix.Signal.signal
    end
 \end{verbatim}
 
 \begin{description}
-\entry{set (t, \{value, interval\})}
+\entry{set (t, \{interval, value\})}
 set the interval timer (using {\tt setitimer}) specified by {\tt t} to the given
-{\tt value} and {\tt interval}.
+{\tt interval} and {\tt value}.
 
 \entry{signal t}
 return the signal corresponding to {\tt t}.
@@ -305,11 +305,11 @@ Like {\tt Posix.Process.execp}.
 \end{description}
 
 \subsubsec{{\tt MLton.Profile}}{profile}
-This structure provides rudimentary profiling control from within the
-program.  For more details, see \secref{profiling} and {\tt
-  examples/profiling}.  In order to most efficiently execute
-non-profiled programs, the error-raising semantics of these functions
-are relaxed when compiled {\tt -profile false}.
+This structure provides profiling control from within the program.
+For more details, see \secref{profiling} and {\tt examples/profiling}.
+In order to most efficiently execute non-profiled programs, all of the
+operations in {\tt MLton.Profile} are no-ops when compiling {\tt
+-profile false}.
 
 \begin{verbatim}
 signature MLTON_PROFILE =
@@ -358,9 +358,9 @@ It is an error to reset a previously freed unit of profiling data.
 \entry{\tt write (x, f)}
 writes the accumulated ticks in the unit of profiling data {\tt x} to
 file {\tt f}.  It is an error to write a previously freed unit of
-profiling data.  Note: a program compiled with {\tt -p} will always
-write the current unit of profiling data at program exit to a file
-named {\tt mlmon.out}.
+profiling data.  Note: a program compiled with {\tt -profile true}
+will always write the current unit of profiling data at program exit
+to a file named {\tt mlmon.out}.
 
 \entry{current}
 returns the current unit of profiling data.
@@ -564,8 +564,8 @@ interrupted thread.
 \entry{setHandler (s, h)} set the handler for signal {\tt s} to {\tt h}.
 
 \entry{suspend m}
-temporarily sets the signal mask to m and suspends until an unmasked signal is
-received and handled, and then resets the mask.
+temporarily sets the signal mask to {\tt m} and suspends until an
+unmasked signal is received and handled, and then resets the mask.
 \end{description}
 
 \subsubsection{{\tt MLton.Socket}}
@@ -741,7 +741,10 @@ fd}.
 
 \subsubsec{{\tt MLton.Thread}}{thread}
 Threads are data structures that will begin computing when {\tt
-switch}ed to with a value.
+switch}ed to with a value.  {\tt MLton.Thread} does not include a
+default scheduling mechanism, and can be used to implement both
+preemptive and non-preemptive threads.  For examples, see {\tt
+thread1.sml} and {\tt thread2.sml} in the {\tt examples} directory.
 \begin{verbatim}
 signature MLTON_THREAD =
    sig
@@ -777,15 +780,14 @@ create a new thread (destroying {\tt t} in the process) that first applies
 t}.  This is a constant time operation.
 
 \entry{switch f}
-apply {\tt f} to the current thread to get
-{\tt (t, v)}, and then start running thread {\tt t} on value {\tt
-v}.  It is an error for {\tt f} to perform another {\tt switch}.  Also, {\tt f}
-is guaranteed to run atomically.
+apply {\tt f} to the current thread to get {\tt (t, v)}, and then
+start running thread {\tt t} on value {\tt v}.  It is an error for
+{\tt f} to perform another {\tt switch}.  {\tt f} is guaranteed
+to run atomically.
 
 \entry{switch' f}
-apply {\tt f} to the current thread to get
-{\tt (t, g)}, and then starts running thread {\tt t} computing the
-value {\tt g ()}.
+apply {\tt f} to the current thread to get {\tt (t, g)}, and then
+start running thread {\tt t} computing the value {\tt g ()}.
 
 \end{description}
 
@@ -920,7 +922,7 @@ returns {\tt "X86"}.
 returns {\tt UNIX}.
 
 \entry{SysInfo.getOSName ()}
-returns {\tt "Linux"}.
+returns {\tt "Cygwin"} or {\tt "Linux"}.
 
 \entry{Internals.GC.messages b}
 the same as {\tt MLton.GC.messages b}.
