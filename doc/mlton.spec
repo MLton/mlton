@@ -5,13 +5,13 @@ Release:
 Copyright: GPL
 Group: Development/Languages
 Source: mlton-%{version}.tgz
-URL: http://www.sourcelight.com/MLton
+URL: http://www.mlton.org/
 Buildroot: %{_tmppath}/%{name}/mlton
 Prefix: /usr
 
 %description
 MLton is a whole-program optimizing compiler for the Standard ML programming
-language.  The MLton home page is http://www.sourcelight.com/MLton.
+language.  The MLton home page is http://www.mlton.org/.
 
 %prep
 %setup

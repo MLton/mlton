@@ -95,7 +95,6 @@ version:
 		doc/web/index.html 					\
 		doc/web/download.html					\
 		doc/user-guide/macros.tex				\
-		doc/ANNOUNCE 						\
 		doc/CHANGES 						\
 		doc/README						\
 		mlton/control/control.sml; 				\
