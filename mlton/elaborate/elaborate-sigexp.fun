@@ -310,6 +310,7 @@ val info' = Trace.info "elaborateSpec"
 (* rule 65 *)
 fun elaborateSigexp (sigexp: Sigexp.t, E: Env.t): Interface.t =
    let
+      val _ = Interface.renameTycons := (fn () => Env.setTyconNames E)
       fun elaborateSigexp arg : Interface.t =
 	 Trace.traceInfo' (info,
 			   Layout.tuple2 (Sigexp.layout,

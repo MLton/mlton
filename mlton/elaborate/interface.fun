@@ -552,6 +552,8 @@ structure Cons =
 			 scheme = Scheme.fromEnv scheme}))
    end
 
+val renameTycons = ref (fn () => ())
+   
 structure TypeStr =
    struct
       structure Cons' = Cons
@@ -642,8 +644,9 @@ structure TypeStr =
 			      else SOME c
 		     end
 		| Tycon.Rigid (c, _) =>
-		     error (concat ["already defined as ",
-				    Layout.toString (Etycon.layout c)])
+		     (! renameTycons ()
+		      ; error (concat ["already defined as ",
+				       Layout.toString (Etycon.layout c)]))
 	 in
 	    loop s
 	 end
