@@ -1,0 +1,559 @@
+\documentclass[12pt]{article}
+\usepackage{alltt,epsfig,html,latexsym,longtable,makeidx,moreverb}
+
+\setlength\topmargin{-0.5in}
+\setlength\textheight{8.5in}
+\setlength\textwidth{7.0in}
+\setlength\oddsidemargin{-0.3in}
+\setlength\evensidemargin{-0.3in}
+\hyphenation{}
+\title{{\mlton} SML Style Guide}
+\author{Stephen Weeks}
+\date{\today}
+\include{macros}
+\makeindex
+
+\begin{document}
+
+\maketitle
+\input{abstract}
+
+% conventions chosen so that inertia is towards modularity and reuse
+% not to type fewer characters
+
+\sec{High-level structure}{high-level-structure}
+
+Code is structured in {\mlton} so that signatures are closed.  Thus, in
+{\mlton}, one would never write the following.
+\begin{verbatim}
+signature SIG =
+   sig
+      val f: Foo.t -> int
+   end
+\end{verbatim}
+Instead, one would write the following.
+\begin{verbatim}
+signature SIG =
+   sig
+      structure Foo: FOO
+
+      val f: Foo.t -> int
+   end
+\end{verbatim}
+The benefit of this approach is that one can first understand the
+specifications (i.e. signatures) of all of the modules in {\mlton} before having
+to look at any implementations (i.e. structures or functors).  That is, the
+signatures are self-contained.
+
+We deviate from this only in allowing references to top level types (like {\tt
+int}), basis library modules, and {\mlton} library modules.  So, the following
+signature is fine, because structure {\tt Regexp} is part of the {\mlton}
+library.
+\begin{verbatim}
+signature SIG =
+   sig
+      val f: Regexp.t -> int
+   end
+\end{verbatim}
+
+We also use signatures to express (some of) the dependencies between modules.
+For every module {\tt Foo}, we write two signatures in a file named {\tt
+foo.sig}.  The signature {\tt FOO} specifies what is implemented by {\tt Foo}.
+The signature {\tt FOO\_STRUCTS} specifies the modules that are needed in order
+to specify {\tt Foo}, but that are not implemented by {\tt Foo}.  As an example,
+consider {\mlton}'s closure conversion pass (in {\tt mlton/closure-convert}),
+which converts from {\tt Sxml}, {\mlton}'s higher-order simply-typed
+intermediate language, to {\tt Cps}, {\mlton}'s first-order simply-typed
+intermediate language.  The file {\tt closure-convert.sig} contains the
+following.
+\begin{verbatim}
+signature CLOSURE_CONVERT_STRUCTS = 
+   sig
+      structure Sxml: SXML
+      structure Cps: CPS
+      sharing Sxml.Atoms = Cps.Atoms
+   end
+
+signature CLOSURE_CONVERT = 
+   sig
+      include CLOSURE_CONVERT_STRUCTS
+      
+      val closureConvert: Sxml.Program.t -> Cps.Program.t
+   end
+\end{verbatim}
+These signatures say that the {\tt ClosureConvert} module implements a function
+{\tt closureConvert} that transforms an {\tt Sxml} program into a {\tt Cps}
+program.  They also say that {\tt ClosureConvert} does not implement {\tt Sxml}
+or {\tt Cps}.  Rather, it expects some other modules to implement these and for
+them to be provided to {\tt ClosureConvert}.  The sharing constraint expresses
+that the ILs must share some basic atoms, like constants, variables, and
+primitives.
+
+Given the two signatures that specify a module, the module definition always has
+the same structure.  A module {\tt Foo} is implemented in a file named {\tt
+foo.fun}, which defines a functor named {\tt Foo} that takes as an argument a
+structure matching {\tt FOO\_STRUCTS} and returns as a result a structure
+matching {\tt FOO}.  For example, {\tt closure-convert.fun} contains the
+following.
+\begin{verbatim}
+functor ClosureConvert (S: CLOSURE_CONVERT_STRUCTS): CLOSURE_CONVERT = 
+struct
+
+open S
+
+fun closureConvert ...
+
+end
+\end{verbatim}
+Although the signatures for {\tt ClosureConvert} express the dependence
+on the {\tt Sxml} and {\tt Cps} ILs, they do not express the
+dependence on other modules that are only used internally to closure
+conversion.  For example, closure conversion uses an auxiliary module {\tt
+AbstractValue} as part of its higher-order control-flow analysis.  Because {\tt
+AbstractValue} is only used internally to closure conversion, it does not appear
+in the signatures that specify closure conversion.  So, helper functors (like
+{\tt AbstractValue}) are analogous to helper functions in that they are not
+visible to clients.
+
+We do not put helper functors lexically in scope because SML only allows top
+level functor definitions and, more importantly, because files would become
+unmanageably large.  Instead, helper functors get their own {\tt .sig} and {\tt
+.fun} file, which follow exactly the convention above.
+
+\section{General conventions}
+
+\begin{itemize}
+\item A line of code never exceeds 80 columns.
+\item Use alphabetical order wherever possible.
+\begin{itemize}
+\item record field names
+\item datatype constructors
+\item value specs in signatures
+\item file lists in CM files
+\item export lists in CM files
+\end{itemize}
+\end{itemize}
+
+%------------------------------------------------------
+%                Signature conventions                 
+%------------------------------------------------------
+
+\sec{Signatures}{signature-conventions}
+
+We now enumerate the conventions we follow in writing signatures.
+
+\begin{enumerate}
+
+\item
+Signature identifiers are in all capitals, using ``\_'' to
+separate words.
+
+\item
+A signature typically contains a single type specification that defines a type
+constructor {\tt t}, which is the type of interest in the specification.  For
+oexample, here are signature fragments for integers, lists, and maps.
+\begin{verbatim}
+signature INTEGER =
+   sig
+      type t
+
+      val + : t * t -> t
+      ...
+   end
+
+signature LIST =
+   sig
+      type 'a t
+
+      val map: 'a t * ('a -> 'b) -> 'b t
+      ...
+   end
+
+signature MAP
+   sig
+      type ('a, 'b) t
+
+      val extend: ('a, 'b) t * 'a * 'b -> ('a, 'b) t
+      ...
+   end
+\end{verbatim}
+Although at first it might appear confusing to name every type {\tt t}, in fact
+there is never ambiguity, because at any point in the program there is at most
+one unqualified {\tt t} in scope, and all other types will be named with long
+identifiers (like {\tt Int.t} or {\tt Int.t List.t}).  For example, the code for
+a function {\tt foo} within the {\tt Map} module might look like the following.
+\begin{verbatim}
+fun foo (l: 'a List.t, n: Int.t): ('a, Int.t) t = ...
+\end{verbatim}
+
+In practice, for pervasive types like {\tt int}, {\tt 'a list}, we often use the
+standard pervasive name instead of the {\tt t} name.
+
+\item Signatures should not contain free types or structures, other than
+pervasives, basis library modules, or {\mlton} library modules.  This was
+explained in \secref{high-level-structure}.
+
+\item
+If additional abstract types (other than pervasive types) are needed to specify
+operations, they are included as substructures of the signature, and have a
+signature in their own right. For example, the following signature is good.
+
+\begin{verbatim}
+signature FOO =
+   sig
+      structure Var: VAR
+
+      type t
+      val fromVar: Var.t -> t
+      val toVar: t -> Var.t
+   end
+\end{verbatim}
+
+\item
+Signatures do not use substructures or multiple structures to group different
+operations on the same type.  This makes you waste energy remembering where the
+operations are.  For exmample, the following signature is bad.
+
+\begin{verbatim}
+signature REAL =
+   sig
+     type t
+
+     val + : t * t -> t
+
+     structure Trig:
+        sig
+           val sin: t -> t
+           val cos: t -> t
+        end
+   end
+\end{verbatim}
+
+\item
+Signatures usually should not contain datatypes.  This exposes the
+implementation of what should be an abstract type.  For example, the following
+signature is bad.
+\begin{verbatim}
+signature COMPLEX =
+   sig
+      datatype t = T of real * real
+   end
+\end{verbatim}
+A common exception to this rule is abstract syntax trees.
+
+\item
+Use structure sharing to express type sharing.  For example, in {\tt
+closure-convert.sig}, a single structure sharing equation expresses a number of
+type sharing equations.
+
+\end{enumerate}
+
+%------------------------------------------------------
+%                 Value specifications                 
+%------------------------------------------------------
+
+\subsec{Value specifications}{val-specs}
+
+Here are the conventions that we use for individual value specifications in
+signatures.  Of course, many of these conventions directly impact the way in
+which we write the core language expressions that implement the specifications.
+
+\begin{enumerate}
+
+\item
+In a datatype specification, if there is a single constructor, then that
+constructor is called {\tt T}.
+\begin{verbatim}
+datatype t = T of int
+\end{verbatim}
+
+\item
+In a datatype specification, if a constructor carries multiple values of the
+same type, use a record to name them to avoid confusion.
+\begin{verbatim}
+datatype t = T of {length: int, start: int}
+\end{verbatim}
+
+\item
+Identifiers begin with and use small letters, using capital letters to separate
+words.
+\begin{verbatim}
+val helloWorld: unit -> unit
+\end{verbatim}
+
+\item
+There is no space before the colon, and a single space after it.  In the case of
+operators (like {\tt +}), there is a space before the colon to avoid lexing the
+colon as part of the operator.
+
+\item
+Pass multiple arguments as tuple, not curried.
+\begin{verbatim}
+val eval: Exp.t * Env.t -> Val.t
+\end{verbatim}
+
+\item
+Currying is only used when there staging of a computation, i.e., if
+precomputation is done on one of the arguments.
+\begin{verbatim}
+val match: Regexp.t -> string -> bool
+\end{verbatim}
+
+\item
+Functions which take a single element of the abstract type of a signature take
+the element as the first argument, and auxiliary arguments after.
+\begin{verbatim}
+val push: t * int -> unit
+val map: 'a t * ('a -> 'b) -> 'b t
+\end{verbatim}
+
+\item
+$n$-ary operations take the $n$ elements first, and auxilary arguments after.
+\begin{verbatim}
+val merge: 'a t * 'a t * ('a * 'a -> 'b) -> 'b t
+\end{verbatim}
+
+\item
+If two arguments to a function are of the same type, and the operation is not
+commutative, pass them using a record.  This names the arguments and ensures
+they are not confused.  Exceptions are the standard numerical and algebraic
+operators.
+\begin{verbatim}
+val fromTo: {start: int, step: int, stop: int} -> int list
+val substring: t * {length: int, start: int} -> t
+val - : t * t -> t
+\end{verbatim}
+
+\item
+Field names in record types are written in alphabetical order.
+
+\item
+Return multiple results as a tuple, or as a record if there is the potential for
+confusion.
+\begin{verbatim}
+val parse: string -> t * string
+val quotRem: t * t -> t * t
+val partition: 'a t * ('a -> bool) -> {no: 'a t, yes: 'a t}
+\end{verbatim}
+
+\item
+If a function returns multiple results, at least two of which are of the same
+type, and the name of the function does not clearly indicate which result is
+which, use a record to name the results.
+\begin{verbatim}
+val vars: t -> {frees : Vars.t, bound : Vars.t}
+val partition: 'a t * ('a -> bool) -> {yes : 'a t, no : 'a t}
+\end{verbatim}
+
+\item
+Use the same names and argument orders for similar functions in different
+signatures.  This is especially common in the {\mlton} library.
+\begin{verbatim}
+val < : t * t -> bool
+val equals: t * t -> bool
+val forall: 'a t * ('a -> bool) -> bool
+\end{verbatim}
+
+\item
+Use {\tt is}, {\tt are}, {\tt can}, etc. to name predicates.  One exception is
+{\tt equals}.
+\begin{verbatim}
+val isEven: int -> bool
+val canRead: t -> bool
+\end{verbatim}
+
+\end{enumerate}
+
+%------------------------------------------------------
+%                  Signature example                   
+%------------------------------------------------------
+
+\subsection{Example}
+
+Here is the complete specification of a simple interpreter.  This demonstrates
+the {\tt t}-convention, the closed-signature convention, and the use of sharing
+constraints.
+
+\begin{verbatim}
+signature VAR =
+   sig
+      type t
+   end
+
+signature EXP =
+   sig
+      structure Var: VAR
+	 
+      datatype t =
+         Var of Var.t
+       | Lam of Var.t * t
+       | App of t * t
+   end
+
+signature VAL =
+   sig
+      structure Var: VAR
+	 
+      type t
+
+      val var: Var.t -> t
+      val lam: Var.t * t -> t
+      val app: t * t -> t
+   end
+
+signature INTERP =
+   sig
+      structure Exp: EXP
+      structure Val: VAL
+      sharing Exp.Var = Val.Var
+     
+      val eval: Exp.t -> Val.t
+   end
+
+signature ENV =
+   sig
+      structure Var: VAR
+	 
+      type 'a t
+
+      val lookup: 'a t * Var.t -> 'a
+      val extend: 'a t * Var.t * 'a -> 'a t
+   end
+\end{verbatim}
+
+%------------------------------------------------------
+%               Functors and structures                
+%------------------------------------------------------
+
+\section{Functors and structures}
+We now enumerate the conventions we follow in writing functors and structures.
+There is some repetition with \secref{high-level-structure}.
+
+\begin{enumerate}
+
+\item
+Functor identifiers begin with capital letters, use mixed case, and use capital
+letters to separate words.
+
+\item
+Functor definitions look like the following.
+\begin{verbatim}
+functor Foo (S: FOO_STRUCTS): FOO =
+struct
+
+open S
+
+...
+
+end
+\end{verbatim}
+
+\item
+The name of the functor is the same as the name of the signature describing the
+structure it produces.
+
+\item
+The functor result is constrained by a signature.
+
+\item
+A functor takes as arguments any structures that occur in the signature of the
+result that it does not implement.
+
+\item
+Structure identifiers begin with capital letters, and use capital letters to
+separate words.
+
+\item
+The name of the structure is the same as the name of the functor that produces
+it.
+
+\item
+A structure definition looks like one of the following.
+\begin{verbatim}
+structure Foo = Foo (S)
+
+structure Foo =
+   struct
+      ...
+   end
+\end{verbatim}
+
+\item
+Avoid the use of {\tt open} except within tightly constrained scopes.  The use
+of {\tt open} makes it hard to look at code later and understand where things
+come from.
+
+\end{enumerate}
+
+%------------------------------------------------------
+%                   Core expressions                   
+%------------------------------------------------------
+
+\section{Core expressions}
+
+We now enumerate the conventions we follow in writing core expressions.  We do
+not repeat the conventions of \secref{val-spec}, although many of them apply
+here.
+\begin{enumerate}
+
+\item
+Tuples are written with spaces after commas, like {\tt (a, b, c)}.
+
+\item
+Records are written with spaces on both sides of equals and with spaces after
+commas, like {\tt \{bar = 1, foo = 2\}}.
+
+\item
+Record field names are written in alphabetical order, both in expressions and
+types.
+
+\item
+Function application is written with a space between the function and the
+argument.  If there is one untupled argument, it looks like {\tt f x}.  If there
+is a tupleg argument, it looks like {\tt f (x, y, z)}.
+
+\item
+When you want to mix declarations with side-effecting statements, use a
+declaration like {\tt val \_ = sideEffectingProcedure()}.
+
+\item
+In sequence expressions {\tt (e1; e2)} that span multiple lines, place the
+semicolon at the beginning of lines.
+\begin{verbatim}
+(e1
+ ; e2
+ ; e3)
+\end{verbatim}
+
+\item
+Never write nonexhaustive matches.  Always handle the default case and raise an
+error message.  Your error message will be better than the compiler's.  Also, if
+you have lots of uncaught cases, then you are probably not using the type system
+in a strong enough way - your types are not expressing as much as they could.
+
+\item
+Never use the syntax for declaring functions that repeats the function name.
+Use {\tt case} or {\tt fn} instead.  That is, do not write the following.
+\begin{verbatim}
+fun f 0 = 1
+  | f n = n + 1
+\end{verbatim}
+Instead, write the following.
+\begin{verbatim}
+val f =
+   fn 0 => 1
+    | n => n + 1
+\end{verbatim}
+Or, write the following.
+\begin{verbatim}
+fun f n =
+   case n of
+      0 => 1
+    | _ => n + 1
+\end{verbatim}
+
+\end{enumerate}
+
+\bibliographystyle{alpha}
+\bibliography{bib}
+\end{document}

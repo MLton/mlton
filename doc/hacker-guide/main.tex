@@ -1,0 +1,33 @@
+\documentclass[12pt,openany]{report}
+\usepackage{alltt,epsfig,html,latexsym,longtable,makeidx,moreverb}
+
+\setlength\topmargin{-0.5in}
+\setlength\textheight{8.5in}
+\setlength\textwidth{7.0in}
+\setlength\oddsidemargin{-0.3in}
+\setlength\evensidemargin{-0.3in}
+\hyphenation{}
+\title{{\mlton} Hacker Guide}
+\author{Stephen Weeks}
+\date{\today}
+\include{macros}
+\makeindex
+
+\begin{document}
+
+\maketitle
+\input{abstract}
+\tableofcontents
+\input{sources}
+\input{basis-library}
+\input{mlton}
+\chap{Todo}{todo}
+native backend vs x86 backend
+To unpackage debian, do
+\begin{verbatim}
+dpkg -x ../mlton_20010806-2_i386.deb .
+\end{verbatim}
+\printindex
+\bibliographystyle{alpha}
+\bibliography{bib}
+\end{document}

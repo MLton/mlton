@@ -1,0 +1,148 @@
+\chap{The basis library}{basis-library}
+
+The basis library is implemented with about 12,000 lines of SML code.  There is
+roughly one file for each signature and structure that the library specification
+defines.  The files are grouped in directories in the same way that the
+corresponding modules are grouped in the basis library documentation.  Here is
+an overview of the {\tt basis-library} directory.
+
+\begin{description}
+\place{arrays-and-vectors general integer io list posix real system text}
+SML code for basis library modules.
+
+\place{basis.sml}
+Automatically constructed by {\tt bin/check-basis}.  Used to type check the
+basis libary under {\smlnj}.
+
+\place{bind-basis}
+A list of the files (in order) that define what is exported by the basis
+library.
+
+\place{build-basis}
+A list of the files (in order) used to construct the basis library.
+
+\place{Makefile}
+Only has a target to clean the directory.
+
+\place{misc}
+SML code that didn't fit anywhere else.  In particular, the {\tt Primitive}
+structure.
+
+\place{mlton}
+The {\tt MLton} structure, which is not part of the standard basis library.
+For more details on what {\tt MLton} provides, see the {\userguide}.
+
+\place{sml-nj}
+The {\tt SMLofNJ} and {\tt Unsafe} structures, which are not part of the
+standard basis library.
+
+\place{top-level}
+Files describing the overloads, infixes, modules, types, and values that the
+basis library makes available to user programs.
+\end{description}
+
+\subsec{How {\mlton} builds the basis environment}{build-basis-env}
+The {\tt forceBasisLibrary} function in \code{\tt mlton/main/compile.sml} builds
+the basis environment that is used to compile user programs.  Conceptually, the
+basis environment is constructed in two steps.  First, all of the files in {\tt
+build-basis} are concatenated together and evaluated to produce an environment
+$E$.  Then, all of the files in {\tt bind-basis} are concatenated and evaluated
+in environment $E$ to produce a new environment $E'$, which is the top-level
+environment.  Another way to view it is that every user program is prefixed by
+the following.
+\begin{verbatim}
+local
+  <concatenate files in build-basis>
+in
+  <concatenate files in bind-basis>
+end
+\end{verbatim}
+This view is not strictly accurate because some of the files are not SML (they
+use the {\tt \_prim}, {\tt \_ffi}, and {\tt \_overload} syntaxes) and because SML
+does not allow local functor or signature declarations.  Here is a description
+of the basis files that are not SML.
+\begin{description}
+\place{misc/primitive.sml}
+Defines the {\tt Primitive} structure, which binds (via the {\tt \_prim}
+syntax) all of the primitives provided by the compiler that the basis library
+uses.
+\place{mlton/syslog.sml}
+Defines constants and FFI routines used to implement {\tt MLton.Syslog}.
+\place{posix/primitive.sml}
+Defines the {\tt PosixPrimitive} structrue, which binds the constants and FFI
+routines used to implement the {\tt Posix} structure.
+\place{top-level/overloads.sml}
+Defines the overloaded variables available at the top-level the {\tt \_overload}
+syntax: {\tt \_overload $x$: $ty$ as $y_0$ and $y_1$ and ...}
+\end{description}
+
+\subsection{Modifying the basis library}
+
+If you modify the basis library, you should first check that your modifications
+are type correct using the {\tt bin/check-basis} script.  Since this {\mlton}
+does not have a proper typechecker, this script uses {\smlnj}.  First, it
+concatenates the files as described in \secref{build-basis-env} into one file,
+{\tt basis.sml}.  It also replaces the nonstandard syntax ({\tt \_prim}, etc.) 
+and declares the toplevel types to match {\mlton}'s (necessary since {\smlnj}
+uses 31 bits while {\mlton} uses 32).  It then feeds {\tt basis.sml} to
+{\smlnj}.  If there are no type errors, a message like the following will
+appear.
+\begin{verbatim}
+stdIn:12213.1-12213.14 Error: operator is not a function [tycon mismatch]
+  operator: unit
+  in expression:
+    () ()
+\end{verbatim}
+This error message is intentionally introduced by {\tt check-basis} at the end
+of {\tt basis.sml} to make it clear that {\smlnj} reached the end of {\tt
+basis.sml} and has hence type checked the entire basis.
+
+Once you have a basis library that type checks, you need to create a new version
+of {\mlton} that uses this library.  {\mlton} preprocess the basis library to
+create a {\tt world.mlton} file that contains the basis environment.  The {\tt
+world.mlton} file is stored in the {\tt lib} directory and is loaded by {\tt
+mlton} when compiling a user program (see the {\tt bin/mlton} script).  To build
+a new {\tt world.mlton}, run {\tt make world} from within the sources directory.
+
+\subsection{The {\tt misc} directory}
+
+\begin{description}
+
+\place{cleaner.sig}
+Functions for register ``cleaning'' functions to be run at certain times, in
+particular at program exit.  The {\tt TextIO} module uses these cleaners to
+ensure that IO buffers are flushed upon exit.
+
+\place{suffix.sml}
+Code that is (conceptually) concatenated on to the end of every user program.
+It just calls {\tt OS.Process.exit}.  The {\tt forceBasisLibrary} function
+ensures that {\tt suffix.sml} is elaborated in an environment where the basis
+library {\tt OS} structure is available.
+
+\place{top-level-handler.sml}
+This defines the top level exception handler that is installed (via a special
+compiler primitive) in the basis library, before any user code is run.
+
+\end{description}
+
+\subsection{Dead-code elimination}
+
+In order to compile small programs rapidly and to cut down on executable size,
+{\tt mlton} runs a pass of dead-code elimination ({\tt
+mlton/core-ml/dead-code.sig}) to eliminate as much of the basis library as
+possible.  The dead-code elimination algorithm used is not safe in general, and
+only works because the basis library implementation has special properties:
+\begin{itemize}
+\item it terminates
+\item it performs no I/O
+\item it doesn't side-effect top-level variables
+\end{itemize}
+The dead code elimination simply includes the minimal set of
+declarations from the basis so that their are no free variables in the
+user program (or basis).  Hence, if you do something like the
+following in the basis, it will break.
+\begin{verbatim}
+val r = ref 13
+val _ = r := 14
+\end{verbatim}
+The dead code elimination will remove the {\tt val \_ = ...} binding.
