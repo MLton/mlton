@@ -82,7 +82,10 @@ fun 'a analyze
 		        (Option.app (returns, fn vs =>
 				     coerces (vs, labelArgs cont))
 			 ; (case handler of
-			       Handler.CallerHandler => ()
+			       Handler.CallerHandler =>
+				  if mayRaise andalso not shouldRaise
+				     then Error.bug "raise mismatch at NonTail"
+				  else ()
 			     | Handler.Handle h =>
 				  let
 				     val vs = labelArgs h
