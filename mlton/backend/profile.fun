@@ -98,24 +98,20 @@ fun profile program =
       val profileStack: bool = !Control.profileStack
       val profileTime: bool = profile = Control.ProfileTime
       val frameProfileIndices = ref []
+      val infoNodes: InfoNode.t list ref = ref []
       local
 	 val c = Counter.new 0
-	 val sourceInfos = ref []
       in
-	 val {get = sourceInfoNode, ...} =
-	    Property.get (SourceInfo.plist,
-			  Property.initFun
-			  (fn si =>
-			   let
-			      val _ = List.push (sourceInfos, si)
-			      val index = Counter.next c
-			   in
-			      InfoNode.T {index = index,
+	 fun sourceInfoNode si =
+	    let
+	       val index = Counter.next c
+	       val infoNode = InfoNode.T {index = index,
 					  info = si,
 					  successors = ref []}
-			   end))
-	 val sourceInfoIndex = InfoNode.index o sourceInfoNode
-	 fun makeSources () = Vector.fromListRev (!sourceInfos)
+	       val _ = List.push (infoNodes, infoNode)
+	    in
+	       infoNode
+	    end
       end
       fun firstEnter (ps: Push.t list): InfoNode.t option =
 	 List.peekMap (ps, fn p =>
@@ -124,10 +120,22 @@ fun profile program =
 			| _ => NONE)
       (* unknown must be 0, which == SOURCES_INDEX_UNKNOWN from gc.h *)
       val unknownInfoNode = sourceInfoNode SourceInfo.unknown
-      val unknownIndex = InfoNode.index unknownInfoNode
       (* gc must be 1 which == SOURCES_INDEX_GC from gc.h *)
-      val _ = sourceInfoIndex SourceInfo.gc
-      val mainIndex = sourceInfoIndex SourceInfo.main
+      val gcInfoNode = sourceInfoNode SourceInfo.gc
+      val mainInfoNode = sourceInfoNode SourceInfo.main
+      val sourceInfoNode =
+	 fn si =>
+	 let
+	    open SourceInfo
+	 in
+	    if equals (si, unknown)
+	       then unknownInfoNode
+	    else if equals (si, gc)
+		    then gcInfoNode
+		 else if equals (si, main)
+			 then mainInfoNode
+		      else sourceInfoNode si
+	 end
       local
 	 val table: {hash: word,
 		     index: int,
@@ -158,9 +166,9 @@ fun profile program =
 	 fun makeSourceSeqs () = Vector.fromListRev (!sourceSeqs)
       end
       (* Ensure that [SourceInfo.unknown] is index 0. *)
-      val unknownSourceSeq = sourceSeqIndex [sourceInfoIndex SourceInfo.unknown]
+      val unknownSourceSeq = sourceSeqIndex [InfoNode.index unknownInfoNode]
       (* Ensure that [SourceInfo.gc] is index 1. *)
-      val gcSourceSeq = sourceSeqIndex [sourceInfoIndex SourceInfo.gc]
+      val gcSourceSeq = sourceSeqIndex [InfoNode.index gcInfoNode]
       fun addFrameProfileIndex (label: Label.t,
 				index: int): unit =
 	 List.push (frameProfileIndices, (label, index))
@@ -228,7 +236,7 @@ fun profile program =
 	    val FuncInfo.T {enters, tailCalls, ...} = funcInfo name
 	    fun enter (ps: Push.t list, si: SourceInfo.t): Push.t list * bool =
 	       let
-		  fun node () = sourceInfoNode si
+		  val node = Promise.lazy (fn () => sourceInfoNode si)
 		  fun yes () = (Push.Enter (node ()) :: ps, true)
 		  fun no () = (Push.Skip si :: ps, false)
 	       in
@@ -300,17 +308,18 @@ fun profile program =
 	    fun backward {args,
 			  kind,
 			  label,
+			  leaves,
 			  sourceSeq: int list,
 			  statements: Statement.t list,
 			  transfer: Transfer.t}: unit =
 	       let
-		  val (npl, sourceSeq, statements) =
+		  val (_, npl, sourceSeq, statements) =
 		     List.fold
 		     (statements,
-		      (true, sourceSeq, []),
-		      fn (s, (npl, sourceSeq, ss)) =>
+		      (leaves, true, sourceSeq, []),
+		      fn (s, (leaves, npl, sourceSeq, ss)) =>
 		      case s of
-			 Object _ => (true, sourceSeq, s :: ss)
+			 Object _ => (leaves, true, sourceSeq, s :: ss)
 		       | Profile ps =>
 			    let
 			       val (npl, ss) =
@@ -321,20 +330,23 @@ fun profile program =
 					then (false,
 					      profileLabel sourceSeq :: ss)
 				     else (true, ss)
-			       val sourceSeq = 
+			       val (leaves, sourceSeq) = 
 				  case ps of
 				     Enter si =>
 					(case sourceSeq of
 					    [] => Error.bug "unmatched Enter"
-					  | si' :: sis =>
-					       if si' = sourceInfoIndex si
-						  then sis
-					       else Error.bug "mismatched Enter")
-				   | Leave si => sourceInfoIndex si :: sourceSeq
+					  | _ :: sis => (leaves, sis))
+				   | Leave _ =>
+					(case leaves of
+					    [] => Error.bug "missing Leave"
+					  | infoNode :: leaves =>
+					       (leaves,
+						InfoNode.index infoNode
+						:: sourceSeq))
 			    in
-			       (npl, sourceSeq, ss)
+			       (leaves, npl, sourceSeq, ss)
 			    end
-		       | _ => (true, sourceSeq, s :: ss))
+		       | _ => (leaves, true, sourceSeq, s :: ss))
 		  val statements =
 		     if profileTime andalso npl
 			then profileLabel sourceSeq :: statements
@@ -477,6 +489,7 @@ fun profile program =
 			       | Jump => ()
 			   end
 			fun maybeSplit {args, bytesAllocated, kind, label,
+					leaves,
 					pushes: Push.t list,
 					statements} =
 			   if profileAlloc andalso bytesAllocated > 0
@@ -499,6 +512,7 @@ fun profile program =
 				       backward {args = args,
 						 kind = kind,
 						 label = label,
+						 leaves = leaves,
 						 sourceSeq = sourceSeq,
 						 statements = statements,
 						 transfer = transfer}
@@ -507,14 +521,16 @@ fun profile program =
 				     bytesAllocated = 0,
 				     kind = Kind.CReturn {func = func},
 				     label = newLabel,
+				     leaves = [],
 				     statements = []}
 				 end
 			   else {args = args,
 				 bytesAllocated = 0,
 				 kind = kind,
 				 label = label,
+				 leaves = leaves,
 				 statements = statements}
-			val {args, bytesAllocated, kind, label, pushes,
+			val {args, bytesAllocated, kind, label, leaves, pushes,
 			     statements} =
 			   Vector.fold
 			   (statements,
@@ -522,9 +538,11 @@ fun profile program =
 			     bytesAllocated = 0,
 			     kind = kind,
 			     label = label,
+			     leaves = [],
 			     pushes = pushes,
 			     statements = []},
 			    fn (s, {args, bytesAllocated, kind, label,
+				    leaves,
 				    pushes: Push.t list,
 				    statements}) =>
 			    (if not debug
@@ -546,42 +564,53 @@ fun profile program =
 				   bytesAllocated = bytesAllocated + size,
 				   kind = kind,
 				   label = label,
+				   leaves = leaves,
 				   pushes = pushes,
 				   statements = s :: statements}
 			     | Profile ps =>
 				  let
 				     val {args, bytesAllocated, kind, label,
-					  statements} =
+					  leaves, statements} =
 					maybeSplit
 					{args = args,
 					 bytesAllocated = bytesAllocated,
 					 kind = kind,
 					 label = label,
+					 leaves = leaves,
 					 pushes = pushes,
 					 statements = statements}
 				     datatype z = datatype ProfileExp.t
-				     val (pushes, keep) =
+				     val (pushes, keep, leaves) =
 					case ps of
-					   Enter si => enter (pushes, si)
+					   Enter si =>
+					      let
+						 val (pushes, keep) =
+						    enter (pushes, si)
+					      in
+						 (pushes, keep, leaves)
+					      end
 					 | Leave si =>
 					      (case pushes of
 						  [] =>
 						     Error.bug "unmatched Leave"
 						| p :: pushes' =>
 						     let
-							val (keep, isOk) =
+							val (keep, si', leaves) =
 							   case p of
 							      Push.Enter
-							      (InfoNode.T
-							       {index, ...}) =>
-								 (true,
-								  index = sourceInfoIndex si)
+							      (infoNode as
+							       InfoNode.T
+							       {info, ...}) =>
+								 (true, info,
+								  infoNode :: leaves)
 							    | Push.Skip si' =>
-								 (false,
-								  SourceInfo.equals (si, si'))
+								 (false, si',
+								  leaves)
 						     in
-							if isOk
-							   then (pushes', keep)
+							if SourceInfo.equals (si, si')
+							   then (pushes',
+								 keep,
+								 leaves)
 							else Error.bug "mismatched Leave"
 						     end)
 				     val statements =
@@ -593,6 +622,7 @@ fun profile program =
 				      bytesAllocated = bytesAllocated,
 				      kind = kind,
 				      label = label,
+				      leaves = leaves,
 				      pushes = pushes,
 				      statements = statements}
 				  end
@@ -601,14 +631,16 @@ fun profile program =
 				   bytesAllocated = bytesAllocated,
 				   kind = kind,
 				   label = label,
+				   leaves = leaves,
 				   pushes = pushes,
 				   statements = s :: statements})
 			    )
-			val {args, kind, label, statements, ...} =
+			val {args, kind, label, leaves, statements, ...} =
 			   maybeSplit {args = args,
 				       bytesAllocated = bytesAllocated,
 				       kind = kind,
 				       label = label,
+				       leaves = leaves,
 				       pushes = pushes,
 				       statements = statements}
 			val _ =
@@ -645,6 +677,7 @@ fun profile program =
 			backward {args = args,
 				  kind = kind,
 				  label = label,
+				  leaves = leaves,
 				  sourceSeq = Push.toSources pushes,
 				  statements = statements,
 				  transfer = transfer}
@@ -664,17 +697,12 @@ fun profile program =
 			       main = doFunction main,
 			       objectTypes = objectTypes}
       val _ = addFuncEdges ()
-      val sources = makeSources ()
+      val infoNodes = Vector.fromListRev (!infoNodes)
+      val sources = Vector.map (infoNodes, InfoNode.info)
       val sourceSuccessors =
-	 Vector.map (sources, fn si =>
-		     let
-			val InfoNode.T {successors, ...} = sourceInfoNode si
-		     in
-			sourceSeqIndex
-			(List.revMap (!successors, InfoNode.index))
-		     end)
-      (* This must happen after making sourceSuccessors, since that creates
-       * new sourceSeqs.
+	 Vector.map (infoNodes, fn InfoNode.T {successors, ...} =>
+		     sourceSeqIndex (List.revMap (!successors, InfoNode.index)))
+      (* This must happen after makeSources, since that creates new sourceSeqs.
        *)
       val sourceSeqs = makeSourceSeqs ()
    in
