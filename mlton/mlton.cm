@@ -304,6 +304,8 @@ ssa/redundant.sig
 ssa/equivalence-relation.sig
 ssa/equivalence-relation.fun
 ssa/redundant.fun
+ssa/redundant-tests.sig
+ssa/redundant-tests.fun
 ssa/two-point-lattice.sig
 ssa/two-point-lattice.fun
 ssa/remove-unused.sig

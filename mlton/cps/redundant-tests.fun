@@ -232,7 +232,7 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 						 then (j, j')
 					      else (j', j)
 					   end
-				      | (2, NONE) =>
+				      | (2, _) =>
 					   let
 					      val (c, j) = ca 0
 					      val (_, j') = ca 1
@@ -353,7 +353,7 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 				    ; (Control.diagnostic
 				       (fn () =>
 					let open Layout
-					in seq [Var.layout var, str " ",
+					in seq [Var.layout var, str " -> ",
 						Var.layout x]
 					end))
 				    ; Bind {var = var, ty = ty,

@@ -37,6 +37,8 @@ poly-equal.fun
 poly-equal.sig
 redundant.fun
 redundant.sig
+redundant-tests.fun
+redundant-tests.sig
 remove-unused.fun
 remove-unused.sig
 shrink.fun
