@@ -349,7 +349,8 @@ fun insertCoalesce (f: Function.t, usesSignals) =
       val n = Vector.length blocks
       val {get = labelIndex, set = setLabelIndex, rem = remLabelIndex, ...} =
 	 Property.getSetOnce
-	 (Label.plist, Property.initRaise ("LimitCheck.labelIndex", Label.layout))
+	 (Label.plist,
+	  Property.initRaise ("LimitCheck.labelIndex", Label.layout))
       val {get = nodeIndex, set = setNodeIndex, ...} =
 	 Property.getSetOnce
 	 (Node.plist, Property.initRaise ("LimitCheck.nodeIndex", Node.layout))
@@ -431,7 +432,6 @@ fun insertCoalesce (f: Function.t, usesSignals) =
 	 (blocks, fn Block.T {statements, ...} =>
 	  Vector.fold (statements, 0, fn (s, ac) =>
 		       ac + Statement.objectBytesAllocated s))
-
       fun insertCoalesceExtBasicBlocks () =
 	 let
 	    val preds = Array.new (n, 0)
@@ -579,10 +579,6 @@ fun insertCoalesce (f: Function.t, usesSignals) =
 	 let 
 	    val block as Block.T {label, statements, ...} = 
 	       Vector.sub (blocks, blockIndex)
-	    val bytes =
-	       Vector.fold
-	       (statements, 0, fn (s, ac) =>
-		ac + Statement.objectBytesAllocated s)
 	    val heap = if Array.sub (mayHaveCheck, blockIndex)
 	                  then SOME {bytes = maxPath blockIndex}
 		       else NONE
@@ -592,8 +588,10 @@ fun insertCoalesce (f: Function.t, usesSignals) =
 	    {heap = heap,
 	     stack = Label.equals (start, label)}
 	 end
+      val f = insertFunction (f, usesSignals, blockInfo)
+      val _ = Function.clear f
    in
-      insertFunction (f, usesSignals, blockInfo)
+      f
    end
 
 fun insert (p as Program.T {functions, main}) =

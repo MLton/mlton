@@ -147,11 +147,13 @@ fun insert p =
 		      then NONE
 		   else SOME b)
 	       val blocks = Vector.concat [blocks, Vector.fromList (!extra)]
+	       val f = Function.new {args = args,
+				     blocks = blocks,
+				     name = name,
+				     start = start}
+	       val _ = Function.clear f
 	    in
-	       Function.new {args = args,
-			     blocks = blocks,
-			     name = name,
-			     start = start}
+	       f
 	    end
       in
 	 Program.T {functions = List.revMap (functions, insert),

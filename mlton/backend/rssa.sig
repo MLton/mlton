@@ -197,6 +197,7 @@ signature RSSA =
 	    type t
 	       
 	    val blocks: t -> Block.t vector
+	    val clear: t -> unit
 	    val dest: t -> {args: (Var.t * Type.t) vector,
 			    blocks: Block.t vector,
 			    name: Func.t,
