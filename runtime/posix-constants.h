@@ -108,15 +108,18 @@
 
 #include <unistd.h>
 /* used by pathconf and fpathconf */
+#define Posix_FileSys_CHOWN_RESTRICTED _PC_CHOWN_RESTRICTED
 #define Posix_FileSys_LINK_MAX _PC_LINK_MAX
 #define Posix_FileSys_MAX_CANON _PC_MAX_CANON
 #define Posix_FileSys_MAX_INPUT _PC_MAX_INPUT
 #define Posix_FileSys_NAME_MAX _PC_NAME_MAX
+#define Posix_FileSys_NO_TRUNC _PC_NO_TRUNC
 #define Posix_FileSys_PATH_MAX _PC_PATH_MAX
 #define Posix_FileSys_PIPE_BUF _PC_PIPE_BUF
-#define Posix_FileSys_CHOWN_RESTRICTED _PC_CHOWN_RESTRICTED
-#define Posix_FileSys_NO_TRUNC _PC_NO_TRUNC
 #define Posix_FileSys_VDISABLE _PC_VDISABLE
+#define Posix_FileSys_ASYNC_IO _PC_ASYNC_IO
+#define Posix_FileSys_SYNC_IO _PC_SYNC_IO
+#define Posix_FileSys_PRIO_IO _PC_PRIO_IO
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -173,6 +176,7 @@
 #define Posix_ProcEnv_EXPR_NEST_MAX _SC_EXPR_NEST_MAX
 #define Posix_ProcEnv_JOB_CONTROL _SC_JOB_CONTROL
 #define Posix_ProcEnv_LINE_MAX _SC_LINE_MAX
+#define Posix_ProcEnv_NGROUPS_MAX _SC_NGROUPS_MAX
 #define Posix_ProcEnv_OPEN_MAX _SC_OPEN_MAX
 #define Posix_ProcEnv_RE_DUP_MAX _SC_RE_DUP_MAX
 #define Posix_ProcEnv_SAVED_IDS _SC_SAVED_IDS

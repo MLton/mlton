@@ -1,8 +1,10 @@
 signature POSIX_SIGNAL =
    sig
       eqtype signal
+
       val toWord: signal -> SysWord.word
       val fromWord: SysWord.word -> signal
+
       val abrt: signal
       val alrm: signal
       val bus: signal

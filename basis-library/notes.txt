@@ -263,7 +263,11 @@ MLton specific:
 ******************************************************************************
 ******************************************************************************
 
+Posix structure:
+- last sentence in Discussion: "onsult" instead of "consult"
+
 POSIX_ERROR
+Discusion:
 "The name of a corresponding POSIX error can be derived by
 capitalizing all letters and adding the character ``E'' as a
 prefix. For example, the POSIX error associated with nodev is
@@ -273,4 +277,6 @@ associated POSIX error is E2BIG."
    syserror.  It currently isn't in MLton.
 
 POSIX_SIGNAL
+Discussion:
 "The name of the corresponding..." is repeated.
+

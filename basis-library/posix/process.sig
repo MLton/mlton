@@ -45,3 +45,9 @@ signature POSIX_PROCESS =
       val pause: unit -> unit 
       val sleep: Time.time -> Time.time 
    end
+
+signature POSIX_PROCESS_EXTRA = 
+   sig
+      include POSIX_PROCESS
+      type status
+   end

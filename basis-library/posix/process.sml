@@ -93,13 +93,23 @@ structure PosixProcess: POSIX_PROCESS =
        | W_SAME_GROUP
        | W_GROUP of pid 
 
+      type status = status
       datatype exit_status =
 	 W_EXITED
        | W_EXITSTATUS of Word8.word
        | W_SIGNALED of signal
        | W_STOPPED of signal 
 
-      val fromStatus = fn s => raise Fail "Posix.Process.fromStatus: <unimplemented>"
+      fun fromStatus status =
+	 if Prim.ifExited status
+	    then (case Prim.exitStatus status of
+		     0 => W_EXITED
+		   | n => W_EXITSTATUS (Word8.fromInt n))
+	 else if Prim.ifSignaled status
+	    then W_SIGNALED (Prim.termSig status)
+	 else if Prim.ifStopped status
+	    then W_STOPPED (Prim.stopSig status)
+	 else raise Fail "Posix.Process.fromStatus"
 
       structure W =
 	 struct
@@ -117,31 +127,21 @@ structure PosixProcess: POSIX_PROCESS =
 	    
 	 val status: status ref = ref 0
 
-	 fun getStatus () =
-	    let val status = !status
-	    in if Prim.ifExited status
-		  then (case Prim.exitStatus status of
-			   0 => W_EXITED
-			 | n => W_EXITSTATUS (Word8.fromInt n))
-	       else if Prim.ifSignaled status
-		       then W_SIGNALED (Prim.termSig status)
-	       else if Prim.ifStopped status
-		       then W_STOPPED (Prim.stopSig status)
-		    else raise Fail "Posix.Process.waitpid"
-	    end
+	 fun getStatus () = fromStatus (!status)
       in
 	 fun waitpid (wa, flags) =
 	    let val pid = Prim.waitpid (convertwa wa, status,
-				       SysWord.toInt (W.flags flags))
+					SysWord.toInt 
+					(W.flags flags))
 	    in Error.checkResult pid
 	       ; (pid, getStatus ())
 	    end
 
 	 fun waitpid_nh (wa, flags) =
 	    let
-	       val pid =
-		  Prim.waitpid (convertwa wa, status,
-			       SysWord.toInt (W.flags (wnohang :: flags)))
+	       val pid = Prim.waitpid (convertwa wa, status,
+				       SysWord.toInt 
+				       (W.flags (wnohang :: flags)))
 	    in Error.checkResult pid
 	       ; if pid = 0
 		    then NONE
@@ -173,8 +173,9 @@ structure PosixProcess: POSIX_PROCESS =
 
       local
 	 fun wrap prim (t: Time.time): Time.time =
-	    Time.fromSeconds
-	    (LargeInt.fromInt (prim (LargeInt.toInt (Time.toSeconds t))))
+	    (Time.fromSeconds (LargeInt.fromInt 
+	    (prim 
+	    (LargeInt.toInt (Time.toSeconds t)))))
       in
 	 val alarm = wrap Prim.alarm
 	 val sleep = wrap Prim.sleep

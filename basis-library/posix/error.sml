@@ -34,19 +34,6 @@ structure PosixError: POSIX_ERROR_EXTRA =
 
       fun raiseSys n = raise SysErr (errorMsg n, SOME n)
 
-      fun restart (f: 'a -> int) (a: 'a): int =
-	 let
-	    fun loop () =
-	       case f a of
-		  ~1 => let val errno = getErrno ()
-			in if errno = intr
-			      then loop ()
-			   else raiseSys errno
-			end
-		| n => n
-	 in loop ()
-	 end
-      
       fun error () = raiseSys (getErrno ())
 
       fun checkReturnResult (n: int) = if n = ~1 then error () else n

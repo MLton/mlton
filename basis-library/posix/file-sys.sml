@@ -297,7 +297,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 	 structure U = Prim.Utimbuf
       in
 	 fun utime (f: string, opt: {actime: Time.time,
-				    modtime: Time.time} option): unit =
+				     modtime: Time.time} option): unit =
 	    let
 	       val (a, m) =
 		  case opt of

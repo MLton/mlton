@@ -29,11 +29,13 @@ structure PosixProcEnv: POSIX_PROC_ENV =
 	 val setuid = Error.checkResult o setuid
       end
 
+      fun id x = x
+      val uidToWord = id 
+      val wordToUid = id
+      val gidToWord = id
+      val wordToGid = id
+
       local
-	 (* QUESTION: Why Primitive.Array.array and not Array.array? 
-	  * I guess we don't need to fill in values because getgroups
-	  *  will fill in the array; but wouldn't hurt to use Array.array.
-	  *)
 	 val a: word array = Primitive.Array.array Prim.numgroups
       in
 	 fun getgroups () =
@@ -42,12 +44,6 @@ structure PosixProcEnv: POSIX_PROC_ENV =
 	       ; ArraySlice.toList (ArraySlice.slice (a, 0, SOME n))
 	    end
       end
-
-      fun id x = x
-      val uidToWord = id 
-      val wordToUid = id
-      val gidToWord = id
-      val wordToGid = id
 
       fun getlogin () =
 	 let val cs = Prim.getlogin ()
