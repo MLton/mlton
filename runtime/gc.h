@@ -129,10 +129,10 @@ struct GC_stringInit {
   uint size;
 };
 
-struct GC_profileLabel {
+typedef struct GC_profileLabel {
 	pointer label;
 	uint sourceSeqsIndex;
-};
+} *GC_profileLabel;
 
 /* ------------------------------------------------- */
 /*                  GC_frameLayout                   */

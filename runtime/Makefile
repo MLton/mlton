@@ -9,7 +9,7 @@ endif
 CC =		gcc -Wall -I. -mcpu=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=5 -fomit-frame-pointer $(HOSTFLAGS)
 # Can't use more optimization than -O1 because gcc doesn't correctly compile
 #  Real_class in basis/Real.c
-CFLAGS =	-O1 -DNODEBUG
+CFLAGS =	-O1
 
 OBJS =						\
 	basis/Array/numElements.o		\
@@ -312,7 +312,7 @@ DEBUG_OBJS =					\
 	my-lib-gdb.o
 
 %-gdb.o: %.c
-	$(CC) -g -c -o $@ $<
+	$(CC) -g -DASSERT=1 -c -o $@ $<
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<

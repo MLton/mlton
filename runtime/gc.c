@@ -663,7 +663,7 @@ static inline bool stackTopIsOk (GC_state s, GC_stack stack) {
 			+ (stackIsEmpty (stack) ? 0 : topFrameSize (s, stack));
 }
 
-#ifndef NODEBUG
+#if ASSERT
 static bool hasBytesFree (GC_state s, W32 oldGen, W32 nursery) {
 	if (DEBUG_DETAILED)
 		fprintf (stderr, "hasBytesFree  oldGen = %s  nursery = %s\n",
@@ -681,13 +681,8 @@ static inline void setFrontier (GC_state s, pointer p) {
 
 /* Pre: s->profileAllocIndex is set. */
 void GC_incProfileAlloc (GC_state s, W32 amount) {
-	if (s->profileAllocIsOn) {
-		if (DEBUG_PROFILE_ALLOC)
-			fprintf (stderr, "GC_IncProfileAlloc (%u, %u)\n",
-					s->profileAllocIndex,
-					(uint)amount);
-		s->profileAllocCounts[s->profileAllocIndex] += amount;
-	}
+	if (s->profileAllocIsOn)
+		MLton_ProfileAlloc_inc (amount);
 }
 
 /* Pre: s->profileAllocIndex is set. */
@@ -984,7 +979,7 @@ static bool ratiosOk (GC_state s) {
 			and s->copyRatio <= s->liveRatio;
 }
 
-#ifndef NODEBUG
+#if ASSERT
 
 static inline bool isInOldGen (GC_state s, pointer p) {
 	return s->heap.start <= p and p < s->heap.start + s->oldGenSize;
@@ -999,7 +994,7 @@ static inline bool isInFromSpace (GC_state s, pointer p) {
 }
 
 static inline void assertIsInFromSpace (GC_state s, pointer *p) {
-#ifndef NODEBUG
+#if ASSERT
 	unless (isInFromSpace (s, *p))
 		die ("gc.c: assertIsInFromSpace p = 0x%08x  *p = 0x%08x);\n",
 			(uint)p, *(uint*)p);
@@ -1097,7 +1092,7 @@ bool mutatorInvariant (GC_state s) {
 	assert (invariant (s));
 	return TRUE;
 }
-#endif /* #ifndef NODEBUG */
+#endif /* #if ASSERT */
 
 static inline void blockSignals (GC_state s) {
 	sigprocmask (SIG_BLOCK, &s->signalsHandled, NULL);
@@ -3235,10 +3230,18 @@ static void showProf (GC_state s) {
 extern void	_start(void),
 		etext(void);
 
+static int compareProfileLabels (const void *v1, const void *v2) {
+	GC_profileLabel l1;
+	GC_profileLabel l2;
+
+	l1 = (GC_profileLabel)v1;
+	l2 = (GC_profileLabel)v2;
+	return (int)l1->label - (int)l2->label;
+}
+
 int GC_init (GC_state s, int argc, char **argv) {
 	char *worldFile;
 	int i;
-	int j;
 
 	s->amInGC = FALSE;
 	s->bytesAllocated = 0;
@@ -3312,20 +3315,19 @@ int GC_init (GC_state s, int argc, char **argv) {
 		uint sourceSeqsIndex;
 
 		/* Sort profileLabels by address. */
-		for (i = 1; i < s->profileLabelsSize; ++i)
-			for (j = i; s->profileLabels[j - 1].label
-					> s->profileLabels[j].label; --j) {
-				struct GC_profileLabel tmp;
-
-				tmp = s->profileLabels[j];
-				s->profileLabels[j] = s->profileLabels[j - 1];
-				s->profileLabels[j - 1] = tmp;
-			}
+		qsort (s->profileLabels, 
+			s->profileLabelsSize,
+			sizeof(*s->profileLabels),
+			compareProfileLabels);
 		if (DEBUG_PROF)
 			for (i = 0; i < s->profileLabelsSize; ++i)
 				fprintf (stderr, "0x%08x  %u\n",
 						(uint)s->profileLabels[i].label,
 						s->profileLabels[i].sourceSeqsIndex);
+		if (ASSERT)
+			for (i = 1; i < s->profileLabelsSize; ++i)
+				assert (s->profileLabels[i-1].label
+					<= s->profileLabels[i].label);
 		/* Initialize s->textSources. */
 		s->textEnd = (pointer)&etext;
 		s->textStart = (pointer)&_start;

@@ -30,6 +30,7 @@ void MLton_ProfileAlloc_setCurrent (Pointer d) {
 
 void MLton_ProfileAlloc_inc (Word amount) {
 	GC_state s;
+	uint *sourceSeq;
 
 	s = &gcState;
 	if (DEBUG_PROFILE_ALLOC)
@@ -38,8 +39,10 @@ void MLton_ProfileAlloc_inc (Word amount) {
 				(uint)amount);
 	assert (s->profileAllocIsOn);
 	assert (s->profileAllocIndex < s->profileSourceSeqsSize);
-	s->profileAllocCounts [s->profileSourceSeqs [s->profileAllocIndex] [1]] 
-		+= amount;
+	sourceSeq = s->profileSourceSeqs [s->profileAllocIndex];
+	assert (sourceSeq [0] > 0);
+	assert (sourceSeq [1] < s->profileSourcesSize);
+	s->profileAllocCounts [sourceSeq [1]] += amount;
 }
 
 Pointer MLton_ProfileAlloc_Data_malloc (void) {
@@ -108,8 +111,8 @@ void MLton_ProfileAlloc_Data_write (Pointer d, Word fd) {
 	uint i;
 
 	if (DEBUG_PROFILE_ALLOC)
-		fprintf (stderr, "MLton_ProfileAlloc_Data_write (0x%08x, %d)\n",
-				(uint)d, fd);
+		fprintf (stderr, "MLton_ProfileAlloc_Data_write (0x%08x, %u)\n",
+				(uint)d, (uint)fd);
 	assert (gcState.profileAllocIsOn);
 	data = (ullong*)d;
 	writeString (fd, "MLton prof");
