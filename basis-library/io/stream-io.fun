@@ -26,13 +26,7 @@ signature STREAM_IO_EXTRA_ARG =
 		      fromInt : Position.int -> PrimIO.pos} option
    end
 
-functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG) :>
-	STREAM_IO_EXTRA where type elem = S.PrimIO.elem
-	                where type vector = S.PrimIO.vector
-			where type vector_slice = S.PrimIO.vector_slice
-			where type reader = S.PrimIO.reader
-			where type writer = S.PrimIO.writer
-			where type pos = S.PrimIO.pos =
+functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
    struct
       open S
 
@@ -821,27 +815,14 @@ signature STREAM_IO_ARG =
       val someElem: PrimIO.elem
    end
 
-functor StreamIO (S: STREAM_IO_ARG) :>
-   STREAM_IO where type elem = S.PrimIO.elem
-             where type pos = S.PrimIO.pos
-	     where type reader = S.PrimIO.reader
-	     where type vector = S.PrimIO.vector
-	     where type writer = S.PrimIO.writer
-   =
+functor StreamIO (S: STREAM_IO_ARG): STREAM_IO =
    StreamIOExtra (open S
 		  val line = NONE
 		  val xlatePos = NONE)
 
 signature STREAM_IO_EXTRA_FILE_ARG = STREAM_IO_EXTRA_ARG
 
-functor StreamIOExtraFile 
-        (S: STREAM_IO_EXTRA_FILE_ARG) :>
-	STREAM_IO_EXTRA_FILE where type elem = S.PrimIO.elem
-	                     where type vector = S.PrimIO.vector
-			     where type vector_slice = S.PrimIO.vector_slice
-			     where type reader = S.PrimIO.reader
-			     where type writer = S.PrimIO.writer
-			     where type pos = S.PrimIO.pos =
+functor StreamIOExtraFile (S: STREAM_IO_EXTRA_FILE_ARG): STREAM_IO_EXTRA_FILE =
    struct
       open S
 
