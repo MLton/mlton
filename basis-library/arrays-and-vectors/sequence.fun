@@ -86,17 +86,8 @@ functor Sequence (S: sig
 	       in loop (l, n)
 		  ; fromArray a
 	       end
-	 else 
-	    let
-	       val a = array n
-	       fun loop i =
-		  if i >= n
-		     then ()
-		  else (Array.update (a, i, f i)
-			; loop (i + 1))
-	    in loop 0 ;
-	       fromArray a
-	    end
+	 else
+	    unfoldi (n, (), fn (i, ()) => (f i, ()))
 
       fun new (n, x) = tabulate (n, fn _ => x)
 
@@ -172,7 +163,6 @@ functor Sequence (S: sig
       val extract =
 	 fn (s, 0, NONE) => s
 	  | slice => mapi #2 slice
-
 
       fun copy s = map (fn x => x) s
 
