@@ -99,8 +99,7 @@ structure MLton =
 
                   val all = [(Cygwin, "cygwin"),
                              (FreeBSD, "freebsd"),
-                             (Linux, "linux"),
-                             (Solaris, "solaris")]
+                             (Linux, "linux")]
                
                   fun fromString s = omap (peek (all, fn (_, s') => s = s'), #1)
 
