@@ -10,13 +10,6 @@ in
    val atomicEnd = atomicEnd
 end
 
-local
-   fun make f x = (f x; Prim.saved ())
-in
-   val copy = make Prim.copy
-   val copyShrink = make Prim.copyShrink
-end
-
 datatype 'a thread =
    Dead
  | New of 'a -> unit
@@ -46,7 +39,7 @@ fun new f = T (ref (New f))
    
 local
    val func: (unit -> unit) option ref = ref NONE
-   val base = copyShrink (Prim.current ())
+   val base = (Prim.copyCurrent (); Prim.saved ())
    val _ = (case !func of
 	       NONE => ()
 	     | SOME x =>
@@ -83,7 +76,8 @@ in
 		     Dead => fail (Fail "switch to a Dead thread")
 		   | New g => (Prim.atomicBegin () (* nested *)
 			       ; func := SOME (g o x)
-			       ; copy base)
+			       ; Prim.copy base
+			       ; Prim.saved ())
 		   | Paused (f, t) => (f x; t)
 	       val _ = switching := false
 	       val _ = Prim.switchTo primThread

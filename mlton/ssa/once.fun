@@ -16,7 +16,7 @@ end
 
 fun usesConts p = Program.hasPrim (p, fn p =>
 				   case Prim.name p of
-				      Prim.Name.Thread_switchToCont => true
+				      Prim.Name.Thread_switchTo => true
 				    | _ => false)
        
 (*

@@ -356,10 +356,9 @@ static inline void GC_arrayShrink(pointer array, uint numElements) {
 /*                      Threads                      */
 /* ------------------------------------------------- */
 
-
-/* Both copyThread and copyThreadShrink place the copy in s->savedThread. */
+/* Both copyThread and copyCurrentThread place the copy in s->savedThread. */
 void GC_copyThread(GC_state s, GC_thread t);
-void GC_copyThreadShrink(GC_state s, GC_thread t);
+void GC_copyCurrentThread(GC_state s);
 void GC_threadSwitchTo(GC_state s, GC_thread t);
 
 /* ------------------------------------------------- */

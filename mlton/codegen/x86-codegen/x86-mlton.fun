@@ -973,6 +973,15 @@ struct
 			       liveInfo = liveInfo})]
 	    end
 
+	fun copyCurrent () =
+	   invokeRuntime
+	   {prim = oper,
+	    args = [(Operand.immediate_label gcState, pointerSize)],
+	    info = getRuntimeInfo (),
+	    addData = addData,
+	    frameLayouts = frameLayouts,
+	    liveInfo = liveInfo}
+
 	fun intInf_comp f
 	  = let
 	      val (dst,dstsize) = getDst ()
@@ -2479,7 +2488,7 @@ struct
 	     | String_toCharVector => mov ()
 	     | String_toWord8Vector => mov ()
 	     | Thread_copy => thread ()
-	     | Thread_copyShrink => thread ()
+	     | Thread_copyCurrent => copyCurrent ()
 	     | Thread_current
 	     => let
 		  val (dst,dstsize) = getDst ()
@@ -2501,7 +2510,6 @@ struct
 		end
 	     | Thread_finishHandler => thread ()
 	     | Thread_switchTo => thread ()
-	     | Thread_switchToCont => thread ()
 	     | Vector_length => lengthArrayVectorString ()
 	     | Word8_toInt => movx Instruction.MOVZX
 	     | Word8_toIntX => movx Instruction.MOVSX

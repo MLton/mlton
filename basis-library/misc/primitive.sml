@@ -494,20 +494,13 @@ structure Primitive =
 	    val clearSaved = _ffi "Thread_clearSaved": unit -> unit;
 	    (* copy stores the copy in saved. *)
 	    val copy = _prim "Thread_copy": thread -> unit;
-	    (* copyShrink stores the copy in saved. *)
-	    val copyShrink = _prim "Thread_copyShrink": thread -> unit;
+	    (* copyCurrent stores the copy in saved. *)
+	    val copyCurrent = _prim "Thread_copyCurrent": unit -> unit;
 	    val current = _prim "Thread_current": unit -> thread;
 	    val finishHandler = _prim "Thread_finishHandler": thread -> unit;
 	    val saved = _ffi "Thread_saved": unit -> thread;
 	    val setHandler = _ffi "Thread_setHandler": thread -> unit;
 	    val switchTo = _prim "Thread_switchTo": thread -> unit;
-	    (* switchToCont is exactly the same as switchTo.
-	     * It is used so that the compiler can determine if
-	     * continuations are ever used.  This makes some optimizations
-	     * that depend on pieces of code executing once (e.g. globalization)
-	     * more powerful.
-	     *)
-	    val switchToCont = _prim "Thread_switchToCont": thread -> unit;
 	 end      
 
       structure Time =

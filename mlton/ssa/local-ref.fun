@@ -505,15 +505,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
     end
 
 fun usesConts p 
-  = Program.hasPrim (p, fn p =>
-		     case Prim.name p
-		       of Prim.Name.Thread_copy => true
-			| Prim.Name.Thread_copyShrink => true
-			| Prim.Name.Thread_current => true
-			| Prim.Name.Thread_finishHandler => true
-			| Prim.Name.Thread_switchTo => true
-			| Prim.Name.Thread_switchToCont => true
-			| _ => false)
+  = Program.hasPrim (p, fn p => Prim.name p = Prim.Name.Thread_switchTo)
 
 val eliminate = fn p => if usesConts p
 			  then p

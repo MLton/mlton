@@ -141,11 +141,10 @@ structure Name =
        | String_toCharVector
        | String_toWord8Vector
        | Thread_copy
-       | Thread_copyShrink
+       | Thread_copyCurrent
        | Thread_current
        | Thread_finishHandler
        | Thread_switchTo
-       | Thread_switchToCont
        | Vector_fromArray
        | Vector_length
        | Vector_sub
@@ -244,10 +243,9 @@ structure Name =
 	  | MLton_halt => true
 	  | MLton_serialize => true
 	  | Thread_copy => true
-	  | Thread_copyShrink => true
+	  | Thread_copyCurrent => true
 	  | Thread_finishHandler => true
 	  | Thread_switchTo => true
-	  | Thread_switchToCont => true
 	  | World_save => true
 	  | _ => false
 
@@ -400,11 +398,10 @@ structure Name =
 	  (String_toCharVector, Functional, "String_toCharVector"),
 	  (String_toWord8Vector, Functional, "String_toWord8Vector"),
 	  (Thread_copy, SideEffect, "Thread_copy"),
-	  (Thread_copyShrink, SideEffect, "Thread_copyShrink"),
+	  (Thread_copyCurrent, SideEffect, "Thread_copyCurrent"),
 	  (Thread_current, DependsOnState, "Thread_current"),
 	  (Thread_finishHandler, SideEffect, "Thread_finishHandler"),
 	  (Thread_switchTo, SideEffect, "Thread_switchTo"),
-	  (Thread_switchToCont, SideEffect, "Thread_switchToCont"),
 	  (Vector_fromArray, DependsOnState, "Vector_fromArray"),
 	  (Vector_length, Functional, "Vector_length"),
 	  (Vector_sub, Functional, "Vector_sub"),

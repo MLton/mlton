@@ -332,23 +332,25 @@ int main(int argc, char **argv) {					\
 		frontier += GC_OBJECT_HEADER_SIZE + (bytes);	\
 	} while (0)
 
-#define LimitCheck(frameSize, ret, bytes, other)				\
-	do {									\
-		declareFirst;							\
-										\
-		if (GC_EVERY_CHECK						\
-		or (GC_FIRST_CHECK and gc_first)				\
-		or frontier + (bytes) > gcState.limit				\
-		or (other)) {							\
-			InvokeRuntime						\
-			(GC_gc(&gcState, bytes,					\
-				GC_EVERY_CHECK or				\
-				(GC_FIRST_CHECK and gc_first),			\
-				__FILE__, __LINE__),				\
-			frameSize, ret);					\
-			clearFirst;						\
-		}								\
-		assert(gcState.stackBottom <= stackTop + WORD_SIZE);		\
+#define LimitCheck(frameSize, ret, b, other)				\
+	do {								\
+		declareFirst;						\
+									\
+		if (GC_EVERY_CHECK					\
+		or (GC_FIRST_CHECK and gc_first)			\
+		or frontier + (b) > gcState.limit			\
+		or (other)) {						\
+			uint bytes = b;					\
+									\
+			InvokeRuntime					\
+			(GC_gc(&gcState, bytes,				\
+				GC_EVERY_CHECK or			\
+				(GC_FIRST_CHECK and gc_first),		\
+				__FILE__, __LINE__),			\
+			frameSize, ret);				\
+			clearFirst;					\
+		}							\
+		assert(gcState.stackBottom <= stackTop + WORD_SIZE);	\
 	} while (0)
 
 #define StackOverflowCheck (stackTop >= gcState.stackLimit)
@@ -644,11 +646,9 @@ int Int_bogus;
 		InvokeRuntime(GC_copyThread(&gcState, t), frameSize, ret);	\
 	} while (0)
 
-#define Thread_copyShrink(frameSize, ret, thread)			\
-	do {								\
-		pointer t = thread;					\
-		InvokeRuntime(GC_copyThreadShrink(&gcState, t),		\
-					frameSize, ret);		\
+#define Thread_copyCurrent(frameSize, ret)					\
+	do {									\
+		InvokeRuntime(GC_copyCurrentThread(&gcState), frameSize, ret);	\
 	} while (0)
 
 #define Thread_finishHandler(frameSize, ret, thread)			\
@@ -657,8 +657,6 @@ int Int_bogus;
 		InvokeRuntime(GC_finishHandler(&gcState, t),		\
 					frameSize, ret);		\
 	} while (0)
-
-#define Thread_switchToCont Thread_switchTo
 
 #define Thread_switchTo(frameSize, ret, thread)					\
 	do {									\

@@ -151,8 +151,8 @@ static void display(GC_state s, FILE *stream) {
 	fprintf(stream, "frontier - base = %d  limit - base = %d\n",
 		(int)(s->frontier - s->base),
 		(int)(s->limit - s->base));
+	fprintf(stderr, "canHandle = %d\n", s->canHandle);
 }
-
 
 /* ------------------------------------------------- */
 /*                    ensureFree                     */
@@ -732,9 +732,12 @@ leave(GC_state s)
 }
 
 inline void
-GC_copyThreadShrink(GC_state s, GC_thread t)
+GC_copyCurrentThread(GC_state s)
 {
+	GC_thread t;
+
 	GC_enter(s);
+	t = s->currentThread;
 	copyThread(s, t, CONT_HEADER, t->stack->used);
 	assert(s->frontier <= s->limit);
 	leave(s);
@@ -1326,11 +1329,11 @@ void GC_gc(GC_state s, uint bytesRequested, bool force,
 	s->currentThread->bytesNeeded = bytesRequested;
 	do {
 	uint stackBytesRequested;
-	if (DEBUG)
-		fprintf(stderr, "%s %d: GC  canHandle = %d  base = %x  frontier = %x  limit = %x\n", 
-				file, line, s->canHandle,
-				(uint)s->base, (uint)s->frontier, (uint)s->limit);
 	GC_enter(s);
+	if (DEBUG) {
+		fprintf (stderr, "%s %d: ", file, line);
+		display(s, stderr);
+	}
 	stackBytesRequested =
 		(stackTopIsOk(s, s->currentThread->stack))
 		? 0 
@@ -1341,7 +1344,7 @@ void GC_gc(GC_state s, uint bytesRequested, bool force,
 	if (force or (s->frontier + bytesRequested + stackBytesRequested 
 			> s->limit)) {
 		if (s->messages)
-			fprintf(stderr, "%s %d: GC\n", file, line);
+			fprintf(stderr, "%s %d: GC_doGC\n", file, line);
 		/* This GC will grow the stack, if necessary. */
 		GC_doGC (s, bytesRequested, s->currentThread->stack->reserved);
 		assert (s->frontier + bytesRequested <= s->limit);

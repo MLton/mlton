@@ -28,26 +28,31 @@ fun callcc (f: 'a t -> 'a): 'a =
 		 | Clear
 		val r: 'a state ref = ref (Original f)
 		val _ = Thread.atomicBegin () (* Match 1 *)
-		val _ = Thread.copyShrink (Thread.current ())
-	     in case (!r before r := Clear) of
-		Clear => raise Fail "callcc saw Clear"
-	      | Copy v => (Thread.atomicEnd () (* Match 2 *)
-			   ; v ())
-	      | Original f =>
-		   let val t = Thread.saved ()
-		   in Thread.atomicEnd () (* Match 1 *)
-		      ; f (fn v =>
-			  let val _ = Thread.atomicBegin () (* Match 2 *)
-			     val _ = r := Copy v
-			     val _ = Thread.copy t
-			     val new = Thread.saved ()
-			     (* The following Thread.atomicBegin () 
-			      * is matched by Thread.switchTo.
-			      *)
-			     val _ = Thread.atomicBegin ()
-			  in Thread.switchToCont new
-			  end)
-		   end
+		val _ = Thread.copyCurrent ()
+	     in
+		case (!r before r := Clear) of
+		   Clear => raise Fail "callcc saw Clear"
+		 | Copy v => (Thread.atomicEnd () (* Match 2 *)
+			      ; v ())
+		 | Original f =>
+		      let
+			 val t = Thread.saved ()
+		      in
+			 Thread.atomicEnd () (* Match 1 *)
+			 ; f (fn v =>
+			      let
+				 val _ = Thread.atomicBegin () (* Match 2 *)
+				 val _ = r := Copy v
+				 val _ = Thread.copy t
+				 val new = Thread.saved ()
+				 (* The following Thread.atomicBegin () 
+				  * is matched by Thread.switchTo.
+				  *)
+				 val _ = Thread.atomicBegin ()
+			      in
+				 Thread.switchTo new
+			      end)
+		      end
 	     end))
 
 fun ('a, 'b) throw' (k: 'a t, v: unit -> 'a): 'b =

@@ -1260,10 +1260,9 @@ struct
 		       of GC_collect => default "GC_gc"
 			| MLton_halt => default "MLton_exit"
 			| Thread_copy => default "GC_copyThread"
-			| Thread_copyShrink => default "GC_copyThreadShrink"
+			| Thread_copyCurrent => default "GC_copyCurrentThread"
 			| Thread_finishHandler => default "GC_finishHandler"
 			| Thread_switchTo => thread ()
-			| Thread_switchToCont => thread ()
 			| World_save => default "GC_saveWorld"
 			| _ => Error.bug "x86GenerateTransfers::Runtime: prim"
 		   end
@@ -3524,10 +3523,9 @@ struct
 		       of GC_collect => default "GC_gc"
 			| MLton_halt => default "MLton_exit"
 			| Thread_copy => default "GC_copyThread"
-			| Thread_copyShrink => default "GC_copyThreadShrink"
+			| Thread_copyCurrent => default "GC_copyCurrentThread"
 			| Thread_finishHandler => default "GC_finishHandler"
 			| Thread_switchTo => thread ()
-			| Thread_switchToCont => thread ()
 			| World_save => default "GC_saveWorld"
 			| _ => Error.bug "x86GenerateTransfers::Runtime: prim"
 		   end

@@ -134,7 +134,7 @@ signature PRIM =
 	     | String_toCharVector
 	     | String_toWord8Vector
 	     | Thread_copy
-	     | Thread_copyShrink
+	     | Thread_copyCurrent
 	     | Thread_current
 	     | Thread_finishHandler
 	     (* switchTo has to be a _prim because we have to know that it
@@ -142,7 +142,6 @@ signature PRIM =
 	      * on the stack.
 	      *)
 	     | Thread_switchTo
-	     | Thread_switchToCont
 	     | Vector_fromArray (* implemented in backend/backend.fun *)
 	     | Vector_length
 	     | Vector_sub (* implemented in backend/backend.fun *)
