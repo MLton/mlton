@@ -207,6 +207,14 @@ fun elaborateProgram (program,
 		  end)
 		 ; Decs.empty)
 		) arg
+      val elabTopdec =
+	 fn d =>
+	 let
+	    val res = elabTopdec d
+	    val _ = Control.checkForErrors "elaborate"
+	 in
+	    res
+	 end
    in
       List.fold (decs, Decs.empty, fn (d, decs) =>
 		 Decs.append (decs, elabTopdec d))

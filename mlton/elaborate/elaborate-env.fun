@@ -377,6 +377,39 @@ structure Structure =
 	     | UndefinedStructure _ => NONE
 	 end
 
+      fun maker () =
+	 let
+	    fun make (op <=) =
+	       let
+		  val r = ref []
+		  fun add {range, values} =
+		     List.push (r, {isUsed = ref false,
+				    range = range,
+				    values = values})
+		  fun done () = 
+		     Info.T
+		     (QuickSort.sortArray
+		      (Array.fromList (!r),
+		       fn ({values = v, ...}, {values = v', ...}) =>
+		       Values.domain v <= Values.domain v'))
+	       in
+		  (add, done)
+	       end
+	    val (addStr, strs) = make Ast.Strid.<=
+	    val (addType, types) = make Ast.Tycon.<=
+	    val (addVal, vals) = make Ast.Vid.<=
+	    fun finish shapeId =
+	       T {shapeId = shapeId,
+		  strs = strs (), 
+		  types = types (),
+		  vals = vals ()}
+	 in
+	    {addStr = addStr,
+	     addType = addType,
+	     addVal = addVal,
+	     finish = finish}
+	 end
+      
       (* section 5.3, 5.5, 5.6 and rules 52, 53 *)
       fun cut {str, interface, opaque: bool, region}: t =
 	 let
@@ -392,7 +425,7 @@ structure Structure =
 	       end
 	    val interface =
 	       Interface.realize
-	       (interface, fn (c, k) =>
+	       (interface, fn (c, a, k) =>
 		case peekLongtycon (str, c) of
 		   NONE => (error ("type", Longtycon.layout c)
 			    ; TypeStr.bogus k)
@@ -419,12 +452,10 @@ structure Structure =
 		      end)
 	    fun cut (S as T {shapeId, ...}, I, strids) =
 	       let
+		  val {addStr, addType, addVal, finish} = maker ()
 		  val shapeId' = Interface.shapeId I
 		  fun doit () =
 		     let
-			val strs = ref []
-			val vals = ref []
-			val types = ref []
 			fun handleStr {name, interface = I} =
 			   case peekStrid' (S, name) of
 			      NONE =>
@@ -433,11 +464,8 @@ structure Structure =
 				  Longstrid.layout	
 				  (Longstrid.long (rev strids, name)))
 			    | SOME {range, values, ...} =>
-				 List.push
-				 (strs,
-				  {isUsed = ref false,
-				   range = cut (range, I, name :: strids),
-				   values = values})
+				 addStr {range = cut (range, I, name :: strids),
+					 values = values}
 			fun handleType {name: Ast.Tycon.t,
 					typeStr: TypeStr.t} =
 			   let
@@ -520,10 +548,8 @@ structure Structure =
 						     layoutName, region)
 						    ; typeStr)
 				    in
-				       List.push (types,
-						  {isUsed = ref false,
-						   range = typeStr,
-						   values = values})
+				       addType {range = typeStr,
+						values = values}
 				    end
 			   end
                         fun handleVal {name, scheme, status} =
@@ -560,52 +586,16 @@ structure Structure =
 					       Layout.empty)
 					      ; vid)
 				 in
-				    List.push (vals,
-					       {isUsed = ref false,
-						range = (vid, s),
-						values = values})
+				    addVal {range = (vid, s),
+					    values = values}
 				 end
-			val handleStr =
-			   Trace.trace ("handleStr",
-					Ast.Strid.layout o #name,
-					Unit.layout)
-			   handleStr
-			val handleType =
-			   Trace.trace ("handleType",
-					fn {name, typeStr} =>
-					Layout.record [("name",
-							Ast.Tycon.layout name),
-						       ("typeStr",
-							TypeStr.layout typeStr)],
-					Unit.layout)
-			   handleType
-			val handleVal =
-			   Trace.trace ("handleVal",
-					Ast.Vid.layout o #name,
-					Unit.layout)
-			   handleVal
 			val _ =
-			   Interface.fold
-			   (I, (), fn (e, ()) =>
-			    let
-			       datatype z = datatype Interface.Element.t
-			    in
-			       case e of
-				  Str z => handleStr z
-				| Type z => handleType z
-				| Val z => handleVal z
-			    end)
-			fun doit (elts, op <=) =
-			   Info.T
-			   (QuickSort.sortArray
-			    (Array.fromList (!elts),
-			     fn ({values = v, ...}, {values = v', ...}) =>
-			     Values.domain v <= Values.domain v'))
+			   Interface.foreach
+			   (I, {handleStr = handleStr,
+				handleType = handleType,
+				handleVal = handleVal})
 		     in
-			T {shapeId = SOME shapeId',
-			   strs = doit (strs, Ast.Strid.<=),
-			   types = doit (types, Ast.Tycon.<=),
-			   vals = doit (vals, Ast.Vid.<=)}
+			finish (SOME shapeId')
 		     end
 	       in
 		  case shapeId of
@@ -862,6 +852,61 @@ fun layoutUsed (T {fcts, sigs, strs, types, vals, ...}) =
 		   align [seq [str "structure ", Ast.Strid.layout d],
 			  indent (Structure.layoutUsed r, 3)])]
    end
+   
+fun dummyStructure (T {strs, types, vals, ...}, I: Interface.t): Structure.t =
+   let
+      val I =
+	 Interface.realize
+	 (I, fn (c, a, k) =>
+	  let
+	     val c = Tycon.fromString (Longtycon.toString c)
+	     val _ = TypeEnv.tyconAdmitsEquality c := a
+	  in
+	     TypeStr.tycon (c, k)
+	  end)
+      val {get, ...} =
+	 Property.get
+	 (Interface.plist,
+	  Property.initRec
+	  (fn (I, get) =>
+	   let
+	      val {addStr, addType, addVal, finish} = Structure.maker ()
+	      fun handleStr {name, interface = I} =
+		 addStr {range = get I,
+			 values = NameSpace.values (strs, name)}
+	      fun handleType {name, typeStr} =
+		 addType {range = typeStr,
+			  values = NameSpace.values (types, name)}
+	      fun handleVal {name, scheme, status} =
+		 let
+		    val con = CoreML.Con.fromString o Ast.Vid.toString
+		    val var = CoreML.Var.fromString o Ast.Vid.toString
+		    val vid =
+		       case status of
+			  Status.Con => Vid.Con (con name)
+			| Status.Exn => Vid.Exn (con name)
+			| Status.Var => Vid.Var (var name)
+		 in
+		    addVal {range = (vid, scheme),
+			    values = NameSpace.values (vals, name)}
+		 end
+	      val _ =
+		 Interface.foreach
+		 (I, {handleStr = handleStr,
+		      handleType = handleType,
+		      handleVal = handleVal})
+	   in
+	      finish (SOME (Interface.shapeId I))
+	   end))
+   in
+      get I
+   end
+
+val dummyStructure =
+   Trace.trace ("dummyStructure",
+		Interface.layout o #2,
+		Structure.layoutPretty)
+   dummyStructure
 
 (* ------------------------------------------------- *)
 (*                  functorClosure                   *)
@@ -943,6 +988,7 @@ fun functorClosure
     argInt: Interface.t,
     makeBody: Structure.t * string list -> Decs.t * Structure.t) =
    let
+      val _ = makeBody (dummyStructure (E, argInt), [])
       val restore = snapshot E
       fun apply (arg, nest, region) =
 	 let
@@ -959,9 +1005,11 @@ fun functorClosure
 		      Layout.tuple2 (Layout.ignore, Structure.layout))
 	 apply
       fun sizeMessage () = layoutSize apply
+      val fc =
+	 FunctorClosure.T {apply = apply,
+			   sizeMessage = sizeMessage}
    in
-      FunctorClosure.T {apply = apply,
-			sizeMessage = sizeMessage}
+      fc
    end
 
 (* ------------------------------------------------- *)

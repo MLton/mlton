@@ -117,9 +117,10 @@ structure FlexibleTycon =
       fun layout (T s) =
 	 let
 	    open Layout
-	    val {hasCons, id, typeFcn, ...} = Set.value s
+	    val {admitsEquality, hasCons, id, typeFcn, ...} = Set.value s
 	 in
-	    record [("hasCons", Bool.layout hasCons),
+	    record [("admitsEquality", AdmitsEquality.layout (!admitsEquality)),
+		    ("hasCons", Bool.layout hasCons),
 		    ("id", TyconId.layout id),
 		    ("typeFcn", TypeFcn.layout typeFcn)]
 	 end
@@ -155,15 +156,18 @@ structure FlexibleTycon =
 	 
       fun copy (T s): t =
 	 let
-	    val {copy, typeFcn, hasCons, ...} = Set.value s
+	    val {admitsEquality = a, copy, hasCons, typeFcn, ...} = Set.value s
 	 in
 	    case !copy of
 	       NONE => 
-		  let val c = new {hasCons = hasCons,
-				   typeFcn = typeFcn}
-		  in List.push (copies, copy)
-		     ; copy := SOME c
-		     ; c
+		  let
+		     val c = new {hasCons = hasCons,
+				  typeFcn = typeFcn}
+		     val _ = admitsEquality c := !a
+		     val _ = List.push (copies, copy)
+		     val _ = copy := SOME c
+		  in
+		     c
 		  end
 	     | SOME c => c
 	 end
@@ -276,6 +280,19 @@ structure Type =
       val var = Var
 
       val exn = Con (Tycon.exn, Vector.new0 ())
+
+      fun deArrowOpt (t: t): (t * t) option =
+	 case t of
+	    Con (c, ts) =>
+	       if Tycon.equals (c, Tycon.arrow)
+		  then SOME (Vector.sub (ts, 0), Vector.sub (ts, 1))
+	       else NONE
+	  | _ => NONE
+
+      fun deArrow t =
+	 case deArrowOpt t of
+	    NONE => Error.bug "Type.deArrow"
+	  | SOME z => z
 	 
       fun hom (t, {con, record, var}) =
 	 let
@@ -582,6 +599,7 @@ structure TypeStr =
 
 datatype t = T of {copy: copy,
 		   elements: element list,
+		   plist: PropertyList.t,
 		   shapeId: ShapeId.t,
 		   wheres: (FlexibleTycon.t * TypeStr.t) list ref} Set.t
 and element =
@@ -595,6 +613,12 @@ and element =
 withtype copy = t option ref
 
 type interface = t
+
+local
+   fun make f (T s) = f (Set.value s)
+in
+   val plist = make #plist
+end
 
 fun equals (T s, T s') = Set.equals (s, s')
 
@@ -631,6 +655,7 @@ end
 fun explicit elements: t =
    T (Set.singleton {copy = ref NONE,
 		     elements = elements,
+		     plist = PropertyList.new (),
 		     shapeId = ShapeId.new (),
 		     wheres = ref []})
 
@@ -933,20 +958,6 @@ fun wheres (I as T s, v: (Longtycon.t * TypeStr.t) vector): unit =
        end)
    end
 
-structure Element =
-   struct
-      type interface = t
-
-      datatype t =
-	 Str of {name: Ast.Strid.t,
-		 interface: interface}
-       | Type of {name: Ast.Tycon.t,
-		  typeStr: EtypeStr.t}
-       | Val of {name: Ast.Vid.t,
-		 scheme: Escheme.t,
-		 status: Status.t}
-   end
-
 fun copyAndRealize (I: t, getTypeFcnOpt): t =
    let
       (* Keep track of all nodes that have forward pointers to copies, so
@@ -994,6 +1005,8 @@ fun copyAndRealize (I: t, getTypeFcnOpt): t =
 					      fun get () =
 						 f
 						 (Longtycon.long (strids, name),
+						  ! (FlexibleTycon.admitsEquality
+						     c),
 						  TypeStr.kind typeStr)
 					      fun doit (s: EtypeStr.t): unit =
 						 FlexibleTycon.setTypeStr (c, s)
@@ -1026,8 +1039,9 @@ fun copyAndRealize (I: t, getTypeFcnOpt): t =
 				    scheme = Scheme.copy scheme,
 				    status = status})
 		     val I = T (Set.singleton {copy = ref NONE,
-					       shapeId = shapeId,
 					       elements = elements,
+					       plist = PropertyList.new (),
+					       shapeId = shapeId,
 					       wheres = ref wheres})
 		     val _ = List.push (copies, copy)
 		     val _ = copy := SOME I
@@ -1052,29 +1066,21 @@ fun realize (I, f) = copyAndRealize (I, SOME f)
 
 val realize = Trace.trace2 ("realize", layout, Layout.ignore, layout) realize
 
-fun 'a fold (T s, b: 'a, f: Element.t * 'a -> 'a): 'a =
+fun foreach (T s, {handleStr, handleType, handleVal}) =
    let
       val {elements, ...} = Set.value s
    in
-      List.fold
-      (elements, b, fn (elt, b) =>
-       let
-	  val elt =
-	     case elt of
-		Str r => Element.Str r
-	      | Type {name, typeStr} =>
-		   Element.Type {name = name,
-				 typeStr = TypeStr.toEnv typeStr}
-	      | Val {name, scheme, status} =>
-		   Element.Val {name = name,
-				scheme = Scheme.toEnv scheme,
-				status = status}
-
-       in
-	  f (elt, b)
-       end)
+      List.foreach
+      (elements, fn elt =>
+       case elt of
+	  Str r => handleStr r
+	| Type {name, typeStr} =>
+	     handleType {name = name,
+			 typeStr = TypeStr.toEnv typeStr}
+	| Val {name, scheme, status} =>
+	     handleVal {name = name,
+			scheme = Scheme.toEnv scheme,
+			status = status})
    end
-
-fun foreach (s, f) = fold (s, (), f o #1)
 
 end

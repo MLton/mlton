@@ -74,21 +74,8 @@ signature INTERFACE =
       sharing TypeStr.Tycon = Tycon
       sharing TypeStr.Type = Type
       sharing TypeStr.Tyvar = EnvTypeStr.Tyvar = Tyvar
-      structure Element:
-	 sig
-	    type interface
-	    datatype t =
-	       Str of {name: Ast.Strid.t,
-		       interface: interface}
-	     | Type of {name: Ast.Tycon.t,
-			typeStr: EnvTypeStr.t}
-	     | Val of {name: Ast.Vid.t,
-		       scheme: EnvTypeStr.Scheme.t,
-		       status: Status.t}
-	 end
       
       type t
-      sharing type t = Element.interface
       
       val + : t * t -> t
       val bogus: t
@@ -98,11 +85,22 @@ signature INTERFACE =
       val equals: t * t -> bool
       val excons: TypeStr.Cons.t -> t
       val extendTycon: t * Ast.Tycon.t * TypeStr.t -> t
-      val fold: t * 'a * (Element.t * 'a -> 'a) -> 'a
+      val foreach: t * {handleStr: {name: Ast.Strid.t,
+				    interface: t} -> unit,
+			handleType: {name: Ast.Tycon.t,
+				     typeStr: EnvTypeStr.t} -> unit,
+			handleVal: {name: Ast.Vid.t,
+				    scheme: EnvTypeStr.Scheme.t,
+				    status: Status.t} -> unit} -> unit
       val layout: t -> Layout.t
+      val lookupLongtycon: t * Ast.Longtycon.t * (TypeStr.t -> unit) -> unit
       val peekLongtycon: t * Ast.Longtycon.t -> TypeStr.t option
+      val peekStrid: t * Ast.Strid.t -> t option
+      val plist: t -> PropertyList.t
       (* realize makes a copy, and instantiate longtycons *)
-      val realize: t * (Ast.Longtycon.t * TypeStr.Kind.t -> EnvTypeStr.t) -> t
+      val realize: t * (Ast.Longtycon.t
+			* TypeStr.Tycon.AdmitsEquality.t
+			* TypeStr.Kind.t -> EnvTypeStr.t) -> t
       val shapeId: t -> ShapeId.t
       val share: t * Ast.Longstrid.t * Ast.Longstrid.t -> unit
       val shareType: t * Ast.Longtycon.t * Ast.Longtycon.t -> unit

@@ -60,10 +60,30 @@ end
 
 fun lookupLongtycon (E: Env.t,
 		     I: Interface.t,
-		     c: Ast.Longtycon.t) =
-   case Interface.peekLongtycon (I, c) of
-      NONE => TypeStr.fromEnv (Env.lookupLongtycon (E, c))
-    | SOME s => s
+		     c: Ast.Longtycon.t): TypeStr.t =
+   let
+      fun env () = TypeStr.fromEnv (Env.lookupLongtycon (E, c))
+      val (strids, t) = Ast.Longtycon.split c
+   in
+      case strids of
+	 [] =>
+	    (case Interface.peekLongtycon (I, c) of
+		NONE => env ()
+	      | SOME s => s)
+       | s :: _ =>
+	    (case Interface.peekStrid (I, s) of
+		NONE => env ()
+	      | SOME s =>
+		   let
+		      val r = ref NONE
+		      val _ =
+			 Interface.lookupLongtycon (I, c, fn s => r := SOME s)
+		   in
+		      case !r of
+			 NONE => TypeStr.bogus Kind.Nary
+		       | SOME s => s
+		   end)
+   end
 
 fun elaborateType (ty: Atype.t, E: Env.t, I: Interface.t)
    : Tyvar.t vector * Type.t =
@@ -214,32 +234,27 @@ fun elaborateDatBind (datBind: DatBind.t, E, I): Interface.t =
 	       (tycons, datatypes,
 		fn (tycon, {cons, tycon = astTycon, tyvars, ...}) =>
 		let
-		   val resultType: Type.t =
-		      Type.con (tycon, Vector.map (tyvars, Type.var))
+		   val resultType: Atype.t =
+		      Atype.con (astTycon, Vector.map (tyvars, Atype.var))
 		   val (cons, conArgs) =
 		      Vector.unzip
 		      (Vector.map
 		       (cons, fn (name, arg) =>
 			let
 			   val con = Con.newNoname ()
-			   val (arg, ty) =
+			   val (makeArg, ty) =
 			      case arg of
-				 NONE => (NONE, resultType)
+				 NONE => (fn _ => NONE, resultType)
 			       | SOME t =>
-				    let
-				       (* We do the elaborateScheme here to 
-					* check for unbound tyvars in t.
-					*)
-				       val t =
-					  Scheme.ty
-					  (elaborateScheme (tyvars, t, E, I2))
-				    in
-				       (SOME t, Type.arrow (t, resultType))
-				    end
-			   val scheme = Scheme.make (tyvars, ty)
+				    (fn s =>
+				     SOME (#1 (Type.deArrow (Scheme.ty s))),
+				     Atype.arrow (t, resultType))
+			   val scheme = elaborateScheme (tyvars, ty, E, I2)
 			in
-			   ({con = con: TypeStr.Con.t, name = name, scheme = scheme},
-			    arg)
+			   ({con = con: TypeStr.Con.t,
+			     name = name,
+			     scheme = scheme},
+			    makeArg scheme)
 			end))
 		   val cons = Cons.T cons
 		   val _ =

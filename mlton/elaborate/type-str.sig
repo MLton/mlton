@@ -46,6 +46,7 @@ signature TYPE_STR_STRUCTS =
 	    val arrow: t * t -> t
 	    val bogus: t
 	    val con: Tycon.t * t vector -> t
+	    val deArrow: t -> t * t
 	    val deEta: t * Tyvar.t vector -> Tycon.t option
 	    val exn: t
 	    val hom: t * {con: Tycon.t * 'a vector -> 'a,
