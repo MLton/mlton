@@ -78,34 +78,12 @@ nj-mlton-dual:
 	$(MAKE) script runtime hostmap constants
 	@echo 'Build of MLton succeeded.'
 
-# There is some messiness below to put the gmp include and library in the
-# build directory, even though it is not in the sources.  The assumption is
-# that we are compiling from an old MLton that has them around and we can
-# just copy those.
-
-GMPH = /usr/local/lib/mlton/self/include/gmp.h
-GMPLIB = /usr/local/lib/mlton/self/libgmp.a
-
 .PHONY: runtime
 runtime:
 	@echo 'Compiling MLton runtime system for $(HOST).'
-ifeq ($(HOSTTYPE),cygwin)
-	$(CP) $(GMPH) runtime
-endif
-ifeq ($(HOSTTYPE),freebsd)
-	$(CP) $(GMPH) runtime
-endif
 	$(MAKE) -C runtime
 	$(CP) $(RUN)/*.a $(LIB)/$(HOST)/
 	$(CP) runtime/*.h include/*.h $(LIB)/$(HOST)/include/
-ifeq ($(HOSTTYPE),cygwin)
-	$(CP) $(GMPLIB) $(LIB)/$(HOST)/
-	$(CP) $(GMPH) $(LIB)/$(HOST)/include
-endif
-ifeq ($(HOSTTYPE),freebsd)
-	$(CP) $(GMPLIB) $(LIB)/$(HOST)/
-	$(CP) $(GMPH) $(LIB)/$(HOST)/include
-endif
 
 .PHONY: script
 script:
