@@ -596,7 +596,7 @@ structure Type =
 			 (NotUnifiable (l, l'),
 			  Unknown (Unknown.new {canGeneralize = true,
 						equality = true}))
-		      fun oneFlex ({fields, spine, time}, r, outer) =
+		      fun oneFlex ({fields, spine, time}, r, outer, swap) =
 			 let
 			    val _ = minTime (outer, !time)
 			    val differences =
@@ -643,8 +643,13 @@ structure Type =
 			    case differences of
 			       ([], []) => (Unified, Record r)
 			     | (ds, ds') =>
-				  notUnifiable (layoutRecord ds,
-						layoutRecord ds')
+				  let
+				     val ds = layoutRecord ds
+				     val ds' = layoutRecord ds'
+				  in
+				     notUnifiable (if swap then (ds', ds)
+						   else (ds, ds'))
+				  end
 			 end
 		      fun genFlexError () =
 			 Error.bug "GenFlexRecord seen in unify"
@@ -652,9 +657,12 @@ structure Type =
 		      val {ty = t', ...} = Set.value s'
 		      fun not () =
 			 notUnifiable (layoutTopLevel t, layoutTopLevel t')
-		      fun conAnd (c, ts, t, t') =
+		      fun conAnd (c, ts, t, t', swap) =
 			 let
 			    fun lay () = layoutTopLevel (Con (c, ts))
+			    val notUnifiable =
+			       fn (z, z') =>
+			       notUnifiable (if swap then (z', z) else (z, z'))
 			 in
 			    case t of
 			       Con (c', ts') =>
@@ -724,21 +732,18 @@ structure Type =
 			 in
 			    (Unified, t)
 			 end
-		      fun swap (res, t) =
-			 case res of
-			    NotUnifiable (l, l') => (NotUnifiable (l', l), t)
-			  | Unified => (Unified, t)
 		      val (res, t) =
 			 case (t, t') of
 			    (Unknown r, Unknown r') =>
 			       (Unified, Unknown (Unknown.join (r, r')))
 			  | (_, Unknown u) => oneUnknown (u, t, outer)
 			  | (Unknown u, _) => oneUnknown (u, t', outer')
-			  | (Con (c, ts), _) => conAnd (c, ts, t', t)
-			  | (_, Con (c, ts)) => swap (conAnd (c, ts, t, t'))
-			  | (FlexRecord f, Record r) => oneFlex (f, r, outer')
+			  | (Con (c, ts), _) => conAnd (c, ts, t', t, false)
+			  | (_, Con (c, ts)) => conAnd (c, ts, t, t', true)
+			  | (FlexRecord f, Record r) =>
+			       oneFlex (f, r, outer', false)
 			  | (Record r, FlexRecord f) =>
-			       swap (oneFlex (f, r, outer))
+			       oneFlex (f, r, outer, true)
 			  | (FlexRecord {fields = fields, spine = s, time = t},
 			     FlexRecord {fields = fields', spine = s',
 					 time = t', ...}) =>

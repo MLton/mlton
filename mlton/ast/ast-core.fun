@@ -171,31 +171,35 @@ structure Pat =
 	 else make (Tuple ps)
       
       fun layout (p, isDelimited) =
-	 let fun delimit t = if isDelimited then t else paren t
-	 in case node p of
-	    Wild => str "_"
-	  | Var {name, fixop} => seq [Fixop.layout fixop, layoutLongvid name]
-	  | Const c => Const.layout c
-	  | Tuple ps => Vector.layout layoutT ps
-	  | Record {items, flexible} =>
-	       seq [str "{",
-		   mayAlign (separateRight (Vector.toListMap (items, layoutItem),
-					    ", ")),
-		   if flexible
-		      then str (if Vector.isEmpty items then "..." else ", ...")
-		   else empty,
-		   str "}"]
-	  | List ps => Layout.vector (Vector.map (ps, layoutT))
-	  | FlatApp ps => delimit (layoutFlatApp ps)
-	  | App (c, p) => delimit (mayAlign [Longcon.layout c,
-					     layoutF p])
-	  | Constraint (p, t) => delimit (layoutConstraint (layoutF p, t))
-	  | Layered {fixop, var, constraint, pat} =>
-	       delimit
-	       (mayAlign [maybeConstrain
-			  (seq [Fixop.layout fixop, Var.layout var],
-			   constraint),
-		      seq [str "as ", layoutT pat]])
+	 let
+	    fun delimit t = if isDelimited then t else paren t
+	 in
+	    case node p of
+	       App (c, p) => delimit (mayAlign [Longcon.layout c,
+						layoutF p])
+	     | Const c => Const.layout c
+	     | Constraint (p, t) => delimit (layoutConstraint (layoutF p, t))
+	     | FlatApp ps => delimit (layoutFlatApp ps)
+	     | Layered {fixop, var, constraint, pat} =>
+		  delimit
+		  (mayAlign [maybeConstrain
+			     (seq [Fixop.layout fixop, Var.layout var],
+			      constraint),
+			     seq [str "as ", layoutT pat]])
+	     | List ps => list (Vector.toListMap (ps, layoutT))
+	     | Record {items, flexible} =>
+		  seq [str "{",
+		       mayAlign (separateRight
+				 (Vector.toListMap (items, layoutItem), ", ")),
+		       if flexible
+			  then str (if Vector.isEmpty items
+				       then "..."
+				    else ", ...")
+		       else empty,
+		       str "}"]
+	     | Tuple ps => Vector.layout layoutT ps
+	     | Var {name, fixop} => seq [Fixop.layout fixop, layoutLongvid name]
+	     | Wild => str "_"
 	 end
       and layoutF p = layout (p, false)
       and layoutT p = layout (p, true)

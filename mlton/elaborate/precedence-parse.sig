@@ -18,8 +18,8 @@ signature PRECEDENCE_PARSE =
    sig
       include PRECEDENCE_PARSE_STRUCTS
 
-      val parseClause: Ast.Pat.t vector * Env.t -> {func: Ast.Var.t,
-						    args: Ast.Pat.t vector}
-      val parseExp: Ast.Exp.t vector * Env.t -> Ast.Exp.t
-      val parsePat: Ast.Pat.t vector * Env.t -> Ast.Pat.t
+      val parseClause: Ast.Pat.t vector * Env.t -> {args: Ast.Pat.t vector,
+						    func: Ast.Var.t}
+      val parseExp: Ast.Exp.t vector * (unit -> Layout.t) * Env.t -> Ast.Exp.t
+      val parsePat: Ast.Pat.t vector * (unit -> Layout.t) * Env.t -> Ast.Pat.t
    end

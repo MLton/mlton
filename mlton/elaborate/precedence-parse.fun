@@ -57,24 +57,28 @@ datatype 'a precStack =
  | NONf of 'a * 'a precStack
  | NILf
    
-fun 'a parse {name: string,
-	      region: 'a -> Region.t,
-	      items: 'a vector,
+fun 'a parse {apply: 'a * 'a -> 'a,
 	      fixval: 'a -> Fixval.t,
-	      apply: 'a * 'a -> 'a,
+	      items: 'a vector,
+	      lay: unit -> Layout.t,
+	      name: string,
+	      region: 'a -> Region.t,
+	      toString: 'a -> string,
 	      tuple: 'a vector -> 'a}: 'a =
    let
-      fun error msg =
-	 Control.errorStr (Region.list (Vector.toList items, region), msg)
+      fun error (r: Region.t, msg: string) =
+	 Control.error (r, Layout.str msg, lay ())
       fun ensureNONf ((e, f), p) =
 	 let
 	    val _ =
 	       case f of
 		  Fixval.Nonfix => ()
 		| _ =>
-		     Control.errorStr
+		     Control.error
 		     (region e,
-		      concat [name, " begins with infix identifier"])
+		      Layout.str (concat ["identifier must be used infix: ",
+					  toString e]),
+		      lay ())
 	 in
 	    NONf (e, p)
 	 end
@@ -88,8 +92,8 @@ fun 'a parse {name: string,
 	     (e4, f as Fixval.Infix (lbp, rbp))) =>
 	    if lbp > bp then INf (rbp, e4, p)
 	    else (if lbp = bp
-		     then error "mixed left- and right-associative \
-		      \operators of same precedence"
+		     then error (region e1,
+				 "operators of same precedence with mixed associativity")
 		  else ();
 		  parse (NONf (apply (e2, tuple (Vector.new2 (e3, e1))),
 			       r),
@@ -104,14 +108,15 @@ fun 'a parse {name: string,
 			     r))
 	  | NONf (e1, NILf) => e1
 	  | INf (_, e1, NONf (e2, p)) =>
-	       (error (concat [name, " ends with infix identifier"]) ;
-		finish (NONf (apply (e2, e1), p)))
+	       (error (region e1, concat [name, " ends with infix identifier"])
+		; finish (NONf (apply (e2, e1), p)))
 	  | NILf => Error.bug "Corelang.finish NILf"
 	  | _ => Error.bug "Corelang.finish"
       fun getfix x = (x, fixval x)
    in
       if Vector.isEmpty items
-	 then Error.bug "parse"
+	 then
+	    Error.bug "parse"
       else
 	 let
 	    val item = Vector.sub (items, 0)
@@ -122,7 +127,7 @@ fun 'a parse {name: string,
 	 end
    end
 
-fun parsePat (ps, E) =
+fun parsePat (ps, lay, E) =
    let
       fun apply (p1, p2) =
 	 case Pat.node p1 of
@@ -135,39 +140,43 @@ fun parsePat (ps, E) =
 		  open Layout
 		  val _ =
 		     Control.error
-		  (Pat.region p1,
-		   seq [str "non-constructor applied to argument in pattern: ",
-			Pat.layout p1],
-		   empty)
+		     (Pat.region p1,
+		      seq [str "non-constructor applied to argument: ",
+			   Pat.layout p1],
+		      lay ())
 	       in
 		  Pat.wild
 	       end
    in
-      parse {name = "pattern",
-	     region = Pat.region,
-	     items = ps,
+      parse {apply = apply,
 	     fixval = fn p => Fixval.makePat (p, E),
-	     tuple = Pat.tuple,
-	     apply = apply}
+	     items = ps,
+	     lay = lay,
+	     name = "pattern",
+	     region = Pat.region,
+	     toString = Layout.toString o Pat.layout,
+	     tuple = Pat.tuple}
    end
 
 val parsePat =
    Trace.trace ("parsePat",
-		fn (ps, _) => Vector.layout Pat.layout ps,
+		fn (ps, _, _) => Vector.layout Pat.layout ps,
 		Ast.Pat.layout)
    parsePat
 
-fun parseExp (es, E) =
-   parse {name = "expression",
-	  region = Exp.region,
-	  items = es,
+fun parseExp (es, lay, E) =
+   parse {apply = Exp.app,
 	  fixval = fn e => Fixval.makeExp (e, E),
-	  apply = Exp.app,
+	  items = es,
+	  lay = lay,
+	  name = "expression",
+	  region = Exp.region,
+	  toString = Layout.toString o Exp.layout,
 	  tuple = Exp.tuple}
 
 val parseExp =
    Trace.trace ("parseExp",
-		fn (es, _) => Vector.layout Exp.layout es,
+		fn (es, _, _) => Vector.layout Exp.layout es,
 		Ast.Exp.layout)
    parseExp
 

@@ -221,15 +221,11 @@ fun resolveConst (c: Aconst.t, ty: Type.t): Const.t =
 			Layout.empty)
       val tycon =
 	 case typeTycon ty of
-	    NONE =>
-	       Error.bug (concat ["constant ", Aconst.toString c,
-				  " of strange type ",
-				  Layout.toString (Type.layoutPretty ty)])
+	    NONE => Tycon.bogus
 	  | SOME c => c
       fun choose (all, sizeTycon, name, make) =
 	 case List.peek (all, fn s => Tycon.equals (tycon, sizeTycon s)) of
-	    NONE => Error.bug (concat ["strange ", name, " type: ",
-				       Layout.toString (Type.layout ty)])
+	    NONE => Const.string "<bogus>"
 	  | SOME s => make s
    in
       case Aconst.node c of
@@ -278,7 +274,8 @@ fun unify (t1: Type.t, t2: Type.t,
        | Unified => ()
    end
 
-fun unifyList (trs: (Type.t * Region.t) vector): Type.t =
+fun unifyList (trs: (Type.t * Region.t) vector,
+	       lay: unit -> Layout.t): Type.t =
    if 0 = Vector.length trs
       then Type.list (newType ())
    else
@@ -291,7 +288,8 @@ fun unifyList (trs: (Type.t * Region.t) vector): Type.t =
 		    (r,
 		     str "list elements must be of same type",
 		     align [seq [str "element:  ", l'],
-			    seq [str "previous: ", l]])))
+			    seq [str "previous: ", l],
+			    lay ()])))
       in
 	 Type.list t
       end
@@ -328,15 +326,15 @@ fun elaboratePat (p: Apat.t, E: Env.t, amInRvb: bool)
 	 (fn p: Apat.t =>
 	  let
 	     val region = Apat.region p
-	     fun error (e1, e2) =
-		Control.error (region, e1, e2)
-	     fun unifyPatternConstraint (p, c) =
+	     fun unifyPatternConstraint (p, lay, c) =
 		unify
 		(p, c, fn (l1, l2) =>
 		 (region,
 		  str "pattern and constraint don't agree",
-		  align [seq [str "pattern:    ", l1],
+		  align [seq [str "pattern:    ", lay ()],
+			 seq [str "of type:    ", l1],
 			 seq [str "constraint: ", l2]]))
+	     fun lay () = Apat.layout p
 	  in
 	     case Apat.node p of
 		Apat.App (c, p) =>
@@ -351,17 +349,16 @@ fun elaboratePat (p: Apat.t, E: Env.t, amInRvb: bool)
 			 unify
 			 (instance, Type.arrow (argType, resultType), fn _ =>
 			  (region,
-			   seq [str "constant constructor applied to argument in pattern: ",
-				Ast.Longcon.layout c],
-			   empty))
+			   str "constant constructor applied to argument",
+			   seq [str "pattern: ", lay ()]))
 		      val _ =
 			 unify
 			 (Cpat.ty p, argType, fn (l, l') =>
 			  (region,
-			   str "constructor applied to incorrect arguments in pattern",
-			   align
-			   [seq [str "expects: ", l],
-			    seq [str "but got: ", l']]))
+			   str "constructor applied to incorrect argument",
+			   align [seq [str "expects: ", l'],
+				  seq [str "but got: ", l],
+				  seq [str "pattern: ", lay ()]]))
 		   in
 		      Cpat.make (Cpat.Con {arg = SOME p,
 					   con = con,
@@ -382,14 +379,17 @@ fun elaboratePat (p: Apat.t, E: Env.t, amInRvb: bool)
 			  end)
 	      | Apat.Constraint (p, t) =>
 		   let
-		      val p = loop p
+		      val p' = loop p
 		      val _ =
 			 unifyPatternConstraint
-			 (Cpat.ty p, elaborateType (t, Lookup.fromEnv E))
+			 (Cpat.ty p', fn () => Apat.layout p,
+			  elaborateType (t, Lookup.fromEnv E))
 		   in
-		      p
+		      p'
 		   end
-	      | Apat.FlatApp items => loop (Parse.parsePat (items, E))
+	      | Apat.FlatApp items =>
+		   loop (Parse.parsePat
+			 (items, fn () => seq [str "pattern: ", lay ()], E))
 	      | Apat.Layered {var = x, constraint, pat, ...} =>
 		   let
 		      val t =
@@ -397,10 +397,13 @@ fun elaboratePat (p: Apat.t, E: Env.t, amInRvb: bool)
 			    NONE => newType ()
 			  | SOME t => elaborateType (t, Lookup.fromEnv E)
 		      val x = bindToType (x, t)
-		      val pat = loop pat
-		      val _ = unifyPatternConstraint (t, Cpat.ty pat)
+		      val pat' = loop pat
+		      val _ =
+			 unifyPatternConstraint (Cpat.ty pat',
+						 fn () => Apat.layout pat,
+						 t)
 		   in
-		      Cpat.make (Cpat.Layered (x, pat), t)
+		      Cpat.make (Cpat.Layered (x, pat'), t)
 		   end
 	      | Apat.List ps =>
 		   let
@@ -409,7 +412,8 @@ fun elaboratePat (p: Apat.t, E: Env.t, amInRvb: bool)
 		      Cpat.make (Cpat.List ps',
 				 unifyList
 				 (Vector.map2 (ps, ps', fn (p, p') =>
-					       (Cpat.ty p', Apat.region p))))
+					       (Cpat.ty p', Apat.region p)),
+				  fn () => seq [str "pattern:  ", lay ()]))
 		   end
 	      | Apat.Record {flexible, items} =>
 		   (* rules 36, 38, 39 and Appendix A, p.57 *)
@@ -451,7 +455,7 @@ fun elaboratePat (p: Apat.t, E: Env.t, amInRvb: bool)
 					Control.error
 					(region,
 					 str "unresolved ... in flexible record pattern",
-					 Layout.empty)
+					 seq [str "pattern: ", lay ()])
 				  val _ = List.push (overloads, resolve)
 			       in
 				  t
@@ -493,7 +497,7 @@ fun elaboratePat (p: Apat.t, E: Env.t, amInRvb: bool)
 				      val _ = 
 					 Control.error
 					 (region,
-					  seq [str "longid in var pat: ",
+					  seq [str "undefined constructor: ",
 					       Ast.Longvid.layout name],
 					  empty)
 				   in
@@ -787,6 +791,15 @@ structure Con =
       val fromAst = fromString o Ast.Con.toString
    end
 
+fun approximate (s: string): string =
+   let
+      val n = String.size s
+   in
+      if n <= 60
+	 then s
+      else concat [String.prefix (s, 35), "  ...  ", String.suffix (s, 25)]
+   end
+   
 fun elaborateDec (d, {env = E,
 		      lookupConstant: string * ConstType.t -> CoreML.Const.t,
 		      nest}) =
@@ -1106,8 +1119,8 @@ fun elaborateDec (d, {env = E,
 					  (Atype.region t,
 					   str "function result type does not agree with expression",
 					   align
-					   [seq [str "result type:", l1],
-					    seq [str "expression: ", l2]])))
+					   [seq [str "result type: ", l1],
+					    seq [str "expression:  ", l2]])))
 				  in
 				     {body = body,
 				      bodyRegion = bodyRegion,
@@ -1435,6 +1448,8 @@ fun elaborateDec (d, {env = E,
 			  Trace.assertTrue)
 	 (fn (e: Aexp.t, nest) =>
 	  let
+	     fun lay () =
+		Layout.str (approximate (Layout.toString (Aexp.layout e)))
 	     val region = Aexp.region e
 	     fun constant (c: Aconst.t) =
 		case Aconst.node c of
@@ -1521,7 +1536,7 @@ fun elaborateDec (d, {env = E,
 		   in
 		      e
 		   end
-	      | Aexp.FlatApp items => elab (Parse.parseExp (items, E))
+	      | Aexp.FlatApp items => elab (Parse.parseExp (items, lay, E))
 	      | Aexp.Fn m =>
 		   let
 		      val {arg, argType, body} =
@@ -1597,7 +1612,9 @@ fun elaborateDec (d, {env = E,
 		      Cexp.make (Cexp.List es',
 				 unifyList
 				 (Vector.map2 (es, es', fn (e, e') =>
-					       (Cexp.ty e', Aexp.region e))))
+					       (Cexp.ty e', Aexp.region e)),
+				  fn () => seq [str "expression: ",
+						lay ()]))
 		   end
 	      | Aexp.Orelse (e, e') =>
 		   let
