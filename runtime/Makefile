@@ -308,7 +308,7 @@ gmp:
 		&& [ libgmp.a -nt gmp-2.0.2.tgz ]; } || {			\
 			rm -rf gmp.h libgmp.a gmp-stuff &&			\
 			mkdir gmp-stuff gmp-stuff/info &&			\
-			echo 'a' | tr 'a' '\037' >gmp-stuff/info/dir &&		\
+			echo '!@File: dir,#Node: Top' | tr '!@#' '\037\n\t' >gmp-stuff/info/dir &&	\
 			{ [ -d gmp-2.0.2 ] ||					\
 				zcat <gmp-2.0.2.tgz | tar xf -; } &&		\
 				cd gmp-2.0.2 &&					\
