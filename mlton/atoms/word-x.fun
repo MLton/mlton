@@ -24,7 +24,7 @@ in
    val value = make #value
 end
 
-fun toString w = concat ["0wx", IntInf.format (value w, StringCvt.HEX)]
+fun toString w = IntInf.format (value w, StringCvt.HEX)
 
 val layout = Layout.str o toString
 
