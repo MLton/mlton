@@ -223,13 +223,15 @@ signature MACHINE =
 	             frameSources: int vector,
 		     labels: {label: ProfileLabel.t,
 			      sourceSeqsIndex: int} vector,
+		     names: string vector,
 		     (* Each sourceSeq describes a sequence of source functions,
 		      * each given as an index into the source vector.
 		      *)
 		     sourceSeqs: int vector vector,
-		     sourceSuccessors: int vector,
-		     sources: SourceInfo.t vector}
+		     sources: {nameIndex: int,
+			       successorsIndex: int} vector}
 
+	    val empty: t
 	    val modify: t -> {newProfileLabel: ProfileLabel.t -> ProfileLabel.t,
 			      delProfileLabel: ProfileLabel.t -> unit,
 			      getProfileInfo: unit -> t}
@@ -253,7 +255,7 @@ signature MACHINE =
 			    label: Label.t},
 		     maxFrameSize: int,
 		     objectTypes: ObjectType.t vector,
-		     profileInfo: ProfileInfo.t,
+		     profileInfo: ProfileInfo.t option,
 		     reals: (Global.t * RealX.t) list,
 		     strings: (Global.t * string) list}
 

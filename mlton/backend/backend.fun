@@ -157,31 +157,17 @@ fun toMachine (program: Ssa.Program.t) =
       val program = pass ("insertSignalChecks", SignalCheck.insert, program)
       val program = pass ("implementHandlers", ImplementHandlers.doit, program)
       val _ = R.Program.checkHandlers program
-      val {frameProfileIndices, labels = profileLabels, program, sources,
-	   sourceSeqs, sourceSuccessors} =
+      val (program, makeProfileInfo) =
 	 Control.passTypeCheck
-	 {display = Control.Layouts (fn ({program, ...}, output) =>
+	 {display = Control.Layouts (fn ((program, _), output) =>
 				     Rssa.Program.layouts (program, output)),
 	  name = "profile",
 	  style = Control.No,
 	  suffix = "rssa",
 	  thunk = fn () => Profile.profile program,
-	  typeCheck = R.Program.typeCheck o #program}
+	  typeCheck = R.Program.typeCheck o #1}
       val profile = !Control.profile <> Control.ProfileNone
       val profileStack = profile andalso !Control.profileStack
-      val frameProfileIndex =
-	 if profile
-	    then
-	       let
-		  val {get, set, ...} =
-		     Property.getSetOnce
-		     (Label.plist,
-		      Property.initRaise ("frameProfileIndex", Label.layout))
-		  val _ = Vector.foreach (frameProfileIndices, set)
-	       in
-		  get
-	       end
-	 else fn _ => 0
       val _ =
 	 let
 	    open Control
@@ -225,7 +211,7 @@ fun toMachine (program: Ssa.Program.t) =
 	  end)
       (* FrameInfo. *)
       local
-	 val frameSources = ref []
+	 val frameLabels = ref []
 	 val frameLayouts = ref []
 	 val frameLayoutsCounter = Counter.new 0
 	 val _ = IntSet.reset ()
@@ -249,11 +235,11 @@ fun toMachine (program: Ssa.Program.t) =
 	 fun allFrameInfo () =
 	    let
 	       (* Reverse lists because the index is from back of list. *)
-	       val frameOffsets = Vector.fromListRev (!frameOffsets)
+	       val frameLabels = Vector.fromListRev (!frameLabels)
 	       val frameLayouts = Vector.fromListRev (!frameLayouts)
-	       val frameSources = Vector.fromListRev (!frameSources)
+	       val frameOffsets = Vector.fromListRev (!frameOffsets)
 	    in
-	       (frameLayouts, frameOffsets, frameSources)
+	       (frameLabels, frameLayouts, frameOffsets)
 	    end
 	 fun getFrameLayoutsIndex {isC: bool,
 				   label: Label.t,
@@ -261,7 +247,6 @@ fun toMachine (program: Ssa.Program.t) =
 				   size: int}: int =
 	    let
 	       val foi = frameOffsetsIndex (IntSet.fromList offsets)
-	       val profileIndex = frameProfileIndex label
 	       fun new () =
 		  let
 		     val _ =
@@ -269,34 +254,34 @@ fun toMachine (program: Ssa.Program.t) =
 				   {frameOffsetsIndex = foi,
 				    isC = isC,
 				    size = size})
-		     val _ =
-			if profile
-			   then List.push (frameSources, profileIndex)
-			else ()
+		     val _ = List.push (frameLabels, label)
 		  in
 		     Counter.next frameLayoutsCounter
 		  end
 	    in
+	       (* We need to give each frame its own layout index in two cases.
+		* 1. If we are using the C codegen, in which case we want the
+		*    indices in a chunk to be consecutive integers so that gcc
+		*    will use a jump table.
+		* 2. If we are profiling, we want every frame to have a
+		*    different index so that it can have its own profiling info.
+		*    This will be created by the call to makeProfileInfo at the
+		*    end of the backend.
+		*)
 	       if not (!Control.Native.native)
-		  then
-		     (* Assign the entries of each chunk consecutive integers
-		      * so that gcc will use a jump table.
-		      *)
-		     new ()
+		  orelse !Control.profile <> Control.ProfileNone
+		  then new ()
 	       else
 	       #frameLayoutsIndex
 	       (HashSet.lookupOrInsert
 		(table, Word.fromInt foi,
-		 fn {frameOffsetsIndex = foi', isC = isC',
-		     profileIndex = pi', size = s', ...} =>
+		 fn {frameOffsetsIndex = foi', isC = isC', size = s', ...} =>
 		 foi = foi'
 		 andalso isC = isC'
-		 andalso profileIndex = pi'
 		 andalso size = s',
 		 fn () => {frameLayoutsIndex = new (),
 			   frameOffsetsIndex = foi,
 			   isC = isC,
-			   profileIndex = profileIndex,
 			   size = size}))
 	    end
       end
@@ -1061,7 +1046,7 @@ fun toMachine (program: Ssa.Program.t) =
        *)
       val _ = List.foreach (chunks, fn M.Chunk.T {blocks, ...} =>
 			    Vector.foreach (blocks, Label.clear o M.Block.label))
-      val (frameLayouts, frameOffsets, frameSources) = allFrameInfo ()
+      val (frameLabels, frameLayouts, frameOffsets) = allFrameInfo ()
       val maxFrameSize =
 	 List.fold
 	 (chunks, 0, fn (M.Chunk.T {blocks, ...}, max) =>
@@ -1099,12 +1084,7 @@ fun toMachine (program: Ssa.Program.t) =
 	      max
 	   end))
       val maxFrameSize = Runtime.wordAlignInt maxFrameSize
-      val profileInfo =
-	 ProfileInfo.T {frameSources = frameSources,
-			labels = profileLabels,
-			sourceSeqs = sourceSeqs,
-			sourceSuccessors = sourceSuccessors,
-			sources = sources}
+      val profileInfo = makeProfileInfo {frames = frameLabels}
    in
       Machine.Program.T 
       {chunks = chunks,

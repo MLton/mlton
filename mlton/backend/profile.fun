@@ -8,22 +8,22 @@ type sourceSeq = int list
 
 structure InfoNode =
    struct
-      datatype t = T of {index: int,
-			 info: SourceInfo.t,
+      datatype t = T of {info: SourceInfo.t,
+			 nameIndex: int,
+			 sourcesIndex: int,
 			 successors: t list ref}
 
       local
 	 fun make f (T r) = f r
       in
-	 val index = make #index
 	 val info = make #info
+	 val sourcesIndex = make #sourcesIndex
       end
 
-      fun layout (T {index, info, ...}) =
-	 Layout.record [("index", Int.layout index),
-			("info", SourceInfo.layout info)]
+      fun layout (T {info, ...}) =
+	 Layout.record [("info", SourceInfo.layout info)]
 
-      fun equals (n: t, n': t): bool = index n = index n'
+      fun equals (n: t, n': t): bool = SourceInfo.equals (info n, info n')
 
       fun call {from = T {info = i, successors, ...},
 		to as T {info = i', ...}} =
@@ -77,18 +77,14 @@ structure Push =
       fun toSources (ps: t list): int list =
 	 List.fold (rev ps, [], fn (p, ac) =>
 		    case p of
-		       Enter (InfoNode.T {index, ...}) => index :: ac
+		       Enter (InfoNode.T {sourcesIndex, ...}) =>
+			  sourcesIndex :: ac
 		     | Skip _ => ac)
    end
 
 fun profile program =
    if !Control.profile = Control.ProfileNone
-      then {frameProfileIndices = Vector.new0 (),
-	    labels = Vector.new0 (),
-	    program = program,
-	    sourceSeqs = Vector.new0 (),
-	    sourceSuccessors = Vector.new0 (),
-	    sources = Vector.new0 ()}
+      then (program, fn _ => NONE)
    else
    let
       val Program.T {functions, main, objectTypes} = program
@@ -97,28 +93,30 @@ fun profile program =
       val profileAlloc: bool = profile = Control.ProfileAlloc
       val profileStack: bool = !Control.profileStack
       val profileTime: bool = profile = Control.ProfileTime
-      val frameProfileIndices = ref []
+      val frameProfileIndices: (Label.t * int) list ref = ref []
       val infoNodes: InfoNode.t list ref = ref []
+      val nameCounter = Counter.new 0
+      val names: string list ref = ref []
       local
-	 val c = Counter.new 0
-	 fun new si =
+	 val sourceCounter = Counter.new 0
+	 val {get = nameIndex, ...} =
+	    Property.get (SourceInfo.plist,
+			  Property.initFun
+			  (fn si =>
+			   (List.push (names, SourceInfo.toString' (si, "\t"))
+			    ; Counter.next nameCounter)))
+      in	 
+	 fun sourceInfoNode (si: SourceInfo.t) =
 	    let
-	       val index = Counter.next c
-	       val infoNode = InfoNode.T {index = index,
-					  info = si,
-					  successors = ref []}
+	       val infoNode =
+		  InfoNode.T {info = si,
+			      nameIndex = nameIndex si,
+			      sourcesIndex = Counter.next sourceCounter,
+			      successors = ref []}
 	       val _ = List.push (infoNodes, infoNode)
 	    in
 	       infoNode
 	    end
-	 val {get = share, ...} =
-	    Property.get (SourceInfo.plist, Property.initFun new)
-	 val rc = Regexp.compileNFA (!Control.profileSplit)
-      in	 
-	 fun sourceInfoNode (si: SourceInfo.t) =
-	    if Regexp.Compiled.matchesAll (rc, SourceInfo.toString si)
-	       then new si
-	    else share si
       end
       fun firstEnter (ps: Push.t list): InfoNode.t option =
 	 List.peekMap (ps, fn p =>
@@ -173,9 +171,11 @@ fun profile program =
 	 fun makeSourceSeqs () = Vector.fromListRev (!sourceSeqs)
       end
       (* Ensure that [SourceInfo.unknown] is index 0. *)
-      val unknownSourceSeq = sourceSeqIndex [InfoNode.index unknownInfoNode]
+      val unknownSourceSeq =
+	 sourceSeqIndex [InfoNode.sourcesIndex unknownInfoNode]
       (* Ensure that [SourceInfo.gc] is index 1. *)
-      val gcSourceSeq = sourceSeqIndex [InfoNode.index gcInfoNode]
+      val gcSourceSeq =
+	 sourceSeqIndex [InfoNode.sourcesIndex gcInfoNode]
       fun addFrameProfileIndex (label: Label.t,
 				index: int): unit =
 	 List.push (frameProfileIndices, (label, index))
@@ -348,7 +348,7 @@ fun profile program =
 					    [] => Error.bug "missing Leave"
 					  | infoNode :: leaves =>
 					       (leaves,
-						InfoNode.index infoNode
+						InfoNode.sourcesIndex infoNode
 						:: sourceSeq))
 			    in
 			       (leaves, npl, sourceSeq, ss)
@@ -706,21 +706,39 @@ fun profile program =
 			       main = doFunction main,
 			       objectTypes = objectTypes}
       val _ = addFuncEdges ()
-      val infoNodes = Vector.fromListRev (!infoNodes)
-      val sources = Vector.map (infoNodes, InfoNode.info)
-      val sourceSuccessors =
-	 Vector.map (infoNodes, fn InfoNode.T {successors, ...} =>
-		     sourceSeqIndex (List.revMap (!successors, InfoNode.index)))
-      (* This must happen after makeSources, since that creates new sourceSeqs.
+      val names = Vector.fromListRev (!names)
+      val sources =
+	 Vector.map
+	 (Vector.fromListRev (!infoNodes),
+	  fn InfoNode.T {nameIndex, successors, ...} =>
+	  {nameIndex = nameIndex, 
+	   successorsIndex = (sourceSeqIndex
+			      (List.revMap (!successors,
+					    InfoNode.sourcesIndex)))})
+      (* makeSourceSeqs () must happen after making sources, since that creates
+       * new sourceSeqs.
        *)
       val sourceSeqs = makeSourceSeqs ()
+      fun makeProfileInfo {frames} =
+	 let
+	    val {get, set, ...} =
+	       Property.getSetOnce
+	       (Label.plist,
+		Property.initRaise ("frameProfileIndex", Label.layout))
+	    val _ =
+	       List.foreach (!frameProfileIndices, fn (l, i) =>
+			     set (l, i))
+	    val frameSources = Vector.map (frames, get)
+	 in
+	    SOME (Machine.ProfileInfo.T
+		  {frameSources = frameSources,
+		   labels = Vector.fromList (!labels),
+		   names = names,
+		   sourceSeqs = sourceSeqs,
+		   sources = sources})
+	 end
    in
-      {frameProfileIndices = Vector.fromList (!frameProfileIndices),
-       labels = Vector.fromList (!labels),
-       program = program,
-       sourceSeqs = sourceSeqs,
-       sourceSuccessors = sourceSuccessors,
-       sources = sources}
+      (program, makeProfileInfo)
    end
 
 end

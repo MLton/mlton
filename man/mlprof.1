@@ -1,14 +1,13 @@
-.TH mlprof 1 "March 12, 2003"
+.TH mlprof 1 "July 7, 2003"
 .SH NAME
-\fBmlprof\fP \- display profiling information from MLton-compiled executable
+\fBmlprof\fP \- display profiling information for a MLton-compiled executable
 .SH SYNOPSIS
 \fBmlprof \fI[option ...] a.out [mlmon.out ...]\fR
 .SH DESCRIPTION
 .PP
 \fBmlprof\fP extracts information from an executable compiled by
-\fBMLton\fP with \fB-profile alloc\fP or \fB-profile time\fP option
-and the resulting \fBmlmon.out\fP file produced by running the
-executable.
+\fBMLton\fP with \fB-profile alloc\fP or \fB-profile time\fP and the
+resulting \fBmlmon.out\fP file produced by running the executable.
 
 The output of \fBmlprof\fP consists of an initial line indicating the
 total amount of CPU time or bytes allocated.  After this, source
@@ -27,10 +26,6 @@ profiling information.
 
 .SH OPTIONS
 .TP
-\fB-graph \fI{\fBexp\fP}\fP
-Show nodes in the call graph specified by \fBexp\fP.  For details on
-the allowed expressions, see the \fBMLton User Guide\fP.
-.TP
 \fB-graph-title \fIstring\fP
 Set the call-graph title.
 .TP
@@ -38,12 +33,10 @@ Set the call-graph title.
 Gray call-graph nodes according to stack %.  This only makes sense if
 the executable was compiled \fB-profile-stack true\fP.
 .TP
-\fB-ignore \fIregexp\fP
-Ignore functions whose name matches \fBregexp\fP.  With \fB-show-line
-true\fP, the function name is followed by a space and the file
-position, so you may need to put \fB .*\fP at the end of the regexp.
-Multiple \fB-ignore\fPs are allowed, and will be or-ed together as
-regexps.
+\fB-keep \fI{\fBexp\fP}\fP
+Only show functions specified by \fBexp\fP.  For details on the
+allowed expressions, see the \fBMLton User Guide\fP.  Multiple
+\fB-keep\fP expressions are not allowed.
 .TP
 \fB-mlmon \fIfile\fP
 Process the list of whitespace-separated \fBmlmon.out\fP files found in the
@@ -56,8 +49,9 @@ Show the raw counts in addition to the percentages.
 Show the file and line for each function.
 .TP
 \fB-thresh \fIx\fP
-Only print information about functions whose percentage is above
-\fBx\fP, where 0 <= \fBx\fP <= 100.0.
+An abbreviation for \fB-keep '(thresh x)'\fP, which only print
+information about functions whose percentage is greater than or equal
+to \fBx\fP, where 0 <= \fBx\fP <= 100.0. 
 .TP
 \fB-tolerant \fI{\fBfalse\fP|\fBtrue\fP}\fP
 Print a warning about broken mlmon files, but do not exit.

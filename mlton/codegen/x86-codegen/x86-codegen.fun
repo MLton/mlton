@@ -100,6 +100,10 @@ struct
 	val makeS = outputS
 
 	val Machine.Program.T {profileInfo, ...} = program
+	val profileInfo =
+	   case profileInfo of
+	      NONE => Machine.ProfileInfo.empty
+	    | SOME pi => pi
 	val {newProfileLabel, delProfileLabel, getProfileInfo} = 
 	  Machine.ProfileInfo.modify profileInfo
 
@@ -130,7 +134,7 @@ struct
 		   main = main, 
 		   maxFrameSize = maxFrameSize, 
 		   objectTypes = objectTypes, 
-		   profileInfo = getProfileInfo (),
+		   profileInfo = SOME (getProfileInfo ()),
 		   reals = reals, 
 		   strings = strings} 
 	      end

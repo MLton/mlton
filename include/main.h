@@ -39,14 +39,15 @@
 	gcState.objectTypes = objectTypes;				\
 	gcState.objectTypesSize = cardof(objectTypes);			\
 	gcState.profileStack = ps;					\
+	gcState.saveGlobals = saveGlobals;				\
 	gcState.sourceLabels = sourceLabels;				\
 	gcState.sourceLabelsSize = cardof(sourceLabels);		\
-	gcState.saveGlobals = saveGlobals;				\
-	gcState.sources = sources;					\
-	gcState.sourcesSize = cardof(sources);				\
+	gcState.sourceNames = sourceNames;				\
+	gcState.sourceNamesSize = cardof(sourceNames);			\
 	gcState.sourceSeqs = sourceSeqs;				\
 	gcState.sourceSeqsSize = cardof(sourceSeqs);			\
-	gcState.sourceSuccessors = sourceSuccessors;			\
+	gcState.sources = sources;					\
+	gcState.sourcesSize = cardof(sources);				\
 	gcState.stringInits = stringInits;				\
 	gcState.stringInitsSize = cardof(stringInits);			\
 	MLton_init (argc, argv, &gcState);				\

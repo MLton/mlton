@@ -19,6 +19,8 @@ Pointer MLton_Profile_Data_malloc (void) {
 }
 
 void MLton_Profile_Data_write (Pointer p, Word fd) {
+	if (DEBUG_PROFILE)
+		fprintf (stderr, "MLton_Profile_Data_write (0x%08x)\n", (uint)p);
 	GC_profileWrite (&gcState, (GC_profile)p, (int)fd);
 }
 
@@ -29,7 +31,7 @@ Pointer MLton_Profile_current (void) {
 	s = &gcState;
 	res = (Pointer)s->profile;
 	if (DEBUG_PROFILE)
-		fprintf (stderr, "0x%0x8 = MLton_Profile_current ()\n", 
+		fprintf (stderr, "0x%08x = MLton_Profile_current ()\n", 
 				(uint)res);
 	return res;
 }

@@ -625,15 +625,21 @@ structure ProfileInfo =
 	 T of {frameSources: int vector,
 	       labels: {label: ProfileLabel.t,
 			sourceSeqsIndex: int} vector,
+	       names: string vector,
 	       sourceSeqs: int vector vector,
-	       sourceSuccessors: int vector,
-	       sources: SourceInfo.t vector}
+	       sources: {nameIndex: int,
+			 successorsIndex: int} vector}
+
+      val empty = T {frameSources = Vector.new0 (),
+		     labels = Vector.new0 (),
+		     names = Vector.new0 (),
+		     sourceSeqs = Vector.new0 (),
+		     sources = Vector.new0 ()}
 
       fun clear (T {labels, ...}) =
 	 Vector.foreach (labels, ProfileLabel.clear o #label)
 
-      fun layout (T {frameSources, labels, sourceSeqs, sourceSuccessors,
-		     sources}) =
+      fun layout (T {frameSources, labels, names, sourceSeqs, sources}) =
 	 Layout.record
 	 [("frameSources", Vector.layout Int.layout frameSources),
 	  ("labels",
@@ -643,44 +649,46 @@ structure ProfileInfo =
 			   ("sourceSeqsIndex",
 			    Int.layout sourceSeqsIndex)])
 	   labels),
+	  ("names", Vector.layout String.layout names),
 	  ("sourceSeqs", Vector.layout (Vector.layout Int.layout) sourceSeqs),
-	  ("sourceSuccessors", Vector.layout Int.layout sourceSuccessors),
-	  ("sources", Vector.layout SourceInfo.layout sources)]
+	  ("sources",
+	   Vector.layout (fn {nameIndex, successorsIndex} =>
+			  Layout.record [("nameIndex", Int.layout nameIndex),
+					 ("successorsIndex",
+					  Int.layout successorsIndex)])
+	   sources)]
 
       fun layouts (pi, output) = output (layout pi)
 
-      fun isOK (T {frameSources,
-		   labels,
-		   sourceSeqs,
-		   sourceSuccessors,
-		   sources}): bool =
+      fun isOK (T {frameSources, labels, names, sourceSeqs, sources}): bool =
 	 let
+	    val namesLength = Vector.length names
 	    val sourceSeqsLength = Vector.length sourceSeqs
 	    val sourcesLength = Vector.length sources
 	 in
 	    !Control.profile = Control.ProfileNone
 	    orelse
-	    (true
-	     andalso (Vector.forall
-		      (frameSources, fn i =>
-		       0 <= i andalso i < sourceSeqsLength))
+	    (Vector.forall (frameSources, fn i =>
+			    0 <= i andalso i < sourceSeqsLength)
 	     andalso (Vector.forall
 		      (labels, fn {sourceSeqsIndex = i, ...} =>
-		       0 <= i andalso i < sourceSeqsLength)))
+		       0 <= i andalso i < sourceSeqsLength))
 	     andalso (Vector.forall
 		      (sourceSeqs, fn v =>
 		       Vector.forall
 		       (v, fn i => 0 <= i andalso i < sourcesLength)))
-	     andalso (Vector.length sourceSuccessors = Vector.length sources)
 	     andalso (Vector.forall
-		      (sourceSuccessors, fn i =>
-		       0 <= i andalso i < sourceSeqsLength))
+		      (sources, fn {nameIndex, successorsIndex} =>
+		       0 <= nameIndex
+		       andalso nameIndex < namesLength
+		       andalso 0 <= successorsIndex
+		       andalso successorsIndex < sourceSeqsLength)))
 	 end
 
-       fun modify (T {frameSources, labels, sourceSeqs, sourceSuccessors, sources}) :
-	          {newProfileLabel: ProfileLabel.t -> ProfileLabel.t,
-		   delProfileLabel: ProfileLabel.t -> unit,
-		   getProfileInfo: unit -> t} =
+       fun modify (T {frameSources, labels, names, sourceSeqs, sources})
+	  : {newProfileLabel: ProfileLabel.t -> ProfileLabel.t,
+	     delProfileLabel: ProfileLabel.t -> unit,
+	     getProfileInfo: unit -> t} =
 	  let
 	     val {get: ProfileLabel.t -> int, set, ...} =
 	        Property.getSet
@@ -711,8 +719,8 @@ structure ProfileInfo =
 		   val pi = T {frameSources = frameSources,
 			       labels = Vector.concat
 			                [labels, Vector.fromList (!new)],
+			       names = names,
 			       sourceSeqs = sourceSeqs,
-			       sourceSuccessors = sourceSuccessors,
 			       sources = sources}
 		in
 		  Assert.assert ("newProfileInfo", fn () => isOK pi);
@@ -738,13 +746,13 @@ structure Program =
 				label: Label.t},
 			 maxFrameSize: int,
 			 objectTypes: ObjectType.t vector,
-			 profileInfo: ProfileInfo.t,
+			 profileInfo: ProfileInfo.t option,
 			 reals: (Global.t * RealX.t) list,
 			 strings: (Global.t * string) list}
 
       fun clear (T {chunks, profileInfo, ...}) =
 	 (List.foreach (chunks, Chunk.clear)
-	  ; ProfileInfo.clear profileInfo)
+	  ; Option.app (profileInfo, ProfileInfo.clear))
 
       fun frameSize (T {frameLayouts, ...},
 		     FrameInfo.T {frameLayoutsIndex, ...}) =
@@ -771,8 +779,9 @@ structure Program =
 					     ("isC", Bool.layout isC),
 					     ("size", Int.layout size)])
 		      frameLayouts)])
-	    ; output (str "\nProfileInfo:")
-	    ; ProfileInfo.layouts (profileInfo, output)
+	    ; Option.app (profileInfo, fn pi =>
+			  (output (str "\nProfileInfo:")
+			   ; ProfileInfo.layouts (pi, output)))
 	    ; output (str "\nObjectTypes:")
 	    ; Vector.foreachi (objectTypes, fn (i, ty) =>
 			       output (seq [str "pt_", Int.layout i,
@@ -822,11 +831,8 @@ structure Program =
 
       fun typeCheck (program as
 		     T {chunks, frameLayouts, frameOffsets, intInfs, main,
-			maxFrameSize, objectTypes,
-			profileInfo as ProfileInfo.T {frameSources,
-						      labels = profileLabels,
-						      ...},
-			reals, strings, ...}) =
+			maxFrameSize, objectTypes, profileInfo, reals, strings,
+			...}) =
 	 let
 	    val _ =
 	       if !Control.profile = Control.ProfileTime
@@ -846,26 +852,44 @@ structure Program =
 		       else print (concat ["missing profile info: ",
 					   Label.toString label, "\n"])))
 	       else ()
-	    val _ =
-	       Err.check
-	       ("frameSources length",
-		fn () => (Vector.length frameSources
-			  = (if !Control.profile <> Control.ProfileNone
-				then Vector.length frameLayouts
-			     else 0)),
-		fn () => ProfileInfo.layout profileInfo)
-	    val {get = profileLabelCount, ...} =
-	       Property.get
-	       (ProfileLabel.plist, Property.initFun (fn _ => ref 0))
-	    val _ =
-	       Vector.foreach (profileLabels, fn {label, ...} =>
+	    val profileLabelIsOk =
+	       case profileInfo of
+		  NONE =>
+		     if !Control.profile = Control.ProfileNone
+			then fn _ => false
+		     else Error.bug "profileInfo = NONE"
+		| SOME (pi as ProfileInfo.T {frameSources,
+					     labels = profileLabels, ...}) =>
+		     if !Control.profile = Control.ProfileNone
+			orelse (Vector.length frameSources
+				<> Vector.length frameLayouts)
+			then Error.bug "profileInfo = SOME"
+		     else
+			let
+			   val {get = profileLabelCount, ...} =
+			      Property.get
+			      (ProfileLabel.plist,
+			       Property.initFun (fn _ => ref 0))
+			   val _ =
+			      Vector.foreach
+			      (profileLabels, fn {label, ...} =>
 			       let
 				  val r = profileLabelCount label
 			       in
-				  case !r of
-				     0 => r := 1
-				   | _ => Error.bug "duplicate profile label"
+				  if 0 = !r
+				     then r := 1
+				  else Error.bug "duplicate profile label"
 			       end)
+			in
+			   fn l =>
+			   let
+			      val r = profileLabelCount l
+			   in
+			      if 1 = !r 
+				 then (r := 2; true)
+			      else false
+			   end
+			end
 	    fun getFrameInfo (FrameInfo.T {frameLayoutsIndex, ...}) =
 	       Vector.sub (frameLayouts, frameLayoutsIndex)
 	    fun boolToUnitOpt b = if b then SOME () else NONE
@@ -1219,15 +1243,9 @@ structure Program =
 				 end
 			end
 		   | ProfileLabel l =>
-			if !Control.profile = Control.ProfileTime
-			   then let
-				   val r = profileLabelCount l
-				in
-				   case !r of
-				      1 => (r := 2; SOME alloc)
-				    | _ => NONE
-				end
-			else SOME alloc
+			if profileLabelIsOk l
+			   then SOME alloc
+			else NONE
 	       end
 	    fun liveIsOk (live: Operand.t vector,
 			  a: Alloc.t): bool =

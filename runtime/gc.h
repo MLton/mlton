@@ -223,48 +223,54 @@ typedef enum {
 	PROFILE_TIME,
 } ProfileKind;
 
+typedef struct GC_source {
+	uint nameIndex;
+	uint successorsIndex;
+} *GC_source;
+
 typedef struct GC_sourceLabel {
 	pointer label;
 	uint sourceSeqsIndex;
 } *GC_profileLabel;
 
+/* If profileStack, then there is one struct GC_profileStackInfo for each
+ * function.
+ */
+typedef struct GC_profileStack {
+	/* ticks counts ticks while the function was on the stack. */
+	ullong ticks;
+	/* ticksInGC counts ticks in GC while the function was on the stack. */
+	ullong ticksInGC; 
+        /* lastTotal is the value of total when the oldest occurrence of f on the
+         * stack was pushed, i.e., the most recent time that numTimesOnStack
+         * changed from 0 to 1.  lastTotal is used to compute the amount to
+         * attribute to f when the oldest occurrence is finally popped.
+         */
+	ullong lastTotal;
+	/* lastTotalGC is like lastTotal, but for GC ticks. */
+	ullong lastTotalGC;
+	/* numOccurrences is the number of times this function is on the stack.
+         */
+	uint numOccurrences;
+} *GC_profileStack;
+
 /* GC_profile is used for both time and allocation profiling.
  * In the comments below, "ticks" mean clock ticks with time profiling and
  * bytes allocated with allocation profiling.
+ *
+ * All of the arrays in GC_profile are of length sourcesSize + sourceNamesSize.
+ * The first soruceSizes entries are for handling the duplicate copies of 
+ * functions, and the next sourceNamesSize entries are for the master versions.
  */
 typedef struct GC_profile {
-	/* countTop is an array of length sourcesSize that counts for each 
-	 * function the number of ticks that occurred while the function was on
-	 * top of the stack.
+	/* countTop is an array that counts for each function the number of ticks
+         * that occurred while the function was on top of the stack.
 	 */
 	ullong *countTop;
-	/* countStack is an array of length sourcesSize that counts for each
-	 * function the ticks while the function was anywhere on the stack 
-	 * (only once, no matter how many times on the stack).  countStack is 
+	/* stack is an array that gives stack info for each function.  It is
 	 * only used if profileStack.
-	 */
-	ullong *countStack;
-	/* countStackGC is an array of length sourcesSize that counts for each
-	 * function the ticks in GC while the function was anywhere on the stack
-	 * (only once, no matter how many times on the stack).  countStackGC is
-	 * only used if profileStack.
-	 */
-	ullong *countStackGC;
-	/* lastTotal is an array of length sourcesSize that for each function, 
-	 * f, stores the value of total when the oldest occurrence of f on the
-         * stack was pushed, i.e., the most recent time that stackCount[f] was 
-	 * changed from 0 to 1.  lastTotal is used to compute the amount to
-	 * attribute to f when the oldest occurrence is finally popped.
-	 * lastTotal is only used if profileStack.
-	 */
-	ullong *lastTotal;
-	/* lastTotalGC is like lastTotal, but for totalGC. */
-	ullong *lastTotalGC;
-	/* stackCount is an array of length sourcesSize that counts the number 
-	 * of times each function is on the stack.  It is only used if 
-	 * profileStack.
-	 */
- 	uint *stackCount;
+         */
+	struct GC_profileStack *stack;
 	/* The total number of mutator ticks. */
 	ullong total;
 	/* The total number of GC ticks. */
@@ -444,18 +450,19 @@ typedef struct GC_state {
 	struct GC_sourceLabel *sourceLabels;
 	uint sourceLabelsSize;
 	/* sources is an array of strings identifying source positions. */
-	string *sources;
-	uint sourcesSize;
+	string *sourceNames;
+	uint sourceNamesSize;
 	/* Each entry in sourceSeqs is a vector, whose first element is
          * a length, and subsequent elements index into sources.
 	 */
 	uint **sourceSeqs;
 	uint sourceSeqsSize;
-	/* sourceSuccessors is an array of length sourcesSize.  Each entry is an
-	 * index into sourceSeqs that specifies the call-stack successors to this
-	 * source.
+	/* sources is an array of length sourcesSize.  Each entry specifies 
+         * an index into sourceNames and an index into sourceSeqs, giving the
+	 * name of the function and the successors, respectively.
 	 */
-	uint *sourceSuccessors;
+	struct GC_source *sources;
+	uint sourcesSize;
 	pointer stackBottom; /* The bottom of the stack in the current thread. */
  	uint startTime; /* The time when GC_init or GC_loadWorld was called. */
 	struct GC_stringInit *stringInits;

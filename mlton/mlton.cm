@@ -321,9 +321,9 @@ backend/mtype.fun
 backend/c-function.fun
 backend/runtime.fun
 backend/err.sml
+backend/machine.sig
 backend/profile-label.fun
 backend/machine-atoms.fun
-backend/machine.sig
 backend/machine.fun
 ../lib/mlton/basic/unique-set.sig
 ../lib/mlton/basic/unique-set.fun

@@ -8,5 +8,5 @@ fun rev l =
       [] => []
     | x :: l => append (rev l, [x])
 
-val l = List.tabulate (100, fn i => i)
+val l = List.tabulate (1000, fn i => i)
 val _ = 1 + hd (rev l)

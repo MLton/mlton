@@ -9,7 +9,7 @@ counts (bytes or clock ticks) for each source function in the program.
 When the program finishes, it automatically writes the counts to an
 {\tt mlmon.out} file.  You can then run {\tt mlprof} on the executable
 and the {\tt mlmon.out} file to see the percentage of the total
-(allocation or time) spent in each functions.
+(allocation or time) spent in each function.
 
 Here is an example of time profiling, run from within the {\tt
 examples/profiling} directory.
@@ -17,41 +17,41 @@ examples/profiling} directory.
 % mlton -profile time tak.sml
 % ./tak
 % mlprof tak mlmon.out
-6.36 seconds of CPU time (0.0 seconds GC)
-function  cur 
--------- -----
-tak2     77.2%
-tak1     22.8%
-<gc>      0.0%
+6.00 seconds of CPU time (0.00 seconds GC)
+function     cur 
+------------- -----
+Tak.tak1.tak2 75.8%
+Tak.tak1      24.2%
 \end{verbatim}
 This is a contrived example with two mutually recursive copies of the
-{\tt tak} function.  The profiling shows us that roughly
-three-quarters of the time is spent in the {\tt tak2} function, while
-the rest is spent in {\tt tak1}.  There is a negligible amount of time
-spent in gc.
+{\tt tak} function, defined within the {\tt Tak} structure.  This
+examples shows how {\tt mlprof} indicates lexical nesting via a
+sequence of period-separated names indicating the structures and
+functions in which a function definition is nested.  The profiling
+data shows us that roughly three-quarters of the time is spent in the
+{\tt Tak.tak1.tak2} function, while the rest is spent in {\tt
+Tak.tak1}.
 
 You can display raw counts in addition to percentages with {\tt -raw
 true}.
 \begin{verbatim}
 % mlprof -raw true tak mlmon.out
-6.36 seconds of CPU time (0.0 seconds GC)
-function  cur    raw  
--------- ----- -------
-tak2     77.2% (4.91s)
-tak1     22.8% (1.45s)
-<gc>      0.0%  (0.0s)
+6.00 seconds of CPU time (0.00 seconds GC)
+  function     cur    raw  
+------------- ----- -------
+Tak.tak1.tak2 75.8% (4.55s)
+Tak.tak1      24.2% (1.45s)
 \end{verbatim}
 
 You can display the filename and line numbers for functions in addition
 to their names with {\tt -show-line true}.
 \begin{verbatim}
 % mlprof -show-line true tak mlmon.out
-6.36 seconds of CPU time (0.0 seconds GC)
-   function      cur 
---------------- -----
-tak2 tak.sml: 8 77.2%
-tak1 tak.sml: 1 22.8%
-<gc>             0.0%
+6.00 seconds of CPU time (0.00 seconds GC)
+        function           cur 
+------------------------- -----
+Tak.tak1.tak2  tak.sml: 5 75.8%
+Tak.tak1  tak.sml: 3      24.2%
 \end{verbatim}
 
 Allocation profiling is very similar to time profiling.  Here is an
@@ -60,41 +60,26 @@ example run from within the {\tt examples/profiling} directory.
 \begin{verbatim}
 % mlton -profile alloc list-rev.sml
 % ./list-rev
-% mlprof -show-line true -thresh 1 list-rev mlmon.out
-63,144 bytes allocated (4,632 bytes by GC)
+% mlprof -show-line true list-rev mlmon.out
+6,030,136 bytes allocated (108,336 bytes by GC)
        function          cur 
 ----------------------- -----
-append  list-rev.sml: 1 87.6%
-<gc>                     6.8%
-<main>                   3.8%
-rev  list-rev.sml: 6     1.8%
+append  list-rev.sml: 1 97.6%
+<gc>                     1.8%
+<main>                   0.4%
+rev  list-rev.sml: 6     0.2%
 \end{verbatim}
 
-The data shows that most of the allocation is done by the append
-function, defined on line 1 of {\tt list-rev.sml}.  The allocation by
+The data shows that most of the allocation is done by the {\tt append}
+function, defined on line 1 of {\tt list-rev.sml}.  The table also
+shows how special functions like {\tt gc} and {\tt main} are handled:
+they are printed with surrounding brackets.  C functions are displayed
+similarly.  Finally, as is usually the case, the allocation done by
 the garbage collector is due to it growing the stack.
-%Basis library
-%functions are displayed with the {\tt <basis>} prefix.
-The example
-also shows how to filter out functions below a certain percentage with
-{\tt -thresh}.
 
 Time profiling typically has a very small performance impact.
 However, the performance impact of allocation profiling is noticeable,
 because it inserts additional C calls for object allocation.
-
-To make it easier to identify a function, {\tt mlprof} shows lexical
-nesting via a sequence of period-separated names indicating the
-structures and functions in which the function definition is nested.
-In all of the above examples, the functions were defined at the top
-level and so had a single name.  As an example of nesting, {\tt g} in
-the following code would appear as {\tt S.f.g}.
-\begin{verbatim}
-structure S =
-   struct
-       fun f = ... fun g ...
-   end
-\end{verbatim}
 
 \subsection{Profiling the stack}
 
@@ -105,21 +90,20 @@ while a function is on the stack.  Here is an example.
 \begin{verbatim}
 % mlton -profile alloc -profile-stack true list-rev.sml
 % ./list-rev
-% mlprof -show-line true -thresh 1 list-rev mlmon.out
-63,144 bytes allocated (4,632 bytes by GC)
+% mlprof -show-line true list-rev mlmon.out
+6,030,136 bytes allocated (108,336 bytes by GC)
        function          cur  stack  GC 
 ----------------------- ----- ----- ----
-append  list-rev.sml: 1 87.6% 87.6% 3.1%
-<main>                   3.8% 93.2% 6.0%
-rev  list-rev.sml: 6     1.8% 87.7% 5.8%
+append  list-rev.sml: 1 97.6% 97.6% 1.4%
+<gc>                     1.8%  0.0% 1.8%
+<main>                   0.4% 98.2% 1.8%
+rev  list-rev.sml: 6     0.2% 97.6% 1.8%
 \end{verbatim}
 
 In the above table, we see that {\tt rev}, defined on line 6 of {\tt
-list-rev.sml}, is on the stack while 87.6\% of the allocation is done
-by the user program and while 3.1\% of the allocation is done by the
-garbage collector.  The above table also shows how special functions
-like {\tt main} are handled: they are printed with surrounding
-brackets.  C functions are displayed similarly.
+list-rev.sml}, is on the stack while 97.6\% of the allocation is done
+by the user program and while 1.8\% of the allocation is done by the
+garbage collector. 
 
 The performance impact of {\tt -profile-stack true} can be noticeable
 since there is some extra bookkeeping at every nontail call.
@@ -127,25 +111,30 @@ since there is some extra bookkeeping at every nontail call.
 \subsection{Call graphs}
 
 For easier visualization of profiling data, {\tt mlprof} creates a
-call graph of the program in dot format.  The graph nodes contain the
-function name (and source position with {\tt -show-line true}), as
-well as the percentage of ticks.  You can create a postscript graph
-from the dot file using the
+call graph of the program in dot format, from which you can create a
+postscript graph using the
 \htmladdnormallink{{\tt graphviz}}
 		  {http://www.research.att.com/sw/tools/graphviz/}
-software package.
+software package.  For example, {\tt mlprof foo mlmon.out} will create
+{\tt foo.dot} with a complete call graph.  For each source function,
+there will be one node in the graph that contains the function name
+(and source position with {\tt -show-line true}), as well as the
+percentage of ticks.  If you want to create a call graph for your
+program without any profiling data, you can simply call {\tt mlprof}
+without any {\tt mlmon.out} files, e.g. {\tt mlprof foo}.
 
 Because SML has higher-order functions, the call graph is is dependent
-on {\mlton}'s analysis of where functions can be called.  This
+on {\mlton}'s analysis of which functions call each other.  This
 analysis depends on many implementation details and might display
 spurious edges that a human could conclude are impossible.  However,
 in practice, the call graphs tend to be very accurate.
 
-Because call graphs can get big, you may want to control what nodes
-appear in the graph.  For this, you can use the {\tt -graph} option to
-specify the nodes that you would like to see.  The argument to {\tt
--graph} is an expression that describes a set of nodes, taken from the
-following grammar.
+Because call graphs can get big, {\tt mlprof} provides the {\tt -keep}
+option to specify the functions that you would like to see.  This
+option also controls which functions appear in the table that {\tt
+mlprof} prints.  The argument to {\tt -keep} is an expression
+describing a set of source functions (i.e. graph nodes), taken from
+the following grammar.
 
 \begin{latexonly}
 \begin{center}
@@ -184,68 +173,45 @@ following grammar.
 \end{center}
 \end{htmlonly}
 
-In the grammar, {\tt all} denotes the set of all nodes.  In {\tt "{\it
-s}"}, {\it s} is a regular expression denoting the set of nodes whose
-function name matches {\it s}.  The regexp must match the entire
-function name, including the source position if you use {\tt
--show-line true}.  So, with {\tt -show-line false}, you would use {\tt
-"foo"}, but with {\tt -show-line true}, you would use {\tt "foo .*"}.
+In the grammar, {\tt all} denotes the set of all nodes.  {\tt "{\it
+s}"} is a regular expression denoting the set of functions whose name
+has a prefix matchin the regexp.  The {\tt and}, {\tt not}, and {\tt
+or} expressions denote intersection, complement, and union,
+respectively.  The {\tt pred} and {\tt succ} expressions add the set
+of immediate predecessors or successors to their argument,
+respectively.  The {\tt from} and {\tt to} expressions denote the set
+of nodes that have paths from or to the set of nodes denoted by their
+arguments, respectively.  Finally, {\tt thresh}, {\tt thresh-gc}, and
+{\tt thresh-stack} denote the set of nodes whose percentage of ticks,
+gc ticks, or stack ticks, respectively, is greater than or equal to
+the real number {\it x}.
 
-The {\tt and}, {\tt not}, and {\tt or} expressions denote
-intersection, complement, and union, respectively.  The {\tt pred} and
-{\tt succ} expressions add the set of immediate predecessors or
-successors to their argument, respectively.  The {\tt from} and {\tt
-to} expressions denote the set of nodes that have paths from or to the
-set of nodes denoted by their arguments, respectively.  Finally, {\tt
-thresh}, {\tt thresh-gc}, and {\tt thresh-stack} denote the set of
-nodes whose percentage of ticks, gc ticks, or stack ticks,
-respectively, is greater than or equal to the real number {\it x}.
+For example, if you want to see the entire call graph for a program,
+you can use {\tt -keep all} (this is the default).  If you want to see
+all nodes reachable from function {\tt foo} in your program, you would
+use {\tt -keep '(from "foo")'}.  Or, if you want to see all the
+functions defined in subdirectory {\tt bar} of your project that used
+at least 1\% of the ticks, you would use {\tt -keep '(and ".*/bar/"
+(thresh 1.0))'}.  To see all functions with ticks above a threshold,
+you can also use {\tt -thresh x}, which is an abbreviation for {\tt
+-keep '(thresh x)'}.  You can not use multiple {\tt -keep} arguments
+or both {\tt -keep} and {\tt -thresh}.  When you use {\tt -keep} to
+display a subset of the functions, {\tt mlprof} will add dotted edges
+to the call graph to indicate a path in the original call graph from
+one function to another.
 
-For example, if you want to see the entire call-graph for a program,
-you can use {\tt -graph all}.  If you want to see all nodes reachable
-from function {\tt foo} in your program, you would use {\tt -graph
-'(from "foo")'}.  Or, if you want to see all the functions defined in
-subdirectory {\tt bar} of your project that used at least 1\% of the
-ticks, you would use {\tt -show-line true -graph '(and ".*/bar/.*"
-(thresh 1.0))'}.
-
-When compiling with {\tt -profile-stack false}, the default is {\tt
--graph '(to (thresh {\it x}))'} where {\it x} is the threshold.  When
-compiling with {\tt -profile-stack true}, the default is {\tt -graph
-'(thresh-stack {\it x})'} where {\it x} is the threshold.
+When compiling with {\tt -profile-stack true}, you can use {\tt mlprof
+-gray true} to make the nodes darker or lighter depending on whether
+their stack percentage is higher or lower.
 
 {\mlton}'s optimizer may duplicate source functions for any of a
 number of reasons (functor duplication, monomorphisation,
-polyvariance, inlining).  By default, duplicates arising from functor
-duplication are treated as different functions, while duplicates
-arising from other optimizations are treated as the same function.  If
-you would like all the copies of a function to be treated as
-different, you can use {\tt -profile-split}.
-
-Another {\tt mlprof} option to improve the readability of call graphs
-is {\tt -ignore}, which takes a regexp specifying functions to ignore
-when creating the call graph.  For example, suppose you define a
-library function like {\tt o} (compose), and then define {\tt fun f x
-= (g o h) x}.  Then the call graph would contain edges from {\tt f} to
-{\tt o}, from {\tt o} to {\tt g}, and from {\tt o} to {\tt h}.  You
-might prefer to see only edges from {\tt f} to {\tt g} and from {\tt
-f} to {\tt h}.  To do this, you can pass {\tt -ignore 'o'} to {\tt
-mlprof}, which will cause it to remove {\tt o} and connect its
-predecessors and successors in the call graph.  Note that this is
-different than using {\tt -graph (not "o")}, which would only remove
-the node from the graph, leaving it disconnected.  Also, as with {\tt
--graph}, the regexp must match the entire function name, including the
-source position if you use {\tt -show-line true}.  You will also
-likely want to use {\tt -profile-split} to treat all copies of compose
-as different functions.
-
-Technically speaking, the graph is a call-stack graph rather than a
-call graph because it describes the set of possible call stacks.  The
-difference is in how tail calls are displayed.  For example if {\tt f}
-nontail calls {\tt g} and {\tt g} tail calls {\tt h}, then the
-call-stack graph has edges from {\tt f} to {\tt g} and {\tt f} to {\tt
-h}, while the call-graph has edges from {\tt f} to {\tt g} and {\tt g}
-to {\tt h}.
+polyvariance, inlining).  By default, all duplicates of a function are
+treated as one.  If you would like to treat the duplicates separately,
+you can use {\tt mlprof -profile-split <regexp>}, which will cause all
+duplicates of functions whose name has a prefix matching the regular
+expression to be treated separately.  This can be especially useful
+for higher-order utility functions like {\tt General.o}.
 
 \subsection{Using {\tt MLton.Profile}}
 
@@ -266,29 +232,33 @@ directory, showing how to profile the executions of the {\tt fib} and
 % mlton -profile time fib-tak.sml
 % ./fib-tak
 % mlprof fib-tak mlmon.fib.out
-5.67 seconds of CPU time (0.0 seconds GC)
 function   cur 
 --------- -----
-fib       96.8%
-<unknown>  3.2%
-<gc>       0.0%
+fib       96.9%
+<unknown>  3.1%
 % mlprof fib-tak mlmon.tak.out
-0.72 seconds of CPU time (0.0 seconds GC)
+0.68 seconds of CPU time (0.00 seconds GC)
 function  cur  
 -------- ------
 tak      100.0%
-<gc>       0.0%
 % mlprof fib-tak mlmon.fib.out mlmon.tak.out mlmon.out
-6.39 seconds of CPU time (0.0 seconds GC)
+6.45 seconds of CPU time (0.00 seconds GC)
 function   cur 
 --------- -----
-fib       85.9%
-tak       11.3%
+fib       86.7%
+tak       10.5%
 <unknown>  2.8%
-<gc>       0.0%
 \end{verbatim}
 
 \subsection{Profiling details}
+
+Technically speaking, {\tt mlprof} produces a call-stack graph rather
+than a call graph, because it describes the set of possible call
+stacks.  The difference is in how tail calls are displayed.  For
+example if {\tt f} nontail calls {\tt g} and {\tt g} tail calls {\tt
+h}, then the call-stack graph has edges from {\tt f} to {\tt g} and
+{\tt f} to {\tt h}, while the call-keep has edges from {\tt f} to {\tt
+g} and {\tt g} to {\tt h}.
 
 Conceptually, both allocation and time profiling work in the same way.
 The compiler produces information that maps machine code positions to
@@ -319,9 +289,5 @@ seconds) in order to get reasonable time data.
 
 There may be a few missed clock ticks or bytes allocated at the
 very end of the program after the data is written.
-
-For both forms of profiling, if your program calls {\tt
-Posix.Process.exit}, you will bypass the code responsible for writing
-out the profiling data and thus get no {\tt mlmon.out} file.
 
 Profiling has not been tested with threads.

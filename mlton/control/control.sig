@@ -203,8 +203,6 @@ signature CONTROL =
       datatype profileIL = ProfileSSA | ProfileSource
       val profileIL: profileIL ref
 
-      val profileSplit: Regexp.t ref
-
       val profileStack: bool ref
 
       (* Array bounds checking. *)

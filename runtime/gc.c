@@ -3306,15 +3306,35 @@ void GC_foreachStackFrame (GC_state s, void (*f) (GC_state s, uint i)) {
 		fprintf (stderr, "done walking stack\n");
 }
 
-static inline void removeFromStack (GC_state s, GC_profile p, uint i) {
+static inline string sourceName (GC_state s, uint i) {
+	if (i < s->sourcesSize)
+		return s->sourceNames[s->sources[i].nameIndex];
+	else
+		return s->sourceNames[i - s->sourcesSize];
+}
+
+static inline GC_profileStack profileStackInfo (GC_state s, uint i) {
+	return &(s->profile->stack[i]);
+}
+
+static inline uint profileMaster (GC_state s, uint i) {
+	return s->sources[i].nameIndex + s->sourcesSize;
+}
+
+static inline void removeFromStack (GC_state s, uint i) {
+	GC_profile p;
+	GC_profileStack ps;
 	ullong totalInc;
 
-	totalInc = p->total - p->lastTotal[i];
+	p = s->profile;
+	ps = profileStackInfo (s, i);
+	totalInc = p->total - ps->lastTotal;
 	if (DEBUG_PROFILE)
-		fprintf (stderr, "removing %s from stack  totalInc = %llu\n",
-				s->sources[i], totalInc);
-	p->countStack[i] += totalInc;
-	p->countStackGC[i] += p->totalGC - p->lastTotalGC[i];
+		fprintf (stderr, "removing %s from stack  ticksInc = %llu  ticksInGCInc = %llu\n",
+				sourceName (s, i), totalInc,
+				p->totalGC - ps->lastTotalGC);
+	ps->ticks += totalInc;
+	ps->ticksInGC += p->totalGC - ps->lastTotalGC;
 }
 
 static void setProfTimer (long usec) {
@@ -3339,18 +3359,31 @@ void GC_profileDone (GC_state s) {
 		setProfTimer (0);
 	s->profilingIsOn = FALSE;
 	p = s->profile;
-	p->countTop[SOURCES_INDEX_GC] = p->totalGC;
 	if (s->profileStack) {
-		for (sourceIndex = 0; sourceIndex < s->sourcesSize;
+		for (sourceIndex = 0; 
+			sourceIndex < s->sourcesSize + s->sourceNamesSize;
 			++sourceIndex) {
-			if (p->stackCount[sourceIndex] > 0) {
+			if (p->stack[sourceIndex].numOccurrences > 0) {
 				if (DEBUG_PROFILE)
 					fprintf (stderr, "done leaving %s\n", 
-							s->sources[sourceIndex]);
-				removeFromStack (s, p, sourceIndex);
+							sourceName (s, sourceIndex));
+				removeFromStack (s, sourceIndex);
 			}
 		}
 	}
+}
+
+static inline void profileEnterSource (GC_state s, uint i) {
+	GC_profile p;
+	GC_profileStack ps;
+
+	p = s->profile;
+	ps = profileStackInfo (s, i);
+	if (0 == ps->numOccurrences) {
+		ps->lastTotal = p->total;
+		ps->lastTotalGC = p->totalGC;
+	}
+	ps->numOccurrences++;
 }
 
 static void profileEnter (GC_state s, uint sourceSeqIndex) {
@@ -3369,17 +3402,28 @@ static void profileEnter (GC_state s, uint sourceSeqIndex) {
 		sourceIndex = sourceSeq[i];
 		if (DEBUG_PROFILE)
 			fprintf (stderr, "entering %s\n", 
-					s->sources[sourceIndex]);
-		if (0 == p->stackCount[sourceIndex]) {
-			p->lastTotal[sourceIndex] = p->total;
-			p->lastTotalGC[sourceIndex] = p->totalGC;
-		}
-		p->stackCount[sourceIndex]++;
+					sourceName (s, sourceIndex));
+		profileEnterSource (s, sourceIndex);
+		profileEnterSource (s, profileMaster (s, sourceIndex));
 	}
 }
 
 static void enterFrame (GC_state s, uint i) {
 	profileEnter (s, s->frameSources[i]);
+}
+
+static inline void profileLeaveSource (GC_state s, uint i) {
+	GC_profile p;
+	GC_profileStack ps;
+
+	if (DEBUG_PROFILE)
+		fprintf (stderr, "profileLeaveSource (%u)\n", i);
+	p = s->profile;
+	ps = profileStackInfo (s, i);
+	assert (ps->numOccurrences > 0);
+	ps->numOccurrences--;
+	if (0 == ps->numOccurrences)
+		removeFromStack (s, i);
 }
 
 static void profileLeave (GC_state s, uint sourceSeqIndex) {
@@ -3398,11 +3442,9 @@ static void profileLeave (GC_state s, uint sourceSeqIndex) {
 		sourceIndex = sourceSeq[i];
 		if (DEBUG_PROFILE)
 			fprintf (stderr, "leaving %s\n",
-					s->sources[sourceIndex]);
-		assert (p->stackCount[sourceIndex] > 0);
-		p->stackCount[sourceIndex]--;
-		if (0 == p->stackCount[sourceIndex])
-			removeFromStack (s, p, sourceIndex);
+					sourceName (s, sourceIndex));
+		profileLeaveSource (s, sourceIndex);
+		profileLeaveSource (s, profileMaster (s, sourceIndex));
 	}
 }
 
@@ -3410,7 +3452,6 @@ static inline void profileInc (GC_state s, W32 amount, uint sourceSeqIndex) {
 	uint *sourceSeq;
 	uint topSourceIndex;
 
-	assert (not s->amInGC);
 	if (DEBUG_PROFILE)
 		fprintf (stderr, "profileInc (%u, %u)\n", 
 				(uint)amount, sourceSeqIndex);
@@ -3421,8 +3462,9 @@ static inline void profileInc (GC_state s, W32 amount, uint sourceSeqIndex) {
 		: SOURCES_INDEX_UNKNOWN;
 	if (DEBUG_PROFILE)
 		fprintf (stderr, "bumping %s by %u\n",
-				s->sources[topSourceIndex], (uint)amount);
+				sourceName (s, topSourceIndex), (uint)amount);
 	s->profile->countTop[topSourceIndex] += amount;
+	s->profile->countTop[profileMaster (s, topSourceIndex)] += amount;
 	if (s->profileStack)
 		profileEnter (s, sourceSeqIndex);
 	if (SOURCES_INDEX_GC == topSourceIndex)
@@ -3442,22 +3484,19 @@ void GC_profileLeave (GC_state s) {
 }
 
 void GC_profileInc (GC_state s, W32 amount) {
-	assert (not s->amInGC);
 	if (DEBUG_PROFILE)
 		fprintf (stderr, "GC_profileInc (%u)\n", (uint)amount);
-	profileInc (s, amount, topFrameSourceSeqIndex (s));
+	profileInc (s, amount, 
+			 s->amInGC
+				? SOURCE_SEQ_GC 
+				: topFrameSourceSeqIndex (s));
 }
 
 void GC_profileAllocInc (GC_state s, W32 amount) {
 	if (DEBUG_PROFILE)
 		fprintf (stderr, "GC_profileAllocInc (%u)\n", (uint)amount);
-	if (s->profilingIsOn and (PROFILE_ALLOC == s->profileKind)) {
-		if (s->amInGC) {
-			s->profile->totalGC += amount;
-			return;
-		}
+	if (s->profilingIsOn and (PROFILE_ALLOC == s->profileKind))
 		GC_profileInc (s, amount);
-	}
 }
 
 static void showProf (GC_state s) {
@@ -3465,52 +3504,57 @@ static void showProf (GC_state s) {
 	int j;
 
 	fprintf (stdout, "0x%08x\n", s->magic);
+	fprintf (stdout, "%u\n", s->sourceNamesSize);
+	for (i = 0; i < s->sourceNamesSize; ++i)
+		fprintf (stdout, "%s\n", s->sourceNames[i]);
 	fprintf (stdout, "%u\n", s->sourcesSize);
 	for (i = 0; i < s->sourcesSize; ++i)
-		fprintf (stdout, "%s\n", s->sources[i]);
-	for (i = 0; i < s->sourcesSize; ++i) {
+		fprintf (stdout, "%u %u\n", 
+				s->sources[i].nameIndex,
+				s->sources[i].successorsIndex);
+	fprintf (stdout, "%u\n", s->sourceSeqsSize);
+	for (i = 0; i < s->sourceSeqsSize; ++i) {
 		uint *sourceSeq;
 
-		sourceSeq = s->sourceSeqs[s->sourceSuccessors[i]];
+		sourceSeq = s->sourceSeqs[i];
 		for (j = 1; j <= sourceSeq[0]; ++j)
 			fprintf (stdout, "%u ", sourceSeq[j]);
 		fprintf (stdout, "\n");
 	}
 }
 
-void GC_profileFree (GC_state s, GC_profile p) {
-	free (p->countTop);
-	if (s->profileStack) {
-		free (p->countStack);
-		free (p->countStackGC);
-		free (p->lastTotal);
-		free (p->lastTotalGC);
-		free (p->stackCount);
-	}
-	free (p);
-}
-
 GC_profile GC_profileNew (GC_state s) {
 	GC_profile p;
+	uint size;
 
 	NEW (p);
 	p->total = 0;
 	p->totalGC = 0;
-	ARRAY (p->countTop, s->sourcesSize);
-	if (s->profileStack) {
-		ARRAY (p->countStack, s->sourcesSize);
-		ARRAY (p->countStackGC, s->sourcesSize);
-		ARRAY (p->lastTotal, s->sourcesSize);
-		ARRAY (p->lastTotalGC, s->sourcesSize);
-		ARRAY (p->stackCount, s->sourcesSize);
-	}
+	size = s->sourcesSize + s->sourceNamesSize;
+	ARRAY (p->countTop, size);
+	if (s->profileStack)
+		ARRAY (p->stack, size);
 	if (DEBUG_PROFILE)
 		fprintf (stderr, "0x%08x = GC_profileNew ()\n", (uint)p);
 	return p;
 }
 
+void GC_profileFree (GC_state s, GC_profile p) {
+	free (p->countTop);
+	if (s->profileStack)
+		free (p->stack);
+	free (p);
+}
+
 static void writeString (int fd, string s) {
 	swrite (fd, s, strlen(s));
+}
+
+static void writeUint (int fd, uint u) {
+	char buf[20];
+
+	sprintf (buf, "%u", u);
+	writeString (fd, buf);
 }
 
 static void writeUllong (int fd, ullong u) {
@@ -3531,6 +3575,20 @@ static inline void newline (int fd) {
 	writeString (fd, "\n");
 }
 
+static void profileWriteCount (GC_state s, GC_profile p, int fd, uint i) {
+	writeUllong (fd, p->countTop[i]);
+	if (s->profileStack) {
+		GC_profileStack ps;
+	
+		ps = &(p->stack[i]);
+		writeString (fd, " ");
+		writeUllong (fd, ps->ticks);
+		writeString (fd, " ");
+		writeUllong (fd, ps->ticksInGC);
+	}
+	newline (fd);
+}
+
 void GC_profileWrite (GC_state s, GC_profile p, int fd) {
 	int i;
 
@@ -3547,16 +3605,14 @@ void GC_profileWrite (GC_state s, GC_profile p, int fd) {
 	writeString (fd, " ");
 	writeUllong (fd, p->totalGC);
 	newline (fd);
-	for (i = 0; i < s->sourcesSize; ++i) {
-		writeUllong (fd, p->countTop[i]);
-		if (s->profileStack) {
-			writeString (fd, " ");
-			writeUllong (fd, p->countStack[i]);
-			writeString (fd, " ");
-			writeUllong (fd, p->countStackGC[i]);
-		}
-		newline (fd);
-	}
+	writeUint (fd, s->sourcesSize);
+	newline (fd);
+	for (i = 0; i < s->sourcesSize; ++i)
+		profileWriteCount (s, p, fd, i);
+	writeUint (fd, s->sourceNamesSize);
+	newline (fd);
+	for (i = 0; i < s->sourceNamesSize; ++i)
+		profileWriteCount (s, p, fd, i + s->sourcesSize);
 }
 
 #if (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
@@ -3588,20 +3644,20 @@ static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {
 #endif
 	if (DEBUG_PROFILE)
 		fprintf (stderr, "catcher  pc = 0x%08x\n", (uint)pc);
-	if (s->amInGC) {
-		s->profile->totalGC++;
-		return;
-	}
-	frameIndex = topFrameIndex (s);
-	if (s->frameLayouts[frameIndex].isC) {
-		sourceSeqIndex = s->frameSources[frameIndex];
-	} else {
-		if (s->textStart <= pc and pc < s->textEnd) {
-			sourceSeqIndex = s->textSources [pc - s->textStart];
-		} else {
-			if (DEBUG_PROFILE)
-				fprintf (stderr, "pc out of bounds\n");
-		       	sourceSeqIndex = SOURCE_SEQ_UNKNOWN;
+	if (s->amInGC)
+		sourceSeqIndex = SOURCE_SEQ_GC;
+	else {
+		frameIndex = topFrameIndex (s);
+		if (s->frameLayouts[frameIndex].isC)
+			sourceSeqIndex = s->frameSources[frameIndex];
+		else {
+			if (s->textStart <= pc and pc < s->textEnd)
+				sourceSeqIndex = s->textSources [pc - s->textStart];
+			else {
+				if (DEBUG_PROFILE)
+					fprintf (stderr, "pc out of bounds\n");
+		       		sourceSeqIndex = SOURCE_SEQ_UNKNOWN;
+			}
 		}
 	}
 	profileInc (s, 1, sourceSeqIndex);

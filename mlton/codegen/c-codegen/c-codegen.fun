@@ -360,33 +360,36 @@ fun outputDeclarations
 	 end
       fun declareProfileInfo () =
 	 let
-	    val ProfileInfo.T {frameSources, labels, sourceSeqs,
-			       sourceSuccessors, sources, ...} =
-	       profileInfo
+	    fun doit (ProfileInfo.T {frameSources, labels, names, sourceSeqs,
+				     sources}) =
+	       (Vector.foreach (labels, fn {label, ...} =>
+				declareProfileLabel (label, print))
+		; (Vector.foreachi
+		   (sourceSeqs, fn (i, v) =>
+		    (print (concat ["static int sourceSeq",
+				    Int.toString i,
+				    "[] = {"])
+		     ; print (C.int (Vector.length v))
+		     ; Vector.foreach (v, fn i =>
+				       (print (concat [",", C.int i])))
+		     ; print "};\n")))
+		; declareArray ("uint", "*sourceSeqs", sourceSeqs, fn (i, _) =>
+				concat ["sourceSeq", Int.toString i])
+		; declareArray ("uint", "frameSources", frameSources, C.int o #2)
+		; (declareArray
+		   ("struct GC_sourceLabel", "sourceLabels", labels,
+		    fn (_, {label, sourceSeqsIndex}) =>
+		    concat ["{(pointer)", ProfileLabel.toString label, ", ",
+			    C.int sourceSeqsIndex, "}"]))
+		; declareArray ("string", "sourceNames", names, C.string o #2)
+		; declareArray ("struct GC_source", "sources", sources,
+				fn (_, {nameIndex, successorsIndex}) =>
+				concat ["{ ", Int.toString nameIndex, ", ",
+					Int.toString successorsIndex, " }"]))
 	 in
-	    Vector.foreach (labels, fn {label, ...} =>
-			    declareProfileLabel (label, print))
-	    ; declareArray ("struct GC_sourceLabel", "sourceLabels", labels,
-			    fn (_, {label, sourceSeqsIndex}) =>
-			    concat ["{(pointer)", ProfileLabel.toString label,
-				    ", ", C.int sourceSeqsIndex, "}"])
-	    ; declareArray ("string", "sources", sources,
-			    fn (_, si) =>
-			    C.string (SourceInfo.toString' (si, "\t")))
-	    ; Vector.foreachi (sourceSeqs, fn (i, v) =>
-			       (print (concat ["static int sourceSeq",
-					       Int.toString i,
-					       "[] = {"])
-				; print (C.int (Vector.length v))
-				; Vector.foreach (v, fn i =>
-						  (print (concat [",", C.int i])))
-				; print "};\n"))
-				      
-	    ; declareArray ("uint", "*sourceSeqs", sourceSeqs, fn (i, _) =>
-			    concat ["sourceSeq", Int.toString i])
-	    ; declareArray ("uint", "frameSources", frameSources, C.int o #2)
-	    ; declareArray ("uint", "sourceSuccessors", sourceSuccessors,
-			    C.int o #2)
+	    case profileInfo of
+	       NONE => doit ProfileInfo.empty
+	     | SOME z => doit z
 	 end
    in
       outputIncludes (includes, print)

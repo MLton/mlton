@@ -16,12 +16,11 @@ val debug = false
 val sourcesIndexGC: int = 1
 
 val gray: bool ref = ref false
-val ignore: Regexp.t ref = ref Regexp.none
 val longName: bool ref = ref true
 val mlmonFiles: string list ref = ref []
 val raw = ref false
 val showLine = ref false
-val thresh: real ref = ref 0.0
+val splitReg: Regexp.t ref = ref Regexp.none
 val title: string option ref = ref NONE
 val tolerant: bool ref = ref false
 
@@ -33,6 +32,11 @@ structure Source =
        | Simple of string
 
       fun toString n =
+	 case n of
+	    NamePos {name, pos} => concat [name, "  ", pos]
+	  | Simple s => s
+
+      fun toStringMaybeLine n =
 	 case n of
 	    NamePos {name, pos} =>
 	       if !showLine
@@ -67,6 +71,10 @@ structure Source =
 	       else [(name, Dot.Center)]
 	  | Simple s =>
 	       [(s, Dot.Center)]
+
+      val isGC =
+	 fn Simple "<gc>" => true
+	  | _ => false
    end
 
 structure Graph = DirectedGraph
@@ -76,21 +84,32 @@ in
    structure Edge = Edge
    structure Node = Node
 end
+local
+   open Dot
+in
+   structure EdgeOption = EdgeOption
+   structure NodeOption = NodeOption
+end
 
 structure AFile =
    struct
       datatype t = T of {callGraph: unit Graph.t,
 			 magic: word,
+			 master: {isSplit: bool,
+				  source: Source.t} vector,
 			 name: string,
-			 sources: {node: unit Node.t,
-				   source: Source.t} option vector}
+			 split: {masterIndex: int,
+				 node: unit Node.t} vector}
 
-      fun layout (T {magic, name, sources, ...}) =
+      fun layout (T {magic, name, master, ...}) =
 	 Layout.record
 	 [("name", String.layout name),
 	  ("magic", Word.layout magic),
-	  ("sources",
-	   Vector.layout (Option.layout (Source.layout o #source)) sources)]
+	  ("master",
+	   Vector.layout (fn {isSplit, source} =>
+			  Layout.record [("isSplit", Bool.layout isSplit),
+					 ("source", Source.layout source)])
+	   master)]
 
       fun new {afile: File.t}: t =
 	 if not (File.doesExist afile)
@@ -104,73 +123,73 @@ structure AFile =
 	     let
 		fun line () = In.inputLine ins
 		val magic = valOf (Word.fromString (line ()))
-		val sourcesLength = valOf (Int.fromString (line ()))
+		fun vector (f: string -> 'a): 'a vector =
+		   Vector.tabulate (valOf (Int.fromString (line ())),
+				    fn _ => f (line ()))
+		val rc = Regexp.compileNFA (!splitReg)
+		val master =
+		   vector
+		   (fn s =>
+		    let
+		       val source = Source.fromString (String.dropSuffix (s, 1))
+		       val isSplit =
+			  Regexp.Compiled.matchesPrefix
+			  (rc, Source.toString source)
+		    in
+		       {isSplit = isSplit,
+			source = source}
+		    end)
 		val _ =
-		   if 0 = sourcesLength
-		      then Error.bug "doesn't appear to be compiled for profiling"
+		   if 0 = Vector.length master
+		      then
+			 Error.bug "doesn't appear to be compiled for profiling"
 		   else ()
-		val graph = Graph.new ()
-		val {get = nodeIndex, set = setNodeIndex, ...} =
-		   Property.getSetOnce
-		   (Node.plist, Property.initRaise ("index", Node.layout))
 		val sources =
-		   Vector.tabulate
-		   (sourcesLength, fn i =>
+		   vector
+		   (fn s =>
+		    case String.tokens (s, Char.isSpace) of
+		       [masterIndex, successorsIndex] =>
+			  {masterIndex = valOf (Int.fromString masterIndex),
+			   successorsIndex = valOf (Int.fromString
+						    successorsIndex)}
+		     | _ => Error.bug "AFile.new")
+		val sourceSeqs =
+		   vector
+		   (fn s =>
+		    Vector.fromListMap
+		    (String.tokens (s, Char.isSpace), fn s =>
+		     valOf (Int.fromString s)))
+		val graph = Graph.new ()
+		val split =
+		   Vector.mapi
+		   (sources, fn (i, {masterIndex, ...}) =>
 		    let
 		       val n = Graph.newNode graph
-		       val _ = setNodeIndex (n, i)
 		    in
-		       {node = n,
-			source = (Source.fromString
-				  (String.dropSuffix (line (), 1)))}
+		       {masterIndex = masterIndex,
+			node = n}
 		    end)
 		val _ =
-		   Int.for
-		   (0, sourcesLength, fn i =>
-		    let
-		       val from = #node (Vector.sub (sources, i))
-		    in
-		       List.foreach
-		       (String.tokens (line (), Char.isSpace), fn s =>
-			let
-			   val suc = valOf (Int.fromString s)
-			   val _ =
-			      Graph.addEdge
-			      (graph,
-			       {from = from,
-				to = #node (Vector.sub (sources, suc))})
-			in
-			   ()
-			end)
-		    end)
+		   Vector.foreach2
+		   (sources, split,
+		    fn ({successorsIndex, ...}, {node = from, ...}) =>
+		    Vector.foreach
+		    (Vector.sub (sourceSeqs, successorsIndex),
+		     fn to =>
+		     (Graph.addEdge
+		      (graph, {from = from,
+			       to = #node (Vector.sub (split, to))})
+		      ; ())))
 		val _ =
 		   case line () of
 		      "" => ()
 		    | _ => Error.bug "expected end of file"
-		val rc = Regexp.compileNFA (!ignore)
-		val {get = shouldIgnore: unit Node.t -> bool, ...} =
-		   Property.get
-		   (Node.plist,
-		    Property.initFun
-		    (fn n =>
-		     Regexp.Compiled.matchesAll
-		     (rc,
-		      Source.toString
-		      (#source (Vector.sub (sources, nodeIndex n))))))
-		val (graph, {newNode, ...}) =
-		   Graph.ignoreNodes (graph, shouldIgnore)
-		val (graph, {node = coerceNode, ...}) = Graph.coerce graph
-		val sources =
-		   Vector.map (sources, fn {node, source} =>
-			       if shouldIgnore node
-				  then NONE
-			       else SOME {node = coerceNode (newNode node),
-					  source = source})
 	     in
 		T {callGraph = graph,
 		   magic = magic,
+		   master = master,
 		   name = afile,
-		   sources = sources}
+		   split = split}
 	     end)
    end
 
@@ -209,36 +228,60 @@ structure Style =
 structure Counts =
    struct
       datatype t =
-	 Current of IntInf.t vector
+	 Current of {master: IntInf.t vector,
+		     split: IntInf.t vector}
        | Empty
-       | Stack of {current: IntInf.t,
-		   stack: IntInf.t,
-		   stackGC: IntInf.t} vector
+       | Stack of {master: {current: IntInf.t,
+			    stack: IntInf.t,
+			    stackGC: IntInf.t} vector,
+		   split: {current: IntInf.t,
+			   stack: IntInf.t,
+			   stackGC: IntInf.t} vector}
 
       val layout =
-	 fn Current v => Vector.layout IntInf.layout v
+	 fn Current {master, split} =>
+	      Layout.record [("master", Vector.layout IntInf.layout master),
+			     ("split", Vector.layout IntInf.layout split)]
 	  | Empty => Layout.str "empty"
-	  | Stack v =>
-	       Vector.layout
-	       (fn {current, stack, stackGC} =>
-		Layout.record [("current", IntInf.layout current),
-			       ("stack", IntInf.layout stack),
-			       ("stackGC", IntInf.layout stackGC)])
-	       v
+	  | Stack {master, split} =>
+	       let
+		  fun lay v =
+		     Vector.layout
+		     (fn {current, stack, stackGC} =>
+		      Layout.record [("current", IntInf.layout current),
+				     ("stack", IntInf.layout stack),
+				     ("stackGC", IntInf.layout stackGC)])
+		     v
+	       in
+		  Layout.record [("master", lay master),
+				 ("split", lay split)]
+	       end
 
       fun merge (c: t, c': t): t =
 	 case (c, c') of
-	    (Current v, Current v') =>
-	       Current (Vector.map2 (v, v', IntInf.+))
+	    (Current {master = m, split = s},
+	     Current {master = m', split = s'}) =>
+	       let
+		  fun merge (v, v') = Vector.map2 (v, v', IntInf.+)
+	       in
+		  Current {master = merge (m, m'),
+			   split = merge (s, s')}
+	       end
 	  | (Empty, _) => c'
 	  | (_, Empty) => c
-	  | (Stack v, Stack v') =>
-	       Stack (Vector.map2
-		      (v, v', fn ({current = c, stack = s, stackGC = g},
-				  {current = c', stack = s', stackGC = g'}) =>
-		       {current = IntInf.+ (c, c'),
-			stack = IntInf.+ (s, s'),
-			stackGC = IntInf.+ (g, g')}))
+	  | (Stack {master = m, split = s}, Stack {master = m', split = s'}) =>
+	       let
+		  fun merge (v, v') =
+		     Vector.map2
+		     (v, v', fn ({current = c, stack = s, stackGC = g},
+				 {current = c', stack = s', stackGC = g'}) =>
+		      {current = IntInf.+ (c, c'),
+		       stack = IntInf.+ (s, s'),
+		       stackGC = IntInf.+ (g, g')})
+	       in
+		  Stack {master = merge (m, m'),
+			 split = merge (s, s')}
+	       end
 	  | _ =>
 	       Error.bug
 	       "cannot merge -profile-stack false with -profile-stack true"
@@ -303,14 +346,16 @@ structure ProfFile =
 		case String.tokens (line (), Char.isSpace) of
 		   [total, totalGC] => (s2i total, s2i totalGC)
 		 | _ => Error.bug "invalid totals"
-	     fun getCounts (fromLine: string -> 'a): 'a vector =
+	     fun getCounts (f: string -> 'a): {master: 'a vector,
+					       split: 'a vector} =
 		let
-		   fun loop ac =
-		      case In.inputLine ins of
-			 "" => Vector.fromListRev ac
-		       | s => loop (fromLine s :: ac)
+		   fun vector () =
+		      Vector.tabulate (valOf (Int.fromString (line ())),
+				       fn _ => f (line ()))
+		   val split = vector ()
+		   val master = vector ()
 		in
-		   loop []
+		   {master = master, split = split}
 		end
 	     val counts =
 		case style of
@@ -337,8 +382,8 @@ structure ProfFile =
 	  end)
    
       fun merge (T {counts = c, kind = k, magic = m, total = t, totalGC = g},
-		 T {counts = c', kind = k', magic = m', total = t', totalGC = g',
-		    ...}): t =
+		 T {counts = c', kind = k', magic = m', total = t',
+		    totalGC = g'}): t =
 	 if m <> m'
 	    then Error.bug "wrong magic number"
 	 else
@@ -439,7 +484,11 @@ structure NodePred =
 					      [Sexp.Atom x] =>
 						 (case Real.fromString x of
 						     NONE => err ()
-						   | SOME x => Atomic (f x))
+						   | SOME x =>
+							if 0.0 <= x
+							   andalso x <= 100.0
+							   then Atomic (f x)
+							else err ())
 					    | _ => err ()
 					datatype z = datatype Atomic.t
 				     in
@@ -572,33 +621,75 @@ structure NodePred =
 	 end
    end
    
-val graphPred: NodePred.t option ref = ref NONE
+val keep: NodePred.t ref = ref NodePred.All
 
-fun display (AFile.T {callGraph, name = aname, sources, ...},
+val ticksPerSecond = 100.0
+
+fun display (AFile.T {callGraph, master, name = aname, split, ...},
 	     ProfFile.T {counts, kind, total, totalGC, ...}): unit =
    let
       val {get = nodeInfo: (unit Node.t
-			    -> {keep: bool ref,
-				mayKeep: (Atomic.t -> bool) ref,
-				options: Dot.NodeOption.t list ref}), ...} =
-	 Property.get (Node.plist,
-		       Property.initFun (fn _ => {keep = ref false,
-						  mayKeep = ref (fn _ => false),
-						  options = ref []}))
-      val graph = Graph.new ()
-      val ticksPerSecond = 100.0
-      val thresh = !thresh
+			    -> {index: int,
+				keep: bool ref,
+				mayKeep: (Atomic.t -> bool) ref}),
+	   set = setNodeInfo, ...} =
+	 Property.getSetOnce (Node.plist,
+			      Property.initRaise ("info", Node.layout))
+      val _ =
+	 Vector.foreachi (split, fn (i, {node, ...}) =>
+			  setNodeInfo (node,
+				       {index = i,
+					keep = ref false,
+					mayKeep = ref (fn _ => false)}))
+      val profileStack =
+	 case counts of
+	    Counts.Current _ => false
+	  | Counts.Empty => false
+	  | Counts.Stack _ => true
       val totalReal = Real.fromIntInf (IntInf.+ (total, totalGC))
-      fun per (ticks: IntInf.t): real * string list =
+      val per: IntInf.t -> real =
+	 if Real.equals (0.0, totalReal)
+	    then fn _ => 0.0
+	 else
+	    fn ticks => 100.0 * Real.fromIntInf ticks / totalReal
+      fun doit ({master = masterCount: 'a vector,
+		 split = splitCount: 'a vector},
+		f: 'a -> {current: IntInf.t,
+			  stack: IntInf.t,
+			  stackGC: IntInf.t}) =
 	 let
-	    val rticks = Real.fromIntInf ticks
-	    val per =
-	       if Real.equals (0.0, totalReal)
-		  then 0.0
-	       else 100.0 * rticks / totalReal
-	    val row =
-	       (concat [Real.format (per, Real.Format.fix (SOME 1)),
-			"%"])
+	    val _ =
+	       Vector.foreachi
+	       (split, fn (i, {masterIndex, node, ...}) =>
+		let
+		   val {mayKeep, ...} = nodeInfo node
+		   val {isSplit, source, ...} = Vector.sub (master, masterIndex)
+		   val name = Source.toString source
+		in
+		   mayKeep :=
+		   (fn a =>
+		    let
+		       fun thresh (x: real, sel) =
+			  let
+			     val (v, i) =
+				if isSplit
+				   then (splitCount, i)
+				else (masterCount, masterIndex)
+			  in
+			     per (sel (f (Vector.sub (v, i)))) >= x
+			  end
+		       datatype z = datatype Atomic.t
+		    in
+		       case a of
+			  Name (_, rc) =>
+			     Regexp.Compiled.matchesPrefix (rc, name)
+			| Thresh x => thresh (x, #current)
+			| ThreshGC x => thresh (x, #stackGC)
+			| ThreshStack x => thresh (x, #stack)
+		    end)
+		end)
+	    fun row (ticks: IntInf.t): string list =
+	       (concat [Real.format (per ticks, Real.Format.fix (SOME 1)), "%"])
 	       :: (if !raw
 		      then
 			 [concat
@@ -609,129 +700,199 @@ fun display (AFile.T {callGraph, name = aname, sources, ...},
 			    | Kind.Time =>
 				 ["(",
 				  Real.format
-				  (rticks / ticksPerSecond,
+				  (Real.fromIntInf ticks / ticksPerSecond,
 				   Real.Format.fix (SOME 2)),
 				  "s)"])]
 		   else [])
+	    fun info (source: Source.t, a: 'a) =
+	       let
+		  val {current, stack, stackGC} = f a
+		  val row =
+		     row current
+		     @ (if profileStack
+			   then row stack @ row stackGC
+			else [])
+		  val pc = per current
+		  val tableInfo = 
+		     if IntInf.> (current, IntInf.fromInt 0)
+			orelse IntInf.> (stack, IntInf.fromInt 0)
+			orelse IntInf.> (stackGC, IntInf.fromInt 0)
+			then SOME {per = pc,
+				   row = Source.toStringMaybeLine source :: row}
+		     else NONE
+		  val nodeOptions =
+		     [Dot.NodeOption.Shape Dot.Box,
+		      Dot.NodeOption.Label
+		      (Source.toDotLabel source
+		       @ (if IntInf.> (current, IntInf.zero)
+			     then [(concat (List.separate (row, " ")),
+				    Dot.Center)]
+			  else [])),
+		      Dot.NodeOption.Color
+		      (if !gray
+			  then DotColor.gray (100 - Real.round (per stack))
+		       else DotColor.Black)]
+	       in
+		  {nodeOptions = nodeOptions,
+		   tableInfo = tableInfo}
+	       end
+	    val masterOptions =
+	       Vector.map2
+	       (master, masterCount, fn ({source, ...}, a) =>
+		info (source, a))
+	    val splitOptions =
+	       Vector.map2
+	       (split, splitCount, fn ({masterIndex, ...}, a) =>
+		info (#source (Vector.sub (master, masterIndex)), a))
 	 in
-	    (per, row)
+	    (masterOptions, splitOptions)
 	 end
-      val profileStack =
+      val (masterInfo, splitInfo) =
 	 case counts of
-	    Counts.Current _ => false
-	  | Counts.Empty => false
-	  | Counts.Stack _ => true
-      fun doit (v, f) =
-	 Vector.mapi
-	 (v, fn (i, x) =>
-	  let
-	     val {per, perGC, perStack, row, sortPer} = f x
-	  in
-	     case Vector.sub (sources, i) of
-		NONE => NONE
-	      | SOME {node, source, ...} =>
-		   let
-		      val {mayKeep, options, ...} = nodeInfo node
-		      val _ =
-			 mayKeep :=
-			 (fn a =>
-			  let
-			     datatype z = datatype Atomic.t
-			  in
-			     case a of
-				Name (_, rc) =>
-				   Regexp.Compiled.matchesAll
-				   (rc, Source.toString source)
-			      | Thresh x => per >= x
-			      | ThreshGC x => perGC >= x
-			      | ThreshStack x => perStack >= x
-			  end)
-		      val _ = 
-			 options :=
-			 List.append
-			 ([Dot.NodeOption.Label
-			   (Source.toDotLabel source
-			    @ (if per > 0.0
-				  then [(concat (List.separate (row, " ")),
-					 Dot.Center)]
-			       else [])),
-			   Dot.NodeOption.Shape Dot.Box,
-			   if !gray
-			      then
-				 Dot.NodeOption.Color
-				 (DotColor.gray (100 - (Real.round perStack)))
-			   else Dot.NodeOption.Color DotColor.Black],
-			  !options)
-		      val showInTable =
-			 per > 0.0
-			 andalso (per >= thresh
-				  orelse (not profileStack
-					  andalso i = sourcesIndexGC))
-		   in
-		      if showInTable
-			 then SOME {sortPer = sortPer,
-				    row = Source.toString source :: row}
-		      else NONE
-		   end
-	  end)
-      val counts =
-	 case counts of
-	    Counts.Current v =>
-	       doit (v, fn z =>
-		     let
-			val (p, r) = per z
-		     in
-			{per = p, perGC = 0.0, perStack = 0.0,
-			 row = r, sortPer = p}
-		     end)
+	    Counts.Current ms =>
+	       doit (ms, fn z => {current = z,
+				  stack = IntInf.zero,
+				  stackGC = IntInf.zero})
 	  | Counts.Empty =>
-	       let
-		  val (p, r) = per IntInf.zero
-	       in
-		  doit (Vector.new (Vector.length sources, ()),
-			fn () => {per = p, perGC = 0.0, perStack = 0.0,
-				  row = r, sortPer = p})
-	       end
-	  | Counts.Stack v =>
-	       doit (v, fn {current, stack, stackGC} =>
-		     let
-			val (cp, cr) = per current
-			val (sp, sr) = per stack
-			val (gp, gr) = per stackGC
-		     in
-			{per = sp, perGC = gp, perStack = sp,
-			 row = List.concat [cr, sr, gr],
-			 sortPer = cp}
-		     end)
-      (* Display the subgraph specified by -graph. *)
-      val graphPred =
-	 case !graphPred of
-		 NONE =>
-	       let
-		  datatype z = datatype NodePred.t
-		  datatype z = datatype Atomic.t
-	       in
-		  if profileStack
-		     then Atomic (ThreshStack thresh)
-		  else PathTo (Atomic (Thresh thresh))
-	       end
-	  | SOME p => p
+	       doit ({master = Vector.new (Vector.length master, ()),
+		      split = Vector.new (Vector.length split, ())},
+		     fn () => {current = IntInf.zero,
+			       stack = IntInf.zero,
+			       stackGC = IntInf.zero})
+	  | Counts.Stack ms =>
+	       doit (ms, fn z => z)
+      val keep = !keep
       val keepNodes =
 	 NodePred.nodes
-	 (graphPred, callGraph, fn (n, a) => (! (#mayKeep (nodeInfo n))) a)
+	 (keep, callGraph, fn (n, a) => (! (#mayKeep (nodeInfo n))) a)
       val _ = Vector.foreach (keepNodes, fn n =>
 			      #keep (nodeInfo n) := true)
-      val (subgraph, {newNode, ...}) =
-	 Graph.subgraph (callGraph, ! o #keep o nodeInfo)
-      val {get = oldNode, set = setOldNode, ...} =
-	 Property.getSetOnce (Node.plist,
-			      Property.initRaise ("old node", Node.layout))
+      (* keep a master node if it is not split and some copy of it is kept. *)
+      val keepMaster = Array.new (Vector.length master, false)
       val _ =
-	 Graph.foreachNode
-	 (callGraph, fn n =>
-	  if !(#keep (nodeInfo n))
-	     then setOldNode (newNode n, n)
-	  else ())
+	 Vector.foreach
+	 (split, fn {masterIndex, node, ...} =>
+	  let
+	     val {keep, ...} = nodeInfo node
+	     val {isSplit, ...} = Vector.sub (master, masterIndex)
+	  in
+	     if !keep andalso not isSplit
+		then Array.update (keepMaster, masterIndex, true)
+	     else ()
+	  end)
+      datatype keep = T
+      val keepGraph: keep Graph.t = Graph.new ()
+      val {get = nodeOptions: keep Node.t -> NodeOption.t list,
+	   set = setNodeOptions, ...} =
+	 Property.getSetOnce (Node.plist,
+			      Property.initRaise ("options", Node.layout))
+      val tableInfos = ref []
+      fun newNode {nodeOptions: NodeOption.t list,
+		   tableInfo} =
+	 let
+	    val _ = Option.app (tableInfo, fn z => List.push (tableInfos, z))
+	    val n = Graph.newNode keepGraph
+	    val _ = setNodeOptions (n, nodeOptions)
+	 in
+	    n
+	 end
+      val masterNodes =
+	 Vector.tabulate
+	 (Vector.length master, fn i =>
+	  if Array.sub (keepMaster, i)
+	     then SOME (newNode (Vector.sub (masterInfo, i)))
+	  else NONE)
+      val splitNodes =
+	 Vector.mapi
+	 (split, fn (i, {masterIndex, node, ...}) =>
+	  let
+	     val {keep, ...} = nodeInfo node
+	     val {isSplit, ...} = Vector.sub (master, masterIndex)
+	  in
+	     if isSplit
+		then
+		   if !keep
+		      then SOME (newNode (Vector.sub (splitInfo, i)))
+		   else NONE
+	     else Vector.sub (masterNodes, masterIndex)
+	  end)
+      val _ =
+	 Graph.foreachEdge
+	 (callGraph, fn (from, e) =>
+	  let
+	     val to = Edge.to e
+	     fun f n = Vector.sub (splitNodes, #index (nodeInfo n))
+	  in
+	     case (f from, f to) of
+		(SOME from, SOME to) =>
+		   (Graph.addEdge (keepGraph, {from = from, to = to})
+		    ; ())
+	      | _ => ()
+	  end)
+      val _ = Graph.removeDuplicateEdges keepGraph
+      val {get = edgeOptions: keep Edge.t -> EdgeOption.t list ref, ...} =
+	 Property.get (Edge.plist, Property.initFun (fn _ => ref []))
+      (* Add a dashed edge from A to B if there is path from A to B of length
+       * >= 2 going through only ignored nodes.
+       *)
+      fun newNode (n: unit Node.t): keep Node.t option =
+	 Vector.sub (splitNodes, #index (nodeInfo n))
+      fun reach (root: unit Node.t, f: keep Node.t -> unit): unit =
+	 let
+	    val {get = isKept: keep Node.t -> bool ref, ...} =
+	       Property.get (Node.plist, Property.initFun (fn _ => ref false))
+	    val {get = isSeen: unit Node.t -> bool ref, ...} =
+	       Property.get (Node.plist, Property.initFun (fn _ => ref false))
+	    fun loop n =
+	       List.foreach
+	       (Node.successors n, fn e =>
+		let
+		   val n = Edge.to e
+		   val s = isSeen n
+		in
+		   if !s
+		      then ()
+		   else
+		      let
+			 val _ = s := true
+		      in
+			 case newNode n of
+			    NONE => loop n
+			  | SOME keepN => 
+			       let
+				  val r = isKept keepN
+			       in
+				  if !r
+				     then ()
+				  else (r := true; f keepN)
+			       end
+		      end
+		end)
+	    val _ =
+	       List.foreach (Node.successors root, fn e =>
+			     let
+				val n = Edge.to e
+			     in
+				if Option.isNone (newNode n)
+				   then loop n
+				else ()
+			     end)
+	 in
+	    ()
+	 end
+      val _ =
+	 Vector.foreach2
+	 (split, splitNodes, fn ({node = from, ...}, z) =>
+	  Option.app
+	  (z, fn from' =>
+	   (reach (from, fn to =>
+		   let
+		      val e = Graph.addEdge (keepGraph, {from = from', to = to})
+		      val _ = List.push (edgeOptions e,
+					 EdgeOption.Style Dot.Dotted)
+		   in
+		      ()
+		   end))))
       val title =
 	 case !title of
 	    NONE => concat [aname, " call-stack graph"]
@@ -740,18 +901,16 @@ fun display (AFile.T {callGraph, name = aname, sources, ...},
 	 File.withOut
 	 (concat [aname, ".dot"], fn out =>
 	  Layout.output
-	  (Graph.layoutDot (subgraph,
-			    fn _ => {edgeOptions = fn _ => [],
-				     nodeOptions =
-				     fn n => ! (#options (nodeInfo (oldNode n))),
+	  (Graph.layoutDot (keepGraph,
+			    fn _ => {edgeOptions = ! o edgeOptions,
+				     nodeOptions = nodeOptions,
 				     options = [],
 				     title = title}),
 	   out))
       (* Display the table. *)
       val tableRows =
 	 QuickSort.sortVector
-	 (Vector.keepAllMap (counts, fn z => z),
-	  fn (z, z') => #sortPer z >= #sortPer z')
+	 (Vector.fromList (!tableInfos), fn (z, z') => #per z >= #per z')
       val _ = 
 	 print
 	 (concat
@@ -802,20 +961,15 @@ fun makeOptions {usage} =
       open Popt
    in
       List.map
-      ([(Normal, "graph", " <pred>", "show graph nodes",
-	 SpaceString (fn s =>
-		      graphPred := SOME (NodePred.fromString s)
-		      handle e => usage (concat ["invalid -graph arg: ",
-						 Exn.toString e]))),
-	(Normal, "graph-title", " <string>", "set call-graph title",
+      ([(Normal, "graph-title", " <string>", "set call-graph title",
 	 SpaceString (fn s => title := SOME s)),
 	(Normal, "gray", " {false|true}", "gray nodes according to stack %",
 	 boolRef gray),
-	(Normal, "ignore", " <regexp>", "ignore matching functions",
+	(Normal, "keep", " <pred>", "which functions to display",
 	 SpaceString (fn s =>
-		      case Regexp.fromString s of
-			 NONE => usage (concat ["invalid -ignore regexp: ", s])
-		       | SOME (r, _) => ignore := Regexp.or [r, !ignore])),
+		      keep := NodePred.fromString s
+		      handle e => usage (concat ["invalid -keep arg: ",
+						 Exn.toString e]))),
 	(Expert, "long-name", " {true|false}",
 	 " show long names of functions",
 	 boolRef longName),
@@ -828,10 +982,15 @@ fun makeOptions {usage} =
 	 boolRef raw),
 	(Normal, "show-line", " {false|true}", "show line numbers",
 	 boolRef showLine),
-	(Normal, "thresh", " {0|1|...|100}", "only show counts above threshold",
+	(Normal, "split", " <regexp>", "split matching functions",
+	 SpaceString (fn s =>
+		      case Regexp.fromString s of
+			 NONE => usage (concat ["invalid -split regexp: ", s])
+		       | SOME (r, _) => splitReg := Regexp.or [r, !splitReg])),
+	(Normal, "thresh", " [0.0,100.0]", "-keep (thresh x)",
 	 Real (fn x => if x < 0.0 orelse x > 100.0
 			 then usage "invalid -thresh"
-		      else thresh := x)),
+		      else keep := NodePred.Atomic (Atomic.Thresh x))),
 	(Normal, "tolerant", " {false|true}", "ignore broken mlmon files",
 	 boolRef tolerant)],
        fn (style, name, arg, desc, opt) =>

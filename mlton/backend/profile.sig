@@ -3,7 +3,9 @@ type word = Word.t
    
 signature PROFILE_STRUCTS = 
    sig
+      structure Machine: MACHINE
       structure Rssa: RSSA
+      sharing Machine.ProfileLabel = Rssa.ProfileLabel
    end
 
 signature PROFILE = 
@@ -11,11 +13,7 @@ signature PROFILE =
       include PROFILE_STRUCTS
       
       val profile:
-	 Rssa.Program.t -> {frameProfileIndices: (Rssa.Label.t * int) vector,
-			    labels: {label: Rssa.ProfileLabel.t,
-				     sourceSeqsIndex: int} vector,
-			    program: Rssa.Program.t,
-			    sourceSeqs: int vector vector,
-			    sourceSuccessors: int vector,
-			    sources: Rssa.SourceInfo.t vector}
+	 Rssa.Program.t
+	 -> Rssa.Program.t * ({frames: Rssa.Label.t vector}
+			      -> Machine.ProfileInfo.t option)
    end

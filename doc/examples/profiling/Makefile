@@ -15,7 +15,7 @@ clean:
 profile-alloc:
 	$(mlton) -profile alloc $(ALLOC_EX).sml
 	./$(ALLOC_EX)
-	$(mlprof) -show-line true -thresh 1 $(ALLOC_EX) mlmon.out
+	$(mlprof) -show-line true $(ALLOC_EX) mlmon.out
 
 .PHONE: profile-multiple
 profile-multiple:
@@ -29,7 +29,7 @@ profile-multiple:
 profile-stack:
 	$(mlton) -profile alloc -profile-stack true $(ALLOC_EX).sml
 	./$(ALLOC_EX)
-	$(mlprof) -show-line true -thresh 1 $(ALLOC_EX) mlmon.out
+	$(mlprof) -show-line true $(ALLOC_EX) mlmon.out
 	dot $(ALLOC_EX).dot >$(ALLOC_EX).ps
 
 .PHONY: profile-time
