@@ -1,0 +1,1 @@
+datatype t = A | A

@@ -877,9 +877,33 @@ repl : tyvars tycon EQUALOP DATATYPE longtycon
 	; DatatypeRhs.Repl {lhs = tycon, rhs = longtycon})
 
 datBind : dbs withtypes
-            (DatBind.makeRegion' (DatBind.T {datatypes = Vector.fromList dbs,
-					     withtypes = withtypes},
-				  dbsleft, withtypesright))
+          (let
+	      val datatypes = Vector.fromList dbs
+	      val _ =
+		 reportDuplicates
+		 (Vector.concatV (Vector.map (datatypes, #cons)),
+		  "constructor",
+		  fn ((c, _), (c', _)) => Con.equals (c, c'),
+		  Con.layout o #1,
+		  Con.region o #1)
+	      val _ =
+		 reportDuplicates
+		 (Vector.concat [Vector.map (datatypes, #tycon),
+				 let
+				    val TypBind.T v = TypBind.node withtypes
+				 in
+				    Vector.map (v, #tycon)
+				 end],
+		  "type definition",
+		  Ast.Tycon.equals,
+		  Ast.Tycon.layout,
+		  Ast.Tycon.region)
+	   in
+	      DatBind.makeRegion' (DatBind.T {datatypes = datatypes,
+					      withtypes = withtypes},
+				   dbsleft,
+				   withtypesright)
+	   end)
 
 datBindNoWithtype
         : dbs  (DatBind.makeRegion' (DatBind.T {datatypes = Vector.fromList dbs,
