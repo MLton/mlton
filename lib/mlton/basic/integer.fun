@@ -53,10 +53,17 @@ val isOdd = not o isEven
 fun toCommaString n =
    let
       fun loop (chars, accum) =
-	 case chars of
-	    x1 :: x2 :: x3 :: (chars as _ :: _) =>
-	       loop (chars, #"," :: x3 :: x2 :: x1 :: accum)
-	  | _ => implode (rev chars @ accum)
+	 let
+	    fun done () = implode (rev chars @ accum)
+	 in
+	    case chars of
+	       x1 :: x2 :: x3 :: chars =>
+		  (case chars of
+		      [] => done ()
+		    | [#"~"] => done ()
+		    | _ => loop (chars, #"," :: x3 :: x2 :: x1 :: accum))
+	     | _ => done ()
+	 end
    in loop (rev (explode (toString n)), [])
    end
 
