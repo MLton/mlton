@@ -1,12 +1,3 @@
-(* scan is from ML Kit Version 3 basislib/real.sml *)
-
-(* Some of this code was taken from SML/NJ real64.sml *)
-(* real64.sml
- *
- * COPYRIGHT (c) 1995 AT&T Bell Laboratories.
- *
- *)
-
 structure Real64: REAL =
    struct
       structure Prim = Primitive.Real
@@ -97,25 +88,33 @@ structure Real64: REAL =
       fun max (x, y) = if x > y orelse isNan y then x else y
 
       fun sign (x: real): int =
-	 if isNan x then raise Domain
-	 else if x > 0.0 then 1
-	      else if x < 0.0 then ~1
-		   else 0
+	 if x > 0.0 then 1
+         else if x < 0.0 then ~1
+	 else if isNan x then raise Domain
+         else 0
 
       fun sameSign (x, y) = Prim.signBit x = Prim.signBit y
 
-      fun compare (x, y) =
-	 if x < y then General.LESS
-	 else if x > y then General.GREATER
-         else if x == y then General.EQUAL 
-         else raise IEEEReal.Unordered
+      local
+	 datatype z = datatype General.order
+      in
+	 fun compare (x, y) =
+	    if x < y then LESS
+	    else if x > y then GREATER
+            else if x == y then EQUAL
+            else raise IEEEReal.Unordered
+      end
 
-      fun compareReal (x, y) = 
-	 if x < y then IEEEReal.LESS
-	 else if x > y then IEEEReal.GREATER
-	      else if x == y then IEEEReal.EQUAL 
-		   else IEEEReal.UNORDERED
-
+      local
+	 datatype z = datatype IEEEReal.real_order
+      in
+	 fun compareReal (x, y) = 
+	    if x < y then LESS
+	    else if x > y then GREATER
+            else if x == y then EQUAL 
+            else UNORDERED
+      end
+   
       fun unordered (x, y) = isNan x orelse isNan y
 
       (* See runtime/basis/Real.c for the integers returned by class. *)
@@ -159,12 +158,11 @@ structure Real64: REAL =
 
       val realMod = #frac o split
 	 
-      fun rem (x, y) = y * #frac (split (x/y))
-	 
       fun checkFloat x =
-	 if x > negInf andalso x < posInf then x
-	 else if isNan x then raise Div
-	      else raise Overflow
+	 case class x of
+	    INF => raise Overflow
+	  | NAN => raise Div
+	  | _ => x
 
       fun withRoundingMode (m, th) =
 	 let
@@ -236,6 +234,18 @@ structure Real64: REAL =
 	 val realCeil = round TO_POSINF
 	 val realTrunc = round TO_ZERO
       end
+
+      fun rem (x, y) =
+	 case class x of
+	    INF => nan
+	  | NAN => nan
+	  | ZERO => 0.0
+	  | _ =>
+	       case class y of
+		  INF => x
+		| NAN => nan
+		| ZERO => nan
+		| _ => x - realTrunc (x/y) * y
 
       (* fromDecimal, scan, fromString: decimal -> binary conversions *)
       exception Bad
