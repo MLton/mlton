@@ -16,15 +16,15 @@ set -e
 # You also might want to change the installation prefix.
 
 binutils='binutils-2.11.2'
-cygwin='cygwin-1.3.9-1'
+cygwin='cygwin-1.3.18-1'
 gccVers='3.0.3'
 gcc="gcc-$gccVers"
 gccTar="gcc-core-$gccVers.tar"
-w32api='w32api-1.2-1'
+w32api='w32api-2.1-1'
 
 root=`pwd`
 target='i386-pc-cygwin'
-prefix='/usr/local'
+prefix='/usr'
 
 name=`basename $0`
 
