@@ -5,31 +5,35 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-structure Time: TIME =
+structure Time: TIME_EXTRA =
 struct
 
 structure Prim = Primitive.Time
 
 (* A time is represented as a number of nanoseconds. *)
 val precision: int = 9
-val ticksPerSec: LargeInt.int = 1000000000
+val ticksPerSecond: LargeInt.int = 1000000000
    
-datatype time = T of LargeInt.int 
+datatype time = T of LargeInt.int
+
+val fromTicks = T
+
+fun toTicks (T t) = t
 
 exception Time
 
 val zeroTime = T 0
 
 fun fromReal r =
-   T (Real.toLargeInt IEEEReal.TO_NEAREST (r * Real.fromLargeInt ticksPerSec))
+   T (Real.toLargeInt IEEEReal.TO_NEAREST (r * Real.fromLargeInt ticksPerSecond))
 
 fun toReal (T i) =
-   Real.fromLargeInt i / Real.fromLargeInt ticksPerSec
+   Real.fromLargeInt i / Real.fromLargeInt ticksPerSecond
 
 local
    fun make ticksPer =
       let
-	 val d = LargeInt.quot (ticksPerSec, ticksPer)
+	 val d = LargeInt.quot (ticksPerSecond, ticksPer)
       in
 	 (fn i => T (LargeInt.* (i, d)),
 	  fn T i => LargeInt.quot (i, d))
@@ -59,7 +63,8 @@ end
 local
    fun getNow (): time =
       (Prim.gettimeofday ()
-       ; T (LargeInt.+ (LargeInt.* (LargeInt.fromInt (Prim.sec ()), ticksPerSec),
+       ; T (LargeInt.+ (LargeInt.* (LargeInt.fromInt (Prim.sec ()),
+				    ticksPerSecond),
 			LargeInt.fromInt (Prim.usec ()))))
    val prev = ref (getNow ())
 in
@@ -90,7 +95,7 @@ fun scan getc src =
 	    val sec = intv
 	    val usec = (pow10 (10-decs) * fracv + 5) div 10
 	    val t =
-	       LargeInt.+ (LargeInt.* (Int.toLarge intv, ticksPerSec),
+	       LargeInt.+ (LargeInt.* (Int.toLarge intv, ticksPerSecond),
 			   Int.toLarge usec)
 	    val t = if sign then t else LargeInt.~ t
 	 in

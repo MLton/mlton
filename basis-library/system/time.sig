@@ -27,3 +27,12 @@ signature TIME =
       val toString: time -> string 
       val zeroTime: time 
    end
+
+signature TIME_EXTRA =
+   sig
+      include TIME
+
+      val fromTicks: LargeInt.int -> time
+      val ticksPerSecond: LargeInt.int
+      val toTicks: time -> LargeInt.int
+   end
