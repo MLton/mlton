@@ -104,7 +104,7 @@ structure VarTree =
 	 fn (t, ac) =>
 	 List.appendRev (foldRoots (t, [], op ::), ac)
 
-      val dropRoot: t -> t =
+      val rec dropVars: t -> t =
 	 fn T (info, ts) =>
 	 let
 	    val info =
@@ -112,7 +112,7 @@ structure VarTree =
 		  Flat => Flat
 		| NotFlat {ty, ...} => NotFlat {ty = ty, var = NONE}
 	 in
-	    T (info, ts)
+	    T (info, Prod.map (ts, dropVars))
 	 end
 	 
       fun fillInRoots (t: t, {object: Var.t, offset: int})
@@ -232,13 +232,17 @@ and flattensAt {froms: VarTree.t Prod.t,
 	 (Prod.dest froms, Prod.dest tos, ({offset = offset}, []),
 	  fn ({elt = f, isMutable}, {elt = t, ...}, ({offset}, ss)) =>
 	  let
+	     val () =
+		if isMutable
+		   then Error.bug "flattensAt mutable"
+		else ()
 	     val ({offset}, t, ss') =
 		flatten {from = f,
 			 object = object,
 			 offset = offset,
 			 to = t}
 	  in
-	     ({elt = t, isMutable = isMutable},
+	     ({elt = t, isMutable = false},
 	      ({offset = offset}, ss' @ ss))
 	  end)
    in
@@ -371,9 +375,7 @@ structure Value =
 	  | _ => Error.bug "Value.deObject"
 
       fun select {object: t, offset: int}: t =
-	 case value object of
-	    Object {args, ...} => Prod.elt (args, offset)
-	  | _ => Error.bug "Value.select"
+	 Prod.elt (#args (deObject object), offset)
 
       val deVector: t -> t Prod.t =
 	 fn v =>
@@ -452,17 +454,15 @@ structure Value =
 		  (Ground _, Ground _) => ()
 		| (Object {args = a, ...},
 		   Object {args = a', coercedFrom = c', flat = f', ...}) =>
-		     let
-			val () =
-			   case !f' of
-			      Flat => List.push (c', from)
-			    | NotFlat => unify (from, to)
-		     in
-			coerceProd {from = a, to = a'}
-		     end
-		| (Vector {elt = p, ...}, Vector {elt = p', ...}) =>
-		     coerceProd {from = p, to = p'}
-		| (Weak {arg = a, ...}, Weak {arg = a', ...}) => unify (a, a')
+		     (if Prod.isMutable a
+			 then unify (from, to)
+		      else
+			 case !f' of
+			    Flat => (List.push (c', from)
+				     ; coerceProd {from = a, to = a'})
+			  | NotFlat => unify (from, to))
+		| (Vector _, Vector _) => unify (from, to)
+		| (Weak _, Weak _) => unify (from, to)
 		| _ => Error.bug "strange unify"
 	    end) arg
       and coerceProd =
@@ -569,10 +569,10 @@ structure Value =
 	     case value of
 		Object {args, ...} =>
 		   Vector.fromListRev
-		   (#2 (Vector.fold (Prod.dest args, (0, []),
-				     fn ({elt, ...}, (offset, offsets)) =>
-				     (offset + Prod.length (finalTypes elt),
-				      offset :: offsets))))
+		   (#2 (Prod.fold
+			(args, (0, []), fn (elt, (offset, offsets)) =>
+			 (offset + Prod.length (finalTypes elt),
+			  offset :: offsets))))
 	      | _ => Error.bug "finalOffsets of non object")
 	 end
 
@@ -943,13 +943,6 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			    val Tree.T (info, children) = varTree object
 			    val {elt = child, isMutable} =
 			       Prod.sub (children, offset)
-			    val child =
-			       (* Don't simplify a select out of a mutable field.
-				* Something may have mutated it.
-				*)
-			       if isMutable
-				  then VarTree.dropRoot child
-			       else child
 			    val (child, ss) =
 			       case info of
 				  VarTree.Flat => (child, [])
@@ -957,12 +950,24 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 				     (case var of
 					 NONE => Error.bug "select missing var"
 				       | SOME var =>
-					    VarTree.fillInRoots
-					    (child,
-					     {object = var,
-					      offset = (Value.finalOffset
-							(varValue object,
-							 offset))}))
+					    let
+					       val child =
+						  (* Don't simplify a select out
+						   * of a mutable field.
+						   * Something may have mutated
+						   * it.
+						   *)
+						  if isMutable
+						     then VarTree.dropVars child
+						  else child
+					    in
+					       VarTree.fillInRoots
+					       (child,
+						{object = var,
+						 offset = (Value.finalOffset
+							   (varValue object,
+							    offset))})
+					    end)
 			    val () = setVarTree (var, child)
 			 in
 			    ss
@@ -990,7 +995,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			   val (vt, ss) =
 			      coerceTree {from = varTree value,
 					  to = child}
-			   val r = ref 0
+			   val r = ref offset
 			   val ss' = ref []
 			   val () =
 			      VarTree.foreachRoot
