@@ -3,7 +3,7 @@
 For porting code from SML/NJ and for developing code for MLton under SML/NJ,
 {\mlton} supports a very limited subset of
 \htmladdnormallink{Compilation Manager}
-		  {http://www.smlnj.org/doc/CM/index.html}
+                  {http://www.smlnj.org/doc/CM/index.html}
 (CM) files.  From {\mlton}'s point of view, a CM file {\tt foo.cm} defines a
 list of SML source files.  The call {\tt mlton foo.cm} is equivalent to
 compiling an SML program consisting of the concatenation of these files.  As
@@ -73,7 +73,7 @@ Finally, the only valid file suffixes in a CM file are {\tt .cm}, {\tt .fun},
 If you are unfamiliar with CM under {\smlnj}, then you should skip this
 section.
 
-{\mlton} supports the full syntax of CM as of SML/NJ version 110.9.1.
+{\mlton} supports the full syntax of CM as of {\smlnj} version 110.9.1.
 Extensions since then are unsupported.  Also, many of the syntactic
 constructs are ignored.  The most important difference between the two is that
 order in CM files matters to {\mlton} but not to CM, which performs automatic
@@ -97,5 +97,5 @@ reflected in your CM files.  Because {\mlton} relies on ordering in CM files,
 your CM files probably will not work with {\mlton}.  To help in porting CM files
 to {\mlton}, the {\mlton} distribution includes the SML sources for a
 utility, {\tt cmcat}, that will print an ordered list of files corresponding to
-a CM file.  See {\tt \doc/cmcat.sml} for details.  Building {\tt cmcat}
-requires that you have already installed {\smlnj}.
+a CM file.  See {\tt \doc/cmcat/cmcat.sml} for details.  Building {\tt cmcat}
+requires that you have already installed {\smlnj} version 110.44.
