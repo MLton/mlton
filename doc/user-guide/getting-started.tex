@@ -44,6 +44,15 @@ compilation.
 
 \end{description}
 
+If your Linux distribution doesn't use rpm, you can either use the binary tgz or
+use the following to unpack the binary RPM into the current directory
+\begin{alltt}
+rpm2cpio -i mlton-\version-1.i386.rpm | cpio -id
+\end{alltt}
+If you do not install the rpm in the usual place, {\tt /usr/local}, then you
+must set the {\tt lib} variable in {\tt usr/local/bin/mlton} to the directory
+that contains the libraries ({\tt /usr/local/lib/mlton} by default).
+
 \subsection{Hello, World!}
 
 Create a file called {\tt hello-world.sml} with the following contents.
