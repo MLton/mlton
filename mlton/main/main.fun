@@ -179,7 +179,7 @@ fun makeOptions {usage} =
 	       ; Control.Elaborate.enabled Control.Elaborate.deadCode := b))),
        (Expert, "debug", " {false|true}", "produce executable with debug info",
 	boolRef debug),
-       (Expert, "default-ann", " <ann>", "annotation default",
+       (Normal, "default-ann", " <ann>", "set annotation default for mlb files",
 	SpaceString 
 	(fn s =>
 	 List.foreach
@@ -201,7 +201,7 @@ fun makeOptions {usage} =
 			       ; List.push (keepPasses, re)
 			    end
 	   | NONE => usage (concat ["invalid -diag-pass flag: ", s])))),
-       (Expert, "disable-ann", " <ann>", "globally disable annotation",
+       (Normal, "disable-ann", " <ann>", "disable annotation in mlb files",
 	SpaceString 
 	(fn s =>
 	 List.foreach

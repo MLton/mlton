@@ -504,24 +504,3 @@ identifiers that do not contribute to the exported modules, and
 preventing warnings on exported modules that are not used in the
 remainder of the program.  Many of the available libraries listed in
 \secref{mlb-libs} are delivered with these annotations.
-
-%
-\subsubsection{Compile-time options}
-
-\begin{description}
-
-\option{-default-ann {\it anns}}
-Specify the default annotation values.  For example, to change the
-defaults as described in the previous section, use {\tt -default-ann
-'sequenceUnit true, warnUnused true'}.
-
-\option{-disable-ann {\it ann}}
-Specify that an annotation should be disabled.  This has the effect of
-ignoring the annotation in every ML basis file.  For example, to see
-\emph{all} match and unused warnings, use {\tt -disable-ann
-'warnMatch, warnUnused, forceUsed' -default-ann 'warnUnused true'}.
-
-\option{-warn-ann \trueFalse}
-Report unrecognized annotations.
-
-\end{description}
