@@ -8,6 +8,7 @@ val busy = ref false : bool ref
 val color = ref false
 val static = ref false (* include static C functions *)
 val thresh = ref 0 : int ref
+val extra = ref false
 
 val die = Process.fail
 val warn = fn s => Out.output (Out.error, concat ["Warning: ", s, "\n"])
@@ -537,7 +538,7 @@ fun display (counts: {name: string, ticks: int} ProfileInfo.t,
 	    val total = Real.fromInt total
 	    val _ =
 	       if n = 0
-		  then print (concat ([Real.format (total / ticksPerSecond,
+		  then print (concat ([Real.format (total / ticksPerSecond, 
 						    Real.Format.fix (SOME 2)),
 				       " seconds of CPU time\n"]))
 	       else ()
@@ -557,7 +558,14 @@ fun display (counts: {name: string, ticks: int} ProfileInfo.t,
 			    fn total =>
 			    concat [Real.format (per total,
 						 Real.Format.fix (SOME 2)),
-				    "%"]
+				    "%",
+				    if !extra
+				      then concat [" (",
+						   Real.format
+						   (rticks / ticksPerSecond,
+						    Real.Format.fix (SOME 2)),
+						   "s)"]
+				      else ""]
 		      in			    
 			 {name = name,
 			  ticks = ticks,
@@ -654,7 +662,7 @@ fun display (counts: {name: string, ticks: int} ProfileInfo.t,
    end
 
 fun usage s
-  = Process.usage {usage = "[-d {0|1|2}] [-s] [-t n] a.out mlmon.out",
+  = Process.usage {usage = "[-d {0|1|2}] [-s] [-t n] [-x] a.out mlmon.out",
 		   msg = s}
 
 fun main args =
@@ -674,7 +682,8 @@ fun main args =
 		     ("s", trueRef static),
 		     ("t", Int (fn i => if i < 0 orelse i > 100
 					  then die "invalid threshold"
-					  else thresh := i))]}
+					  else thresh := i)),
+		     ("x", trueRef extra)]}
 	  end
     in
       case rest 
