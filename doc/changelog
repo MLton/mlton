@@ -9,8 +9,6 @@ Here are the changes since version 20030312.
     if the heap was allocated at a very low (<10M) address.  The bug
     actually showed up on a Cygwin system. 
 
-and showed
-
 * 2003-05-08
   - Fixed bug in HashType that raised "Vector.forall2" when the 
     arity of a type constructor is changed by simplifyTypes, but
