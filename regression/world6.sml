@@ -29,7 +29,7 @@ val _ =
 	    fun p s = (print s; print "\n")
 	 in p (CommandLine.name ())
 	    ; List.app p (CommandLine.arguments ())
-	    ; OS.Process.exit 0
+	    ; succeed ()
 	 end
     | Original => ()
 	 
