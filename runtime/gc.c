@@ -45,7 +45,7 @@ enum {
 	DEBUG_WEAK = FALSE,
 	DEBUG_WORLD = FALSE,
 	FORCE_GENERATIONAL = FALSE,
-	FORCE_MARK_COMPACT = FALSE,
+	FORCE_MARK_COMPACT = TRUE,
 	FORWARDED = 0xFFFFFFFF,
 	STACK_HEADER_SIZE = WORD_SIZE,
 };
@@ -2106,16 +2106,15 @@ W32 mark (GC_state s, pointer root, MarkMode mode) {
 	Bool hasIdentity;
 	Header* headerp;
 	Header header;
-	uint index;
+	uint index; /* The i'th pointer in the object (element) being marked. */
 	GC_frameLayout *layout;
-	pointer max; /* The end of the pointers in an object. */
 	pointer next; /* The next object to mark. */
 	Header *nextHeaderp;
 	Header nextHeader;
 	uint numNonPointers;
 	uint numPointers;
 	pointer prev; /* The previous object on the mark stack. */
-	W32 size;	/* Total number of bytes marked. */
+	W32 size; /* Total number of bytes marked. */
 	uint tag;
 	pointer todo; /* A pointer to the pointer in cur to next. */
 	pointer top; /* The top of the next stack frame to mark. */
@@ -2133,17 +2132,19 @@ markNext:
 	/* cur is the object that was being marked.
 	 * prev is the mark stack.
 	 * next is the unmarked object to be marked.
+	 * nextHeaderp points to the header of next.
+	 * nextHeader is the header of next.
 	 * todo is a pointer to the pointer inside cur that points to next.
-	 * headerp points to the header of next.
-	 * header is the header of next.
 	 */
 	if (DEBUG_MARK_COMPACT)
 		fprintf (stderr, "markNext  cur = 0x%08x  next = 0x%08x  prev = 0x%08x  todo = 0x%08x\n",
 				(uint)cur, (uint)next, (uint)prev, (uint)todo);
 	assert (not modeEqMark (mode, next));
-	assert (header == GC_getHeader (next));
-	assert (headerp == GC_getHeaderp (next));
+	assert (nextHeaderp == GC_getHeaderp (next));
+	assert (nextHeader == GC_getHeader (next));
 	assert (*(pointer*) todo == next);
+	headerp = nextHeaderp;
+	header = nextHeader;
 	*(pointer*)todo = prev;
 	prev = cur;
 	cur = next;
@@ -2165,25 +2166,34 @@ mark:
 			: header & ~MARK_MASK;
 	SPLIT_HEADER();
 	if (NORMAL_TAG == tag) {
-		todo = cur + toBytes (numNonPointers);
-		max = todo + toBytes (numPointers);
-		size += GC_NORMAL_HEADER_SIZE + (max - cur);
-		index = 0;
-markInNormal:
-		assert (todo <= max);
-		if (DEBUG_MARK_COMPACT)
-			fprintf (stderr, "markInNormal  index = %d\n", index);
-		if (todo == max) {
-			*headerp = header & ~COUNTER_MASK;
+		if (0 == numPointers) {
+			/* There is nothing to mark.  Store the marked header and
+			 * return.
+			 */
+			*headerp = header;
 			if (s->shouldHashCons)
 				cur = hashCons (s, cur);
 			goto ret;
 		}
+		todo = cur + toBytes (numNonPointers);
+		size += todo + toBytes (numPointers) - (pointer)headerp;
+		index = 0;
+markInNormal:
+		if (DEBUG_MARK_COMPACT)
+			fprintf (stderr, "markInNormal  index = %d\n", index);
+		assert (index < numPointers);
 		next = *(pointer*)todo;
 		if (not GC_isPointer (next)) {
 markNextInNormal:
+			assert (index < numPointers);
+       			index++;
+			if (index == numPointers) {
+				*headerp = header & ~COUNTER_MASK;
+				if (s->shouldHashCons)
+					cur = hashCons (s, cur);
+				goto ret;
+			}
 			todo += POINTER_SIZE;
-			index++;
 			goto markInNormal;
 		}
 		nextHeaderp = GC_getHeaderp (next);
@@ -2195,8 +2205,6 @@ markNextInNormal:
 		}
 		*headerp = (header & ~COUNTER_MASK) |
 				(index << COUNTER_SHIFT);
-		headerp = nextHeaderp;
-		header = nextHeader;
 		goto markNext;
 	} else if (WEAK_TAG == tag) {
 		/* Store the marked header and don't follow any pointers. */
@@ -2227,45 +2235,43 @@ markArrayElt:
 		index = 0;
 		/* Skip to the first pointer. */
 		todo += numNonPointers;
-markArrayPointer:
+markInArray:
 		if (DEBUG_MARK_COMPACT)
-			fprintf (stderr, "markArrayPointer arrayIndex = %u index = %u\n",
+			fprintf (stderr, "markInArray arrayIndex = %u index = %u\n",
 					arrayIndex, index);
 		assert (arrayIndex < GC_arrayNumElements (cur));
 		assert (index < numPointers);
 		assert (todo == arrayPointer (s, cur, arrayIndex, index));
 		next = *(pointer*)todo;
-		if (GC_isPointer (next)) {
-			nextHeaderp = GC_getHeaderp (next);
-			nextHeader = *nextHeaderp;
-			if ((nextHeader & MARK_MASK)
-				== (MARK_MODE == mode ? MARK_MASK : 0)) {
-				maybeSharePointer (s, (pointer*)todo);
-				goto markArrayContinue;
-			}
-			/* Recur and mark next. */
-			*arrayCounterp (cur) = arrayIndex;
-			*headerp = (header & ~COUNTER_MASK) |
-					(index << COUNTER_SHIFT);
-			headerp = nextHeaderp;
-			header = nextHeader;
-			goto markNext;
+		if (not (GC_isPointer (next))) {
+markNextInArray:
+			assert (arrayIndex < GC_arrayNumElements (cur));
+			assert (index < numPointers);
+			assert (todo == arrayPointer (s, cur, arrayIndex, index));
+			todo += POINTER_SIZE;
+			index++;
+			if (index < numPointers)
+				goto markInArray;
+			arrayIndex++;
+			if (arrayIndex < GC_arrayNumElements (cur))
+				goto markArrayElt;
+			/* Done.  Clear out the counters and return. */
+			*arrayCounterp (cur) = 0;
+			*headerp = header & ~COUNTER_MASK;
+			goto ret;
 		}
-markArrayContinue:
-		assert (arrayIndex < GC_arrayNumElements (cur));
-		assert (index < numPointers);
-		assert (todo == arrayPointer (s, cur, arrayIndex, index));
-		todo += POINTER_SIZE;
-		index++;
-		if (index < numPointers)
-			goto markArrayPointer;
-		arrayIndex++;
-		if (arrayIndex < GC_arrayNumElements (cur))
-			goto markArrayElt;
-		/* Done.  Clear out the counters and return. */
-		*arrayCounterp (cur) = 0;
-		*headerp = header & ~COUNTER_MASK;
-		goto ret;
+		nextHeaderp = GC_getHeaderp (next);
+		nextHeader = *nextHeaderp;
+		if ((nextHeader & MARK_MASK)
+			== (MARK_MODE == mode ? MARK_MASK : 0)) {
+			maybeSharePointer (s, (pointer*)todo);
+			goto markNextInArray;
+		}
+		/* Recur and mark next. */
+		*arrayCounterp (cur) = arrayIndex;
+		*headerp = (header & ~COUNTER_MASK) |
+				(index << COUNTER_SHIFT);
+		goto markNext;
 	} else {
 		assert (STACK_TAG == tag);
 		*headerp = header;
@@ -2312,8 +2318,6 @@ markInFrame:
 			goto markInFrame;
 		}
 		((GC_stack)cur)->markIndex = index;		
-		headerp = nextHeaderp;
-		header = nextHeader;
 		goto markNext;
 	}
 	assert (FALSE);
@@ -2328,7 +2332,9 @@ ret:
 	assert (modeEqMark (mode, cur));
 	if (NULL == prev)
 		return size;
-	headerp = GC_getHeaderp (prev);
+	next = cur;
+	cur = prev;
+	headerp = GC_getHeaderp (cur);
 	header = *headerp;
 	SPLIT_HEADER();
 	/* It's impossible to get a WEAK_TAG here, since we would never follow
@@ -2336,32 +2342,23 @@ ret:
 	 */
 	assert (WEAK_TAG != tag);
 	if (NORMAL_TAG == tag) {
-		todo = prev + toBytes (numNonPointers);
-		max = todo + toBytes (numPointers);
+		todo = cur + toBytes (numNonPointers);
 		index = (header & COUNTER_MASK) >> COUNTER_SHIFT;
 		todo += index * POINTER_SIZE;
-		next = cur;
-		cur = prev;
 		prev = *(pointer*)todo;
 		*(pointer*)todo = next;
-		todo += POINTER_SIZE;
-		index++;
-		goto markInNormal;
+		goto markNextInNormal;
 	} else if (ARRAY_TAG == tag) {
-		arrayIndex = arrayCounter (prev);
-		todo = prev + arrayIndex * (numNonPointers 
+		arrayIndex = arrayCounter (cur);
+		todo = cur + arrayIndex * (numNonPointers 
 						+ toBytes (numPointers));
 		index = (header & COUNTER_MASK) >> COUNTER_SHIFT;
 		todo += numNonPointers + index * POINTER_SIZE;
-		next = cur;
-		cur = prev;
 		prev = *(pointer*)todo;
 		*(pointer*)todo = next;
-		goto markArrayContinue;
+		goto markNextInArray;
 	} else {
 		assert (STACK_TAG == tag);
-		next = cur;
-		cur = prev;
 		index = ((GC_stack)cur)->markIndex;
 		top = ((GC_stack)cur)->markTop;
 		layout = getFrameLayout (s, *(word*) (top - WORD_SIZE));
@@ -2949,8 +2946,8 @@ static void majorGC (GC_state s, W32 bytesRequested, bool mayResize) {
 	if (s->bytesLive > s->maxBytesLive)
 		s->maxBytesLive = s->bytesLive;
 	/* Notice that the s->bytesLive below is different than the s->bytesLive
-	 * used as an argument to heapCreate above.  Above, it was an estimate.
-	 * Here, it is exactly how much was live after the GC.
+	 * used as an argument to heapAllocateSecondSemi above.  Above, it was 
+         * an estimate.  Here, it is exactly how much was live after the GC.
 	 */
 	if (mayResize)
 		resizeHeap (s, (W64)s->bytesLive + bytesRequested);
@@ -3096,9 +3093,9 @@ static void switchToThread (GC_state s, GC_thread t) {
 }
 
 /* GC_startHandler does not do an enter()/leave(), even though it is exported.
- * The basis library uses it via _ffi, not _prim, and so does not treat it as a
- * runtime call -- so the invariant in enter would fail miserably.  It is OK
- * because GC_startHandler must be called from within a critical section.
+ * The basis library uses it via _import, not _prim, and so does not treat it
+ * as a runtime call -- so the invariant in enter would fail miserably.  It is
+ * OK because GC_startHandler must be called from within a critical section.
  *
  * Don't make it inline, because it is also called in basis/Thread.c, and when
  * compiling with COMPILE_FAST, they may appear out of order.
