@@ -458,7 +458,7 @@ fun inline (program as Program.T {datatypes, globals, functions, main}) =
 				    val blocks = doit (blocks, return)
 				    val _ = List.push (newBlocks, blocks)
 				    val name =
-				       Label.newSymbol (Func.originalName name)
+				       Label.newString (Func.originalName name)
 				    val _ = 
 				       List.push 
 				       (newBlocks,

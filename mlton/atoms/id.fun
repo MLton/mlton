@@ -6,6 +6,30 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 
+structure UniqueString:
+   sig
+      val unique: string -> string
+   end =
+   struct
+      val set: {counter: Counter.t,
+		hash: word,
+		original: string} HashSet.t =
+	 HashSet.new {hash = #hash}
+
+      fun unique (s: string): string =
+	 let
+	    val hash = String.hash s
+	    val {counter, ...} =
+	       HashSet.lookupOrInsert
+	       (set, hash, fn {original, ...} => s = original,
+		fn () => {counter = Counter.new 0,
+			  hash = hash,
+			  original = s})
+	 in
+	    concat [s, "_", Int.toString (Counter.next counter)]
+	 end
+   end
+
 functor Id (S: ID_STRUCTS): ID =
 struct
 
@@ -13,12 +37,8 @@ open S
 
 structure Plist = PropertyList
 
-(* Can't use the same hash as Symbol.hash original name, because many later
- * passes would be really slow due to lots of ids (with the same noname symbol)
- * hashing to the same value.
- *)
 datatype t = T of {hash: word,
-		   originalName: Symbol.t,
+		   originalName: string,
 		   printName: string option ref,
 		   plist: Plist.t}
 
@@ -43,37 +63,36 @@ fun toString (T {printName, originalName, ...}) =
 	 let
 	    val s =
 	       if not (!printNameAlphaNumeric)
-		  orelse String.forall (Symbol.toString originalName, fn c =>
+		  orelse String.forall (originalName, fn c =>
 					Char.isAlphaNum c orelse c = #"_")
 		  then originalName
 	       else
-		  Symbol.fromString
-		  (String.translate
-		   (Symbol.toString originalName,
-		    fn #"!" => "Bang"
-		     | #"#" => "Hash"
-		     | #"$" => "Dollar"
-		     | #"%" => "Percent"
-		     | #"&" => "Ampersand"
-		     | #"'" => "P"
-		     | #"*" => "Star"
-		     | #"+" => "Plus"
-		     | #"-" => "Minus"
-		     | #"." => "D"
-		     | #"/" => "Divide"
-		     | #":" => "Colon"
-		     | #"<" => "Lt"
-		     | #"=" => "Eq"
-		     | #">" => "Gt"
-		     | #"?" => "Ques"
-		     | #"@" => "At"
-		     | #"\\" => "Slash"
-		     | #"^" => "Caret"
-		     | #"`" => "Quote"
-		     | #"|" => "Pipe"
-		     | #"~" => "Tilde"
-		     | c => str c))
-	    val s = Symbol.uniqueString s
+		  String.translate
+		  (originalName,
+		   fn #"!" => "Bang"
+		    | #"#" => "Hash"
+		    | #"$" => "Dollar"
+		    | #"%" => "Percent"
+		    | #"&" => "Ampersand"
+		    | #"'" => "P"
+		    | #"*" => "Star"
+		    | #"+" => "Plus"
+		    | #"-" => "Minus"
+		    | #"." => "D"
+		    | #"/" => "Divide"
+		    | #":" => "Colon"
+		    | #"<" => "Lt"
+		    | #"=" => "Eq"
+		    | #">" => "Gt"
+		    | #"?" => "Ques"
+		    | #"@" => "At"
+		    | #"\\" => "Slash"
+		    | #"^" => "Caret"
+		    | #"`" => "Quote"
+		    | #"|" => "Pipe"
+		    | #"~" => "Tilde"
+		    | c => str c)
+	    val s = UniqueString.unique s
 	    val _ = printName := SOME s
 	 in
 	    s
@@ -82,8 +101,6 @@ fun toString (T {printName, originalName, ...}) =
 
 val layout = String.layout o toString
    
-fun sameName (id, id') = Symbol.equals (originalName id, originalName id')
-
 fun equals (id, id') = Plist.equals (plist id, plist id')
 
 local
@@ -93,23 +110,15 @@ local
 	 printName = ref printName,
 	 plist = Plist.new ()}
 in
-   fun fromString s =
-      make (Symbol.fromString s,
-	    SOME s)
-   fun newSymbol s = make (s, NONE)
+   fun fromString s = make (s, SOME s)
+   fun newString s = make (s, NONE)
 end
 
-val new = newSymbol o originalName
+val new = newString o originalName
 
-val newString = newSymbol o Symbol.fromString
+fun newNoname () = newString noname
 
-local
-   val noname = Symbol.fromString noname
-in
-   fun newNoname () = newSymbol noname
-end
-
-val bogus = newSymbol Symbol.bogus
+val bogus = newString "bogus"
 
 val clear = Plist.clear o plist
    

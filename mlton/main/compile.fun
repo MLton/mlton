@@ -232,7 +232,8 @@ in
 		  List.foreach
 		  (Tycon.prims, fn (tycon, kind, _) =>
 		   extendTycon
-		   (E, Ast.Tycon.fromSymbol (Tycon.originalName tycon,
+		   (E, Ast.Tycon.fromSymbol (Symbol.fromString
+					     (Tycon.originalName tycon),
 					     Region.bogus),
 		    TypeStr.tycon (tycon, kind)))
 	       val _ =

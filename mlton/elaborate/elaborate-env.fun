@@ -252,10 +252,10 @@ structure Info =
 val allTycons: Tycon.t list ref = ref (List.map (Tycon.prims, #1))
 val newTycons: (Tycon.t * Kind.t) list ref = ref []
 
-val newTycon: Symbol.t * Kind.t * AdmitsEquality.t -> Tycon.t =
+val newTycon: string * Kind.t * AdmitsEquality.t -> Tycon.t =
    fn (s, k, a) =>
    let
-      val c = Tycon.newSymbol s
+      val c = Tycon.newString s
       val _ = TypeEnv.initAdmitsEquality (c, a)
       val _ = List.push (allTycons, c)
       val _ = List.push (newTycons, (c, k))
@@ -1226,8 +1226,7 @@ fun setTyconNames (E: t): unit =
 	  if ! (shortest c) < Int.maxInt
 	     then ()
 	  else
-	     Tycon.setPrintName
-	     (c, concat ["?.", Symbol.toString (Tycon.originalName c)]))
+	     Tycon.setPrintName (c, concat ["?.", Tycon.originalName c]))
    in
       ()
    end
@@ -1240,8 +1239,7 @@ fun dummyStructure (T {strs, types, vals, ...}, prefix: string, I: Interface.t)
 	 Interface.realize
 	 (I, fn (c, a, k, _) =>
 	  let
-	     val c' = newTycon (Symbol.fromString
-				(concat [prefix, Longtycon.toString c]), k, a)
+	     val c' = newTycon (concat [prefix, Longtycon.toString c], k, a)
 	     val _ = List.push (tycons, (c, c'))
 	  in
 	     TypeStr.tycon (c', k)
@@ -1766,8 +1764,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 	 (I, fn (c, a, k, {hasCons}) =>
 	  let
 	     fun bad () =
-		TypeStr.tycon (newTycon (Symbol.fromString
-					 (Longtycon.toString c), k, a), k)
+		TypeStr.tycon (newTycon (Longtycon.toString c, k, a), k)
 	  in
 	     case Structure.peekLongtycon (S, c) of
 		NONE => bad ()

@@ -14,11 +14,6 @@ open S
 structure IntSize = IntX.IntSize
 structure RealSize = RealX.RealSize
 structure WordSize = WordX.WordSize
-local
-   open Label
-in
-   structure Symbol = Symbol
-end
 structure Runtime = Runtime (structure CType = CType)
 local
    open Runtime
@@ -33,8 +28,7 @@ structure Atoms = MachineAtoms (open S
 				structure WordSize = WordSize)
 open Atoms
 
-structure ChunkLabel = Id (structure Symbol = Symbol
-			   val noname = "ChunkLabel")
+structure ChunkLabel = Id (val noname = "ChunkLabel")
 
 structure SmallIntInf =
    struct

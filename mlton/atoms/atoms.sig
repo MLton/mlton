@@ -83,7 +83,7 @@ signature ATOMS =
       sharing Record = Atoms.Record
       sharing SortedRecord = Atoms.SortedRecord
       sharing SourceInfo = Atoms.SourceInfo
-      sharing Symbol = Con.Symbol = Tycon.Symbol = Var.Symbol
+(*      sharing Symbol = Con.Symbol = Tycon.Symbol = Var.Symbol *)
       sharing Tycon = Atoms.Tycon
       sharing Tycons = Atoms.Tycons
       sharing Tyvar = Atoms.Tyvar

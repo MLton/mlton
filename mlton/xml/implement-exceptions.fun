@@ -512,8 +512,7 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 					   arg = SOME (Var.newNoname (), arg)},
 				    const
 				    (Const.string
-				     (Symbol.toString
-				      (Con.originalName con)))))),
+				     (Con.originalName con))))),
 				 default = NONE,
 				 ty = Type.string}))
 			   end})

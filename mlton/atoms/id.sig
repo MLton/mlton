@@ -11,7 +11,6 @@ type word = Word.t
 
 signature ID_STRUCTS =
    sig
-      structure Symbol: SYMBOL
       val noname: string
    end
 
@@ -30,12 +29,10 @@ signature ID =
       val hash: t -> word
       val new: t -> t (* new id with the same originalName *)
       val newNoname: unit -> t (* prefix is noname *)
-      val newString: string -> t (* new id with printName set *)
-      val newSymbol: Symbol.t -> t (* new id with printName not set *)
-      val originalName: t -> Symbol.t (* raw destructor *)
+      val newString: string -> t (* new id with printName not set *)
+      val originalName: t -> string (* raw destructor *)
       val plist: t -> PropertyList.t
       val printNameAlphaNumeric: bool ref
-      val sameName: t * t -> bool
       val setPrintName: t * string -> unit
       val toString: t -> string
    end

@@ -81,7 +81,7 @@ signature SSA_TREE =
 
       structure Func: ID
       structure Label: LABEL
-      sharing Symbol = Func.Symbol = Label.Symbol
+(*      sharing Symbol = Func.Symbol = Label.Symbol *)
       
       structure Exp:
 	 sig

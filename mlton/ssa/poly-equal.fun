@@ -112,9 +112,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 	  | NONE =>
 	       let
 		  val name =
-		     Func.newString
-		     (concat ["equal_",
-			      Symbol.toString (Tycon.originalName tycon)])
+		     Func.newString (concat ["equal_", Tycon.originalName tycon])
 		  val _ = setEqualFunc (tycon, SOME name)
 		  val ty = Type.con (tycon, Vector.new0 ())
 		  val arg1 = (Var.newNoname (), ty)

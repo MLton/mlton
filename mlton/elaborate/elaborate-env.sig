@@ -154,7 +154,7 @@ signature ELABORATE_ENV =
       val lookupSigid: t * Ast.Sigid.t -> Interface.t option
       val makeStructure: t * (unit -> 'a) -> 'a * Structure.t
       val makeInterfaceEnv: t -> InterfaceEnv.t
-      val newTycon: Symbol.t * Tycon.Kind.t * Tycon.AdmitsEquality.t -> Tycon.t
+      val newTycon: string * Tycon.Kind.t * Tycon.AdmitsEquality.t -> Tycon.t
       (* openStructure (E, S) opens S in the environment E. *) 
       val openStructure: t * Structure.t -> unit
       val peekFix: t * Ast.Vid.t -> Ast.Fixity.t option
