@@ -1,4 +1,4 @@
-structure INetSock : INET_SOCK =
+structure INetSock: INET_SOCK =
    struct
       structure Prim = Primitive.Socket.INetSock
 
@@ -7,6 +7,7 @@ structure INetSock : INET_SOCK =
       type 'mode stream_sock = 'mode Socket.stream sock
       type dgram_sock = Socket.dgram sock
       type sock_addr = inet Socket.sock_addr
+
       val inetAF = Primitive.Socket.AF.INET
 
       fun toAddr (in_addr, port) =
@@ -16,7 +17,9 @@ structure INetSock : INET_SOCK =
 	in
 	  finish ()
 	end
+
       fun any port = toAddr (NetHostDB.any (), port)
+
       fun fromAddr sa =
 	let
 	  val _ = Prim.fromAddr (Socket.unpackSockAddr sa)
@@ -31,19 +34,25 @@ structure INetSock : INET_SOCK =
 	 struct
 	   structure Prim = Prim.UDP
 
-	    fun socket' prot = GenericSock.socket' (inetAF, Socket.SOCK.dgram, prot)
+	    fun socket' prot =
+	       GenericSock.socket' (inetAF, Socket.SOCK.dgram, prot)
+	       
 	    fun socket () = socket' 0
 	 end
+      
       structure TCP =
 	 struct
 	    structure Prim = Prim.TCP
 
-	    fun socket' prot = GenericSock.socket' (inetAF, Socket.SOCK.stream, prot)
+	    fun socket' prot =
+	       GenericSock.socket' (inetAF, Socket.SOCK.stream, prot)
+	       
 	    fun socket () = socket' 0
 
 	    fun getNODELAY sock =
 	      Socket.CtlExtra.getSockOptBool
 	      (Prim.TCP, Prim.NODELAY) sock
+
 	    fun setNODELAY (sock,optval) =
 	      Socket.CtlExtra.setSockOptBool
 	      (Prim.TCP, Prim.NODELAY) (sock,optval)
