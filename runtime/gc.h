@@ -189,8 +189,8 @@ typedef struct GC_state {
 	* of pages greater than liveRatio * numBytesLive
 	*/
 	bool useFixedHeap; /* if true, then don't resize the heap */
-	uint maxHeapSize;  /* if (not useFixedHeap), then s->fromSize <= maxHeapSize
-			    * and s->toSize <= maxHeapSize
+	uint maxHeapSize;  /* if zero, then unlimited,
+			    * else fromSize + toSize < maxHeapSize
 			    */
 
 	/* Print out a message at the start and end of each gc. */
@@ -252,7 +252,6 @@ typedef struct GC_state {
 	float ramSlop;
 	uint totalRam; /* bytes */
 	uint totalSwap; /* bytes */
-	bool maxHeapSwap; /* include available swap when setting max heap size */
 } *GC_state;
 
 /* ------------------------------------------------- */
@@ -412,18 +411,15 @@ typedef void (*GC_pointerFun)(GC_state s, pointer *p);
 void GC_foreachGlobal(GC_state s, GC_pointerFun f);
 void GC_foreachPointerInRange(GC_state s, pointer front, pointer *back,
 					GC_pointerFun f);
-void GC_initCounters(GC_state s);
-void GC_setHeapParams(GC_state s, uint size);
-
 void GC_display(GC_state s, FILE *stream);
-
-bool GC_mutatorInvariant(GC_state s);
-
 void GC_fromSpace(GC_state s);
-void GC_toSpace(GC_state s);
-void GC_setStack(GC_state s);
-
+void GC_init(GC_state s);
+bool GC_mutatorInvariant(GC_state s);
 uint GC_objectSize(pointer p);
+void GC_newWorld(GC_state s);
+void GC_setHeapParams(GC_state s, uint size);
+void GC_setStack(GC_state s);
+void GC_toSpace(GC_state s);
 
 pointer GC_foreachPointerInObject(GC_state s, GC_pointerFun f, pointer p);
 

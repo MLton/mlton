@@ -77,7 +77,6 @@ void GC_loadWorld(GC_state s,
 	pointer base, frontier;
 	char c;
 	
-	GC_initCounters(s);
 	file = sopen(fileName, "r");
 	until ((c = fgetc(file)) == GC_worldTerminator or EOF == c);
 	if (EOF == c) die("Invalid world.");

@@ -16,7 +16,7 @@ void MLton_printStringEscaped(FILE *f, unsigned char *s) {
 }
 
 static void usage(string s) {
-	die("Usage: %s [@MLton [fixed-heap n[{k|m}]] [gc-messages] [gc-summary] [load-world file] [max-heap n[{k|m}]] [max-heap-swap] [ram-slop x] --] args", 
+	die("Usage: %s [@MLton [fixed-heap n[{k|m}]] [gc-messages] [gc-summary] [load-world file] [max-heap n[{k|m}]] [ram-slop x] --] args", 
 		s);
 }
 
@@ -73,14 +73,9 @@ bool MLton_init(int argc,
 
 	Posix_ProcEnv_environ = (CstringArray)environ;
 	Real_posInf = HUGE_VAL;
+	GC_init(&gcState);
 	worldFile = NULL;
-
-	gcState.messages = FALSE;
-	gcState.ramSlop = 0.85;
-	gcState.summary = FALSE;
-	gcState.maxHeapSwap = FALSE;
 	isOriginal = TRUE;
-	gcState.maxHeapSize = 0;
 	i = 1;
 	if (argc > 1 and (0 == strcmp(argv[1], "@MLton"))) {
 		bool done;
@@ -115,15 +110,13 @@ bool MLton_init(int argc,
 						usage(argv[0]);
 					worldFile = argv[i++];
 				} else if (0 == strcmp(arg, "max-heap")) {
+					fprintf(stderr, "max-heap is currently disabled\n");
 					++i;
 					if (i == argc) 
 						usage(argv[0]);
 					gcState.useFixedHeap = FALSE;
 					gcState.maxHeapSize =
 						stringToBytes(argv[i++]);
-				} else if (0 == strcmp(arg, "max-heap-swap")) {
-					++i;
-					gcState.maxHeapSwap = TRUE;
 				} else if (0 == strcmp(arg, "ram-slop")) {
 					++i;
 					if (i == argc)
@@ -141,7 +134,7 @@ bool MLton_init(int argc,
 	}
 	
 	if (isOriginal)
-		GC_init(&gcState);
+		GC_newWorld(&gcState);
 	else
 		GC_loadWorld(&gcState, worldFile, loadGlobals);
 	

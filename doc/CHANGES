@@ -1,5 +1,12 @@
 Here are the changes from version 20011006 to version VERSION.
 
+* 2002-02-08
+  - Modifications to runtime to behave better in situations where the amount of
+    live data is a signifant fraction of the amount of RAM, based on code from
+    PolySpace.  MLton executables by default can now use more than the
+    available amount of RAM.  Executables will still respect the max-heap
+    runtime arg if it is set. 
+
 * 2002-02-04
   - Improvements to runtime so that it fails to get space, it attempts to get 
     less space instead of failing.  Based on PolySpace's modifications.
