@@ -3641,7 +3641,7 @@ void GC_profileWrite (GC_state s, GC_profile p, int fd) {
 		profileWriteCount (s, p, fd, i + s->sourcesSize);
 }
 
-#if (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
+#if (defined (__linux__) || defined (__FreeBSD__) || defined (__NetBSD__) || defined (__sun__))
 
 #ifndef EIP
 #define EIP	14
@@ -3652,7 +3652,13 @@ static GC_state catcherState;
 /*
  * Called on each SIGPROF interrupt.
  */
+#if (defined (__linux__) || defined (__FreeBSD__) || defined (__sun__))
 static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {
+#elif (defined (__NetBSD__))
+static void catcher (int sig, int code, struct sigcontext *ucp) {
+#else
+#error catcher prototype not defined
+#endif
 	uint frameIndex;
 	pointer pc;
 	GC_state s;
@@ -3663,6 +3669,8 @@ static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {
         pc = (pointer) ucp->uc_mcontext.gregs[EIP];
 #elif (defined (__FreeBSD__))
 	pc = (pointer) ucp->uc_mcontext.mc_eip;
+#elif (defined (__NetBSD__))
+	pc = (pointer) ucp->sc_eip;
 #elif (defined (__sun__))
 	pc = (pointer) ucp->uc_mcontext.gregs[REG_PC];
 #else
@@ -3761,14 +3769,20 @@ static void profileTimeInit (GC_state s) {
 	catcherState = s;
 	sa.sa_handler = (void (*)(int))catcher;
 	sigemptyset (&sa.sa_mask);
+#if (defined (__linux__) || defined(__FreeBSD__) || defined(__sun__))
 	sa.sa_flags = SA_ONSTACK | SA_RESTART | SA_SIGINFO;
+#elif (defined (__NetBSD__))
+	sa.sa_flags = SA_ONSTACK | SA_RESTART;
+#else
+#error sa_flags not set
+#endif
 	unless (sigaction (SIGPROF, &sa, NULL) == 0)
 		diee ("sigaction() failed");
 	/* Start the SIGPROF timer. */
 	setProfTimer (10000);
 }
 
-#elif (defined (__CYGWIN__) || defined (__NetBSD__))
+#elif (defined (__CYGWIN__))
 
 /* No time profiling on Cygwin. 
  * There is a check in mlton/main/main.sml to make sure that time profiling is
