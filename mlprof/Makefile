@@ -2,7 +2,7 @@ NAME = mlprof
 MLTON = mlton
 HOST = self
 FLAGS = -host $(HOST)
-PATH = ../build/bin:$(shell echo $$PATH)
+PATH = $(shell cd ../build/bin && echo `pwd`:$$PATH)
 
 all:	$(NAME)
 
