@@ -13,13 +13,9 @@ structure Prim = PosixPrimitive.Signal
 structure Error = PosixError
 
 type t = signal
-   
-local
-   open Prim
-in
-   val prof = prof
-   val vtalrm = vtalrm
-end
+
+val prof = Prim.prof
+val vtalrm = Prim.vtalrm
 
 type how = Prim.how
 
@@ -74,7 +70,7 @@ datatype handler = datatype Handler.t
 local
    val r = ref false
 in
-   fun initHandler s =
+   fun initHandler (s: signal): Handler.t =
       if 0 = Prim.isDefault (s, r)
 	 then if !r
 		 then Default
@@ -91,16 +87,16 @@ fun raiseInval () =
 
 val (get, set, handlers) =
    let
-      val handlers = Array.tabulate (Prim.numSignals, initHandler)
+      val handlers = Array.tabulate (Prim.numSignals, initHandler o fromInt)
       val _ =
 	 Cleaner.addNew
 	 (Cleaner.atLoadWorld, fn () =>
-	  Array.modifyi (initHandler o #1) handlers)
+	  Array.modifyi (initHandler o fromInt o #1) handlers)
    in
-      (fn s => Array.sub (handlers, s),
-       fn (s, h) => if Primitive.MLton.Profile.isOn andalso s = prof
-		       then raiseInval ()
-		    else Array.update (handlers, s, h),
+      (fn s: t => Array.sub (handlers, toInt s),
+       fn (s: t, h) => if Primitive.MLton.Profile.isOn andalso s = prof
+			  then raiseInval ()
+		       else Array.update (handlers, toInt s, h),
        handlers)
    end
 
@@ -108,24 +104,24 @@ val gcHandler = ref Ignore
    
 val getHandler = get
 
-fun isHandledDefault s =
+fun isHandledDefault (s: t): bool =
    case get s of
       Default => true
     | _ => false
 
-fun isIgnored s =
+fun isIgnored (s: t): bool =
    case get s of
       Ignore => true
     | _ => false
 
-fun ignore s =
+fun ignore (s: t): unit =
    case get s of
       Ignore => ()
     | InvalidSignal => raiseInval ()
     | _ => (set (s, Ignore)
 	    ; checkResult (Prim.ignore s))
 
-fun handleDefault s =
+fun handleDefault (s: t): unit =
    case getHandler s of
       Default => ()
     | InvalidSignal => raiseInval ()
@@ -164,7 +160,8 @@ structure Handler =
 		      Array.foldli
 		      (fn (s, h, t) =>
 		       case h of
-			  Handler f => if Prim.isPending s then f t else t
+			  Handler f =>
+			     if Prim.isPending (fromInt s) then f t else t
 			| _ => t)
 		      t
 		      handlers
@@ -180,7 +177,7 @@ structure Handler =
 	 end
    end
 
-fun handleWithSafe (s, h) =
+fun handleWithSafe (s: t, h) =
    let
       val old = getHandler s
       val _ = set (s, h)

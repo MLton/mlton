@@ -26,3 +26,11 @@ signature POSIX_SIGNAL =
       val ttin: signal
       val ttou: signal
    end
+
+signature POSIX_SIGNAL_EXTRA =
+   sig
+      include POSIX_SIGNAL
+
+      val fromInt: int -> signal
+      val toInt: signal -> int
+   end

@@ -5,10 +5,10 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-structure PosixSignal: POSIX_SIGNAL =
+structure PosixSignal: POSIX_SIGNAL_EXTRA =
    struct
       open PosixPrimitive.Signal
 
-      val toWord = SysWord.fromInt
-      val fromWord = SysWord.toInt
+      val fromWord = fromInt o SysWord.toInt
+      val toWord = SysWord.fromInt o toInt
    end

@@ -25,7 +25,7 @@ signature POSIX_EXTRA =
       structure IO: POSIX_IO
       structure ProcEnv: POSIX_PROC_ENV
       structure Process: POSIX_PROCESS_EXTRA
-      structure Signal: POSIX_SIGNAL
+      structure Signal: POSIX_SIGNAL_EXTRA
       structure SysDB: POSIX_SYS_DB
       structure TTY: POSIX_TTY
 

@@ -106,9 +106,9 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 		     0 => W_EXITED
 		   | n => W_EXITSTATUS (Word8.fromInt n))
 	 else if Prim.ifSignaled status
-	    then W_SIGNALED (Prim.termSig status)
+	    then W_SIGNALED (PosixSignal.fromInt (Prim.termSig status))
 	 else if Prim.ifStopped status
-	    then W_STOPPED (Prim.stopSig status)
+	    then W_STOPPED (PosixSignal.fromInt (Prim.stopSig status))
 	 else raise Fail "Posix.Process.fromStatus"
 
       structure W =
@@ -162,11 +162,14 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
        | K_GROUP of pid 
 
       fun kill (ka: killpid_arg, s: signal): unit =
-	 let val pid = (case ka of
-			   K_PROC pid => pid
-			 | K_SAME_GROUP => ~1
-			 | K_GROUP pid => ~ pid)
-	 in Error.checkResult (Prim.kill (pid, s))
+	 let
+	    val pid =
+	       case ka of
+		  K_PROC pid => pid
+		| K_SAME_GROUP => ~1
+		| K_GROUP pid => ~ pid
+	 in
+	    Error.checkResult (Prim.kill (pid, PosixSignal.toInt s))
 	 end
 
       local

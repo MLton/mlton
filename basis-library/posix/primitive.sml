@@ -122,11 +122,26 @@ structure PosixPrimitive =
 		]
 	 end
       
-      structure Signal =
+      structure Signal:>
+	 sig
+	    eqtype signal
+	    type how
+
+	    val fromInt: int -> signal
+	    val toInt: signal -> int
+	 end =
 	 struct
 	    type signal = signal
       	    type how = int
 
+	    val fromInt = fn s => s
+	    val toInt = fn s => s
+	 end
+
+      structure Signal =
+	 struct
+	    open Signal
+	       
 	    val abrt = _const "Posix_Signal_abrt": signal;
 	    val alrm = _const "Posix_Signal_alrm": signal;
 	    val bus = _const "Posix_Signal_bus": signal;
