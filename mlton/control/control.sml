@@ -160,7 +160,7 @@ fun setInlineSize (size: int): unit =
 
 val inlineArrayAllocation =
    control {name = "inline array allocation",
-	    default = true,
+	    default = false,
 	    toString = Bool.toString}
    
 val inputFile = control {name = "input file",

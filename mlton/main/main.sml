@@ -138,7 +138,7 @@ fun options () =
  *)
        (Normal, "inline", " n", "inlining threshold",
 	Int setInlineSize),
-       (Expert, "inline-array", " {true|false}",
+       (Expert, "inline-array", " {false|true}",
 	"inline array allocation",
 	boolRef inlineArrayAllocation),
 (*        (Normal, "I", "dir", "search dir for include files",
