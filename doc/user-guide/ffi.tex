@@ -44,8 +44,8 @@ mlton import.sml ffi-import.o
 success
 \end{verbatim}
 
-\subsection{Calling from C to SML}
-Suppose you would like export from SML a funtion of type {\tt real *
+\subsec{Calling from C to SML}{export}
+Suppose you would like export from SML a function of type {\tt real *
 char -> int} as the C function {\tt foo}.  {\mlton} extends the syntax
 of SML to allow expressions like the following:
 \begin{verbatim}
@@ -65,16 +65,18 @@ _export "foo": real * char -> int;
 (fn (x, c) => 13 + Real.floor x + Char.ord c)
 \end{verbatim}
 
-{\mlton} generate a C header file at compile time with prototypes for
-all of the exported functions.  You can use this header to type check
-your C code.  An example in the {\tt examples/ffi} directory
-demonstrates the use of {\export} expressions and the header file.
-Running {\tt make export} will produce an executable, {\tt export},
-that should output {\tt success} when run.
+To type check your C files, you can use the {\tt -export-header true}
+option, which generates a C header file with prototypes for all of the
+functions exported from SML.  An example in the {\tt examples/ffi}
+directory demonstrates the use of {\export} expressions and generating
+the header file.  Running {\tt make export} will produce an
+executable, {\tt export}, that should output {\tt success} when run.
 
 \begin{verbatim}
 % make export
-mlton export.sml ffi-export.c
+mlton -export-header true >export.h export.sml
+gcc -c -I/usr/lib/mlton/self/include ffi-export.c
+mlton export.sml ffi-export.o
 % ./export
 g starting
 i = 13  r = 17.15
@@ -88,6 +90,13 @@ g2 done
 g3 starting
 hello
 g3 done
+g4 (13)
+g4 (12)
+...
+g4 (3)
+g4 (2)
+g4 (1)
+g4 (0)
 success
 \end{verbatim}
 

@@ -69,14 +69,10 @@ compiling {\tt -native false}.
 This flag controls whether or not overflow checking is performed on integer
 arithmetic, in particular on {\tt Int.\{+,-,*,\~{},div,quot\}}.
 
-% -D doesn't work right now
-%
-%\option{-D\mbox{\rm define}}
-%Define a compile-time constant accessible via {\mlton}'s {\tt \_prim}
-%syntax (see \secref{compile-time-constant}).
-
-%If you compile {\tt -DMLton\_debug=1}, then the value of the variable
-%{\tt MLton.debug} will be true.  The default is false.
+\option{-export-header \falseTrue}
+This flag is useful for programs that use {\export} expressions (see
+\secref{export}).  It causes {\mlton} to output to standard output a C
+header file with prototypes for all of functions exported from SML.
 
 \option{-exn-history \falseTrue}
 Enable {\tt Exn.history}.  See \secref{exn} for details.  There is a
