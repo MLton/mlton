@@ -793,17 +793,7 @@ fun exportNJ (root: Dir.t, file: File.t): unit =
 fun exportMLton (): unit =
    case CommandLine.arguments () of
       [worldFile] =>
-	 let
-	    datatype z = datatype MLton.World.status
-	 in
-	    OS.Process.exit
-	    (case MLton.World.save worldFile of
-		Clone =>
-		   (commandLine (CommandLine.arguments ())
-		    handle _ => OS.Process.failure)
-	     | Original =>
-		  OS.Process.success)
-	 end
-    | _ => Error.bug "usage: exportMLton root file"
+	 SMLofNJ.exportFn (worldFile, fn (_, args) => commandLine args)
+    | _ => Error.bug "usage: exportMLton worldFile"
 
 end

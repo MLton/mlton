@@ -205,7 +205,7 @@ version:
 world: 
 	@echo 'Making world.'
 	$(CP) $(SRC)/basis-library $(LIB)/sml
-	$(LIB)/$(AOUT) @MLton -- $(LIB)/world.mlton
+	$(LIB)/$(AOUT) @MLton -- $(LIB)/world
 
 # The TBIN and TLIB are where the files are going to be after installing.
 # The DESTDIR and is added onto them to indicate where the Makefile actually
