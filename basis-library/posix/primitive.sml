@@ -152,6 +152,7 @@ structure PosixPrimitive =
 
 	    val block = _const "Posix_Signal_block": how;
 	    val default = _ffi "Posix_Signal_default": signal -> int;
+	    val handleGC = _ffi "Posix_Signal_handleGC": unit -> unit;
 	    val handlee = _ffi "Posix_Signal_handle": signal -> int;
 	    val ignore = _ffi "Posix_Signal_ignore": signal -> int;
 	    val isDefault =

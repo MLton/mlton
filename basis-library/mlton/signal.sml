@@ -208,6 +208,7 @@ fun suspend m =
     ; MLtonThread.switchToHandler ())
 
 fun handleGC f =
-   gcHandler := Handler.handler (fn t => (f (); t))
+   (Prim.handleGC ()
+    ; gcHandler := Handler.handler (fn t => (f (); t)))
 
 end

@@ -43,6 +43,10 @@ Int Posix_Signal_handle (int signum) {
 	return sigaction (signum, &sa, NULL);
 }
 
+void Posix_Signal_handleGC () {
+	gcState.handleGCSignal = TRUE;
+}
+
 Int Posix_Signal_ignore (Int signum) {
 	struct sigaction sa;
 

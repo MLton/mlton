@@ -2973,7 +2973,7 @@ void GC_gc (GC_state s, uint bytesRequested, bool force,
 		/* This GC will grow the stack, if necessary. */
 		doGC (s, 0, bytesRequested, force, TRUE);	
 		/* Send a GC signal. */
-		if (BOGUS_THREAD != s->signalHandler) {
+		if (s->handleGCSignal and BOGUS_THREAD != s->signalHandler) {
 			if (DEBUG_SIGNALS)
 				fprintf (stderr, "GC Signal pending\n");
 			s->gcSignalIsPending = TRUE;
@@ -4041,6 +4041,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->currentThread = BOGUS_THREAD;
 	s->gcSignalIsPending = FALSE;
 	s->growRatio = 8.0;
+	s->handleGCSignal = FALSE;
 	s->inSignalHandler = FALSE;
 	s->isOriginal = TRUE;
 	s->liveRatio = 8.0;
@@ -4328,6 +4329,7 @@ void GC_finishHandler (GC_state s) {
 void GC_handler (GC_state s, int signum) {
 	if (DEBUG_SIGNALS)
 		fprintf (stderr, "GC_handler  signum = %d\n", signum);
+	assert (sigismember (&s->signalsHandled, signum));
 	signalPending (s);
 	sigaddset (&s->signalsPending, signum);
 	if (DEBUG_SIGNALS)

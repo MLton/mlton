@@ -352,6 +352,7 @@ typedef struct GC_state {
 	pointer *globals;
 	uint globalsSize;
 	float growRatio;
+	bool handleGCSignal;
 	struct GC_heap heap;
 	struct GC_heap heap2;	/* Used for major copying collection. */
 	bool inSignalHandler; 	/* TRUE iff a signal handler is running. */
@@ -427,7 +428,10 @@ typedef struct GC_state {
 	/* saveGlobals writes out the values of all of the globals to fd. */
 	void (*saveGlobals)(int fd);
 	GC_thread signalHandler; /* The mutator signal handler thread. */
-	sigset_t signalsHandled; /* The signals handler expects to be handled. */
+        /* signalsHandled is the set of signals for which a mutator signal
+	 * handler needs to run in order to handle the signal.
+	 */
+	sigset_t signalsHandled;
 	/* signalIsPending is TRUE iff a signal has been received but not
 	 * processed by the mutator signal handler.
 	 */
