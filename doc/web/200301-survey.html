@@ -19,7 +19,7 @@
     This survey will help the MLton team to understand the
     improvements to MLton that would be most useful to our users and
       to set priorities for 2003.
-    Thank you very much for filling it out.
+    Thank you for filling it out.
 
     <form action = "http://www.mlton.org/cgi-bin/submit"
 	  enctype = "multipart/form-data"
@@ -29,19 +29,27 @@
 	  <input type = "text" name = "email"></input>
 	  <br> This is not for spam, but we might like to contact you to
 	  help us understand your answers so we can make MLton better.
+      <li>
+	What is your occupation?
+	<br><input type = "radio" name = "occupation" value = "undergraduate student">undergraduate student </input>
+	<br><input type = "radio" name = "occupation" value = "graduate student">graduate student</input>
+	<br><input type = "radio" name = "occupation" value = 
+		   "university">faculty/researcher at university</input>
+	<br><input type = "radio" name = "occupation" value =
+			"research lab">researcher at industrial
+	  research lab</input>
+	<br><input type = "radio" name = "occupation" value =
+			"programmer">programmer</input>
+	<br><input type = "radio" name = "occupation" value =
+			"other">other:</input>
+	    <input type = "text" name = "other occupation"></input>
      <li> How long have you been using SML?
-		<input type = "text" name = "how long SML" size = "10"></input>
-     <li> What's the largest (# lines) SML program you've written?
-		<input type = "text" name = "largest SML" size = "10"></input>
-     <li> How long have you been using MLton?
-		<input type = "text" name = "how long MLton" size = "10"></input>
-     <li> What's the largest (# lines) SML program you've compiled with MLton?
-		<input type = "text" name = "largest MLton" size = "10"></input>
-     <li>If you have software compiled with MLton that is not already listed
-         on the MLton <a href =
-			 "http://www.mlton.org/users.html">users page</a>,
-         please include a brief description and a link here.
-         <br> <textarea name = "project" cols = 60 rows = 5></textarea>
+		<input type = "text" name = "how long SML" size =
+		       "10"></input>
+          MLton? <input type = "text" name = "how long MLton" size = "10"></input>
+     <li> What's the largest (# lines) program you've written in 
+          <nobr>SML? <input type = "text" name = "largest SML" size = "10"></input></nobr>
+          <nobr>MLton? <input type = "text" name = "largest MLton" size = "10"></input></nobr>
      <li> What improvements to MLton would be most useful to you?
 <br><input type = "checkbox" name = "improve" value = "front end">
 	a proper front-end</input>
@@ -68,38 +76,36 @@
 <br><input type = "checkbox" name = "improve" value = "compiler internals">
 	documentation of compiler internals</input>
 <br><input type = "checkbox" name = "improve" value = "additional optimizations">
-	additional optimizations
-                (variant-tag elimination,
-		bounds-check elimination,
-		double alignment,
-		array flattening)</input>
+	additional optimizations</input>
 <br>Other:
   <br>  <textarea name = "project" cols = 60 rows = 5></textarea>
+     <li>If you have software compiled with MLton that is not already listed
+         on the <a href =
+			 "http://www.mlton.org/users.html">MLton users page</a>,
+         please include a brief description and a link here.
+         <br> <textarea name = "project" cols = 60 rows = 5></textarea>
       <li>
-	What is your occupation?
-	<br><input type = "radio" name = "occupation" value = "undergraduate student">undergraduate student </input>
-	<br><input type = "radio" name = "occupation" value = "graduate student">graduate student</input>
-	<br><input type = "radio" name = "occupation" value = 
-		   "university">faculty/researcher at university</input>
-	<br><input type = "radio" name = "occupation" value =
-			"research lab">researcher at industrial
-	  research lab</input>
-	<br><input type = "radio" name = "occupation" value =
-			"programmer">programmer</input>
-	<br><input type = "radio" name = "occupation" value =
-			"other">other:</input>
-	    <input type = "text" name = "other occupation"></input>
-      </p>
+        If you have an application that you are thinking of building
+        with MLton, but haven't yet, please give a brief description.
+        Include what the application does, the current
+        language/compiler (if it is already built with another
+        system), and the features of MLton that make it desirable or
+        undesirable to build your application with MLton.
+         <br> <textarea name = "application" cols = 60 rows = 5></textarea>
       </ol>
+      </p>
+      <p>
+	 If you have any additional information,
+	  you can contact us at <tt>MLton@mlton.org</tt>.
+         Thank you for filling out the survey.
       <p>
 	<input type = "submit" value = "Submit Survey">
-      </p>
     </form>
 
     <hr>
 <!-- Created: Tue Jan  7 16:06:53 PST 2003 -->
 <!-- hhmts start -->
-Last modified: Wed Jan  8 05:39:40 PST 2003
+Last modified: Wed Jan  8 09:14:26 PST 2003
 <!-- hhmts end -->
   </body>
 </html>
