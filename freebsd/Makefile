@@ -17,8 +17,8 @@ MAINTAINER=	MLton@mlton.org
 # order to build MLton, you must have installed a binary MLton package (an
 # earlier version should work), which you can get from www.mlton.org.
 BUILD_DEPENDS= \
+	hevea:$(PORTSDIR)/textproc/hevea:			\
 	latex:$(PORTSDIR)/print/teTeX: 				\
-	latex2html:$(PORTSDIR)/textproc/latex2html:		\
 	mlton:$(PORTSDIR)/lang/mlton:
 LIB_DEPENDS= \
 	gmp.5:$(PORTSDIR)/math/libgmp4
