@@ -646,6 +646,7 @@ structure ProfileInfo =
 			    Int.layout sourceSeqsIndex)])
 	   labels),
 	  ("sourceSeqs", Vector.layout (Vector.layout Int.layout) sourceSeqs),
+	  ("sourceSuccessors", Vector.layout Int.layout sourceSuccessors),
 	  ("sources", Vector.layout SourceInfo.layout sources)]
 
       fun layouts (pi, output) = output (layout pi)
