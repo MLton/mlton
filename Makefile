@@ -24,15 +24,15 @@ RELEASE = 1
 
 .PHONY: all
 all:
-	$(MAKE) dirs compiler world
+	$(MAKE) dirs runtime compiler world-no-check
 # If we're compiling with another version of MLton, then we want to do
 # another round of compilation so that we get a MLton built without
-# stubs .  Remove $(AOUT) so that the $(MAKE) compiler below will
-# remake MLton. 
+# stubs.  Remove $(AOUT) so that the $(MAKE) compiler below will
+# remake MLton.
 ifeq (other, $(shell if [ ! -x $(BIN)/mlton ]; then echo other; fi))
 	rm -f $(COMP)/$(AOUT)
 endif
-	$(MAKE) script runtime targetmap constants compiler world tools docs
+	$(MAKE) script targetmap constants compiler world tools docs
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: bootstrap-nj
@@ -203,11 +203,15 @@ version:
 
 .PHONY: world
 world: 
+	$(MAKE) world-no-check
+	@echo 'Type checking basis.'
+	$(MLTON) -show-basis true >/dev/null
+
+.PHONY: world-no-check
+world-no-check: 
 	@echo 'Making world.'
 	$(CP) $(SRC)/basis-library $(LIB)/sml
 	$(LIB)/$(AOUT) @MLton -- $(LIB)/world
-	@echo 'Type checking basis.'
-	$(MLTON) -show-basis true >/dev/null
 
 # The TBIN and TLIB are where the files are going to be after installing.
 # The DESTDIR and is added onto them to indicate where the Makefile actually
