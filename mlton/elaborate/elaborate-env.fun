@@ -564,6 +564,8 @@ structure Structure =
 		      Layout.tuple [layout str, Interface.layout interface],
 		      layout)
 	 cut
+
+      val ffi: t option ref = ref NONE
    end
 
 structure FunctorClosure =

@@ -28,7 +28,6 @@ signature MLTON =
       structure BinIO: MLTON_BIN_IO
       structure Cont: MLTON_CONT
       structure Exn: MLTON_EXN
-      structure FFI: MLTON_FFI
       structure Finalizable: MLTON_FINALIZABLE
       structure GC: MLTON_GC
       structure IntInf: MLTON_INT_INF

@@ -416,11 +416,8 @@ fun export (name: string, ty: Type.t, region: Region.t): Aexp.t =
 	       end
       open Ast
       val filePos = "<export>"
-      fun strid name = Strid.fromString (name, region)
       fun id name =
-	 Aexp.longvid
-	 (Longvid.long ([strid "MLton", strid "FFI"], 
-			Vid.fromString (name, region)))
+	 Aexp.longvid (Longvid.short (Vid.fromString (name, region)))
       fun int (i: int): Aexp.t =
 	 Aexp.const (Aconst.makeRegion (Aconst.Int (IntInf.fromInt i), region))
       val f = Var.fromString ("f", region)
@@ -955,7 +952,12 @@ fun elaborateDec (d, nest, E) =
 			    in
 			       doit
 			       (Cexp.Constraint
-				(elabExp' (export (name, ty, region), nest),
+				(Env.scope
+				 (E, fn () =>
+				  (Env.openStructure (E,
+						      valOf (!Env.Structure.ffi))
+				   ; elabExp' (export (name, ty, region),
+					       nest))),
 				 Type.arrow (ty, Type.unit)))
 			    end
 		       | FFI => simple (Cprim.ffi (name, ty))

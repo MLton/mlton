@@ -241,9 +241,16 @@ in
 	  val (build, localTopFinish) =
 	     Env.localTop
 	     (basisEnv,
-	      fn () => (Env.addPrim basisEnv
-			; withFiles (libsFile "build", 
-				     fn fs => parseAndElaborateFiles (fs, basisEnv))))
+	      fn () =>
+	      (Env.addPrim basisEnv
+	       ; withFiles (libsFile "build", 
+			    fn fs => parseAndElaborateFiles (fs, basisEnv))))
+	  val _ =
+	     Env.Structure.ffi
+	     := SOME (Env.lookupLongstrid
+		      (basisEnv,
+		       Ast.Longstrid.short
+		       (Ast.Strid.fromString ("MLtonFFI", Region.bogus))))
 	  val localTopFinish = fn g =>
 	     (localTopFinish g) before (Env.addEquals basisEnv
 					; Env.clean basisEnv)
@@ -288,7 +295,7 @@ fun selectBasisLibrary () =
      val lib = !Control.basisLibrary
    in
       case List.peek (libs, fn {name, ...} => name = lib) of
-	 NONE => Error.bug ("Missing basis library: " ^ lib)
+	 NONE => Error.bug (concat ["Missing basis library: ", lib])
        | SOME {bind, prefix, suffix, ...} =>
 	   let
 	     val (bind, prefix, suffix) = 

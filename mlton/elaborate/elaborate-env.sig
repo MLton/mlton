@@ -79,6 +79,10 @@ signature ELABORATE_ENV =
 		      interface: Interface.t,
 		      opaque: bool,
 		      region: Region.t} -> t
+	    (* ffi represents MLtonFFI, which is built by the basis library
+	     * and is set in compile.sml after processing the basis.
+	     *)
+	    val ffi: t option ref
 	 end
       structure FunctorClosure:
 	 sig
