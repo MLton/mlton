@@ -66,13 +66,13 @@ functor BufferIExtra
 
       fun update function (ib as In {augmented_reader, state,
 				     first, last, buf, ...}) blocking =
-	case !state of
-	  Closed => SOME false
-	| Open {eos = true} => SOME false
-	| Open {eos = false} =>
-	    if !first < !last
-	      then SOME true
-	      else let
+	if !first < !last
+	  then SOME true
+	  else case !state of
+	         Closed => SOME false
+	       | Open {eos = true} => SOME false
+	       | Open {eos = false} =>
+		   let
 		     fun doit readArr =
 		       let
 			 val i = readArr {buf = buf, i = 0, sz = NONE}
@@ -172,96 +172,95 @@ functor BufferIExtra
 
       fun input (ib as In {augmented_reader, state, 
 			   first, last, buf, ...}) =
-	case !state of
-	  Closed => empty
-	| Open {eos = true} => (state := Open {eos = false};
-				empty)
-	| Open {eos = false} =>
-	    let
-	      val f = !first
-	      val l = !last
-	    in
-	      if f < l
-		then (first := l;
-		      V.tabulate (l - f, fn i => A.sub (buf, f + i)))
-		else case readerSel (augmented_reader, #readVec) of
-		       NONE => liftExn (inbufferName ib) "input" IO.BlockingNotSupported 
-		     | SOME readVec => readVec (readerSel (augmented_reader, #chunkSize))
-			               handle exn => 
-				       liftExn (inbufferName ib) "input" exn
-	    end
+	let
+	  val f = !first
+	  val l = !last
+	in
+	  if f < l
+	    then (first := l;
+		  V.tabulate (l - f, fn i => A.sub (buf, f + i)))
+	    else case !state of
+	           Closed => empty
+		 | Open {eos = true} => (state := Open {eos = false};
+					 empty)
+		 | Open {eos = false} =>
+		     (case readerSel (augmented_reader, #readVec) of
+			NONE => liftExn (inbufferName ib) "input" IO.BlockingNotSupported 
+		      | SOME readVec => readVec (readerSel (augmented_reader, #chunkSize))
+			                handle exn => 
+					liftExn (inbufferName ib) "input" exn)
+	end
 
       (* input1 will move past a temporary end of stream *)
       fun input1 (ib as In {state, first, last, buf, ...}) =
-	case !state of
-	  Closed => NONE
-	| Open {eos = true} => (state := Open {eos = false}; 
-				NONE)
-	| Open {eos = false} =>
-	    let
-	      val f = !first
-	      val l = !last
-	    in
-	      if f < l
-		then (first := f + 1;
-		      SOME (A.sub (buf, f)))
-		else if updateB "input1" ib
-		       then (first := 1;
-			     SOME (A.sub (buf, 0)))
-		       else NONE
-	    end
+	let
+	  val f = !first
+	in
+	  if f < !last
+	    then (first := f + 1;
+		  SOME (A.sub (buf, f)))
+	  else case !state of
+	         Closed => NONE
+	       | Open {eos = true} => (state := Open {eos = false}; 
+				       NONE)
+	       | Open {eos = false} => if updateB "input1" ib
+					 then (first := 1;
+					       SOME (A.sub (buf, 0)))
+					 else NONE
+	end
 	  
       fun inputN (ib as In {augmented_reader, state, 
 			    first, last, buf, ...}, n) =
 	if n < 0 orelse n > V.maxLen
 	  then raise Size
-	  else case !state of
-	    Closed => empty
-	  | Open {eos = true} => (state := Open {eos = false};
-				  empty)
-	  | Open {eos = false} =>
-	      let
-		val f = !first
-		val l = !last
-		val size = l - f
-	      in
-		if size >= n
-		  then (first := f + n;
-			V.tabulate (n, fn k => A.sub (buf, f + k)))
-		  else case readerSel (augmented_reader, #readArr) of
-		         NONE => liftExn (inbufferName ib)
-			         "inputN" 
-				 IO.BlockingNotSupported 
-		       | SOME readArr => 
-			   let
-			     val inp = A.array (n, someElem)
-			     fun fill k =
-			       if k >= size
-				 then ()
-				 else (A.update (inp, k, A.sub (buf, f + k));
-				       fill (k + 1))
-			     val _ = fill 0
-			     val _ = first := l
-			     fun loop i =
-			       if i = n
-				 then i
-				 else let
-					val j = readArr
-					        {buf = inp,
+	  else let
+		 val f = !first
+		 val l = !last
+		 val size = l - f
+	       in
+		 if size >= n
+		   then (first := f + n;
+			 V.tabulate (n, fn k => A.sub (buf, f + k)))
+		   else case !state of
+		          Closed => empty
+			| Open {eos = true} => (state := Open {eos = false};
+						empty)
+			| Open {eos = false} =>
+			    (case readerSel (augmented_reader, #readArr) of
+			       NONE => liftExn (inbufferName ib)
+				       "inputN" 
+				       IO.BlockingNotSupported 
+			     | SOME readArr => 
+				 let
+				   val inp = A.array (n, someElem)
+				   fun fill k =
+				     if k >= size
+				       then ()
+				       else (A.update (inp, k, A.sub (buf, f + k));
+					     fill (k + 1))
+				   val _ = fill 0
+				   val _ = first := l
+				   fun loop i =
+				     if i = n
+				       then i
+				       else let
+					      val j = 
+						readArr
+						{buf = inp,
 						 i = i,
 						 sz = SOME (n - i)}
 						handle exn => 
-						liftExn (inbufferName ib) "inputN" exn
-				      in
-					if j = 0
-					  then (state := Open {eos = true}; i)
-					  else loop (i + j)
-				      end
-			     val i = loop size
-			   in
-			     V.tabulate (i, fn k => A.sub (inp, k))
-			   end
-	      end
+					        liftExn (inbufferName ib) "inputN" exn
+					    in
+					      if j = 0
+						then (state := Open {eos = true}; i)
+						else loop (i + j)
+					    end
+				   val i = loop size
+				 in
+				   V.tabulate (i, fn k => A.sub (inp, k))
+				 end)
+	       end
 	    
       fun inputAll (ib as In {augmented_reader, state, 
 			      first, last, buf, ...}) =
@@ -345,20 +344,20 @@ functor BufferIExtra
 	  | _ => SOME 0
 		 
       fun lookahead (ib as In {state, first, last, buf, ...}) =
-	case !state of
-	  Closed => NONE
-	| Open {eos = true} => NONE
-	| Open {eos = false} =>
-	    let
-	      val f = !first
-	      val l = !last
-	    in
-	      if f < l
-		then SOME (A.sub (buf, f))
-		else if updateB "lookahead" ib
+	let
+	  val f = !first
+	  val l = !last
+	in
+	  if f < l
+	    then SOME (A.sub (buf, f))
+	    else case !state of
+	           Closed => NONE
+		 | Open {eos = true} => NONE
+		 | Open {eos = false} =>
+		     if updateB "lookahead" ib
 		       then SOME (A.sub (buf, 0))
 		       else NONE
-	    end
+	end
 
       fun closeIn (ib as In {first, last, state, ...}) =
 	case !state of

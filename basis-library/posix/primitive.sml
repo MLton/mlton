@@ -518,9 +518,13 @@ structure PosixPrimitive =
 	    val fsync = _ffi "Posix_IO_fsync": fd -> int;
 	    val lseek = _ffi "Posix_IO_lseek": fd * int * int -> int;
 	    val pipe = _ffi "Posix_IO_pipe": fd array -> int;
-	    val read = _ffi "Posix_IO_read":
+	    val readChar = _ffi "Posix_IO_read":
+	       fd * char array * int * size -> ssize;
+	    val writeChar = _ffi "Posix_IO_write":
+	       fd * char vector * int * size -> ssize;
+	    val readWord8 = _ffi "Posix_IO_read":
 	       fd * word8 array * int * size -> ssize;
-	    val write = _ffi "Posix_IO_write":
+	    val writeWord8 = _ffi "Posix_IO_write":
 	       fd * word8 vector * int * size -> ssize;
 	 end	       
 

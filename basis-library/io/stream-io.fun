@@ -410,14 +410,26 @@ functor StreamIOExtra
 		 loop (is, [], n)
 	       end
 
-      fun input1 is =
-	let
-	  val (inp, is') = inputN (is, 1)
-	in
-	  if V.length inp = 0
-	    then NONE
-	    else SOME (V.sub (inp, 0), is')
-	end
+      fun input1 (is as In {state, ...}) =
+	case !state of
+	  Active (ref (Link {inp, pos, next})) =>
+	    let
+	      val next = if pos + 1 < V.length inp
+			   then let
+				  val link = Link {inp = inp,
+						   pos = pos + 1,
+						   next = next}
+				in ref (Active (ref link))
+				end
+			   else next
+	    in
+	      SOME (V.sub (inp, pos), updateState (is, next))
+	    end
+	| Active (ref End) => 
+	    let val _ = extendB "input1" is 
+	    in input1 is
+	    end
+	| _ => NONE
 
       fun inputAll is =
 	let
