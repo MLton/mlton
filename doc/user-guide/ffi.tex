@@ -112,6 +112,9 @@ of the different sizes of (fixed-sized) integers, reals, and words are
 supported as well: {\tt Int8.int}, {\tt Int16.int}, {\tt Int32.int},
 {\tt Int64.int}, {\tt Real32.real}, {\tt Real64.real}, {\tt
 Word8.word}, {\tt Word16.word}, {\tt Word32.word}, {\tt Word64.word}.
+There is a special type, {\tt MLton.Pointer.t}, for passing C pointers
+-- see \secref{pointer} for details.
+
 Arrays, refs, and vectors of the above types are also allowed.
 Because in {\mlton} monomorphic arrays and vectors are exactly the
 same as their polymorphic counterpart, these are also allowed.
@@ -121,6 +124,7 @@ would interfere with representation optimizations.
 The C header file that {\tt -export-header true} generates includes
 {\tt typedef}s for the C types corresponding to the SML types.  Here
 is the mapping between SML types and C types.
+
 
 \begin{center}
 \begin{tabular}{l|l|l}
@@ -134,6 +138,7 @@ SML type & C typedef & C type\\
 {\tt Int32.int} & {\tt Int32} & {\tt long} \\
 {\tt Int64.int} & {\tt Int64} & {\tt long long} \\
 {\tt int} & {\tt Int32} & {\tt long} \\
+{\tt MLton.Pointer.t} & {\tt Pointer} & {\tt char *} \\
 {\tt Real32.real} & {\tt Real32} & {\tt float} \\
 {\tt Real64.real} & {\tt Real64} & {\tt double} \\
 {\tt real} & {\tt Real64} & {\tt double} \\
