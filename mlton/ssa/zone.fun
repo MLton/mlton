@@ -139,7 +139,7 @@ fun zoneFunction f =
 				 val offset = !numComponents
 				 val () = List.push (componentsRev, x)
 				 val () = numComponents := 1 + offset
-				 val exp = Select {object = tuple,
+				 val exp = Select {base = Base.Object tuple,
 						   offset = offset}
 				 val () = List.push (uses, {exp = exp,
 							    scope = scope})

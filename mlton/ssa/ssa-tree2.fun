@@ -70,6 +70,37 @@ structure Prod =
 			    isMutable = isMutable}))
    end
 
+structure ObjectCon =
+   struct
+      datatype t =
+	 Con of Con.t
+       | Tuple
+       | Vector
+
+      val equals: t * t -> bool =
+	 fn (Con c, Con c') => Con.equals (c, c')
+	  | (Tuple, Tuple) => true
+	  | (Vector, Vector) => true
+	  | _ => false
+
+      val isVector: t -> bool =
+	 fn Vector => true
+	  | _ => false
+
+      val layout: t -> Layout.t =
+	 fn oc =>
+	 let
+	    open Layout
+	 in
+	    case oc of
+	       Con c => Con.layout c
+	     | Tuple => str "Tuple"
+	     | Vector => str "Vector"
+	 end
+   end
+
+datatype z = datatype ObjectCon.t
+
 structure Type =
    struct
       datatype t =
@@ -79,14 +110,12 @@ structure Type =
       and tree =
 	 Datatype of Tycon.t
 	| IntInf
-	| Object of {args: prod,
-		     con: Con.t option}
+	| Object of {args: t Prod.t,
+		     con: ObjectCon.t}
 	| Real of RealSize.t
 	| Thread
-	| Vector of prod
 	| Weak of t
 	| Word of WordSize.t
-      withtype prod = t Prod.t
 	 
       local
 	 fun make f (T r) = f r
@@ -102,10 +131,13 @@ structure Type =
 
       fun equals (t, t') = PropertyList.equals (plist t, plist t')
 
-      fun isVector t =
+      val deVectorOpt: t -> t Prod.t option =
+	 fn t =>
 	 case dest t of
-	    Vector _ => true
-	  | _ => false
+	    Object {args, con = Vector} => SOME args
+	  | _ => NONE
+	       
+      val isVector: t -> bool = isSome o deVectorOpt
 
       fun isWeak t =
 	 case dest t of
@@ -117,11 +149,10 @@ structure Type =
 	    fn (Datatype t1, Datatype t2) => Tycon.equals (t1, t2)
 	     | (IntInf, IntInf) => true
 	     | (Object {args = a1, con = c1}, Object {args = a2, con = c2}) =>
-		  Option.equals (c1, c2, Con.equals)
+		  ObjectCon.equals (c1, c2)
 		  andalso Prod.equals (a1, a2, equals)
 	     | (Real s1, Real s2) => RealSize.equals (s1, s2)
 	     | (Thread, Thread) => true
-	     | (Vector p1, Vector p2) => Prod.equals (p1, p2, equals)
 	     | (Weak t1, Weak t2) => equals (t1, t2)
 	     | (Word s1, Word s2) => WordSize.equals (s1, s2)
 	     | _ => false
@@ -179,18 +210,20 @@ structure Type =
 	    Vector.fold (Prod.dest p, base, fn ({elt, ...}, w) =>
 			 Word.xorb (w * generator, hash elt))
       in
-	 fun vector p = lookup (hashProd (p, tuple), Vector p)
 	 fun object {args, con}: t =
 	    let
 	       val base =
 		  case con of
-		     NONE => tuple
-		   | SOME c => Con.hash c
+		     Con c => Con.hash c
+		   | Tuple => tuple
+		   | Vector => vector
 	       val hash = hashProd (args, base)
 	    in
 	       lookup (hash, Object {args = args, con = con})
 	    end
       end
+
+      fun vector p = object {args = p, con = Vector}
 
       local
 	 fun make isMutable t =
@@ -215,20 +248,20 @@ structure Type =
 	     | Word8Vector _ => word8Vector
 	 end
 
-      fun conApp (con, args) = object {args = args, con = SOME con}
+      fun conApp (con, args) = object {args = args, con = Con con}
 	 
-      fun tuple ts = object {args = ts, con = NONE}
+      fun tuple ts = object {args = ts, con = Tuple}
 
       fun reff t =
 	 object {args = Prod.make (Vector.new1 {elt = t, isMutable = true}),
-		 con = NONE}
+		 con = Tuple}
 	 
       val unit: t = tuple (Prod.empty ())
 
       val isUnit: t -> bool =
 	 fn t =>
 	 case dest t of
-	    Object {args, con} => Prod.isEmpty args andalso Option.isNone con
+	    Object {args, con = Tuple} => Prod.isEmpty args
 	  | _ => false
 
       local
@@ -246,16 +279,16 @@ structure Type =
 		    if isUnit t
 		       then str "unit"
 		    else
-		       (case con of
-			   NONE => Prod.layout (args, layout)
-			 | SOME c =>
-			      if false
-				 then seq [Con.layout c,
-					   str " ", Prod.layout (args, layout)]
-			      else Con.layout c)
+		       let
+			  val args = Prod.layout (args, layout)
+		       in
+			  case con of
+			     Con c => Con.layout c
+			   | Tuple => args
+			   | Vector => seq [args, str " vector"]
+		       end
 	       | Real s => str (concat ["real", RealSize.toString s])
 	       | Thread => str "thread"
-	       | Vector p => seq [Prod.layout (p, layout), str " vector"]
 	       | Weak t => seq [layout t, str " weak"]
 	       | Word s => str (concat ["word", WordSize.toString s])))
       end
@@ -318,8 +351,8 @@ structure Type =
 	     | Array_toVector =>
 		  oneArg
 		  (fn a =>
-		   case (dest a, dest result) of
-		      (Vector ap, Vector vp) =>
+		   case (deVectorOpt a, deVectorOpt result) of
+		      (SOME ap, SOME vp) =>
 			 Vector.equals (Prod.dest ap, Prod.dest vp,
 					fn ({elt = ae, isMutable = ai},
 					    {elt = ve, isMutable = vi}) =>
@@ -545,6 +578,63 @@ structure Var =
 			  xs)
    end
 
+structure Base =
+   struct
+      datatype 'a t =
+	 Object of 'a
+       | VectorSub of {index: 'a,
+		       vector: 'a}
+
+      fun layout (b: 'a t, layoutX: 'a -> Layout.t): Layout.t =
+	 let
+	    open Layout
+	 in
+	    case b of
+	       Object x => layoutX x
+	     | VectorSub {index, vector} =>
+		  seq [layoutX vector, str "[", layoutX index, str "]"]
+	 end
+
+      val equals: 'a t * 'a t * ('a * 'a -> bool) -> bool =
+	 fn (b1, b2, equalsX) =>
+	 case (b1, b2) of
+	    (Object x1, Object x2) => equalsX (x1, x2)
+	  | (VectorSub {index = i1, vector = v1},
+	     VectorSub {index = i2, vector = v2}) =>
+	       equalsX (i1, i2) andalso equalsX (v1, v2)
+	  | _ => false
+
+      fun object (b: 'a t): 'a =
+	 case b of
+	    Object x => x
+	  | VectorSub {vector = x, ...} => x
+
+      local
+	 val newHash = Random.word
+	 val object = newHash ()
+	 val vectorSub = newHash ()
+      in
+	 val hash: 'a t * ('a -> word) -> word =
+	    fn (b, hashX) =>
+	    case b of
+	       Object x => Word.xorb (object, hashX x)
+	     | VectorSub {index, vector} =>
+		  Word.xorb (Word.xorb (hashX index, hashX vector),
+			     vectorSub)
+      end
+
+      fun foreach (b: 'a t, f: 'a -> unit): unit =
+	 case b of
+	    Object x => f x
+	  | VectorSub {index, vector} => (f index; f vector)
+
+      fun map (b: 'a t, f: 'a -> 'b): 'b t =
+	 case b of
+	    Object x => Object (f x)
+	  | VectorSub {index, vector} => VectorSub {index = f index,
+						    vector = f vector}
+   end
+
 structure Exp =
    struct
       datatype t =
@@ -555,12 +645,9 @@ structure Exp =
 		    args: Var.t vector}
        | PrimApp of {prim: Type.t Prim.t,
 		     args: Var.t vector}
-       | Select of {object: Var.t,
+       | Select of {base: Var.t Base.t,
 		    offset: int}
        | Var of Var.t
-       | VectorSub of {index: Var.t,
-		       offset: int,
-		       vector: Var.t}
 
       val unit = Object {con = NONE,
 			 args = Vector.new0 ()}
@@ -574,9 +661,8 @@ structure Exp =
 	     | Inject {variant, ...} => v variant
 	     | Object {args, ...} => vs args
 	     | PrimApp {args, ...} => vs args
-	     | Select {object, ...} => v object
+	     | Select {base, ...} => Base.foreach (base, v)
 	     | Var x => v x
-	     | VectorSub {index, vector, ...} => (v index; v vector)
 	 end
 
       fun replaceVar (e, fx) =
@@ -588,13 +674,9 @@ structure Exp =
 	     | Inject {sum, variant} => Inject {sum = sum, variant = fx variant}
 	     | Object {con, args} => Object {con = con, args = fxs args}
 	     | PrimApp {prim, args} => PrimApp {args = fxs args, prim = prim}
-	     | Select {object, offset} =>
-		  Select {object = fx object, offset = offset}
+	     | Select {base, offset} =>
+		  Select {base = Base.map (base, fx), offset = offset}
 	     | Var x => Var (fx x)
-	     | VectorSub {index, offset, vector} =>
-		  VectorSub {index = fx index,
-			     offset = offset,
-			     vector = fx vector}
 	 end
 
       fun layout' (e, layoutVar) =
@@ -612,16 +694,10 @@ structure Exp =
 		       layoutTuple args]
 	     | PrimApp {args, prim} =>
 		  seq [Prim.layout prim, seq [str " ", layoutTuple args]]
-	     | Select {object, offset} =>
+	     | Select {base, offset} =>
 		  seq [str "#", Int.layout offset, str " ",
-		       layoutVar object]
+		       Base.layout (base, layoutVar)]
 	     | Var x => layoutVar x
-	     | VectorSub {index, offset, vector} =>
-		  seq [if 0 = offset
-			  then empty
-		       else seq [str "#", Int.layout offset, str " "],
-		       layoutVar vector,
-		       str "[", layoutVar index, str "]"]
 	 end
 
       fun layout e = layout' (e, Var.layout)
@@ -642,7 +718,6 @@ structure Exp =
 	  | PrimApp {prim,...} => Prim.maySideEffect prim
 	  | Select _ => false
 	  | Var _ => false
-	  | VectorSub _ => false
 
       fun varsEquals (xs, xs') = Vector.equals (xs, xs', Var.equals)
 
@@ -655,15 +730,9 @@ structure Exp =
 	  | (PrimApp {prim, args, ...},
 	     PrimApp {prim = prim', args = args', ...}) =>
 	       Prim.equals (prim, prim') andalso varsEquals (args, args')
-	  | (Select {object = o1, offset = i1},
-	     Select {object = o2, offset = i2}) =>
-	       Var.equals (o1, o2) andalso i1 = i2
+	  | (Select {base = b1, offset = i1}, Select {base = b2, offset = i2}) =>
+	       Base.equals (b1, b2, Var.equals) andalso i1 = i2
 	  | (Var x, Var x') => Var.equals (x, x')
-  	  | (VectorSub {index = i1, offset = o1, vector = v1},
-	     VectorSub {index = i2, offset = o2, vector = v2}) =>
-	       Var.equals (i1, i2)
-	       andalso o1 = o2
-	       andalso Var.equals (v1, v2)
 	  | _ => false
 
       local
@@ -672,7 +741,6 @@ structure Exp =
 	 val primApp = newHash ()
 	 val select = newHash ()
 	 val tuple = newHash ()
-	 val vectorSub = newHash ()
 	 fun hashVars (xs: Var.t vector, w: Word.t): Word.t =
 	    Vector.fold (xs, w, fn (x, w) => Word.xorb (w, Var.hash x))
       in
@@ -687,14 +755,10 @@ structure Exp =
 			       NONE => tuple
 			     | SOME c => Con.hash c)
 	     | PrimApp {args, ...} => hashVars (args, primApp)
-	     | Select {object, offset} =>
-		  Word.xorb (select, Var.hash object + Word.fromInt offset)
+	     | Select {base, offset} =>
+		  Word.xorb (select,
+			     Base.hash (base, Var.hash) + Word.fromInt offset)
 	     | Var x => Var.hash x
-	     | VectorSub {index, offset, vector} =>
-		  Word.xorb
-		  (vectorSub,
-		   Word.xorb (Var.hash index + Word.fromInt offset,
-			     Var.hash vector))
       end
 
       val hash = Trace.trace ("Exp.hash", layout, Word.layout) hash
@@ -708,11 +772,8 @@ structure Statement =
 		  ty: Type.t,
 		  exp: Exp.t}
        | Profile of ProfileExp.t
-       | Updates of {object: Var.t} * {offset: int,
-				       value: Var.t} vector
-       | VectorUpdates of {index: Var.t,
-			   vector: Var.t} * {offset: int,
-					     value: Var.t} vector
+       | Updates of Var.t Base.t * {offset: int,
+				    value: Var.t} vector
 
       fun layout' (s: t, layoutVar): Layout.t =
 	 let
@@ -730,23 +791,14 @@ structure Statement =
 					  str " = "]],
 		       Exp.layout' (exp, layoutVar)]
 	     | Profile p => ProfileExp.layout p
-      	     | Updates ({object}, us) =>
+      	     | Updates (base, us) =>
 		  align (Vector.toListMap
 			 (us, fn {offset, value} =>
 			  seq [if 0 = offset
 				  then empty
 			       else seq [str "#", Int.layout offset, str " "],
-				  layoutVar object,
+				  Base.layout (base, layoutVar),
 				  str " := ", layoutVar value]))
-	     | VectorUpdates ({index, vector}, us) =>
-		  align (Vector.toListMap
-			 (us, fn {offset, value} =>
-			  seq [if 0 = offset
-				  then empty
-			       else seq [str "#", Int.layout offset, str " "],
-			       layoutVar vector,
-			       str "[", layoutVar index, str "]",
-			       str " := ", layoutVar value]))
 	 end
 
       fun layout s = layout' (s, Var.layout)
@@ -762,7 +814,6 @@ structure Statement =
 	    Bind {exp, ...} => Exp.maySideEffect exp
 	  | Profile _ => false
 	  | Updates _ => true
-	  | VectorUpdates _ => true
 
       val profile = Profile
 
@@ -818,10 +869,8 @@ structure Statement =
 	 case s of
 	    Bind {exp, ...} => Exp.foreachVar (exp, f)
 	  | Profile _ => ()
-	  | Updates ({object}, us) =>
-	       (f object; Vector.foreach (us, f o #value))
-	  | VectorUpdates ({index, vector}, us) =>
-	       (f index; f vector; Vector.foreach (us, f o #value))
+	  | Updates (base, us) =>
+	       (Base.foreach (base, f); Vector.foreach (us, f o #value))
 	       
       fun replaceDefsUses (s: t, {def: Var.t -> Var.t, use: Var.t -> Var.t}): t =
 	 case s of
@@ -830,16 +879,10 @@ structure Statement =
 		     ty = ty,
 		     var = Option.map (var, def)}
 	  | Profile _ => s
-	  | Updates ({object}, us) =>
-	       Updates ({object = use object},
+	  | Updates (base, us) =>
+	       Updates (Base.map (base, use),
 			Vector.map (us, fn {offset, value} =>
 				    {offset = offset, value = use value}))
-	  | VectorUpdates ({index, vector}, us) =>
-	       VectorUpdates ({index = use index,
-			       vector = use vector},
-			      Vector.map (us, fn {offset, value} =>
-					  {offset = offset,
-					   value = use value}))
 
       fun replaceUses (s, f) = replaceDefsUses (s, {def = fn x => x, use = f})
    end

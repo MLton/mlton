@@ -38,7 +38,8 @@ structure VarInfo =
 		     variant: t}
 	| Object of {args: t vector,
 		     con: Con.t option}
-	| Select of {object: t, offset: int}
+	| Select of {object: t,
+		     offset: int}
 
       fun equals (T {var = x, ...}, T {var = y, ...}) = Var.equals (x, y)
 	 
@@ -219,9 +220,12 @@ fun shrinkFunction {globals: Statement.t vector} =
 			 construct
 			 (Value.Object {args = Vector.map (args, varInfo),
 					con = con})
-		    | Select {object, offset} =>
-			 construct (Value.Select {object = varInfo object,
-						  offset = offset})
+		    | Select {base, offset} =>
+			 (case base of
+			     Base.Object x =>
+				construct (Value.Select {object = varInfo x,
+							 offset = offset})
+			   | _ => ())
 		    | Var y =>
 			 Option.app (var, fn x => setVarInfo (x, varInfo y))
 		    | _ => ()
@@ -1120,7 +1124,7 @@ fun shrinkFunction {globals: Statement.t vector} =
 						    NONE => no ()
 						  | SOME ty =>
 						       (case Type.dest ty of
-							   Type.Object {args, con = NONE} =>
+							   Type.Object {args, con = ObjectCon.Tuple} =>
 							      if Prod.length args
 								 = Vector.length xs
 								 andalso
@@ -1177,14 +1181,14 @@ fun shrinkFunction {globals: Statement.t vector} =
 			 | Bool b =>
 			      let
 				 val variant = Var.newNoname ()
-				 val con = SOME (Con.fromBool b)
+				 val con = Con.fromBool b
 			      in
 				 evalStatements
 				 (Vector.new2
 				  (Bind {exp = Object {args = Vector.new0 (),
-						       con = con},
+						       con = SOME con},
 					 ty = Type.object {args = Prod.empty (),
-							   con = con},
+							   con = ObjectCon.Con con},
 					 var = SOME variant},
 				   Bind {exp = Inject {sum = Tycon.bool,
 						       variant = variant},
@@ -1197,31 +1201,38 @@ fun shrinkFunction {globals: Statement.t vector} =
 			 | _ => apply {args = args, prim = prim}
 				       
 		     end
-		| Select {object, offset} =>
-		     let
-			val object as VarInfo.T {ty, value, ...} = varInfo object
-			fun dontChange () =
-			   construct (Value.Select {object = object,
-						    offset = offset},
-				      fn () => Select {object = use object,
-						       offset = offset})
-		     in
-			case (ty, !value) of
-			   (SOME ty, SOME (Value.Object {args, ...})) =>
-			      (case Type.dest ty of
-				  Type.Object {args = targs, ...} =>
-				     (* Can't simplify the select if the field is
-				      * mutable.
-				      *)
-				     if #isMutable (Vector.sub
-						    (Prod.dest targs, offset))
-					then dontChange ()
-				     else setVar (Vector.sub (args, offset))
-				| _ => Error.bug "select of non object")
-			 | _ => dontChange ()
-		     end
+		| Select {base, offset} =>
+		     (case base of
+			 Base.Object object =>
+			    let
+			       val object as VarInfo.T {ty, value, ...} =
+				  varInfo object
+			       fun dontChange () =
+				  construct
+				  (Value.Select {object = object,
+						 offset = offset},
+				   fn () =>
+				   Select {base = Base.Object (use object),
+					   offset = offset})
+			    in
+			       case (ty, !value) of
+				  (SOME ty, SOME (Value.Object {args, ...})) =>
+				     (case Type.dest ty of
+					 Type.Object {args = targs, ...} =>
+					    (* Can't simplify the select if the
+					     * field is mutable.
+					     *)
+					    if (#isMutable
+						(Vector.sub
+						 (Prod.dest targs, offset)))
+					       then dontChange ()
+					    else setVar (Vector.sub
+							 (args, offset))
+				       | _ => Error.bug "select of non object")
+				| _ => dontChange ()
+			    end
+		       | Base.VectorSub _ => simple {sideEffect = false})
 		| Var x => setVar (varInfo x)
-		| VectorSub _ => simple {sideEffect = false}
 	    end
 	 and evalStatement arg : Statement.t list -> Statement.t list =
 	    traceEvalStatement
@@ -1234,7 +1245,6 @@ fun shrinkFunction {globals: Statement.t vector} =
 		   Bind b => evalBind b
 		 | Profile _ => simple ()
 		 | Updates _ => simple ()
-		 | VectorUpdates _ => simple ()
 	     end) arg
 	 val start = labelMeaning start
 	 val () = forceMeaningBlock start

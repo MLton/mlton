@@ -25,6 +25,7 @@ end
 local
    open S2
 in
+   structure Base = Base
    structure Prod = Prod
 end
 
@@ -106,27 +107,27 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 		     fun targ i = convertType (Vector.sub (targs, i))
 		     fun sub () =
 			simple
-			(S2.Exp.VectorSub {index = arg 1,
-					   offset = 0,
-					   vector = arg 0})
+			(S2.Exp.Select {base = Base.VectorSub {index = arg 1,
+							       vector = arg 0},
+					offset = 0})
 		     datatype z = datatype Prim.Name.t
 		   in
 		      case Prim.name prim of
 			 Array_sub => sub ()
 		       | Array_update =>
 			    Vector.new1
-			    (S2.Statement.VectorUpdates
-			     ({index = arg 1,
-			       vector = arg 0},
+			    (S2.Statement.Updates
+			     (Base.VectorSub {index = arg 1,
+					      vector = arg 0},
 			      Vector.new1 {offset = 0,
 					   value = arg 2}))
 		       | Ref_assign =>
 			    Vector.new1 (S2.Statement.Updates
-					 ({object = arg 0},
+					 (Base.Object (arg 0),
 					  Vector.new1 {offset = 0,
 						       value = arg 1}))
 		       | Ref_deref =>
-			    simple (S2.Exp.Select {object = arg 0,
+			    simple (S2.Exp.Select {base = Base.Object (arg 0),
 						   offset = 0})
 		       | Ref_ref =>
 			    simple (S2.Exp.Object {args = Vector.new1 (arg 0),
@@ -141,7 +142,8 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 		   end
 	     | S.Exp.Profile e => Vector.new1 (S2.Statement.Profile e)
 	     | S.Exp.Select {offset, tuple} =>
-		  simple (S2.Exp.Select {object = tuple, offset = offset})
+		  simple (S2.Exp.Select {base = Base.Object tuple,
+					 offset = offset})
 	     | S.Exp.Tuple v => simple (S2.Exp.Object {args = v, con = NONE})
 	     | S.Exp.Var x => simple (S2.Exp.Var x)
 	 end
@@ -187,8 +189,9 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 				     let
 					val x = Var.newNoname ()
 					val exp =
-					   S2.Exp.Select {object = object,
-							  offset = i}
+					   S2.Exp.Select
+					   {base = Base.Object object,
+					    offset = i}
 				     in
 					(x,
 					 S2.Statement.Bind {exp = exp,

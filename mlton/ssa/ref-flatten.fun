@@ -46,7 +46,7 @@ structure Value =
 	| Unknown
       and object =
 	 Obj of {args: t Prod.t,
-		 con: Con.t option,
+		 con: ObjectCon.t,
 		 finalComponents: Type.t Prod.t option ref,
 		 finalOffsets: int vector option ref,
 		 finalType: Type.t option ref,
@@ -54,8 +54,6 @@ structure Value =
       and value =
 	 Ground of Type.t
        | Object of object
-       | Vector of {elt: t Prod.t,
-		    finalType: Type.t option ref}
        | Weak of {arg: t,
 		  finalType: Type.t option ref}
 
@@ -69,8 +67,6 @@ structure Value =
 	    case value v of
 	       Ground t => Type.layout t
 	     | Object ob => layoutObject ob
-	     | Vector {elt, ...} =>
-		  seq [str "Vector ", Prod.layout (elt, layout)]
 	     | Weak {arg, ...} => seq [str "Weak ", layout arg]
 	 and layoutFlat (f: flat): Layout.t =
 	    case f of
@@ -82,7 +78,7 @@ structure Value =
 	 and layoutObject (Obj {args, con, flat, ...}) =
 	    seq [str "Object ",
 		 record [("args", Prod.layout (args, layout)),
-			 ("con", Option.layout Con.layout con),
+			 ("con", ObjectCon.layout con),
 			 ("flat", layoutFlat (! flat))]]
       end
    end
@@ -116,8 +112,6 @@ structure Value =
       val ground = new o Ground
 
       fun weak (a: t): t = new (Weak {arg = a, finalType = ref NONE})
-
-      fun vector (p): t = new (Vector {elt = p, finalType = ref NONE})
 
       val deObject: t -> Object.t option =
 	 fn v =>
@@ -153,6 +147,7 @@ structure Value =
 	       ref
 	       (if Vector.exists (Prod.dest args, fn {elt, isMutable} =>
 				  isMutable andalso not (isUnit elt))
+		   andalso not (ObjectCon.isVector con)
 		   then Unknown
 		else NotFlat)
 	 in
@@ -165,11 +160,13 @@ structure Value =
 	 end
 	    
       val tuple: t Prod.t -> t =
-	 fn vs => object {args = vs, con = NONE}
+	 fn vs => object {args = vs, con = ObjectCon.Tuple}
 
       val tuple =
 	 Trace.trace ("Value.tuple", fn p => Prod.layout (p, layout), layout)
 	 tuple
+
+      fun vector (args): t = object {args = args, con = ObjectCon.Vector}
 
       val rec unify: t * t -> unit =
 	 fn (T s, T s') =>
@@ -192,8 +189,6 @@ structure Value =
 		  in
 		     unifyProd (a, a')
 		  end
-	     | (Vector {elt = p, ...}, Vector {elt = p', ...}) =>
-		  unifyProd (p, p')
 	     | (Weak {arg = a, ...}, Weak {arg = a', ...}) => unify (a, a')
 	     | _ => Error.bug "strange unify"
 	 end
@@ -252,6 +247,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			     val args = Prod.map (args, makeTypeValue)
 			     val mayFlatten =
 				Vector.exists (Prod.dest args, #isMutable)
+				andalso not (ObjectCon.isVector con)
 			  in
 			     if mayFlatten orelse needToMakeProd args
 				then Make (fn () =>
@@ -259,10 +255,10 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 							 con = con})
 			     else const ()
 			  end
+		       datatype z = datatype ObjectCon.t
 		    in
 		       case con of
-			  NONE => doit ()
-			| SOME c =>
+			  Con c =>
 			     Const
 			     (Ref.memoize
 			      (conValue c, fn () =>
@@ -278,14 +274,8 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 				     in
 					v
 				     end))
-		    end
-	       | Vector p =>
-		    let
-		       val p = Prod.map (p, makeTypeValue)
-		    in
-		       if needToMakeProd p
-			  then Make (fn () => Value.vector (makeProd p))
-		       else const ()
+			| Tuple => doit ()
+			| Vector => doit ()
 		    end
 	       | Weak t =>
 		    (case makeTypeValue t of
@@ -374,9 +364,10 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		     val () =
 			case (Value.value (arg 0), Value.value res) of
 			   (Ground _, Ground _) => ()
-			 | (Vector {elt = p, ...}, Vector {elt = p', ...}) =>
+			 | (Object (Obj {args = a, ...}),
+			    Object (Obj {args = a', ...})) =>
 			      Vector.foreach2
-			      (Prod.dest p, Prod.dest p',
+			      (Prod.dest a, Prod.dest a',
 			       fn ({elt = v, ...}, {elt = v', ...}) =>
 			       Value.unify (v, v'))
 			 | _ => Error.bug "Array_toVector"
@@ -395,11 +386,11 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	     | Weak_new => weak (arg 0)
 	     | _ => result ()
 	 end
-      fun select {object, offset} =
+      fun select {base, offset} =
 	 let
 	    datatype z = datatype Value.value
 	 in
-	    case Value.value object of
+	    case Value.value base of
 	       Ground t =>
 		  (case Type.dest t of
 		      Type.Object {args, ...} =>
@@ -408,24 +399,9 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	     | Object ob => Object.select (ob, offset)
 	     | _ => Error.bug "select"
 	 end
-      fun update {object, offset, value} =
+      fun update {base, offset, value} =
 	 coerce {from = value,
-		 to = select {object = object, offset = offset}}
-      fun vectorSub {index = _, offset, vector: Value.t}: Value.t =
-	 case Value.value vector of
-	    Value.Ground t =>
-	        (case Type.dest t of
-		    Type.Vector p => typeValue (Prod.elt (p, offset))
-		  | _ => Error.bug "vectorSub Ground")
-	  | Value.Vector {elt, ...} => Prod.elt (elt, offset)
-	  | _ => Error.bug "vectorSub of non vector"
-      fun vectorUpdate {index = _, offset, value: Value.t, vector: Value.t} =
-	 case Value.value vector of
-	    Value.Ground _ => ()
-	  | Value.Vector {elt, ...} =>
-	       coerce {from = value,
-		       to = Prod.elt (elt, offset)}
-	  | _ => Error.bug "vectorUpdate of non vector"
+		 to = select {base = base, offset = offset}}
       fun const c = typeValue (Type.ofConst c)
       val {func, label, value = varValue, ...} =
 	 analyze {coerce = coerce,
@@ -438,12 +414,10 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		  object = object,
 		  primApp = primApp,
 		  program = program,
-		  select = fn {object, offset, ...} => select {object = object,
-							       offset = offset},
+		  select = fn {base, offset, ...} => select {base = base,
+							     offset = offset},
 		  update = update,
-		  useFromTypeOnBinds = false,
-		  vectorSub = vectorSub,
-		  vectorUpdate = vectorUpdate}
+		  useFromTypeOnBinds = false}
       val varObject = Value.deObject o varValue
       (* Mark a variable as flat if it is used only once and that use is in an
        * object allocation.
@@ -637,9 +611,6 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	    case Value.value v of
 	       Ground t => t
 	     | Object z => objectType z
-	     | Vector {elt, finalType} =>
-		  Ref.memoize (finalType, fn () =>
-			       Type.vector (Prod.map (elt, valueType)))
 	     | Weak {arg, finalType} =>
 		  Ref.memoize (finalType, fn () => Type.weak (valueType arg))
 	 end) arg
@@ -706,7 +677,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		      List.push
 		      (extraSelects,
 		       Bind
-		       {exp = Select {object = object,
+		       {exp = Select {base = Base.Object object,
 				      offset = objectOffset (obj, i)},
 			ty = valueType elt,
 			var = SOME var})
@@ -769,39 +740,46 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 					  make (Exp.Object
 						{args = args, con = con})]
 				      end))
-	      | PrimApp {args, prim} =>
-		   make (PrimApp {args = args, prim = prim})
-	     | Select {object, offset} =>
+	     | PrimApp {args, prim} =>
+		  make (PrimApp {args = args, prim = prim})
+	     | Select {base, offset} =>
 		  (case var of
 		      NONE => none ()
 		    | SOME var =>
-			 (case varObject object of
-			     NONE => make exp
-			   | SOME obj => 
-				make
-				(if isSome (Value.deFlat {inner = varValue var,
-							  outer = obj})
-				    then Var object
-				 else (Select
-				       {object = object,
-					offset = objectOffset (obj, offset)}))))
+			 (case base of
+			     Base.Object object =>
+				(case varObject object of
+				    NONE => make exp
+				  | SOME obj => 
+				       make
+				       (if isSome (Value.deFlat
+						   {inner = varValue var,
+						    outer = obj})
+					   then Var object
+					else (Select
+					      {base = base,
+					       offset = (objectOffset
+							 (obj, offset))})))
+			   | Base.VectorSub _ => make exp))
 	     | _ => make exp
 	 end
       fun transformStatement (s: Statement.t): Statement.t vector =
 	 case s of
 	    Bind b => transformBind b
-	  | Updates ({object}, us) =>
-	       Vector.new1
-	       (case varObject object of
-		   NONE => s
-		 | SOME obj =>
-		      Updates
-		      ({object = object},
-		       Vector.map
-		       (us, fn {offset, value} =>
-			{offset = objectOffset (obj, offset),
-			 value = value})))
-	  | _ => Vector.new1 s
+	  | Profile _ => Vector.new1 s
+	  | Updates (base, us) =>
+	       (case base of
+		   Base.Object object =>
+		      Vector.new1
+		      (case varObject object of
+			  NONE => s
+			| SOME obj =>
+			     Updates
+			     (base,
+			      Vector.map (us, fn {offset, value} =>
+					  {offset = objectOffset (obj, offset),
+					   value = value})))
+		 | Base.VectorSub _ => Vector.new1 s)
       val transformStatement =
 	 Trace.trace ("transformStatement",
 		      Statement.layout,

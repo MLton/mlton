@@ -37,7 +37,9 @@ structure S = Ssa
 local
    open Ssa
 in
+   structure Base = Base
    structure Con = Con
+   structure ObjectCon = ObjectCon
    structure Prod = Prod
    structure Tycon = Tycon
 end
@@ -452,23 +454,15 @@ structure Unpack =
 
 structure Base =
    struct
-      datatype t =
-	 Object of Operand.t
-       | Vector of {index: Operand.t,
-		    vector: Operand.t}
+      open Base
 
-      fun getObject (b: t): Operand.t =
-	 case b of
-	    Object z => z
-	  | Vector _ => Error.bug "Base.getObject"
-
-      fun toOperand (b: t, offset: Bytes.t, ty: Type.t): Operand.t =
+      fun toOperand (b: Operand.t t, offset: Bytes.t, ty: Type.t): Operand.t =
 	 case b of
 	    Object base =>
 	       Offset {base = base,
 		       offset = offset,
 		       ty = ty}
-	  | Vector {index, vector} =>
+	  | VectorSub {index, vector} =>
 	       ArrayOffset {base = vector,
 			    index = index,
 			    offset = offset,
@@ -527,7 +521,7 @@ structure Select =
 			      rest = rest,
 			      ty = ty}
 
-      fun select (s: t, {base: Base.t,
+      fun select (s: t, {base: Operand.t Base.t,
 			 dst: Var.t * Type.t}): Statement.t list =
 	 let
 	    fun move src =
@@ -542,7 +536,7 @@ structure Select =
 	 in
 	    case s of
 	       None => []
-	     | Direct _ => move (Base.getObject base)
+	     | Direct _ => move (Base.object base)
 	     | Indirect {offset, ty} => move (Base.toOperand (base, offset, ty))
 	     | IndirectUnpack {offset, rest, ty} =>
 		  let
@@ -555,15 +549,15 @@ structure Select =
 		     :: Unpack.select (rest, {dst = dst, src = tmpOp})
 		  end
 	     | Unpack u =>
-		  Unpack.select (u, {dst = dst, src = Base.getObject base})
+		  Unpack.select (u, {dst = dst, src = Base.object base})
 	 end
 
       val select =
 	 Trace.trace ("Select.select", layout o #1, List.layout Statement.layout)
 	 select
 
-      fun update (s: t, {base: Base.t,
-			 value: Rssa.Operand.t}): Statement.t list =
+      fun update (s: t, {base: Operand.t Base.t,
+			 value: Operand.t}): Statement.t list =
 	 case s of
 	    Indirect {offset, ty} =>
 	       [Move {dst = Base.toOperand (base, offset, ty),
@@ -600,7 +594,7 @@ structure Selects =
 			{orig = orig,
 			 select = f select}))
 
-      fun select (T v, {base: Base.t,
+      fun select (T v, {base: Operand.t Base.t,
 			dst: Var.t * Type.t,
 			offset: int}): Statement.t list =
 	 Select.select (#select (Vector.sub (v, offset)),
@@ -2171,7 +2165,18 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 				     ty = Type.intInf})
 	       | Object {args, con} =>
 		    (case con of
-			NONE =>
+			ObjectCon.Con con =>
+			   let
+			      val {rep, tyconRep} = conInfo con
+			      fun compute () = ConRep.rep (!rep)
+			      val r = Value.new {compute = compute,
+						 equals = Rep.equals,
+						 init = Rep.unit}
+			      val () = Value.affect (tyconRep, r)
+			   in
+			      r
+			   end
+		      | ObjectCon.Tuple =>
 			   let
 			      val pt = PointerTycon.new ()
 			      val rs =
@@ -2207,76 +2212,68 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 			   in
 			      r
 			   end
-		      | SOME con =>
+		      | ObjectCon.Vector => 
 			   let
-			      val {rep, tyconRep} = conInfo con
-			      fun compute () = ConRep.rep (!rep)
-			      val r = Value.new {compute = compute,
-						 equals = Rep.equals,
-						 init = Rep.unit}
-			      val () = Value.affect (tyconRep, r)
+			      val args = Prod.dest args
+			      fun new () =
+				 let
+				    val pt = PointerTycon.new ()
+				    val () =
+				       List.push
+				       (delayedObjectTypes, fn () =>
+					let
+					   val tr =
+					      TupleRep.make
+					      (pt, {forceBox = true},
+					       Vector.map
+					       (args, fn {elt, isMutable} =>
+						{isMutable = isMutable,
+						 rep = Value.get (typeRep elt),
+						 ty = elt}))
+					   val () = setVectorRep (t, tr)
+					   val ty =
+					      case tr of
+						 TupleRep.Direct _ =>
+						    TupleRep.ty tr
+					       | TupleRep.Indirect pr =>
+						    PointerRep.componentsTy pr
+					   val ty =
+					      if Type.isUnit ty
+						 then Type.zero Bits.inByte
+					      else ty
+					in
+					   SOME (pt, ObjectType.Array ty)
+					end)
+				 in
+				    Type.pointer pt
+				 end
+			      datatype z = datatype S.Type.dest
+			      val ty =
+				 if 1 = Vector.length args
+				    then
+				       let
+					  val {elt, isMutable} =
+					     Vector.sub (args, 0)
+				       in
+					  case S.Type.dest elt of
+					     Word s =>
+						(case (Bits.toInt
+						       (WordSize.bits s)) of
+						    8 => Type.word8Vector
+						  | 32 => Type.wordVector
+						  | _ => new ())
+					   | _ => new ()
+				       end
+				 else new ()
 			   in
-			      r
+			      constant
+			      (Rep.T {rep = Rep.Pointer {endsIn00 = true},
+				      ty = ty})
 			   end)
 	       | Real s => nonPointer (Type.real s)
 	       | Thread =>
 		    constant (Rep.T {rep = Rep.Pointer {endsIn00 = true},
 				     ty = Type.thread})
-	       | Vector p =>
-		    let
-		       val p = Prod.dest p
-		       fun new () =
-			  let
-			     val pt = PointerTycon.new ()
-			     val () =
-				List.push
-				(delayedObjectTypes, fn () =>
-				 let
-				    val tr =
-				       TupleRep.make
-				       (pt, {forceBox = true},
-					Vector.map
-					(p, fn {elt, isMutable} =>
-					 {isMutable = isMutable,
-					  rep = Value.get (typeRep elt),
-					  ty = elt}))
-				    val () = setVectorRep (t, tr)
-				    val ty =
-				       case tr of
-					  TupleRep.Direct _ =>
-					     TupleRep.ty tr
-					| TupleRep.Indirect pr =>
-					     PointerRep.componentsTy pr
-				    val ty =
-				       if Type.isUnit ty
-					  then Type.zero Bits.inByte
-				       else ty
-				 in
-				    SOME (pt, ObjectType.Array ty)
-				 end)
-			  in
-			     Type.pointer pt
-			  end
-		       datatype z = datatype S.Type.dest
-		       val ty =
-			  if 1 = Vector.length p
-			     then
-				let
-				   val {elt, isMutable} = Vector.sub (p, 0)
-				in
-				   case S.Type.dest elt of
-				      Word s =>
-					 (case Bits.toInt (WordSize.bits s) of
-					     8 => Type.word8Vector
-					   | 32 => Type.wordVector
-					   | _ => new ())
-				    | _ => new ()
-				end
-			  else new ()
-		    in
-		       constant (Rep.T {rep = Rep.Pointer {endsIn00 = true},
-					ty = ty})
-		    end
 	       | Weak t =>
 		    let
 		       val pt = PointerTycon.new ()
@@ -2407,43 +2404,35 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	     | SOME con => ConRep.conApp (conRep con, {dst = dst, src = src})
 	 end
       fun getSelects (con, objectTy) =
-	 case con of
-	    NONE => TupleRep.selects (tupleRep objectTy)
-	  | SOME con =>
-	       case conRep con of
-		  ConRep.ShiftAndTag {selects, ...} => selects
-		| ConRep.Tuple tr => TupleRep.selects tr
-		| _ => Error.bug "can't get con selects"
-      fun select {dst, object, objectTy, offset} =
-	 case S.Type.dest objectTy of
+	 let
+	    datatype z = datatype ObjectCon.t
+	 in
+	    case con of
+	       Con con =>
+		  (case conRep con of
+		      ConRep.ShiftAndTag {selects, ...} => selects
+		    | ConRep.Tuple tr => TupleRep.selects tr
+		    | _ => Error.bug "can't get con selects")
+	     | Tuple => TupleRep.selects (tupleRep objectTy)
+	     | Vector => TupleRep.selects (vectorRep objectTy)
+	 end
+      fun select {base, baseTy, dst, offset} =
+	 case S.Type.dest baseTy of
 	    S.Type.Object {args, con} =>
 	       Selects.select
-	       (getSelects (con, objectTy),
-		{base = Base.Object object,
+	       (getSelects (con, baseTy),
+		{base = base,
 		 dst = dst,
 		 offset = offset})
 	  | _ => Error.bug "select of non object"
-      fun update {object, objectTy, offset, value} =
-	 case S.Type.dest objectTy of
+      fun update {base, baseTy, offset, value} =
+	 case S.Type.dest baseTy of
 	    S.Type.Object {args, con} =>
-	       Selects.update (getSelects (con, objectTy),
-			       {base = Base.Object object,
+	       Selects.update (getSelects (con, baseTy),
+			       {base = base,
 				offset = offset,
 				value = value})
 	  | _ => Error.bug "update of non object"
-      fun vectorSelects t = TupleRep.selects (vectorRep t)
-      fun vectorSub {dst, index, offset, vector, vectorTy} =
-	 Selects.select
-	 (vectorSelects vectorTy,
-	  {base = Base.Vector {index = index, vector = vector},
-	   dst = dst,
-	   offset = offset})
-      fun vectorUpdate {index, offset, value, vector, vectorTy} =
-	 Selects.update
-	 (vectorSelects vectorTy,
-	  {base = Base.Vector {index = index, vector = vector},
-	   offset = offset,
-	   value = value})
    in
       {diagnostic = diagnostic,
        genCase = genCase,
@@ -2451,9 +2440,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
        objectTypes = objectTypes,
        select = select,
        toRtype = toRtype,
-       update = update,
-       vectorSub = vectorSub,
-       vectorUpdate = vectorUpdate}
+       update = update}
    end
 
 end

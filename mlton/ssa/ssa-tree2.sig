@@ -34,6 +34,17 @@ signature SSA_TREE2 =
 	    val sub: 'a t * int -> {elt: 'a, isMutable: bool}
 	 end
 
+      structure ObjectCon:
+	 sig
+	    datatype t =
+	       Con of Con.t
+	     | Tuple
+	     | Vector
+
+	    val isVector: t -> bool
+	    val layout: t -> Layout.t
+	 end
+      
       structure Type:
 	 sig
 	    type t
@@ -42,10 +53,9 @@ signature SSA_TREE2 =
 	       Datatype of Tycon.t
 	     | IntInf
 	     | Object of {args: t Prod.t,
-			  con: Con.t option}
+			  con: ObjectCon.t}
 	     | Real of RealSize.t
 	     | Thread
-	     | Vector of t Prod.t
 	     | Weak of t
 	     | Word of WordSize.t
 
@@ -61,7 +71,7 @@ signature SSA_TREE2 =
 	    val intInf: t
 	    val isUnit: t -> bool
 	    val layout: t -> Layout.t
-	    val object: {args: t Prod.t, con: Con.t option} -> t
+	    val object: {args: t Prod.t, con: ObjectCon.t} -> t
 	    val ofConst: Const.t -> t
 	    val plist: t -> PropertyList.t
 	    val real: RealSize.t -> t
@@ -75,6 +85,18 @@ signature SSA_TREE2 =
 	    val unit: t
 	 end
 
+      structure Base:
+	 sig
+	    datatype 'a t =
+	       Object of 'a
+	     | VectorSub of {index: 'a,
+			     vector: 'a}
+
+	    val layout: 'a t * ('a -> Layout.t) -> Layout.t
+	    val map: 'a t * ('a -> 'b) -> 'b t
+	    val object: 'a t -> 'a
+	 end
+
       structure Exp:
 	 sig
 	    datatype t =
@@ -85,12 +107,9 @@ signature SSA_TREE2 =
 			  con: Con.t option}
 	     | PrimApp of {args: Var.t vector,
 			   prim: Type.t Prim.t}
-	     | Select of {object: Var.t,
+	     | Select of {base: Var.t Base.t,
 			  offset: int}
 	     | Var of Var.t
-	     | VectorSub of {index: Var.t,
-			     offset: int,
-			     vector: Var.t}
 
 	    val equals: t * t -> bool
 	    val foreachVar: t * (Var.t -> unit) -> unit
@@ -109,11 +128,8 @@ signature SSA_TREE2 =
 			ty: Type.t,
 			var: Var.t option}
 	     | Profile of ProfileExp.t
-	     | Updates of {object: Var.t} * {offset: int,
-					     value: Var.t} vector
-	     | VectorUpdates of {index: Var.t,
-				 vector: Var.t} * {offset: int,
-						   value: Var.t} vector
+	     | Updates of Var.t Base.t * {offset: int,
+					  value: Var.t} vector
 
 	    val clear: t -> unit (* clear the var *)
 	    val foreachDef: t * (Var.t * Type.t -> unit) -> unit

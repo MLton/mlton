@@ -17,7 +17,7 @@ datatype z = datatype Transfer.t
 fun 'a analyze
    {coerce, const, filter, filterWord, fromType, inject, layout, object, primApp,
     program = Program.T {functions, globals, main, ...},
-    select, update, useFromTypeOnBinds, vectorSub, vectorUpdate} =
+    select, update, useFromTypeOnBinds} =
    let
       val unit = fromType Type.unit
       fun coerces (msg, from, to) =
@@ -199,6 +199,10 @@ fun 'a analyze
 	  Option.layout (Vector.layout layout),
 	  Layout.ignore)
 	 loopTransfer
+      fun baseValue b =
+	 case b of
+	    Base.Object x => value x
+	  | Base.VectorSub {vector, ...} => value vector
       fun loopBind {exp, ty, var}: 'a =
 	 case exp of
 	    Const c => const c
@@ -227,15 +231,11 @@ fun 'a analyze
 			args = values args,
 			resultType = ty,
 			resultVar = var}
-	  | Select {object, offset} =>
-	       select {object = value object,
+	  | Select {base, offset} =>
+	       select {base = baseValue base,
 		       offset = offset,
 		       resultType = ty}
 	  | Var x => value x
-	  | VectorSub {index, offset, vector} =>
-	       vectorSub {index = value index,
-			  offset = offset,
-			  vector = value vector}
       fun loopStatement (s: Statement.t): unit =
 	 (case s of
 	     Bind (b as {ty, var, ...}) =>
@@ -255,25 +255,14 @@ fun 'a analyze
 		    else setValue (var, v))
 		end
 	  | Profile _ => ()
-	  | Updates ({object}, us) =>
+	  | Updates (base, us) =>
 	       let
-		  val object = value object
+		  val base = baseValue base
 	       in
 		  Vector.foreach (us, fn {offset, value = v} =>
-				  update {object = object,
+				  update {base = base,
 					  offset = offset,
 					  value = value v})
-	       end
-	  | VectorUpdates ({index, vector}, us) =>
-	       let
-		  val index = value index
-		  val vector = value vector
-	       in
-		  Vector.foreach (us, fn {offset, value = v} =>
-				  vectorUpdate {index = index,
-						offset = offset,
-						value = value v,
-						vector = vector})
 	       end)
 	     handle exn =>
 		Error.bug (concat ["loopStatement: ",

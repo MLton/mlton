@@ -351,11 +351,11 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
 	    case Type.dest variant of
 	       Type.Object {con, ...} =>
 		  (case con of
-		      NONE => error "inject"
-		    | SOME c =>
+		      ObjectCon.Con c =>
 			 if Tycon.equals (conTycon c, sum)
 			    then Type.datatypee sum
-			 else error "inject into wrong sum")
+			 else error "inject into wrong sum"
+		    | _ => error "inject")
 	     | _ => error "inject of no object"
 	 end
       fun coerce {from: Type.t, to: Type.t}: unit =
@@ -380,7 +380,10 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
 	 in
 	    case Type.dest resultType of
 	       Type.Object {args = args', con = con'} =>
-		  (if Option.equals (con, con', Con.equals)
+		  (if (case (con, con') of
+			  (NONE, ObjectCon.Tuple) => true
+			| (SOME c, ObjectCon.Con c') => Con.equals (c, c')
+			| _ => false)
 		      andalso (Vector.foreach2
 			       (Prod.dest args, Prod.dest args',
 				fn ({elt = t, isMutable = _}, {elt = t', ...}) =>
@@ -390,12 +393,12 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
 		   else err ())
 	     | _ => err ()
 	 end
-      fun select {object: Type.t, offset: int, resultType = _}: Type.t =
-	 case Type.dest object of
+      fun select {base: Type.t, offset: int, resultType = _}: Type.t =
+	 case Type.dest base of
 	    Type.Object {args, ...} => Prod.elt (args, offset)
 	  | _ => error ("select of non object", Layout.empty)
-      fun update {object, offset, value} =
-	 case Type.dest object of
+      fun update {base, offset, value} =
+	 case Type.dest base of
 	    Type.Object {args, ...} =>
 	       let
 		  val {elt, isMutable} = Prod.sub (args, offset)
@@ -435,30 +438,6 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
 	 in
 	    resultType
 	 end
-      fun vectorSub {index, offset, vector} =
-	 let
-	    val error = fn s => error (s, Layout.empty)
-	 in
-	    case (Type.dest vector, Type.dest index) of
-	       (Type.Vector p, Type.Word s) =>
-		  if WordSize.equals (s, WordSize.default)
-		     then Prod.elt (p, offset)
-		  else error "vectorSub with bad index"
-	     | _ => error "vectorSub with bad index"
-	 end
-      fun vectorUpdate {index, offset, value, vector} =
-	 let
-	    val error = fn s => error (s, Layout.empty)
-	 in
-	    case (Type.dest vector, Type.dest index) of
-	       (Type.Vector p, Type.Word s) =>
-		  if WordSize.equals (s, WordSize.default)
-		     then if Type.equals (value, Prod.elt (p, offset))
-			     then ()
-			  else error "vectorUpdate with bad value"
-		  else error "vectorUpdate with bad index"
-	     | _ => error "vectorUpdate with bad index"
-	 end	 
       val _ =
 	 analyze {coerce = coerce,
 		  const = Type.ofConst,
@@ -472,9 +451,7 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
 		  program = program,
 		  select = select,
 		  update = update,
-		  useFromTypeOnBinds = true,
-		  vectorSub = vectorSub,
-		  vectorUpdate = vectorUpdate}
+		  useFromTypeOnBinds = true}
 	 handle e => error (concat ["analyze raised exception ",
 				    Layout.toString (Exn.layout e)],
 			    Layout.empty)

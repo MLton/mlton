@@ -15,6 +15,13 @@ datatype z = datatype IntSize.prim
 datatype z = datatype WordSize.prim
 
 structure S = Ssa
+
+local
+   open Ssa
+in
+   structure Base = Base
+end
+   
 local
    open Runtime
 in
@@ -358,8 +365,7 @@ val word = Type.word o WordSize.bits
 fun convert (program as S.Program.T {functions, globals, main, ...},
 	     {codegenImplementsPrim}): Rssa.Program.t =
    let
-      val {diagnostic, genCase, object, objectTypes, select, toRtype, update,
-	   vectorSub, vectorUpdate} =
+      val {diagnostic, genCase, object, objectTypes, select, toRtype, update} =
 	 PackedRepresentation.compute program
       val objectTypes = Vector.concat [ObjectType.basic, objectTypes]
       val () =
@@ -622,54 +628,35 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 		     fun add s = loop (i - 1, s :: ss, t)
 		     fun adds ss' = loop (i - 1, ss' @ ss, t)
 		     val s = Vector.sub (statements, i)
-		     fun updates (object, us, update1) =
-			let
-			   val ({isPointerUpdate}, ss) =
-			      Vector.foldr
-			      (us, ({isPointerUpdate = false}, []),
-			       fn ({offset, value},
-				   z as ({isPointerUpdate}, ac)) =>
-			       case toRtype (varType value) of
-				  NONE => z
-				| SOME t => 
-				     ({isPointerUpdate =
-				       isPointerUpdate orelse Type.isPointer t},
-				      update1 {offset = offset,
-					       value = varOp value} @ ac))
-			   val ss =
-			      if !Control.markCards
-				 andalso isPointerUpdate
-				 then updateCard object @ ss
-			      else ss
-			in
-			   adds ss
-			end
 		  in
 		     case s of
 			S.Statement.Profile e => add (Statement.Profile e)
-		      | S.Statement.Updates ({object}, us) =>
+		      | S.Statement.Updates (base, us) =>
 			   let
-			      val objectTy = varType object
-			      val object = varOp object
+			      val baseOp = Base.map (base, varOp)
+			      val baseTy = varType (Base.object base)
+			      val ({isPointerUpdate}, ss) =
+				 Vector.foldr
+				 (us, ({isPointerUpdate = false}, []),
+				  fn ({offset, value},
+				      z as ({isPointerUpdate}, ac)) =>
+				  case toRtype (varType value) of
+				     NONE => z
+				   | SOME t => 
+					({isPointerUpdate =
+					  (isPointerUpdate
+					   orelse Type.isPointer t)},
+					 update {base = baseOp,
+						 baseTy = baseTy,
+						 offset = offset,
+						 value = varOp value} @ ac))
+			      val ss =
+				 if !Control.markCards
+				    andalso isPointerUpdate
+				    then updateCard (Base.object baseOp) @ ss
+				 else ss
 			   in
-			      updates (object, us, fn {offset, value} =>
-				       update {object = object,
-					       objectTy = objectTy,
-					       offset = offset,
-					       value = value})
-			   end
-		      | S.Statement.VectorUpdates ({index, vector}, us) =>
-			   let
-			      val vectorTy = varType vector
-			      val vector = varOp vector
-			      val index = varOp index
-			   in
-			      updates (vector, us, fn {offset, value} =>
-				       vectorUpdate {index = index,
-						     offset = offset,
-						     value = value,
-						     vector = vector,
-						     vectorTy = vectorTy})
+			      adds ss
 			   end
 		      | S.Statement.Bind {exp, ty, var} =>
 	          let
@@ -1096,34 +1083,23 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 					   func = CFunction.worldSave}
 			       | _ => codegenOrC prim
 			   end
-		      | S.Exp.Select {object, offset} =>
+		      | S.Exp.Select {base, offset} =>
 			   (case var of
 			       NONE => none ()
 			     | SOME var =>
 				  (case toRtype ty of
 				      NONE => none ()
 				    | SOME ty => 
-					 adds (select {dst = (var, ty),
-						       object = varOp object,
-						       objectTy = varType object,
-						       offset = offset})))
+					 adds
+					 (select
+					  {base = Base.map (base, varOp),
+					   baseTy = varType (Base.object base),
+					   dst = (var, ty),
+					   offset = offset})))
 		      | S.Exp.Var y =>
 			   (case toRtype ty of
 			       NONE => none ()
 			     | SOME _ => move (varOp y))
-		      | S.Exp.VectorSub {index, offset, vector} =>
-			   (case var of
-			       NONE => none ()
-			     | SOME var =>
-				  (case toRtype ty of
-				      NONE => none ()
-				    | SOME ty => 
-					 adds (vectorSub
-					       {dst = (var, ty),
-						index = varOp index,
-						offset = offset,
-						vector = varOp vector,
-						vectorTy = varType vector})))
 		  end
 		  end
 	 in
