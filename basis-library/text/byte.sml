@@ -7,14 +7,20 @@
  *)
 structure Byte: BYTE =
    struct
-      open Primitive.Byte Int
-	 
+      val byteToChar = Primitive.Word8.toChar
+
       val bytesToString = Primitive.String.fromWord8Vector
-      val stringToBytes = Primitive.String.toWord8Vector
-      val unpackStringVec = bytesToString o Word8Vector.extract
-      val unpackString = bytesToString o Word8Array.extract
+
+      val charToByte = Primitive.Char.toWord8
+
       fun packString (a: Word8Array.array, i: int, s: substring): unit =
 	 Util.naturalForeach
 	 (Substring.size s, fn j =>
 	  Word8Array.update (a, i +? j, charToByte (Substring.sub (s, j))))
+
+      val stringToBytes = Primitive.String.toWord8Vector
+
+      val unpackString = bytesToString o Word8Array.extract
+
+      val unpackStringVec = bytesToString o Word8Vector.extract
    end

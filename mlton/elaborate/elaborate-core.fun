@@ -332,20 +332,27 @@ structure CType =
    struct
       open CoreML.CType
 	       
+      fun sized (all: 'a list,
+		 toString: 'a -> string,
+		 prefix: string,
+		 make: 'a -> t,
+		 makeType: 'a -> Type.t) =
+	 List.map (all, fn a =>
+		   (make a, concat [prefix, toString a], makeType a))
       val nullary =
-	 [(bool, Type.bool),
-	  (char, Type.con (Tycon.char, Vector.new0 ())),
-	  (pointer, Type.pointer),
-	  (pointer, Type.preThread),
-	  (pointer, Type.thread)]
-	 @ List.map (IntSize.all, fn s => (Int s, Type.int s))
-	 @ List.map (RealSize.all, fn s => (Real s, Type.real s))
-	 @ List.map (WordSize.all, fn s => (Word s, Type.word s))
+	 [(bool, "Bool", Type.bool),
+	  (char, "Char", Type.con (Tycon.char, Vector.new0 ())),
+	  (pointer, "Pointer", Type.pointer),
+	  (pointer, "Pointer", Type.preThread),
+	  (pointer, "Pointer", Type.thread)]
+	 @ sized (IntSize.all, IntSize.toString, "Int", Int, Type.int)
+	 @ sized (RealSize.all, RealSize.toString, "Real", Real, Type.real)
+	 @ sized (WordSize.all, WordSize.toString, "Word", Word, Type.word)
 
       val unary = [Tycon.array, Tycon.reff, Tycon.vector]
 
-      fun fromType (t: Type.t): t option =
-	 case List.peek (nullary, fn (_, t') => Type.equals (t, t')) of
+      fun fromType (t: Type.t): (t * string) option =
+	 case List.peek (nullary, fn (_, _, t') => Type.equals (t, t')) of
 	    NONE =>
 	       (case Type.deconOpt t of
 		   NONE => NONE
@@ -354,16 +361,17 @@ structure CType =
 				      Tycon.equals (tycon, tycon'))
 			 andalso 1 = Vector.length ts
 			 andalso isSome (fromType (Vector.sub (ts, 0)))
-			 then SOME Pointer
+			 then SOME (Pointer, "Pointer")
 		      else NONE)
-	  | SOME (t, _) => SOME t
+	  | SOME (t, s, _) => SOME (t, s)
 
-      fun parse (ty: Type.t): (t vector * t option) option =
+      fun parse (ty: Type.t)
+	 : ((t * string) vector * (t * string) option) option =
 	 case Type.dearrowOpt ty of
 	    NONE => NONE
 	  | SOME (t1, t2) =>
 	       let
-		  fun finish (ts: t vector) =
+		  fun finish (ts: (t * string) vector) =
 		     case fromType t2 of
 			NONE =>
 			   if Type.equals (t2, Type.unit)
@@ -424,7 +432,7 @@ fun import {attributes: Attribute.t list,
 				   Type.layout ty]
 			   end)
 		    ; Cprim.bogus)
-	      | SOME t =>
+	      | SOME (t, _) =>
 		   case attributes of
 		      [] => Cprim.ffiSymbol {name = name, ty = t}
 		    | _ => 
@@ -441,7 +449,7 @@ fun import {attributes: Attribute.t list,
 			      ; Convention.Cdecl)
 		   | SOME c => c
 	       val func =
-		  CFunction.T {args = args,
+		  CFunction.T {args = Vector.map (args, #1),
 			       bytesNeeded = NONE,
 			       convention = convention,
 			       ensuresBytesFree = false,
@@ -450,7 +458,7 @@ fun import {attributes: Attribute.t list,
 			       mayGC = true (* callsFromC *),
 			       maySwitchThreads = false,
 			       name = name,
-			       return = result}
+			       return = Option.map (result, #1)}
 	    in
 	       Cprim.ffi (func, Scheme.fromType ty)
 	    end
@@ -471,7 +479,7 @@ fun export {attributes, name: string, region: Region.t, ty: Type.t}: Aexp.t =
 	    NONE => (invalidAttributes ()
 		     ; Convention.Cdecl)
 	  | SOME c => c
-      val (args, exportId, res) =
+      val (exportId, args, res) =
 	 case CType.parse ty of
 	    NONE =>
 	       (Control.error
@@ -483,15 +491,15 @@ fun export {attributes, name: string, region: Region.t, ty: Type.t}: Aexp.t =
 			 Type.layout ty]
 		 end,
 		 Layout.empty)
-		; (Vector.new0 (), 0, NONE))
+		; (0, Vector.new0 (), NONE))
 	  | SOME (us, t) =>
 	       let
-		  val id = Ffi.addExport {args = us,
+		  val id = Ffi.addExport {args = Vector.map (us, #1),
 					  convention = convention,
 					  name = name,
-					  res = t}
+					  res = Option.map (t, #1)}
 	       in
-		  (us, id, t)
+		  (id, us, t)
 	       end
       open Ast
       val filePos = "<export>"
@@ -524,7 +532,7 @@ fun export {attributes, name: string, region: Region.t, ty: Type.t}: Aexp.t =
 		  val (args, decs) =
 		     Vector.unzip
 		     (Vector.map
-		      (args, fn u =>
+		      (args, fn (u, name) =>
 		       let
 			  val x =
 			     Var.fromString
@@ -534,10 +542,8 @@ fun export {attributes, name: string, region: Region.t, ty: Type.t}: Aexp.t =
 			  val dec =
 			     Dec.vall (Vector.new0 (),
 				       x,
-				       Exp.app
-				       (id (concat
-					    ["get", CType.toString u]),
-					int (Counter.next (map u))))
+				       Exp.app (id (concat ["get", name]),
+						int (Counter.next (map u))))
 		       in
 			  (x, dec)
 		       end))
@@ -556,8 +562,8 @@ fun export {attributes, name: string, region: Region.t, ty: Type.t}: Aexp.t =
 		      (newVar (),
 		       (case res of
 			   NONE => Exp.unit
-			 | SOME t => 
-			      Exp.app (id (concat ["set", CType.toString t]),
+			 | SOME (t, name) => 
+			      Exp.app (id (concat ["set", name]),
 				       Exp.var resVar)))),
 		     fn (x, e) => Dec.vall (Vector.new0 (), x, e))],
 		   Exp.tuple (Vector.new0 ()))

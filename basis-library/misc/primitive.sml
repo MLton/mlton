@@ -130,12 +130,6 @@ structure Primitive =
 	       fn x => _prim "Array_update": 'a array * int * 'a -> unit; x
 	 end
 
-      structure Byte =
-	 struct
-	    val byteToChar = _prim "Byte_byteToChar": word8 -> char;
-	    val charToByte = _prim "Byte_charToByte": char -> word8;
-	 end
-
       structure C =
 	 struct
 	    (* char* *)
@@ -172,6 +166,7 @@ structure Primitive =
 	    val >= = _prim "Char_ge": char * char -> bool;
 	    val chr = _prim "Char_chr": int -> char;
 	    val ord = _prim "Char_ord": char -> int;
+	    val toWord8 = _prim "Char_toWord8": char -> Word8.word;
 	 end
 
       structure CommandLine =
@@ -250,32 +245,28 @@ structure Primitive =
 
       structure FFI =
 	 struct
-	    val getBool = _import "MLton_IMPORT_getBool": int -> bool;
-	    val getChar = _import "MLton_IMPORT_getChar": int -> char;
-	    val getInt8 = _import "MLton_IMPORT_getInt8": int -> Int8.int;
-	    val getInt16 = _import "MLton_IMPORT_getInt16": int -> Int16.int;
-	    val getInt32 = _import "MLton_IMPORT_getInt32": int -> Int32.int;
-	    val getInt64 = _import "MLton_IMPORT_getInt64": int -> Int64.int;
-	    val getOp = _import "MLton_IMPORT_getOp": unit -> int;
+	    val getInt8 = _import "MLton_FFI_getInt8": int -> Int8.int;
+	    val getInt16 = _import "MLton_FFI_getInt16": int -> Int16.int;
+	    val getInt32 = _import "MLton_FFI_getInt32": int -> Int32.int;
+	    val getInt64 = _import "MLton_FFI_getInt64": int -> Int64.int;
+	    val getOp = _import "MLton_FFI_getOp": unit -> int;
 	    val getPointer = fn z => _prim "FFI_getPointer": int -> 'a; z
-	    val getReal32 = _import "MLton_IMPORT_getReal32": int -> Real32.real;
-	    val getReal64 = _import "MLton_IMPORT_getReal64": int -> Real64.real;
-	    val getWord8 = _import "MLton_IMPORT_getWord8": int -> Word8.word;
-	    val getWord16 = _import "MLton_IMPORT_getWord16": int -> Word16.word;
-	    val getWord32 = _import "MLton_IMPORT_getWord32": int -> Word32.word;
-	    val numExports = _build_const "MLton_IMPORT_numExports": int;
-	    val setBool = _import "MLton_IMPORT_setBool": bool -> unit;
-	    val setChar = _import "MLton_IMPORT_setChar": char -> unit;
-	    val setInt8 = _import "MLton_IMPORT_setInt8": Int8.int -> unit;
-	    val setInt16 = _import "MLton_IMPORT_setInt16": Int16.int -> unit;
-	    val setInt32 = _import "MLton_IMPORT_setInt32": Int32.int -> unit;
-	    val setInt64 = _import "MLton_IMPORT_setInt64": Int64.int -> unit;
+	    val getReal32 = _import "MLton_FFI_getReal32": int -> Real32.real;
+	    val getReal64 = _import "MLton_FFI_getReal64": int -> Real64.real;
+	    val getWord8 = _import "MLton_FFI_getWord8": int -> Word8.word;
+	    val getWord16 = _import "MLton_FFI_getWord16": int -> Word16.word;
+	    val getWord32 = _import "MLton_FFI_getWord32": int -> Word32.word;
+	    val numExports = _build_const "MLton_FFI_numExports": int;
+	    val setInt8 = _import "MLton_FFI_setInt8": Int8.int -> unit;
+	    val setInt16 = _import "MLton_FFI_setInt16": Int16.int -> unit;
+	    val setInt32 = _import "MLton_FFI_setInt32": Int32.int -> unit;
+	    val setInt64 = _import "MLton_FFI_setInt64": Int64.int -> unit;
 	    val setPointer = fn z => _prim "FFI_setPointer": 'a -> unit; z
-	    val setReal32 = _import "MLton_IMPORT_setReal32": Real32.real -> unit;
-	    val setReal64 = _import "MLton_IMPORT_setReal64": Real64.real -> unit;
-  	    val setWord8 = _import "MLton_IMPORT_setWord8": Word8.word -> unit;
-	    val setWord16 = _import "MLton_IMPORT_setWord16": Word16.word -> unit;
-	    val setWord32 = _import "MLton_IMPORT_setWord32": Word32.word -> unit;
+	    val setReal32 = _import "MLton_FFI_setReal32": Real32.real -> unit;
+	    val setReal64 = _import "MLton_FFI_setReal64": Real64.real -> unit;
+  	    val setWord8 = _import "MLton_FFI_setWord8": Word8.word -> unit;
+	    val setWord16 = _import "MLton_FFI_setWord16": Word16.word -> unit;
+	    val setWord32 = _import "MLton_FFI_setWord32": Word32.word -> unit;
 	 end
 
       structure GC =
@@ -1055,6 +1046,7 @@ structure Primitive =
 	    val ror = _prim "Word8_ror": word * word32 -> word;
 	    val >> = _prim "Word8_rshift": word * word32 -> word;
 	    val - = _prim "Word8_sub": word * word -> word;
+	    val toChar = _prim "Word8_toChar": word -> char;
 	    val toInt = _prim "Word8_toInt32": word -> int;
 	    val toIntX = _prim "Word8_toInt32X": word -> int;
 	    val toLargeWord = _prim "Word8_toWord32": word -> word32;

@@ -1180,8 +1180,6 @@ fun infer {program = p: CoreML.Program.t,
 						    (IntInf.fromInt i,
 						     IntSize.default)))
 					 end
-				    | Byte_byteToChar => id ()
-				    | Byte_charToByte => id ()
 				    | C_CS_charArrayToWord8Array => id ()
 				    | Char_chr =>
 					 app (Prim.intToWord
@@ -1193,9 +1191,11 @@ fun infer {program = p: CoreML.Program.t,
 				    | Char_ord =>
 					 app (Prim.wordToInt
 					      (W8, IntSize.default))
+				    | Char_toWord8 => id ()
 				    | Constant c =>
 					 Xexp.const (lookupConstant c)
 				    | String_toWord8Vector => id ()
+				    | Word8_toChar => id ()
 				    | Word8Vector_toString => id ()
 				    | _ => app prim
 				end
