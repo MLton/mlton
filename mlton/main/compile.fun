@@ -453,7 +453,7 @@ fun elaborate {input: File.t list}: Xml.Program.t =
       val _ =
 	 if !Control.showBasis
 	    then (Env.setTyconNames basisEnv
-		  ; Layout.outputl (Env.layoutPretty basisEnv, Out.standard)
+		  ; Layout.outputl (Env.layout basisEnv, Out.standard)
 		  ; Process.succeed ())
 	 else ()
       val _ =

@@ -367,6 +367,8 @@ elaborate/elaborate-core.sig
 elaborate/elaborate-core.fun
 elaborate/elaborate-sigexp.sig
 elaborate/elaborate-sigexp.fun
+control/pretty.sig
+control/pretty.sml
 atoms/generic-scheme.sig
 atoms/generic-scheme.fun
 elaborate/type-str.fun
@@ -378,8 +380,6 @@ elaborate/elaborate.fun
 match-compile/nested-pat.sig
 match-compile/match-compile.sig
 match-compile/match-compile.fun
-control/pretty.sig
-control/pretty.sml
 match-compile/nested-pat.fun
 defunctorize/defunctorize.sig
 defunctorize/defunctorize.fun

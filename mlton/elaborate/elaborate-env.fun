@@ -13,6 +13,7 @@ open S
 local
    open Ast
 in
+   structure Fctid = Fctid
    structure Fixity = Fixity
    structure Strid = Strid
    structure Longcon = Longcon
@@ -20,6 +21,9 @@ in
    structure Longstrid = Longstrid
    structure Longtycon = Longtycon
    structure Priority = Priority
+   structure Sigid = Sigid
+   structure Strid = Strid
+   structure Symbol = Symbol
 end
 
 local
@@ -116,45 +120,6 @@ structure Vid =
    end
 
 fun layoutSize z = Int.layout (MLton.size z)
-   
-structure Values =
-   struct
-      datatype ('a, 'b) t = T of {domain: 'a,
-				  ranges: {isUsed: bool ref,
-					   scope: Scope.t,
-					   value: 'b} list ref}
-
-      fun domain (T {domain, ...}) = domain
-	    
-      fun sizeMessage (vs as T {domain, ranges}, layoutA, layoutB) =
-	 let
-	    open Layout
-	 in
-	    seq [layoutA domain, str " ",
-		 List.layout (layoutB o #value) (!ranges)]
-	 end
-
-      fun layout (layoutDomain, layoutRange) (T {domain, ranges, ...}) =
-	 Layout.tuple [layoutDomain domain,
-		       List.layout (layoutRange o #value) (!ranges)]
-
-      fun new domain = T {domain = domain,
-			  ranges = ref []}
-
-      local
-	 fun f g (T r) = g r
-      in
-	 fun domain z = f #domain z
-	 fun ranges z = f #ranges z
-      end
-
-      fun isEmpty (T {ranges, ...}) = List.isEmpty (!ranges)
-
-      val pop: ('a, 'b) t -> {isUsed: bool ref,
-			      scope: Scope.t,
-			      value: 'b} =
-	 fn T {ranges, ...} => List.pop ranges
-   end
 
 structure TypeStr = TypeStr (structure AdmitsEquality = AdmitsEquality
 			     structure Con = Con
@@ -223,26 +188,24 @@ structure Status =
 structure Info =
    struct
       (* The array is sorted by domain element. *)
-      datatype ('a, 'b) t = T of {isUsed: bool ref,
-				  range: 'b,
-				  values: ('a, 'b) Values.t} array
-
+      datatype ('a, 'b) t = T of {domain: 'a,
+				  isUsed: bool ref,
+				  range: 'b} array
+	 
       fun bogus () = T (Array.tabulate (0, fn _ => Error.bug "impossible"))
 
       fun layout (layoutDomain, layoutRange) (T a) =
-	 Array.layout (fn {range, values, ...} =>
-		       Layout.tuple [layoutDomain (Values.domain values),
-				     layoutRange range])
+	 Array.layout (fn {domain, range, ...} =>
+		       Layout.tuple [layoutDomain domain, layoutRange range])
 	 a
 
       fun foreach (T a, f) =
-	 Array.foreach (a, fn {range, values, ...} =>
-			f (Values.domain values, range))
+	 Array.foreach (a, fn {domain, range, ...} => f (domain, range))
 
-      fun peek (T a, compare, domain) =
+      fun peek (T a, domain: 'a, toSymbol: 'a -> Symbol.t) =
 	 Option.map
-	 (BinarySearch.search
-	  (a, fn {values, ...} => compare (domain, Values.domain values)),
+	 (BinarySearch.search (a, fn {domain = d, ...} =>
+			       Symbol.compare (toSymbol domain, toSymbol d)),
 	  fn i =>
 	  let
 	     val v as {isUsed, ...} =  Array.sub (a, i)
@@ -253,18 +216,18 @@ structure Info =
 
       val map: ('a, 'b) t * ('b -> 'b) -> ('a, 'b) t =
 	 fn (T a, f) =>
-	 T (Array.map (a, fn {range, values, ...} =>
-		       {isUsed = ref false,
-			range = f range,
-			values = values}))
+	 T (Array.map (a, fn {domain, range, ...} =>
+		       {domain = domain,
+			isUsed = ref false,
+			range = f range}))
 
       val map2: ('a, 'b) t * ('a, 'b) t * ('b * 'b -> 'b) -> ('a, 'b) t =
 	 fn (T a, T a', f) =>
 	 T (Array.map2
-	    (a, a', fn ({range = r, values, ...}, {range = r', ...}) =>
-	     {isUsed = ref false,
-	      range = f (r, r'),
-	      values = values}))
+	    (a, a', fn ({domain, range = r, ...}, {range = r', ...}) =>
+	     {domain = domain,
+	      isUsed = ref false,
+	      range = f (r, r')}))
    end
 
 val allTycons: Tycon.t list ref = ref []
@@ -310,33 +273,32 @@ structure Structure =
 	    open Layout
 	    fun doit (Info.T a, lay): Layout.t =
 	       align
-	       (Array.foldr (a, [], fn ({isUsed, range, values}, ac) =>
+	       (Array.foldr (a, [], fn ({domain, isUsed, range}, ac) =>
 			     if not (!isUsed)
 				then ac
-			     else lay (Values.domain values, range) :: ac))
+			     else lay (domain, range) :: ac))
 	    fun doitn (i, name, lay) =
 	       doit (i, fn (d, _) => seq [str name, lay d])
 	 in
 	    align [doitn (types, "type ", Ast.Tycon.layout),
 		   doitn (vals, "val ", Ast.Vid.layout),
 		   doit (strs, fn (d, r) =>
-			 align [seq [str "structure ", Ast.Strid.layout d],
+			 align [seq [str "structure ", Strid.layout d],
 				indent (layoutUsed r, 3)])]
 	 end
 
       fun layout (T {strs, vals, types, ...}) =
 	 Layout.record
 	 [("types", Info.layout (Ast.Tycon.layout, TypeStr.layout) types),
-	  ("vals",
-	   Info.layout (Ast.Vid.layout,
-			Layout.tuple2 (Vid.layout, Scheme.layout))
-	   vals),
-	  ("strs", Info.layout (Ast.Strid.layout, layout) strs)]
+	  ("vals", (Info.layout (Ast.Vid.layout,
+				 Layout.tuple2 (Vid.layout, Scheme.layout))
+		    vals)),
+	  ("strs", Info.layout (Strid.layout, layout) strs)]
 
       local
 	 open Layout
       in
-	 fun layoutTypeSpec (c, s) =
+	 fun layoutTypeSpec (name: Ast.Tycon.t, s) =
 	    let
 	       val {destroy, lay} = Type.makeLayoutPretty ()
 	       val lay = #1 o lay
@@ -347,7 +309,6 @@ structure Structure =
 			(n, fn _ =>
 			 Type.var (Tyvar.newNoname {equality = false}))
 		   | Kind.Nary => Vector.new0 ()
-	       val name = Ast.Tycon.layout c
 	       val args =
 		  case Vector.length tyvars of
 		     0 => empty
@@ -358,7 +319,8 @@ structure Structure =
 				     (Vector.toList (Vector.map (tyvars, lay)),
 				      ", "))),
 			 str " "]
-	       val def = seq [str "type ", args, name, str " = "]
+	       val def = seq [str "type ", args,
+			      Ast.Tycon.layout name, str " = "]
 	       val res = 
 		  case TypeStr.node s of
 		     TypeStr.Datatype {cons = Cons.T cs, ...} =>
@@ -382,11 +344,11 @@ structure Structure =
 	    in
 	       res
 	    end
-	 fun layoutValSpec (d, (vid, scheme)) =
+	 fun layoutValSpec (d: Ast.Vid.t, (vid, scheme)) =
 	    let
 	       fun simple s =
-		  seq [str s, str " ", Ast.Vid.layout d, str ": ",
-		       Scheme.layoutPretty scheme]
+		  seq [str s, str " ", Ast.Vid.layout d,
+		       str ": ", Scheme.layoutPretty scheme]
 	       datatype z = datatype Vid.t
 	    in
 	       case vid of
@@ -400,16 +362,14 @@ structure Structure =
 		| Overload  _ => simple "val"
 		| Var _ => simple "val"
 	    end
-	 fun layoutStrSpec (d, r) =
-	    align [seq [str "structure ", Ast.Strid.layout d, str ":"],
+	 fun layoutStrSpec (d: Strid.t, r) =
+	    align [seq [str "structure ", Strid.layout d, str ":"],
 		   indent (layoutPretty r, 3)]
 	 and layoutPretty (T {strs, vals, types, ...}) =
 	    let
 	       fun doit (Info.T a, layout) =
-		  align (Array.foldr (a, [], fn ({range, values, ...}, ac) =>
-				      layout (Values.domain values,
-					      range)
-				      :: ac))
+		  align (Array.foldr (a, [], fn ({domain, range, ...}, ac) =>
+				      layout (domain, range) :: ac))
 	    in
 	       align
 	       [str "sig",
@@ -427,12 +387,12 @@ structure Structure =
 		     types = Info.bogus ()}
 
       local
-	 fun make (field, compare) (T fields, domain) =
-	    Info.peek (field fields, compare, domain)
+	 fun make (field, toSymbol) (T fields, domain) =
+	    Info.peek (field fields, domain, toSymbol)
       in
-	 val peekStrid' = make (#strs, Ast.Strid.compare)
-	 val peekVid' = make (#vals, Ast.Vid.compare)
-	 val peekTycon' = make (#types, Ast.Tycon.compare)
+	 val peekStrid' = make (#strs, Ast.Strid.toSymbol)
+	 val peekVid' = make (#vals, Ast.Vid.toSymbol)
+	 val peekTycon' = make (#types, Ast.Tycon.toSymbol)
       end
 
       fun peekStrid z = Option.map (peekStrid' z, #range)
@@ -477,25 +437,25 @@ structure Structure =
 
       fun maker () =
 	 let
-	    fun make (op <=) =
+	    fun make toSymbol =
 	       let
 		  val r = ref []
-		  fun add {range, values} =
-		     List.push (r, {isUsed = ref false,
-				    range = range,
-				    values = values})
+		  fun add {domain, range} =
+		     List.push (r, {domain = domain,
+				    isUsed = ref false,
+				    range = range})
 		  fun done () = 
 		     Info.T
 		     (QuickSort.sortArray
 		      (Array.fromList (!r),
-		       fn ({values = v, ...}, {values = v', ...}) =>
-		       Values.domain v <= Values.domain v'))
+		       fn ({domain = d, ...}, {domain = d', ...}) =>
+		       Symbol.<= (toSymbol d, toSymbol d')))
 	       in
 		  (add, done)
 	       end
-	    val (addStr, strs) = make Ast.Strid.<=
-	    val (addType, types) = make Ast.Tycon.<=
-	    val (addVal, vals) = make Ast.Vid.<=
+	    val (addStr, strs) = make Strid.toSymbol
+	    val (addType, types) = make Ast.Tycon.toSymbol
+	    val (addVal, vals) = make Ast.Vid.toSymbol
 	    fun finish () =
 	       T {plist = PropertyList.new (),
 		  strs = strs (), 
@@ -532,24 +492,66 @@ structure FunctorClosure =
 (*                     NameSpace                     *)
 (* ------------------------------------------------- *)
 
+structure Values =
+   struct
+      (* The domains of all elements in a values list have the same symbol. *)
+      datatype ('a, 'b) t = T of {domain: 'a,
+				  isUsed: bool ref,
+				  scope: Scope.t,
+				  range: 'b} list ref
+
+      fun new (): ('a, 'b) t = T (ref [])
+
+      fun pop (T r) = List.pop r
+
+      fun ! (T r) = Ref.! r
+   end
+
 structure NameSpace =
    struct
-      datatype ('a, 'b) t =
-	 T of {current: ('a, 'b) Values.t list ref,
-	       equals: 'a * 'a -> bool,
-	       hash: 'a -> word,
-	       table: ('a, 'b) Values.t HashSet.t}
+      datatype ('a, 'b) t = T of {current: ('a, 'b) Values.t list ref,
+				  lookup: Symbol.t -> ('a, 'b) Values.t,
+				  toSymbol: 'a -> Symbol.t}
 
-      fun fold (T {table, ...}, ac, f) =
-	 HashSet.fold (table, [], fn (vs, ac) =>
-		       if Values.isEmpty vs
-			  then ac
-		       else f (vs, ac))
-	 
-      fun domain s = fold (s, [], fn (vs, ac) => Values.domain vs :: ac)
+      fun values (T {lookup, toSymbol, ...}, a) = lookup (toSymbol a)
 
-      fun collect (T {current, ...}: ('a, 'b) t,
-		   le: 'a * 'a -> bool): unit -> ('a, 'b) Info.t =
+      fun new {lookup, toSymbol} =
+	 T {current = ref [],
+	    lookup = lookup,
+	    toSymbol = toSymbol}
+
+      fun peek (ns, a) =
+	 case Values.! (values (ns, a)) of
+	    [] => NONE
+	  | {isUsed, range, ...} :: _ => 
+	       (isUsed := !Control.showBasisUsed
+		; SOME range)
+
+      val update: ('a, 'b) t * Scope.t * {domain: 'a,
+					  isUsed: bool ref,
+					  range: 'b} -> unit =
+	 fn (T {current, lookup, toSymbol, ...},
+	     scope,
+	     {domain, isUsed, range}) =>
+	 let
+	    val value = {domain = domain,
+			 isUsed = isUsed,
+			 range = range,
+			 scope = scope}
+	    val values as Values.T r = lookup (toSymbol domain)
+	    fun new () = (List.push (current, values)
+			  ; List.push (r, value))
+	 in
+	    case !r of
+	       [] => new ()
+	     | {scope = scope', ...} :: l =>
+		  if Scope.equals (scope, scope')
+		     then r := value :: l
+		  else new ()
+	 end
+
+      fun collect (T {current, toSymbol, ...}: ('a, 'b) t)
+	 : unit -> ('a, 'b) Info.t =
 	 let
 	    val old = !current
 	    val _ = current := []
@@ -559,76 +561,22 @@ structure NameSpace =
 	       val elts =
 		  List.revMap (!current, fn values =>
 			       let
-				  val {isUsed, value, ...} = Values.pop values
+				  val {domain, isUsed, range, ...} =
+				     Values.pop values
 			       in
-				  {isUsed = isUsed,
-				   range = value,
-				   values = values}
+				  {domain = domain,
+				   isUsed = isUsed,
+				   range = range}
 			       end)
 	       val _ = current := old
 	       val a =
 		  QuickSort.sortArray
 		  (Array.fromList elts,
-		   fn ({values = v, ...}, {values = v', ...}) =>
-		   le (Values.domain v, Values.domain v'))
+		   fn ({domain = d, ...}, {domain = d', ...}) =>
+		   Symbol.<= (toSymbol d, toSymbol d'))
 	    in
 	       Info.T a
 	    end
-	 end
-
-      fun peek (T {equals, hash, table, ...}, a) =
-	 case HashSet.peek (table, hash a, fn vs =>
-			    equals (a, Values.domain vs)) of
-	    SOME (Values.T {ranges = ref ({isUsed, value, ...} :: _), ...}) =>
-	       (isUsed := !Control.showBasisUsed
-		; SOME value)
-	  | _ => NONE
-
-      fun sizeMessage (i as T {table, ...}: ('a, 'b) t,
-		       layoutA: 'a -> Layout.t,
-		       layoutB: 'b -> Layout.t) =
-	 let
-	    open Layout
-	 in
-	    align (seq [str "total ", layoutSize i]
-		   :: (HashSet.fold
-		       (table, [], fn (v, ac) =>
-			Values.sizeMessage (v, layoutA, layoutB) :: ac)))
-	 end
-
-      fun new (equals, hash) =
-	 T {current = ref [],
-	    equals = equals,
-	    hash = hash,
-	    table = HashSet.new {hash = hash o Values.domain}}
-
-      fun layout (layoutDomain, layoutRange) (T {table, ...}) =
-	 HashSet.layout (Values.layout (layoutDomain, layoutRange)) table
-
-      fun values (T {hash, equals, table, ...}, a) =
-	 HashSet.lookupOrInsert (table, hash a,
-				 fn vs => equals (a, Values.domain vs),
-				 fn () => Values.new a)
-
-      val update: ('a, 'b) t * Scope.t * {isUsed: bool ref,
-					  range: 'b,
-					  values: ('a, 'b) Values.t} -> unit =
-	 fn (T {current, ...}, scope, {isUsed,
-				       range,
-				       values as Values.T {ranges, ...}}) =>
-	 let
-	    val value = {isUsed = isUsed,
-			 scope = scope,
-			 value = range}
-	    fun new () = (List.push (current, values)
-			  ; List.push (ranges, value))
-	 in
-	    case !ranges of
-	       [] => new ()
-	     | {scope = scope', ...} :: l =>
-		  if Scope.equals (scope, scope')
-		     then ranges := value :: l
-		  else new ()
 	 end
    end
 
@@ -637,110 +585,117 @@ structure NameSpace =
 (*---------------------------------------------------*)
 
 datatype t = T of {currentScope: Scope.t ref,
-		   fcts: (Ast.Fctid.t, FunctorClosure.t) NameSpace.t,
+		   fcts: (Fctid.t, FunctorClosure.t) NameSpace.t,
 		   fixs: (Ast.Vid.t, Ast.Fixity.t) NameSpace.t,
-		   sigs: (Ast.Sigid.t, Interface.t) NameSpace.t,
-		   strs: (Ast.Strid.t, Structure.t) NameSpace.t,
+		   sigs: (Sigid.t, Interface.t) NameSpace.t,
+		   strs: (Strid.t, Structure.t) NameSpace.t,
 		   types: (Ast.Tycon.t, TypeStr.t) NameSpace.t,
 		   vals: (Ast.Vid.t, Vid.t * Scheme.t) NameSpace.t}
 
-fun clean (T {fcts, fixs, sigs, strs, types, vals, ...}): unit =
-   let
-      fun doit (NameSpace.T {table, ...}) =
-	 HashSet.removeAll (table, Values.isEmpty)
-   in
-      doit fcts; doit fixs; doit sigs
-   (* Can't doit to the following because it removes Values.t components that
-    * are referred to by structures.  Hence, later opens fail.
-    *)
-      (* doit strs; doit types; doit vals *)
-   end
+fun clean _ = ()
 
-fun sizeMessage (E as T {fcts, fixs, sigs, strs, types, vals, ...}) =
+fun sizeMessage (E: t): Layout.t =
    let
       val size = MLton.size
       open Layout
    in
-      record
-      [("total", Int.layout (size E)),
-       ("fcts", NameSpace.sizeMessage (fcts, Ast.Fctid.layout,
-				       FunctorClosure.sizeMessage)),
-       ("sigs", NameSpace.sizeMessage (sigs, Ast.Sigid.layout, layoutSize)),
-       ("strs", NameSpace.sizeMessage (strs, Ast.Strid.layout, layoutSize))]
+      record [("total", Int.layout (size E))]
    end
 
 fun empty () =
-   T {currentScope = ref (Scope.new ()),
-      fcts = NameSpace.new let open Ast.Fctid in (equals, hash) end,
-      fixs = NameSpace.new let open Ast.Vid in (equals, hash) end,
-      sigs = NameSpace.new let open Ast.Sigid in (equals, hash) end,
-      strs = NameSpace.new let open Ast.Strid in (equals, hash) end,
-      types = NameSpace.new let open Ast.Tycon in (equals, hash) end,
-      vals = NameSpace.new let open Ast.Vid in (equals, hash) end}
-
-fun layout (T {strs, types, vals, ...}) =
-   Layout.tuple
-   [NameSpace.layout (Ast.Tycon.layout, TypeStr.layout) types,
-    NameSpace.layout (Ast.Vid.layout,
-		      Layout.tuple2 (Vid.layout, Scheme.layout)) vals,
-    NameSpace.layout (Ast.Strid.layout, Structure.layout) strs]
-
-fun layoutPretty (T {fcts, sigs, strs, types, vals, ...}) =
    let
-      open Layout
-      fun doit (NameSpace.T {table, ...}, le, layout) =
-	 let
-	    val l =
-	       HashSet.fold
-	       (table, [], fn (Values.T {domain, ranges}, ac) =>
-		case !ranges of
-		   [] => ac
-		 | {value, ...} :: _ => (domain, value) :: ac)
-	 in align (List.map (QuickSort.sortList
-			     (l, fn ((d, _), (d', _)) => le (d, d')),
-			     layout))
-	 end
+      val lookup =
+	 #get (Property.get
+	       (Symbol.plist,
+		Property.initFun
+		(fn s => {fcts = Values.new (),
+			  fixs = Values.new (),
+			  sigs = Values.new (),
+			  strs = Values.new (),
+			  types = Values.new (),
+			  vals = Values.new ()})))
+      fun make (sel, toSymbol) =
+	 NameSpace.new {lookup = sel o lookup,
+			toSymbol = toSymbol}
    in
-      align [doit (types, Ast.Tycon.<=, Structure.layoutTypeSpec),
-	     doit (vals, Ast.Vid.<=, Structure.layoutValSpec),
-	     doit (sigs, Ast.Sigid.<=, fn (d, _) => seq [str "signature ",
-							 Ast.Sigid.layout d]),
-	     doit (fcts, Ast.Fctid.<=, fn (d, _) => seq [str "functor ",
-							 Ast.Fctid.layout d]),
-	     doit (strs, Ast.Strid.<=, Structure.layoutStrSpec)]
+      T {currentScope = ref (Scope.new ()),
+	 fcts = make (#fcts, Fctid.toSymbol),
+	 fixs = make (#fixs, Ast.Vid.toSymbol),
+	 sigs = make (#sigs, Sigid.toSymbol),
+	 strs = make (#strs, Strid.toSymbol),
+	 types = make (#types, Ast.Tycon.toSymbol),
+	 vals = make (#vals, Ast.Vid.toSymbol)}
    end
 
-fun layoutUsed (T {fcts, sigs, strs, types, vals, ...}) =
+fun collect (T r, f: {isUsed: bool} -> bool) =
    let
-      open Layout
-      fun doit (NameSpace.T {table, ...}, le, layout) =
-	 let
-	    val all =
-	       HashSet.fold
-	       (table, [], fn (Values.T {domain, ranges}, ac) =>
-		case !ranges of
-		   [] => ac
-		 | {isUsed, value, ...} :: _ =>
-		      if !isUsed
-			 then (domain, layout (domain, value)) :: ac
-		      else ac)
-	 in
-	    align (List.map
-		   (QuickSort.sortList
-		    (all, fn ((d, _), (d', _)) => le (d, d')),
-		    #2))
-	 end
-      fun doitn (ns, name, le, lay) =
-	 doit (ns, le, fn (d, _) => seq [str name, str " ", lay d])
-
+      val fcts = ref []
+      val sigs = ref []
+      val strs = ref []
+      val types = ref []
+      val vals = ref []
+      val _ =
+	 Symbol.foreach
+	 (fn s =>
+	  let
+	     fun doit (ac, sel) =
+		let
+		   val NameSpace.T {lookup, ...} = sel r
+		in
+		   case Values.! (lookup s) of
+		      [] => ()
+		    | {domain, isUsed, range, ...} :: _ =>
+			 if f {isUsed = !isUsed}
+			    then List.push (ac, (domain, range))
+			 else ()
+		end
+	     val _ = doit (fcts, #fcts)
+	     val _ = doit (sigs, #sigs)
+	     val _ = doit (strs, #strs)
+	     val _ = doit (types, #types)
+	     val _ = doit (vals, #vals)
+	  in
+	     ()
+	  end)
+      fun finish (r, toSymbol) =
+	 QuickSort.sortArray
+	 (Array.fromList (!r), fn ((d, _), (d', _)) =>
+	  Symbol.<= (toSymbol d, toSymbol d'))
    in
-      align [doitn (types, "type", Ast.Tycon.<=, Ast.Tycon.layout),
-	     doitn (vals, "val", Ast.Vid.<=, Ast.Vid.layout),
-	     doitn (sigs, "signature", Ast.Sigid.<=, Ast.Sigid.layout),
-	     doitn (fcts, "functor", Ast.Fctid.<=, Ast.Fctid.layout),
-	     doit (strs, Ast.Strid.<=,
-		   fn (d, r) =>
-		   align [seq [str "structure ", Ast.Strid.layout d],
+      {fcts = finish (fcts, Fctid.toSymbol),
+       sigs = finish (sigs, Sigid.toSymbol),
+       strs = finish (strs, Strid.toSymbol),
+       types = finish (types, Ast.Tycon.toSymbol),
+       vals = finish (vals, Ast.Vid.toSymbol)}
+   end
+   
+fun layout (E: t): Layout.t =
+   let
+      val {fcts, sigs, strs, types, vals} = collect (E, fn _ => true)
+      open Layout
+      fun doit (a, layout) = align (Array.toListMap (a, layout))
+   in
+      align [doit (types, Structure.layoutTypeSpec),
+	     doit (vals, Structure.layoutValSpec),
+	     doit (sigs, fn (s, _) => seq [str "signature ", Sigid.layout s]),
+	     doit (fcts, fn (s, _) => seq [str "functor ", Fctid.layout s]),
+	     doit (strs, Structure.layoutStrSpec)]
+   end
+
+fun layoutUsed (E: t): Layout.t =
+   let
+      val {fcts, sigs, strs, types, vals} = collect (E, #isUsed)
+      open Layout
+      fun doit (a, layout) = align (Array.toListMap (a, layout))
+      fun doitn (ns, name, lay) =
+	 doit (ns, fn (s, _) => seq [str name, str " ", lay s])
+   in
+      align [doitn (types, "type", Ast.Tycon.layout),
+	     doitn (vals, "val", Ast.Vid.layout),
+	     doitn (sigs, "signature", Sigid.layout),
+	     doitn (fcts, "functor", Fctid.layout),
+	     doit (strs, fn (s, r) =>
+		   align [seq [str "structure ", Strid.layout s],
 			  indent (Structure.layoutUsed r, 3)])]
    end
 
@@ -749,14 +704,10 @@ fun layoutUsed (T {fcts, sigs, strs, types, vals, ...}) =
 (* ------------------------------------------------- *)
 
 local
-   fun 'a make field (T fields, a) = NameSpace.peek (field fields, a)
+   fun make sel (T r, a) = NameSpace.peek (sel r, a)
 in
    val peekFctid = make #fcts
    val peekFix = make #fixs
-   val peekFix =
-      Trace.trace
-      ("peekFix", Ast.Vid.layout o #2, Option.layout Ast.Fixity.layout)
-      peekFix			      
    val peekSigid = make #sigs
    val peekStrid = make #strs
    val peekTycon = make #types
@@ -925,29 +876,18 @@ local
 	 val ns = get fields
       in
 	 NameSpace.update (ns, !currentScope,
-			   {isUsed = ref false,
-			    range = range,
-			    values = NameSpace.values (ns, domain)})
+			   {domain = domain,
+			    isUsed = ref false,
+			    range = range})
       end
 in
    val extendFctid = make #fcts
    val extendFix = make #fixs
-   val extendFix =
-      Trace.trace ("extendFix",
-		   fn (_, x, f) => Layout.tuple [Ast.Vid.layout x,
-						 Ast.Fixity.layout f],
-		   Unit.layout)
-      extendFix
    val extendSigid = make #sigs
    val extendStrid = make #strs
    val extendTycon = make #types
    val extendVals = make #vals
 end
-
-val extendTycon =
-   Trace.trace3 ("extendTycon", layout, Ast.Tycon.layout, TypeStr.layout,
-		 Unit.layout)
-   extendTycon
 
 fun extendCon (E, c, c', s) =
    extendVals (E, Ast.Vid.fromCon c, (Vid.Con c', s))
@@ -989,11 +929,11 @@ local
 	       val _ = List.foreach (c1, fn v => (Values.pop v; ()))
 	       val _ = current := old
 	       val _ =
-		  List.foreach2 (lift, c2, fn ({isUsed, value, ...}, values) =>
-				 NameSpace.update
-				 (info, s0, {isUsed = isUsed,
-					     range = value,
-					     values = values}))
+		  List.foreach (lift, fn {domain, isUsed, range, ...} =>
+				NameSpace.update
+				(info, s0, {domain = domain,
+					    isUsed = isUsed,
+					    range = range}))
 	    in
 	       ()
 	    end
@@ -1059,10 +999,10 @@ end
 
 fun makeStructure (T {currentScope, fixs, strs, types, vals, ...}, make) =
    let
-      val f = NameSpace.collect (fixs, Ast.Vid.<=)
-      val s = NameSpace.collect (strs, Ast.Strid.<=)
-      val t = NameSpace.collect (types, Ast.Tycon.<=)
-      val v = NameSpace.collect (vals, Ast.Vid.<=)
+      val f = NameSpace.collect fixs
+      val s = NameSpace.collect strs
+      val t = NameSpace.collect types
+      val v = NameSpace.collect vals
       val s0 = !currentScope
       val _ = currentScope := Scope.new ()
       val res = make ()
@@ -1133,7 +1073,7 @@ fun openStructure (T {currentScope, strs, vals, types, ...},
       ; doit (types, types')
    end
 
-fun setTyconNames (T {strs, types, ...}) =
+fun setTyconNames (E: t): unit =
    let
       val {get = shortest: Tycon.t -> int ref, ...} =
 	 Property.get (Tycon.plist, Property.initFun (fn _ => ref Int.maxInt))
@@ -1153,29 +1093,12 @@ fun setTyconNames (T {strs, types, ...}) =
 		     let
 			val _ = r := length
 			val name =
-			   Ast.Longtycon.toString
-			   (Ast.Longtycon.long (strids, name))
+			   Pretty.longid (List.map (strids, Strid.layout),
+					  Ast.Tycon.layout name)
 		     in
-			Tycon.setPrintName (c, name)
+			Tycon.setPrintName (c, Layout.toString name)
 		     end
 	       end
-      fun foreach (NameSpace.T {table, ...}, op <=, f) =
-	 let
-	    val all = ref []
-	    val _ =
-	       HashSet.foreach
-	       (table, fn Values.T {domain, ranges} =>
-		case !ranges of
-		   [] => ()
-		 | {value, ...} :: _ => List.push (all, (domain, value)))
-	    val v =
-	       QuickSort.sortVector
-	       (Vector.fromList (!all), fn ((d, _), (d', _)) => d <= d')
-	 in
-	    Vector.foreach (v, f)
-	 end
-      val _ = foreach (types, Ast.Tycon.<=,
-		       fn (name, typeStr) => doType (typeStr, name, 0, []))
       val {get = strShortest: Structure.t -> int ref, ...} =
 	 Property.get (Structure.plist,
 		       Property.initFun (fn _ => ref Int.maxInt))
@@ -1195,8 +1118,10 @@ fun setTyconNames (T {strs, types, ...}) =
 		; Info.foreach (strs, fn (strid, str) =>
 				loopStr (str, 1 + length, strids @ [strid])))
 	 end
-      val _ = foreach (strs, Ast.Strid.<=,
-		       fn (strid, str) => loopStr (str, 1, [strid]))
+      val {strs, types, ...} = collect (E, fn _ => true)
+      val _ = Array.foreach (types, fn (name, typeStr) =>
+			     doType (typeStr, name, 0, []))
+      val _ = Array.foreach (strs, fn (strid, str) => loopStr (str, 1, [strid]))
       val _ =
 	 List.foreach
 	 (!allTycons, fn c =>
@@ -1205,35 +1130,6 @@ fun setTyconNames (T {strs, types, ...}) =
 	  else Tycon.setPrintName (c, concat ["?.", Tycon.originalName c]))
    in
       ()
-   end
-
-val propertyFun:
-   ('a -> PropertyList.t) * ('a * 'b * ('a * 'b -> 'c) -> 'c)
-   -> ('a * 'b -> 'c) * {destroy: unit -> unit} =
-   fn (plist, f) =>
-   let
-      fun uncurry g (a, b) = g a b 
-      val {destroy, get: 'a -> 'b -> 'c, ...} =
-	 Property.destGet
-	 (plist,
-	  Property.initRec
-	  (fn (a, get) =>
-	   let
-	      val done = ref NONE
-	   in
-	      fn b =>
-	      case !done of
-		 NONE =>
-		    let
-		       val c = f (a, b, uncurry get)
-		       val _ = done := SOME c
-		    in
-		       c
-		    end
-	       | SOME c => c
-	   end))
-   in
-      (uncurry get, {destroy = destroy})
    end
 
 fun dummyStructure (T {strs, types, vals, ...}, prefix: string, I: Interface.t)
@@ -1258,11 +1154,11 @@ fun dummyStructure (T {strs, types, vals, ...}, prefix: string, I: Interface.t)
 	   let
 	      val {addStr, addType, addVal, finish} = Structure.maker ()
 	      fun handleStr {name, interface = I} =
-		 addStr {range = get I,
-			 values = NameSpace.values (strs, name)}
+		 addStr {domain = name,
+			 range = get I}
 	      fun handleType {name, typeStr} =
-		 addType {range = typeStr,
-			  values = NameSpace.values (types, name)}
+		 addType {domain = name,
+			  range = typeStr}
 	      fun handleVal {name, scheme, status} =
 		 let
 		    val con = CoreML.Con.fromString o Ast.Vid.toString
@@ -1273,8 +1169,8 @@ fun dummyStructure (T {strs, types, vals, ...}, prefix: string, I: Interface.t)
 			| Status.Exn => Vid.Exn (con name)
 			| Status.Var => Vid.Var (var name)
 		 in
-		    addVal {range = (vid, scheme),
-			    values = NameSpace.values (vals, name)}
+		    addVal {domain = name,
+			    range = (vid, scheme)}
 		 end
 	      val _ =
 		 Interface.foreach
@@ -1482,9 +1378,9 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 		  NONE =>
 		     error ("structure",
 			    Longstrid.layout (Longstrid.long (rev strids, name)))
-		| SOME {range, values, ...} =>
-		     addStr {range = cut (range, I, name :: strids),
-			     values = values}
+		| SOME {domain, range, ...} =>
+		     addStr {domain = domain,
+			     range = cut (range, I, name :: strids)}
 	    fun handleType {name: Ast.Tycon.t,
 			    typeStr: TypeStr.t} =
 	       let
@@ -1494,7 +1390,7 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 	       in
 		  case Structure.peekTycon' (S, name) of
 		     NONE => error ("type", layoutName ())
-		   | SOME {range = typeStr', values, ...} =>
+		   | SOME {range = typeStr', ...} =>
 			let
 			   fun tyconScheme (c: Tycon.t): Scheme.t =
 			      let
@@ -1572,8 +1468,8 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 					 layoutName, region)
 					; typeStr)
 			in
-			   addType {range = typeStr,
-				    values = values}
+			   addType {domain = name,
+				    range = typeStr}
 			end
 	       end
 	    fun handleVal {name, scheme = s, status} =
@@ -1581,7 +1477,7 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 		  NONE =>
 		     error ("variable",
 			    Longvid.layout (Longvid.long (rev strids, name)))
-		| SOME {range = (vid, s'), values, ...} =>
+		| SOME {range = (vid, s'), ...} =>
 		     let
 			val (tyvars, t) = Scheme.dest s
 			val {args, instance = t'} = Scheme.instantiate s'
@@ -1650,8 +1546,8 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 					    Layout.empty)
 					   ; vid)
 		     in
-			addVal {range = (vid, s),
-				values = values}
+			addVal {domain = name,
+				range = (vid, s)}
 		     end
 	    val _ = Interface.foreach (I, {handleStr = handleStr,
 					   handleType = handleType,
@@ -1753,72 +1649,77 @@ val cut =
 (*                  functorClosure                   *)
 (* ------------------------------------------------- *)
 
-fun snapshot (T {currentScope, fcts, fixs, sigs, strs, types, vals}):
-   (unit -> 'a) -> 'a =
+fun snapshot (T {currentScope, fcts, fixs, sigs, strs, types, vals, ...})
+   : (unit -> 'a) -> 'a =
    let
-      fun m l = Layout.outputl (l, Out.error)
-      open Layout
-      fun doit (NameSpace.T {current, table, ...}, lay) =
-	 let
-	    val all =
-	       HashSet.fold
-	       (table, [], fn (vs as Values.T {ranges, ...}, ac) =>
-		case !ranges of
-		   [] => ac
-		 | z :: _ => (z, vs) :: ac)
-	 in
-	    fn s0 =>
-	    let
-	       val current0 = !current
-	       val _ =
-		  current :=
-		  List.fold
-		  (all, [], fn (({isUsed, value, ...},
-				 vs as Values.T {ranges, ...}), ac) =>
-		   (List.push (ranges, {isUsed = isUsed,
-					scope = s0,
-					value = value})
-		    ; vs :: ac))
-	       val removed =
-		  HashSet.fold
-		  (table, [], fn (Values.T {ranges, ...}, ac) =>
-		   let
-		      val r = !ranges
-		   in
-		      case r of
-			 [] => ac
-		       | {scope, ...} :: _ =>
-			    if Scope.equals (s0, scope)
-			       then ac
-			    else (ranges := []
-				  ; (ranges, r) :: ac)
-		   end)
-	    in fn () => (List.foreach (!current, fn v => (Values.pop v; ()))
-			 ; current := current0
-			 ; List.foreach (removed, op :=))
-	    end
-	 end
-      val fcts = doit (fcts, Ast.Fctid.layout)
-      val fixs = doit (fixs, Ast.Vid.layout)
-      val sigs = doit (sigs, Ast.Sigid.layout)
-      val strs = doit (strs, Ast.Strid.layout)
-      val types = doit (types, Ast.Tycon.layout)
-      val vals = doit (vals, Ast.Vid.layout)
+      val add: (Scope.t -> unit) list ref = ref []
+      (* Push onto add everything currently in scope. *)
+      val _ =
+	 Symbol.foreach
+	 (fn s =>
+	  let
+	     fun doit (NameSpace.T {current, lookup, ...}) =
+		let
+		   val v as Values.T vs = lookup s
+		in
+		   case ! vs of
+		      [] => ()
+		    | {domain, isUsed, range, ...} :: _ =>
+			 List.push
+			 (add, fn s0 =>
+			  (List.push (vs, {domain = domain,
+					   isUsed = isUsed,
+					   range = range,
+					   scope = s0})
+			   ; List.push (current, v)))
+		end
+	  in
+	     (doit fcts; doit fixs; doit sigs; doit strs; doit types; doit vals)
+	  end)
    in
       fn th =>
       let
 	 val s0 = Scope.new ()
-	 val fcts = fcts s0
-	 val fixs = fixs s0
-	 val sigs = sigs s0
-	 val strs = strs s0
-	 val types = types s0
-	 val vals = vals s0
+	 val restore: (unit -> unit) list ref = ref []
+	 fun doit (NameSpace.T {current, ...}) =
+	    let
+	       val current0 = !current
+	       val _ = current := []
+	    in
+	       List.push (restore, fn () =>
+			  (List.foreach (!current, fn v => (Values.pop v; ()))
+			   ; current := current0))
+	    end
+	 val _ = (doit fcts; doit fixs; doit sigs
+		  ; doit strs; doit types; doit vals)
+	 val _ = List.foreach (!add, fn f => f s0)
+	 (* Clear out any symbols that weren't available in the old scope. *)
+	 val _ =
+	    Symbol.foreach
+	    (fn s =>
+	     let
+		fun doit (NameSpace.T {lookup, ...}) =
+		   let
+		      val Values.T vs = lookup s
+		      val cur = !vs
+		   in
+		      case cur of
+			 [] => ()
+		       | {scope, ...} :: _ =>
+			    if Scope.equals (s0, scope)
+			       then ()
+			    else (vs := []
+				  ; List.push (restore, fn () => vs := cur))
+		   end
+	     in
+		(doit fcts; doit fixs; doit sigs
+		 ; doit strs; doit types; doit vals)
+	     end)
 	 val s1 = !currentScope
 	 val _ = currentScope := s0
 	 val res = th ()
 	 val _ = currentScope := s1
-	 val _ = (fcts (); fixs (); sigs (); strs (); types (); vals ())
+	 val _ = List.foreach (!restore, fn f => f ())
       in
 	 res
       end

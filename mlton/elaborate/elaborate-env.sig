@@ -108,7 +108,6 @@ signature ELABORATE_ENV =
 	 * (Structure.t * string list -> Decs.t * Structure.t)
 	 -> FunctorClosure.t
       val layout: t -> Layout.t
-      val layoutPretty: t -> Layout.t
       val layoutUsed: t -> Layout.t
       val localCore: t * (unit -> 'a) * ('a -> 'b) -> 'b
       val localModule: t * (unit -> 'a) * ('a -> 'b) -> 'b
