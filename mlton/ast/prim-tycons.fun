@@ -147,7 +147,7 @@ fun layoutApp (c: t,
 	       {isChar = false, needsParen = true})
       else if equals (c, tuple)
          then (mayAlign (Layout.separateLeft (Vector.toListMap (args, maybe),
-					      " * ")),
+					      "* ")),
 	       {isChar = false, needsParen = true})
       else if equals (c, vector)
          then if #isChar (#2 (Vector.sub (args, 0)))
