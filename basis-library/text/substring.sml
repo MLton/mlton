@@ -23,7 +23,7 @@ structure Substring: SUBSTRING =
       in
 	val isPrefix = make isPrefix
 	val isSubstring = make isSubvector
-	val isSuffix = make isPrefix
+	val isSuffix = make isSuffix
 	val position = make position
       end
       val compare = collate Char.compare

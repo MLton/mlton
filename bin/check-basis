@@ -6,42 +6,11 @@
 name=`basename $0`
 
 function usage() {
-	echo >&2 "usage: $name"
+	echo >&2 "usage: $name [file.sml | file.cm]"
 	exit 1
 }
 
-case "$#" in
-0)
-	;;
-*)
-	usage
-	;;
-esac
-
-dir=`dirname $0`
-root=`cd $dir/.. && pwd`
-basis="$root/basis-library/basis.sml"
-
-cd $root/basis-library
-rm -f $basis
-(
-cat <<-EOF
-	val _ = SMLofNJ.Internals.GC.messages false;
-	fun PRIM (x:string) = raise Fail "_prim"
-	fun STRING_CONST (x:string) : char vector = raise Fail "<string constant>"
-	datatype pointer = T
-        datatype preThread = T
-	datatype thread = T
-	type word8 = Word8.word
-	type word = Word32.word
-	type int = Int32.int
-	type intInf = int
-	nonfix * / mod div ^ + - := o > < >= <= = <> :: @ before
-EOF
-for f in `(cat build-basis; cat bind-basis) | grep -v overload`; do
-	echo "(*#line 1.0 \"$f\"*)"
-	cat $f
-done |
+function rewrite() {
 	sed 's/_build_const\(.*\);/(PRIM\1)/' |
 	sed 's/_build_const/PRIM/' |
 	sed 's/_const\(.*\);/(PRIM\1)/' |
@@ -50,8 +19,101 @@ done |
 	sed 's/_prim/PRIM/' |
 	sed 's/_ffi\(.*\);/(PRIM\1)/' |
 	sed 's/_ffi/PRIM/' |
-	sed 's/fun bigIntConstant x = x/fun bigIntConstant(x:smallInt):bigInt = raise Fail "bigIntConstant"/'
+	sed 's/fun bigIntConstant x = x/fun bigIntConstant(x:smallInt):bigInt = raise Fail "bigIntConstant"/' |
+	sed 's/#"\([^"\]*\(\\.[^"\]*\)*\)"/#ZZZ\1ZZZ/g' |
+	sed 's/\([^\]\)"\([^"\]*\(\\.[^"\]*\)*\)"/\1(STRING_CONST "\2")/g' |
+	sed 's/#ZZZ\(\(.\)\|\(..\)\|\([^Z][^Z][^Z].*\)\)ZZZ/#"\1"/g' |
+        sed 's/(\*#line 0.0 \(.*\)\*)/(*#line 0.0 "\1"*)/'
+}
+
+REWRITE_FILE=""
+function rewrite_file() {
+(
+	echo "(*#line 0.0 $REWRITE_FILE*)"
+	cat $REWRITE_FILE 
+) | rewrite
+}
+
+REWRITE_FILES=""
+function rewrite_files() {
+for f in `cat $REWRITE_FILES | grep -v overload | grep -v Group`; do
+	echo "(*#line 0.0 $f*)"
+        cat $f
+done | rewrite
+}
+
+SML_FILE=""
+CM_FILE=""
+case "$#" in
+0)
+	;;
+1)
+	if [ "$1" == "`basename $1 .sml`.sml" -a -r "$1" ]; then
+		SML_FILE=$1
+	elif [ "$1" == "`basename $1 .cm`.cm" -a -r "$1" ]; then
+		CM_FILE=$1
+	else usage
+        fi
+        ;;
+*)
+	usage
+	;;
+esac
+
+dir=`dirname $0`
+root=`cd $dir/.. && pwd`
+here=`pwd`
+basis="$root/basis-library/basis.sml"
+
+rm -f $basis
+(
 cat <<-EOF
+	val _ = SMLofNJ.Internals.GC.messages false;
+	fun PRIM (x:char vector) = raise Fail "_prim"
+	fun STRING_CONST (x:string) : char vector = raise Fail "<string constant>"
+	datatype pointer = T
+	datatype preThread = T
+	datatype thread = T
+	type word8 = Word8.word
+	type word = Word32.word
+	type int = Int32.int
+	type intInf = int
+	nonfix * / mod div ^ + - := o > < >= <= = <> :: @ before
+EOF
+cat <<-EOF
+	local
+EOF
+cd $root/basis-library
+REWRITE_FILES="build-basis"
+rewrite_files
+cat <<-EOF
+	in
+EOF
+cd $root/basis-library
+REWRITE_FILES="bind-basis"
+rewrite_files
+cat <<-EOF
+	end
+EOF
+cd $here
+case "$SML_FILE" in
+"")
+	;;
+*)
+	REWRITE_FILE=$SML_FILE
+	rewrite_file
+	;;
+esac
+case "$CM_FILE" in
+"")
+	;;
+*)
+	REWRITE_FILES=$CM_FILE
+	rewrite_files
+	;;
+esac
+cat <<-EOF
+	(*#line 0.0 "check-basis"*)
 	val _ = () ()
 EOF
 ) >$basis

@@ -358,15 +358,64 @@ structure Date :> DATE =
 	fun drop p     = StringCvt.dropl p getc
 	fun isColon c  = (c = #":")
 
-	val getMonth = fn "Jan" => Jan | "Feb" => Feb | "Mar" => Mar
-                     | "Apr" => Apr | "May" => May | "Jun" => Jun
-		     | "Jul" => Jul | "Aug" => Aug | "Sep" => Sep
-		     | "Oct" => Oct | "Nov" => Nov | "Dec" => Dec 
-		     | _ => raise BadFormat
-	val getWday  = fn "Sun" => Sun | "Mon" => Mon | "Tue" => Tue
-		     | "Wed" => Wed | "Thu" => Thu | "Fri" => Fri
-		     | "Sat" => Sat 
-		     | _ => raise BadFormat
+	local
+	   fun err () = raise BadFormat
+	   fun check1 (s, c1, r) = if String.sub(s,1) = c1
+	                              then r
+				   else err ()
+	   fun check2 (s, c2, r) = if String.sub(s,2) = c2
+	                              then r
+				   else err ()
+	   fun check12 (s, c1, c2, r) = if String.sub(s,1) = c1
+	                                   andalso 
+					   String.sub(s,2) = c2
+					   then r
+					else err ()
+ 	in
+	  val getMonth = fn m =>
+	     if String.size m <> 3
+	        then err ()
+	     else
+	        (case String.sub (m, 0) of
+		    #"J" => (case String.sub (m, 1) of
+			        #"a" => check2 (m, #"n", Jan)
+			      | #"u" => (case String.sub (m, 2) of
+					    #"n" => Jun
+					  | #"l" => Jul
+					  | _ => err ())
+			      | _ => err ())
+		  | #"F" => check12 (m, #"e", #"b", Feb)
+		  | #"M" => check1 (m, #"a", case String.sub (m, 2) of
+				                #"r" => Mar
+					      | #"y" => May
+					      | _ => err ())
+		  | #"A" => (case String.sub (m, 1) of
+			        #"p" => check2 (m, #"r", Apr)
+			      | #"u" => check2 (m, #"g", Aug)
+			      | _ => err ())
+		  | #"S" => check12 (m, #"e", #"p", Sep)
+		  | #"O" => check12 (m, #"c", #"t", Oct)
+		  | #"N" => check12 (m, #"o", #"v", Nov)
+		  | #"D" => check12 (m, #"e", #"c", Dec)
+		  | _ => err ())
+	  val getWday = fn w =>
+	     if String.size w <> 3
+	        then err ()
+	     else
+	        (case String.sub (w, 0) of
+		    #"S" => (case String.sub (w,1) of
+			        #"u" => check2 (w, #"n", Sun)
+			      | #"a" => check2 (w, #"t", Sat)
+			      | _ => err ())
+		  | #"M" => check12 (w, #"o", #"n", Mon)
+		  | #"T" => (case String.sub (w,1) of
+			        #"u" => check2 (w, #"e", Tue)
+			      | #"h" => check2 (w, #"u", Thu)
+			      | _ => err ())
+		  | #"W" => check12 (w, #"e", #"d", Wed)
+		  | #"F" => check12 (w, #"r", #"i", Fri)
+		  | _ => err ())
+	end
 
 	val (wday, src1)  = getstring src
 	val (month, src2) = getstring (drop Char.isSpace src1)

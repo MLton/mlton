@@ -38,13 +38,13 @@ signature MONO_VECTOR_EXTRA_PRE =
       val tokens: (elem -> bool) -> vector -> vector list
       val fields: (elem -> bool) -> vector -> vector list
 
-      val duplicate: 'a vector -> 'a vector
-      val fromArray: 'a array -> 'a vector
-      val toList: 'a vector -> 'a list
-      val unfoldi: int * 'a * (int * 'a -> 'b * 'a) -> 'b vector
-      val vector: int * 'a -> 'a vector
+      val duplicate: vector -> vector
+      val fromArray: elem array -> vector
+      val toList: vector -> elem list
+      val unfoldi: int * 'a * (int * 'a -> elem * 'a) -> vector
+      val vector: int * elem -> vector
       (* Depreciated *)
-      val extract: 'a vector * int * int option -> 'a vector
+      val extract: vector * int * int option -> vector
    end
 
 signature MONO_VECTOR_EXTRA =

@@ -236,7 +236,9 @@ signature BASIS =
       sharing type exn = General.exn
       sharing type array = Array.array
       sharing type vector = Vector.vector
+(*
       sharing type ref = General.ref
+*)
 (*
       sharing type bool = Bool.bool
 *)
@@ -316,11 +318,11 @@ signature BASIS =
 (*
       sharing type PackRealBig.real = real
 *)
-      sharing type PackRealLitte.real = real
+      sharing type PackRealLittle.real = real
 (*
       sharing type PackReal64Big.real = Real64.real
 *)
-      sharing type PackReal64Litte.real = Real64.real
+      sharing type PackReal64Little.real = Real64.real
       sharing type RealArray.vector = RealVector.vector
       sharing type RealArray.elem = real
       sharing type RealArray2.vector = RealVector.vector
@@ -355,18 +357,21 @@ signature BASIS =
       sharing type Word32VectorSlice.vector = Word32Vector.vector
       sharing type Word32VectorSlice.elem = Word32.word
    end
+   (* Compiler built-in types *)
    where type unit = unit
    where type int = int
    where type word = word
    where type real = real
    where type char = char
-   where type string = string
-   where type substring = substring
    where type exn = exn
    where type 'a array = 'a array
    where type 'a vector = 'a vector
    where type 'a ref = 'a ref
    where type bool = bool
-   where type 'a option = 'a option
-   where type 'a order = 'a order
    where type 'a list = 'a list
+   (* Types referenced in signatures by structure name *)
+   where type LargeInt.int = LargeInt.int
+   where type LargeReal.real = LargeReal.real
+   where type LargeWord.word = LargeWord.word
+   where type Word8Array.array = Word8Array.array
+   where type Word8Vector.vector = Word8Vector.vector

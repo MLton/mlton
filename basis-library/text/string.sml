@@ -20,9 +20,13 @@ structure String: STRING_EXTRA =
 	 val fields = make (Reader.fields, "fields")
       end
 *)
-      val isPrefix = isPrefix (op =)
-      val isSubstring = isSubvector (op =)
-      val isSuffix = isPrefix (op =)
+      local
+	 fun make f = f (op = : char * char -> bool)
+      in
+	val isPrefix = make isPrefix
+	val isSubstring = make isSubvector
+	val isSuffix = make isSuffix
+      end
       val compare = collate Char.compare
       val {<, <=, >, >=} = Util.makeOrder compare
 
