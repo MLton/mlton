@@ -61,6 +61,9 @@ signature PROCESS =
       val signalGroup: Pid.t * Signal.t -> unit
       val size: File.t -> {text: int, data: int, bss: int}
       val sleep: Time.t -> Time.t
+      val spawn: {path: string, args: string list} -> Pid.t
+      val spawne: {path: string, args: string list, env: string list} -> Pid.t
+      val spawnp: {file: string, args: string list} -> Pid.t
       val su: string -> unit (* string is userid *)
       val succeed: unit -> 'a
       val time: (unit -> unit) -> {system: Time.t, user: Time.t}

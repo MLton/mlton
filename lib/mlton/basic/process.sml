@@ -411,5 +411,13 @@ fun time (f: unit -> unit) =
 val setEnv = MLton.ProcEnv.setenv
 
 val exec = fn (c, a) => exec (c, a, In.standard, Out.standard)
-   
+
+local
+   open MLton.Process
+in
+   val spawn = spawn
+   val spawne = spawne
+   val spawnp = spawnp
+end
+
 end
