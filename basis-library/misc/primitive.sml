@@ -35,11 +35,13 @@ type char = Char.char
 structure Char2 =
    struct
       type t = char16
+      type char = t
    end
 
 structure Char4 =
    struct
       type t = char32
+      type char = t
    end
 
 type exn = exn
@@ -284,9 +286,9 @@ structure Primitive =
 	 struct
 	    open Char4
 
-	    val op < = _prim "WordU16_lt": char * char -> bool;
-	    val chr = _prim "WordS32_toWord16": int -> char;
-	    val ord = _prim "WordU16_toWord32": char -> int;
+	    val op < = _prim "WordU32_lt": char * char -> bool;
+	    val chr = _prim "WordS32_toWord32": int -> char;
+	    val ord = _prim "WordU32_toWord32": char -> int;
 	 end
 
       structure CommandLine =
