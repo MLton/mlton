@@ -79,7 +79,7 @@ tools:
 	cd $(LEX) && $(MAKE)
 	cd $(PROF) && $(MAKE)
 	cd $(YACC) && $(MAKE)
-	$(CP) $(LEX) $(PROF) $(YACC) $(BIN)
+	$(CP) $(LEX)/$(LEX) $(PROF)/$(PROF) $(YACC)/$(YACC) $(BIN)
 
 .PHONY: world
 world: 
