@@ -274,6 +274,8 @@ structure MLton: MLTON =
 	    fun handleWith' _ = raise Fail "handleWith'"
 	    fun handleWith _ = raise Fail "handleWith"
 	    fun ignore _ = raise Fail "ignore"
+	    fun isHandledDefault _ = raise Fail "isHandledDefault"
+	    fun isIgnored _ = raise Fail "isIgnored"
 	    fun setHandler _ = raise Fail "setHandler"
 	    fun suspend _ = raise Fail "suspend"
 	 end

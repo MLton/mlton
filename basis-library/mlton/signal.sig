@@ -41,9 +41,11 @@ signature MLTON_SIGNAL =
        * Thread.prepend).  This is to avoid the possibility of
        * aynchronous exceptions.
        *)
-      val handleWith': t * (unit MLtonThread.t -> unit MLtonThread.t) -> unit
       val handleWith: t * (unit -> unit) -> unit
+      val handleWith': t * (unit MLtonThread.t -> unit MLtonThread.t) -> unit
       val ignore: t -> unit
+      val isHandledDefault: t -> bool
+      val isIgnored: t -> bool
       val setHandler: t * Handler.t -> unit
       (* suspend m temporarily sets the signal mask to m and suspends until an
        * unmasked signal is received and handled, and then resets the mask.

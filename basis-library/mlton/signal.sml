@@ -105,6 +105,16 @@ val (get, set, handlers) =
 
 val getHandler = get
 
+fun isHandledDefault s =
+   case get s of
+      Default => true
+    | _ => false
+
+fun isIgnored s =
+   case get s of
+      Ignore => true
+    | _ => false
+
 fun ignore s =
    case get s of
       Ignore => ()
