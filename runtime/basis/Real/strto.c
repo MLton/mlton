@@ -1,5 +1,7 @@
 #include "platform.h"
-#include "gdtoa/gdtoa.h"
+
+Real32 gdtoa_strtof (char *s, char **endptr);
+Real64 gdtoa_strtod (char *s, char **endptr);
 
 Real32 Real32_strto (char *s) {
 	char *endptr;
