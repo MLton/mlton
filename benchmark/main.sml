@@ -130,7 +130,7 @@ in
 	      abbrv = "MLton" ^ (Int.toString (Counter.next n)),
 	      test = (fn {bench} =>
 		      compileSizeRun
-		      {command = Shell (concat [com, " -o ", exe, " ", batch bench]),
+		      {command = Shell (concat [com, " -output ", exe, " ", batch bench]),
 		       exe = exe,
 		       doTextPlusData = true})})
 end
