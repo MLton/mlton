@@ -1,4 +1,4 @@
-all: benchmarks CHANGES HTML
+all: CHANGES benchmarks user-guide
 
 benchmarks:
 	mkdir benchmarks
