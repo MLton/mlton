@@ -117,7 +117,7 @@ fun addEdge (_, e as {from = Node.Node {successors, ...}, ...}) =
    in
       e
    end
-val addEdge' = ignore o addEdge
+fun addEdge' arg = ignore (addEdge arg)
 
 fun layoutDot (T {nodes, ...},
 	       mkOptions:
