@@ -64,6 +64,9 @@
 #define PTRACE_PEEKDATA PTRACE_BOGUS
 #define PTRACE_PEEKTEXT PTRACE_BOGUS
 #define PTRACE_TRACEME PTRACE_BOGUS
+
+#else
+
 #error PTRACE_ constants not defined
 
 #endif
