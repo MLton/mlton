@@ -83,7 +83,7 @@ signature XML_TREE =
 	     | Const of Const.t
 	     | Handle of {try: exp,
 			  (* catch binds the exception in the handler. *)
-			  catch: (Var.t * Type.t),
+			  catch: Var.t * Type.t,
 			  handler: exp}
 	     | Lambda of Lambda.t
 	     | PrimApp of {prim: Prim.t,
