@@ -238,15 +238,18 @@ fun profile program =
 			   if let
 				 open SourceInfo
 			      in
-				 !Control.profileBasis
-				 orelse not (isBasis si)
-				 orelse (equals (si', main)
-					 andalso not (equals (si, main)))
-				 orelse (equals (si', unknown))
+				 not (!Control.profileBasis)
+				 andalso not (equals (si', unknown))
+				 andalso
+				 (equals (si, gcArrayAllocate)
+				  orelse (isBasis si 
+					  andalso
+					  (equals (si, main)
+					   orelse not (equals (si', main)))))
 			      end
-			      then (InfoNode.call {from = node', to = node ()}
-				    ; yes ())
-			   else no ()
+			      then no ()
+			   else (InfoNode.call {from = node', to = node ()}
+				 ; yes ())
 	       end
 	    val _ =
 	       Vector.foreach
@@ -260,9 +263,6 @@ fun profile program =
 	       Statement.Move
 	       {dst = Operand.Runtime Runtime.GCField.CurrentSource,
 		src = Operand.word (Word.fromInt n)}
-	    fun funcNeedsCurrentSource (f: CFunction.t): bool =
-	       (profileAlloc andalso CFunction.needsCurrentSource f)
-	       orelse profileTime
 	    fun backward {args,
 			  kind,
 			  label,
@@ -577,16 +577,20 @@ fun profile program =
 			val (statements, transfer) =
 			   case transfer of
 			      Transfer.CCall {func, ...} =>
-				 if funcNeedsCurrentSource func
+				 if (profileAlloc
+				     andalso CFunction.needsCurrentSource func)
+				    orelse profileTime
 				    then
 				       let
 					  val name = CFunction.name func
 					  val si =
-					     if name = "GC_gc"
-						then SourceInfo.gc
-					     else
-						SourceInfo.fromString
-						(concat ["<", name, ">"])
+					     case name of
+						"GC_gc" => SourceInfo.gc
+					      | "GC_arrayAllocate" =>
+						   SourceInfo.gcArrayAllocate
+					      | _ => 
+						   SourceInfo.fromString
+						   (concat ["<", name, ">"])
 					  val set =
 					     setCurrentSource
 					     (sourceSeqIndex

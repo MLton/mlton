@@ -13,6 +13,7 @@ signature SOURCE_INFO =
 
       val equals: t * t -> bool
       val gc: t
+      val gcArrayAllocate: t
       val fromRegion: Region.t -> t
       val fromString: string -> t
       val hash: t -> word

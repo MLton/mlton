@@ -14,6 +14,7 @@ val fromString = fn s => s
 val hash = String.hash
 
 val gc = "<gc>"
+val gcArrayAllocate = "<GC_arrayAllocate>"
 val main = "<main>"
 val polyEqual = "<poly-equal>"
 val unknown = "<unknown>"
