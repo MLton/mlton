@@ -27,6 +27,7 @@ version="mlton-$date"
 release="1"
 src="$rpms/SOURCES/$version/src"
 
+cd $root
 echo 'Cleaning up'
 ss rm -rf $rpms/SOURCES/$version*			\
 	$rpms/RPMS/i386/$version-$release.i386.rpm 	\
