@@ -24,12 +24,16 @@ void Thread_setHandler(Thread t) {
 	gcState.signalHandler = (GC_thread)t;
 }
 
-void Thread_switchTo(Thread thread) {
-	GC_thread t = (GC_thread)thread;
-	gcState.currentThread->stack->used = gcState.stackTop - gcState.stackBottom;
-	gcState.currentThread = t;
-	gcState.stackBottom = ((pointer)t->stack) + sizeof(struct GC_stack); 
-	gcState.stackTop = gcState.stackBottom + t->stack->used;
-	gcState.stackLimit = 
-	  gcState.stackBottom + t->stack->reserved - 2 * gcState.maxFrameSize;
+void Thread_switchTo (Thread thread) {
+	GC_thread t;
+	GC_state s;
+
+	t = (GC_thread)thread;
+	s = &gcState;
+	s->currentThread->stack->used = s->stackTop - s->stackBottom;
+	s->currentThread = t;
+	s->stackBottom = ((pointer)t->stack) + sizeof(struct GC_stack); 
+	s->stackTop = s->stackBottom + t->stack->used;
+	s->stackLimit = 
+		s->stackBottom + t->stack->reserved - 2 * s->maxFrameSize;
 }

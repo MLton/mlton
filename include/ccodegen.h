@@ -556,26 +556,6 @@ int Int_bogus;
 #define String_toWord8Vector(x) x
 
 /* ------------------------------------------------- */
-/*                      Thread                       */
-/* ------------------------------------------------- */
-
-#define Thread_switchTo(thread)							\
-	do {									\
-		GC_thread t = thread;						\
-										\
-		if (FALSE)							\
-			fprintf (stderr, "%d  Thread_switchTo (0x%08x)\n",	\
-					__LINE__, t);				\
-	 	gcState.currentThread->stack->used = stackTop - StackBottom;	\
-	 	gcState.currentThread = t;					\
-		StackBottom = ((pointer)t->stack) + sizeof(struct GC_stack);	\
-		stackTop = StackBottom + t->stack->used;			\
-		gcState.stackLimit = StackBottom + t->stack->reserved		\
-			- 2 * gcState.maxFrameSize;				\
-		Return();							\
-	} while (0)
-
-/* ------------------------------------------------- */
 /*                      Vector                       */
 /* ------------------------------------------------- */
 
