@@ -57,10 +57,10 @@ end
 (* ------------------------------------------------- *)
 
 val (lexAndParse, lexAndParseMsg) =
-   Control.traceBatch "lex and parse" FrontEnd.lexAndParse
+   Control.traceBatch (Control.Pass, "lex and parse") FrontEnd.lexAndParse
 
 val (elaborate, elaborateMsg) =
-   Control.traceBatch "elaborate" Elaborate.elaborateProgram
+   Control.traceBatch (Control.Pass, "elaborate") Elaborate.elaborateProgram
 
 fun parseAndElaborateFile (f: File.t, E): Decs.t =
    let
@@ -335,6 +335,7 @@ fun preCodegen {input, docc}: MachineOutput.Program.t =
 		   end)
 	    else ()
 	 end
+(*
       val _ =
 	 Control.passSimplify
 	 {display = Control.Layouts Ssa.Program.layouts,
@@ -346,6 +347,7 @@ fun preCodegen {input, docc}: MachineOutput.Program.t =
 						{funcToFunc = fn f => f,
 						 jumpToLabel = fn j => j}),
 	  typeCheck = Ssa.typeCheck}
+*)
       val machine =
 	 Control.pass
 	 {name = "backend",

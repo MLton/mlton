@@ -383,47 +383,49 @@ fun trace (verb, name: string) (f: 'a -> 'b) (a: 'a): 'b =
    else
       f a
 
-val ('a, 'b) traceBatch: string -> ('a -> 'b) -> 
-   (('a -> 'b) * (unit -> unit)) =
-   fn name =>
-   fn f => let
-	      val total = ref Time.zero
-	      val totalGC = ref Time.zero
-	      val verb = Pass
-	   in
-	      (fn a =>
-	       if Verbosity.<= (verb, !verbosity)
-		  then let
-			  val (t, gc) = time ()
-			  fun done () =
-			     let
-				val (t', gc') = time ()
-			     in
-			       total := 
-			       timePlus (!total, 
-					timeMinus (t',t,
-						  "traceBatch: t' - t"), 
-					"traceBatch: !total");
-			       totalGC := 
-			       timePlus (!totalGC, 
-					timeMinus (gc',gc,
-						  "traceBatch: gc' - gc"), 
-					"traceBatch: !totalGC")
-			     end
-		       in
-			  (f a 
-			   before done ())
-			  handle e => (messageStr (verb,
-						   concat [name, " raised"])
-				       ; raise e)
-		       end
-	       else f a,
-		  fn () => messageStr (verb,
-				       concat [name,
-					       " totals ",
-					       timeToString {total = !total,
-							     gc = !totalGC}]))
-	   end
+val ('a, 'b) traceBatch: (verbosity * string) -> ('a -> 'b) -> 
+                         (('a -> 'b) * (unit -> unit)) =
+   fn (verb, name) =>
+   fn f => if Verbosity.<= (verb, !verbosity)
+	     then let
+		    val total = ref Time.zero
+		    val totalGC = ref Time.zero
+		  in
+		    (fn a 
+		      => let
+			   val (t, gc) = time ()
+			   fun done ()
+			     = let
+				 val (t', gc') = time ()
+			       in
+				 total := 
+				 timePlus (!total, 
+					   timeMinus 
+					   (t',t,
+					    "traceBatch: t' - t"), 
+					   "traceBatch: !total");
+				 totalGC := 
+				 timePlus (!totalGC, 
+					   timeMinus 
+					   (gc',gc,
+					    "traceBatch: gc' - gc"), 
+					   "traceBatch: !totalGC")
+			       end
+			 in
+			   (f a 
+			    before done ())
+			   handle e => (messageStr (verb,
+						    concat [name, " raised"])
+					; raise e)
+			 end,
+		       fn () => messageStr (verb,
+					    concat [name,
+						    " totals ",
+						    timeToString 
+						    {total = !total,
+						     gc = !totalGC}]))
+		  end
+	     else (f, fn () => ())
 
 (*------------------------------------*)
 (*               Errors               *)
