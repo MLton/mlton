@@ -3,7 +3,9 @@ Here are the changes since version 20030716.
 * 2004-01-20
   - Fixed a bug in IEEEReal.{fromString,scan}, which would improperly
     return INF instead of ZERO for things like "0.0000e123456789012345".
-  - Report a compile-time error on unrepresentable real constants .
+  - Fixed a bug in Real.{fromDecimal,fromString,scan}, which didn't
+    return an appropriately signed zero for ~0.0.
+  - Report a compile-time error on unrepresentable real constants.
 
 * 2004-01-05
   - Removed option -may-load-world.  You can now use -runtime

@@ -363,7 +363,7 @@ functor Real (R: PRE_REAL): REAL =
 		   | NAN => nan
 		   | NORMAL => doit ()
 		   | SUBNORMAL => doit ()
-		   | ZERO => zero)
+		   | ZERO => if sign then ~ zero else zero)
 	    handle Bad => NONE
 	 end
 
