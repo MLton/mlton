@@ -148,7 +148,7 @@ fun elaborateType (ty: Atype.t, lookup: Lookup.t): Type.t =
 			      val _ = 
 				 Control.error
 				 (Atype.region ty,
-				  seq [str "type constructor ",
+				  seq [str "type ",
 				       Ast.Longtycon.layout c,
 				       str " given ",
 				       Int.layout numArgs,
@@ -1584,7 +1584,6 @@ fun elaborateDec (d, {env = E,
 				(bound, fn (x, _, _) =>
 				 (Acon.ensureRedefine (Avid.toCon
 						       (Avid.fromVar x))
-				  ; ensureNotEquals x
 				  ; Env.extendVar (E, x, var, scheme,
 						   {isRebind = false})
 				  ; (x, var, ty)))

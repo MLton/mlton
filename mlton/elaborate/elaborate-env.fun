@@ -2287,7 +2287,23 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 		  sigStr
 	       end
 	 in
-	    if not (Kind.equals (structKind, sigKind))
+	    if not (AdmitsEquality.<= (TypeStr.admitsEquality sigStr,
+				       TypeStr.admitsEquality structStr))
+	       then
+		  let
+		     open Layout
+		     val _ =
+			Control.error
+			(region,
+			 seq [str "type ",
+			      layout (strids, Ast.Tycon.layout name),
+			      str " admits equality in ", str sign,
+			      str " but not in structure"],
+			 empty)
+		  in
+		     sigStr
+		  end
+	    else if not (Kind.equals (structKind, sigKind))
 	       then
 		  let
 		     open Layout
@@ -2356,7 +2372,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 					layout (strids, layoutName name),
 					str (concat
 					     [" in ", sign,
-					      " but not in structure: "])],
+					      " but not in structure"])],
 				   empty)
 			    in
 			       {domain = name,
@@ -2558,63 +2574,6 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 			 types = types,
 			 vals = vals}
 	 end
-      fun typeStrIsConsistent (typeStr: TypeStr.t,
-			       long,
-			       a: AdmitsEquality.t,
-			       k: Kind.t,
-			       {hasCons: bool}): bool =
-	 if not (AdmitsEquality.<= (a, TypeStr.admitsEquality typeStr))
-	    then 
-	       let
-		  open Layout
-		  val _ =
-		     Control.error
-		     (region,
-		      seq [str "type ", Longtycon.layout (long ()),
-			   str " admits equality in ", str sign,
-			   str " but not in structure"],
-		      empty)
-	       in
-		  false
-	       end
-	 else if hasCons andalso Option.isNone (TypeStr.toTyconOpt typeStr)
-            then
-	       let
-		  open Layout
-		  val _ =
-		     Control.error
-		     (region,
-		      seq [str "type ", Longtycon.layout (long ()),
-			   str " is a datatype in ", str sign,
-			   str " but not in structure"],
-		      empty)
-	       in
-		  false
-	       end
-	 else
-	    let
-	       val k' = TypeStr.kind typeStr
-	    in
-	       if not (Kind.equals (k, k'))
-		  then
-		     let
-			open Layout
-			val _ =
-			   Control.error
-			   (region,
-			    seq [str "type ",
-				 Longtycon.layout (long ()),
-				 str " has arity ",
-				 Kind.layout k',
-				 str " in structure but arity ",
-				 Kind.layout k,
-				 str " in ", str sign],
-			    empty)
-		     in
-			false
-		     end
-	       else true
-	    end
       val I = Interface.copy I
       val () =
 	 Structure.realize
@@ -2630,8 +2589,12 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 		case typeStr of
 		   NONE => bad ()
 		 | SOME typeStr =>
-		      if typeStrIsConsistent (typeStr, long, a, k,
-					      {hasCons = hasCons})
+		      if AdmitsEquality.<= (a, TypeStr.admitsEquality typeStr)
+			 andalso Kind.equals (k, TypeStr.kind typeStr)
+			 andalso not (hasCons andalso
+				      (case TypeStr.node typeStr of
+					  TypeStr.Datatype _ => false
+					| _ => true))
 			 then typeStr
 		      else bad ()
 	     val () = FlexibleTycon.realize (flex, typeStr)

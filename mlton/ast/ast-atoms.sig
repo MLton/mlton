@@ -36,6 +36,7 @@ signature AST_ATOMS =
 	    sharing type con = t
 
             val ensureRedefine: t -> unit
+            val ensureSpecify: t -> unit
 	 end
 
       structure Sigid: AST_ID

@@ -50,8 +50,8 @@ structure Con =
       open P
 
       val it = fromSymbol (Symbol.itt, Region.bogus)
-	 
-      fun ensureRedefine c =
+
+      fun ensure oper c =
 	 if List.exists ([cons, falsee, it, nill, reff, truee],
 			 fn c' => equals (c, c'))
 	    then 
@@ -59,10 +59,15 @@ structure Con =
 		  open Layout
 	       in
 		  Control.error (region c,
-				 seq [str "can not redefine ", layout c],
+				 seq [str (concat ["can not ", oper, " "]),
+				      layout c],
 				 empty)
 	       end
 	 else ()
+
+      val ensureRedefine = ensure "redefine"
+
+      val ensureSpecify = ensure "specify"
    end
 
 structure Sigid = AstId (structure Symbol = Symbol)

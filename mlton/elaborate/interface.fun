@@ -687,7 +687,7 @@ structure TypeStr =
 			   str " has arity ", Kind.layout k,
 			   str " and type ", lay' (),
 			   str " has arity ", Kind.layout k',
-			   str " so cannot be shared"],
+			   str " and cannot be shared"],
 		      empty)
 		  end
 	    else
