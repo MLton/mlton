@@ -1,9 +1,9 @@
-mlton (VERSION.1-1) unstable; urgency=low
+mlton (20020929.1-1) unstable; urgency=low
 
   * Took over packaging and maintenance responsibilites from Barak.
   * Moved the debian packaging stuff into the MLton CVS.
 
- -- Stephen Weeks <sweeks@sweeks.com>  DATE
+ -- Stephen Weeks <sweeks@sweeks.com>  Sun, 29 Sep 2002 00:01:46 -0700.
 
 mlton (20020728.1-1) unstable; urgency=low
 

@@ -144,8 +144,6 @@ tools:
 version:
 	@echo 'Instantiating version numbers.'
 	for f in							\
-		debian/changelog					\
-		debian/copyright					\
 		doc/mlton.spec						\
 		doc/user-guide/macros.tex				\
 		mlton/control/control.sml; 				\
