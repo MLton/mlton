@@ -91,10 +91,11 @@ fun simplify p =
    (stats p
     ; (List.fold
        (passes, p, fn ((name, pass), p) =>
-	if List.contains (!Control.dropPasses, name, String.equals)
+	if List.contains (!Control.dropPasses, name^"CPS", String.equals)
 	   then p
 	else
 	   let
+	      val name = name^"CPS"
 	      val p =
 		 Control.passTypeCheck
 		 {name = name,
@@ -113,10 +114,11 @@ fun simplify p =
    (stats p
     ; (List.fold
        (passes, p, fn ((name, pass), p) =>
-      if List.contains (!Control.dropPasses, name, String.equals)
+      if List.contains (!Control.dropPasses, name^"CPS", String.equals)
          then p
       else
          let
+	    val name = name^"CPS"
             val _ =
 	       let
 		  open Control

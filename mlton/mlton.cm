@@ -282,12 +282,16 @@ ssa/type-check.fun
 ssa/shrink.sig
 ssa/simplify.sig
 ssa/ssa.sig
+ssa/common-block.sig
+ssa/common-block.fun
 ssa/common-subexp.sig
 ssa/common-subexp.fun
 ssa/contify.sig
 ssa/contify.fun
 ssa/implement-handlers.sig
 ssa/implement-handlers.fun
+ssa/introduce-loops.sig
+ssa/introduce-loops.fun
 ssa/two-point-lattice.sig
 ssa/two-point-lattice.fun
 ssa/remove-unused.sig

@@ -13,6 +13,8 @@ is
 
 analyze.fun
 analyze.sig
+common-block.sig
+common-block.fun
 common-subexp.fun
 common-subexp.sig
 contify.fun
@@ -21,6 +23,8 @@ flat-lattice.fun
 flat-lattice.sig
 implement-handlers.fun
 implement-handlers.sig
+introduce-loops.sig
+introduce-loops.fun
 remove-unused.fun
 remove-unused.sig
 shrink.fun

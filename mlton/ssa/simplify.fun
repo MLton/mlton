@@ -6,14 +6,14 @@ struct
 
 open S
 
-(* structure CommonBlock = CommonBlock (S) *)
+structure CommonBlock = CommonBlock (S)
 structure CommonSubexp = CommonSubexp (S)
 (* structure ConstantPropagation = ConstantPropagation (S) *)
 structure Contify = Contify (S)
 (* structure Flatten = Flatten (S) *)
 structure ImplementHandlers = ImplementHandlers (S)
 (* structure Inline = Inline (S) *)
-(* structure IntroduceLoops = IntroduceLoops (S) *)
+structure IntroduceLoops = IntroduceLoops (S)
 (* structure LocalFlatten = LocalFlatten (S) *)
 (* structure LoopInvariant = LoopInvariant (S) *)
 (* structure PolyEqual = PolyEqual (S) *)
@@ -22,7 +22,6 @@ structure ImplementHandlers = ImplementHandlers (S)
 (* structure RedundantTests = RedundantTests (S) *)
 structure RemoveUnused = RemoveUnused (S)
 (* structure SimplifyTypes = SimplifyTypes (S) *)
-(* structure UnusedArgs = UnusedArgs (S) *)
 (* structure Useless = Useless (S) *)
 
 (* fun leafInline p =
@@ -51,7 +50,6 @@ val passes =
      *)
 (*    ("useless", Useless.useless), *)
 (*    ("removeUnused2", RemoveUnused.remove), *)
-(*    ("unusedArgs1", UnusedArgs.unusedArgs), *)
 (*    ("simplifyTypes", SimplifyTypes.simplify), *)
     (* polyEqual cannot be omitted.  It implements MLton_equal.
      * polyEqual should run
@@ -64,17 +62,15 @@ val passes =
 (*    ("localFlatten2", LocalFlatten.flatten), *)
 (*    ("removeUnused3", RemoveUnused.remove), *)
 (*    ("raiseToJump2", RaiseToJump.raiseToJump), *)
-     ("contify4", Contify.contify),
-(*    ("unusedArgs2", UnusedArgs.unusedArgs), *)
-(*    ("introduceLoops", IntroduceLoops.introduceLoops), *)
+     ("contify3", Contify.contify),
+     ("introduceLoops", IntroduceLoops.introduceLoops),
 (*    ("loopInvariant", LoopInvariant.loopInvariant), *)
 (*    ("flatten", Flatten.flatten), *)
 (*    ("localFlatten3", LocalFlatten.flatten), *)
-     ("commonSubexp2", CommonSubexp.eliminate),
-(*    ("commonBlock", CommonBlock.eliminate), *)
+     ("commonSubexp", CommonSubexp.eliminate),
+     ("commonBlock", CommonBlock.eliminate),
 (*    ("redundantTests", RedundantTests.simplify), *)
 (*    ("redundant", Redundant.redundant), *)
-(*    ("unusedArgs3", UnusedArgs.unusedArgs), *)
      (* removeUnused cannot be omitted.
       * The final shrink pass ensures that constant operands are
       * not used in dead switch branches in a type-unsafe way.
@@ -82,7 +78,7 @@ val passes =
       * are expected in the Operand.offsets generated in the
       * backend.
       *)
-     ("removeUnused5", RemoveUnused.remove),
+     ("removeUnused4", RemoveUnused.remove),
      ("implementHandlers", ImplementHandlers.doit)
     ]
 
@@ -94,10 +90,11 @@ fun simplify p =
    (stats p
     ; (List.fold
        (passes, p, fn ((name, pass), p) =>
-	if List.contains (!Control.dropPasses, name, String.equals)
+	if List.contains (!Control.dropPasses, name^"SSA", String.equals)
 	   then p
 	else
 	   let
+	      val name = name^"SSA"
 	      val p =
 		 Control.passTypeCheck
 		 {name = name,
@@ -116,10 +113,11 @@ fun simplify p =
    (stats p
     ; (List.fold
        (passes, p, fn ((name, pass), p) =>
-      if List.contains (!Control.dropPasses, name, String.equals)
+      if List.contains (!Control.dropPasses, name^"SSA", String.equals)
          then p
       else
          let
+	    val name = name^"SSA"
             val _ =
 	       let
 		  open Control
