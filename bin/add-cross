@@ -73,7 +73,7 @@ exe='print-constants'
 echo 'Building print-constants executable.'
 (
 	mlton -build-constants >$exe.c
-	mlton -o $original/$exe.exe -host $crossHost $exe.c
+	mlton -output $original/$exe.exe -host $crossHost $exe.c
 	rm -f $exe.c
 ) || die "Unable to build $exe executable."
 
