@@ -1,17 +1,8 @@
-signature BIN_STREAM_IO =
+signature STREAM_IO_1997 =
    sig
-      include STREAM_IO
-              where type vector = Word8Vector.vector 
-              where type elem = Word8Vector.elem
-   end
-
+      type elem
+      type vector
 (*
-signature TEXT_STREAM_IO =
-   sig
-      (* STREAM_IO *)
-      type elem = Word8Vector.elem
-      type vector = Word8Vector.vector 
-(*       
       type reader
       type writer
 *)
@@ -20,7 +11,7 @@ signature TEXT_STREAM_IO =
       type outstream
  
       type out_pos
-      type pos = int
+      type pos (* = int *)
 
       val canInput: instream * int -> int option
       val closeIn: instream -> unit
@@ -30,7 +21,7 @@ signature TEXT_STREAM_IO =
       val input: instream -> vector * instream 
       val inputAll: instream -> vector 
       val inputN: instream * int -> vector * instream 
-(*      
+(*
       val mkInstream: reader * vector -> instream  (* need to update this *)
       val getReader: instream -> reader * vector 
       val output: outstream * vector -> unit 
@@ -45,4 +36,3 @@ signature TEXT_STREAM_IO =
       val setPosOut: out_pos -> outstream 
 *)
    end
-*)

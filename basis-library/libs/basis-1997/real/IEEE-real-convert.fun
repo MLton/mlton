@@ -4,6 +4,8 @@ functor IEEERealConvert
 	  include IEEE_REAL_1997 
 	  val >> : IEEEReal.float_class -> float_class
 	  val << : float_class -> IEEEReal.float_class
+	  val >>> : IEEEReal.decimal_approx -> decimal_approx
+	  val <<< : decimal_approx -> IEEEReal.decimal_approx
 	end =
   struct
      open IEEEReal
@@ -30,13 +32,17 @@ functor IEEERealConvert
 
      type decimal_approx = {kind: float_class, sign: bool,
 			    digits: int list, exp: int}
-     val toString = fn {kind, sign, digits, exp} =>
-       toString {class = << kind, sign = sign, 
-		 digits = digits, exp = exp}
-     val fromString = fn s =>
-       Option.map
-       (fn {class, sign, digits, exp} =>
-	{kind = >> class, sign = sign, 
-	 digits = digits, exp = exp})
-       (fromString s)
+ 
+     val <<< = fn {kind, sign, digits, exp} =>
+       {class = << kind, sign = sign, 
+	digits = digits, exp = exp}
+     val >>> = fn {class, sign, digits, exp} =>
+       {kind = >> class, sign = sign, 
+	digits = digits, exp = exp}
+
+     val toString = toString o <<<
+     val fromString = fn s => 
+       Option.map (>>>) (fromString s)
   end
+
+structure IEEEReal1997 = IEEERealConvert(structure IEEEReal = IEEEReal)

@@ -83,8 +83,10 @@ signature BASIS_1997 =
 
       (* Required structures *)
       structure Array : ARRAY_1997
-      structure BinIO : BIN_IO
+      structure BinIO : BIN_IO_1997
+(*
       structure BinPrimIO : PRIM_IO
+*)
       structure Bool : BOOL
       structure Byte : BYTE
       structure Char : CHAR
@@ -97,7 +99,7 @@ signature BASIS_1997 =
       structure Int : INTEGER
       structure IO : IO_1997
       structure LargeInt : INTEGER
-      structure LargeReal : REAL
+      structure LargeReal : REAL_1997
       structure LargeWord : WORD
       structure List : LIST
       structure ListPair : LIST_PAIR
@@ -111,13 +113,15 @@ signature BASIS_1997 =
       structure OS.IO : OS_IO
 *)
       structure Position : INTEGER
-      structure Real : REAL
+      structure Real : REAL_1997
       structure SML90 : SML90
       structure String : STRING_1997
       structure StringCvt : STRING_CVT
       structure Substring : SUBSTRING_1997
-      structure TextIO : TEXT_IO
+      structure TextIO : TEXT_IO_1997
+(*
       structure TextPrimIO : PRIM_IO
+*)
       structure Time : TIME
       structure Timer : TIMER_1997
       structure Vector : VECTOR_1997
@@ -169,7 +173,7 @@ signature BASIS_1997 =
 *)
       structure RealArray : MONO_ARRAY_1997
       structure RealVector : MONO_VECTOR_1997
-      structure Real64 : REAL
+      structure Real64 : REAL_1997
       structure Real64Array : MONO_ARRAY_1997
       structure Real64Vector : MONO_VECTOR_1997
       structure RealArray2 : MONO_ARRAY2_1997
@@ -193,207 +197,4 @@ signature BASIS_1997 =
       structure MLton : MLTON
       structure SMLofNJ : SML_OF_NJ
       structure Unsafe : UNSAFE
-
-      (* ************************************************** *)
-      (* ************************************************** *)
-
-      (* Sharing constraints *)
-
-(*
-      (* Top-level types *)
-      sharing type unit = General.unit
-      sharing type int = Int.int
-      sharing type word = Word.word
-      sharing type real = Real.real
-      sharing type char = Char.char
-      sharing type string = String.string
-      sharing type substring = Substring.substring
-      sharing type exn = General.exn
-      sharing type array = Array.array
-      sharing type vector = Vector.vector
-      (*
-      sharing type ref = General.ref
-      *)
-      (*
-      sharing type bool = Bool.bool
-      *)
-      sharing type option = Option.option
-      sharing type order = General.order
-      (*
-      sharing type list = List.list
-      *)
-*)
-
-(*
-      (* Required structures *)
-      sharing type Array.vector = Vector.vector
-      sharing type BinPrimIO.array = Word8Array.array
-      sharing type BinPrimIO.vector = Word8Vector.vector
-      sharing type BinPrimIO.elem = Word8.word
-      sharing type BinPrimIO.pos = Position.int
-      sharing type Char.string = string
-      sharing type CharArray.vector = CharVector.vector
-      sharing type CharArray.elem = char
-      sharing type CharArraySlice.vector = CharVector.vector
-      sharing type CharArraySlice.vector_slice = CharVectorSlice.slice
-      sharing type CharArraySlice.array = CharArray.array
-      sharing type CharArraySlice.elem = char
-      sharing type CharVector.vector = String.string
-      sharing type CharVector.elem = char
-      sharing type CharVectorSlice.slice = Substring.substring
-      sharing type CharVectorSlice.vector = String.string
-      sharing type CharVectorSlice.elem = char
-      sharing type Math.real = Real.real
-      sharing type String.string = CharVector.vector
-      sharing type String.char = char
-      sharing type Substring.substring = CharVectorSlice.slice
-      sharing type Substring.string = String.string
-      sharing type Substring.char = char
-(*
-      sharing type Text.Char.char = char
-      sharing type Text.String.string = string
-*)
-      sharing type TextPrimIO.array = CharArray.array
-      sharing type TextPrimIO.vector = CharVector.vector
-      sharing type TextPrimIO.elem = Char.char
-      sharing type Word8Array2.vector = Word8Vector.vector
-      sharing type Word8Array2.elem = Word8.word
-      sharing type Word8Array.vector = Word8Vector.vector
-      sharing type Word8Array.elem = Word8.word
-      sharing type Word8ArraySlice.vector = Word8Vector.vector
-      sharing type Word8ArraySlice.vector_slice = Word8VectorSlice.slice
-      sharing type Word8ArraySlice.array = Word8Array.array
-      sharing type Word8ArraySlice.elem = Word8.word
-      sharing type Word8Vector.elem = Word8.word
-      sharing type Word8VectorSlice.vector = Word8Vector.vector
-      sharing type Word8VectorSlice.elem = Word8.word
-	
-      (* Optional structures *)
-      sharing type BoolArray.vector = BoolVector.vector
-      sharing type BoolArray.elem = bool
-      sharing type BoolArray2.vector = BoolVector.vector
-      sharing type BoolArray2.elem = bool
-      sharing type BoolArraySlice.vector = BoolVector.vector
-      sharing type BoolArraySlice.vector_slice = BoolVectorSlice.slice
-      sharing type BoolArraySlice.array = BoolArray.array
-      sharing type BoolArraySlice.elem = bool
-      sharing type BoolVector.elem = bool
-      sharing type BoolVectorSlice.vector = BoolVector.vector
-      sharing type BoolVectorSlice.elem = bool
-      sharing type CharArray2.vector = CharVector.vector
-      sharing type CharArray2.elem = char
-      sharing type IntArray.vector = IntVector.vector
-      sharing type IntArray.elem = int
-      sharing type IntArray2.vector = IntVector.vector
-      sharing type IntArray2.elem = int
-      sharing type IntArraySlice.vector = IntVector.vector
-      sharing type IntArraySlice.vector_slice = IntVectorSlice.slice
-      sharing type IntArraySlice.array = IntArray.array
-      sharing type IntArraySlice.elem = int
-      sharing type IntVector.elem = int
-      sharing type IntVectorSlice.vector = IntVector.vector
-      sharing type IntVectorSlice.elem = int
-      sharing type Int32Array.vector = Int32Vector.vector
-      sharing type Int32Array.elem = Int32.int
-      sharing type Int32Array2.vector = Int32Vector.vector
-      sharing type Int32Array2.elem = Int32.int
-      sharing type Int32ArraySlice.vector = Int32Vector.vector
-      sharing type Int32ArraySlice.vector_slice = Int32VectorSlice.slice
-      sharing type Int32ArraySlice.array = Int32Array.array
-      sharing type Int32ArraySlice.elem = Int32.int
-      sharing type Int32Vector.elem = Int32.int
-      sharing type Int32VectorSlice.vector = Int32Vector.vector
-      sharing type Int32VectorSlice.elem = Int32.int
-(*
-      sharing type PackRealBig.real = real
-*)
-      sharing type PackRealLittle.real = real
-(*
-      sharing type PackReal64Big.real = Real64.real
-*)
-      sharing type PackReal64Little.real = Real64.real
-      sharing type Posix.Error.syserror = OS.syserror
-      sharing type Posix.Process.exit_status = Unix.exit_status
-      sharing type Posix.FileSys.dirstream = OS.FileSys.dirstream
-      sharing type Posix.FileSys.access_mode = OS.FileSys.access_mode
-      sharing type RealArray.vector = RealVector.vector
-      sharing type RealArray.elem = real
-      sharing type RealArray2.vector = RealVector.vector
-      sharing type RealArray2.elem = real
-      sharing type RealArraySlice.vector = RealVector.vector
-      sharing type RealArraySlice.vector_slice = RealVectorSlice.slice
-      sharing type RealArraySlice.array = RealArray.array
-      sharing type RealArraySlice.elem = real
-      sharing type RealVector.elem = real
-      sharing type RealVectorSlice.vector = RealVector.vector
-      sharing type RealVectorSlice.elem = real
-      sharing type Real64Array.vector = Real64Vector.vector
-      sharing type Real64Array.elem = Real64.real
-      sharing type Real64Array2.vector = Real64Vector.vector
-      sharing type Real64Array2.elem = Real64.real
-      sharing type Real64ArraySlice.vector = Real64Vector.vector
-      sharing type Real64ArraySlice.vector_slice = Real64VectorSlice.slice
-      sharing type Real64ArraySlice.array = Real64Array.array
-      sharing type Real64ArraySlice.elem = Real64.real
-      sharing type Real64Vector.elem = Real64.real
-      sharing type Real64VectorSlice.vector = Real64Vector.vector
-      sharing type Real64VectorSlice.elem = Real64.real
-      sharing type Unix.exit_status = Posix.Process.exit_status
-      sharing type Word32Array.vector = Word32Vector.vector
-      sharing type Word32Array.elem = Word32.word
-      sharing type Word32Array2.vector = Word32Vector.vector
-      sharing type Word32Array2.elem = Word32.word
-      sharing type Word32ArraySlice.vector = Word32Vector.vector
-      sharing type Word32ArraySlice.vector_slice = Word32VectorSlice.slice
-      sharing type Word32ArraySlice.array = Word32Array.array
-      sharing type Word32ArraySlice.elem = Word32.word
-      sharing type Word32Vector.elem = Word32.word
-      sharing type Word32VectorSlice.vector = Word32Vector.vector
-      sharing type Word32VectorSlice.elem = Word32.word
-*)
    end
-(*
-   (* Top-level types *)
-   where type unit = unit
-   where type int = int
-   where type word = word
-   where type real = real
-   where type char = char
-   where type exn = exn
-   where type 'a array = 'a array
-   where type 'a vector = 'a vector
-   where type 'a ref = 'a ref
-   where type bool = bool
-   where type 'a option = 'a option
-   where type order = order
-   where type 'a list = 'a list
-
-   (* Types referenced in signatures by structure name *)
-   where type BinPrimIO.reader = BinPrimIO.reader
-   where type BinPrimIO.writer = BinPrimIO.writer
-   where type Char.char = Char.char
-   where type Int.int = Int.int
-   where type LargeInt.int = LargeInt.int
-   where type LargeReal.real = LargeReal.real
-   where type LargeWord.word = LargeWord.word
-   where type IEEEReal.real_order = IEEEReal.real_order
-   where type IEEEReal.float_class = IEEEReal.float_class
-   where type IEEEReal.rounding_mode = IEEEReal.rounding_mode
-   where type OS.IO.iodesc = OS.IO.iodesc
-   where type OS.Process.status = OS.Process.status
-   where type Position.int = Position.int
-   where type Posix.Process.pid = Posix.Process.pid
-   where type StringCvt.radix = StringCvt.radix
-   where type StringCvt.realfmt = StringCvt.realfmt
-(*
-   where type ('a, 'b) StringCvt.reader = ('a, 'b) StringCvt.reader
-*)
-   where type SysWord.word = SysWord.word
-   where type TextPrimIO.reader = TextPrimIO.reader
-   where type TextPrimIO.writer = TextPrimIO.writer
-   where type Time.time = Time.time
-   where type Word.word = Word.word
-   where type Word8.word = Word8.word
-   where type Word8Array.array = Word8Array.array
-   where type Word8Vector.vector = Word8Vector.vector
-*)

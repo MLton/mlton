@@ -354,6 +354,13 @@ Posix.FileSys:
 * Within structure S, the type mode is constrained equal to flags,
   but flags is an eqtype.
 
+STREAM_IO.pos
+* "This is the type of positions in the underlying readers and
+  writers. In some instantiations of this signature (e.g.,
+  TextIO.StreamIO), pos is abstract; in others (e.g., BinIO.StreamIO)
+  it is Position.int."  But, the equality of BinIO.StreamIO.pos and
+  Position.int is never specified in any where constraint of BinIO.
+
 Not sent to list:
 
 * (In general, probably a good idea to look at the entire top-level

@@ -31,7 +31,7 @@ signature REAL_1997 =
       val sameSign: real * real -> bool 
       val copySign: real * real -> real 
       val compare: real * real -> order 
-      val compareReal: real * real -> IEEEReal.real_order
+      val compareReal: real * real -> IEEEReal1997.real_order
       val < : real * real -> bool 
       val <= : real * real -> bool 
       val > : real * real -> bool 
@@ -43,7 +43,7 @@ signature REAL_1997 =
       val isFinite: real -> bool 
       val isNan: real -> bool 
       val isNormal: real -> bool 
-      val class: real -> IEEEReal.float_class 
+      val class: real -> IEEEReal1997.float_class 
       val fmt: StringCvt.realfmt -> real -> string 
       val toString: real -> string 
       val scan: (char, 'a) StringCvt.reader -> (real, 'a) StringCvt.reader
@@ -57,12 +57,12 @@ signature REAL_1997 =
       val realFloor: real -> real 
       val realCeil: real -> real 
       val realTrunc: real -> real 
-      val toInt: IEEEReal.rounding_mode -> real -> int 
-      val toLargeInt: IEEEReal.rounding_mode -> real -> LargeInt.int
+      val toInt: IEEEReal1997.rounding_mode -> real -> int 
+      val toLargeInt: IEEEReal1997.rounding_mode -> real -> LargeInt.int
       val fromInt: int -> real 
       val fromLargeInt: LargeInt.int -> real
       val toLarge: real -> LargeReal.real 
-      val fromLarge: IEEEReal.rounding_mode -> LargeReal.real -> real 
-      val toDecimal: real -> IEEEReal.decimal_approx
-      val fromDecimal: IEEEReal.decimal_approx -> real option
+      val fromLarge: IEEEReal1997.rounding_mode -> LargeReal.real -> real 
+      val toDecimal: real -> IEEEReal1997.decimal_approx
+      val fromDecimal: IEEEReal1997.decimal_approx -> real option
    end

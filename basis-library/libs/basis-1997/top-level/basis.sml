@@ -77,7 +77,10 @@ structure Basis1997: BASIS_1997 =
       structure String = Text.String
       structure Substring = Text.Substring
 
-      structure IEEEReal = IEEERealConvert(structure IEEEReal = IEEEReal)
+      structure IEEEReal = IEEEReal1997
+      structure LargeReal = RealConvert(structure Real = LargeReal)
+      structure Real = RealConvert(structure Real = Real)
+      structure Real64 = RealConvert(structure Real = Real64)
 
       structure Posix = PosixConvert(structure Posix = Posix)
 
@@ -85,4 +88,6 @@ structure Basis1997: BASIS_1997 =
       structure Timer = TimerConvert(structure Timer = Timer)
 
       structure IO = IOConvert(structure IO = IO)
+      structure TextIO = TextIOConvert(structure TextIO = TextIO)
+      structure BinIO = BinIOConvert(structure BinIO = BinIO)
    end
