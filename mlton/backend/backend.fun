@@ -700,7 +700,8 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 	 (chunk, {label = initGlobals,
 		  kind = Kind.func {args = []},
 		  live = [],
-		  profileName = "initGlobals",
+		  profileInfo = {func = Mlabel.toString initGlobals,
+				 label = Mlabel.toString initGlobals},
 		  statements = initGlobalsStatements,
 		  transfer = Mtransfer.farJump {chunkLabel = funcChunkLabel main,
 					        label = funcToLabel main,
@@ -726,7 +727,7 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 		   seq [str "Generating code for function ", Func.layout name]
 		end)
 	    val _ = setVarInfos args
-	    val profileName = Func.toString name
+	    val profileInfoFunc = Func.toString name
 	    val chunk = funcChunk name
 	    (* Set the var infos. *)
 	    val _ =
@@ -848,7 +849,7 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 	    (*                      genCase                      *)
 	    (* ------------------------------------------------- *)
 	    fun genCase {chunk: Chunk.t,
-			 profileName: string,
+			 label: Label.t, 
 			 test: Var.t,
 			 testRep: TyconRep.t,
 			 cases: (Con.t * Label.t) vector,
@@ -862,14 +863,15 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 		   * all it does is a few moves and then a transfer.  I.E. it
 		   * does no allocations and can not trigger a GC.
 		   *)
-		  fun newBlock (live, statements, transfer): Mlabel.t =
+		  fun newBlock (j, live, statements, transfer): Mlabel.t =
 		     let
 			val l = Mlabel.newNoname ()
 			val _ =
 			   Chunk.newBlock (chunk,
 					   {label = l,
 					    kind = Kind.jump,
-					    profileName = profileName,
+					    profileInfo = {func = profileInfoFunc,
+							   label = Label.toString j},
 					    live = live,
 					    statements = statements,
 					    transfer = transfer})
@@ -938,7 +940,7 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 		  fun transferToLabel {live, transfer}: Mlabel.t =
 		     case Mtransfer.toMOut transfer of
 			MOtransfer.NearJump {label, ...} => label
-		      | _ => newBlock (live, [], transfer)
+		      | _ => newBlock (label, live, [], transfer)
 		  fun switchIP (numEnum, pointer: Mlabel.t): Mtransfer.t =
 		     let
 			val test = vo test
@@ -962,7 +964,7 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 				   val live = if testIsUsed
 						 then addTest live
 					      else live
-				in (live, newBlock (live, s, t))
+				in (live, newBlock (j, live, s, t))
 				end
 		     end
 		  fun enumAndOne (numEnum: int): Mtransfer.t =
@@ -1047,8 +1049,7 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 			 l: Mlabel.t,
 			 j: Label.t,
 			 h: Label.t option,
-			 args: (Var.t * Stype.t) vector,
-			 profileName: string): unit =
+			 args: (Var.t * Stype.t) vector): unit =
 	       let
 		  val Info.T {liveFrame, liveNoFormals, size, ...} =
 		     labelRegInfo j
@@ -1102,7 +1103,8 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 			      kind = Kind.cont {args = argsl,
 						size = size},
 			      live = liveNoFormals,
-			      profileName = profileName,
+			      profileInfo = {func = profileInfoFunc,
+					     label = Label.toString j},
 			      statements = statements,
 			      transfer = transfer})
 	       in ()
@@ -1112,8 +1114,7 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 	    (* ------------------------------------------------- *)
 	    fun genHandler (c: Chunk.t,
 			    l: Mlabel.t,
-			    j: Label.t,
-			    profileName: string): unit =
+			    j: Label.t): unit =
 	       let
 		  val _ = Mprogram.newHandler (mprogram, 
 					       {chunkLabel = Chunk.label c,
@@ -1126,7 +1127,8 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 				  {label = l,
 				   kind = Kind.handler {offset = offset},
 				   live = liveNoFormals,
-				   profileName = profileName,
+				   profileInfo = {func = profileInfoFunc,
+						  label = Label.toString j},
 				   statements = statements,
 				   transfer = transfer})
 	       end
@@ -1135,7 +1137,7 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 	    (* ------------------------------------------------- *)
 	    fun genTransfer (t: Stransfer.t,
 			     chunk: Chunk.t,
-			     profileName: string,
+			     label: Label.t,
 			     handlerOffset: int option)
 	       : Mstatement.t list * Mtransfer.t =
 	       case t of
@@ -1262,8 +1264,8 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 				     if Vector.isEmpty tys
 					then genCase {cases = cases,
 						      chunk = chunk,
+						      label = label,
 						      default = default,
-						      profileName = profileName,
 						      test = test,
 						      testRep = tyconRep tycon}
 				     else Error.bug "strange type in case"
@@ -1299,11 +1301,12 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 			    {label = noOverflowLabel,
 			     kind = Kind.jump,
 			     live = live,
-			     profileName = profileName,
 			     statements = statements,
 			     transfer = (Mtransfer.nearJump
 					 {label = labelToLabel success,
-					  return = NONE})})
+					  return = NONE}),
+			     profileInfo = {func = profileInfoFunc,
+					    label = Label.toString success}})
 		     in
 			([],
 			 Mtransfer.overflow
@@ -1362,7 +1365,8 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 		{label = funcToLabel name,
 		 kind = Kind.func {args = live},
 		 live = live,
-		 profileName = profileName,
+		 profileInfo = {func = profileInfoFunc,
+				label = profileInfoFunc},
 		 statements = [Mstatement.limitCheck limitCheck],
 		 transfer = (Mtransfer.nearJump
 			     {label = labelToLabel start,
@@ -1384,15 +1388,15 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 		  val {cont, handler, ...} = labelInfo label
 		  val _ =
 		     List.foreach (!cont, fn (h, l) =>
-				   genCont (chunk, l, label, h, args, profileName))
+				   genCont (chunk, l, label, h, args))
 		  val _ =
 		     Option.app (!handler, fn l =>
-				 genHandler (chunk, l, label, profileName))
+				 genHandler (chunk, l, label))
 
 		  val statements = 
 		     genStatements (statements, chunk, handlerOffset)
 		  val (preTransfer, transfer) =
-		     genTransfer (transfer, chunk, profileName, handlerOffset)
+		     genTransfer (transfer, chunk, label, handlerOffset)
 		  val statements =
 		     Mstatement.limitCheck limitCheck
 		     :: (statements @ preTransfer)
@@ -1400,39 +1404,13 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 		  Chunk.newBlock (chunk, {label = labelToLabel label,
 					  kind = Kind.jump,
 					  live = live,
-					  profileName = profileName,
+					  profileInfo = {func = profileInfoFunc,
+							 label = Label.toString label},
 					  statements = statements,
 					  transfer = transfer})
 	       end
 	    val genBlock = traceGenBlock genBlock
-(*
-	    fun genStubs (Block.T {label, ...}) =
-	       let
-		  val _ =
-		     Control.diagnostic
-		     (fn () =>
-		      let
-			 open Layout
-		      in
-			 seq [str "Generating stub code for block ",
-			      Label.layout label]
-		      end)
-		  val chunk = labelChunk label
-		  val {cont, handler, ...} = labelInfo label
-		  val _ =
-		     List.foreach (!cont, fn (_, l) =>
-				   genCont (chunk, l, label, args, profileName))
-		  val _ =
-		     Option.app (!handler, fn l =>
-				 genHandler (chunk, l, label, profileName))
-	       in
-		  ()
-	       end
-*)
 	    val _ = Vector.foreach (blocks, genBlock)
-(*
-	    val _ = Vector.foreach (blocks, genStubs)
-*)
 	    val _ = Vector.foreach (blocks, Block.clear)
 	 in
 	    ()

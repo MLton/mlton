@@ -3575,7 +3575,7 @@ struct
 		   T {zero = zero2, 
 		      one = one2, 
 		      two = two2})
-	= if zero1 = zero2
+	= if zero1 = zero2 
 	    then T {zero = zero1,
 		    one = one2,
 		    two = two1}

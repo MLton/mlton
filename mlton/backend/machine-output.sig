@@ -163,7 +163,7 @@ signature MACHINE_OUTPUT =
 			       kind: Kind.t,
 			       (* Live registers and stack offsets at beginning of block. *)
 			       live: Operand.t list,
-			       profileName: string,
+			       profileInfo: {func: string, label: string},
 			       statements: Statement.t array,
 			       transfer: Transfer.t}
 

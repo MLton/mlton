@@ -1875,7 +1875,8 @@ struct
       fun toX86Blocks {block as T {label, 
 				   kind, 
 				   live,
-				   profileName,
+				   profileInfo as {func = funcProfileInfo,
+						   label = labelProfileInfo},
 				   statements, 
 				   transfer},
 		       frameLayouts,
@@ -2004,12 +2005,12 @@ struct
 		    = x86.ProfileInfo.add
 		      (profileInfo,
 		       {profileLevel = 0,
-			profileName = profileName})
+			profileName = funcProfileInfo})
 		  val profileInfo
 		    = x86.ProfileInfo.add
 		      (profileInfo,
 		       {profileLevel = 1,
-			profileName = Label.toString label})
+			profileName = labelProfileInfo})
 		in
 		  profileInfo
 		end

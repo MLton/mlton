@@ -214,7 +214,7 @@ signature MACHINE =
 		    label: Label.t,
 		    kind: Block.Kind.t,
 		    live: Operand.t list,
-		    profileName: string,
+		    profileInfo: {func: string, label: string},
 		    statements: Statement.t list,
 		    transfer: Transfer.t
 		   } -> unit

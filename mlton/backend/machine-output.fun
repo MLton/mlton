@@ -337,7 +337,7 @@ structure Block =
       datatype t = T of {label: Label.t,
 			 kind: Kind.t,
 			 live: Operand.t list,
-			 profileName: string,
+			 profileInfo: {func: string, label: string},
 			 statements: Statement.t array,
 			 transfer: Transfer.t}
 
@@ -347,7 +347,7 @@ structure Block =
 	 val label = make #label
       end
 
-      fun layout (T {label, kind, live, profileName, statements, transfer})
+      fun layout (T {label, kind, live, profileInfo, statements, transfer})
 	= let open Layout
 	  in
 	    align [seq [Label.layout label, 

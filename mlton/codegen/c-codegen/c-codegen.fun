@@ -446,13 +446,14 @@ structure Chunk =
 	    and printLabelCode arg =
 	       tracePrintLabelCode
 	       (fn {block = Block.T {label = l,
-						 kind,
-						 live, profileName,
-						 statements, transfer, ...},
+				     kind,
+				     live, profileInfo = {func = profileInfoFunc, 
+							  label = profileInfoLabel},
+				     statements, transfer, ...},
 				layedOut, status} =>
 	       let
 		  val _ = layedOut := true
-		  val _ = C.profile (profileName, profileName, print)
+		  val _ = C.profile (profileInfoFunc, profileInfoFunc, print)
 		  val _ =
 		     case !status of
 			Many =>

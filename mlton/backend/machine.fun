@@ -533,21 +533,21 @@ structure Block =
 			 kind: Kind.t,
 			 label: Label.t,
 			 live: Operand.t list,
-			 profileName: string,
+			 profileInfo: {func: string, label: string},
 			 statements: Statement.t array,
 			 transfer: Transfer.t}
 
       fun clear (T {label, ...}) = PropertyList.clear (Label.plist label)
 	 
       fun toMOut (T {label, kind, live, 
-		     profileName, statements, transfer, ...}) =
+		     profileInfo, statements, transfer, ...}) =
 	 MachineOutput.Block.T {label = label,
 				kind = Kind.toMOut kind,
 				live = live,
 				statements = Array.map (statements,
 							Statement.toMOut),
 				transfer = Transfer.toMOut transfer,
-				profileName = profileName}
+				profileInfo = profileInfo}
    end
 
 
@@ -752,13 +752,13 @@ structure Chunk =
 	 register (c, !(regMax ty), ty)
 	 
       fun newBlock (T {blocks, ...},
-		    {label, kind, live, profileName, statements, transfer}) =
+		    {label, kind, live, profileInfo, statements, transfer}) =
 	 List.push
 	 (blocks, Block.T {bytesNeeded = ref NONE,
 			   label = label,
 			   kind = kind,
 			   live = live,
-			   profileName = profileName,
+			   profileInfo = profileInfo,
 			   statements = Array.fromList statements,
 			   transfer = transfer})
    end
