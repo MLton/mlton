@@ -298,6 +298,7 @@ fun commandLine (args: string list): unit =
 	 List.foreach
 	 ([(detectOverflow, "MLton_detectOverflow"),
 	   (exnHistory, "Exn_keepHistory"),
+	   (limitCheckCounts, "LIMIT_CHECK_COUNTS"),
 	   (profile, "MLton_profile"),
 	   (safe, "MLton_safe")],
 	  fn (b, x) =>

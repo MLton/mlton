@@ -342,11 +342,12 @@ int main(int argc, char **argv) {					\
 		declareFirst;							\
 										\
 		if (FALSE)							\
-			fprintf(stderr, 					\
+			fprintf(stderr,						\
 				"%d  LimitCheck  frontier - base = %d\n",	\
 				__LINE__,					\
 				frontier - gcState.base);			\
-		gcState.numLCs++;						\
+		if (LIMIT_CHECK_COUNTS)						\
+			gcState.numLCs++;					\
 		if (GC_EVERY_CHECK						\
 		or (GC_FIRST_CHECK and gc_first)				\
 		or frontier + (b) > gcState.limit				\
@@ -361,7 +362,7 @@ int main(int argc, char **argv) {					\
 			frameSize, ret);					\
 			clearFirst;						\
 		}								\
-		assert(StackBottom <= stackTop);			\
+		assert(StackBottom <= stackTop);				\
 	} while (0)
 
 #define StackOverflowCheck (stackTop > gcState.stackLimit)
