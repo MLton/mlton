@@ -10,9 +10,9 @@ PATH = $(BIN):$(shell echo $$PATH)
 
 all: $(AOUT)
 
-$(AOUT): $(shell $(MLTON) -stop f mlton.cm)
+$(AOUT): $(NAME).cm $(shell $(MLTON) -stop f mlton.cm)
 	@echo 'Compiling mlton (takes a while)'
-	time $(MLTON) $(FLAGS) mlton.cm
+	time $(MLTON) $(FLAGS) $(NAME).cm
 	size $(AOUT)
 	strip $(AOUT)
 
