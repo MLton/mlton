@@ -25,6 +25,7 @@ all:
 
 .PHONY: clean
 clean:
+	cd regression && $(MAKE) clean
 	bin/clean
 
 .PHONY: cm
