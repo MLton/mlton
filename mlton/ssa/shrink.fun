@@ -800,6 +800,15 @@ fun shrinkFunction (globals: Statement.t vector) =
 			    in
 			       goto (overflow, Vector.new0 ())
 			    end
+		       | Prim.ApplyResult.Apply (prim, args) =>
+			    let val args = Vector.fromList args
+			    in
+			       ([], Arith {prim = prim,
+					   args = uses args,
+					   overflow = simplifyLabel overflow,
+					   success = simplifyLabel success,
+					   ty = ty})
+			    end					
 		       | _ =>
 			    ([], Arith {prim = prim,
 					args = uses args,
