@@ -89,10 +89,8 @@ type basbinds = {name: Basid.t, def: Basexp.t} list
 
 %header (functor MLBLrValsFun (structure Token: TOKEN
                                structure Ast: AST
-			       val lexAndParseProg: File.t * Region.t -> 
-                                                    File.t * Ast.Program.t
-			       val lexAndParseMLB: File.t * Region.t -> 
-                                                   File.t * OS.FileSys.file_id option * Ast.Basdec.t))
+                               val lexAndParseProgOrMLB: File.t * Region.t ->
+                                                         Ast.Basdec.node))
 
 %right AND
 
@@ -175,22 +173,8 @@ basdecnode
    | LOCAL basdecs IN basdecs END  (Basdec.Local (basdecs1, basdecs2))
    | OPEN basids  (Basdec.Open (Vector.fromList basids))
    | FILE
-     (let
-	 val reg = reg (FILEleft, FILEright)
-         fun err () =
-	    (error (reg, "MLton can't process")
-             ; Basdec.Seq [])
-         val mlbExts = ["mlb"]
-         val progExts = ["ML","fun","sig","sml"]
-      in
-         case File.extension FILE of
-	    SOME s =>
-	       if List.contains (mlbExts, s, String.equals)
-		  then Basdec.MLB (lexAndParseMLB (FILE, reg))
-	       else if List.contains (progExts, s, String.equals)
-		  then Basdec.Prog (lexAndParseProg (FILE, reg))
-	       else err ()
-	  | NONE => err ()
+     (let val reg = reg (FILEleft, FILEright)
+      in lexAndParseProgOrMLB (FILE, reg)
       end)
    | PRIM (Basdec.Prim)
    | ANN anns IN basdecs END  (Basdec.Ann (anns, basdecs))
