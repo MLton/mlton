@@ -16,7 +16,7 @@ struct
 
 open S
 
-val _ = Assert.assert("UniqueSet", fn () => cacheSize >= 1 andalso bits >= 1)
+val _ = Assert.assert ("UniqueSet", fn () => cacheSize >= 1 andalso bits >= 1)
 
 type elements = Element.t list
    
@@ -217,11 +217,10 @@ end
 
 (* val fromList = Trace.trace("fromList", List.layout Element.layout, layout) fromList *)
    
-(*
- * fun traceBinary(name, f) = Trace.trace2(name, layout, layout, layout) f
- * val op + = traceBinary("+", op +)
- * val op - = traceBinary("-", op -)
- * val op intersect = traceBinary("intersect", intersect)
- *)
+fun traceBinary (name, f) = Trace.trace2 (name, layout, layout, layout) f
+
+val op + = traceBinary ("UniqueSet.+", op +)
+val op - = traceBinary ("UniqueSet.-", op -)
+val op intersect = traceBinary ("UniqueSet.intersect", intersect)
 
 end

@@ -44,13 +44,14 @@ structure Lambdas = UniqueSet (structure Element = Lambda
 structure LambdaNode:
    sig
       type t
-      val new: unit -> t
-      val lambda: Sxml.Lambda.t -> t
+
       val addHandler: t * (Lambda.t -> unit) -> unit
+      val coerce: {from: t, to: t} -> unit
+      val lambda: Sxml.Lambda.t -> t
+      val layout: t -> Layout.t
+      val new: unit -> t
       val toSet: t -> Lambdas.t
       val unify: t * t -> unit
-      val coerce: {from: t, to: t} -> unit
-      val layout: t -> Layout.t
    end =
    struct
       datatype t = LambdaNode of {me: Lambdas.t ref,
@@ -91,12 +92,17 @@ structure LambdaNode:
 		  ; handless (!handlers, diff))
 	 end
 
+      val send =
+	 Trace.trace2 ("LambdaNode.send", layout, Lambdas.layout, Unit.layout)
+	 send
+
       fun equals (LambdaNode d, LambdaNode d') = Dset.equals (d, d')
 
       fun coerce (arg as {from = from as LambdaNode d, to: t}): unit =
 	 if equals (from, to)
 	    then ()
-	 else let val {me, coercedTo, ...} = Dset.value d
+	 else let
+		 val {me, coercedTo, ...} = Dset.value d
 	      in
 		 if List.exists (!coercedTo, fn ls => equals (ls, to))
 		    then ()

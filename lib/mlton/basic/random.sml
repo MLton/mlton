@@ -47,7 +47,7 @@ val maxInt = Int.maxInt
 
 fun nat () = Word.toInt (Word.andb (word (), Word.fromInt maxInt))
 
-val int = Trace.trace ("Random.nat", Unit.layout, Int.layout) int
+val nat = Trace.trace ("Random.nat", Unit.layout, Int.layout) nat
 
 val maxIntR = Real.fromInt maxInt
 
@@ -55,10 +55,15 @@ fun scale r = r / maxIntR
 
 val natReal = Real.fromInt o nat
 
+val natReal = Trace.trace0 ("Random.natReal", Real.layout) natReal
+
 fun real () = scale (natReal () + scale (natReal ()))
 
+val real = Trace.trace0 ("Random.real", Real.layout) real
+
 fun intRange (lo: int, hi: int): unit -> int =
-   let val rlo = Real.fromInt lo
+   let
+      val rlo = Real.fromInt lo
       val R = Real.fromInt hi - rlo + 1.0
    in
       fn () => Real.trunc (rlo + R * real ())
