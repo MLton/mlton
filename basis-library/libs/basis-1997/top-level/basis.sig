@@ -126,7 +126,6 @@ signature BASIS_1997 =
       structure Word8 : WORD_1997
       structure Word8Array : MONO_ARRAY_1997
       structure Word8Vector : MONO_VECTOR_1997
-      structure Word64: WORD_1997
 
       (* Optional structures *)
       structure Array2 : ARRAY2
@@ -136,7 +135,38 @@ signature BASIS_1997 =
       structure CharArray2 : MONO_ARRAY2_1997
       structure FixedInt : INTEGER
       structure IntInf : INT_INF
-      structure Int32 : INTEGER
+      structure Int2: INTEGER
+      structure Int3: INTEGER
+      structure Int4: INTEGER
+      structure Int5: INTEGER
+      structure Int6: INTEGER
+      structure Int7: INTEGER
+      structure Int8: INTEGER
+      structure Int9: INTEGER
+      structure Int10: INTEGER
+      structure Int11: INTEGER
+      structure Int12: INTEGER
+      structure Int13: INTEGER
+      structure Int14: INTEGER
+      structure Int15: INTEGER
+      structure Int16: INTEGER
+      structure Int17: INTEGER
+      structure Int18: INTEGER
+      structure Int19: INTEGER
+      structure Int20: INTEGER
+      structure Int21: INTEGER
+      structure Int22: INTEGER
+      structure Int23: INTEGER
+      structure Int24: INTEGER
+      structure Int25: INTEGER
+      structure Int26: INTEGER
+      structure Int27: INTEGER
+      structure Int28: INTEGER
+      structure Int29: INTEGER
+      structure Int30: INTEGER
+      structure Int31: INTEGER
+      structure Int32: INTEGER
+      structure Int64: INTEGER
       structure IntArray : MONO_ARRAY_1997
       structure Int32Array : MONO_ARRAY_1997
       structure IntArray2 : MONO_ARRAY2_1997
@@ -187,7 +217,37 @@ signature BASIS_1997 =
       structure WideTextPrimIO : PRIM_IO
       structure WideTextIO : TEXT_IO
 *)
-      structure Word32 : WORD_1997
+      structure Word2: WORD_1997
+      structure Word3: WORD_1997
+      structure Word4: WORD_1997
+      structure Word5: WORD_1997
+      structure Word6: WORD_1997
+      structure Word7: WORD_1997
+      structure Word9: WORD_1997
+      structure Word10: WORD_1997
+      structure Word11: WORD_1997
+      structure Word12: WORD_1997
+      structure Word13: WORD_1997
+      structure Word14: WORD_1997
+      structure Word15: WORD_1997
+      structure Word16: WORD_1997
+      structure Word17: WORD_1997
+      structure Word18: WORD_1997
+      structure Word19: WORD_1997
+      structure Word20: WORD_1997
+      structure Word21: WORD_1997
+      structure Word22: WORD_1997
+      structure Word23: WORD_1997
+      structure Word24: WORD_1997
+      structure Word25: WORD_1997
+      structure Word26: WORD_1997
+      structure Word27: WORD_1997
+      structure Word28: WORD_1997
+      structure Word29: WORD_1997
+      structure Word30: WORD_1997
+      structure Word31: WORD_1997
+      structure Word32: WORD_1997
+      structure Word64: WORD_1997
       structure Word8Array2 : MONO_ARRAY2_1997
       structure Unix : UNIX_1997
    end
