@@ -871,7 +871,8 @@ struct
 	     (!table, 
 	      fn T {plist, ...} 
 	       => PropertyList.clear plist) ;
-	     table := HashSet.new {hash = hash})
+	     table := HashSet.new {hash = hash} ;
+	     Counter.reset (counter, 0))
       end
 
       val rec mayAliasImmIndex 
