@@ -1087,7 +1087,7 @@ static W32 heapDesiredSize (GC_state s, W64 live, W32 currentSize) {
 		/* If the heap is currently close in size to what we want, leave
 		 * it alone.  Favor growing over shrinking.
 		 */
-		unless (res >= 1.5 * currentSize 
+		unless (res >= 1.1 * currentSize 
 				or res <= .5 * currentSize)
 			res = currentSize;
 	} else if (ratio >= s->copyRatio + s->growRatio) {
@@ -3117,14 +3117,14 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->bytesMarkCompacted = 0;
 	s->canHandle = 0;
 	s->cardSize = 0x1 << s->cardSizeLog2;
-	s->copyRatio = 2.0;
+	s->copyRatio = 5.0;
 	s->currentThread = BOGUS_THREAD;
-	s->generationalRatio = 4.0;
+	s->generationalRatio = 5.0;
 	s->growRatio = 1.5;
 	s->inSignalHandler = FALSE;
 	s->isOriginal = TRUE;
 	s->liveRatio = 8.0;
-	s->markCompactRatio = 1.5;
+	s->markCompactRatio = 1.04;
 	s->markedCards = 0;
 	s->maxBytesLive = 0;
 	s->maxHeap = 0;
