@@ -13,6 +13,7 @@ val {empty, singleton, size, equals, <=, >=, <, >, +, -, intersect, unions,
    List.set{equals = Element.equals,
 	    layout = Element.layout}
 
+val partition = List.partition
 val power = List.power
 val subsets = List.subsets
    

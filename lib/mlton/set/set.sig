@@ -32,6 +32,7 @@ signature SET =
       val isEmpty: t -> bool
       val layout: t -> Layout.t
       val map: t * (Element.t -> Element.t) -> t
+      val partition: t * (Element.t -> bool) -> {yes: t, no: t}
       val power: t -> t list
       val replace: t * (Element.t -> Element.t option) -> t
       val remove: t * Element.t -> t
