@@ -123,7 +123,6 @@ dirs:
 
 .PHONY: docs
 docs: dirs
-	$(MAKE) -C $(SRC)/doc/user-guide
 	$(MAKE) -C $(LEX) docs
 	$(MAKE) -C $(YACC) docs
 
@@ -262,7 +261,6 @@ version:
 	for f in							\
 		debian/changelog					\
 		doc/mlton.spec						\
-		doc/user-guide/macros.tex				\
 		freebsd/Makefile					\
 		mlton/control/control.sml; 				\
 	do								\
@@ -350,8 +348,6 @@ install-docs:
 		$(CP) changelog cm2mlb cmcat examples license README $(TDOC)/	\
 	)
 	rm -rf $(TDOC)/user-guide
-	$(CP) $(SRC)/doc/user-guide/main $(TDOC)/user-guide
-	$(GZIP) -c $(SRC)/doc/user-guide/main.ps >$(TDOC)/user-guide.ps.gz
 	for f in callcc command-line hello-world same-fringe signals	\
 			size taut thread1 thread2 thread-switch timeout \
 		; do 							\
