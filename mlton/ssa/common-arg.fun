@@ -53,7 +53,7 @@ fun eliminate (Program.T {datatypes, globals, functions, main}) =
 	 Property.getSetOnce
 	 (Node.plist,
 	  Property.initRaise ("CommonArg.nodeInfo", Node.layout))
-      val labelArgs =
+      val nodeInfo =
 	 Trace.trace ("CommonArg.nodeInfo", Layout.ignore, Layout.ignore)
 	 nodeInfo
       val {get = labelArgs: Label.t -> (Var.t * Type.t) vector, 
@@ -101,7 +101,7 @@ fun eliminate (Program.T {datatypes, globals, functions, main}) =
 		 (setLabelArgs (label, args)
 		  ; Vector.foreach (args, fn (v, _) =>
 				    setVarInfo (v, VarInfo.new (newNode v)))))
-	     (* Flow Transfer.Goto arguments. *)
+	    (* Flow Transfer.Goto arguments. *)
 	    fun flowVarVar (v, v'): unit = 
 	       ignore (Graph.addEdge (G, {from = varNode v, to = varNode v'}))
 	    fun flowVarVarTy (v, (v', _)) = flowVarVar (v, v')
