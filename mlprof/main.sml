@@ -118,7 +118,9 @@ structure AFile =
 	    then Error.bug "can not run"
 	 else
 	    Process.callWithIn
-	    (afile, ["@MLton", "show-prof"],
+	    (OS.Path.mkAbsolute {path = afile,
+				 relativeTo = OS.FileSys.getDir ()},
+	     ["@MLton", "show-prof"],
 	     fn ins =>
 	     let
 		fun line () =
