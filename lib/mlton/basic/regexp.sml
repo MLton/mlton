@@ -1406,6 +1406,7 @@ in
 	 val save = Save
 	 val seq = Seq
 	 val star = Star
+	 val zeroOrMore = star
 
 	 val dquote = char #"\""
 
