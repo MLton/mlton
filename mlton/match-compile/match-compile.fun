@@ -144,9 +144,10 @@ in
 end
 
 local
-   fun make (all, ty, inj, get) =
+   fun make (all, cardinality, ty, inj, get) =
       List.map (all, fn s =>
 		(ty s,
+		 cardinality s,
 		 fn (cases, finish) =>
 		 inj (s,
 		      Vector.map
@@ -155,11 +156,11 @@ local
 in
    val directCases = 
       make (List.remove (IntSize.all, fn s => IntSize.I64 = s),
-	    Type.int, Cases.int,
+	    IntSize.cardinality, Type.int, Cases.int,
 	    fn Const.Int i => i
 	     | _ => Error.bug "caseInt type error")
       @ make (List.remove (WordSize.all, fn s => WordSize.W64 = s),
-	      Type.word, Cases.word,
+	      WordSize.cardinality, Type.word, Cases.word,
 	      fn Const.Word w => w
 	       | _ => Error.bug "caseWord type error")
 end
@@ -459,23 +460,32 @@ fun matchCompile {caseType: Type.t,
 		      in (cases, defaults)
 		      end
 		 | _ => Error.bug "expected Const pat")
-	    val default = finish (Vector.fromList defaults)
+	    fun default () = finish (Vector.fromList defaults)
 	    fun loop ds =
 	       case ds of
 		  [] =>
 		     List.fold
-		     (cases, default, fn ({const, infos}, rest) =>
+		     (cases, default (), fn ({const, infos}, rest) =>
 		      Exp.iff {test = Exp.equal (test, Exp.const const),
 			       thenn = finish (Vector.fromList infos),
 			       elsee = rest,
 			       ty = caseType})
-		| (ty', make) :: ds  =>
+		| (ty', cardinality, make) :: ds  =>
 		     if Type.equals (ty, ty')
-			then Exp.casee {test = test,
-					default = SOME (default, region),
-					ty = caseType,
-					cases = make (Vector.fromList cases,
-						      finish)}
+			then
+			   let
+			      val cases = Vector.fromList cases
+			      val default =
+				 if cardinality
+				    = IntInf.fromInt (Vector.length cases)
+				    then NONE
+				 else SOME (default (), region)
+			   in
+			      Exp.casee {cases = make (cases, finish),
+					 default = default,
+					 test = test,
+					 ty = caseType}
+			   end
 		     else loop ds
 	 in loop directCases
 	 end) arg
