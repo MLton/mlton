@@ -239,13 +239,23 @@ in
    fun userName () = Passwd.name (getpwuid (getuid ()))
 end
 
+fun fail x = raise Fail x
+
+local
+   val z = Posix.ProcEnv.uname ()
+   fun lookup s =
+      case List.peek (z, fn (s', _) => s = s') of
+	 NONE => fail (concat [s, " unknown"])
+       | SOME (_, s) => s
+in
+   fun hostName () = lookup "nodename"
+end
+
 val getEnv = Posix.ProcEnv.getenv
 
 fun glob (s: string): string list =
    String.tokens (collect (call ("bash", ["-c", "ls " ^ s])),
 		 fn c => c = #"\n")
-
-fun fail x = raise Fail x
 
 fun usage {usage: string, msg: string}: 'a =
    fail (concat [msg, "\n", "Usage: ", commandName (), " ", usage])

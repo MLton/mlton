@@ -44,6 +44,7 @@ signature PROCESS =
        * For now, s should be a bash pattern.
        *)
       val glob: string -> string list
+      val hostName: unit -> string
       val makeMain: (string list -> unit) -> (unit -> unit)
       (* pipe [c_1, ..., c_n] runs the commands c_1, ..., c_n in
        * subprocesses in parallel, with the standard output of c_i hooked
