@@ -310,6 +310,7 @@ fun main args =
 		in
 		   set (stackSize, {hard = hard, soft = hard})
 		end
+	   | MLton.Sun => ()
       local
 	 open Popt
       in
