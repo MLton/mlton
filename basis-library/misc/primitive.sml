@@ -261,10 +261,6 @@ structure Primitive =
 
       structure FFI =
 	 struct
-	    val int8Array = _import "MLton_FFI_Int8": Pointer.t;
-	    val int16Array = _import "MLton_FFI_Int16": Pointer.t;
-	    val int32Array = _import "MLton_FFI_Int32": Pointer.t;
-	    val int64Array = _import "MLton_FFI_Int64": Pointer.t;
 	    val getOp = fn () => _import "MLton_FFI_op": int;
 	    val numExports = _build_const "MLton_FFI_numExports": int;
 	    val pointerArray = _import "MLton_FFI_Pointer": Pointer.t;
@@ -274,6 +270,10 @@ structure Primitive =
 	    val word16Array = _import "MLton_FFI_Word16": Pointer.t;
 	    val word32Array = _import "MLton_FFI_Word32": Pointer.t;
 	    val word64Array = _import "MLton_FFI_Word64": Pointer.t;
+	    val int8Array = word8Array
+	    val int16Array = word16Array
+	    val int32Array = word32Array
+	    val int64Array = word64Array
 	 end
 
       structure GC =
