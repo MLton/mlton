@@ -435,7 +435,7 @@ fun main args =
 		  in
 		     setHandler (Posix.Signal.pipe, Handler.ignore)
 		  end
-	       fun r2s r = Real.format (r, Real.Format.fix (SOME 2))
+	       fun r2s n r = Real.format (r, Real.Format.fix (SOME n))
 	       val i2s = Int.toCommaString
 	       val p2s = i2s o Position.toInt
 	       val s2s = fn s => s
@@ -456,7 +456,7 @@ fun main args =
 			     concat ["WARNING: ", base, " failed on: ",
 				     concat (List.separate (fs, ", ")),
 				     "\n"])
-		     fun show (title, data: 'a data, toString) =
+		     fun show (title, data: 'a data, toString, toStringHtml) =
 			let
 			   val _ = Out.output (out, concat [title, "\n"])
 			   val compilers =
@@ -477,7 +477,7 @@ fun main args =
 						      bench = b)
 				  then b :: ac
 			       else ac)
-			   val rows =
+			   fun rows toString =
 			      ("benchmark"
 			       :: List.revMap (compilers, fn (_, n') => n'))
 			      :: (List.revMap
@@ -489,15 +489,16 @@ fun main args =
 							   compiler = c', ...} =>
 						 b = b' andalso n = c')) of
 					     NONE => "*"
-					   | SOME {value = v, ...} => toString v))))
+					   | SOME {value = v, ...} =>
+						toString v))))
 			   open Justify
-			   val _ =
+			   val () =
 			      outputTable
 			      (table {columnHeads = NONE,
 				      justs = (Left ::
 					       List.revMap (compilers,
 							    fn _ => Right)),
-				      rows = rows},
+				      rows = rows toString},
 			       out)
 			   fun p ss =
 			      (Out.output (out, concat ss)
@@ -517,19 +518,23 @@ fun main args =
 			   val _ =
 			      if !doHtml
 				 then
-				    (prow (hd rows, "h")
-				     ; (List.foreach
-					(tl rows,
-					 fn [] => raise Fail "bug"
-					  | b :: r =>
-					       let
-						  val b = 
-						     concat
-						     ["<a href = \"benchmarks/",
-						      b, ".sml\">", b, "</a>"]
-					       in
-						      prow (b :: r, "d")
-					       end)))
+				    let
+				       val rows = rows toStringHtml
+				    in					  
+				       prow (hd rows, "h")
+				       ; (List.foreach
+					  (tl rows,
+					   fn [] => raise Fail "bug"
+					    | b :: r =>
+						 let
+						    val b = 
+						       concat
+						       ["<a href = \"benchmarks/",
+							b, ".sml\">", b, "</a>"]
+						 in
+							prow (b :: r, "d")
+						 end))
+				    end
 			      else ()
 			in
 			   ()
@@ -549,16 +554,18 @@ fun main args =
 					     bench = b) of
 				NONE => ~1.0
 			      | SOME {value = v, ...} => value / v} :: ac)
-		     val _ = show ("run time ratio", ratios, r2s)
-		     val _ = show ("size", sizes, p2s)
-		     val _ = show ("compile time", compiles, r2s)
-		     val _ = show ("run time", runs, r2s)
+		     val _ = show ("run time ratio", ratios, r2s 2, r2s 1)
+		     val _ = show ("size", sizes, p2s, p2s)
+		     val _ = show ("compile time", compiles, r2s 2, r2s 2)
+		     val _ = show ("run time", runs, r2s 2, r2s 2)
 		     val _ = case !outData of
-			SOME (out, _) => show (concat ["out: ", out], outs, s2s)
-		      | NONE => ()
+                        NONE => ()
+                      | SOME (out, _) =>
+                           show (concat ["out: ", out], outs, s2s, s2s)
 		     val _ = case !errData of
-			SOME (err, _) => show (concat ["err: ", err], errs, s2s)
-		      | NONE => ()
+			NONE => ()
+		      | SOME (err, _) =>
+			   show (concat ["err: ", err], errs, s2s, s2s)
 		  in ()
 		  end
 	       val totalFailures = ref []
