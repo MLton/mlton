@@ -397,6 +397,32 @@ end
 
 structure Type =
    struct
+      structure Overload =
+	 struct
+	    datatype t = Int | Real | Word
+
+	    val equals: t * t -> bool = op =
+
+	    val toString =
+	       fn Int => "Int"
+		| Real => "Real"
+		| Word => "Word"
+
+	    val layout = Layout.str o toString
+
+	    val matchesTycon: t * Tycon.t -> bool =
+	       fn (ov, c) =>
+	       case ov of
+		  Int => Tycon.isIntX c
+		| Real => Tycon.isRealX c
+		| Word => Tycon.isWordX c
+
+	    val defaultTycon: t -> Tycon.t =
+	       fn Int => Tycon.defaultInt
+		| Real => Tycon.defaultReal
+		| Word => Tycon.defaultWord
+	 end
+      
       (* Tuples of length <> 1 are always represented as records.
        * There will never be tuples of length one.
        *)
@@ -414,12 +440,10 @@ structure Type =
 	 * extra.
 	 *)
 	| GenFlexRecord of genFlexRecord
-	| Int (* an unresolved int type *)
-	| Real (* an unresolved real type *)
+	| Overload of Overload.t
 	| Record of t Srecord.t
 	| Unknown of Unknown.t
 	| Var of Tyvar.t
-	| Word (* an unresolved word type *)
       withtype fields = (Field.t * t) list
       and genFlexRecord =
 	 {extra: unit -> {field: Field.t,
@@ -455,8 +479,7 @@ structure Type =
 		  seq [str "GenFlex ",
 		       record [("fields", layoutFields fields),
 			       ("spine", Spine.layout spine)]]
-	     | Int => str "Int"
-	     | Real => str "Real"
+	     | Overload ov => Overload.layout ov
 	     | Record r => Srecord.layout {record = r,
 					   separator = ": ",
 					   extra = "",
@@ -464,7 +487,6 @@ structure Type =
 					   layoutElt = layout}
 	     | Unknown u => Unknown.layout u
 	     | Var a => paren (seq [str "Var ", Tyvar.layout a])
-	     | Word => str "Word"
       end
 
       val toString = Layout.toString o layout
@@ -493,8 +515,8 @@ structure Type =
 		      Layout.ignore)
 	 opaqueTyconExpansion
 
-      fun makeHom {con, expandOpaque, flexRecord, genFlexRecord, int, real,
-		   record, recursive, unknown, var, word} =
+      fun makeHom {con, expandOpaque, flexRecord, genFlexRecord, overload,
+		   record, recursive, unknown, var} =
 	 let
 	    datatype status = Processing | Seen | Unseen
 	    val {destroy = destroyStatus, get = status, ...} =
@@ -528,7 +550,6 @@ structure Type =
 				      in
 					 if expandOpaque then yes () else no ()
 				      end
-				 | Int => int t
 				 | FlexRecord {fields, spine} =>
 				      flexRecord (t, {fields = loopFields fields,
 						      spine = spine})
@@ -537,11 +558,10 @@ structure Type =
 				      (t, {extra = extra,
 					   fields = loopFields fields,
 					   spine = spine})
-				 | Real => real t
+				 | Overload ov => overload (t, ov)
 				 | Record r => record (t, Srecord.map (r, get))
 				 | Unknown u => unknown (t, u)
 				 | Var a => var (t, a)
-				 | Word => word t
 			     val _ = r := Seen
 			  in
 			     res
@@ -568,7 +588,6 @@ structure Type =
 	    val str = Layout.str
 	    fun con (_, c, ts) = Tycon.layoutApp (c, ts)
 	    fun con0 c = Tycon.layoutApp (c, Vector.new0 ())
-	    fun int _ = con0 Tycon.defaultInt
 	    fun flexRecord (_, {fields, spine}) =
 	       layoutRecord
 	       (List.fold
@@ -586,7 +605,7 @@ structure Type =
 			      (field, false, simple (Tyvar.layout tyvar))),
 		 fn ((f, t), ac) => (f, false, t) :: ac),
 		Spine.canAddFields spine)
-	    fun real _ = con0 Tycon.defaultReal
+	    fun overload (_, ov) = con0 (Overload.defaultTycon ov)
 	    fun record (_, r) =
 	       case Srecord.detupleOpt r of
 		  NONE =>
@@ -615,19 +634,16 @@ structure Type =
 		    end
 		 end))
 	    fun var (_, a) = prettyTyvar a
-	    fun word _ = con0 Tycon.defaultWord
 	    fun lay t =
 	       hom (t, {con = con,
 			expandOpaque = false,
 			flexRecord = flexRecord,
 			genFlexRecord = genFlexRecord,
-			int = int,
-			real = real,
+			overload = overload,
 			record = record,
 			recursive = recursive,
 			unknown = unknown,
-			var = var,
-			word = word})
+			var = var})
 	 in
 	    {destroy = destroy,
 	     lay = lay}
@@ -715,9 +731,6 @@ structure Type =
 	 else newTy (Con (tycon, ts),
 		     Equality.applyTycon (tycon, Vector.map (ts, equality)))
 
-      val char = con (Tycon.char, Vector.new0 ())
-      val string = con (Tycon.vector, Vector.new1 char)
-
       fun var a = newTy (Var a, Equality.fromBool (Tyvar.isEquality a))
    end
 
@@ -735,6 +748,7 @@ structure Type =
       open Ops Type
 
       val char = con (Tycon.char, Vector.new0 ())
+      val string = con (Tycon.vector, Vector.new1 char)
 	 
       val unit = tuple (Vector.new0 ())
 
@@ -746,7 +760,7 @@ structure Type =
       fun isInt t =
 	 case toType t of
 	    Con (c, _) => Tycon.isIntX c
-	  | Int => true
+	  | Overload Overload.Int => true
 	  | _ => false
 	       
       fun isUnit t =
@@ -758,7 +772,8 @@ structure Type =
 	  | _ => false
 
       local
-	 fun make ty () = newTy ty
+	 fun make (ov, eq) () = newTy (Overload ov, eq)
+	 datatype z = datatype Overload.t
       in
 	 val unresolvedInt = make (Int, Equality.truee)
 	 val unresolvedReal = make (Real, Equality.falsee)
@@ -776,8 +791,7 @@ structure Type =
 	   | (_, Unknown _) => true
 	   | (Con (c, ts), t') => conAnd (c, ts, t')
 	   | (t', Con (c, ts)) => conAnd (c, ts, t')
-	   | (Int, Int) => true
-	   | (Real, Real) => true
+	   | (Overload o1, Overload o2) => Overload.equals (o1, o2)
 	   | (Record r, Record r') =>
 		let
 		   val fs = Srecord.toVector r
@@ -788,16 +802,14 @@ structure Type =
 					   andalso canUnify (t, t'))
 		end
 	   | (Var a, Var a') => Tyvar.equals (a, a')
-	   | (Word, Word) => true
 	   | _ => false) arg
       and conAnd (c, ts, t') =
 	 case t' of
 	    Con (c', ts') =>
 	       Tycon.equals (c, c')
 	       andalso Vector.forall2 (ts, ts', canUnify)
-	  | Int => 0 = Vector.length ts andalso Tycon.isIntX c
-	  | Real => 0 = Vector.length ts andalso Tycon.isRealX c
-	  | Word => 0 = Vector.length ts andalso Tycon.isWordX c
+	  | Overload ov =>
+	       0 = Vector.length ts andalso Overload.matchesTycon (ov, c)
 	  | _ => false
 
       (* minTime (t, bound) ensures that all components of t have times no larger
@@ -836,8 +848,7 @@ structure Type =
 			      end
 			 | FlexRecord {fields, ...} => loopFields fields
 			 | GenFlexRecord {fields, ...} => loopFields fields
-			 | Int => ()
-			 | Real => ()
+			 | Overload _ => ()
 			 | Record r => Srecord.foreach (r, loop)
 			 | Unknown _ => ()
 			 | Var a =>
@@ -848,7 +859,6 @@ structure Type =
 				    then ()
 				 else r := bound
 			      end
-			 | Word => ()
 		     end
 	       end
 	    and loopFields (fs: (Field.t * t) list) =
@@ -989,16 +999,9 @@ structure Type =
 					       (maybe (lay ls, lay ls'))
 					    end)
 				  else not ()
-			     | Int =>
-				  if Tycon.isIntX c andalso Vector.isEmpty ts
-				     then (Unified, t')
-				  else not ()
-			     | Real =>
-				  if Tycon.isRealX c andalso Vector.isEmpty ts
-				     then (Unified, t')
-				  else not ()
-			     | Word =>
-				  if Tycon.isWordX c andalso Vector.isEmpty ts
+                             | Overload ov =>
+				  if Vector.isEmpty ts
+				     andalso Overload.matchesTycon (ov, c)
 				     then (Unified, t')
 				  else not ()
 			     | _ => not ()
@@ -1028,13 +1031,11 @@ structure Type =
 				     expandOpaque = false,
 				     flexRecord = flexRecord,
 				     genFlexRecord = genFlexRecord,
-				     int = no,
-				     real = no,
+				     overload = no,
 				     record = record,
 				     recursive = fn _ => Error.bug "oneUnknown recursive",
 				     unknown = unknown,
-				     var = no,
-				     word = no})
+				     var = no})
 			 in
 			    if isCircular
 			       then not ()
@@ -1085,8 +1086,10 @@ structure Type =
 			    end
 			  | (GenFlexRecord _, _) => genFlexError ()
 			  | (_, GenFlexRecord _) => genFlexError ()
-			  | (Int, Int) => (Unified, Int)
-			  | (Real, Real) => (Unified, Real)
+			  | (Overload o1, Overload o2) =>
+			       if Overload.equals (o1, o2)
+				  then (Unified, t)
+			       else not ()
 			  | (Record r, Record r') =>
 			       (case (Srecord.detupleOpt r,
 				      Srecord.detupleOpt r') of
@@ -1110,7 +1113,6 @@ structure Type =
 			       if Tyvar.equals (a, a')
 				  then (Unified, t)
 			       else not ()
-			  | (Word, Word) => (Unified, Word)
 			  | _ => not ()
 		      val res =
 			 case res of
@@ -1243,6 +1245,16 @@ structure Type =
 		      Tycon.word (WordSize.fromBits (IntSize.bits s))))
 
       val defaultInt = con (Tycon.int IntSize.default, Vector.new0 ())
+
+      structure Overload =
+	 struct
+	    open Overload
+	       
+	    val defaultType =
+	       fn Int => defaultInt
+		| Real => defaultReal
+		| Word => defaultWord
+	 end
 	 
       fun 'a simpleHom {con: t * Tycon.t * 'a vector -> 'a,
 			expandOpaque: bool,
@@ -1297,21 +1309,24 @@ structure Type =
 	       in
 		  con (t, tycon, Vector.new0 ())
 	       end
-	    val int = default (defaultInt, Tycon.defaultInt)
-	    val real = default (defaultReal, Tycon.defaultReal)
-	    val word = default (defaultWord, Tycon.defaultWord)
+	    fun overload (t', ov) =
+	       let
+		  val t = Overload.defaultType ov
+		  val _ = unify (t, t',
+				 {preError = fn _ => Error.bug "default unify"})
+	       in
+		  con (t, Overload.defaultTycon ov, Vector.new0 ())
+	       end
 	 in
 	    makeHom {con = con,
 		     expandOpaque = expandOpaque,
-		     int = int,
 		     flexRecord = flexRecord,
 		     genFlexRecord = genFlexRecord,
-		     real = real,
+		     overload = overload,
 		     record = fn (t, r) => record (t, Srecord.toVector r),
 		     recursive = recursive,
 		     unknown = fn _ => unknown,
-		     var = var,
-		     word = word}
+		     var = var}
 	 end
    end
 
@@ -1428,13 +1443,11 @@ structure Scheme =
 				    expandOpaque = false,
 				    flexRecord = keep o #1,
 				    genFlexRecord = genFlexRecord,
-				    int = keep,
-				    real = keep,
+				    overload = keep o #1,
 				    record = record,
 				    recursive = recursive,
 				    unknown = keep o #1,
-				    var = var,
-				    word = keep})
+				    var = var})
 		  val _ = destroyTyvarInst ()
 		  val flexInsts = !flexInsts
 		  fun args (): Type.t vector =
@@ -1516,13 +1529,11 @@ structure Scheme =
 		flexRecord = fn (_, {fields, ...}) => List.exists (fields, #2),
 		genFlexRecord = (fn (_, {fields, ...}) =>
 				 List.exists (fields, #2)),
-		int = no,
-		real = no,
+		overload = no,
 		record = fn (_, r) => Srecord.exists (r, fn b => b),
 		recursive = no,
 		unknown = fn _ => true,
-		var = no,
-		word = no}
+		var = no}
 	    val res =
 	       Vector.map (v, fn s =>
 			   case s of
