@@ -117,8 +117,7 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
        * we can eliminate redundant defaults.
        *)
       val {get = conNumCons: Con.t -> int , set = setConNumCons, ...} =
-	 Property.getSetOnce (Con.plist,
-			      Property.initRaise ("numCons", Con.layout))
+	 Property.getSetOnce (Con.plist, Property.initConst ~1)
       val _ =
 	 Vector.foreach
 	 (datatypes, fn {cons, ...} =>
@@ -132,8 +131,7 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
 	    Cases.Con v =>
 	       ((0 < Vector.length v
 		 andalso (Vector.length v
-			  = conNumCons (Pat.con (#1 (Vector.sub (v, 0))))))
-		handle _ => false)
+			  = conNumCons (Pat.con (#1 (Vector.sub (v, 0)))))))
 	  | _ => false
       val {get = varInfo: Var.t -> VarInfo.t, set = setVarInfo, ...} =
 	 Property.getSet (Var.plist,
