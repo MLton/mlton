@@ -176,6 +176,6 @@ fun suspend m =
 
 fun handleGC f =
    (Prim.handleGC ()
-    ; gcHandler := Handler.handler (fn t => (f (); t)))
+    ; gcHandler := Handler.simple f)
 
 end
