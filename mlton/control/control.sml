@@ -421,7 +421,7 @@ fun timeMinus (t1,t2,s)
 				      s])
 fun timePlus (t1,t2,s)
   = Time.+ (t1, t2)
-    handle Time => Error.bug (concat ["timeMinus: ",
+    handle Time => Error.bug (concat ["timePlus: ",
 				      "t1: ",
 				      Time.toString t1,
 				      " ",
