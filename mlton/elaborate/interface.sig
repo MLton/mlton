@@ -101,6 +101,7 @@ signature INTERFACE =
       val realize: t * (Ast.Longtycon.t
 			* TypeStr.AdmitsEquality.t
 			* TypeStr.Kind.t -> EnvTypeStr.t) -> t
+      val reportDuplicates: t -> unit
       val shapeId: t -> ShapeId.t
       val share: t * Ast.Longstrid.t * Ast.Longstrid.t -> unit
       val shareType: t * Ast.Longtycon.t * Ast.Longtycon.t -> unit

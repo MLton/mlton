@@ -612,6 +612,49 @@ and element =
 	    status: Status.t}
 withtype copy = t option ref
 
+fun reportDuplicates (T s) =
+   let
+      val {elements, ...} = Set.value s
+      fun make (kind, region, toString) =
+	 let
+	    val h = HashSet.new {hash = #hash}
+	 in
+	    fn n => let
+		       val s = toString n
+		       val hash = String.hash s
+		       val isNew = ref true
+		       val _ = 
+			  HashSet.lookupOrInsert
+			  (h, hash,
+			   fn {name, ...} => (s = name
+					      andalso (isNew := false
+						       ; true)),
+			   fn () => {hash = hash,
+				     name = s})
+		    in
+		       if !isNew
+			  then ()
+		       else Control.error (region n,
+					   Layout.str
+					   (concat ["duplicate ",
+						    kind,
+						    " specification: ",
+						    s]),
+					   Layout.empty)
+		    end
+	 end
+      val str = make ("structure", Ast.Strid.region, Ast.Strid.toString)
+      val ty = make ("type", Ast.Tycon.region, Ast.Tycon.toString)
+      val vid = make ("variable", Ast.Vid.region, Ast.Vid.toString)
+   in
+      List.foreach
+      (elements, fn e =>
+       case e of
+	  Str {name, ...} => str name
+	| Type {name, ...} => ty name
+	| Val {name, ...} => vid name)
+   end
+   
 type interface = t
 
 local

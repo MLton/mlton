@@ -314,7 +314,12 @@ fun elaborateSigexp (sigexp: Sigexp.t, E: Env.t): Interface.t =
 	 (fn (sigexp: Sigexp.t, I: Interface.t) =>
 	  case Sigexp.node sigexp of
 	     Sigexp.Spec spec => (* rule 62 *)
-		elaborateSpec (spec, I)
+		let
+		   val I = elaborateSpec (spec, I)
+		   val _ = Interface.reportDuplicates I
+		in
+		   I
+		end
 	   | Sigexp.Var x => (* rule 63 *)
 		Interface.copy (Env.lookupSigid (E, x))
 	   | Sigexp.Where (sigexp, wheres) => (* rule 64 *)
