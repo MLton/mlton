@@ -245,7 +245,8 @@ fun outputDeclarations
 	 end
       fun declareProfileInfo () =
 	 let
-	    val ProfileInfo.T {frameSources, labels, sourceSeqs, sources} =
+	    val ProfileInfo.T {frameSources, labels, sourceSeqs,
+			       sourceSuccessors, sources} =
 	       profileInfo
 	 in
 	    Vector.foreach (labels, fn {label, ...} =>
@@ -267,9 +268,11 @@ fun outputDeclarations
 						  (print (concat [",", C.int i])))
 				; print "};\n"))
 				      
-	    ; declareArray ("int", "*sourceSeqs", sourceSeqs, fn (i, _) =>
+	    ; declareArray ("uint", "*sourceSeqs", sourceSeqs, fn (i, _) =>
 			    concat ["sourceSeq", Int.toString i])
-	    ; declareArray ("int", "frameSources", frameSources, C.int o #2)
+	    ; declareArray ("uint", "frameSources", frameSources, C.int o #2)
+	    ; declareArray ("uint", "sourceSuccessors", sourceSuccessors,
+			    C.int o #2)
 	 end
    in
       print (concat ["#define ", name, "CODEGEN\n\n"])

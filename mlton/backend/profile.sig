@@ -15,6 +15,7 @@ signature PROFILE =
 			    labels: {label: Rssa.ProfileLabel.t,
 				     sourceSeqsIndex: int} vector,
 			    program: Rssa.Program.t,
-			    sources: Rssa.SourceInfo.t vector,
-			    sourceSeqs: int vector vector}
+			    sourceSeqs: int vector vector,
+			    sourceSuccessors: int vector,
+			    sources: Rssa.SourceInfo.t vector}
    end

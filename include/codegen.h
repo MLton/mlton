@@ -60,6 +60,7 @@
 	gcState.sourcesSize = cardof(sources);				\
 	gcState.sourceSeqs = sourceSeqs;				\
 	gcState.sourceSeqsSize = cardof(sourceSeqs);			\
+	gcState.sourceSuccessors = sourceSuccessors;			\
 	gcState.stringInits = stringInits;				\
 	MLton_init (argc, argv, &gcState);				\
 

@@ -221,6 +221,7 @@ signature MACHINE =
 		      * each given as an index into the source vector.
 		      *)
 		     sourceSeqs: int vector vector,
+		     sourceSuccessors: int vector,
 		     sources: SourceInfo.t vector}
 	 end
 

@@ -2825,10 +2825,20 @@ void GC_incProfileAlloc (GC_state s, W32 amount) {
 
 static void showProf (GC_state s) {
 	int i;
+	int j;
 
 	fprintf (stdout, "0x%08x\n", s->magic);
+	fprintf (stdout, "%u\n", s->sourcesSize);
 	for (i = 0; i < s->sourcesSize; ++i)
 		fprintf (stdout, "%s\n", s->sources[i]);
+	for (i = 0; i < s->sourcesSize; ++i) {
+		uint *sourceSeq;
+
+		sourceSeq = s->sourceSeqs[s->sourceSuccessors[i]];
+		for (j = 1; j <= sourceSeq[0]; ++j)
+			fprintf (stdout, "%u ", sourceSeq[j]);
+		fprintf (stdout, "\n");
+	}
 }
 
 void GC_profileFree (GC_state s, GC_profile p) {

@@ -628,10 +628,55 @@ structure ProfileInfo =
 	       labels: {label: ProfileLabel.t,
 			sourceSeqsIndex: int} vector,
 	       sourceSeqs: int vector vector,
+	       sourceSuccessors: int vector,
 	       sources: SourceInfo.t vector}
 
       fun clear (T {labels, ...}) =
 	 Vector.foreach (labels, ProfileLabel.clear o #label)
+
+      fun layout (T {frameSources, labels, sourceSeqs, sourceSuccessors,
+		     sources}) =
+	 Layout.record
+	 [("frameSources", Vector.layout Int.layout frameSources),
+	  ("labels",
+	   Vector.layout (fn {label, sourceSeqsIndex} =>
+			  Layout.record
+			  [("label", ProfileLabel.layout label),
+			   ("sourceSeqsIndex",
+			    Int.layout sourceSeqsIndex)])
+	   labels),
+	  ("sourceSeqs", Vector.layout (Vector.layout Int.layout) sourceSeqs),
+	  ("sources", Vector.layout SourceInfo.layout sources)]
+
+      fun layouts (pi, output) = output (layout pi)
+
+      fun isOK (T {frameSources,
+		   labels,
+		   sourceSeqs,
+		   sourceSuccessors,
+		   sources}): bool =
+	 let
+	    val sourceSeqsLength = Vector.length sourceSeqs
+	    val sourcesLength = Vector.length sources
+	 in
+	    !Control.profile = Control.ProfileNone
+	    orelse
+	    (true
+	     andalso (Vector.forall
+		      (frameSources, fn i =>
+		       0 <= i andalso i < sourceSeqsLength))
+	     andalso (Vector.forall
+		      (labels, fn {sourceSeqsIndex = i, ...} =>
+		       0 <= i andalso i < sourceSeqsLength)))
+	     andalso (Vector.forall
+		      (sourceSeqs, fn v =>
+		       Vector.forall
+		       (v, fn i => 0 <= i andalso i < sourcesLength)))
+	     andalso (Vector.length sourceSuccessors = Vector.length sources)
+	     andalso (Vector.forall
+		      (sourceSuccessors, fn i =>
+		       0 <= i andalso i < sourceSeqsLength))
+	 end
    end
 
 structure Program =
@@ -660,7 +705,7 @@ structure Program =
 
       fun layouts (p as T {chunks, frameLayouts, frameOffsets, handlesSignals,
 			   main = {label, ...},
-			   maxFrameSize, objectTypes, ...},
+			   maxFrameSize, objectTypes, profileInfo, ...},
 		   output': Layout.t -> unit) =
 	 let
 	    open Layout
@@ -678,6 +723,8 @@ structure Program =
 					      Int.layout frameOffsetsIndex),
 					     ("size", Int.layout size)])
 		      frameLayouts)])
+	    ; output (str "\nProfileInfo:")
+	    ; ProfileInfo.layouts (profileInfo, output)
 	    ; output (str "\nObjectTypes:")
 	    ; Vector.foreachi (objectTypes, fn (i, ty) =>
 			       output (seq [str "pt_", Int.layout i,
@@ -728,10 +775,9 @@ structure Program =
       fun typeCheck (program as
 		     T {chunks, frameLayouts, frameOffsets, intInfs, main,
 			maxFrameSize, objectTypes,
-			profileInfo = ProfileInfo.T {frameSources,
-						     labels = profileLabels,
-						     sources,
-						     sourceSeqs},
+			profileInfo as ProfileInfo.T {frameSources,
+						      labels = profileLabels,
+						      ...},
 			reals, strings, ...}) =
 	 let
 	    val _ =
@@ -752,14 +798,15 @@ structure Program =
 		       else print (concat ["missing profile info: ",
 					   Label.toString label, "\n"])))
 	       else ()
-	    val maxProfileLabel = Vector.length sourceSeqs
 	    val _ =
-	       Vector.foreach
-	       (profileLabels, fn {sourceSeqsIndex = i, ...} =>
-		Err.check
-		("profileLabels",
-		 fn () => 0 <= i andalso i < maxProfileLabel,
-		 fn () => Int.layout i))
+	       Err.check
+	       ("frameSources length",
+		fn () => (Vector.length frameSources
+			  = (if !Control.profile <> Control.ProfileNone
+				andalso !Control.profileStack
+				then Vector.length frameLayouts
+			     else 0)),
+		fn () => ProfileInfo.layout profileInfo)
 	    val {get = profileLabelCount, ...} =
 	       Property.get
 	       (ProfileLabel.plist, Property.initFun (fn _ => ref 0))
@@ -772,29 +819,6 @@ structure Program =
 				     0 => r := 1
 				   | _ => Error.bug "duplicate profile label"
 			       end)
-	    val _ =
-	       let
-		  val maxFrameSourceSeq = Vector.length sourceSeqs
-		  val _ =
-		     Vector.foreach
-		     (frameSources, fn i =>
-		      Err.check
-		      ("frameSources", 
-		       fn () => 0 <= i andalso i <= maxFrameSourceSeq,
-		       fn () => Int.layout i))
-		  val maxSource = Vector.length sources
-		  val _ =
-		     Vector.foreach
-		     (sourceSeqs, fn v =>
-		      Vector.foreach
-		      (v, fn i =>
-		       Err.check
-		       ("sourceSeq",
-			fn () => 0 <= i andalso i < maxSource,
-			fn () => Int.layout i)))
-	       in
-		  ()
-	       end
 	    fun getFrameInfo (FrameInfo.T {frameLayoutsIndex, ...}) =
 	       Vector.sub (frameLayouts, frameLayoutsIndex)
 	    fun boolToUnitOpt b = if b then SOME () else NONE

@@ -4,33 +4,44 @@ struct
 open S
 open Rssa
 
-structure Graph = DirectedGraph
-local
-   open Graph
-in
-   structure Edge = Edge
-   structure Node = Node
-end
-
 type sourceSeq = int list
 
 structure InfoNode =
    struct
       datatype t = T of {index: int,
 			 info: SourceInfo.t,
-			 node: Node.t}
+			 successors: t list ref}
 
       local
 	 fun make f (T r) = f r
       in
 	 val index = make #index
 	 val info = make #info
-	 val node = make #node
       end
 
       fun layout (T {index, info, ...}) =
 	 Layout.record [("index", Int.layout index),
 			("info", SourceInfo.layout info)]
+
+      fun equals (n: t, n': t): bool = index n = index n'
+
+      fun call {from = T {successors, ...}, to} =
+	 if List.exists (!successors, fn n => equals (n, to))
+	    then ()
+	 else List.push (successors, to)
+   end
+
+structure FuncInfo =
+   struct
+      datatype t = T of {callers: InfoNode.t list ref,
+			 enters: InfoNode.t list ref,
+			 seen: bool ref,
+			 tailCalls: t list ref}
+
+      fun new () = T {callers = ref [],
+		      enters = ref [],
+		      seen = ref false,
+		      tailCalls = ref []}
    end
 
 structure Push =
@@ -60,8 +71,9 @@ fun profile program =
       then {frameProfileIndices = Vector.new0 (),
 	    labels = Vector.new0 (),
 	    program = program,
-	    sources = Vector.new0 (),
-	    sourceSeqs = Vector.new0 ()}
+	    sourceSeqs = Vector.new0 (),
+	    sourceSuccessors = Vector.new0 (),
+	    sources = Vector.new0 ()}
    else
    let
       val Program.T {functions, main, objectTypes} = program
@@ -72,19 +84,11 @@ fun profile program =
       val profileTime: bool = profile = Control.ProfileTime
       val frameProfileIndices = ref []
       local
-	 val graph = Graph.new ()
-	 val {get = nodeOptions, ...} =
-	    Property.get (Node.plist, Property.initFun (fn _ => ref []))
 	 val table: InfoNode.t HashSet.t =
 	    HashSet.new {hash = SourceInfo.hash o InfoNode.info}
 	 val c = Counter.new 0
 	 val sourceInfos = ref []
       in
-	 fun addEdge {from, to} =
-	    if List.exists (Node.successors from, fn e =>
-			    Node.equals (to, Edge.to e))
-	       then ()
-	    else (Graph.addEdge (graph, {from = from, to = to}); ())
 	 fun sourceInfoNode (si: SourceInfo.t) =
 	    HashSet.lookupOrInsert
 	    (table, SourceInfo.hash si,
@@ -92,15 +96,10 @@ fun profile program =
 	     fn () => let
 			 val _ = List.push (sourceInfos, si)
 			 val index = Counter.next c
-			 val node = Graph.newNode graph
-			 val _ =
-			    List.push
-			    (nodeOptions node,
-			     Dot.NodeOption.label (SourceInfo.toString si))
 		      in
 			 InfoNode.T {index = index,
 				     info = si,
-				     node = node}
+				     successors = ref []}
 		      end)
 	 val sourceInfoIndex = InfoNode.index o sourceInfoNode
 	 fun firstEnter (ps: Push.t list): InfoNode.t option =
@@ -108,18 +107,6 @@ fun profile program =
 			  case p of
 			     Push.Enter n => SOME n
 			   | _ => NONE)
-	 fun saveGraph () =
-	    Control.saveToFile
-	    ({suffix = "call-graph.dot"},
-	     Control.Dot,
-	     (),
-	     Control.Layout (fn () =>
-			     Graph.layoutDot
-			     (graph,
-			      fn _ => {edgeOptions = fn _ => [],
-				       nodeOptions = ! o nodeOptions,
-				       options = [],
-				       title = "call graph"})))
 	 fun makeSources () = Vector.fromListRev (!sourceInfos)
       end
       (* unknown must be 0, which == SOURCES_INDEX_UNKNOWN from gc.h *)
@@ -187,39 +174,56 @@ fun profile program =
 	       orelse index = mainIndex
 	       orelse index = unknownIndex
       local
-	 val {get: Func.t -> {callees: Node.t list ref,
-			      callers: Node.t list ref}, ...} =
-	    Property.get (Func.plist,
-			  Property.initFun (fn _ => {callers = ref [],
-						     callees = ref []}))
+	 val {get: Func.t -> FuncInfo.t, ...} =
+	    Property.get (Func.plist, Property.initFun (fn _ => FuncInfo.new ()))
       in
 	 val funcInfo = get
 	 fun addFuncEdges () =
 	    (* Don't need to add edges for main because no one calls it. *)
-	    List.foreach (functions, fn f =>
-			  let
-			     val {callers, callees} = get (Function.name f)
-			  in
+	    List.foreach
+	    (functions, fn f =>
+	     let
+		val allSeen: bool ref list ref = ref []
+		val func = Function.name f
+		val fi as FuncInfo.T {callers, ...} = get func
+		(* Add edges from all the callers to the enters in f and all
+		 * functions that f tail calls.
+		 *)
+		fun call (FuncInfo.T {enters, seen, tailCalls, ...}): unit =
+		   if !seen
+		      then ()
+		   else
+		      let
+			 val _ = seen := true
+			 val _ = List.push (allSeen, seen)
+			 val _ = 
+			    List.foreach
+			    (!callers, fn from =>
 			     List.foreach
-			     (!callers, fn from =>
-			      List.foreach (!callees, fn to =>
-					    addEdge {from = from, to = to}))
-			  end)
+			     (!enters, fn to =>
+			      InfoNode.call {from = from, to = to}))
+		      in
+			 List.foreach (!tailCalls, call)
+		      end
+		val _ = call fi
+		val _ = List.foreach (!allSeen, fn r => r := false)
+	     in
+		()
+	     end)
       end
       fun doFunction (f: Function.t): Function.t =
 	 let
 	    val {args, blocks, name, raises, returns, start} = Function.dest f
-	    val {callees, ...} = funcInfo name
+	    val FuncInfo.T {enters, tailCalls, ...} = funcInfo name
 	    fun enter (si: SourceInfo.t, ps: Push.t list) =
 	       let
-		  val n as InfoNode.T {node, ...} = sourceInfoNode si
+		  val node = sourceInfoNode si
 		  val _ = 
 		     case firstEnter ps of
-			NONE => List.push (callees, node)
-		      | SOME (InfoNode.T {node = node', ...}) =>
-			   addEdge {from = node', to = node}
+			NONE => List.push (enters, node)
+		      | SOME node' => InfoNode.call {from = node', to = node}
 	       in
-		  Push.Enter n :: ps
+		  Push.Enter node :: ps
 	       end
 	    val _ =
 	       Vector.foreach
@@ -354,7 +358,7 @@ fun profile program =
 			val Block.T {args, kind, label, statements, transfer,
 				     ...} = block
 			val _ =
-			   if Kind.isFrame kind
+			   if profileStack andalso Kind.isFrame kind
 			      then List.push (frameProfileIndices,
 					      (label,
 					       sourceSeqIndex
@@ -502,11 +506,19 @@ fun profile program =
 			(* Record the call for the call graph. *)
 			val _ =
 			   case transfer of
-			      Transfer.Call {func, ...} =>
-				 Option.app
-				 (firstEnter sourceSeq,
-				  fn InfoNode.T {node, ...} =>
-				  List.push (#callers (funcInfo func), node))
+			      Transfer.Call {func, return, ...} =>
+				 let
+				    val fi as FuncInfo.T {callers, ...} =
+				       funcInfo func
+				 in
+				    case return of
+				       Return.NonTail _ =>
+					  Option.app
+					  (firstEnter sourceSeq,
+					   fn n => List.push (callers, n))
+				   | _ =>
+					List.push (tailCalls, fi)
+				 end
 			    | _ => ()
 			val {args, kind, label, statements, ...} =
 			   maybeSplit {args = args,
@@ -574,13 +586,26 @@ fun profile program =
 			       main = doFunction main,
 			       objectTypes = objectTypes}
       val _ = addFuncEdges ()
-      val _ = saveGraph ()
+      val sources = makeSources ()
+      val sourceSuccessors =
+	 Vector.map (sources, fn si =>
+		     let
+			val InfoNode.T {successors, ...} = sourceInfoNode si
+		     in
+			sourceSeqIndex
+			(List.revMap (!successors, InfoNode.index))
+		     end)
+      (* This must happen after making sourceSuccessors, since that creates
+       * new sourceSeqs.
+       *)
+      val sourceSeqs = makeSourceSeqs ()
    in
       {frameProfileIndices = Vector.fromList (!frameProfileIndices),
        labels = Vector.fromList (!labels),
        program = program,
-       sources = makeSources (),
-       sourceSeqs = makeSourceSeqs ()}
+       sourceSeqs = sourceSeqs,
+       sourceSuccessors = sourceSuccessors,
+       sources = sources}
    end
 
 end

@@ -153,7 +153,7 @@ fun toMachine (program: Ssa.Program.t) =
       val program = pass ("insertSignalChecks", SignalCheck.insert, program)
       val program = pass ("implementHandlers", ImplementHandlers.doit, program)
       val {frameProfileIndices, labels = profileLabels, program, sources,
-	   sourceSeqs} =
+	   sourceSeqs, sourceSuccessors} =
 	 Control.passTypeCheck
 	 {display = Control.Layouts (fn ({program, ...}, output) =>
 				     Rssa.Program.layouts (program, output)),
@@ -163,19 +163,22 @@ fun toMachine (program: Ssa.Program.t) =
 	  thunk = fn () => Profile.profile program,
 	  typeCheck = R.Program.typeCheck o #program}
       val _ = R.Program.checkHandlers program
+      val profileStack =
+	 !Control.profile <> Control.ProfileNone
+	 andalso !Control.profileStack
       val frameProfileIndex =
-	 if !Control.profile = Control.ProfileNone
-	    then fn _ => 0
-	 else
-	    let
-	       val {get, set, ...} =
-		  Property.getSetOnce
-		  (Label.plist,
-		   Property.initRaise ("frameProfileIndex", Label.layout))
-	       val _ = Vector.foreach (frameProfileIndices, set)
-	    in
-	       get
-	    end
+	 if profileStack
+	    then
+	       let
+		  val {get, set, ...} =
+		     Property.getSetOnce
+		     (Label.plist,
+		      Property.initRaise ("frameProfileIndex", Label.layout))
+		  val _ = Vector.foreach (frameProfileIndices, set)
+	       in
+		  get
+	       end
+	 else fn _ => 0
       val _ =
 	 let
 	    open Control
@@ -253,15 +256,18 @@ fun toMachine (program: Ssa.Program.t) =
 				   offsets: int list,
 				   size: int}: int =
 	    let
-	       val profileIndex = frameProfileIndex label
 	       val foi = frameOffsetsIndex (IntSet.fromList offsets)
+	       val profileIndex = frameProfileIndex label
 	       fun new () =
 		  let
 		     val _ =
 			List.push (frameLayouts,
 				   {frameOffsetsIndex = foi,
 				    size = size})
-		     val _ = List.push (frameSources, profileIndex)
+		     val _ =
+			if profileStack
+			   then List.push (frameSources, profileIndex)
+			else ()
 		  in
 		     Counter.next frameLayoutsCounter
 		  end
@@ -1056,8 +1062,9 @@ fun toMachine (program: Ssa.Program.t) =
       val profileInfo =
 	 ProfileInfo.T {frameSources = frameSources,
 			labels = profileLabels,
-			sources = sources,
-			sourceSeqs = sourceSeqs}
+			sourceSeqs = sourceSeqs,
+			sourceSuccessors = sourceSuccessors,
+			sources = sources}
    in
       Machine.Program.T 
       {chunks = chunks,

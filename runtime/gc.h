@@ -405,8 +405,13 @@ typedef struct GC_state {
 	/* Each entry in sourceSeqs is a vector, whose first element is
          * a length, and subsequent elements index into sources.
 	 */
-	int **sourceSeqs;
+	uint **sourceSeqs;
 	uint sourceSeqsSize;
+	/* sourceSuccessors is an array of length sourcesSize.  Each entry is an
+	 * index into sourceSeqs that specifies the call-stack successors to this
+	 * source.
+	 */
+	uint *sourceSuccessors;
 	pointer stackBottom; /* The bottom of the stack in the current thread. */
  	uint startTime; /* The time when GC_init or GC_loadWorld was called. */
         /* The inits array should be NULL terminated, 
