@@ -11,13 +11,6 @@ struct
 
 val maxAliasNesting: int = 32
 
-fun checkFile (f: File.t, fail: string -> unit, k: unit -> unit) =
-   if not (File.doesExist f)
-      then fail (concat ["File ", f, " does not exist"])
-   else if not (File.canRead f)
-	   then fail (concat ["File ", f, " cannot be read"])
-	else k ()
-
 fun cm {cmfile: File.t} =
    let
       val files = ref []
@@ -46,18 +39,17 @@ fun cm {cmfile: File.t} =
 		       | SOME d =>
 			    OS.Path.mkRelative {path = f,
 						relativeTo = d}
-		   fun fail msg =
+		   fun region () =
 		      let
 			 val sourcePos =
 			    SourcePos.make {column = 0,
 					    file = finalize cmfile,
 					    line = 0}
 		      in
-			 Control.error
-			 (Region.make {left = sourcePos, right = sourcePos},
-			  Layout.str msg,
-			  Layout.empty)
+			 Region.make {left = sourcePos, right = sourcePos}
 		      end
+		   fun fail msg =
+		      Control.error (region (), Layout.str msg, Layout.empty)
 		   datatype z = datatype Parse.result
 		in
 		   case Parse.parse {cmfile = file} of
@@ -80,7 +72,7 @@ fun cm {cmfile: File.t} =
 				     fun sml () =
 					List.push (files, finalize m')
 				  in
-				     checkFile
+				     Control.checkFile
 				     (m, fail, fn () =>
 				      case File.suffix m of
 					 SOME "cm" =>

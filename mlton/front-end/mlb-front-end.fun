@@ -176,61 +176,60 @@ val lexAndParseString =
       fun lexAndParseProg {fileAbs: File.t, fileUse: File.t, 
 			   fail: String.t -> Ast.Program.t} =
 	 Ast.Basdec.Prog
-	 ({fileAbs = fileAbs, fileUse = fileUse}, Promise.delay (fn () =>
- 	  if not (File.doesExist fileUse)
-	     then fail "does not exist"
-	  else if not (File.canRead fileUse)
-	     then fail "cannot be read"
-	  else FrontEnd.lexAndParseFile fileUse))
+	 ({fileAbs = fileAbs, fileUse = fileUse},
+	  Promise.delay
+	  (fn () =>
+	   Control.checkFile
+	   (fileUse, fail, fn () => FrontEnd.lexAndParseFile fileUse)))
       and lexAndParseMLB {cwd: Dir.t, relativize: Dir.t option,
 			  seen: (File.t * File.t * Region.t) list,
 			  fileAbs: File.t, fileUse: File.t,
 			  fail: String.t -> Ast.Basdec.t, reg: Region.t} =
 	 Ast.Basdec.MLB
-	 ({fileAbs = fileAbs, fileUse = fileUse}, Promise.delay (fn () =>
-	  if not (File.doesExist fileUse)
-	     then fail "does not exist"
-	  else if not (File.canRead fileUse)
-	     then fail "cannot be read"
-	  else let
-		  val seen' = (fileAbs, fileUse, reg) :: seen
-	       in
-		  if List.exists (seen, fn (fileAbs', _, _) => 
-				  String.equals (fileAbs, fileAbs'))
-		     then (let open Layout
-			   in 
-			      Control.error 
-			      (reg, seq [str "Basis forms a cycle with ", 
-					 File.layout fileUse],
-			       align (List.map (seen', fn (_, f, r) => 
-						seq [Region.layout r, 
-						     str ": ", 
-						     File.layout f])))
-			      ; Ast.Basdec.empty
-			   end)
-		     else 
-			let
-			   val (_, basdec) =
-			      HashSet.lookupOrInsert
-			      (psi, String.hash fileAbs, fn (fileAbs', _) =>
-			       String.equals (fileAbs, fileAbs'), fn () =>
-			       let
-				  val cwd = OS.Path.dir fileAbs
-				  val basdec =
-				     Promise.delay
-				     (fn () =>
-				      wrapLexAndParse
-				      ({cwd = cwd,
-					relativize = relativize,
-					seen = seen'},
-				       lexAndParseFile, fileUse))
-			       in
-				  (fileAbs, basdec)
-			       end)
-			in
-			   Promise.force basdec
-			end
-	       end))
+	 ({fileAbs = fileAbs, fileUse = fileUse},
+	  Promise.delay
+	  (fn () =>
+	   Control.checkFile
+	   (fileUse, fail, fn () =>
+	    let
+	       val seen' = (fileAbs, fileUse, reg) :: seen
+	    in
+	       if List.exists (seen, fn (fileAbs', _, _) => 
+			       String.equals (fileAbs, fileAbs'))
+		  then (let open Layout
+			in 
+			   Control.error 
+			   (reg, seq [str "Basis forms a cycle with ", 
+				      File.layout fileUse],
+			    align (List.map (seen', fn (_, f, r) => 
+					     seq [Region.layout r, 
+						  str ": ", 
+						  File.layout f])))
+			   ; Ast.Basdec.empty
+			end)
+	       else 
+		  let
+		     val (_, basdec) =
+			HashSet.lookupOrInsert
+			(psi, String.hash fileAbs, fn (fileAbs', _) =>
+			 String.equals (fileAbs, fileAbs'), fn () =>
+			 let
+			    val cwd = OS.Path.dir fileAbs
+			    val basdec =
+			       Promise.delay
+			       (fn () =>
+				wrapLexAndParse
+				({cwd = cwd,
+				  relativize = relativize,
+				  seen = seen'},
+				 lexAndParseFile, fileUse))
+			 in
+			    (fileAbs, basdec)
+			 end)
+		  in
+		     Promise.force basdec
+		  end
+	    end)))
       and lexAndParseProgOrMLB {cwd, relativize, seen}
 	                       (fileOrig: File.t, reg: Region.t) =
 	 let
@@ -240,19 +239,7 @@ val lexAndParseString =
 			   relativize = relativize}
 	    fun fail default msg =
 	       let
-		  val () =
-		     let
-			open Layout
-		     in
-			Control.error
-			(reg,
-			 str (concat ["file ", fileOrig, " ",
-				      if fileOrig = fileUse
-					 then ""
-				      else concat [" (", fileUse, ")"],
-				      msg]),
-			 empty)
-		     end
+		  val () = Control.error (reg, Layout.str msg, Layout.empty)
 	       in
 		  default
 	       end

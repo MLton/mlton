@@ -1000,7 +1000,10 @@ fun commandLine (args: string list): unit =
 		  fun compile () =
 		     case start of
 			Place.CM => compileCM input
-		      | Place.SML => compileSml [input]
+		      | Place.SML =>
+			   Control.checkFile
+			   (input, fn s => raise Fail s,
+			    fn () => compileSml [input])
 		      | Place.MLB => compileMLB input
 		      | Place.Generated => compileCSO (input :: csoFiles)
 		      | Place.O => compileCSO (input :: csoFiles)

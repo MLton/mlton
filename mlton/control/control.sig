@@ -342,6 +342,7 @@ signature CONTROL =
       (*------------------------------------*)
       (*          Error Reporting           *)
       (*------------------------------------*)
+      val checkFile: File.t * (string -> 'a) * (unit -> 'a) -> 'a
       val checkForErrors: string -> unit
       val error: Region.t * Layout.t * Layout.t -> unit
       val errorStr: Region.t * string -> unit

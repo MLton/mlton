@@ -952,6 +952,17 @@ fun checkForErrors (name: string) =
       then die (concat ["compilation aborted: ", name, " reported errors"])
    else ()
 
+fun checkFile (f: File.t, error: string -> 'a, k: unit -> 'a): 'a =
+   let
+      fun check (test, msg, k) =
+	 if not (test f)
+	    then error (concat ["File ", f, " ", msg])
+	 else k ()
+   in
+      check (File.doesExist, "does not exist", fn () =>
+	     check (File.canRead, "cannot be read", k))
+   end
+
 (*---------------------------------------------------*)
 (*                  Compiler Passes                  *)
 (*---------------------------------------------------*)
