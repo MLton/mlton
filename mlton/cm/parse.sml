@@ -42,6 +42,12 @@ fun parse {cmfile: string} =
 			      fsigdef = no,
 			      symval = fn _ => NONE}
 		 (cmfile, ins)
+	      val lex =
+		 fn m =>
+		 lex m
+		 handle Lexer.LexicalError (_, s) => bad s
+		      | Lexer.SyntaxError (_, s) => bad s
+		      | Lexer.UserError (_, s) => bad s
 	      val lookahead: Lexer.token list ref = ref []
 	      fun normal () =
 		 case !lookahead of
