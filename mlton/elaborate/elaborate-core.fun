@@ -950,13 +950,18 @@ structure Cexp =
 	 else make (EnterLeave (e, si ()), ty e)
    end
 
+(* This property must be outside of elaborateDec, since we don't want it to
+ * be created for each call to elaborateDec.  If it were, then property lists
+ * on variables would be littered with lots of these.
+ *)
+val {get = recursiveTargs: Var.t -> (unit -> Type.t vector) option ref,
+     ...} =
+   Property.get (Var.plist, Property.initFun (fn _ => ref NONE))
+   
 fun elaborateDec (d, {env = E,
 		      lookupConstant: string * ConstType.t -> CoreML.Const.t,
 		      nest}) =
    let
-      val {get = recursiveTargs: Var.t -> (unit -> Type.t vector) option ref,
-	   ...} =
-	 Property.get (Var.plist, Property.initFun (fn _ => ref NONE))
       fun recursiveFun () =
 	 let
 	    val boundRef: (unit -> Tyvar.t vector) option ref = ref NONE
