@@ -697,7 +697,7 @@ fun profile program =
 					 shouldSplit = shouldSplit,
 					 statements = statements}
 				     datatype z = datatype ProfileExp.t
-				     val (pushes', keep, leaves) =
+				     val (pushes, keep, leaves) =
 					case ps of
 					   Enter si =>
 					      let
@@ -710,7 +710,7 @@ fun profile program =
 					      (case pushes of
 						  [] =>
 						     Error.bug "unmatched Leave"
-						| p :: pushes' =>
+						| p :: pushes =>
 						     let
 							val (keep, si', leaves) =
 							   case p of
@@ -725,7 +725,7 @@ fun profile program =
 								  leaves)
 						     in
 							if SourceInfo.equals (si, si')
-							   then (pushes',
+							   then (pushes,
 								 keep,
 								 leaves)
 							else Error.bug "mismatched Leave"
@@ -756,7 +756,7 @@ fun profile program =
 				      kind = kind,
 				      label = label,
 				      leaves = leaves,
-				      pushes = pushes',
+				      pushes = pushes,
 				      statements = statements}
 				  end
 			     | _ =>
