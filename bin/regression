@@ -83,7 +83,7 @@ for f in `ls *.sml`; do
 			fi
 		fi
 		if [ ! -r $f.nonterm -a $cross = 'no' -a -x $f ]; then
-			./$f >$tmp 2>&1
+			( ./$f || echo 'Nonzero exit status.' ) >$tmp 2>&1 
 			if [ -r $f.ok ] && ! diff $f.ok $tmp ; then
 				echo "difference with $flags"
 			fi
