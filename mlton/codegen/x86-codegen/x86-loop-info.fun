@@ -58,10 +58,6 @@ struct
 
 	fun addEdge edge
 	  = ignore (Graph.addEdge (G, edge))
-	fun addEdge' edge
-	  = if Node.hasEdge edge
-	      then ()
-	      else addEdge edge
 
 	val _
 	  = List.foreach

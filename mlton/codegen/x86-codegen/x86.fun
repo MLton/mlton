@@ -998,17 +998,13 @@ struct
 				 size = size2})
 	   | (U {immBase = SOME immBase1, memBase = NONE,
 		 immIndex = immIndex1, memIndex = SOME memIndex1,
-		 scale = scale1, size = size1, ...},
+		 size = size1, ...},
 	      U {immBase = SOME immBase2, memBase = NONE,
 		 immIndex = immIndex2, memIndex = SOME memIndex2,
-		 scale = scale2, size = size2, ...})
+		 size = size2, ...})
 	   => not (Immediate.eq(immBase1, immBase2))
 	      andalso
 	      (not (eq(memIndex1, memIndex2))
-(*
-	       orelse
-	       not (Scale.eq(scale1, scale2))
-*)
 	       orelse
 	       mayAliasImmIndex ({immIndex = immIndex1,
 				  size = size1},
@@ -1028,17 +1024,13 @@ struct
 				 size = size2})
 	   | (U {immBase = NONE, memBase = SOME memBase1,
 		 immIndex = immIndex1, memIndex = SOME memIndex1,
-		 scale = scale1, size = size1, ...},
+		 size = size1, ...},
 	      U {immBase = NONE, memBase = SOME memBase2,
 		 immIndex = immIndex2, memIndex = SOME memIndex2,
-		 scale = scale2, size = size2, ...})
+		 size = size2, ...})
 	   => not (eq(memBase1, memBase2))
 	      orelse
 	      not (eq(memIndex1, memIndex2))
-(*
-	      orelse
-	      not (Scale.eq(scale1, scale2))
-*)
 	      orelse
 	      mayAliasImmIndex ({immIndex = immIndex1,
 				 size = size1},
@@ -1095,17 +1087,12 @@ struct
 		else NONE
 	   | (U {immBase = SOME immBase1, memBase = NONE,
 		 immIndex = immIndex1, memIndex = SOME memIndex1,
-		 scale = scale1, size = size1, ...},
+		 size = size1, ...},
 	      U {immBase = SOME immBase2, memBase = NONE,
 		 immIndex = immIndex2, memIndex = SOME memIndex2,
-		 scale = scale2, size = size2, ...})
+		 size = size2, ...})
 	   => if Immediate.eq(immBase1, immBase2)
-		then if (not (eq(memIndex1, memIndex2))
-(*
-			 orelse
-			 not (Scale.eq(scale1, scale2))
-*)
-			 )
+		then if not (eq(memIndex1, memIndex2))
 		       then SOME EQUAL
 		       else mayAliasOrdImmIndex ({immIndex = immIndex1,
 						  size = size1},
@@ -1126,18 +1113,13 @@ struct
 					   size = size2})
 	   | (U {immBase = NONE, memBase = SOME memBase1,
 		 immIndex = immIndex1, memIndex = SOME memIndex1,
-		 scale = scale1, size = size1, ...},
+		 size = size1, ...},
 	      U {immBase = NONE, memBase = SOME memBase2,
 		 immIndex = immIndex2, memIndex = SOME memIndex2,
-		 scale = scale2, size = size2, ...})
+		 size = size2, ...})
 	   => if (not (eq(memBase1, memBase2))
 		  orelse
-		  not (eq(memIndex1, memIndex2))
-(*
-		  orelse
-		  not (Scale.eq(scale1, scale2))
-*)
-		  )
+		  not (eq(memIndex1, memIndex2)))
 		then SOME EQUAL
 		else mayAliasOrdImmIndex ({immIndex = immIndex1,
 					   size = size1},

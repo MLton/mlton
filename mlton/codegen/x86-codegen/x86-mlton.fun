@@ -30,7 +30,7 @@ struct
   fun prim {prim : Prim.t,
 	    args : (Operand.t * Size.t) vector,
 	    dsts : (Operand.t * Size.t) vector,
-	    transInfo as {live, liveInfo, ...} : transInfo}
+	    transInfo = {...} : transInfo}
     = let
 	val primName = Prim.toString prim
 	datatype z = datatype Prim.Name.t
@@ -54,13 +54,6 @@ struct
 	  = (Vector.sub (args, 0), Vector.sub (args, 1), 
 	     Vector.sub (args, 2), Vector.sub (args, 3))
 	    handle _ => Error.bug "applyPrim: getSrc4"
-
-	fun unimplemented s
-	  = AppendList.fromList
-	    [Block.mkBlock'
-	     {entry = NONE,
-	      statements = [Assembly.comment ("UNIMPLEMENTED PRIM: " ^ s)],
-	      transfer = NONE}]
 
 	fun mov ()
 	  = let
@@ -426,53 +419,6 @@ struct
 			    {entry = NONE,	
 			     statements
 			     = [Assembly.instruction_cmp
-				{src1 = src1,
-				 src2 = src2,
-				 size = src1size},
-				Assembly.instruction_setcc
-				{condition = condition,
-				 dst = dst,
-				 size = dstsize}],
-			     transfer = NONE}]
-	    end
-
-	fun test condition
-	  = let
-	      val (dst,dstsize) = getDst1 ()
-	      val ((src1,src1size),
-		   (src2,src2size)) = getSrc2 ()
-	      val _ 
-		= Assert.assert
-		  ("applyPrim: cmp, src1size/src2size",
-		   fn () => src1size = src2size)
-	    in
-	      (* Can't have an immediate in src1 position,
-	       * so reverse the srcs and reverse the condition.
-	       *
-	       * This won't fix an immediate in both positions.
-	       * Either constant folding eliminated it
-	       * or the register allocator will raise an error.
-	       *)
-	      case Operand.deImmediate src1
-		of SOME _ => AppendList.fromList
-		             [Block.mkBlock'
-			      {entry = NONE,
-			       statements
-			       = [Assembly.instruction_test
-				  {src1 = src2,
-				   src2 = src1,
-				   size = src1size},
-				  Assembly.instruction_setcc
-				  {condition 
-				   = Instruction.condition_reverse condition,
-				   dst = dst,
-				   size = dstsize}],
-			       transfer = NONE}]
-		 | NONE => AppendList.fromList
-			   [Block.mkBlock'
-			    {entry = NONE,
-			     statements
-			     = [Assembly.instruction_test
 				{src1 = src1,
 				 src2 = src2,
 				 size = src1size},
@@ -1594,7 +1540,7 @@ struct
 	     frameInfo,
 	     func,
 	     return: x86.Label.t option,
-	     transInfo = {live, liveInfo, ...}: transInfo}
+	     transInfo = {...}: transInfo}
     = let
 	val CFunction.T {convention, name, ...} = func
 	val name =
@@ -1819,59 +1765,6 @@ struct
 		       dst = dst,
 		       size = dstsize}],
 		     condition)
-	    end
-
-	fun neg64 ()
-	  = let
-	      val ((dst1, dst1size), (dst2, dst2size)) = getDst2 ()
-	      val ((src1, src1size), (src2, src2size)) = getSrc2 ()
-	      val _ = Assert.assert
-		      ("arith: neg64, dst1size/dst2size/src1size/src2size",
-		       fn () => src1size = dst1size andalso
-		                src2size = dst2size andalso
-				dst1size = dst2size)
-	      val overflowCheck = Label.newString "overflowCheck"
-	      val _ = x86Liveness.LiveInfo.setLiveOperands
-		      (liveInfo, overflowCheck, dst1::(live overflow))
-	    in
-	       AppendList.fromList
-	       [x86.Block.mkBlock'
-		{entry = NONE,
-		 statements = [Assembly.instruction_mov
-			       {dst = dst1,
-				src = src1,
-				size = dst1size},
-			       Assembly.instruction_mov
-			       {dst = dst2,
-				src = src2,
-				size = dst2size},
-			       Assembly.instruction_unal 
-			       {oper = x86.Instruction.NEG,
-				dst = dst1,
-				size = dst1size},
-			       Assembly.instruction_binal
-			       {dst = dst2,
-				oper = Instruction.ADC,
-				src = Operand.immediate_const_int 0,
-				size = dst2size},
-			       Assembly.instruction_unal 
-			       {oper = x86.Instruction.NEG,
-				dst = dst2,
-				size = dst2size}],
-		 transfer = SOME (x86.Transfer.iff
-				  {condition = x86.Instruction.O,
-				   truee = overflowCheck,
-				   falsee = success})},
-		x86.Block.mkBlock'
-		{entry = SOME (x86.Entry.jump {label = overflowCheck}),
-		 statements = [Assembly.instruction_cmp
-			       {src1 = dst1,
-				src2 = Operand.immediate_const_int 0,
-				size = dst1size}],
-		 transfer = SOME (x86.Transfer.iff
-				  {condition = x86.Instruction.E,
-				   truee = overflow,
-				   falsee = success})}]
 	    end
 
 	fun neg64 ()
