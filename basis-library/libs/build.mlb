@@ -220,7 +220,7 @@ primitive.mlb
 ../mlton/socket.sig
 ../mlton/socket.sml
 ../mlton/syslog.sig
-../mlton/syslog.sml
+ann allowImport true in ../mlton/syslog.sml end
 ../mlton/vector.sig
 ../mlton/weak.sig
 ../mlton/weak.sml

@@ -1,6 +1,7 @@
 
 ann 
    allowConstant true, 
+   allowImport true,
    allowPrim true, 
    allowRebindEquals true,
    deadCode true,

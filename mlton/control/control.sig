@@ -21,6 +21,11 @@ signature CONTROL =
       datatype align = Align4 | Align8
       val align: align ref
 
+      val allowExportAnn : bool ref
+      val allowExportDef : bool ref
+      val allowImportAnn : bool ref
+      val allowImportDef : bool ref
+
       val atMLtons: string vector ref
 
       val basisLibs: string list

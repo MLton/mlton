@@ -125,8 +125,14 @@ fun makeOptions {usage} =
 			   | "8" => Align8
 			   | _ => usage (concat ["invalid -align flag: ",
 						 s]))))),
+       (Expert, "allow-export", " {false|true}",
+	"allow _export expression in program",
+	boolRef allowExportDef),
+       (Expert, "allow-import", " {false|true}",
+	"allow _import expression in program",
+	boolRef allowImportDef),
        (Expert, "basis", " {2002|1997|...}",
-	"select basis library to prefix to the program",
+	"select Basis Library revision to prefix to the program",
 	SpaceString (fn s =>
 		     let
 			val () = warnDeprecated "basis"
@@ -185,7 +191,9 @@ fun makeOptions {usage} =
 	SpaceString 
 	(fn s =>
 	 (case s of
-	     "deadCode" => deadCodeAnn := false
+	     "allowExport" => allowExportAnn := false
+	   | "allowImport" => allowImportAnn := false
+	   | "deadCode" => deadCodeAnn := false
 	   | "sequenceUnit" => sequenceUnitAnn := false
 	   | "warnMatch" => warnMatchAnn := false
 	   | "warnUnused" => warnUnusedAnn := false
@@ -204,7 +212,9 @@ fun makeOptions {usage} =
 	SpaceString 
 	(fn s =>
 	 (case s of
-	     "deadCode" => deadCodeAnn := true
+	     "allowExport" => allowExportAnn := true
+	   | "allowImport" => allowImportAnn := true
+	   | "deadCode" => deadCodeAnn := true
 	   | "sequenceUnit" => sequenceUnitAnn := true
 	   | "warnMatch" => warnMatchAnn := true
 	   | "warnUnused" => warnUnusedAnn := true

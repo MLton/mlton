@@ -106,7 +106,7 @@ for f in `ls *.sml`; do
 		no)
 			mlb="/tmp/$$.mlb"
 			echo "\$(SML_LIB)/basis/basis.mlb
-                              ann allowOverload true
+                              ann allowExport true, allowImport true, allowOverload true
                               in $src/regression/$f.sml end" >$mlb
 			$mlton $flags $extraFlags -output $f $mlb
 			rm $mlb

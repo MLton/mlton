@@ -38,22 +38,31 @@ struct
 	 let
 	    val restore =
 	       (make (allowConstant, false)) o
-	       (make (allowExport, true)) o
-	       (make (allowImport, true)) o
+	       (make' (allowExport, fn () =>
+		       if !Control.allowExportAnn
+			  then !Control.allowExportDef
+			  else true)) o
+	       (make' (allowImport, fn () =>
+		       if !Control.allowImportAnn
+			  then !Control.allowImportDef
+			  else true)) o
 	       (make (allowOverload, false)) o
 	       (make (allowPrim, true)) o
 	       (make (allowRebindEquals, false)) o
 	       (make (deadCode, false)) o
 	       (make (forceUsed, 0)) o
 	       (make' (sequenceUnit, fn () => 
-		       !Control.sequenceUnitAnn 
-		       andalso !Control.sequenceUnitDef)) o
+		       if !Control.sequenceUnitAnn 
+			  then !Control.sequenceUnitDef
+			  else false)) o
 	       (make' (warnMatch, fn () => 
-		       !Control.warnMatchAnn 
-		       andalso !Control.warnMatchDef)) o
+		       if !Control.warnMatchAnn 
+			  then !Control.warnMatchDef
+			  else true)) o
 	       (make' (warnUnused, fn () => 
-		       !Control.warnUnusedAnn 
-		       andalso !Control.warnUnusedDef)) o
+		       if !Control.warnUnusedAnn 
+			  then !Control.warnUnusedDef
+			  else false)) o
 	       (fn () => ())
 	 in
 	    DynamicWind.wind (f, restore)
@@ -104,9 +113,9 @@ struct
 		   ["allowConstant", b] =>
 		      setBool (allowConstant, b)
 		 | ["allowExport", b] =>
-		      setBool (allowExport, b)
+		      setBool'' (!Control.allowExportAnn, allowExport, b)
 		 | ["allowImport", b] =>
-		      setBool (allowImport, b)
+		      setBool'' (!Control.allowImportAnn, allowImport, b)
 		 | ["allowOverload", b] =>
 		      setBool (allowOverload, b)
 		 | ["allowPrim", b] =>

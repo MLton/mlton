@@ -26,6 +26,20 @@ val align = control {name = "align",
 		     default = Align4,
 		     toString = Align.toString}
 
+val allowExportAnn = control {name = "allow _export (annotation)",
+			      default = true,
+			      toString = Bool.toString}
+val allowExportDef = control {name = "allow _export",
+			      default = false,
+			      toString = Bool.toString}
+val allowImportAnn = control {name = "allow _import (annotation)",
+			      default = true,
+			      toString = Bool.toString}
+val allowImportDef = control {name = "allow _import",
+			      default = false,
+			      toString = Bool.toString}
+
+
 val atMLtons = control {name = "atMLtons",
 			default = Vector.new0 (),
 			toString = fn v => Layout.toString (Vector.layout
