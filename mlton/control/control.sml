@@ -902,10 +902,10 @@ fun pass {name: string,
 
 (* Code for profiling each pass. *)
 val pass =
+   fn z as {name, ...} =>
    if true
-      then pass
+      then pass z
    else
-      fn z as {name, ...} =>
       let
 	 open MLton.Profile
 	 val d = Data.malloc ()
