@@ -14,132 +14,145 @@
  *)
 
 structure Unix: UNIX =
-  struct
+   struct
+      open Posix
 
-    structure OSP = OS_Process
-    structure PP = Posix.Process
-    structure PPE = Posix.ProcEnv
-    structure PFS = Posix.FileSys
-    structure PIO = Posix.IO
-    structure SS = Substring
+      structure Status = Primitive.Status
 
-    structure Status = Primitive.Status
+      type signal = Signal.signal
+      datatype exit_status = datatype Process.exit_status
+      val fromStatus = Process.fromStatus
 
-    type signal = Posix.Signal.signal
-    datatype exit_status = datatype Posix.Process.exit_status
-    val fromStatus = Posix.Process.fromStatus
+      structure Mask = MLtonSignal.Mask
 
-    structure Mask = MLtonSignal.Mask
+      fun ('a, 'b) protect (f: 'a -> 'b) (x: 'a): 'b =
+	 let
+	    val _ = Mask.block Mask.all
+	 in
+	    DynamicWind.wind (fn () => f x, fn () => Mask.unblock Mask.all)
+	 end
 
-    fun ('a, 'b) protect(f: 'a -> 'b) (x: 'a): 'b =
-       let val _ = Mask.block Mask.all
-       in DynamicWind.wind(fn () => f x, fn () => Mask.unblock Mask.all)
-       end
-
-    datatype 'a str = FD of PFS.file_desc | STR of 'a * ('a -> unit)
-    fun close str =
-      case str of
-	FD file_desc => PIO.close file_desc
-      | STR (str, close) => close str
+      datatype 'a str =
+	 FD of FileSys.file_desc
+	| STR of 'a * ('a -> unit)
+	
+      fun close str =
+	 case str of
+	    FD fd => IO.close fd
+	  | STR (str, close) => close str
       
-    datatype ('a, 'b) proc = PROC of {pid: PP.pid,
-				      status: OSP.status option ref,
-				      ins: 'a str ref,
-				      outs: 'b str ref}
+      datatype ('a, 'b) proc =
+	 PROC of {ins: 'a str ref,
+		  outs: 'b str ref,
+		  pid: Process.pid,
+		  status: OS.Process.status option ref}
 
-    fun executeInEnv (cmd, argv, env) =
-       if not(PFS.access(cmd, [PFS.A_EXEC]))
-	  then PosixError.raiseSys PosixError.noent
-       else
-	  let
-	     val p1 = PIO.pipe ()
-	     val p2 = PIO.pipe ()
-	     fun closep () = (PIO.close (#outfd p1); 
-			      PIO.close (#infd p1);
-			      PIO.close (#outfd p2); 
-			      PIO.close (#infd p2))
-	     val base = SS.string(SS.taker (fn c => c <> #"/") (SS.full cmd))
-	     fun startChild () =
-		case protect PP.fork () of
-		   SOME pid => pid (* parent *)
-		 | NONE => let
-			      val oldin = #infd p1
-			      val oldout = #outfd p2
-			      val newin = PFS.stdin
-			      val newout = PFS.stdout
-			   in
-			      PIO.close (#outfd p1);
-			      PIO.close (#infd p2);
-			      if (oldin = newin) then ()
-			      else (PIO.dup2{old = oldin, new = newin};
-				    PIO.close oldin);
-			      if (oldout = newout) then ()
-			      else (PIO.dup2{old = oldout, new = newout};
-				    PIO.close oldout);
-			      PP.exece (cmd, base :: argv, env)
-			   end
-	     (* end case *)
-	     val _ = TextIO.flushOut TextIO.stdOut
-	     val pid = (startChild ()) handle ex => (closep(); raise ex)
-          in
-	     (* close the child-side fds *)
-	     PIO.close (#outfd p2);
-	     PIO.close (#infd p1);
-	     (* set the fds close on exec *)
-	     PIO.setfd (#infd p2, PIO.FD.flags [PIO.FD.cloexec]);
-	     PIO.setfd (#outfd p1, PIO.FD.flags [PIO.FD.cloexec]);
-	     PROC {
-		   pid = pid,
-		   status = ref NONE,
-		   ins = ref (FD (#infd p2)),
-		   outs = ref (FD (#outfd p1))
-		   }
-          end
+      fun executeInEnv (cmd, argv, env) =
+	 if not (FileSys.access (cmd, [FileSys.A_EXEC]))
+	    then PosixError.raiseSys PosixError.noent
+	 else
+	    let
+	       val p1 = IO.pipe ()
+	       val p2 = IO.pipe ()
+	       fun closep () =
+		  (IO.close (#outfd p1)
+		   ; IO.close (#infd p1)
+		   ; IO.close (#outfd p2)
+		   ; IO.close (#infd p2))
+	       val base =
+		  Substring.string (Substring.taker (fn c => c <> #"/")
+				    (Substring.full cmd))
+	       fun startChild () =
+		  case protect Process.fork () of
+		     SOME pid => pid (* parent *)
+		   | NONE =>
+			let
+			   val oldin = #infd p1
+			   val oldout = #outfd p2
+			   val newin = FileSys.stdin
+			   val newout = FileSys.stdout
+			in
+			   IO.close (#outfd p1)
+			   ; IO.close (#infd p2)
+			   ; if oldin = newin
+				then ()
+			     else (IO.dup2{old = oldin, new = newin}
+				   ; IO.close oldin)
+				; if oldout = newout
+				     then ()
+				  else (IO.dup2{old = oldout, new = newout}
+					; IO.close oldout)
+				     ; Process.exece (cmd, base :: argv, env)
+			end
+	       val _ = TextIO.flushOut TextIO.stdOut
+	       val pid = (startChild ()) handle ex => (closep(); raise ex)
+	       fun cloexec fd = IO.setfd (fd, IO.FD.flags [IO.FD.cloexec])
+	    in
+	       IO.close (#outfd p2)
+	       ; IO.close (#infd p1)
+	       ; cloexec (#infd p2)
+	       ; cloexec (#outfd p1)
+	       ; PROC {ins = ref (FD (#infd p2)),
+		       outs = ref (FD (#outfd p1)),
+		       pid = pid,
+		       status = ref NONE}
+	    end
 
-    fun execute (cmd, argv) = executeInEnv (cmd, argv, PPE.environ())
+      fun execute (cmd, argv) = executeInEnv (cmd, argv, ProcEnv.environ ())
 
-    local
-      fun mkInstreamOf (newIn, closeIn) (PROC {ins, ...}) =
-	case !ins of
-	  FD file_desc => let val str' = newIn (file_desc, "<process>")
-			  in ins := STR (str', closeIn); str'
-			  end
-	| STR (str, _) => str
-      fun mkOutstreamOf (newOut, closeOut) (PROC {outs, ...}) =
-	case !outs of
-	  FD file_desc => let val str' = newOut (file_desc, "<process>")
-			  in outs := STR (str', closeOut); str'
-			  end
-	| STR (str, _) => str
-    in
-      fun textInstreamOf proc =
-	 mkInstreamOf (TextIO.newIn, TextIO.closeIn) proc
-      fun textOutstreamOf proc =
-	 mkOutstreamOf (TextIO.newOut, TextIO.closeOut) proc
-      fun binInstreamOf proc =
-	 mkInstreamOf (BinIO.newIn, BinIO.closeIn) proc
-      fun binOutstreamOf proc =
-	 mkOutstreamOf (BinIO.newOut, BinIO.closeOut) proc
-    end
-    fun streamsOf pr = (textInstreamOf pr, textOutstreamOf pr)
+      local
+	 fun mkInstreamOf (newIn, closeIn) (PROC {ins, ...}) =
+	    case !ins of
+	       FD fd =>
+		  let
+		     val str = newIn (fd, "<process>")
+		     val () = ins := STR (str, closeIn)
+		  in
+		     str
+		  end
+	     | STR (str, _) => str
+	 fun mkOutstreamOf (newOut, closeOut) (PROC {outs, ...}) =
+	    case !outs of
+	       FD fd =>
+		  let
+		     val str = newOut (fd, "<process>")
+		     val () = outs := STR (str, closeOut)
+		  in
+		     str
+		  end
+	     | STR (str, _) => str
+      in
+	 fun textInstreamOf proc =
+	    mkInstreamOf (TextIO.newIn, TextIO.closeIn) proc
+	 fun textOutstreamOf proc =
+	    mkOutstreamOf (TextIO.newOut, TextIO.closeOut) proc
+	 fun binInstreamOf proc =
+	    mkInstreamOf (BinIO.newIn, BinIO.closeIn) proc
+	 fun binOutstreamOf proc =
+	    mkOutstreamOf (BinIO.newOut, BinIO.closeOut) proc
+      end
 
-    fun reap (PROC{pid, status, ins, outs}) =
-      case !status of
-	SOME status => status
-      | NONE => let
+      fun streamsOf pr = (textInstreamOf pr, textOutstreamOf pr)
+
+      fun reap (PROC {pid, status, ins, outs}) =
+	 case !status of
+	    NONE =>
+	       let
 		  val _ = close (!ins)
 		  val _ = close (!outs)
 		  (* protect is probably too much; typically, one
 		   * would only mask SIGINT, SIGQUIT and SIGHUP
 		   *)
-		  val st = protect OSP.wait pid
+		  val st = protect OS.Process.wait pid
 		  val _ = status := SOME st
-		in
+	       in
 		  st
-		end
+	       end
+	  | SOME status => status
 
-    fun kill (PROC{pid, ...}, signal) = PP.kill (PP.K_PROC pid, signal)
+      fun kill (PROC {pid, ...}, signal) =
+	 Process.kill (Process.K_PROC pid, signal)
 
-    fun exit (w: Word8.word): 'a =
-       OSP.exit (Status.fromInt (Word8.toInt w))
-  end (* structure Unix *)
+      fun exit (w: Word8.word): 'a =
+	 OS.Process.exit (Status.fromInt (Word8.toInt w))
+   end
