@@ -15,15 +15,16 @@ functor FixWord (W: WORD) =
       val toInt = toLargeInt
       val toIntX = toLargeIntX
       val fromInt = fromLargeInt
-      val toLargeInt: word -> LargeInt.int =
-	 fn _ => raise Fail "Word.toLargeInt"
-      val toLargeIntX: word -> LargeInt.int =
-	 fn _ => raise Fail "Word.toLargeIntX"
-
-      (* Bug in SML/NJ -- they use lower instead of upper case. *)
-      val toUpper = Pervasive.String.translate (Char.toString o Char.toUpper)
-      fun fmt r i = toUpper (W.fmt r i)
-      val toString = toUpper o toString	 
+      val fromLargeInt = fromInt o Int.fromLarge
+      val toLargeInt = Int.toLarge o toInt
+      val toLargeIntX: word -> LargeInt.int = Int.toLarge o toIntX
+      local
+	 (* Bug in SML/NJ -- they use lower instead of upper case. *)
+	 val toUpper = Pervasive.String.translate (Char.toString o Char.toUpper)
+      in
+	 fun fmt r i = toUpper (W.fmt r i)
+	 val toString = toUpper o toString
+      end
    end
 
 structure Word8 = FixWord (Pervasive.Word8)
@@ -43,6 +44,7 @@ structure Word =
 	       then fromInt (IntInf.toInt n)
 	    else
 	       highBit + fromInt (IntInf.toInt (IntInf.mod (n, highBitInt)))
+
 	 fun toLargeInt (w: word): IntInf.int =
 	    if w < highBit
 	       then IntInf.fromInt (toInt w)
