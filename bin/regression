@@ -32,7 +32,7 @@ PATH=.:$PATH
 
 (
 	cd $src/regression
-	for f in `ls *.sml`
+	for f in 22.sml 23.sml #`ls *.sml`
 	do
 		f=`basename $f .sml`
 		case "$f" in
@@ -44,7 +44,7 @@ PATH=.:$PATH
 			$mlton -type-check true $f.sml
 			if [ $? -ne 0 ]; then
 				echo "compilation of $f failed"
-			else
+			elif [ ! -r $f.nonterm ]; then
 				$f >$tmp 2>&1
 				if [ -r $f.ok ]; then
 					diff $f.ok $tmp

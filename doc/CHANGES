@@ -1,5 +1,11 @@
 Here are the changes from version 20010806 to version VERSION.
 
+* 2000-8-17
+  - Fixed bug in removeUnused optimzation that caused the following program to
+    fail to compile.
+	fun f l = case l of [] => f l | _ :: l => f l
+	val _ = f [13]
+
 * 2000-8-7
   - MLton.Socket.shutdownWrite flushes the outstream.
 

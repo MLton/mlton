@@ -279,7 +279,10 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
 		  NONE => none ()
 		| SOME j =>
 		     if 0 = Vector.length cases
-			then Jump {dst = j, args = Vector.new0 ()}
+			then
+			   if ! (#visited (jumpInfo j))
+			      then Jump {dst = j, args = Vector.new0 ()}
+			   else Bug
 		     else
 			let
 			   val (c, _) = Vector.sub (cases, 0)
