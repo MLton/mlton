@@ -37,7 +37,7 @@ dir=`dirname $0`
 src=`cd $dir/.. && pwd`
 bin="$src/build/bin"
 mlton="$bin/mlton"
-flags='-type-check true -native true -gc-check first'
+flags='-g -type-check true -native true -gc-check limit'
 if [ $cross = 'yes' ]; then
 	flags="$flags -host $crossHost"
 fi
