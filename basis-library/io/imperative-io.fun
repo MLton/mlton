@@ -544,7 +544,7 @@ fun lookahead (ib as In {buf, first, last, ...}) =
       val l = !last
    in
       if f < l
-	 then SOME (A.sub (buf, f))
+	 then SOME (A.unsafeSub (buf, f))
       else
 	 let
 	    val In {state, ...} = ib
@@ -591,10 +591,11 @@ fun mkInbuffer' {reader, closed, bufferContents} =
 		 val (state, last) =
 		    case bufferContents of
 		       NONE => (ref (Open {eos = false}), ref 0)
-		     | SOME v => if V.length v = 0
-				    then (ref (Open {eos = true}), ref 0)
-				 else (V.appi (fn (i, c) => A.update (buf, i, c)) v;
-				       (ref (Open {eos = false}), ref (V.length v)))
+		     | SOME v =>
+			  if V.length v = 0
+			     then (ref (Open {eos = true}), ref 0)
+			  else (V.appi (fn (i, c) => A.update (buf, i, c)) v
+				; (ref (Open {eos = false}), ref (V.length v)))
 	      in
 		 (state, first, last, buf)
 	      end

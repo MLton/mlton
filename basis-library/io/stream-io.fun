@@ -537,23 +537,24 @@ functor StreamIOExtra
 
       (* input1' will move past a temporary end of stream *)
       fun input1' (is as In {pos, buf as Buf {inp, next, ...}, ...}) =
-	let
-	  val e = V.sub (inp, pos)
-	  val is' = updatePos (is, pos + 1)
-	in
-	  (SOME e, is')
-	end
-        handle Subscript =>
-	  let
-	    fun doit next =
-	      case next of
-		Link {buf} => input1' (updateBufBeg (is, buf))
-	      | Eos {buf} => (NONE, updateBufBeg (is, buf))
-	      | End => doit (extendB "input1" is)
-	      | _ => (NONE, is)
-	  in
-	    doit (!next)
-	  end
+	 case SOME (V.sub (inp, pos)) handle Subscript => NONE of
+	    NONE =>
+	       let
+		  fun doit next =
+		     case next of
+			Link {buf} => input1' (updateBufBeg (is, buf))
+		      | Eos {buf} => (NONE, updateBufBeg (is, buf))
+		      | End => doit (extendB "input1" is)
+		      | _ => (NONE, is)
+	       in
+		  doit (!next)
+	       end
+	  | SOME e =>
+	       let
+		  val is' = updatePos (is, pos + 1)
+	       in
+		  (SOME e, is')
+	       end
 		   
       (* input1 will never move past a temporary end of stream *)
       fun input1 is =
@@ -586,11 +587,12 @@ functor StreamIOExtra
 		  fun findLine (v, i) =
 		     let
 			fun loop i =
-			   if i >= V.length v
-			      then NONE
-			      else if isLine (V.sub (v, i))
-				      then SOME (i + 1)
-				      else loop (i + 1)
+			   case SOME (V.sub (v, i)) handle Subscript => NONE of
+			      NONE => NONE
+			    | SOME c => 
+				 if isLine c
+				    then SOME (i + 1)
+				 else loop (i + 1)
 		     in
 			loop i
 		     end
