@@ -39,6 +39,6 @@ structure Main =
 			val _ = if w <> 0w0 then raise Fail "bug" else ()
 		     in loop (n - 1)
 		     end
-	 in loop 50
+	 in loop 1500
 	 end
    end
