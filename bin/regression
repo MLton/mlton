@@ -89,7 +89,7 @@ fi
 for f in `ls *.sml`; do
 	f=`basename $f .sml`
 	case "$f" in
-	mlton.overload|serialize)
+	serialize)
 		echo "skipping $f"
 	;;
 	*)
@@ -104,7 +104,12 @@ for f in `ls *.sml`; do
 		esac
 		case "$runOnly" in
 		no)
-			$mlton $flags $extraFlags $f.sml
+			mlb="/tmp/$$.mlb"
+			echo "\$(SML_LIB)/basis/basis.mlb
+                              ann allowOverload true
+                              in $src/regression/$f.sml end" >$mlb
+			$mlton $flags $extraFlags -output $f $mlb
+			rm $mlb
 			if [ "$?" -ne '0' ] || 
 				[ "$cross" = 'no' -a ! -x "$f" ]; then
 				compFail $f
