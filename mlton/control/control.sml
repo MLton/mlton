@@ -952,7 +952,7 @@ local
 		     String.dropPrefix (msg, 1),
 		     "."])
 	 in
-	    outputl (align [seq [str (concat [kind, ": "]), str p, str ":"],
+	    outputl (align [seq [str (concat [kind, ": "]), str p, str "."],
 			    indent (align [msg, extra], 3)],
 		     Out.error)
       end
