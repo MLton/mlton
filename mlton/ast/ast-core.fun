@@ -566,7 +566,7 @@ structure Exp =
 		 | _ => NONE)
 	 in
 	    make
-	    (if Vector.length ds = Vector.length ds
+	    (if Vector.length ds = Vector.length es
 		then Seq (Vector.concat [es, Vector.new1 e])
 	     else
 		case node e of
