@@ -33,7 +33,7 @@ fun insertInFunction (f: Function.t): Function.t =
 			  setLabelIndex (label, i))
       val g = Graph.new ()
       val n = Vector.length blocks
-      val {get = nodeIndex: Node.t -> int, set = setNodeIndex, ...} =
+      val {get = nodeIndex: unit Node.t -> int, set = setNodeIndex, ...} =
 	 Property.getSetOnce
 	 (Node.plist, Property.initRaise ("index", Node.layout))
       val nodes =
@@ -132,22 +132,28 @@ fun insertInFunction (f: Function.t): Function.t =
       (* Create extra blocks with signal checks for all blocks that are
        * loop headers.
        *)
-      fun loop (Forest.T {loops, ...}) =
-	 Vector.foreach
-	 (loops, fn {headers, child} =>
-	  let
-	     val _ = Vector.foreach (headers, fn n =>
-				     let
-					val i = nodeIndex n
-					val _ = Array.update (isHeader, i, true)
-				     in
-					addSignalCheck (Vector.sub (blocks, i))
-				     end)
-	     val _ = loop child
-	  in
-	     ()
-	  end)
-      (* Add a signal check at the function entry. *)
+      fun loop (f: unit Forest.t) =
+	 let
+	    val {loops, ...} = Forest.dest f
+	 in
+	    Vector.foreach
+	    (loops, fn {headers, child} =>
+	     let
+		val _ =
+		   Vector.foreach
+		   (headers, fn n =>
+		    let
+		       val i = nodeIndex n
+		       val _ = Array.update (isHeader, i, true)
+		    in
+		       addSignalCheck (Vector.sub (blocks, i))
+		    end)
+		val _ = loop child
+	     in
+		()
+	     end)
+	 end
+	    (* Add a signal check at the function entry. *)
       val newStart =
 	 case Vector.peek (blocks, fn Block.T {label, ...} =>
 			   Label.equals (label, start)) of

@@ -68,10 +68,10 @@ end
 
 structure AFile =
    struct
-      datatype t = T of {callGraph: Graph.t,
+      datatype t = T of {callGraph: unit Graph.t,
 			 magic: word,
 			 name: string,
-			 sources: {node: Node.t,
+			 sources: {node: unit Node.t,
 				   source: Source.t} option vector}
 
       fun layout (T {magic, name, sources, ...}) =
@@ -137,7 +137,7 @@ structure AFile =
 		      "" => ()
 		    | _ => Error.bug "expected end of file"
 		val rc = Regexp.compileNFA (!ignore)
-		val {get = shouldIgnore: Node.t -> bool, ...} =
+		val {get = shouldIgnore: unit Node.t -> bool, ...} =
 		   Property.get
 		   (Node.plist,
 		    Property.initFun
@@ -148,11 +148,12 @@ structure AFile =
 		      (#source (Vector.sub (sources, nodeIndex n))))))
 		val (graph, {newNode, ...}) =
 		   Graph.ignoreNodes (graph, shouldIgnore)
+		val (graph, {node = coerceNode, ...}) = Graph.coerce graph
 		val sources =
 		   Vector.map (sources, fn {node, source} =>
 			       if shouldIgnore node
 				  then NONE
-			       else SOME {node = newNode node,
+			       else SOME {node = coerceNode (newNode node),
 					  source = source})
 	     in
 		T {callGraph = graph,
@@ -459,10 +460,10 @@ structure NodePred =
 		  parse s
 	       end
 
-      fun nodes (p: t, g: Graph.t,
-		 atomic: Node.t * Atomic.t -> bool): Node.t vector =
+      fun nodes (p: t, g: 'a Graph.t,
+		 atomic: 'a Node.t * Atomic.t -> bool): 'a Node.t vector =
 	 let
-	    val {get = nodeIndex: Node.t -> int,
+	    val {get = nodeIndex: 'a Node.t -> int,
 		 set = setNodeIndex, ...} =
 	       Property.getSet (Node.plist,
 				Property.initRaise ("index", Node.layout))
@@ -473,14 +474,18 @@ structure NodePred =
 	       Promise.lazy
 	       (fn () =>
 		let
+		   val {get = nodeIndex': 'a Graph.u Node.t -> int,
+			set = setNodeIndex, ...} =
+		      Property.getSet (Node.plist,
+				       Property.initRaise ("index", Node.layout))
 		   val (transpose, {newNode, ...}) = Graph.transpose g
 		   val _ =
 		      Graph.foreachNode
 		      (g, fn n => setNodeIndex (newNode n, nodeIndex n))
 		in
-		   (transpose, newNode)
+		   (transpose, newNode, nodeIndex')
 		end)
-	    fun vectorToNodes (v: bool vector): Node.t vector =
+	    fun vectorToNodes (v: bool vector): 'a Node.t vector =
 	       Vector.keepAllMapi
 	       (v, fn (i, b) =>
 		if b
@@ -490,6 +495,23 @@ structure NodePred =
 				    Vector.tabulate (numNodes, fn _ => true))
 	    val none = Promise.lazy (fn () =>
 				     Vector.tabulate (numNodes, fn _ => false))
+	    fun path (v: bool vector,
+		      (g: 'b Graph.t,
+		       getNode: 'a Node.t -> 'b Node.t,
+		       nodeIndex: 'b Node.t -> int)): bool vector =
+	       let
+		  val roots = vectorToNodes v
+		  val a = Array.array (numNodes, false)
+		  val _ =
+		     Graph.dfsNodes
+		     (g,
+		      Vector.toListMap (roots, getNode),
+		      Graph.DfsParam.startNode (fn n =>
+						Array.update
+						(a, nodeIndex n, true)))
+	       in
+		  Vector.fromArray a
+	       end
 	    fun loop (p: t): bool vector =
 	       case p of
 		  All => all ()
@@ -503,8 +525,8 @@ structure NodePred =
 		     Vector.fold (ps, none (), fn (p, v) =>
 				  Vector.map2 (v, loop p, fn (b, b') =>
 					       b orelse b'))
-		| PathFrom p => path (p, (g, fn n => n))
-		| PathTo p => path (p, transpose ())
+		| PathFrom p => path (loop p, (g, fn n => n, nodeIndex))
+		| PathTo p => path (loop p, transpose ())
 		| Pred p =>
 		     let
 			val ns = vectorToNodes (loop p)
@@ -533,20 +555,6 @@ structure NodePred =
 		     in
 			Vector.fromArray a
 		     end
-	    and path (p: t, (g: Graph.t, getNode)): bool vector =
-	       let
-		  val roots = vectorToNodes (loop p)
-		  val a = Array.array (numNodes, false)
-		  val _ =
-		     Graph.dfsNodes
-		     (g,
-		      Vector.toListMap (roots, getNode),
-		      Graph.DfsParam.startNode (fn n =>
-						Array.update
-						(a, nodeIndex n, true)))
-	       in
-		  Vector.fromArray a
-	       end
 	    val v = loop p
 	 in
 	    vectorToNodes v
@@ -558,9 +566,10 @@ val graphPred: NodePred.t option ref = ref NONE
 fun display (AFile.T {callGraph, name = aname, sources, ...},
 	     ProfFile.T {counts, kind, total, totalGC, ...}): unit =
    let
-      val {get = nodeInfo: Node.t -> {keep: bool ref,
-				      mayKeep: (Atomic.t -> bool) ref,
-				      options: Dot.NodeOption.t list ref}, ...} =
+      val {get = nodeInfo: (unit Node.t
+			    -> {keep: bool ref,
+				mayKeep: (Atomic.t -> bool) ref,
+				options: Dot.NodeOption.t list ref}), ...} =
 	 Property.get (Node.plist,
 		       Property.initFun (fn _ => {keep = ref false,
 						  mayKeep = ref (fn _ => false),

@@ -10,57 +10,61 @@ signature DIRECTED_GRAPH =
    sig
       structure Node: 
 	 sig
-	    type edge
-	    type t
+	    type 'a edge
+	    type 'a t
 
-	    val equals: t * t -> bool
-	    val hasEdge: {from: t, to: t} -> bool
-	    val layout: t -> Layout.t
-	    val plist: t -> PropertyList.t
-	    val successors: t -> edge list
+	    val equals: 'a t * 'a t -> bool
+	    val hasEdge: {from: 'a t, to: 'a t} -> bool
+	    val layout: 'a t -> Layout.t
+	    val plist: 'a t -> PropertyList.t
+	    val successors: 'a t -> 'a edge list
 	 end
       structure Edge:
 	 sig
-	    type t
+	    type 'a t
 
-	    val equals: t * t -> bool
-	    val plist: t -> PropertyList.t
-	    val to: t -> Node.t
+	    val equals: 'a t * 'a t -> bool
+	    val plist: 'a t -> PropertyList.t
+	    val to: 'a t -> 'a Node.t
 	 end
       sharing type Node.edge = Edge.t
 
       (* depth first search *)
       structure DfsParam:
 	 sig
-	    type ('a, 'b, 'c, 'd) t =
-	       'a
-	       * (Node.t * 'a
-		  -> ('b
-		      * (Node.t * 'b -> ('c
-					 * (Edge.t * 'c -> 'c)
-					 * (Edge.t * 'c -> 'b * ('d -> 'c))
-					 * ('c -> 'd)))
-		      * ('d -> 'a)))
-	    type 'a u = ('a, 'a, 'a, 'a) t
+	    type ('a, 'b, 'c, 'd, 'e) t =
+	       'b
+	       * ('a Node.t * 'b
+		  -> ('c
+		      * ('a Node.t * 'c -> ('d
+					    * ('a Edge.t * 'd -> 'd)
+					    * ('a Edge.t * 'd -> 'c * ('e -> 'd))
+					    * ('d -> 'e)))
+		      * ('e -> 'b)))
+	    type ('a, 'b) u = ('a, 'b, 'b, 'b, 'b) t
 
 	    val discoverFinishTimes:
-	       unit -> (int u * {discover: Node.t -> int,
-				 finish: Node.t -> int,
-				 destroy: unit -> unit})
-	    val finishNode: (Node.t -> unit) -> unit u
-	    val startNode: (Node.t -> unit) -> unit u
+	       unit -> (('a, int) u * {discover: 'a Node.t -> int,
+				       finish: 'a Node.t -> int,
+				       destroy: unit -> unit})
+	    val finishNode: ('a Node.t -> unit) -> ('a, unit) u
+	    val startNode: ('a Node.t -> unit) -> ('a, unit) u
 	 end
 
       (* the main graph type *)
-      type t
+      type 'a t
+      type 'a u
 
-      val addEdge: t * {from: Node.t, to: Node.t} -> Edge.t
-      val dfs: t * ('a, 'b, 'c, 'd) DfsParam.t -> 'a
-      val dfsNodes: t * Node.t list * ('a, 'b, 'c, 'd) DfsParam.t -> 'a
-      val dfsTree: t * {root: Node.t, nodeValue: Node.t -> 'a} -> 'a Tree.t
+      val addEdge: 'a t * {from: 'a Node.t, to: 'a Node.t} -> 'a Edge.t
+      val coerce: 'a t -> unit t * {edge: 'a Edge.t -> unit Edge.t,
+				    node: 'a Node.t -> unit Node.t}
+      val dfs: 'a t * ('a, 'b, 'c, 'd, 'e) DfsParam.t -> 'b
+      val dfsNodes: 'a t * 'a Node.t list * ('a, 'b, 'c, 'd, 'e) DfsParam.t -> 'b
+      val dfsTree: 'a t * {root: 'a Node.t,
+			   nodeValue: 'a Node.t -> 'b} -> 'b Tree.t
       val display:
-	 {graph: t,
-	  layoutNode: Node.t -> Layout.t,
+	 {graph: 'a t,
+	  layoutNode: 'a Node.t -> Layout.t,
 	  display: Layout.t -> unit} -> unit
       (* dominators (graph, {root})
        * Returns the immediate dominator relation for the subgraph of graph
@@ -69,42 +73,46 @@ signature DIRECTED_GRAPH =
        *  idom n = Idom n'        where n' is the immediate dominator of n
        *  idom n = Unreachable    if n is not reachable from root
        *)
-      datatype idomRes =
-	 Idom of Node.t
+      datatype 'a idomRes =
+	 Idom of 'a Node.t
        | Root
        | Unreachable
-      val dominators: t * {root: Node.t} -> {idom: Node.t -> idomRes}
-      val dominatorTree: t * {root: Node.t, nodeValue: Node.t -> 'a} -> 'a Tree.t
-      val foreachDescendent: t * Node.t * (Node.t -> unit) -> unit
-      val foldNodes: t * 'a * (Node.t * 'a -> 'a) -> 'a
-      val foreachEdge: t * (Node.t * Edge.t -> unit) -> unit
-      val foreachNode: t * (Node.t -> unit) -> unit
+      val dominators: 'a t * {root: 'a Node.t} -> {idom: 'a Node.t -> 'a idomRes}
+      val dominatorTree: 'a t * {root: 'a Node.t,
+				 nodeValue: 'a Node.t -> 'b} -> 'b Tree.t
+      val foreachDescendent: 'a t * 'a Node.t * ('a Node.t -> unit) -> unit
+      val foldNodes: 'a t * 'b * ('a Node.t * 'b -> 'b) -> 'b
+      val foreachEdge: 'a t * ('a Node.t * 'a Edge.t -> unit) -> unit
+      val foreachNode: 'a t * ('a Node.t -> unit) -> unit
       (* ignoreNodes (g, f) builds a graph g' that looks like g, except that g'
        * does not contain nodes n such that f n, and that for every path in g
        * of the form n0 -> n1 -> ... -> nm, where n0 and nm are not ignored and
        * n1, ..., n_m-1 are ignored, there is an edge in g'.
        *)
       val ignoreNodes:
-	 t * (Node.t -> bool) -> t * {destroy: unit -> unit,
-				      newNode: Node.t -> Node.t}
+	 'a t * ('a Node.t -> bool)
+	 -> 'a u t * {destroy: unit -> unit,
+		      newNode: 'a Node.t -> 'a u Node.t}
       val layoutDot:
-	 t * ({nodeName: Node.t -> string}
-	      -> {edgeOptions: Edge.t -> Dot.EdgeOption.t list,
-		  nodeOptions: Node.t -> Dot.NodeOption.t list,
-		  options: Dot.GraphOption.t list,
-		  title: string})
+	 'a t * ({nodeName: 'a Node.t -> string}
+		 -> {edgeOptions: 'a Edge.t -> Dot.EdgeOption.t list,
+		     nodeOptions: 'a Node.t -> Dot.NodeOption.t list,
+		     options: Dot.GraphOption.t list,
+		     title: string})
 	 -> Layout.t
       structure LoopForest: 
 	 sig 
-	   datatype t = T of {loops: {headers: Node.t vector,
-				      child: t} vector,
-			      notInLoop: Node.t vector}
+	    type 'a t
+
+	    val dest: 'a t -> {loops: {headers: 'a Node.t vector,
+				       child: 'a t} vector,
+			       notInLoop: 'a Node.t vector}
 	 end
-      val loopForestSteensgaard: t * {root:Node.t} -> LoopForest.t
-      val new: unit -> t
-      val newNode: t -> Node.t
-      val nodes: t -> Node.t list
-      val numNodes: t -> int
+      val loopForestSteensgaard: 'a t * {root: 'a Node.t} -> 'a LoopForest.t
+      val new: unit -> 'a t
+      val newNode: 'a t -> 'a Node.t
+      val nodes: 'a t -> 'a Node.t list
+      val numNodes: 'a t -> int
       (* quotient (g, v)
        * Pre: v should be an equivalence relation on the nodes of g.  That is,
        *   each node in g should appear exactly once in some vector in v.
@@ -112,23 +120,25 @@ signature DIRECTED_GRAPH =
        * between classes iff there is an edge between nodes in the classes.
        *)
       val quotient:
-	 t * (Node.t vector vector)
-	 -> t * {destroy: unit -> unit,
-		 newNode: Node.t -> Node.t}
+	 'a t * ('a Node.t vector vector)
+	 -> 'a u t * {destroy: unit -> unit,
+		      newNode: 'a Node.t -> 'a u Node.t}
       (* Strongly-connected components.
        * Each component is given as a list of nodes.
        * The components are returned topologically sorted.
        *)
-      val stronglyConnectedComponents: t -> Node.t list list
-      val subgraph: t * (Node.t -> bool) -> t * {destroy: unit -> unit,
-						 newNode: Node.t -> Node.t}
+      val stronglyConnectedComponents: 'a t -> 'a Node.t list list
+      val subgraph:
+	 'a t * ('a Node.t -> bool)
+	 -> 'a u t * {destroy: unit -> unit,
+		      newNode: 'a Node.t -> 'a u Node.t}
       (* topologicalSort g returns NONE if there is a cycle in g.
        * Otherwise, returns then nodes in g in a list such that if there is a
        * path in g from n to n', then n appears before n' in the list.
        *)
-      val topologicalSort: t -> Node.t list option
-      val transpose: t -> t * {destroy: unit -> unit,
-			       newNode: Node.t -> Node.t}
+      val topologicalSort: 'a t -> 'a Node.t list option
+      val transpose: 'a t -> 'a u t * {destroy: unit -> unit,
+				       newNode: 'a Node.t -> 'a u Node.t}
    end
 
 

@@ -21,7 +21,7 @@ fun sccFuns (Program.T {datatypes, body, overflow}) =
        * if they appear in it's body.
        *)
       val {get = funInfo: Var.t -> {
-				    node: Node.t,
+				    node: unit Node.t,
 				    visit: (unit -> unit) ref
 				    } option,
 	   set = setFunInfo, ...} =

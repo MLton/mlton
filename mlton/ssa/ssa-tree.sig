@@ -217,9 +217,10 @@ signature SSA_TREE =
 	     * in the function, but not the function name's plist.
 	     *)
 	    val clear: t -> unit
-	    val controlFlow: t -> {graph: DirectedGraph.t,
-				   labelNode: Label.t -> DirectedGraph.Node.t,
-				   nodeBlock: DirectedGraph.Node.t -> Block.t}
+	    val controlFlow:
+	       t -> {graph: unit DirectedGraph.t,
+		     labelNode: Label.t -> unit DirectedGraph.Node.t,
+		     nodeBlock: unit DirectedGraph.Node.t -> Block.t}
 	    val dest: t -> {args: (Var.t * Type.t) vector,
 			    blocks: Block.t vector,
 			    name: Func.t,

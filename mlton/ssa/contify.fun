@@ -74,7 +74,7 @@ structure Areturn =
 
 structure ContData =
   struct
-    datatype t = T of {node: DirectedGraph.Node.t option ref,
+    datatype t = T of {node: unit DirectedGraph.Node.t option ref,
 		       rootEdge: bool ref,
 		       prefixes: Func.t list ref}
       
@@ -99,7 +99,7 @@ structure ContData =
 
 structure FuncData =
   struct
-    datatype t = T of {node: DirectedGraph.Node.t option ref,
+    datatype t = T of {node: unit DirectedGraph.Node.t option ref,
 		       reach: bool ref,
 		       callers: {nontail: (Func.t * Cont.t) list ref,
 				 tail: Func.t list ref},
@@ -170,7 +170,7 @@ structure ContFuncGraph =
 		then ()
 		else addEdge edge
 
-	  val {get = getNodeInfo : Node.t -> t, 
+	  val {get = getNodeInfo : unit Node.t -> t, 
 	       set = setNodeInfo, ...}
 	    = Property.getSetOnce
 	      (Node.plist,

@@ -4,7 +4,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-structure DirectedGraph: DIRECTED_GRAPH = 
+structure DirectedGraph:> DIRECTED_GRAPH = 
 struct
 
 structure Types =
@@ -70,6 +70,9 @@ structure Edge =
 
 datatype t = T of {nodes: Node.t list ref}
 
+fun coerce g = (g, {edge = fn e => e,
+		    node = fn n => n})
+   
 fun nodes (T {nodes, ...}) = !nodes
 
 fun foldNodes (g, a, f) = List.fold (nodes g, a, f)
@@ -130,20 +133,20 @@ fun layoutDot (T {nodes, ...},
 
 structure DfsParam =
    struct
-      type ('a, 'b, 'c, 'd) t =
-	 'a
-	 * (Node.t * 'a -> ('b
-			    * (Node.t * 'b -> ('c
-					       * (Edge.t * 'c -> 'c)
-					       * (Edge.t * 'c -> 'b * ('d -> 'c))
-					       * ('c -> 'd)))
-			    * ('d -> 'a)))
-
-      type 'a u = ('a, 'a, 'a, 'a) t
+      type ('a, 'b, 'c, 'd, 'e) t =
+	 'b
+	 * (Node.t * 'b
+	    -> ('c
+		* (Node.t * 'c -> ('d
+				   * (Edge.t * 'd -> 'd)
+				   * (Edge.t * 'd -> 'c * ('e -> 'd))
+				   * ('d -> 'e)))
+		* ('e -> 'b)))
+      type ('a, 'b) u = ('a, 'b, 'b, 'b, 'b) t
 
       fun startFinishNode (a: 'a,
 			   start: Node.t * 'a -> 'a,
-			   finish: Node.t * 'a -> 'a): ('a, 'a, 'a, 'a) t =
+			   finish: Node.t * 'a -> 'a): ('b, 'a) u =
 	 (a,
 	  fn (_, a) => (a,
 			fn (n, a) =>
@@ -182,55 +185,55 @@ structure DfsParam =
 	 
 fun dfsNodes (g: t,
 	      ns: Node.t list,
-	      (a, f): ('a, 'b, 'c, 'd) DfsParam.t) =
+	      (b, f): ('a, 'b, 'c, 'd, 'e) DfsParam.t) =
    let
       type info = {hasBeenVisited: bool ref}
       val {get = nodeInfo: Node.t -> info, destroy, ...} =
 	 Property.destGetSet (Node.plist,
 			      Property.initFun (fn _ =>
 						{hasBeenVisited = ref false}))
-      val a =
+      val b =
 	 List.fold
-	 (ns, a, fn (n, a) =>
+	 (ns, b, fn (n, b) =>
 	  let
 	     val info as {hasBeenVisited} = nodeInfo n
 	  in
 	     if !hasBeenVisited
-		then a
+		then b
 	     else
 		let
-		   val (b, startNode, finishTree) = f (n, a)
-		   fun visit (n: Node.t, {hasBeenVisited}: info, b: 'b): 'd =
+		   val (c, startNode, finishTree) = f (n, b)
+		   fun visit (n: Node.t, {hasBeenVisited}: info, c: 'c): 'e =
 		      let
 			 val _ = hasBeenVisited := true
-			 val (c, nonTreeEdge, treeEdge, finishNode) =
-			    startNode (n, b)
+			 val (d, nonTreeEdge, treeEdge, finishNode) =
+			    startNode (n, c)
 		      in
 			 finishNode
 			 (List.fold
-			  (Node.successors n, c,
-			   fn (e, c) =>
+			  (Node.successors n, d,
+			   fn (e, d) =>
 			   let
 			      val n = Edge.to e
 			      val info as {hasBeenVisited} = nodeInfo n
 			   in
 			      if !hasBeenVisited
-				 then nonTreeEdge (e, c)
+				 then nonTreeEdge (e, d)
 			      else
 				 let
-				    val (b, finish) = treeEdge (e, c)
+				    val (c, finish) = treeEdge (e, d)
 				 in
-				    finish (visit (n, info, b))
+				    finish (visit (n, info, c))
 				 end
 			   end))
 		      end
 		in
-		   finishTree (visit (n, info, b))
+		   finishTree (visit (n, info, c))
 		end
 	  end)
       val _ = destroy ()
    in
-      a
+      b
    end
 
 fun dfs (g, z) = dfsNodes (g, nodes g, z)
@@ -325,7 +328,7 @@ fun validDominators (graph,
     in true
     end)
 
-datatype idomRes =
+datatype 'a idomRes =
    Idom of Node.t
   | Root
   | Unreachable
@@ -614,9 +617,6 @@ structure LoopForest =
       datatype t = T of {loops: {headers: Node.t vector,
 				 child: t} vector,
 			 notInLoop: Node.t vector}
-
-      val empty = T {loops = Vector.new0 (),
-		     notInLoop = Vector.new0 ()}
 
       fun single n = T {loops = Vector.new0 (),
 			notInLoop = Vector.new1 n}
@@ -1117,5 +1117,31 @@ val transpose =
       end
    end
 
+structure Node =
+   struct
+      open Node
+
+      type 'a t = t
+      type 'a edge = edge
+   end
+
+structure Edge =
+   struct
+      open Edge
+
+      type 'a t = t
+   end
+
+type 'a t = t
+type 'a u = unit
+
+structure LoopForest =
+   struct
+      open LoopForest
+      type 'a t = t
+
+      fun dest (T r) = r
+   end
+   
 end
 

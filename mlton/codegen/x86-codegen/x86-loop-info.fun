@@ -27,13 +27,13 @@ struct
     = let
 	val G = Graph.new ()
 
-	val nodeInfo as {get = getNodeInfo : Node.t -> Label.t,
+	val nodeInfo as {get = getNodeInfo : unit Node.t -> Label.t,
 			 set = setNodeInfo, ...}
 	  = Property.getSetOnce
 	    (Node.plist,
 	     Property.initRaise ("x86LoopInfo:getNodeInfo", Node.layout))
 
-	val info as {get = getInfo : Label.t -> Node.t,
+	val info as {get = getInfo : Label.t -> unit Node.t,
 		     destroy = destInfo}
 	  = Property.destGet
 	    (Label.plist,
@@ -120,10 +120,11 @@ struct
 
 	val lf = Graph.loopForestSteensgaard (G, {root = root})
 	  
-	fun doit (LoopForest.T {loops, notInLoop}, 
+	fun doit (f: unit LoopForest.t,
 		  headers,
 		  path)
 	  = let
+	      val {loops, notInLoop} = LoopForest.dest f
 	      val notInLoop = Vector.toListMap (notInLoop, getNodeInfo)
 	      val path' = List.rev path
 	    in

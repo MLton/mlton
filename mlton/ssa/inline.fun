@@ -171,13 +171,13 @@ fun nonRecursive (program as Program.T {functions, ...},
 		  {size: int option}) =
    let
       val {get = funcInfo: Func.t -> {isBig: bool,
-				      node: Node.t,
+				      node: unit Node.t,
 				      numCalls: int ref,
 				      shouldInline: bool ref},
 	   set = setFuncInfo, ...} =
 	 Property.getSetOnce
 	 (Func.plist, Property.initRaise ("funcInfo", Func.layout))
-      val {get = nodeFunc: Node.t -> Func.t,
+      val {get = nodeFunc: unit Node.t -> Func.t,
 	   set = setNodeFunc, ...} = 
 	 Property.getSetOnce 
 	 (Node.plist, Property.initRaise ("nodeFunc", Node.layout))
@@ -284,7 +284,7 @@ fun product (program as Program.T {functions, ...},
    let
       type info = {doesCallSelf: bool ref,
 		   function: Function.t,
-		   node: Node.t,
+		   node: unit Node.t,
 		   numCalls: int ref,
 		   shouldInline: bool ref,
 		   size: int ref}
@@ -292,7 +292,7 @@ fun product (program as Program.T {functions, ...},
 	   set = setFuncInfo, ...} =
 	 Property.getSetOnce
 	 (Func.plist, Property.initRaise ("funcInfo", Func.layout))
-      val {get = nodeFunc: Node.t -> Func.t,
+      val {get = nodeFunc: unit Node.t -> Func.t,
 	   set = setNodeFunc, ...} = 
 	 Property.getSetOnce 
 	 (Node.plist, Property.initRaise ("nodeFunc", Node.layout))

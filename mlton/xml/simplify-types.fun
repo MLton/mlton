@@ -16,7 +16,7 @@ structure Node = Graph.Node
 fun simplifyTypes (p as Program.T {datatypes, body, ...}) =
    let
       val g = Graph.new ()
-      val {get = tyconInfo: Tycon.t -> {node: Node.t,
+      val {get = tyconInfo: Tycon.t -> {node: unit Node.t,
 					isOneVariantArrow: bool ref,
 					cons: {con: Con.t,
 					       arg: Type.t option

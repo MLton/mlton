@@ -610,7 +610,7 @@ structure Function =
 	    val {get = labelNode, ...} =
 	       Property.get
 	       (Label.plist, Property.initFun (fn _ => newNode ()))
-	    val {get = nodeInfo: Node.t -> {block: Block.t},
+	    val {get = nodeInfo: unit Node.t -> {block: Block.t},
 		 set = setNodeInfo, ...} =
 	       Property.getSetOnce
 	       (Node.plist, Property.initRaise ("info", Node.layout))

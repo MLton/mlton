@@ -561,8 +561,9 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
 	    val classes = Array.array (n, ~1)
 	    fun indexClass i = Array.sub (classes, i)
 	    val c = Counter.new 0
-	    fun setClass (Forest.T {loops, notInLoop}) =
+	    fun setClass (f: unit Forest.t) =
 	       let
+		  val {loops, notInLoop} = Forest.dest f
 		  val class = Counter.next c
 		  val _ =
 		     Vector.foreach

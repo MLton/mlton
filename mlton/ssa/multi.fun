@@ -163,14 +163,14 @@ fun multi (p as Program.T {globals, functions, main, ...})
 	= Program.hasPrim (p, fn p => Prim.name p = Prim.Name.Thread_switchTo)
 
       (* funcNode *)
-      val {get = funcNode: Func.t -> Node.t,
+      val {get = funcNode: Func.t -> unit Node.t,
 	   set = setFuncNode, 
 	   rem = remFuncNode, ...}
 	= Property.getSetOnce
 	  (Func.plist, Property.initRaise ("Multi.funcNode", Func.layout))
 
       (* nodeFunction *)
-      val {get = nodeFunction: Node.t -> Function.t,
+      val {get = nodeFunction: unit Node.t -> Function.t,
 	   set = setNodeFunction, ...}
 	= Property.getSetOnce 
 	  (Node.plist, Property.initRaise ("Multi.nodeFunc", Node.layout))
