@@ -77,14 +77,22 @@ fun maybeShrink (s as T {buckets, mask, numItems, ...}): unit =
       else resize (s, n', Word.>> (!mask, Word.fromInt shiftAmount))
    end
 
-fun remove (T {buckets, hash, mask, numItems}, p) =
+fun removeAll (T {buckets, hash, numItems, ...}, p) =
    Array.modify (!buckets, fn elts =>
 		 List.fold (elts, [], fn (a, ac) =>
 			    if p a
 			       then (Int.dec numItems; ac)
 			    else a :: ac))
-   (* maybe shrink *)
 
+fun remove (T {buckets, hash, mask, numItems, ...}, w, p) =
+   let
+      val i = index (w, !mask)
+      val b = !buckets
+      val _ = Array.update (b, i, List.removeFirst (Array.sub (b, i), p))
+      val _ = Int.dec numItems
+   in
+      ()
+   end
 
 fun peekGen (T {buckets = ref buckets, mask, ...}, w, p, no, yes) =
    let

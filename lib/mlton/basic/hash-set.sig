@@ -17,8 +17,10 @@ signature HASH_SET =
       val lookupOrInsert: 'a t * word * ('a -> bool) * (unit -> 'a) -> 'a
       val new: {hash: 'a -> word} -> 'a t
       val peek: 'a t * word * ('a -> bool) -> 'a option
-      (* remove (s, p) removes all entries from s that satisfy predicate p. *)
-      val remove: 'a t * ('a -> bool) -> unit
+      (* remove an entry.  Error if it's not there. *)
+      val remove: 'a t * word * ('a -> bool) -> unit
+      (* removeAll (s, p) removes all entries from s that satisfy predicate p. *)
+      val removeAll: 'a t * ('a -> bool) -> unit
       val size: 'a t -> int
       val stats: unit -> Layout.t
       val toList: 'a t -> 'a list
