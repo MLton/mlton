@@ -109,50 +109,61 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 	       let
 		  val name = Func.newString ("equal_" ^ Tycon.originalName tycon)
 		  val _ = setEqualFunc (tycon, SOME name)
-
 		  local
 		     val ty = Type.con (tycon, Vector.new0 ())
 		     val arg1 = (Var.newNoname (), ty)
 		     val arg2 = (Var.newNoname (), ty)
 		     val args = Vector.new2 (arg1, arg2)
-		       
 		     val darg1 = Dexp.var arg1
 		     val darg2 = Dexp.var arg2
-
-		     val body = 
-		        Dexp.casee
-			{test = darg1,
-			 ty = Type.bool,
-			 default = NONE,
-			 cases =
-			 Dexp.Con
-			 (Vector.map
-			  (tyconCons tycon, fn {con, args} =>
-			   let
-			      fun makeArgs () =
-			         Vector.map (args, fn ty => (Var.newNoname (), ty))
-			      val xs = makeArgs ()
-			      val ys = makeArgs ()
-			   in
-			      {con = con,
-			       args = xs,
-			       body = 
-			       Dexp.casee
-			       {test = darg2,
-				ty = Type.bool,
-				default = SOME Dexp.falsee,
-				cases =
-				Dexp.Con
-				(Vector.new1
-				 {con = con,
-				  args = ys,
-				  body =
-				  Vector.fold2
-				  (xs, ys, Dexp.truee,
-				   fn ((x, ty), (y, _), de) =>
-				   Dexp.conjoin (de, equal (x, y, ty)))})}}
-			   end))}
-		     val (start, blocks) = Dexp.linearize body
+		     val cons = tyconCons tycon
+		     val body =
+			Dexp.disjoin
+			(Dexp.eq (Dexp.var arg1, Dexp.var arg2, ty),
+			 Dexp.casee
+			 {test = darg1,
+			  ty = Type.bool,
+			  default = (if Vector.exists (cons, fn {args, ...} =>
+						       0 = Vector.length args)
+					then SOME Dexp.falsee
+				     else NONE),
+			  cases =
+			  Dexp.Con
+			  (Vector.keepAllMap
+			   (cons, fn {con, args} =>
+			    if 0 = Vector.length args
+			       then NONE
+			    else
+			       let
+				  fun makeArgs () =
+				     Vector.map (args, fn ty =>
+						 (Var.newNoname (), ty))
+				  val xs = makeArgs ()
+				  val ys = makeArgs ()
+			       in
+				  SOME
+				  {con = con,
+				   args = xs,
+				   body = 
+				   Dexp.casee
+				   {test = darg2,
+				    ty = Type.bool,
+				    default = if 1 = Vector.length cons
+						 then NONE
+					      else SOME Dexp.falsee,
+				    cases =
+				    Dexp.Con
+				    (Vector.new1
+				     {con = con,
+				      args = ys,
+				      body =
+				      Vector.fold2
+				      (xs, ys, Dexp.truee,
+				       fn ((x, ty), (y, _), de) =>
+				       Dexp.conjoin (de, equal (x, y, ty)))})}}
+			       end))})
+		     val (start, blocks) =
+			Dexp.linearize (body, Handler.CallerHandler)
 		     val blocks = Vector.fromList blocks
 		  in
 		     val _ = List.push
@@ -178,16 +189,13 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 		  val name = Func.newString "vectorEqual"
 		  val _ = setVectorEqualFunc (ty, SOME name)
 		  val loop = Func.newString "vectorEqualLoop"
-
 		  val vty = Type.vector ty
 		  local
 		     val v1 = (Var.newNoname (), vty)
 		     val v2 = (Var.newNoname (), vty)
 		     val args = Vector.new2 (v1, v2)
-
 		     val dv1 = Dexp.var v1
 		     val dv2 = Dexp.var v2
-		      
 		     val body =
 		        let
 			  fun length x =
@@ -196,15 +204,18 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 						args = Vector.new1 x,
 						ty = Type.int}
 			in
-			   Dexp.conjoin
-			   (Dexp.eq (length dv1, length dv2, Type.int),
-			    Dexp.call
-			    {func = loop,
-			     args = (Vector.new4 
-				     (Dexp.int 0, length dv1, dv1, dv2)),
-			     ty = Type.bool})
+			   Dexp.disjoin
+			   (Dexp.eq (Dexp.var v1, Dexp.var v2, vty),
+			    Dexp.conjoin
+			    (Dexp.eq (length dv1, length dv2, Type.int),
+			     Dexp.call
+			     {func = loop,
+			      args = (Vector.new4 
+				      (Dexp.int 0, length dv1, dv1, dv2)),
+			      ty = Type.bool}))
 			end
-		     val (start, blocks) = Dexp.linearize body
+		     val (start, blocks) =
+			Dexp.linearize (body, Handler.CallerHandler)
 		     val blocks = Vector.fromList blocks
 		  in
 		     val _ = List.push
@@ -216,26 +227,23 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 						    returns = returns,
 						    raises = NONE}))
 		  end
-
 		  local
 		     val i = (Var.newNoname (), Type.int)
 		     val len = (Var.newNoname (), Type.int)
 		     val v1 = (Var.newNoname (), vty)
 		     val v2 = (Var.newNoname (), vty)
 		     val args = Vector.new4 (i, len, v1, v2)
-		       
 		     val di = Dexp.var i
 		     val dlen = Dexp.var len
 		     val dv1 = Dexp.var v1
 		     val dv2 = Dexp.var v2
-
 		     val body =
 		        let
 			   fun sub (v, i) =
 			      Dexp.primApp {prim = Prim.vectorSub,
-						 targs = Vector.new1 ty,
-						 args = Vector.new2 (v, i),
-						 ty = ty}
+					    targs = Vector.new1 ty,
+					    args = Vector.new2 (v, i),
+					    ty = ty}
 			in
 			   Dexp.disjoin 
 			   (Dexp.eq (di, dlen, Type.int),
@@ -248,7 +256,8 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 				       dlen, dv1, dv2)),
 			      ty = Type.bool}))
 			end
-		     val (start, blocks) = Dexp.linearize body
+		     val (start, blocks) =
+			Dexp.linearize (body, Handler.CallerHandler)
 		     val blocks = Vector.fromList blocks
 		  in
 		     val _ = List.push
@@ -271,57 +280,57 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 	    val dx2 = Dexp.var (x2, ty)
 	    fun prim (p, targs) =
 	       Dexp.primApp {prim = p,
-				  targs = targs, 
+			     targs = targs, 
+			     args = Vector.new2 (dx1, dx2),
+			     ty = Type.bool}
+	    fun eq () = prim (Prim.eq, Vector.new1 ty)
+	    fun hasConstArg () =
+	       #isConst (varInfo x1) orelse #isConst (varInfo x2)
+	 in
+	    case Type.dest ty of
+	       Type.Array _ => eq ()
+	     | Type.Char => eq ()
+	     | Type.Datatype tycon =>
+		  if isEnum tycon orelse hasConstArg ()
+		     then eq ()
+		  else Dexp.call {func = equalFunc tycon,
 				  args = Vector.new2 (dx1, dx2),
 				  ty = Type.bool}
-	    fun eq () = prim (Prim.eq, Vector.new1 ty)
-	    fun hasConstArg () = #isConst (varInfo x1) orelse #isConst (varInfo x2)
-	 in case Type.dest ty of
-	    Type.Char => eq ()
-	  | Type.Int => eq ()
-	  | Type.IntInf => if hasConstArg ()
-			      then eq ()
-			   else prim (Prim.intInfEqual, Vector.new0 ())
-	  | Type.Word => eq ()
-	  | Type.Word8 => eq ()
-	  | Type.String => prim (Prim.stringEqual, Vector.new0 ())
-	  | Type.Array _ => eq ()
-	  | Type.Vector ty =>
-	       Dexp.call {func = vectorEqualFunc ty,
-			       args = Vector.new2 (dx1, dx2),
-			       ty = Type.bool}
-	  | Type.Ref _ => eq ()
-	  | Type.Datatype tycon =>
-	       if isEnum tycon orelse hasConstArg ()
-		  then eq ()
-	       else Dexp.call {func = equalFunc tycon,
-				    args = Vector.new2 (dx1, dx2),
-				    ty = Type.bool}
-	  | Type.Tuple tys =>
-	       let
-		  val max = Vector.length tys - 1
-		  (* test components i, i+1, ... *)
-		  fun loop (i: int): Dexp.t =
-		     if i > max
-		        then Dexp.truee
-		     else let
-			     val ty = Vector.sub (tys, i)
-			     fun select tuple =
-				Dexp.select {tuple = tuple,
-						  offset = i,
-						  ty = ty}
-			  in
-			     Dexp.conjoin
-			     (equalExp (select dx1, select dx2, ty),
-			      loop (i + 1))
-			  end
-	       in
-		  loop 0
-	       end
-	  | _ => Error.bug "equal of strange type"
+	     | Type.Int => eq ()
+	     | Type.IntInf => if hasConstArg ()
+				 then eq ()
+			      else prim (Prim.intInfEqual, Vector.new0 ())
+	     | Type.Ref _ => eq ()
+	     | Type.String => prim (Prim.stringEqual, Vector.new0 ())
+	     | Type.Tuple tys =>
+		  let
+		     val max = Vector.length tys - 1
+		     (* test components i, i+1, ... *)
+		     fun loop (i: int): Dexp.t =
+			if i > max
+			   then Dexp.truee
+			else let
+				val ty = Vector.sub (tys, i)
+				fun select tuple =
+				   Dexp.select {tuple = tuple,
+						offset = i,
+						ty = ty}
+			     in
+				Dexp.conjoin
+				(equalExp (select dx1, select dx2, ty),
+				 loop (i + 1))
+			     end
+		  in
+		     loop 0
+		  end
+	     | Type.Vector ty =>
+		  Dexp.call {func = vectorEqualFunc ty,
+			     args = Vector.new2 (dx1, dx2),
+			     ty = Type.bool}
+	     | Type.Word => eq ()
+	     | Type.Word8 => eq ()
+	     | _ => Error.bug "equal of strange type"
 	 end
-
-
       fun loopBind (Statement.T {var, ty, exp}) =
 	 let
 	    fun const () = setVarInfo (valOf var, {isConst = true})
@@ -338,8 +347,6 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 	     | _ => ()
 	 end
       val _ = Vector.foreach (globals, loopBind)
-
-
       fun doit blocks =
 	 let
 	    val _ =
@@ -378,7 +385,9 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 					 val l = Label.newNoname ()
 					 val (start',bs') =
 					    Dexp.linearizeGoto
-					    (equal (arg 0, arg 1, ty), l)
+					    (equal (arg 0, arg 1, ty),
+					     Handler.None,
+					     l)
 				      in
 					(finish (las, 
 						 Goto {dst = start',

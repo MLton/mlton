@@ -63,10 +63,8 @@ signature DIRECT_EXP =
 	   val layout: t -> Layout.t
 	   val lett: {decs: {var: Var.t, exp: t} list,
 		      body: t} -> t
-	   (* linearize with respect to Handler.CallerHandler *)
-	   val linearize: t -> Label.t * Block.t list
-	   (* linearize with respect to Handler.None *)
-	   val linearizeGoto: t * Label.t -> Label.t * Block.t list
+	   val linearize: t * Handler.t -> Label.t * Block.t list
+	   val linearizeGoto: t * Handler.t * Label.t -> Label.t * Block.t list
 	   val name: t * (Var.t -> t) -> t
 	   val primApp: {args: t vector,
 			 prim: Prim.t,

@@ -99,7 +99,8 @@ structure Accum =
 		  body = Dexp.tuple {exps = (Vector.fromListMap
 					     (globals, fn {var, ty, ...} =>
 					      Dexp.var (var, ty))),
-				     ty = Type.unit (* bogus *)}})
+				     ty = Type.unit (* bogus *)}},
+		 Ssa.Handler.CallerHandler)
 	     val {blocks, ...} =
 		Function.dest
 		(Ssa.shrinkFunction
@@ -677,7 +678,8 @@ fun closureConvert
       val shrinkFunction = Ssa.shrinkFunction (Vector.new0 ())
       fun addFunc (ac, {args, body, name, returns}) =
 	 let
-	    val (start, blocks) = Dexp.linearize body
+	    val (start, blocks) =
+	       Dexp.linearize (body, Ssa.Handler.CallerHandler)
 	 in
 	    Accum.addFunc (ac,
 			   shrinkFunction

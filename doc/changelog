@@ -1,5 +1,9 @@
 Here are the changes from version 20020923.
 
+* 2002-11-05
+  - Improvements to polymorphic equality.  Equality on IntInfs, vectors,
+    and dataypes all do an eq test first before a more expensive comparison.
+
 * 2002-11-01
   - Added allocation profiling.  Now, can compile with either -profile alloc
     or -profile time.  Renamed MLton.Profile as MLton.ProfileTime.  Added

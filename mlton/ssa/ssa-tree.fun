@@ -588,6 +588,12 @@ structure Transfer =
        | Runtime of {prim: Prim.t,
 		     args: Var.t vector,
 		     return: Label.t} (* Must be nullary. *)
+
+      fun iff (test: Var.t, {truee, falsee}) =
+	 Case
+	 {cases = Cases.Int (Vector.new2 ((0, falsee), (1, truee))),
+	  default = NONE,
+	  test = test}
 	 
       fun foreachFuncLabelVar (t, func, label: Label.t -> unit, var) =
 	 let

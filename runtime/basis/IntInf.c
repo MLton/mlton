@@ -32,6 +32,14 @@ static inline uint isSmall (pointer arg) {
 	return ((uint)arg & 1);
 }
 
+static inline uint eitherIsSmall (pointer arg1, pointer arg2) {
+	return (1 & ((uint)arg1 | (uint)arg2));
+}
+
+static inline uint areSmall (pointer arg1, pointer arg2) {
+	return ((uint)arg1 & (uint)arg2 & 1);
+}
+
 /*
  * Convert a bignum intInf to a bignum pointer.
  */
@@ -217,17 +225,12 @@ int IntInf_compare (pointer lhs, pointer rhs) {
 
 /*
  * Check if two IntInf.int's are equal.
- * (This should be partly in ML, but the compiler won't call ML code in the
- * middle of polymorphic equality.)
  */
 int IntInf_equal (pointer lhs, pointer rhs) {
-	if (isSmall (lhs))
-		if (isSmall (rhs))
-			return (lhs == rhs);
-		else
-			return (FALSE);
-	else if (isSmall (rhs))
-		return (FALSE);
+	if (lhs == rhs)
+		return TRUE;
+	if (eitherIsSmall (lhs, rhs))
+		return FALSE;
 	else
 		return (IntInf_compare (lhs, rhs) == 0);
 }

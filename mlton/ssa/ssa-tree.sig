@@ -193,7 +193,8 @@ signature SSA_TREE =
 	    val foreachLabel: t * (Label.t -> unit) -> unit
 	    val foreachLabelVar: t * (Label.t -> unit) * (Var.t -> unit) -> unit
 	    val foreachVar: t * (Var.t -> unit) -> unit
-	    val hash: t -> Word.t
+	    val hash: t -> Word.t 
+	    val iff: Var.t * {falsee: Label.t, truee: Label.t} -> t
 	    val layout: t -> Layout.t
 	    val replaceLabelVar: t * (Label.t -> Label.t) * (Var.t -> Var.t) -> t
 	    val replaceLabel: t * (Label.t -> Label.t) -> t
@@ -204,8 +205,8 @@ signature SSA_TREE =
 	 sig
 	    datatype t =
 	       T of {
-		     label: Label.t,
 		     args: (Var.t * Type.t) vector,
+		     label: Label.t,
 		     statements: Statement.t vector,
 		     transfer: Transfer.t
 		     }

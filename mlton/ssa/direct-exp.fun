@@ -600,15 +600,15 @@ fun linearize' (e: t, h: Handler.t, k: Cont.t): Label.t * Block.t list =
       (l, !blocks)
    end
 
-fun linearizeGoto (e: t, l) = linearize' (e, Handler.None, Cont.goto l)
-
-fun linearize (e: t) = linearize' (e, Handler.CallerHandler, Cont.return)
+fun linearize (e: t, h) = linearize' (e, h, Cont.return)
 
 val linearize =
-   Trace.trace ("Linearize.linearize", layout,
+   Trace.trace2 ("Linearize.linearize", layout, Handler.layout,
 		Layout.tuple2 (Label.layout,
 			       List.layout (Label.layout o Block.label)))
    linearize
+
+fun linearizeGoto (e: t, h, l) = linearize' (e, h, Cont.goto l)
 
 end
 end
