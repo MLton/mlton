@@ -1,6 +1,7 @@
 NAME = mlyacc
 MLTON = mlton
 FLAGS =
+PATH = ../build/bin:$(shell echo $$PATH)
 
 all:	$(NAME)
 
