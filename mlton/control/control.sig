@@ -237,6 +237,9 @@ signature CONTROL =
 	 
       (* Type check ILs. *)
       val typeCheck: bool ref
+
+      datatype typeError = Concise | Full
+      val typeError: typeError ref
 	 
       (* Should the basis library be prefixed onto the program. *)
       val useBasisLibrary: bool ref

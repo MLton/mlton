@@ -368,6 +368,14 @@ fun makeOptions {usage} =
 	intRef textIOBufSize),
        (Expert, "type-check", " {false|true}", "type check ILs",
 	boolRef typeCheck),
+       (Normal, "type-error", " {concise|full}", "type error verbosity",
+	SpaceString
+	(fn s =>
+	 typeError := (case s of
+			  "concise" => Concise
+			| "full" => Full
+			| _ => usage (concat
+				      ["invalid -type-error arg: ", s])))),
        (Normal, "verbose", " {0|1|2|3}", "how verbose to be",
 	SpaceString
 	(fn s =>

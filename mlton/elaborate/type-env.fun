@@ -357,7 +357,8 @@ in
    fun simple (l: Layout.t): z =
       (l, {isChar = false, needsParen = false})
    val dontCare: z = simple (str "_")
-   fun layoutRecord (ds: (Field.t * z) list, flexible: bool) =
+   fun bracket l = seq [str "[", l, str "]"]
+   fun layoutRecord (ds: (Field.t * bool * z) list, flexible: bool) =
       simple (case ds of
 		 [] => str "{...}"
 	       | _ => 
@@ -365,9 +366,15 @@ in
 			 mayAlign
 			 (separateRight
 			  (List.map
-			   (QuickSort.sortList (ds, fn ((f, _), (f', _)) =>
+			   (QuickSort.sortList (ds, fn ((f, _, _), (f', _, _)) =>
 						Field.<= (f, f')),
-			    fn (f, (l, _)) => seq [Field.layout f, str ": ", l]),
+			    fn (f, b, (l, _)) =>
+			    let
+			       val f = Field.layout f
+			       val f = if b then bracket f else f
+			    in
+			       seq [f, str ": ", l]
+			    end),
 			   ",")),
 			 str (if flexible
 				 then ", ...}"
@@ -564,23 +571,25 @@ structure Type =
 	       (List.fold
 		(fields,
 		 Spine.foldOverNew (spine, fields, [], fn (f, ac) =>
-				    (f, simple (str "unit"))
+				    (f, false, simple (str "unit"))
 				    :: ac),
-		 fn ((f, t), ac) => (f, t) :: ac),
+		 fn ((f, t), ac) => (f, false, t) :: ac),
 		Spine.canAddFields spine)
 	    fun genFlexRecord (_, {extra, fields, spine}) =
 	       layoutRecord
 	       (List.fold
 		(fields,
 		 List.revMap (extra (), fn {field, tyvar} =>
-			      (field, simple (Tyvar.layout tyvar))),
-		 fn ((f, t), ac) => (f, t) :: ac),
+			      (field, false, simple (Tyvar.layout tyvar))),
+		 fn ((f, t), ac) => (f, false, t) :: ac),
 		Spine.canAddFields spine)
 	    fun real _ = simple (str "real")
 	    fun record (_, r) =
 	       case Srecord.detupleOpt r of
 		  NONE =>
-		     layoutRecord (Vector.toList (Srecord.toVector r), false)
+		     layoutRecord (Vector.toListMap (Srecord.toVector r,
+						     fn (f, t) => (f, false, t)),
+				   false)
 		| SOME ts => Tycon.layoutApp (Tycon.tuple, ts)
 	    fun recursive _ = simple (str "<recur>")
 	    fun unknown (_, u) = simple (str "???")
@@ -839,7 +848,15 @@ structure Type =
       fun unify (t, t'): UnifyResult.t =
 	 let
 	    val {destroy, lay = layoutPretty} = makeLayoutPretty ()
-	    val layoutRecord = fn z => layoutRecord (z, true)
+	    val dontCare' =
+	       case !Control.typeError of
+		  Control.Concise => (fn _ => dontCare)
+		| Control.Full => layoutPretty
+	    val layoutRecord =
+	       fn z => layoutRecord (z,
+				     case !Control.typeError of
+					Control.Concise => true
+				      | Control.Full => false)
 	    fun unify arg =
 	       traceUnify
 	       (fn (outer as T s, outer' as T s') =>
@@ -850,44 +867,58 @@ structure Type =
 		      fun notUnifiable (l: Lay.t, l': Lay.t) =
 			 (NotUnifiable (l, l'),
 			  Unknown (Unknown.new {canGeneralize = true}))
+		      val bracket = fn (l, z) => (bracket l, z)
+		      fun notUnifiableBracket (l, l') =
+			 notUnifiable (bracket l, bracket l')
 		      fun oneFlex ({fields, spine, time}, r, outer, swap) =
 			 let
 			    val _ = minTime (outer, !time)
-			    val differences =
+			    val (ac, ac') =
 			       List.fold
 			       (fields, ([], []), fn ((f, t), (ac, ac')) =>
 				case Srecord.peek (r, f) of
-				   NONE => ((f, dontCare) :: ac, ac')
+				   NONE => ((f, true, dontCare' t) :: ac, ac')
 				 | SOME t' =>
 				      case unify (t, t') of
 					 NotUnifiable (l, l') =>
-					    ((f, l) :: ac, (f, l') :: ac')
-				       | Unified => (ac, ac'))
-			    val (ac, ac') =
+					    ((f, false, l) :: ac,
+					     (f, false, l') :: ac')
+				       | Unified =>
+					    (case !Control.typeError of
+						Control.Concise => (ac, ac')
+					      | Control.Full =>
+						   let
+						      val z =
+							 (f, false,
+							  layoutPretty t)
+						   in
+						      (z :: ac, z :: ac')
+						   end))
+			    val ac =
 			       List.fold
-			       (Spine.fields spine, differences,
-				fn (f, (ac, ac')) =>
+			       (Spine.fields spine, ac,
+				fn (f, ac) =>
 				if List.exists (fields, fn (f', _) =>
 						Field.equals (f, f'))
-				   then (ac, ac')
+				   then ac
 				else
 				   case Srecord.peek (r, f) of
-				      NONE => ((f, dontCare) :: ac, ac')
-				    | SOME _ => (ac, ac'))
+				      NONE => (f, true, dontCare) :: ac
+				    | SOME _ => ac)
 			    val ac' =
 			       Srecord.foldi
 			       (r, ac', fn (f, t, ac') =>
 				if Spine.ensureField (spine, f)
 				   then ac'
-				else (f, dontCare) :: ac')
+				else (f, true, dontCare' t) :: ac')
 			    val _ = Spine.noMoreFields spine
 			 in
-			    case differences of
+			    case (ac, ac') of
 			       ([], []) => (Unified, Record r)
-			     | (ds, ds') =>
+			     | _ =>
 				  let
-				     val ds = layoutRecord ds
-				     val ds' = layoutRecord ds'
+				     val ds = layoutRecord ac
+				     val ds' = layoutRecord ac'
 				  in
 				     notUnifiable (if swap then (ds', ds)
 						   else (ds, ds'))
@@ -903,15 +934,41 @@ structure Type =
 			  * hand, if we choose layoutPretty, then we see the
 			  * whole type that didn't unify.
 			  *)
-			 notUnifiable
+			 notUnifiableBracket
 			 (if true
 			     then (layoutPretty outer, layoutPretty outer')
 			  else (layoutTopLevel t, layoutTopLevel t'))
+		      fun unifys (ts, ts', yes, no) =
+			 let
+			    val us = Vector.map2 (ts, ts', unify)
+			 in
+			    if Vector.forall
+			       (us, fn Unified => true | _ => false)
+			       then yes ()
+			    else
+			       let
+				  val (ls, ls') =
+				     Vector.unzip
+				     (Vector.mapi
+				      (us, fn (i, u) =>
+				       case u of
+					  Unified =>
+					     let
+						val z =
+						   dontCare' (Vector.sub (ts, i))
+					     in
+						(z, z)
+					     end
+					| NotUnifiable (l, l') => (l, l')))
+			       in
+				  no (ls, ls')
+			       end
+			 end
 		      fun conAnd (c, ts, t, t', swap) =
 			 let
-			    val notUnifiable =
-			       fn (z, z') =>
-			       notUnifiable (if swap then (z', z) else (z, z'))
+			    fun notUnifiable (z, z') =
+			       notUnifiableBracket
+			       (if swap then (z', z) else (z, z'))
 			 in
 			    case t of
 			       Con (c', ts') =>
@@ -933,33 +990,16 @@ structure Type =
 						 notUnifiable (lay ts, lay ts')
 					      end
 					else
-					   let
-					      val us =
-						 Vector.map2 (ts, ts', unify)
-					   in
-					      if Vector.forall
-						 (us,
-						  fn Unified => true
-						   | _ => false)
-						 then (Unified, t)
-					      else
-						 let
-						    val (ls, ls') =
-						       Vector.unzip
-						       (Vector.map
-							(us,
-							 fn Unified =>
-							    (dontCare,
-							     dontCare)
-							  | NotUnifiable (l, l') =>
-							       (l, l')))
-						    fun lay ls =
-						       Tycon.layoutApp (c, ls)
-						 in
-						    notUnifiable (lay ls,
-								  lay ls')
-						 end
-					   end
+					   unifys
+					   (ts, ts',
+					    fn () => (Unified, t),
+					    fn (ls, ls') =>
+					    let 
+					       fun lay ls =
+						  Tycon.layoutApp (c, ls)
+					    in
+					       notUnifiable (lay ls, lay ls')
+					    end)
 				  else not ()
 			     | Int =>
 				  if Tycon.isIntX c andalso Vector.isEmpty ts
@@ -1004,10 +1044,11 @@ structure Type =
 						      Field.equals (f, f'))
 					 orelse Spine.ensureField (spine', f)
 					 then ac
-				      else (f, dontCare) :: ac)
+				      else (f, true, dontCare) :: ac)
 				  val ac = subsetSpine (fields, s, s')
 				  val ac' = subsetSpine (fields', s', s)
-				  fun subset (fields, fields', spine', ac, ac') =
+				  fun subset (fields, fields', spine', ac, ac',
+					      skipBoth) =
 				     List.fold
 				     (fields, (ac, ac'),
 				      fn ((f, t), (ac, ac')) =>
@@ -1016,16 +1057,31 @@ structure Type =
 					 NONE =>
 					    if Spine.ensureField (spine', f)
 					       then (ac, ac')
-					    else ((f, dontCare) :: ac, ac')
+					    else ((f, true, dontCare) :: ac, ac')
 				       | SOME (_, t') =>
-					    case unify (t, t') of
-					       NotUnifiable (l, l') =>
-						  ((f, l) :: ac, (f, l) :: ac')
-					     | Unified => (ac, ac'))
+					    if skipBoth
+					       then (ac, ac')
+					    else
+					       case unify (t, t') of
+						  NotUnifiable (l, l') =>
+						     ((f, false, l) :: ac,
+						      (f, false, l) :: ac')
+						| Unified =>
+						     (case !Control.typeError of
+							 Control.Concise =>
+							    (ac, ac')
+						       | Control.Full =>
+							    let
+							       val z =
+								  (f, false,
+								   layoutPretty t)
+							    in
+							       (z :: ac, z :: ac')
+							    end))
 				  val (ac, ac') =
-				     subset (fields, fields', s', ac, ac')
-				  val (ac, ac') =
-				     subset (fields', fields, s, [], [])
+				     subset (fields, fields', s', ac, ac', false)
+				  val (ac', ac) =
+				     subset (fields', fields, s, ac', ac, true)
 				  val _ = Spine.unify (s, s')
 				  val fields =
 				     List.fold
@@ -1060,16 +1116,28 @@ structure Type =
 					     fn ((f, t), (ac, ac')) =>
 					     case Srecord.peek (r', f) of
 						NONE =>
-						   ((f, dontCare) :: ac, ac')
+						   ((f, true, dontCare' t) :: ac,
+						    ac')
 					      | SOME t' =>
 						   if skipBoth
 						      then (ac, ac')
 						   else
 						      case unify (t, t') of
 							 NotUnifiable (l, l') =>
-							    ((f, l) :: ac,
-							     (f, l') :: ac')
-						       | Unified => (ac, ac'))
+							    ((f, false, l) :: ac,
+							     (f, false, l') :: ac')
+						       | Unified =>
+							    case !Control.typeError of
+							       Control.Concise => (ac, ac')
+							     | Control.Full =>
+								  let
+								     val z =
+									(f, false,
+									 layoutPretty t)
+								  in
+								     (z :: ac,
+								      z :: ac')
+								  end)
 					 val (ac, ac') =
 					    diffs (r, r', false, [], [])
 					 val (ac', ac) =
@@ -1085,32 +1153,12 @@ structure Type =
 				 | (SOME ts, SOME ts') =>
 				      if Vector.length ts = Vector.length ts'
 					 then
-					    let
-					       val us =
-						  Vector.map2 (ts, ts', unify)
-					    in
-					       if Vector.forall
-						  (us,
-						   fn Unified => true
-						    | _ => false)
-						  then (Unified, Record r)
-					       else
-						  let
-						     val (ls, ls') =
-							Vector.unzip
-							(Vector.map
-							 (us,
-							  fn Unified =>
-							        (dontCare,
-								 dontCare)
-							   | NotUnifiable (l, l') =>
-								(l, l')))
-						  in
-						     notUnifiable
-						     (layoutTuple ls,
-						      layoutTuple ls')
-						  end
-					    end
+					    unifys
+					    (ts, ts',
+					     fn () => (Unified, Record r),
+					     fn (ls, ls') =>
+					     notUnifiable (layoutTuple ls,
+							   layoutTuple ls'))
 				      else not ()
 				 | _ => not ())
 			  | (Var a, Var a') =>

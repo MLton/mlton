@@ -450,6 +450,21 @@ val textIOBufSize = control {name = "TextIO buffer size",
 val typeCheck = control {name = "type check",
 			 default = false,
 			 toString = Bool.toString}
+
+structure TypeError =
+   struct
+      datatype t = Concise | Full
+
+      val toString =
+	 fn Concise => "concise"
+	  | Full => "full"
+   end
+
+datatype typeError = datatype TypeError.t
+
+val typeError = control {name = "type error",
+			 default = Concise,
+			 toString = TypeError.toString}
    
 val useBasisLibrary = control {name = "use basis library",
 			       default = true,
