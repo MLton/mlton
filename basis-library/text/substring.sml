@@ -12,7 +12,6 @@ structure Substring: SUBSTRING =
       val size = length
       val extract = slice
       fun substring (s, start, len) = extract (s, start, SOME len)
-      val all = full
       val string = vector
       val getc = getItem
       fun first ss = Option.map #1 (getItem ss)

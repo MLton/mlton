@@ -21,6 +21,7 @@ functor TextConvert
         struct
 	   structure String = S
 	   open Substring
+	   val all = full
 	end
      structure Char = C
      structure String = S

@@ -1,13 +1,13 @@
 signature ARRAY_GLOBAL =
    sig
-      eqtype 'a array
+      type 'a array = 'a array
    end
 
 signature ARRAY =
    sig
       include ARRAY_GLOBAL
 
-      type 'a vector
+      type 'a vector = 'a Vector.vector
 
       val all: ('a -> bool) -> 'a array -> bool
       val app: ('a -> unit) -> 'a array -> unit 
@@ -39,9 +39,6 @@ signature ARRAY_EXTRA =
       include ARRAY
       type 'a vector_slice
       structure ArraySlice: ARRAY_SLICE_EXTRA 
-	where type 'a array = 'a array
-	  and type 'a vector = 'a vector
-	  and type 'a vector_slice = 'a vector_slice
 
       val rawArray: int -> 'a array
       val unsafeSub: 'a array * int -> 'a

@@ -89,6 +89,16 @@ in
    structure Int64Array2 = Array2
 end
 local
+   structure S = EqMono (type elem = IntInf.int)
+   open S
+in
+   structure IntInfVector = Vector
+   structure IntInfVectorSlice = VectorSlice
+   structure IntInfArray = Array
+   structure IntInfArraySlice = ArraySlice
+   structure IntInfArray2 = Array2
+end
+local
    structure S = Mono (type elem = Real32.real)
    open S
 in
@@ -138,3 +148,39 @@ in
    structure Word32ArraySlice = ArraySlice
    structure Word32Array2 = Array2
 end
+
+structure IntVector = Int32Vector
+structure IntVectorSlice = Int32VectorSlice
+structure IntArray = Int32Array
+structure IntArraySlice = Int32ArraySlice
+structure IntArray2 = Int32Array2
+
+structure LargeIntVector = IntInfVector
+structure LargeIntVectorSlice = IntInfVectorSlice
+structure LargeIntArray = IntInfArray
+structure LargeIntArraySlice = IntInfArraySlice
+structure LargeIntArray2 = IntInfArray2
+
+structure RealVector = Real64Vector
+structure RealVectorSlice = Real64VectorSlice
+structure RealArray = Real64Array
+structure RealArraySlice = Real64ArraySlice
+structure RealArray2 = Real64Array2
+
+structure LargeRealVector = Real64Vector
+structure LargeRealVectorSlice = Real64VectorSlice
+structure LargeRealArray = Real64Array
+structure LargeRealArraySlice = Real64ArraySlice
+structure LargeRealArray2 = Real64Array2
+
+structure WordVector = Word32Vector
+structure WordVectorSlice = Word32VectorSlice
+structure WordArray = Word32Array
+structure WordArraySlice = Word32ArraySlice
+structure WordArray2 = Word32Array2
+
+structure LargeWordVector = Word32Vector
+structure LargeWordVectorSlice = Word32VectorSlice
+structure LargeWordArray = Word32Array
+structure LargeWordArraySlice = Word32ArraySlice
+structure LargeWordArray2 = Word32Array2

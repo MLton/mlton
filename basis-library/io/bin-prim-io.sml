@@ -4,8 +4,8 @@ structure BinPrimIO : PRIM_IO
 		      where type vector = Word8Vector.vector
 		      where type elem = Word8.word
 		      where type pos = Position.int =
-  PrimIOExtra(structure A = Word8Array
-	      structure V = Word8Vector
+  PrimIOExtra(structure Vector = Word8Vector
+	      structure Array = Word8Array
 	      val someElem = (0wx0: Word8.word)
 	      type pos = Position.int
 	      val compare = Position.compare)

@@ -18,9 +18,9 @@ signature PRE_WORD =
       include WORD_GLOBAL
 
       val wordSize: int 
-      val toLargeWord: word -> LargeWord.word 
-      val toLargeWordX: word -> LargeWord.word 
-      val fromLargeWord: LargeWord.word -> word 
+      val toLarge: word -> LargeWord.word
+      val toLargeX: word -> LargeWord.word
+      val fromLarge: LargeWord.word -> word 
       val toInt: word -> Int.int 
       val toIntX: word -> Int.int 
       val fromInt: Int.int -> word 
@@ -51,6 +51,9 @@ signature WORD =
    sig
       include PRE_WORD
 	 
+      val toLargeWord: word -> LargeWord.word 
+      val toLargeWordX: word -> LargeWord.word 
+      val fromLargeWord: LargeWord.word -> word 
       val compare: word * word -> order 
       val min: word * word -> word 
       val max: word * word -> word

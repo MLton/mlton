@@ -1,10 +1,10 @@
 signature PRIM_IO_EXTRA_ARG =
    sig
-     structure A: MONO_ARRAY
-     structure V: MONO_VECTOR
-     sharing type A.vector = V.vector
-     sharing type A.elem = V.elem
-     val someElem : A.elem
+     structure Vector: MONO_VECTOR
+     structure Array: MONO_ARRAY
+     sharing type Vector.elem = Array.elem 
+     sharing type Vector.vector = Array.vector
+     val someElem : Vector.elem
      eqtype pos
      val compare : (pos * pos) -> order
    end
@@ -13,6 +13,9 @@ functor PrimIOExtra
         (S : PRIM_IO_EXTRA_ARG): PRIM_IO_EXTRA = 
    struct
       open S
+
+      structure A = Array
+      structure V = Vector
 
       type array = A.array
       type vector = V.vector
@@ -326,11 +329,11 @@ functor PrimIOExtra
 
 signature PRIM_IO_ARG =
    sig
-     structure A: MONO_ARRAY
-     structure V: MONO_VECTOR
-     sharing type A.vector = V.vector
-     sharing type A.elem = V.elem
-     val someElem : A.elem
+     structure Vector: MONO_VECTOR
+     structure Array: MONO_ARRAY
+     sharing type Vector.vector = Array.vector
+     sharing type Vector.elem = Array.elem
+     val someElem : Vector.elem
      eqtype pos
      val compare : (pos * pos) -> order
    end

@@ -15,7 +15,7 @@ functor MonoVector(type elem): MONO_VECTOR_EXTRA
 	 struct
 	    open VectorSlice
 	    type elem = elem
-	    type vector = elem vector
+	    type vector = vector
 	    type slice = elem slice
 	 end
    end
@@ -30,7 +30,7 @@ functor EqtypeMonoVector(eqtype elem): EQTYPE_MONO_VECTOR_EXTRA
 	 struct
 	    open VectorSlice
 	    type elem = elem
-	    type vector = elem vector
+	    type vector = vector
 	    type slice = elem slice
 	 end
    end

@@ -27,6 +27,10 @@ val one: word = fromInt 1
 val highBit: word = <<(one, wordSizeMinusOneWord)
 val allOnes: word = ~>>(highBit, wordSizeMinusOneWord)
 
+val toLargeWord = toLarge
+val toLargeWordX = toLargeX
+val fromLargeWord = fromLarge
+
 val (toInt,toIntX) =
   if detectOverflow andalso
      Int.>=(wordSize, Int.precision')

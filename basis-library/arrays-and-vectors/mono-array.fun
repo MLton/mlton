@@ -8,20 +8,25 @@
 functor MonoArray (type elem
 		   structure V: MONO_VECTOR_EXTRA
 		     where type elem = elem
-		       and type vector = elem Vector.vector): MONO_ARRAY_EXTRA =
+		       and type vector = elem Vector.vector
+                       and type MonoVectorSlice.slice = elem VectorSlice.slice
+                  ): MONO_ARRAY_EXTRA 
+                     where type elem = elem
+                       and type vector = V.vector
+                       and type vector_slice = V.MonoVectorSlice.slice =
    struct
       open Array
       type elem = V.elem
       type array = elem array
-      type vector = elem vector
-      type vector_slice = elem vector_slice
+      type vector = V.vector
+      type vector_slice = V.MonoVectorSlice.slice
       structure MonoArraySlice =
 	 struct
 	    open ArraySlice
 	    type elem = elem
-	    type array = elem array
+	    type array = array
 	    type slice = elem slice
-	    type vector = elem vector
-	    type vector_slice = elem vector_slice
+	    type vector = vector
+	    type vector_slice = vector_slice
 	 end
    end

@@ -1,6 +1,6 @@
 signature VECTOR_GLOBAL =
    sig
-      eqtype 'a vector
+      type 'a vector = 'a vector
    end
 
 signature VECTOR =
@@ -33,7 +33,6 @@ signature VECTOR_EXTRA =
    sig
       include VECTOR
       structure VectorSlice: VECTOR_SLICE_EXTRA 
-	where type 'a vector = 'a vector
 
       val unsafeSub: 'a vector * int -> 'a
 

@@ -1,3 +1,8 @@
+structure Array =
+   struct
+      type 'a array = 'a array
+   end
+
 signature ARRAY_SLICE_GLOBAL =
    sig
 
@@ -7,20 +12,18 @@ signature ARRAY_SLICE =
    sig
       include ARRAY_SLICE_GLOBAL
 
-      type 'a array
       type 'a slice
-      type 'a vector
-      type 'a vector_slice
+
       val length: 'a slice -> int
       val sub: 'a slice * int -> 'a
       val update: 'a slice * int * 'a -> unit
-      val full: 'a array -> 'a slice
-      val slice: 'a array * int * int option -> 'a slice
+      val full: 'a Array.array -> 'a slice
+      val slice: 'a Array.array * int * int option -> 'a slice
       val subslice: 'a slice * int * int option -> 'a slice
-      val base: 'a slice -> 'a array * int * int
-      val vector: 'a slice -> 'a vector
-      val copy: {src: 'a slice, dst: 'a array, di: int} -> unit
-      val copyVec: {src: 'a vector_slice, dst: 'a array, di: int} -> unit
+      val base: 'a slice -> 'a Array.array * int * int
+      val vector: 'a slice -> 'a Vector.vector
+      val copy: {src: 'a slice, dst: 'a Array.array, di: int} -> unit
+      val copyVec: {src: 'a VectorSlice.slice, dst: 'a Array.array, di: int} -> unit
       val isEmpty: 'a slice -> bool
       val getItem: 'a slice -> ('a * 'a slice) option
       val appi: (int * 'a -> unit) -> 'a slice -> unit

@@ -168,6 +168,21 @@ signature BASIS_2002 =
       structure Int64VectorSlice : MONO_VECTOR_SLICE
       structure Int64Array2 : MONO_ARRAY2
       structure IntInf : INT_INF
+      structure LargeIntArray : MONO_ARRAY
+      structure LargeIntArraySlice : MONO_ARRAY_SLICE
+      structure LargeIntVector : MONO_VECTOR
+      structure LargeIntVectorSlice : MONO_VECTOR_SLICE
+      structure LargeIntArray2 : MONO_ARRAY2
+      structure LargeRealArray : MONO_ARRAY
+      structure LargeRealArraySlice : MONO_ARRAY_SLICE
+      structure LargeRealVector : MONO_VECTOR
+      structure LargeRealVectorSlice : MONO_VECTOR_SLICE
+      structure LargeRealArray2 : MONO_ARRAY2
+      structure LargeWordArray : MONO_ARRAY
+      structure LargeWordArraySlice : MONO_ARRAY_SLICE
+      structure LargeWordVector : MONO_VECTOR
+      structure LargeWordVectorSlice : MONO_VECTOR_SLICE
+      structure LargeWordArray2 : MONO_ARRAY2
       structure NetHostDB : NET_HOST_DB
       structure NetProtDB : NET_PROT_DB
       structure NetServDB : NET_SERV_DB
@@ -216,6 +231,11 @@ signature BASIS_2002 =
 (*
       structure Windows : WINDOWS
 *)
+      structure WordArray : MONO_ARRAY
+      structure WordArraySlice : MONO_ARRAY_SLICE
+      structure WordVector : MONO_VECTOR
+      structure WordVectorSlice : MONO_VECTOR_SLICE
+      structure WordArray2 : MONO_ARRAY2
       structure Word16 : WORD
       structure Word16Array : MONO_ARRAY
       structure Word16ArraySlice : MONO_ARRAY_SLICE
@@ -258,12 +278,12 @@ signature BASIS_2002 =
       *)
 
       (* Required structures *)
-      sharing type Array.vector = Vector.vector
+      sharing type BinPrimIO.elem = Word8.word
       sharing type BinPrimIO.array = Word8Array.array
       sharing type BinPrimIO.vector = Word8Vector.vector
-      sharing type BinPrimIO.elem = Word8.word
       sharing type BinPrimIO.pos = Position.int
-      sharing type Char.string = string
+      sharing type Char.char = char
+      sharing type Char.string = String.string
       sharing type CharArray.elem = char
       sharing type CharArray.vector = CharVector.vector
       sharing type CharArraySlice.elem = char
@@ -275,16 +295,20 @@ signature BASIS_2002 =
       sharing type CharVectorSlice.elem = char
       sharing type CharVectorSlice.vector = String.string
       sharing type CharVectorSlice.slice = Substring.substring
+      sharing type Int.int = int
       sharing type Math.real = Real.real
-      sharing type String.char = char
+      sharing type Real.real = real
+      sharing type String.string = string
       sharing type String.string = CharVector.vector
-      sharing type Substring.char = char
-      sharing type Substring.string = String.string
+      sharing type String.char = Char.char
       sharing type Substring.substring = CharVectorSlice.slice
-(*
-      sharing type Text.Char.char = char
-      sharing type Text.String.string = string
-*)
+      sharing type Substring.string = String.string
+      sharing type Substring.char = Char.char
+      sharing type Text.Char.char = Char.char
+      sharing type Text.String.string = String.string
+      sharing type Text.Substring.substring = Substring.substring
+      sharing type Text.CharVector.vector = CharVector.vector
+      sharing type Text.CharArray.array = CharArray.array
       sharing type TextPrimIO.elem = Char.char
       sharing type TextPrimIO.array = CharArray.array
       sharing type TextPrimIO.vector = CharVector.vector
@@ -300,7 +324,7 @@ signature BASIS_2002 =
       sharing type Word8Array2.elem = Word8.word
       sharing type Word8Array2.vector = Word8Vector.vector
 	
-      (* Optional structures *)
+      (* Optional structures *) 
       sharing type BoolArray.elem = bool
       sharing type BoolArray.vector = BoolVector.vector
       sharing type BoolArraySlice.elem = bool
@@ -369,13 +393,44 @@ signature BASIS_2002 =
       sharing type Int64VectorSlice.vector = Int64Vector.vector
       sharing type Int64Array2.elem = Int64.int
       sharing type Int64Array2.vector = Int64Vector.vector
-(*
+      sharing type LargeIntArray.elem = LargeInt.int
+      sharing type LargeIntArray.vector = LargeIntVector.vector
+      sharing type LargeIntArraySlice.elem = LargeInt.int
+      sharing type LargeIntArraySlice.array = LargeIntArray.array
+      sharing type LargeIntArraySlice.vector = LargeIntVector.vector
+      sharing type LargeIntArraySlice.vector_slice = LargeIntVectorSlice.slice
+      sharing type LargeIntVector.elem = LargeInt.int
+      sharing type LargeIntVectorSlice.elem = LargeInt.int
+      sharing type LargeIntVectorSlice.vector = LargeIntVector.vector
+      sharing type LargeIntArray2.elem = LargeInt.int
+      sharing type LargeIntArray2.vector = LargeIntVector.vector
+      sharing type LargeRealArray.elem = LargeReal.real
+      sharing type LargeRealArray.vector = LargeRealVector.vector
+      sharing type LargeRealArraySlice.elem = LargeReal.real
+      sharing type LargeRealArraySlice.array = LargeRealArray.array
+      sharing type LargeRealArraySlice.vector = LargeRealVector.vector
+      sharing type LargeRealArraySlice.vector_slice = LargeRealVectorSlice.slice
+      sharing type LargeRealVector.elem = LargeReal.real
+      sharing type LargeRealVectorSlice.elem = LargeReal.real
+      sharing type LargeRealVectorSlice.vector = LargeRealVector.vector
+      sharing type LargeRealArray2.elem = LargeReal.real
+      sharing type LargeRealArray2.vector = LargeRealVector.vector
+      sharing type LargeWordArray.elem = LargeWord.word
+      sharing type LargeWordArray.vector = LargeWordVector.vector
+      sharing type LargeWordArraySlice.elem = LargeWord.word
+      sharing type LargeWordArraySlice.array = LargeWordArray.array
+      sharing type LargeWordArraySlice.vector = LargeWordVector.vector
+      sharing type LargeWordArraySlice.vector_slice = LargeWordVectorSlice.slice
+      sharing type LargeWordVector.elem = LargeWord.word
+      sharing type LargeWordVectorSlice.elem = LargeWord.word
+      sharing type LargeWordVectorSlice.vector = LargeWordVector.vector
+      sharing type LargeWordArray2.elem = LargeWord.word
+      sharing type LargeWordArray2.vector = LargeWordVector.vector
       sharing type PackRealBig.real = real
-*)
       sharing type PackRealLittle.real = real
-(*
+      sharing type PackReal32Big.real = Real64.real
+      sharing type PackReal32Little.real = Real64.real
       sharing type PackReal64Big.real = Real64.real
-*)
       sharing type PackReal64Little.real = Real64.real
       sharing type Posix.Error.syserror = OS.syserror
       sharing type Posix.Process.exit_status = Unix.exit_status
@@ -415,6 +470,17 @@ signature BASIS_2002 =
       sharing type Real64Array2.elem = Real64.real
       sharing type Real64Array2.vector = Real64Vector.vector
       sharing type Unix.exit_status = Posix.Process.exit_status
+      sharing type WordArray.elem = word
+      sharing type WordArray.vector = WordVector.vector
+      sharing type WordArraySlice.elem = word
+      sharing type WordArraySlice.array = WordArray.array
+      sharing type WordArraySlice.vector = WordVector.vector
+      sharing type WordArraySlice.vector_slice = WordVectorSlice.slice
+      sharing type WordVector.elem = word
+      sharing type WordVectorSlice.elem = word
+      sharing type WordVectorSlice.vector = WordVector.vector
+      sharing type WordArray2.elem = word
+      sharing type WordArray2.vector = WordVector.vector
       sharing type Word16Array.elem = Word16.word
       sharing type Word16Array.vector = Word16Vector.vector
       sharing type Word16ArraySlice.elem = Word16.word
@@ -437,11 +503,6 @@ signature BASIS_2002 =
       sharing type Word32VectorSlice.vector = Word32Vector.vector
       sharing type Word32Array2.elem = Word32.word
       sharing type Word32Array2.vector = Word32Vector.vector
-
-      (* Non-standard *)
-      sharing type Array.vector = ArraySlice.vector = Vector.vector = VectorSlice.vector
-      sharing type ArraySlice.array = Array.array
-      sharing type ArraySlice.vector_slice = VectorSlice.slice
    end
    (* Top-level types *)
    where type unit = unit
@@ -459,6 +520,10 @@ signature BASIS_2002 =
    where type 'a list = 'a list
 
    (* Types referenced in signatures by structure name *)
+(*
+   where type 'a Array.array = 'a Array.array
+*)
+   where type 'a ArraySlice.slice = 'a ArraySlice.slice
    where type BinPrimIO.reader = BinPrimIO.reader
    where type BinPrimIO.writer = BinPrimIO.writer
    where type Char.char = Char.char
@@ -488,3 +553,8 @@ signature BASIS_2002 =
    where type Word8.word = Word8.word
    where type Word8Array.array = Word8Array.array
    where type Word8Vector.vector = Word8Vector.vector
+(*
+   where type 'a Vector.vector = 'a Vector.vector
+*)
+   where type 'a VectorSlice.slice = 'a VectorSlice.slice
+

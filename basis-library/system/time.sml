@@ -54,7 +54,7 @@ structure Time: TIME_EXTRA =
       fun fromMilliseconds (msec: LargeInt.int): time =
 	let
 	  val msec = IntInf.fromLarge msec
-	  val (sec, msec) = IntInf.divMod (msec, thousand'')
+	  val (sec, msec) = IntInf.quotRem (msec, thousand'')
 	  val (sec, msec) = (IntInf.toLarge sec, IntInf.toLarge msec)
 	in
 	  T {sec = convert sec,
@@ -64,7 +64,7 @@ structure Time: TIME_EXTRA =
       fun fromMicroseconds (usec: LargeInt.int): time =
 	let
 	  val usec = IntInf.fromLarge usec
-	  val (sec, usec) = IntInf.divMod (usec, million'')
+	  val (sec, usec) = IntInf.quotRem (usec, million'')
 	  val (sec, usec) = (IntInf.toLarge sec, IntInf.toLarge usec)
 	in
 	  T {sec = convert sec,
@@ -83,8 +83,7 @@ structure Time: TIME_EXTRA =
 	       else (s'', u'')
 	 in T {sec = s'', usec = u''}
 	 end
-      (* Basis spec says Overflow, not Time, should be raised. *)
-      (* handle Overflow => raise Time *) 
+         handle Overflow => raise Time
 
       val sub =
          fn (T {sec = s, usec = u}, T {sec = s', usec = u'}) =>
@@ -98,8 +97,7 @@ structure Time: TIME_EXTRA =
 	       else (s'', u'')
 	 in T {sec = s'', usec = u''}
 	 end
-      (* Basis spec says Overflow, not Time, should be raised. *)
-      (* handle Overflow => raise Time *) 
+         handle Overflow => raise Time
 
       fun compare (T {sec = s, usec = u}, T {sec = s', usec = u'}) =
 	 if s > s'
@@ -195,6 +193,7 @@ structure Time: TIME_EXTRA =
 		   NONE => NONE
 		 | SOME d => int' true d rest)
 	 end
+         handle Overflow => raise Time
       val fromString = StringCvt.scanString scan
 
       val op + = add

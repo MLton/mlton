@@ -1164,7 +1164,7 @@ structure Primitive =
 	    val ~>> = _prim "Word8_arshift": word * word32 -> word;
 	    val div = _prim "Word8_div": word * word -> word;
 	    val fromInt = _prim "Int32_toWord8": int -> word;
-	    val fromLargeWord = _prim "Word32_toWord8": word32 -> word;
+	    val fromLarge = _prim "Word32_toWord8": word32 -> word;
 	    val >= = _prim "Word8_ge": word * word -> bool;
 	    val > = _prim "Word8_gt" : word * word -> bool;
 	    val <= = _prim "Word8_le": word * word -> bool;
@@ -1183,8 +1183,8 @@ structure Primitive =
 	    val toChar = _prim "Word8_toChar": word -> char;
 	    val toInt = _prim "Word8_toInt32": word -> int;
 	    val toIntX = _prim "Word8_toInt32X": word -> int;
-	    val toLargeWord = _prim "Word8_toWord32": word -> word32;
-	    val toLargeWordX = _prim "Word8_toWord32X": word -> word32;
+	    val toLarge = _prim "Word8_toWord32": word -> word32;
+	    val toLargeX = _prim "Word8_toWord32X": word -> word32;
 	    val xorb = _prim "Word8_xorb": word * word -> word;
 	 end
 
@@ -1219,7 +1219,7 @@ structure Primitive =
 	    val ~>> = _prim "Word16_arshift": word * word32 -> word;
 	    val div = _prim "Word16_div": word * word -> word;
 	    val fromInt = _prim "Int32_toWord16": int -> word;
-	    val fromLargeWord = _prim "Word32_toWord16": word32 -> word;
+	    val fromLarge = _prim "Word32_toWord16": word32 -> word;
 	    val >= = _prim "Word16_ge": word * word -> bool;
 	    val > = _prim "Word16_gt" : word * word -> bool;
 	    val <= = _prim "Word16_le": word * word -> bool;
@@ -1237,8 +1237,8 @@ structure Primitive =
 	    val - = _prim "Word16_sub": word * word -> word;
 	    val toInt = _prim "Word16_toInt32": word -> int;
 	    val toIntX = _prim "Word16_toInt32X": word -> int;
-	    val toLargeWord = _prim "Word16_toWord32": word -> word32;
-	    val toLargeWordX = _prim "Word16_toWord32X": word -> word32;
+	    val toLarge = _prim "Word16_toWord32": word -> word32;
+	    val toLargeX = _prim "Word16_toWord32X": word -> word32;
 	    val xorb = _prim "Word16_xorb": word * word -> word;
 	 end
 
@@ -1253,7 +1253,7 @@ structure Primitive =
 	    val ~>> = _prim "Word32_arshift": word * word -> word;
 	    val div = _prim "Word32_div": word * word -> word;
 	    val fromInt = _prim "Int32_toWord32": int -> word;
-	    val fromLargeWord : word -> word = fn x => x
+	    val fromLarge : word -> word = fn x => x
 	    val >= = _prim "Word32_ge": word * word -> bool;
 	    val > = _prim "Word32_gt" : word * word -> bool;
 	    val <= = _prim "Word32_le": word * word -> bool;
@@ -1271,8 +1271,8 @@ structure Primitive =
 	    val - = _prim "Word32_sub": word * word -> word;
 	    val toInt = _prim "Word32_toInt32": word -> int;
 	    val toIntX = _prim "Word32_toInt32X": word -> int;
-	    val toLargeWord : word -> word = fn x => x
-	    val toLargeWordX : word -> word = fn x => x
+	    val toLarge : word -> word = fn x => x
+	    val toLargeX : word -> word = fn x => x
 	    val xorb = _prim "Word32_xorb": word * word -> word;
 	 end
       structure Word = Word32

@@ -6,8 +6,6 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 
-structure CharVector = EqtypeMonoVector(type elem = char)
-structure CharVectorSlice = CharVector.MonoVectorSlice
 structure String0 = 
    struct
       open CharVector

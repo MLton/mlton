@@ -1,13 +1,13 @@
 signature STREAM_IO_EXTRA_ARG = 
    sig
       structure PrimIO: PRIM_IO_EXTRA where type pos = Position.int
-      structure Array: MONO_ARRAY
       structure Vector: sig 
 	                  include MONO_VECTOR
 			  val extract: vector * int * int option -> vector
 			end
-      sharing type PrimIO.elem = Array.elem = Vector.elem
-      sharing type PrimIO.vector = Array.vector = Vector.vector
+      structure Array: MONO_ARRAY
+      sharing type PrimIO.elem = Vector.elem = Array.elem
+      sharing type PrimIO.vector = Vector.vector = Array.vector
       sharing type PrimIO.array = Array.array
       val someElem: PrimIO.elem
 
@@ -657,10 +657,10 @@ functor StreamIOExtra
 signature STREAM_IO_ARG = 
    sig
       structure PrimIO: PRIM_IO where type pos = Position.int
-      structure Array: MONO_ARRAY
       structure Vector: MONO_VECTOR
-      sharing type PrimIO.elem = Array.elem = Vector.elem
-      sharing type PrimIO.vector = Array.vector = Vector.vector
+      structure Array: MONO_ARRAY
+      sharing type PrimIO.elem = Vector.elem = Array.elem
+      sharing type PrimIO.vector = Vector.vector = Array.vector
       sharing type PrimIO.array = Array.array
       val someElem: PrimIO.elem
    end
@@ -690,13 +690,13 @@ functor StreamIO
 signature STREAM_IO_EXTRA_FILE_ARG =
    sig
       structure PrimIO: PRIM_IO_EXTRA where type pos = Position.int
-      structure Array: MONO_ARRAY
-      structure Vector: sig
+      structure Vector: sig 
 	                  include MONO_VECTOR
 			  val extract: vector * int * int option -> vector
 			end
-      sharing type PrimIO.elem = Array.elem = Vector.elem
-      sharing type PrimIO.vector = Array.vector = Vector.vector
+      structure Array: MONO_ARRAY
+      sharing type PrimIO.elem = Vector.elem = Array.elem
+      sharing type PrimIO.vector = Vector.vector = Array.vector
       sharing type PrimIO.array = Array.array
       val someElem: PrimIO.elem
 

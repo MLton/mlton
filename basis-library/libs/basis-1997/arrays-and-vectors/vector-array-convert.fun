@@ -1,13 +1,11 @@
 
 functor VectorArrayConvert
-        (structure Vector: VECTOR
-	 structure VectorSlice: VECTOR_SLICE
-	 structure Array: ARRAY
+        (structure Vector: VECTOR 
+	 structure VectorSlice: VECTOR_SLICE 
+                                where type 'a slice = 'a VectorSlice.slice
+	 structure Array: ARRAY 
 	 structure ArraySlice: ARRAY_SLICE
-	 sharing type Vector.vector = VectorSlice.vector =
-	              Array.vector = ArraySlice.vector
-	 sharing type VectorSlice.slice = ArraySlice.vector_slice
-	 sharing type Array.array = ArraySlice.array) :
+                               where type 'a slice = 'a ArraySlice.slice) :
 	sig
 	   structure Vector: VECTOR_1997
 	   structure Array: ARRAY_1997

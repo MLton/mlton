@@ -1017,5 +1017,3 @@ structure IntInf: INT_INF_EXTRA =
       val ~>> = bigArshift
       val << = bigLshift
    end
-
-structure LargeInt = IntInf
