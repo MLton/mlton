@@ -874,9 +874,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 					     numPointers = 0})),
 				   dst = dst (),
 				   prim = Prim.arrayAllocate})
-
-
-		     fun updateCard (addr, prefix, assign) =
+		     fun updateCard (addr: Operand.t, prefix, assign) =
 		        let
 			   val index = Var.newNoname ()
 			   val map = Var.newNoname ()
@@ -884,8 +882,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			      (PrimApp
 			       {args = (Vector.new2
 					(Operand.CastWord addr,
-					 Operand.word
-					 Runtime.bytesPerCardLog2)),
+					 Operand.word Runtime.bytesPerCardLog2)),
 				dst = SOME (index, Type.int),
 				prim = Prim.word32Rshift})
 			      :: (Bind {isMutable = false,
@@ -907,21 +904,25 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			   then let
 				   val temp = Var.newNoname ()
 				   val tempOp = Operand.Var {var = temp,
-							     ty = Type.int}
+							     ty = Type.word}
 				   val addr = Var.newNoname ()
 				   val addrOp = Operand.Var {var = addr,
 							     ty = Type.pointer}
 				   fun prefix ss =
 				      (PrimApp
 				       {args = Vector.new2
-					       (varOp (a 1),
-					        Operand.int (Type.size ty)),
-				        dst = SOME (temp, Type.int),
-				        prim = Prim.intMul})
+					       (Operand.CastWord (varOp (a 1)),
+					        Operand.word
+						(Word.fromInt (Type.size ty))),
+				        dst = SOME (temp, Type.word),
+				        prim = Prim.word32Mul})
 				      :: (PrimApp
-					  {args = Vector.new2 (varOp (a 0), tempOp),
+					  {args = (Vector.new2
+						   (Operand.CastWord
+						    (varOp (a 0)),
+						    tempOp)),
 					   dst = SOME (addr, Type.pointer),
-					   prim = Prim.intAdd})
+					   prim = Prim.word32Add})
 				      :: ss
 				   val assign = Move {dst = Operand.Offset
 						            {base = addr,

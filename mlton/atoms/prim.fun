@@ -580,6 +580,7 @@ in
       val word32Add = make Name.Word32_add
       val word32AddCheck = make Name.Word32_addCheck
       val word32Andb = make Name.Word32_andb
+      val word32Mul = make Name.Word32_mul
       val word32MulCheck = make Name.Word32_mulCheck
       val word32Rshift = make Name.Word32_rshift
       val word32Sub = make Name.Word32_sub

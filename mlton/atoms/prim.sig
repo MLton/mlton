@@ -323,6 +323,7 @@ signature PRIM =
       val word32Andb: t
       val word32FromInt: t
       val word32Gt: t
+      val word32Mul: t
       val word32MulCheck: t
       val word32Rshift: t
       val word32Sub: t

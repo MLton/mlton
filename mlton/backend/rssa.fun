@@ -781,7 +781,9 @@ structure Program =
 			    Type.equals (varType base, Type.pointer)
 			    andalso Type.equals (varType index, Type.int)
 		       | CastInt z => Type.equals (Operand.ty z, Type.pointer)
-		       | CastWord z => Type.equals (Operand.ty z, Type.pointer)
+		       | CastWord z =>
+			    Type.equals (Operand.ty z, Type.pointer)
+			    orelse Type.equals (Operand.ty z, Type.int)
 		       | Const _ => true
 		       | EnsuresBytesFree => true
 		       | File => true

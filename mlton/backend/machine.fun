@@ -574,7 +574,9 @@ structure Program =
 				   ; Type.equals (Operand.ty x, Type.pointer))
 			     | CastWord x =>
 				  (checkOperand x
-				   ; Type.equals (Operand.ty x, Type.pointer))
+				   ; (Type.equals (Operand.ty x, Type.pointer)
+				      orelse
+				      Type.equals (Operand.ty x, Type.int)))
 			     | Char _ => true
 			     | Contents {oper, ...} =>
 				  (checkOperand oper
