@@ -297,34 +297,30 @@ enum {
 		goto mainLoop;			\
 	} while (0)
 
-#define Switch(size)						\
-	case OPCODE_Switch##size:				\
-	{							\
-		Label label;					\
-		ProgramCounter lastCase;			\
-		Word##size test = 0;				\
-		Word16 numCases;				\
-								\
-		Fetch (numCases);				\
-		lastCase = pc + (4 + size/8) * numCases;	\
-		maybe test = PopReg (Word##size);		\
-		assertRegsEmpty ();				\
-		while (pc < lastCase) {				\
-			Word##size caseWord;			\
-			if (DEBUG or disassemble)		\
-				fprintf (stderr, "\n\t  ");	\
-			Fetch (caseWord);			\
-			if (DEBUG or disassemble)		\
-				fprintf (stderr, " =>");	\
-			Fetch (label);				\
+#define Switch(size)							\
+	case OPCODE_Switch##size:					\
+	{								\
+		Label label;						\
+		ProgramCounter lastCase;				\
+		Word##size test = 0;					\
+		Word16 numCases;					\
+									\
+		Fetch (numCases);					\
+		lastCase = pc + (4 + size/8) * numCases;		\
+		maybe test = PopReg (Word##size);			\
+		assertRegsEmpty ();					\
+		while (pc < lastCase) {					\
+			Word##size caseWord;				\
+			if (DEBUG or disassemble)			\
+				fprintf (stderr, "\n\t  ");		\
+			Fetch (caseWord);				\
+			if (DEBUG or disassemble)			\
+				fprintf (stderr, " =>");		\
+			Fetch (label);					\
 			if (not disassemble and test == caseWord)	\
-				Goto (label);			\
-		}						\
-		if (DEBUG or disassemble)			\
-			fprintf (stderr, "\n\t   _ =>");	\
-       		/* Default case. */				\
-		Fetch (label);					\
-		Goto (label);					\
+				Goto (label);				\
+		}							\
+		goto mainLoop;						\
 	}
 
 typedef char *String;

@@ -623,9 +623,9 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 			   case default of
 			      NONE =>
 				 (emitCases (Vector.dropSuffix (cases, 1))
-				  ; emitLabel (#2 (Vector.last cases)))
+				  ; goto (#2 (Vector.last cases)))
 			    | SOME l =>
-				 (emitCases cases; emitLabel l)
+				 (emitCases cases; goto l)
 			end
 		  in
 		     if 2 = Vector.length cases
