@@ -50,6 +50,7 @@ structure Assert
 structure Base64
 structure BinarySearch
 structure Bool
+structure Buffer
 structure Char
 structure CharArray
 structure CharBuffer

@@ -27,6 +27,7 @@ structure Assert
 structure Base64
 structure BinarySearch
 structure Bool
+structure Buffer
 structure Char
 structure CharArray
 structure CharBuffer
@@ -315,6 +316,8 @@ choice-pattern.sig
 choice-pattern.sml
 escape.sig
 escape.sml
+buffer.sig
+buffer.sml
 
 # if ( defined(SMLNJ_VERSION) )
 
