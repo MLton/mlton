@@ -1065,17 +1065,17 @@ setMemInfo(GC_state s)
 	maxMem = maxMem - s->totalRam;
 	tmp = sbuf.mem_unit * (W64)sbuf.totalswap;
 	s->totalSwap = (tmp > (W64)maxMem) ? maxMem : (W32)tmp;
-	s->maxSemi = roundPage(s, s->ramSlop * (double)s->totalRam / 2);
-	if (DEBUG)
-		fprintf(stderr, "totalRam = %u  totalSwap = %u  maxSemi = %u\n",
-			s->totalRam, s->totalSwap, s->maxSemi);
 }
 #elif (defined (__CYGWIN__))
+#include <windows.h>
 static inline void
 setMemInfo(GC_state s)
 {
-	s->totalRam = roundPage (s, 128 * 1024 * 1024);
-	s->totalSwap = 0;
+	MEMORYSTATUS ms; 
+
+	GlobalMemoryStatus(&ms); 
+	s->totalRam = ms.dwTotalPhys;
+	s->totalSwap = ms.dwTotalPageFile;
 	s->maxSemi = roundPage(s, s->ramSlop * (double)s->totalRam / 2);
 }
 #endif
@@ -1242,12 +1242,14 @@ GC_init(GC_state s, int argc, char **argv,
 		}
 	}
 	setMemInfo(s);
-	
+	s->maxSemi = roundPage(s, s->ramSlop * (double)s->totalRam / 2);
+	if (DEBUG)
+		fprintf(stderr, "totalRam = %u  totalSwap = %u  maxSemi = %u\n",
+			s->totalRam, s->totalSwap, s->maxSemi);
 	if (s->isOriginal)
 		newWorld(s);
 	else
 		GC_loadWorld(s, worldFile, loadGlobals);
-
 	return i;
 }
 
@@ -1426,10 +1428,12 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 				if (13 == try) {
 					static char buffer[256];
 
+#if (defined (__linux__))
 					sprintf(buffer, 
 						"/bin/cat /proc/%d/maps\n", 
 						getpid());
 					(void)system(buffer);
+#endif
 					die("Out of swap space: cannot obtain %u bytes.", s->toSize);
 				}
 				goto retry;
@@ -1480,19 +1484,19 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 
 		needed = (W64)s->bytesLive + bytesRequested;
 		/* Determine the size of new space (now fromSpace). */
-		if (needed * s->minLive < (W64)s->fromSize)
+		if (needed * s->minLive < (W64)s->fromSize) {
 			/* The ratio of live data to semispace size is too low,
 			 * so shrink new space.
 			 */
 			keep = roundPage(s, needed * s->liveRatio);
-		else if (s->fromSize > s->maxSemi) {
-			if (2 * needed <= (W64)s->maxSemi)
+		} else if (s->fromSize > s->maxSemi) {
+			if (2 * needed <= (W64)s->maxSemi) {
 				/* The live data fits in a semispace that is half
 				 * of the RAM size, with a factor of two to 
 				 * spare, so shrink down to maxSemi.
  				 */
 				keep = s->maxSemi;
-			else {
+			} else {
 				/* Needed is large.  Allocate a factor of two
 				 * provided that the semispace will still fit
 				 * in RAM.
@@ -1501,7 +1505,8 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 
 				mult = (2 * needed > s->ramSlop * s->totalRam)
 					? 1.25 : 2.0;
-				keep = roundPage(s, (size_t)needed * mult);
+				keep = min(s->fromSize,
+					roundPage(s, (size_t)needed * mult));
 			}
 		} else
 			/* The heap is about right -- leave new space alone. */
