@@ -144,6 +144,14 @@ structure VarInfo =
       end
    end
 
+val traceLoopBind =
+   Trace.trace
+   ("ClosureConvert.analyzeBind",
+    fn {var, ty: Stype.t, exp} =>
+    Layout.record [("var", Var.layout var),
+		   ("exp", SprimExp.layout exp)],
+    Unit.layout)
+
 fun closureConvert
    (program as Sxml.Program.T {datatypes, body, overflow}): Cps.Program.t =
    let
@@ -222,7 +230,9 @@ fun closureConvert
 		   | MonoVal b => loopBind b
 		   | _ => Error.bug "closure convert saw bogus Dec"
 	       end
-	    and loopBind {var, ty, exp} =
+	    and loopBind arg =
+	       traceLoopBind
+	       (fn {var, ty, exp} =>
 	       let
 		  fun set v = newVar (var, v)
 		  fun new () =
@@ -289,7 +299,7 @@ fun closureConvert
 			   then (new (); ())
 		      else set (Value.tuple (Vector.map (xs, varExp)))
 		   | Var x => set (varExp x)
-	       end
+	       end) arg
 	    and loopLambda (lambda: Lambda.t, x: Var.t): Value.t =
 	       let
 		  val _ = List.push (allLambdas, lambda)
