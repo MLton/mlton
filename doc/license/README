@@ -2,9 +2,12 @@ package		license			use
 --------------  -----------		------------
 MLton		MLton-LICENSE (GPL)	
 
-SML/NJ		NJ-LICENSE		lexer, parser, precedence parser,
-					splay trees,
+SML/NJ		NJ-LICENSE		lexer, parser, 
+                                        precedence parser,
 					OS.IO, Posix.IO, Process, Unix
+					splay trees,
+                                        Concurrent ML Library
+                                        MLNLFFI Library, mlnlffigen
 
 ML Kit		MLKit-LICENSE (GPL)	Path, Time, Date
 

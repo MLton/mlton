@@ -143,11 +143,12 @@ libraries-no-check:
 	cd $(LIB)/sml && rm -rf cml mlyacc-lib
 	$(CP) $(SRC)/lib/mlyacc/. $(LIB)/sml/mlyacc-lib
 	$(CP) $(SRC)/lib/cml/. $(LIB)/sml/cml
+	$(CP) $(SRC)/lib/mlnlffi/. $(LIB)/sml/mlnlffi-lib
 
 .PHONY: libraries
 libraries:
 	$(MAKE) libraries-no-check
-	for f in cml mlyacc-lib; do				\
+	for f in cml mlyacc-lib mlnlffi-lib; do			\
 		echo "Type checking $$f library.";		\
 		$(MLTON) -disable-ann deadCode 			\
 			-stop tc 				\
