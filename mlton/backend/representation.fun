@@ -581,7 +581,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	 Trace.trace
 	 ("toRtype", S.Type.layout, Option.layout R.Type.layout)
 	 toRtype
-      val _ = S.Program.foreachVar (program, fn (_, t) => (toRtype t; ()))
+      val _ = S.Program.foreachVar (program, fn (_, t) => ignore (toRtype t))
       val n = List.length (!finish)
       val _ = List.foreach (!finish, fn f => f ())
       val _ =

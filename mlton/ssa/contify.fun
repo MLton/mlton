@@ -139,7 +139,7 @@ structure ContFuncGraph =
 	  val G = Graph.new ()
 
 	  fun addEdge edge
-	    = (Graph.addEdge (G, edge); ())
+	    = ignore (Graph.addEdge (G, edge))
 
 	  fun addEdge' edge
 	    = if Node.hasEdge edge

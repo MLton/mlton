@@ -58,7 +58,7 @@ struct
 	val root = getInfo rootLabel
 
 	fun addEdge edge
-	  = (Graph.addEdge (G, edge) ; ())
+	  = ignore (Graph.addEdge (G, edge))
 	fun addEdge' edge
 	  = if Node.hasEdge edge
 	      then ()

@@ -220,8 +220,8 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
 			 end))
 	  in ()
 	  end)
-      val _ = (monoCon (Con.truee, Vector.new0 ())
-	       ; monoCon (Con.falsee, Vector.new0 ()))
+      val _ = monoCon (Con.truee, Vector.new0 ())
+      val _ = monoCon (Con.falsee, Vector.new0 ())
       fun finishDbs ac =
 	 let
 	    val dbs = !newDbs

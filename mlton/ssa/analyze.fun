@@ -166,13 +166,14 @@ fun 'a analyze
 			in
 			   (SOME x, t)
 			end
-	       in		     
-		  primApp {prim = prim,
-			   targs = Vector.new0 (),
-			   args = values args,
-			   resultType = resultType,
-			   resultVar = resultVar}
-		  ; ()
+		  val _ =
+		     primApp {prim = prim,
+			      targs = Vector.new0 (),
+			      args = values args,
+			      resultType = resultType,
+			      resultVar = resultVar}
+	       in 
+		  ()
 	       end)
 	handle exn => 
 	   Error.bug (concat ["loopTransfer: ", 

@@ -81,11 +81,15 @@ fun checkScopes (program as
 			val _ =
 			   Vector.foreach
 			   (cases, fn (x, _) =>
-			    (HashSet.insertIfNew
-			     (table, toWord x, fn y => equals (x, y),
-			      fn () => x, 
-			      fn _ => Error.bug "redundant branch in case")
-			     ; ()))
+			    let
+			       val _ = 
+				  HashSet.insertIfNew
+				  (table, toWord x, fn y => equals (x, y),
+				   fn () => x, 
+				   fn _ => Error.bug "redundant branch in case")
+			    in
+			       ()
+			    end)
 		     in
 			if isSome default
 			   then ()

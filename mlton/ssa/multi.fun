@@ -170,7 +170,7 @@ fun multi (p as Program.T {functions, main, ...})
        *)
       val G = Graph.new ()
       fun newNode () = Graph.newNode G
-      fun addEdge edge = (Graph.addEdge (G, edge); ())
+      fun addEdge edge = ignore (Graph.addEdge (G, edge))
       fun addEdge' edge = if Node.hasEdge edge then () else addEdge edge
       val _ = List.foreach
 	      (functions, fn f =>

@@ -367,7 +367,7 @@ val basisLibrary = Promise.lazy basisLibrary
     
 fun forceBasisLibrary d =
    (setBasisLibraryDir d
-    ; basisLibrary ()
+    ; ignore (basisLibrary ())
     ; ())
 
 val primitiveDecs: CoreML.Dec.t vector =
@@ -628,7 +628,7 @@ fun compile {input: File.t list, outputC, outputS}: unit =
 
 val elaborate =
    fn {input: File.t list} =>
-   (elaborate {input = input}; ())
+   (ignore (elaborate {input = input}))
    handle Done => ()
 
 end

@@ -59,9 +59,8 @@ fun insertInFunction (f: Function.t): Function.t =
 	     else
 		Transfer.foreachLabel
 		(transfer, fn to =>
-		 (Graph.addEdge (g, {from = from,
-				     to = labelNode to})
-		  ; ()))
+		 (ignore o Graph.addEdge) 
+		 (g, {from = from, to = labelNode to}))
 	  end)
       val extra: Block.t list ref = ref []
       fun addSignalCheck (Block.T {args, kind, label, statements, transfer})

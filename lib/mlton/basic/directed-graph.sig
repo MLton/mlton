@@ -171,8 +171,7 @@ local
 		     ("B4", "B6"),
 		     ("B5", "exit"),
 		     ("B6", "B4")], fn (from, to) =>
-		    (addEdge (g, {from = node from, to = node to})
-		     ; ()))
+		    ignore (addEdge (g, {from = node from, to = node to})))
    val _ =
       File.withOut
       ("/tmp/z.dot", fn out =>
@@ -204,9 +203,8 @@ local
    val _ = foreachNode (g, fn n =>
 			case idom n of
 			   Idom n' =>
-			      (addEdge (g2, {from = newNode n',
-					     to = newNode n})
-			       ; ())
+			      ignore (addEdge (g2, {from = newNode n',
+						    to = newNode n}))
 			 | _ => ())
    val _ =
       File.withOut

@@ -1731,7 +1731,7 @@ fun elaborateDec (d, {env = E,
 			  fn (l, _) =>
 			  (Aexp.region e,
 			   str (concat
-				[br, " branch of andalso not a bool"]),
+				[br, " branch of andalso not of type bool"]),
 			   seq [str " branch: ", l]))
 		      val _ = doit (ce, "left")
 		      val _ = doit (ce', "right")
@@ -1852,7 +1852,7 @@ fun elaborateDec (d, {env = E,
 			 unify
 			 (Cexp.ty a', Type.bool, fn (l1, _) =>
 			  (Aexp.region a,
-			   str "if test not a bool",
+			   str "if test not of type bool",
 			   seq [str "test type: ", l1]))
 		      val _ =
 			 unify
@@ -1903,7 +1903,7 @@ fun elaborateDec (d, {env = E,
 			  fn (l, _) =>
 			  (Aexp.region e,
 			   str (concat
-				[br, " branch of orelse not a bool"]),
+				[br, " branch of orelse not of type bool"]),
 			   seq [str " branch: ", l]))
 		      val _ = doit (ce, "left")
 		      val _ = doit (ce', "right")
@@ -2193,7 +2193,7 @@ fun elaborateDec (d, {env = E,
 			 unify
 			 (Cexp.ty test', Type.bool, fn (l1, _) =>
 			  (Aexp.region test,
-			   str "while test not a bool",
+			   str "while test not of type bool",
 			   seq [str "test type: ", l1]))
 		      val expr = elab expr
 		      (* Error if expr is not of type unit. *)

@@ -952,7 +952,10 @@ structure Program =
 			   true
 			   orelse Alloc.doesDefine (alloc, x)
 		      | Int _ => true
-		      | Label l => (labelBlock l; true)
+		      | Label l => 
+			   (let val _ = labelBlock l
+			    in true
+			    end handle _ => false)
 		      | Line => true
 		      | Offset (z as {base, ...}) =>
 			   (checkOperand (base, alloc)

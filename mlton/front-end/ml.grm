@@ -86,8 +86,11 @@ structure Pat =
 					([], vid) =>
 					   SOME (fixop, Vid.toVar vid)
 				      | _ =>
-					   (err ()
-					    ; SOME (Fixop.None, Var.bogus)))
+					   let
+					      val _ = err ()
+					   in
+					      SOME (Fixop.None, Var.bogus)
+					   end)
 			       | _ => NONE)
 		     else NONE
                 | _ => NONE

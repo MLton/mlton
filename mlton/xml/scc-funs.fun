@@ -95,9 +95,12 @@ fun sccFuns (Program.T {datatypes, body, overflow}) =
 				 (lambdas, fn {var = x, ...} =>
 				  let val {visit, node = to} = valOf (funInfo x)
 				  in visit := (fn () =>
-					       (Graph.addEdge (g, {from = from,
-								   to = to})
-						; visit := ignore))
+					       let
+						  val _ = Graph.addEdge
+						          (g, {from = from, to = to})
+					       in
+						  visit := ignore
+					       end)
 				  end)
 				 ; (setNodeLambda
 				    (from, {var = var,

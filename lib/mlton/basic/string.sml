@@ -27,7 +27,7 @@ structure String: STRING =
 	       end
 	    val _ =
 	       List.foreach (l, fn (s, a) =>
-			     (lookupOrInsert (s, fn () => a); ()))
+			     ignore (lookupOrInsert (s, fn () => a)))
 	 in
 	    fn s => #3 (lookupOrInsert (s, fn () => init s))
 	 end

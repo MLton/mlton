@@ -182,10 +182,9 @@ structure AFile =
 		    Vector.foreach
 		    (Vector.sub (sourceSeqs, successorsIndex),
 		     fn to =>
-		     (Graph.addEdge
-		      (graph, {from = from,
-			       to = #node (Vector.sub (split, to))})
-		      ; ())))
+		     (ignore o Graph.addEdge)
+		     (graph, {from = from,
+			      to = #node (Vector.sub (split, to))})))
 		val _ =
 		   case In.inputLine ins of
 		      NONE => ()
@@ -833,8 +832,8 @@ fun display (AFile.T {callGraph, master, name = aname, split, ...},
 	  in
 	     case (f from, f to) of
 		(SOME from, SOME to) =>
-		   (Graph.addEdge (keepGraph, {from = from, to = to})
-		    ; ())
+		   (ignore o Graph.addEdge) 
+		   (keepGraph, {from = from, to = to})
 	      | _ => ()
 	  end)
       val {get = edgeOptions: keep Edge.t -> EdgeOption.t list ref, ...} =

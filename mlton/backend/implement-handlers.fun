@@ -79,14 +79,20 @@ fun flow (f: Function.t): Function.t =
 	     val {global, handler} = labelInfo label
 	     val _ =
 		if Label.equals (label, start)
-		   then (ExnStack.<= (ExnStack.slot, global)
-			 ; HandlerLat.forceTop handler
-			 ; ())
+		   then let
+			   val _ = ExnStack.<= (ExnStack.slot, global)
+			   val _ = HandlerLat.forceTop handler
+			in
+			   ()
+			end
 		else ()
 	     fun goto' {global = g, handler = h}: unit =
-		(ExnStack.<= (global, g)
-		 ; HandlerLat.<= (handler, h)
-		 ; ())
+		let
+		   val _ = ExnStack.<= (global, g)
+		   val _ = HandlerLat.<= (handler, h)
+		in
+		   ()
+		end
 	     val goto = goto' o labelInfo
 	  in
 	     case transfer of
@@ -100,20 +106,25 @@ fun flow (f: Function.t): Function.t =
 			  in
 			     case h of
 				Handler.Caller =>
-				   (ExnStack.<= (ExnStack.slot, g')
-				    ; HandlerLat.<= (handler, h')
-				    ; ())
+				   let
+				      val _ = ExnStack.<= (ExnStack.slot, g')
+				      val _ = HandlerLat.<= (handler, h')
+				   in
+				      ()
+				   end
 			      | Handler.Dead => goto' li
 			      | Handler.Handle l =>
 				   let
 				      fun doit {global = g'', handler = h''} =
-					 (ExnStack.<= (ExnStack.locall, g'')
-					  ; (HandlerLat.<=
-					     (HandlerLat.point l, h'')))
+					 let
+					    val _ = ExnStack.<= (ExnStack.locall, g'')
+					    val _ = HandlerLat.<= (HandlerLat.point l, h'')
+					 in
+					    ()
+					 end
 				   in
 				      doit (labelInfo l)
 				      ; doit li
-				      ; ()
 				   end
 			  end
 		     | Return.Tail => ())

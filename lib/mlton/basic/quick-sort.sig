@@ -30,6 +30,6 @@ val _ =
    List.foreach
    ([Array.array (0, 0),
      Array.tabulate (100, fn _ => Random.int ())],
-    fn a => (sortArray (a, op <=); ()))
+    fn a => ignore (sortArray (a, op <=)))
    
 end

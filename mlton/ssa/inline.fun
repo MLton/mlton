@@ -247,9 +247,8 @@ fun product (Program.T {functions, ...}, {small: int, product: int}) =
 			 Call {func, ...} =>
 			    if Func.equals (name, func)
 			       then ()
-			    else (Graph.addEdge 
-				  (graph, {from = node, to = #node (funcInfo func)})
-				  ; ())
+			    else (ignore o Graph.addEdge)
+			         (graph, {from = node, to = #node (funcInfo func)})
 		       | _ => ())
 	     else ()
 	  end)

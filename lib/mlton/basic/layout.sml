@@ -177,8 +177,7 @@ fun print {tree: t,
 			       (newline ()
 				; loop (t, {at = 0, printAt = printAt}))))
 	 end
-   in loop (tree, {at = 0, printAt = 0})
-      ; ()
+   in ignore (loop (tree, {at = 0, printAt = 0}))
    end
 
 fun outputWidth (t, width, out) =

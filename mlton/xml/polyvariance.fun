@@ -69,8 +69,9 @@ fun lambdaSize (Program.T {body, ...}): Lambda.t -> int =
 	  | Lambda l => loopLambda (l, n + 1)
 	  | Profile _ => n
 	  | _ => n + 1
-   in loopExp (body, 0)
-      ; size
+      val _ = loopExp (body, 0)
+   in 
+      size
    end
 
 fun shouldDuplicate (program as Program.T {body, ...}, small, product)
@@ -261,7 +262,7 @@ fun duplicate (program as Program.T {datatypes, body, overflow},
       fun new {lambda = _, ty = _, var}: unit =
 	 if shouldDuplicate var
 	    then setVarInfo (var, Dup {duplicates = ref []})
-	 else (bind var; ())
+	 else ignore (bind var)
       fun loopExp (e: Exp.t): Exp.t =
 	 let
 	    val {decs, result} = Exp.dest e

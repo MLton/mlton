@@ -617,8 +617,8 @@ structure Function =
 		   val _ =
 		      Transfer.foreachLabel
 		      (transfer, fn to =>
-		       (Graph.addEdge (g, {from = from, to = labelNode to})
-			; ()))
+		       (ignore o Graph.addEdge) 
+		       (g, {from = from, to = labelNode to}))
 		in
 		   ()
 		end)

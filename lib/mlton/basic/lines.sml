@@ -28,7 +28,7 @@ fun dropLast (ins, out, {start: int, last: int}): unit =
       val _ = Assert.assert ("Lines.dropLast", fn () =>
 			     start >= 0 andalso last >= 0)
       fun line () = In.inputLine ins
-      val _ = Int.for (0, start, fn _ => (line (); ()))
+      val _ = Int.for (0, start, fn _ => ignore (line ()))
    in
       if last = 0
 	 then In.outputAll (ins, out)

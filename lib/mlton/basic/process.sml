@@ -139,7 +139,7 @@ val run = wait o fork
 
 (* doubleFork avoids creating zombies. *)
 fun doubleFork (c: unit -> unit): unit =
-   run (fn () => (fork c; ()))
+   run (fn () => ignore (fork c))
 
 structure Posix =
    struct
@@ -317,7 +317,7 @@ in
 	 fun loop (delay: Time.t): 'a =
 	    if Time.> (delay, maxDelay)
 	       then fail msg
-	    else (f () handle _ => (sleep delay
+	    else (f () handle _ => (ignore (sleep delay)
 				   ; loop (Time.+ (delay, delay))))
       in loop delay
       end

@@ -541,8 +541,8 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
 		 val i' = labelIndex l
 		 val to = indexNode i'
 		 fun addEdge from =
-		    (Graph.addEdge (g, {from = from, to = to})
-		     ; ())
+		    (ignore o Graph.addEdge) 
+		    (g, {from = from, to = to})
 	      in
 		 if fullCFG
 		    then addEdge from

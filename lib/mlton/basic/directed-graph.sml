@@ -117,6 +117,7 @@ fun addEdge (_, e as {from = Node.Node {successors, ...}, ...}) =
    in
       e
    end
+val addEdge' = ignore o addEdge
 
 fun layoutDot (T {nodes, ...},
 	       mkOptions:
@@ -616,8 +617,7 @@ fun ignoreNodes (g: t, shouldIgnore: Node.t -> bool)
 	     in
 		List.foreach
 		(reach n, fn to =>
-		 (addEdge (g', {from = from, to = newNode to})
-		  ; ()))
+		 addEdge' (g', {from = from, to = newNode to}))
 	     end)
    in
       (g', {destroy = destroy,
@@ -931,9 +931,8 @@ fun loopForestSteensgaard (g: t, {root: Node.t}): LoopForest.t =
 				 in
 				    if class = class'
 				       andalso not (!isHeader')
-				       then (addEdge (g', {from = from',
+				       then addEdge' (g', {from = from',
 							   to = valOf (!next')})
-					     ; ())
 				    else ()
 				 end)
 			     end)
@@ -997,9 +996,8 @@ fun quotient (g, vs) =
 		 if Array.sub (hasIt, c)
 		    then ()
 		 else (Array.update (hasIt, c, true)
-		       ; addEdge (g', {from = from,
-				       to = Vector.sub (newNodes, c)})
-		       ; ()))
+		       ; addEdge' (g', {from = from,
+					to = Vector.sub (newNodes, c)})))
 	     val _ =
 		List.foreach (cs, fn c => Array.update (hasIt, c, false))
 	  in
@@ -1032,9 +1030,8 @@ fun subgraph (g: t, keep: Node.t -> bool) =
 				  in
 				     if keep to
 					then
-					   (addEdge (sub, {from = from,
+					   addEdge' (sub, {from = from,
 							   to = newNode to})
-					    ; ())
 				     else ()
 				  end
 			       end))
@@ -1086,9 +1083,8 @@ fun transpose (g: t) =
 			       val to = newNode to
 			    in
 			       fn e =>
-			       (addEdge (transpose, {from = newNode (Edge.to e),
+			       addEdge' (transpose, {from = newNode (Edge.to e),
 						     to = to})
-				; ())
 			    end))
    in
       (transpose, {destroy = destroy,

@@ -142,7 +142,7 @@ fun globalize {program = Program.T {datatypes, body, ...},
 		     ; once)
 	    | _ => Error.bug "globalize saw strange dec") arg
       and loopLambda (l: Lambda.t): unit =
-	 (loopExp (Lambda.body l, false); ())
+	 ignore (loopExp (Lambda.body l, false))
       val _ = loopExp (body, true)
       val _ = destroyTycon ()
    in

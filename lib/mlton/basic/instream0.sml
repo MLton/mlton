@@ -79,7 +79,7 @@ fun sameContents (in1, in2) =
 
 fun inputToSpace i = inputTo (i, Char.isSpace)
 fun inputToChar (i, c) = inputTo (i, fn c' => Char.equals (c, c'))
-fun ignoreSpaces i = (inputTo (i,not o Char.isSpace); ())
+fun ignoreSpaces i = ignore (inputTo (i,not o Char.isSpace))
 
 fun inputNothing _ = ()
 

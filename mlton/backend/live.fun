@@ -216,7 +216,7 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 			; List.push (todo, b)
 			; true)
 	       val consider = traceConsider consider
-	       val consider = fn x => (consider x; ())
+	       val consider = ignore o consider
 	       val _ = List.foreach (!used, consider)
 	       fun loop () =
 		  case !todo of

@@ -277,6 +277,7 @@ fun closureConvert
 		     let val v = Value.fromType ty
 		     in set v; v
 		     end
+		  val new' = ignore o new
 		  datatype z = datatype PrimExp.t
 	       in
 		  case exp of
@@ -315,8 +316,8 @@ fun closureConvert
 			  | (SOME x, SOME v)     =>
 			       Value.coerce {from = varExp x, to = v}
 			  | _ => Error.bug "constructor mismatch"
-			 ; new (); ())
-		   | Const _ => (new (); ())
+			 ; new' ())
+		   | Const _ => new' ()
 		   | Handle {try, catch = (x, t), handler} =>
 			let
 			   val result = new ()
@@ -329,13 +330,13 @@ fun closureConvert
 			set (Value.primApply {prim = prim,
 					      args = varExps args,
 					      resultTy = ty})
-		   | Profile _ => (new (); ())
-		   | Raise _ => (new (); ())
+		   | Profile _ => new' ()
+		   | Raise _ => new' ()
 		   | Select {tuple, offset} =>
 			set (Value.select (varExp tuple, offset))
 		   | Tuple xs =>
 			if Value.typeIsFirstOrder ty
-			   then (new (); ())
+			   then new' ()
 		      else set (Value.tuple (Vector.map (xs, varExp)))
 		   | Var x => set (varExp x)
 	       end) arg
