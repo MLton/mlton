@@ -24,6 +24,7 @@ in
    structure Operand = Operand
    structure PointerTycon = PointerTycon
    structure Prim = Prim
+   structure RealSize = RealSize
    structure Runtime = Runtime
    structure Scale = Scale
    structure Statement = Statement
@@ -715,17 +716,24 @@ structure PointerRep =
 	       Vector.fold
 	       (components, Bytes.zero, fn ({component = c, ...}, ac) =>
 		Bytes.+ (ac, Type.bytes (Component.ty c)))
-	    val (components, selects) =
+	    fun align8 (b: Bytes.t): Bytes.t =
+	       Bytes.align (b, {alignment = Bytes.fromInt 8})
+	    fun isAligned8 (b: Bytes.t): bool = Bytes.equals (b, align8 b)
+	    val isAligned: bool =
+	       !Control.align = Control.Align4
+	       orelse
 	       if isVector
-		  orelse !Control.align = Control.Align4
-		  orelse
-		  let
-		     val totalWidth = Bytes.+ (width, Runtime.normalHeaderSize)
-		  in
-		     Bytes.equals
-		     (totalWidth,
-		      Bytes.align (totalWidth, {alignment = Bytes.fromInt 8}))
-		  end
+		  then
+		     if (Vector.exists
+			 (components, fn {component = c, ...} =>
+			  case Type.deReal (Component.ty c) of
+			     NONE => false
+			   | SOME s => RealSize.equals (s, RealSize.R64)))
+			then isAligned8 width
+		     else true
+	       else isAligned8 (Bytes.+ (width, Runtime.normalHeaderSize))
+	    val (components, selects) =
+	       if isAligned
 		  then (components, selects)
 	       else
 		  (* Need to insert a pad word before the first pointer. *)
