@@ -87,7 +87,7 @@ PATH=.:$PATH
 	    ;;
 	    *)
 		    echo "testing $f"
-		    make $f.cm > /dev/null
+		    make -W $f > /dev/null
 		    $mlton -type-check true -o $tmpf $f.cm
 		    if [ $? -ne 0 ]; then
 				echo "compilation of $f failed"
