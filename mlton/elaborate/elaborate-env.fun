@@ -2577,7 +2577,12 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 		FlexibleTycon.dest flex
 	     fun long () = Longtycon.long (rev nest, name)
 	     fun bad () =
-		TypeStr.tycon (newTycon (Longtycon.toString (long ()), k, a), k)
+		(* Use a new type to avoid spurious errors. *)
+		TypeStr.def
+		(Scheme.make {canGeneralize = true,
+			      ty = Type.new (),
+			      tyvars = Vector.new0 ()},
+		 k)
 	     val typeStr =
 		case typeStr of
 		   NONE => bad ()
