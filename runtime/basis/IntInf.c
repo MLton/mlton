@@ -15,13 +15,6 @@
 extern struct GC_state gcState;
 
 /*
- * Third header word for bignums and strings.
- */
-#define	BIGMAGIC	GC_objectHeader(WORD_VECTOR_TYPE_INDEX)
-#define	STRMAGIC	GC_objectHeader(STRING_TYPE_INDEX)
-
-
-/*
  * Layout of strings.  Note, the value passed around is a pointer to
  * the chars member.
  */
@@ -31,19 +24,6 @@ typedef struct	strng {
 		magic;		/* STRMAGIC */
 	char	chars[0];	/* actual chars */
 }	strng;
-
-
-/*
- * Layout of bignums.  Note, the value passed around is a pointer to
- * the isneg member.
- */
-typedef struct	bignum {
-	uint	counter,	/* used by GC. */
-		card,		/* one more than the number of limbs */
-		magic,		/* BIGMAGIC */
-		isneg;		/* iff bignum is negative */
-	ulong	limbs[0];	/* big digits, least significant first */
-}	bignum;
 
 
 /*
@@ -495,94 +475,4 @@ IntInf_do_rem(pointer num, pointer den, uint bytes)
 	}
 	resmpz._mp_size = resIsNeg ? - nsize : nsize;
 	return answer(&resmpz);
-}
-
-
-/*
- * For each entry { globalIndex, mlstr} in the inits array (which is terminated
- * by one with an mlstr of NULL), set
- *	state->globals[globalIndex]
- * to the corresponding IntInf.int value.
- * On exit, the GC_state pointed to by state is adjusted to account for any
- * space used.
- * The strings pointed to by the mlstr fields consist of
- *	an optional ~
- *	either one or more of [0-9] or
- *		0x followed by one or more of [0-9a-fA-F]
- *	a trailing EOS
- */
-void
-IntInf_init(GC_state state, struct intInfInit *inits)
-{
-	char	*str;
-	uint	slen,
-		llen,
-		alen,
-		i;
-	bool	neg,
-		hex;
-	bignum	*bp;
-	char	*cp;
-
-	for (; (str = inits->mlstr) != NULL; ++inits) {
-		assert(inits->globalIndex < state->numGlobals);
-		neg = *str == '~';
-		if (neg)
-			++str;
-		slen = strlen(str);
-		hex = str[0] == '0' && str[1] == 'x';
-		if (hex) {
-			str += 2;
-			slen -= 2;
-			llen = (slen + 7) / 8;
-		} else
-			llen = (slen + 8) / 9;
-		assert(slen > 0);
-		bp = (bignum *)state->frontier;
-		cp = (char *)&bp->limbs[llen];
-		if ((pointer)&cp[slen] >= state->limit)
-			die("Out of space");
-		for (i = 0; i != slen; ++i)
-			if ('0' <= str[i] && str[i] <= '9')
-				cp[i] = str[i] - '0' + 0;
-			else if ('a' <= str[i] && str[i] <= 'f')
-				cp[i] = str[i] - 'a' + 0xa;
-			else {
-				assert('A' <= str[i] && str[i] <= 'F');
-				cp[i] = str[i] - 'A' + 0xA;
-			}
-		alen = mpn_set_str(bp->limbs, cp, slen, hex ? 0x10 : 10);
-		assert(alen <= llen);
-		if (alen <= 1) {
-			uint	val,
-				ans;
-
-			if (alen == 0)
-				val = 0;
-			else
-				val = bp->limbs[0];
-			if (neg) {
-				/*
-				 * We only fit if val in [1, 2^30].
-				 */
-				ans = - val;
-				val = val - 1;
-			} else
-				/*
-				 * We only fit if val in [0, 2^30 - 1].
-				 */
-				ans = val;
-			if (val < (uint)1<<30) {
-				state->globals[inits->globalIndex] = 
-					(pointer)(ans<<1 | 1);
-				continue;
-			}
-		}
-		state->globals[inits->globalIndex] = (pointer)&bp->isneg;
-		bp->counter = 0;
-		bp->card = alen + 1;
-		bp->magic = BIGMAGIC;
-		bp->isneg = neg;
-		state->frontier = (pointer)&bp->limbs[alen];
-	}
 }

@@ -16,21 +16,22 @@
 #include "mlton-basis.h"
 
 /*
- * IntInf_init() is passed an array of struct intInfInit's (along
- * with a pointer to the current GC_state) at the start of the program.
- * The array is terminated by an intInfInit with mlstr field NULL.
- * For each other entry, the globalIndex'th entry of the globals array in
- * the GC_state structure is set to the IntInf.int whose value corresponds
- * to the mlstr string.
- * On return, the GC_state must have been adjusted to account for any space
- * used.
+ * Third header word for bignums and strings.
  */
-struct intInfInit {
-	Word	globalIndex;
-	char	*mlstr;
-};
+#define	BIGMAGIC	GC_objectHeader(WORD_VECTOR_TYPE_INDEX)
+#define	STRMAGIC	GC_objectHeader(STRING_TYPE_INDEX)
 
-extern void	IntInf_init(GC_state state, struct intInfInit inits[]);
+/*
+ * Layout of bignums.  Note, the value passed around is a pointer to
+ * the isneg member.
+ */
+typedef struct	bignum {
+	uint	counter,	/* used by GC. */
+		card,		/* one more than the number of limbs */
+		magic,		/* BIGMAGIC */
+		isneg;		/* iff bignum is negative */
+	ulong	limbs[0];	/* big digits, least significant first */
+}	bignum;
 
 /* All of these routines modify the frontier in gcState.  They assume that 
  * there are bytes bytes free, and allocate an array to store the result

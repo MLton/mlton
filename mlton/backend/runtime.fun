@@ -16,10 +16,8 @@ structure CFunction = CFunction (structure Type = Type)
 structure GCField =
    struct
       datatype t =
-	 Base
-       | CanHandle
+	 CanHandle
        | CurrentThread
-       | FromSize
        | Frontier
        | Limit
        | LimitPlusSlop
@@ -30,10 +28,8 @@ structure GCField =
        | StackTop
 
       val ty =
-	 fn Base => Type.pointer
-	  | CanHandle => Type.int
+	 fn CanHandle => Type.int
 	  | CurrentThread => Type.pointer
-	  | FromSize => Type.word
 	  | Frontier => Type.pointer
 	  | Limit => Type.pointer
 	  | LimitPlusSlop => Type.pointer
@@ -43,10 +39,8 @@ structure GCField =
 	  | StackLimit => Type.pointer
 	  | StackTop => Type.pointer
 
-      val baseOffset: int ref = ref 0
       val canHandleOffset: int ref = ref 0
       val currentThreadOffset: int ref = ref 0
-      val fromSizeOffset: int ref = ref 0
       val frontierOffset: int ref = ref 0
       val limitOffset: int ref = ref 0
       val limitPlusSlopOffset: int ref = ref 0
@@ -56,13 +50,11 @@ structure GCField =
       val stackLimitOffset: int ref = ref 0
       val stackTopOffset: int ref = ref 0
 
-      fun setOffsets {base, canHandle, currentThread, fromSize, frontier, limit,
+      fun setOffsets {canHandle, currentThread, frontier, limit,
 		      limitPlusSlop, maxFrameSize, signalIsPending, stackBottom,
 		      stackLimit, stackTop} =
-	 (baseOffset := base
-	  ; canHandleOffset := canHandle
+	 (canHandleOffset := canHandle
 	  ; currentThreadOffset := currentThread
-	  ; fromSizeOffset := fromSize
 	  ; frontierOffset := frontier
 	  ; limitOffset := limit
 	  ; limitPlusSlopOffset := limitPlusSlop
@@ -73,10 +65,8 @@ structure GCField =
 	  ; stackTopOffset := stackTop)
 
       val offset =
-	 fn Base => !baseOffset
-	  | CanHandle => !canHandleOffset
+	 fn CanHandle => !canHandleOffset
 	  | CurrentThread => !currentThreadOffset
-	  | FromSize => !fromSizeOffset
 	  | Frontier => !frontierOffset
 	  | Limit => !limitOffset
 	  | LimitPlusSlop => !limitPlusSlopOffset
@@ -87,10 +77,8 @@ structure GCField =
 	  | StackTop => !stackTopOffset
 
       val toString =
-	 fn Base => "Base"
-	  | CanHandle => "CanHandle"
+	 fn CanHandle => "CanHandle"
 	  | CurrentThread => "CurrentThread"
-	  | FromSize => "FromSize"
 	  | Frontier => "Frontier"
 	  | Limit => "Limit"
 	  | LimitPlusSlop => "LimitPlusSlop"

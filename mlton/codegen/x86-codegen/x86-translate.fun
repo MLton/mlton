@@ -133,10 +133,8 @@ struct
 		open x86MLton
 	      in
 		case oper of
-		   Base => gcState_baseContentsOperand ()
-		 | CanHandle => gcState_canHandleContentsOperand ()
+		   CanHandle => gcState_canHandleContentsOperand ()
 		 | CurrentThread => gcState_currentThreadContentsOperand ()
-		 | FromSize => gcState_fromSizeContentsOperand ()
 		 | Frontier => gcState_frontierContentsOperand ()
 		 | Limit => gcState_limitContentsOperand ()
 		 | LimitPlusSlop => gcState_limitPlusSlopContentsOperand ()

@@ -82,16 +82,6 @@ enum {
 
 #define TWOPOWER(n) (1 << (n))
 
-/* The GC can either always use copying, always use mark-compact, or
- * automatically switch between the two, using copying for small heaps and
- * mark-compact for large heaps.
- */
-typedef enum {
-	GC_METHOD_AUTO_SWITCH,
-	GC_METHOD_COPY,
-	CC_METHOD_MARK_COMPACT,
-} GCMethod;
-
 /* ------------------------------------------------- */
 /*                    object type                    */
 /* ------------------------------------------------- */
@@ -107,6 +97,36 @@ typedef struct {
 	ushort numNonPointers;
 	ushort numPointers;
 } GC_ObjectType;
+
+/* ------------------------------------------------- */
+/*                  initialization                   */
+/* ------------------------------------------------- */
+
+
+/*
+ * GC_init uses the array of struct intInfInits in s at program start to 
+ * allocate intInfs.
+ * The array is terminated by an intInfInit with mlstr field NULL.
+ * For each other entry, the globalIndex'th entry of the globals array in
+ * s is set to the IntInf.int whose value corresponds to the mlstr string.
+ *
+ * The strings pointed to by the mlstr fields consist of
+ *	an optional ~
+ *	either one or more of [0-9] or
+ *		0x followed by one or more of [0-9a-fA-F]
+ *	a trailing EOS
+ */
+struct GC_intInfInit {
+	uint	globalIndex;
+	char	*mlstr;
+};
+
+/* GC_init allocates a collection of strings in the heap. */
+struct GC_stringInit {
+  uint globalIndex;
+  char *str;
+  uint size;
+};
 
 /* ------------------------------------------------- */
 /*                  GC_frameLayout                   */
@@ -169,6 +189,34 @@ typedef struct GC_thread {
 } *GC_thread;
 
 /* ------------------------------------------------- */
+/*                      GC_heap                      */
+/* ------------------------------------------------- */
+
+/* Heap layout is as follows (drawing is not to scale -- card
+ * map and cross map are < 1% of the space)
+ *
+ *  --------------------------------------------------------------------------
+ * | card map | cross map |    old generation    |   to space   |   nursery   |
+ *  --------------------------------------------------------------------------
+ *
+ * If generational collection is not used then the old generation and the
+ * nursery are identical, and the card map, cross map, and to space are empty.
+ */
+
+typedef struct GC_heap {
+	pointer cardMap;
+	pointer crossMap;
+	pointer nursery;
+	uint nurserySize;
+	pointer oldGen;
+	uint oldGenSize;
+	uint size;		/* size (in bytes) of memory area */
+	pointer start;		/* start of memory area */
+	pointer toSpace;
+
+} *GC_heap;
+
+/* ------------------------------------------------- */
 /*                     GC_state                      */
 /* ------------------------------------------------- */
 
@@ -190,26 +238,20 @@ typedef struct GC_state {
 	pointer stackLimit;	/* stackBottom + stackSize - maxFrameSize */
 
 	pointer back;     	/* Points at next available word in toSpace. */
-	pointer base;		/* start (lowest address) of from space */
 	ullong bytesAllocated;
  	ullong bytesCopied;
 	int bytesLive;		/* Number of bytes copied by most recent GC. */
 	ullong bytesMarkCompacted;
 	GC_thread currentThread; /* This points to a thread in the heap. */
- 	/* The dfs stack is only used during the depth-first-search of an 
-	 * object.  This is used in computing the size of an object.
-	 * Top points at the next free space. 
-         */
-	pointer dfsBottom;
-	pointer dfsTop;
- 	uint forwardSize;
 	GC_frameLayout *frameLayouts;
-	uint fromSize; /* Size (bytes) of from space. */
-	pointer *globals; /* An array of size numGlobals. */
+	pointer *globals; 	/* An array of size numGlobals. */
+	struct GC_heap heap;
+	struct GC_heap heap2;
 	bool inSignalHandler; 	/* TRUE iff a signal handler is running. */
 	/* canHandle == 0 iff GC may switch to the signal handler
  	 * thread.  This is used to implement critical sections.
 	 */
+	struct GC_intInfInit *intInfInits;
 	volatile int canHandle;
 	bool isOriginal;
 	pointer limitPlusSlop; /* limit + LIMIT_SLOP */
@@ -220,17 +262,16 @@ typedef struct GC_state {
 	uint maxHeap; /* if zero, then unlimited, else limit total heap */
 	uint maxHeapSizeSeen;
 	uint maxObjectTypeIndex; /* 0 <= typeIndex < maxObjectTypeIndex */
-	uint maxPause; /* max time spent in any gc in milliseconds. */
+	uint maxPause;		/* max time spent in any gc in milliseconds. */
 	uint maxStackSizeSeen;
 	bool messages; /* Print out a message at the start and end of each gc. */
-	GCMethod method;
 	/* native is true iff the native codegen was used.
 	 * The GC needs to know this because it affects how it finds the
 	 * layout of stack frames.
  	 */
 	bool native;
 	uint numCopyingGCs;
-	uint numGlobals; /* Number of pointers in globals array. */
+	uint numGlobals;	/* Number of pointers in globals array. */
  	ullong numLCs;
  	uint numMarkCompactGCs;
 	GC_ObjectType *objectTypes; /* Array of object types. */
@@ -261,17 +302,19 @@ typedef struct GC_state {
 	sigset_t signalsPending;
 	pointer stackBottom; /* The bottom of the stack in the current thread. */
  	uint startTime; /* The time when GC_init or GC_loadWorld was called. */
+        /* The inits array should be NULL terminated, 
+         *    i.e.the final element should be {0, NULL, 0}.
+         */
+	struct GC_stringInit *stringInits;
 	/* If summary is TRUE, then print a summary of gc info when the program 
 	 * is done .
 	 */
 	bool summary; 
-	pointer toBase; /* The start (lowest address) of to space. */
-	uint toSize; /* size (bytes) of to space */
-	uint totalRam; /* bytes */
-	uint totalSwap; /* bytes */
-	uint translateDiff; /* used by translateHeap */
- 	bool translateUp; /* used by translateHeap */
-	bool useFixedHeap; /* if true, then don't resize the heap */
+	uint totalRam;		/* bytes */
+	uint totalSwap; 	/* bytes */
+	uint translateDiff;	/* used by translateHeap */
+ 	bool translateUp;	/* used by translateHeap */
+	bool useFixedHeap; 	/* if true, then don't resize the heap */
 } *GC_state;
 
 static inline uint wordAlign(uint p) {
@@ -317,18 +360,6 @@ pointer GC_copyThread (GC_state s, pointer t);
  * why it's a bad idea to have copyCurrentThread return the copy directly.
  */
 void GC_copyCurrentThread (GC_state s);
-
-/* GC_createStrings allocates a collection of strings in the heap.
- * It assumes that there is enough space.
- * The inits array should be NULL terminated, 
- *    i.e.the final element should be {0, NULL, 0}.
- */
-struct GC_stringInit {
-  uint globalIndex;
-  char *str;
-  uint size;
-};
-void GC_createStrings (GC_state s, struct GC_stringInit inits[]);
 
 /* GC_deseralize returns the deserialization of the word8vector. */
 /* pointer GC_deserialize (GC_state s, pointer word8vector); */
@@ -399,7 +430,7 @@ static inline bool GC_isPointer (pointer p) {
 }
 
 static inline bool GC_isValidFrontier (GC_state s, pointer frontier) {
-	return s->base <= frontier and frontier <= s->limit;
+	return s->heap.nursery <= frontier and frontier <= s->limit;
 }
 
 static inline bool GC_isValidSlot (GC_state s, pointer slot) {

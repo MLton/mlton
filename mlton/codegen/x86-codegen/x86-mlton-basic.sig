@@ -100,8 +100,6 @@ signature X86_MLTON_BASIC =
     val fileLine : unit -> x86.Operand.t
 
     (* gcState relative locations defined in gc.h *)
-    val gcState_baseContents: unit -> x86.MemLoc.t
-    val gcState_baseContentsOperand: unit -> x86.Operand.t
     val gcState_canHandleContentsOperand: unit -> x86.Operand.t
     val gcState_currentThread: unit -> x86.Immediate.t
     val gcState_currentThreadContentsOperand: unit -> x86.Operand.t
@@ -110,7 +108,6 @@ signature X86_MLTON_BASIC =
     val gcState_currentThread_stackContentsOperand: unit -> x86.Operand.t
     val gcState_currentThread_stack_reservedContentsOperand: unit -> x86.Operand.t
     val gcState_currentThread_stack_usedContentsOperand: unit -> x86.Operand.t
-    val gcState_fromSizeContentsOperand: unit -> x86.Operand.t
     val gcState_frontierContents: unit -> x86.MemLoc.t
     val gcState_frontierContentsOperand: unit -> x86.Operand.t
     val gcState_frontierDerefOperand: unit -> x86.Operand.t

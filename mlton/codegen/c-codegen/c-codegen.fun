@@ -167,10 +167,8 @@ structure Operand =
 		  datatype z = datatype GCField.t
 	       in
 		  case r of
-		     Base => "gcState.base"
-		   | CanHandle => "gcState.canHandle"
+		     CanHandle => "gcState.canHandle"
 		   | CurrentThread => "gcState.currentThread"
-		   | FromSize => "gcState.fromSize"
 		   | Frontier => "frontier"
 		   | Limit => "gcState.limit"
 		   | LimitPlusSlop => "gcState.limitPlusSlop"
@@ -284,31 +282,14 @@ fun outputDeclarations
 	  ; print "};\n")
       fun declareMain () =
 	 let
-	    val stringSizes =
-	       List.fold (strings, 0, fn ((_, s), n) =>
-			  n + Runtime.arrayHeaderSize
-			  + Type.align (Type.pointer, String.size s))
-	    val intInfSizes =
-	       List.fold (intInfs, 0, fn ((_, s), n) =>
-			  n + Runtime.intInfOverheadSize
-			  + Type.align (Type.pointer, String.size s))
-	    val bytesLive = intInfSizes + stringSizes
-	    val (usedFixedHeap, fromSize) =
+	    val usedFixedHeap =
 	       case !Control.fixedHeap of
-		  NONE => (false, 0)
-		| SOME n =>
-		     (* div 2 for semispace *)
-		     (if n > 0 andalso bytesLive >= n div 2 
-			 then Out.output (Out.error,
-					  "Warning: heap size used with -h is too small to hold static data.\n")
-		      else ();
-			 (true, n))
+		  NONE => false
+		| SOME n => true
 	    val magic = C.word (Random.useed ())
 	 in 
 	    C.callNoSemi ("Main",
 			  [if usedFixedHeap then C.truee else C.falsee,
-			      C.int fromSize,
-			      C.int bytesLive,
 			      C.int maxFrameSize,
 			      C.int maxFrameIndex,
 			      C.int (Vector.length objectTypes),

@@ -335,9 +335,6 @@ struct
 				   size = pointerSize,
 				   class = Classes.StaticNonTemp})
   
-  val (_, gcState_baseContents, gcState_baseContentsOperand) =
-     make (Field.Base, pointerSize, Classes.GCState)
-
   val (_, _, gcState_canHandleContentsOperand) =
      make (Field.CanHandle, wordSize, Classes.GCState)
 
@@ -345,9 +342,6 @@ struct
        gcState_currentThreadContentsOperand) =
      make (Field.CurrentThread, pointerSize, Classes.GCState)
 
-  val (_, _, gcState_fromSizeContentsOperand) =
-     make (Field.FromSize, pointerSize, Classes.GCState)
-     
   val (_, gcState_frontierContents, gcState_frontierContentsOperand) =
      make (Field.Frontier, pointerSize, Classes.GCStateHold)
 

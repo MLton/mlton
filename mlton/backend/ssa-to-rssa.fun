@@ -1118,10 +1118,11 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 				    simpleCCall CFunction.stringEqual
 			       | String_sub => sub Type.char
 			       | Thread_atomicBegin =>
-				    (* assert(gcState.canHandle >= 0);
-				     * gcState.canHandle++;
-				     * if (gcState.signalIsPending)
-				     *         setLimit(&gcState);
+				    (* assert (s->canHandle >= 0);
+				     * s->canHandle++;
+				     * if (s->signalIsPending)
+				     *         s->limit = s->limitPlusSlop
+				     *                    - LIMIT_SLOP;
 				     *)
 				    split
 				    (Vector.new0 (), Kind.Jump, ss, fn l =>
@@ -1144,17 +1145,12 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 					   end
 					datatype z = datatype GCField.t
 					val statements =
-					   Vector.concat
-					   [doit (LimitPlusSlop,
-						  Prim.word32Add,
-						  Operand.Runtime Base,
-						  Operand.Runtime FromSize),
-					    doit (Limit,
-						  Prim.word32Sub,
-						  Operand.Runtime LimitPlusSlop,
-						  Operand.word
-						  (Word.fromInt
-						   Runtime.limitSlop))]
+					   doit (Limit,
+						 Prim.word32Sub,
+						 Operand.Runtime LimitPlusSlop,
+						 Operand.word
+						 (Word.fromInt
+						  Runtime.limitSlop))
 					val l' =
 					   newBlock
 					   {args = Vector.new0 (),

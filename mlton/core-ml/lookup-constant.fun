@@ -119,10 +119,8 @@ fun decsConstants (decs: CoreML.Dec.t vector): res =
 
 val gcFields =
    [
-    "base",
     "canHandle",
     "currentThread",
-    "fromSize",
     "frontier",
     "limit",
     "limitPlusSlop",

@@ -22,10 +22,8 @@ signature RUNTIME =
       structure GCField:
 	 sig
 	    datatype t =
-	       Base
-	     | CanHandle
+	       CanHandle
 	     | CurrentThread
-	     | FromSize
 	     | Frontier (* The place where the next object is allocated. *)
 	     | Limit (* frontier + heapSize - LIMIT_SLOP *)
 	     | LimitPlusSlop (* frontier + heapSize *)
@@ -37,10 +35,8 @@ signature RUNTIME =
 
 	    val layout: t -> Layout.t
 	    val offset: t -> int (* Field offset in struct GC_state. *)
-	    val setOffsets: {base: int,
-			     canHandle: int,
+	    val setOffsets: {canHandle: int,
 			     currentThread: int,
-			     fromSize: int,
 			     frontier: int,
 			     limit: int,
 			     limitPlusSlop: int,

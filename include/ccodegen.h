@@ -48,7 +48,7 @@
 	pointer localpointer[p];					\
 	uint localuint[u]
 
-#define BeginIntInfs static struct intInfInit intInfInits[] = {
+#define BeginIntInfs static struct GC_intInfInit intInfInits[] = {
 #define IntInf(g, n) { g, n },
 #define EndIntInfs { 0, NULL }};
 
@@ -118,14 +118,13 @@ struct cont {
 /*                       main                        */
 /* ------------------------------------------------- */
 
-#define Main(ufh, fs, bl, mfs, mfi, mot, mg, mc, ml)			\
+#define Main(ufh,  mfs, mfi, mot, mg, mc, ml)				\
 int main(int argc, char **argv) {					\
 	struct cont cont;						\
 	int l_nextFun;							\
-	gcState.bytesLive = bl;						\
 	gcState.frameLayouts = frameLayouts;				\
-	gcState.fromSize = fs;						\
 	gcState.globals = globalpointer;				\
+	gcState.intInfInits = intInfInits;				\
 	gcState.magic = mg;						\
 	gcState.maxFrameIndex = mfi;					\
 	gcState.maxFrameSize = mfs;					\
@@ -134,16 +133,10 @@ int main(int argc, char **argv) {					\
 	gcState.numGlobals = cardof(globalpointer);			\
 	gcState.objectTypes = objectTypes;				\
 	gcState.saveGlobals = &saveGlobals;				\
+	gcState.stringInits = stringInits;				\
 	gcState.useFixedHeap = ufh;					\
-	MLton_init(argc, argv, &loadGlobals);				\
+	MLton_init (argc, argv, &loadGlobals);				\
 	if (gcState.isOriginal) {					\
- 		/* The (> 1) check is so that the C compiler can	\
-		 * eliminate the call if there are no IntInfs and we	\
-		 * then won't have to link in with the IntInf stuff.	\
-		 */							\
-		if (cardof (intInfInits) > 1)				\
-			IntInf_init (&gcState, intInfInits);		\
-		GC_createStrings(&gcState, stringInits);		\
 		float_Init();						\
 		PrepFarJump(mc, ml);					\
 	} else {							\

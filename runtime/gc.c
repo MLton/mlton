@@ -52,6 +52,7 @@ enum {
 	DEBUG_STACKS = FALSE,
 	DEBUG_THREADS = FALSE,
 	FORWARDED = 0xFFFFFFFF,
+	GENERATIONAL = FALSE,
 	HEADER_SIZE = WORD_SIZE,
 	LIVE_RATIO = 8,	/* The desired live ratio. */
 	STACK_HEADER_SIZE = WORD_SIZE,
@@ -449,6 +450,28 @@ static inline uint currentTime () {
 }
 
 /* ---------------------------------------------------------------- */
+/*                            GC_display                            */
+/* ---------------------------------------------------------------- */
+
+void GC_display (GC_state s, FILE *stream) {
+	fprintf (stream, "GC state\n\toldGen = 0x%08x\n\tnursery = 0x%08x\n\tfrontier - nursery = %u\n\tlimitPlusSlop - frontier = %d\n",
+			(uint) s->heap.oldGen,
+			(uint) s->heap.nursery, 
+			s->frontier - s->heap.nursery,
+			s->limitPlusSlop - s->frontier);
+	fprintf (stream, "\tcanHandle = %d\n", s->canHandle);
+	fprintf (stream, "\texnStack = %u  bytesNeeded = %u  reserved = %u  used = %u\n",
+			s->currentThread->exnStack,
+			s->currentThread->bytesNeeded,
+			s->currentThread->stack->reserved,
+			s->currentThread->stack->used);
+	fprintf (stream, "\tstackBottom = 0x%08x\nstackTop - stackBottom = %u\nstackLimit - stackTop = %u\n",
+			(uint)s->stackBottom,
+			s->stackTop - s->stackBottom,
+			(s->stackLimit - s->stackTop));
+}
+
+/* ---------------------------------------------------------------- */
 /*                              Stacks                              */
 /* ---------------------------------------------------------------- */
 
@@ -587,8 +610,13 @@ static inline void foreachGlobal (GC_state s, GC_pointerFun f)
 {
 	int i;
 
- 	for (i = 0; i < s->numGlobals; ++i)
+ 	for (i = 0; i < s->numGlobals; ++i) {
+		if (DEBUG_DETAILED)
+			fprintf (stderr, "foreachGlobal %u\n", i);
 		maybeCall (f, s, &s->globals [i]);
+	}
+	if (DEBUG_DETAILED)
+		fprintf (stderr, "foreachGlobal threads\n");
 	maybeCall (f, s, (pointer*)&s->currentThread);
 	maybeCall (f, s, (pointer*)&s->savedThread);
 	maybeCall (f, s, (pointer*)&s->signalHandler);
@@ -629,7 +657,7 @@ inline pointer foreachPointerInObject (GC_state s, GC_pointerFun f, pointer p) {
 	header = GC_getHeader (p);
 	SPLIT_HEADER();
 	if (DEBUG_DETAILED)
-		fprintf(stderr, "foreachPointerInObject p = 0x%x  header = 0x%x  tag = %s  numNonPointers = %d  numPointers = %d\n", 
+		fprintf (stderr, "foreachPointerInObject p = 0x%x  header = 0x%x  tag = %s  numNonPointers = %d  numPointers = %d\n", 
 			(uint)p, header, tagToString (tag), 
 			numNonPointers, numPointers);
 	if (NORMAL_TAG == tag) {
@@ -640,9 +668,9 @@ inline pointer foreachPointerInObject (GC_state s, GC_pointerFun f, pointer p) {
 		/* Apply f to all internal pointers. */
 		for ( ; p < max; p += POINTER_SIZE) {
 			if (DEBUG_DETAILED)
-				fprintf(stderr, "p = 0x%08x  *p = 0x%08x\n",
+				fprintf (stderr, "p = 0x%08x  *p = 0x%08x\n",
 						(uint)p, (uint)*p);
-			maybeCall(f, s, (pointer*)p);
+			maybeCall (f, s, (pointer*)p);
 		}
 	} else if (ARRAY_TAG == tag) {
 		uint numBytes;
@@ -764,7 +792,7 @@ static inline void foreachPointerInRange (GC_state s, pointer front,
 	       		if (DEBUG_DETAILED)
 				fprintf (stderr, "front = 0x%08x  *back = 0x%08x\n",
 						(uint)front, (uint)*back);
-			front = foreachPointerInObject(s, f, toData (front));
+			front = foreachPointerInObject (s, f, toData (front));
 		}
 		b = *back;
 	}
@@ -778,7 +806,8 @@ static inline void foreachPointerInRange (GC_state s, pointer front,
 #ifndef NODEBUG
 
 static inline bool isInFromSpace (GC_state s, pointer p) {
- 	return (s->base <= p and p < s->frontier);
+ 	return ((s->heap.oldGen <= p and p < s->heap.toSpace)
+		or (s->heap.nursery <= p and p < s->frontier));
 }
 
 static inline void assertIsInFromSpace (GC_state s, pointer *p) {
@@ -790,8 +819,9 @@ static inline void assertIsInFromSpace (GC_state s, pointer *p) {
 }
 
 static inline bool isInToSpace (GC_state s, pointer p) {
-	return (not(GC_isPointer(p))
-		or (s->toBase <= p and p < s->toBase + s->toSize));
+	return (not (GC_isPointer (p))
+		or (s->heap2.oldGen <= p 
+			and p < s->heap2.start + s->heap2.size));
 }
 
 static bool invariant (GC_state s) {
@@ -799,8 +829,8 @@ static bool invariant (GC_state s) {
 	int i;
 	GC_stack stack;
 
-//	if (DEBUG)
-//		fprintf (stderr, "invariant\n");
+	if (DEBUG)
+		fprintf (stderr, "invariant\n");
 	/* Frame layouts */
 	for (i = 0; i < s->maxFrameIndex; ++i) {
 		GC_frameLayout *layout;
@@ -816,15 +846,17 @@ static bool invariant (GC_state s) {
 	}
 	/* Heap */
 	assert (isWordAligned ((uint)s->frontier));
-	assert (s->base <= s->frontier);
-	assert (0 == s->fromSize 
-		or (s->frontier <= s->limitPlusSlop
-			and s->limitPlusSlop == s->base + s->fromSize
+	assert (s->heap.nursery <= s->frontier);
+	assert (0 == s->heap.size
+		or (isPageAligned (s, s->heap.size)
+			and s->frontier <= s->limitPlusSlop
+			and s->limitPlusSlop == s->heap.nursery + s->heap.nurserySize
 			and s->limit == s->limitPlusSlop - LIMIT_SLOP));
-	assert (s->toBase == NULL or s->toSize == s->fromSize);
+	assert (s->heap2.start == NULL or s->heap.size == s->heap2.size);
 	/* Check that all pointers are into from space. */
 	foreachGlobal (s, assertIsInFromSpace);
-	foreachPointerInRange (s, s->base, &s->frontier, assertIsInFromSpace);
+	foreachPointerInRange (s, s->heap.oldGen, &s->frontier, 
+				assertIsInFromSpace);
 	/* Current thread. */
 	stack = s->currentThread->stack;
 	assert (isWordAligned (stack->reserved));
@@ -834,8 +866,8 @@ static bool invariant (GC_state s) {
 	assert (stack->used == currentStackUsed (s));
 	assert (stack->used < stack->reserved);
  	assert (s->stackBottom <= s->stackTop);
-//	if (DEBUG)
-//		fprintf (stderr, "invariant passed\n");
+	if (DEBUG)
+		fprintf (stderr, "invariant passed\n");
 	return TRUE;
 }
 
@@ -895,45 +927,6 @@ void leave (GC_state s) {
 		fprintf (stderr, "leave ok\n");
 }
 
-static inline void releaseFromSpace (GC_state s) {
-	if (s->messages)
-		fprintf (stderr, "Releasing from space.\n");
-	release (s->base, s->fromSize);
-	s->base = NULL;
-	s->fromSize = 0;
-}
-
-static inline void releaseToSpace (GC_state s) {
-	if (0 == s->toSize)
-		return;
-	if (s->messages)
-		fprintf (stderr, "Releasing to space.\n");
-	release (s->toBase, s->toSize);
-	s->toBase = NULL;
-	s->toSize = 0;
-}
-
-/* ---------------------------------------------------------------- */
-/*                            GC_display                            */
-/* ---------------------------------------------------------------- */
-
-void GC_display (GC_state s, FILE *stream) {
-	fprintf (stream, "GC state\n\tbase = 0x%x\n\tfrontier - base = %u\n\tlimitPlusSlop - frontier = %d\n",
-			(uint) s->base, 
-			s->frontier - s->base,
-			s->limitPlusSlop - s->frontier);
-	fprintf (stream, "\tcanHandle = %d\n", s->canHandle);
-	fprintf (stream, "\texnStack = %u  bytesNeeded = %u  reserved = %u  used = %u\n",
-			s->currentThread->exnStack,
-			s->currentThread->bytesNeeded,
-			s->currentThread->stack->reserved,
-			s->currentThread->stack->used);
-	fprintf (stream, "\tstackBottom = %x\nstackTop - stackBottom = %u\nstackLimit - stackTop = %u\n",
-			(uint)s->stackBottom,
-			s->stackTop - s->stackBottom,
-			(s->stackLimit - s->stackTop));
-}
-
 /* ---------------------------------------------------------------- */
 /*                   Semispace memory management                    */
 /* ---------------------------------------------------------------- */
@@ -952,79 +945,148 @@ static W32 computeSemiSize (GC_state s, W64 live) {
 	return res;
 }
 
-/* This toggles back and forth between high and low addresses to decrease
- * the chance of virtual memory fragmentation causing an mmap to fail.
- * This is important for large heaps.
- */
-static void *allocateSemi (GC_state s, size_t length) {
-	static int direction = 1;
-	int i;
-	void *result = (void*)-1;
-
-	for (i = 0; i < 32; i++) {
-		unsigned long address;
-
-		address = i * 0x08000000ul;
-		if (direction)
-			address = 0xf8000000ul - address;
-#if (defined (__CYGWIN__))
-		address = 0; /* FIXME */
-		i = 31; /* FIXME */
-		result = VirtualAlloc ((LPVOID)address, length,
-					MEM_COMMIT,
-					PAGE_READWRITE);
-		if (NULL == result)
-			result = (void*)-1;
-		if (DEBUG_MEM)
-			fprintf (stderr, "0x%x = VirtualAlloc (0x%x, %u, MEM_COMMIT, PAGE_READWRITE)\n",
-					(uint)result, (uint)address,
-					(uint)length);
-#elif (defined (__linux__) || defined (__FreeBSD__))
-		result = mmap(address+(void*)0, length, PROT_READ | PROT_WRITE,
-				MAP_PRIVATE | MAP_ANON, -1, 0);
-#endif
-		unless ((void*)-1 == result) {
-			direction = (direction==0);
-			if (s->toSize > s->maxHeapSizeSeen)
-				s->maxHeapSizeSeen = s->toSize;
-			break;
-		}
-	}
-	return result;
+static inline void heapInit (GC_state s, GC_heap h) {
+	h->size = 0;
+	h->start = NULL;
 }
 
-/* prepareToSpace (s, need, minSize) allocates a space of the size necessary to
+static inline void heapRelease (GC_state s, GC_heap h) {
+	if (0 == h->size)
+		return;
+	if (s->messages)
+		fprintf (stderr, "Releasing heap at 0x%08x of size %u.\n", 
+				(uint)h->start, (uint)h->size);
+	release (h->start, h->size);
+	h->start = NULL;
+	h->size = 0;
+}
+
+static inline void releaseFromSpace (GC_state s) {
+	heapRelease (s, &s->heap);
+}
+
+static inline void releaseToSpace (GC_state s) {
+	heapRelease (s, &s->heap2);
+}
+
+static inline void heapShrink (GC_state s, GC_heap h, W32 keep) {
+	assert (keep <= h->size);
+	assert (isPageAligned (s, keep));
+	if (0 == keep)
+		heapRelease (s, h);
+	else if (keep < h->size) {
+		if (DEBUG or s->messages)
+			fprintf (stderr, 
+				"Shrinking space at 0x%08x from %u to %u bytes.\n",
+				(uint)h->start, (uint)h->size, (uint)keep);
+		decommit (h->start + keep, h->size - keep);
+		h->size = keep;
+	}
+}
+
+static void setLimit (GC_state s) {
+	s->limitPlusSlop = s->heap.nursery + s->heap.nurserySize;
+	s->limit = s->limitPlusSlop - LIMIT_SLOP;
+}
+
+
+static inline void setNursery (GC_state s) {
+	GC_heap h;
+
+	h = &s->heap;
+	h->oldGenSize = s->bytesLive;
+	h->toSpace = h->oldGen + h->oldGenSize;
+	h->nurserySize = h->start + h->size - h->toSpace;
+	if (GENERATIONAL)
+		h->nurserySize /= 2;
+	h->nursery = h->start + h->size - h->nurserySize;
+	s->frontier = h->nursery;
+	setLimit (s);
+}
+
+static inline void shrinkFromSpace (GC_state s, W32 keep) {
+	assert (keep <= s->heap.size);
+	heapShrink (s, &s->heap, keep);
+}
+
+static inline void shrinkToSpace (GC_state s, W32 keep) {
+	assert (keep <= s->heap2.size);
+	heapShrink (s, &s->heap2, keep);
+}
+
+/* heapCreate (s, need, minSize) allocates a heap of the size necessary to
  * work with need live data, and ensures that at least minSize is available.
  * It returns TRUE if it is able to allocate the space, and returns FALSE if it
- * is unable.  If a reasonable size to space is already there, then
- * prepareToSpace leaves it.
+ * is unable.  If a reasonable size to space is already there, then heapCreate
+ * leaves it.
  */
-static inline bool prepareToSpace (GC_state s, W64 need, W32 minSize) {
+static inline bool heapCreate (GC_state s, GC_heap h, W64 need, W32 minSize) {
 	W32 backoff;
 	W32 requested;
 
+	if (DEBUG)
+		fprintf (stderr, "heapCreate  need = %llu  minSize = %u\n",
+				need, (uint)minSize);
+	minSize = roundPage (s, minSize);
 	requested = computeSemiSize (s, need);
 	if (requested < minSize)
 		requested = minSize;
-	if (s->toSize >= minSize and s->toSize >= requested / 2)
+	if (h->size >= minSize and h->size >= requested / 2)
 		/* Tospace is big enough.  Keep it. */
 		return TRUE;
 	else
-		releaseToSpace (s);
-	assert (0 == s->toSize and NULL == s->toBase);
+		heapRelease (s, h);
+	assert (0 == h->size and NULL == h->start);
 	backoff = (requested == minSize)
 		? s->pageSize
 		: roundPage (s, (requested - minSize) / 20);
-	for (s->toSize = requested; s->toSize >= minSize; s->toSize -= backoff) {
-		s->toBase = allocateSemi (s, s->toSize);
-		unless ((void*)-1 == s->toBase)
-			return TRUE;
-		s->toBase = (void*)NULL;
+	assert (isPageAligned (s, requested));
+	assert (isPageAligned (s, backoff));
+	/* mmap toggling back and forth between high and low addresses to
+         * decrease the chance of virtual memory fragmentation causing an mmap
+	 * to fail.  This is important for large heaps.
+	 */
+	for (h->size = requested; h->size >= minSize; h->size -= backoff) {
+		static int direction = 1;
+		int i;
+
+		assert (isPageAligned (s, h->size));
+		for (i = 0; i < 32; i++) {
+			unsigned long address;
+
+			address = i * 0x08000000ul;
+			if (direction)
+				address = 0xf8000000ul - address;
+#if (defined (__CYGWIN__))
+			address = 0; /* FIXME */
+			i = 31; /* FIXME */
+			h->start = VirtualAlloc ((LPVOID)address, h->size,
+							MEM_COMMIT,
+							PAGE_READWRITE);
+			if (DEBUG_MEM)
+				fprintf (stderr, "0x%08x = VirtualAlloc (0x%08x, %u, MEM_COMMIT, PAGE_READWRITE)\n",
+						(uint)h->start, (uint)address,
+						(uint)h->size);
+#elif (defined (__linux__) || defined (__FreeBSD__))
+			h->start = mmap (address+(void*)0, h->size, PROT_READ | PROT_WRITE,
+					MAP_PRIVATE | MAP_ANON, -1, 0);
+			if ((void*)-1 == h->start)
+				h->start = (void*)NULL;
+#endif
+			unless ((void*)NULL == h->start) {
+				direction = (direction==0);
+				assert (isPageAligned (s, h->size));
+				if (h->size > s->maxHeapSizeSeen)
+					s->maxHeapSizeSeen = h->size;
+				h->oldGen = h->start;
+				return TRUE;
+			}
+		}
 		if (s->messages)
 			fprintf(stderr, "[Requested %luM cannot be satisfied, backing off by %luM (need = %luM).\n",
-				meg (s->toSize), meg (backoff), meg (need));
+				meg (h->size), meg (backoff), meg (need));
 	}
-	s->toSize = 0;
+	h->size = 0;
 	return FALSE;
 }
 
@@ -1081,7 +1143,7 @@ static inline void forward (GC_state s, pointer *pp) {
 			skip = stack->reserved - stack->used;
 		}
 		size = headerBytes + objectBytes;
-		assert (s->back + size + skip <= s->toBase + s->toSize);
+		assert (s->back + size + skip <= s->heap2.start + s->heap2.size);
   		/* Copy the object. */
 		if (DEBUG_DETAILED)
 			fprintf (stderr, "copying from 0x%08x to 0x%08x\n",
@@ -1098,7 +1160,7 @@ static inline void forward (GC_state s, pointer *pp) {
 		assert(isWordAligned((uint)s->back));
 	}
 	*pp = *(pointer*)p;
-	assert(isInToSpace(s, *pp));
+	assert (isInToSpace (s, *pp));
 }
 
 static inline void forwardEachPointerInRange (GC_state s, pointer front,
@@ -1117,48 +1179,42 @@ static inline void forwardEachPointerInRange (GC_state s, pointer front,
 	assert(front == *back);
 }
 
-static void setFromSize (GC_state s, uint size) {
-	if (size > s->maxHeapSizeSeen)
-		s->maxHeapSizeSeen = size;
-	s->fromSize = size;
-	s->limitPlusSlop = s->base + s->fromSize;
-	s->limit = s->limitPlusSlop - LIMIT_SLOP;
-}
-
 static void swapSemis (GC_state s) {
-	pointer p;
-	uint tmp;
+	struct GC_heap h;
 
-	p = s->base;
-	s->base = s->toBase;
-	s->toBase = p;
-	tmp = s->fromSize;
-	setFromSize (s, s->toSize);
-	s->toSize = tmp;
+	h = s->heap2;
+	s->heap2 = s->heap;
+	s->heap = h;
+	setLimit (s);
 }
 
 static inline void cheneyCopy (GC_state s) {
-	pointer front;
-
 	s->numCopyingGCs++;
  	if (DEBUG or s->messages) {
 		fprintf (stderr, "Copying GC.\n");
-		fprintf (stderr, "fromSpace = %x  toSpace = %x\n",
-				(uint)s->base, (uint)s->toBase);
-	 	fprintf (stderr, "fromSpace size = %s", 
-				uintToCommaString (s->fromSize));
-		fprintf (stderr, "  toSpace size = %s\n",
-				uintToCommaString (s->toSize));
+	 	fprintf (stderr, "fromSpace = 0x%08x  fromSpace size = %s\n", 
+				(uint) s->heap.oldGen,
+				uintToCommaString (s->heap.size));
+		fprintf (stderr, "toSpace = 0x%08x  toSpace size = %s\n",
+				(uint) s->heap2.oldGen,
+				uintToCommaString (s->heap2.size));
 	}
-	assert (s->toBase != (void*)NULL);
-	assert (s->toSize >= s->fromSize);
-	s->back = s->toBase;
-	front = s->back;
+	assert (s->heap2.start != (void*)NULL);
+	/* The next assert ensures there is enough space for the copy to succeed.
+	 * It does not say  assert (s->heap2.size >= s->heap.size)
+  	 * because that is too strong.
+	 */
+	assert (s->heap2.size >= s->frontier - s->heap.nursery);
+	s->back = s->heap2.oldGen;
 	foreachGlobal (s, forward);
-	forwardEachPointerInRange (s, front, &s->back);
+	forwardEachPointerInRange (s, s->heap2.oldGen, &s->back);
+	s->bytesLive = s->back - s->heap2.oldGen;
+	if (DEBUG)
+		fprintf (stderr, "bytesLive = %u\n", s->bytesLive);
 	swapSemis (s);
-	s->frontier = s->back;
-	s->bytesCopied += s->frontier - s->base;
+	s->bytesCopied += s->bytesLive;
+ 	if (DEBUG or s->messages)
+		fprintf (stderr, "Copying GC done.\n");
 }
 
 /* ---------------------------------------------------------------- */
@@ -1479,7 +1535,7 @@ static inline void updateForwardPointers (GC_state s) {
 	if (DEBUG_MARK_COMPACT)
 		fprintf (stderr, "updateForwardPointers\n");
 	back = s->frontier;
-	front = s->base;
+	front = s->heap.oldGen;
 	endOfLastMarked = front;
 	gap = 0;
 updateObject:
@@ -1574,7 +1630,7 @@ static inline void updateBackwardPointersAndSlide (GC_state s) {
 	if (DEBUG_MARK_COMPACT)
 		fprintf (stderr, "updateBackwardPointersAndSlide\n");
 	back = s->frontier;
-	front = s->base;
+	front = s->heap.oldGen;
 	gap = 0;
 	totalSize = 0;
 updateObject:
@@ -1638,56 +1694,23 @@ unmark:
 	}
 	assert (FALSE);
 done:
-	s->frontier = s->base + totalSize;
+	s->bytesLive = totalSize;
 	return;
 }
 
 static inline void markCompact (GC_state s) {
-	if (s->messages)
+	if (DEBUG or s->messages)
 		fprintf (stderr, "Mark-compact GC.\n");
 	s->numMarkCompactGCs++;
 	foreachGlobal (s, markGlobal);
 	foreachGlobal (s, threadInternal);
 	updateForwardPointers (s);
 	updateBackwardPointersAndSlide (s);
-	s->bytesMarkCompacted += s->frontier - s->base;
-	if (s->messages)
+	s->bytesMarkCompacted += s->bytesLive;
+	if (DEBUG or s->messages)
 		fprintf (stderr, "Mark-compact GC done.\n");
 }
 
-/* ---------------------------------------------------------------- */
-/*                          Heap Resizing                           */
-/* ---------------------------------------------------------------- */
-
-static inline void shrinkFromSpace (GC_state s, W32 keep) {
-	assert (keep <= s->fromSize);
-	assert (isPageAligned (s, keep));
-	if (0 == keep)
-		releaseFromSpace (s);
-	else if (keep < s->fromSize) {
-		if (DEBUG or s->messages)
-			fprintf (stderr, 
-				"Shrinking from space at %x to %u bytes.\n",
-				(uint)s->base , (uint)keep);
-		decommit (s->base + keep, s->fromSize - keep);
-		setFromSize (s, keep);
-	}
-}
-
-static inline void shrinkToSpace (GC_state s, W32 keep) {
-	assert (keep <= s->toSize);
-	assert (isPageAligned (s, keep));
-	if (0 == keep)
-		releaseToSpace (s);
-	else if (keep < s->toSize) {
-		if (DEBUG or s->messages)
-			fprintf (stderr, 
-				"Shrinking to space at %x to %u bytes.\n",
-				(uint)s->toBase , (uint)keep);
-		decommit (s->toBase + keep, s->toSize - keep);
-		s->toSize = keep;
-	}
-}
 
 static void translatePointer (GC_state s, pointer *p) {
 	if (s->translateUp)
@@ -1697,13 +1720,13 @@ static void translatePointer (GC_state s, pointer *p) {
 }
 
 /* Translate all pointers to the heap from within the stack and the heap for
- * a heap that has moved from s->base == old to s->base.
+ * a heap that has moved from from to to.
  */
 static void translateHeap (GC_state s, pointer from, pointer to, uint size) {
 	pointer limit;
 
-	if (s->messages)
-		fprintf (stderr, "Translating heap of size %s from 0x%x to 0x%x.\n",
+	if (DEBUG or s->messages)
+		fprintf (stderr, "Translating heap of size %s from 0x%08x to 0x%08x.\n",
 				uintToCommaString (size),
 				(uint)from, (uint)to);
 	if (from == to)
@@ -1733,52 +1756,56 @@ static inline void resizeHeap (GC_state s, W64 need) {
 	keep = 0;
 	if (DEBUG_RESIZING)
 		fprintf (stderr, "resizeHeap  need = %llu  fromSize = %u\n",
-				need, s->fromSize);
-	if (need >= s->fromSize)
+				need, s->heap.size);
+	if (need >= s->heap.size)
 		grow = TRUE;
 	else if (need * LIVE_RATIO_MIN >= s->ramSlop * s->totalRam) {
 		/* Paging matters.  Change the heap size if the 
 		 * desired size (LIVE_RATIO * needed) is very different
 		 * from fromSize.
 		 */
-		if (need * 1.5 <= s->fromSize)
+		if (need * 1.5 <= s->heap.size)
 			keep = need * LIVE_RATIO_MIN;
-		else if (need * 1.1 >= s->fromSize)
+		else if (need * 1.1 >= s->heap.size)
 			grow = TRUE;
 		else
-			keep = s->fromSize;
+			keep = s->heap.size;
 	} else if (need * 10 >= s->ramSlop * s->totalRam) {
 		/* Go ahead and use all of memory. */
-		if (s->fromSize >= s->ramSlop * s->totalRam)
+		if (s->heap.size >= s->ramSlop * s->totalRam)
 			keep = s->ramSlop * s->totalRam;
 		else
 			grow = TRUE;
 	} else {
-		if (need * 20 <= s->fromSize)
+		if (need * 20 <= s->heap.size)
 			keep = need * 8;
-		else if (need * 3 >= s->fromSize)
+		else if (need * 3 >= s->heap.size)
 			grow = TRUE;
 		else
-			keep = s->fromSize;
+			keep = s->heap.size;
 	}
 	if (DEBUG_RESIZING)
-		fprintf (stderr, "need = %u  keep = %u\n",
-				(uint)need, (uint)keep);
+		fprintf (stderr, "size = %u  need = %u  keep = %u\n",
+				(uint)s->heap.size, (uint)need, (uint)keep);
 	/* Shrink or grow the heap. */
-	if (not grow)
+	if (not grow) {
+		assert (roundPage (s, keep) <= s->heap.size);
 		shrinkFromSpace (s, roundPage (s, keep));
-	else {
+	} else {
 		pointer old;
 
 		if (DEBUG_RESIZING)
-			fprintf (stderr, "Growing from space.\n");
+			fprintf (stderr, "Growing from space.  bytesLive = %u\n",
+					(uint)s->bytesLive);
 		releaseToSpace (s);
-		old = s->base;
+		old = s->heap.oldGen;
+		assert (roundPage (s, s->bytesLive) <= s->heap.size);
 		shrinkFromSpace (s, roundPage (s, s->bytesLive));
 		/* Allocate a space of the desired size. */
-		if (prepareToSpace (s, need, need)) {
-			copy (s->base, s->toBase, s->bytesLive);
-			releaseFromSpace (s);
+		if (heapCreate (s, &s->heap2, need, need)) {
+			copy (s->heap.oldGen, s->heap2.oldGen, s->bytesLive);
+			heapRelease (s, &s->heap);
+			swapSemis (s);
 		} else {
 			/* Write the heap to a file and try again. */
 			FILE *stream;
@@ -1791,12 +1818,12 @@ static inline void resizeHeap (GC_state s, W64 need) {
 				fprintf (stderr, "Paging from space to %s.\n", 
 						template);
 			stream = sfopen (template, "wb");
-			sfwrite (s->base, 1, s->bytesLive, stream);
+			sfwrite (old, 1, s->bytesLive, stream);
 			sfclose (stream);
 			releaseFromSpace (s);
-			if (prepareToSpace (s, need, need)) {
+			if (heapCreate (s, &s->heap, need, need)) {
 				stream = sfopen (template, "rb");
-				sfread (s->toBase, 1, s->bytesLive, stream);
+				sfread (s->heap.oldGen, 1, s->bytesLive, stream);
 				sfclose (stream);
 				sunlink (template);
 			} else {
@@ -1806,25 +1833,25 @@ static inline void resizeHeap (GC_state s, W64 need) {
 				die ("Out of memory.  Need %llu bytes.\n", need);
 			}
 		}
-		translateHeap (s, old, s->toBase, s->bytesLive);
-		swapSemis (s);
-		setStack (s);
-		s->frontier = s->base + s->bytesLive;
+		translateHeap (s, old, s->heap.oldGen, s->bytesLive);
 	}
+	setNursery (s);
+	setStack (s);
 	/* Resize to space. */
-	if (0 == s->toSize)
+	if (0 == s->heap2.size)
 		/* nothing */ ;
 	else if (/* toSpace is smaller than fromSpace, so we won't be
              	  * able to use it for the next GC anyways. 
  		  */
- 		s->toSize < s->fromSize
+ 		s->heap2.size < s->heap.size
 		or /* Holding on to toSpace may cause paging. */
-		s->fromSize + s->toSize > s->ramSlop * s->totalRam)
+		s->heap.size + s->heap2.size > s->ramSlop * s->totalRam)
 		releaseToSpace (s);
 	else
-		shrinkToSpace (s, s->fromSize);
-	assert (s->fromSize >= need);
-	assert (0 == s->toSize or s->fromSize == s->toSize);
+		shrinkToSpace (s, s->heap.size);
+	assert (s->heap.size >= need);
+	assert (0 == s->heap2.size or s->heap.size == s->heap2.size);
+	assert (invariant (s));
 }
 
 static void growStack (GC_state s) {
@@ -1864,20 +1891,22 @@ void doGC (GC_state s, uint bytesRequested) {
 		fprintf (stderr, "Starting gc.  bytesRequested = %u\n",
 					bytesRequested);
 	fixedGetrusage (RUSAGE_SELF, &ru_start);
- 	s->bytesAllocated += s->frontier - (s->base + s->bytesLive);
-	size = s->fromSize;
+ 	s->bytesAllocated += s->frontier - (s->heap.nursery + s->bytesLive);
+	size = s->heap.size;
 	stackBytesRequested = getStackBytesRequested (s);
         if (not s->useFixedHeap
-		and (W64)s->bytesLive + (W64)s->fromSize 
+		and (W64)s->bytesLive + (W64)s->heap.size
 			<= s->ramSlop * s->totalRam
-		and prepareToSpace (s, (W64)s->bytesLive + (W64)bytesRequested 
+		and heapCreate (s, &s->heap2,
+					(W64)s->bytesLive + (W64)bytesRequested 
 					        + (W64)stackBytesRequested,
-					s->fromSize))
+					s->heap.oldGenSize 
+						+ s->frontier - s->heap.nursery))
 		cheneyCopy (s);
 	else
 		markCompact (s);
+	setNursery (s);
 	setStack (s);
-	s->bytesLive = s->frontier - s->base;
 	if (s->bytesLive > s->maxBytesLive)
 		s->maxBytesLive = s->bytesLive;
 	resizeHeap (s, (W64)s->bytesLive + (W64)bytesRequested 
@@ -2096,7 +2125,7 @@ static inline uint threadBytes () {
 }
 
 static inline uint initialThreadBytes (GC_state s) {
-	return threadBytes() + stackBytes(initialStackSize(s));
+	return threadBytes () + stackBytes (initialStackSize (s));
 }
 
 static inline GC_thread newThreadOfSize (GC_state s, uint stackSize) {
@@ -2183,23 +2212,6 @@ static inline void initSignalStack(GC_state s) {
 	altstack.ss_flags = 0;
 	sigaltstack(&altstack, NULL);
 #endif
-}
-
-/* fromSpace (s, live) allocates fromSpace big enough to hold live data. */
-static inline void fromSpace (GC_state s, uint live) {
-	uint size;
-
-	if (s->useFixedHeap) {
-		if (0 == s->fromSize)
-			size = roundPage (s, s->ramSlop * s->totalRam);
-		else
-		        size = roundPage (s, s->fromSize);
-	} else
-		size = computeSemiSize (s, live);
-	if (live > size)
-		die ("Out of memory (setHeapParams).");
-	s->base = smmap (size);
-	setFromSize (s, size);
 }
 
 static int processor_has_sse2=0;
@@ -2344,7 +2356,7 @@ static float stringToFloat(string s) {
 	return f;
 }
 
-static uint stringToBytes(string s) {
+static uint stringToBytes (string s) {
 	char c;
 	uint result;
 	int i, m;
@@ -2375,6 +2387,152 @@ static uint stringToBytes(string s) {
 	return result;
 }
 
+static inline void setInitialBytesLive (GC_state s) {
+	int i;
+	int numElements;
+
+	s->bytesLive = 0;
+	for (i = 0; s->intInfInits[i].mlstr != NULL; ++i) {
+		numElements = strlen (s->intInfInits[i].mlstr);
+		s->bytesLive +=
+			GC_ARRAY_HEADER_SIZE + WORD_SIZE // for the sign
+			+ ((0 == numElements) 
+				? POINTER_SIZE 
+				: wordAlign (numElements));
+	}
+	for (i = 0; s->stringInits[i].str != NULL; ++i) {
+		numElements = s->stringInits[i].size;
+		s->bytesLive +=
+			GC_ARRAY_HEADER_SIZE
+			+ ((0 == numElements) 
+				? POINTER_SIZE 
+				: wordAlign (numElements));
+	}
+}
+
+#include "IntInf.h"
+#include "gmp.h"
+/*
+ * For each entry { globalIndex, mlstr } in the inits array (which is terminated
+ * by one with an mlstr of NULL), set
+ *	state->globals[globalIndex]
+ * to the corresponding IntInf.int value.
+ * On exit, the GC_state pointed to by state is adjusted to account for any
+ * space used.
+ */
+static inline void initIntInfs (GC_state s) {
+	struct GC_intInfInit *inits;
+	pointer frontier;
+	char	*str;
+	uint	slen,
+		llen,
+		alen,
+		i;
+	bool	neg,
+		hex;
+	bignum	*bp;
+	char	*cp;
+
+	inits = s->intInfInits;
+	frontier = s->frontier;
+	for (; (str = inits->mlstr) != NULL; ++inits) {
+		assert (inits->globalIndex < s->numGlobals);
+		neg = *str == '~';
+		if (neg)
+			++str;
+		slen = strlen (str);
+		hex = str[0] == '0' && str[1] == 'x';
+		if (hex) {
+			str += 2;
+			slen -= 2;
+			llen = (slen + 7) / 8;
+		} else
+			llen = (slen + 8) / 9;
+		assert(slen > 0);
+		bp = (bignum *)frontier;
+		cp = (char *)&bp->limbs[llen];
+		for (i = 0; i != slen; ++i)
+			if ('0' <= str[i] && str[i] <= '9')
+				cp[i] = str[i] - '0' + 0;
+			else if ('a' <= str[i] && str[i] <= 'f')
+				cp[i] = str[i] - 'a' + 0xa;
+			else {
+				assert('A' <= str[i] && str[i] <= 'F');
+				cp[i] = str[i] - 'A' + 0xA;
+			}
+		alen = mpn_set_str (bp->limbs, cp, slen, hex ? 0x10 : 10);
+		assert(alen <= llen);
+		if (alen <= 1) {
+			uint	val,
+				ans;
+
+			if (alen == 0)
+				val = 0;
+			else
+				val = bp->limbs[0];
+			if (neg) {
+				/*
+				 * We only fit if val in [1, 2^30].
+				 */
+				ans = - val;
+				val = val - 1;
+			} else
+				/*
+				 * We only fit if val in [0, 2^30 - 1].
+				 */
+				ans = val;
+			if (val < (uint)1<<30) {
+				s->globals[inits->globalIndex] = 
+					(pointer)(ans<<1 | 1);
+				continue;
+			}
+		}
+		s->globals[inits->globalIndex] = (pointer)&bp->isneg;
+		bp->counter = 0;
+		bp->card = alen + 1;
+		bp->magic = BIGMAGIC;
+		bp->isneg = neg;
+		frontier = (pointer)&bp->limbs[alen];
+	}
+	s->frontier = frontier;
+}
+
+static inline void initStrings (GC_state s) {
+	struct GC_stringInit *inits;
+	pointer frontier;
+	int i;
+
+	inits = s->stringInits;
+	frontier = s->frontier;
+	for (i = 0; inits[i].str != NULL; ++i) {
+		uint numElements, numBytes;
+
+		numElements = inits[i].size;
+		numBytes = GC_ARRAY_HEADER_SIZE
+			+ ((0 == numElements) 
+				? POINTER_SIZE 
+				: wordAlign(numElements));
+		assert (numBytes <= s->heap.start + s->heap.size - frontier);
+		*(word*)frontier = 0; /* counter word */
+		*(word*)(frontier + WORD_SIZE) = numElements;
+		*(word*)(frontier + 2 * WORD_SIZE) = STRING_HEADER;
+		s->globals[inits[i].globalIndex] = 
+			frontier + GC_ARRAY_HEADER_SIZE;
+		if (DEBUG_DETAILED)
+			fprintf (stderr, "allocated string at 0x%x\n",
+					(uint)s->globals[inits[i].globalIndex]);
+		{
+			int j;
+
+			for (j = 0; j < numElements; ++j)
+				*(frontier + GC_ARRAY_HEADER_SIZE + j) 
+					= inits[i].str[j];
+		}
+		frontier += numBytes;
+	}
+	s->frontier = frontier;
+}
+
 static void newWorld (GC_state s)
 {
 	int i;
@@ -2382,14 +2540,16 @@ static void newWorld (GC_state s)
 	assert (isWordAligned (sizeof (struct GC_thread)));
 	for (i = 0; i < s->numGlobals; ++i)
 		s->globals[i] = (pointer)BOGUS_POINTER;
-	fromSpace (s, s->bytesLive + initialThreadBytes (s));
-	s->frontier = s->base;
-	s->toSize = 0;
-	s->toBase = NULL;
+	setInitialBytesLive (s);
+	heapCreate (s, &s->heap, s->bytesLive, s->bytesLive);
+	s->frontier = s->heap.oldGen;
+	initIntInfs (s);
+	initStrings (s);
+	assert (s->frontier - s->heap.oldGen <= s->bytesLive);
+	s->bytesLive = s->frontier - s->heap.oldGen;
+	setNursery (s);
+	heapInit (s, &s->heap2);
 	switchToThread (s, newThreadOfSize (s, initialStackSize (s)));
-	assert (initialThreadBytes (s) == s->frontier - s->base);
-	assert (s->frontier + s->bytesLive <= s->limitPlusSlop);
-	assert (mutatorInvariant (s));
 }
 
 /* worldTerminator is used to separate the human readable messages at the 
@@ -2401,37 +2561,33 @@ static void loadWorld (GC_state s,
 			char *fileName,
 			void (*loadGlobals)(FILE *file)) {
 	FILE *file;
-	uint heapSize, magic;
-	pointer base, frontier;
+	uint magic;
+	pointer oldGen;
 	char c;
 	
-	file = sfopen(fileName, "rb");
-	until ((c = fgetc(file)) == worldTerminator or EOF == c);
-	if (EOF == c) die("Invalid world.");
-	magic = sfreadUint(file);
+	file = sfopen (fileName, "rb");
+	until ((c = fgetc (file)) == worldTerminator or EOF == c);
+	if (EOF == c) die ("Invalid world.");
+	magic = sfreadUint (file);
 	unless (s->magic == magic)
 		die("Invalid world: wrong magic number.");
-	base = (pointer)sfreadUint(file);
-	frontier = (pointer)sfreadUint(file);
-	s->currentThread = (GC_thread)sfreadUint(file);
-	s->signalHandler = (GC_thread)sfreadUint(file);
-	heapSize = frontier - base;
-	s->bytesLive = heapSize;
-       	fromSpace (s, heapSize);
-	sfread (s->base, 1, heapSize, file);
-	s->frontier = s->base + heapSize;
+	oldGen = (pointer) sfreadUint (file);
+	s->bytesLive = sfreadUint (file);
+	s->currentThread = (GC_thread) sfreadUint (file);
+	s->signalHandler = (GC_thread) sfreadUint (file);
+       	heapCreate (s, &s->heap, s->bytesLive, s->bytesLive);
+	setNursery (s);
+	heapInit (s, &s->heap2);
+	sfread (s->heap.oldGen, 1, s->bytesLive, file);
 	(*loadGlobals)(file);
 	unless (EOF == fgetc (file))
-		die("Invalid world: junk at end of file.");
-	fclose(file);
+		die ("Invalid world: junk at end of file.");
+	fclose (file);
 	/* translateHeap must occur after loading the heap and globals, since it
 	 * changes pointers in all of them.
 	 */
-	translateHeap (s, base, s->base, heapSize);
+	translateHeap (s, oldGen, s->heap.oldGen, s->bytesLive);
 	setStack (s);
-	s->toSize = 0;
-	s->toBase = NULL;
-	assert (mutatorInvariant (s));
 }
 
 int GC_init (GC_state s, int argc, char **argv, 
@@ -2439,14 +2595,14 @@ int GC_init (GC_state s, int argc, char **argv,
 	char *worldFile;
 	int i;
 
-	s->pageSize = getpagesize();
-	initSignalStack(s);
+	s->pageSize = getpagesize ();
+	initSignalStack (s);
 	s->bytesAllocated = 0;
 	s->bytesCopied = 0;
 	s->bytesMarkCompacted = 0;
 	s->canHandle = 0;
 	s->currentThread = BOGUS_THREAD;
-	rusageZero(&s->ru_gc);
+	rusageZero (&s->ru_gc);
 	s->inSignalHandler = FALSE;
 	s->isOriginal = TRUE;
 	s->maxBytesLive = 0;
@@ -2461,12 +2617,12 @@ int GC_init (GC_state s, int argc, char **argv,
 	s->ramSlop = 0.80;
 	s->savedThread = BOGUS_THREAD;
 	s->signalHandler = BOGUS_THREAD;
-	sigemptyset(&s->signalsHandled);
+	sigemptyset (&s->signalsHandled);
 	s->signalIsPending = FALSE;
-	sigemptyset(&s->signalsPending);
-	s->startTime = currentTime();
+	sigemptyset (&s->signalsPending);
+	s->startTime = currentTime ();
 	s->summary = FALSE;
- 	readProcessor();
+ 	readProcessor ();
 	worldFile = NULL;
 	i = 1;
 	if (argc > 1 and (0 == strcmp (argv [1], "@MLton"))) {
@@ -2483,11 +2639,12 @@ int GC_init (GC_state s, int argc, char **argv,
 
 				arg = argv[i];
 				if (0 == strcmp(arg, "fixed-heap")) {
+					die ("fixed-heap is currently unimplemented");
 					++i;
 					if (i == argc)
 						usage(argv[0]);
 					s->useFixedHeap = TRUE;
-					s->fromSize =
+					s->heap.size =
 						stringToBytes (argv[i++]);
 				} else if (0 == strcmp(arg, "gc-messages")) {
 					++i;
@@ -2522,7 +2679,7 @@ int GC_init (GC_state s, int argc, char **argv,
 			}
 		}
 	}
-	setMemInfo(s);
+	setMemInfo (s);
 	if (DEBUG or DEBUG_RESIZING)
 		fprintf (stderr, "totalRam = %u  totalSwap = %u\n",
 				s->totalRam, s->totalSwap);
@@ -2530,45 +2687,8 @@ int GC_init (GC_state s, int argc, char **argv,
 		newWorld (s);
 	else
 		loadWorld (s, worldFile, loadGlobals);
+	assert (mutatorInvariant (s));
 	return i;
-}
-
-void GC_createStrings (GC_state s, struct GC_stringInit inits[]) {
-	pointer frontier;
-	int i;
-
-	assert (invariant (s));
-	frontier = s->frontier;
-	for(i = 0; inits[i].str != NULL; ++i) {
-		uint numElements, numBytes;
-
-		numElements = inits[i].size;
-		numBytes = GC_ARRAY_HEADER_SIZE
-			+ ((0 == numElements) 
-				? POINTER_SIZE 
-				: wordAlign(numElements));
-		if (frontier + numBytes >= s->limit)
-			die("Unable to allocate string constant \"%s\".", 
-				inits[i].str);
-		*(word*)frontier = 0; /* counter word */
-		*(word*)(frontier + WORD_SIZE) = numElements;
-		*(word*)(frontier + 2 * WORD_SIZE) = STRING_HEADER;
-		s->globals[inits[i].globalIndex] = 
-			frontier + GC_ARRAY_HEADER_SIZE;
-		if (DEBUG_DETAILED)
-			fprintf (stderr, "allocated string at 0x%x\n",
-					(uint)s->globals[inits[i].globalIndex]);
-		{
-			int j;
-
-			for (j = 0; j < numElements; ++j)
-				*(frontier + GC_ARRAY_HEADER_SIZE + j) 
-					= inits[i].str[j];
-		}
-		frontier += numBytes;
-	}
-	s->frontier = frontier;
-	assert(mutatorInvariant(s));
 }
 
 static void displayUint (string name, uint n) {
@@ -2581,17 +2701,17 @@ static void displayUllong (string name, ullong n) {
 
 inline void GC_done (GC_state s) {
 	enter (s);
-	release (s->base, s->fromSize);
-	releaseToSpace (s);
+	heapRelease (s, &s->heap);
+	heapRelease (s, &s->heap2);
 	if (s->summary) {
 		double time;
 		uint gcTime = rusageTime (&s->ru_gc);
 
-		displayUint("max semispace size(bytes)", s->maxHeapSizeSeen);
-		displayUint("max stack size(bytes)", s->maxStackSizeSeen);
+		displayUint ("max semispace size(bytes)", s->maxHeapSizeSeen);
+		displayUint ("max stack size(bytes)", s->maxStackSizeSeen);
 		time = (double)(currentTime() - s->startTime);
 		fprintf(stderr, "GC time(ms): %s (%.1f%%)\n",
-			intToCommaString(gcTime), 
+			intToCommaString (gcTime), 
 			(0.0 == time) ? 0.0 
 			: 100.0 * ((double) gcTime) / time);
 		displayUint ("maxPause(ms)", s->maxPause);
@@ -2600,7 +2720,7 @@ inline void GC_done (GC_state s) {
 		displayUllong ("number of LCs", s->numLCs);
 		displayUllong ("bytes allocated",
 	 			s->bytesAllocated 
-				+ (s->frontier - s->base - s->bytesLive));
+				+ (s->frontier - s->heap.nursery - s->bytesLive));
 		displayUllong ("bytes copied", s->bytesCopied);
 		displayUllong ("bytes mark-compacted", s->bytesMarkCompacted);
 		displayUint ("max bytes live", s->maxBytesLive);
@@ -2658,20 +2778,21 @@ uint GC_size (GC_state s, pointer root) {
 void GC_saveWorld (GC_state s, int fd) {
 	char buf[80];
 
+	if (DEBUG)
+		fprintf (stderr, "Save world.\n");
 	enter (s);
-	/* Compact the heap into fromSpace */
+	/* Compact the heap. */
 	doGC (s, 0);
-	sprintf(buf,
-		"Heap file created by MLton.\nbase = %x\nfrontier = %x\n",
-		(uint)s->base,
-		(uint)s->frontier);
-	swrite(fd, buf, 1 + strlen(buf)); /* +1 to get the '\000' */
-	swriteUint(fd, s->magic);
-	swriteUint(fd, (uint)s->base);
-	swriteUint(fd, (uint)s->frontier);
-	swriteUint(fd, (uint)s->currentThread);
-	swriteUint(fd, (uint)s->signalHandler);
- 	swrite(fd, s->base, s->frontier - s->base);
-	(*s->saveGlobals)(fd);
+	sprintf (buf,
+		"Heap file created by MLton.\noldGen = 0x%08x\nbytesLive = %u\n",
+		(uint)s->heap.oldGen, (uint)s->bytesLive);
+	swrite (fd, buf, 1 + strlen(buf)); /* +1 to get the '\000' */
+	swriteUint (fd, s->magic);
+	swriteUint (fd, (uint)s->heap.oldGen);
+	swriteUint (fd, (uint)s->bytesLive);
+	swriteUint (fd, (uint)s->currentThread);
+	swriteUint (fd, (uint)s->signalHandler);
+ 	swrite (fd, s->heap.oldGen, s->bytesLive);
+	(*s->saveGlobals) (fd);
 	leave (s);
 }
