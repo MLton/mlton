@@ -68,9 +68,20 @@ structure Statement =
    struct
       open Statement
 
+      fun error () = Error.bug "Array as object with non-constant numBytes"
       fun objectBytesAllocated s =
 	 case s of
-	    Statement.Array0 _ => Runtime.array0Size
+	    Statement.Array {isObject, numBytes, ...} =>
+	       if isObject
+		  then
+		     (case numBytes of
+			 Operand.Const c =>
+			    (case Const.node c of
+				Const.Node.Word w =>
+				   Word.toInt w + Runtime.arrayHeaderSize
+			      | _ => error ())
+		       | _ => error ())
+	       else 0
 	  | Statement.Object {numPointers = p, numWordsNonPointers = np, ...} =>
 	       Runtime.objectHeaderSize
 	       + Runtime.objectSize {numPointers = p,

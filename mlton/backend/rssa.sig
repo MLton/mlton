@@ -69,6 +69,10 @@ signature RSSA =
 	 sig
 	    datatype t =
 	       Array of {dst: Var.t,
+			 (* Treat the array as an object for the purposes of
+			  * limit check insertion.
+			  *)
+			 isObject: bool,
 			 (* The number of bytes taken by the array, not
 			  * including headers.
 			  *)
@@ -76,7 +80,6 @@ signature RSSA =
 			 numBytesNonPointers: int,
 			 numElts: Operand.t,
 			 numPointers: int}
-	     | Array0 of {dst: Var.t}
 	     | Bind of {isMutable: bool,
 			oper: Operand.t,
 			var: Var.t}

@@ -614,8 +614,16 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 				 add (PrimApp {dst = dst (),
 					       prim = prim,
 					       args = varOps args})
-			      fun array0 () =
-				 add (Array0 {dst = valOf var})
+			      fun array0 (numElts: Operand.t) =
+				 add
+				 (Array
+				  {dst = valOf var,
+				   isObject = true,
+				   numBytes = (Operand.word
+					       (Word.fromInt Runtime.wordSize)),
+				   numBytesNonPointers = 0,
+				   numElts = numElts,
+				   numPointers = 0})
 			      datatype z = datatype Prim.Name.t
 			      fun bumpCanHandle n =
 				 let
@@ -667,104 +675,109 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			      else
 				 case Prim.name prim of
 				    Array_array =>
-  (case targ () of
-      NONE => array0 ()
-    | SOME t =>
-	 let
-	    val (nbnp, np, bytesPerElt) =
-	       if Type.isPointer t
-		  then (0, 1, Runtime.pointerSize)
-	       else
-		  let val n = Type.size t
-		  in (n, 0, n)
-		  end
-	 in
-	    if 0 = np andalso 0 = nbnp
-	       then array0 ()
-	    else
-	       let
-		  val numElts = a 0
-		  val (numBytes, numElts, continue) =
-		     case varInt numElts of
-			SOME n =>
-			   (* Compute the number of bytes in the array now, since
-			    * the number of elements is a known constant.
-			    *)
-			   let
-			      val numBytes =
-				 Runtime.wordAlign
-				 (MLton.Word.mulCheck (Word.fromInt n,
-						       Word.fromInt bytesPerElt))
-				 handle Overflow => Runtime.allocTooLarge
-			   in
-			      (Operand.word numBytes,
-			       Operand.int n,
-			       fn alloc =>
-			       ([], Goto {args = Vector.new0 (),
-					  dst = alloc}))
-			   end 
-		      | NONE =>
-			   let
-			      val numEltsOp =
-				 Operand.Var {var = numElts, ty = Type.int}
-			      val numBytes = Var.newNoname ()
-			      val numEltsWord = Var.newNoname ()
-			      val numEltsWordOp =
-				 Operand.Var {var = numEltsWord, ty = Type.word}
-			      val conv =
-				 PrimApp {args = Vector.new1 numEltsOp,
-					  dst = SOME (numEltsWord, Type.word),
-					  prim = Prim.word32FromInt}
-			   in
-			      (Operand.Var {var = numBytes, ty = Type.word},
-			       numEltsOp,
-			       fn alloc =>
-			       if 1 = nbnp
-				  then
-				     let
-					val numBytesWord = Var.newNoname ()
-					val numEltsP3 = Var.newNoname ()
-				     in
-					([conv,
-					  PrimApp
-					  {args = (Vector.new2 (Operand.word 0w3,
-								numEltsWordOp)),
-					   dst = SOME (numEltsP3, Type.word),
-					   prim = Prim.word32Add},
-					  PrimApp
-					  {args = (Vector.new2
-						   (Operand.word (Word.notb 0w3),
-						    Operand.Var {var = numEltsP3,
-								 ty = Type.word})),
-					   dst = SOME (numBytes, Type.word),
-					   prim = Prim.word32Andb}],
-					 Goto {args = Vector.new0 (),
-					       dst = alloc})
-				     end
-			       else
-				  ([conv],
-				   Transfer.Arith
-				   {args = Vector.new2 (Operand.word
-							(Word.fromInt bytesPerElt),
-							numEltsWordOp),
-				    dst = numBytes,
-				    overflow = allocTooLarge (),
-				    prim = Prim.word32MulCheck,
-				    success = alloc,
-				    ty = Type.word}))
-			   end
-	       in
-		  split (Vector.new0 (), Kind.Jump,
-			 Array {dst = valOf var,
-				numBytes = numBytes,
-				numBytesNonPointers = nbnp,
-				numElts = numElts,
-				numPointers = np}
-			 :: ss,
-			 continue)
-	       end
-	 end)
-				  | Array_array0 => array0 ()
+  let
+     val numElts = a 0
+     val numEltsOp = Operand.Var {var = numElts, ty = Type.int}
+  in
+     case targ () of
+	NONE => array0 numEltsOp
+      | SOME t =>
+	   let
+	      val (nbnp, np, bytesPerElt) =
+		 if Type.isPointer t
+		    then (0, 1, Runtime.pointerSize)
+		 else
+		    let val n = Type.size t
+		    in (n, 0, n)
+		    end
+	   in
+	      if 0 = np andalso 0 = nbnp
+		 then array0 numEltsOp
+	      else
+		 let
+		    val (numBytes, numElts, continue) =
+		       case varInt numElts of
+			  SOME n =>
+			     (* Compute the number of bytes in the array now, since
+			      * the number of elements is a known constant.
+			      *)
+			     let
+				val numBytes =
+				   Runtime.wordAlign
+				   (MLton.Word.mulCheck (Word.fromInt n,
+							 Word.fromInt bytesPerElt))
+				   handle Overflow => Runtime.allocTooLarge
+			     in
+				(Operand.word numBytes,
+				 Operand.int n,
+				 fn alloc =>
+				 ([], Goto {args = Vector.new0 (),
+					    dst = alloc}))
+			     end 
+			| NONE =>
+			     let
+				val numEltsOp =
+				   Operand.Var {var = numElts, ty = Type.int}
+				val numBytes = Var.newNoname ()
+				val numEltsWord = Var.newNoname ()
+				val numEltsWordOp =
+				   Operand.Var {var = numEltsWord, ty = Type.word}
+				val conv =
+				   PrimApp {args = Vector.new1 numEltsOp,
+					    dst = SOME (numEltsWord, Type.word),
+					    prim = Prim.word32FromInt}
+			     in
+				(Operand.Var {var = numBytes, ty = Type.word},
+				 numEltsOp,
+				 fn alloc =>
+				 if 1 = nbnp
+				    then
+				       let
+					  val numBytesWord = Var.newNoname ()
+					  val numEltsP3 = Var.newNoname ()
+				       in
+					  ([conv,
+					    PrimApp
+					    {args = (Vector.new2 (Operand.word 0w3,
+								  numEltsWordOp)),
+					     dst = SOME (numEltsP3, Type.word),
+					     prim = Prim.word32Add},
+					    PrimApp
+					    {args = (Vector.new2
+						     (Operand.word (Word.notb 0w3),
+						      Operand.Var {var = numEltsP3,
+								   ty = Type.word})),
+					     dst = SOME (numBytes, Type.word),
+					     prim = Prim.word32Andb}],
+					   Goto {args = Vector.new0 (),
+						 dst = alloc})
+				       end
+				 else
+				    ([conv],
+				     Transfer.Arith
+				     {args = Vector.new2 (Operand.word
+							  (Word.fromInt bytesPerElt),
+							  numEltsWordOp),
+				      dst = numBytes,
+				      overflow = allocTooLarge (),
+				      prim = Prim.word32MulCheck,
+				      success = alloc,
+				      ty = Type.word}))
+			     end
+		 in
+		    split (Vector.new0 (), Kind.Jump,
+			   Array {dst = valOf var,
+				  isObject = false,
+				  numBytes = numBytes,
+				  numBytesNonPointers = nbnp,
+				  numElts = numElts,
+				  numPointers = np}
+			   :: ss,
+			   continue)
+		 end
+	   end
+  end
+				  | Array_array0 => array0 (Operand.int 0)
 				  | Array_sub =>
 				       (case targ () of
 					   NONE => none ()

@@ -94,11 +94,11 @@ structure Statement =
    struct
       datatype t =
 	 Array of {dst: Var.t,
+		   isObject: bool,
 		   numBytes: Operand.t,
 		   numBytesNonPointers: int,
 		   numElts: Operand.t,
 		   numPointers: int}
-       | Array0 of {dst: Var.t}
        | Bind of {isMutable: bool,
 		  oper: Operand.t,
 		  var: Var.t}
@@ -131,7 +131,6 @@ structure Statement =
 	       Array {dst, numBytes, numElts, ...} =>
 		  useOperand (numElts,
 			      useOperand (numBytes, def (dst, Type.pointer, a)))
-	     | Array0 {dst} => def (dst, Type.pointer, a)
 	     | Bind {oper, var, ...} =>
 		  def (var, Operand.ty oper, useOperand (oper, a))
 	     | Move {dst, src} => useOperand (src, useOperand (dst, a))
@@ -168,14 +167,15 @@ structure Statement =
 	 let
 	    open Layout
 	 in
-	    fn Array {dst, numBytes, numBytesNonPointers, numElts, numPointers} =>
+	    fn Array {dst, isObject, numBytes, numBytesNonPointers, numElts,
+		      numPointers} =>
 	    seq [Var.layout dst,
 		 str " = Array ",
-		 record [("numBytes", Operand.layout numBytes),
+		 record [("isObject", Bool.layout isObject),
+			 ("numBytes", Operand.layout numBytes),
 			 ("numBytesNonPointers", Int.layout numBytesNonPointers),
 			 ("numElts", Operand.layout numElts),
 			 ("numPointers", Int.layout numPointers)]]
-	     | Array0 {dst} => seq [Var.layout dst, str " = Array0"]
 	     | Bind {oper, var, ...} =>
 		  seq [Var.layout var, str " = ", Operand.layout oper]
 	     | Move {dst, src} =>
@@ -792,24 +792,15 @@ structure Program =
 		  datatype z = datatype Statement.t
 	       in
 		  case s of
-		     Array {dst, numBytes, numBytesNonPointers, numElts,
-			    numPointers} =>
+		     Array {dst, isObject, numBytes, numBytesNonPointers,
+			    numElts, numPointers} =>
 			(Type.equals (varType dst, Type.pointer)
 			 andalso Type.equals (Operand.ty numBytes, Type.word)
 			 andalso Type.equals (Operand.ty numElts, Type.int)
 			 andalso
 			 Runtime.isValidArrayHeader
 			 {numPointers = numPointers,
-			  numBytesNonPointers = numBytesNonPointers}
-			 andalso
-			 (case numElts of
-			     Operand.Const c =>
-				(case Const.node c of
-				    Const.Node.Int n => n > 0
-				  | _ => false)
-			   | _ => true))
-		   | Array0 {dst} =>
-			Type.equals (varType dst, Type.pointer)
+			  numBytesNonPointers = numBytesNonPointers})
 		   | Bind {oper, ...} => (checkOperand oper; true)
 		   | Move {dst, src} =>
 			(checkOperand dst

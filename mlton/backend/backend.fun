@@ -314,7 +314,8 @@ fun toMachine (program: Ssa.Program.t) =
 	    datatype z = datatype R.Statement.t
 	 in
 	    case s of
-	       Array {dst, numBytes, numBytesNonPointers, numElts, numPointers} =>
+	       Array {dst, numBytes, numBytesNonPointers, numElts, numPointers,
+		      ...} =>
 		  M.Statement.Array
 		  {dst = varOperand dst,
 		   header = (Runtime.arrayHeader
@@ -322,13 +323,6 @@ fun toMachine (program: Ssa.Program.t) =
 			      numPointers = numPointers}),
 		   numBytes = translateOperand numBytes,
 		   numElts = translateOperand numElts}
-	     | Array0 {dst} =>
-		  M.Statement.Array
-		  {dst = varOperand dst,
-		   header = Runtime.arrayHeader {numBytesNonPointers = 0,
-						 numPointers = 0},
-		   numBytes = M.Operand.Uint (Word.fromInt Runtime.wordSize),
-		   numElts = M.Operand.Int 0}
 	     | Bind {isMutable, oper, var} =>
 		  if isMutable
 		     orelse (case #operand (varInfo var) of
