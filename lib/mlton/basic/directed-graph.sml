@@ -504,6 +504,11 @@ fun validDominators (graph,
     in true
     end)
 
+datatype idomRes =
+   Idom of Node.t
+  | Root
+  | Unreachable
+    
 fun dominators (graph, {root}) =
    let
       val n0 = Node.new ()
@@ -518,7 +523,7 @@ fun dominators (graph, {root}) =
 	  preds = ref [],
 	  sdno = ref ~1,
 	  size = ref 1}
-      val {get = nodeInfo: Node.t -> NodeInfo.t, ...} =
+      val {get = nodeInfo: Node.t -> NodeInfo.t, rem = remove, ...} =
 	 Property.get (Node.plist, Property.initFun newNode)
       local
 	 fun 'a make (sel: NodeInfo.t -> 'a ref) =
@@ -561,10 +566,12 @@ fun dominators (graph, {root}) =
 	 in ()
 	 end
       val _ = dfs root
-      val _ =
-	 if !dfnCounter = numNodes
-	    then ()
-	 else Error.bug "dominators: graph is not connected"
+(*       val _ =
+ * 	 if !dfnCounter = numNodes
+ * 	    then ()
+ * 	 else Error.bug "dominators: graph is not connected"
+ *)
+      val numNodes = !dfnCounter
       (* compress ancestor path to node v to the node whose label has the
        * maximal (minimal?) semidominator number. 
        *)
@@ -671,9 +678,19 @@ fun dominators (graph, {root}) =
 	  end)
       val _ = idom' root := root
       val _ = Assert.assert ("dominators", fn () =>
-			     validDominators (graph, {root = root,
-						      idom = idom}))
-   in {idom = idom}
+ 			     validDominators (graph, {root = root,
+ 						      idom = idom}))
+      val {get = idomFinal, set = setIdom, ...} =
+	 Property.getSetOnce (Node.plist, Property.initConst Unreachable)
+      val _ = setIdom (root, Root)
+      val _ = Int.for (1, numNodes, fn i =>
+		       let
+			  val n = ndfs i
+		       in
+			  setIdom (n, Idom (idom n))
+		       end)
+      val _ = Int.for (0, numNodes, fn i => remove (ndfs i))
+   in {idom = idomFinal}
    end
 
 fun dominatorTree (graph, {root: Node.t, nodeValue: Node.t -> 'a}): 'a Tree.t =
@@ -686,9 +703,10 @@ fun dominatorTree (graph, {root: Node.t, nodeValue: Node.t -> 'a}): 'a Tree.t =
       val _ =
 	 List.foreach
 	 (nodes graph, fn n =>
-	  if Node.equals (n, root)
-	     then ()
-	  else List.push (#children (nodeInfo (idom n)), n))
+	  case idom n of
+	     Idom n' => List.push (#children (nodeInfo n'), n)
+	   | Root => ()
+	   | Unreachable => ())
       fun treeAt (n: Node.t): 'a Tree.t =
 	 let
 	    val {children, value} = nodeInfo n

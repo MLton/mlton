@@ -490,14 +490,14 @@ structure AnalyzeDom =
 	  val idom = computeDominators ()
 
 	  fun computeADom () = let
-	  fun ancestor node
-	    = let
-		val parent = idom node
-	      in
-		if Node.equals (parent, Root)
-		  then node
-		  else ancestor parent
-	      end
+	  fun ancestor node =
+	     case idom node of
+		Graph.Idom parent =>
+		   if Node.equals (parent, Root)
+		      then node
+		   else ancestor parent
+	      | Graph.Root => node
+	      | Graph.Unreachable => Error.bug "unreachable"
 
           val _
 	    = Vector.foreach
@@ -511,7 +511,10 @@ structure AnalyzeDom =
 		     val f_node = valOf (!node)
 		     datatype z = datatype JumpFuncGraph.t
 		   in
-		     if Node.equals (idom f_node, Root)
+		     if (case idom f_node of
+			    Graph.Idom n => Node.equals (n, Root)
+			  | Graph.Root => true
+			  | Graph.Unreachable => Error.bug "unreachable")
 		       then if f_reach
 			      then f_ADom := Unknown
 			      else f_ADom := Uncalled

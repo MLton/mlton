@@ -805,7 +805,7 @@ structure Function =
 		  (fn () =>
 		   Graph.dominatorTree (g, {root = root,
 					    nodeValue = #block o nodeInfo})
-		   handle exn => Error.bug (concat ["dominatorTree:",
+		   handle exn => Error.bug (concat ["dominatorTree: ",
 						    Func.toString name,
 						    ":",
 						    case exn

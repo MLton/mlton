@@ -52,14 +52,18 @@ signature DIRECTED_GRAPH =
 	 {graph: t,
 	  layoutNode: Node.t -> Layout.t,
 	  display: Layout.t -> unit} -> unit
-      (* dominators {graph, root}
-       * Pre: All nodes in graph must be reachable from root.
-       *      This condition is checked.
-       * Returns idom, where
-       *  idom n = the immediate dominator n.
-       *  idom root = root.
+      (* dominators (graph, {root})
+       * Returns the immediate dominator relation for the subgraph of graph
+       * rooted at root.
+       *  idom n = SOME root      if n = root
+       *  idom n = SOME n'        where n' is the immediate dominator of n
+       *  idom n = NONE           if n is not reachable from root.
        *)
-      val dominators: t * {root: Node.t} -> {idom: Node.t -> Node.t}
+      datatype idomRes =
+	 Idom of Node.t
+       | Root
+       | Unreachable
+      val dominators: t * {root: Node.t} -> {idom: Node.t -> idomRes}
       val dominatorTree: t * {root: Node.t, nodeValue: Node.t -> 'a} -> 'a Tree.t
       val foreachDescendent: t * Node.t * (Node.t -> unit) -> unit
       val foreachEdge: t * (Node.t * Edge.t -> unit) -> unit
@@ -167,9 +171,12 @@ local
 				      in n'
 				      end))
    val _ = foreachNode (g, fn n =>
-			(addEdge (g2, {from = newNode (idom n),
-				       to = newNode n})
-			 ; ()))
+			case idom n of
+			   Idom n' =>
+			      (addEdge (g2, {from = newNode n',
+					     to = newNode n})
+			       ; ())
+			 | _ => ())
    val _ =
       File.withOut
       ("/tmp/z2.dot", fn out =>

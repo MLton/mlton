@@ -202,11 +202,17 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 	     val _ =
 		List.foreach
 		(Graph.nodes graph, fn n =>
-		 (if Node.equals (n, root)
-		     then ()
-		  else List.push (#children (nodeInfo (idom n)), n)
-		  ; List.foreach (Node.successors n, fn e =>
-				  Int.inc (#numPreds (nodeInfo (Edge.to e))))))
+		 let
+		    val _ =
+		       case idom n of
+			  Graph.Idom n' => List.push (#children (nodeInfo n'), n)
+			| _ => ()
+		    val _ =
+		       List.foreach (Node.successors n, fn e =>
+				     Int.inc (#numPreds (nodeInfo (Edge.to e))))
+		 in
+		    ()
+		 end)
 	     fun loopTransfer (t, n: Node.t) =
 		case t of
 		   Case {test, cases, default, ...} =>
