@@ -1,12 +1,21 @@
 \subsec{Running on SunOS}{sunos}
 
+Here are some things that may affect performance on Sparc.
 \begin{itemize}
 
 \item
-When running on Sparc's, {\mlton} uses {\tt -align 8} by default.
+When running on a Sparc, {\mlton} uses {\tt -align 8} by default.
 While this speeds up reals, it also may increase object sizes.  If
 your program does not make significant use of reals, you might see a
 speedup with {\tt -align 4}.
+
+\item
+Since {\mlton} uses {\tt -native false} on Sparc, the quality of
+code generated of {\tt gcc} is important.  By default, {\mlton} calls
+{\tt gcc -O1}.  You can change this by calling {\mlton} with {\tt
+-cc-opt -O2}.  We have seen this speed up some programs by as much as
+30\%, especially those involving floating point, however it can also
+more than double compile times.
 
 \end{itemize}
 
