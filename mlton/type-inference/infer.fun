@@ -345,6 +345,10 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
        * unifications must be done before converting to Xml
        *)
       val overloads: (unit -> Xexp.t) list ref = ref []
+
+      (* Helps to find type errors. *)
+      val currentFunction: Var.t list ref = ref []
+
       fun varExp (x: Var.t, env: Env.t): expCode =
 	 let
 	    val vr as VarRange.T {scheme, kind} = Env.lookupVarRange (env, x)
@@ -400,13 +404,24 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 			     then (Type.unify (instance, t)
 				   ; SOME (Xexp.monoVar (y, Type.toXml t)))
 			  else NONE,
-			     fn () => (let open Layout
-				       in output (align [Var.layout x,
-							 VarRange.layout vr],
-						  Out.error)
-				       end
-					  ; Out.newline Out.error
-				       ; Error.bug "impossible use of overloaded var")))
+			     fn () =>
+			     (let
+				 open Layout
+				 val _ =
+				    outputl
+				    (align
+				     [Var.layout x,
+				      VarRange.layout vr,
+				      str " in function ",
+				      List.layout Var.layout (!currentFunction),
+				      str " types = ",
+				      Vector.layout (Type.layout o #2) yts,
+				      str " instance = ",
+				      Type.layout instance],
+				     Out.error)
+			      in
+				 Error.bug "impossible use of overloaded var"
+			      end)))
 		     val _ = List.push (overloads, promise)
 		  in
 		     (promise, instance)
@@ -761,8 +776,11 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 		      Vector.map
 		      (decs, fn {var, match, argType, resultType} =>
 		       let
+			  val saved = !currentFunction
+			  val _ = currentFunction := var :: saved
 			  val rs = inferMatchUnify (match, env',
 						    argType, resultType)
+			  val _ = currentFunction := saved
 		       in {var = var,
 			   ty = Type.arrow (argType, resultType),
 			   rules = rs}
