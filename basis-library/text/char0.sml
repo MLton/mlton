@@ -87,7 +87,7 @@ structure Char0 =
 	    memoize (fn c => if lower <= c andalso c <= upper
 			       then chr (ord c +? diff)
 			    else c)
-	 val diff = ord #"A" -? ord #"a"
+	 val diff = ord #"A" - ord #"a"
       in
 	 val toLower = make (#"A", #"Z", ~diff)
 	 val toUpper = make (#"a", #"z", diff)

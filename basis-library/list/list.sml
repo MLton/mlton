@@ -33,43 +33,7 @@ structure List: LIST =
      val getItem =
 	fn [] => NONE
 	 | x :: r => SOME (x, r)
-
-     fun nth (l, n) =
-	let
-	   val rec loop =
-	      fn (e :: _, 0) => e
-	       | ([], _) => raise Subscript
-	       | (_ :: l, n) => loop (l, n -? 1)
-	in
-	   if not Primitive.safe orelse n >= 0
-	      then loop (l, n)
-	   else raise Subscript
-	end
-
-     fun take (l, n) =
-	let
-	   val rec loop =
-	      fn (l, 0) => []
-	       | ([], _) => raise Subscript
-	       | (x :: l, n) => x :: loop (l, n -? 1)
-	in
-	   if not Primitive.safe orelse n >= 0
-	      then loop (l, n)
-	   else raise Subscript
-	end
-
-     fun drop (l, n) =
-	let
-	   val rec loop =
-	      fn (l, 0) => l
-	       | ([], _) => raise Subscript
-	       | ((_ :: t), n) => loop (t, n -? 1)
-	in
-	   if not Primitive.safe orelse n >= 0
-	      then loop (l, n)
-	   else raise Subscript
-	end
-     
+   
      fun foldl f b l =
 	let
 	   fun loop (l, b) =
@@ -139,10 +103,55 @@ structure List: LIST =
 	if Primitive.safe andalso n < 0
 	   then raise Size
 	else let
-		fun loop (i, ac) = if i >= n then rev ac
-				   else loop (i + 1, f i :: ac)
+		fun loop (i, ac) =
+		   if i < n
+		      then loop (i + 1, f i :: ac)
+		   else rev ac
 	     in loop (0, [])
 	     end
+
+     fun nth (l, n) =
+	let
+	   fun loop (l, n) =
+	      case l of
+		 [] => raise Subscript
+	       | x :: l =>
+		    if n > 0
+		       then loop (l, n - 1)
+		    else x
+	in
+	   if Primitive.safe andalso n < 0
+	      then raise Subscript
+	   else loop (l, n)
+	end
+
+     fun take (l, n) =
+	let
+	   fun loop (l, n, ac) =
+	      if n > 0
+		 then (case l of
+			  [] => raise Subscript
+			| x :: l => loop (l, n - 1, x :: ac))
+	      else rev ac
+	in
+	   if Primitive.safe andalso n < 0
+	      then raise Subscript
+	   else loop (l, n, [])
+	end
+
+     fun drop (l, n) =
+	let
+	   fun loop (l, n) =
+	      if n > 0
+		 then (case l of
+			  [] => raise Subscript
+			| _ :: l => loop (l, n - 1))
+	      else l
+	in
+	   if Primitive.safe andalso n < 0
+	      then raise Subscript
+	   else loop (l, n)
+	end
   end
 
 structure ListGlobal: LIST_GLOBAL = List

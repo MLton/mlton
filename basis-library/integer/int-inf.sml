@@ -528,10 +528,10 @@ structure IntInf: INT_INF_EXTRA =
 	       if #"0" <= ch andalso ch <= #"9"
 		  then SOME (Word.fromInt (ord ch -? ord #"0"))
 	       else if #"a" <= ch andalso ch <= #"f"
-		       then SOME (Word.fromInt (ord ch -? (ord #"a" -? 0xa)))
+		       then SOME (Word.fromInt (ord ch -? (ord #"a" - 0xa)))
 		    else if #"A" <= ch andalso ch <= #"F"
 			    then SOME (Word.fromInt
-				       (ord ch -? (ord #"A" -? 0xA)))
+				       (ord ch -? (ord #"A" - 0xA)))
 			 else
 			    NONE
 	 end

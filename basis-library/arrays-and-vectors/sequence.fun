@@ -43,7 +43,7 @@ functor Sequence (S: sig
 	 let
 	    val a = array n
 	    fun loop (i, b)  =
-	       if i = n
+	       if i >= n
 		  then ()
 	       else
 		  let
@@ -92,10 +92,13 @@ functor Sequence (S: sig
       fun fromListOfLength (l, n) =
 	 let 
 	    val a = array n
-	    val rec loop =
-	       fn ([],     _) => ()
-		| (x :: l, i) => (Array.update (a, i, x)
-				  ; loop (l, i +? 1))
+	    fun loop (l, i) =
+	       if i < n
+		  then (case l of
+			   [] => raise Fail "fromListOfLength bug"
+			 | x :: l => (Array.update (a, i, x)
+				      ; loop (l, i + 1)))
+	       else ()
 	 in loop (l, 0)
 	    ; fromArray a
 	 end
