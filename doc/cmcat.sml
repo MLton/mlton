@@ -85,7 +85,7 @@ structure Cmcat:
       fun cmcat {defines, out, sources} =
 	 let
 	    (* Define preprocessor symbols *)
-            val _ = List.app (fn n => CM.SymVal.define (n, 0)) defines
+            val _ = List.app (fn n => CM.SymVal.define (n, 1)) defines
 	    val dir = getDir ()
 	 in
 	    CM.verbose (SOME false)
