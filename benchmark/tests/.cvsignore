@@ -9,5 +9,6 @@ TEST
 a.out
 chess.ppm
 run
+tmp*
 z
 z.sml
