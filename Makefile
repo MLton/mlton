@@ -81,7 +81,7 @@ tools:
 	cd $(YACC) && $(MAKE)
 	$(CP) $(LEX)/$(LEX) $(PROF)/$(PROF) $(YACC)/$(YACC) $(BIN)
 
-VERSION=VERSION
+VERSION = $(shell echo `date +%Y%m%d`)
 .PHONY: version
 version:
 	@echo 'Instantiating version numbers.'

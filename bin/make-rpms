@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 # 
 # make-rpms srcdir topdir
@@ -23,15 +23,6 @@ function usage() {
 
 while [ "$#" -gt 0 ]; do
 	case "$1" in
-	-local)
-		local='yes'
-		shift
-		if [ "$#" -eq 0 ]; then
-			usage
-		fi
-		srcdir="$1"
-		shift
-		;;
 	*)
 		case "$#" in
 		2)
@@ -73,7 +64,7 @@ mkdir mlton-$version
 cd mlton-$version
 ( cd $srcdir && tar.write . ) | tar.read
 make clean
-find mlton-$version -type d | grep CVS | xargs rm -rf
+find . -type d | grep CVS | xargs rm -rf
 make VERSION=$version version
 cd doc
 sed "/^Version:/s;.*;Version: $version;" <mlton.spec >z
