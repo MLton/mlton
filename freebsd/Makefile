@@ -13,8 +13,8 @@
 PORTNAME=	mlton
 PORTVERSION=	MLTONVERSION
 CATEGORIES=	lang
-MASTER_SITES=	http://mlton.org/download/	\
-		http://mlton.org/experimental/
+MASTER_SITES=	http://mlton.org/pages/Download/attachments/
+		http://mlton.org/pages/Experimental/attachments/
 DISTFILES=	${BOOT_DIST} ${SRC_DIST}
 EXTRACT_ONLY=	${SRC_DIST}
 
