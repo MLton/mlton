@@ -19,4 +19,5 @@ signature FIELD =
       val <= : t * t -> bool (* ordering used for sorting *)
       val equals: t * t -> bool
       val layout: t -> Layout.t
+      val toString: t -> string
    end

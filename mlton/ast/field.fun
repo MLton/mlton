@@ -17,6 +17,10 @@ val equals =
    fn (String s, String s') => String.equals (s, s')
     | (Int n, Int n') => Int.equals (n, n')
     | _ => false
+
+val toString =
+   fn String s => s
+    | Int n => Int.toString (n + 1)
 	 
 fun layout f =
    case f of
