@@ -21,6 +21,7 @@ Redirect permanent /favicon.ico	http://www.mlton.org/not-found.html
 RedirectMatch permanent /*formmail.pl http://www.mlton.org/not-found.html
 RedirectMatch permanent /*Formmail.pl http://www.mlton.org/not-found.html
 
+Redirect permanent /cvs/ http://cvs.mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton
 Redirect permanent /download/ http://prdownloads.sourceforge.net/mlton/
 Redirect permanent /experimental/ http://sourceforge.net/project/showfiles.php?group_id=50419
 Redirect permanent /experimental http://sourceforge.net/project/showfiles.php?group_id=50419
