@@ -89,7 +89,7 @@ fi
 for f in `ls *.sml`; do
 	f=`basename $f .sml`
 	case "$f" in
-	serialize)
+	mlton.overload|serialize)
 		echo "skipping $f"
 	;;
 	*)
