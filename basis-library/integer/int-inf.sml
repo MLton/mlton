@@ -883,6 +883,12 @@ structure IntInf: INT_INF_EXTRA =
       val toLarge = fn x => x
       val toString = bigToString
       val ~ = bigNegate
+      val orb = fn _ => raise (Fail "<IntInf.orb not implemented>")
+      val xorb = fn _ => raise (Fail "<IntInf.xorb not implemented>")
+      val andb = fn _ => raise (Fail "<IntInf.andb not implemented>")
+      val notb = fn _ => raise (Fail "<IntInf.notb not implemented>")
+      val << = fn _ => raise (Fail "<IntInf.<< not implemented>")
+      val ~>> = fn _ => raise (Fail "<IntInf.~>> not implemented>")
    end
 
 structure LargeInt = IntInf
