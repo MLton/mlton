@@ -18,7 +18,21 @@
     Linux.
 
     <h3>What's new?</h3>
-    Version VERSION is a major release over 20000906, and includes the
+    Version VERSION is a bug-fix release over 20010706.  For a complete list of
+    changes and bug fixes, see the <a href = "CHANGES">CHANGES</a> file.
+    Notable changes include:
+    <ul>
+      <li> <tt>Word.andb (w, 0xFF)</tt> now works correctly.
+      <li> <tt>MLton.Rusage.rusage</tt> has a patch to work around a linux
+	kernel bug.
+      <li> Programs of the form <tt>exp ; program</tt> are
+	now accepted.
+      <li> Added the <tt>MLton.Rlimit</tt> structure.
+      <li> Added the <tt>-keep dot</tt> flag, which produces call graphs,
+	intraprocedural control-flow graphs, and dominator trees.
+    </ul>
+
+    Version 20010706 was major release over 20000906, and included the
     following changes.
     <ul>
       <li> Native X86 code generator (instead of using <tt>gcc</tt>)
@@ -28,8 +42,6 @@
       <li> Correct raising of the Overflow exception for integer arithmetic
       <li> New modules in the <tt>MLton</tt> structure
     </ul>
-    For a complete list of changes and bugfixes, see the 
-    <a href = "CHANGES">CHANGES</a> file.
 
     <h3>Features of MLton</h3>
     MLton has the following features (for details, please see
@@ -109,7 +121,7 @@
 
     <hr>
     <!-- hhmts start -->
-Last modified: Wed Jul 25 13:47:43 PDT 2001
+Last modified: Fri Aug  3 17:05:16 PDT 2001
 <!-- hhmts end -->
   </body>
 </html>
