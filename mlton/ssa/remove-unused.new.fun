@@ -170,7 +170,8 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 				      sideEffects: SideEffects.t,
 				      terminates: Terminates.t,
 				      fails: Fails.t,
-				      bugs: (Type.t vector * Label.t) list ref,
+				      bug: Label.t option ref,
+				      bugConts: (Type.t vector * Label.t option * Label.t) list ref,
 				      wrappers: Block.t list ref},
 	   set = setFuncInfo, ...}
 	= Property.getSetOnce
@@ -214,7 +215,8 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	val argsFunc = #args o funcInfo
 	val returnsFunc = #returns o funcInfo
 
-	val (bugsFunc, bugsFunc') = make #bugs
+	val (bugFunc, bugFunc') = make #bug
+	val (bugContsFunc, bugContsFunc') = make #bugConts
 	val (wrappersFunc, wrappersFunc') = make #wrappers
       end
 
@@ -437,7 +439,8 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 					sideEffects = SideEffects.new (),
 					terminates = Terminates.new (),
 					fails = Fails.new (),
-					bugs = ref [],
+					bug = ref NONE,
+					bugConts = ref [],
 					wrappers = ref []});
 		     whenUsedFunc(name, visitLabelTh start);
 		     Vector.foreach
@@ -529,7 +532,23 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 		   else SOME (Datatype.T {tycon = tycon, cons = cons})
 	       end)
 
-      fun getBugFunc (f, args)
+      fun getBugFunc f
+	= case bugFunc' f
+	    of SOME l => l
+	     | NONE
+	     => let
+		  val l = Label.newNoname ()
+		  val block = Block.T {label = l,
+				       args = Vector.new0 (),
+				       statements = Vector.new0 (),
+				       transfer = Bug}
+		  val _ = bugFunc f := SOME l
+		  val _ = List.push(wrappersFunc f, block)
+		in
+		  l
+		end
+
+      fun getBugContFunc (f, args, handler)
 	= let
 	    val tys = Vector.keepAllMap
 	              (args, fn (x, ty) => if isUsedVar x
@@ -537,14 +556,16 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 					     else NONE)
 	  in
 	    case List.peek
-	         (bugsFunc' f,
-		  fn (args', l)
-		   => Vector.length args' = Vector.length tys
+	         (bugContsFunc' f,
+		  fn (tys', handler', l')
+		   => Vector.length tys' = Vector.length tys
 		      andalso
 		      Vector.forall2
-		      (args', tys,
-		       fn (ty', ty) => Type.equals(ty', ty)))
-	      of SOME (_, l') => l'
+		      (tys', tys,
+		       fn (ty', ty) => Type.equals(ty', ty))
+		      andalso
+		      Option.equals(handler', handler, Label.equals))
+	      of SOME (_, _, l') => l'
 	       | NONE
 	       => let
 		    val l' = Label.newNoname ()
@@ -559,8 +580,9 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 		    val block = Block.T {label = l',
 					 args = args',
 					 statements = Vector.new0 (),
-					 transfer = Bug}
-		    val _ = List.push(bugsFunc f, (tys', l'))
+					 transfer = Goto {dst = getBugFunc f,
+							  args = Vector.new0 ()}}
+		    val _ = List.push(bugContsFunc f, (tys', handler, l'))
 		    val _ = List.push(wrappersFunc f, block)
 		  in
 		    l'
@@ -729,18 +751,24 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 					            (cont, returnsFunc func),
 					     handler = NONE})
 		                   | (false, true, SOME handler)
-				   => call 
-				      (SOME {cont = getBugFunc 
-					            (f, returnsFunc func),
-					     handler = SOME (getHandlerWrapperLabel 
-					 		     handler)})
+				   => let
+					val handler 
+					  = SOME (getHandlerWrapperLabel handler)
+				      in
+					call
+					(SOME {cont = getBugContFunc
+					              (f, returnsFunc func, handler),
+					       handler = handler})
+				      end
 				   | (false, _, _)
 				   => if Vector.forall
 					 (returnsFunc f, 
 					  fn (x, t) => not (isUsedVar x))
 				        then call NONE
-				        else call (SOME {cont = getBugFunc 
-							        (f, returnsFunc func), 
+				        else call (SOME {cont = getBugContFunc 
+							        (f, 
+								 returnsFunc func, 
+								 NONE), 
 					 	 	 handler = NONE}))
                      | NONE => call NONE
 		end
