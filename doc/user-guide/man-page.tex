@@ -11,7 +11,7 @@ contains a valid SML program, in which case {\mlton} compiles the
 program to produce an executable {\tt foo}.  Since {\mlton} does not
 support separate compilation, the program must be the entire
 program you wish to compile.  However, the program may refer to
-signatures and structures defined in the SML basis library.
+signatures and structures defined in the SML Basis Library.
 
 Larger programs, spanning many files, may be compiled with the ML
 Basis system (MLBs).  In this case, {\tt mlton foo.mlb} will compile
@@ -119,7 +119,7 @@ Specify the name of the final output file. The default name is the
 input file name with its suffix removed and an appropriate, possibly
 empty, suffix added.
 
-\option{-profile \choiceThree{no}{alloc}{count}{time}}
+\option{-profile \choiceFour{no}{alloc}{count}{time}}
 Produce an executable that will gather profiling information.  When
 such an executable is run, it will produce an {\tt mlmon.out} file.
 See \secref{profiling} for details.
@@ -142,10 +142,10 @@ then the last setting will take effect.
 
 \option{-safe \trueFalse}
 This switch determines the value of the SML variable {\tt MLton.safe},
-which controls whether the basis library performs array, string, and
+which controls whether the Basis Library performs array, string, and
 vector bounds checks, division for zero checks, and other checks.
 Compiling {\tt -safe false} changes the behavior of some programs,
-does not conform to the basis library specification, and may cause
+does not conform to the Basis Library specification, and may cause
 programs to seg fault.
 
 \option{-show-basis {\it file}}

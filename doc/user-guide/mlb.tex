@@ -1,8 +1,43 @@
 \sec{ML Basis System}{mlb}{MLBs.html}
 %
+This section describes the ML Basis system (MLBs) used in {\mlton}.
+While the Modules level of Standard ML provides a sophisticated
+language for programming-in-the-large, it is difficult, if not
+impossible, to accomplish a number of routine namespace management
+operations that are necessary for
+programming-in-the-\emph{very}-large, when (parts of) a program draws
+upon multiple libraries provided by different vendors.  The ML Basis
+system is a simple, yet powerful, approach that builds upon the
+programmer's intuitive notion (and the Definition of SML's formal
+notion) of the top-level environment (a \emph{basis}).  The system has
+been designed to be a natural extension of Standard ML;
+\appref{mlb-formal} gives a formal specification of MLBs in the
+style of the Definition.
+
+We briefly highlight some of the key features provided by MLBs:
+\begin{itemize}
+\item Explicit file order: The order of files (and, hence, the order
+  of evaluation) in the program is explicit.  The MLBs semantics are
+  structured in such a way that for any well-formed project, there
+  will be exactly one possible interpretation of the project's syntax,
+  static semantics, and dynamic semantics.
+\item Implicit dependencies: A source file (corresponding to a SML
+  top-level declaration) is elaborated in the environment described by
+  preceding declarations.  It is not necessary to explicitly list the
+  dependencies of a file.
+\item Scoping and renaming: MLBs provides mechanisms for limiting the
+  scope of (i.e, hiding) and renaming identifiers.
+\item No file name convention: MLBs assumes no convention for finding
+  the file that defines a module.  (Conversely, to import a module,
+  it's defining file must appear in the project.)
+\end{itemize}
 
 %
-\subsection{Syntax}
+\subsection{Syntax and Semantics}
+
+An {\tt .mlb} (ML Basis) file describes a library or program.  An
+{\tt .mlb} file contains a ``basis declaration,'' defined by the
+following grammar:
 
 \begin{latexonly}
 \begin{center}
@@ -10,22 +45,22 @@
 {\it basdec} 
 & ::=    & {\tt basis} {\it basid} {\tt =} {\it basexp}
             ({\tt and} {\it basid} {\tt =} {\it basexp})* \\
-& $\alt$ & {\tt local} {\it basdec} {\tt in} {\it basdec} {\tt end} \\
 & $\alt$ & {\tt open} {\it basid}$_1$ $\cdots$ {\it basid}$_n$ \\
+& $\alt$ & {\tt local} {\it basdec} {\tt in} {\it basdec} {\tt end} \\
+& $\alt$ & {\it basdec} [{\tt;}] {\it basdec} \\
 & $\alt$ & {\tt structure} {\it strid} [{\tt =} {\it strid}] 
                 ({\tt and} {\it strid} [{\tt =} {\it strid}])* \\
 & $\alt$ & {\tt signature} {\it sigid} [{\tt =} {\it sigid}] 
                 ({\tt and} {\it sigid} [{\tt =} {\it sigid}])* \\
 & $\alt$ &   {\tt functor} {\it funid} [{\tt =} {\it funid}] 
                 ({\tt and} {\it funid} [{\tt =} {\it funid}])* \\
-& $\alt$ & {\it basdec} [{\tt;}] {\it basdec} \\
-& $\alt$ & {\it path.}{\tt mlb} \\
 & $\alt$ & {\it path.}{\tt sml} \\
+& $\alt$ & {\it path.}{\tt mlb} \\
 & $\alt$ & {\tt ann} {\it id} ({\it id})* [{\tt ,}  {\it id} ({\it id})*] 
            {\tt in} {\it basdec} {\tt end} \\
 \\
 {\it basexp}
-& ::=    & {\tt basis} {\it basdec} {\tt end} \\
+& ::=    & {\tt bas} {\it basdec} {\tt end} \\
 & $\alt$ & {\it basid} \\
 & $\alt$ & {\tt let} {\it basdec} {\tt in} {\it basexp} {\tt end}
 \end{tabular}
@@ -38,14 +73,308 @@
 \end{center}
 \end{htmlonly}
 
+Nested SML-style comments (enclosed with {\tt (*} and {\tt *)}) are
+ignored (but {\nline} directives of \secref{nline} are recognized).
+
+Conceptually, a basis file is elaborated starting in an empty basis,
+and each basis declaration adds to the basis, producing a basis as a
+result.  Basis expressions and basis identifiers allow binding a basis
+to a name; this, in turn, allows fine-grained specification of
+dependenies, without the need for additional {\tt .mlb} files.  Local
+declarations provide name hiding.
+
+Structure, signature, and functor declarations bind a module in the
+current basis.  References to SML source files cause the file to be
+elaborated in the ``current'' basis.  References to other ML basis
+files cause the basis denoted by that ML basis file to be imported.
+Paths can be relative or absolute.  Relative paths are relative to the
+directory containing the {\tt .mlb} file.  Paths are expanded
+according to a path map; see \secref{mlb-path-map} for more details.
+
+Finally, annotations allow a library author to control options that
+affect the elaboration of SML source files; see \secref{mlb-anns} for
+more details.
 
 %
-\subsection{Annotations}
+\subsec{Examples}{mlb-examples}
+
+We demonstrate how to accomplish some common tasks:
+\begin{description}
+\item{Complete program:}
+Suppose your complete program consists of the files {\tt file1.sml},
+$\ldots$, {\tt filen.sml}, which depend upon libraries {\tt lib1.mlb},
+$\ldots$, {\tt libm.mlb}.
+\begin{verbatim}
+(* import libraries *)
+lib1.mlb
+...
+libm.mlb
+
+(* program files *)
+file1.sml
+...
+filen.sml
+\end{verbatim}
+The bases denoted by {\tt lib1.mlb}, $\ldots$, {\tt libm.mlb} are
+merged (bindings of names in later bases take precedence over bindings
+of the same name in earlier bases), producing a basis in which {\tt
+file1.sml}, $\ldots$, {\tt filen.sml} are elaborated, possibly adding
+additional bindings to the basis.
+\item{Export filter:}
+Suppose you only want to export certain structures, signatures, and
+functors from a collection of files.
+\begin{verbatim}
+local
+  file1.sml
+  ...
+  filen.sml
+in
+  (* export filter here *)
+  functor F
+  structure S
+end
+\end{verbatim}
+While {\tt file1.sml}, $\ldots$, {\tt filen.sml} may declare top-level
+identifiers in addition to {\tt F} and {\tt S}, such names are not
+accessible to programs and libraries that import this {\tt .mlb}.
+\item{Export filter with renaming:}
+Suppose you want an export filter, but want to rename one of the
+modules.
+\begin{verbatim}
+local
+  file1.sml
+  ...
+  filen.sml
+in
+  (* export filter, with renaming, here *)
+  functor F
+  structure S' = S
+end
+\end{verbatim}
+Note that {\tt functor F} is an abbreviation for {\tt functor F = F},
+which simply exports an identifier under the same name.
+\item{Import filter:}
+Suppose you only want to import a functor {\tt F} from one library and
+a structure {\tt S} from another library.
+\begin{verbatim}
+local
+  lib1.mlb
+in
+  (* import filter here *)
+  functor F
+end
+local
+  lib2.mlb
+in
+  (* import filter here *)
+  structure S
+end
+file1.sml
+...
+filen.sml
+\end{verbatim}
+\item{Import filter with renaming:}
+Suppose you want to import a structure {\tt S} from one library and another
+structure {\tt S} from another library.
+\begin{verbatim}
+local
+  lib1.mlb
+in
+  (* import filter, with renaming, here *)
+  structure S1 = S
+end
+local
+  lib2.mlb
+in
+  (* import filter, with renaming, here *)
+  structure S2 = S
+end
+file1.sml
+...
+filen.sml
+\end{verbatim}
+\end{description}
+
+Since the Modules level of SML is the natural means for organizing
+program and library components, MLBs provides convenient syntax for
+renaming Modules level identifiers.\footnote{In fact, renaming of
+functor identifiers provides a mechanism that is not available in
+SML.}  However, please note that {\tt .mlb} files elaborate to full
+bases including top-level types and values (including infix status),
+in addition to structures, signatures, and functors.  For example,
+suppose you wished to extend the Standard ML Basis Library with an
+{\tt ('a, 'b) either} datatype corresponding to a disjoint sum; the
+type and some operations should be available at the top-level;
+additionally, a signature and structure provide the complete
+interface.
+
+We assume that the main implementation is given by two files: {\tt
+either-sigs.sml} and {\tt either-strs.sml}:
+
+\begin{description}
+\item{{\tt either-sigs.sml}:}
+\begin{verbatim}
+signature EITHER_GLOBAL =
+  sig
+    datatype ('a, 'b) either = Left of 'a | Right of 'b
+    val &  : ('a -> 'c) * ('b -> 'c) -> ('a, 'b) either -> 'c
+    val && : ('a -> 'c) * ('b -> 'd) -> ('a, 'b) either -> ('c, 'd) either
+  end
+
+signature EITHER =
+  sig
+    include EITHER_GLOBAL
+    val isLeft  : ('a, 'b) either -> bool
+    val isRight : ('a, 'b) either -> bool
+    ...
+  end
+\end{verbatim}
+\item{{\tt either-strs.sml}:}
+\begin{verbatim}
+structure Either : EITHER =
+  struct
+    datatype ('a, 'b) either = Left of 'a | Right of 'b
+    fun f & g = fn x =>
+      case x of Left z => f z | Right z => g z
+    fun f && g = fn x =>
+      case x of Left z => Left (f z) | Right z => Right (g z)
+    fun isLeft x = ((fn _ => true) & (fn _ => false)) x
+    fun isRight x = (not o isLeft) x
+    ...
+  end
+structure EitherGlobal : EITHER_GLOBAL = Either
+\end{verbatim}
+\end{description}
+
+Two additional files contain the infix directives ({\tt
+either-infixes.sml}) and a declaration to import the top-level types
+and values ({\tt either-open.sml}):
+\begin{description}
+\item{{\tt either-infixes.sml}:}
+\begin{verbatim}
+infixr 5 & &&
+\end{verbatim}
+\item{{\tt either-open.sml}:}
+\begin{verbatim}
+open EitherGlobal
+\end{verbatim}
+\end{description}
+
+The extension is delivered via {\tt either.mlb}:
+\begin{description}
+\item{{\tt either.mlb}:}
+\begin{verbatim}
+local
+  (* import Basis Library *)
+  basis.mlb
+
+  either-sigs.sml
+  either-infixes.sml
+  either-strs.sml
+in
+  signature EITHER
+  structure Either
+  either-infixes.sml
+  either-open.sml
+end
+\end{verbatim}
+\end{description}
+A client that imports {\tt either.mlb} will have access to neither
+{\tt EITHER\_GLOBAL} nor {\tt EitherGlobal}, but will have access to
+the type {\tt either} and the values {\tt \&} and {\tt \&\&} (with
+infix status) in the top-level environment.  Note that the infix
+directive in {\tt either-infixes.sml} is repeated, because {\tt local}
+limits limits the scope of the directive.  Although the repetition is
+unfortunate, it is preferable to repeat {\tt either-infixes.sml} in
+{\tt either.mlb}, rather than require every client of {\tt either.mlb}
+to also import {\tt either-infixes.sml}.
+
+%
+\subsec{Path maps}{mlb-path-map}
+As noted above, paths can be either relative or absolute.  However,
+using a fixed relative or absolute path to a library makes it
+difficult to move either the client or the library.  Hence, MLton
+allows path variables to appear in paths in the form {\tt \$(VAR)}.
+The mapping from path variables to paths is initialized by reading two
+configuration files: a system-wide one and a user-specific one.  The
+system-wide configuration file is read from {\tt
+/\prefix/lib/mlton/mlb-path-map}.  The user-specific configuration
+file is read from {\tt .mlton/mlb-path-map} in the user's home
+directory (which must be given by the {\tt HOME} environment
+variable).  
+
+The format of an {\tt mlb-path-map} file is a sequence of lines; each
+line consists of two, white-space delimited tokens.  The first token
+is a path variable {\tt VAR} and the second token is the path to which
+the variable is mapped.  The path may include path variables, which
+are recursively expanded.  Configuration files are processed from top
+to bottom, system-wide before user-specific; later mappings take
+precedence over earlier mappings.  The system-wide configuration file
+makes the following path variables available:\\
+\hspace*{0.5in}
+\begin{tabular}{ll}
+{\tt LIB\_MLTON\_DIR} & {\tt /\prefix/lib/mlton} \\
+{\tt MLTON\_ROOT} & {\tt \$(LIB\_MLTON\_DIR)/sml}
+\end{tabular}
+
+%
+\subsection{Available Libraries}
+
+\begin{tabular}{l}
+{\tt \$(MLTON\_ROOT)/basis/basis.mlb} \\\hspace{0.5in}
+The Standard ML Basis Library (see \secref{basis-library}). 
+\\
+{\tt \$(MLTON\_ROOT)/basis/pervasive-types.mlb} \\\hspace{0.5in}
+The top-level types and constructors of the Basis Library (see \secref{basis-pervasive-types}).
+\\
+{\tt \$(MLTON\_ROOT)/basis/pervasive-exns.mlb} \\\hspace{0.5in}
+The top-level exception constructors of the Basis Library (see \secref{basis-pervasive-exns}).
+\\
+{\tt \$(MLTON\_ROOT)/basis/pervasive-vals.mlb} \\\hspace{0.5in}
+The top-level values of the Basis Library, without infix status (see \secref{basis-pervasive-vals}).
+\\
+{\tt \$(MLTON\_ROOT)/basis/overloads.mlb} \\\hspace{0.5in}
+The top-level overloaded values of the Basis Library, without infix status (see \secref{basis-overloads}).
+\\
+{\tt \$(MLTON\_ROOT)/basis/equal.mlb} \\\hspace{0.5in}
+The polymorphic equality {\tt =} and inequality {\tt <>} values, without infix status.
+\\
+{\tt \$(MLTON\_ROOT)/basis/infixes.mlb} \\\hspace{0.5in}
+The infix declarations of the Basis Library.
+\\
+{\tt \$(MLTON\_ROOT)/basis/pervasive.mlb} \\\hspace{0.5in}
+The entire top-level environment of the Basis Library, with infix status.
+\\
+{\tt \$(MLTON\_ROOT)/basis/basis-1997.mlb} \\\hspace{0.5in}
+The (deprecated) 1997 specification of the Standard ML Basis Library.
+\\
+{\tt \$(MLTON\_ROOT)/basis/mlton.mlb} \\\hspace{0.5in}
+The {\tt MLton} structure and signatures (see \secref{mlton-ext}).
+\\
+{\tt \$(MLTON\_ROOT)/basis/sml-nj.mlb} \\\hspace{0.5in}
+The {\tt SMLofNJ} structure and signature (see \secref{sml-nj-ext}).
+\\
+{\tt \$(MLTON\_ROOT)/basis/unsafe.mlb} \\\hspace{0.5in}
+The {\tt Unsafe} structure and signature (see \secref{unsafe-ext}).
+\end{tabular}
+
+%
+\subsec{Annotations}{mlb-anns}
 
 \begin{description}
 \option{allowExport \falseTrue}
+If true, allow the {\tt \_export} expression form of \secref{export} to
+appear in imported source files.
+
 \option{allowImport \falseTrue}
+If true, allow the {\tt \_import} expression form of \secref{import} to
+appear in imported source files.
+
 \option{forceUsed}
+Force all identifiers in the basis denoted by the body of the {\tt
+ann} basis declaration to be considered used; 
+use in conjunction with {\tt warnUnused true}.
+
 \option{sequenceUnit \falseTrue}
 If true, then in the sequence expression {\tt (e1; e2)}, it is a type
 error if {\tt e1} is not of type {\tt unit}.  This can be helpful in
@@ -58,18 +387,3 @@ Report nonexhaustive and redundant matches.
 \option{warnUnused \falseTrue}
 Report unused identifiers.
 \end{description}
-
-
-%
-\subsection{The Standard ML Basis Library}
-
-%
-\subsection{}
-
-\begin{verbatim}
-local
-  $(MLTON_ROOT)/basis/basis.mlb
-in
-  foo.sml
-end
-\end{verbatim}

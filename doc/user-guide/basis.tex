@@ -1,4 +1,4 @@
-\sec{Basis library}{basis-library}{Basis_library.html}
+\sec{Basis Library}{basis-library}{Basis_library.html}
 %
 This section describes {\mlton}'s implementation of the Standard ML
 Basis Library, which by default {\mlton} makes available to user
@@ -15,7 +15,7 @@ In summary, {\mlton} implements all of the required portions of the
 Basis Library.  {\mlton} also implements many of the optional
 structures, as seen below.
 %
-\subsection{Toplevel types and constructors}
+\subsec{Toplevel types and constructors}{basis-pervasive-types}
 {
 \tt eqtype 'a array\\
 \tt datatype bool = false | true\\
@@ -34,7 +34,7 @@ structures, as seen below.
 \tt eqtype word\\
 }
 %
-\subsection{Top level exception constructors}
+\subsec{Top level exception constructors}{basis-pervasive-exns}
 {\tt Bind},
 {\tt Chr},
 {\tt Div},
@@ -48,7 +48,7 @@ structures, as seen below.
 {\tt Span},
 {\tt Subscript}.
 %
-\subsection{Top level values}
+\subsec{Top level values}{basis-pervasive-vals}
 
 {\mlton} does not implement the optional top level value
 \verb+use: string -> unit+, which conflicts with whole-program
@@ -56,27 +56,16 @@ compilation because it allows new code to be loaded dynamically.
 {\mlton} implements all other top level values:
 
 {\tt !},
-{\tt *},
-{\tt +},
-{\tt -},
-{\tt /},
 {\tt :=},
-{\tt <},
-{\tt <=},
 {\tt <>},
 {\tt =},
-{\tt >},
-{\tt >=},
 {\tt @},
 {\tt \char94},
-{\tt \char126}.
-{\tt abs},
 {\tt app},
 {\tt before},
 {\tt ceil},
 {\tt chr},
 {\tt concat},
-{\tt div},
 {\tt exnMessage},
 {\tt exnName},
 {\tt explode},
@@ -90,7 +79,6 @@ compilation because it allows new code to be loaded dynamically.
 {\tt isSome},
 {\tt length},
 {\tt map},
-{\tt mod},
 {\tt not},
 {\tt null},
 {\tt o},
@@ -106,6 +94,22 @@ compilation because it allows new code to be loaded dynamically.
 {\tt trunc},
 {\tt valOf},
 {\tt vector}.
+
+%
+\subsec{Overloaded identifiers}{basis-overloads}
+
+{\tt *},
+{\tt +},
+{\tt -},
+{\tt /},
+{\tt <},
+{\tt <=},
+{\tt >},
+{\tt >=},
+{\tt \char126}.
+{\tt abs},
+{\tt div},
+{\tt mod}.
 %
 \newcommand{\signature}[1]{{\tt #1}\\}
 \subsection{Top level signatures}

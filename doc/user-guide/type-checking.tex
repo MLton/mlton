@@ -1,10 +1,10 @@
-\sec{Type Checking}{type-checkin}{Type_checking.html}
+\sec{Type checking}{type-checkin}{Type_checking.html}
 %
 {\mlton}'s type checker follows the Definition of SML closely, so you
 may find differences between {\mlton} and other SML compilers that do
 not follow the Definition so closely.  In particular, {\smlnj} has
 many deviations from the Definition -- please see
-\secref{nj-deviations} for a list of those that we are aware of.
+\appref{nj-deviations} for a list of those that we are aware of.
 
 In some respects {\mlton}'s type checker is more powerful than other
 SML compilers, so there are programs that {\mlton} accepts that are
@@ -96,10 +96,6 @@ val f: int -> int
 \end{verbatim}
 If you only want to see the basis and do not wish to compile the
 program, you can call {\mlton} with {\tt -stop tc}.
-
-When {\mlton} is called with {\tt -show-basis} and no input file and,
-it pretty prints the entire basis library.  This can be helpful in
-understanding what the basis library makes available to user programs.
 
 When displaying signatures, {\mlton} prefixes types defined in the
 signature them with {\tt ?.} to distinguish them from types defined in
