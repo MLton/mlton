@@ -337,8 +337,8 @@ computeSemiSize(GC_state s, uint live, uint used, int try)
 		if (n <= maxSemi)
 			n = maxSemi;
 		else if (s->messages and try > 0)
-				fprintf(stderr, "[Requested %luMb (> %luMb) cannot be satisfied, allocating %luMb instead. Live = %luMb, k=%.2f]\n",
-					meg(neededLong), meg(maxSemi),
+				fprintf(stderr, "[Requested %lluMb (> %luMb) cannot be satisfied, allocating %luMb instead. Live = %luMb, k=%.2f]\n",
+					neededLong / (1024 * 1024), meg(maxSemi),
 					meg(n), meg(live), ks[try]);
 		needed = n;
 	}
@@ -1319,6 +1319,7 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 			toSpace(s);
 			if ((void*)-1 == s->toBase) {
 				s->toBase = (void*)NULL;
+				try++;
 				if (13 == try) {
 					static char buffer[256];
 
@@ -1326,9 +1327,8 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 						"/bin/cat /proc/%d/maps\n", 
 						getpid());
 					(void)system(buffer);
-					die("OUT OF SWAP SPACE: cannot obtain %u bytes.", s->toSize);
+					die("Out of swap space: cannot obtain %u bytes.", s->toSize);
 				}
-				try++;
 				goto retry;
 			}
 		}
