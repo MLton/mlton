@@ -26,7 +26,7 @@ val childReady = ref false
 
 fun print s = TextIO.output (TextIO.stdErr, s)
 
-val _ = handleWith (usr1, fn () => childReady := true)
+val _ = setHandler (usr1, Handler.simple (fn () => childReady := true))
    
 val parent = getpid ()
 
@@ -36,9 +36,9 @@ val _ =
 	 let
 	    val canExit = ref false
 	 in
-	    handleWith' (usr1, fn t => (canExit := true
-					; saveThread (w, t)
-					; t))
+	    setHandler (usr1, Handler.handler (fn t => (canExit := true
+							; saveThread (w, t)
+							; t)))
 	    ; kill (K_PROC parent, usr1)
 	    ; let
 		 fun loop () = if !canExit then print "success\n" else loop ()
