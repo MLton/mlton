@@ -370,16 +370,14 @@ fun allocate {argOperands,
 	  let
 	     val {begin, beginNoFormals, ...} = labelLive label
 	     val _ =
-		case kind of
-		   Kind.Cont _ =>
-		      (Vector.foreach (args, forceStack o #1)
-		       ; List.foreach (beginNoFormals, forceStack))
-		 | Kind.Handler =>
+		case Kind.frameStyle kind of
+		   Kind.None => ()
+		 | Kind.OffsetsAndSize =>
 		      List.foreach (beginNoFormals, forceStack)
-		 | Kind.CReturn {func = CFunction.T {mayGC, ...}} =>
-		      if mayGC
-			 then List.foreach (beginNoFormals, forceStack)
-		      else ()
+		 | Kind.SizeOnly => ()
+	     val _ =
+		case kind of
+		   Kind.Cont _ => Vector.foreach (args, forceStack o #1)
 		 | _ => ()
 	     val _ =
 		Vector.foreach

@@ -49,7 +49,6 @@ structure CFunction =
 	       modifiesFrontier = true,
 	       modifiesStackTop = false,
 	       name = name,
-	       needsCurrentSource = true,
 	       returnTy = SOME Type.pointer}
       in
 	 val intInfAdd = make ("IntInf_do_add", 2)
@@ -84,7 +83,6 @@ structure CFunction =
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "GC_copyCurrentThread",
-	    needsCurrentSource = false,
 	    returnTy = NONE}
 
       val copyThread =
@@ -95,7 +93,6 @@ structure CFunction =
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "GC_copyThread",
-	    needsCurrentSource = false,
 	    returnTy = SOME Type.pointer}
 
       val exit =
@@ -106,7 +103,6 @@ structure CFunction =
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "MLton_exit",
-	    needsCurrentSource = false,
 	    returnTy = NONE}
 
       val gcArrayAllocate =
@@ -117,7 +113,6 @@ structure CFunction =
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "GC_arrayAllocate",
-	    needsCurrentSource = true,
 	    returnTy = SOME Type.pointer}
 
       local
@@ -129,7 +124,6 @@ structure CFunction =
 	       modifiesFrontier = true,
 	       modifiesStackTop = true,
 	       name = name,
-	       needsCurrentSource = true,
 	       returnTy = NONE}
       in
 	 val pack = make "GC_pack"
@@ -144,7 +138,6 @@ structure CFunction =
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "Thread_switchTo",
-	    needsCurrentSource = false,
 	    returnTy = NONE}
 
       val worldSave =
@@ -155,7 +148,6 @@ structure CFunction =
 	    modifiesFrontier = true,
 	    modifiesStackTop = true,
 	    name = "GC_saveWorld",
-	    needsCurrentSource = false,
 	    returnTy = NONE}
    end
 

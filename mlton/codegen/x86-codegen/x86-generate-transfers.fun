@@ -508,9 +508,8 @@ struct
 			    => near label
 			    | CReturn {dst, 
 				       frameInfo,
-				       func = CFunction.T {mayGC,
-							   maySwitchThreads,
-							   name, ...},
+				       func = CFunction.T {maySwitchThreads,
+							   ...},
 				       label}
 			    => let
 				 fun getReturn ()
@@ -536,10 +535,11 @@ struct
 						    size = dstsize})
 					       | _ => Error.bug "CReturn")
 			       in
-				 if mayGC orelse maySwitchThreads
-				   then let
+				 case frameInfo of
+				   SOME fi =>
+				      let
 					  val FrameInfo.T {size, frameLayoutsIndex}
-					    = valOf frameInfo
+					    = fi
 					  val finish
 					    = AppendList.appends
 					      [let	
@@ -596,7 +596,8 @@ struct
 							      weight = 1024}))})],
 						   finish)]
 					end
-				 else AppendList.append (near label, getReturn ())
+				 | NONE => 
+				      AppendList.append (near label, getReturn ())
 			       end
 			    | Func {label,...}
 			    => AppendList.appends
@@ -1078,8 +1079,7 @@ struct
 		    end
 	        | CCall {args, dstsize,
 			 frameInfo,
-			 func = CFunction.T {mayGC,
-					     maySwitchThreads,
+			 func = CFunction.T {maySwitchThreads,
 					     modifiesFrontier,
 					     modifiesStackTop,
 					     name, ...},
@@ -1129,9 +1129,10 @@ struct
 				   size = size}),
 				 assembly_args),
 			   (Size.toBytes size) + size_args))
-		     val flush 
-		       = if mayGC orelse maySwitchThreads
-			   then (* Entering runtime *)
+		     val flush =
+			case frameInfo of
+			   SOME (FrameInfo.T {size, ...}) =>
+			        (* Entering runtime *)
 			        let
 				  val return = valOf return
 				  val _ = enque return
@@ -1148,7 +1149,6 @@ struct
 				    = x86MLton.gcState_stackTopMinusWordDeref ()
 				  val stackTopMinusWordDeref
 				    = x86MLton.gcState_stackTopMinusWordDerefOperand ()
-				  val FrameInfo.T {size, ...} = valOf frameInfo
 				  val bytes = x86.Operand.immediate_const_int size
 				    
 				  val live =
@@ -1222,7 +1222,8 @@ struct
 				      dead_memlocs = MemLocSet.empty,
 				      dead_classes = ClassSet.empty})))
 				end
-			   else AppendList.single
+			 | NONE => 
+			        AppendList.single
 			        (Assembly.directive_force
 				 {commit_memlocs = let
 						     val s = MemLocSet.empty
@@ -1249,7 +1250,7 @@ struct
 			  {target = Operand.label target,
 			   absolute = false}]
 		     val kill
-		       = if mayGC orelse maySwitchThreads
+		       = if isSome frameInfo
 			   then AppendList.single
 			        (Assembly.directive_force
 				 {commit_memlocs = MemLocSet.empty,
@@ -1313,7 +1314,7 @@ struct
 				    absolute = true})))
 			 else case return
 				of NONE => AppendList.empty
-				 | SOME l => (if mayGC
+				 | SOME l => (if isSome frameInfo
 						then (* Don't need to trampoline,
 						      * since didn't switch threads,
 						      * but can't fall because

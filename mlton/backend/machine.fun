@@ -416,9 +416,12 @@ structure FrameInfo =
       in
 	 val frameLayoutsIndex = make #frameLayoutsIndex
       end
-   
+
       fun layout (T {frameLayoutsIndex, ...}) =
 	 Layout.record [("frameLayoutsIndex", Int.layout frameLayoutsIndex)]
+
+      fun equals (T {frameLayoutsIndex = i}, T {frameLayoutsIndex = i'}) =
+	 i = i'
    end
 
 structure Transfer =
@@ -730,6 +733,7 @@ structure Program =
    struct
       datatype t = T of {chunks: Chunk.t list,
 			 frameLayouts: {frameOffsetsIndex: int,
+					isC: bool,
 					size: int} vector,
 			 frameOffsets: int vector vector,
 			 handlesSignals: bool,
@@ -765,9 +769,10 @@ structure Program =
 		     ("frameOffsets",
 		      Vector.layout (Vector.layout Int.layout) frameOffsets),
 		     ("frameLayouts",
-		      Vector.layout (fn {frameOffsetsIndex, size} =>
+		      Vector.layout (fn {frameOffsetsIndex, isC, size} =>
 				     record [("frameOffsetsIndex",
 					      Int.layout frameOffsetsIndex),
+					     ("isC", Bool.layout isC),
 					     ("size", Int.layout size)])
 		      frameLayouts)])
 	    ; output (str "\nProfileInfo:")
@@ -850,7 +855,6 @@ structure Program =
 	       ("frameSources length",
 		fn () => (Vector.length frameSources
 			  = (if !Control.profile <> Control.ProfileNone
-				andalso !Control.profileStack
 				then Vector.length frameLayouts
 			     else 0)),
 		fn () => ProfileInfo.layout profileInfo)
@@ -871,7 +875,7 @@ structure Program =
 	    fun boolToUnitOpt b = if b then SOME () else NONE
 	    val _ =
 	       Vector.foreach
-	       (frameLayouts, fn {frameOffsetsIndex, size} =>
+	       (frameLayouts, fn {frameOffsetsIndex, size, ...} =>
 		Err.check
 		("frameLayouts",
 		 fn () => (0 <= frameOffsetsIndex
@@ -1042,30 +1046,39 @@ structure Program =
 	       let
 		  datatype z = datatype Kind.t
 		  exception No
-		  fun frame (FrameInfo.T {frameLayoutsIndex}): bool =
+		  fun frame (FrameInfo.T {frameLayoutsIndex},
+			     useSlots: bool,
+			     isC: bool): bool =
 		     let
-			val {frameOffsetsIndex, size} =
+			val {frameOffsetsIndex, isC = isC', ...} =
 			   Vector.sub (frameLayouts, frameLayoutsIndex)
 			   handle Subscript => raise No
-			val Alloc.T zs = alloc
-			val liveOffsets =
-			   List.fold
-			   (zs, [], fn (z, liveOffsets) =>
-			    case z of
-			       Operand.StackOffset {offset, ty} =>
-				  if Type.isPointer ty
-				     then offset :: liveOffsets
-				  else liveOffsets
-			     | _ => raise No)
-			val liveOffsets =
-			   Vector.fromArray
-			   (QuickSort.sortArray
-			    (Array.fromList liveOffsets, op <=))
-			val liveOffsets' =
-			   Vector.sub (frameOffsets, frameOffsetsIndex)
-			   handle Subscript => raise No
 		     in
-			liveOffsets = liveOffsets'
+			isC = isC'
+			andalso
+			(not useSlots
+			 orelse
+			 let
+			    val Alloc.T zs = alloc
+			    val liveOffsets =
+			       List.fold
+			       (zs, [], fn (z, liveOffsets) =>
+				case z of
+				   Operand.StackOffset {offset, ty} =>
+				      if Type.isPointer ty
+					 then offset :: liveOffsets
+				      else liveOffsets
+				 | _ => raise No)
+			    val liveOffsets =
+			       Vector.fromArray
+			       (QuickSort.sortArray
+				(Array.fromList liveOffsets, op <=))
+			    val liveOffsets' =
+			       Vector.sub (frameOffsets, frameOffsetsIndex)
+			       handle Subscript => raise No
+			 in
+			    liveOffsets = liveOffsets'
+			 end)
 		     end handle No => false
 		  fun slotsAreInFrame (fi: FrameInfo.t): bool =
 		     let
@@ -1081,24 +1094,30 @@ structure Program =
 	       in
 		  case k of
 		     Cont {args, frameInfo} =>
-			if frame frameInfo
+			if frame (frameInfo, true, false)
 			   andalso slotsAreInFrame frameInfo
 			   then SOME (Vector.fold
 				      (args, alloc, fn (z, alloc) =>
 				       Alloc.define (alloc, z)))
 			else NONE
-		   | CReturn {dst, frameInfo, ...} =>
-			if (case frameInfo of
-			       NONE => true
-			     | SOME fi => (frame fi
-					   andalso slotsAreInFrame fi))
+		   | CReturn {dst, frameInfo, func, ...} =>
+			if (if CFunction.mayGC func
+			       then (case frameInfo of
+					NONE => false
+				      | SOME fi => (frame (fi, true, true)
+						    andalso slotsAreInFrame fi))
+			    else if !Control.profile = Control.ProfileNone
+				    then true
+				 else (case frameInfo of
+					  NONE => false
+					| SOME fi => frame (fi, false, true)))
 			   then SOME (case dst of
 					 NONE => alloc
 				       | SOME z => Alloc.define (alloc, z))
 			else NONE
 		   | Func => SOME alloc
 		   | Handler {frameInfo, ...} =>
-			if frame frameInfo
+			if frame (frameInfo, false, false)
 			   then SOME alloc
 			else NONE
 		   | Jump => SOME alloc
@@ -1345,7 +1364,7 @@ structure Program =
 			   andalso jump (overflow, alloc)
 			   andalso jump (success, alloc)
 			end
-		   | CCall {args, frameInfo, func, return} =>
+		   | CCall {args, frameInfo = fi, func, return} =>
 			let
 			   val _ = checkOperands (args, alloc)
 			in
@@ -1360,8 +1379,10 @@ structure Program =
 				    andalso
 				    case labelKind l of
 				       Kind.CReturn
-				       {dst, func = f, ...} => 
+				       {dst, frameInfo = fi', func = f, ...} => 
 					  CFunction.equals (func, f)
+					  andalso (Option.equals
+						   (fi, fi', FrameInfo.equals))
 					  andalso
 					  (case (dst, CFunction.returnTy f) of
 					      (NONE, _) => true

@@ -592,14 +592,42 @@ static inline bool stackIsEmpty (GC_stack stack) {
 	return 0 == stack->used;
 }
 
+static inline uint getFrameIndex (GC_state s, word returnAddress) {
+	uint res;
+
+	if (s->native) {
+		if (DEBUG_PROFILE)
+			fprintf (stderr, "getFrameIndex (0x%08x) = ", 
+					returnAddress);
+		res = *((uint*)(returnAddress - WORD_SIZE));
+	} else {
+		if (DEBUG_PROFILE)
+			fprintf (stderr, "getFrameIndex (%u) = ", returnAddress);
+		res = (uint)returnAddress;
+	}
+	if (DEBUG_PROFILE)
+		fprintf (stderr, "%u\n", res);
+	return res;
+}
+
+static inline uint topFrameIndex (GC_state s) {
+	uint res;
+
+	res = getFrameIndex (s, *(word*)(s->stackTop - WORD_SIZE));
+	if (DEBUG_PROFILE)
+		fprintf (stderr, "topFrameIndex = %u\n", res);
+	return res;
+}
+
+static inline uint topFrameSourceSeqIndex (GC_state s) {
+	return s->frameSources[topFrameIndex (s)];
+}
+
 static inline GC_frameLayout * getFrameLayout (GC_state s, word returnAddress) {
 	GC_frameLayout *layout;
 	uint index;
 
-	if (s->native)
-		index = *((uint*)(returnAddress - WORD_SIZE));
-	else
-		index = (uint)returnAddress;
+	index = getFrameIndex (s, returnAddress);
 	if (DEBUG_DETAILED)
 		fprintf (stderr, "returnAddress = 0x%08x  index = %d  frameLayoutsSize = %d\n",
 				returnAddress, index, s->frameLayoutsSize);
@@ -2461,17 +2489,15 @@ static void doGC (GC_state s,
 			bool forceMajor,
 			bool mayResize) {
 	uint gcTime;
-	uint oldSource = -1;
 	bool stackTopOk;
 	W64 stackBytesRequested;
 	struct rusage ru_start;
 	W64 totalBytesRequested;
 	
 	if (s->profilingIsOn) {
-		oldSource = s->currentSource;
 		if (s->profileStack)
 			GC_profileEnter (s);
-		s->currentSource = SOURCE_SEQ_GC;
+		s->amInGC = TRUE;
 	}
 	if (DEBUG or s->messages)
 		fprintf (stderr, "Starting gc.  Request %s nursery bytes and %s old gen bytes.\n",
@@ -2514,9 +2540,9 @@ static void doGC (GC_state s,
 	assert (hasBytesFree (s, oldGenBytesRequested, nurseryBytesRequested));
 	assert (invariant (s));
 	if (s->profilingIsOn) {
-		s->currentSource = oldSource;
 		if (s->profileStack)
 			GC_profileLeave (s);
+		s->amInGC = FALSE;
 	}
 }
 
@@ -2793,12 +2819,7 @@ pointer GC_copyThread (GC_state s, pointer thread) {
 /*                            Profiling                             */
 /* ---------------------------------------------------------------- */
 
-static void enterFrame (GC_state s, uint i) {
-	s->currentSource = s->frameSources[i];
-	GC_profileEnter (s);
-	s->currentSource = CURRENT_SOURCE_UNDEFINED;
-}
-
+/* Apply f to the frame index of each frame in the current thread's stack. */
 void GC_foreachStackFrame (GC_state s, void (*f) (GC_state s, uint i)) {
 	pointer bottom;
 	word index;
@@ -2815,7 +2836,7 @@ void GC_foreachStackFrame (GC_state s, void (*f) (GC_state s, uint i)) {
 				(uint)bottom, (uint)s->stackTop);
 	for (top = s->stackTop; top > bottom; top -= layout->numBytes) {
 		returnAddress = *(word*)(top - WORD_SIZE);
-		index = *(word*)(returnAddress - WORD_SIZE);
+		index = getFrameIndex (s, returnAddress);
 		if (DEBUG_PROFILE)
 			fprintf (stderr, "top = 0x%08x  index = %u\n",
 					(uint)top, index);
@@ -2831,9 +2852,13 @@ void GC_foreachStackFrame (GC_state s, void (*f) (GC_state s, uint i)) {
 }
 
 static inline void removeFromStack (GC_state s, GC_profile p, uint i) {
+	ullong totalInc;
+
+	totalInc = p->total - p->lastTotal[i];
 	if (DEBUG_PROFILE)
-		fprintf (stderr, "removing %s from stack\n", s->sources[i]);
-	p->countStack[i] += p->total - p->lastTotal[i];
+		fprintf (stderr, "removing %s from stack  totalInc = %llu\n",
+				s->sources[i], totalInc);
+	p->countStack[i] += totalInc;
 	p->countStackGC[i] += p->totalGC - p->lastTotalGC[i];
 }
 
@@ -2872,19 +2897,18 @@ void GC_profileDone (GC_state s) {
 	}
 }
 
-void GC_profileEnter (GC_state s) {
+static void profileEnter (GC_state s, uint sourceSeqIndex) {
 	int i;
 	GC_profile p;
 	uint sourceIndex;
 	uint *sourceSeq;
 
 	if (DEBUG_PROFILE)
-		fprintf (stderr, "GC_profileEnter  currentSource = %u\n",
-				(uint)s->currentSource);
+		fprintf (stderr, "profileEnter (%u)\n", sourceSeqIndex);
 	assert (s->profileStack);
-	assert (s->currentSource < s->sourceSeqsSize);
+	assert (sourceSeqIndex < s->sourceSeqsSize);
 	p = s->profile;
-	sourceSeq = s->sourceSeqs[s->currentSource];
+	sourceSeq = s->sourceSeqs[sourceSeqIndex];
 	for (i = 1; i <= sourceSeq[0]; ++i) {
 		sourceIndex = sourceSeq[i];
 		if (DEBUG_PROFILE)
@@ -2898,53 +2922,22 @@ void GC_profileEnter (GC_state s) {
 	}
 }
 
-/* Pre: s->currentSource is set. */
-void GC_profileInc (GC_state s, W32 amount) {
-	uint source;
-	uint *sourceSeq;
-
-	if (DEBUG_PROFILE)
-		fprintf (stderr, "GC_profileInc (%u) currentSource = %u\n",
-				(uint)amount,
-				s->currentSource);
-	assert (s->currentSource < s->sourceSeqsSize);
-	sourceSeq = s->sourceSeqs[s->currentSource];
-	source = sourceSeq[0] > 0
-		? sourceSeq[sourceSeq[0]]
-		: SOURCES_INDEX_UNKNOWN;
-	if (DEBUG_PROFILE)
-		fprintf (stderr, "bumping %s by %u\n",
-				s->sources[source], (uint)amount);
-	s->profile->countTop[source] += amount;
-	if (s->profileStack)
-		GC_profileEnter (s);
-	if (SOURCES_INDEX_GC == source)
-		s->profile->totalGC += amount;
-	else
-		s->profile->total += amount;
-	if (s->profileStack)
-		GC_profileLeave (s);
+static void enterFrame (GC_state s, uint i) {
+	profileEnter (s, s->frameSources[i]);
 }
 
-/* s->currentSource must be set. */
-void GC_profileAllocInc (GC_state s, W32 amount) {
-	if (s->profilingIsOn and (PROFILE_ALLOC == s->profileKind))
-		GC_profileInc (s, amount);
-}
-
-void GC_profileLeave (GC_state s) {
+static void profileLeave (GC_state s, uint sourceSeqIndex) {
 	int i;
 	GC_profile p;
 	uint sourceIndex;
 	uint *sourceSeq;
 
 	if (DEBUG_PROFILE)
-		fprintf (stderr, "GC_profileLeave  currentSource = %u\n",
-				s->currentSource);
+		fprintf (stderr, "profileLeave (%u)\n", sourceSeqIndex);
 	assert (s->profileStack);
-	assert (s->currentSource < s->sourceSeqsSize);
+	assert (sourceSeqIndex < s->sourceSeqsSize);
 	p = s->profile;
-	sourceSeq = s->sourceSeqs[s->currentSource];
+	sourceSeq = s->sourceSeqs[sourceSeqIndex];
 	for (i = sourceSeq[0]; i > 0; --i) {
 		sourceIndex = sourceSeq[i];
 		if (DEBUG_PROFILE)
@@ -2954,6 +2947,62 @@ void GC_profileLeave (GC_state s) {
 		p->stackCount[sourceIndex]--;
 		if (0 == p->stackCount[sourceIndex])
 			removeFromStack (s, p, sourceIndex);
+	}
+}
+
+static inline void profileInc (GC_state s, W32 amount, uint sourceSeqIndex) {
+	uint *sourceSeq;
+	uint topSourceIndex;
+
+	assert (not s->amInGC);
+	if (DEBUG_PROFILE)
+		fprintf (stderr, "profileInc (%u, %u)\n", 
+				(uint)amount, sourceSeqIndex);
+	assert (sourceSeqIndex < s->sourceSeqsSize);
+	sourceSeq = s->sourceSeqs[sourceSeqIndex];
+	topSourceIndex = sourceSeq[0] > 0
+		? sourceSeq[sourceSeq[0]]
+		: SOURCES_INDEX_UNKNOWN;
+	if (DEBUG_PROFILE)
+		fprintf (stderr, "bumping %s by %u\n",
+				s->sources[topSourceIndex], (uint)amount);
+	s->profile->countTop[topSourceIndex] += amount;
+	if (s->profileStack)
+		profileEnter (s, sourceSeqIndex);
+	if (SOURCES_INDEX_GC == topSourceIndex)
+		s->profile->totalGC += amount;
+	else
+		s->profile->total += amount;
+	if (s->profileStack)
+		profileLeave (s, sourceSeqIndex);
+}
+
+void GC_profileEnter (GC_state s) {
+	profileEnter (s, topFrameSourceSeqIndex (s));
+}
+
+void GC_profileLeave (GC_state s) {
+	profileLeave (s, topFrameSourceSeqIndex (s));
+}
+
+void GC_profileInc (GC_state s, W32 amount) {
+	assert (not s->amInGC);
+	if (DEBUG_PROFILE)
+		fprintf (stderr, "GC_profileInc (%u)\n", (uint)amount);
+	profileInc (s, amount, topFrameSourceSeqIndex (s));
+}
+
+void GC_profileAllocInc (GC_state s, W32 amount) {
+	if (DEBUG_PROFILE)
+		fprintf (stderr, "GC_profileAllocInc (%u)\n", (uint)amount);
+	if (s->profilingIsOn and (PROFILE_ALLOC == s->profileKind)) {
+		if (s->amInGC) {
+			if (DEBUG_PROFILE)
+				fprintf (stderr, "amInGC\n");
+			s->profile->totalGC += amount;
+			return;
+		}
+		GC_profileInc (s, amount);
 	}
 }
 
@@ -3066,9 +3115,10 @@ static GC_state catcherState;
  * Called on each SIGPROF interrupt.
  */
 static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {
-	GC_state s;
+	uint frameIndex;
 	pointer pc;
-	bool undef;
+	GC_state s;
+	uint sourceSeqIndex;
 
 	s = catcherState;
 #if (defined (__linux__))
@@ -3079,21 +3129,24 @@ static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {
 #error pc not defined
 #endif
 	if (DEBUG_PROFILE)
-		fprintf (stderr, "pc = 0x%08x\n", (uint)pc);
-	if (CURRENT_SOURCE_UNDEFINED == s->currentSource) {
-		undef = TRUE;
+		fprintf (stderr, "catcher  pc = 0x%08x\n", (uint)pc);
+	if (s->amInGC) {
+		s->profile->totalGC++;
+		return;
+	}
+	frameIndex = topFrameIndex (s);
+	if (s->frameLayouts[frameIndex].isC) {
+		sourceSeqIndex = s->frameSources[frameIndex];
+	} else {
 		if (s->textStart <= pc and pc < s->textEnd) {
-			s->currentSource = s->textSources [pc - s->textStart];
+			sourceSeqIndex = s->textSources [pc - s->textStart];
 		} else {
 			if (DEBUG_PROFILE)
 				fprintf (stderr, "pc out of bounds\n");
-		       	s->currentSource = SOURCE_SEQ_UNKNOWN;
+		       	sourceSeqIndex = SOURCE_SEQ_UNKNOWN;
 		}
-	} else
-		undef = FALSE;
-	GC_profileInc (s, 1);
-	if (undef)
-		s->currentSource = CURRENT_SOURCE_UNDEFINED;
+	}
+	profileInc (s, 1, sourceSeqIndex);
 }
 
 /* To get the beginning and end of the text segment. */
@@ -3116,7 +3169,6 @@ static void profileTimeInit (GC_state s) {
 	uint sourceSeqsIndex;
 
 	s->profile = GC_profileNew (s);
-	s->currentSource = CURRENT_SOURCE_UNDEFINED;
 	/* Sort sourceLabels by address. */
 	qsort (s->sourceLabels, s->sourceLabelsSize, sizeof(*s->sourceLabels),
 		compareProfileLabels);
@@ -3382,7 +3434,7 @@ static void setInitialBytesLive (GC_state s) {
 	int numElements;
 
 	s->bytesLive = 0;
-	for (i = 0; s->intInfInits[i].mlstr != NULL; ++i) {
+	for (i = 0; i < s->intInfInitsSize; ++i) {
 		numElements = strlen (s->intInfInits[i].mlstr);
 		s->bytesLive +=
 			GC_ARRAY_HEADER_SIZE + WORD_SIZE // for the sign
@@ -3390,7 +3442,7 @@ static void setInitialBytesLive (GC_state s) {
 				? POINTER_SIZE 
 				: wordAlign (numElements));
 	}
-	for (i = 0; s->stringInits[i].str != NULL; ++i) {
+	for (i = 0; i < s->stringInitsSize; ++i) {
 		numElements = s->stringInits[i].size;
 		s->bytesLive +=
 			GC_ARRAY_HEADER_SIZE
@@ -3415,15 +3467,17 @@ static void initIntInfs (GC_state s) {
 	uint	slen,
 		llen,
 		alen,
-		i;
+		i,
+		index;
 	bool	neg,
 		hex;
 	bignum	*bp;
 	char	*cp;
 
-	inits = s->intInfInits;
 	frontier = s->frontier;
-	for (; (str = inits->mlstr) != NULL; ++inits) {
+	for (index = 0; index < s->intInfInitsSize; ++index) {
+		inits = &s->intInfInits[index];
+		str = inits->mlstr;
 		assert (inits->globalIndex < s->globalsSize);
 		neg = *str == '~';
 		if (neg)
@@ -3494,7 +3548,7 @@ static void initStrings (GC_state s) {
 
 	inits = s->stringInits;
 	frontier = s->frontier;
-	for (i = 0; inits[i].str != NULL; ++i) {
+	for (i = 0; i < s->stringInitsSize; ++i) {
 		uint numElements, numBytes;
 
 		numElements = inits[i].size;
@@ -3592,6 +3646,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 	char *worldFile;
 	int i;
 
+	s->amInGC = TRUE;
 	s->bytesAllocated = 0;
 	s->bytesCopied = 0;
 	s->bytesCopiedMinor = 0;
@@ -3600,7 +3655,6 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->cardSize = 0x1 << s->cardSizeLog2;
 	s->copyRatio = 4.0;
 	s->copyGenerationalRatio = 4.0;
-	s->currentSource = SOURCE_SEQ_GC;
 	s->currentThread = BOGUS_THREAD;
 	s->growRatio = 8.0;
 	s->inSignalHandler = FALSE;
@@ -3648,6 +3702,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 	/* Initialize profiling. */
 	if (s->sourcesSize > 0) {
 		s->profilingIsOn = TRUE;
+		assert (s->frameSourcesSize == s->frameLayoutsSize);
 		if (s->sourceLabelsSize > 0) {
 			s->profileKind = PROFILE_TIME;
 			profileTimeInit (s);
@@ -3780,6 +3835,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 			GC_foreachStackFrame (s, enterFrame);
 	}
 	assert (mutatorInvariant (s));
+	s->amInGC = FALSE;
 	return i;
 }
 

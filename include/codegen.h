@@ -3,11 +3,11 @@
 
 #define BeginIntInfs static struct GC_intInfInit intInfInits[] = {
 #define IntInf(g, n) { g, n },
-#define EndIntInfs { 0, NULL }};
+#define EndIntInfs };
 
 #define BeginStrings static struct GC_stringInit stringInits[] = {
 #define String(g, s, l) { g, s, l },
-#define EndStrings { 0, NULL, 0 }};
+#define EndStrings };
 
 #define BeginReals static void real_Init() {
 #define Real(c, f) globaldouble[c] = f;
@@ -46,6 +46,7 @@
 	gcState.globals = globalpointer;				\
 	gcState.globalsSize = cardof(globalpointer);			\
 	gcState.intInfInits = intInfInits;				\
+	gcState.intInfInitsSize = cardof(intInfInits);			\
 	gcState.loadGlobals = loadGlobals;				\
 	gcState.magic = mg;						\
 	gcState.maxFrameSize = mfs;					\
@@ -63,6 +64,7 @@
 	gcState.sourceSeqsSize = cardof(sourceSeqs);			\
 	gcState.sourceSuccessors = sourceSuccessors;			\
 	gcState.stringInits = stringInits;				\
+	gcState.stringInitsSize = cardof(stringInits);			\
 	MLton_init (argc, argv, &gcState);				\
 
 #endif /* #ifndef _CODEGEN_H_ */

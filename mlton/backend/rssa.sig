@@ -168,7 +168,8 @@ signature RSSA =
 	     | Handler
 	     | Jump
 
-	    val isFrame: t -> bool
+	    datatype frameStyle = None | OffsetsAndSize | SizeOnly
+	    val frameStyle: t -> frameStyle
 	 end
 
       structure Block:

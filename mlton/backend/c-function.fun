@@ -15,13 +15,11 @@ datatype t = T of {bytesNeeded: int option,
 		   maySwitchThreads: bool,
 		   modifiesFrontier: bool,
 		   modifiesStackTop: bool,
-		   needsCurrentSource: bool,
 		   name: string,
 		   returnTy: Type.t option}
    
 fun layout (T {bytesNeeded, ensuresBytesFree, mayGC, maySwitchThreads,
-	       modifiesFrontier, modifiesStackTop, name, needsCurrentSource,
-	       returnTy}) =
+	       modifiesFrontier, modifiesStackTop, name, returnTy}) =
    Layout.record
    [("bytesNeeded", Option.layout Int.layout bytesNeeded),
     ("ensuresBytesFree", Bool.layout ensuresBytesFree),
@@ -30,7 +28,6 @@ fun layout (T {bytesNeeded, ensuresBytesFree, mayGC, maySwitchThreads,
     ("modifiesFrontier", Bool.layout modifiesFrontier),
     ("modifiesStackTop", Bool.layout modifiesStackTop),
     ("name", String.layout name),
-    ("needsCurrentSource", Bool.layout needsCurrentSource),
     ("returnTy", Option.layout Type.layout returnTy)]
 
 local
@@ -43,7 +40,6 @@ in
    val modifiesFrontier = make #modifiesFrontier
    val modifiesStackTop = make #modifiesStackTop
    val name = make #name
-   val needsCurrentSource = make #needsCurrentSource
    val returnTy = make #returnTy
 end
 
@@ -52,9 +48,10 @@ fun equals (f, f') = name f = name f'
 fun isOk (T {ensuresBytesFree, mayGC, maySwitchThreads, modifiesFrontier,
 	     modifiesStackTop, returnTy, ...}): bool =
    (if maySwitchThreads
-      then (case returnTy of
-	      NONE => true
-	    | SOME t => false)
+      then (mayGC
+	    andalso (case returnTy of
+			NONE => true
+		      | SOME t => false))
       else true)
    andalso
    (if ensuresBytesFree orelse maySwitchThreads
@@ -79,7 +76,6 @@ local
 	 modifiesFrontier = true,
 	 modifiesStackTop = true,
 	 name = "GC_gc",
-	 needsCurrentSource = true,
 	 returnTy = NONE}
    val t = make true
    val f = make false
@@ -95,28 +91,20 @@ fun vanilla {name, returnTy} =
       modifiesFrontier = false,
       modifiesStackTop = false,
       name = name,
-      needsCurrentSource = false,
       returnTy = returnTy}
 
 val bug = vanilla {name = "MLton_bug",
 		   returnTy = NONE}
 
-val profileEnter = vanilla {name = "GC_profileEnter",
-			    returnTy = NONE}
-
-val profileInc =
-   T {bytesNeeded = NONE,
-      ensuresBytesFree = false,
-      mayGC = false,
-      maySwitchThreads = false,
-      modifiesFrontier = false,
-      modifiesStackTop = false,
-      name = "GC_profileInc",
-      needsCurrentSource = true,
-      returnTy = NONE}
-
-val profileLeave = vanilla {name = "GC_profileLeave",
-			    returnTy = NONE}
+local
+   fun make name =
+      vanilla {name = name,
+	       returnTy = NONE}
+in
+   val profileEnter = make "GC_profileEnter"
+   val profileInc = make "GC_profileInc"
+   val profileLeave = make "GC_profileLeave"
+end
 
 val size = vanilla {name = "MLton_size",
 		    returnTy = SOME Type.int}

@@ -163,11 +163,10 @@ fun toMachine (program: Ssa.Program.t) =
 	  suffix = "rssa",
 	  thunk = fn () => Profile.profile program,
 	  typeCheck = R.Program.typeCheck o #program}
-      val profileStack =
-	 !Control.profile <> Control.ProfileNone
-	 andalso !Control.profileStack
+      val profile = !Control.profile <> Control.ProfileNone
+      val profileStack = profile andalso !Control.profileStack
       val frameProfileIndex =
-	 if profileStack
+	 if profile
 	    then
 	       let
 		  val {get, set, ...} =
@@ -252,7 +251,8 @@ fun toMachine (program: Ssa.Program.t) =
 	    in
 	       (frameLayouts, frameOffsets, frameSources)
 	    end
-	 fun getFrameLayoutsIndex {label: Label.t,
+	 fun getFrameLayoutsIndex {isC: bool,
+				   label: Label.t,
 				   offsets: int list,
 				   size: int}: int =
 	    let
@@ -263,9 +263,10 @@ fun toMachine (program: Ssa.Program.t) =
 		     val _ =
 			List.push (frameLayouts,
 				   {frameOffsetsIndex = foi,
+				    isC = isC,
 				    size = size})
 		     val _ =
-			if profileStack
+			if profile
 			   then List.push (frameSources, profileIndex)
 			else ()
 		  in
@@ -282,22 +283,27 @@ fun toMachine (program: Ssa.Program.t) =
 	       #frameLayoutsIndex
 	       (HashSet.lookupOrInsert
 		(table, Word.fromInt foi,
-		 fn {frameOffsetsIndex = foi',
+		 fn {frameOffsetsIndex = foi', isC = isC',
 		     profileIndex = pi', size = s', ...} =>
-		 foi = foi' andalso profileIndex = pi' andalso size = s',
+		 foi = foi'
+		 andalso isC = isC'
+		 andalso profileIndex = pi'
+		 andalso size = s',
 		 fn () => {frameLayoutsIndex = new (),
 			   frameOffsetsIndex = foi,
+			   isC = isC,
 			   profileIndex = profileIndex,
 			   size = size}))
 	    end
       end
-      val {get = frameInfo: Label.t -> M.FrameInfo.t,
+      val {get = frameInfo: Label.t -> M.FrameInfo.t option,
 	   set = setFrameInfo, ...} = 
 	 Property.getSetOnce (Label.plist,
-			      Property.initRaise ("frameInfo", Label.layout))
+			      Property.initConst NONE)
       val setFrameInfo =
 	 Trace.trace2 ("Backend.setFrameInfo",
-		       Label.layout, M.FrameInfo.layout, Unit.layout)
+		       Label.layout, Option.layout M.FrameInfo.layout,
+		       Unit.layout)
 	 setFrameInfo
       (* The global raise operands. *)
       local
@@ -675,29 +681,44 @@ fun toMachine (program: Ssa.Program.t) =
 	    val _ =
 	       Vector.foreach
 	       (blocks, fn R.Block.T {kind, label, ...} =>
-		if not (R.Kind.isFrame kind)
-		   then ()
-		else
-		   let
-		      val {liveNoFormals, size, ...} = labelRegInfo label
-		      val offsets =
-			 Vector.fold
-			 (liveNoFormals, [], fn (oper, ac) =>
-			  case oper of
-			     M.Operand.StackOffset {offset, ty} =>
-				if Type.isPointer ty
-				   then offset :: ac
-				else ac
-			   | _ => ac)
-		      val frameLayoutsIndex =
-			 getFrameLayoutsIndex {label = label,
-					       offsets = offsets,
-					       size = size}
-		   in
-		      setFrameInfo (label,
-				    M.FrameInfo.T
-				    {frameLayoutsIndex = frameLayoutsIndex})
-		   end)
+		let
+		   fun doit (useOffsets: bool): unit =
+		      let
+			 val {liveNoFormals, size, ...} = labelRegInfo label
+			 val offsets =
+			    if useOffsets
+			       then
+				  Vector.fold
+				  (liveNoFormals, [], fn (oper, ac) =>
+				   case oper of
+				      M.Operand.StackOffset {offset, ty} =>
+					 if Type.isPointer ty
+					    then offset :: ac
+					 else ac
+				    | _ => ac)
+			    else
+			       []
+			 val isC =
+			    case kind of
+			       R.Kind.CReturn _ => true
+			     | _ => false
+			 val frameLayoutsIndex =
+			    getFrameLayoutsIndex {isC = isC,
+						  label = label,
+						  offsets = offsets,
+						  size = size}
+		      in
+			 setFrameInfo
+			 (label,
+			  SOME (M.FrameInfo.T
+				{frameLayoutsIndex = frameLayoutsIndex}))
+		      end
+		in
+		   case R.Kind.frameStyle kind of
+		      R.Kind.None => ()
+		    | R.Kind.OffsetsAndSize => doit true
+		    | R.Kind.SizeOnly => doit false
+		end)
 	    (* ------------------------------------------------- *)
 	    (*                    genTransfer                    *)
 	    (* ------------------------------------------------- *)
@@ -720,10 +741,9 @@ fun toMachine (program: Ssa.Program.t) =
 		   | R.Transfer.CCall {args, func, return} =>
 			simple (M.Transfer.CCall
 				{args = translateOperands args,
-				 frameInfo = if CFunction.mayGC func
-						then SOME (frameInfo
-							   (valOf return))
-					     else NONE,
+				 frameInfo = (case return of
+						 NONE => NONE
+					       | SOME l => frameInfo l),
 				 func = func,
 				 return = return})
 		   | R.Transfer.Call {func, args, return} =>
@@ -881,14 +901,14 @@ fun toMachine (program: Ssa.Program.t) =
 			      val srcs = callReturnOperands (args, #2, size)
 			   in
 			      (M.Kind.Cont {args = srcs,
-					    frameInfo = frameInfo label},
+					    frameInfo = valOf (frameInfo label)},
 			       liveNoFormals,
 			       parallelMove
 			       {chunk = chunk,
 				dsts = Vector.map (args, varOperand o #1),
 				srcs = srcs})
 			   end
-		      | R.Kind.CReturn {func as CFunction.T {mayGC, ...}} =>
+		      | R.Kind.CReturn {func, ...} =>
 			   let
 			      val dst =
 				 case Vector.length args of
@@ -896,13 +916,9 @@ fun toMachine (program: Ssa.Program.t) =
 				  | 1 => SOME (varOperand
 					       (#1 (Vector.sub (args, 0))))
 				  | _ => Error.bug "strange CReturn"
-			      val frameInfo =
-				 if mayGC
-				    then SOME (frameInfo label)
-				 else NONE
 			   in
 			      (M.Kind.CReturn {dst = dst,
-					       frameInfo = frameInfo,
+					       frameInfo = frameInfo label,
 					       func = func},
 			       liveNoFormals,
 			       Vector.new0 ())
@@ -917,8 +933,9 @@ fun toMachine (program: Ssa.Program.t) =
 			      val handles =
 				 raiseOperands (Vector.map (dsts, M.Operand.ty))
 			   in
-			      (M.Kind.Handler {frameInfo = frameInfo label,
-					       handles = handles},
+			      (M.Kind.Handler
+			       {frameInfo = valOf (frameInfo label),
+				handles = handles},
 			       liveNoFormals,
 			       M.Statement.moves {dsts = dsts,
 						  srcs = handles})

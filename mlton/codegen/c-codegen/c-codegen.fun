@@ -109,7 +109,8 @@ structure C =
       fun bug (s: string, print) =
 	 call ("MLton_bug", [concat ["\"", String.escapeC s, "\""]], print)
 
-      fun push (i, print) = call ("\tPush", [int i], print)
+      fun push (i, print) =
+	 call ("\tPush", [int i], print)
 
       fun move ({dst, src}, print) =
 	 print (concat [dst, " = ", src, ";\n"])
@@ -205,9 +206,10 @@ fun outputDeclarations
 	  ; print "};\n")
       fun declareFrameLayouts () =
 	 declareArray ("GC_frameLayout", "frameLayouts", frameLayouts,
-		       fn (_, {frameOffsetsIndex, size}) =>
+		       fn (_, {frameOffsetsIndex, isC, size}) =>
 		       concat ["{",
-			       C.int size,
+			       C.bool isC,
+			       ", ", C.int size,
 			       ", frameOffsets", C.int frameOffsetsIndex,
 			       "}"])
       fun declareObjectTypes () =
@@ -408,7 +410,6 @@ fun output {program as Machine.Program.T {chunks,
 		     case r of
 			CanHandle => "gcState.canHandle"
 		      | CardMap => "gcState.cardMapForMutator"
-		      | CurrentSource => "gcState.currentSource"
 		      | CurrentThread => "gcState.currentThread"
 		      | ExnStack => "ExnStack"
 		      | Frontier => "frontier"
@@ -526,13 +527,17 @@ fun output {program as Machine.Program.T {chunks,
 		     | Switch s => Switch.foreachLabel (s, jump)
 		 end)
 	    fun push (return: Label.t, size: int) =
-	       (C.push (size, print)
-		; print "\t"
+	       (print "\t"
 		; C.move ({dst = operandToString
-			   (Operand.StackOffset {offset = ~Runtime.labelSize,
-						 ty = Type.label return}),
+			   (Operand.StackOffset
+			    {offset = size - Runtime.labelSize,
+			     ty = Type.label return}),
 			   src = operandToString (Operand.Label return)},
-			  print))
+			  print)
+		; C.push (size, print)
+		; if !Control.profile <> Control.ProfileNone
+		     then print "\tFlushStackTop();\n"
+		  else ())
 	    fun copyArgs (args: Operand.t vector): string list * (unit -> unit) =
 	       if Vector.exists (args,
 				 fn Operand.StackOffset _ => true
@@ -610,10 +615,10 @@ fun output {program as Machine.Program.T {chunks,
 		  val _ =
 		     case kind of
 			Kind.Cont {frameInfo, ...} => pop frameInfo
-		      | Kind.CReturn {dst, frameInfo, func, ...} =>
-			   (if CFunction.mayGC func
-			       then pop (valOf frameInfo)
-			    else ()
+		      | Kind.CReturn {dst, frameInfo, ...} =>
+			   (case frameInfo of
+			       NONE => ()
+			     | SOME fi => pop (valOf frameInfo)
 			    ; (Option.app
 			       (dst, fn x =>
 				print (concat
@@ -707,8 +712,7 @@ fun output {program as Machine.Program.T {chunks,
 			end
 		   | CCall {args,
 			    frameInfo,
-			    func = CFunction.T {mayGC,
-						maySwitchThreads,
+			    func = CFunction.T {maySwitchThreads,
 						modifiesFrontier,
 						modifiesStackTop,
 						name,
@@ -717,20 +721,19 @@ fun output {program as Machine.Program.T {chunks,
 			    return} =>
 			let
 			   val (args, afterCall) =
-			      if mayGC
-				 then
+			      case frameInfo of
+				 NONE =>
+				    (Vector.toListMap (args, operandToString),
+				     fn () => ())
+			       | SOME frameInfo =>
 				    let
 				       val size =
-					  Program.frameSize (program,
-							     valOf frameInfo)
+					  Program.frameSize (program, frameInfo)
 				       val res = copyArgs args
 				       val _ = push (valOf return, size)
 				    in
 				       res
 				    end
-			      else
-				 (Vector.toListMap (args, operandToString),
-				  fn () => ())
 			   val _ =
 			      if modifiesFrontier
 				 then print "\tFlushFrontier();\n"

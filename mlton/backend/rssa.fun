@@ -430,12 +430,18 @@ structure Kind =
 	     | Jump => str "Jump"
 	 end
 
-      fun isFrame (k: t): bool =
+      datatype frameStyle = None | OffsetsAndSize | SizeOnly
+      fun frameStyle (k: t): frameStyle =
 	 case k of
-	    Cont _ => true
-	  | CReturn {func = CFunction.T {mayGC, ...}, ...} => mayGC
-	  | Handler => true
-	  | Jump => false
+	    Cont _ => OffsetsAndSize
+	  | CReturn {func, ...} =>
+	       if CFunction.mayGC func
+		  then OffsetsAndSize
+	       else if !Control.profile = Control.ProfileNone
+		       then None
+		    else SizeOnly
+	  | Handler => SizeOnly
+	  | Jump => None
    end
 
 local

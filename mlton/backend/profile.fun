@@ -157,6 +157,13 @@ fun profile program =
       val unknownSourceSeq = sourceSeqIndex [sourceInfoIndex SourceInfo.unknown]
       (* Ensure that [SourceInfo.gc] is index 1. *)
       val gcSourceSeq = sourceSeqIndex [sourceInfoIndex SourceInfo.gc]
+      fun addFrameProfileIndex (label: Label.t,
+				index: int): unit =
+	 List.push (frameProfileIndices, (label, index))
+      fun addFrameProfilePushes (label: Label.t,
+				 pushes: Push.t list): unit =
+	 addFrameProfileIndex (label,
+			       sourceSeqIndex (Push.toSources pushes))
       val {get = labelInfo: Label.t -> {block: Block.t,
 					visited: bool ref},
 	   set = setLabelInfo, ...} =
@@ -284,40 +291,25 @@ fun profile program =
 	    val blocks = ref []
 	    datatype z = datatype Statement.t
 	    datatype z = datatype ProfileExp.t
-	    fun setCurrentSource (n: int): Statement.t =
-	       Statement.Move
-	       {dst = Operand.Runtime Runtime.GCField.CurrentSource,
-		src = Operand.word (Word.fromInt n)}
-	    val setCurrentSource =
-	       Trace.trace ("Profile.setCurrentSource",
-			    Int.layout, Statement.layout)
-	       setCurrentSource
-	    val clearCurrentSource = setCurrentSource ~1
 	    fun backward {args,
 			  kind,
 			  label,
-			  needsCurrentSource,
 			  sourceSeq: int list,
 			  statements: Statement.t list,
 			  transfer: Transfer.t}: unit =
 	       let
-		  fun addCurrent (statements, sourceSeq) =
-		     setCurrentSource (sourceSeqIndex sourceSeq) :: statements
-		  val (ncs, npl, sourceSeq, statements) =
+		  val (npl, sourceSeq, statements) =
 		     List.fold
 		     (statements,
-		      (needsCurrentSource, true, sourceSeq, []),
-		      fn (s, (ncs, npl, sourceSeq, ss)) =>
+		      (true, sourceSeq, []),
+		      fn (s, (npl, sourceSeq, ss)) =>
 		      case s of
-			 Object _ => (true, true, sourceSeq, s :: ss)
+			 Object _ => (true, sourceSeq, s :: ss)
 		       | Profile ps =>
 			    let
 			       val (npl, ss) =
 				  if profileAlloc
-				     then if ncs
-					     then (false,
-						   addCurrent (ss, sourceSeq))
-					  else (false, ss)
+				     then (false, ss)
 				  else (* profileTime *)
 				     if npl andalso not (List.isEmpty sourceSeq)
 					then (false,
@@ -334,36 +326,13 @@ fun profile program =
 					       else Error.bug "mismatched Enter")
 				   | Leave si => sourceInfoIndex si :: sourceSeq
 			    in
-			       (false, npl, sourceSeq, ss)
+			       (npl, sourceSeq, ss)
 			    end
-		       | _ => (ncs, true, sourceSeq, s :: ss))
+		       | _ => (true, sourceSeq, s :: ss))
 		  val statements =
-		     if profileAlloc
-			then
-			   if ncs
-			      then addCurrent (statements, sourceSeq)
-			   else statements
-		     else (* profileTime *)
-			let
-			   fun pl () = profileLabel sourceSeq
-			in
-			   if (case kind of
-				  Kind.Cont _ => profileStack
-		                | Kind.CReturn {func, ...} => true
-				| Kind.Handler => profileStack
-				| _ => false)
-			      then
-				 (case statements of
-				     (s as Statement.ProfileLabel _) :: ss =>
-					s :: clearCurrentSource :: ss
-				   | _ => 
-					pl ()
-					:: clearCurrentSource
-					:: statements)
-			   else if npl
-				   then pl () :: statements
-				else statements
-			end
+		     if profileTime andalso npl
+			then profileLabel sourceSeq :: statements
+		     else statements
 		  val {args, kind, label} =
 		     if profileStack andalso (case kind of
 						 Kind.Cont _ => true
@@ -373,13 +342,15 @@ fun profile program =
 			   let
 			      val func = CFunction.profileLeave
 			      val newLabel = Label.newNoname ()
-			      val index = sourceSeqIndex sourceSeq
-			      val statements =
-				 [setCurrentSource index]
+			      val _ =
+				 addFrameProfileIndex
+				 (newLabel, sourceSeqIndex sourceSeq)
 			      val statements =
 				 if profileTime
-				    then profileLabelIndex index :: statements
-				 else statements
+				    then (Vector.new1
+					  (profileLabelIndex
+					   (sourceSeqIndex sourceSeq)))
+				 else Vector.new0 ()
 			      val _ =
 				 List.push
 				 (blocks,
@@ -387,7 +358,7 @@ fun profile program =
 				  {args = args,
 				   kind = kind,
 				   label = label,
-				   statements = Vector.fromList statements,
+				   statements = statements,
 				   transfer = 
 				   Transfer.CCall
 				   {args = Vector.new1 Operand.GCState,
@@ -417,31 +388,29 @@ fun profile program =
 			      List.layout Statement.layout statements],
 		Unit.layout)
 	       backward
-	    fun profileEnter (sourceSeq: int list,
-			      transfer: Transfer.t)
-	       : Statement.t * Transfer.t =
+	    fun profileEnter (pushes: Push.t list,
+			      transfer: Transfer.t): Transfer.t =
 	       let
 		  val func = CFunction.profileEnter
 		  val newLabel = Label.newNoname ()
-		  val index = sourceSeqIndex sourceSeq
-		  val statements = [clearCurrentSource]
+		  val index = sourceSeqIndex (Push.toSources pushes)
+		  val _ = addFrameProfileIndex (newLabel, index)
 		  val statements =
 		     if profileTime
-			then profileLabelIndex index :: statements
-		     else statements
+			then Vector.new1 (profileLabelIndex index)
+		     else Vector.new0 ()
 		  val _ =
 		     List.push
 		     (blocks,
 		      Block.T {args = Vector.new0 (),
 			       kind = Kind.CReturn {func = func},
 			       label = newLabel,
-			       statements = Vector.fromList statements,
+			       statements = statements,
 			       transfer = transfer})
 	       in
-		  (setCurrentSource index,
-		   Transfer.CCall {args = Vector.new1 Operand.GCState,
-				   func = func,
-				   return = SOME newLabel})
+		  Transfer.CCall {args = Vector.new1 Operand.GCState,
+				  func = func,
+				  return = SOME newLabel}
 	       end
 	    fun goto (l: Label.t, pushes: Push.t list): unit =
 	       let
@@ -478,12 +447,28 @@ fun profile program =
 				   | _ => false)
 			   else statements
 			val _ =
-			   if profileStack andalso Kind.isFrame kind
-			      then List.push (frameProfileIndices,
-					      (label,
-					       sourceSeqIndex
-					       (Push.toSources pushes)))
-			   else ()
+			   let
+			      fun add pushes =
+				 addFrameProfilePushes (label, pushes)
+			      datatype z = datatype Kind.t
+			   in
+			      case kind of
+				 Cont _ => add pushes
+			       | CReturn {func, ...} =>
+				    let
+				       val name = CFunction.name func
+				       val si =
+					  case name of
+					     "GC_gc" => SourceInfo.gc
+					   | "GC_arrayAllocate" =>
+						SourceInfo.gcArrayAllocate
+					   | _ => SourceInfo.fromC name
+				    in
+				       add (#1 (enter (pushes, si)))
+				    end
+			       | Handler => add pushes
+			       | Jump => ()
+			   end
 			fun maybeSplit {args, bytesAllocated, kind, label,
 					pushes: Push.t list,
 					statements} =
@@ -491,6 +476,8 @@ fun profile program =
 			      then
 				 let
 				    val newLabel = Label.newNoname ()
+				    val _ =
+				       addFrameProfilePushes (newLabel, pushes)
 				    val func = CFunction.profileInc
 				    val transfer =
 				       Transfer.CCall
@@ -505,7 +492,6 @@ fun profile program =
 				       backward {args = args,
 						 kind = kind,
 						 label = label,
-						 needsCurrentSource = true,
 						 sourceSeq = sourceSeq,
 						 statements = statements,
 						 transfer = transfer}
@@ -611,9 +597,6 @@ fun profile program =
 				   pushes = pushes,
 				   statements = s :: statements})
 			    )
-			val _ =
-			   Transfer.foreachLabel
-			   (transfer, fn l => goto (l, pushes))
 			val {args, kind, label, statements, ...} =
 			   maybeSplit {args = args,
 				       bytesAllocated = bytesAllocated,
@@ -621,32 +604,12 @@ fun profile program =
 				       label = label,
 				       pushes = pushes,
 				       statements = statements}
-			val sourceSeq = Push.toSources pushes
-			val (statements, transfer) =
+			val _ =
+			   Transfer.foreachLabel
+			   (transfer, fn l => goto (l, pushes))
+			val transfer =
 			   case transfer of
-			      Transfer.CCall {func, ...} =>
-				 if (profileAlloc
-				     andalso CFunction.needsCurrentSource func)
-				    orelse profileTime
-				    then
-				       let
-					  val name = CFunction.name func
-					  val si =
-					     case name of
-						"GC_gc" => SourceInfo.gc
-					      | "GC_arrayAllocate" =>
-						   SourceInfo.gcArrayAllocate
-					      | _ => SourceInfo.fromC name
-					  val set =
-					     setCurrentSource
-					     (sourceSeqIndex
-					      (Push.toSources
-					       (#1 (enter (pushes, si)))))
-				       in
-					  (set :: statements, transfer)
-				       end
-				 else (statements, transfer)
-			    | Transfer.Call {func, return, ...} =>
+			      Transfer.Call {func, return, ...} =>
 				 let
 				    val fi as FuncInfo.T {callers, ...} =
 				       funcInfo func
@@ -661,29 +624,21 @@ fun profile program =
 						 | SOME n => 
 						      List.push (callers, n)
 					  in
-					      if profileStack
-						 then
-						    let
-						       val (s, t) =
-							  profileEnter
-							  (sourceSeq, transfer)
-						    in
-						       (s :: statements, t)
-						    end
-					      else
-						 (statements, transfer)
+					     if profileStack
+						then profileEnter (pushes,
+								   transfer)
+					     else transfer
 					  end
 				     | _ =>
 					  (List.push (tailCalls, fi)
-					   ; (statements, transfer))
+					   ; transfer)
 				 end
-			    | _ => (statements, transfer)
+			    | _ => transfer
 		     in
 			backward {args = args,
 				  kind = kind,
 				  label = label,
-				  needsCurrentSource = false,
-				  sourceSeq = sourceSeq,
+				  sourceSeq = Push.toSources pushes,
 				  statements = statements,
 				  transfer = transfer}
 		     end

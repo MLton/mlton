@@ -24,7 +24,6 @@ signature RUNTIME =
 	    datatype t =
 	       CanHandle
 	     | CardMap
-	     | CurrentSource
 	     | CurrentThread
 	     | ExnStack
 	     | Frontier (* The place where the next object is allocated. *)
@@ -41,7 +40,6 @@ signature RUNTIME =
 	    val offset: t -> int (* Field offset in struct GC_state. *)
 	    val setOffsets: {canHandle: int,
 			     cardMap: int,
-			     currentSource: int,
 			     currentThread: int,
 			     frontier: int,
 			     limit: int,

@@ -31,7 +31,6 @@ signature C_FUNCTION =
 			 mayGC: bool,
 			 maySwitchThreads: bool,
 			 name: string,
-			 needsCurrentSource: bool,
 			 returnTy: Type.t option}
 
       val bug: t
@@ -45,7 +44,6 @@ signature C_FUNCTION =
       val maySwitchThreads: t -> bool
       val modifiesFrontier: t -> bool
       val modifiesStackTop: t -> bool
-      val needsCurrentSource: t -> bool
       val name: t -> string
       val profileEnter: t
       val profileInc: t

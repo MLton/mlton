@@ -374,7 +374,6 @@ fun preCodegen {input, docc}: Machine.Program.t =
 	    {
 	     canHandle = get "canHandle",
 	     cardMap = get "cardMapForMutator",
-	     currentSource = get "currentSource",
 	     currentThread = get "currentThread",
 	     frontier = get "frontier",
 	     limit = get "limit",

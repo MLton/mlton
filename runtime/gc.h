@@ -109,9 +109,8 @@ typedef struct {
 /*
  * GC_init uses the array of struct intInfInits in s at program start to 
  * allocate intInfs.
- * The array is terminated by an intInfInit with mlstr field NULL.
- * For each other entry, the globalIndex'th entry of the globals array in
- * s is set to the IntInf.int whose value corresponds to the mlstr string.
+ * The globalIndex'th entry of the globals array in s is set to the
+ * IntInf.int whose value corresponds to the mlstr string.
  *
  * The strings pointed to by the mlstr fields consist of
  *	an optional ~
@@ -138,6 +137,9 @@ struct GC_stringInit {
 typedef ushort *GC_offsets;
 
 typedef struct GC_frameLayout {
+	/* isC is a boolean identifying whether or not the frame is for a C call.
+	 */
+	char isC;
 	/* Number of bytes in frame, including space for return address. */
 	ushort numBytes;
 	/* Offsets from stackTop pointing at bottom of frame at which pointers
@@ -290,6 +292,7 @@ typedef struct GC_state {
 	pointer stackTop;
 	pointer stackLimit;	/* stackBottom + stackSize - maxFrameSize */
 
+	bool amInGC;
 	pointer back;     	/* Points at next available word in toSpace. */
 	ullong bytesAllocated;
  	ullong bytesCopied;
@@ -310,10 +313,6 @@ typedef struct GC_state {
 	GC_heap crossMapHeap;	/* only used during GC. */
 	pointer crossMap;
 	uint crossMapSize;
-	/* currentSource is the index in sources of the currently executing
-	 * function.
-	 */
-	uint currentSource;
 	GC_thread currentThread; /* This points to a thread in the heap. */
 	uint fixedHeapSize; 	/* Only meaningful if useFixedHeap. */
 	GC_frameLayout *frameLayouts;
@@ -334,6 +333,7 @@ typedef struct GC_state {
  	 * thread.  This is used to implement critical sections.
 	 */
 	struct GC_intInfInit *intInfInits;
+	uint intInfInitsSize;
 	volatile int canHandle;
 	bool isOriginal;
 	pointer limitPlusSlop; /* limit + LIMIT_SLOP */
@@ -432,10 +432,8 @@ typedef struct GC_state {
 	uint *sourceSuccessors;
 	pointer stackBottom; /* The bottom of the stack in the current thread. */
  	uint startTime; /* The time when GC_init or GC_loadWorld was called. */
-        /* The inits array should be NULL terminated, 
-         *    i.e.the final element should be {0, NULL, 0}.
-         */
 	struct GC_stringInit *stringInits;
+	uint stringInitsSize;
 	/* If summary is TRUE, then print a summary of gc info when the program 
 	 * is done .
 	 */

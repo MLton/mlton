@@ -127,6 +127,7 @@ signature MACHINE =
 	 sig
 	    datatype t = T of {frameLayoutsIndex: int}
 
+	    val equals: t * t -> bool
 	    val layout: t -> Layout.t
 	 end
 
@@ -234,6 +235,7 @@ signature MACHINE =
 	    datatype t =
 	       T of {chunks: Chunk.t list,
 		     frameLayouts: {frameOffsetsIndex: int,
+				    isC: bool,
 				    size: int} vector,
 		     (* Each vector in frame Offsets specifies the offsets
 		      * of live pointers in a stack frame.  A vector is referred
