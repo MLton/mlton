@@ -691,7 +691,6 @@ fun import {attributes: Attribute.t list,
 	    ty: Type.t,
 	    region: Region.t}: Prim.t =
    let
-      val ty = Type.expandOpaque (ty, Type.Always)
       fun error l = Control.error (region, l, Layout.empty)
       fun invalidAttributes () =
 	 error (seq [str "invalid attributes for import: ",
@@ -744,7 +743,6 @@ fun import {attributes: Attribute.t list,
 
 fun export {attributes, name: string, region: Region.t, ty: Type.t}: Aexp.t =
    let
-      val ty = Type.expandOpaque (ty, Type.Always)
       fun error l = Control.error (region, l, Layout.empty)
       fun invalidAttributes () =
 	 error (seq [str "invalid attributes for export: ",
@@ -760,7 +758,7 @@ fun export {attributes, name: string, region: Region.t, ty: Type.t}: Aexp.t =
 	       (Control.error
 		(region,
 		 seq [str "invalid type for exported function: ",
-		      Type.layout ty],
+		      Type.layoutPretty ty],
 		 Layout.empty)
 		; (0, Vector.new0 (), NONE))
 	  | SOME (us, t) =>
@@ -825,7 +823,7 @@ fun export {attributes, name: string, region: Region.t, ty: Type.t}: Aexp.t =
 		    (newVar (), Exp.app (id "atomicBegin", Exp.unit)),
 		    (newVar (),
 		     (case res of
-			 NONE => Exp.unit
+			 NONE => Exp.constraint (Exp.var resVar, Type.unit)
 		       | SOME (t, name) => 
 			    Exp.app (id (concat ["set", name]),
 				     Exp.var resVar)))),
@@ -1837,6 +1835,13 @@ fun elaborateDec (d, {env = E,
 	      | Aexp.Prim {kind, name, ty} =>
 		   let
 		      val ty = elabType ty
+		      val expandedTy = Type.expandOpaque (ty, Type.Always)
+		      (* We use expandedTy to get the underlying primitive right
+		       * but we use wrap in the end to make the result of the
+		       * final expression be ty, because that is what the rest
+		       * of the code expects to see.
+		       *)
+		      fun wrap (e, t) = Cexp.make (Cexp.node e, t)
 		      fun primApp {args, prim, result: Type.t} =
 			 let
 			    val targs =
@@ -1856,10 +1861,12 @@ fun elaborateDec (d, {env = E,
 				       result)
 			 end
 		      fun eta (p: Prim.t): Cexp.t =
-			 case Type.deArrowOpt ty of
-			    NONE => primApp {args = Vector.new0 (),
-					     prim = p,
-					     result = ty}
+			 case Type.deArrowOpt expandedTy of
+			    NONE =>
+			       wrap (primApp {args = Vector.new0 (),
+					      prim = p,
+					      result = ty},
+				     ty)
 			  | SOME (argType, bodyType) =>
 			       let
 				  val arg = Var.newNoname ()
@@ -1896,59 +1903,82 @@ fun elaborateDec (d, {env = E,
 					       test = Cexp.var (arg, argType)}
 					   end
 			       in
-				  Cexp.lambda (Lambda.make {arg = arg,
-							    argType = argType,
-							    body = body})
+				  Cexp.make (Cexp.Lambda
+					     (Lambda.make {arg = arg,
+							   argType = argType,
+							   body = body}),
+					     ty)
 			       end
 		      fun lookConst (name: string) =
-			 case Type.deConOpt ty of
-			    NONE => Error.bug "strange constant"
-			  | SOME (c, ts) =>
+			 let
+			    fun bug () =
 			       let
-				  val ct =
-				     if Tycon.equals (c, Tycon.bool)
-					then ConstType.Bool
-				     else if Tycon.isIntX c
-					then ConstType.Int
-				     else if Tycon.isRealX c
-					then ConstType.Real
-				     else if Tycon.isWordX c
-					then ConstType.Word
-				     else if Tycon.equals (c, Tycon.vector)
-					     andalso 1 = Vector.length ts
-					     andalso
-					     (case (Type.deConOpt
-						    (Vector.sub (ts, 0))) of
-						 NONE => false
-					       | SOME (c, _) => 
-						    Tycon.equals
-						    (c, Tycon.char))
-					then ConstType.String
-				     else Error.bug "strange const type"
+				  open Layout
+				  val _ =
+				     Control.error
+				     (region,
+				      seq [str "strange constant type: ",
+					   Type.layout expandedTy],
+				      empty)
+			       in
+				  Error.bug "lookConst bug"
+			       end
+			 in
+			    case Type.deConOpt expandedTy of
+			       NONE => bug ()
+			     | SOME (c, ts) =>
+				  let
+				     val ct =
+					if Tycon.equals (c, Tycon.bool)
+					   then ConstType.Bool
+					else if Tycon.isIntX c
+						then ConstType.Int
+					else if Tycon.isRealX c
+						then ConstType.Real
+					else if Tycon.isWordX c
+						then ConstType.Word
+					else if Tycon.equals (c, Tycon.vector)
+					   andalso 1 = Vector.length ts
+					   andalso
+					   (case (Type.deConOpt
+						  (Vector.sub (ts, 0))) of
+					       NONE => false
+					     | SOME (c, _) => 
+						  Tycon.equals (c, Tycon.char))
+						then ConstType.String
+					     else
+						bug ()
 				  fun finish () = lookupConstant (name, ct)
 			       in
 				  Cexp.make (Cexp.Const finish, ty)
 			       end
+			 end
 		      datatype z = datatype Ast.PrimKind.t
 		   in
 		      case kind of
 			 BuildConst => lookConst name
-		       | Const =>  lookConst name
+		       | Const => lookConst name
 		       | Export attributes =>
-			    Env.scope
-			    (E, fn () =>
-			     (Env.openStructure (E,
-						 valOf (!Env.Structure.ffi))
-			      ; elabExp (export {attributes = attributes,
-						 name = name,
-						 region = region,
-						 ty = ty},
-					 nest)))
+			    let
+			       val e =
+				  Env.scope
+				  (E, fn () =>
+				   (Env.openStructure
+				    (E, valOf (!Env.Structure.ffi))
+				    ; elabExp (export {attributes = attributes,
+						       name = name,
+						       region = region,
+						       ty = expandedTy},
+					       nest)))
+
+			    in
+			       wrap (e, Type.arrow (ty, Type.unit))
+			    end
 		       | Import attributes =>
 			    eta (import {attributes = attributes,
 					 name = name,
 					 region = region,
-					 ty = ty})
+					 ty = expandedTy})
 		       | Prim => eta (Prim.new name)
 		   end
 	      | Aexp.Raise exn =>
