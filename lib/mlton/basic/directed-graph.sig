@@ -113,6 +113,10 @@ signature DIRECTED_GRAPH =
 	     | Italic
 	     | Roman
 	    type fontName = fontFamily * fontWeight
+	    datatype justify =
+	       Center
+	     | Left
+	     | Right
 	    datatype orientation =
 	       Landscape
 	     | Portrait
@@ -156,10 +160,12 @@ signature DIRECTED_GRAPH =
 		   | FontColor of color
 		   | FontName of fontName
 		   | FontSize of int (* points *)
-		   | Label of string
+		   | Label of (string * justify) list
 		   | Minlen of int
 		   | Style of style
 		   | Weight of int
+
+		  val label: string -> t (* label s = Label (s, Center) *)
 	       end
 	    structure NodeOption:
 	       sig
@@ -169,9 +175,11 @@ signature DIRECTED_GRAPH =
 		   | FontName of fontName
 		   | FontSize of int (* points *)
 		   | Height of real (* inches *)
-		   | Label of string
+		   | Label of (string * justify) list
 		   | Shape of shape
 		   | Width of real (* inches *)
+
+		  val label: string -> t (* label s = Label (s, Center) *)
 	       end
 	    structure GraphOption:
 	       sig
@@ -223,7 +231,7 @@ local
 			      in n
 			      end)
    val _ =
-      List.foreach ([("entry", "B1"),
+      List.foreach ([("entry\nfoo", "B1"),
 		     ("B1", "B2"),
 		     ("B1", "B3"),
 		     ("B2", "exit"),
@@ -240,17 +248,16 @@ local
        let
 	  open LayoutDot
        in
-	  Layout.output (layout {graph = g,
-				 title = "Muchnick",
-				 options = [],
-				 edgeOptions = fn _ => [],
-				 nodeOptions = fn n => let open NodeOption
-						       in [Label (name n)]
-						       end},
+	  Layout.output (layout
+			 {graph = g,
+			  title = "Muchnick",
+			  options = [],
+			  edgeOptions = fn _ => [],
+			  nodeOptions = fn n => [NodeOption.label (name n)]},
 			 out)
 	  ; Out.newline out
        end)
-   val {idom} = dominators {graph = g, root = node "entry"}
+   val {idom} = dominators {graph = g, root = node "entry\nfoo"}
    val g2 = new ()
    val {get = oldNode, set = setOldNode} =
       Property.getSetOnce (Node.plist,
@@ -278,9 +285,7 @@ local
 		   title = "dom",
 		   options = [],
 		   edgeOptions = fn _ => [],
-		   nodeOptions = fn n => let open NodeOption
-					 in [Label (name (oldNode n))]
-					 end},
+		   nodeOptions = fn n => [NodeOption.label (name (oldNode n))]},
 	   out)
 	  ; Out.newline out
        end)

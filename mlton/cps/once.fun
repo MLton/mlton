@@ -116,7 +116,7 @@ fun once (program as Program.T {globals, functions, main, ...}) =
 				 title = "once",
 				 options = [],
 				 edgeOptions = fn _ => [],
-				 nodeOptions = fn n => [NodeOption.Label
+				 nodeOptions = fn n => [NodeOption.label
 							(Layout.toString
 							 (nodeName n))]})
 	     end))

@@ -222,5 +222,5 @@ word.sml
 word8.sml
 
 # if ( defined(SMLNJ_VERSION) )
-(*test.sml*)
+test.sml
 # endif

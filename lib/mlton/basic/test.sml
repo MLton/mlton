@@ -12,10 +12,10 @@ structure Z =
 	    ; ["Regexp.match"]
 	 end
    end
-structure Z = TestRegexp (Regexp)
 structure Z = TestBase64 (Base64)
 structure Z = TestBinarySearch (BinarySearch)
 structure Z = TestChar (Char)
+structure Z = TestDirectedGraph (DirectedGraph)
 structure Z = TestFormat (Format)
 structure Z = TestHashSet (HashSet)
 structure Z = TestHttp (Http)

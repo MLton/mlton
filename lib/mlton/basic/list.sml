@@ -106,6 +106,8 @@ fun concatRev l = fold (l, [], append)
 
 fun concat l = concatRev (rev l) 
 
+fun concatMap (l, f) = concatRev (revMap (l, f))
+
 val ('a, 'b) unfoldri: int * 'a * (int * 'a -> 'b * 'a) -> 'b list =
    fn (n, a, f) =>
    if n < 0
@@ -402,8 +404,6 @@ fun separate (ts, s) =
 			       | t :: ts => s :: t:: (loop ts)
 		       in loop ts
 		       end)
-
-fun concatMap (l, f) = concatRev (revMap (l, f))
 
 fun cross l =
    case l of

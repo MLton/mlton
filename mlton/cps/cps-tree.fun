@@ -1358,15 +1358,18 @@ structure Function =
 	       val graph = Graph.new ()
 	       val {get = nodeOptions, ...} =
 		  Property.get (Node.plist, Property.initFun (fn _ => ref []))
-	       fun label (n: Node.t, s: string): unit =
-		  List.push (nodeOptions n, NodeOption.Label s)
+	       fun label (n: Node.t, l): unit =
+		  List.push (nodeOptions n, NodeOption.Label l)
 	       fun newNode () = Graph.newNode graph
 	       val {destroy, get = jumpNode} =
 		  Property.destGet (Jump.plist,
 				    Property.initFun (fn _ => newNode ()))
 	       val {get = edgeOptions, set = setEdgeOptions} =
 		  Property.getSetOnce (Edge.plist, Property.initConst [])
-	       fun loop (e: Exp.t, from: Node.t, handlers, name: string) =
+	       fun loop (e: Exp.t, from: Node.t,
+			 handlers: Jump.t list,
+			 name: string,
+			 formals: (Var.t * Type.t) vector) =
 		  let
 		     val {decs, transfer} = Exp.dest e
 		     fun edge (to: Jump.t,
@@ -1375,7 +1378,7 @@ structure Function =
 			let
 			   val e = Graph.addEdge (graph, {from = from,
 							  to = jumpNode to})
-			   val _ = setEdgeOptions (e, [EdgeOption.Label label,
+			   val _ = setEdgeOptions (e, [EdgeOption.label label,
 						       EdgeOption.Style style])
 			in
 			   ()
@@ -1431,7 +1434,7 @@ structure Function =
 			 | Return xs => ["return ", Var.prettys (xs, global)]
 		     val lab =
 			List.fold
-			(rev decs, rest @ ["\\l"], fn (b, ac) =>
+			(rev decs, [(concat rest, Left)], fn (b, ac) =>
 			 case b of 
 			    Bind {var, exp, ...} =>
 			       let
@@ -1444,30 +1447,33 @@ structure Function =
 					    (j, "Overflow", Dashed))
 				      | _ => ()
 			       in
-				  [Var.toString var, " = ",
-				   PrimExp.toPretty (exp, global), "\\l"] @ ac
+				  (concat
+				   [Var.toString var, " = ",
+				    PrimExp.toPretty (exp, global)],
+				   Left) :: ac
 			       end
 			  | Fun {name, args, body, ...} =>
 			       (loop (body, jumpNode name, jumpHandlers name,
-				      concat [Jump.toString name, " ",
-					      Layout.toString
-					      (Layout.vector
-					       (Vector.map (args,
-							    Var.layout o #1))),
-					      " ",
-					      Layout.toString
-					      (List.layout Jump.layout
-					       (jumpHandlers name))])
+				      Jump.toString name, args)
 				; ac)
-			  | HandlerPop => "HandlerPop\\l" :: ac
+			  | HandlerPop => ("HandlerPop", Left) :: ac
 			  | HandlerPush l =>
-			       ["HandlerPush ", Jump.toString l, "\\l"] @ ac)
-		     val _ = label (from, concat (name :: "\\l" :: lab))
+			       (concat ["HandlerPush ", Jump.toString l],
+				Left) :: ac)
+		     val name =
+			concat [name, " ",
+				Layout.toString
+				(Layout.vector
+				 (Vector.map (formals, Var.layout o #1))),
+				" ",
+				Layout.toString
+				(List.layout Jump.layout handlers)]
+		     val _ = label (from, (name, Left) :: lab)
 		  in
 		     ()
 		  end
 	       val root = newNode ()
-	       val _ = loop (body, root, [], Func.toString name)
+	       val _ = loop (body, root, [], Func.toString name, args)
 	       val graphLayout =
 		  Graph.LayoutDot.layout
 		  {graph = graph,
@@ -1488,9 +1494,10 @@ structure Function =
 			 case d of
 			    Fun {name, ...} =>
 			       label (graphToTree (jumpNode name),
-				      Jump.toString name)
+				      [(Jump.toString name, Center)])
 			  | _ => ())
-		     val _ = label (graphToTree root, Func.toString name)
+		     val _ = label (graphToTree root,
+				    [(Func.toString name, Center)])
 		     val treeLayout =
 			Graph.LayoutDot.layout
 			{graph = tree,
@@ -1677,7 +1684,7 @@ structure Program =
 		   (fn f =>
 		    let
 		       val n = Graph.newNode graph
-		       val _ = setNodeOptions (n, [NodeOption.Label
+		       val _ = setNodeOptions (n, [NodeOption.label
 						   (Func.toString f)])
 		    in
 		       n

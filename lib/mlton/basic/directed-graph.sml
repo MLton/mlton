@@ -142,12 +142,13 @@ structure LayoutDot =
 	  if Char.isPrint c
 	     then (case c of
 		      #"\"" => "\\\""
-		      | _ => Char.toString c)
+                    | #"\\" => "\\\\\\\\"
+		    | _ => Char.toString c)
 	  else
 	     case c of
-		#"\n" => "\\n"
-	      | #"\t" => "\\t"
-	      | c => concat ["\\", Int.format (Char.ord c, StringCvt.OCT)])
+		#"\n" => "\\\\\\\\n"
+	      | #"\t" => "\\\\\\\\t"
+	      | c => concat ["\\\\\\\\", Int.format (Char.ord c, StringCvt.OCT)])
 
       val dquote = "\""
       fun quote s = concat [dquote, s, dquote]
@@ -222,6 +223,16 @@ structure LayoutDot =
 	 
       fun fontNameToString (f, w) =
 	 concat [fontFamilyToString f, "-", fontWeightToString w]
+
+      datatype justify =
+	 Center
+	| Left
+	| Right
+
+      val justifyToString =
+	 fn Center => "\\n"
+	  | Left => "\\l"
+	  | Right => "\\r"
 
       datatype orientation =
 	 Landscape
@@ -313,6 +324,10 @@ structure LayoutDot =
 	  | Invisible => "invisible"
 	  | Solid => "solid"
 
+      fun labelToString (l: (string * justify) list): string =
+	 concat (List.concatMap (l, fn (s, j) =>
+				 [escapeString s, justifyToString j]))
+	    
       structure EdgeOption =
 	 struct
 	    datatype t =
@@ -322,10 +337,12 @@ structure LayoutDot =
 	     | FontColor of color
 	     | FontName of fontName
 	     | FontSize of int (* points *)
-	     | Label of string
+	     | Label of (string * justify) list
 	     | Minlen of int
 	     | Style of style
 	     | Weight of int
+
+	    fun label s = Label [(s, Center)]
 
 	    fun toString opt =
 	       lab (case opt of
@@ -335,7 +352,7 @@ structure LayoutDot =
 		     | FontColor c => ("fontcolor", colorToString c)
 		     | FontName n => ("fontname", fontNameToString n)
 		     | FontSize s => ("fontsize", intToString s)
-		     | Label l => ("label", escapeString l)
+		     | Label l => ("label", labelToString l)
 		     | Minlen n => ("minlen", intToString n)
 		     | Style s => ("style", styleToString s)
 		     | Weight n => ("weight", intToString n))
@@ -349,9 +366,11 @@ structure LayoutDot =
 	     | FontName of fontName
 	     | FontSize of int (* points *)
 	     | Height of real (* inches *)
-	     | Label of string
+	     | Label of (string * justify) list
 	     | Shape of shape
 	     | Width of real (* inches *)
+
+	    fun label s = Label [(s, Center)]
 
 	    fun toString opt =
 	       lab (case opt of
@@ -360,7 +379,7 @@ structure LayoutDot =
 		     | FontName n => ("fontname", fontNameToString n)
 		     | FontSize s => ("fontsize", intToString s)
 		     | Height r => ("height", realToString r)
-		     | Label l => ("label", escapeString l)
+		     | Label l => ("label", labelToString l)
 		     | Shape s => ("shape", shapeToString s)
 		     | Width r => ("width", realToString r))
 	 end
@@ -991,6 +1010,5 @@ fun dominatorTree {graph: t, root: Node.t} =
       {tree = tree,
        graphToTree = graphToTree}
    end
-
 
 end

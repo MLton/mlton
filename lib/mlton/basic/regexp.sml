@@ -678,10 +678,7 @@ local
 		  let val r = nodeOptions (node i)
 		  in r := opts @ !r
 		  end
-	       val _ = addNodeOption (start,
-				      let open NodeOption
-				      in [Label "start"]
-				      end)
+	       val _ = addNodeOption (start, [NodeOption.label "start"])
 	       val _ =
 		  Int.for
 		  (0, numStates, fn src =>
@@ -723,9 +720,7 @@ local
 				val edge = Graph.addEdge (g, {from = node src,
 							      to = node dst})
 			     in List.push (edgeOptions edge,
-					   let open EdgeOption
-					   in Label (edgeLabel cs)
-					   end)
+					   EdgeOption.label (edgeLabel cs))
 			     end)
 		   end)
 	    in
@@ -1166,10 +1161,7 @@ local
 		  let val r = nodeOptions (node i)
 		  in r := opts @ !r
 		  end
-	       val _ = addNodeOption (start,
-				      let open NodeOption
-				      in [Label "start"]
-				      end)
+	       val _ = addNodeOption (start, [NodeOption.label "start"])
 	       val _ =
 		  Int.for
 		  (0, numStates, fn src =>
@@ -1225,9 +1217,7 @@ local
 							 EdgeAction.toString)
 					  v)]
 			   in List.push (edgeOptions edge,
-					 let open EdgeOption
-					 in Label label
-					 end)
+					 EdgeOption.label label)
 			   end))
 		   end)
 	    in
