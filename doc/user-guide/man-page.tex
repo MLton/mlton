@@ -67,7 +67,7 @@ On {\intel}, the default is {\tt 4} and on {\sparc} the default is
 \option{-cc-opt {\it option}}
 Pass the option to {\tt gcc} when compiling C code.
 
-\option{codegen \choiceTwo{native}{c}}
+\option{-codegen \choiceTwo{native}{c}}
 Generate native code , as opposed to generating C and using {\tt gcc}.
 With {\tt -codegen native}, {\mlton} typically compiles more quickly and
 generates better code.
@@ -148,12 +148,6 @@ Compiling {\tt -safe false} changes the behavior of some programs,
 does not conform to the basis library specification, and may cause
 programs to seg fault.
 
-\option{-sequence-unit \falseTrue}
-If true, then in the sequence expression {\tt (e1; e2)}, it is a type
-error if {\tt e1} is not of type {\tt unit}.  This can be helpful in
-detecting curried applications that are mistakenly not fully applied.
-To silence spurious errors, you can use {\tt ignore e1}.
-
 \option{-show-basis {\it file}}
 Pretty print to {\it file} the basis defined by the input program.
 
@@ -193,12 +187,6 @@ How verbose to be about what passes are running.  The default is 0.\\
 {\tt 2} & 1 + intermediate compiler passes\\
 {\tt 3} & 2 + some data structure sizes\\
 \end{tabular}\\
-
-\option{-warn-match \trueFalse}
-Report nonexhaustive and redundant matches.
-
-\option{-warn-unused \falseTrue}
-Report unused identifiers.
 
 \end{description}
 
