@@ -882,8 +882,10 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 		end
 	   | Cdec.Overload {var, scheme = CoreML.Scheme.T {tyvars, ty}, ovlds} =>
 		(emptyDec,
-		 let val ty = Type.fromCoreML ty
-		 in Env.extendVarRange
+		 let
+		    val ty = Type.fromCoreML ty
+		 in
+		    Env.extendVarRange
 		    (env, var,
 		     VarRange.T
 		     {scheme = Scheme.make {canGeneralize = false,
