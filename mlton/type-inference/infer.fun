@@ -793,7 +793,7 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
       fun inferDec arg: decCode * Env.t =
 	 traceInferDec
 	 (fn (d: Cdec.t, env: Env.t) =>
-	  case d of
+	  case Cdec.node d of
 	     Cdec.Datatype dbs =>
 		(Vector.foreach
 		 (dbs, fn {tyvars, tycon, cons} =>
@@ -1175,6 +1175,7 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
       (*    main code for type inference    *)
       (*------------------------------------*)
       val Cprogram.T {decs} = Scope.scope p
+      val _ = Control.checkForErrors "type variable scope inference"
       val (ds, env) =
 	 Control.trace (Control.Pass, "unification")
 	 inferDecs (decs, Env.empty)

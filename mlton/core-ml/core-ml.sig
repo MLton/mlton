@@ -110,7 +110,8 @@ signature CORE_ML =
 
       structure Dec:
 	 sig
-	    datatype t =
+	    type t
+	    datatype node =
 	       Datatype of {
 			    tyvars: Tyvar.t vector,
 			    tycon: Tycon.t,
@@ -140,6 +141,8 @@ signature CORE_ML =
 		       filePos: string,
 		       pat: Pat.t,
 		       tyvars: Tyvar.t vector}
+	    include WRAPPED sharing type node' = node
+		            sharing type obj = t
 
 	    val isExpansive: t -> bool
 	    val layout: t -> Layout.t
@@ -149,9 +152,7 @@ signature CORE_ML =
 
       structure Program:
 	 sig
-	    datatype t = T of {
-			       decs: Dec.t vector
-			      }
+	    datatype t = T of {decs: Dec.t vector}
 
 	    val layout: t -> Layout.t
 	    val layoutStats: t -> Layout.t

@@ -214,13 +214,15 @@ fun layoutBasisLibrary () = Env.layoutPretty basisEnv
 fun preCodegen {input, docc}: Machine.Program.t =
    let
       fun parseElabMsg () = (lexAndParseMsg (); elaborateMsg ())
-      val primitiveDecs =
+      val primitiveDecs: CoreML.Dec.t vector =
 	 let
 	    open CoreML.Dec
-	 in Vector.concat [Vector.new1 (Datatype primitiveDatatypes),
+	    fun make n = makeRegion (n, Region.bogus)
+	 in
+	    Vector.concat [Vector.new1 (make (Datatype primitiveDatatypes)),
 			   Vector.fromListMap
 			   (primitiveExcons, fn c =>
-			    Exception {con = c, arg = NONE})]
+			    make (Exception {con = c, arg = NONE}))]
 	 end
       val coreML =
 	 if !Control.useBasisLibrary

@@ -13,12 +13,11 @@ fun deadCode {basis, user} =
       val {get = varIsUsed, set = setVarIsUsed, destroy, ...} =
 	 Property.destGetSet (Var.plist, Property.initConst false)
       fun foreachDefinedVar (d, f) =
-	 case d of
+	 case Dec.node d of
 	    Val {pat, ...} => Pat.foreachVar (pat, f)
 	  | Fun {decs, ...} => Vector.foreach (decs, f o #var)
 	  | Overload {var, ...} => f var
 	  | _ => ()
-
       fun patVarIsUsed p =
 	 DynamicWind.withEscape
 	 (fn escape =>
@@ -26,9 +25,8 @@ fun deadCode {basis, user} =
 					 then escape true
 				      else ())
 	   ; false))
-	 
       fun decIsNeeded d =
-	 case d of
+	 case Dec.node d of
 	    Val {pat, ...} =>
 	       (case Pat.node pat of
 		   Wild => true
@@ -37,11 +35,10 @@ fun deadCode {basis, user} =
 	  | Datatype _ => true
 	  | Exception _ => true
 	  | Overload {var, ...} => varIsUsed var
-
       fun useVar x = setVarIsUsed (x, true)
       fun useExp e = Exp.foreachVar (e, useVar)
       fun useDec d = 
-	 case d of
+	 case Dec.node d of
 	    Val {exp, ...} => useExp exp
 	  | Fun {decs, ...} =>
 	       Vector.foreach (decs, fn {match, ...} =>
@@ -50,7 +47,7 @@ fun deadCode {basis, user} =
 	  | Exception _ => ()
 	  | Overload {ovlds, ...} => Vector.foreach (ovlds, useVar)
       fun decIsWild d =
-	 case d of
+	 case Dec.node d of
 	    Val {pat, ...} => Pat.isWild pat
 	  | _ => false
       val _ = List.foreach (user, useDec)

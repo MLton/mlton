@@ -203,7 +203,7 @@ structure Pat =
 	 end
    end
 
-datatype dec =
+datatype decNode =
    Val of {exp: exp,
 	   filePos: string,
 	   pat: Pat.t,
@@ -242,6 +242,7 @@ and expNode =
 and match = Match of {filePos: string,
 		      rules: (Pat.t * exp) vector}
 withtype exp = expNode Wrap.t
+and dec = decNode Wrap.t
 
 structure Match =
    struct
@@ -286,11 +287,11 @@ in
 	 cons = Vector.map (cons, fn {con, arg} =>
 			    (Con.toAst con, Type.optionToAst arg))}))
       
-   fun decToAst d =
+   fun decToAst (d: dec) =
       let
 	 fun doit n = Dec.makeRegion (n, Region.bogus)
       in
-	 case d of
+	 case Wrap.node d of
 	    Val {pat, filePos, tyvars, exp} =>
 	       doit (Dec.Val {tyvars = tyvars,
 			      vbs = Vector.new1 {pat = Pat.toAst pat,
@@ -361,7 +362,7 @@ fun makeForeachVar f =
 	  | _ => ()
       and match m = Vector.foreach (Match.rules m, exp o #2)
       and dec d =
-	 case d of
+	 case Wrap.node d of
 	    Val {exp = e, ...} => exp e
 	  | Fun {decs, ...} => Vector.foreach (decs, match o #match)
 	  | Overload {ovlds, ...} => Vector.foreach (ovlds, f)
@@ -433,10 +434,11 @@ structure Exp =
 	    in
 	       makeRegion
 	       (Let (Vector.map (es, fn e =>
-				 Val {pat = makeRegion (Pat.Wild, r),
-				      tyvars = Vector.new0 (),
-				      exp = e,
-				      filePos = ""}),
+				 makeRegion (Val {pat = makeRegion (Pat.Wild, r),
+						  tyvars = Vector.new0 (),
+						  exp = e,
+						  filePos = ""},
+					     r)),
 		     e),
 		r)
 	    end
@@ -482,20 +484,22 @@ structure Exp =
 	 in
 	    makeRegion
 	    (Let (Vector.new1
-		  (Fun {tyvars = Vector.new0 (),
-			decs = (Vector.new1
-				{var = loop,
-				 types = Vector.new0 (),
-				 match = (Match.new
-					  {filePos = "",
-					   rules =
-					   Vector.new1
-					   (Pat.tuple (Vector.new0 (), r),
-					    iff (test,
-						 seq (Vector.new2 (expr, call),
-						      r),
-						 unit r,
-						 r))})})}),
+		  (makeRegion
+		   (Fun {tyvars = Vector.new0 (),
+			 decs = (Vector.new1
+				 {var = loop,
+				  types = Vector.new0 (),
+				  match = (Match.new
+					   {filePos = "",
+					    rules =
+					    Vector.new1
+					    (Pat.tuple (Vector.new0 (), r),
+					     iff (test,
+						  seq (Vector.new2 (expr, call),
+						       r),
+						  unit r,
+						  r))})})},
+		    r)),
 		  call),
 	     r)
 	 end
@@ -505,10 +509,15 @@ structure Exp =
 
 structure Dec =
    struct
-      datatype t = datatype dec
+      open Wrap
+      type t = dec
+      datatype node = datatype decNode
+      type node' = node
+      type obj = t
 
-      val isExpansive =
-	 fn Val {exp, ...} => Exp.isExpansive exp
+      fun isExpansive d =
+	 case node d of
+	    Val {exp, ...} => Exp.isExpansive exp
 	  | _ => false
 
       val toAst = decToAst
@@ -547,7 +556,7 @@ structure Program =
 		    | _ => ()))
 	    and match m = Vector.foreach (Match.rules m, exp o #2)
 	    and dec d =
-	       case d of
+	       case Dec.node d of
 		  Val {exp = e, ...} => exp e
 		| Fun {decs, ...} => Vector.foreach (decs, match o #match)
 		| Exception _ => inc ()

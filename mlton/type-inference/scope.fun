@@ -70,7 +70,7 @@ fun renamePat (p, env) =
 		      end
       and loop p =
 	 let
-	    fun doit n = makeRegion (n, region p)
+	    fun doit n = Pat.makeRegion (n, region p)
 	 in
 	    case node p of
 	       Wild => (p, Tyvars.empty)
@@ -111,66 +111,78 @@ fun renamePat (p, env) =
       loop p
    end
 
-open Dec Exp
+datatype z = datatype Dec.node
+datatype z = datatype Exp.node
    
 fun renameDec (d, env) =
-   case d of
-      Val {tyvars, pat, exp, filePos} =>
-	 let
-	    val (env, tyvars) = TyvarEnv.rename (env, tyvars)
-	    val (pat, u1) = renamePat (pat, env)
-	    val (exp, u2) = renameExp (exp, env)
-	 in (Val
-	     {tyvars = (Vector.fromList
-			(Tyvars.toList
-			 (Tyvars.unions [u1, u2,
-					 Tyvars.fromList
-					 (Vector.toList tyvars)]))),
-	      pat = pat, exp = exp, filePos = filePos},
-	     Tyvars.empty)
-	 end
-    | Fun {tyvars, decs} =>
-	 let
-	    val (env, tyvars) = TyvarEnv.rename (env, tyvars)
-	    val (decs, unguarded) =
-	       renames (decs, fn {var, types, match} =>
-			 let
-			    val (types, u1) = renames (types, fn t =>
-						       renameTy (t, env))
-			    val (match, u2) = renameMatch (match, env)
-			 in ({var = var, types = types, match = match},
-			     Tyvars.+ (u1, u2))
-			 end)
-	 in (Fun {tyvars = (Vector.fromList
-			    (Tyvars.toList
-			     (Tyvars.+
-			      (unguarded,
-			       Tyvars.fromList (Vector.toList tyvars))))),
-		  decs = decs},
-	     Tyvars.empty)
-	 end
-    | Datatype dbs =>
-	 let
-	    val (dbs, unguarded) =
-	       renames
-	       (dbs, fn {tyvars, tycon, cons} =>
-		let
-		   val (env, tyvars) = TyvarEnv.rename (env, tyvars)
-		   val (cons, unguarded) =
-		      renames (cons, fn {con, arg} =>
-			       let val (arg, unguarded) = renameTyOpt (arg, env)
-			       in ({con = con, arg = arg}, unguarded)
-			       end)
-		in ({tyvars = tyvars, tycon = tycon, cons = cons},
-		    Tyvars.- (unguarded, Tyvars.fromList (Vector.toList tyvars)))
-		end)
-	 in (Datatype dbs, unguarded)
-	 end
-    | Exception {con, arg} =>
-	 let val (arg, unguarded) = renameTyOpt (arg, env)
-	 in (Exception {con = con, arg = arg}, unguarded)
-	 end
-    | Overload _ => (d, Tyvars.empty)
+   let
+      fun doit n = Dec.makeRegion (n, Dec.region d)
+   in
+      case Dec.node d of
+	 Val {tyvars, pat, exp, filePos} =>
+	    let
+	       val (env, tyvars) = TyvarEnv.rename (env, tyvars)
+	       val (pat, u1) = renamePat (pat, env)
+	       val (exp, u2) = renameExp (exp, env)
+	    in (doit (Val
+		      {tyvars = (Vector.fromList
+				 (Tyvars.toList
+				  (Tyvars.unions [u1, u2,
+						  Tyvars.fromList
+						  (Vector.toList tyvars)]))),
+		       pat = pat, exp = exp, filePos = filePos}),
+		Tyvars.empty)
+	    end
+       | Fun {tyvars, decs} =>
+	    let
+	       val (env, tyvars) = TyvarEnv.rename (env, tyvars)
+	       val (decs, unguarded) =
+		  renames (decs, fn {var, types, match} =>
+			   let
+			      val (types, u1) = renames (types, fn t =>
+							 renameTy (t, env))
+			      val (match, u2) = renameMatch (match, env)
+			   in ({var = var, types = types, match = match},
+			       Tyvars.+ (u1, u2))
+			   end)
+	    in (doit (Fun {tyvars = (Vector.fromList
+				     (Tyvars.toList
+				      (Tyvars.+
+				       (unguarded,
+					Tyvars.fromList
+					(Vector.toList tyvars))))),
+			   decs = decs}),
+		Tyvars.empty)
+	    end
+       | Datatype dbs =>
+	    let
+	       val (dbs, unguarded) =
+		  renames
+		  (dbs, fn {tyvars, tycon, cons} =>
+		   let
+		      val (env, tyvars) = TyvarEnv.rename (env, tyvars)
+		      val (cons, unguarded) =
+			 renames (cons, fn {con, arg} =>
+				  let
+				     val (arg, unguarded) =
+					renameTyOpt (arg, env)
+				  in ({con = con, arg = arg}, unguarded)
+				  end)
+		   in ({tyvars = tyvars, tycon = tycon, cons = cons},
+		       Tyvars.- (unguarded,
+				 Tyvars.fromList (Vector.toList tyvars)))
+		   end)
+	    in
+	       (doit (Datatype dbs), unguarded)
+	    end
+       | Exception {con, arg} =>
+	    let
+	       val (arg, unguarded) = renameTyOpt (arg, env)
+	    in
+	       (doit (Exception {con = con, arg = arg}), unguarded)
+	    end
+       | Overload _ => (d, Tyvars.empty)
+   end
 and renameDecs (ds, env) = renames (ds, fn d => renameDec (d, env))
 and renameExp (e, env) =
    let
@@ -298,40 +310,52 @@ fun removes (xs, scope, removeX) =
    Vector.map (xs, fn x => removeX (x, scope))
 
 fun removeDec (d: Dec.t, scope: Env.t): Dec.t =
-   case d of
-      Val {tyvars, pat, exp, filePos} =>
-	 let val (scope, tyvars) = bindNew (scope, tyvars)
-	 in Val {tyvars = tyvars,
-		 pat = removePat (pat, scope),
-		 exp = removeExp (exp, scope),
-		 filePos = filePos}
-	 end
-    | Fun {tyvars, decs} =>
-	 let val (scope, tyvars) = bindNew (scope, tyvars)
-	 in Fun {tyvars = tyvars,
-		 decs = Vector.map (decs, fn {var, types, match} =>
-				    {var = var,
-				     types = Vector.map (types, fn t =>
-							 removeTy (t, scope)),
-				     match = removeMatch (match, scope)})}
-	 end
-    | Exception {con, arg} => Exception {con = con,
-					 arg = removeTyOpt (arg, scope)}
-    | Datatype dbs =>
-	 Datatype
-	 (Vector.map (dbs, fn {tyvars, tycon, cons} =>
-		      let val (scope, tyvars) = TyvarEnv.rename (scope, tyvars)
-		      in {tyvars = tyvars,
-			  tycon = tycon,
-			  cons = Vector.map (cons, fn {con, arg} =>
-					     {con = con,
-					      arg = removeTyOpt (arg, scope)})}
-		      end))
-    | Overload _ => d
-
+   let
+      fun doit n = Dec.makeRegion (n, Dec.region d)
+   in
+      case Dec.node d of
+	 Val {tyvars, pat, exp, filePos} =>
+	    let
+	       val (scope, tyvars) = bindNew (scope, tyvars)
+	    in
+	       doit (Val {tyvars = tyvars,
+			  pat = removePat (pat, scope),
+			  exp = removeExp (exp, scope),
+			  filePos = filePos})
+	    end
+       | Fun {tyvars, decs} =>
+	    let
+	       val (scope, tyvars) = bindNew (scope, tyvars)
+	    in
+	       doit
+	       (Fun {tyvars = tyvars,
+		     decs = (Vector.map
+			     (decs, fn {var, types, match} =>
+			      {var = var,
+			       types = Vector.map (types, fn t =>
+						   removeTy (t, scope)),
+			       match = removeMatch (match, scope)}))})
+	    end
+       | Exception {con, arg} =>
+	    doit (Exception {con = con,
+			     arg = removeTyOpt (arg, scope)})
+       | Datatype dbs =>
+	    doit
+	    (Datatype
+	     (Vector.map
+	      (dbs, fn {tyvars, tycon, cons} =>
+	       let val (scope, tyvars) = TyvarEnv.rename (scope, tyvars)
+	       in {tyvars = tyvars,
+		   tycon = tycon,
+		   cons = Vector.map (cons, fn {con, arg} =>
+				      {con = con,
+				       arg = removeTyOpt (arg, scope)})}
+	       end)))
+       | Overload _ => d
+   end
 and removeExp (e: Exp.t, scope: Env.t): Exp.t =
    let
-      fun doit n = makeRegion (n, Exp.region e)
+      fun doit n = Exp.makeRegion (n, Exp.region e)
    in
       case Exp.node e of
 	 App (e1, e2) =>
@@ -364,7 +388,18 @@ fun scopeDec d =
    in
       if Tyvars.isEmpty unguarded
 	 then removeDec (d, Env.empty)
-      else Error.bug "scope: free type variable"
+      else
+	 let
+	    open Layout
+	    val _ = 
+	       Control.error (Dec.region d,
+			      seq [str "free type variables: ",
+				   List.layout Tyvar.layout
+				   (Tyvars.toList unguarded)],
+			      empty)
+	 in
+	    d
+	 end
    end
 
 val scopeDec = Trace.trace ("scopeDec", Dec.layout, Dec.layout) scopeDec

@@ -97,7 +97,7 @@ fun build (CoreML.Program.T {decs, ...},
 	 and loopDecs (ds: Dec.t vector, ac: ac): ac =
 	    Vector.fold (ds, ac, loopDec)
 	 and loopDec (d: Dec.t, ac: ac): ac =
-	    case d of
+	    case Dec.node d of
 	       Val {exp, ...} => loopExp (exp, ac)
 	     | Fun {decs, ...} =>
 		  Vector.fold (decs, ac, fn ({match, ...}, ac) =>

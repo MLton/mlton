@@ -309,6 +309,7 @@ fun elaborateDec (d, E) =
       fun elabDatBind datBind =
 	 (* rules 28, 29, 81, 82 *)
 	 let
+	    val region = DatBind.region datBind
 	    val lookup = Lookup.fromEnv E
 	    val DatBind.T {datatypes, withtypes} = DatBind.node datBind
 	    (* Build enough of an env so that that the withtypes
@@ -357,7 +358,8 @@ fun elaborateDec (d, E) =
 		 end))
 	 in {cons = Vector.concatV cons,
 	     tycons = Vector.concat [tycons, tycons'],
-	     decs = Decs.single (Cdec.Datatype datatypes)}
+	     decs = Decs.single (Cdec.makeRegion (Cdec.Datatype datatypes,
+						  region))}
 	 end
       fun elabDec d =
 	 Trace.traceInfo (info, Ast.Dec.layout, Layout.ignore, Trace.assertTrue)
@@ -413,8 +415,10 @@ fun elaborateDec (d, E) =
 				let val exn' = Con.fromAst exn
 				in (Decs.add
 				    (decs,
-				     Cdec.Exception {con = exn',
-						     arg = elabTypeOpt to}),
+				     Cdec.makeRegion
+				     (Cdec.Exception {con = exn',
+						      arg = elabTypeOpt to},
+				      EbRhs.region rhs)),
 				    exn')
 				end
 		       val _ = Env.extendExn (E, exn, exn')
@@ -527,8 +531,9 @@ fun elaborateDec (d, E) =
 					   | _ => Error.bug "elabFbs")
 				 end}
 			     end)
-		   in Decs.single (Cdec.Fun {tyvars = tyvars,
-					     decs = decs})
+		   in Decs.single (Cdec.makeRegion (Cdec.Fun {tyvars = tyvars,
+							      decs = decs},
+						    region))
 		   end
 	      | Adec.Local (d, d') =>
 		   Decs.append (Env.localCore (E,
@@ -559,9 +564,11 @@ fun elaborateDec (d, E) =
 			 Vector.map (xs, fn x => Env.lookupLongvar (E, x))
 		      val _ = Env.extendVar (E, x, x')
 		   in
-		      Decs.single (Cdec.Overload {var = x',
-						  scheme = scheme,
-						  ovlds = ovlds})
+		      Decs.single (Cdec.makeRegion
+				   (Cdec.Overload {var = x',
+						   scheme = scheme,
+						   ovlds = ovlds},
+				    region))
 		   end
 	      | Adec.SeqDec ds =>
 		   Vector.fold (ds, Decs.empty, fn (d, decs) =>
@@ -637,30 +644,39 @@ fun elaborateDec (d, E) =
 					 val x' = Cvar.fromAst x
 					 val _ =
 					    List.foreach
-					    (vars, fn y => Env.extendVar (E, y, x'))
+					    (vars, fn y =>
+					     Env.extendVar (E, y, x'))
 				      in
 					 x'
 				      end
 			  in
-			     (var, Vector.fromListMap (types, Scheme.ty o elabType))
+			     (var,
+			      Vector.fromListMap (types, Scheme.ty o elabType))
 			  end)
 		      val rvbs =
-			 Vector.map2 (rvbs, vts, fn ({match, ...}, (var, types)) =>
-				      {var = var,
-				       types = types,
-				       match = elabMatch match})
+			 Vector.map2
+			 (rvbs, vts, fn ({match, ...}, (var, types)) =>
+			  {var = var,
+			   types = types,
+			   match = elabMatch match})
 		      val ps = Vector.map (vbs, fn {pat, filePos, ...} =>
 					   {pat = elaboratePat (pat, E),
-					    filePos = filePos})
-		      val vbs = Vector.map2 (ps, es, fn ({pat, filePos}, e) =>
-					     Cdec.Val {pat = pat,
-						       filePos = filePos,
-						       tyvars = tyvars,
-						       exp = e})
+					    filePos = filePos,
+					    region = Apat.region pat})
+		      val vbs =
+			 Vector.map2 (ps, es, fn ({pat, filePos, region}, e) =>
+				      Cdec.makeRegion
+				      (Cdec.Val {pat = pat,
+						 filePos = filePos,
+						 tyvars = tyvars,
+						 exp = e},
+				       region))
 		   in Decs.appends
 		      [Decs.fromVector vbs,
-		       Decs.single (Cdec.Fun {tyvars = tyvars,
-					      decs = rvbs}),
+		       Decs.single (Cdec.makeRegion
+				    (Cdec.Fun {tyvars = tyvars,
+					       decs = rvbs},
+				     region)),
 		       (* Hack to implement rule 126, which requires Bind to be
 			* raised if any of the rvbs contains a constructor in a
 			* pattern.  This, despite the fact that rule 26 allows
@@ -671,13 +687,15 @@ fun elaborateDec (d, E) =
 			  NONE => Decs.empty
 			| SOME filePos => 
 			     Decs.single
-			     (Cdec.Val
-			      {exp = doit (Cexp.Raise
-					   {exn = doit (Cexp.Con Con.bind),
-					    filePos = filePos}),
-			       filePos = "",
-			       pat = Cpat.makeRegion (Cpat.Wild, region),
-			       tyvars = Vector.new0 ()})]
+			     (Cdec.makeRegion
+			      (Cdec.Val
+			       {exp = doit (Cexp.Raise
+					    {exn = doit (Cexp.Con Con.bind),
+					     filePos = filePos}),
+				filePos = "",
+				pat = Cpat.makeRegion (Cpat.Wild, region),
+				tyvars = Vector.new0 ()},
+			       region))]
 		   end
 	  end) d
       and elabExps (es: Ast.Exp.t list): Cexp.t list =
