@@ -501,7 +501,8 @@ fun commandLine (args: string list): unit =
 	 if !hostOS = Cygwin andalso !profile = ProfileTime
 	    then usage "can't use -profile time on Cygwin"
 	 else ()
-      fun printVersion () = print (concat [version, " ", build, "\n"])
+      fun printVersion (out: Out.t): unit =
+	 Out.output (out, concat [version, " ", build, "\n"])
    in
       case result of
       Result.No msg => usage msg
@@ -513,8 +514,8 @@ fun commandLine (args: string list): unit =
 					Out.standard)
 		else if !buildConstants
 		   then Compile.outputBasisConstants Out.standard
-	        else printVersion ()
-	   | Top => printVersion ()
+	        else printVersion Out.standard
+	   | Top => printVersion Out.standard
 	   | _ => (inputFile := ""
 		   ; outputHeader' (No, Out.standard)))
     | Result.Yes (input :: rest) =>
@@ -570,7 +571,7 @@ fun commandLine (args: string list): unit =
 		  let
 		     val _ =
 			if !verbosity = Top
-			   then printVersion ()
+			   then printVersion Out.error
 			else ()
 		     val tempFiles: File.t list ref = ref []
 		     val tmpDir =
