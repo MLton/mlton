@@ -20,6 +20,9 @@ signature ANALYZE2 =
 	 {coerce: {from: 'a,
 		   to: 'a} -> unit,
 	  const: Const.t -> 'a,
+	  (* In filter, the variant is an 'a option because the targets of Case
+	   * branches may ignore the test (by taking 0 args).
+	   *)
 	  filter: {con: Con.t,
 		   test: 'a,
 		   variant: 'a option} -> unit,
