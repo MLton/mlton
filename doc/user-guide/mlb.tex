@@ -125,7 +125,12 @@ duplicated if the {\tt .mlb} file is referred to multiple times.
 Paths can be relative or absolute.  Relative paths are relative to the
 directory containing the {\tt .mlb} file.  Paths may include path
 variables and are expanded according to a path map; see
-\secref{mlb-path-map} for more details.
+\secref{mlb-path-map} for more details.  Unquoted paths may include
+alpha-numeric characters and the symbols {\tt -} and {\tt \_}, along
+with the arc separator {\tt /} and extension separator {\tt .}.  More
+complicated paths, including paths with spaces, may be included by
+quoting the path with {\tt "}.  A quoted path is lexed as a SML string
+constant.
 
 Finally, annotations allow a library author to control options that
 affect the elaboration of SML source files; see \secref{mlb-anns} for
