@@ -11,6 +11,12 @@ struct
 type int = Int.t
 type word = Word.t
 
+structure GraphShow =
+   struct
+      datatype t = Above
+   end
+
+val graphShow = ref GraphShow.Above
 val raw = ref false
 val thresh: int ref = ref 0
 
@@ -173,55 +179,66 @@ fun display (AFile.T {name = aname, sources, sourceSuccessors, ...},
 	  let
 	     val rticks = Real.fromIntInf ticks
 	     val per = 100.0 * rticks / totalReal
+	     val aboveThresh = per >= thresh
+	     val name = Vector.sub (sources, i)
+	     val row =
+		(concat [Real.format (per, Real.Format.fix (SOME 2)),
+			 "%"])
+		:: (if !raw
+		       then
+			  [concat
+			   (case kind of
+			       Kind.Alloc =>
+				  ["(", IntInf.toCommaString ticks, ")"]
+			     | Kind.Time =>
+				  ["(",
+				   Real.format
+				   (rticks / ticksPerSecond,
+				    Real.Format.fix (SOME 2)),
+				   "s)"])]
+		    else [])
+	     val node =
+		if (case !graphShow of
+		       GraphShow.Above => aboveThresh)
+		   andalso (not (name = "<unknown>")
+			    orelse IntInf.> (ticks, IntInf.zero))
+		   then
+		      let
+			 val node = Graph.newNode graph
+			 val _ = 
+			    List.push
+			    (nodeOptions node,
+			     Dot.NodeOption.Label
+			     [(name, Dot.Center),
+			      (concat (List.separate (row, " ")), Dot.Center)])
+		      in
+			 SOME node
+		      end
+		else NONE
 	  in
-	     if per < thresh
-		then NONE
-	     else
-		let
-		   val name = Vector.sub (sources, i)
-		   val node = Graph.newNode graph
-		   val per =
-		      (concat [Real.format (per, Real.Format.fix (SOME 2)),
-			       "%"])
-		      :: (if !raw
-			     then
-				[concat
-				 (case kind of
-				     Kind.Alloc =>
-					["(", IntInf.toCommaString ticks, ")"]
-				   | Kind.Time =>
-					["(",
-					 Real.format
-					 (rticks / ticksPerSecond,
-					  Real.Format.fix (SOME 2)),
-					 "s)"])]
-			  else [])
-		   val nodeIndex =
-		      List.push
-		      (nodeOptions node,
-		       Dot.NodeOption.Label
-		       [(name, Dot.Center),
-			(concat (List.separate (per, " ")), Dot.Center)])
-		in
-		   SOME {node = node,
-			 row = name :: per,
-			 ticks = ticks}
-		end
+	     {aboveThresh = aboveThresh,
+	      node = node,
+	      row = name :: row,
+	      ticks = ticks}
 	  end)
       val _ =
 	 Vector.mapi
 	 (counts,
-	  fn (i, z) =>
-	  case z of
+	  fn (i, {node, ...}) =>
+	  case node of
 	     NONE => ()
-	   | SOME {node = from, ...} =>
+	   | SOME from =>
 		Vector.foreach
 		(Vector.sub (sourceSuccessors, i), fn j =>
-		 case Vector.sub (counts, j) of
-		    NONE => ()
-		  | SOME {node = to, ...} => 
-		       (Graph.addEdge (graph, {from = from, to = to})
-			; ())))
+		 let
+		    val {node, ...} = Vector.sub (counts, j)
+		 in
+		    case node of
+		       NONE => ()
+		     | SOME to =>
+			  (Graph.addEdge (graph, {from = from, to = to})
+			   ; ())
+		 end))
       val _ = 
 	 File.withOut
 	 (concat [aname, ".dot"], fn out =>
@@ -232,7 +249,7 @@ fun display (AFile.T {name = aname, sources, sourceSuccessors, ...},
 				     options = [],
 				     title = "call-stack graph"}),
 	   out))
-      val counts = Vector.keepAllMap (counts, fn z => z)
+      val counts = Vector.keepAll (counts, #aboveThresh)
       val counts =
 	 QuickSort.sortVector
 	 (counts, fn ({ticks = t1, ...}, {ticks = t2, ...}) =>
@@ -265,7 +282,12 @@ fun makeOptions {usage} =
       open Popt
    in
       List.map
-      ([(Normal, "raw", " {false|true}", "show raw counts",
+      ([(Expert, "graph", " {above|all}", " show graph nodes",
+	 SpaceString (fn s =>
+		      case s of
+			 "above" => graphShow := GraphShow.Above
+		       | _ => usage "invalid -graph arg")),
+	(Normal, "raw", " {false|true}", "show raw counts",
 	 boolRef raw),
 	(Normal, "thresh", " {0|1|...|100}", "only show counts above threshold",
 	 Int (fn i => if i < 0 orelse i > 100
