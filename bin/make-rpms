@@ -1,53 +1,72 @@
 #!/bin/sh
 
-# This script makes binary and source RPMs and puts them in the current 
+# This script makes binary and source RPMs in topdir (your RPM _topdir).
+# It can either grab the sources from the CVS repository or from a local
 # directory.
+#
+# Note that the build (rpm -ba) uses whatever mlton is in your PATH.
 
 name=`basename $0`
 
 function usage() {
-	echo >&2 "usage: $name [-home] [-local]"
+	echo >&2 "usage: $name [-home dir] [-local dir] topdir"
 	exit 1
 }
 
 home='no'
 local='no'
+topdir='unset'
 while [ "$#" -gt 0 ]; do
 	case "$1" in
 	-home)
 		home='yes'
 		shift
+		if [ "$#" -eq 0 ]; then
+			usage
+		fi
+		homeDir="$1"
+		shift
 		;;
 	-local)
 		local='yes'
 		shift
+		if [ "$#" -eq 0 ]; then
+			usage
+		fi
+		localDir="$1"
+		shift
 		;;
 	*)
-		usage
+		topdir="$1"
+		shift
+		if [ "$#" -gt 0 ]; then
+			usage
+		fi
 		;;
 	esac
 done
+if [ "$topdir" = 'unset' ]; then
+	usage
+fi
 
 version=`date +%Y%m%d`
 release="1"
 package="mlton-$version-$release"
 
 echo 'Cleaning up'
-cd `dirname $0`'/..'
-rm -rf rpms
-mkdir -p rpms
-cd rpms
-root=`pwd`
+root="$topdir"
 src="$root/SOURCES/mlton-$version/src"
+cd $root
 mkdir -p BUILD RPMS/i386 SOURCES SPECS SRPMS
-
 cd $root/SOURCES
+rm -rf mlton-$version
 mkdir mlton-$version
 cd mlton-$version
 mkdir bin lib include
 if [ $local = 'yes' ]; then
 	echo 'Getting local sources'
-	(cd /home/sweeks/mlton && tar.write src) | tar.read
+	mkdir src
+	(cd $localDir && tar.write .) | (cd src && tar.read && make clean)
 else
  	echo 'Checking out sources'
  	cvs -Q co -d src mlton
@@ -96,21 +115,13 @@ rm -rf mlton-$version
 
 echo 'Building rpms'
 (
-	export HOME="$root"
-	echo "%_topdir $root" >$root/.rpmmacros
-	time rpm -ba --quiet --clean --buildroot $root/install \
-		$root/SPECS/mlton.spec
+	time rpm -ba --quiet --clean $root/SPECS/mlton.spec
 	touch $root/RPMS/i386/$package.i386.rpm $root/SRPMS/$package.src.rpm
 )
 
-echo 'Cleaning up'
-cd $root
-cp -p RPMS/i386/$package.i386.rpm SRPMS/$package.src.rpm .
-rm -rf install BUILD RPMS SOURCES SPECS SRPMS
-
 if [ $home = 'yes' ]; then
 	echo 'Building web home'
-	cd $root
+	cd $homeDir
 	cvs -Q co -d doc mlton/doc
 	cvs -Q release doc
 	cd doc
@@ -119,12 +130,12 @@ if [ $home = 'yes' ]; then
 	make
 	cvs -Q co -d benchmarks mlton/benchmark/tests
 	cvs -Q release benchmarks
-	cp $root/$package.i386.rpm $root/$package.src.rpm .
+	cp $root/RPMS/i386/$package.i386.rpm $root/SRPMS/$package.src.rpm .
 	find . -type d | grep CVS | xargs rm -rf
 	find . -type f | grep cvsignore | xargs rm -f
 	echo '  Building tgz'
-	tar.write -x Makefile . | gzip >$root/mlton-home.tgz
-	rm -rf $root/doc
+	tar.write -x Makefile . | gzip >$homeDir/mlton-home.tgz
+	rm -rf $homeDir/doc
 fi
 
 echo 'Success'
