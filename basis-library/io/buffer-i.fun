@@ -13,7 +13,6 @@ signature BUFFER_I_EXTRA_ARG =
 
       val lineElem: Vector.elem
       val isLine: Vector.elem -> bool
-      val hasLine: Vector.vector -> bool
    end
 
 functor BufferIExtra
@@ -35,6 +34,8 @@ functor BufferIExtra
       fun liftExn name function cause = raise IO.Io {name = name,
 						     function = function,
 						     cause = cause}
+
+      val hasLine = V.exists isLine
 
       (*---------------*)
       (*   inbuffer    *)
@@ -466,8 +467,7 @@ functor BufferI
 		     fun outputSlice _ = raise (Fail "<outputSlice>")
 		  end
 	       val lineElem = someElem
-	       fun isLine _ = raise (Fail "<isLine>")
-	       fun hasLine _ = raise (Fail "<hasLine>"))
+	       fun isLine _ = raise (Fail "<isLine>"))
 
 signature BUFFER_I_EXTRA_FILE_ARG =
    sig
@@ -484,7 +484,6 @@ signature BUFFER_I_EXTRA_FILE_ARG =
 
       val lineElem: Vector.elem
       val isLine: Vector.elem -> bool
-      val hasLine: Vector.vector -> bool
 
       structure Cleaner: CLEANER
    end

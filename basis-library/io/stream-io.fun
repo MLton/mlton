@@ -10,7 +10,6 @@ signature STREAM_IO_EXTRA_ARG =
 
       val lineElem : Vector.elem
       val isLine : Vector.elem -> bool 
-      val hasLine : Vector.vector -> bool
    end
 
 functor StreamIOExtra 
@@ -31,6 +30,8 @@ functor StreamIOExtra
       fun liftExn name function cause = raise IO.Io {name = name,
 						     function = function,
 						     cause = cause}
+
+      val hasLine = V.exists isLine
 
       (*---------------*)
       (*   outstream   *)
@@ -621,8 +622,7 @@ functor StreamIO
         (S: STREAM_IO_ARG): STREAM_IO = 
   StreamIOExtra(open S
 		val lineElem = someElem
-		fun isLine _ = raise (Fail "<isLine>")
-		fun hasLine _ = raise (Fail "<hasLine>"))
+		fun isLine _ = raise (Fail "<isLine>"))
 
 signature STREAM_IO_EXTRA_FILE_ARG =
    sig
@@ -636,7 +636,6 @@ signature STREAM_IO_EXTRA_FILE_ARG =
 
       val lineElem : Vector.elem
       val isLine : Vector.elem -> bool
-      val hasLine : Vector.vector -> bool
 
       structure Cleaner: CLEANER
    end
