@@ -443,12 +443,19 @@ functor StreamIOExtra
       fun input1' (is as In {pos, state, ...}) =
 	case !state of
 	  Link {inp, next} =>
-	    (SOME (V.sub (inp, pos)),
-	     if pos + 1 < V.length inp
-	       then updatePos (is, pos + 1)
-	       else updateState (is, next))
+	    let
+	      val e = V.sub (inp, pos)
+	      val state = 
+		if pos + 1 < V.length inp
+		  then updatePos (is, pos + 1)
+		  else updateState (is, next)
+	    in
+	      (SOME e, state)
+	    end
 	| Eos {next} =>
-	    (NONE, updateState (is, next))
+	    let val state = updateState (is, next)
+	    in (NONE, state)
+	    end
 	| End => 
 	    let val _ = extendB "input1" is 
 	    in input1' is
@@ -516,7 +523,7 @@ functor StreamIOExtra
 	       end
 	    | _ => (empty, is)
 	  and loop (is as In {pos, state, ...}, inps) =
-	    (* pos = 0, List.lengt inps > 0 *)
+	    (* pos = 0, List.length inps > 0 *)
 	    case !state of
 	      Link {inp, next} =>
 		(case findLine (inp, pos) of
@@ -597,7 +604,7 @@ functor StreamIOExtra
 		 | _ => SOME 0
 	       end
 
-      fun closeIn (is as In {common = {tail, ...}, state, ...}) =
+      fun closeIn (is as In {common = {tail, ...}, ...}) =
 	case !(!tail) of
 	  End =>
 	    (!tail := Closed;
