@@ -7,15 +7,11 @@
  *)
 signature CLEANER =
    sig
-      structure UniqueId: UNIQUE_ID
-
       type t
 
-      val add: t * UniqueId.t * (unit -> unit) -> unit
       val addNew: t * (unit -> unit) -> unit
       val atExit: t
       val atLoadWorld: t
       val clean: t -> unit
       val new: unit -> t
-      val remove: t * UniqueId.t -> unit
    end

@@ -116,7 +116,7 @@ structure NetHostDB:> NET_HOST_DB_EXTRA =
 		     StringCvt.wdigits StringCvt.HEX reader state''
 		 | SOME (#"x", state'') => 
 		     StringCvt.wdigits StringCvt.HEX reader state''
-		 | SOME (c, state'') =>
+		 | SOME (c, _) =>
 		     if Char.isDigit c
 		       then StringCvt.wdigits StringCvt.OCT reader state'
 		       else SOME (0wx0, state')

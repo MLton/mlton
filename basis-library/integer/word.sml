@@ -21,8 +21,6 @@ val fromLargeInt: LargeInt.int -> word = fn _ => raise Fail "fromLargeInt"
 val wordSizeWord: Word.word = PW.fromInt wordSize
 val wordSizeMinusOneWord: Word.word = PW.fromInt (Int.-? (wordSize, 1))
 val zero: word = fromInt 0
-val one: word = fromInt 1
-val allOnes: word = notb zero
 
 val toLargeWord = toLarge
 val toLargeWordX = toLargeX

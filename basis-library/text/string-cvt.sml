@@ -10,7 +10,6 @@ structure StringCvt: STRING_CVT_EXTRA =
       open Reader
 
       val wordFromInt = Primitive.Word32.fromInt
-      val wordToIntX = Primitive.Word32.toIntX
 
       datatype radix = BIN | OCT | DEC | HEX
 
@@ -103,8 +102,8 @@ structure StringCvt: STRING_CVT_EXTRA =
 	 val oct = Char.memoize (range (0, #"0", #"7"))
 	 val dec = Char.memoize (range (0, #"0", #"9"))
 	 val hex = combine [range (0, #"0", #"9"),
-			   range (10, #"a", #"f"),
-			   range (10, #"A", #"F")]
+			    range (10, #"a", #"f"),
+			    range (10, #"A", #"F")]
       in
 	 fun charToDigit (radix: radix): char -> int option =
 	    case radix of
@@ -113,37 +112,8 @@ structure StringCvt: STRING_CVT_EXTRA =
 	     | DEC => dec
 	     | HEX => hex
       end
+   
       fun charToWDigit radix = (Option.map wordFromInt) o (charToDigit radix)
-
-      fun charsToInt (radix: radix): char list -> int option =
-	 let
-	    val f = charToDigit radix
-	    val r = radixToInt radix
-	    fun loop (cs, accum) =
-	       case cs of
-		  [] => SOME accum
-		| c :: cs =>
-		     case f c of
-			NONE => NONE
-		      | SOME d => loop (cs, accum * r + d)
-	 in fn cs => loop (cs, 0)
-	 end
-
-      fun charsToWord (radix: radix): char list -> word option =
-	 let
-	    val op + = Primitive.Word32.+
-	    val op * = Primitive.Word32.*
-	    val f = charToWDigit radix
-	    val r = radixToWord radix
-	    fun loop (cs, accum: word) =
-	       case cs of
-		  [] => SOME accum
-		| c :: cs =>
-		     case f c of
-			NONE => NONE
-		      | SOME d => loop (cs, accum * r + d)
-	 in fn cs => loop (cs, 0wx0)
-	 end
 
       fun digits (radix, max, accum) reader state =
 	 let
@@ -163,49 +133,13 @@ structure StringCvt: STRING_CVT_EXTRA =
 	 in loop (max, accum, state)
 	 end
 
-      fun wdigits (radix, max, accum) reader state =
-	 let
-	    val op + = Primitive.Word32.+
-	    val op * = Primitive.Word32.*
-	    val r = radixToWord radix
-	    fun loop (max, accum, state) =
-	       let fun done () = SOME (accum, state)
-	       in if max <= 0
-		     then done ()
-		  else
-		     case reader state of
-			NONE => done ()
-		      | SOME (c, state) =>
-			   case charToWDigit radix c of
-			      NONE => done ()
-			    | SOME n => loop (max - 1, n + accum * r, state)
-	       end
-	 in loop (max, accum, state)
-	 end
-
       fun digitsPlus (radix, max) reader state =
-	 let
-	    val r = radixToInt radix
-	 in
-	    case reader state of
-	       NONE => NONE
-	     | SOME (c, state) =>
-		  case charToDigit radix c of
-		     NONE => NONE
-		   | SOME n => digits (radix, max -? 1, n) reader state
-	 end
-
-      fun wdigitsPlus (radix, max) reader state =
-	 let
-	    val r = radixToWord radix
-	 in
-	    case reader state of
-	       NONE => NONE
-	     | SOME (c, state) =>
-		  case charToWDigit radix c of
-		     NONE => NONE
-		   | SOME n => wdigits (radix, max -? 1, n) reader state
-	 end
+	 case reader state of
+	    NONE => NONE
+	  | SOME (c, state) =>
+	       case charToDigit radix c of
+		  NONE => NONE
+		| SOME n => digits (radix, max -? 1, n) reader state
 
       fun digitsExact (radix, num) reader state =
 	 let val r = radixToInt radix
@@ -220,24 +154,6 @@ structure StringCvt: STRING_CVT_EXTRA =
 			   NONE => NONE
 			 | SOME n => loop (num - 1, n + accum * r, state)
 	 in loop (num, 0, state)
-	 end
-
-      fun wdigitsExact (radix, num) reader state =
-	 let 
-	    val op + = Primitive.Word32.+
-	    val op * = Primitive.Word32.*
-	    val r = radixToWord radix
-	    fun loop (num, accum, state) =
-	       if num <= 0
-		  then SOME (accum, state)
-	       else
-		  case reader state of
-		     NONE => NONE
-		   | SOME (c, state) =>
-			case charToWDigit radix c of
-			   NONE => NONE
-			 | SOME n => loop (num - 1, n + accum * r, state)
-	 in loop (num, 0wx0, state)
 	 end
 
       fun digits radix reader state =
@@ -279,5 +195,4 @@ structure StringCvt: STRING_CVT_EXTRA =
 	 end
 
       fun digitToChar (n: int): char = String.sub ("0123456789ABCDEF", n)
-      fun wdigitToChar (w: word): char = digitToChar (wordToIntX w)
    end

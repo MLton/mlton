@@ -33,7 +33,7 @@ datatype state =
    Normal
  | InHandler
     
-val state = ref Normal
+val state: state ref = ref Normal
 
 fun amInSignalHandler () = InHandler = !state
 

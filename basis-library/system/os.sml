@@ -5,7 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-structure OS: OS =
+structure OS =
    struct
       structure FileSys = OS_FileSys
       structure Path = OS_Path

@@ -34,5 +34,4 @@ signature TIME_EXTRA =
 
       val fromTicks: LargeInt.int -> time
       val ticksPerSecond: LargeInt.int
-      val toTicks: time -> LargeInt.int
    end

@@ -23,7 +23,6 @@ structure Basis2002:> BASIS_2002 =
       structure LargeWord = LargeWord
       structure List = List
       structure ListPair = ListPair
-      structure Math = Math
       structure OS = OS
       structure Option = Option
       structure Position = Position

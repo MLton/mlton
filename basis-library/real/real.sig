@@ -1,8 +1,3 @@
-structure Real =
-   struct
-      type real = real
-   end
-
 structure LargeReal =
    struct
       type real = real
@@ -42,7 +37,6 @@ signature PRE_REAL =
       val minNormalPos: real
       val minPos: real
       val modf: real * real ref -> real
-      val nextAfter: real * real -> real
       val nextAfterDown: real -> real
       val nextAfterUp: real -> real
       val precision: int

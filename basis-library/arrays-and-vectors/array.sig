@@ -53,6 +53,4 @@ signature ARRAY_EXTRA =
       val checkSlice: 'a array * int * int option -> int
       (* Deprecated *)
       val checkSliceMax: int * int option * int -> int
-      (* Deprecated *)
-      val extract: 'a array * int * int option -> 'a vector
    end

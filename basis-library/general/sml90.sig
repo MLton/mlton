@@ -3,37 +3,37 @@ signature SML90 =
       type instream
       type outstream
       exception Abs
-      exception Quot
-      exception Prod
-      exception Neg
-      exception Sum
       exception Diff
-      exception Floor
       exception Exp
-      exception Sqrt
-      exception Ln
-      exception Ord
-      exception Mod
-      exception Io of string 
+      exception Floor
       exception Interrupt
-      val sqrt: real -> real 
-      val exp: real -> real 
-      val ln: real -> real 
-      val sin: real -> real 
-      val cos: real -> real 
+      exception Io of string 
+      exception Ln
+      exception Mod
+      exception Neg
+      exception Ord
+      exception Prod
+      exception Quot
+      exception Sqrt
+      exception Sum
       val arctan: real -> real 
-      val ord: string -> int 
       val chr: int -> string 
+      val close_in: instream -> unit 
+      val close_out: outstream -> unit
+      val cos: real -> real 
+      val end_of_stream: instream -> bool 
+      val exp: real -> real 
       val explode: string -> string list 
       val implode: string list -> string 
-      val std_in: instream 
-      val open_in: string -> instream 
       val input: instream * int -> string 
+      val ln: real -> real 
       val lookahead: instream -> string
-      val close_in: instream -> unit 
-      val end_of_stream: instream -> bool 
-      val std_out: outstream 
+      val open_in: string -> instream 
       val open_out: string -> outstream 
+      val ord: string -> int 
       val output: outstream * string -> unit 
-      val close_out: outstream -> unit
+      val sin: real -> real 
+      val sqrt: real -> real 
+      val std_in: instream 
+      val std_out: outstream 
    end

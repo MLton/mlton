@@ -10,6 +10,4 @@ functor UniqueId () :> UNIQUE_ID =
       type t = unit ref
 
       fun new (): t = ref ()
-
-      val equals = op =
    end

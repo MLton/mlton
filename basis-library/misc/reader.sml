@@ -12,29 +12,30 @@ open Primitive.Int
    
 type ('a, 'b) reader = 'b -> ('a * 'b) option
 
-local
-   fun make finish p reader state =
-      let
-	 fun loop (state, token, tokens) =
-	    case reader state of
-	       NONE => SOME (rev (finish (token, tokens)), state)
-	     | SOME (x, state) =>
-		  let
-		     val (token, tokens) =
-			if p x then ([], finish (token, tokens))
-			else (x :: token, tokens)
-		  in loop (state, token, tokens)
-		  end
-      in loop (state, [], [])
-      end
-in
-   fun tokens p = make (fn (token, tokens) =>
-		       case token of
-			  [] => tokens
-			| _ => (rev token) :: tokens) p
-   fun fields p = make (fn (field, fields) => (rev field) :: fields) p
-end
-
+(* local
+ *    fun make finish p reader state =
+ *       let
+ * 	 fun loop (state, token, tokens) =
+ * 	    case reader state of
+ * 	       NONE => SOME (rev (finish (token, tokens)), state)
+ * 	     | SOME (x, state) =>
+ * 		  let
+ * 		     val (token, tokens) =
+ * 			if p x then ([], finish (token, tokens))
+ * 			else (x :: token, tokens)
+ * 		  in loop (state, token, tokens)
+ * 		  end
+ *       in loop (state, [], [])
+ *       end
+ * in
+ *     fun tokens p = make (fn (token, tokens) =>
+ *  		       case token of
+ *  			  [] => tokens
+ *  			| _ => (rev token) :: tokens) p
+ *    fun fields p = make (fn (field, fields) => (rev field) :: fields) p
+ * end
+ *)
+   
 fun list (reader: ('a, 'b) reader): ('a list, 'b) reader =
    fn state =>
    let
@@ -68,6 +69,7 @@ fun ignore f reader =
 	       else SOME (x, state)
    in loop
    end
+val _ = ignore
    
 fun map (f: 'a -> 'c) (reader: ('a, 'b) reader): ('c, 'b) reader =
    fn (b: 'b) =>
@@ -87,6 +89,7 @@ fun mapOpt (f: 'a -> 'c option) (reader: ('a, 'b) reader): ('c, 'b) reader =
 fun reader2 reader =
    map (fn [y, z] => (y, z) | _ => raise Fail "Reader.reader2")
    (readerN (reader, 2))
+val _ = reader2
    
 fun reader3 reader =
    map (fn [x, y, z] => (x, y, z) | _ => raise Fail "Reader.reader3")

@@ -633,7 +633,6 @@ structure IntInf: INT_INF_EXTRA =
 	  *)
 	 fun toChunkR (base: Word.word,
 		       dpc: smallInt,
-		       cread: (char, 'a) reader,
 		       dread: (Word.word, 'a) reader)
 	    : (chunk, 'a) reader =
 	    let fun loop {left: smallInt,
@@ -690,7 +689,7 @@ structure IntInf: INT_INF_EXTRA =
 		fun reader (state: 'a): (bigInt * 'a) option =
 		   case ckread state of
 		      NONE => NONE
-		    | SOME ({more, shift, chunk}, state') =>
+		    | SOME ({more, chunk, ...}, state') =>
 			 SOME (loop (more,
 				     smallToBig chunk,
 				     state'))
@@ -729,27 +728,6 @@ structure IntInf: INT_INF_EXTRA =
 			  end
 	    in reader
 	    end
-	 
-	 (*
-	  * Given a char reader and an unsigned reader, return a reader
-	  * which handles the optional initial 0x or 0X.
-	  *)
-	 fun toX (cread: (char, 'a) reader, uread: (bigInt, 'a) reader)
-	    (state: 'a)
-	    : (bigInt * 'a) option =
-	    case cread state of
-	       NONE => NONE
-	     | SOME (#"0", state') =>
-		  (case cread state' of
-		      NONE => SOME (zero, state')
-		    | SOME (ch, state'') =>
-			 if ch = #"X" orelse ch = #"x"
-			    then case uread state'' of
-			       NONE => SOME (zero,
-					     state')
-			     | res => res
-			 else uread state)
-	     | _ => uread state
 		  
 	 (*
 	  * Base-specific conversions from char readers to
@@ -759,7 +737,7 @@ structure IntInf: INT_INF_EXTRA =
 	    fun reader (base, dpc, dig)
 	       (cread: (char, 'a) reader): (bigInt, 'a) reader =
 	       let val dread = toDigR (dig, cread)
-		  val ckread = toChunkR (base, dpc, cread, dread)
+		  val ckread = toChunkR (base, dpc, dread)
 		  val uread = toUnsR ckread
 		  val reader = toSign (cread, uread)
 	       in reader
@@ -830,11 +808,9 @@ structure IntInf: INT_INF_EXTRA =
 
       val op + = bigPlus
       val op - = bigMinus
-      val compare = bigCompare
       val op > = bigGT
       val op >= = bigGE
       val op < = bigLT
-      val op <= = bigLE
       val quot = bigQuot
       val rem = bigRem
 
@@ -972,7 +948,6 @@ structure IntInf: INT_INF_EXTRA =
    
       type int = bigInt
       val abs = bigAbs
-      val bigIntConstant = bigIntConstant
       val compare = bigCompare
       val divMod = divMod
       val fmt = bigFmt

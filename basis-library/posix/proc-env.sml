@@ -31,7 +31,7 @@ structure PosixProcEnv: POSIX_PROC_ENV =
       end
 
       fun setsid () = Pid.fromInt (Error.checkReturnResult
-				   (Pid.toInt (setsid ())))
+				   (Pid.toInt (Prim.setsid ())))
 
       fun id x = x
       val uidToWord = id 

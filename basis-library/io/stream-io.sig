@@ -57,7 +57,6 @@ signature STREAM_IO_EXTRA =
       val mkOutstream': {bufferMode: IO.buffer_mode,
 			 closed: bool,
 			 writer: writer} -> outstream
-      val openVector: vector -> instream
       val outputSlice: outstream * vector_slice -> unit
       val outstreamWriter: outstream -> writer
    end

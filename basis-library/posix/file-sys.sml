@@ -113,7 +113,8 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 		  else if c = Array.sub (a, i)
 			  then i
 		       else loop (i + 1)
-	    in Array.extract (a, 0, SOME (loop 0))
+	    in
+	       ArraySlice.vector (ArraySlice.slice (a, 0, SOME (loop 0)))
 	    end
 	 
 	 fun extract a = extractToChar (a, #"\000")

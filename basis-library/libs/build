@@ -77,8 +77,8 @@ integer/patch.sml
 
 top-level/arithmetic.sml
 
-misc/unique-id.sig
-misc/unique-id.fun
+# misc/unique-id.sig
+# misc/unique-id.fun
 misc/cleaner.sig
 misc/cleaner.sml
 
@@ -200,8 +200,8 @@ mlton/proc-env.sig
 mlton/proc-env.sml
 mlton/profile.sig
 mlton/profile.sml
-mlton/ptrace.sig
-mlton/ptrace.sml
+# mlton/ptrace.sig
+# mlton/ptrace.sml
 mlton/rlimit.sig
 mlton/rlimit.sml
 mlton/socket.sig

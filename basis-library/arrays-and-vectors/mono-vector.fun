@@ -12,16 +12,12 @@ functor MonoVector (type elem): MONO_VECTOR_EXTRA
       type array = elem array
       type elem = elem
       type vector = elem vector
-      val fromPoly = fn v => v
-      val toPoly = fn v => v
       structure MonoVectorSlice = 
 	 struct
 	    open VectorSlice
 	    type elem = elem
 	    type vector = vector
 	    type slice = elem slice
-	    val fromPoly = fn s => s
-	    val toPoly = fn s => s
 	 end
    end
 

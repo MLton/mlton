@@ -95,4 +95,6 @@ structure Basis1997: BASIS_1997 =
       structure IO = IOConvert(structure IO = IO)
       structure TextIO = TextIOConvert(structure TextIO = TextIO)
       structure BinIO = BinIOConvert(structure BinIO = BinIO)
+
+      structure Unix = UnixConvert (structure Unix = Unix)
    end

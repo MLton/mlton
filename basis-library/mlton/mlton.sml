@@ -8,10 +8,6 @@
 structure MLton: MLTON =
 struct
 
-structure Prim = Primitive.MLton
-
-type pointer = pointer
-  
 val isMLton = true
    
 (* The ref stuff is so that the (de)serializer always deals with pointers
@@ -33,21 +29,7 @@ val errno = Primitive.errno
 val safe = Primitive.safe
 
 structure Array = Array
-structure BinIO =
-   struct
-      local
-	 structure S = MLtonIO (BinIO)
-      in
-	 open S
-      end
-      local
-	 open BinIO
-      in
-	 val stdErr = stdErr
-	 val stdIn = stdIn
-	 val stdOut = stdOut
-      end
-   end
+structure BinIO = MLtonIO (BinIO)
 structure Cont = MLtonCont
 structure Exn = MLtonExn
 structure Finalizable = MLtonFinalizable
@@ -62,7 +44,7 @@ structure Platform = MLtonPlatform
 structure Pointer = MLtonPointer
 structure ProcEnv = MLtonProcEnv
 structure Process = MLtonProcess
-structure Ptrace = MLtonPtrace
+(* structure Ptrace = MLtonPtrace *)
 structure Profile = MLtonProfile
 structure Random = MLtonRandom
 structure Rlimit = MLtonRlimit

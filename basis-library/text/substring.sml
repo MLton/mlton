@@ -18,7 +18,6 @@ structure Substring
    struct
       open Substring0
 
-      val toSlice = CharVectorSlice.toPoly
       val size = length
       val extract = slice
       fun substring (s, start, len) = extract (s, start, SOME len)

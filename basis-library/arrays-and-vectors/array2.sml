@@ -99,7 +99,8 @@ structure Array2: ARRAY2 =
       fun row ({rows, cols, array}, r) =
 	 if Primitive.safe andalso geu (r, rows)
 	    then raise Subscript
-	 else Array.extract (array, r *? cols, SOME cols)
+	 else
+	    ArraySlice.vector (ArraySlice.slice (array, r *? cols, SOME cols))
 
       fun column (a as {rows, cols, ...}: 'a array, c) =
 	 if Primitive.safe andalso geu (c, cols)
@@ -207,8 +208,8 @@ structure Array2: ARRAY2 =
 	       ; a
 	    end
 
-      fun copy {src = src as {base, row, col, nrows, ncols},
-	       dst, dst_row, dst_col} =
+      fun copy {src = src as {base, row, col, ...}: 'a region,
+		dst, dst_row, dst_col} =
 	 let
 	    val {stopRow, stopCol} = checkRegion src
 	    val nrows = stopRow -? row

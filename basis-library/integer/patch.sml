@@ -93,13 +93,6 @@ structure Word32: WORD32_EXTRA =
 	    then IntInf.+ (0x80000000, toLargeIntX (andb (w, 0wx7FFFFFFF)))
 	 else toLargeIntX w
 
-      fun toReal (w: word): real =
-	 if highBitSet w
-	    then
-	       Real.+ (2147483648.0, (* 2 ^ 31 *)
-		       Real.fromInt (toIntX (andb (w, 0wx7FFFFFFF))))
-	 else Real.fromInt (toIntX w)
-
       local
 	 val t32: LargeInt.int = 0x100000000
 	 val t31: LargeInt.int = 0x80000000

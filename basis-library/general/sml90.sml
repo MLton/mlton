@@ -32,7 +32,7 @@ structure SML90:> SML90 =
 				 then y
 			      else raise Exp
 			   end
-	 val ln = fn x => if Real.>(x, 0.0) then ln x else raise Ln
+	 val ln = fn x => if Real.> (x, 0.0) then ln x else raise Ln
 	 val sin = sin
 	 val cos = cos
 	 val arctan = atan
@@ -67,3 +67,31 @@ structure SML90:> SML90 =
 	 handle IO.Io _ => raise Io "Output stream is closed"
       val close_out = TextIO.closeOut
    end
+
+(* The following is to quell unused variable warnings. *)
+local
+   open SML90
+   val _ = (Abs, Diff, Exp, Floor, Interrupt, Io "", Ln, Mod, Neg, Ord, Prod,
+	    Quot, Sqrt, Sum)
+   val _ = arctan
+   val _ = chr
+   val _ = close_in
+   val _ = close_out
+   val _ = cos
+   val _ = end_of_stream
+   val _ = exp
+   val _ = explode
+   val _ = implode
+   val _ = input
+   val _ = ln
+   val _ = lookahead
+   val _ = open_in
+   val _ = open_out
+   val _ = ord
+   val _ = output
+   val _ = sin
+   val _ = sqrt
+   val _ = std_in
+   val _ = std_out
+in
+end

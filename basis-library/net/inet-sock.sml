@@ -1,8 +1,9 @@
 structure INetSock:> INET_SOCK =
    struct
       structure Prim = Primitive.Socket.INetSock
-
-      datatype inet = INET
+	 
+      datatype inet = INET (* a phantom type*)
+      val _ = INET (* to quell unused variable warnings *)
       type 'sock_type sock = (inet, 'sock_type) Socket.sock
       type 'mode stream_sock = 'mode Socket.stream sock
       type dgram_sock = Socket.dgram sock
@@ -33,8 +34,6 @@ structure INetSock:> INET_SOCK =
 
       structure UDP =
 	 struct
-	   structure Prim = Prim.UDP
-
 	    fun socket' prot =
 	       GenericSock.socket' (inetAF, Socket.SOCK.dgram, prot)
 	       

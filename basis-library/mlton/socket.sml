@@ -22,44 +22,37 @@ structure Host =
       val getByName = get o NetHostDB.getByName
    end
 
-type passive_socket = (INetSock.inet, Socket.passive Socket.stream) Socket.sock
-type active_socket = (INetSock.inet, Socket.active Socket.stream) Socket.sock
-type t = passive_socket
+type passiveSocket = (INetSock.inet, Socket.passive Socket.stream) Socket.sock
+type activeSocket = (INetSock.inet, Socket.active Socket.stream) Socket.sock
+type t = passiveSocket
    
-val listen: unit -> Port.t * passive_socket =
+val listen: unit -> Port.t * passiveSocket =
    fn () =>
    let
-      val sl : (INetSock.inet, Socket.passive Socket.stream) Socket.sock =
-	 INetSock.TCP.socket ()
+      val sl: passiveSocket = INetSock.TCP.socket ()
       val _ = Socket.Ctl.setREUSEADDR (sl, true)
-      val addr : INetSock.inet Socket.sock_addr = 
-	 INetSock.any 0
+      val addr: INetSock.inet Socket.sock_addr = INetSock.any 0
       val _ = Socket.bind (sl, addr)
       val _ = Socket.listen (sl, 5)
-      val addr : INetSock.inet Socket.sock_addr =
-	 Socket.Ctl.getSockName sl
-      val (in_addr : NetHostDB.in_addr, 
-	   port : int) = 
-	 INetSock.fromAddr addr
+      val addr: INetSock.inet Socket.sock_addr = Socket.Ctl.getSockName sl
+      val (_, port: int) = INetSock.fromAddr addr
    in
       (port, sl)
    end
 
-val listenAt: Port.t -> passive_socket =
+val listenAt: Port.t -> passiveSocket =
    fn port =>
    let
-      val sl : (INetSock.inet, Socket.passive Socket.stream) Socket.sock =
-	 INetSock.TCP.socket ()
+      val sl: passiveSocket = INetSock.TCP.socket ()
       val _ = Socket.Ctl.setREUSEADDR (sl, true)
-      val addr : INetSock.inet Socket.sock_addr = 
-	 INetSock.any port
+      val addr: INetSock.inet Socket.sock_addr = INetSock.any port
       val _ = Socket.bind (sl, addr)
       val _ = Socket.listen (sl, 5)
    in
       sl
    end
 
-fun sockToIO sock =
+fun sockToIO (sock: activeSocket) =
    let
       val fd = Socket.sockToFD sock
       val ins = TextIO.newIn (fd, "<socket>")
@@ -69,12 +62,9 @@ fun sockToIO sock =
 
 fun accept s =
    let
-      val (sock : (INetSock.inet, Socket.active Socket.stream) Socket.sock,
-	   addr : INetSock.inet Socket.sock_addr) =
+      val (sock: activeSocket, addr: INetSock.inet Socket.sock_addr) =
 	 Socket.accept s
-      val (in_addr : NetHostDB.in_addr, 
-	   port : int) = 
-	 INetSock.fromAddr addr
+      val (in_addr: NetHostDB.in_addr, port: int) = INetSock.fromAddr addr
       val (ins, out) = sockToIO sock
    in
       (NetHostDB.inAddrToWord in_addr, port, ins, out)
@@ -82,24 +72,22 @@ fun accept s =
 
 fun connect (host, port) =
    let
-      val hp : NetHostDB.entry = 
-         valOf (NetHostDB.getByName host)
-      val res : (INetSock.inet, Socket.active Socket.stream) Socket.sock = 
-         INetSock.TCP.socket ()
-      val addr : INetSock.inet Socket.sock_addr =
-         INetSock.toAddr (NetHostDB.addr hp, port)
+      val hp: NetHostDB.entry = valOf (NetHostDB.getByName host)
+      val res: activeSocket = INetSock.TCP.socket ()
+      val addr: INetSock.inet Socket.sock_addr =
+	 INetSock.toAddr (NetHostDB.addr hp, port)
       val _ = Socket.connect (res, addr)
       val (ins, out) = sockToIO res
    in 
       (ins, out)
    end
 
-fun shutdown (fd: Posix.IO.file_desc,
-	      mode: Socket.shutdown_mode): unit =
+fun shutdown (fd: Posix.IO.file_desc, mode: Socket.shutdown_mode): unit =
    Socket.shutdown (Socket.fdToSock fd, mode)
 
 fun shutdownRead ins =
    shutdown (TextIO.inFd ins, Socket.NO_RECVS)
+   
 fun shutdownWrite out =
    (TextIO.flushOut out
     ; shutdown (TextIO.outFd out, Socket.NO_SENDS))

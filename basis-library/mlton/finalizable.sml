@@ -33,7 +33,6 @@ val finalize =
 			then (gotOne, z :: zs)
 		     else (clean (); (true, zs)))
 	 (false, []) l
-      val exiting = ref false
       val _ = MLtonSignal.handleGC (fn () => r := #2 (clean (!r)))
       val _ =
 	 Cleaner.addNew

@@ -42,19 +42,6 @@ structure Util =
 	    in loop (start, b)
 	    end
 
-      fun naturalFold (n, b, f) = naturalFoldStartStop (0, n, b, f)
-
-      fun naturalFoldDown (n, b, f) =
-	 if n < 0
-	    then raise Subscript
-	 else 
-	    let
-	       fun loop (i, b) =
-		  if i < 0 then b
-		  else loop (i - 1, f (i, b))
-	    in loop (n - 1, b)
-	    end
-
       fun naturalForeachStartStop (start, stop, f) =
 	 naturalFoldStartStop (start, stop, (), fn (i, ()) => f i)
 

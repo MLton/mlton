@@ -139,8 +139,6 @@ structure Date :> DATE =
        | Nov => 30
        | Dec => 31
 
-    fun yeardays year = if leapyear year then 366 else 365
-
     (* Check whether date may be passed to ISO/ANSI C functions: *)
 
     fun okDate (DATE {year, month, day, hour, minute, second, ...}) =
@@ -151,7 +149,7 @@ structure Date :> DATE =
 	andalso 0 <= second andalso second <= 61 (* leap seconds *)
 
     fun dateToTmoz (dt as DATE {year, month, day, hour, minute, second,
-				wday, yday, isDst, offset}): tmoz =
+				wday, yday, isDst, ...}): tmoz =
 	if okDate dt then 
 	    {tm_hour = hour, tm_mday = day, tm_min = minute, 
 	     tm_mon = frommonth month, tm_sec = second, 
@@ -255,7 +253,7 @@ structure Date :> DATE =
 		    NONE   => 
 			tmozToDate (getlocaltime_ (mktime_ (dateToTmoz date1)))
 			           offset
-		  | SOME t => date1
+		  | SOME _ => date1
 	end
 
     fun fromTimeLocal t = 
@@ -307,7 +305,7 @@ structure Date :> DATE =
 					    concat ["%", str fmtChar, "\000"])
 		in if len = 0
 		      then raise Fail "Date.fmt"
-		   else Array.extract (buf, 0, SOME len)
+		   else ArraySlice.vector (ArraySlice.slice (buf, 0, SOME len))
 		end
 	     val max = size fmtStr
 	     fun loop (i, start, accum) =

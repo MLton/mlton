@@ -10,5 +10,4 @@ signature UNIQUE_ID =
       type t
 	 
       val new: unit -> t
-      val equals: t * t -> bool
    end

@@ -105,7 +105,7 @@ structure Unix: UNIX =
 			  in ins := STR (str', closeIn); str'
 			  end
 	| STR (str, _) => str
-      fun mkOutstreamOf (newOut, closeOut) (PROC {outs, pid, ...}) =
+      fun mkOutstreamOf (newOut, closeOut) (PROC {outs, ...}) =
 	case !outs of
 	  FD file_desc => let val str' = newOut (file_desc, "<process>")
 			  in outs := STR (str', closeOut); str'

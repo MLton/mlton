@@ -1,6 +1,3 @@
-type int = Int.int
-type word = Word.word
-
 signature MLTON_PROFILE =
    sig
       structure Data:

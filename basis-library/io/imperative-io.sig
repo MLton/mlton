@@ -44,7 +44,6 @@ signature IMPERATIVE_IO_EXTRA =
       val closeOut: outstream -> unit
       val endOfStream: instream -> bool
       val equalsIn: instream * instream -> bool
-      val equalsOut: outstream * outstream -> bool
       val flushOut: outstream -> unit
       val getInstream: instream -> StreamIO.instream
       val getOutstream: outstream -> StreamIO.outstream

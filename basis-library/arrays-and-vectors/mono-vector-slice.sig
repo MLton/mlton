@@ -58,12 +58,12 @@ signature MONO_VECTOR_SLICE_EXTRA =
       val fields: (elem -> bool) -> slice -> slice list
 
       val toList: slice -> elem list
-      val fromPoly: elem VectorSlice.slice -> slice
-      val toPoly: slice -> elem VectorSlice.slice
    end
 
 signature EQTYPE_MONO_VECTOR_SLICE_EXTRA =
    sig
       include MONO_VECTOR_SLICE_EXTRA
+      val fromPoly: elem VectorSlice.slice -> slice
       val span: slice * slice -> slice
+      val toPoly: slice -> elem VectorSlice.slice
    end

@@ -2,7 +2,7 @@ structure Real64 =
   Real
   (structure P = Primitive.Real64
    open P
-   fun fromLarge m r = P.fromLarge r
+   fun fromLarge _ r = P.fromLarge r
    val negInf = ~1.0 / 0.0
    val posInf = 1.0 / 0.0
    fun nextAfterDown r = nextAfter (r, negInf)

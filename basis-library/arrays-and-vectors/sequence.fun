@@ -102,13 +102,13 @@ functor Sequence (S: sig
 	    fun length (T {len, ...}) = len
 	    fun unsafeSub (T {seq, start, ...}, i) =
 	       S.sub (seq, start +? i)
-	    fun sub (sl as T {seq, start, len}, i) =
+	    fun sub (sl as T {len, ...}, i) =
 	       if Primitive.safe andalso Primitive.Int.geu (i, len)
 		  then raise Subscript
 	       else unsafeSub (sl, i)
 	    fun unsafeUpdate' update (T {seq, start, ...}, i, x) =
 	       update (seq, start +? i, x)
-	    fun update' update (sl as T {seq, start, len}, i, x) =
+	    fun update' update (sl as T {len, ...}, i, x) =
 	       if Primitive.safe andalso Primitive.Int.geu (i, len)
 		  then raise Subscript
 	       else unsafeUpdate' update (sl, i, x)
@@ -148,7 +148,7 @@ functor Sequence (S: sig
 			  T {seq = seq, 
 			     start = start +? 1, 
 			     len = len -? 1})
-	    fun foldli f b (sl as T {seq, start, len}) =
+	    fun foldli f b (T {seq, start, len}) =
 	       let
 		  val min = start
 		  val max = start +? len
@@ -403,7 +403,7 @@ functor Sequence (S: sig
 	       in split (sl, loop start)
 	       end
 	    fun span (eq: 'a sequence * 'a sequence -> bool)
-	             (T {seq, start, len},
+	             (T {seq, start, ...},
 		      T {seq = seq', start = start', len = len'}) =
 	       if Primitive.safe andalso 
 		  (not (eq (seq, seq')) orelse start' +? len' < start)
@@ -450,8 +450,6 @@ functor Sequence (S: sig
 	fun unsafeSub (seq, i) = Slice.unsafeSub (Slice.full seq, i)
 	fun update' update (seq, i, x) = 
 	   Slice.update' update (Slice.full seq, i, x)
-	fun unsafeUpdate' update (seq, i, x) = 
-	   Slice.unsafeUpdate' update (Slice.full seq, i, x)
 	fun append seqs = make2 Slice.append seqs
 	fun concat seqs = Slice.concat (List.map Slice.full seqs)
 	fun appi f = make (Slice.appi f)
@@ -465,8 +463,10 @@ functor Sequence (S: sig
 	fun findi p = make (Slice.findi p)
 	fun find p = make (Slice.find p)
 	fun existsi p = make (Slice.existsi p)
+	val _ = existsi (* quell unused variable warning *)
 	fun exists p = make (Slice.exists p)
 	fun alli p = make (Slice.alli p)
+	val _ = alli (* quell unused variable warning *)
 	fun all p = make (Slice.all p)
 	fun collate cmp = make2 (Slice.collate cmp)
 	fun concatWith sep seqs = Slice.concatWith sep (List.map Slice.full seqs)
@@ -477,9 +477,12 @@ functor Sequence (S: sig
 	fun tokens f seq = List.map Slice.sequence (make (Slice.tokens f) seq)
 	fun fields f seq = List.map Slice.sequence (make (Slice.fields f) seq)
 	fun createi tabulate f seq = make (Slice.createi tabulate f) seq
+	val _ = createi (* quell unused variable warning *)
 	fun create tabulate f seq = make (Slice.create tabulate f) seq
-	fun duplicate seq = make (Slice.sequence) seq
-	fun toList seq = make (Slice.toList) seq
+	val _ = create (* quell unused variable warning *)
+	fun duplicate seq = make Slice.sequence seq
+	val _ = duplicate (* quell unused variable warning *)
+	fun toList seq = make Slice.toList seq
       end
     
       (* Deprecated *)
@@ -495,6 +498,4 @@ functor Sequence (S: sig
 	       else start +? num
       (* Deprecated *)
       fun checkSlice (s, i, opt) = checkSliceMax (i, opt, length s)
-      (* Deprecated *)
-      fun extract args = Slice.sequence (Slice.slice args)
    end

@@ -51,7 +51,8 @@ structure PosixIO: POSIX_IO =
 		     fromVector
 		     (if n = bytesRead
 			 then Vector.fromArray a
-		      else Array.extract (a, 0, SOME bytesRead))
+		      else ArraySlice.vector (ArraySlice.slice
+					      (a, 0, SOME bytesRead)))
 		  end
 	       fun writeArr (FD fd, sl) =
 		  let

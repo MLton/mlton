@@ -11,14 +11,11 @@ struct
 structure Prim = Primitive.Time
 
 (* A time is represented as a number of nanoseconds. *)
-val precision: int = 9
 val ticksPerSecond: LargeInt.int = 1000000000
    
 datatype time = T of LargeInt.int
 
 val fromTicks = T
-
-fun toTicks (T t) = t
 
 exception Time
 
@@ -95,7 +92,6 @@ fun scan getc src =
 	| pow10 n = 10 * pow10 (n-1)
       fun mkTime sign intv fracv decs =
 	 let
-	    val sec = intv
 	    val usec = (pow10 (10-decs) * fracv + 5) div 10
 	    val t =
 	       LargeInt.+ (LargeInt.* (Int.toLarge intv, ticksPerSecond),

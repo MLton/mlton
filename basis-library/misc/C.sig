@@ -22,7 +22,6 @@ signature C =
 	    val toString: t -> string
 	    (* extract first n characters of string *)
 	    val toStringOfLength: t * int -> string
-	    val toWord8ArrayOfLength: t * int -> word8 array
 	    val update: t * int * char -> unit
 	 end
 

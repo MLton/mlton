@@ -26,10 +26,11 @@ fun new_sock_addr (): (pre_sock_addr * int ref * (unit -> sock_addr)) =
    in
       (sa, salen, finish)
    end
-datatype dgram = DGRAM
-datatype stream = MODE
-datatype passive = PASSIVE
-datatype active = ACTIVE
+datatype dgram = DGRAM (* phantom *)
+datatype stream = MODE (* phantom *)
+datatype passive = PASSIVE (* phantom *)
+datatype active = ACTIVE (* phantom *)
+val _ = (DGRAM, MODE, PASSIVE, ACTIVE) (* quell unused warnings *)
 
 structure AF =
    struct
@@ -78,12 +79,10 @@ structure CtlExtra =
       type optname = Prim.Ctl.optname
       type request = Prim.Ctl.request
       (* host byte order (LSB) *)
-      type read_data = Prim.Ctl.read_data
-      type write_data = Prim.Ctl.write_data
       structure PW = PackWord32Little
 
       val wordLen = PW.bytesPerElem
-      fun unmarshalWord (wa, l, s): word = 
+      fun unmarshalWord (wa, _, s): word = 
 	 Word.fromLargeWord (PW.subArr (wa, s))
       val intLen: int = wordLen
       fun unmarshalInt (wa, l, s): int = 
@@ -160,7 +159,6 @@ structure CtlExtra =
 	       fun setIOCtl (request: request) (S s, optval: 'a): unit =
 		  let
 		     val optval = marshal optval
-		     val optlen = Word8Vector.length optval
 		  in
 		     PE.checkResult (Prim.Ctl.setIOCtl
 				     (s, request, Word8Vector.toPoly optval))
@@ -169,14 +167,11 @@ structure CtlExtra =
 	       (getSockOpt, getIOCtl, setSockOpt, setIOCtl)
 	    end
       in
-	 val (getSockOptWord, getIOCtlWord, setSockOptWord, setIOCtlWord) =
-	    make (wordLen, marshalWord, unmarshalWord)
-	 val (getSockOptInt, getIOCtlInt, setSockOptInt, setIOCtlInt) =
+	 val (getSockOptInt, getIOCtlInt, setSockOptInt, _) =
 	    make (intLen, marshalInt, unmarshalInt)
-	 val (getSockOptBool, getIOCtlBool, setSockOptBool, setIOCtlBool) =
+	 val (getSockOptBool, getIOCtlBool, setSockOptBool, _) =
 	    make (boolLen, marshalBool, unmarshalBool)
-	 val (getSockOptTimeOpt, getIOCtlTimeOpt, setSockOptTimeOpt,
-	      setIOCtlTimeOpt) =
+	 val (getSockOptTimeOpt, _, setSockOptTimeOpt, _) =
 	    make (timeOptLen, marshalTimeOpt, unmarshalTimeOpt)
       end
    end
@@ -351,8 +346,6 @@ fun select {rds: sock_desc list,
 
 val ioDesc = sockDesc
  
-type 'a buf = {buf: 'a, i: int, sz: int option}
-
 type out_flags = {don't_route: bool, oob: bool}
 
 fun mk_out_flags {don't_route, oob} =
@@ -442,15 +435,18 @@ fun recvArr' (S s, sl, in_flags) =
       (Prim.recv (s, Word8Array.toPoly buf, i, sz, mk_in_flags in_flags))
    end
 
+fun getVec (a, n, bytesRead) =
+   if n = bytesRead
+      then Word8Vector.fromArray a
+   else Word8ArraySlice.vector (Word8ArraySlice.slice (a, 0, SOME bytesRead))
+      
 fun recvVec' (sock, n, in_flags) =
    let
       val a = Word8Array.rawArray n
       val bytesRead =
 	 recvArr' (sock, Word8ArraySlice.full a, in_flags)
    in
-      if n = bytesRead
-	 then Word8Vector.fromArray a
-      else Word8Array.extract (a, 0, SOME bytesRead)
+      getVec (a, n, bytesRead)
    end
 
 fun recvArr (sock, sl) = recvArr' (sock, sl, no_in_flags)
@@ -475,10 +471,7 @@ fun recvVecFrom' (sock, n, in_flags) =
       val (bytesRead, sock_addr) =
 	 recvArrFrom' (sock, Word8ArraySlice.full a, in_flags)
    in
-      (if n = bytesRead
-	  then Word8Vector.fromArray a
-       else Word8Array.extract (a, 0, SOME bytesRead),
-	  sock_addr)
+      (getVec (a, n, bytesRead), sock_addr)
    end
 
 fun recvArrFrom (sock, sl) = recvArrFrom' (sock, sl, no_in_flags)
@@ -505,10 +498,7 @@ fun recvVecNB' (S s, n, in_flags) =
       nonBlock (Prim.recv (s, Word8Array.toPoly a, 0, n, mk_in_flagsNB in_flags),
 		NONE,
 		fn bytesRead =>
-		SOME (if n = bytesRead
-			 then Word8Vector.fromArray a
-		      else Word8Array.extract (a, 0, SOME bytesRead)))
-		      
+		SOME (getVec (a, n, bytesRead)))
    end
 
 fun recvArrNB (sock, sl) = recvArrNB' (sock, sl, no_in_flags)
@@ -536,11 +526,7 @@ fun recvVecFromNB' (S s, n, in_flags) =
       (Prim.recvFrom (s, Word8Array.toPoly a, 0, n, mk_in_flagsNB in_flags,
 		      sa, salen),
        NONE,
-       fn bytesRead =>
-       SOME (if n = bytesRead
-		then Word8Vector.fromArray a
-	     else Word8Array.extract (a, 0, SOME bytesRead),
-		finish ()))
+       fn bytesRead => SOME (getVec (a, n, bytesRead), finish ()))
    end
 
 fun recvArrFromNB (sock, sl) = recvArrFromNB' (sock, sl, no_in_flags)

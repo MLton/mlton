@@ -37,7 +37,6 @@ signature BIN_IO_EXTRA =
       include BIN_IO
 
       val equalsIn: instream * instream -> bool
-      val equalsOut: outstream * outstream -> bool
       val inFd: instream -> Posix.IO.file_desc
       val newIn: Posix.IO.file_desc * string -> instream
       val newOut: Posix.IO.file_desc * string -> outstream

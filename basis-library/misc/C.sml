@@ -40,9 +40,6 @@ structure C: C =
 
 	    fun toCharArrayOfLength (cs, n) = toArrayOfLength (cs, sub, n)
 
-	    val toWord8ArrayOfLength =
-	       charArrayToWord8Array o toCharArrayOfLength
-	       
 	    fun toStringOfLength cs =
 	       String.fromArray (CharArray.fromPoly (toCharArrayOfLength cs))
 

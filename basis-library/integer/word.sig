@@ -78,5 +78,5 @@ signature WORD32_EXTRA =
    sig
       include WORD_EXTRA
 
-      val toReal: word -> real
+(*      val toReal: word -> real *)
    end

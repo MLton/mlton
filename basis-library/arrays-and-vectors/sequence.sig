@@ -24,8 +24,6 @@ signature SEQUENCE =
        *)
       val update': ('a sequence * int * 'a elt -> unit) ->
                    ('a sequence * int * 'a elt) -> unit
-      val unsafeUpdate': ('a sequence * int * 'a elt -> unit) ->
-	                 ('a sequence * int * 'a elt) -> unit
       val concat: 'a sequence list -> 'a sequence 
       val appi: (int * 'a elt -> unit) -> 'a sequence -> unit 
       val app: ('a elt -> unit) -> 'a sequence -> unit 
@@ -70,6 +68,4 @@ signature SEQUENCE =
       val checkSlice: 'a sequence * int * int option -> int
       (* Deprecated *)
       val checkSliceMax: int * int option * int -> int
-      (* Deprecated *)
-      val extract: 'a sequence * int * int option -> 'a sequence
    end

@@ -81,11 +81,11 @@ structure OS_IO: OS_IO =
   (* set polling events; if the polling operation is not appropriate
    * for the underlying I/O device, then the Poll exception is raised.
    *)
-    fun pollIn (PollDesc (iod, {rd, wr, pri})) =
+    fun pollIn (PollDesc (iod, {wr, pri, ...}: poll_flags)) =
 	  PollDesc (iod, {rd=true, wr=wr, pri=pri})
-    fun pollOut (PollDesc (iod, {rd, wr, pri})) =
+    fun pollOut (PollDesc (iod, {rd, pri, ...}: poll_flags)) =
 	  PollDesc (iod, {rd=rd, wr=true, pri=pri})
-    fun pollPri (PollDesc (iod, {rd, wr, pri})) =
+    fun pollPri (PollDesc (iod, {rd, wr, ...}: poll_flags)) =
 	  PollDesc (iod, {rd=rd, wr=wr, pri=true})
 
   (* polling function *)

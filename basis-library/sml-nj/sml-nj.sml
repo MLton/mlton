@@ -44,20 +44,23 @@ structure SMLofNJ: SML_OF_NJ =
 
       val exnHistory = MLtonExn.history
 	 
-      structure World = MLtonWorld
 
       fun exportFn (file: string, f) =
-	 let open MLtonWorld OS.Process
-	 in case save (file ^ ".mlton") of
-	    Original => exit success
-	  | Clone => exit (f (getCmdName (), getArgs ()) handle _ => failure)
+	 let
+	    open MLtonWorld OS.Process
+	 in
+	    case save (file ^ ".mlton") of
+	       Original => exit success
+	     | Clone => exit (f (getCmdName (), getArgs ()) handle _ => failure)
 	 end
 
       fun exportML (f: string): bool =
-	 let open MLtonWorld
-	 in case save (f ^ ".mlton") of
-	    Clone => true
-	  | Original => false
+	 let
+	    open MLtonWorld
+	 in
+	    case save (f ^ ".mlton") of
+	       Clone => true
+	     | Original => false
 	 end
    end
    

@@ -206,7 +206,6 @@ structure Int64 =
 	 structure I = Integer (P)
       in
 	 open I
-	 val fromWord = P.fromWord
 	 val toWord = P.toWord
       end
    end

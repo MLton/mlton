@@ -51,6 +51,5 @@ signature ARRAY_SLICE_EXTRA =
       val unsafeSlice: 'a array * int * int option -> 'a slice
       val unsafeSubslice: 'a slice * int * int option -> 'a slice
 
-      val array: 'a slice -> 'a array
       val toList: 'a slice -> 'a list
    end

@@ -1,6 +1,5 @@
 structure OS =
    struct
-      type syserror = PosixPrimitive.Error.syserror
       structure Process =
 	 struct
 	    type status = PosixPrimitive.Process.Status.t

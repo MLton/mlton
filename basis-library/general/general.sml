@@ -21,8 +21,6 @@ structure General =
       exception Span
       exception Subscript
       val exnName = Primitive.Exn.name
-      (* exnMessage will be improved upon after MLton.Exn is defined. *)
-      val exnMessage = exnName 
  
       datatype order = LESS | EQUAL | GREATER
 
@@ -33,11 +31,19 @@ structure General =
       fun ignore _ = ()
    end
 
-(* GeneralGlobal will be defined once MLton.Exn is.  For now, we just open
- * everything we have.
- *)
 local
-   structure Z: GENERAL_GLOBAL = General
+   open General
 in
-   open Z
+   datatype order = datatype order
+   exception Chr = Chr
+   exception Div = Div
+   exception Domain = Domain
+   exception Span = Span
+   exception Subscript = Subscript
+   val ! = !
+   val op := = op :=
+   val op before = op before
+   val exnName = exnName
+   val ignore = ignore
+   val op o = op o
 end

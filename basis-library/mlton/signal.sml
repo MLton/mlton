@@ -19,15 +19,14 @@ val vtalrm = Prim.vtalrm
 
 type how = Prim.how
 
-val toString = SysWord.toString o toWord
+(* val toString = SysWord.toString o toWord *)
    
 val checkResult = Error.checkResult
 
 structure Mask =
    struct
       datatype t =
-	 All
-       | AllBut of signal list
+	 AllBut of signal list
        | Some of signal list
 
       val allBut = AllBut
@@ -38,8 +37,7 @@ structure Mask =
 
       fun create m =
 	 case m of
-	    All => checkResult (Prim.sigfillset ())
-	  | AllBut signals =>
+	    AllBut signals =>
 	       (checkResult (Prim.sigfillset ())
 		; List.app (checkResult o Prim.sigdelset) signals)
 	  | Some signals =>

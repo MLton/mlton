@@ -31,10 +31,6 @@ structure OS_Path : OS_PATH = struct
   fun isslash c = c = #"/"
   fun validVol s = s = ""
 
-  fun getVol s =
-      if size s >= 1 andalso isslash (s sub 0) then SOME ""
-      else NONE
-
   fun splitabsvolrest s =
       if size s >= 1 andalso isslash (s sub 0) then
 	  (true, "", substring(s, 1, NONE))
@@ -61,17 +57,10 @@ structure OS_Path : OS_PATH = struct
 	      vol = v}
      end
 
-  fun isRoot p =
-     let
-	val (isAbs, _, rest) = splitabsvolrest p
-     in
-	isAbs andalso rest = ""
-     end
-
   fun getVolume p = #2 (splitabsvolrest p);
-  fun validVolume{isAbs, vol} = validVol vol;
+  fun validVolume {isAbs = _, vol} = validVol vol;
 
-  fun toString (path as {isAbs, vol, arcs}) =
+  fun toString {isAbs, vol, arcs} =
       let fun h []        res = res
 	    | h (a :: ar) res = h ar (a :: slash :: res)
       in

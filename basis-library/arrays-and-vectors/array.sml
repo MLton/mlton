@@ -23,16 +23,13 @@ structure Array: ARRAY_EXTRA =
       structure ArraySlice =
 	 struct
 	    open Slice
-	    type 'a array = 'a array
-	    type 'a vector = 'a Vector.vector
-	    type 'a vector_slice = 'a Vector.VectorSlice.slice
 	    fun update (arr, i, x) = 
 	       update' Primitive.Array.update (arr, i, x)
 	    fun unsafeUpdate (arr, i, x) = 
 	       unsafeUpdate' Primitive.Array.update (arr, i, x)
 	    fun vector sl = create Vector.tabulate (fn x => x) sl
 	    fun modifyi f sl = 
-	       appi (fn (i, x) => unsafeUpdate (sl, i, f (i, unsafeSub (sl, i)))) sl
+	       appi (fn (i, x) => unsafeUpdate (sl, i, f (i, x))) sl
 	    fun modify f sl = modifyi (f o #2) sl
 	    local
 	       fun make (length, sub) {src, dst, di} =
@@ -55,8 +52,6 @@ structure Array: ARRAY_EXTRA =
 	       fun copyVec arg =
 		  make (Vector.VectorSlice.length, Vector.VectorSlice.unsafeSub) arg
 	    end
-
-	    val array = sequence
 	 end
 
       val rawArray = Primitive.Array.array
@@ -77,9 +72,6 @@ structure Array: ARRAY_EXTRA =
       val unsafeSub = Primitive.Array.sub
       fun update (arr, i, x) = update' Primitive.Array.update (arr, i, x)
       val unsafeUpdate = Primitive.Array.update
-
-      (* Deprecated *)
-      fun extract args = ArraySlice.vector (ArraySlice.slice args)
    end
 structure ArraySlice: ARRAY_SLICE_EXTRA = Array.ArraySlice
 

@@ -150,7 +150,8 @@ structure Char: CHAR_EXTRA =
 			      #"\\" => escape state
 			    | _ => SOME (c, state)
 		     else NONE
-	 in main o reader
+	 in
+	    main o reader
 	 end
 
       val fromCString = StringCvt.scanString scanC

@@ -22,7 +22,6 @@ signature MLTON_POINTER = MLTON_POINTER
 signature MLTON_PROC_ENV = MLTON_PROC_ENV
 signature MLTON_PROCESS = MLTON_PROCESS
 signature MLTON_PROFILE = MLTON_PROFILE
-signature MLTON_PTRACE = MLTON_PTRACE
 signature MLTON_RANDOM = MLTON_RANDOM
 signature MLTON_RLIMIT = MLTON_RLIMIT
 signature MLTON_RUSAGE = MLTON_RUSAGE
@@ -37,6 +36,9 @@ signature MLTON_WORD = MLTON_WORD
 signature MLTON_WORLD = MLTON_WORLD
 signature SML_OF_NJ = SML_OF_NJ
 signature UNSAFE = UNSAFE
+
+(* Quell unused structure warnings. *)
+local open Basis1997 BasisNone in end
 
 open Basis2002
 
@@ -83,3 +85,6 @@ structure Word8 = Word8
 structure Word16 = Word16
 structure Word32 = Word32
 structure Word64 = Word64
+
+_basis_done MLtonFFI
+

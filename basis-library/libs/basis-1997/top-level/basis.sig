@@ -189,5 +189,5 @@ signature BASIS_1997 =
 *)
       structure Word32 : WORD_1997
       structure Word8Array2 : MONO_ARRAY2_1997
-      structure Unix : UNIX
+      structure Unix : UNIX_1997
    end

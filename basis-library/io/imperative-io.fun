@@ -63,8 +63,6 @@ structure V = Vector
 structure VS = VectorSlice
 
 type elem = PrimIO.elem
-type pos = PIO.pos
-type reader = PIO.reader
 type vector = PrimIO.vector
 type vector_slice = VS.slice
 
@@ -73,8 +71,6 @@ type vector_slice = VS.slice
 (* ------------------------------------------------- *)
 
 datatype outstream = Out of SIO.outstream ref
-
-fun equalsOut (Out os1, Out os2) = os1 = os2
 
 fun output (Out os, v) = SIO.output (!os, v)
 fun output1 (Out os, v) = SIO.output1 (!os, v)
@@ -217,8 +213,6 @@ fun setInstream (In {first, last, state, ...}, s) =
 
 fun equalsIn (In {first = f, ...}, In {first = f', ...}) = f = f'
 
-fun inbufferReader (In {reader, ...}) = reader
-	       
 fun augmentedReaderSel (In {augmentedReader = PIO.RD v, ...}, sel) = sel v
 
 fun readerSel (In {reader = PIO.RD v, ...}, sel) = sel v
@@ -234,8 +228,6 @@ fun inFd ib =
 
 val empty = V.tabulate (0, fn _ => someElem)
    
-fun lastElem v = V.sub (v, V.length v - 1)
-
 local
    fun make (sel, e: exn) ib =
       case augmentedReaderSel (ib, sel) of
@@ -614,13 +606,6 @@ fun mkInbuffer' {reader, closed, bufferContents} =
 	  state = state}
    end
 
-fun mkInbuffer (reader, bufferContents) = 
-   mkInbuffer' {bufferContents = if V.length bufferContents = 0
-				     then NONE
-				  else SOME bufferContents,
-		closed = false,
-		reader = reader}
-		
 fun openVector v = 
    mkInbuffer' {bufferContents = NONE,
 		closed = false,
@@ -689,14 +674,6 @@ val mkInbuffer'' =
 	 ib
       end
    end
-
-fun mkInbuffer (reader, bufferContents) =
-   mkInbuffer'' {bufferContents = if V.length bufferContents = 0
-				      then NONE
-				   else SOME bufferContents,
-		 closeAtExit = true,
-                 closed = false,
-		 reader = reader}
 
 fun scanStream f is =
    case f SIO.input1 (getInstream is) of
@@ -768,8 +745,6 @@ functor ImperativeIO (S: IMPERATIVE_IO_ARG): IMPERATIVE_IO =
       open S
 
       structure SIO = StreamIO
-      structure V = Vector
-      structure A = Array
 
       type elem = SIO.elem
       type vector = SIO.vector
@@ -806,11 +781,8 @@ functor ImperativeIO (S: IMPERATIVE_IO_ARG): IMPERATIVE_IO =
       fun inputN (In is, n) = let val (v, is') = SIO.inputN (!is, n)
 			      in is := is'; v
 			      end
-      fun lookahead (In is) = Option.map (fn (c, is') => c) (SIO.input1 (!is))
+      fun lookahead (In is) =
+	 Option.map #1 (SIO.input1 (!is))
       fun mkInstream is = In (ref is)
       fun setInstream (In is, is') = is := is'
-      fun scanStream f is =
-	case f SIO.input1 (getInstream is) of
-	  NONE => NONE
-	| SOME (v, is') => (setInstream (is, is'); SOME v)
    end

@@ -32,7 +32,6 @@ functor Real (R: PRE_REAL): REAL =
 	 val maxFinite = maxFinite
 	 val minNormalPos = minNormalPos
 	 val minPos = minPos
-	 val nextAfter = nextAfter
 	 val precision = precision
 	 val radix = radix
 	 val signBit = signBit
@@ -179,8 +178,7 @@ functor Real (R: PRE_REAL): REAL =
 		  in
 		     if r > zero
 			then doit (r, t)
-		     else
-			~ (doit (~r, ~t))
+		     else ~ (doit (~r, ~t))
 		  end
 			 
       val toManExp =

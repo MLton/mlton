@@ -30,7 +30,6 @@ functor MonoArray (type elem
 	    type slice = elem slice
 	    type vector = vector
 	    type vector_slice = vector_slice
-	    val fromPoly = fn s => s
 	    val toPoly = fn s => s
 	 end
    end

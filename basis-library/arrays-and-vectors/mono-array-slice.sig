@@ -37,9 +37,7 @@ signature MONO_ARRAY_SLICE_EXTRA =
    sig
       include MONO_ARRAY_SLICE
 
-      val array: slice -> array
       val concat: slice list -> array
-      val fromPoly: elem ArraySlice.slice -> slice
       val toList: slice -> elem list
       val toPoly: slice -> elem ArraySlice.slice
       val unsafeSlice: array * int * int option -> slice

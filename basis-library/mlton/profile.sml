@@ -16,7 +16,6 @@ structure Data =
       local
 	 fun make f (T r) = f r
       in
-	 val isCurrent = make #isCurrent
 	 val isFreed = make #isFreed
 	 val raw = make #raw
       end

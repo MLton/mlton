@@ -33,16 +33,13 @@ signature MONO_VECTOR_EXTRA_PRE =
       val append: vector * vector -> vector
       val concatWith: vector -> vector list -> vector
       val duplicate: vector -> vector
-      val extract: vector * int * int option -> vector (* Deprecated *)
       val fields: (elem -> bool) -> vector -> vector list
       val fromArray: array -> vector
-      val fromPoly: elem Vector.vector -> vector
       val isPrefix: (elem * elem -> bool) -> vector -> vector -> bool
       val isSubvector: (elem * elem -> bool) -> vector -> vector -> bool
       val isSuffix: (elem * elem -> bool) -> vector -> vector -> bool
       val toList: vector -> elem list
       val tokens: (elem -> bool) -> vector -> vector list
-      val toPoly: vector -> elem Vector.vector
       val translate: (elem -> vector) -> vector -> vector
       val unfoldi: int * 'a * (int * 'a -> elem * 'a) -> vector
       val unsafeSub: vector * int -> elem
@@ -60,6 +57,8 @@ signature MONO_VECTOR_EXTRA =
 signature EQTYPE_MONO_VECTOR_EXTRA =
    sig
       include MONO_VECTOR_EXTRA_PRE
+      val fromPoly: elem Vector.vector -> vector 
+      val toPoly: vector -> elem Vector.vector
       structure MonoVectorSlice: EQTYPE_MONO_VECTOR_SLICE_EXTRA 
 	where type elem = elem
 	  and type vector = vector

@@ -27,7 +27,7 @@ fun start (i, n) =
       val i = Int.* (bytesPerElem, i)
       val _ =
 	 if Primitive.safe
-	    andalso Int.geu (Int.+ (i, Int.- (bytesPerElem, 1)), n)
+	    andalso Primitive.Int.geu (Int.+ (i, Int.- (bytesPerElem, 1)), n)
 	    then raise Subscript
 	 else ()
    in

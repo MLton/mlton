@@ -11,8 +11,8 @@ functor VectorArrayConvert
 	   structure Array: ARRAY_1997
 	end =
   struct
-     fun shift1 f (sl as (_, s, _)) = fn (i:int, x) => f (i + s, x)
-     fun shift2 f (sl as (_, s, _)) = fn (i:int, x, y) => f (i + s, x, y)
+     fun shift1 f (_, s, _) = fn (i:int, x) => f (i + s, x)
+     fun shift2 f (_, s, _) = fn (i:int, x, y) => f (i + s, x, y)
       
      structure V =
        struct

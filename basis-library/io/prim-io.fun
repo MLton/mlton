@@ -84,14 +84,12 @@ functor PrimIO (S: PRIM_IO_ARG)
 	 let
 	    val name = "openVector"
 	    val closed = ref false
-	    val empty = V.tabulate (0, fn _ => someElem)
 	    val pos = ref 0
 	    val eofPos = V.length v
 	    fun check f = if !closed
 			     then liftExn name f IO.ClosedStream
 			     else ()
 	    fun const f c = fn _ => (check f; c)
-	    fun function f g = fn x => (check f; g x)
 	    fun readVec f i =
 	       let
 		  val _ = check f
@@ -137,7 +135,6 @@ functor PrimIO (S: PRIM_IO_ARG)
 			     then liftExn name f IO.ClosedStream
 			     else ()
 	    fun const f c = fn _ => (check f; c)
-	    fun function f g = fn x => (check f; g x)
 	    val empty = V.fromList []
 	 in
 	    RD {avail = const "avail" NONE,
@@ -312,7 +309,7 @@ functor PrimIO (S: PRIM_IO_ARG)
 	    val ((writeVec,writeArr),(writeVecNB,writeArrNB)) =
 	       (augmentWrite (writeVec, writeArr),
 		augmentWrite (writeVecNB, writeArrNB))
-	    val ((writeVec,writeVecNB),(writeArr,wriveArrNB)) =
+	    val ((writeVec,writeVecNB),(writeArr,writeArrNB)) =
 	       (augmentSeq (writeVec, writeVecNB),
 		augmentSeq (writeArr, writeArrNB))
 	 in

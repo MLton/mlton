@@ -6,14 +6,9 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 
-(* Primitive names are special -- see atoms/prim.fun.
- * _prim declarations of ground type declare compile time constants, which are
- * evaluated by calling gcc just before running infer/infer.fun.
- * The polymorphic primitives are eta-expanded so that my create-basis
- * script produces type-correct SML code.
- *)
+(* Primitive names are special -- see atoms/prim.fun. *)
 
-infix 4 = <> > >= < <=
+infix 4 = (* <> > >= < <= *)
 
 val op = = fn z => _prim "MLton_equal": ''a * ''a -> bool; z
 
@@ -22,7 +17,7 @@ structure Bool =
    struct
       datatype bool = datatype bool
    end
-datatype bool = datatype Bool.bool
+(* datatype bool = datatype Bool.bool *)
 structure Char =
    struct
       type char = char
@@ -50,8 +45,8 @@ structure IntInf =
    struct
       type int = intInf
    end
-structure LargeInt = IntInf
-datatype list = datatype list
+
+(* datatype list = datatype list *)
 
 structure Real32 =
    struct
@@ -63,7 +58,7 @@ structure Real64 =
    end
 structure Real = Real64
 
-datatype ref = datatype ref
+(* datatype ref = datatype ref *)
 
 type preThread = preThread
 type thread = thread
@@ -112,11 +107,11 @@ structure Pid :> sig
 
       val fromInt = fn i => i
       val toInt = fn i => i
+      val _ = fromInt
    end
 
 structure Position = Int64
    
-exception Bind = Bind
 exception Fail of string
 exception Match = Match
 exception Overflow = Overflow
@@ -124,43 +119,29 @@ exception Size
 
 structure Primitive =
    struct
-      structure Debug =
-	 struct
-	    val enter = _import "Debug_enter": string -> unit;
-	    val leave = _import "Debug_leave": string -> unit;
-	 end
-   end
-
-structure Primitive =
-   struct
       val detectOverflow = _build_const "MLton_detectOverflow": bool;
-      val enterLeave = _import "MLton_enterLeave": unit -> unit;
-      val eq = fn z => _prim "MLton_eq": 'a * 'a -> bool; z
+      val eq = _prim "MLton_eq": 'a * 'a -> bool;
       val errno = _import "MLton_errno": unit -> int;
-      val handlesSignals = _prim "MLton_handlesSignals": bool;
       val installSignalHandler =
 	 _prim "MLton_installSignalHandler": unit -> unit;
       val safe = _build_const "MLton_safe": bool;
-      val touch = fn z => _prim "MLton_touch": 'a -> unit; z
+      val touch = _prim "MLton_touch": 'a -> unit;
       val usesCallcc: bool ref = ref false;
 
       structure Stdio =
 	 struct
 	    val print = _import "Stdio_print": string -> unit;
-	    val sprintf =
-	       _import "Stdio_sprintf": char array * nullString * real -> int;
+(*	    val sprintf = _import "Stdio_sprintf": char array * nullString * real -> int; *)
 	 end
 
       structure Array =
 	 struct
-	    val array0Const =
-	       fn () => _prim "Array_array0Const": unit -> 'a array; ()
-	    val length = fn x => _prim "Array_length": 'a array -> int; x
+	    val array0Const = _prim "Array_array0Const": unit -> 'a array;
+	    val length = _prim "Array_length": 'a array -> int;
 	    (* There is no maximum length on arrays, so maxLen = maxInt. *)
 	    val maxLen: int = 0x7FFFFFFF
-	    val sub = fn x => _prim "Array_sub": 'a array * int -> 'a; x
-	    val update =
-	       fn x => _prim "Array_update": 'a array * int * 'a -> unit; x
+	    val sub = _prim "Array_sub": 'a array * int -> 'a;
+	    val update = _prim "Array_update": 'a array * int * 'a -> unit;
 	 end
 
       structure C =
@@ -171,11 +152,7 @@ structure Primitive =
 		  type t = Pointer.t
 
 		  val sub = _import "C_CS_sub": t * int -> char;
-		  val update =
-		     _import "C_CS_update": t * int * char -> unit; (* primitive *)
-		  val charArrayToWord8Array =
-		     _prim "C_CS_charArrayToWord8Array":
-		     char array -> word8 array;
+		  val update = _import "C_CS_update": t * int * char -> unit;
 	       end
 	    
 	    (* char** *)
@@ -246,8 +223,6 @@ structure Primitive =
 	       _import "Date_strfTime": char array * size * nullString -> size;
 	 end
 
-      structure Debug = Primitive.Debug
-
       structure Exn =
 	 struct
 	    (* The polymorphism with extra and setInitExtra is because primitives
@@ -257,15 +232,15 @@ structure Primitive =
 	     *)
 	    type extra = string list
 
-	    val extra = fn x => _prim "Exn_extra": exn -> 'a; x
+	    val extra = _prim "Exn_extra": exn -> 'a;
 	    val extra: exn -> extra = extra
 	    val name = _prim "Exn_name": exn -> string;
 	    val keepHistory = _build_const "Exn_keepHistory": bool;
 	    val setExtendExtra =
-	       fn x => _prim "Exn_setExtendExtra": (string * 'a -> 'a) -> unit; x
+	       _prim "Exn_setExtendExtra": (string * 'a -> 'a) -> unit;
 	    val setExtendExtra: (string * extra -> extra) -> unit =
 	       setExtendExtra
-	    val setInitExtra = fn x => _prim "Exn_setInitExtra": 'a -> unit; x
+	    val setInitExtra = _prim "Exn_setInitExtra": 'a -> unit;
 	    val setInitExtra: extra -> unit = setInitExtra
 	    val setTopLevelHandler =
 	       _prim "Exn_setTopLevelHandler": (exn -> unit) -> unit;
@@ -339,7 +314,6 @@ structure Primitive =
 	       else ~?
 	    val fromInt = _prim "Int32_toInt8": Int.int -> int;
 	    val toInt = _prim "Int8_toInt32": int -> Int.int;
-	    val toWord8 = _prim "Int8_toWord8": int -> Word8.word;
 	 end
       structure Int16 =
 	 struct
@@ -377,7 +351,6 @@ structure Primitive =
 	       else ~?
 	    val fromInt = _prim "Int32_toInt16": Int.int -> int;
 	    val toInt = _prim "Int16_toInt32": int -> Int.int;
-	    val toWord16 = _prim "Int16_toWord16": int -> Word16.word;
 	 end
       structure Int32 =
 	 struct
@@ -416,7 +389,9 @@ structure Primitive =
 	    val fromInt : int -> int = fn x => x
 	    val toInt : int -> int = fn x => x
 	 end
+
       structure Int = Int32
+
       structure Int64 =
 	 struct
 	    type int = Int64.int
@@ -442,8 +417,6 @@ structure Primitive =
 	    val op >= = _prim "Int64_ge": int * int -> bool;
 	    val quot = _import "Int64_quot": int * int -> int;
 	    val rem = _import "Int64_rem": int * int -> int;
- 	    val geu = _import "Int64_geu": int * int -> bool;
- 	    val gtu = _import "Int64_gtu": int * int -> bool;
 	    val ~? = _prim "Int64_neg": int -> int; 
 	    val ~ =
 	       if detectOverflow
@@ -461,7 +434,7 @@ structure Primitive =
 	 struct
 	    open Array
 
-	    val array = fn n => _prim "Array_array": int -> 'a array; n
+	    val array = _prim "Array_array": int -> 'a array;
       	    val array =
 	       fn n => if safe andalso Int.< (n, 0)
 			  then raise Size
@@ -511,7 +484,7 @@ structure Primitive =
 	    val native = _build_const "MLton_native": bool;
 (*       val deserialize = _prim "MLton_deserialize": Word8Vector.vector -> 'a ref; *)
 (*       val serialize = _prim "MLton_serialize": 'a ref -> Word8Vector.vector; *)
-	    val size = fn x => _prim "MLton_size": 'a ref -> int; x
+	    val size = _prim "MLton_size": 'a ref -> int;
 
 	    structure Platform =
 	       struct
@@ -624,16 +597,16 @@ structure Primitive =
 	       struct
 		  type 'a t = 'a weak
 		     
-		  val canGet = fn x => _prim "Weak_canGet": 'a t -> bool; x
-		  val get = fn x => _prim "Weak_get": 'a t -> 'a; x
-		  val new = fn x => _prim "Weak_new" : 'a -> 'a t; x
+		  val canGet = _prim "Weak_canGet": 'a t -> bool;
+		  val get = _prim "Weak_get": 'a t -> 'a;
+		  val new = _prim "Weak_new" : 'a -> 'a t;
 	       end
 	 end
 
       structure Net =
 	 struct
- 	    val htonl = _import "Net_htonl": int -> int;
-	    val ntohl = _import "Net_ntohl": int -> int;
+(* 	    val htonl = _import "Net_htonl": int -> int; *)
+(*	    val ntohl = _import "Net_ntohl": int -> int; *)
  	    val htons = _import "Net_htons": int -> int;
 	    val ntohs = _import "Net_ntohs": int -> int;
 	 end
@@ -686,10 +659,6 @@ structure Primitive =
 
       structure OS =
 	 struct
-	    structure FileSys =
-	       struct
-		  val tmpnam = _import "OS_FileSys_tmpnam": unit -> cstring;
-	       end
 	    structure IO =
 	       struct
 		  val POLLIN = _const "OS_IO_POLLIN": word;
@@ -762,36 +731,6 @@ structure Primitive =
 	       _prim "Pointer_setWord32": t * int * Word32.word -> unit;
 	    val setWord64 =
 	       _prim "Pointer_setWord64": t * int * Word64.word -> unit;
-	 end
-
-      structure Ptrace =
-	 struct
-	    (*
-	     * These constants are from
-	     *   /usr/include/linux/ptrace.h
-	     *   /usr/src/linux/include/asm-i386/ptrace.h
-	     *)
-	    val TRACEME = _const "Ptrace_TRACEME": int;
-	    val PEEKTEXT = _const "Ptrace_PEEKTEXT": int;
-	    val PEEKDATA = _const "Ptrace_PEEKDATA": int;
-(*	    val PEEKUSR = _const "Ptrace_PEEKUSR": int; *)
-	    val POKETEXT = _const "Ptrace_POKETEXT": int;
-	    val POKEDATA = _const "Ptrace_POKEDATA": int;
-(*	    val POKEUSR = _const "Ptrace_POKEUSR": int; *)
-	    val CONT = _const "Ptrace_CONT": int;
-	    val KILL = _const "Ptrace_KILL": int;
-	    val SINGLESTEP = _const "Ptrace_SINGLESTEP": int;
-	    val ATTACH = _const "Ptrace_ATTACH": int;
-	    val DETACH = _const "Ptrace_DETACH": int;
-	    val GETREGS = _const "Ptrace_GETREGS": int;
-	    val SETREGS = _const "Ptrace_SETREGS": int;
-	    val GETFPREGS = _const "Ptrace_GETFPREGS": int;
-	    val SETFPREGS = _const "Ptrace_SETFPREGS": int;
-	    val SYSCALL = _const "Ptrace_SYSCALL": int;
-
-	    val ptrace2 = _import "Ptrace_ptrace2": int * Pid.t -> int;
-	    val ptrace4 =
-	       _import "Ptrace_ptrace4": int * Pid.t * word * word ref -> int;
 	 end
 
       val useMathLibForTrig = false
@@ -956,7 +895,6 @@ structure Primitive =
 	    val minNormalPos = _import "Real32_minNormalPos": real;
 	    val minPos = _import "Real32_minPos": real;
 	    val modf = _import "Real32_modf": real * real ref -> real;
-	    val nextAfter = _import "nextafterf": real * real -> real;
 	    val signBit = _import "Real32_signBit": real -> bool;
 	    val strto = _import "Real32_strto": nullString -> real;
 	    val toInt = _prim "Real32_toInt32": real -> int;
@@ -965,8 +903,8 @@ structure Primitive =
 
       structure Ref =
 	 struct
-	    val deref = fn x => _prim "Ref_deref": 'a ref -> 'a; x
-	    val assign = fn x => _prim "Ref_assign": 'a ref * 'a -> unit; x
+	    val deref = _prim "Ref_deref": 'a ref -> 'a;
+	    val assign = _prim "Ref_assign": 'a ref * 'a -> unit;
 	 end
 
       structure Socket =
@@ -1047,7 +985,7 @@ structure Primitive =
 		  val getSockName =
 		     _import "Socket_Ctl_getSockName": sock * pre_sock_addr * int ref -> int;
 
-		  val NBIO = _const "Socket_Ctl_FIONBIO": request;
+(*		  val NBIO = _const "Socket_Ctl_FIONBIO": request; *)
 		  val NREAD = _const "Socket_Ctl_FIONREAD": request;
 		  val ATMARK = _const "Socket_Ctl_SIOCATMARK": request;
 	       end
@@ -1106,9 +1044,6 @@ structure Primitive =
 		  val getInAddr = _import "INetSock_getInAddr": NetHostDB.pre_in_addr -> 
                                                              unit;
 		  val getPort = _import "INetSock_getPort": unit -> int;
-		  structure UDP =
-		     struct
-		     end
 		  structure TCP =
 		     struct
 		        open CtlExtra
@@ -1124,12 +1059,6 @@ structure Primitive =
 		  val fromAddr =
 		     _import "UnixSock_fromAddr"
 		     : sock_addr * char array * int -> unit;
-		  structure Strm =
-		     struct
-		     end
-		  structure DGrm =
-		     struct
-		     end
 	       end
 	 end
 
@@ -1214,14 +1143,13 @@ structure Primitive =
 
       structure Vector =
 	 struct
-	    val sub = fn x => _prim "Vector_sub": 'a vector * int -> 'a; x
-	    val length = fn x => _prim "Vector_length": 'a vector -> int; x
+	    val sub = _prim "Vector_sub": 'a vector * int -> 'a;
+	    val length = _prim "Vector_length": 'a vector -> int;
 
 	    (* Don't mutate the array after you apply fromArray, because vectors
 	     * are supposed to be immutable and the optimizer depends on this.
 	     *)
-	    val fromArray =
-	       fn x => _prim "Array_toVector": 'a array -> 'a vector; x
+	    val fromArray = _prim "Array_toVector": 'a array -> 'a vector;
 	 end
 
       structure Word8 =
@@ -1231,7 +1159,7 @@ structure Primitive =
 	    val wordSize: int = 8
 
 	    val + = _prim "Word8_add": word * word -> word;
-	    val addCheck = _prim "Word8_addCheck": word * word -> word;
+(*	    val addCheck = _prim "Word8_addCheck": word * word -> word; *)
 	    val andb = _prim "Word8_andb": word * word -> word;
 	    val ~>> = _prim "Word8_arshift": word * Word.word -> word;
 	    val div = _prim "Word8_div": word * word -> word;
@@ -1244,7 +1172,7 @@ structure Primitive =
 	    val op < = _prim "Word8_lt" : word * word -> bool;
 	    val mod = _prim "Word8_mod": word * word -> word;
 	    val * = _prim "Word8_mul": word * word -> word;
-	    val mulCheck = _prim "Word8_mulCheck": word * word -> word;
+(*	    val mulCheck = _prim "Word8_mulCheck": word * word -> word; *)
 	    val ~ = _prim "Word8_neg": word -> word;
 	    val notb = _prim "Word8_notb": word -> word;
 	    val orb = _prim "Word8_orb": word * word -> word;
@@ -1287,7 +1215,7 @@ structure Primitive =
 	    val wordSize: int = 16
 
 	    val + = _prim "Word16_add": word * word -> word;
-	    val addCheck = _prim "Word16_addCheck": word * word -> word;
+(*	    val addCheck = _prim "Word16_addCheck": word * word -> word; *)
 	    val andb = _prim "Word16_andb": word * word -> word;
 	    val ~>> = _prim "Word16_arshift": word * Word.word -> word;
 	    val div = _prim "Word16_div": word * word -> word;
@@ -1300,12 +1228,12 @@ structure Primitive =
 	    val op < = _prim "Word16_lt" : word * word -> bool;
 	    val mod = _prim "Word16_mod": word * word -> word;
 	    val * = _prim "Word16_mul": word * word -> word;
-	    val mulCheck = _prim "Word16_mulCheck": word * word -> word;
+(*	    val mulCheck = _prim "Word16_mulCheck": word * word -> word; *)
 	    val ~ = _prim "Word16_neg": word -> word;
 	    val notb = _prim "Word16_notb": word -> word;
 	    val orb = _prim "Word16_orb": word * word -> word;
-	    val rol = _prim "Word16_rol": word * Word.word -> word;
-	    val ror = _prim "Word16_ror": word * Word.word -> word;
+(*	    val rol = _prim "Word16_rol": word * Word.word -> word; *)
+(*	    val ror = _prim "Word16_ror": word * Word.word -> word; *)
 	    val >> = _prim "Word16_rshift": word * Word.word -> word;
 	    val - = _prim "Word16_sub": word * word -> word;
 	    val toInt = _prim "Word16_toInt32": word -> int;
@@ -1356,7 +1284,7 @@ structure Primitive =
 	    val wordSize: int = 64
 
 	    val + = _prim "Word64_add": word * word -> word;
-	    val addCheck = _prim "Word64_addCheck": word * word -> word;
+(*	    val addCheck = _prim "Word64_addCheck": word * word -> word; *)
 	    val andb = _prim "Word64_andb": word * word -> word;
 	    val ~>> = _import "Word64_arshift": word * Word.word -> word;
 	    val div = _import "Word64_div": word * word -> word;
@@ -1373,8 +1301,8 @@ structure Primitive =
 	    val ~ = _prim "Word64_neg": word -> word;
 	    val notb = _prim "Word64_notb": word -> word;
 	    val orb = _prim "Word64_orb": word * word -> word;
-	    val rol = _import "Word64_rol": word * Word.word -> word;
-	    val ror = _import "Word64_ror": word * Word.word -> word;
+(*	    val rol = _import "Word64_rol": word * Word.word -> word; *)
+(*	    val ror = _import "Word64_ror": word * Word.word -> word; *)
 	    val >> = _import "Word64_rshift": word * Word.word -> word;
 	    val - = _prim "Word64_sub": word * word -> word;
 	    val toInt = _import "Word64_toInt32": word -> int;
@@ -1383,7 +1311,6 @@ structure Primitive =
 	    val toLargeX: word -> LargeWord.word = fn x => x
 	    val xorb = _prim "Word64_xorb": word * word -> word;
 	 end
-      structure LargeWord = Word64
 	 
       structure World =
 	 struct
@@ -1397,28 +1324,6 @@ structure Primitive =
    struct
       open Primitive
 
-      structure Int8 =
-	 struct
-	    open Int8
-	       
-	    local
-	       fun make f (i: int, i': int): bool = f (toWord8 i, toWord8 i')
-	    in
-	       val geu = make Primitive.Word8.>=
-	       val gtu = make Primitive.Word8.> 
-	    end
-	 end
-      structure Int16 =
-	 struct
-	    open Int16
-	       
-	    local
-	       fun make f (i: int, i': int): bool = f (toWord16 i, toWord16 i')
-	    in
-	       val geu = make Primitive.Word16.>=
-	       val gtu = make Primitive.Word16.> 
-	    end
-	 end
       structure Int32 =
 	 struct
 	    open Int32

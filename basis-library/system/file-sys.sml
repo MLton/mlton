@@ -6,10 +6,8 @@
  *
  *)
 
-structure OS_FileSys: OS_FILE_SYS =
+structure OS_FileSys =
    struct
-      structure Prim = Primitive.OS.FileSys
-	 
       structure P_FSys = Posix.FileSys
 
       val sysWordToWord = Word.fromLargeWord o SysWord.toLargeWord
@@ -119,9 +117,6 @@ structure OS_FileSys: OS_FILE_SYS =
 	 in
 	    P_FSys.access (path, List.map cvt al)
 	 end
-
-      (* modified by sweeks *)
-      val tmpName = fn _ => raise Fail "tmpName unimplemented"
 
       datatype file_id = FID of {dev: SysWord.word, ino: SysWord.word}
 

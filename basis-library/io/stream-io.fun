@@ -23,12 +23,11 @@ signature STREAM_IO_EXTRA_ARG =
 
       val line: {isLine: PrimIO.elem -> bool,
 		 lineElem: PrimIO.elem} option
-      val xlatePos : {toInt : PrimIO.pos -> Position.int, 
+      val xlatePos : {toInt : PrimIO.pos -> Position.int,
 		      fromInt : Position.int -> PrimIO.pos} option
    end
 
-functor StreamIOExtra 
-        (S: STREAM_IO_EXTRA_ARG) :>
+functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG) :>
 	STREAM_IO_EXTRA where type elem = S.PrimIO.elem
 	                where type vector = S.PrimIO.vector
 			where type vector_slice = S.PrimIO.vector_slice
@@ -85,18 +84,12 @@ functor StreamIOExtra
 				   state: state ref,
 				   bufferMode: bufferMode ref}
 
-      fun equalsOut (os1 as Out {state = state1, ...},
-		     os2 as Out {state = state2, ...}) = state1 = state2
+      fun equalsOut (Out {state = state1, ...}, Out {state = state2, ...}) =
+	 state1 = state2
 	
       fun outstreamSel (Out v, sel) = sel v
       fun outstreamWriter os = outstreamSel (os, #writer)
       fun writerSel (PIO.WR v, sel) = sel v
-      fun outstreamName os =
-	 let
-	    val PIO.WR {name, ...} = outstreamWriter os
-	 in
-	    name
-	 end
       fun outstreamName os = writerSel (outstreamWriter os, #name)
 
       local
@@ -302,11 +295,11 @@ functor StreamIOExtra
 		; makeTerminated os)
 	handle exn => liftExn (outstreamName os) "closeOut" exn
 
-      fun getBufferMode (os as Out {bufferMode, ...}) =
-	case !bufferMode of
-	  NO_BUF => IO.NO_BUF
-	| LINE_BUF _ => IO.LINE_BUF
-	| BLOCK_BUF _ => IO.BLOCK_BUF
+      fun getBufferMode (Out {bufferMode, ...}) =
+	 case !bufferMode of
+	    NO_BUF => IO.NO_BUF
+	  | LINE_BUF _ => IO.LINE_BUF
+	  | BLOCK_BUF _ => IO.BLOCK_BUF
 
       fun setBufferMode (os as Out {bufferMode, ...}, mode) =
 	case mode of
@@ -401,8 +394,8 @@ functor StreamIOExtra
        *   pos = V.length inp, !next = s
        *)
 
-      fun equalsIn (is1 as In {common = {tail = tail1, ...}, ...}, 
-		    is2 as In {common = {tail = tail2, ...}, ...}) = 
+      fun equalsIn (In {common = {tail = tail1, ...}, ...}, 
+		    In {common = {tail = tail2, ...}, ...}) = 
 	tail1 = tail2
 
       fun update (In {common, ...}, pos, buf) =
@@ -493,7 +486,7 @@ functor StreamIOExtra
 	if n < 0 orelse n > V.maxLen
 	  then raise Size
 	  else let
-		 fun first (is as In {pos, buf as Buf {inp, next, ...}, ...}, n) =
+		 fun first (is as In {pos, buf as Buf {inp, ...}, ...}, n) =
 		   if pos + n <= V.length inp
 		     then let
 			    val inp' = V.extract(inp, pos, SOME n)
@@ -509,7 +502,7 @@ functor StreamIOExtra
 		   let
 		     fun doit next =
 		       case next of
-			 Link {buf as Buf {inp, next, ...}} =>
+			 Link {buf as Buf {inp, ...}} =>
 			   if n <= V.length inp
 			     then let
 				    val inp' = VS.slice(inp, 0, SOME n)
@@ -536,7 +529,7 @@ functor StreamIOExtra
 	       end
 
       (* input1' will move past a temporary end of stream *)
-      fun input1' (is as In {pos, buf as Buf {inp, next, ...}, ...}) =
+      fun input1' (is as In {pos, buf = Buf {inp, next, ...}, ...}) =
 	 case SOME (V.sub (inp, pos)) handle Subscript => NONE of
 	    NONE =>
 	       let
@@ -613,7 +606,7 @@ functor StreamIOExtra
 					    fun doit next = 
 					       case next of
 						  Link {buf} => first (updateBufBeg (is, buf))
-						| Eos {buf} => NONE
+						| Eos _ => NONE
 						| End => doit (extendB "inputLine" is)
 						| _ => NONE
 					 in
@@ -624,7 +617,7 @@ functor StreamIOExtra
 		     let
 			fun doit next =
 			   case next of
-			      Link {buf as Buf {inp, next, ...}} =>
+			      Link {buf as Buf {inp, ...}} =>
 				 (case findLine (inp, 0) of
 				     SOME i => let
 						  val inp' = VS.slice(inp, 0, SOME i)
@@ -652,7 +645,7 @@ functor StreamIOExtra
 	       end
 	    end
 	       
-      fun canInput (is as In {pos, buf as Buf {inp, next, ...}, ...}, n) =
+      fun canInput (is as In {pos, buf = Buf {inp, next, ...}, ...}, n) =
 	if n < 0 orelse n > V.maxLen
 	  then raise Size
 	else if n = 0
@@ -672,9 +665,9 @@ functor StreamIOExtra
 	       and loop (inps, k) =
 		 case extendNB "canInput" is of
 		   NONE => finish (inps, k)
-		 | SOME (Link {buf as Buf {inp, ...}}) =>
+		 | SOME (Link {buf = Buf {inp, ...}}) =>
 		     add (inps, inp, k)
-		 | SOME (Eos {buf}) => finish (inps, k)
+		 | SOME (Eos _) => finish (inps, k)
 		 | _ => raise Fail "extendNB bug"
 	       and finish (inps, k) =
 		 let
@@ -689,7 +682,7 @@ functor StreamIOExtra
 		        End => 
 			  (case extendNB "canInput" is of
 			     NONE => NONE
-			   | SOME (Link {buf as Buf {inp, base, ...}}) =>
+			   | SOME (Link {buf = Buf {inp, base, ...}}) =>
 			       let
 				 val (inp, k) = start inp
 				 val buf = Buf {inp = inp,
@@ -699,7 +692,7 @@ functor StreamIOExtra
 				 next := Link {buf = buf};
 				 SOME k
 			       end
-			   | SOME (Eos {buf}) => SOME 0
+			   | SOME (Eos _) => SOME 0
 			   | _ => raise Fail "extendNB bug")
 		      | _ => SOME 0
 	     end
@@ -779,11 +772,6 @@ functor StreamIOExtra
 		     closed = false, 
 		     reader = reader}
 	
-      fun openVector v =
-	mkInstream' {bufferContents = NONE,
-		     closed = false,
-		     reader = PIO.openVector v}
-
       fun getReader (is as In {common = {reader, tail, ...}, ...}) =
 	case !(!tail) of
 	  End => (!tail := Truncated;
@@ -793,7 +781,8 @@ functor StreamIOExtra
 	| _ => liftExn (instreamName is) "getReader" IO.ClosedStream
 
       fun filePosIn (is as In {common = {augmented_reader, ...},
-			       pos, buf as Buf {base, ...}, ...}) =
+			       pos,
+			       buf = Buf {base, ...}, ...}) =
 	case base of
 	   SOME b => (case xlatePos of
 			 SOME {fromInt, toInt, ...} => 
@@ -833,8 +822,7 @@ signature STREAM_IO_ARG =
       val someElem: PrimIO.elem
    end
 
-functor StreamIO 
-        (S: STREAM_IO_ARG) :>
+functor StreamIO (S: STREAM_IO_ARG) :>
 	STREAM_IO where type elem = S.PrimIO.elem
 	          where type vector = S.PrimIO.vector
 		  where type reader = S.PrimIO.reader
@@ -862,8 +850,6 @@ functor StreamIOExtraFile
 
       structure StreamIO = StreamIOExtra (S)
       open StreamIO
-
-      structure PFS = Posix.FileSys
 
       fun liftExn name function cause = raise IO.Io {name = name,
 						     function = function,

@@ -54,6 +54,4 @@ signature VECTOR_EXTRA =
 
       (* Deprecated *)
       val checkSlice: 'a vector * int * int option -> int
-      (* Deprecated *)
-      val extract: 'a vector * int * int option -> 'a vector
    end
