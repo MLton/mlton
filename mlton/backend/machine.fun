@@ -33,24 +33,15 @@ structure SmallIntInf =
 
 structure Register =
    struct
-      datatype t = T of {index: int,
+      datatype t = T of {index: int option ref,
 			 plist: PropertyList.t,
 			 ty: Type.t}
 
       local
 	 fun make f (T r) = f r
       in
-	 val index = make #index
 	 val plist = make #plist
 	 val ty = make #ty
-      end
-
-      local
-	 val c = Counter.new 0
-      in
-	 fun new ty = T {index = Counter.next c,
-			 plist = PropertyList.new (),
-			 ty = ty}
       end
 
       fun layout (T {index, ty, ...}) =
@@ -58,11 +49,31 @@ structure Register =
 	    open Layout
 	 in
 	    seq [str "reg ",
-		 record [("index", Int.layout index),
+		 record [("index", Option.layout Int.layout (!index)),
 			 ("ty", Type.layout ty)]]
 	 end
 
       val toString = Layout.toString o layout
+
+      fun index (r as T {index, ...}) =
+	 case !index of
+	    NONE =>
+	       Error.bug (concat ["register ", toString r, " missing index"])
+	  | SOME i => i
+
+      fun setIndex (r as T {index, ...}, i) =
+	 case !index of
+	    NONE => index := SOME i
+	  | SOME _ =>
+	       Error.bug (concat ["register ", toString r, " index already set"])
+
+      local
+	 val c = Counter.new 0
+      in
+	 fun new ty = T {index = ref NONE,
+			 plist = PropertyList.new (),
+			 ty = ty}
+      end
 
       fun equals (T {plist = p, ...}, T {plist = p', ...}) =
 	 PropertyList.equals (p, p')
@@ -534,7 +545,8 @@ structure Block =
 structure Chunk =
    struct
       datatype t = T of {chunkLabel: ChunkLabel.t,
-			 blocks: Block.t vector}
+			 blocks: Block.t vector,
+			 regs: Register.t vector}
 
       fun layout (T {blocks, ...}) =
 	 let
@@ -545,16 +557,6 @@ structure Chunk =
 
       fun layouts (c as T {blocks, ...}, output : Layout.t -> unit) =
 	 Vector.foreach (blocks, fn block => Block.layouts (block, output))
-
-
-      fun foldRegs (T {blocks, ...}, a, f) =
-	 Vector.fold
-	 (blocks, a, fn (b, a) =>
-	  Block.foldDefs
-	  (b, a, fn (z, a) =>
-	   case z of
-	      Operand.Register r => f (r, a)
-	    | _ => a))
    end
 
 structure Program =
@@ -593,9 +595,6 @@ structure Program =
             ; List.foreach (chunks, fn chunk => Chunk.layouts (chunk, output))
 	 end
 	    
-      fun foldRegs (T {chunks, ...}, a, f) =
-	 List.fold (chunks, a, fn (c, a) => Chunk.foldRegs (c, a, f))
-
       fun typeCheck (T {chunks, frameOffsets, intInfs, main,
 			maxFrameSize, objectTypes, reals, strings, ...}) =
 	 let

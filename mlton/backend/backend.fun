@@ -887,8 +887,46 @@ fun toMachine (program: Ssa.Program.t) =
 		       transfer = transfer}
 	 end
       fun chunkToMachine (Chunk.T {chunkLabel, blocks}) =
-	 Machine.Chunk.T {chunkLabel = chunkLabel,
-			  blocks = Vector.fromListMap (!blocks, blockToMachine)}
+	 let
+	    val {get = seen, rem, set = setSeen} =
+	       Property.getSetOnce (Register.plist,
+				    Property.initConst false)
+	    val blocks = Vector.fromListMap (!blocks, blockToMachine)
+	    val regs =
+	       Vector.fromList
+	       (Vector.fold
+		(blocks, [], fn (b, a) =>
+		 M.Block.foldDefs
+		 (b, a, fn (z, a) =>
+		  case z of
+		     M.Operand.Register r =>
+			if seen r
+			   then a
+			else (setSeen (r, true)
+			      ; r :: a)
+		   | _ => a)))
+	    val _ =
+	       let
+		  val tyCounter = Runtime.Type.memo (fn _ => Counter.new 0)
+	       in
+		  Vector.foreach
+		  (regs, fn r =>
+		   let
+		      val _ = rem r
+		      val ty = Register.ty r
+		      val index =
+			 Counter.next (tyCounter
+				       (Type.toRuntime (Register.ty r)))
+		      val _ = Register.setIndex (r, index)
+		   in
+		      ()
+		   end)
+	       end
+	 in
+	    Machine.Chunk.T {chunkLabel = chunkLabel,
+			     blocks = blocks,
+			     regs = regs}
+	 end
       val mainName = R.Function.name main
       val main = {chunkLabel = Chunk.label (funcChunk mainName),
 		  label = funcToLabel mainName}

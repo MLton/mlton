@@ -24,30 +24,15 @@ struct
 
   structure Machine = x86MLton.Machine
 
-  structure Label = Machine.Label
-  structure Prim = Machine.Prim
-  structure Runtime = Machine.Runtime
-    
-  structure Type = Machine.Type
-    
-  structure Local =
-     struct
-	open Machine.Register
-
-	fun toX86MemLoc (r: t) =
-	   let
-	      val ty = Machine.Type.toRuntime (ty r)
-	      val base = x86.Immediate.label (x86MLton.local_base ty)
-	   in
-	      x86.MemLoc.imm {base = base,
-			      index = x86.Immediate.const_int (index r),
-			      scale = x86MLton.toX86Scale ty,
-			      size = x86MLton.toX86Size ty,
-			      class = x86MLton.Classes.Locals}
-	   end
-
-	val eq = equals
-     end
+  local
+     open Machine
+  in
+     structure Label = Label
+     structure Prim = Prim
+     structure Register = Register
+     structure Runtime = Runtime
+     structure Type = Type
+  end
   
   structure Global =
      struct
@@ -160,7 +145,19 @@ struct
 		  x86.Operand.memloc memloc
 	       end
 	  | Real _ => Error.bug "toX86Operand: Real unimplemented"
-	  | Register l => x86.Operand.memloc (Local.toX86MemLoc l)
+	  | Register r =>
+	       let
+		  val ty = Machine.Type.toRuntime (Register.ty r)
+		  val base = x86.Immediate.label (x86MLton.local_base ty)
+	       in
+		  x86.Operand.memloc
+		  (x86.MemLoc.imm {base = base,
+				   index = (x86.Immediate.const_int
+					    (Register.index r)),
+				   scale = x86MLton.toX86Scale ty,
+				   size = x86MLton.toX86Size ty,
+				   class = x86MLton.Classes.Locals})
+	       end
 	  | Runtime oper =>
 		let
 		   datatype z = datatype Machine.Runtime.GCField.t
@@ -1024,9 +1021,7 @@ struct
 	= let
 	    val data = ref []
 	    val addData = fn l => List.push (data, l)
-
 	    val _ = addData [x86.Assembly.pseudoop_data ()]
-
 	    val {get = live : Label.t -> x86.Operand.t list,
 		 set = setLive, 
 		 rem = remLive, ...}

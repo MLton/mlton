@@ -31,10 +31,11 @@ signature MACHINE =
 	    type t
 
 	    val equals: t * t -> bool
-	    val index: t -> int 
+	    val index: t -> int
 	    val layout: t -> Layout.t
 	    val new: Type.t -> t
 	    val plist: t -> PropertyList.t
+	    val setIndex: t * int -> unit
 	    val toString: t -> string
 	    val ty: t -> Type.t
 	 end
@@ -194,18 +195,15 @@ signature MACHINE =
 		     statements: Statement.t vector,
 		     transfer: Transfer.t}
 
+	    val foldDefs: t * 'a * (Operand.t * 'a -> 'a) -> 'a
 	    val label: t -> Label.t
 	 end
 
       structure Chunk:
 	 sig
 	    datatype t = T of {blocks: Block.t vector,
-			       chunkLabel: ChunkLabel.t}
-
-	    (* Fold over each register that appears in the chunk.
-	     * May visit duplicates.
-	     *)
-	    val foldRegs: t * 'a * (Register.t * 'a -> 'a) -> 'a
+			       chunkLabel: ChunkLabel.t,
+			       regs: Register.t vector}
 	 end
 
       structure Program:
@@ -227,10 +225,6 @@ signature MACHINE =
 		     reals: (Global.t * string) list,
 		     strings: (Global.t * string) list}
 
-	    (* Fold over each register that appears in the chunk.
-	     * May visit duplicates.
-	     *)
-	    val foldRegs: t * 'a * (Register.t * 'a -> 'a) -> 'a
 	    val layouts: t * (Layout.t -> unit) -> unit
 	    val typeCheck: t -> unit
 	 end

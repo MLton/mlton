@@ -245,9 +245,6 @@ fun output {program as Machine.Program.T {chunks,
 			      done: unit -> unit}} =
    let
       datatype status = None | One | Many
-      val {get = registerIndex, set = setRegisterIndex, ...} =
-	 Property.getSetOnce (Register.plist,
-			      Property.initRaise ("index", Register.layout))
       val {get = labelInfo: Label.t -> {block: Block.t,
 					chunkLabel: ChunkLabel.t,
 					frameIndex: int option,
@@ -358,7 +355,7 @@ fun output {program as Machine.Program.T {chunks,
 	     | Real s => C.real s
 	     | Register r =>
 		  concat ["R", Type.name (Register.ty r),
-			  "(", Int.toString (registerIndex r), ")"]
+			  "(", Int.toString (Register.index r), ")"]
 	     | Runtime r =>
 		  let
 		     datatype z = datatype GCField.t
@@ -444,7 +441,7 @@ fun output {program as Machine.Program.T {chunks,
 			    C.call ("SetSlotExnStack", [C.int offset], print)
 			    ))
 	 end
-      fun outputChunk (chunk as Chunk.T {chunkLabel, blocks, ...}) =
+      fun outputChunk (chunk as Chunk.T {chunkLabel, blocks, regs, ...}) =
 	 let
 	    fun labelFrameSize (l: Label.t): int =
 	       FrameInfo.size (valOf (labelFrameInfo l))
@@ -810,32 +807,11 @@ fun output {program as Machine.Program.T {chunks,
 			end
 	       end
 	    fun declareRegisters () =
-	       let
-		  val tyCounter = Runtime.Type.memo (fn _ => Counter.new 0)
-		  val {get = seen, rem, set = setSeen} =
-		     Property.getSetOnce (Register.plist,
-					  Property.initConst false)
-		  val all =
-		     Chunk.foldRegs
-		     (chunk, [], fn (r, ac) =>
-		      if seen r
-			 then ac
-		      else (setSeen (r, true)
-			    ; r :: ac))
-	       in
-		  List.foreach
-		  (all, fn r =>
-		   let
-		      val _ = rem r
-		      val ty = Register.ty r
-		      val index =
-			 Counter.next (tyCounter
-				       (Type.toRuntime (Register.ty r)))
-		      val _ = setRegisterIndex (r, index)
-		   in
-		      C.call (concat ["D", Type.name ty], [C.int index], print)
-		   end)
-	       end
+	       Vector.foreach
+	       (regs, fn r =>
+		C.call (concat ["D", Type.name (Register.ty r)],
+			[C.int (Register.index r)],
+			print))
 	 in
 	    C.callNoSemi ("Chunk", [ChunkLabel.toString chunkLabel], print)
 	    ; print "\n"
