@@ -68,9 +68,13 @@ signature CORE_ML =
 	    datatype noMatch = Impossible | RaiseAgain | RaiseBind | RaiseMatch
 	    datatype node =
 	       App of t * t
-	     | Case of {noMatch: noMatch,
+	     | Case of {kind: string,
+			lay: unit -> Layout.t,
+			noMatch: noMatch,
 			region: Region.t,
-			rules: (Pat.t * t) vector,
+			rules: {exp: t,
+				lay: (unit -> Layout.t) option,
+				pat: Pat.t} vector,
 			test: t}
 	     | Con of Con.t * Type.t vector
 	     | Const of unit -> Const.t
@@ -91,9 +95,13 @@ signature CORE_ML =
 	     | Var of (unit -> Var.t) * (unit -> Type.t vector)
 
 	    val andAlso: t * t -> t
-	    val casee: {noMatch: noMatch,
+	    val casee: {kind: string,
+			lay: unit -> Layout.t,
+			noMatch: noMatch,
 			region: Region.t,
-			rules: (Pat.t * t) vector,
+			rules: {exp: t,
+				lay: (unit -> Layout.t) option,
+				pat: Pat.t} vector,
 			test: t} -> t
 	    val dest: t -> node * Type.t
 	    val enterLeave: t * SourceInfo.t -> t
@@ -145,6 +153,7 @@ signature CORE_ML =
 			      var: Var.t} vector,
 		       tyvars: unit -> Tyvar.t vector,
 		       vbs: {exp: Exp.t,
+			     lay: unit -> Layout.t,
 			     pat: Pat.t,
 			     patRegion: Region.t} vector}
 

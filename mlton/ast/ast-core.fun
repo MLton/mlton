@@ -169,7 +169,7 @@ structure Pat =
 	 if 1 = Vector.length ps
 	    then Vector.sub (ps, 0)
 	 else make (Tuple ps)
-      
+
       fun layout (p, isDelimited) =
 	 let
 	    fun delimit t = if isDelimited then t else paren t
@@ -190,7 +190,7 @@ structure Pat =
 	     | Record {items, flexible} =>
 		  seq [str "{",
 		       mayAlign (separateRight
-				 (Vector.toListMap (items, layoutItem), ", ")),
+				 (Vector.toListMap (items, layoutItem), ",")),
 		       if flexible
 			  then str (if Vector.isEmpty items
 				       then "..."
@@ -216,6 +216,7 @@ structure Pat =
 			     NONE => empty
 			   | SOME p => seq [str " as ", layoutT p]]
 
+      val layoutDelimit = layoutF
       val layout = layoutT
    
       val unit = tuple (Vector.new0 ())

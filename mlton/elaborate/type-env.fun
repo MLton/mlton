@@ -460,13 +460,13 @@ fun layoutTopLevel (t: Type.ty) =
 			       then (str "_", {isChar = true,
 					       needsParen = false})
 			    else dontCare))
-       | FlexRecord _ => simple (str "{_}")
-       | GenFlexRecord _ => simple (str "{_}")
+       | FlexRecord _ => simple (str "{...}")
+       | GenFlexRecord _ => simple (str "{...}")
        | Int => simple (str "int")
        | Real => simple (str "real")
        | Record r =>
 	    (case Srecord.detupleOpt r of
-		NONE => simple (str "{_}")
+		NONE => simple (str "{...}")
 	      | SOME ts => layoutTuple (Vector.map (ts, fn _ => dontCare)))
        | Unknown _ => Error.bug "layoutTopLevel Unknown"
        | Var a => simple (Tyvar.layout a)
@@ -806,7 +806,7 @@ structure Type =
 				      Srecord.detupleOpt r') of
 				   (NONE, NONE) =>
 				      let
-					 fun diffs (r, r', ac, ac') =
+					 fun diffs (r, r', skipBoth, ac, ac') =
 					    Vector.fold
 					    (Srecord.toVector r, (ac, ac'),
 					     fn ((f, t), (ac, ac')) =>
@@ -814,13 +814,18 @@ structure Type =
 						NONE =>
 						   ((f, dontCare) :: ac, ac')
 					      | SOME t' =>
-						   case unify (t, t') of
-						      NotUnifiable (l, l') =>
-							 ((f, l) :: ac,
-							  (f, l') :: ac')
-						    | Unified => (ac, ac'))
-					 val (ac, ac') = diffs (r, r', [], [])
-					 val (ac', ac) = diffs (r', r, ac', ac)
+						   if skipBoth
+						      then (ac, ac')
+						   else
+						      case unify (t, t') of
+							 NotUnifiable (l, l') =>
+							    ((f, l) :: ac,
+							     (f, l') :: ac')
+						       | Unified => (ac, ac'))
+					 val (ac, ac') =
+					    diffs (r, r', false, [], [])
+					 val (ac', ac) =
+					    diffs (r', r, true, ac', ac)
 				      in
 					 case (ac, ac') of
 					    ([], []) =>

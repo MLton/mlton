@@ -491,7 +491,8 @@ fun matchCompile {caseType: Type.t,
 	     if Vector.isEmpty infos
 		then Error.bug "matchRules: no default"
 	     else
-		let val Info.T {accum = env, continue} = Vector.sub (infos, 0)
+		let
+		   val Info.T {accum = env, continue} = Vector.sub (infos, 0)
 		in
 		   case continue of
 		      Finish f => f (fn x => Env.lookup (env, x))

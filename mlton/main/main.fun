@@ -795,6 +795,7 @@ val _ =
    in
       debug := Out Out.error
       ; flagged ()
+(*      ; on ["matchCompile"] *)
 (*      ; on ["setConTycon"] *)
 (*      ; on ["elaborateDec", "elaborateExp", "elaboratePat"] *)
 (*      ; on ["coalesce"] *)

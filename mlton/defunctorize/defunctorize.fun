@@ -96,24 +96,41 @@ structure Xexp =
       end
    end
 
+val warnings: (unit -> unit) list ref = ref []
+   
 fun casee {caseType: Xtype.t,
-	   cases: (NestedPat.t * Xexp.t) vector,
+	   cases: {exp: Xexp.t,
+		   lay: (unit -> Layout.t) option,
+		   pat: NestedPat.t} vector,
 	   conTycon,
+	   kind: string,
+	   lay: unit -> Layout.t,
+	   mayWarn: bool,
 	   noMatch,
 	   region: Region.t,
 	   test = (test: Xexp.t, testType: Xtype.t),
 	   tyconCons}: Xexp.t =
    let
+      val cases = Vector.map (cases, fn {exp, lay, pat} =>
+			      {exp = exp,
+			       isDefault = false,
+			       lay = lay,
+			       numUses = ref 0,
+			       pat = pat})
       fun raiseExn f =
 	 let
 	    val e = Var.newNoname ()
 	 in
 	    Vector.concat
 	    [cases,
-	     Vector.new1 (NestedPat.make (NestedPat.Var e, testType),
+	     Vector.new1 {exp =
 			  Xexp.raisee ({exn = f e,
 					filePos = Region.toFilePos region},
-				       caseType))]
+				       caseType),
+			  isDefault = true,
+			  lay = NONE,
+			  numUses = ref 0,
+			  pat = NestedPat.make (NestedPat.Var e, testType)}]
 	 end
       val cases =
 	 let
@@ -125,11 +142,12 @@ fun casee {caseType: Xtype.t,
 	     | RaiseBind => raiseExn (fn _ => Xexp.bind)
 	     | RaiseMatch => raiseExn (fn _ => Xexp.match)
 	 end
+      val check: (unit -> unit) list ref = ref []
       fun matchCompile () =		     		     
 	 let
 	    val (cases, decs) =
 	       Vector.mapAndFold
-	       (cases, [], fn ((p: NestedPat.t, e: Xexp.t), decs) =>
+	       (cases, [], fn ({exp = e, numUses, pat = p, ...}, decs) =>
 		let
 		   val args = Vector.fromList (NestedPat.varsAndTypes p)
 		   val (vars, tys) = Vector.unzip args
@@ -153,15 +171,17 @@ fun casee {caseType: Xtype.t,
 			   components = vars,
 			   body = e})})}
 		   fun finish rename =
-		      Xexp.app
-		      {func = Xexp.monoVar (func, funcType),
-		       arg =
-		       Xexp.tuple {exps = (Vector.map
-					   (args, fn (x, t) =>
-					    Xexp.monoVar (rename x, t))),
-				   ty = argType},
-		       ty = caseType}
-		in ((p, finish), dec :: decs)
+		      (Int.inc numUses
+		       ; (Xexp.app
+			  {func = Xexp.monoVar (func, funcType),
+			   arg =
+			   Xexp.tuple {exps = (Vector.map
+					       (args, fn (x, t) =>
+						Xexp.monoVar (rename x, t))),
+				       ty = argType},
+			   ty = caseType}))
+		in
+		   ((p, finish), dec :: decs)
 		end)
 	    val testVar = Var.newNoname ()
 	 in
@@ -182,16 +202,17 @@ fun casee {caseType: Xtype.t,
       datatype z = datatype NestedPat.node
       fun lett (x, e) = Xexp.let1 {var = x, exp = test, body = e}
       fun wild e = lett (Var.newNoname (), e)
-      fun normal () =
+      val exp =
 	 if Vector.isEmpty cases
 	    then Error.bug "case with no patterns"
 	 else
 	    let
-	       val (p, e) = Vector.sub (cases, 0)
+	       val {exp = e, pat = p, numUses, ...} = Vector.sub (cases, 0)
+	       fun use () = Int.inc numUses 
 	    in
 	       case NestedPat.node p of
-		  Wild => wild e
-		| Var x => lett (x, e)
+		  Wild => (use (); wild e)
+		| Var x => (use (); lett (x, e))
 		| Tuple ps =>
 		     if Vector.forall (ps, NestedPat.isVar)
 			then
@@ -199,6 +220,7 @@ fun casee {caseType: Xtype.t,
 			    * Generate the selects.
 			    *)
 			   let
+			      val _ = use ()
 			      val t = Var.newNoname ()
 			      val tuple = XvarExp.mono t
 			      val tys = Xtype.deTuple testType
@@ -217,29 +239,54 @@ fun casee {caseType: Xtype.t,
 						  offset = i})}
 					 :: decs)
 				   | _ => Error.bug "infer flat tuple")
-			   in Xexp.let1 {var = t, exp = test,
+			   in
+			      Xexp.let1 {var = t, exp = test,
 					 body = Xexp.lett {decs = decs,
 							   body = e}}
 			   end
 		     else matchCompile ()
-				   | _ => matchCompile ()
+                | _ => matchCompile ()
 	    end
-				 fun make (ac, default) =
-				    Xexp.casee {test = test,
-						default = default,
-						ty = caseType,
-						cases = Xcases.Con (Vector.fromList ac)}
-				 fun step (_, (p, e), ac) =
-				    case NestedPat.node p of
-				       NestedPat.Wild =>
-					  Vector.Done
-					  (case ac of
-					      [] => wild e
-					    | _ => make (ac, SOME (e, region)))
-				     | _ => Vector.Done (normal ())
-				 fun done ac = make (ac, NONE)
+      fun warn () =
+	 let
+	    val _ =
+	       if noMatch <> Cexp.RaiseAgain
+		  andalso Vector.exists (cases, fn {isDefault, numUses, ...} =>
+					 isDefault andalso !numUses > 0)
+		  then
+		     Control.warning (region,
+				      Layout.str (concat
+						  [kind, " is not exhaustive"]),
+				      lay ())
+	       else ()
+	    val redundant =
+	       Vector.keepAll (cases, fn {isDefault, numUses, ...} =>
+			       not isDefault andalso !numUses = 0)
+	    val _ =
+	       if 0 = Vector.length redundant
+		  then ()
+	       else 
+		  let
+		     open Layout
+		  in
+		     Control.warning
+		     (region,
+		      str (concat [kind, " has redundant rules"]),
+		      align
+		      [seq [str "rules: ",
+			    align (Vector.toListMap
+				   (redundant, fn {lay, ...} =>
+				    case lay of
+				       NONE => Error.bug "redundant match with no lay"
+				     | SOME l => l ()))],
+		       lay ()])
+		  end
+	 in
+	    ()
+	 end
+      val _ = if mayWarn then List.push (warnings, warn) else ()
    in
-      Vector.fold' (cases, 0, [], step, done)
+      exp
    end
 
 val casee =
@@ -323,7 +370,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
 	       App (e, e') => (loopExp e; loopExp e')
 	     | Case {rules, test, ...} =>
 		  (loopExp test
-		   ; Vector.foreach (rules, loopExp o #2))
+		   ; Vector.foreach (rules, loopExp o #exp))
 	     | Con _ => ()
 	     | Const _ => ()
 	     | EnterLeave (e, _) => loopExp e
@@ -417,28 +464,34 @@ fun defunctorize (CoreML.Program.T {decs}) =
 	       let
 		  val tyvars = tyvars ()
 		  val bodyType = et
-		  fun patDec (p: NestedPat.t,
-			      e: Xexp.t,
-			      r: Region.t,
-			      body: Xexp.t,
-			      bodyType: Xtype.t) =
-		     casee {caseType = bodyType,
-			    cases = Vector.new1 (p, body),
-			    conTycon = conTycon,
-			    noMatch = Cexp.RaiseBind,
-			    region = r,
-			    test = (e, NestedPat.ty p),
-			    tyconCons = tyconCons}
 		  val e =
 		     Vector.foldr
-		     (vbs, e, fn ({exp, pat, patRegion}, e) =>
+		     (vbs, e, fn ({exp, lay, pat, patRegion}, e) =>
 		      let
+			 fun patDec (p: NestedPat.t,
+				     e: Xexp.t,
+				     r: Region.t,
+				     body: Xexp.t,
+				     bodyType: Xtype.t,
+				     mayWarn: bool) =
+			    casee {caseType = bodyType,
+				   cases = Vector.new1 {exp = body,
+							lay = SOME lay,
+							pat = p},
+				   conTycon = conTycon,
+				   kind = "declaration",
+				   lay = lay,
+				   mayWarn = mayWarn,
+				   noMatch = Cexp.RaiseBind,
+				   region = r,
+				   test = (e, NestedPat.ty p),
+				   tyconCons = tyconCons}
 			 val (exp, expType) = loopExp exp
 			 val pat = loopPat pat
 			 fun vd (x: Var.t) = valDec (tyvars, x, exp, expType, e)
 		      in
 			 if Vector.isEmpty tyvars
-			    then patDec (pat, exp, patRegion, e, bodyType)
+			    then patDec (pat, exp, patRegion, e, bodyType, true)
 			 else
 			    case NestedPat.node pat of
 			       NestedPat.Wild => vd (Var.newNoname ())
@@ -475,7 +528,8 @@ fun defunctorize (CoreML.Program.T {decs}) =
 							       var = x},
 						     patRegion,
 						     Xexp.monoVar (y', yt),
-						     yt),
+						     yt,
+						     false),
 					     yt,
 					     e)
 					 end)
@@ -516,7 +570,8 @@ fun defunctorize (CoreML.Program.T {decs}) =
 						    var = x},
 						   patRegion,
 						   e,
-						   bodyType)
+						   bodyType,
+						   true)
 					       end
 					else e
 				  in
@@ -566,12 +621,16 @@ fun defunctorize (CoreML.Program.T {decs}) =
 					func = #1 (loopExp e1),
 					ty = ty}
 		     end
-		| Case {noMatch, region, rules, test} =>
+		| Case {kind, lay, noMatch, region, rules, test} =>
 		     casee {caseType = ty,
-			    cases = Vector.map (rules, fn (pat, exp) =>
-						(loopPat pat,
-						 #1 (loopExp exp))),
+			    cases = Vector.map (rules, fn {exp, lay, pat} =>
+						{exp = #1 (loopExp exp),
+						 lay = lay,
+						 pat = loopPat pat}),
 			    conTycon = conTycon,
+			    kind = kind,
+			    lay = lay,
+			    mayWarn = true,
 			    noMatch = noMatch,
 			    region = region,
 			    test = loopExp test,
@@ -708,9 +767,10 @@ fun defunctorize (CoreML.Program.T {decs}) =
 	     body = body,
 	     bodyType = bodyType}
 	 end
-      val body = loopDecs (decs, (Xexp.unit (), Xtype.unit))
+      val body = Xexp.toExp (loopDecs (decs, (Xexp.unit (), Xtype.unit)))
+      val _ = List.foreach (!warnings, fn f => f ())
    in
-      Xml.Program.T {body = Xexp.toExp body,
+      Xml.Program.T {body = body,
 		     datatypes = Vector.fromList (!datatypes),
 		     overflow = NONE}
    end

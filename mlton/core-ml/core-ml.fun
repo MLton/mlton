@@ -132,16 +132,21 @@ datatype dec =
 		  var: Var.t} vector,
 	   tyvars: unit -> Tyvar.t vector,
 	   vbs: {exp: exp,
+		 lay: unit -> Layout.t,
 		 pat: Pat.t,
 		 patRegion: Region.t} vector}
 and exp = Exp of {node: expNode,
 		  ty: Type.t}
 and expNode =
    App of exp * exp
-  | Case of  {noMatch: noMatch,
-	      region: Region.t,
-	      rules: (Pat.t * exp) vector,
-	      test: exp}
+  | Case of {kind: string,
+	     lay: unit -> Layout.t,
+	     noMatch: noMatch,
+	     region: Region.t,
+	     rules: {exp: exp,
+		     lay: (unit -> Layout.t) option,
+		     pat: Pat.t} vector,
+	     test: exp}
   | Con of Con.t * Type.t vector
   | Const of unit -> Const.t
   | EnterLeave of exp * SourceInfo.t
@@ -206,8 +211,8 @@ in
 	 App (e1, e2) => paren (seq [layoutExp e1, str " ", layoutExp e2])
        | Case {noMatch, rules, test, ...} =>
 	    Pretty.casee {default = NONE,
-			  rules = Vector.map (rules, fn (p, e) =>
-					      (Pat.layout p, layoutExp e)),
+			  rules = Vector.map (rules, fn {exp, pat, ...} =>
+					      (Pat.layout pat, layoutExp exp)),
 			  test = layoutExp test}
        | Con (c, _) => Con.layout c
        | Const f => Const.layout (f ())
@@ -334,13 +339,19 @@ structure Exp =
       fun casee (z as {rules, ...}) =
 	 if 0 = Vector.length rules
 	    then Error.bug "CoreML.casee"
-	 else make (Case z, ty (#2 (Vector.sub (rules, 0))))
-			  
+	 else make (Case z, ty (#exp (Vector.sub (rules, 0))))
+
       fun iff (test, thenCase, elseCase): t =
-	 casee {noMatch = Impossible,
+	 casee {kind = "if",
+		lay = fn () => Layout.empty,
+		noMatch = Impossible,
 		region = Region.bogus,
-		rules = Vector.new2 ((Pat.truee, thenCase),
-				     (Pat.falsee, elseCase)),
+		rules = Vector.new2 ({exp = thenCase,
+				      lay = NONE,
+				      pat = Pat.truee},
+				     {exp = elseCase,
+				      lay = NONE,
+				      pat = Pat.falsee}),
 		test = test}
 
       fun andAlso (e1, e2) = iff (e1, e2, falsee)

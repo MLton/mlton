@@ -74,6 +74,7 @@ signature AST_CORE =
 			  constraint: Type.t option,
 			  pat: t} -> t
 	    val layout: t -> Layout.t
+	    val layoutDelimit: t -> Layout.t
 	    val longvid: Longvid.t -> t
 	    val tuple: t vector -> t
 	    val var: Var.t -> t

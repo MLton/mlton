@@ -711,22 +711,32 @@ val errorThreshhold: int ref = ref 20
 
 val die = Process.fail
 
-fun error (r: Region.t, msg: Layout.t, extra: Layout.t): unit =
-   let
-      val _ = Int.inc numErrors
-      open Layout
-      val p =
-	 case Region.left r of
-	    NONE => "<bogus>"
-	  | SOME p => SourcePos.toString p
-      val _ = outputl (align [seq [str "Error: ", str p, str ": ", msg],
-			      indent (extra, 3)],
-		       Out.error)
-   in
-      if !numErrors = !errorThreshhold
-	 then die "compilation aborted: too many errors"
-      else ()
-   end
+local
+   fun msg (kind: string, r: Region.t, msg: Layout.t, extra: Layout.t): unit =
+      let
+	 open Layout
+	 val p =
+	    case Region.left r of
+	       NONE => "<bogus>"
+	     | SOME p => SourcePos.toString p
+	 in
+	    outputl (align [seq [str (concat [kind, ": "]),
+				 str p, str ": ", msg],
+			    indent (extra, 3)],
+		     Out.error)
+      end
+in
+   fun warning (r, m, e) = msg ("Warning", r, m, e)
+   fun error (r, m, e) =
+      let
+	 val _ = Int.inc numErrors
+	 val _ = msg ("Error", r, m, e)
+      in
+	 if !numErrors = !errorThreshhold
+	    then die "compilation aborted: too many errors"
+	 else ()
+      end
+end
 
 fun errorStr (r, msg) = error (r, Layout.str msg, Layout.empty)
 

@@ -278,6 +278,7 @@ signature CONTROL =
       val error: Region.t * Layout.t * Layout.t -> unit
       val errorStr: Region.t * string -> unit
       val checkForErrors: string -> unit
+      val warning: Region.t * Layout.t * Layout.t -> unit
 	 
       (*------------------------------------*)
       (*          Compiler Passes           *)
