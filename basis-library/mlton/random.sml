@@ -61,22 +61,31 @@ structure MLtonRandom: MLTON_RANDOM =
       local
 	 val chars =
 	    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	 val numChars = String.size chars
 	 val refresh =
-	    Int.quot (Word.wordSize,
-		      1 + IntInf.log2 (IntInf.fromInt (String.size chars)))
-	 val r: word ref = ref (rand ())
-	 val count: int ref = ref 0
-	 val numChars = Word.fromInt (String.size chars)
+	    let
+	       val numChars = IntInf.fromInt numChars
+	       fun loop (i: IntInf.int, c: int): int =
+		  if IntInf.< (i, numChars)
+		     then c
+		  else loop (IntInf.div (i, numChars), c + 1)
+	    in
+	       loop (IntInf.pow (2, Word.wordSize), 0)
+	    end
+	 val r: word ref = ref 0w0
+	 val count: int ref = ref refresh
+	 val numChars = Word.fromInt numChars
       in
 	 fun alphaNumChar (): char =
 	    let
 	       val n = !count
-	       val _ = if 0 = n then r := rand () else ()
+	       val _ = if n = refresh
+			  then (r := rand ()
+				; count := 1)
+		       else (count := n + 1)
 	       val w = !r
 	       val c = String.sub (chars, Word.toInt (Word.mod (w, numChars)))
 	       val _ = r := Word.div (w, numChars)
-	       val n = n + 1
-	       val _ = count := (if n = refresh then 0 else n)
 	    in
 	       c
 	    end
