@@ -2909,7 +2909,6 @@ void GC_profileInc (GC_state s, W32 amount) {
 				s->currentSource);
 	assert (s->currentSource < s->sourceSeqsSize);
 	sourceSeq = s->sourceSeqs[s->currentSource];
-	
 	source = sourceSeq[0] > 0
 		? sourceSeq[sourceSeq[0]]
 		: SOURCES_INDEX_UNKNOWN;
