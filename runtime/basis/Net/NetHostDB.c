@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include <netdb.h>
+#include <sys/socket.h>
 #include "mlton-basis.h"
 #include "my-lib.h"
 
