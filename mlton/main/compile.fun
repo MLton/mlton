@@ -282,41 +282,26 @@ end
 (* ------------------------------------------------- *)
 
 val (lexAndParseMLB, lexAndParseMLBMsg) =
-   Control.traceBatch (Control.Pass, "lex and parse")
+   Control.traceBatch 
+   (Control.Pass, "lex and parse")
    MLBFrontEnd.lexAndParseString
 
-val lexAndParseMLB : String.t * {parseImport: bool, 
-				 parseSource: bool} -> 
-                     Ast.Basdec.t * {importFiles: File.t vector, 
-				     sourceFiles: File.t vector} = 
-   fn (input, parse) => 
+val lexAndParseMLB : String.t -> Ast.Basdec.t = 
+   fn input =>
    let
-      val (ast, files) = lexAndParseMLB (input, parse)
+      val ast = lexAndParseMLB input
       val _ = Control.checkForErrors "parse"
-   in
-      (ast, files)
-   end
-
-val sourceFilesMLB = fn {input} =>
-   let
-      val (_, {sourceFiles, ...}) =
-	 lexAndParseMLB (input, {parseImport = true, 
-				 parseSource = false})
-   in
-      sourceFiles
-   end
-
-val lexAndParseMLB = fn input =>
-   let
-      val (ast, _) =
-	 lexAndParseMLB (input, {parseImport = true, 
-				 parseSource = true})
    in
       ast
    end
 
+fun sourceFilesMLB {input} =
+   Ast.Basdec.sourceFiles (lexAndParseMLB input)
+
 val (elaborateMLB, elaborateMLBMsg) =
-   Control.traceBatch (Control.Pass, "elaborate") Elaborate.elaborateMLB
+   Control.traceBatch 
+   (Control.Pass, "elaborate") 
+   Elaborate.elaborateMLB
 
 val displayEnvDecs =
    Control.Layout
@@ -327,7 +312,7 @@ val displayEnvDecs =
      [("deadCode", Bool.layout b),
       ("decs", Decs.layout d)])
     ds)
-   
+
 fun parseAndElaborateMLB (input: String.t): Env.t * (Decs.t * bool) vector =
    Control.pass
    {name = "parseAndElaborate",

@@ -895,7 +895,7 @@ fun commandLine (args: string list): unit =
 			      (if !keepSML
 				  then saveSML (suffix ".sml")
 			       else ()
-				  ; compileSml files)
+			       ; compileSml files)
 		     end
 		  fun compileMLB file =
 		     let

@@ -24,44 +24,29 @@ val node = Wrap.node
 
 datatype basexpNode =
    Bas of basdec
- | Var of Basid.t
  | Let of basdec * basexp
+ | Var of Basid.t
 and basdecNode =
-   Defs of ModIdBind.t
- | Basis of {name: Basid.t,
-	     def: basexp} vector
+   Ann of (string list * Region.t) list * basdec
+ | Basis of {name: Basid.t, def: basexp} vector
+ | Defs of ModIdBind.t
  | Local of basdec * basdec
- | Seq of basdec list
+ | MLB of {fileAbs: File.t, fileUse: File.t} * basdec Promise.t
  | Open of Basid.t vector   
- | Prog of File.t * Program.t
- | MLB of File.t * OS.FileSys.file_id option * basdec
  | Prim
- | Ann of (string list * Region.t) list * basdec
+ | Prog of {fileAbs: File.t, fileUse: File.t} * Program.t Promise.t
+ | Seq of basdec list
 withtype basexp = basexpNode Wrap.t
      and basdec = basdecNode Wrap.t
 
 fun layoutBasexp exp =
    case node exp of
       Bas dec => align [str "bas", indent (layoutBasdec dec, 3), str "end"]
-    | Var basid => Basid.layout basid
     | Let (dec, exp) => Pretty.lett (layoutBasdec dec, layoutBasexp exp)
+    | Var basid => Basid.layout basid 
 and layoutBasdec dec =
    case node dec of
-      Defs def => ModIdBind.layout def
-    | Basis basbnds =>
-	 layoutAndsBind
-	 ("basis", "=", basbnds, fn {name, def} =>
-	  (case node def of Var _ => OneLine | _ => Split 3,
-	   Basid.layout name, layoutBasexp def))
-    | Local (dec1, dec2) => Pretty.locall (layoutBasdec dec1, layoutBasdec dec2)
-    | Seq decs => align (layoutBasdecs decs)
-    | Open bs => seq [str "open ",
-		      seq (separate (Vector.toListMap (bs, Basid.layout),
-				     " "))]
-    | Prog (f,_) => File.layout f
-    | MLB (f,_,_) => File.layout f
-    | Prim => str "_prim"
-    | Ann (anns, dec) =>
+      Ann (anns, dec) =>
 	 align [str "ann", 
 		indent ((seq o separate)
 			(List.map (anns, fn (ann,_) =>
@@ -70,17 +55,31 @@ and layoutBasdec dec =
 			3),
 		str "in", 
 		indent (layoutBasdec dec, 3), str "end"]
+    | Basis basbnds =>
+	 layoutAndsBind
+	 ("basis", "=", basbnds, fn {name, def} =>
+	  (case node def of Var _ => OneLine | _ => Split 3,
+	   Basid.layout name, layoutBasexp def))
+    | Defs def => ModIdBind.layout def
+    | Local (dec1, dec2) => Pretty.locall (layoutBasdec dec1, layoutBasdec dec2) 
+    | MLB ({fileUse, ...}, _) => File.layout fileUse
+    | Open bs => seq [str "open ",
+		      seq (separate (Vector.toListMap (bs, Basid.layout),
+				     " "))] 
+    | Prim => str "_prim"
+    | Prog ({fileUse, ...}, _) => File.layout fileUse
+    | Seq decs => align (layoutBasdecs decs)
 and layoutBasdecs decs = layouts (decs, layoutBasdec)
 
 fun checkSyntaxBasexp (e: basexp): unit =
    case node e of
       Bas dec => checkSyntaxBasdec dec
-    | Var basid => ()
     | Let (dec, exp) => (checkSyntaxBasdec dec
 			 ; checkSyntaxBasexp exp)
+    | Var basid => ()
 and checkSyntaxBasdec (d: basdec): unit =
    case node d of
-      Defs def => ModIdBind.checkSyntax def
+      Ann (anns, dec) => checkSyntaxBasdec dec
     | Basis basbnds =>
 	 reportDuplicates
 	 (basbnds, {equals = (fn ({name = id, ...}, {name = id', ...}) =>
@@ -89,15 +88,62 @@ and checkSyntaxBasdec (d: basdec): unit =
 		    name = "basis definition",
 		    region = Basid.region o #name,
 		    term = fn () => layoutBasdec d})
+    | Defs def => ModIdBind.checkSyntax def
     | Local (dec1, dec2) => 
 	 (checkSyntaxBasdec dec1
 	  ; checkSyntaxBasdec dec2)
-    | Seq decs => List.foreach (decs, checkSyntaxBasdec)
+    | MLB (_,_) => ()
     | Open bs => ()
-    | Prog (f,_) => ()
-    | MLB (f,_,_) => ()
     | Prim => ()
-    | Ann (anns, dec) => checkSyntaxBasdec dec
+    | Prog (_,_) => ()
+    | Seq decs => List.foreach (decs, checkSyntaxBasdec)
+
+fun sourceFiles (d: basdec): File.t vector =
+   let
+      val sourceFiles : File.t Buffer.t =
+	 Buffer.new {dummy = "<dummy>"}
+      val psi : File.t -> bool ref =
+	 String.memoize (fn _ => ref false)
+
+      fun sourceFilesBasexp (e: basexp): unit =
+	 case node e of
+	    Bas dec => sourceFilesBasdec dec
+	  | Let (dec, exp) => (sourceFilesBasdec dec
+			       ; sourceFilesBasexp exp)
+	  | Var _ => ()
+      and sourceFilesBasdec (d: basdec): unit =
+	 case node d of
+	    Ann (_, dec) => sourceFilesBasdec dec
+	  | Basis basbnds =>
+	       Vector.foreach
+	       (basbnds, fn {def, ...} =>
+		sourceFilesBasexp def)
+	  | Defs _ => ()
+	  | Local (dec1, dec2) => (sourceFilesBasdec dec1
+				   ; sourceFilesBasdec dec2)
+	  | MLB ({fileAbs, ...}, dec) =>
+	       let
+		  val b = psi fileAbs
+	       in
+		  if !b
+		     then ()
+		     else let
+			     val () = b := true
+			  in
+			     sourceFilesBasdec (Promise.force dec)
+			  end
+	       end
+	  | Open _ => ()
+	  | Prim => ()
+	  | Prog ({fileUse, ...}, _) => Buffer.add (sourceFiles, fileUse)
+	  | Seq decs => List.foreach (decs, sourceFilesBasdec)
+      val () = sourceFilesBasdec d
+   in
+      Buffer.toVector sourceFiles
+   end
+val sourceFiles =
+   Trace.trace ("Ast.Basdec.sourceFiles", Layout.ignore, Vector.layout File.layout)
+   sourceFiles
 
 
 structure Basexp =
@@ -132,11 +178,12 @@ structure Basdec =
       val locall = make o Local
       val seq = make o Seq
       val empty = seq []
+      val mlb = make o MLB
       val openn = make o Open
       val prim = make Prim
       val prog = make o Prog
-      val mlb = make o MLB
       val checkSyntax = checkSyntaxBasdec
       val layout = layoutBasdec
+      val sourceFiles = sourceFiles
    end
 end

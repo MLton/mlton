@@ -101,8 +101,8 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
 
       fun elabProg p = ElaboratePrograms.elaborateProgram (p, {env = E})
 
-      val psi : (OS.FileSys.file_id * Env.Basis.t Promise.t) HashSet.t =
-	 HashSet.new {hash = OS.FileSys.hash o #1}
+      val psi : (File.t * Env.Basis.t Promise.t) HashSet.t =
+	 HashSet.new {hash = String.hash o #1}
 
       val elabBasexpInfo = Trace.info "elabBasexp"
       val elabBasdecInfo = Trace.info "elabBasdec"
@@ -174,15 +174,19 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
 			     Env.lookupBasid (E, basid)), fn bo => 
 		 Option.app (bo, fn b => Env.openBasis (E, b)))
 	   | Basdec.Prog (_, prog) =>
-		Buffer.add (decs, (elabProg prog, deadCode ()))
-	   | Basdec.MLB (_, fid, basdec) =>
 		let
-		   val fid = valOf fid
+		   val prog = Promise.force prog
+		in
+		   Buffer.add (decs, (elabProg prog, deadCode ()))
+		end
+	   | Basdec.MLB ({fileAbs, ...}, basdec) =>
+		let
 		   val (_, B) =
 		      HashSet.lookupOrInsert
-		      (psi, OS.FileSys.hash fid, fn (fid', _) => 
-		       OS.FileSys.compare (fid, fid') = EQUAL, fn () =>
+		      (psi, String.hash fileAbs, fn (fileAbs', _) => 
+		       String.equals (fileAbs, fileAbs'), fn () =>
 		       let
+			  val basdec = Promise.force basdec
 			  val B =
 			     Promise.delay
 			     (fn () =>
@@ -191,7 +195,7 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
 			       (#2 o Env.makeBasis) 
 			       (E, fn () => elabBasdec basdec)))
 		       in
-			  (fid, B)
+			  (fileAbs, B)
 		       end)
 		   val B = Promise.force B
 		in

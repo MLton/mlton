@@ -21,8 +21,8 @@ signature AST_MLBS =
 	    type t
 	    datatype node =
 	       Bas of basdec
-	     | Var of Basid.t
 	     | Let of basdec * t
+	     | Var of Basid.t
 	       
 	    include WRAPPED sharing type node' = node
 	                    sharing type obj = t
@@ -43,28 +43,29 @@ signature AST_MLBS =
 	     | Basis of {name: Basid.t, def: Basexp.t} vector
 	     | Defs of ModIdBind.t
 	     | Local of t * t
-	     | MLB of File.t * OS.FileSys.file_id option * t
+	     | MLB of {fileAbs: File.t, fileUse: File.t} * t Promise.t
 	     | Open of Basid.t vector
 	     | Prim
-	     | Prog of File.t * Program.t
+	     | Prog of {fileAbs: File.t, fileUse: File.t} * Program.t Promise.t
 	     | Seq of t list
 
 	    include WRAPPED sharing type node' = node
 	                    sharing type obj = t
 
-	    val defs: ModIdBind.t -> t
-	    val basis: {name: Basid.t, def: Basexp.t} vector -> t
-	    val locall: t * t -> t
-	    val empty: t
-	    val seq: t list -> t
-	    val openn: Basid.t vector -> t
-	    val prog: File.t * Program.t -> t
-	    val mlb: File.t * OS.FileSys.file_id option * t -> t
-	    val prim: t
 	    val ann: (string list * Region.t) list * t -> t
+	    val basis: {name: Basid.t, def: Basexp.t} vector -> t
+	    val defs: ModIdBind.t -> t
+	    val empty: t
+	    val locall: t * t -> t
+	    val mlb: {fileAbs: File.t, fileUse: File.t} * t Promise.t -> t
+	    val openn: Basid.t vector -> t
+	    val prim: t
+	    val prog: {fileAbs: File.t, fileUse: File.t} * Program.t Promise.t -> t
+	    val seq: t list -> t
 
 	    val checkSyntax: t -> unit
 	    val layout: t -> Layout.t
+	    val sourceFiles: t -> File.t vector
 	 end
       sharing type Basdec.t = Basexp.basdec
    end
