@@ -86,13 +86,22 @@ functor FixWord (W: PERVASIVE_WORD): WORD =
       end
       val fromInt = W.fromLargeInt
       val fromLarge = W.fromLargeWord o LargeWord.toLargeWord
-      val fromLargeInt = W.fromLargeInt o Int.fromLarge
+      fun fromLargeInt i =
+	 if IntInf.< (i, IntInf.fromInt 0)
+	    then raise Overflow
+	 else valOf (W.fromString (IntInf.fmt StringCvt.HEX i))
       val fromLargeWord = fromLarge
       val toInt = W.toLargeInt
       val toIntX = W.toLargeIntX
       val toLarge = LargeWord.fromLargeWord o W.toLargeWord
-      val toLargeInt = Int.toLarge o toInt
-      val toLargeIntX = Int.toLarge o toIntX
+      fun toLargeInt w = valOf (IntInf.fromString (W.fmt StringCvt.DEC w))
+      val highBit = W.<< (W.fromLargeWord 0w1,
+			  Word31.fromInt (Int31.- (W.wordSize, 1)))
+      val highBitSub = IntInf.* (IntInf.fromInt 2, toLargeInt highBit)
+      fun toLargeIntX w =
+	 if W.fromLargeWord 0w0 = W.andb (w, highBit)
+	    then toLargeInt w
+	 else IntInf.- (toLargeInt w, highBitSub)
       val toLargeWord = toLarge
       val toLargeWordX = LargeWord.fromLargeWord o W.toLargeWordX
       val toLargeX = toLargeWordX
