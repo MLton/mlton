@@ -21,7 +21,6 @@ signature IMPERATIVE_IO_EXTRA_ARG =
 functor ImperativeIOExtra(S: IMPERATIVE_IO_EXTRA_ARG): IMPERATIVE_IO_EXTRA =
    struct
       open S
-      structure StreamIOExtra = StreamIO
 
       structure SIO = StreamIO
       structure V = Vector

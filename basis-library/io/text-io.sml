@@ -1,10 +1,12 @@
 structure TextIO: TEXT_IO_EXTRA =
    struct
       structure StreamIO = 
-	StreamIOExtra(structure PrimIO = TextPrimIO
+	StreamIOExtra(structure Cleaner = Cleaner
+		      structure PrimIO = TextPrimIO
 		      structure Array = CharArray
 		      structure Vector = CharVector
 		      val someElem = (#"\000": Char.char))
+      structure StreamIOExtra = StreamIO
       structure ImperativeIO = 
 	ImperativeIOExtra(structure StreamIO = StreamIO
 			  structure Vector = CharVector

@@ -1,5 +1,6 @@
 signature STREAM_IO_EXTRA_ARG = 
    sig
+      structure Cleaner: CLEANER
       structure PrimIO: PRIM_IO_EXTRA
       structure Array: MONO_ARRAY
       structure Vector: MONO_VECTOR
@@ -52,6 +53,8 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 				   augmented_writer: writer,
 				   state: state ref,
 				   buffer_mode: buffer_mode ref}
+
+      val openOutstreams : outstream list ref = ref []
 
       fun outstreamSel (Out v, sel) = sel v
       fun writerSel (PIO.WR v, sel) = sel v
@@ -170,6 +173,10 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 	if closed (!state)
 	  then ()
 	  else (flushOut os;
+		openOutstreams := List.filter
+                                  (fn Out {state = state', ...} =>
+				   state <> state')
+				  (!openOutstreams);
 		if terminated (!state)
 		  then (writerSel (outstreamWriter os, #close)) ()
 		  else ();
@@ -209,15 +216,21 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 
       fun mkOutstream (writer, buffer_mode) =
 	let
+	  val _ = Cleaner.addNew
+	          (Cleaner.atExit, fn () =>
+		   List.app (fn os =>
+			     closeOut os) (!openOutstreams))
 	  val bufSize = writerSel (writer, #chunkSize)
+	  val os = Out {writer = writer,
+			augmented_writer = PIO.augmentWriter writer,
+			state = ref Active,
+			buffer_mode = ref (case buffer_mode of
+					     IO.NO_BUF => NO_BUF
+					   | IO.LINE_BUF => newLineBuf bufSize
+					   | IO.BLOCK_BUF => newBlockBuf bufSize)}
+	  val _ = openOutstreams := os :: (!openOutstreams)
 	in
-	  Out {writer = writer,
-	       augmented_writer = PIO.augmentWriter writer,
-	       state = ref Active,
-	       buffer_mode = ref (case buffer_mode of
-				    IO.NO_BUF => NO_BUF
-				  | IO.LINE_BUF => newLineBuf bufSize
-				  | IO.BLOCK_BUF => newBlockBuf bufSize)}
+	  os
 	end
 
       fun getWriter (os as Out {writer, state, buffer_mode, ...}) =
@@ -272,6 +285,8 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 				 augmented_reader: reader,
 				 state: state ref,
 				 tail: state ref ref}
+
+      val openInstreams : instream list ref = ref []
 
       fun updateState (In {reader, augmented_reader, tail, ...}, state) =
 	In {reader = reader,
@@ -465,10 +480,14 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 		 | _ => SOME 0
 	       end
 
-      fun closeIn (is as In {tail, ...}) =
+      fun closeIn (is as In {state, tail, ...}) =
 	case !(!tail) of
 	  Active (ref (End)) =>
 	    (!tail := Closed;
+	     openInstreams := List.filter
+	                      (fn In {state = state', ...} =>
+			       state <> state')
+			      (!openInstreams);
 	     (readerSel (instreamReader is, #close)) ())
 	| _ => ()
 	handle exn => liftExn (instreamName is) "closeIn" exn
@@ -480,15 +499,21 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 
       fun mkInstream (reader, v) =
 	let
+	  val _ = Cleaner.addNew
+	          (Cleaner.atExit, fn () =>
+		   List.app (fn is =>
+			     closeIn is) (!openInstreams))
 	  val next = ref (Active (ref End))
 	  val this = if V.length v = 0
 		       then next
 		       else ref (Active (ref (Link {inp = v, pos = 0, next = next})))
+	  val is = In {reader = reader,
+		       augmented_reader = PIO.augmentReader reader,
+		       state = this,
+		       tail = ref next}
+	  val _ = openInstreams := is :: (!openInstreams)
 	in
-	  In {reader = reader,
-	      augmented_reader = PIO.augmentReader reader,
-	      state = this,
-	      tail = ref next}
+	  is
 	end
 
       fun getReader (is as In {reader, tail, ...}) =
@@ -522,4 +547,6 @@ signature STREAM_IO_ARG =
       sharing type PrimIO.array = Array.array
       val someElem: PrimIO.elem
    end
-functor StreamIO(S: STREAM_IO_ARG): STREAM_IO = StreamIOExtra(S)
+functor StreamIO(S: STREAM_IO_ARG): STREAM_IO = 
+  StreamIOExtra(open S
+		structure Cleaner = EmptyCleaner)
