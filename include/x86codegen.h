@@ -27,6 +27,11 @@ word statusTemp;
 word switchTemp;
 word threadTemp;
 
+#ifndef DEBUG_X86CODEGEN
+#define DEBUG_X86CODEGEN FALSE
+#endif
+
+
 #define Locals(c, d, i, p, u)						\
 	char localuchar[c];						\
 	double localdouble[d];				       		\
@@ -35,6 +40,35 @@ word threadTemp;
 	uint localuint[u]
 
 #define Main(cs, mg, mfs, mlw, mmc, ps, ml, reserveEsp)			\
+void MLton_callFromC () {						\
+	pointer jump;							\
+	GC_state s;							\
+									\
+	if (DEBUG_X86CODEGEN)						\
+		fprintf (stderr, "MLton_callFromC() starting\n");	\
+	s = &gcState;							\
+	s->savedThread = s->currentThread;				\
+	/* Return to the C Handler thread. */				\
+	GC_switchToThread (s, s->callFromCHandler);			\
+	jump = *(pointer*)(s->stackTop - WORD_SIZE);			\
+	if (reserveEsp)							\
+		__asm__ __volatile__					\
+		("pusha;movl %%esp,%0;movl %1,%%eax;movl %2,%%ebp;movl %3,%%edi;jmp *%%eax;.global Thread_returnToC;Thread_returnToC:;movl %0,%%esp;popa" \
+		: "=m" (c_stackP)					\
+		: "m" (jump), "m" (gcState.stackTop), "m" (gcState.frontier) \
+		);							\
+	else								\
+		__asm__ __volatile__ 					\
+		("pusha;movl %%esp,%0;movl %1,%%eax;movl %2,%%ebp;movl %3,%%esp;jmp *%%eax;.global Thread_returnToC;Thread_returnToC:;movl %0,%%esp;popa" \
+		: "=m" (c_stackP) 					\
+ 		: "m" (jump), "m" (gcState.stackTop), "m" (gcState.frontier) \
+		); \
+	GC_switchToThread (s, s->savedThread);				\
+	s->savedThread = BOGUS_THREAD;					\
+	if (DEBUG_X86CODEGEN)						\
+		fprintf (stderr, "Thread_returnToC done");		\
+	return;								\
+}									\
 int main (int argc, char **argv) {					\
 	pointer jump;  							\
 	extern pointer ml;						\
@@ -51,13 +85,13 @@ int main (int argc, char **argv) {					\
 		("movl %%esp,%0;movl %1,%%eax;movl %2,%%ebp;movl %3,%%edi;jmp *%%eax" \
 		: "=m" (c_stackP)					\
 		: "m" (jump), "m" (gcState.stackTop), "m" (gcState.frontier) \
-		: "%ebp", "%edi");					\
+		);							\
 	else								\
 		__asm__ __volatile__ 					\
 		("movl %%esp,%0;movl %1,%%eax;movl %2,%%ebp;movl %3,%%esp;jmp *%%eax" \
 		: "=m" (c_stackP) 					\
  		: "m" (jump), "m" (gcState.stackTop), "m" (gcState.frontier) \
-		: "%ebp", "%esp");					\
+		);							\
 	return 1;							\
 }
 
