@@ -14,9 +14,11 @@ datatype 'a t = T of {afters: (unit -> unit) list ref,
 		      finalizers: ('a -> unit) list ref,
 		      value: 'a ref}
 
-fun withValue (T {value, ...}, f) =
-   DynamicWind.wind (fn () => f (!value),
-		     fn () => Primitive.touch value)
+fun touch (T {value, ...}) = Primitive.touch value
+   
+fun withValue (f as T {value, ...}, g) =
+   DynamicWind.wind (fn () => g (!value),
+		     fn () => touch f)
 
 fun addFinalizer (T {finalizers, ...}, f) =
    List.push (finalizers, f)
@@ -77,6 +79,6 @@ fun new v =
    end
 
 fun finalizeBefore (T {afters, ...}, f) =
-   List.push (afters, fn () => Primitive.touch f)
+   List.push (afters, fn () => touch f)
 
 end
