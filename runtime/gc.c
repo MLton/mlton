@@ -38,7 +38,6 @@
 #endif
 
 #include "IntInf.h"
-#include "gmp.h"
 
 #define METER FALSE  /* Displays distribution of object sizes at program exit. */
 

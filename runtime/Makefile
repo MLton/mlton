@@ -320,7 +320,7 @@ DEBUG_OBJS =					\
 %.o: %.S
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-all: ensure-gmp libmlton.a libmlton-gdb.a
+all: libmlton.a libmlton-gdb.a
 
 libmlton.a: $(OBJS) 
 	$(AR) libmlton.a $(OBJS)
@@ -336,10 +336,3 @@ clean:
 .PHONY: depend
 depend:
 	makedepend -f- -- $(CFLAGS) -- $(SRCS)
-
-LIBMLTON = /usr/lib/mlton/self
-.PHONY: ensure-gmp
-ensure-gmp:
-	if [ $(HOSTTYPE) = freebsd ] && ! [ -r gmp.h -a -r libgmp.a ]; then	\
-		cp $(LIBMLTON)/libgmp.a $(LIBMLTON)/include/gmp.h ./; 		\
-	fi		

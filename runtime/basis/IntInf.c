@@ -5,11 +5,11 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  */
-#include "gmp.h"
-#include "IntInf.h"
 
 #include <stddef.h> /* for offsetof */
 #include <string.h>
+
+#include "IntInf.h"
 
 /* Import the global gcState so we can get and set the frontier. */
 extern struct GC_state gcState;

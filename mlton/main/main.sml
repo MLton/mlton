@@ -453,8 +453,8 @@ fun commandLine (args: string list): unit =
 		   *)
 		  val linkWithGmp =
 		     case !hostType of
-			Cygwin => "-lgmp"
-		      | FreeBSD => "-lgmp"
+			Cygwin => ["-lgmp"]
+		      | FreeBSD => ["-L/usr/local/lib/", "-lgmp"]
 		      | Linux =>
 			   case (List.peekMap
 				 ("/lib\n" :: "/usr/lib\n"
@@ -468,8 +468,8 @@ fun commandLine (args: string list): unit =
 					then SOME lib
 				     else NONE
 				  end)) of
-			      NONE => "-lgmp"
-			    | SOME lib => lib
+			      NONE => ["-lgmp"]
+			    | SOME lib => [lib]
 		  val linkLibs: string list =
 		     List.concat [list ("-L", rev (libDirs)),
 				  list ("-l",
@@ -477,7 +477,7 @@ fun commandLine (args: string list): unit =
 					    then "mlton-gdb"
 					 else "mlton")
 					    :: !libs),
-				  [linkWithGmp]]
+				  linkWithGmp]
 		  fun compileO (inputs: File.t list) =
 		     let
 			val output = maybeOut ""

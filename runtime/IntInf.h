@@ -15,6 +15,21 @@
 #include "gc.h"
 #include "mlton-basis.h"
 
+#if (defined (__CYGWIN__))
+#include "gmp.h"
+#elif (defined (__FreeBSD__))
+/* On FreeBSD, the default gmp.h is installed in /usr/include, but that is
+ * version 2.  We want gmp version 4, which the is installed in 
+ * /usr/local/include, and is ensured to exist because it is required by the
+ * MLton package.
+ */
+#include "/usr/local/include/gmp.h"
+#elif (defined (__linux__))
+#include <gmp.h>
+#else
+#error gmp.h not defined for platform
+#endif
+
 /*
  * Third header word for bignums and strings.
  */
