@@ -458,21 +458,21 @@ static void MLton_overflow() {
 
 static inline Int Int_addCheckFast(Int n1, Int n2) {
  	__asm__ __volatile__ ("addl %1, %0\n\tjo MLton_overflow"
-			      : "+r" (n1) : "g" (n2) );
+			      : "+r" (n1) : "g" (n2) : "cc");
 
 	return n1;
 }
 
 static inline Int Int_mulCheckFast(Int n1, Int n2) {
  	__asm__ __volatile__ ("imull %1, %0\n\tjo MLton_overflow"
-			      : "+r" (n1) : "g" (n2) );
+			      : "+r" (n1) : "g" (n2) : "cc");
 
 	return n1;
 }
 
 static inline Int Int_subCheckFast(Int n1, Int n2) {
  	__asm__ __volatile__ ("subl %1, %0\n\tjo MLton_overflow"
-			      : "+r" (n1) : "g" (n2) );
+			      : "+r" (n1) : "g" (n2) : "cc" );
 
 	return n1;
 }
@@ -488,7 +488,7 @@ static inline Int Int_subCheckFast(Int n1, Int n2) {
 
 static inline Int Int_negCheckFast(Int n) {
 	__asm__ __volatile__ ("negl %1\n\tjo MLton_overflow"
-				: "+r" (n) : );
+				: "+r" (n) : : "cc" );
 	return n;
 }
 #define Int_negCheck(dst, n, l) dst = Int_negCheckFast(n)
