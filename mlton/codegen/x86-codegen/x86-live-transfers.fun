@@ -144,7 +144,7 @@ struct
 			    liveInfo : x86Liveness.LiveInfo.t,
 			    jumpInfo : x86JumpInfo.t}
     = let
-	val cutoff = !Native.cutoff
+	val cutoff = !Control.Native.cutoff
 
 	val info
 	  as {get = getInfo : 
@@ -312,7 +312,7 @@ struct
 		      val Block.T {statements, transfer, ...} = block
 
 		      datatype t = Position of I.t | Length of I'.t
-		      fun posF (assembly,n as I.Finite n')
+		      fun posF (assembly,n)
 			= if n < cutoff
 			    then posF'(assembly,n)
 			    else Position I.PosInfinity
