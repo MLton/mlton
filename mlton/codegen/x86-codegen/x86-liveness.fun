@@ -7,7 +7,10 @@ struct
   val tracer = x86.tracer
   val tracerTop = x86.tracerTop
 
-  structure LiveSet = MemLocSet
+  structure LiveSet = struct 
+			open MemLocSet
+			fun toMemLocSet s = s
+		      end
   fun track memloc = ClassSet.contains(!x86MLtonBasic.Classes.livenessClasses, 
 				       MemLoc.class memloc)
 
