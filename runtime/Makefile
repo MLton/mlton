@@ -1,4 +1,4 @@
-CC =		gcc -Wall -I. -march=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=5 -fomit-frame-pointer
+CC =		gcc -Wall -I. -mcpu=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=5 -fomit-frame-pointer
 CFLAGS =	-O9 -DNODEBUG
 AR =		ar rc
 
