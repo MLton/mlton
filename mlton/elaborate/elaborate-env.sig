@@ -85,6 +85,35 @@ signature ELABORATE_ENV =
 	       t * Structure.t * string list * Region.t ->
 	       Decs.t * Structure.t option
 	 end
+      structure InterfaceEnv:
+	 sig
+	    structure Scheme:
+	       sig
+		  type t
+	       end
+	    structure Status:
+	       sig
+		  type t
+	       end
+	    structure TypeStr: TYPE_STR
+
+	    type t
+
+	    val allowDuplicates: bool ref
+	    val extendCon: t * Ast.Con.t * CoreML.Con.t * Scheme.t -> unit
+	    val extendExn: t * Ast.Con.t * Scheme.t -> unit
+	    val extendStrid: t * Ast.Strid.t * Interface.t -> unit
+	    val extendTycon: t * Ast.Tycon.t * TypeStr.t -> unit
+	    val extendVid: t * Ast.Vid.t * Status.t * Scheme.t -> unit
+	    val lookupLongstrid: t * Ast.Longstrid.t -> Interface.t option
+	    val lookupLongtycon: t * Ast.Longtycon.t -> TypeStr.t option
+	    val lookupSigid: t * Ast.Sigid.t -> Interface.t option
+	    val makeInterface: t * (unit -> 'a) -> Interface.t * 'a
+	    val openInterface: t * Interface.t * Region.t -> unit
+	 end
+      sharing Interface.Scheme = InterfaceEnv.Scheme
+      sharing Interface.Status = InterfaceEnv.Status
+      sharing Interface.TypeStr = InterfaceEnv.TypeStr
 
       type t
 
@@ -124,6 +153,7 @@ signature ELABORATE_ENV =
       val lookupLongvid: t * Ast.Longvid.t -> Vid.t * Scheme.t
       val lookupSigid: t * Ast.Sigid.t -> Interface.t option
       val makeStructure: t * (unit -> 'a) -> 'a * Structure.t
+      val makeInterfaceEnv: t -> InterfaceEnv.t
       val newTycon: Symbol.t * Tycon.Kind.t * Tycon.AdmitsEquality.t -> Tycon.t
       (* openStructure (E, S) opens S in the environment E. *) 
       val openStructure: t * Structure.t -> unit

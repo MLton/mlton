@@ -41,6 +41,8 @@ signature INTERFACE =
       structure Scheme:
 	 sig
 	    type t
+
+	    val toEnv: t -> EnvTypeStr.Scheme.t
 	 end
       structure Status:
 	 sig
@@ -63,11 +65,24 @@ signature INTERFACE =
 	    val empty: t
 	    val layout: t -> Layout.t
 	 end
+      structure Time:
+	 sig
+	    type t
+
+	    val tick: unit -> t
+	 end
       structure TypeStr:
 	 sig
 	    include TYPE_STR
 
 	    val fromEnv: EnvTypeStr.t -> t
+	    val share:
+	       (t * Region.t * (unit -> Layout.t))
+	       * (t * Region.t * (unit -> Layout.t))
+	       * Time.t
+	       -> unit
+	    val wheree: t * Region.t * (unit -> Layout.t) * Time.t * t -> unit
+	    val toEnv: t -> EnvTypeStr.t
 	 end
       sharing TypeStr.AdmitsEquality = AdmitsEquality
       sharing TypeStr.Con = Con
@@ -79,34 +94,27 @@ signature INTERFACE =
       sharing TypeStr.Type = Type
       sharing TypeStr.Tyvar = EnvTypeStr.Tyvar = Tyvar
 
-      structure Time:
-	 sig
-	    type t
-
-	    val tick: unit -> t
-	 end
-
       type t
       
-      val + : t * t -> t
-      val bogus: t
-      val cons: TypeStr.Cons.t -> t
       val copy: t -> t (* copy renames all flexible tycons. *)
-      val empty: t
       val equals: t * t -> bool
-      val excons: TypeStr.Cons.t -> t
-      val extendTycon: t * Ast.Tycon.t * TypeStr.t -> t
-      val foreach: t * {handleStr: {name: Ast.Strid.t,
-				    interface: t} -> unit,
-			handleType: {name: Ast.Tycon.t,
-				     typeStr: EnvTypeStr.t} -> unit,
-			handleVal: ({name: Ast.Vid.t,
-				     scheme: EnvTypeStr.Scheme.t,
-				     status: Status.t} -> unit) option} -> unit
+      val dest: t -> {strs: (Ast.Strid.t * t) array,
+		      types: (Ast.Tycon.t * TypeStr.t) array,
+		      vals: (Ast.Vid.t * (Status.t * Scheme.t)) array}
+      val empty: t
       val layout: t -> Layout.t
-      val lookupLongtycon: t * Ast.Longtycon.t * (TypeStr.t -> unit) -> unit
-      val peekLongtycon: t * Ast.Longtycon.t -> TypeStr.t option
+      val lookupLongtycon:
+	 t * Ast.Longtycon.t * Region.t * {prefix: Ast.Strid.t list}
+	 -> TypeStr.t option
+      val new: {strs: (Ast.Strid.t * t) array,
+		types: (Ast.Tycon.t * TypeStr.t) array,
+		vals: (Ast.Vid.t * (Status.t * Scheme.t)) array} -> t
       val peekStrid: t * Ast.Strid.t -> t option
+      datatype 'a peekResult =
+	 Found of 'a
+       | UndefinedStructure of Ast.Strid.t list
+      val peekStrids: t * Ast.Strid.t list -> t peekResult
+      val peekTycon: t * Ast.Tycon.t -> TypeStr.t option
       val plist: t -> PropertyList.t
       (* realize makes a copy, and instantiate longtycons *)
       val realize: t * (Ast.Longtycon.t
@@ -114,14 +122,6 @@ signature INTERFACE =
 			* TypeStr.Kind.t
 			* {hasCons: bool} -> EnvTypeStr.t) -> t
       val renameTycons: (unit -> unit) ref
-      val reportDuplicates: t * Region.t -> unit
       val sameShape: t * t -> bool
-      val share: t * Ast.Longstrid.t * Ast.Longstrid.t * Time.t -> unit
-      val shareType: t * Ast.Longtycon.t * Ast.Longtycon.t * Time.t -> unit
-      val strs: {name: Ast.Strid.t, interface: t} vector -> t
-      val types: {name: Ast.Tycon.t, typeStr: TypeStr.t} vector -> t
-      val vals: {name: Ast.Vid.t,
-		 scheme: Scheme.t,
-		 status: Status.t} vector -> t
-      val wheres: t * Time.t * (Ast.Longtycon.t * TypeStr.t) vector -> unit
+      val share: t * Ast.Longstrid.t * t * Ast.Longstrid.t * Time.t -> unit
    end

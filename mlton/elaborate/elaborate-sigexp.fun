@@ -20,6 +20,7 @@ in
    structure Longstrid = Longstrid
    structure Longtycon = Longtycon
    structure Sigexp = Sigexp
+   structure Sigid = Sigid
    structure SortedRecord = SortedRecord
    structure Spec = Spec
    structure Strid = Strid
@@ -34,6 +35,8 @@ in
 end
 
 structure Con = Env.CoreML.Con
+structure StructureEnv = Env
+structure Env = Env.InterfaceEnv
 
 local
    open Interface
@@ -53,35 +56,7 @@ in
    structure Type = Type
 end
 
-fun lookupLongtycon (E: Env.t,
-		     I: Interface.t,
-		     c: Ast.Longtycon.t): TypeStr.t =
-   let
-      fun env () = TypeStr.fromEnv (Env.lookupLongtycon (E, c))
-      val (strids, t) = Ast.Longtycon.split c
-   in
-      case strids of
-	 [] =>
-	    (case Interface.peekLongtycon (I, c) of
-		NONE => env ()
-	      | SOME s => s)
-       | s :: _ =>
-	    (case Interface.peekStrid (I, s) of
-		NONE => env ()
-	      | SOME s =>
-		   let
-		      val r = ref NONE
-		      val _ =
-			 Interface.lookupLongtycon (I, c, fn s => r := SOME s)
-		   in
-		      case !r of
-			 NONE => TypeStr.bogus Kind.Nary
-		       | SOME s => s
-		   end)
-   end
-
-fun elaborateType (ty: Atype.t, E: Env.t, I: Interface.t)
-   : Tyvar.t vector * Type.t =
+fun elaborateType (ty: Atype.t, E: Env.t): Tyvar.t vector * Type.t =
    let
       val tyvars = ref []
       fun loop (ty: Atype.t): Type.t =
@@ -96,7 +71,10 @@ fun elaborateType (ty: Atype.t, E: Env.t, I: Interface.t)
 		  val ts = Vector.map (ts, loop)
 		  fun normal () =
 		     let
-			val s = lookupLongtycon (E, I, c)
+			val s =
+			   case Env.lookupLongtycon (E, c) of
+			      NONE => TypeStr.bogus Kind.Nary
+			    | SOME s => s
 			val kind = TypeStr.kind s
 			val numArgs = Vector.length ts
 		     in
@@ -144,9 +122,9 @@ val elaborateType =
    Trace.trace ("elaborateType", Atype.layout o #1, Type.layout o #2)
    elaborateType
 
-fun elaborateScheme (tyvars: Tyvar.t vector, ty: Atype.t, E, I): Scheme.t =
+fun elaborateScheme (tyvars: Tyvar.t vector, ty: Atype.t, E): Scheme.t =
    let
-      val (tyvars', ty) = elaborateType (ty, E, I)
+      val (tyvars', ty) = elaborateType (ty, E)
       val unbound =
 	 Vector.keepAll
 	 (tyvars', fn a =>
@@ -185,313 +163,306 @@ fun elaborateScheme (tyvars: Tyvar.t vector, ty: Atype.t, E, I): Scheme.t =
 
 fun elaborateTypedescs (typedescs: {tycon: Ast.Tycon.t,
 				    tyvars: Tyvar.t vector} list,
-			{equality: bool}): Interface.t =
-   Interface.types
-   (Vector.fromListMap
-    (typedescs, fn {tycon = name, tyvars} =>
-     let
-	val tycon = Tycon.make {hasCons = false}
-	val _ =
-	   Tycon.admitsEquality tycon
-	   := (if equality
-		  then AdmitsEquality.Sometimes
-	       else AdmitsEquality.Never)
-     in
-	{name = name,
-	 typeStr = TypeStr.tycon (tycon, Kind.Arity (Vector.length tyvars))}
-     end))
+			{equality: bool},
+			E): unit =
+   List.foreach
+   (typedescs, fn {tycon = name, tyvars} =>
+    let
+       val tycon = Tycon.make {hasCons = false}
+       val _ =
+	  Tycon.admitsEquality tycon
+	  := (if equality
+		 then AdmitsEquality.Sometimes
+	      else AdmitsEquality.Never)
+    in
+       Env.extendTycon (E, name,
+			TypeStr.tycon (tycon, Kind.Arity (Vector.length tyvars)))
+    end)
 
-val elaborateTypedescs =
-   Trace.trace ("elaborateTypedescs", Layout.ignore, Interface.layout)
-   elaborateTypedescs
-
-
-fun elaborateDatBind (datBind: DatBind.t, E, I): Interface.t =
+fun elaborateDatBind (datBind: DatBind.t, E): unit =
    let
       val region = DatBind.region datBind
       val DatBind.T {datatypes, withtypes} = DatBind.node datBind
       val change = ref false
-      (* Build enough of an interface so that that the withtypes and the
-       * constructor argument types can be elaborated.
+      (* Build enough of an interface so that that the constructor argument
+       * types can be elaborated.
        *)
-      val (tycons, strs) =
-	 Vector.unzip
-	 (Vector.map
-	  (datatypes, fn {cons, tycon = name, tyvars} =>
-	   let
-	      val tycon = Tycon.make {hasCons = true}
-	   in
-	      (tycon,
-	       {name = name,
-		typeStr = TypeStr.data (tycon,
-					Kind.Arity (Vector.length tyvars),
-					Cons.empty)})
-	   end))
-      val I' = Interface.types strs
-      fun elabAll (I1: Interface.t): Interface.t =
-	 let
-	    val I2 = Interface.+ (I1, I)
-	    val Is =
-	       Vector.map2
-	       (tycons, datatypes,
-		fn (tycon, {cons, tycon = astTycon, tyvars, ...}) =>
+      val tycons =
+	 Vector.map
+	 (datatypes, fn {cons, tycon = name, tyvars} =>
+	  let
+	     val tycon = Tycon.make {hasCons = true}
+	     val _ =
+		Env.extendTycon
+		(E, name,
+		 TypeStr.data (tycon,
+			       Kind.Arity (Vector.length tyvars),
+			       Cons.empty))
+	  in
+	     tycon
+	  end)
+      fun elabAll (): unit =
+	 Vector.foreach2
+	 (tycons, datatypes, fn (tycon, {cons, tycon = astTycon, tyvars, ...}) =>
+	  let
+	     val resultType: Atype.t =
+		Atype.con (astTycon, Vector.map (tyvars, Atype.var))
+	     val (cons, conArgs) =
+		Vector.unzip
+		(Vector.map
+		 (cons, fn (name, arg) =>
+		  let
+		     val con = Con.newString "FOO"
+		     val (makeArg, ty) =
+			case arg of
+			   NONE => (fn _ => NONE, resultType)
+			 | SOME t =>
+			      (fn s =>
+			       SOME (#1 (Type.deArrow (Scheme.ty s))),
+			       Atype.arrow (t, resultType))
+		     val scheme = elaborateScheme (tyvars, ty, E)
+		  in
+		     ({con = con,
+		       name = name,
+		       scheme = scheme},
+		      makeArg scheme)
+		  end))
+	     val _ =
 		let
-		   val resultType: Atype.t =
-		      Atype.con (astTycon, Vector.map (tyvars, Atype.var))
-		   val (cons, conArgs) =
-		      Vector.unzip
-		      (Vector.map
-		       (cons, fn (name, arg) =>
-			let
-			   val con = Con.newNoname ()
-			   val (makeArg, ty) =
-			      case arg of
-				 NONE => (fn _ => NONE, resultType)
-			       | SOME t =>
-				    (fn s =>
-				     SOME (#1 (Type.deArrow (Scheme.ty s))),
-				     Atype.arrow (t, resultType))
-			   val scheme = elaborateScheme (tyvars, ty, E, I2)
-			in
-			   ({con = con: TypeStr.Con.t,
-			     name = name,
-			     scheme = scheme},
-			    makeArg scheme)
-			end))
-		   val cons = Cons.T cons
-		   val _ =
-		      let
-			 val r = Tycon.admitsEquality tycon
-			 datatype z = datatype AdmitsEquality.t
-		      in
-			 case !r of
-			    Always => Error.bug "datatype Always"
-			  | Never => ()
-			  | Sometimes =>
-			       if Vector.forall
-				  (conArgs, fn arg =>
-				   case arg of
-				      NONE => true
-				    | SOME ty =>
-					 Scheme.admitsEquality
-					 (Scheme.make (tyvars, ty)))
-				  then ()
-			       else (r := Never; change := true)
-		      end
+		   val r = Tycon.admitsEquality tycon
+		   datatype z = datatype AdmitsEquality.t
 		in
-		   Interface.+
-		   (Interface.cons cons,
-		    Interface.types
-		    (Vector.new1
-		     {name = astTycon,
-		      typeStr = TypeStr.data (tycon,
-					      Kind.Arity (Vector.length tyvars),
-					      cons)}))
-		end)
-	 in
-	    Vector.fold (Is, Interface.empty, Interface.+)
-	 end
+		   case !r of
+		      Always => Error.bug "datatype Always"
+		    | Never => ()
+		    | Sometimes =>
+			 if Vector.forall
+			    (conArgs, fn arg =>
+			     case arg of
+				NONE => true
+			      | SOME ty =>
+				   Scheme.admitsEquality
+				   (Scheme.make (tyvars, ty)))
+			    then ()
+			 else (r := Never; change := true)
+		end
+	     val _ =
+		Vector.foreach
+		(cons, fn {con, name, scheme} =>
+		 Env.extendCon (E, name, con, scheme))
+	     val _ = Env.allowDuplicates := true
+	     val _ =
+		Env.extendTycon
+		(E, astTycon,
+		 TypeStr.data (tycon, Kind.Arity (Vector.length tyvars),
+			       Cons.T cons))
+	  in
+	     ()
+	  end)
       (* Maximize equality. *)
-      fun loop (I: Interface.t): Interface.t =
+      fun loop (): unit =
 	 let
-	    val I = elabAll I
+	    val _ = elabAll ()
 	 in
 	    if !change
-	       then (change := false; loop I)
-	    else I
+	       then (change := false; loop ())
+	    else ()
 	 end
+      val _ = loop ()
+      val _ = Env.allowDuplicates := false
    in
-      loop I'
+      ()
    end
 
-val info = Trace.info "elaborateSigexp"
+val traceElaborateSigexp =
+   Trace.trace ("elaborateSigexp", Sigexp.layout, Option.layout Interface.layout)
+   
 val info' = Trace.info "elaborateSpec"
-
+ 
 (* rule 65 *)
-fun elaborateSigexp (sigexp: Sigexp.t, E: Env.t): Interface.t option =
+fun elaborateSigexp (sigexp: Sigexp.t, E: StructureEnv.t): Interface.t option =
    let
-      val _ = Interface.renameTycons := (fn () => Env.setTyconNames E)
+      val _ = Interface.renameTycons := (fn () => StructureEnv.setTyconNames E)
+      val E = StructureEnv.makeInterfaceEnv E
       fun elaborateSigexp arg : Interface.t option =
-	 Trace.traceInfo' (info,
-			   Layout.tuple2 (Sigexp.layout,
-					  Interface.layout),
-			   Option.layout Interface.layout)
-	 (fn (sigexp: Sigexp.t, I: Interface.t) =>
+	 traceElaborateSigexp
+	 (fn (sigexp: Sigexp.t) =>
 	  case Sigexp.node sigexp of
-	     Sigexp.Spec spec => (* rule 62 *)
-		let
-		   val I = elaborateSpec (spec, I)
-		   val _ = Interface.reportDuplicates (I, Sigexp.region sigexp)
-		in
-		   SOME I
-		end
-	   | Sigexp.Var x => (* rule 63 *)
+	     Sigexp.Spec spec =>
+		(* rule 62 *)
+		SOME (#1 (Env.makeInterface (E, fn () => elaborateSpec spec)))
+	   | Sigexp.Var x =>
+		(* rule 63 *)
 		Option.map (Env.lookupSigid (E, x), Interface.copy)
-	   | Sigexp.Where (sigexp, wheres) => (* rule 64 *)
+	   | Sigexp.Where (sigexp, wheres) =>
+		(* rule 64 *)
 		let
 		   val time = Interface.Time.tick ()
 		in
 		   Option.map
-		   (elaborateSigexp (sigexp, I),
-		    fn I' =>
+		   (elaborateSigexp sigexp, fn I =>
 		    let
 		       val _ = 
-			  Interface.wheres
-			  (I', time,
-			   Vector.fromListMap
-			   (wheres, fn {tyvars, longtycon, ty} =>
-			    (longtycon,
-			     TypeStr.def
-			     (elaborateScheme (tyvars, ty, E, I),
-			      Kind.Arity (Vector.length tyvars)))))
+			  List.foreach
+			  (wheres, fn {longtycon, ty, tyvars} =>
+			   Option.app
+			   (Interface.lookupLongtycon
+			    (I, longtycon, Longtycon.region longtycon,
+			     {prefix = []}),
+			    fn s =>
+			    TypeStr.wheree
+			    (s, Longtycon.region longtycon,
+			     fn () => Longtycon.layout longtycon,
+			     time,
+			     TypeStr.def (elaborateScheme (tyvars, ty, E),
+					  Kind.Arity (Vector.length tyvars)))))
 		    in
-		       I'
+		       I
 		    end)
 		end) arg
-      and elaborateSpec arg : Interface.t =
-	 Trace.traceInfo' (info',
-			   Layout.tuple2 (Ast.Spec.layout, Layout.ignore),
-			   Layout.ignore)
-	 (fn (spec: Ast.Spec.t, I: Interface.t) =>
+      and elaborateSpec arg : unit =
+	 Trace.traceInfo' (info', Spec.layout, Layout.ignore)
+	 (fn spec: Spec.t =>
 	  case Spec.node spec of
-	     Spec.Datatype rhs => (* rules 71, 72 *)
+	     Spec.Datatype rhs =>
+		(* rules 71, 72 *)
 		(case DatatypeRhs.node rhs of
-		    DatatypeRhs.DatBind b => elaborateDatBind (b, E, I)
+		    DatatypeRhs.DatBind b => elaborateDatBind (b, E)
 		  | DatatypeRhs.Repl {lhs, rhs} =>
-		       let
-			  val s = lookupLongtycon (E, I, rhs)
-		       in
-			  Interface.+
-			  (Interface.types (Vector.new1 {name = lhs,
-							 typeStr = s}),
-			   Interface.cons (TypeStr.cons s))
-		       end)
-	   | Spec.Empty => (* rule 76 *)
-		Interface.empty
-	   | Spec.Eqtype typedescs => (* rule 70 *)
-		elaborateTypedescs (typedescs, {equality = true})
-	   | Spec.Exception cons => (* rule 73 *)
-		Interface.excons
-		(Cons.T
-		 (Vector.fromListMap
-		  (cons, fn (name: TypeStr.Name.t,
-			     arg: Ast.Type.t option) =>
-		   let
-		      val con = Con.newNoname ()
-		      val (arg, ty) =
-			 case arg of
-			    NONE => (NONE, Type.exn)
-			  | SOME t =>
-			       let
-				  val t =
-				     Scheme.ty
-				     (elaborateScheme (Vector.new0 (),
-						       t, E, I))
-			       in
-				  (SOME t, Type.arrow (t, Type.exn))
-			       end
-		   in
-		      {con = con: TypeStr.Con.t,
-		       name= name: TypeStr.Name.t,
-		       scheme = Scheme.make (Vector.new0 (), ty)}
-		   end)))
-	   | Spec.IncludeSigexp sigexp => (* rule 75 *)
-		(case elaborateSigexp (sigexp, I) of
-		    NONE => Interface.empty
-		  | SOME I => I)
-	   | Spec.IncludeSigids sigids => (* Appendix A, p.59 *)
-		List.fold
-		(sigids, Interface.empty, fn (sigid, I) =>
-		 case Env.lookupSigid (E, sigid) of
-		    NONE => I
-		  | SOME I' => Interface.+ (I, Interface.copy I'))
-	   | Spec.Seq (s, s') => (* rule 77 *)
-		let
-		   val I' = elaborateSpec (s, I)
-		   val I'' = elaborateSpec (s', Interface.+ (I', I))
-		in
-		   Interface.+ (I', I'')
-		end
+		       Option.app
+		       (Env.lookupLongtycon (E, rhs), fn s =>
+			let
+			   val _ = Env.extendTycon (E, lhs, s)
+			   val TypeStr.Cons.T v = TypeStr.cons s
+			   val _ =
+			      Vector.foreach
+			      (v, fn {con, name, scheme} =>
+			       Env.extendCon (E, name, con, scheme))
+			in
+			   ()
+			end))
+	   | Spec.Empty =>
+		(* rule 76 *)
+		()
+	   | Spec.Eqtype typedescs =>
+		(* rule 70 *)
+		elaborateTypedescs (typedescs, {equality = true}, E)
+	   | Spec.Exception cons =>
+		(* rule 73 *)
+		List.foreach
+		(cons, fn (name: TypeStr.Name.t, arg: Ast.Type.t option) =>
+		 let
+		    val (arg, ty) =
+		       case arg of
+			  NONE => (NONE, Type.exn)
+			| SOME t =>
+			     let
+				val t = Scheme.ty (elaborateScheme
+						   (Vector.new0 (), t, E))
+			     in
+				(SOME t, Type.arrow (t, Type.exn))
+			     end
+		    val scheme = Scheme.make (Vector.new0 (), ty)
+		    val _ = Env.extendExn (E, name, scheme)
+		 in
+		    ()
+		 end)
+	   | Spec.IncludeSigexp sigexp =>
+		(* rule 75 *)
+		Option.app (elaborateSigexp sigexp, fn I =>
+			    Env.openInterface (E, I, Sigexp.region sigexp))
+	   | Spec.IncludeSigids sigids =>
+		(* Appendix A, p.59 *)
+		List.foreach (sigids, fn x =>
+			      Option.app
+			      (Env.lookupSigid (E, x), fn I =>
+			       Env.openInterface
+			       (E, Interface.copy I, Sigid.region x)))
+	   | Spec.Seq (s, s') =>
+		(* rule 77 *)
+		(elaborateSpec s; elaborateSpec s')
 	   | Spec.Sharing {equations, spec} =>
 		(* rule 78 and section G.3.3 *)
 		let
 		   val time = Interface.Time.tick ()
-		   val I' = elaborateSpec (spec, I)
-		   fun share eqn =
-		      case Equation.node eqn of
-			 Equation.Structure ss =>
-			    let
-			       fun loop ss =
-				  case ss of
-				     [] => ()
-				   | s :: ss =>
-					(List.foreach
-					 (ss, fn s' =>
-					  Interface.share (I', s, s', time))
-					 ; loop ss)
-			    in
-			       loop ss
-			    end
-		       | Equation.Type cs =>
-			    case cs of
-			       [] => ()
-			     | c :: cs =>
-				  List.foreach
-				  (cs, fn c' =>
-				   Interface.shareType (I', c, c', time))
-		   val _ = List.foreach (equations, share)
+		   val _ = elaborateSpec spec
+		   val _ =
+		      List.foreach
+		      (equations, fn eqn =>
+		       case Equation.node eqn of
+			  Equation.Structure ss =>
+			     (List.fold
+			      (ss, NONE, fn (s', io) =>
+			       case (io, Env.lookupLongstrid (E, s')) of
+				  (NONE, NONE) => NONE
+				| (SOME _, NONE) => io
+				| (NONE, SOME I') => SOME (I', s')
+				| (SOME (I, s), SOME I') =>
+				     (Interface.share (I, s, I', s', time)
+				      ; SOME (I', s')))
+			      ; ())
+			| Equation.Type cs =>
+			     (List.fold
+			      (cs, NONE, fn (c', so) =>
+			       case (so, Env.lookupLongtycon (E, c')) of
+				  (NONE, NONE) => NONE
+				| (SOME _, NONE) => so
+				| (NONE, SOME s') => SOME (c', s')
+				| (SOME (c, s), SOME s') =>
+				     let
+					fun doit (c, s) =
+					   (s, Longtycon.region c,
+					    fn () => Longtycon.layout c)
+					val _ =
+					   TypeStr.share (doit (c, s),
+							  doit (c', s'),
+							  time)
+				     in
+					SOME (c', s')
+				     end)
+			      ; ()))
 		in
-		   I'
+		   ()
 		end
-	   | Spec.Structure ss => (* rules 74, 84 *)
-		Interface.strs
-		(Vector.fromListMap
-		 (ss, fn (strid, sigexp) =>
-		  {interface = (case elaborateSigexp (sigexp, I) of
-				   NONE => Interface.empty
-				 | SOME I => I),
-		   name = strid}))
-	   | Spec.Type typedescs => (* rule 69 *)
-		elaborateTypedescs (typedescs, {equality = false})
+	   | Spec.Structure ss =>
+		(* rules 74, 84 *)
+		List.foreach
+		(ss, fn (strid, sigexp) =>
+		 Env.extendStrid (E, strid,
+				  case elaborateSigexp sigexp of
+				     NONE => Interface.empty
+				   | SOME I => I))
+	   | Spec.Type typedescs =>
+		(* rule 69 *)
+		elaborateTypedescs (typedescs, {equality = false}, E)
 	   | Spec.TypeDefs typBind =>
-		(* Abbreviation on page 59,
-		 * combined with rules 77 and 80.
-		 *)
+		(* Abbreviation on page 59 combined with rules 77 and 80. *)
 		let
 		   val TypBind.T ds = TypBind.node typBind
 		in
-		   #2
-		   (Vector.fold
-		    (ds, (I, Interface.empty),
-		     fn ({def, tycon, tyvars}, (I, I')) =>
-		     let
-			val I'' = 
-			   Interface.types
-			   (Vector.new1
-			    {name = tycon,
-			     typeStr = (TypeStr.def
-					(elaborateScheme (tyvars, def, E, I),
-					 Kind.Arity (Vector.length tyvars)))})
-		     in
-			(Interface.+ (I, I''), Interface.+ (I', I''))
-		     end))
+		   Vector.foreach
+		   (ds, fn {def, tycon, tyvars} =>
+		    Env.extendTycon
+		    (E, tycon,
+		     TypeStr.def (elaborateScheme (tyvars, def, E),
+				  Kind.Arity (Vector.length tyvars))))
 		end
-	   | Spec.Val xts => (* rules 68, 79 *)
-		Interface.vals
-		(Vector.fromListMap
-		 (xts, fn (x, t) =>
-		  {name = Ast.Vid.fromVar x,
-		   scheme = Scheme.make (elaborateType (t, E, I)),
-		   status = Status.Var}))
+	   | Spec.Val xts =>
+		(* rules 68, 79 *)
+		List.foreach
+		(xts, fn (x, t) =>
+		 Env.extendVid
+		 (E, Ast.Vid.fromVar x, Status.Var,
+		  Scheme.make (elaborateType (t, E))))
 		) arg
    in
-      elaborateSigexp (sigexp, Interface.empty)
+      elaborateSigexp sigexp
    end
 
 val elaborateSigexp =
    fn (sigexp, E) =>
    case Sigexp.node sigexp of
-      Sigexp.Var x => Env.lookupSigid (E, x)
+      Sigexp.Var x => StructureEnv.lookupSigid (E, x)
     | _ => elaborateSigexp (sigexp, E)
 
 val elaborateSigexp = 
@@ -500,5 +471,7 @@ val elaborateSigexp =
 		 Layout.ignore,
 		 Layout.ignore)
    elaborateSigexp
+
+structure Env = StructureEnv
 
 end

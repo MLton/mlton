@@ -19,6 +19,7 @@ in
    structure Strid = Strid
    structure Symbol = Symbol
    structure Tyvar = Tyvar
+   structure Vid = Vid
 end
 
 structure Field = Record.Field
@@ -658,7 +659,7 @@ structure TypeStr =
       val fromEnv =
 	 Trace.trace ("TypeStr.fromEnv", EtypeStr.layout, layout) fromEnv
 
-      fun getFlex (s: t, time, oper, (reg, lay)): FlexibleTycon.t option =
+      fun getFlex (s: t, time, oper, reg, lay): FlexibleTycon.t option =
 	 let
 	    fun error what =
 	       let
@@ -684,8 +685,7 @@ structure TypeStr =
 	       case c of
 		  Tycon.Flexible c =>
 		     let
-			val {creationTime, defn, ...} =
-			   FlexibleTycon.dest c
+			val {creationTime, defn, ...} = FlexibleTycon.dest c
 		     in
 			case Defn.dest (!defn) of
 			   Defn.Realized _ => Error.bug "getFlex of realized"
@@ -702,8 +702,8 @@ structure TypeStr =
 	 in
 	    loop s
 	 end
-      
-      fun share (s: t, z, s': t, z', time: Time.t): unit =
+
+      fun share ((s: t, reg, lay), (s': t, reg', lay'), time: Time.t): unit =
 	 let
 	    val oper = "shared"
 	    val k = kind s
@@ -712,8 +712,6 @@ structure TypeStr =
 	    if not (Kind.equals (k, k'))
 	       then
 		  let
-		     val (reg, lay) = z
-		     val (_, lay') = z'
 		     open Layout
 		  in
 		     Control.error
@@ -726,10 +724,86 @@ structure TypeStr =
 		      empty)
 		  end
 	    else
-	       case (getFlex (s, time, oper, z), getFlex (s', time, oper, z')) of
+	       case (getFlex (s, time, oper, reg, lay),
+		     getFlex (s', time, oper, reg', lay')) of
 		  (SOME f, SOME f') => FlexibleTycon.share (f, f')
 		| _ => ()
 	 end
+
+      val share =
+	 Trace.trace
+	 ("TypeStr.share",
+	  fn ((s, _, _), (s', _, _), t) =>
+	  Layout.tuple [layout s, layout s', Time.layout t],
+	  Unit.layout)
+	 share
+
+      fun wheree (s': t, r: Region.t, lay, time: Time.t, s: t): unit =
+	 case getFlex (s', time, "redefined", r, lay) of
+	    NONE => ()
+	  | SOME flex =>
+	       let
+		  val k = kind s
+		  val k' = kind s'
+	       in
+		  if not (Kind.equals (k, k'))
+		     then
+			let
+			   open Layout
+			in
+			   Control.error
+			   (r,
+			    seq [str "type ", lay (),
+				 str " has arity ", Kind.layout k',
+				 str " and cannot be defined to have arity ",
+				 Kind.layout k],
+			    empty)
+			end
+		  else if (admitsEquality s' = AdmitsEquality.Sometimes
+			   andalso admitsEquality s = AdmitsEquality.Never)
+			  then
+			     let
+				open Layout
+			     in
+				Control.error
+				(r,
+				 seq [str "eqtype ", lay (),
+				      str " cannot be defined as a non-equality type"],
+				 empty)
+			     end
+		       else
+			  let
+			     val {defn, hasCons, ...} = FlexibleTycon.dest flex
+			  in
+			     if hasCons
+				andalso
+				(case node s of
+				    Scheme (Scheme.T {ty, tyvars}) =>
+				       Option.isNone
+				       (Type.deEta (expandTy ty, tyvars))
+				  | _ => false)
+				then
+				   let
+				      open Layout
+				   in
+				      Control.error
+				      (r,
+				       seq [str "type ", lay (),
+					    str " is a datatype and cannot be redefined as a complex type"],
+				       empty)
+				   end
+			     else
+				defn := Defn.typeStr s
+			  end
+	       end
+
+      val wheree =
+	 Trace.trace ("TypeStr.wheree",
+		      fn (s, _, _, t, s') => Layout.tuple [layout s,
+							   Time.layout t,
+							   layout s'],
+		      Unit.layout)
+	 wheree
    end
 
 structure UniqueId = IntUniqueId ()
@@ -741,128 +815,89 @@ structure UniqueId = IntUniqueId ()
 (* The shape of interface is the set of longtycons that are accessible in it. *)
 
 datatype t = T of {copy: copy,
-		   elements: element list,
 		   plist: PropertyList.t,
 		   shapeId: ShapeId.t,
-		   uniqueId: UniqueId.t} Set.t
-and element =
-   Str of {interface: t,
-	   name: Ast.Strid.t}
-  | Type of {name: Ast.Tycon.t,
-	     typeStr: TypeStr.t}
-  | Val of {name: Ast.Vid.t,
-	    scheme: Scheme.t,
-	    status: Status.t}
+		   strs: (Ast.Strid.t * t) array,
+		   types: (Ast.Tycon.t * TypeStr.t) array,
+		   uniqueId: UniqueId.t,
+		   vals: (Ast.Vid.t * (Status.t * Scheme.t)) array} Set.t
 withtype copy = t option ref
-  
-type interface = t
+
+fun new {strs, types, vals} =
+   T (Set.singleton {copy = ref NONE,
+		     plist = PropertyList.new (),
+		     shapeId = ShapeId.new (),
+		     strs = strs,
+		     types = types,
+		     uniqueId = UniqueId.new (),
+		     vals = vals})
+
+val empty = new {strs = Array.new0 (),
+		 types = Array.new0 (),
+		 vals = Array.new0 ()}
 
 local
    fun make f (T s) = f (Set.value s)
 in
-   val elements = make #elements
    val plist = make #plist
    val shapeId = make #shapeId
+   val strs = make #strs
+   val types = make #types
    val uniqueId = make #uniqueId
+   val vals = make #vals
 end
 
 local
    open Layout
 in
-   fun layout(T s) =
+   fun layout (T s) =
       let
-	 val {elements, shapeId, uniqueId = u, ...} = Set.value s
+	 val {shapeId, strs, types, uniqueId = u, vals, ...} = Set.value s
       in
-	 record [("elements", list (List.map (elements, layoutElement))),
-		 ("shapeId", ShapeId.layout shapeId),
-		 ("uniqueId", UniqueId.layout u)]
-      end
-   and layoutElement (e: element) =
-      let
-	 val (lhs, rhs) =
-	    case e of
-	       Val{name, scheme, status} =>
-		  (Ast.Vid.layout name,
-		   tuple[Status.layout status,
-			 Scheme.layout scheme])
-	     | Type{name, typeStr} =>
-		  (Ast.Tycon.layout name,
-		   TypeStr.layout typeStr)
-	     | Str{name, interface} =>
-		  (Ast.Strid.layout name, layout interface)
-      in seq [lhs, str " -> ", rhs]
+	 record [("shapeId", ShapeId.layout shapeId),
+		 ("uniqueId", UniqueId.layout u),
+
+		 ("strs",
+		  Array.layout (Layout.tuple2 (Strid.layout, layout)) strs),
+		 ("types",
+		  Array.layout (Layout.tuple2 (Ast.Tycon.layout, TypeStr.layout))
+		  types),
+		 ("vals",
+		  Array.layout (Layout.tuple2 (Vid.layout,
+					       Layout.tuple2 (Status.layout,
+							      Scheme.layout)))
+		  vals)]
       end
 end
+
+fun dest (T s) =
+   let
+      val {strs, types, vals, ...} = Set.value s
+   in
+      {strs = strs,
+       types = types,
+       vals = vals}
+   end
 
 fun equals (T s, T s') = Set.equals (s, s')
 
 val equals =
    Trace.trace2 ("Interface.equals", layout, layout, Bool.layout) equals
 
-fun explicit elements: t =
-   T (Set.singleton {copy = ref NONE,
-		     elements = elements,
-		     plist = PropertyList.new (),
-		     shapeId = ShapeId.new (),
-		     uniqueId = UniqueId.new ()})
-
-val empty = explicit []
-
-val bogus = empty
-
-fun vals v = explicit (Vector.toListMap (v, Val))
-fun strs v = explicit (Vector.toListMap (v, Str))
-fun types v = explicit (Vector.toListMap (v, Type))
-   
-local
-   fun make status (Cons.T cs) =
-      explicit (Vector.toListMap (cs, fn {name, scheme, ...} =>
-				  Val {name = Ast.Vid.fromCon name,
-				       scheme = scheme,
-				       status = status}))
-in
-   val cons = make Status.Con
-   val excons = make Status.Exn
-end
-
-fun extendTycon (I, tycon, typeStr) =
-   explicit (elements I @ [Type {name = tycon, typeStr = typeStr}])
-
-fun (T s) + (T s') =
+fun peekStrid (T s, strid: Ast.Strid.t): t option =
    let
-      val {elements = es, ...} = Set.value s
-      val {elements = es', ...} = Set.value s'
+      val {strs, ...} = Set.value s
    in
-      T (Set.singleton {copy = ref NONE,
-			elements = es @ es',
-			plist = PropertyList.new (),
-			shapeId = ShapeId.new (),
-			uniqueId = UniqueId.new ()})
+      Array.peekMap (strs, fn (strid', I) =>
+		     if Strid.equals (strid, strid')
+			then SOME I
+		     else NONE)
    end
 
-fun peekTyconElements (elements: element list, tycon): TypeStr.t option =
-   case List.peek (elements,
-		   fn Type {name, ...} => Ast.Tycon.equals(tycon,name)
-		    | _ => false) of
-      NONE => NONE
-    | SOME (Type {typeStr, ...}) => SOME typeStr
-    | _ => Error.bug "peekTyconElements"
-	 
-fun peekStridElements (elements, strid): t option =
-   case List.peek (elements,
-		   fn Str  {name, ...} => Strid.equals(strid,name)
-		    | _ => false) of
-      NONE => NONE
-    | SOME (Str {interface, ...}) => SOME interface
-    | _ => Error.bug "peekStridElements"
-
-fun peekStrid (I: t, strid: Ast.Strid.t): t option =
-   peekStridElements (elements I, strid)
-
 datatype 'a peekResult =
-   Found of t
+   Found of 'a
   | UndefinedStructure of Strid.t list
-    
+
 fun peekStrids (I: t, strids: Ast.Strid.t list): t peekResult =
    let
       fun loop (I, strids, ac) =
@@ -876,6 +911,16 @@ fun peekStrids (I: t, strids: Ast.Strid.t list): t peekResult =
       loop (I, strids, [])
    end
 
+fun peekTycon (T s, tycon: Ast.Tycon.t): TypeStr.t option =
+   let
+      val {types, ...} = Set.value s
+   in
+      Array.peekMap (types, fn (name, typeStr) =>
+		     if Ast.Tycon.equals (tycon, name)
+			then SOME typeStr
+		     else NONE)
+   end
+
 fun unbound (r: Region.t, className, x: Layout.t): unit =
    Control.error
    (r,
@@ -887,83 +932,30 @@ fun unbound (r: Region.t, className, x: Layout.t): unit =
 fun layoutStrids (ss: Strid.t list): Layout.t =
    Layout.str (concat (List.separate (List.map (ss, Strid.toString), ".")))
 
-fun lookupLongstrid (I: t, s: Longstrid.t): t =
+fun lookupLongtycon (I: t, long: Longtycon.t, r: Region.t,
+		     {prefix: Strid.t list}) =
    let
-      val (strids, strid) = Longstrid.split s
+      val (ss, c) = Longtycon.split long
    in
-      case peekStrids (I, strids @ [strid]) of
-	 Found I => I
+      case peekStrids (I, ss) of
+	 Found I =>
+	    (case peekTycon (I, c) of
+		NONE => 
+		   (unbound (r, "type",
+			     Longtycon.layout (Longtycon.long (prefix @ ss, c)))
+		    ; NONE)
+	      | SOME s => SOME s)
        | UndefinedStructure ss =>
-	    (unbound (Longstrid.region s, "structure", layoutStrids ss)
-	     ; bogus)
+	    (unbound (r, "structure", layoutStrids (prefix @ ss))
+	     ; NONE)
    end
-
-structure PeekResult =
-   struct
-      datatype 'a t =
-	 Found of 'a
-       | UndefinedStructure of Strid.t list
-       | Undefined
-
-      fun layout lay =
-	 fn Found z => lay z
-	  | UndefinedStructure ss => layoutStrids ss
-	  | Undefined => Layout.str "Undefined"
-
-      val toOption: 'a t -> 'a option =
-	 fn Found z => SOME z
-	  | _ => NONE
-   end
-
-fun peekLongtycon (I: t, c: Longtycon.t): TypeStr.t PeekResult.t =
-   let
-      val (strids, c) = Longtycon.split c
-   in
-      case peekStrids (I, strids) of
-        Found I =>
-	   (case peekTyconElements (elements I, c) of
-	       NONE => PeekResult.Undefined
-	     | SOME s => PeekResult.Found s)
-      | UndefinedStructure ss => PeekResult.UndefinedStructure ss
-   end
-
-fun lookupLongtycon (I: t, c: Longtycon.t, continue: TypeStr.t -> unit): unit =
-   let
-      datatype z = datatype PeekResult.t
-   in
-      case peekLongtycon (I, c) of
-	 Found s => continue s
-       | UndefinedStructure ss =>
-	    unbound (Longtycon.region c, "structure", layoutStrids ss)
-       | Undefined => 
-	    unbound (Longtycon.region c, "type", Longtycon.layout c)
-   end
-
-val peekLongtycon =
-   fn z =>
-   let
-      datatype z = datatype PeekResult.t
-   in
-      case peekLongtycon z of
-	 Found s => SOME s
-       | _ => NONE
-   end
-
-fun shareType (I: t, c: Longtycon.t, c': Longtycon.t, time) =
-   lookupLongtycon
-   (I, c, fn s =>
-    lookupLongtycon
-    (I, c', fn s' =>
-     TypeStr.share (s, (Longtycon.region c, fn () => Longtycon.layout c),
-		    s', (Longtycon.region c', fn () => Longtycon.layout c'),
-		    time)))
 
 fun sameShape (m, m') = ShapeId.equals (shapeId m, shapeId m')
 
-fun share (I: t, ls: Longstrid.t, ls': Longstrid.t, time) =
+fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, time): unit =
    let
-      fun lay (ls, strids, name) =
-	 (Longstrid.region ls,
+      fun lay (s, ls, strids, name) =
+	 (s, Longstrid.region ls,
 	  fn () =>
 	  let
 	     val (ss, s) = Longstrid.split ls
@@ -978,23 +970,19 @@ fun share (I: t, ls: Longstrid.t, ls': Longstrid.t, time) =
 	       let
 		  fun loop (T s, T s', strids): unit =
 		     let
-			val {elements = es, ...} = Set.value s
-			val {elements = es', ...} = Set.value s'
+			val {strs, types, ...} = Set.value s
+			val {strs = strs', types = types', ...} = Set.value s'
 			val _ = Set.union (s, s')
 			val _ =
-			   List.foreach2
-			   (es, es', fn (e, e') =>
-			    case (e, e') of
-			       (Str {interface = I, name, ...},
-				Str {interface = I', ...}) =>
-			       loop (I, I', name :: strids)
-				      | (Type {typeStr = s, name, ...},
-					 Type {typeStr = s', ...}) =>
-				        TypeStr.share
-					(s, lay (ls, strids, name),
-					 s', lay (ls', strids, name),
-					 time)
-				       | _ => ())
+			   Array.foreach2
+			   (types, types', fn ((name, s), (_, s')) =>
+			    TypeStr.share (lay (s, ls, strids, name),
+					   lay (s', ls', strids, name),
+					   time))
+			val _ =
+			   Array.foreach2
+			   (strs, strs', fn ((name, I), (_, I')) =>
+			    loop (I, I', name :: strids))
 		     in
 			()
 		     end
@@ -1003,110 +991,66 @@ fun share (I: t, ls: Longstrid.t, ls': Longstrid.t, time) =
 	       end
 	 else (* different shapes -- need to share pointwise *)
 	    let
-	       val es = elements I
-	       val es' = elements I'
+	       val T s = I
+	       val {strs, types, ...} = Set.value s
+	       val {strs = strs', types = types', ...} = Set.value s'
+	       fun walk2 (a, a', compareNames, f) =
+		  let
+		     val n = Array.length a
+		     val n' = Array.length a'
+		     fun both (i, i') =
+			if i < n andalso i' < n'
+			   then compare (i, Array.sub (a, i),
+					 i', Array.sub (a', i'))
+			else ()
+		     and compare (i, (name, z), i', (name', z')) =
+			case compareNames (name, name') of
+			   GREATER =>
+			      let
+				 val i' = i' + 1
+			      in
+				 if i' < n'
+				    then compare (i, (name, z),
+						  i', Array.sub (a', i'))
+				 else ()
+			      end
+			 | EQUAL => (f (z, z', name)
+				     ; both (i + 1, i' + 1))
+			 | LESS =>
+			      let
+				 val i = i + 1
+			      in
+				 if i < n
+				    then compare (i, Array.sub (a, i),
+						  i', (name', z'))
+				 else ()
+			      end
+		  in
+		     both (0, 0)
+		  end
+	       val _ =
+		  walk2 (strs, strs', Strid.compare,
+			 fn (I, I', name) => share (I, I', name :: strids))
+	       val _ =
+		  walk2 (types, types', Ast.Tycon.compare,
+			 fn (s, s', name) =>
+			 TypeStr.share (lay (s, ls, strids, name),
+					lay (s', ls', strids, name),
+					time))
 	    in
-	       List.foreach
-	       (es, fn e =>
-		case e of
-		   Str {name, interface = I} =>
-		      (case peekStridElements (es', name) of
-			  NONE => ()
-			| SOME I' => share (I, I', name :: strids))
-		 | Type {name, typeStr = s} =>
-		      (case peekTyconElements (es',name) of
-			  NONE => ()
-			| SOME s' =>
-			     TypeStr.share (s, lay (ls, strids, name),
-					    s', lay (ls', strids, name),
-					    time))
-		 | _ => ())
+	       ()
 	    end
    in
-      share (lookupLongstrid (I, ls),
-	     lookupLongstrid (I, ls'),
-	     [])
+      share (I, I', [])
    end
 
-fun wheres (I, time: Time.t, v: (Longtycon.t * TypeStr.t) vector): unit =
-   Vector.foreach
-   (v, fn (c, s: TypeStr.t) =>
-    let
-       val reg = Longtycon.region c
-    in
-       lookupLongtycon
-       (I, c, fn s' =>
-	case TypeStr.getFlex (s', time, "redefined",
-			      (reg, fn () => Longtycon.layout c)) of
-	   NONE => ()
-	 | SOME flex =>
-	      let
-		 val k = TypeStr.kind s
-		 val k' = TypeStr.kind s'
-	      in
-		 if not (Kind.equals (k, k'))
-		    then
-		       let
-			  open Layout
-		       in
-			  Control.error
-			  (reg,
-			   seq [str "type ",
-				Longtycon.layout c,
-				str " has arity ", Kind.layout k',
-				str " and cannot be defined to have arity ",
-				Kind.layout k],
-			   empty)
-		       end
-		 else if (TypeStr.admitsEquality s' = AdmitsEquality.Sometimes
-			  andalso TypeStr.admitsEquality s = AdmitsEquality.Never)
-			 then
-			    let
-			       open Layout
-			    in
-			       Control.error
-			       (reg,
-				seq [str "eqtype ",
-				     Longtycon.layout c,
-				     str " cannot be defined as a non-equality type"],
-				empty)
-			    end
-		      else
-			 let
-			    val {defn, hasCons, ...} = FlexibleTycon.dest flex
-			 in
-			    if hasCons
-			       andalso
-			       (case TypeStr.node s of
-				   TypeStr.Scheme (Scheme.T {ty, tyvars}) =>
-				      Option.isNone
-				      (Type.deEta (expandTy ty, tyvars))
-				 | _ => false)
-			       then
-				  let
-				     open Layout
-				  in
-				     Control.error
-				     (reg,
-				      seq [str "type ",
-					   Longtycon.layout c,
-					   str " is a datatype and cannot be redefined as a complex type"],
-				      empty)
-				  end
-			    else
-			       defn := Defn.typeStr s
-			 end
-	      end)
-    end)
-
-val wheres =
-   Trace.trace3 ("Interface.wheres",
-		 layout,
-		 Time.layout,
-		 Vector.layout (Layout.tuple2 (Longtycon.layout,
-					       TypeStr.layout)),
-		 Unit.layout)
-   wheres
+val share =
+   Trace.trace
+   ("Interface.share",
+    fn (I, _, I', _, t) =>
+    Layout.tuple [layout I, layout I', Time.layout t],
+    Unit.layout)
+   share
 
 fun copyAndRealize (I: t, getTypeFcnOpt): t =
    let
@@ -1116,64 +1060,56 @@ fun copyAndRealize (I: t, getTypeFcnOpt): t =
       val copies: copy list ref = ref []
       fun loop (I as T s, strids: Ast.Strid.t list): t =
 	 let
-	    val {copy, elements, shapeId, ...} = Set.value s
+	    val {copy, shapeId, strs, types, vals, ...} = Set.value s
 	 in
 	    case !copy of
 	       NONE =>
 		  let
-		     val elements =
-			List.map
-			(elements, fn e =>
-			 case e of
-			    Type {name, typeStr} =>
-			       let
-				  val typeStr = TypeStr.copy typeStr
-				  val _ =
-				     case (TypeStr.toTyconOpt typeStr,
-					   getTypeFcnOpt) of
-					(SOME (Tycon.Flexible c), SOME f) =>
-					   let
-					      val FlexibleTycon.T s = c
-					      val {admitsEquality, defn, hasCons,
-						   ...} =
-						 Set.value s
-					   in
-					      case Defn.dest (!defn) of
-						 Defn.Realized _ => ()
-					       | Defn.TypeStr _ => ()
-					       | Defn.Undefined =>
-						    FlexibleTycon.realize
-						    (c,
-						     f
-						     (Longtycon.long (strids, name),
-						      !admitsEquality,
-						      TypeStr.kind typeStr,
-						      {hasCons = hasCons}))
-					   end
-				      | _ => ()
-			       in
-				  Type {name = name,
-					typeStr = typeStr}
-			       end
-			  | _ => e)
-		     val elements =
-			List.map
-			(elements, fn e =>
-			 case e of
-			    Str {name, interface} =>
-			       Str {interface = loop (interface,
-						      strids @ [name]),
-				    name = name}
-			  | Type _ => e
-			  | Val {name, scheme, status} =>
-			       Val {name = name,
-				    scheme = Scheme.copy scheme,
-				    status = status})
+		     val types =
+			Array.map
+			(types, fn (name, typeStr) =>
+			 let
+			    val typeStr = TypeStr.copy typeStr
+			    val _ =
+			       case (TypeStr.toTyconOpt typeStr,
+				     getTypeFcnOpt) of
+				  (SOME (Tycon.Flexible c), SOME f) =>
+				     let
+					val FlexibleTycon.T s = c
+					val {admitsEquality, defn, hasCons,
+					     ...} =
+					   Set.value s
+				     in
+					case Defn.dest (!defn) of
+					   Defn.Realized _ => ()
+					 | Defn.TypeStr _ => ()
+					 | Defn.Undefined =>
+					      FlexibleTycon.realize
+					      (c,
+					       f
+					       (Longtycon.long (strids, name),
+						!admitsEquality,
+						TypeStr.kind typeStr,
+						{hasCons = hasCons}))
+				     end
+				| _ => ()
+			 in
+			    (name, typeStr)
+			 end)
+		     val vals =
+			Array.map
+			(vals, fn (name, (status, scheme)) =>
+			 (name, (status, Scheme.copy scheme)))
+		     val strs =
+			Array.map (strs, fn (name, I) =>
+				   (name, loop (I, strids @ [name])))
 		     val I = T (Set.singleton {copy = ref NONE,
-					       elements = elements,
 					       plist = PropertyList.new (),
 					       shapeId = shapeId,
-					       uniqueId = UniqueId.new ()})
+					       strs = strs,
+					       types = types,
+					       uniqueId = UniqueId.new (),
+					       vals = vals})
 		     val _ = List.push (copies, copy)
 		     val _ = copy := SOME I
 		  in
@@ -1199,71 +1135,5 @@ fun realize (I, f) = copyAndRealize (I, SOME f)
 
 val realize =
    Trace.trace2 ("Interface.realize", layout, Layout.ignore, layout) realize
-
-fun foreach (T s, {handleStr, handleType, handleVal}) =
-   let
-      val {elements, ...} = Set.value s
-   in
-      List.foreach
-      (elements, fn elt =>
-       case elt of
-	  Str r => handleStr r
-	| Type {name, typeStr} =>
-	     handleType {name = name,
-			 typeStr = TypeStr.toEnv typeStr}
-	| Val r =>
-	     case handleVal of
-		NONE => ()
-	      | SOME f => 
-		   let
-		      val {name, scheme, status} = r
-		   in
-		      f {name = name,
-			 scheme = Scheme.toEnv scheme,
-			 status = status}
-		   end)
-   end
-
-fun reportDuplicates (T s, region) =
-   let
-      val {elements, ...} = Set.value s
-      val destroys: (unit -> unit) list ref = ref []
-      fun make (kind, toSymbol) =
-	 let
-	    val {get, destroy, ...} =
-	       Property.destGet (Symbol.plist,
-				 Property.initFun (fn _ => ref false))
-	    val _ = List.push (destroys, destroy)
-	 in
-	    fn n => let
-		       val sym = toSymbol n
-		       val r = get sym
-		    in
-		       if !r
-			  then
-			     Control.error (region,
-					    Layout.str
-					    (concat ["duplicate ",
-						     kind,
-						     " specification: ",
-						     Symbol.toString sym]),
-					    Layout.empty)
-		       else r := true
-		    end
-	 end
-      val str = make ("structure", Ast.Strid.toSymbol)
-      val ty = make ("type", Ast.Tycon.toSymbol)
-      val vid = make ("variable", Ast.Vid.toSymbol)
-      val _ = 
-	 List.foreach
-	 (elements, fn e =>
-	  case e of
-	     Str {name, ...} => str name
-	   | Type {name, ...} => ty name
-	   | Val {name, ...} => vid name)
-      val _ = List.foreach (!destroys, fn d => d ())
-   in
-      ()
-   end
 
 end
