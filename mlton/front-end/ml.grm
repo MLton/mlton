@@ -40,15 +40,14 @@ structure Pat =
 
       fun var id =
 	 Var {name = Longvid.short (Vid.fromString id),
-	     fixop = Fixop.None}
+	      fixop = Fixop.None}
 
-      fun makeAs (p1 : t, p2 : t) : node =
+      fun makeAs (p1: t, p2: t): node =
 	 let
 	    fun err () =
 	       (error (Pat.region p1,
 		       "must have variable to left in as pattern") ;
 		bogus)
-
 	    fun fixopVar (p : t) =
 	       case node p of
 		  FlatApp ps =>
@@ -63,7 +62,7 @@ structure Pat =
 					    ; SOME (Fixop.None, Var.bogus)))
 			       | _ => NONE)
 		     else NONE
-		| _ => NONE
+                | _ => NONE
 	 in
 	    case fixopVar p1 of
 	       SOME (fixop, var) =>
@@ -99,7 +98,7 @@ structure Dec =
    struct
       open Dec
 	 
-      fun sequence (d1 : t, d2 : t) : t =
+      fun sequence (d1: t, d2: t): t =
 	 makeRegion (case (node d1, node d2) of
 			(SeqDec d1, SeqDec d2) => SeqDec (Vector.concat [d1, d2])
 		      | (SeqDec d1, _) =>
@@ -107,7 +106,7 @@ structure Dec =
 		      | (_, SeqDec d2) =>
 			   SeqDec (Vector.concat [Vector.new1 d1, d2])
 		      | _ => SeqDec (Vector.new2 (d1, d2)),
-		     Region.append (region d1, region d2))
+	             Region.append (region d1, region d2))
    end
 
 structure Spec =
@@ -238,6 +237,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | longid of string
        | longidEqual of string
        | const of Const.t
+       | const' of Const.node
        | vid of Vid.t
        | vidNoEqual of Vid.t
        | vids of Vid.t list
@@ -1020,7 +1020,10 @@ ty0_pc	: ty COMMA ty		([ty1, ty2])
 (*                       Atoms                       *)
 (*---------------------------------------------------*)
 
-const	: INT			(Const.Int INT)
+const	: const'                (Const.makeRegion
+				 (const', reg (const'left, const'right)))
+
+const'  : INT			(Const.Int INT)
 	| WORD			(Const.Word WORD)
 	| REAL			(Const.Real REAL)
 	| STRING		(Const.String STRING)

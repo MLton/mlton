@@ -128,7 +128,9 @@ fun parsePat (ps, E) =
       fun apply (p1, p2) =
 	 case Pat.node p1 of
 	    Pat.Var {name, ...} =>
-	       Pat.make (Pat.App (Longvid.toLongcon name, p2))
+	       Pat.makeRegion (Pat.App (Longvid.toLongcon name, p2),
+			       Region.append (Pat.region p1,
+					      Pat.region p2))
 	  | _ =>
 	       Error.bug "PrecedenceParse: parsePat: apply got non-constructor"
    in

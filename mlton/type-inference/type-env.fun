@@ -61,14 +61,18 @@ structure Spine:
       val fields: t -> Field.t list
       (* ensureField checks if field is there.  If it is not, then ensureField
        * will add it unless no more fields are allowed in the spine.
+       * It is passed an error routine to call if the field cannot be added.
        *)
-      val ensureField: t * Field.t -> unit
+      val ensureField: t * Field.t * (Layout.t -> unit) -> unit
       val foldOverNew: t * (Field.t * 'a) list * 'b * (Field.t * 'b -> 'b) -> 'b
       val layout: t -> Layout.t
       val layoutPretty: t -> Layout.t
       val new: Field.t list -> t
       val noMoreFields: t -> unit
-      val unify: t * t -> unit
+      (* unify is passed an error routine to be called if the spines cannot
+       * be unified.
+       *)
+      val unify: t * t * (Layout.t -> unit) -> unit
    end =
    struct
       datatype t = T of {fields: Field.t list ref,
@@ -102,25 +106,27 @@ structure Spine:
       fun canAddFields (T s) = ! (#more (Set.value s))
       fun fields (T s) = ! (#fields (Set.value s))
 
-      fun ensureFieldValue ({fields, more}, f) =
+      fun ensureFieldValue ({fields, more}, f, error) =
 	 if List.contains (!fields, f, Field.equals)
 	    then ()
 	 else
 	    if !more
 	       then List.push (fields, f)
-	    else Error.bug (concat ["record spine missing field ",
-				    Field.toString f])
+	    else error (let open Layout
+			in seq [str "record spine missing field ",
+				Field.layout f]
+			end)
 
-      fun ensureField (T s, f) = ensureFieldValue (Set.value s, f)
+      fun ensureField (T s, f, error) = ensureFieldValue (Set.value s, f, error)
 
       fun noMoreFields (T s) = #more (Set.value s) := false
 
-      fun unify (T s, T s') =
+      fun unify (T s, T s', error) =
 	 let
 	    val v as {fields = fs, more = m} = Set.value s
 	    val v' as {fields = fs', more = m'} = Set.value s'
 	    fun subset (s, v) =
-	       List.foreach (!fs, fn f => ensureFieldValue (v, f))
+	       List.foreach (!fs, fn f => ensureFieldValue (v, f, error))
 	    val _ = subset (fs, v')
 	    val _ = subset (fs', v)
 	    val _ = Set.union (s, s')
@@ -160,19 +166,19 @@ structure Type =
 	| Int (* an unresolved int type *)
 	| FlexRecord of {fields: fields,
 			 final: FinalRecordType.t,
+			 region: Region.t,
 			 spine: Spine.t}
 	(* GenFlexRecord only appears in type schemes.
 	 * It will never be unified.
 	 * The fields that are filled in after generalization are stored in
 	 * extra.
 	 *)
-	| GenFlexRecord of {
-			    extra: unit -> {field: Field.t,
+	| GenFlexRecord of {extra: unit -> {field: Field.t,
 					    tyvar: Tyvar.t} list,
 			    fields: fields,
 			    final: FinalRecordType.t,
-			    spine: Spine.t
-			    }
+			    region: Region.t,
+			    spine: Spine.t}
 	| Record of t Srecord.t
 	| Unknown of Unknown.t
 	| Var of Tyvar.t
@@ -197,10 +203,11 @@ structure Type =
 		  paren (align [seq [str "Con ", Tycon.layout c],
 				Vector.layout layout ts])
 	     | Int => str "Int"
-	     | FlexRecord {fields, final, spine} =>
+	     | FlexRecord {fields, final, region, spine} =>
 		  seq [str "Flex ",
 		       record [("fields", layoutFields fields),
 			       ("final", FinalRecordType.layout final),
+			       ("region", Region.layout region),
 			       ("spine", Spine.layout spine)]]
 	     | GenFlexRecord {fields, final, spine, ...} =>
 		  seq [str "GenFlex ",
@@ -215,83 +222,126 @@ structure Type =
 	     | Unknown u => Unknown.layout u
 	     | Var a => paren (seq [str "Var ", Tyvar.layout a])
 	     | Word => str "Word"
-
-	 fun layoutPretty t =
-	    case toType t of
-	       Con (c, ts) =>
-		  let
-		     val c' = Tycon.layout c
-		     fun t n = layoutPretty (Vector.sub (ts, n))
-		  in
-		     case Vector.length ts of
-			0 => c'
-		      | 1 => seq [t 0, str " ", c']
-		      | _ => 
-			   if Tycon.equals (c, Tycon.arrow)
-			      then seq [t 0, str " -> ", t 1]
-			   else seq [Vector.layout layoutPretty ts,
-				     str " ", c']
-		  end
-	     | Int => str "int"
-	     | FlexRecord {fields, spine, ...} =>
-		  seq [str "{",
-		       seq (List.map
-			    (fields, fn (f, t) =>
-			     seq [Field.layout f, str ": ", layoutPretty t,
-				  str ", "])),
-		       Spine.layoutPretty spine,
-		       str "}"]
-	     | GenFlexRecord _ => layout t
-	     | Record r =>
-		  Srecord.layout {record = r,
-				  separator = ": ",
-				  extra = "",
-				  layoutTuple = Vector.layout layoutPretty,
-				  layoutElt = layoutPretty}
-	     | Unknown u => Unknown.layoutPretty u
-	     | Var a => Tyvar.layout a
-	     | Word => str "word"
       end
 
       fun union (T s, T s') = Set.union (s, s')
 
       fun set (T s, v) = Set.setValue (s, v)
 	 
-      fun makeHom {con, int, flexRecord, genFlexRecord,
-		   record, unknown, var, word} =
+      fun makeHom {con, flexRecord, genFlexRecord, int,
+		   record, recursive, unknown, var, word} =
 	 let
-	    val {get, destroy} =
+	    datatype status = Processing | Seen | Unseen
+	    val {destroy = destroyStatus, get = status, ...} =
+	       Property.destGet (plist, Property.initFun (fn _ => ref Unseen))
+	    val {get, destroy = destroyProp} =
 	       Property.destGet
 	       (plist,
 		Property.initRec
 		(fn (t, get) =>
 		 let
-		    fun loopFields fields =
-		       List.revMap (fields, fn (f, t) => (f, get t))
+		    val r = status t
 		 in
-		    case toType t of
-		       Con (c, ts) => con (t, c, Vector.map (ts, get))
-		     | Int => int t
-		     | FlexRecord {fields, final, spine} =>
-			  flexRecord (t, {fields = loopFields fields,
-					  final = final,
-					  spine = spine})
-		     | GenFlexRecord {extra, fields, final, spine} =>
-			  genFlexRecord (t, {extra = extra,
-					     fields = loopFields fields,
-					     final = final,
-					     spine = spine})
-		     | Record r => record (t, Srecord.map (r, get))
-		     | Unknown u => unknown (t, u)
-		     | Var a => var (t, a)
-		     | Word => word t
+		    case !r of
+		       Seen => Error.bug "impossible"
+		     | Processing => recursive t
+		     | Unseen =>
+			  let
+			     val _ = r := Processing
+			     fun loopFields fields =
+				List.revMap (fields, fn (f, t) => (f, get t))
+			     val res = 
+				case toType t of
+				   Con (c, ts) =>
+				      con (t, c, Vector.map (ts, get))
+				 | Int => int t
+				 | FlexRecord {fields, final, region, spine} =>
+				      flexRecord (t, {fields = loopFields fields,
+						      final = final,
+						      region = region,
+						      spine = spine})
+				 | GenFlexRecord {extra, fields, final, region, spine} =>
+				      genFlexRecord
+				      (t, {extra = extra,
+					   fields = loopFields fields,
+					   final = final,
+					   region = region,
+					   spine = spine})
+				 | Record r => record (t, Srecord.map (r, get))
+				 | Unknown u => unknown (t, u)
+				 | Var a => var (t, a)
+				 | Word => word t
+			     val _ = r := Seen
+			  in
+			     res
+			  end
 		 end))
+	    fun destroy () =
+	       (destroyStatus ()
+		; destroyProp ())
 	 in {hom = get, destroy = destroy}
 	 end
 
       fun hom (ty, z) =
-	 let val {hom, destroy} = makeHom z
-	 in hom ty before destroy ()
+	 let
+	    val {hom, destroy} = makeHom z
+	 in
+	    hom ty before destroy ()
+	 end
+
+      fun layoutPretty t =
+	 let
+	    open Layout
+	    fun con (_, c, ts) =
+	       let
+		  val c' = str (Tycon.originalName c)
+		  fun t n = Vector.sub (ts, n)
+	       in
+		  case Vector.length ts of
+		     0 => c'
+		   | 1 => seq [t 0, str " ", c']
+		   | _ => 
+			if Tycon.equals (c, Tycon.arrow)
+			   then seq [t 0, str " -> ", t 1]
+			else seq [Vector.layout (fn l => l) ts,
+				  str " ", c']
+	       end
+	    fun int _ = str "int"
+	    fun flexRecord (_, {fields, final, region, spine}) =
+	       seq [str "{",
+		    seq (List.map
+			 (fields, fn (f, t) =>
+			  seq [Field.layout f, str ": ", t,
+			       str ", "])),
+		    Spine.layoutPretty spine,
+		    str "}"]
+	    fun genFlexRecord (t, _) = layout t
+	    fun record (_, r) =
+	       Srecord.layout
+	       {record = r,
+		separator = ": ",
+		extra = "",
+		layoutTuple = (fn ts =>
+			       if 0 = Vector.length ts
+				  then str "unit"
+			       else
+				  paren (seq (separate (Vector.toList ts,
+							" * ")))),
+		layoutElt = fn l => l}
+	    fun recursive _ = str "<recur>"
+	    fun unknown (_, u) = Unknown.layoutPretty u
+	    fun var (_, a) = Tyvar.layout a
+	    fun word _ = str "word"
+	 in
+	    hom (t, {con = con,
+		     flexRecord = flexRecord,
+		     genFlexRecord = genFlexRecord,
+		     int = int,
+		     record = record,
+		     recursive = recursive,
+		     unknown = unknown,
+		     var = var,
+		     word = word})
 	 end
 
       fun deconOpt t =
@@ -305,7 +355,7 @@ structure Type =
 
       val new = newTy o Unknown o Unknown.new
 
-      fun record {flexible, record} =
+      fun record {flexible, record, region} =
 	 newTy (if flexible
 		   then
 		      let
@@ -313,6 +363,7 @@ structure Type =
 		      in
 			 FlexRecord {fields = Vector.toList v,
 				     final = FinalRecordType.new (),
+				     region = region,
 				     spine = Spine.new (Vector.toListMap
 							(v, #1))}
 		      end
@@ -339,16 +390,13 @@ structure Type =
       open Ops Type
 
       val unit = tuple (Vector.new0 ())
-	 
+
       val equals: t * t -> bool = fn (T s, T s') => Set.equals (s, s')
 	 
       val var = newTy o Var
 
-      (*val con = Trace.trace2 ("con", Tycon.layout,
-       List.layout (", ", layout),
-       layout) con*)
-      fun ofConst c =
-	 case c of
+      fun ofConst (c: Aconst.t): t =
+	 case Aconst.node c of
 	    Aconst.Char _ => char
 	  | Aconst.Int _ => newTy Type.Int
 	  | Aconst.Real _ => real
@@ -412,7 +460,7 @@ structure Type =
 				     seq [str "t2: ", layoutPretty (T s')]])
 			  end
 		      fun errorS s = error (Layout.str s)
-		      fun oneFlex ({fields, final, spine}, r) =
+		      fun oneFlex ({fields, final, region, spine}, r) =
 			 let
 			    val _ =
 			       List.foreach
@@ -440,7 +488,7 @@ structure Type =
 			       Srecord.foldi
 			       (r, (), fn (f, t, ()) =>
 				let
-				   val _ = Spine.ensureField (spine, f)
+				   val _ = Spine.ensureField (spine, f, error)
 				   val _ =
 				      case List.peek (fields, fn (f', _) =>
 						      Field.equals (f, f')) of
@@ -513,10 +561,11 @@ structure Type =
 			       (oneFlex (f, r); res)
 			  | (res as Record r, FlexRecord f) =>
 			       (oneFlex (f, r); res)
-			| (FlexRecord {fields = fields, spine = s, final, ...},
+			| (FlexRecord {fields = fields, final, region,
+				       spine = s},
 			   FlexRecord {fields = fields', spine = s', ...}) =>
 			  let
-			     val _ = Spine.unify (s, s')
+			     val _ = Spine.unify (s, s', error)
 			     fun subset (fields, fields') =
 				let
 				   val res = ref fields'
@@ -535,6 +584,7 @@ structure Type =
 			  in
 			     FlexRecord {fields = fields,
 					 final = final,
+					 region = region,
 					 spine = s}
 			  end
 			 | _ => (errorS "can't unify"; t)
@@ -580,19 +630,40 @@ structure Type =
 	    in
 	       tuple (Vector.map (v, #2))
 	    end
-	 fun genFlexRecord (_, {extra, fields, final, spine}) =
+	 fun genFlexRecord (_, {extra, fields, final, region, spine}) =
 	    unsorted (List.fold
 		      (extra (), fields, fn ({field, tyvar}, ac) =>
 		       (field, X.var tyvar) :: ac),
 		      final)
-	 fun flexRecord (_, {fields, final, spine}) =
+	 fun flexRecord (t, {fields, final, region, spine}) =
 	    if Spine.canAddFields spine
-	       then Error.bug "unresolved ... in flexible pattern"
+	       then
+		  let
+		     open Layout
+		     val _ =
+			Control.error
+			(region,
+			 str "unresolved ... in flexible record pattern",
+			 layoutPretty t)
+		  in
+		     X.unit
+		  end
 	    else unsorted (Spine.foldOverNew
 			   (spine, fields, fields, fn (f, ac) =>
 			    (f, X.unit) :: ac),
 			   final)
 	 fun record (_, r) = tuple (Srecord.range r)
+	 val region = ref Region.bogus
+	 fun recursive t =
+	    let
+	       open Layout
+	       val _ =
+		  Control.error (!region,
+				 str "recursive type",
+				 layoutPretty t)
+	    in
+	       X.unit
+	    end
 	 val int = con (Tycon.defaultInt, Vector.new0 ())
 	 val word = con (Tycon.defaultWord, Vector.new0 ())
 	 val {hom: Type.t -> X.t, ...} =
@@ -601,23 +672,27 @@ structure Type =
 		     flexRecord = flexRecord,
 		     genFlexRecord = genFlexRecord,
 		     record = record,
+		     recursive = recursive,
 		     unknown = fn _ => unknown,
 		     var = X.var o #2,
 		     word = fn _ => word}
       in
-	 val toXml = hom
+	 fun toXml (t, r) =
+	    (region := r
+	     ; hom t)
 
-	 val toXml = Trace.trace ("toXml", layout, XmlType.layout) toXml
+	 val toXml =
+	    Trace.trace2 ("toXml", layout, Region.layout, X.layout) toXml
       end
 	 
-      fun derecord t =
+      fun derecord (t, region) =
 	 case toType t of
-	    FlexRecord {final, ...} => (toXml t
+	    FlexRecord {final, ...} => (toXml (t, region)
 					; valOf (!final))
-	  | GenFlexRecord {final, ...} => (toXml t
+	  | GenFlexRecord {final, ...} => (toXml (t, region)
 					   ; valOf (!final))
 	  | Record r => Vector.map (Srecord.toVector r, fn (f, t) =>
-				    (f, toXml t))
+				    (f, toXml (t, region)))
 	  | _ => Error.bug "Type.deRecord"
    end
 
@@ -667,8 +742,9 @@ structure InferScheme =
 
       val fromType = Type
 
-      val instantiate =
-	 fn Type ty => {args = fn () => Vector.new0 (),
+      fun instantiate (t, region) =
+	 case t of
+	    Type ty => {args = fn () => Vector.new0 (),
 			instance = ty}
 	  | General {canGeneralize, flexes, tyvars, ty, ...} =>
 	       let
@@ -697,13 +773,14 @@ structure InferScheme =
 			      ty = newTy (Con (c, Vector.map (zs, #ty)))}
 		     else keep ty
 		  val flexInsts = ref []
-		  fun genFlexRecord (t, {extra, fields, final, spine}) =
+		  fun genFlexRecord (t, {extra, fields, final, region, spine}) =
 		     let
 			val fields = List.revMap (fields, fn (f, t: z) =>
 						  (f, #ty t))
 			val flex = 
 			   newTy (FlexRecord {fields = fields,
 					      final = FinalRecordType.new (),
+					      region = region,
 					      spine = spine})
 			val _ = List.push (flexInsts, {genFlex = t, flex = flex})
 		     in
@@ -715,6 +792,18 @@ structure InferScheme =
 			then {isNew = true,
 			      ty = newTy (Record (Srecord.map (r, #ty)))}
 		     else keep t
+		  fun recursive t =
+		     let
+			open Layout
+			val _ = 
+			   Control.error (region,
+					  str "instantiating recursive type",
+					  layoutPretty t)
+		     in
+			{isNew = true,
+			 ty = new {canGeneralize = true,
+				   equality = true}}
+		     end
 		  fun var (ty, a) =
 		     case tyvarInst a of
 			NONE => {isNew = false, ty = ty}
@@ -725,6 +814,7 @@ structure InferScheme =
 				    flexRecord = fn (t, _) => keep t,
 				    genFlexRecord = genFlexRecord,
 				    record = record,
+				    recursive = recursive,
 				    unknown = fn (t, _) => keep t,
 				    var = var,
 				    word = keep})
@@ -772,12 +862,13 @@ structure InferScheme =
 				  | SOME t => t) :: ac)
 			     end
 			| _ => Error.bug "args expected GenFlexRecord"),
-		      Type.toXml)
+		      fn t => Type.toXml (t, region))
 	       in {args = args,
 		   instance = ty}
 	       end
       val instantiate =
-	 Trace.trace ("Scheme.instantiate", layout, Type.layout o #instance)
+	 Trace.trace2 ("Scheme.instantiate", layout, Region.layout,
+		       Type.layout o #instance)
 	 instantiate
    end
 
@@ -850,7 +941,7 @@ val extendVar =
 		 layout)
    extendVar
    
-fun closes (e: t, tys: Type.t vector, ensure: Tyvar.t vector)
+fun closes (e: t, tys: Type.t vector, ensure: Tyvar.t vector, region)
    : {bound: unit -> Tyvar.t vector,
       mayHaveTyvars: bool,
       schemes: InferScheme.t vector} =
@@ -877,6 +968,7 @@ fun closes (e: t, tys: Type.t vector, ensure: Tyvar.t vector)
 	    flexRecord = fn (t, _) => add (flexes, t, Type.equals),
 	    genFlexRecord = fn _ => Error.bug "GenFlexRecord seen in Env.close",
 	    record = fn _ => (),
+	    recursive = fn _ => (),
 	    unknown = (fn (t, Unknown.T {canGeneralize, ...}) =>
 		       if canGeneralize
 			  then add (freeUnknowns, t, Type.equals)
@@ -907,7 +999,7 @@ fun closes (e: t, tys: Type.t vector, ensure: Tyvar.t vector)
 		   val {ty, plist} = Set.value s
 		in
 		   case ty of
-		      Type.FlexRecord {fields, spine, ...} =>
+		      Type.FlexRecord {fields, region, spine, ...} =>
 			 let
 			    val extra =
 			       Promise.lazy
@@ -915,7 +1007,11 @@ fun closes (e: t, tys: Type.t vector, ensure: Tyvar.t vector)
 				let
 				   val _ =
 				      if Spine.canAddFields spine
-					 then Error.bug "unresolved ... in flexible pattern"
+					 then
+					    Control.error
+					    (region,
+					     Layout.str "unresolved ... in flexible record pattern",
+					     Layout.empty)
 				      else ()
 				in
 				   Spine.foldOverNew
@@ -931,6 +1027,7 @@ fun closes (e: t, tys: Type.t vector, ensure: Tyvar.t vector)
 				 Type.GenFlexRecord {extra = extra,
 						     fields = fields,
 						     final = FinalRecordType.new (),
+						     region = region,
 						     spine = spine}})
 			 end
 		    | _ => Error.bug "flexes contained non FlexRecord"
@@ -993,7 +1090,16 @@ fun closes (e: t, tys: Type.t vector, ensure: Tyvar.t vector)
 			else ()
 		     fun var (_, a) =
 			if Vector.contains (ensure, a, Tyvar.equals)
-			   then Error.bug "unable to generalize tyvar"
+			   then
+			       let
+				  open Layout
+			       in
+				  Control.error
+				  (region,
+				   seq [str "unable to generalize tyvar ",
+					Tyvar.layout a],
+				   empty)
+			       end
 			else 
 			   if Vector.exists (bound, fn a' =>
 					     Tyvar.equals (a, a'))
@@ -1006,6 +1112,7 @@ fun closes (e: t, tys: Type.t vector, ensure: Tyvar.t vector)
 					flexRecord = flexRecord,
 					genFlexRecord = ignore,
 					record = ignore,
+					recursive = ignore,
 					unknown = unknown,
 					var = var,
 					word = ignore})
@@ -1020,17 +1127,17 @@ fun closes (e: t, tys: Type.t vector, ensure: Tyvar.t vector)
    end
 
 val closes =
-   Trace.trace3
+   Trace.trace4
    ("Env.closes",
-    layout, Vector.layout Type.layout, Vector.layout Tyvar.layout,
+    layout, Vector.layout Type.layout, Vector.layout Tyvar.layout, Region.layout,
     fn {bound, mayHaveTyvars, schemes} =>
     Layout.record [("mayHaveTyvars", Bool.layout mayHaveTyvars),
 		   ("schemes", Vector.layout InferScheme.layout schemes)])
    closes
 
-fun close (e, t, ts) =
+fun close (e, t, ts, region) =
    let
-      val {bound, mayHaveTyvars, schemes} = closes (e, Vector.new1 t, ts)
+      val {bound, mayHaveTyvars, schemes} = closes (e, Vector.new1 t, ts, region)
    in
       {bound = bound,
        mayHaveTyvars = mayHaveTyvars,

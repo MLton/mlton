@@ -87,8 +87,11 @@ structure Longvid =
 			   structure Id = Vid)
       open L
       fun fromLongcon (c: Longcon.t): t =
-	 let val (strids, id) = Longcon.split c
-	 in make (T {strids = strids, id = Vid.fromCon id})
+	 let
+	    val (strids, id) = Longcon.split c
+	 in
+	    makeRegion (T {strids = strids, id = Vid.fromCon id},
+			Longcon.region c)
 	 end
       local
 	 fun to (make,node, conv) x =
@@ -124,8 +127,8 @@ structure Type =
       type node' = node
       type obj = t
 
+      fun make n = makeRegion (n, Region.bogus)
       val var = make o Var
-	 
       val record = make o Record
       val tuple = record o Record.tuple
       val unit = tuple (Vector.new0 ())
@@ -227,7 +230,7 @@ structure TypBind =
 			      Tyvar.layout),
 	      Type.layout def))
 	 end
-      val empty = make (T [])
+      val empty = makeRegion (T [], Region.bogus)
    end
 
 (*---------------------------------------------------*)

@@ -165,6 +165,8 @@ structure Sigexp =
 	  | _ => makeRegion (Where (sigexp, wherespecs),
 			     region sigexp)
 
+      fun make n = makeRegion (n, Region.bogus)
+	 
       val spec = make o Spec
       val var = make o Var
 	 
@@ -187,7 +189,7 @@ structure Spec =
       type node' = node
       type obj = t
 	 
-      val empty = make Empty
+      val empty = makeRegion (Empty, Region.bogus)
 	 
       val layout = layoutSpec
    end
@@ -246,6 +248,8 @@ structure Strexp =
       datatype node = datatype strexpNode
       type node' = node
       type obj = t
+
+      fun make n = makeRegion (n, Region.bogus)
       val var = make o Var
       val structt = make o Struct
       val constrained = make o Constrained
@@ -262,6 +266,7 @@ structure Strdec =
       type node' = node
       type obj = t
 
+      fun make n = makeRegion (n, Region.bogus)
       val structuree = make o Structure
       val locall = make o Local
       val core = make o Core
@@ -324,6 +329,7 @@ structure Topdec =
 				     layoutSigConst result],
 				layoutStrexp body))
 
+      fun make n = makeRegion (n, Region.bogus)
       val fromExp = make o Strdec o Strdec.fromExp
       val functorr = make o Functor
       val signaturee = make o Signature

@@ -47,17 +47,20 @@ structure Pat =
 		  (case (flexible, Record.detupleOpt record) of
 		      (false, SOME ps) => Pat.tuple (Vector.map (ps, toAst))
 		    | _ =>
-			 Pat.make
+			 Pat.makeRegion
 			 (Pat.Record
 			  {flexible = flexible,
 			   items = (Vector.map
 				    (Record.toVector record, fn (field, p) =>
-				     Pat.Item.Field (field, toAst p)))}))
+				     Pat.Item.Field (field, toAst p)))},
+			  Region.bogus))
 	     | Con {con, arg} =>
-		  let val con = Con.toAst con
-		  in case arg of
-		     NONE => Pat.con con
-		   | SOME p => Pat.app (con, toAst p)
+		  let
+		     val con = Con.toAst con
+		  in
+		     case arg of
+			NONE => Pat.con con
+		      | SOME p => Pat.app (con, toAst p)
 		  end
 	     | Constraint (p, t) => Pat.constraint (toAst p,  Type.toAst t)
 	     | Layered (x, p) =>
@@ -266,8 +269,10 @@ structure Match =
    end
 
 local
-   local open Ast
-   in structure Dec = Dec
+   local
+      open Ast
+   in
+      structure Dec = Dec
       structure Exp = Exp
       structure Longvar = Longvar
    end
@@ -282,34 +287,37 @@ in
 			    (Con.toAst con, Type.optionToAst arg))}))
       
    fun decToAst d =
-      case d of
-	 Val {pat, filePos, tyvars, exp} =>
-	    Dec.make (Dec.Val {tyvars = tyvars,
-			       vbs = Vector.new1 {pat = Pat.toAst pat,
-						  exp = expToAst exp,
-						  filePos = filePos},
-			       rvbs = Vector.new0 ()})
-       | Fun {tyvars, decs} =>
-	    Dec.make (Dec.Val
-		      {tyvars = tyvars,
-		       vbs = Vector.new0 (),
-		       rvbs = (Vector.map
-			       (decs, fn {var, types, match} =>
-				{pat = (Vector.fold
-					(types, Apat.var (Var.toAst var),
-					 fn (t, p) =>
-					 Apat.constraint (p, Type.toAst t))),
-				 match = matchToAst match}))})
-       | Datatype ds => astDatatype ds
-       | Exception {con, arg} =>
-	    Dec.exceptionn (Con.toAst con, Type.optionToAst arg)
-       | Overload {var, scheme, ovlds} =>
-	    Dec.make (Dec.Overload
-		      (Var.toAst var,
-		       Type.toAst (Scheme.ty scheme),
-		       Vector.map (ovlds, fn x =>
-				   Longvar.short (Var.toAst x))))
-
+      let
+	 fun doit n = Dec.makeRegion (n, Region.bogus)
+      in
+	 case d of
+	    Val {pat, filePos, tyvars, exp} =>
+	       doit (Dec.Val {tyvars = tyvars,
+			      vbs = Vector.new1 {pat = Pat.toAst pat,
+						 exp = expToAst exp,
+						 filePos = filePos},
+			      rvbs = Vector.new0 ()})
+	  | Fun {tyvars, decs} =>
+	       doit (Dec.Val
+		     {tyvars = tyvars,
+		      vbs = Vector.new0 (),
+		      rvbs = (Vector.map
+			      (decs, fn {var, types, match} =>
+			       {pat = (Vector.fold
+				       (types, Apat.var (Var.toAst var),
+					fn (t, p) =>
+					Apat.constraint (p, Type.toAst t))),
+				match = matchToAst match}))})
+	  | Datatype ds => astDatatype ds
+	  | Exception {con, arg} =>
+	       Dec.exceptionn (Con.toAst con, Type.optionToAst arg)
+	  | Overload {var, scheme, ovlds} =>
+	       doit (Dec.Overload
+		     (Var.toAst var,
+		      Type.toAst (Scheme.ty scheme),
+		      Vector.map (ovlds, fn x =>
+				  Longvar.short (Var.toAst x))))
+      end
    and expToAst e =
       case Wrap.node e of
 	 Var x => Exp.var (Var.toAst x)
@@ -509,17 +517,15 @@ structure Dec =
 
 structure Program =
    struct
-      datatype t = T of {decs: Dec.t vector
-(*			 constructors: Constructors.t *)}
-
-      (*      val empty = T [] *)
-
-      (*      fun append (T ds, T ds') = T (List.append (ds, ds')) *)
+      datatype t = T of {decs: Dec.t vector}
 
       fun toAst (T {decs, ...}) =
-	 Adec.make
-	 (Adec.Local (Adec.make (Adec.SeqDec (Vector.map (decs, Dec.toAst))),
-		      Adec.empty))
+	 Adec.makeRegion
+	 (Adec.Local
+	  (Adec.makeRegion (Adec.SeqDec (Vector.map (decs, Dec.toAst)),
+			    Region.bogus),
+	   Adec.empty),
+	  Region.bogus)
 
       val layout = Adec.layout o toAst
 

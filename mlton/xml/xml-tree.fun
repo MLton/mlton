@@ -155,40 +155,44 @@ fun expToAst (Exp {decs, result, ...}): Aexp.t =
 and expsToAsts es = List.map (es, expToAst)
 and decsToAst decs = Vector.fromListMap (decs, decToAst)
 and decToAst d : Adec.t =
-   case d of
-      MonoVal {var, ty, exp} =>
-	 Adec.make
-	 (Adec.Val
-	  {tyvars = Vector.new0 (),
-	   vbs = (Vector.new1
-		  {filePos = "",
-		   exp = primExpToAst exp,
-		   pat = if !Control.showTypes
-			    then Apat.constraint (Apat.var (Var.toAst var),
-						  Type.toAst ty)
-			 else  Apat.var (Var.toAst var)}),
-	   rvbs = Vector.new0 ()})
-    | PolyVal {tyvars, var, exp, ...} =>
-	 Adec.vall (tyvars, Var.toAst var, expToAst exp)
-    | Fun {tyvars, decs} =>
-	 Adec.make
-	 (Adec.Fun
-	  (tyvars,
-	   Vector.map
-	   (decs, fn {var, ty, lambda = Lam {arg, argType, body, ...}, ...} =>
-	    {filePos = "",
-	     clauses =
-	     Vector.new1
-	     {pats = (Vector.new2
-		      (Apat.var (Var.toAst var),
-		       if !Control.showTypes
-			  then Apat.constraint (Apat.var (Var.toAst arg),
-						Type.toAst argType)
-		       else Apat.var (Var.toAst arg))),
-	      resultType = SOME (Type.toAst (#2 (Type.dearrow ty))),
-	      body = expToAst body}})))
-    | Exception {con, arg} =>
-	 Adec.exceptionn (Con.toAst con, Type.optionToAst arg)
+   let
+      fun doit n = Adec.makeRegion (n, Region.bogus)
+   in
+      case d of
+	 MonoVal {var, ty, exp} =>
+	    doit
+	    (Adec.Val
+	     {tyvars = Vector.new0 (),
+	      vbs = (Vector.new1
+		     {filePos = "",
+		      exp = primExpToAst exp,
+		      pat = if !Control.showTypes
+			       then Apat.constraint (Apat.var (Var.toAst var),
+						     Type.toAst ty)
+			    else  Apat.var (Var.toAst var)}),
+	      rvbs = Vector.new0 ()})
+       | PolyVal {tyvars, var, exp, ...} =>
+	    Adec.vall (tyvars, Var.toAst var, expToAst exp)
+       | Fun {tyvars, decs} =>
+	    doit
+	    (Adec.Fun
+	     (tyvars,
+	      Vector.map
+	      (decs, fn {var, ty, lambda = Lam {arg, argType, body, ...}, ...} =>
+	       {filePos = "",
+		clauses =
+		Vector.new1
+		{pats = (Vector.new2
+			 (Apat.var (Var.toAst var),
+			  if !Control.showTypes
+			     then Apat.constraint (Apat.var (Var.toAst arg),
+						   Type.toAst argType)
+			  else Apat.var (Var.toAst arg))),
+		 resultType = SOME (Type.toAst (#2 (Type.dearrow ty))),
+		 body = expToAst body}})))
+       | Exception {con, arg} =>
+	    Adec.exceptionn (Con.toAst con, Type.optionToAst arg)
+   end
 and primExpToAst e : Aexp.t =
    case e of
       Const c => Const.toAstExp c
@@ -228,15 +232,16 @@ and primExpToAst e : Aexp.t =
 	    fun doit (l, f) =
 	       Vector.map (l, fn (i, exp) => (f i, expToAst exp))
 	    datatype z = datatype Cases.t
+	    val make =
+	       fn n => Ast.Pat.const (Ast.Const.makeRegion (n, Region.bogus))
 	    val cases =
 	       case cases of
-		  Char l => doit (l, Ast.Pat.const o Ast.Const.Char)
+		  Char l => doit (l, make o Ast.Const.Char)
 		| Con l => Vector.map (l, fn (pat, exp) =>
 				       (Pat.toAst pat, expToAst exp))
-		| Int l => doit (l, Ast.Pat.const o Ast.Const.fromInt)
-		| Word l => doit (l, Ast.Pat.const o Ast.Const.Word)
-		| Word8 l =>
-		     doit (l, Ast.Pat.const o Ast.Const.Word o Word8.toWord)
+		| Int l => doit (l, make o Ast.Const.Int o Int.toString)
+		| Word l => doit (l, make o Ast.Const.Word)
+		| Word8 l => doit (l, make o Ast.Const.Word o Word8.toWord)
 	    val cases =
 	       case default of
 		  NONE => cases

@@ -107,6 +107,8 @@ structure Pat =
 	    datatype t = datatype item
 	 end
 
+      fun make n = makeRegion (n, Region.bogus)
+
       val wild = make Wild
       val const = make o Const
       val record = make o Record
@@ -420,6 +422,7 @@ structure Exp =
       type node' = node
       type obj = t
 
+      fun make n = makeRegion (n, Region.bogus)
       val const = make o Const
       val constraint = make o Constraint
       val fnn = make o Fn
@@ -471,30 +474,33 @@ structure Exp =
 		      else longvid (Longvid.short (Vid.fromCon c))
 
       fun app (e1: t, e2: t): t =
-	 let val e = make (App (e1, e2))
-	 in case node e1 of
-	    Fn m => casee (e2, m)
-	  | Var {name = x, ...} =>
-	       if Longvid.equals (x, Longvid.cons)
-		  then case node e2 of
-		     Record r =>
-			(case Record.detupleOpt r of
-			    SOME v =>
-			       if 2 = Vector.length v
-				  then
-				     let
-					val e1 = Vector.sub (v, 0)
-					val es = Vector.sub (v, 1)
-				     in
-					case node es of
-					   List es => make (List (e1 :: es))
-					 | _ => e
-				     end
-			       else e
-			  | _ => e)
-		   | _ => e
-	       else e
-		   | _ => e
+	 let
+	    val e = makeRegion (App (e1, e2),
+				Region.append (region e1, region e2))
+	 in
+	    case node e1 of
+	       Fn m => casee (e2, m)
+	     | Var {name = x, ...} =>
+		  if Longvid.equals (x, Longvid.cons)
+		     then case node e2 of
+			Record r =>
+			   (case Record.detupleOpt r of
+			       SOME v =>
+				  if 2 = Vector.length v
+				     then
+					let
+					   val e1 = Vector.sub (v, 0)
+					   val es = Vector.sub (v, 1)
+					in
+					   case node es of
+					      List es => make (List (e1 :: es))
+					    | _ => e
+					end
+				  else e
+					    | _ => e)
+		      | _ => e
+		  else e
+		      | _ => e
 	 end
 
       val seq = make o Seq
@@ -561,6 +567,8 @@ structure Dec =
       type node' = node
       type obj = t
 
+      fun make n = makeRegion (n, Region.bogus)
+	 
       val openn = make o Open
 
       fun funn (tyvars, rvbs): t =
@@ -587,10 +595,12 @@ structure Dec =
       fun datatypee datatypes: t =
 	 make
 	 (Datatype
-	  (DatatypeRhs.make
+	  (DatatypeRhs.makeRegion
 	   (DatatypeRhs.DatBind
-	    (DatBind.make (DatBind.T {withtypes = TypBind.empty,
-				      datatypes = datatypes})))))
+	    (DatBind.makeRegion (DatBind.T {withtypes = TypBind.empty,
+					    datatypes = datatypes},
+				 Region.bogus)),
+	    Region.bogus)))
 
       val seq = make o SeqDec
       val empty = seq (Vector.new0 ())

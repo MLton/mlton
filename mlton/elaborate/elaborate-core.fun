@@ -444,7 +444,10 @@ fun elaborateDec (d, E) =
 					  val x = Avar.fromString "z"
 					  val c =
 					     Aexp.const
-					     (Aconst.String (Avar.toString func))
+					     (Aconst.makeRegion
+					      (Aconst.String
+					       (Avar.toString func),
+					       region))
 					  fun make f = Aexp.app (f, c)
 				       in
 					  Aexp.seq
@@ -669,7 +672,7 @@ fun elaborateDec (d, E) =
 					   {exn = doit (Cexp.Con Con.bind),
 					    filePos = filePos}),
 			       filePos = "",
-			       pat = Cpat.make Cpat.Wild,
+			       pat = Cpat.makeRegion (Cpat.Wild, region),
 			       tyvars = Vector.new0 ()})]
 		   end
 	  end) d

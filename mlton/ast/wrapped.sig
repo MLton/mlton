@@ -9,7 +9,7 @@ signature WRAPPED =
       type obj
 
       val dest: obj -> node' * Region.t
-      val make: node' -> obj
+(*      val make: node' -> obj *)
       val makeRegion': node' * SourcePos.t * SourcePos.t -> obj
       val makeRegion: node' * Region.t -> obj
       val node: obj -> node'

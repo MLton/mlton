@@ -12,15 +12,18 @@ signature AST_CONST_STRUCTS =
 signature AST_CONST =
    sig
       include AST_CONST_STRUCTS
-	 
-      datatype t =
+
+      type t
+      datatype node =
 	 Char of char
        | Int of string
        | Real of string
        | String of string
        | Word of word
+      include WRAPPED sharing type node' = node
+                      sharing type obj = t
 
       val equals: t * t -> bool
-      val fromInt: int -> t
       val layout: t -> Layout.t
+      val toString: t -> string
    end

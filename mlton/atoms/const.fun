@@ -67,21 +67,25 @@ end
    
 fun 'a toAst (make: Ast.Const.t -> 'a, constrain: 'a * Ast.Type.t -> 'a) c =
    let
+      val make = fn n => make (Ast.Const.makeRegion (n, Region.bogus))
       fun maybeConstrain (defaultTycon, aconst) =
-	 let val t = tycon c
-	 in if Tycon.equals (t, defaultTycon)
+	 let
+	    val t = tycon c
+	 in
+	    if Tycon.equals (t, defaultTycon)
 	       then make aconst
 	    else constrain (make aconst, Ast.Type.con (Tycon.toAst t,
 						       Vector.new0 ()))
 	 end
       fun int s = maybeConstrain (Tycon.defaultInt, Aconst.Int s)
-   in case node c of
-      Char c => make (Aconst.Char c)
-    | Int n => int (Int.toString n)
-    | IntInf i => int (IntInf.toString i)
-    | Real r => make (Aconst.Real r)
-    | String s => make (Aconst.String s)
-    | Word w => maybeConstrain (Tycon.defaultWord, Aconst.Word w)
+   in
+      case node c of
+	 Char c => make (Aconst.Char c)
+       | Int n => int (Int.toString n)
+       | IntInf i => int (IntInf.toString i)
+       | Real r => make (Aconst.Real r)
+       | String s => make (Aconst.String s)
+       | Word w => maybeConstrain (Tycon.defaultWord, Aconst.Word w)
    end
 
 val toAstExp = toAst (Ast.Exp.const, Ast.Exp.constraint)

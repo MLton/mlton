@@ -48,7 +48,8 @@ val equals =
    in List.equals (ss, ss', Strid.equals) andalso Id.equals (i, i')
    end
    
-fun long (strids, id) = make (T {strids = strids, id = id})
+fun long (strids, id) = makeRegion (T {strids = strids, id = id},
+				    Region.bogus)
 
 fun short id = long ([], id)
 

@@ -19,7 +19,7 @@ val fromDec = single
 fun toAsts ds =
    Vector.map (toVector ds, CoreML.Dec.toAst)
 
-fun toAst ds = Ast.Dec.make (Ast.Dec.SeqDec (toAsts ds))
+fun toAst ds = Ast.Dec.makeRegion (Ast.Dec.SeqDec (toAsts ds), Region.bogus)
 
 fun layout ds =
    let
