@@ -754,7 +754,7 @@ interrupted by the signal.  The signal handler returns the thread that
 it would like to resume execution (this is often the thread that it
 was passed).  It is an error for a signal handler to raise an
 unhandled exception.  To avoid the possibility of aynchronous
-exceptions, it is an error for to {\tt Thread.switch'} to an
+exceptions, it is an error to {\tt Thread.switch'} to an
 interrupted thread with a thunk that raises an exception (either
 directly, or via {\tt Thread.prepend}). All signals are automatically
 blocked for the duration of a handler.  Signal handlers will never run
