@@ -4,7 +4,6 @@ structure MLtonProcess =
       structure Error = PosixError
       structure SysCall = Error.SysCall
       structure MLton = Primitive.MLton
-      structure Status = PosixPrimitive.Process.Status
 
       type pid = Pid.t
 
@@ -58,29 +57,6 @@ structure MLtonProcess =
 	       NONE => Posix.Process.execp (file, args)
 	     | SOME pid => pid
 
-      val exiting = ref false
-
-      exception Exit
-      
-      fun exit (status: Status.t): 'a =
-	 if !exiting
-	    then raise Exit
-	 else
-	    let
-	       val _ = exiting := true
-	       val i = Status.toInt status
-	    in
-	       if 0 <= i andalso i < 256
-		  then (let open Cleaner in clean atExit end
-			; Primitive.halt status
-			; raise Fail "exit")
-	       else raise Fail (concat ["exit must have 0 <= status < 256: saw ",
-					Int.toString i])
-	    end
-
-      fun atExit f =
-	 if !exiting
-	    then ()
-	 else Cleaner.addNew (Cleaner.atExit, f)
+      open Exit
    end
 
