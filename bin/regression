@@ -8,7 +8,7 @@ set -e
 name=`basename $0`
 
 usage () {
-	echo >&2 "usage: $name [-cross host] [-run-only] [mlton flags ...]"
+	echo >&2 "usage: $name [-cross target] [-run-only target] [mlton flags ...]"
 	exit 1
 }
 
@@ -28,6 +28,11 @@ while [ "$#" -gt 0 ]; do
 	-run-only)
 		runOnly='yes'
 		shift
+		if [ "$#" = 0 ]; then
+			usage
+		fi
+		crossTarget="$1"
+		shift
 		;;
 	*)
 		flags="$@"
@@ -42,7 +47,7 @@ bin="$src/build/bin"
 mlton="$bin/mlton"
 flags="-warn-match false $flags"
 if [ $cross = 'yes' ]; then
-	flags="$flags -target $crossTarget"
+	flags="$flags -target $crossTarget -stop g"
 fi
 cont='callcc.sml callcc2.sml callcc3.sml'
 intInf='conv.sml conv2.sml harmonic.sml int-inf.*.sml slow.sml slower.sml smith-normal-form.sml'
@@ -76,12 +81,22 @@ for f in `ls *.sml`; do
 			extraFlags=""
 		;;
 		esac
-		if [ $runOnly = 'no' ]; then
+		case "$runOnly" in
+		no)
 			$mlton $flags $extraFlags $f.sml
-			if [ $? -ne 0 -o ! -x $f ]; then
+			if [ "$?" -ne '0' ] || 
+				[ "$cross" = 'no' -a ! -x "$f" ]; then
 				compFail $f
 			fi
-		fi
+		;;
+		yes)
+			gcc -o $f -w -O1				\
+				-I"$src/build/lib/include"		\
+				-L"$src/build/lib/$crossTarget"		\
+				$f.[0-9].[cS]				\
+				-lmlton -lgmp -lgdtoa -lm
+		;;
+		esac
 		if [ ! -r $f.nonterm -a $cross = 'no' -a -x $f ]; then
 			( ./$f || echo 'Nonzero exit status.' ) >$tmp 2>&1 
 			if [ -r $f.ok ] && ! diff $f.ok $tmp ; then
@@ -91,8 +106,8 @@ for f in `ls *.sml`; do
 	;;
 	esac
 done
-if [ $cross = 'yes' -o $runOnly = 'yes' ]; then
-	exit 0
+if [ "$cross" = 'yes' -o "$runOnly" = 'yes' ]; then
+ 	exit 0
 fi
 make clean >/dev/null
 cd $src/benchmark/tests
