@@ -1960,13 +1960,12 @@ static void minorGC (GC_state s) {
  */
 
 static GC_ObjectHashTable newTable (GC_state s) {
+	int i;
 	uint maxElementsSize;
 	pointer regionStart;
 	pointer regionEnd;
 	GC_ObjectHashTable t;
 
-	if (DEBUG_SHARE)
-		GC_display (s, stderr);
 	NEW (t);
 	// Try to use space in the heap for the elements.
 	if (not (heapIsInit (&s->heap2))) {
@@ -1991,8 +1990,8 @@ static GC_ObjectHashTable newTable (GC_state s) {
 	maxElementsSize = (regionEnd - regionStart) / sizeof (*(t->elements));
 	if (DEBUG_SHARE)
 		fprintf (stderr, "maxElementsSize = %u\n", maxElementsSize);
-	t->elementsSize = 1024;    // some small power of two
-	t->log2ElementsSize = 10;  // and its log base 2
+	t->elementsSize = 64;    // some small power of two
+	t->log2ElementsSize = 6;  // and its log base 2
 	if (maxElementsSize < t->elementsSize) {
 		if (DEBUG_SHARE)
 			fprintf (stderr, "too small -- using malloc\n");
@@ -2008,6 +2007,8 @@ static GC_ObjectHashTable newTable (GC_state s) {
 		t->elementsSize >>= 1;
 		t->log2ElementsSize--;
 		assert (t->elementsSize <= maxElementsSize);
+		for (i = 0; i < t->elementsSize; ++i)
+			t->elements[i].object = NULL;
 	}
 	t->numElements = 0;
 	if (DEBUG_SHARE) {
@@ -2027,7 +2028,7 @@ static void destroyTable (GC_ObjectHashTable t) {
 
 static inline Pointer tableInsert 
 	(GC_state s, GC_ObjectHashTable t, W32 hash, Pointer object, 
-		Bool mightBeThere, Header header, Pointer max) {
+		Bool mightBeThere, Header header, W32 tag, Pointer max) {
 	GC_ObjectHashElement e;
 	Header header2;
 	static Bool init = FALSE;
@@ -2093,6 +2094,10 @@ lookNext:
 				++p, ++p2)
 			unless (*p == *p2)
 				goto lookNext;
+		if (ARRAY_TAG == tag
+			and (GC_arrayNumElements (object)
+				!= GC_arrayNumElements (e->object)))
+			goto lookNext;
 	}
 	/* object is equal to e->object. */
 	return e->object;
@@ -2104,9 +2109,6 @@ static void maybeGrowTable (GC_state s, GC_ObjectHashTable t) {
 	int i;
 	int s0;
 
-	if (DEBUG_SHARE)
-		fprintf (stderr, "maybeGrowTable  t->numElements = %u  t->elementsSize = %u\n",
-				t->numElements, t->elementsSize);
 	if (t->numElements * 2 <= t->elementsSize)
 		return;
 	s0 = t->elementsSize;
@@ -2119,7 +2121,7 @@ static void maybeGrowTable (GC_state s, GC_ObjectHashTable t) {
 	for (i = 0; i < s0; ++i) {
 		e0 = &elements0[i];
 		unless (NULL == e0->object)
-			tableInsert (s, t, e0->hash, e0->object, FALSE, 0, 0);
+			tableInsert (s, t, e0->hash, e0->object, FALSE, 0, 0, 0);
 	}
 	if (t->elementsIsInHeap)
 		t->elementsIsInHeap = FALSE;
@@ -2129,12 +2131,11 @@ static void maybeGrowTable (GC_state s, GC_ObjectHashTable t) {
 		fprintf (stderr, "done growing table\n");
 }
 
-
 static Pointer hashCons (GC_state s, Pointer object) {
 	Bool hasIdentity;
 	Word32 hash;
 	Header header;
-	word *max;
+	pointer max;
 	uint numNonPointers;
 	uint numPointers;
 	word *p;
@@ -2147,19 +2148,23 @@ static Pointer hashCons (GC_state s, Pointer object) {
 	t = s->objectHashTable;
 	header = GC_getHeader (object);
 	SPLIT_HEADER ();
-	if (hasIdentity or tag != NORMAL_TAG) {
+	if (hasIdentity) {
 		/* Don't hash cons. */
 		res = object;
 		goto done;
 	}
-	assert (NORMAL_TAG == tag);
-	/* Compute the hash. */
-	max = (word*)(object + toBytes (numPointers + numNonPointers));
+	assert (ARRAY_TAG == tag or NORMAL_TAG == tag);
+	if (ARRAY_TAG == tag)
+		max = object + arrayNumBytes (s, object,
+						numPointers, numNonPointers);
+	else
+		max = object + toBytes (numPointers + numNonPointers);
+	// Compute the hash.
 	hash = header;
-	for (p = (word*)object; p < max; ++p)
+	for (p = (word*)object; p < (word*)max; ++p)
 		hash = hash * 31 + *p;
 	/* Insert into table. */
-       	res = tableInsert (s, t, hash, object, TRUE, header, (Pointer)max);
+       	res = tableInsert (s, t, hash, object, TRUE, header, tag, (Pointer)max);
 	maybeGrowTable (s, t);
 done:
 	if (DEBUG_SHARE)
@@ -2279,9 +2284,7 @@ mark:
 	SPLIT_HEADER();
 	if (NORMAL_TAG == tag) {
 		if (0 == numPointers) {
-			/* There is nothing to mark.  Store the marked header and
-			 * return.
-			 */
+			/* There is nothing to mark. */
 			size += GC_NORMAL_HEADER_SIZE + toBytes (numNonPointers);
 			if (shouldHashCons)
 				cur = hashCons (s, cur);
@@ -2330,11 +2333,12 @@ markNextInNormal:
 		 */
 		size += GC_ARRAY_HEADER_SIZE
 			+ arrayNumBytes (s, cur, numPointers, numNonPointers);
-		if (0 == numPointers or 0 == GC_arrayNumElements (cur))
-			/* There is nothing to mark.  Store the marked header
-			 * and return.
-			 */
+		if (0 == numPointers or 0 == GC_arrayNumElements (cur)) {
+			/* There is nothing to mark. */
+			if (shouldHashCons)
+				cur = hashCons (s, cur);
 			goto ret;
+		}
 		/* Begin marking first element. */
 		arrayIndex = 0;
 		todo = cur;
@@ -2366,6 +2370,8 @@ markNextInArray:
 			/* Done.  Clear out the counters and return. */
 			*arrayCounterp (cur) = 0;
 			*headerp = header & ~COUNTER_MASK;
+			if (shouldHashCons)
+				cur = hashCons (s, cur);
 			goto ret;
 		}
 		nextHeaderp = GC_getHeaderp (next);
