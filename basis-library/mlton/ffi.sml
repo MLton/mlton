@@ -37,16 +37,21 @@ val atomicBegin = MLtonThread.atomicBegin
 val atomicEnd = MLtonThread.atomicEnd
 val register = MLtonThread.register
 
+(* To the C-world, booleans and chars are signed integers. *)
 fun intToBool (i: int): bool = i <> 0
    
 val getBool = intToBool o getInt32
 
-val getChar = Byte.byteToChar o getWord8
+val getChar8 = Primitive.Char.fromInt8 o getInt8
+val getChar16 = Primitive.Char2.fromInt16 o getInt16
+val getChar32 = Primitive.Char4.fromInt32 o getInt32
 	       
 fun boolToInt (b: bool): int = if b then 1 else 0
 
 val setBool = setInt32 o boolToInt
 
-val setChar = setWord8 o Byte.charToByte
+val setChar8 = setInt8 o Primitive.Char.toInt8
+val setChar16 = setInt16 o Primitive.Char2.toInt16
+val setChar32 = setInt32 o Primitive.Char4.toInt32
 
 end

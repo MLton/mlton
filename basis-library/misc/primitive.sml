@@ -29,15 +29,12 @@ structure Char =
       type t = char8
       type char = t
    end
-
 type char = Char.char
-
 structure Char2 =
    struct
       type t = char16
       type char = t
    end
-
 structure Char4 =
    struct
       type t = char32
@@ -48,64 +45,62 @@ type exn = exn
 
 structure Int8 =
    struct
-      type int = int8
+      type t = int8
+      type int = t
    end
-
 structure Int16 =
    struct
-      type int = int16
+      type t = int16
+      type int = t
    end
-
 structure Int32 =
    struct
-      type int = int32
+      type t = int32
+      type int = t
    end
-
 structure Int = Int32
-
+type int = Int.int
 structure Int64 =
    struct
-      type int = int64
+      type t = int64
+      type int = t
    end
-
 structure IntInf =
    struct
-      type int = intInf
+      type t = intInf
+      type int = t
    end
+(*structure LargeInt = IntInf*)
 
 structure Real32 =
    struct
       type t = real32
       type real = t
    end
-
 structure Real64 =
    struct
       type t = real64
       type real = t
    end
-
 structure Real = Real64
+type real = Real.real
 
 structure String =
    struct
       type string = char vector
    end
-
+type string = String.string
 structure String2 =
    struct
       type t = Char2.t vector
    end
-
 structure String4 =
    struct
       type t = Char4.t vector
    end
 
-type string = String.string
-
-structure PreThread:> sig type t end = struct type t = thread end
-structure Thread:> sig type t end = struct type t = thread end
+structure PreThread :> sig type t end = struct type t = thread end
+structure Thread :> sig type t end = struct type t = thread end
 
 structure Word8 =
    struct
@@ -123,6 +118,7 @@ structure Word32 =
       type word = t
    end
 structure Word = Word32
+type word = Word.word
 structure Word64 =
    struct
       type t = word64
@@ -138,7 +134,7 @@ type 'a weak = 'a weak
  * NullString.fromString is replaced by a version that checks that the string
  * is indeed null terminated.  See the bottom of this file.
  *)
-structure NullString:>
+structure NullString :>
    sig
       type t
 
@@ -150,13 +146,9 @@ structure NullString:>
       val fromString = fn s => s
    end
 
-type int = Int.int
-type real = Real.real
-type word = Word.word
-
 structure Pointer =
    struct
-      type t = word
+      type t = pointer
    end
 
 structure Pid :> sig
@@ -228,8 +220,14 @@ structure Primitive =
 	    val update = _prim "Array_update": 'a array * int * 'a -> unit;
 	 end
 
-      type cstring = Pointer.t
-      type cstringArray = Pointer.t
+      structure CString =
+	 struct
+	    type t = Pointer.t
+	 end
+      structure CStringArray =
+	 struct
+	    type t = Pointer.t
+	 end
 
       structure GCState =
 	 struct
@@ -250,7 +248,7 @@ structure Primitive =
 	    val keep = _command_line_const "CallStack.keep": bool = false;
 	    val numStackFrames =
 	       _import "GC_numStackFrames": GCState.t -> int;
-	    val sourceName = _import "GC_sourceName": GCState.t * int -> cstring;
+	    val sourceName = _import "GC_sourceName": GCState.t * int -> CString.t;
 	 end
 
       structure Char =
@@ -260,7 +258,10 @@ structure Primitive =
 	    val op < = _prim "WordU8_lt": char * char -> bool;
 	    val chr = _prim "WordS32_toWord8": int -> char;
 	    val ord = _prim "WordU8_toWord32": char -> int;
+	    val toInt8 = _prim "WordS8_toWord8": char -> Int8.int;
+	    val fromInt8 = _prim "WordS8_toWord8": Int8.int -> char;
 	    val toWord8 = _prim "WordU8_toWord8": char -> Word8.word;
+	    val fromWord8 = _prim "WordU8_toWord8": Word8.word -> char;
 	 end
 
       structure Char =
@@ -280,6 +281,10 @@ structure Primitive =
 	    val op < = _prim "WordU16_lt": char * char -> bool;
 	    val chr = _prim "WordS32_toWord16": int -> char;
 	    val ord = _prim "WordU16_toWord32": char -> int;
+	    val toInt16 = _prim "WordS16_toWord16": char -> Int16.int;
+	    val fromInt16 = _prim "WordS16_toWord16": Int16.int -> char;
+	    val toWord16 = _prim "WordU16_toWord16": char -> Word16.word;
+	    val fromWord16 = _prim "WordU16_toWord16": Word16.word -> char;
 	 end
       
       structure Char4 =
@@ -289,14 +294,18 @@ structure Primitive =
 	    val op < = _prim "WordU32_lt": char * char -> bool;
 	    val chr = _prim "WordS32_toWord32": int -> char;
 	    val ord = _prim "WordU32_toWord32": char -> int;
+	    val toInt32 = _prim "WordS32_toWord32": char -> Int32.int;
+	    val fromInt32 = _prim "WordS32_toWord32": Int32.int -> char;
+	    val toWord32 = _prim "WordU32_toWord32": char -> Word32.word;
+	    val fromWord32 = _prim "WordU32_toWord32": Word32.word -> char;
 	 end
 
       structure CommandLine =
 	 struct
 	    val argc = fn () => _import "CommandLine_argc": int;
-	    val argv = fn () => _import "CommandLine_argv": cstringArray;
+	    val argv = fn () => _import "CommandLine_argv": CStringArray.t;
 	    val commandName =
-	       fn () => _import "CommandLine_commandName": cstring;
+	       fn () => _import "CommandLine_commandName": CString.t;
 	 end
 
       structure Date =
@@ -358,6 +367,10 @@ structure Primitive =
       structure FFI =
 	 struct
 	    val getOp = fn () => _import "MLton_FFI_op": int;
+	    val int8Array = _import "MLton_FFI_Int8": Pointer.t;
+	    val int16Array = _import "MLton_FFI_Int16": Pointer.t;
+	    val int32Array = _import "MLton_FFI_Int32": Pointer.t;
+	    val int64Array = _import "MLton_FFI_Int64": Pointer.t;
 	    val numExports = _build_const "MLton_FFI_numExports": int;
 	    val pointerArray = _import "MLton_FFI_Pointer": Pointer.t;
 	    val real32Array = _import "MLton_FFI_Real32": Pointer.t;
@@ -366,10 +379,6 @@ structure Primitive =
 	    val word16Array = _import "MLton_FFI_Word16": Pointer.t;
 	    val word32Array = _import "MLton_FFI_Word32": Pointer.t;
 	    val word64Array = _import "MLton_FFI_Word64": Pointer.t;
-	    val int8Array = word8Array
-	    val int16Array = word16Array
-	    val int32Array = word32Array
-	    val int64Array = word64Array
 	 end
 
       structure GC =
@@ -1121,9 +1130,9 @@ structure Primitive =
 	    val inAddrLen = _const "NetHostDB_inAddrLen": int;
 	    val INADDR_ANY = _const "NetHostDB_INADDR_ANY": int;
 	    type addr_family = int
-	    val entryName = _import "NetHostDB_Entry_name": unit -> cstring;
+	    val entryName = _import "NetHostDB_Entry_name": unit -> CString.t;
 	    val entryNumAliases = _import "NetHostDB_Entry_numAliases": unit -> int;
-	    val entryAliasesN = _import "NetHostDB_Entry_aliasesN": int -> cstring;
+	    val entryAliasesN = _import "NetHostDB_Entry_aliasesN": int -> CString.t;
 	    val entryAddrType = _import "NetHostDB_Entry_addrType": unit -> int;
 	    val entryLength = _import "NetHostDB_Entry_length": unit -> int;
 	    val entryNumAddrs = _import "NetHostDB_Entry_numAddrs": unit -> int;
@@ -1138,9 +1147,9 @@ structure Primitive =
 
       structure NetProtDB =
 	 struct
-	    val entryName = _import "NetProtDB_Entry_name": unit -> cstring;
+	    val entryName = _import "NetProtDB_Entry_name": unit -> CString.t;
 	    val entryNumAliases = _import "NetProtDB_Entry_numAliases": unit -> int;
-	    val entryAliasesN = _import "NetProtDB_Entry_aliasesN": int -> cstring;
+	    val entryAliasesN = _import "NetProtDB_Entry_aliasesN": int -> CString.t;
 	    val entryProtocol = _import "NetProtDB_Entry_protocol": unit -> int;
 	    val getByName = _import "NetProtDB_getByName": NullString.t -> bool;
 	    val getByNumber = _import "NetProtDB_getByNumber": int -> bool;
@@ -1148,11 +1157,11 @@ structure Primitive =
 
       structure NetServDB =
 	 struct
-	    val entryName = _import "NetServDB_Entry_name": unit -> cstring;
+	    val entryName = _import "NetServDB_Entry_name": unit -> CString.t;
 	    val entryNumAliases = _import "NetServDB_Entry_numAliases": unit -> int;
-	    val entryAliasesN = _import "NetServDB_Entry_aliasesN": int -> cstring;
+	    val entryAliasesN = _import "NetServDB_Entry_aliasesN": int -> CString.t;
 	    val entryPort = _import "NetServDB_Entry_port": unit -> int;
-	    val entryProtocol = _import "NetServDB_Entry_protocol": unit -> cstring;
+	    val entryProtocol = _import "NetServDB_Entry_protocol": unit -> CString.t;
 	    val getByName = _import "NetServDB_getByName": NullString.t * NullString.t -> bool;
 	    val getByNameNull = _import "NetServDB_getByNameNull": NullString.t -> bool;
 	    val getByPort = _import "NetServDB_getByPort": int * NullString.t -> bool;
@@ -1201,14 +1210,14 @@ structure Primitive =
 	 struct
 	    open Pointer
 
-	    val fromWord = fn w => w
-	    val toWord = fn w => w
+	    val fromWord = _prim "WordU32_toWord32": word -> t;
+	    val toWord = _prim "WordU32_toWord32": t -> word;
 	       
 	    val null: t = fromWord 0w0
 
 	    fun isNull p = p = null
 
-	    val free = _import "free": Pointer.t -> unit;
+	    val free = _import "free": t -> unit;
 	    val getInt8 = _prim "Pointer_getWord8": t * int -> Int8.int;
 	    val getInt16 = _prim "Pointer_getWord16": t * int -> Int16.int;
 	    val getInt32 = _prim "Pointer_getWord32": t * int -> Int32.int;
@@ -1225,7 +1234,7 @@ structure Primitive =
 	       _prim "Pointer_setWord16": t * int * Int16.int -> unit;
 	    val setInt32 =
 	       _prim "Pointer_setWord32": t * int * Int32.int -> unit;
-	    val setInt64 =
+	    val setInt64 = 
 	       _prim "Pointer_setWord64": t * int * Int64.int -> unit;
 	    val setPointer = _prim "Pointer_setPointer": t * int * 'a -> unit;
 	    val setReal32 =
@@ -1294,7 +1303,7 @@ structure Primitive =
 	    val class = _import "Real64_class": real -> int;
 	    val frexp = _import "Real64_frexp": real * int ref -> real;
 	    val gdtoa =
-	       _import "Real64_gdtoa": real * int * int * int ref -> cstring;
+	       _import "Real64_gdtoa": real * int * int * int ref -> CString.t;
 	    val fromInt = _prim "WordS32_toReal64": int -> real;
 	    val ldexp = _prim "Real64_ldexp": real * int -> real;
 	    val maxFinite = _import "Real64_maxFinite": real;
@@ -1369,7 +1378,7 @@ structure Primitive =
 	    fun frexp (r: real, ir: int ref): real =
 	       fromLarge (Real64.frexp (toLarge r, ir))
 	    val gdtoa =
-	       _import "Real32_gdtoa": real * int * int * int ref -> cstring;
+	       _import "Real32_gdtoa": real * int * int * int ref -> CString.t;
 	    val fromInt = _prim "WordS32_toReal32": int -> real;
 	    val ldexp = _prim "Real32_ldexp": real * int -> real;
 	    val maxFinite = _import "Real32_maxFinite": real;
@@ -1681,7 +1690,7 @@ structure Primitive =
       structure Cygwin =
 	 struct
 	    val toFullWindowsPath =
-	       _import "Cygwin_toFullWindowsPath": NullString.t -> cstring;
+	       _import "Cygwin_toFullWindowsPath": NullString.t -> CString.t;
 	 end
 
       structure Windows =
@@ -1720,7 +1729,6 @@ structure Primitive =
 	    val ror = _prim "Word8_ror": word * Word.word -> word;
 	    val >> = _prim "WordU8_rshift": word * Word.word -> word;
 	    val - = _prim "Word8_sub": word * word -> word;
-	    val toChar = _prim "WordU8_toWord8": word -> char;
 	    val toInt = _prim "WordU8_toWord32": word -> int;
 	    val toIntX = _prim "WordS8_toWord32": word -> int;
 	    val toLarge = _prim "WordU8_toWord64": word -> LargeWord.word;

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -22,7 +22,6 @@ val exn = fromString "exn"
 val intInf = fromString "intInf"
 val list = fromString "list"
 val pointer = fromString "pointer"
-val preThread = fromString "preThread"
 val reff = fromString "ref"
 val thread = fromString "thread"
 val tuple = fromString "*"
@@ -94,7 +93,7 @@ val prims =
     (exn, Arity 0, Never),
     (intInf, Arity 0, Sometimes),
     (list, Arity 1, Sometimes),
-    (preThread, Arity 0, Never),
+    (pointer, Arity 0, Always),
     (reff, Arity 1, Always),
     (thread, Arity 0, Never),
     (tuple, Nary, Sometimes),

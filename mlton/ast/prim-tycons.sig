@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -53,6 +53,7 @@ signature PRIM_TYCONS =
 	 tycon * (Layout.t * {isChar: bool, needsParen: bool}) vector
 	 -> Layout.t * {isChar: bool, needsParen: bool}
       val list: tycon
+      val pointer: tycon
       val prims: (tycon * Kind.t * AdmitsEquality.t) list
       val real: RealSize.t -> tycon
       val reals: (tycon * RealSize.t) vector

@@ -1252,6 +1252,8 @@ structure Type =
 	  setSynonym (Tycon.int s,
 		      Tycon.word (WordSize.fromBits (IntSize.bits s))))
 
+      val () = setSynonym (Tycon.pointer, Tycon.word (WordSize.pointer ()))
+
       val defaultChar = con (Tycon.char CharSize.default, Vector.new0 ())
       val defaultInt = con (Tycon.int IntSize.default, Vector.new0 ())
 

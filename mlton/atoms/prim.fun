@@ -131,7 +131,7 @@ datatype 'a t =
  | Ref_assign (* backend *)
  | Ref_deref (* backend *)
  | Ref_ref (* backend *)
- | String_toWord8Vector (* type inference *)
+ | String_toWord8Vector (* defunctorize *)
  | Thread_atomicBegin (* backend *)
  | Thread_atomicEnd (* backend *)
  | Thread_canHandle (* backend *)
@@ -177,7 +177,7 @@ datatype 'a t =
  | Word8Array_subWord (* ssa to rssa *)
  | Word8Array_updateWord (* ssa to rssa *)
  | Word8Vector_subWord (* ssa to rssa *)
- | Word8Vector_toString (* type inference *)
+ | Word8Vector_toString (* defunctorize *)
  | World_save (* ssa to rssa *)
 
 fun name p = p

@@ -28,7 +28,7 @@ val all = [Int8, Int16, Int32, Int64,
 	   Real32, Real64,
 	   Word8, Word16, Word32, Word64]
 
-val bool = Word32
+val bool = Int32
 
 val char = Int8
 

@@ -29,7 +29,7 @@ signature PRE_REAL =
       val abs: real -> real
       val class: real -> int
       val frexp: real * int ref -> real
-      val gdtoa: real * int * int * int ref -> Primitive.cstring
+      val gdtoa: real * int * int * int ref -> Primitive.CString.t
       val fromInt: int -> real
       val fromLarge: IEEEReal.rounding_mode -> LargeReal.real -> real
       val ldexp: real * int -> real

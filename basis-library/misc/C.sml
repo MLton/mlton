@@ -37,7 +37,7 @@ structure C: C =
 	    type t = Pointer.t
 
 	    fun sub (cs, i) =
-	       Primitive.Word8.toChar (Primitive.Pointer.getWord8 (cs, i))
+	       Primitive.Char.fromWord8 (Primitive.Pointer.getWord8 (cs, i))
 
 	    fun update (cs, i, c) =
 	       Primitive.Pointer.setWord8 (cs, i, Primitive.Char.toWord8 c)

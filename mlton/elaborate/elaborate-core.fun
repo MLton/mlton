@@ -709,8 +709,9 @@ structure Type =
 		end)
 	 in
 	    [("Bool", CType.bool, Tycon.bool),
-	     ("Real32", CType.Real32, Tycon.real RealSize.R32),
-	     ("Real64", CType.Real64, Tycon.real RealSize.R64),
+	     ("Pointer", CType.pointer, Tycon.pointer),
+	     ("Real32", CType.real RealSize.R32, Tycon.real RealSize.R32),
+	     ("Real64", CType.real RealSize.R64, Tycon.real RealSize.R64),
 	     ("Thread", CType.thread, Tycon.thread)]
 	    @ sized (Tycon.char o CharSize.fromBits,
 		     let
@@ -753,8 +754,18 @@ structure Type =
 		     else NONE
 		| SOME {ctype, name, ...} => SOME {ctype = ctype, name = name}
 
+      val toCType =
+	 Trace.trace
+	 ("ElaborateCore.Type.toCType",
+	  layout,
+	  Option.layout (fn {ctype, name} =>
+			 Layout.record
+			 [("ctype", CType.layout ctype),
+			  ("name", String.layout name)]))
+	 toCType
+
       type z = {ctype: CType.t, name: string, ty: t}
-	 
+
       fun parse (ty: t): (z vector * z option) option =
 	 case deArrowOpt ty of
 	    NONE => NONE
@@ -936,22 +947,12 @@ fun symbol {name: string,
    let
       fun error l = Control.error (region, l, Layout.empty)
    in
-      case Type.parse ty of
-	 NONE =>
-	    if isSome (Type.toCType ty)
-	       then Prim.ffiSymbol {fetch = false,
-				    name = name,
-				    ty = Type.word (WordSize.pointer ())}
-	    else
-	       let
-		  val () =
-		     Control.error (region,
-				    str "invalid type for import",
-				    Type.layoutPretty ty)
-	       in
-		  Prim.bogus
-	       end
-       | SOME (args, result) =>
+      case Type.toCType ty of
+	 SOME {ctype = CType.Pointer, ...} =>
+	    Prim.ffiSymbol {fetch = false,
+			    name = name,
+			    ty = ty}
+       | _ =>
 	    let
 	       val () =
 		  Control.error (region,
@@ -2447,7 +2448,7 @@ fun elaborateDec (d, {env = E, nest}) =
 					   (ty, expandedTy)
 					val () =
 					   case Type.toCType fptrExpandedTy of
-					      SOME {ctype = CType.Word32, ...} => ()
+					      SOME {ctype = CType.Pointer, ...} => ()
 					    | _ => 
 						 Control.error
 						 (region,

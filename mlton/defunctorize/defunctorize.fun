@@ -20,6 +20,7 @@ in
    structure Clambda = Lambda
    structure Cpat = Pat
    structure Prim = Prim
+   structure RealSize = RealSize
    structure Record = Record
    structure Ctype = Type
    structure WordSize = WordSize
@@ -927,9 +928,11 @@ fun defunctorize (CoreML.Program.T {decs}) =
 			datatype z = datatype Prim.Name.t
 		     in
 			if (case Prim.name prim of
-			       String_toWord8Vector => true
+			       Real_toReal (s1, s2) =>
+				  RealSize.equals (s1, s2)
+			     | String_toWord8Vector => true
 			     | Word8Vector_toString => true
-			     | Word_toWord (s1, s2, _) =>
+			     | Word_toWord (s1, s2, _) => 
 				  WordSize.equals (s1, s2)
 			     | _ => false)
 			   then Vector.sub (args, 0)

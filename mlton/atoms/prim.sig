@@ -120,7 +120,7 @@ signature PRIM =
 	     | Ref_assign (* ssa to ssa2 *)
 	     | Ref_deref (* ssa to ssa2 *)
 	     | Ref_ref (* ssa to ssa2 *)
-	     | String_toWord8Vector (* type inference *)
+	     | String_toWord8Vector (* defunctorize *)
 	     | Thread_atomicBegin (* backend *)
 	     | Thread_atomicEnd (* backend *)
 	     | Thread_canHandle (* backend *)
@@ -166,7 +166,7 @@ signature PRIM =
 	     | Word8Array_subWord (* ssa to rssa *)
 	     | Word8Array_updateWord (* ssa to rssa *)
 	     | Word8Vector_subWord (* ssa to rssa *)
-	     | Word8Vector_toString (* type inference *)
+	     | Word8Vector_toString (* defunctorize *)
 	     | World_save (* ssa to rssa *)
 
 	    val layout: 'a t -> Layout.t

@@ -7,7 +7,7 @@
  *)
 structure Byte: BYTE =
    struct
-      val byteToChar = Primitive.Word8.toChar
+      val byteToChar = Primitive.Char.fromWord8
 
       val bytesToString = Primitive.String.fromWord8Vector o Word8Vector.toPoly
 
