@@ -67,12 +67,6 @@ signature ELABORATE_ENV =
 	 sig
 	    type t
 	       
-	    (* cut keeps only those bindings in the structure that also appear
-	     * in the interface.  It proceeds recursively on substructures.
-	     *)
-	    val cut: t * {interface: Interface.t,
-			  opaque: bool,
-			  region: Region.t} -> t * Decs.t
 	    (* ffi represents MLtonFFI, which is built by the basis library
 	     * and is set in compile.sml after processing the basis.
 	     *)
@@ -90,6 +84,12 @@ signature ELABORATE_ENV =
 
       (* Remove unnecessary entries. *)
       val clean: t -> unit
+      (* cut keeps only those bindings in the structure that also appear
+       * in the interface.  It proceeds recursively on substructures.
+       *)
+      val cut:
+	 t * Structure.t * Interface.t * {opaque: bool} * Region.t
+	 -> Structure.t * Decs.t
       val empty: unit -> t
       val extendCon: t * Ast.Con.t * CoreML.Con.t * Scheme.t -> unit
       val extendExn: t * Ast.Con.t * CoreML.Con.t * Scheme.t -> unit

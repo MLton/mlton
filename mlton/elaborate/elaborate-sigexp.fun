@@ -45,17 +45,12 @@ end
 local
    open TypeStr
 in
+   structure AdmitsEquality = AdmitsEquality
    structure Cons = Cons
    structure Kind = Kind
    structure Scheme = Scheme
    structure Tycon = Tycon
    structure Type = Type
-end
-
-local
-   open Tycon
-in
-   structure AdmitsEquality = AdmitsEquality
 end
 
 fun lookupLongtycon (E: Env.t,
@@ -307,169 +302,166 @@ val info' = Trace.info "elaborateSpec"
 
 (* rule 65 *)
 fun elaborateSigexp (sigexp: Sigexp.t, E: Env.t): Interface.t =
-   case Sigexp.node sigexp of
-      Sigexp.Var s => Env.lookupSigid (E, s)
-    | _ =>
-	 let
-	    fun elaborateSigexp arg : Interface.t =
-	       Trace.traceInfo' (info,
-				 Layout.tuple2 (Sigexp.layout,
-						Interface.layout),
-				 Interface.layout)
-	       (fn (sigexp: Sigexp.t, I: Interface.t) =>
-		case Sigexp.node sigexp of
-		   Sigexp.Spec spec => (* rule 62 *)
-		      elaborateSpec (spec, I)
-		 | Sigexp.Var x => (* rule 63 *)
-		      Interface.copy (Env.lookupSigid (E, x))
-		 | Sigexp.Where (sigexp, wheres) => (* rule 64 *)
-		      let
-			 val I' = elaborateSigexp (sigexp, I)
-			 val _ =
-			    Interface.wheres
-			    (I',
-			     Vector.fromListMap
-			     (wheres, fn {tyvars, longtycon, ty} =>
-			      (longtycon,
-			       TypeStr.def
-			       (Scheme.make (elaborateType (ty, E, I)),
-				Kind.Arity (Vector.length tyvars)))))
-		      in
-			 I'
-		      end) arg
-	    and elaborateSpec arg : Interface.t =
-	       Trace.traceInfo' (info',
-				 Layout.tuple2 (Ast.Spec.layout, Layout.ignore),
-				 Layout.ignore)
-	       (fn (spec: Ast.Spec.t, I: Interface.t) =>
-		case Spec.node spec of
-		   Spec.Datatype rhs => (* rules 71, 72 *)
-		      (case DatatypeRhs.node rhs of
-			  DatatypeRhs.DatBind b => elaborateDatBind (b, E, I)
-			| DatatypeRhs.Repl {lhs, rhs} =>
-			     let
-				val s = lookupLongtycon (E, I, rhs)
-			     in
-				Interface.+
-				(Interface.types (Vector.new1 {name = lhs,
-							       typeStr = s}),
-				 Interface.cons (TypeStr.cons s))
-			     end)
-		 | Spec.Empty => (* rule 76 *)
-		      Interface.empty
-		 | Spec.Eqtype typedescs => (* rule 70 *)
-		      elaborateTypedescs (typedescs, {equality = true})
-		 | Spec.Exception cons => (* rule 73 *)
-		      Interface.excons
-		      (Cons.T
-		       (Vector.fromListMap
-			(cons, fn (name: TypeStr.Name.t,
-				   arg: Ast.Type.t option) =>
-			 let
-			    val con = Con.newNoname ()
-			    val (arg, ty) =
-			       case arg of
-				  NONE => (NONE, Type.exn)
-				| SOME t =>
-				     let
-					val t =
-					   Scheme.ty
-					   (elaborateScheme (Vector.new0 (),
-							     t, E, I))
-				     in
-					(SOME t, Type.arrow (t, Type.exn))
-				     end
-			 in
-			    {con = con: TypeStr.Con.t,
-			     name= name: TypeStr.Name.t,
-			     scheme = Scheme.make (Vector.new0 (), ty)}
-			 end)))
-		 | Spec.IncludeSigexp sigexp => (* rule 75 *)
-		      elaborateSigexp (sigexp, I)
-		 | Spec.IncludeSigids sigids => (* Appendix A, p.59 *)
-		      List.fold
-		      (sigids, Interface.empty, fn (sigid, I) =>
-		       Interface.+
-		       (I, Interface.copy (Env.lookupSigid (E, sigid))))
-		 | Spec.Seq (s, s') => (* rule 77 *)
-		      let
-			 val I' = elaborateSpec (s, I)
-			 val I'' = elaborateSpec (s', Interface.+ (I', I))
-		     in
-			Interface.+ (I', I'')
-		     end
-		 | Spec.Sharing {equations, spec} =>
-		      (* rule 78 and section G.3.3 *)
-		      let
-			 val I' = elaborateSpec (spec, I)
-			 fun share eqn =
-			    case Equation.node eqn of
-			       Equation.Structure ss =>
-				  let
-				     fun loop ss =
-					case ss of
-					   [] => ()
-					 | s :: ss =>
-					      (List.foreach
-					       (ss, fn s' =>
-						Interface.share (I', s, s'))
-					       ; loop ss)
-				  in
-				     loop ss
-				  end
-			     | Equation.Type cs =>
-				  case cs of
+   let
+      fun elaborateSigexp arg : Interface.t =
+	 Trace.traceInfo' (info,
+			   Layout.tuple2 (Sigexp.layout,
+					  Interface.layout),
+			   Interface.layout)
+	 (fn (sigexp: Sigexp.t, I: Interface.t) =>
+	  case Sigexp.node sigexp of
+	     Sigexp.Spec spec => (* rule 62 *)
+		elaborateSpec (spec, I)
+	   | Sigexp.Var x => (* rule 63 *)
+		Interface.copy (Env.lookupSigid (E, x))
+	   | Sigexp.Where (sigexp, wheres) => (* rule 64 *)
+		let
+		   val I' = elaborateSigexp (sigexp, I)
+		   val _ =
+		      Interface.wheres
+		      (I',
+		       Vector.fromListMap
+		       (wheres, fn {tyvars, longtycon, ty} =>
+			(longtycon,
+			 TypeStr.def
+			 (Scheme.make (elaborateType (ty, E, I)),
+			  Kind.Arity (Vector.length tyvars)))))
+		in
+		   I'
+		end) arg
+      and elaborateSpec arg : Interface.t =
+	 Trace.traceInfo' (info',
+			   Layout.tuple2 (Ast.Spec.layout, Layout.ignore),
+			   Layout.ignore)
+	 (fn (spec: Ast.Spec.t, I: Interface.t) =>
+	  case Spec.node spec of
+	     Spec.Datatype rhs => (* rules 71, 72 *)
+		(case DatatypeRhs.node rhs of
+		    DatatypeRhs.DatBind b => elaborateDatBind (b, E, I)
+		  | DatatypeRhs.Repl {lhs, rhs} =>
+		       let
+			  val s = lookupLongtycon (E, I, rhs)
+		       in
+			  Interface.+
+			  (Interface.types (Vector.new1 {name = lhs,
+							 typeStr = s}),
+			   Interface.cons (TypeStr.cons s))
+		       end)
+	   | Spec.Empty => (* rule 76 *)
+		Interface.empty
+	   | Spec.Eqtype typedescs => (* rule 70 *)
+		elaborateTypedescs (typedescs, {equality = true})
+	   | Spec.Exception cons => (* rule 73 *)
+		Interface.excons
+		(Cons.T
+		 (Vector.fromListMap
+		  (cons, fn (name: TypeStr.Name.t,
+			     arg: Ast.Type.t option) =>
+		   let
+		      val con = Con.newNoname ()
+		      val (arg, ty) =
+			 case arg of
+			    NONE => (NONE, Type.exn)
+			  | SOME t =>
+			       let
+				  val t =
+				     Scheme.ty
+				     (elaborateScheme (Vector.new0 (),
+						       t, E, I))
+			       in
+				  (SOME t, Type.arrow (t, Type.exn))
+			       end
+		   in
+		      {con = con: TypeStr.Con.t,
+		       name= name: TypeStr.Name.t,
+		       scheme = Scheme.make (Vector.new0 (), ty)}
+		   end)))
+	   | Spec.IncludeSigexp sigexp => (* rule 75 *)
+		elaborateSigexp (sigexp, I)
+	   | Spec.IncludeSigids sigids => (* Appendix A, p.59 *)
+		List.fold
+		(sigids, Interface.empty, fn (sigid, I) =>
+		 Interface.+
+		 (I, Interface.copy (Env.lookupSigid (E, sigid))))
+	   | Spec.Seq (s, s') => (* rule 77 *)
+		let
+		   val I' = elaborateSpec (s, I)
+		   val I'' = elaborateSpec (s', Interface.+ (I', I))
+		in
+		   Interface.+ (I', I'')
+		end
+	   | Spec.Sharing {equations, spec} =>
+		(* rule 78 and section G.3.3 *)
+		let
+		   val I' = elaborateSpec (spec, I)
+		   fun share eqn =
+		      case Equation.node eqn of
+			 Equation.Structure ss =>
+			    let
+			       fun loop ss =
+				  case ss of
 				     [] => ()
-				   | c :: cs =>
-					List.foreach
-					(cs, fn c' =>
-					 Interface.shareType (I', c, c'))
-			 val _ = List.foreach (equations, share)
-		      in
-			 I'
-		      end
-		 | Spec.Structure ss => (* rules 74, 84 *)
-		     Interface.strs
-		     (Vector.fromListMap
-		      (ss, fn (strid, sigexp) =>
-		       {interface = elaborateSigexp (sigexp, I),
-			name = strid}))
-		 | Spec.Type typedescs => (* rule 69 *)
-		      elaborateTypedescs (typedescs, {equality = false})
-		 | Spec.TypeDefs typBind =>
-		      (* Abbreviation on page 59,
-		       * combined with rules 77 and 80.
-		       *)
-		      let
-			 val TypBind.T ds = TypBind.node typBind
-		      in
-			 #2
-			 (List.fold
-			  (ds, (I, Interface.empty),
-			   fn ({def, tycon, tyvars}, (I, I')) =>
-			   let
-			      val I'' = 
-				 Interface.types
-				 (Vector.new1
-				  {name = tycon,
-				   typeStr = (TypeStr.def
-					      (elaborateScheme (tyvars, def, E, I),
-					       Kind.Arity (Vector.length tyvars)))})
-			   in
-			      (Interface.+ (I, I''), Interface.+ (I', I''))
-			   end))
-		      end
-		 | Spec.Val xts => (* rules 68, 79 *)
-		      Interface.vals
-		      (Vector.fromListMap
-		       (xts, fn (x, t) =>
-			{name = Ast.Vid.fromVar x,
-			 scheme = Scheme.make (elaborateType (t, E, I)),
-			 status = Status.Var}))
-		   ) arg
-	 in
-	    elaborateSigexp (sigexp, Interface.empty)
-	 end
+				   | s :: ss =>
+					(List.foreach
+					 (ss, fn s' =>
+					  Interface.share (I', s, s'))
+					 ; loop ss)
+			    in
+			       loop ss
+			    end
+		       | Equation.Type cs =>
+			    case cs of
+			       [] => ()
+			     | c :: cs =>
+				  List.foreach
+				  (cs, fn c' =>
+				   Interface.shareType (I', c, c'))
+		   val _ = List.foreach (equations, share)
+		in
+		   I'
+		end
+	   | Spec.Structure ss => (* rules 74, 84 *)
+		Interface.strs
+		(Vector.fromListMap
+		 (ss, fn (strid, sigexp) =>
+		  {interface = elaborateSigexp (sigexp, I),
+		   name = strid}))
+	   | Spec.Type typedescs => (* rule 69 *)
+		elaborateTypedescs (typedescs, {equality = false})
+	   | Spec.TypeDefs typBind =>
+		(* Abbreviation on page 59,
+		 * combined with rules 77 and 80.
+		 *)
+		let
+		   val TypBind.T ds = TypBind.node typBind
+		in
+		   #2
+		   (List.fold
+		    (ds, (I, Interface.empty),
+		     fn ({def, tycon, tyvars}, (I, I')) =>
+		     let
+			val I'' = 
+			   Interface.types
+			   (Vector.new1
+			    {name = tycon,
+			     typeStr = (TypeStr.def
+					(elaborateScheme (tyvars, def, E, I),
+					 Kind.Arity (Vector.length tyvars)))})
+		     in
+			(Interface.+ (I, I''), Interface.+ (I', I''))
+		     end))
+		end
+	   | Spec.Val xts => (* rules 68, 79 *)
+		Interface.vals
+		(Vector.fromListMap
+		 (xts, fn (x, t) =>
+		  {name = Ast.Vid.fromVar x,
+		   scheme = Scheme.make (elaborateType (t, E, I)),
+		   status = Status.Var}))
+		) arg
+   in
+      elaborateSigexp (sigexp, Interface.empty)
+   end
 
 val elaborateSigexp = 
    Trace.trace2 ("elaborateSigexp",

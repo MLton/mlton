@@ -255,6 +255,14 @@ signature BASIS_2002 =
       structure Word64Vector : MONO_VECTOR
       structure Word64VectorSlice : MONO_VECTOR_SLICE
 
+      (* Non-standard structures *)
+      structure MLton: MLTON
+      structure SMLofNJ: SML_OF_NJ
+      structure Unsafe: UNSAFE
+
+      sharing type MLton.IntInf.int = IntInf.int
+      sharing type MLton.Signal.t = Posix.Signal.signal
+	 
       (* ************************************************** *)
       (* ************************************************** *)
 
@@ -318,6 +326,8 @@ signature BASIS_2002 =
       sharing type Text.Substring.substring = Substring.substring
       sharing type Text.CharVector.vector = CharVector.vector
       sharing type Text.CharArray.array = CharArray.array
+      sharing type TextIO.elem = char 
+      sharing type TextIO.vector = string
       sharing type TextPrimIO.elem = Char.char
       sharing type TextPrimIO.array = CharArray.array
       sharing type TextPrimIO.vector = CharVector.vector
@@ -333,7 +343,11 @@ signature BASIS_2002 =
       sharing type Word8Array2.elem = Word8.word
       sharing type Word8Array2.vector = Word8Vector.vector
 	
-      (* Optional structures *) 
+      (* Optional structures *)
+      sharing IntArray = Int32Array
+      sharing RealArray = Real64Array
+      sharing WordArray = Word32Array
+
       sharing type BoolArray.elem = bool
       sharing type BoolArray.vector = BoolVector.vector
       sharing type BoolArraySlice.elem = bool
@@ -437,14 +451,15 @@ signature BASIS_2002 =
       sharing type LargeWordArray2.vector = LargeWordVector.vector
       sharing type PackRealBig.real = real
       sharing type PackRealLittle.real = real
-      sharing type PackReal32Big.real = Real64.real
-      sharing type PackReal32Little.real = Real64.real
+      sharing type PackReal32Big.real = Real32.real
+      sharing type PackReal32Little.real = Real32.real
       sharing type PackReal64Big.real = Real64.real
       sharing type PackReal64Little.real = Real64.real
       sharing type Posix.Error.syserror = OS.syserror
-      sharing type Posix.Process.exit_status = Unix.exit_status
+      sharing type Posix.IO.file_desc = Posix.ProcEnv.file_desc
       sharing type Posix.FileSys.dirstream = OS.FileSys.dirstream
       sharing type Posix.FileSys.access_mode = OS.FileSys.access_mode
+      sharing type Posix.Process.exit_status = Unix.exit_status
       sharing type RealArray.elem = real
       sharing type RealArray.vector = RealVector.vector
       sharing type RealArraySlice.elem = real
@@ -501,6 +516,7 @@ signature BASIS_2002 =
       sharing type Word16VectorSlice.vector = Word16Vector.vector
       sharing type Word16Array2.elem = Word16.word
       sharing type Word16Array2.vector = Word16Vector.vector
+      sharing type Word32.word = Word.word
       sharing type Word32Array.elem = Word32.word
       sharing type Word32Array.vector = Word32Vector.vector
       sharing type Word32ArraySlice.elem = Word32.word
@@ -514,19 +530,21 @@ signature BASIS_2002 =
       sharing type Word32Array2.vector = Word32Vector.vector
    end
    (* Top-level types *)
-   where type unit = unit
-   where type int = int
-   where type word = word
-   where type real = real
+   where type 'a array = 'a array
+   where type 'a list = 'a list
+   where type 'a option = 'a option
+   where type 'a ref = 'a ref
+   where type 'a vector = 'a vector
+   where type bool = bool
    where type char = char
    where type exn = exn
-   where type 'a array = 'a array
-   where type 'a vector = 'a vector
-   where type 'a ref = 'a ref
-   where type bool = bool
-   where type 'a option = 'a option
+   where type int = int
    where type order = order
-   where type 'a list = 'a list
+   where type real = real
+   where type string = string
+   where type substring = substring
+   where type unit = unit
+   where type word = word
 
    (* Types referenced in signatures by structure name *)
 (*
@@ -537,6 +555,7 @@ signature BASIS_2002 =
    where type BinPrimIO.writer = BinPrimIO.writer
    where type Char.char = Char.char
    where type Int.int = Int.int
+   where type IntInf.int = IntInf.int
    where type LargeInt.int = LargeInt.int
    where type LargeReal.real = LargeReal.real
    where type LargeWord.word = LargeWord.word
@@ -548,23 +567,36 @@ signature BASIS_2002 =
    where type OS.IO.iodesc = OS.IO.iodesc
    where type OS.Process.status = OS.Process.status
    where type Position.int = Position.int
+   where type Posix.IO.file_desc = Posix.IO.file_desc
    where type Posix.Process.pid = Posix.Process.pid
+   where type Posix.Signal.signal = Posix.Signal.signal
+   where type Real32.real = Real32.real
    where type Real64.real = Real64.real
+   where type Real64Array.array = Real64Array.array
+   where type ('a, 'b) Socket.sock = ('a, 'b) Socket.sock
+   where type 'a Socket.sock_addr = 'a Socket.sock_addr
+   where type 'a Socket.stream = 'a Socket.stream
    where type StringCvt.radix = StringCvt.radix
    where type StringCvt.realfmt = StringCvt.realfmt
 (*
    where type ('a, 'b) StringCvt.reader = ('a, 'b) StringCvt.reader
 *)
    where type SysWord.word = SysWord.word
+   where type TextIO.instream = TextIO.instream
+   where type TextIO.outstream = TextIO.outstream
    where type TextPrimIO.reader = TextPrimIO.reader
    where type TextPrimIO.writer = TextPrimIO.writer
    where type Time.time = Time.time
    where type Word.word = Word.word
    where type Word8.word = Word8.word
    where type Word8Array.array = Word8Array.array
+   where type Word8ArraySlice.slice = Word8ArraySlice.slice
+   where type Word8ArraySlice.vector_slice = Word8ArraySlice.vector_slice
    where type Word8Vector.vector = Word8Vector.vector
+   where type Word8VectorSlice.vector = Word8VectorSlice.vector
 (*
    where type 'a Vector.vector = 'a Vector.vector
 *)
    where type 'a VectorSlice.slice = 'a VectorSlice.slice
 
+   where type 'a MLton.Thread.t = 'a MLton.Thread.t

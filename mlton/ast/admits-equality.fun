@@ -12,6 +12,13 @@ val toString =
 
 val layout = Layout.str o toString
 
+val op <= =
+   fn (Never, _) => true
+    | (Sometimes, Never) => false
+    | (Sometimes, _) => true
+    | (Always, Always) => true
+    | (Always, _) => false
+
 val or =
    fn (Always, _) => Always
     | (_, Always) => Always

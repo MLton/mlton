@@ -215,6 +215,7 @@ val freeTyvarChecks: (unit -> unit) list ref = ref []
 
 val {hom = typeTycon: Type.t -> Tycon.t option, ...} =
    Type.makeHom {con = fn (c, _) => SOME c,
+		 expandOpaque = Type.Never,
 		 var = fn _ => NONE}
    
 fun resolveConst (c: Aconst.t, ty: Type.t): Const.t =

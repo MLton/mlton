@@ -86,9 +86,8 @@ fun elaborateProgram (program,
 	    fun s (sigexp, opaque) =
 	       let
 		  val (S, decs) =
-		     Structure.cut (S, {interface = elabSigexp sigexp,
-					opaque = opaque,
-					region = Sigexp.region sigexp})
+		     Env.cut (E, S, elabSigexp sigexp, {opaque = opaque},
+			      Sigexp.region sigexp)
 	       in
 		  (decs, S)
 	       end

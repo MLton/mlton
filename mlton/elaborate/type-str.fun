@@ -10,6 +10,12 @@ struct
 
 open S
 
+local
+   open Tycon
+in
+   structure AdmitsEquality = AdmitsEquality
+end
+
 structure Cons =
    struct
       datatype t = T of {con: Con.t,
@@ -55,6 +61,14 @@ fun layout t =
        | Scheme s => Scheme.layout s
        | Tycon t => seq [str "Tycon ", Tycon.layout t]
    end
+
+fun admitsEquality (s: t): AdmitsEquality.t =
+   case node s of
+      Datatype {tycon = c, ...} => ! (Tycon.admitsEquality c)
+    | Scheme s => if Scheme.admitsEquality s
+		     then AdmitsEquality.Sometimes
+		  else AdmitsEquality.Never
+    | Tycon c =>  ! (Tycon.admitsEquality c)
 
 fun bogus (k: Kind.t): t =
    T {kind = k,

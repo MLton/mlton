@@ -37,7 +37,12 @@ in
    structure Var = Var
 end
 
-structure Kind = Tycon.Kind
+local
+   open Tycon
+in
+   structure AdmitsEquality = AdmitsEquality
+   structure Kind = Kind
+end
 
 local
    open TypeEnv
@@ -150,7 +155,8 @@ structure Values =
 	 fn T {ranges, ...} => List.pop ranges
    end
 
-structure TypeStr = TypeStr (structure Con = Con
+structure TypeStr = TypeStr (structure AdmitsEquality = AdmitsEquality
+			     structure Con = Con
 			     structure Kind = Tycon.Kind
 			     structure Name = Ast.Con
 			     structure Record = SortedRecord
@@ -178,6 +184,12 @@ structure TypeStr = TypeStr (structure Con = Con
 				   open Type
 
 				   val bogus = new ()
+
+				   fun hom (t, {con, record, var}) =
+				      Type.hom (t, {con = con,
+						    expandOpaque = Type.Never,
+						    record = record,
+						    var = var})
 				end
 			     structure Tyvar = Tyvar)
 
@@ -244,29 +256,25 @@ structure Info =
 		       {isUsed = ref false,
 			range = f range,
 			values = values}))
+
+      val map2: ('a, 'b) t * ('a, 'b) t * ('b * 'b -> 'b) -> ('a, 'b) t =
+	 fn (T a, T a', f) =>
+	 T (Array.map2
+	    (a, a', fn ({range = r, values, ...}, {range = r', ...}) =>
+	     {isUsed = ref false,
+	      range = f (r, r'),
+	      values = values}))
    end
 
-(* pre: arities are equal. *)
-fun equalSchemes (s: Scheme.t, s': Scheme.t, name: unit -> Layout.t, r: Region.t)
-   : unit =
+val newTycons: (Tycon.t * Kind.t) list ref = ref []
+
+val newTycon: string * Kind.t -> Tycon.t =
+   fn (s, k) =>
    let
-      val (tyvars, ty) = Scheme.dest s
-      val (_, ty') = Scheme.dest s'
-      val tyvars =
-	 Vector.tabulate (Vector.length tyvars, fn _ =>
-			  Type.var (Tyvar.newNoname {equality = false}))
+      val c = Tycon.fromString s
+      val _ = List.push (newTycons, (c, k))
    in
-      Type.unify
-      (Scheme.apply (s, tyvars), Scheme.apply (s', tyvars), fn (l1, l2) =>
-       let
-	  open Layout
-       in
-	  (r,
-	   seq [str "type ", name (),
-		str " in structure disagrees with signature"],
-	   align [seq [str "structure: ", l1],
-		  seq [str "signature: ", l2]])
-       end)
+      c
    end
 
 (* ------------------------------------------------- *)
@@ -286,6 +294,8 @@ structure Structure =
       in
 	 val plist = make #plist
       end
+
+      fun eq (s: t, s': t): bool = PropertyList.equals (plist s, plist s')
 
       fun layoutUsed (T {strs, types, vals, ...}) =
 	 let
@@ -446,308 +456,6 @@ structure Structure =
 	     addVal = addVal,
 	     finish = finish}
 	 end
-      
-      (* section 5.3, 5.5, 5.6 and rules 52, 53 *)
-      fun cut (str: t, {interface, opaque: bool, region}): t * Decs.t =
-	 let
-	    val decs = ref []
-	    fun error (name, l) =
-	       let
-		  open Layout
-	       in
-		  Control.error
-		  (region,
-		   seq [str (concat [name, " "]), l,
-			str " in signature but not in structure"],
-		   empty)
-	       end
-	    fun checkCons (Cons.T v, Cons.T v', strids): unit =
-	       let
-		  fun lay (c: Ast.Con.t) =
-		     Longcon.layout (Longcon.long (rev strids, c))
-		  val extraStr =
-		     Vector.keepAllMap
-		     (v, fn {name = n, scheme = s, ...} =>
-		      case Vector.peek (v', fn {name = n', ...} =>
-					Ast.Con.equals (n, n')) of
-			 NONE => SOME n
-		       | SOME {scheme = s', ...} =>
-			    let
-			       val _ =
-				  equalSchemes
-				  (s, s', fn () =>
-				   let
-				      open Layout
-				   in
-				      seq [str "of ", lay n]
-				   end,
-				   region)
-			    in
-			       NONE
-			    end)
-		  fun extras (v, name) =
-		     if 0 = Vector.length v
-			then ()
-		     else
-			let
-			   open Layout
-			in
-			   Control.error
-			   (region,
-			    seq [str (concat ["constructors in ", name, " only: "]),
-				 seq (List.separate (Vector.toListMap (v, lay),
-						     str ", "))],
-			    empty)
-			end
-		  val _ = extras (extraStr, "structure")
-		  val extraSig =
-		     Vector.keepAllMap
-		     (v', fn {name = n', ...} =>
-		      if Vector.exists (v, fn {name = n, ...} =>
-					Ast.Con.equals (n, n'))
-			 then NONE
-		      else SOME n')
-		  val _ = extras (extraSig, "signature")
-	       in
-		  ()
-	       end
-	    val interface =
-	       Interface.realize
-	       (interface, fn (c, a, k) =>
-		case peekLongtycon (str, c) of
-		   NONE => (error ("type", Longtycon.layout c)
-			    ; TypeStr.bogus k)
-		 | SOME typeStr =>
-		      let
-			 val k' = TypeStr.kind typeStr
-		      in
-			 if Kind.equals (k, k')
-			    then typeStr
-			 else
-			    let
-			       open Layout
-			       val _ =
-				  Control.error
-				  (Longtycon.region c,
-				   seq [str "type ", Longtycon.layout c,
-					str "has arity ", Kind.layout k',
-					str "in structure but arity ",
-					Kind.layout k, str " in signature"],
-				   empty)
-			    in
-			       TypeStr.bogus k
-			    end
-		      end)
-	    fun cut (S as T {shapeId, ...}, I, strids) =
-	       let
-		  val {addStr, addType, addVal, finish} = maker ()
-		  val shapeId' = Interface.shapeId I
-		  fun doit () =
-		     let
-			fun handleStr {name, interface = I} =
-			   case peekStrid' (S, name) of
-			      NONE =>
-				 error
-				 ("structure",
-				  Longstrid.layout	
-				  (Longstrid.long (rev strids, name)))
-			    | SOME {range, values, ...} =>
-				 addStr {range = cut (range, I, name :: strids),
-					 values = values}
-			fun handleType {name: Ast.Tycon.t,
-					typeStr: TypeStr.t} =
-			   let
-			      fun layoutName () =
-				 Longtycon.layout
-				 (Longtycon.long (rev strids, name))
-			   in
-			      case peekTycon' (S, name) of
-				 NONE => error ("type", layoutName ())
-			       | SOME {range = typeStr', values, ...} =>
-				    let
-				       fun tyconScheme (c: Tycon.t): Scheme.t =
-					  let
-					     val tyvars =
-						case TypeStr.kind typeStr' of
-						   Kind.Arity n =>
-						      Vector.tabulate
-						      (n, fn _ =>
-						       Tyvar.newNoname
-						       {equality = false})
-						 | _ => Error.bug "Nary tycon"
-					  in
-					     Scheme.make
-					     {canGeneralize = true,
-					      ty = Type.con (c, Vector.map (tyvars, Type.var)),
-					      tyvars = tyvars}
-					  end
-				       datatype z = datatype TypeStr.node
-				       val k = TypeStr.kind typeStr
-				       val k' = TypeStr.kind typeStr'
-				       fun typeStrScheme (s: TypeStr.t) =
-					  case TypeStr.node s of
-					     Datatype {tycon, ...} =>
-						tyconScheme tycon
-					   | Scheme s => s
-					   | Tycon c' => tyconScheme c'
-				       val typeStr =
-					  if not (Kind.equals (k, k'))
-					     then
-						let
-						   open Layout
-						in
-						   Control.error
-						   (region,
-						    seq [str "type ", layoutName (),
-							 str " has arity ", Kind.layout k',
-							 str " in structure but arity ", Kind.layout k,
-							 str " in signature"],
-						    empty)
-						   ; typeStr
-						end
-					  else
-					     case TypeStr.node typeStr of
-						Datatype {cons = c, ...} =>
-						   (case TypeStr.node typeStr' of
-						       Datatype {cons = c', ...} =>
-							  (checkCons (c', c,
-								      strids)
-							   ; typeStr')
-						     | _ =>
-							  let
-							     open Layout
-							  in
-							     Control.error
-							     (region,
-							      seq [str "type ",
-								   layoutName (),
-								   str " is a datatype in signature but not in structure"],
-							      Layout.empty)
-							     ; typeStr
-							  end)
-					      | Scheme s =>
-						   (equalSchemes
-						    (typeStrScheme typeStr',
-						     s, layoutName, region)
-						    ; typeStr)
-					      | Tycon c =>
-						   (equalSchemes
-						    (typeStrScheme typeStr',
-						     tyconScheme c,
-						     layoutName, region)
-						    ; typeStr)
-				    in
-				       addType {range = typeStr,
-						values = values}
-				    end
-			   end
-                        fun handleVal {name, scheme = s, status} =
-			   case peekVid' (S, name) of
-			      NONE =>
-				 error ("variable",
-					Longvid.layout (Longvid.long
-							(rev strids, name)))
-			    | SOME {range = (vid, s'), values, ...} =>
-				 let
-				    val (tyvars, t) = Scheme.dest s
-				    val {args, instance = t'} =
-				       Scheme.instantiate s'
-				    val _ =
-				       Type.unify
-				       (t, t', fn (l, l') =>
-					let
-					   open Layout
-					in
-					   (region,
-					    seq [str "type of ",
-						 Longvid.layout	
-						 (Longvid.long
-						  (rev strids, name)),
-						 str " in structure disagrees with signature"],
-					    align [seq [str "structure: ", l'],
-						   seq [str "signature: ", l]])
-					end)
-				    fun addDec (n: Exp.node): Vid.t =
-				       let
-					  val x = Var.newNoname ()
-					  val e = Exp.make (n, t')
-					  val _ =
-					     List.push
-					     (decs,
-					      Dec.Val
-					      {rvbs = Vector.new0 (),
-					       tyvars = fn () => tyvars,
-					       vbs = (Vector.new1
-						      {exp = e,
-						       lay = fn _ => Layout.empty,
-						       pat = Pat.var (x, t'),
-						       patRegion = region})})
-				       in
-					  Vid.Var x
-				       end
-				    fun con (c: Con.t): Vid.t =
-				       addDec (Exp.Con (c, args ()))
-				    val vid =
-				       case (vid, status) of
-					  (Vid.Con c, Status.Var) => con c
-					| (Vid.Exn c, Status.Var) => con c
-					| (Vid.Var x, Status.Var) =>
-					     if 0 < Vector.length tyvars
-						orelse 0 < Vector.length (args ())
-						then
-						   addDec
-						   (Exp.Var (fn () => x, args))
-					     else vid
-					| (Vid.Con _, Status.Con) => vid
-					| (Vid.Exn _, Status.Exn) => vid
-					| _ =>
-					     (Control.error
-					      (region,
-					       Layout.str
-					       (concat
-						["identifier ",
-						 Longvid.toString
-						 (Longvid.long (rev strids,
-								name)),
-						 " is ",
-						 Vid.statusPretty vid,
-						 " in the structure but ",
-						 Status.pretty status,
-						 " in the signature "]),
-					       Layout.empty)
-					      ; vid)
-				 in
-				    addVal {range = (vid, s),
-					    values = values}
-				 end
-			val _ =
-			   Interface.foreach
-			   (I, {handleStr = handleStr,
-				handleType = handleType,
-				handleVal = handleVal})
-		     in
-			finish (SOME shapeId')
-		     end
-	       in
-		  case shapeId of
-		     NONE => doit ()
-		   | SOME shapeId =>
-			if ShapeId.equals (shapeId, shapeId')
-			   then S
-			else doit ()
-	       end
-	    val str = cut (str, interface, [])
-	 in
-	    (str, Decs.fromList (!decs))
-	 end
-
-      val cut =
-	 Trace.trace ("cut",
-		      fn (str, {interface, ...}) =>
-		      Layout.tuple [layoutPretty str,
-				    Interface.layout interface],
-		      layout o #1)
-	 cut
 
       val ffi: t option ref = ref NONE
    end
@@ -983,351 +691,6 @@ fun layoutUsed (T {fcts, sigs, strs, types, vals, ...}) =
 		   fn (d, r) =>
 		   align [seq [str "structure ", Ast.Strid.layout d],
 			  indent (Structure.layoutUsed r, 3)])]
-   end
-   
-fun dummyStructure (T {strs, types, vals, ...}, I: Interface.t): Structure.t =
-   let
-      val I =
-	 Interface.realize
-	 (I, fn (c, a, k) =>
-	  let
-	     val c = Tycon.fromString (Longtycon.toString c)
-	     val _ = TypeEnv.tyconAdmitsEquality c := a
-	  in
-	     TypeStr.tycon (c, k)
-	  end)
-      val {get, ...} =
-	 Property.get
-	 (Interface.plist,
-	  Property.initRec
-	  (fn (I, get) =>
-	   let
-	      val {addStr, addType, addVal, finish} = Structure.maker ()
-	      fun handleStr {name, interface = I} =
-		 addStr {range = get I,
-			 values = NameSpace.values (strs, name)}
-	      fun handleType {name, typeStr} =
-		 addType {range = typeStr,
-			  values = NameSpace.values (types, name)}
-	      fun handleVal {name, scheme, status} =
-		 let
-		    val con = CoreML.Con.fromString o Ast.Vid.toString
-		    val var = CoreML.Var.fromString o Ast.Vid.toString
-		    val vid =
-		       case status of
-			  Status.Con => Vid.Con (con name)
-			| Status.Exn => Vid.Exn (con name)
-			| Status.Var => Vid.Var (var name)
-		 in
-		    addVal {range = (vid, scheme),
-			    values = NameSpace.values (vals, name)}
-		 end
-	      val _ =
-		 Interface.foreach
-		 (I, {handleStr = handleStr,
-		      handleType = handleType,
-		      handleVal = handleVal})
-	   in
-	      finish (SOME (Interface.shapeId I))
-	   end))
-   in
-      get I
-   end
-
-val dummyStructure =
-   Trace.trace ("dummyStructure",
-		Interface.layout o #2,
-		Structure.layoutPretty)
-   dummyStructure
-
-(* ------------------------------------------------- *)
-(*                  functorClosure                   *)
-(* ------------------------------------------------- *)
-
-fun snapshot (T {currentScope, fcts, fixs, sigs, strs, types, vals}):
-   (unit -> 'a) -> 'a =
-   let
-      fun m l = Layout.outputl (l, Out.error)
-      open Layout
-      fun doit (NameSpace.T {current, table, ...}, lay) =
-	 let
-	    val all =
-	       HashSet.fold
-	       (table, [], fn (vs as Values.T {ranges, ...}, ac) =>
-		case !ranges of
-		   [] => ac
-		 | z :: _ => (z, vs) :: ac)
-	 in
-	    fn s0 =>
-	    let
-	       val current0 = !current
-	       val _ =
-		  current :=
-		  List.fold
-		  (all, [], fn (({isUsed, value, ...},
-				 vs as Values.T {ranges, ...}), ac) =>
-		   (List.push (ranges, {isUsed = isUsed,
-					scope = s0,
-					value = value})
-		    ; vs :: ac))
-	       val removed =
-		  HashSet.fold
-		  (table, [], fn (Values.T {ranges, ...}, ac) =>
-		   let
-		      val r = !ranges
-		   in
-		      case r of
-			 [] => ac
-		       | {scope, ...} :: _ =>
-			    if Scope.equals (s0, scope)
-			       then ac
-			    else (ranges := []
-				  ; (ranges, r) :: ac)
-		   end)
-	    in fn () => (List.foreach (!current, fn v => (Values.pop v; ()))
-			 ; current := current0
-			 ; List.foreach (removed, op :=))
-	    end
-	 end
-      val fcts = doit (fcts, Ast.Fctid.layout)
-      val fixs = doit (fixs, Ast.Vid.layout)
-      val sigs = doit (sigs, Ast.Sigid.layout)
-      val strs = doit (strs, Ast.Strid.layout)
-      val types = doit (types, Ast.Tycon.layout)
-      val vals = doit (vals, Ast.Vid.layout)
-   in
-      fn th =>
-      let
-	 val s0 = Scope.new ()
-	 val fcts = fcts s0
-	 val fixs = fixs s0
-	 val sigs = sigs s0
-	 val strs = strs s0
-	 val types = types s0
-	 val vals = vals s0
-	 val s1 = !currentScope
-	 val _ = currentScope := s0
-	 val res = th ()
-	 val _ = currentScope := s1
-	 val _ = (fcts (); fixs (); sigs (); strs (); types (); vals ())
-      in
-	 res
-      end
-   end
-
-val useFunctorSummary = ref false
-val newTycons: (Tycon.t * Kind.t) list ref = ref []
-
-val newTycon: string * Kind.t -> Tycon.t =
-   fn (s, k) =>
-   let
-      val c = Tycon.fromString s
-      val _ = List.push (newTycons, (c, k))
-   in
-      c
-   end
-
-val propertyFun:
-   ('a -> PropertyList.t) * ('a * 'b * ('a * 'b -> 'c) -> 'c)
-   -> ('a * 'b -> 'c) * {destroy: unit -> unit} =
-   fn (plist, f) =>
-   let
-      fun uncurry g (a, b) = g a b 
-      val {destroy, get: 'a -> 'b -> 'c, ...} =
-	 Property.destGet
-	 (plist,
-	  Property.initRec
-	  (fn (a, get) =>
-	   let
-	      val done = ref NONE
-	   in
-	      fn b =>
-	      case !done of
-		 NONE =>
-		    let
-		       val c = f (a, b, uncurry get)
-		       val _ = done := SOME c
-		    in
-		       c
-		    end
-	       | SOME c => c
-	   end))
-   in
-      (uncurry get, {destroy = destroy})
-   end
-		     
-fun functorClosure
-   (E: t,
-    argInt: Interface.t,
-    makeBody: Structure.t * string list -> Decs.t * Structure.t) =
-   let
-      val formal = dummyStructure (E, argInt)
-      val _ = useFunctorSummary := true
-      (* Keep track of all tycons created during the instantiation of the
-       * functor.  These will later become the generative tycons that will need
-       * to be recreated for each functor application.
-       *)
-      val _ = newTycons := []
-      val (_, res) = makeBody (formal, [])
-      val generative = !newTycons
-      val _ = newTycons := []
-      val _ = useFunctorSummary := false
-      val restore = snapshot E
-      fun apply (arg, nest, region) =
-	 let
-	    val (actual, decs) =
-	       Structure.cut (arg, {interface = argInt,
-				    opaque = false,
-				    region = region})
-	 in
-	    if !useFunctorSummary
-	       then
-		  let
-		     val {destroy = destroy1,
-			  get = tyconTypeStr: Tycon.t -> TypeStr.t option,
-			  set = setTyconTypeStr, ...} =
-			Property.destGetSet (Tycon.plist,
-					     Property.initConst NONE)
-		     (* Match the actual against the formal, to set the
-		      * tycons.  Then duplicate the res, replacing tycons.
-		      * Want to generate new tycons just like the functor body
-		      * did.
-		      * Need to treat the formal as a DAG.
-		      *)
-		     val (setTycons, {destroy}) =
-			propertyFun
-			(Structure.plist,
-			 (fn (formal, actual, setTycons) =>
-			  let
-			     val Structure.T {strs = Info.T s,
-					      types = Info.T t, ...} =
-				formal
-			     val Structure.T {strs = Info.T s',
-					      types = Info.T t', ...} =
-				actual
-			     val _ =
-				Array.foreach2
-				(t, t',
-				 fn ({range = r, ...},
-				     {range = r', ...}) =>
-				 let
-				    fun doit tycon =
-				       setTyconTypeStr (tycon, SOME r')
-				 in
-				    case TypeStr.node r of
-				       TypeStr.Datatype {tycon, ...} =>
-					  doit tycon
-				     | TypeStr.Scheme _ => ()
-				     | TypeStr.Tycon tycon => doit tycon
-				 end)
-			     val _ =
-				Array.foreach2
-				(s, s', fn ({range = s, ...},
-					    {range = s', ...}) =>
-				 setTycons (s, s'))
-			  in
-			     ()
-			  end))
-		     val _ = setTycons (formal, actual)
-		     val _ = destroy ()
-		     val _ =
-			List.foreach
-			(generative, fn (c, k) =>
-			 setTyconTypeStr
-			 (c, SOME (TypeStr.tycon
-				   (newTycon (Tycon.originalName c, k),
-				    k))))
-		     fun replaceType (t: Type.t): Type.t =
-			let
-			   fun con (c, ts) =
-			      case tyconTypeStr c of
-				 NONE => Type.con (c, ts)
-			       | SOME s => TypeStr.apply (s, ts)
-			in
-			   Type.hom (t, {con = con,
-					 record = Type.record,
-					 var = Type.var})
-			end
-		     fun replaceScheme (s: Scheme.t): Scheme.t =
-			let
-			   val (tyvars, ty) = Scheme.dest s
-			in
-			   Scheme.make {canGeneralize = true,
-					ty = replaceType ty,
-					tyvars = tyvars}
-			end
-		     fun replaceCons (Cons.T v): Cons.t =
-			Cons.T
-			(Vector.map
-			 (v, fn {con, name, scheme} =>
-			  {con = con,
-			   name = name,
-			   scheme = replaceScheme scheme}))
-		     fun replaceTypeStr (s: TypeStr.t): TypeStr.t =
-			let
-			   val k = TypeStr.kind s
-			   datatype z = datatype TypeStr.node
-			in
-			   case TypeStr.node s of
-			      Datatype {cons, tycon} =>
-				 let
-				    val tycon =
-				       case tyconTypeStr tycon of
-					  NONE => tycon
-					| SOME s =>
-					     (case TypeStr.node s of
-						Datatype {tycon, ...} => tycon
-					      | Scheme _ =>
-						   Error.bug "bad datatype"
-					      | Tycon c => c)
-				 in
-				    TypeStr.data (tycon, k, replaceCons cons)
-				 end
-			    | Scheme s => TypeStr.def (replaceScheme s, k)
-			    | Tycon c =>
-				 (case tyconTypeStr c of
-				     NONE => s
-				   | SOME s' => s')
-			end
-		     val {destroy = destroy2,
-			  get = replacement: Structure.t -> Structure.t, ...} =
-			Property.destGet
-			(Structure.plist,
-			 Property.initRec
-			 (fn (Structure.T {shapeId, strs, types, vals, ... },
-			      replacement) =>
-			  Structure.T
-			  {plist = PropertyList.new (),
-			   shapeId = shapeId,
-			   strs = Info.map (strs, replacement),
-			   types = Info.map (types, replaceTypeStr),
-			   vals = Info.map (vals, fn (v, s) =>
-					    (v, replaceScheme s))}))
-		     val res = replacement res
-		     val _ = destroy1 ()
-		     val _ = destroy2 ()
-		  in
-		     (Decs.empty, res)
-		  end
-	    else
-	       let
-		  val (decs', str) = restore (fn () => makeBody (actual, nest))
-	       in
-		  (Decs.append (decs, decs'),
-		   str)
-	       end
-	 end
-      val apply =
-	 Trace.trace ("functorApply",
-		      Structure.layout o #1,
-		      Layout.tuple2 (Layout.ignore, Structure.layout))
-	 apply
-      fun sizeMessage () = layoutSize apply
-      val fc =
-	 FunctorClosure.T {apply = apply,
-			   sizeMessage = sizeMessage}
-   in
-      fc
    end
 
 (* ------------------------------------------------- *)
@@ -1718,6 +1081,747 @@ fun openStructure (T {currentScope, strs, vals, types, ...},
    in doit (strs, strs')
       ; doit (vals, vals')
       ; doit (types, types')
+   end
+
+
+val propertyFun:
+   ('a -> PropertyList.t) * ('a * 'b * ('a * 'b -> 'c) -> 'c)
+   -> ('a * 'b -> 'c) * {destroy: unit -> unit} =
+   fn (plist, f) =>
+   let
+      fun uncurry g (a, b) = g a b 
+      val {destroy, get: 'a -> 'b -> 'c, ...} =
+	 Property.destGet
+	 (plist,
+	  Property.initRec
+	  (fn (a, get) =>
+	   let
+	      val done = ref NONE
+	   in
+	      fn b =>
+	      case !done of
+		 NONE =>
+		    let
+		       val c = f (a, b, uncurry get)
+		       val _ = done := SOME c
+		    in
+		       c
+		    end
+	       | SOME c => c
+	   end))
+   in
+      (uncurry get, {destroy = destroy})
+   end
+
+fun dummyStructure (T {strs, types, vals, ...}, I: Interface.t)
+   : Structure.t * (Structure.t * (Tycon.t * TypeStr.t -> unit) -> unit) =
+   let
+      val tycons: (Longtycon.t * Tycon.t) list ref = ref []
+      val I =
+	 Interface.realize
+	 (I, fn (c, a, k) =>
+	  let
+	     val c' = newTycon (Longtycon.toString c, k)
+	     val _ = TypeEnv.tyconAdmitsEquality c' := a
+	     val _ = List.push (tycons, (c, c'))
+	  in
+	     TypeStr.tycon (c', k)
+	  end)
+      val tycons = !tycons
+      val {get, ...} =
+	 Property.get
+	 (Interface.plist,
+	  Property.initRec
+	  (fn (I, get) =>
+	   let
+	      val {addStr, addType, addVal, finish} = Structure.maker ()
+	      fun handleStr {name, interface = I} =
+		 addStr {range = get I,
+			 values = NameSpace.values (strs, name)}
+	      fun handleType {name, typeStr} =
+		 addType {range = typeStr,
+			  values = NameSpace.values (types, name)}
+	      fun handleVal {name, scheme, status} =
+		 let
+		    val con = CoreML.Con.fromString o Ast.Vid.toString
+		    val var = CoreML.Var.fromString o Ast.Vid.toString
+		    val vid =
+		       case status of
+			  Status.Con => Vid.Con (con name)
+			| Status.Exn => Vid.Exn (con name)
+			| Status.Var => Vid.Var (var name)
+		 in
+		    addVal {range = (vid, scheme),
+			    values = NameSpace.values (vals, name)}
+		 end
+	      val _ =
+		 Interface.foreach
+		 (I, {handleStr = handleStr,
+		      handleType = handleType,
+		      handleVal = handleVal})
+	   in
+	      finish (SOME (Interface.shapeId I))
+	   end))
+      val S = get I
+      fun instantiate (S', f) =
+	 List.foreach (tycons, fn (long, c) =>
+		       case Structure.peekLongtycon (S', long) of
+			  NONE => Error.bug "structure missing longtycon"
+			| SOME s=> f (c, s))
+   in
+      (S, instantiate)
+   end
+
+val dummyStructure =
+   Trace.trace ("dummyStructure",
+		Interface.layout o #2,
+		Structure.layoutPretty o #1)
+   dummyStructure
+	 
+(* section 5.3, 5.5, 5.6 and rules 52, 53 *)
+fun cut (E: t, S: Structure.t, I: Interface.t, {opaque: bool}, region)
+   : Structure.t * Decs.t =
+   let
+      val decs = ref []
+      fun error (name, l) =
+	 let
+	    open Layout
+	 in
+	    Control.error
+	    (region,
+	     seq [str (concat [name, " "]), l,
+		  str " in signature but not in structure"],
+	     empty)
+	 end
+      (* pre: arities are equal. *)
+      fun equalSchemes (s: Scheme.t, s': Scheme.t,
+			name: unit -> Layout.t,
+			r: Region.t): unit =
+	 let
+	    val (tyvars', ty') = Scheme.dest s'
+	    val tyvars =
+	       Vector.tabulate
+	       (Vector.length tyvars', fn _ =>
+		Type.var (Tyvar.newNoname {equality = false}))
+	 in
+	    Type.unify
+	    (Scheme.apply (s, tyvars),
+	     Scheme.apply (Scheme.make {canGeneralize = true,
+					ty = ty',
+					tyvars = tyvars'},
+			   tyvars),
+	     fn (l1, l2) =>
+	     let
+		open Layout
+	     in
+		(r,
+		 seq [str "type ", name (),
+		      str " in structure disagrees with signature"],
+		 align [seq [str "structure: ", l1],
+			seq [str "signature: ", l2]])
+	     end)
+	 end
+      val equalSchemes =
+	 Trace.trace
+	 ("equalSchemes",
+	  fn (s, s', _, _) => Layout.tuple [Scheme.layout s,
+					    Scheme.layout s'],
+	  Unit.layout)
+	 equalSchemes
+      fun checkCons (Cons.T v, Cons.T v', strids): unit =
+	 let
+	    fun lay (c: Ast.Con.t) =
+	       Longcon.layout (Longcon.long (rev strids, c))
+	    val extraStr =
+	       Vector.keepAllMap
+	       (v, fn {name = n, scheme = s, ...} =>
+		case Vector.peek (v', fn {name = n', ...} =>
+				  Ast.Con.equals (n, n')) of
+		   NONE => SOME n
+		 | SOME {scheme = s', ...} =>
+		      let
+			 val _ =
+			    equalSchemes
+			    (s, s', fn () =>
+			     let
+				open Layout
+			     in
+				seq [str "of ", lay n]
+			     end,
+			     region)
+		      in
+			 NONE
+		      end)
+	    fun extras (v, name) =
+	       if 0 = Vector.length v
+		  then ()
+	       else
+		  let
+		     open Layout
+		  in
+		     Control.error
+		     (region,
+		      seq [str (concat ["constructors in ", name, " only: "]),
+			   seq (List.separate (Vector.toListMap (v, lay),
+					       str ", "))],
+		      empty)
+		  end
+	    val _ = extras (extraStr, "structure")
+	    val extraSig =
+	       Vector.keepAllMap
+	       (v', fn {name = n', ...} =>
+		if Vector.exists (v, fn {name = n, ...} =>
+				  Ast.Con.equals (n, n'))
+		   then NONE
+		else SOME n')
+	    val _ = extras (extraSig, "signature")
+	 in
+	    ()
+	 end
+      val I' =
+	 Interface.realize
+	 (I, fn (c, a, k) =>
+	  case Structure.peekLongtycon (S, c) of
+	     NONE => (error ("type", Longtycon.layout c)
+		      ; TypeStr.bogus k)
+	   | SOME typeStr =>
+		let
+		   val _ =
+		      if AdmitsEquality.<= (a, TypeStr.admitsEquality typeStr)
+			 then ()
+		      else
+			 let
+			    open Layout
+			 in
+			    Control.error
+			    (region,
+			     seq [str "type ", Longtycon.layout c,
+				  str " admits equality in signature but not in structure"],
+			     empty)
+			 end
+		   val k' = TypeStr.kind typeStr
+		   val typeStr =
+		      if Kind.equals (k, k')
+			 then typeStr
+		      else
+			 let
+			    open Layout
+			    val _ =
+			       Control.error
+			       (region,
+				seq [str "type ", Longtycon.layout c,
+				     str "has arity ", Kind.layout k',
+				     str "in structure but arity ",
+				     Kind.layout k, str " in signature"],
+				empty)
+			 in
+			    TypeStr.bogus k
+			 end
+		in
+		   typeStr
+		end)
+      fun cut (S as Structure.T {shapeId, ...}, I, strids) =
+	 let
+	    val {addStr, addType, addVal, finish} = Structure.maker ()
+	    val shapeId' = Interface.shapeId I
+	    fun doit () =
+	       let
+		  fun handleStr {name, interface = I} =
+		     case Structure.peekStrid' (S, name) of
+			NONE =>
+			   error
+			   ("structure",
+			    Longstrid.layout	
+			    (Longstrid.long (rev strids, name)))
+		      | SOME {range, values, ...} =>
+			   addStr {range = cut (range, I, name :: strids),
+				   values = values}
+		  fun handleType {name: Ast.Tycon.t,
+				  typeStr: TypeStr.t} =
+		     let
+			fun layoutName () =
+			   Longtycon.layout
+			   (Longtycon.long (rev strids, name))
+		     in
+			case Structure.peekTycon' (S, name) of
+			   NONE => error ("type", layoutName ())
+			 | SOME {range = typeStr', values, ...} =>
+			      let
+				 fun tyconScheme (c: Tycon.t): Scheme.t =
+				    let
+				       val tyvars =
+					  case TypeStr.kind typeStr' of
+					     Kind.Arity n =>
+						Vector.tabulate
+						(n, fn _ =>
+						 Tyvar.newNoname
+						 {equality = false})
+					   | _ => Error.bug "Nary tycon"
+				    in
+				       Scheme.make
+				       {canGeneralize = true,
+					ty = Type.con (c, Vector.map (tyvars, Type.var)),
+					tyvars = tyvars}
+				    end
+				 datatype z = datatype TypeStr.node
+				 val k = TypeStr.kind typeStr
+				 val k' = TypeStr.kind typeStr'
+				 fun typeStrScheme (s: TypeStr.t) =
+				    case TypeStr.node s of
+				       Datatype {tycon, ...} =>
+					  tyconScheme tycon
+				     | Scheme s => s
+				     | Tycon c' => tyconScheme c'
+				 val typeStr =
+				    if not (Kind.equals (k, k'))
+				       then
+					  let
+					     open Layout
+					  in
+					     Control.error
+					     (region,
+					      seq [str "type ", layoutName (),
+						   str " has arity ", Kind.layout k',
+						   str " in structure but arity ", Kind.layout k,
+						   str " in signature"],
+					      empty)
+					     ; typeStr
+					  end
+				    else
+				       case TypeStr.node typeStr of
+					  Datatype {cons = c, ...} =>
+					     (case TypeStr.node typeStr' of
+						 Datatype {cons = c', ...} =>
+						    (checkCons (c', c,
+								strids)
+						     ; typeStr')
+					       | _ =>
+						    let
+						       open Layout
+						    in
+						       Control.error
+						       (region,
+							seq [str "type ",
+							     layoutName (),
+							     str " is a datatype in signature but not in structure"],
+							Layout.empty)
+						       ; typeStr
+						    end)
+					| Scheme s =>
+					     (equalSchemes
+					      (typeStrScheme typeStr',
+					       s, layoutName, region)
+					      ; typeStr)
+					| Tycon c =>
+					     (equalSchemes
+					      (typeStrScheme typeStr',
+					       tyconScheme c,
+					       layoutName, region)
+					      ; typeStr)
+			      in
+				 addType {range = typeStr,
+					  values = values}
+			      end
+		     end
+		  fun handleVal {name, scheme = s, status} =
+		     case Structure.peekVid' (S, name) of
+			NONE =>
+			   error ("variable",
+				  Longvid.layout (Longvid.long
+						  (rev strids, name)))
+		      | SOME {range = (vid, s'), values, ...} =>
+			   let
+			      val (tyvars, t) = Scheme.dest s
+			      val {args, instance = t'} =
+				 Scheme.instantiate s'
+			      val _ =
+				 Type.unify
+				 (t, t', fn (l, l') =>
+				  let
+				     open Layout
+				  in
+				     (region,
+				      seq [str "type in structure disagrees with signature"],
+				      align [seq [str "variable:  ",
+						  Longvid.layout	
+						  (Longvid.long
+						   (rev strids, name))],
+					     seq [str "structure: ", l'],
+					     seq [str "signature: ", l]])
+				  end)
+			      fun addDec (n: Exp.node): Vid.t =
+				 let
+				    val x = Var.newNoname ()
+				    val e = Exp.make (n, t')
+				    val _ =
+				       List.push
+				       (decs,
+					Dec.Val
+					{rvbs = Vector.new0 (),
+					 tyvars = fn () => tyvars,
+					 vbs = (Vector.new1
+						{exp = e,
+						 lay = fn _ => Layout.empty,
+						 pat = Pat.var (x, t'),
+						 patRegion = region})})
+				 in
+				    Vid.Var x
+				 end
+			      fun con (c: Con.t): Vid.t =
+				 addDec (Exp.Con (c, args ()))
+			      val vid =
+				 case (vid, status) of
+				    (Vid.Con c, Status.Var) => con c
+				  | (Vid.Exn c, Status.Var) => con c
+				  | (Vid.Var x, Status.Var) =>
+				       if 0 < Vector.length tyvars
+					  orelse 0 < Vector.length (args ())
+					  then
+					     addDec
+					     (Exp.Var (fn () => x, args))
+				       else vid
+					   | (Vid.Con _, Status.Con) => vid
+					   | (Vid.Exn _, Status.Exn) => vid
+					   | _ =>
+						(Control.error
+						 (region,
+						  Layout.str
+						  (concat
+						   ["identifier ",
+						    Longvid.toString
+						    (Longvid.long (rev strids,
+								   name)),
+						    " is ",
+						    Vid.statusPretty vid,
+						    " in the structure but ",
+						    Status.pretty status,
+						    " in the signature "]),
+						  Layout.empty)
+						 ; vid)
+			   in
+			      addVal {range = (vid, s),
+				      values = values}
+			   end
+		  val _ =
+		     Interface.foreach
+		     (I, {handleStr = handleStr,
+			  handleType = handleType,
+			  handleVal = handleVal})
+	       in
+		  finish (SOME shapeId')
+	       end
+	 in
+	    case shapeId of
+	       NONE => doit ()
+	     | SOME shapeId =>
+		  if ShapeId.equals (shapeId, shapeId')
+		     then S
+		  else doit ()
+	 end
+      val S = cut (S, I', [])
+      val S =
+	 if not opaque
+	    then S
+	 else
+	    let
+	       fun fixCons (Cons.T cs, Cons.T cs') =
+		  Cons.T
+		  (Vector.map
+		   (cs', fn {con, name, scheme} =>
+		    let
+		       val con =
+			  case Vector.peek (cs, fn {name = n, ...} =>
+					    Ast.Con.equals (n, name)) of
+			     NONE => Con.bogus
+			   | SOME {con, ...} => con
+		    in
+		       {con = con, name = name, scheme = scheme}
+		    end))
+	       val (S', instantiate) = dummyStructure (E, I)
+	       val _ = instantiate (S, fn (c, s) =>
+				    TypeEnv.setOpaqueTyconExpansion
+				    (c, fn ts => TypeStr.apply (s, ts)))
+	       val {destroy,
+		    get = replacements: (Structure.t
+					 -> {formal: Structure.t,
+					     new: Structure.t} list ref), ...} =
+		  Property.destGet (Structure.plist,
+				Property.initFun (fn _ => ref []))
+	       fun loop (S, S'): Structure.t =
+		  let
+		     val rs = replacements S
+		  in
+		     case List.peek (!rs, fn {formal, ...} =>
+				     Structure.eq (S', formal)) of
+			NONE =>
+			   let
+			      val Structure.T {shapeId, strs, types, vals,
+					       ...} = S
+			      val Structure.T {strs = strs',
+					       types = types',
+					       vals = vals', ...} = S'
+			      val strs = Info.map2 (strs, strs', loop)
+			      val types =
+				 Info.map2
+				 (types, types', fn (s, s') =>
+				  let
+				     datatype z = datatype TypeStr.node
+				  in
+				     case TypeStr.node s' of
+					Datatype {cons = cs', tycon} =>
+					   (case TypeStr.node s of
+					       Datatype {cons = cs, ...} =>
+						  TypeStr.data
+						  (tycon, TypeStr.kind s',
+						   fixCons (cs, cs'))
+					     | _ => s')
+				      | Scheme _ => s'
+				      | Tycon _ => s'
+				  end)
+			      val vals =
+				 Info.map2 (vals, vals', fn ((v, _), (_, s)) =>
+					    (v, s))
+			      val new =
+				 Structure.T {plist = PropertyList.new (),
+					      shapeId = shapeId,
+					      strs = strs,
+					      types = types,
+					      vals = vals}
+			      val _ = List.push (rs, {formal = S', new = new})
+			   in
+			      new
+			   end
+		      | SOME {new, ...} => new
+		  end
+	       val S'' = loop (S, S')
+	       val _ = destroy ()
+	    in
+	       S''
+	    end
+   in
+      (S, Decs.fromList (!decs))
+   end
+
+val cut =
+   Trace.trace ("cut",
+		fn (_, S, I, _, _) =>
+		Layout.tuple [Structure.layoutPretty S, Interface.layout I],
+		Structure.layoutPretty o #1)
+   cut
+
+(* ------------------------------------------------- *)
+(*                  functorClosure                   *)
+(* ------------------------------------------------- *)
+
+fun snapshot (T {currentScope, fcts, fixs, sigs, strs, types, vals}):
+   (unit -> 'a) -> 'a =
+   let
+      fun m l = Layout.outputl (l, Out.error)
+      open Layout
+      fun doit (NameSpace.T {current, table, ...}, lay) =
+	 let
+	    val all =
+	       HashSet.fold
+	       (table, [], fn (vs as Values.T {ranges, ...}, ac) =>
+		case !ranges of
+		   [] => ac
+		 | z :: _ => (z, vs) :: ac)
+	 in
+	    fn s0 =>
+	    let
+	       val current0 = !current
+	       val _ =
+		  current :=
+		  List.fold
+		  (all, [], fn (({isUsed, value, ...},
+				 vs as Values.T {ranges, ...}), ac) =>
+		   (List.push (ranges, {isUsed = isUsed,
+					scope = s0,
+					value = value})
+		    ; vs :: ac))
+	       val removed =
+		  HashSet.fold
+		  (table, [], fn (Values.T {ranges, ...}, ac) =>
+		   let
+		      val r = !ranges
+		   in
+		      case r of
+			 [] => ac
+		       | {scope, ...} :: _ =>
+			    if Scope.equals (s0, scope)
+			       then ac
+			    else (ranges := []
+				  ; (ranges, r) :: ac)
+		   end)
+	    in fn () => (List.foreach (!current, fn v => (Values.pop v; ()))
+			 ; current := current0
+			 ; List.foreach (removed, op :=))
+	    end
+	 end
+      val fcts = doit (fcts, Ast.Fctid.layout)
+      val fixs = doit (fixs, Ast.Vid.layout)
+      val sigs = doit (sigs, Ast.Sigid.layout)
+      val strs = doit (strs, Ast.Strid.layout)
+      val types = doit (types, Ast.Tycon.layout)
+      val vals = doit (vals, Ast.Vid.layout)
+   in
+      fn th =>
+      let
+	 val s0 = Scope.new ()
+	 val fcts = fcts s0
+	 val fixs = fixs s0
+	 val sigs = sigs s0
+	 val strs = strs s0
+	 val types = types s0
+	 val vals = vals s0
+	 val s1 = !currentScope
+	 val _ = currentScope := s0
+	 val res = th ()
+	 val _ = currentScope := s1
+	 val _ = (fcts (); fixs (); sigs (); strs (); types (); vals ())
+      in
+	 res
+      end
+   end
+
+val useFunctorSummary = ref false
+		     
+fun functorClosure
+   (E: t,
+    argInt: Interface.t,
+    makeBody: Structure.t * string list -> Decs.t * Structure.t) =
+   let
+      val (formal, instantiate) = dummyStructure (E, argInt)
+      val _ = useFunctorSummary := true
+      (* Keep track of all tycons created during the instantiation of the
+       * functor.  These will later become the generative tycons that will need
+       * to be recreated for each functor application.
+       *)
+      val _ = newTycons := []
+      val (_, res) = makeBody (formal, [])
+      val generative = !newTycons
+      val _ = newTycons := []
+      val _ = useFunctorSummary := false
+      val restore = snapshot E
+      fun apply (arg, nest, region) =
+	 let
+	    val (actual, decs) = cut (E, arg, argInt, {opaque = false}, region)
+	 in
+	    if !useFunctorSummary
+	       then
+		  let
+		     val {destroy = destroy1,
+			  get = tyconTypeStr: Tycon.t -> TypeStr.t option,
+			  set = setTyconTypeStr, ...} =
+			Property.destGetSet (Tycon.plist,
+					     Property.initConst NONE)
+		     (* Match the actual against the formal, to set the tycons.
+		      * Then duplicate the res, replacing tycons.
+		      * Want to generate new tycons just like the functor body
+		      * did.
+		      *)
+		     val _ =
+			instantiate (actual, fn (c, s) =>
+				     setTyconTypeStr (c, SOME s))
+		     val _ =
+			List.foreach
+			(generative, fn (c, k) =>
+			 setTyconTypeStr
+			 (c, SOME (TypeStr.tycon
+				   (newTycon (Tycon.originalName c, k),
+				    k))))
+		     fun replaceType (t: Type.t): Type.t =
+			let
+			   fun con (c, ts) =
+			      case tyconTypeStr c of
+				 NONE => Type.con (c, ts)
+			       | SOME s => TypeStr.apply (s, ts)
+			in
+			   Type.hom (t, {con = con,
+					 expandOpaque = Type.Never,
+					 record = Type.record,
+					 var = Type.var})
+			end
+		     fun replaceScheme (s: Scheme.t): Scheme.t =
+			let
+			   val (tyvars, ty) = Scheme.dest s
+			in
+			   Scheme.make {canGeneralize = true,
+					ty = replaceType ty,
+					tyvars = tyvars}
+			end
+		     fun replaceCons (Cons.T v): Cons.t =
+			Cons.T
+			(Vector.map
+			 (v, fn {con, name, scheme} =>
+			  {con = con,
+			   name = name,
+			   scheme = replaceScheme scheme}))
+		     fun replaceTypeStr (s: TypeStr.t): TypeStr.t =
+			let
+			   val k = TypeStr.kind s
+			   datatype z = datatype TypeStr.node
+			in
+			   case TypeStr.node s of
+			      Datatype {cons, tycon} =>
+				 let
+				    val tycon =
+				       case tyconTypeStr tycon of
+					  NONE => tycon
+					| SOME s =>
+					     (case TypeStr.node s of
+						Datatype {tycon, ...} => tycon
+					      | Scheme _ =>
+						   Error.bug "bad datatype"
+					      | Tycon c => c)
+				 in
+				    TypeStr.data (tycon, k, replaceCons cons)
+				 end
+			    | Scheme s => TypeStr.def (replaceScheme s, k)
+			    | Tycon c =>
+				 (case tyconTypeStr c of
+				     NONE => s
+				   | SOME s' => s')
+			end
+		     val {destroy = destroy2,
+			  get = replacement: Structure.t -> Structure.t, ...} =
+			Property.destGet
+			(Structure.plist,
+			 Property.initRec
+			 (fn (Structure.T {shapeId, strs, types, vals, ... },
+			      replacement) =>
+			  Structure.T
+			  {plist = PropertyList.new (),
+			   shapeId = shapeId,
+			   strs = Info.map (strs, replacement),
+			   types = Info.map (types, replaceTypeStr),
+			   vals = Info.map (vals, fn (v, s) =>
+					    (v, replaceScheme s))}))
+		     val res = replacement res
+		     val _ = destroy1 ()
+		     val _ = destroy2 ()
+		  in
+		     (Decs.empty, res)
+		  end
+	    else
+	       let
+		  val (decs', str) = restore (fn () => makeBody (actual, nest))
+	       in
+		  (Decs.append (decs, decs'),
+		   str)
+	       end
+	 end
+      val apply =
+	 Trace.trace ("functorApply",
+		      Structure.layout o #1,
+		      Layout.tuple2 (Layout.ignore, Structure.layout))
+	 apply
+      fun sizeMessage () = layoutSize apply
+      val fc =
+	 FunctorClosure.T {apply = apply,
+			   sizeMessage = sizeMessage}
+   in
+      fc
    end
 
 end

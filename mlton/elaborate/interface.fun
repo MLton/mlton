@@ -26,6 +26,7 @@ structure EtypeStr = EnvTypeStr
 local
    open EtypeStr
 in
+   structure AdmitsEquality = AdmitsEquality
    structure Con = Con
    structure Econs = Cons
    structure Kind = Kind
@@ -33,8 +34,6 @@ in
    structure Etycon = Tycon
    structure Etype = Type
 end
-
-structure AdmitsEquality = Etycon.AdmitsEquality
 
 structure Set = DisjointSet
 
@@ -422,7 +421,8 @@ structure Scheme =
 	 end
    end
 
-structure TypeStr = TypeStr (structure Con = Con
+structure TypeStr = TypeStr (structure AdmitsEquality = AdmitsEquality
+			     structure Con = Con
 			     structure Kind = Kind
 			     structure Name = Ast.Con
 			     structure Record = Record

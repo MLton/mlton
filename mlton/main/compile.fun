@@ -49,6 +49,12 @@ structure CoreML = CoreML (open Atoms
 			      struct
 				 open TypeEnv.Type
 
+				 val makeHom =
+				    fn {con, var} =>
+				    makeHom {con = con,
+					     expandOpaque = Always,
+					     var = var}
+				    
 				 val layout = layoutPretty
 			      end)
 structure Xml = Xml (open Atoms)

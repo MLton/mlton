@@ -316,10 +316,7 @@ fun valDec (tyvars: Tyvar.t vector,
 fun defunctorize (CoreML.Program.T {decs}) =
    let
       val {destroy, hom = loopTy} =
-	 Ctype.makeHom {con = fn (c, ts) => if Tycon.equals (c, Tycon.char)
-					       then Xtype.word8
-					    else Xtype.con (c, ts),
-                        var = Xtype.var}
+	 Ctype.makeHom {con = Xtype.con, var = Xtype.var}
       val {get = conTycon, set = setConTycon, ...} =
 	 Property.getSetOnce (Con.plist,
 			      Property.initRaise ("conTycon", Con.layout))

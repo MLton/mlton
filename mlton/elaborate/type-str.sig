@@ -7,6 +7,7 @@
  *)
 signature TYPE_STR_STRUCTS = 
    sig
+      structure AdmitsEquality: ADMITS_EQUALITY
       structure Con:
 	 sig
 	    type t
@@ -23,8 +24,6 @@ signature TYPE_STR_STRUCTS =
 	 end
       structure Tycon:
 	 sig
-	    structure AdmitsEquality: ADMITS_EQUALITY
-
 	    type t
 
 	    val admitsEquality: t -> AdmitsEquality.t ref
@@ -93,6 +92,7 @@ signature TYPE_STR =
        | Tycon of Tycon.t
 
       val abs: t -> t
+      val admitsEquality: t -> AdmitsEquality.t
       val apply: t * Type.t vector -> Type.t
       val bogus: Kind.t -> t
       val cons: t -> Cons.t

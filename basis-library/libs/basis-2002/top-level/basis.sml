@@ -174,6 +174,10 @@ structure Basis2002:> BASIS_2002 =
       structure Word64Vector = Word64Vector
       structure Word64VectorSlice = Word64VectorSlice
 
+      structure MLton = MLton
+      structure SMLofNJ = SMLofNJ
+      structure Unsafe = Unsafe
+	 
       open ArrayGlobal
 	   BoolGlobal
 	   CharGlobal

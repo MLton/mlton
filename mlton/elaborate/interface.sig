@@ -99,7 +99,7 @@ signature INTERFACE =
       val plist: t -> PropertyList.t
       (* realize makes a copy, and instantiate longtycons *)
       val realize: t * (Ast.Longtycon.t
-			* TypeStr.Tycon.AdmitsEquality.t
+			* TypeStr.AdmitsEquality.t
 			* TypeStr.Kind.t -> EnvTypeStr.t) -> t
       val shapeId: t -> ShapeId.t
       val share: t * Ast.Longstrid.t * Ast.Longstrid.t -> unit
