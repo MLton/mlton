@@ -97,4 +97,4 @@ spin_cube: $(GLUT_SML) $(GLU_SML) $(GL_SML) spin_cube.sml
 	mlton $(GL_LINK_OPTS) spin_cube.cm Gl_c.c Glut_c.c
 
 clean:
-	rm -f *_h.h *.stackdump *~ *.o *.exe Glut *.a hello shortest solar
+	rm -f *_h.h *.stackdump *~ *.o *.exe Glut *.a hello shortest atom solar triangle spin_cube

@@ -2,11 +2,43 @@ open GL;
 open GLU;
 open GLUT;
 
-val whiteLight =  [0.2, 0.2, 0.2, 1.0]
+val whiteLight =  [0.5, 0.5, 0.5, 1.0]
 val sourceLight =  [0.8, 0.8, 0.8, 1.0]
 val lightPos =  [0.0, 0.0, 0.0, 1.0]
 
 datatype spec = RGB of GLreal * GLreal * GLreal;
+
+fun changeSize ((width : int), (height : int)) : unit = 
+    let 
+	val nRange    = ref 2.0
+	val h =
+	    Real.fromInt (if height = 0 then 
+			      1
+			  else 
+			      height)
+	val w = Real.fromInt (width)
+    in 
+	glViewport 0 0 (Real.trunc w) (Real.trunc h);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+
+	if w <= h then
+	    glOrtho (~(!nRange)) 
+	            (!nRange) 
+		    (~(!nRange) * h / w)
+		    (!nRange * h / w) 
+		    (~(!nRange))
+		    (!nRange)
+	else
+	    glOrtho (~(!nRange) * w / h)
+	            (!nRange * w / h) 
+		    (~(!nRange))
+		    (!nRange) 
+		    (~(!nRange))
+		    (!nRange);
+        glMatrixMode GL_MODELVIEW;
+	glLoadIdentity()
+    end
 
 fun initialise () =
     (
@@ -15,8 +47,6 @@ fun initialise () =
      glutInitWindowSize 400 400;
      glutCreateWindow "Spinning Cube";
      glEnable GL_DEPTH_TEST;
-     glFrontFace GL_CCW;	
-     glEnable GL_CULL_FACE;
      glEnable GL_LIGHTING;
      glLightModelfv GL_LIGHT_MODEL_AMBIENT whiteLight;
      glLightfv GL_LIGHT0 GL_DIFFUSE sourceLight;
@@ -48,7 +78,7 @@ fun DrawPrim (_,[]) = glFlush ()
 
 fun loop () : unit = 
   (
-   glClear(GL_COLOR_BUFFER_BIT);
+   glClear(GL_COLOR_BUFFER_BIT + GL_DEPTH_BUFFER_BIT);
    DrawPrim (GL_QUADS,
 	     [
 	      (RGB(0.9, 1.0, 0.0),
@@ -56,20 +86,20 @@ fun loop () : unit =
 	      (RGB(0.0,0.7,0.1),
 	       [(1.0,~1.0,1.0),(~1.0,~1.0,1.0)]),
 	      
-	      (* (RGB(0.9,1.0,0.0),
-	       [(~1.0,1.0,~1.0), (1.0,1.0,~1.0)]),
+	      (RGB(0.9,1.0,0.0),
+	       [(~1.0,1.0,1.0), (~1.0,1.0,~1.0)]),
 	       (RGB(0.2,0.2,1.0),
-	       [(1.0,~1.0,~1.0), (~1.0,~1.0,~1.0)]), *)
+	       [(~1.0,~1.0,~1.0), (~1.0,~1.0,1.0)]),
 	      
 	      (RGB(0.2,0.2,1.0),
 	       [(~1.0,1.0,~1.0), (1.0,1.0,~1.0)]),
 	      (RGB(0.7,0.0,0.1),
 	       [(1.0,~1.0,~1.0), (~1.0,~1.0,~1.0)]),
 	      
-	      (* (RGB(0.2,0.2,1.0),
-	       [(~1.0,1.0,1.0), (1.0,1.0,1.0)]),
+	      (RGB(0.2,0.2,1.0),
+	       [(1.0,1.0,1.0), (1.0,1.0,~1.0)]),
 	       (RGB(0.7,0.0,0.1),
-	       [(1.0,1.0,~1.0), (~1.0,1.0,~1.0)]), *)
+	       [(1.0,~1.0,~1.0), (1.0,~1.0,1.0)]),
 	      
 	      (RGB(0.9,1.0,0.0),
 	       [(~1.0,1.0,1.0), (1.0,1.0,1.0)]),
@@ -89,6 +119,7 @@ fun loop () : unit =
 fun main () = 
     (
      initialise();
+     glutReshapeFunc changeSize;
      glutIdleFunc loop;
      glutDisplayFunc loop;
      glutMainLoop ()
