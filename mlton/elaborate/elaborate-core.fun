@@ -1111,6 +1111,18 @@ fun elaborateDec (d, {env = E,
 			     then Error.bug "no clauses in fundec"
 			  else
 			     let
+				fun lay () =
+				   let
+				      open Layout
+				   in
+				      seq [str "in: ",
+					   approximate
+					   (seq
+					    (separate
+					     (Vector.toListMap
+					      (clauses, fn {lay, ...} => lay ()),
+					      "| ")))]
+				   end
 				val {args, func, ...} = Vector.sub (clauses, 0)
 				val numArgs = Vector.length args
 				val _ =
@@ -1155,6 +1167,7 @@ fun elaborateDec (d, {env = E,
 			     in
 				{clauses = clauses,
 				 func = func,
+				 lay = lay,
 				 ty = ty,
 				 var = var}
 			     end)
@@ -1162,6 +1175,7 @@ fun elaborateDec (d, {env = E,
 			 Vector.map
 			 (fbs, fn {clauses,
 				   func: Avar.t,
+				   lay,
 				   ty: Type.t,
 				   var: Var.t} =>
 			  let
@@ -1241,7 +1255,7 @@ fun elaborateDec (d, {env = E,
 				       unify
 				       (t, Cexp.ty body, fn (l1, l2) =>
 					(bodyRegion,
-					 str "function with results of different types",
+					 str "function with result of different types",
 					 align [seq [str "result:   ", l2],
 						seq [str "previous: ", l1],
 						lay ()])))
@@ -1301,9 +1315,9 @@ fun elaborateDec (d, {env = E,
 				unify
 				(Cexp.ty lambda, ty, fn (l1, l2) =>
 				 (Avar.region func,
-				  str "function type disagrees with recursive uses",
-				  align [seq [str "function type:  ", l1],
-					 seq [str "recursive uses: ", l2],
+				  str "function type disagrees with recursive use",
+				  align [seq [str "function type: ", l1],
+					 seq [str "recursive use: ", l2],
 					 lay ()]))
 			     val lambda =
 				case Cexp.node lambda of
