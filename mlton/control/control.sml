@@ -583,15 +583,20 @@ val warnUnused = control {name = "warn unused",
 			  default = false,
 			  toString = Bool.toString}
 
-val xmlPassesSet : (string -> string list Result.t) ref = 
+val xmlPassesSet: (string -> string list Result.t) ref = 
    control {name = "xmlPassesSet",
 	    default = fn _ => Error.bug ("xmlPassesSet not installed"),
 	    toString = fn _ => "<xmlPassesSet>"}
-val xmlPasses : string list ref = 
+val xmlPasses: string list ref = 
    control {name = "xmlPasses",
 	    default = ["default"],
 	    toString = List.toString String.toString}
 
+val zoneCutDepth: int ref =
+   control {name = "zone cut depth",
+	    default = 100,
+	    toString = Int.toString}
+   
 datatype style = No | Assembly | C | Dot | ML
 
 fun preSuf style =

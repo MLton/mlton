@@ -301,6 +301,8 @@ signature CONTROL =
       val xmlPassesSet: (string -> string list Result.t) ref
       val xmlPasses: string list ref
 
+      val zoneCutDepth: int ref
+
       (*------------------------------------*)
       (*             End Flags              *)
       (*------------------------------------*)

@@ -438,7 +438,9 @@ fun makeOptions {usage} =
 	(fn s =>
 	 case !Control.xmlPassesSet s of
 	    Result.Yes ss => Control.xmlPasses := ss
-	  | Result.No s' => usage (concat ["invalid -xml-pass arg: ", s'])))
+	  | Result.No s' => usage (concat ["invalid -xml-pass arg: ", s']))),
+       (Expert, "zone-cut-depth", " <n>", "zone cut depth",
+	intRef zoneCutDepth)
        ],
        fn (style, name, arg, desc, opt) =>
        {arg = arg, desc = desc, name = name, opt = opt, style = style})
