@@ -1594,7 +1594,7 @@ open GL
 signature GLUT =
     sig
 
-        type glutfont = Word32.word
+        type glutfont = MLton.Pointer.t
         (* Display mode bit masks. *)
         val GLUT_RGB : GL.GLenum
         val GLUT_RGBA : GL.GLenum
@@ -1676,18 +1676,18 @@ signature GLUT =
         val GLUT_OVERLAY : GL.GLenum
 
         (* Stroke font constants (use these in GLUT program). *)
-        val GLUT_STROKE_ROMAN : glutfont
-        val GLUT_STROKE_MONO_ROMAN : glutfont
+        val GLUT_STROKE_ROMAN : unit -> glutfont
+        val GLUT_STROKE_MONO_ROMAN : unit -> glutfont
 
         (* Bitmap font constants (use these in GLUT program). *)
-        val GLUT_BITMAP_9_BY_15 : glutfont
-        val GLUT_BITMAP_8_BY_13 : glutfont
-        val GLUT_BITMAP_TIMES_ROMAN_10 : glutfont
-        val GLUT_BITMAP_TIMES_ROMAN_24 : glutfont
+        val GLUT_BITMAP_9_BY_15 : unit -> glutfont
+        val GLUT_BITMAP_8_BY_13 : unit -> glutfont
+        val GLUT_BITMAP_TIMES_ROMAN_10 : unit -> glutfont
+        val GLUT_BITMAP_TIMES_ROMAN_24 : unit -> glutfont
         (*#if (GLUT_API_VERSION >= 3)*)
-        val GLUT_BITMAP_HELVETICA_10 : glutfont
-        val GLUT_BITMAP_HELVETICA_12 : glutfont
-        val GLUT_BITMAP_HELVETICA_18 : glutfont
+        val GLUT_BITMAP_HELVETICA_10 : unit -> glutfont
+        val GLUT_BITMAP_HELVETICA_12 : unit -> glutfont
+        val GLUT_BITMAP_HELVETICA_18 : unit -> glutfont
         (*#endif *)
 
         (* glutGet parameters. *)
@@ -1857,7 +1857,7 @@ open GL
 
 structure GLUT :> GLUT =
     struct
-        type glutfont = Word32.word
+        type glutfont = MLton.Pointer.t
 
         (* Display mode bit masks. *)
         val GLUT_RGB = 0w0
@@ -2105,16 +2105,16 @@ structure GLUT :> GLUT =
 
         in
             (* Stroke font constants (use these in GLUT program). *)
-            val GLUT_STROKE_ROMAN = _import "mlton_glut_stroke_roman" : glutfont;
-            val GLUT_STROKE_MONO_ROMAN = _import "mlton_glut_stroke_mono_roman" : glutfont;
+            val GLUT_STROKE_ROMAN = _import "mlton_glut_stroke_roman" : unit -> glutfont;
+            val GLUT_STROKE_MONO_ROMAN = _import "mlton_glut_stroke_mono_roman" : unit -> glutfont;
             (* Bitmap font constants (use these in GLUT program). *)
-            val GLUT_BITMAP_9_BY_15 = _import "mlton_glut_bitmap_9_by_15" : glutfont;
-            val GLUT_BITMAP_8_BY_13 = _import "mlton_glut_bitmap_8_by_13" : glutfont;
-            val GLUT_BITMAP_TIMES_ROMAN_10 = _import "mlton_glut_bitmap_times_roman_10" : glutfont;
-            val GLUT_BITMAP_TIMES_ROMAN_24 = _import "mlton_glut_bitmap_times_roman_24" : glutfont;
-            val GLUT_BITMAP_HELVETICA_10 = _import "mlton_glut_bitmap_helvetica_10" : glutfont;
-            val GLUT_BITMAP_HELVETICA_12 = _import "mlton_glut_bitmap_helvetica_12" : glutfont;
-            val GLUT_BITMAP_HELVETICA_18 = _import "mlton_glut_bitmap_helvetica_18" : glutfont;
+            val GLUT_BITMAP_9_BY_15 = _import "mlton_glut_bitmap_9_by_15" : unit -> glutfont;
+            val GLUT_BITMAP_8_BY_13 = _import "mlton_glut_bitmap_8_by_13" : unit -> glutfont;
+            val GLUT_BITMAP_TIMES_ROMAN_10 = _import "mlton_glut_bitmap_times_roman_10" : unit -> glutfont;
+            val GLUT_BITMAP_TIMES_ROMAN_24 = _import "mlton_glut_bitmap_times_roman_24" : unit -> glutfont;
+            val GLUT_BITMAP_HELVETICA_10 = _import "mlton_glut_bitmap_helvetica_10" : unit -> glutfont;
+            val GLUT_BITMAP_HELVETICA_12 = _import "mlton_glut_bitmap_helvetica_12" : unit -> glutfont;
+            val GLUT_BITMAP_HELVETICA_18 = _import "mlton_glut_bitmap_helvetica_18" : unit -> glutfont;
 
             fun glutDisplayFunc (display: unit -> unit) = (e display; f ())
 
