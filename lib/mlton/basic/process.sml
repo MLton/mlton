@@ -376,20 +376,27 @@ fun callWithOut (name, args, f: Out.t -> 'a) =
 fun size (f: File.t): {text: int, data: int, bss: int}  =
    let
       val fail = fn () => fail (concat ["size failed on ", f])
-   in callWithIn
-      ("size", [f], fn ins =>
-       case In.lines ins of
-	  [_, nums] =>
-	     (case String.tokens (nums, Char.isSpace) of
-		 text :: data :: bss :: _ =>
-		    (case (Int.fromString text,
-			   Int.fromString data,
-			   Int.fromString bss) of
-			(SOME text, SOME data, SOME bss) =>
-			   {text = text, data = data, bss = bss}
-		      | _ => fail ())
-	       | _ => fail ())
-	| _ => fail ())
+   in
+      File.withTemp
+      (fn sizeRes =>
+       let
+	  val _ = OS.Process.system (concat ["size ", f, ">", sizeRes])
+       in
+	  File.withIn
+	  (sizeRes, fn ins =>
+	   case In.lines ins of
+	      [_, nums] =>
+		 (case String.tokens (nums, Char.isSpace) of
+		     text :: data :: bss :: _ =>
+			(case (Int.fromString text,
+			       Int.fromString data,
+			       Int.fromString bss) of
+			    (SOME text, SOME data, SOME bss) =>
+			       {text = text, data = data, bss = bss}
+			  | _ => fail ())
+		   | _ => fail ())
+	    | _ => fail ())
+       end)
    end
 
 fun time (f: unit -> unit) =
@@ -401,8 +408,7 @@ fun time (f: unit -> unit) =
       {system = Time.- (s', s), user = Time.- (u', u)}
    end
 
-fun setEnv z = raise Fail "setEnv unimplemented"
-   (* FIXME MLton.ProcEnv.setenv *)
+val setEnv = MLton.ProcEnv.setenv
 
 val exec = fn (c, a) => exec (c, a, In.standard, Out.standard)
    
