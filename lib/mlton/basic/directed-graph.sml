@@ -83,6 +83,15 @@ structure DfsParam =
 			  finishTree = ignore,
 			  finishDfs = ignore}
 
+      fun handleTreeEdge f = {finishNode = ignore,
+			      startNode = ignore,
+			      handleTreeEdge = f,
+			      handleNonTreeEdge = ignore,
+			      startTree = ignore,
+			      finishTree = ignore,
+			      finishDfs = ignore}
+
+
       fun startNode f = {finishNode = ignore,
 			 startNode = f,
 			 handleTreeEdge = ignore,
@@ -190,6 +199,28 @@ fun dfsNodes (g, ns, {startNode, finishNode,
    end
 
 fun dfs (g, p) = dfsNodes (g, nodes g, p)
+
+fun dfsTree (g, {root: Node.t, nodeValue: Node.t -> 'a}): 'a Tree.t =
+   let
+      val {get = nodeInfo, ...} =
+	 Property.get
+	 (Node.plist, Property.initFun (fn n => {children = ref [],
+						 value = nodeValue n}))
+
+      val handleTreeEdge =
+	 fn Edge.Edge {from, to, ...} => List.push (#children (nodeInfo from), to)
+
+      val _ = dfsNodes (g, [root], DfsParam.handleTreeEdge handleTreeEdge)
+
+      fun treeAt (n: Node.t): 'a Tree.t =
+	 let
+	    val {children, value} = nodeInfo n
+	 in
+	    Tree.T (value, Vector.fromListMap (!children, treeAt))
+	 end
+   in
+      treeAt root
+   end
 
 fun display {graph, layoutNode, display} =
    dfs (graph,

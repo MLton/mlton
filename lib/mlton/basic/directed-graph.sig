@@ -44,6 +44,7 @@ signature DIRECTED_GRAPH =
       val addEdge: t * {from: Node.t, to: Node.t} -> Edge.t
       val dfs: t * DfsParam.t -> unit
       val dfsNodes: t * Node.t list * DfsParam.t -> unit
+      val dfsTree: t * {root: Node.t, nodeValue: Node.t -> 'a} -> 'a Tree.t
       val discoverFinishTimes: t -> {discover: Node.t -> int,
 				     finish: Node.t -> int,
 				     destroy: unit -> unit,
