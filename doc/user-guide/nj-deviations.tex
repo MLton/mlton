@@ -7,10 +7,10 @@ documented in the
 \htmladdnormallink
   {SML '97 Conversion Guide}
   {http://www.smlnj.org/doc/Conversion/index.html}.
-Since {\mlton} does not implement these features, if your program
-contains any of them it will not compile under {\mlton}.  If you discover
-other deviations of {\smlnj} that affect compilation under {\mlton},
-please send mail to {\mltonmail}.
+Since {\mlton} does not deviate from the Definition, you should look
+here if you are having trouble porting a program from {\mlton} to
+{\smlnj} or vice versa.  If you discover other deviations of {\smlnj}
+that aren't listed here, please send mail to {\mltonmail}.
 
 \begin{itemize}
 \item
@@ -191,6 +191,14 @@ signature SIG =
    end
 \end{verbatim}
 This signature is allowed by the Definition.
+
+\item
+{\smlnj} disallows polymorphic generalization of refutable patterns.
+For example, {\smlnj} disallows the following.
+\begin{verbatim}
+val [x] = [[]]
+val _ = (1 :: x, "one" :: x)
+\end{verbatim}
 
 \end{itemize}
 
