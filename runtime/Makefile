@@ -365,7 +365,7 @@ DEBUG_OBJS =					\
 all:  libgdtoa.a libmlton.a libmlton-gdb.a
 
 libgdtoa.a: gdtoa/arith.h
-	cd gdtoa && gcc $(HOSTFLAGS) -c -DINFNAN_CHECK *.c
+	cd gdtoa && $(CC) $(CFLAGS) -w -O1 -c -DINFNAN_CHECK *.c
 	$(AR) libgdtoa.a gdtoa/*.o
 
 gdtoa/arithchk.c:
@@ -373,7 +373,7 @@ gdtoa/arithchk.c:
 	patch -p0 <gdtoa-patch
 
 gdtoa/arithchk.out: gdtoa/arithchk.c
-	cd gdtoa && gcc $(HOSTFLAGS) -o arithchk.out arithchk.c
+	cd gdtoa && $(CC) -o arithchk.out arithchk.c
 
 gdtoa/arith.h: gdtoa/arithchk.out
 	cd gdtoa && ./arithchk.out >arith.h
@@ -384,8 +384,9 @@ libmlton.a: $(OBJS)
 libmlton-gdb.a: $(DEBUG_OBJS)
 	$(AR) libmlton-gdb.a $(DEBUG_OBJS)
 
-# gcc 3.2 is buggy when compiling class.c with -O2
-basis/Real/class.o: basis/Real/class.c
+# gcc 3.2 is buggy (or maybe we're not following the C spec)
+# when compiling Real/*.c with -O2.
+basis/Real/%.o: basis/Real/%.c
 	$(CC) $(CFLAGS) -O1 -c -o $@ $<
 
 %-gdb.o: %.c
