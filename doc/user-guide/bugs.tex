@@ -37,7 +37,7 @@ in
    T
 end
 \end{verbatim}
-
+%
 \item
 {\mlton} does not enforce the restriction that types must be defined
 before they are implicitly used.  So, {\mlton} accepts programs like
@@ -81,7 +81,7 @@ val _ = fn (t1, t2 : t) => eq (t1, t2)
 Other implementations will typically reject this program, because they
 make an early choice for the type of {\tt eq} to be {\tt ''a * ''a ->
 bool} instead of {\tt t * t -> bool}.  The choice is understandable,
-since because the Definition accepts the following program.
+since the Definition accepts the following program.
 \begin{verbatim}
 abstype t = T with val eq = op = end
 val _ = eq (1, 2)
