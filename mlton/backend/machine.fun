@@ -715,6 +715,24 @@ structure Program =
 						     sourceSeqs},
 			reals, strings, ...}) =
 	 let
+	    val _ =
+	       if !Control.profile = Control.ProfileTime
+		  then
+		     List.foreach
+		     (chunks, fn Chunk.T {blocks, ...} =>
+		      Vector.foreach
+		      (blocks, fn Block.T {kind, label, statements, ...} =>
+		       if (case kind of
+			      Kind.Func => true
+			    | _ => false)
+			  orelse (0 < Vector.length statements
+				  andalso (case Vector.sub (statements, 0) of
+					      Statement.ProfileLabel _ => true
+					    | _ => false))
+			  then ()
+		       else print (concat ["missing profile info: ",
+					   Label.toString label, "\n"])))
+	       else ()
 	    val maxProfileLabel = Vector.length sourceSeqs
 	    val _ =
 	       Vector.foreach
