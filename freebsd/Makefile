@@ -67,7 +67,7 @@ post-extract:
 	${BOOT_WRKSRC}/bin/mlton
 
 post-install:
-.for f in mllex mlprof mlton mlyacc; do
+.for f in mllex mlprof mlton mlyacc
 	${CHOWN} ${SHAREOWN}:${SHAREGRP}	\
 		${PREFIX}/bin/${f}		\
 		${PREFIX}/man/man1/${f}.1.gz
