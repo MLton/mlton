@@ -104,11 +104,12 @@ fun options () =
 			       | NONE => usage (concat ["invalid -diag flag: ", s])))),
        (Expert, "drop-pass", " pass", "omit optimization pass",
 	SpaceString (fn s => List.push (dropPasses, s))),
-       (Normal, "D", "define", "define compile-time constant",
-	String (fn s => (List.push (defines, s)
-			 ; if s = "INSTRUMENT"
-			      then instrument := true
-			   else ()))),
+(*        (Expert, "D", "define", "define compile-time constant",
+ * 	String (fn s => (List.push (defines, s)
+ * 			 ; if s = "INSTRUMENT"
+ * 			      then instrument := true
+ * 			   else ()))),
+ *)
        (Normal, "exn-history", " {false|true}",
 	"enable Exn.history",
 	boolRef Control.exnHistory),
@@ -134,12 +135,14 @@ fun options () =
 	boolRef Native.IEEEFP),
        (Expert, "indentation", " n", "indentation level in ILs",
 	intRef indentation),
-       (Normal, "include", " file.h", "include a .h file",
-	SpaceString (fn s => List.push (includes, s))),
+(*        (Normal, "include", " file.h", "include a .h file",
+ * 	SpaceString (fn s => List.push (includes, s))),
+ *)
        (Normal, "inline", " n", "inlining threshold",
 	Int setInlineSize),
-       (Normal, "I", "dir", "search dir for include files",
-	push includeDirs),
+(*        (Normal, "I", "dir", "search dir for include files",
+ * 	push includeDirs),
+ *)
        (Normal, "keep", " {dot|g|o|sml|ssa}", "save intermediate files",
 	SpaceString (fn s =>
 		     case s of

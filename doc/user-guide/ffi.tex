@@ -1,11 +1,12 @@
 \sec{Foreign function interface (FFI)}{ffi}
 
 {\mlton}'s FFI is {\em not} part of Standard ML and it is quite possible that
-this interface will change.  That having been said, it is easy to make calls to
-C functions from within SML using {\mlton}, at least when passing and returning
-simple types like {\tt char}, {\tt double}, {\tt int}, and {\tt word}.  It is
-not possible to call C macros or to call SML from C.  Suppose you would like to
-call a C function with the following prototype from SML:
+this interface will change.  That having been said, it is easy to access C
+global variables and make calls to C functions from within SML using {\mlton},
+at least when dealing with simple types like {\tt char}, {\tt double}, {\tt
+int}, and {\tt word}.  It is not possible to call C macros or to call SML from
+C.  Suppose you would like to call a C function with the following prototype
+from SML:
 \begin{verbatim}
 int foo(double d, unsigned char c);
 \end{verbatim}
@@ -15,13 +16,13 @@ _ffi "foo": real * char -> int;
 \end{verbatim}
 This expression returns a function of type {\tt real * char -> int}
 whose behavior is implemented by calling the C function whose name is
-{\tt foo}.  Thinking in terms of C, imagine that there is a C
-variable {\tt d} of type {\tt double}, {\tt c} of type {\tt unsigned
+{\tt foo}.  Thinking in terms of C, imagine that there are C
+variables {\tt d} of type {\tt double}, {\tt c} of type {\tt unsigned
 char}, and {\tt i} of type {\tt int}.  Then, the C statement
-\mbox{\tt i = foo(d, c)} is executed.
+\mbox{\tt i = foo(d, c)} is executed and {\tt i} is returned.
 The general form of an \verb+_ffi+ declaration is:
 \begin{verbatim}
-_ffi "c function name": ty;
+_ffi "C global variable or function name": ty;
 \end{verbatim}
 The semicolon is not optional.  Here is a grammar for the types that
 are currently allowed.
@@ -92,19 +93,46 @@ so from the SML side.
 %The \verb+_prim+ expressions are then replaced by appropriate constants, which
 %are available to the rest of the compilation process.
 
+\subsection{Type checking programs that use {\tt \_ffi}}
+
+Because {\mlton} has poor type checking, it is necessary to type check programs
+that use {\tt \_ffi} with another SML compiler.  This can be done by a standard
+process using a Makefile and {\tt sed}.  Suppose that you have a file, {\tt
+mlxtest.cm}, that describes your {\mlton} project, and that it refers to a file,
+{\tt mlx.sml}, that uses {\tt \_ffi}.  The following Makefile will let you
+type-check your code with {\smlnj} by typing {\tt make typecheck}.
+
+\begin{verbatim}
+nj: *.sml *.cm
+        cat mlx.sml | sed -e 's/_ffi/Unsafe.cast/' >mlx-nj.sml
+        cat mlxtest.cm | sed -e 's/mlx.sml/mlx-nj.sml/' >sources.cm
+
+typecheck: nj
+        echo "CM.make();" | sml
+\end{verbatim}
+
+The basic trick is to replace {\ffi} with {\tt Unsafe.cast} to generate a new
+program that SML/NJ likes.  Instead of {\tt Unsafe.cast}, you could also use
+anything of type {\tt string -> 'a}, like {\tt raise Match} or a looping
+function.  Since all {\ffi} declarations are annotated with their types, the
+cast is constrained to the actual type of the foreign function or primitive. Of
+course, you should never actually run the code, but it's sufficient for type
+checking.
+
 \subsection{Example}
 
 The example in the {\tt examples/ffi} directory demonstrates the use of
-\verb+_ffi+ and \verb+_prim+ declarations.  The {\tt Makefile} demonstrates how
+{\ffi} declarations.  The {\tt Makefile} demonstrates how
 to call {\mlton} to include and link with the appropriate files.  Running {\tt
 make} should produce an executable, {\tt ffi}, which should output {\tt success}
-when run.  You should also read \secref{compile-time-options} to familiarize
-yourself with the {\mlton} options governing include files and linking ({\tt
--include}, {\tt -I}, {\tt -l}, and {\tt -L}).
+when run.
+%You should also read \secref{compile-time-options} to familiarize
+%yourself with the {\mlton} options governing include files and linking ({\tt
+%-include}, {\tt -I}, {\tt -l}, and {\tt -L}).
 
 \begin{verbatim}
 % mlton -stop o ffi.c
-% mlton -I. -include ffi.h main.sml ffi.o
+% mlton main.sml ffi.o
 % main
 13
 success

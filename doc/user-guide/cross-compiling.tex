@@ -1,9 +1,9 @@
-\sec{Cross compiling applications for Windows via Cygwin}{cross-compiling}
+\subsec{Cross compiling applications from Linux to Cygwin/Windows}
+       {cross-compiling}
 
-Although {\mlton} runs on Linux, you can use the {\tt -host} flag to cross
-compile applications and produce executables that run on Windows.  {\mlton} uses
-the \htmladdnormallink{Cygwin}{http://www.cygwin.com/} Unix emulation layer for
-Windows to provide a Posix-like environment.  In order to use {\mlton} as a
+With {\mlton} running on Linux, you can use the {\tt -host} flag to cross
+compile applications and produce executables that run on Cygwin/Windows.
+In order to use {\mlton} as a
 cross compiler, you need to do several things.
 
 \begin{enumerate}
@@ -15,9 +15,6 @@ cross compiler, you need to do several things.
 \item Cross compile the {\mlton} runtime system for your Windows machine.
 
 \end{enumerate}
-
-To install the Cygwin dll, visit the Cygwin site from your Windows machine and
-run their {\tt setup.exe} script.
 
 To build a GCC cross-compiler toolset on your machine, you can use the script
 {\tt bin/build-cross-gcc} available in the {\mlton} sources.  There are some
@@ -56,24 +53,3 @@ mlton -host i386-pc-cygwin hello-world.sml
 \end{verbatim}
 will create {\tt hello-world.exe}, which you should be able to run from a Cygwin
 shell on your Windows machine.
-
-\subsec{Known problems}{known-problems}
-
-There are several known problems with cross-compiled SML applications, which are
-due to bugs in Cygwin's emulation.
-
-\begin{enumerate}
-
-\item There is a bug in fork, which I am still investigating.  For idiomatic
-uses of fork + exec, this problem may be avoided by using the {\tt
-MLton.Process.spawn} family of functions. 
-
-\item There was a bug in mmap that caused large heaps to not work correctly.
-This may even cause seg faults on programs that use a lot of memory.  There was
-a fix available in the Cygwin developer snapshot 2002-Mar-16 available at
-{\tt http://cygwin.com/snapshots/}.  I am still unsure if problems remain.
-
-\item I am not confident in the correctness of Cygwin's emulation of signals and
-signal handlers, and am still investigating them.
-
-\end{enumerate}

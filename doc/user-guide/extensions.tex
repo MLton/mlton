@@ -23,13 +23,17 @@ structure MLton:
    sig
       val debug: bool
       val eq: 'a * 'a -> bool
+      datatype hostType = Cygwin | Linux
+      val hostType: hostType
       val isMLton: bool
       val safe: bool
       val size: 'a -> int
-         
+
+      structure Array: MLTON_ARRAY
       structure Cont: MLTON_CONT
       structure Exn: MLTON_EXN
       structure GC: MLTON_GC
+      structure IntInf: MLTON_INT_INF
       structure Itimer: MLTON_ITIMER
       structure ProcEnv: MLTON_PROC_ENV
       structure Process: MLTON_PROCESS
@@ -40,8 +44,9 @@ structure MLton:
       structure Signal: MLTON_SIGNAL
       structure Socket: MLTON_SOCKET
       structure Syslog: MLTON_SYSLOG
-      structure Thread: MLTON_THREAD
       structure TextIO: MLTON_TEXT_IO
+      structure Thread: MLTON_THREAD
+      structure Vector: MLTON_VECTOR
       structure Word: MLTON_WORD where type word = Word.word
       structure Word8: MLTON_WORD where type word = Word8.word
       structure World: MLTON_WORLD
@@ -54,9 +59,7 @@ structure MLton:
 \begin{description}
 
 \entry{debug}
-a compile-time constant that is true when compiling {\tt
--DMLton\_debug=1} and false when compiling {\tt -DMLton\_debug=0}.
-The default is false.
+a compile-time constant that reflects the value of the {\tt -debug} switch.
 
 \entry{eq (x, y)}
 returns true if {\tt x} and {\tt y} are equal as pointers.  For simple types
@@ -64,16 +67,22 @@ like {\tt char}, {\tt int}, and {\tt word}, this is the same as equals.  For
 arrays, datatypes, strings, tuples, and vectors, this is a simple pointer
 equality.  The semantics is a bit murky.
 
+\entry{datatype hostType = Cygwin | Linux}
+the two possible host types that {\mlton} can generate executables for.
 
-\entry{isMLton} always true in a {\mlton} basis library.
+\entry{hostType}
+the host type that the executable was generated for.
+
+\entry{isMLton}
+is always true in a {\mlton} basis library, and is always false in a stub
+library.
 
 \entry{safe}
-a compile time constant that makes it easy to
-include assertions and checks in code that you would like removed when running
-at full speed.  {\tt safe} will be true unless the program is compiled with the
-{\tt -safe false} option, in which case it will be false.  The simplification
-passes of the compiler will remove any uses of {\tt safe} at compile time.  For
-example, array subscripting might be implemented as:
+a compile time constant that reflects the value of the {\tt -safe} switch.  It
+make it easy to include assertions and checks in code that you would like
+removed when running at full speed. The simplification passes of the compiler
+will remove any uses of {\tt safe} at compile time.  For example, array
+subscripting might be implemented as:
 \begin{verbatim}
 fun sub (a, i) =
    if MLton.safe andalso (i < 0 orelse i >= length a)
@@ -87,6 +96,22 @@ When compiled {\tt -safe false}, {\tt sub} will reduce to
 return the amount of heap space (in bytes) taken by the value of {\tt x}.  Size
 takes time proportional to the size of its argument.  For an example, see {\tt
 examples/size.sml}.
+
+\end{description}
+
+\subsubsec{{\tt MLton.Array}}{array}
+\begin{verbatim}
+signature MLTON_ARRAY =
+   sig
+      val unfoldi: int * 'b * (int * 'b -> 'a * 'b) -> 'a array
+   end
+\end{verbatim}
+
+\begin{description}
+
+\entry{unfoldi (n, b, f)}
+construct an array $a$ of a length {\tt n}, whose elements $a_i$ are determined
+by the equations $b_0 = b$ and $(a_i, b_{i+1}) = f (i, b_i)$.
 
 \end{description}
 
@@ -130,6 +155,7 @@ continuation.
 
 \end{description}
 
+\subsubsection{{\tt MLton.Exn}}
 \begin{verbatim}
 signature MLTON_EXN =
    sig
@@ -173,6 +199,39 @@ is the same as the {\tt gc-summary} runtime system option.
 
 \end{description}
 
+\subsubsection{{\tt MLton.IntInf}}
+\begin{verbatim}
+signature MLTON_INT_INF =
+   sig
+      include INT_INF
+
+       val gcd: int * int -> int 
+       datatype rep =
+          Small of word
+        | Big of word vector
+       val rep: int -> rep
+       val size: int -> Int.int
+   end
+\end{verbatim}
+
+\begin{description}
+
+\entry{gcd (a, b)}
+using the gmp's fast gcd implementation.
+
+\entry{datatype rep}
+the underlying representation of an IntInf, which is either a 31 bit word
+representing a small integer in $[-2^{30}, 2^{30})$ or a vector of words
+representing the limbs of gmp big integer.
+
+\entry{rep i}
+return the underlying representation of i.
+
+\entry{size i}
+return the number of words taken by {\tt i}.
+
+\end{description}
+
 \subsubsec{{\tt MLton.Itimer}}{itimer}
 
 \begin{verbatim}
@@ -196,73 +255,6 @@ set the interval timer (using {\tt setitimer}) specified by {\tt t} to the given
 
 \entry{signal t}
 return the signal corresponding to {\tt t}.
-\end{description}
-
-\subsubsec{{\tt MLton.Profile}}{profile}
-This structure provides rudimentary profiling control from within the
-program.  For more details, see \secref{profiling} and {\tt
-  examples/profiling}.  In order to most efficiently execute
-non-profiled programs, the error-raising semantics of these functions
-are relaxed when not compiled {\tt -p}.
-
-\begin{verbatim}
-signature MLTON_PROFILE =
-   sig
-      val profile: bool
-      structure Data:
-         sig
-            type t
-            val equals: t * t -> bool
-            val free: t -> unit
-            val malloc: unit -> t
-            val reset: t -> unit
-            val write: t * string -> unit
-         end
-      val current: unit -> Data.t
-      val setCurrent: Data.t -> unit
-   end
-\end{verbatim}
-
-\begin{description}
-
-\entry{profile}
-a compile-time constant that is true when compiling {\tt -p}.  The
-default is false.
-
-\entry{type Data.t} the type of a unit of profiling data.
-
-\entry{Data.equals (x, y)}
-returns true if the {\tt x} and {\tt y} are the same unit of profiling
-data.
-
-\entry{Data.free x}
-frees the memory associated with the unit of profiling data {\tt x}.
-It is an error to free the current unit of profiling data or to free a
-previously freed unit of profiling data.
-
-\entry{Data.malloc ()}
-returns new unit of profiling data.  Each unit of profiling data is
-allocated from the process heap (\emph{not} the \mlton heap) and
-consumes memory equal in size to text segment of the executable.
-
-\entry{Data.reset x} 
-clears the accumulated ticks in the unit of profiling data {\tt x}.
-It is an error to reset a previously freed unit of profiling data.
-
-\entry{\tt write (x, f)}
-writes the accumulated ticks in the unit of profiling data {\tt x} to
-file {\tt f}.  It is an error to write a previously freed unit of
-profiling data.  Note: a program compiled with {\tt -p} will always
-write the current unit of profiling data at program exit to a file
-named {\tt mlmon.out}.
-
-\entry{current}
-returns the current unit of profiling data.
-
-\entry{setCurrent x}
-sets the current unit of profiling data.  It is an error to set a
-previously freed unit of profiling data.  
-
 \end{description}
 
 \subsubsection{\tt MLton.ProcEnv}
@@ -310,6 +302,73 @@ arguments {\tt args}.  Like {\tt Posix.Process.exece}.
 Search the {\tt PATH} environment variable for an executable named {\tt file},
 and start a new process running that executable with the arguments {\tt args}.
 Like {\tt Posix.Process.execp}.
+\end{description}
+
+\subsubsec{{\tt MLton.Profile}}{profile}
+This structure provides rudimentary profiling control from within the
+program.  For more details, see \secref{profiling} and {\tt
+  examples/profiling}.  In order to most efficiently execute
+non-profiled programs, the error-raising semantics of these functions
+are relaxed when compiled {\tt -profile false}.
+
+\begin{verbatim}
+signature MLTON_PROFILE =
+   sig
+      val profile: bool
+      structure Data:
+         sig
+            type t
+            val equals: t * t -> bool
+            val free: t -> unit
+            val malloc: unit -> t
+            val reset: t -> unit
+            val write: t * string -> unit
+         end
+      val current: unit -> Data.t
+      val setCurrent: Data.t -> unit
+   end
+\end{verbatim}
+
+\begin{description}
+
+\entry{profile}
+a compile-time constant that reflects the value of the {\tt -profile} switch.
+The default is false.
+
+\entry{type Data.t} the type of a unit of profiling data.
+
+\entry{Data.equals (x, y)}
+returns true if the {\tt x} and {\tt y} are the same unit of profiling
+data.
+
+\entry{Data.free x}
+frees the memory associated with the unit of profiling data {\tt x}.
+It is an error to free the current unit of profiling data or to free a
+previously freed unit of profiling data.
+
+\entry{Data.malloc ()}
+returns new unit of profiling data.  Each unit of profiling data is
+allocated from the process heap (\emph{not} the {\mlton} heap) and
+consumes memory equal in size to text segment of the executable.
+
+\entry{Data.reset x} 
+clears the accumulated ticks in the unit of profiling data {\tt x}.
+It is an error to reset a previously freed unit of profiling data.
+
+\entry{\tt write (x, f)}
+writes the accumulated ticks in the unit of profiling data {\tt x} to
+file {\tt f}.  It is an error to write a previously freed unit of
+profiling data.  Note: a program compiled with {\tt -p} will always
+write the current unit of profiling data at program exit to a file
+named {\tt mlmon.out}.
+
+\entry{current}
+returns the current unit of profiling data.
+
+\entry{setCurrent x}
+sets the current unit of profiling data.  It is an error to set a
+previously freed unit of profiling data.  
+
 \end{description}
 
 \subsubsection{\tt MLton.Random}
@@ -383,7 +442,7 @@ type types of resources that can be inspected and modified.
 returns the current hard and soft limits for resource {\tt r}.
 
 \entry{set (r, \{hard, soft\})}
-sets the hard and soft limits for resource {\tt r}.
+sets the hard and soft limits for resource {\tt r}.  May raise {\tt OS.SysErr}.
 \end{description}
 
 \subsubsection{\tt MLton.Rusage}
@@ -482,10 +541,13 @@ signature MLTON_SIGNAL =
 
 \entry{handleDefault s} set the handler for signal {\tt s} to default.
 
-\entry{handleWith' (s, f)} set the handler for signal {\tt s} to be the
-function {\tt f}.  When run, {\tt f} will be passed the thread that was
-interrupted by signal {\tt s}, and should return the thread that will resume
-execution.
+\entry{handleWith' (s, f)}
+set the handler for signal {\tt s} to be the function {\tt f}.  When run, {\tt
+f} will be passed the thread that was interrupted by signal {\tt s}, and should
+return the thread that will resume execution.  It is an error for {\tt f} to
+raise an exception.  It is an error to {\tt Thread.switch'} to an interrupted
+thread with a thunk that raises an exception (either directly, or via {\tt
+Thread.prepend}).  This is to avoid the possibility of aynchronous exceptions.
 
 \entry{handleWith (s, f)} like {\tt handleWith'}, but always resumes with the
 interrupted thread.
@@ -716,6 +778,22 @@ value {\tt g ()}.
 
 \end{description}
 
+\subsubsection{\tt MLton.Vector}
+\begin{verbatim}
+signature MLTON_VECTOR =
+   sig
+      val unfoldi: int * 'b * (int * 'b -> 'a * 'b) -> 'a vector
+   end
+\end{verbatim}
+
+\begin{description}
+
+\entry{unfoldi (n, b, f)}
+construct a vector $v$ of a length {\tt n}, whose elements $v_i$ are determined
+by the equations $b_0 = b$ and $(v_i, b_{i+1}) = f (i, b_i)$.
+
+\end{description}
+
 \subsubsection{\tt MLton.Word, MLton.Word8}
 \begin{verbatim}
 signature MLTON_WORD =
@@ -745,7 +823,7 @@ signature MLTON_WORLD =
 
       val load: string -> 'a
       val save: string -> status
-      val saveThread: string * unit Thread.t -> status
+      val saveThread: string * unit Thread.t -> unit
    end
 \end{verbatim}
 
@@ -774,7 +852,7 @@ I am the clone
 
 \entry{saveThread (f, t)}
 save the entire state of the computation to
-the file {\tt f}, and resume with thread {\tt t} upon restart.
+the file {\tt f} that will resume with thread {\tt t} upon restart.
 
 \end{description}
 

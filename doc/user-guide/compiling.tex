@@ -18,21 +18,25 @@ Number of states = 278
 Number of distinct rows = 183
 Approx. memory size of trans. table = 188856 bytes
 Compiling mlton (takes a while)
-time mlton @MLton -- -v -o mlton-compile mlton.cm
+time mlton @MLton -- -v -o mlton-compile mlton-stubs.cm
 MLton starting
    Compile SML starting
       pre codegen starting
 ...
 \end{verbatim}
 This calls {\tt mlyacc} and {\tt mllex} to build the parser and lexer, and then
-calls {\tt mlton} to compile itself.
+calls {\tt mlton} to compile itself.  If you make {\mlton} using another version
+of {\mlton}, then the Makefile will automatically use {\tt mlton-stubs.cm},
+which will put in enough stubs to emulate the {\tt MLton} structure.  Once you
+have successfully built {\mlton}, you should recompile it with itself, which
+will use {\tt mlton.cm} to bypass the stubs and use the real {\tt MLton}
+structure from the basis library.
 
-Compiling {\mlton} requires at least 400m of memory.  By default, MLton limits
-itself to using 85\% of the total RAM available on your machine.  Thus, if your
-machine has less than 512m, it is likely that self-compilation will take a very
-long time due to paging.  Even if you have enough memory, there simply may not
-be enough available, due to memory consumed by other processes.  In this case,
-you will likely see the following error during self-compilation.
+Compiling {\mlton} requires at least 400m of memory.  Thus, if your machine has
+less than 512m, it is likely that self-compilation will take a very long time
+due to paging.  Even if you have enough memory, there simply may not be enough
+available, due to memory consumed by other processes.  In this case, you will
+likely see the following error during self-compilation.
 \begin{verbatim}
 mmap failed (Cannot allocate memory)
 \end{verbatim}
@@ -40,19 +44,16 @@ The only fix is to make sure that enough virtual memory is available.
 
 \subsection{Compiling with {\smlnj}}
 
-To compile with {\smlnj} version 110.9.1, run the following command from within
-{\tt src/mlton}.
+To compile with {\smlnj} version 110.35 or later, run {\tt make nj-mlton} from
+within the {\tt mlton} subdirectory of the sources.
 \begin{verbatim}
 % make nj-mlton
 (                                                                       \
         echo 'SMLofNJ.Internals.GC.messages false;';                    \
-        echo 'CM.verbose(SOME false);';                                 \
-        echo 'CM.make'\''{group = "sources.cm", force_relink = true};'; \
-        echo 'Main.exportNJ("../../src/basis-library", "../../lib/mlton");'     \
-) | sml
-Standard ML of New Jersey v110.9.1 [FLINT v1.41], October 19, 1998 [CM; autoload enabled]
-- val it = () : unit
-val it = true : bool
-../lib/mlton-stubs-in-smlnj/socket.sig:1.1-1.19: declaration not tracked by CM
 ...
+)
+...
+Standard ML of New Jersey v110.37 [FLINT v1.5], November 21, 2001
+...
+write 5,0: 271 big objects (6473 pages) @ 0x4fd000
 \end{verbatim}

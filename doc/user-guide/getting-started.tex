@@ -2,13 +2,20 @@
 
 \subsection{Installation}
 
-{\mlton} runs on X86 machines under Linux.  {\mlton} is distributed in source
-and binary RPM and gzipped tar format.  To install the binary RPM, run the
-following command.
-\begin{alltt}
-rpm -i mlton-\version-1.i386.rpm
-\end{alltt}
-The binary RPM installs the following files and directories.
+{\mlton} runs on X86 machines under either Linux or Cygwin/Windows.
+and is distributed in source and binary RPM and gzipped tar ({\tt
+tgz}) format.  You can install either the binary RPM with {\tt rpm -i
+rpm -i mlton-\version-1.i386.rpm} or the binary tgz with {\tt zcat
+mlton-\version-1.i386.tgz | tar x}.  Or, if your distribution doesn't
+use rpm, but you have {\tt rpm2cpio}, you can use {\tt rpm2cpio
+mlton-\version-1.i386.rpm | cpio -id}.
+
+If you do not install {\mlton} in the root directory, then you must
+set the {\tt lib} variable in {\tt usr/local/bin/mlton} to the
+directory that contains the libraries ({\tt /usr/local/lib/mlton} by
+default).
+
+Installation creates the following files and directories.
 
 \newcommand{\place}[1]{\item[\tt #1]\hspace{1in}\\}
 
@@ -44,18 +51,10 @@ compilation.
 
 \end{description}
 
-If your Linux distribution doesn't use rpm, you can either use the binary tgz or
-use the following to unpack the binary RPM into the current directory
-\begin{alltt}
-rpm2cpio -i mlton-\version-1.i386.rpm | cpio -id
-\end{alltt}
-If you do not install the rpm in the usual place, {\tt /usr/local}, then you
-must set the {\tt lib} variable in {\tt usr/local/bin/mlton} to the directory
-that contains the libraries ({\tt /usr/local/lib/mlton} by default).
-
 \subsection{Hello, World!}
 
-Create a file called {\tt hello-world.sml} with the following contents.
+Once you have installed {\mlton}, create a file called {\tt
+hello-world.sml} with the following contents.
 
 \begin{verbatim}
 print "Hello, world!;\n"

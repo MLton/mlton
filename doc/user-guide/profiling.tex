@@ -6,17 +6,17 @@ usage to {\tt gprof}.  Here is an example run from within the {\tt
 information.
 
 \begin{verbatim}
-% mlton -p -keep g profiling.sml
-% profiling
+% mlton -profile true -keep g profiling.sml
+% ./profiling
 % mlprof profiling mlmon.out
-0.40 seconds of CPU time
-tak_0               90.00%
-IntInf_smallMul (C) 10.00%
+0.12 seconds of CPU time
+tak_0               91.67%
+IntInf_smallMul (C)  8.33%
 \end{verbatim}
 In summary, generating profiling information takes three steps.
 \begin{enumerate}
   
-\item Compile with the {\tt -p} switch.  This saves a {\tt .ssa} file
+\item Compile with {\tt -profile true}.  This saves a {\tt .ssa} file
   (see below).  You can also use {\tt -keep g} to save the generated
   assembly ({\tt .S}) files.
   
@@ -26,8 +26,8 @@ In summary, generating profiling information takes three steps.
 \item Run {\tt mlprof} on the executable and the {\tt mlmon.out} file.
 
 \end{enumerate}
-The profiling information output by {\tt mlprof} {\em does not refer
-  to the source program}.  Instead, {\tt mlprof} reports the
+Unfortunately, the profiling output of {\tt mlprof} {\em
+does not refer to the source program}.  Instead, {\tt mlprof} reports the
 percentage of time spent in each C and SSA function.  C functions are
 used for the FFI and garbage collector.  SSA is an intermediate
 language used by MLton that has traditional first-order function
@@ -78,36 +78,26 @@ threshold, and {\tt -x}, which will annotate each percentage of time
 with its absolute time.
 
 You may find it useful to use the {\tt -keep dot} switch when
-compiling {\tt -p}, since this saves the the SSA function call graph
-({\tt .call-graph.dot}) for the whole program.  Also, for each SSA
-function {\tt f}, it saves the intraprocedural control-flow graph
-({\tt .f.cfg.dot}) and dominator tree ({\tt .f.dom.dot}).  In the
-control-flow graph, solid edges indicate gotos with arguments, dashed
-edges indicate handling a raise coming from the callee, and dotted
-edges indicate a return from the callee.  Executing {\tt mlprof} with
-the {\tt -color} option in the presence of the {\tt .call-graph.dot}
-file will color the nodes of the call graph red, orange, yellow, or
-black according to the percentage of time spent in the corresponding
-SSA functions.  Likewise, executing {\tt mlprof} with the {\tt -color
-  -d 2} options in the presence of the {\tt .cfg.dot} files will color
-the nodes of the control-flow graphs.  Note that the effect of the
-{\tt -color} option is dependent upon the {\tt -t n} option; functions
-and blocks below the threshold are always colored black.
+compiling {\tt -profile true}, since this saves the the SSA function
+call graph ({\tt .call-graph.dot}) for the whole program.  Also, for
+each SSA function {\tt f}, it saves the intraprocedural control-flow
+graph ({\tt .f.cfg.dot}) and dominator tree ({\tt .f.dom.dot}).  In
+the control-flow graph, solid edges indicate gotos with arguments,
+dashed edges indicate handling a raise coming from the callee, and
+dotted edges indicate a return from the callee.  Executing {\tt
+mlprof} with the {\tt -color} option in the presence of the {\tt
+.call-graph.dot} file will color the nodes of the call graph red,
+orange, yellow, or black according to the percentage of time spent in
+the corresponding SSA functions.  Likewise, executing {\tt mlprof}
+with the {\tt -color -d 2} options in the presence of the {\tt
+.cfg.dot} files will color the nodes of the control-flow graphs.  Note
+that the effect of the {\tt -color} option is dependent upon the {\tt
+-t n} option; functions and blocks below the threshold are always
+colored black.
 
-The profiler works by catching the {\tt SIGPROF} signal 100 times per
-second and recording where in the executable the program counter is.
-Thus, if you compile {\tt -p}, your program should not use the
-following, which will interfere with
-the profiler.\\
-\begin{tabular}{l}
-\tt MLton.Itimer.set \{which = MLton.Itimer.Prof, ...\}\\
-\tt MLton.Signal.Handler.set (MLton.Signal.prof, ...)
-\end{tabular}\\
-Also, it is best to have a long running program (at least tens of
-seconds) in order to get reasonable data.
-
-To facilitate profiling individual portions of your program, {\mlton}
-provides the {\tt MLton.Profile} structure (see \secref{profile}).
+\subsection{Using {\tt mlprof} and {\tt MLton.Profile}}
+To profile individual portions of your program, use the {\tt
+MLton.Profile} structure (see \secref{profile}).
 Here is an example run from within the {\tt examples/profiling}
 directory showing how to profile the executions of the {\tt fib} and
 {\tt tak} functions separately.
@@ -129,10 +119,20 @@ tak_0 10.26%
 
 Executing {\tt mlprof} with multiple {\tt mlmon.out} files sums the
 profiling data in each file to produce the output profiling
-information.  The function {\tt MLton.Profile.Data.malloc} is used to
-allocate space for each unit of profiling data, while {\tt
-  MLton.Profile.Data.write} is used to write the accumulated profiling
-data.  The functions {\tt MLton.Profile.current} and {\tt
-  MLton.Profile.setCurrent} are used to change the unit of profiling
-data into which ticks are accumulated.
+information.
 
+\subsection{How profiling works}
+
+The profiler works by catching the {\tt SIGPROF} signal 100 times per
+second and recording where in the executable the program counter is.
+Thus, if you compile {\tt -profile true}, use of the following in your
+program will cause a run-time error, since they would interfere with
+profiling.
+
+\begin{tabular}{l}
+\tt MLton.Itimer.set \{which = MLton.Itimer.Prof, ...\}\\
+\tt MLton.Signal.Handler.set (MLton.Signal.prof, ...)
+\end{tabular}
+
+It is best to have a long running program (at least tens of seconds)
+in order to get reasonable data.

@@ -28,30 +28,35 @@ compilation can be resumed by passing the resulting files to \fBMLton\fP.
 \fBMLton\fP uses the input file suffix to determine the type of input program.
 The possibilities are \fB.cm\fR, \fB.sml\fR, \fB.c\fR, \fB.S\fR, and \fB.o\fR.
 
-For compatibility with Standard ML of New Jersey, \fBMLton\fP also supports a
-limited subset of Compilation Manager (CM) files.  From \fBMLton\fP's point of
-view, a CM file \fBfoo.cm\fR defines a list of SML source files.  The call 
-\fBmlton foo.cm\fR is equivalent to compiling an SML program consisting of the
-concatenation of these files.  As always with \fBMLton\fP, the concatenation
+For developing large programs spanning many files, \fBMLton\fP upports a
+limited subset of SML/NJ Compilation Manager (CM) files.  From \fBMLton\fP's
+point of view, a CM file \fBfoo.cm\fR defines a list of SML source files.  The
+call \fBmlton foo.cm\fR is equivalent to compiling an SML program consisting of
+the concatenation of these files.  As always with \fBMLton\fP, the concatenation
 must be the whole program you wish to compile.  See the \fBMLton\fP user guide
 for details.
+
+For a usage message, run \fBMLton\fP with an invalid switch, e.g., \fBmlton
+-z\fP.  In the explanation below and in the usage message, for flags that take a
+boolean argument (\fI{\fBtrue\fI|\fBfalse\fI}\fR), the first value listed is the
+default. For example, by default, overflow checking on is performed on integer
+arithmetic.
 
 .SH Compile-time options
 .TP
 \fB-detect-overflow \fI{\fBtrue\fI|\fBfalse\fI}\fR
 This flag controls whether or not overflow checking is performed on integer
 arithmetic.
-
-.TP
-\fB-D\fIdefine\fR
-Define a compile-time constant accessible via \fBMLton\fR's \fB_prim\fR
-syntax.
+.COM .TP
+.COM !\fB-D\fIdefine\fR
+.COM !Define a compile-time constant accessible via \fBMLton\fR's \fB_prim\fR
+.COM !syntax.
 
 .TP
 \fB-exn-history \fI{\fBtrue\fI|\fBfalse\fI}\fR
 Enable \fBExn.history\fP.  This has a performance impact, both in memory usage
 of exceptions and in runtime, because of additional work that must be performed
-at each exception construction, raise, and handle.  By default, it is disabled.
+at each exception construction, raise, and handle.
 
 .TP
 \fB-fixed-heap \fI n[\fBkm\fP]\fR
@@ -71,30 +76,29 @@ This option only makes sense when the input file suffix is \fB.sml\fP.
 
 .TP
 \fB-host \fI{\fBself\fP|\fI...}\fR
-Cross compile to program to run on the specified host.  The default is to
-compile for the build machine.  To use any other host, you must first install a
-cross-compiler.  See the user guide for details.
+Generate an executable that runs on the specified host.  The default is
+\fBself\FP, which means to compile for the machine that \fBMLton\fP is running
+on.  To use any other host, you must first install a cross compiler.  See the
+user guide for details.
 
 .TP
 \fB-ieee-fp \fI{\fBfalse\fP|\fBtrue\fP}\fR
 Control whether or not the code generator is pedantic about following
 the IEEE floating point standard.  By default, it is not, because of the
 performance cost.
-
-.TP
-\fB-include \fIfile.h\fR
-Specify an additional \fB.h\fP file to be included for defining compile-time
-constants.  The file will be included with \fB#include <file.h>\fP.
+.COM .TP
+.COM \fB-include \fIfile.h\fR
+.COM Specify an additional \fB.h\fP file to be included for defining compile-time
+.COM constants.  The file will be included with \fB#include <file.h>\fP.
 
 .TP
 \fB-inline \fIn\fR
 Set the inlining threshold used in the optimizer.
 The default is 320.
-
-.TP
-\fB-I\fIdir\fR
-Specify an additional directory to be searched for include files (included with
-\fB-i\fR).
+.COM .TP
+.COM \fB-I\fIdir\fR
+.COM Specify an additional directory to be searched for include files (included with
+.COM \fB-i\fR).
 
 .TP
 \fB-keep \fI{\fBdot\fP|\fBg\fP|\fBo\fP|\fBsml\fP|\fBssa\fP}\fR
@@ -124,9 +128,9 @@ This switch is passed unchanged to the linker.
 
 .TP
 \fB-native \fI{\fBtrue\fP|\fBfalse\fP}\fP
-Controls whether or not to use native code generation.  By default this is
-\fBtrue\fP.  Older versions of \fBMLton\fP generated C code and used 
-\fBgcc\fP to produce assembly, but this functionality is being phased out.
+Controls whether or not to use native code generation.  With native code
+generation, \fBMLton\fP typically compiles more quickly and generates better
+code.
 
 .TP
 \fB-o\fI file\fR
@@ -137,36 +141,32 @@ appropriate suffix added.
 .TP
 \fB-polyvariance \fI{\fBtrue\fP|\fBfalse\fP}\fR
 Control whether the optimizer runs polyvariance, which is a pass that duplicates
-small, higher-order functions to improve performance.  The default is for
-polyvariance to be on.
+small, higher-order functions to improve performance.
 
 .TP
 \fB-profile \fI{\fBfalse\fP|\fBtrue\fP}\fR
 Produce an executable that will gather profiling information.  
 When such an executable is run, it will produce a \fBmlmon.out\fP file.
 The man page on \fBmlprof\fP describes how to extract information from this
-file.
-The default is not to gather profiling information.  \fB-profile true\fP implies
-\fB-keep ssa\fP.
+file.  \fB-profile true\fP implies \fB-keep ssa\fP.
 
 .TP
 \fB-safe \fI{\fBtrue\fP|\fBfalse\fP}\fR
 This switch determines the value of the SML variable \fBMLton.safe\fP, which
 controls whether the basis library performs array, string, and vector bounds
-checks, division for zero checks, and other checks.  By default,
-\fBMLton.safe\fP is \fBtrue\fP.  Compiling \fB-safe false\fP changes the
-behavior of some programs, does not conform to the basis library specification,
-and may cause programs to seg fault.
+checks, division for zero checks, and other checks.  Compiling \fB-safe false\fP
+changes the behavior of some programs, does not conform to the basis library
+specification, and may cause programs to seg fault.
 
 .TP
 \fB-show-basis-used \fI{\fBfalse\fP|\fBtrue\fP}\fR
-If this is true, then the compiler prints out the types, values, signatures,
+If true, then the compiler prints out the types, values, signatures,
 structures, and functors from the basis library that the input program uses, and
 then exits.
 
 .TP
 \fB-static \fI{\fBfalse\fP|\fBtrue\fP}\fR
-Produce a statically linked executable.  This switch is passed unchanged to 
+If true, then produce a statically linked executable.  This option only affects
 the linker.
 
 .TP
@@ -224,11 +224,11 @@ Restart the computation with the file \fIworld\fP.
 The \fIworld\fP file must have been created by a call to
 \fBMLton.World.save\fP by the same executable.
 .TP
-\fBmax-heap \fIn[\fBkm\fI]\fR
-Run the computation with an automatically resized heap that is never larger
-than \fIn\fP.
-The meaning of \fI[\fBkm\fI]\fR is the same as with the \fBfixed-heap\fP
-option.
+.COM \fBmax-heap \fIn[\fBkm\fI]\fR
+.COM Run the computation with an automatically resized heap that is never larger
+.COM than \fIn\fP.
+.COM The meaning of \fI[\fBkm\fI]\fR is the same as with the \fBfixed-heap\fP
+.COM option.
 .TP
 \fBram-slop \fIx\fR
 Multiply \fBx\fP by the amount of RAM to obtain the max heap size.

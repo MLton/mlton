@@ -26,6 +26,7 @@ and to stop the compilation process early, at some intermediate pass.  {\mlton}
 uses the input file suffix to determine the type of input program.  The
 possibilities are {\tt .cm}, {\tt .sml}, {\tt .c}, {\tt .S} and {\tt .o}.
 
+For a usage message, run {\mlton} with an invalid switch, e.g. {\tt mlton -z}.
 In the explanation below and in the usage message, for flags that take a boolean
 argument ({\tt {true|false}}), the first value listed is the default.  For
 example, by default, overflow checking on is performed on integer arithmetic.
@@ -36,11 +37,13 @@ example, by default, overflow checking on is performed on integer arithmetic.
 
 \option{-detect-overflow \{true|false\}}
 This flag controls whether or not overflow checking is performed on integer
-arithmetic, in particular on {\tt Int.\{+,-,*,~,div,quot\}}.
+arithmetic, in particular on {\tt Int.\{+,-,*,\~{},div,quot\}}.
 
-\option{-D\mbox{\rm define}}
-Define a compile-time constant accessible via {\mlton}'s {\tt \_prim}
-syntax (see \secref{compile-time-constant}).
+% -D doesn't work right now
+%
+%\option{-D\mbox{\rm define}}
+%Define a compile-time constant accessible via {\mlton}'s {\tt \_prim}
+%syntax (see \secref{compile-time-constant}).
 
 %If you compile {\tt -DMLton\_debug=1}, then the value of the variable
 %{\tt MLton.debug} will be true.  The default is false.
@@ -48,10 +51,10 @@ syntax (see \secref{compile-time-constant}).
 \option{-exn-history \{false|true\}}
 Enable {\tt Exn.history}.  This has a performance impact, both in memory usage
 of exceptions and in runtime, because of additional work that must be performed
-at each exception construction, raise, and handle.  By default, it is disabled.
+at each exception construction, raise, and handle.
 
 \option{-fixed-heap \mbox{\rm n[}km\mbox{\rm ]}}
-The resulting executable will use a fixed size heap of size {\tt n}.  A value
+The resulting executable will use a heap of fixed size {\tt n}.  A value
 of {\tt 0} means that the heap size should be chosen almost as large as the
 amount of
 RAM in the machine.  A trailing {\tt k} means that {\tt heapSize} is in units of
@@ -60,26 +63,27 @@ neither appears, then {\tt heapSize} is in bytes.  By default the executable
 will use an automatically resized heap.
 
 \option{-host \{self|...\}}
-Cross compile to program to run on the specified host.  The default is to
-compile for the build machine.  To use any other host, you must first install a
-cross-compiler.  See \secref{cross-compiling}.
-
-\option{-include \mbox{\rm file.h}}
-Specify an additional {\tt .h} file to be included for defining compile-time
-constants (see \secref{compile-time-constant}).  The file will be included with
-{\tt \#include <file.h>}.
+Generate an executable that runs on the specified host.  The default is {\tt
+self}, which means to compile for the machine that {\mlton} is running on.  To
+use any other host, you must first install a cross-compiler.  See
+\secref{cross-compiling}.
 
 \option{-ieee-fp \{false|true\}}
-Control whether or not the code generator is pedantic about following
+Control whether or not the native code generator is pedantic about following
 the IEEE floating point standard.  By default, it is not, because of the
-performance cost.
+performance cost.  This has no effect with {\tt -native false}.
+
+%\option{-include \mbox{\rm file.h}}
+%Specify an additional {\tt .h} file to be included for defining compile-time
+%constants (see \secref{compile-time-constant}).  The file will be included with
+%{\tt \#include <file.h>}.
 
 \option{-inline \mbox{\rm n}}
 Set the inlining threshold used in the optimizer.  The default is 320.
 
-\option{-I\mbox{\rm dir}}
-Specify an additional directory to be searched for include files (included with
-{\tt -i}).
+%\option{-I\mbox{\rm dir}}
+%Specify an additional directory to be searched for include files (included with
+%{\tt -i}).
 
 \option{-keep \{dot|g|o|sml|ssa\}}
 Save the intermediate file(s) corresponding to the given arg.  If
@@ -102,37 +106,32 @@ Specify an additional directory to be searched for libraries.
 This switch is passed unchanged to the linker.
 
 \option{-native \{true|false\}}
-Controls whether or not to use native code generation.  By default this is
-{\tt true}.  Older versions of {\mlton} generated {\tt C} code and used {\tt
-gcc} to produce assembly, but this functionality is being phased out.
+Controls whether or not to use native code generation.  With native code
+generation, {\mlton} typically compiles more quickly and generates better code.
 
 \option{-o \mbox{\rm file}}
 Specify the name of the final output file.
-The default file name is the input file with its
+The default name is the input file name with its
 suffix removed and an appropriate suffix added.
-
-\option{-profile \{false|true\}}
-Produce an executable that will gather profiling information.  The default is
-not to gather profiling information.  {\tt -profile true} implies {\tt -keep
-ssa}.  See \secref{profiling} for details.
 
 \option{-polyvariance \{true|false\}}
 Control whether the optimizer runs polyvariance, which is a pass that duplicates
-small, higher-order functions to improve performance.  The default is for
-polyvariance to be on.
+small, higher-order functions to improve performance.
+
+\option{-profile \{false|true\}}
+Produce an executable that will gather profiling information.  {\tt -profile
+true} implies {\tt -keep ssa}.  See \secref{profiling} for details.
 
 \option{-safe \{true|false\}}
 This switch determines the value of the SML variable {\tt MLton.safe}, which
 controls whether the basis library performs array, string, and vector bounds
-checks, division for zero checks, and other checks.  By default, {\tt
-MLton.safe} is {\tt true}.  Compiling {\tt -safe false} changes the behavior of
-some programs, does not conform to the basis library specification, and may
-cause programs to seg fault.
+checks, division for zero checks, and other checks.  Compiling {\tt -safe false}
+changes the behavior of some programs, does not conform to the basis library
+specification, and may cause programs to seg fault.
 
 \option{-show-basis-used \{false|true\}}
-If this is true, then the compiler prints out the types, values, signatures,
-structures, and functors from the basis library that the input program uses, and
-then exits.
+If true, then the compiler prints out the types, values, signatures, structures,
+and functors from the basis library that the input program uses, and then exits.
 
 \option{-static \{false|true\}}
 If true, then produce a statically linked executable.  This option only
@@ -218,10 +217,10 @@ The world file must have been created by a call to
 {\tt MLton.World.save} by the same executable.  See \secref{world}
 for details.
 
-\option{max-heap \mbox{\rm n[}km\mbox{\rm ]}}
-Run the computation with an automatically resized heap that is never
-larger than n.  The meaning of [{\tt km}] is the same as with the
-{\tt fixed-heap} option.
+%\option{max-heap \mbox{\rm n[}km\mbox{\rm ]}}
+%Run the computation with an automatically resized heap that is never
+%larger than n.  The meaning of [{\tt km}] is the same as with the
+%{\tt fixed-heap} option.
 
 \option{ram-slop {\mbox{\rm x}}}
 Multiply {\tt x} by the amount of memory to obtain the max heap size.

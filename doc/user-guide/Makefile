@@ -6,6 +6,7 @@ TEX_FILES = \
 	compiling.tex		\
 	credits.tex		\
 	cross-compiling.tex	\
+	cygwin.tex		\
 	drawbacks.tex		\
 	extensions.tex		\
 	features.tex		\
