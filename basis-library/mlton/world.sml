@@ -21,7 +21,6 @@ structure MLtonWorld: MLTON_WORLD =
 			open S
 		     in
 			flags [irusr, iwusr, irgrp, iwgrp, iroth, iwoth]
-
 		     end
 	       in
 		  createf (file, O_WRONLY, flags, mode)
