@@ -2,7 +2,11 @@ Here are the changes since version 20030312.
 
 At this point, the only missing basis library function is "use".
 
-* 2003-0625
+* 2003-06-25
+  - Added {Int{8,16},Word8}{,Array,ArraySlice,Vector,VectorSlice,Array2}
+    structures.
+	
+* 2003-06-25
   - Fixed bug in IntInf.sign, which returned the wrong value for zero.
 
 * 2003-06-24
