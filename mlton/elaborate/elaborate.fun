@@ -70,8 +70,6 @@ structure ElaborateCore = ElaborateCore (structure Ast = Ast
 					 structure Decs = Decs
 					 structure Env = Env)
 
-val allowRebindEquals = ElaborateCore.allowRebindEquals
-
 val info = Trace.info "elaborateStrdec"
 val info' = Trace.info "elaborateTopdec"
 	  
@@ -217,7 +215,17 @@ fun elaborateProgram (program,
 	 Trace.traceInfo' (info', Topdec.layout, Decs.layout)
 	 (fn (d: Topdec.t) =>
 	  case Topdec.node d of
-	     Topdec.Strdec d => elabStrdec (d, [])
+	     Topdec.BasisDone {ffi} =>
+		let
+		   val _ = ElaborateCore.allowRebindEquals := false
+		   val _ =
+		      Option.app
+		      (Env.lookupLongstrid (E, ffi), fn S =>
+		       (Env.Structure.ffi := SOME S
+			; Env.Structure.forceUsed S))
+		in
+		   Decs.empty
+		end
 	   | Topdec.Signature sigbinds =>
 		(Vector.foreach
 		 (sigbinds, fn (sigid, sigexp) =>
@@ -226,6 +234,7 @@ fun elaborateProgram (program,
 				      NONE => Interface.empty
 				    | SOME I => I))
 		 ; Decs.empty)
+	   | Topdec.Strdec d => elabStrdec (d, [])
 	   | Topdec.Functor funbinds =>
 		(* Appendix A, p.58 *)
 		(Vector.foreach

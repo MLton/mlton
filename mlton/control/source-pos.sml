@@ -19,6 +19,15 @@ in
    val line = f #line
 end
 
+fun compare (T {column = c, file = f, line = l},
+	     T {column = c', file = f', line = l'}) =
+   case String.compare (f, f') of
+      EQUAL =>
+	 (case Int.compare (l, l') of
+	     EQUAL => Int.compare (c, c')
+	   | r => r)
+    | r => r
+
 fun equals (T r, T r') = r = r'
 
 fun make {column, file, line} =

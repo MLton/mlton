@@ -59,6 +59,7 @@ val output: string option ref = ref NONE
 val profileSet: bool ref = ref false
 val runtimeArgs: string list ref = ref ["@MLton"]
 val stop = ref Place.OUT
+val warnMatch = ref true
 
 val targetMap: unit -> {arch: MLton.Platform.Arch.t,
 			os: MLton.Platform.OS.t,
@@ -180,9 +181,8 @@ fun makeOptions {usage} =
 	boolRef exnHistory),
        (Expert, "expert", " {false|true}", "enable expert status",
 	boolRef expert),
-       (Normal, "export-header", " {false|true}",
-	"output header file for _export's",
-	boolRef exportHeader),
+       (Normal, "export-header", " <file>", "write header file for _export's",
+	SpaceString (fn s => exportHeader := SOME s)),
        (Expert, "gc-check", " {limit|first|every}", "force GCs",
 	SpaceString (fn s =>
 		     gcCheck :=
@@ -323,12 +323,14 @@ fun makeOptions {usage} =
        (Normal, "sequence-unit", " {false|true}",
 	"in (e1; e2), require e1: unit",
 	boolRef sequenceUnit),
-       (Normal, "show-basis", " {false|true}", "display the basis library",
-	boolRef showBasis),
-       (Normal, "show-basis-used", " {false|true}",
-	"display the basis library used by the program",
-	boolRef showBasisUsed),
-       (Expert, "show-types", " {false|true}", "print types in ILs",
+       (Normal, "show-basis", " <file>", "write out the basis library",
+	SpaceString (fn s => showBasis := SOME s)),
+       (Normal, "show-basis-used", " <file>",
+	"write the basis library used by the program",
+	SpaceString (fn s => showBasisUsed := SOME s)),
+       (Normal, "show-def-use", " <file>", "write def-use information",
+	SpaceString (fn s => showDefUse := SOME s)),
+       (Expert, "show-types", " {false|true}", "show types in ILs",
 	boolRef showTypes),
        (Expert, "ssa-passes", " <passes>", "ssa optimization passes",
 	SpaceString
@@ -404,7 +406,10 @@ fun makeOptions {usage} =
 		      | _ => usage (concat ["invalid -variant arg: ", s])))),
        (Normal, "warn-match", " {true|false}",
 	"nonexhaustive and redundant match warnings",
-	Bool (fn b => (warnNonExhaustive := b; warnRedundant := b))),
+	boolRef warnMatch),
+       (Expert, "warn-unused", " {false|true}",
+	"unused identifier warnings",
+	boolRef warnUnused),
        (Expert, "xml-passes", " <passes>", "xml optimization passes",
 	SpaceString
 	(fn s =>
@@ -439,6 +444,7 @@ fun commandLine (args: string list): unit =
       val _ = setTargetType ("self", usage)
       val result = parse args
       val gcc = !gcc
+      val stop = !stop
       val target = !target
       val targetStr =
 	 case target of
@@ -524,25 +530,22 @@ fun commandLine (args: string list): unit =
 	    then keepSSA := true
 	 else ()
       val _ =
+	 let
+	    val b = !warnMatch
+	 in
+	    (warnNonExhaustive := b; warnRedundant := b)
+	 end
+      val _ =
+	 keepDefUse := (isSome (!showDefUse)
+			orelse isSome (!showBasisUsed)
+			orelse !warnUnused)
+      val _ = elaborateOnly := (stop = Place.TypeCheck
+				andalso not (!warnMatch)
+				andalso not (!keepDefUse))
+      val _ =
 	 if targetOS = Cygwin andalso !profile = ProfileTime
 	    then usage "can't use -profile time on Cygwin"
 	 else ()
-      val _ =
-	 case List.keepAll ([("-export-header", exportHeader),
-			     ("-show-basis", showBasis),
-			     ("-show-basis-used", showBasisUsed)],
-			    fn (_, r) => !r) of
-	    (a, _) :: (b, _) :: _ =>
-	       usage (concat ["can't use both ", a, " and ", b])
-	  | _ => ()
-      val _ =
-	 if !showBasis orelse !showBasisUsed
-	    then (stop := Place.TypeCheck
-		  ; warnNonExhaustive := false)
-	 else ()
-      val stop = !stop
-      val _ = elaborateOnly := (stop = Place.TypeCheck
-				andalso not (!warnNonExhaustive))
       fun printVersion (out: Out.t): unit =
 	 Out.output (out, concat [version, " ", build, "\n"])
    in
@@ -550,7 +553,7 @@ fun commandLine (args: string list): unit =
       Result.No msg => usage msg
     | Result.Yes [] =>
 	 (inputFile := "<none>"
-	  ; if !showBasis orelse stop = Place.TypeCheck
+	  ; if isSome (!showDefUse) orelse isSome (!showBasis) orelse !warnUnused
 	       then
 		  trace (Top, "Type Check Basis")
 		  Compile.elaborate {input = []}

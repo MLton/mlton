@@ -41,19 +41,14 @@ structure Env = Env.InterfaceEnv
 local
    open Interface
 in
-   structure Status = Status
-   structure Tycon = Tycon
-   structure TypeStr = TypeStr
-end
-
-local
-   open TypeStr
-in
    structure AdmitsEquality = AdmitsEquality
    structure Cons = Cons
    structure Kind = Kind
    structure Scheme = Scheme
+   structure Status = Status
+   structure Tycon = Tycon
    structure Type = Type
+   structure TypeStr = TypeStr
 end
 
 fun elaborateType (ty: Atype.t, E: Env.t): Tyvar.t vector * Type.t =
@@ -212,7 +207,6 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
 		(Vector.map
 		 (cons, fn (name, arg) =>
 		  let
-		     val con = Con.newString "FOO"
 		     val (makeArg, ty) =
 			case arg of
 			   NONE => (fn _ => NONE, resultType)
@@ -222,8 +216,7 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
 			       Atype.arrow (t, resultType))
 		     val scheme = elaborateScheme (tyvars, ty, E)
 		  in
-		     ({con = con,
-		       name = name,
+		     ({name = name,
 		       scheme = scheme},
 		      makeArg scheme)
 		  end))
@@ -246,10 +239,8 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
 			    then ()
 			 else (r := Never; change := true)
 		end
-	     val _ =
-		Vector.foreach
-		(cons, fn {con, name, scheme} =>
-		 Env.extendCon (E, name, con, scheme))
+	     val _ = Vector.foreach (cons, fn {name, scheme} =>
+				     Env.extendCon (E, name, scheme))
 	     val _ = Env.allowDuplicates := true
 	     val _ =
 		Env.extendTycon
@@ -333,11 +324,11 @@ fun elaborateSigexp (sigexp: Sigexp.t, E: StructureEnv.t): Interface.t option =
 		       (Env.lookupLongtycon (E, rhs), fn s =>
 			let
 			   val _ = Env.extendTycon (E, lhs, s)
-			   val TypeStr.Cons.T v = TypeStr.cons s
+			   val Cons.T v = TypeStr.cons s
 			   val _ =
 			      Vector.foreach
-			      (v, fn {con, name, scheme} =>
-			       Env.extendCon (E, name, con, scheme))
+			      (v, fn {name, scheme} =>
+			       Env.extendCon (E, name, scheme))
 			in
 			   ()
 			end))
@@ -350,7 +341,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, E: StructureEnv.t): Interface.t option =
 	   | Spec.Exception cons =>
 		(* rule 73 *)
 		List.foreach
-		(cons, fn (name: TypeStr.Name.t, arg: Ast.Type.t option) =>
+		(cons, fn (name: Ast.Con.t, arg: Ast.Type.t option) =>
 		 let
 		    val (arg, ty) =
 		       case arg of

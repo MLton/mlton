@@ -39,5 +39,3 @@ scope.fun
 scope.sig
 type-env.fun
 type-env.sig
-type-str.fun
-type-str.sig

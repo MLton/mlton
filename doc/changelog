@@ -1,5 +1,11 @@
 Here are the changes since version 20030716.
 
+* 2004-02-16
+  - Changed -export-header, -show-basis, -show-basis-used to take a
+    file name argument, and they no longer force compilation to halt.
+  - Added -show-def-use and -warn-unused, which deal with def-use
+    information.
+
 * 2004-02-13
   - Added flag -sequence-unit, which imposes the constraint that in
     the sequence expression (e1; e2), e1 must be of type unit.

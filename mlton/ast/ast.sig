@@ -147,7 +147,8 @@ signature AST =
 	 sig
 	    type t
 	    datatype node =
-	       Functor of {arg: FctArg.t,
+	       BasisDone of {ffi: Longstrid.t}
+	     | Functor of {arg: FctArg.t,
 			   body: Strexp.t,
 			   name: Fctid.t,
 			   result: SigConst.t} vector

@@ -68,6 +68,8 @@ structure Scheme =
 
 structure TypeScheme = Scheme
 
+val insideFunctor = ref false
+
 structure Scope =
    struct
       structure Unique = UniqueId ()
@@ -86,6 +88,45 @@ structure Scope =
 	    unique = Unique.new ()}
 
       fun equals (s, s') = Unique.equals (unique s, unique s')
+   end
+
+structure Uses:
+   sig
+      type 'a t
+
+      val add: 'a t * 'a -> unit
+      val all: 'a t -> 'a list
+      val clear: 'a t -> unit
+      val forceUsed: 'a t -> unit
+      val hasUse: 'a t -> bool
+      val isUsed: 'a t -> bool
+      val new: unit -> 'a t
+   end =
+   struct
+      datatype 'a t = T of {direct: 'a list ref,
+			    forceUsed: bool ref}
+ 
+      fun new () = T {direct = ref [],
+		      forceUsed = ref false}
+
+      fun add (T {direct, ...}, a) = List.push (direct, a)
+
+      fun forceUsed (T {forceUsed = r, ...}) = r := true
+
+      fun clear (T {direct, ...}) = direct := []
+
+      fun wrap u = u
+
+      fun 'a accum (T {direct, ...}, ac: 'a list): 'a list =
+	 List.fold (!direct, ac, op ::)
+
+      fun all (T {direct, ...}) = !direct
+
+      fun hasUse (T {direct, ...}): bool =
+	 not (List.isEmpty (!direct))
+	 
+      fun isUsed (u as T {forceUsed, ...}): bool =
+	 !forceUsed orelse hasUse u
    end
 
 structure Vid =
@@ -140,44 +181,149 @@ structure Vid =
 
 fun layoutSize z = Int.layout (MLton.size z)
 
-structure TypeStr = TypeStr (structure AdmitsEquality = AdmitsEquality
-			     structure Con = Con
-			     structure Kind = Tycon.Kind
-			     structure Name = Ast.Con
-			     structure Record = SortedRecord
-			     structure Scheme =
-				struct
-				   open Scheme
+structure TypeStr =
+   struct
+      structure AdmitsEquality = AdmitsEquality
+      structure Kind = Kind
+      structure Scheme =
+	 struct
+	    open Scheme
 
-				   val make =
-				      fn (tyvars, ty) =>
-				      make {canGeneralize = true,
-					    ty = ty,
-					    tyvars = tyvars}
-				end
-			     structure Tycon =
-				struct
-				   open Tycon
+	    val make =
+	       fn (tyvars, ty) =>
+	       make {canGeneralize = true,
+		     ty = ty,
+		     tyvars = tyvars}
+	 end
 
-				   val admitsEquality =
-				      TypeEnv.tyconAdmitsEquality
+      structure Tycon =
+	 struct
+	    open Tycon
 
-				   val make = newNoname
-				end
-			     structure Type =
-				struct
-				   open Type
+	    val admitsEquality = TypeEnv.tyconAdmitsEquality
 
-				   val bogus = new ()
+	    val make = newNoname
+	 end
 
-				   fun hom (t, {con, record, var}) =
-				      Type.hom (t, {con = con,
-						    expandOpaque = false,
-						    record = record,
-						    replaceCharWithWord8 = false,
-						    var = var})
-				end
-			     structure Tyvar = Tyvar)
+      structure Type =
+	 struct
+	    open Type
+
+	    fun hom (t, {con, record, var}) =
+	       Type.hom (t, {con = con,
+			     expandOpaque = false,
+			     record = record,
+			     replaceCharWithWord8 = false,
+			     var = var})
+	 end
+      
+      structure Cons =
+	 struct
+	    datatype t = T of {con: Con.t,
+			       name: Ast.Con.t,
+			       scheme: Scheme.t,
+			       uses: Ast.Vid.t Uses.t} vector
+	       
+	    val empty = T (Vector.new0 ())
+	       
+	    fun layout (T v) =
+	       Vector.layout (fn {name, scheme, ...} =>
+			      let
+				 open Layout
+			      in
+				 seq [Ast.Con.layout name,
+				      str ": ", Scheme.layout scheme]
+			      end)
+	       v
+	 end
+
+      datatype node =
+	 Datatype of {cons: Cons.t,
+		      tycon: Tycon.t}
+       | Scheme of Scheme.t
+       | Tycon of Tycon.t
+
+      datatype t = T of {kind: Kind.t,
+			 node: node}
+
+      local
+	 fun make f (T r) = f r
+      in
+	 val kind = make #kind
+	 val node = make #node
+      end
+
+      fun layout t =
+	 let
+	    open Layout
+	 in
+	    case node t of
+	       Datatype {tycon, cons} =>
+		  seq [str "Datatype ",
+		       record [("tycon", Tycon.layout tycon),
+			       ("cons", Cons.layout cons)]]
+	     | Scheme s => Scheme.layout s
+	     | Tycon t => seq [str "Tycon ", Tycon.layout t]
+	 end
+
+      fun admitsEquality (s: t): AdmitsEquality.t =
+	 case node s of
+	    Datatype {tycon = c, ...} => ! (Tycon.admitsEquality c)
+	  | Scheme s => if Scheme.admitsEquality s
+			   then AdmitsEquality.Sometimes
+			else AdmitsEquality.Never
+	  | Tycon c =>  ! (Tycon.admitsEquality c)
+
+      fun bogus (k: Kind.t): t =
+	 T {kind = k,
+	    node = Scheme (Scheme.bogus ())}
+
+      fun abs t =
+	 case node t of
+	    Datatype {tycon, ...} => T {kind = kind t,
+					node = Tycon tycon}
+	  | _ => t
+
+      fun apply (t: t, tys: Type.t vector): Type.t =
+	 case node t of
+	    Datatype {tycon, ...} => Type.con (tycon, tys)
+	  | Scheme s => Scheme.apply (s, tys)
+	  | Tycon t => Type.con (t, tys)
+
+      fun cons t =
+	 case node t of
+	    Datatype {cons, ...} => cons
+	  | _ => Cons.empty
+
+      fun data (tycon, kind, cons) =
+	 T {kind = kind,
+	    node = Datatype {tycon = tycon, cons = cons}}
+   
+      fun def (s: Scheme.t, k: Kind.t) =
+	 let
+	    val (tyvars, ty) = Scheme.dest s
+	 in
+	    T {kind = k,
+	       node = (case Type.deEta (ty, tyvars) of
+			  NONE => Scheme s
+			| SOME c => Tycon c)}
+	 end
+
+      fun isTycon s =
+	 case node s of
+	    Datatype _ => false
+	  | Scheme _ => false
+	  | Tycon _ => true
+
+      fun toTyconOpt s =
+	 case node s of
+	    Datatype {tycon, ...} => SOME tycon
+	  | Scheme _ => NONE
+	  | Tycon c => SOME c
+
+      fun tycon (c, kind) = T {kind = kind,
+			       node = Tycon c}
+   end
 
 local
    open TypeStr
@@ -195,6 +341,158 @@ in
    structure Status = Status
 end
 
+structure Interface =
+   struct
+      structure Econs = Cons
+      structure Escheme = Scheme
+      structure Etycon = Tycon
+      structure Etype = Type
+      structure EtypeStr = TypeStr
+      open Interface
+
+      fun flexibleTyconToEnv (c: FlexibleTycon.t): EtypeStr.t =
+	 let
+	    datatype z = datatype FlexibleTycon.dest
+	 in
+	    case FlexibleTycon.dest c of
+	       ETypeStr s => s
+	     | TypeStr s => typeStrToEnv s
+	 end
+      and tyconToEnv (t: Tycon.t): EtypeStr.t =
+	 let
+	    open Tycon
+	 in
+	    case t of
+	       Flexible c => flexibleTyconToEnv c
+	     | Rigid (c, k) => EtypeStr.tycon (c, k)
+	 end
+      and typeToEnv (t: Type.t): Etype.t =
+	 Type.hom (t, {con = fn (c, ts) => EtypeStr.apply (tyconToEnv c, ts),
+		       record = Etype.record,
+		       var = Etype.var})
+      and schemeToEnv (Scheme.T {ty, tyvars}): Escheme.t =
+	 Escheme.make {canGeneralize = true,
+		       ty = typeToEnv ty,
+		       tyvars = tyvars}
+      and consToEnv (Cons.T v): Econs.t =
+	 Econs.T (Vector.map (v, fn {name, scheme} =>
+			      {con = Con.newNoname (),
+			       name = name,
+			       scheme = schemeToEnv scheme,
+			       uses = Uses.new ()}))
+      and typeStrToEnv (s: TypeStr.t): EtypeStr.t =
+	 let
+	    val k = TypeStr.kind s
+	    datatype z = datatype TypeStr.node
+	 in
+	    case TypeStr.node s of
+	       Datatype {cons, tycon} =>
+		  let
+		     val tycon: Etycon.t =
+			case tycon of
+			   Tycon.Flexible c =>
+			      let
+				 val typeStr = flexibleTyconToEnv c
+			      in
+				 case EtypeStr.node typeStr of
+				    EtypeStr.Datatype {tycon, ...} => tycon
+				  | EtypeStr.Tycon c => c
+				  | _ =>
+				       let
+					  open Layout
+				       in
+					  Error.bug
+					  (toString
+					   (seq [str "datatype ",
+						 TypeStr.layout s,
+						 str " realized with scheme ",
+						 EtypeStr.layout typeStr]))
+				       end
+			      end
+			 | Tycon.Rigid (c, _) => c
+		  in
+		     EtypeStr.data (tycon, k, consToEnv cons)
+		  end
+	     | Scheme s => EtypeStr.def (schemeToEnv s, k)
+	     | Tycon c => EtypeStr.abs (tyconToEnv c)
+	 end
+
+      structure Tycon =
+	 struct
+	    open Tycon
+
+	    val fromEnv = Rigid
+	 end
+
+      structure Type =
+	 struct
+	    open Type
+
+	    fun fromEnv (t: Etype.t): t =
+	       let
+		  fun con (c, ts) =
+		     Type.con (Tycon.fromEnv (c, Kind.Arity (Vector.length ts)),
+			       ts)
+	       in
+		  Etype.hom (t, {con = con,
+				 expandOpaque = false,
+				 record = record,
+				 replaceCharWithWord8 = false,
+				 var = var})
+	       end
+	 end
+      
+      structure Scheme =
+	 struct
+	    open Scheme
+
+	    val toEnv = schemeToEnv
+
+	    fun fromEnv (s: Escheme.t): t =
+	       let
+		  val (tyvars, ty) = Escheme.dest s
+	       in
+		  Scheme.T {ty = Type.fromEnv ty,
+			    tyvars = tyvars}
+	       end
+	 end
+
+      structure Cons =
+	 struct
+	    open Cons
+	       
+	    fun fromEnv (Econs.T v): t =
+	       T (Vector.map (v, fn {name, scheme, ...} =>
+			      {name = name,
+			       scheme = Scheme.fromEnv scheme}))
+	 end
+
+      structure TypeStr =
+	 struct
+	    open TypeStr
+
+	    val toEnv = typeStrToEnv
+
+	    fun fromEnv (s: EtypeStr.t) =
+	       let
+		  val kind = EtypeStr.kind s
+	       in
+		  case EtypeStr.node s of
+		     EtypeStr.Datatype {cons, tycon} =>
+			data (Tycon.fromEnv (tycon, kind),
+			      kind,
+			      Cons.fromEnv cons)
+		   | EtypeStr.Scheme s => def (Scheme.fromEnv s, kind)
+		   | EtypeStr.Tycon c =>
+			tycon (Tycon.fromEnv (c, kind), kind)
+	       end
+
+	    val fromEnv =
+	       Trace.trace ("Interface.TypeStr.fromEnv", EtypeStr.layout, layout)
+	       fromEnv
+	 end
+   end
+
 structure Status =
    struct
       open Status
@@ -209,8 +507,8 @@ structure Info =
    struct
       (* The array is sorted by domain element. *)
       datatype ('a, 'b) t = T of {domain: 'a,
-				  isUsed: bool ref,
-				  range: 'b} array
+				  range: 'b,
+				  uses: 'a Uses.t} array
 	 
       fun bogus () = T (Array.tabulate (0, fn _ => Error.bug "impossible"))
 
@@ -222,32 +520,34 @@ structure Info =
       fun foreach (T a, f) =
 	 Array.foreach (a, fn {domain, range, ...} => f (domain, range))
 
+      fun forceUsed (T a) = Array.foreach (a, Uses.forceUsed o #uses)
+
       fun peek (T a, domain: 'a, toSymbol: 'a -> Symbol.t) =
 	 Option.map
 	 (BinarySearch.search (a, fn {domain = d, ...} =>
 			       Symbol.compare (toSymbol domain, toSymbol d)),
 	  fn i =>
 	  let
-	     val v as {isUsed, ...} =  Array.sub (a, i)
-	     val _ = isUsed := !Control.showBasisUsed
+	     val v as {uses, ...} =  Array.sub (a, i)
+	     val _ = Uses.add (uses, domain)
 	  in
 	     v
 	  end)
 
       val map: ('a, 'b) t * ('b -> 'b) -> ('a, 'b) t =
 	 fn (T a, f) =>
-	 T (Array.map (a, fn {domain, range, ...} =>
+	 T (Array.map (a, fn {domain, range, uses} =>
 		       {domain = domain,
-			isUsed = ref false,
-			range = f range}))
+			range = f range,
+			uses = uses}))
 
       val map2: ('a, 'b) t * ('a, 'b) t * ('b * 'b -> 'b) -> ('a, 'b) t =
 	 fn (T a, T a', f) =>
 	 T (Array.map2
-	    (a, a', fn ({domain, range = r, ...}, {range = r', ...}) =>
+	    (a, a', fn ({domain, range = r, uses}, {range = r', ...}) =>
 	     {domain = domain,
-	      isUsed = ref false,
-	      range = f (r, r')}))
+	      range = f (r, r'),
+	      uses = uses}))
    end
 
 val allTycons: Tycon.t list ref = ref (List.map (Tycon.prims, #1))
@@ -324,6 +624,42 @@ structure Structure =
       val hasInterface =
 	 Trace.trace2 ("Structure.hasInterface", layout, Interface.layout,
 		       Bool.layout) hasInterface
+
+      local
+	 datatype handleUses = Clear | Force
+	 fun make handleUses =
+	    let
+	       fun loop (T f) =
+		  let
+		     fun doit (sel, forceRange) =
+			let
+			   val Info.T a = sel f
+			in
+			   Array.foreach
+			   (a, fn {range, uses, ...} =>
+			    let
+			       val _ =
+				  case handleUses of
+				     Clear => Uses.clear uses
+				   | Force => Uses.forceUsed uses
+			       val _ = forceRange range
+			    in
+			       ()
+			    end)
+			end
+		     val _ = doit (#strs, loop)
+		     val _ = doit (#types, ignore)
+		     val _ = doit (#vals, ignore)
+		  in
+		     ()
+		  end
+	    in
+	       loop
+	    end
+      in
+	 val clearUsed = make Clear
+	 val forceUsed = make Force
+      end
 
       fun realize (S: t, I: Interface.t, realizeTycon) =
 	 let
@@ -429,12 +765,13 @@ structure Structure =
 		  let
 		     fun doit (Info.T a, layout) =
 			align (Array.foldr
-			       (a, [], fn ({domain, isUsed, range, ...}, ac) =>
-				if not showUsed orelse !isUsed
-				   then (case layout (domain, range) of
-					    NONE => ac
-					  | SOME l => l :: ac)
-				else ac))
+			       (a, [], fn ({domain, range, uses}, ac) =>
+				if showUsed andalso not (Uses.hasUse uses)
+				   then ac
+				else
+				   case layout (domain, range) of
+				      NONE => ac
+				    | SOME l => l :: ac))
 		  in
 		     align
 		     [str "sig",
@@ -519,10 +856,10 @@ structure Structure =
 	    fun make toSymbol =
 	       let
 		  val r = ref []
-		  fun add {domain, range} =
+		  fun add {domain, range, uses} =
 		     List.push (r, {domain = domain,
-				    isUsed = ref false,
-				    range = range})
+				    range = range,
+				    uses = uses})
 		  fun done () = 
 		     Info.T
 		     (QuickSort.sortArray
@@ -563,6 +900,7 @@ structure FunctorClosure =
 	 fun make f (T r) = f r
       in
 	 val argInterface = make #argInt
+	 val result = make #result
       end
 
       fun layout _ = Layout.str "<functor closure>"
@@ -611,40 +949,59 @@ structure Time:>
 structure Values =
    struct
       type ('a, 'b) value = {domain: 'a,
-			     isUsed: bool ref,
 			     range: 'b,
 			     scope: Scope.t,
-			     time: Time.t}
+			     time: Time.t,
+			     uses: 'a Uses.t}
       (* The domains of all elements in a values list have the same symbol. *)
       datatype ('a, 'b) t = T of ('a, 'b) value list ref
 
       fun new (): ('a, 'b) t = T (ref [])
 
-      fun pop (T r) = List.pop r
-
       fun isEmpty (T r) = List.isEmpty (Ref.! r)
 
       fun ! (T r) = Ref.! r
+
+      fun pop (T r) = List.pop r
    end
 
 structure NameSpace =
    struct
-      datatype ('a, 'b) t = T of {current: ('a, 'b) Values.t list ref,
-				  lookup: 'a -> ('a, 'b) Values.t,
-				  toSymbol: 'a -> Symbol.t}
+      datatype ('a, 'b) t =
+	 T of {class: string,
+	       current: ('a, 'b) Values.t list ref,
+	       defUses: {def: 'a,
+			 time: Time.t,
+			 uses: 'a Uses.t} list ref,
+	       lookup: 'a -> ('a, 'b) Values.t,
+	       region: 'a -> Region.t,
+	       toSymbol: 'a -> Symbol.t}
 
       fun values (T {lookup, ...}, a) = lookup a
 
-      fun new {lookup, toSymbol} =
-	 T {current = ref [],
+      fun new {class, lookup, region, toSymbol} =
+	 T {class = class,
+	    current = ref [],
+	    defUses = ref [],
 	    lookup = lookup,
+	    region = region,
 	    toSymbol = toSymbol}
 
-      fun peek (ns, a) =
+      fun newUses (T {defUses, ...}, def, time) =
+	 let
+	    val u = Uses.new ()
+	    val _ = List.push (defUses, {def = def,
+					 time = time,
+					 uses = u})
+	 in
+	    u
+	 end
+
+      fun peek (ns as T {toSymbol, ...}, a, {markUse: bool}) =
 	 case Values.! (values (ns, a)) of
 	    [] => NONE
-	  | {isUsed, range, ...} :: _ => 
-	       (isUsed := !Control.showBasisUsed
+	  | {range, uses, ...} :: _ => 
+	       (if markUse then Uses.add (uses, a) else ()
 		; SOME range)
 
       fun collect (T {current, toSymbol, ...}: ('a, 'b) t)
@@ -658,12 +1015,12 @@ structure NameSpace =
 	       val elts =
 		  List.revMap (!current, fn values =>
 			       let
-				  val {domain, isUsed, range, ...} =
+				  val {domain, range, uses, ...} =
 				     Values.pop values
 			       in
 				  {domain = domain,
-				   isUsed = isUsed,
-				   range = range}
+				   range = range,
+				   uses = uses}
 			       end)
 	       val _ = current := old
 	       val a =
@@ -729,7 +1086,9 @@ fun empty () =
       val {get = maybeAddTop: Symbol.t -> unit, ...} =
 	 Property.get (Symbol.plist,
 		       Property.initFun (fn s => List.push (topSymbols, s)))
-      fun ('a, 'b) make (toSymbol,
+      fun ('a, 'b) make (class: string,
+			 region: 'a -> Region.t,
+			 toSymbol: 'a -> Symbol.t,
 			 extract: All.t -> ('a, 'b) Values.t option,
 			 make: ('a, 'b) Values.t -> All.t)
 	 : ('a, 'b) NameSpace.t  =
@@ -749,20 +1108,34 @@ fun empty () =
 		   | SOME v => v
 	       end
 	 in
-	    NameSpace.new {lookup = lookup,
+	    NameSpace.new {class = class,
+			   lookup = lookup,
+			   region = region,
 			   toSymbol = toSymbol}
 	 end
+      val fcts = make ("functor", Fctid.region, Fctid.toSymbol,
+		       All.fctOpt, All.Fct)
+      val fixs = make ("fixity", Ast.Vid.region, Ast.Vid.toSymbol,
+		       All.fixOpt, All.Fix)
+      val sigs = make ("signature", Sigid.region, Sigid.toSymbol,
+		       All.sigOpt, All.Sig)
+      val strs = make ("structure", Strid.region, Strid.toSymbol,
+		       All.strOpt, All.Str)
+      val types = make ("type", Ast.Tycon.region, Ast.Tycon.toSymbol,
+			All.tycOpt, All.Tyc)
+      val vals = make ("variable", Ast.Vid.region, Ast.Vid.toSymbol,
+		       All.valOpt, All.Val)
    in
       T {currentScope = ref (Scope.new {isTop = true}),
-	 fcts = make (Fctid.toSymbol, All.fctOpt, All.Fct),
-	 fixs = make (Ast.Vid.toSymbol, All.fixOpt, All.Fix),
+	 fcts = fcts,
+	 fixs = fixs,
 	 lookup = lookupAll,
 	 maybeAddTop = maybeAddTop,
-	 sigs = make (Sigid.toSymbol, All.sigOpt, All.Sig),
-	 strs = make (Strid.toSymbol, All.strOpt, All.Str),
+	 sigs = sigs,
+	 strs = strs,
 	 topSymbols = topSymbols,
-	 types = make (Ast.Tycon.toSymbol, All.tycOpt, All.Tyc),
-	 vals = make (Ast.Vid.toSymbol, All.valOpt, All.Val)}
+	 types = types,
+	 vals = vals}
    end
 
 local
@@ -789,7 +1162,7 @@ in
 end
 
 fun collect (E as T r,
-	     keep: {isUsed: bool, scope: Scope.t} -> bool,
+	     keep: {hasUse: bool, scope: Scope.t} -> bool,
 	     le: {domain: Symbol.t, time: Time.t}
 	         * {domain: Symbol.t, time: Time.t} -> bool) =
    let
@@ -801,8 +1174,8 @@ fun collect (E as T r,
       fun doit ac vs =
 	 case Values.! vs of
 	    [] => ()
-	  | (z as {isUsed, scope, ...}) :: _ =>
-	       if keep {isUsed = !isUsed, scope = scope}
+	  | (z as {scope, uses, ...}) :: _ =>
+	       if keep {hasUse = Uses.hasUse uses, scope = scope}
 		  then List.push (ac, z)
 	       else ()
       val _ =
@@ -930,13 +1303,13 @@ fun dummyStructure (T {strs, types, vals, ...},
 	      val strs =
 		 Array.map (strs, fn (name, I) =>
 			    {domain = name,
-			     isUsed = ref false,
-			     range = get I})
+			     range = get I,
+			     uses = Uses.new ()})
 	      val types =
 		 Array.map (types, fn (name, s) =>
 			    {domain = name,
-			     isUsed = ref false,
-			     range = Interface.TypeStr.toEnv s})
+			     range = Interface.TypeStr.toEnv s,
+			     uses = Uses.new ()})
 	      val vals =
 		 Array.map (vals, fn (name, (status, scheme)) =>
 			    let
@@ -949,8 +1322,8 @@ fun dummyStructure (T {strs, types, vals, ...},
 				   | Status.Var => Vid.Var (var name)
 			    in
 			       {domain = name,
-				isUsed = ref false,
-				range = (vid, Interface.Scheme.toEnv scheme)}
+				range = (vid, Interface.Scheme.toEnv scheme),
+				uses = Uses.new ()}
 			    end)
 	   in
 	      Structure.T {interface = SOME I,
@@ -964,7 +1337,7 @@ fun dummyStructure (T {strs, types, vals, ...},
 	 List.foreach (tycons, fn (long, c) =>
 		       case Structure.peekLongtycon (S', long) of
 			  NONE => Error.bug "structure missing longtycon"
-			| SOME s=> f (c, s))
+			| SOME s => f (c, s))
    in
       (S, instantiate)
    end
@@ -1033,14 +1406,190 @@ fun layoutCurrentScope (E as T {currentScope, ...}) =
 	       {showUsed = false})
    end
 
-fun layoutUsed (E: t): Layout.t = layout' (E, #isUsed, {showUsed = true})
+fun layoutUsed (E: t): Layout.t = layout' (E, #hasUse, {showUsed = true})
+
+fun clearDefUses (E as T f) =
+   let
+      fun doit sel =
+	 let
+	    val NameSpace.T {defUses, ...} = sel f
+	 in
+	    defUses := []
+	 end
+      val _ = doit #fcts
+      val _ = doit #fixs
+      val _ = doit #sigs
+      val _ = doit #strs
+      val _ = doit #types
+      val _ = doit #vals
+      fun doit clearRange (Values.T r) =
+	 case !r of
+	    [] => ()
+	  | {range, uses, ...} :: _ =>
+	       (Uses.clear uses
+		; clearRange range)
+      val _ =
+	 foreachDefinedSymbol
+	 (E, {fcts = doit ignore,
+	      fixs = doit ignore,
+	      sigs = doit ignore,
+	      strs = doit Structure.clearUsed,
+	      types = doit ignore,
+	      vals = doit ignore})
+   in
+      ()
+   end
+
+(* Force everything that is currently in scope to be marked as used. *)
+fun forceUsed (E as T f) =
+   let
+      fun doit forceRange (Values.T r) =
+	 case !r of
+	    [] => ()
+	  | {uses, range, ...} :: _ =>
+	       (Uses.forceUsed uses
+		; forceRange range)
+      val _ =
+	 foreachDefinedSymbol
+	 (E, {fcts = doit (fn f => Option.app (FunctorClosure.result f,
+					       Structure.forceUsed)),
+	      fixs = doit ignore,
+	      sigs = doit ignore,
+	      strs = doit Structure.forceUsed,
+	      types = doit ignore,
+	      vals = doit ignore})
+   in
+      ()
+   end
+
+fun processDefUse (E as T f) =
+   let
+      val _ = forceUsed E
+      val all: {class: string,
+		def: Layout.t,
+		isUsed: bool,
+		region: Region.t,
+		uses: Region.t list} list ref = ref []
+      fun doit sel =
+	 let
+	    val NameSpace.T {class, defUses, region, toSymbol, ...} = sel f
+	 in
+	    List.foreach
+	    (!defUses, fn {def, uses, ...} =>
+	     List.push
+	     (all, {class = class,
+		    def = Symbol.layout (toSymbol def),
+		    isUsed = Uses.isUsed uses,
+		    region = region def,
+		    uses = List.fold (Uses.all uses, [], fn (u, ac) =>
+				      region u :: ac)}))
+	 end
+      val _ = doit #fcts
+      val _ = doit #sigs
+      val _ = doit #strs
+      val _ = doit #types
+      val _ = doit #vals
+      val a = Array.fromList (!all)
+      val _ =
+	 QuickSort.sortArray (a, fn ({region = r, ...}, {region = r', ...}) =>
+			      Region.<= (r, r'))
+      val l =
+	 Array.foldr
+	 (a, [], fn (z as {class, def, isUsed, region, uses}, ac) =>
+	  case ac of
+	     [] => [z]
+	   | (z' as {isUsed = i', region = r', uses = u', ...}) :: ac' =>
+		if Region.equals (region, r')
+		   then {class = class,
+			 def = def,
+			 isUsed = isUsed orelse i',
+			 region = region,
+			 uses = uses @ u'} :: ac'
+		else z :: ac)
+      val _ =
+	 if not (!Control.warnUnused)
+	    then ()
+	 else
+	    List.foreach
+	    (l, fn {class, def, isUsed, region, ...} =>
+	     if isUsed orelse Option.isNone (Region.left region)
+		then ()
+	     else
+		let
+		   open Layout
+		in
+		   Control.warning
+		   (region,
+		    seq [str (concat ["unused ", class, ": "]), def],
+		    empty)
+		end)
+      val _ =
+	 case !Control.showDefUse of
+	    NONE => ()
+	  | SOME f =>
+	       File.withOut
+	       (f, fn out =>
+		List.foreach
+		(l, fn {def, region, uses, ...} =>
+		 case Region.left region of
+		    NONE => ()
+		  | SOME p =>
+		       let
+			  val uses = Array.fromList uses
+			  val _ = QuickSort.sortArray (uses, Region.<=)
+			  val uses =
+			     Array.foldr
+			     (uses, [], fn (r, ac) =>
+			      case ac of
+				 [] => [r]
+			       | r' :: _ =>
+				    if Region.equals (r, r')
+				       then ac
+				    else r :: ac)
+			  open Layout
+		       in
+			  outputl
+			  (align [seq [str (concat [SourcePos.toString p, " "]),
+				       def],
+				  indent
+				  (align
+				   (List.map
+				    (uses, fn r =>
+				     str (concat [case Region.left r of
+						     NONE => "NONE"
+						   | SOME p =>
+							SourcePos.toString p,
+						  " "]))),
+				   4)],
+			   out)
+		       end))
+   in
+      ()
+   end
+
+fun newCons (T {vals, ...}, v) =
+   let
+      val v =
+	 Vector.map (v, fn {con, name} =>
+		     {con = con,
+		      name = name,
+		      uses = NameSpace.newUses (vals, Ast.Vid.fromCon name,
+						Time.now ())})
+   in
+      fn v' => Cons.T (Vector.map2
+		       (v, v', fn ({con, name, uses}, scheme) =>
+			{con = con,
+			 name = name,
+			 scheme = scheme,
+			 uses = uses}))
+   end
 
 (* ------------------------------------------------- *)
 (*                       peek                        *)
 (* ------------------------------------------------- *)
 
 local
-   fun make sel (T r, a) = NameSpace.peek (sel r, a)
+   fun make sel (T r, a) = NameSpace.peek (sel r, a, {markUse = true})
 in
    val peekFctid = make #fcts
    val peekFix = make #fixs
@@ -1054,8 +1603,8 @@ in
        | SOME (vid, s) => Option.map (Vid.deVar vid, fn x => (x, s))
 end
 
-fun peekCon (E: t, c: Ast.Con.t): (Con.t * Scheme.t) option =
-   case peekVid (E, Ast.Vid.fromCon c) of
+fun peekCon (T {vals, ...}, c: Ast.Con.t): (Con.t * Scheme.t) option =
+   case NameSpace.peek (vals, Ast.Vid.fromCon c, {markUse = false}) of
       NONE => NONE
     | SOME (vid, s) => Option.map (Vid.deCon vid, fn c => (c, s))
 
@@ -1212,19 +1761,51 @@ val peekLongtycon = PeekResult.toOption o peekLongtycon
 (*                      extend                       *)
 (* ------------------------------------------------- *)
 
-val extend: t * ('a, 'b) NameSpace.t * {domain: 'a,
-					isUsed: bool ref,
-					range: 'b,
-					scope: Scope.t,
-					time: Time.t} -> unit =
+structure ExtendUses =
+   struct
+      datatype 'a t =
+	 New
+       | Old of 'a Uses.t
+       | Rebind
+
+      fun fromIsRebind {isRebind} = if isRebind then Rebind else New
+   end
+
+val extend:
+   t * ('a, 'b) NameSpace.t * {domain: 'a,
+			       forceUsed: bool,
+			       range: 'b,
+			       scope: Scope.t,
+			       time: Time.t,
+			       uses: 'a ExtendUses.t} -> unit =
    fn (T {maybeAddTop, ...},
-       NameSpace.T {current, lookup, toSymbol, ...},
-       value as {domain, isUsed, range, scope, time}) =>
+       ns as NameSpace.T {current, defUses, lookup, toSymbol, ...},
+       {domain, forceUsed, range, scope, time, uses}) =>
    let
+      fun newUses () =
+	 let
+	    val u = NameSpace.newUses (ns, domain, time)
+	    val _ = if forceUsed then Uses.forceUsed u else ()
+	 in
+	    u
+	 end
       val values as Values.T r = lookup domain
+      datatype z = datatype ExtendUses.t
       fun new () =
-	 (List.push (current, values)
-	  ; List.push (r, value))
+	 let
+	    val _ = List.push (current, values)
+	    val uses =
+	       case uses of
+		  New => newUses ()
+		| Old u => u
+		| Rebind => Error.bug "rebind new"
+	 in
+	    {domain = domain,
+	     range = range,
+	     scope = scope,
+	     time = time,
+	     uses = uses}
+	 end
    in
       case !r of
 	 [] =>
@@ -1234,52 +1815,88 @@ val extend: t * ('a, 'b) NameSpace.t * {domain: 'a,
 		     then maybeAddTop (toSymbol domain)
 		  else ()
 	    in
-	       new ()
+	       r := [new ()]
 	    end
-       | {scope = scope', ...} :: l =>
+       | all as ({scope = scope', uses = uses', ...} :: rest) =>
 	    if Scope.equals (scope, scope')
-	       then r := value :: l
-	    else new ()
+	       then
+		  let
+		     val uses =
+			case uses of
+			   New => newUses ()
+			 | Old u => u
+			 | Rebind => uses'
+		  in
+		     r := {domain = domain,
+			   range = range,
+			   scope = scope,
+			   time = time,
+			   uses = uses} :: rest
+		  end
+	    else r := new () :: all
    end
 
-
 local
-   fun make get (E as T (fields as {currentScope, ...}), domain, range) =
+   val extend =
+      fn (E as T (fields as {currentScope, ...}), get,
+	  domain: 'a,
+	  range: 'b,
+	  forceUsed: bool,
+	  uses: 'a ExtendUses.t) =>
       let
 	 val ns = get fields
       in
 	 extend (E, ns, {domain = domain,
-			 isUsed = ref false,
+			 forceUsed = forceUsed,
 			 range = range,
 			 scope = !currentScope,
-			 time = Time.next ()})
+			 time = Time.next (),
+			 uses = uses})
       end
 in
-   val extendFctid = make #fcts
-   val extendFix = make #fixs
-   val extendSigid = make #sigs
-   val extendStrid = make #strs
-   val extendTycon = make #types
-   val extendVals = make #vals
+   fun extendFctid (E, d, r) = extend (E, #fcts, d, r, false, ExtendUses.New)
+   fun extendFix (E, d, r) = extend (E, #fixs, d, r, false, ExtendUses.New)
+   fun extendSigid (E, d, r) = extend (E, #sigs, d, r, false, ExtendUses.New)
+   fun extendStrid (E, d, r) = extend (E, #strs, d, r, false, ExtendUses.New)
+   fun extendVals (E, d, r, eu) = extend (E, #vals, d, r, false, eu)
+   fun extendTycon (E, d, s, ir) =
+      let
+	 val forceUsed =
+	    let
+	       datatype z = datatype TypeStr.node
+	    in
+	       case TypeStr.node s of
+		  Datatype _ => true
+		| Scheme _ => false
+		| Tycon _ => true
+	    end
+	 val _ = extend (E, #types, d, s, forceUsed, ExtendUses.fromIsRebind ir)
+	 val Cons.T v = TypeStr.cons s
+      in
+	 Vector.foreach
+	 (v, fn {con, name, scheme, uses} => 
+	  extendVals (E, Ast.Vid.fromCon name, (Vid.Con con, scheme),
+		      ExtendUses.Old uses))
+      end
 end
-
-fun extendCon (E, c, c', s) =
-   extendVals (E, Ast.Vid.fromCon c, (Vid.Con c', s))
-	       
+       
 fun extendExn (E, c, c', s) =
-   extendVals (E, Ast.Vid.fromCon c, (Vid.Exn c', s))
+   extendVals (E, Ast.Vid.fromCon c, (Vid.Exn c', s), ExtendUses.New)
 	       
-fun extendVar (E, x, x', s) =
-   extendVals (E, Ast.Vid.fromVar x, (Vid.Var x', s))
+fun extendVar (E, x, x', s, ir) =
+   extendVals (E, Ast.Vid.fromVar x, (Vid.Var x', s),
+	       ExtendUses.fromIsRebind ir)
 
 val extendVar =
-   Trace.trace4
-   ("extendVar", Layout.ignore, Ast.Var.layout, Var.layout, Scheme.layoutPretty,
+   Trace.trace
+   ("extendVar",
+    fn (_, x, x', s, _) =>
+    Layout.tuple [Ast.Var.layout x, Var.layout x', Scheme.layoutPretty s],
     Unit.layout)
    extendVar
 
 fun extendOverload (E, p, x, yts, s) =
-   extendVals (E, Ast.Vid.fromVar x, (Vid.Overload (p, yts), s))
+   extendVals (E, Ast.Vid.fromVar x, (Vid.Overload (p, yts), s), ExtendUses.New)
 
 (* ------------------------------------------------- *)   
 (*                       local                       *)
@@ -1299,16 +1916,17 @@ local
 	    fn () =>
 	    let
 	       val c2 = !current
-	       val lift = List.map (c2, Values.pop)
+	       val lift = List.revMap (c2, Values.pop)
 	       val _ = List.foreach (c1, fn v => (Values.pop v; ()))
 	       val _ = current := old
 	       val _ =
-		  List.foreach (lift, fn {domain, isUsed, range, time, ...} =>
+		  List.foreach (lift, fn {domain, range, time, uses, ...} =>
 				extend (E, ns, {domain = domain,
-						isUsed = isUsed,
+						forceUsed = false,
 						range = range,
 						scope = s0,
-						time = time}))
+						time = time,
+						uses = ExtendUses.Old uses}))
 	    in
 	       ()
 	    end
@@ -1396,7 +2014,7 @@ fun makeStructure (T {currentScope, fixs, strs, types, vals, ...}, make) =
 
 fun scope (T {currentScope, fixs, strs, types, vals, ...}, th) =
    let
-      fun doit (NameSpace.T {current, ...}) =
+      fun doit (ns as NameSpace.T {current, ...}) =
 	 let
 	    val old = !current
 	    val _ = current := []
@@ -1418,7 +2036,7 @@ fun scope (T {currentScope, fixs, strs, types, vals, ...}, th) =
 
 fun scopeAll (T {currentScope, fcts, fixs, sigs, strs, types, vals, ...}, th) =
    let
-      fun doit (NameSpace.T {current, ...}) =
+      fun doit (ns as NameSpace.T {current, ...}) =
 	 let
 	    val old = !current
 	    val _ = current := []
@@ -1439,7 +2057,7 @@ fun scopeAll (T {currentScope, fcts, fixs, sigs, strs, types, vals, ...}, th) =
    in
       res
    end
-
+   
 fun openStructure (E as T {currentScope, strs, vals, types, ...},
 		   Structure.T {strs = strs',
 				vals = vals',
@@ -1447,12 +2065,13 @@ fun openStructure (E as T {currentScope, strs, vals, types, ...},
    let
       val scope = !currentScope
       fun doit (ns, Info.T a) =
-	 Array.foreach (a, fn {domain, isUsed, range} =>
+	 Array.foreach (a, fn {domain, range, uses} =>
 			extend (E, ns, {domain = domain,
-					isUsed = isUsed,
+					forceUsed = false,
 					range = range,
 					scope = scope,
-					time = Time.next ()}))
+					time = Time.next (),
+					uses = ExtendUses.Old uses}))
       val _ = doit (strs, strs')
       val _ = doit (vals, vals')
       val _ = doit (types, types')
@@ -1465,15 +2084,15 @@ fun makeOpaque (E: t, S: Structure.t, I: Interface.t, {prefix: string}) =
       fun fixCons (Cons.T cs, Cons.T cs') =
 	 Cons.T
 	 (Vector.map
-	  (cs', fn {con, name, scheme} =>
+	  (cs', fn {con, name, scheme, ...} =>
 	   let
-	      val con =
+	      val (con, uses) =
 		 case Vector.peek (cs, fn {name = n, ...} =>
 				   Ast.Con.equals (n, name)) of
-		    NONE => Con.bogus
-		  | SOME {con, ...} => con
+		    NONE => (Con.bogus, Uses.new ())
+		  | SOME {con, uses, ...} => (con, uses)
 	   in
-	      {con = con, name = name, scheme = scheme}
+	      {con = con, name = name, scheme = scheme, uses = uses}
 	   end))
       val (S', instantiate) = dummyStructure (E, I, {prefix = prefix,
 						     tyconNewString = true})
@@ -1756,21 +2375,24 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 					      " but not in structure: "])],
 				   empty)
 			    in
-			       bogus c
+			       {domain = name,
+				range = bogus c,
+				uses = Uses.new ()}
 			    end
 		      else
 			 let
-			    val {domain, range, ...} = Array.sub (structArray, i)
+			    val {domain, range, uses} =
+			       Array.sub (structArray, i)
 			 in
 			    if namesEqual (domain, name)
 			       then (r := i + 1
-				     ; doit (name, range, c))
+				     ; {domain = domain,
+					range = doit (name, range, c),
+					uses = uses})
 			    else find (i + 1)
 			 end
 		in
-		   {domain = name,
-		    isUsed = ref false,
-		    range = find (!r)}
+		   find (!r)
 		end)
 	 in
 	    Info.T array
@@ -2034,14 +2656,14 @@ fun snapshot (E as T {currentScope, fcts, fixs, sigs, strs, types, vals, ...})
       fun doit (NameSpace.T {current, ...}) (v as Values.T vs) =
 	 case ! vs of
 	    [] => ()
-	  | {domain, isUsed, range, ...} :: _ =>
+	  | {domain, range, uses, ...} :: _ =>
 	       List.push
 	       (add, fn s0 =>
 		(List.push (vs, {domain = domain,
-				 isUsed = isUsed,
 				 range = range,
 				 scope = s0,
-				 time = Time.next ()})
+				 time = Time.next (),
+				 uses = uses})
 		 ; List.push (current, v)))
       val _ =
 	 foreachTopLevelSymbol (E, {fcts = doit fcts,
@@ -2103,8 +2725,6 @@ fun snapshot (E as T {currentScope, fcts, fixs, sigs, strs, types, vals, ...})
       end
    end
 
-val useFunctorSummary = ref false
-		     
 fun functorClosure
    (E: t,
     prefix: string,
@@ -2127,7 +2747,7 @@ fun functorClosure
       val _ = TypeEnv.tick {useBeforeDef = fn _ => Error.bug "functor tick"}
       val (formal, instantiate) =
 	 dummyStructure (E, argInt, {prefix = prefix, tyconNewString = false})
-      val _ = useFunctorSummary := true
+      val _ = insideFunctor := true
       (* Keep track of all tycons created during the instantiation of the
        * functor.  These will later become the generative tycons that will need
        * to be recreated for each functor application.
@@ -2138,6 +2758,7 @@ fun functorClosure
        *)
       val _ = newTycons := []
       val (_, result) = makeBody (formal, [])
+      val _ = Option.app (result, Structure.forceUsed)
       val generative = !newTycons
       val _ = allTycons := let
 			      fun loop cs =
@@ -2151,16 +2772,17 @@ fun functorClosure
 			      loop (!allTycons)
 			   end
       val _ = newTycons := []
-      val _ = useFunctorSummary := false
+      val _ = insideFunctor := false
       val restore =
 	 if !Control.elaborateOnly
 	    then fn f => f ()
 	 else snapshot E
       fun apply (actual, nest) =
-	 if not (!useFunctorSummary) andalso not (!Control.elaborateOnly)
+	 if not (!insideFunctor) andalso not (!Control.elaborateOnly)
 	    then restore (fn () => makeBody (actual, nest))
 	 else
 	    let
+	       val _ = Structure.forceUsed actual
 	       val {destroy = destroy1,
 		    get = tyconTypeStr: Tycon.t -> TypeStr.t option,
 		    set = setTyconTypeStr, ...} =
@@ -2205,10 +2827,11 @@ fun functorClosure
 	       fun replaceCons (Cons.T v): Cons.t =
 		  Cons.T
 		  (Vector.map
-		   (v, fn {con, name, scheme} =>
+		   (v, fn {con, name, scheme, uses} =>
 		    {con = con,
 		     name = name,
-		     scheme = replaceScheme scheme}))
+		     scheme = replaceScheme scheme,
+		     uses = uses}))
 	       fun replaceTypeStr (s: TypeStr.t): TypeStr.t =
 		  let
 		     val k = TypeStr.kind s
@@ -2287,17 +2910,17 @@ structure InterfaceEnv =
 			 vals: (Ast.Vid.t, Status.t * Scheme.t) NameSpace.t}
 
       val allowDuplicates = ref false
-	 
+
       fun extend (T (fields as {currentScope, ...}),
 		  domain, range, kind: string, ns, region): unit =
 	 let
 	    val scope = !currentScope
 	    val NameSpace.T {current, lookup, toSymbol, ...} = ns fields
 	    fun value () = {domain = domain,
-			    isUsed = ref false,
 			    range = range,
 			    scope = scope,
-			    time = Time.next ()}
+			    time = Time.next (),
+			    uses = Uses.new ()}
 	    val values as Values.T r = lookup domain
 	    fun new () = (List.push (current, values)
 			  ; List.push (r, value ()))
@@ -2329,7 +2952,7 @@ structure InterfaceEnv =
       val lookupSigid = fn (T {env, ...}, x) => lookupSigid (env, x)
 
       local
-	 fun make sel (T r, a) = NameSpace.peek (sel r, a)
+	 fun make sel (T r, a) = NameSpace.peek (sel r, a, {markUse = true})
       in
 	 val peekStrid = make #strs
 	 val peekTycon = make #types
@@ -2421,7 +3044,7 @@ structure InterfaceEnv =
       val extendVid =
 	 fn (E, v, st, s) => extendVid (E, v, st, s, Ast.Vid.region v)
 
-      fun extendCon (E, c, c', s) =
+      fun extendCon (E, c, s) =
 	 extendVid (E, Ast.Vid.fromCon c, Status.Con, s)
 
       fun extendExn (E, c, s) =
@@ -2441,15 +3064,19 @@ fun makeInterfaceEnv (env as T {currentScope, ...}): InterfaceEnv.t =
 		       (fn _ => {strs = Values.new (),
 				 types = Values.new (),
 				 vals = Values.new ()}))
-      fun make (sel, toSymbol: 'a -> Symbol.t): ('a, 'b) NameSpace.t =
-	 NameSpace.new {lookup = sel o lookupAll o toSymbol,
+      fun make (sel, class, region, toSymbol: 'a -> Symbol.t)
+	 : ('a, 'b) NameSpace.t =
+	 NameSpace.new {class = class,
+			lookup = sel o lookupAll o toSymbol,
+			region = region,
 			toSymbol = toSymbol}
    in
-      InterfaceEnv.T {currentScope = currentScope,
-		      env = env,
-		      strs = make (#strs, Strid.toSymbol),
-		      types = make (#types, Ast.Tycon.toSymbol),
-		      vals = make (#vals, Ast.Vid.toSymbol)}
+      InterfaceEnv.T
+      {currentScope = currentScope,
+       env = env,
+       strs = make (#strs, "structure", Strid.region, Strid.toSymbol),
+       types = make (#types, "type", Ast.Tycon.region, Ast.Tycon.toSymbol),
+       vals = make (#vals, "variable", Ast.Vid.region, Ast.Vid.toSymbol)}
    end
 
 val newTycon = fn (s, k, a) => newTycon (s, k, a, {newString = true})

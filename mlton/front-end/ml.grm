@@ -254,7 +254,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
     | RBRACKET | REC | RPAREN | SEMICOLON | SHARING | SIG | SIGNATURE | STRUCT
     | STRUCTURE | THEN | TYPE | VAL | WHERE | WHILE | WILD | WITH | WITHTYPE
       (* Extensions *)
-    | BUILD_CONST | CONST | EXPORT | FFI | IMPORT | PRIM
+    | BASIS_DONE | BUILD_CONST | CONST | EXPORT | FFI | IMPORT | PRIM
 
 %nonterm
          aexp of Exp.node
@@ -518,6 +518,7 @@ topdecnode
       in
 	 Topdec.Functor funbinds
       end)
+   | BASIS_DONE longid (Topdec.BasisDone {ffi = Longstrid.fromSymbols longid})
 
 (*---------------------------------------------------*)
 (*                    Structures                     *)

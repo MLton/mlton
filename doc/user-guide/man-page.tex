@@ -69,10 +69,10 @@ performance cost to {\tt -exn-history true}, both in memory usage of
 exceptions and in run time, because of additional work that must be
 performed at each exception construction, raise, and handle.
 
-\option{-export-header \falseTrue}
-Causes {\mlton} to print a C header file with prototypes for all of
-the functions exported from SML, and then exit.  This flag is useful
-for programs that use {\export} expressions (see \secref{export}).
+\option{-export-header {\it file}}
+Causes {\mlton} to create {\it file} with C prototypes for all of the
+functions exported from SML to C.  This flag is useful for programs
+that use {\export} expressions (see \secref{export}).
 
 \option{-ieee-fp \falseTrue}
 Control whether or not the native code generator is pedantic about following
@@ -140,14 +140,19 @@ error if {\tt e1} is not of type {\tt unit}.  This can be helpful in
 detecting curried applications that are mistakenly not fully applied.
 To silence spurious errors, you can use {\tt ignore e1}.
 
-\option{-show-basis \falseTrue}
-If true, {\mlton} prints the basis library and exits.  When used with
-an input file, {\mlton} prints the basis defined by the input program.
+\option{-show-basis {\it file}}
+Causes {\mlton} to pretty print to {\it file} the basis defined by the
+input program.  When used with no input, {\mlton} pretty prints the
+entire basis library.
 
-\option{-show-basis-used \falseTrue}
-If true, {\mlton} prints the types, values, signatures, structures,
-and functors from the basis library that the input program uses, and
-then exits.
+\option{-show-basis-used {\it file}}
+Causes {\mlton} to pretty print to {\it file} the portion of the basis
+library that the input program uses.
+
+\option{-show-def-use {\it file}}
+Causes {\mlton} to output def-use information to {\it file}.  Each
+identifier that is defined appears on a line, follwed on subequent
+lines by the position of each use.
 
 \option{-stop \choiceFour{f}{g}{o}{sml}}
 Secify pass to stop at.\\
@@ -179,6 +184,9 @@ How verbose to be about what passes are running.  The default is 0.\\
 
 \option{-warn-match \trueFalse}
 Whether or not to display nonexhaustive and redundant match warnings.
+
+\option{-warn-unused \falseTrue}
+Whether or not to report unused identifiers.
 
 \end{description}
 

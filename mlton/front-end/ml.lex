@@ -127,17 +127,22 @@ hexnum={hexDigit}+;
 %%
 <INITIAL>{ws}	=> (continue ());
 <INITIAL>{eol}	=> (Source.newline (source, yypos); continue ());
-<INITIAL>"_const" => (tok (Tokens.CONST, source, yypos,
-			   yypos + size yytext));
-<INITIAL>"_build_const" => (tok (Tokens.BUILD_CONST, source, yypos,
-				 yypos + size yytext));
-<INITIAL>"_export" => (tok (Tokens.EXPORT, source, yypos, yypos + size yytext));
-<INITIAL>"_ffi" => (tok (Tokens.FFI, source, yypos, yypos + size yytext));
-<INITIAL>"_import" => (tok (Tokens.IMPORT, source, yypos, yypos + size yytext));
-<INITIAL>"_overload" => (tok (Tokens.OVERLOAD, source, yypos,
-			      yypos + size yytext));
-<INITIAL>"_prim" => (tok (Tokens.PRIM, source, yypos,
-			  yypos + size yytext));
+<INITIAL>"_basis_done" =>
+   (tok (Tokens.BASIS_DONE, source, yypos, yypos + size yytext));
+<INITIAL>"_const" =>
+   (tok (Tokens.CONST, source, yypos, yypos + size yytext));
+<INITIAL>"_build_const" =>
+   (tok (Tokens.BUILD_CONST, source, yypos, yypos + size yytext));
+<INITIAL>"_export" =>
+   (tok (Tokens.EXPORT, source, yypos, yypos + size yytext));
+<INITIAL>"_ffi" =>
+   (tok (Tokens.FFI, source, yypos, yypos + size yytext));
+<INITIAL>"_import" =>
+   (tok (Tokens.IMPORT, source, yypos, yypos + size yytext));
+<INITIAL>"_overload" =>
+   (tok (Tokens.OVERLOAD, source, yypos, yypos + size yytext));
+<INITIAL>"_prim" =>
+   (tok (Tokens.PRIM, source, yypos, yypos + size yytext));
 <INITIAL>"_"	=> (tok (Tokens.WILD, source, yypos, yypos + 1));
 <INITIAL>","	=> (tok (Tokens.COMMA, source, yypos, yypos + 1));
 <INITIAL>"{"	=> (tok (Tokens.LBRACE, source, yypos, yypos + 1));

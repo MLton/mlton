@@ -97,8 +97,8 @@ val eliminateOverflow =
 
 val exportHeader =
    control {name = "export header",
-	    default = false,
-	    toString = Bool.toString}
+	    default = NONE,
+	    toString = Option.toString File.toString}
    
 val exnHistory = control {name = "exn history",
 			  default = false,
@@ -196,6 +196,10 @@ val instrumentSxml = control {name = "instrument Sxml",
 			      default = false,
 			      toString = Bool.toString}
 
+val keepDefUse = control {name = "keep def-use",
+			  default = false,
+			  toString = Bool.toString}
+   
 val keepMachine = control {name = "keep Machine",
 			   default = false,
 			   toString = Bool.toString}
@@ -398,12 +402,16 @@ val sequenceUnit = control {name = "sequence unit",
 			    toString = Bool.toString}
 
 val showBasis = control {name = "show basis",
-			 default = false,
-			 toString = Bool.toString}
+			 default = NONE,
+			 toString = Option.toString File.toString}
    
 val showBasisUsed = control {name = "show basis used",
-			     default = false,
-			     toString = Bool.toString}
+			     default = NONE,
+			     toString = Option.toString File.toString}
+
+val showDefUse = control {name = "show def-use",
+			  default = NONE,
+			  toString = Option.toString File.toString}
 
 val showTypes = control {name = "show types",
 			 default = false,
@@ -548,6 +556,10 @@ val warnNonExhaustive = control {name = "warn non-exhaustive",
 val warnRedundant = control {name = "warn redundant",
 			     default = true,
 			     toString = Bool.toString}
+
+val warnUnused = control {name = "warn unused",
+			  default = false,
+			  toString = Bool.toString}
 
 val xmlPassesSet : (string -> string list Result.t) ref = 
    control {name = "xmlPassesSet",

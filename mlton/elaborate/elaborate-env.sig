@@ -24,6 +24,9 @@ signature ELABORATE_ENV =
    sig
       include ELABORATE_ENV_STRUCTS
 
+      structure AdmitsEquality: ADMITS_EQUALITY
+      sharing AdmitsEquality = TypeEnv.Tycon.AdmitsEquality
+	 
       structure Decs: DECS
       sharing CoreML = Decs.CoreML
 
@@ -52,14 +55,44 @@ signature ELABORATE_ENV =
 
 	    val layout: t -> Layout.t
 	 end
-      structure TypeStr: TYPE_STR
-      sharing TypeStr.Con = CoreML.Con
+      structure TypeStr:
+	 sig
+	    structure Cons:
+	       sig
+		  type t
+
+		  val empty: t
+		  val layout: t -> Layout.t
+	       end
+	    structure Kind: TYCON_KIND
+	    structure Tycon:
+	       sig
+		  type t
+	       end
+	       
+	    type t
+
+	    datatype node =
+	       Datatype of {cons: Cons.t,
+			    tycon: Tycon.t}
+	     | Scheme of Scheme.t
+	     | Tycon of Tycon.t
+
+	    val abs: t -> t
+	    val admitsEquality: t -> AdmitsEquality.t
+	    val apply: t * Type.t vector -> Type.t
+	    val bogus: Kind.t -> t
+	    val cons: t -> Cons.t
+	    val data: Tycon.t * Kind.t * Cons.t -> t
+	    val def: Scheme.t * Kind.t -> t
+	    val kind: t -> Kind.t
+	    val layout: t -> Layout.t
+	    val node: t -> node
+	    val toTyconOpt: t -> Tycon.t option (* NONE on Scheme *)
+	    val tycon: Tycon.t * Kind.t -> t
+	 end
       sharing TypeStr.Kind = Tycon.Kind
-      sharing TypeStr.Name = Ast.Con
-      sharing TypeStr.Scheme = Scheme
       sharing TypeStr.Tycon = CoreML.Tycon
-      sharing TypeStr.Type = Type
-      sharing TypeStr.Tyvar = Ast.Tyvar
       structure Interface: INTERFACE
       sharing Interface.Ast = Ast
       sharing Interface.EnvTypeStr = TypeStr
@@ -67,10 +100,11 @@ signature ELABORATE_ENV =
 	 sig
 	    type t
 	       
-	    (* ffi represents MLtonFFI, which is built by the basis library
-	     * and is set in compile.sml after processing the basis.
+	    (* ffi represents MLtonFFI, which is built by the basis library and
+	     * set via the special _set_ffi topdec.
 	     *)
 	    val ffi: t option ref
+	    val forceUsed: t -> unit
 	 end
       structure FunctorClosure:
 	 sig
@@ -90,12 +124,15 @@ signature ELABORATE_ENV =
 	       sig
 		  type t
 	       end
-	    structure TypeStr: TYPE_STR
+	    structure TypeStr:
+	       sig
+		  type t
+	       end
 
 	    type t
 
 	    val allowDuplicates: bool ref
-	    val extendCon: t * Ast.Con.t * CoreML.Con.t * Scheme.t -> unit
+	    val extendCon: t * Ast.Con.t * Scheme.t -> unit
 	    val extendExn: t * Ast.Con.t * Scheme.t -> unit
 	    val extendStrid: t * Ast.Strid.t * Interface.t -> unit
 	    val extendTycon: t * Ast.Tycon.t * TypeStr.t -> unit
@@ -112,6 +149,7 @@ signature ELABORATE_ENV =
 
       type t
 
+      val clearDefUses: t -> unit
       (* cut keeps only those bindings in the structure that also appear
        * in the interface.  It proceeds recursively on substructures.
        *)
@@ -120,14 +158,14 @@ signature ELABORATE_ENV =
 	 * {isFunctor: bool, opaque: bool, prefix: string} * Region.t
 	 -> Structure.t * Decs.t
       val empty: unit -> t
-      val extendCon: t * Ast.Con.t * CoreML.Con.t * Scheme.t -> unit
       val extendExn: t * Ast.Con.t * CoreML.Con.t * Scheme.t -> unit
       val extendFctid: t * Ast.Fctid.t * FunctorClosure.t -> unit
       val extendFix: t * Ast.Vid.t * Ast.Fixity.t -> unit
       val extendSigid: t * Ast.Sigid.t * Interface.t -> unit
       val extendStrid: t * Ast.Strid.t * Structure.t -> unit
-      val extendTycon: t * Ast.Tycon.t * TypeStr.t -> unit
-      val extendVar: t * Ast.Var.t * CoreML.Var.t * Scheme.t -> unit
+      val extendTycon: t * Ast.Tycon.t * TypeStr.t * {isRebind: bool} -> unit
+      val extendVar:
+	 t * Ast.Var.t * CoreML.Var.t * Scheme.t * {isRebind: bool} -> unit
       val extendOverload:
 	 t * Ast.Priority.t * Ast.Var.t * (CoreML.Var.t * Type.t) vector * Scheme.t
 	 -> unit
@@ -158,7 +196,11 @@ signature ELABORATE_ENV =
       val lookupSigid: t * Ast.Sigid.t -> Interface.t option
       val makeStructure: t * (unit -> 'a) -> 'a * Structure.t
       val makeInterfaceEnv: t -> InterfaceEnv.t
-      val newTycon: string * Tycon.Kind.t * Tycon.AdmitsEquality.t -> Tycon.t
+      val newCons: ((t * {con: CoreML.Con.t,
+			  name: Ast.Con.t} vector)
+		    -> Scheme.t vector
+		    -> TypeStr.Cons.t)
+      val newTycon: string * Tycon.Kind.t * AdmitsEquality.t -> Tycon.t
       (* openStructure (E, S) opens S in the environment E. *) 
       val openStructure: t * Structure.t -> unit
       val peekFix: t * Ast.Vid.t -> Ast.Fixity.t option
@@ -173,5 +215,6 @@ signature ELABORATE_ENV =
       val scopeAll: t * (unit -> 'a) -> 'a
       val setTyconNames: t -> unit
       val sizeMessage: t -> Layout.t
+      val processDefUse: t -> unit
    end
 

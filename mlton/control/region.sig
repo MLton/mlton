@@ -17,8 +17,11 @@ signature REGION =
       
       type t
 
+      val <= : t * t -> bool
       val append: t * t -> t
       val bogus: t
+      val compare: t * t -> Relation.t
+      val equals: t * t -> bool
       val extendRight: t * SourcePos.t -> t
       val left: t -> SourcePos.t option
       val layout: t -> Layout.t

@@ -235,47 +235,46 @@ in
 		   (E, Ast.Tycon.fromSymbol (Symbol.fromString
 					     (Tycon.originalName tycon),
 					     Region.bogus),
-		    TypeStr.tycon (tycon, kind)))
+		    TypeStr.tycon (tycon, kind),
+		    {isRebind = false}))
 	       val _ =
 		  Vector.foreach
 		  (primitiveDatatypes, fn {tyvars, tycon, cons} =>
 		   let
-		      val cs =
-			 Vector.map
-			 (cons, fn {arg, con} =>
-			  let
-			     val resultType =
-				Type.con (tycon, Vector.map (tyvars, Type.var))
-			     val scheme =
-				Scheme.make
-				{canGeneralize = true,
-				 ty = (case arg of
-					  NONE => resultType
-					| SOME t => Type.arrow (t, resultType)),
-				 tyvars = tyvars}
-			  in
-			     {con = con,
-			      name = Con.toAst con,
-			      scheme = scheme}
-			  end)
-		      val _ =
-			 Vector.foreach (cs, fn {con, name, scheme} =>
-					 extendCon (E, name, con, scheme))
+		      val cons =
+			 Env.newCons
+			 (E, Vector.map (cons, fn {arg, con} =>
+					 {con = con, name = Con.toAst con}))
+			 (Vector.map
+			  (cons, fn {arg, ...} =>
+			   let
+			      val resultType =
+				 Type.con (tycon, Vector.map (tyvars, Type.var))
+			   in
+			      Scheme.make
+			      {canGeneralize = true,
+			       ty = (case arg of
+					NONE => resultType
+				      | SOME t => Type.arrow (t, resultType)),
+			       tyvars = tyvars}
+			   end))
 		   in
 		      extendTycon
 		      (E, Tycon.toAst tycon,
 		       TypeStr.data (tycon,
 				     TypeStr.Kind.Arity (Vector.length tyvars),
-				     TypeStr.Cons.T cs))
+				     cons),
+		       {isRebind = false})
 		   end)
 	       val _ =
 		  extendTycon (E,
 			       Ast.Tycon.fromSymbol (Symbol.unit, Region.bogus),
 			       TypeStr.def (Scheme.fromType Type.unit,
-					    TypeStr.Kind.Arity 0))
+					    TypeStr.Kind.Arity 0),
+			       {isRebind = false})
 	       val scheme = Scheme.fromType Type.exn
 	       val _ = List.foreach (primitiveExcons, fn c =>
-				     extendCon (E, Con.toAst c, c, scheme))
+				     extendExn (E, Con.toAst c, c, scheme))
 	    in
 	       ()
 	    end
@@ -347,13 +346,6 @@ in
 	       ; withFiles (libsFile "build", 
 			    fn fs => parseAndElaborateFiles (fs, basisEnv,
 							     lookupConstant))))
-	  val _ =
-	     Env.Structure.ffi
-	     := (Env.lookupLongstrid
-		 (basisEnv,
-		  Ast.Longstrid.short
-		  (Ast.Strid.fromSymbol (Symbol.fromString "MLtonFFI",
-					 Region.bogus))))
 	  fun doit name =
 	    let
 	      fun libFile f = libsFile (String./ (name, f))
@@ -436,52 +428,61 @@ exception Done
 
 fun elaborate {input: File.t list}: Xml.Program.t =
    let
-      fun parseElabMsg () = (lexAndParseMsg (); elaborateMsg ())
       val {basis, prefix, suffix, ...} = selectBasisLibrary ()
-      val _ = Elaborate.allowRebindEquals := false
-      fun parseAndElab () =
-	 parseAndElaborateFiles (input, basisEnv, lookupConstantError)
       val _ =
-	 if !Control.showBasisUsed
-	    then (Env.scopeAll (basisEnv, parseAndElab)
-		  ; Layout.outputl (Env.layoutUsed basisEnv, Out.standard)
-		  ; raise Done)
-	 else ()
-      val _ =
-	 if !Control.showBasis
-	    then
-	       let
-		  val lay =
-		     case input of
-			[] => Env.layout basisEnv
-		      | _ => 
-			   Env.scopeAll
-			   (basisEnv, fn () =>
-			    (parseAndElab ()
-			     ; Env.layoutCurrentScope basisEnv))
-		  val _ = Layout.outputl (lay, Out.standard)
-	       in
-		  raise Done
-	       end
-	 else ()
-      val input = parseAndElab ()
-      val _ = if !Control.elaborateOnly then raise Done else ()
-      val _ =
-	 if not (!Control.exportHeader)
+	 if List.isEmpty input
 	    then ()
-	 else 
-	    let
-	       val _ =
-		  File.outputContents
-		  (concat [!Control.libDir, "/include/types.h"],
-		   Out.standard)
-	       val _ = print "\n"
-	       val _ = Ffi.declareHeaders {print = print}
-	    in
-	       raise Done
-	    end
+	 else Env.clearDefUses basisEnv
+      val input =
+	 Env.scopeAll
+	 (basisEnv, fn () =>
+	  let
+	     val res = parseAndElaborateFiles (input, basisEnv,
+					       lookupConstantError)
+	     val _ =
+		case !Control.showBasis of
+		   NONE => ()
+		 | SOME f => 
+		      let
+			 val lay =
+			    if List.isEmpty input
+			       then Env.layout basisEnv
+			    else Env.layoutCurrentScope basisEnv
+		      in
+			 File.withOut (f, fn out => Layout.outputl (lay, out))
+		      end
+	     val _ =
+		if isSome (!Control.showDefUse) orelse !Control.warnUnused
+		   then Env.processDefUse basisEnv
+		else ()
+	  in
+	     res
+	  end)
+      val _ = 
+	 case !Control.showBasisUsed of
+	    NONE => ()
+	  | SOME f => 
+	       File.withOut (f, fn out =>
+			     Layout.outputl (Env.layoutUsed basisEnv, out))
+      val _ =
+	 case !Control.exportHeader of
+	    NONE => ()
+	  | SOME f => 
+	       File.withOut
+	       (f, fn out =>
+		let
+		   val _ =
+		      File.outputContents
+		      (concat [!Control.libDir, "/include/types.h"], out)
+		   fun print s = Out.output (out, s)
+		   val _ = print "\n"
+		   val _ = Ffi.declareHeaders {print = print}
+		in
+		   ()
+		end)
+      val _ = (lexAndParseMsg (); elaborateMsg ())
+      val _ = if !Control.elaborateOnly then raise Done else ()
       val user = Decs.toList (Decs.appends [prefix, input, suffix])
-      val _ = parseElabMsg ()
       val basis = Decs.toList basis
       val basis =
 	 if !Control.deadCode

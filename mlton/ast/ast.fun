@@ -353,7 +353,8 @@ structure Topdec =
    struct
       open Wrap
       datatype node =
-	 Functor of {arg: FctArg.t,
+	 BasisDone of {ffi: Longstrid.t}
+       | Functor of {arg: FctArg.t,
 		     body: Strexp.t,
 		     name: Fctid.t,
 		     result: SigConst.t} vector
@@ -365,15 +366,7 @@ structure Topdec =
 	 
       fun layout d =
 	 case node d of
-	    Strdec d => Strdec.layout d
-	  | Signature sigbs =>
-	       layoutAndsBind ("signature", "=", Vector.toList sigbs,
-			       fn (name, def) =>
-			       (case Sigexp.node def of
-				   Sigexp.Var _ => OneLine
-				 | _ => Split 3,
-				      Sigid.layout name,
-				      Sigexp.layout def))
+	    BasisDone {ffi} => seq [str "_basis_done ", Longstrid.layout ffi]
 	  | Functor fctbs =>
 	       layoutAndsBind ("functor", "=", Vector.toList fctbs,
 			       fn {name, arg, result, body} =>
@@ -382,6 +375,16 @@ structure Topdec =
 				     paren (FctArg.layout arg),
 				     layoutSigConst result],
 				layoutStrexp body))
+	  | Signature sigbs =>
+	       layoutAndsBind ("signature", "=", Vector.toList sigbs,
+			       fn (name, def) =>
+			       (case Sigexp.node def of
+				   Sigexp.Var _ => OneLine
+				 | _ => Split 3,
+				      Sigid.layout name,
+				      Sigexp.layout def))
+	  | Strdec d => Strdec.layout d
+
 
       fun make n = makeRegion (n, Region.bogus)
       val fromExp = make o Strdec o Strdec.fromExp

@@ -46,6 +46,24 @@ val append =
 
 fun list (xs, reg) = List.fold (xs, Bogus, fn (x, r) => append (reg x, r))
 
+fun compare (r, r') =
+   case (left r, left r') of
+      (NONE, NONE) => EQUAL
+    | (NONE, _) => LESS
+    | (_, NONE) => GREATER
+    | (SOME p, SOME p') => SourcePos.compare (p, p')
+	 
+val compare =
+   Trace.trace2 ("Region.compare", layout, layout, Relation.layout) compare
+	 
+fun equals (r, r') = compare (r, r') = EQUAL
+   
+fun r <= r' =
+   case compare (r, r') of
+      EQUAL => true
+    | GREATER => false
+    | LESS => true
+
 structure Wrap =
    struct
       type region = t

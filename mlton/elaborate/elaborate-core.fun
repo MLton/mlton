@@ -344,15 +344,15 @@ val allowRebindEquals = ref true
 local
    val eq = Avar.fromSymbol (Symbol.equal, Region.bogus)
 in
-   fun extendVar (E, x, x', s, region) =
+   fun ensureNotEquals x =
       if not (!allowRebindEquals) andalso Avar.equals (x, eq)
 	 then
 	    let
 	       open Layout
 	    in
-	       Control.error (region, str "= can't be redefined", empty)
+	       Control.error (Avar.region x, str "= can't be redefined", empty)
 	    end
-      else Env.extendVar (E, x, x', s)
+      else ()
 end
 
 fun approximate (l: Layout.t): Layout.t =
@@ -368,18 +368,19 @@ fun approximate (l: Layout.t): Layout.t =
 
 val elaboratePat:
    unit
-   -> Apat.t * Env.t * (unit -> unit)
+   -> Apat.t * Env.t * {bind: bool} * (unit -> unit)
    -> Cpat.t * (Avar.t * Var.t * Type.t) vector =
    fn () =>
    let
       val others: (Apat.t * (Avar.t * Var.t * Type.t) vector) list ref = ref []
    in
-      fn (p: Apat.t, E: Env.t, preError: unit -> unit) =>
+      fn (p: Apat.t, E: Env.t, {bind}, preError: unit -> unit) =>
       let
 	 val region = Apat.region p
 	 val xts: (Avar.t * Var.t * Type.t) list ref = ref []
 	 fun bindToType (x: Avar.t, t: Type.t): Var.t =
 	    let
+	       val _ = ensureNotEquals x
 	       val x' = Var.fromAst x
 	       val _ =
 		  if List.exists (!xts, fn (x', _, _) => Avar.equals (x, x'))
@@ -419,7 +420,11 @@ val elaboratePat:
 
 			end
 	       val _ = List.push (xts, (x, x', t))
-	       val _ = extendVar (E, x, x', Scheme.fromType t, region)
+	       val _ =
+		  if bind
+		     then Env.extendVar (E, x, x', Scheme.fromType t,
+					 {isRebind = false})
+		  else ()
 	    in
 	       x'
 	    end
@@ -953,7 +958,7 @@ fun elaborateDec (d, {env = E,
 	 in
 	    Vector.foreach2
 	    (types, strs, fn ({tycon, ...}, str) =>
-	     Env.extendTycon (E, tycon, str))
+	     Env.extendTycon (E, tycon, str, {isRebind = false}))
 	 end
       fun elabDatBind (datBind: DatBind.t, nest: string list)
 	 : Decs.t * {tycon: Ast.Tycon.t,
@@ -965,7 +970,7 @@ fun elaborateDec (d, {env = E,
 	    (* Build enough of an env so that that the withtypes and the
 	     * constructor argument types can be elaborated.
 	     *)
-	    val tycons =
+	    val datatypes =
 	       Vector.map
 	       (datatypes, fn {cons, tycon = name, tyvars} =>
 		let
@@ -977,25 +982,38 @@ fun elaborateDec (d, {env = E,
 				".")),
 		       kind,
 		       AdmitsEquality.Sometimes)
-		   val _ = Env.extendTycon (E, name, TypeStr.tycon (tycon, kind))
+		   val _ = Env.extendTycon (E, name, TypeStr.tycon (tycon, kind),
+					    {isRebind = false})
+		   val cons =
+		      Vector.map
+		      (cons, fn (name, arg) =>
+		       {con = Con.fromAst name,
+			name = name,
+			arg = arg})
+		   val makeCons =
+		      Env.newCons (E, Vector.map (cons, fn {con, name, ...} =>
+						  {con = con, name = name}))
 		in
-		   tycon
+		   {cons = cons,
+		    makeCons = makeCons,
+		    name = name,
+		    tycon = tycon,
+		    tyvars = tyvars}
 		end)
 	    val change = ref false
 	    fun elabAll () =
 	       (elabTypBind withtypes
-		; (Vector.map2
-		   (tycons, datatypes,
-		    fn (tycon, {cons, tycon = astTycon, tyvars, ...}) =>
+		; (Vector.map
+		   (datatypes,
+		    fn {cons, makeCons, name, tycon, tyvars} =>
 		    let
 		       val resultType: Type.t =
 			  Type.con (tycon, Vector.map (tyvars, Type.var))
-		       val (cons, datatypeCons) =
+		       val (schemes, datatypeCons) =
 			  Vector.unzip
 			  (Vector.map
-			   (cons, fn (name, arg) =>
+			   (cons, fn {arg, con, name} =>
 			    let
-			       val con = Con.fromAst name
 			       val (arg, ty) =
 				  case arg of
 				     NONE => (NONE, resultType)
@@ -1009,10 +1027,8 @@ fun elaborateDec (d, {env = E,
 				  Scheme.make {canGeneralize = true,
 					       ty = ty,
 					       tyvars = tyvars}
-			       val _ = Env.extendCon (E, name, con, scheme)
 			    in
-			       ({con = con, name = name, scheme = scheme},
-				{arg = arg, con = con})
+			       (scheme, {arg = arg, con = con})
 			    end))
 		       val _ =
 			  let
@@ -1038,13 +1054,13 @@ fun elaborateDec (d, {env = E,
 		    val typeStr =
 		       TypeStr.data (tycon,
 				     Kind.Arity (Vector.length tyvars),
-				     Cons.T cons)
-		    val _ = Env.extendTycon (E, astTycon, typeStr)
+				     makeCons schemes)
+		    val _ = Env.extendTycon (E, name, typeStr, {isRebind = true})
 		 in
 		    ({cons = datatypeCons,
 		      tycon = tycon,
 		      tyvars = tyvars},
-		     {tycon = astTycon,
+		     {tycon = name,
 		      typeStr = typeStr})
 		 end)))
 	    (* Maximize equality. *)
@@ -1120,7 +1136,8 @@ fun elaborateDec (d, {env = E,
 		      val _ =
 			 Vector.foreach
 			 (strs, fn {tycon, typeStr} =>
-			  Env.extendTycon (E, tycon, TypeStr.abs typeStr))
+			  Env.extendTycon (E, tycon, TypeStr.abs typeStr,
+					   {isRebind = false}))
 		   in
 		      Decs.append (decs, decs')
 		   end
@@ -1130,13 +1147,9 @@ fun elaborateDec (d, {env = E,
 			  #1 (elabDatBind (datBind, nest))
 		     | DatatypeRhs.Repl {lhs, rhs} => (* rule 18 *)
 			  let
-			     val tyStr = Env.lookupLongtycon (E, rhs)
-			     val _ = Env.extendTycon (E, lhs, tyStr)
-			     val TypeStr.Cons.T v = TypeStr.cons tyStr
-			     val _ =
-				Vector.foreach
-				(v, fn {con, name, scheme} =>
-				 Env.extendCon (E, name, con, scheme))
+			     val s = Env.lookupLongtycon (E, rhs)
+			     val _ = Env.extendTycon (E, lhs, s,
+						      {isRebind = false})
 			  in
 			     Decs.empty
 			  end)
@@ -1275,7 +1288,8 @@ fun elaborateDec (d, {env = E,
 				val var = Var.fromAst func
 				val ty = Type.new ()
 				val _ = Env.extendVar (E, func, var,
-						       Scheme.fromType ty)
+						       Scheme.fromType ty,
+						       {isRebind = false})
 				val _ = markFunc var
 				val _ =
 				   Acon.ensureRedefine
@@ -1326,7 +1340,8 @@ fun elaborateDec (d, {env = E,
 					Vector.map
 					(args, fn p =>
 					 {pat = #1 (elaboratePat
-						    (p, E, preError)),
+						    (p, E, {bind = true},
+						     preError)),
 					  region = Apat.region p})
 				     val bodyRegion = Aexp.region body
 				     val body = elabExp (body, nest, NONE)
@@ -1469,7 +1484,8 @@ fun elaborateDec (d, {env = E,
 			 Vector.foreach3
 			 (fbs, decs, schemes,
 			  fn ({func, ...}, {var, ...}, scheme) =>
-			  (Env.extendVar (E, func, var, scheme)
+			  (Env.extendVar (E, func, var, scheme,
+					  {isRebind = true})
 			   ; unmarkFunc var))
 		      val decs =
 			 Vector.map (decs, fn {lambda, var, ...} =>
@@ -1586,7 +1602,8 @@ fun elaborateDec (d, {env = E,
 			 (rvbs, fn {pat, match} =>
 			  let
 			     val region = Apat.region pat
-			     val (pat, bound) = elaboratePat (pat, E, preError)
+			     val (pat, bound) =
+				elaboratePat (pat, E, {bind = false}, preError)
 			     val (nest, var, ty) =
 				if 0 = Vector.length bound
 				   then ("anon" :: nest,
@@ -1605,7 +1622,9 @@ fun elaborateDec (d, {env = E,
 				(bound, fn (x, _, _) =>
 				 (Acon.ensureRedefine (Avid.toCon
 						       (Avid.fromVar x))
-				  ; Env.extendVar (E, x, var, scheme)
+				  ; ensureNotEquals x
+				  ; Env.extendVar (E, x, var, scheme,
+						   {isRebind = false})
 				  ; (x, var, ty)))
 			  in
 			     {bound = bound,
@@ -1615,8 +1634,6 @@ fun elaborateDec (d, {env = E,
 			      region = region,
 			      var = var}
 			  end)
-		      val boundVars =
-			 Vector.concatV (Vector.map (rvbs, #bound))
 		      val rvbs =
 			 Vector.map
 			 (rvbs, fn {bound, match, nest, pat, region, var, ...} =>
@@ -1654,6 +1671,10 @@ fun elaborateDec (d, {env = E,
 			      lambda = lambda,
 			      var = var}
 			  end)
+		      val boundVars =
+			 Vector.map
+			 (Vector.concatV (Vector.map (rvbs, #bound)),
+			  fn x => (x, {isRebind = true}))
 		      val rvbs =
 			 Vector.map
 			 (rvbs, fn {bound, lambda, var} =>
@@ -1665,7 +1686,8 @@ fun elaborateDec (d, {env = E,
 			 (vbs,
 			  fn {exp = e, expRegion, lay, pat, patRegion, ...} =>
 			  let
-			     val (p, bound) = elaboratePat (pat, E, preError)
+			     val (p, bound) =
+				elaboratePat (pat, E, {bind = false}, preError)
 			     val _ =
 				unify
 				(Cpat.ty p, Cexp.ty e, fn (p, e) =>
@@ -1684,16 +1706,20 @@ fun elaborateDec (d, {env = E,
 			  end)
 		      val boundVars =
 			 Vector.concat
-			 [boundVars, Vector.concatV (Vector.map (vbs, #bound))]
-		      val {bound, schemes} = close (Vector.map (boundVars, #3))
+			 [boundVars,
+			  Vector.map
+			  (Vector.concatV (Vector.map (vbs, #bound)),
+			   fn x => (x, {isRebind = false}))]
+		      val {bound, schemes} =
+			 close (Vector.map (boundVars, #3 o #1))
 		      val _ = checkSchemes (Vector.zip
-					    (Vector.map (boundVars, #2),
+					    (Vector.map (boundVars, #2 o #1),
 					     schemes))
 		      val _ = setBound bound
 		      val _ =
 			 Vector.foreach2
-			 (boundVars, schemes, fn ((x, x', _), scheme) =>
-			  Env.extendVar (E, x, x', scheme))
+			 (boundVars, schemes, fn (((x, x', _), ir), scheme) =>
+			  Env.extendVar (E, x, x', scheme, ir))
 		      val vbs =
 			 Vector.map (vbs, fn {exp, lay, pat, patRegion, ...} =>
 				     {exp = exp,
@@ -2254,7 +2280,8 @@ fun elaborateDec (d, {env = E,
 			  approximate
 			  (seq [Apat.layout pat, str " => ", Aexp.layout exp])
 		       end
-		    val (p, xts) = elaboratePat () (pat, E, preError)
+		    val (p, xts) =
+		       elaboratePat () (pat, E, {bind = true}, preError)
 		    val _ =
 		       unify
 		       (Cpat.ty p, argType, preError, fn (l1, l2) =>

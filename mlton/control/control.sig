@@ -59,7 +59,7 @@ signature CONTROL =
       (* whether optimization passes should eliminate useless overflow tests *)
       val eliminateOverflow: bool ref
 
-      val exportHeader: bool ref
+      val exportHeader: File.t option ref
 	 
       val exnHistory: bool ref
 
@@ -91,23 +91,25 @@ signature CONTROL =
       (* call count instrumentation *)
       val instrument: bool ref
 
-      (* Save the Machine to a file. *)
-      val keepMachine: bool ref
-	 
-      (* Save the RSSA to a file. *)
-      val keepRSSA: bool ref
-	 
-      (* Save the SSA to a file. *)
-      val keepSSA: bool ref
-	 
+      val keepDefUse: bool ref
+
       (* List of pass names to keep diagnostic info on. *)
       val keepDiagnostics: Regexp.Compiled.t list ref
 
       (* Keep dot files for whatever SSA files are produced. *)
       val keepDot: bool ref
 
+      (* Save the Machine to a file. *)
+      val keepMachine: bool ref
+	 
       (* List of pass names to save the result of. *)
       val keepPasses: Regexp.Compiled.t list ref
+
+      (* Save the RSSA to a file. *)
+      val keepRSSA: bool ref
+	 
+      (* Save the SSA to a file. *)
+      val keepSSA: bool ref
 
       (* lib/mlton directory *)
       val libDir: Dir.t ref
@@ -135,7 +137,7 @@ signature CONTROL =
 
       (* Number of times to loop through optimization passes. *)
       val loopPasses: int ref
-
+	 
       (* Should the mutator mark cards? *)
       val markCards: bool ref
 
@@ -214,11 +216,14 @@ signature CONTROL =
       (* in (e1; e2), require e1: unit. *)
       val sequenceUnit: bool ref
 
-      (* Show the basis library and exit. *)
-      val showBasis: bool ref
+      (* Show the basis library. *)
+      val showBasis: File.t option ref
 	 
-      (* Show the basis library used and exit. *)
-      val showBasisUsed: bool ref
+      (* Show the basis library used. *)
+      val showBasisUsed: File.t option ref
+
+      (* Show def-use information. *)
+      val showDefUse: File.t option ref
 	 
       (* Should types be printed in ILs. *)
       val showTypes: bool ref
@@ -278,6 +283,8 @@ signature CONTROL =
       val warnNonExhaustive: bool ref
 
       val warnRedundant: bool ref
+
+      val warnUnused: bool ref
 
       (* XML Passes *)
       val xmlPassesSet: (string -> string list Result.t) ref

@@ -10,10 +10,27 @@ type int = Int.t
 signature INTERFACE_STRUCTS = 
    sig
       structure Ast: AST
-      structure EnvTypeStr: TYPE_STR
-      sharing Ast.Con = EnvTypeStr.Name
-      sharing Ast.SortedRecord = EnvTypeStr.Record
-      sharing Ast.Tyvar = EnvTypeStr.Tyvar
+      structure EnvTypeStr:
+	 sig
+	    structure AdmitsEquality: ADMITS_EQUALITY
+	    structure Kind: TYCON_KIND
+	    structure Tycon:
+	       sig
+		  type t
+
+		  val admitsEquality: t -> AdmitsEquality.t ref
+		  val arrow: t
+		  val equals: t * t -> bool
+		  val exn: t
+		  val layout: t -> Layout.t
+		  val layoutApp:
+		     t * (Layout.t * {isChar: bool, needsParen: bool}) vector
+		     -> Layout.t * {isChar: bool, needsParen: bool}
+		  val tuple: t
+	       end
+
+	    type t
+	 end
    end
 
 signature INTERFACE = 
@@ -21,9 +38,25 @@ signature INTERFACE =
       include INTERFACE_STRUCTS
 
       structure AdmitsEquality: ADMITS_EQUALITY
+      sharing AdmitsEquality = EnvTypeStr.AdmitsEquality
+      structure Kind: TYCON_KIND
+      sharing Kind = EnvTypeStr.Kind
+	 
+      structure FlexibleTycon:
+	 sig
+	    type typeStr
+	    type t
+
+	    datatype dest =
+	       ETypeStr of EnvTypeStr.t
+	     | TypeStr of typeStr
+	    val dest: t -> dest
+	 end
       structure Tycon:
 	 sig
-	    type t
+	    datatype t =
+	       Flexible of FlexibleTycon.t
+	     | Rigid of EnvTypeStr.Tycon.t * Kind.t
 
 	    val admitsEquality: t -> AdmitsEquality.t ref
 	    val make: {hasCons: bool} -> t
@@ -32,17 +65,25 @@ signature INTERFACE =
 	 sig
 	    type t
 	 end
+      sharing Tyvar = Ast.Tyvar
+      structure Record: RECORD
+      sharing Record = Ast.SortedRecord
       structure Type:
 	 sig
 	    type t
-	       
-	    val deEta: t * Tyvar.t vector -> Tycon.t option
-	 end
-      structure Scheme:
-	 sig
-	    type t
 
-	    val toEnv: t -> EnvTypeStr.Scheme.t
+	    val arrow: t * t -> t
+	    val bogus: t
+	    val con: Tycon.t * t vector -> t
+	    val deArrow: t -> t * t
+	    val deEta: t * Tyvar.t vector -> Tycon.t option
+	    val exn: t
+	    val hom: t * {con: Tycon.t * 'a vector -> 'a,
+			  record: 'a Record.t -> 'a,
+			  var: Tyvar.t -> 'a} -> 'a
+	    val layout: t -> Layout.t
+	    val record: t Record.t -> t
+	    val var: Tyvar.t -> t
 	 end
       structure Status:
 	 sig
@@ -51,48 +92,59 @@ signature INTERFACE =
 	    val layout: t -> Layout.t
 	    val toString: t -> string
 	 end
-      structure Con:
-	 sig
-	    type t
-	 end
-      sharing Con = EnvTypeStr.Con
-      structure Cons:
-	 sig
-	    datatype t = T of {con: Con.t,
-			       name: Ast.Con.t,
-			       scheme: Scheme.t} vector
-
-	    val empty: t
-	    val layout: t -> Layout.t
-	 end
       structure Time:
 	 sig
 	    type t
 
 	    val tick: unit -> t
 	 end
+      structure Scheme:
+	 sig
+	    datatype t = T of {ty: Type.t,
+			       tyvars: Tyvar.t vector}
+
+	    val admitsEquality: t -> bool
+	    val make: Tyvar.t vector * Type.t -> t
+	    val ty: t -> Type.t
+	 end
+      structure Cons:
+	 sig
+	    datatype t = T of {name: Ast.Con.t,
+			       scheme: Scheme.t} vector
+	       
+	    val empty: t
+	    val layout: t -> Layout.t
+	 end
       structure TypeStr:
 	 sig
-	    include TYPE_STR
+	    type t
 
-	    val fromEnv: EnvTypeStr.t -> t
+	    datatype node =
+	       Datatype of {cons: Cons.t,
+			    tycon: Tycon.t}
+	     | Scheme of Scheme.t
+	     | Tycon of Tycon.t
+
+	    val abs: t -> t
+	    val admitsEquality: t -> AdmitsEquality.t
+	    val apply: t * Type.t vector -> Type.t
+	    val bogus: Kind.t -> t
+	    val cons: t -> Cons.t
+	    val data: Tycon.t * Kind.t * Cons.t -> t
+	    val def: Scheme.t * Kind.t -> t
+	    val kind: t -> Kind.t
+	    val layout: t -> Layout.t
+	    val node: t -> node
+	    val toTyconOpt: t -> Tycon.t option (* NONE on Scheme *)
+	    val tycon: Tycon.t * Kind.t -> t
 	    val share:
 	       (t * Region.t * (unit -> Layout.t))
 	       * (t * Region.t * (unit -> Layout.t))
 	       * Time.t
 	       -> unit
 	    val wheree: t * Region.t * (unit -> Layout.t) * Time.t * t -> unit
-	    val toEnv: t -> EnvTypeStr.t
 	 end
-      sharing TypeStr.AdmitsEquality = AdmitsEquality
-      sharing TypeStr.Con = Con
-      sharing TypeStr.Kind = EnvTypeStr.Kind
-      sharing TypeStr.Name = EnvTypeStr.Name
-      sharing TypeStr.Record = EnvTypeStr.Record
-      sharing TypeStr.Scheme = Scheme
-      sharing TypeStr.Tycon = Tycon
-      sharing TypeStr.Type = Type
-      sharing TypeStr.Tyvar = EnvTypeStr.Tyvar = Tyvar
+      sharing type FlexibleTycon.typeStr = TypeStr.t
       structure Shape:
 	 sig
 	    type t
@@ -128,8 +180,8 @@ signature INTERFACE =
 	 t * {followStrid: 'a * Ast.Strid.t -> 'a,
 	      init: 'a,
 	      realizeTycon: ('a * Ast.Tycon.t
-			     * TypeStr.AdmitsEquality.t
-			     * TypeStr.Kind.t
+			     * AdmitsEquality.t
+			     * Kind.t
 			     * {hasCons: bool} -> EnvTypeStr.t)}
 	 -> t
       val renameTycons: (unit -> unit) ref

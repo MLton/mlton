@@ -19,6 +19,7 @@ signature SOURCE_POS =
 
       val bogus: t
       val column: t -> int
+      val compare: t * t -> Relation.t
       val equals: t * t -> bool
       val file: t -> File.t
       val isBasis: t -> bool

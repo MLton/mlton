@@ -231,7 +231,6 @@ ast/int-size.sig
 atoms/c-type.sig
 backend/runtime.sig
 backend/profile-label.sig
-ast/symbol.sig
 atoms/id.sig
 atoms/c-function.sig
 codegen/x86-codegen/x86.sig
@@ -286,6 +285,7 @@ atoms/tycon.sig
 atoms/type-ops.sig
 ast/wrapped.sig
 ast/tyvar.sig
+ast/symbol.sig
 ast/field.sig
 ast/record.sig
 atoms/var.sig
@@ -355,7 +355,6 @@ ast/ast.sig
 elaborate/scope.sig
 elaborate/scope.fun
 core-ml/core-ml.sig
-elaborate/type-str.sig
 elaborate/interface.sig
 elaborate/decs.sig
 elaborate/type-env.sig
@@ -371,7 +370,6 @@ control/pretty.sig
 control/pretty.sml
 atoms/generic-scheme.sig
 atoms/generic-scheme.fun
-elaborate/type-str.fun
 elaborate/interface.fun
 elaborate/decs.fun
 elaborate/elaborate-env.fun
