@@ -122,7 +122,7 @@ structure Handler =
 	 
       val handler =
 	 (* This let is used so that Thread.setHandler is only used if
-	  * Handler.handler' is used.  This prevents threads from being part
+	  * Handler.handler is used.  This prevents threads from being part
 	  * of every program.
 	  *)
 	 let
@@ -170,10 +170,8 @@ fun setHandler (s, h) =
     | Ignore => ignore s
 
 fun suspend m =
-   (raise Fail "MLton.Signal.suspend is currently unimplemented."
-    ; Mask.create m
+   (Mask.create m
     ; Prim.suspend ()
-    ; ())
-(*  ;  Primitive.GC.switchToSignalHandler () *)
+    ; Thread.switchToHandler ())
    
 end

@@ -112,6 +112,8 @@ fun fromPrimitive (t: Prim.thread): unit t =
 			die "Asynchronous exceptions are not allowed.\n"),
 	    t)))
 
+val signalHandler: Prim.thread option ref = ref NONE
+   
 fun setHandler (f: unit t -> unit t): unit =
    let
       val _ = Primitive.installSignalHandler ()
@@ -136,10 +138,18 @@ fun setHandler (f: unit t -> unit t): unit =
 	 in
 	    loop ()
 	 end
+      val p =
+	 toPrimitive (new (fn () => loop () handle e => Exn.topLevelHandler e))
+      val _ = signalHandler := SOME p
    in
-      Prim.setHandler
-      (toPrimitive (new (fn () => loop () handle e => Exn.topLevelHandler e)))
+      Prim.setHandler p
    end
+
+fun switchToHandler () =
+   (Prim.startHandler ()
+    ; (case !signalHandler of
+	  NONE => raise Fail "no signal handler installed"
+	| SOME t => Prim.switchTo t))
 
 type 'a thread = 'a t
 

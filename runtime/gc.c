@@ -1950,10 +1950,46 @@ void GC_switchToThread (GC_state s, GC_thread t) {
 	assert (s->currentThread->bytesNeeded <= s->limitPlusSlop - s->frontier);
 }
 
+static void startHandler (GC_state s) {
+	/* Switch to the signal handler thread. */
+	if (DEBUG_SIGNALS) {
+		fprintf (stderr, "switching to signal handler\n");
+		GC_display (s, stderr);
+	}
+	assert (0 == s->canHandle);
+	assert (s->signalIsPending);
+	s->signalIsPending = FALSE;
+	s->inSignalHandler = TRUE;
+	s->savedThread = s->currentThread;
+	/* Set s->canHandle to 2, which will be decremented to 1
+	 * when swithching to the signal handler thread, which will then
+ 	 * run atomically and will finish by switching to the thread
+	 * to continue with, which will decrement s->canHandle to 0.
+ 	 */
+	s->canHandle = 2;
+}
+
+
+/* GC_startHandler does not do an enter()/leave(), even though it is exported.
+ * The basis library uses it as via _ffi, not _prim, and so does not treat it
+ * as a runtime call -- so the invariant in enter would fail miserably. 
+ * It simulates the relevant part of enter() by blocking signals and resetting
+ * the limit.  The leave() wouldn't do anything upon exit  because we are in a
+ * signal handler.
+ */
+void GC_startHandler (GC_state s) {
+	blockSignals (s);
+	if (0 == s->limit)
+		s->limit = s->limitPlusSlop - LIMIT_SLOP;
+	startHandler (s);
+}
+
 void GC_gc (GC_state s, uint bytesRequested, bool force,
 		string file, int line) {
 	uint stackBytesRequested;
 
+	if (DEBUG)
+		fprintf (stderr, "%s %d: ", file, line);
 	enter (s);
 	/* When the mutator requests zero bytes, it may actually need as much
 	 * as LIMIT_SLOP.
@@ -1963,7 +1999,6 @@ void GC_gc (GC_state s, uint bytesRequested, bool force,
 	s->currentThread->bytesNeeded = bytesRequested;
 	stackBytesRequested = getStackBytesRequested (s);
 	if (DEBUG) {
-		fprintf (stderr, "%s %d: ", file, line);
 		fprintf (stderr, "bytesRequested = %u  stackBytesRequested = %u\n",
 				bytesRequested, stackBytesRequested);
 		GC_display (s, stderr);
@@ -1978,22 +2013,7 @@ void GC_gc (GC_state s, uint bytesRequested, bool force,
 	} else if (not (stackTopIsOk (s, s->currentThread->stack)))
 		growStack (s);
 	else {
-		/* Switch to the signal handler thread. */
-		if (DEBUG_SIGNALS) {
-			fprintf (stderr, "switching to signal handler\n");
-			GC_display (s, stderr);
-		}
-		assert (0 == s->canHandle);
-		assert (s->signalIsPending);
-		s->signalIsPending = FALSE;
-		s->inSignalHandler = TRUE;
-		s->savedThread = s->currentThread;
-		/* Set s->canHandle to 2, which will be decremented to 1
-		 * when swithching to the signal handler thread, which will then
-                 * run atomically and will finish by switching to the thread
-		 * to continue with, which will decrement s->canHandle to 0.
-                 */
-		s->canHandle = 2;
+		startHandler (s);
 		switchToThread (s, s->signalHandler);
 	}
 	assert (s->currentThread->bytesNeeded <= s->limitPlusSlop - s->frontier);

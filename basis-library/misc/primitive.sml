@@ -51,6 +51,7 @@ structure Primitive =
    struct
       val debug = _build_const "MLton_debug": bool;
       val detectOverflow = _build_const "MLton_detectOverflow": bool;
+      val enterLeave = _ffi "MLton_enterLeave": unit -> unit;
       val eq = fn z => _prim "MLton_eq": 'a * 'a -> bool; z
       val errno = _ffi "MLton_errno": unit -> int;
       val halt = _prim "MLton_halt": int -> unit;
@@ -583,6 +584,7 @@ structure Primitive =
 	    val saved = _ffi "Thread_saved": unit -> thread;
 	    val savedPre = _ffi "Thread_saved": unit -> preThread;
 	    val setHandler = _ffi "Thread_setHandler": thread -> unit;
+	    val startHandler = _ffi "Thread_startHandler": unit -> unit;
 	    val switchTo = _prim "Thread_switchTo": thread -> unit;
 	 end      
 

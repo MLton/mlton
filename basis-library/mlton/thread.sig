@@ -33,4 +33,5 @@ signature MLTON_THREAD_EXTRA =
 
       val amInSignalHandler: unit -> bool
       val setHandler: (unit t -> unit t) -> unit
+      val switchToHandler: unit -> unit
    end

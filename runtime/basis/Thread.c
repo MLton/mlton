@@ -4,11 +4,11 @@
 
 extern struct GC_state gcState;
 
-Thread Thread_current() {
+Thread Thread_current () {
 	return (Thread)gcState.currentThread;
 }
 
-void Thread_finishHandler() {
+void Thread_finishHandler () {
 	GC_finishHandler (&gcState);
 }
 
@@ -20,8 +20,12 @@ Thread Thread_saved() {
 	return t;
 }
 
-void Thread_setHandler(Thread t) {
+void Thread_setHandler (Thread t) {
 	gcState.signalHandler = (GC_thread)t;
+}
+
+void Thread_startHandler () {
+	GC_startHandler (&gcState);
 }
 
 void Thread_switchTo (Thread thread, Word ensureBytesFree) {

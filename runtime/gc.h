@@ -424,6 +424,11 @@ void GC_saveWorld (GC_state s, int fd);
 /* Return the amount of heap space taken by the object pointed to by root. */
 uint GC_size (GC_state s, pointer root);
 
+/* GC_startHandler should be called by the mutator just before switching to
+ * the signal handler thread.
+ */
+void GC_startHandler (GC_state s);
+
 void GC_switchToThread (GC_state s, GC_thread t);
 
 #endif /* #ifndef _MLTON_GC_H */

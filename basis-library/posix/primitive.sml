@@ -516,7 +516,7 @@ structure PosixPrimitive =
 	    val sigemptyset = _ffi "Posix_Signal_sigemptyset": unit -> int;
 	    val sigfillset = _ffi "Posix_Signal_sigfillset": unit -> int;
 	    val sigprocmask = _ffi "Posix_Signal_sigprocmask": how -> int;
-	    val suspend = _ffi "Posix_Signal_suspend": unit -> int;
+	    val suspend = _ffi "Posix_Signal_suspend": unit -> unit;
 	    val unblock = _const "Posix_Signal_unblock": how;
 	 end
       
