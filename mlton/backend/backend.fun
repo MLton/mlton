@@ -349,7 +349,7 @@ fun toMachine (program: Ssa.Program.t) =
 					 value = translateOperand value})}
 	     | PrimApp {dst, prim, args} =>
 		  (case Prim.name prim of
-		      Prim.Name.MLton_handlesSignals =>
+		      Prim.Name.MLton_installSignalHandler =>
 			 M.Statement.Noop
 		    | _ => 
 			 M.Statement.PrimApp

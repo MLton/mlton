@@ -96,6 +96,7 @@ structure Name =
        | MLton_equal
        | MLton_halt
        | MLton_handlesSignals
+       | MLton_installSignalHandler
        | MLton_serialize
        | MLton_size
        | Real_Math_acos
@@ -352,7 +353,9 @@ structure Name =
 	  (MLton_eq, Functional, "MLton_eq"),
 	  (MLton_equal, Functional, "MLton_equal"),
 	  (MLton_halt, SideEffect, "MLton_halt"),
-	  (MLton_handlesSignals, SideEffect, "MLton_handlesSignals"),
+	  (MLton_handlesSignals, Functional, "MLton_handlesSignals"),
+	  (MLton_installSignalHandler, SideEffect,
+	   "MLton_installSignalHandler"),
 	  (MLton_serialize, DependsOnState, "MLton_serialize"),
 	  (MLton_size, DependsOnState, "MLton_size"),
 	  (Real_Math_acos, Functional, "Real_Math_acos"),

@@ -88,12 +88,20 @@ signature PRIM =
 	     | MLton_eq
 	     | MLton_equal (* implemented in ssa/poly-equal.fun *)
 	     | MLton_halt
-	     (* MLton_handlesSignals is essentially a noop, and is kept around
-	      * only so various optimizations can test whether or not the program
-	      * installs signal handlers.
-	      * It is converted to a noop in backend.fun
+	     (* MLton_handlesSignals and MLton_installSignalHandler work together
+	      * to inform the optimizer and basis library whether or not the
+	      * program uses signal handlers.
+	      *
+	      * MLton_installSignalHandler is called by MLton.Signal.setHandler,
+	      * and is effectively a noop, but is left in the program until the
+	      * end of the backend, so that the optimizer can test whether or
+	      * not the program installs signal handlers.
+	      *
+	      * MLton_handlesSignals is translated by closure conversion into
+	      * a boolean, and is true iff MLton_installsSignalHandler is called.
 	      *)
 	     | MLton_handlesSignals
+	     | MLton_installSignalHandler
 	     | MLton_serialize
 	     | MLton_size
 	     | Real_Math_acos

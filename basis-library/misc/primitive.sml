@@ -49,7 +49,8 @@ structure Primitive =
       val detectOverflow = _build_const "MLton_detectOverflow": bool;
       val eq = fn z => _prim "MLton_eq": 'a * 'a -> bool; z
       val halt = _prim "MLton_halt": int -> unit;
-      val handlesSignals = _prim "MLton_handlesSignals": unit -> unit;
+      val handlesSignals = _prim "MLton_handlesSignals": bool;
+      val installSignalHandler = _prim "MLton_installSignalHandler": unit -> unit;
       val isLittleEndian = _const "MLton_isLittleEndian": bool;
       val safe = _build_const "MLton_safe": bool;
       val usesCallcc: bool ref = ref false;
@@ -537,12 +538,18 @@ structure Primitive =
 	    type preThread = preThread
 	    type thread = thread
 
-	    val atomicBegin = _prim "Thread_atomicBegin": unit -> unit;
+	    fun atomicBegin () =
+	       if handlesSignals
+		  then _prim "Thread_atomicBegin": unit -> unit; ()
+	       else ()
 	    val canHandle = _prim "Thread_canHandle": unit -> int;
 	    fun atomicEnd () =
-	       if Int.<= (canHandle (), 0)
-		  then raise Fail "Thread.atomicEnd with no atomicBegin"
-	       else _prim "Thread_atomicEnd": unit -> unit; ()
+	       if handlesSignals
+		  then
+		     if Int.<= (canHandle (), 0)
+			then raise Fail "Thread.atomicEnd with no atomicBegin"
+		     else _prim "Thread_atomicEnd": unit -> unit; ()
+	       else ()
 	    (* copy stores a thread that should be gotten using saved (). *)
 	    val copy = _prim "Thread_copy": preThread -> unit;
 	    (* copyCurrent stores a preThread that should be gotten using

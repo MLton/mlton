@@ -587,6 +587,9 @@ fun closureConvert
 	 Dexp.var (!replacement, varInfoType info)
       val convertVar = convertVarInfo o varInfo
       val convertVarExp = convertVar o SvarExp.var
+      val handlesSignals =
+	 Sexp.hasPrim (body, fn p =>
+		       Prim.name p = Prim.Name.MLton_installSignalHandler)
       (*------------------------------------*)      	       
       (*               apply                *)
       (*------------------------------------*)
@@ -824,10 +827,19 @@ fun closureConvert
 				 prim = prim,
 				 ty = ty})
 		 else
-		    simple (Dexp.primApp {args = args,
-					  prim = prim,
-					  targs = targs,
-					  ty = ty})
+		    let
+		       datatype z = datatype Prim.Name.t
+		    in
+		       simple
+		       (case Prim.name prim of
+			   MLton_handlesSignals =>
+			      if handlesSignals then Dexp.truee else Dexp.falsee
+			 | _ => 
+			      Dexp.primApp {args = args,
+					    prim = prim,
+					    targs = targs,
+					    ty = ty})
+		    end
 	       end
 	  | SprimExp.Tuple xs =>
 	       simple (Dexp.tuple {exps = Vector.map (xs, convertVarExp),

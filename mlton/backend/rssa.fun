@@ -637,7 +637,7 @@ structure Program =
 	 end
 
       fun handlesSignals p =
-	 hasPrim (p, fn p => Prim.name p = Prim.Name.MLton_handlesSignals)
+	 hasPrim (p, fn p => Prim.name p = Prim.Name.MLton_installSignalHandler)
 	 
       fun layouts (T {functions, main}, output': Layout.t -> unit): unit =
 	 let

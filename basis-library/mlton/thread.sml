@@ -117,7 +117,7 @@ fun fromPrimitive (t: Prim.thread): unit t =
 
 fun setHandler (f: unit t -> unit t): unit =
    let
-      val _ = Primitive.handlesSignals ()
+      val _ = Primitive.installSignalHandler ()
       fun loop () =
 	 let
 	    (* s->canHandle == 1 *)
