@@ -1220,9 +1220,17 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 	  | Ctransfer.Jump {dst, args} => tail (dst, args, vo)
 	  | Ctransfer.Raise xs =>
 	       (case handlers of
-		   [] => (Statement.moves {dsts = [raiseOperand ()],
-					   srcs = Vector.toListMap (xs, vo)},
-			  Mtransfer.raisee)
+		   [] => 
+		      let
+			 val r = raiseOperand ()
+			 val s =
+			    if Mtype.isVoid (Operand.ty r)
+			       then []
+			    else (Statement.moves
+				  {dsts = [r],
+				   srcs = Vector.toListMap (xs, vo)})
+		      in (s, Mtransfer.raisee)
+		      end
 		 | h :: _ => tail (h, xs, vo))
 	  | Ctransfer.Return xs =>
 	       let
