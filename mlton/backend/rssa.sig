@@ -63,8 +63,6 @@ signature RSSA =
 		       var: Var.t}
 
 	    val bool: bool -> t
-	    val caseBytes: t * {big: t -> 'a,
-				small: Bytes.t -> 'a} -> 'a
 	    val cast: t * Type.t -> t
 	    val layout: t -> Layout.t
 	    val foreachVar: t * (Var.t -> unit) -> unit
@@ -226,6 +224,7 @@ signature RSSA =
 	    val clear: t -> unit
 	    val checkHandlers: t -> unit
 	    val layouts: t * (Layout.t -> unit) -> unit
+	    val shrink: t -> t
 	    val typeCheck: t -> unit
 	 end
    end

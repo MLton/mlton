@@ -66,6 +66,8 @@ struct
 open S
 open Rssa
 
+datatype z = datatype Transfer.t
+   
 structure CFunction =
    struct
       open CFunction Type.BuiltInCFunction
@@ -75,29 +77,45 @@ structure Statement =
    struct
       open Statement
 
-      fun caseBytes (s: Statement.t,
-		     {big = _: Operand.t -> 'a,
-		      small: Bytes.t -> 'a}): 'a =
+      fun bytesAllocated (s: t): Bytes.t =
 	 case s of
-	    Object {size, ...} => small (Words.toBytes size)
-	  | _ => small Bytes.zero
+	    Object {size, ...} => Words.toBytes size
+	  | _ => Bytes.zero
    end
 
 structure Transfer =
    struct
       open Transfer
 
-      fun caseBytes (t: t, {big: Operand.t -> 'a,
-			    small: Bytes.t -> 'a}): 'a =
+      datatype bytesAllocated =
+	 Big of Operand.t
+       | Small of Bytes.t
+	 
+      fun bytesAllocated (t: t): bytesAllocated =
 	 case t of
 	    CCall {args, func, ...} =>
 	       (case CFunction.bytesNeeded func of
-		   NONE => small Bytes.zero
+		   NONE => Small Bytes.zero
 		 | SOME i =>
-		      Operand.caseBytes (Vector.sub (args, i),
-					 {big = big,
-					  small = small}))
-	  | _ => small Bytes.zero
+		      let
+			 val z = Vector.sub (args, i)
+		      in
+			 case z of
+			    Operand.Const c =>
+			       (case c of
+				   Const.Word w =>
+				      let
+					 val w = WordX.toIntInf w
+				      in
+					 (* 512 is small and arbitrary *)
+					 if w <= 512 
+					    then Small (Bytes.fromIntInf w)
+					 else Big z
+				      end
+				 | _ => Error.bug "strange numBytes")
+			  | _ => Big z
+		      end)
+	  | _ => Small Bytes.zero
    end
 
 structure Block =
@@ -107,12 +125,10 @@ structure Block =
       fun objectBytesAllocated (T {statements, transfer, ...}): Bytes.t =
 	 Bytes.+
 	 (Vector.fold (statements, Bytes.zero, fn (s, ac) =>
-		       Bytes.+
-		       (ac,
-			Statement.caseBytes (s, {big = fn _ => Bytes.zero,
-						 small = fn b => b}))),
-	  Transfer.caseBytes (transfer, {big = fn _ => Bytes.zero,
-					 small = fn b => b}))
+		       Bytes.+ (ac, Statement.bytesAllocated s)),
+	  case Transfer.bytesAllocated transfer of
+	     Transfer.Big _ => Bytes.zero
+	   | Transfer.Small b => b)
    end
 
 val extraGlobals: Var.t list ref = ref []
@@ -299,20 +315,20 @@ fun insertFunction (f: Function.t,
 		in
 		   newBlock (maybeFirst, statements, transfer)
 		end
-	     fun maybeStack (): Label.t =
+	     fun maybeStack (): unit =
 		if stack
-		   then stackCheck (true,
-				    insert (Operand.word
-					    (WordX.zero WordSize.default)))
+		   then ignore (stackCheck
+				(true,
+				 insert (Operand.word
+					 (WordX.zero WordSize.default))))
 		else
 		   (* No limit check, just keep the block around. *)
-		   (List.push (newBlocks,
-			       Block.T {args = args,
-					kind = kind,
-					label = label,
-					statements = statements,
-					transfer = transfer})
-		    ; label)
+		   List.push (newBlocks,
+			      Block.T {args = args,
+				       kind = kind,
+				       label = label,
+				       statements = statements,
+				       transfer = transfer})
 	     fun frontierCheck (isFirst,
 				prim, op1, op2,
 				z as {collect, dontCollect = _}): Label.t =
@@ -367,19 +383,20 @@ fun insertFunction (f: Function.t,
 				newBlock (false, statements, transfer)})
 			else newBlock (isFirst, statements, transfer)
 		end
-	     fun heapCheckNonZero (bytes: Bytes.t): Label.t =
-		if Bytes.<= (bytes, Runtime.limitSlop)
-		   then frontierCheck (true,
-				       greaterThan,
-				       Operand.Runtime Frontier,
-				       Operand.Runtime Limit,
-				       insert (Operand.word
-					       (WordX.zero WordSize.default)))
-		else heapCheck (true,
-				Operand.word (WordX.fromIntInf
-					      (Bytes.toIntInf bytes,
-					       WordSize.default)))
-	     fun smallAllocation _ =
+	     fun heapCheckNonZero (bytes: Bytes.t): unit =
+		ignore
+		(if Bytes.<= (bytes, Runtime.limitSlop)
+		    then frontierCheck (true,
+					greaterThan,
+					Operand.Runtime Frontier,
+					Operand.Runtime Limit,
+					insert (Operand.word
+						(WordX.zero WordSize.default)))
+		 else heapCheck (true,
+				 Operand.word (WordX.fromIntInf
+					       (Bytes.toIntInf bytes,
+						WordSize.default))))
+	     fun smallAllocation (): unit =
 		let
 		   val b = blockCheckAmount {blockIndex = i}
 		in
@@ -387,7 +404,7 @@ fun insertFunction (f: Function.t,
 		      then maybeStack ()
 		   else heapCheckNonZero b
 		end
-	     fun bigAllocation (bytesNeeded: Operand.t) =
+	     fun bigAllocation (bytesNeeded: Operand.t): unit =
 		let
 		   val extraBytes =
 		      Bytes.+ (Runtime.arrayHeaderSize,
@@ -407,36 +424,35 @@ fun insertFunction (f: Function.t,
 		    | _ =>
 			 let
 			    val bytes = Var.newNoname ()
+			    val _ =
+			       newBlock
+			       (true,
+				Vector.new0 (),
+				Transfer.Arith
+				{args = Vector.new2 (Operand.word
+						     (WordX.fromIntInf
+						      (Word.toIntInf
+						       (Bytes.toWord extraBytes),
+						       WordSize.default)),
+						     bytesNeeded),
+				 dst = bytes,
+				 overflow = allocTooLarge (),
+				 prim = Prim.wordAddCheck (WordSize.default,
+							   {signed = false}),
+				 success = (heapCheck
+					    (false, 
+					     Operand.Var
+					     {var = bytes,
+					      ty = Type.defaultWord})),
+				 ty = Type.defaultWord})
 			 in
-			    newBlock
-			    (true,
-			     Vector.new0 (),
-			     Transfer.Arith
-			     {args = Vector.new2 (Operand.word
-						  (WordX.fromIntInf
-						   (Word.toIntInf
-						    (Bytes.toWord extraBytes),
-						    WordSize.default)),
-						  bytesNeeded),
-			      dst = bytes,
-			      overflow = allocTooLarge (),
-			      prim = Prim.wordAddCheck (WordSize.default,
-							{signed = false}),
-			      success = (heapCheck
-					 (false, 
-					  Operand.Var {var = bytes,
-						       ty = Type.defaultWord})),
-			      ty = Type.defaultWord})
+			    ()
 			 end
 		end
-	     val bs = {big = bigAllocation,
-		       small = smallAllocation}
-	     val _ =
-		if 0 < Vector.length statements
-		   then Statement.caseBytes (Vector.sub (statements, 0), bs)
-		else Transfer.caseBytes (transfer, bs)
 	  in
-	     ()
+	     case Transfer.bytesAllocated transfer of
+		Transfer.Big z => bigAllocation z
+	      | Transfer.Small _ => smallAllocation ()
 	  end)
    in
       Function.new {args = args,
@@ -463,8 +479,47 @@ structure Forest = Graph.LoopForest
 
 val traceMaxPath = Trace.trace ("maxPath", Int.layout, Bytes.layout)
 
+fun isolateBigTransfers (f: Function.t): Function.t =
+   let
+      val {args, blocks, name, raises, returns, start} = Function.dest f
+      val newBlocks = ref []
+      val () =
+	 Vector.foreach
+	 (blocks,
+	  fn block as Block.T {args, kind, label, statements, transfer} =>
+	  case Transfer.bytesAllocated transfer of
+	     Transfer.Big _ =>
+		let
+		   val l = Label.newNoname ()
+		in
+		   List.push (newBlocks,
+			      Block.T {args = args,
+				       kind = kind,
+				       label = label,
+				       statements = statements,
+				       transfer = Goto {args = Vector.new0 (),
+							dst = l}})
+		   ; List.push (newBlocks,
+				Block.T {args = Vector.new0 (),
+					 kind = Kind.Jump,
+					 label = l,
+					 statements = Vector.new0 (),
+					 transfer = transfer})
+		end
+	   | Transfer.Small _ => List.push (newBlocks, block))
+      val blocks = Vector.fromListRev (!newBlocks)
+   in
+      Function.new {args = args,
+		    blocks = blocks,
+		    name = name,
+		    raises = raises,
+		    returns = returns,
+		    start = start}
+   end
+   
 fun insertCoalesce (f: Function.t, handlesSignals) =
    let
+      val f = isolateBigTransfers f
       val {blocks, start, ...} = Function.dest f
       val n = Vector.length blocks
       val {get = labelIndex, set = setLabelIndex, ...} =
@@ -506,12 +561,10 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
 	     val Block.T {kind, statements, transfer, ...} =
 		Vector.sub (blocks, i)
 	     datatype z = datatype Kind.t
-	     val bs = {big = fn _ => true,
-		       small = fn _ => false}
-	     fun isBigAlloc () =
-		if 0 < Vector.length statements
-		   then Statement.caseBytes (Vector.sub (statements, 0), bs)
-		else Transfer.caseBytes (transfer, bs)
+	     val isBigAlloc =
+		case Transfer.bytesAllocated transfer of
+		   Transfer.Big _ => true
+		 | Transfer.Small _ => false
 	     val b =
 		case kind of
 		   Cont _ => true
@@ -530,7 +583,7 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
 				      | _ => true))
 			| _ => false)
 	  in
-	     b orelse isBigAlloc ()
+	     b orelse isBigAlloc
 	  end)
       val _ = Array.update (mayHaveCheck, labelIndex start, true)
       (* Build cfg. *)

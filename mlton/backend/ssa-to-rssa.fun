@@ -756,11 +756,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 				     {dst = canHandle,
 				      src = Var {ty = resTy, var = res}}]
 				 end
-			      fun ccallGen
-				 {args: Operand.t vector,
-				  func: CFunction.t,
-				  prefix: Transfer.t -> (Statement.t list
-							 * Transfer.t)} =
+			      fun ccall {args: Operand.t vector,
+					 func: CFunction.t} =
 				 let
 				    val formals =
 				       case dst () of
@@ -770,44 +767,11 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 				    split
 				    (formals, Kind.CReturn {func = func}, ss,
 				     fn l =>
-				     let
-					val t =
-					   Transfer.CCall {args = args,
-							   func = func,
-							   return = SOME l}
-					fun isolate () =
-					   (* Put the CCall in its own block
-					    * so that limit check insertion
-					    * can put a limit check just before
-					    * it.
-					    *)
-					   let
-					      val l =
-						 newBlock
-						 {args = Vector.new0 (),
-						  kind = Kind.Jump,
-						  statements = Vector.new0 (),
-						  transfer = t}
-					   in
-					      prefix
-					      (Transfer.Goto
-					       {args = Vector.new0 (),
-						dst = l})
-					   end
-				     in
-					case CFunction.bytesNeeded func of
-					   NONE => prefix t
-					 | SOME i =>
-					      Operand.caseBytes
-					      (Vector.sub (args, i),
-					       {big = fn _ => isolate (),
-						small = fn _ => prefix t})
-				     end)
+				     ([],
+				      Transfer.CCall {args = args,
+						      func = func,
+						      return = SOME l}))
 				 end
-			      fun ccall {args, func} =
-				 ccallGen {args = args,
-					   func = func,
-					   prefix = fn t => ([], t)}
 			      fun simpleCCall (f: CFunction.t) =
 				 ccall {args = vos args,
 					func = f}

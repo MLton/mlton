@@ -37,7 +37,7 @@ datatype z = datatype Transfer.t
 
 structure LiveInfo =
    struct
-      datatype t = T of {live: Var.t list ref,
+      datatype t = T of {live: Var.t Buffer.t,
 			 liveHS: {handler: Label.t option ref,
 				  link: unit option ref},
 			 name: string,
@@ -46,19 +46,19 @@ structure LiveInfo =
       fun layout (T {name, ...}) = Layout.str name
 
       fun new (name: string) =
-	 T {live = ref [],
+	 T {live = Buffer.new {dummy = Var.bogus},
 	    liveHS = {handler = ref NONE,
 		      link = ref NONE},
 	    name = name,
 	    preds = ref []}
 
-      fun live (T {live = r, ...}) = !r
+      fun live (T {live, ...}) = Buffer.toVector live
 	 
       fun liveHS (T {liveHS = {handler, link}, ...}) =
 	 {handler = !handler,
 	  link = isSome (!link)}
 
-      fun equals (T {live = r, ...}, T {live = r', ...}) = r = r'
+      fun equals (T {preds = r, ...}, T {preds = r', ...}) = r = r'
 
       fun addEdge (b, T {preds, ...}) =
 	 if List.exists (!preds, fn b' => equals (b, b'))
@@ -76,17 +76,35 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
       val shouldConsider =
 	 Trace.trace ("Live.shouldConsider", Var.layout, Bool.layout)
 	 shouldConsider
+      val {args, blocks, ...} = Function.dest function
       val _ =
 	 Control.diagnostic
 	 (fn () =>
-	  let open Layout
-	  in seq [str "Live info for ",
-		  Func.layout (Function.name function)]
+	  let
+	     val numVars = ref 0
+	     fun loopVar (x, _) =
+		if shouldConsider x
+		   then Int.inc numVars
+		else ()
+	     fun loopFormals v = Vector.foreach (v, loopVar)
+	     val () =
+		Vector.foreach
+		(blocks, fn Block.T {args, statements, transfer, ...} =>
+		 (loopFormals args
+		  ; Vector.foreach (statements, fn s =>
+				    Statement.foreachDef (s, loopVar))
+		  ; Transfer.foreachDef (transfer, loopVar)))
+	     open Layout
+	  in
+	     align [seq [str "Live info for ",
+			 Func.layout (Function.name function)],
+		    seq [str "  num blocks ", Int.layout (Vector.length blocks)],
+		    seq [str "  num vars ", Int.layout (!numVars)]]
 	  end)
-      val {args, blocks, ...} = Function.dest function
       val {get = labelInfo: Label.t -> {argInfo: LiveInfo.t,
 					block: Block.t,
 					bodyInfo: LiveInfo.t},
+	   rem = removeLabelInfo,
 	   set = setLabelInfo, ...} =
 	 Property.getSetOnce (Label.plist,
 			      Property.initRaise ("live info", Label.layout))
@@ -208,11 +226,11 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 	       val todo: LiveInfo.t list ref = ref []
 	       fun consider (b as LiveInfo.T {live, ...}) =
 		  if LiveInfo.equals (b, defined)
-		     orelse (case !live of
-				[] => false
-			      | x' :: _ => Var.equals (x, x'))
+		     orelse (case Buffer.last live of
+				NONE => false
+			      | SOME x' => Var.equals (x, x'))
 		     then false
-		  else (List.push (live, x)
+		  else (Buffer.add (live, x)
 			; List.push (todo, b)
 			; true)
 	       val consider = traceConsider consider
@@ -289,16 +307,21 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 	 end
       val _ = handlerLink (handlerCodeDefUses, #handler)
       val _ = handlerLink (handlerLinkDefUses, #link)
-      fun labelLive (l: Label.t) =
-	 let
-	    val {bodyInfo, argInfo, ...} = labelInfo l
-	    val {handler, link} = LiveInfo.liveHS bodyInfo
-	 in
-	    {begin = LiveInfo.live bodyInfo,
-	     beginNoFormals = LiveInfo.live argInfo,
-	     handler = handler,
-	     link = link}
-	 end
+      val {get = labelLive, ...} =
+	 Property.get
+	 (Label.plist,
+	  Property.initFun
+	  (fn l =>
+	   let
+	      val {bodyInfo, argInfo, ...} = labelInfo l
+	      val () = removeLabelInfo l
+	      val {handler, link} = LiveInfo.liveHS bodyInfo
+	   in
+	      {begin = LiveInfo.live bodyInfo,
+	       beginNoFormals = LiveInfo.live argInfo,
+	       handler = handler,
+	       link = link}
+	   end))
       val _ =
 	 Control.diagnostics
 	 (fn display =>
@@ -313,9 +336,9 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 		 display
 		 (seq [Label.layout l,
 		       str " ",
-		       record [("begin", List.layout Var.layout begin),
+		       record [("begin", Vector.layout Var.layout begin),
 			       ("beginNoFormals",
-				List.layout Var.layout beginNoFormals),
+				Vector.layout Var.layout beginNoFormals),
 			       ("handler", Option.layout Label.layout handler),
 			       ("link", Bool.layout link)]])
 	      end)

@@ -114,7 +114,7 @@ val traceGenBlock =
 fun eliminateDeadCode (f: R.Function.t): R.Function.t =
    let
       val {args, blocks, name, returns, raises, start} = R.Function.dest f
-      val {get, set, ...} =
+      val {get, rem, set, ...} =
 	 Property.getSetOnce (Label.plist, Property.initConst false)
       val get = Trace.trace ("Backend.labelIsReachable",
 			     Label.layout,
@@ -124,7 +124,13 @@ fun eliminateDeadCode (f: R.Function.t): R.Function.t =
 			 (set (label, true)
 			  ; fn () => ()))
       val blocks =
-	 Vector.keepAll (blocks, fn R.Block.T {label, ...} => get label)
+	 Vector.keepAll (blocks, fn R.Block.T {label, ...} =>
+			 let
+			    val res = get label
+			    val () = rem label
+			 in
+			    res
+			 end)
    in
       R.Function.new {args = args,
 		      blocks = blocks,
@@ -144,6 +150,7 @@ fun toMachine (program: Ssa.Program.t, codegen) =
 				thunk = fn () => doit program,
 				typeCheck = R.Program.typeCheck}
       val program = pass ("ssaToRssa", SsaToRssa.convert, (program, codegen))
+      val program = pass ("rssaShrink", Rssa.Program.shrink, program)
       val program = pass ("insertLimitChecks", LimitCheck.insert, program)
       val program = pass ("insertSignalChecks", SignalCheck.insert, program)
       val program = pass ("implementHandlers", ImplementHandlers.doit, program)

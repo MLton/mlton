@@ -143,22 +143,6 @@ structure Operand =
 
       fun foreachVar (z: t, f: Var.t -> unit): unit =
 	 foldVars (z, (), f o #1)
-
-      fun caseBytes (z, {big: t -> 'a,
-			 small: Bytes.t -> 'a}): 'a =
-	 case z of
-	    Const c =>
-	       (case c of
-		   Const.Word w =>
-		      let
-			 val w = WordX.toIntInf w
-		      in
-			 if w <= 512 (* 512 is pretty arbitrary *)
-			    then small (Bytes.fromIntInf w)
-			 else big z
-		      end
-		 | _ => Error.bug "strange numBytes")
-	  | _ => big z
    end
 
 structure Switch = Switch (open S
@@ -619,11 +603,11 @@ structure Function =
 		 set = setNodeInfo, ...} =
 	       Property.getSetOnce
 	       (Node.plist, Property.initRaise ("info", Node.layout))
-	    val _ =
+	    val () =
 	       Vector.foreach
 	       (blocks, fn b as Block.T {label, ...}=>
 		setNodeInfo (labelNode label, {block = b}))
-	    val _ =
+	    val () =
 	       Vector.foreach
 	       (blocks, fn Block.T {label, transfer, ...} =>
 		let
@@ -639,6 +623,99 @@ structure Function =
 	 in
 	    Graph.dominatorTree (g, {root = labelNode start,
 				     nodeValue = #block o nodeInfo})
+	 end
+
+      fun shrink (f: t): t =
+	 let
+	    val {args, blocks, name, raises, returns, start} = dest f
+	    val {get = labelInfo, rem, set = setLabelInfo, ...} =
+	       Property.getSetOnce
+	       (Label.plist, Property.initRaise ("info", Label.layout))
+	    val () =
+	       Vector.foreach
+	       (blocks, fn block as Block.T {label, ...} =>
+		setLabelInfo (label, {block = block,
+				      inline = ref false,
+				      occurrences = ref 0}))
+	    fun visitLabel l = Int.inc (#occurrences (labelInfo l))
+	    val () = visitLabel start
+	    val () =
+	       Vector.foreach (blocks, fn Block.T {transfer, ...} =>
+			       Transfer.foreachLabel (transfer, visitLabel))
+	    datatype z = datatype Statement.t
+	    datatype z = datatype Transfer.t
+	    val () =
+	       Vector.foreach
+	       (blocks, fn Block.T {transfer, ...} =>
+		case transfer of
+		   Goto {args, dst} =>
+		      let
+			 val {inline, occurrences, ...} = labelInfo dst
+		      in
+			 if 1 = !occurrences
+			    then inline := true
+			 else ()
+		      end
+		 | _ => ())
+	    fun expand (ss: Statement.t vector list, t: Transfer.t)
+	       : Statement.t vector * Transfer.t =
+	       let
+		  fun done () = (Vector.concat (rev ss), t)
+	       in
+		  case t of
+		     Goto {args, dst} =>
+			let
+			   val {block, inline, ...} = labelInfo dst
+			in
+			   if not (!inline)
+			      then done ()
+			   else
+			      let
+				 val Block.T {args = formals, statements,
+					      transfer, ...} =
+				    block
+				 val binds =
+				    Vector.map2
+				    (formals, args, fn (dst, src) =>
+				     Bind {dst = dst,
+					   isMutable = false,
+					   src = src})
+			      in
+				 expand (statements :: binds :: ss, transfer)
+			      end
+			end
+		   | _ => done ()
+	       end
+	    val blocks =
+	       Vector.fromList
+	       (Vector.fold
+		(blocks, [],
+		 fn (Block.T {args, kind, label, statements, transfer}, ac) =>
+		 let
+		    val {inline, ...} = labelInfo label
+		 in
+		    if !inline
+		       then ac
+		    else
+		       let
+			  val (statements, transfer) =
+			     expand ([statements], transfer)
+		       in
+			  Block.T {args = args,
+				   kind = kind,
+				   label = label,
+				   statements = statements,
+				   transfer = transfer} :: ac
+		       end
+		 end))
+	    val () = Vector.foreach (blocks, rem o Block.label)
+	 in
+	    new {args = args,
+		 blocks = blocks,
+		 name = name,
+		 raises = raises,
+		 returns = returns,
+		 start = start}
 	 end
    end
 
@@ -669,6 +746,12 @@ structure Program =
 	    ; output (str "\nFunctions:")
 	    ; List.foreach (functions, fn f => Function.layouts (f, output))
 	 end
+
+      fun shrink (T {functions, handlesSignals, main, objectTypes}) =
+	 T {functions = List.revMap (functions, Function.shrink),
+	    handlesSignals = handlesSignals,
+	    main = Function.shrink main,
+	    objectTypes = objectTypes}
 
       structure ExnStack =
 	 struct
@@ -992,7 +1075,7 @@ structure Program =
 	    val _ = clear program
 	 in ()
 	 end
-
+   
       fun typeCheck (p as T {functions, main, objectTypes, ...}) =
 	 let
 	    val _ =
@@ -1003,7 +1086,7 @@ structure Program =
 			   fn () => ObjectType.layout ty))
 	    fun tyconTy (pt: PointerTycon.t): ObjectType.t =
 	       Vector.sub (objectTypes, PointerTycon.index pt)
-	    val _ = checkScopes p
+	    val () = checkScopes p
 	    val {get = labelBlock: Label.t -> Block.t,
 		 set = setLabelBlock, ...} =
 	       Property.getSetOnce (Label.plist,

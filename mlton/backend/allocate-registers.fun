@@ -336,7 +336,7 @@ fun allocate {argOperands,
 		case Kind.frameStyle kind of
 		   Kind.None => ()
 		 | Kind.OffsetsAndSize =>
-		      List.foreach (beginNoFormals, forceStack)
+		      Vector.foreach (beginNoFormals, forceStack)
 		 | Kind.SizeOnly => ()
 	     val _ =
 		case kind of
@@ -416,14 +416,12 @@ fun allocate {argOperands,
 		  SOME {handler = handler, link = link}
 	       end
 	 else NONE
-      fun getOperands (xs: Var.t list): Operand.t list =
-	 List.fold
-	 (xs, [], fn (x, operands) =>
-	  valOf (! (valOf (#operand (varInfo x)))) :: operands)
+      fun getOperands (xs: Var.t vector): Operand.t vector =
+	 Vector.map (xs, fn x => valOf (! (valOf (#operand (varInfo x)))))
       val getOperands =
 	 Trace.trace ("Allocate.getOperands",
-		      List.layout Var.layout,
-		      List.layout Operand.layout)
+		      Vector.layout Var.layout,
+		      Vector.layout Operand.layout)
 	 getOperands
       (* Do a DFS of the control-flow graph. *)
       val _ =
@@ -432,32 +430,32 @@ fun allocate {argOperands,
 	  let
 	     val {begin, beginNoFormals, handler = handlerLive,
 		  link = linkLive} = labelLive label
-	     fun addHS ops =
-		Vector.fromList
-		(case handlerLinkOffset of
-		    NONE => ops
-		  | SOME {handler, link} =>
-		       let
-			  val ops =
-			     case handlerLive of
-				NONE => ops
-			      | SOME h => 
-				   Operand.stackOffset {offset = handler,
-							ty = Type.label h}
-				   :: ops
-			  val ops =
-			     if linkLive
-				then
-				   Operand.stackOffset {offset = link,
-							ty = Type.exnStack}
-				   :: ops
-			     else ops
-		       in
-			  ops
-		       end)
+	     fun addHS (ops: Operand.t vector): Operand.t vector =
+		case handlerLinkOffset of
+		   NONE => ops
+		 | SOME {handler, link} =>
+		      let
+			 val extra = []
+			 val extra =
+			    case handlerLive of
+			       NONE => extra
+			     | SOME h => 
+				  Operand.stackOffset {offset = handler,
+						       ty = Type.label h}
+				  :: extra
+			 val extra =
+			    if linkLive
+			       then
+				  Operand.stackOffset {offset = link,
+						       ty = Type.exnStack}
+				  :: extra
+			    else extra
+		      in
+			 Vector.concat [Vector.fromList extra, ops]
+		      end
 	     val liveNoFormals = getOperands beginNoFormals
 	     val (stackInit, registersInit) =
-	        List.fold
+	        Vector.fold
 		(liveNoFormals, ([],[]), fn (oper, (stack, registers)) =>
 		 case oper of
 		    Operand.StackOffset s => (s::stack, registers)
