@@ -8,7 +8,7 @@ doit () {
 	for f in `ls`; do
 		if [ -d $f ]; then
 			cd $f && 
-			if [ -r Makefile ]; then 
+			if [ -r Makefile ] && grep -q '^clean:' Makefile ; then 
 				gmake clean
 			else
 				doit
