@@ -33,7 +33,7 @@ val parent = getpid ()
 val _ =
    case fork () of
       NONE => 
-	 (handleWith (usr1, fn () => save w)
+	 (handleWith' (usr1, fn t => (saveThread (w, t); t))
 	  ; kill (K_PROC parent, usr1)
 	  ; let
 	       val rec loop =
