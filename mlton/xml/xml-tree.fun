@@ -33,7 +33,17 @@ fun maybeConstrain (x, t) =
 	 then seq [x, str ": ", Type.layout t]
       else x
    end
-   
+
+local
+   open Layout
+in
+   fun layoutTargs (ts: Type.t vector) =
+      if !Control.showTypes
+	 andalso 0 < Vector.length ts
+	 then list (Vector.toListMap (ts, Type.layout))
+      else empty
+end
+
 structure Pat =
    struct
       datatype t = T of {arg: (Var.t * Type.t) option,
@@ -45,6 +55,7 @@ structure Pat =
       in
 	 fun layout (T {arg, con, targs}) =
 	    seq [Con.layout con,
+		 layoutTargs targs,
 		 case arg of
 		    NONE => empty
 		  | SOME (x, t) =>
@@ -259,8 +270,9 @@ in
 		      | SOME (e, _) => seq [str "_ => ", layoutExp e]],
 		    2),
 		   Cases.layout (cases, layoutExp)]
-       | ConApp {arg, con, ...} =>
+       | ConApp {arg, con, targs, ...} =>
 	    seq [Con.layout con,
+		 layoutTargs targs,
 		 case arg of
 		    NONE => empty
 		  | SOME x => seq [str " ", VarExp.layout x]]
@@ -273,10 +285,7 @@ in
        | Lambda l => layoutLambda l
        | PrimApp {args, prim, targs} =>
 	    seq [Prim.layout prim,
-		 if !Control.showTypes
-		    andalso 0 < Vector.length targs
-		    then list (Vector.toListMap (targs, Type.layout))
-		 else empty,
+		 layoutTargs targs,
 		 str " ", tuple (Vector.toListMap (args, VarExp.layout))]
        | Profile e => ProfileExp.layout e
        | Raise {exn, ...} => seq [str "raise ", VarExp.layout exn]
