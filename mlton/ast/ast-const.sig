@@ -20,12 +20,13 @@ signature AST_CONST =
        | Char of IntInf.t
        | Int of IntInf.t
        | Real of string
-       | String of string
+       | String of IntInf.t vector
        | Word of IntInf.t
       include WRAPPED sharing type node' = node
                       sharing type obj = t
 
       val equals: t * t -> bool
       val layout: t -> Layout.t
+      val ordToString: IntInf.t -> string
       val toString: t -> string
    end

@@ -54,6 +54,7 @@ signature TYPE_ENV =
 	    val unresolvedChar: unit -> t
 	    val unresolvedInt: unit -> t
 	    val unresolvedReal: unit -> t
+	    val unresolvedString: unit -> t
 	    val unresolvedWord: unit -> t
 	    val var: Tyvar.t -> t
 	 end

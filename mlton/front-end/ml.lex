@@ -23,7 +23,7 @@ type lexarg = {source: Source.t}
 type arg = lexarg
 type ('a,'b) token = ('a,'b) Tokens.token
 
-val charlist: string list ref = ref []
+val charlist: IntInf.t list ref = ref []
 val colNum: int ref = ref 0
 val commentLevel: int ref = ref 0
 val commentStart = ref SourcePos.bogus
@@ -36,11 +36,16 @@ fun lineDirective (source, file, yypos) =
    Source.lineDirective (source, file,
 			 {lineNum = !lineNum,
 			  lineStart = yypos - !colNum})
-fun addString (s: string) = charlist := s :: (!charlist)
+
+fun addString (s: string) =
+   charlist :=
+   String.fold (s, !charlist, fn (c, ac) => Int.toIntInf (Char.ord c) :: ac)
+
 fun addChar (c: char) = addString (String.fromChar c)
 
-fun inc (ri as ref (i: int)) = (ri := i + 1)
-fun dec (ri as ref (i: int)) = (ri := i-1)
+fun inc (ri as ref (i: int)) = ri := i + 1
+   
+fun dec (ri as ref (i: int)) = ri := i - 1
 
 fun error (source, left, right, msg) = 
    Control.errorStr (Region.make {left = Source.getPos (source, left),
@@ -51,6 +56,13 @@ fun stringError (source, right, msg) =
    Control.errorStr (Region.make {left = !stringStart,
 				  right = Source.getPos (source, right)},
 		     msg)
+
+fun addOrd (i: IntInf.t): unit = List.push (charlist, i)
+
+fun addHexEscape (s: string, source, yypos): unit =
+   case StringCvt.scanString (Pervasive.IntInf.scan StringCvt.HEX) s of
+      NONE => stringError (source, yypos, "illegal unicode escape")
+    | SOME i => addOrd i
 
 val eof: lexarg -> lexresult =
    fn {source, ...} =>
@@ -219,12 +231,12 @@ hexnum={hexDigit}+;
    (word (yytext, 2, source, yypos, StringCvt.DEC));
 <INITIAL>"0wx"{hexnum} =>
    (word (yytext, 3, source, yypos, StringCvt.HEX));
-<INITIAL>\"	=> (charlist := [""]
+<INITIAL>\"	=> (charlist := []
                     ; stringStart := Source.getPos (source, yypos)
                     ; stringtype := true
                     ; YYBEGIN S
                     ; continue ());
-<INITIAL>\#\"	=> (charlist := [""]
+<INITIAL>\#\"	=> (charlist := []
                     ; stringStart := Source.getPos (source, yypos)
                     ; stringtype := false
                     ; YYBEGIN S
@@ -272,23 +284,22 @@ hexnum={hexDigit}+;
 <A>.		=> (continue ());
 
 <S>\"	        => (let
-		       val s = concat (rev (!charlist))
+		       val s = Vector.fromListRev (!charlist)
 		       val _ = charlist := nil
 		       fun make (t, v) =
 			  t (v, !stringStart, Source.getPos (source, yypos + 1))
-                    in YYBEGIN INITIAL;
+		       val () = YYBEGIN INITIAL
+		    in
 		       if !stringtype
 			  then make (Tokens.STRING, s)
 		       else
 			  make (Tokens.CHAR,
-				IntInf.fromInt
-				(Char.ord
-				 (if size s <> 1 
-				     then (error
-					   (source, yypos, yypos + 1,
-					    "character constant not length 1")
-					   ; #"\000")
-				  else String.sub (s, 0))))
+				if 1 <> Vector.length s
+				   then (error
+					 (source, yypos, yypos + 1,
+					  "character constant not length 1")
+					 ; 0)
+				else Vector.sub (s, 0))
                     end);
 <S>\\a		=> (addChar #"\a"; continue ());
 <S>\\b		=> (addChar #"\b"; continue ());
@@ -305,32 +316,20 @@ hexnum={hexDigit}+;
 		"illegal control escape; must be one of @ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_");
 	continue ());
 <S>\\[0-9]{3}	=> (let
-		       val x =
-			  Char.ord(String.sub(yytext, 1)) * 100
-			  + Char.ord(String.sub(yytext, 2)) * 10
-			  + Char.ord(String.sub(yytext, 3))
-			  - (Char.ord #"0") * 111
-		    in (if x > 255
-			   then stringError (source, yypos,
-					     "illegal ascii escape")
-			else addChar(Char.chr x);
-			   continue ())
+		       fun c (i, scale) =
+			  scale * (Char.ord (String.sub (yytext, i))
+				   - Char.ord #"0")
+		       val () = addOrd (IntInf.fromInt
+					(c (1, 100) + c (2, 10) + c (3, 1)))
+		    in
+		       continue ()
 		    end);
-<S>\\u{hexDigit}{4} => (let
-			   val x = 
-			      StringCvt.scanString
-			      (Pervasive.Int.scan StringCvt.HEX)
-			      (String.substring (yytext, 2, 4))
-			   fun err () =
-			      stringError (source, yypos,
-					   "illegal unicode escape")
-			in (case x of
-			       SOME x => if x > 255
-					    then err()
-					 else addChar(Char.chr x)
-			     | _ => err())
-			   ; continue ()
-			end);
+<S>\\u{hexDigit}{4} => (addHexEscape (String.substring (yytext, 2, 4),
+				      source, yypos)
+			; continue ());
+<S>\\U{hexDigit}{8} => (addHexEscape (String.substring (yytext, 2, 8),
+				      source, yypos)
+			; continue ());
 <S>\\\"		=> (addString "\""; continue ());
 <S>\\\\		=> (addString "\\"; continue ());
 <S>\\{nrws}   	=> (YYBEGIN F; continue ());

@@ -92,6 +92,7 @@ in
    structure Var = Var
    structure WordSize = WordSize
    structure WordX = WordX
+   structure WordXVector = WordXVector
 end
 
 structure AdmitsEquality = Tycon.AdmitsEquality
@@ -215,52 +216,55 @@ fun 'a elabConst (c: Aconst.t,
 	     seq [Type.layoutPretty ty, str " too big: ", Aconst.layout c],
 	     empty)
 	 end
+      fun ensureChar (cs: CharSize.t, ch: IntInf.t): unit =
+	 if CharSize.isInRange (cs, ch)
+	    then ()
+	 else
+	    let
+	       open Layout
+	    in
+	       Control.error (Aconst.region c,
+			      str (concat
+				   ["character too big: ",
+				    "#\"", Aconst.ordToString ch, "\""]),
+			      empty)
+	    end
       fun choose (tycon, all, sizeTycon, make) =
 	 case List.peek (all, fn s => Tycon.equals (tycon, sizeTycon s)) of
 	    NONE => Const.string "<bogus>"
 	  | SOME s => make s
       fun now (c: Const.t, ty: Type.t): 'a = make (fn () => c, ty)
-      fun delay (ty: Type.t, resolve: Tycon.t -> Const.t): 'a =
+      fun delay (ty: unit -> Type.t, resolve: Type.t -> Const.t): 'a =
 	 let
-	    val resolve =
-	       Promise.lazy
-	       (fn () =>
-		let
-		   val tycon =
-		      case typeTycon ty of
-			 NONE => Tycon.bogus
-		       | SOME c => c
-		in
-		   resolve tycon
-		end)
+	    val ty = ty ()
+	    val resolve = Promise.lazy (fn () => resolve ty)
 	    val _ = List.push (overloads, (Priority.default, ignore o resolve))
 	 in
 	    make (resolve, ty)
 	 end
+      val typeTycon =
+	 fn ty =>
+	 case typeTycon ty of
+	    NONE => Tycon.bogus
+	  | SOME c => c
    in
       case Aconst.node c of
 	 Aconst.Bool b => if b then t else f
        | Aconst.Char c =>
-	    let
-	       val ty = Type.unresolvedChar ()
-	    in
-	       delay
-	       (ty, fn tycon =>
-		choose (tycon,
-			List.map ([8, 16, 32], WordSize.fromBits o Bits.fromInt),
-			Tycon.word,
-			fn s =>
-			Const.Word
-			(if WordSize.isInRange (s, c, {signed = false})
-			    then WordX.fromIntInf (c, s)
-			 else (error ty; WordX.zero s))))
-	    end
+	    delay
+	    (Type.unresolvedChar, fn ty =>
+	     choose (typeTycon ty,
+		     List.map ([8, 16, 32], WordSize.fromBits o Bits.fromInt),
+		     Tycon.word,
+		     fn s =>
+		     (ensureChar (CharSize.fromBits (WordSize.bits s), c)
+		      ; Const.Word (WordX.fromIntInf (c, s)))))
        | Aconst.Int i =>
-	    let
-	       val ty = Type.unresolvedInt ()
-	    in
-	       delay
-	       (ty, fn tycon =>
+	    delay
+	    (Type.unresolvedInt, fn ty =>
+	     let
+		val tycon = typeTycon ty
+	     in
 		if Tycon.equals (tycon, Tycon.intInf)
 		   then Const.IntInf i
 		else
@@ -268,33 +272,43 @@ fun 'a elabConst (c: Aconst.t,
 			   Const.Word
 			   (if WordSize.isInRange (s, i, {signed = true})
 			       then WordX.fromIntInf (i, s)
-			    else (error ty; WordX.zero s))))
-	    end
+			    else (error ty; WordX.zero s)))
+	     end)
        | Aconst.Real r =>
-	    let
-	       val ty = Type.unresolvedReal ()
-	    in
-	       delay
-	       (ty, fn tycon =>
-		choose (tycon, RealSize.all, Tycon.real, fn s =>
-			Const.Real (case RealX.make (r, s) of
-				       NONE => (error ty; RealX.zero s)
-				     | SOME r => r)))
-	    end
-       | Aconst.String s => now (Const.string s, Type.string)
+	    delay
+	    (Type.unresolvedReal, fn ty =>
+	     choose (typeTycon ty, RealSize.all, Tycon.real, fn s =>
+		     Const.Real (case RealX.make (r, s) of
+				    NONE => (error ty; RealX.zero s)
+				  | SOME r => r)))
+       | Aconst.String v =>
+	    delay
+	    (Type.unresolvedString, fn ty =>
+	     choose (typeTycon (Type.deVector ty),
+		     List.map ([8, 16, 32], WordSize.fromBits o Bits.fromInt),
+		     Tycon.word,
+		     fn s =>
+		     let
+			val cs = CharSize.fromBits (WordSize.bits s)
+		     in
+			Const.WordVector
+			(WordXVector.tabulate
+			 ({elementSize = s}, Vector.length v, fn i =>
+			  let
+			     val ch = Vector.sub (v, i)
+			     val () = ensureChar (cs, ch)
+			  in
+			     WordX.fromIntInf (ch, s)
+			  end))
+		     end))
        | Aconst.Word w =>
-	    let
-	       val ty = Type.unresolvedWord ()
-	    in
-	       delay
-	       (ty, fn tycon =>
-		choose (tycon, WordSize.all, Tycon.word, fn s =>
-			Const.Word
-			(if WordSize.isInRange (s, w, {signed = false})
-			    then WordX.fromIntInf (w, s)
-			 else (error ty
-			       ; WordX.zero s))))
-	    end	       
+	    delay
+	    (Type.unresolvedWord, fn ty =>
+	     choose (typeTycon ty, WordSize.all, Tycon.word, fn s =>
+		     Const.Word
+		     (if WordSize.isInRange (s, w, {signed = false})
+			 then WordX.fromIntInf (w, s)
+		      else (error ty; WordX.zero s))))
    end
 
 local

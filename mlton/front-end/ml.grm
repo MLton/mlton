@@ -220,7 +220,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
 	      radix: StringCvt.radix}
     | LONGID of string
     | REAL of string
-    | STRING of string 
+    | STRING of IntInf.t vector
     | TYVAR of string
     | WORD of {digits: string,
 	       radix: StringCvt.radix}
@@ -365,6 +365,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | strexp2node of Strexp.node
        | strexpnode of Strexp.node
        | strid of Strid.t
+       | string of string
        | tlabel of (Field.t * Type.t)
        | tlabels  of (Field.t * Type.t) list
        | topdec of Topdec.t
@@ -446,7 +447,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
 %value INT ({digits = "0", negate = false, radix = StringCvt.DEC})
 %value LONGID ("bogus")
 %value REAL ("13.0")
-%value STRING ("bogus")
+%value STRING (Vector.fromList [])
 %value TYVAR ("'a")
 %value WORD ({digits = "0", radix = StringCvt.DEC})
 
@@ -1010,37 +1011,37 @@ aexp	: OP vid		(Exp.Var {name = Longvid.short vid,
 	    (Exp.Let (decs, Exp.makeRegion' (Exp.Seq (Vector.fromList exp_ps),
 					     exp_psleft,
 					     exp_psright)))
-        | BUILD_CONST STRING COLON ty SEMICOLON
-	  (Exp.Prim {kind = PrimKind.BuildConst {name = STRING}, 
+        | BUILD_CONST string COLON ty SEMICOLON
+	  (Exp.Prim {kind = PrimKind.BuildConst {name = string}, 
                      ty = ty})
-	| COMMAND_LINE_CONST STRING COLON ty EQUALOP constOrBool SEMICOLON
-	  (Exp.Prim {kind = PrimKind.CommandLineConst {name = STRING,
+	| COMMAND_LINE_CONST string COLON ty EQUALOP constOrBool SEMICOLON
+	  (Exp.Prim {kind = PrimKind.CommandLineConst {name = string,
                                                        value = constOrBool},
 		     ty = ty})
-        | CONST STRING COLON ty SEMICOLON
-	  (Exp.Prim {kind = PrimKind.Const {name = STRING}, 
+        | CONST string COLON ty SEMICOLON
+	  (Exp.Prim {kind = PrimKind.Const {name = string}, 
                      ty = ty})
-        | FFI STRING COLON ty SEMICOLON
+        | FFI string COLON ty SEMICOLON
 	  (Control.warning
 	   (reg (FFIleft, SEMICOLONright),
 	    Layout.str "_ffi is deprecated.  Use _import.",
 	    Layout.empty)
 	   ; Exp.Prim {kind = PrimKind.Import {attributes = [], 
-                                               name = STRING}, 
+                                               name = string}, 
                        ty = ty})
-	| EXPORT STRING attributes COLON ty SEMICOLON
+	| EXPORT string attributes COLON ty SEMICOLON
           (Exp.Prim {kind = PrimKind.Export {attributes = attributes,
-                                             name = STRING},
+                                             name = string},
 		     ty = ty})
-	| IMPORT STRING attributes COLON ty SEMICOLON
+	| IMPORT string attributes COLON ty SEMICOLON
 	  (Exp.Prim {kind = PrimKind.Import {attributes = attributes,
-                                             name = STRING},
+                                             name = string},
 		     ty = ty})
 	| IMPORT ASTERISK attributes COLON ty SEMICOLON
 	  (Exp.Prim {kind = PrimKind.IImport {attributes = attributes},
 		     ty = ty})
-        | PRIM STRING COLON ty SEMICOLON
-	  (Exp.Prim {kind = PrimKind.Prim {name = STRING}, 
+        | PRIM string COLON ty SEMICOLON
+	  (Exp.Prim {kind = PrimKind.Prim {name = string}, 
                      ty = ty})
 
 attributes
@@ -1194,6 +1195,10 @@ const'  : int			(Const.Int int)
 	| STRING		(Const.String STRING)
 	| CHAR 		        (Const.Char CHAR)
 
+string : STRING  (CharVector.tabulate
+		  (Vector.length STRING, fn i =>
+		   Char.fromInt (Int.fromIntInf (Vector.sub (STRING, i)))))
+	  
 idNoAsterisk : longidNoAsterisk (ensureNonqualified longidNoAsterisk)
 
 id : idNoAsterisk  (idNoAsterisk)
@@ -1216,7 +1221,7 @@ longidNoAsterisk
 
 longidEqual : longid   (longid)
             | EQUALOP  (([Symbol.equal], reg (EQUALOPleft, EQUALOPright)))
-
+	      
 vid : idEqual                  (Vid.fromSymbol idEqual)
 vidNoEqual : id                (Vid.fromSymbol id)
 vids : vid                     ([vid])

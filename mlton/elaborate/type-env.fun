@@ -784,6 +784,8 @@ structure Type =
 	 val unresolvedReal = make (Real, Equality.falsee)
 	 val unresolvedWord = make (Word, Equality.truee)
       end
+
+      fun unresolvedString () = vector (unresolvedChar ())
    
       val traceCanUnify =
 	 Trace.trace2 ("canUnify", layout, layout, Bool.layout)
