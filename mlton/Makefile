@@ -60,7 +60,6 @@ SML	= sml
 nj-mlton: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
-		echo 'Control.polyEqWarn := false;';				\
 		echo '#set CM.Control.verbose false;';				\
 		echo '#set CM.Control.warn_obsolete false;';			\
 		echo 'Control.polyEqWarn := false;';				\
@@ -72,7 +71,6 @@ nj-mlton: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 nj-mlton-dual: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
-		echo 'Control.polyEqWarn := false;';				\
 		echo '#set CM.Control.verbose false;';				\
 		echo '#set CM.Control.warn_obsolete false;';			\
 		echo 'Control.polyEqWarn := false;';				\
