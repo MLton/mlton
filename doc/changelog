@@ -1,5 +1,8 @@
 Here are the changes since version 20030716.
 
+* 2003-10-10
+  - Added "-stop tc" switch to stop after type checking.
+
 * 2003-10-09
   - Changed default ramSlop to 0.5.
 

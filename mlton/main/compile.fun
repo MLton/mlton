@@ -425,8 +425,8 @@ fun layoutBasisLibrary () =
 (* ------------------------------------------------- *)
 (*                      compile                      *)
 (* ------------------------------------------------- *)
-   
-fun preCodegen {input}: Machine.Program.t =
+
+fun elaborate {input: File.t list} =
    let
       fun parseElabMsg () = (lexAndParseMsg (); elaborateMsg ())
       val decs =
@@ -475,7 +475,8 @@ fun preCodegen {input}: Machine.Program.t =
  * 						    user = user},
  * 		display = Control.Layout (List.layout CoreML.Dec.layout)}
  *)
-	 in Vector.concat [primitiveDecs,
+	 in
+	    Vector.concat [primitiveDecs,
 			   Vector.fromList basis,
 			   Vector.fromList user]
 	 end
@@ -508,14 +509,28 @@ fun preCodegen {input}: Machine.Program.t =
 	     }
 	 end
       val xml =
-	 Control.passSimplify
+	 Control.passTypeCheck
 	 {name = "defunctorize",
 	  suffix = "xml",
 	  style = Control.ML,
 	  thunk = fn () => Defunctorize.defunctorize coreML,
 	  display = Control.Layout Xml.Program.layout,
-	  typeCheck = Xml.typeCheck,
-	  simplify = Xml.simplify}
+	  typeCheck = Xml.typeCheck}
+   in
+      xml
+   end
+      
+fun preCodegen {input}: Machine.Program.t =
+   let
+      val xml = elaborate {input = input}
+      val xml =
+	  Control.passTypeCheck
+	  {name = "simplify Xml",
+	   suffix = "xml",
+	   style = Control.ML,
+	   thunk = fn () => Xml.simplify xml,
+	   display = Control.Layout Xml.Program.layout,
+	   typeCheck = Xml.typeCheck}
       val _ = Control.message (Control.Detail, fn () =>
 			       Xml.Program.layoutStats xml)
       val sxml =
@@ -570,6 +585,9 @@ fun preCodegen {input}: Machine.Program.t =
       machine
    end
 
+fun typeCheck {input: File.t list}: unit =
+   (elaborate {input = input}; ())
+   
 fun compile {input: File.t list, outputC, outputS}: unit =
    let
       val machine =

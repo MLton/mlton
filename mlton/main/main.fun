@@ -14,15 +14,16 @@ structure Compile = Compile ()
 
 structure Place =
    struct
-      datatype t = CM | Files | Generated | O | OUT | SML
+      datatype t = CM | Files | Generated | O | OUT | SML | TypeCheck
 
       val toInt: t -> int =
 	 fn CM => 0
 	  | Files => 1
 	  | SML => 2
-	  | Generated => 3
-	  | O => 4
-	  | OUT => 5
+	  | TypeCheck => 3
+	  | Generated => 4
+	  | O => 5
+	  | OUT => 6
 
       val toString =
 	 fn CM => "cm"
@@ -31,6 +32,7 @@ structure Place =
 	  | Generated => "g"
 	  | O => "o"
 	  | OUT => "out"
+	  | TypeCheck => "tc"
 
       val layout = Layout.str o toString
 
@@ -320,7 +322,7 @@ fun makeOptions {usage} =
        (Normal, "static", " {false|true}",
 	"produce a statically linked executable",
 	boolRef static),
-       (Normal, "stop", " {f|g|o|sml}", "where to stop",
+       (Normal, "stop", " {f|g|o|sml|tc}", "where to stop",
 	SpaceString
 	(fn s =>
 	 stop := (case s of
@@ -328,6 +330,7 @@ fun makeOptions {usage} =
 		   | "g" => Place.Generated	
 		   | "o" => Place.O
 		   | "sml" => Place.SML
+		   | "tc" => Place.TypeCheck
 		   | _ => usage (concat ["invalid -stop arg: ", s])))),
        (Normal, "target",
 	concat [" {",
@@ -713,18 +716,25 @@ fun commandLine (args: string list): unit =
 				     ; Out.newline out
 				  end)
 			val _ =
-			   trace (Top, "Compile SML")
-			   Compile.compile
-			   {input = files,
-			    outputC = make (Control.C, ".c"),
-			    outputS = make (Control.Assembly,
-					    if !debug then ".s" else ".S")}
-			(* Shrink the heap before calling gcc. *)
-			val _ = MLton.GC.pack ()
+			   case stop of
+			      Place.TypeCheck =>
+				 trace (Top, "Type Check SML")
+				 Compile.typeCheck {input = files}
+			    | _ => 
+				 trace (Top, "Compile SML")
+				 Compile.compile
+				 {input = files,
+				  outputC = make (Control.C, ".c"),
+				  outputS = make (Control.Assembly,
+						  if !debug then ".s" else ".S")}
 		     in
 			case stop of
 			   Place.Generated => ()
-			 | _ => compileCSO (List.concat [!outputs, csoFiles])
+			 | Place.TypeCheck => ()
+			 | _ =>
+			      (* Shrink the heap before calling gcc. *)
+			      (MLton.GC.pack ()
+			       ; compileCSO (List.concat [!outputs, csoFiles]))
 		     end
 		  fun compileCM input =
 		     let

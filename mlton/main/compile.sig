@@ -26,4 +26,5 @@ signature COMPILE =
       val layoutBasisLibrary: unit -> Layout.t
       (* output a C file to print out the basis constants. *)
       val outputBasisConstants: Out.t -> unit
+      val typeCheck: {input: File.t list} -> unit
    end
