@@ -41,6 +41,7 @@ OBJS =						\
 	basis/MLton/size.o			\
 	basis/MLton/world.o			\
 	basis/OS/FileSys/tmpnam.o		\
+	basis/OS/IO/poll.o			\
 	basis/PackReal/subVec.o			\
 	basis/PackReal/update.o			\
 	basis/Ptrace/ptrace2.o			\
@@ -188,6 +189,7 @@ DEBUG_OBJS =					\
 	basis/MLton/size-gdb.o			\
 	basis/MLton/world-gdb.o			\
 	basis/OS/FileSys/tmpnam-gdb.o		\
+	basis/OS/IO/poll-gdb.o			\
 	basis/PackReal/subVec-gdb.o		\
 	basis/PackReal/update-gdb.o		\
 	basis/Ptrace/ptrace2-gdb.o		\

@@ -16,8 +16,6 @@ signature OS_IO =
 	    val device: iodesc_kind
 	 end
 
-      (* MISSING *)
-(*
       eqtype poll_desc
       type poll_info
       val pollDesc: iodesc -> poll_desc option
@@ -31,5 +29,4 @@ signature OS_IO =
       val isOut: poll_info -> bool
       val isPri: poll_info -> bool
       val infoToPollDesc: poll_info -> poll_desc
-*)
    end

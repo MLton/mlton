@@ -391,6 +391,11 @@ structure Primitive =
 	       struct
 		  val tmpnam = _ffi "OS_FileSys_tmpnam": unit -> cstring;
 	       end
+	    structure IO =
+	       struct
+		  val poll = _ffi "OS_IO_poll": int vector * word vector * 
+                                                int * int * word array -> int;
+	       end
 	 end
 
       structure PackReal =
