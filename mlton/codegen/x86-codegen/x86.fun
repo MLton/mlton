@@ -618,7 +618,7 @@ struct
 	   | 2 => Two
 	   | 4 => Four
 	   | 8 => Eight
-	   | _ => Error.bug "fromBytes"
+	   | _ => Error.bug "Scale.fromBytes"
       val toBytes : t -> int
 	= fn One => 1
 	   | Two => 2
@@ -1946,7 +1946,7 @@ struct
 		       | Size.LONG
 		       => (Register.T {reg = Register.EDX, part = Register.E},
 			   Register.T {reg = Register.EAX, part = Register.E})
-		       | _ => Error.bug "uses_defs: MD, size"
+		       | _ => Error.bug "Instruction.uses_defs: MD, size"
 	      in 
 		if oper = IMUL orelse oper = MUL
 		  then {uses = [src, Operand.register lo],
@@ -1972,7 +1972,7 @@ struct
 			       | Size.LONG
 		               => Register.T {reg = Register.ECX, 
 					      part = Register.E}
-		               | _ => Error.bug "uses_defs: SRAL, size"
+		               | _ => Error.bug "Instruction.uses_defs: SRAL, size"
 		     in
 		       {uses = [count, dst, Operand.register reg], 
 			defs = [dst], 
@@ -2058,7 +2058,7 @@ struct
 		       | Size.LONG
 		       => (Register.T {reg = Register.EDX, part = Register.E},
 			   Register.T {reg = Register.EAX, part = Register.E})
-		       | _ => Error.bug "uses_defs: CX, size"
+		       | _ => Error.bug "Instruction.uses_defs: CX, size"
 	      in
 		{uses = [Operand.register lo],
 		 defs = [Operand.register hi, Operand.register lo], 
@@ -2182,7 +2182,7 @@ struct
 		       | Size.LONG
 		       => (Register.T {reg = Register.EDX, part = Register.E},
 			   Register.T {reg = Register.EAX, part = Register.E})
-		       | _ => Error.bug "uses_defs: MD, size"
+		       | _ => Error.bug "Instruction.hints: MD, size"
 
 		val temp = MemLoc.temp {size = size}
 	      in 
@@ -2204,7 +2204,7 @@ struct
 		       | Size.LONG
 		       => (Register.T {reg = Register.EDX, part = Register.E},
 			   Register.T {reg = Register.EAX, part = Register.E})
-		       | _ => Error.bug "uses_defs: MD, size"
+		       | _ => Error.bug "Instruction.hints: MD, size"
 			
 		val temp = MemLoc.temp {size = size}
 	      in 
@@ -2228,7 +2228,7 @@ struct
 			       | Size.LONG
 		               => Register.T {reg = Register.ECX, 
 					      part = Register.E}
-		               | _ => Error.bug "uses_defs: SRAL, size"
+		               | _ => Error.bug "Instruction.hints: SRAL, size"
 		     in
 		       [(memloc, reg)]
 		     end
@@ -2275,7 +2275,7 @@ struct
 		       | Size.LONG
 		       => (Register.T {reg = Register.EDX, part = Register.E},
 			   Register.T {reg = Register.EAX, part = Register.E})
-		       | _ => Error.bug "srcs_dsts: MD, size"
+		       | _ => Error.bug "Instruction.srcs_dsts: MD, size"
 	      in 
 		if oper = IMUL orelse oper = MUL
 		  then {srcs = SOME [src, 
@@ -2304,7 +2304,7 @@ struct
 			       | Size.LONG
 		               => Register.T {reg = Register.ECX, 
 					      part = Register.E}
-		               | _ => Error.bug "srcs_dsts: SRAL, size"
+		               | _ => Error.bug "Instruction.srcs_dsts: SRAL, size"
 		     in
 		       {srcs = SOME [count, dst, Operand.register reg], 
 			dsts = SOME [dst]} 
@@ -2355,7 +2355,7 @@ struct
 		       | Size.LONG
 		       => (Register.T {reg = Register.EDX, part = Register.E},
 			   Register.T {reg = Register.EAX, part = Register.E})
-		       | _ => Error.bug "uses_defs: CX, size"
+		       | _ => Error.bug "Instruction.srcs_dsts: CX, size"
 	      in
 		{srcs = SOME [Operand.register lo],
 		 dsts = SOME [Operand.register hi, Operand.register lo]}
@@ -3148,6 +3148,37 @@ struct
 	  end
       val toString = Layout.toString o layout
 
+      fun replace replacer
+	= let
+	    val replacerLabel
+	      = fn label 
+		 => case Operand.deLabel 
+			 (replacer {use = true, def = false} 
+			           (Operand.label label))
+		      of SOME label => label
+		       | NONE => Error.bug "PseudoOp.replace: replacerLabel"
+	    val replacerImmediate
+	      = fn immediate
+		 => case Operand.deImmediate
+			 (replacer {use = true, def = false} 
+			           (Operand.immediate immediate))
+			     of SOME immediate => immediate
+			      | NONE => Error.bug "PseudoOp.replace: replacerImmediate"
+	  in
+	    fn Data => Data
+	     | Text => Text
+             | Balign i => Balign i
+	     | P2align i => P2align i
+	     | Space (i,f) => Space (i, replacerImmediate f)
+	     | Byte bs => Byte (List.map(bs, replacerImmediate))
+	     | Word ws => Word (List.map(ws, replacerImmediate))
+	     | Long ls => Long (List.map(ls, replacerImmediate))
+	     | String ss => String ss
+	     | Global l => Global (replacerLabel l)
+	     | Local l => Local (replacerLabel l)
+	     | Comm (l, i, a) => Comm (replacerLabel l, i, a)
+	  end
+
       val data = fn () => Data
       val text = fn () => Text
       val balign = Balign
@@ -3200,8 +3231,12 @@ struct
       fun replace replacer
 	= fn Comment s => Comment s
 	   | Directive d => Directive (Directive.replace replacer d)
-	   | PseudoOp p => PseudoOp p
-	   | Label l => Label l
+	   | PseudoOp p => PseudoOp (PseudoOp.replace replacer p)
+	   | Label l => Label (case Operand.deLabel 
+				    (replacer {use = false, def = true}
+				              (Operand.label l))
+				 of SOME l => l
+				  | NONE => Error.bug "Assembly.replace")
 	   | Instruction i => Instruction (Instruction.replace replacer i)
 
       val comment = Comment
