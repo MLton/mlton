@@ -4431,7 +4431,9 @@ static void displayCollectionStats (FILE *out, string name, struct rusage *ru,
 	displayCol (out, 7, uintToCommaString (num));
 	displayCol (out, 15, ullongToCommaString (bytes));
 	displayCol (out, 15, 
-			uintToCommaString (1000.0 * (float)bytes/(float)ms));
+			(ms > 0)
+			? uintToCommaString (1000.0 * (float)bytes/(float)ms)
+			: "-");
 	fprintf (out, "\n");
 }
 
