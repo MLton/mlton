@@ -1741,7 +1741,7 @@ fun elaborateDec (d, {env = E, nest}) =
 				 (Avar.region func,
 				  str "Recursive use of function disagrees with its type",
 				  align [seq [str "expects: ", l1],
-					 seq [str "bug got: ", l2],
+					 seq [str "but got: ", l2],
 					 lay ()]))
 			     val lambda =
 				case Cexp.node lambda of
