@@ -198,6 +198,12 @@ signature CPS_TREE =
 	    val foreach: t * {handleDec: Dec.t -> unit -> unit,
 			      handleTransfer: Transfer.t -> unit
 			      } -> unit
+	    (* foreach'' really doesn't apply the thunk until finished
+	     * with the scope of the dec.
+	     *)
+	    val foreach'': t * {handleDec: Dec.t -> unit -> unit,
+				handleTransfer: Transfer.t -> unit
+				} -> unit
 	    val foreachBind: t * ({var: Var.t,
 				   ty: Type.t,
 				   exp: PrimExp.t} -> unit) -> unit

@@ -447,6 +447,21 @@ structure Exp =
 	 in exp e
 	 end
 
+      fun foreach'' (e, {handleDec, handleTransfer})
+	= let
+	    fun exp (Exp {decs, transfer, ...}, afters)
+	      = (List.foreach (decs, fn d => dec(d, afters))
+		 ; handleTransfer transfer
+		 ; List.foreach(!afters, fn f => f ()))
+	    and dec (d, afters)
+	      = (List.push(afters, handleDec d)
+		 ; case d
+		     of Dec.Fun {body, ...} => exp (body, ref [])
+		      | _ => ())
+	  in
+	    exp (e, ref [])
+	  end
+
       fun ignore _ = ()
       fun ignore' _ = ignore
 
