@@ -1,19 +1,13 @@
 \sec{Profiling}{profiling}{Profiling.html}
 %
 With {\mlton} and {\tt mlprof}, you can profile your program to find
-out for each function how much time it spends or how many bytes it
-allocates during an entire run of the program.  To profile your
-program, compile with either {\tt -profile alloc} or {\tt -profile
-time} (you can not do both simultaneously).  Then, run the executable.
-While it runs, the profiler maintains counts (bytes or clock ticks)
-for each source function in the program.  When the program finishes,
-it automatically writes the counts to an {\tt mlmon.out} file.  You
-can then run {\tt mlprof} on the executable and the {\tt mlmon.out}
-file to see the percentage of the total (allocation or time) spent in
-each function.
-
-Here is an example of time profiling, run from within the {\tt
-examples/profiling} directory.
+out how much time is spent by each source function over an entire run
+of the program.  To profile your program, compile with {\tt -profile
+time}.  Then, run the executable, which, when it finishes, will write
+an {\tt mlmon.out} file.  You can then run {\tt mlprof} on the
+executable and the {\tt mlmon.out} file to see the percentage of the
+total time spent in each function.  Here is an example of time
+profiling, run from within the {\tt examples/profiling} directory.
 \begin{verbatim}
 % mlton -profile time tak.sml
 % ./tak
@@ -55,8 +49,13 @@ Tak.tak1.tak2  tak.sml: 5 75.8%
 Tak.tak1  tak.sml: 3      24.2%
 \end{verbatim}
 
-Allocation profiling is very similar to time profiling.  Here is an
-example run from within the {\tt examples/profiling} directory.
+Time profiling is designed to have a very small performance impact.
+
+\subsection{Profiling allocation}
+
+You can compile your program with {\tt -profile alloc} to find out how
+many bytes each function allocates.  Here is an example run from
+within the {\tt examples/profiling} directory.
 
 \begin{verbatim}
 % mlton -profile alloc list-rev.sml
@@ -78,9 +77,49 @@ they are printed with surrounding brackets.  C functions are displayed
 similarly.  Here, as is usually the case, the allocation done by the
 garbage collector is due to stack growth.
 
-Time profiling typically has a very small performance impact.
-However, the performance impact of allocation profiling is noticeable,
-because it inserts additional C calls for object allocation.
+The performance impact of allocation profiling is noticeable, because
+it inserts additional C calls for object allocation.
+%
+\subsection{Profiling counts}
+
+You can compile your program with {\tt -profile count} to find out how
+many times each function is called and how many times each branch is
+taken.  Here's an example.
+
+\begin{verbatim}
+% mlton -profile count tak.sml
+% ./tak
+% mlprof -raw true -show-line true tak mlmon.out
+623,610,002 ticks
+            function               cur       raw     
+--------------------------------- ----- -------------
+Tak.tak1.tak2  tak.sml: 5         38.2% (238,530,000)
+Tak.tak1.tak2.<true>  tak.sml: 7  27.5% (171,510,000)
+Tak.tak1  tak.sml: 3              10.7%  (67,025,000)
+Tak.tak1.<true>  tak.sml: 14      10.7%  (67,025,000)
+Tak.tak1.tak2.<false>  tak.sml: 9 10.7%  (67,020,000)
+Tak.tak1.<false>  tak.sml: 16      2.0%  (12,490,000)
+f  tak.sml: 23                     0.0%       (5,001)
+f.<branch>  tak.sml: 25            0.0%       (5,000)
+f.<branch>  tak.sml: 23            0.0%           (1)
+uncalled  tak.sml: 29              0.0%           (0)
+f.<branch>  tak.sml: 24            0.0%           (0)
+\end{verbatim}
+
+Branches are displayed with the usual lexical nesting followed by {\tt
+<branch>} where the function name would normally be, or {\tt <true>}
+or {\tt <false>} for if-expressions.  Hence, it is best to run {\tt
+mlprof} with {\tt -show-line true} to help identify the branch.
+
+One use of {\tt -profile count} is as a code-coverage tool, to help
+find code in your program that hasn't been tested.  For this reason,
+{\tt mlprof} displays functions and branches that have a count of
+zero.  As the above output shows, the branch on line 24 was never
+taken and the function defined on line 29 was never called.  To see
+zero counts, it is best to run {\tt mlprof} with {\tt -raw true},
+since some code (e.g. the branch on line 23 above) will show up with
+{\tt 0.0\%} but may still have been executed and hence have a nonzero
+raw count.
 %
 \subsection{Profiling the stack}
 

@@ -1,11 +1,14 @@
 mlton = mlton
 mlprof = mlprof
 ALLOC_EX = list-rev
+COUNT_EX = tak
 MULT_EX = fib-tak
 TIME_EX = tak
 
+PATH = ../../../build/bin:$(shell echo $$PATH)
+
 .PHONY: all
-all: profile-time profile-alloc profile-stack profile-multiple
+all: profile-time profile-alloc profile-count profile-stack profile-multiple
 
 .PHONY: clean
 clean:
@@ -16,6 +19,12 @@ profile-alloc:
 	$(mlton) -profile alloc $(ALLOC_EX).sml
 	./$(ALLOC_EX)
 	$(mlprof) -show-line true $(ALLOC_EX) mlmon.out
+
+.PHONY: profile-count
+profile-count:
+	$(mlton) -profile count $(COUNT_EX).sml
+	./$(COUNT_EX)
+	$(mlprof) -raw true -show-line true $(COUNT_EX) mlmon.out
 
 .PHONE: profile-multiple
 profile-multiple:

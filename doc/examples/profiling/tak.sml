@@ -21,6 +21,9 @@ structure Tak =
 
 val rec f =
    fn 0 => ()
+    | ~1 => print "this branch is not taken\n"
     | n => (Tak.tak1 (18, 12, 6) ; f (n-1))
 
 val _ = f 5000
+
+fun uncalled () = ()

@@ -109,10 +109,10 @@ Specify the name of the final output file. The default name is the
 input file name with its suffix removed and an appropriate, possibly
 empty, suffix added.
 
-\option{-profile \choiceThree{no}{alloc}{time}}
-Produce an executable that will gather allocation or time profiling
-information.  When such an executable is run, it will produce an {\tt
-mlmon.out} file.  See \secref{profiling} for details.
+\option{-profile \choiceThree{no}{alloc}{count}{time}}
+Produce an executable that will gather profiling information.  When
+such an executable is run, it will produce an {\tt mlmon.out} file.
+See \secref{profiling} for details.
 
 \option{-profile-stack \falseTrue}
 If true, the profiler will count the time spent (or bytes allocated)
