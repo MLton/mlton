@@ -25,13 +25,13 @@ local
       fun edgeLabel (cs: char list): string =
 	 let
 	    val chars = implode cs
-	    val numChars = String.size chars
+	    val n = String.size chars
 	    val numValidChars = String.size validCharsString
 	 in
-	    if numChars = numValidChars
+	    if n = numChars
 	       then "."
 	    else
-	       (if numChars >= Int.quot (numValidChars, 2)
+	       (if n >= Int.quot (numValidChars, 2)
 		   then (* Character complement. *)
 		      concat ["[^",
 			      String.alphabetize
@@ -76,7 +76,8 @@ local
    structure Regexp =
       struct
 	 datatype t =
-	    AnchorStart
+	    AnchorFinish
+	  | AnchorStart
 	  | CharSet of char -> bool
 	  | Or of t list
 	  | Seq of t list
@@ -88,7 +89,8 @@ local
 	       open Layout
 	    in
 	       case r of
-		  AnchorStart => str "AnchorStart"
+		  AnchorFinish => str "AnchorFinish"
+		| AnchorStart => str "AnchorStart"
 		| CharSet f =>
 		     seq [str "[",
 			  str (edgeLabel (Int.foldDown
@@ -165,22 +167,22 @@ local
    structure MatchAction =
       struct
 	 datatype t =
-	    Start of Save.t
-	  | Finish of Save.t
+	    Finish of Save.t
+	  | Start of Save.t
 
 	 val equals =
-	    fn (Start s, Start s') => Save.equals (s, s')
-	     | (Finish s, Finish s') => Save.equals (s, s')
+	    fn (Finish s, Finish s') => Save.equals (s, s')
+	     | (Start s, Start s') => Save.equals (s, s')
 	     | _ => false
 		  
 	 fun layout a =
-	    let open Layout
+	    let
+	       open Layout
 	    in
 	       case a of
-		  Start s => seq [str "Start ", Save.layout s]
-		| Finish s => seq [str "Finish ", Save.layout s]
+		  Finish s => seq [str "Finish ", Save.layout s]
+		| Start s => seq [str "Start ", Save.layout s]
 	    end
-	       
       end
 
    structure Finals =
@@ -283,7 +285,8 @@ local
 	 datatype t =
 	    T of {anchorStarts: (State.t * MatchAction.t vector) vector,
 		  charClass: int array, (* of length numChars *)
-		  final: MatchAction.t vector option array,
+		  final: {actions: MatchAction.t vector,
+			  requireFinish: bool} option array,
 		  next: (State.t * MatchAction.t vector) array Array2.t,
 		  saves: Save.t vector,
 		  seen: bool array,
@@ -310,8 +313,7 @@ local
 	 val match: {nfa: t,
 		     short: bool,
 		     string: string,
-		     startPos: int,
-		     anchorStart: bool} -> (int * Actions.t) option
+		     startPos: int} -> (int * Actions.t) option
 	 val numCharClasses: t -> int
 	 val numStates: t -> int
 	 val saves: t -> Save.t vector
@@ -339,8 +341,7 @@ local
 			      next, seen, stack1, stack2, start, ...},
 		    short,
 		    string = s,
-		    startPos,
-		    anchorStart: bool}: (int * Actions.t) option =
+		    startPos}: (int * Actions.t) option =
 	    let
 	       val numStates = numStates nfa
 	       val n = String.size s
@@ -355,7 +356,10 @@ local
 			      (current, fn (s, a) =>
 			       case Array.sub (final, s) of
 				  NONE => NONE
-				| SOME v => SOME (i, Actions.add (a, i, v)))) of
+				| SOME {actions, requireFinish} =>
+				     if requireFinish andalso i < n
+					then NONE
+				     else SOME (i, Actions.add (a, i, actions)))) of
 			   NONE => last
 			 | s => s
 		  in
@@ -387,7 +391,7 @@ local
 		  end
 	       val _ = Stack.push (stack1, (start, Actions.empty))
 	       val _ =
-		  if anchorStart
+		  if startPos = 0
 		     then (Vector.foreach
 			   (anchorStarts, fn (s, v) =>
 			    Stack.push
@@ -409,14 +413,17 @@ local
 	 fun fromRegexp (r: Regexp.t): t =
 	    let
 	       fun loop (r, ac as (saves, numPos)) =
-		  let open Regexp
-		  in case r of
-		     AnchorStart => (saves, numPos + 1)
-		   | CharSet _ => (saves, numPos + 1)
-		   | Or rs => List.fold (rs, ac, loop)
-		   | Save (r, s) => loop (r, (s :: saves, numPos))
-		   | Seq rs => List.fold (rs, ac, loop)
-		   | Star r => loop (r, ac)
+		  let
+		     open Regexp
+		  in
+		     case r of
+			AnchorFinish => (saves, numPos + 1)
+		      | AnchorStart => (saves, numPos + 1)
+		      | CharSet _ => (saves, numPos + 1)
+		      | Or rs => List.fold (rs, ac, loop)
+		      | Save (r, s) => loop (r, (s :: saves, numPos))
+		      | Seq rs => List.fold (rs, ac, loop)
+		      | Star r => loop (r, ac)
 		  end
 	       val (saves, numPos) = loop (r, ([], 0))
 	       val saves = Vector.fromList saves
@@ -464,7 +471,18 @@ local
 		   (v', fn (s', a') =>
 		    Array2.update (follow, s, s',
 				   SOME (Vector.concat [a, a']))))
+	       val anchorFinishes = ref []
 	       val anchorStarts = ref []
+	       fun anchor r =
+		  let
+		     val i = ++ posCounter
+		     val _ = List.push (r, i)
+		     val first = singleton i
+		  in
+		     {first = first,
+		      last = first,
+		      nullable = NONE}
+		  end
 	       (* The following loop fills in follow and posChars.
 		* first set of positions that
 		* nullable is SOME v iff the regexp is nullable, where v is the
@@ -474,16 +492,8 @@ local
 					last: set,
 					nullable: MatchAction.t vector option} =
 		  case r of
-		     Regexp.AnchorStart =>
-			let
-			   val i = ++ posCounter
-			   val _ = List.push (anchorStarts, i)
-			   val first = singleton i
-			in
-			   {first = first,
-			    last = first,
-			    nullable = NONE}
-			end
+		     Regexp.AnchorFinish => anchor anchorFinishes
+		   | Regexp.AnchorStart => anchor anchorStarts
 		   | Regexp.CharSet f =>
 			let
 			   val i = ++ posCounter
@@ -561,25 +571,49 @@ local
 			    nullable = SOME (Vector.new0 ())}
 			end
 	       val {first, last, nullable} = loop r
-	       (* Any anchor starts in first should be anchor starts. *)
-	       val anchorStarts =
-		  Vector.keepAllMap
-		  (Vector.fromListMap (!anchorStarts, fn s =>
-				       Option.map (lookup (first, s), fn v =>
-						   (s, v))),
-		   fn x => x)
+	       local
+		  fun extract (anchors, positions) =
+		     Vector.keepAllMap
+		     (Vector.fromListMap
+		      (!anchors, fn s =>
+		       Option.map (lookup (positions, s), fn v => (s, v))),
+		      fn x => x)
+	       in
+		  (* Any anchor starts in first should be anchor starts. *)
+		  val anchorStarts = extract (anchorStarts, first)
+		  (* Any anchor finishes in last should be anchor finishes *)
+		  val anchorFinishes = extract (anchorFinishes, last)
+	       end
 	       (* The positions in first are reachable from the start state. *)
 	       val _ = foreach (first, fn (i, a) =>
 				Array2.update (follow, start, i, SOME a))
-	       (* The positions in last are all final states. *)
 	       val final = Array.array (numStates, NONE)
-	       val _ = foreach (last, fn (i, a) =>
-				Array.update (final, i, SOME a))
+	       (* The positions that are followed by an anchorFinish are final,
+		* with requireFinish = true.
+		*)
+	       val _ =
+		  Vector.foreach
+		  (anchorFinishes, fn (j, _) =>
+		   Int.for
+		   (0, numStates, fn i =>
+		    case Array2.sub (follow, i, j) of
+		       NONE => ()
+		     | SOME a => 
+			  Array.update (final, i, SOME {actions = a,
+							requireFinish = true})))
+	       (* The positions in last are all final. *)
+	       val _ =
+		  foreach (last, fn (i, a) =>
+			   Array.update (final, i, SOME {actions = a,
+							 requireFinish = false}))
 	       (* The start state is final iff the whole regexp is nullable. *)
 	       val _ =
 		  case nullable of
 		     NONE => ()
-		   | SOME v => Array.update (final, start, SOME v)
+		   | SOME v =>
+			Array.update (final, start,
+				      SOME {actions = v,
+					    requireFinish = false})
 	       (* Compute the transition table, "next". *)
 	       val tmp: MatchAction.t vector option Array.t =
 		  Array.new (numStates, NONE)
@@ -838,8 +872,9 @@ local
 		  anchorStartStack: MatchAction.t vector vector,
 		  charClass: int array, (* of length numChars *)
 		  dead: bool array,
-		  final: {slot: int,
-			  actions: MatchAction.t vector} option array,
+		  final: {actions: MatchAction.t vector,
+			  requireFinish: bool,
+			  slot: int} option array,
 		  next: (State.t * EdgeAction.t vector) Array2.t,
 		  saves: Save.t vector,
 		  stack1: Actions.t array, (* of size maxNumNFAStates *)
@@ -1037,13 +1072,20 @@ local
 			 (valOf (! out), fn (c, j) =>
 			  Array2.update (next', i, c, j))
 		      val _ =
-			 case Array.peekMapi (states, fn s =>
-					      Array.sub (final, s)) of
-			    NONE => ()
-			  | SOME (slot, v) => 
-			       Array.update (final', i, SOME {slot = slot,
-							      actions = v})
-		   in ()
+			 case Array.sub (final', i) of
+			    SOME {requireFinish = false, ...} => ()
+			  | _ =>
+			       case Array.peekMapi (states, fn s =>
+						    Array.sub (final, s)) of
+				  NONE => ()
+				| SOME (slot, {actions, requireFinish}) =>
+				     Array.update
+				     (final', i,
+				      SOME {actions = actions,
+					    requireFinish = requireFinish,
+					    slot = slot})
+		   in
+		      ()
 		   end)
 	       fun newStack () = Array.new (!maxNumStates, Actions.empty)
 	    in T {anchorStart = anchorStart',
@@ -1083,9 +1125,12 @@ local
 		     val last =
 			case Array.sub (final, state) of
 			   NONE => last
-			 | SOME {slot, actions} =>
-			      SOME (i, Actions.add (Array.sub (stack1, slot),
-						    i, actions))
+			 | SOME {actions, requireFinish, slot} =>
+			      if requireFinish andalso i < n
+				 then NONE
+			      else
+				 SOME (i, Actions.add (Array.sub (stack1, slot),
+						       i, actions))
 		  in
 		     if Array.sub (dead, state)
 			orelse i = n
@@ -1377,6 +1422,7 @@ in
 	    
 	 open Regexp
 
+	 val anchorFinish = AnchorFinish
 	 val anchorStart = AnchorStart
 	 val isChar = CharSet
 	 fun isNotChar f = isChar (not o f)
@@ -1427,7 +1473,7 @@ in
 	 fun upper (r, n: int) =
 	    if n = 0
 	       then null
-	    else or [r, upper (r, n - 1)]
+	    else or [null, seq [r, upper (r, n - 1)]]
 	 fun range (r, n: int, m: int) =
 	    seq [repeat (r, n), upper (r, m - n)]
 	    
@@ -1484,50 +1530,51 @@ in
 			       NFA.match {nfa = nfa,
 					  short = short,
 					  string = string,
-					  startPos = startPos,
-					  anchorStart = anchorStart})
+					  startPos = startPos})
+		     exception No
 		  in
 		     Option.map
 		     (opt, fn (stop, a as Actions.T actions) =>
-		     let
-			val _ = Vector.foreachi (saves, fn (i, s) =>
-						 Save.assign (s, i))
-			val n = Vector.length saves
-			val starts = Array.array (n, ~1)
-			val matches = Array.array (n, NONE)
-			val _ =
-			   List.foreach
-			   (rev actions, fn (i, v) =>
-			    Vector.foreach
-			    (v, fn ma =>
-			     case ma of
-				MatchAction.Finish s =>
-				   let
-				      val index = Save.index s
-				      val start = Array.sub (starts, index)
-				   in
-				      Array.update
-				      (matches, index,
-				       SOME (Substring.substring
-					     (string, {start = start,
-						       length = i - start})))
-				   end
-			      | MatchAction.Start s =>
-				   Array.update (starts, Save.index s, i)))
-			val matches =
-			   Array.keepAllMapi
-			   (matches, fn (i, sso) =>
-			    case sso of
-			       NONE => NONE
-			     | SOME ss => SOME (Vector.sub (saves, i), ss))
-			val all =
-			   Substring.substring
-			   (string, {start = startPos,
-				     length = stop - startPos})
-		     in
-			Match.T {all = all,
-				 matches = matches}
-		     end)
+		      let
+			 val _ = Vector.foreachi (saves, fn (i, s) =>
+						  Save.assign (s, i))
+			 val n = Vector.length saves
+			 val starts = Array.array (n, ~1)
+			 val matches = Array.array (n, NONE)
+			 val last = String.size string
+			 val _ =
+			    List.foreach
+			    (rev actions, fn (i, v) =>
+			     Vector.foreach
+			     (v, fn ma =>
+			      case ma of
+				 MatchAction.Finish s =>
+				    let
+				       val index = Save.index s
+				       val start = Array.sub (starts, index)
+				    in
+				       Array.update
+				       (matches, index,
+					SOME (Substring.substring
+					      (string, {start = start,
+							length = i - start})))
+				    end
+			       | MatchAction.Start s =>
+				    Array.update (starts, Save.index s, i)))
+			 val matches =
+			    Array.keepAllMapi
+			    (matches, fn (i, sso) =>
+			     case sso of
+				NONE => NONE
+			      | SOME ss => SOME (Vector.sub (saves, i), ss))
+			 val all =
+			    Substring.substring
+			    (string, {start = startPos,
+				      length = stop - startPos})
+		      in
+			 Match.T {all = all,
+				  matches = matches}
+		      end) handle No => NONE
 		  end
 
 	       val match =
@@ -1811,8 +1858,8 @@ in
 				        | _ => raise (X "A"))
 				end
 		   | #"."::s => finishR (s, any)
-		   | #"^"::s => raise (X "A:^")
-		   | #"$"::s => raise (X "A:$")
+		   | #"^"::s => finishR (s, anchorStart)
+		   | #"$"::s => finishR (s, anchorFinish)
 		   | #"\\"::(c::s) => finishC (s, c)
 		   | c::s => if String.contains (")|*+?{", c)
 				then raise (X "A")
@@ -1947,6 +1994,11 @@ in
 	       fn s => (SOME (S (explode s))) handle X s => (print s;
 							     print "\n";
 							     NONE)
+	    val fromString =
+	       Trace.trace ("Regexp.fromString",
+			    String.layout,
+			    Option.layout (layout o #1))
+	       fromString
 	 end
       end
 
@@ -2012,3 +2064,17 @@ in
  *    end
  *)
 end
+
+(* local
+ *    val _ =
+ *       let
+ * 	 open Trace.Immediate
+ *       in
+ * 	 debug := Out Out.error
+ * 	 ; flagged()
+ * 	 ; on ["Regexp.match"]
+ *       end
+ *    structure Z = TestRegexp (Regexp)
+ * in
+ * end
+ *)

@@ -65,6 +65,7 @@ signature REGEXP =
 
       type t
 
+      val anchorFinish: t
       val anchorStart: t
       val any: t (* arbitrary character *)
       val anys: t (* arbitrary number of characters *)
@@ -104,8 +105,8 @@ val _ = print "TestRegexp\n"
    
 open S
 open Compiled
-val compile = compileNFA
 val compile = compileDFA
+val compile = compileNFA
 
 val _ =
    Assert.assert
@@ -134,13 +135,39 @@ val _ =
     List.forall ([(any, "a"),
 		  (anys, "abc")], 
 		 fn (r, s) => matchesAll (compile r, s)))
-
 val tests =
-   [(stringIgnoreCase "abc", "abc", SOME (3: int), SOME (3: int)),
+   List.map ([
+	      ("\\a", "a"),
+	      ("^$", ""),
+	      ("abc", "abc"),
+	      (".", "a"),
+	      ("^foo$", "foo"),
+	      ("^...$", "foo"),
+	      ("^.*$", "foo"),
+	      ("^.*foo@bar\\.com$", "foo@bar.com"),
+	      ("(abc)","abc"),
+	      ("\\(abc\\)","(abc)"),
+	      ("(abc){2,4}$", "abcabc"),
+	      ("(abc){2,4}$", "abcabcabc"),
+	      ("(abc){2,4}$", "abcabcabcabc")
+	      ],
+	     fn (r, s) =>
+	     let
+		val opt = SOME (String.size s)
+	     in
+		(#1 (valOf (fromString r)), s, opt, opt)
+	     end)
+   @
+   [
+    (stringIgnoreCase "abc", "abc", SOME (3: int), SOME (3: int)),
     (stringIgnoreCase "abc", "aBC", SOME 3, SOME 3),
     (stringIgnoreCase "ab", "abab", SOME 2, SOME 2),
     (string "abc", "abc", SOME 3, SOME 3),
     (string "Abc", "abc", NONE, NONE),
+    (seq [anchorStart, anchorFinish], "", SOME 0, SOME 0),
+    (seq [anchorStart, string "abc", anchorFinish], "abc", SOME 3, SOME 3),
+    (seq [or [null, anchorFinish], string "a"], "a", SOME 1, SOME 1),
+    (seq [or [anchorFinish, null], string "a"], "a", SOME 1, SOME 1),
     (seq [], "abc", SOME 0, SOME 0),
     (seq [string "ab"], "ab", SOME 2, SOME 2),
     (seq [char #"a", char #"b", char #"c"], "abc", SOME 3, SOME 3),
@@ -216,6 +243,7 @@ val _ =
 		    val r = compile r
 		    val _ = Compiled.layoutDotToFile (r, "/tmp/z.dot")
 		    fun doit m = Option.map (m (r, s, 0), Match.length)
+		    val m1 = doit matchShort
 		 in
 		    i1 = doit matchShort
 		    andalso i2 = doit matchLong
