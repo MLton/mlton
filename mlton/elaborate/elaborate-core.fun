@@ -931,6 +931,25 @@ structure Con =
       val fromAst = fromString o Ast.Con.toString
    end
 
+structure Cexp =
+   struct
+      open Cexp
+
+      fun enterLeave (e, si) =
+	 if (* Don't create the sourceInfo if we're in the middle of elaborating
+	     * a functor body.  Count profiling keeps track of all sourceInfos
+	     * created and would show it with a count of zero, which would be
+	     * bad.
+	     *)
+	    Env.amInsideFunctor ()
+	    (* Don't create the source info if we're not profiling. *)
+	    orelse !Control.profile = Control.ProfileNone
+	    (* Don't create the source info if we're profiling some IL. *)
+	    orelse !Control.profileIL <> Control.ProfileSource
+	    then e
+	 else make (EnterLeave (e, si ()), ty e)
+   end
+
 fun elaborateDec (d, {env = E,
 		      lookupConstant: string * ConstType.t -> CoreML.Const.t,
 		      nest}) =

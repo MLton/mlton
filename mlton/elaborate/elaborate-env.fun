@@ -65,6 +65,8 @@ structure Scheme =
 
 val insideFunctor = ref false
 
+fun amInsideFunctor () = !insideFunctor
+
 structure Scope =
    struct
       structure Unique = UniqueId ()

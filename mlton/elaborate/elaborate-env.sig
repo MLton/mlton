@@ -147,6 +147,7 @@ signature ELABORATE_ENV =
 
       type t
 
+      val amInsideFunctor: unit -> bool
       val clearDefUses: t -> unit
       (* cut keeps only those bindings in the structure that also appear
        * in the interface.  It proceeds recursively on substructures.

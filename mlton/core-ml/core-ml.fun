@@ -301,12 +301,6 @@ structure Exp =
       fun make (n, t) = Exp {node = n,
 			     ty = t}
 
-      fun enterLeave (e, si) =
-	 if !Control.profile = Control.ProfileNone
-	    orelse !Control.profileIL <> Control.ProfileSource
-	    then e
-	 else make (EnterLeave (e, si ()), ty e)
-	 
       fun var (x: Var.t, ty: Type.t): t =
 	 make (Var (fn () => x, fn () => Vector.new0 ()), ty)
 	 
