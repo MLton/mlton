@@ -1397,9 +1397,6 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 		else
 			/* The heap is about right -- leave new space alone. */
 			keep = s->fromSize;
-		if (s->messages)
-			fprintf(stderr, "needed = %llu  keep = %u\n",
-				needed, keep);
 		if (keep < s->fromSize) {
 			if (DEBUG or s->messages) {
 				fprintf(stderr, 
