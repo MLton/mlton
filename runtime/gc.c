@@ -949,6 +949,24 @@ static inline void foreachGlobal (GC_state s, GC_pointerFun f) {
 	maybeCall (f, s, (pointer*)&s->signalHandler);
 }
 
+static pointer arrayPointer (GC_state s, 
+				pointer a, 
+				uint arrayIndex, 
+				uint pointerIndex) {
+	word header;
+	uint numPointers;
+	uint numNonPointers;
+	uint tag;
+
+	header = GC_getHeader (a);
+	SPLIT_HEADER();
+	assert (tag == ARRAY_TAG);
+	return a 
+		+ arrayIndex * (numNonPointers + toBytes (numPointers))
+		+ numNonPointers
+		+ pointerIndex * POINTER_SIZE;
+}
+
 /* The number of bytes in an array, not including the header. */
 static inline uint arrayNumBytes (GC_state s,
 					pointer p, 
@@ -1012,32 +1030,29 @@ static inline pointer foreachPointerInObject (GC_state s, pointer p,
 		uint numBytes;
 		pointer max;
 
-		assert (ARRAY_TAG == tag);
 		numBytes = arrayNumBytes (s, p, numPointers, numNonPointers);
 		max = p + numBytes;
-		if (numPointers == 0) {
+		if (0 == numPointers or 0 == GC_arrayNumElements (p)) {
 			/* There are no pointers, just update p. */
 			p = max;
 		} else if (numNonPointers == 0) {
 		  	/* It's an array with only pointers. */
-			if (0 == GC_arrayNumElements (p))
-				/* Skip the space for the forwarding pointer. */
-				p = max;
-			else
-				for (; p < max; p += POINTER_SIZE)
-					maybeCall (f, s, (pointer*)p);
+			for (; p < max; p += POINTER_SIZE)
+				maybeCall (f, s, (pointer*)p);
 		} else {
 			uint numBytesPointers;
 			
-			numBytesPointers = toBytes(numPointers);
+			fprintf (stderr, "funky array in foreachPointerInObject\n");
+			numBytesPointers = toBytes (numPointers);
 			/* For each array element. */
 			while (p < max) {
 				pointer max2;
-					p += numNonPointers;
+
+				p += numNonPointers;
 				max2 = p + numBytesPointers;
 				/* For each internal pointer. */
 				for ( ; p < max2; p += POINTER_SIZE) 
-					maybeCall(f, s, (pointer*)p);
+					maybeCall (f, s, (pointer*)p);
 			}
 		}
 		assert (p == max);
@@ -2151,8 +2166,7 @@ static inline bool isMarked (pointer p) {
 }
 
 static bool modeEqMark (MarkMode m, pointer p) {
-	return (((MARK_MODE == m) and isMarked (p))
-		or ((UNMARK_MODE == m) and not isMarked (p)));
+	return (MARK_MODE == m) ? isMarked (p): not isMarked (p);
 }
 
 /* mark (s, p) sets all the mark bits in the object graph pointed to by p. 
@@ -2162,6 +2176,7 @@ static bool modeEqMark (MarkMode m, pointer p) {
  * It returns the total size in bytes of the objects marked.
  */
 W32 mark (GC_state s, pointer root, MarkMode mode) {
+	uint arrayIndex;
 	pointer cur;  /* The current object being marked. */
 	GC_offsets frameOffsets;
 	Header* headerp;
@@ -2172,11 +2187,10 @@ W32 mark (GC_state s, pointer root, MarkMode mode) {
 	pointer next; /* The next object to mark. */
 	Header *nextHeaderp;
 	Header nextHeader;
-	W32 numBytes;
 	uint numNonPointers;
 	uint numPointers;
 	pointer prev; /* The previous object on the mark stack. */
-	W32 size;
+	W32 size;	/* Total number of bytes marked. */
 	uint tag;
 	pointer todo; /* A pointer to the pointer in cur to next. */
 	pointer top; /* The top of the next stack frame to mark. */
@@ -2260,38 +2274,67 @@ markNextInNormal:
 		*headerp = header;
 		goto ret;
 	} else if (ARRAY_TAG == tag) {
-		numBytes = arrayNumBytes (s, cur, numPointers, numNonPointers);
-		size += GC_ARRAY_HEADER_SIZE + numBytes;
-		*headerp = header;
-		if (0 == numPointers or 0 == GC_arrayNumElements (cur))
+		/* When marking arrays:
+		 *   arrayIndex is the index of the element to mark.
+		 *   cur is the pointer to the array.
+		 *   index is the index of the pointer within the element
+		 *     (i.e. the i'th pointer is at index i).
+		 *   todo is the start of the element.
+		 */
+		size += GC_ARRAY_HEADER_SIZE
+			+ arrayNumBytes (s, cur, numPointers, numNonPointers);
+		if (0 == numPointers or 0 == GC_arrayNumElements (cur)) {
+			/* There is nothing to mark.  Store the marked header
+			 * and return.
+			 */
+			*headerp = header;
 			goto ret;
-		assert (0 == numNonPointers);
-		max = cur + numBytes;
+		}
+		/* Begin marking first element. */
+		arrayIndex = 0;
 		todo = cur;
+markArrayElt:
+		assert (arrayIndex < GC_arrayNumElements (cur));
 		index = 0;
-markInArray:
+		/* Skip to the first pointer. */
+		todo += numNonPointers;
+markArrayPointer:
 		if (DEBUG_MARK_COMPACT)
-			fprintf (stderr, "markInArray index = %d\n", index);
-		if (todo == max) {
-			*arrayCounterp (cur) = 0;
-			goto ret;
-		}
+			fprintf (stderr, "markArrayPointer arrayIndex = %u index = %u\n",
+					arrayIndex, index);
+		assert (arrayIndex < GC_arrayNumElements (cur));
+		assert (index < numPointers);
+		assert (todo == arrayPointer (s, cur, arrayIndex, index));
 		next = *(pointer*)todo;
-		if (not GC_isPointer (next)) {
-markNextInArray:
-			todo += POINTER_SIZE;
-			index++;
-			goto markInArray;
+		if (GC_isPointer (next)) {
+			nextHeaderp = GC_getHeaderp (next);
+			nextHeader = *nextHeaderp;
+			if ((nextHeader & MARK_MASK)
+				== (MARK_MODE == mode ? MARK_MASK : 0))
+				goto markArrayContinue;
+			/* Recur and mark next. */
+			*arrayCounterp (cur) = arrayIndex;
+			*headerp = (header & ~COUNTER_MASK) |
+					(index << COUNTER_SHIFT);
+			headerp = nextHeaderp;
+			header = nextHeader;
+			goto markNext;
 		}
-		nextHeaderp = GC_getHeaderp (next);
-		nextHeader = *nextHeaderp;
-		if ((nextHeader & MARK_MASK)
-			== (MARK_MODE == mode ? MARK_MASK : 0))
-			goto markNextInArray;
-		*arrayCounterp (cur) = index;
-		headerp = nextHeaderp;
-		header = nextHeader;
-		goto markNext;
+markArrayContinue:
+		assert (arrayIndex < GC_arrayNumElements (cur));
+		assert (index < numPointers);
+		assert (todo == arrayPointer (s, cur, arrayIndex, index));
+		todo += POINTER_SIZE;
+		index++;
+		if (index < numPointers)
+			goto markArrayPointer;
+		arrayIndex++;
+		if (arrayIndex < GC_arrayNumElements (cur))
+			goto markArrayElt;
+		/* Done.  Clear out the counters and return. */
+		*arrayCounterp (cur) = 0;
+		*headerp = header & ~COUNTER_MASK;
+		goto ret;
 	} else {
 		assert (STACK_TAG == tag);
 		*headerp = header;
@@ -2373,17 +2416,16 @@ ret:
 		index++;
 		goto markInNormal;
 	} else if (ARRAY_TAG == tag) {
-		max = prev + arrayNumBytes (s, prev, numPointers,
-						numNonPointers);
-		index = arrayCounter (prev);
-		todo = prev + index * POINTER_SIZE;
+		arrayIndex = arrayCounter (prev);
+		todo = prev + arrayIndex * (numNonPointers 
+						+ toBytes (numPointers));
+		index = (header & COUNTER_MASK) >> COUNTER_SHIFT;
+		todo += numNonPointers + index * POINTER_SIZE;
 		next = cur;
 		cur = prev;
 		prev = *(pointer*)todo;
 		*(pointer*)todo = next;
-		todo += POINTER_SIZE;
-		index++;
-		goto markInArray;
+		goto markArrayContinue;
 	} else {
 		assert (STACK_TAG == tag);
 		next = cur;
