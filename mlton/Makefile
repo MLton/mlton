@@ -23,7 +23,7 @@ endif
 ifeq (old,$(shell PATH=$(BIN):$$PATH; $(MLTON) -v >/dev/null 2>&1 && echo old))
   EXTRA_FLAGS = -v -o $(AOUT)
 else
-  EXTRA_FLAGS = -verbose 2 -output $(AOUT)
+  EXTRA_FLAGS = -verbose 1 -output $(AOUT)
 endif
 
 .PHONY: all
