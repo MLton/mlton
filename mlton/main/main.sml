@@ -385,8 +385,7 @@ fun commandLine (args: string list): unit =
 		     List.concat [list ("-D", !defines),
 				  list ("-I", rev (!includeDirs))]
 		  val linkLibs: string list =
-		     List.concat [rest,
-				  list ("-L", rev (!libDirs)),
+		     List.concat [list ("-L", rev (!libDirs)),
 				  list ("-l", !lib :: !libs)]
 		  fun compileO (inputs: File.t list) =
 		     trace (Top, "Link")
@@ -395,7 +394,7 @@ fun commandLine (args: string list): unit =
 			    maybeOut "",
 			    List.concat [if !debug then ["-g"] else [],
 					 if !static then ["-static"] else []],
-			    linkLibs))
+			    rest @ linkLibs))
 		     ()
 		  fun compileS (main: File.t, inputs: File.t list) =
 		     let
