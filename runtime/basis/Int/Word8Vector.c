@@ -1,5 +1,3 @@
-#define _ISOC99_SOURCE
-
 #include "platform.h"
 
 Word32 Word8Vector_subWord32Rev (Pointer v, Int offset) {

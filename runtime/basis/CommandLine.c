@@ -1,5 +1,3 @@
-#define _ISOC99_SOURCE
-
 #include "platform.h"
 
 /* Manual initialization is a work-around for a Darwin linker issue. */

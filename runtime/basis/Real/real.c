@@ -1,5 +1,3 @@
-#define _ISOC99_SOURCE
-
 #include "platform.h"
 
 Real32 Real32_Math_pi = (Real32)3.14159265358979323846;

@@ -9,6 +9,10 @@
 #ifndef _PLATFORM_H_
 #define _PLATFORM_H_
 
+#define _ISOC99_SOURCE
+#define _BSD_SOURCE
+#define _POSIX_C_SOURCE 200112L
+
 #include <sys/types.h> // lots of includes depend on this
 #include <dirent.h>
 #include <errno.h>

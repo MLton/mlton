@@ -1,5 +1,3 @@
-#define _ISOC99_SOURCE
-
 #include "platform.h"
 
 Int Real64_class (Real64 d) {

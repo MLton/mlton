@@ -1,5 +1,3 @@
-#define _ISOC99_SOURCE
-
 #include "platform.h"
 
 Real32 PackReal32_subVec (Pointer v, Int offset) {

@@ -1,6 +1,3 @@
-#define _ISOC99_SOURCE
-#define _BSD_SOURCE
-
 /* Copyright (C) 2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *

@@ -1,5 +1,3 @@
-#define _ISOC99_SOURCE
-
 /* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.

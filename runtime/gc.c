@@ -1,7 +1,3 @@
-#define _ISOC99_SOURCE
-/* needed to get mremap: */
-#define _GNU_SOURCE
-
 /* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
@@ -10,6 +6,7 @@
  * Please see the file MLton-LICENSE for license information.
  */
 
+#define _GNU_SOURCE
 #include "platform.h"
 
 /* The mutator should maintain the invariants
