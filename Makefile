@@ -43,9 +43,9 @@ endif
 
 .PHONY: basis
 basis:
-	rm -rf $(LIB)/sml
-	mkdir $(LIB)/sml
-	$(CP) $(SRC)/basis-library $(LIB)/sml/basis
+	mkdir -p $(LIB)/sml
+	rm -rf $(LIB)/sml/basis
+	$(CP) $(SRC)/basis-library/. $(LIB)/sml/basis
 	find $(LIB)/sml -type f -name .cvsignore | xargs rm -rf
 
 .PHONY: bootstrap-nj
@@ -141,8 +141,9 @@ freebsd:
 
 .PHONY: libraries-no-check
 libraries-no-check:
-	$(CP) $(SRC)/lib/mlyacc $(LIB)/sml/mlyacc-lib
-	$(CP) $(SRC)/lib/cml $(LIB)/sml/cml
+	cd $(LIB)/sml && rm -rf cml mlyacc-lib
+	$(CP) $(SRC)/lib/mlyacc/. $(LIB)/sml/mlyacc-lib
+	$(CP) $(SRC)/lib/cml/. $(LIB)/sml/cml
 
 .PHONY: libraries
 libraries:
@@ -339,7 +340,7 @@ install-docs:
 	mkdir -p $(TDOC)
 	(									\
 		cd $(SRC)/doc &&						\
-		$(CP) changelog cm2mlb cmcat examples license README $(TDOC)/		\
+		$(CP) changelog cm2mlb cmcat examples license README $(TDOC)/	\
 	)
 	rm -rf $(TDOC)/user-guide
 	$(CP) $(SRC)/doc/user-guide/main $(TDOC)/user-guide
