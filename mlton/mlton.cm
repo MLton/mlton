@@ -16,8 +16,6 @@ Group is
 ../lib/mlton/basic/layout.sig
 ../lib/mlton/basic/layout.sml
 ../lib/mlton/basic/fold.sig
-../lib/mlton/basic/option.sig
-../lib/mlton/basic/option.sml
 ../lib/mlton/basic/fold.fun
 ../lib/mlton/basic/assert.sig
 ../lib/mlton/basic/assert.sml
@@ -56,6 +54,8 @@ Group is
 ../lib/mlton/basic/intermediate-computation.sig
 ../lib/mlton/basic/intermediate-computation.sml
 ../lib/mlton/basic/string-map.sml
+../lib/mlton/basic/option.sig
+../lib/mlton/basic/option.sml
 ../lib/mlton/basic/pid.sig
 ../lib/mlton/basic/pid.sml
 ../lib/mlton/basic/date.sig
