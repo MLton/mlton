@@ -9,9 +9,9 @@ structure String0 =
       structure S = Sequence (type 'a sequence = string
 			      type 'a elt = char
 			      val fromArray = fromArray
+			      val isMutable = false
 			      open Primitive.String
-			      val length = size
-			      val shareZero = true)
+			      val length = size)
       open S
 
       open Primitive.Int

@@ -6,9 +6,8 @@ functor Sequence (S: sig
 			type 'a elt
 			(* fromArray should be constant time. *)
 			val fromArray: 'a elt array -> 'a sequence 
+			val isMutable: bool
 			val length: 'a sequence -> int
-			(* Whether zero length arrays should be shared. *)
-			val shareZero: bool
 			val sub: 'a sequence * int -> 'a elt
 		     end
 		  ): SEQUENCE =
@@ -25,9 +24,9 @@ functor Sequence (S: sig
 	 let
 	    open Primitive.Array
 	 in
-	    if shareZero andalso n = 0
-	       then array0 ()
-	    else array n
+	    if isMutable orelse n > 0
+	       then array n
+	    else array0 ()
 	 end
 
       fun sub (s, i) =
@@ -174,6 +173,9 @@ functor Sequence (S: sig
 	 fn (s, 0, NONE) => s
 	  | slice => mapi #2 slice
 
+
+      fun copy s = map (fn x => x) s
+
       (* This concat is not used for now, since it is 3X slower than the
        * following one.  As soon as we get better intraprocedural flattening,
        * we should replace it.
@@ -181,6 +183,7 @@ functor Sequence (S: sig
       fun 'a concat (vs: 'a sequence list): 'a sequence =
 	 case vs of
 	    [] => fromArray (Primitive.Array.array0 ())
+	  | [v] => if isMutable then copy v else v
 	  | v :: vs' => 
 	       let
 		  val n = List.foldl (fn (v, s) => s + length v) 0 vs
@@ -200,7 +203,8 @@ functor Sequence (S: sig
 
       fun concat sequences =
 	 case sequences of
-	    [s] => s
+	    [] => fromArray (Primitive.Array.array0 ())
+	  | [s] => if isMutable then copy s else s
 	  | _ => 
 	       let
 		  val size = List.foldl (fn (s, n) => n +? length s) 0 sequences

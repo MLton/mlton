@@ -6,8 +6,8 @@ structure Array: ARRAY_EXTRA =
       structure A = Sequence (type 'a sequence = 'a array
 			      type 'a elt = 'a
 			      val fromArray = fn a => a
-			      open Primitive.Array
-			      val shareZero = false)
+			      val isMutable = true
+			      open Primitive.Array)
       open A
       open Primitive.Int
 

@@ -6,8 +6,8 @@ structure Vector: VECTOR_EXTRA =
       structure V = Sequence (type 'a sequence = 'a vector
 			      type 'a elt = 'a
 			      val fromArray = Primitive.Vector.fromArray
-			      open Primitive.Vector
-			      val shareZero = true)
+			      val isMutable = false
+			      open Primitive.Vector)
       open V
 
       type 'a vector = 'a vector
