@@ -61,6 +61,7 @@ structure InitScript
 structure Int
 structure Int32
 structure IntInf
+structure InsertionSort
 structure Iterate
 structure Itimer
 structure Justify
