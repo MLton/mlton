@@ -1441,7 +1441,7 @@ fun cut (E: t, S: Structure.t, I: Interface.t, {opaque: bool}, region)
 				     open Layout
 				  in
 				     (region,
-				      seq [str "type in structure disagrees with signature"],
+				      seq [str "variable type in structure disagrees with signature"],
 				      align [seq [str "variable:  ",
 						  Longvid.layout	
 						  (Longvid.long
