@@ -424,8 +424,11 @@ fun selectBasisLibrary () =
    end
 
 fun layoutBasisLibrary () = 
-   let val _ = selectBasisLibrary ()
-   in Env.layoutPretty basisEnv
+   let
+      val _ = selectBasisLibrary ()
+      val _ = Env.setTyconNames basisEnv
+   in
+      Env.layoutPretty basisEnv
    end
 
 (* ------------------------------------------------- *)

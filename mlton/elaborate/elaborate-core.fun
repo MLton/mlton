@@ -279,6 +279,7 @@ end
 val unify = Type.unify
    
 fun unifyList (trs: (Type.t * Region.t) vector,
+	       preError: unit -> unit,
 	       lay: unit -> Layout.t): Type.t =
    if 0 = Vector.length trs
       then Type.list (Type.new ())
@@ -288,7 +289,7 @@ fun unifyList (trs: (Type.t * Region.t) vector,
 	 val _ =
 	    Vector.foreach
 	    (trs, fn (t', r) =>
-	     unify (t, t', fn (l, l') =>
+	     unify (t, t', preError, fn (l, l') =>
 		    (r,
 		     str "list elements of different types",
 		     align [seq [str "element:  ", l'],
@@ -334,7 +335,7 @@ fun approximate (l: Layout.t): Layout.t =
        else concat [String.prefix (s, 35), "  ...  ", String.suffix (s, 25)])
    end
 
-fun elaboratePat (p: Apat.t, E: Env.t, amInRvb: bool)
+fun elaboratePat (p: Apat.t, E: Env.t, preError: unit -> unit, amInRvb: bool)
    : Cpat.t * (Avar.t * Var.t * Type.t) vector =
    let
       val region = Apat.region p
@@ -372,6 +373,7 @@ fun elaboratePat (p: Apat.t, E: Env.t, amInRvb: bool)
 	 (fn p: Apat.t =>
 	  let
 	     val region = Apat.region p
+	     val unify = fn (t, t', f) => unify (t, t', preError, f)
 	     fun unifyPatternConstraint (p, lay, c) =
 		unify
 		(p, c, fn (l1, l2) =>
@@ -393,7 +395,8 @@ fun elaboratePat (p: Apat.t, E: Env.t, amInRvb: bool)
 		      val resultType = Type.new ()
 		      val _ =
 			 unify
-			 (instance, Type.arrow (argType, resultType), fn _ =>
+			 (instance, Type.arrow (argType, resultType),
+			  fn _ =>
 			  (region,
 			   str "constant constructor applied to argument",
 			   seq [str "pattern: ", lay ()]))
@@ -459,6 +462,7 @@ fun elaboratePat (p: Apat.t, E: Env.t, amInRvb: bool)
 				 unifyList
 				 (Vector.map2 (ps, ps', fn (p, p') =>
 					       (Cpat.ty p', Apat.region p)),
+				  preError,
 				  fn () => seq [str "pattern:  ", lay ()]))
 		   end
 	      | Apat.Record {flexible, items} =>
@@ -992,6 +996,8 @@ fun elaborateDec (d, {env = E,
 	  Layout.ignore, Trace.assertTrue)
 	 (fn (d, nest, isTop) =>
 	  let
+	     val preError = Promise.lazy (fn () => Env.setTyconNames E)
+	     val unify = fn (t, t', f) => unify (t, t', preError, f)
 	     fun lay () = seq [str "in: ", approximate (Adec.layout d)]
 	     val region = Adec.region d
 	     fun checkSchemes (v: (Var.t * Scheme.t) vector): unit =
@@ -1218,7 +1224,8 @@ fun elaborateDec (d, {env = E,
 				     val pats =
 					Vector.map
 					(args, fn p =>
-					 {pat = #1 (elaboratePat (p, E, false)),
+					 {pat = #1 (elaboratePat
+						    (p, E, preError, false)),
 					  region = Apat.region p})
 				     val bodyRegion = Aexp.region body
 				     val body = elabExp (body, nest)
@@ -1466,7 +1473,8 @@ fun elaborateDec (d, {env = E,
 			 (rvbs, fn {pat, match} =>
 			  let
 			     val region = Apat.region pat
-			     val (pat, bound) = elaboratePat (pat, E, true)
+			     val (pat, bound) =
+				elaboratePat (pat, E, preError, true)
 			     val (nest, var, ty) =
 				if 0 = Vector.length bound
 				   then ("anon" :: nest,
@@ -1500,7 +1508,7 @@ fun elaborateDec (d, {env = E,
 			 (rvbs, fn {bound, match, nest, pat, region, var, ...} =>
 			  let
 			     val {argType, region, resultType, rules} =
-				elabMatch (match, nest)
+				elabMatch (match, preError, nest)
 			     val _ =
 				unify
 				(Cpat.ty pat,
@@ -1542,7 +1550,8 @@ fun elaborateDec (d, {env = E,
 			 (vbs,
 			  fn {exp = e, expRegion, lay, pat, patRegion, ...} =>
 			  let
-			     val (p, bound) = elaboratePat (pat, E, false)
+			     val (p, bound) =
+				elaboratePat (pat, E, preError, false)
 			     val _ =
 				unify
 				(Cpat.ty p, Cexp.ty e, fn (p, e) =>
@@ -1596,6 +1605,8 @@ fun elaborateDec (d, {env = E,
 			  Trace.assertTrue)
 	 (fn (e: Aexp.t, nest) =>
 	  let
+	     val preError = Promise.lazy (fn () => Env.setTyconNames E)
+	     val unify = fn (t, t', f) => unify (t, t', preError, f)
 	     fun lay () = seq [str "in: ", approximate (Aexp.layout e)]
 	     val unify =
 		fn (a, b, f) => unify (a, b, fn z =>
@@ -1662,7 +1673,7 @@ fun elaborateDec (d, {env = E,
 		   let
 		      val e = elab e
 		      val {argType, resultType, rules, ...} =
-			 elabMatch (m, nest)
+			 elabMatch (m, preError, nest)
 		      val _ =
 			 unify
 			 (Cexp.ty e, argType, fn (l1, l2) =>
@@ -1695,7 +1706,8 @@ fun elaborateDec (d, {env = E,
 	      | Aexp.Fn m =>
 		   let
 		      val {arg, argType, body} =
-			 elabMatchFn (m, nest, "function", lay, Cexp.RaiseMatch)
+			 elabMatchFn (m, preError, nest, "function", lay,
+				      Cexp.RaiseMatch)
 		      val body =
 			 Cexp.enterLeave
 			 (body, SourceInfo.function {name = nest,
@@ -1710,7 +1722,7 @@ fun elaborateDec (d, {env = E,
 		   let
 		      val try = elab try
 		      val {arg, argType, body} =
-			 elabMatchFn (match, nest, "handler", lay,
+			 elabMatchFn (match, preError, nest, "handler", lay,
 				      Cexp.RaiseAgain)
 		      val _ =
 			 unify
@@ -1769,7 +1781,7 @@ fun elaborateDec (d, {env = E,
 				 unifyList
 				 (Vector.map2 (es, es', fn (e, e') =>
 					       (Cexp.ty e', Aexp.region e)),
-				  lay))
+				  preError, lay))
 		   end
 	      | Aexp.Orelse (e, e') =>
 		   let
@@ -2001,10 +2013,11 @@ fun elaborateDec (d, {env = E,
 		      Cexp.whilee {expr = expr, test = test'}
 		   end
 	  end) arg
-      and elabMatchFn (m: Amatch.t, nest, kind, lay, noMatch) =
+      and elabMatchFn (m: Amatch.t, preError, nest, kind, lay, noMatch) =
 	 let
 	    val arg = Var.newNoname ()
-	    val {argType, region, resultType, rules} = elabMatch (m, nest)
+	    val {argType, region, resultType, rules} =
+	       elabMatch (m, preError, nest)
 	    val body =
 	       Cexp.casee {kind = kind,
 			   lay = lay,
@@ -2017,7 +2030,7 @@ fun elaborateDec (d, {env = E,
 	    argType = argType,
 	    body = body}
 	 end
-      and elabMatch (m: Amatch.t, nest: Nest.t) =
+      and elabMatch (m: Amatch.t, preError, nest: Nest.t) =
 	 let
 	    val region = Amatch.region m
 	    val Amatch.T rules = Amatch.node m
@@ -2036,10 +2049,10 @@ fun elaborateDec (d, {env = E,
 			  approximate
 			  (seq [Apat.layout pat, str " => ", Aexp.layout exp])
 		       end
-		    val (p, xts) = elaboratePat (pat, E, false)
+		    val (p, xts) = elaboratePat (pat, E, preError, false)
 		    val _ =
 		       unify
-		       (Cpat.ty p, argType, fn (l1, l2) =>
+		       (Cpat.ty p, argType, preError, fn (l1, l2) =>
 			(Apat.region pat,
 			 str "rule patterns of different types",
 			 align [seq [str "pattern:  ", l1],
@@ -2048,7 +2061,7 @@ fun elaborateDec (d, {env = E,
 		    val e = elabExp (exp, nest)
 		    val _ =
 		       unify
-		       (Cexp.ty e, resultType, fn (l1, l2) =>
+		       (Cexp.ty e, resultType, preError, fn (l1, l2) =>
 			(Aexp.region exp,
 			 str "rule results of different types",
 			 align [seq [str "result:   ", l1],

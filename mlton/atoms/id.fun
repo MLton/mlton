@@ -33,6 +33,8 @@ in
    val originalName = make #originalName
 end
 
+fun setPrintName (T {printName, ...}, s) = printName := SOME s
+
 fun toString (T {printName, originalName, ...}) =
    case !printName of
       NONE =>

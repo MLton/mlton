@@ -21,12 +21,13 @@ signature ID =
       val equals: t * t -> bool
       val fromString: string -> t (* doesn't add uniquefying suffix *)
       val layout: t -> Layout.t
-      val new: t -> t            (* with the same prefix *)
-      val newNoname: unit -> t   (* prefix is "x" *)
+      val new: t -> t (* with the same prefix *)
+      val newNoname: unit -> t (* prefix is noname *)
       val newString: string -> t (* given prefix *)
       val originalName: t -> string (* raw destructor *)
       val plist: t -> PropertyList.t
       val sameName: t * t -> bool
+      val setPrintName: t * string -> unit
       val toString: t -> string
    end
 

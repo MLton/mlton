@@ -266,12 +266,14 @@ structure Info =
 	      values = values}))
    end
 
+val allTycons: Tycon.t list ref = ref []
 val newTycons: (Tycon.t * Kind.t) list ref = ref []
 
 val newTycon: string * Kind.t -> Tycon.t =
    fn (s, k) =>
    let
       val c = Tycon.fromString s
+      val _ = List.push (allTycons, c)
       val _ = List.push (newTycons, (c, k))
    in
       c
@@ -1083,6 +1085,64 @@ fun openStructure (T {currentScope, strs, vals, types, ...},
       ; doit (types, types')
    end
 
+fun setTyconNames (T {strs, types, ...}) =
+   let
+      val {get = seen: Tycon.t -> bool ref, ...} =
+	 Property.get (Tycon.plist, Property.initFun (fn _ => ref false))
+      fun doType (typeStr: TypeStr.t,
+		  name: Ast.Tycon.t,
+		  strids: Strid.t list): unit =
+	 case TypeStr.toTyconOpt typeStr of
+	    NONE => ()
+	  | SOME c => 
+	       let
+		  val r = seen c
+	       in
+		  if !r
+		     then ()
+		  else
+		     let
+			val _ = r := true
+			val name =
+			   Ast.Longtycon.toString
+			   (Ast.Longtycon.long (strids, name))
+		     in
+			Tycon.setPrintName (c, name)
+		     end
+	       end
+      fun foreach (NameSpace.T {table, ...}, f) =
+	 HashSet.foreach
+	 (table, fn Values.T {domain, ranges} =>
+	  case !ranges of
+	     [] => ()
+	   | {value, ...} :: _ => f (domain, value))
+      val _ = foreach (types, fn (name, typeStr) => doType (typeStr, name, []))
+      val {get = strSeen: Structure.t -> bool ref, ...} =
+	 Property.get (Structure.plist, Property.initFun (fn _ => ref false))
+      fun loopStr (s as Structure.T {strs, types, ...}, strids: Strid.t list)
+	 : unit =
+	 let
+	    val r = strSeen s
+	 in
+	    if !r
+	       then ()
+	    else
+	       (r := true
+		; Info.foreach (types, fn (name, typeStr) =>
+				doType (typeStr, name, strids))
+		; Info.foreach (strs, fn (strid, str) =>
+				loopStr (str, strids @ [strid])))
+	 end
+      val _ = foreach (strs, fn (strid, str) => loopStr (str, [strid]))
+      val _ =
+	 List.foreach
+	 (!allTycons, fn c =>
+	  if ! (seen c)
+	     then ()
+	  else Tycon.setPrintName (c, concat ["?.", Tycon.originalName c]))
+   in
+      ()
+   end
 
 val propertyFun:
    ('a -> PropertyList.t) * ('a * 'b * ('a * 'b -> 'c) -> 'c)
@@ -1183,6 +1243,12 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 	 {opaque: bool, prefix: string}, region)
    : Structure.t * Decs.t =
    let
+      val preError =
+	 Promise.lazy
+	 (fn () =>
+	  scope (E, fn () =>
+		 (openStructure (E, S)
+		  ; setTyconNames E)))
       val decs = ref []
       fun error (name, l) =
 	 let
@@ -1211,6 +1277,7 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 					ty = ty',
 					tyvars = tyvars'},
 			   tyvars),
+	     preError,
 	     fn (l1, l2) =>
 	     let
 		open Layout
@@ -1437,7 +1504,7 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 				 Scheme.instantiate s'
 			      val _ =
 				 Type.unify
-				 (t, t', fn (l, l') =>
+				 (t, t', preError, fn (l, l') =>
 				  let
 				     open Layout
 				  in

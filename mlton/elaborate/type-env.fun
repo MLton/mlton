@@ -845,7 +845,7 @@ structure Type =
 
       val traceUnify = Trace.trace2 ("unify", layout, layout, UnifyResult.layout)
 
-      fun unify (t, t'): UnifyResult.t =
+      fun unify (t, t', preError: unit -> unit): UnifyResult.t =
 	 let
 	    val {destroy, lay = layoutPretty} = makeLayoutPretty ()
 	    val dontCare' =
@@ -874,74 +874,41 @@ structure Type =
 			   needsParen = false})
 		      fun notUnifiableBracket (l, l') =
 			 notUnifiable (bracket l, bracket l')
+		      fun flexToRecord (fields, spine) =
+			 (Vector.fromList fields,
+			  Vector.fromList
+			  (List.fold
+			   (Spine.fields spine, [], fn (f, ac) =>
+			    if List.exists (fields, fn (f', _) =>
+					    Field.equals (f, f'))
+			       then ac
+			    else f :: ac)),
+			  fn f => Spine.ensureField (spine, f))
+		      fun rigidToRecord r =
+			 (Srecord.toVector r,
+			  Vector.new0 (),
+			  fn f => isSome (Srecord.peek (r, f)))
 		      fun oneFlex ({fields, spine, time}, r, outer, swap) =
 			 let
 			    val _ = minTime (outer, !time)
-			    val (ac, ac') =
-			       List.fold
-			       (fields, ([], []), fn ((f, t), (ac, ac')) =>
-				case Srecord.peek (r, f) of
-				   NONE => ((f, true, dontCare' t) :: ac, ac')
-				 | SOME t' =>
-				      case unify (t, t') of
-					 NotUnifiable (l, l') =>
-					    ((f, false, l) :: ac,
-					     (f, false, l') :: ac')
-				       | Unified =>
-					    (case !Control.typeError of
-						Control.Concise => (ac, ac')
-					      | Control.Full =>
-						   let
-						      val z =
-							 (f, false,
-							  layoutPretty t)
-						   in
-						      (z :: ac, z :: ac')
-						   end))
-			    val ac =
-			       List.fold
-			       (Spine.fields spine, ac,
-				fn (f, ac) =>
-				if List.exists (fields, fn (f', _) =>
-						Field.equals (f, f'))
-				   then ac
-				else
-				   case Srecord.peek (r, f) of
-				      NONE => (f, true, dontCare) :: ac
-				    | SOME _ => ac)
-			    val ac' =
-			       Srecord.foldi
-			       (r, ac', fn (f, t, ac') =>
-				if Spine.ensureField (spine, f)
-				   then ac'
-				else (f, true, dontCare' t) :: ac')
-			    val _ = Spine.noMoreFields spine
 			 in
-			    case (ac, ac') of
-			       ([], []) => (Unified, Record r)
-			     | _ =>
-				  let
-				     val ds = layoutRecord ac
-				     val ds' = layoutRecord ac'
-				  in
-				     notUnifiable (if swap then (ds', ds)
-						   else (ds, ds'))
-				  end
+			    unifyRecords
+			    (flexToRecord (fields, spine),
+			     rigidToRecord r,
+			     fn () => (Spine.noMoreFields spine
+				       ; (Unified, Record r)),
+			     fn (l, l') => notUnifiable (if swap
+							    then (l', l)
+							 else (l, l')))
 			 end
 		      fun genFlexError () =
 			 Error.bug "GenFlexRecord seen in unify"
 		      val {equality = e, ty = t, plist} = Set.value s
 		      val {equality = e', ty = t', ...} = Set.value s'
 		      fun not () =
-			 (* By choosing layoutTopLevel, when two types don't
-			  * unify, we only see the outermost bits.  On the other
-			  * hand, if we choose layoutPretty, then we see the
-			  * whole type that didn't unify.
-			  *)
-			 notUnifiableBracket
-			 (if true
-			     then (layoutPretty outer, layoutPretty outer')
-			  else (layoutTopLevel t, layoutTopLevel t'))
+			 (preError ()
+			  ; notUnifiableBracket (layoutPretty outer,
+						 layoutPretty outer'))
 		      fun unifys (ts, ts', yes, no) =
 			 let
 			    val us = Vector.map2 (ts, ts', unify)
@@ -989,6 +956,7 @@ structure Type =
 							       (Vector.length ts),
 							       " args> "]),
 						      Tycon.layout c])
+						 val _ = preError ()
 					      in
 						 notUnifiableBracket
 						 (maybe (lay ts, lay ts'))
@@ -1041,71 +1009,30 @@ structure Type =
 			  | (FlexRecord {fields = fields, spine = s, time = t},
 			     FlexRecord {fields = fields', spine = s',
 					 time = t', ...}) =>
-			       let
-				  fun subsetSpine (fields, spine, spine') =
-				     List.fold
-				     (Spine.fields spine, [], fn (f, ac) =>
-				      if List.exists (fields, fn (f', _) =>
-						      Field.equals (f, f'))
-					 orelse Spine.ensureField (spine', f)
-					 then ac
-				      else (f, true, dontCare) :: ac)
-				  val ac = subsetSpine (fields, s, s')
-				  val ac' = subsetSpine (fields', s', s)
-				  fun subset (fields, fields', spine', ac, ac',
-					      skipBoth) =
-				     List.fold
-				     (fields, (ac, ac'),
-				      fn ((f, t), (ac, ac')) =>
-				      case List.peek (fields', fn (f', _) =>
-						      Field.equals (f, f')) of
-					 NONE =>
-					    if Spine.ensureField (spine', f)
-					       then (ac, ac')
-					    else ((f, true, dontCare) :: ac, ac')
-				       | SOME (_, t') =>
-					    if skipBoth
-					       then (ac, ac')
-					    else
-					       case unify (t, t') of
-						  NotUnifiable (l, l') =>
-						     ((f, false, l) :: ac,
-						      (f, false, l) :: ac')
-						| Unified =>
-						     (case !Control.typeError of
-							 Control.Concise =>
-							    (ac, ac')
-						       | Control.Full =>
-							    let
-							       val z =
-								  (f, false,
-								   layoutPretty t)
-							    in
-							       (z :: ac, z :: ac')
-							    end))
-				  val (ac, ac') =
-				     subset (fields, fields', s', ac, ac', false)
-				  val (ac', ac) =
-				     subset (fields', fields, s, ac', ac, true)
-				  val _ = Spine.unify (s, s')
-				  val fields =
-				     List.fold
-				     (fields, fields', fn ((f, t), ac) =>
-				      if List.exists (fields', fn (f', _) =>
-						      Field.equals (f, f'))
-					 then ac
-				      else (f, t) :: ac)
-			       in
-				  case (ac, ac') of
-				     ([], []) =>
-					(Unified,
-					 FlexRecord
-					 {fields = fields,
-					  spine = s,
-					  time = ref (Time.min (!t, !t'))})
-				   | _ => notUnifiable (layoutRecord ac,
-							layoutRecord ac')
-			       end
+			    let
+			       fun yes () =
+				  let
+				     val _ = Spine.unify (s, s')
+				     val fields =
+					List.fold
+					(fields, fields', fn ((f, t), ac) =>
+					 if List.exists (fields', fn (f', _) =>
+							 Field.equals (f, f'))
+					    then ac
+					 else (f, t) :: ac)
+				  in
+				     (Unified,
+				      FlexRecord
+				      {fields = fields,
+				       spine = s,
+				       time = ref (Time.min (!t, !t'))})
+				  end
+			    in
+			       unifyRecords
+			       (flexToRecord (fields, s),
+				flexToRecord (fields', s'),
+				yes, notUnifiable)
+			    end
 			  | (GenFlexRecord _, _) => genFlexError ()
 			  | (_, GenFlexRecord _) => genFlexError ()
 			  | (Int, Int) => (Unified, Int)
@@ -1114,47 +1041,10 @@ structure Type =
 			       (case (Srecord.detupleOpt r,
 				      Srecord.detupleOpt r') of
 				   (NONE, NONE) =>
-				      let
-					 fun diffs (r, r', skipBoth, ac, ac') =
-					    Vector.fold
-					    (Srecord.toVector r, (ac, ac'),
-					     fn ((f, t), (ac, ac')) =>
-					     case Srecord.peek (r', f) of
-						NONE =>
-						   ((f, true, dontCare' t) :: ac,
-						    ac')
-					      | SOME t' =>
-						   if skipBoth
-						      then (ac, ac')
-						   else
-						      case unify (t, t') of
-							 NotUnifiable (l, l') =>
-							    ((f, false, l) :: ac,
-							     (f, false, l') :: ac')
-						       | Unified =>
-							    case !Control.typeError of
-							       Control.Concise => (ac, ac')
-							     | Control.Full =>
-								  let
-								     val z =
-									(f, false,
-									 layoutPretty t)
-								  in
-								     (z :: ac,
-								      z :: ac')
-								  end)
-					 val (ac, ac') =
-					    diffs (r, r', false, [], [])
-					 val (ac', ac) =
-					    diffs (r', r, true, ac', ac)
-				      in
-					 case (ac, ac') of
-					    ([], []) =>
-					       (Unified, Record r)
-					  | _ =>
-					       notUnifiable (layoutRecord ac,
-							     layoutRecord ac')
-				      end
+				      unifyRecords
+				      (rigidToRecord r, rigidToRecord r',
+				       fn () => (Unified, Record r),
+				       notUnifiable)
 				 | (SOME ts, SOME ts') =>
 				      if Vector.length ts = Vector.length ts'
 					 then
@@ -1192,6 +1082,65 @@ structure Type =
 		   in
 		      res
 		   end) arg
+	    and unifyRecords ((fields: (Field.t * t) vector,
+			       extra: Field.t vector,
+			       ensureField: Field.t -> bool),
+			      (fields': (Field.t * t) vector,
+			       extra': Field.t vector,
+			       ensureField': Field.t -> bool),
+			      yes, no) =
+	       let
+		  fun extras (extra, ensureField') =
+		     Vector.fold
+		     (extra, [], fn (f, ac) =>
+		      if ensureField' f
+			 then ac
+		      else (preError (); (f, true, dontCare) :: ac))
+		  val ac = extras (extra, ensureField')
+		  val ac' = extras (extra', ensureField)
+		  fun subset (fields, fields', ensureField', ac, ac',
+			      both, skipBoth) =
+		     Vector.fold
+		     (fields, (ac, ac', both), fn ((f, t), (ac, ac', both)) =>
+		      case Vector.peek (fields', fn (f', _) =>
+					Field.equals (f, f')) of
+			 NONE =>
+			    if ensureField' f
+			       then (ac, ac', both)
+			    else (preError ()
+				  ; ((f, true, dontCare' t) :: ac, ac', both))
+		       | SOME (_, t') =>
+			    if skipBoth
+			       then (ac, ac', both)
+			    else
+			       case unify (t, t') of
+				  NotUnifiable (l, l') =>
+				     ((f, false, l) :: ac,
+				      (f, false, l') :: ac',
+				      both)
+				| Unified =>
+				     (ac, ac',
+				      case !Control.typeError of
+					 Control.Concise => []
+				       | Control.Full => (f, t) :: both))
+		  val (ac, ac', both) =
+		     subset (fields, fields', ensureField', ac, ac', [], false)
+		  val (ac', ac, both) =
+		     subset (fields', fields, ensureField, ac', ac, both, true)
+	       in
+		  case (ac, ac') of
+		     ([], []) => yes ()
+		   | _ =>
+			let
+			   val _ = preError ()
+			   fun doit ac =
+			      layoutRecord (List.fold
+					    (both, ac, fn ((f, t), ac) =>
+					     (f, false, layoutPretty t) :: ac))
+			in
+			   no (doit ac, doit ac')
+			end
+	       end
 	    val _ = destroy ()
 	 in
 	    unify (t, t')
@@ -1215,8 +1164,8 @@ structure Type =
       datatype unifyResult = datatype UnifyResult'.t
 
       val unify =
-	 fn (t, t') =>
-	 case unify (t, t') of
+	 fn (t, t', preError) =>
+	 case unify (t, t', preError) of
 	    UnifyResult.NotUnifiable ((l, _), (l', _)) => NotUnifiable (l, l')
 	  | UnifyResult.Unified => Unified
 
@@ -1627,7 +1576,7 @@ fun closeTop (r: Region.t): unit =
 	 List.foreach
 	 (!Type.freeUnknowns, fn t =>
 	  case Type.toType t of
-	     Type.Unknown _ => (Type.unify (t, Type.unit)
+	     Type.Unknown _ => (Type.unify (t, Type.unit, fn () => ())
 				; ())
 	   | _ => ())
       val _ = Type.freeUnknowns := []
@@ -1728,9 +1677,9 @@ structure Type =
 	 expandOpaque
 
       val unify =
-	 fn (t1: t, t2: t,
+	 fn (t1: t, t2: t, preError: unit -> unit,
 	     f: Layout.t * Layout.t -> Region.t * Layout.t * Layout.t) =>
-	 case unify (t1, t2) of
+	 case unify (t1, t2, preError) of
 	    NotUnifiable z => Control.error (f z)
 	  | Unified => ()
    end
