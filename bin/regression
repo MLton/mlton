@@ -48,7 +48,7 @@ PATH=.:$PATH
 			*)
 			;;
 			esac
-			$mlton -native false -type-check true $flags $f.sml
+			$mlton -native true -type-check true $flags $f.sml
 			if [ $? -ne 0 ]; then
 				echo "compilation of $f failed"
 				exit 1
