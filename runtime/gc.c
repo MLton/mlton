@@ -2885,6 +2885,7 @@ void GC_profileDone (GC_state s) {
 		setProfTimer (0);
 	s->profilingIsOn = FALSE;
 	p = s->profile;
+	p->countTop[SOURCES_INDEX_GC] = p->totalGC;
 	if (s->profileStack) {
 		for (sourceIndex = 0; sourceIndex < s->sourcesSize;
 			++sourceIndex) {
@@ -2998,8 +2999,6 @@ void GC_profileAllocInc (GC_state s, W32 amount) {
 		fprintf (stderr, "GC_profileAllocInc (%u)\n", (uint)amount);
 	if (s->profilingIsOn and (PROFILE_ALLOC == s->profileKind)) {
 		if (s->amInGC) {
-			if (DEBUG_PROFILE)
-				fprintf (stderr, "amInGC\n");
 			s->profile->totalGC += amount;
 			return;
 		}
