@@ -1,8 +1,12 @@
-NAME = benchmark
+SRC = $(shell cd .. && pwd)
+BUILD = $(SRC)/build
+BIN = $(BUILD)/bin
+LIB = $(BUILD)/lib
 MLTON = mlton
 HOST = self
 FLAGS = -host $(HOST)
-PATH = $(shell cd ../build/bin && echo `pwd`:$$PATH)
+NAME = benchmark
+PATH = $(BIN):$(shell echo $$PATH)
 
 all: 	$(NAME)
 

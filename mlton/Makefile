@@ -3,10 +3,10 @@ BUILD = $(SRC)/build
 BIN = $(BUILD)/bin
 LIB = $(BUILD)/lib
 MLTON = mlton
-NAME = mlton
-AOUT = mlton-compile
 HOST = self
 FLAGS = @MLton gc-summary -- -host $(HOST) -v -o $(AOUT)
+NAME = mlton
+AOUT = mlton-compile
 PATH = $(BIN):$(shell echo $$PATH)
 # If we're compiling MLton with an older version of itself, use the stubs for
 # the MLton structure.  If we're compiling it with itself, don't.
