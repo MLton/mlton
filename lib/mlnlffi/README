@@ -1,0 +1,21 @@
+This is the ML-NLFFI Library, the core of a new foreign-function
+interface for SML/NJ.
+
+Library $c/c.cm provides:
+
+  - an encoding of the C type system in ML
+  - dynamic linking (an interface to dlopen/dlsym)
+  - ML/C string conversion routines
+
+  This is the (only) library to be used by user code.
+
+Library $c/c-int.cm (subdirectory "internals"):
+
+  - implements all of $c/c.cm
+  - implements low-level hooks to be used by ml-nlffigen-generated code
+
+Library $c/memory.cm (subdirectory "memory"):
+
+  - encapsulates low-level details related to raw memory access
+
+  User code should NOT directly refer to this library.

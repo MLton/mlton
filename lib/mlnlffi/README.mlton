@@ -1,0 +1,6 @@
+ML-NLFFI is a no-longer-foreign-function interface library for SML.
+
+This directory has an initial port of ML-NLFFI from SML/NJ to MLton.
+All of the ML-NLFFI functionality is present.
+
+See http://www.mlton.org/MLNLFFI for more details.

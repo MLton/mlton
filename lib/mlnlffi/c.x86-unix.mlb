@@ -1,0 +1,34 @@
+(* c.x86-unix.mlb
+ * 2005 Matthew Fluet (mfluet@acm.org)
+ *  Adapted for MLton.
+ *)
+
+(*
+ * A new foreign-function interface for SML.
+ *   This interface is actually an interface to C.  It is based on
+ *   an encoding of C's type system in ML.
+ *   This library is a helper library for use by automatically generated
+ *   code.  (An auxiliary tool produces this code directly from C code.)
+ *
+ *   (C) 2001, Lucent Technologies, Bell Laboratories
+ *
+ * author: Matthias Blume (blume@research.bell-labs.com)
+ *)
+local
+  internals/c-int.x86-unix.mlb
+in
+  structure Tag
+
+  structure MLRep
+
+  signature C
+  structure C
+  signature C_DEBUG
+  structure C_Debug
+
+  signature ZSTRING
+  structure ZString
+
+  signature DYN_LINKAGE
+  structure DynLinkage
+end
