@@ -68,6 +68,8 @@ structure IntInf =
 	 fn _ => raise Fail "IntInf.~>>"
    end'
 
+feature 'val _ = Real32.+' 'structure Real32 = Real64'
+
 feature 'val _ = Word8.~' '
 structure Word8 =
    struct
