@@ -112,7 +112,13 @@ structure Base64: BASE64 =
 			let val c = sub i
 			in if pad = c
 			      then 0w0
-			   else valOf(charToWord8 c)
+			   else
+			      case charToWord8 c of
+				 NONE =>
+				    Error.bug (concat
+					       ["Base64.decode: strange char ",
+						Char.escapeSML c])
+			       | SOME w => w
 			end
 		     val w0 = sub i
 		     val w1 = sub(i + 1)
