@@ -396,6 +396,10 @@ val keepSSA = control {name = "keep SSA",
 		       default = false,
 		       toString = Bool.toString}
 
+val keepSSA2 = control {name = "keep SSA2",
+			default = false,
+			toString = Bool.toString}
+
 val keepDot = control {name = "keep dot",
 		       default = false,
 		       toString = Bool.toString}

@@ -290,7 +290,7 @@ structure Type =
 			  val args = Prod.layout (args, layout)
 		       in
 			  case con of
-			     Con c => Con.layout c
+			     Con c => seq [Con.layout c, str " of ", args]
 			   | Tuple => args
 			   | Vector => seq [args, str " vector"]
 		       end

@@ -481,7 +481,16 @@ fun preCodegen {input}: Machine.Program.t =
 	  typeCheck = Ssa.typeCheck,
 	  display = Control.Layouts Ssa.Program.layouts,
 	  simplify = Ssa.simplify}
-      val ssa =
+      val _ =
+	 let
+	    open Control
+	 in
+	    if !keepSSA
+	       then saveToFile ({suffix = "ssa"}, No, ssa,
+				 Layouts Ssa.Program.layouts)
+	    else ()
+	 end
+      val ssa2 =
 	 Control.passSimplify
 	 {name = "toSsa2",
 	  suffix = "ssa2",
@@ -494,8 +503,8 @@ fun preCodegen {input}: Machine.Program.t =
 	 let
 	    open Control
 	 in
-	    if !keepSSA
-	       then saveToFile ({suffix = "ssa"}, No, ssa,
+	    if !keepSSA2
+	       then saveToFile ({suffix = "ssa2"}, No, ssa2,
 				 Layouts Ssa2.Program.layouts)
 	    else ()
 	 end
@@ -510,7 +519,7 @@ fun preCodegen {input}: Machine.Program.t =
 	  suffix = "machine",
 	  style = Control.No,
 	  thunk = fn () => (Backend.toMachine
-			    (ssa,
+			    (ssa2,
 			     {codegenImplementsPrim = codegenImplementsPrim})),
 	  display = Control.Layouts Machine.Program.layouts}
       val _ =

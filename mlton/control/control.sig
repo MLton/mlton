@@ -141,6 +141,8 @@ signature CONTROL =
 	 
       (* Save the SSA to a file. *)
       val keepSSA: bool ref
+      (* Save the SSA2 to a file. *)
+      val keepSSA2: bool ref
 
       (* For the codegen -- do labels for gcc and assembler need an extra leading
        * underscore.

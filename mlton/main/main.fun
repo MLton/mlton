@@ -284,6 +284,7 @@ fun makeOptions {usage} =
 		      | "sml" => keepSML := true
 		      | "rssa" => keepRSSA := true
 		      | "ssa" => keepSSA := true
+		      | "ssa2" => keepSSA2 := true
 		      | _ => usage (concat ["invalid -keep flag: ", s]))),
        (Expert, "keep-pass", " <pass>", "keep the results of pass",
 	SpaceString
