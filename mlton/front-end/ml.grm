@@ -1088,7 +1088,7 @@ aexp	: OP vid		(Exp.Var {name = Longvid.short vid,
         | FFI STRING COLON ty SEMICOLON
 	  (Control.warning
 	   (reg (FFIleft, SEMICOLONright),
-	    Layout.str "_ffi is deprecated.  Please use _import.\n",
+	    Layout.str "_ffi is deprecated.  Please use _import.",
 	    Layout.empty)
 	   ; Exp.Prim {kind = PrimKind.Import [], name = STRING, ty = ty})
 	| EXPORT STRING attributes COLON ty SEMICOLON
