@@ -48,6 +48,7 @@ structure Escape
 structure Exn
 structure Export
 structure File
+structure FileDesc
 structure FixedPoint
 structure Function
 structure HashSet
