@@ -646,8 +646,8 @@ structure Structure =
 		      shapeSigid: Shape.t -> (Sigid.t * Interface.t) option) =
 	    let
 	       fun layoutTypeSpec (n, s) =
-		  layoutTypeSpec' (Ast.Tycon.layout n, s, {allowData = true})
-	       and layoutTypeSpec' (name: Layout.t, s, {allowData: bool}) =
+		  layoutTypeSpec' (Ast.Tycon.layout n, s, {isWhere = false})
+	       and layoutTypeSpec' (name: Layout.t, s, {isWhere: bool}) =
 		  let
 		     val {destroy, lay} = Type.makeLayoutPretty ()
 		     val lay = #1 o lay
@@ -668,26 +668,40 @@ structure Structure =
 					   (Vector.toList (Vector.map (tyvars, lay)),
 					    ", "))),
 			       str " "]
-		     val def = seq [str "type ", args, name, str " = "]
+		     val t =
+			case TypeStr.node s of
+			   TypeStr.Datatype _ => "datatype"
+			 | _ =>
+			      if isWhere
+				 then "type"
+			      else
+				 let
+				    datatype z = datatype AdmitsEquality.t
+				 in
+				    case TypeStr.admitsEquality s of
+				       Always => "eqtype"
+				     | Never => "type"
+				     | Sometimes => "eqtype"   
+				 end
+                     val def = seq [str t, str " ", args, name, str " = "]
 		     val res = 
 			case TypeStr.node s of
 			   TypeStr.Datatype {cons = Cons.T cs, tycon} =>
-			      if allowData
-				 then
-				    let
-				       val cs =
-					  Vector.toListMap
-					  (cs, fn {name, scheme, ...} =>
-					   seq [Ast.Con.layout name,
-						case (Type.deArrowOpt
-						      (Scheme.apply (scheme, tyvars))) of
-						   NONE => empty
-						 | SOME (t, _) => seq [str " of ", lay t]])
-				    in
-				       seq [str "data", def, alignPrefix (cs, "| ")]
-				    end
+			      if isWhere
+				 then seq [def, lay (Type.con (tycon, tyvars))]
 			      else
-				 seq [def, lay (Type.con (tycon, tyvars))]
+				 let
+				    val cs =
+				       Vector.toListMap
+				       (cs, fn {name, scheme, ...} =>
+					seq [Ast.Con.layout name,
+					     case (Type.deArrowOpt
+						   (Scheme.apply (scheme, tyvars))) of
+						NONE => empty
+					      | SOME (t, _) => seq [str " of ", lay t]])
+				 in
+				    seq [def, alignPrefix (cs, "| ")]
+				 end
 			 | TypeStr.Scheme s =>
 			      seq [def, lay (Scheme.apply (s, tyvars))]
 			 | TypeStr.Tycon c =>
@@ -770,7 +784,7 @@ structure Structure =
 						  (Ast.Longtycon.long
 						   (rev nest, c)),
 						  typeStr,
-						  {allowData = false})])
+						  {isWhere = true})])
 					   ; typeStr)
 			   val _ = realize (S, I, realizeTycon)
 			in
