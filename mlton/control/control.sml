@@ -95,6 +95,13 @@ val detectOverflow = control {name = "detect overflow",
 			      default = true,
 			      toString = Bool.toString}
 
+val diagPasses = 
+   control {name = "diag passes",
+	    default = [],
+	    toString = List.toString 
+	    (Layout.toString o 
+	     Regexp.Compiled.layout)}
+
 val dropPasses =
    control {name = "drop passes",
 	    default = [],
@@ -229,12 +236,6 @@ val keepSSA = control {name = "keep SSA",
 		       default = false,
 		       toString = Bool.toString}
 
-val keepDiagnostics = control {name = "keep diagnostics",
-			       default = [],
-			       toString = List.toString 
-			                  (Layout.toString o 
-					   Regexp.Compiled.layout)}
-
 val keepDot = control {name = "keep dot",
 		       default = false,
 		       toString = Bool.toString}
@@ -360,6 +361,13 @@ val polyvariance =
 			     ("small", Int.layout small),
 			     ("product", Int.layout product)])
 	     p)}
+
+val profPasses = 
+   control {name = "prof passes",
+	    default = [],
+	    toString = List.toString 
+	    (Layout.toString o 
+	     Regexp.Compiled.layout)}
 
 structure Profile =
    struct
@@ -839,14 +847,14 @@ fun pass {name: string,
 	  display = disp,
 	  thunk: unit -> 'a}: 'a =
    let
-      val result =
-	 if not (List.exists (!keepDiagnostics, fn re =>
+      val result = 
+	 if not (List.exists (!diagPasses, fn re =>
 			      Regexp.Compiled.matchesAll (re, name)))
 	    then trace (Pass, name) thunk ()
 	 else
 	    let
 	       val result = ref NONE
-	       val _ = 
+	       val _ =
 		  saveToFile
 		  ({suffix = concat [name, ".diagnostic"]}, No, (),
 		   Layouts (fn ((), disp) =>
@@ -867,21 +875,23 @@ fun pass {name: string,
       result
    end
 
-(* Code for profiling each pass. *)
+(* Code for diagnosing a pass. *)
 val pass =
    fn z as {name, ...} =>
-   if true
-      then pass z
-   else
-      let
-	 open MLton.Profile
-	 val d = Data.malloc ()
-	 val res = withData (d, fn () => pass z)
-	 val _ = Data.write (d, concat ["/tmp/", name, ".mlmon"])
-	 val _ = Data.free d
-      in
-	 res
-      end
+   if MLton.Profile.isOn
+      then if not (List.exists (!profPasses, fn re =>
+				Regexp.Compiled.matchesAll (re, name)))
+	      then pass z
+	   else let
+		   open MLton.Profile
+		   val d = Data.malloc ()
+		   val result = withData (d, fn () => pass z)
+		   val _ = Data.write (d, concat [!inputFile, ".", name, ".mlmon"])
+		   val _ = Data.free d
+		in
+		   result
+		end
+   else pass z
 
 fun passTypeCheck {name: string,
 		   suffix: string,

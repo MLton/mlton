@@ -36,6 +36,7 @@ ifeq (new,$(shell PATH=$(BIN):$$PATH; mlton -verbose 1 >/dev/null 2>&1 && echo n
 else
   FLAGS += -v -o $(AOUT)
 endif
+FLAGS += $(COMPILE_ARGS)
 
 SOURCES =			\
 	mlton.cm		\

@@ -170,7 +170,7 @@ fun makeOptions {usage} =
 		     (case Regexp.fromString s of
 			 SOME (re,_) => let val re = Regexp.compileDFA re
 					in 
-					   List.push (keepDiagnostics, re)
+					   List.push (diagPasses, re)
 					   ; List.push (keepPasses, re)
 					end
 		       | NONE => usage (concat ["invalid -diag-pass flag: ", s])))),
@@ -295,6 +295,14 @@ fun makeOptions {usage} =
 	SpaceString (fn s => output := SOME s)),
        (Expert, "polyvariance", " {true|false}", "use polyvariance",
 	Bool (fn b => if b then () else polyvariance := NONE)),
+       (Expert, "prof-pass", " <pass>", "keep profile info for pass",
+	SpaceString (fn s =>
+		     (case Regexp.fromString s of
+			 SOME (re,_) => let val re = Regexp.compileDFA re
+					in 
+					   List.push (profPasses, re)
+					end
+		       | NONE => usage (concat ["invalid -diag-pass flag: ", s])))),
        (Normal, "profile", " {no|alloc|count|time}",
 	"produce executable suitable for profiling",
 	SpaceString

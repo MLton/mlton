@@ -55,6 +55,9 @@ signature CONTROL =
       (* whether the arithmetic primitives detect overflow *)
       val detectOverflow: bool ref
 
+      (* List of pass names to keep diagnostic info on. *)
+      val diagPasses: Regexp.Compiled.t list ref
+
       (* List of optimization passes to skip. *)
       val dropPasses: Regexp.Compiled.t list ref
 
@@ -99,9 +102,6 @@ signature CONTROL =
       val instrument: bool ref
 
       val keepDefUse: bool ref
-
-      (* List of pass names to keep diagnostic info on. *)
-      val keepDiagnostics: Regexp.Compiled.t list ref
 
       (* Keep dot files for whatever SSA files are produced. *)
       val keepDot: bool ref
@@ -200,6 +200,9 @@ signature CONTROL =
 	  small: int,
 	  product: int
 	 } option ref
+
+      (* List of pass names to keep profiling info on. *)
+      val profPasses: Regexp.Compiled.t list ref
 
       (* Insert profiling information. *)
       datatype profile = ProfileNone | ProfileAlloc | ProfileCount | ProfileTime
