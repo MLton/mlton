@@ -29,10 +29,10 @@ functor StreamIO (S: STREAM_IO_ARG) : STREAM_IO =
                            | LINE_BUF of buf
                            | BLOCK_BUF of buf
       fun newLineBuf bufSize =
-	LINE_BUF {size = ref 0,
+	LINE_BUF {size = ref 0, 
 		  array = Array.array (bufSize, someElem)}
       fun newBlockBuf bufSize =
-	BLOCK_BUF {size = ref 0,
+	BLOCK_BUF {size = ref 0, 
 		   array = Array.array (bufSize, someElem)}
 
       datatype state = Active | Terminated | Closed
@@ -80,14 +80,14 @@ functor StreamIO (S: STREAM_IO_ARG) : STREAM_IO =
 	end
 
       fun flushVec (writer, x) =
-	let PrimIO.WR {name, writeVec, ...} = writer
+	let val writeVec = writerSel (writer, #writeVec)
 	in
 	  case writeVec of
 	    SOME writeVec => flushGen (writeVec, x)
 	  | NONE => raise IO.BlockingNotSupported
 	end
       fun flushArr (writer, x) =
-	let PrimIO.WR {name, writeArr, ...} = writer
+	let val writeArr = writerSel (writer, #writeArr)
 	in
 	  case writeArr of
 	    SOME writeArr => flushGen (writeArr, x)
@@ -157,7 +157,7 @@ functor StreamIO (S: STREAM_IO_ARG) : STREAM_IO =
 			 NO_BUF => (Array.update (buf1, 0, c);
 				    flushArr (augmented_writer,
 					      {buf = buf1, i = 0, sz = 1}))
-	               | LINE_BUF buf => doit (buf, true)
+	               | LINE_BUF buf => doit (buf, false)
 		       | BLOCK_BUF buf => doit (buf, false)
 		     end
 		   
@@ -275,21 +275,22 @@ functor StreamIO (S: STREAM_IO_ARG) : STREAM_IO =
       (*   instream    *)
       (*---------------*)
 
-      datatype buf = Buf of {array: Array.array,
-			     first: int ref,
-			     last: int ref}
       datatype buffer_mode = NO_BUF
-                           | BUF of buf
+	                   | BUF of {array: Array.array,
+				     first: int ref,
+				     last: int ref}
       fun newBufferMode bufSize =
 	if bufSize = 1
 	  then NO_BUF
-	  else BUF (Buf {array = Array.array (bufSize, someElem),
-			 first = ref 0,
-			 last = ref 0})
+	  else BUF {array = Array.array (bufSize, someElem),
+		    first = ref 0,
+		    last = ref 0}
 
-      datatype chain = Chain of {inp: Vector.vector,
-				 next: state ref}
-      and state = Active of chain option ref | Truncated | Closed
+      datatype chain = End of {buffer_mode: buffer_mode}
+	             | Link of {inp: Vector.vector, next: state ref}
+      and state = Active of chain ref 
+	        | Truncated 
+	        | Closed
       fun active state =
 	case state of
 	  Active => true
@@ -302,7 +303,6 @@ functor StreamIO (S: STREAM_IO_ARG) : STREAM_IO =
 
       datatype instream = In of {reader: reader,
 				 augmented_reader: reader,
-				 buffer_mode: buffer_mode,
 				 state: state ref}
 
       fun instreamSel (os, sel) =
@@ -318,10 +318,55 @@ functor StreamIO (S: STREAM_IO_ARG) : STREAM_IO =
       fun instreamName is =
 	readerSel (instreamSel (is, #reader), #name)
 
-      fun input (is as In {state, ...}) =
-	let
-	in
-	end
+      val empty = Vector.fromList []
+
+      fun input (is as In {augmented_reader, state, ...}) =
+	case !state of
+	  Active (ref (Link {inp, next})) => (inp, In state)
+	| Active (r as ref (c as End {buffer_mode})) => 
+	    (case buffer_mode of
+	       NO_BUF => 
+		 (case readerSel (augmented_reader, #readVec) of
+		    NONE => raise IO.Io {name = instreamName is,
+					 function = "input",
+					 exn = IO.NonblockingNotSupported}
+		  | SOME readVec => let
+				      val inp = readVec 1
+				      val _ = r := Link {inp = inp, next = ref c}
+				    in
+				      inp
+				    end)
+	     | BUF {array, first, last} =>
+		 if !first < !last
+		   then let
+			  val inp = Vector.tabulate
+			            (!last - !first, 
+				     fn i => Array.sub (array, !first + i))
+			  val _ = first := !last
+			  val _ = r := Link {inp = inp, next = ref c}
+			in
+			  inp
+			end
+		   else (case readerSel (augmented_reader, #readArr) of
+			   NONE => raise IO.Io {name = instreamName is,
+						function = "input",
+						exn = IO.NonblockingNotSupported}
+			 | SOME readArr => let
+					     val k = readArr {buf = array,
+							      i = 0,
+							      sz = NONE}
+					     val _ = first := 0
+					     val _ = last := k
+					   in
+					     input is
+					   end
+			in
+			end 
+	| Truncated => (empty, is)
+	| Closed => (empty, is)
+	handle exn => raise IO.Io {name = instreamName is,
+				   function = "input",
+				   exn = exn}
 
       fun input1 (is as In {pos, chain, ...}) =
 	let
@@ -347,15 +392,13 @@ functor StreamIO (S: STREAM_IO_ARG) : STREAM_IO =
 	let
 	  fun truncate state =
 	    case !state of
-	      Active (ref NONE) => state := Closed
-	    | Active (ref (SOME (Chain {next, ...}))) => truncate next
-	    | Truncated => ()
-	    | Closed => ()
+	      Active (ref (End {...})) => 
+		(state := Closed;
+		 (readerSel (instreamReader is, #close)) ())
+	    | Active (ref (Link {next, ...})) => truncate next
+	    | _ => ()
 	in
-	  if closed (!state)
-	    then ()
-	    else (truncateState;
-		  (readerSel (outstreamReader is, #close)) ())
+	  truncate state
 	end
 	handle exn => IO.Io {name = instreamName is,
 			     function = "closeIn",
@@ -369,22 +412,30 @@ functor StreamIO (S: STREAM_IO_ARG) : STREAM_IO =
       fun mkInstream (reader, v) =
 	In {reader = reader,
 	    augmented_reader = PrimIO.augmentReader reader,
-	    buffer_mode = newBufferMode (readerSel (instreamReader is, #chunkSize)),
 	    state = let
-		      val next = ref (SOME (Active (ref NONE)))
-		      val chain = Chain {imp = v, next = next}
-		      val state = ref (Active (ref (SOME chain)))
+		      val buffer_mode = newBufferMode (readerSel (reader, #chunkSize)),
+		      val next = ref (End {buffer_mode = buffer_mode})
+		      val state = ref (Chain {imp = v, next = next})
 		    in 
 		      state
 		    end}
 
       fun getReader (is as In {reader, state, ...}) =
 	let
-	  fun truncate (state, ac) =
+	  fun truncate state =
 	    case !state of
-	      Active (ref NONE) => (state := Truncated;
-				    Vector.concat (List.rev ac))
-	    | Active (ref (SOME (Chain {inp, next}))) => truncate (next, inp::ac)
+	      Active (ref (End {buffer_mode})) => 
+		let
+		  val buffer = case buffer_mode of
+		                 NO_BUF => empty
+			       | BUF {array, first, last} =>
+				   Vector.tabulate
+				   (last - first,
+				    fn i => Array.sub (array, first + i))
+		in 
+		  (state := Truncated; buffer)
+		end
+	    | Active (ref (Link {inp, next})) => truncate next
 	    | _ => raise IO.Io {name = instreamName is,
 				function = "getReader",
 				cause = IO.ClosedStream}
