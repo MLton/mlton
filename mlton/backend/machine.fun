@@ -727,7 +727,7 @@ structure Program =
 						 CFunction.equals (func, f)
 						 andalso
 						 (case (dst, CFunction.returnTy f) of
-						     (NONE, NONE) => true
+						     (NONE, _) => true
 						   | (SOME x, SOME ty) =>
 							Type.equals
 							(ty, Operand.ty x)
