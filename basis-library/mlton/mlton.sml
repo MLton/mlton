@@ -22,10 +22,10 @@ fun size x =
    in Primitive.MLton.size (ref x) - refOverhead
    end
 
-fun cleanAtExit () = let open Cleaner in clean atExit end
+(* fun cleanAtExit () = let open Cleaner in clean atExit end *)
 
 val eq = Primitive.eq
-val errno = Primitive.errno
+(* val errno = Primitive.errno *)
 val safe = Primitive.safe
 
 structure Array = Array

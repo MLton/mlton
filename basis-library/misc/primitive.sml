@@ -147,7 +147,7 @@ structure Primitive =
    struct
       val detectOverflow = _build_const "MLton_detectOverflow": bool;
       val eq = _prim "MLton_eq": 'a * 'a -> bool;
-      val errno = _import "MLton_errno": unit -> int;
+(*      val errno = _import "MLton_errno": unit -> int; *)
       val installSignalHandler =
 	 _prim "MLton_installSignalHandler": unit -> unit;
       val safe = _build_const "MLton_safe": bool;
@@ -1275,7 +1275,7 @@ structure Primitive =
 	    val wordSize: int = 32
 
 	    val + = _prim "Word32_add": word * word -> word;
-	    val addCheck = _prim "Word32_addCheck": word * word -> word;
+(*	    val addCheck = _prim "Word32_addCheck": word * word -> word; *)
 	    val andb = _prim "Word32_andb": word * word -> word;
 	    val ~>> = _prim "Word32_arshift": word * word -> word;
 	    val div = _prim "Word32_div": word * word -> word;
@@ -1288,7 +1288,7 @@ structure Primitive =
 	    val op < = _prim "Word32_lt" : word * word -> bool;
 	    val mod = _prim "Word32_mod": word * word -> word;
 	    val * = _prim "Word32_mul": word * word -> word;
-	    val mulCheck = _prim "Word32_mulCheck": word * word -> word;
+(*	    val mulCheck = _prim "Word32_mulCheck": word * word -> word; *)
 	    val ~ = _prim "Word32_neg": word -> word;
 	    val notb = _prim "Word32_notb": word -> word;
 	    val orb = _prim "Word32_orb": word * word -> word;
