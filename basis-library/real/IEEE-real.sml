@@ -188,7 +188,12 @@ structure IEEEReal: IEEE_REAL_EXTRA =
 		  loop (0, ds)
 	       end
 	    fun stripTrailingZeros ds =
-	       rev (#2 (stripLeadingZeros (rev ds)))
+	       case ds of
+		  [] => []
+		| _ =>
+		     case List.last ds of
+			0 => rev (#2 (stripLeadingZeros (rev ds)))
+		      | _ => ds
 	    fun done (whole: int list,
 		      frac: int list,
 		      {digits: int list, negate: bool},
