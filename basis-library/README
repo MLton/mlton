@@ -43,13 +43,10 @@ algorithm used is not safe in general, and only works because the
 basis library implementation has special properties:
   * it terminates
   * it performs no I/O
-  * it doesn't side-effect top-level variables
-The dead code elimination simply includes the minimal set of
+The dead code elimination includes the minimal set of
 declarations from the basis so that their are no free variables in the
-user program (or basis).  Hence, if you do something like the
-following in the basis, it will break.
+user program (or basis).  It has a special hack to include all
+bindings of the form 
+	
+	val _ = ...
 
-val r = ref 13
-val _ = r := 14
-
-The dead code elimination will remove the "val _ = ..." binding.
