@@ -16,20 +16,20 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 	= Exp.make {decs = [],
 		    transfer = Jump {dst = dst, args = Vector.new0 ()}}
 
+      val {get = varInfo: Var.t -> Jump.t option ref option,
+	   set = setVarInfo}
+	= Property.getSet(Var.plist, Property.initConst NONE)
+
+      fun resetGlobals ()
+	= Vector.foreach
+	  (globals, fn {var, ...} => setVarInfo (var, SOME (ref NONE)))
+
       fun eliminateFunction (f as Function.T {name, args, body, returns})
 	= let
-	    val {get = varInfo: Var.t -> Jump.t option ref option,
-		 set = setVarInfo}
-	      = Property.getSetOnce
-	        (Var.plist,
-		 Property.initConst NONE)
-
-	    val _ 
-	      = Vector.foreach
-	        (globals, fn {var, ...} => setVarInfo (var, SOME (ref NONE)))
+	    val _ = resetGlobals ()
 
 	    val newDecs = ref []
-	    fun maybeInstall var
+	    fun commonBlock var
 	      = case varInfo var
 		  of NONE => NONE
 		   | SOME r
@@ -38,14 +38,11 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 			  | NONE 
 			  => let
 			       val j = Jump.newNoname ()
-			       val dec
-				 = Fun 
-				   {name = j,
-				    args = Vector.new0 (),
-				    body = makeRaise var}
+			       val dec = Fun {name = j,
+					      args = Vector.new0 (),
+					      body = makeRaise var}
 			     in
-			       List.push
-			       (newDecs, dec) ;
+			       List.push(newDecs, dec) ;
 			       r := SOME j ;
 			       SOME j
 			     end)
@@ -80,7 +77,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 				     then let
 					    val var = Vector.sub(vars, 0)
 					  in
-					    case maybeInstall var
+					    case commonBlock var
 					      of SOME j => default' j
 					       | NONE => default ()
 					  end
@@ -103,14 +100,10 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 			returns = returns}
 	  end
 
-      val functions
-	= Vector.map
-	  (functions, eliminateFunction)
-
       val program 
 	= Program.T {datatypes = datatypes,
 		     globals = globals,
-		     functions = functions,
+		     functions = Vector.map(functions, eliminateFunction),
 		     main = main}
       val _ = Program.clear program
     in
