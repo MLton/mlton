@@ -3946,7 +3946,7 @@ static int totalSwap () {
 
 /* returns total amount of memory available */
 static int totalRam () {
-	uint mem
+	uint mem;
 	int len, mib[2];
 	
 	mib[0] = CTL_HW;
