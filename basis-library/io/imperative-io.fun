@@ -646,7 +646,7 @@ fun getInstream (ib as In {state, ...}) =
 	 Closed => doit (true, NONE)
        | Open {eos} =>
 	    if eos
-	       then doit (false, SOME empty)
+	       then doit (false, SOME (true, empty))
 	    else
 	       let
 		  val In {buf, first, last, ...} = ib
@@ -656,8 +656,7 @@ fun getInstream (ib as In {state, ...}) =
 		  if f < l
 		     then 
 			doit (false,
-			      SOME (AS.vector
-				    (AS.slice (buf, f, SOME (l - f)))))
+			      SOME (true, AS.vector (AS.slice (buf, f, SOME (l - f)))))
 		  else doit (false, NONE)
 	       end
        | Stream s => s

@@ -51,7 +51,7 @@ signature STREAM_IO_EXTRA =
       val input1': instream -> elem option * instream
       val inputLine: instream -> (vector * instream) option
       val instreamReader: instream -> reader
-      val mkInstream': {bufferContents: vector option,
+      val mkInstream': {bufferContents: (bool * vector) option,
 			closed: bool,
 			reader: reader} -> instream
       val mkOutstream': {bufferMode: IO.buffer_mode,
@@ -67,7 +67,7 @@ signature STREAM_IO_EXTRA_FILE =
       include STREAM_IO_EXTRA
 
       val inFd: instream -> Posix.IO.file_desc
-      val mkInstream'': {bufferContents: vector option,
+      val mkInstream'': {bufferContents: (bool * vector) option,
 			 closeAtExit: bool,
 			 closed: bool,
 			 reader: reader} -> instream

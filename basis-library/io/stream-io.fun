@@ -744,15 +744,26 @@ functor StreamIOExtra
 	      NONE => Buf {inp = empty,
 			   base = base,
 			   next = next}
-	    | SOME v => if V.length v = 0
-			  then Buf {inp = empty,
-				    base = base,
-				    next = ref (Eos {buf = Buf {inp = empty,
-								base = base,
-								next = next}})}
-			  else Buf {inp = v,
-				    base = NONE,
-				    next = next}
+	    | SOME (lastRead, v) => 
+		if V.length v = 0
+		  then Buf {inp = empty,
+			    base = base,
+			    next = ref (Eos {buf = Buf {inp = empty,
+							base = base,
+							next = next}})}
+		  else case (lastRead, base, xlatePos) of
+		         (true, SOME b, SOME {fromInt, toInt, ...}) =>
+			   let
+			     val b =
+			       fromInt (Position.- (toInt b, Position.fromInt (V.length v)))
+			   in
+			     Buf {inp = v,
+				  base = SOME b,
+				  next = next}
+			   end
+		       | _ => Buf {inp = v,
+				   base = NONE,
+				   next = next}
 	in
 	  In {common = {reader = reader,
 			augmented_reader = PIO.augmentReader reader,
@@ -764,7 +775,7 @@ functor StreamIOExtra
       fun mkInstream (reader, bufferContents) =
 	mkInstream' {bufferContents = if 0 = V.length bufferContents
 					 then NONE
-					 else SOME bufferContents,
+					 else SOME (false, bufferContents),
 		     closed = false, 
 		     reader = reader}
 	
@@ -965,7 +976,7 @@ functor StreamIOExtraFile
 	
       fun mkInstream (reader, bufferContents) =
 	mkInstream' {bufferContents = (if V.length bufferContents = 0 then NONE
-				       else SOME bufferContents),
+				       else SOME (false, bufferContents)),
 		     closed = false,
 		     reader = reader}
 	
