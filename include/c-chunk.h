@@ -230,9 +230,12 @@ extern Pointer globalpointerNonRoot[];
 		if (DEBUG_CCODEGEN)						\
 			fprintf (stderr, "%s:%d: Raise\n",			\
 					__FILE__, __LINE__);			\
-		StackTop = StackBottom + ExnStack;	\
+		StackTop = StackBottom + ExnStack;				\
 		Return();							\
 	} while (0)								\
+
+#define DeclareProfileLabel(l)			\
+	void l() __attribute__ ((weak))
 
 #define ProfileLabel(l)				\
 	__asm__ __volatile__ (#l ## ":" : : )
