@@ -4341,7 +4341,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->nurseryRatio = 10.0;
 	s->oldGenArraySize = 0x100000;
 	s->pageSize = getpagesize ();
-	s->ramSlop = 0.50;
+	s->ramSlop = 0.70;
 	s->savedThread = BOGUS_THREAD;
 	s->signalHandler = BOGUS_THREAD;
 	s->signalIsPending = FALSE;
