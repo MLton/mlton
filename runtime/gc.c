@@ -209,7 +209,7 @@ getFrameLayout(GC_state s, word returnAddress)
 /* stackSlop returns the amount of "slop" space needed between the top of 
  * the stack and the end of the stack space.
  * If you change this, make sure and change Thread_switchTo in ccodegen.h
- *   and thread_switchTo in x86-mlton.sml.
+ *   and thread_switchTo in x86-generate-transfers.sml.
  */
 static inline uint stackSlop(GC_state s) {
 	return 2 * s->maxFrameSize;
@@ -225,8 +225,8 @@ stackBytes(uint size)
 	return wordAlign(HEADER_SIZE + sizeof(struct GC_stack) + size);
 }
 
-/* If you change this, make sure and change Thread_switchTo in machine.h
- *   and thread_switchTo in x86-mlton.sml.
+/* If you change this, make sure and change Thread_switchTo in ccodegen.h
+ *   and thread_switchTo in x86-generate-transfers.sml.
  */
 static inline pointer
 stackBottom(GC_stack stack)
@@ -235,8 +235,8 @@ stackBottom(GC_stack stack)
 }
 
 /* Pointer to the topmost word in use on the stack. */
-/* If you change this, make sure and change Thread_switchTo in machine.h
- *   and thread_switchTo in x86-mlton.sml.
+/* If you change this, make sure and change Thread_switchTo in ccodegen.h
+ *   and thread_switchTo in x86-generate-transfers.sml.
  */
 static inline pointer
 stackTop(GC_stack stack)
@@ -245,8 +245,8 @@ stackTop(GC_stack stack)
 }
 
 /* The maximum value stackTop may take on. */
-/* If you change this, make sure and change Thread_switchTo in machine.h
- *   and thread_switchTo in x86-mlton.sml.
+/* If you change this, make sure and change Thread_switchTo in ccodegen.h
+ *   and thread_switchTo in x86-generate-transfers.sml.
  */
 static inline pointer
 stackLimit(GC_state s, GC_stack stack)
@@ -258,8 +258,8 @@ stackLimit(GC_state s, GC_stack stack)
 }
 
 /* Number of bytes used by the stack. */
-/* If you change this, make sure and change Thread_switchTo in machine.h
- *   and thread_switchTo in x86-mlton.sml.
+/* If you change this, make sure and change Thread_switchTo in ccodegen.h
+ *   and thread_switchTo in x86-generate-transfers.sml.
  */
 static inline uint
 currentStackUsed(GC_state s)
@@ -715,7 +715,7 @@ GC_enter(GC_state s)
 		display(s, stderr);
 	unless (s->inSignalHandler) {
 		blockSignals(s);
-		if (s->limit == s->base)
+		if (s->limit == 0)
 			setLimit(s);
 	}
 	assert(invariant(s));
@@ -726,7 +726,7 @@ leave(GC_state s)
 {
 	assert(GC_mutatorInvariant(s));
 	if (s->signalIsPending and 0 == s->canHandle)
-		s->limit = s->base;
+		s->limit = 0;
 	unless (s->inSignalHandler)
 		unblockSignals(s);
 }
@@ -762,7 +762,7 @@ GC_switchToThread(GC_state s, GC_thread t) {
 	switchToThread(s, t);
 	s->canHandle--;
 	if (s->signalIsPending && 0 == s->canHandle)
-	s->limit = s->base;  
+	s->limit = 0;  
 }
 
 
@@ -1451,7 +1451,7 @@ GC_done (GC_state s)
 	}	
 }
 
-/* GC_handler sets s->limit = s->base so that the next limit check will fail. 
+/* GC_handler sets s->limit = 0 so that the next limit check will fail. 
  * Signals need to be blocked during the handler (i.e. it should run atomically)
  * because sigaddset does both a read and a write of s->signalsPending.
  * The signals are blocked by Posix_Signal_handle (see Posix/Signal/Signal.c).
@@ -1464,7 +1464,7 @@ GC_handler(GC_state s, int signum)
 	if (0 == s->canHandle) {
 		if (DEBUG)
 			fprintf(stderr, "setting limit = base\n");
-		s->limit = s->base;
+		s->limit = 0;
 	}
 	sigaddset(&s->signalsPending, signum);
 	s->signalIsPending = TRUE;

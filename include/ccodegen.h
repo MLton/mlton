@@ -641,7 +641,7 @@ int Int_bogus;
 			- 2 * gcState.maxFrameSize;				\
 		gcState.canHandle--; /* atomicEnd */				\
 		if (gcState.signalIsPending && 0 == gcState.canHandle)		\
-			gcState.limit = gcState.base;				\
+			gcState.limit = 0;					\
 		Return();							\
 		ret:								\
 		stackTop -= (frameSize);					\
