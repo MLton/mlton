@@ -590,16 +590,6 @@ struct
   open x86MLtonBasic
   open x86
 
-  val wordAlign : int -> int =
-     fn p =>
-     (Word.toInt (Runtime.wordAlign (Word.fromInt p))
-      handle exn
-      => Error.bug ("x86MLton.wordAlign::" ^
-		    (case exn
-			of Fail s => s
-		      | Overflow => "Overflow"
-		      | _ => "?")))
-
   type transInfo = {addData : x86.Assembly.t list -> unit,
 		    frameLayouts: x86.Label.t ->
 		                  {size: int,

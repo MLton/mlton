@@ -19,8 +19,6 @@ signature X86_MLTON =
     sharing x86 = x86Liveness.x86
     sharing x86.Label = Machine.Label
 
-    val wordAlign : int -> int
-
     type transInfo = {addData : x86.Assembly.t list -> unit,
 		      frameLayouts: x86.Label.t ->
 		                    {size: int,
