@@ -8,11 +8,3 @@ signature PACK_WORD =
       val subArrX: Word8Array.array * int -> LargeWord.word 
       val update: Word8Array.array * int * LargeWord.word -> unit
    end
-
-
-signature PACK_WORD_EXTRA =
-   sig
-      include PACK_WORD
-
-      val start: int * int -> int
-   end

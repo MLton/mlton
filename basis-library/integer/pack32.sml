@@ -6,17 +6,25 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 
-functor Pack32 (val isBigEndian: bool
-		val shift3: Word.word
-		val shift2: Word.word
-		val shift1: Word.word
-		val shift0: Word.word): PACK_WORD_EXTRA =
+functor Pack (val isBigEndian: bool): PACK_WORD =
    struct
-      structure LW = LargeWord
-      structure W8 = Word8
-
       val bytesPerElem: int = 4
       val isBigEndian = isBigEndian
+
+      fun revWord (w: word): word =
+	 let
+	    open Word
+	 in
+	    orb (orb (orb (andb (>> (w, 0w8), 0wxFF00),
+			   andb(<< (w, 0w8), 0wxFF0000)),
+		      >> (w, 0w24)),
+		 << (w, 0w24))
+	 end
+      
+      fun maybeRev w =
+	 if isBigEndian = Primitive.MLton.isBigEndian
+	    then w
+	 else revWord w
 
       fun start (i, n) = 
 	 let
@@ -28,69 +36,13 @@ functor Pack32 (val isBigEndian: bool
 	 in
 	    i
 	 end handle Overflow => raise Subscript
-      
-      local
-	 fun make (s, length) (av, i) =
-	    let
-	       val i = start (i, length av)
-	       fun sub (i, shift: Word.word): LW.word =
-		  LW.<< (W8.toLargeWord (s (av, i)), shift)
-	    in LW.orb (LW.orb (LW.orb (sub (i, shift0),
-				       sub (i +? 1, shift1)),
-			       sub (i +? 2, shift2)),
-		       sub (i +? 3, shift3))
-	    end
-      in
-	 val subArr = make (Array.unsafeSub, Array.length)
-	 val subArrX = subArr
-	 val subVec = make (Vector.unsafeSub, Vector.length)
-	 val subVecX = subVec
-      end
-
-      fun update (a, i, w) =
-	 let
-	    val i = start (i, Array.length a)
-	    fun update (i, shift) =
-	       Array.unsafeUpdate (a, i, W8.fromLargeWord (LW.>> (w, shift)))
-	 in
-	    update (i, shift0)
-	    ; update (i +? 1, shift1)
-	    ; update (i +? 2, shift2)
-	    ; update (i +? 3, shift3)
-	 end
-   end
-
-structure Pack32Big =
-   Pack32 (val isBigEndian = true
-	   val shift3: word = 0w0
-	   val shift2: word = 0w8
-	   val shift1: word = 0w16
-	   val shift0: word = 0w24)
-
-(* structure Pack32Little =
- *    Pack32 (val isBigEndian = false
- * 	   val shift0: word = 0w0
- * 	   val shift1: word = 0w8
- * 	   val shift2: word = 0w16
- * 	   val shift3: word = 0w24)
- *)
-
-(* Depends on being on a little-endian machine. *)
-structure Pack32Little: PACK_WORD_EXTRA =
-   struct
-      val start = Pack32Big.start
-      val _ = if Primitive.isLittleEndian
-		 then ()
-	      else Primitive.halt 1
-      val bytesPerElem: int = 4
-      val isBigEndian = false
 
       local
 	 fun make (sub, length) (av, i) =
 	    let
 	       val _ = start (i, length av)
 	    in
-	       sub (av, i)
+	       maybeRev (sub (av, i))
 	    end
       in
 	 val subArr = make (Primitive.Word8Array.subWord, Word8Array.length)
@@ -103,6 +55,9 @@ structure Pack32Little: PACK_WORD_EXTRA =
 	 let
 	    val _ = start (i, Array.length a)
 	 in
-	    Primitive.Word8Array.updateWord (a, i, w)
+	    Primitive.Word8Array.updateWord (a, i, maybeRev w)
 	 end
    end
+
+structure Pack32Big = Pack (val isBigEndian = true)
+structure Pack32Little = Pack (val isBigEndian = false)
