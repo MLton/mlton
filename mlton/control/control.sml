@@ -175,7 +175,8 @@ structure Elaborate =
 		    parseArgs: string list -> 'args option},
 		   {parseId: string -> Id.t option,
 		    parseIdAndArgs: string -> (Id.t * Args.t) option,
-		    withDef: unit -> (unit -> unit)}) =
+		    withDef: unit -> (unit -> unit),
+		    snapshot: unit -> unit -> (unit -> unit)}) =
 	    let
 	       val ctrl as T {args = argsRef, cur, def, 
 			      id as Id.T {enabled, ...}, ...} =
@@ -246,11 +247,28 @@ structure Elaborate =
 		     ; fn () => (cur := old
 				 ; restore ())
 		  end
+	       val snapshot : unit -> unit -> (unit -> unit) =
+		  fn () =>
+		  let 
+		     val withSaved = snapshot ()
+		     val saved = !cur 
+		  in
+		     fn () =>
+		     let
+			val restore = withSaved ()
+			val old = !cur
+		     in
+			cur := saved
+			; fn () => (cur := old
+				    ; restore ())
+		     end
+		  end
 	    in
 	       (ctrl, 
 		{parseId = parseId,
 		 parseIdAndArgs = parseIdAndArgs,
-		 withDef = withDef})
+		 withDef = withDef,
+		 snapshot = snapshot})
 	    end
 
 	 fun makeBool ({default: bool,
@@ -271,7 +289,8 @@ structure Elaborate =
 	 val ac =
 	    {parseId = fn _ => NONE,
 	     parseIdAndArgs = fn _ => NONE,
-	     withDef = fn () => (fn () => ())}
+	     withDef = fn () => (fn () => ()),
+	     snapshot = fn () => fn () => (fn () => ())}
 	 val (allowConstant, ac) =
 	    makeBool ({name = "allowConstant", default = false, expert = true}, ac)
 	 val (allowExport, ac) =
@@ -316,7 +335,7 @@ structure Elaborate =
 	    makeBool ({name = "warnMatch", default = true, expert = false}, ac)
 	 val (warnUnused, ac) =
 	    makeBool ({name = "warnUnused", default = false, expert = false}, ac)
-	 val {parseId, parseIdAndArgs, withDef} = ac
+	 val {parseId, parseIdAndArgs, withDef, snapshot} = ac
       end
 
       val processDefault = fn s =>
@@ -332,6 +351,11 @@ structure Elaborate =
 	 let val restore = withDef ()
 	 in DynamicWind.wind (f, restore)
 	 end
+      val snapshot : unit -> (unit -> 'a) -> 'a = fn () =>
+	 let val withSaved = snapshot () in fn f =>
+	 let val restore = withSaved ()
+	 in DynamicWind.wind (f, restore)
+	 end end
 
    end
 

@@ -107,6 +107,7 @@ signature CONTROL =
 	    val processEnabled: string * bool -> bool
 
 	    val withDef: (unit -> 'a) -> 'a
+	    val snapshot: unit -> (unit -> 'a) -> 'a
 	 end
 
       (* stop after elaboration.  So, no need for the elaborator to generate

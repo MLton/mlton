@@ -3136,7 +3136,12 @@ fun functorClosure
       val restore =
 	 if !Control.elaborateOnly
 	    then fn f => f ()
-	 else snapshot E
+	 else let 
+		 val withSaved = Control.Elaborate.snapshot ()
+		 val snapshot = snapshot E
+	      in 
+		 fn f => snapshot (fn () => withSaved f)
+	      end
       fun apply (actual, nest) =
 	 if not (!insideFunctor) andalso not (!Control.elaborateOnly)
 	    then restore (fn () => makeBody (actual, nest))
