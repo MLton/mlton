@@ -8,6 +8,12 @@ signature HASH_SET =
       val fold: 'a t * 'b * ('a * 'b -> 'b) -> 'b
       val forall: 'a t * ('a -> bool) -> bool
       val foreach: 'a t * ('a -> unit) -> unit
+      (* insertIfNew (s, h, p, f, g) looks in the set s for an entry with hash h
+       * satisfying predicate p.  If the entry is there, it is returned after being
+       * applied to g.  Otherwise, the function f is called to create a new entry, 
+       * which is inserted and returned.
+       *)
+      val insertIfNew: 'a t * word * ('a -> bool) * (unit -> 'a) * ('a -> unit) -> 'a
       val layout: ('a -> Layout.t) -> 'a t -> Layout.t
       (* lookupOrInsert (s, h, p, f)  looks in the set s for an entry with hash h
        * satisfying predicate p.  If the entry is there, it is returned.

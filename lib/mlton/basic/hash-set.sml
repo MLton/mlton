@@ -147,7 +147,7 @@ fun peek (t, w, p) = peekGen (t, w, p, fn _ => NONE, SOME)
  *    end
  *)
 
-fun lookupOrInsert (table as T {buckets, numItems, ...}, w, p, f) =
+fun insertIfNew (table as T {buckets, numItems, ...}, w, p, f, g) =
    let
       fun no (j, b) =
 	 let val a = f ()
@@ -156,8 +156,12 @@ fun lookupOrInsert (table as T {buckets, numItems, ...}, w, p, f) =
 	    val _ = maybeGrow table
 	 in a
 	 end
-   in peekGen (table, w, p, no, fn x => x)
+      fun yes x = (g x; x)
+   in peekGen (table, w, p, no, yes)
    end
+
+fun lookupOrInsert (table, w, p, f) =
+   insertIfNew (table, w, p, f, ignore)
 
 fun fold (T {buckets, ...}, b, f) =
    Array.fold (!buckets, b, fn (r, b) => List.fold (r, b, f))
