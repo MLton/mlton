@@ -135,9 +135,13 @@ val benchCount =
        NONE => Error.bug (concat ["no benchCount for ", s])
      | SOME (_, x86, sparc) =>
 	  Int.toString
-	  (case MLton.Platform.arch of
-	      MLton.Platform.Sparc => sparc
-	    | MLton.Platform.X86 => x86))
+	  let
+	     open MLton.Platform.Arch
+	  in
+	     case host of
+		Sparc => sparc
+	      | X86 => x86
+	  end)
 
 fun compileSizeRun {command, exe, doTextPlusData: bool} =
    Escape.new
@@ -228,10 +232,10 @@ fun njCompile {bench} =
 					size = NONE})
        val suffix =
 		 let
-		   datatype z = datatype MLton.Platform.arch
-		   datatype z = datatype MLton.Platform.os
+		   datatype z = datatype MLton.Platform.Arch.t
+		   datatype z = datatype MLton.Platform.OS.t
 		 in
-		   case (MLton.Platform.arch, MLton.Platform.os) of
+		   case (MLton.Platform.Arch.host, MLton.Platform.OS.host) of
 		     (X86, Linux) => ".x86-linux"
 		   | (Sparc, SunOS) => ".sparc-solaris"
 		   | _ => raise Fail "don't know SML/NJ suffix for host type"
@@ -365,19 +369,17 @@ fun main args =
        *)
        val _ =
 	  let
-	    datatype z = datatype MLton.Platform.os
+	     open MLton.Platform.OS
 	  in
-	    case MLton.Platform.os of
-	      Cygwin => ()
-	    | FreeBSD => ()
-	    | Linux => 
-		let
-		  open MLton.Rlimit
-		  val {hard, ...} = get stackSize
-		in
-		  set (stackSize, {hard = hard, soft = hard})
-		end
-	    | SunOS => ()
+	     if host = Linux
+		then
+		   let
+		      open MLton.Rlimit
+		      val {hard, ...} = get stackSize
+		   in
+		      set (stackSize, {hard = hard, soft = hard})
+		   end
+	     else ()
 	  end
       local
 	 open Popt
