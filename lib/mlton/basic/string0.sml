@@ -15,6 +15,7 @@ local
 in
    val op ^ = op ^
    val concat = concat
+   val concatWith = fn (ss,s) => concatWith s ss
    val escapeC = toCString
    val escapeSML = toString
    val explode = explode

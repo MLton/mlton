@@ -54,6 +54,31 @@ structure String: STRING =
 	 in find
 	 end
 
+      fun substituteFirst (s, {substring, replacement}) =
+	 case findSubstring (s, {substring = substring}) of
+	    NONE => s
+	  | SOME i =>
+	       let
+		  val n = length substring
+		  val prefix = Substring.substring (s, {start = 0, length = i})
+		  val suffix = Substring.extract (s, i + n, NONE)
+	       in
+		  Substring.concat [prefix, Substring.full replacement, suffix]
+	       end
+      fun substituteAll (s, {substring, replacement}) =
+	 case findSubstring (s, {substring = substring}) of
+	    NONE => s
+	  | SOME i =>
+	       let
+		  val ls = length s
+		  val lss = length substring
+		  val prefix = dropSuffix (s, ls - i)
+		  val suffix = substituteAll (dropPrefix (s, i + lss),
+					      {substring = substring, 
+					       replacement = replacement})
+	       in
+		  concat [prefix, replacement, suffix]
+	       end
    end
 
 structure ZString = String (* CM bug ?? -- see instream.sml *)

@@ -25,6 +25,7 @@ signature STRING =
       val baseName: t * t -> t
       val compare: t * t -> Relation.t
       val concat: t list -> t
+      val concatWith: t list * t -> t
       val contains: t * char -> bool
       val deleteSurroundingWhitespace: t -> t
       val dquote: t (* " *)
@@ -85,6 +86,8 @@ signature STRING =
        *)
       val split: t * char -> t list
       val sub: t * int -> char
+      val substituteAll: t * {substring: t, replacement: t} -> t
+      val substituteFirst: t * {substring: t, replacement: t} -> t
       (* beginning at start, with length chars *)
       val substring1: t * {start: int, length: int} -> t
       (* inclusive of start, exclusive of finish *)

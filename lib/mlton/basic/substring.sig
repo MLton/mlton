@@ -17,6 +17,7 @@ signature SUBSTRING =
       val explode: t -> char list 
       val extract: string * int * int option -> t 
       val first: t -> char option
+      val full: string -> t
       val getc: t -> (char * t) option 
       val isEmpty: t -> bool
       val layout: t -> Layout.t
