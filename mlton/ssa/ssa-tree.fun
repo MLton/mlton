@@ -1372,7 +1372,7 @@ structure Function =
 		   end)
 	       val root = labelNode start
 	       val graphLayout =
-		  Graph.layoutDot'
+		  Graph.layoutDot
 		  (graph, fn {nodeName} => 
 		   {title = concat [makeName' (Func.toString name, 
 					       args, returns, raises),
@@ -1644,7 +1644,7 @@ structure Program =
 		   end)
 	       val root = funcNode main
 	       val l =
-		  Graph.layoutDot'
+		  Graph.layoutDot
 		  (graph, fn {nodeName} =>
 		   {title = title,
 		    options = [GraphOption.Rank (Min, [{nodeName = nodeName root}])],

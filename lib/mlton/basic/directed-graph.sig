@@ -72,17 +72,12 @@ signature DIRECTED_GRAPH =
 (*      exception Input *)
 (*     val input: In.t * (In.t -> 'a)* (In.t -> 'b) -> t * 'a * (Edge.t -> 'b) *)
 (*      val isCyclic: t -> bool*)
-      val layoutDot':
+      val layoutDot:
 	 t * ({nodeName: Node.t -> string} ->
 	      {title: string,
 	       options: Dot.GraphOption.t list,
 	       edgeOptions: Edge.t -> Dot.EdgeOption.t list,
 	       nodeOptions: Node.t -> Dot.NodeOption.t list}) -> Layout.t
-      val layoutDot:
-	 t * {title: string,
-	      options: Dot.GraphOption.t list,
-	      edgeOptions: Edge.t -> Dot.EdgeOption.t list,
-	      nodeOptions: Node.t -> Dot.NodeOption.t list} -> Layout.t
       val loopForest:
 	 {headers: (* graph *) Node.t list -> (* graph *) Node.t list,
 	  graph: t,
@@ -160,7 +155,7 @@ local
 	  open Dot
        in
 	  Layout.output (layoutDot
-			 (g,
+			 (g, fn _ =>
 			  {title = "Muchnick",
 			   options = [],
 			   edgeOptions = fn _ => [],
@@ -196,10 +191,11 @@ local
        in
 	  Layout.output
 	  (layoutDot
-	   (g2, {title = "dom",
-		 options = [],
-		 edgeOptions = fn _ => [],
-		 nodeOptions = fn n => [NodeOption.label (name (oldNode n))]}),
+	   (g2, fn _ =>
+	    {title = "dom",
+	     options = [],
+	     edgeOptions = fn _ => [],
+	     nodeOptions = fn n => [NodeOption.label (name (oldNode n))]}),
 	   out)
 	  ; Out.newline out
        end)

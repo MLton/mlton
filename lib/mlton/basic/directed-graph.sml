@@ -141,12 +141,12 @@ fun addEdge (_, e as {from as Node.Node {successors, ...}, to}) =
 
 (*fun removeEdge (_, {from, to}) = Node.removeSuccessor (from, to) *)
 
-fun layoutDot' (T {nodes, ...},
-		mkOptions : {nodeName: Node.t -> string} ->
-		            {edgeOptions: Edge.t -> Dot.EdgeOption.t list,
-			     nodeOptions: Node.t -> Dot.NodeOption.t list,
-			     options: Dot.GraphOption.t list,
-			     title: string}): Layout.t =
+fun layoutDot (T {nodes, ...},
+	       mkOptions : {nodeName: Node.t -> string} ->
+	       {edgeOptions: Edge.t -> Dot.EdgeOption.t list,
+		nodeOptions: Node.t -> Dot.NodeOption.t list,
+		options: Dot.GraphOption.t list,
+		title: string}): Layout.t =
    let
       val ns = !nodes
       val c = Counter.new 0
@@ -173,8 +173,6 @@ fun layoutDot' (T {nodes, ...},
    in
       res
    end
-
-fun layoutDot (g, options) = layoutDot' (g, fn _ => options)
 
 (*--------------------------------------------------------*)
 (*                   Depth-First Search                   *)
