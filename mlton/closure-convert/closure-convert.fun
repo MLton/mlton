@@ -624,6 +624,7 @@ fun closureConvert (program as Sxml.Program.T {datatypes, body}): Cps.Program.t 
 				    Vector.layout Var.layout b],
 		      Layout.ignore)
 	 recursives
+      val shrinkExp = Cps.shrinkExp (Vector.new0 ())
       (* Closure convert an expression, returning:
        *   - the target cps expression
        *   - a list of global declarations (in order)
@@ -892,7 +893,7 @@ fun closureConvert (program as Sxml.Program.T {datatypes, body}): Cps.Program.t 
 		   args = args,
 		   returns = returns,
 		   body =
-		   Cps.shrinkExp (Vector.new0 ())
+		   shrinkExp
 		   (Cexp.toExp
 		    (Cexp.lett
 		     {decs = decs,

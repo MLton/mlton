@@ -5,7 +5,7 @@ SRC = $(ROOT)/src
 MLTON = mlton
 NAME = mlton
 AOUT = mlton-compile
-FLAGS = @MLton -- -v -o $(AOUT)
+FLAGS = @MLton -- -v2 -native-live-transfer false -o $(AOUT)
 PATH = $(BIN):$(shell echo $$PATH)
 
 all: $(AOUT)
