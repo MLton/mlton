@@ -754,9 +754,13 @@ structure Primitive =
 	    val copyCurrent = _prim "Thread_copyCurrent": unit -> unit;
 	    val current = _ffi "Thread_current": unit -> thread;
 	    val finishHandler = _ffi "Thread_finishHandler": unit -> unit;
+	    val returnToC = _prim "Thread_returnToC": unit -> unit;
 	    val saved = _ffi "Thread_saved": unit -> thread;
 	    val savedPre = _ffi "Thread_saved": unit -> preThread;
+	    val setCallFromCHandler =
+	       _ffi "Thread_setCallFromCHandler": thread -> unit;
 	    val setHandler = _ffi "Thread_setHandler": thread -> unit;
+	    val setSaved = _ffi "Thread_setSaved": thread -> unit;
 	    val startHandler = _ffi "Thread_startHandler": unit -> unit;
 	    val switchTo = _prim "Thread_switchTo": thread -> unit;
 	 end      

@@ -49,7 +49,7 @@ structure Kind =
       fun isEntry (k: t): bool =
 	 case k of
 	    Cont _ => true
-	  | CReturn {func = CFunction.T {mayGC, ...}, ...} => mayGC
+	  | CReturn {func, ...} => CFunction.mayGC func
 	  | Func => true
 	  | Handler _ => true
 	  | _ => false
@@ -518,9 +518,8 @@ fun output {program as Machine.Program.T {chunks,
 		    case transfer of
 		       Arith {overflow, success, ...} =>
 			  (jump overflow; jump success)
-		     | CCall {func = CFunction.T {maySwitchThreads, ...},
-			      return, ...} =>
-			  if maySwitchThreads
+		     | CCall {func, return, ...} =>
+			  if CFunction.maySwitchThreads func
 			     then ()
 			  else Option.app (return, jump)
 		     | Call {label, ...} => jump label
@@ -716,16 +715,14 @@ fun output {program as Machine.Program.T {chunks,
 			   ; gotoLabel success 
 			   ; maybePrintLabel overflow
 			end
-		   | CCall {args,
-			    frameInfo,
-			    func = CFunction.T {maySwitchThreads,
-						modifiesFrontier,
-						modifiesStackTop,
-						name,
-						returnTy,
-						...},
-			    return} =>
+		   | CCall {args, frameInfo, func, return} =>
 			let
+			   val {maySwitchThreads,
+				modifiesFrontier,
+				modifiesStackTop,
+				name,
+				returnTy,
+				...} = CFunction.dest func
 			   val (args, afterCall) =
 			      case frameInfo of
 				 NONE =>

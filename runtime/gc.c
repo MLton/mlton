@@ -60,7 +60,6 @@
 
 enum {
 	BOGUS_EXN_STACK = 0xFFFFFFFF,
-	BOGUS_POINTER = 0x1,
 	COPY_CHUNK_SIZE = 0x800000,
 	CURRENT_SOURCE_UNDEFINED = 0xFFFFFFFF,
 	DEBUG = FALSE,
@@ -86,7 +85,6 @@ typedef enum {
 	UNMARK_MODE,
 } MarkMode;
 
-#define BOGUS_THREAD (GC_thread)BOGUS_POINTER
 #define STACK_HEADER GC_objectHeader (STACK_TYPE_INDEX)
 #define STRING_HEADER GC_objectHeader (STRING_TYPE_INDEX)
 #define THREAD_HEADER GC_objectHeader (THREAD_TYPE_INDEX)
@@ -771,6 +769,7 @@ static inline void foreachGlobal (GC_state s, GC_pointerFun f) {
 	}
 	if (DEBUG_DETAILED)
 		fprintf (stderr, "foreachGlobal threads\n");
+	maybeCall (f, s, (pointer*)&s->callFromCHandler);
 	maybeCall (f, s, (pointer*)&s->currentThread);
 	maybeCall (f, s, (pointer*)&s->savedThread);
 	maybeCall (f, s, (pointer*)&s->signalHandler);
@@ -3635,6 +3634,7 @@ static void loadWorld (GC_state s, char *fileName) {
 		die ("Invalid world: wrong magic number.");
 	oldGen = (pointer) sfreadUint (file);
 	s->oldGenSize = sfreadUint (file);
+	s->callFromCHandler = (GC_thread) sfreadUint (file);
 	s->currentThread = (GC_thread) sfreadUint (file);
 	s->signalHandler = (GC_thread) sfreadUint (file);
        	heapCreate (s, &s->heap, heapDesiredSize (s, s->oldGenSize, 0),
@@ -3666,6 +3666,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->bytesCopied = 0;
 	s->bytesCopiedMinor = 0;
 	s->bytesMarkCompacted = 0;
+	s->callFromCHandler = BOGUS_THREAD;
 	s->canHandle = 0;
 	s->cardSize = 0x1 << s->cardSizeLog2;
 	s->copyRatio = 4.0;
@@ -3993,6 +3994,7 @@ void GC_saveWorld (GC_state s, int fd) {
 	swriteUint (fd, s->magic);
 	swriteUint (fd, (uint)s->heap.start);
 	swriteUint (fd, (uint)s->oldGenSize);
+	swriteUint (fd, (uint)s->callFromCHandler);
 	swriteUint (fd, (uint)s->currentThread);
 	swriteUint (fd, (uint)s->signalHandler);
  	swrite (fd, s->heap.start, s->oldGenSize);

@@ -157,6 +157,7 @@ signature PRIM =
 	     | Thread_canHandle (* implemented in backend *)
 	     | Thread_copy
 	     | Thread_copyCurrent
+	     | Thread_returnToC
 	     (* switchTo has to be a _prim because we have to know that it
 	      * enters the runtime -- because everything must be saved
 	      * on the stack.

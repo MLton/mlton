@@ -92,6 +92,11 @@ structure MLton: MLTON =
 	    val topLevelHandler = fn _ => raise Fail "Exn.topLevelHandler"
 	 end
 
+      structure FFI =
+	 struct
+	    val handleCallFromC = fn _ => raise Fail "FFI.handleCallFromC"
+	 end
+      
       structure GC =
 	 struct
 	    fun collect _ = ()

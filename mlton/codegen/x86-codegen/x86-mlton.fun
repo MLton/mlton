@@ -1314,10 +1314,11 @@ struct
 
   fun ccall {args: (x86.Operand.t * x86.Size.t) vector,
 	     frameInfo,
-	     func as CFunction.T {name, returnTy, ...},
+	     func,
 	     return: x86.Label.t option,
 	     transInfo: transInfo}
     = let
+	val {name, returnTy, ...} = CFunction.dest func
 	val dstsize = Option.map (returnTy, toX86Size)
 	val comment_begin
 	  = if !Control.Native.commented > 0

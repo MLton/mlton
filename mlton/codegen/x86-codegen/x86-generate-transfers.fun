@@ -506,11 +506,7 @@ struct
 		       = case entry
 			   of Jump {label}
 			    => near label
-			    | CReturn {dst, 
-				       frameInfo,
-				       func = CFunction.T {maySwitchThreads,
-							   ...},
-				       label}
+			    | CReturn {dst, frameInfo, func, label}
 			    => let
 				 fun getReturn ()
 				   = case dst 
@@ -569,7 +565,7 @@ struct
 					    Assembly.label label],
 					   AppendList.fromList
 					   (ProfileLabel.toAssemblyOpt profileLabel),
-					   if maySwitchThreads
+					   if CFunction.maySwitchThreads func
 					     then (* entry from far assumptions *)
 					          farEntry finish
 					     else (* near entry & live transfer assumptions *)
@@ -1077,14 +1073,12 @@ struct
 			 {target = x86MLton.gcState_stackTopMinusWordDerefOperand (),
 			  absolute = true})))
 		    end
-	        | CCall {args, dstsize,
-			 frameInfo,
-			 func = CFunction.T {maySwitchThreads,
-					     modifiesFrontier,
-					     modifiesStackTop,
-					     name, ...},
-			 return, target}
+	        | CCall {args, dstsize, frameInfo, func, return, target}
 		=> let
+		     val {maySwitchThreads,
+			  modifiesFrontier,
+			  modifiesStackTop,
+			  name, ...} = CFunction.dest func
 		     val stackTopMinusWordDeref
 		       = x86MLton.gcState_stackTopMinusWordDerefOperand ()
 		     val {dead, ...}

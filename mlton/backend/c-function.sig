@@ -17,29 +17,38 @@ signature C_FUNCTION =
    sig
       include C_FUNCTION_STRUCTS
 
-      datatype t = T of {(* bytesNeeded = SOME i means that the i'th
-			  * argument to the function is a word that
-			  * specifies the number of bytes that must be
-			  * free in order for the C function to succeed.
-			  * Limit check insertion is responsible for
-			  * making sure that the bytesNeeded is available.
-			  *)
-			 bytesNeeded: int option,
-			 ensuresBytesFree: bool,
-			 modifiesFrontier: bool,
-			 modifiesStackTop: bool,
-			 mayGC: bool,
-			 maySwitchThreads: bool,
-			 name: string,
-			 returnTy: Type.t option}
-
+      type t
+	 
       val bug: t
       val bytesNeeded: t -> int option
+      val dest: t -> {bytesNeeded: int option,
+		      ensuresBytesFree: bool,
+		      modifiesFrontier: bool,
+		      modifiesStackTop: bool,
+		      mayGC: bool,
+		      maySwitchThreads: bool,
+		      name: string,
+		      returnTy: Type.t option}
       val ensuresBytesFree: t -> bool
       val equals: t * t -> bool
       val gc: {maySwitchThreads: bool} -> t
       val isOk: t -> bool
       val layout: t -> Layout.t
+      val make: {(* bytesNeeded = SOME i means that the i'th
+		  * argument to the function is a word that
+		  * specifies the number of bytes that must be
+		  * free in order for the C function to succeed.
+		  * Limit check insertion is responsible for
+		  * making sure that the bytesNeeded is available.
+		  *)
+		 bytesNeeded: int option,
+		 ensuresBytesFree: bool,
+		 modifiesFrontier: bool,
+		 modifiesStackTop: bool,
+		 mayGC: bool,
+		 maySwitchThreads: bool,
+		 name: string,
+		 returnTy: Type.t option} -> t
       val mayGC: t -> bool
       val maySwitchThreads: t -> bool
       val modifiesFrontier: t -> bool
@@ -48,6 +57,12 @@ signature C_FUNCTION =
       val profileEnter: t
       val profileInc: t
       val profileLeave: t
+      (* returnToC is not really a C function.  Calls to it must be handled
+       * specially by each codegen to ensure that the C stack is handled
+       * correctly.  However, for the purposes of the backend it looks like a
+       * call to C.
+       *)
+      val returnToC: t
       val returnTy: t -> Type.t option
       val size: t
       val vanilla: {name: string, returnTy: Type.t option} -> t

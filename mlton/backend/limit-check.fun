@@ -85,10 +85,13 @@ structure Transfer =
       fun caseBytes (t: t, {big: Operand.t -> 'a,
 			    small: word -> 'a}): 'a =
 	 case t of
-	    CCall {args, func = CFunction.T {bytesNeeded = SOME i, ...}, ...} =>
-	       Operand.caseBytes (Vector.sub (args, i),
-				  {big = big,
-				   small = small})
+	    CCall {args, func, ...} =>
+	       (case CFunction.bytesNeeded func of
+		   NONE => small 0w0
+		 | SOME i =>
+		      Operand.caseBytes (Vector.sub (args, i),
+					 {big = big,
+					  small = small}))
 	  | _ => small 0w0
    end
 
@@ -126,14 +129,14 @@ fun insertFunction (f: Function.t,
 		     val l = Label.newNoname ()
 		     val _ = r := SOME l
 		     val cfunc =
-			CFunction.T {bytesNeeded = NONE,
-				     ensuresBytesFree = false,
-				     mayGC = false,
-				     maySwitchThreads = false,
-				     modifiesFrontier = false,
-				     modifiesStackTop = false,
-				     name = "MLton_allocTooLarge",
-				     returnTy = NONE}
+			CFunction.make {bytesNeeded = NONE,
+					ensuresBytesFree = false,
+					mayGC = false,
+					maySwitchThreads = false,
+					modifiesFrontier = false,
+					modifiesStackTop = false,
+					name = "MLton_allocTooLarge",
+					returnTy = NONE}
 		     val _ =
 			newBlocks :=
 			Block.T {args = Vector.new0 (),
@@ -155,10 +158,8 @@ fun insertFunction (f: Function.t,
 	  let
 	     val transfer = 
 		case transfer of
-		   Transfer.CCall {args,
-				   func as CFunction.T {ensuresBytesFree, ...},
-				   return} =>
-		      (if ensuresBytesFree
+		   Transfer.CCall {args, func, return} =>
+		      (if CFunction.ensuresBytesFree func
 			  then 
 			     Transfer.CCall
 			     {args = (Vector.map
@@ -487,18 +488,20 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
 	     val b =
 		case kind of
 		   Cont _ => true
-		 | CReturn {func = CFunction.T {ensuresBytesFree, mayGC, ...}} =>
-		      mayGC andalso not ensuresBytesFree
+		 | CReturn {func, ...} =>
+		      CFunction.mayGC func
+		      andalso not (CFunction.ensuresBytesFree func)
 		 | Handler => true
 		 | Jump =>
 		      (case transfer of
-			  Transfer.CCall
-			  {args,
-			   func = CFunction.T {bytesNeeded = SOME i, ...},
-			   ...} => (case Vector.sub (args, i) of
-				       Operand.Const c => false
-				     | _ => true)
-			 | _ => false)
+			  Transfer.CCall {args, func, ...} =>
+			     (case CFunction.bytesNeeded func of
+				 NONE => true
+			       | SOME i => 
+				    (case Vector.sub (args, i) of
+					Operand.Const c => false
+				      | _ => true))
+			| _ => false)
 	  in
 	     b orelse isBigAlloc ()
 	  end)

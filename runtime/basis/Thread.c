@@ -20,6 +20,14 @@ Thread Thread_saved() {
 	return t;
 }
 
+void Thread_setCallFromCHandler (Thread t) {
+	gcState.callFromCHandler = (GC_thread)t;
+}
+
+Thread Thread_setSaved (Thread t) {
+	gcState.savedThread = (GC_thread)t;
+}
+
 void Thread_setHandler (Thread t) {
 	gcState.signalHandler = (GC_thread)t;
 }

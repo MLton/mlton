@@ -17,6 +17,10 @@ datatype t = T of {bytesNeeded: int option,
 		   modifiesStackTop: bool,
 		   name: string,
 		   returnTy: Type.t option}
+
+val make = T
+
+fun dest (T r) = r
    
 fun layout (T {bytesNeeded, ensuresBytesFree, mayGC, maySwitchThreads,
 	       modifiesFrontier, modifiesStackTop, name, returnTy}) =
@@ -109,4 +113,14 @@ end
 val size = vanilla {name = "MLton_size",
 		    returnTy = SOME Type.int}
 
+val returnToC =
+   T {bytesNeeded = NONE,
+      ensuresBytesFree = false,
+      modifiesFrontier = true,
+      modifiesStackTop = true,
+      mayGC = true,
+      maySwitchThreads = true,
+      name = "Thread_returnToC",
+      returnTy = NONE}
+   
 end

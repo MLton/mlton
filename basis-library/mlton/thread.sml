@@ -139,10 +139,35 @@ fun setHandler (f: unit t -> unit t): unit =
 	    loop ()
 	 end
       val p =
-	 toPrimitive (new (fn () => loop () handle e => MLtonExn.topLevelHandler e))
+	 toPrimitive
+	 (new (fn () => loop () handle e => MLtonExn.topLevelHandler e))
       val _ = signalHandler := SOME p
    in
       Prim.setHandler p
+   end
+
+val setCallFromCHandler =
+   let
+      val r: (unit -> unit) ref =
+	 ref (fn () => raise Fail "no handler for C calls")
+      val _ =
+	 Prim.setCallFromCHandler
+	 (toPrimitive
+	  (new (let
+		   fun loop (): unit =
+		      let
+			 val t = Prim.saved ()
+		      in
+			 !r () handle e => MLtonExn.topLevelHandler e
+			 ; Prim.setSaved t
+			 ; Prim.returnToC ()
+			 ; loop ()
+		      end
+		in
+		   loop
+		end)))
+   in
+      fn f => r := f
    end
 
 fun switchToHandler () =

@@ -42,14 +42,14 @@ structure CFunction =
 
       local
 	 fun make (name, i) =
-	    T {bytesNeeded = SOME i,
-	       ensuresBytesFree = false,
-	       mayGC = false,
-	       maySwitchThreads = false,
-	       modifiesFrontier = true,
-	       modifiesStackTop = false,
-	       name = name,
-	       returnTy = SOME Type.pointer}
+	    CFunction.make {bytesNeeded = SOME i,
+			    ensuresBytesFree = false,
+			    mayGC = false,
+			    maySwitchThreads = false,
+			    modifiesFrontier = true,
+			    modifiesStackTop = false,
+			    name = name,
+			    returnTy = SOME Type.pointer}
       in
 	 val intInfAdd = make ("IntInf_do_add", 2)
 	 val intInfAndb = make ("IntInf_do_andb", 2)
@@ -76,27 +76,27 @@ structure CFunction =
       end
  
       val copyCurrentThread =
-	 T {bytesNeeded = NONE,
-	    ensuresBytesFree = false,
-	    mayGC = true,
-	    maySwitchThreads = false,
-	    modifiesFrontier = true,
-	    modifiesStackTop = true,
-	    name = "GC_copyCurrentThread",
-	    returnTy = NONE}
+	 make {bytesNeeded = NONE,
+	       ensuresBytesFree = false,
+	       mayGC = true,
+	       maySwitchThreads = false,
+	       modifiesFrontier = true,
+	       modifiesStackTop = true,
+	       name = "GC_copyCurrentThread",
+	       returnTy = NONE}
 
       val copyThread =
-	 T {bytesNeeded = NONE,
-	    ensuresBytesFree = false,
-	    mayGC = true,
-	    maySwitchThreads = false,
-	    modifiesFrontier = true,
-	    modifiesStackTop = true,
-	    name = "GC_copyThread",
-	    returnTy = SOME Type.pointer}
+	 make {bytesNeeded = NONE,
+	       ensuresBytesFree = false,
+	       mayGC = true,
+	       maySwitchThreads = false,
+	       modifiesFrontier = true,
+	       modifiesStackTop = true,
+	       name = "GC_copyThread",
+	       returnTy = SOME Type.pointer}
 
       val exit =
-	 T {bytesNeeded = NONE,
+	 make {bytesNeeded = NONE,
 	    ensuresBytesFree = false,
 	    mayGC = false,
 	    maySwitchThreads = false,
@@ -106,32 +106,32 @@ structure CFunction =
 	    returnTy = NONE}
 
       val gcArrayAllocate =
-	 T {bytesNeeded = NONE,
-	    ensuresBytesFree = true,
-	    mayGC = true,
-	    maySwitchThreads = false,
-	    modifiesFrontier = true,
-	    modifiesStackTop = true,
-	    name = "GC_arrayAllocate",
-	    returnTy = SOME Type.pointer}
-
-      local
-	 fun make name =
-	    T {bytesNeeded = NONE,
-	       ensuresBytesFree = false,
+	 make {bytesNeeded = NONE,
+	       ensuresBytesFree = true,
 	       mayGC = true,
 	       maySwitchThreads = false,
 	       modifiesFrontier = true,
 	       modifiesStackTop = true,
-	       name = name,
-	       returnTy = NONE}
+	       name = "GC_arrayAllocate",
+	       returnTy = SOME Type.pointer}
+
+      local
+	 fun make name =
+	    CFunction.make {bytesNeeded = NONE,
+			    ensuresBytesFree = false,
+			    mayGC = true,
+			    maySwitchThreads = false,
+			    modifiesFrontier = true,
+			    modifiesStackTop = true,
+			    name = name,
+			    returnTy = NONE}
       in
 	 val pack = make "GC_pack"
 	 val unpack = make "GC_unpack"
       end
 
       val threadSwitchTo =
-	 T {bytesNeeded = NONE,
+	 make {bytesNeeded = NONE,
 	    ensuresBytesFree = true,
 	    mayGC = true,
 	    maySwitchThreads = true,
@@ -141,14 +141,14 @@ structure CFunction =
 	    returnTy = NONE}
 
       val worldSave =
-	 T {bytesNeeded = NONE,
-	    ensuresBytesFree = false,
-	    mayGC = true,
-	    maySwitchThreads = false,
-	    modifiesFrontier = true,
-	    modifiesStackTop = true,
-	    name = "GC_saveWorld",
-	    returnTy = NONE}
+	 make {bytesNeeded = NONE,
+	       ensuresBytesFree = false,
+	       mayGC = true,
+	       maySwitchThreads = false,
+	       modifiesFrontier = true,
+	       modifiesStackTop = true,
+	       name = "GC_saveWorld",
+	       returnTy = NONE}
    end
 
 datatype z = datatype Operand.t
@@ -168,6 +168,11 @@ end
 fun convert (program as S.Program.T {functions, globals, main, ...})
    : Rssa.Program.t =
    let
+      val callsFromC =
+	 S.Program.hasPrim (program, fn p =>
+			    case Prim.name p of
+			       Prim.Name.Thread_returnToC => true
+			     | _ => false)
       val {conRep, objectTypes, refRep, toRtype, tupleRep, tyconRep} =
 	 Representation.compute program
       val conRep =
@@ -988,8 +993,14 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				       then normal ()
 				    else
 				       simpleCCall
-				       (CFunction.vanilla
-					{name = name,
+				       (CFunction.make
+					{bytesNeeded = NONE,
+					 ensuresBytesFree = false,
+					 modifiesFrontier = callsFromC,
+					 modifiesStackTop = callsFromC,
+					 mayGC = callsFromC,
+					 maySwitchThreads = false,
+					 name = name,
 					 returnTy =
 					 Option.map
 					 (var, fn x =>
@@ -1170,6 +1181,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 						   [Vector.new1 Operand.GCState,
 						    vos args]),
 					   func = CFunction.copyThread}
+			       | Thread_returnToC =>
+				    ccall {args = vos args,
+					   func = CFunction.returnToC}
 			       | Thread_switchTo =>
 				    ccall {args = (Vector.new2
 						   (varOp (a 0),

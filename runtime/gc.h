@@ -63,6 +63,7 @@ typedef W32 Header;
 
 /* Sizes are (almost) always measured in bytes. */
 enum {
+	BOGUS_POINTER = 0x1,
 	WORD_SIZE = 		4,
 	COUNTER_MASK =		0x7FF00000,
 	COUNTER_SHIFT =		20,
@@ -83,6 +84,8 @@ enum {
 	WORD8_VECTOR_TYPE_INDEX = STRING_TYPE_INDEX,
 	WORD_VECTOR_TYPE_INDEX = 3,
 };
+
+#define BOGUS_THREAD (GC_thread)BOGUS_POINTER
 
 #define TWOPOWER(n) (1 << (n))
 
@@ -299,6 +302,7 @@ typedef struct GC_state {
 	ullong bytesCopiedMinor;
 	int bytesLive; /* Number of bytes live at most recent major GC. */
 	ullong bytesMarkCompacted;
+	GC_thread callFromCHandler; /* For C calls. */
 	bool canMinor; /* TRUE iff there is space for a minor gc. */
 	pointer cardMap;
 	pointer cardMapForMutator;

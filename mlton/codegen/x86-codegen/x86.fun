@@ -3707,8 +3707,8 @@ struct
       val creturn = CReturn
 
       val isNear = fn Jump _ => true
-	            | CReturn {func = CFunction.T {maySwitchThreads, ... }, ...} 
-	            => not maySwitchThreads
+	            | CReturn {func, ...} 
+	            => not (CFunction.maySwitchThreads func)
 	            | _ => false
     end
 
@@ -4017,7 +4017,7 @@ struct
 	   | NonTail {return,handler,...} => return::(case handler 
 							of NONE => nil
 							 | SOME handler => [handler])
-	   | CCall {return, func = CFunction.T {maySwitchThreads, ...}, ...} 
+	   | CCall {return, ...} 
 	   => (case return of
 		 NONE => []
 	       | SOME l => [l])

@@ -152,6 +152,7 @@ structure Name =
        | Thread_canHandle
        | Thread_copy
        | Thread_copyCurrent
+       | Thread_returnToC
        | Thread_switchTo
        | Vector_fromArray
        | Vector_length
@@ -372,6 +373,7 @@ structure Name =
 	  (Thread_canHandle, DependsOnState, "Thread_canHandle"),
 	  (Thread_copy, Moveable, "Thread_copy"),
 	  (Thread_copyCurrent, SideEffect, "Thread_copyCurrent"),
+	  (Thread_returnToC, SideEffect, "Thread_returnToC"),
 	  (Thread_switchTo, SideEffect, "Thread_switchTo"),
 	  (Vector_fromArray, DependsOnState, "Vector_fromArray"),
 	  (Vector_length, Functional, "Vector_length"),

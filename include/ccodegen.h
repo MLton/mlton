@@ -81,7 +81,7 @@ struct cont {
 			leaveChunk:					\
 				FlushFrontier();			\
 				FlushStackTop();			\
-				return(cont);				\
+				return cont;				\
 		} /* end switch (l_nextFun) */				\
 		} /* end while (1) */					\
 	} /* end chunk */
@@ -90,7 +90,40 @@ struct cont {
 /*                       main                        */
 /* ------------------------------------------------- */
 
+static bool returnToC;
+
+#define Thread_returnToC()						\
+	do {								\
+		if (DEBUG_CCODEGEN)					\
+			fprintf (stderr, "%d  Thread_returnToC()\n",	\
+					__LINE__);			\
+		returnToC = TRUE;					\
+		return cont;						\
+	} while (0)
+
+
 #define Main(cs, mg, mfs, mlw, mmc, ps, mc, ml)				\
+void MLton_callFromC () {						\
+	struct cont cont;						\
+	GC_state s;							\
+									\
+	if (DEBUG_CCODEGEN)						\
+		fprintf (stderr, "MLton_callFromC() starting\n");	\
+	s = &gcState;							\
+	s->savedThread = s->currentThread;				\
+	/* Return to the C Handler thread. */				\
+	GC_switchToThread (s, s->callFromCHandler);			\
+	nextFun = *(int*)(s->stackTop - WORD_SIZE);			\
+	cont.nextChunk = nextChunks[nextFun];				\
+	returnToC = FALSE;						\
+	do {								\
+ 		cont=(*(struct cont(*)(void))cont.nextChunk)();		\
+	} while (not returnToC);					\
+	GC_switchToThread (s, s->savedThread);				\
+	s->savedThread = BOGUS_THREAD;					\
+	if (DEBUG_CCODEGEN)						\
+		fprintf (stderr, "MLton_callFromC done\n");		\
+}									\
 int main (int argc, char **argv) {					\
 	struct cont cont;						\
 	gcState.native = FALSE;						\

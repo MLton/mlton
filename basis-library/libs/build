@@ -195,6 +195,8 @@ mlton/text-io.sig
 mlton/bin-io.sig
 mlton/itimer.sig
 mlton/itimer.sml
+mlton/ffi.sig
+mlton/ffi.sml
 mlton/gc.sig
 mlton/gc.sml
 mlton/int-inf.sig
