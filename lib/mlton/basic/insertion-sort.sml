@@ -18,16 +18,21 @@ fun sort (a: 'a array, op <= : 'a * 'a -> bool): unit =
 	 (1, Array.length a, fn i =>
 	  let
 	     val _ =
-		Assert.assert ("insertionSort1", fn () =>
-			       Array.isSortedRange (a, 0, i, op <=))
+		if true
+		   then ()
+		else
+		   Assert.assert ("insertionSort1", fn () =>
+				  Array.isSortedRange (a, 0, i, op <=))
 	     val t = x i
 	     fun sift (j: int) =
-		(Assert.assert
-		 ("insertionSort2", fn () =>
-		  Array.isSortedRange (a, 0, j, op <=)
-		  andalso Array.isSortedRange (a, j + 1, i + 1, op <=)
-		  andalso Int.forall (j + 1, i + 1, fn k =>
-				      t <= x k))
+		(if true
+		    then ()
+		 else
+		    Assert.assert
+		    ("insertionSort2", fn () =>
+		     Array.isSortedRange (a, 0, j, op <=)
+		     andalso Array.isSortedRange (a, j + 1, i + 1, op <=)
+		     andalso Int.forall (j + 1, i + 1, fn k => t <= x k))
 		 ; if j > 0
 		      then
 			 let

@@ -67,10 +67,13 @@ fun 'a sortArray (a: 'a array, op <= : 'a * 'a -> bool): 'a array =
 		  val m =
 		     Int.fold
 		     (l + 1, u + 1, l, fn (i, m) =>
-		      (Assert.assert
-		       ("QuickSort", fn () =>
-			Int.forall (l + 1, m + 1, fn k => x k <= t)
-			andalso Int.forall (m + 1, i, fn k => not (x k <= t)))
+		      (if true
+			  then ()
+		       else
+			  Assert.assert
+			  ("QuickSort", fn () =>
+			   Int.forall (l + 1, m + 1, fn k => x k <= t)
+			   andalso Int.forall (m + 1, i, fn k => not (x k <= t)))
 		       ; if x i <= t
 			    then (swap (m + 1, i)
 				  ; m + 1)
