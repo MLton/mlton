@@ -70,6 +70,12 @@ See Runtime system options.)
 This option only makes sense when the input file suffix is \fB.sml\fP.
 
 .TP
+\fB-host \fI{\fBself\fP|\fI...}\fR
+Cross compile to program to run on the specified host.  The default is to
+compile for the build machine.  To use any other host, you must first install a
+cross-compiler.  See the user guide for details.
+
+.TP
 \fB-ieee-fp \fI{\fBfalse\fP|\fBtrue\fP}\fR
 Control whether or not the code generator is pedantic about following
 the IEEE floating point standard.  By default, it is not, because of the

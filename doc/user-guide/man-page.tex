@@ -59,6 +59,11 @@ RAM in the machine.  A trailing {\tt k} means that {\tt heapSize} is in units of
 neither appears, then {\tt heapSize} is in bytes.  By default the executable
 will use an automatically resized heap.
 
+\option{-host \{self|...\}}
+Cross compile to program to run on the specified host.  The default is to
+compile for the build machine.  To use any other host, you must first install a
+cross-compiler.  See \secref{cross-compiling}.
+
 \option{-include \mbox{\rm file.h}}
 Specify an additional {\tt .h} file to be included for defining compile-time
 constants (see \secref{compile-time-constant}).  The file will be included with

@@ -5,6 +5,7 @@ TEX_FILES = \
 	cm.tex			\
 	compiling.tex		\
 	credits.tex		\
+	cross-compiling.tex	\
 	drawbacks.tex		\
 	extensions.tex		\
 	features.tex		\

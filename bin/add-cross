@@ -18,7 +18,7 @@ src=`cd $dir/.. && pwd`
 # permission there. 
 
 lib="$src/build/lib"
-
+lib=/usr/local/lib/mlton
 # crossHost will be used via the -b flag passed to the GCC cross-compiler tools.
 # You must already have installed the GCC cross-compiler tools.  This script
 # does not do that, although you may find the script build-cross-gcc helpful.
@@ -71,9 +71,9 @@ exe='print-constants'
 echo 'Building print-constants executable.'
 (
 	mlton -build-constants >$exe.c &&
-	mlton -o $original/$exe -host $crossHost $exe.c &&
+	mlton -o $original/$exe.exe -host $crossHost $exe.c &&
 	rm -f $exe.c
 ) || die "Unable to build $exe executable."
 
-echo "You must now run $exe on the $crossHost machine"
+echo "You must now run $exe.exe on the $crossHost machine"
 echo "and put the output in $lib/$crossHost/constants."

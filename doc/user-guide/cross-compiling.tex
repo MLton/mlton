@@ -1,0 +1,77 @@
+\sec{Cross compiling applications for Windows via Cygwin}{cross-compiling}
+
+Although {\mlton} runs on Linux, you can use the {\tt -host} flag to cross
+compile applications and produce executables that run on Windows.  {\mlton} uses
+the \htmladdnormallink{Cygwin}{http://www.cygwin.com/} Unix emulation layer for
+Windows to provide a Posix-like environment.  In order to use {\mlton} as a
+cross compiler, you need to do several things.
+
+\begin{enumerate}
+
+\item Install the Cygwin dll in the Windows machine.
+
+\item Install the GCC cross-compiler tools on your Linux machine.
+
+\item Cross compile the {\mlton} runtime system for your Windows machine.
+
+\end{enumerate}
+
+To install the Cygwin dll, visit the Cygwin site from your Windows machine and
+run their {\tt setup.exe} script.
+
+To build a GCC cross-compiler toolset on your machine, you can use the script
+{\tt bin/build-cross-gcc} available in the {\mlton} sources.  There are some
+comments at the top of the script that tell you what to download and what
+variables to set in order to build the toolset.  In particular, the {\tt target}
+variable is important, since that is what you will pass to {\mlton}'s {\tt
+-host} flag.
+
+Once you have the toolset built, you should be able to test it by cross
+compiling a simple hello world program on your Linux machine.
+\begin{verbatim}
+gcc -b i386-pc-cygwin -o hello-world.exe hello-world.c
+\end{verbatim}
+You should now be able to run {\tt hello-world.exe} from a Cygwin shell on your
+Windows Machine.
+
+Next, you must cross compile the {\mlton} runtime system and inform {\mlton} of
+the availability of the new target.  The script {\tt bin/add-cross} from
+the {\mlton} sources that will help you do this.  Please read the comments at
+the top of the script.  Here is a sample run.
+\begin{verbatim}
+% add-cross
+Making runtime.
+Building print-constants executable.
+You must now run print-constants.exe on the i386-pc-cygwin machine
+and put the output in /home/sweeks/mlton/src/build/lib/i386-pc-cygwin/constants.
+\end{verbatim}
+Running {\tt add-cross} installs the cross-compiled runtime and creates a
+cross-compiled executable, {\tt print-constants.exe}, which prints out all of
+the constants that {\mlton} needs in order to implement the basis library.  The
+final step is to run {\tt print-constants.exe} on your Windows machine, and save
+the output in the file indicated by {\tt add-cross}.  Once you have done this,
+you should be able to cross compile SML applications.  For example
+\begin{verbatim}
+mlton -host i386-pc-cygwin hello-world.sml
+\end{verbatim}
+will create {\tt hello-world.exe}, which you should be able to run from a Cygwin
+shell on your Windows machine.
+
+\subsec{Known problems}{known-problems}
+
+There are several known problems with cross-compiled SML applications, which are
+due to bugs in Cygwin's emulation.
+
+\begin{enumerate}
+
+\item Due to a bug in mmap/fork, fork does not work correctly.  Any call to {\tt
+Posix.Process.fork} will raise the Fail exception.  The Cygwin developers claim
+to have fixed the bug (3/11/02) and I will try it out soon.  This problem may be
+avoided in some situations by using spawn, which I will add to the MLton basis
+library soon.
+
+\item Due to a bug in mmap, large heaps do not work correctly.  This may
+cause seg faults on programs that use a lot of memory.  I am working with the
+Cygwin developers to fix the problem.
+
+\end{enumerate}
