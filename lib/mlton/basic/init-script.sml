@@ -59,12 +59,12 @@ fun startStop {name, action, log, thunk, usage} =
 		       val _ = Out.close Out.standard
 		       val _ = Posix.ProcEnv.setpgid {pid = NONE, pgid = NONE}
 		       val _ =
-			  Signal.handleWith'
-			  (Signal.term, fn _ =>
+			  Signal.setHandler
+			  (Posix.Signal.term, Signal.Handler.handler (fn _ =>
 			   Thread.new
 			   (fn () =>
 			    (messageStr "received Signal.term -- exiting"
-			     ; Process.succeed ())))
+			     ; Process.succeed ()))))
 		    in
 		       thunk ()
 		    end)
@@ -81,7 +81,7 @@ fun startStop {name, action, log, thunk, usage} =
 	  | SOME {pgrp, ...} => 
 	       wrap (fn () =>
 		     (print (concat ["Shutting down ", name, ":"])
-		      ; Process.signalGroup (pgrp, Signal.term)))
+		      ; Process.signalGroup (pgrp, Posix.Signal.term)))
    in case action of
       "start" => start ()
     | "status" => status ()
