@@ -11,23 +11,34 @@
 #include <fcntl.h>
 #include <math.h>
 #include <string.h>
+
 #if (defined (__FreeBSD__))
 #include <sys/types.h>
 #include <sys/sysctl.h>
 #endif
+
 #include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/times.h>
 #include <time.h>
+
 #if (defined (__CYGWIN__))
 #include <windows.h>
 #endif
+
 #if (defined (__linux__))
 #include <values.h>
+#include <linux/mman.h> /* For MREMAP_MAYMOVE, which should come from
+			 * sys/mman.h, but doesn't.
+			 */
+#include <sys/sysinfo.h>
 #endif
 #if (defined (__FreeBSD__))
 #include <limits.h>
 #endif
+
+#include "IntInf.h"
+#include "gmp.h"
 
 #define METER FALSE  /* Displays distribution of object sizes at program exit. */
 
@@ -2193,11 +2204,6 @@ static bool heapRemap (GC_state s, GC_heap h, W32 desired, W32 minSize) {
 
 #elif (defined (__linux__))
 
-/* The following include is for MREMAP_MAYMOVE, which I would think should come
- * from sys/mman.h, but doesn't.
- */
-#include <linux/mman.h>
-
 static bool heapRemap (GC_state s, GC_heap h, W32 desired, W32 minSize) {
 	W32 backoff;
 	W32 size;
@@ -2786,7 +2792,6 @@ static void readProcessor() {
 
 #if (defined (__linux__))
 
-#include <sys/sysinfo.h>
 /* struct sysinfo copied from /usr/include/linux/kernel.h on a 2.4 kernel
  * because we need mem_unit.
  * On older kernels, it will be guaranteed to be zero, and we test for that
@@ -2831,7 +2836,6 @@ static void setMemInfo (GC_state s) {
 
 #elif (defined (__CYGWIN__))
 
-#include <windows.h>
 static void setMemInfo (GC_state s) {
 	MEMORYSTATUS ms; 
 
@@ -2958,8 +2962,6 @@ static void setInitialBytesLive (GC_state s) {
 	}
 }
 
-#include "IntInf.h"
-#include "gmp.h"
 /*
  * For each entry { globalIndex, mlstr } in the inits array (which is terminated
  * by one with an mlstr of NULL), set

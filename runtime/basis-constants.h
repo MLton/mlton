@@ -1,18 +1,23 @@
 #ifndef _BASIS_CONSTANTS_H_
 #define _BASIS_CONSTANTS_H_
 
+#include <sys/time.h>
+#if (defined (__linux__))
+#include <sys/ptrace.h>
+#endif
+#include <sys/socket.h>
+
+#include "gc.h"
+
 /* ------------------------------------------------- */
 /*                       Array                       */
 /* ------------------------------------------------- */
 
-#include "gc.h"
 #define Array_maxLen GC_MAX_ARRAY_LENGTH
 
 /* ------------------------------------------------- */
 /*                      Itimer                       */
 /* ------------------------------------------------- */
-
-#include <sys/time.h>
 
 #define Itimer_prof ITIMER_PROF
 #define Itimer_real ITIMER_REAL
@@ -38,8 +43,11 @@
 /* ------------------------------------------------- */
 
 #if (defined (__linux__))
-#include <sys/ptrace.h>
+
+/* Nothing to do -- everything comes from sys/ptrace.h. */
+
 #elif (defined (__CYGWIN__) || defined (__FreeBSD__))
+
 #define PTRACE_BOGUS 0xFFFFFFFF
 #define PTRACE_SYSCALL PTRACE_BOGUS
 #define PTRACE_SETFPREGS PTRACE_BOGUS
@@ -56,8 +64,8 @@
 #define PTRACE_PEEKDATA PTRACE_BOGUS
 #define PTRACE_PEEKTEXT PTRACE_BOGUS
 #define PTRACE_TRACEME PTRACE_BOGUS
-#else
 #error PTRACE_ constants not defined
+
 #endif
 
 #define Ptrace_TRACEME PTRACE_TRACEME
@@ -81,8 +89,6 @@
 /* ------------------------------------------------- */
 /*                      Socket                       */
 /* ------------------------------------------------- */
-
-#include <sys/socket.h>
 
 #define Socket_shutdownRead SHUT_RD
 #define Socket_shutdownWrite SHUT_WR

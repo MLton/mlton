@@ -1,6 +1,11 @@
 #ifndef _MLTON_BASIS_H_
 #define _MLTON_BASIS_H_
 
+#if (defined (__FreeBSD__))
+#include <sys/time.h>
+#endif
+#include <sys/resource.h>
+
 /* Here are the types that the abstract machine deals with.
  * See backend/mtype.sig.
  */
@@ -177,11 +182,6 @@ Int Real_signBit(Double d);
 /* ------------------------------------------------- */
 /*                      Rlimit                       */
 /* ------------------------------------------------- */
-
-#if (defined (__FreeBSD__))
-#include <sys/time.h>
-#endif
-#include <sys/resource.h>
 
 #if (defined (__CYGWIN__))
 #define RLIMIT_BOGUS 0xFFFFFFFF

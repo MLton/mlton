@@ -2,6 +2,14 @@
 #define _POSIX_CONSTANTS_H_
 
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <signal.h>
+#include <termios.h>
+
 #define Posix_Error_acces EACCES
 #define Posix_Error_again EAGAIN
 #define Posix_Error_badf EBADF
@@ -63,11 +71,6 @@
 #define Posix_FileSys_S_ifchr S_IFCHR
 #define Posix_FileSys_S_ififo S_IFIFO
 
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
 /* Cygwin/Windows distinguish between text and binary files, but Linux and
  * FreeBSD do not.
  */
@@ -109,13 +112,11 @@
 #define Posix_FileSys_S_isuid S_ISUID
 #define Posix_FileSys_S_isgid S_ISGID
 
-#include <unistd.h>
 #define Posix_FileSys_R_OK R_OK
 #define Posix_FileSys_W_OK W_OK
 #define Posix_FileSys_X_OK X_OK
 #define Posix_FileSys_F_OK F_OK
 
-#include <unistd.h>
 /* used by pathconf and fpathconf */
 #define Posix_FileSys_LINK_MAX _PC_LINK_MAX
 #define Posix_FileSys_MAX_CANON _PC_MAX_CANON
@@ -127,8 +128,6 @@
 #define Posix_FileSys_NO_TRUNC _PC_NO_TRUNC
 #define Posix_FileSys_VDISABLE _PC_VDISABLE
 
-#include <unistd.h>
-#include <fcntl.h>
 #define Posix_IO_F_DUPFD F_DUPFD
 #define Posix_IO_F_GETFD F_GETFD
 #define Posix_IO_F_SETFD F_SETFD
@@ -148,7 +147,6 @@
 #define Posix_IO_SEEK_END SEEK_END
 #define Posix_IO_FD_cloexec FD_CLOEXEC
 
-#include <unistd.h>
 #if (defined (__CYGWIN__))
 #define _SC_BOGUS 0xFFFFFFFF
 #define _SC_2_FORT_DEV _SC_BOGUS
@@ -193,11 +191,9 @@ enum {
 	Posix_ProcEnv_numgroups = 100,
 };
 
-#include <sys/wait.h>
 #define Posix_Process_wnohang WNOHANG
 #define Posix_Process_W_untraced WUNTRACED
 
-#include <signal.h>
 #define Posix_Signal_abrt SIGABRT
 #define Posix_Signal_alrm SIGALRM
 #define Posix_Signal_bus SIGBUS
@@ -231,9 +227,6 @@ enum {
 #endif
 #define Posix_Signal_setmask SIG_SETMASK
 #define Posix_Signal_unblock SIG_UNBLOCK
-
-#include <termios.h>
-#include <unistd.h>
 
 #define Posix_TTY_b0 B0
 #define Posix_TTY_b110 B110
