@@ -62,7 +62,7 @@ datatype t =
 fun layout s =
    let
       open Layout
-      fun simple ({cases, default, size, test}, name, lay) =
+      fun simple ({cases, default, size = _, test}, name, lay) =
 	 seq [str (concat ["switch", name, " "]),
 	      record [("test", Use.layout test),
 		      ("default", Option.layout Label.layout default),
@@ -92,8 +92,6 @@ fun layout s =
 			  cases)]]
        | Word z => simple (z, "Word", WordX.layout)
    end
-
-val allChars = Vector.tabulate (Char.numChars, Char.fromInt)
 
 fun isOk (s, {checkUse, labelIsOk}): bool =
    case s of
@@ -170,7 +168,7 @@ fun isOk (s, {checkUse, labelIsOk}): bool =
 
 fun foldLabelUse (s: t, a: 'a, {label, use}): 'a =
    let
-      fun simple {cases, default, size, test} =
+      fun simple {cases, default, size = _, test} =
 	 let
 	    val a = use (test, a)
 	    val a = Option.fold (default, a, label)

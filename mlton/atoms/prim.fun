@@ -731,12 +731,7 @@ fun 'a apply (p, args, varEquals) =
       val word8Vector = ApplyResult.Const o Const.word8Vector
       val t = ApplyResult.truee
       val f = ApplyResult.falsee
-      local
-	 fun make from (f, c1, c2) = from (f (c1, c2))
-      in
-	 fun pred z = make bool z
-	 val iio = make intInf
-      end
+      fun iio (f, c1, c2) = intInf (f (c1, c2))
       fun io (f: IntX.t * IntX.t -> IntX.t, i, i') =
 	 int (f (i, i'))
       fun wcheck (f: IntInf.t * IntInf.t -> IntInf.t,
@@ -765,10 +760,10 @@ fun 'a apply (p, args, varEquals) =
 	     (Int_add _, [Int i1, Int i2]) => io (IntX.+, i1, i2)
 	   | (Int_addCheck _, [Int i1, Int i2]) => io (IntX.+, i1, i2)
            | (Int_equal _, [Int i1, Int i2]) => bool (IntX.equals (i1, i2))
-	   | (Int_ge s, [Int i1, Int i2]) => bool (IntX.>= (i1, i2))
-	   | (Int_gt s, [Int i1, Int i2]) => bool (IntX.> (i1, i2))
-	   | (Int_le s, [Int i1, Int i2]) => bool (IntX.<= (i1, i2))
-	   | (Int_lt s, [Int i1, Int i2]) => bool (IntX.< (i1, i2))
+	   | (Int_ge _, [Int i1, Int i2]) => bool (IntX.>= (i1, i2))
+	   | (Int_gt _, [Int i1, Int i2]) => bool (IntX.> (i1, i2))
+	   | (Int_le _, [Int i1, Int i2]) => bool (IntX.<= (i1, i2))
+	   | (Int_lt _, [Int i1, Int i2]) => bool (IntX.< (i1, i2))
 	   | (Int_mul _, [Int i1, Int i2]) => io (IntX.*, i1, i2)
 	   | (Int_mulCheck _, [Int i1, Int i2]) => io (IntX.*, i1, i2)
 	   | (Int_neg _, [Int i]) => int (IntX.~ i)
@@ -896,7 +891,7 @@ fun 'a apply (p, args, varEquals) =
 	    fun varWord (x, w, inOrder) =
 	       let
 		  val zero = word o WordX.zero
-		  fun add s = if WordX.isZero w then Var x else Unknown
+		  fun add () = if WordX.isZero w then Var x else Unknown
 		  fun mul () =
 		     if WordX.isZero w
 			then word w
@@ -936,8 +931,8 @@ fun 'a apply (p, args, varEquals) =
 			  else Unknown
 	       in
 		  case name of
-		     Word_add s => add s
-		   | Word_addCheck s => add s
+		     Word_add _ => add ()
+		   | Word_addCheck _ => add ()
 		   | Word_andb s =>
 			if WordX.isZero w
 			   then zero s
@@ -1014,7 +1009,7 @@ fun 'a apply (p, args, varEquals) =
 		  in
 		     word8Vector (Word8.stringToVector (IntInf.format (i, base)))
 		  end
-	     | (_, [Con {con = c, hasArg = h}, Con {con = c', hasArg = h'}]) =>
+	     | (_, [Con {con = c, hasArg = h}, Con {con = c', ...}]) =>
 		  if name = MLton_equal orelse name = MLton_eq
 		     then if Con.equals (c, c')
 			     then if h
@@ -1026,8 +1021,8 @@ fun 'a apply (p, args, varEquals) =
 	     | (_, [Const (Word i), Var x]) => varWord (x, i, false)
 	     | (_, [Var x, Const (Int i)]) =>
 		  (case name of
-		      Int_add s => add (x, i)
-		    | Int_addCheck s => add (x, i)
+		      Int_add _ => add (x, i)
+		    | Int_addCheck _ => add (x, i)
 		    | Int_ge _ => if IntX.isMin i then t else Unknown
 		    | Int_gt _ => if IntX.isMax i then f else Unknown
 		    | Int_le _ => if IntX.isMax i then t else Unknown

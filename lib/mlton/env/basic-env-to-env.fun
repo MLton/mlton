@@ -19,12 +19,6 @@ fun layout e =
 	  str"]"]
    end
 
-fun maybeLayout(env,name) =
-   if isEmpty env then Layout.empty
-   else let open Layout
-	in seq[str name, str " = ", layout env]
-	end
-
 val size = List.length o toList
    
 val empty = fromList []
@@ -69,7 +63,6 @@ fun foldi(e, b, f) = List.fold(toList e, b, fn ((d, r), b) => f(d, r, b))
 fun foreach(e, f) = List.foreach(toList e, f o #2)
 fun foreachi(e, f) = List.foreach(toList e, f)
 
-fun forall(e, f) = List.forall(toList e, f o #2)
 fun foralli(e, f) = List.forall(toList e, f)
    
 val equals =

@@ -183,7 +183,7 @@ structure LrParser :> LR_PARSER =
             | nil => ()
                 
         fun prAction showTerminal
-		 (stack as (state,_) :: _, next as (TOKEN (term,_),_), action) =
+		 (stack as (state,_) :: _, (TOKEN (term,_), _), action) =
              (println "Parse: state stack:";
               printStack(stack, 0);
               print("       state="
@@ -197,7 +197,7 @@ structure LrParser :> LR_PARSER =
                  | REDUCE i => println ("REDUCE " ^ (Int.toString i))
                  | ERROR => println "ERROR"
 		 | ACCEPT => println "ACCEPT")
-        | prAction _ (_,_,action) = ()
+        | prAction _ _ = ()
      end
 
     (* ssParse: parser which maintains the queue of (state * lexvalues) in a
@@ -300,7 +300,7 @@ fun mkFixError({is_keyword,terms,errtermvalue,
 	     distanceParse : ('_a,'_b) distanceParse,
 	     minAdvance,maxAdvance) 
 
-            (lexv as (TOKEN (term,value as (_,leftPos,_)),_),stack,queue) =
+            ((TOKEN (term, (_, leftPos, _)), _), _, queue) =
     let val _ = if DEBUG2 then
 			error("syntax error found at " ^ (showTerminal term),
 			      leftPos,leftPos)
@@ -344,17 +344,6 @@ fun mkFixError({is_keyword,terms,errtermvalue,
 
          val showTerms = concat o map (fn TOKEN(t,_) => " " ^ showTerminal t)
 
-	 val printChange = fn c =>
-	  let val CHANGE {distance,new,orig,pos,...} = c
-	  in (print ("{distance= " ^ (Int.toString distance));
-	      print (",orig ="); print(showTerms orig);
-	      print (",new ="); print(showTerms new);
-	      print (",pos= " ^ (Int.toString pos));
-	      print "}\n")
-	  end
-
-	val printChangeList = app printChange
-
 (* parse: given a lexPair, a stack, and the distance from the error
    token, return the distance past the error token that we are able to parse.*)
 
@@ -389,12 +378,12 @@ fun mkFixError({is_keyword,terms,errtermvalue,
 	      Do not delete unshiftable terminals. *)
 
 
-    fun tryDelete n ((stack,lexPair as (TOKEN(term,(_,l,r)),_)),qPos) =
+    fun tryDelete n ((stack, lexPair as (TOKEN (_, (_, l, r)), _)), qPos) =
 	let fun del(0,accum,left,right,lexPair) =
 	          tryChange{lex=lexPair,stack=stack,
 			    pos=qPos,leftPos=left,rightPos=right,
 			    orig=rev accum, new=[]}
-	      | del(n,accum,left,right,(tok as TOKEN(term,(_,_,r)),lexer)) =
+	      | del(n,accum,left,_,(tok as TOKEN(term,(_,_,r)),lexer)) =
 		   if noShift term then []
 		   else del(n-1,tok::accum,left,r,Stream.get lexer)
          in del(n,[],l,r,lexPair)
@@ -412,7 +401,7 @@ fun mkFixError({is_keyword,terms,errtermvalue,
 (* trySubst: try to substitute tokens for the current terminal;
        return a list of the successes  *)
 
-        fun trySubst ((stack,lexPair as (orig as TOKEN (term,(_,l,r)),lexer)),
+        fun trySubst ((stack, (orig as TOKEN (term,(_,l,r)),lexer)),
 		      queuePos) =
 	      if noShift term then []
 	      else
@@ -433,10 +422,10 @@ fun mkFixError({is_keyword,terms,errtermvalue,
 	       if t=t'
 		   then SOME([tok],l,r,Stream.get lp')
                    else NONE
-          | do_delete(t::rest,(tok as TOKEN(t',(_,l,r)),lp')) =
+          | do_delete(t::rest,(tok as TOKEN(t',(_,l,_)),lp')) =
 	       if t=t'
 		   then case do_delete(rest,Stream.get lp')
-                         of SOME(deleted,l',r',lp'') =>
+                         of SOME(deleted,_,r',lp'') =>
 			       SOME(tok::deleted,l,r',lp'')
 			  | NONE => NONE
 		   else NONE
@@ -506,7 +495,7 @@ fun mkFixError({is_keyword,terms,errtermvalue,
 
 		  val findNth = fn n =>
 		      let fun f (h::t,0) = (h,rev t)
-			    | f (h::t,n) = f(t,n-1)
+			    | f (_::t,n) = f(t,n-1)
 			    | f (nil,_) = let exception FindNth
 					  in raise FindNth
 					  end

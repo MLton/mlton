@@ -10,17 +10,13 @@ struct
 
 open S
 structure R = Rssa
-structure M = Machine
 
 local
    open Rssa
 in
-   structure Block = Block
-   structure CFunction = CFunction
    structure Func = Func
    structure Function = Function
    structure Kind = Kind
-   structure Label = Label
    structure Type = Type
    structure Var = Var
 end
@@ -34,15 +30,6 @@ in
    structure Runtime = Runtime
 end
 
-(* If a handler is stored in a stack frame, then we need both a word for
- * the old handler and space for the handler itself
- *)
-local
-   open Type
-in
-   val handlerSize = Runtime.labelSize + size defaultWord
-end
-
 structure Live = Live (Rssa)
 
 structure Allocation:
@@ -51,7 +38,6 @@ structure Allocation:
          sig
             type t
 
-            val empty: t
             val get: t * Type.t -> t * {offset: int}
             val layout: t -> Layout.t
             val new: {offset: int, ty: Type.t} list -> t
@@ -80,8 +66,6 @@ structure Allocation:
 					 ("size", Int.layout size)])
 	                 alloc
 	 
-	  val empty = T []
-
 	  fun size (T alloc) =
 	     case alloc of
 	        [] => 0
@@ -242,7 +226,6 @@ structure Allocation:
        in
 	  val stack = ! o (make #stack)
 	  val stackSize = Stack.size o stack
-	  val registers = make #registers
        end
     
        fun layout (T {registers, stack}) =
@@ -250,7 +233,7 @@ structure Allocation:
 	  [("stack", Stack.layout (!stack)),
 	   ("registers", Registers.layout registers)]
 
-       fun getStack (T {registers, stack}, ty) =
+       fun getStack (T {stack, ...}, ty) =
 	  let
 	     val (s, offset) = Stack.get (!stack, ty)
 	     val _ = stack := s
@@ -319,7 +302,7 @@ fun allocate {argOperands,
 	 setLabelInfo
       val labelLive =
 	 Live.live (f, {shouldConsider = isSome o #operand o varInfo})
-      val {args, blocks, name, start, ...} = Function.dest f
+      val {args, blocks, name, ...} = Function.dest f
       (*
        * Decide which variables will live in stack slots and which
        * will live in registers.
@@ -340,9 +323,9 @@ fun allocate {argOperands,
       val _ =
 	 Vector.foreach
 	 (blocks,
-	  fn R.Block.T {args, kind, label, statements, transfer, ...} =>
+	  fn R.Block.T {args, kind, label, statements, ...} =>
 	  let
-	     val {begin, beginNoFormals, ...} = labelLive label
+	     val {beginNoFormals, ...} = labelLive label
 	     val _ =
 		case Kind.frameStyle kind of
 		   Kind.None => ()
@@ -361,7 +344,7 @@ fun allocate {argOperands,
 				datatype z = datatype R.Statement.t
 			     in
 				case s of
-				   SetHandler h => true
+				   SetHandler _ => true
 				 | SetExnStackLocal => true
 				 | SetExnStackSlot => true
 				 | SetSlotExnStack => true
@@ -372,14 +355,11 @@ fun allocate {argOperands,
 	  in
 	     ()
 	  end)
-      fun allocateVar (x: Var.t,
-		       l: Label.t option, 
-		       force: bool,
-		       a: Allocation.t): unit = 
+      fun allocateVar (x: Var.t, a: Allocation.t): unit = 
 	 let
 	    val {operand, ty} = varInfo x
 	 in
-	    if force orelse isSome operand
+	    if isSome operand
 	       then let
 		       val oper =
 			  case ! (place x) of
@@ -403,13 +383,8 @@ fun allocate {argOperands,
 	    else ()
 	 end
       val allocateVar =
-	 Trace.trace4
-	 ("Allocate.allocateVar",
-	  Var.layout,
-	  Option.layout Label.layout,
-	  Bool.layout,
-	  Allocation.layout,
-	  Unit.layout)
+	 Trace.trace2
+	 ("Allocate.allocateVar", Var.layout, Allocation.layout, Unit.layout)
 	 allocateVar
       (* Create the initial stack and set the stack slots for the formals. *)
       val stack =
@@ -507,14 +482,12 @@ fun allocate {argOperands,
 			    Control.Align4 => size
 			  | Control.Align8 => CType.align8 size
 		      end
-	     val _ =
-		Vector.foreach (args, fn (x, _) =>
-				allocateVar (x, SOME label, false, a))
+	     val _ = Vector.foreach (args, fn (x, _) => allocateVar (x, a))
 	     (* Must compute live after allocateVar'ing the args, since that
 	      * sets the operands for the args.
 	      *)
 	     val live = getOperands begin
-	     fun one (var, ty) = allocateVar (var, SOME label, false, a)
+	     fun one (var, _) = allocateVar (var, a)
 	     val _ =
 		Vector.foreach (statements, fn statement =>
 				R.Statement.foreachDef (statement, one))

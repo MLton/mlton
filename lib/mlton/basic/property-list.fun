@@ -33,8 +33,6 @@ fun stats () =
 		end]]
    end
 
-fun print s = TextIO.output (TextIO.stdErr, s)
-
 fun 'a newProperty () =
    let
       val {make, pred, peek = peekH} = H.new ()

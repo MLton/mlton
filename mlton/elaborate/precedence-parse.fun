@@ -187,7 +187,6 @@ val parseExp =
 fun parseClause (pats: Pat.t vector, E: Env.t, region, lay) =
    let
       val pats = Vector.toList pats
-      fun empty () = Error.bug "parseClause: empty clause"
       fun error msg =
 	 (Control.error (region, msg, lay ())
 	  ; {func = Ast.Var.bogus,

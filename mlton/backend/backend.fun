@@ -14,19 +14,13 @@ structure M = Machine
 local
    open Machine
 in
-   structure Chunk = Chunk
    structure Global = Global
    structure IntX = IntX
    structure Label = Label
-   structure MemChunk = MemChunk
-   structure ObjectType = ObjectType
    structure PointerTycon = PointerTycon
-   structure ProfileInfo = ProfileInfo
    structure RealX = RealX
    structure Register = Register
    structure Runtime = Runtime
-   structure SourceInfo = SourceInfo
-   structure Type = Type
    structure WordSize = WordSize
    structure WordX = WordX
 end
@@ -35,10 +29,8 @@ local
 in
    structure GCField = GCField
 end
-val wordSize = Runtime.wordSize
 
-structure Rssa = Rssa (open Ssa Machine
-		       structure ProfileStatement = ProfileExp)
+structure Rssa = Rssa (open Ssa Machine)
 structure R = Rssa
 local
    open Rssa
@@ -106,8 +98,6 @@ structure Chunk =
 
       fun label (T {chunkLabel, ...}) = chunkLabel
 	 
-      fun equals (T {blocks = r, ...}, T {blocks = r', ...}) = r = r'
-	 
       fun new (): t =
 	 T {blocks = ref [],
 	    chunkLabel = M.ChunkLabel.newNoname ()}
@@ -167,8 +157,6 @@ fun toMachine (program: Ssa.Program.t) =
 	  suffix = "rssa",
 	  thunk = fn () => Profile.profile program,
 	  typeCheck = R.Program.typeCheck o #1}
-      val profile = !Control.profile <> Control.ProfileNone
-      val profileStack = profile andalso !Control.profileStack
       val _ =
 	 let
 	    open Control
@@ -189,7 +177,6 @@ fun toMachine (program: Ssa.Program.t) =
       val {get = funcChunk: Func.t -> Chunk.t, set = setFuncChunk, ...} =
 	 Property.getSetOnce (Func.plist,
 			      Property.initRaise ("funcChunk", Func.layout))
-      val funcChunkLabel = Chunk.label o funcChunk
       val chunks = ref []
       fun newChunk () =
 	 let
@@ -332,7 +319,6 @@ fun toMachine (program: Ssa.Program.t) =
 	 varInfo
       val varOperand: Var.t -> M.Operand.t =
 	 VarOperand.operand o #operand o varInfo
-      fun varOperands xs = Vector.map (xs, varOperand)
       (* Hash tables for uniquifying globals. *)
       local
 	 fun ('a, 'b) make (equals: 'a * 'a -> bool,
@@ -398,7 +384,7 @@ fun toMachine (program: Ssa.Program.t) =
 		| Word8Vector v => globalString (Word8.vectorToString v)
 	    end
       end
-      fun parallelMove {chunk,
+      fun parallelMove {chunk = _,
 			dsts: M.Operand.t vector,
 			srcs: M.Operand.t vector}: M.Statement.t vector =
 	 let
@@ -590,8 +576,6 @@ fun toMachine (program: Ssa.Program.t) =
 	    val f = eliminateDeadCode f
 	    val {args, blocks, name, raises, returns, start, ...} =
 	       Function.dest f
-	    val func = Func.toString name
-	    val profileInfoFunc = Func.toString name
 	    val raises = Option.map (raises, fn ts => raiseOperands ts)
 	    val returns =
 	       Option.map (returns, fn ts =>
@@ -731,9 +715,7 @@ fun toMachine (program: Ssa.Program.t) =
 	    (* ------------------------------------------------- *)
 	    (*                    genTransfer                    *)
 	    (* ------------------------------------------------- *)
-	    fun genTransfer (t: R.Transfer.t,
-			     chunk: Chunk.t,
-			     label: Label.t)
+	    fun genTransfer (t: R.Transfer.t, chunk: Chunk.t)
 	       : M.Statement.t vector * M.Transfer.t =
 	       let
 		  fun simple t = (Vector.new0 (), t)
@@ -787,7 +769,6 @@ fun toMachine (program: Ssa.Program.t) =
 			      {chunk = chunk,
 			       dsts = dsts,
 			       srcs = translateOperands args}
-			   val chunk' = funcChunk func
 			   val transfer =
 			      M.Transfer.Call
 			      {label = funcToLabel func,
@@ -878,12 +859,6 @@ fun toMachine (program: Ssa.Program.t) =
 		     if Label.equals (label, start)
 			then let
 				val live = #live (labelRegInfo start)
-				val args =
-				   Vector.map
-				   (live, fn z =>
-				    case z of
-				       M.Operand.StackOffset so => so
-				     | _ => Error.bug "function with strange live")
 			     in
 				Chunk.newBlock
 				(chunk, 
@@ -902,8 +877,7 @@ fun toMachine (program: Ssa.Program.t) =
 		     Vector.concatV
 		     (Vector.map (statements, fn s =>
 				  genStatement (s, handlerLinkOffset)))
-		  val (preTransfer, transfer) =
-		     genTransfer (transfer, chunk, label)
+		  val (preTransfer, transfer) = genTransfer (transfer, chunk)
 		  val (kind, live, pre) =
 		     case kind of
 			R.Kind.Cont _ =>

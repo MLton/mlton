@@ -125,9 +125,7 @@ structure TypeAndMemChunk =
 			m = m' andalso i = i' andalso equalsTy (t, t'))
 
       local
-	 val byte: int = 1
 	 val word: int = 4
-	 val double: int = 8
       in
 	 val size =
 	    fn EnumPointers _ => word
@@ -254,10 +252,6 @@ structure Type =
 	 fn Real _ => true
 	  | _ => false
 
-      fun split ({enum, pointers}) =
-	 {enum = {enum = enum, pointers = Vector.new0 ()},
-	  pointers = {enum = Vector.new0 (), pointers = pointers}}
-
       local
 	 structure C = CType
       in
@@ -268,7 +262,7 @@ structure Type =
 	     | C.Word s => word s
 
 	 val toCType: t -> CType.t =
-	    fn EnumPointers {enum, pointers} =>
+	    fn EnumPointers {pointers, ...} =>
 		  if 0 = Vector.length pointers
 		     then C.defaultInt
 		  else C.pointer
@@ -521,7 +515,7 @@ fun castIsOk {from: Type.t,
 		   andalso 1 = Vector.length pointers
 		   andalso PointerTycon.equals (PointerTycon.wordVector,
 						Vector.sub (pointers, 0))
-	      | Word s =>  true  (* IntInf_toWord *)
+	      | Word _ =>  true  (* IntInf_toWord *)
 	      | _ => false)
        | MemChunk _ =>
 	    (case to of

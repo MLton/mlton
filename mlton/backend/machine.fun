@@ -15,12 +15,6 @@ structure IntSize = IntX.IntSize
 structure RealSize = RealX.RealSize
 structure WordSize = WordX.WordSize
 structure Runtime = Runtime (structure CType = CType)
-local
-   open Runtime
-in
-   structure GCField = GCField
-end
-
 structure Atoms = MachineAtoms (open S
 				structure IntSize = IntSize
 				structure RealSize = RealSize
@@ -73,12 +67,8 @@ structure Register =
 	  | SOME _ =>
 	       Error.bug (concat ["register ", toString r, " index already set"])
 
-      local
-	 val c = Counter.new 0
-      in
-	 fun new (ty, i) = T {index = ref i,
-			      ty = ty}
-      end
+      fun new (ty, i) = T {index = ref i,
+			   ty = ty}
 
       fun equals (r, r') =
 	 (case (indexOpt r, indexOpt r') of
@@ -294,7 +284,7 @@ structure Operand =
 		  inter base orelse inter index
 	     | (Contents {oper, ...}, _) => inter oper
 	     | (Global g, Global g') => Global.equals (g, g')
-	     | (Offset {base, offset, ...}, _) => inter base
+	     | (Offset {base, ...}, _) => inter base
 	     | (Register r, Register r') => Register.equals (r, r')
 	     | (StackOffset so, StackOffset so') =>
 		  StackOffset.interfere (so, so')
@@ -397,12 +387,6 @@ structure Statement =
 structure FrameInfo =
    struct
       datatype t = T of {frameLayoutsIndex: int}
-
-      local
-	 fun make f (T r) = f r
-      in
-	 val frameLayoutsIndex = make #frameLayoutsIndex
-      end
 
       fun layout (T {frameLayoutsIndex, ...}) =
 	 Layout.record [("frameLayoutsIndex", Int.layout frameLayoutsIndex)]
@@ -596,14 +580,7 @@ structure Chunk =
 			 chunkLabel: ChunkLabel.t,
 			 regMax: CType.t -> int}
 
-      fun layout (T {blocks, ...}) =
-	 let
-	    open Layout
-	 in
-	    align (Vector.toListMap (blocks, Block.layout))
-	 end
-
-      fun layouts (c as T {blocks, ...}, output : Layout.t -> unit) =
+      fun layouts (T {blocks, ...}, output : Layout.t -> unit) =
 	 Vector.foreach (blocks, fn block => Block.layouts (block, output))
 
       fun clear (T {blocks, ...}) =
@@ -749,9 +726,9 @@ structure Program =
 		     FrameInfo.T {frameLayoutsIndex, ...}) =
 	 #size (Vector.sub (frameLayouts, frameLayoutsIndex))
 
-      fun layouts (p as T {chunks, frameLayouts, frameOffsets, handlesSignals,
-			   main = {label, ...},
-			   maxFrameSize, objectTypes, profileInfo, ...},
+      fun layouts (T {chunks, frameLayouts, frameOffsets, handlesSignals,
+		      main = {label, ...},
+		      maxFrameSize, objectTypes, profileInfo, ...},
 		   output': Layout.t -> unit) =
 	 let
 	    open Layout
@@ -809,19 +786,10 @@ structure Program =
 	       Trace.trace2 ("Alloc.doesDefine", layout, Operand.layout,
 			     Bool.layout)
 	       doesDefine
-
-	    fun peekOffset (T zs, i: int): {offset: int,
-					    ty: Type.t} option =
-	       List.peekMap
-	       (zs, fn Operand.StackOffset (ot as {offset, ...}) =>
-		          if i = offset
-			     then SOME ot
-			  else NONE
-		     | _ => NONE)
 	 end
 
       fun typeCheck (program as
-		     T {chunks, frameLayouts, frameOffsets, intInfs, main,
+		     T {chunks, frameLayouts, frameOffsets, intInfs,
 			maxFrameSize, objectTypes, profileInfo, reals, strings,
 			...}) =
 	 let
@@ -849,8 +817,8 @@ structure Program =
 		     if !Control.profile = Control.ProfileNone
 			then fn _ => false
 		     else Error.bug "profileInfo = NONE"
-		| SOME (pi as ProfileInfo.T {frameSources,
-					     labels = profileLabels, ...}) =>
+		| SOME (ProfileInfo.T {frameSources,
+				       labels = profileLabels, ...}) =>
 		     if !Control.profile = Control.ProfileNone
 			orelse (Vector.length frameSources
 				<> Vector.length frameLayouts)
@@ -883,7 +851,6 @@ structure Program =
 			end
 	    fun getFrameInfo (FrameInfo.T {frameLayoutsIndex, ...}) =
 	       Vector.sub (frameLayouts, frameLayoutsIndex)
-	    fun boolToUnitOpt b = if b then SOME () else NONE
 	    val _ =
 	       Vector.foreach
 	       (frameLayouts, fn {frameOffsetsIndex, size, ...} =>
@@ -1090,10 +1057,6 @@ structure Program =
 	    fun check' (x, name, isOk, layout) =
 	       Err.check (name, fn () => isOk x, fn () => layout x)
 	    val labelKind = Block.kind o labelBlock
-	    fun labelIsJump (l: Label.t): bool =
-	       case labelKind l of
-		  Kind.Jump => true
-		| _ => false
 	    fun checkKind (k: Kind.t, alloc: Alloc.t): Alloc.t option =
 	       let
 		  datatype z = datatype Kind.t
@@ -1192,7 +1155,7 @@ structure Program =
 			   else NONE
 			end
 		   | Noop => SOME alloc
-		   | Object {dst, header, size, stores} =>
+		   | Object {dst, header, stores, ...} =>
 			let
 			   val _ =
 			      Vector.foreach
@@ -1216,7 +1179,7 @@ structure Program =
 			     | _ => NONE)
 			       handle Subscript => NONE
 			end
-		   | PrimApp {args, dst, prim} =>
+		   | PrimApp {args, dst, ...} =>
 			let
 			   val _ = checkOperands (args, alloc)
 			in
@@ -1333,7 +1296,7 @@ structure Program =
 			       returns = returns,
 			       size = size}
 			   end
-		  val b as Block.T {kind, ...} = labelBlock dst
+		  val b = labelBlock dst
 		  val alloc =
 		     Alloc.T
 		     (Vector.fold
@@ -1367,7 +1330,7 @@ structure Program =
 		  datatype z = datatype Transfer.t
 	       in
 		  case t of
-		     Arith {args, dst, overflow, prim, success, ty} =>
+		     Arith {args, dst, overflow, success, ty, ...} =>
 			let
 			   val _ = checkOperands (args, alloc)
 			   val alloc = Alloc.define (alloc, dst)
@@ -1385,8 +1348,7 @@ structure Program =
 			      NONE => true
 			    | SOME l =>
 				 let 
-				    val Block.T {kind, live, ...} =
-				       labelBlock l
+				    val Block.T {live, ...} = labelBlock l
 				 in
 				    liveIsOk (live, alloc)
 				    andalso
@@ -1444,7 +1406,7 @@ structure Program =
 		Layout.tuple [Transfer.layout t, Alloc.layout a],
 		Bool.layout)
 	       transferOk
-	    fun blockOk (Block.T {kind, label, live, raises, returns, statements,
+	    fun blockOk (Block.T {kind, live, raises, returns, statements,
 				  transfer, ...}): bool =
 	       let
 		  val live = Vector.toList live

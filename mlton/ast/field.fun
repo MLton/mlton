@@ -14,8 +14,6 @@ datatype t =
    Int of int
  | Symbol of Symbol.t
    
-val fromInt = Int
-
 val equals =
    fn (Int n, Int n') => Int.equals (n, n')
     | (Symbol s, Symbol s') => Symbol.equals (s, s')

@@ -14,7 +14,7 @@ type int = Int.t
 datatype t = T of {elements: Element.t list,
 		   length: int}
 
-fun T' f (s as {elements, length})
+fun T' _ s
   = let
 (*
       val _ 
@@ -54,7 +54,7 @@ val empty' = {elements = [], length = 0: int}
 val empty = T' "empty'" empty'
 fun singleton x = T' "singleton" {elements = [x], length = 1}
 
-fun contains (s as T {elements = xs, length = n}, x)
+fun contains (T {elements = xs, ...}, x)
   = let
       val rec contains' 
 	= fn [] => false
@@ -67,14 +67,14 @@ fun contains (s as T {elements = xs, length = n}, x)
       contains' xs
     end
 
-fun add (s as T (s' as {elements, length}), x)
+fun add (s as T s', x)
   = let
       val rec add'
-	= fn (s1 as {elements = [], ...},
-	      sacc as {elements = xsacc, length = nacc})
+	= fn ({elements = [], ...},
+	      {elements = xsacc, length = nacc})
 	   => {elements = List.appendRev(xsacc, [x]), length = nacc + 1}
-	   | (s1 as {elements = xs as h::t, length = n},
-	      sacc as {elements = xsacc, length = nacc})
+	   | ({elements = xs as h::t, length = n},
+	      {elements = xsacc, length = nacc})
 	   => if Element.<(h,x)
 		then add' ({elements = t, length = n - 1},
 			   {elements = h::xsacc, length = 1 + nacc})
@@ -89,8 +89,7 @@ fun add (s as T (s' as {elements, length}), x)
 	else T' "add" (add' (s', empty'))
     end
 
-fun areDisjoint (s1 as T {elements = xs1, length = n1}, 
-		 s2 as T {elements = xs2, length = n2})
+fun areDisjoint (T {elements = xs1, ...}, T {elements = xs2, ...})
   = let
       val rec areDisjoint'
 	= fn ([], _) => true
@@ -106,19 +105,19 @@ fun areDisjoint (s1 as T {elements = xs1, length = n1},
       areDisjoint' (xs1, xs2)
     end
 
-fun difference (s1 as T s1', s2 as T s2')
+fun difference (T s1', T s2')
   = let
       val rec difference'
-	= fn (s1 as {elements = [], ...},
-	      s2 as {elements = xs2, length = n2},
-	      sacc as {elements = xsacc, length = nacc})
+	= fn ({elements = [], ...},
+	      _,
+	      {elements = xsacc, length = nacc})
 	   => {elements = List.rev xsacc, length = nacc}
-	   | (s1 as {elements = xs1, length = n1},
-	      s2 as {elements = [], ...},
-	      sacc as {elements = xsacc, length = nacc})
+	   | ({elements = xs1, length = n1},
+	      {elements = [], ...},
+	      {elements = xsacc, length = nacc})
 	   => {elements = List.appendRev(xsacc, xs1), length = nacc + n1}
-	   | (s1 as {elements = xs1 as h1::t1, length = n1},
-	      s2 as {elements = xs2 as h2::t2, length = n2},
+	   | (s1 as {elements = h1::t1, length = n1},
+	      s2 as {elements = h2::t2, length = n2},
 	      sacc as {elements = xsacc, length = nacc})
 	   => if Element.<(h1,h2)
 		then difference' ({elements = t1, length = n1 - 1},
@@ -135,8 +134,8 @@ fun difference (s1 as T s1', s2 as T s2')
       T' "difference" (difference' (s1', s2', empty'))
     end
 
-fun equals (s1 as T {elements = xs1, length = n1},
-	    s2 as T {elements = xs2, length = n2})
+fun equals (T {elements = xs1, length = n1},
+	    T {elements = xs2, length = n2})
   = let
       val rec equals' 
 	= fn ([], []) => true
@@ -151,29 +150,28 @@ fun equals (s1 as T {elements = xs1, length = n1},
       equals' (xs1, xs2)
     end
 
-fun exists (s as T {elements = xs, length = n}, p) = List.exists(xs, p)
+fun exists (T {elements = xs, ...}, p) = List.exists(xs, p)
 
-fun fold (s as T {elements = xs, length = n}, b, f) = List.fold(xs, b, f)
-fun foldr (s as T {elements = xs, length = n}, b, f) = List.foldr(xs, b, f)
+fun fold (T {elements = xs, ...}, b, f) = List.fold(xs, b, f)
 
-fun forall (s as T {elements = xs, length = n}, p) = List.forall(xs, p)
-fun foreach (s as T {elements = xs, length = n}, p) = List.foreach(xs, p)
+fun forall (T {elements = xs, ...}, p) = List.forall(xs, p)
+fun foreach (T {elements = xs, ...}, p) = List.foreach(xs, p)
 
 fun fromList l = List.fold(l, empty, fn (x, s) => add(s, x))
 
-fun intersect (s1 as T s1', s2 as T s2')
+fun intersect (T s1', T s2')
   = let
       val rec intersect'
-	= fn (s1 as {elements = [], ...},
-	      s2 as {elements = xs2, length = n2},
-	      sacc as {elements = xsacc, length = nacc})
+	= fn ({elements = [], ...},
+	      _,
+	      {elements = xsacc, length = nacc})
 	   => {elements = List.rev xsacc, length = nacc}
-	   | (s1 as {elements = xs1, length = n1},
-	      s2 as {elements = [], ...},
-	      sacc as {elements = xsacc, length = nacc})
+	   | (_,
+	      {elements = [], ...},
+	      {elements = xsacc, length = nacc})
 	   => {elements = List.rev xsacc, length = nacc}
-	   | (s1 as {elements = xs1 as h1::t1, length = n1},
-	      s2 as {elements = xs2 as h2::t2, length = n2},
+	   | (s1 as {elements = h1::t1, length = n1},
+	      s2 as {elements = h2::t2, length = n2},
 	      sacc as {elements = xsacc, length = nacc})
 	   => if Element.<(h1,h2)
 		then intersect' ({elements = t1, length = n1 - 1},
@@ -190,13 +188,13 @@ fun intersect (s1 as T s1', s2 as T s2')
       T' "intersect" (intersect' (s1', s2', empty'))
     end
 
-fun layout (s as T {elements = xs, length = n}) = List.layout Element.layout xs
-fun map (s as T {elements = xs, length = n}, f) = fromList(List.map(xs, f))
+fun layout (T {elements = xs, ...}) = List.layout Element.layout xs
+fun map (T {elements = xs, ...}, f) = fromList(List.map(xs, f))
 
-fun partition (s as T {elements = xs, length = n}, p)
+fun partition (T {elements = xs, ...}, p)
   = let
-      val {yes as {elements = yxs, length = yn},
-	   no as {elements = nxs, length = nn}}
+      val {yes = {elements = yxs, length = yn},
+	   no = {elements = nxs, length = nn}}
 	= List.fold(xs, 
 		    {yes = empty',
 		     no = empty'},
@@ -213,7 +211,7 @@ fun partition (s as T {elements = xs, length = n}, p)
        no = T' "partition" {elements = List.rev nxs, length = nn}}
     end
 
-fun power (s as T {elements = xs, length = n})
+fun power (T {elements = xs, ...})
   = let
       val rec power'
 	= fn [] => [empty]
@@ -223,21 +221,21 @@ fun power (s as T {elements = xs, length = n})
 		       List.fold
 		       (rest,
 			rest,
-			fn (s as T {elements = xs, length = n}, rest) 
+			fn (T {elements = xs, length = n}, rest) 
 			 => (T' "power" {elements = h::xs, length = 1 + n})::rest)
 		     end
     in
       power' xs
     end
 
-fun remove (s as T s', x)
+fun remove (T s', x)
   = let
       val rec remove' 
-	= fn (s1 as {elements = [], ...},
-	      sacc as {elements = xsacc, length = nacc})
+	= fn ({elements = [], ...},
+	      {elements = xsacc, length = nacc})
 	   => {elements = List.appendRev(xsacc, [x]), length = nacc + 1}
-	   | (s1 as {elements = xs as h::t, length = n},
-	      sacc as {elements = xsacc, length = nacc})
+	   | ({elements = xs as h::t, length = n},
+	      {elements = xsacc, length = nacc})
 	   => if Element.<(h, x)
 		then remove' ({elements = t, length = n - 1},
 			      {elements = h::xsacc, length = 1 + nacc})
@@ -250,16 +248,16 @@ fun remove (s as T s', x)
       T' "remove" (remove' (s', empty'))
     end
 
-fun replace (s as T {elements = xs, length = n}, f)
+fun replace (T {elements = xs, ...}, f)
   = List.fold(xs, 
 	      empty, 
 	      fn (x, s) => (case f x
 			      of NONE => s
 			       | SOME x' => add(s, x')))
 
-fun size (s as T {elements = xs, length = n}) = n
+fun size (T {length = n, ...}) = n
 
-fun subset (s as T {elements = xs, length = n}, p)
+fun subset (T {elements = xs, ...}, p)
   = let
       val {elements = xs, length = n}
 	= List.fold(xs, 
@@ -272,29 +270,29 @@ fun subset (s as T {elements = xs, length = n}, p)
       T' "subset" {elements = List.rev xs, length = n}
     end
 
-fun subsets (s, n) = Error.unimplemented "OrderedUniqueSet: subsets"
+fun subsets _ = Error.unimplemented "OrderedUniqueSet: subsets"
 
-fun subsetSize (s as T {elements = xs, length = n}, p)
+fun subsetSize (T {elements = xs, ...}, p)
   = List.fold(xs, 0: int, fn (x, n) => if p x then n + 1 else n)
 			     
-fun toList (s as T {elements = xs, length = n}) = xs
+fun toList (T {elements = xs, ...}) = xs
 
-fun union (s1 as T s1', s2 as T s2')
+fun union (T s1', T s2')
   = let
       val rec union' 
-	= fn (s1 as {elements = [], ...},
-	      s2 as {elements = xs2, length = n2},
-	      sacc as {elements = xsacc, length = nacc})
+	= fn ({elements = [], ...},
+	      {elements = xs2, length = n2},
+	      {elements = xsacc, length = nacc})
 	   => {elements = List.appendRev(xsacc, xs2),
 	       length = nacc + n2}
-           | (s1 as {elements = xs1, length = n1},
-	      s2 as {elements = [], ...},
-	      sacc as {elements = xsacc, length = nacc})
+           | ({elements = xs1, length = n1},
+	      {elements = [], ...},
+	      {elements = xsacc, length = nacc})
 	   => {elements = List.appendRev(xsacc, xs1),
 	       length = nacc + n1}
-	   | (s1 as {elements = xs1 as h1::t1, length = n1},
-	      s2 as {elements = xs2 as h2::t2, length = n2},
-	      sacc as {elements = xsacc, length = nacc})
+	   | (s1 as {elements = h1::t1, length = n1},
+	      s2 as {elements = h2::t2, length = n2},
+	      {elements = xsacc, length = nacc})
 	   => if Element.<(h1,h2)
 		then union' ({elements = t1, length = n1 - 1},
 			     s2,

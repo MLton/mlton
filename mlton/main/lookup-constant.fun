@@ -136,7 +136,7 @@ fun load (ins: In.t): string * ConstType.t -> Const.t =
 	 in
 	    ()
 	 end
-      val buildConstants =
+      val _ =
 	 List.foreach (buildConstants, fn (name, f) =>
 		       add {name = name, value = f ()})
       val _ = 

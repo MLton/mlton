@@ -20,7 +20,6 @@ val empty: t = empty()
 val equals = equals Range.equals
 
 val layout = layout Range.layout
-val maybeLayout = fn (env,name) => maybeLayout (name, Range.layout) env
 
 end
 
@@ -37,18 +36,6 @@ BasicEnvToEnv
 
  datatype t = T of (Domain.t * Range.t) List.t
  type range = Range.t
-
- fun eq d d' = Domain.equals(d, d')
- fun member(d, ds) = List.exists(ds, eq d)
-    
- fun invariant(T drs) =
-    let
-       fun loop(drs, seen) =
-	  case drs of
-	     [] => true
-	   | (d, _) :: drs => not(member(d, seen)) andalso loop(drs, d :: seen)
-    in loop(drs, [])
-    end
 
  val fromList = T
     

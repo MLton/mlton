@@ -51,9 +51,6 @@ structure Computation =
 	       
 	    fun layoutDarrow _ = darrow
 	       
-	    fun layoutResult({result, ...}:t) =
-	       Result.layout result
-	       
 	    fun layoutTime({time, ...}:t) =
 	       case time of
 		  SOME t => Time.layout t
@@ -157,7 +154,7 @@ structure Computation =
 	 fun choose (choices: (string * 'a) list): 'a =
 	    let
 	       val n =
-		  List.fold(choices, 0, fn ((name, th),n) =>
+		  List.fold(choices, 0, fn ((name, _),n) =>
 			    (Layout.output(Int.layout n, out)
 			     ; print(concat[". ", name, "\n"])
 			     ; n+1))
@@ -191,10 +188,10 @@ structure Computation =
 			 ; loop())
 		  in loop() handle Back => ()
 		  end
-	 and choices(c as T crs) =
+	 and choices(T crs) =
 	    List.map(crs, fn cr as {name, ...} =>
 		     ("  " ^ name, fn () => inspectCr cr))
-	 and inspectCr(cr as {name, layoutArg, body, result, time}) =
+	 and inspectCr(cr as {name, layoutArg, body, result, time = _}) =
 	    (print(concat["Call to ", name, "\n"])
 	     ; let
 		  fun loop() =

@@ -114,8 +114,7 @@ val _ = print "TestRegexp\n"
    
 open S
 open Compiled
-val compile = compileDFA
-val compile = compileNFA
+val compile = if true then compileNFA else compileDFA
 
 val _ =
    Assert.assert
@@ -258,7 +257,6 @@ val _ =
 		    val r = compile r
 		    val _ = Compiled.layoutDotToFile (r, "/tmp/z.dot")
 		    fun doit m = Option.map (m (r, s, 0), Match.length)
-		    val m1 = doit matchShort
 		 in
 		    i1 = doit matchShort
 		    andalso i2 = doit matchLong

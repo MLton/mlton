@@ -4,12 +4,19 @@ struct
 open Layout
 	 
 fun casee {default, rules, test} =
-   align [seq [str "case ", test, str " of"],
-	  indent (alignPrefix (Vector.toListMap
-			       (rules, fn (lhs, rhs) =>
-				mayAlign [seq [lhs, str " =>"], rhs]),
-			       "| "),
-		  2)]
+   let
+      val rules =
+	 case default of
+	    NONE => rules
+	  | SOME l => Vector.concat [rules, Vector.new1 (str "_", l)]
+   in
+      align [seq [str "case ", test, str " of"],
+	     indent (alignPrefix (Vector.toListMap
+				  (rules, fn (lhs, rhs) =>
+				   mayAlign [seq [lhs, str " =>"], rhs]),
+				  "| "),
+		     2)]
+   end
 
 fun conApp {arg, con, targs} =
    seq [con,

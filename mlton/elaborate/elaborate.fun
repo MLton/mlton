@@ -25,15 +25,6 @@ in
    structure Topdec = Topdec
 end
 
-local
-   open CoreML
-in
-   structure Con = Con
-   structure Prim = Prim
-   structure Tycon = Tycon
-   structure Type = Type
-end
-
 structure Env = ElaborateEnv (structure Ast = Ast
 			      structure CoreML = CoreML
 			      structure TypeEnv = TypeEnv)
@@ -45,12 +36,10 @@ in
    structure FunctorClosure = FunctorClosure
    structure Interface = Interface
    structure Structure = Structure
-   structure TypeStr = TypeStr
 end
 
 structure ElaborateSigexp = ElaborateSigexp (structure Ast = Ast
-					     structure Env = Env
-					     structure Interface = Interface)
+					     structure Env = Env)
 
 structure ConstType =
    struct

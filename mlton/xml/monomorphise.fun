@@ -45,61 +45,45 @@ structure Cache:
       val toList: 'a t -> (Stype.t vector * 'a) list
    end =
    struct
-      structure Stype =
-	 struct
-	    open Stype
+      (* use a splay tree based on lexicographic ordering of vectors of hash
+       * values of types.  Use an alist (i.e. polycache) within each bucket
+       * of the splay tree
+       *)
+      structure Cache = PolyCache
 	       
-	    val layout =
-	       fn t =>
-	       let open Layout
-	       in record [("hash", str (Word.toString (hash t))),
-			  ("type", layout t)]
-	       end
-	 end
+      structure S =
+	 SplayMapFn
+	 (type ord_key = Stype.t vector
+	  val compare =
+	     fn (ts, ts') =>
+	     Vector.compare (ts, ts',
+			     fn (t, t') =>
+			     Word.compare (Stype.hash t,
+					   Stype.hash t')))
 
-      structure C2 =
-	 (* use a splay tree based on lexicographic ordering of vectors of hash
-	  * values of types.  Use an alist (i.e. polycache) within each bucket
-	  * of the splay tree
-	  *)
-	 struct
-	    structure Cache = PolyCache
-	       
-	    structure S =
-	       SplayMapFn
-	       (type ord_key = Stype.t vector
-		val compare =
-		   fn (ts, ts') =>
-		   Vector.compare (ts, ts',
-				   fn (t, t') =>
-				   Word.compare (Stype.hash t,
-						 Stype.hash t')))
+      type 'a t = (Stype.t vector, 'a) Cache.t S.map ref
 
-	    type 'a t = (Stype.t vector, 'a) Cache.t S.map ref
+      fun new () = ref S.empty
 
-	    fun new () = ref S.empty
-
-	    local
-	       fun equal (v, v') =
-		  Vector.equals (v, v', Stype.equals)
-	    in
-	       fun getOrAdd (m, k, th) =
-		  case S.find (!m, k) of
-		     NONE => let
-				val x = th ()
-				val cache =
-				   Cache.fromList {equal = equal, 
-						   elements = [(k, x)]}
-			     in m := S.insert (!m, k, cache); x
-			     end
-		   | SOME cache => Cache.getOrAdd (cache, k, th)
-	    end
+      local
+	 fun equal (v, v') =
+	    Vector.equals (v, v', Stype.equals)
+      in
+	 fun getOrAdd (m, k, th) =
+	    case S.find (!m, k) of
+	       NONE => let
+			  val x = th ()
+			  val cache =
+			     Cache.fromList {equal = equal, 
+					     elements = [(k, x)]}
+		       in m := S.insert (!m, k, cache); x
+		       end
+	     | SOME cache => Cache.getOrAdd (cache, k, th)
+      end
 	 
-	    fun toList c =
-	       List.fold (S.listItems (! c), [], fn (cache, items) =>
-			  Cache.toList cache @ items)
-	 end
-      open C2
+      fun toList c =
+	 List.fold (S.listItems (! c), [], fn (cache, items) =>
+		    Cache.toList cache @ items)
    end
 
 fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =

@@ -17,7 +17,6 @@ in
    structure Longtycon = Longtycon
    structure Record = SortedRecord
    structure Strid = Strid
-   structure Symbol = Symbol
    structure Tyvar = Tyvar
    structure Vid = Vid
 end
@@ -149,7 +148,7 @@ structure FlexibleTycon =
 		    ("id", TyconId.layout id)]
 	 end
 
-      fun layoutApp (t, v) = (layout t, {isChar = false, needsParen = false})
+      fun layoutApp (t, _) = (layout t, {isChar = false, needsParen = false})
 
       val copies: copy list ref = ref []
 	 
@@ -302,8 +301,6 @@ structure Scheme =
    struct
       open Scheme
 
-      fun admitsEquality _ = raise Fail "Interface.Scheme.admitsEquality"
-
       fun bogus () = T {ty = Type.bogus, tyvars = Vector.new0 ()}
 
       fun dest (T {ty, tyvars}) = (tyvars, ty)
@@ -361,14 +358,6 @@ structure TypeStr =
 	     | Tycon t => seq [str "Tycon ", Tycon.layout t]
 	 end
 
-      fun admitsEquality (s: t): AdmitsEquality.t =
-	 case node s of
-	    Datatype {tycon = c, ...} => ! (Tycon.admitsEquality c)
-	  | Scheme s => if Scheme.admitsEquality s
-			   then AdmitsEquality.Sometimes
-			else AdmitsEquality.Never
-	  | Tycon c =>  ! (Tycon.admitsEquality c)
-
       fun bogus (k: Kind.t): t =
 	 T {kind = k,
 	    node = Scheme (Scheme.bogus ())}
@@ -403,12 +392,6 @@ structure TypeStr =
 			  NONE => Scheme s
 			| SOME c => Tycon c)}
 	 end
-
-      fun isTycon s =
-	 case node s of
-	    Datatype _ => false
-	  | Scheme _ => false
-	  | Tycon _ => true
 
       fun toTyconOpt s =
 	 case node s of
@@ -523,12 +506,6 @@ structure AdmitsEquality =
       open AdmitsEquality
 
       fun fromBool b = if b then Sometimes else Never
-	 
-      fun toBool a = 
-	 case a of
-		  Always => true
-		| Never => false
-		| Sometimes => true
    end
 
 fun flexibleTyconAdmitsEquality (FlexibleTycon.T s): AdmitsEquality.t =
@@ -587,8 +564,6 @@ structure FlexibleTycon =
 	    defn := Defn.realized e
 	 end
 
-      val bogus = new {defn = Defn.undefined, hasCons = false}
-
       fun share (T s, T s') =
 	 let
 	    val {admitsEquality = a, creationTime = t, hasCons = h, id, plist,
@@ -630,8 +605,6 @@ structure Tycon =
       fun make {hasCons} =
 	 Flexible (FlexibleTycon.new {defn = Defn.undefined,
 				      hasCons = hasCons})
-
-      val exn = fromEnv (Etycon.exn, Kind.Arity 0)
    end
 
 structure Scheme =
@@ -836,10 +809,6 @@ local
 in
    val plist = make #plist
    val shape = make #shape
-   val strs = make #strs
-   val types = make #types
-   val uniqueId = make #uniqueId
-   val vals = make #vals
 end
 
 fun new {strs, types, vals} =
@@ -970,7 +939,7 @@ fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, time): unit =
 	     (Ast.Longtycon.long (List.concat [ss, [s], rev strids],
 				  name))
 	  end)
-      fun share (I as T s, I' as T s', strids): unit = 
+      fun share (I, I', strids): unit = 
 	 if Shape.equals (shape I, shape I')
 	    then
 	       let
@@ -998,6 +967,7 @@ fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, time): unit =
 	 else (* different shapes -- need to share pointwise *)
 	    let
 	       val T s = I
+	       val T s' = I'
 	       val {strs, types, ...} = Set.value s
 	       val {strs = strs', types = types', ...} = Set.value s'
 	       fun walk2 (a, a', compareNames, f) =
@@ -1065,7 +1035,7 @@ fun tyconMap (I: t): FlexibleTycon.t TyconMap.t =
 				 -> {flex: FlexibleTycon.t option ref,
 				     length: int} ref), ...} =
 	 Property.destGet (FlexibleTycon.plist,
-			   Property.initFun (fn c => ref {flex = ref NONE,
+			   Property.initFun (fn _ => ref {flex = ref NONE,
 							  length = Int.maxInt}))
       val {destroy = destroy2,
 	   get = interfaceShortest: t -> int ref, ...} =
@@ -1137,7 +1107,7 @@ fun 'a copyAndRealize (I: t, {followStrid, init: 'a, realizeTycon}): t =
        * that we can gc them when done.
        *)
       val copies: copy list ref = ref []
-      fun loop (I as T s, a: 'a): t =
+      fun loop (T s, a: 'a): t =
 	 let
 	    val {copy, shape, strs, types, vals, ...} = Set.value s
 	 in

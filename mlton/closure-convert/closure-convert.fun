@@ -89,8 +89,6 @@ structure Accum =
 	      * functions.
 	      *)
 	     val globals = AL.toList globals
-	     val vars =
-		Ssa.Transfer.Return 
 	     val vars = Vector.fromListMap (globals, #var)
 	     val (start, blocks) =
 		Dexp.linearize
@@ -185,7 +183,7 @@ structure VarInfo =
 val traceLoopBind =
    Trace.trace
    ("ClosureConvert.analyzeBind",
-    fn {var, ty: Stype.t, exp} =>
+    fn {exp, ty = _: Stype.t, var} =>
     Layout.record [("var", Var.layout var),
 		   ("exp", SprimExp.layout exp)],
     Unit.layout)
@@ -247,15 +245,12 @@ fun closureConvert
 			     Var.layout, Layout.ignore, Unit.layout)
 	       newVar
 	    fun varExps xs = Vector.map (xs, varExp)
-	    fun merge (vs: Value.t list, ty: Type.t): Value.t =
-	       let val v = Value.fromType ty
-	       in List.foreach (vs, fn v' => Value.coerce {from = v', to = v})
-		  ; v
-	       end
 	    fun loopExp (e: Exp.t): Value.t =
-	       let val {decs, result} = Exp.dest e
-	       in List.foreach (Exp.decs e, loopDec)
-		  ; varExp result
+	       let
+		  val {decs, result} = Exp.dest e
+		  val () = List.foreach (decs, loopDec)
+	       in
+		  varExp result
 	       end
 	    and loopDec (d: Dec.t): unit =
 	       let
@@ -321,7 +316,7 @@ fun closureConvert
 			       Value.coerce {from = varExp x, to = v}
 			  | _ => Error.bug "constructor mismatch"
 			 ; new (); ())
-		   | Const c => (new (); ())
+		   | Const _ => (new (); ())
 		   | Handle {try, catch = (x, t), handler} =>
 			let
 			   val result = new ()
@@ -408,7 +403,6 @@ fun closureConvert
 	 Property.get (Lambdas.plist, Property.initFun (fn _ => ref NONE))
       val {hom = convertType, destroy = destroyConvertType} =
 	 Stype.makeMonoHom {con = fn (_, c, ts) => Type.con (c, ts)}
-      fun convertTypes ts = List.map (ts, convertType)
       (* newDatatypes accumulates the new datatypes built for sets of lambdas. *)
       val newDatatypes: Datatype.t list ref = ref []
       fun valueType arg: Type.t =
@@ -499,7 +493,6 @@ fun closureConvert
 				NONE => emptyTypes
 			      | SOME v => Vector.new1 (valueType v))}))})
       (* Variable renaming *)
-      val getNewVar = ! o #replacement o varInfo
       fun newVarInfo (x: Var.t, {isGlobal, replacement, ...}: VarInfo.t): Var.t =
 	 if !isGlobal
 	    then x
@@ -718,7 +711,7 @@ fun closureConvert
 	       List.fold
 	       (decs, ([], ac), fn (d, (binds, ac)) =>
 		case d of
-		   Sdec.MonoVal {var, ty, exp} =>
+		   Sdec.MonoVal {exp, var, ...} =>
 		      let
 			 val info as {isGlobal, value, ...} = varInfo var
 			 val (exp, ac) = convertPrimExp (exp, value, ac)
@@ -734,7 +727,7 @@ fun closureConvert
 			 then (binds, ac)
 		      else
 			 let 
-			    val {var, ty, lambda} = Vector.sub (decs, 0)
+			    val {lambda, var, ...} = Vector.sub (decs, 0)
 			    val info = lambdaInfo lambda
 			    val tupleVar = Var.newString "tuple"
 			    val tupleTy = lambdaInfoType info

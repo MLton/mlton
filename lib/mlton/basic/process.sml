@@ -10,7 +10,6 @@ struct
 local
    open Trace.Immediate
 in
-   val message = message
    val messageStr = messageStr
 end
 
@@ -52,9 +51,6 @@ structure PosixStatus =
 				   SysWord.toString (Posix.Signal.toWord s)]
 
       val layout = Layout.str o toString
-
-      val success = W_EXITED
-      val failure = W_EXITSTATUS 0w1
    end
 
 structure Status =
@@ -198,13 +194,6 @@ fun pipe (cs: command list, ins: In.t, out: Out.t): unit =
 
 fun pipe' cs = pipe (cs, In.standard, Out.standard)
 
-local
-   open DynamicWind
-in
-   val windFail = windFail
-   val wind = wind
-end
-
 fun exec (c: string, a: string list, ins: In.t, out: Out.t): unit =
    let
       open FileDesc
@@ -218,7 +207,7 @@ fun exec (c: string, a: string list, ins: In.t, out: Out.t): unit =
 		       to = stderr})
       else ()
       ; (Posix.Process.execp (c, c :: a)
-	 handle e => (Out.output (Out.error,
+	 handle _ => (Out.output (Out.error,
 				  (concat ("unable to exec "
 					   :: List.separate (c :: a, " "))))
 		      ; OS.Process.exit OS.Process.failure))

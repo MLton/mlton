@@ -33,10 +33,6 @@ structure Calls =
   struct
     datatype t = T of value ref
     and value = Zero | One | Many
-    val layout
-      = fn (T (ref Zero)) => Layout.str "Zero"
-         | (T (ref One)) => Layout.str "One"
-         | (T (ref Many)) => Layout.str "Many"
     fun new (): t = T (ref Zero)
     fun inc (T r)
       = case !r 

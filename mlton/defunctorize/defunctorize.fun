@@ -9,14 +9,12 @@ in
    structure Const = Const
    structure Cdec = Dec
    structure Cexp = Exp
-   structure IntSize = IntSize
    structure Clambda = Lambda
    structure Cpat = Pat
    structure Prim = Prim
    structure Record = Record
    structure Ctype = Type
    structure WordSize = WordSize
-   structure WordX = WordX
 end
 
 structure IntX = Const.IntX
@@ -105,7 +103,6 @@ fun casee {caseType: Xtype.t,
 		   lay: (unit -> Layout.t) option,
 		   pat: NestedPat.t} vector,
 	   conTycon,
-	   hasExtraTuple: bool,
 	   kind: string,
 	   lay: unit -> Layout.t,
 	   mayWarn: bool,
@@ -145,7 +142,6 @@ fun casee {caseType: Xtype.t,
 	     | RaiseBind => raiseExn (fn _ => Xexp.bind)
 	     | RaiseMatch => raiseExn (fn _ => Xexp.match)
 	 end
-      val check: (unit -> unit) list ref = ref []
       val examples = ref (fn () => Vector.new0 ())
       fun matchCompile () =		     		     
 	 let
@@ -382,7 +378,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
 		     val frees: Tyvar.t list ref = ref []
 		     val _ =
 			Vector.foreach
-			(dbs, fn {cons, tycon, tyvars} =>
+			(dbs, fn {cons, tyvars, ...} =>
 			 let
 			    fun var (a: Tyvar.t): unit =
 			       let
@@ -578,7 +574,6 @@ fun defunctorize (CoreML.Program.T {decs}) =
 							lay = SOME lay,
 							pat = p},
 				   conTycon = conTycon,
-				   hasExtraTuple = false,
 				   kind = "declaration",
 				   lay = lay,
 				   mayWarn = mayWarn,
@@ -721,15 +716,13 @@ fun defunctorize (CoreML.Program.T {decs}) =
 					func = #1 (loopExp e1),
 					ty = ty}
 		     end
-		| Case {hasExtraTuple, kind, lay, noMatch, region, rules,
-			test} =>
+		| Case {kind, lay, noMatch, region, rules, test, ...} =>
 		     casee {caseType = ty,
 			    cases = Vector.map (rules, fn {exp, lay, pat} =>
 						{exp = #1 (loopExp exp),
 						 lay = lay,
 						 pat = loopPat pat}),
 			    conTycon = conTycon,
-			    hasExtraTuple = hasExtraTuple,
 			    kind = kind,
 			    lay = lay,
 			    mayWarn = true,

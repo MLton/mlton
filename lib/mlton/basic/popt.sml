@@ -77,7 +77,7 @@ fun parse {switches: string list,
 		  case String.sub (switch, 0) of
 		     #"-" =>
 		     let val switch = String.dropPrefix (switch, 1)
-		     in case List.peek (opts, fn (switch', arg) =>
+		     in case List.peek (opts, fn (switch', _) =>
 					switch = switch') of
 			NONE =>
 			   let
@@ -167,7 +167,7 @@ fun makeUsage {mainUsage, makeOptions, showExpert} =
 	     val opts =
 		List.fold
 		(rev (options ()), [],
-		 fn ({arg, desc, name, opt, style}, rest) =>
+		 fn ({arg, desc, opt = _, name, style}, rest) =>
 		 if style = Normal orelse showExpert ()
 		    then [concat ["    -", name, arg, " "], desc] :: rest
 		 else rest)

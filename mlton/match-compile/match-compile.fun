@@ -93,10 +93,6 @@ structure Rule =
    struct
       datatype t = T of {info: Info.t,
 			 pat: NestedPat.t}
-
-      fun layout (T {info, pat}) =
-	 Layout.record [("info", Info.layout info),
-			("pat", NestedPat.layout pat)]
    end
 
 structure FlatRule =
@@ -160,19 +156,6 @@ end
 (* unhandledConst cs returns a constant (of the appropriate type) not in cs. *)
 fun unhandledConst (cs: Const.t vector): Const.t =
    let
-      fun search (start: 'a, next: 'a -> 'a, make: 'a -> Const.t): Const.t =
-	 let
-	    fun loop (a: 'a): Const.t =
-	       let
-		  val c = make a
-	       in
-		  if Vector.exists (cs, fn c' => Const.equals (c, c'))
-		     then loop (next a)
-		  else c
-	       end
-	 in
-	    loop start
-	 end
       fun search {<= : 'a * 'a -> bool,
 		  equals: 'a * 'a -> bool,
 		  extract: Const.t -> 'a,
@@ -293,7 +276,7 @@ fun matchCompile {caseType: Type.t,
 	 let
 	    val rules =
 	       Vector.map
-	       (rules, fn Rule.T {pat, info as Info.T {accum, continue}} =>
+	       (rules, fn Rule.T {pat, info = Info.T {accum, continue}} =>
 		let
 		   val (pat, accum) = FlatPat.flatten (var, pat, accum)
 		in
@@ -315,7 +298,7 @@ fun matchCompile {caseType: Type.t,
 			       FlatPat.Any => false
 			     | _ => true) of
 	     NONE => finish (wild, Vector.map (rules, FlatRule.info))
-	   | SOME (FlatRule.T {pat, info}) =>
+	   | SOME (FlatRule.T {pat, ...}) =>
 		let
 		   val test = Exp.var (var, ty)
 		in
@@ -359,7 +342,7 @@ fun matchCompile {caseType: Type.t,
 	       val (var, ty) = Vector.sub (vars, i)
 	       val rules =
 		  Vector.map
-		  (rules, fn {pats, info as Info.T {accum, continue}} =>
+		  (rules, fn {pats, info = Info.T {accum, continue}} =>
 		   case pats of
 		      NONE =>
 			 FlatRule.T
@@ -392,7 +375,7 @@ fun matchCompile {caseType: Type.t,
       and tuple arg =
 	 traceTuple
 	 (fn (test: Exp.t,
-	      ty: Type.t,
+	      _,
 	      rules: FlatRule.t vector,
 	      finish: Finish.t) =>
 	  let
@@ -410,7 +393,7 @@ fun matchCompile {caseType: Type.t,
       (*------------------------------------*)
       (*                sum                 *)
       (*------------------------------------*)
-      and sum (test, ty: Type.t, rules: FlatRule.t vector, finish: Finish.t) =
+      and sum (test, _: Type.t, rules: FlatRule.t vector, finish: Finish.t) =
 	 let
 	    datatype arg = 
 	       NoArg of Info.t list
@@ -522,12 +505,6 @@ fun matchCompile {caseType: Type.t,
 		Cases.con (Vector.map
 			   (cases, fn {con, tys, arg} =>
 			    let
-			       fun conPat arg =
-				  NestedPat.make
-				  (NestedPat.Con {arg = arg,
-						  con = con,
-						  targs = tys},
-				   ty)
 			       val (arg, rhs) =
 				  case arg of
 				     NoArg infos =>
@@ -550,7 +527,7 @@ fun matchCompile {caseType: Type.t,
 	    if 1 = Vector.length cases
 	       then
 		  let
-		     val {arg, con, tys, ...} = Vector.sub (cases, 0)
+		     val {arg, con, ...} = Vector.sub (cases, 0)
 		  in
 		     case arg of
 			Arg {var, ty, rules} =>

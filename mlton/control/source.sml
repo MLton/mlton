@@ -12,12 +12,6 @@ datatype t = T of {file: File.t ref,
 		   lineNum: int ref,
 		   lineStart: int ref}
 
-local
-   fun make f (T r) = ! (f r)
-in
-   val file = make #file
-end
-
 fun getPos (T {file, lineNum, lineStart, ...}, n) =
    SourcePos.make {column = n - !lineStart,
 		   file = !file,

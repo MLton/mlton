@@ -264,15 +264,6 @@ structure Unknown =
 			 ("id", Int.layout id)]]
 	 end
 
-      fun layoutPretty (T {id, ...}) =
-	 let
-	    open Layout
-	 in
-	    seq [str "'a", Int.layout id]
-	 end
-
-      val toString = Layout.toString o layoutPretty
-      
       local
 	 val r: int ref = ref 0
       in
@@ -294,7 +285,6 @@ structure Spine:
       type t
 
       val canAddFields: t -> bool
-      val empty: unit -> t
       val equals: t * t -> bool
       val fields: t -> Field.t list
       (* ensureField checks if field is there.  If it is not, then ensureField
@@ -318,8 +308,6 @@ structure Spine:
 					 more = ref true})
 
       fun equals (T s, T s') = Set.equals (s, s')
-
-      fun empty () = new []
 
       fun layout (T s) =
 	 let
@@ -482,10 +470,6 @@ structure Type =
       val admitsEquality =
 	 Trace.trace ("admitsEquality", layout, Bool.layout) admitsEquality
 
-      fun union (T s, T s') = Set.union (s, s')
-
-      fun set (T s, v) = Set.setValue (s, v)
-
       val {get = opaqueTyconExpansion: Tycon.t -> (t vector -> t) option,
 	   set = setOpaqueTyconExpansion, ...} =
 	 Property.getSet (Tycon.plist, Property.initConst NONE)
@@ -571,7 +555,6 @@ structure Type =
 						      needsParen: bool}} =
 	 let
 	    val str = Layout.str
-	    fun maybeParen (b, t) = if b then Layout.paren t else t
 	    fun con (_, c, ts) = Tycon.layoutApp (c, ts)
 	    fun con0 c = Tycon.layoutApp (c, Vector.new0 ())
 	    fun int _ = con0 Tycon.defaultInt
@@ -601,7 +584,7 @@ structure Type =
 				   false)
 		| SOME ts => Tycon.layoutApp (Tycon.tuple, ts)
 	    fun recursive _ = simple (str "<recur>")
-	    fun unknown (_, u) = simple (str "???")
+	    fun unknown _ = simple (str "???")
 	    val {destroy, get = prettyTyvar, ...} =
 	       Property.destGet
 	       (Tyvar.plist,
@@ -730,38 +713,8 @@ structure Type =
 fun setOpaqueTyconExpansion (c, f) =
    Type.setOpaqueTyconExpansion (c, SOME f)
 
-structure Ops = TypeOps (structure IntSize = IntSize
-			 structure Tycon = Tycon
-			 structure WordSize = WordSize
+structure Ops = TypeOps (structure Tycon = Tycon
 			 open Type)
-
-fun layoutTopLevel (t: Type.ty) =
-   let
-      val str = Layout.str
-      datatype z = datatype Type.ty
-   in
-      case t of
-	 Con (c, ts) =>
-	    Tycon.layoutApp
-	    (c, Vector.map (ts, fn t =>
-			    if (case Type.toType t of
-				   Con (c, _) => Tycon.equals (c, Tycon.char)
-				 | _ => false)
-			       then (str "_", {isChar = true,
-					       needsParen = false})
-			    else dontCare))
-       | FlexRecord _ => simple (str "{...}")
-       | GenFlexRecord _ => simple (str "{...}")
-       | Int => simple (str "int")
-       | Real => simple (str "real")
-       | Record r =>
-	    (case Srecord.detupleOpt r of
-		NONE => simple (str "{...}")
-	      | SOME ts => layoutTuple (Vector.map (ts, fn _ => dontCare)))
-       | Unknown _ => Error.bug "layoutTopLevel Unknown"
-       | Var a => simple (Tyvar.layout a)
-       | Word => simple (str "word")
-   end
    
 structure Type =
    struct
@@ -786,8 +739,6 @@ structure Type =
 		   NONE => false
 		 | SOME v => 0 = Vector.length v)
 	  | _ => false
-
-      val equals: t * t -> bool = fn (T s, T s') => Set.equals (s, s')
 
       local
 	 fun make ty () = newTy ty
@@ -917,7 +868,7 @@ structure Type =
 			 (NotUnifiable (l, l'),
 			  Unknown (Unknown.new {canGeneralize = true}))
 		      val bracket =
-			 fn (l, {isChar, needsParen}) =>
+			 fn (l, {isChar, needsParen = _}) =>
 			 (bracket l,
 			  {isChar = isChar,
 			   needsParen = false})
@@ -1035,7 +986,7 @@ structure Type =
 				  else not ()
 			     | _ => not ()
 			 end
-		      fun oneUnknown (u, time, t, outer, swap) =
+		      fun oneUnknown (_, time, t, outer, _) =
 			 let
 			    val _ = minTime (outer, time)
 			 in
@@ -1208,14 +1159,6 @@ structure Type =
 	    datatype t =
 	       NotUnifiable of Layout.t * Layout.t
 	     | Unified
-
-	    val layout =
-	       let
-		  open Layout
-	       in
-		  fn NotUnifiable _ => str "NotUnifiable"
-		   | Unified => str "Unified"
-	       end
 	 end
 
       datatype unifyResult = datatype UnifyResult'.t
@@ -1247,7 +1190,7 @@ structure Type =
 	       in
 		  record (t, v)
 	       end
-	    fun genFlexRecord (t, {extra, fields, spine}) =
+	    fun genFlexRecord (t, {extra, fields, spine = _}) =
 	       unsorted (t,
 			 List.fold
 			 (extra (), fields, fn ({field, tyvar}, ac) =>
@@ -1259,7 +1202,7 @@ structure Type =
 			      Spine.foldOverNew
 			      (spine, fields, fields, fn (f, ac) =>
 			       (f, unit) :: ac))
-	    fun recursive t = Error.bug "Type.hom recursive"
+	    fun recursive _ = Error.bug "Type.hom recursive"
 	    fun default (t, tycon) =
 	       fn t' => (unify (t, t',
 				{preError = fn _ => Error.bug "default unify"})
@@ -1310,10 +1253,6 @@ structure Scheme =
 	    Type t => Type.layoutPretty t
 	  | General {ty, ...} => Type.layoutPretty ty
 
-      val tyvars =
-	 fn General {tyvars, ...} => tyvars
-	  | Type _ => Vector.new0 ()
-	 
       val bound =
 	 fn General {bound, ...} => bound ()
 	  | Type _ => Vector.new0 ()
@@ -1363,7 +1302,7 @@ structure Scheme =
 			 t
 		      end)
 		  type z = {isNew: bool, ty: Type.t}
-		  fun isNew {isNew = b, ty} = b
+		  fun isNew {isNew = b, ty = _} = b
 		  fun keep ty = {isNew = false, ty = ty}
 		  fun con (ty, c, zs) =
 		     if Vector.exists (zs, isNew)
@@ -1371,7 +1310,7 @@ structure Scheme =
 			      ty = Type.con (c, Vector.map (zs, #ty))}
 		     else keep ty
 		  val flexInsts = ref []
-		  fun genFlexRecord (t, {extra, fields, spine}) =
+		  fun genFlexRecord (_, {extra = _, fields, spine}) =
 		     let
 			val fields = List.revMap (fields, fn (f, t: z) =>
 						  (f, #ty t))
@@ -1388,8 +1327,7 @@ structure Scheme =
 			then {isNew = true,
 			      ty = Type.record (Srecord.map (r, #ty))}
 		     else keep t
-		  fun recursive t =
-		     Error.bug "instantiating recursive type"
+		  fun recursive _ = Error.bug "instantiating recursive type"
 		  fun var (ty, a) =
 		     case tyvarInst a of
 			NONE => {isNew = false, ty = ty}
@@ -1472,7 +1410,7 @@ structure Scheme =
 	 Type.admitsEquality
 	 (#instance
 	  (instantiate'
-	   (s, fn {canGeneralize, equality, ...} =>
+	   (s, fn {canGeneralize, ...} =>
 	    Type.unknown {canGeneralize = canGeneralize,
 			  equality = Equality.truee})))
 
@@ -1561,12 +1499,8 @@ fun close (ensure: Tyvar.t vector, region) =
 		      then t :: ac
 		   else
 		      case ty of
-			 Type.FlexRecord {fields, spine} =>
+			 Type.FlexRecord {fields, spine, ...} =>
 			    let
-			       val fields =
-				  case ty of
-				     Type.FlexRecord {fields, ...} => fields
-				   | _ => Error.bug "close flexRecord"
 			       val extra =
 				  Promise.lazy
 				  (fn () =>

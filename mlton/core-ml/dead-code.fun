@@ -16,18 +16,6 @@ fun deadCode {basis, user} =
    let
       val {get = varIsUsed, set = setVarIsUsed, destroy, ...} =
 	 Property.destGetSet (Var.plist, Property.initConst false)
-      fun foreachDefinedVar (d: Dec.t, f) =
-	 let
-
-	 in
-	    case d of
-	       Fun {decs, ...} => Vector.foreach (decs, f o #var)
-	     | Val {rvbs, vbs, ...} =>
-		  (Vector.foreach (rvbs, f o #var)
-		   ; Vector.foreach (vbs, fn {pat, ...} =>
-				     Pat.foreachVar (pat, f)))
-	     | _ => ()
-	 end
       fun patVarIsUsed (p: Pat.t): bool =
 	 DynamicWind.withEscape
 	 (fn escape =>

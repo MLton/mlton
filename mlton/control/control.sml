@@ -52,8 +52,6 @@ structure Chunk =
 	 fn OneChunk => "one chunk"
 	  | ChunkPerFunc => "chunk per function"
 	  | Coalesce {limit} => concat ["coalesce ", Int.toString limit]
-
-      val layout = Layout.str o toString
    end
 
 datatype chunk = datatype Chunk.t
@@ -253,8 +251,6 @@ structure LimitCheck =
 		       ", loopExits = ",
 		       Bool.toString loopExits,
 		       ")"]
-
-      val layout = Layout.str o toString
    end
 
 datatype limitCheck = datatype LimitCheck.t
@@ -625,31 +621,6 @@ val defaults = setDefaults
 
 val _ = defaults ()
 
-(* Add a decimal point to a string so that the resulting
- * string has n digits after the decimal point.
- *)
-fun addDecimal (s, n) =
-   let
-      val rec mkZero =
-	 fn 0 => []
-	  | n => #"0" :: mkZero (n - 1)
-      val l = String.size s
-   in
-      if l <= n
-	 then let
-		 val zero = "0." ^ implode (mkZero n)
-		 val pre = String.extract (zero, 0, SOME (n + 2 - l))
-	      in
-		 pre ^ s
-	      end
-      else let
-	      val pre = String.extract (s, 0, SOME  (l - n))
-	      val post = String.extract (s, l - n, NONE)
-	   in
-	      pre ^ "." ^ post
-	   end
-   end
-
 fun time () =
    let
       open Time
@@ -658,27 +629,6 @@ fun time () =
    in
       (add self + add children, add gc)
    end
-
-fun timeMinus (t1,t2,s)
-  = Time.- (t1, t2)
-    handle Time => Error.bug (concat ["timeMinus: ",
-				      "t1: ",
-				      Time.toString t1,
-				      " ",
-				      "t2: ",
-				      Time.toString t2,
-				      " :: ",
-				      s])
-fun timePlus (t1,t2,s)
-  = Time.+ (t1, t2)
-    handle Time => Error.bug (concat ["timePlus: ",
-				      "t1: ",
-				      Time.toString t1,
-				      " ",
-				      "t2: ",
-				      Time.toString t2,
-				      " :: ",
-				      s])
 
 fun timeToString {total, gc} =
    let
@@ -692,10 +642,7 @@ fun timeToString {total, gc} =
 	 fmt (Real./ (Int.toReal (LargeInt.toInt (Time.toMilliseconds t)),
 		      1000.0),
 	      2)
-   in concat [t2s (timeMinus (total, gc, "timeToString: total - gc")),
-	      " + ",
-	      t2s gc,
-	      " (", per, "% GC)"]
+   in concat [t2s (Time.- (total, gc)), " + ", t2s gc, " (", per, "% GC)"]
    end
 
 fun trace (verb, name: string) (f: 'a -> 'b) (a: 'a): 'b =
@@ -710,8 +657,8 @@ fun trace (verb, name: string) (f: 'a -> 'b) (a: 'a): 'b =
 		  val _ = unindent ()
 		  val (t', gc') = time ()
 	       in
-		  timeToString {total = timeMinus (t', t, "trace: t' - t"),
-				gc = timeMinus (gc', gc, "trace: gc' - gc")}
+		  timeToString {total = Time.- (t', t),
+				gc = Time.- (gc', gc)}
 	       end
 	 in (f a
 	     before messageStr (verb, concat [name, " finished in ", done ()]))
@@ -752,18 +699,8 @@ val ('a, 'b) traceAdd: (traceAccum * string) -> ('a -> 'b) -> 'a -> 'b =
 	      = let
 		  val (t', gc') = time ()
 		in
-		  total := timePlus 
-		           (!total,
-			    timeMinus
-			    (t', t,
-			     "traceAdd: 't - t"),
-			    "traceAdd: !total") ;
-		  totalGC := timePlus
-		             (!totalGC,
-			      timeMinus
-			      (gc', gc,
-			       "traceAdd: gc' - gc"),
-			      "traceAdd: !totalGC")
+		  total := Time.+ (!total, Time.- (t', t))
+		  ; totalGC := Time.+ (!totalGC, Time.- (gc', gc))
 		end
 	  in
 	    (f a
@@ -827,8 +764,6 @@ fun checkForErrors (name: string) =
    if !numErrors > 0
       then die (concat ["compilation aborted: ", name, " reported errors"])
    else ()
-
-fun reset () = numErrors := 0
 
 (*---------------------------------------------------*)
 (*                  Compiler Passes                  *)

@@ -32,16 +32,6 @@ val intToString = Int.toString
 val realToString = DotColor.realToString
 fun real2ToString (x, y) = concat [realToString x, ", ", realToString y]
    
-datatype clusterRank =
-   Global
-  | Local
-  | None
-
-val clusterRankToString =
-   fn Global => "global"
-    | Local => "local"
-    | None => "none"
-
 structure Color = DotColor
 datatype color = datatype Color.t
 

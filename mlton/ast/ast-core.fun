@@ -43,14 +43,6 @@ structure Fixop =
 	 fn Op => str "op "
 	  | None => empty
    end
-
-fun layoutApp (func: 'a,
-	      getLongvid: 'a -> Longvid.t option,
-	      layoutFunc: 'a -> Layout.t,
-	      arg: 'b,
-	      getPair: 'b -> ('b * 'b) option,
-	      layoutArg: 'b -> Layout.t) =
-   mayAlign [layoutFunc func, layoutArg arg]
 	 
 fun layoutConstraint (t, ty) =
    mayAlign [seq [t, str ":"], Type.layout ty]
@@ -114,7 +106,6 @@ structure Pat =
 
       val wild = make Wild
       val const = make o Const
-      val record = make o Record
       val constraint = make o Constraint
       val layered = make o Layered
 
@@ -218,8 +209,6 @@ structure Pat =
 
       val layoutDelimit = layoutF
       val layout = layoutT
-   
-      val unit = tuple (Vector.new0 ())
    end
 
 structure Eb =
@@ -241,8 +230,6 @@ structure Eb =
 	 end
       
       type t = Con.t * Rhs.t
-
-      fun gen (c, to) = {exn = c, rhs = Rhs.Gen to}
 
       fun layout (exn, rhs) =
 	 seq [Con.layout exn, Rhs.layout rhs]
@@ -382,7 +369,7 @@ fun expNodeName e =
 
 val traceLayoutExp =
    Trace.traceInfo' (Trace.info "layoutExp",
-		     fn (e, b: bool) => Layout.str (expNodeName e),
+		     fn (e, _: bool) => Layout.str (expNodeName e),
 		     Layout.ignore: Layout.t -> Layout.t)
    
 fun layoutExp arg =

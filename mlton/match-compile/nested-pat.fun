@@ -164,7 +164,4 @@ fun varsAndTypes (p: t): (Var.t * Type.t) list =
    in loop (p, [])
    end
 
-fun vars (p: t): Var.t list =
-   List.revMap (varsAndTypes p, #1)
-
 end

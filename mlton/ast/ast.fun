@@ -41,10 +41,6 @@ structure Equation =
 type typedescs = {tyvars: Tyvar.t vector,
 		  tycon: Tycon.t} list
 
-type typedefs = {tyvars: Tyvar.t vector,
-		 tycon: Tycon.t,
-		 ty: Type.t} list
-
 datatype sigexpNode =
    Var of Sigid.t
  | Where of sigexp * {tyvars: Tyvar.t vector,
@@ -181,8 +177,6 @@ structure Spec =
       type t = spec
       type node' = node
       type obj = t
-	 
-      val empty = makeRegion (Empty, Region.bogus)
 	 
       val layout = layoutSpec
    end

@@ -15,13 +15,6 @@ structure Status =
    struct
       datatype t = Unseen | Free | Bound
 
-      val toString =
-	 fn Unseen => "Unseen"
-	  | Free => "Free"
-	  | Bound => "Bound"
-
-      val layout = Layout.str o toString
-
       val init = Unseen
    end
 datatype status = datatype Status.t

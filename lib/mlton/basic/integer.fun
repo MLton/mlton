@@ -40,8 +40,6 @@ fun input i = (In.ignoreSpaces i
 		     NONE => raise Input
 		   | SOME n => n))
 
-val toReal = Pervasive.Real.fromInt
-   
 structure I = EuclideanRing (open R S
 			    val metric = toIntInf o abs
 			    val monics = Stream.infinite (two, fn n => n + one)
@@ -69,12 +67,6 @@ fun choose (n, k) =
    end
 
 fun output (n, out) = Out.output (out, toString n)
-
-fun powerMod {base, exp, modulus} =
-   Power.power {layout = layout,
-	       one = one,
-	       times = fn (x, y) => x * y mod modulus}
-   (base, exp)
 
 fun largest (i, f) =
    let

@@ -91,7 +91,7 @@ structure CMLexer: CM_LEXER = struct
 			   | SOME c => (ungetc c; skip_ml_comment ()))
 	        (*| SOME #";" => (skip_scheme_comment (); skip_ml_comment ())*)
 		  | NONE => incomplete ()
-		  | SOME c => skip_ml_comment ()
+		  | SOME _ => skip_ml_comment ()
 	    end
 
 	    fun skip () = let
@@ -455,7 +455,7 @@ structure CMLexer: CM_LEXER = struct
 		    (T_C, true) :: s
 		else
 		    (T, false) :: s
-	      | transform (ELIF c, (T_C, _) :: s) = (T_C, false) :: s
+	      | transform (ELIF _, (T_C, _) :: s) = (T_C, false) :: s
 	      | transform (ELIF c, (T, _) :: s) =
 		if iscopying s andalso c () <> 0 then
 		    (T_C, true) :: s

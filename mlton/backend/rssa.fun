@@ -40,7 +40,6 @@ structure Operand =
 		 ty: Type.t}
 
       val int = Const o Const.int
-      val real = Const o Const.real
       val word = Const o Const.word
 	 
       fun bool b = Cast (int (IntX.make (if b then 1 else 0, IntSize.default)),
@@ -99,8 +98,6 @@ structure Operand =
 	     | SmallIntInf w => seq [str "SmallIntInf ", paren (Word.layout w)]
 	     | Var {var, ty} => seq [Var.layout var, constrain ty]
 	 end
-
-      val toString = Layout.toString o layout
 
       fun cast (z, t) =
 	 if Type.equals (t, ty z)
@@ -328,12 +325,10 @@ structure Transfer =
 		return = NONE}
 
       fun 'a foldDefLabelUse (t, a: 'a,
-			      z as {def: Var.t * Type.t * 'a -> 'a,
-				    label: Label.t * 'a -> 'a,
-				    use: Var.t * 'a -> 'a}): 'a =
+			      {def: Var.t * Type.t * 'a -> 'a,
+			       label: Label.t * 'a -> 'a,
+			       use: Var.t * 'a -> 'a}): 'a =
 	 let
-	    fun useVars (xs: Var.t vector, a) =
-	       Vector.fold (xs, a, use)
 	    fun useOperand (z, a) = Operand.foldVars (z, a, use)
 	    fun useOperands (zs: Operand.t vector, a) =
 	       Vector.fold (zs, a, useOperand)
@@ -481,7 +476,7 @@ structure Block =
 	  ; Vector.foreach (statements, Statement.clear)
 	  ; Transfer.clear transfer)
 
-      fun hasPrim (T {statements, transfer, ...}, f) =
+      fun hasPrim (T {statements, ...}, f) =
 	 Vector.exists (statements, fn s => Statement.hasPrim (s, f))
 
       fun layout (T {args, kind, label, statements, transfer, ...}) =
@@ -515,11 +510,8 @@ structure Function =
       local
 	 fun make f (T r) = f r
       in
-	 val args = make #args
 	 val blocks = make #blocks
 	 val name = make #name
-	 val raises = make #raises
-	 val returns = make #returns
 	 val start = make #start
       end
 
@@ -600,7 +592,6 @@ structure Function =
 
       structure Graph = DirectedGraph
       structure Node = Graph.Node
-      structure Edge = Graph.Edge
 
       fun dominatorTree (T {blocks, start, ...}): Block.t Tree.t =
 	 let
@@ -620,7 +611,7 @@ structure Function =
 		setNodeInfo (labelNode label, {block = b}))
 	    val _ =
 	       Vector.foreach
-	       (blocks, fn b as Block.T {label, transfer, ...} =>
+	       (blocks, fn Block.T {label, transfer, ...} =>
 		let
 		   val from = labelNode label
 		   val _ =
@@ -695,7 +686,6 @@ structure Program =
 	    structure Point = ZPoint
 	 
 	    val me = point Point.Me
-	    val caller = point Point.Caller
 	 end
 
       structure HandlerLat = FlatLattice (structure Point = Label)
@@ -833,7 +823,7 @@ structure Program =
 			      Arith {overflow, success, ...} =>
 				 (goto overflow; goto success)
 			    | CCall {return, ...} => Option.app (return, goto)
-			    | Call {func, return, ...} =>
+			    | Call {return, ...} =>
 				 assert
 				 ("return",
 				  let
@@ -931,16 +921,15 @@ structure Program =
 	       in (bind, reference, unbind)
 	       end
 	    val (bindVar, getVar, unbindVar) = make (Var.layout, Var.plist)
-	    val (bindFunc, getFunc, _) = make (Func.layout, Func.plist)
+	    val (bindFunc, _, _) = make (Func.layout, Func.plist)
 	    val bindFunc = fn f => bindFunc (f, false)
 	    val (bindLabel, getLabel, unbindLabel) =
 	       make (Label.layout, Label.plist)
 	    val bindLabel = fn l => bindLabel (l, false)
-	    fun getVars xs = Vector.foreach (xs, getVar)
 	    fun loopFunc (f: Function.t, isMain: bool): unit =
 	       let
 		  val bindVar = fn x => bindVar (x, isMain)
-		  val {args, blocks, start, ...} = Function.dest f
+		  val {args, blocks, ...} = Function.dest f
 		  val _ = Vector.foreach (args, bindVar o #1)
 		  val _ = Vector.foreach (blocks, bindLabel o Block.label)
 		  val _ =
@@ -1116,10 +1105,6 @@ structure Program =
 	    fun check' (x, name, isOk, layout) =
 	       Err.check (name, fn () => isOk x, fn () => layout x)
 	    val labelKind = Block.kind o labelBlock
-	    fun labelIsJump (l: Label.t): bool =
-	       case labelKind l of
-		  Kind.Jump => true
-		| _ => false
 	    fun statementOk (s: Statement.t): bool =
 	       let
 		  datatype z = datatype Statement.t
@@ -1131,7 +1116,7 @@ structure Program =
 			 ; checkOperand src
 			 ; (Type.equals (Operand.ty dst, Operand.ty src)
 			    andalso Operand.isLocation dst))
-		   | Object {dst, size, stores, tycon, ...} =>
+		   | Object {stores, tycon, ...} =>
 			(Vector.foreach (stores, checkOperand o # value)
 			 ; (case tyconTy tycon of
 			       ObjectType.Normal mc =>
@@ -1249,7 +1234,7 @@ structure Program =
 			datatype z = datatype Transfer.t
 		     in
 			case t of
-			   Arith {args, dst, overflow, prim, success, ty} =>
+			   Arith {args, overflow, prim, success, ty, ...} =>
 			      let
 				 val _ = checkOperands args
 			      in
@@ -1308,8 +1293,7 @@ structure Program =
 			      Switch.isOk (s, {checkUse = checkOperand,
 					       labelIsOk = labelIsNullaryJump})
 		     end
-		  fun blockOk (Block.T {args, kind, label, 
-					statements, transfer, ...}): bool =
+		  fun blockOk (Block.T {kind, statements, transfer, ...}): bool =
 		     let
 			fun kindOk (k: Kind.t): bool =
 			   let

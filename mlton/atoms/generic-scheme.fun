@@ -23,8 +23,6 @@ in
    val tyvars = make #tyvars
 end
 
-val isPoly = not o Vector.isEmpty o tyvars
-
 fun fromType t = T {tyvars = Vector.new0 (), ty = t}
 
 val equals = fn _ => Error.unimplemented "Scheme.equals"

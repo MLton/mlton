@@ -104,12 +104,8 @@ structure Longtycon =
       val arrow = short Tycon.arrow
 
       val exn = short Tycon.exn
-
-      fun isArrow t =
-	 case split t of
-	    ([], tycon) => Tycon.equals (tycon, Tycon.arrow)
-	  | _ => false
    end
+
 structure Longvar = Longid (structure Id = Var
 			    structure Strid = Strid
 			    structure Symbol = Symbol)
@@ -121,8 +117,6 @@ structure Longcon =
 			    structure Symbol = Symbol)
 			   
       open L
-      val nill = short Con.nill
-      val cons = short Con.cons
    end
 
 structure Longstrid = Longid (structure Id = Strid
@@ -231,8 +225,6 @@ structure Type =
 
 fun bind (x, y) = mayAlign [seq [x, str " ="], y]
 
-val layouts = List.map
-   
 fun 'a layoutAnds (prefix: string,
 		   xs: 'a list, 
 		   layoutX: Layout.t * 'a -> Layout.t): Layout.t =

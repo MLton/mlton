@@ -88,7 +88,7 @@ fun outputTree (t, out) =
 		Empty => print "Empty"
 	      | String s => (print "(String "; print s; print ")")
 	      | Sequence ts => loops ("Sequence", ts)
-	      | Align {force, rows} => loops ("Align", rows)
+	      | Align {rows, ...} => loops ("Align", rows)
 	      | Indent (t, n) => (print "(Indent "
 				  ; print (Int.toString n)
 				  ; print " "
@@ -126,7 +126,7 @@ fun print {tree: t,
       (*val _ = outputTree (t, out)*)
       fun newline () = print "\n"
 
-      fun outputCompact (t, {at, printAt}) =
+      fun outputCompact (t, {at, printAt = _}) =
 	 let
 	    fun loop (T {tree, ...}) =
 	       case tree of
@@ -212,14 +212,14 @@ fun separate (ts, s) =
 fun separateLeft (ts, s) =
    case ts of
       [] => []
-    | [t] => ts
+    | [_] => ts
     | t :: ts => t :: (map (fn t => seq [str s, t]) ts)
 
 fun separateRight (ts, s) =
    rev (let val ts = rev ts
 	in case ts of
 	   [] => []
-	 | [t] => ts
+	 | [_] => ts
 	 | t :: ts => t :: (map (fn t => seq [t, str s]) ts)
 	end)
 

@@ -25,7 +25,7 @@ structure InfoNode =
 
       fun equals (n: t, n': t): bool = SourceInfo.equals (info n, info n')
 
-      fun call {from = T {info = i, successors, ...},
+      fun call {from = T {successors, ...},
 		to as T {info = i', ...}} =
 	 if let
 	       open SourceInfo
@@ -171,11 +171,9 @@ fun profile program =
 	 fun makeSourceSeqs () = Vector.fromListRev (!sourceSeqs)
       end
       (* Ensure that [SourceInfo.unknown] is index 0. *)
-      val unknownSourceSeq =
-	 sourceSeqIndex [InfoNode.sourcesIndex unknownInfoNode]
+      val _ = sourceSeqIndex [InfoNode.sourcesIndex unknownInfoNode]
       (* Ensure that [SourceInfo.gc] is index 1. *)
-      val gcSourceSeq =
-	 sourceSeqIndex [InfoNode.sourcesIndex gcInfoNode]
+      val _ = sourceSeqIndex [InfoNode.sourcesIndex gcInfoNode]
       fun addFrameProfileIndex (label: Label.t,
 				index: int): unit =
 	 List.push (frameProfileIndices, (label, index))
@@ -339,7 +337,7 @@ fun profile program =
 				     else (true, ss)
 			       val (leaves, sourceSeq) = 
 				  case ps of
-				     Enter si =>
+				     Enter _ =>
 					(case sourceSeq of
 					    [] => Error.bug "unmatched Enter"
 					  | _ :: sis => (leaves, sis))

@@ -34,7 +34,6 @@ in
    structure RealX = RealX
    structure Register = Register
    structure Runtime = Runtime
-   structure SourceInfo = SourceInfo
    structure Statement = Statement
    structure Switch = Switch
    structure Transfer = Transfer
@@ -67,8 +66,6 @@ structure Kind =
    end
 
 val traceGotoLabel = Trace.trace ("gotoLabel", Label.layout, Unit.layout) 
-
-val overhead = "**C overhead**"
 
 structure IntX =
    struct
@@ -157,10 +154,6 @@ structure C =
 	 (callNoSemi (f, xs, print)
 	  ; print ";\n")
 
-      fun char (c: char) =
-	 concat [if Char.ord c >= 0x80 then "(uchar)" else "",
-		 "'", Char.escapeC c, "'"]
-
       fun int (i: int) =
 	 IntX.toC (IntX.make (IntInf.fromInt i, IntSize.default))
 
@@ -171,14 +164,8 @@ structure C =
 
       fun word (w: Word.t) = "0x" ^ Word.toString w
 
-      fun bug (s: string, print) =
-	 call ("MLton_bug", [concat ["\"", String.escapeC s, "\""]], print)
-
       fun push (i, print) =
 	 call ("\tPush", [int i], print)
-
-      fun move ({dst, src}, print) =
-	 print (concat [dst, " = ", src, ";\n"])
    end
 
 structure Operand =
@@ -236,7 +223,7 @@ fun outputDeclarations
     includes: string list,
     print: string -> unit,
     program = (Program.T
-	       {chunks, frameLayouts, frameOffsets, intInfs, maxFrameSize,
+	       {frameLayouts, frameOffsets, intInfs, maxFrameSize,
 		objectTypes, profileInfo, reals, strings, ...}),
     rest: unit -> unit
     }: unit =
@@ -487,12 +474,6 @@ fun output {program as Machine.Program.T {chunks,
 	   (Array.fromList (!entryLabels), fn ((_, i), (_, i')) => i <= i')),
 	  #1)
       val labelChunk = #chunkLabel o labelInfo
-      fun labelFrameInfo (l: Label.t): FrameInfo.t option =
-	 let
-	    val {block = Block.T {kind, ...}, ...} = labelInfo l
-	 in
-	    Kind.frameInfoOpt kind
-	 end
       val {get = chunkLabelIndex: ChunkLabel.t -> int, ...} =
 	 Property.getSet (ChunkLabel.plist,
 			  Property.initFun (let
@@ -660,7 +641,7 @@ fun output {program as Machine.Program.T {chunks,
 			    ))
 	 end
       val profiling = !Control.profile <> Control.ProfileNone
-      fun outputChunk (chunk as Chunk.T {chunkLabel, blocks, regMax, ...}) =
+      fun outputChunk (Chunk.T {chunkLabel, blocks, regMax, ...}) =
 	 let
 	    val {done, print, ...} = outputC ()
 	    fun declareFFI () =
@@ -694,7 +675,7 @@ fun output {program as Machine.Program.T {chunks,
 			   | _ => ())
 		      val _ =
 			 case transfer of
-			    Transfer.CCall {args, func, ...} =>
+			    Transfer.CCall {func, ...} =>
 			       let
 				  val CFunction.T {name, ...} = func
 			       in
@@ -739,8 +720,6 @@ fun output {program as Machine.Program.T {chunks,
 		 case s of
 		    Statement.ProfileLabel l => declareProfileLabel (l, print)
 		  | _ => ()))
-	    fun labelFrameSize (l: Label.t): int =
-	       Program.frameSize (program, valOf (labelFrameInfo l))
 	    (* Count how many times each label is jumped to. *)
 	    fun jump l =
 	       let
@@ -754,7 +733,7 @@ fun output {program as Machine.Program.T {chunks,
 	    fun force l = #status (labelInfo l) := Many
 	    val _ =
 		Vector.foreach
-		(blocks, fn Block.T {kind, label, statements, transfer, ...} =>
+		(blocks, fn Block.T {kind, label, transfer, ...} =>
 		 let
 		    val _ = if Kind.isEntry kind then jump label else ()
 		    datatype z = datatype Transfer.t
@@ -820,7 +799,7 @@ fun output {program as Machine.Program.T {chunks,
 	    val tracePrintLabelCode =
 	       Trace.trace
 	       ("printLabelCode",
-		fn {block, layedOut, status: status ref, ...} =>
+		fn {block, layedOut, ...} =>
 		Layout.record [("block", Label.layout (Block.label block)),
 			       ("layedOut", Bool.layout (!layedOut))],
 		Unit.layout)
@@ -866,7 +845,7 @@ fun output {program as Machine.Program.T {chunks,
 		      | Kind.CReturn {dst, frameInfo, ...} =>
 			   (case frameInfo of
 			       NONE => ()
-			     | SOME fi => pop (valOf frameInfo)
+			     | SOME fi => pop fi
 			    ; (Option.app
 			       (dst, fn x =>
 				let
@@ -1077,7 +1056,7 @@ fun output {program as Machine.Program.T {chunks,
 					       #2 (Vector.sub (cases, 0)))
 				  | (_, SOME l) => switch (cases, l)
 			      end
-			   fun simple ({cases, default, size, test}, f) =
+			   fun simple ({cases, default, size = _, test}, f) =
 			      doit {cases = Vector.map (cases, fn (c, l) =>
 							(f c, l)),
 				    default = default,
@@ -1089,7 +1068,7 @@ fun output {program as Machine.Program.T {chunks,
 			      iff (concat
 				   ["IsInt (", operandToString test, ")"],
 				   enum, pointers)
-			    | Int (z as {cases, default, size, test}) =>
+			    | Int (z as {cases, default, test, ...}) =>
 				 let
 				    fun normal () = simple (z, IntX.toC)
 				 in

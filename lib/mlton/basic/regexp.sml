@@ -195,15 +195,6 @@ local
 		| Start s => seq [str "Start ", Save.layout s]
 	    end
       end
-
-   structure Finals =
-      struct
-	 type t = (Save.t * int * int) list
-	    
-	 val layout: t -> Layout.t =
-	    List.layout (fn (_, i, j) =>
-			 Layout.tuple [Int.layout i, Int.layout j])
-      end
    
    structure Match =
       struct
@@ -266,11 +257,6 @@ local
 					Vector.layout MatchAction.layout))
 	    l
 
-	 fun equals (T l, T l') =
-	    List.equals
-	    (l, l', fn ((i, v), (i', v')) =>
-	     i = i' andalso Vector.equals (v, v', MatchAction.equals))
-	    
 	 val empty = T []
 	    
 	 fun add (a as T l, i, v: MatchAction.t vector) =
@@ -319,7 +305,6 @@ local
 	 datatype t = datatype NFA.t
 	    
 	 val fromRegexp: Regexp.t -> t
-	 val layout: t -> Layout.t
 	 val layoutDot: t * string (* title *) -> Layout.t
 	 val match: {nfa: t,
 		     short: bool,
@@ -336,20 +321,11 @@ local
 	 fun numCharClasses (T {next, ...}) = Array2.nCols next
 	 fun saves (T {saves, ...}) = saves
 
-	 fun layout (dfa: t): Layout.t =
-	    let
-	       open Layout
-	    in
-	       seq [str "NFA with ",
-		    Int.layout (numStates dfa), str " states and ",
-		    Int.layout (numCharClasses dfa), str " charClasses"]
-	    end
-
 	 (* Simulating an NFA with two stacks and a bit vector, as in Algorithm
 	  * 3.4 (page 126) of the Dragon Book.
 	  *)
 	 fun match {nfa as T {anchorStarts, charClass, final,
-			      next, seen, stack1, stack2, start, ...},
+			      next, stack1, stack2, start, ...},
 		    short,
 		    string = s,
 		    startPos}: (int * Actions.t) option =
@@ -357,7 +333,6 @@ local
 	       val numStates = numStates nfa
 	       val n = String.size s
 	       val seen = Array.array (numStates, false)
-	       val gotit = ref false
 	       fun loop (current, nextStates, i: int,
 			 last: (int * Actions.t) option)
 		  : (int * Actions.t) option =
@@ -791,7 +766,6 @@ local
 	 type t
 
 	 val fromNFA: NFA.t -> t
-	 val layout: t -> Layout.t
 	 val layoutDot: {dfa: t,
 			 showDead: bool,
 			 title: string} -> Layout.t
@@ -894,18 +868,8 @@ local
 		  startStack: MatchAction.t vector vector}
 
 	 fun numStates (T {next, ...}): int = Array2.nRows next
-	 fun numCharClasses (T {next, ...}) = Array2.nCols next
 	 fun saves (T {saves, ...}) = saves
 
-	 fun layout (dfa: t): Layout.t =
-	    let
-	       open Layout
-	    in
-	       seq [str "DFA with ",
-		    Int.layout (numStates dfa), str " states and ",
-		    Int.layout (numCharClasses dfa), str " charClasses"]
-	    end
-	    
 	 fun dead (numStates, numCharClasses, final, next) =
 	    Array.tabulate
 	    (numStates, fn i =>
@@ -1117,16 +1081,15 @@ local
 	  * The first pass just determines if the match will succeed.
 	  * The second pass computes all the edge actions.
 	  *)
-	 fun match {dfa as T {anchorStart = ancSt, anchorStartStack,
+	 fun match {dfa = T {anchorStart = ancSt, anchorStartStack,
 			      charClass, dead, final, next, stack1, stack2,
 			      start, startStack, ...},
 		    short: bool,
-		    string as s,
+		    string = s,
 		    startPos: int,
 		    anchorStart: bool}: (int * Actions.t) option =
 	    let
 	       val n = String.size s
-	       val numEdgeActions = ref 0
 	       fun loop (i: int,
 			 state: int,
 			 stack1, stack2,
@@ -1454,7 +1417,6 @@ in
 	 val none = isChar (fn _ => false)
 	 fun oneOf s = isChar (fn c => String.contains (s, c))
 	 fun notOneOf s = isNotChar (fn c => String.contains (s, c))
-	 val digs = "0123456789"
 	 val digit = isChar Char.isDigit
 	 val digits = star digit
 	 val nonDigit = isNotChar Char.isDigit
@@ -1464,9 +1426,6 @@ in
 	 fun string (s: string): t =
 	    seq (Int.foldDown (0, String.size s, [], fn (i, ac) =>
 			       char (String.sub (s, i)) :: ac))
-	 fun notString (s: string): t =
-	    seq (Int.foldDown (0, String.size s, [], fn (i, ac) =>
-			       notChar (String.sub (s, i)) :: ac))
 
 	 fun stringIgnoreCase (s: string): t =
 	    seq (Int.foldDown
@@ -1489,8 +1448,6 @@ in
 	 fun range (r, n: int, m: int) =
 	    seq [repeat (r, n), upper (r, m - n)]
 	    
-	 val empty = or [] (* Empty Language. *)
-
 	 structure Compiled =
 	    struct
 	       datatype machine =
@@ -1509,7 +1466,7 @@ in
 	       fun layoutDotToFile (c: t, f: File.t) =
 		  File.withOut (f, fn out => Layout.output (layoutDot c, out))
 
-	       fun layout (T {machine, regexp, ...}) =
+	       fun layout (T {regexp, ...}) =
 		  let
 		     open Layout
 		  in
@@ -1546,14 +1503,13 @@ in
 		     exception No
 		  in
 		     Option.map
-		     (opt, fn (stop, a as Actions.T actions) =>
+		     (opt, fn (stop, Actions.T actions) =>
 		      let
 			 val _ = Vector.foreachi (saves, fn (i, s) =>
 						  Save.assign (s, i))
 			 val n = Vector.length saves
 			 val starts = Array.array (n, ~1)
 			 val matches = Array.array (n, NONE)
-			 val last = String.size string
 			 val _ =
 			    List.foreach
 			    (rev actions, fn (i, v) =>
@@ -1986,7 +1942,7 @@ in
 		       k (s, Char.isAlphaNum)
 		  | #"a"::(#"l"::(#"p"::(#"h"::(#"a"::s)))) => 
 		       k (s, Char.isAlpha)
-		  | #"b"::(#"l"::(#"a"::(#"n"::(#"k"::s)))) => 
+		  | #"b"::(#"l"::(#"a"::(#"n"::(#"k"::_)))) => 
 		       raise (X "Cl:blank")
 		  | #"c"::(#"n"::(#"t"::(#"r"::(#"l"::s)))) => 
 		       k (s, Char.isCntrl)
@@ -1998,7 +1954,7 @@ in
 		       k (s, Char.isLower)
 		  | #"p"::(#"r"::(#"i"::(#"n"::(#"t"::s)))) => 
 		       k (s, Char.isPrint)
-		  | #"p"::(#"u"::(#"n"::(#"c"::(#"t"::s)))) => 
+		  | #"p"::(#"u"::(#"n"::(#"c"::(#"t"::_)))) => 
 		       raise (X "Cl:punct")
 		  | #"s"::(#"p"::(#"a"::(#"c"::(#"e"::s)))) => 
 		       k (s, Char.isSpace)
@@ -2010,7 +1966,7 @@ in
 	       end
 	 in
 	    val fromString: string -> (t * Save.t vector) option =
-	       fn s => (SOME (S (explode s))) handle X s => NONE
+	       fn s => (SOME (S (explode s))) handle X _ => NONE
 	    val fromString =
 	       Trace.trace ("Regexp.fromString",
 			    String.layout,

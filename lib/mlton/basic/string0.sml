@@ -19,7 +19,6 @@ in
    val escapeSML = toString
    val explode = explode
    val extract = extract
-   val fromChar = str
    val fromCString = fromCString
    val fromString = fromString
    val implode = implode

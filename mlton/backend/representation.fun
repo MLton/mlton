@@ -165,7 +165,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		    ([], []) => TyconRep.Void
 		  | ([_], []) => TyconRep.Void
 		  | (_, []) => TyconRep.Enum
-		  | ([], [{args, ...}]) => TyconRep.Direct
+		  | ([], [_]) => TyconRep.Direct
 		  | (_, [{args, ...}]) =>
 		       if (if 1 = Vector.length args
 			      then
@@ -302,7 +302,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		       Vector.mapi
 		       (tys, fn (i, ty) =>
 			Option.map
-			(ty, fn ty =>
+			(ty, fn _ =>
 			 let
 			    val {offset, ty, ...} =
 			       valOf

@@ -21,7 +21,7 @@ structure SplayTree: SPLAY_TREE =
 
     fun splay (compf, root) = let
         fun adj SplayNil = (No, SplayNil, SplayNil)
-          | adj (arg as SplayObj{value, left, right}) =
+          | adj (SplayObj {value, left, right}) =
               (case compf value of
                 EQUAL => (Eq value, left, right)
               | GREATER =>
@@ -94,7 +94,7 @@ structure SplayTree: SPLAY_TREE =
       end
 
     fun lrotate SplayNil = SplayNil
-      | lrotate (arg as SplayObj{value, left, right=SplayNil}) = arg
+      | lrotate (arg as SplayObj {right = SplayNil, ...}) = arg
       | lrotate (SplayObj{value, left, right=SplayObj{value=v, left=l, right=r}}) = 
           lrotate (SplayObj{value=v, left=SplayObj{value=value, left=left, right=l}, right=r})
 
@@ -104,7 +104,8 @@ structure SplayTree: SPLAY_TREE =
       | join (l, r) =
           case lrotate l of
             SplayNil => r      (* impossible as l is not SplayNil *)
-          | SplayObj{value, left, right} => SplayObj{value=value, left=left, right=r}
+          | SplayObj {left, value, ...} =>
+	       SplayObj {value = value, left = left, right=r}
 
   end (* SplayTree *)
 

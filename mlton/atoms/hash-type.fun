@@ -78,21 +78,8 @@ structure Type =
 	 makeHom {var = fn _ => Error.bug "makeMonoHom saw type variable",
 		  con = con}
 
-      fun monoHom {ty, con} =
-	 let
-	    val {hom, destroy} = makeMonoHom {con = con}
-	    val res = hom ty
-	    val _ = destroy ()
-	 in res
-	 end
-
       fun equals (t, t'): bool = PropertyList.equals (plist t, plist t')
 		      
-      fun isChar t =
-	 case deConOpt t of
-	    NONE => false
-	  | SOME (c, _) => Tycon.equals (c, Tycon.char)
-	 
       fun layout (ty: t): Layout.t =
 	 #1 (hom {con = Tycon.layoutApp,
 		  ty = ty,
@@ -143,16 +130,12 @@ structure Type =
 				 layout) con
       end
    end
-structure Ops = TypeOps (structure IntSize = IntSize
-			 structure Tycon = Tycon
-			 structure WordSize = WordSize
+structure Ops = TypeOps (structure Tycon = Tycon
 			 open Type)
 open Type Ops
 
 val string = word8Vector
    
-structure Plist = PropertyList
-
 fun ofConst c =
    let
       datatype z = datatype Const.t

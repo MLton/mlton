@@ -13,20 +13,6 @@ open Rssa
 datatype z = datatype Statement.t
 datatype z = datatype Transfer.t
 
-structure LabelInfo =
-   struct
-      type t = {block: Block.t,
-		handlerStack: Label.t list option ref,
-		replacement: Statement.t vector option ref,
-		visited: bool ref}
-
-      fun layout ({handlerStack, visited, ...}: t) =
-	 Layout.record
-	 [("handlerStack",
-	   Option.layout (List.layout Label.layout) (!handlerStack)),
-	  ("visited", Bool.layout (!visited))]
-   end
-
 structure Function =
    struct
       open Function
@@ -169,10 +155,10 @@ fun flow (f: Function.t): Function.t =
 		else Vector.new1 (SetHandler l)
 	     val post =
 		case transfer of
-		   Call {args, func, return} =>
+		   Call {return, ...} =>
 		      (case return of
 			  Return.Dead => Vector.new0 ()
-			| Return.NonTail {cont, handler} =>
+			| Return.NonTail {handler, ...} =>
 			     (case handler of
 				 Handler.Caller => setExnStackSlot ()
 			       | Handler.Dead => Vector.new0 ()
@@ -223,10 +209,10 @@ fun simple (f: Function.t): Function.t =
 	  let
 	     val post =
 		case transfer of
-		   Call {args, func, return} =>
+		   Call {return, ...} =>
 		      (case return of
 			  Return.Dead => Vector.new0 ()
-			| Return.NonTail {cont, handler} =>
+			| Return.NonTail {handler, ...} =>
 			     (case handler of
 				 Handler.Caller =>
 				    Vector.new1 SetExnStackSlot

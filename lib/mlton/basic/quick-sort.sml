@@ -9,36 +9,7 @@ struct
 
 open Array
    
-(* Check if entries in a[lo ... hi] are sorted. *)
-fun 'a isSorted (a: 'a array,
-		 lo: int,
-		 hi: int,
-		 op <= : 'a * 'a -> bool) =
-   let
-      fun loop (i, x) =
-	 i > hi
-	 orelse let
-		   val y = sub (a, i)
-		in
-		   x <= y andalso loop (i + 1, y)
-		end
-   in
-      lo >= hi orelse loop (lo + 1, sub (a, lo))
-   end
-
-(* From page 284 of Numerical Recipes in C. *)
-local
-   open Word
-   val seed: word ref = ref 0w13
-in
-   fun rand () =
-      let
-	 val res = 0w1664525 * !seed + 0w1013904223
-	 val _ = seed := res
-      in
-	 toIntX res
-      end
-end
+val rand = Word.toIntX o MLton.Random.rand
 
 fun randInt (lo, hi) = lo + Int.mod (rand(), hi - lo + 1)
 

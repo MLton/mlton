@@ -1,5 +1,7 @@
 functor ProfileLabel (S: PROFILE_LABEL_STRUCTS): PROFILE_LABEL =
    struct
+      open S
+	 
       datatype t = T of {plist: PropertyList.t,
 			 uniq: int}
 

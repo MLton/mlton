@@ -313,33 +313,12 @@ end
 fun convert (program as S.Program.T {functions, globals, main, ...})
    : Rssa.Program.t =
    let
-      val callsFromC =
-	 S.Program.hasPrim (program, fn p =>
-			    case Prim.name p of
-			       Prim.Name.Thread_returnToC => true
-			     | _ => false)
       val {conRep, objectTypes, refRep, toRtype, tupleRep, tyconRep} =
 	 Representation.compute program
       val conRep =
 	 Trace.trace ("conRep", Con.layout, ConRep.layout) conRep
       fun tyconTy (pt: PointerTycon.t): ObjectType.t =
 	 Vector.sub (objectTypes, PointerTycon.index pt)
-      (* varInt is set for variables that are constant integers.  It is used
-       * so that we can precompute array numBytes when numElts is known.
-       *)
-      val {get = varInt: Var.t -> IntX.t option,
-	   set = setVarInt, ...} =
-	 Property.getSetOnce (Var.plist, Property.initConst NONE)
-      val _ =
-	 Vector.foreach (globals, fn S.Statement.T {var, exp, ...} =>
-			 case exp of
-			    S.Exp.Const c =>
-			       (case c of
-				   Const.Int n =>
-				      Option.app (var, fn x =>
-						  setVarInt (x, SOME n))
-				 | _ => ())
-			  | _ => ())
       val {get = varInfo: Var.t -> {ty: S.Type.t},
 	   set = setVarInfo, ...} =
 	 Property.getSetOnce (Var.plist,
@@ -354,7 +333,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
       val varOp =
 	 Trace.trace ("SsaToRssa.varOp", Var.layout, Operand.layout) varOp
       fun varOps xs = Vector.map (xs, varOp)
-      fun toRtypes ts = Vector.map (ts, toRtype)
       fun conSelects {rep = TupleRep.T {offsets, ...},
 		      variant: Operand.t}: Operand.t vector =
 	 Vector.keepAllMap
@@ -436,16 +414,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			   end
 		     end
 	       end
-	    fun transferToLabel (transfer: Transfer.t): Label.t =
-	       case transfer of
-		  Transfer.Goto {args, dst, ...} =>
-		     (Assert.assert ("transferToLabel", fn () =>
-				     0 = Vector.length args)
-		      ; dst)
-		| _ => newBlock {args = Vector.new0 (),
-				 kind = Kind.Jump,
-				 statements = Vector.new0 (),
-				 transfer = transfer}
 	    fun switchEP
 	       (makePointersTransfer: Operand.t -> Statement.t list * Transfer.t)
 	       : Transfer.t =
@@ -484,18 +452,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			   pointers = pointers,
 			   test = test})
 	       end
-	    fun tail (l: Label.t, args: Operand.t vector): Label.t =
-	       if 0 = Vector.length args
-		  then l
-	       else
-		  let
-		     val xs = Vector.map (args, fn _ => Var.newNoname ())
-		  in
-		     newBlock {args = Vector.new0 (),
-			       kind = Kind.Jump,
-			       statements = Vector.new0 (),
-			       transfer = Goto {dst = l, args = args}}
-		  end
 	    fun enumAndOne (): Transfer.t =
 	       let
 		  fun make (pointersOp: Operand.t)
@@ -598,7 +554,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					       var = tagVar},
 					  Type.defaultInt))
 			   end
-		      | HeaderIndirect =>
+		      | Control.HeaderIndirect =>
 			   Error.bug "HeaderIndirect unimplemented"
 	       in
 		  (ss,
@@ -706,7 +662,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 	 end
       fun labelHandler (l: Label.t): Label.t =
 	 let
-	    val info as {handler, ...} = labelInfo l
+	    val {handler, ...} = labelInfo l
 	 in
 	    case !handler of
 	       NONE =>
@@ -720,7 +676,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 	 end
       fun labelCont (l: Label.t, h: Handler.t): Label.t =
 	 let
-	    val info as {cont, ...} = labelInfo l
+	    val {cont, ...} = labelInfo l
 	    datatype z = datatype Handler.t
 	 in
 	    case List.peek (!cont, fn (h', _) => Handler.equals (h, h')) of
@@ -834,7 +790,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 	    val c = Operand.Const
 	 in
 	    case t of
-	       Type.EnumPointers (ep as {enum, ...})  =>
+	       Type.EnumPointers _  =>
 		  Operand.Cast (Operand.int (IntX.one IntSize.default), t)
 	     | Type.ExnStack => Error.bug "bogus ExnStack"
 	     | Type.Int s => c (Const.int (IntX.zero s))
@@ -851,7 +807,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 		  then (Vector.fromList ss, t)
 	       else
 		  let
-		     val s as S.Statement.T {var, ty, exp} =
+		     val S.Statement.T {exp, ty, var} =
 			Vector.sub (statements, i)
 		     fun none () = loop (i - 1, ss, t)
 		     fun add s = loop (i - 1, s :: ss, t)
@@ -871,7 +827,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			QuickSort.sortVector
 			(Vector.keepAllMap2
 			 (ys, offsets, fn (y, offset) =>
-			  Option.map (offset, fn {offset, ty} =>
+			  Option.map (offset, fn {offset, ty = _} =>
 				      {offset = offset,
 				       value = varOp y})),
 			 fn ({offset = i, ...}, {offset = i', ...}) => i <= i')
@@ -992,11 +948,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				  prefix: Transfer.t -> (Statement.t list
 							 * Transfer.t)} =
 				 let
-				    val (formals, return) =
+				    val formals =
 				       case dst () of
-					  NONE => (Vector.new0 (), NONE)
-					| SOME (x, t) =>
-					     (Vector.new1 (x, t), SOME t)
+					  NONE => Vector.new0 ()
+					| SOME (x, t) => Vector.new1 (x, t)
 				 in
 				    split
 				    (formals, Kind.CReturn {func = func}, ss,
@@ -1089,7 +1044,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 		     fun arrayUpdate (ty: Type.t) =
 		        if !Control.markCards andalso Type.isPointer ty
 			   then let
-				   val src = varOp (a 2)
 				   val arrayOp = varOp (a 0)
 				   val temp = Var.newNoname ()
 				   val tempOp =

@@ -1,6 +1,8 @@
 functor IntSize (S: INT_SIZE_STRUCTS): INT_SIZE =
 struct
 
+open S
+
 datatype t = I8 | I16 | I32 | I64
 
 val equals: t * t -> bool = op =

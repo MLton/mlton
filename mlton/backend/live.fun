@@ -83,7 +83,7 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 	  in seq [str "Live info for ",
 		  Func.layout (Function.name function)]
 	  end)
-      val {args, blocks, start, ...} = Function.dest function
+      val {args, blocks, ...} = Function.dest function
       val {get = labelInfo: Label.t -> {argInfo: LiveInfo.t,
 					block: Block.t,
 					bodyInfo: LiveInfo.t},
@@ -137,7 +137,7 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
       val _ =
 	 Vector.foreach
 	 (blocks,
-	  fn block as Block.T {args, kind, label, statements, transfer, ...} =>
+	  fn Block.T {args, kind, label, statements, transfer, ...} =>
 	  let
 	    val {argInfo, bodyInfo = b, ...} = labelInfo label
 	    val _ = Vector.foreach (args, fn (x, _) => setDefined (x, argInfo))

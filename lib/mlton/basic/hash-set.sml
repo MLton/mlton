@@ -34,7 +34,6 @@ fun newOfSize {hash, size} =
     numBuckets = 0w4 * Word.roundUpToPowerOfTwo (Word.fromInt size)}
 
 fun size (T {numItems, ...}) = !numItems
-fun numBuckets (T {buckets, ...}) = Array.length (!buckets)
 
 fun index (w: word, mask: word): int =
    Word.toInt (Word.andb (w, mask))
@@ -108,30 +107,14 @@ fun maybeGrow (s as T {buckets, mask, numItems, ...}): unit =
       else ()
    end
 
-(* Shrink the table so it is more than 1/8th full. *)
-fun maybeShrink (s as T {buckets, mask, numItems, ...}): unit =
-   let
-      val n = Array.length (!buckets)
-      val maxSize = Int.max (!numItems * 8, initialSize)
-      fun loop (n, shiftAmount) =
-	 if n <= maxSize
-	    then (n, shiftAmount)
-	 else loop (Int.quot (n, 2), 1 + shiftAmount)
-      val (n', shiftAmount) = loop (n, 0)
-   in
-      if n = n'
-	 then ()
-      else resize (s, n', Word.>> (!mask, Word.fromInt shiftAmount))
-   end
-
-fun removeAll (T {buckets, hash, numItems, ...}, p) =
+fun removeAll (T {buckets, numItems, ...}, p) =
    Array.modify (!buckets, fn elts =>
 		 List.fold (elts, [], fn (a, ac) =>
 			    if p a
 			       then (Int.dec numItems; ac)
 			    else a :: ac))
 
-fun remove (T {buckets, hash, mask, numItems, ...}, w, p) =
+fun remove (T {buckets, mask, numItems, ...}, w, p) =
    let
       val i = index (w, !mask)
       val b = !buckets

@@ -167,8 +167,8 @@ structure AFile =
 		     valOf (Int.fromString s)))
 		val graph = Graph.new ()
 		val split =
-		   Vector.mapi
-		   (sources, fn (i, {masterIndex, ...}) =>
+		   Vector.map
+		   (sources, fn {masterIndex, ...} =>
 		    let
 		       val n = Graph.newNode graph
 		    in

@@ -354,7 +354,6 @@ fun ('down, 'up)
 		      u)
 		  end
 	 end
-      and loopDecs (ds, down) = loops (ds, fn d => loopDec (d, down))
       and loopExp (e: Exp.t, d: 'down): Exp.t * 'up =
 	 let
 	    val loopMatch = fn m => loopMatch (m, d)
@@ -434,8 +433,6 @@ fun ('down, 'up)
 
 fun scope (dec: Dec.t): Dec.t =
    let
-      type up = {free: Tyvars.t,
-		 mayNotBind: Tyvar.t list}
       fun bindFunVal (env, tyvars) =
 	 let
 	    val (env, tyvars) = Env.rename (env, tyvars)
@@ -474,7 +471,7 @@ fun scope (dec: Dec.t): Dec.t =
       fun bindType (env, tyvars) =
 	 let
 	    val (env, tyvars) = Env.rename (env, tyvars)
-	    fun finish {free, mayNotBind} =
+	    fun finish {free, mayNotBind = _} =
 	       {free = Tyvars.- (free, Tyvars.fromList (Vector.toList tyvars)),
 		mayNotBind = []}
 	 in

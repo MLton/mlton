@@ -75,18 +75,13 @@ end
 
 val toString = Layout.toString o layout
 
-local
-   val truee = Random.word ()
-   val falsee = Random.word ()
-in
-   fun hash (c: t): word =
-      case c of
-	 Int i => String.hash (IntX.toString i)
-       | IntInf i => String.hash (IntInf.toString i)
-       | Real r => RealX.hash r
-       | Word w => LargeWord.toWord (WordX.toLargeWord w)
-       | Word8Vector v => String.hash (Word8.vectorToString v)
-end
+fun hash (c: t): word =
+   case c of
+      Int i => String.hash (IntX.toString i)
+    | IntInf i => String.hash (IntInf.toString i)
+    | Real r => RealX.hash r
+    | Word w => LargeWord.toWord (WordX.toLargeWord w)
+    | Word8Vector v => String.hash (Word8.vectorToString v)
    
 fun equals (c, c') =
    case (c, c') of

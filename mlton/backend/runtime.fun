@@ -112,8 +112,6 @@ structure ObjectType =
        | Weak
        | WeakGone
 
-      val equals: t * t -> bool = op =
-
       fun layout (t: t): Layout.t =
 	 let
 	    open Layout
@@ -131,6 +129,7 @@ structure ObjectType =
 	     | Weak => str "Weak"
 	     | WeakGone => str "WeakGone"
 	 end
+      val _ = layout (* quell unused warning *)
    end
 
 val maxTypeIndex = Int.pow (2, 19)
@@ -173,9 +172,6 @@ fun wordAlignInt (i: int): int =
 fun isWordAligned (n: int): bool =
    0 = Int.rem (n, wordSize)
    
-fun isValidObjectSize (n: int): bool =
-   n > 0 andalso isWordAligned n
-
 val maxFrameSize = Int.pow (2, 16)
 
 end

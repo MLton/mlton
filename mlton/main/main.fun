@@ -34,8 +34,6 @@ structure Place =
 	  | OUT => "out"
 	  | TypeCheck => "tc"
 
-      val layout = Layout.str o toString
-
       fun compare (p, p') = Int.compare (toInt p, toInt p')
    end
 
@@ -503,7 +501,7 @@ fun commandLine (args: string list): unit =
 		   | SOME lib => [lib]
 	       end
 	  | NetBSD => ["-Wl,-R/usr/pkg/lib", "-L/usr/pkg/lib", "-lgmp"]
-	  | Sun => ["-lgmp"]
+	  | Solaris => ["-lgmp"]
       val linkOpts =
 	 List.concat [[concat ["-L", !libTargetDir],
 		       if !debug then "-lmlton-gdb" else "-lmlton"],

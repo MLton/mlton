@@ -39,8 +39,6 @@ structure Node =
       fun successors (Node {successors, ...}) = !successors
       fun plist (Node {plist, ...}) = plist
 
-      fun equals (n, n') = PropertyList.equals (plist n, plist n')
-
       fun new () = Node {successors = ref [],
 			 plist = PropertyList.new ()}
 
@@ -112,10 +110,12 @@ fun newNode (T {nodes, ...}) =
       ; n
    end
 
-fun addEdge (_, e as {from = Node.Node {successors, ...}, to}) =
-   let val e = Edge.new e
-   in List.push (successors, e)
-      ; e
+fun addEdge (_, e as {from = Node.Node {successors, ...}, ...}) =
+   let
+      val e = Edge.new e
+      val () = List.push (successors, e)
+   in
+      e
    end
 
 fun layoutDot (T {nodes, ...},
@@ -208,7 +208,7 @@ structure DfsParam =
 	 end
    end
 	 
-fun dfsNodes (g: t,
+fun dfsNodes (_: t,
 	      ns: Node.t list,
 	      (b, f): ('a, 'b, 'c, 'd, 'e) DfsParam.t) =
    let
@@ -266,7 +266,7 @@ fun dfs (g, z) = dfsNodes (g, nodes g, z)
 fun dfsTrees (g, roots: Node.t list, nodeValue: Node.t -> 'a): 'a Tree.t list =
    dfsNodes
    (g, roots,
-    ([], fn (n, trees) =>
+    ([], fn (_, trees) =>
      let
 	fun startNode (n, ()) =
 	   let
@@ -353,6 +353,8 @@ fun validDominators (graph,
     in true
     end)
 
+val _ = validDominators
+
 datatype 'a idomRes =
    Idom of Node.t
   | Root
@@ -381,7 +383,7 @@ fun dominators (graph, {root}) =
 	 val (ancestor', ancestor) = make #ancestor
 	 val (bucket', bucket) = make #bucket
 	 val (child', child) = make #child
-	 val (dfn', dfn) = make #dfn
+	 val (dfn', _) = make #dfn
 	 val (idom', idom) = make #idom
 	 val (label', label) = make #label
 	 val (parent', parent) = make #parent
@@ -574,7 +576,7 @@ fun ignoreNodes (g: t, shouldIgnore: Node.t -> bool)
        * nonempty paths through ignored nodes.  It is computed by starting
        * at each node and doing a DFS that only goes through ignored nodes.
        *)
-      val {get = reach: Node.t -> Node.t list, rem, ...} =
+      val {get = reach: Node.t -> Node.t list, ...} =
 	 Property.get
 	 (Node.plist,
 	  Property.initFun
@@ -687,7 +689,8 @@ structure LoopForest =
 	    Dot.layout {nodes = !nodes,
 			options = options,
 			title = title}
-	 end   
+	 end
+      val _ = layoutDot
    end
 
 (* Strongly connected components from Aho, Hopcroft, Ullman section 5.5. *)
@@ -700,10 +703,6 @@ fun stronglyConnectedComponents (g: t): Node.t list list =
 	   set = setNodeInfo, destroy, ...} =
 	 Property.destGetSetOnce (Node.plist,
 				  Property.initRaise ("scc info", Node.layout))
-      fun updateLow {from: int ref, to: int ref} =
-	 if !to < !from
-	    then from := !to
-	 else ()
       fun startNode (n, (count, stack, components)) =
 	 let
 	    val dfnumber = count
@@ -792,7 +791,7 @@ val stronglyConnectedComponents =
 	    File.withOut
 	    (concat ["graph", Int.toString index, ".dot"], fn out =>
 	     Layout.output
-	     (layoutDot (g, fn {nodeName} =>
+	     (layoutDot (g, fn _ =>
 			 {edgeOptions = fn _ => [],
 			  nodeOptions = fn n => [Dot.NodeOption.label
 						 (Int.toString (nodeIndex n))],
@@ -837,7 +836,6 @@ fun loopForestSteensgaard (g: t, {root: Node.t}): LoopForest.t =
       val _ = List.foreach (nodes g, fn n => newNodeInfo (n, n))
       (* Treat the root as though there is an external edge into it. *)
       val _ = #isHeader (nodeInfo root) := true
-      val c = Counter.new 0
       (* Before calling treeFor, nodeInfo must be defined for all nodes in g. *)
       fun treeFor (g: t): LoopForest.t  =
 	 let
@@ -927,10 +925,9 @@ fun loopForestSteensgaard (g: t, {root: Node.t}): LoopForest.t =
 				(Node.successors from, fn e =>
 				 let
 				    val to = Edge.to e
-				    val info as {class = ref class', 
-						 isHeader = isHeader',
-						 next = next', ...} =
-				       nodeInfo to
+				    val {class = ref class', 
+					 isHeader = isHeader',
+					 next = next', ...} = nodeInfo to
 				 in
 				    if class = class'
 				       andalso not (!isHeader')
@@ -1061,7 +1058,7 @@ fun topologicalSort (g: t): Node.t list option =
 			   if !(amVisiting (Edge.to e))
 			      then raise Cycle
 			   else ns
-			fun tree (e, ns) = (ns, fn ns => ns)
+			fun tree (_, ns) = (ns, fn ns => ns)
 			fun finish ns = n :: ns
 		     in
 			(ns, nonTree, tree, finish)
@@ -1117,7 +1114,7 @@ val transpose =
 	    File.withOut
 	    (concat ["graph", Int.toString index, ".dot"], fn out =>
 	     Layout.output
-	     (layoutDot (g, fn {nodeName} =>
+	     (layoutDot (g, fn _ =>
 			 {edgeOptions = fn _ => [],
 			  nodeOptions = fn n => [Dot.NodeOption.label
 						 (Int.toString (nodeIndex n))],
@@ -1129,7 +1126,7 @@ val transpose =
 	    File.withOut
 	    (concat ["transpose", Int.toString index, ".dot"], fn out =>
 	     Layout.output
-	     (layoutDot (g, fn {nodeName} =>
+	     (layoutDot (g, fn _ =>
 			 {edgeOptions = fn _ => [],
 			  nodeOptions = fn n => [Dot.NodeOption.label
 						 (Int.toString (nodeIndex n))],

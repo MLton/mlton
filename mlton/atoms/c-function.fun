@@ -47,7 +47,6 @@ local
 in
    val args = make #args
    val bytesNeeded = make #bytesNeeded
-   val convention = make #convention
    val ensuresBytesFree = make #ensuresBytesFree
    val mayGC = make #mayGC
    val maySwitchThreads = make #maySwitchThreads

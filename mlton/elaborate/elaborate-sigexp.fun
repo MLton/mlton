@@ -17,13 +17,11 @@ in
    structure DatBind = DatBind
    structure DatatypeRhs = DatatypeRhs
    structure Equation = Equation
-   structure Longstrid = Longstrid
    structure Longtycon = Longtycon
    structure Sigexp = Sigexp
    structure Sigid = Sigid
    structure SortedRecord = SortedRecord
    structure Spec = Spec
-   structure Strid = Strid
    structure TypBind = TypBind
    structure Tyvar = Tyvar
 end
@@ -34,7 +32,6 @@ in
    structure Interface = Interface
 end
 
-structure Con = Env.CoreML.Con
 structure StructureEnv = Env
 structure Env = Env.InterfaceEnv
 
@@ -176,15 +173,14 @@ fun elaborateTypedescs (typedescs: {tycon: Ast.Tycon.t,
 
 fun elaborateDatBind (datBind: DatBind.t, E): unit =
    let
-      val region = DatBind.region datBind
-      val DatBind.T {datatypes, withtypes} = DatBind.node datBind
+      val DatBind.T {datatypes, ...} = DatBind.node datBind
       val change = ref false
       (* Build enough of an interface so that that the constructor argument
        * types can be elaborated.
        *)
       val tycons =
 	 Vector.map
-	 (datatypes, fn {cons, tycon = name, tyvars} =>
+	 (datatypes, fn {tycon = name, tyvars, ...} =>
 	  let
 	     val tycon = Tycon.make {hasCons = true}
 	     val _ =
@@ -343,15 +339,15 @@ fun elaborateSigexp (sigexp: Sigexp.t, E: StructureEnv.t): Interface.t option =
 		List.foreach
 		(cons, fn (name: Ast.Con.t, arg: Ast.Type.t option) =>
 		 let
-		    val (arg, ty) =
+		    val ty =
 		       case arg of
-			  NONE => (NONE, Type.exn)
+			  NONE => Type.exn
 			| SOME t =>
 			     let
 				val t = Scheme.ty (elaborateScheme
 						   (Vector.new0 (), t, E))
 			     in
-				(SOME t, Type.arrow (t, Type.exn))
+				Type.arrow (t, Type.exn)
 			     end
 		    val scheme = Scheme.make (Vector.new0 (), ty)
 		    val _ = Env.extendExn (E, name, scheme)

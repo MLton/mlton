@@ -8,7 +8,8 @@
 functor AstConst (S: AST_CONST_STRUCTS): AST_CONST =
 struct
 
-open Region.Wrap
+open S Region.Wrap
+   
 datatype node =
    Bool of bool
  | Char of char

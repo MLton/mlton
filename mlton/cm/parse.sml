@@ -62,8 +62,8 @@ fun parse {cmfile: string} =
 		 let
 		    fun name () =
 		       (case normal () of
-			   Lexer.T_SYMBOL s => ()
-			 | Lexer.T_STRING s => ()
+			   Lexer.T_SYMBOL _ => ()
+			 | Lexer.T_STRING _ => ()
 			 | _ => bad "missing exported name"
 			      ; SOME ())
 		 in case normal () of
@@ -93,8 +93,8 @@ fun parse {cmfile: string} =
 		       (case member () of
 			   Lexer.T_COLON =>
 			      (case member () of
-				  Lexer.T_SYMBOL class => ()
-				| Lexer.T_STRING class => ()
+				  Lexer.T_SYMBOL _ => ()
+				| Lexer.T_STRING _ => ()
 				| _ => bad "missing class name")
 			 | t => unget t
 			      ; SOME f)

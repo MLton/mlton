@@ -134,8 +134,6 @@ fun one s = make (Word.fromWord 0w1, s)
    
 fun zero s = make (Word.fromWord 0w0, s)
 
-fun allOnes s = make (WordSize.allOnes s, s)
-
 fun max s = make (WordSize.max s, s)
 
 fun toChar (w: t): char =

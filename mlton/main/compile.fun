@@ -8,6 +8,8 @@
 functor Compile (S: COMPILE_STRUCTS): COMPILE =
 struct
 
+open S
+
 (*---------------------------------------------------*)
 (*              Intermediate Languages               *)
 (*---------------------------------------------------*)
@@ -30,13 +32,11 @@ in
    structure RealSize = RealSize
    structure WordSize = WordSize
 end
-structure Atoms = Atoms (structure Ast = Ast
-			 structure Field = Field
+structure Atoms = Atoms (structure Field = Field
 			 structure IntSize = IntSize
 			 structure RealSize = RealSize
 			 structure Record = Record
 			 structure SortedRecord = SortedRecord
-			 structure Symbol = Symbol
 			 structure Tyvar = Tyvar
 			 structure WordSize = WordSize)
 local
@@ -86,7 +86,6 @@ local
    open Elaborate
 in
    structure ConstType = ConstType
-   structure Decs = Decs
    structure Env = Env
 end
 structure LookupConstant = LookupConstant (structure Const = Const
@@ -164,7 +163,6 @@ fun parseAndElaborateFiles (fs: File.t list, E: Env.t, lookupConstant): Decs.t =
 
 local
    structure Con = TypeEnv.Con
-   structure Scheme = TypeEnv.Scheme
    structure Tycon = TypeEnv.Tycon
    structure Type = TypeEnv.Type
    structure Tyvar = TypeEnv.Tyvar
@@ -243,7 +241,7 @@ in
 		   let
 		      val cons =
 			 Env.newCons
-			 (E, Vector.map (cons, fn {arg, con} =>
+			 (E, Vector.map (cons, fn {con, ...} =>
 					 {con = con, name = Con.toAst con}))
 			 (Vector.map
 			  (cons, fn {arg, ...} =>

@@ -20,8 +20,6 @@ datatype 'a t =
  | Snoc of 'a t (* Nonempty *) * 'a 
  | Vector of 'a vector (* Nonempty. *)
    
-val empty = Empty
-
 val isEmpty = fn Empty => true | _ => false
 	 
 fun append (t1, t2) =

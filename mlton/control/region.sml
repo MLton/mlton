@@ -76,10 +76,8 @@ structure Wrap =
       fun makeRegion' (node, left, right) = T {node = node,
 					       region = make {left = left,
 							      right = right}}
-      fun make node = makeRegion (node, bogus)
+
       fun dest (T {node, region}) = (node, region)
-(*      val left = fn T {region, ...} => left region *)
-(*      val right = fn T {region, ...} => right region *)
    end
 
 end

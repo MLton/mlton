@@ -1,17 +1,13 @@
 functor SourceInfo (S: SOURCE_INFO_STRUCTS): SOURCE_INFO =
 struct
 
+open S
+   
 structure Pos =
    struct
       datatype t =
 	 Known of SourcePos.t
        | Unknown
-
-      fun equals (p, p') =
-	 case (p, p') of
-	    (Known p, Known p') => SourcePos.equals (p, p')
-	  | (Unknown, Unknown) => true
-	  | _ => false
 
       fun toString p =
 	 case p of

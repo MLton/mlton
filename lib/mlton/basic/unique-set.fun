@@ -158,9 +158,6 @@ fun singleton x = fromList [x]
 val cacheHits: int ref = ref 0
 val cacheMisses: int ref = ref 0
 
-val numOps: int ref = ref 0
-val next: int ref = ref 1
-
 fun stats() = {hits = !cacheHits, misses = !cacheMisses}
 fun reset() =
    (* need to clear out and reset the tables *)

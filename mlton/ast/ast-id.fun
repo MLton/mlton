@@ -35,8 +35,6 @@ val fromSymbol = makeRegion
 fun makeRegion' (s, x, y) =
    makeRegion (s, Region.make {left = x, right = y})
 
-fun make s = makeRegion (s, Region.bogus)
-
 fun dest (T {name, region, ...}) = (name, region)
 
 val bogus = makeRegion (Symbol.bogus, Region.bogus)
@@ -61,10 +59,6 @@ in
    val op <= = binary String.<=
    val compare = binary String.compare
 end
-
-fun max (x, y) = if x > y then x else y
-
-fun min (x, y) = if x < y then x else y
 
 fun equals (x, x') = Symbol.equals (name x, name x')
 

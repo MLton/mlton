@@ -50,7 +50,7 @@ type 'a base = {one: 'a,
    
 fun ('a, 'b) make
    ({isZero, divMod, two}: 'a exponent)
-   ({one, times, layout}: 'b base) =
+   ({one, times, layout = _}: 'b base) =
    let
       val op * = times
       (* Repeated squaring. *)

@@ -124,7 +124,7 @@ fun layoutApp (c: t,
 	 val seq = seq
 	 val str = str
       end
-      fun maybe (l, {isChar, needsParen}) =
+      fun maybe (l, {isChar = _, needsParen}) =
 	 if needsParen
 	    then Layout.paren l
 	 else l

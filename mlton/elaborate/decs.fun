@@ -20,8 +20,6 @@ type t = dec t
 
 fun add (ds, d) = append (ds, single d)
 
-val fromDec = single
-
 fun layout ds =
    let
       open Layout

@@ -92,10 +92,11 @@ in
 	 val (a, b) = if nEven then (m22, ~m12) else (~m22, m12)
       in (u, a, b)
       end
-   val extendedEuclid = trace extendedEuclid
 
-   fun extendedEuclid(a, b) =
-      extendedEuclidTerm(a, b, fn (_, b) => equals(b, zero), trace)
+   val _ = extendedEuclid
+
+   fun extendedEuclid (a, b) =
+      extendedEuclidTerm (a, b, fn (_, b) => equals (b, zero), trace)
 end   
 
 local
@@ -129,7 +130,6 @@ structure Int =
       open Pervasive.Int
       type t = int
       val layout = Layout.str o toString
-      fun add1 n = n + 1
    end
    
 type factors = (t * Int.t) list

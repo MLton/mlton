@@ -98,7 +98,7 @@ structure LambdaNode:
 
       fun equals (LambdaNode d, LambdaNode d') = Dset.equals (d, d')
 
-      fun coerce (arg as {from = from as LambdaNode d, to: t}): unit =
+      fun coerce {from = from as LambdaNode d, to: t}: unit =
 	 if equals (from, to)
 	    then ()
 	 else let
@@ -116,7 +116,7 @@ structure LambdaNode:
 	 else (List.foreach (c, fn to => send (to, diff))
 	       ; handless (h, diff))
 
-      fun unify (s as LambdaNode d, s' as LambdaNode d'): unit =
+      fun unify (LambdaNode d, LambdaNode d'): unit =
 	 if Dset.equals (d, d')
 	    then ()
 	 else
@@ -195,11 +195,6 @@ fun layout v =
     | Lambdas l => LambdaNode.layout l
    end
    
-fun isType v =
-   case tree v of
-      Type _ => true
-    | _ => false
-
 fun isEmpty v =
    case tree v of
       Lambdas n => Lambdas.isEmpty (LambdaNode.toSet n)
@@ -303,8 +298,6 @@ fun deArray v =
 fun lambda (l: Sxml.Lambda.t, t: Type.t): t =
    new (Lambdas (LambdaNode.lambda l), t)       
 
-val traceUnify = Trace.trace2 ("Value.unify", layout, layout, Unit.layout)
-
 fun unify (v, v') =
    if Dset.equals (v, v')
       then ()
@@ -376,7 +369,6 @@ open Dest
 (*---------------------------------------------------*)
 (*                     primApply                     *)
 (*---------------------------------------------------*)
-structure Name = Prim.Name
 
 val {get = serialValue: Type.t -> t, ...} =
    Property.get (Type.plist, Property.initFun fromType)
@@ -394,7 +386,7 @@ fun primApply {prim: Prim.t, args: t vector, resultTy: Type.t}: t =
 	  ; Error.bug "Value.primApply: type error")
       fun arg i = Vector.sub (args, i)
       val n = Vector.length args
-      fun oneArg f =
+      fun oneArg () =
 	 if n = 1
 	    then arg 0
 	 else Error.bug "wrong number of args for primitive"

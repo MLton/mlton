@@ -30,8 +30,6 @@ fun stats () =
 		      Int.layout (PropertyList.length (plist c))]))
    end
    
-fun clearPrimitive () = List.foreach (all, clear)
-
 fun fromBool b = if b then truee else falsee
    
 end

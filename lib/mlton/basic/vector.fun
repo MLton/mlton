@@ -258,7 +258,7 @@ fun foldri (a, b, f) =
    Int.foldDown (0, length a, b, fn (i, b) => f (i, unsafeSub (a, i), b))
 
 fun foldr (a, b, f) =
-   foldri (a, b, fn (i, a, b) => f (a, b))
+   foldri (a, b, fn (_, a, b) => f (a, b))
    
 fun foreachri (a, f) = foldri (a, (), fn (i, x, ()) => f (i, x))
 
@@ -272,8 +272,6 @@ fun layout l v = Layout.tuple (toListMap (v, l))
 
 fun toString xToString l =
    Layout.toString (layout (Layout.str o xToString) l)
-
-fun maxIndex a = Int.sub1 (length a)
 
 fun new0 () = tabulate (0, fn _ => Error.bug "Vector.new0")
 
@@ -524,9 +522,6 @@ fun indexi (v, f) =
 	  fn _ => NONE)
 
 fun index (v, f) = indexi (v, f o #2)
-
-fun numTrue (v: 'a t, f: 'a -> bool): int =
-   fold (v, 0, fn (a, n) => if f a then n + 1 else n)
 
 fun indices (a: bool t): int t =
    keepAllMapi (a, fn (i, b) => if b then SOME i else NONE)

@@ -33,7 +33,6 @@ in
    structure Priority = Priority
    structure Record = Record
    structure SortedRecord = SortedRecord
-   structure Strid = Strid
    structure Symbol = Symbol
    structure TypBind = TypBind
 end
@@ -49,7 +48,6 @@ end
 local
    open TypeStr
 in
-   structure Cons = Cons
    structure Kind = Kind
 end
 
@@ -57,7 +55,6 @@ local
    open TypeEnv
 in
    structure Scheme = Scheme
-   structure Time = Time
    structure Type = Type
 end
 
@@ -66,7 +63,6 @@ local
 in
    structure CFunction = CFunction
    structure Convention	 = CFunction.Convention	
-   structure CType = CType
    structure Con = Con
    structure Const = Const
    structure Cdec = Dec
@@ -124,27 +120,7 @@ structure Lookup =
    struct
       type t = Longtycon.t -> TypeStr.t
 
-      fun fromFun f = f
       fun fromEnv (E: Env.t) longtycon = Env.lookupLongtycon (E, longtycon)
-      fun lookup (l: t, c: Longtycon.t) = l c
-
-      fun plusEnv (lookup: t, E: Env.t): t =
-	 fn longtycon =>
-	 case Env.peekLongtycon (E, longtycon) of
-	    NONE => lookup longtycon
-	  | SOME typeFcn => typeFcn
-
-      fun plusTycons (f: t, v) =
-	 if Vector.isEmpty v
-	    then f
-	 else
-	    fn t => (case Longtycon.split t of
-			([], t') =>
-			   (case Vector.peek (v, fn (t'', _) =>
-					      Ast.Tycon.equals (t', t'')) of
-			       NONE => f t
-			     | SOME (_, s) => s)
-		      | _ => f t)
    end
 
 fun elaborateType (ty: Atype.t, lookup: Lookup.t): Type.t =
@@ -201,10 +177,8 @@ fun elaborateType (ty: Atype.t, lookup: Lookup.t): Type.t =
       loop ty
    end
 
-fun elaborateTypeOpt (ty: Ast.Type.t option, lookup): Type.t option =
-   Option.map (ty, fn ty => elaborateType (ty, lookup))
-
 val overloads: (Ast.Priority.t * (unit -> unit)) list ref = ref []
+
 val freeTyvarChecks: (unit -> unit) list ref = ref []
 
 val {hom = typeTycon: Type.t -> Tycon.t option, ...} =
@@ -225,7 +199,7 @@ fun 'a elabConst (c: Aconst.t,
 	     seq [Type.layoutPretty ty, str " too big: ", Aconst.layout c],
 	     empty)
 	 end
-      fun choose (tycon, all, sizeTycon, name, make) =
+      fun choose (tycon, all, sizeTycon, make) =
 	 case List.peek (all, fn s => Tycon.equals (tycon, sizeTycon s)) of
 	    NONE => Const.string "<bogus>"
 	  | SOME s => make s
@@ -263,7 +237,7 @@ fun 'a elabConst (c: Aconst.t,
 		if Tycon.equals (tycon, Tycon.intInf)
 		   then Const.IntInf i
 		else
-		   choose (tycon, IntSize.all, Tycon.int, "int", fn s =>
+		   choose (tycon, IntSize.all, Tycon.int, fn s =>
 			   Const.Int
 			   (IntX.make (i, s)
 			    handle Overflow => (error ty; IntX.zero s))))
@@ -274,7 +248,7 @@ fun 'a elabConst (c: Aconst.t,
 	    in
 	       delay
 	       (ty, fn tycon =>
-		choose (tycon, RealSize.all, Tycon.real, "real", fn s =>
+		choose (tycon, RealSize.all, Tycon.real, fn s =>
 			Const.Real (case RealX.make (r, s) of
 				       NONE => (error ty; RealX.zero s)
 				     | SOME r => r)))
@@ -286,7 +260,7 @@ fun 'a elabConst (c: Aconst.t,
 	    in
 	       delay
 	       (ty, fn tycon =>
-		choose (tycon, WordSize.all, Tycon.word, "word", fn s =>
+		choose (tycon, WordSize.all, Tycon.word, fn s =>
 			Const.Word
 			(if w <= LargeWord.toIntInf (WordSize.max s)
 			    then WordX.fromLargeInt (w, s)
@@ -376,7 +350,6 @@ val elaboratePat:
    in
       fn (p: Apat.t, E: Env.t, {bind}, preError: unit -> unit) =>
       let
-	 val region = Apat.region p
 	 val xts: (Avar.t * Var.t * Type.t) list ref = ref []
 	 fun bindToType (x: Avar.t, t: Type.t): Var.t =
 	    let
@@ -872,7 +845,7 @@ fun export {attributes, name: string, region: Region.t, ty: Type.t}: Aexp.t =
 		    (newVar (),
 		     (case res of
 			 NONE => Exp.constraint (Exp.var resVar, Type.unit)
-		       | SOME (t, name) => 
+		       | SOME (_, name) => 
 			    Exp.app (id (concat ["set", name]),
 				     Exp.var resVar)))),
 		   fn (x, e) => Dec.vall (Vector.new0 (), x, e))],
@@ -920,7 +893,6 @@ fun elaborateDec (d, {env = E,
 		      lookupConstant: string * ConstType.t -> CoreML.Const.t,
 		      nest}) =
    let
-      val newTycons: (Tycon.t * Region.t) list ref = ref []
       val {get = recursiveTargs: Var.t -> (unit -> Type.t vector) option ref,
 	   ...} =
 	 Property.get (Var.plist, Property.initFun (fn _ => ref NONE))
@@ -943,7 +915,6 @@ fun elaborateDec (d, {env = E,
 	 end  
       fun elabType (t: Atype.t): Type.t =
 	 elaborateType (t, Lookup.fromEnv E)
-      fun elabTypeOpt t = elaborateTypeOpt (t, Lookup.fromEnv E)
       fun elabTypBind (typBind: TypBind.t) =
 	 let
 	    val TypBind.T types = TypBind.node typBind
@@ -964,7 +935,6 @@ fun elaborateDec (d, {env = E,
 		     typeStr: TypeStr.t} vector =
 	 (* rules 28, 29, 81, 82 *)
 	 let
-	    val region = DatBind.region datBind
 	    val DatBind.T {datatypes, withtypes} = DatBind.node datBind
 	    (* Build enough of an env so that that the withtypes and the
 	     * constructor argument types can be elaborated.
@@ -1011,7 +981,7 @@ fun elaborateDec (d, {env = E,
 		       val (schemes, datatypeCons) =
 			  Vector.unzip
 			  (Vector.map
-			   (cons, fn {arg, con, name} =>
+			   (cons, fn {arg, con, ...} =>
 			    let
 			       val (arg, ty) =
 				  case arg of
@@ -1269,7 +1239,7 @@ fun elaborateDec (d, {env = E,
 				val _ =
 				   case diff of
 				      [] => ()
-				    | fs =>
+				    | _ =>
 					 let
 					    val diff =
 					       List.removeDuplicates
@@ -1391,22 +1361,17 @@ fun elaborateDec (d, {env = E,
 				 in
 				    t
 				 end)
-			     val bodyType =
-				let
-				   val t = Cexp.ty (#body (Vector.sub (rs, 0)))
-				   val _ =
-				      Vector.foreach
-				      (rs, fn {body, bodyRegion, ...} =>
-				       unify
-				       (t, Cexp.ty body, fn (l1, l2) =>
-					(bodyRegion,
-					 str "function with result of different types",
-					 align [seq [str "result:   ", l2],
-						seq [str "previous: ", l1],
-						lay ()])))
-				in
-				   t
-				end
+			     val t = Cexp.ty (#body (Vector.sub (rs, 0)))
+			     val _ =
+				Vector.foreach
+				(rs, fn {body, bodyRegion, ...} =>
+				 unify
+				 (t, Cexp.ty body, fn (l1, l2) =>
+				  (bodyRegion,
+				   str "function with result of different types",
+				   align [seq [str "result:   ", l2],
+					  seq [str "previous: ", l1],
+					  lay ()])))
 			     val xs =
 				Vector.tabulate (numArgs, fn _ =>
 						 Var.newNoname ())
@@ -1416,8 +1381,7 @@ fun elaborateDec (d, {env = E,
 				      let
 					 val e =
 					    Cexp.casee
-					    {hasExtraTuple = i > 1,
-					     kind = "function",
+					    {kind = "function",
 					     lay = lay,
 					     noMatch = Cexp.RaiseMatch,
 					     region = region,
@@ -1635,7 +1599,7 @@ fun elaborateDec (d, {env = E,
 			  end)
 		      val rvbs =
 			 Vector.map
-			 (rvbs, fn {bound, match, nest, pat, region, var, ...} =>
+			 (rvbs, fn {bound, match, nest, pat, var, ...} =>
 			  let
 			     val {argType, region, resultType, rules} =
 				elabMatch (match, preError, nest)
@@ -1652,8 +1616,7 @@ fun elaborateDec (d, {env = E,
 			     val arg = Var.newNoname ()
 			     val body =
 				Cexp.enterLeave
-				(Cexp.casee {hasExtraTuple = false,
-					     kind = "function",
+				(Cexp.casee {kind = "function",
 					     lay = lay,
 					     noMatch = Cexp.RaiseMatch,
 					     region = region,
@@ -1800,8 +1763,7 @@ fun elaborateDec (d, {env = E,
 	      | Aexp.Case (e, m) =>
 		   let
 		      val e = elab e
-		      val {argType, resultType, rules, ...} =
-			 elabMatch (m, preError, nest)
+		      val {argType, rules, ...} = elabMatch (m, preError, nest)
 		      val _ =
 			 unify
 			 (Cexp.ty e, argType, fn (l1, l2) =>
@@ -1810,8 +1772,7 @@ fun elaborateDec (d, {env = E,
 			   align [seq [str "object type:  ", l1],
 				  seq [str "rules expect: ", l2]]))
 		   in
-		      Cexp.casee {hasExtraTuple = false,
-				  kind = "case",
+		      Cexp.casee {kind = "case",
 				  lay = lay,
 				  noMatch = Cexp.RaiseMatch,
 				  region = region,
@@ -2010,8 +1971,7 @@ fun elaborateDec (d, {env = E,
 						  (Var.newNoname (), t))
 					   in
 					      Cexp.casee
-					      {hasExtraTuple = false,
-					       kind = "",
+					      {kind = "",
 					       lay = fn _ => Layout.empty,
 					       noMatch = Cexp.Impossible,
 					       region = Region.bogus,
@@ -2252,11 +2212,9 @@ fun elaborateDec (d, {env = E,
       and elabMatchFn (m: Amatch.t, preError, nest, kind, lay, noMatch) =
 	 let
 	    val arg = Var.newNoname ()
-	    val {argType, region, resultType, rules} =
-	       elabMatch (m, preError, nest)
+	    val {argType, region, rules, ...} = elabMatch (m, preError, nest)
 	    val body =
-	       Cexp.casee {hasExtraTuple = false,
-			   kind = kind,
+	       Cexp.casee {kind = kind,
 			   lay = lay,
 			   noMatch = noMatch,
 			   region = region,
@@ -2286,7 +2244,7 @@ fun elaborateDec (d, {env = E,
 			  approximate
 			  (seq [Apat.layout pat, str " => ", Aexp.layout exp])
 		       end
-		    val (p, xts) =
+		    val (p, _) =
 		       elaboratePat () (pat, E, {bind = true}, preError)
 		    val _ =
 		       unify

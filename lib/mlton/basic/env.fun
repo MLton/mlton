@@ -13,18 +13,6 @@ datatype 'a t = T of (Domain.t * 'a) List.t
 
 fun size (T l) = List.length l
    
-fun eq d d' = Domain.equals (d, d')
-fun member (d, ds) = List.exists (ds, eq d)
-   
-fun invariant (T drs) =
-   let
-      fun loop (drs, seen) =
-	 case drs of
-	    [] => true
-	  | (d, _) :: drs => not (member (d, seen)) andalso loop (drs, d :: seen)
-   in loop (drs, [])
-   end
-
 fun domain (T drs) = List.revMap (drs, #1)
    
 val fromList = T

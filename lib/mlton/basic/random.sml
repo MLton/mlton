@@ -7,8 +7,6 @@
 structure Random: RANDOM =
 struct
 
-structure Array = Pervasive.Array
-
 local
    open MLton.Random
 in
@@ -105,52 +103,5 @@ fun list l =
 	 then NONE
       else SOME (List.nth (l, intRange (0, n - 1) ()))
    end
-
-(* For now, the following is not used.  I just use MLton.Random.rand. *)
-(* Page 302 of Numerical Recipes in C.
- * DES random word generator.
- *)
-local
-   val niter: int = 4
-   open Word
-   fun make (l: Word.t list) =
-      let val a = Array.fromList l
-      in fn i => Array.sub (a, i)
-      end
-   val c1 = make [0wxbaa96887, 0wx1e17d32c, 0wx03bdcd3c, 0wx0f33d1b2]
-   val c2 = make [0wx4b0f3b58, 0wxe874f0c3, 0wx6955c5a6, 0wx55a7ca46]
-   val half: Word.t = 0w16
-   fun reverse w = orb (>> (w, half), << (w, half))
-   fun psdes (lword: t, irword: t): t * t =
-      Int.fold
-      (0, niter, (lword, irword), fn (i, (lword, irword)) =>
-       let
-	  val ia = xorb (irword, c1 i)
-	  val itmpl = andb (ia, 0wxffff)
-	  val itmph = >> (ia, half)
-	  val ib = itmpl * itmpl + notb (itmph * itmph)
-       in (irword,
-	   xorb (lword, itmpl * itmph + xorb (c2 i, reverse ib)))
-       end)
-
-   val zero: Word.t = 0wx13 
-   val lword = ref zero
-   val irword = ref zero
-   val needTo = ref true
-   fun word () =
-      if !needTo
-	 then
-	    let
-	       val (l, i) = psdes (!lword, !irword)
-	       val _ = lword := l
-	       val _ = irword := i
-	       val _ = needTo := false
-	    in
-	       l
-	    end
-      else (needTo := true
-	    ; !irword)
-in
-end
 
 end

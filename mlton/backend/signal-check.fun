@@ -16,7 +16,6 @@ local
    open Graph
 in
    structure Node = Node
-   structure Edge = Edge
    structure Forest = LoopForest
 end
 
@@ -24,8 +23,7 @@ fun insertInFunction (f: Function.t): Function.t =
    let
       val {args, blocks, name, raises, returns, start} =
 	 Function.dest f
-      val {get = labelIndex: Label.t -> int, set = setLabelIndex,
-	   rem = remLabelIndex, ...} =
+      val {get = labelIndex: Label.t -> int, set = setLabelIndex, ...} =
 	 Property.getSetOnce
 	 (Label.plist, Property.initRaise ("index", Label.layout))
       val _ =
@@ -49,7 +47,7 @@ fun insertInFunction (f: Function.t): Function.t =
       val labelNode = indexNode o labelIndex
       val _ =
 	 Vector.foreachi
-	 (blocks, fn (i, Block.T {label, transfer, ...}) =>
+	 (blocks, fn (i, Block.T {transfer, ...}) =>
 	  let
 	     val from = indexNode i
 	  in
@@ -69,8 +67,6 @@ fun insertInFunction (f: Function.t): Function.t =
       fun addSignalCheck (Block.T {args, kind, label, statements, transfer})
 	 : unit = 
 	 let
-	    val failure = Label.newNoname ()
-	    val success = Label.newNoname ()
 	    val collect = Label.newNoname ()
 	    val collectReturn = Label.newNoname ()
 	    val dontCollect = Label.newNoname ()
@@ -152,28 +148,17 @@ fun insertInFunction (f: Function.t): Function.t =
 		()
 	     end)
 	 end
-	    (* Add a signal check at the function entry. *)
-      val newStart =
-	 case Vector.peek (blocks, fn Block.T {label, ...} =>
-			   Label.equals (label, start)) of
-	    NONE => Error.bug "missing start block"
-	  | SOME (Block.T {label, ...}) =>
-	       let
-		  val newStart = Label.newNoname ()
-		  val _ =
-		     addSignalCheck
-		     (Block.T {args = Vector.new0 (),
-			       kind = Kind.Jump,
-			       label = newStart,
-			       statements = Vector.new0 (),
-			       transfer = Transfer.Goto {args = Vector.new0 (),
-							 dst = start}})
-	       in
-		  newStart
-	       end
-      val forest =
-	 loop
-	 (Graph.loopForestSteensgaard (g, {root = labelNode start}))
+      (* Add a signal check at the function entry. *)
+      val newStart = Label.newNoname ()
+      val _ =
+	 addSignalCheck
+	 (Block.T {args = Vector.new0 (),
+		   kind = Kind.Jump,
+		   label = newStart,
+		   statements = Vector.new0 (),
+		   transfer = Transfer.Goto {args = Vector.new0 (),
+					     dst = start}})
+      val () = loop (Graph.loopForestSteensgaard (g, {root = labelNode start}))
       val blocks =
 	 Vector.keepAllMap
 	 (blocks, fn b as Block.T {label, ...} =>

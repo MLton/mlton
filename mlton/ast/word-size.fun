@@ -1,6 +1,8 @@
 functor WordSize (S: WORD_SIZE_STRUCTS): WORD_SIZE =
 struct
 
+open S
+
 datatype t = W8 | W16 | W32 | W64
 
 val equals: t * t -> bool = op =

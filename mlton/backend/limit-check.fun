@@ -71,7 +71,7 @@ structure Statement =
       open Statement
 
       fun caseBytes (s: Statement.t,
-		     {big: Operand.t -> 'a,
+		     {big = _: Operand.t -> 'a,
 		      small: word -> 'a}): 'a =
 	 case s of
 	    Object {size, ...} => small (Word.fromInt size)
@@ -308,7 +308,7 @@ fun insertFunction (f: Function.t,
 		    ; label)
 	     fun frontierCheck (isFirst,
 				prim, op1, op2,
-				z as {collect, dontCollect}): Label.t =
+				z as {collect, dontCollect = _}): Label.t =
 		let
 		   val (statements, transfer) = primApp (prim, op1, op2, z)
 		   val l = newBlock (isFirst andalso not stack,
@@ -322,7 +322,7 @@ fun insertFunction (f: Function.t,
 	     fun heapCheck (isFirst: bool,
 			    amount: Operand.t (* of type word *)): Label.t =
 		let
-		   val z as {collect, dontCollect} = insert amount
+		   val z as {collect, ...} = insert amount
 		   val res = Var.newNoname ()
 		   val s =
 		      (* Can't do Limit - Frontier, because don't know that
@@ -437,7 +437,7 @@ fun insertFunction (f: Function.t,
 
 fun insertPerBlock (f: Function.t, handlesSignals) =
    let
-      val {start, blocks, ...} = Function.dest f
+      val {blocks, ...} = Function.dest f
       fun blockCheckAmount {blockIndex} =
 	 Block.objectBytesAllocated (Vector.sub (blocks, blockIndex))
    in
@@ -453,9 +453,9 @@ val traceMaxPath = Trace.trace ("maxPath", Int.layout, Word.layout)
 
 fun insertCoalesce (f: Function.t, handlesSignals) =
    let
-      val {args, blocks, name, raises, returns, start} = Function.dest f
+      val {blocks, start, ...} = Function.dest f
       val n = Vector.length blocks
-      val {get = labelIndex, set = setLabelIndex, rem = remLabelIndex, ...} =
+      val {get = labelIndex, set = setLabelIndex, ...} =
 	 Property.getSetOnce
 	 (Label.plist,
 	  Property.initRaise ("LimitCheck.labelIndex", Label.layout))
@@ -514,7 +514,7 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
 				 NONE => true
 			       | SOME i => 
 				    (case Vector.sub (args, i) of
-					Operand.Const c => false
+					Operand.Const _ => false
 				      | _ => true))
 			| _ => false)
 	  in

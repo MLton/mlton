@@ -122,14 +122,6 @@ structure Pat =
 structure NoMatch =
    struct
       datatype t = Impossible | RaiseAgain | RaiseBind | RaiseMatch
-
-      val toString =
-	 fn Impossible => "Impossible"
-	  | RaiseAgain => "RaiseAgain"
-	  | RaiseBind => "RaiseBind"
-	  | RaiseMatch => "RaiseMatch"
-
-      val layout = Layout.str o toString
    end
 
 datatype noMatch = datatype NoMatch.t
@@ -155,8 +147,7 @@ and exp = Exp of {node: expNode,
 		  ty: Type.t}
 and expNode =
    App of exp * exp
-  | Case of {hasExtraTuple: bool,
-	     kind: string,
+  | Case of {kind: string,
 	     lay: unit -> Layout.t,
 	     noMatch: noMatch,
 	     region: Region.t,
@@ -226,7 +217,7 @@ in
    and layoutExp (Exp {node, ...}) =
       case node of
 	 App (e1, e2) => paren (seq [layoutExp e1, str " ", layoutExp e2])
-       | Case {noMatch, rules, test, ...} =>
+       | Case {rules, test, ...} =>
 	    Pretty.casee {default = NONE,
 			  rules = Vector.map (rules, fn {exp, pat, ...} =>
 					      (Pat.layout pat, layoutExp exp)),
@@ -256,7 +247,7 @@ in
 	     record = r,
 	     separator = " = "}
        | Seq es => Pretty.seq (Vector.map (es, layoutExp))
-       | Var (x, targs) => Var.layout (x ())
+       | Var (x, _) => Var.layout (x ())
    and layoutFuns (tyvars, decs)  =
       if 0 = Vector.length decs
 	 then empty
@@ -267,7 +258,7 @@ in
 				align [seq [Var.layout var, str " = "],
 				       indent (layoutLambda lambda, 3)])),
 			3)]
-   and layoutLambda (Lam {arg, argType, body}) =
+   and layoutLambda (Lam {arg, body, ...}) =
       paren (align [seq [str "fn ", Var.layout arg, str " =>"],
 		    layoutExp body])
 end
@@ -359,8 +350,7 @@ structure Exp =
 	 else make (Case z, ty (#exp (Vector.sub (rules, 0))))
 
       fun iff (test, thenCase, elseCase): t =
-	 casee {hasExtraTuple = false,
-		kind = "if",
+	 casee {kind = "if",
 		lay = fn () => Layout.empty,
 		noMatch = Impossible,
 		region = Region.bogus,

@@ -27,8 +27,6 @@ fun initRaise (name, layout) =
      in toString (seq [layout s, str " has no ", str name, str " property"])
      end))
    
-fun print s = TextIO.output (TextIO.stdErr, s)
-
 fun ('sym, 'val) nondestructable (plist: 'sym -> Plist.t,
 				  init: ('sym, 'val) init) =
    let
@@ -118,7 +116,6 @@ fun getSet z =
 
 end
 
-structure HetContainer = RefHetContainer ()
 structure HetContainer = ExnHetContainer ()
 structure PropertyList = PropertyList (ExnHetContainer ())
 structure Property = Property (PropertyList)

@@ -35,8 +35,6 @@ fun oneChunk (Program.T {functions, main, ...}) =
 				 Vector.map (Function.blocks f, Block.label)))}
    end
 
-structure Set = DisjointSet
-
 fun blockSize (Block.T {statements, transfer, ...}): int =
    let
       val transferSize =
@@ -44,7 +42,7 @@ fun blockSize (Block.T {statements, transfer, ...}): int =
 	    Switch s =>
 	       let
 		  datatype z = datatype Switch.t
-		  fun simple {cases, default, size, test} =
+		  fun simple {cases, default = _, size = _, test = _} =
 		     1 + Vector.length cases
 	       in
 		  case s of

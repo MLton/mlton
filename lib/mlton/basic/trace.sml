@@ -325,8 +325,8 @@ fun traceInfo ({name, flags = {immediate, delayed, time}},
 		  fun getTime () =
 		     case startTime of
 			NONE => NONE
-		      | SOME (t as {self as {utime = u, stime = s}, ...}) =>
-			   SOME (let val {self as {utime = u', stime = s'},
+		      | SOME {self = {utime = u, stime = s}, ...} =>
+			   SOME (let val {self = {utime = u', stime = s'},
 					  ...} = Timer.times ()
 				in Timer.+ (Timer.- (u', u),
 					    Timer.- (s', s))
