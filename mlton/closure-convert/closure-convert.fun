@@ -682,20 +682,18 @@ fun closureConvert
 	    handle Yes ts => SOME ts
 	 end
       val shrinkFunction = Ssa.shrinkFunction (Vector.new0 ())
-      fun addFunc (ac, {args, body, name, returns, sourceInfo}) =
+      fun addFunc (ac, {args, body, name, returns}) =
 	 let
 	    val (start, blocks) =
 	       Dexp.linearize (body, Ssa.Handler.Caller)
 	    val f =
-	       Function.profile 
-	       (shrinkFunction
-		(Function.new {args = args,
-			       blocks = Vector.fromList blocks,
-			       name = name,
-			       raises = raises,
-			       returns = SOME returns,
-			       start = start}),
-		sourceInfo)
+	       shrinkFunction
+	       (Function.new {args = args,
+			      blocks = Vector.fromList blocks,
+			      name = name,
+			      raises = raises,
+			      returns = SOME returns,
+			      start = start})
 	 in
 	    Accum.addFunc (ac, f)
 	 end
@@ -1014,9 +1012,7 @@ fun closureConvert
 		 addFunc (ac, {args = args,
 			       body = body,
 			       name = name,
-			       returns = returns,
-			       sourceInfo = (SourceInfo.fromRegion
-					     (Slambda.region lambda))})
+			       returns = returns})
 	      end))
 	 end
       (*------------------------------------*)
@@ -1031,8 +1027,7 @@ fun closureConvert
 	     val ac = addFunc (ac, {args = Vector.new0 (),
 				    body = body,
 				    name = main,
-				    returns = Vector.new1 Type.unit,
-				    sourceInfo = SourceInfo.main})
+				    returns = Vector.new1 Type.unit})
 	  in Accum.done ac
 	  end) ()
       val datatypes = Vector.concat [datatypes, Vector.fromList (!newDatatypes)]

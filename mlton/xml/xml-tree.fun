@@ -149,9 +149,7 @@ and dec =
 and lambda = Lam of {arg: Var.t,
 		     argType: Type.t,
 		     body: exp,
-		     bodyType: Type.t,
-		     plist: PropertyList.t,
-		     region: Region.t}
+		     plist: PropertyList.t}
 
 (*---------------------------------------------------*)
 (*                 Conversion to Ast                 *)
@@ -540,21 +538,16 @@ structure Lambda =
 	 val arg = make #arg
 	 val argType = make #argType
 	 val body = make #body
-	 val region = make #region
       end
 
-      fun new {arg, argType, body, bodyType, region} =
+      fun new {arg, argType, body} =
 	 Lam {arg = arg,
 	      argType = argType,
 	      body = body,
-	      bodyType = bodyType,
-	      plist = PropertyList.new (),
-	      region = region}
+	      plist = PropertyList.new ()}
 
-      fun dest (Lam {arg, argType, body, bodyType, region, ...}) =
-	 {arg = arg, argType = argType,
-	  body = body, bodyType = bodyType,
-	  region = region}
+      fun dest (Lam {arg, argType, body, ...}) =
+	 {arg = arg, argType = argType, body = body}
 	 
       fun plist (Lam {plist, ...}) = plist
 	 
@@ -753,12 +746,10 @@ structure DirectExp =
 	       Exp.prefix (send (body, k),
 			   Dec.MonoVal {var = var, ty = ty, exp = exp}))
 	 
-      fun lambda {arg, argType, body, bodyType, region} =
+      fun lambda {arg, argType, body, bodyType} =
 	 simple (Lambda (Lambda.new {arg = arg,
 				     argType = argType,
-				     body = toExp body,
-				     bodyType = bodyType,
-				     region = region}),
+				     body = toExp body}),
 		 Type.arrow (argType, bodyType))
       
       fun detupleGen (e: PrimExp.t,

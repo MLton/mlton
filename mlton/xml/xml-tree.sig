@@ -53,23 +53,16 @@ signature XML_TREE =
 	    val body: t -> exp
 	    val dest: t -> {arg: Var.t,
 			    argType: Type.t,
-			    body: exp,
-			    bodyType: Type.t,
-			    region: Region.t}
+			    body: exp}
 	    val equals: t * t -> bool
 	    val layout: t -> Layout.t
 	    val new: {arg: Var.t,
 		      argType: Type.t,
-		      body: exp,
-		      bodyType: Type.t,
-		      region: Region.t} -> t
+		      body: exp} -> t
 	    val plist: t -> PropertyList.t
-	    val region: t -> Region.t
 	 end
 
-      (* VarExp is a type application.
-       * variable (applied to type args) paired with its type.
-       *)
+      (* VarExp is a type application, variable applied to type args. *)
       structure VarExp:
 	 sig
 	    datatype t = T of {var: Var.t,
@@ -203,8 +196,7 @@ signature XML_TREE =
 	    val lambda: {arg: Var.t,
 			 argType: Type.t,
 			 body: t,
-			 bodyType: Type.t,
-			 region: Region.t} -> t
+			 bodyType: Type.t} -> t
 	    val layout: t -> Layout.t
 	    val let1: {var: Var.t, exp: t, body: t} -> t
 	    val lett: {decs: Dec.t list, body: t} -> t

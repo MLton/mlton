@@ -261,12 +261,11 @@ fun makeOptions {usage} =
 		      | "alloc" => ProfileAlloc
 		      | "time" => ProfileTime
 		      | _ => usage (concat ["invalid -profile arg: ", s])))),
-       (Expert, "profile-il", " {xml|ssa}", "where to insert profile exps",
+       (Expert, "profile-il", " {xml}", "where to insert profile exps",
 	SpaceString
 	(fn s =>
 	 case s of
-	    "ssa" => profileIL := ProfileSSA
-	  | "xml" => profileIL := ProfileXML
+	    "xml" => profileIL := ProfileXML
 	  | _ => usage (concat ["invalid -profile-il arg: ", s]))),
        (Normal, "profile-stack", " {false|true}",
 	"profile the stack",

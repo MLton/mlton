@@ -476,13 +476,11 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
 	 traceSimplifyLambda
 	 (fn l => 
 	  let
-	     val {arg, argType, body, bodyType, region} = Lambda.dest l
+	     val {arg, argType, body} = Lambda.dest l
 	  in
 	     Lambda.new {arg = arg,
 			 argType = argType,
-			 body = simplifyExp body,
-			 bodyType = bodyType,
-			 region = region}
+			 body = simplifyExp body}
 	  end) l
       val _ = countExp body
       val _ = Option.app (overflow, fn x => VarInfo.inc (varInfo x, 1))

@@ -37,13 +37,11 @@ fun sccFuns (Program.T {datatypes, body, overflow}) =
       fun loopVarExps xs = Vector.foreach (xs, loopVarExp)
       fun loopLambda (l: Lambda.t): Lambda.t =
 	 let
-	    val {arg, argType, body, bodyType, region} = Lambda.dest l
+	    val {arg, argType, body} = Lambda.dest l
 	 in
 	    Lambda.new {arg = arg,
 			argType = argType,
-			body = loopExp body,
-			bodyType = bodyType,
-			region = region}
+			body = loopExp body}
 	 end
       and loopPrimExp (e: PrimExp.t): PrimExp.t =
 	 case e of

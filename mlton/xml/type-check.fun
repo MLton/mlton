@@ -248,16 +248,11 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 	 end) arg
       and checkLambda l: Type.t =
 	 let
-	    val {arg, argType, body, bodyType, ...} = Lambda.dest l
+	    val {arg, argType, body, ...} = Lambda.dest l
 	    val _ = checkType argType
 	    val _ = setVar (arg, {tyvars = Vector.new0 (), ty = argType})
-	    val _ =
-	       if Type.equals (bodyType, checkExp body)
-		  then ()
-	       else Type.error ("lambda body of wrong type",
-				Lambda.layout l)
 	 in
-	    Type.arrow (argType, bodyType)
+	    Type.arrow (argType, checkExp body)
 	 end
       and checkDec d =
 	 let

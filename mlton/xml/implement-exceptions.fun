@@ -329,8 +329,7 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 					   exp = lambda {arg = unit,
 							 argType = Type.unit,
 							 bodyType = ty,
-							 body = body,
-							 region = region}}
+							 body = body}}
 				    in makeExp
 				       (lett
 					{decs = decs,
@@ -421,13 +420,11 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 	 end
       and loopLambda l =
 	 let
-	    val {arg, argType, body, bodyType, region} = Lambda.dest l
+	    val {arg, argType, body} = Lambda.dest l
 	 in
 	    Lambda.new {arg = arg,
 			argType = argType,
-			body = loop body,
-			bodyType = bodyType,
-			region = region}
+			body = loop body}
 	 end
       val body =
 	 let
@@ -458,8 +455,7 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 			   {arg = Var.newNoname (),
 			    argType = Type.exn,
 			    bodyType = Type.unit,
-			    body = bug "toplevel handler not installed",
-			    region = Region.bogus}),
+			    body = bug "toplevel handler not installed"}),
 	  body = body}
       val body = wrapBody body
       val (datatypes, body) =
@@ -500,9 +496,7 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 				     (Con.originalName con))))),
 				 default = NONE,
 				 ty = Type.string}))
-			   end,
-			   bodyType = Type.string,
-			   region = Region.bogus})
+			   end})
 		       end}
 	       in
 		  (Vector.concat

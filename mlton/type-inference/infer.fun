@@ -393,8 +393,7 @@ fun infer {program = p: CoreML.Program.t,
 	 (fn () => Xexp.lambda {arg = Var.newNoname (),
 				argType = Xtype.unit,
 				body = finishExp e,
-				bodyType = Type.toXml (t, r),
-				region = r},
+				bodyType = Type.toXml (t, r)},
 	  Type.arrow (Type.unit, t),
 	  r)
       fun letExp (d: decCode, e as (_, t, r): expCode): expCode =
@@ -526,9 +525,7 @@ fun infer {program = p: CoreML.Program.t,
 			       (Xexp.detupleBind
 				{tuple = Xexp.monoVar (arg, argType),
 				 components = vars,
-				 body = e}),
-			       bodyType = caseType,
-			       region = region})}
+				 body = e})})}
 			 fun finish rename =
 			    Xexp.app
 			    {func = Xexp.monoVar (func, funcType),
@@ -645,9 +642,7 @@ fun infer {program = p: CoreML.Program.t,
 						      filePos = filePos},
 						     resultType))]),
 			     caseType = resultType,
-			     region = region})),
-	     bodyType = resultType,
-	     region = region}
+			     region = region}))}
 	 end
       fun forceRulesMatch (rs, region) =
 	 forceRules (rs, NestedPat.Wild, match (), region)
@@ -894,25 +889,23 @@ fun infer {program = p: CoreML.Program.t,
 			    decs = (Vector.map
 				    (decs, fn {var, region, rules, ty} =>
 				     let
-					val {arg, argType, body, bodyType,
-					     ...} =
+					val ty = Type.toXml (ty, region)
+					val {arg, argType, body, ...} =
 					   Xlambda.dest
 					   (forceRulesMatch (rules, region))
 					val body =
 					   Xml.Exp.enterLeave
 					   (body,
-					    bodyType,
+					    #2 (Xtype.dearrow ty),
 					    SourceInfo.fromRegion region)
 					val lambda =
 					   Xlambda.new
 					   {arg = arg,
 					    argType = argType,
-					    body = body,
-					    bodyType = bodyType,
-					    region = region}
+					    body = body}
 				     in
 					{var = var,
-					 ty = Type.toXml (ty, region),
+					 ty = ty,
 					 lambda = lambda}
 				     end))}]),
 		    env)
@@ -1011,8 +1004,7 @@ fun infer {program = p: CoreML.Program.t,
 			  Xexp.lambda {arg = arg,
 				       argType = argType,
 				       body = Xexp.fromExp (body, resultType),
-				       bodyType = resultType,
-				       region = region}
+				       bodyType = resultType}
 		       end,
 		       Type.arrow (argType, resultType),
 		       region)
@@ -1110,8 +1102,7 @@ fun infer {program = p: CoreML.Program.t,
 			    {arg = x,
 			     argType = t1,
 			     body = make (SOME (Xexp.monoVar (x, t1), t1), t2),
-			     bodyType = t2,
-			     region = region}
+			     bodyType = t2}
 			 end,
 			 ty, region)
 		     end
