@@ -43,7 +43,7 @@ void GC_loadWorld(GC_state s,
 	pointer base, frontier;
 	char c;
 	
-	file = sfopen(fileName, "r");
+	file = sfopen(fileName, "rb");
 	until ((c = fgetc(file)) == GC_worldTerminator or EOF == c);
 	if (EOF == c) die("Invalid world.");
 	magic = sfreadUint(file);

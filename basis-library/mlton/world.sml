@@ -14,13 +14,17 @@ structure World: MLTON_WORLD =
 	       let
 		  open Posix.FileSys
 		  val flags =
+		     O.flags [O.trunc,
+			      PosixPrimitive.FileSys.O.binary]
+		  val mode =
 		     let
 			open S
 		     in
 			flags [irusr, iwusr, irgrp, iwgrp, iroth, iwoth]
+
 		     end
 	       in
-		   (creat (file, flags))
+		  createf (file, O_WRONLY, flags, mode)
 	       end
 	    val _ = Prim.save (Posix.FileSys.fdToWord fd)
 	 in
