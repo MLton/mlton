@@ -70,22 +70,22 @@ the IEEE floating point standard.  By default, it is not, because of the
 performance cost.
 
 \option{-inline \mbox{\rm n}}
-Set the inlining threshold used in the CPS simplifier.  The default is 320.
+Set the inlining threshold used in the optimizer.  The default is 320.
 
 \option{-I\mbox{\rm dir}}
 Specify an additional directory to be searched for include files (included with
 {\tt -i}).
 
-\option{-keep \{cps|dot|g|o|sml\}}
+\option{-keep \{dot|g|o|sml|ssa\}}
 Save the intermediate file(s) corresponding to the given arg.  If
 no {\tt -keep} argument is given, then only the final file(s) is saved.\\
 \begin{tabular}{ll}
-{\tt cps} & CPS file\\
-{\tt dot} & dot files.  Implies {\tt -keep cps}.  See \secref{profiling} for
+{\tt dot} & dot files.  Implies {\tt -keep ssa}.  See \secref{profiling} for
 details.\\
 {\tt g} & generated {\tt .S} and {\tt .c} files passed to gcc and the assembler\\
 {\tt o} & object file\\
 {\tt sml} & SML file\\
+{\tt ssa} & SSA file\\
 \end{tabular}
 
 \option{-l\mbox{\rm lib}}
@@ -113,7 +113,7 @@ suffix removed and an appropriate suffix added.
 
 \option{-p}
 Produce an executable that will gather profiling information.  The default is
-not to gather profiling information.  This option implies {\tt -keep cps}.
+not to gather profiling information.  This option implies {\tt -keep ssa}.
 See \secref{profiling} for details.
 
 \option{-safe \{true|false\}}

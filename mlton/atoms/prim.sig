@@ -83,7 +83,7 @@ signature PRIM =
 	     | MLton_bug
 	     | MLton_deserialize
 	     | MLton_eq
-	     | MLton_equal (* implemented in cps/poly-equal.fun *)
+	     | MLton_equal (* implemented in ssa/poly-equal.fun *)
 	     | MLton_halt
 	     | MLton_serialize
 	     | MLton_size

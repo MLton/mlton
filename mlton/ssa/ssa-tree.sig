@@ -7,9 +7,6 @@ type word = Word.t
 signature SSA_TREE_STRUCTS = 
    sig
       include ATOMS
-
-      structure Cps: CPS
-      sharing Atoms = Cps.Atoms
    end
 
 signature SSA_TREE = 
@@ -206,6 +203,8 @@ signature SSA_TREE =
 	    val args: t -> (Var.t * Type.t) vector
 	    val clear: t -> unit
 	    val label: t -> Label.t
+	    val layout: t -> Layout.t
+	    val statements: t -> Statement.t vector
 	    val transfer: t -> Transfer.t
 	 end
 
@@ -281,8 +280,6 @@ signature SSA_TREE =
 	    val checkHandlers: t -> unit
 	    val clear: t -> unit
 	    val clearTop: t -> unit
-	    val fromCps: Cps.Program.t * {jumpToLabel: Cps.Jump.t -> Label.t,
-					  funcToFunc: Cps.Func.t -> Func.t} -> t
 	    val foreachVar: t * (Var.t * Type.t -> unit) -> unit
 	    val hasPrim: t * (Prim.t -> bool) -> bool
 	    val layouts: t * (Layout.t -> unit) -> unit

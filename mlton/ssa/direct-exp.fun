@@ -1,286 +1,552 @@
-
 functor DirectExp (S: DIRECT_EXP_STRUCTS): DIRECT_EXP =
 struct
   
-  open S
+open S
 
-  type int = Int.t
-  type word = Word.t
+structure DirectExp =
+struct
+   
+datatype t =
+   Call of {func: Func.t,
+	    args: t vector,
+	    ty: Type.t}
+ | Case of {cases: cases,
+	    default: t option,
+	    test: t,
+	    ty: Type.t}
+ | ConApp of {con: Con.t,
+	      args: t vector,
+	      ty: Type.t}
+ | Const of Const.t
+ | Detuple of {body: Var.t vector -> t,
+	       length: int,
+	       tuple: t}
+ | DetupleBind of {body: t,
+		   components: Var.t vector,
+		   tuple: Var.t,
+		   tupleTy: Type.t}
+ | Handle of {try: t,
+	      catch: Var.t * Type.t,
+	      handler: t,
+	      ty: Type.t}
+ | Let of {decs: {var: Var.t, exp: t} list,
+	   body: t}
+ | Name of t * (Var.t -> t)
+ | PrimApp of {args: t vector,
+	       overflow: t option,
+	       prim: Prim.t,
+	       targs: Type.t vector,
+	       ty: Type.t}
+ | Raise of t
+ | Select of {tuple: t,
+	      offset: int,
+	      ty: Type.t}
+ | Seq of t * t
+ | Tuple of {exps: t vector, ty: Type.t}
+ | Var of Var.t * Type.t
+and cases =
+   Char of (char * t) vector
+ | Con of {con: Con.t,
+	   args: (Var.t * Type.t) vector,
+	   body: t} vector
+ | Int of (int * t) vector
+ | Word of (word * t) vector
+ | Word8 of (Word8.t * t) vector
 
-  open Exp Transfer
+val call = Call
+val casee = Case
+val conApp = ConApp
+val const = Const
+val detuple = Detuple
+val detupleBind = DetupleBind
+val handlee = Handle
+val lett = Let
+val name = Name
+val primApp' = PrimApp
+val raisee = Raise
+val select = Select
+val seq = Seq
+fun tuple (r as {exps, ...}) =
+   if 1 = Vector.length exps
+      then Vector.sub (exps, 0)
+   else Tuple r
+val var = Var
 
-  structure Cont =
-    struct
-      type u = Label.t * Block.t list
-      type t = Exp.t * Type.t -> u
+fun primApp {prim, targs, args, ty} =
+   primApp' {args = args,
+	     overflow = NONE,
+	     prim = prim,
+	     targs = targs,
+	     ty = ty}
 
-      val layout = Layout.ignore
+local
+   fun make c = conApp {con = c, args = Vector.new0 (), ty = Type.bool}
+in
+   val truee = make Con.truee
+   val falsee = make Con.falsee
+end
 
-      fun nameGen (k: Var.t * Type.t -> u): t =
-	 fn (e, ty) =>
-	 case e of
-	    Var x => k (x, ty)
-	  | _ => let val x = Var.newNoname ()
-	             val start = Label.newNoname ()
-	             val (start', bs') = k (x, ty)
-		 in (start,
-		     Block.T {label = start,
-			      args = Vector.new0 (),
-			      statements = Vector.new1 (Statement.T {var = SOME x,
-								     ty = ty,
-								     exp = e}),
-			      transfer = Goto {dst = start',
-					       args = Vector.new0 ()}}
-		     :: bs')
-		 end
+val int = const o Const.fromInt
+   
+fun eq (e1, e2, ty) =
+   primApp {prim = Prim.eq,
+	    targs = Vector.new1 ty,
+	    args = Vector.new2 (e1, e2),
+	    ty = Type.bool}
 
-      fun name (k: Var.t -> u): t = nameGen (k o #1)
-
-      val bug: t =
-	 name (fn x =>
-	       let
-		  val start = Label.newNoname ()
-	       in
-		  (start,
-		   [Block.T {label = start,
-			     args = Vector.new0 (),
-			     statements = Vector.new0 (),
-			     transfer = Bug}])
-	       end)
-
-      fun goto (l: Label.t): t =
-	 name (fn x =>
-	       let
-		  val start = Label.newNoname ()
-	       in
-		  (start,
-		   [Block.T {label = start,
-			     args = Vector.new0 (),
-			     statements = Vector.new0 (),
-			     transfer = Goto {dst = l, args = Vector.new1 x}}])
-	       end)
-
-      val return: t =
-	 name (fn x =>
-	       let
-		  val start = Label.newNoname ()
-	       in
-		 (start,
-		  [Block.T {label = start,
-			    args = Vector.new0 (),
-			    statements = Vector.new0 (),
-			    transfer = Return (Vector.new1 x)}])
-	       end)
-			      
-      val raisee: t =
-	 name (fn x =>
-	       let
-		  val start = Label.newNoname ()
-	       in
-		 (start,
-		  [Block.T {label = start,
-			    args = Vector.new0 (),
-			    statements = Vector.new0 (),
-			    transfer = Raise (Vector.new1 x)}])
-	       end)
-			      
-      fun finish (k: t, ety: Exp.t * Type.t): u = k ety
-    end
-
-  type u = Label.t * Block.t list
-  type t = Cont.t -> u
-
-  val layout = Layout.ignore
-
-
-  fun sendCont (e: t, k: Cont.t): u = e k
-
-  fun sendName (e: t, k: Var.t -> u): u = sendCont (e, Cont.name k)
-
-  fun sendBug (e: t): u = sendCont (e, Cont.bug)
-
-  fun sendGoto (e: t, l): u = sendCont (e, Cont.goto l)
-
-  fun sendReturn (e: t): u = sendCont (e, Cont.return)
-
-
-  fun convertsGen (es: t vector, k: Var.t vector -> u): u =
-     let
-        val n = Vector.length es
-	fun loop (i, xs) =
-	   if i = n
-	      then k (Vector.fromListRev xs)
-	   else sendName (Vector.sub (es, i), fn x => (loop (i+ 1, x :: xs)))
-     in
-        loop (0, [])
-     end
-
-  fun converts (es: t vector, make: Var.t vector -> Exp.t * Type.t): t =
-     fn k => convertsGen (es, k o make)
-
-  fun convert (e: t, make: Var.t -> Exp.t * Type.t): t =
-     fn k => sendName (e, k o make)
-
-
-  fun conApp {con, args, ty}: t =
-     converts (args, fn args => (ConApp {con = con, 
-					 args = args}, ty))
-
-  fun const (c): t = 
-     fn k => Cont.finish (k, (Const c, Type.ofConst c))
-
-  fun primApp {prim, targs, args, ty}: t =
-     let
-        val primApp = 
-	   converts (args, fn args => (PrimApp {prim = prim,
-						targs = targs,
-						args = args}, ty))
-     in
-        case Prim.name prim of
-	   Prim.Name.MLton_halt => (fn _ => sendBug primApp)
-	 | _ => primApp
-     end
-
-  fun select {tuple, offset, ty}: t = 
-     convert (tuple, fn tuple => (Select {tuple = tuple, offset = offset}, ty))
-
-  fun tuple (exps: t vector, ty: Type.t): t = 
-     if Vector.length exps = 1
-        then Vector.sub (exps, 0)
-     else converts (exps, fn xs => (Exp.Tuple xs, ty))
-
-  fun var (x, ty): t = 
-     fn k => Cont.finish (k, (Var x, ty))
-
-
-  fun name (e: t, make: Var.t -> t): t =
-     fn k => sendName (e, fn x => sendCont (make x, k))
-
-  fun seq (e1: t, e2: t): t =
-     fn k => sendCont (e1, fn _ => sendCont (e2, k))
-
-
-  fun call {func, args, ty}: t =
-     fn k => 
-     let
-	val start = Label.newNoname ()
-	val cont = Label.newNoname ()
-        val result = Var.newNoname ()
-	val (start', bs') = Cont.finish (k, (Var result, ty))
-     in
-        convertsGen 
-	(args,
-	 fn args => 
-	 (start,
-	  Block.T
-	  {label = start,
-	   args = Vector.new0 (),
-	   statements = Vector.new0 (),
-	   transfer = Call {func = func,
-			    args = args,
-			    return = (Return.NonTail
-				      {cont = cont,
-				       handler = Handler.None})}}
-	  :: Block.T {label = cont,
-		      args = Vector.new1 (result, ty),
-		      statements = Vector.new0 (),
-		      transfer = Goto {dst = start',
-				       args = Vector.new0 ()}}
-	  :: bs'))
-     end
-
-  datatype cases =
-     Char of (char * t) vector
-   | Con of {con: Con.t,
-	     args: (Var.t * Type.t) vector,
-	     body: t} vector
-   | Int of (int * t) vector
-   | Word of (word * t) vector
-   | Word8 of (Word8.t * t) vector
-
-  fun casee {test, cases, default, ty} =
-     fn k =>
-     let
-        val start = Label.newNoname ()
-	val join = Label.newNoname ()
-        val result = Var.newNoname ()
-	val (start',bs') = Cont.finish (k, (Var result, ty))
-     in
-        test (Cont.nameGen
-	      (fn (test, testTy) =>
-	       let
-		  fun doCases (cases, finish, make) =
-		     let
-		        val (cases, bss) =
-			   Vector.mapAndFold
-			   (cases, [], fn (c, bss) =>
+local
+   open Layout
+   fun lett (decs, body) =
+      align [seq [str "let ", decs],
+	     seq [str "in ", body],
+	     str "end"]
+in
+   fun layout e : Layout.t =
+      case e of
+	 Call {func, args, ty} =>
+	    seq [Func.layout func, str " ", layouts args,
+		 str ": ", Type.layout ty]
+       | Case {cases, default, test, ty} =>
+	    align
+	    [seq [str "case ", layout test, str " of"],
+	     indent
+	     (align [let
+			fun doit (v, f) =
+			   Vector.layout
+			   (fn z =>
 			    let
-			       val (test, args, body) = make c
-			       val l = Label.newNoname ()
-			       val (start',bs') = sendGoto (body, join)
+			       val (x, e) = f z
 			    in
-			       ((test, l),
-				(Block.T {label = l,
-					  args = args,
-					  statements = Vector.new0 (),
-					  transfer = Goto {dst = start',
-							   args = Vector.new0 ()}}
-				 :: bs')
-				:: bss)
+			       seq [str "| ", x, str " => ", layout e]
 			    end)
+			   v
+			fun simple (v, f) =
+			   doit (v, (fn (x, e) => (f x, e)))
 		     in
-		        (finish cases, List.concat bss)
-		     end
-		  fun doit (l, f) =
-		     doCases (l, f, fn (test, body) => (test, Vector.new0 (), body))
-		  val (cases, bsc) =
-		     case cases of
-		        Char l => doit (l, Cases.Char)
-		      | Con l => 
-			   doCases (l, Cases.Con, fn {con, args, body} =>
-				    (con, args, body))
-		      | Int l => doit (l, Cases.Int)
-		      | Word l => doit (l, Cases.Word)
-		      | Word8 l => doit (l, Cases.Word8)
-		  val (default, bs) =
-		     case default of
-		        NONE => (NONE, bsc)
-		      | SOME e => 
-			   let
-			      val (start', bs') = sendGoto (e, join)
-			   in
-			      (SOME start', bs' @ bsc)
-			   end
+			case cases of
+			   Char v => simple (v, Char.layout)
+			 | Con v =>
+			      doit (v, fn {con, args, body} =>
+				    (seq [Con.layout con,
+					  Vector.layout (Var.layout o #1) args],
+				     body))
+			 | Int v => simple (v, Int.layout)
+			 | Word v => simple (v, Word.layout)
+			 | Word8 v => simple (v, Word8.layout)
+		     end,
+			case default of
+			   NONE => empty
+			 | SOME e => seq [str "  _ => ", layout e]],
+	      2)]
+       | ConApp {con, args, ty} =>
+	    seq [Con.layout con, layouts args, str ": ", Type.layout ty]
+       | Const c => Const.layout c
+       | Detuple {tuple, ...} => seq [str "detuple ", layout tuple]
+       | DetupleBind {body, components, tuple, ...} =>
+	    lett (seq [Vector.layout Var.layout components,
+		       str " = ", Var.layout tuple],
+		  layout body)
+       | Handle {try, catch, handler, ty} =>
+	    align [layout try,
+		   seq [str "handle ", Var.layout (#1 catch),
+			str " => ", layout handler]]
+       | Let {decs, body} =>
+	    lett (align
+		  (List.map (decs, fn {var, exp} =>
+			     seq [Var.layout var, str " = ", layout exp])),
+		     layout body)
+       | Name _ => str "Name"
+       | PrimApp {args, overflow, prim, targs, ty} =>
+	    align [Prim.layoutApp (prim, args, layout),
+		   case overflow of
+		      NONE => empty
+		    | SOME e => seq [str "Overflow => ", layout e]]
+       | Raise e => seq [str "raise ", layout e]
+       | Select {tuple, offset, ...} =>
+	    seq [str "#", str (Int.toString (1 + offset)), str " ",
+		 layout tuple]
+       | Seq (e1, e2) => seq [layout e1, str "; ", layout e2]
+       | Tuple {exps, ...} => layouts exps
+       | Var (x, t) =>
+	    seq [Var.layout x, str ": ", Type.layout t]
+   and layouts es = Vector.layout layout es
+end
+
+structure Res =
+   struct
+      type t = {statements: Statement.t list,
+		transfer: Transfer.t}
+
+      fun layout {statements, transfer} =
+	 let
+	    open Layout
+	 in
+	    align [align (List.map (statements, Statement.layout)),
+		   Transfer.layout transfer]
+	 end
+
+      fun prefix ({statements, transfer}: t, s: Statement.t): t =
+	 {statements = s :: statements,
+	  transfer = transfer}
+   end
+
+structure Cont:
+   sig
+      type t
+
+      val bind: Var.t * Res.t -> t
+      val goto: Label.t -> t
+      val layout: t -> Layout.t
+      val prefix: t * Statement.t -> t
+      val receiveExp: (Exp.t * Type.t -> Res.t) -> t
+      val receiveVar: (Var.t * Type.t -> Res.t) -> t
+      val return: t
+      val sendExp: t * Type.t * Exp.t -> Res.t
+      val sendVar: t * Type.t * Var.t -> Res.t
+      val toBlock: t * Type.t -> Block.t
+   end =
+   struct
+      type bind = {arg: Var.t,
+		   statements: Statement.t list,
+		   transfer: Transfer.t}
+
+      datatype t =
+	 Bind of bind
+       | Goto of Label.t
+       | Prefix of t * Statement.t
+       | ReceiveExp of Exp.t * Type.t -> Res.t
+       | ReceiveVar of Var.t * Type.t -> Res.t
+       | Return
+
+      fun layout (k: t): Layout.t =
+	 let
+	    open Layout
+	 in
+	    case k of
+	       Bind {arg, statements, transfer} =>
+		  seq [str "Bind ",
+		       record [("arg", Var.layout arg),
+			       ("statements",
+				List.layout Statement.layout statements),
+			       ("transfer", Transfer.layout transfer)]]
+	     | Goto l => seq [str "Goto ", Label.layout l]
+	     | Prefix (k, s) => seq [str "Prefix ",
+				     tuple [layout k, Statement.layout s]]
+	     | ReceiveExp _ => str "ReceiveExp"
+	     | ReceiveVar _ => str "ReceiveVar"
+	     | Return => str "Return"
+	 end
+
+      fun bind (arg, {statements, transfer}) =
+	 Bind {arg = arg,
+	       statements = statements,
+	       transfer = transfer}
+
+      val goto = Goto
+      val prefix = Prefix
+      val receiveExp = ReceiveExp
+      val receiveVar = ReceiveVar
+      val return = Return
+      
+      fun toBind (k: t, ty: Type.t): bind =
+	 case k of
+	    Bind b => b
+	  | _ =>
+	       let
+		  val arg = Var.newNoname ()
+		  val {statements, transfer} = sendVar (k, ty, arg)
 	       in
-		  (start,
-		   Block.T {label = start,
-			    args = Vector.new0 (),
-			    statements = Vector.new0 (),
-			    transfer = Case {test = test,
-					     cases = cases,
-					     default = default}} 
-		   :: Block.T {label = join,
-			       args = Vector.new1 (result, ty),
-			       statements = Vector.new0 (),
-			       transfer = Goto {dst = start', 
-						args = Vector.new0 ()}}
-		   :: (bs @ bs'))
-	       end))
-     end
+		  {arg = arg,
+		   statements = statements,
+		   transfer = transfer}
+	       end
+      and sendVar (k: t, ty: Type.t, x: Var.t): Res.t =
+	 case k of
+	    Bind b => sendBindExp (b, ty, Exp.Var x)
+	  | Goto dst => {statements = [],
+			 transfer = Transfer.Goto {dst = dst,
+						   args = Vector.new1 x}}
+	  | ReceiveExp f => f (Exp.Var x, ty)
+	  | ReceiveVar f => f (x, ty)
+	  | Prefix (k, s) => Res.prefix (sendVar (k, ty, x), s)
+	  | Return => {statements = [],
+		       transfer = Transfer.Return (Vector.new1 x)}
+      and sendBindExp ({arg, statements, transfer}, ty, e: Exp.t) = 
+	 {statements = Statement.T {var = SOME arg,
+				    ty = ty,
+				    exp = e} :: statements,
+	  transfer = transfer}
 
-  local
-     fun make c = conApp {con = c, args = Vector.new0 (), ty = Type.bool}
-  in
-     val truee = make Con.truee
-     val falsee = make Con.falsee
-  end
+      val sendVar =
+	 Trace.trace3 ("Cont.sendVar", layout, Type.layout, Var.layout,
+		       Res.layout)
+	 sendVar
 
-  val int = const o Const.fromInt
-     
-  fun eq (e1, e2, ty) =
-     primApp {prim = Prim.eq,
-	      targs = Vector.new1 ty,
-	      args = Vector.new2 (e1, e2),
-	      ty = Type.bool}
+      val sendExp: t * Type.t * Exp.t -> Res.t =
+	 fn (k, ty, e) =>
+	 case k of
+	    ReceiveExp f => f (e, ty)
+	  | _ => sendBindExp (toBind (k, ty), ty, e)
 
+      val sendExp =
+	 Trace.trace3 ("Cont.sendExp", layout, Type.layout, Exp.layout,
+		       Res.layout)
+	 sendExp
+
+      fun toBlock (k: t, ty: Type.t): Block.t =
+	 let
+	    val {arg, statements, transfer} = toBind (k, ty)
+	    val label = Label.newNoname ()
+	 in
+	    Block.T {label = label,
+		     args = Vector.new1 (arg, ty),
+		     statements = Vector.fromList statements,
+		     transfer = transfer}
+	 end
+
+      val toBlock =
+	 Trace.trace2 ("Cont.toBlock", layout, Type.layout, Block.layout)
+	 toBlock
+   end
+
+fun selects (tuple: Var.t, ty: Type.t, components: Var.t vector)
+   : Statement.t list =
+   let
+      val ts = Type.detuple ty
+   in
+      Vector.foldi
+      (ts, [], fn (i, t, ss) =>
+       Statement.T {var = SOME (Vector.sub (components, i)),
+		    ty = t,
+		    exp = Exp.Select {tuple = tuple,
+				      offset = i}}
+       :: ss)
+   end
+
+fun linearize' (e: t, h: Handler.t, k: Cont.t): Label.t * Block.t list =
+   let
+      val traceLinearizeLoop =
+	 Trace.trace3 ("Linearize.loop", layout, Handler.layout, Cont.layout,
+		       Res.layout)
+      val blocks: Block.t list ref = ref []
+      fun newBlock (args: (Var.t * Type.t) vector,
+		    {statements: Statement.t list,
+		     transfer: Transfer.t}): Label.t =
+	 let 
+	    val label = Label.newNoname ()
+	    val _ = List.push (blocks,
+			       Block.T {label = label,
+					args = args,
+					statements = Vector.fromList statements,
+					transfer = transfer})
+	 in
+	    label
+	 end
+      fun reify (k: Cont.t, ty: Type.t): Label.t =
+	 let
+	    val b = Cont.toBlock (k, ty)
+	    val _ = List.push (blocks, b)
+	 in
+	    Block.label b
+	 end
+      fun newLabel (args: (Var.t * Type.t) vector,
+		    e: t,
+		    h: Handler.t,
+		    k: Cont.t): Label.t =
+	 newBlock (args, loop (e, h, k))
+      and newLabel0 (e, h, k) = newLabel (Vector.new0 (), e, h, k)
+      and loopf (e: t, h: Handler.t, f: Var.t * Type.t -> Res.t) =
+	 loop (e, h, Cont.receiveVar f)
+      and loop arg : Res.t =
+	 traceLinearizeLoop
+	 (fn (e: t, h: Handler.t, k: Cont.t) =>
+	 case e of
+	    Call {func, args, ty} =>
+	       loops
+	       (args, h, fn xs =>
+		{statements = [],
+		 transfer = (Transfer.Call
+			     {func = func,
+			      args = xs,
+			      return = Return.NonTail {cont = reify (k, ty),
+						       handler = h}})})
+	  | Case {cases, default, test, ty} =>
+	       let
+		  val k = Cont.goto (reify (k, ty))
+	       in
+		  loopf (test, h, fn (x, _) =>
+			 {statements = [],
+			  transfer =
+			  Transfer.Case
+			  {test = x,
+			   default = Option.map (default, fn e =>
+						 newLabel0 (e, h, k)),
+			   cases =
+			   let
+			      fun doit v = 
+				 Vector.map (v, fn (c, e) =>
+					     (c, newLabel0 (e, h, k)))
+			   in
+			      case cases of
+				 Char v => Cases.Char (doit v)
+			       | Con v =>
+				    Cases.Con
+				    (Vector.map
+				     (v, fn {con, args, body} =>
+				      (con,
+				       newLabel (args, body, h, k))))
+			       | Int v => Cases.Int (doit v)
+			       | Word v => Cases.Word (doit v)
+			       | Word8 v => Cases.Word8 (doit v)
+			   end}})
+	       end
+	  | ConApp {con, args, ty} =>
+	       loops (args, h, fn xs =>
+		      Cont.sendExp (k, ty, Exp.ConApp {con = con, args = xs}))
+	  | Const c => Cont.sendExp (k, Type.ofConst c, Exp.Const c)
+	  | Detuple {tuple, length, body} =>
+	       loop (tuple, h,
+		     Cont.receiveExp
+		     (fn (e, ty) =>
+		      let
+			 fun doit (tuple: Var.t): Res.t =
+			    let
+			       val (ss, xs) = 
+				  case length of
+				     0 => ([], Vector.new0 ())
+				   | 1 => ([], Vector.new1 tuple)
+				   | _ =>
+					let
+					   val xs = 
+					      Vector.tabulate
+					      (length, fn _ => Var.newNoname ())
+					in (selects (tuple, ty, xs), xs)
+					end
+			       val {statements, transfer} = loop (body xs, h, k)
+			    in
+			       {statements = List.appendRev (ss, statements),
+				transfer = transfer}
+			    end
+		      in
+			 case e of
+			    Exp.Tuple xs => loop (body xs, h, k)
+			  | Exp.Var x => doit x
+			  | _ => 
+			       let
+				  val tuple = Var.newNoname ()
+			       in
+				  Res.prefix (doit tuple,
+					      Statement.T {var = SOME tuple,
+							   ty = ty,
+							   exp = e})
+			       end
+		      end))
+	  | DetupleBind {body, components, tuple, tupleTy} =>
+	       let
+		  val {statements, transfer} = loop (body, h, k)
+		  val ss =
+		     case Vector.length components of
+			0 => []
+		      | 1 => [Statement.T
+			      {var = SOME (Vector.sub (components, 0)),
+			       ty = tupleTy,
+			       exp = Exp.Var tuple}]
+		      | _ => selects (tuple, tupleTy, components)
+	       in
+		  {statements = List.appendRev (ss, statements),
+		   transfer = transfer}
+	       end
+	  | Handle {try, catch, handler, ty} =>
+	       let
+		  val k = Cont.goto (reify (k, ty))
+		  val hl = Label.newNoname ()
+		  val {statements, transfer} =
+		     Res.prefix (loop (handler, h, k), Statement.handlerPop hl)
+		  val _ =
+		     List.push (blocks,
+				Block.T {label = hl,
+					 args = Vector.new1 catch,
+					 statements = Vector.fromList statements,
+					 transfer = transfer})
+	       in
+		  Res.prefix (loop (try, Handler.Handle hl,
+				    Cont.prefix (k, Statement.handlerPop hl)),
+			      Statement.handlerPush hl)
+	       end
+	  | Let {decs, body} =>
+	       let
+		  fun each decs =
+		     case decs of
+			[] => loop (body, h, k)
+		      | {var, exp} :: decs =>
+			   loop (exp, h, Cont.bind (var, each decs))
+	       in
+		  each decs
+	       end
+	  | Name (e, f) => loopf (e, h, fn (x, _) => loop (f x, h, k))
+	  | PrimApp {args, overflow, prim, targs, ty} =>
+	       loops
+	       (args, h, fn xs =>
+		case overflow of
+		   NONE => Cont.sendExp (k, ty, Exp.PrimApp {prim = prim,
+							     targs = targs,
+							     args = xs})
+		 | SOME e =>
+		      let
+			 val l = reify (k, ty)
+			 val k = Cont.goto l
+		      in
+			 {statements = [],
+			  transfer =
+			  Transfer.Prim {prim = prim,
+					 args = xs,
+					 failure = newLabel0 (e, h, k),
+					 success = l}}
+		      end)
+	  | Raise e =>
+	       loopf (e, h, fn (x, _) =>
+		      {statements = [],
+		       transfer =
+		       (case h of
+			   Handler.CallerHandler =>
+			      Transfer.Raise (Vector.new1 x)
+			 | Handler.Handle l =>
+			      Transfer.Goto {dst = l,
+					     args = Vector.new1 x}
+			 | Handler.None => Error.bug "raise to None")})
+	  | Select {tuple, offset, ty} =>
+	       loopf (tuple, h, fn (tuple, _) =>
+		      Cont.sendExp (k, ty, Exp.Select {tuple = tuple,
+						       offset = offset}))
+	  | Seq (e1, e2) => loopf (e1, h, fn _ => loop (e2, h, k))
+	  | Tuple {exps, ty} =>
+	       loops (exps, h, fn xs => Cont.sendExp (k, ty, Exp.Tuple xs))
+	  | Var (x, ty) => Cont.sendVar (k, ty, x)) arg
+      and loops (es: t vector, h: Handler.t, k: Var.t vector -> Res.t): Res.t =
+	 let
+	    val n = Vector.length es
+	    fun each (i, ac) =
+	       if i = n
+		  then k (Vector.fromListRev ac)
+	       else loopf (Vector.sub (es, i), h, fn (x, _) =>
+			   each (i + 1, x :: ac))
+	 in
+	    each (0, [])
+	 end
+      val l = newLabel0 (e, h, k)
+   in
+      (l, !blocks)
+   end
+
+fun linearizeGoto (e: t, l) = linearize' (e, Handler.None, Cont.goto l)
+
+fun linearize (e: t) = linearize' (e, Handler.CallerHandler, Cont.return)
+
+val linearize =
+   Trace.trace ("Linearize.linearize", layout,
+		Layout.tuple2 (Label.layout,
+			       List.layout (Label.layout o Block.label)))
+   linearize
+
+end
 end

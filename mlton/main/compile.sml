@@ -14,10 +14,8 @@ structure CoreML = CoreML (open Atoms
 			   structure Type = Prim.Type)
 structure Xml = Xml (open Atoms)
 structure Sxml = Xml
-structure Cps = Cps (open Atoms)
-structure Ssa = Ssa (open Atoms
-		     structure Cps = Cps)
-structure MachineOutput = MachineOutput (structure Label = Cps.Func
+structure Ssa = Ssa (open Atoms)
+structure MachineOutput = MachineOutput (structure Label = Ssa.Func
 					 structure Prim = Atoms.Prim)
 structure Machine = Machine (structure MachineOutput = MachineOutput)
 
@@ -37,7 +35,7 @@ structure Monomorphise = Monomorphise (structure Xml = Xml
 				       structure Sxml = Sxml)
 structure ImplementExceptions = ImplementExceptions (open Sxml)
 structure Polyvariance = Polyvariance (open Sxml)
-structure ClosureConvert = ClosureConvert (structure Cps = Cps
+structure ClosureConvert = ClosureConvert (structure Ssa = Ssa
 					   structure Sxml = Sxml)
 structure Backend = Backend (structure Ssa = Ssa
 			     structure Machine = Machine
@@ -302,39 +300,15 @@ fun preCodegen {input, docc}: MachineOutput.Program.t =
 	  display = Control.Layout Sxml.Program.layout}
       val _ = Control.message (Control.Detail, fn () =>
 			       Sxml.Program.layoutStats sxml)
-      val cps =
-	 Control.passTypeCheck
-	 {name = "closureConvert",
-	  suffix = "cps",
-	  style = Control.No,
-	  thunk = fn () => ClosureConvert.closureConvert sxml,
-	  typeCheck = Cps.typeCheck,
-	  display = Control.Layouts Cps.Program.layouts}
-      val _ =
-	 let open Control
-	 in if !keepCps
-	       then
-		  File.withOut
-		  (concat [!inputFile, ".cps"], fn out =>
-		   let
-		      fun disp l = Layout.outputl (l, out)
-		   in
-		      outputHeader (No, disp)
-		      ; Cps.Program.layouts (cps, disp)
-		   end)
-	    else ()
-	 end
       val ssa =
 	 Control.passSimplify
-	 {display = Control.Layouts Ssa.Program.layouts,
-	  name = "toSSA",
-	  simplify = Ssa.simplify,
-	  style = Control.No,
+	 {name = "closureConvert",
 	  suffix = "ssa",
-	  thunk = fn () => Ssa.Program.fromCps (cps,
-						{funcToFunc = fn f => f,
-						 jumpToLabel = fn j => j}),
-	  typeCheck = Ssa.typeCheck}
+	  style = Control.No,
+	  thunk = fn () => ClosureConvert.closureConvert sxml,
+	  typeCheck = Ssa.typeCheck,
+	  display = Control.Layouts Ssa.Program.layouts,
+	  simplify = Ssa.simplify}
       val _ =
 	 let open Control
 	 in if !keepSSA

@@ -31,7 +31,6 @@ is
 ../codegen/sources.cm
 ../control/sources.cm
 ../core-ml/sources.cm
-../cps/sources.cm
 ../elaborate/sources.cm
 ../front-end/sources.cm
 ../ssa/sources.cm

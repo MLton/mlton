@@ -6,10 +6,112 @@ struct
 
 open S
 
-structure Type = Cps.Type
-structure Func = Cps.Func
-structure Label = Cps.Jump
-structure Cases = Cps.Cases
+   structure Type =
+   struct
+      local structure T = HashType (S)
+      in open  T
+      end
+
+      fun tyconArgs t =
+	 case Dest.dest t of
+	    Dest.Con x => x
+	  | _ => Error.bug "FirstOrderType.tyconArgs"
+	       
+      datatype dest =
+	 Char
+	| Int
+	| IntInf
+	| Pointer
+	| Word
+	| Word8
+	| Real
+	| Thread
+	| String 
+	| Array of t
+	| Vector of t
+	| Ref of t
+	| Datatype of Tycon.t
+	| Tuple of t vector
+
+      local
+	 val {get, set, ...} =
+	    Property.getSetOnce (Tycon.plist, Property.initConst NONE)
+
+	 fun nullary c v =
+	    if Vector.isEmpty v
+	       then c
+	    else Error.bug "bogus application of nullary tycon"
+
+	 fun unary make v =
+	    if 1 = Vector.length v
+	       then make (Vector.sub (v, 0))
+	    else Error.bug "bogus application of unary tycon"
+
+	 val tycons =
+	    [(Tycon.tuple, Tuple),
+	     (Tycon.char, nullary Char),
+	     (Tycon.int, nullary Int),
+	     (Tycon.intInf, nullary IntInf),
+	     (Tycon.pointer, nullary Pointer),
+	     (Tycon.real, nullary Real),
+	     (Tycon.string, nullary String),
+	     (Tycon.thread, nullary Thread),
+	     (Tycon.word8, nullary Word8),
+	     (Tycon.word, nullary Word),
+	     (Tycon.array, unary Array),
+	     (Tycon.vector, unary Vector),
+	     (Tycon.reff, unary Ref)]
+      in
+	 val _ = List.foreach (tycons, fn (tycon, f) => set (tycon, SOME f))
+
+	 fun dest t =
+	    case Dest.dest t of
+	       Dest.Con (tycon, ts) =>
+		  (case get tycon of
+		      NONE => Datatype tycon
+		    | SOME f => f ts)
+	     | _ => Error.bug "dest"
+      end
+
+      local open Layout
+      in
+	 fun layout t =
+	    case dest t of
+	       Char => str "char"
+	     | Int => str "int"
+	     | IntInf => str "IntInf.int"
+	     | Pointer => str "pointer"
+	     | Word => str "word"
+	     | Word8 => str "word8"
+	     | Real => str "real"
+	     | String => str "string"
+	     | Thread => str "thread"
+	     | Array t => seq [layout t, str " array"]
+	     | Vector t => seq [layout t, str " vector"]
+	     | Ref t => seq [layout t, str " ref"]
+	     | Datatype t => Tycon.layout t
+	     | Tuple ts =>
+		  if Vector.isEmpty ts
+		     then str "unit"
+		  else paren (seq (separate (Vector.toListMap (ts, layout),
+					     " * ")))
+      end
+   end
+
+structure Func =
+   struct
+      open Var (* Id (structure AstId = Ast.Var) *)
+
+      fun newNoname () = newString "F"
+   end
+
+structure Label =
+   struct
+      open Func
+      fun newNoname () = newString "L"
+   end
+
+structure Cases = Cases (type con = Con.t)
 
 local open Layout
 in
@@ -837,7 +939,7 @@ structure Function =
 			     Out.error)
 			    ; (Error.bug
 			       (concat
-				["inferHandlers bug found ", Label.toString l,
+				["inferHandlers bug found in ", Label.toString l,
 				 ": ", msg])))
 			val _ =
 			   case Array.sub (handlerStack, i) of
@@ -860,10 +962,10 @@ structure Function =
 				| HandlerPush h => h :: hs
 				| _ => hs
 			    end)
-			fun empty () =
+			fun empty s =
 			   if List.isEmpty hs
 			      then ()
-			   else bug "nonempty stack"
+			   else bug (concat ["nonempty stack ", s])
 			fun top l =
 			   case hs of
 			      l' :: _ =>
@@ -876,15 +978,16 @@ structure Function =
 			      Call {return, ...} =>
 				 (case return of
 				     Return.Dead => ()
-				   | Return.HandleOnly => empty ()
+				   | Return.HandleOnly => empty "HandleOnly"
 				   | Return.NonTail {handler, ...} =>
 					(case handler of
-					    Handler.CallerHandler => empty ()
+					    Handler.CallerHandler =>
+					       empty "CallerHandler"
 					  | Handler.Handle l => top l
 					  | Handler.None => ())
-				   | Return.Tail => empty ())
-			    | Raise _ => empty ()
-			    | Return _ => empty ()
+				   | Return.Tail => empty "tail")
+			    | Raise _ => empty "raise"
+			    | Return _ => empty "return"
 			    | _ => ()
 			val _ = 
 			   Transfer.foreachLabel (transfer, fn l =>
@@ -1584,7 +1687,7 @@ structure Program =
 	    fun inc _ = Int.inc numTypes
 	    val {hom = countType, destroy} =
 	       Type.makeHom
-	       {var = fn _ => Error.bug "cps-tree saw var",
+	       {var = fn _ => Error.bug "ssa-tree saw var",
 		con = inc}
 	    val numStatements = ref (Vector.length globals)
 	    val numBlocks = ref 0
@@ -1659,172 +1762,6 @@ structure Program =
 	     false
 	  end)
 
-      fun fromCps (p as Cps.Program.T {datatypes, globals, functions, main},
-		   {jumpToLabel, funcToFunc}) =
-	 let
-	    val jumpHandlers = Cps.inferHandlers p
-	    datatype z =
-	       Normal of Statement.t
-	     | Overflow of {prim: Prim.t,
-			    args: Var.t vector,
-			    failure: Label.t}
-	    fun bindToStatement {var, ty, exp} =
-	       let
-		  fun normal exp =
-		     Normal (Statement.T {var = SOME var, ty = ty, exp = exp})
-		  datatype z = datatype Cps.PrimExp.t
-	       in
-		  case exp of
-		     ConApp z => normal (Exp.ConApp z)
-		   | Const z => normal (Exp.Const z)
-		   | PrimApp {prim, targs, args, info} =>
-			(case info of
-			    Cps.PrimInfo.None =>
-			       normal (Exp.PrimApp {prim = prim,
-						    targs = targs,
-						    args = args})
-			  | Cps.PrimInfo.Overflow j =>
-			       Overflow {prim = prim,
-					 args = args,
-					 failure = jumpToLabel j})
-		   | Select z => normal (Exp.Select z)
-		   | Tuple z => normal (Exp.Tuple z)
-		   | Var z => normal (Exp.Var z)
-	       end
-	    fun loopTransfer (t, handlers) =
-	       let
-		  datatype z = datatype Cps.Transfer.t
-	       in
-		  case t of
-		     Bug => Transfer.Bug
-		   | Call {func, args, cont} =>
-			let
-			   val return =
-			      case cont of
-				 NONE => Return.Tail
-			       | SOME l =>
-				    Return.NonTail
-				    {cont = jumpToLabel l,
-				     handler =
-				     (case jumpHandlers l of
-					 [] => Handler.CallerHandler
-				       | h :: _ =>
-					    Handler.Handle (jumpToLabel h))}
-			in
-			   Transfer.Call {func = funcToFunc func,
-					  args = args,
-					  return = return}
-			end
-		   | Case {test, cases, default, ...} =>
-			Transfer.Case {test = test,
-				       cases = cases,
-				       default = default}
-		   | Jump {dst, args} =>
-			Transfer.Goto {dst = dst, args = args}
-		   | Raise xs =>
-			(case handlers of
-			    [] => Transfer.Raise xs
-			  | h :: _ => Transfer.Goto {dst = h, args = xs})
-		   | Return xs => Transfer.Return xs
-	       end
-	    fun loopFunc (Cps.Function.T {name, args, body, returns}) =
-	       let
-		  val blocks = ref []
-		  fun loop (e: Cps.Exp.t,
-			    l: Label.t,
-			    args: (Var.t * Type.t) vector,
-			    handlers: Cps.Jump.t list): unit =
-		     let
-			val {decs, transfer} = Cps.Exp.dest e
-		     in
-			loopDecs (decs, [], l, args, handlers, transfer)
-		     end
-		  and loopDecs (decs, statements, l: Label.t, args,
-				handlers, transfer) =
-		     let
-			fun addBlock (t: Transfer.t): unit =
-			   List.push
-			   (blocks,
-			    Block.T {label = l,
-				     args = args,
-				     statements = Vector.fromListRev statements,
-				     transfer = t})
-		     in
-			case decs of
-			   [] => addBlock (loopTransfer (transfer, handlers))
-			 | d :: decs =>
-			      let
-				 fun continue statements =
-				    loopDecs (decs, statements, l, args,
-					      handlers, transfer)
-				 datatype z = datatype Cps.Dec.t
-			      in
-				 case d of
-				    Bind (b as {var, ...}) =>
-				       (case bindToStatement b of
-					   Normal s =>
-					      continue (s :: statements)
-					 | Overflow {prim, args, failure} =>
-					      let
-						 val success = Label.newNoname ()
-						 val _ =
-						    addBlock
-						    (Prim {args = args,
-							   failure = failure,
-							   prim = prim,
-							   success = success})
-					      in loopDecs
-						 (decs, [],
-						  success,
-						  Vector.new1 (var, Type.int),
-						  handlers, transfer)
-					      end)
-				  | Fun {name, args, body} =>
-				       (loop (body, jumpToLabel name, args,
-					      jumpHandlers name)
-					; continue statements)
-				  | HandlerPush h =>
-				       loopDecs
-				       (decs,
-					Statement.handlerPush (jumpToLabel h)
-					:: statements,
-					l, args, h :: handlers, transfer)
-				  | HandlerPop => 
-				       (case handlers of
-					   [] =>
-					      Error.bug
-					      "pop of empty handler stack"
-					 | h :: handlers =>
-					      loopDecs
-					      (decs,
-					       Statement.handlerPop h
-					       :: statements,
-					       l, args, handlers, transfer))
-			      end
-		     end
-		  val start = Label.newNoname ()
-		  val _ = loop (body, start, Vector.new0 (), [])
-	       in
-		  Function.new {args = args,
-				blocks = Vector.fromList (!blocks),
-				name = funcToFunc name,
-				returns = SOME returns,
-				raises = SOME (Vector.new1 (Type.exn)),
-				start = start}
-	       end
-	    val program =
-	       T {datatypes = Vector.map (datatypes, Datatype.T),
-		  globals = (Vector.map
-			     (globals, fn b =>
-			      case bindToStatement b of
-				 Normal s => s
-			       | Overflow _ => Error.bug "overflow in globals")),
-		  functions = Vector.toListMap (functions, loopFunc),
-		  main = funcToFunc main}
-	    val _ = clear program
-	 in
-	    program
-	 end
    end
 
 end

@@ -2,4 +2,5 @@
  * Please see the file LICENSE for license information.
  *)
 functor Ssa (S: SSA_STRUCTS): SSA = 
-   Simplify (Shrink (TypeCheck (Analyze (SsaTree (S)))))
+   Simplify (Shrink (TypeCheck (Analyze (DirectExp (SsaTree (S))))))
+

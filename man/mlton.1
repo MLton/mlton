@@ -82,7 +82,7 @@ constants.  The file will be included with \fB#include <file.h>\fP.
 
 .TP
 \fB-inline \fIn\fR
-Set the inlining threshold used in the CPS simplifier.
+Set the inlining threshold used in the optimizer.
 The default is 320.
 
 .TP
@@ -91,19 +91,19 @@ Specify an additional directory to be searched for include files (included with
 \fB-i\fR).
 
 .TP
-\fB-keep \fI{\fBcps\fP|\fBdot\fP|\fBg\fP|\fBo\fP|\fBsml\fP}\fR
+\fB-keep \fI{\fBdot\fP|\fBg\fP|\fBo\fP|\fBsml\fP|\fBssa\fP}\fR
 Save the intermediate files corresponding to the given arg.
 If no \fB-keep\fP argument is given, then only the final file is saved.
 .in +.5i
-\fBcps\fP  CPS file.
-.br
-\fBdot\fP  dot files.  Implies \fB-keep cps\fP. Do not use with \fB-keep il\fP.
+\fBdot\fP  dot files.  Implies \fB-keep ssa\fP. Do not use with \fB-keep il\fP.
 .br
 \fBg\fP    generated \fB.S\fP and \fB.c\fP files passed to gcc.
 .br
 \fBo\fP    object file (\fI*\fB.o\fR).
 .br
 \fBsml\fP  SML file.
+.br
+\fBssa\fP  SSA file.
 .in -.5i
 
 .TP
@@ -141,7 +141,7 @@ When such an executable is run, it will produce a \fBmlmon.out\fP file.
 The man page on \fBmlprof\fP describes how to extract information from this
 file.
 The default is not to gather profiling information.  This option implies
-\fB-keep cps\fP.
+\fB-keep ssa\fP.
 
 .TP
 \fB-safe \fI{\fBtrue\fP|\fBfalse\fP}\fR

@@ -41,10 +41,6 @@ The implicitly typed IL that results from defunctorization.  Contains a
 pass of dead code elimination for eliminating basis library code.  Also contains
 the pass that replaces constants defined by {\tt \_prim} with their values.
 
-\place{cps}
-The first-order simply-typed IL on which most optimization is performed.  There
-are roughly 20 different optimization passes (some of which run several times).
-
 \place{elaborate}
 The elaborator, which matches variable uses with bindings in the AST IL and
 defunctorizes to produce a {\tt CoreML} program.  It does not do type checking
@@ -77,8 +73,9 @@ describing representations (hence the ``r'').  Not yet in use.
 For compiling with {\smlnj}.
 
 \place{ssa}
-An experimental IL, similar to CPS, but without lexical scoping.  Hence, it is
-very close to Static-Single-Assignment form.  Not yet in use.
+Static-Single-Assignment form, the first-order simply-typed IL on which most
+optimization is performed.  There are roughly 20 different optimization passes
+(some of which run several times).
 
 \place{type-inference}
 The type inference pass, which translates from {\tt CoreML} to {\tt Xml}.

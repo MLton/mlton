@@ -6,7 +6,7 @@ type int = Int.t
 signature ABSTRACT_VALUE_STRUCTS = 
    sig
       structure Sxml: SXML
-      structure Cps: CPS
+      structure Ssa: SSA
    end
 
 signature ABSTRACT_VALUE = 
@@ -42,7 +42,7 @@ signature ABSTRACT_VALUE =
 
       val addHandler: t * (Lambda.t -> unit) -> unit
       val coerce: {from: t, to: t} -> unit
-      val cpsType: t -> Cps.Type.t option ref
+      val ssaType: t -> Ssa.Type.t option ref
       val dearray: t -> t
       val deref: t -> t
       val dest: t -> dest

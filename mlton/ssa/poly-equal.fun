@@ -35,9 +35,7 @@ type word = Word.t
 
 open Exp Transfer
 
-structure DirectExp = DirectExp (S)
-
-structure DirectExp =
+structure Dexp =
    struct
       open DirectExp
 
@@ -114,16 +112,16 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 		     val arg2 = (Var.newNoname (), ty)
 		     val args = Vector.new2 (arg1, arg2)
 		       
-		     val darg1 = DirectExp.var arg1
-		     val darg2 = DirectExp.var arg2
+		     val darg1 = Dexp.var arg1
+		     val darg2 = Dexp.var arg2
 
 		     val body = 
-		        DirectExp.casee
+		        Dexp.casee
 			{test = darg1,
 			 ty = Type.bool,
 			 default = NONE,
 			 cases =
-			 DirectExp.Con
+			 Dexp.Con
 			 (Vector.map
 			  (tyconCons tycon, fn {con, args} =>
 			   let
@@ -135,22 +133,22 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 			      {con = con,
 			       args = xs,
 			       body = 
-			       DirectExp.casee
+			       Dexp.casee
 			       {test = darg2,
 				ty = Type.bool,
-				default = SOME DirectExp.falsee,
+				default = SOME Dexp.falsee,
 				cases =
-				DirectExp.Con
+				Dexp.Con
 				(Vector.new1
 				 {con = con,
 				  args = ys,
 				  body =
 				  Vector.fold2
-				  (xs, ys, DirectExp.truee,
+				  (xs, ys, Dexp.truee,
 				   fn ((x, ty), (y, _), de) =>
-				   DirectExp.conjoin (de, equal (x, y, ty)))})}}
+				   Dexp.conjoin (de, equal (x, y, ty)))})}}
 			   end))}
-		     val (start, blocks) = DirectExp.sendReturn body
+		     val (start, blocks) = Dexp.linearize body
 		     val blocks = Vector.fromList blocks
 		  in
 		     val _ = List.push
@@ -183,36 +181,26 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 		     val v2 = (Var.newNoname (), vty)
 		     val args = Vector.new2 (v1, v2)
 
-		     val dv1 = DirectExp.var v1
-		     val dv2 = DirectExp.var v2
+		     val dv1 = Dexp.var v1
+		     val dv2 = Dexp.var v2
 		      
 		     val body =
 		        let
 			  fun length x =
-			     DirectExp.primApp
-			     {prim = Prim.vectorLength,
-			      targs = Vector.new1 ty,
-			      args = Vector.new1 x,
-			      ty = Type.int}
+			     Dexp.primApp {prim = Prim.vectorLength,
+						targs = Vector.new1 ty,
+						args = Vector.new1 x,
+						ty = Type.int}
 			in
-			  DirectExp.name
-			  (length dv1, fn lv1 =>
-			   DirectExp.name
-			   (length dv2, fn lv2 =>
-			    let
-			       val dlv1 = DirectExp.var (lv1, Type.int)
-			       val dlv2 = DirectExp.var (lv2, Type.int)
-			    in
-			       DirectExp.conjoin
-			       (DirectExp.eq (dlv1, dlv2, Type.int),
-				DirectExp.call
-				{func = loop,
-				 args = Vector.new4 
-				 (DirectExp.int 0, dlv1, dv1, dv2),
-				 ty = Type.bool})
-			    end))
+			   Dexp.conjoin
+			   (Dexp.eq (length dv1, length dv2, Type.int),
+			    Dexp.call
+			    {func = loop,
+			     args = (Vector.new4 
+				     (Dexp.int 0, length dv1, dv1, dv2)),
+			     ty = Type.bool})
 			end
-		     val (start, blocks) = DirectExp.sendReturn body
+		     val (start, blocks) = Dexp.linearize body
 		     val blocks = Vector.fromList blocks
 		  in
 		     val _ = List.push
@@ -232,35 +220,31 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 		     val v2 = (Var.newNoname (), vty)
 		     val args = Vector.new4 (i, len, v1, v2)
 		       
-		     val di = DirectExp.var i
-		     val dlen = DirectExp.var len
-		     val dv1 = DirectExp.var v1
-		     val dv2 = DirectExp.var v2
+		     val di = Dexp.var i
+		     val dlen = Dexp.var len
+		     val dv1 = Dexp.var v1
+		     val dv2 = Dexp.var v2
 
 		     val body =
 		        let
 			   fun sub (v, i) =
-			      DirectExp.primApp {prim = Prim.vectorSub,
+			      Dexp.primApp {prim = Prim.vectorSub,
 						 targs = Vector.new1 ty,
 						 args = Vector.new2 (v, i),
 						 ty = ty}
 			in
-			   DirectExp.disjoin 
-			   (DirectExp.eq (di, dlen, Type.int),
-			    DirectExp.name
-			    (sub (dv1, di), fn v1i =>
-			     DirectExp.name
-			     (sub (dv2, di), fn v2i =>
-			      DirectExp.conjoin
-			      (equal (v1i, v2i, ty),
-			       DirectExp.call
-			       {func = loop,
-				args = Vector.new4 
-				       (DirectExp.add (di, DirectExp.int 1),
-					dlen, dv1, dv2),
-			        ty = Type.bool}))))
+			   Dexp.disjoin 
+			   (Dexp.eq (di, dlen, Type.int),
+			    Dexp.conjoin
+			    (equalExp (sub (dv1, di), sub (dv2, di), ty),
+			     Dexp.call
+			     {func = loop,
+			      args = (Vector.new4 
+				      (Dexp.add (di, Dexp.int 1),
+				       dlen, dv1, dv2)),
+			      ty = Type.bool}))
 			end
-		     val (start, blocks) = DirectExp.sendReturn body
+		     val (start, blocks) = Dexp.linearize body
 		     val blocks = Vector.fromList blocks
 		  in
 		     val _ = List.push
@@ -275,12 +259,14 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 	       in
 		  name
 	       end
-      and equal (x1: Var.t, x2: Var.t, ty: Type.t): DirectExp.t =
+      and equalExp (e1: Dexp.t, e2: Dexp.t, ty: Type.t): Dexp.t =
+	 Dexp.name (e1, fn x1 => Dexp.name (e2, fn x2 => equal (x1, x2, ty)))
+      and equal (x1: Var.t, x2: Var.t, ty: Type.t): Dexp.t =
 	 let
-	    val dx1 = DirectExp.var (x1, ty)
-	    val dx2 = DirectExp.var (x2, ty)
+	    val dx1 = Dexp.var (x1, ty)
+	    val dx2 = Dexp.var (x2, ty)
 	    fun prim (p, targs) =
-	       DirectExp.primApp {prim = p,
+	       Dexp.primApp {prim = p,
 				  targs = targs, 
 				  args = Vector.new2 (dx1, dx2),
 				  ty = Type.bool}
@@ -297,35 +283,33 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 	  | Type.String => prim (Prim.stringEqual, Vector.new0 ())
 	  | Type.Array _ => eq ()
 	  | Type.Vector ty =>
-	       DirectExp.call {func = vectorEqualFunc ty,
+	       Dexp.call {func = vectorEqualFunc ty,
 			       args = Vector.new2 (dx1, dx2),
 			       ty = Type.bool}
 	  | Type.Ref _ => eq ()
 	  | Type.Datatype tycon =>
 	       if isEnum tycon orelse hasConstArg ()
 		  then eq ()
-	       else DirectExp.call {func = equalFunc tycon,
+	       else Dexp.call {func = equalFunc tycon,
 				    args = Vector.new2 (dx1, dx2),
 				    ty = Type.bool}
 	  | Type.Tuple tys =>
 	       let
 		  val max = Vector.length tys - 1
 		  (* test components i, i+1, ... *)
-		  fun loop (i: int): DirectExp.t =
+		  fun loop (i: int): Dexp.t =
 		     if i > max
-		        then DirectExp.truee
+		        then Dexp.truee
 		     else let
 			     val ty = Vector.sub (tys, i)
+			     fun select tuple =
+				Dexp.select {tuple = tuple,
+						  offset = i,
+						  ty = ty}
 			  in
-			     DirectExp.name
-			     (DirectExp.select {tuple = dx1, offset = i, ty = ty}, 
-			      fn x1i =>
-			      DirectExp.name
-			      (DirectExp.select {tuple = dx2, offset = i, ty = ty},
-			       fn x2i =>
-			       DirectExp.conjoin 
-			       (equal (x1i, x2i, ty), 
-				loop (i + 1))))
+			     Dexp.conjoin
+			     (equalExp (select dx1, select dx2, ty),
+			      loop (i + 1))
 			  end
 	       in
 		  loop 0
@@ -389,7 +373,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 					 fun arg i = Vector.sub (args, i)
 					 val l = Label.newNoname ()
 					 val (start',bs') =
-					    DirectExp.sendGoto
+					    Dexp.linearizeGoto
 					    (equal (arg 0, arg 1, ty), l)
 				      in
 					(finish (las, 

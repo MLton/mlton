@@ -6,7 +6,7 @@ type word = Word.t
    
 signature ANALYZE_STRUCTS = 
    sig
-      include SSA_TREE
+      include DIRECT_EXP
    end
 
 signature ANALYZE = 

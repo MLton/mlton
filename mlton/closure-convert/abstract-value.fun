@@ -146,17 +146,17 @@ datatype tree =
 
 withtype t = {tree: tree,
 	      ty: Type.t,
-	      cpsType: Cps.Type.t option ref} Dset.t
+	      ssaType: Ssa.Type.t option ref} Dset.t
 
 fun new (tree: tree, ty: Type.t): t =
-   Dset.singleton {cpsType = ref NONE,
+   Dset.singleton {ssaType = ref NONE,
 		   tree = tree,
 		   ty = ty}
 
 local
    fun make sel : t -> 'a = sel o Dset.value
 in
-   val cpsType = make #cpsType
+   val ssaType = make #ssaType
    val tree = make #tree
    val ty = make #ty
 end

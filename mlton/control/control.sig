@@ -43,7 +43,7 @@ signature CONTROL =
        | Every
       val gcCheck: gcCheck ref
 
-      (* Indentation used in laying out CPS trees. *)
+      (* Indentation used in laying out ILs. *)
       val indentation: int ref
 	 
       (* The .h files that should be #include'd in the .c file. *)
@@ -64,16 +64,13 @@ signature CONTROL =
       (* call count instrumentation *)
       val instrument: bool ref
 
-      (* Save the CPS to a file. *)
-      val keepCps: bool ref
-
       (* Save the SSA to a file. *)
       val keepSSA: bool ref
 	 
       (* List of pass names to keep diagnostic info on. *)
       val keepDiagnostics: string list ref
 
-      (* Keep dot files for whatever CPS files are produced. *)
+      (* Keep dot files for whatever SSA files are produced. *)
       val keepDot: bool ref
 
       (* List of pass names to save the result of. *)

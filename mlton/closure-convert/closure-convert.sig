@@ -4,13 +4,13 @@
 signature CLOSURE_CONVERT_STRUCTS = 
    sig
       structure Sxml: SXML
-      structure Cps: CPS
-      sharing Sxml.Atoms = Cps.Atoms
+      structure Ssa: SSA
+      sharing Sxml.Atoms = Ssa.Atoms
    end
 
 signature CLOSURE_CONVERT = 
    sig
       include CLOSURE_CONVERT_STRUCTS
       
-      val closureConvert: Sxml.Program.t -> Cps.Program.t
+      val closureConvert: Sxml.Program.t -> Ssa.Program.t
    end

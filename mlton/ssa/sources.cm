@@ -8,7 +8,6 @@ is
 
 ../atoms/sources.cm
 ../control/sources.cm
-../cps/sources.cm
 ../../lib/mlton/sources.cm
 
 analyze.fun

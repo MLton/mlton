@@ -2,9 +2,9 @@
  * Please see the file LICENSE for license information.
  *)
 (*
- * All local variables in the Sxml are renamed to new variables in Cps,
+ * All local variables in the Sxml are renamed to new variables in Ssa,
  * unless they are global, as determined by the Globalization pass.
- * Renaming must happen because an Sxml variable will be bound in the Cps
+ * Renaming must happen because an Sxml variable will be bound in the Ssa
  * once for each lambda it occurs in.  The main trickiness is caused because a
  * property is used to implement the renamer map.  Hence, a variable binding
  * must always be visited with "newVar" or "newScope" before it is looked up
@@ -31,33 +31,34 @@ in
    open Atoms
 end
 
-local open Cps
+local
+   open Ssa
 in
-   structure Ccases = Cases
-   structure Cause = Cause
-   structure Ctype = Type
+   structure Block = Block
+   structure Datatype = Datatype
+   structure Dexp = DirectExp
    structure Func = Func
-   structure Cdec = Dec
-   structure Cexp = DirectExp
-   structure Cprogram = Program
-   structure CPrimExp = PrimExp
+   structure Function = Function
+   structure Type = Type
 end
 
-structure Value = AbstractValue (structure Cps = Cps
+structure Value = AbstractValue (structure Ssa = Ssa
 				 structure Sxml = Sxml)
 local open Value
 in structure Lambdas = Lambdas
 end
 
 (* Accum.t is one of the results returned internally by the converter -- an
- * accumulation of toplevel Cps globals and function declarations.
+ * accumulation of toplevel Ssa globals and function declarations.
  *)
 structure Accum =
    struct
       structure AL = AppendList
 
-      datatype t = T of {globals: {var: Var.t, ty: Ctype.t, exp: Cexp.t} AL.t,
-			 functions: Cps.Function.t list}
+      datatype t = T of {globals: {var: Var.t,
+				   ty: Type.t,
+				   exp: Dexp.t} AL.t,
+			 functions: Function.t list}
 
       val empty = T {globals = AL.empty, functions = []}
 
@@ -74,30 +75,59 @@ structure Accum =
 	 {functions = functions,
 	  globals =
 	  let
-	     val exp =
-		(* Must shrink because coercions may be inserted at constructor
-		 * applications.  I'm pretty sure the shrinking will eliminate
-		 * any case expressions/local functions.
-		 * The "NoDelete" is because the shrinker is just processing
-		 * globals and hence cannot safely delete a variable that
-		 * has no occurrences, since there may still be occurrences in
-		 * functions.
-		 *)
-		Cps.shrinkExpNoDelete
-		(Cexp.toExp (Cexp.lett
-			     {decs = AL.toList globals,
-			      body = Cexp.tuple {exps = Vector.new0 (),
-						 ty = Ctype.unit}}))
-	     val decs = Cps.Exp.decs exp
-	  in 
-	     List.map (decs,
-		       fn Cdec.Bind b => b
-			| _ => Error.bug "globalization produced a non binding")
+	     (* Must shrink because coercions may be inserted at constructor
+	      * applications.  I'm pretty sure the shrinking will eliminate
+	      * any case expressions/local functions.
+	      * The "NoDelete" is because the shrinker is just processing
+	      * globals and hence cannot safely delete a variable that
+	      * has no occurrences, since there may still be occurrences in
+	      * functions.
+	      *)
+	     val globals = AL.toList globals
+	     val vars =
+		Ssa.Transfer.Return 
+	     val vars = Vector.fromListMap (globals, #var)
+	     val (start, blocks) =
+		Dexp.linearize
+		(Dexp.lett
+		 {decs = List.map (globals, fn {var, exp, ...} =>
+				   {var = var, exp = exp}),
+		  body = Dexp.tuple {exps = (Vector.fromListMap
+					     (globals, fn {var, ty, ...} =>
+					      Dexp.var (var, ty))),
+				     ty = Type.unit (* bogus *)}})
+	     val {blocks, ...} =
+		Function.dest
+		(Ssa.shrinkFunction
+		 (Vector.new0 ())
+		 (Function.new {args = Vector.new0 (),
+				blocks = Vector.fromList blocks,
+				name = Func.newNoname (),
+				raises = NONE,
+				returns = NONE, (* bogus *)
+				start = start}))
+	  in
+	     if 1 <> Vector.length blocks
+		then Error.bug "shrinker didn't completely simplify"
+	     else
+		let
+		   val ss = Block.statements (Vector.sub (blocks, 0))
+		   val _ = 
+		      case Ssa.Statement.exp (Vector.last ss) of
+			 Ssa.Exp.Tuple v =>
+			    if Vector.equals (vars, v, Var.equals)
+			       then ()
+			    else Error.bug "shrinker didn't simplify right"
+		       | _ => Error.bug "shrinker didn't produce tuple"
+		in
+		   Vector.tabulate (Vector.length ss - 1, fn i =>
+				    Vector.sub (ss, i))
+		end
 	  end}
    end
 
 (* val traceConvertExp =
- *    Trace.trace2 ("convertExp", Sexp.layout, Instance.layout, Cexp.layout)
+ *    Trace.trace2 ("convertExp", Sexp.layout, Instance.layout, Dexp.layout)
  *)
 
 val convertPrimExpInfo = Trace.info "ClosureConvert.convertPrimExp"
@@ -123,7 +153,7 @@ structure LambdaInfo =
 	       name: Func.t,
 	       recs: Var.t vector ref,
 	       (* The type of its environment record. *)
-	       ty: Ctype.t option ref
+	       ty: Type.t option ref
 	       }
 
       fun frees (T {frees, ...}) = !frees
@@ -153,7 +183,7 @@ val traceLoopBind =
     Unit.layout)
 
 fun closureConvert
-   (program as Sxml.Program.T {datatypes, body, overflow}): Cps.Program.t =
+   (program as Sxml.Program.T {datatypes, body, overflow}): Ssa.Program.t =
    let
       val {get = conArg: Con.t -> Value.t option, set = setConArg, ...} =
 	 Property.getSetOnce (Con.plist,
@@ -363,18 +393,18 @@ fun closureConvert
       val {get = lambdasInfoOpt, ...} =
 	 Property.get (Lambdas.plist, Property.initFun (fn _ => ref NONE))
       val {hom = convertType, destroy = destroyConvertType} =
-	 Stype.makeMonoHom {con = fn (_, c, ts) => Ctype.con (c, ts)}
+	 Stype.makeMonoHom {con = fn (_, c, ts) => Type.con (c, ts)}
       fun convertTypes ts = List.map (ts, convertType)
       (* newDatatypes accumulates the new datatypes built for sets of lambdas. *)
-      val newDatatypes = ref []
-      fun valueType arg: Ctype.t =
+      val newDatatypes: Datatype.t list ref = ref []
+      fun valueType arg: Type.t =
 	 Trace.traceInfo (valueTypeInfo,
 			  Layout.ignore,
-			  Ctype.layout,
+			  Type.layout,
 			  Trace.assertTrue)
 	 (fn (v: Value.t) =>
 	 let
-	    val r = Value.cpsType v
+	    val r = Value.ssaType v
 	 in
 	    case !r of
 	       SOME t => t
@@ -383,18 +413,18 @@ fun closureConvert
 		     val t = 
 			case Value.dest v of
 			   Value.Type t => convertType t
-			 | Value.Ref v => Ctype.reff (valueType v)
-			 | Value.Array v => Ctype.array (valueType v)
-			 | Value.Vector v => Ctype.vector (valueType v)
+			 | Value.Ref v => Type.reff (valueType v)
+			 | Value.Array v => Type.array (valueType v)
+			 | Value.Vector v => Type.vector (valueType v)
 			 | Value.Tuple vs =>
-			      Ctype.tuple (Vector.map (vs, valueType))
+			      Type.tuple (Vector.map (vs, valueType))
 			 | Value.Lambdas ls => #ty (lambdasInfo ls)
 		  in r := SOME t; t
 		  end
 	 end) arg
       and lambdasInfo (ls: Lambdas.t): {cons: {lambda: Slambda.t,
 					       con: Con.t} vector,
-					ty: Ctype.t} =
+					ty: Type.t} =
 	 let
 	    val r = lambdasInfoOpt ls
 	 in
@@ -408,7 +438,7 @@ fun closureConvert
 			(Lambdas.toList ls, fn l =>
 			 {lambda = Value.Lambda.dest l,
 			  con = Con.newString "Env"})
-		     val ty = Ctype.con (tycon, Vector.new0 ())
+		     val ty = Type.con (tycon, Vector.new0 ())
 		     val info = {ty = ty, cons = cons}
 		     val _ = r := SOME info
 		     (* r must be set before the following, because calls to
@@ -420,17 +450,18 @@ fun closureConvert
 			 {con = con,
 			  args = Vector.new1 (lambdaInfoType
 					      (lambdaInfo lambda))})
-		     val _ = List.push (newDatatypes, {tycon = tycon,
-						       cons = cons})
+		     val _ = List.push (newDatatypes,
+					Datatype.T {tycon = tycon,
+						    cons = cons})
 		  in
 		     info
 		  end
 	 end
       and varInfoType ({value, ...}: VarInfo.t) = valueType value
-      and lambdaInfoType (LambdaInfo.T {frees, ty, ...}): Ctype.t =
+      and lambdaInfoType (LambdaInfo.T {frees, ty, ...}): Type.t =
 	 case !ty of
 	    NONE =>
-	       let val t = Ctype.tuple (Vector.map
+	       let val t = Type.tuple (Vector.map
 					(!frees, varInfoType o varInfo))
 	       in ty := SOME t; t
 	       end
@@ -444,6 +475,7 @@ fun closureConvert
       val datatypes =
 	 Vector.map
 	 (datatypes, fn {tycon, cons, ...} =>
+	  Datatype.T
 	  {tycon = tycon,
 	   cons = (Vector.map
 		   (cons, fn {con, ...} =>
@@ -474,17 +506,17 @@ fun closureConvert
       (*               coerce               *)
       (*------------------------------------*)
       val traceCoerce =
-	 Trace.trace3 ("coerce", Cexp.layout, Value.layout, Value.layout,
-		       Cexp.layout)
+	 Trace.trace3 ("coerce", Dexp.layout, Value.layout, Value.layout,
+		       Dexp.layout)
       (*       val traceCoerceTuple =
        * 	 let val layoutValues = List.layout (", ", Value.layout)
-       * 	 in Trace.trace3 ("coerceTuple", Cexp.layout,
-       * 			 layoutValues, layoutValues, Cexp.layout)
+       * 	 in Trace.trace3 ("coerceTuple", Dexp.layout,
+       * 			 layoutValues, layoutValues, Dexp.layout)
        * 	 end
        *)
-      fun coerce arg: Cexp.t =
+      fun coerce arg: Dexp.t =
 	 traceCoerce
-	 (fn (e: Cexp.t, from: Value.t, to: Value.t) =>
+	 (fn (e: Dexp.t, from: Value.t, to: Value.t) =>
 	  if Value.equals (from, to)
 	     then e
 	  else 
@@ -507,12 +539,12 @@ fun closureConvert
 			     in r := con
 			     end)
 			 val exp =
-			    Cexp.casee
-			    {cause = Cause.Coerce,
-			     test = e, default = NONE,
+			    Dexp.casee
+			    {test = e,
+			     default = NONE,
 			     ty = ty,
 			     cases =
-			     Cexp.Con
+			     Dexp.Con
 			     (Vector.map
 			      (cons, fn {lambda, con} =>
 			       let
@@ -522,40 +554,41 @@ fun closureConvert
 					       lambdaInfoType info)
 			       in {con = con,
 				   args = Vector.new1 tuple,
-				   body = (Cexp.conApp
+				   body = (Dexp.conApp
 					   {con = !r,
 					    ty = ty,
 					    args =
-					    Vector.new1 (Cexp.var tuple)})}
+					    Vector.new1 (Dexp.var tuple)})}
 			       end))}
 		      in exp
 		      end
 	      | _ => Error.bug "impossible coercion") arg
       and coerceTuple arg =
 	 (*	 traceCoerceTuple *)
-	 (fn (e: Cexp.t,
-	      ty: Ctype.t, vs: Value.t vector,
-	      ty': Ctype.t, vs': Value.t vector) =>
-	  if Ctype.equals (ty, ty')
+	 (fn (e: Dexp.t,
+	      ty: Type.t, vs: Value.t vector,
+	      ty': Type.t, vs': Value.t vector) =>
+	  if Type.equals (ty, ty')
 	     then e
 	  else 
-	     Cexp.detuple
+	     Dexp.detuple
 	     {tuple = e,
+	      length = Vector.length vs,
 	      body =
 	      fn components => 
-	      Cexp.tuple
+	      Dexp.tuple
 	      {exps = Vector.map3 (components, vs, vs',
 				   fn (x, v, v') =>
-				   coerce (Cexp.var (x, valueType v), v, v')),
+				   coerce (Dexp.var (x, valueType v), v, v')),
 	       ty = ty'}}) arg
       fun convertVarInfo (info as {replacement, ...}: VarInfo.t) =
-	 Cexp.var (!replacement, varInfoType info)
+	 Dexp.var (!replacement, varInfoType info)
       val convertVar = convertVarInfo o varInfo
       val convertVarExp = convertVar o SvarExp.var
       (*------------------------------------*)      	       
       (*               apply                *)
       (*------------------------------------*)
-      fun apply {func, arg, resultVal}: Cexp.t =
+      fun apply {func, arg, resultVal}: Dexp.t =
 	 let
 	    val func = varExpInfo func
 	    val arg = varExpInfo arg
@@ -564,13 +597,12 @@ fun closureConvert
 	    val argExp = convertVarInfo arg
 	    val ty = valueType resultVal
 	    val {cons, ...} = valueLambdasInfo funcVal
-	 in Cexp.casee
-	    {cause = Cause.Dispatch,
-	     test = convertVarInfo func,
+	 in Dexp.casee
+	    {test = convertVarInfo func,
 	     ty = ty,
 	     default = NONE,
 	     cases =
-	     Cexp.Con
+	     Dexp.Con
 	     (Vector.map
 	      (cons, fn {lambda, con} =>
 	       let
@@ -580,9 +612,9 @@ fun closureConvert
 		  val env = (Var.newString "env", lambdaInfoType info)
 	       in {con = con,
 		   args = Vector.new1 env,
-		   body = coerce (Cexp.call
+		   body = coerce (Dexp.call
 				  {func = name,
-				   args = Vector.new2 (Cexp.var env,
+				   args = Vector.new2 (Dexp.var env,
 						       coerce (argExp, argVal,
 							       value param)),
 				   ty = valueType result},
@@ -592,8 +624,8 @@ fun closureConvert
       (*------------------------------------*)
       (*             convertExp             *)
       (*------------------------------------*)
-      fun lambdaInfoTuple (info as LambdaInfo.T {frees, ...}): Cexp.t =
-	 Cexp.tuple {exps = Vector.map (!frees, convertVar),
+      fun lambdaInfoTuple (info as LambdaInfo.T {frees, ...}): Dexp.t =
+	 Dexp.tuple {exps = Vector.map (!frees, convertVar),
 		     ty = lambdaInfoType info}
       fun recursives (old: Var.t vector, new: Var.t vector, env) =
 	 Vector.fold2
@@ -607,8 +639,8 @@ fun closureConvert
 		   in
 		      {var = new,
 		       ty = ty,
-		       exp = Cexp.conApp {con = con, ty = ty,
-					  args = Vector.new1 (Cexp.var env)}}
+		       exp = Dexp.conApp {con = con, ty = ty,
+					  args = Vector.new1 (Dexp.var env)}}
 		      :: ac
 		   end
 	     else Error.bug "val rec lambda must be singleton"
@@ -620,14 +652,40 @@ fun closureConvert
 				    Vector.layout Var.layout b],
 		      Layout.ignore)
 	 recursives
-      val shrinkExp = Cps.shrinkExp (Vector.new0 ())
+      val raises: Type.t vector option =
+	 let
+	    exception Yes of Type.t vector
+	 in
+	    (Sexp.foreachPrimExp
+	     (body, fn (_, e) =>
+	      case e of
+		 SprimExp.Handle {catch = (x, _), ...} =>
+		    raise (Yes (Vector.new1 (varInfoType (varInfo x))))
+	       | _ => ())
+	     ; NONE)
+	    handle Yes ts => SOME ts
+	 end
+      val shrinkFunction = Ssa.shrinkFunction (Vector.new0 ())
+      fun addFunc (ac, {args, body, name, returns}) =
+	 let
+	    val (start, blocks) = Dexp.linearize body
+	 in
+	    Accum.addFunc (ac,
+			   shrinkFunction
+			   (Function.new {args = args,
+					  blocks = Vector.fromList blocks,
+					  name = name,
+					  raises = raises,
+					  returns = SOME returns,
+					  start = start}))
+	 end
       (* Closure convert an expression, returning:
-       *   - the target cps expression
+       *   - the target ssa expression
        *   - a list of global declarations (in order)
        *   - a list of function declarations
        * Accumulate the globals onto the end of the given ones.
        *)
-      fun convertExp (e: Sexp.t, ac: Accum.t): Cexp.t * Accum.t =
+      fun convertExp (e: Sexp.t, ac: Accum.t): Dexp.t * Accum.t =
 	 let
 	    val {decs, result} = Sexp.dest e
 	    (* Process decs left to right, since bindings of variables
@@ -676,11 +734,12 @@ fun closureConvert
 							 ac)))
 			 end
 		 | _ => Error.bug "closure convert saw strange dec")
-	 in (Cexp.lett {decs = List.rev decs,
+	 in (Dexp.lett {decs = List.fold (decs, [], fn ({var, exp, ...}, ac) =>
+					  {var = var, exp = exp} :: ac),
 			body = convertVarExp result},
 	     ac)
 	 end
-      and convertPrimExp arg : Cexp.t * Accum.t =
+      and convertPrimExp arg : Dexp.t * Accum.t =
 	 Trace.traceInfo (convertPrimExpInfo,
 			  SprimExp.layout o #1,
 			  Layout.ignore,
@@ -695,7 +754,7 @@ fun closureConvert
 	    fun simple e = (e, ac)
 	 in case e of
 	    SprimExp.Var y => simple (convertVarExp y)
-	  | SprimExp.Const c => simple (Cexp.const c)
+	  | SprimExp.Const c => simple (Dexp.const c)
 	  | SprimExp.PrimApp {prim, targs, args} =>
 	       let
 		  open Prim.Name
@@ -749,32 +808,32 @@ fun closureConvert
 			       {prim = prim,
 				args = Vector.map (args, varInfoType),
 				result = ty,
-				dearray = Ctype.dearray,
-				dearrow = Ctype.dearrow,
-				deref = Ctype.deref,
-				devector = Ctype.devector},
+				dearray = Type.dearray,
+				dearrow = Type.dearrow,
+				deref = Type.deref,
+				devector = Type.devector},
 			       Vector.map (args, convertVarInfo))
 			   end
 		  val overflow =
 		     if Prim.mayOverflow prim
-			then SOME (Cexp.raisee (convertVar overflow))
+			then SOME (Dexp.raisee (convertVar overflow))
 		     else NONE
-	       in simple (Cexp.primApp' {prim = prim,
+	       in simple (Dexp.primApp' {prim = prim,
 					 overflow = overflow,
 					 ty = ty,
 					 targs = targs,
 					 args = args})
 	       end
 	  | SprimExp.Tuple xs =>
-	       simple (Cexp.tuple {exps = Vector.map (xs, convertVarExp),
+	       simple (Dexp.tuple {exps = Vector.map (xs, convertVarExp),
 				   ty = ty})
 	  | SprimExp.Select {tuple, offset} =>
-	       simple (Cexp.select {tuple = convertVarExp tuple,
+	       simple (Dexp.select {tuple = convertVarExp tuple,
 				    offset = offset,
 				    ty = ty})
 	  | SprimExp.ConApp {con = con, arg, ...} =>
 	       simple
-	       (Cexp.conApp
+	       (Dexp.conApp
 		{con = con,
 		 ty = ty,
 		 args = (case (arg, conArg con) of
@@ -789,7 +848,7 @@ fun closureConvert
 				  else Vector.new1 (coerce (arg, argVal, conArg))
 			       end
 			  | _ => Error.bug "constructor mismatch")})
-	  | SprimExp.Raise {exn, ...} => simple (Cexp.raisee (convertVarExp exn))
+	  | SprimExp.Raise {exn, ...} => simple (Dexp.raisee (convertVarExp exn))
 	  | SprimExp.Handle {try, catch = (catch, _), handler} =>
 	       let
 		  val catchInfo = varInfo catch
@@ -797,7 +856,7 @@ fun closureConvert
 		  val catch = (newVarInfo (catch, catchInfo),
 			       varInfoType catchInfo)
 		  val (handler, ac) = convertJoin (handler, ac)
-	       in (Cexp.handlee {try = try, ty = ty,
+	       in (Dexp.handlee {try = try, ty = ty,
 				 catch = catch, handler = handler},
 		   ac)
 	       end
@@ -824,10 +883,10 @@ fun closureConvert
 		  fun doit (l, f) = doCases (l, f, fn i => fn e => (i, e))
 		  val (cases, ac) =
 		     case cases of
-			Scases.Char l => doit (l, Cexp.Char)
+			Scases.Char l => doit (l, Dexp.Char)
 		      | Scases.Con cases =>
 			   doCases
-			   (cases, Cexp.Con,
+			   (cases, Dexp.Con,
 			    fn Spat.T {con, arg, ...} =>
 			    let
 			       val args =
@@ -838,12 +897,11 @@ fun closureConvert
 				   | _ => Error.bug "constructor mismatch"
 			    in fn body => {con = con, args = args, body = body}
 			    end)
-		      | Scases.Int l => doit (l, Cexp.Int)
-		      | Scases.Word l => doit (l, Cexp.Word)
-		      | Scases.Word8 l => doit (l, Cexp.Word8)
-	       in (Cexp.casee
-		   {cause = Cause.User,
-		    test = convertVarExp test,
+		      | Scases.Int l => doit (l, Dexp.Int)
+		      | Scases.Word l => doit (l, Dexp.Word)
+		      | Scases.Word8 l => doit (l, Dexp.Word8)
+	       in (Dexp.casee
+		   {test = convertVarExp test,
 		    ty = ty, cases = cases, default = default},
 		   ac)
 	       end
@@ -856,7 +914,7 @@ fun closureConvert
 				    Slambda.equals (l, l')) of
 		  NONE => Error.bug "lambda must exist in its own set"
 		| SOME {con, ...} =>
-		     (Cexp.conApp {con = con, ty = ty,
+		     (Dexp.conApp {con = con, ty = ty,
 				   args = Vector.new1 (lambdaInfoTuple info)},
 		      ac)
 	       end
@@ -870,8 +928,9 @@ fun closureConvert
 	 let
 	    val {arg = argVar, body, ...} = Slambda.dest lambda
 	    val argVarInfo = varInfo argVar
-	    val env = (Var.newString "env", lambdaInfoType info)
-	    val args = Vector.new2 (env,
+	    val env = Var.newString "env"
+	    val envType = lambdaInfoType info
+	    val args = Vector.new2 ((env, envType),
 				    (newVarInfo (argVar, argVarInfo),
 				     varInfoType argVarInfo))
 	    val returns = Vector.new1 (valueType (expValue body))
@@ -881,22 +940,20 @@ fun closureConvert
 	     newScope
 	     (recs, fn recs' =>
 	      let
-		 val decs = recursives (recs, recs', env)
+		 val decs = recursives (recs, recs', (env, envType))
 		 val (body, ac) = convertExp (body, ac)
-	      in Accum.addFunc
-		 (ac,
-		  Cps.Function.T
-		  {name = name, 
-		   args = args,
-		   returns = returns,
-		   body =
-		   shrinkExp
-		   (Cexp.toExp
-		    (Cexp.lett
-		     {decs = decs,
-		      body = Cexp.detupleBind {tuple = Cexp.var env,
-					       components = components,
-					       body = body}}))})
+		 val body =
+		    Dexp.lett
+		    {decs = List.fold (decs, [], fn ({var, exp, ...}, ac) =>
+				       {var = var, exp = exp} :: ac),
+		     body = Dexp.detupleBind {tuple = env,
+					      tupleTy = envType,
+					      components = components,
+					      body = body}}
+	      in addFunc (ac, {args = args,
+			       body = body,
+			       name = name,
+			       returns = returns})
 	      end))
 	 end
       (*------------------------------------*)
@@ -908,25 +965,21 @@ fun closureConvert
 	 (fn () =>
 	  let
 	     val (body, ac) = convertExp (body, Accum.empty)
-	     val ac =
-		Accum.addFunc
-		(ac,
-		 Cps.Function.T
-		 {name = main,
-		  args = Vector.new0 (),
-		  returns = Vector.new1 Ctype.unit,
-		  body = shrinkExp (Cexp.toExp body)})
+	     val ac = addFunc (ac, {args = Vector.new0 (),
+				    body = body,
+				    name = main,
+				    returns = Vector.new1 Type.unit})
 	  in Accum.done ac
 	  end) ()
       val datatypes = Vector.concat [datatypes, Vector.fromList (!newDatatypes)]
       val program =
-	 Cprogram.T {datatypes = datatypes,
-		     globals = Vector.fromList globals,
-		     functions = Vector.fromList functions,
-		     main = main}
+	 Ssa.Program.T {datatypes = datatypes,
+			globals = globals,
+			functions = functions,
+			main = main}
       val _ = destroyConvertType ()
       val _ = Value.destroy ()
-      val _ = Cprogram.clear program
+      val _ = Ssa.Program.clear program
    in
       program
    end

@@ -103,11 +103,10 @@ val options =
 	Int setInlineSize),
        (Normal, "I", "dir", "search dir for include files",
 	push includeDirs),
-       (Normal, "keep", " {cps|dot|g|o|sml|ssa}", "save intermediate files",
+       (Normal, "keep", " {dot|g|o|sml|ssa}", "save intermediate files",
 	SpaceString (fn s =>
 		     case s of
-			"cps" => keepCps := true
-		      | "dot" => keepDot := true
+			"dot" => keepDot := true
 		      | "g" => keepGenerated := true
 		      | "o" => keepO := true
 		      | "sml" => keepSML := true

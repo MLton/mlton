@@ -4,17 +4,17 @@ functor ClosureConvert
    
 is
 
+../../lib/mlton/sources.cm
 ../atoms/sources.cm
 ../control/sources.cm
-../cps/sources.cm
-../../lib/mlton/sources.cm
+../ssa/sources.cm
 ../xml/sources.cm
 
-lambda-free.sig
-lambda-free.fun
-globalize.sig
-globalize.fun
-abstract-value.sig
 abstract-value.fun
-closure-convert.sig
+abstract-value.sig
 closure-convert.fun
+closure-convert.sig
+globalize.fun
+globalize.sig
+lambda-free.fun
+lambda-free.sig

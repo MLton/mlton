@@ -59,7 +59,7 @@ PATH=.:$PATH
 					diff $f.ok $tmp
 				fi
 			fi
-			rm -f $f $f.cps $f.c
+			rm -f $f $f.ssa $f.c
 		;;
 		esac
 	done 
