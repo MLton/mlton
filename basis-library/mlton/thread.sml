@@ -76,7 +76,7 @@ in
 		     Dead => fail (Fail "switch to a Dead thread")
 		   | New g => (Prim.atomicBegin () (* nested *)
 			       ; func := SOME (g o x)
-			       ; Prim.copyToThread base
+			       ; Prim.copy base
 			       ; Prim.saved ())
 		   | Paused (f, t) => (f x; t)
 	       val _ = switching := false

@@ -40,7 +40,7 @@ fun callcc (f: 'a t -> 'a): 'a =
 			    let
 			       val _ = Thread.atomicBegin () (* Match 2 *)
 			       val _ = r := Copy v
-			       val new = (Thread.copyToThread t; Thread.saved ())
+			       val new = (Thread.copy t; Thread.saved ())
 			       (* The following Thread.atomicBegin () 
 				* is matched by Thread.switchTo.
 				*)
