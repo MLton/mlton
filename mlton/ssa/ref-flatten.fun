@@ -451,12 +451,28 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	 NonObject
 	| Object of {components: Var.t vector,
 		     flat: Flat.t ref}
+      val layoutVarInfo =
+	 let
+	    open Layout
+	 in
+	    fn NonObject => str "NonObject"
+	     | Object {components, flat} =>
+		  seq [str "Object ",
+		       record [("components",
+				Vector.layout Var.layout components),
+			       ("flat", Flat.layout (!flat))]]
+	 end
       val {get = varInfo: Var.t -> varInfo ref, ...} =
 	 Property.get (Var.plist, Property.initFun (fn _ => ref NonObject))
+      val varInfo =
+	 Trace.trace ("RefFlatten.varInfo",
+		      Var.layout, Ref.layout layoutVarInfo)
+	 varInfo
       fun use x =
 	 case ! (varInfo x) of
 	    Object {flat, ...} => flat := Flat.NotFlat
 	  | _ => ()
+      val use = Trace.trace ("RefFlatten.use", Var.layout, Unit.layout) use
       fun uses xs = Vector.foreach (xs, use)
       fun loopStatement (Statement.T {exp, ty, var}) =
 	 case exp of
@@ -490,6 +506,9 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 				      end)
 			    end)
 	  | _ => Exp.foreachVar (exp, use)
+      val loopStatement =
+	 Trace.trace ("RefFlatten.loopStatement", Statement.layout, Unit.layout)
+	 loopStatement
       fun loopStatements ss = Vector.foreach (ss, loopStatement)
       fun loopTransfer t = Transfer.foreachVar (t, use)
       val {get = labelInfo: Label.t -> {args: (Var.t * Type.t) vector},
@@ -501,15 +520,12 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
       val () =
 	 List.foreach
 	 (functions, fn f =>
-	  let
-	     val {args, blocks, ...} = Function.dest f
-	  in
-	     Vector.foreach
-	     (blocks, fn Block.T {args, label, statements, transfer, ...} =>
-	      (setLabelInfo (label, {args = args})
-	       ; loopStatements statements
-	       ; loopTransfer transfer))
-	  end)
+	  Function.dfs
+	  (f, fn Block.T {args, label, statements, transfer, ...} =>
+	   (setLabelInfo (label, {args = args})
+	    ; loopStatements statements
+	    ; loopTransfer transfer
+	    ; fn () => ())))
       fun foreachObject (f): unit =
 	 let
 	    fun loopStatement (Statement.T {exp, var, ...}) =
