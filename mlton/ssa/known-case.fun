@@ -51,13 +51,13 @@ structure ConInfo =
 
 structure ConValue =
   struct
-    type w = Var.t vector
+    type w = Var.t ref vector
     type v = w option
     type u = v option
     type t = Con.t * u
 
     val equalsW : w * w -> bool
-      = fn (x, y) => Vector.equals (x, y, Var.equals)
+      = fn (x, y) => Vector.equals (x, y, fn (x, y) => Var.equals (!x, !y))
     val equalsV : v * v -> bool
       = fn (x, y) => Option.equals (x, y, equalsW)
     val equalsU : u * u -> bool
@@ -66,14 +66,14 @@ structure ConValue =
       = fn ((conx, x), (cony, y)) => 
         Con.equals (conx, cony) andalso equalsU (x, y)
 
-    val layoutW = Vector.layout Var.layout
+    val layoutW = Vector.layout (Var.layout o !)
     val layoutV = Option.layout layoutW
     val layoutU = Option.layout layoutV
-    val layout = Layout.tuple2 (Con.layout, layoutU)
+    val layout : t -> Layout.t = Layout.tuple2 (Con.layout, layoutU)
 
     val joinV : v * v -> v
       = fn (SOME x, SOME y) 
-         => if Vector.equals (x, y, Var.equals)
+         => if equalsW (x, y)
 	      then SOME x
 	      else NONE
 	 | (NONE, _) => NONE
@@ -102,7 +102,7 @@ structure TyconValue =
   struct
     type t = ConValue.t vector
 
-    val layout = Vector.layout ConValue.layout
+    val layout : t -> Layout.t = Vector.layout ConValue.layout
 
     val join : t * t -> t
       = fn (x, y) => Vector.map2 (x, y, ConValue.join)
@@ -124,20 +124,31 @@ structure TyconValue =
 
 structure VarInfo =
   struct
-    datatype t = T of {active: bool ref, 
-		       tyconValues: TyconValue.t list ref}
+    datatype t = T of {active: bool ref,
+		       replaces: Var.t ref list ref,
+		       tyconValues: TyconValue.t list ref,
+		       var: Var.t}
 
     local 
       fun make f (T r) = f r
       fun make' f = (make f, ! o (make f))
     in
       val (active, active') = make' #active
+      val (replaces, replaces') = make' #replaces
       val (tyconValues, tyconValues') = make' #tyconValues
+      val var = make #var
     end
 
-    fun layout (T {tyconValues, ...}) 
-      = Layout.record [("tyconValues", 
-			List.layout TyconValue.layout (!tyconValues))]
+    fun layout (T {active, replaces, tyconValues, var, ...}) 
+      = Layout.record [("active", Bool.layout (!active)),
+		       ("replaces", List.layout (Var.layout o !) (!replaces)),
+		       ("tyconValues", List.layout TyconValue.layout (!tyconValues)),
+		       ("var", Var.layout var)]
+
+    fun new var = T {active = ref false,
+		     replaces = ref [ref var],
+		     tyconValues = ref [],
+		     var = var}
 
     fun deactivate (T {active, ...}) = active := false
     fun activate (T {active, ...}) = active := true
@@ -146,15 +157,48 @@ structure VarInfo =
 	 activate vi)
     val active = active'
 
+    fun replace (T {replaces, ...})
+      = case !replaces of h::_ => SOME h | _ => NONE
+    fun popReplace (T {replaces, ...}) = ignore (List.pop replaces)
+    fun pushReplace (T {replaces, ...}, rep) = List.push (replaces, ref rep)
+    fun pushReplace' (vi, rep, addPost)
+      = let
+	  val _ = pushReplace (vi, rep)
+	  val _ = addPost (fn () => popReplace vi)
+	in
+	  ()
+	end
+    fun flipReplace (vi, rep) 
+      = case replace vi 
+	  of SOME r => !r before (r := rep) 
+	   | _ => Error.bug "KnownCase.VarInfo.flipReplace"
+    fun flipReplace' (vi, rep, addPost)
+      = let 
+	  val rep = flipReplace (vi, rep)
+	  val _ = addPost (fn () => ignore (flipReplace (vi, rep)))
+	in 
+	  rep
+	end
+    fun nextReplace' (vi, rep, addPost)
+      = let 
+	  val rep = flipReplace' (vi, rep, addPost)
+	  val _ = pushReplace' (vi, rep, addPost)
+	in
+	  ()
+	end
+
+    fun tyconValue (T {tyconValues, ...})
+      = case !tyconValues of h::_ => SOME h | _ => NONE
     fun popTyconValue (T {tyconValues, ...}) = ignore (List.pop tyconValues)
     fun pushTyconValue (T {tyconValues, ...}, tcv) = List.push (tyconValues, tcv)
     fun pushTyconValue' (vi, tcv, addPost)
-      = (addPost (fn () => popTyconValue vi);
-	 pushTyconValue (vi, tcv))
-    fun tyconValue (T {tyconValues, ...}) 
-      = case !tyconValues of h::_ => SOME h | _ => NONE
-
-    fun pushActiveTyconValue (vi, tcv, addPost, addPost')
+      = let
+	  val _ = pushTyconValue (vi, tcv)
+	  val _ = addPost (fn () => popTyconValue vi)
+	in
+	  ()
+	end
+    fun joinActiveTyconValue (vi, tcv, addPost, addPost')
       = if active vi
 	  then let val tcv' = valOf (tyconValue vi)
 	       in 
@@ -182,7 +226,7 @@ structure LabelInfo =
       val (pred, pred') = make' #pred
     end
 
-    fun layout (T {activations, pred, ...}) 
+    fun layout (T {pred, ...}) 
       = Layout.record 
         [("pred", Option.layout (Option.layout Label.layout) (!pred))]
 
@@ -190,6 +234,16 @@ structure LabelInfo =
 		       block = block,
 		       depth = ref 0,
 		       pred = ref NONE}
+
+    fun popDepth (T {depth, ...}) = Int.dec depth
+    fun pushDepth (T {depth, ...}) = Int.inc depth
+    fun pushDepth' (li, addPost)
+      = let
+	  val _ = pushDepth li
+	  val _ = addPost (fn () => popDepth li)
+	in
+	  ()
+	end
 
     fun addPred (T {pred, ...}, l)
       = case !pred
@@ -208,10 +262,10 @@ structure LabelInfo =
     fun activate (T {activations, ...}, addPost)
       = let
 	  val {addPost = addPost', post = post'} = mkPost ()
-	in
+	in 
 	  List.foreach
 	  (!activations, fn (vi, tcv) =>
-	   VarInfo.pushActiveTyconValue (vi, tcv, addPost, addPost'));
+	   VarInfo.joinActiveTyconValue (vi, tcv, addPost, addPost'));
 	  post' ()
 	end
     val activate : t * ((unit -> unit) -> unit) -> unit
@@ -222,13 +276,12 @@ structure LabelInfo =
 	 in
 	   seq [Label.layout label,
 		str " ",
-		(List.layout (tuple2 (Layout.ignore,
+		(List.layout (tuple2 (VarInfo.layout,
 				      TyconValue.layout))
 		             (!activations))]
 	 end,
 	 Layout.ignore)
 	activate
-
   end
 
 fun simplify (program as Program.T {globals, datatypes, functions, main})
@@ -236,16 +289,6 @@ fun simplify (program as Program.T {globals, datatypes, functions, main})
       (* restore and shrink *)
       val restore = restoreFunction globals
       val shrink = shrinkFunction globals
-(*
-      val (restore : Function.t -> Function.t, restoreMsg) 
-	= Control.traceBatch
-          (Control.Pass, "knownCase.restore")
-	  restore
-      val (shrink : Function.t -> Function.t, shrinkMsg)
-	= Control.traceBatch
-	  (Control.Pass, "knownCase.shrink")
-	  shrink
-*)
 
       (* tyconInfo and conInfo *)
       val {get = tyconInfo: Tycon.t -> TyconInfo.t,
@@ -294,10 +337,10 @@ fun simplify (program as Program.T {globals, datatypes, functions, main})
       val {get = varInfo: Var.t -> VarInfo.t,
 	   set = setVarInfo, ...}
 	= Property.getSetOnce
-	  (Var.plist, Property.initFun (fn x => VarInfo.T {active = ref false,
-							   tyconValues = ref []}))
+	  (Var.plist, Property.initFun (fn x => VarInfo.new x))
 
-      fun initVarInfo (x, ty, exp)
+
+      fun bindVar' (x, ty, exp, addPost)
 	= case Type.dest ty
 	    of Type.Datatype tycon
 	     => if optimizeTycon tycon
@@ -307,25 +350,34 @@ fun simplify (program as Program.T {globals, datatypes, functions, main})
 			   = case exp
 			       of SOME (ConApp {con, args})
 				=> TyconValue.newKnown 
-				   (cons, con, args)
+				   (cons, con, 
+				    Vector.map 
+				    (args, valOf o VarInfo.replace o varInfo))
 			        | _ => TyconValue.newUnknown cons
 		       in
-			 VarInfo.pushTyconValue
-			 (varInfo x, tyconValue)
+			 VarInfo.pushTyconValue'
+			 (varInfo x, tyconValue, addPost)
 		       end
 		  else ()
 	     | _ => ()
 
-      fun initVarInfoArgs args 
+      fun bindVarArgs' (args, addPost)
 	= Vector.foreach 
 	  (args, fn (x, ty) =>
-	   initVarInfo (x, ty, NONE))
-      fun initVarInfoStatement (Statement.T {var, ty, exp})
-	= Option.app (var, fn x => initVarInfo (x, ty, SOME exp))
-      fun initVarInfoStatements statements
-	= Vector.foreach (statements, initVarInfoStatement)
+	   bindVar' (x, ty, NONE, addPost))
+      fun bindVarArgs args = bindVarArgs' (args, ignore)
+      fun bindVarStatement' (Statement.T {var, ty, exp}, addPost)
+	= Option.app 
+	  (var, fn x => 
+	   bindVar' (x, ty, SOME exp, addPost))
+      fun bindVarStatement statement = bindVarStatement' (statement, ignore)
+      fun bindVarStatements' (statements, addPost)
+	= Vector.foreach 
+	  (statements, fn statement => 
+	   bindVarStatement' (statement, addPost))
+      fun bindVarStatements statements = bindVarStatements' (statements, ignore)
 
-      val _ = initVarInfoStatements globals
+      val _ = bindVarStatements globals
       (* Diagnostics *)
       val _ = Control.diagnostics
 	      (fn display =>
@@ -354,19 +406,16 @@ fun simplify (program as Program.T {globals, datatypes, functions, main})
 	   let
 	     val {name, args, start, blocks, returns, raises} = Function.dest f
 
-	     val _ = initVarInfoArgs args
 	     val _ = Vector.foreach
 	             (blocks, fn block as Block.T {label, ...} =>
 		      setLabelInfo (label, LabelInfo.new block))
 	     val _ = Vector.foreach
-	             (blocks, fn Block.T {label, args, statements, transfer} =>
-		      (initVarInfoArgs args;
-		       initVarInfoStatements statements;
-		       Transfer.foreachLabel
-		       (transfer, fn l =>
-			let val li = labelInfo l
-			in LabelInfo.addPred (li, label)
-			end)))
+	             (blocks, fn Block.T {label, transfer, ...} =>
+		      Transfer.foreachLabel
+		      (transfer, fn l =>
+		       let val li = labelInfo l
+		       in LabelInfo.addPred (li, label)
+		       end))
 	     (* Diagnostics *)
 	     val _ = Control.diagnostics
 	             (fn display =>
@@ -419,125 +468,188 @@ fun simplify (program as Program.T {globals, datatypes, functions, main})
 		   end
 	       fun bugBlock () = newBlock Bug
 	     end
-	     val traceRewriteTransfer 
-	       = Trace.traceRec 
-	         ("KnownCase.rewriteTransfer",
-		  Layout.tuple2 (Bool.layout, Transfer.layout),
+
+	     val traceRewriteGoto
+	       = Trace.trace
+	         ("KnownCase.rewriteGoto",
+		  fn {dst, args} =>
+		  Layout.record
+		  [("dst", Label.layout dst),
+		   ("args", Vector.layout Var.layout args)],
 		  Option.layout
 		  (Layout.tuple2
 		   (Vector.layout Statement.layout,
 		    Transfer.layout)))
-	     fun rewriteTransfer rewriteTransferRec (top, transfer)
-	       = DynamicWind.withEscape
-	         (fn escape =>
-		  case transfer
-		    of Goto {dst, args}
-		     => let
-			  val {addPost, post} = mkPost ()
-			  val LabelInfo.T
-			      {block = blockDst, 
-			       depth = depthDst, ...}
-			    = labelInfo dst
-			  val Block.T {args = argsDst, 
-				       statements = statementsDst, 
-				       transfer = transferDst, ...} 
-			    = blockDst
+	     val traceRewriteCase
+	       = Trace.trace
+	         ("KnownCase.rewriteCase",
+		  fn {test, cases, default} =>
+		  Layout.record
+		  [("test", Var.layout test),
+		   ("cases", Vector.layout 
+		             (Layout.tuple2 (Con.layout, Label.layout))
+			     cases),
+		   ("default", Option.layout Label.layout default)],
+		  Option.layout
+		  (Layout.tuple2
+		   (Vector.layout Statement.layout,
+		    Transfer.layout)))
+	     val traceRewriteTransfer
+	       = Trace.trace
+	         ("KnownCase.rewriteTransfer",
+		  Transfer.layout,
+		  Option.layout
+		  (Layout.tuple2
+		   (Vector.layout Statement.layout,
+		    Transfer.layout)))
+
+	     fun rewriteGoto' {dst, args} :
+                              (Statement.t vector * Transfer.t) option
+	       = let
+		   val li = labelInfo dst
+		   val Block.T {args = argsDst,
+				statements = statementsDst,
+				transfer = transferDst, ...}
+		     = LabelInfo.block li
+		   val depthDst = LabelInfo.depth' li
+		 in
+		   if depthDst <= 2
+		      andalso
+		      Vector.length statementsDst <= 0
+		     then let
+			    val {addPost, post} = mkPost ()
+			    val _ = LabelInfo.pushDepth' (li, addPost)
+
+			    val vars = Vector.map2
+			               (args, argsDst,
+					fn (x, (z, ty)) =>
+					(x, Var.newNoname (), 
+					 z, Var.newNoname (), ty))
+
+			    val moves1
+			      = if depthDst > 0
+				  then Vector.map
+				       (vars, fn (_, _, z, t, ty) =>
+					(if optimizeType ty
+					   then let
+						  val zvi = varInfo z
+						  val tvi = varInfo t
+						in
+						  VarInfo.pushTyconValue'
+						  (tvi,
+						   valOf (VarInfo.tyconValue zvi),
+						   addPost);
+						  VarInfo.nextReplace'
+						  (zvi, t, addPost)
+						end
+					   else ();
+					 Statement.T {var = SOME t,
+						      ty = ty,
+						      exp = Var z}))
+				  else Vector.new0 ()
+			    val moves2
+			      = Vector.map
+			        (vars, fn (x, t, _, _, ty) =>
+				 (if optimizeType ty
+				    then let
+					   val xvi = varInfo x
+					   val tvi = varInfo t
+					 in
+					   VarInfo.pushTyconValue'
+					   (tvi,
+					    valOf (VarInfo.tyconValue xvi),
+					    addPost)
+					 end
+				    else ();
+				  Statement.T {var = SOME t,
+					       ty = ty,
+					       exp = Var x}))
+			    val moves3
+			      = Vector.map
+			        (vars, fn (_, t, z, _, ty) =>
+				 (if optimizeType ty
+				    then let
+					   val tvi = varInfo t
+					   val zvi = varInfo z
+					 in
+					   VarInfo.pushTyconValue'
+					   (zvi,
+					    valOf (VarInfo.tyconValue tvi),
+					    addPost)
+					 end
+				    else ();
+				  Statement.T {var = SOME z,
+					       ty = ty,
+					       exp = Var t}))
+			    val _ = bindVarStatements' (statementsDst, addPost)
+			  in
+			    (case rewriteTransfer transferDst
+			       of NONE => NONE
+			        | SOME (newStatements, newTransfer)
+				=> SOME (Vector.concat [moves1, moves2, moves3, 
+							statementsDst,
+							newStatements],
+					 newTransfer))
+			    before (post ())
+			  end
+		     else NONE
+		 end
+	     and rewriteGoto goto = traceRewriteGoto
+	                            rewriteGoto'
+				    goto
+
+	     and rewriteCase' {test, cases, default} :
+                              (Statement.t vector * Transfer.t) option
+
+	       = let
+		   val {addPost, post} = mkPost ()
+
+		   val testvi = varInfo test
+		   val tyconValue as conValues
+		     = case VarInfo.tyconValue testvi
+			 of SOME tyconValue => tyconValue
+			  | _ => Error.bug "KnownCase.rewriteCase:tyconValue"
+		    val cons = TyconValue.cons tyconValue
+		    val numCons = Vector.length cons
+		      
+		    datatype z = None
+		               | One of (Con.t * ConValue.v)
+		               | Many
+
+		    fun doOneSome (con, args)
+		      = let
+			  val goto
+			    = case Vector.peek
+			           (cases, fn (con', _) =>
+				    Con.equals (con, con'))
+				of SOME (con, dst)
+				 => {dst = dst, args = Vector.map (args, !)}
+				 | NONE
+				 => {dst = valOf default,
+				     args = Vector.new0 ()}
 			in
-			  if Vector.length statementsDst <= 
-			     (if top then 0 else 0)
-			     andalso
-			     !depthDst <= 0
-			    then let
-				   val _ = addPost (fn () => Int.dec depthDst)
-				   val _ = Int.inc depthDst
-				   val _ = Vector.foreach2
-				           (args, argsDst, fn (x, (y, ty)) =>
-					    if optimizeType ty
-					      then let
-						     val xvi = varInfo x
-						     val yvi = varInfo y
-						   in
-						     VarInfo.pushTyconValue'
-						     (yvi, 
-						      valOf (VarInfo.tyconValue xvi),
-						      addPost)
-						   end
-					      else ())
-				 in
-				   (case rewriteTransferRec (false, transferDst)
-				     of NONE => NONE
-				      | SOME (newStatements, newTransfer)
-				      => SOME (Vector.concat
-					       [Vector.map2
-						(args, argsDst, fn (x, (y, ty)) =>
-						 Statement.T {var = SOME y,
-							      ty = ty,
-							      exp = Var x}),
-						statementsDst,
-						newStatements],
-					       newTransfer))
-				   before (post ())
-				 end
-			    else NONE
+			  case rewriteGoto goto
+			    of NONE => SOME (Vector.new0 (), Transfer.Goto goto)
+			     | sst => sst
 			end
-	             | Case {test, cases = Cases.Con cases, default}
-		     => let
-			  val {addPost, post} = mkPost ()
+		    val doOneSome
+		      = Trace.trace
+		        ("KnownCase.doOneSome",
+			 Layout.ignore, Layout.ignore)
+			doOneSome
 
-			  val testvi = varInfo test
-			  val tyconValue as conValues 
-			    = case VarInfo.tyconValue testvi
-				of NONE => escape NONE
-				 | SOME tyconValue => tyconValue
-			  val cons = TyconValue.cons tyconValue
-			  val numCons = Vector.length cons
-
-			  datatype z = None 
-			             | One of (Con.t * ConValue.v)
-			             | Many
-
-			  fun doOneSome (con, args)
-			    = let
-				val transfer
-				  = case Vector.peek
-			                 (cases, fn (con', _) =>
-					  Con.equals (con, con'))
-				      of SOME (con, dst)
-				       => Goto {dst = dst, args = args}
-				       | NONE
-				       => Goto {dst = valOf default,
-						args = Vector.new0 ()}
-			      in
-				case rewriteTransferRec (false, transfer)
-				  of NONE => SOME (Vector.new0 (), transfer)
-				   | sst => sst
-			      end
-			  val doOneSome
-			    = Trace.trace
-			      ("KnownCase.doOneSome",
-			       Layout.ignore, Layout.ignore)
-			      doOneSome
-
-			  fun rewriteDefault conValues'
-			    = let
-				val dst = valOf default
-				val LabelInfo.T
-				    {block = blockDst, ...}
-				  = labelInfo dst
-				val Block.T {transfer = transferDst, ...}
-				  = blockDst
-
-				val _ = VarInfo.pushTyconValue'
-				        (testvi, conValues', addPost)
-			      in
-				rewriteTransferRec 
-				(false, Goto {dst = dst, args = Vector.new0 ()})
-			      end
-			  val rewriteDefault
-			    = Trace.trace
-			      ("KnownCase.rewriteDefault",
-			       Layout.ignore, Layout.ignore)
-			      rewriteDefault
+		    fun rewriteDefault conValues'
+		      = let
+			  val _ = VarInfo.pushTyconValue'
+			          (testvi, conValues', addPost)
+			in
+			  rewriteGoto {dst = valOf default, args = Vector.new0 ()}
+			end
+		    val rewriteDefault
+		      = Trace.trace
+		        ("KnownCase.rewriteDefault",
+			 Layout.ignore, Layout.ignore)
+			rewriteDefault
 
 fun doOneNone con
   = let
@@ -562,21 +674,25 @@ fun doOneNone con
 		   fn ty => 
 		   let
 		     val x = Var.newNoname ()
+		     val xvi = varInfo x
 		     val _ = case Type.dest ty
 			       of Type.Datatype tycon
 				=> if optimizeTycon tycon
 				     then VarInfo.pushTyconValue'
-				          (varInfo x,
+				          (xvi,
 					   TyconValue.newUnknown
 					   (TyconInfo.cons (tyconInfo tycon)),
 					   addPost)
 				     else ()
 				| _ => ()
 		   in
-		     (x,ty)
+		     (x, ty)
 		   end)
 	      val (xs, tys) = Vector.unzip args
-	      val conValues' = TyconValue.newKnown (cons, con, xs)
+	      val conValues' = TyconValue.newKnown 
+		               (cons, con,
+				Vector.map 
+				(xs, valOf o VarInfo.replace o varInfo))
 	      val label = Label.newNoname ()
 	      val (statements, transfer)
 		= case rewriteDefault conValues'
@@ -659,13 +775,18 @@ fun doMany ()
 			     Case {test = test', 
 				   cases = Cases.Con cases',
 				   default = default'})
-		     => if Var.equals (test, test')
-		           orelse
-			   (Vector.exists
-			    (statements, fn Statement.T {var, exp, ...} =>
-			     Option.equals (var, SOME test', Var.equals)
-			     andalso
-			     Exp.equals (exp, Var test)))
+		     => if Option.equals
+		           (SOME test,
+			    Vector.foldr
+			    (statements, SOME test',
+			     fn (Statement.T {var, exp, ...}, NONE) => NONE
+			      | (Statement.T {var, exp, ...}, SOME test') =>
+			     if Option.equals (var, SOME test', Var.equals)
+			       then case exp
+				      of Var test' => SOME test'
+				       | _ => NONE
+			       else SOME test'),
+			    Var.equals)
 			  then let
 				 val (cases', default') 
 				   = route (statements, (cases', default'))
@@ -713,40 +834,130 @@ val doMany
     ("KnownCase.doMany",
      Layout.ignore, Layout.ignore)
     doMany
-			       in
-				 (if not top
-				     andalso
-				     Vector.forall
-				     (conValues, ConValue.isTop)
-				    then NONE
-				    else case Vector.foldi
-				              (conValues, None, 
-					       fn (i, conValue, Many) => Many
-						| (i, conValue, One ccv)
-					        => (case conValue
-						      of (con, NONE) => One ccv
-						       | (con, SOME cv) => Many)
-						| (i, conValue, None)
-					        => (case conValue
-						      of (con, NONE) => None
-						       | (con, SOME cv) 
-						       => One (con, cv)))
-					   of None 
-					    => SOME (Vector.new0 (), Bug)
-					    | One (con, SOME args) 
-					    => doOneSome (con, args)
-					    | One (con, NONE) 
-					    => doOneNone con
-					    | Many 
-					    => doMany ())
-				 before (post ())
-			       end
-		     | _ => NONE)
-	     val rewriteTransfer = traceRewriteTransfer rewriteTransfer
-	     fun rewriteBlock (Block.T {label, args, statements, transfer})
+    
+		 in
+		   (if Vector.forall
+		       (conValues, ConValue.isTop)
+		      then NONE
+		      else case Vector.foldi
+			        (conValues, None, 
+				 fn (i, conValue, Many) => Many
+				  | (i, conValue, One ccv)
+				  => (case conValue
+					of (con, NONE) => One ccv
+					 | (con, SOME cv) => Many)
+				  | (i, conValue, None)
+				  => (case conValue
+					of (con, NONE) => None
+					 | (con, SOME cv) => One (con, cv)))
+			     of None => SOME (Vector.new0 (), Bug)
+			      | One (con, SOME args) => doOneSome (con, args)
+			      | One (con, NONE) => doOneNone con
+			      | Many => doMany ())
+		   before (post ())
+		 end
+	     and rewriteCase casee = traceRewriteCase
+	                             rewriteCase'
+				     casee
+
+	     and rewriteTransfer' (transfer: Transfer.t) : 
+	                          (Statement.t vector * Transfer.t) option
+	       = case transfer
+		   of Goto {dst, args} => rewriteGoto {dst = dst, args = args}
+	            | Case {test, cases = Cases.Con cases, default}
+		    => rewriteCase {test = test, cases = cases, default = default}
+		    | _ => NONE
+	     and rewriteTransfer transfer = traceRewriteTransfer
+	                                    rewriteTransfer'
+					    transfer
+
+	     fun activateGoto {dst, args}
 	       = let
+		   val liDst = labelInfo dst
+		   val Block.T {args = argsDst, ...}
+		     = LabelInfo.block liDst
+		 in
+		   if LabelInfo.onePred liDst
+		     then Vector.foreach2
+		          (args, argsDst, fn (x, (y, ty)) =>
+			   if optimizeType ty
+			     then let
+				    val xvi = varInfo x
+				    val yvi = varInfo y
+				    val conValues' 
+				      = valOf (VarInfo.tyconValue xvi)
+				  in
+				    LabelInfo.addActivation
+				    (liDst, (yvi, conValues'))
+				  end
+			     else ())
+		     else ()
+		 end
+	     fun activateCase {test, cases, default}
+	       = let
+		   val testvi = varInfo test
+		   val tyconValue as conValues
+		     = case VarInfo.tyconValue testvi
+			 of NONE => Error.bug "KnownCase.activateTransfer:tyconValue"
+			  | SOME tyconValue => tyconValue
+		   val cons = TyconValue.cons tyconValue
+		   val numCons = Vector.length cons
+		     
+		   val usedCons = Array.new (numCons, false)
+		 in
+		   Vector.foreach
+		   (cases, fn (con, dst) =>
+		    let
+		      val conIndex = ConInfo.index (conInfo con)
+		      val _ = Array.update (usedCons, conIndex, true)
+		      val liDst = labelInfo dst
+		      val Block.T {args = argsDst, ...}
+			= LabelInfo.block liDst
+		      val conValues' 
+			= TyconValue.newKnown 
+			  (cons, con, 
+			   Vector.map (argsDst, valOf o VarInfo.replace o varInfo o #1))
+		    in
+		      if LabelInfo.onePred liDst
+			then LabelInfo.addActivation
+			     (liDst, (testvi, conValues'))
+			else ()
+		    end);
+		   Option.app
+		   (default, fn dst =>
+		    let
+		      val liDst = labelInfo dst
+		      val conValues' = Vector.mapi
+			               (cons, fn (i, con) =>
+					if Array.sub (usedCons, i)
+					  then ConValue.new con
+					  else Vector.sub (conValues, i))
+		    in
+		      if LabelInfo.onePred liDst
+			then LabelInfo.addActivation
+			     (liDst, (testvi, conValues'))
+			else ()
+		    end)
+		 end
+	     fun activateTransfer transfer
+	       = case transfer
+		   of Goto {dst, args}
+		    => activateGoto {dst = dst, args = args}
+	            | Case {test, cases = Cases.Con cases, default}
+		    => activateCase {test = test, cases = cases, default = default}
+		    | _ => ()
+
+	     fun rewriteBlock (Block.T {label, args, statements, transfer},
+			       addPost)
+	       = let
+		   val li = labelInfo label
+		   val _ = LabelInfo.pushDepth' (li, addPost)
+		   val _ = bindVarArgs' (args, addPost)
+		   val _ = LabelInfo.activate (li, addPost)
+		   val _ = bindVarStatements' (statements, addPost)
+		   val _ = activateTransfer transfer
 		   val (statements, transfer)
-		     = case rewriteTransfer (true, transfer)
+		     = case rewriteTransfer transfer
 			 of NONE => (statements, transfer)
 			  | SOME (newStatements, newTransfer)
 			  => (Vector.concat [statements,newStatements],
@@ -760,103 +971,16 @@ val doMany
 	     val rewriteBlock
 	       = Trace.trace
 	         ("KnownCase.rewriteBlock",
-		  fn Block.T {label, ...} =>
-		  Label.layout label,
-		  Layout.ignore)
+		  Layout.tuple2 (Block.layout, Layout.ignore),
+		  Block.layout)
 		 rewriteBlock
-(*
-	     val blocks = Vector.map (blocks, rewriteBlock)
-	     val blocks = Vector.concat [Vector.fromListRev (!newBlocks), blocks]
-*)
-	     fun activateTransfer transfer
-	       = DynamicWind.withEscape
-	         (fn escape =>
-		  case transfer
-		    of Goto {dst, args}
-		     => let
-			  val liDst as LabelInfo.T 
-			               {block = blockDst as Block.T 
-					                    {args = argsDst, 
-							     ...},
-					...}
-			    = labelInfo dst
-			in
-			  if LabelInfo.onePred liDst
-			    then Vector.foreach2
-			         (args, argsDst, fn (x, (y, ty)) =>
-				  if optimizeType ty
-				    then let
-					   val xvi = varInfo x
-					   val yvi = varInfo y
-					   val conValues' 
-					     = valOf (VarInfo.tyconValue xvi)
-					 in
-					   LabelInfo.addActivation
-					   (liDst, (yvi, conValues'))
-					 end
-				    else ())
-			    else ()
-			end
-		     | Case {test, cases = Cases.Con cases, default}
-		     => let
-			  val testvi = varInfo test
-			  val tyconValue as conValues
-			    = case VarInfo.tyconValue testvi
-				of NONE => escape ()
-				 | SOME tyconValue => tyconValue
-			  val cons = TyconValue.cons tyconValue
-			  val numCons = Vector.length cons
 
-			  val usedCons = Array.new (numCons, false)
-			in
-			  Vector.foreach
-			  (cases, fn (con, dst) =>
-			   let
-			     val conIndex = ConInfo.index (conInfo con)
-			     val _ = Array.update (usedCons, conIndex, true)
-			     val liDst as LabelInfo.T
-			                  {block = blockDst as Block.T
-					                       {args = argsDst,
-								...},
-					   ...}
-			       = labelInfo dst
-			     val conValues' 
-			       = TyconValue.newKnown 
-			         (cons, con, Vector.map (argsDst, #1))
-			   in
-			     if LabelInfo.onePred liDst
-			       then LabelInfo.addActivation
-				    (liDst, (testvi, conValues'))
-			       else ()
-			   end);
-			  Option.app
-			  (default, fn dst =>
-			   let
-			     val liDst as LabelInfo.T
-			                  {...}
-			       = labelInfo dst
-			     val conValues' = Vector.mapi
-			                      (cons, fn (i, con) =>
-					       if Array.sub (usedCons, i)
-						 then ConValue.new con
-						 else Vector.sub (conValues, i))
-			   in
-			     if LabelInfo.onePred liDst
-			       then LabelInfo.addActivation
-				    (liDst, (testvi, conValues'))
-			       else ()
-			   end)
-			end
-		     | _ => ())
-	     fun doitTree tree 
+	     fun doitTree tree
 	       = let
-		   fun loop (Tree.T (block as Block.T {label, transfer, ...}, 
-				     children))
+		   fun loop (Tree.T (block, children))
 		     = let
 			 val {addPost, post} = mkPost ()
- 			 val _ = LabelInfo.activate (labelInfo label, addPost)
-			 val _ = activateTransfer transfer
-			 val block = rewriteBlock block
+			 val block = rewriteBlock (block, addPost)
 		       in
 			 addBlock block ;
 			 Vector.foreach (children, loop) ;
@@ -866,6 +990,7 @@ val doMany
 		 in
 		   Vector.fromListRev (!newBlocks)
 		 end
+	     val _ = bindVarArgs args
 	     val blocks = doitTree (Function.dominatorTree f)
 
 	     val f = Function.new {name = name,
@@ -874,8 +999,17 @@ val doMany
 				   blocks = blocks,
 				   returns = returns,
 				   raises = raises}
+	     val _ = Control.diagnostics
+	             (fn display =>
+		      display (Function.layout (f, fn _ => NONE)))
 	     val f = restore f
+	     val _ = Control.diagnostics
+	             (fn display =>
+		      display (Function.layout (f, fn _ => NONE)))
 	     val f = shrink f
+	     val _ = Control.diagnostics
+	             (fn display =>
+		      display (Function.layout (f, fn _ => NONE)))
 	     val _ = Function.clear f
 	   in
 	     f
