@@ -151,19 +151,25 @@ structure Operand =
 	  | Runtime r =>
 	       let
 		  datatype z = datatype RuntimeOperand.t
+		  val ty = (case RuntimeOperand.ty r of
+			       RuntimeOperand.Int => "Int"
+			     | RuntimeOperand.Word => "Word")
+		  val z = 
+		     case r of
+			Base => "gcState.base"
+		      | CanHandle => "gcState.canHandle"
+		      | CurrentThread => "gcState.currentThread"
+		      | FromSize => "gcState.fromSize"
+		      | Frontier => "frontier"
+		      | Limit => "gcState.limit"
+		      | LimitPlusSlop => "gcState.limitPlusSlop"
+		      | MaxFrameSize => "gcState.maxFrameSize"
+		      | SignalIsPending => "gcState.signalIsPending"
+		      | StackBottom => "gcState.stackBottom"
+		      | StackLimit => "gcState.stackLimit"
+		      | StackTop => "stackTop"
 	       in
-		  case r of
-		     Base => "((Word)gcState.base)"
-		   | CanHandle => "gcState.canHandle"
-		   | CurrentThread => "((Word)gcState.currentThread)"
-		   | Frontier => "((Word)frontier)"
-		   | Limit => "((Word)gcState.limit)"
-		   | LimitPlusSlop => "((Word)gcState.limitPlusSlop)"
-		   | MaxFrameSize => "gcState.maxFrameSize"
-		   | SignalIsPending => "gcState.signalIsPending"
-		   | StackBottom => "((Word)gcState.stackBottom)"
-		   | StackLimit => "((Word)gcState.stackLimit)"
-		   | StackTop => "stackTop"
+		  concat ["((", ty, ")", z, ")"]
 	       end
           | StackOffset {offset, ty} =>
 	       concat ["S", Type.name ty, "(", C.int offset, ")"]

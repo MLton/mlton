@@ -229,9 +229,9 @@ signature RSSA =
 		     main: Function.t}
 
 	    val clear: t -> unit
+	    val handlesSignals: t -> bool
 	    val hasPrim: t * (Prim.t -> bool) -> bool
 	    val layouts: t * (Layout.t -> unit) -> unit
 	    val typeCheck: t -> unit
-	    val usesSignals: t -> bool
 	 end
    end

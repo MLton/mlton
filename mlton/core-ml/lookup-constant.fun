@@ -115,6 +115,7 @@ val gcFields =
     "base",
     "canHandle",
     "currentThread",
+    "fromSize",
     "frontier",
     "limit",
     "limitPlusSlop",

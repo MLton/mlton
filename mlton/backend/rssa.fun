@@ -636,8 +636,8 @@ structure Program =
 	    has main orelse List.exists (functions, has)
 	 end
 
-      fun usesSignals p =
-	 hasPrim (p, fn p => Prim.name p = Prim.Name.Thread_finishHandler)
+      fun handlesSignals p =
+	 hasPrim (p, fn p => Prim.name p = Prim.Name.MLton_handlesSignals)
 	 
       fun layouts (T {functions, main}, output': Layout.t -> unit): unit =
 	 let

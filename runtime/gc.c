@@ -32,6 +32,7 @@ enum {
 	BOGUS_POINTER = 0x1,
 	DEBUG = FALSE,
 	DEBUG_DETAILED = FALSE,
+	DEBUG_SIGNALS = FALSE,
 	FORWARDED = 0xFFFFFFFF,
 	HEADER_SIZE = WORD_SIZE,
 	STACK_HEADER_SIZE = WORD_SIZE,
@@ -166,7 +167,7 @@ getFrameLayout(GC_state s, word returnAddress)
 		index = *((uint*)(returnAddress - 4));
 	else
 		index = (uint)returnAddress;
-	assert(0 <= index && index <= s->maxFrameIndex);
+	assert(0 <= index and index <= s->maxFrameIndex);
 	layout = &(s->frameLayouts[index]);
 	assert(layout->numBytes > 0);
 	return layout;
@@ -1572,6 +1573,8 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 		GC_doGC(s, bytesRequested, 0);
 	}
 	assert(bytesRequested <= s->limit - s->frontier);
+	if (DEBUG) 
+		GC_display(s, stderr);
 	assert(invariant(s));
 }
 
@@ -1622,9 +1625,9 @@ void GC_gc(GC_state s, uint bytesRequested, bool force,
 		GC_setStack(s);
 		assert (bytesRequested <= s->limit - s->frontier);
 	} else {
-		assert (0 == s->canHandle);
 		/* Switch to the signal handler thread. */
-		if (DEBUG) {
+		assert (0 == s->canHandle);
+		if (DEBUG_SIGNALS) {
 			fprintf(stderr, "switching to signal handler\n");
 			GC_display(s, stderr);
 		}
@@ -1632,6 +1635,12 @@ void GC_gc(GC_state s, uint bytesRequested, bool force,
 		s->signalIsPending = FALSE;
 		s->inSignalHandler = TRUE;
 		s->savedThread = s->currentThread;
+		/* Set s->canHandle to 2, which will be decremented to 1
+		 * when swithching to the signal handler thread, which will then
+                 * run atomically and will finish by switching to the thread
+		 * to continue with, which will decrement s->canHandle to 0.
+                 */
+		s->canHandle = 2;
 		switchToThread(s, s->signalHandler);
 	}
 	leave(s);
@@ -1735,32 +1744,24 @@ GC_done (GC_state s)
 inline void
 GC_handler(GC_state s, int signum)
 {
-	if (DEBUG)
+	if (DEBUG_SIGNALS)
 		fprintf(stderr, "GC_handler  signum = %d\n", signum);
 	if (0 == s->canHandle) {
-		if (DEBUG)
+		if (DEBUG_SIGNALS)
 			fprintf(stderr, "setting limit = 0\n");
 		s->limit = 0;
 	}
 	sigaddset(&s->signalsPending, signum);
 	s->signalIsPending = TRUE;
-	if (DEBUG)
+	if (DEBUG_SIGNALS)
 		fprintf(stderr, "GC_handler done\n");
 }
 
-inline void
-GC_finishHandler(GC_state s, GC_thread t)
-{
-	if (DEBUG) {
-		fprintf(stderr, "GC_finishHandler\n");
-		GC_display(s, stderr);
-	}
-	GC_enter(s);
-	assert(t != BOGUS_THREAD);
+void GC_finishHandler (GC_state s) {
+	assert(s->canHandle == 1);
 	s->inSignalHandler = FALSE;	
 	sigemptyset(&s->signalsPending);
-	switchToThread(s, t);
-	leave(s);
+	unblockSignals(s);
 }
 
 /* ------------------------------------------------- */

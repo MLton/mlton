@@ -1,3 +1,4 @@
+HOST = self
 ifeq ($(HOST), self)
 AR = ar rc
 HOSTFLAGS =

@@ -7,6 +7,7 @@ signature GC_FIELD =
 	 Base
        | CanHandle
        | CurrentThread
+       | FromSize
        | Frontier (* The place where the next object is allocated. *)
        | Limit (* frontier + heapSize - LIMIT_SLOP *)
        | LimitPlusSlop (* frontier + heapSize *)
@@ -21,6 +22,7 @@ signature GC_FIELD =
       val setOffsets: {base: int,
 		       canHandle: int,
 		       currentThread: int,
+		       fromSize: int,
 		       frontier: int,
 		       limit: int,
 		       limitPlusSlop: int,

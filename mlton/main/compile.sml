@@ -315,6 +315,7 @@ fun preCodegen {input, docc}: Machine.Program.t =
 	     base = get "base",
 	     canHandle = get "canHandle",
 	     currentThread = get "currentThread",
+	     fromSize = get "fromSize",
 	     frontier = get "frontier",
 	     limit = get "limit",
 	     limitPlusSlop = get "limitPlusSlop",

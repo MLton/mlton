@@ -88,6 +88,12 @@ signature PRIM =
 	     | MLton_eq
 	     | MLton_equal (* implemented in ssa/poly-equal.fun *)
 	     | MLton_halt
+	     (* MLton_handlesSignals is essentially a noop, and is kept around
+	      * only so various optimizations can test whether or not the program
+	      * installs signal handlers.
+	      * It is converted to a noop in backend.fun
+	      *)
+	     | MLton_handlesSignals
 	     | MLton_serialize
 	     | MLton_size
 	     | Real_Math_acos
@@ -138,10 +144,10 @@ signature PRIM =
 	     | String_toWord8Vector
 	     | Thread_atomicBegin (* implemented in backend *)
 	     | Thread_atomicEnd (* implemented in backend *)
+	     | Thread_canHandle (* implemented in backend *)
 	     | Thread_copy
 	     | Thread_copyCurrent
 	     | Thread_current
-	     | Thread_finishHandler
 	     (* switchTo has to be a _prim because we have to know that it
 	      * enters the runtime -- because everything must be saved
 	      * on the stack.

@@ -10,7 +10,7 @@ structure Edge = Graph.Edge
 structure Forest = Graph.LoopForest
 
 fun insert p =
-   if not (Program.usesSignals p)
+   if not (Program.handlesSignals p)
       then p
    else
       let

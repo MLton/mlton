@@ -348,9 +348,14 @@ fun toMachine (program: Ssa.Program.t) =
 					{offset = offset,
 					 value = translateOperand value})}
 	     | PrimApp {dst, prim, args} =>
-		  M.Statement.PrimApp {args = translateOperands args,
-				       dst = Option.map (dst, varOperand o #1),
-				       prim = prim}
+		  (case Prim.name prim of
+		      Prim.Name.MLton_handlesSignals =>
+			 M.Statement.Noop
+		    | _ => 
+			 M.Statement.PrimApp
+			 {args = translateOperands args,
+			  dst = Option.map (dst, varOperand o #1),
+			  prim = prim})
 	     | SetExnStackLocal =>
 		  M.Statement.SetExnStackLocal {offset = handlerOffset ()}
 	     | SetExnStackSlot =>

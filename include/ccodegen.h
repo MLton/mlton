@@ -352,7 +352,6 @@ int main(int argc, char **argv) {					\
 			fprintf(stderr, "%d  %x = Array(%d)\n",	\
 				__LINE__, (uint)dst, numElts);	\
 		frontier = (dst) + (numBytes);			\
-		assert(frontier <= gcState.limit + LIMIT_SLOP); \
 	} while (0)
 
 /* ------------------------------------------------- */
@@ -652,12 +651,6 @@ int Int_bogus;
 		InvokeRuntime(GC_copyCurrentThread(&gcState), frameSize, ret);	\
 	} while (0)
 
-#define Thread_finishHandler(frameSize, ret, thread)				\
-	do {									\
-		GC_thread t = thread;						\
-		InvokeRuntime(GC_finishHandler(&gcState, t), frameSize, ret);	\
-	} while (0)
-
 #define Thread_switchTo(frameSize, ret, thread)					\
 	do {									\
 		GC_thread t = thread;						\
@@ -669,11 +662,6 @@ int Int_bogus;
 		stackTop = StackBottom + t->stack->used;			\
 		gcState.stackLimit = StackBottom + t->stack->reserved		\
 			- 2 * gcState.maxFrameSize;				\
-		/* Thread_atomicEnd () */					\
-		gcState.canHandle--;						\
-		if (gcState.signalIsPending && 0 == gcState.canHandle)		\
-			gcState.limit = 0;					\
-		/* Thread_atomicEnd () */					\
 		Return();							\
 	} while (0)
 

@@ -395,6 +395,9 @@ struct
        gcState_currentThreadContentsOperand) =
      make (Field.CurrentThread, pointerSize, Classes.GCState)
 
+  val (_, _, gcState_fromSizeContentsOperand) =
+     make (Field.FromSize, pointerSize, Classes.GCState)
+     
   val (_, gcState_frontierContents, gcState_frontierContentsOperand) =
      make (Field.Frontier, pointerSize, Classes.GCStateHold)
 
@@ -2505,7 +2508,6 @@ struct
 		end
 	     | Thread_copy => thread ()
 	     | Thread_copyCurrent => thread_copyCurrent ()
-	     | Thread_finishHandler => thread ()
 	     | Thread_switchTo => thread ()
 	     | World_save
 	     => let
@@ -2585,7 +2587,6 @@ struct
              | MLton_halt => default ()
              | Thread_copy => default ()
              | Thread_copyCurrent => default ()
-             | Thread_finishHandler => default ()
              | Thread_switchTo => default ()
              | World_save => default ()
              | _ => Error.bug ("runtimereturn: strange Prim.Name.t: " ^ primName)),

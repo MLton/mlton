@@ -10,7 +10,7 @@ structure General: GENERAL =
       exception Chr
       exception Div
       exception Domain
-      exception Fail of string
+      exception Fail = Fail
       exception Match = Match
       exception Overflow = Overflow
       exception Size = Size

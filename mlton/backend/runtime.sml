@@ -7,6 +7,7 @@ structure GCField =
 	 Base
        | CanHandle
        | CurrentThread
+       | FromSize
        | Frontier
        | Limit
        | LimitPlusSlop
@@ -22,6 +23,7 @@ structure GCField =
 	 fn Base => Word
 	  | CanHandle => Int
 	  | CurrentThread => Word
+	  | FromSize => Word
 	  | Frontier => Word
 	  | Limit => Word
 	  | LimitPlusSlop => Word
@@ -34,6 +36,7 @@ structure GCField =
       val baseOffset: int ref = ref 0
       val canHandleOffset: int ref = ref 0
       val currentThreadOffset: int ref = ref 0
+      val fromSizeOffset: int ref = ref 0
       val frontierOffset: int ref = ref 0
       val limitOffset: int ref = ref 0
       val limitPlusSlopOffset: int ref = ref 0
@@ -43,12 +46,13 @@ structure GCField =
       val stackLimitOffset: int ref = ref 0
       val stackTopOffset: int ref = ref 0
 
-      fun setOffsets {base, canHandle, currentThread, frontier, limit,
+      fun setOffsets {base, canHandle, currentThread, fromSize, frontier, limit,
 		      limitPlusSlop, maxFrameSize, signalIsPending, stackBottom,
 		      stackLimit, stackTop} =
 	 (baseOffset := base
 	  ; canHandleOffset := canHandle
 	  ; currentThreadOffset := currentThread
+	  ; fromSizeOffset := fromSize
 	  ; frontierOffset := frontier
 	  ; limitOffset := limit
 	  ; limitPlusSlopOffset := limitPlusSlop
@@ -62,6 +66,7 @@ structure GCField =
 	 fn Base => !baseOffset
 	  | CanHandle => !canHandleOffset
 	  | CurrentThread => !currentThreadOffset
+	  | FromSize => !fromSizeOffset
 	  | Frontier => !frontierOffset
 	  | Limit => !limitOffset
 	  | LimitPlusSlop => !limitPlusSlopOffset
@@ -75,6 +80,7 @@ structure GCField =
 	 fn Base => "Base"
 	  | CanHandle => "CanHandle"
 	  | CurrentThread => "CurrentThread"
+	  | FromSize => "FromSize"
 	  | Frontier => "Frontier"
 	  | Limit => "Limit"
 	  | LimitPlusSlop => "LimitPlusSlop"

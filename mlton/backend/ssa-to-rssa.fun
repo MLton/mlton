@@ -827,6 +827,11 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 				       end
 				  | String_sub => sub Type.char
 				  | Thread_atomicBegin =>
+				       (* assert(gcState.canHandle >= 0);
+					* gcState.canHandle++;
+					* if (gcState.signalIsPending)
+					*         setLimit(&gcState);
+					*)
 				       split
 				       (Vector.new0 (), Kind.Jump, ss, fn l =>
 					let
@@ -851,7 +856,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 					      [doit (LimitPlusSlop,
 						     Prim.word32Add,
 						     Operand.Runtime Base,
-						     Operand.Runtime Frontier),
+						     Operand.Runtime FromSize),
 					       doit (Limit,
 						     Prim.word32Sub,
 						     Operand.Runtime LimitPlusSlop,
@@ -875,6 +880,12 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 					      truee = l'}))
 					end)
 				  | Thread_atomicEnd =>
+				       (* gcState.canHandle--;
+					* assert(gcState.canHandle >= 0);
+					* if (gcState.signalIsPending
+					*     and 0 == gcState.canHandle)
+					*         gcState.limit = 0;
+					*)
 				       split
 				       (Vector.new0 (), Kind.Jump, ss, fn l =>
 					let
@@ -912,6 +923,9 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 					     {falsee = l,
 					      truee = l'}))
 					end)
+				  | Thread_canHandle =>
+				       move (Operand.Runtime
+					     RuntimeOperand.CanHandle)
 				  | Vector_fromArray => move (varOp (a 0))
 				  | Vector_sub =>
 				       (case targ () of

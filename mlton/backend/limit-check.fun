@@ -97,7 +97,7 @@ structure BlockInfo =
 val extraGlobals: Var.t list ref = ref []
    
 fun insertFunction (f: Function.t,
-		    usesSignals: bool,
+		    handlesSignals: bool,
 		    blockInfo: {blockIndex: int} -> BlockInfo.t) =
    let
       val {args, blocks, name, start} = Function.dest f
@@ -266,7 +266,7 @@ fun insertFunction (f: Function.t,
 			       z)
 		   val statements = Vector.concat [Vector.new1 s, statements]
 		in
-		   if usesSignals
+		   if handlesSignals
 		      then
 			 frontierCheck (isFirst,
 					Prim.eq,
@@ -353,7 +353,7 @@ fun insertFunction (f: Function.t,
 		    start = start}
    end
 
-fun insertPerBlock (f: Function.t, usesSignals) =
+fun insertPerBlock (f: Function.t, handlesSignals) =
    let
       val {start, blocks, ...} = Function.dest f
       fun blockInfo {blockIndex} =
@@ -372,7 +372,7 @@ fun insertPerBlock (f: Function.t, usesSignals) =
 	     stack = Label.equals (start, label)}
 	 end
    in
-      insertFunction (f, usesSignals, blockInfo)
+      insertFunction (f, handlesSignals, blockInfo)
    end
 
 structure Graph = DirectedGraph
@@ -382,7 +382,7 @@ structure Forest = Graph.LoopForest
 
 val traceMaxPath = Trace.trace ("maxPath", Int.layout, Int.layout)
 
-fun insertCoalesce (f: Function.t, usesSignals) =
+fun insertCoalesce (f: Function.t, handlesSignals) =
    let
       val {args, blocks, name, start} = Function.dest f
       val n = Vector.length blocks
@@ -627,7 +627,7 @@ fun insertCoalesce (f: Function.t, usesSignals) =
 	    {heap = heap,
 	     stack = Label.equals (start, label)}
 	 end
-      val f = insertFunction (f, usesSignals, blockInfo)
+      val f = insertFunction (f, handlesSignals, blockInfo)
       val _ = Function.clear f
    in
       f
@@ -640,8 +640,8 @@ fun insert (p as Program.T {functions, main}) =
 	 case !Control.limitCheck of
 	    PerBlock => insertPerBlock
 	  | _ => insertCoalesce
-      val usesSignals = Program.usesSignals p
-      val insertFunction = fn f => insertFunction (f, usesSignals)
+      val handlesSignals = Program.handlesSignals p
+      val insertFunction = fn f => insertFunction (f, handlesSignals)
       val functions = List.revMap (functions, insertFunction)
       val {args, blocks, name, start} = Function.dest (insertFunction main)
       val newStart = Label.newNoname ()

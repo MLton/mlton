@@ -369,13 +369,6 @@ void GC_gc (GC_state s, uint bytesRequested, bool force,
 		string file, int line);
 
 /* ------------------------------------------------- */
-/*                 GC_finishHandler                  */
-/* ------------------------------------------------- */
-
-/* This should be called */
-void GC_finishHandler (GC_state s, GC_thread t);
-
-/* ------------------------------------------------- */
 /*                      GC_size                      */
 /* ------------------------------------------------- */
 
@@ -439,6 +432,8 @@ void GC_loadWorld(GC_state s,
 /* This is the baked-in signal handler.  It causes the next limit check to fail.
  */
 void GC_handler(GC_state s, int signum);
+
+void GC_finishHandler (GC_state s);
 
 /* ------------------------------------------------- */
 /*                       Misc                        */

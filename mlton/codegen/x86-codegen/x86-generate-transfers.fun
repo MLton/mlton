@@ -1177,85 +1177,7 @@ struct
 			     {oper = Instruction.SUB,
 			      dst = stackLimit,
 			      src = maxFrameSize,
-			      size = pointerSize},
-			     (* gcState.canHandle-- *)
-			     Assembly.instruction_unal
-			     {oper = Instruction.DEC,
-			      dst = canHandle,
-			      size = wordSize},
-			     (* if (0 == canHandle && signalIsPending)
-			      *   limit = 0
-			      *)
-			     Assembly.directive_cache
-			     {caches = [{register = stackTopReg,
-					 memloc = stackTop',
-					 reserve = true},
-					{register = frontierReg,
-					 memloc = frontier (),
-					 reserve = true}]},
-			     Assembly.directive_force
-			     {commit_memlocs = MemLocSet.empty,
-			      commit_classes = farflushClasses,
-			      remove_memlocs = MemLocSet.empty,
-			      remove_classes = ClassSet.empty,
-			      dead_memlocs = MemLocSet.empty,
-			      dead_classes = ClassSet.empty},
-			     Assembly.instruction_jcc
-			     {condition = Instruction.NZ,
-			      target = Operand.label resetJoin},
-			     Assembly.instruction_cmp
-			     {src1 = signalIsPending,
-			      src2 = Operand.immediate_const_int 0,
-			      size = wordSize},
-			     Assembly.directive_cache
-			     {caches = [{register = stackTopReg,
-					 memloc = stackTop',
-					 reserve = true},
-					{register = frontierReg,
-					 memloc = frontier (),
-					 reserve = true}]},
-			     Assembly.directive_force
-			     {commit_memlocs = MemLocSet.empty,
-			      commit_classes = farflushClasses,
-			      remove_memlocs = MemLocSet.empty,
-			      remove_classes = ClassSet.empty,
-			      dead_memlocs = MemLocSet.empty,
-			      dead_classes = ClassSet.empty},
-			     Assembly.instruction_jcc
-			     {condition = Instruction.E,
-			      target = Operand.label resetJoin},
-			     Assembly.instruction_mov
-			     {dst = limit,
-			      src = Operand.immediate_const_int 0,
-			      size = pointerSize},
-			     Assembly.directive_cache
-			     {caches = [{register = stackTopReg,
-					 memloc = stackTop',
-					 reserve = true},
-					{register = frontierReg,
-					 memloc = frontier (),
-					 reserve = true}]},
-			     Assembly.directive_force
-			     {commit_memlocs = MemLocSet.empty,
-			      commit_classes = farflushClasses,
-			      remove_memlocs = MemLocSet.empty,
-			      remove_classes = ClassSet.empty,
-			      dead_memlocs = MemLocSet.empty,
-			      dead_classes = ClassSet.empty},
-			     Assembly.directive_reset (),
-			     Assembly.label resetJoin,
-			     Assembly.directive_assume
-			     {assumes
-			      = [{register = stackTopReg,
-				  memloc = stackTop',
-				  weight = 1024,
-				  sync = false,
-				  reserve = false},
-				 {register = frontierReg,
-				  memloc = frontier (),
-				  weight = 2048,
-				  sync = false,
-				  reserve = false}]}],
+			      size = pointerSize}],
 			    (* flushing at far transfer *)
 			    (farTransfer MemLocSet.empty
 			     AppendList.empty
@@ -1273,7 +1195,6 @@ struct
 			| MLton_halt => default "MLton_exit"
 			| Thread_copy => default "GC_copyThread"
 			| Thread_copyCurrent => default "GC_copyCurrentThread"
-			| Thread_finishHandler => default "GC_finishHandler"
 			| Thread_switchTo => thread ()
 			| World_save => default "GC_saveWorld"
 			| _ => Error.bug "x86GenerateTransfers::Runtime: prim"

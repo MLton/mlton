@@ -94,7 +94,7 @@ fun handleDefault s =
 	 
 val handleWith' =
    (* This let is used so that Thread.setHandler is only used if
-    * Signal.setHandler' is used.  This prevents threads from being part
+    * Signal.handleWith' is used.  This prevents threads from being part
     * of every program.
     *)
    let

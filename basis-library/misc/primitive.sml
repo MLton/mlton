@@ -29,6 +29,7 @@ type word32 = word
 type 'a vector = 'a vector
 
 exception Bind = Bind
+exception Fail of string
 exception Match = Match
 exception Overflow = Overflow
 exception Size
@@ -48,6 +49,7 @@ structure Primitive =
       val detectOverflow = _build_const "MLton_detectOverflow": bool;
       val eq = fn z => _prim "MLton_eq": 'a * 'a -> bool; z
       val halt = _prim "MLton_halt": int -> unit;
+      val handlesSignals = _prim "MLton_handlesSignals": unit -> unit;
       val isLittleEndian = _const "MLton_isLittleEndian": bool;
       val safe = _build_const "MLton_safe": bool;
       val usesCallcc: bool ref = ref false;
@@ -536,7 +538,11 @@ structure Primitive =
 	    type thread = thread
 
 	    val atomicBegin = _prim "Thread_atomicBegin": unit -> unit;
-	    val atomicEnd = _prim "Thread_atomicEnd": unit -> unit;
+	    val canHandle = _prim "Thread_canHandle": unit -> int;
+	    fun atomicEnd () =
+	       if Int.<= (canHandle (), 0)
+		  then raise Fail "Thread.atomicEnd with no atomicBegin"
+	       else _prim "Thread_atomicEnd": unit -> unit; ()
 	    (* copy stores a thread that should be gotten using saved (). *)
 	    val copy = _prim "Thread_copy": preThread -> unit;
 	    (* copyCurrent stores a preThread that should be gotten using
@@ -544,7 +550,7 @@ structure Primitive =
 	     *)
 	    val copyCurrent = _prim "Thread_copyCurrent": unit -> unit;
 	    val current = _prim "Thread_current": unit -> thread;
-	    val finishHandler = _prim "Thread_finishHandler": thread -> unit;
+	    val finishHandler = _ffi "Thread_finishHandler": unit -> unit;
 	    val saved = _ffi "Thread_saved": unit -> thread;
 	    val savedPre = _ffi "Thread_saved": unit -> preThread;
 	    val setHandler = _ffi "Thread_setHandler": thread -> unit;

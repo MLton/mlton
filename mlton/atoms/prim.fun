@@ -95,6 +95,7 @@ structure Name =
        | MLton_eq
        | MLton_equal
        | MLton_halt
+       | MLton_handlesSignals
        | MLton_serialize
        | MLton_size
        | Real_Math_acos
@@ -145,10 +146,10 @@ structure Name =
        | String_toWord8Vector
        | Thread_atomicBegin
        | Thread_atomicEnd
+       | Thread_canHandle
        | Thread_copy
        | Thread_copyCurrent
        | Thread_current
-       | Thread_finishHandler
        | Thread_switchTo
        | Vector_fromArray
        | Vector_length
@@ -251,7 +252,6 @@ structure Name =
 	  | MLton_halt => true
 	  | Thread_copy => true
 	  | Thread_copyCurrent => true
-	  | Thread_finishHandler => true
 	  | Thread_switchTo => true
 	  | World_save => true
 	  | _ => false
@@ -352,6 +352,7 @@ structure Name =
 	  (MLton_eq, Functional, "MLton_eq"),
 	  (MLton_equal, Functional, "MLton_equal"),
 	  (MLton_halt, SideEffect, "MLton_halt"),
+	  (MLton_handlesSignals, SideEffect, "MLton_handlesSignals"),
 	  (MLton_serialize, DependsOnState, "MLton_serialize"),
 	  (MLton_size, DependsOnState, "MLton_size"),
 	  (Real_Math_acos, Functional, "Real_Math_acos"),
@@ -402,10 +403,10 @@ structure Name =
 	  (String_toWord8Vector, Functional, "String_toWord8Vector"),
 	  (Thread_atomicBegin, SideEffect, "Thread_atomicBegin"),
 	  (Thread_atomicEnd, SideEffect, "Thread_atomicEnd"),
+	  (Thread_canHandle, DependsOnState, "Thread_canHandle"),
 	  (Thread_copy, SideEffect, "Thread_copy"),
 	  (Thread_copyCurrent, SideEffect, "Thread_copyCurrent"),
 	  (Thread_current, DependsOnState, "Thread_current"),
-	  (Thread_finishHandler, SideEffect, "Thread_finishHandler"),
 	  (Thread_switchTo, SideEffect, "Thread_switchTo"),
 	  (Vector_fromArray, DependsOnState, "Vector_fromArray"),
 	  (Vector_length, Functional, "Vector_length"),

@@ -8,6 +8,10 @@ Thread Thread_current() {
 	return (Thread)gcState.currentThread;
 }
 
+void Thread_finishHandler() {
+	GC_finishHandler (&gcState);
+}
+
 Thread Thread_saved() {
 	Thread t;
 
