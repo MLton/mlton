@@ -94,11 +94,14 @@ libmlton-gdb.a: $(DEBUG_OBJS)
 runtime.c: $(CFILES)
 	cat $(CFILES) >runtime.c
 
-# gcc 3.2 is buggy (or maybe we're not following the C spec) when
-# compiling Real/*.c with -O2.   Files that have been known to cause
-# problems are class.c and gdtoa.c.  But there may be others.
+# It looks like we don't follow the C spec w.r.t. aliasing.  And gcc
+# -O2 catches us on the code in Real/*.c where we treat a double as a
+# chunk of two words.  Files that have been known to cause problems
+# are class.c and gdtoa.c.  But there may be others.  So, we compile
+# with -fno-strict-aliasing to prevent gcc from taking advantage of
+# this aspect of the C spec.
 basis/Real/%.o: basis/Real/%.c
-	$(CC) $(CFLAGS) -O1 -c -o $@ $<
+	$(CC) $(CFLAGS) -fno-strict-aliasing -c -o $@ $<
 
 %-gdb.o: %.c $(HFILES)
 	$(CC) $(DEBUGFLAGS) -DASSERT=1 -c -o $@ $<
