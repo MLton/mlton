@@ -11,12 +11,13 @@
 
 structure ThreadID : THREAD_ID_EXTRA =
    struct
-      structure Assert = LocalAssert(val assert = true)
+      structure Assert = LocalAssert(val assert = false)
 
       structure R = RepTypes
 
 
       datatype thread_id = datatype R.thread_id
+      datatype thread_id' = datatype thread_id
 
       fun sameTid (TID{id=a, ...}, TID{id=b, ...}) = a = b
       fun compareTid (TID{id=a, ...}, TID{id=b, ...}) = Int.compare (a, b)

@@ -1,0 +1,8 @@
+local
+  $(SML_LIB)/basis/basis.mlb
+  ../cml.mlb
+  print.sml
+in
+  primes.sml 
+  run-main.sml
+end

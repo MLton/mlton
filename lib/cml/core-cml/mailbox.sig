@@ -27,5 +27,5 @@ signature MAILBOX =
 signature MAILBOX_EXTRA =
    sig
       include MAILBOX
-      val resetMbox : 'a mbox -> unit
+      (*val resetMbox : 'a mbox -> unit*)
    end

@@ -21,5 +21,5 @@ signature TRANS_ID =
       (* given a transaction ID, mark it cancelled. *)
       val force : trans_id -> unit
 
-      val toString : trans_id -> string
+      (*val toString : trans_id -> string*)
    end

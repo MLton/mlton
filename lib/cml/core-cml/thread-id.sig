@@ -9,10 +9,9 @@
  * COPYRIGHT (c) 1989-1991 John H. Reppy
  *)
 
-type word = Word.word
 signature THREAD_ID =
    sig
-      datatype thread_id = datatype RepTypes.thread_id
+      type thread_id
 
       val sameTid    : (thread_id * thread_id) -> bool
       val compareTid : (thread_id * thread_id) -> order
@@ -23,7 +22,8 @@ signature THREAD_ID =
 
 signature THREAD_ID_EXTRA =
    sig
-      include THREAD_ID
+      datatype thread_id' = datatype RepTypes.thread_id
+      include THREAD_ID where type thread_id = thread_id'
       val new : unit -> thread_id
       val bogus : string -> thread_id
 

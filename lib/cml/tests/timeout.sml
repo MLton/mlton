@@ -3,6 +3,8 @@ structure Main =
 struct
    open CML
 
+   val print = TextIO.print
+
    fun doit' n =
       RunCML.doit
       (fn () =>

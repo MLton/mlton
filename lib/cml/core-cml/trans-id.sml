@@ -11,7 +11,7 @@
 
 structure TransID : TRANS_ID =
    struct 
-      structure Assert = LocalAssert(val assert = true)
+      structure Assert = LocalAssert(val assert = false)
 
       structure R = RepTypes
  
@@ -43,8 +43,10 @@ structure TransID : TRANS_ID =
 	       TRANS => txst := CANCEL
 	     | CANCEL => raise Fail "TransID.force")
 
+      (*
       fun toString (TXID txst) =
 	 case !txst of
 	    TRANS => "TRANS"
 	  | CANCEL => "CANCEL"
+      *)
    end

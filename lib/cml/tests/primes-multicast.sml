@@ -4,6 +4,8 @@ struct
    open CML
    structure MC = Multicast
 
+   val print = TextIO.print
+
    fun makeNatStream c =
       let
 	 val mch = MC.mChannel ()

@@ -19,6 +19,4 @@ signature CML =
      include CHANNEL
      include EVENT
      include TIME_OUT
-
-     val print : string -> unit
   end

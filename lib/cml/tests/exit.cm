@@ -1,4 +1,6 @@
-Group is
-  ../cml.cm
+Group 
+  structure Main
+is
+  $cml/basis.cm
+  $cml/cml.cm
   exit.sml 
-  run-main.sml

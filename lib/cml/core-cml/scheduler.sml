@@ -14,7 +14,7 @@
 
 structure Scheduler : SCHEDULER =
    struct
-      structure Assert = LocalAssert(val assert = true)
+      structure Assert = LocalAssert(val assert = false)
       structure GlobalDebug = Debug
       structure Debug = LocalDebug(val debug = false)
 
@@ -65,42 +65,6 @@ structure Scheduler : SCHEDULER =
       fun tidMsg () = TID.tidToString (getCurThreadId ())
       fun debug msg = Debug.sayDebug ([atomicMsg, tidMsg], msg)
       fun debug' msg = debug (fn () => msg)
-
-      local
-	 val time = ref Time.zeroTime
-      in
-	 val atomicBegin = fn () =>
-	    let
-	       val () = atomicBegin ()
-(*
-	       val () = 
-		  case MLton.Thread.atomicState () of
-		     MLton.Thread.AtomicState.Atomic 1 => time := Time.now ()
-		   | _ => ()
-*)
-	    in
-	       ()
-	    end
-	 val atomicEnd = fn () =>
-	    let
-(*
-	       val () = 
-		  case MLton.Thread.atomicState () of
-		     MLton.Thread.AtomicState.Atomic 1 => 
-			let
-			   val diff = Time.-(Time.now(), !time)
-			in 
-			   GlobalDebug.sayDebug
-			   ([], fn () =>
-			    concat [LargeInt.toString (Time.toMilliseconds diff), "ms"])
-			end
-		   | _ => ()
-*)
-	       val () = atomicEnd ()
-	    in 
-	       ()
-	    end 
-      end
 
       (* The thread ready queues:
        * rdyQ1 is the primary queue and rdyQ2 is the secondary queue.

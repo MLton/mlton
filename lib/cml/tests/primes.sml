@@ -3,6 +3,8 @@ structure Main =
 struct
    open CML
 
+   val print = TextIO.print
+
    fun makeNatStream c =
       let
 	 val ch = channel ()

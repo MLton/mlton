@@ -20,7 +20,7 @@
 
 structure Channel : CHANNEL_EXTRA =
    struct
-      structure Assert = LocalAssert(val assert = true)
+      structure Assert = LocalAssert(val assert = false)
       structure Debug = LocalDebug(val debug = false)
 	 
       structure Q = ImpQueue
@@ -38,10 +38,12 @@ structure Channel : CHANNEL_EXTRA =
 		  inQ  : (trans_id * 'a S.thread) Q.t,
 		  outQ : (trans_id * 'a S.thread S.thread) Q.t}
 
+      (*
       fun resetChan (CHAN {prio, inQ, outQ}) = 
 	 (prio := 1
 	  ; Q.reset inQ
 	  ; Q.reset outQ)
+      *)
 
       fun channel () = CHAN {prio = ref 1, inQ = Q.new (), outQ = Q.new ()}
 

@@ -31,5 +31,5 @@ signature CHANNEL =
 signature CHANNEL_EXTRA =
    sig
       include CHANNEL
-      val resetChan : 'a chan -> unit
+      (*val resetChan : 'a chan -> unit*)
    end

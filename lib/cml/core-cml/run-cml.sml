@@ -11,7 +11,7 @@
 
 structure RunCML : RUN_CML =
    struct
-      structure Assert = LocalAssert(val assert = true)
+      structure Assert = LocalAssert(val assert = false)
       structure Debug = LocalDebug(val debug = false)
 
       structure R = Running
@@ -109,7 +109,7 @@ structure RunCML : RUN_CML =
 		  then raise Fail "CML is running"
 		  else ()
 	    val (installAlrmHandler, restoreAlrmHandler) = prepareAlrmHandler tq
-	    val (cleanUp, status) =
+	    val ((*cleanUp*)_, status) =
 	       S.switchToNext
 	       (fn thrd => 
 		let

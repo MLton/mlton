@@ -1,5 +1,11 @@
-Group is
-  ../util/util.cm
+ann 
+  sequenceUnit true,
+  warnMatch true, 
+  warnUnused true
+in
+local
+  $(SML_LIB)/basis/basis.mlb
+  ../util/util.mlb
   rep-types.sml
   running.sml
   trans-id.sig
@@ -32,3 +38,18 @@ Group is
 
   run-cml.sig
   run-cml.sml
+
+  rebind.sml
+in
+  signature CML
+  structure CML
+
+  signature SYNC_VAR
+  structure SyncVar
+
+  signature MAILBOX
+  structure Mailbox
+
+  structure RunCML
+end
+end

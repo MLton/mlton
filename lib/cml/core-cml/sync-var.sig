@@ -40,3 +40,8 @@ signature SYNC_VAR =
       val mSwapEvt  : ('a mvar * 'a) -> 'a CML.event
       val sameMVar  : ('a mvar * 'a mvar) -> bool
    end
+
+signature SYNC_VAR_EXTRA =
+   sig
+      include SYNC_VAR
+   end

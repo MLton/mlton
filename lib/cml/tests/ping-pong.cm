@@ -1,4 +1,6 @@
-Group is
-  ../cml.cm
+Group 
+  structure Main
+is
+  $cml/basis.cm
+  $cml/cml.cm
   ping-pong.sml 
-  run-main.sml

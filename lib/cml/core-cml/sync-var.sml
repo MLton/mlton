@@ -11,9 +11,9 @@
  * The implementation of Id-style synchronizing memory cells.
  *)
 
-structure SyncVar : SYNC_VAR =
+structure SyncVar : SYNC_VAR_EXTRA =
    struct
-      structure Assert = LocalAssert(val assert = true)
+      structure Assert = LocalAssert(val assert = false)
       structure Debug = LocalDebug(val debug = false)
 	 
       structure Q = ImpQueue

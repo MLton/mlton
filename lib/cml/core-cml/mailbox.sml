@@ -13,7 +13,7 @@
 
 structure Mailbox : MAILBOX_EXTRA =
    struct
-      structure Assert = LocalAssert(val assert = true)
+      structure Assert = LocalAssert(val assert = false)
       structure Debug = LocalDebug(val debug = false)
 
       structure Q = FunQueue
@@ -35,7 +35,9 @@ structure Mailbox : MAILBOX_EXTRA =
 
       datatype 'a mbox = MB of 'a state ref
 
+      (*
       fun resetMbox (MB state) = state := EMPTY (Q.new ())
+      *)
 
       fun mailbox () = MB (ref (EMPTY (Q.new ())))
 

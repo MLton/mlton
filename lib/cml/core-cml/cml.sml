@@ -16,10 +16,4 @@ structure CML : CML =
       open Channel
       open Event
       open TimeOut
-
-      fun print s =
-	 (Scheduler.atomicBegin ();
-	  TextIO.print s;
-	  Scheduler.atomicEnd ())
    end
-
