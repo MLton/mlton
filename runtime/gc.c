@@ -928,19 +928,21 @@ void leave (GC_state s) {
 }
 
 /* ---------------------------------------------------------------- */
-/*                   Semispace memory management                    */
+/*                              Heaps                               */
 /* ---------------------------------------------------------------- */
 
-static W32 computeSemiSize (GC_state s, W64 live) {
+static W32 heapDesiredSize (GC_state s, W64 live) {
 	W32 res;
 
-	res = min64 (s->totalRam + s->totalSwap,
-			max64 (live * LIVE_RATIO_MIN, 
-				min64 (s->ramSlop * s->totalRam,
-					live * LIVE_RATIO)));
+	res = s->useFixedHeap
+		? s->fixedHeapSize
+		: min64 (s->totalRam + s->totalSwap,
+				max64 (live * LIVE_RATIO_MIN, 
+					min64 (s->ramSlop * s->totalRam,
+						live * LIVE_RATIO)));
 	res = roundPage (s, res);
 	if (DEBUG_RESIZING)
-		fprintf (stderr, "%u = computeSemiSize (%llu)\n",
+		fprintf (stderr, "%u = heapDesiredSize (%llu)\n",
 				(uint)res, live);
 	return res;
 }
@@ -1028,7 +1030,7 @@ static inline bool heapCreate (GC_state s, GC_heap h, W64 need, W32 minSize) {
 		fprintf (stderr, "heapCreate  need = %llu  minSize = %u\n",
 				need, (uint)minSize);
 	minSize = roundPage (s, minSize);
-	requested = computeSemiSize (s, need);
+	requested = heapDesiredSize (s, need);
 	if (requested < minSize)
 		requested = minSize;
 	if (h->size >= minSize and h->size >= requested / 2)
@@ -1895,7 +1897,7 @@ void doGC (GC_state s, uint bytesRequested) {
 	size = s->heap.size;
 	stackBytesRequested = getStackBytesRequested (s);
         if (not s->useFixedHeap
-		and (W64)s->bytesLive + (W64)s->heap.size
+ 		and (W64)s->bytesLive + (W64)s->heap.size 
 			<= s->ramSlop * s->totalRam
 		and heapCreate (s, &s->heap2,
 					(W64)s->bytesLive + (W64)bytesRequested 
@@ -2557,9 +2559,7 @@ static void newWorld (GC_state s)
  */
 static const char worldTerminator = '\000';
 
-static void loadWorld (GC_state s, 
-			char *fileName,
-			void (*loadGlobals)(FILE *file)) {
+static void loadWorld (GC_state s, char *fileName) {
 	FILE *file;
 	uint magic;
 	pointer oldGen;
@@ -2579,7 +2579,7 @@ static void loadWorld (GC_state s,
 	setNursery (s);
 	heapInit (s, &s->heap2);
 	sfread (s->heap.oldGen, 1, s->bytesLive, file);
-	(*loadGlobals)(file);
+	(*s->loadGlobals) (file);
 	unless (EOF == fgetc (file))
 		die ("Invalid world: junk at end of file.");
 	fclose (file);
@@ -2590,8 +2590,7 @@ static void loadWorld (GC_state s,
 	setStack (s);
 }
 
-int GC_init (GC_state s, int argc, char **argv, 
-		void (*loadGlobals)(FILE *file)) {
+int GC_init (GC_state s, int argc, char **argv) {
 	char *worldFile;
 	int i;
 
@@ -2639,42 +2638,41 @@ int GC_init (GC_state s, int argc, char **argv,
 
 				arg = argv[i];
 				if (0 == strcmp(arg, "fixed-heap")) {
-					die ("fixed-heap is currently unimplemented");
 					++i;
 					if (i == argc)
-						usage(argv[0]);
+						usage (argv[0]);
 					s->useFixedHeap = TRUE;
-					s->heap.size =
+					s->fixedHeapSize =
 						stringToBytes (argv[i++]);
-				} else if (0 == strcmp(arg, "gc-messages")) {
+				} else if (0 == strcmp (arg, "gc-messages")) {
 					++i;
 					s->messages = TRUE;
-				} else if (0 == strcmp(arg, "gc-summary")) {
+				} else if (0 == strcmp (arg, "gc-summary")) {
 					++i;
 					s->summary = TRUE;
-				} else if (0 == strcmp(arg, "load-world")) {
+				} else if (0 == strcmp (arg, "load-world")) {
 					++i;
 					s->isOriginal = FALSE;
 					if (i == argc) 
-						usage(argv[0]);
+						usage (argv[0]);
 					worldFile = argv[i++];
-				} else if (0 == strcmp(arg, "max-heap")) {
+				} else if (0 == strcmp (arg, "max-heap")) {
 					++i;
 					if (i == argc) 
-						usage(argv[0]);
+						usage (argv[0]);
 					s->useFixedHeap = FALSE;
-					s->maxHeap = stringToBytes(argv[i++]);
-				} else if (0 == strcmp(arg, "ram-slop")) {
+					s->maxHeap = stringToBytes (argv[i++]);
+				} else if (0 == strcmp (arg, "ram-slop")) {
 					++i;
 					if (i == argc)
-						usage(argv[0]);
+						usage (argv[0]);
 					s->ramSlop =
-						stringToFloat(argv[i++]);
-				} else if (0 == strcmp(arg, "--")) {
+						stringToFloat (argv[i++]);
+				} else if (0 == strcmp (arg, "--")) {
 					++i;
 					done = TRUE;
 				} else if (i > 1)
-					usage(argv[0]);
+					usage (argv[0]);
 			        else done = TRUE;
 			}
 		}
@@ -2686,7 +2684,7 @@ int GC_init (GC_state s, int argc, char **argv,
 	if (s->isOriginal)
 		newWorld (s);
 	else
-		loadWorld (s, worldFile, loadGlobals);
+		loadWorld (s, worldFile);
 	assert (mutatorInvariant (s));
 	return i;
 }
@@ -2705,8 +2703,9 @@ inline void GC_done (GC_state s) {
 	heapRelease (s, &s->heap2);
 	if (s->summary) {
 		double time;
-		uint gcTime = rusageTime (&s->ru_gc);
+		uint gcTime;
 
+		gcTime = rusageTime (&s->ru_gc);
 		displayUint ("max semispace size(bytes)", s->maxHeapSizeSeen);
 		displayUint ("max stack size(bytes)", s->maxStackSizeSeen);
 		time = (double)(currentTime() - s->startTime);

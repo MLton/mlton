@@ -19,16 +19,11 @@
 #include "my-lib.h"
 #include "posix-constants.h"
 
-extern struct GC_state gcState;
-
 /* initialize the machine */
-void MLton_init(int argc, 
-		char **argv,
-		/* Read the globals from the world file. */
-		void (*loadGlobals)(FILE *file));
+void MLton_init (int argc, char **argv, GC_state s);
 
 /* Print a string, escaping every character with decimal escapes. */
-void MLton_printStringEscaped(FILE *f, unsigned char *s);
+void MLton_printStringEscaped (FILE *f, unsigned char *s);
 
 #endif /* #ifndef _LIBMLTON_H */
 

@@ -243,6 +243,7 @@ typedef struct GC_state {
 	int bytesLive;		/* Number of bytes copied by most recent GC. */
 	ullong bytesMarkCompacted;
 	GC_thread currentThread; /* This points to a thread in the heap. */
+	uint fixedHeapSize; 	/* Only meaningful if useFixedHeap. */
 	GC_frameLayout *frameLayouts;
 	pointer *globals; 	/* An array of size numGlobals. */
 	struct GC_heap heap;
@@ -255,6 +256,8 @@ typedef struct GC_state {
 	volatile int canHandle;
 	bool isOriginal;
 	pointer limitPlusSlop; /* limit + LIMIT_SLOP */
+	/* loadGlobals loads the globals from the stream. */
+	void (*loadGlobals)(FILE *file);
 	uint magic; /* The magic number required for a valid world file. */
 	uint maxBytesLive;
 	uint maxFrameIndex; /* 0 <= frameIndex < maxFrameIndex */
@@ -284,7 +287,7 @@ typedef struct GC_state {
          * GC_copyCurrentThread also uses it to store its result.
 	 */
 	GC_thread savedThread;
-	/* Save globals writes out the values of all of the globals to fd. */
+	/* saveGlobals writes out the values of all of the globals to fd. */
 	void (*saveGlobals)(int fd);
 	/* serializeStart holds the frontier at the start of the serialized
          * object during object serialization.
@@ -404,25 +407,29 @@ static inline Header GC_getHeader (pointer p) {
 void GC_handler (GC_state s, int signum);
 
 /* GC_init must be called before doing any allocation.
- * It must also be called before MLTON_init, GC_createStrings, and GC_createIntInfs.
+ * It processes command line arguments, creates the heap, initializes the global
+ * strings and intInfs.
+ *
  * Before calling GC_init, you must initialize:
- *   numGlobals
- *   globals 
- *   maxFrameSize
- *   maxFrameIndex
+ *   fixedHeapSize
  *   frameLayouts
+ *   globals 
+ *   intInfInits
+ *   loadGlobals
+ *   magic
+ *   maxFrameIndex
+ *   maxFrameSize
+ *   maxObjectTypeIndex
  *   native
+ *   numGlobals
+ *   objectTypes
+ *   saveGlobals
+ *   stringInits
  *   useFixedHeap
- * if (useFixedHeap)
- *   then fromSize should be set to the semispace size
- *   else fromSize be set to the initial amount of live data that will be placed
- *          into the heap (e.g. with GC_createStrings).  The initial heap size will
- *          be set to fromSize * s->liveRatio.
- *        maxHeapSize should be set to 0 if you want it to be figured out
- *          automatically, otherwise set it to what you want.
+ *
+ * GC_init returns the index of the first non-runtime command-line arg.
  */
-int GC_init (GC_state s, int argc, char **argv,
-			void (*loadGlobals)(FILE *file));
+int GC_init (GC_state s, int argc, char **argv);
 
 /* GC_isPointer returns true if p looks like a pointer, i.e. if p = 0 mod 4. */
 static inline bool GC_isPointer (pointer p) {

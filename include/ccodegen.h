@@ -118,13 +118,15 @@ struct cont {
 /*                       main                        */
 /* ------------------------------------------------- */
 
-#define Main(ufh,  mfs, mfi, mot, mg, mc, ml)				\
+#define Main(ufh, fhs, mfs, mfi, mot, mg, mc, ml)			\
 int main(int argc, char **argv) {					\
 	struct cont cont;						\
 	int l_nextFun;							\
+	gcState.fixedHeapSize = fhs;					\
 	gcState.frameLayouts = frameLayouts;				\
 	gcState.globals = globalpointer;				\
 	gcState.intInfInits = intInfInits;				\
+	gcState.loadGlobals = &loadGlobals;				\
 	gcState.magic = mg;						\
 	gcState.maxFrameIndex = mfi;					\
 	gcState.maxFrameSize = mfs;					\
@@ -135,7 +137,7 @@ int main(int argc, char **argv) {					\
 	gcState.saveGlobals = &saveGlobals;				\
 	gcState.stringInits = stringInits;				\
 	gcState.useFixedHeap = ufh;					\
-	MLton_init (argc, argv, &loadGlobals);				\
+	MLton_init (argc, argv, &gcState);				\
 	if (gcState.isOriginal) {					\
 		float_Init();						\
 		PrepFarJump(mc, ml);					\

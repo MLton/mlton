@@ -9,7 +9,7 @@
 #include <string.h>
 #include "libmlton.h"
 
-void MLton_printStringEscaped(FILE *f, unsigned char *s) {
+void MLton_printStringEscaped (FILE *f, unsigned char *s) {
 	int i;
 	for (i = 0; s[i] != '\0'; i++)
 		fprintf(f, "%d%d%d", 
@@ -25,15 +25,12 @@ void MLton_printStringEscaped(FILE *f, unsigned char *s) {
 
 extern char **environ; /* for Posix_ProcEnv_environ */
 
-void MLton_init(int argc, 
-		char **argv,
-		void (*loadGlobals)(FILE *file)) {
-
+void MLton_init (int argc, char **argv, GC_state s) {
 	int start;
 
 	Posix_ProcEnv_environ = (CstringArray)environ;
 	Real_posInf = HUGE_VAL;
-	start = GC_init(&gcState, argc, argv, loadGlobals);
+	start = GC_init (s, argc, argv);
 	/* Setup argv and argc that SML sees. */
 	/* start is now the index of the first real arg. */
 	CommandLine_commandName = (uint)(argv[0]);

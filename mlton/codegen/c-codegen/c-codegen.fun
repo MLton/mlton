@@ -282,18 +282,19 @@ fun outputDeclarations
 	  ; print "};\n")
       fun declareMain () =
 	 let
-	    val usedFixedHeap =
+	    val (usedFixedHeap, fixedHeapSize) =
 	       case !Control.fixedHeap of
-		  NONE => false
-		| SOME n => true
+		  NONE => (C.falsee, 0)
+		| SOME n => (C.truee, n)
 	    val magic = C.word (Random.useed ())
 	 in 
 	    C.callNoSemi ("Main",
-			  [if usedFixedHeap then C.truee else C.falsee,
-			      C.int maxFrameSize,
-			      C.int maxFrameIndex,
-			      C.int (Vector.length objectTypes),
-			      magic] @ additionalMainArgs,
+			  [usedFixedHeap,
+			   C.int fixedHeapSize,
+			   C.int maxFrameSize,
+			   C.int maxFrameIndex,
+			   C.int (Vector.length objectTypes),
+			   magic] @ additionalMainArgs,
 			  print)
 	    ; print "\n"
 	 end
