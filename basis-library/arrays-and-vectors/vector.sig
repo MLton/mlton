@@ -35,17 +35,22 @@ signature VECTOR_EXTRA =
       structure VectorSlice: VECTOR_SLICE_EXTRA 
 	where type 'a vector = 'a vector
 
-      val copy: vector -> vector
+      val unsafeSub: 'a vector * int -> 'a
+
+      (* Used to implement Substring/String functions *)
+      val concatWith: 'a vector -> 'a vector list -> 'a vector
+      val isPrefix: ('a * 'a -> bool) -> 'a vector -> 'a vector -> bool
+      val isSubvector: ('a * 'a -> bool) -> 'a vector -> 'a vector -> bool
+      val isSuffix: ('a * 'a -> bool) -> 'a vector -> 'a vector -> bool
+      val translate: ('a -> 'a vector) -> 'a vector -> 'a vector
+      val tokens: ('a -> bool) -> 'a vector -> 'a vector list
+      val fields: ('a -> bool) -> 'a vector -> 'a vector list
+
+      val copy: 'a vector -> 'a vector
       val fromArray: 'a array -> 'a vector
       val toList: 'a vector -> 'a list
       val unfoldi: int * 'a * (int * 'a -> 'b * 'a) -> 'b vector
       val vector: int * 'a -> 'a vector
-
-      val unsafeSub: 'a vector * int -> 'a
-
-      val isPrefix: ('a * 'a -> bool) -> 'a vector -> 'a vector -> bool
-      val isSubsequence: ('a * 'a -> bool) -> 'a vector -> 'a vector -> bool
-      val isSuffix: ('a * 'a -> bool) -> 'a vector -> 'a vector -> bool
 
       (* Depreciated *)
       val checkSlice: 'a vector * int * int option -> int

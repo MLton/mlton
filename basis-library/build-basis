@@ -13,6 +13,7 @@ list/list.sig
 list/list.sml
 list/list-pair.sig
 list/list-pair.sml
+arrays-and-vectors/slice.sig
 arrays-and-vectors/sequence.sig
 arrays-and-vectors/sequence.fun
 arrays-and-vectors/vector-slice.sig

@@ -28,6 +28,7 @@ functor Sequence (S: sig
 	 if not isMutable andalso n = 0
 	    then Array.array0Const ()
 	 else Array.array n
+      val seq0 = fn () => fromArray (array 0)
 
       fun unfoldi (n, b, f) =
 	 let
@@ -79,18 +80,11 @@ functor Sequence (S: sig
 
       fun new (n, x) = tabulate (n, fn _ => x)
 
-      fun fromListOfLength (l, n) =
-	 let 
-	    val a = array n
-	    val rec loop =
-	       fn ([],     _) => ()
-		| (x :: l, i) => (Array.update (a, i, x)
-				  ; loop (l, i +? 1))
-	 in loop (l, 0)
-	    ; fromArray a
+      fun fromList l =
+	 let val a = array (List.length l)
+	 in List.foldl (fn (c, i) => (Array.update (a, i, c) ; i +? 1)) 0 l ;
+	    fromArray a
 	 end
-
-      fun fromList l = fromListOfLength (l, List.length l)
 
       structure Slice =
 	 struct
@@ -98,8 +92,7 @@ functor Sequence (S: sig
 	    type 'a elt = 'a elt
 	    type 'a slice = {seq: 'a sequence, start: int, len: int}
 
-	    fun base (sl: 'a slice as {seq, start, len}) = (seq, start, len)
-	    fun length (sl: 'a slice) = #len sl
+	    fun length (sl: 'a slice as {len, ...}) = len
 	    fun sub (sl: 'a slice as {seq, start, len}, i) =
 	       if Primitive.safe andalso Primitive.Int.geu (i, len)
 		  then raise Subscript
@@ -139,6 +132,7 @@ functor Sequence (S: sig
 	       subslice (full seq, start, len)
 	    fun unsafeSlice (seq: 'a sequence, start, len) =
 	       unsafeSubslice (full seq, start, len)
+	    fun base (sl: 'a slice as {seq, start, len}) = (seq, start, len)
 	    fun isEmpty sl = length sl = 0
 	    fun getItem (sl: 'a slice as {seq, start, len}) =
 	       if isEmpty sl
@@ -173,12 +167,12 @@ functor Sequence (S: sig
 	    end
 	    fun appi f sl = foldli (fn (i, x, ()) => f (i, x)) () sl
 	    fun app f sl = appi (f o #2) sl
-	    fun mapi' tabulate f (sl: 'a slice as {seq, start, len}) =
+	    fun createi tabulate f (sl: 'a slice as {seq, start, len}) =
 	       tabulate (len, fn i => let val j = start +? i
 				      in f (j, S.sub (seq, j))
 				      end)
-	    fun map' tabulate f sl = mapi' tabulate (f o #2) sl
-	    fun mapi f sl = mapi' tabulate f sl
+	    fun create tabulate f sl = createi tabulate (f o #2) sl
+	    fun mapi f sl = createi tabulate f sl
 	    fun map f sl = mapi (f o #2) sl
 	    fun findi p (sl: 'a slice as {seq, start, len}) = 
 	       let
@@ -217,20 +211,20 @@ functor Sequence (S: sig
 			    | ans => ans)
 	       in loop (min1, min2)
 	       end
-	    fun copy (sl as {seq, start, len}) =
+	    fun copy (sl: 'a slice as {seq, start, len}): 'a sequence =
 	       if isMutable orelse (start <> 0 orelse len <> S.length seq)
 		  then map (fn x => x) sl
 	       else seq
 	    fun concat (sls: 'a slice list): 'a sequence =
 	       case sls of
-		  [] => fromArray (array 0)
+		  [] => seq0 ()
 		| [sl] => copy sl
-		| sl::sls' =>
+		| sls' as sl::sls =>
 		     let
-		        val n = List.foldl (fn (sl, s) => s + length sl) 0 sls
+		        val n = List.foldl (fn (sl, s) => s + length sl) 0 sls'
 			        handle Overflow => raise Size
 		     in
-		        unfoldi (n, (0, sl, sls'),
+		        unfoldi (n, (0, sl, sls),
 				 fn (_, ac) =>
 				 let
 				    fun loop (i, sl, sls) =
@@ -242,7 +236,30 @@ functor Sequence (S: sig
 				 in loop ac
 				 end)
 		     end
-	    fun toList (sl: 'a slice) = foldr (fn (a,l) => a::l) [] sl
+	    fun concatWith (sep: 'a sequence) (sls: 'a slice list): 'a sequence =
+	       let val sep = full sep
+	       in case sls of
+		     [] => seq0 ()
+		   | [sl] => copy sl
+		   | sl::sls =>
+		       List.foldl (fn (sl,seq) => 
+				   concat [full seq, sep, full (copy sl)])
+		                  (copy sl) sls
+	       end
+	    fun triml k =
+	       if Primitive.safe andalso k < 0
+		  then raise Subscript
+	       else
+		  (fn (sl as {seq, start, len}) =>
+		   if k > len
+		      then unsafeSlice (seq, start +? len, SOME 0)
+		   else unsafeSlice (seq, start +? k, SOME (len -? k)))
+	    fun trimr k =
+	       if Primitive.safe andalso k < 0
+		  then raise Subscript
+	       else 
+		  (fn (sl as {seq, start, len}) =>
+		   unsafeSlice (seq, start, SOME (if k > len then 0 else len -? k)))
 	    fun isSubsequence (eq: 'a elt * 'a elt -> bool)
 	                      (seq: 'a sequence)
 			      (sl: 'a slice) =
@@ -307,7 +324,100 @@ functor Sequence (S: sig
 			  end
 		  else false
 	       end
-
+	    fun split (sl: 'a slice as {seq, start, len}, i) =
+	       (unsafeSlice (seq, start, SOME (i -? start)),
+		unsafeSlice (seq, i, SOME (len -? (i -? start))))
+	    fun splitl f (sl: 'a slice as {seq, start, len}) =
+	       let
+		  val stop = start +? len
+		  fun loop i =
+		     if i >= stop
+		        then i
+		     else if f (S.sub (seq, i))
+		             then loop (i +? 1)
+			  else i
+	       in split (sl, loop start)
+	       end
+	    fun splitr f (sl: 'a slice as {seq, start, len}) =
+	       let
+		  fun loop i =
+		     if i < start
+		        then start
+		     else if f (S.sub (seq, i))
+		             then loop (i -? 1)
+			  else i +? 1
+	       in split (sl, loop (start +? len -? 1))
+	       end
+	    fun splitAt (sl: 'a slice as {seq, start, len}, i) =
+	       if Primitive.safe andalso Primitive.Int.gtu (i, len)
+		  then raise Subscript
+	       else (unsafeSlice (seq, start, SOME i),
+		     unsafeSlice (seq, start +? i, SOME (len -? i)))
+	    fun dropl p s = #2 (splitl p s)
+	    fun dropr p s = #1 (splitr p s)
+	    fun takel p s = #1 (splitl p s)
+	    fun taker p s = #2 (splitr p s)
+	    fun position (eq: 'a elt * 'a elt -> bool)
+	                 (seq': 'a sequence)
+			 (sl: 'a slice as {seq, start, len}) =
+	       let
+		  val len' = S.length seq
+		  val max = start +? len -? len' +? 1
+		  (* loop returns the index of the front of the suffix. *)
+		  fun loop i =
+		     if i >= max
+		        then start +? len
+		     else let
+			     fun loop' j =
+			        if j >= len'
+				   then i
+				else if eq (S.sub (seq, i +? j), 
+					    S.sub (seq', j))
+				        then loop' (j +? 1)
+				     else loop (i +? 1)
+			  in loop' 0
+			  end
+	       in split (sl, loop start)
+	       end
+(*
+	    fun span (sl: ''a slice as {seq, start, len},
+		      sl': ''a slice as {seq = seq', start = start', len = len'}) =
+	       if Primitive.safe andalso 
+		  (seq <> seq' orelse start' < start)
+		  then raise Span
+	       else unsafeSlice (seq, start, SOME ((start' +? len') -? start))
+*)
+	    fun translate f (sl: 'a slice) =
+	       concat (List.rev (foldl (fn (c, l) => (full (f c)) :: l) [] sl))
+	    local
+	       fun make finish p (sl: 'a slice as {seq, start, len}) =
+		  let
+		     val max = start +? len
+		     fun loop (i, start, sls) =
+		        if i >= max
+			   then List.rev (finish (seq, start, i, sls))
+			else
+			   if p (S.sub (seq, i))
+			      then loop (i +? 1, i +? 1, finish (seq, start, i, sls))
+			   else loop (i +? 1, start, sls)
+		  in loop (start, start, []) 
+		  end
+	    in
+	       fun tokens p sl =
+		  make (fn (seq, start, stop, sls) =>
+			if start = stop
+			   then sls
+			else
+			   (unsafeSlice (seq, start, SOME (stop -? start)))
+			   :: sls)
+		       p sl
+	       fun fields p sl = 
+		  make (fn (seq, start, stop, sls) =>
+			(unsafeSlice (seq, start, SOME (stop -? start)))
+			:: sls)
+		       p sl
+	    end
+	    fun toList (sl: 'a slice) = foldr (fn (a,l) => a::l) [] sl
 	 end
 
       local
@@ -320,16 +430,15 @@ functor Sequence (S: sig
 	   Slice.update' update (Slice.full seq, i, x)
 	fun unsafeUpdate' update (seq, i, x) = 
 	   Slice.unsafeUpdate' update (Slice.full seq, i, x)
+	fun concat seqs = Slice.concat (List.map Slice.full seqs)
+	fun appi f = make (Slice.appi f)
+	fun app f = make (Slice.app f)
+	fun mapi f = make (Slice.mapi f)
+	fun map f = make (Slice.map f)
 	fun foldli f b = make (Slice.foldli f b)
 	fun foldri f b = make (Slice.foldri f b)
 	fun foldl f b = make (Slice.foldl f b)
 	fun foldr f b = make (Slice.foldr f b)
-	fun appi f = make (Slice.appi f)
-	fun app f = make (Slice.app f)
-	fun mapi' tabulate f = make (Slice.mapi' tabulate f)
-	fun map' tabulate f = make (Slice.map' tabulate f)
-	fun mapi f = make (Slice.mapi f)
-	fun map f = make (Slice.map f)
 	fun findi p = make (Slice.findi p)
 	fun find p = make (Slice.find p)
 	fun existsi p = make (Slice.existsi p)
@@ -337,12 +446,17 @@ functor Sequence (S: sig
 	fun alli p = make (Slice.alli p)
 	fun all p = make (Slice.all p)
 	fun collate cmp = make2 (Slice.collate cmp)
-	fun copy seq = make (Slice.copy) seq
-	fun concat seqs = Slice.concat (List.map Slice.full seqs)
-	fun toList seq = make (Slice.toList) seq
-	fun isSubsequence eq seq = make (Slice.isSubsequence eq seq)
+	fun concatWith sep seqs = Slice.concatWith sep (List.map Slice.full seqs)
 	fun isPrefix eq seq = make (Slice.isPrefix eq seq)
+	fun isSubsequence eq seq = make (Slice.isSubsequence eq seq)
 	fun isSuffix eq seq = make (Slice.isSuffix eq seq)
+	fun translate f = make (Slice.translate f)
+	fun tokens f seq = List.map Slice.copy (make (Slice.tokens f) seq)
+	fun fields f seq = List.map Slice.copy (make (Slice.fields f) seq)
+	fun copy seq = make (Slice.copy) seq
+	fun createi tabulate f seq = make (Slice.createi tabulate f) seq
+	fun create tabulate f seq = make (Slice.create tabulate f) seq
+	fun toList seq = make (Slice.toList) seq
       end
     
       (* Depreciated *)

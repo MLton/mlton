@@ -38,14 +38,33 @@ signature VECTOR_SLICE_EXTRA =
    sig
       include VECTOR_SLICE
 
-      val copy: 'a slice -> 'a vector
-      val toList: 'a slice -> 'a list
-
       val unsafeSub: 'a slice * int -> 'a
       val unsafeSlice: 'a vector * int * int option -> 'a slice
       val unsafeSubslice: 'a slice * int * int option -> 'a slice
 
+      (* Used to implement Substring/String functions *)
+      val concatWith: 'a vector -> 'a slice list -> 'a vector
+      val triml: int -> 'a slice -> 'a slice
+      val trimr: int -> 'a slice -> 'a slice
       val isPrefix: ('a * 'a -> bool) -> 'a vector -> 'a slice -> bool
-      val isSubsequence: ('a * 'a -> bool) -> 'a vector -> 'a slice -> bool
+      val isSubvector: ('a * 'a -> bool) -> 'a vector -> 'a slice -> bool
       val isSuffix: ('a * 'a -> bool) -> 'a vector -> 'a slice -> bool
+      val splitl: ('a -> bool) -> 'a slice -> 'a slice * 'a slice
+      val splitr: ('a -> bool) -> 'a slice -> 'a slice * 'a slice
+      val splitAt: 'a slice * int -> 'a slice * 'a slice
+      val dropl: ('a -> bool) -> 'a slice -> 'a slice
+      val dropr: ('a -> bool) -> 'a slice -> 'a slice
+      val takel: ('a -> bool) -> 'a slice -> 'a slice
+      val taker: ('a -> bool) -> 'a slice -> 'a slice
+      val position: ('a * 'a -> bool) -> 
+                    'a vector -> 'a slice -> 'a slice * 'a slice
+(*
+      val span: ('a * 'a -> bool) -> 'a slice * 'a slice -> 'a slice
+*)
+      val translate: ('a -> 'a vector) -> 'a slice -> 'a vector
+      val tokens: ('a -> bool) -> 'a slice -> 'a slice list
+      val fields: ('a -> bool) -> 'a slice -> 'a slice list
+
+      val copy: 'a slice -> 'a vector
+      val toList: 'a slice -> 'a list
    end
