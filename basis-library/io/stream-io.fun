@@ -419,10 +419,10 @@ functor StreamIOExtra
       fun input1 (is as In {pos, state, ...}) =
 	case !state of
 	  Link {inp, next} =>
-	     SOME (V.sub (inp, pos),
-		   if pos + 1 < V.length inp
-		      then updatePos (is, pos + 1)
-		   else updateState (is, next))
+	    SOME (V.sub (inp, pos),
+		  if pos + 1 < V.length inp
+		    then updatePos (is, pos + 1)
+		    else updateState (is, next))
 	| End => 
 	    let val _ = extendB "input1" is 
 	    in input1 is
@@ -463,15 +463,16 @@ functor StreamIOExtra
 		(case findLine (inp, pos) of
 		   SOME i => let
 			       val j = i + 1
-			       val (k, next) = if j < V.length inp
-						 then (j, state)
-						 else (0, next)
 			       val inp' = V.tabulate
 				          (j - pos,
 					   fn i => V.sub (inp, pos + i))
 			       val inps = inp'::inps
 			     in
-			       finish (inps, update (is, k, next), false)
+			       finish (inps, 
+				       if j < V.length inp
+					 then updatePos (is, j)
+					 else updateState (is, next),
+				       false)
 			     end
 		 | NONE => let
 			     val inp' = V.tabulate
