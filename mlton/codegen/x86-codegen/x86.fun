@@ -847,6 +847,10 @@ struct
 	        (Control.Detail,
 	         fn () => Layout.seq [Layout.str "memloc table size: ",
 			  	      HashSet.stats' (!table)]); *)
+	     HashSet.foreach
+	     (!table, 
+	      fn T {plist, ...} 
+	       => PropertyList.clear plist) ;
 	     table := HashSet.new {hash = hash})
       end
 
@@ -3445,6 +3449,7 @@ struct
 
       val jump = Jump
       val func = Func
+      val isFunc = fn Func _ => true | _ => false
       val cont = Cont
       val handler = Handler
       val runtime = Runtime

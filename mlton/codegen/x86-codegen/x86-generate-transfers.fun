@@ -5,6 +5,7 @@ struct
   open S
   open x86
   open x86JumpInfo
+  open x86LoopInfo
   open x86Liveness.LiveInfo
   open x86Liveness.Liveness
 
@@ -19,7 +20,8 @@ struct
     = x86LiveTransfers(structure x86 = x86
 		       structure x86MLton = x86MLton
 		       structure x86Liveness = x86Liveness
-		       structure x86JumpInfo = x86JumpInfo)
+		       structure x86JumpInfo = x86JumpInfo
+		       structure x86LoopInfo = x86LoopInfo)
 
   val pointerSize = x86MLton.pointerSize
   val wordSize = x86MLton.wordSize
@@ -34,7 +36,7 @@ struct
       x86.Register.bl::
       x86.Register.ecx::
       x86.Register.cl::
-      x86.Register.edx::
+      x86.Register.edx:: 
       x86.Register.dl::
       x86.Register.edi::
       x86.Register.esi::
@@ -59,7 +61,8 @@ struct
 				     unique : bool} -> 
 				    Assembly.t AppendList.t,
 			 effect : gef -> 
-			          {transfer : Transfer.t} ->
+			          {label : Label.t,
+				   transfer : Transfer.t} ->
 				  Assembly.t AppendList.t,
 			 fall : gef ->
 			        {label : Label.t,
@@ -169,13 +172,17 @@ struct
 	    ("verifyEntryTransfer", 
 	     fn () => x86EntryTransfer.verifyEntryTransfer {chunk = chunk})
 
+	val loopInfo
+	  = x86LoopInfo.createLoopInfo {chunk = chunk, farLoops = false}
+
 	val liveTransfers
 	  = x86LiveTransfers.computeLiveTransfers
 	    {chunk = chunk,
 	     transferRegs = transferRegs,
 	     transferFltRegs = transferFltRegs,
 	     liveInfo = liveInfo,
-	     jumpInfo = jumpInfo}
+	     jumpInfo = jumpInfo,
+	     loopInfo = loopInfo}
 	    handle exn
 	     => Error.bug ("x86LiveTransfers.computeLiveTransfers::" ^
 			   (case exn
@@ -188,13 +195,15 @@ struct
 	  = #2 o x86LiveTransfers.getLiveTransfers
 
 	val layoutInfo as {get = getLayoutInfo : Label.t -> Block.t option,
-			   set = setLayoutInfo}
-	  = Property.getSet(Label.plist, 
-			    Property.initRaise ("layoutInfo", Label.layout))
+			   set = setLayoutInfo,
+			   destroy = destLayoutInfo}
+	  = Property.destGetSet(Label.plist, 
+				Property.initRaise ("layoutInfo", Label.layout))
 	val profileInfo as {get = getProfileInfo : Label.t -> ProfileInfo.t,
-			    set = setProfileInfo}
-	  = Property.getSet(Label.plist, 
-			    Property.initRaise ("profileInfo", Label.layout))
+			    set = setProfileInfo,
+			    destroy = destProfileInfo}
+	  = Property.destGetSet(Label.plist, 
+				Property.initRaise ("profileInfo", Label.layout))
 
 	val _ 
 	  = List.foreach
@@ -208,16 +217,22 @@ struct
 		 end)
 
 	local
+	  val stack = ref []
 	  val queue = ref (Queue.empty ())
 	in
 	  fun enque x = queue := Queue.enque(!queue, x)
-	  fun deque () = case Queue.deque(!queue)
-			   of NONE => NONE
-			    | SOME(x, queue') => (queue := queue';
-						  SOME x)
+	  fun push x = stack := x::(!stack)
+
+	  fun deque () = (case (!stack)
+			    of [] => (case Queue.deque(!queue)
+					of NONE => NONE
+					 | SOME(x, queue') => (queue := queue';
+							       SOME x))
+			     | x::stack' => (stack := stack';
+					     SOME x))
 	end
 
-	fun enqueCompensationBlock {label, id}
+	fun pushCompensationBlock {label, id}
 	  = let
 	      val label' = Label.new label
 	      val profileInfo
@@ -243,12 +258,12 @@ struct
 	    in
 	      setLive(liveInfo, label', live);
 	      incNear(jumpInfo, label');
-	      Assert.assert("enqueCompensationBlock",
+	      Assert.assert("pushCompensationBlock",
 			    fn () => getNear(jumpInfo, label') = Count 1);
 	      x86LiveTransfers.setLiveTransfersEmpty(liveTransfers, label');
 	      setLayoutInfo(label', SOME block);
 	      setProfileInfo(label', profileInfo);
-	      enque label';
+	      push label';
 	      label'
 	    end
 
@@ -491,7 +506,8 @@ struct
 
 		     val statements = AppendList.fromList statements
 
-		     val transfer = effect gef {transfer = transfer}
+		     val transfer = effect gef {label = label, 
+						transfer = transfer}
 		   in
 		     AppendList.appends 
 		     [pre,
@@ -501,7 +517,7 @@ struct
 
 	datatype z = datatype Transfer.t
 	fun effectDefault (gef as GEF {generate,effect,fall})
-	                  {transfer} : Assembly.t AppendList.t
+	                  {label, transfer} : Assembly.t AppendList.t
 	  = AppendList.append
 	    (if !Control.Native.commented > 1
 	       then AppendList.single
@@ -532,8 +548,8 @@ struct
 		       = let
 			   val id = Directive.Id.new ()
 			   val falsee'
-			     = enqueCompensationBlock {label = falsee,
-						       id = id};
+			     = pushCompensationBlock {label = falsee,
+						      id = id};
 			 in
 			   AppendList.append
 			   (AppendList.fromList
@@ -562,8 +578,8 @@ struct
 		     fun fall_falsee ()
 		       = let
 			   val id = Directive.Id.new ()
-			   val truee' = enqueCompensationBlock {label = truee,
-								id = id};
+			   val truee' = pushCompensationBlock {label = truee,
+							       id = id};
 			 in
 			   AppendList.append
 			   (AppendList.fromList
@@ -589,20 +605,36 @@ struct
 				   live = falsee_live}))
 			 end
 		   in
-		     case (getNear(jumpInfo, truee),
-			   getNear(jumpInfo, falsee))
-		       of (Count 1, Count 1)
-			=> if truee_live_length <= falsee_live_length
-			     then fall_falsee ()
-			     else fall_truee ()
-			| (Count 1, _)
-		        => fall_truee ()
-		        | (_, Count 1)
-		        => fall_falsee ()
-		        | _
-		        => if truee_live_length <= falsee_live_length
-		             then fall_falsee ()
-		             else fall_truee ()
+		     case (getLayoutInfo truee,
+			   getLayoutInfo falsee)
+		       of (NONE, SOME _) => fall_falsee ()
+			| (SOME _, NONE) => fall_truee ()
+			| _ 
+			=> let
+			     fun default' ()
+			       = if truee_live_length <= falsee_live_length
+				   then fall_falsee ()
+				   else fall_truee ()
+
+			     fun default ()
+			       = case (getNear(jumpInfo, truee),
+				       getNear(jumpInfo, falsee))
+				   of (Count 1, Count 1) => default' ()
+				    | (Count 1, _) => fall_truee ()
+				    | (_, Count 1) => fall_falsee ()
+				    | _ => default' ()
+			   in 
+			     case (getLoopDistance(loopInfo, label, truee),
+				   getLoopDistance(loopInfo, label, falsee))
+			       of (NONE, NONE) => default ()
+				| (SOME _, NONE) => fall_truee ()
+				| (NONE, SOME _) => fall_falsee ()
+			        | (SOME dtruee, SOME dfalsee)
+				=> (case Int.compare(dtruee, dfalsee)
+				      of EQUAL => default ()
+				       | LESS => fall_falsee ()
+				       | MORE => fall_truee ())
+			   end
 		   end
 		| Switch {test, cases, default}
 		=> let
@@ -626,7 +658,7 @@ struct
 				val target_live
 				  = getLive(liveInfo, target)
 				val id = Directive.Id.new ()
-				val target' = enqueCompensationBlock 
+				val target' = pushCompensationBlock 
 				              {label = target,
 					       id = id}
 			      in
@@ -1271,7 +1303,7 @@ struct
 		   end)
 
         fun effectJumpTable (gef as GEF {generate,effect,fall})
-	                     {transfer} : Assembly.t AppendList.t
+	                     {label, transfer} : Assembly.t AppendList.t
 	  = case transfer
 	      of Switch {test, cases, default}
 	       => let
@@ -1361,7 +1393,7 @@ struct
 			    = Label.newString "jumpTable"
 
 			  val idT = Directive.Id.new ()
-			  val defaultT = enqueCompensationBlock
+			  val defaultT = pushCompensationBlock
 			                 {label = default,
 					  id = idT}
 
@@ -1371,7 +1403,7 @@ struct
 			       => if i = j
 				    then let
 					   val target'
-					     = enqueCompensationBlock
+					     = pushCompensationBlock
 					       {label = target,
 						id = idT}
 					 in 
@@ -1450,7 +1482,7 @@ struct
 			   if shift > 0
 			     then let
 				    val idC = Directive.Id.new ()
-				    val defaultC = enqueCompensationBlock
+				    val defaultC = pushCompensationBlock
 				                   {label = default,
 						    id = idC}
 				    val _ = incNear(jumpInfo, default)
@@ -1593,7 +1625,8 @@ struct
 					     constFn)
 				 end
 			    else effectDefault gef
-			                       {transfer = transfer}
+			                       {label = label, 
+						transfer = transfer}
 			end
 		  in
 		    case cases
@@ -1650,7 +1683,8 @@ struct
 			   Immediate.const_word)
 		  end
 	       | _ => effectDefault gef 
-		                    {transfer = transfer}
+		                    {label = label,
+				     transfer = transfer}
 
 	fun fallNone (gef as GEF {generate,effect,fall})
 	             {label, live} : Assembly.t AppendList.t
@@ -1721,7 +1755,7 @@ struct
 		of NONE
 		 => default ()
 		 | SOME (block as Block.T {entry,...})
-		 => (enque label;
+		 => (push label;
 		     default ())
 	    end
 
@@ -1859,6 +1893,8 @@ struct
 		      of [] => doit ()
 		       | block => block::(doit ())))
 	val assembly = doit ()
+	val _ = destLayoutInfo ()
+	val _ = destProfileInfo ()
       in
 	assembly
       end

@@ -1029,6 +1029,7 @@ signature X86 =
 	val jump : {label: Label.t} -> t
 	val func : {label: Label.t,
 		    live: MemLocSet.t} -> t
+	val isFunc : t -> bool
 	val cont : {label: Label.t,
 		    live: MemLocSet.t,
 		    frameInfo: FrameInfo.t} -> t

@@ -12,6 +12,8 @@ signature X86_LIVE_TRANSFERS_STRUCTS =
     sharing x86.MemLocSet = x86Liveness.LiveSet
     structure x86JumpInfo : X86_JUMP_INFO
     sharing x86 = x86JumpInfo.x86
+    structure x86LoopInfo : X86_LOOP_INFO
+    sharing x86 = x86LoopInfo.x86
   end
 
 signature X86_LIVE_TRANSFERS =
@@ -24,7 +26,8 @@ signature X86_LIVE_TRANSFERS =
 				transferRegs : x86.Register.t list,
 				transferFltRegs : Int.t, 
 				liveInfo : x86Liveness.LiveInfo.t,
-				jumpInfo : x86JumpInfo.t} -> t
+				jumpInfo : x86JumpInfo.t,
+				loopInfo : x86LoopInfo.t} -> t
     val computeLiveTransfers_totals : unit -> unit
 
     val getLiveTransfers : t * x86.Label.t -> 

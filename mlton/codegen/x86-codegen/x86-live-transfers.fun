@@ -13,10 +13,7 @@ struct
   structure LiveSet = x86Liveness.LiveSet
   structure LiveInfo = x86Liveness.LiveInfo
   open x86JumpInfo
-
-  structure Graph = DirectedGraph
-  structure Node = Graph.Node
-  structure Edge = Graph.Edge
+  open x86LoopInfo
 
   fun take (l, n) 
     = let
@@ -178,7 +175,8 @@ struct
 			    transferRegs : Register.t list,
 			    transferFltRegs : Int.t,
 			    liveInfo : x86Liveness.LiveInfo.t,
-			    jumpInfo : x86JumpInfo.t}
+			    jumpInfo : x86JumpInfo.t,
+			    loopInfo : x86LoopInfo.t}
     = let
 	val (useLF, useB, sync)
 	  = case !Control.Native.liveTransfer
@@ -198,7 +196,6 @@ struct
 	  as {get = getInfo :
 	            Label.t -> 
 		    {block: Block.t,
-		     node: Node.t,
 		     pred: Label.t list ref,
 		     succ: Label.t list ref,
 		     live: {memloc: MemLoc.t,
@@ -209,27 +206,11 @@ struct
 		     liveTransfers: ((MemLoc.t * Register.t * bool ref) list *
 				     (MemLoc.t * bool ref) list) option ref,
 		     defed: MemLocSet.t option ref},
-	      set = setInfo}
-	  = Property.getSetOnce
+	      set = setInfo,
+	      destroy = destInfo}
+	  = Property.destGetSetOnce
 	    (Label.plist,
 	     Property.initRaise ("x86LiveTransfers:getInfo", Label.layout))
-
-	val {get = getNodeInfo : Node.t -> Label.t, 
-	     set = setNodeInfo}
-	  = Property.getSetOnce
-	    (Node.plist,
-	     Property.initRaise ("nodeInfo", Node.layout))
-
-	val G = Graph.new ()
-	val root = Graph.newNode G
-	val rootLabel = Label.newString "root"
-	val _ = setNodeInfo(root, rootLabel)
-	fun addEdge edge
-	  = (Graph.addEdge (G, edge) ; ())
-	fun addEdge' edge
-	  = if Node.hasEdge edge
-	      then ()
-	      else addEdge edge
 
 	val (labels, funcs)
 	  = List.fold
@@ -246,12 +227,9 @@ struct
 			       fn (label, live)
 			        => LiveSet.+(live, LiveInfo.getLive(liveInfo, label)))
 		   val live = LiveSet.toList live
-		   val n = Graph.newNode G
-		   val _ = setNodeInfo(n, label)
 		   val _ 
 		     = setInfo(label,
 			       {block = block,
-				node = n,
 				pred = ref [],
 				succ = ref succ,
 				live = Vector.fromListMap
@@ -280,28 +258,23 @@ struct
 	    (labels,
 	     fn label
 	      => let
-		   val {node, block, ...} = getInfo label
+		   val {block, ...} = getInfo label
 		   fun doit' target
 		     = let
-			 val {node = node', pred = pred', ...} = getInfo target
+			 val {pred = pred', ...} = getInfo target
 		       in
-			 addEdge {from = node, to = node'};
 			 List.push (pred', label)
 		       end
 		   fun doit'' target
 		     = let
-			 val {node = node', pred = pred', ...} = getInfo target
+			 val {pred = pred', ...} = getInfo target
 		       in
-			 addEdge {from = root, to = node'};
 			 List.push (pred', label)
 		       end
 		   val Block.T {entry, transfer, ...} = block
 		   datatype z = datatype Entry.t
 		   datatype z = datatype Transfer.t
 		 in
-		   case entry
-		     of Func {label, ...} => doit'' label
-		      | _ => () ;
 		   case transfer
 		     of Goto {target, ...} 
 		      => doit' target
@@ -327,58 +300,6 @@ struct
 		      | CCall {dst, return, ...}
 		      => (doit' return)
 		 end)
-
-	val {forest, graphToForest, loopNodes, parent}
-	  = Graph.loopForestSteensgaard {graph = G, root = root}
-
-(*
-	val graphLayout
-	  = let
-	      open Graph.LayoutDot
-	    in
-	      layout
-	      {graph = G,
-	       title = "callGraph",
-	       options = [],
-	       edgeOptions = fn _ => [],
-	       nodeOptions = fn n => [NodeOption.label 
-				      (Label.toString (getNodeInfo n))]}
-	    end
-	val _ = Control.saveToFile
-	        ({suffix = concat [Label.toString (Vector.sub(funcs, 0)), 
-				   ".callGraph.dot"]}, 
-		 graphLayout)
-
-	val forestLayout
-	  = let
-	      open Graph.LayoutDot
-	    in
-	      layout
-	      {graph = forest,
-	       title = "loopForestSteensgaard",
-	       options = [],
-	       edgeOptions = fn _ => [],
-	       nodeOptions = let
-			       open NodeOption
-			     in 
-			       fn n => let
-					 val ns = loopNodes n
-				       in
-					 [label (List.toString 
-						 (Label.toString o getNodeInfo)
-						 ns),
-					  case ns
-					    of nil => Shape Diamond
-					     | _::nil => Shape Box
-					     | _ => Shape Ellipse]
-				       end
-			     end}
-	    end
-	val _ = Control.saveToFile
-	        ({suffix = concat [Label.toString (Vector.sub(funcs, 0)), 
-				   ".loopForest.dot"]}, 
-		 forestLayout)
-*)
 
 	val _
 	  = Vector.foreach
@@ -478,7 +399,7 @@ struct
 	fun get_distanceF {temp: MemLoc.t,
 			   label: Label.t}
 	  = let
-	      val {block, node, succ, live, ...} = getInfo label
+	      val {block, succ, live, ...} = getInfo label
 	      val Block.T {transfer, ...} = block
 	    in
 	      case Vector.peek
@@ -493,10 +414,10 @@ struct
 			| Length n
 			=> let
 			     val loopLabels
-			       = case parent(graphToForest node)
+			       = case getLoopTreeAt(loopInfo, label)
 				   of NONE => []
-				    | SOME node 
-				    => List.map(loopNodes node, getNodeInfo)
+				    | SOME {up = Tree.T (loopLabels, _), ...}
+				    => loopLabels
 			     val _ = distanceF := SOME (I.PosInfinity, NONE)
 			     fun default ()
 			       = let
@@ -552,7 +473,7 @@ struct
 	fun get_distanceB {temp: MemLoc.t,
 			   label: Label.t}
 	  = let
-	      val {block, node, pred, live, ...} = getInfo label
+	      val {block, pred, live, ...} = getInfo label
 	      val Block.T {entry, ...} = block
 	    in
 	      case Vector.peek
@@ -563,10 +484,10 @@ struct
 		 | SOME {distanceB, ...}
 		 => let
 		      val loopLabels
-			= case parent(graphToForest node)
+			= case getLoopTreeAt(loopInfo, label)
 			    of NONE => []
-			     | SOME node 
-			     => List.map(loopNodes node, getNodeInfo)
+			     | SOME {up = Tree.T (loopLabels, _), ...} 
+			     => loopLabels
 		      val _ = distanceB := SOME (I.PosInfinity, NONE)
 		      fun default () 
 			= List.fold
@@ -640,17 +561,16 @@ struct
 
 	fun doit {label, hints}
 	  = let
-	      val {block, node, pred, succ, liveTransfers, ...} = getInfo label
+	      val {block, pred, succ, liveTransfers, ...} = getInfo label
 	    in
 	      case !liveTransfers
 		of SOME _ => ()
 		 | NONE 
 		 => let
 		      val loopLabels
-			= case parent(graphToForest node)
+			= case getLoopTreeAt(loopInfo, label)
 			    of NONE => []
-			     | SOME node 
-			     => List.map(loopNodes node, getNodeInfo)
+			     | SOME {up = Tree.T (loopLabels, _), ...} => loopLabels
 		      val Block.T {transfer, ...} = block
 			
 		      val (regHints, fltregHints) = hints
@@ -1058,6 +978,7 @@ struct
 		       setLiveTransfers(label, (liveRegs, liveFltRegs))
 		     end)
 
+	val _ = destInfo ()
       in
 	T {get = getLiveTransfers,
 	   set = setLiveTransfers}
@@ -1065,13 +986,14 @@ struct
 
 
   val computeLiveTransfers 
-    = fn {chunk, transferRegs, transferFltRegs, liveInfo, jumpInfo}
+    = fn {chunk, transferRegs, transferFltRegs, liveInfo, jumpInfo, loopInfo}
        => if !Control.Native.liveTransfer > 0
 	    then computeLiveTransfers {chunk = chunk, 
 				       transferRegs = transferRegs,
 				       transferFltRegs = transferFltRegs,
 				       liveInfo = liveInfo, 
-				       jumpInfo = jumpInfo}
+				       jumpInfo = jumpInfo,
+				       loopInfo = loopInfo}
 	    else let
 		   val liveTransfers
 		    as {get = getLiveTransfers,
@@ -1087,7 +1009,8 @@ struct
 			       transferRegs : Register.t list,
 			       transferFltRegs : Int.t,
 			       liveInfo : LiveInfo.t,
-			       jumpInfo : x86JumpInfo.t} -> t,
+			       jumpInfo : x86JumpInfo.t,
+			       loopInfo : x86LoopInfo.t} -> t,
        computeLiveTransfers_msg)
     = tracerTop
       "computeLiveTransfers"
