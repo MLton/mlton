@@ -119,17 +119,17 @@ structure Elaborate =
       fun enabled (T {enabled, ...}) = enabled
 
       local
-	 fun make {name: string, 
-		   default: 'a, 
-		   toString: 'a -> string,
-		   expert: bool,
-		   options: string list -> 'b option,
-		   newCur: 'a * 'b -> 'a,
-		   newDef: 'a * 'b -> 'a,
-		   withDef: unit -> (unit -> unit),
-		   withAnn: string list -> (unit -> unit) option,
-		   setDef: string list -> bool,
-		   setAble: bool * string -> bool} =
+	 fun make ({name: string, 
+		    default: 'a, 
+		    toString: 'a -> string,
+		    expert: bool,
+		    options: string list -> 'b option,
+		    newCur: 'a * 'b -> 'a,
+		    newDef: 'a * 'b -> 'a},
+		   {withDef: unit -> (unit -> unit),
+		    withAnn: string list -> (unit -> unit) option,
+		    setDef: string list -> bool,
+		    setAble: bool * string -> bool}) =
 	    let
 	       val ctrl as T {cur, def, enabled} =
 		  T {cur = ref default,
@@ -200,89 +200,71 @@ structure Elaborate =
 		     then (enabled := b; true)
 		     else setAble (b, s)
 	    in
-	       {ctrl = ctrl,
-		withDef = withDef,
-		withAnn = withAnn,
-		setDef = setDef,
-		setAble = setAble}
+	       (ctrl,
+		{withDef = withDef,
+		 withAnn = withAnn,
+		 setDef = setDef,
+		 setAble = setAble})
 	    end
 
-	 fun makeBool {name, default, expert,
-		       withDef: unit -> (unit -> unit),
-		       withAnn: string list -> (unit -> unit) option,
-		       setDef: string list -> bool,
-		       setAble: bool * string -> bool} =
-	    make {name = name,
-		  default = default, 
-		  toString = Bool.toString,
-		  expert = expert,
-		  options = fn ss => 
-		    case ss of 
-		       [s] => Bool.fromString s 
-		     | _ => NONE,
-		  newCur = fn (_,b) => b,
-		  newDef = fn (_,b) => b,
-		  withDef = withDef, withAnn = withAnn,
-		  setDef = setDef, setAble = setAble}
+	 fun makeBool ({name: string,
+			default: bool,
+			expert: bool}, ac) =
+	    make ({name = name,
+		   default = default, 
+		   toString = Bool.toString,
+		   expert = expert,
+		   options = fn ss => 
+		   case ss of 
+		      [s] => Bool.fromString s 
+		    | _ => NONE,
+			 newCur = fn (_,b) => b,
+			 newDef = fn (_,b) => b},
+		  ac)
       in
-	 val {withDef, withAnn, setDef, setAble} =
+	 val ac =
 	    {withDef = fn () => (fn () => ()),
 	     withAnn = fn _ => NONE,
 	     setDef = fn _ => false,
 	     setAble = fn _ => false}
-	 val {ctrl = allowConstant, withDef, withAnn, setDef, setAble} =
-	    makeBool {name = "allowConstant", default = false, expert = true,
-		      withDef = withDef, withAnn = withAnn,
-		      setDef = setDef, setAble = setAble}
-	 val {ctrl = allowExport, withDef, withAnn, setDef, setAble} =
-	    makeBool {name = "allowExport", default = false, expert = false,
-		      withDef = withDef, withAnn = withAnn,
-		      setDef = setDef, setAble = setAble}
-	 val {ctrl = allowImport, withDef, withAnn, setDef, setAble} =
-	    makeBool {name = "allowImport", default = false, expert = false,
-		      withDef = withDef, withAnn = withAnn,
-		      setDef = setDef, setAble = setAble}
-	 val {ctrl = allowPrim, withDef, withAnn, setDef, setAble} =
-	    makeBool {name = "allowPrim", default = false, expert = true,
-		      withDef = withDef, withAnn = withAnn,
-		      setDef = setDef, setAble = setAble}
-	 val {ctrl = allowOverload, withDef, withAnn, setDef, setAble} =
-	    makeBool {name = "allowOverload", default = false, expert = true,
-		      withDef = withDef, withAnn = withAnn,
-		      setDef = setDef, setAble = setAble}
-	 val {ctrl = allowRebindEquals, withDef, withAnn, setDef, setAble} =
-	    makeBool {name = "allowRebindEquals", default = false, expert = true,
-		      withDef = withDef, withAnn = withAnn,
-		      setDef = setDef, setAble = setAble}
-	 val {ctrl = deadCode, withDef, withAnn, setDef, setAble} =
-	    makeBool {name = "deadCode", default = false, expert = false,
-		      withDef = withDef, withAnn = withAnn,
-		      setDef = setDef, setAble = setAble}
-	 val {ctrl = forceUsed, withDef, withAnn, setDef, setAble} =
-	    make {name = "forceUsed",
-		  default = 0, 
-		  toString = Int.toString,
-		  expert = false,
-		  options = fn ss => 
-		    case ss of 
-		       [] => SOME ()
-		     | _ => NONE,
-		  newCur = fn (i,()) => i + 1,
-		  newDef = fn (_,()) => 1,
-		  withDef = withDef, withAnn = withAnn,
-		  setDef = setDef, setAble = setAble}
-	 val {ctrl = sequenceUnit, withDef, withAnn, setDef, setAble} =
-	    makeBool {name = "sequenceUnit", default = false, expert = false,
-		      withDef = withDef, withAnn = withAnn,
-		      setDef = setDef, setAble = setAble}
-	 val {ctrl = warnMatch, withDef, withAnn, setDef, setAble} =
-	    makeBool {name = "warnMatch", default = true, expert = false,
-		      withDef = withDef, withAnn = withAnn,
-		      setDef = setDef, setAble = setAble}
-	 val {ctrl = warnUnused, withDef, withAnn, setDef, setAble} =
-	    makeBool {name = "warnUnused", default = false, expert = false,
-		      withDef = withDef, withAnn = withAnn,
-		      setDef = setDef, setAble = setAble}
+	 val (allowConstant, ac) =
+	    makeBool ({name = "allowConstant", default = false, expert = true},
+		      ac)
+	 val (allowExport, ac) =
+	    makeBool ({name = "allowExport", default = false, expert = false},
+		      ac)
+	 val (allowImport, ac) =
+	    makeBool ({name = "allowImport", default = false, expert = false},
+		      ac)
+	 val (allowPrim, ac) =
+	    makeBool ({name = "allowPrim", default = false, expert = true}, ac)
+	 val (allowOverload, ac) =
+	    makeBool ({name = "allowOverload", default = false, expert = false},
+		      ac)
+	 val (allowRebindEquals, ac) =
+	    makeBool ({name = "allowRebindEquals", default = false,
+		       expert = true},
+		      ac)
+	 val (deadCode, ac) =
+	    makeBool ({name = "deadCode", default = false, expert = false}, ac)
+	 val (forceUsed, ac) =
+	    make ({name = "forceUsed",
+		   default = 0, 
+		   toString = Int.toString,
+		   expert = false,
+		   options = fn ss => 
+		   case ss of 
+		      [] => SOME ()
+		    | _ => NONE,
+			 newCur = fn (i,()) => i + 1,
+			 newDef = fn (_,()) => 1}, ac)
+	 val (sequenceUnit, ac) =
+	    makeBool ({name = "sequenceUnit", default = false, expert = false},
+		      ac)
+	 val (warnMatch, ac) =
+	    makeBool ({name = "warnMatch", default = true, expert = false}, ac)
+	 val (warnUnused, {setAble, setDef, withAnn, withDef}) =
+	    makeBool ({name = "warnUnused", default = false, expert = false}, ac)
       end
 
       val withDef : (unit -> 'a) -> 'a = fn f =>
