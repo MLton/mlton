@@ -740,7 +740,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	  let
 	    val _ =
 	       S.Function.foreachVar (f, fn (x, t) => setVarInfo (x, {ty = t}))
-	     val {args, blocks, name, start, ...} = S.Function.dest f
+	    val {args, blocks, name, start, ...} = S.Function.dest f
 	    val _ =
 	       Vector.foreach
 		(blocks, fn S.Block.T {label, args, ...} =>
