@@ -66,6 +66,16 @@ post-extract:
 		"s|lib=\'${LOCALBASE}/|lib=\'${BOOT_WRKSRC}/|" \
 	${BOOT_WRKSRC}/bin/mlton
 
+post-install:
+        for f in mllex mlprof mlton mlyacc; do          \
+                ${CHOWN} ${SHAREOWN}:${SHAREGRP}        \
+                        ${PREFIX}/bin/$$f               \
+                        ${PREFIX}/man/man1/$$f.1.gz;    \
+        done
+        ${CHOWN} ${SHAREOWN}:${SHAREGRP}                \
+                ${PREFIX}/lib/mlton                     \
+                ${PREFIX}/share/doc/mlton
+
 # Stuff below this line is for maintainer use only.
 
 .PHONY: build-package
