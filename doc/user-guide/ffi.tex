@@ -24,22 +24,31 @@ char}, and {\tt i} of type {\tt int}.  Then, the C statement
 \mbox{\tt i = foo(d, c)} is executed and {\tt i} is returned.
 
 The general form of an \verb+_ffi+ declaration is:
-\begin{verbatim}
-_ffi "C global variable or function name": ty;
-\end{verbatim}
+\begin{center}
+{\tt \_ffi "}C global variable or function name{\tt ": }ty{\tt ;}
+\end{center}
+
 The semicolon is not optional.  Here is a grammar for the types that
 are currently allowed.
-\[
-\begin{array}{lcl}
+\begin{center}
+\begin{tabular}{l}
 \production{\mbox{ty}}
 	   {u \alt t\ \mbox{\tt *}\ \ldots\ \mbox{\tt *}\ t\ \mbox{\tt ->}\ u}
+\production{u}
+	   {\mbox{\tt bool} \alt \mbox{\tt char} \alt \mbox{\tt int} \alt \mbox{\tt real} \alt \mbox{\tt string} \alt \mbox{\tt unit} \alt \mbox{\tt word} \alt \mbox{\tt word8}}
 \production{t}
 	   {u \alt u\ \mbox{\tt array} \alt u\ \mbox{\tt ref}
              \alt u\ \mbox{\tt vector}}
-\production{u}
-	   {\mbox{\tt bool} \alt \mbox{\tt char} \alt \mbox{\tt int} \alt \mbox{\tt real} \alt \mbox{\tt string} \alt \mbox{\tt unit} \alt \mbox{\tt word} \alt \mbox{\tt word8}}
-\end{array}
-\]
+\quad \alt \mbox{\tt CharArray.array} \alt \mbox{\tt CharVector.vector} \\
+\quad \alt \mbox{\tt IntArray.array} \alt \mbox{\tt IntVector.vector} \\
+\quad \alt \mbox{\tt Int32Array.array} \alt \mbox{\tt Int32Vector.vector} \\
+\quad \alt \mbox{\tt RealArray.array} \alt \mbox{\tt RealVector.vector} \\
+\quad \alt \mbox{\tt Real64Array.array} \alt \mbox{\tt Real64Vector.vector} \\
+\quad \alt \mbox{\tt Word8Array.array} \alt \mbox{\tt Word8Vector.vector} \\
+\quad \alt \mbox{\tt Word32Array.array} \alt \mbox{\tt Word32Vector.vector} \\
+\end{tabular}
+\end{center}
+
 Here is the mapping between SML types and C types.
 \begin{center}
 \begin{tabular}{ll}
@@ -98,12 +107,13 @@ so from the SML side.
 
 \subsection{Type checking programs that use {\tt \_ffi}}
 
-Because {\mlton} has poor type checking, it is necessary to type check programs
-that use {\tt \_ffi} with another SML compiler.  This can be done by a standard
-process using a Makefile and {\tt sed}.  Suppose that you have a file, {\tt
-mlxtest.cm}, that describes your {\mlton} project, and that it refers to a file,
-{\tt mlx.sml}, that uses {\tt \_ffi}.  The following Makefile will let you
-type-check your code with {\smlnj} by typing {\tt make typecheck}.
+Because {\mlton} has nonstandard type checking, it is necessary to
+type check programs that use {\tt \_ffi} with another SML compiler.
+This can be done by a standard process using a Makefile and {\tt sed}.
+Suppose that you have a file, {\tt mlxtest.cm}, that describes your
+{\mlton} project, and that it refers to a file, {\tt mlx.sml}, that
+uses {\tt \_ffi}.  The following Makefile will let you type-check your
+code with {\smlnj} by typing {\tt make typecheck}.
 
 \begin{verbatim}
 nj: *.sml *.cm
