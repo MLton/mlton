@@ -102,6 +102,7 @@ signature VECTOR =
       val peeki: 'a t * (int * 'a -> bool) -> (int * 'a) option
       val peekMap: 'a t * ('a -> 'b option) -> 'b option
       val peekMapi: 'a t * ('a -> 'b option) -> (int * 'b) option
+      val removeFirst: 'a t * ('a -> bool) -> 'a t
       val rev: 'a t -> 'a t
       val splitLast: 'a t -> 'a t * 'a
       val tabulate: int * (int -> 'a) -> 'a t

@@ -513,4 +513,17 @@ fun isSubsequence (va, vb, f) =
       loop (0, 0)
    end
 
+fun removeFirst (v, f) =
+   let
+      val seen = ref false
+      val v = keepAll (v, fn a =>
+		       not (f a)
+		       orelse (!seen)
+		       orelse (seen := true
+			       ; false))
+      val _ = if !seen then () else Error.bug "Vector.removeFirst"
+   in
+      v
+   end
+
 end
