@@ -38,9 +38,6 @@ BFLAGS = -mlton "/usr/bin/mlton" -mlton "mlton -optimize-ssa {false,true}"
 BFLAGS = -html -mlton "/usr/bin/mlton" -mlkit -mosml -poly -smlnj
 BFLAGS = -mlton "$(BIN)/mlton"
 
-BENCH = flat-array
-BFLAGS = -mlton "$(BIN)/mlton {-drop-pass deepFlatten,}"
-
 .PHONY: test
 test: $(NAME)
 	cd tests && ../benchmark $(BFLAGS) $(BENCH)
