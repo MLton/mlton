@@ -13,16 +13,18 @@ signature SUBSTRING_1997 =
       val triml: int -> substring -> substring
       val trimr: int -> substring -> substring
       val slice: (substring * int * int option) -> substring
-      val sub: (substring * int) -> char
+      val sub: (substring * int) -> String.Char.char
       val size: substring -> int
       val concat: substring list -> String.string
       val explode: substring -> String.Char.char list
       val isPrefix: String.string -> substring -> bool
       val compare: (substring * substring) -> order
-      val collate: ((String.Char.char * String.Char.char) -> order) -> 
-                   (substring * substring) -> order
-      val splitl: (String.Char.char -> bool) -> substring -> (substring * substring)
-      val splitr: (String.Char.char -> bool) -> substring -> (substring * substring)
+      val collate: ((String.Char.char * String.Char.char) -> order)
+	           -> (substring * substring) -> order
+      val splitl: ((String.Char.char -> bool)
+		   -> substring -> (substring * substring))
+      val splitr: ((String.Char.char -> bool)
+		   -> substring -> (substring * substring))
       val splitAt: (substring * int) -> (substring * substring)
       val dropl: (String.Char.char -> bool) -> substring -> substring
       val dropr: (String.Char.char -> bool) -> substring -> substring
@@ -30,7 +32,8 @@ signature SUBSTRING_1997 =
       val taker: (String.Char.char -> bool) -> substring -> substring
       val position: String.string -> substring -> (substring * substring)
       val span: (substring * substring) -> substring
-      val translate: (String.Char.char -> String.string) -> substring -> String.string
+      val translate: ((String.Char.char -> String.string)
+		      -> substring -> String.string)
       val tokens: (String.Char.char -> bool) -> substring -> substring list
       val fields: (String.Char.char -> bool) -> substring -> substring list
       val foldl: ((String.Char.char * 'a) -> 'a) -> 'a -> substring -> 'a
