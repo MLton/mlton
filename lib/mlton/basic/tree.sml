@@ -3,6 +3,14 @@ struct
 
 datatype 'a t = T of 'a * 'a t vector
 
+fun foldPre (T (a, v), b, f) =
+   Vector.fold (v, f (a, b), fn (t, b) =>
+		foldPre (t, b, f))
+
+fun foldPost (T (a, v), b, f) =
+   f (a, Vector.fold (v, b, fn (t, b) =>
+		      foldPost (t, b, f)))
+
 fun traverse (t, f) =
    let
       fun loop (T (a, v)) =
