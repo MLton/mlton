@@ -64,14 +64,16 @@ due to bugs in Cygwin's emulation.
 
 \begin{enumerate}
 
-\item Due to a bug in mmap/fork, fork does not work correctly.  Any call to {\tt
-Posix.Process.fork} will raise the Fail exception.  The Cygwin developers claim
-to have fixed the bug (3/11/02) and I will try it out soon.  This problem may be
-avoided in some situations by using spawn, which I will add to the MLton basis
-library soon.
+\item There is a bug in fork, which I am still investigating.  For idiomatic
+uses of fork + exec, this problem may be avoided by using the {\tt
+MLton.Process.spawn} family of functions. 
 
-\item Due to a bug in mmap, large heaps do not work correctly.  This may
-cause seg faults on programs that use a lot of memory.  I am working with the
-Cygwin developers to fix the problem.
+\item There was a bug in mmap that caused large heaps to not work correctly.
+This may even cause seg faults on programs that use a lot of memory.  There was
+a fix available in the Cygwin developer snapshot 2002-Mar-16 available at
+{\tt http://cygwin.com/snapshots/}.  I am still unsure if problems remain.
+
+\item I am not confident in the correctness of Cygwin's emulation of signals and
+signal handlers, and am still investigating them.
 
 \end{enumerate}
