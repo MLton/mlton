@@ -1436,7 +1436,7 @@ structure Function =
 			List.fold
 			(rev decs, [(concat rest, Left)], fn (b, ac) =>
 			 case b of 
-			    Bind {var, exp, ...} =>
+			    Bind {var, ty, exp, ...} =>
 			       let
 				  val _ =
 				     case exp of
@@ -1448,7 +1448,12 @@ structure Function =
 				      | _ => ()
 			       in
 				  (concat
-				   [Var.toString var, " = ",
+				   [Var.toString var, 
+				    if !Control.showTypes
+				      then concat [": ",
+						   Layout.toString (Type.layout ty)]
+				      else "",
+				    " = ",
 				    PrimExp.toPretty (exp, global)],
 				   Left) :: ac
 			       end
@@ -1464,7 +1469,13 @@ structure Function =
 			concat [name, " ",
 				Layout.toString
 				(Layout.vector
-				 (Vector.map (formals, Var.layout o #1))),
+				 (Vector.map (formals, 
+					      fn (var, ty)
+					       => if !Control.showTypes
+						    then Layout.seq [Var.layout var,
+								     Layout.str ": ",
+								     Type.layout ty]
+						    else Var.layout var))),
 				" ",
 				Layout.toString
 				(List.layout Jump.layout handlers)]
