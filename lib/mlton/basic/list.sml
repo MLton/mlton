@@ -478,6 +478,18 @@ fun partition (l, p) =
        then {no = no, yes = x :: yes}
     else {no = x :: no, yes = yes})
 
+fun equivalence (l, p) =
+   fold
+   (l, [], fn (x, ecs) =>
+    let
+      fun loop ([], ecs') = [x]::ecs'
+	| loop (ec::ecs, ecs') =
+	 if p (x, hd ec)
+	    then fold (ecs, (x::ec)::ecs', op ::)
+	 else loop (ecs, ec::ecs')
+    in
+       loop (ecs, [])
+    end)
 end
 
 val length = List.length

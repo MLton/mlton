@@ -34,7 +34,7 @@ signature LIST =
       val equals: 'a t * 'b t * ('a * 'b -> bool) -> bool
       val equalsAsSet: 'a t * 'a t * ('a * 'a -> bool) -> bool
       (* Group according to equivalence relation. *)
-(*      val equivalence: 'a t * ('a * 'a -> bool) -> 'a t t *)
+      val equivalence: 'a t * ('a * 'a -> bool) -> 'a t t
       val exists: 'a t * ('a -> bool) -> bool
       val first: 'a t -> 'a
       val firstN: 'a t * int -> 'a t
