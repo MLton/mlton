@@ -124,8 +124,16 @@ int setrlimit (int resource, const struct rlimit *rlp) {
 /*                   MLton.Rusage                    */
 /* ------------------------------------------------- */
 
-int getrusage (int who, struct rusage *usage) {
-	die ("getrusage not implemented");
+/* This is implemented to fill in the times with zeros, so that we can compile
+ * MLton.
+ */
+
+int fixedGetrusage (int who, struct rusage *usage) {
+	usage->ru_utime.tv_sec = 0;
+	usage->ru_utime.tv_usec = 0;
+	usage->ru_stime.tv_sec = 0;
+	usage->ru_stime.tv_usec = 0;
+	return 0;
 }
 
 /* ------------------------------------------------- */
@@ -288,8 +296,33 @@ clock_t times (struct tms *buf) {
 char *ttyname (int desc) {
 	die ("*ttyname not implemented");
 }
+
+/* This is just enough of uname so that MLton can self compile.  Someday it would
+ * be nice to add stuff to fill in the fields currently set to "unknown".
+ *
+ * machine
+ *   Use the Windows API function GetSystemInfo.
+ * 
+ * sysname
+ *   For now this is hardcoded as MINGW32, but this should be suffixed with the
+ *   windows verision info, which can be obtained with the Windows API function
+ *   GetVersion (or GetVersionEx).  For example, on my MinGW system, uname -s
+ *   displays MINGW32_NT-4.0.
+ *
+ * release, version
+ *   On MinGW, uname -r and uname -v indicate the release and version of MinGW,
+ *   not of the underlying Windows system.  So, we need to find some 
+ *   MinGW-specific constants or functions to get those.
+ */
 int uname (struct utsname *buf) {
-	die ("uname not implemented");
+	strcpy (buf->machine, "unknown");
+	unless (0 == gethostname (buf->nodename, sizeof (buf->nodename))) {
+		strcpy (buf->nodename, "unknown");
+	}
+	strcpy (buf->release, "unknown"); 
+	strcpy (buf->sysname, "MINGW32");
+	strcpy (buf->version, "unknown");
+	return 0;
 }
 
 /* ------------------------------------------------- */

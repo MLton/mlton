@@ -292,43 +292,6 @@ static inline void copy (pointer src, pointer dst, uint size) {
 /*                              rusage                              */
 /* ---------------------------------------------------------------- */
 
-int fixedGetrusage (int who, struct rusage *rup) {
-	struct tms	tbuff;
-	int		res;
-	clock_t		user,
-			sys;
-	static bool	first = TRUE;
-	static long	hz;
-
-	if (first) {
-		first = FALSE;
-		hz = sysconf (_SC_CLK_TCK);
-	}
-	res = getrusage (who, rup);
-	unless (res == 0)
-		return (res);
-	if (times (&tbuff) == -1)
-		diee ("Impossible: times() failed");
-	switch (who) {
-	case RUSAGE_SELF:
-		user = tbuff.tms_utime;
-		sys = tbuff.tms_stime;
-		break;
-	case RUSAGE_CHILDREN:
-		user = tbuff.tms_cutime;
-		sys = tbuff.tms_cstime;
-		break;
-	default:
-		die ("getrusage() accepted unknown who: %d", who);
-		exit (1);  /* needed to keep gcc from whining. */
-	}
-	rup->ru_utime.tv_sec = user / hz;
-	rup->ru_utime.tv_usec = (user % hz) * (1000000 / hz);
-	rup->ru_stime.tv_sec = sys / hz;
-	rup->ru_stime.tv_usec = (sys % hz) * (1000000 / hz);
-	return (0);
-}
-
 static inline void rusageZero (struct rusage *ru) {
 	memset (ru, 0, sizeof (*ru));
 }
@@ -390,14 +353,10 @@ static uint rusageTime (struct rusage *ru) {
 
 /* Return time as number of milliseconds. */
 static uint currentTime () {
-#if (defined(__MSVCRT__))
-	return GetTickCount ();
-#else
 	struct rusage	ru;
 
 	fixedGetrusage (RUSAGE_SELF, &ru);
 	return rusageTime (&ru);
-#endif
 }
 
 static inline void startTiming (struct rusage *ru_start) {
@@ -3107,11 +3066,7 @@ void MLton_Rusage_ru () __attribute__ ((weak));
 void MLton_Rusage_ru ();
 #endif
 static inline bool needGCTime (GC_state s) {
-#if (defined (__MSVCRT__))
-	return FALSE;
-#else
 	return DEBUG or s->summary or s->messages or (0 != MLton_Rusage_ru);
-#endif
 }
 
 static void doGC (GC_state s, 

@@ -4,6 +4,7 @@
 
 #include "platform.h"
 
+#include "getrusage.c"
 #include "mkdir2.c"
 
 void *getTextEnd () {

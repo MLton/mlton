@@ -7,7 +7,11 @@ Here are the known problems using {\mlton} on MinGW.
 \item Many of the {\tt Posix} functions are unimplemented and will
 {\tt raise SysErr}.
 
-\item The following {\tt MLton} structures are unimplemented: {\tt
-Itimer}, {\tt Rusage}.
+\item {\tt MLton.Itimer} is unimplemented.
+
+\item The C function {\tt getrusage} is implemented by a stub that
+always sets the time to zero.  Hence {\tt MLton.Rusage.rusage} will
+return times of zero.  Also, the times printed by the runtime system
+will be zeroes.
 
 \end{itemize}

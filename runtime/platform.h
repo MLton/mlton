@@ -205,6 +205,12 @@ string ullongToCommaString (ullong n);
 
 int mkdir2 (const char *pathname, mode_t mode);
 
+/*
+ * fixedGetrusage() works just like getrusage().  We have a wrapper because on 
+ * some platforms (e.g. Linux) we need to work around kernel bugs in getrusage.
+ */
+int fixedGetrusage (int who, struct rusage *rup);
+
 /* ---------------------------------------------------------------- */
 /*                         MLton libraries                          */
 /* ---------------------------------------------------------------- */

@@ -241,7 +241,7 @@ struct tms {
 
 struct utsname {
 	char machine[20];
-	char nodename[20];
+	char nodename[256];
 	char release[20];
 	char sysname[20];
 	char version[20];

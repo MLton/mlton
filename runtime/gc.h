@@ -521,13 +521,6 @@ static inline bool isWordAligned(uint x) {
 	return 0 == (x & 0x3);
 }
 
-/*
- * fixedGetrusage() works just like getrusage() except that it actually works.
- * I.e., it does not suffer from the Linux kernel bugs associated with the user
- * and system times.
- */
-int fixedGetrusage (int who, struct rusage *rup);
-
 /* ---------------------------------------------------------------- */
 /*                           GC functions                           */
 /* ---------------------------------------------------------------- */

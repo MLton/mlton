@@ -97,18 +97,6 @@ in
 	       val set = stub ("set", set)
 	    end
 
-	 structure MLton =
-	    struct
-	       open MLton
-		  
-	       structure Rusage =
-		  struct
-		     open Rusage
-
-		     val ru = stub ("ru", ru)
-		  end
-	    end
-
 	 structure OS =
 	    struct
 	       open OS
