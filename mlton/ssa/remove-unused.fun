@@ -389,9 +389,9 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 		 visitVars args;
 		 visitLabel failure;
 		 visitLabel success)
-	     | Raise xs 
+	     | Raise x
 	     => (failFunc f;
-		 visitVars xs)
+		 visitVar x)
 	     | Return xs 
 	     => (terminateFunc f;
 		 flowVarTysVars(returnsFunc f, xs))
@@ -676,15 +676,16 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 
       fun simplifyStatement (f: Func.t,
 			     s: Statement.t 
-			     as Statement.T {var, ty, exp}): Statement.t option
-	= case exp
-	    of SetHandler l 
-	     => if doesCatchLabel l
-		  then SOME (Statement.T 
-			     {var = var,
-			      ty = ty,
-			      exp = SetHandler (getHandlerWrapperLabel l)})
-		  else NONE
+			     as Statement.T {var, ty, exp}): Statement.t option =
+	 let
+	    fun maybe (l, e) =
+	       if doesCatchLabel l
+		  then SOME (Statement.T {var = var, ty = ty, exp = e})
+	       else NONE
+	 in     
+	    case exp of
+	       HandlerPop l => maybe (l, HandlerPop (getHandlerWrapperLabel l))
+	     | HandlerPush l => maybe (l, HandlerPush (getHandlerWrapperLabel l))
 	     | _ => let
 		      fun doit' var
 			= SOME (Statement.T {var = var,
@@ -703,6 +704,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 					 else doit NONE
 			 | NONE => doit NONE
 		    end
+	 end
       fun simplifyStatements (f: Func.t, 
 			      ss: Statement.t Vector.t): Statement.t Vector.t
 	= Vector.keepAllMap (ss, fn s => simplifyStatement(f, s))

@@ -11,6 +11,7 @@ open S
 (* structure ConstantPropagation = ConstantPropagation (S) *)
 structure Contify = Contify (S)
 (* structure Flatten = Flatten (S) *)
+structure ImplementHandlers = ImplementHandlers (S)
 (* structure Inline = Inline (S) *)
 (* structure IntroduceLoops = IntroduceLoops (S) *)
 (* structure LocalFlatten = LocalFlatten (S) *)
@@ -81,7 +82,8 @@ val passes =
       * are expected in the Operand.offsets generated in the
       * backend.
       *)
-     ("removeUnused5", RemoveUnused.remove)
+     ("removeUnused5", RemoveUnused.remove),
+     ("implementHandlers", ImplementHandlers.doit)
     ]
 
 fun stats p =

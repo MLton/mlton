@@ -51,6 +51,6 @@ signature ANALYZE =
 	     func: Func.t -> {args: 'a vector,
 			      returns: 'a vector},
 	     label: Label.t -> 'a vector,
-	     exnVals: 'a vector option
+	     exnVal: 'a option
 	    }
    end

@@ -165,30 +165,27 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 	     ; Vector.foreach (labels, fn l => setLabelChunk (l, c))
 	  end)
       (* The global raise operand. *)
-      val raiseGlobal: Operand.t option ref = ref NONE
-      fun maybeSetRaiseGlobal (a: (Var.t * Stype.t) vector) =
-	 case !raiseGlobal of
-	    SOME _ => ()
-	  | NONE =>
-	       if 1 = Vector.length a
-		  then
-		     let
-			val (_, t) = Vector.sub (a, 0)
-			val t = toMtype t
-			val oper =
-			   if Mtype.isPointer t
-			      then
-				 Mprogram.newGlobalPointerNonRoot
-				 mprogram
-			   else
-			      Mprogram.newGlobal (mprogram, t)
-		     in raiseGlobal := SOME oper
-		     end
-	       else Error.bug "handler with <> 1 arg"
-      fun raiseOperand (): Operand.t =
-	 case !raiseGlobal of
-	    NONE => Error.bug "raiseGlobal not defined"
-	  | SOME z => z
+      local
+	 val raiseGlobal: Operand.t option ref = ref NONE
+      in
+	 fun raiseOperand (t: Stype.t) =
+	    case !raiseGlobal of
+	       SOME z => z
+	     | NONE =>
+		  let
+		     val t = toMtype t
+		     val oper =
+			if Mtype.isPointer t
+			   then
+			      Mprogram.newGlobalPointerNonRoot
+			      mprogram
+			else
+			   Mprogram.newGlobal (mprogram, t)
+		     val _ = raiseGlobal := SOME oper
+		  in
+		     oper
+		  end
+      end
       (* labelInfo, which is only set while processing each function. *)
       val {get = labelInfo: Label.t -> {args: (Var.t * Stype.t) vector,
 					cont: (Handler.t * Mlabel.t) list ref,
@@ -237,7 +234,7 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
       val varOperand = #operand o varInfo
       fun varOperands xs = List.map (xs, varOperand)
       val varOperandOpt = VarOperand.operandOpt o varOperand
-      val vo = fn x => ((valOf o varOperandOpt) x)
+      val vo = fn x => (valOf o varOperandOpt) x
 
       fun sortTypes (initialOffset: int,
 		     tys: Mtype.t vector): {size: int,
@@ -764,7 +761,6 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 	       end
 	    fun newHandler h =
 	       let val {args, handler, ...} = labelInfo h
-		   val _ = maybeSetRaiseGlobal args
 	       in case !handler of
 		     SOME _ => ()
 		   | NONE => let
@@ -1123,7 +1119,8 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 						label = l})
 		  val Info.T {liveNoFormals, ...} = labelRegInfo j
 		  val offset = valOf handlerOffset
-		  val args = Vector.new1 (raiseOperand ())
+		  val args = Vector.new1 (raiseOperand (#2 (Vector.sub
+							    (labelArgs j, 0))))
 		  val (statements, transfer) = tail (j, args, id)
 	       in Chunk.newBlock (labelChunk j,
 				  {label = l,
@@ -1320,9 +1317,9 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 			  prim = prim,
 			  success = noOverflowLabel})
 		     end
-		| Stransfer.Raise xs =>
-		     (Mstatement.moves {dsts = [raiseOperand ()],
-					srcs = Vector.toListMap (xs, vo)},
+		| Stransfer.Raise x =>
+		     ([Mstatement.move {dst = raiseOperand (#ty (varInfo x)),
+					src = vo x}],
 		      Mtransfer.raisee)
 		| Stransfer.Return xs =>
 		     let

@@ -54,6 +54,8 @@ fun checkScopes (program as
 		  ConApp {con, args, ...} => (getCon con
 					      ; Vector.foreach (args, getVar))
 		| Const _ => ()
+		| HandlerPop _ => ()
+		| HandlerPush _ => ()
 		| PrimApp {args, ...} => Vector.foreach (args, getVar)
 		| Select {tuple, ...} => getVar tuple
 		| SetExnStackLocal => ()
@@ -81,7 +83,7 @@ fun checkScopes (program as
 	  | Goto {dst, args} => (getLabel dst; getVars args)
 	  | Prim {args, failure, success, ...} =>
 	       (getVars args; getLabel failure; getLabel success)
-	  | Raise xs => getVars xs
+	  | Raise x => getVar x
 	  | Return xs => getVars xs
       fun loopFunc (f: Function.t) =
 	 let

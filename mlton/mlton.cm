@@ -284,6 +284,8 @@ ssa/simplify.sig
 ssa/ssa.sig
 ssa/contify.sig
 ssa/contify.fun
+ssa/implement-handlers.sig
+ssa/implement-handlers.fun
 ssa/two-point-lattice.sig
 ssa/two-point-lattice.fun
 ssa/remove-unused.sig

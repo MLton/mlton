@@ -670,10 +670,10 @@ structure Transform =
 			     of SOME {cont, ...}
 			      => Goto {dst = cont, args = xs}
 			      | _ => transfer)
-		       | Raise xs
+		       | Raise x
 		       => (case c
 			     of SOME {handler = Handler.Handle handler, ...} 
-			      => Goto {dst = handler, args = xs}
+			      => Goto {dst = handler, args = Vector.new1 x}
 			      | _ => transfer)
 		       | _ => transfer
 	      in

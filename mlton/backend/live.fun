@@ -212,6 +212,7 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 			    end
 		       | Tuple xs => (uses (b, xs); b)
 		       | Var y => (use (b, y); b)
+		       | _ => Error.bug "backend saw strange statement"
 		   val _ =
 		      Option.app (var, fn x =>
 				  newVarInfo (x, {defined = b}))
@@ -264,8 +265,8 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 		     (uses (b, args)
 		      ; goto failure
 		      ; goto success)
+		| Raise x => use (b, x)
 		| Return xs => uses (b, xs)
-		| Raise xs => uses (b, xs)
 	 in ()
 	 end
       val addEdgesForBlock =

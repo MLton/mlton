@@ -47,13 +47,16 @@ fun 'a analyze
 	     setFunc (name, {args = loopArgs args,
 			     returns = Vector.map (returns, fromType)})
 	  end)
-      val exnVals: 'a vector option ref = ref NONE
-      fun getExnVals vs =
-	 case !exnVals of
-	    NONE => let val vs = Vector.map (vs, copy)
-		    in exnVals := SOME vs; vs
+      val exnVal: 'a option ref = ref NONE
+      fun getExnVal v =
+	 case !exnVal of
+	    NONE => let
+		       val v = copy v
+		       val _ = exnVal := SOME v
+		    in
+		       v
 		    end
-	  | SOME vs => vs
+	  | SOME v => v
       fun loopTransfer (t, shouldReturns): unit =
 	(case t of
 	    Bug => ()
@@ -98,9 +101,9 @@ fun 'a analyze
 					  args = values args,
 					  resultType = Type.int},
 			  to = Vector.sub (labelArgs success, 0)})
-	  | Raise xs => let val vs = values xs
-			in coerces (vs, getExnVals vs)
-			end
+	  | Raise x => let val v = value x
+		       in coerce {from = v, to = getExnVal v}
+		       end
 	  | Return xs => coerces (values xs, shouldReturns))
 	   handle exn => Error.bug ("loopTransfer:" ^ 
 				    (Layout.toString (Transfer.layout t)) ^ ":" ^
@@ -117,6 +120,8 @@ fun 'a analyze
 	       case exp of
 		  ConApp {con, args} => conApp {con = con, args = values args}
 		| Const c => const c
+		| HandlerPop _ => unit
+		| HandlerPush _ => unit
 		| PrimApp {prim, targs, args, ...} =>
 		     primApp {prim = prim,
 			      targs = targs,
@@ -126,16 +131,16 @@ fun 'a analyze
 		     select {tuple = value tuple,
 			     offset = offset,
 			     resultType = ty}
-		| SetExnStackLocal => unit
-		| SetExnStackSlot => unit
-		| SetSlotExnStack => unit
 		| SetHandler h =>
 		     let
-			val vs = labelArgs h
-			val _ = coerces (getExnVals vs, vs)
+			val v = Vector.sub (labelArgs h, 0)
+			val _ = coerce {from = getExnVal v, to = v}
 		     in
 			unit
 		     end
+		| SetExnStackLocal => unit
+		| SetExnStackSlot => unit
+		| SetSlotExnStack => unit
 		| Tuple xs =>
 		     if 1 = Vector.length xs
 			then Error.bug "unary tuple"
@@ -154,11 +159,13 @@ fun 'a analyze
 		     end
 	     else setValue (var, v))
 	 end
-         handle exn => Error.bug ("loopStatement:" ^ 
-				  (Layout.toString (Statement.layout s)) ^ ":" ^
-				  (case exn
-				     of Fail msg => msg
-				      | _ => ""))
+         handle exn =>
+	    Error.bug (concat ["loopStatement: ",
+			       Layout.toString (Statement.layout s),
+			       ":",
+			       (case exn
+				   of Fail msg => msg
+				 | _ => "")])
       val _ = coerces (Vector.new0 (), #args (func main))
       val _ = Vector.foreach (globals, loopStatement)
       val _ =
@@ -197,7 +204,7 @@ fun 'a analyze
        value = value,
        func = func,
        label = labelArgs,
-       exnVals = !exnVals
+       exnVal = !exnVal
        }
    end
 

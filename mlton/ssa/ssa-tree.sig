@@ -50,6 +50,13 @@ signature SSA_TREE =
 	       ConApp of {con: Con.t,
 			  args: Var.t vector}
 	     | Const of Const.t
+	     (* HandlerPush and HandlerPop are used throughout the simplification
+	      * pipeline, but are replaced with SetExnStackLocal and friends
+	      * at the very end of the pipeline, so that the backend never
+	      * sees HandlerPush and Pop.
+	      *)
+	     | HandlerPop of Label.t (* the label is redundant, but useful *)
+	     | HandlerPush of Label.t
 	     | PrimApp of {prim: Prim.t,
 			   targs: Type.t vector,
 			   args: Var.t vector}
@@ -77,6 +84,9 @@ signature SSA_TREE =
 	    val layout: t -> Layout.t
 	    val mayAllocate: t -> bool
 	    val setHandler: Label.t -> t
+	    val setExnStackLocal: t
+	    val setExnStackSlot: t
+	    val setSlotExnStack: t
 	    val var: t -> Var.t option
 	    val exp: t -> Exp.t
 	 end
@@ -132,7 +142,7 @@ signature SSA_TREE =
 	       (* Raise implicitly raises to the caller.  I.E. the local handler
 		* stack must be empty.
 		*)
-	     | Raise of Var.t vector
+	     | Raise of Var.t
 	     | Return of Var.t vector
 
 	    val foreachLabel: t * (Label.t -> unit) -> unit

@@ -40,6 +40,8 @@ structure Exp =
 	 ConApp of {con: Con.t,
 		    args: Var.t vector}
        | Const of Const.t
+       | HandlerPop of Label.t
+       | HandlerPush of Label.t
        | PrimApp of {prim: Prim.t,
 		     targs: Type.t vector,
 		     args: Var.t vector}
@@ -67,6 +69,8 @@ structure Exp =
 	    case e of
 	       ConApp {args, ...} => vs args
 	     | Const _ => ()
+	     | HandlerPop l => j l
+	     | HandlerPush l => j l
 	     | PrimApp {args, ...} => vs args
 	     | Select {tuple, ...} => v tuple
 	     | SetExnStackLocal => ()
@@ -87,6 +91,8 @@ structure Exp =
 	    case e of
 	       ConApp {con, args} => ConApp {con = con, args = fs args}
 	     | Const _ => e
+	     | HandlerPop l => HandlerPop (fj l)
+	     | HandlerPush l => HandlerPush (fj l)
 	     | PrimApp {prim, targs, args} =>
 		  PrimApp {prim = prim, targs = targs, args = fs args}
 	     | Select {tuple, offset} =>
@@ -109,6 +115,8 @@ structure Exp =
 	       ConApp {con, args} =>
 		  seq [Con.layout con, str " ", layoutTuple args]
 	     | Const c => Const.layout c
+	     | HandlerPop l => seq [str "HandlerPop ", Label.layout l]
+	     | HandlerPush l => seq [str "HandlerPush ", Label.layout l]
 	     | PrimApp {prim, targs, args} =>
 		  seq [Prim.layout prim,
 		       if !Control.showTypes
@@ -133,6 +141,8 @@ structure Exp =
       val isFunctional =
 	 fn ConApp _ => true
 	  | Const _ => true
+	  | HandlerPop _ => false
+	  | HandlerPush _ => false
 	  | PrimApp {prim, ...} => Prim.isFunctional prim
 	  | Select _ => true
 	  | SetExnStackLocal => false
@@ -146,6 +156,8 @@ structure Exp =
 	 case e of
 	    ConApp _ => false
 	  | Const _ => false
+	  | HandlerPop _ => true
+	  | HandlerPush _ => true
 	  | PrimApp {prim,...} => Prim.maySideEffect prim
 	  | Select _ => false
 	  | SetExnStackLocal => true
@@ -160,6 +172,8 @@ structure Exp =
       local
 	 val newHash = Random.word
 	 val conApp = newHash ()
+	 val handlerPop = newHash ()
+	 val handlerPush = newHash ()
 	 val primApp = newHash ()
 	 val select = newHash ()
 	 val setExnStackLocal = newHash ()
@@ -173,6 +187,8 @@ structure Exp =
 	 val hash: t -> Word.t =
 	    fn ConApp {con, args, ...} => hashVars (args, Con.hash con)
 	     | Const c => Const.hash c
+	     | HandlerPop l => Word.xorb (handlerPop, Label.hash l)
+	     | HandlerPush l => Word.xorb (handlerPush, Label.hash l)
 	     | PrimApp {args, ...} => hashVars (args, primApp)
 	     | Select {tuple, offset} =>
 		  Word.xorb (select, Var.hash tuple + Word.fromInt offset)
@@ -193,6 +209,8 @@ structure Exp =
 	    ConApp {con, args} =>
 	       concat [Con.toString con, " ", Var.prettys (args, global)]
 	  | Const c => Const.toString c
+	  | HandlerPop l => concat ["HandlerPop ", Label.toString l]
+	  | HandlerPush l => concat ["HandlerPush ", Label.toString l]
 	  | PrimApp {prim, args, ...} =>
 	       Layout.toString
 	       (Prim.layoutApp (prim, args, fn x =>
@@ -249,6 +267,8 @@ structure Statement =
 	 val setExnStackSlot = make Exp.SetExnStackSlot
 	 val setSlotExnStack = make Exp.SetSlotExnStack
 	 fun setHandler h = make (Exp.SetHandler h)
+	 fun handlerPop h = make (Exp.HandlerPop h)
+	 fun handlerPush h = make (Exp.HandlerPush h)
       end
 
       val mayAllocate = Exp.mayAllocate o exp
@@ -316,7 +336,7 @@ structure Transfer =
 		  failure: Label.t, (* Must be nullary. *)
 		  success: Label.t  (* Must be unary. *)
 		  }
-       | Raise of Var.t vector
+       | Raise of Var.t
        | Return of Var.t vector
 
       fun foreachFuncLabelVar (t, func, label: Label.t -> unit, var) =
@@ -338,7 +358,7 @@ structure Transfer =
 	     | Goto {dst, args, ...} => (vars args; label dst)
 	     | Prim {args, failure, success, ...} =>
 		  (vars args; label failure; label success)
-	     | Raise xs => vars xs
+	     | Raise x => var x
 	     | Return xs => vars xs
 	 end
 
@@ -364,7 +384,7 @@ structure Transfer =
 			args = fs args,
 			failure = failure,
 			success = success}
-	     | Raise xs => Raise (fs xs)
+	     | Raise x => Raise (f x)
 	     | Return xs => Return (fs xs)
 	 end
 
@@ -417,7 +437,7 @@ structure Transfer =
 		       tuple [Prim.layoutApp (prim, args, Var.layout)],
 		       str " Overflow => ",
 		       Label.layout failure, str "()"]
-	     | Raise xs => seq [str "raise ", layoutTuple xs]
+	     | Raise x => seq [str "raise ", Var.layout x]
 	     | Return xs => if 1 = Vector.length xs
 			       then Var.layout (Vector.sub (xs, 0))
 			    else layoutTuple xs
@@ -870,7 +890,7 @@ structure Function =
 				   (Prim.layoutApp (prim, args, fn x =>
 						    Layout.str
 						    (Var.pretty (x, global))))])
-			  | Raise xs => ["raise ", Var.prettys (xs, global)]
+			  | Raise x => ["raise ", Var.pretty (x, global)]
 			  | Return xs => ["return ", Var.prettys (xs, global)]
 		      val lab =
 			 Vector.foldr
@@ -1280,7 +1300,10 @@ structure Program =
 				       default = default}
 		   | Jump {dst, args} =>
 			Transfer.Goto {dst = dst, args = args}
-		   | Raise xs => Transfer.Raise xs
+		   | Raise xs =>
+			if 1 = Vector.length xs
+			   then Transfer.Raise (Vector.sub (xs, 0))
+			else Error.bug "Raise must have one var"
 		   | Return xs => Transfer.Return xs
 	       end
 	    fun loopFunc (Cps.Function.T {name, args, body, returns}) =
@@ -1340,41 +1363,22 @@ structure Program =
 					      jumpHandlers name)
 					; continue statements)
 				  | HandlerPush h =>
-				       let
-					  val ac =
-					     Statement.setHandler (jumpToLabel h)
-					     :: statements
-					  val ac =
-					     case handlers of
-						[] =>
-						   Statement.setExnStackLocal
-						   :: Statement.setSlotExnStack
-						   :: ac
-					      | _ => ac
-				       in
-					  loopDecs (decs, ac,
-						    l, args, h :: handlers,
-						    transfer)
-				       end
-				  | HandlerPop =>
+				       loopDecs
+				       (decs,
+					Statement.handlerPush (jumpToLabel h)
+					:: statements,
+					l, args, h :: handlers, transfer)
+				  | HandlerPop => 
 				       (case handlers of
 					   [] =>
 					      Error.bug
 					      "pop of empty handler stack"
-					 | _ :: handlers =>
-					      let
-						 val s =
-						    case handlers of
-						       [] =>
-							  Statement.setExnStackSlot
-						     | h :: _ =>
-							  Statement.setHandler
-							  (jumpToLabel h)
-					      in
-						 loopDecs
-						 (decs, s :: statements,
-						  l, args, handlers, transfer)
-					      end)
+					 | h :: handlers =>
+					      loopDecs
+					      (decs,
+					       Statement.handlerPop h
+					       :: statements,
+					       l, args, handlers, transfer))
 			      end
 		     end
 		  val start = Label.newNoname ()

@@ -17,6 +17,8 @@ contify.fun
 contify.sig
 flat-lattice.fun
 flat-lattice.sig
+implement-handlers.fun
+implement-handlers.sig
 remove-unused.fun
 remove-unused.sig
 shrink.fun
