@@ -23,6 +23,11 @@ void callGlutKeyboardFunc ()
   glutKeyboardFunc (glutKeyboardFuncArgument);
 }
 
+void callGlutMouseFunc ()
+{
+  glutMouseFunc (glutMouseFuncArgument);
+}
+
 
 void callGlutSpecialFunc ()
 {

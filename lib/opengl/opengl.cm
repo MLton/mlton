@@ -1,7 +1,4 @@
 Group is
-GL.sig
-GL.sml
-GLU.sig
-GLU.sml
-GLUT.sig
-GLUT.sml
+GL.cm
+GLU.cm
+GLUT.cm
