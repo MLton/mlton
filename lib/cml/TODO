@@ -1,0 +1,5 @@
+
+* Implement Okasaki real-time data-structures.
+  + mailbox.sml -- needs functional queue
+  + scheduler.sml -- needs imperative queue
+  + timeout.sml -- needs functional priority queue

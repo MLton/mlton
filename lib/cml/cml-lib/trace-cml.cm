@@ -1,0 +1,32 @@
+(* trace-cml.cm
+ *
+ * COPYRIGHT (c) 1996 AT&T Research.
+ *
+ * The TraceCML library module needs access to CML internals, so we package
+ * it up into a sub-group.
+ *)
+Group (cm-descr/trace-cml.cm)
+  (* Notice that the "owner" specification above gets ignored by the old
+   * CM.  Under the old CM clients use _this_ file to refer to the
+   * trace library, under the new CM clients use the description file
+   * in cm-descr/trace-cml.cm.
+   * This is done to avoid a file-naming conflict for smlnj-lib.cm.
+   * The conflict is caused by the old CM's path-search mechanism and
+   * does not occur under the new CM. *)
+  signature TRACE_CML
+  structure TraceCML
+is
+#if defined (NEW_CM)
+  $/smlnj-lib.cm
+  $cml/basis.cm
+  $cml/core-cml.cm
+  $cml/cml.cm
+#else
+  smlnj-lib.cm
+  ../src/basis.cm
+  ../src/core-cml.cm
+  ../src/cml.cm
+#endif
+
+  trace-cml-sig.sml
+  trace-cml.sml
