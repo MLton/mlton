@@ -9,6 +9,7 @@ signature X86_LIVE_TRANSFERS_STRUCTS =
     sharing x86 = x86MLton.x86
     structure x86Liveness : X86_LIVENESS
     sharing x86 = x86Liveness.x86
+    sharing x86.MemLocSet = x86Liveness.LiveSet
     structure x86JumpInfo : X86_JUMP_INFO
     sharing x86 = x86JumpInfo.x86
     structure x86LoopInfo : X86_LOOP_INFO
