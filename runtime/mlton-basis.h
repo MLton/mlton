@@ -201,8 +201,6 @@ int String_equal (char * s1, char * s2);
 /*                      Thread                       */
 /* ------------------------------------------------- */
 
-void Thread_atomicBegin ();
-void Thread_atomicEnd ();
 Thread Thread_current ();
 void Thread_finishHandler ();
 Thread Thread_saved ();
