@@ -293,7 +293,8 @@ val lexAndParseMLB : String.t * {parseImport: bool,
    let
       val (ast, files) = lexAndParseMLB (input, parse)
       val _ = Control.checkForErrors "parse"
-   in (ast, files)
+   in
+      (ast, files)
    end
 
 val sourceFilesMLB = fn {input} =>
@@ -304,6 +305,7 @@ val sourceFilesMLB = fn {input} =>
    in
       sourceFiles
    end
+
 val lexAndParseMLB = fn input =>
    let
       val (ast, _) =
@@ -325,6 +327,7 @@ val displayEnvDecs =
      [("deadCode", Bool.layout b),
       ("decs", Decs.layout d)])
     ds)
+   
 fun parseAndElaborateMLB (input: String.t): Env.t * (Decs.t * bool) vector =
    Control.pass
    {name = "parseAndElaborate",
@@ -575,23 +578,21 @@ val elaborateMLB =
    handle Done => ()
 
 local
-   fun genMLB {input: File.t list} =
+   fun genMLB {input: File.t list}: string =
       let
 	 val basis =
 	    String.concat
-	    ["$(MLTON_ROOT)/basis/",!Control.basisLibrary,".mlb\n",
-	     "$(MLTON_ROOT)/basis/mlton.mlb\n",
-	     "$(MLTON_ROOT)/basis/sml-nj.mlb\n",
-	     "$(MLTON_ROOT)/basis/unsafe.mlb\n"]
-	 val s =
-	    String.concat
-	    ["local\n",
-	     basis,
-	     "in\n",
-	     String.concat (List.separate(input, "\n")), "\n",
-	     "end\n"]
+	    (List.map ([!Control.basisLibrary, "mlton", "sml-nj", "unsafe"],
+		       fn s => concat ["$(MLTON_ROOT)/basis/", s, ".mlb\n"]))
       in
-	 s
+	 case input of
+	    [] => basis
+	  | _ => 
+	       String.concat ["local\n",
+			      basis,
+			      "in\n",
+			      String.concat (List.separate (input, "\n")), "\n",
+			      "end\n"]
       end
 in
    fun compileSML {input: File.t list, outputC, outputS}: unit =

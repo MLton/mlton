@@ -627,7 +627,10 @@ fun commandLine (args: string list): unit =
       Result.No msg => usage msg
     | Result.Yes [] =>
 	 (inputFile := "<none>"
-	  ; if !buildConstants
+	  ; if isSome (!showBasis)
+	       then (trace (Top, "Type Check SML")
+		     Compile.elaborateSML {input = []})
+	    else if !buildConstants
                then Compile.outputBasisConstants Out.standard
 	    else if !verbosity = Silent orelse !verbosity = Top
                then printVersion Out.standard
@@ -978,7 +981,8 @@ fun commandLine (args: string list): unit =
 		       DynamicWind.wind
 		       (compile, fn () =>
 			List.foreach (!tempFiles, File.remove)))
-	       in doit ()
+	       in
+		  doit ()
 	       end
 	 end
    end
