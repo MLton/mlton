@@ -534,6 +534,66 @@ fun dominatorTree (graph, {root: Node.t, nodeValue: Node.t -> 'a}): 'a Tree.t =
       treeAt root
    end
 
+fun ignoreNodes (g: t, shouldIgnore: Node.t -> bool)
+   : t * {destroy: unit -> unit,
+	  newNode: Node.t -> Node.t} =
+   let
+      val g' = new ()
+      val {destroy, get = newNode, ...} =
+	 Property.destGet (Node.plist,
+			   Property.initFun (fn _ => newNode g'))
+      (* reach n is the set of non-ignored nodes that n reaches via
+       * nonempty paths through ignored nodes.  It is computed by starting
+       * at each node and doing a DFS that only goes through ignored nodes.
+       *)
+      val {get = reach: Node.t -> Node.t list, rem, ...} =
+	 Property.get
+	 (Node.plist,
+	  Property.initFun
+	  (fn root =>
+	   let
+	      val r = ref []
+	      val {destroy, get = seen, ...} =
+		 Property.destGet (Node.plist,
+				   Property.initFun (fn _ => ref false))
+	      fun loop n =
+		 List.foreach (Node.successors n, fn e =>
+			       let
+				  val n = Edge.to e
+				  val s = seen n
+			       in
+				  if !s
+				     then ()
+				  else
+				     (s := true
+				      ; if shouldIgnore n
+					   then loop n
+					else List.push (r, n))
+			       end)
+	      val _ = loop root
+	      val _ = destroy ()
+	   in
+	      !r
+	   end))
+      val _ =
+	 foreachNode
+	 (g, fn n =>
+	  if shouldIgnore n
+	     then ()
+	  else
+	     let
+		val from = newNode n
+	     in
+		List.foreach
+		(reach n, fn to =>
+		 (addEdge (g', {from = from, to = newNode to})
+		  ; ()))
+	     end)
+   in
+      (g', {destroy = destroy,
+	    newNode = newNode})
+   end
+
 (*--------------------------------------------------------*)
 (*                   Loop Forest                          *)
 (*--------------------------------------------------------*)

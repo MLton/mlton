@@ -79,6 +79,14 @@ signature DIRECTED_GRAPH =
       val foldNodes: t * 'a * (Node.t * 'a -> 'a) -> 'a
       val foreachEdge: t * (Node.t * Edge.t -> unit) -> unit
       val foreachNode: t * (Node.t -> unit) -> unit
+      (* ignoreNodes (g, f) builds a graph g' that looks like g, except that g'
+       * does not contain nodes n such that f n, and that for every path in g
+       * of the form n0 -> n1 -> ... -> nm, where n0 and nm are not ignored and
+       * n1, ..., n_m-1 are ignored, there is an edge in g'.
+       *)
+      val ignoreNodes:
+	 t * (Node.t -> bool) -> t * {destroy: unit -> unit,
+				      newNode: Node.t -> Node.t}
       val layoutDot:
 	 t * ({nodeName: Node.t -> string}
 	      -> {edgeOptions: Edge.t -> Dot.EdgeOption.t list,
