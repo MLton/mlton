@@ -18,17 +18,6 @@ $(NAME): $(shell $(MLTON) -stop f $(NAME).cm)
 $(NAME).sml: $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)
 	mlton -stop sml $(NAME).cm
 
-.PHONY:	$(NAME)_cm
-$(NAME)_cm: 
-	(								\
-		echo 'Group is' &&					\
-		cmcat sources.cm | 					\
-			grep -v 'basis-stubs' | 			\
-			grep -v 'mlton-stubs' | 			\
-			grep -v 'mlton-stubs-in-smlnj' &&		\
-		echo 'call-main.sml';					\
-	) >$(NAME).cm
-
 .PHONY: clean
 clean:
 	../bin/clean
