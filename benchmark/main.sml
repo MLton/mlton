@@ -218,7 +218,7 @@ fun njCompile {bench} =
 	       (out,
 		concat
 		["in val _ = SMLofNJ.exportFn (\"", bench,
-		 "\", fn _ =>\n", "(Main.doit ", benchCount bench, ")",
+		 "\", fn _ => (Main.doit ", benchCount bench,
 		 "; OS.Process.success))\nend\n"]
 		 ))),
            fn input => withInput (input, fn () => timeIt (Explicit {args = [],
