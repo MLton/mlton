@@ -2084,7 +2084,7 @@ fun elaborateDec (d, {env = E,
 			 unify
 			 (Cexp.ty exn, Type.exn, fn (l1, _) =>
 			  (region,
-			   str "raise of non-exception",
+			   str "raise of non exception",
 			   seq [str "exp type: ", l1]))
 		      val resultType = Type.new ()
 		   in
