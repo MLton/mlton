@@ -53,7 +53,7 @@ fun isEmpty a = 0 = length a
 
 fun dropPrefix (v, n) = tabulate (length v - n, fn i => sub (v, i + n))
 
-fun dropSuffix (v, n) = tabulate (n, fn i => sub (v, i))
+fun dropSuffix (v, n) = tabulate (length v - n, fn i => sub (v, i))
    
 fun new (n, x) = tabulate (n, fn _ => x)
    
