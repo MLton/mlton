@@ -75,7 +75,7 @@ real/real32.sml
 real/real64.sml
 integer/patch.sml
 
-top-level/overloads.sml
+top-level/arithmetic.sml
 
 misc/unique-id.sig
 misc/unique-id.fun

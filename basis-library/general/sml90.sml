@@ -26,13 +26,13 @@ structure SML90:> SML90 =
 
       local open Real.Math
       in
-	 val sqrt = fn x => if x < 0.0 then raise Sqrt else sqrt x
+	 val sqrt = fn x => if Real.< (x, 0.0) then raise Sqrt else sqrt x
 	 val exp = fn x => let val y = exp x
 			   in if Real.isFinite y
 				 then y
 			      else raise Exp
 			   end
-	 val ln = fn x => if x > 0.0 then ln x else raise Ln
+	 val ln = fn x => if Real.>(x, 0.0) then ln x else raise Ln
 	 val sin = sin
 	 val cos = cos
 	 val arctan = atan

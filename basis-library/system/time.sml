@@ -25,10 +25,11 @@ exception Time
 val zeroTime = T 0
 
 fun fromReal r =
-   T (Real.toLargeInt IEEEReal.TO_NEAREST (r * Real.fromLargeInt ticksPerSecond))
+   T (Real.toLargeInt IEEEReal.TO_NEAREST 
+                      (Real.* (r, Real.fromLargeInt ticksPerSecond)))
 
 fun toReal (T i) =
-   Real.fromLargeInt i / Real.fromLargeInt ticksPerSecond
+   Real./ (Real.fromLargeInt i, Real.fromLargeInt ticksPerSecond)
 
 local
    fun make ticksPer =
