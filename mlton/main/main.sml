@@ -37,6 +37,7 @@ structure Place =
 
 val buildConstants: bool ref = ref false
 val coalesce: int option ref = ref NONE
+val expert: bool ref = ref false
 val gcc: string ref = ref "<unset>"
 val gccSwitches : string ref = ref ""
 val includeDirs: string list ref = ref []
@@ -116,6 +117,9 @@ fun makeOptions {usage} =
        (Normal, "exn-history", " {false|true}",
 	"enable Exn.history",
 	boolRef Control.exnHistory),
+       (Expert, "expert", " {false|true}",
+	"enable expert status",
+	boolRef expert),
        (Expert, "gc-check", " {limit|first|every}", "force GCs",
 	SpaceString (fn s =>
 		     gcCheck :=
@@ -287,16 +291,13 @@ fun makeOptions {usage} =
        {arg = arg, desc = desc, name = name, opt = opt, style = style})
    end
 
-fun showExpert () = let open Control
-		    in !verbosity <> Silent
-		    end
 val mainUsage =
    "mlton [option ...] file.{cm|sml|c|o} [file.{S|o} ...] [library ...]"
 
 val {parse, usage} =
    Popt.makeUsage {mainUsage = mainUsage,
 		   makeOptions = makeOptions,
-		   showExpert = showExpert}
+		   showExpert = fn () => !expert}
 
 val usage = fn s => (usage s; raise Fail "unreachable")
    
