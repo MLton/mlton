@@ -1,15 +1,15 @@
 all: interpret.o interpret-gdb.o print-opcodes
 
-INCLUDES = -I../runtime -I../include
+CC = gcc -fomit-frame-pointer -I../runtime -I../include -Wall
 
 interpret.o: interpret.c interpret.h opcode.h
-	gcc -O2 -Wall -c $(INCLUDES) interpret.c
+	$(CC) -c -O2 interpret.c
 
 interpret-gdb.o: interpret.c interpret.h
-	gcc -o $@ -gstabs+ -g2 -DASSERT=1 -Wall -c $(INCLUDES) interpret.c
+	$(CC) -c -o $@ -gstabs+ -g2 -DASSERT=1 interpret.c
 
 print-opcodes: print-opcodes.c opcode.h
-	gcc -o print-opcodes -I../runtime -L../runtime	\
+	$(CC) -o print-opcodes -I../runtime -L../runtime	\
 		print-opcodes.c -lmlton
 
 .PHONY: clean

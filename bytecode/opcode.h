@@ -111,6 +111,8 @@
 	prims()					\
 	opcodeGen (CallC)			\
 	opcodeGen (Goto)			\
+	opcodeGen (loadGPNR)			\
+	opcodeGen (storeGPNR)			\
 	opcodeGen (JumpOnOverflow)		\
 	opcodeGen (ProfileLabel)		\
 	opcodeGen (Raise)			\

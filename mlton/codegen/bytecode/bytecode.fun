@@ -315,6 +315,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	 val stackOffset = make ("StackOffset", false)
 	 val wordOpcode = make ("Word", false)
       end
+      fun gpnr ls = opcode (concat [LoadStore.toString ls, "GPNR"])
       local
 	 fun make name (ls: LoadStore.t): Opcode.t =
 	    opcode (concat [LoadStore.toString ls, name])
@@ -423,7 +424,9 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	     | Frontier => emitOpcode (frontier ls)
 	     | GCState => emitOpcode (gcState ls)
 	     | Global g =>
-		  (emitOpcode (global (ls, cty))
+		  (if Global.isRoot g
+		      then emitOpcode (global (ls, cty))
+		   else emitOpcode (gpnr ls)
 		   ; emitWord16 (Int.toIntInf (Global.index g)))
 	     | Label l =>
 		  (emitOpcode (wordOpcode (ls, cty))

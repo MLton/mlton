@@ -33,6 +33,7 @@ struct GC_state gcState;
 	ty ty##Reg[1000]
 
 extern Pointer globalPointer[];
+extern Pointer globalPointerNonRoot[];
 static Pointer PointerVReg[1000];
 
 regs(Real32);
@@ -143,6 +144,16 @@ enum {
 		if (disassemble) goto mainLoop;				\
 		loadStoreGen (mode, ty, ty2, G (ty, globalIndex));	\
 		goto mainLoop;						\
+	}
+
+#define loadStoreGPNR(mode)							\
+	case opcodeSym (mode##GPNR):						\
+	{									\
+		GlobalIndex globalIndex;					\
+		Fetch (globalIndex);						\
+		if (disassemble) goto mainLoop;					\
+		loadStoreGen (mode, Pointer, Word32, GPNR (globalIndex));	\
+		goto mainLoop;							\
 	}
 
 #define loadStoreOffset(mode, ty)					\
@@ -406,6 +417,8 @@ mainLoop:
 		Fetch (label);
  		Goto (label);
 	}
+	loadStoreGPNR(load);
+	loadStoreGPNR(store);
 	case opcodeSym (JumpOnOverflow):
 	{
 		Label label;
