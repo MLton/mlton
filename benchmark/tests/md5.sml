@@ -20,8 +20,15 @@ structure MD5 :> MD5 =
     structure W8V = 
       struct
 	open Word8Vector
-	fun extract (vec, s, l) = 
-	  Word8VectorSlice.vector (Word8VectorSlice.slice (vec, s, l))
+	fun extract (vec, s, l) =
+	   let
+	      val n =
+		 case l of
+		    NONE => length vec - s
+		  | SOME i => i
+	   in
+	      tabulate (n, fn i => sub (vec, s + i))
+	   end
       end
     type word64  = {hi:W32.word,lo:W32.word}
     type word128 = {A:W32.word, B:W32.word, C:W32.word,  D:W32.word}
@@ -265,3 +272,5 @@ structure Main =
    struct
       val doit = Test.time_test
    end
+
+val _ = Main.doit ()
