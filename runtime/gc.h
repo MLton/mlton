@@ -676,7 +676,7 @@ word *GC_stackFrameIndices (GC_state s);
  */
 void GC_startHandler (GC_state s);
 
-void GC_switchToThread (GC_state s, GC_thread t);
+void GC_switchToThread (GC_state s, GC_thread t, uint ensureBytesFree);
 
 void GC_unpack (GC_state s);
 

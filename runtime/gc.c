@@ -746,9 +746,14 @@ static inline pointer stackTop (GC_state s, GC_stack stack) {
 	return stackBottom (s, stack) + stack->used;
 }
 
+/* Pointer to the end of stack. */
+static inline pointer endOfStack (GC_state s, GC_stack stack) {
+	return stackBottom (s, stack) + stack->reserved;
+}
+
 /* The maximum value stackTop may take on. */
 static inline pointer stackLimit (GC_state s, GC_stack stack) {
-	return stackBottom (s, stack) + stack->reserved - stackSlop (s);
+	return endOfStack (s, stack) - stackSlop (s);
 }
 
 static inline bool stackIsEmpty (GC_stack stack) {
@@ -811,15 +816,6 @@ static inline uint topFrameSize (GC_state s, GC_stack stack) {
 
 static inline uint stackNeedsReserved (GC_state s, GC_stack stack) {
 	return stack->used + stackSlop (s) - topFrameSize (s, stack);
-}
-
-/* stackTopIsOk ensures that when this stack becomes current that 
- * the stackTop is less than the stackLimit.
- */
-static inline bool stackTopIsOk (GC_state s, GC_stack stack) {
-	return stackTop (s, stack) 
-		       	<= stackLimit (s, stack) 
-			+ (stackIsEmpty (stack) ? 0 : topFrameSize (s, stack));
 }
 
 #if ASSERT
@@ -1153,6 +1149,17 @@ static inline pointer foreachPointerInRange (GC_state s,
 /*                            invariant                             */
 /* ---------------------------------------------------------------- */
 
+static bool mutatorFrontierInvariant (GC_state s) {
+	return (s->currentThread->bytesNeeded <= 
+			s->limitPlusSlop - s->frontier);
+}
+
+static bool mutatorStackInvariant (GC_state s) {
+	return (stackTop (s, s->currentThread->stack) <= 
+			stackLimit (s, s->currentThread->stack) + 
+			topFrameSize (s, s->currentThread->stack));
+}
+
 static bool ratiosOk (GC_state s) {
 	return 1.0 < s->growRatio
 			and 1.0 < s->nurseryRatio
@@ -1271,10 +1278,13 @@ static bool invariant (GC_state s) {
 	return TRUE;
 }
 
-bool mutatorInvariant (GC_state s) {
+static bool mutatorInvariant (GC_state s, bool frontier, bool stack) {
 	if (DEBUG)
 		GC_display (s, stderr);
-	assert (stackTopIsOk (s, s->currentThread->stack));
+	if (frontier)
+		assert (mutatorFrontierInvariant(s));
+	if (stack)
+		assert (mutatorStackInvariant(s));
 	assert (invariant (s));
 	return TRUE;
 }
@@ -1335,8 +1345,11 @@ void enter (GC_state s) {
 void leave (GC_state s) {
 	if (DEBUG)
 		fprintf (stderr, "leave\n");
-	assert (mutatorInvariant (s));
-	if (s->signalIsPending and 0 == s->canHandle)
+	/* The mutator frontier invariant may not hold
+	 * for functions that don't ensureBytesFree.
+	 */
+	assert (mutatorInvariant (s, FALSE, TRUE));
+	if (s->canHandle == 0 and s->signalIsPending)
 		s->limit = 0;
 	unless (s->inSignalHandler)
 		unblockSignals (s);
@@ -1712,26 +1725,41 @@ static inline void forward (GC_state s, pointer *pp) {
 
 			assert (STACK_TAG == tag);
 			headerBytes = STACK_HEADER_SIZE;
-			/* Shrink stacks that don't use a lot of their reserved
-		 	 * space.
-			 */
 			stack = (GC_stack)p;
-			if (stack->used <= stack->reserved / 4) {
-				W32 new;
 
-				new = stackReserved
-					 (s, max (stack->reserved / 2, 
-							stackNeedsReserved (s, stack)));
-				/* It's possible that new > stack->reserved if
-				 * the stack is the current one and the stack
-				 * top isn't OK.  In that case, we want to leave
-				 * the stack alone, because some other part of
-				 * the gc will grow the stack.  We cannot do any
-				 * growing here because we may run out of to
-				 * space.
+			if (s->currentThread->stack == stack) {
+				/* Shrink stacks that don't use a lot 
+				 * of their reserved space;
+				 * but don't violate the stack invariant.
 				 */
-				if (new <= stack->reserved)
-					stack->reserved = new;
+				if (stack->used <= stack->reserved / 4) {
+					uint new = stackReserved (s, max (stack->reserved / 2,
+										stackNeedsReserved (s, stack)));
+					/* It's possible that new > stack->reserved if
+					 * the stack invariant is violated. In that case, 
+					 * we want to leave the stack alone, because some 
+					 * other part of the gc will grow the stack.  We 
+					 * cannot do any growing here because we may run 
+					 * out of to space.
+					 */
+					if (new <= stack->reserved) {
+						stack->reserved = new;
+						if (DEBUG_STACKS)
+							fprintf (stderr, "Shrinking stack to size %s.\n",
+									uintToCommaString (stack->reserved));
+					}
+				}
+			} else {
+				/* Shrink heap stacks that don't use a 
+				 * lot of their reserved space.
+				 */
+				if (stack->used <= stack->reserved / 4)
+					stack->reserved = stackReserved (s, stack->reserved / 2);
+				else if (stack->used <= stack->reserved / 2)
+					stack->reserved = stackReserved (s, stack->used);
+				if (DEBUG_STACKS)
+					fprintf (stderr, "Shrinking stack to size %s.\n",
+							uintToCommaString (stack->reserved));
 			}
 			objectBytes = sizeof (struct GC_stack) + stack->used;
 			skip = stack->reserved - stack->used;
@@ -2902,7 +2930,8 @@ static void growStack (GC_state s) {
 	uint size;
 	GC_stack stack;
 
-	size = 2 * s->currentThread->stack->reserved;
+	size = max(2 * s->currentThread->stack->reserved, 
+			stackNeedsReserved (s, s->currentThread->stack));
 	if (DEBUG_STACKS or s->messages)
 		fprintf (stderr, "Growing stack to size %s.\n",
 				uintToCommaString (stackBytes (s, size)));
@@ -2998,11 +3027,12 @@ static void doGC (GC_state s,
 	if (needGCTime (s))
 		startTiming (&ru_start);
 	minorGC (s);
-	stackTopOk = stackTopIsOk (s, s->currentThread->stack);
+	stackTopOk = mutatorStackInvariant(s);
 	stackBytesRequested =
 		stackTopOk
 		? 0 
-		: stackBytes (s, 2 * s->currentThread->stack->reserved);
+		: stackBytes (s, max(2 * s->currentThread->stack->reserved, 
+					stackNeedsReserved (s, s->currentThread->stack)));
 	totalBytesRequested = 
 		(W64)oldGenBytesRequested 
 		+ stackBytesRequested
@@ -3030,11 +3060,30 @@ static void doGC (GC_state s,
 				100.0 * ((double) s->oldGenSize) 
 					/ s->heap.size);
 	}
+	/* Send a GC signal. */
+	if (s->handleGCSignal and s->signalHandler != BOGUS_THREAD) {
+		if (DEBUG_SIGNALS)
+			fprintf (stderr, "GC Signal pending.\n");
+		s->gcSignalIsPending = TRUE;
+		unless (s->inSignalHandler) 
+			s->signalIsPending = TRUE;
+	}
 	if (DEBUG) 
 		GC_display (s, stderr);
 	assert (hasBytesFree (s, oldGenBytesRequested, nurseryBytesRequested));
 	assert (invariant (s));
 	leaveGC (s);
+}
+
+static inline void ensureMutatorInvariant (GC_state s, bool force) {
+	if (force
+		or not (mutatorFrontierInvariant(s))
+		or not (mutatorStackInvariant(s))) {
+		/* This GC will grow the stack, if necessary. */
+		doGC (s, 0, s->currentThread->bytesNeeded, force, TRUE);
+	}
+	assert (mutatorFrontierInvariant(s));
+	assert (mutatorStackInvariant(s));
 }
 
 /* ensureFree (s, b) ensures that upon return
@@ -3051,12 +3100,8 @@ static void switchToThread (GC_state s, GC_thread t) {
 	if (DEBUG_THREADS)
 		fprintf (stderr, "switchToThread (0x%08x)  used = %u  reserved = %u\n", 
 				(uint)t, t->stack->used, t->stack->reserved);
-	assert (stackTopIsOk (s, t->stack));
 	s->currentThread = t;
 	setStack (s);
-	ensureFree (s, t->bytesNeeded);
-	/* Can not refer to t, because ensureFree may have GC'ed. */
-	assert (s->currentThread->bytesNeeded <= s->limitPlusSlop - s->frontier);
 }
 
 static void startHandler (GC_state s) {
@@ -3065,7 +3110,7 @@ static void startHandler (GC_state s) {
 		fprintf (stderr, "switching to signal handler\n");
 		GC_display (s, stderr);
 	}
-	assert (0 == s->canHandle);
+	assert (s->canHandle == 0);
 	assert (s->signalIsPending);
 	s->signalIsPending = FALSE;
 	s->inSignalHandler = TRUE;
@@ -3077,35 +3122,52 @@ static void startHandler (GC_state s) {
 	s->canHandle = 1;
 }
 
-void GC_switchToThread (GC_state s, GC_thread t) {
+void GC_switchToThread (GC_state s, GC_thread t, uint ensureBytesFree) {
 	if (DEBUG_THREADS)
-		fprintf (stderr, "GC_switchToThread (0x%08x)\n", (uint)t);
-	if (TRUE) {
+		fprintf (stderr, "GC_switchToThread (0x%08x, %u)\n", (uint)t, ensureBytesFree);
+	if (FALSE) {
 		/* This branch is slower than the else branch, especially 
 		 * when debugging is turned on, because it does an invariant
 		 * check on every thread switch.
 		 * So, we'll stick with the else branch for now.
 		 */
 	 	enter (s);
-	  	switchToThread (s, t);
+		s->currentThread->bytesNeeded = ensureBytesFree;
+		switchToThread (s, t);
 		s->canHandle--;
-		if (0 == s->canHandle and s->signalIsPending) {
-			startHandler(s);
-			switchToThread(s, s->signalHandler);
+		if (s->canHandle == 0 and s->signalIsPending) {
+			startHandler (s);
+			switchToThread (s, s->signalHandler);
 		}
+		ensureMutatorInvariant (s, FALSE);
+		assert (mutatorFrontierInvariant(s));
+		assert (mutatorStackInvariant(s));
 	 	leave (s);
 	} else {
+		/* BEGIN: enter(s); */
 		s->currentThread->stack->used = currentStackUsed (s);
-		s->currentThread = t;
-		setStack (s);
-		if (t->bytesNeeded > s->limitPlusSlop - s->frontier)  {
-			enter (s);
-			doGC (s, 0, t->bytesNeeded, FALSE, TRUE);
-			leave (s);
+		s->currentThread->exnStack = s->exnStack;
+		/* END: enter(s); */
+		switchToThread (s, t);
+		s->canHandle--;
+		if (s->canHandle == 0 and s->signalIsPending) {
+			startHandler (s);
+			switchToThread (s, s->signalHandler);
 		}
+		/* BEGIN: ensureMutatorInvariant */
+		if (not (mutatorFrontierInvariant(s))
+			or not (mutatorStackInvariant(s))) {
+			enter(s);
+			/* This GC will grow the stack, if necessary. */
+			doGC (s, 0, s->currentThread->bytesNeeded, FALSE, TRUE);
+			leave(s);
+		}
+		/* END: ensureMutatorInvariant */
+		/* BEGIN: leave(s); */
+		/* END: leave(s); */
 	}
-	/* Can not refer to t, because we may have GC'ed. */
-	assert (s->currentThread->bytesNeeded <= s->limitPlusSlop - s->frontier);
+	assert (mutatorFrontierInvariant(s));
+	assert (mutatorStackInvariant(s));
 }
 
 /* GC_startHandler does not do an enter()/leave(), even though it is exported.
@@ -3133,24 +3195,13 @@ void GC_gc (GC_state s, uint bytesRequested, bool force,
 	if (0 == bytesRequested)
 		bytesRequested = LIMIT_SLOP;
 	s->currentThread->bytesNeeded = bytesRequested;
-	if (force 
-		or bytesRequested > s->limitPlusSlop - s->frontier
-		or not (stackTopIsOk (s, s->currentThread->stack))) {
-		/* This GC will grow the stack, if necessary. */
-		doGC (s, 0, bytesRequested, force, TRUE);	
-		/* Send a GC signal. */
-		if (s->handleGCSignal and BOGUS_THREAD != s->signalHandler) {
-			if (DEBUG_SIGNALS)
-				fprintf (stderr, "GC Signal pending\n");
-			s->gcSignalIsPending = TRUE;
-			unless (s->inSignalHandler)
-				s->signalIsPending = TRUE;
-		}
-	} else {
-		startHandler (s);
+	if (s->canHandle == 0 and s->signalIsPending) {
+		startHandler(s);
 		switchToThread (s, s->signalHandler);
 	}
-	assert (s->currentThread->bytesNeeded <= s->limitPlusSlop - s->frontier);
+	ensureMutatorInvariant (s, force);
+	assert (mutatorFrontierInvariant(s));
+	assert (mutatorStackInvariant(s));
 	leave (s);
 }
 
@@ -3251,10 +3302,6 @@ static inline uint threadBytes (GC_state s) {
 	return res;
 }
 
-static inline uint initialThreadBytes (GC_state s) {
-	return threadBytes (s) + stackBytes (s, initialStackSize (s));
-}
-
 static GC_thread newThreadOfSize (GC_state s, uint stackSize) {
 	GC_stack stack;
 	GC_thread t;
@@ -3295,8 +3342,8 @@ static GC_thread copyThread (GC_state s, GC_thread from, uint size) {
 }
 
 void GC_copyCurrentThread (GC_state s) {
-	GC_thread t;
 	GC_thread res;
+	GC_thread t;
 	
 	if (DEBUG_THREADS)
 		fprintf (stderr, "GC_copyCurrentThread\n");
@@ -3307,6 +3354,7 @@ void GC_copyCurrentThread (GC_state s) {
  * the reserved to be slightly larger than the used.
  */
 /*	assert (res->stack->reserved == res->stack->used); */
+	assert (res->stack->reserved >= res->stack->used);
 	leave (s);
 	if (DEBUG_THREADS)
 		fprintf (stderr, "0x%08x = GC_copyCurrentThread\n", (uint)res);
@@ -3317,14 +3365,24 @@ pointer GC_copyThread (GC_state s, pointer thread) {
 	GC_thread res;
 	GC_thread t;
 
-	t = (GC_thread)thread;
 	if (DEBUG_THREADS)
-		fprintf (stderr, "GC_copyThread (0x%08x)\n", (uint)t);
+		fprintf (stderr, "GC_copyThread (0x%08x)\n", (uint)thread);
 	enter (s);
+	t = (GC_thread)thread;
+/* The following assert is no longer true, since alignment restrictions can force
+ * the reserved to be slightly larger than the used.
+ */
 /*	assert (t->stack->reserved == t->stack->used); */
-	res = copyThread (s, t, stackNeedsReserved (s, t->stack));
-	assert (stackTopIsOk (s, res->stack));
+	assert (t->stack->reserved >= t->stack->used);
+	res = copyThread (s, t, t->stack->used);
+/* The following assert is no longer true, since alignment restrictions can force
+ * the reserved to be slightly larger than the used.
+ */
+/*	assert (res->stack->reserved == res->stack->used); */
+	assert (res->stack->reserved >= res->stack->used);
 	leave (s);
+	if (DEBUG_THREADS)
+		fprintf (stderr, "0x%08x = GC_copyThread (0x%08x)\n", (uint)res, (uint)thread);
 	return (pointer)res;
 }
 
@@ -4432,14 +4490,18 @@ int GC_init (GC_state s, int argc, char **argv) {
 		atexit (profileEnd);
 	} else
 		s->profilingIsOn = FALSE;
-	if (s->isOriginal)
+	if (s->isOriginal) {
 		newWorld (s);
-	else {
+		/* The mutator stack invariant doesn't hold,
+		 * because the mutator has yet to run.
+		 */
+		assert (mutatorInvariant(s, TRUE, FALSE));
+	} else {
 		loadWorld (s, worldFile);
 		if (s->profilingIsOn and s->profileStack)
 			GC_foreachStackFrame (s, enterFrame);
+		assert (mutatorInvariant(s, TRUE, TRUE));
 	}
-	assert (mutatorInvariant (s));
 	s->amInGC = FALSE;
 	return i;
 }
@@ -4542,7 +4604,7 @@ void GC_handler (GC_state s, int signum) {
 	if (DEBUG_SIGNALS)
 		fprintf (stderr, "GC_handler signum = %d\n", signum);
 	assert (sigismember (&s->signalsHandled, signum));
-	if (0 == s->canHandle)
+	if (s->canHandle == 0)
 		s->limit = 0;
 	s->signalIsPending = TRUE;
 	sigaddset (&s->signalsPending, signum);

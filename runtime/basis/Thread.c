@@ -50,13 +50,8 @@ void Thread_startHandler () {
 }
 
 void Thread_switchTo (Thread thread, Word ensureBytesFree) {
-	GC_state s;
-
 	if (DEBUG_THREAD)
 		fprintf (stderr, "Thread_switchTo (0x%08x, %u)\n",
 				(uint)thread, (uint)ensureBytesFree);
-	s = &gcState;
-	s->currentThread->stack->used = s->stackTop - s->stackBottom;
-	s->currentThread->bytesNeeded = ensureBytesFree;
-	GC_switchToThread (s, (GC_thread)thread);
+	GC_switchToThread (&gcState, (GC_thread)thread, ensureBytesFree);
 }

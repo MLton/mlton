@@ -18,14 +18,14 @@ void MLton_callFromC () {						\
 	s->savedThread = s->currentThread;				\
 	s->canHandle += 3;						\
 	/* Switch to the C Handler thread. */				\
-	GC_switchToThread (s, s->callFromCHandler);			\
+	GC_switchToThread (s, s->callFromCHandler, 0);			\
 	nextFun = *(int*)(s->stackTop - WORD_SIZE);			\
 	cont.nextChunk = nextChunks[nextFun];				\
 	returnToC = FALSE;						\
 	do {								\
  		cont=(*(struct cont(*)(void))cont.nextChunk)();		\
 	} while (not returnToC);					\
-	GC_switchToThread (s, s->savedThread);				\
+	GC_switchToThread (s, s->savedThread, 0);      			\
  	s->savedThread = BOGUS_THREAD;					\
 	if (DEBUG_CCODEGEN)						\
 		fprintf (stderr, "MLton_callFromC done\n");		\
