@@ -243,8 +243,8 @@ structure OS_Path : OS_PATH = struct
       | _ => false
   end
 
-  fun fromUnixPath _ = raise (Fail "<not implemented>")
-  fun toUnixPath _ = raise (Fail "<not implemented>")
+  fun fromUnixPath _ = raise (Fail "<Path.fromUnixPath not implemented>")
+  fun toUnixPath _ = raise (Fail "<Path.toUnixPath not implemented>")
 end (*structure Path*)
 
 
