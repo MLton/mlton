@@ -291,10 +291,10 @@ fun makeOptions {usage} =
 	Bool (fn b => Native.shuffle := b)),
        (Expert, "new-return", " {false|true}", "non-tail call return convention",
 	boolRef newReturn),
-       (Expert, "polyvariance", " {true|false}", "use polyvariance",
-	Bool (fn b => if b then () else polyvariance := NONE)),
        (Normal, "output", " <file>", "name of output file",
 	SpaceString (fn s => output := SOME s)),
+       (Expert, "polyvariance", " {true|false}", "use polyvariance",
+	Bool (fn b => if b then () else polyvariance := NONE)),
        (Normal, "profile", " {no|alloc|count|time}",
 	"produce executable suitable for profiling",
 	SpaceString
