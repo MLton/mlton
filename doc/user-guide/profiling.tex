@@ -8,9 +8,9 @@ directory showing how to generate profiling information.
 % mlton -p -keep g profiling.sml
 % profiling
 % mlprof profiling mlmon.out
-0.46 seconds of CPU time
-tak_1               93.48%
-IntInf_smallMul (C)  6.52%
+0.41 seconds of CPU time
+tak_0               95.12%
+IntInf_smallMul (C)  4.88%
 \end{verbatim}
 In summary, generating profiling information takes three steps.
 \begin{enumerate}
@@ -47,37 +47,45 @@ You can display profiling information at the SSA basic block level with
 
 \begin{verbatim}
 % mlprof -d 1 profiling mlmon.out
-0.45 seconds of CPU time
-tak_1                      84.44%
-     L_79           13.16%       
-     loop_14        13.16%       
-     L_47           13.16%       
-     L_46           13.16%       
-     L_75           10.53%       
-     L_375          10.53%       
-     tak_1           7.89%       
-     L_83            7.89%       
-     L_376           5.26%       
-     L_377           2.63%       
-     L_371           2.63%       
-IntInf_smallMul (C)        15.56%
+0.41 seconds of CPU time
+tak_0                      95.12%
+     L_18           28.21%       
+     loop_0         20.51%       
+     L_14           12.82%       
+     L_20           12.82%       
+     L_16           10.26%       
+     L_17            7.69%       
+     L_49            2.56%       
+     L_47            2.56%       
+     L_21            2.56%       
+IntInf_smallMul (C)         4.88%
 \end{verbatim}
 Each of the indented labels refers to a basic block in {\tt
   profiling.ssa}, within the {\tt tak\_0} function.
 
 You can display profiling information at the assembly basic block level with
 {\tt mlprof -d 2}.  Other {\tt mlprof} options are
-{\tt -s}, which will print information about static C functions, and {\tt -t},
+{\tt -s}, which will print information about static C functions, {\tt -t},
 which will limit {\tt mlprof} to only print information about functions (or
-blocks) whose percentage of time is above a certain threshold.
+blocks) whose percentage of time is above a certain threshold, and {\tt -x}, 
+which will annotate each percentage of time with its absolute time.
 
-You may find it useful to use the {\tt -keep dot} switch when compiling {\tt
--p}, since this saves the the SSA function call graph ({\tt .call-graph.dot})
-for the whole program.  Also, for each SSA function {\tt f}, it saves the
-intraprocedural control-flow graph ({\tt .f.cfg.dot}) and dominator tree ({\tt
-.f.dom.dot}).  In the control-flow graph, solid edges indicate gotos with
-arguments, dashed edges indicate handling a raise coming from the callee, and
-dotted edges indicate a return from the callee.
+You may find it useful to use the {\tt -keep dot} switch when
+compiling {\tt -p}, since this saves the the SSA function call graph
+({\tt .call-graph.dot}) for the whole program.  Also, for each SSA
+function {\tt f}, it saves the intraprocedural control-flow graph
+({\tt .f.cfg.dot}) and dominator tree ({\tt .f.dom.dot}).  In the
+control-flow graph, solid edges indicate gotos with arguments, dashed
+edges indicate handling a raise coming from the callee, and dotted
+edges indicate a return from the callee.  Executing {\tt mlprof} with
+the {\tt -color} option in the presence of the {\tt .call-graph.dot}
+file will color the nodes of the call graph red, orange, yellow, or
+black according to the percentage of time spent in the corresponding
+SSA functions.  Likewise, executing {\tt mlprof} with the {\tt -color
+  -d 2} options in the presence of the {\tt .cfg.dot} files will color
+the nodes of the control-flow graphs.  Note that the effect of the
+{\tt -color} option is dependent upon the {\tt -t n} option; functions
+and blocks below the threshold are always colored black.
 
 The profiler works by catching the {\tt SIGPROF} signal 100 times per second and
 recording where in the executable the program counter is.  Thus, if you compile
@@ -89,3 +97,35 @@ the profiler.\\
 \end{tabular}\\
 Also, it is best to have a long running program (at least tens of seconds) in
 order to get reasonable data. 
+
+To facilitate profiling individual portions of your program, {\mlton}
+provides the {\tt MLton.Profile} structure (see \secref{profile}).
+Here is an example run from within the {\tt examples/profiling}
+directory showing how to profile the executions of the {\tt fib} and
+{\tt tak} functions separately.
+
+\begin{verbatim}
+% mlton -p -keep g profiling2.sml
+% profiling2
+% mlprof profiling2 mlmon.fib.out
+mlprof profiling2 mlmon.fib.out
+14.65 seconds of CPU time
+fib_0 100.00%
+% mlprof profiling2 mlmon.tak.out
+mlprof profiling2 mlmon.tak.out
+1.67 seconds of CPU time
+tak_0 100.00%
+% mlprof profiling2 mlmon.init.out mlmon.fib.out mlmon.tak.out mlmon.out
+16.33 seconds of CPU time
+fib_0     89.71%
+tak_0     10.23%
+<unknown>  0.06%
+\end{verbatim}
+
+Executing {\tt mlprof} with multiple {\tt mlmon.out} files sums the
+profiling data in each file to produce the output profiling
+information.  The functions {\tt MLton.Profile.reset} and {\tt
+  MLton.Profile.write} are used to reset and write the accumulated
+profiling data for portions of the program.
+
+

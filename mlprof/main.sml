@@ -685,7 +685,7 @@ fun display (counts: {name: string, ticks: int} ProfileInfo.t,
 
 fun usage s
   = Process.usage 
-    {usage = "[-d {0|1|2}] [-s] [-t n] [-x] a.out mlmon.out [mlmon.out]...",
+    {usage = "[-color] [-d {0|1|2}] [-s] [-t n] [-x] a.out mlmon.out [mlmon.out]...",
      msg = s}
 
 fun main args =

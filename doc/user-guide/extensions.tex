@@ -25,12 +25,13 @@ structure MLton:
       val isMLton: bool
       val safe: bool
       val size: 'a -> int
-	 
+         
       structure Cont: MLTON_CONT
       structure Exn: MLTON_EXN
       structure GC: MLTON_GC
       structure Itimer: MLTON_ITIMER
       structure ProcEnv: MLTON_PROC_ENV
+      structure Profile: MLTON_PROFILE
       structure Random: MLTON_RANDOM
       structure Rlimit: MLTON_RLIMIT
       structure Rusage: MLTON_RUSAGE
@@ -188,6 +189,35 @@ set the interval timer (using {\tt setitimer}) specified by {\tt w} to the given
 return the signal corresponding to {\tt w}.
 \end{description}
 
+\subsubsec{{\tt MLton.Profile}}{profile}
+This structure provides rudimentary profiling control from within the program.  For more details, see \secref{profiling} and {\tt examples/profiling}.
+
+\begin{verbatim}
+signature MLTON_PROFILE =
+   sig
+      val profile: bool
+      val reset: unit -> unit
+      val write: string -> unit
+   end
+\end{verbatim}
+
+\begin{description}
+
+\entry{\tt profile}
+a compile-time constant that is true when compiling {\tt -p}.  The default is false.
+
+\entry{\tt reset ()}
+clear accumulated profiling data.  This function is equivalent to {\tt
+  fn () => ()} unless the program is compiled with {\tt -p}.
+
+\entry{\tt write f}
+write accumulated profiling data to file {\tt f}.  This function is
+equivalent to {\tt fn (f : string) => ()} unless the program is
+compiled with {\tt -p}.  Note: a program compiled with {\tt -p} will
+always write the final accumulated profiling data to a file named {\tt
+  mlmon.out}.
+\end{description}
+
 \subsubsection{\tt MLton.ProcEnv}
 \begin{verbatim}
 signature MLTON_PROC_ENV =
@@ -237,11 +267,11 @@ setrlimit}.
 signature MLTON_RLIMIT =
    sig
       type rlim = word
-	       
+               
       val infinity: rlim
 
       type resource
-	       
+               
       val cpuTime: resource             (* CPU     CPU time in seconds *)
       val coreFileSize: resource        (* CORE    max core file size *)
       val dataSize: resource            (* DATA    max data size *)
@@ -610,7 +640,7 @@ value {\tt g ()}.
 signature MLTON_WORD =
    sig
       type word
-	 
+         
       val ~ : word -> word
       val rol: word * Word.word -> word
       val ror: word * Word.word -> word
@@ -643,7 +673,7 @@ signature MLTON_WORLD =
 used to specify whether a world is original or a restarted (a clone).
 
 \entry{load f}
-load the saved computation from file f.
+load the saved computation from file {\tt f}.
 
 \entry{save f}
 save the entire state of the computation to
@@ -685,12 +715,12 @@ signature SML_OF_NJ =
          end
       structure SysInfo:
          sig
-	    exception UNKNOWN
-	    datatype os_kind = BEOS | MACOS | OS2 | UNIX | WIN32
+            exception UNKNOWN
+            datatype os_kind = BEOS | MACOS | OS2 | UNIX | WIN32
 
-	    val getHostArch: unit -> string
-	    val getOSKind: unit -> os_kind
-	    val getOSName: unit -> string
+            val getHostArch: unit -> string
+            val getOSKind: unit -> os_kind
+            val getOSName: unit -> string
          end
       structure Internals:
          sig
