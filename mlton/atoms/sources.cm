@@ -23,11 +23,9 @@ signature PRIM
 signature PROFILE_EXP
 signature REAL_X
 signature RECORD
-signature SCHEME
 signature SOURCE_INFO
 signature TYCON
 signature TYPE_OPS
-signature TYPE
 signature TYVAR
 signature VAR
 signature WORD_X
@@ -72,15 +70,12 @@ profile-exp.fun
 profile-exp.sig
 real-x.fun
 real-x.sig
-scheme.sig
 source-info.fun
 source-info.sig
 tycon.fun
 tycon.sig
 type-ops.fun
 type-ops.sig
-type.fun
-type.sig
 use-name.fun
 var.fun
 var.sig

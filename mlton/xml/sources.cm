@@ -38,7 +38,6 @@ sxml-exns.sig
 sxml-simplify.fun
 sxml-simplify.sig
 sxml-tree.sig
-sxml-tree.fun
 sxml.sig
 sxml.fun
 type-check.fun
