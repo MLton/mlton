@@ -86,8 +86,7 @@ if [ "$fail" = 'yes' ]; then
 	exit 0
 fi
 
-# for f in `ls *.sml`; do
-for f in exnHistory.sml exnHistory2.sml exnHistory3.sml; do
+for f in exnHistory*.sml; do #`ls *.sml`; do
 	f=`basename $f .sml`
 	case "$f" in
 	serialize)
@@ -105,15 +104,25 @@ for f in exnHistory.sml exnHistory2.sml exnHistory3.sml; do
 		esac
 		case "$runOnly" in
 		no)
-			mlb="/tmp/$$.mlb"
-			echo "\$(MLTON_ROOT)/basis/basis.mlb
-                              \$(MLTON_ROOT)/basis/mlton.mlb
-                              \$(MLTON_ROOT)/basis/sml-nj.mlb
-                              ann allowExport true, allowImport true, allowOverload true,
-                                  warnMatch false
-                              in $src/regression/$f.sml end" >$mlb
-			$mlton $flags $extraFlags -output $f $mlb
-			rm $mlb
+			mlb="$$.mlb"
+			case "$f" in
+			ZexnHistory*)
+				# Can't use mlbs for exnHistory regressions?
+				$mlton $flags -output $f $f.sml
+			;;
+			*)
+				echo "\$(MLTON_ROOT)/basis/basis.mlb
+        	                      \$(MLTON_ROOT)/basis/mlton.mlb
+                	              \$(MLTON_ROOT)/basis/sml-nj.mlb
+                        	      ann allowExport true, 
+						allowImport true, 
+						allowOverload true,
+						warnMatch false
+        	                      in $f.sml end" >$mlb
+				$mlton $flags $extraFlags -output $f $mlb
+				rm $mlb
+			;;
+			esac
 			if [ "$?" -ne '0' ] || 
 				[ "$cross" = 'no' -a ! -x "$f" ]; then
 				compFail $f
@@ -161,7 +170,9 @@ for f in `ls *.sml`; do
 	*)
 			echo "testing $f"
 		echo "val _ = Main.doit 0" | cat $f.sml - > $tmpf.sml
-		$mlton -output $tmpf $flags $tmpf.sml
+		$mlton -output $tmpf $flags 			\
+			-default-ann 'warnMatch false'		\
+			$tmpf.sml
 		if [ $? -ne 0 ]; then
 			compFail $f
 		fi
