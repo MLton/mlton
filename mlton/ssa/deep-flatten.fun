@@ -569,48 +569,53 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	 Trace.trace ("DeepFlatten.conValue",
 		      Con.layout, Ref.layout (Option.layout Value.layout))
 	 conValue
+      val traceMakeTypeValue =
+	 Trace.trace ("DeepFlatten.makeTypeValue",
+		      Type.layout o #1,
+		      Layout.ignore)
       val {get = makeTypeValue: Type.t -> unit -> Value.t, ...} =
 	 Property.get
 	 (Type.plist,
 	  Property.initRec
-	  (fn (t, makeTypeValue) =>
-	   let
-	      datatype z = datatype Type.dest
-	   in
-	      case Type.dest t of
-		 Object {args, con} =>
-		    let
-		       val args = Prod.map (args, makeTypeValue)
-		       fun doit () =
-			  Value.delay
-			  (fn () =>
-			   Value.object {args = Prod.map (args, fn f => f ()),
-					 con = con})
-		       datatype z = datatype ObjectCon.t
-		    in
-		       case con of
-			  Con c =>
-			     let
-				val v = conValue c
-			     in
-				fn () => Ref.memoize (v, doit)
-			     end
-			| Tuple => doit
-			| Vector =>  doit
-		    end
-	       | Weak t =>
-		    let
-		       val t = makeTypeValue t
-		    in
-		       fn () => Value.delay (fn () => Value.weak (t ()))
-		    end
-	       | _ =>
-		    let
-		       val v = Value.ground t
-		    in
-		       fn () => v
-		    end
-	   end))
+	  (traceMakeTypeValue
+	   (fn (t, makeTypeValue) =>
+	    let
+	       datatype z = datatype Type.dest
+	    in
+	       case Type.dest t of
+		  Object {args, con} =>
+		     let
+			val args = Prod.map (args, makeTypeValue)
+			fun doit () =
+			   Value.delay
+			   (fn () =>
+			    Value.object {args = Prod.map (args, fn f => f ()),
+					  con = con})
+			datatype z = datatype ObjectCon.t
+		     in
+			case con of
+			   Con c =>
+			      let
+				 val v = conValue c
+			      in
+				 fn () => Ref.memoize (v, doit)
+			      end
+			 | Tuple => doit
+			 | Vector =>  doit
+		     end
+		| Weak t =>
+		     let
+			val t = makeTypeValue t
+		     in
+			fn () => Value.delay (fn () => Value.weak (t ()))
+		     end
+		| _ =>
+		     let
+			val v = Value.ground t
+		     in
+			fn () => v
+		     end
+	    end)))
       fun typeValue (t: Type.t): Value.t = makeTypeValue t ()
       val typeValue =
 	 Trace.trace ("DeepFlatten.typeValue", Type.layout, Value.layout)
