@@ -36,6 +36,36 @@ fun stats () =
 		end]]
    end
 
+fun stats' (T {buckets, numItems, ...}) =
+   let open Layout
+       val numi = !numItems
+       val numb = Array.length (!buckets)
+       val numb' = numb - 1
+       val avg = let open Real in (fromInt numi / fromInt numb) end
+       val (min,max,total)
+	 = Array.fold
+	   (!buckets,
+	    (Int.maxInt, Int.minInt, 0.0),
+	    fn (l,(min,max,total)) 
+	     => let
+		  val n = List.length l
+		  val d = (Real.fromInt n) - avg
+		in
+		  (Int.min(min,n),
+		   Int.max(max,n),
+		   total + d * d)
+		end)
+       val stdd = let open Real in Math.sqrt(total / (fromInt numb')) end
+       val rfmt = fn r => Real.format (r, Real.Format.fix (SOME 3))
+   in align
+      [seq [str "numItems = ", Int.layout numi],
+       seq [str "numBuckets = ", Int.layout numb],
+       seq [str "avg = ", str (rfmt avg),
+	    str " stdd = ", str (rfmt stdd),
+	    str " min = ", Int.layout min, 
+	    str " max = ", Int.layout max]]
+   end
+
 fun resize (T {buckets, hash, mask, ...}, size: int, newMask: word): unit =
    let
       val newBuckets = Array.new (size, [])

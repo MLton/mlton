@@ -23,6 +23,7 @@ signature HASH_SET =
       val removeAll: 'a t * ('a -> bool) -> unit
       val size: 'a t -> int
       val stats: unit -> Layout.t
+      val stats': 'a t -> Layout.t
       val toList: 'a t -> 'a list
    end
 
