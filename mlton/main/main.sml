@@ -115,12 +115,24 @@ val options =
        (Expert, "keep-pass", " pass", "keep the results of pass",
 	SpaceString (fn s => List.push (keepPasses, s))),
        (Normal, "l", "library", "link with library", push libs),
+       (Expert, "limit-check", " {pb|ebb|lh|lhf|lhle|lhfle}",
+	"limit check insertion algorithm",
+	SpaceString (fn s =>
+		     case s of
+		        "pb" => limitCheck := PerBlock
+		      | "ebb" => limitCheck := ExtBasicBlocks
+		      | "lh" => limitCheck := LoopHeaders {fullCFG = false,
+							   loopExits = false}
+		      | "lhf" => limitCheck := LoopHeaders {fullCFG = true,
+							    loopExits = false}
+		      | "lhle" => limitCheck := LoopHeaders {fullCFG = false,
+							     loopExits = true}
+		      | "lhfle" => limitCheck := LoopHeaders {fullCFG = true,
+							      loopExits = true}
+		      | _ => usage (concat ["invalid -limit-check flag: ", s]))),
        (Expert, "limit-check-counts", " {false|true}",
 	"compute dynamic counts of limit checks",
 	boolRef limitCheckCounts),
-       (Expert, "limit-check-per-block", " {false|true}",
-	"force limit checks at each block",
-	boolRef limitCheckPerBlock),
        (Expert, "loop-passes", " n", "loop optimization passes (1)",
 	Int 
 	(fn i => 

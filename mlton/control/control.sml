@@ -150,13 +150,35 @@ val keepPasses = control {name = "keep passes",
 			  default = [],
 			  toString = List.toString (fn s => s)}
 
+structure LimitCheck =
+   struct
+      datatype t = 
+	 PerBlock
+       | ExtBasicBlocks
+       | LoopHeaders of {fullCFG: bool,
+			 loopExits: bool}
+
+      val toString =
+	 fn PerBlock => "per block"
+	  | ExtBasicBlocks => "extended basic blocks"
+	  | LoopHeaders {fullCFG, loopExits} =>
+	       concat ["loop headers (fullCFG = ",
+		       Bool.toString fullCFG,
+		       ", loopExits = ",
+		       Bool.toString loopExits,
+		       ")"]
+
+      val layout = Layout.str o toString
+   end
+datatype limitCheck = datatype LimitCheck.t
+val limitCheck = control {name = "limit check",
+			  default = LoopHeaders {fullCFG = false,
+						 loopExits = true},
+			  toString = LimitCheck.toString}
+
 val limitCheckCounts = control {name = "limit check counts",
 				default = false,
 				toString = Bool.toString}
-
-val limitCheckPerBlock = control {name = "limit check per block",
-				  default = false,
-				  toString = Bool.toString}
 
 val loopPasses = control {name = "loop passes",
 			  default = 1,

@@ -76,14 +76,23 @@ signature CONTROL =
       (* List of pass names to save the result of. *)
       val keepPasses: string list ref
 
+      datatype limitCheck =
+	 (* per block *)
+	 PerBlock
+         (* decycle using extended basic blocks 
+	  *)
+       | ExtBasicBlocks
+	 (* decycle using loop headers
+	  *  - use full CFG
+	  *  - use loop exits of non-allocatin loops
+	  *)
+       | LoopHeaders of {fullCFG: bool,
+			 loopExits: bool}
+
+      val limitCheck: limitCheck ref
+
       (* Whether or not dynamic counts of limit checks are computed. *)
       val limitCheckCounts: bool ref
-
-      (* Whether or not limit checks are forced to occur every block -- thus
-       * hopefully avoiding a bug in limit check insertion when it attempts
-       * to coalesce checks across blocks.
-       *)
-      val limitCheckPerBlock: bool ref
 
       (* Number of times to loop through optimization passes. *)
       val loopPasses: int ref
