@@ -616,7 +616,7 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 						  val inp' = VS.slice(inp, 0, SOME i)
 						  val inps = inp'::inps
 					       in
-						  finish (inps, update (is, i + 1, buf), false)
+						  finish (inps, update (is, i, buf), false)
 					       end
 				   | NONE => loop (buf, (VS.full inp)::inps))
 			    | End => doit (extendB "inputLine" is)
