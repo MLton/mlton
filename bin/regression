@@ -105,7 +105,7 @@ for f in `ls *.sml`; do
 	;;
 	*)
 			echo "testing $f"
-		echo "val _ = Main.doit ()" | cat $f.sml - > $tmpf.sml
+		echo "val _ = Main.doit 0" | cat $f.sml - > $tmpf.sml
 		$mlton -output $tmpf $flags $tmpf.sml
 		if [ $? -ne 0 ]; then
 			compFail $f
