@@ -17,8 +17,6 @@ TEX_FILES = \
 	performance.tex		\
 	profiling.tex		\
 
-WEB = ../web
-
 all:	main.ps main/main.html
 
 main/main.html: $(TEX_FILES)
