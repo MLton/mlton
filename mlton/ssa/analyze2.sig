@@ -41,13 +41,10 @@ signature ANALYZE2 =
 	  update: {object: 'a,
 		   offset: int,
 		   value: 'a} -> unit,
-	  useFromTypeOnBinds: bool
-	 }
-	 -> {
-	     value: Var.t -> 'a,
-	     func: Func.t -> {args: 'a vector,
+	  useFromTypeOnBinds: bool}
+	 -> {func: Func.t -> {args: 'a vector,
 			      raises: 'a vector option,
 			      returns: 'a vector option},
-	     label: Label.t -> 'a vector
-	    }
+	     label: Label.t -> 'a vector,
+	     value: Var.t -> 'a}
    end
