@@ -797,7 +797,13 @@ structure ObjectType =
 
       fun isOk (t: t): bool =
 	 case t of
-	    Array t => Bits.isByteAligned (Type.width t)
+	    Array t =>
+	       let
+		  val b = Type.width t
+	       in
+		  Bits.> (b, Bits.zero)
+		  andalso Bits.isByteAligned b
+	       end
 	  | Normal t =>
 	       not (Type.isUnit t) andalso Bits.isWordAligned (Type.width t)
 	  | Stack => true
