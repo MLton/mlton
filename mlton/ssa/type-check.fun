@@ -55,9 +55,10 @@ fun checkScopes (program as
 					      ; Vector.foreach (args, getVar))
 		| Const _ => ()
 		| PrimApp {args, ...} => Vector.foreach (args, getVar)
-		| RestoreExnStack => ()
-		| SaveExnStack => ()
 		| Select {tuple, ...} => getVar tuple
+		| SetExnStackLocal => ()
+		| SetExnStackSlot => ()
+		| SetSlotExnStack => ()
 		| SetHandler l => getLabel l
 		| Tuple xs => Vector.foreach (xs, getVar)
 		| Var x => getVar x
@@ -79,54 +80,29 @@ fun checkScopes (program as
 	       (getVars args; getLabel failure; getLabel success)
 	  | Raise xs => getVars xs
 	  | Return xs => getVars xs
-      val labelHandler = Program.inferHandlers program
+      val handlers = Program.inferHandlers program
       fun loopFunc (f as Function.T {name, args, start, blocks, returns}) =
 	 let
-	    (* Build a slightly more precise control-flow graph than normal
-	     * that splits blocks where there are overflows.
-	     *)
-	    val g = Graph.new ()
-	    fun newNode () = Graph.newNode g
-	    val {get = labelNode} =
-	       Property.get (Label.plist, Property.initFun (fn _ => newNode ()))
-	    val {get = nodeInfo: Node.t -> {children: Node.t list ref,
-					    statements: Statement.t vector,
-					    start: int,
-					    stop: int,
-					    transfer: Transfer.t option},
-		 set = setNodeInfo} =
-	       Property.getSetOnce
-	       (Node.plist, Property.initRaise ("info", Node.layout))
-	    val root = labelNode start
-	    (* Now, descend the dominator tree, verifying that variables are
+	    (* Descend the dominator tree, verifying that variables are
 	     * defined before they are used.
 	     *)
-	    fun loop (n: Node.t): unit =
+	    fun loop (Tree.T (block, children)): unit =
 	       let
-		  val {children, statements, start, stop, transfer} =
-		     nodeInfo n
-		  fun defs (bind: bool) =
-		     Int.for
-		     (start, stop, fn i =>
-		      let
-			 val s = Vector.sub (statements, i)
-		      in
-			 Option.app
-			 (Statement.var s, fn var =>
-			  if bind 
-			     then loopStatement s
-			  else unbindVar var)
-		      end)
-		  val _ = defs true
-		  val _ = List.foreach (!children, loop)
-		  val _ = Option.app (transfer, loopTransfer)
-		  val _ = defs false
+		  val Block.T {args, statements, transfer, ...} = block
+		  val _ = Vector.foreach (args, bindVar o #1)
+		  val _ = Vector.foreach (statements, loopStatement)
+		  val _ = loopTransfer transfer
+		  val _ = List.foreach (children, loop)
+		  val _ =
+		     Vector.foreach (statements, fn Statement.T {var, ...} =>
+				     Option.app (var, unbindVar))
+		  val _ = Vector.foreach (args, unbindVar o #1)
 	       in
 		  ()
 	       end
 	    val _ = Vector.foreach (args, bindVar o #1)
 	    val _ = Vector.foreach (blocks, bindLabel o Block.label)
-	    val _ = loop root
+	    val _ = loop (Function.dominatorTree (f, handlers))
 	    val _ = Vector.foreach (blocks, unbindLabel o Block.label)
 	    val _ = Vector.foreach (args, unbindVar o #1)
 	 in
@@ -247,7 +223,8 @@ fun typeCheck (program as Program.T {datatypes, functions, ...}): unit =
 		  tuple = Type.tuple,
 		  useFromTypeOnBinds = true
 		  }
-	 handle _ => error "analyze raised an exception"
+	 handle e => error (concat ["analyze raised exception ",
+				    Layout.toString (Exn.layout e)])
       val _ = destroyCon ()
    in
       ()

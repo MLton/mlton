@@ -565,7 +565,7 @@ fun passSimplify {name, suffix, style, thunk, display, typeCheck, simplify} =
    let
       val result =
 	 passTypeCheck {name = name,
-			suffix = "",
+			suffix = suffix,
 			style = style,
 			thunk = thunk,
 			display = display,

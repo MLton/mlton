@@ -50,10 +50,11 @@ signature SSA_TREE =
 	     | PrimApp of {prim: Prim.t,
 			   targs: Type.t vector,
 			   args: Var.t vector}
-	     | RestoreExnStack
-	     | SaveExnStack
 	     | Select of {tuple: Var.t,
 			  offset: int}
+	     | SetExnStackLocal
+	     | SetExnStackSlot
+	     | SetSlotExnStack
 	     | SetHandler of Label.t
 	     | Tuple of Var.t vector
 	     | Var of Var.t
@@ -69,8 +70,6 @@ signature SSA_TREE =
 
 	    val lastHandler: t vector * Label.t option -> Label.t option
 	    val layout: t -> Layout.t
-	    val restoreExnStack: t
-	    val saveExnStack: t
 	    val setHandler: Label.t -> t
 	    val var: t -> Var.t option
 	 end
@@ -103,6 +102,7 @@ signature SSA_TREE =
 	     | Raise of Var.t vector
 	     | Return of Var.t vector
 
+	    val foreachLabel: t * (Label.t -> unit) -> unit
 	    val layout: t -> Layout.t
 	 end
 
@@ -117,7 +117,6 @@ signature SSA_TREE =
 		     }
 
 	    val label: t -> Label.t
-	    val layout: t -> Layout.t
 	 end
 
       structure Datatype:
@@ -134,6 +133,11 @@ signature SSA_TREE =
 	    val layout: t -> Layout.t
 	 end
 
+      structure Handlers:
+	 sig
+	    type t
+	 end
+
       structure Function:
 	 sig
 	    datatype t =
@@ -146,15 +150,15 @@ signature SSA_TREE =
 		     }
 
 	    val controlFlowGraph:
-	       t * {labelHandler: Label.t -> Label.t option}
+	       t * Handlers.t
 	       -> {graph: DirectedGraph.t,
 		   labelNode: Label.t -> DirectedGraph.Node.t,
 		   dominatorTree: unit -> Block.t Tree.t}
 	    val dominatorTree:
-	       t * {labelHandler: Label.t -> Label.t option}
+	       t * Handlers.t
 	       -> Block.t Tree.t
 	 end
-      
+     
       structure Program:
 	 sig
 	    datatype t =
@@ -168,7 +172,7 @@ signature SSA_TREE =
 	    val clear: t -> unit
 	    val fromCps: Cps.Program.t * {jumpToLabel: Cps.Jump.t -> Label.t,
 					  funcToFunc: Cps.Func.t -> Func.t} -> t
-	    val inferHandlers: t -> Label.t -> Label.t option
+	    val inferHandlers: t -> Handlers.t
 	    val layouts: t * (Layout.t -> unit) -> unit
 	    val layoutStats: t -> Layout.t
 	 end

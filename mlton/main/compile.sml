@@ -335,6 +335,17 @@ fun preCodegen {input, docc}: MachineOutput.Program.t =
 		   end)
 	    else ()
 	 end
+      val _ =
+	 Control.passSimplify
+	 {display = Control.Layouts Ssa.Program.layouts,
+	  name = "toSSA",
+	  simplify = Ssa.simplify,
+	  style = Control.No,
+	  suffix = "ssa",
+	  thunk = fn () => Ssa.Program.fromCps (cps,
+						{funcToFunc = fn f => f,
+						 jumpToLabel = fn j => j}),
+	  typeCheck = Ssa.typeCheck}
       val machine =
 	 Control.pass
 	 {name = "backend",

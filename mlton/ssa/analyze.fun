@@ -28,15 +28,16 @@ fun 'a analyze
       val {get = func, set = setFunc} =
 	 Property.getSetOnce
 	 (Func.plist, Property.initRaise ("analyze func name", Func.layout))
-      val {get = label, set = setLabel} =
+      val {get = labelInfo, set = setLabelInfo} =
 	 Property.getSetOnce
 	 (Label.plist, Property.initRaise ("analyze label", Label.layout))
+      val labelArgs = #args o labelInfo
       fun loopArgs args =
 	 Vector.map (args, fn (x, t) =>
-		    let val v = fromType t
-		    in setValue (x, v)
-		       ; v
-		    end)
+		     let val v = fromType t
+		     in setValue (x, v)
+			; v
+		     end)
       val _ =
 	 Vector.foreach
 	 (functions, fn Function.T {name, args, returns, ...} =>
@@ -58,14 +59,14 @@ fun 'a analyze
 		  val shouldReturns =
 		     case return of
 			NONE => shouldReturns
-		      | SOME l => label l
+		      | SOME l => labelArgs l
 	       in coerces (values args, formals)
 		  ; coerces (returns, shouldReturns)
 	       end
 	  | Case {test, cases, default, ...} =>
 	       let val test = value test
 		  fun ensureNullary j =
-		     if 0 = Vector.length (label j)
+		     if 0 = Vector.length (labelArgs j)
 			then ()
 		     else Error.bug (concat [Label.toString j,
 					     " must be nullary"])
@@ -78,21 +79,21 @@ fun 'a analyze
 			Char l => doit (l, filterChar)
 		      | Con cases =>
 			   Vector.foreach (cases, fn (c, j) =>
-					   filter (test, c, label j))
+					   filter (test, c, labelArgs j))
 		      | Int l => doit (l, filterInt)
 		      | Word l => doit (l, filterWord)
 		      | Word8 l => doit (l, filterWord8)
 		  val _ = Option.app (default, ensureNullary)
 	       in ()
 	       end
-	  | Goto {dst, args} => coerces (values args, label dst)
+	  | Goto {dst, args} => coerces (values args, labelArgs dst)
 	  | Prim {prim, args, failure, success} =>
-	       (coerces (Vector.new0 (), label failure)
+	       (coerces (Vector.new0 (), labelArgs failure)
 		; coerce {from = primApp {prim = prim,
 					  targs = Vector.new0 (),
 					  args = values args,
 					  resultType = Type.int},
-			  to = Vector.sub (label success, 0)})
+			  to = Vector.sub (labelArgs success, 0)})
 	  | Raise xs => let val vs = values xs
 			in coerces (vs, getExnVals vs)
 			end
@@ -112,15 +113,16 @@ fun 'a analyze
 			      targs = targs,
 			      args = values args,
 			      resultType = ty}
-		| RestoreExnStack => unit
-		| SaveExnStack => unit
 		| Select {tuple, offset} =>
 		     select {tuple = value tuple,
 			     offset = offset,
 			     resultType = ty}
+		| SetExnStackLocal => unit
+		| SetExnStackSlot => unit
+		| SetSlotExnStack => unit
 		| SetHandler h =>
 		     let
-			val vs = label h
+			val vs = labelArgs h
 			val _ = coerces (getExnVals vs, vs)
 		     in
 			unit
@@ -147,25 +149,39 @@ fun 'a analyze
       val _ = Vector.foreach (globals, loopStatement)
       val _ =
 	 Vector.foreach
-	 (functions, fn Function.T {name, blocks, ...} =>
+	 (functions, fn Function.T {name, blocks, start, ...} =>
 	  let
 	     val _ =
 		Vector.foreach
-		(blocks, fn Block.T {label, args, ...} =>
-		 setLabel (label, loopArgs args))
+		(blocks, fn b as Block.T {label, args, ...} =>
+		 setLabelInfo (label, {args = loopArgs args,
+				       block = b,
+				       visited = ref false}))
 	     val returns = #returns (func name)
-	     val _ =
-		Vector.foreach
-		(blocks, fn Block.T {label, args, statements, transfer} =>
-		 (Vector.foreach (statements, loopStatement)
-		  ; loopTransfer (transfer, returns)))
+	     fun visit (l: Label.t) =
+		let
+		   val {block, visited, ...} = labelInfo l
+		in
+		   if !visited
+		      then ()
+		   else
+		      let
+			 val _ = visited := true
+			 val Block.T {statements, transfer, ...} = block
+		      in
+			 Vector.foreach (statements, loopStatement)
+			 ; loopTransfer (transfer, returns)
+			 ; Transfer.foreachLabel (transfer, visit)
+		      end
+		end
+	     val _ = visit start
 	  in
 	     ()
 	  end)
    in {
        value = value,
        func = func,
-       label = label,
+       label = labelArgs,
        exnVals = !exnVals
        }
    end
