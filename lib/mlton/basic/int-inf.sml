@@ -17,8 +17,8 @@ structure IntInf: INT_INF =
       val notb = Pervasive.IntInf.notb
       val orb = Pervasive.IntInf.orb
       val xorb = Pervasive.IntInf.xorb
-      val (op ~>>) = Pervasive.IntInf.~>>
-      val (op <<) = Pervasive.IntInf.<<
+      val op ~>> = Pervasive.IntInf.~>>
+      val op << = Pervasive.IntInf.<<
       val fromInt = Trace.trace("IntInf.fromInt", Int.layout, layout) fromInt
       val toInt = Trace.trace("IntInf.toInt", layout, Int.layout) toInt
    end
