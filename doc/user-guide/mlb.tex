@@ -11,8 +11,13 @@ system is a simple, yet powerful, approach that builds upon the
 programmer's intuitive notion (and the Definition of SML's formal
 notion) of the top-level environment (a \emph{basis}).  The system has
 been designed to be a natural extension of Standard ML;
-\appref{mlb-formal} gives a formal specification of MLBs in the
-style of the Definition.
+\begin{latexonly}
+\appref{mlb-formal}
+\end{latexonly}
+\begin{htmlonly}
+a separate document
+\end{htmlonly}
+gives a formal specification of MLBs in the style of the Definition.
 
 We briefly highlight some of the key features provided by MLBs:
 \begin{itemize}
@@ -69,7 +74,28 @@ following grammar:
 \begin{htmlonly}
 \begin{center}
 \begin{tabular}{lcl}
-\end{tabular}{lcl}
+{\it basdec} 
+& ::=    & {\tt basis} {\it basid} {\tt =} {\it basexp}
+            ({\tt and} {\it basid} {\tt =} {\it basexp})* \\
+& | & {\tt open} {\it basid}$_1$ $\cdots$ {\it basid}$_n$ \\
+& | & {\tt local} {\it basdec} {\tt in} {\it basdec} {\tt end} \\
+& | & {\it basdec} [{\tt;}] {\it basdec} \\
+& | & {\tt structure} {\it strid} [{\tt =} {\it strid}] 
+                ({\tt and} {\it strid} [{\tt =} {\it strid}])* \\
+& | & {\tt signature} {\it sigid} [{\tt =} {\it sigid}] 
+                ({\tt and} {\it sigid} [{\tt =} {\it sigid}])* \\
+& | &   {\tt functor} {\it funid} [{\tt =} {\it funid}] 
+                ({\tt and} {\it funid} [{\tt =} {\it funid}])* \\
+& | & {\it path.}{\tt sml} \\
+& | & {\it path.}{\tt mlb} \\
+& | & {\tt ann} {\it id} ({\it id})* ({\tt ,}  {\it id} ({\it id})*)*
+           {\tt in} {\it basdec} {\tt end} \\
+\\
+{\it basexp}
+& ::=    & {\tt bas} {\it basdec} {\tt end} \\
+& | & {\it basid} \\
+& | & {\tt let} {\it basdec} {\tt in} {\it basexp} {\tt end}
+\end{tabular}
 \end{center}
 \end{htmlonly}
 
