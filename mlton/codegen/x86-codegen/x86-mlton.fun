@@ -77,7 +77,7 @@ struct
 	   Temp::
 	   Locals::
 	   StaticTemp::
-	   Stack::
+(*	   Stack:: *)
 	   nil)
       val holdClasses
 	= x86.ClassSet.fromList
