@@ -8,6 +8,7 @@ Source: mlton-%{version}.tgz
 URL: http://www.mlton.org/
 Buildroot: %{_tmppath}/%{name}/mlton
 Prefix: /usr
+Requires: gmp >= 3.1.1, gmp-devel >= 3.1.1
 
 %description
 MLton is a whole-program optimizing compiler for the Standard ML programming
