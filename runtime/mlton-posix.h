@@ -184,9 +184,11 @@ Int Posix_Signal_ignore(Int signum);
 Bool Posix_Signal_isDefault(Int signum);
 Bool Posix_Signal_isPending(Int signum);
 Int Posix_Signal_sigaddset(Int signum);
+Int Posix_Signal_sigdelset(Int signum);
 Int Posix_Signal_sigemptyset();
 Int Posix_Signal_sigfillset();
 Int Posix_Signal_sigprocmask(Int how);
+Int Posix_Signal_sigsuspend();
 
 /* ------------------------------------------------- */
 /*                       SysDB                       */

@@ -65,6 +65,10 @@ Int Posix_Signal_sigaddset(int signum) {
 	return sigaddset(&set, signum);
 }
 
+Int Posix_Signal_sigdelset(int signum) {
+	return sigdelset(&set, signum);
+}
+
 Int Posix_Signal_sigemptyset() {
 	return sigemptyset(&set);
 }
@@ -75,4 +79,8 @@ Int Posix_Signal_sigfillset() {
 
 Int Posix_Signal_sigprocmask(Int how) {
 	return sigprocmask(how, &set, (sigset_t*)NULL);
+}
+
+Int Posix_Signal_suspend() {
+	return sigsuspend(&set);
 }

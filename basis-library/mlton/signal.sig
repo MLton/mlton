@@ -13,10 +13,12 @@ signature MLTON_SIGNAL =
 	    type t
 	       
 	    val all: t
-	    val some: signal list -> t
+	    val allBut: signal list -> t
 	    val block: t -> unit
-	    val unblock: t -> unit
+	    val none: t
 	    val set: t -> unit
+	    val some: signal list -> t
+	    val unblock: t -> unit
 	 end
 
       datatype handler =
@@ -37,4 +39,8 @@ signature MLTON_SIGNAL =
       val handleWith: t * (unit -> unit) -> unit
       val ignore: t -> unit
       val setHandler: t * handler -> unit
+      (* suspend m temporarily sets the signal mask to m and suspends until an
+       * unmasked signal is received and handled, and then resets the mask.
+       *)
+      val suspend: Mask.t -> unit
    end

@@ -26,19 +26,27 @@ structure Mask =
    struct
       datatype t =
 	 All
+       | AllBut of signal list
        | Some of signal list
 
-      val all = All
+      val allBut = AllBut
       val some = Some
-	 
+
+      val all = allBut []
+      val none = some []
+
+      fun create m =
+	 case m of
+	    AllBut signals =>
+	       (checkResult (Prim.sigfillset ())
+		; List.app (checkResult o Prim.sigdelset) signals)
+	  | Some signals =>
+	       (checkResult (Prim.sigemptyset ())
+		; List.app (checkResult o Prim.sigaddset) signals)
+
       local
 	 fun make (how: how) (m: t) =
-	    (case m of
-		All => checkResult (Prim.sigfillset ())
-	      | Some signals =>
-		   (checkResult (Prim.sigemptyset ())
-		    ; List.app (checkResult o Prim.sigaddset) signals)
-		   ; checkResult (Prim.sigprocmask how))
+	    (create m; checkResult (Prim.sigprocmask how))
       in
 	 val block = make Prim.block
 	 val unblock = make Prim.unblock
@@ -146,4 +154,9 @@ fun setHandler (s, h) =
     | Handler f => handleWith' (s, f)
     | Ignore => ignore s
 
+fun suspend m =
+   (Mask.create m
+    ; Prim.suspend ()
+    ; Primitive.GC.collect (0w0, false) (* force switch to signal handler *))
+   
 end

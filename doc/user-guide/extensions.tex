@@ -493,10 +493,12 @@ signature MLTON_SIGNAL =
             type t
                
             val all: t
-            val some: signal list -> t
+            val allBut: signal list -> t
             val block: t -> unit
-            val unblock: t -> unit
+            val none: t
             val set: t -> unit
+            val some: signal list -> t
+            val unblock: t -> unit
          end
 
       datatype handler =
@@ -510,6 +512,7 @@ signature MLTON_SIGNAL =
       val handleWith: t * (unit -> unit) -> unit
       val ignore: t -> unit
       val setHandler: t * handler -> unit
+      val suspend: Mask.t -> unit
    end
 \end{verbatim}
 
@@ -527,13 +530,17 @@ signature MLTON_SIGNAL =
 
 \entry{Mask.all} a mask of all signals.
 
-\entry{Mask.some l} a mask of the signals in {\tt l}.
+\entry{Mask.allBut l} a mask of all signals except for those in l.
 
 \entry{Mask.block m} block all signals in {\tt m}.
 
-\entry{Mask.unblock m} unblock all signals in {\tt m}.
+\entry{Mask.none} a mask of no signals.
 
 \entry{Mask.set m} set the signal mask to {\tt m}.
+
+\entry{Mask.some l} a mask of the signals in {\tt l}.
+
+\entry{Mask.unblock m} unblock all signals in {\tt m}.
 
 \entry{type handler} the type of signal handlers.
 
@@ -555,6 +562,10 @@ interrupted thread.
 \entry{ignore s} set the handler for signal {\tt s} to ignore the signal.
 
 \entry{setHandler (s, h)} set the handler for signal {\tt s} to {\tt h}.
+
+\entry{suspend m}
+temporarily sets the signal mask to m and suspends until an unmasked signal is
+received and handled, and then resets the mask.
 \end{description}
 
 \subsubsection{{\tt MLton.Socket}}
