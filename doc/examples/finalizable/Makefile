@@ -1,3 +1,5 @@
+PATH = ../../../build/bin:$(shell echo $$PATH)
+
 mlton = mlton
 
 all:
