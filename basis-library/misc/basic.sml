@@ -7,7 +7,6 @@
  *)
 
 (* Integer arithmetic without overflow checking. *)
-val *? = Primitive.Int.*?
 val +? = Primitive.Int.+?
 val -? = Primitive.Int.-?
 infix 7 *?

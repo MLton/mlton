@@ -66,13 +66,18 @@ structure IntInf: INT_INF_EXTRA =
 	    then 0
 	 else bigSize arg
 
+      val bytesPerWord = 0w4
       (*
-       * Reserve heap space for a bignum bigInt with room for size `limbs'.
+       * Reserve heap space for a bignum bigInt with room for size + extra
+       * `limbs'.  The reason for splitting this up is that extra is intended
+       * to be a constant, and so can be combined at compile time with the 0w4
+       * below.
        *)
-      fun reserve (size: smallInt): word = 
-	 Word.* (0w4 (* bytes per word *),
+      fun reserve (size: smallInt, extra: smallInt): word = 
+	 Word.* (bytesPerWord,
 		 Word.+ (Word.fromInt size,
-			 0w4 (* counter, size, header, sign words *)))
+			 Word.+ (0w4, (* counter, size, header, sign words *)
+				 Word.fromInt extra)))
 
       (*
        * Given a fixnum bigInt, return the Word.word which it
@@ -251,7 +256,7 @@ structure IntInf: INT_INF_EXTRA =
 		       then negBad
 		    else Prim.fromWord (Word.- (0w2, argw))
 		 end
-	 else Prim.~ (arg, reserve (1 +? bigSize arg))
+	 else Prim.~ (arg, reserve (bigSize arg, 1))
 
       val dontInline: (unit -> 'a) -> 'a =
 	 fn f =>
@@ -290,7 +295,8 @@ structure IntInf: INT_INF_EXTRA =
 	       case res of
 		  NONE =>
 		     dontInline
-		     (fn () => Prim.* (lhs, rhs, reserve (size lhs +? size rhs)))
+		     (fn () =>
+		      Prim.* (lhs, rhs, reserve (size lhs +? size rhs, 0)))
 		| SOME i => i
 	    end
       end
@@ -327,9 +333,11 @@ structure IntInf: INT_INF_EXTRA =
 		    then zero
 		 else if den = zero
 			 then raise Div
-		      else let val space = reserve (2 *? nsize +? 2)
-			   in Prim.quot (num, den, space)
-			   end
+		      else
+			 Prim.quot
+			 (num, den,
+			  Word.* (Word.* (0w2, bytesPerWord),
+				  Word.+ (Word.fromInt nsize, 0w3)))
 	      end
 
       (*
@@ -361,9 +369,10 @@ structure IntInf: INT_INF_EXTRA =
 		    then num
 		 else if den = zero
 			 then raise Div
-		      else let val space = reserve (2 *? nsize +? 2)
-			   in Prim.rem (num, den, space)
-			   end
+		      else
+			 Prim.rem
+			 (num, den, Word.* (Word.* (0w2, bytesPerWord),
+					    Word.+ (Word.fromInt nsize, 0w3)))
 	      end
 
       (*
@@ -385,8 +394,7 @@ structure IntInf: INT_INF_EXTRA =
 	       NONE => 
 		  dontInline
 		  (fn () =>
-		   Prim.+ (lhs, rhs,
-			   reserve (Int.max (size lhs, size rhs) +? 1)))
+		   Prim.+ (lhs, rhs, reserve (Int.max (size lhs, size rhs), 1)))
 	     | SOME i => i
 	 end
 
@@ -410,12 +418,9 @@ structure IntInf: INT_INF_EXTRA =
 	 in
 	    case res of
 	       NONE =>
-		  dontInline (fn () =>
-			      let
-				 val tsize = Int.max (size lhs, size rhs) +? 1
-			      in
-				 Prim.- (lhs, rhs, reserve tsize)
-			      end)
+		  dontInline
+		  (fn () =>
+		   Prim.- (lhs, rhs, reserve (Int.max (size lhs, size rhs), 1)))
 	     | SOME i => i
 	 end
 
@@ -459,7 +464,7 @@ structure IntInf: INT_INF_EXTRA =
 			 else arg
 		 end
 	 else if bigIsNeg arg
-		 then Prim.~ (arg, reserve (1 +? bigSize arg))
+		 then Prim.~ (arg, reserve (bigSize arg, 1))
 	      else arg
 
       (*
@@ -544,7 +549,7 @@ structure IntInf: INT_INF_EXTRA =
 		    (gcdInt (Int.abs (Word.toIntX (stripTag lhs)),
 			     Int.abs (Word.toIntX (stripTag rhs)),
 			     1))))
-	    else Prim.gcd (lhs, rhs, reserve (max (size lhs, size rhs)))
+	    else Prim.gcd (lhs, rhs, reserve (max (size lhs, size rhs), 0))
       end
 
       (*
@@ -563,7 +568,7 @@ structure IntInf: INT_INF_EXTRA =
 	       then smallCvt (Word.toIntX (stripTag arg))
 	    else Prim.toString (arg, base,
 				Word.+
-				(reserve 0,
+				(reserve (0, 0),
 				 Word.+ (0w2, (* sign character *)
 					 Word.* (dpc,
 						 Word.fromInt (bigSize arg)))))
@@ -927,14 +932,16 @@ structure IntInf: INT_INF_EXTRA =
 	    fn (lhs: bigInt, rhs: bigInt) =>
 	    if areSmall (lhs, rhs)
 	       then
-		  let val ansv = wordOp (stripTag lhs, stripTag rhs)
+		  let
+		     val ansv = wordOp (stripTag lhs, stripTag rhs)
 		     val ans = addTag ansv
-		  in Prim.fromWord ans
+		  in
+		     Prim.fromWord ans
 		  end
 	    else
 	       dontInline
 	       (fn () => 
-		bigIntOp (lhs, rhs, reserve (Int.max (size lhs, size rhs))))
+		bigIntOp (lhs, rhs, reserve (Int.max (size lhs, size rhs), 0)))
       in
 	 val bigAndb = make (Word.andb, Prim.andb)
 	 val bigOrb = make (Word.orb, Prim.orb)
@@ -944,7 +951,7 @@ structure IntInf: INT_INF_EXTRA =
       fun bigNotb (arg: bigInt): bigInt =
 	 if isSmall arg
 	    then Prim.fromWord (addTag (Word.notb (stripTag arg)))
-	 else dontInline (fn () => Prim.notb (arg, reserve (size arg)))
+	 else dontInline (fn () => Prim.notb (arg, reserve (size arg, 0)))
 
       local
 	 val bitsPerLimb : Word.word = 0w32
@@ -954,12 +961,13 @@ structure IntInf: INT_INF_EXTRA =
 	    if shift = 0wx0
 	       then arg
 	    else Prim.~>> (arg, shift,
-			   reserve (Int.max (1, size arg -? shiftSize shift)))
+			   reserve (Int.max (1, size arg -? shiftSize shift),
+				    0))
 
 	 fun bigLshift (arg: bigInt, shift: word): bigInt =
 	    if shift = 0wx0
 	       then arg
-	    else Prim.<< (arg, shift, reserve (size arg +? shiftSize shift +? 1))
+	    else Prim.<< (arg, shift, reserve (size arg +? shiftSize shift, 1))
       end
    
       type int = bigInt
