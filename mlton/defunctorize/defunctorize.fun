@@ -115,8 +115,7 @@ fun casee {caseType: Xtype.t,
 	   tyconCons}: Xexp.t =
    let
       val cases = Vector.map (cases, fn {exp, lay, pat} =>
-			      {examples = ref [],
-			       exp = exp,
+			      {exp = exp,
 			       isDefault = false,
 			       lay = lay,
 			       numUses = ref 0,
@@ -127,8 +126,7 @@ fun casee {caseType: Xtype.t,
 	 in
 	    Vector.concat
 	    [cases,
-	     Vector.new1 {examples = ref [],
-			  exp =
+	     Vector.new1 {exp =
 			  Xexp.raisee ({exn = f e,
 					filePos = Region.toFilePos region},
 				       caseType),
@@ -148,12 +146,13 @@ fun casee {caseType: Xtype.t,
 	     | RaiseMatch => raiseExn (fn _ => Xexp.match)
 	 end
       val check: (unit -> unit) list ref = ref []
+      val examples = ref (fn () => Vector.new0 ())
       fun matchCompile () =		     		     
 	 let
 	    val (cases, decs) =
 	       Vector.mapAndFold
 	       (cases, [],
-		fn ({examples, exp = e, numUses, pat = p, ...}, decs) =>
+		fn ({exp = e, numUses, pat = p, ...}, decs) =>
 		let
 		   val args = Vector.fromList (NestedPat.varsAndTypes p)
 		   val (vars, tys) = Vector.unzip args
@@ -176,9 +175,8 @@ fun casee {caseType: Xtype.t,
 			  {tuple = Xexp.monoVar (arg, argType),
 			   components = vars,
 			   body = e})})}
-		   fun finish (p, rename) =
+		   fun finish rename =
 		      (Int.inc numUses
-		       ; List.push (examples, p)
 		       ; (Xexp.app
 			  {func = Xexp.monoVar (func, funcType),
 			   arg =
@@ -191,20 +189,20 @@ fun casee {caseType: Xtype.t,
 		   ((p, finish), dec :: decs)
 		end)
 	    val testVar = Var.newNoname ()
+	    val (body, es) =
+	       MatchCompile.matchCompile {caseType = caseType,
+					  cases = cases,
+					  conTycon = conTycon,
+					  region = region,
+					  test = testVar,
+					  testType = testType,
+					  tyconCons = tyconCons}
+	    val _ = examples := es
 	 in
-	    Xexp.let1
-	    {var = testVar,
-	     exp = test,
-	     body = 
-	     Xexp.lett
-	     {decs = decs,
-	      body = MatchCompile.matchCompile {caseType = caseType,
-						cases = cases,
-						conTycon = conTycon,
-						region = region,
-						test = testVar,
-						testType = testType,
-						tyconCons = tyconCons}}}
+	    Xexp.let1 {var = testVar,
+		       exp = test,
+		       body = Xexp.lett {decs = decs,
+					 body = body}}
 	 end
       datatype z = datatype NestedPat.node
       fun lett (x, e) = Xexp.let1 {var = x, exp = test, body = e}
@@ -260,21 +258,19 @@ fun casee {caseType: Xtype.t,
 	       if !Control.warnNonExhaustive
 		  andalso noMatch <> Cexp.RaiseAgain
 		  then
-		     case Vector.peek (cases, fn {isDefault, numUses, ...} =>
-				       isDefault andalso !numUses > 0) of
+		     case Vector.peeki (cases,
+					fn (_, {isDefault, numUses, ...}) =>
+					isDefault andalso !numUses > 0) of
 			NONE => ()
-		      | SOME {examples, ...} =>
+		      | SOME (i, _) =>
 			   let
-			      val ps = !examples
-			      val suf = if length ps > 1 then "s" else ""
 			      open Layout
 			   in
 			      Control.warning
 			      (region,
 			       str (concat [kind, " is not exhaustive"]),
-			       align [seq (str (concat ["missing pattern",
-							suf, ": "])
-					   :: (separate (ps, " | "))),
+			       align [seq [str "missing pattern: ",
+					   Vector.sub (!examples (), i)],
 				      lay ()])
 			   end
 	       else ()

@@ -62,7 +62,7 @@ structure FlatPat =
 structure Continue =
    struct
       datatype t =
-	 Finish of (Layout.t * (Var.t -> Var.t)) -> Exp.t
+	 Finish of Layout.t list ref * ((Var.t -> Var.t) -> Exp.t)
        | Matches of FlatPat.t vector option * t
 
       fun layout c =
@@ -278,14 +278,13 @@ end
 (*---------------------------------------------------*)
 
 fun matchCompile {caseType: Type.t,
-		  cases: (NestedPat.t
-			  * (Layout.t * (Var.t -> Var.t) -> Exp.t)) vector,
+		  cases: (NestedPat.t * ((Var.t -> Var.t) -> Exp.t)) vector,
 		  conTycon: Con.t -> Tycon.t,
 		  region: Region.t,
 		  test: Var.t,
 		  testType: Type.t,
 		  tyconCons: Tycon.t -> {con: Con.t,
-					 hasArg: bool} vector}: Exp.t =
+					 hasArg: bool} vector} =
    let
       fun match (var: Var.t,
 		 ty: Type.t,
@@ -667,33 +666,40 @@ fun matchCompile {caseType: Type.t,
 				ty = caseType}
 		  end
 	 end) arg
-   (*------------------------------------*)
-   (*    main code for match compile     *)
-   (*------------------------------------*)
+      (*------------------------------------*)
+      (*    main code for match compile     *)
+      (*------------------------------------*)
+      val examples = Vector.tabulate (Vector.length cases, fn _ => ref [])
+      val res =
+	 match (test, testType,
+		Vector.map2 (cases, examples, fn ((p, f), r) =>
+			     Rule.T {pat = p,
+				     info = Info.T {accum = Env.empty,
+						    continue = Finish (r, f)}}),
+		fn (pat, infos) =>
+		if Vector.isEmpty infos
+		   then Error.bug "matchRules: no default"
+		else
+		   let
+		      val Info.T {accum = env, continue} = Vector.sub (infos, 0)
+		   in
+		      case continue of
+			 Finish (r, f) =>
+			    (List.push (r, pat)
+			     ; f (fn x => Env.lookup (env, x)))
+		       | _ => Error.bug "matchRules: expecting Finish"
+		   end)
    in
-      match (test, testType,
-	     Vector.map (cases, fn (p, f) =>
-			 Rule.T {pat = p,
-				 info = Info.T {accum = Env.empty,
-						continue = Finish f}}),
-	     fn (pat, infos) =>
-	     if Vector.isEmpty infos
-		then Error.bug "matchRules: no default"
-	     else
-		let
-		   val Info.T {accum = env, continue} = Vector.sub (infos, 0)
-		in
-		   case continue of
-		      Finish f => f (pat, fn x => Env.lookup (env, x))
-		    | _ => Error.bug "matchRules: expecting Finish"
-		end)
+      (res,
+       fn () =>
+       Vector.map (examples, fn r => Layout.seq (Layout.separate (! r, " | "))))
    end
 
 val matchCompile =
    Trace.trace
    ("matchCompile",
     fn {cases, ...} => Vector.layout (NestedPat.layout o #1) cases,
-    Exp.layout)
+    Exp.layout o #1)
    matchCompile
    
 end
