@@ -343,7 +343,6 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 		    (x, t) :: ac)
 		end) arg
 
-
       fun delayExp (e as (_, t): expCode): expCode =
 	 (fn () => Xexp.lambda {arg = Var.newNoname (),
 			       argType = Xtype.unit,

@@ -181,15 +181,6 @@ structure Type =
 structure Ops = TypeOps (structure Tycon = Tycon
 			 open Type)
 
-structure Free =
-   struct
-      structure F = Sum (structure X = Tyvar
-			 structure Y = Type)
-      open F
-      val fromTyvar = X
-      val fromType = Y
-   end
-
 structure Type =
    struct
       (* Order is important, since want specialized definitions
@@ -547,9 +538,22 @@ val extendVar =
 		 layout)
    extendVar
 
+structure Free =
+   struct
+      datatype t =
+	 Type of Type.t
+       | Tyvar of Tyvar.t
+
+      val equals =
+	 fn (Type t, Type t') => Type.equals (t, t')
+	  | (Tyvar a, Tyvar a') => Tyvar.equals (a, a')
+	  | _ => false
+   end
+
 fun close (e, ty: Type.t, ensure: Tyvar.t vector): Tyvar.t list =
    let
       val frees: Free.t list ref = ref []
+	 
       fun addFree f =
 	 if List.contains (!frees, f, Free.equals)
 	    then ()
@@ -560,15 +564,12 @@ fun close (e, ty: Type.t, ensure: Tyvar.t vector): Tyvar.t list =
 	  con = fn _ => (),
 	  word = (),
 	  int = (),
-	  record = (fn {flexible, ...} =>
-		    if flexible
-		       then Error.bug "unresolved flexible record"
-		    else ()),
+	  record = fn _ => (),
 	  unknown = (fn (Unknown.T {canGeneralize, ...}, t) =>
 		     if canGeneralize
-			then addFree (Free.fromType t)
+			then addFree (Free.Type t)
 		     else ()),
-	  var = fn a => addFree (Free.fromTyvar a)}
+	  var = fn a => addFree (Free.Tyvar a)}
       (* Loop through all of the type schemes in the environment and remove
        * any frees.
        *)
@@ -598,7 +599,7 @@ fun close (e, ty: Type.t, ensure: Tyvar.t vector): Tyvar.t list =
 				   else ()),
 			 unknown = (fn (Unknown.T {canGeneralize, ...}, t) =>
 				    if canGeneralize
-				       then removeFree (Free.fromType t)
+				       then removeFree (Free.Type t)
 				    else ()),
 			 var = (fn a =>
 				if Vector.contains (ensure, a, Tyvar.equals)
@@ -607,7 +608,7 @@ fun close (e, ty: Type.t, ensure: Tyvar.t vector): Tyvar.t list =
 				   if Vector.exists (bound, fn a' =>
 						     Tyvar.equals (a, a'))
 				      then ()
-				   else removeFree (Free.fromTyvar a)),
+				   else removeFree (Free.Tyvar a)),
 			 word = ()}
 		  in
 		     if !keep
@@ -620,14 +621,16 @@ fun close (e, ty: Type.t, ensure: Tyvar.t vector): Tyvar.t list =
       List.revMap
       (!frees, fn free =>
        case free of
-	  Free.X a => a
-	| Free.Y s => 
+	  Free.Tyvar a => a
+	| Free.Type s => 
 	     case Type.toType s of
 		Type.Unknown (Unknown.T {equality, ...}) =>
-		   let val a = Tyvar.newNoname {equality = equality}
-		   in Set.setValue (s, {ty = Type.Var a,
-					plist = PropertyList.new ()})
-		      ; a
+		   let
+		      val a = Tyvar.newNoname {equality = equality}
+		      val _ = Set.setValue (s, {ty = Type.Var a,
+						plist = PropertyList.new ()})
+		   in
+		      a
 		   end
 	      | _ => Error.bug "Env.close: not unknown")
    end
