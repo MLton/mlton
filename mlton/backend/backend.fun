@@ -500,6 +500,7 @@ fun toMachine (program: Ssa.Program.t) =
 		  in
 		     case Prim.name prim of
 			MLton_installSignalHandler => Vector.new0 ()
+		      | MLton_touch => Vector.new0 ()
 		      | _ => 
 			   Vector.new1
 			   (M.Statement.PrimApp

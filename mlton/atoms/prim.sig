@@ -111,6 +111,7 @@ signature PRIM =
 	     | MLton_installSignalHandler (* backend *)
 	     | MLton_serialize (* unused *)
 	     | MLton_size (* ssa to rssa *)
+	     | MLton_touch (* backend *)
 	     | Real_Math_acos (* codegen *)
 	     | Real_Math_asin (* codegen *)
 	     | Real_Math_atan (* codegen *)

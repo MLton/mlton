@@ -106,6 +106,7 @@ structure Name =
        | MLton_installSignalHandler
        | MLton_serialize
        | MLton_size
+       | MLton_touch
        | Real_Math_acos
        | Real_Math_asin
        | Real_Math_atan
@@ -330,6 +331,7 @@ structure Name =
 	   "MLton_installSignalHandler"),
 	  (MLton_serialize, DependsOnState, "MLton_serialize"),
 	  (MLton_size, DependsOnState, "MLton_size"),
+	  (MLton_touch, SideEffect, "MLton_touch"),
 	  (Real_Math_acos, Functional, "Real_Math_acos"),
 	  (Real_Math_asin, Functional, "Real_Math_asin"),
 	  (Real_Math_atan, Functional, "Real_Math_atan"),
@@ -700,6 +702,7 @@ fun 'a extractTargs {prim, args, result,
        | MLton_equal => one (arg 0)
        | MLton_serialize => one (arg 0)
        | MLton_size => one (deref (arg 0))
+       | MLton_touch => one (arg 0)
        | Ref_assign => one (arg 1)
        | Ref_deref => one result
        | Ref_ref => one (arg 0)

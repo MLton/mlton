@@ -58,6 +58,7 @@ structure Primitive =
       val handlesSignals = _prim "MLton_handlesSignals": bool;
       val installSignalHandler = _prim "MLton_installSignalHandler": unit -> unit;
       val safe = _build_const "MLton_safe": bool;
+      val touch = fn z => _prim "MLton_touch": 'a -> unit; z
       val usesCallcc: bool ref = ref false;
 
       structure Array =

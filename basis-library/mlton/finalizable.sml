@@ -14,14 +14,9 @@ datatype 'a t = T of {afters: (unit -> unit) list ref,
 		      finalizers: ('a -> unit) list ref,
 		      value: 'a ref}
 
-fun touch (r: 'a ref) =
-   if r = ref (!r)
-      then raise Fail "Finalize.touch bug\n"
-   else ()
-	    
 fun withValue (T {value, ...}, f) =
    DynamicWind.wind (fn () => f (!value),
-		     fn () => touch value)
+		     fn () => Primitive.touch value)
 
 fun addFinalizer (T {finalizers, ...}, f) =
    List.push (finalizers, f)
