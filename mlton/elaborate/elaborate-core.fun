@@ -363,254 +363,258 @@ val elaboratePat:
 					  seq [str "pattern: ",
 					       approximate (Apat.layout p)])
 			end
-		  else
-		     case List.peek (!others, fn (p, v) =>
-				     Vector.exists (v, fn (x', _, _) =>
-						    Avar.equals (x, x'))) of
-			NONE =>
-			   (List.push (xts, (x, x', t))
-			    ; extendVar (E, x, x', Scheme.fromType t, region))
-		      | SOME (p', _) =>
-			   let
-			      open Layout
-			      fun err p =
-				 Control.error
-				 (Apat.region p,
-				  seq [str "variable ",
-				       Avar.layout x,
-				       str " occurs in multiple patterns"],
-				  seq [str "pattern: ",
-				       approximate (Apat.layout p)])
-			   in
-			     err p; err p'
-			   end
-	 in
-	    x'
-	 end
-      fun bind (x: Avar.t): Var.t * Type.t =
-	 let
-	    val t = Type.new ()
-	 in
-	    (bindToType (x, t), t)
-	 end
-      fun loop arg: Cpat.t =
-	 Trace.traceInfo' (info, Apat.layout, Cpat.layout)
-	 (fn p: Apat.t =>
-	  let
-	     val region = Apat.region p
-	     val unify = fn (t, t', f) => unify (t, t', preError, f)
-	     fun unifyPatternConstraint (p, lay, c) =
-		unify
-		(p, c, fn (l1, l2) =>
-		 (region,
-		  str "pattern and constraint disagree",
-		  align [seq [str "expects: ", l2],
-			 seq [str "but got: ", l1],
-			 seq [str "in: ", lay ()]]))
-	     fun lay () = approximate (Apat.layout p)
-	  in
-	     case Apat.node p of
-		Apat.App (c, p) =>
-		   let
-		      val (con, s) = Env.lookupLongcon (E, c)
-		      val {args, instance} = Scheme.instantiate s
-		      val args = args ()
-		      val p = loop p
-		      val argType = Type.new ()
-		      val resultType = Type.new ()
-		      val _ =
-			 unify
-			 (instance, Type.arrow (argType, resultType),
-			  fn _ =>
-			  (region,
-			   str "constant constructor applied to argument",
-			   seq [str "pattern: ", lay ()]))
-		      val _ =
-			 unify
-			 (Cpat.ty p, argType, fn (l, l') =>
-			  (region,
-			   str "constructor applied to incorrect argument",
-			   align [seq [str "expects: ", l'],
-				  seq [str "but got: ", l],
-				  seq [str "pattern: ", lay ()]]))
-		   in
-		      Cpat.make (Cpat.Con {arg = SOME p,
-					   con = con,
-					   targs = args},
-				 resultType)
-		   end
-	      | Apat.Const c =>
-		   let
-		      fun doit () =
-			 let
-			    val ty = Aconst.ty c
-			    fun resolve () = resolveConst (c, ty)
-			    val _ = List.push (overloads, fn () =>
-					       (resolve (); ()))
-			 in
-			    Cpat.make (Cpat.Const resolve, ty)
-			 end
-		   in
-		      case Aconst.node c of
-			 Aconst.Bool b => if b then Cpat.truee else Cpat.falsee
-		       | Aconst.Real r =>
+		  else ()
+	       val _ =
+		  let
+		     fun err p =
+			let
+			   open Layout
+			in
+			   Control.error
+			   (Apat.region p,
+			    seq [str "variable ",
+				 Avar.layout x,
+				 str " occurs in multiple patterns"],
+			    seq [str "pattern: ",
+				 approximate (Apat.layout p)])
+			end
+		     val main = Promise.lazy (fn () => err p)
+		  in
+		     List.foreach
+		     (!others, fn (p, v) =>
+		      if Vector.exists (v, fn (x', _, _) => Avar.equals (x, x'))
+			 then (main (); err p)
+		      else ())
+		  end
+	       val _ = List.push (xts, (x, x', t))
+	       val _ = extendVar (E, x, x', Scheme.fromType t, region)
+	    in
+	       x'
+	    end
+	 fun bind (x: Avar.t): Var.t * Type.t =
+	    let
+	       val t = Type.new ()
+	    in
+	       (bindToType (x, t), t)
+	    end
+	 fun loop arg: Cpat.t =
+	    Trace.traceInfo' (info, Apat.layout, Cpat.layout)
+	    (fn p: Apat.t =>
+	     let
+		val region = Apat.region p
+		val unify = fn (t, t', f) => unify (t, t', preError, f)
+		fun unifyPatternConstraint (p, lay, c) =
+		   unify
+		   (p, c, fn (l1, l2) =>
+		    (region,
+		     str "pattern and constraint disagree",
+		     align [seq [str "expects: ", l2],
+			    seq [str "but got: ", l1],
+			    seq [str "in: ", lay ()]]))
+		fun lay () = approximate (Apat.layout p)
+	     in
+		case Apat.node p of
+		   Apat.App (c, p) =>
+		      let
+			 val (con, s) = Env.lookupLongcon (E, c)
+			 val {args, instance} = Scheme.instantiate s
+			 val args = args ()
+			 val p = loop p
+			 val argType = Type.new ()
+			 val resultType = Type.new ()
+			 val _ =
+			    unify
+			    (instance, Type.arrow (argType, resultType),
+			     fn _ =>
+			     (region,
+			      str "constant constructor applied to argument",
+			      seq [str "pattern: ", lay ()]))
+			 val _ =
+			    unify
+			    (Cpat.ty p, argType, fn (l, l') =>
+			     (region,
+			      str "constructor applied to incorrect argument",
+			      align [seq [str "expects: ", l'],
+				     seq [str "but got: ", l],
+				     seq [str "pattern: ", lay ()]]))
+		      in
+			 Cpat.make (Cpat.Con {arg = SOME p,
+					      con = con,
+					      targs = args},
+				    resultType)
+		      end
+		 | Apat.Const c =>
+		      let
+			 fun doit () =
 			    let
-			       open Layout
-			       val _ = 
-				  Control.error
-				  (region,
-				   seq [str "real constants are not allowed in patterns: ",
-					lay ()],
-				   empty)
+			       val ty = Aconst.ty c
+			       fun resolve () = resolveConst (c, ty)
+			       val _ = List.push (overloads, fn () =>
+						  (resolve (); ()))
 			    in
-			       doit ()
+			       Cpat.make (Cpat.Const resolve, ty)
 			    end
-		       | _ => doit ()
-		   end
-	      | Apat.Constraint (p, t) =>
-		   let
-		      val p' = loop p
-		      val _ =
-			 unifyPatternConstraint
-			 (Cpat.ty p', fn () => Apat.layout p,
-			  elaborateType (t, Lookup.fromEnv E))
-		   in
-		      p'
-		   end
-	      | Apat.FlatApp items =>
-		   loop (Parse.parsePat
-			 (items, E, fn () => seq [str "pattern: ", lay ()]))
-	      | Apat.Layered {var = x, constraint, pat, ...} =>
-		   let
-		      val t =
-			 case constraint of
-			    NONE => Type.new ()
-			  | SOME t => elaborateType (t, Lookup.fromEnv E)
-		      val x = bindToType (x, t)
-		      val pat' = loop pat
-		      val _ =
-			 unifyPatternConstraint (Cpat.ty pat',
-						 fn () => Apat.layout pat,
-						 t)
-		   in
-		      Cpat.make (Cpat.Layered (x, pat'), t)
-		   end
-	      | Apat.List ps =>
-		   let
-		      val ps' = Vector.map (ps, loop)
-		   in
-		      Cpat.make (Cpat.List ps',
-				 unifyList
-				 (Vector.map2 (ps, ps', fn (p, p') =>
-					       (Cpat.ty p', Apat.region p)),
-				  preError,
-				  fn () => seq [str "pattern:  ", lay ()]))
-		   end
-	      | Apat.Record {flexible, items} =>
-		   (* rules 36, 38, 39 and Appendix A, p.57 *)
-		   let
-		      val (fs, ps) =
-			 Vector.unzip
-			 (Vector.map
-			  (items,
-			   fn (f, i) =>
-			   (f,
-			    case i of
-			       Apat.Item.Field p => p
-			     | Apat.Item.Vid (vid, tyo, po) =>
-				  let
-				     val p =
-					case po of
-					   NONE =>
-					      Apat.longvid (Longvid.short vid)
-					 | SOME p =>
-					      Apat.layered
-					      {fixop = Fixop.None,
-					       var = Ast.Vid.toVar vid,
-					       constraint = NONE,
-					       pat = p}
-				  in
-				     case tyo of
-					NONE => p
-				      | SOME ty => Apat.constraint (p, ty)
-				  end)))
-		      val ps = Vector.map (ps, loop)
-		      val r = SortedRecord.zip (fs, Vector.map (ps, Cpat.ty))
-		      val ty =
-			 if flexible
-			    then
+		      in
+			 case Aconst.node c of
+			    Aconst.Bool b => if b then Cpat.truee else Cpat.falsee
+			  | Aconst.Real r =>
 			       let
-				  val (t, isResolved) = Type.flexRecord r
-				  fun resolve () =
-				     if isResolved ()
-					then ()
-				     else
-					Control.error
-					(region,
-					 str "unresolved ... in record pattern",
-					 seq [str "pattern: ", lay ()])
-				  val _ = List.push (overloads, resolve)
+				  open Layout
+				  val _ = 
+				     Control.error
+				     (region,
+				      seq [str "real constants are not allowed in patterns: ",
+					   lay ()],
+				      empty)
 			       in
-				  t
+				  doit ()
 			       end
-			 else
-			    Type.record r
-		   in
-		      Cpat.make
-		      (Cpat.Record (Record.fromVector (Vector.zip (fs, ps))),
-		       ty)
-		   end
-	      | Apat.Tuple ps =>
-		   let
-		      val ps = Vector.map (ps, loop)
-		   in
-		      Cpat.make (Cpat.Tuple ps,
-				 Type.tuple (Vector.map (ps, Cpat.ty)))
-		   end
-	      | Apat.Var {name, ...} =>
-		   let
-		      val (strids, x) = Ast.Longvid.split name
-		      fun var () =
-			 let
-			    val (x, t) = bind (Ast.Vid.toVar x)
-			 in
-			    Cpat.make (Cpat.Var x, t)
-			 end
+			  | _ => doit ()
+		      end
+		 | Apat.Constraint (p, t) =>
+		      let
+			 val p' = loop p
+			 val _ =
+			    unifyPatternConstraint
+			    (Cpat.ty p', fn () => Apat.layout p,
+			     elaborateType (t, Lookup.fromEnv E))
+		      in
+			 p'
+		      end
+		 | Apat.FlatApp items =>
+		      loop (Parse.parsePat
+			    (items, E, fn () => seq [str "pattern: ", lay ()]))
+		 | Apat.Layered {var = x, constraint, pat, ...} =>
+		      let
+			 val t =
+			    case constraint of
+			       NONE => Type.new ()
+			     | SOME t => elaborateType (t, Lookup.fromEnv E)
+			 val x = bindToType (x, t)
+			 val pat' = loop pat
+			 val _ =
+			    unifyPatternConstraint (Cpat.ty pat',
+						    fn () => Apat.layout pat,
+						    t)
+		      in
+			 Cpat.make (Cpat.Layered (x, pat'), t)
+		      end
+		 | Apat.List ps =>
+		      let
+			 val ps' = Vector.map (ps, loop)
+		      in
+			 Cpat.make (Cpat.List ps',
+				    unifyList
+				    (Vector.map2 (ps, ps', fn (p, p') =>
+						  (Cpat.ty p', Apat.region p)),
+				     preError,
+				     fn () => seq [str "pattern:  ", lay ()]))
+		      end
+		 | Apat.Record {flexible, items} =>
+		      (* rules 36, 38, 39 and Appendix A, p.57 *)
+		      let
+			 val (fs, ps) =
+			    Vector.unzip
+			    (Vector.map
+			     (items,
+			      fn (f, i) =>
+			      (f,
+			       case i of
+				  Apat.Item.Field p => p
+				| Apat.Item.Vid (vid, tyo, po) =>
+				     let
+					val p =
+					   case po of
+					      NONE =>
+						 Apat.longvid (Longvid.short vid)
+					    | SOME p =>
+						 Apat.layered
+						 {fixop = Fixop.None,
+						  var = Ast.Vid.toVar vid,
+						  constraint = NONE,
+						  pat = p}
+				     in
+					case tyo of
+					   NONE => p
+					 | SOME ty => Apat.constraint (p, ty)
+				     end)))
+			 val ps = Vector.map (ps, loop)
+			 val r = SortedRecord.zip (fs, Vector.map (ps, Cpat.ty))
+			 val ty =
+			    if flexible
+			       then
+				  let
+				     val (t, isResolved) = Type.flexRecord r
+				     fun resolve () =
+					if isResolved ()
+					   then ()
+					else
+					   Control.error
+					   (region,
+					    str "unresolved ... in record pattern",
+					    seq [str "pattern: ", lay ()])
+				     val _ = List.push (overloads, resolve)
+				  in
+				     t
+				  end
+			    else
+			       Type.record r
+		      in
+			 Cpat.make
+			 (Cpat.Record (Record.fromVector (Vector.zip (fs, ps))),
+			  ty)
+		      end
+		 | Apat.Tuple ps =>
+		      let
+			 val ps = Vector.map (ps, loop)
+		      in
+			 Cpat.make (Cpat.Tuple ps,
+				    Type.tuple (Vector.map (ps, Cpat.ty)))
+		      end
+		 | Apat.Var {name, ...} =>
+		      let
+			 val (strids, x) = Ast.Longvid.split name
+			 fun var () =
+			    let
+			       val (x, t) = bind (Ast.Vid.toVar x)
+			    in
+			       Cpat.make (Cpat.Var x, t)
+			    end
 
-		   in
-		      if amInRvb andalso List.isEmpty strids
-			 then var ()
-		      else
-			 (case Env.peekLongcon (E, Ast.Longvid.toLongcon name) of
-			     NONE =>
-				if List.isEmpty strids
-				   then var ()
-				else
+		      in
+			 if amInRvb andalso List.isEmpty strids
+			    then var ()
+			 else
+			    (case Env.peekLongcon (E, Ast.Longvid.toLongcon name) of
+				NONE =>
+				   if List.isEmpty strids
+				      then var ()
+				   else
+				      let
+					 val _ = 
+					    Control.error
+					    (region,
+					     seq [str "undefined constructor: ",
+						  Ast.Longvid.layout name],
+					     empty)
+				      in
+					 Cpat.make (Cpat.Wild, Type.new ())
+				      end
+			      | SOME (c, s) =>
 				   let
-				      val _ = 
-					 Control.error
-					 (region,
-					  seq [str "undefined constructor: ",
-					       Ast.Longvid.layout name],
-					  empty)
+				      val {args, instance} = Scheme.instantiate s
 				   in
-				      Cpat.make (Cpat.Wild, Type.new ())
-				   end
-			   | SOME (c, s) =>
-				let
-				   val {args, instance} = Scheme.instantiate s
-				in
-				   Cpat.make
-				   (Cpat.Con {arg = NONE, con = c, targs = args ()},
-				    instance)
-				end)
-		   end
-	      | Apat.Wild =>
-		   Cpat.make (Cpat.Wild, Type.new ())
-	  end) arg
-      val p' = loop p
-      val xts = Vector.fromList (!xts)
-      val _ = List.push (others, (p, xts))
+				      Cpat.make
+				      (Cpat.Con {arg = NONE, con = c, targs = args ()},
+				       instance)
+				   end)
+		      end
+		 | Apat.Wild =>
+		      Cpat.make (Cpat.Wild, Type.new ())
+	     end) arg
+	 val p' = loop p
+	 val xts = Vector.fromList (!xts)
+	 val _ = List.push (others, (p, xts))
       in
 	 (p', xts)
       end
@@ -1264,6 +1268,19 @@ fun elaborateDec (d, {env = E,
 				 ty = ty,
 				 var = var}
 			     end)
+		      val _ =
+			 Vector.fold
+			 (fbs, [], fn ({func = f, ...}, ac) =>
+			  if List.exists (ac, fn f' => Avar.equals (f, f'))
+			     then
+				(Control.error
+				 (Avar.region f,
+				  seq [str "function ",
+				       Avar.layout f,
+				       str " defined multiple times: "],
+				  lay ())
+				 ; ac)
+			  else f :: ac)
 		      val decs =
 			 Vector.map
 			 (fbs, fn {clauses,
