@@ -382,25 +382,31 @@ let
 			   r))
 	 val (allStrings, globalString) =
 	    make (String.equals, fn s => (s, Type.word8Vector, s))
-	 fun constOperand (c: Const.t): M.Operand.t =
-	    let
-	       datatype z = datatype Const.t
-	    in
-	       case c of
-		  IntInf i =>
-		     (case Const.SmallIntInf.toWord i of
-			 NONE => globalIntInf i
-		       | SOME w =>
-			    M.Operand.Word (WordX.fromIntInf
-					    (Word.toIntInf w, WordSize.default)))
-		| Real r =>
-		     if !Control.codegen = Control.CCodegen
-			then M.Operand.Real r
-		     else globalReal r
-		| Word w => M.Operand.Word w
-		| Word8Vector v => globalString (Word8.vectorToString v)
-	    end
       end
+      fun realOp (r: RealX.t): M.Operand.t =
+	 if !Control.codegen = Control.CCodegen
+	    then M.Operand.Real r
+	 else globalReal r
+      fun bogusOp (t: Type.t): M.Operand.t =
+	 case Type.deReal t of
+	    NONE => M.Operand.Word (WordX.fromIntInf
+				    (0, WordSize.fromBits (Type.width t)))
+	  | SOME s => realOp (RealX.zero s)
+      fun constOperand (c: Const.t): M.Operand.t =
+	 let
+	    datatype z = datatype Const.t
+	 in
+	    case c of
+	       IntInf i =>
+		  (case Const.SmallIntInf.toWord i of
+		      NONE => globalIntInf i
+		    | SOME w =>
+			 M.Operand.Word (WordX.fromIntInf
+					 (Word.toIntInf w, WordSize.default)))
+	     | Real r => realOp r
+	     | Word w => M.Operand.Word w
+	     | Word8Vector v => globalString (Word8.vectorToString v)
+	 end
       fun parallelMove {chunk = _,
 			dsts: M.Operand.t vector,
 			srcs: M.Operand.t vector}: M.Statement.t vector =
@@ -456,7 +462,7 @@ let
 			then M.Operand.Offset {base = base,
 					       offset = offset,
 					       ty = ty}
-		     else M.Operand.bogus ty
+		     else bogusOp ty
 		  end
 	     | PointerTycon pt =>
 		  M.Operand.Word

@@ -94,7 +94,6 @@ signature MACHINE =
 	     | StackTop
 	     | Word of WordX.t
 
-	    val bogus: Type.t -> t
 	    val equals: t * t -> bool
 	    val interfere: t * t -> bool
 	    val isLocation: t -> bool

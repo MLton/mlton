@@ -320,12 +320,6 @@ structure Operand =
 	  | Register _ => true
 	  | StackOffset _ => true
 	  | _ => false
-
-      val bogus: Type.t -> t =
-	 fn t =>
-	 case Type.deReal t of
-	    NONE => Word (WordX.fromIntInf (0, WordSize.fromBits (Type.width t)))
-	  | SOME s => Real (RealX.zero s)
    end
 
 structure Switch = Switch (open Atoms
