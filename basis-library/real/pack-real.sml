@@ -17,24 +17,35 @@ val (sub, up) =
    else (subVecRev, updateRev)
 
 fun update (a, i, r) =
-   (Array.checkSlice (a, i, SOME bytesPerElem)
-    ; up (a, i, r))
+   let
+      val a = Word8Array.toPoly a
+   in
+      Array.checkSlice (a, i, SOME bytesPerElem)
+      ; up (a, i, r)
+   end
    
 local
    val a = Word8Array.array (bytesPerElem, 0w0)
 in
    fun toBytes (r: real): Word8Vector.vector =
-      (up (a, 0, r)
+      (up (Word8Array.toPoly a, 0, r)
        ; Byte.stringToBytes (Byte.unpackString (Word8ArraySlice.full a)))
 end
 
 fun subVec (v, i) =
-   (Vector.checkSlice (v, i, SOME bytesPerElem)
-    ; sub (v, i))
+   let
+      val v = Word8Vector.toPoly v
+   in
+      Vector.checkSlice (v, i, SOME bytesPerElem)
+      ; sub (v, i)
+   end
 
 fun fromBytes v = subVec (v, 0)
 
-fun subArr (a, i) = subVec (Primitive.Vector.fromArray a, i)
+fun subArr (a, i) =
+   subVec (Word8Vector.fromPoly
+	   (Primitive.Vector.fromArray (Word8Array.toPoly a)),
+	   i)
    
 end
 

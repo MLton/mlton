@@ -35,21 +35,22 @@ fun start (i, n) =
    end handle Overflow => raise Subscript
 
 local
-   fun make (sub, length) (av, i) =
+   fun make (sub, length, toPoly) (av, i) =
       let
 	 val _ = start (i, length av)
       in
-	 Word.toLarge (sub (av, i))
+	 Word.toLarge (sub (toPoly av, i))
       end
 in
-   val subArr = make (sub, Word8Array.length)
+   val subArr = make (sub, Word8Array.length, Word8Array.toPoly)
    val subArrX = subArr
-   val subVec = make (subV, Word8Vector.length)
+   val subVec = make (subV, Word8Vector.length, Word8Vector.toPoly)
    val subVecX = subVec
 end
 
 fun update (a, i, w) =
    let
+      val a = Word8Array.toPoly a
       val _ = start (i, Array.length a)
    in
       up (a, i, Word.fromLarge w)

@@ -200,7 +200,7 @@ val newOut =
    fn (fd, name) =>
    let
       val b = Buf {size = ref 0,
-		   array = Primitive.Array.array bufSize}
+		   array = Word8Array.fromPoly (Primitive.Array.array bufSize)}
       val bufStyle =
 	 if Posix.ProcEnv.isatty fd
 	    then Line b
@@ -269,7 +269,7 @@ fun output (out as ref (Out {bufStyle, closed, fd, ...}), s): unit =
 				     cause = exn}
 
 local
-   val buf1 = Primitive.Array.array 1
+   val buf1 = Word8Array.fromPoly (Primitive.Array.array 1)
 in
    fun output1 (out as ref (Out {fd, closed, bufStyle, ...}), c: elem): unit =
       if !closed
@@ -357,7 +357,8 @@ structure Buf =
 		(!openIns))
 	 in
 	    fn (fd, name) =>
-	    let val b = T {buf = Primitive.Array.array bufSize,
+	    let val b = T {buf = (Word8Array.fromPoly
+				  (Primitive.Array.array bufSize)),
 			   closed = ref false,
 			   eof = ref false,
 			   fd = fd,
@@ -452,10 +453,11 @@ structure Buf =
 			before first := bytesToRead +? !first)
 	       else
 		  let
-		     val dst = Primitive.Array.array bytesToRead
+		     val dst =
+			Word8Array.fromPoly (Primitive.Array.array bytesToRead)
 		     val _ =
-			(ArraySlice.copy 
-			 {src = ArraySlice.slice (buf, !first, SOME size),
+			(Word8ArraySlice.copy 
+			 {src = Word8ArraySlice.slice (buf, !first, SOME size),
 			  dst = dst, di = 0}
 			 ; first := !last)
 		     fun loop (bytesRead: int): int =
@@ -544,7 +546,7 @@ structure StreamIO =
 	    fun isEmpty (T {buf, ...}) = 0 = Array.length buf
 
 	    val empty as T {next, ...} =
-	       T {buf = Primitive.Array.array 0,
+	       T {buf = Word8Array.fromPoly (Primitive.Array.array 0),
 		  closed = ref true, (* doesn't matter *)
 		  fd = FS.stdin, (* doesn't matter *)
 		  next = ref NONE}
@@ -574,12 +576,14 @@ structure StreamIO =
 			then empty
 		     else
 			let
-			   val buf = Primitive.Array.array bufSize
+			   val buf =
+			      Word8Array.fromPoly (Primitive.Array.array bufSize)
 			   val n = PIO.readArr (fd, AS.full buf)
 			   val buf =
 			      if n < bufSize
-				 then Array.tabulate (n, fn i =>
-						      Array.sub (buf, i))
+				 then (Word8Array.tabulate
+				       (n, fn i =>
+					Word8Array.sub (buf, i)))
 			      else buf
 			   val c = T {buf = buf,
 				      closed = closed,

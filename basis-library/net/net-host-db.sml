@@ -8,17 +8,17 @@ structure NetHostDB: NET_HOST_DB_EXTRA =
       structure PW = PackWord32Big
       fun new_in_addr () =
 	let
-	  val ia = Word8Array.array (Prim.inAddrLen, 0wx0)
-	  fun finish () = Word8Array.vector ia
+	  val ia = Array.array (Prim.inAddrLen, 0wx0: Word8.word)
+	  fun finish () = Array.vector ia
 	in
 	  (ia, finish)
 	end
-      fun inAddrToWord ia =
-	Word.fromLargeWord (PW.subVec (ia, 0))
+      fun inAddrToWord (ia: in_addr) =
+	Word.fromLargeWord (PW.subVec (Word8Vector.fromPoly ia, 0))
       fun wordToInAddr w =
 	let
 	  val (ia, finish) = new_in_addr ()
-	  val _ = PW.update (ia, 0, Word.toLargeWord w)
+	  val _ = PW.update (Word8Array.fromPoly ia, 0, Word.toLargeWord w)
 	in
 	  finish ()
 	end
@@ -61,9 +61,11 @@ structure NetHostDB: NET_HOST_DB_EXTRA =
 		   fun fill (n, addrs) =
 		     if n < numAddrs
 		       then let
-			      val addr = Word8Array.array(length, 0wx0)
-			      val _ = Prim.entryAddrsN(n, addr)
-			      val addr = Word8Array.vector addr
+			      val addr = Word8Array.array (length, 0wx0)
+			      val _ =
+				 Prim.entryAddrsN (n, Word8Array.toPoly addr)
+			      val addr =
+				 Word8Vector.toPoly (Word8Array.vector addr)
 			    in
 			      fill (n + 1, addr::addrs)
 			    end
@@ -78,7 +80,7 @@ structure NetHostDB: NET_HOST_DB_EXTRA =
 	    else NONE
       in
 	fun getByAddr in_addr = 
-	  get (Prim.getByAddress (in_addr, Word8Vector.length in_addr))
+	  get (Prim.getByAddress (in_addr, Vector.length in_addr))
 	fun getByName name = 
 	  get (Prim.getByName (String.nullTerm name))
       end
@@ -156,7 +158,7 @@ structure NetHostDB: NET_HOST_DB_EXTRA =
 		  val (d,c,b,a,w) = get4 w
 		in
 		  if w = 0wx0
-		    then SOME (Word8Vector.fromList [a,b,c,d], statew)
+		    then SOME (Vector.fromList [a,b,c,d], statew)
 		    else NONE
 		end
 	    | [(x, statex), (w, statew)] => 
@@ -165,7 +167,7 @@ structure NetHostDB: NET_HOST_DB_EXTRA =
 		  val (a,x) = get1 x
 		in
 		  if w = 0wx0 andalso x = 0wx0
-		    then SOME (Word8Vector.fromList [a,b,c,d], statew)
+		    then SOME (Vector.fromList [a,b,c,d], statew)
 		    else try [(x, statex)]
 		end
 	    | [(y, statey), (x, statex), (w, statew)] => 
@@ -175,7 +177,7 @@ structure NetHostDB: NET_HOST_DB_EXTRA =
 		  val (a,y) = get1 y
 		in
 		  if w = 0wx0 andalso x = 0wx0 andalso y = 0wx0
-		    then SOME (Word8Vector.fromList [a,b,c,d], statew)
+		    then SOME (Vector.fromList [a,b,c,d], statew)
 		    else try [(y, statey), (x, statex)]
 		end
 	    | [(z, statez), (y, statey), (x, statex), (w, statew)] => 
@@ -186,7 +188,7 @@ structure NetHostDB: NET_HOST_DB_EXTRA =
 		  val (a,z) = get1 z
 		in
 		  if w = 0wx0 andalso x = 0wx0 andalso y = 0wx0 andalso z = 0wx0
-		    then SOME (Word8Vector.fromList [a,b,c,d], statew)
+		    then SOME (Vector.fromList [a,b,c,d], statew)
 		    else try [(z, statez), (y, statey), (x, statex)]
 		end
 	    | _ => NONE
@@ -197,5 +199,5 @@ structure NetHostDB: NET_HOST_DB_EXTRA =
       fun fromString s = StringCvt.scanString scan s
       fun toString in_addr =
 	String.concatWith "." 
-	(Word8Vector.foldr (fn (w,ss) => (Word8.fmt StringCvt.DEC w)::ss) [] in_addr)
+	(Vector.foldr (fn (w,ss) => (Word8.fmt StringCvt.DEC w)::ss) [] in_addr)
    end

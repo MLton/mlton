@@ -203,7 +203,10 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
       in
 	 fun readlink (path: string): string =
 	    let
-	       val len = Prim.readlink (String.nullTerm path, buf, size)
+	       val len =
+		  Prim.readlink (String.nullTerm path,
+				 Word8Array.toPoly buf,
+				 size)
 	    in
 	       checkResult len
 	       ; Byte.unpackString (Word8ArraySlice.slice (buf, 0, SOME len))

@@ -19,6 +19,7 @@ structure UnixSock : UNIX_SOCK =
       fun fromAddr sa = 
 	let
 	  val sa = Socket.unpackSockAddr sa
+	  val sa = Word8Vector.toPoly sa
 	  val len = Prim.pathLen sa
 	  val a = CharArray.array (len, #"\000")
 	  val _ = Prim.fromAddr (sa, CharArray.toPoly a, len)

@@ -9,7 +9,7 @@ structure Byte: BYTE =
    struct
       val byteToChar = Primitive.Word8.toChar
 
-      val bytesToString = Primitive.String.fromWord8Vector
+      val bytesToString = Primitive.String.fromWord8Vector o Word8Vector.toPoly
 
       val charToByte = Primitive.Char.toWord8
 
@@ -18,7 +18,7 @@ structure Byte: BYTE =
 	 (Substring.size s, fn j =>
 	  Word8Array.update (a, i +? j, charToByte (Substring.sub (s, j))))
 
-      val stringToBytes = Primitive.String.toWord8Vector
+      val stringToBytes = Word8Vector.fromPoly o Primitive.String.toWord8Vector
 
       local
 	 fun make (length, sub) s =

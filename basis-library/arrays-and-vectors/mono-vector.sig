@@ -29,26 +29,24 @@ signature MONO_VECTOR_EXTRA_PRE =
 
       type array
 
-      val unsafeSub: vector * int -> elem
-
       (* Used to implement Substring/String functions *)
       val append: vector * vector -> vector
       val concatWith: vector -> vector list -> vector
+      val duplicate: vector -> vector
+      val extract: vector * int * int option -> vector (* Deprecated *)
+      val fields: (elem -> bool) -> vector -> vector list
+      val fromArray: array -> vector
+      val fromPoly: elem Vector.vector -> vector
       val isPrefix: (elem * elem -> bool) -> vector -> vector -> bool
       val isSubvector: (elem * elem -> bool) -> vector -> vector -> bool
       val isSuffix: (elem * elem -> bool) -> vector -> vector -> bool
-      val translate: (elem -> vector) -> vector -> vector
-      val tokens: (elem -> bool) -> vector -> vector list
-      val fields: (elem -> bool) -> vector -> vector list
-
-      val duplicate: vector -> vector
-      val fromArray: array -> vector
       val toList: vector -> elem list
+      val tokens: (elem -> bool) -> vector -> vector list
+      val toPoly: vector -> elem Vector.vector
+      val translate: (elem -> vector) -> vector -> vector
       val unfoldi: int * 'a * (int * 'a -> elem * 'a) -> vector
+      val unsafeSub: vector * int -> elem
       val vector: int * elem -> vector
-
-      (* Deprecated *)
-      val extract: vector * int * int option -> vector
    end
 
 signature MONO_VECTOR_EXTRA =

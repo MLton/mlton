@@ -34,7 +34,8 @@ structure PosixIO: POSIX_IO =
       fun close (FD fd) = checkResult (Prim.close fd)
 
       local
-	 fun make {read, toArraySlice, toVectorSlice, write, writeVec} =
+	 fun make {fromVector, read, toArraySlice, toVectorSlice,
+		   vectorLength, write, writeVec} =
 	    let
 	       fun readArr (FD fd, sl): int =
 		  let
@@ -47,9 +48,10 @@ structure PosixIO: POSIX_IO =
 		     val a = Primitive.Array.array n
 		     val bytesRead = checkReturnResult (read (fd, a, 0, n))
 		  in 
-		     if n = bytesRead
-			then Vector.fromArray a
-		     else Array.extract (a, 0, SOME bytesRead)
+		     fromVector
+		     (if n = bytesRead
+			 then Vector.fromArray a
+		      else Array.extract (a, 0, SOME bytesRead))
 		  end
 	       fun writeArr (FD fd, sl) =
 		  let
@@ -66,21 +68,26 @@ structure PosixIO: POSIX_IO =
 		  end
 	    in
 	       {readArr = readArr, readVec = readVec,
+		vectorLength = vectorLength,
 		writeVec = writeVec, writeArr = writeArr}
 	    end
       in
-	val rwChar = make {read = readChar,
+	val rwChar = make {fromVector = fn v => v,
+			   read = readChar,
 			   toArraySlice = CharArraySlice.toPoly,
 			   toVectorSlice = CharVectorSlice.toPoly,
+			   vectorLength = CharVector.length,
 			   write = writeChar,
 			   writeVec = writeCharVec}
-	val rwWord8 = make {read = readWord8,
-			    toArraySlice = fn sl => sl,
-			    toVectorSlice = fn sl => sl,
+	val rwWord8 = make {fromVector = Word8Vector.fromPoly,
+			    read = readWord8,
+			    toArraySlice = Word8ArraySlice.toPoly,
+			    toVectorSlice = Word8VectorSlice.toPoly,
+			    vectorLength = Word8Vector.length,
 			    write = writeWord8,
 			    writeVec = writeWord8Vec}
       end
-      val {readArr, readVec, writeVec, writeArr} = rwWord8
+      val {readArr, readVec, writeVec, writeArr, ...} = rwWord8
 		      
       structure FD =
 	 struct
@@ -237,7 +244,7 @@ structure PosixIO: POSIX_IO =
 		  endPos = NONE, 
 		  verifyPos = NONE}
 
-	fun make {readArr, readVec, writeVec, writeArr} (RD, WR) =
+	fun make {readArr, readVec, vectorLength, writeVec, writeArr} (RD, WR) =
 	  let
 	    fun mkReader {fd, name, initBlkMode} =
 	      let
@@ -254,7 +261,7 @@ structure PosixIO: POSIX_IO =
 		fun incPos k = pos := Position.+ (!pos, Position.fromInt k)
 		val readVec = fn n => 
 		  let val v = readVec (fd, n)
-		  in incPos (Vector.length v); v
+		  in incPos (vectorLength v); v
 		  end
 		val readArr = fn x => 
 		  let val k = readArr (fd, x)

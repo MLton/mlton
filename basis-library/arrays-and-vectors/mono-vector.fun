@@ -12,6 +12,8 @@ functor MonoVector (type elem): MONO_VECTOR_EXTRA
       type array = elem array
       type elem = elem
       type vector = elem vector
+      val fromPoly = fn v => v
+      val toPoly = fn v => v
       structure MonoVectorSlice = 
 	 struct
 	    open VectorSlice
@@ -30,6 +32,8 @@ functor EqtypeMonoVector (eqtype elem): EQTYPE_MONO_VECTOR_EXTRA
       type array = elem array
       type elem = elem
       type vector = elem vector
+      val fromPoly = fn v => v
+      val toPoly = fn v => v
       structure MonoVectorSlice = 
 	 struct
 	    open VectorSlice

@@ -22,7 +22,7 @@ structure INetSock: INET_SOCK =
 
       fun fromAddr sa =
 	let
-	  val _ = Prim.fromAddr (Socket.unpackSockAddr sa)
+	  val _ = Prim.fromAddr (Word8Vector.toPoly (Socket.unpackSockAddr sa))
 	  val port = Net.ntohs (Prim.getPort ())
 	  val (ia, finish) = NetHostDB.new_in_addr ()
 	  val _ = Prim.getInAddr ia

@@ -139,7 +139,10 @@ in
    structure Real64Array2 = Array2
 end
 local
-   structure S = EqMono (type elem = Word8.word)
+   structure S:>
+      EQ_MONO
+      where type Array.elem = Word8.word
+      = EqMono (type elem = Word8.word)
    open S
 in
    structure Word8Vector = Vector
