@@ -1486,6 +1486,7 @@ static inline void minorGC (GC_state s) {
 	 */
 	foreachGlobal (s, forwardIfInNursery);
 	forwardInterGenerationalPointers (s);
+	heapClearCardMap (&s->heap);
 	foreachPointerInRange (s, toSpace, &s->back, forwardIfInNursery);
 	s->heap.oldGenSize = s->back - s->heap.oldGen;
 	setNursery (s);
@@ -2215,7 +2216,8 @@ void doGC (GC_state s, uint bytesRequested, bool forceMajor) {
 					bytesRequested);
 	fixedGetrusage (RUSAGE_SELF, &ru_start);
  	s->bytesAllocated += s->frontier - s->heap.nursery;
-	forceMajor = forceMajor
+	forceMajor = not MINOR
+			or forceMajor
 			or not s->generational
 /*			or s->heap.oldGenSize > 0.90 * s->heap.size */
 			or 10 == s->numMinorsSinceLastMajor;
