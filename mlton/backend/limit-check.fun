@@ -246,15 +246,14 @@ fun insertFunction (f: Function.t,
 						 dontCollect = l})
 		   else l
 		end
-	     fun heapCheck (isFirst: bool,
-			    lhs: Operand.t,
-			    amount: Operand.t): Label.t =
+	     fun heapCheck (isFirst: bool, amount: Operand.t): Label.t =
 		let
 		   val z as {collect, dontCollect} = insert amount
 		   val res = Var.newNoname ()
 		   val s =
 		      Statement.PrimApp
-		      {args = Vector.new2 (lhs, Operand.Runtime Frontier),
+		      {args = Vector.new2 (Operand.Runtime LimitPlusSlop,
+					   Operand.Runtime Frontier),
 		       dst = SOME (res, Type.word),
 		       prim = Prim.word32Sub}
 		   val (statements, transfer) =
@@ -290,9 +289,7 @@ fun insertFunction (f: Function.t,
 				       Operand.Runtime Frontier,
 				       Operand.Runtime Limit,
 				       insert (Operand.int 0))
-		else heapCheck (true,
-				Operand.Runtime LimitPlusSlop,
-				Operand.word bytes)
+		else heapCheck (true, Operand.word bytes)
 	     fun noArray () =
 		case heap of
 		   NONE => maybeStack ()
@@ -303,43 +300,37 @@ fun insertFunction (f: Function.t,
 	     fun array (numBytes: Operand.t) =
 		let
 		   val extraBytes =
-		      Runtime.arrayHeaderSize
-		      + (case heap of
-			    NONE => 0
-			  | SOME {bytes} => bytes)
+		      Word.fromInt
+		      (Runtime.arrayHeaderSize
+		       + (case heap of
+			     NONE => 0
+			   | SOME {bytes} => bytes))
 		in
 		   case numBytes of
 		      Operand.Const c =>
 			 (case Const.node c of
 			     Const.Node.Word w =>
-				heapCheckNonZero (w + Word.fromInt extraBytes)
+				heapCheckNonZero (w + extraBytes)
 			   | _ => Error.bug "strange array bytes")
 		    | _ =>
-			 if extraBytes <= Runtime.limitSlop
-			    then heapCheck (true,
-					    Operand.Runtime Limit,
-					    numBytes)
-			 else
-			    let
-			       val bytes = Var.newNoname ()
-			    in
-			       newBlock
-			       (true,
-				Vector.new0 (),
-				Transfer.Arith
-				{args = Vector.new2 (Operand.word
-						     (Word.fromInt extraBytes),
-						     numBytes),
-				 dst = bytes,
-				 overflow = allocTooLarge (),
-				 prim = Prim.word32AddCheck,
-				 success = (heapCheck
-					    (false,
-					     Operand.Runtime LimitPlusSlop,
-					     Operand.Var {var = bytes,
-							  ty = Type.word})),
-				 ty = Type.word})
-			    end
+			 let
+			    val bytes = Var.newNoname ()
+			 in
+			    newBlock
+			    (true,
+			     Vector.new0 (),
+			     Transfer.Arith
+			     {args = Vector.new2 (Operand.word extraBytes,
+						  numBytes),
+			      dst = bytes,
+			      overflow = allocTooLarge (),
+			      prim = Prim.word32AddCheck,
+			      success = (heapCheck
+					 (false, 
+					  Operand.Var {var = bytes,
+						       ty = Type.word})),
+			      ty = Type.word})
+			 end
 		end
 	     val _ =
 		if 0 < Vector.length statements
