@@ -66,11 +66,9 @@ fun insertInFunction (f: Function.t): Function.t =
 		  ; ()))
 	  end)
       val extra: Block.t list ref = ref []
-      fun addSignalCheck (i: int): unit =
+      fun addSignalCheck (Block.T {args, kind, label, statements, transfer})
+	 : unit = 
 	 let
-	    val _ = Array.update (isHeader, i, true)
-	    val Block.T {args, kind, label, statements, transfer} =
-	       Vector.sub (blocks, i)
 	    val failure = Label.newNoname ()
 	    val success = Label.newNoname ()
 	    val collect = Label.newNoname ()
@@ -139,17 +137,35 @@ fun insertInFunction (f: Function.t): Function.t =
 	 (loops, fn {headers, child} =>
 	  let
 	     val _ = Vector.foreach (headers, fn n =>
-				     addSignalCheck (nodeIndex n))
+				     let
+					val i = nodeIndex n
+					val _ = Array.update (isHeader, i, true)
+				     in
+					addSignalCheck (Vector.sub (blocks, i))
+				     end)
 	     val _ = loop child
 	  in
 	     ()
 	  end)
       (* Add a signal check at the function entry. *)
-      val _ =
-	 case Vector.peeki (blocks, fn (_, Block.T {label, ...}) =>
-			    Label.equals (label, start)) of
+      val newStart =
+	 case Vector.peek (blocks, fn Block.T {label, ...} =>
+			   Label.equals (label, start)) of
 	    NONE => Error.bug "missing start block"
-	  | SOME (i, _) => addSignalCheck i
+	  | SOME (Block.T {label, ...}) =>
+	       let
+		  val newStart = Label.newNoname ()
+		  val _ =
+		     addSignalCheck
+		     (Block.T {args = Vector.new0 (),
+			       kind = Kind.Jump,
+			       label = newStart,
+			       statements = Vector.new0 (),
+			       transfer = Transfer.Goto {args = Vector.new0 (),
+							 dst = start}})
+	       in
+		  newStart
+	       end
       val forest =
 	 loop
 	 (Graph.loopForestSteensgaard (g, {root = labelNode start}))
@@ -165,7 +181,7 @@ fun insertInFunction (f: Function.t): Function.t =
 			    name = name,
 			    raises = raises,
 			    returns = returns,
-			    start = start}
+			    start = newStart}
       val _ = Function.clear f
    in
       f
