@@ -370,6 +370,17 @@ structure Primitive =
 		 val gc_stime_sec = _ffi "MLton_Rusage_gc_stime_sec": unit -> int;
 		 val gc_stime_usec = _ffi "MLton_Rusage_gc_stime_usec": unit -> int;
 	       end
+
+	    structure Process =
+	       struct
+		  val spawne =
+		     _ffi "MLton_Process_spawne"
+		     : nullString * nullString array * nullString array -> int;
+		  val spawnp =
+		     _ffi "MLton_Process_spawnp"
+		     : nullString * nullString array -> int;
+	       end
+	    
 (*       val deserialize = _prim "MLton_deserialize": Word8Vector.vector -> 'a ref; *)
 (*       val serialize = _prim "MLton_serialize": 'a ref -> Word8Vector.vector; *)
 

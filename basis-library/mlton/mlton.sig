@@ -26,6 +26,7 @@ signature MLTON =
       structure IntInf: MLTON_INT_INF
       structure Itimer: MLTON_ITIMER
       structure ProcEnv: MLTON_PROC_ENV
+      structure Process: MLTON_PROCESS
       structure Profile: MLTON_PROFILE
       structure Ptrace: MLTON_PTRACE
       structure Random: MLTON_RANDOM

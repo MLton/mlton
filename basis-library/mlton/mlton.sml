@@ -34,6 +34,7 @@ structure GC = GC
 structure IntInf = IntInf
 structure Itimer = Itimer
 structure ProcEnv = ProcEnv
+structure Process = Process
 structure Ptrace = Ptrace
 structure Profile = Profile (structure Cleaner = Cleaner
 			     structure Profile = Prim.Profile)

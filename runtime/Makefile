@@ -36,6 +36,8 @@ OBJS =						\
 	basis/MLton/random.o			\
 	basis/MLton/rlimit.o			\
 	basis/MLton/rusage.o			\
+	basis/MLton/spawne.o			\
+	basis/MLton/spawnp.o			\
 	basis/MLton/size.o			\
 	basis/OS/FileSys/tmpnam.o		\
 	basis/PackReal/subVec.o			\
@@ -184,6 +186,8 @@ DEBUG_OBJS =					\
 	basis/MLton/random-gdb.o		\
 	basis/MLton/rlimit-gdb.o		\
 	basis/MLton/rusage-gdb.o		\
+	basis/MLton/spawne-gdb.o		\
+	basis/MLton/spawnp-gdb.o		\
 	basis/MLton/size-gdb.o			\
 	basis/OS/FileSys/tmpnam-gdb.o		\
 	basis/PackReal/subVec-gdb.o		\

@@ -152,6 +152,8 @@ mlton/syslog.sig
 mlton/syslog.sml
 mlton/exn.sig
 mlton/exn.sml
+mlton/process.sig
+mlton/process.sml
 mlton/mlton.sig
 mlton/mlton.sml
 

@@ -1,5 +1,12 @@
 Here are the changes from version 20011006 to version VERSION.
 
+* 2002-03-17
+  - Added MLton.Process.{spawn,spawne,spawnp}, which use primitives when 
+    running on Cygwin and fork/exec when running on Linux.
+
+* 2002-02 - 2002-03
+  - Added the ability to cross-compile to Cygwin/Windows.
+
 * 2002-02-10
   - Reworked object header words so that Array.maxLen = valOf Int.maxInt.  
     Also fixed a long-standing minor bug in MLton, where

@@ -19,8 +19,12 @@
 #define	not	!			/* logical negation operator */
 #define	and	&&			/* logical conjunction */
 #define	or	||			/* logical disjunction */
+#ifndef TRUE
 #define	TRUE	(0 == 0)
+#endif
+#ifndef FALSE
 #define	FALSE	(not TRUE)
+#endif
 #define	loop	while (TRUE)		/* loop until break */
 #define	EOS	'\0'			/* end-of-string char */
 #ifndef	NULL

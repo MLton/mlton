@@ -128,6 +128,10 @@ void MLton_Profile_Data_reset (Pointer data);
 void MLton_Profile_Data_write (Pointer data, Cstring name);
 void MLton_Profile_init (void);
 void MLton_Profile_installHandler (void);
+#if (defined (__CYGWIN__))
+Int MLton_Process_spawne(NullString p, Pointer a, Pointer e);
+Int MLton_Process_spawnp(NullString p, Pointer a);
+#endif
 
 /* ------------------------------------------------- */
 /*                        OS                         */

@@ -32,6 +32,7 @@ structure MLton:
       structure GC: MLTON_GC
       structure Itimer: MLTON_ITIMER
       structure ProcEnv: MLTON_PROC_ENV
+      structure Process: MLTON_PROCESS
       structure Profile: MLTON_PROFILE
       structure Random: MLTON_RANDOM
       structure Rlimit: MLTON_RLIMIT
@@ -275,6 +276,35 @@ signature MLTON_PROC_ENV =
 \begin{description}
 \entry{setenv \{name, value\}}
 Like the C {\tt setenv} function.
+\end{description}
+
+\subsubsection{\tt MLton.Process}
+This structure provides an alternative to the {\tt fork}/{\tt exec} idiom that
+is typically used on Linux to create a new process.  On Linux, the {\tt spawn}
+functions are simple wrappers around {\tt fork}/{\tt exec}.  However, on Cygwin,
+the {\tt spawn} functions are primitive and are both faster and more reliable
+than {\tt fork}/{\tt exec}.
+
+\begin{verbatim}
+signature MLTON_PROCESS =
+   sig
+      val spawn: {path: string, args: string list} -> unit
+      val spawne: {path: string, args: string list, env: string list} -> unit
+      val spawnp: {file: string, args: string list} -> unit
+   end
+\end{verbatim}
+
+\begin{description}
+\entry{spawn \{path, args\}}
+Start a new process running the executable specified by {\tt path} with the
+arguments {\tt args}.  Like {\tt Posix.Process.exec}.
+\entry{spawne \{path, args, env\}}
+Start a new process running the executable specified by {\tt path} with the
+arguments {\tt args}.  Like {\tt Posix.Process.exece}.
+\entry{spawnp \{file, args\}}
+Search the {\tt PATH} environment variable for an executable named {\tt file},
+and start a new process running that executable with the arguments {\tt args}.
+Like {\tt Posix.Process.execp}.
 \end{description}
 
 \subsubsection{\tt MLton.Random}
