@@ -670,6 +670,7 @@ fun output {program as Machine.Program.T {chunks,
 			    ))
 	 end
       val profiling = !Control.profile <> Control.ProfileNone
+      val amTimeProfiling = !Control.profile = Control.ProfileTime
       fun outputChunk (Chunk.T {chunkLabel, blocks, regMax, ...}) =
 	 let
 	    val {done, print, ...} = outputC ()
@@ -792,7 +793,7 @@ fun output {program as Machine.Program.T {chunks,
 			       srcIsMem = false,
 			       ty = Type.label return})
 		; C.push (size, print)
-		; if profiling
+		; if amTimeProfiling
 		     then print "\tFlushStackTop();\n"
 		  else ())
 	    fun copyArgs (args: Operand.t vector): string list * (unit -> unit) =
@@ -867,7 +868,7 @@ fun output {program as Machine.Program.T {chunks,
 		      | _ => ()
 		  fun pop (fi: FrameInfo.t) =
 		     (C.push (Bytes.~ (Program.frameSize (program, fi)), print)
-		      ; if profiling
+		      ; if amTimeProfiling
 			   then print "\tFlushStackTop();\n"
 			else ())
 		  val _ =
