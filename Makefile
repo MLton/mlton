@@ -19,7 +19,7 @@ CP = /bin/cp -fp
 all:
 	$(MAKE) compiler dirs
 	mv $(COMP)/$(AOUT) $(LIB)
-	$(MAKE) script world runtime hostmap constants docs
+	$(MAKE) script world runtime hostmap constants tools docs
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: clean
