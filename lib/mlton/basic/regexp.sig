@@ -86,6 +86,7 @@ signature REGEXP =
       val fromString: string -> (t * Save.t vector) option
       val isChar: (char -> bool) -> t
       val isNotChar: (char -> bool) -> t
+      val layout: t -> Layout.t
       val nonDigit: t
       val none: t
       val notChar: char -> t
@@ -101,6 +102,7 @@ signature REGEXP =
       val star: t -> t
       val string: string -> t (* case matters *)
       val stringIgnoreCase: string -> t (* case doesn't matter *)
+      val toString: t -> string
    end
 
 

@@ -115,6 +115,8 @@ local
 				      Layout.tuple [layout r, Save.layout s]]
 		| Star r => seq [str "Star ", layout r]
 	    end
+
+	 val toString = Layout.toString o layout
       end
 
    structure Stack:
