@@ -21,4 +21,6 @@ signature TEXT =
 	 = CharVectorSlice.vector
 	 = String.string
 	 = Substring.string
+      sharing type CharArray.array = CharArraySlice.array
+      sharing type CharVectorSlice.slice = CharArraySlice.vector_slice
    end
