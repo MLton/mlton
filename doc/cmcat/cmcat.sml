@@ -548,6 +548,7 @@ struct
 			      (#set (CM.symval sym)) (SOME 1))
 	 val _ = (#set CM.Control.verbose) false
 	 val _ = (#set CM.Control.warn_obsolete) false
+	 val _ = Control.printWarnings := false
 	 val dir = OS.FileSys.getDir ()
 	 val libs = Closure.topoSortImportGraph
 	            (OS.Path.mkAbsolute {path = source, relativeTo = dir})
