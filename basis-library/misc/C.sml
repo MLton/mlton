@@ -39,6 +39,7 @@ structure C: C =
 	    open Prim.CS
 
 	    fun toCharArrayOfLength (cs, n) = toArrayOfLength (cs, sub, n)
+
 	    val toWord8ArrayOfLength =
 	       charArrayToWord8Array o toCharArrayOfLength
 	       
