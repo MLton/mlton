@@ -16,8 +16,6 @@ datatype z = datatype Exp.t
 datatype z = datatype Statement.t
 datatype z = datatype Transfer.t
 
-structure Set = DisjointSet
-
 structure Tree = Tree (structure Seq = Prod)
 
 structure TypeTree =
@@ -265,57 +263,6 @@ structure Flat =
    end
 
 datatype z = datatype Flat.t
-
-structure Equatable:
-   sig
-      type 'a t
-
-      val equals: 'a t * 'a t -> bool
-      val delay: (unit -> 'a) -> 'a t
-      val equate: 'a t * 'a t * ('a * 'a -> 'a) -> unit
-      val new: 'a -> 'a t
-      val value: 'a t -> 'a
-   end =
-   struct
-      datatype 'a delay =
-	 Computed of 'a
-       | Uncomputed of unit -> 'a
-
-      datatype 'a t = T of 'a delay Set.t
-
-      fun delay f = T (Set.singleton (Uncomputed f))
-	 
-      fun new a = T (Set.singleton (Computed a))
-
-      fun equals (T s, T s') = Set.equals (s, s')
-
-      fun value (T s) =
-	 case Set.! s of
-	    Computed a => a
-	  | Uncomputed f =>
-	       let
-		  val a = f ()
-		  val () = Set.:= (s, Computed a)
-	       in
-		  a
-	       end
-	    
-      fun equate (T s, T s', combine) =
-	 if Set.equals (s, s')
-	    then ()
-	 else
-	    let
-	       val d = Set.! s
-	       val d' = Set.! s'
-	       val () = Set.union (s, s')
-	    in
-	       case (d, d') of
-		  (Computed a, Computed a') =>
-		     Set.:= (s, Computed (combine (a, a')))
-		| (Uncomputed _, _) => Set.:= (s, d')
-		| (_, Uncomputed _) => Set.:= (s, d)
-	    end
-   end
    
 structure Value =
    struct

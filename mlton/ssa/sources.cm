@@ -23,6 +23,8 @@ is
 ../control/sources.cm
 ../../lib/mlton/sources.cm
 
+equatable.sig
+equatable.sml
 ssa-tree.sig
 ssa-tree2.sig
 ssa-tree.fun

@@ -16,8 +16,6 @@ datatype z = datatype Exp.t
 datatype z = datatype Statement.t
 datatype z = datatype Transfer.t
 
-structure Set = DisjointSet
-
 structure Finish =
    struct
       datatype t = T of {flat: Type.t Prod.t option, 
@@ -38,15 +36,7 @@ structure Value =
    struct
       datatype t =
 	 GroundV of Type.t
-       | Complex of complex Set.t
-      and complex =
-	 Computed of computed
-	 (* If a value is Uncomputed then nothing is known about any of its
-	  * subcomponents.  Maintining this invariant is essential to allowing
-	  * unification to completely drop an uncomputed value without looking
-	  * at it.
-	  *)
-	| Uncomputed of unit -> computed
+       | Complex of computed Equatable.t
       and computed =
 	 ObjectC of object
 	| WeakC of {arg: t,
@@ -64,11 +54,7 @@ structure Value =
 		     offset: int}
 	| Unknown
 
-      fun delay (f: unit -> computed): t =
-	 Complex (Set.singleton
-		  (if false
-		      then Computed (f ())
-		   else Uncomputed f))
+      fun delay (f: unit -> computed): t = Complex (Equatable.delay f)
 
       datatype value =
 	 Ground of Type.t
@@ -78,23 +64,10 @@ structure Value =
 
       val value: t -> value =
 	 fn GroundV t => Ground t
-	  | Complex s =>
-	       let
-		  val c = 
-		     case Set.! s of
-			Computed c => c
-		      | Uncomputed f =>
-			   let
-			      val c = f ()
-			      val () = Set.:= (s, Computed c)
-			   in
-			      c
-			   end
-	       in
-		  case c of
-		     ObjectC obj => Object obj
-		   | WeakC w => Weak w
-	       end
+	  | Complex e =>
+	       case Equatable.value e of
+		  ObjectC obj => Object obj
+		| WeakC w => Weak w
 
       local
 	 open Layout
@@ -102,13 +75,11 @@ structure Value =
 	 fun layout v: Layout.t =
 	    case v of
 	       GroundV t => Type.layout t
-	     | Complex s =>
-		  (case Set.! s of
-		      Computed c =>
-			 (case c of
-			     ObjectC ob => layoutObject ob
-			   | WeakC {arg, ...} => seq [str "Weak ", layout arg])
-		    | Uncomputed _ => str "<uncomputed>")
+	     | Complex e =>
+		  Equatable.layout 
+		  (fn ObjectC ob => layoutObject ob
+		    | WeakC {arg, ...} => seq [str "Weak ", layout arg])
+		  e
 	 and layoutFlat (f: flat): Layout.t =
 	    case f of
 	       NotFlat => str "NotFlat"
@@ -202,7 +173,7 @@ structure Value =
 	  end
 
       val computed: computed -> t =
-	 fn c => Complex (Set.singleton (Computed c))
+	 fn c => Complex (Equatable.new c)
 
       fun weakC (a: t): computed =
 	 WeakC {arg = a, finalType = ref NONE}
@@ -223,38 +194,28 @@ structure Value =
 	    (GroundV t, GroundV t') =>
 	       if Type.equals (t, t') then ()
 	       else Error.bug "unify of unequal Grounds"
-	  | (Complex s, Complex s') =>
-	       if Set.equals (s, s') then ()
-	       else
-		  let
-		     val c = Set.! s
-		     val c' = Set.! s'
-		     val () = Set.union (s, s')
-		  in
-		     case (c, c') of
-			(Computed c, Computed c') => 
-			   (case (c, c') of
-			       (ObjectC (Obj {args = a, flat = f, ...}),
-				ObjectC (Obj {args = a', flat = f', ...})) =>
-			       let
-				  val () =
-				     case (!f, !f') of
-					(_, NotFlat) => f := NotFlat
-				      | (NotFlat, _) => f' := NotFlat
-				      | (Offset _, _) =>
-					   Error.bug "unify saw Offset"
-				      | (_, Offset _) =>
-					   Error.bug "unify saw Offset"
-				      | _ => ()
-			       in
-				  unifyProd (a, a')
-			       end
-			      | (WeakC {arg = a, ...}, WeakC {arg = a', ...}) =>
-				   unify (a, a')
-			      | _ => Error.bug "strange unify")
-		      | (Uncomputed _, _) => Set.:= (s, c')
-		      | (_, Uncomputed _) => Set.:= (s, c)
-		  end
+	  | (Complex e, Complex e') =>
+	       Equatable.equate
+	       (e, e', fn (c, c') =>
+		case (c, c') of
+		   (ObjectC (Obj {args = a, flat = f, ...}), ObjectC (Obj {args = a', flat = f', ...})) =>
+		      let
+			 val () = unifyProd (a, a')
+			 val () =
+			    case (!f, !f') of
+			       (_, NotFlat) => f := NotFlat
+			     | (NotFlat, _) => f' := NotFlat
+			     | (Offset _, _) =>
+				  Error.bug "unify saw Offset"
+			     | (_, Offset _) =>
+				  Error.bug "unify saw Offset"
+			     | _ => ()
+		      in
+			 c
+		      end
+		 | (WeakC {arg = a, ...}, WeakC {arg = a', ...}) =>
+		      (unify (a, a'); c)
+		 | _ => Error.bug "strange unify")
 	  | _ => Error.bug "unify Complex with Ground"
       and unifyProd =
 	 fn (p, p') =>

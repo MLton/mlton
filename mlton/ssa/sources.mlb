@@ -5,11 +5,14 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-local
-    ../../lib/mlton/sources.mlb
-    ../atoms/sources.mlb
-    ../control/sources.mlb
 
+local
+   ../../lib/mlton/sources.mlb
+   ../atoms/sources.mlb
+   ../control/sources.mlb
+
+    equatable.sig
+    equatable.sml
     ssa-tree.sig
     ssa-tree2.sig
     ssa-tree.fun
