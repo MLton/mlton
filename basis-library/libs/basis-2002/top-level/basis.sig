@@ -299,6 +299,10 @@ signature BASIS_2002 =
       sharing type list = List.list
       *)
 
+      sharing type int = Int32.int
+      sharing type real = Real64.real
+      sharing type word = Word32.word
+
       (* Required structures *)
 (*      sharing type BinIO.StreamIO.elem = Word8.word *)
       sharing type BinIO.StreamIO.reader = BinPrimIO.reader
@@ -362,10 +366,6 @@ signature BASIS_2002 =
       sharing type Word8Array2.vector = Word8Vector.vector
 	
       (* Optional structures *)
-      sharing IntArray = Int32Array
-      sharing RealArray = Real64Array
-      sharing WordArray = Word32Array
-
       sharing type BoolArray.vector = BoolVector.vector
       sharing type BoolArraySlice.array = BoolArray.array
       sharing type BoolArraySlice.vector = BoolVector.vector
