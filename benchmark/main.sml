@@ -94,6 +94,7 @@ val benchCounts: (string * int * int) list =
     ("DLXSimulator", 50, 15),
     ("fft", 256, 128),
     ("fib", 6, 1),
+    ("flat-array", 2000, 400),
     ("hamlet", 50, 5),
     ("imp-for", 1000, 300),
     ("knuth-bendix", 500, 100),
