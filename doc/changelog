@@ -1,5 +1,9 @@
 Here are the changes since version 20041109.
 
+* 2005-02-03
+  - Fixed a bug in OS.Path.joinDirFile, which did not raise InvalidArc
+    when passed a file that was not an arc.
+
 * 2005-01-26
   - Fixed a front end bug that incorrectly rejected expansive valbinds
     with useless bound type variables.

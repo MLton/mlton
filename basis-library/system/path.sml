@@ -192,7 +192,15 @@ structure OS_Path : OS_PATH = struct
 
   fun isCanonical p = mkCanonical p = p;
 
-  fun joinDirFile {dir, file} = concat(dir, file)
+  fun toArcOpt s =
+     case fromString s of
+	{arcs = [a], isAbs = false, vol = ""} => SOME a
+      | _ => NONE
+	
+  fun joinDirFile {dir, file} =
+     case toArcOpt file of
+	NONE => raise InvalidArc
+      | SOME a => concat (dir, a)
 
   fun splitDirFile p =
       let open List
