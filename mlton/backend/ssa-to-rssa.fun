@@ -859,7 +859,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 	     | Type.Real s => c (Const.real (RealX.zero s))
 	     | Type.Word s => c (Const.word (WordX.zero s))
 	 end
-      val handlesSignals = ref false
+      val handlesSignals = 
+	 S.Program.hasPrim 
+	 (program, fn p => 
+	  Prim.name p = Prim.Name.MLton_installSignalHandler)
       fun translateStatementsTransfer (statements, ss, transfer) =
 	 let
 	    fun loop (i, ss, t): Statement.t vector * Transfer.t =
@@ -1237,9 +1240,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				    (case targ () of
 					NONE => move (Operand.bool true)
 				      | SOME _ => primApp prim)
-			       | MLton_installSignalHandler =>
-				    (handlesSignals := true
-				     ; none ())
+			       | MLton_installSignalHandler => none ()
 			       | MLton_touch => none ()
 			       | Pointer_getInt s => pointerGet (Type.Int s)
 			       | Pointer_getPointer =>
@@ -1271,11 +1272,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				    (Vector.new1 (a 0),
 				     refRep (Vector.sub (targs, 0)))
 			       | Thread_atomicBegin =>
-				    (* assert (s->canHandle >= 0);
-				     * s->canHandle++;
-				     * if (s->signalIsPending)
-				     *         s->limit = s->limitPlusSlop
-				     *                    - LIMIT_SLOP;
+				    (* gcState.canHandle++;
+				     * if (gcState.signalIsPending)
+				     *   gcState.limit = gcState.limitPlusSlop - LIMIT_SLOP;
 				     *)
 				    split
 				    (Vector.new0 (), Kind.Jump, ss, fn l =>
@@ -1309,39 +1308,50 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 							{args = Vector.new0 (),
 							 dst = l})}
 				     in
-					(bumpCanHandle 1,
-					 Transfer.ifInt
-					 (Operand.Runtime SignalIsPending,
-					  {falsee = l,
-					   truee = l'}))
+					if handlesSignals 
+					   then (bumpCanHandle 1,
+						 Transfer.ifInt
+						 (Operand.Runtime SignalIsPending,
+						  {falsee = l,
+						   truee = l'}))
+					   else (bumpCanHandle 1,
+						 Transfer.Goto
+						 {args = Vector.new0 (),
+						  dst = l})
 				     end)
 			       | Thread_atomicEnd =>
 				    (* gcState.canHandle--;
-				     * assert(gcState.canHandle >= 0);
 				     * if (gcState.signalIsPending
 				     *     and 0 == gcState.canHandle)
-				     *         gcState.limit = 0;
+				     *   gc;
 				     *)
 				    split
 				    (Vector.new0 (), Kind.Jump, ss, fn l =>
 				     let
 					datatype z = datatype GCField.t
-					val statements =
-					   Vector.new1
-					   (Statement.Move
-					    {dst = Operand.Runtime Limit,
-					     src =
-					     Operand.word
-					     (WordX.zero (WordSize.pointer ()))})
+					val func = CFunction.gc {maySwitchThreads = true}
+					val args = 
+					   Vector.new5
+					   (Operand.GCState,
+					    Operand.int (IntX.zero IntSize.default),
+					    Operand.bool false,
+					    Operand.File,
+					    Operand.Line)
+					val l''' = 
+					   newBlock
+					   {args = Vector.new0 (),
+					    kind = Kind.CReturn {func = func},
+					    statements = Vector.new0 (),
+					    transfer = Goto {args = Vector.new0 (),
+							     dst = l}}
 					val l'' =
 					   newBlock
 					   {args = Vector.new0 (),
 					    kind = Kind.Jump,
-					    statements = statements,
-					    transfer =
-					    Transfer.Goto
-					    {args = Vector.new0 (),
-					     dst = l}}
+					    statements = Vector.new0 (),
+					    transfer = Transfer.CCall {args = args,
+								       func = func,
+								       return = SOME l'''}}
 					val l' =
 					   newBlock
 					   {args = Vector.new0 (),
@@ -1353,11 +1363,16 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					     {falsee = l'',
 					      truee = l})}
 				     in
-					(bumpCanHandle ~1,
-					 Transfer.ifInt
-					 (Operand.Runtime SignalIsPending,
-					  {falsee = l,
-					   truee = l'}))
+					if handlesSignals 
+					   then (bumpCanHandle ~1,
+						 Transfer.ifInt
+						 (Operand.Runtime SignalIsPending,
+						  {falsee = l,
+						   truee = l'}))
+					   else (bumpCanHandle ~1,
+						 Transfer.Goto
+						 {args = Vector.new0 (),
+						  dst = l})
 				     end)
 			       | Thread_canHandle =>
 				    move (Operand.Runtime GCField.CanHandle)
@@ -1517,7 +1532,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 	  end
       val functions = List.revMap (functions, translateFunction)
       val p = Program.T {functions = functions,
-			 handlesSignals = !handlesSignals,
+			 handlesSignals = handlesSignals,
 			 main = main,
 			 objectTypes = objectTypes}
       val _ = Program.clear p

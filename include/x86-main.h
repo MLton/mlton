@@ -75,13 +75,12 @@ void MLton_callFromC () {						\
 		fprintf (stderr, "MLton_callFromC() starting\n");	\
 	s = &gcState;							\
 	s->savedThread = s->currentThread;				\
-	s->canHandle += 2;						\
+	s->canHandle += 3;						\
 	/* Return to the C Handler thread. */				\
 	GC_switchToThread (s, s->callFromCHandler);			\
 	jump = *(pointer*)(s->stackTop - WORD_SIZE);			\
 	MLton_jumpToSML(jump);						\
 	GC_switchToThread (s, s->savedThread);				\
-	s->canHandle--;							\
 	s->savedThread = BOGUS_THREAD;					\
 	if (DEBUG_X86CODEGEN)						\
 		fprintf (stderr, "MLton_callFromC() done\n");		\

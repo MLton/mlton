@@ -16,7 +16,7 @@ void MLton_callFromC () {						\
 		fprintf (stderr, "MLton_callFromC() starting\n");	\
 	s = &gcState;							\
 	s->savedThread = s->currentThread;				\
-	s->canHandle += 2;						\
+	s->canHandle += 3;						\
 	/* Switch to the C Handler thread. */				\
 	GC_switchToThread (s, s->callFromCHandler);			\
 	nextFun = *(int*)(s->stackTop - WORD_SIZE);			\
@@ -26,7 +26,6 @@ void MLton_callFromC () {						\
  		cont=(*(struct cont(*)(void))cont.nextChunk)();		\
 	} while (not returnToC);					\
 	GC_switchToThread (s, s->savedThread);				\
-	s->canHandle--;							\
  	s->savedThread = BOGUS_THREAD;					\
 	if (DEBUG_CCODEGEN)						\
 		fprintf (stderr, "MLton_callFromC done\n");		\

@@ -9,7 +9,12 @@ enum {
 };
 
 Thread Thread_current () {
-	return (Thread)gcState.currentThread;
+	Thread t;
+
+	t = (Thread)gcState.currentThread;
+	if (DEBUG_THREAD)
+		fprintf (stderr, "0x%08x = Thread_current ()\n", (uint)t);
+	return t;
 }
 
 void Thread_finishHandler () {
@@ -47,7 +52,7 @@ void Thread_startHandler () {
 void Thread_switchTo (Thread thread, Word ensureBytesFree) {
 	GC_state s;
 
-	if (FALSE)
+	if (DEBUG_THREAD)
 		fprintf (stderr, "Thread_switchTo (0x%08x, %u)\n",
 				(uint)thread, (uint)ensureBytesFree);
 	s = &gcState;

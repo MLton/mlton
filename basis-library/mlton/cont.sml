@@ -1,7 +1,6 @@
 structure MLtonCont:> MLTON_CONT =
 struct
 
-structure Thread' = MLtonThread
 structure Thread = Primitive.Thread
 
 (* This mess with dummy is so that if callcc is ever used anywhere in the
@@ -17,7 +16,7 @@ type 'a t = (unit -> 'a) -> unit
 
 fun callcc (f: 'a t -> 'a): 'a =
    (dummy ()
-    ; if Thread'.amInSignalHandler ()
+    ; if MLtonThread.amInSignalHandler ()
 	 then die "callcc can not be used in a signal handler\n"
       else 
 	 let

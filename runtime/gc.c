@@ -655,13 +655,13 @@ void GC_display (GC_state s, FILE *stream) {
 			(uint) s->frontier,
 			s->frontier - s->nursery,
 			s->limitPlusSlop - s->frontier);
-	fprintf (stream, "\tcanHandle = %d\n", s->canHandle);
+	fprintf (stream, "\tcanHandle = %d\n\tsignalsIsPending = %d\n", s->canHandle, s->signalIsPending);
 	fprintf (stderr, "\tcurrentThread = 0x%08x\n", (uint) s->currentThread);
-	fprintf (stream, "\tstackBottom = 0x%08x\nstackTop - stackBottom = %u\nstackLimit - stackTop = %u\n",
+	fprintf (stream, "\tstackBottom = 0x%08x\n\tstackTop - stackBottom = %u\n\tstackLimit - stackTop = %u\n",
 			(uint)s->stackBottom,
 			s->stackTop - s->stackBottom,
 			(s->stackLimit - s->stackTop));
-	fprintf (stream, "\texnStack = %u  bytesNeeded = %u  reserved = %u  used = %u\n",
+	fprintf (stream, "\texnStack = %u\n\tbytesNeeded = %u\n\treserved = %u\n\tused = %u\n",
 			s->currentThread->exnStack,
 			s->currentThread->bytesNeeded,
 			s->currentThread->stack->reserved,
@@ -3059,10 +3059,28 @@ static void switchToThread (GC_state s, GC_thread t) {
 	assert (s->currentThread->bytesNeeded <= s->limitPlusSlop - s->frontier);
 }
 
+static void startHandler (GC_state s) {
+	/* Switch to the signal handler thread. */
+	if (DEBUG_SIGNALS) {
+		fprintf (stderr, "switching to signal handler\n");
+		GC_display (s, stderr);
+	}
+	assert (0 == s->canHandle);
+	assert (s->signalIsPending);
+	s->signalIsPending = FALSE;
+	s->inSignalHandler = TRUE;
+	s->savedThread = s->currentThread;
+	/* Set s->canHandle to 1 when switching to the signal handler thread, 
+	 * which will then run atomically and will finish by switching to 
+	 * the thread to continue with, which will decrement s->canHandle to 0.
+ 	 */
+	s->canHandle = 1;
+}
+
 void GC_switchToThread (GC_state s, GC_thread t) {
 	if (DEBUG_THREADS)
 		fprintf (stderr, "GC_switchToThread (0x%08x)\n", (uint)t);
-	if (FALSE) {
+	if (TRUE) {
 		/* This branch is slower than the else branch, especially 
 		 * when debugging is turned on, because it does an invariant
 		 * check on every thread switch.
@@ -3070,6 +3088,11 @@ void GC_switchToThread (GC_state s, GC_thread t) {
 		 */
 	 	enter (s);
 	  	switchToThread (s, t);
+		s->canHandle--;
+		if (0 == s->canHandle and s->signalIsPending) {
+			startHandler(s);
+			switchToThread(s, s->signalHandler);
+		}
 	 	leave (s);
 	} else {
 		s->currentThread->stack->used = currentStackUsed (s);
@@ -3083,25 +3106,6 @@ void GC_switchToThread (GC_state s, GC_thread t) {
 	}
 	/* Can not refer to t, because we may have GC'ed. */
 	assert (s->currentThread->bytesNeeded <= s->limitPlusSlop - s->frontier);
-}
-
-static void startHandler (GC_state s) {
-	/* Switch to the signal handler thread. */
-	if (DEBUG_SIGNALS) {
-		fprintf (stderr, "switching to signal handler\n");
-		GC_display (s, stderr);
-	}
-	assert (0 == s->canHandle);
-	assert (s->signalIsPending);
-	s->signalIsPending = FALSE;
-	s->inSignalHandler = TRUE;
-	s->savedThread = s->currentThread;
-	/* Set s->canHandle to 2, which will be decremented to 1
-	 * when switching to the signal handler thread, which will then
- 	 * run atomically and will finish by switching to the thread
-	 * to continue with, which will decrement s->canHandle to 0.
- 	 */
-	s->canHandle = 2;
 }
 
 /* GC_startHandler does not do an enter()/leave(), even though it is exported.
@@ -4536,7 +4540,7 @@ void GC_finishHandler (GC_state s) {
  */
 void GC_handler (GC_state s, int signum) {
 	if (DEBUG_SIGNALS)
-		fprintf (stderr, "GC_handler  signum = %d\n", signum);
+		fprintf (stderr, "GC_handler signum = %d\n", signum);
 	assert (sigismember (&s->signalsHandled, signum));
 	if (0 == s->canHandle)
 		s->limit = 0;
