@@ -38,7 +38,10 @@ structure MLton: MLTON =
       val deserialize = fn _ => raise Fail "deserialize"
       val eq = fn _ => false
       val errno = fn _ => raise Fail "errno"
-      val isMLton = false
+      (* Using Array.maxLen will make isMLton true when being compiled by MLton
+       * and false when being compiled by SML/NJ.
+       *)
+      val isMLton = Array.maxLen = 0x7FFFFFFF
       val safe = true
       val serialize = fn _ => raise Fail "serialize"
       val size = fn _ => ~1: int
