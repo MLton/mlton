@@ -27,7 +27,7 @@ fun fold' (v, start, b, f, g) =
    let
       val n = length v
       fun loop (i, b) =
-	 if i = n
+	 if i >= n
 	    then g b
 	 else
 	    case f (i, unsafeSub (v, i), b) of
@@ -127,7 +127,7 @@ fun fold2From (a, a', start, b, f) =
       val n = length a
       val n' = length a'
       fun loop (i, b) =
-	 if i = n
+	 if i >= n
 	    then b
 	 else loop (i + 1, f (unsafeSub (a, i), unsafeSub (a', i), b))
    in
@@ -144,7 +144,7 @@ fun fold3From (a, a', a'', start, b, f) =
       val n' = length a'
       val n'' = length a''
       fun loop (i, b) =
-	 if i = n
+	 if i >= n
 	    then b
 	 else loop (i + 1, f (unsafeSub (a, i),
 			      unsafeSub (a', i),
@@ -160,11 +160,10 @@ fun fold3 (a, a', a'', b, f) = fold3From (a, a', a'', 0, b, f)
 
 fun foreachR (v, start, stop, f) =
    if 0 <= start andalso start <= stop andalso stop <= length v
-      
       then
 	 let
 	    fun step (i, a, ()) =
-	       if i = stop
+	       if i >= stop
 		  then Done ()
 	       else (f a; Continue ())
 	 in
@@ -440,7 +439,7 @@ fun splitLast v =
    let
       val n = length v
    in
-      if 0 = n
+      if n <= 0
 	 then Error.bug "splitLast"
       else (tabulate (n - 1, fn i => unsafeSub (v, i)),
 	    unsafeSub (v, n - 1))

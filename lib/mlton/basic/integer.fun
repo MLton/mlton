@@ -98,7 +98,7 @@ fun smallest (i, f) =
 fun least (start: t, stop: t, f: int -> bool): int option =
    let
       fun loop (i: t) =
-	 if i = stop
+	 if i >= stop
 	    then NONE
 	 else if f i
 		 then SOME i

@@ -37,48 +37,50 @@ fun fromString (s: string): t Result.t =
 	       loop (cur + 1, String.sub (s, cur) :: ac,
 		     prev, prevChoices, state)
 	 in
-	    if cur = n
+	    if cur < n
 	       then
-		  (case state of
-		      Nest {start} =>
-			 error ["unmatched { at position ",
-				Int.toString start]
-		    | Normal =>
-			 (cur, Concat (Vector.fromListRev (accum ()))))
+		  let
+		     val c = String.sub (s, cur)
+		  in
+		     case c of
+			#"{" => let
+				   val (cur, t) =
+				      loop (cur + 1, [], [], [],
+					    Nest {start = cur})
+				in
+				   loop (cur, [], t :: accum (), prevChoices,
+					 state)
+				end
+		      | #"}" =>
+			   (case state of
+			       Nest _ =>
+				  (cur + 1,
+				   Choice (Vector.fromList (finishChoice ())))
+			     | Normal =>
+				  error ["unmatched } at position ",
+					 Int.toString cur])
+		      | #"," =>
+			   (case state of
+			       Nest _ => loop (cur + 1, [], [], finishChoice (),
+					       state)
+			     | Normal => keepChar cur)
+		      | #"\\" =>
+			   let
+			      val cur = cur + 1
+			   in
+			      if cur = n
+				 then error ["terminating backslash"]
+			      else keepChar cur
+			   end
+		      | _ => keepChar cur
+		  end
 	    else
-	       let
-		  val c = String.sub (s, cur)
-	       in
-		  case c of
-		     #"{" => let
-				val (cur, t) =
-				   loop (cur + 1, [], [], [], Nest {start = cur})
-			     in
-				loop (cur, [], t :: accum (), prevChoices, state)
-			     end
-		   | #"}" =>
-			(case state of
-			    Nest _ =>
-			       (cur + 1,
-				Choice (Vector.fromList (finishChoice ())))
-			  | Normal =>
-			       error ["unmatched } at position ",
-				      Int.toString cur])
-		   | #"," =>
-			(case state of
-			    Nest _ => loop (cur + 1, [], [], finishChoice (),
-					      state)
-			  | Normal => keepChar cur)
-		   | #"\\" =>
-			let
-			   val cur = cur + 1
-			in
-			   if cur = n
-			      then error ["terminating backslash"]
-			   else keepChar cur
-			end
-		   | _ => keepChar cur
-	       end
+	       (case state of
+		   Nest {start} =>
+		      error ["unmatched { at position ",
+			     Int.toString start]
+		 | Normal =>
+		      (cur, Concat (Vector.fromListRev (accum ()))))
 	 end
    in
       Result.Yes (#2 (loop (0, [], [], [], Normal)))

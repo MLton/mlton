@@ -52,13 +52,11 @@ fun inputTo (i, p) =
 	       if p c
 		  then (chars, strings)
 	       else (inputChar i
-		     ; if n = 0
-			  then loop (maxListLength,
-				     [],
-				     finish chars :: strings)
-		       else loop (n - 1,
-				  c :: chars,
-				  strings))
+		     ; if n > 0
+			  then loop (n - 1, c :: chars, strings)
+		       else loop (maxListLength,
+				  [],
+				  finish chars :: strings))
       val (chars, strings) = loop (maxListLength, [], [])
    in
       concat (rev (finish chars :: strings))

@@ -37,7 +37,7 @@ fun all r s =
 fun firstN(r, n: Int.t) s =
    let
       fun loop(n, s, ac) =
-	 if n = 0
+	 if n <= 0
 	    then SOME(rev ac, s)
 	 else (case r s of
 		  NONE => NONE
@@ -91,7 +91,7 @@ fun seq5(r1, r2, r3, r4, r5) s =
 fun stringOfLength(r, i: Int.t) s =
    let
       fun loop(i, s, cs) =
-	 if i = 0
+	 if i <= 0
 	    then SOME(implode(rev cs), s)
 	 else (case r s of
 		  NONE => NONE

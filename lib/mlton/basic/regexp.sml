@@ -1478,7 +1478,7 @@ in
 	 fun repeat (r, n: int) = seq (List.tabulate (n, fn _ => r))
 	 fun lower (r, n: int) = seq [repeat (r, n), star r]
 	 fun upper (r, n: int) =
-	    if n = 0
+	    if n <= 0
 	       then null
 	    else or [null, seq [r, upper (r, n - 1)]]
 	 fun range (r, n: int, m: int) =
@@ -1621,7 +1621,7 @@ in
 		  let
 		     val n = String.size s
 		     fun loop (i: int) =
-			if i = n
+			if i >= n
 			   then NONE
 			else
 			   case match {compiled = c,

@@ -68,7 +68,7 @@ fun timeLimit (t: Time.t, f: unit -> 'a): 'a option =
 fun repeat {thunk, limit, tries} =
    let
       fun loop (n: int) =
-	 if n = 0
+	 if n <= 0
 	    then NONE
 	 else (case timeLimit (limit, thunk) of
 		  NONE => loop (n - 1)

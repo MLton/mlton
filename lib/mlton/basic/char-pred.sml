@@ -10,7 +10,7 @@ fun contains s =
 	    val a = Array.array(numChars, false)
 	    val n = String.size s
 	    fun loop i =
-	       if i = n then ()
+	       if i >= n then ()
 	       else (Array.update(a, ord(String.sub(s, i)), true)
 		     ; loop(i + 1))
 	 in loop 0

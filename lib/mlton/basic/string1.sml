@@ -34,7 +34,7 @@ fun deleteSurroundingWhitespace (s: t): t =
    let
       val n = size s
       fun loop (i: int) =
-	 if i = n
+	 if Int.>= (i, n)
 	    then s
 	 else
 	    if Char.isSpace (sub (s, i))
@@ -45,7 +45,7 @@ fun deleteSurroundingWhitespace (s: t): t =
 		     let
 			val c = sub (s, j)
 		     in
-			if j = i
+			if Int.<= (j, i)
 			   then fromChar c
 			else
 			   if Char.isSpace c

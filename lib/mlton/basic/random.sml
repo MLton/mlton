@@ -74,7 +74,7 @@ fun nRandom {list, length, n} =
    let
       fun loop (need: int, length: int, xs: 'a list, ac: 'a list): 'a list =
 	 (Assert.assert ("Random.nRandom", fn () => need <= length)
-	  ; if need = 0
+	  ; if need <= 0
 	       then ac
 	    else (case xs of
 		     [] => Error.bug "nRandom"

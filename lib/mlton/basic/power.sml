@@ -36,7 +36,7 @@ structure Int = Pervasive.Int
 structure Array = Pervasive.Array
 
 fun for(a: Int.int, b: Int.int, f) =
-   let fun loop i = if i = b then () else (f i; loop(i + 1))
+   let fun loop i = if i >= b then () else (f i; loop(i + 1))
    in loop a
    end
 	 
@@ -117,7 +117,7 @@ fun ('a, 'b) make
 	    fun split l =
 	       let
 		  fun loop(l, n, ac) =
-		     if n = 0
+		     if n <= 0
 			then (rev ac, l)
 		     else (case l of
 			      [] => (rev ac, [])

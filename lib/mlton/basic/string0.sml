@@ -126,7 +126,7 @@ fun findSubstring {string, substring} =
 	    let
 	       val start = i
 	       fun loopSubstring (i, j) =
-		  if j = n
+		  if j >= n
 		     then SOME start
 		  else
 		     if Char.equals (sub (string, i), sub (substring, j))

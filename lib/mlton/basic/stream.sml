@@ -87,7 +87,7 @@ fun keep (s, p) =
 fun firstN (s, n: int) =
    let
       fun loop (n, s, ac) =
-	 if n = 0
+	 if n <= 0
 	    then rev ac
 	 else (case force s of
 		  NONE => Error.bug "firstN"
@@ -98,7 +98,7 @@ fun firstN (s, n: int) =
 fun nth (s, n: int) =
    case force s of
       NONE => Error.bug "nth"
-    | SOME (x, s) => if n = 0 then x else nth (s, n - 1)
+    | SOME (x, s) => if n <= 0 then x else nth (s, n - 1)
 
 fun 'a infinite (start: 'a, next: 'a -> 'a): 'a t =
    let fun loop (a: 'a) = delay (fn () => cons (a, loop (next a)))

@@ -29,7 +29,7 @@ fun unescape (s: string): string =
       fun sub i = String.sub (s, i)
       val n = String.size s
       fun loop (i, cs) =
-	 if i = n
+	 if i >= n
 	    then implode (rev cs)
 	 else let val c = sub i
 	      in if c = #"%"

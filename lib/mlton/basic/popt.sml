@@ -46,7 +46,7 @@ fun memString (s: string): int option =
    let
       val n = String.size s
       fun loop (i, ac) =
-	 if i = n
+	 if i >= n
 	    then SOME ac
 	 else
 	    let val c = String.sub (s, i)

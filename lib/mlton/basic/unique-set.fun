@@ -185,7 +185,7 @@ local
 	 fn (s: t, s': t) =>
 	 let
 	    fun loop i =
-	       if i = cacheSize
+	       if i >= cacheSize
 		  then
 		     let val s'' = fromList(oper(toList s, toList s'))
 		     in Int.inc cacheMisses
