@@ -51,7 +51,6 @@ signature RSSA =
 			  ty: Type.t}
 	     | PointerTycon of PointerTycon.t
 	     | Runtime of Runtime.GCField.t
-	     | SmallIntInf of word
 	     | Var of {ty: Type.t,
 		       var: Var.t}
 

@@ -376,7 +376,9 @@ fun toMachine (program: Ssa.Program.t) =
 		| IntInf i =>
 		     (case Const.SmallIntInf.toWord i of
 			 NONE => globalIntInf i
-		       | SOME w => M.Operand.SmallIntInf w)
+		       | SOME w =>
+			    M.Operand.Word (WordX.fromIntInf
+					    (Word.toIntInf w, WordSize.default)))
 		| Real r =>
 		     if !Control.Native.native
 			then globalReal r
@@ -443,7 +445,6 @@ fun toMachine (program: Ssa.Program.t) =
 		    WordSize.default))
 	     | Runtime f =>
 		  runtimeOp (f, R.Operand.ty oper)
-	     | SmallIntInf w => M.Operand.SmallIntInf w
 	     | Var {var, ...} => varOperand var
 	 end
       fun translateOperands ops = Vector.map (ops, translateOperand)

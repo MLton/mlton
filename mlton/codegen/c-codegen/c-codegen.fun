@@ -562,8 +562,6 @@ fun output {program as Machine.Program.T {chunks,
 	     | Register r =>
 		  concat [Type.name (Register.ty r), "_",
 			  Int.toString (Register.index r)]
-	     | SmallIntInf w =>
-		  concat ["SmallIntInf", C.args [concat ["0x", Word.toString w]]]
 	     | StackOffset {offset, ty} =>
 		  concat ["S", C.args [Type.toC ty, C.bytes offset]]
 	     | StackTop => "StackTop"

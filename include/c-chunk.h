@@ -180,8 +180,6 @@ extern struct GC_state gcState;
 #define ProfileLabel(l)				\
 	__asm__ __volatile__ (#l "_internal:" : : )
 
-#define SmallIntInf(n) ((Pointer)(n))
-
 #define Object(x, h)							\
 	do {								\
 		*(Word*)Frontier = (h);					\
@@ -263,8 +261,9 @@ extern struct GC_state gcState;
 #define Int32_addCheck Int32_addCheckXC
 #define Int64_addCheck Int64_addCheckXC
 
-#define Int_negCheck(size, dst, n, l)		\
+#define Int_negCheck(size, dst, nW, l)		\
 	do {					\
+		Int##size n = nW;		\
 		if (n == Int##size##_min)	\
 			goto l;			\
 		dst = -n;			\
@@ -277,9 +276,9 @@ extern struct GC_state gcState;
 
 #define Int_subCheckCX(size, dst, cW, xW, l)		\
 	do {						\
- 		if (c >= 0) {				\
 		Int##size c = cW;			\
 		Int##size x = xW;			\
+ 		if (c >= 0) {				\
 			if (x < c - Int##size##_max)	\
 				goto l;			\
 		} else if (x > c - Int##size##_min)	\

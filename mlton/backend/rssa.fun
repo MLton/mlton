@@ -45,7 +45,6 @@ structure Operand =
 		    ty: Type.t}
        | PointerTycon of PointerTycon.t
        | Runtime of GCField.t
-       | SmallIntInf of word
        | Var of {var: Var.t,
 		 ty: Type.t}
 
@@ -76,7 +75,6 @@ structure Operand =
 	  | Offset {ty, ...} => ty
 	  | PointerTycon _ => Type.defaultWord
 	  | Runtime z => Type.ofGCField z
-	  | SmallIntInf _ => Type.intInf
 	  | Var {ty, ...} => ty
 
       fun layout (z: t): Layout.t =
@@ -101,7 +99,6 @@ structure Operand =
 		       constrain ty]
 	     | PointerTycon pt => PointerTycon.layout pt
 	     | Runtime r => GCField.layout r
-	     | SmallIntInf w => seq [str "SmallIntInf ", paren (Word.layout w)]
 	     | Var {var, ty} => seq [Var.layout var, constrain ty]
 	 end
 
@@ -1026,7 +1023,6 @@ structure Program =
 					     result = ty}
 		       | PointerTycon _ => true
 		       | Runtime _ => true
-		       | SmallIntInf _ => true
 		       | Var {ty, var} => Type.isSubtype (varType var, ty)
 		in
 		   Err.check ("operand", ok, fn () => Operand.layout x)

@@ -307,8 +307,6 @@ struct
 		      scale = x86.Scale.One,
 		      size = size}, size), offset + x86.Size.toBytes size))
 	       end
-	  | SmallIntInf ii => 
-	       Vector.new1 (x86.Operand.immediate_const_word ii,x86.Size.LONG)
 	  | StackOffset {offset, ty} =>
 	       let
 		  val offset = Bytes.toInt offset

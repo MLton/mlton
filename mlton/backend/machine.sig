@@ -76,7 +76,6 @@ signature MACHINE =
 			  ty: Type.t}
 	     | Real of RealX.t
 	     | Register of Register.t
-	     | SmallIntInf of word
 	     | StackOffset of {offset: Bytes.t,
 			       ty: Type.t}
 	     | StackTop

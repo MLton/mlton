@@ -15,11 +15,6 @@ structure Type = RepType
 
 structure ChunkLabel = Id (val noname = "ChunkLabel")
 
-structure SmallIntInf =
-   struct
-      type t = word
-   end
-
 structure Register =
    struct
       datatype t = T of {index: int option ref,
@@ -166,7 +161,6 @@ structure Operand =
        | GCState
        | Global of Global.t
        | Int of IntX.t
-       | SmallIntInf of SmallIntInf.t
        | Label of Label.t
        | Line
        | Offset of {base: t,
@@ -202,7 +196,6 @@ structure Operand =
 	| Offset {ty, ...} => ty
 	| Real r => Type.real (RealX.size r)
 	| Register r => Register.ty r
-	| SmallIntInf _ => Type.intInf
 	| StackOffset {ty, ...} => ty
 	| StackTop => Type.defaultWord
 	| Word w => Type.constant w
@@ -238,7 +231,6 @@ structure Operand =
 		       constrain ty]
 	     | Real r => RealX.layout r
 	     | Register r => Register.layout r
-	     | SmallIntInf w => seq [str "SmallIntInf ", paren (Word.layout w)]
 	     | StackOffset so => StackOffset.layout so
 	     | StackTop => str "<StackTop>"
 	     | Word w => seq [str "0x", WordX.layout w]
@@ -265,7 +257,6 @@ structure Operand =
 	        equals (b, b') andalso Bytes.equals (i, i')
 	   | (Real r, Real r') => RealX.equals (r, r')
 	   | (Register r, Register r') => Register.equals (r, r')
-	   | (SmallIntInf w, SmallIntInf w') => Word.equals (w, w')
 	   | (StackOffset so, StackOffset so') => StackOffset.equals (so, so')
 	   | (Word w, Word w') => WordX.equals (w, w')
 	   | _ => false
@@ -967,7 +958,6 @@ structure Program =
 						      result = ty}))
 		      | Real _ => true
 		      | Register _ => Alloc.doesDefine (alloc, x)
-		      | SmallIntInf w => 0wx1 = Word.andb (w, 0wx1)
 		      | StackOffset {offset, ty, ...} =>
 			   Bytes.<= (Bytes.+ (offset, Type.bytes ty),
 				     maxFrameSize)
