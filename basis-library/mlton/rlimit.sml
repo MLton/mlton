@@ -3,12 +3,12 @@ structure MLtonRlimit: MLTON_RLIMIT =
       open Primitive.MLton.Rlimit
 
       val get =
-	 fn (r: resource) =>
+	 fn (r: t) =>
 	 (PosixError.checkResult (get r)
 	  ; {hard = getHard (),
 	     soft = getSoft ()})
 
       val set =
-	 fn (r: resource, {hard, soft}) =>
+	 fn (r: t, {hard, soft}) =>
 	 PosixError.checkResult (set (r, hard, soft))
    end

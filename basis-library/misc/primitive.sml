@@ -573,34 +573,25 @@ structure Primitive =
 		     
 		  val infinity = _const "MLton_Rlimit_infinity": rlim;
 
-		  type resource = int
+		  type t = int
 
-		  val cpuTime =
-		     _const "MLton_Rlimit_cpuTime": resource;
-		  val coreFileSize =
-		     _const "MLton_Rlimit_coreFileSize": resource;
-		  val dataSize =
-		     _const "MLton_Rlimit_dataSize": resource;
-		  val fileSize =
-		     _const "MLton_Rlimit_fileSize": resource;
+		  val cpuTime = _const "MLton_Rlimit_cpuTime": t;
+		  val coreFileSize = _const "MLton_Rlimit_coreFileSize": t;
+		  val dataSize = _const "MLton_Rlimit_dataSize": t;
+		  val fileSize = _const "MLton_Rlimit_fileSize": t;
 		  val lockedInMemorySize =
-		     _const "MLton_Rlimit_lockedInMemorySize": resource;
-		  val numFiles =
-		     _const "MLton_Rlimit_numFiles": resource;
-		  val numProcesses =
-		     _const "MLton_Rlimit_numProcesses": resource;
-		  val residentSetSize =
-		     _const "MLton_Rlimit_residentSetSize": resource;
-		  val stackSize =
-		     _const "MLton_Rlimit_stackSize": resource;
+		     _const "MLton_Rlimit_lockedInMemorySize": t;
+		  val numFiles = _const "MLton_Rlimit_numFiles": t;
+		  val numProcesses = _const "MLton_Rlimit_numProcesses": t;
+		  val residentSetSize = _const "MLton_Rlimit_residentSetSize": t;
+		  val stackSize = _const "MLton_Rlimit_stackSize": t;
 		  val virtualMemorySize =
-		     _const "MLton_Rlimit_virtualMemorySize": resource;
+		     _const "MLton_Rlimit_virtualMemorySize": t;
 		     
-		  val get = _ffi "MLton_Rlimit_get": resource -> int;
+		  val get = _ffi "MLton_Rlimit_get": t -> int;
 		  val getHard = _ffi "MLton_Rlimit_getHard": unit -> rlim;
 		  val getSoft = _ffi "MLton_Rlimit_getSoft": unit -> rlim;
-		  val set =
-		     _ffi "MLton_Rlimit_set": resource * rlim * rlim -> int;
+		  val set = _ffi "MLton_Rlimit_set": t * rlim * rlim -> int;
 	       end
 	    
 	    structure Rusage =
