@@ -529,7 +529,10 @@ fun simplify (program as Program.T {globals, datatypes, functions, main})
 		 in
 		   if depthDst <= 2
 		      andalso
-		      Vector.length statementsDst <= 0
+		      Vector.fold
+		      (statementsDst, 0,
+		       fn (Statement.T {exp as Profile _, ...}, i) => i
+		        | (_, i) => i + 1) <= 0
 		     then let
 			    val {addPost, post} = mkPost ()
 			    val _ = LabelInfo.pushDepth' (li, addPost)
