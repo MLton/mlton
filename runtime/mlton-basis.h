@@ -137,6 +137,7 @@ Int MLton_Process_spawnp (NullString p, Pointer a);
 /* ------------------------------------------------- */
 
 Cstring OS_FileSys_tmpnam();
+Int OS_IO_poll(Int *fds, Word *eventss, Int n, Int timeout, Word *reventss);
 
 /* ------------------------------------------------- */
 /*                     PackReal                      */

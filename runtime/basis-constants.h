@@ -4,6 +4,7 @@
 #include <syslog.h>
 
 #include <sys/time.h>
+#include <sys/poll.h>
 #if (defined (__linux__))
 #include <sys/ptrace.h>
 #endif
@@ -53,6 +54,14 @@
 #define LOG_AUTHPRIV LOG_AUTH
 #define LOG_PERROR 0
 #endif /* __sun__ */
+
+/* ------------------------------------------------- */
+/*                      OS                           */
+/* ------------------------------------------------- */
+
+#define OS_IO_POLLIN POLLIN
+#define OS_IO_POLLPRI POLLPRI
+#define OS_IO_POLLOUT POLLOUT
 
 /* ------------------------------------------------- */
 /*                      Ptrace                       */

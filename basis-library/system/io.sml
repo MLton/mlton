@@ -83,9 +83,9 @@ structure OS_IO: OS_IO =
       fun join (false, _, w) = w
         | join (true, b, w) = Word.orb(w, b)
       fun test (w, b) = (Word.andb(w, b) <> 0w0)
-      val rdBit : Word.word = 0w1 
-      and wrBit : Word.word = 0w2 
-      and priBit : Word.word = 0w4
+      val rdBit : Word.word = Primitive.OS.IO.POLLIN
+      and wrBit : Word.word = Primitive.OS.IO.POLLOUT
+      and priBit : Word.word = Primitive.OS.IO.POLLPRI
       fun fromPollDesc (PollDesc(FD fd, {rd, wr, pri})) =
 	    ( fd,
 	      join (rd, rdBit, 

@@ -474,6 +474,9 @@ structure Primitive =
 	       end
 	    structure IO =
 	       struct
+		  val POLLIN = _const "OS_IO_POLLIN": word;
+		  val POLLPRI = _const "OS_IO_POLLPRI": word;
+		  val POLLOUT = _const "OS_IO_POLLOUT": word;
 		  val poll = _ffi "OS_IO_poll": int vector * word vector * 
                                                 int * int * word array -> int;
 	       end
