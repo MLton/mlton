@@ -9,9 +9,12 @@ fun bits (T {precision = p, ...}) = p
 
 val equals: t * t -> bool = op =
 
-val sizes: int list = [8, 16, 31, 32, 64]
+val sizes: int list =
+   List.tabulate (31, fn i => i + 2)
+   @ [64]
 
-fun isValidSize i = List.exists (sizes, fn i' => i = i')
+fun isValidSize (i: int) =
+   (2 <= i andalso i <= 32) orelse i = 64
 
 fun make i = T {precision = i}
 
@@ -87,5 +90,22 @@ fun prim s =
    case primOpt s of
       NONE => Error.bug "IntSize.prim"
     | SOME p => p
+
+fun roundUpToPrim s =
+   let
+      val bits = bits s
+      val bits =
+	 if bits <= 8
+	    then 8
+	 else if bits <= 16
+		 then 16
+	      else if bits <= 32
+		      then 32
+		   else if bits = 64
+			   then 64
+			else Error.bug "IntSize.roundUpToPrim"
+   in
+      I bits
+   end
 
 end

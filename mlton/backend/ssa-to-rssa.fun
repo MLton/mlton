@@ -1176,15 +1176,14 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				    ccall {args = Vector.new1 Operand.GCState,
 					   func = CFunction.unpack}
 			       | Int_equal s =>
-				    (case IntSize.bits s of
-					31 => primApp (Prim.intEqual
-						       (IntSize.I 32))
-				      | 64 =>
-					   if !Control.Native.native
-					      then
-						 simpleCCall CFunction.int64Equal
-					   else normal ()
-				      | _ => normal ())
+				    let
+				       val s = IntSize.roundUpToPrim s
+				    in
+				       if 64 = IntSize.bits s
+					  andalso !Control.Native.native
+					  then simpleCCall CFunction.int64Equal
+				       else primApp (Prim.intEqual s)
+				    end
 			       | Int_ge s => int (s, CFunction.intGe s)
 			       | Int_gt s => int (s, CFunction.intGt s)
 			       | Int_le s => int (s, CFunction.intLe s)
@@ -1201,13 +1200,16 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 						(CFunction.intToInt (s1, s2))
 					  else normal ()
 				       val id = cast
+				       val s1 = IntSize.roundUpToPrim s1
+				       val s2 = IntSize.roundUpToPrim s2
+				       val b1 = IntSize.bits s1
+				       val b2 = IntSize.bits s2
 				    in
-				       case (IntSize.bits s1, IntSize.bits s2) of
-					  (32, 64) => call ()
-					| (64, 32) => call ()
-					| (31, 32) => id ()
-					| (32, 31) => id ()
-					| _ => normal ()
+				       if b1 = 64 orelse b2 = 64
+					  then call ()
+				       else if b1 = b2
+					       then id ()
+					    else primApp (Prim.intToInt (s1, s2))
 				    end
 			       | Int_toWord (s1, s2) =>
 				    let

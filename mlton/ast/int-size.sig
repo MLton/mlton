@@ -26,5 +26,6 @@ signature INT_SIZE =
       val prim: t -> prim
       val prims: t list
       val range: t -> IntInf.t * IntInf.t
+      val roundUpToPrim: t -> t
       val toString: t -> string
    end

@@ -261,6 +261,7 @@ signature PRIM =
       val intMulCheck: IntSize.t -> t
       val intSub: IntSize.t -> t
       val intSubCheck: IntSize.t -> t
+      val intToInt: IntSize.t * IntSize.t -> t
       val intToWord: IntSize.t * WordSize.t -> t
       val isCommutative: t -> bool
       (*

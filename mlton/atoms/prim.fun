@@ -574,6 +574,7 @@ local
    val int = IntSize.memoize
    val word = WordSize.memoize
 in
+   val intToInt = make (Name.Int_toInt, int, int)
    val intToWord = make (Name.Int_toWord, int, word)
    val wordToInt = make (Name.Word_toInt, word, int)
    val wordToIntX = make (Name.Word_toIntX, word, int)

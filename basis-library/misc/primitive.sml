@@ -385,13 +385,229 @@ structure Primitive =
 	    val fromInt = _prim "Int32_toInt16": Int.int -> int;
 	    val toInt = _prim "Int16_toInt32": int -> Int.int;
 	 end
+      structure Int2 =
+	 struct
+	    type big = Int8.int
+	    type int = int2
+	    val fromBigUnsafe = _prim "Int8_toInt2": big -> int;
+	    val precision' = 2
+	    val toBig = _prim "Int2_toInt8": int -> big;
+	 end
+      structure Int3 =
+	 struct
+	    type big = Int8.int
+	    type int = int3
+	    val fromBigUnsafe = _prim "Int8_toInt3": big -> int;
+	    val precision' = 3
+	    val toBig = _prim "Int3_toInt8": int -> big;
+	 end
+      structure Int4 =
+	 struct
+	    type big = Int8.int
+	    type int = int4
+	    val fromBigUnsafe = _prim "Int8_toInt4": big -> int;
+	    val precision' = 4
+	    val toBig = _prim "Int4_toInt8": int -> big;
+	 end
+      structure Int5 =
+	 struct
+	    type big = Int8.int
+	    type int = int5
+	    val fromBigUnsafe = _prim "Int8_toInt5": big -> int;
+	    val precision' = 5
+	    val toBig = _prim "Int5_toInt8": int -> big;
+	 end
+      structure Int6 =
+	 struct
+	    type big = Int8.int
+	    type int = int6
+	    val fromBigUnsafe = _prim "Int8_toInt6": big -> int;
+	    val precision' = 6
+	    val toBig = _prim "Int6_toInt8": int -> big;
+	 end
+      structure Int7 =
+	 struct
+	    type big = Int8.int
+	    type int = int7
+	    val fromBigUnsafe = _prim "Int8_toInt7": big -> int;
+	    val precision' = 7
+	    val toBig = _prim "Int7_toInt8": int -> big;
+	 end
+      structure Int9 =
+	 struct
+	    type big = Int16.int
+	    type int = int9
+	    val fromBigUnsafe = _prim "Int16_toInt9": big -> int;
+	    val precision' = 9
+	    val toBig = _prim "Int9_toInt16": int -> big;
+	 end
+      structure Int10 =
+	 struct
+	    type big = Int16.int
+	    type int = int10
+	    val fromBigUnsafe = _prim "Int16_toInt10": big -> int;
+	    val precision' = 10
+	    val toBig = _prim "Int10_toInt16": int -> big;
+	 end
+      structure Int11 =
+	 struct
+	    type big = Int16.int
+	    type int = int11
+	    val fromBigUnsafe = _prim "Int16_toInt11": big -> int;
+	    val precision' = 11
+	    val toBig = _prim "Int11_toInt16": int -> big;
+	 end
+      structure Int12 =
+	 struct
+	    type big = Int16.int
+	    type int = int12
+	    val fromBigUnsafe = _prim "Int16_toInt12": big -> int;
+	    val precision' = 12
+	    val toBig = _prim "Int12_toInt16": int -> big;
+	 end
+      structure Int13 =
+	 struct
+	    type big = Int16.int
+	    type int = int13
+	    val fromBigUnsafe = _prim "Int16_toInt13": big -> int;
+	    val precision' = 13
+	    val toBig = _prim "Int13_toInt16": int -> big;
+	 end
+      structure Int14 =
+	 struct
+	    type big = Int16.int
+	    type int = int14
+	    val fromBigUnsafe = _prim "Int16_toInt14": big -> int;
+	    val precision' = 14
+	    val toBig = _prim "Int14_toInt16": int -> big;
+	 end
+      structure Int15 =
+	 struct
+	    type big = Int16.int
+	    type int = int15
+	    val fromBigUnsafe = _prim "Int16_toInt15": big -> int;
+	    val precision' = 15
+	    val toBig = _prim "Int15_toInt16": int -> big;
+	 end
+      structure Int17 =
+	 struct
+	    type big = Int32.int
+	    type int = int17
+	    val fromBigUnsafe = _prim "Int32_toInt17": big -> int;
+	    val precision' = 17
+	    val toBig = _prim "Int17_toInt32": int -> big;
+	 end
+      structure Int18 =
+	 struct
+	    type big = Int32.int
+	    type int = int18
+	    val fromBigUnsafe = _prim "Int32_toInt18": big -> int;
+	    val precision' = 18
+	    val toBig = _prim "Int18_toInt32": int -> big;
+	 end
+      structure Int19 =
+	 struct
+	    type big = Int32.int
+	    type int = int19
+	    val fromBigUnsafe = _prim "Int32_toInt19": big -> int;
+	    val precision' = 19
+	    val toBig = _prim "Int19_toInt32": int -> big;
+	 end
+      structure Int20 =
+	 struct
+	    type big = Int32.int
+	    type int = int20
+	    val fromBigUnsafe = _prim "Int32_toInt20": big -> int;
+	    val precision' = 20
+	    val toBig = _prim "Int20_toInt32": int -> big;
+	 end
+      structure Int21 =
+	 struct
+	    type big = Int32.int
+	    type int = int21
+	    val fromBigUnsafe = _prim "Int32_toInt21": big -> int;
+	    val precision' = 21
+	    val toBig = _prim "Int21_toInt32": int -> big;
+	 end
+      structure Int22 =
+	 struct
+	    type big = Int32.int
+	    type int = int22
+	    val fromBigUnsafe = _prim "Int32_toInt22": big -> int;
+	    val precision' = 22
+	    val toBig = _prim "Int22_toInt32": int -> big;
+	 end
+      structure Int23 =
+	 struct
+	    type big = Int32.int
+	    type int = int23
+	    val fromBigUnsafe = _prim "Int32_toInt23": big -> int;
+	    val precision' = 23
+	    val toBig = _prim "Int23_toInt32": int -> big;
+	 end
+      structure Int24 =
+	 struct
+	    type big = Int32.int
+	    type int = int24
+	    val fromBigUnsafe = _prim "Int32_toInt24": big -> int;
+	    val precision' = 24
+	    val toBig = _prim "Int24_toInt32": int -> big;
+	 end
+      structure Int25 =
+	 struct
+	    type big = Int32.int
+	    type int = int25
+	    val fromBigUnsafe = _prim "Int32_toInt25": big -> int;
+	    val precision' = 25
+	    val toBig = _prim "Int25_toInt32": int -> big;
+	 end
+      structure Int26 =
+	 struct
+	    type big = Int32.int
+	    type int = int26
+	    val fromBigUnsafe = _prim "Int32_toInt26": big -> int;
+	    val precision' = 26
+	    val toBig = _prim "Int26_toInt32": int -> big;
+	 end
+      structure Int27 =
+	 struct
+	    type big = Int32.int
+	    type int = int27
+	    val fromBigUnsafe = _prim "Int32_toInt27": big -> int;
+	    val precision' = 27
+	    val toBig = _prim "Int27_toInt32": int -> big;
+	 end
+      structure Int28 =
+	 struct
+	    type big = Int32.int
+	    type int = int28
+	    val fromBigUnsafe = _prim "Int32_toInt28": big -> int;
+	    val precision' = 28
+	    val toBig = _prim "Int28_toInt32": int -> big;
+	 end
+      structure Int29 =
+	 struct
+	    type big = Int32.int
+	    type int = int29
+	    val fromBigUnsafe = _prim "Int32_toInt29": big -> int;
+	    val precision' = 29
+	    val toBig = _prim "Int29_toInt32": int -> big;
+	 end
+      structure Int30 =
+	 struct
+	    type big = Int32.int
+	    type int = int30
+	    val fromBigUnsafe = _prim "Int32_toInt30": big -> int;
+	    val precision' = 30
+	    val toBig = _prim "Int30_toInt32": int -> big;
+	 end
       structure Int31 =
 	 struct
+	    type big = Int32.int
 	    type int = int31
-
-	    val fromBigUnsafe = _prim "Int32_toInt31": Int32.int -> int;
+	    val fromBigUnsafe = _prim "Int32_toInt31": big -> int;
 	    val precision' = 31
-	    val toBig = _prim "Int31_toInt32": int -> Int32.int;
+	    val toBig = _prim "Int31_toInt32": int -> big;
 	 end
       structure Int32 =
 	 struct
@@ -429,9 +645,6 @@ structure Primitive =
 	       else ~?
 	    val fromInt : int -> int = fn x => x
 	    val toInt : int -> int = fn x => x
-
-(*	    val fromInt31 = _prim "Int31_toInt32": Int31.int -> int; *)
-(* 	    val toInt31 = _prim "Int32_toInt31": int -> Int31.int; *)
 	 end
 
       structure Int = Int32

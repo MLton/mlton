@@ -135,37 +135,64 @@ signature BASIS_2002 =
       structure FixedInt : INTEGER
       structure GenericSock : GENERIC_SOCK
       structure INetSock : INET_SOCK
-      structure Int16 : INTEGER
-      structure Int16Array : MONO_ARRAY
-      structure Int16Array2 : MONO_ARRAY2
-      structure Int16ArraySlice : MONO_ARRAY_SLICE
-      structure Int16Vector : MONO_VECTOR
-      structure Int16VectorSlice : MONO_VECTOR_SLICE
-      structure Int31 : INTEGER
-      structure Int32 : INTEGER
-      structure Int32Array : MONO_ARRAY
-      structure Int32Array2 : MONO_ARRAY2
-      structure Int32ArraySlice : MONO_ARRAY_SLICE
-      structure Int32Vector : MONO_VECTOR
-      structure Int32VectorSlice : MONO_VECTOR_SLICE
-      structure Int64 : INTEGER
-      structure Int64Array : MONO_ARRAY
-      structure Int64Array2 : MONO_ARRAY2
-      structure Int64ArraySlice : MONO_ARRAY_SLICE
-      structure Int64Vector : MONO_VECTOR
-      structure Int64VectorSlice : MONO_VECTOR_SLICE
-      structure Int8 : INTEGER
+      structure Int2: INTEGER
+      structure Int3: INTEGER
+      structure Int4: INTEGER
+      structure Int5: INTEGER
+      structure Int6: INTEGER
+      structure Int7: INTEGER
+      structure Int8: INTEGER
+      structure Int9: INTEGER
+      structure Int10: INTEGER
+      structure Int11: INTEGER
+      structure Int12: INTEGER
+      structure Int13: INTEGER
+      structure Int14: INTEGER
+      structure Int15: INTEGER
+      structure Int16: INTEGER
+      structure Int17: INTEGER
+      structure Int18: INTEGER
+      structure Int19: INTEGER
+      structure Int20: INTEGER
+      structure Int21: INTEGER
+      structure Int22: INTEGER
+      structure Int23: INTEGER
+      structure Int24: INTEGER
+      structure Int25: INTEGER
+      structure Int26: INTEGER
+      structure Int27: INTEGER
+      structure Int28: INTEGER
+      structure Int29: INTEGER
+      structure Int30: INTEGER
+      structure Int31: INTEGER
+      structure Int32: INTEGER
+      structure Int64: INTEGER
       structure Int8Array : MONO_ARRAY
       structure Int8Array2 : MONO_ARRAY2
       structure Int8ArraySlice : MONO_ARRAY_SLICE
       structure Int8Vector : MONO_VECTOR
       structure Int8VectorSlice : MONO_VECTOR_SLICE
+      structure Int16Array : MONO_ARRAY
+      structure Int16Array2 : MONO_ARRAY2
+      structure Int16ArraySlice : MONO_ARRAY_SLICE
+      structure Int16Vector : MONO_VECTOR
+      structure Int16VectorSlice : MONO_VECTOR_SLICE
+      structure Int32Array : MONO_ARRAY
+      structure Int32Array2 : MONO_ARRAY2
+      structure Int32ArraySlice : MONO_ARRAY_SLICE
+      structure Int32Vector : MONO_VECTOR
+      structure Int32VectorSlice : MONO_VECTOR_SLICE
+      structure Int64Array : MONO_ARRAY
+      structure Int64Array2 : MONO_ARRAY2
+      structure Int64ArraySlice : MONO_ARRAY_SLICE
+      structure Int64Vector : MONO_VECTOR
+      structure Int64VectorSlice : MONO_VECTOR_SLICE
       structure IntArray : MONO_ARRAY
       structure IntArray2 : MONO_ARRAY2
       structure IntArraySlice : MONO_ARRAY_SLICE
-      structure IntInf : INT_INF
       structure IntVector : MONO_VECTOR
       structure IntVectorSlice : MONO_VECTOR_SLICE
+      structure IntInf : INT_INF
       structure LargeIntArray : MONO_ARRAY
       structure LargeIntArray2 : MONO_ARRAY2
       structure LargeIntArraySlice : MONO_ARRAY_SLICE
@@ -572,7 +599,6 @@ signature BASIS_2002 =
    where type 'a vector = 'a vector
    where type char = char
    where type exn = exn
-   where type int = int
    where type order = order
    where type real = real
    where type string = string
@@ -630,9 +656,37 @@ signature BASIS_2002 =
    where type Word8Vector.vector = Word8Vector.vector
 
    (* Types that must be exposed because constants denote them. *)
+   where type Int2.int = Int2.int
+   where type Int3.int = Int3.int
+   where type Int4.int = Int4.int
+   where type Int5.int = Int5.int
+   where type Int6.int = Int6.int
+   where type Int7.int = Int7.int
    where type Int8.int = Int8.int
+   where type Int9.int = Int9.int
+   where type Int10.int = Int10.int
+   where type Int11.int = Int11.int
+   where type Int12.int = Int12.int
+   where type Int13.int = Int13.int
+   where type Int14.int = Int14.int
+   where type Int15.int = Int15.int
    where type Int16.int = Int16.int
+   where type Int17.int = Int17.int
+   where type Int18.int = Int18.int
+   where type Int19.int = Int19.int
+   where type Int20.int = Int20.int
+   where type Int21.int = Int21.int
+   where type Int22.int = Int22.int
+   where type Int23.int = Int23.int
+   where type Int24.int = Int24.int
+   where type Int25.int = Int25.int
+   where type Int26.int = Int26.int
+   where type Int27.int = Int27.int
+   where type Int28.int = Int28.int
+   where type Int29.int = Int29.int
+   where type Int30.int = Int30.int
    where type Int31.int = Int31.int
+   where type Int32.int = Int32.int
    where type Int64.int = Int64.int
    where type IntInf.int = IntInf.int
    where type Real32.real = Real32.real

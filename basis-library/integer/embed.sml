@@ -1,12 +1,15 @@
-functor EmbedInt (structure Big: INTEGER
-		  structure Small:
-		     sig
-			eqtype int
+signature EMBED =
+   sig
+      eqtype int
+      type big
+	 
+      val precision': Int.int
+      val fromBigUnsafe: big -> int
+      val toBig: int -> big
+   end
 
-			val precision': Int.int
-			val fromBigUnsafe: Big.int -> int
-			val toBig: int -> Big.int
-		     end): INTEGER =
+functor EmbedInt (structure Big: INTEGER
+		  structure Small: EMBED where type big = Big.int): INTEGER =
    struct
       open Small
 	 
@@ -90,5 +93,43 @@ functor EmbedInt (structure Big: INTEGER
       val toString = Big.toString o toBig
    end
 
-structure Int31 = EmbedInt (structure Big = Int32
-			    structure Small = Primitive.Int31)
+functor Embed8 (Small: EMBED where type big = Int8.int): INTEGER =
+   EmbedInt (structure Big = Int8
+	     structure Small = Small)
+
+functor Embed16 (Small: EMBED where type big = Int16.int): INTEGER =
+   EmbedInt (structure Big = Int16
+	     structure Small = Small)
+
+functor Embed32 (Small: EMBED where type big = Int32.int): INTEGER =
+   EmbedInt (structure Big = Int32
+	     structure Small = Small)
+
+structure Int2 = Embed8 (Primitive.Int2)
+structure Int3 = Embed8 (Primitive.Int3)
+structure Int4 = Embed8 (Primitive.Int4)
+structure Int5 = Embed8 (Primitive.Int5)
+structure Int6 = Embed8 (Primitive.Int6)
+structure Int7 = Embed8 (Primitive.Int7)
+structure Int9 = Embed16 (Primitive.Int9)
+structure Int10 = Embed16 (Primitive.Int10)
+structure Int11 = Embed16 (Primitive.Int11)
+structure Int12 = Embed16 (Primitive.Int12)
+structure Int13 = Embed16 (Primitive.Int13)
+structure Int14 = Embed16 (Primitive.Int14)
+structure Int15 = Embed16 (Primitive.Int15)
+structure Int17 = Embed32 (Primitive.Int17)
+structure Int18 = Embed32 (Primitive.Int18)
+structure Int19 = Embed32 (Primitive.Int19)
+structure Int20 = Embed32 (Primitive.Int20)
+structure Int21 = Embed32 (Primitive.Int21)
+structure Int22 = Embed32 (Primitive.Int22)
+structure Int23 = Embed32 (Primitive.Int23)
+structure Int24 = Embed32 (Primitive.Int24)
+structure Int25 = Embed32 (Primitive.Int25)
+structure Int26 = Embed32 (Primitive.Int26)
+structure Int27 = Embed32 (Primitive.Int27)
+structure Int28 = Embed32 (Primitive.Int28)
+structure Int29 = Embed32 (Primitive.Int29)
+structure Int30 = Embed32 (Primitive.Int30)
+structure Int31 = Embed32 (Primitive.Int31)

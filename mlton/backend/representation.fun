@@ -540,19 +540,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	      case S.Type.dest t of
 		 Array t => SOME (array {mutable = true, ty = t})
 	       | Datatype tycon => convertDatatype tycon
-	       | Int s =>
-		    let
-		       val bits =
-			  case IntSize.bits s of
-			     8 => 8
-			   | 16 => 16
-			   | 31 => 32
-			   | 32 => 32
-			   | 64 => 64
-			   | _ => Error.bug "strange size int"
-		    in
-		       SOME (R.Type.int (IntSize.I bits))
-		    end
+	       | Int s => SOME (R.Type.int (IntSize.roundUpToPrim s))
 	       | IntInf => SOME R.Type.intInf
 	       | PreThread => SOME R.Type.thread
 	       | Real s => SOME (R.Type.real s)

@@ -1,9 +1,3 @@
-(* This code tests every value in a module matching the INTEGER signature
- * by comparing its behaviour with LargeInt.
- *
- * It assumes that the module is for fixed integers, i.e. isSome precision.
- *)
-
 functor Test (I: INTEGER) =
    struct
       fun foreach (l, f) = List.app f l
@@ -15,7 +9,13 @@ functor Test (I: INTEGER) =
       val nums =
 	 [valOf I.maxInt,
 	  I.- (valOf I.maxInt, I.fromInt 1)]
-	 @ (List.map I.fromInt [100, 10, 5, 2, 1, 0, ~1, ~2, 5, 10, 100])
+	 @ (List.foldl
+	    (fn (i, ac) =>
+	     case SOME (I.fromInt i) handle Overflow => NONE of
+		NONE => ac
+	      | SOME i => i :: ac)
+	    []
+	    [100, 10, 5, 2, 1, 0, ~1, ~2, 5, 10, 100])
 	 @ [I.+ (I.fromInt 1, valOf I.minInt),
 	    valOf I.minInt]
 
@@ -210,8 +210,36 @@ functor Test (I: INTEGER) =
 		 
    end
 
+structure S = Test (Int2)
+structure S = Test (Int3)
+structure S = Test (Int4)
+structure S = Test (Int5)
+structure S = Test (Int6)
+structure S = Test (Int7)
 structure S = Test (Int8)
+structure S = Test (Int9)
+structure S = Test (Int10)
+structure S = Test (Int11)
+structure S = Test (Int12)
+structure S = Test (Int13)
+structure S = Test (Int14)
+structure S = Test (Int15)
 structure S = Test (Int16)
+structure S = Test (Int17)
+structure S = Test (Int17)
+structure S = Test (Int18)
+structure S = Test (Int19)
+structure S = Test (Int20)
+structure S = Test (Int21)
+structure S = Test (Int22)
+structure S = Test (Int23)
+structure S = Test (Int24)
+structure S = Test (Int25)
+structure S = Test (Int26)
+structure S = Test (Int27)
+structure S = Test (Int28)
+structure S = Test (Int29)
+structure S = Test (Int30)
 structure S = Test (Int31)
 structure S = Test (Int32)
 structure S = Test (Int64)

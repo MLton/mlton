@@ -95,6 +95,11 @@ fun simplify (Program.T {globals, datatypes, functions, main}) =
        | Or of Fact.t * Fact.t
       val {get = varInfo: Var.t -> varInfo, set = setVarInfo, ...} =
 	 Property.getSetOnce (Var.plist, Property.initConst None)
+      val setVarInfo =
+	 Trace.trace ("RedundantTests.setVarInfo",
+		      Var.layout o #1,
+		      Unit.layout)
+	 setVarInfo
       datatype z = datatype Fact.result
       datatype z = datatype Rel.t
       fun makeVarInfo {args, prim, targs = _}: varInfo =
