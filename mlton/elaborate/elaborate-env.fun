@@ -641,7 +641,8 @@ datatype t = T of {currentScope: Scope.t ref,
 
 fun clean (T {fcts, fixs, sigs, strs, types, vals, ...}): unit =
    let
-      fun doit (NameSpace.T {table, ...}) = HashSet.remove (table, Values.isEmpty)
+      fun doit (NameSpace.T {table, ...}) =
+	 HashSet.removeAll (table, Values.isEmpty)
    in
       doit fcts; doit fixs; doit sigs
    (* Can't doit to the following because it removes Values.t components that
