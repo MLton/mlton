@@ -28,6 +28,7 @@
 #include "/usr/local/include/gmp.h"
 
 #define HAS_MREMAP FALSE
+#define HAS_PTRACE TRUE
 #define HAS_SIGALTSTACK TRUE
 #define HAS_SPAWN FALSE
 #define HAS_TIME_PROFILING TRUE

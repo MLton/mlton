@@ -21,9 +21,8 @@
 
 #include "gmp.h"
 
-#include "ptrace.h"
-
 #define HAS_MREMAP FALSE
+#define HAS_PTRACE FALSE
 #define HAS_SIGALTSTACK FALSE
 #define HAS_SPAWN TRUE
 #define HAS_TIME_PROFILING FALSE
