@@ -66,7 +66,7 @@ equality.  The semantics is a bit murky.
 
 \entry{isMLton} always true in a {\mlton} basis library.
 
-\entry{\tt safe}
+\entry{safe}
 a compile time constant that makes it easy to
 include assertions and checks in code that you would like removed when running
 at full speed.  {\tt safe} will be true unless the program is compiled with the
@@ -198,32 +198,70 @@ return the signal corresponding to {\tt t}.
 \end{description}
 
 \subsubsec{{\tt MLton.Profile}}{profile}
-This structure provides rudimentary profiling control from within the program.  For more details, see \secref{profiling} and {\tt examples/profiling}.
+This structure provides rudimentary profiling control from within the
+program.  For more details, see \secref{profiling} and {\tt
+  examples/profiling}.  In order to most efficiently execute
+non-profiled programs, the error-raising semantics of these functions
+are relaxed when not compiled {\tt -p}.
 
 \begin{verbatim}
 signature MLTON_PROFILE =
    sig
       val profile: bool
-      val reset: unit -> unit
-      val write: string -> unit
+      structure Data:
+         sig
+            type t
+            val equals: t * t -> bool
+            val free: t -> unit
+            val malloc: unit -> t
+            val reset: t -> unit
+            val write: t * string -> unit
+         end
+      val current: unit -> Data.t
+      val setCurrent: Data.t -> unit
    end
 \end{verbatim}
 
 \begin{description}
 
-\entry{\tt profile}
-a compile-time constant that is true when compiling {\tt -p}.  The default is false.
+\entry{profile}
+a compile-time constant that is true when compiling {\tt -p}.  The
+default is false.
 
-\entry{\tt reset ()}
-clear accumulated profiling data.  This function is equivalent to {\tt
-  fn () => ()} unless the program is compiled with {\tt -p}.
+\entry{type Data.t} the type of a unit of profiling data.
 
-\entry{\tt write f}
-write accumulated profiling data to file {\tt f}.  This function is
-equivalent to {\tt fn (f : string) => ()} unless the program is
-compiled with {\tt -p}.  Note: a program compiled with {\tt -p} will
-always write the final accumulated profiling data to a file named {\tt
-  mlmon.out}.
+\entry{Data.equals (x, y)}
+returns true if the {\tt x} and {\tt y} are the same unit of profiling
+data.
+
+\entry{Data.free x}
+frees the memory associated with the unit of profiling data {\tt x}.
+It is an error to free the current unit of profiling data or to free a
+previously freed unit of profiling data.
+
+\entry{Data.malloc ()}
+returns new unit of profiling data.  Each unit of profiling data is
+allocated from the process heap (\emph{not} the \mlton heap) and
+consumes memory equal in size to text segment of the executable.
+
+\entry{Data.reset x} 
+clears the accumulated ticks in the unit of profiling data {\tt x}.
+It is an error to reset a previously freed unit of profiling data.
+
+\entry{\tt write (x, f)}
+writes the accumulated ticks in the unit of profiling data {\tt x} to
+file {\tt f}.  It is an error to write a previously freed unit of
+profiling data.  Note: a program compiled with {\tt -p} will always
+write the current unit of profiling data at program exit to a file
+named {\tt mlmon.out}.
+
+\entry{current}
+returns the current unit of profiling data.
+
+\entry{setCurrent x}
+sets the current unit of profiling data.  It is an error to set a
+previously freed unit of profiling data.  
+
 \end{description}
 
 \subsubsection{\tt MLton.ProcEnv}

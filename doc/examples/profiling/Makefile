@@ -14,12 +14,14 @@ profiling: profiling.sml
 	$(mlton) -p -keep g profiling.sml
 
 .PHONE: profile2
-profile2: profiling2 mlmon.init.out
+profile2: profiling2 mlmon.fib.out mlmon.tak.out
 	$(mlprof) profiling2 mlmon.fib.out
 	$(mlprof) profiling2 mlmon.tak.out
-	$(mlprof) profiling2 mlmon.init.out mlmon.fib.out mlmon.tak.out mlmon.out
+	$(mlprof) profiling2 mlmon.fib.out mlmon.tak.out mlmon.out
 
-mlmon.init.out:
+mlmon.fib.out:
+	./profiling2
+mlmon.tak.out:
 	./profiling2
 
 profiling2: profiling2.sml

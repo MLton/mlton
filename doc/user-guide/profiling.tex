@@ -1,74 +1,81 @@
 \sec{Profiling}{profiling}
 
-{\mlton} has a profiling facility, {\tt mlprof}, that is similar in usage
-to {\tt gprof}.  Here is an example run from within the {\tt examples/profiling}
-directory showing how to generate profiling information.
+{\mlton} has a profiling facility, {\tt mlprof}, that is similar in
+usage to {\tt gprof}.  Here is an example run from within the {\tt
+  examples/profiling} directory showing how to generate profiling
+information.
 
 \begin{verbatim}
 % mlton -p -keep g profiling.sml
 % profiling
 % mlprof profiling mlmon.out
 0.40 seconds of CPU time
-tak_0               97.50%
-IntInf_smallMul (C)  2.50%
+tak_0               90.00%
+IntInf_smallMul (C) 10.00%
 \end{verbatim}
 In summary, generating profiling information takes three steps.
 \begin{enumerate}
-
-\item Compile with the {\tt -p} switch.  This saves a {\tt .ssa} file (see
-below).  You can also use {\tt -keep g} to save the generated assembly ({\tt
-.S}) files.
-
-\item Run the executable.  This produces a file called {\tt mlmon.out}.
-
+  
+\item Compile with the {\tt -p} switch.  This saves a {\tt .ssa} file
+  (see below).  You can also use {\tt -keep g} to save the generated
+  assembly ({\tt .S}) files.
+  
+\item Run the executable.  This produces a file called {\tt
+    mlmon.out}.
+  
 \item Run {\tt mlprof} on the executable and the {\tt mlmon.out} file.
 
 \end{enumerate}
-The profiling information output by {\tt mlprof} {\em does not refer to the
-source program}.  Instead, {\tt mlprof} reports the percentage of time spent in
-each C and SSA function.  C functions are used for the FFI and garbage
-collector.  SSA is an intermediate language used by MLton that has traditional
-first-order function definitions and calls and is similar to static-single
-assignment form.  In the above example, {\tt tak\_0} is a SSA function (see {\tt
-profiling.ssa}) corresponding to the source SML {\tt tak} function.  The C
-function {\tt IntInf\_smallMul} is used to implement {\tt IntInf.*}.
+The profiling information output by {\tt mlprof} {\em does not refer
+  to the source program}.  Instead, {\tt mlprof} reports the
+percentage of time spent in each C and SSA function.  C functions are
+used for the FFI and garbage collector.  SSA is an intermediate
+language used by MLton that has traditional first-order function
+definitions and calls and is similar to static-single assignment form.
+In the above example, {\tt tak\_0} is a SSA function (see {\tt
+  profiling.ssa}) corresponding to the source SML {\tt tak} function.
+The C function {\tt IntInf\_smallMul} is used to implement {\tt
+  IntInf.*}.
 
-In translating from SML to SSA, {\mlton} attempts to preserve source names, but
-due to anonymous functions, inlining, monomorphisation, closure conversion, and
-other optimizations, there is often quite a difference between the source and
-the optimized SSA program.  The source names are always mangled by adding a
-suffix of {\tt \_n} for some n (e.g. {\tt tak\_0}).  Names in the source may
-disappear (e.g. {\tt f} is nowhere to be found because it has been turned into a
-loop within main) or new names may appear from the SML basis library code that
-is prefixed to your program.
+In translating from SML to SSA, {\mlton} attempts to preserve source
+names, but due to anonymous functions, inlining, monomorphisation,
+closure conversion, and other optimizations, there is often quite a
+difference between the source and the optimized SSA program.  The
+source names are always mangled by adding a suffix of {\tt \_n} for
+some n (e.g. {\tt tak\_0}).  Names in the source may disappear (e.g.
+{\tt f} is nowhere to be found because it has been turned into a loop
+within main) or new names may appear from the SML basis library code
+that is prefixed to your program.
 
-You can display profiling information at the SSA basic block level with
-{\tt mlprof -d 1}.
+You can display profiling information at the SSA basic block level
+with {\tt mlprof -d 1}.
 
 \begin{verbatim}
 % mlprof -d 1 profiling mlmon.out
 0.40 seconds of CPU time
-tak_0                      97.50%
-     L_18           23.08%       
-     L_14           20.51%       
-     L_20           20.51%       
-     loop_0         12.82%       
-     L_16           10.26%       
-     L_17            5.13%       
-     L_19            2.56%       
-     L_15            2.56%       
-     L_21            2.56%       
-IntInf_smallMul (C)         2.50%
+tak_0                      90.00%
+     loop_0         19.44%       
+     L_17           16.67%       
+     L_23           13.89%       
+     L_22           11.11%       
+     L_19            8.33%       
+     L_21            8.33%       
+     L_20            8.33%       
+     L_18            5.56%       
+     L_24            5.56%       
+     L_15            2.78%       
+IntInf_smallMul (C)        10.00%
 \end{verbatim}
 Each of the indented labels refers to a basic block in {\tt
   profiling.ssa}, within the {\tt tak\_0} function.
 
-You can display profiling information at the assembly basic block level with
-{\tt mlprof -d 2}.  Other {\tt mlprof} options are
-{\tt -s}, which will print information about static C functions, {\tt -t},
-which will limit {\tt mlprof} to only print information about functions (or
-blocks) whose percentage of time is above a certain threshold, and {\tt -x}, 
-which will annotate each percentage of time with its absolute time.
+You can display profiling information at the assembly basic block
+level with {\tt mlprof -d 2}.  Other {\tt mlprof} options are {\tt
+  -s}, which will print information about static C functions, {\tt
+  -t}, which will limit {\tt mlprof} to only print information about
+functions (or blocks) whose percentage of time is above a certain
+threshold, and {\tt -x}, which will annotate each percentage of time
+with its absolute time.
 
 You may find it useful to use the {\tt -keep dot} switch when
 compiling {\tt -p}, since this saves the the SSA function call graph
@@ -87,16 +94,17 @@ the nodes of the control-flow graphs.  Note that the effect of the
 {\tt -color} option is dependent upon the {\tt -t n} option; functions
 and blocks below the threshold are always colored black.
 
-The profiler works by catching the {\tt SIGPROF} signal 100 times per second and
-recording where in the executable the program counter is.  Thus, if you compile
-{\tt -p}, your program should not use the following, which will interfere with
+The profiler works by catching the {\tt SIGPROF} signal 100 times per
+second and recording where in the executable the program counter is.
+Thus, if you compile {\tt -p}, your program should not use the
+following, which will interfere with
 the profiler.\\
 \begin{tabular}{l}
 \tt MLton.Itimer.set \{which = MLton.Itimer.Prof, ...\}\\
 \tt MLton.Signal.Handler.set (MLton.Signal.prof, ...)
 \end{tabular}\\
-Also, it is best to have a long running program (at least tens of seconds) in
-order to get reasonable data. 
+Also, it is best to have a long running program (at least tens of
+seconds) in order to get reasonable data.
 
 To facilitate profiling individual portions of your program, {\mlton}
 provides the {\tt MLton.Profile} structure (see \secref{profile}).
@@ -108,22 +116,23 @@ directory showing how to profile the executions of the {\tt fib} and
 % mlton -p -keep g profiling2.sml
 % profiling2
 % mlprof profiling2 mlmon.fib.out
-14.71 seconds of CPU time
+14.60 seconds of CPU time
 fib_0 100.00%
 % mlprof profiling2 mlmon.tak.out
-1.70 seconds of CPU time
+1.67 seconds of CPU time
 tak_0 100.00%
-% mlprof profiling2 mlmon.init.out mlmon.fib.out mlmon.tak.out mlmon.out
-16.42 seconds of CPU time
-fib_0     89.59%
-tak_0     10.35%
-<unknown>  0.06%
+% mlprof profiling2 mlmon.fib.out mlmon.tak.out mlmon.out
+16.27 seconds of CPU time
+fib_0 89.74%
+tak_0 10.26%
 \end{verbatim}
 
 Executing {\tt mlprof} with multiple {\tt mlmon.out} files sums the
 profiling data in each file to produce the output profiling
-information.  The functions {\tt MLton.Profile.reset} and {\tt
-  MLton.Profile.write} are used to reset and write the accumulated
-profiling data for portions of the program.
-
+information.  The function {\tt MLton.Profile.Data.malloc} is used to
+allocate space for each unit of profiling data, while {\tt
+  MLton.Profile.Data.write} is used to write the accumulated profiling
+data.  The functions {\tt MLton.Profile.current} and {\tt
+  MLton.Profile.setCurrent} are used to change the unit of profiling
+data into which ticks are accumulated.
 
