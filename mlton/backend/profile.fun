@@ -25,8 +25,9 @@ structure InfoNode =
 
       fun equals (n: t, n': t): bool = index n = index n'
 
-      fun call {from = T {successors, ...}, to} =
-	 if List.exists (!successors, fn n => equals (n, to))
+      fun call {from = T {successors, ...}, to as T {info, ...}} =
+	 if SourceInfo.equals (info, SourceInfo.unknown)
+	    orelse List.exists (!successors, fn n => equals (n, to))
 	    then ()
 	 else List.push (successors, to)
 
@@ -131,7 +132,7 @@ fun profile program =
 	 val c = Counter.new 0
 	 val sourceSeqs: int vector list ref = ref []
       in
-	 fun sourceSeqIndex (s: sourceSeq): int =
+	 fun sourceSeqIndex' (s: sourceSeq): int =
 	    let
 	       val s = Vector.fromListRev s
 	       val hash =
@@ -153,11 +154,11 @@ fun profile program =
 	 fun makeSourceSeqs () = Vector.fromListRev (!sourceSeqs)
       end
       (* Ensure that SourceInfo unknown is index 0. *)
-      val unknownSourceSeq = sourceSeqIndex [sourceInfoIndex SourceInfo.unknown]
+      val unknownSourceSeq = sourceSeqIndex' [sourceInfoIndex SourceInfo.unknown]
       (* Treat the empty source sequence as unknown. *)
       val sourceSeqIndex =
 	 fn [] => unknownSourceSeq
-	  | s => sourceSeqIndex s
+	  | s => sourceSeqIndex' s
       val {get = labelInfo: Label.t -> {block: Block.t,
 					visited: bool ref},
 	   set = setLabelInfo, ...} =
@@ -218,20 +219,29 @@ fun profile program =
 	    val FuncInfo.T {enters, tailCalls, ...} = funcInfo name
 	    fun enter (ps: Push.t list, si: SourceInfo.t): Push.t list * bool =
 	       let
-		  val node = sourceInfoNode si
-		  fun yes () = (Push.Enter node :: ps, true)
+		  fun node () = sourceInfoNode si
+		  fun yes () = (Push.Enter (node ()) :: ps, true)
+		  fun no () = (Push.Skip si :: ps, false)
 	       in
-		  case firstEnter ps of
-		     NONE => (List.push (enters, node)
-			      ; yes ())
-		   | SOME (node' as InfoNode.T {index, ...}) =>
-			if not (SourceInfo.equals (si, SourceInfo.unknown))
-			   andalso (not (SourceInfo.isBasis si)
-				    orelse index = mainIndex
-				    orelse index = unknownIndex)
-			   then (InfoNode.call {from = node', to = node}
-				 ; yes ())
-			else (Push.Skip si :: ps, false)
+		  if SourceInfo.equals (si, SourceInfo.unknown)
+		     then no ()
+		  else
+		     case firstEnter ps of
+			NONE =>
+			   (List.push (enters, node ())
+			    ; yes ())
+		      | SOME (node' as InfoNode.T {info = si', ...}) =>
+			   if let
+				 open SourceInfo
+			      in
+				 not (isBasis si)
+				 orelse (equals (si', main)
+					 andalso not (equals (si, main)))
+				 orelse (equals (si', unknown))
+			      end
+			      then (InfoNode.call {from = node', to = node ()}
+				    ; yes ())
+			   else no ()
 	       end
 	    val _ =
 	       Vector.foreach
@@ -616,7 +626,7 @@ fun profile program =
 		     let
 			val InfoNode.T {successors, ...} = sourceInfoNode si
 		     in
-			sourceSeqIndex
+			sourceSeqIndex'
 			(List.revMap (!successors, InfoNode.index))
 		     end)
       (* This must happen after making sourceSuccessors, since that creates
