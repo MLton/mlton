@@ -228,7 +228,6 @@ signature LEXGEN =
 
 structure LexGen: LEXGEN =
    struct
-      open Pervasive
    open Array List
    infix 9 sub
 

@@ -1,0 +1,7 @@
+local
+  ../lib/mlton/sources.mlb
+  main.sml
+in
+  structure Main
+end
+

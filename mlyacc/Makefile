@@ -10,9 +10,9 @@ PATH = $(BIN):$(shell echo $$PATH)
 
 all:	$(NAME)
 
-$(NAME): $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)
+$(NAME): $(NAME).mlb $(shell $(MLTON) -stop f $(NAME).cm)
 	@echo 'Compiling $(NAME)'
-	$(MLTON) $(FLAGS) $(NAME).cm
+	$(MLTON) $(FLAGS) $(NAME).mlb
 	size $(NAME)
 
 $(NAME).sml: $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)

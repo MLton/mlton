@@ -1,0 +1,33 @@
+(* Modified by sweeks@acm.org on 2000-8-24.
+ * Took out everything except for splay trees.
+ * Ported to MLton.
+ *)
+
+(* sources.cm
+ *
+ * COPYRIGHT (c) 1996 AT&T Research.
+ * COPYRIGHT (c) 1998 Bell Labs, Lucent Technologies
+ *
+ * The sources specification for the SML/NJ Utility library; part of the
+ * SML/NJ Library suite.
+ *)
+
+ann  
+   sequenceUnit true,
+   warnMatch true,
+   warnUnused false, forceUsed
+in
+local
+    $(MLTON_ROOT)/basis/basis.mlb
+
+    splaytree-sig.sml
+    splaytree.sml
+    ord-key-sig.sml
+    lib-base-sig.sml
+    lib-base.sml
+    ord-map-sig.sml
+    splay-map-fn.sml
+in
+    functor SplayMapFn
+end
+end

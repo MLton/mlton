@@ -1,0 +1,22 @@
+ann  
+   sequenceUnit true,
+   warnMatch true,
+   warnUnused false, forceUsed
+in
+local
+    $(MLTON_ROOT)/basis/basis.mlb
+    ../basic/sources.mlb
+
+    disjoint.sig
+    disjoint.fun
+    set.sig
+    unordered.fun
+    ordered-unique-set.fun
+in
+    signature SET
+
+    structure DisjointSet
+    functor OrderedUniqueSet
+    functor UnorderedSet
+end
+end

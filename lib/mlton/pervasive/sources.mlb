@@ -1,0 +1,8 @@
+local
+    $(MLTON_ROOT)/basis/basis.mlb
+    pervasive.sml
+in
+    signature PERVASIVE_REAL
+    signature PERVASIVE_WORD
+    structure Pervasive
+end

@@ -1,0 +1,27 @@
+ann  
+   sequenceUnit true,
+   warnMatch true,
+   warnUnused false, forceUsed
+in
+local
+    $(MLTON_ROOT)/basis/basis.mlb
+    ../../smlnj/sources.mlb
+    ../basic/sources.mlb
+
+    mono-env.sig
+    basic-env-to-env.fun
+    mono-env.fun
+    finite-function.sig
+    poly-cache.sig
+    poly-cache.fun
+in
+    signature ENV
+    signature MONO_ENV
+    signature POLY_CACHE
+
+    structure PolyCache
+
+    functor MakeMonoEnv
+    functor MonoEnv
+end
+end

@@ -5,15 +5,13 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-structure Main =
+structure Main : sig val main : unit -> unit end =
 struct
 
 type int = Int.t
 type word = Word.t
 
 val debug = false
-
-val sourcesIndexGC: int = 1
 
 val callGraphFile: File.t option ref = ref NONE
 val gray: bool ref = ref false
@@ -72,10 +70,6 @@ structure Source =
 	       else [(name, Dot.Center)]
 	  | Simple s =>
 	       [(s, Dot.Center)]
-
-      val isGC =
-	 fn Simple "<gc>" => true
-	  | _ => false
    end
 
 structure Graph = DirectedGraph
@@ -225,11 +219,9 @@ structure Style =
    struct
       datatype t = Current | Stack
 
-      val toString =
-	 fn Current => "Current"
-	  | Stack => "Stack"
+      (* val toString = fn Current => "Current" | Stack => "Stack" *)
 
-      val layout = Layout.str o toString
+      (* val layout = Layout.str o toString *)
    end
 
 structure Counts =
@@ -308,12 +300,6 @@ structure ProfFile =
 	    magic = magic,
 	    total = 0,
 	    totalGC = 0}
-
-      local
-	 fun make f (T r) = f r
-      in
-	 val kind = make #kind
-      end
 
       fun layout (T {counts, kind, magic, total, totalGC}) =
 	 Layout.record [("kind", Kind.layout kind),
@@ -461,7 +447,7 @@ structure NodePred =
 	     | Succ p => unary ("succ", p)
 	 end
 
-      val layout = Sexp.layout o toSexp
+      (* val layout = Sexp.layout o toSexp *)
 
       val fromString: string -> t =
 	 fn s =>

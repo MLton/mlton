@@ -1,0 +1,15 @@
+local
+  local 
+    $(MLTON_ROOT)/basis/basis.mlb
+    lexgen.sml
+  in
+    structure LexGen
+  end
+  local
+    ../lib/mlton/sources.mlb
+  in
+    main.sml
+  end
+in
+  structure Main
+end

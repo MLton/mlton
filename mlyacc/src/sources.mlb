@@ -1,0 +1,30 @@
+local
+  $(MLTON_ROOT)/basis/basis.mlb
+  $(MLTON_ROOT)/basis/unsafe.mlb
+  ../../lib/mlyacc/mlyacc-lib.mlb
+
+  utils.sig
+  utils.sml
+  sigs.sml
+  hdr.sml
+  yacc.grm.sig
+  yacc.grm.sml
+  yacc.lex.sml
+  parse.sml
+  grammar.sml
+  core.sml
+  coreutils.sml
+  graph.sml
+  look.sml
+  lalr.sml
+  mklrtable.sml
+  mkprstruct.sml
+  shrink.sml
+  verbose.sml
+  absyn.sig
+  absyn.sml
+  yacc.sml
+  link.sml
+in
+  structure ParseGen
+end
