@@ -21,13 +21,9 @@ functor Sequence (S: sig
       val maxLen = Array.maxLen
 
       fun array n =
-	 let
-	    open Primitive.Array
-	 in
-	    if isMutable orelse n <> 0 (* can't use n > 0.  need to raise Size *)
-	       then array n
-	    else array0 ()
-	 end
+	 if isMutable orelse n <> 0 (* can't use n > 0.  need to raise Size *)
+	    then Array.array n
+	 else Array.array0 ()
 
       fun sub (s, i) =
 	 if Primitive.safe andalso Primitive.Int.geu (i, length s)
