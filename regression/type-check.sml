@@ -78,3 +78,6 @@ val 'a x =
    in
       ()
    end
+
+(* This example confirms that bools can be used as labels. *)
+val {false = x, ...} = {false = 13};
