@@ -7,122 +7,17 @@ struct
   open S
   open x86
 
-  val rec partition
-    = fn ([],p) => ([],[])
-       | (h::t,p) => let
-		       val (truee,falsee) = partition(t, p)
-		     in
-		       if p h
-			 then (h::truee,falsee)
-			 else (truee,h::falsee)
-		     end
-
   val rec ones : int -> word
     = fn 0 => 0wx0
        | n => Word.orb(Word.<<(ones (n-1), 0wx1),0wx1)
 
-  val tracer
-    = Control.traceBatch
-(*
-    = fn s => fn f => (Control.trace (Control.Detail, s) f, fn () => ())
-*)
-
-  structure JumpInfo =
-    struct
-      datatype status = Must | Maybe of int
-
-      val lt
-	= fn (Maybe i1, Must) => true
-	   | (Maybe i1, Maybe i2) => i1 < i2
-	   | _ => false
-      val eq
-	= fn (Must, Must) => true
-           | (Maybe i1, Maybe i2) => i1 = i2
-	   | _ => false
-
-      val toString
-        = fn Must => "Must"
-	   | Maybe i => concat ["Maybe ", Int.toString i]
-
-      local
-	fun doit (status_ref, maybe_fn)
-	  = case !status_ref
-	      of Must => ()
-	       | Maybe i => status_ref := (maybe_fn i)
-      in
-	fun inc {label, jumpInfo as {get}}
-	  = doit (get label, fn i => Maybe (i+1))
-	fun dec {label, jumpInfo as {get}}
-	  = doit (get label, fn i => Maybe (i-1))
-	fun force {label, jumpInfo as {get}}
-	  = doit (get label, fn i => Must)
-      end
-
-      fun computeJumpInfo {blocks: Block.t list, 
-			   exports: Label.t list,
-			   block_pre: Label.t -> Assembly.t list option}
-	= let
-	    val jumpInfo as {get: Label.t -> status ref}
-	      = Property.get
-	        (Label.plist, 
-		 Property.initFun 
-		 (fn label
-		   => case block_pre label 
-			of NONE => if List.contains(exports,
-						    label,
-						    Label.equals)
-				     then ref Must
-				     else ref (Maybe 0) 
-			 | SOME assembly => ref Must))
-
-	    val _ 
-	      = List.foreach
-	        (blocks,
-		 fn Block.T {transfer,...}
-		  => List.foreach
-		     (Transfer.targets transfer,
-		      fn label 
-		       => inc {label = label,
-			       jumpInfo = jumpInfo}))
-	  in
-	    jumpInfo
-	  end
-
-      val (computeJumpInfo, computeJumpInfo_msg)
-	= tracer
-          "computeJumpInfo"
-	  computeJumpInfo
-
-      fun verifyJumpInfo {blocks: Block.t list, 
-			  exports: Label.t list,
-			  block_pre: Label.t -> Assembly.t list option,
-			  jumpInfo: {get: Label.t -> status ref}}
-	= let
-	    val jumpInfo' = computeJumpInfo {blocks = blocks,
-					     exports = exports,
-					     block_pre = block_pre}
-
-	    val verified 
-	      = List.forall
-	        (blocks,
-		 fn Block.T {label,...}
-		  => if !((#get jumpInfo') label) = !((#get jumpInfo) label)
-		       then true
-		       else false)
-	  in
-	    verified
-	  end
-
-      val (verifyJumpInfo, verifyJumpInfo_msg)
-	= tracer
-          "verifyJumpInfo"
-	  verifyJumpInfo
-    end
+  val tracer = x86.tracer
+  val tracerTop = x86.tracerTop
 
   structure PeepholeBlock =
     struct
       structure Peephole
-	= Peephole(type label_type = Label.t
+	= Peephole(type entry_type = Entry.t
 		   type profileInfo_type = ProfileInfo.t
 		   type statement_type = Assembly.t
 		   type transfer_type = Transfer.t
@@ -151,8 +46,7 @@ struct
 
       local
 	val isInstructionMOV : statement_type -> bool
-	  = fn Assembly.Instruction (Instruction.MOV
-				     {...})
+	  = fn Assembly.Instruction (Instruction.MOV {...})
 	     => true
 	     | _ => false
 
@@ -172,7 +66,7 @@ struct
 	     transfer = fn _ => true}
 
 	val rewriter : rewriter
-	  = fn {label,
+	  = fn {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -211,13 +105,13 @@ struct
 				       op ::)
 		       in
 			 SOME (Block.T
-			       {label = label,
+			       {entry = entry,
 				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
 		  else NONE
-	     | {label,
+	     | {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -256,7 +150,7 @@ struct
 				       op ::)
 		       in
 			 SOME (Block.T
-			       {label = label,
+			       {entry = entry,
 				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
@@ -276,8 +170,7 @@ struct
 
       local
 	val isInstructionFMOV : statement_type -> bool
-	  = fn Assembly.Instruction (Instruction.pFMOV
-				     {...})
+	  = fn Assembly.Instruction (Instruction.pFMOV {...})
 	     => true
 	     | _ => false
 
@@ -299,7 +192,7 @@ struct
 	     transfer = fn _ => true}
 
 	val rewriter : rewriter
-	  = fn {label,
+	  = fn {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -338,13 +231,13 @@ struct
 				       op ::)
 		       in
 			 SOME (Block.T
-			       {label = label,
+			       {entry = entry,
 				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
 		  else NONE
-	     | {label,
+	     | {entry,
 		profileInfo, 
 		start, 
 		statements as
@@ -383,13 +276,13 @@ struct
 				       op ::)
 		       in
 			 SOME (Block.T
-			       {label = label,
+			       {entry = entry,
 				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
 		  else NONE
-	     | {label,
+	     | {entry,
 	        profileInfo,
 		start, 
 		statements as
@@ -428,7 +321,7 @@ struct
 				       op ::)
 		       in
 			 SOME (Block.T
-			       {label = label,
+			       {entry = entry,
 				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
@@ -484,7 +377,7 @@ struct
 	     transfer = fn _ => true}
 
 	val rewriter : rewriter
-	  = fn {label,
+	  = fn {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -526,14 +419,14 @@ struct
 					     op ::)
 			     in
 			       SOME (Block.T
-				     {label = label,
+				     {entry = entry,
 				      profileInfo = profileInfo,
 				      statements = statements,
 				      transfer = transfer})
 			     end
 			  | _ => NONE
 		  else NONE
-	     | {label,
+	     | {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -575,7 +468,7 @@ struct
 					     op ::)
 			     in
 			       SOME (Block.T
-				     {label = label,
+				     {entry = entry,
 				      profileInfo = profileInfo,
 				      statements = statements,
 				      transfer = transfer})
@@ -595,17 +488,11 @@ struct
       end
 
       local
-	val isImmediate0
-	  = fn Immediate.Const (Immediate.Char #"\000") => true
-	     | Immediate.Const (Immediate.Int 0) => true
-	     | Immediate.Const (Immediate.Word 0wx0) => true
-	     | _ => false
-
 	val isInstructionMOV_srcImmediate0 : statement_type -> bool
 	  = fn Assembly.Instruction (Instruction.MOV
 				     {src = Operand.Immediate immediate,
 				      ...})
-	     => isImmediate0 immediate
+	     => Immediate.zero immediate
 	     | _ => false
 
 	val isInstructionBinAL : statement_type -> bool
@@ -627,7 +514,7 @@ struct
 	     transfer = fn _ => true}
 
 	val rewriter : rewriter
-	  = fn {label,
+	  = fn {entry,
 		profileInfo,
 		start,
 		statements as
@@ -700,13 +587,13 @@ struct
 				| _ => Transfer.Goto {target = falsee}
 		       in
 			 SOME (Block.T
-			       {label = label,
+			       {entry = entry,
 				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
 		  else NONE
-	     | {label,
+	     | {entry,
 		profileInfo,
 		start,
 		statements as
@@ -779,13 +666,13 @@ struct
 				| _ => Transfer.Goto {target = truee}
 		       in
 			 SOME (Block.T
-			       {label = label,
+			       {entry = entry,
 				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
 		  else NONE
-	     | {label,
+	     | {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -851,7 +738,7 @@ struct
 				       op ::)
 		       in
 			 SOME (Block.T
-			       {label = label,
+			       {entry = entry,
 				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
@@ -870,15 +757,8 @@ struct
       end
 
       local
-	val isImmediate0
-	  = fn Immediate.Const (Immediate.Char #"\000") => true
-	     | Immediate.Const (Immediate.Int 0) => true
-	     | Immediate.Const (Immediate.Word 0wx0) => true
-	     | _ => false
-
 	val isInstructionMOV : statement_type -> bool
-	  = fn Assembly.Instruction (Instruction.MOV
-				     {...})
+	  = fn Assembly.Instruction (Instruction.MOV {...})
 	     => true
 	     | _ => false
 
@@ -892,7 +772,7 @@ struct
 		    | Instruction.SBB => false
 		    | _ => true)
                 andalso
-		isImmediate0 immediate
+		Immediate.zero immediate
 	     | _ => false
 
 	val template : template
@@ -904,7 +784,7 @@ struct
 	     transfer = fn _ => true}
 
 	val rewriter : rewriter
-	  = fn {label,
+	  = fn {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -970,13 +850,13 @@ struct
 			 val transfer = Transfer.Goto {target = falsee}
 		       in
 			 SOME (Block.T
-			       {label = label,
+			       {entry = entry,
 				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
 		  else NONE
-	     | {label,
+	     | {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -1042,13 +922,13 @@ struct
 			 val transfer = Transfer.Goto {target = truee}
 		       in
 			 SOME (Block.T
-			       {label = label,
+			       {entry = entry,
 				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
 		  else NONE
-	     | {label,
+	     | {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -1110,7 +990,7 @@ struct
 				       op ::)
 		       in
 			 SOME (Block.T
-			       {label = label,
+			       {entry = entry,
 				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
@@ -1155,7 +1035,7 @@ struct
 		  | Instruction.SUB => true
 		  | _ => false)
 	      andalso
-	      isSome (getImmediate1 immediate)
+	      isSome (getImmediate1 (Immediate.destruct immediate))
 	   | _ => false
 
 	val template : template 
@@ -1165,7 +1045,7 @@ struct
 	     transfer = fn _ => true}
 
 	val rewriter : rewriter
-	  = fn {label,
+	  = fn {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -1178,7 +1058,7 @@ struct
 		transfer}
 	     => let
 		  val oper
-		    = case (oper, getImmediate1 immediate)
+		    = case (oper, getImmediate1 (Immediate.destruct immediate))
 		        of (Instruction.ADD, SOME false) => Instruction.INC
 		         | (Instruction.ADD, SOME true ) => Instruction.DEC
 		         | (Instruction.SUB, SOME false) => Instruction.DEC
@@ -1198,7 +1078,7 @@ struct
 				op ::)
 		in 
 		  SOME (Block.T
-			{label = label,
+			{entry = entry,
 			 profileInfo = profileInfo,
 			 statements = statements,
 			 transfer = transfer})
@@ -1226,6 +1106,12 @@ struct
 			  | _ => NONE
 		  else log2' (Word32.~>>(w, 0wx1), i + 1)
 	fun log2 w = log2' (w, 0 : int)
+	fun divTemp size
+	  = MemLoc.imm {base = Immediate.label (Label.fromString "divTemp"),
+			index = Immediate.const_int 0,
+			scale = Scale.Four,
+			size = size,
+			class = MemLoc.Class.Temp}
 
 	val isImmediatePow2
 	  = fn Immediate.Const (Immediate.Char c) 
@@ -1257,18 +1143,19 @@ struct
 		  | Instruction.DIV => true
 		  | _ => false)
 	      andalso
-	      isImmediatePow2 immediate
+	      isImmediatePow2 (Immediate.destruct immediate)
 	   | _ => false
 
 	val template : template 
 	  = {start = EmptyOrNonEmpty,
 	     statements 
-	     = [One isInstructionMULorDIV_srcImmediatePow2],
+	     = [One isInstructionMULorDIV_srcImmediatePow2,
+		All isComment],
 	     finish = EmptyOrNonEmpty,
 	     transfer = fn _ => true}
 
 	val rewriter : rewriter
-	  = fn {label,
+	  = fn {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -1276,13 +1163,82 @@ struct
 					{oper = Instruction.IMUL, 
 					 src = Operand.Immediate immediate, 
 					 dst, 
-					 size})]],
+					 size})],
+		 comments],
 		finish as [], 
-		transfer as Transfer.Iff {condition = Instruction.O,
+		transfer as Transfer.Iff {condition,
 					  truee,
 					  falsee}}
-	     => NONE
-	     | {label,
+	     => (case getImmediateLog2 (Immediate.destruct immediate)
+		   of NONE => Error.bug "Peephole: elimMDPow2"
+		    | SOME (0,false)
+		    => let
+			 val transfer
+			   = case condition
+			       of Instruction.O 
+				=> Transfer.Goto {target = falsee}
+				| Instruction.NO 
+				=> Transfer.Goto {target = truee}
+				| _ => Error.bug "Peephole: elimMDPow2"
+				 
+			 val statements
+			   = List.fold(start,
+				       comments,
+				       op ::)
+		       in
+			 SOME (Block.T
+			       {entry = entry,
+				profileInfo = profileInfo,
+				statements = statements,
+				transfer = transfer})
+		       end
+		    | SOME (0,true)
+		    => let
+			 val statements
+			   = List.fold
+			     (start,
+			      (Assembly.instruction_unal
+			       {oper = Instruction.NEG,
+				dst = dst,
+				size = size})::
+			      comments,
+			      op ::)
+		       in 
+			 SOME (Block.T
+			       {entry = entry,
+				profileInfo = profileInfo,
+				statements = statements,
+				transfer = transfer})
+		       end
+		    | SOME (1,b)
+		    => let
+			 val statements
+			   = List.fold
+			     (start,
+			      (fn l
+			        => if b
+				     then (Assembly.instruction_unal
+					   {oper = Instruction.NEG,
+					    dst = dst,
+					    size = size})::
+				          l
+				     else l)
+			      ((Assembly.instruction_binal
+				{oper = Instruction.ADD,
+				 src = dst,
+				 dst = dst,
+				 size = size})::
+			       comments),
+			      op ::)
+		       in
+			 SOME (Block.T
+			       {entry = entry,
+				profileInfo = profileInfo,
+				statements = statements,
+				transfer = transfer})
+		       end
+		    | _ => NONE)
+	     | {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -1290,31 +1246,18 @@ struct
 					{oper = Instruction.IMUL, 
 					 src = Operand.Immediate immediate, 
 					 dst, 
-					 size})]],
-		finish as [], 
-		transfer as Transfer.Iff {condition = Instruction.NO,
-					  truee,
-					  falsee}}
-	     => NONE
-	     | {label,
-		profileInfo,
-		start, 
-		statements as
-		[[Assembly.Instruction (Instruction.pMD 
-					{oper = Instruction.IMUL, 
-					 src = Operand.Immediate immediate, 
-					 dst, 
-					 size})]],
+					 size})],
+		 comments],
 		finish, 
 		transfer}
-	     => (case getImmediateLog2 immediate
+	     => (case getImmediateLog2 (Immediate.destruct immediate)
 		   of NONE => Error.bug "Peephole: elimMDPow2"
 		    | SOME (0,false) 
 		    => SOME (Block.T
-			     {label = label,
+			     {entry = entry,
 			      profileInfo = profileInfo,
 			      statements = List.fold(start,
-						     finish,
+						     List.concat [comments, finish],
 						     op ::),
 			      transfer = transfer})
 		    | SOME (0,true)
@@ -1324,7 +1267,7 @@ struct
 			      {oper = Instruction.NEG,
 			       dst = dst,
 			       size = size})::
-			     finish
+			     (List.concat [comments, finish])
 
 			 val statements
 			   = List.fold(start, 
@@ -1332,7 +1275,34 @@ struct
 				       op ::)
 		       in
 			 SOME (Block.T
-			       {label = label,
+			       {entry = entry,
+				profileInfo = profileInfo,
+				statements = statements,
+				transfer = transfer})
+		       end
+		    | SOME (1,b)
+		    => let
+			 val statements
+			   = List.fold
+			     (start,
+			      (fn l
+			        => if b
+				     then (Assembly.instruction_unal
+					   {oper = Instruction.NEG,
+					    dst = dst,
+					    size = size})::
+				          l
+				     else l)
+			      ((Assembly.instruction_binal
+				{oper = Instruction.ADD,
+				 src = dst,
+				 dst = dst,
+				 size = size})::
+			       (List.concat [comments, finish])),
+			      op ::)
+		       in
+			 SOME (Block.T
+			       {entry = entry,
 				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
@@ -1354,21 +1324,21 @@ struct
 						   size = size})::
 					         l
 					    else l))
-                                    finish
+                                    (List.concat [comments, finish])
 
 				val statements
-				  = List.fold(start, 
+				  = List.fold(start,
 					      statements,
 					      op ::)
 			      in
 				SOME (Block.T
-				      {label = label,
+				      {entry = entry,
 				       profileInfo = profileInfo,
 				       statements = statements,
 				       transfer = transfer})
 			      end
 			 else NONE)
-	     | {label,
+	     | {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -1376,17 +1346,18 @@ struct
 					 {oper = Instruction.MUL, 
 					  src = Operand.Immediate immediate, 
 					  dst, 
-					  size})]],
+					  size})],
+		 comments],
 		finish, 
 		transfer}
-	     => (case getImmediateLog2 immediate
+	     => (case getImmediateLog2 (Immediate.destruct immediate)
 		   of NONE => Error.bug "Peephole: elimMDPow2"
 		    | SOME (0,false) 
 		    => SOME (Block.T
-			     {label = label,
+			     {entry = entry,
 			      profileInfo = profileInfo,
 			      statements = List.fold(start,
-						     finish,
+						     List.concat [comments, finish],
 						     op ::),
 			      transfer = transfer})
 		    | SOME (i,false)
@@ -1398,7 +1369,7 @@ struct
 				      count = Operand.immediate_const_int i,
 				      dst = dst,
 				      size = size})::
-				    finish
+				    (List.concat [comments, finish])
 
 				val statements
 				  = List.fold(start, 
@@ -1406,7 +1377,7 @@ struct
 					      op ::)
 			      in 
 				SOME (Block.T
-				      {label = label,
+				      {entry = entry,
 				       profileInfo = profileInfo,
 				       statements = statements,
 				       transfer = transfer})
@@ -1414,7 +1385,7 @@ struct
 			 else NONE
 		    | SOME (i,true)
 		    => NONE)
-	     | {label,
+	     | {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -1422,17 +1393,18 @@ struct
 					{oper = Instruction.IDIV,
 					 src = Operand.Immediate immediate, 
 					 dst, 
-					 size})]],
+					 size})],
+		 comments],
 		finish, 
 		transfer}
-	     => (case getImmediateLog2 immediate
+	     => (case getImmediateLog2 (Immediate.destruct immediate)
 		   of NONE => Error.bug "Peephole: elimMDPow2"
 		    | SOME (0,false) 
 		    => SOME (Block.T
-			     {label = label,
+			     {entry = entry,
 			      profileInfo = profileInfo,
 			      statements = List.fold(start,
-						     finish,
+						     List.concat [comments, finish],
 						     op ::),
 			      transfer = transfer})
 		    | SOME (0,true)
@@ -1442,7 +1414,7 @@ struct
 			      {oper = Instruction.NEG,
 			       dst = dst,
 			       size = size})::
-			     finish
+			     (List.concat [comments, finish])
 
 			 val statements
 			   = List.fold(start, 
@@ -1450,7 +1422,7 @@ struct
 				       op ::)
 		       in
 			 SOME (Block.T
-			       {label = label,
+			       {entry = entry,
 				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
@@ -1458,33 +1430,24 @@ struct
 		    | SOME (i,b)
 		    => if i < (8 * Size.toBytes size)
 			 then let
-				val temp
-				  = (Operand.memloc o MemLoc.imm)
-				    {base = Immediate.const_int 0,
-				     index = Immediate.const_int 0,
-				     scale = Scale.Four,
-				     size = Size.LONG,
-				     commit = MemLoc.Commit.commit
-				              {isTemp = true,
-					       onFlush = false},
-				     class = MemLoc.Class.new "Temp"}
-
+				val divTemp = Operand.MemLoc (divTemp size)
 				val width = 8 * Size.toBytes size
 
 				val statements
 				  = ((fn l
 				       => (Assembly.instruction_mov
 					   {src = dst,
-					    dst = temp,
+					    dst = divTemp,
 					    size = size})::
 				          l) o
 				     (fn l
 				       => if i > 0
 					    then (Assembly.instruction_sral
 						  {oper = Instruction.SAR,
-						   dst = temp,
+						   dst = divTemp,
 						   count 
-						   = Operand.immediate_const_int (i - 1),
+						   = Operand.immediate_const_int 
+						     (i - 1),
 						   size = size})::
 					         l
 					    else l) o
@@ -1492,16 +1455,17 @@ struct
 				       => if i < width
 					    then (Assembly.instruction_sral
 						  {oper = Instruction.SHR,
-						   dst = temp,
+						   dst = divTemp,
 						   count 
-						   = Operand.immediate_const_int (width - i),
+						   = Operand.immediate_const_int 
+						     (width - i),
 						   size = size})::
 					         l
 					    else l) o
 				     (fn l
 				       => (Assembly.instruction_binal
 					   {oper = Instruction.ADD,
-					    src = temp,
+					    src = divTemp,
 					    dst = dst,
 					    size = size})::
 					  (Assembly.instruction_sral
@@ -1518,7 +1482,7 @@ struct
 						   size = size})::
 					          l
 					     else l))
-				    finish
+				    (List.concat [comments, finish])
 
 				val statements
 				  = List.fold(start,
@@ -1526,13 +1490,13 @@ struct
 					      op ::)
 			      in 
 				SOME (Block.T
-				      {label = label,
+				      {entry = entry,
 				       profileInfo = profileInfo,
 				       statements = statements,
 				       transfer = transfer})
 			      end
 			 else NONE)
-	     | {label,
+	     | {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -1540,17 +1504,18 @@ struct
 					{oper = Instruction.DIV,
 					 src = Operand.Immediate immediate, 
 					 dst, 
-					 size})]],
+					 size})],
+		 comments],
 		finish, 
 		transfer}
-	     => (case getImmediateLog2 immediate
+	     => (case getImmediateLog2 (Immediate.destruct immediate)
 		   of NONE => Error.bug "Peephole: elimMDPow2"
 		    | SOME (0,false) 
 		    => SOME (Block.T
-			     {label = label,
+			     {entry = entry,
 			      profileInfo = profileInfo,
 			      statements = List.fold(start,
-						     finish,
+						     List.concat [comments, finish],
 						     op ::),
 			      transfer = transfer})
 		    | SOME (i,false)
@@ -1562,7 +1527,7 @@ struct
 				      count = Operand.immediate_const_int i,
 				      dst = dst,
 				      size = size})::
-				    finish
+				    (List.concat [comments, finish])
 
 				val statements
 				  = List.fold(start,
@@ -1570,7 +1535,7 @@ struct
 					      op ::)
 			      in 
 				SOME (Block.T
-				      {label = label,
+				      {entry = entry,
 				       profileInfo = profileInfo,
 				       statements = statements,
 				       transfer = transfer})
@@ -1590,15 +1555,105 @@ struct
       end  
 
       local
-	val isInstructionCMPorTEST
+	val isInstructionCMPorTEST : statement_type -> bool
 	  = fn Assembly.Instruction (Instruction.CMP _)
 	     => true
 	     | Assembly.Instruction (Instruction.TEST _)
 	     => true
 	     | _ => false
 
-	val isTransfer_Iff
-	  = fn Transfer.Iff {truee, falsee, ...}
+	val isInstructionMOV : statement_type -> bool
+	  = fn Assembly.Instruction (Instruction.MOV {...})
+	     => true
+	     | _ => false
+
+	val isInstructionSETcc : statement_type -> bool
+	  = fn Assembly.Instruction (Instruction.SETcc {...})
+	     => true
+	     | _ => false
+
+	val isInstruction : statement_type -> bool
+	  = fn Assembly.Instruction _
+	     => true
+	     | _ => false
+
+	val isTransfer_Iff : transfer_type -> bool
+	  = fn Transfer.Iff {...}
+	     => true
+	     | _ => false
+
+	val template 
+	  = {start = EmptyOrNonEmpty,
+	     statements = [One isInstructionCMPorTEST,
+			   All isComment],
+	     finish = EmptyOrNonEmpty,
+	     transfer = fn _ => true}
+
+	val rewriter 
+	  = fn {entry,
+		profileInfo,
+		start, 
+		statements as
+		[[Assembly.Instruction instruction],
+		 comments],
+		finish,
+		transfer}
+	     => let
+		  val rec scan 
+		    = fn [] => not (isTransfer_Iff transfer)
+		       | asm::statements
+		       => if isComment asm
+		             orelse 
+			     isInstructionMOV asm
+			    then scan statements
+			  else if isInstructionSETcc asm
+			    then false
+			  else if isInstruction asm
+			    then true
+			  else false
+		in
+		  if scan finish
+		    then let
+			  val statements 
+			    = List.fold(start, 
+					List.concat [comments, finish],
+					op ::)
+			 in
+			   SOME (Block.T {entry = entry,
+					  profileInfo = profileInfo,
+					  statements = statements,
+					  transfer = transfer})
+			 end
+		    else NONE
+		end
+	     | _ => Error.bug "elimCMPTEST"
+
+	val (callback,elimCMPTEST_msg) 
+	  = make_callback_msg "elimCMPTEST"
+      in
+	val elimCMPTEST : optimization
+	  = {template = template,
+	     rewriter = rewriter,
+	     callback = callback}
+	val elimCMPTEST_msg = elimCMPTEST_msg
+      end
+
+(*
+      local
+	val isInstructionCMPorTEST : statement_type -> bool
+	  = fn Assembly.Instruction (Instruction.CMP _)
+	     => true
+	     | Assembly.Instruction (Instruction.TEST _)
+	     => true
+	     | _ => false
+
+	val isInstructionMOV : statement_type -> bool
+	  = fn Assembly.Instruction (Instruction.MOV {...})
+	     => true
+	     | _ => false
+
+	val isTransfer_Iff : transfer_type -> bool
+	  = fn Transfer.Iff {...}
 	     => true
 	     | _ => false
 
@@ -1610,7 +1665,7 @@ struct
 	     transfer = not o isTransfer_Iff}
 
 	val rewriter 
-	  = fn {label,
+	  = fn {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -1621,69 +1676,255 @@ struct
 	     => let
 		  val statements 
 		    = List.fold(start, 
-				comments,
+				List.concat [comments, finish],
 				op ::)
 		in 
-		  SOME (Block.T {label = label,
+		  SOME (Block.T {entry = entry,
 				 profileInfo = profileInfo,
 				 statements = statements,
 				 transfer = transfer})
 		end
-	     | _ => Error.bug "elimCMPTST"
+	     | _ => Error.bug "elimCMPTEST"
 
-	val (callback,elimCMPTST_msg) 
-	  = make_callback_msg "elimCMPTST"
+	val (callback,elimCMPTEST_msg) 
+	  = make_callback_msg "elimCMPTEST"
       in
-	val elimCMPTST : optimization
+	val elimCMPTEST : optimization
 	  = {template = template,
 	     rewriter = rewriter,
 	     callback = callback}
-	val elimCMPTST_msg = elimCMPTST_msg
+	val elimCMPTEST_msg = elimCMPTEST_msg
+      end
+*)
+
+      local
+	val isInstructionCMP_srcImmediate0
+	  = fn Assembly.Instruction (Instruction.CMP
+				     {src1 = Operand.Immediate immediate,
+				      ...})
+	     => Immediate.zero immediate
+	     | Assembly.Instruction (Instruction.CMP
+				     {src2 = Operand.Immediate immediate,
+				      ...})
+	     => Immediate.zero immediate
+	     | _ => false
+
+	val isTransfer_Iff_E_NE
+	  = fn Transfer.Iff {condition, ...}
+	     => condition = Instruction.E
+	        orelse
+		condition = Instruction.NE
+	     | _ => false
+
+	val template 
+	  = {start = EmptyOrNonEmpty,
+	     statements = [One isInstructionCMP_srcImmediate0,
+			   All isComment],
+	     finish = Empty,
+	     transfer = isTransfer_Iff_E_NE}
+
+	val rewriter 
+	  = fn {entry,
+		profileInfo,
+		start, 
+		statements as
+		[[Assembly.Instruction
+		  (Instruction.CMP {src1, src2, size})],
+		 comments],
+		finish as [],
+		transfer as Transfer.Iff {condition, truee, falsee}}
+	     => let
+		  val condition
+		    = case condition
+			of Instruction.E => Instruction.Z
+			 | Instruction.NE => Instruction.NZ
+			 | _ => Error.bug "Peephole: elimCMP0"
+
+		  val src
+		    = case (Operand.deImmediate src1, 
+			    Operand.deImmediate src2)
+			of (SOME _, NONE) => src2
+			 | (NONE, SOME _) => src1
+			 | (SOME immediate1, 
+			    SOME immediate2)
+			 => if Immediate.zero immediate1
+			      then src2
+			      else src1
+			 | _ => Error.bug "Peephole: elimCMP0"
+
+		  val statements 
+		    = List.fold(start, 
+				(Assembly.instruction_test
+				 {src1 = src,
+				  src2 = src,
+				  size = size})::
+				comments,
+				op ::)
+
+		  val transfer
+		    = Transfer.Iff {condition = condition,
+				    truee = truee,
+				    falsee = falsee}
+		in 
+		  SOME (Block.T {entry = entry,
+				 profileInfo = profileInfo,
+				 statements = statements,
+				 transfer = transfer})
+		end
+	     | _ => Error.bug "elimCMP0"
+
+	val (callback,elimCMP0_msg) 
+	  = make_callback_msg "elimCMP0"
+      in
+	val elimCMP0 : optimization
+	  = {template = template,
+	     rewriter = rewriter,
+	     callback = callback}
+	val elimCMP0_msg = elimCMP0_msg
+      end
+
+      local
+	val isInstructionAL
+	  = fn Assembly.Instruction (Instruction.BinAL {...})
+	     => true
+	     | Assembly.Instruction (Instruction.UnAL {...})
+		
+	     => true
+	     | Assembly.Instruction (Instruction.SRAL {...})
+		
+	     => true
+	     | _ => false
+
+	val isInstructionTEST_eqSrcs
+	  = fn Assembly.Instruction (Instruction.TEST {src1, src2, ...})
+	     => Operand.eq(src1, src2)
+	     | _ => false
+
+	val isTransfer_Iff_Z_NZ
+	  = fn Transfer.Iff {condition, ...}
+	     => condition = Instruction.Z
+	        orelse
+		condition = Instruction.NZ
+	     | _ => false
+
+	val template 
+	  = {start = EmptyOrNonEmpty,
+	     statements = [One isInstructionAL,
+			   All isComment,
+			   One isInstructionTEST_eqSrcs,
+			   All isComment],
+	     finish = Empty,
+	     transfer = isTransfer_Iff_Z_NZ}
+
+	val rewriter 
+	  = fn {entry,
+		profileInfo,
+		start, 
+		statements as
+		[[Assembly.Instruction instruction],
+		 comments1,
+		 [Assembly.Instruction
+		  (Instruction.TEST {src1, src2, size})],
+		 comments2],
+		finish as [],
+		transfer as Transfer.Iff {condition, truee, falsee}}
+	     => let
+		  val dst
+		    = case instruction
+			of Instruction.BinAL {dst, ...} => dst
+			 | Instruction.UnAL {dst, ...} => dst
+			 | Instruction.SRAL {dst, ...} => dst
+			 | _ => Error.bug "elimALTEST"
+		in
+		  if Operand.eq(dst,src1)
+		    then let
+			   val statements
+			     = List.fold
+			       (start,
+				(Assembly.instruction instruction)::
+				(List.concat [comments1, comments2]),
+				op ::)
+			 in
+			   SOME (Block.T {entry = entry,
+					  profileInfo = profileInfo,
+					  statements = statements,
+					  transfer = transfer})
+			 end
+		    else NONE
+		end
+	     | _ => Error.bug "elimALTEST"
+
+	val (callback,elimALTEST_msg) 
+	  = make_callback_msg "elimALTEST"
+      in
+	val elimALTEST : optimization
+	  = {template = template,
+	     rewriter = rewriter,
+	     callback = callback}
+	val elimALTEST_msg = elimALTEST_msg
       end
 
       local
 	val optimizations_pre
-	  = [commuteBinALMD,
-(*
- 	     elimBinAL0L,
-	     elimBinAL0R,
-*)
-	     elimAddSub1,
-	     elimMDPow2]
+	  = commuteBinALMD::
+(*	    elimBinAL0L:: *)
+(*	    elimBinAL0R:: *)
+	    elimAddSub1::
+	    elimMDPow2::
+	    elimCMPTEST::
+	    nil
 	val optimizations_pre_msg
-	  = [commuteBinALMD_msg,
-(*
-	     elimBinAL0L_msg,
-	     elimBinAL0R_msg,
-*)
-	     elimAddSub1_msg,
-	     elimMDPow2_msg]
+	  = commuteBinALMD_msg::
+(*	    elimBinAL0L_msg:: *)
+(*	    elimBinAL0R_msg:: *)
+	    elimAddSub1_msg::
+	    elimMDPow2_msg::
+	    nil
 
 	val optimizations_post
-	  = [elimBinALMDDouble,
-	     elimFltBinADouble,
-	     elimCMPTST]
+	  = elimBinALMDDouble::
+	    elimFltBinADouble::
+	    elimCMPTEST::
+	    elimCMP0::
+	    elimALTEST::
+	    nil
 	val optimizations_post_msg
-	  = [elimBinALMDDouble_msg,
-	     elimFltBinADouble_msg,
-	     elimCMPTST_msg]
+	  = elimBinALMDDouble_msg::
+	    elimFltBinADouble_msg::
+	    elimCMPTEST_msg::
+	    elimCMP0_msg::
+	    elimALTEST_msg::
+	    nil
       in
+	val peepholeBlock_pre
+	  = fn block => (peepholeBlock {optimizations = optimizations_pre,
+				       block = block}
+			 handle exn
+			  => (print "\n\n***** raising in peepholeBlock_pre\n";
+			      Block.printBlock block;
+			      raise exn))
 	val (peepholeBlock_pre, peepholeBlock_pre_msg)
 	  = tracer
 	    "peepholeBlock_pre"
-	    (fn block => peepholeBlock {optimizations = optimizations_pre,
-					block = block})
+	    peepholeBlock_pre
+
 	val peepholeBlock_pre_msg
 	  = fn () => (peepholeBlock_pre_msg ();
 		      Control.indent ();
 		      List.foreach(optimizations_pre_msg, fn msg => msg ());
 		      Control.unindent ())
 
+	val peepholeBlock_post
+	  = fn block => (peepholeBlock {optimizations = optimizations_post,
+				       block = block}
+			 handle exn
+			 => (print "\n\n***** raising in peepholeBlock_post\n";
+			     Block.printBlock block;
+			     raise exn))
 	val (peepholeBlock_post, peepholeBlock_post_msg)
 	  = tracer
 	    "peepholeBlock_post"
-	    (fn block => peepholeBlock {optimizations = optimizations_post,
-					block = block})
+	    peepholeBlock_post
 
 	val peepholeBlock_post_msg
 	  = fn () => (peepholeBlock_post_msg ();
@@ -1692,11 +1933,9 @@ struct
 		      Control.unindent ())
       end
 
-      open JumpInfo
-
       val (callback_elimIff,elimIff_msg)
 	= make_callback_msg "elimIff"
-      fun makeElimIff {jumpInfo : {get: Label.t -> status ref}} :
+      fun makeElimIff {jumpInfo : x86JumpInfo.t} :
 	              optimization
 	= let
 	    val isComment
@@ -1717,32 +1956,33 @@ struct
 
 	    val template 
 	      = {start = EmptyOrNonEmpty,
-		 statements = [One isInstructionCMPorTEST,
-			       All isComment],
+		 statements = [] (* [One isInstructionCMPorTEST,
+			       All isComment] *),
 		 finish = Empty,
 		 transfer = isTransferIff_eqTargets}
 
 	    val rewriter 
-	      = fn {label,
+	      = fn {entry,
 		    profileInfo,
 		    start, 
-		    statements as
+		    statements as [],
+(*
 		    [statement,
 		     comments],
+*)
 		    finish as [],
 		    transfer as Transfer.Iff {condition, truee, falsee}}
 	         => let
-		      val _ = dec {label = falsee,
-				   jumpInfo = jumpInfo}
+		      val _ = x86JumpInfo.decNear(jumpInfo, falsee)
 			
 		      val statements 
 			= List.fold(start, 
-				    comments, 
+				    [] (* comments *), 
 				    op ::)
 			
 		      val transfer = Transfer.goto {target = truee}
 		    in 
-		      SOME (Block.T {label = label,
+		      SOME (Block.T {entry = entry,
 				     profileInfo = profileInfo,
 				     statements = statements,
 				     transfer = transfer})
@@ -1756,7 +1996,7 @@ struct
 
       val (callback_elimSwitchTest,elimSwitchTest_msg)
 	= make_callback_msg "elimSwitchTest"
-      fun makeElimSwitchTest {jumpInfo : {get: Label.t -> status ref}} :
+      fun makeElimSwitchTest {jumpInfo : x86JumpInfo.t} :
 	                     optimization
 	= let
 	    val isComment
@@ -1775,14 +2015,15 @@ struct
 		 transfer = isTransferSwitch_testImmediateEval}
 
 	    val rewriter 
-	      = fn {label,
+	      = fn {entry,
 		    profileInfo,
 		    start as [], 
 		    statements as [statements'],
 		    finish as [],
-		    transfer as Transfer.Switch {test as Operand.Immediate immediate,
-						 cases, 
-						 default}}
+		    transfer as 
+		    Transfer.Switch {test as Operand.Immediate immediate,
+				     cases, 
+				     default}}
 	         => let
 		      val statements = statements'
 		      val test = valOf (Immediate.eval immediate)
@@ -1791,16 +2032,13 @@ struct
 			  (cases,
 			   fn k => k = test,
 			   fn (c,target) 
-			    => (dec {label = target,
-				     jumpInfo = jumpInfo};
+			    => (x86JumpInfo.decNear(jumpInfo, target);
 				(Word.fromInt o Char.ord) c),
 			   fn (i,target) 
-			    => (dec {label = target,
-				     jumpInfo = jumpInfo};
+			    => (x86JumpInfo.decNear(jumpInfo, target);
 				Word.fromInt i),
 			   fn (w,target) 
-			    => (dec {label = label,
-				     jumpInfo = jumpInfo};
+			    => (x86JumpInfo.decNear(jumpInfo, target);
 				w))
 			  
 		      val transfer
@@ -1808,20 +2046,21 @@ struct
 			    then Transfer.goto {target = default}
 			  else if Transfer.Cases.isSingle cases
 			    then let
-				   val _ = dec {label = default,
-						jumpInfo = jumpInfo}
+				   val _ = x86JumpInfo.decNear
+				           (jumpInfo, default)
+
 				   val target
 				     = Transfer.Cases.extract
 				       (cases, 
 					fn target => target)
-				   val _ = inc {label = target,
-						jumpInfo = jumpInfo}
+				   val _ = x86JumpInfo.incNear
+				           (jumpInfo, target)
 				 in
 				   Transfer.goto {target = target}
 				 end
 			  else Error.bug "elimSwitchTest"
 		    in
-		      SOME (Block.T {label = label,
+		      SOME (Block.T {entry = entry,
 				     profileInfo = profileInfo,
 				     statements = statements,
 				     transfer = transfer})
@@ -1835,8 +2074,8 @@ struct
 
       val (callback_elimSwitchCases,elimSwitchCases_msg)
 	= make_callback_msg "elimSwitchCases"
-      fun makeElimSwitchCases {jumpInfo : {get: Label.t -> status ref}} :
-	                       optimization
+      fun makeElimSwitchCases {jumpInfo : x86JumpInfo.t} :
+	                      optimization
 	= let
 	    val isComment
 	      = fn Assembly.Comment _ => true
@@ -1860,7 +2099,7 @@ struct
 		 transfer = isTransferSwitch_casesDefault}
 
 	    val rewriter 
-	      = fn {label,
+	      = fn {entry,
 		    profileInfo,
 		    start as [], 
 		    statements as [statements'],
@@ -1872,8 +2111,8 @@ struct
 			= Transfer.Cases.keepAll
 			  (cases,
 			   fn target => if Label.equals(target, default)
-					  then (dec {label = target,
-						     jumpInfo = jumpInfo};
+					  then (x86JumpInfo.decNear
+						(jumpInfo, target);
 						false)
 					  else true)
 
@@ -1913,7 +2152,7 @@ struct
 						 cases = cases,
 						 default = default})
 		    in 
-		      SOME (Block.T {label = label,	
+		      SOME (Block.T {entry = entry,	
 				     profileInfo = profileInfo,
 				     statements = statements,
 				     transfer = transfer})
@@ -1928,10 +2167,8 @@ struct
 
   structure ElimGoto =
     struct
-      open JumpInfo
-
-      fun elimSimpleGoto {blocks : Block.t list,
-			  jumpInfo : {get: Label.t -> status ref}} 
+      fun elimSimpleGoto {chunk as Chunk.T {blocks, ...},
+			  jumpInfo : x86JumpInfo.t} 
 	= let
 	    val gotoInfo as {get: Label.t -> Label.t option,
 			     set: Label.t * Label.t option -> unit}
@@ -1941,7 +2178,7 @@ struct
 	    val labels
 	      = List.keepAllMap
 	        (blocks,
-		 fn block as Block.T {label, 
+		 fn block as Block.T {entry as Entry.Jump {label}, 
 				      profileInfo,
 				      statements, 
 				      transfer as Transfer.Goto {target}}
@@ -1950,8 +2187,6 @@ struct
 				     | _ => false)
 		        andalso
 			not (Label.equals(label, target))
-			andalso
-			!((#get jumpInfo) label) <> Must
 		       then (set(label, SOME target); SOME label)
 		       else NONE
 		  | _ => NONE)
@@ -1977,10 +2212,8 @@ struct
 	      = case get target
 		  of SOME target'
 		   => (changed := true;
-		       dec {label = target,
-			    jumpInfo = jumpInfo};
-		       inc {label = target',
-			    jumpInfo = jumpInfo};
+		       x86JumpInfo.decNear(jumpInfo, target); 
+		       x86JumpInfo.incNear(jumpInfo, target'); 
 		       target')
 		   | NONE => target
 
@@ -1997,13 +2230,19 @@ struct
 				             (cases,
 					      fn target => update target),
 			             default = update default}
+	         | Transfer.CCall {target, args, dst, live, return}
+	         => Transfer.CCall {target = target,
+				    args = args,
+				    dst = dst,
+				    live = live,
+				    return = update return}
 	         | transfer => transfer
 
 	    val blocks
 	      = List.map
 	        (blocks,
-		 fn Block.T {label, profileInfo, statements, transfer}
-		  => Block.T {label = label,
+		 fn Block.T {entry, profileInfo, statements, transfer}
+		  => Block.T {entry = entry,
 			      profileInfo = profileInfo,
 			      statements = statements,
 			      transfer = elimSimpleGoto' transfer})
@@ -2011,15 +2250,15 @@ struct
 	    val blocks
 	      = List.removeAll
 	        (blocks,
-		 fn Block.T {label,...}
-		  => (case get label
+		 fn Block.T {entry,...}
+		  => (case get (Entry.label entry)
 			of SOME label' => (changed := true;
-					   dec {label = label',
-						jumpInfo = jumpInfo};
+					   x86JumpInfo.decNear(jumpInfo, 
+							       label');
 					   true)
 			 | NONE => false))
 	  in
-	    {blocks = blocks,
+	    {chunk = Chunk.T {blocks = blocks},
 	     changed = !changed}
 	  end
 
@@ -2028,9 +2267,11 @@ struct
 	  "elimSimpleGoto"
 	  elimSimpleGoto
 
-      fun elimComplexGoto {blocks : Block.t list,
-			   jumpInfo : {get: Label.t -> status ref}}
+      fun elimComplexGoto {chunk as Chunk.T {blocks, ...},
+			   jumpInfo : x86JumpInfo.t}
 	= let
+	    datatype z = datatype x86JumpInfo.status
+
 	    val gotoInfo as {get: Label.t -> Block.t option,
 			     set: Label.t * Block.t option -> unit}
 	      = Property.getSet(Label.plist, Property.initConst NONE)
@@ -2038,10 +2279,11 @@ struct
 	    val labels
 	      = List.keepAllMap
 	        (blocks,
-		 fn block as Block.T {label,...}
-		  => if !((#get jumpInfo) label) = Maybe 1
-		       then (set(label, SOME block); SOME label)
-		       else NONE)
+		 fn block as Block.T {entry as Entry.Jump {label},...}
+		  => if x86JumpInfo.getNear(jumpInfo, label) = Count 1
+			 then (set(label, SOME block); SOME label)
+			 else NONE
+		  | _ => NONE)
 
 	    fun loop ()
 	      = if List.fold
@@ -2050,7 +2292,7 @@ struct
 		    fn (label,b)
 		     => case get label
 			  of SOME (Block.T 
-				   {label,
+				   {entry,
 				    profileInfo,
 				    statements,
 				    transfer as Transfer.Goto {target}})
@@ -2059,14 +2301,13 @@ struct
 				 else (case get target
 					 of NONE => b
 					  | SOME (Block.T
-						  {label = label',
-						   profileInfo 
-						   = profileInfo',
+						  {entry = entry',
+						   profileInfo = profileInfo',
 						   statements = statements',
 						   transfer = transfer'})
 					  => (set(label,
 						  SOME (Block.T
-							{label = label,
+							{entry = entry,
 							 profileInfo
 							 = ProfileInfo.combine
 							   (profileInfo,
@@ -2085,29 +2326,30 @@ struct
 	    val _ = loop ()
 
 	    val elimComplexGoto'
-	      = fn block as Block.T {label, 
+	      = fn block as Block.T {entry, 
 				     profileInfo,
 				     statements, 
 				     transfer as Transfer.Goto {target}}
-		 => if Label.equals(label,target)
+		 => if Label.equals(Entry.label entry,target)
 		      then block
 		      else (case get target
 			      of NONE => block
-			       | SOME (Block.T {label = label',
+			       | SOME (Block.T {entry = entry',
 						profileInfo = profileInfo',
 						statements = statements',
 						transfer = transfer'})
 			       => let
-				    val _ = dec {label = label',
-						 jumpInfo = jumpInfo}
+				    val _ = x86JumpInfo.decNear
+				            (jumpInfo, 
+					     Entry.label entry')
 				    val _ = List.foreach
-				            (Transfer.targets transfer',
+				            (Transfer.nearTargets transfer',
 					     fn target 
-					      => inc {label = target, 
-						      jumpInfo = jumpInfo})
+					      => x86JumpInfo.incNear
+					         (jumpInfo, target))
 
 				    val block
-				      = Block.T {label = label,
+				      = Block.T {entry = entry,
 						 profileInfo 
 						 = ProfileInfo.combine
 						   (profileInfo,
@@ -2131,15 +2373,15 @@ struct
 		    = List.foldr
 		      (blocks,
 		       {blocks = [], changed' = false},
-		       fn (block as Block.T {label,transfer,...},
+		       fn (block as Block.T {entry,transfer,...},
 			   {blocks, changed'})
-		        => if !((#get jumpInfo label)) = Maybe 0
+		        => if x86JumpInfo.getNear(jumpInfo, Entry.label entry) = Count 0 
 			     then let
 				    val _ = List.foreach
-				            (Transfer.targets transfer,
+				            (Transfer.nearTargets transfer,
 					     fn target 
-					      => dec {label = target,
-						      jumpInfo = jumpInfo})
+					      => x86JumpInfo.decNear
+					         (jumpInfo, target))
 				  in
 				    {blocks = blocks,
 				     changed' = true}
@@ -2154,7 +2396,7 @@ struct
 
 	    val {blocks, changed} = loop {blocks = blocks, changed = false}
 	  in
-	    {blocks = blocks,
+	    {chunk = Chunk.T {blocks = blocks},
 	     changed = changed}
 	  end
 
@@ -2163,8 +2405,8 @@ struct
 	  "elimComplexGoto"
 	  elimComplexGoto
 
-      fun elimGoto {blocks : Block.t list,
-		    jumpInfo : {get: Label.t -> status ref}}
+      fun elimGoto {chunk : Chunk.t,
+		    jumpInfo : x86JumpInfo.t}
 	= let
 	    val elimIff 
 	      = PeepholeBlock.makeElimIff {jumpInfo = jumpInfo}
@@ -2173,12 +2415,14 @@ struct
 	    val elimSwitchCases 
 	      = PeepholeBlock.makeElimSwitchCases {jumpInfo = jumpInfo}
 
-	    fun loop {blocks,changed}
+	    fun loop {chunk, changed}
 	      = let
-		  val {blocks,
+		  val {chunk,
 		       changed = changed_elimSimpleGoto}
-		    = elimSimpleGoto {blocks = blocks,
+		    = elimSimpleGoto {chunk = chunk,
 				      jumpInfo = jumpInfo}
+
+		  val Chunk.T {blocks} = chunk
 
 		  val {blocks,
 		       changed = changed_peepholeBlocks}
@@ -2187,22 +2431,24 @@ struct
 		       optimizations = [elimIff,
 					elimSwitchTest,
 					elimSwitchCases]}
+
+		  val chunk = Chunk.T {blocks = blocks}
 		in
 		  if changed_elimSimpleGoto orelse changed_peepholeBlocks
-		    then loop {blocks = blocks, changed = true}
-		    else {blocks = blocks, changed = changed}
+		    then loop {chunk = chunk, changed = true}
+		    else {chunk = chunk, changed = changed}
 		end
 
-	    val {blocks, 
+	    val {chunk, 
 		 changed = changed_loop} 
-	      = loop {blocks = blocks, changed = false}
+	      = loop {chunk = chunk, changed = false}
 
-	    val {blocks,
+	    val {chunk,
 		 changed = changed_elimComplexGoto} 
-	      = elimComplexGoto {blocks = blocks,
+	      = elimComplexGoto {chunk = chunk,
 				 jumpInfo = jumpInfo}
 	  in
-	    {blocks = blocks,
+	    {chunk = chunk,
 	     changed = changed_loop orelse changed_elimComplexGoto}
 	  end
 
@@ -2222,828 +2468,15 @@ struct
 		    Control.unindent ())
     end
 
-  structure Liveness =
-    struct
-
-      type t = {liveOut: MemLoc.t list,
-		dead: MemLoc.t list}
-
-      fun toString {liveOut, dead}
-	= let
-	    fun doit (name, l, toString, s)
-	      = List.fold(l, s,
-			  fn (x, s)
-			   => concat [name, toString x, "\n", s])
-	  in
-	    doit("liveOut: ", liveOut, MemLoc.toString,
-	    doit("dead: ", dead, MemLoc.toString,
-		 ""))
-	  end
-	
-      fun eq({liveOut = liveOut1,
-	      dead = dead1},
-	     {liveOut = liveOut2,
-	      dead = dead2})
-	= List.equalsAsSet(liveOut1, liveOut2, MemLoc.eq)
-	  andalso
-	  List.equalsAsSet(dead1, dead2, MemLoc.eq)
-
-      fun temp_uses_defs {uses : Operand.t list,
-			  defs : Operand.t list}
-	= let
-	    val baseUses
-	      = List.fold
-	        (uses,
-		 [],
-		 fn (operand, baseUses)
-		  => case Operand.deMemloc operand
-		       of SOME memloc => if MemLoc.isTemp memloc
-			                    andalso 
-					    not (List.contains(baseUses,
-							       memloc,
-							       MemLoc.eq))
-					   then memloc::baseUses
-					   else baseUses
-		        | NONE => baseUses)
-		   
-	    val tempUses
-	      = let
-		  fun doit (operands, tempUses)
-		    = List.fold
-		      (operands,
-		       tempUses,
-		       fn (operand, tempUses)
-		        => case Operand.deMemloc operand
-			     of SOME memloc
-			      => List.fold(MemLoc.utilized memloc,
-					   tempUses,
-					   fn (memloc, tempUses)
-					    => if MemLoc.isTemp memloc
-					          andalso
-						  not (List.contains(tempUses,
-								     memloc,
-								     MemLoc.eq))
-						 then memloc::tempUses
-						 else tempUses)
-                              | NONE => tempUses)
-		in
-		  doit(defs, 
-		  doit(uses, 
-		       baseUses))
-		end
-
-	    val baseDefs
-	      = List.fold
-	        (defs,
-		 [],
-		 fn (operand, baseDefs)
-		  => case Operand.deMemloc operand
-		       of SOME memloc => if MemLoc.isTemp memloc
-			                    andalso 
-					    not (List.contains(baseDefs,
-							       memloc,
-							       MemLoc.eq))
-					   then memloc::baseDefs
-					   else baseDefs
-			| NONE => baseDefs)
-	    val tempDefs = baseDefs
-	  in
-	    {uses = tempUses,
-	     defs = tempDefs}
-	  end
-
-      fun liveness {uses : MemLoc.t list,
-		    defs : MemLoc.t list,
-		    live : MemLoc.t list} : 
-	           {info : t,
-		    live : MemLoc.t list}
-	= let
-	    val liveOut = live
-
-	    val liveIn
-	      = let
-		  fun doit (memlocs, liveIn)
-		    = List.fold(memlocs,
-				liveIn,
-				fn (memloc,liveIn)
-				 => if List.contains(defs,
-						     memloc,
-						     MemLoc.eq)
-  				       orelse
-				       List.contains(liveIn,
-						     memloc,
-						     MemLoc.eq)
-				      then liveIn
-				      else memloc::liveIn)
-		in
-		  doit(live,
-		       uses)
-		end
-
-	    val dead
-	      = let
-		  fun doit (memlocs, dead)
-		    = List.fold(memlocs,
-				dead,
-				fn (memloc,dead)
-				 => if List.contains(liveOut,
-						     memloc,
-						     MemLoc.eq)
-				       orelse
-				       List.contains(dead,
-						     memloc,
-						     MemLoc.eq)
-				      then dead
-				      else memloc::dead)
-		in
-		  doit(liveIn,
-		  doit(defs,
-		       []))
-		end
-	  in
-	    {info = {liveOut = liveOut,
-		     dead = dead},
-	     live = liveIn}
-	  end
-
-      fun livenessAssembly {assembly: Assembly.t,
-			    live: MemLoc.t list} :
-	                   {info: t,
-			    live: MemLoc.t list}
-	= let
-	    val {uses,defs,...} = Assembly.uses_defs_kills assembly
-	    val {uses,defs} = temp_uses_defs {uses = uses, defs = defs}
-	  in 
-	    liveness {uses = uses,
-		      defs = defs,
-		      live = live}
-	  end 
-
-      fun livenessTransfer' {transfer: Transfer.t,
-			     live: MemLoc.t list} :
-	                    {info: t,
-			     live: MemLoc.t list}
-	= let
-	    val {uses,defs,...} = Transfer.uses_defs_kills transfer
-	    val {uses,defs} = temp_uses_defs {uses = uses, defs = defs}
-	  in 
-	    liveness {uses = uses,
-		      defs = defs,
-		      live = live}
-	  end
-
-      fun livenessTransfer {transfer: Transfer.t,
-			    liveInfo 
-			    as {get: Label.t -> MemLoc.t list,
-				set: Label.t * MemLoc.t list -> unit}} :
-                           {info: t,
-			    live: MemLoc.t list}
-	= let
-	    val targets = Transfer.targets transfer
-	    val live = List.concatMap(targets, get)
-	  in
-	    livenessTransfer' {transfer = transfer,
-			       live = live}
-	  end
-
-(* Memoize the transfer function.
-
-      fun livenessBlockFn {block as Block.T {label, profileInfo,
-					     statements, transfer}}
-	= let
-	    val {uses, defs, ...} = Transfer.uses_defs_kills transfer
-	    val {uses, defs} = temp_uses_defs {uses = uses, defs = defs}
-
-	    val {uses_block, defs_block}
-	      = List.foldr
-	        (statements,
-		 {uses_block = uses,
-		  defs_block = defs},
-		 fn (asm,{uses_block,defs_block})
-		  => let
-		       val {uses,defs,...} 
-			 = Assembly.uses_defs_kills asm
-		       val {uses,defs} 
-			 = temp_uses_defs {uses = uses, defs = defs}
-
-		       val uses_block
-			 = List.fold(uses_block,
-				     uses,
-				     fn (memloc,uses_block)
-				      => if List.contains(defs,
-							  memloc,
-							  MemLoc.eq)
-				            orelse
-					    List.contains(uses_block,
-							  memloc,
-							  MemLoc.eq)
-					   then uses_block
-					   else memloc::uses_block)
-
-		       val defs_block
-			 = List.fold(defs,
-				     defs_block,
-				     fn (memloc,defs_block)
-				      => if List.contains(defs_block,
-							  memloc,
-							  MemLoc.eq)
-					   then defs_block
-					   else memloc::defs_block)
-							 
-		     in
-		       {uses_block = uses_block,
-			defs_block = defs_block}
-		     end)
-	  in
-	    fn live => liveness {uses = uses_block,
-				 defs = defs_block,
-				 live = live}
-	  end
-
-      fun verifyLiveInfo {blocks,
-			  liveInfo
-			  as {get: Label.t -> MemLoc.t list,
-			      set: Label.t * MemLoc.t list -> unit}}
-	= let 
-	    val error = fn _ => Error.bug "getBlockInfo: livenessFn"
-	    val blockInfo
-	      as {get = getBlockInfo : 
-		        Label.t -> 
-			{pred: Label.t list ref,
-			 succ: Label.t list ref,
-			 topo: int ref,
-			 livenessFn: (MemLoc.t list -> 
-				      {info: t, live: MemLoc.t list}) ref}}
-	      = Property.get
-	        (Label.plist,
-	         Property.initFun (fn label => {pred = ref [],
-						succ = ref [],
-						topo = ref ~1,
-						livenessFn = ref error}))
-	    val get_pred = (#pred o getBlockInfo)
-	    val get_succ = (#succ o getBlockInfo)
-	    val get_topo = (#topo o getBlockInfo)
-	    val get_livenessFn = (#livenessFn o getBlockInfo)
-	    val get_pred' = (! o #pred o getBlockInfo)
-	    val get_succ' = (! o #succ o getBlockInfo)
-	    val get_topo' = (! o #topo o getBlockInfo)
-	    val get_livenessFn' = (! o #livenessFn o getBlockInfo)
-
-	    val labels
-	      = List.map
-	        (blocks,
-		 fn block' as Block.T {label,transfer,...}
-		  => let
-		       val {succ,topo,livenessFn,...} = getBlockInfo label
-		       val targets = Transfer.targets transfer
-		     in 		
-		       succ := targets;
-		       topo := 0;
-		       livenessFn := livenessBlockFn {block = block'};
-		       List.foreach
-		       (targets,
-			fn target => List.push(get_pred target, label));
-		       label
-		     end)
-
-	    local
-	      val todo = ref []
-	      fun topo_order(x,y) = Int.compare(get_topo' x, get_topo' y)
-	    in
-	      fun add_todo x = todo := List.insert(!todo, x, topo_order)
-	      fun push_todo x = todo := x::(!todo)
-	      fun rev_todo () = todo := List.rev (!todo)
-	      fun get_todo () 
-		= (case !todo
-		     of [] => NONE
-		      | (x::todo') => (todo := todo';
-				       SOME x))
-	    end
-
-	    local
-	      val num = ref 1
-	    in
-	      fun topo_sort label
-		= let
-		    val {topo, pred, ...} = getBlockInfo label
-		  in
-		    if !topo = 0
-		      then (topo := !num;
-			    Int.inc num;
-			    push_todo label;
-			    List.foreach(!pred, topo_sort))
-		      else ()
-		  end
-	      fun topo_root label
-		= (get_topo label := !num;
-		   Int.inc num;
-		   push_todo label)
-	    end
-
-	    fun loop (labels, n)
-	      = if List.isEmpty labels
-		  then ()
-		  else let
-			 val (exits,labels)
-			   = partition
-			     (labels,
-			      fn label
-			       => let
-				    val succ = get_succ' label
-				    val succ' 
-				      = List.removeAll
-				        (succ,
-					 fn target 
-					  => get_topo' target = ~1)
-				  in
-				    List.length succ' = n
-				  end)
-			 val exits
-			   = List.removeAll
-			     (exits,
-			      fn label => get_topo' label <> 0)
-			 val _ 
-			   = (List.foreach
-			      (exits, 
-			       fn label => topo_root label);
-			      List.foreach
-			      (exits,
-			       fn label 
-			        => List.foreach(get_pred' label, topo_sort)))
-		       in
-			 loop(labels, n + 1)
-		       end
-	    val _ = loop(labels, 0)
-	    val _ = rev_todo ()
-
-	    val changed = ref false
-	    fun doit ()
-	      = (case get_todo ()
-		   of NONE => ()
-		    | SOME label
-		    => let
-			 val {pred, succ, livenessFn, ...} = getBlockInfo label
-
-			 val live = List.concatMap
-			            (!succ,
-				     fn label => case get label
-						    of SOME live => live
-						     | NONE => [])
-				    
-			 val {live,...} = (!livenessFn) live
-
-			 val live' = case get label
-				       of SOME live' => live'
-					| NONE => []
-		       in
-			 if List.equalsAsSet(live,live',MemLoc.eq)
-			   then ()
-			   else (set(label, SOME live);
-				 List.foreach(!pred, add_todo);
-(*
-				 print "Liveness: verifyLiveInfo: ";
-				 print (Label.toString label);
-			         print "\n";
-			         print "backend: ";
-			         List.foreach
-			         (live',
-			          fn m 
-			           => (print (MemLoc.toString m);
-			         print " "));
-			         print "\n";
-			         print "calculated: ";
-				 List.foreach
-			         (live,
-			          fn m 
-			           => (print (MemLoc.toString m);
-			       	 print " "));
-			         print "\n";
-*)
-				 changed := true);
-			 doit ()
-		       end)
-	    val _ = doit ()
-	  in
-	    {changed = !changed}
-	  end
-*)
-
-      fun verifyLiveInfo {blocks,
-			  liveInfo
-			  as {get: Label.t -> MemLoc.t list,
-			      set: Label.t * MemLoc.t list -> unit}}
-	= let 
-	    val blockInfo
-	      as {get = getBlockInfo : 
-		        Label.t -> {pred: Label.t list ref,
-				    block: Block.t option ref,
-				    topo: int ref}}
-	      = Property.get
-	        (Label.plist,
-	         Property.initFun (fn label => {pred = ref [],
-						block = ref NONE,
-						topo = ref ~1}))
-	    val get_pred = (#pred o getBlockInfo)
-	    val get_block = (#block o getBlockInfo)
-	    val get_topo = (#topo o getBlockInfo)
-	    val get_pred' = (! o #pred o getBlockInfo)
-	    val get_block' = (! o #block o getBlockInfo)
-	    val get_topo' = (! o #topo o getBlockInfo)
-
-	    val labels
-	      = List.map
-	        (blocks,
-		 fn block' as Block.T {label,transfer,...}
-		  => let
-		       val {block,topo,...} = getBlockInfo label
-		       val targets = Transfer.targets transfer
-		     in 
-		       block := SOME block';
-		       topo := 0;
-		       List.foreach
-		       (targets,
-			fn target => List.push(get_pred target, label));
-		       label
-		     end)
-
-	    local
-	      val todo = ref []
-	      fun topo_order(x,y) = Int.<=(get_topo' x, get_topo' y)
-	    in
-	      fun add_todo x = todo := List.insert(!todo, x, topo_order)
-	      fun push_todo x = todo := x::(!todo)
-	      fun rev_todo () = todo := List.rev (!todo)
-	      fun get_todo () 
-		= (case !todo
-		     of [] => NONE
-		      | (x::todo') => (todo := todo';
-				       SOME x))
-	    end
-
-	    local
-	      val num = Counter.new 1
-	    in
-	      fun topo_sort label
-		= let
-		    val {topo, pred, ...} = getBlockInfo label
-		  in
-		    if !topo = 0
-		      then (topo := Counter.next num;
-			    push_todo label;
-			    List.foreach(!pred, topo_sort))
-		      else ()
-		  end
-	      fun topo_root label
-		= (get_topo label := Counter.next num;
-		   push_todo label)
-	    end
-
-	    fun loop (labels, n)
-	      = if List.isEmpty labels
-		  then ()
-		  else let
-			 val (exits,labels)
-			   = partition
-			     (labels,
-			      fn label
-			       => let
-				    val Block.T {transfer,...} 
-				      = valOf (get_block' label)
-				    val targets = Transfer.targets transfer
-
-				    val targets'
-				      = List.fold(targets,
-						  0,
-						  fn (target,targets')
-						   => if get_topo' target = ~1
-							then targets'
-							else targets' + 1)
-				  in
-				    targets' = n
-				  end)
-			 val exits
-			   = List.removeAll
-			     (exits,
-			      fn label => get_topo' label <> 0)
-			 val _ 
-			   = (List.foreach
-			      (exits, 
-			       fn label => topo_root label);
-			      List.foreach
-			      (exits,
-			       fn label 
-			        => List.foreach(get_pred' label, topo_sort)))
-		       in
-			 loop(labels, n + 1)
-		       end
-	    val _ = loop(labels, 0)
-	    val _ = rev_todo ()
-
-	    val changed = ref false
-	    fun doit ()
-	      = (case get_todo ()
-		   of NONE => ()
-		    | SOME label
-		    => let
-			 val {pred, block, ...} = getBlockInfo label
-			 val (Block.T {statements, transfer,...}) 
-			   = valOf (!block)
-
-			 val {live,...}
-			   = livenessTransfer {transfer = transfer,
-					       liveInfo = liveInfo}
-			   
-			 val live
-			   = List.foldr
-			     (statements,
-			      live,
-			      fn (asm,live)
-			       => let
-				    val {live,...}
-				      = livenessAssembly 
-				        {assembly = asm,
-					 live = live}
-				  in
-				    live
-				  end)
-			     
-			 val live' = get label
-		       in
-			 if List.equalsAsSet(live,live',MemLoc.eq)
-			   then ()
-			   else (set(label, live);
-				 List.foreach(!pred, add_todo);
-(*
-				 print "Liveness: verifyLiveInfo: ";
-				 print (Label.toString label);
-			         print "\n";
-			         print "backend: ";
-			         List.foreach
-			         (live',
-			          fn m 
-			           => (print (MemLoc.toString m);
-			         print " "));
-			         print "\n";
-			         print "calculated: ";
-				 List.foreach
-			         (live,
-			          fn m 
-			           => (print (MemLoc.toString m);
-			         print " "));
-			         print "\n";
-*)
-				 changed := true);
-			 doit ()
-		       end)
-	    val _ = doit ()
-	  in
-	    {changed = !changed}
-	  end
-
-      val (verifyLiveInfo :
-	   {blocks: Block.t list, 
-	    liveInfo: {get: Label.t -> MemLoc.t list,
-		       set: Label.t * MemLoc.t list -> unit}} ->
-	   {changed: bool},
-	   verifyLiveInfo_msg)
-	= tracer
-          "verifyLiveInfo"
-	  verifyLiveInfo
-    end
-
-  structure LivenessBlock =
-    struct
-
-      datatype t = T of {label: Label.t,
-			 profileInfo: ProfileInfo.t,
-			 statements: (Assembly.t * Liveness.t) list,
-			 transfer: Transfer.t * Liveness.t}
-
-      fun toString (T {label, profileInfo, statements, transfer})
-	= concat [Label.toString label,
-		  ":\n",
-		  List.fold
-		  (statements,
-		   "",
-		   fn ((asm,info),s)
-		   => concat [s,
-			      Assembly.toString asm,
-			      "\n",
-			      Liveness.toString info]),
-		  let
-		    val (trans,info) = transfer
-		  in
-		    concat[Transfer.toString trans,
-			   "\n",
-			   Liveness.toString info]
-		  end]
-
-      fun print_block (T {label, profileInfo, statements, transfer})
-	= (print (Label.toString label);
-	   print ":\n";
-	   List.foreach
-	   (statements,
-	    fn (asm,info)
-	     => (print (Assembly.toString asm);
-		 print "\n";
-		 print (Liveness.toString info)));
-	   let
-	     val (trans,info) = transfer
-	   in
-	     print (Transfer.toString trans);
-	     print "\n";
-	     print (Liveness.toString info)
-	   end)
-
-      fun toLivenessStatements {statements,
-				live}
-	= let
-	    val {statements,live}
-	      = List.foldr(statements,
-			   {statements = [], live = live},
-			   fn (asm,{statements,live})
-			    => let
-				 val {info, live}
-				   = Liveness.livenessAssembly 
-				     {assembly = asm,
-				      live = live}
-			       in
-				 {statements = (asm, info)::statements, 
-				  live = live}
-			       end)
-	  in
-	    {statements = statements,
-	     live = live}
-	  end
-
-      fun reLivenessStatements {statements: (Assembly.t * Liveness.t) list,
-				live}
-	= let
-	    val {statements,live,...}
-	      = List.foldr(statements,
-			   {statements = [], 
-			    live = live, 
-			    continue = false},
-			   fn ((asm,info),{statements,live,continue})
-			   => if continue
-				then {statements = (asm,info)::statements,
-				      live = [],
-				      continue = continue}
-				else let
-				       val {info = info', live = live'}
-					 = Liveness.livenessAssembly 
-					   {assembly = asm,
-					    live = live}
-				     in
-				       {statements = (asm, info')::statements, 
-					live = live',
-					continue = Liveness.eq(info,info')}
-				     end)
-	  in
-	    {statements = statements}
-	  end
-
-      fun toLivenessTransfer {transfer,
-			      liveInfo}
-	= let
-	    val {info, live}
-	      = Liveness.livenessTransfer {transfer = transfer,
-					   liveInfo = liveInfo}
-	  in
-	    {transfer = (transfer,info),
-	     live = live}
-	  end
-
-      fun reLivenessTransfer {transfer: Transfer.t * Liveness.t}
-	= let
-	    val (transfer,{liveOut,...}) = transfer
-	    val {info, live} = Liveness.livenessTransfer' {transfer = transfer,
-							   live = liveOut}
-	  in
-	    {transfer = (transfer, info),
-	     live = live}
-	  end
-
-      fun toLivenessBlock {block as Block.T {label, profileInfo,
-					     statements, transfer},
-			   liveInfo : {get: Label.t -> MemLoc.t list,
-				       set: Label.t * MemLoc.t list -> unit}}
-
-	= let
-	    val {transfer, live}
-	      = toLivenessTransfer {transfer = transfer,
-				    liveInfo = liveInfo}
-
-	    val {statements, live}
-	      = toLivenessStatements {statements =statements,
-				      live = live}
-
-	    val liveness_block
-	      = T {label = label,
-		   profileInfo = profileInfo,
-		   statements = statements,
-		   transfer = transfer}
-	  in 
-	    liveness_block
-	  end
-
-      val (toLivenessBlock:
-	   {block: Block.t,
-	    liveInfo: {get: Label.t -> MemLoc.t list,
-	               set: Label.t * MemLoc.t list -> unit}} ->
-	   t,
-	   toLivenessBlock_msg)
-	= tracer
-	  "toLivenessBlock"
-          toLivenessBlock
-
-      fun verifyLivenessStatements {statements,
-				    live}
-	= List.foldr(statements,
-		     {verified = true, live = live},
-		     fn ((asm,info),{verified, live})
-		      => let
-			   val {info = info', live}
-			     = Liveness.livenessAssembly 
-			       {assembly = asm,
-				live = live}
-			 in
-			   {verified = verified andalso 
-			               Liveness.eq(info, info'), 
-			    live = live}
-			 end)
-
-      fun verifyLivenessTransfer {transfer = (transfer,info),
-				  liveInfo}
-	= let
-	    val {info = info', live}
-	      = Liveness.livenessTransfer {transfer = transfer,
-					   liveInfo = liveInfo}
-	  in
-	    {verified = Liveness.eq(info, info'),
-	     live = live}
-	  end
-
-      fun verifyLivenessBlock {block as T {label, profileInfo,
-					   statements, transfer},
-			       liveInfo 
-			       as {get: Label.t -> MemLoc.t list,
-				   set: Label.t * MemLoc.t list -> unit}}
-	= let
-	    val {verified = verified_transfer,
-		 live}
-	      = verifyLivenessTransfer {transfer = transfer,
-					liveInfo = liveInfo}
-
-	    val {verified = verified_statements,
-		 live}
-	      = verifyLivenessStatements {statements =statements,
-					  live = live}
-
-(* FIXME -- the live-in set changed
-	    val live' = get label
-
-	    val verified_live = List.equalsAsSet(live, live', MemLoc.eq)
-*)
-	    val verified_live = true
-	  in 
-	    verified_transfer andalso 
-	    verified_statements andalso
-	    verified_live
-	  end
-
-      val (verifyLivenessBlock:
-	   {block: t,
-	    liveInfo: {get: Label.t -> MemLoc.t list,
-	               set: Label.t * MemLoc.t list -> unit}} ->
-	   bool,
-	   verifyLivenessBlock_msg)
-	= tracer
-	  "verifyLivenessBlock"
-          verifyLivenessBlock
-
-      fun toBlock (T {label, profileInfo, statements, transfer})
-	= let
-	    val statements = List.map(statements, fn (asm,info) => asm)
-	    val (transfer,info) = transfer
-	  in 
-	    Block.T {label = label,
-		     profileInfo = profileInfo,
-		     statements = statements,
-		     transfer = transfer}
-	  end
-
-      val (toBlock: t -> Block.t, 
-	   toBlock_msg)
-	= tracer
-	  "toBlock"
-          toBlock
-    end
-
   structure MoveHoistLivenessBlock = 
     struct
+      structure LiveSet = x86Liveness.LiveSet
+      structure LiveInfo = x86Liveness.LiveInfo
+      structure Liveness = x86Liveness.Liveness
+      structure LivenessBlock = x86Liveness.LivenessBlock
+
       fun moveHoist {block as LivenessBlock.T 
-		              {label, profileInfo, statements, transfer}}
+		              {entry, profileInfo, statements, transfer}}
 	= let
 	    val {transfer,live} 
 	      = LivenessBlock.reLivenessTransfer {transfer = transfer}
@@ -3055,8 +2488,11 @@ struct
 		  changed = false,
 		  moves = [],
 		  live = live},
-		 fn ((asm,info as {dead,...}),
-		     {statements,changed,moves,live})
+		 fn ((asm: Assembly.t,info as {dead,...}: Liveness.t),
+		     {statements: (Assembly.t * Liveness.t) list,
+		      changed : bool,
+		      moves,
+		      live: x86Liveness.LiveSet.t})
 		  => let
 		       fun default ()
 			 = let
@@ -3265,9 +2701,8 @@ struct
 			     {src as Operand.MemLoc memloc_src,
 			      dst as Operand.MemLoc memloc_dst,
 			      size})
-			  => if List.contains(dead,
-					      memloc_src,
-					      MemLoc.eq)
+			  => if LiveSet.contains(dead,
+						 memloc_src)
 			        orelse
 				List.exists(moves,
 					    fn {src,...}
@@ -3285,9 +2720,8 @@ struct
 			     {src as Operand.MemLoc memloc_src,
 			      dst as Operand.MemLoc memloc_dst,
 			      size})
-			  => if List.contains(dead,
-					      memloc_src,
-					      MemLoc.eq)
+			  => if LiveSet.contains(dead,
+						 memloc_src)
 			        orelse
 				List.exists(moves,
 					    fn {src,...}
@@ -3331,7 +2765,7 @@ struct
 			  List.exists(forces,
 				      fn force as {age,...}
 				       => age <> 0)
-	    val block = LivenessBlock.T {label = label,
+	    val block = LivenessBlock.T {entry = entry,
 					 profileInfo = profileInfo,
 					 statements = statements,
 					 transfer = transfer}
@@ -3339,6 +2773,13 @@ struct
 	    {block = block,
 	     changed = changed}
 	  end
+
+      val moveHoist
+	= fn {block} => (moveHoist {block = block}
+			 handle exn
+			 => (print "\n\n***** raising in moveHoist\n";
+			     LivenessBlock.printBlock block;
+			     raise exn))
 
       val (moveHoist: 
 	   {block: LivenessBlock.t} -> 
@@ -3352,12 +2793,14 @@ struct
 
   structure CopyPropagateLivenessBlock =
     struct
+      structure LiveSet = x86Liveness.LiveSet
+      structure LiveInfo = x86Liveness.LiveInfo
+      structure Liveness = x86Liveness.Liveness
+      structure LivenessBlock = x86Liveness.LivenessBlock
+
       fun copyPropagate' {src,
 			  dst as Operand.MemLoc memloc_dst,
-			  block as LivenessBlock.T {label,
-						    profileInfo,
-						    statements,
-						    transfer},
+			  pblock as {statements, transfer},
 			  liveInfo}
 	= let
 	    val changed = ref 0
@@ -3444,251 +2887,242 @@ struct
 
 	    val (transfer,_) = transfer
 
-	    fun doit ([] : (Assembly.t * Liveness.t) list) 
-	      = SOME (Block.T {label = label,
-			       profileInfo = profileInfo,
-			       statements = [],
-			       transfer = Transfer.replace
-			                  replacer
-					  transfer})
-	      | doit ((asm,{dead,...})::statements)
+	    fun doit (statements : (Assembly.t * Liveness.t) list)
 	      = let
-		  val asm = Assembly.replace replacer asm
+		  fun uses_defs {uses, defs}
+		    = let
+			local
+			  fun doit operands
+			    = List.fold
+			      (operands,
+			       [],
+			       fn (operand,memlocs)
+			        => case Operand.deMemloc operand
+				     of SOME memloc
+				      => if List.contains(memlocs,
+							  memloc,
+							  MemLoc.eq)
+					   then memlocs
+					   else memloc::memlocs
+				    | NONE => memlocs)
 
-		  val {uses,defs,...} = Assembly.uses_defs_kills asm
-
-		  local
-		    fun doit operands
-		      = List.fold
-		        (operands,
-			 [],
-			 fn (operand,memlocs)
-			  => case Operand.deMemloc operand
-			       of SOME memloc
-				=> if List.contains(memlocs,
+			  fun doit'(memlocs,uses)
+			    = List.fold
+			      (memlocs,
+			       uses,
+			       fn (memloc,uses)
+			        => if List.contains(uses,
 						    memloc,
 						    MemLoc.eq)
-				     then memlocs
-				     else memloc::memlocs
-				| NONE => memlocs)
-		  in
-		    val uses = doit uses
-		    val defs = doit defs
-		  end
-
-		  val uses'
-		    = let
-			fun doit(memlocs,uses')
-			  = List.fold
-			    (memlocs,
-			     uses',
-			     fn (memloc,uses')
-			      => if List.contains(uses',
-						  memloc,
-						  MemLoc.eq)
-				   then uses'
-				   else memloc::uses')
-			fun doit'(memlocs,uses')
-			  = List.fold
-			    (memlocs,
-			     uses',
-			     fn (memloc,uses')
-			      => doit(MemLoc.utilized memloc, uses'))
+				     then uses
+				     else memloc::uses)
+			  fun doit''(memlocs,uses)
+			    = List.fold
+			      (memlocs,
+			       uses,
+			       fn (memloc,uses)
+			        => doit'(MemLoc.utilized memloc, uses))
+			in
+			  val uses = doit uses
+			  val defs = doit defs
+			  val uses = doit''(defs,
+				     doit''(uses,
+					    uses))
+			end
 		      in
-			doit'(defs,
-		        doit'(uses,
-			doit(uses,
-			     [])))
+			{uses = uses, defs = defs}
 		      end
 		in
-		  if not (List.contains(uses',
-					memloc_dst,
-					MemLoc.eq))
-		    then if List.contains(dead,memloc_dst,MemLoc.eq)
-			   then let
-				  val statements 
-				    = List.map(statements, 
-					       fn (asm,{...}) => asm)
-				in 
-				  SOME (Block.T 
-					{label = label,
-					 profileInfo = profileInfo,
-					 statements = asm::statements,
-					 transfer = transfer})
-				end
-			 else if List.forall
-			         (all,
-				  fn memloc
-				   => List.forall
-				      (defs,
-				       fn memloc'
-			                => not (MemLoc.mayAlias(memloc, 
-								memloc'))))
-			   then case doit statements
-				  of NONE => NONE
-				   | SOME (Block.T {label,
-						    profileInfo,
-						    statements,
-						    transfer})
-				   => SOME (Block.T 
-					    {label = label,
-					     profileInfo = profileInfo,
-					     statements = asm::statements,
-					     transfer = transfer})
-		         else NONE
-		    else NONE
+		  case statements
+		    of []
+		     => let
+			  val transfer = Transfer.replace replacer transfer
+			  val {uses,defs,...} = Transfer.uses_defs_kills transfer
+
+			  val {uses, defs} = uses_defs {uses = uses, defs = defs}
+			in
+			  if not (List.contains(uses,
+						memloc_dst,
+						MemLoc.eq))
+			     andalso
+			     not (List.contains(Transfer.live transfer,
+						memloc_dst,
+						MemLoc.eq))
+			    then if List.forall
+			            (all,
+				     fn memloc
+				      => List.forall
+				         (defs,
+					  fn memloc'
+					   => not (MemLoc.mayAlias(memloc, 
+								   memloc'))))
+				   then SOME {statements = [],
+					      transfer = transfer}
+				 else NONE
+			    else NONE
+			end
+		     | (asm,{dead,...})::statements
+		     => let
+			  val asm = Assembly.replace replacer asm
+			  val {uses,defs,...} = Assembly.uses_defs_kills asm
+
+			  val {uses, defs} = uses_defs {uses = uses, defs = defs}
+			in
+			  if not (List.contains(uses,
+						memloc_dst,
+						MemLoc.eq))
+			    then if LiveSet.contains(dead,memloc_dst)
+				   then let
+					  val statements 
+					    = List.map(statements, 
+						       fn (asm,{...}) => asm)
+					in 
+					  SOME {statements = asm::statements,
+						transfer = transfer}
+					end
+				 else if List.forall
+				         (all,
+					  fn memloc
+					   => List.forall
+					      (defs,
+					       fn memloc'
+					        => not (MemLoc.mayAlias(memloc, 
+									memloc'))))
+				   then case doit statements
+					  of NONE => NONE
+					   | SOME {statements,
+						   transfer}
+				           => SOME {statements = asm::statements,
+						    transfer = transfer}
+				 else NONE
+			    else NONE
+			end
 		end
 	  in
 	    case doit statements
 	      of NONE => NONE
-	       | SOME block => SOME {block = LivenessBlock.toLivenessBlock 
-				             {block = block,
-					      liveInfo = liveInfo},
-				     changed = !changed > 0}
+	       | SOME {statements, transfer}
+	       => let
+		    val {transfer, live} 
+		      = LivenessBlock.toLivenessTransfer 
+		        {transfer = transfer,
+			 liveInfo = liveInfo}
+		    val {statements, live} 
+		      = LivenessBlock.toLivenessStatements
+		        {statements = statements,
+			 live = live}
+		  in
+		    SOME {pblock = {statements = statements,
+				    transfer = transfer},
+			  changed = !changed > 0}
+		  end
 	  end
 	| copyPropagate' _ = Error.bug "copyPropagate'"
 
+
       fun copyPropagate {block as LivenessBlock.T 
-			          {label, profileInfo, statements, transfer},
+			          {entry, profileInfo, statements, transfer},
 			 liveInfo}
 	= let
-	    val (_,{liveOut,...}) = transfer
-
-	    val {block,changed,liveOut}
+	    val {pblock as {statements,transfer},changed}
 	      = List.foldr
 	        (statements,
-		 {block = LivenessBlock.T {label = label,
-					   profileInfo = profileInfo,
-					   statements = [],
-					   transfer = transfer},
-		  changed = false,
-		  liveOut = liveOut},
-		 fn ((asm as Assembly.Instruction 
+		 {pblock = {statements = [],
+			    transfer = transfer},
+		  changed = false},
+		 fn ((asm as Assembly.Instruction
 		             (Instruction.MOV
 			      {src,
 			       dst as Operand.MemLoc memloc_dst,
 			       size}),
-		      info as {dead,...}),
-		     {block as LivenessBlock.T {label,profileInfo,
-						statements,transfer},
-		      changed,
-		      liveOut})
-		  => let
-		       val block'
-			 = LivenessBlock.T 
-			   {label = label,
-			    profileInfo = profileInfo,
-			    statements = (asm,info)::statements,
-			    transfer = transfer}	
-		       val liveOut'
-			 = List.removeAll(liveOut,
-					  fn memloc 
-					   => List.contains
-					      (dead,
-					       memloc,
-					       MemLoc.eq))
-		     in
-		       if MemLoc.isTemp memloc_dst 
-			  andalso
-			  not (List.contains(liveOut,
-					     memloc_dst,
-					     MemLoc.eq))
-			 then case copyPropagate' {src = src,
-						   dst = dst,
-						   block = block,
-						   liveInfo = liveInfo}
-				of NONE => {block = block',
-					    changed = changed,
-					    liveOut = liveOut'}
-				 | SOME {block = block',
+		      info),
+		     {pblock as {statements, transfer},
+		      changed})
+		   => let
+			val pblock' = {statements = (asm,info)::statements,
+				       transfer = transfer}
+		      in
+			if x86Liveness.track memloc_dst
+			   andalso
+			   (List.fold
+			    (statements,
+			     false,
+			     fn ((_,{dead,...}),b)
+			      => b orelse LiveSet.contains(dead,memloc_dst))
+			    orelse
+			    LiveSet.contains(#dead(#2(transfer)),memloc_dst))
+			  then case copyPropagate' {src = src,
+						    dst = dst,
+						    pblock = pblock,
+						    liveInfo = liveInfo}
+				of NONE => {pblock = pblock',
+					    changed = changed}
+				 | SOME {pblock,
 					 changed = changed'}
-				  => {block = block',
-				      changed = changed orelse changed',
-				      liveOut = liveOut'}
-			 else {block = block',
-			       changed = changed,
-			       liveOut = liveOut'}
-		     end
-		  | ((asm as Assembly.Instruction 
+				  => {pblock = pblock,
+				      changed = changed orelse changed'}
+			 else {pblock = pblock',
+			       changed = changed}
+		      end
+		   | ((asm as Assembly.Instruction
 		             (Instruction.pFMOV
 			      {src,
 			       dst as Operand.MemLoc memloc_dst,
 			       size}),
-		      info as {dead,...}),
-		     {block as LivenessBlock.T {label,profileInfo,
-						statements,transfer},
-		      changed,
-		      liveOut})
-		  => let
-		       val block'
-			 = LivenessBlock.T 
-			   {label = label,
-			    profileInfo = profileInfo,
-			    statements = (asm,info)::statements,
-			    transfer = transfer}	
-		       val liveOut'
-			 = List.removeAll(liveOut,
-					  fn memloc 
-					   => List.contains
-					      (dead,
-					       memloc,
-					       MemLoc.eq))
-		     in 
-		       if MemLoc.isTemp memloc_dst 
-		          andalso
-			  not (List.contains(liveOut,
-					     memloc_dst,
-					     MemLoc.eq))
-			 then case copyPropagate' {src = src,
-						   dst = dst,
-						   block = block,
-						   liveInfo = liveInfo}
-				of NONE 
-				 => {block = block',
-				     changed = changed,
-				     liveOut = liveOut'}
-				 | SOME {block = block',
+		      info),
+		     {pblock as {statements, transfer},
+		      changed})
+		   => let
+			val pblock' = {statements = (asm,info)::statements,
+				       transfer = transfer}
+		      in
+			if x86Liveness.track memloc_dst
+			   andalso
+			   (List.fold
+			    (statements,
+			     false,
+			     fn ((_,{dead,...}),b)
+			      => b orelse LiveSet.contains(dead,memloc_dst))
+			    orelse
+			    LiveSet.contains(#dead(#2(transfer)),memloc_dst))
+			  then case copyPropagate' {src = src,
+						    dst = dst,
+						    pblock = pblock,
+						    liveInfo = liveInfo}
+				of NONE => {pblock = pblock',
+					    changed = changed}
+				 | SOME {pblock,
 					 changed = changed'}
-				 => {block = block',
-				     changed = changed orelse changed',
-				     liveOut = liveOut'}
-			 else {block = block',
-			       changed = changed,
-			       liveOut = liveOut'}
-		     end
-		  | ((asm,info as {dead,...}),
-		     {block as LivenessBlock.T {label,profileInfo,
-						statements,transfer},
-		      changed,
-		      liveOut})
-		  => let
-		       val block'
-			 = LivenessBlock.T 
-			   {label = label,
-			    profileInfo = profileInfo,
-			    statements = (asm,info)::statements,
-			    transfer = transfer}
-		       val liveOut'
-			 = List.removeAll(liveOut,
-					  fn memloc 
-					   => List.contains
-					      (dead,
-					       memloc,
-					       MemLoc.eq))
-		     in
-		       {block = block',
-			changed = changed,
-			liveOut = liveOut'}
-		     end)
+				  => {pblock = pblock,
+				      changed = changed orelse changed'}
+			 else {pblock = pblock',
+			       changed = changed}
+		      end
+		   | ((asm,info),
+		      {pblock as {statements, transfer},
+		       changed})
+		   => {pblock = {statements = (asm,info)::statements,
+				 transfer = transfer},
+		       changed = changed})
 	  in
-	    {block = block,
+	    {block = LivenessBlock.T {entry = entry,
+				      profileInfo = profileInfo,
+				      statements = statements,
+				      transfer = transfer},
 	     changed = changed}
 	  end
 
+      val copyPropagate
+	= fn {block, liveInfo}
+	   => (copyPropagate {block = block, liveInfo = liveInfo}
+	       handle exn
+	        => (print "\n\n***** raising in copyPropagate\n";
+		    LivenessBlock.printBlock block;
+		    raise exn))
+
       val (copyPropagate : 
 	   {block: LivenessBlock.t, 
-	    liveInfo: {get: Label.t -> MemLoc.t list,
-		       set: Label.t * MemLoc.t list -> unit}} ->
+	    liveInfo: LiveInfo.t} -> 
 	   {block: LivenessBlock.t,
 	    changed: bool},
 	   copyPropagate_msg)
@@ -3699,8 +3133,12 @@ struct
 
   structure PeepholeLivenessBlock =
     struct
+      structure LiveSet = x86Liveness.LiveSet
+      structure Liveness = x86Liveness.Liveness
+      structure LivenessBlock = x86Liveness.LivenessBlock
+
       structure Peephole 
-	= Peephole(type label_type = Label.t
+	= Peephole(type entry_type = Entry.t * Liveness.t
 		   type profileInfo_type = ProfileInfo.t
 		   type statement_type = Assembly.t * Liveness.t
 		   type transfer_type = Transfer.t * Liveness.t
@@ -3739,9 +3177,9 @@ struct
 		     | SOME dsts => List.forall
 		                    (dsts,
 				     fn Operand.MemLoc memloc
-				      => MemLoc.isTemp memloc
+				      => x86Liveness.track memloc
 				         andalso
-					 List.contains(dead,memloc,MemLoc.eq)
+					 LiveSet.contains(dead,memloc)
 				      | _ => false)
 		end 
 	     | _ => false
@@ -3753,7 +3191,7 @@ struct
 	     transfer = fn _ => true}
 
 	val rewriter : rewriter
-	  = fn {label,
+	  = fn {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -3765,7 +3203,7 @@ struct
 					   falsee},
 			     {...})}
 	     => NONE
-	     | {label,
+	     | {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -3777,7 +3215,7 @@ struct
 					   falsee},
 			     {...})}
 	     => NONE
-	     | {label,
+	     | {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -3786,16 +3224,38 @@ struct
 		finish, 
 		transfer}
 	     => let
-		  val {statements}
+		  val label = let
+				val (entry,_) = entry
+			      in 
+				Entry.label entry
+			      end
+		  val {dsts, ...} = Instruction.srcs_dsts instruction
+		  val _ = print (Label.toString label)
+		  val _ = print ": "
+		  val _ = Option.app
+		          (dsts,
+			   fn dsts 
+			    => List.foreach
+			       (dsts,
+				fn operand => (print (Operand.toString operand);
+					       print " ")))
+		  val _ = print "\n"
+
+		  val {statements, live}
 		    = LivenessBlock.reLivenessStatements
 		      {statements = List.rev start,
 		       live = liveOut}
+
+		  val {entry, ...}
+		    = LivenessBlock.reLivenessEntry
+		      {entry = entry,
+		       live = live}
 
 		  val statements
 		    = List.concat [statements, finish]
 		in
 		  SOME (LivenessBlock.T
-			{label = label,
+			{entry = entry,
 			 profileInfo = profileInfo,
 			 statements = statements,
 			 transfer = transfer})
@@ -3817,38 +3277,38 @@ struct
 	  = fn (Assembly.Instruction (Instruction.MOV 
 				      {dst = Operand.MemLoc memloc,...}), 
 		{...})
-	     => MemLoc.isTemp memloc
+	     => x86Liveness.track memloc
 	     | _ => false
 
 	val isInstructionAL_dstTemp : statement_type -> bool
 	  = fn (Assembly.Instruction (Instruction.BinAL
 				      {dst = Operand.MemLoc memloc,...}),
 		{...})
-	     => MemLoc.isTemp memloc
+	     => x86Liveness.track memloc
 	     | (Assembly.Instruction (Instruction.pMD
 				      {dst = Operand.MemLoc memloc,...}),
 		
 		{...})
-	     => MemLoc.isTemp memloc
+	     => x86Liveness.track memloc
 	     | (Assembly.Instruction (Instruction.UnAL
 				      {dst = Operand.MemLoc memloc,...}),
 		
 		{...})
-	     => MemLoc.isTemp memloc
+	     => x86Liveness.track memloc
 	     | (Assembly.Instruction (Instruction.SRAL
 				      {dst = Operand.MemLoc memloc,...}),
 		
 		{...})
-	     => MemLoc.isTemp memloc
+	     => x86Liveness.track memloc
 	     | _ => false
 
 	val isInstructionMOV_srcTemp_srcDead : statement_type -> bool
 	  = fn (Assembly.Instruction (Instruction.MOV 
 				      {src = Operand.MemLoc memloc,...}),
 		{dead,...})
-	     => MemLoc.isTemp memloc
+	     => x86Liveness.track memloc
 	        andalso
-		List.contains(dead, memloc, MemLoc.eq)
+		LiveSet.contains(dead, memloc)
 	     | _ => false
 
 	val template : template 
@@ -3863,7 +3323,7 @@ struct
 	     transfer = fn _ => true}
 
 	val rewriter : rewriter
-	  = fn {label,
+	  = fn {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -3973,7 +3433,7 @@ struct
 				       op ::)
 		       in
 			 SOME (LivenessBlock.T
-			       {label = label,
+			       {entry = entry,
 				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})		 
@@ -4007,7 +3467,7 @@ struct
 	     transfer = fn _ => true}
 
 	val rewriter : rewriter
-	  = fn {label,
+	  = fn {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -4025,7 +3485,7 @@ struct
 				op ::)
 		in 
 		  SOME (LivenessBlock.T
-			{label = label,
+			{entry = entry,
 			 profileInfo = profileInfo,
 			 statements = statements,
 			 transfer = transfer})
@@ -4082,7 +3542,7 @@ struct
 	     transfer = fn _ => true}
 
 	val rewriter : rewriter
-	  = fn {label,
+	  = fn {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -4109,17 +3569,14 @@ struct
 		   (case (src1,src2)
 		      of (Operand.MemLoc memloc_src1,
 			  Operand.MemLoc memloc_src2)
-		       => List.contains(dead2,
-					memloc_src2,
-					MemLoc.eq)
+		       => LiveSet.contains(dead2,
+					   memloc_src2)
 			  andalso
-			  not (List.contains(dead1,
-					     memloc_src1,
-					     MemLoc.eq))
+			  not (LiveSet.contains(dead1,
+						memloc_src1))
 		       | (_, Operand.MemLoc memloc_src2)
-		       => List.contains(dead2,
-					memloc_src2,
-					MemLoc.eq)
+		       => LiveSet.contains(dead2,
+					   memloc_src2)
 		       | _ => false) andalso
 		   (case src1
 		      of Operand.MemLoc memloc_src1
@@ -4161,13 +3618,13 @@ struct
 				       op ::)
 		       in
 			 SOME (LivenessBlock.T
-			       {label = label,	
+			       {entry = entry,	
 				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})		 
 		       end
 		  else NONE
-	     | {label,
+	     | {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -4194,17 +3651,14 @@ struct
 		   (case (src1,src2)
 		      of (Operand.MemLoc memloc_src1,
 			  Operand.MemLoc memloc_src2)
-		       => List.contains(dead2,
-					memloc_src2,
-					MemLoc.eq)
+		       => LiveSet.contains(dead2,
+					   memloc_src2)
 			  andalso
-			  not (List.contains(dead1,
-					     memloc_src1,
-					     MemLoc.eq))
+			  not (LiveSet.contains(dead1,
+						memloc_src1))
 		       | (_, Operand.MemLoc memloc_src2)
-		       => List.contains(dead2,
-					memloc_src2,
-					MemLoc.eq)
+		       => LiveSet.contains(dead2,
+					   memloc_src2)
 		       | _ => false) andalso
 		   (case src1
 		      of Operand.MemLoc memloc_src1
@@ -4246,7 +3700,7 @@ struct
 				       op ::)
 		       in
 			 SOME (LivenessBlock.T
-			       {label = label,
+			       {entry = entry,
 				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})		 
@@ -4269,41 +3723,41 @@ struct
 	  = fn (Assembly.Instruction (Instruction.pFMOV 
 				      {dst = Operand.MemLoc memloc,...}), 
 		{...})
-	     => MemLoc.isTemp memloc
+	     => x86Liveness.track memloc
 	     | _ => false
 
 	val isInstructionFltA_dstTemp : statement_type -> bool
 	  = fn (Assembly.Instruction (Instruction.pFBinA
 				      {dst = Operand.MemLoc memloc,...}),
 		{...})
-	     => MemLoc.isTemp memloc
+	     => x86Liveness.track memloc
 	     | (Assembly.Instruction (Instruction.pFUnA
 				      {dst = Operand.MemLoc memloc,...}),
 		
 		{...})
-	     => MemLoc.isTemp memloc
+	     => x86Liveness.track memloc
 	     | (Assembly.Instruction (Instruction.pFPTAN
 				      {dst = Operand.MemLoc memloc,...}),
 		
 		{...})
-	     => MemLoc.isTemp memloc
+	     => x86Liveness.track memloc
 	     | (Assembly.Instruction (Instruction.pFBinAS
 				      {dst = Operand.MemLoc memloc,...}),
 		{...})
-	     => MemLoc.isTemp memloc
+	     => x86Liveness.track memloc
 	     | (Assembly.Instruction (Instruction.pFBinASP
 				      {dst = Operand.MemLoc memloc,...}),
 		{...})
-	     => MemLoc.isTemp memloc
+	     => x86Liveness.track memloc
 	     | _ => false
 
 	val isInstructionFMOV_srcTemp_srcDead : statement_type -> bool
 	  = fn (Assembly.Instruction (Instruction.pFMOV 
 				      {src = Operand.MemLoc memloc,...}),
 		{dead,...})
-	     => MemLoc.isTemp memloc
+	     => x86Liveness.track memloc
 	        andalso
-		List.contains(dead, memloc, MemLoc.eq)
+		LiveSet.contains(dead, memloc)
 	     | _ => false
 
 	val template : template 
@@ -4318,7 +3772,7 @@ struct
 	     transfer = fn _ => true}
 
 	val rewriter : rewriter
-	  = fn {label,
+	  = fn {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -4434,7 +3888,7 @@ struct
 				       op ::)
 		       in
 			 SOME (LivenessBlock.T
-			       {label = label,
+			       {entry = entry,
 				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})		 
@@ -4468,7 +3922,7 @@ struct
 	     transfer = fn _ => true}
 
 	val rewriter : rewriter
-	  = fn {label,
+	  = fn {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -4487,7 +3941,7 @@ struct
 		       op ::)
 		in 
 		  SOME (LivenessBlock.T
-			{label = label,
+			{entry = entry,
 			 profileInfo = profileInfo,
 			 statements = statements,
 			 transfer = transfer})
@@ -4529,7 +3983,7 @@ struct
 	     transfer = fn _ => true}
 
 	val rewriter : rewriter
-	  = fn {label,
+	  = fn {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -4556,17 +4010,14 @@ struct
 		   (case (src1,src2)
 		      of (Operand.MemLoc memloc_src1,
 			  Operand.MemLoc memloc_src2)
-		       => List.contains(dead2,
-					memloc_src2,
-					MemLoc.eq)
+		       => LiveSet.contains(dead2,
+					   memloc_src2)
 			  andalso
-			  not (List.contains(dead1,
-					     memloc_src1,
-					     MemLoc.eq))
+			  not (LiveSet.contains(dead1,
+						memloc_src1))
 		       | (_, Operand.MemLoc memloc_src2)
-		       => List.contains(dead2,
-					memloc_src2,
-					MemLoc.eq)
+		       => LiveSet.contains(dead2,
+					   memloc_src2)
 		       | _ => false) andalso
 		   (case src1
 		      of Operand.MemLoc memloc_src1
@@ -4608,7 +4059,7 @@ struct
 				       op ::)
 		       in
 			 SOME (LivenessBlock.T
-			       {label = label,	
+			       {entry = entry,	
 				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})		 
@@ -4631,7 +4082,7 @@ struct
 	  = fn (Assembly.Instruction (Instruction.SETcc 
 				      {dst = Operand.MemLoc memloc,...}),
 		{...}) 
-	     => MemLoc.isTemp memloc
+	     => x86Liveness.track memloc
 	     | _ => false
 
 	val isInstructionTEST_eqSrcs_srcsTemp_srcsDead : statement_type -> bool
@@ -4639,9 +4090,9 @@ struct
 				      {src1 = Operand.MemLoc memloc1,
 				       src2 = Operand.MemLoc memloc2,...}),
 		{dead,...})
-	     => MemLoc.eq(memloc1,memloc2) andalso
-	        MemLoc.isTemp memloc1 andalso
-		List.contains(dead, memloc1, MemLoc.eq)
+	     => MemLoc.eq(memloc1, memloc2) andalso
+	        x86Liveness.track memloc1 andalso
+		LiveSet.contains(dead, memloc1)
 	     | _ => false
 
 	val isIff_conditionZorNZ : transfer_type -> bool
@@ -4663,7 +4114,7 @@ struct
 	     transfer = isIff_conditionZorNZ}
 
 	val rewriter : rewriter
-	  = fn {label,
+	  = fn {entry,
 		profileInfo,
 		start, 
 		statements as
@@ -4710,7 +4161,7 @@ struct
 			     [List.map(comments1, #1),
 			      List.map(comments2, #1)]
 
-			 val {statements, ...}
+			 val {statements, live}
 			   = LivenessBlock.toLivenessStatements
 			     {statements = statements,
 			      live = live}
@@ -4719,9 +4170,19 @@ struct
 			   = List.fold(start, 
 				       statements, 
 				       op ::)
+
+			 val live
+			   = case statements
+			       of (_,{liveIn,...})::_ => liveIn
+				| _ => Error.bug "Peephole: conditionalJump"
+
+			 val {entry, ...}
+			   = LivenessBlock.reLivenessEntry
+			     {entry = entry,
+			      live = live}
 		       in
 			 SOME (LivenessBlock.T
-			       {label = label,
+			       {entry = entry,
 				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
@@ -4777,38 +4238,49 @@ struct
 
       local
 	val optimizations 
-	  = [elimALCopy, 
-	     elimFltACopy,
-	     elimDeadDsts,
-	     elimSelfMove,
-	     elimFltSelfMove,
-	     commuteBinALMD,
-	     commuteFltBinA,
-	     conditionalJump]
+	  = elimALCopy::
+	    elimFltACopy::
+	    elimDeadDsts::
+	    elimSelfMove::
+	    elimFltSelfMove::
+	    commuteBinALMD::
+	    commuteFltBinA::
+	    conditionalJump::
+	    nil
 	val optimizations_msg
-	  = [elimALCopy_msg, 
-	     elimFltACopy_msg,
-	     elimDeadDsts_msg,
-	     elimSelfMove_msg,
-	     elimFltSelfMove_msg,
-	     commuteBinALMD_msg,
-	     commuteFltBinA_msg,
-	     conditionalJump_msg]
+	  = elimALCopy_msg:: 
+	    elimFltACopy_msg::
+	    elimDeadDsts_msg::
+	    elimSelfMove_msg::
+	    elimFltSelfMove_msg::
+	    commuteBinALMD_msg::
+	    commuteFltBinA_msg::
+	    conditionalJump_msg::
+	    nil
 
 	val optimizations_minor
-	  = [elimDeadDsts_minor,
-	     elimSelfMove_minor,
-	     elimFltSelfMove_minor]
+	  = elimDeadDsts_minor::
+	    elimSelfMove_minor::
+	    elimFltSelfMove_minor::
+	    nil
 	val optimizations_minor_msg
-	  = [elimDeadDsts_minor_msg,
-	     elimSelfMove_minor_msg,
-	     elimFltSelfMove_minor_msg]
+	  = elimDeadDsts_minor_msg::
+	    elimSelfMove_minor_msg::
+	    elimFltSelfMove_minor_msg::
+	    nil
       in
+	val peepholeLivenessBlock
+	  = fn block => (peepholeBlock {optimizations = optimizations,
+					block = block}
+	                 handle exn
+			  => (print "\n\n***** raising in peepholeLivenessBlock\n";
+			      LivenessBlock.printBlock block;
+			      raise exn))
+
 	val (peepholeLivenessBlock, peepholeLivenessBlock_msg)
 	  = tracer
             "peepholeLivenessBlock"
-	    (fn block => peepholeBlock {optimizations = optimizations,
-					block = block})
+	    peepholeLivenessBlock
 
 	val peepholeLivenessBlock_msg
 	  = fn () => (peepholeLivenessBlock_msg ();
@@ -4816,11 +4288,18 @@ struct
 		      List.foreach(optimizations_msg, fn msg => msg ());
 		      Control.unindent ())
 
+	val peepholeLivenessBlock_minor
+	  = fn block => (peepholeBlock {optimizations = optimizations_minor,
+					block = block}
+	                 handle exn
+			  => (print "\n\n***** raising in peepholeLivenessBlock_minor\n";
+			      LivenessBlock.printBlock block;
+			      raise exn))
+
 	val (peepholeLivenessBlock_minor, peepholeLivenessBlock_minor_msg)
 	  = tracer
             "peepholeLivenessBlock_minor"
-	    (fn block => peepholeBlock {optimizations = optimizations_minor,
-					block = block})
+	    peepholeLivenessBlock_minor
 
 	val peepholeLivenessBlock_minor_msg
 	  = fn () => (peepholeLivenessBlock_minor_msg ();
@@ -4830,1607 +4309,228 @@ struct
       end
     end
 
-  structure LiveTransferInfo =
-    struct
-      open JumpInfo
-
-      fun temp_uses_defs {uses : Operand.t list,
-			  defs : Operand.t list}
-	= let
-	    val baseUses
-	      = List.fold
-	        (uses,
-		 [],
-		 fn (operand, baseUses)
-		  => case Operand.deMemloc operand
-		       of SOME memloc => if MemLoc.isTemp memloc
-			                    andalso 
-					    not (List.contains(baseUses,
-							       memloc,
-							       MemLoc.eq))
-					   then memloc::baseUses
-					   else baseUses
-		        | NONE => baseUses)
-		   
-	    val tempUses
-	      = let
-		  fun doit (operands, tempUses)
-		    = List.fold
-		      (operands,
-		       tempUses,
-		       fn (operand, tempUses)
-		        => case Operand.deMemloc operand
-			     of SOME memloc
-			      => List.fold(MemLoc.utilized memloc,
-					   tempUses,
-					   fn (memloc, tempUses)
-					    => if MemLoc.isTemp memloc
-					          andalso
-						  not (List.contains
-						       (tempUses,
-							memloc,
-							MemLoc.eq))
-						 then memloc::tempUses
-						 else tempUses)
-                              | NONE => tempUses)
-		in
-		  doit(defs, 
-		  doit(uses, 
-		       baseUses))
-		end
-
-	    val baseDefs
-	      = List.fold
-	        (defs,
-		 [],
-		 fn (operand, baseDefs)
-		  => case Operand.deMemloc operand
-		       of SOME memloc => if MemLoc.isTemp memloc
-			                    andalso 
-					    not (List.contains(baseDefs,
-							       memloc,
-							       MemLoc.eq))
-					   then memloc::baseDefs
-					   else baseDefs
-			| NONE => baseDefs)
-	    val tempDefs = baseDefs
-	  in
-	    {uses = tempUses,
-	     defs = tempDefs}
-	  end
-
-      fun computeLiveTransferInfo {blocks : Block.t list,
-				   transferRegs : Register.t list,
-				   liveInfo : 
-				   {get : Label.t -> MemLoc.t list,
-				    set : Label.t * MemLoc.t list -> unit},
-				   jumpInfo : {get: Label.t -> status ref}}
-	= let
-	    datatype liveTransferType
-	      = Normal
-	      | Default of Label.t list
-	      | Case of Label.t
-	      | Top
-
-	    val join
-	      = fn (Normal, k) => k
-		 | (k, Normal) => k
-		 | (Default l1, Default l2) 
-	         => if List.equalsAsSet(l1, l2, Label.equals)
-		      then Default l1
-		      else Top
-		 | (Case l1, Case l2) 
-		 => if Label.equals(l1,l2)
-		      then Case l1
-		      else Top
-		 | _ => Top
-
-	    val blockInfo
-	     as {get = getBlockInfo :
-		       Label.t -> {pred: Label.t list ref,
-				   block: Block.t option ref,
-				   succ: Label.t list ref,
-				   distancesF: 
-				   (MemLoc.t * (int * int) ref) list ref,
-				   distancesB: 
-				   (MemLoc.t * (int * int) ref) list ref,
-				   liveTransferType: liveTransferType ref}}
-	      = Property.get
-	        (Label.plist,
-		 Property.initFun (fn label 
-				    => {pred = ref [],
-					block = ref NONE,
-					succ = ref [],
-					distancesF = ref [],
-					distancesB = ref [],
-					liveTransferType = ref Normal}))
-
-	    val get_pred = (#pred o getBlockInfo)
-	    val get_block = (#block o getBlockInfo)
-	    val get_succ = (#succ o getBlockInfo)
-	    val get_liveTransferType = (#liveTransferType o getBlockInfo)
-	    fun join_liveTransferType (label, liveTransferType')
-	      = let
-		  val liveTransferType = get_liveTransferType label
-		in
-		  liveTransferType := join(liveTransferType', 
-					   !liveTransferType)
-		end
-
-	    fun get_distancesF' {temp : MemLoc.t,
-				 label : Label.t}
-	      = let
-		  val {block, succ, distancesF, ...} = getBlockInfo label
-		in
-		  case List.peek(!distancesF,
-				 fn (temp',_) => MemLoc.eq(temp,temp'))
-		    of SOME (_,distances) => !distances
-		     | NONE 
-		     => let
-			  val temp_distancesF = ref (0,1)
-			  val _ = List.push(distancesF, 
-					    (temp,temp_distancesF));
-
-			  val Block.T {statements, transfer, ...} 
-			    = valOf (!block)
-
-			  datatype t = Pos of int | Length of int
-			  fun posF ([],n) 
-			    = let
-				val {uses,defs,...} 
-				  = Transfer.uses_defs_kills transfer
-				val {uses,defs} 
-				  = temp_uses_defs {uses = uses,
-						    defs = defs}
-			      in
-				if List.contains(uses,
-						 temp,
-						 MemLoc.eq)
-				  then Pos n
-				  else Length (n + 1)
-			      end
-			    | posF (asm::assembly,n)
-			    = let
-				val {uses,defs,...} 
-				  = Assembly.uses_defs_kills asm
-				val {uses,defs} 
-				  = temp_uses_defs {uses = uses,
-						    defs = defs}
-			      in
-				if List.contains(uses,
-						 temp,
-						 MemLoc.eq)
-				  then Pos n
-				  else posF (assembly, n + 1)
-			      end
-
-			  val distances
-			    = case posF(statements, 1)
-				of Pos n => (n, 1)
-				 | Length n
-				 => List.fold
-                                    (!succ,
-				     (0,0),
-				     fn (label, (tot, num))
-				      => if List.contains
-				            ((#get liveInfo) label,
-					     temp,
-					     MemLoc.eq)
-					   then let
-						  val (tot',num') 
-						    = get_distancesF' 
-						      {temp = temp, 
-						       label = label}
-						in
-						  (tot + n * num' + tot',
-						   num + num')
-						end 
-					   else (tot, num))
-			in
-			  temp_distancesF := distances;
-			  distances
-			end
-		end
-
-	    fun get_distancesF {temp : MemLoc.t,
-				label : Label.t}
-	      = let
-		  val distances 
-		    = get_distancesF' {temp = temp,
-				       label = label}
-		in
-		  distances
-		end
-
-	    fun get_distancesB' {temp : MemLoc.t,
-				 label : Label.t}
-	      = let
-		  val {pred, block, distancesB, ...} = getBlockInfo label
-		in
-		  case List.peek(!distancesB,
-				 fn (temp',_) => MemLoc.eq(temp,temp'))
-		    of SOME (_,distances) => !distances
-		     | NONE 
-		     => let
-			  val temp_distancesB = ref (0,1)
-			  val _ = List.push(distancesB, 
-					    (temp,temp_distancesB));
-
-			  val Block.T {statements, transfer, ...} 
-			    = valOf (!block)
-
-			  datatype t = Pos of int | Length of int
-			  fun posR []
-			    = let
-				val {uses,defs,...} 
-				  = Transfer.uses_defs_kills transfer
-				val {uses,defs} 
-				  = temp_uses_defs {uses = uses,
-						    defs = defs}
-			      in
-				if List.contains(uses,
-						 temp,
-						 MemLoc.eq)
-				   orelse
-				   List.contains(defs,
-						 temp,
-						 MemLoc.eq)
-				  then Pos 1
-				  else Length 2
-			      end
-			    | posR (asm::assembly)
-			    = (case posR assembly
-				 of Pos n => Pos n
-				  | Length n
-				  => let
-				       val {uses,defs,...} 
-					 = Assembly.uses_defs_kills asm
-				       val {uses,defs} 
-					 = temp_uses_defs {uses = uses,
-							   defs = defs}
-				     in
-				       if List.contains(uses,
-							temp,
-							MemLoc.eq)
-					  orelse
-					  List.contains(defs,
-							temp,
-							MemLoc.eq)
-					 then Pos n
-					 else Length (n + 1)
-				     end)
-
-			  val distances
-			    = case posR statements
-				of Pos n => (n,1)
-				 | Length n
-				 => List.fold
-                                    (!pred,
-				     (0,0),
-				     fn (label, (tot, num))
-				      => let
-					   val (tot',num') 
-					     = get_distancesB' 
-					       {temp = temp, 
-						label = label}
-					 in
-					   (tot + n * num' + tot',
-					    num + num')
-					 end)
-			in
-			  temp_distancesB := distances;
-			  distances
-			end
-		end
-
-	    fun get_distancesB {temp : MemLoc.t,
-				label : Label.t}
-	      = let
-		  val {pred, ...} = getBlockInfo label
-
-		  val distances
-		    = List.fold
-		      (!pred,
-		       (0,0),
-		       fn (label, (tot, num))
-		        => let
-			     val (tot', num')
-			       = get_distancesB' {temp = temp,
-						  label = label}
-			   in
-			     (tot + tot', num + num')
-			   end)
-		in
-		  distances
-		end
-	      
-	    val liveTransferInfo
-	     as {get = getLiveTransferInfo :
-		       Label.t -> (MemLoc.t * Register.t) list,
-		 set = setLiveTransferInfo}
-	     = Property.getSet
-	       (Label.plist,
-		Property.initFun (fn label => []))
-
-	    val labels
-	      = List.map
-	        (blocks,
-		 fn block' as Block.T {label, transfer, ...}
-		  => let
-		       val {block,succ,liveTransferType,...} 
-			 = getBlockInfo label
-		       val targets = Transfer.targets transfer
-		     in 
-		       block := SOME block';
-		       succ := targets;
-		       (if !((#get jumpInfo) label) = Must
-			  then liveTransferType := Top
-			  else ());
-		       List.foreach
-		       (targets,
-			fn target => List.push(get_pred target, label));
-		       (case transfer
-			  of Transfer.Switch {default, cases, ...}
-			   => let
-				val cases
-				  = Transfer.Cases.map'
-				    (cases,
-				     fn target => target,
-				     fn (k, target) => target,
-				     fn (k, target) => target,
-				     fn (k, target) => target)
-			      in
-				(join_liveTransferType (default, 
-							Default cases);
-				 List.foreach
-				 (cases,
-				  fn target 
-				   => join_liveTransferType (target, 
-							     Case default)))
-			      end
-			   | _ => ());
-		       label
-		     end)
-
-	    fun doit label
-	      = let
-		  val liveIn_distance
-		    = List.keepAllMap
-		      ((#get liveInfo) label,
-		       fn temp
-		        => if List.exists
-		              (transferRegs,
-			       fn register
-			        => MemLoc.size temp = Register.size register)
-			     then let
-				    val (totF, numF)
-				      = get_distancesF {temp = temp,
-							label = label}
-
-				    val (totB, numB)
-				      = get_distancesB {temp = temp,
-							label = label}
-
-				    val (tot, num)
-				      = (totF * numB + totB * numF,
-					 numF * numB)
-
-				    val d = tot div num
-				  in
-				    SOME (temp, d)
-				  end
-				  handle Overflow => SOME (temp, Int.maxInt div 2)
-			     else NONE)
-
-		  val liveIn_distance_sorted
-		    = List.insertionSort
-		      (liveIn_distance,
-		       fn ((_,distance1),(_,distance2)) 
-		        => distance1 < distance2)
-
-		  val liveIn = List.map(liveIn_distance_sorted, #1)
-
-		  val (_,liveTransfer)
-		    = List.fold
-		      (liveIn,
-		       (transferRegs,[]),
-		       fn (temp,(transferRegs,liveTransfer))
-		        => case List.peek
-		                (transferRegs,
-				 fn register 
-				  => MemLoc.size temp = Register.size register)
-			     of SOME register
-			      => (List.removeAll
-				  (transferRegs,
-				   fn register'
-				    => Register.coincide(register,
-							 register')),
-				  (temp,register)::liveTransfer)
-			      | NONE => (transferRegs,liveTransfer))
-		in
-		  setLiveTransferInfo(label, liveTransfer)
-		end
-
-	    fun doit' labels
-	      = let
-		  val liveIn_distance''
-		    = List.concatMap
-		      (labels,
-		       fn label 
-		        => List.keepAllMap
-		           ((#get liveInfo) label,
-			    fn temp
-			     => if List.exists
-			           (transferRegs,
-				    fn register
-				     => MemLoc.size temp = Register.size register)
-				  then let
-					 val (totF, numF)
-					   = get_distancesF {temp = temp,
-							     label = label}
-					 val (totB, numB)
-					   = get_distancesB {temp = temp,
-							     label = label}
-
-					 val (tot, num)
-					   = (totF * numB + totB * numF,
-					      numF * numB)
-
-					 val d = tot div num
-				       in
-					 SOME (temp, d)
-				       end
-				  else NONE))
-
-		  val liveIn_distance'
-		    = List.fold
-		      (liveIn_distance'',
-		       [],
-		       fn ((temp,distance),liveIn_distance')
-		        => let
-			     val rec add
-			       = fn [] => [(temp,distance,1)]
-			          | (temp',distance',num')::liveIn_distance'
-			          => if MemLoc.eq(temp, temp')
-				       then (temp',
-					     distance' + distance,
-					     num' + 1)::
-					    liveIn_distance'
-				       else (temp',
-					     distance',
-					     num')::
-					    (add liveIn_distance')
-			   in
-			     add liveIn_distance'
-			   end)
-
-		  val liveIn_distance
-		    = List.map
-		      (liveIn_distance',
-		       fn (temp,distance,num) => (temp, distance div num))
-
-		  val liveIn_distance_sorted
-		    = List.insertionSort
-		      (liveIn_distance,
-		       fn ((_,distance1),(_,distance2)) 
-		        => distance1 < distance2)
-
-		  val liveIn = List.map(liveIn_distance_sorted, #1)
-
-		  val (_,liveTransfer)
-		    = List.fold
-		      (liveIn,
-		       (transferRegs,[]),
-		       fn (temp,(transferRegs,liveTransfer))
-		        => case List.peek
-		                (transferRegs,
-				 fn register 
-				  => MemLoc.size temp = Register.size register)
-			     of SOME register
-			      => (List.removeAll
-				  (transferRegs,
-				   fn register'
-				    => Register.coincide(register,
-							 register')),
-				  (temp,register)::liveTransfer)
-			      | NONE => (transferRegs,liveTransfer))
-		in
-		  List.foreach
-		  (labels,
-		   fn label
-		    => let
-			 val liveIn = (#get liveInfo) label
-
-			 val liveTransfer
-			   = List.keepAll
-			     (liveTransfer,
-			      fn (temp,register)
-			       => List.contains(liveIn,
-						temp,
-						MemLoc.eq))
-		       in
-			 setLiveTransferInfo(label, liveTransfer)
-		       end)
-		end
-
-	    val _
-	      = List.foreach
-	        (labels,
-		 fn label
-		  => case !(get_liveTransferType label)
-		       of Normal => doit label
-			| Default labels
-			=> if List.forall
-			      (labels,
-			       fn label' 
-			        => case !(get_liveTransferType label')
-				     of Case label'' 
-				      => Label.equals(label,label'')
-				      | _ => false)
-			     then doit' (label::labels)
-			     else setLiveTransferInfo(label, [])
-			| Case label' => ()
-			| Top => setLiveTransferInfo(label, []))
-	  in
-	    liveTransferInfo
-	  end
-
-      val (computeLiveTransferInfo, computeLiveTransferInfo_msg)
-	= tracer
-	  "computeLiveTransferInfo"
-	  computeLiveTransferInfo
-
-      fun computeNoLiveTransferInfo ()
-	= let
-	    val liveTransferInfo
-	     as {get = getLiveTransferInfo :
-		       Label.t -> (MemLoc.t * Register.t) list,
-		 set = setLiveTransferInfo}
-	     = Property.getSet
-	       (Label.plist,
-		Property.initFun (fn label => []))
-	  in
-	    liveTransferInfo
-	  end
-    end
-
-  structure GenerateTransfers =
-    struct
-      open Transfer
-      open JumpInfo
-
-      datatype gef = GEF of {generate : gef -> 
-			                {label : Label.t,
-					 begin : bool,
-					 align : bool} -> 
-					Assembly.t list,
-			     effect : gef -> 
-			              {transfer : Transfer.t,
-				       profile_end : Assembly.t list} ->
-                                      Assembly.t list,
-			     fall : gef ->
-			            {profile_end : Assembly.t list,
-				     label : Label.t,
-				     live : MemLoc.t list} ->
-                                    Assembly.t list}
-
-      fun generateTransfers {blocks : Block.t list,
-			     exports : Label.t list,
-			     optimize: int,
-			     block_pre : Label.t -> Assembly.t list option,
-			     block_begin : Assembly.t list,
-			     block_end : Assembly.t list,
-			     block_fall : Assembly.t list,
-			     transferRegs : Register.t list,
-			     liveInfo : {get : Label.t -> MemLoc.t list,
-					 set : Label.t * MemLoc.t list 
-					       -> unit},
-			     jumpInfo : {get: Label.t -> status ref}}
-	= let
-	    val liveTransferInfo
-	      = if !Control.Native.liveTransfer
-		  then LiveTransferInfo.computeLiveTransferInfo
-		       {blocks = blocks,
-			transferRegs = transferRegs,
-			liveInfo = liveInfo,
-			jumpInfo = jumpInfo}
-		  else LiveTransferInfo.computeNoLiveTransferInfo ()
-
-	    val layoutInfo as {get : Label.t -> Block.t option,
-			       set}
-	      = Property.getSet(Label.plist, Property.initConst NONE)
-
-	    val _ 
-	      = List.foreach
-	        (blocks,
-		 fn block as Block.T {label,...}
-		  => set(label, SOME block))
-
-	    local
-	      val queue = ref (Queue.empty ())
-	    in
-	      fun enque x = queue := Queue.enque(!queue, x)
-	      fun deque () = case Queue.deque(!queue)
-			       of NONE => NONE
-				| SOME(x, queue') => (queue := queue';
-						      SOME x)
-	    end
-
-	    fun generateAll (gef as GEF {generate,effect,fall})
-	                    {label, begin, align} : Assembly.t list
-	      = (case get label
-		   of NONE => []
-		    | SOME (Block.T {label, profileInfo,
-				     statements, transfer})
-		    => let
-			 val _ = set(label, NONE)
-
-			 val (profile_begin,profile_end)
-			   = ProfileInfo.profile_begin_end profileInfo
-
-			 val pre 
-			   = if begin
-			       then ((fn l
-				       => if align
-					    then (Assembly.pseudoop_p2align 2)::
-					         l
-					    else l) o
-				     (fn l
-				       => if List.contains(exports,
-							   label,
-							   Label.equals)
-					    then (Assembly.pseudoop_global label)::
-					         l
-					    else l) o
-				     (fn l
-				       => case block_pre label
-					    of NONE => l
-					     | SOME assembly => List.concat
-					                        [assembly, l]))
-				    ((Assembly.label label)::
-				     (List.fold
-				      ((#get liveTransferInfo) label,
-				       profile_begin @ block_begin,
-				       fn ((temp,register),block_begin)
-				        => (x86.Assembly.directive_assume
-					    {register = register,
-					     memloc = temp,
-					     weight = 1024,
-					     sync = false,
-					     reserve = false})::
-				           block_begin)))
-			       else profile_begin
-
-			 val statements = statements
-
-			 val post 
-			   = List.concat [block_end, 
-					  [Assembly.directive_flush ()]]
-
-			 val transfer = effect gef {transfer = transfer,
-						    profile_end = profile_end}
-		       in
-			 List.concat [pre,
-				      statements,
-				      post,
-				      transfer]
-		       end)
-
-	    fun effectDefault (gef as GEF {generate,effect,fall})
-	                      {transfer, profile_end} : Assembly.t list
-	      = (case transfer
-		   of Assembly assembly 
-		    => List.concat [assembly, profile_end]
-	            | Goto {target}
-		    => fall gef
-		            {profile_end = profile_end,
-			     label = target,
-			     live = (#get liveInfo) target}
-		    | Iff {condition, truee, falsee}
-		    => let
-			 val condition_neg 
-			   = Instruction.condition_negate condition
-			   
-			 val truee_live = (#get liveInfo) truee
-			 val truee_liveTransfer 
-			   = (#get liveTransferInfo) truee
-			 val truee_live
-			   = List.removeAll
-			     (truee_live,
-			      fn temp => List.exists
-			                 (truee_liveTransfer,
-					  fn (temp',_) 
-					   => MemLoc.eq(temp, temp')))
-
-			 val falsee_live = (#get liveInfo) falsee
-			 val falsee_liveTransfer
-			   = (#get liveTransferInfo) falsee
-			 val falsee_live
-			   = List.removeAll
-			     (falsee_live,
-			      fn temp => List.exists
-			                 (falsee_liveTransfer,
-					  fn (temp',_) 
-					   => MemLoc.eq(temp, temp')))
-
-			 val common_live
-			   = List.keepAll(truee_live,
-					  fn temp
-					   => List.contains(falsee_live,
-							    temp,
-							    MemLoc.eq))
-
-			 val (truee_live,truee_live_length)
-			   = List.fold
-			     (truee_live,
-			      ([],0),
-			      fn (temp,(truee_live,truee_live_length))
-			       => if List.contains(common_live,
-						   temp,
-						   MemLoc.eq)
-				    then (truee_live,truee_live_length)
-				    else (temp::truee_live,
-					  1 + truee_live_length))
-			 val truee_live_length
-			   = truee_live_length + 
-			     (List.length truee_liveTransfer)
-			   
-
-			 val (falsee_live,falsee_live_length)
-			   = List.fold
-			     (falsee_live,
-			      ([],0),
-			      fn (temp,(falsee_live,falsee_live_length))
-			       => if List.contains(common_live,
-						   temp,
-						   MemLoc.eq)
-				    then (falsee_live,falsee_live_length)
-				    else (temp::falsee_live,
-					  1 + falsee_live_length))
-			 val falsee_live_length
-			   = falsee_live_length + 
-			     (List.length falsee_liveTransfer)
-
-			 fun fall_truee ()
-			   = (enque falsee;
-			      List.concat
-			      [(Assembly.directive_commit 
-				{memlocs = List.concat [common_live, 
-							falsee_live]})::
-			       (List.map
-				(falsee_liveTransfer,
-				 fn (temp,register)
-				  => Assembly.directive_cache
-				     {register = register,
-				      memloc = temp,
-				      reserve = false})),
-			       (Assembly.instruction_jcc
-				{condition = condition_neg,
-				 target = Operand.label falsee})::
-			       (fall gef 
- 			             {profile_end = profile_end,
-				      label = truee,
-				      live = truee_live})])
-
-			 fun fall_falsee ()
-			   = (enque truee;
-			      List.concat
-			      [(Assembly.directive_commit 
-				{memlocs = List.concat [common_live,
-							truee_live]})::
-			       (List.map
-				(truee_liveTransfer,
-				 fn (temp,register)
-				  => Assembly.directive_cache
-				     {register = register,
-				      memloc = temp,
-				      reserve = false})),
-			       (Assembly.instruction_jcc
-				{condition = condition,
-				 target = Operand.label truee})::
-			       (fall gef
-			             {profile_end = profile_end,
-				      label = falsee,
-				      live = falsee_live})])
-		       in 
-			 case (!((#get jumpInfo) truee),
-			       !((#get jumpInfo) falsee))
-			   of (Maybe 1, Maybe 1)
-			    => if truee_live_length <= falsee_live_length
-				 then fall_falsee ()
-				 else fall_truee ()
-			    | (Maybe 1, _)
-			    => fall_truee ()
-			    | (_, Maybe 1)
-			    => fall_falsee ()
-			    | _
-			    => if truee_live_length <= falsee_live_length
-				 then fall_falsee ()
-				 else fall_truee ()
-		       end
-	            | Switch {test, cases, default}
-		    => let
-			 val size 
-			   = case Operand.size test
-			       of SOME size => size
-				| NONE => Size.LONG
-
-			 val default_live = (#get liveInfo) default
-			 val default_liveTransfer
-			   = (#get liveTransferInfo) default
-			 val default_live
-			   = List.removeAll
-			     (default_live,
-			      fn temp 
-			       => List.exists
-			          (default_liveTransfer,
-				   fn (temp',_) 
-				    => MemLoc.eq(temp, temp')))
-
-			 val cases_cases_live_cases_liveTransfer
-			   = Transfer.Cases.map'
-			     (cases,
-			      fn (k, target) 
-			       => let
-				    val target_live = (#get liveInfo) target
-				    val target_liveTransfer
-				      = (#get liveTransferInfo) target
-				    val target_live
-				      = List.removeAll
-				        (target_live,
-					 fn temp 
-					  => List.exists
-					     (target_liveTransfer,
-					      fn (temp',_) 
-					       => MemLoc.eq(temp, temp')))
-				  in
-				    ((k,target),
-				     target_live,
-				     target_liveTransfer)
-				  end,
-			      fn (c, target) => (Immediate.Char c, target),
-			      fn (i, target) => (Immediate.Int i, target),
-			      fn (w, target) => (Immediate.Word w, target))
-
-			 val (cases, carry_live, carry_liveTransfer)
-			   = List.fold
-			     (cases_cases_live_cases_liveTransfer,
-			      ([], [], []),
-			      fn (((k,target), 
-				   target_live, 
-				   target_liveTransfer),
-				  (cases, 
-				   carry_live, 
-				   carry_liveTransfer))
-			       => let
-				    val (target_live,
-					 carry_live)
-				      = List.fold
-				        (target_live,
-					 ([],carry_live),
-					 fn (temp,
-					     (target_live',
-					      carry_live'))
-					  => if List.contains
-					        (carry_live,
-						 temp,
-						 MemLoc.eq)
-					       then (target_live',
-						     carry_live')
-					       else (temp::target_live',
-						     temp::carry_live'))
-
-				    val (target_liveTransfer,
-					 carry_liveTransfer)
-				      = List.fold
-				        (target_liveTransfer,
-					 ([],carry_liveTransfer),
-					 fn ((temp,register),
-					     (target_liveTransfer',
-					      carry_liveTransfer'))
-					  => if List.contains
-					        (carry_liveTransfer,
-						 (temp,register),
-						 fn ((t1,r1),(t2,r2))
-						  => MemLoc.eq(t1,t2)
-						     andalso
-						     Register.eq(r1,r2))
-					       then (target_liveTransfer',
-						     carry_liveTransfer')
-					       else ((temp,register)::
-						     target_liveTransfer',
-						     (temp,register)::
-						     carry_liveTransfer'))
-				  in
-				    enque target;
-				    (List.concat
-				     [(Assembly.instruction_jcc
-				       {condition = Instruction.E,
-					target = Operand.label target})::
-				      (Assembly.instruction_cmp
-				       {src1 = test,
-					src2 = Operand.immediate_const k,
-					size = size})::	
-				      (List.map
-				       (target_liveTransfer,
-					fn (temp,register)
-					 => Assembly.directive_cache
-					    {register = register,
-					     memloc = temp,
-					     reserve = true})),
-				      (Assembly.directive_commit 
-				       {memlocs = target_live})::
-				      cases],
-				     carry_live,
-				     carry_liveTransfer)
-				  end)
-
-			 val default_live
-			   = List.removeAll
-			     (default_live,
-			      fn temp 
-			       => List.contains
-			          (carry_live,
-				   temp,
-				   MemLoc.eq))
-
-			 val cases
-			   = List.fold
-			     (carry_liveTransfer,
-			      cases,
-			      fn ((temp,register),cases)
-			       => (Assembly.directive_unreserve
-				   {register = register})::
-			          cases)
-
-			 val test = valOf (Operand.deMemloc test)
-		       in 
-			 (Assembly.directive_cache
-			  {memloc = test,
-			   register = Register.return (MemLoc.size test),
-			   reserve = true})::
-			 List.fold(cases,
-				   (Assembly.directive_unreserve
-				    {register = Register.return (MemLoc.size test)})::
-			           (fall gef
-			                 {profile_end = profile_end,
-					  label = default,
-					  live = default_live}),
-				   op ::)
-		      end)
-
-	    fun effectJumpTable (gef as GEF {generate,effect,fall})
-	                         {transfer, profile_end} : Assembly.t list
-	      = case transfer
-		  of Switch {test, cases, default}
-		   => let
-			fun reduce(cases,
-				   ops as {zero,
-					   even,
-					   incFn, decFn, halfFn,
-					   ltFn, gtFn,
-					   min, minFn,
-					   max, maxFn,
-					   range})
-			  = let
-			      fun reduce' cases
-				= let
-				    val (minK,maxK,length,
-					 allEven,allOdd)
-				      = List.fold
-				        (cases,
-					 (max, min, 0,
-					  true, true),
-					 fn ((k,target),
-					     (minK,maxK,length,
-					      allEven,allOdd))
-					  => let
-					       val isEven = even k
-					     in
-					       (minFn(k,minK),
-						maxFn(k,maxK),
-						length + 1,
-						allEven andalso isEven,
-						allOdd andalso not isEven)
-					     end)
-				  in
-				    if length > 1 andalso
-				       (allEven orelse allOdd)
-				      then let
-					     val f = if allOdd
-						       then halfFn o decFn
-						       else halfFn
-					     val cases' 
-					       = List.map
-					         (cases,
-						  fn (k,target)
-						   => (f k, target))
-
-					     val (cases'', 
-						  minK'', maxK'', length'',
-						  shift'', mask'')
-					       = reduce' cases'
-
-					     val shift' = 1 + shift''
-					     val mask' 
-					       = Word.orb
-					         (Word.<<(mask'', 0wx1),
-						  if allOdd
-						    then 0wx1
-						    else 0wx0)
-					   in
-					     (cases'', 
-					      minK'', maxK'', length'',
-					      shift', mask')
-					   end
-				      else (cases, 
-					    minK, maxK, length,
-					    0, 0wx0)
-				  end
-			    in 
-			      reduce' cases
-			    end
-
-			fun doitTable(cases,
-				      ops as {zero,
-					      even,
-					      incFn, decFn, halfFn,
-					      ltFn, gtFn,
-					      min, minFn,
-					      max, maxFn,
-					      range},
-				      minK, maxK, rangeK, shift, mask,
-				      constFn)
-			  = let
-			      val jump_table_label
-				= Label.newString "jumpTable"
-
-			      val rec filler 
-				= fn ([],_) => []
-				   | (cases as (i,target)::cases',j)
-				   => if i = j
-					then (enque target;
-					      (Immediate.label target)::
-					      (filler(cases', incFn j)))
-					else (Immediate.label default)::
-					     (filler(cases, incFn j))
-
-			      val _ = enque default
-			      val jump_table = filler (cases, minK)
-
-			      val index
-				= MemLoc.imm
-				  {base = Immediate.const_int 0,
-				   index = Immediate.const_int 0,
-				   scale = Scale.Four,
-				   size = Size.LONG,
-				   commit = MemLoc.Commit.commit
-				            {isTemp = true,
-					     onFlush = false},
-				   class = MemLoc.Class.new "Temp"}
-			      val check
-				= MemLoc.imm
-				  {base = Immediate.const_int 0,
-				   index = Immediate.const_int 0,
-				   scale = Scale.Four,
-				   size = Size.LONG,
-				   commit = MemLoc.Commit.commit
-				            {isTemp = true,
-					     onFlush = false},
-				   class = MemLoc.Class.new "Temp"}
-
-			      val address
-				= MemLoc.basic
-				  {base = Immediate.label jump_table_label,
-				   index = index,
-				   scale = Scale.Four,
-				   size = Size.LONG,
-				   commit = MemLoc.Commit.commit
-				            {isTemp = true,
-					     onFlush = false},
-				   class = MemLoc.Class.Code}
-
-			      val size 
-				= case Operand.size test
-				    of SOME size => size
-				     | NONE => Size.LONG
-			      val index = Operand.memloc index
-			      val check = Operand.memloc check
-			      val address = Operand.memloc address
-			      val default = Operand.label default
-			    in
-			      ((fn l
-				 => if Size.lt(size, Size.LONG)
-				      then (Assembly.instruction_movx
-					    {oper = Instruction.MOVZX,
-					     src = test,
-					     srcsize = size,
-					     dst = index,
-					     dstsize = Size.LONG})::
-					   l
-				      else (Assembly.instruction_mov
-					    {src = test,
-					     dst = index,
-					     size = Size.LONG})::
-					   l) o
-			       (fn l
-				 => if shift > 0
-				      then ((fn l
-					      => (Assembly.instruction_mov
-						  {src = index,
-						   dst = check,
-						   size = Size.LONG})::
-					         (Assembly.instruction_binal
-						  {oper = Instruction.AND,
-						   src = Operand.immediate_const_word (ones shift),
-						   dst = check,
-						   size = Size.LONG})::
-						 l) o
-					    (fn l
-					      => if mask = 0wx0
-						   then l
-						   else (Assembly.instruction_binal
-							 {oper = Instruction.SUB,
-							  src = Operand.immediate_const_word mask,
-							  dst = check,
-							  size = Size.LONG})::
-						        l) o
-					    (fn l
-					      => (Assembly.instruction_jcc
-						  {condition = Instruction.NZ,
-						   target = default})::
-					         (Assembly.instruction_sral
-						  {oper = Instruction.SAR,
-						   count = Operand.immediate_const_int shift,
-						   dst = index,
-						   size = Size.LONG})::
-						 l)) 
-					   l
-				      else l) o
-			       (fn l
-				 => if minK = zero
-				      then l
-				      else (Assembly.instruction_binal
-					    {oper = Instruction.SUB,
-					     src = Operand.immediate 
-					           (constFn minK),
-					     dst = index,
-					     size = Size.LONG})::
-					   l) o
-			       (fn l
-				 => (Assembly.instruction_cmp
-				     {src1 = index,
-				      src2 = Operand.immediate_const_int rangeK,
-				      size = size})::
-				    (Assembly.instruction_jcc
-				     {condition = Instruction.AE,
-				      target = default})::
-				    (Assembly.instruction_jmp
-				     {target = address,
-				      absolute = true})::
-				    l))
-			      (List.concat
-			       [profile_end,
-				[Assembly.pseudoop_data (),
-				 Assembly.pseudoop_p2align 2,
-				 Assembly.label jump_table_label,
-				 Assembly.pseudoop_long jump_table,
-				 Assembly.pseudoop_text ()]])
-			    end
-
-			fun doit(cases,
-				 ops as {zero,
-					 even,
-					 incFn, decFn, halfFn,
-					 ltFn, gtFn,
-					 min, minFn,
-					 max, maxFn,
-					 range},
-				 constFn)
-			  = let
-			      val (cases, 
-				   minK, maxK, length,
-				   shift, mask) 
-				= reduce(cases, ops)
-
-			      val rangeK 
-				= SOME (range(minK,maxK))
-                                  handle Overflow => NONE
-			    in
-			      if length >= 8 
-				 andalso
-				 (isSome rangeK
-				  andalso
-				  valOf rangeK <= 2 * length)
-				then let
-				       val rangeK = valOf rangeK
-
-				       val default_live 
-					 = (#get liveInfo) default
-				       val default_liveTransfer
-					 = (#get liveTransferInfo) default
-				       val default_live
-					 = List.removeAll
-					   (default_live,
-					    fn temp 
-					     => List.exists
-					        (default_liveTransfer,
-						 fn (temp',_) 
-						  => MemLoc.eq(temp, temp')))
-
-				       val cases 
-					 = List.insertionSort
-					   (cases, 
-					    fn ((k,target),(k',target')) 
-					     => ltFn(k,k'))
-				     
-				       val cases_live_cases_liveTransfer
-					 = List.map
-					   (cases,
-					    fn (k, target)
-					     => let
-						  val target_live 
-						    = (#get liveInfo) target
-						  val target_liveTransfer
-						    = (#get liveTransferInfo) 
-						      target
-						  val target_live
-						    = List.removeAll
-						      (target_live,
-						       fn temp 
-						        => List.exists
-						           (target_liveTransfer,
-							    fn (temp',_) 
-							     => MemLoc.eq(temp, temp')))
-						in 
-						  (target_live,
-						   target_liveTransfer)
-						end)
-
-				       val (live,liveTransfer)
-					 = List.fold
-					   (cases_live_cases_liveTransfer,
-					    (default_live,
-					     default_liveTransfer),
-					    fn ((target_live,
-						 target_liveTransfer),
-						(live,
-						 liveTransfer))
-					     => let
-						  val live
-						    = List.fold
-						      (target_live,
-						       live,
-						       fn (temp,
-							   live)
-						        => if List.contains
-						              (live,
-							       temp,
-							       MemLoc.eq)
-							     then live
-							     else temp::live)
-
-						  val liveTransfer
-						    = List.fold
-						      (target_liveTransfer,
-						       liveTransfer,
-						       fn ((temp,register),
-							   liveTransfer)
-						        => if List.contains
-						              (liveTransfer,
-							       (temp,register),
-							       fn ((t1,r1),(t2,r2))
-							        => MemLoc.eq(t1,t2)
-							           andalso
-								   Register.eq(r1,r2))
-							     then liveTransfer
-							     else (temp,register)::
-							          liveTransfer)
-						in 
-						  (live,liveTransfer)
-						end)
-					   
-
-				       val test = valOf (Operand.deMemloc test)
-				     in 
-				       List.concat
-				       [(Assembly.directive_commit
-					 {memlocs = live})::
-					(Assembly.directive_cache
-					 {memloc = test,
-					  register 
-					  = Register.return (MemLoc.size test),
-					  reserve = true})::
-					(List.map
-					 (liveTransfer,
-					  fn (temp,register)
-					   => Assembly.directive_cache
-					      {register = register,
-					       memloc = temp,
-					       reserve = true})),
-					(doitTable(cases, 
-						   ops,
-						   minK, maxK, rangeK,
-						   shift, mask,
-						   constFn))]
-				     end
-				else effectDefault gef
-				                   {transfer = transfer,
-						    profile_end = profile_end}
-			    end
-		      in
-			case cases
-			  of Transfer.Cases.Char cases
-			   => doit
-			      (cases,
-			       {zero = #"\000",
-				even = fn c => (Char.ord c) mod 2 = 0,
-				incFn = Char.succ,
-				decFn = Char.pred,
-				halfFn = fn c => Char.chr((Char.ord c) div 2),
-				ltFn = Char.<,
-				gtFn = Char.>,
-				min = Char.minChar,
-				minFn = Char.min,
-				max = Char.maxChar,
-				maxFn = Char.max,
-				range = fn (min,max) => ((Char.ord max) - 
-							 (Char.ord min)) + 1},
-			       Immediate.const_char)
-			   | Transfer.Cases.Int cases
-			   => doit
-			      (cases,
-			       {zero = 0,
-				even = fn i => i mod 2 = 0,
-				incFn = fn i => i + 1,
-				decFn = fn i => i - 1,
-				halfFn = fn i => i div 2,
-				ltFn = Int.<,
-				gtFn = Int.>,
-				min = Int.minInt,
-				minFn = Int.min,
-				max = Int.maxInt,
-				maxFn = Int.max,
-				range = fn (min,max) => max - min + 1},
-			       Immediate.const_int)
-			   | Transfer.Cases.Word cases
-			   => doit
-			      (cases,
-			       {zero = 0wx0,
-				even = fn w => Word.mod(w,0wx2) = 0wx0,
-				incFn = fn x => Word.+(x,0wx1),
-				decFn = fn x => Word.-(x,0wx1),
-				halfFn = fn x => Word.div(x,0wx2),
-				ltFn = Word.<,
-				gtFn = Word.>,
-				min = 0wx0,
-				minFn = Word.min,
-				max = 0wxFFFFFFFF,
-				maxFn = Word.max,
-				range = fn (min,max) => ((Word.toInt max) -
-							 (Word.toInt min) + 
-							 1)},
-			       Immediate.const_word)
-		      end
-		   | _ => effectDefault gef 
-		                        {transfer = transfer,
-					 profile_end = profile_end}
-
-	    fun fallNone (gef as GEF {generate,effect,fall})
-	                 {profile_end, label, live} : Assembly.t list
-	      = let
-		  val liveTransfer = (#get liveTransferInfo) label
-
-		  val live 
-		    = List.removeAll
-		      (live,
-		       fn temp 
-		        => List.exists
-		           (liveTransfer,
-			    fn (temp',_) 
-			     => MemLoc.eq(temp, temp')))
-
-		  fun default ()
-		    = List.concat
-		      [(Assembly.directive_commit
-			{memlocs = live})::
-		       (List.map
-			(liveTransfer,
-			 fn (temp,register)
-			  => Assembly.directive_cache
-			     {register = register,
-			      memloc = temp,
-			      reserve = false})),
-		       (Assembly.instruction_jmp
-			{target = Operand.label label,
-			 absolute = false})::
-		       profile_end]
-		in
-		  case get label
-		    of NONE
-		     => default ()
-		     | SOME (block as Block.T {label,...})
-		     => (enque label;
-			 default ())
-		end
-
-	    fun fallDefault (gef as GEF {generate,effect,fall})
-	                    {profile_end, label, live} : Assembly.t list
-	      = let
-		  val liveTransfer = (#get liveTransferInfo) label
-
-		  val live 
-		    = List.removeAll
-		      (live,
-		       fn temp 
-		        => List.exists
-		           (liveTransfer,
-			    fn (temp',_) 
-			     => MemLoc.eq(temp, temp')))
-
-		  fun default ()
-		    = List.concat
-		      [(Assembly.directive_commit
-			{memlocs = live})::
-		       (List.map
-			(liveTransfer,
-			 fn (temp,register)
-			  => Assembly.directive_cache
-			     {register = register,
-			      memloc = temp,
-			      reserve = false})),
-		       (Assembly.instruction_jmp
-			{target = Operand.label label,
-			 absolute = false})::
-		       profile_end]
-		in
-		  case get label
-		    of NONE 
-		     => default ()
-		     | SOME (block as Block.T {label,...})
-		     => (case block_pre label
-			   of SOME _ 
-			    => (enque label;
-				default ())
-			    | NONE 
-			    => (case !((#get jumpInfo) label)
-				  of Maybe 1 
-				   => List.concat
-				      [block_fall,
-				       profile_end,
-				       generate gef
-				                {label = label,
-					 	 begin = false,
-						 align = false}]
-				   | _ => List.concat
-				          [(Assembly.directive_commit 
-					    {memlocs = live})::
-					   (List.map
-					    (liveTransfer,
-					     fn (temp,register)
-					      => Assembly.directive_cache
-					         {register = register,
-						  memloc = temp,
-						  reserve = false})),
-					   (Assembly.directive_reset ())::
-					   (List.concat
-					    [profile_end,
-					     (generate gef
-					               {label = label,
-							begin = true,
-							align = false})])]))
-		end
-
-	    fun make {generate, effect, fall}
-	      = generate (GEF {generate = generate,
-			       effect = effect,
-			       fall = fall})
-			 
-	    val generate
-	      = case optimize 
-		  of 0 => make {generate = generateAll,
-				effect = effectDefault,
-				fall = fallNone}
-		   | _ => make {generate = generateAll,
-				effect = effectJumpTable,
-				fall = fallDefault}
-
-	    val _ = List.foreach(exports, fn label => enque label)
-	    fun doit () : Assembly.t list list
-	      = (case deque ()
-		   of NONE => []
-		    | SOME label
-		    => (case generate {label = label,
-				       begin = true,
-				       align = true}
-			  of [] => doit ()
-			   | block => block::(doit ())))
-	    val assembly = doit ()
-       	  in
-	    assembly
-	  end
-
-      val (generateTransfers, generateTransfers_msg)
-	= tracer
-          "generateTransfers"
-	  generateTransfers
-    end
-
-  fun simplify {chunk as Chunk.T {exports, blocks}: Chunk.t,
+  fun simplify {chunk as Chunk.T {blocks}: Chunk.t,
 		optimize : int,
-		block_pre : Label.t -> Assembly.t list option,
-		block_begin : Assembly.t list,
-		block_end : Assembly.t list,
-		block_fall : Assembly.t list,
-		transferRegs : Register.t list,
-		liveInfo : {get : Label.t -> MemLoc.t list,
-			    set : Label.t * MemLoc.t list -> unit}} :
-               Assembly.t list list
+		liveInfo : x86Liveness.LiveInfo.t,
+		jumpInfo : x86JumpInfo.t} :
+               Chunk.t
     = let
 	val labels
-	  = List.map(blocks, fn Block.T {label,...} => label)
+	  = List.map(blocks, fn Block.T {entry,...} => Entry.label entry)
 
-	fun changed_msg(changed,msg)
-(*
-	  = Control.messageStr ("completed " ^ msg)
-*)
-(*
-	  = if changed
-	      then Control.messageStr (msg ^ " changed")
-	      else ()
-*)
+	fun changedChunk_msg 
+            {chunk as Chunk.T {blocks, ...}, changed, msg}
+	  = ()
+	fun changedBlock_msg 
+	    {block as Block.T {entry, ...}, changed, msg}
+	  = ()
+	fun changedLivenessBlock_msg 
+	    {block as x86Liveness.LivenessBlock.T {entry, ...}, changed, msg}
 	  = ()
 
-	(*********************************************************************)
-	(* verifyLiveInfo                                                    *)
-	(*********************************************************************)
-	val {changed} = Liveness.verifyLiveInfo {blocks = blocks,
-						 liveInfo = liveInfo}
-	val _ = changed_msg(changed, "verifyLiveInfo")
-	  
-	(*********************************************************************)
-	(* computeJumpInfo                                                   *)
-	(*********************************************************************)
-	val jumpInfo
-	  = JumpInfo.computeJumpInfo {blocks = blocks,
-				      exports = exports,
-				      block_pre = block_pre}
+(*
+	fun changedChunk_msg 
+            {chunk as Chunk.T {blocks, ...}, changed, msg}
+	  = (print ("finished " ^ msg ^ "\n"))
+	fun changedBlock_msg 
+	    {block as Block.T {entry, ...}, changed, msg}
+	  = (print ("finished " ^ msg ^ "\n"))
+	fun changedLivenessBlock_msg 
+	    {block as x86Liveness.LivenessBlock.T {entry, ...}, changed, msg}
+	  = (print ("finished " ^ msg ^ "\n"))
 
+*)
+(*
+	fun changedChunk_msg 
+            {chunk as Chunk.T {blocks, ...}, changed, msg}
+	  = (print (String.make (60, #"*"));
+	     print "\n";
+	     print msg;
+	     print "\n";
+	     List.foreach(blocks, 
+			  fn b as Block.T {entry, ...}
+			   => (print (concat
+				      ["liveIn: ",
+				       (concat o List.separate)
+				       (List.map
+					(x86Liveness.LiveSet.toList
+					 (x86Liveness.LiveInfo.getLive
+					  (liveInfo, Entry.label entry)),
+					 fn memloc => MemLoc.toString memloc),
+					"\n        "),
+				       "\n"]);
+			       x86.Block.printBlock b)))
+
+	fun changedBlock_msg 
+	    {block as Block.T {entry, ...}, changed, msg}
+	  = (print (String.make (60, #"*"));
+	     print "\n";
+	     print msg;
+	     print "\n";
+	     (print (concat
+		     ["liveIn: ",
+		      (concat o List.separate)
+		      (List.map
+		       (x86Liveness.LiveSet.toList
+			(x86Liveness.LiveInfo.getLive
+			 (liveInfo, Entry.label entry)),
+			fn memloc => MemLoc.toString memloc),
+		       "\n        "),
+		      "\n"]);
+	      x86.Block.printBlock block))
+
+	fun changedLivenessBlock_msg 
+	    {block as x86Liveness.LivenessBlock.T {entry, ...}, changed, msg}
+	  = (print (String.make (60, #"*"));
+	     print "\n";
+	     print msg;
+	     print "\n";
+	     (print (concat
+		     ["liveIn: ",
+		      (concat o List.separate)
+		      (List.map
+		       (x86Liveness.LiveSet.toList
+			(x86Liveness.LiveInfo.getLive
+			 (liveInfo, Entry.label (#1 entry))),
+			fn memloc => MemLoc.toString memloc),
+		       "\n        "),
+		      "\n"]);
+	      x86Liveness.LivenessBlock.printBlock b))
+*)
+
+	fun checkLivenessBlock
+	    {block, block', msg}
+	  = Assert.assert
+	    ("verifyLivenessBlock: " ^ msg,
+	     fn () => if x86Liveness.LivenessBlock.verifyLivenessBlock
+	                 {block = block,
+			  liveInfo = liveInfo}
+			 handle exn
+			  => Error.bug 
+			     ("x86Liveness.LivenessBlock.verifyLivenessBlock::" ^
+			      (case exn
+				 of Fail s => s
+				  | _ => "?"))
+			then true
+			else (print ("pre: " ^ msg);
+			      x86Liveness.LivenessBlock.printBlock block;
+			      print (String.make(60, #"*"));
+			      print ("post: " ^ msg);
+			      x86Liveness.LivenessBlock.printBlock block';
+			      print (String.make(60, #"*"));
+			      false))
+
+	(*********************************************************************)
+	(* simplify                                                          *)
+	(*********************************************************************)
+
+	val _ = changedChunk_msg 
+	        {chunk = chunk,
+		 changed = false,
+		 msg = "simplify:"}
+
+	(*********************************************************************)
+	(* completeLiveInfo                                                  *)
+	(*********************************************************************)
+	val _ = x86Liveness.LiveInfo.completeLiveInfo 
+	        {chunk = chunk,
+		 liveInfo = liveInfo,
+		 pass = "pre"}
+		handle exn
+		 => Error.bug 
+		    ("x86Liveness.LiveInfo.completeLiveInfo (pre)::" ^
+		     (case exn
+			of Fail s => s
+			 | _ => "?"))
+
+	val _ = changedChunk_msg 
+	        {chunk = chunk,
+		 changed = false,
+		 msg = "completeLiveInfo (pre):"}
+
+	(*********************************************************************)
+	(* completeJumpInfo                                                  *)
+	(*********************************************************************)
+	val _ = x86JumpInfo.completeJumpInfo 
+	        {chunk = chunk,
+		 jumpInfo = jumpInfo}
+		handle exn
+		 => Error.bug 
+		    ("x86JumpInfo.completeJumpInfo::" ^
+		     (case exn
+			of Fail s => s
+			 | _ => "?"))
+
+	val _
+	  = Assert.assert
+	    ("verifyEntryTransfer",
+	     fn () => x86EntryTransfer.verifyEntryTransfer
+	              {chunk = chunk}
+		      handle exn
+		       => Error.bug 
+		          ("x86JumpInfo.verifyEntryTransfer::" ^
+			   (case exn
+			      of Fail s => s
+			       | _ => "?")))
 
 	(*********************************************************************)
 	(* optimizer                                                         *)
 	(*********************************************************************)
-	fun optimizer blocks
+	fun optimizer chunk
 	  = let
-	       val blocks = blocks
+	       val chunk = chunk
 	       val changed = false
 
 	       (**************************************************************)
 	       (* elimGoto                                                   *)
 	       (**************************************************************)
-	       val {blocks = blocks',
+	       val {chunk = chunk',
 		    changed = changed'}
-		 = ElimGoto.elimGoto {blocks = blocks,
+		 = ElimGoto.elimGoto {chunk = chunk,
 				      jumpInfo = jumpInfo}
+		   handle exn
+		    => Error.bug 
+		       ("ElimGoto.elimGoto::" ^
+			(case exn
+			   of Fail s => s
+			    | _ => "?"))
 
 	       val _
 		 = Assert.assert
 		   ("verifyJumpInfo",
-		    fn () => JumpInfo.verifyJumpInfo {blocks = blocks',
-						      exports = exports,
-						      block_pre = block_pre,
-						      jumpInfo = jumpInfo})
+		    fn () => x86JumpInfo.verifyJumpInfo 
+		             {chunk = chunk',
+			      jumpInfo = jumpInfo}
+		             handle exn
+			      => Error.bug 
+			         ("x86JumpInfo.verifyJumpInfo::" ^
+				  (case exn
+				     of Fail s => s
+				      | _ => "?")))
 
-	       val blocks = blocks'
-	       val _ 
-		 = changed_msg
-		   (changed', 
-		    "elimGoto")
+	       val _
+		 = Assert.assert
+		   ("verifyEntryTransfer",
+		    fn () => x86EntryTransfer.verifyEntryTransfer
+		             {chunk = chunk'}
+			     handle exn
+			      => Error.bug 
+			         ("x86JumpInfo.verifyEntryTransfer::" ^
+				  (case exn
+				     of Fail s => s
+				      | _ => "?")))
+
+	       val _ = changedChunk_msg 
+		       {chunk = chunk,
+			changed = changed',
+			msg = "ElimGoto.elimGoto:"}
+	       val chunk = chunk'
 	       val changed = changed orelse changed'		 
 
 	       (**************************************************************)
 	       (* peepholeBlock/moveHoist/peepholeLivenessBlock/copyPropagate*)
 	       (**************************************************************)
+	       val Chunk.T {blocks} = chunk
 	       val {blocks = blocks',
 		    changed = changed'}
 		 = List.fold
@@ -6438,40 +4538,49 @@ struct
 		    {blocks = [], changed = false},
 		    fn (block, {blocks, changed})
 		     => let
-			  val block = block
-			  val changed = changed
-
+			  val _ = changedBlock_msg 
+			          {block = block,
+				   changed = false,
+				   msg = "peepholeBlock/moveHoist/peepholeLivenessBlock/copyPropagate"}
 			  (***************************************************)
 			  (* peepholeBlock_pre                               *)
 			  (***************************************************)
 			  val {block = block',
 			       changed = changed'}
-			    = PeepholeBlock.peepholeBlock_pre
-                              block
+			    = PeepholeBlock.peepholeBlock_pre block
+			      handle exn
+			       => Error.bug 
+			          ("PeepholeBlock.peepholeBlock_pre::" ^
+				   (case exn
+				      of Fail s => s
+				       | _ => "?"))
 
+			  val _ = changedBlock_msg 
+			          {block = block',
+				   changed = changed',
+				   msg = "PeepholeBlock.peepholeBlock_pre"}
 			  val block = block'
-			  val _ 
-			    = changed_msg
-			      (changed', 
-			       "peepholeBlock_pre")
 			  val changed = changed orelse changed'
 
 			  (***************************************************)
 			  (* toLivenessBlock                                 *)
 			  (***************************************************)
 			  val block'
-			    = LivenessBlock.toLivenessBlock 
+			    = x86Liveness.LivenessBlock.toLivenessBlock 
 			      {block = block,
 			       liveInfo = liveInfo}
-			  val changed' = false
+			      handle exn
+			       => Error.bug 
+			          ("x86Liveness.LivenessBlock.toLivenessBlock::" ^
+				   (case exn
+				      of Fail s => s
+				       | _ => "?"))
 
 			  val block = block'
-			  val block_toLivenessBlock = block
-			  val _ 
-			    = changed_msg
-			      (changed', 
-			       "toLivenessBlock")
-			  val changed = changed orelse changed'
+			  val _ = changedLivenessBlock_msg 
+			          {block = block',
+				   changed = false,
+				   msg = "x86Liveness.LivenessBlock.toLivenessBlock"}
 
 			  (***************************************************)
 			  (* moveHoist                                       *)
@@ -6481,22 +4590,25 @@ struct
 			    = if !Control.Native.moveHoist
 				then MoveHoistLivenessBlock.moveHoist
 				     {block = block}
+				     handle exn
+				      => Error.bug 
+				         ("MoveHoistLivenessBlock.moveHoist::" ^
+					  (case exn
+					     of Fail s => s
+					      | _ => "?"))
 				else {block = block,
 				      changed = false}
 
-			  val _
-			    = Assert.assert
-			      ("verifyLivenessBlock: moveHoist",
-			       fn () => LivenessBlock.verifyLivenessBlock
-			                {block = block',
-					 liveInfo = liveInfo})
+			  val _ = checkLivenessBlock 
+                                  {block = block,
+				   block' = block',
+				   msg = "MoveHoistLivenessBlock.moveHoist"}
 
+			  val _ = changedLivenessBlock_msg 
+			          {block = block',
+				   changed = changed',
+				   msg = "MoveHoistLivenessBlock.moveHoist"}
 			  val block = block'
-			  val block_moveHoist = block
-			  val _ 
-			    = changed_msg
-			      (changed', 
-			       "moveHoistLivenessBlock")
 			  val changed = changed orelse changed'
 
 			  (***************************************************)
@@ -6506,20 +4618,23 @@ struct
 			       changed = changed'}
 			    = PeepholeLivenessBlock.peepholeLivenessBlock
 			      block
+			      handle exn
+			       => Error.bug 
+			          ("PeepholeLivenessBlock.peepholeLivenessBlock::" ^
+				   (case exn
+				      of Fail s => s
+				       | _ => "?"))
 
-			  val _
-			    = Assert.assert
-			      ("verifyLivenessBlock: peepholeLivenessBlock",
-			       fn () => LivenessBlock.verifyLivenessBlock
-			                {block = block',
-					 liveInfo = liveInfo})
+			  val _ = checkLivenessBlock 
+                                  {block = block,
+				   block' = block',
+				   msg = "PeepholeLivenessBlock.peepholeLivenessBlock"}
 
+			  val _ = changedLivenessBlock_msg 
+			          {block = block',
+				   changed = changed',
+				   msg = "PeepholeLivenessBlock.peepholeLivenessBlock"}
 			  val block = block'
-			  val block_peepholeLivenessBlock = block
-			  val _ 
-			    = changed_msg
-			      (changed', 
-			       "peepholeLivenessBlock")
 			  val changed = changed orelse changed'
 
 			  (***************************************************)
@@ -6531,22 +4646,25 @@ struct
 				then CopyPropagateLivenessBlock.copyPropagate
 				     {block = block,
 				      liveInfo = liveInfo}
+				     handle exn
+				      => Error.bug 
+				         ("CopyPropagateLivenessBlock.copyPropagate::" ^ 
+					  (case exn
+					     of Fail s => s
+					      | _ => "?"))
 				else {block = block,
 				      changed = false}
 
-			  val _
-			    = Assert.assert
-			      ("verifyLivenessBlock: copyPropagate",
-			       fn () => LivenessBlock.verifyLivenessBlock
-			                {block = block',
-					 liveInfo = liveInfo})
+			  val _ = checkLivenessBlock 
+                                  {block = block,
+				   block' = block',
+				   msg = "CopyPropagateLivenessBlock.copyPropagate"}
 
+			  val _ = changedLivenessBlock_msg 
+			          {block = block',
+				   changed = changed',
+				   msg = "CopyPropagateLivenessBlock.copyPropagate"}
 			  val block = block'
-			  val block_copyPropagate = block
-			  val _ 
-			    = changed_msg
-			      (changed', 
-			       "copyPropagate")
 			  val changed = changed orelse changed'
 
 			  (***************************************************)
@@ -6556,146 +4674,157 @@ struct
 			       changed = changed'}
 			    = PeepholeLivenessBlock.peepholeLivenessBlock_minor
 			      block
+			      handle exn
+			       => Error.bug 
+			          ("PeepholeLivenessBlock.peepholeLivenessBlock_minor::" ^ 
+				   (case exn
+				      of Fail s => s
+				       | _ => "?"))
 
-			  val _
-			    = Assert.assert
-			      ("verifyLivenessBlock: peepholeLivenessBlock_minor",
-			       fn () => LivenessBlock.verifyLivenessBlock
-			                {block = block',
-					 liveInfo = liveInfo})
+			  val _ = checkLivenessBlock 
+                                  {block = block,
+				   block' = block',
+				   msg = "PeepholeLivenessBlock.peepholeLivenessBlock_minor"}
 
+			  val _ = changedLivenessBlock_msg 
+			          {block = block',
+				   changed = changed',
+				   msg = "PeepholeLivenessBlock.peepholeLivenessBlock_minor"}
 			  val block = block'
-			  val block_peepholeLivenessBlock_minor = block
-			  val _ 
-			    = changed_msg
-			      (changed', 
-			       "peepholeLivenessBlock_minor")
 			  val changed = changed orelse changed'
 
 			  (***************************************************)
 			  (* toBlock                                         *)
 			  (***************************************************)
 			  val block'
-			    = LivenessBlock.toBlock block
-			  val changed' = false
+			    = x86Liveness.LivenessBlock.toBlock {block = block}
+			      handle exn
+			       => Error.bug 
+			          ("x86Liveness.LivenessBlock.toBlock::" ^ 
+				   (case exn
+				      of Fail s => s
+				       | _ => "?"))
 
+			  val _ = changedBlock_msg 
+			          {block = block',
+				   changed = false,
+				   msg = "x86Liveness.LivenessBlock.toBlock"}
 			  val block = block'
-			  val block_toBlock = block
-			  val _ = changed_msg(changed', "toBlock")
-			  val changed = changed orelse changed'
 
 			  (***************************************************)
 			  (* peepholeBlock_post                              *)
 			  (***************************************************)
 			  val {block = block',
 			       changed = changed'}
-			    = PeepholeBlock.peepholeBlock_post
-                              block
+			    = PeepholeBlock.peepholeBlock_post block
+			      handle exn
+			       => Error.bug 
+			          ("PeepholeBlock.peepholeBlock_post::" ^ 
+				   (case exn
+				      of Fail s => s
+				       | _ => "?"))
 
+			  val _ = changedBlock_msg 
+			          {block = block',
+				   changed = changed',
+				   msg = "PeepholeBlock.peepholeBlock_post"}
 			  val block = block'
-			  val block_peepholeBlock_post = block
-			  val _ = changed_msg(changed', "peepholeBlock_post")
 			  val changed = changed orelse changed'
 			in
 			  {blocks = block::blocks,
 			   changed = changed}
 			end)
+	       val chunk' = Chunk.T {blocks = blocks'}
 
-	       val blocks = blocks'
-	       val _ = changed_msg(changed', "peepholeBlock/moveHoist/peepholeLivenessBlock/copyPropagate")
+	       val _ = changedChunk_msg 
+		       {chunk = chunk',
+			changed = changed',
+			msg = "peepholeBlock/moveHoist/peepholeLivenessBlock/copyPropagate"}
+	       val chunk = chunk'
 	       val changed = changed orelse changed'
 
 	       (**************************************************************)
-	       (* verifyLiveInfo                                             *)
+	       (* completeLiveInfo                                           *)
 	       (**************************************************************)
-	       val {changed = changed'} 
-		 = Liveness.verifyLiveInfo {blocks = blocks,
-					    liveInfo = liveInfo}
-	       val _ = changed_msg(changed, "verifyLiveInfo")
-	       val changed = changed orelse changed'
+	       val _
+		 = x86Liveness.LiveInfo.completeLiveInfo 
+		   {chunk = chunk,
+		    liveInfo = liveInfo,
+		    pass = "post"}
+		   handle exn
+		    => Error.bug 
+		       ("x86Liveness.LiveInfo.completeLiveInfo (post)::" ^ 
+			(case exn
+			   of Fail s => s
+			    | _ => "?"))
+
+	       val _ = changedChunk_msg 
+		       {chunk = chunk,
+			changed = false,
+			msg = "completeLiveInfo (post):"}
 	    in
-	      {blocks = blocks,
+	      {chunk = chunk,
 	       changed = changed}
 	    end
-
 
 	(*********************************************************************)
 	(* optimizer_loop                                                    *)
 	(*********************************************************************)
-	fun optimizer_loop blocks
+	fun optimizer_loop chunk
 	  = let
-	      fun loop (blocks,changed)
+	      fun loop {chunk, changed}
 		= let
-		    val {blocks,
-			 changed = changed'}
-		      = optimizer blocks
+		    val {chunk, changed = changed'}
+		      = optimizer chunk
 		  in
 		    if changed'
-		      then loop (blocks, true)
-		      else (blocks,changed)
+		      then loop {chunk = chunk, 
+				 changed = true}
+		      else {chunk = chunk,
+			    changed = changed}
 		  end
 
-	      val (blocks,changed) = loop (blocks,false)
+	      val {chunk, changed} 
+		= loop {chunk = chunk, changed = false}
 	    in
-	      {blocks = blocks,
+	      {chunk = chunk,
 	       changed = changed}
 	    end
 
 
 	(*********************************************************************)
-	(* blocks                                                            *)
+	(* chunk                                                            *)
 	(*********************************************************************)
-	val {blocks,...}
+	val {chunk, changed}
 	  = case optimize
-	      of 0 => {blocks = blocks, changed = false}
-	       | 1 => optimizer blocks
-	       | _ => optimizer_loop blocks
-
-	(*********************************************************************)
-	(* assembly                                                          *)
-	(*********************************************************************)
-	val assembly
-	  = GenerateTransfers.generateTransfers
-	    {blocks = blocks,
-	     exports = exports,
-	     optimize = optimize,
-	     block_pre = block_pre,
-	     block_begin = block_begin,
-	     block_end = block_end,
-	     block_fall = block_fall,
-	     transferRegs = transferRegs,
-	     liveInfo = liveInfo,
-	     jumpInfo = jumpInfo}
-
-	val _ = List.foreach(labels, Label.clear)
+	      of 0 => {chunk = chunk, changed = false}
+	       | 1 => optimizer chunk
+	       | _ => optimizer_loop chunk
       in
-	assembly
+	chunk
       end
 
   val (simplify, simplify_msg)
-    = tracer
+    = tracerTop
       "simplify"
       simplify
 
   fun simplify_totals ()
     = (simplify_msg ();
        Control.indent ();
-       Liveness.verifyLiveInfo_msg ();
-       JumpInfo.computeJumpInfo_msg ();
+       x86Liveness.LiveInfo.completeLiveInfo_msg ();
+       x86JumpInfo.completeJumpInfo_msg ();
        ElimGoto.elimGoto_msg ();
-       JumpInfo.verifyJumpInfo_msg ();
+       x86JumpInfo.verifyJumpInfo_msg ();
+       x86EntryTransfer.verifyEntryTransfer_msg ();
        PeepholeBlock.peepholeBlock_pre_msg ();
-       LivenessBlock.toLivenessBlock_msg ();
+       x86Liveness.LivenessBlock.toLivenessBlock_msg ();
        MoveHoistLivenessBlock.moveHoist_msg ();
        PeepholeLivenessBlock.peepholeLivenessBlock_msg ();
        CopyPropagateLivenessBlock.copyPropagate_msg ();
        PeepholeLivenessBlock.peepholeLivenessBlock_minor_msg ();
-       LivenessBlock.verifyLivenessBlock_msg ();
-       LivenessBlock.toBlock_msg ();
+       x86Liveness.LivenessBlock.verifyLivenessBlock_msg ();
+       x86Liveness.LivenessBlock.toBlock_msg ();
        PeepholeBlock.peepholeBlock_post_msg ();
-       GenerateTransfers.generateTransfers_msg ();
-       Control.indent ();
-       LiveTransferInfo.computeLiveTransferInfo_msg ();
-       Control.unindent ();
        Control.unindent ())
 end

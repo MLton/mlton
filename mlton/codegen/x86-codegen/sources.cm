@@ -11,8 +11,14 @@ is
 
 x86-codegen.sig
 x86.sig
-x86-pseudo.sig
 x86.fun
+x86-pseudo.sig
+x86-liveness.sig
+x86-liveness.fun
+x86-jump-info.sig
+x86-jump-info.fun
+x86-entry-transfer.sig
+x86-entry-transfer.fun
 x86-mlton.sig
 x86-mlton.fun
 x86-translate.sig
@@ -21,6 +27,10 @@ peephole.sig
 peephole.fun
 x86-simplify.sig
 x86-simplify.fun
+x86-live-transfers.sig
+x86-live-transfers.fun
+x86-generate-transfers.sig
+x86-generate-transfers.fun
 x86-allocate-registers.sig
 x86-allocate-registers.fun
 x86-validate.sig

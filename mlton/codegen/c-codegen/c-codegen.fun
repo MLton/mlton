@@ -135,12 +135,12 @@ structure GCInfo =
    struct
       open GCInfo
 	 
-      fun output (T {frameSize, return}, name, extra, print) =
+      fun output (T {frameSize, return, ...}, name, extra, print) =
 	 C.call (name,
 		 Int.toString frameSize :: Label.toString return :: extra,
 		 print)
 
-      fun outputLimitCheck (info as T {frameSize, return}, 
+      fun outputLimitCheck (info as T {frameSize, return, ...}, 
 			   bytes, stackCheck, print) =
 	 output (info, "LimitCheck",
 		 [bytes, if stackCheck
@@ -153,7 +153,7 @@ structure Statement =
    struct
       open MachineOutput.Statement
 
-      fun assign ({dst, oper, pinfo, args, info}, print) =
+      fun assign ({dst, oper, pinfo, args}, print) =
 	 let
 	    fun printDst () =
 	       case dst of
@@ -165,14 +165,18 @@ structure Statement =
 		  val args = List.map (args, Operand.toString)
 		  val args =
 		     case pinfo of
-			PrimInfo.None => (printDst (); args)
-		      | PrimInfo.Overflow l =>
+		        PrimInfo.Overflow (l,_) =>
 			   (case dst of
 			       NONE => "Int_bogus"
 			     | SOME d => Operand.toString d)
 			       :: (args @ [Label.toString l])
+		      | _ => (printDst (); args)
+		  val gcInfo =
+		     case pinfo of
+		        PrimInfo.Runtime gcInfo => SOME gcInfo
+		      | _ => NONE
 	       in if Prim.entersRuntime oper
-		     then GCInfo.output (valOf info, s, args, print)
+		     then GCInfo.output (valOf gcInfo, s, args, print)
 		  else C.call (s, args, print)
 	       end
 	    datatype z = datatype Prim.Name.t
@@ -221,7 +225,7 @@ structure Statement =
 			       ; print "\t")))
 			  ; C.call ("EndObject", [C.int size], print))
 		    | AllocateArray {dst, numElts, numPointers,
-				     numBytesNonPointers, limitCheck} =>
+				     numBytesNonPointers, live, limitCheck} =>
 			 let
 			    val dst = Operand.toString dst
 			    val numElts = Operand.toString numElts
@@ -276,14 +280,35 @@ structure Transfer =
 	 in
 	    case t of
 	       Bug => (print "\t"; C.bug ("cps machine", print))
-	     | FarJump {chunkLabel, label} =>
-		  C.call ("\tFarJump", 
-			  [ChunkLabel.toString chunkLabel, 
-			   Label.toString label], 
-			  print)
-	     | NearJump {label} => gotoLabel label
+	     | FarJump {chunkLabel, label, return, ...} =>
+		  (case return
+		     of SOME {return, handler, size}
+		      => (Statement.output (Statement.Push size, print);
+			  Statement.output (Statement.Move
+					    {dst = Operand.StackOffset 
+					           {offset = 0, 
+						    ty = Type.int},
+					     src = Operand.Label return},
+					    print))
+		      | NONE => ();
+		   C.call ("\tFarJump", 
+			   [ChunkLabel.toString chunkLabel, 
+			    Label.toString label], 
+			   print))
+	     | NearJump {label, return} => 
+		  (case return
+		     of SOME {return, handler, size}
+		      => (Statement.output (Statement.Push size, print);
+			  Statement.output (Statement.Move
+					    {dst = Operand.StackOffset 
+					           {offset = 0, 
+						    ty = Type.int},
+					     src = Operand.Label return},
+					    print))
+		      | NONE => ();
+		   gotoLabel label)
 	     | Raise => C.call ("\tRaise", [], print)
-	     | Return => C.call ("\tReturn", [], print)
+	     | Return {...} => C.call ("\tReturn", [], print)
 	     | Switch {test, cases, default} =>
 		  let 
 		     val test = Operand.toString test
@@ -381,7 +406,7 @@ structure Chunk =
 				     | SOME l => force l))
 			   | SwitchIP {int, pointer, ...} =>
 				(jump int; force pointer)
-			   | NearJump {label} => jump label
+			   | NearJump {label, ...} => jump label
 			   | _ => ()
 		       end))))
 	    fun printGotoLabel l =
@@ -397,6 +422,7 @@ structure Chunk =
 		  else printLabelCode info
 	       end
 	    and printLabelCode {block = Block.T {label = l,
+						 kind,
 						 live, profileName,
 						 statements, transfer, ...},
 				layedOut, status} =
@@ -420,13 +446,23 @@ structure Chunk =
 		     print (let open Layout
 			   in toString
 			      (seq [str "/* live: ",
-				   List.layout Register.layout live,
+				   List.layout Operand.layout live,
 				   str " */\n"])
 			   end)
+		     
+		  val _ =
+		     case kind
+		       of Block.Kind.Func {args} => ()
+			| Block.Kind.Jump => ()
+			| Block.Kind.Cont {args, size}
+			=> Statement.output (Statement.Push (~ size), print)
+			| Block.Kind.Handler {size}
+			=> Statement.output (Statement.Push (~ size), print)
+
 		  val _ = 
 		     Array.foreach (statements, fn s =>
 				    Statement.output (s, print))
-		  val _ =
+		  val _ = 
 		     Transfer.output (transfer, print, gotoLabel,
 				      maybePrintLabel)
 	       in ()
@@ -635,14 +671,14 @@ structure Program =
 	       let
 		  val stringSizes =
 		     List.fold (strings, 0, fn ((_, s), n)  =>
-				n + arrayHeaderSize
-				+ Type.align (Type.pointer, String.size s))
+			       n + arrayHeaderSize
+			       + Type.align (Type.pointer, String.size s))
 		  val intInfSizes =
 		     List.fold (intInfs, 
-				0, 
-				fn ((_, s), n) =>
-				n + intInfOverhead
-				+ Type.align (Type.pointer, String.size s))
+			       0, 
+			       fn ((_, s), n) =>
+			       n + intInfOverhead
+			       + Type.align (Type.pointer, String.size s))
 		  val liveSize = intInfSizes + stringSizes
 		  val (useFixedHeap, fromSize) =
 		     case !Control.fixedHeap of

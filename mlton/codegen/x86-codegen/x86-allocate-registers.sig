@@ -7,6 +7,8 @@ type word = Word.t
 signature X86_ALLOCATE_REGISTERS_STRUCTS =
   sig
     structure x86 : X86
+    structure x86MLton : X86_MLTON
+    sharing x86 = x86MLton.x86
   end
 
 signature X86_ALLOCATE_REGISTERS =

@@ -6,7 +6,10 @@ type word = Word.t
 
 signature X86_PSEUDO =
   sig
-    structure Label : ID
+    structure Label : HASH_ID
+
+    val tracer : string -> ('a -> 'b) -> (('a -> 'b) * (unit -> unit))
+    val tracerTop : string -> ('a -> 'b) -> (('a -> 'b) * (unit -> unit))
 
     structure Size :
       sig
@@ -19,20 +22,6 @@ signature X86_PSEUDO =
 	val class : t -> class
 	val eq : t * t -> bool
 	val lt : t * t -> bool
-      end
-
-    structure Register :
-      sig
-	type t
-	val return : Size.t -> t
-	val esp : t
-	val ebp : t
-      end
-
-    structure FltRegister :
-      sig
-	type t
-	val return : t
       end
 
     structure Immediate :
@@ -79,49 +68,48 @@ signature X86_PSEUDO =
 
     structure MemLoc :
       sig
-	structure Commit :
-	  sig
-	    type t
-	    val commit : {isTemp: bool, onFlush: bool} -> t
-	  end
-
 	structure Class :
           sig
 	    type t
-	    val new : string -> t
+	    val new : {name: string} -> t
+	    val Temp : t
 	    val CStack : t
 	    val Code : t
+
+	    val eq : t * t -> bool
 	  end
 
-	type t 
-
-	val isTemp : t -> bool
+	type t
 
 	val imm : {base: Immediate.t,
 		   index: Immediate.t,
 		   scale: Scale.t,
 		   size: Size.t,
-		   commit: Commit.t,
 		   class: Class.t} -> t
 	val basic : {base: Immediate.t,
 		     index: t,
 		     scale: Scale.t,
 		     size: Size.t,
-		     commit: Commit.t,
 		     class: Class.t} -> t
 	val simple : {base: t,
 		      index: Immediate.t,
 		      scale: Scale.t,
 		      size: Size.t,
-		      commit: Commit.t,
 		      class: Class.t} -> t
 	val complex : {base: t,
 		       index: t,
 		       scale: Scale.t,
 		       size: Size.t,
-		       commit: Commit.t,
 		       class: Class.t} -> t
+	  
+	val class : t -> Class.t
+	val compare : t * t -> order
       end
+
+    structure ClassSet : SET
+    sharing type ClassSet.Element.t = MemLoc.Class.t
+    structure MemLocSet : SET
+    sharing type MemLocSet.Element.t = MemLoc.t
 
     structure Operand : 
       sig
@@ -129,7 +117,6 @@ signature X86_PSEUDO =
 
 	val toString : t -> string
 
-	val register : Register.t -> t
 	val immediate : Immediate.t -> t
 	val immediate_const_char : char -> t
 	val immediate_const_int : int -> t
@@ -140,6 +127,7 @@ signature X86_PSEUDO =
 	val memloc : MemLoc.t -> t
 	val deMemloc : t -> MemLoc.t option
 
+	val size : t -> Size.t option
 	val eq : t * t -> bool
       end
 
@@ -245,45 +233,6 @@ signature X86_PSEUDO =
 	type t
       end
 
-    structure Directive :
-      sig
-	type t
-	val reset : unit -> t
-	val reserve : {register: Register.t} -> t
-	val unreserve : {register: Register.t} -> t
-	val cache : {register: Register.t,
-		     memloc: MemLoc.t,
-		     reserve: bool} -> t
-	val assume : {register: Register.t,
-		      memloc: MemLoc.t,
-		      weight: int,
-		      sync: bool,
-		      reserve: bool} -> t
-	val eject : {memlocs: MemLoc.t list} -> t
-	val commit : {memlocs: MemLoc.t list} -> t
-	val flush : unit -> t
-	val clear : unit -> t
-	val return : {memloc: MemLoc.t} -> t
-	val fltreturn : {memloc: MemLoc.t} -> t
-      end
-
-    structure PseudoOp :
-      sig
-	type t
-	val data : unit -> t
-	val text : unit -> t
-	val balign : int -> t
-	val p2align : int -> t
-	val space : int * Immediate.t -> t
-	val byte : Immediate.t list -> t
-	val word : Immediate.t list -> t
-	val long : Immediate.t list -> t
-	val string : string list -> t
-	val global : Label.t -> t
-	val locall : Label.t -> t
-	val comm : Label.t * int * int option -> t
-      end
-
     structure Assembly :
       sig
 	type t
@@ -292,39 +241,9 @@ signature X86_PSEUDO =
 
 	val comment : string -> t
 	val isComment : t -> bool
-	val directive : Directive.t -> t
-	val directive_reset : unit -> t
-	val directive_reserve : {register: Register.t} -> t
-	val directive_unreserve : {register: Register.t} -> t
-	val directive_cache : {register: Register.t,
-			       memloc: MemLoc.t,
-			       reserve: bool} -> t
-	val directive_assume : {register: Register.t,
-				memloc: MemLoc.t,
-				weight: int,
-				sync: bool,
-				reserve: bool} -> t
-	val directive_eject : {memlocs: MemLoc.t list} -> t
-	val directive_commit : {memlocs: MemLoc.t list} -> t
-	val directive_flush : unit -> t
-	val directive_clear : unit -> t
-	val directive_return : {memloc : MemLoc.t} -> t
-	val directive_fltreturn : {memloc : MemLoc.t} -> t
-	val pseudoop : PseudoOp.t -> t
-	val pseudoop_data : unit -> t
-	val pseudoop_text : unit -> t
-	val pseudoop_balign : int -> t
-	val pseudoop_p2align : int -> t
-	val pseudoop_space : int * Immediate.t -> t
-	val pseudoop_byte : Immediate.t list -> t
-	val pseudoop_word : Immediate.t list -> t
-	val pseudoop_long : Immediate.t list -> t
-	val pseudoop_string : string list -> t
-	val pseudoop_global : Label.t -> t
-	val pseudoop_local : Label.t -> t
-	val pseudoop_comm : Label.t * int * int option -> t
 	val label : Label.t -> t
 	val instruction : Instruction.t -> t
+	val instruction_nop : unit -> t
 	val instruction_binal : {oper: Instruction.binal,
 				 src: Operand.t,
 				 dst: Operand.t,
@@ -428,12 +347,36 @@ signature X86_PSEUDO =
 				 check: bool} -> t
       end
 
+    structure Entry : 
+      sig
+	structure FrameInfo :
+	  sig
+	    type t
+	    val frameInfo : {size: int, 
+			     frameLayoutsIndex: int} -> t
+	  end
+
+	type t
+	val label : t -> Label.t
+
+	val jump : {label: Label.t} -> t
+	val func : {label: Label.t,
+		    live: MemLoc.t list} -> t
+	val cont : {label: Label.t,
+		    live: MemLoc.t list,
+		    frameInfo: FrameInfo.t} -> t
+	val handler : {label: Label.t,
+		       live: MemLoc.t list,
+		       frameInfo: FrameInfo.t} -> t
+	val runtime : {label: Label.t,
+		       frameInfo: FrameInfo.t} -> t
+      end
+
     structure ProfileInfo :
       sig
 	type t
 	val none : t
 	val add : t * {profileLevel: int, profileName: string} -> t
-	val profile_begin_end : t -> (Assembly.t list * Assembly.t list)
       end
 
     structure Transfer :
@@ -449,7 +392,6 @@ signature X86_PSEUDO =
 
 	type t
 
-	val assembly : Assembly.t list -> t
 	val goto : {target: Label.t} -> t
 	val iff : {condition: Instruction.condition,
 		   truee: Label.t,
@@ -457,15 +399,34 @@ signature X86_PSEUDO =
 	val switch : {test: Operand.t,
 		      cases: Label.t Cases.t,
 		      default: Label.t} -> t
+	val tail : {target: Label.t,
+		    live: MemLoc.t list} -> t
+	val nontail : {target: Label.t, 
+		       live: MemLoc.t list,
+		       return: Label.t,
+		       handler: Label.t option,
+		       size: int} -> t
+	val return : {live: MemLoc.t list} -> t 
+	val raisee : {live: MemLoc.t list} -> t
+	val runtime : {target: Label.t,
+		       args: (Operand.t * Size.t) list,
+		       live: MemLoc.t list,
+		       return: Label.t,
+		       size: int} -> t
+	val ccall : {target: Label.t,
+		     args: (Operand.t * Size.t) list,
+		     dst: (Operand.t * Size.t) option,
+		     live: MemLoc.t list,
+		     return: Label.t} -> t		       
       end
 
     structure Block :
       sig
-	datatype t' = T' of {label: Label.t option,
+	datatype t' = T' of {entry: Entry.t option,
 			     profileInfo: ProfileInfo.t,
 			     statements: Assembly.t list,
 			     transfer: Transfer.t option}
-	datatype t = T of {label: Label.t,
+	datatype t = T of {entry: Entry.t,
 			   profileInfo: ProfileInfo.t,
 			   statements: Assembly.t list,
 			   transfer: Transfer.t}
@@ -474,8 +435,7 @@ signature X86_PSEUDO =
 
     structure Chunk :
       sig
-	datatype t = T of {exports: Label.t list,
-			   blocks: Block.t list}
+	datatype t = T of {blocks: Block.t list}
 			   
       end
   end

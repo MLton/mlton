@@ -7,11 +7,8 @@ struct
   open S;
   open x86;
 
-  val tracer
-    = Control.traceBatch
-(*
-    = fn s => fn f => (Control.traceCall s f, fn () => ())
-*)
+  val tracer = x86.tracer
+  val tracerTop = x86.tracerTop
 
   structure Register =
     struct
@@ -1235,7 +1232,7 @@ struct
 	 else Error.bug "x86Validate.validate")       
 
   val (validate, validate_msg)
-    = tracer
+    = tracerTop
       "validate"
       validate
 
