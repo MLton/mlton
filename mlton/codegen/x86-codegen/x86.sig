@@ -758,31 +758,31 @@ signature X86 =
 	datatype t
 	  = Data
 	  | Text
-	  | Balign of int
-	  | P2align of int
-	  | Space of int * Immediate.t
+	  | Balign of Immediate.t * Immediate.t option * Immediate.t option
+	  | P2align of Immediate.t * Immediate.t option * Immediate.t option
+	  | Space of Immediate.t * Immediate.t
   	  | Byte of Immediate.t list
 	  | Word of Immediate.t list
 	  | Long of Immediate.t list
 	  | String of string list
           | Global of Label.t
           | Local of Label.t
-	  | Comm of Label.t * int * int option
+	  | Comm of Label.t * Immediate.t * Immediate.t option
 
 	val toString : t -> string
 	  
 	val data : unit -> t
 	val text : unit -> t
-	val balign : int -> t
-	val p2align : int -> t
-	val space : int * Immediate.t -> t
+	val balign : Immediate.t * Immediate.t option * Immediate.t option -> t
+	val p2align : Immediate.t * Immediate.t option * Immediate.t option -> t
+	val space : Immediate.t * Immediate.t -> t
 	val byte : Immediate.t list -> t
 	val word : Immediate.t list -> t
 	val long : Immediate.t list -> t
 	val string : string list -> t
 	val global : Label.t -> t
 	val locall : Label.t -> t
-	val comm : Label.t * int * int option -> t
+	val comm : Label.t * Immediate.t * Immediate.t option -> t
       end
 
     structure Assembly :
@@ -838,16 +838,16 @@ signature X86 =
 	val pseudoop : PseudoOp.t -> t
 	val pseudoop_data : unit -> t
 	val pseudoop_text : unit -> t
-	val pseudoop_balign : int -> t
-	val pseudoop_p2align : int -> t
-	val pseudoop_space : int * Immediate.t -> t
+	val pseudoop_balign : Immediate.t * Immediate.t option * Immediate.t option ->t 
+	val pseudoop_p2align : Immediate.t * Immediate.t option * Immediate.t option -> t
+	val pseudoop_space : Immediate.t * Immediate.t -> t
 	val pseudoop_byte : Immediate.t list -> t
 	val pseudoop_word : Immediate.t list -> t
 	val pseudoop_long : Immediate.t list -> t
 	val pseudoop_string : string list -> t
 	val pseudoop_global : Label.t -> t
 	val pseudoop_local : Label.t -> t
-	val pseudoop_comm : Label.t * int * int option -> t
+	val pseudoop_comm : Label.t * Immediate.t * Immediate.t option -> t
 	val label : Label.t -> t
 	val instruction : Instruction.t -> t
 	val instruction_nop : unit -> t

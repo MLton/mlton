@@ -655,13 +655,13 @@ struct
 	    seq [case disp
 		   of NONE => empty
 		    | SOME disp => Immediate.layout disp,
-		 if (base <> NONE orelse index <> NONE)
+		 if (isSome base orelse isSome index)
 		   then paren (seq
 			       [case base
 				  of NONE => empty
 				  | SOME base
 				  => Register.layout base,
-				case  index
+				case index
 				  of NONE => empty
 				   | SOME index
 				   => seq [str ",", Register.layout index],
@@ -3151,16 +3151,16 @@ struct
       datatype t
 	= Data
 	| Text
-	| Balign of int
-	| P2align of int
-	| Space of int * Immediate.t
+	| Balign of Immediate.t * Immediate.t option * Immediate.t option
+	| P2align of Immediate.t * Immediate.t option * Immediate.t option
+	| Space of Immediate.t * Immediate.t
 	| Byte of Immediate.t list
 	| Word of Immediate.t list
 	| Long of Immediate.t list
 	| String of string list
         | Global of Label.t
         | Local of Label.t
-	| Comm of Label.t * int * int option
+	| Comm of Label.t * Immediate.t * Immediate.t option
 
       val layout
 	= let
@@ -3168,11 +3168,35 @@ struct
 	  in
 	    fn Data => str ".data"
 	     | Text => str ".text"
-	     | Balign i => seq [str ".balign ", Int.layout i]
-	     | P2align i => seq [str ".p2align ", Int.layout i]
+	     | Balign (i,fill,max) 
+	     => seq [str ".balign ", 
+		     Immediate.layout i,
+		     case (fill, max)
+		       of (NONE, NONE) => empty
+			| (SOME fill, NONE) => seq [str ",",
+						    Immediate.layout fill]
+			| (NONE, SOME max) => seq [str ",,",
+						   Immediate.layout max]
+			| (SOME fill, SOME max) => seq [str ",",
+							Immediate.layout fill,
+							str ",",
+							Immediate.layout max]]
+	     | P2align (i,fill,max)
+	     => seq [str ".p2align ", 
+		     Immediate.layout i,
+		     case (fill, max)
+		       of (NONE, NONE) => empty
+			| (SOME fill, NONE) => seq [str ",",
+						    Immediate.layout fill]
+			| (NONE, SOME max) => seq [str ",,",
+						   Immediate.layout max]
+			| (SOME fill, SOME max) => seq [str ",",
+							Immediate.layout fill,
+							str ",",
+							Immediate.layout max]]
 	     | Space (i,f) 
 	     => seq [str ".space ", 
-		     Int.layout i, 
+		     Immediate.layout i, 
 		     str ",", 
 		     Immediate.layout f]
 	     | Byte bs
@@ -3202,9 +3226,9 @@ struct
 	     => seq [str ".comm ", 
 		     Label.layout l, 
 		     str ",", 
-		     Int.layout i,
+		     Immediate.layout i,
 		     case a of NONE => empty 
-		             | SOME i => seq [str ",", Int.layout i]]
+		             | SOME i => seq [str ",", Immediate.layout i]]
 	  end
       val toString = Layout.toString o layout
 
@@ -3227,16 +3251,22 @@ struct
 	  in
 	    fn Data => Data
 	     | Text => Text
-             | Balign i => Balign i
-	     | P2align i => P2align i
-	     | Space (i,f) => Space (i, replacerImmediate f)
+             | Balign (i,fill,max) => Balign (replacerImmediate i,
+					      Option.map(fill, replacerImmediate),
+					      Option.map(max, replacerImmediate))
+	     | P2align (i,fill,max) => P2align (replacerImmediate i,
+						Option.map(fill, replacerImmediate),
+						Option.map(max, replacerImmediate))
+	     | Space (i,f) => Space (replacerImmediate i, replacerImmediate f)
 	     | Byte bs => Byte (List.map(bs, replacerImmediate))
 	     | Word ws => Word (List.map(ws, replacerImmediate))
 	     | Long ls => Long (List.map(ls, replacerImmediate))
 	     | String ss => String ss
 	     | Global l => Global (replacerLabel l)
 	     | Local l => Local (replacerLabel l)
-	     | Comm (l, i, a) => Comm (replacerLabel l, i, a)
+	     | Comm (l, i, a) => Comm (replacerLabel l, 
+				       replacerImmediate i,
+				       Option.map(a, replacerImmediate))
 	  end
 
       val data = fn () => Data
