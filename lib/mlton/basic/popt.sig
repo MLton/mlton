@@ -14,16 +14,17 @@ signature POPT =
        * and provides the function to be applied to the argument.
        *)
       datatype t =
-	 (* no args *)
-	 None of unit -> unit
-	 (* one arg: an integer, after a space *)
-       | Int of int -> unit
          (* one arg: a boolean (true, false), after a space *)
-       | Bool of bool -> unit
-	 (* one arg: a single digit, no space. *)
+         Bool of bool -> unit
+	 (* one arg: an integer, after a space *)
        | Digit of int -> unit
 	 (* one arg: an integer followed by tional k or m. *)
+       | Int of int -> unit
+	 (* one arg: a single digit, no space. *)
        | Mem of int -> unit
+	 (* no args *)
+       | None of unit -> unit
+       | Real of real -> unit
 	 (* Any string immediately follows the switch. *)
        | String of string -> unit
 	 (* one arg: any string *)

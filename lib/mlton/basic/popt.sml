@@ -16,6 +16,7 @@ datatype t =
  | Int of int -> unit
  | Mem of int -> unit
  | None of unit -> unit
+ | Real of real -> unit
  | SpaceString of string -> unit
  | SpaceString2 of string * string -> unit
  | String of string -> unit
@@ -133,6 +134,7 @@ fun parse {switches: string list,
 			       | Int f => next (f, Int.fromString, "an integer")
 			       | Mem f => next (f, memString, "a memory amount")
 			       | None f => (f (); loop switches)
+			       | Real f => next (f, Real.fromString, "a real")
 			       | SpaceString f => next (f, SOME, "")
 			       | SpaceString2 f =>
 				    (case switches of
