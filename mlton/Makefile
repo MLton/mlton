@@ -81,7 +81,7 @@ clean:
 # Manager (CM) installed.  You may need to replace the following with
 # 'sml-cm'.
 #
-SMLNJ_VERSION = 110.45
+SMLNJ_VERSION = 110.4[59]
 SML	= sml
 
 .PHONY: check-nj-version
