@@ -602,7 +602,7 @@ functor Real (R: PRE_REAL): REAL =
 		| General.EQUAL => zero
 		| General.GREATER => pos (i, mode)
 	    end
-
+		  
 	 val toLargeInt: IEEEReal.rounding_mode -> real -> IntInf.int =
 	    fn mode => fn x =>
  	    (IntInf.fromInt (toInt mode x)
@@ -651,4 +651,28 @@ functor Real (R: PRE_REAL): REAL =
 		      else IntInf.~ (pos (~ x, negateMode mode))
 		   end)
       end
-  end
+
+      val toLargeInt: IEEEReal.rounding_mode -> real -> LargeInt.int =
+	 fn mode => fn x =>
+	 case class x of
+	    INF => raise Overflow
+	  | NAN => raise Domain
+	  | ZERO => IntInf.fromInt 0
+	  | _ =>
+	       IntInf.fromInt (toInt mode x)
+	       handle Overflow =>
+		  let
+		     val x =
+			IEEEReal.withRoundingMode (mode, fn () => Prim.round x)
+		     val {digits, exp, sign, ...} = toDecimal x
+		     val i =
+			valOf
+			(IntInf.fromString
+			 (implode (List.map (fn d =>
+					     Char.chr (Int.+ (d, Char.ord #"0")))
+				   digits)))
+		     val i = if sign then IntInf.~ i else i
+		  in
+		     IntInf.* (i, IntInf.pow (IntInf.fromInt 10, exp))
+		  end
+   end

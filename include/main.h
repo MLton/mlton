@@ -20,8 +20,10 @@
 #define LoadArray(a, f) sfread (a, sizeof(*a), cardof(a), f)
 #define SaveArray(a, fd) swrite (fd, a, sizeof(*a) * cardof(a))
 
-#define Initialize(al, cs, mg, mfs, mlw, mmc, ps)			\
+#define Initialize(al, cs, mg, mfs, mmc, ps)				\
 	gcState.alignment = al;						\
+	gcState.atMLtons = atMLtons;					\
+	gcState.atMLtonsSize = cardof(atMLtons);		       	\
 	gcState.cardSizeLog2 = cs;					\
 	gcState.frameLayouts = frameLayouts;				\
 	gcState.frameLayoutsSize = cardof(frameLayouts); 		\
@@ -34,7 +36,6 @@
 	gcState.loadGlobals = loadGlobals;				\
 	gcState.magic = mg;						\
 	gcState.maxFrameSize = mfs;					\
-	gcState.mayLoadWorld = mlw;					\
 	gcState.mutatorMarksCards = mmc;				\
 	gcState.objectTypes = objectTypes;				\
 	gcState.objectTypesSize = cardof(objectTypes);			\

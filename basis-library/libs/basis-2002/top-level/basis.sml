@@ -92,14 +92,12 @@ structure Basis2002:> BASIS_2002 =
       structure NetServDB = NetServDB
       structure Pack32Big = Pack32Big
       structure Pack32Little = Pack32Little
-(*
-      structure PackRealBig = PackRealBig
-*)
-      structure PackRealLittle = PackRealLittle
-(*
+      structure PackReal32Big = PackReal32Big
+      structure PackReal32Little = PackReal32Little
       structure PackReal64Big = PackReal64Big
-*)
       structure PackReal64Little = PackReal64Little
+      structure PackRealBig = PackRealBig
+      structure PackRealLittle = PackRealLittle
       structure Posix = Posix
       structure RealArray = Real64Array
       structure RealArraySlice = Real64ArraySlice

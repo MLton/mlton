@@ -322,6 +322,10 @@ typedef struct GC_state {
 	uint alignment;		/* Either WORD_SIZE or 2 * WORD_SIZE. */
 	bool amInGC;
 	bool amInMinorGC;
+	string *atMLtons;	/* Initial @MLton args, processed before command
+				 * line.
+				 */
+	int atMLtonsSize;
 	pointer back;     	/* Points at next available word in toSpace. */
 	ullong bytesAllocated;
  	ullong bytesCopied;

@@ -3983,47 +3983,55 @@ static void setMemInfo (GC_state s) {
 
 #endif /* definition of setMemInfo */
 
-static void usage (string s) {
-	die ("Usage: %s [@MLton [fixed-heap n[{k|m}]] [gc-messages] [gc-summary] [load-world file] [ram-slop x] --] args", 
-		s);
+#if FALSE
+static bool stringToBool (string s) {
+	if (0 == strcmp (s, "false"))
+		return FALSE;
+	if (0 == strcmp (s, "true"))
+		return TRUE;
+	die ("Invalid @MLton bool: %s.", s);
 }
+#endif
 
 static float stringToFloat (string s) {
 	float f;
 
-	sscanf (s, "%f", &f);
+	unless (1 == sscanf (s, "%f", &f))
+		die ("Invalid @MLton float: %s.", s);
 	return f;
 }
 
 static uint stringToBytes (string s) {
 	char c;
 	uint result;
-	int i, m;
+	int i;
 	
 	result = 0;
 	i = 0;
-
 	while ((c = s[i++]) != '\000') {
 		switch (c) {
 		case 'm':
 			if (s[i] == '\000') 
-				result = result * 1048576;
-			else return 0;
+				return result * 1048576;
+			else 
+				goto bad;
 			break;
 		case 'k':
 			if (s[i] == '\000') 
-				result = result * 1024;
-			else return 0;
+				return result * 1024;
+			else 
+				goto bad;
 			break;
 		default:
-			m = (int)(c - '0');
-			if (0 <= m and m <= 9)
-				result = result * 10 + m;
-			else return 0;
+			if ('0' <= c and c <= '9')
+				result = result * 10 + (c - '0');
+			else 
+				goto bad;
 		}
 	}
-	
-	return result;
+	assert (FALSE);
+bad:
+	die ("Invalid @MLton memory amount: %s.", s);
 }
 
 static void setInitialBytesLive (GC_state s) {
@@ -4250,6 +4258,116 @@ static void loadWorld (GC_state s, char *fileName) {
 /*                             GC_init                              */
 /* ---------------------------------------------------------------- */
 
+static int processAtMLton (GC_state s, int argc, char **argv, 
+				string *worldFile) {
+	int i;
+
+	i = 1;
+	if (argc > 1 and (0 == strcmp (argv [1], "@MLton"))) {
+		bool done;
+
+		i = 2;
+		done = FALSE;
+		while (!done) {
+			if (i == argc)
+				die ("Missing -- at end of @MLton args.");
+			else {
+				string arg;
+
+				arg = argv[i];
+				if (0 == strcmp (arg, "copy-ratio")) {
+					++i;
+					if (i == argc)
+						die ("@MLton copy-ratio missing argument.");
+					s->copyRatio =
+						stringToFloat (argv[i++]);
+				} else if (0 == strcmp(arg, "fixed-heap")) {
+					++i;
+					if (i == argc)
+						die ("@MLton fixed-heap missing argument.");
+					s->useFixedHeap = TRUE;
+					s->fixedHeapSize =
+						stringToBytes (argv[i++]);
+				} else if (0 == strcmp (arg, "gc-messages")) {
+					++i;
+					s->messages = TRUE;
+				} else if (0 == strcmp (arg, "gc-summary")) {
+					++i;
+					s->summary = TRUE;
+				} else if (0 == strcmp (arg, "copy-generational-ratio")) {
+					++i;
+					if (i == argc)
+						die ("@MLton copy-generational-ratio missing argument.");
+					s->copyGenerationalRatio =
+						stringToFloat (argv[i++]);
+				} else if (0 == strcmp (arg, "grow-ratio")) {
+					++i;
+					if (i == argc)
+						die ("@MLton grow-ratio missing argument.");
+					s->growRatio =
+						stringToFloat (argv[i++]);
+				} else if (0 == strcmp (arg, "live-ratio")) {
+					++i;
+					if (i == argc)
+						die ("@MLton live-ratio missing argument.");
+					s->liveRatio =
+						stringToFloat (argv[i++]);
+				} else if (0 == strcmp (arg, "load-world")) {
+					unless (s->mayLoadWorld)
+						die ("May not load world.");
+					++i;
+					s->isOriginal = FALSE;
+					if (i == argc) 
+						die ("@MLton load-world missing argument.");
+					*worldFile = argv[i++];
+				} else if (0 == strcmp (arg, "max-heap")) {
+					++i;
+					if (i == argc) 
+						die ("@MLton max-heap missing argument.");
+					s->useFixedHeap = FALSE;
+					s->maxHeap = stringToBytes (argv[i++]);
+				} else if (0 == strcmp (arg, "mark-compact-generational-ratio")) {
+					++i;
+					if (i == argc)
+						die ("@MLton mark-compact-generational-ratio missing argument.");
+					s->markCompactGenerationalRatio =
+						stringToFloat (argv[i++]);
+				} else if (0 == strcmp (arg, "mark-compact-ratio")) {
+					++i;
+					if (i == argc)
+						die ("@MLton mark-compact-ratio missing argument.");
+					s->markCompactRatio =
+						stringToFloat (argv[i++]);
+				} else if (0 == strcmp (arg, "no-load-world")) {
+					++i;
+					s->mayLoadWorld = FALSE;
+				} else if (0 == strcmp (arg, "nursery-ratio")) {
+					++i;
+					if (i == argc)
+						die ("@MLton nursery-ratio missing argument.");
+					s->nurseryRatio =
+						stringToFloat (argv[i++]);
+				} else if (0 == strcmp (arg, "ram-slop")) {
+					++i;
+					if (i == argc)
+						die ("@MLton ram-slop missing argument.");
+					s->ramSlop =
+						stringToFloat (argv[i++]);
+				} else if (0 == strcmp (arg, "show-prof")) {
+					showProf (s);
+					exit (0);
+				} else if (0 == strcmp (arg, "--")) {
+					++i;
+					done = TRUE;
+				} else if (i > 1)
+					die ("Strange @MLton arg: %s", argv[i]);
+			        else done = TRUE;
+			}
+		}
+	}
+	return i;
+}
+
 int GC_init (GC_state s, int argc, char **argv) {
 	char *worldFile;
 	int i;
@@ -4285,6 +4403,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->maxHeapSizeSeen = 0;
 	s->maxPause = 0;
 	s->maxStackSizeSeen = 0;
+	s->mayLoadWorld = TRUE;
 	s->messages = FALSE;
 	s->minorBytesScanned = 0;
 	s->minorBytesSkipped = 0;
@@ -4317,108 +4436,8 @@ int GC_init (GC_state s, int argc, char **argv) {
 	worldFile = NULL;
 	unless (isAligned (s->pageSize, s->cardSize))
 		die ("page size must be a multiple of card size");
-	/* Process command-line arguments. */
-	i = 1;
-	if (argc > 1 and (0 == strcmp (argv [1], "@MLton"))) {
-		bool done;
-
-		/* process @MLton args */
-		i = 2;
-		done = FALSE;
-		while (!done) {
-			if (i == argc)
-				usage(argv[0]);
-			else {
-				string arg;
-
-				arg = argv[i];
-				if (0 == strcmp (arg, "copy-ratio")) {
-					++i;
-					if (i == argc)
-						usage (argv[0]);
-					s->copyRatio =
-						stringToFloat (argv[i++]);
-				} else if (0 == strcmp(arg, "fixed-heap")) {
-					++i;
-					if (i == argc)
-						usage (argv[0]);
-					s->useFixedHeap = TRUE;
-					s->fixedHeapSize =
-						stringToBytes (argv[i++]);
-				} else if (0 == strcmp (arg, "gc-messages")) {
-					++i;
-					s->messages = TRUE;
-				} else if (0 == strcmp (arg, "gc-summary")) {
-					++i;
-					s->summary = TRUE;
-				} else if (0 == strcmp (arg, "copy-generational-ratio")) {
-					++i;
-					if (i == argc)
-						usage (argv[0]);
-					s->copyGenerationalRatio =
-						stringToFloat (argv[i++]);
-				} else if (0 == strcmp (arg, "grow-ratio")) {
-					++i;
-					if (i == argc)
-						usage (argv[0]);
-					s->growRatio =
-						stringToFloat (argv[i++]);
-				} else if (0 == strcmp (arg, "live-ratio")) {
-					++i;
-					if (i == argc)
-						usage (argv[0]);
-					s->liveRatio =
-						stringToFloat (argv[i++]);
-				} else if (0 == strcmp (arg, "load-world")) {
-					unless (s->mayLoadWorld)
-						die ("may not load world");
-					++i;
-					s->isOriginal = FALSE;
-					if (i == argc) 
-						usage (argv[0]);
-					worldFile = argv[i++];
-				} else if (0 == strcmp (arg, "max-heap")) {
-					++i;
-					if (i == argc) 
-						usage (argv[0]);
-					s->useFixedHeap = FALSE;
-					s->maxHeap = stringToBytes (argv[i++]);
-				} else if (0 == strcmp (arg, "mark-compact-generational-ratio")) {
-					++i;
-					if (i == argc)
-						usage (argv[0]);
-					s->markCompactGenerationalRatio =
-						stringToFloat (argv[i++]);
-				} else if (0 == strcmp (arg, "mark-compact-ratio")) {
-					++i;
-					if (i == argc)
-						usage (argv[0]);
-					s->markCompactRatio =
-						stringToFloat (argv[i++]);
-				} else if (0 == strcmp (arg, "nursery-ratio")) {
-					++i;
-					if (i == argc)
-						usage (argv[0]);
-					s->nurseryRatio =
-						stringToFloat (argv[i++]);
-				} else if (0 == strcmp (arg, "ram-slop")) {
-					++i;
-					if (i == argc)
-						usage (argv[0]);
-					s->ramSlop =
-						stringToFloat (argv[i++]);
-				} else if (0 == strcmp (arg, "show-prof")) {
-					showProf (s);
-					exit (0);
-				} else if (0 == strcmp (arg, "--")) {
-					++i;
-					done = TRUE;
-				} else if (i > 1)
-					usage (argv[0]);
-			        else done = TRUE;
-			}
-		}
-	}
+	processAtMLton (s, s->atMLtonsSize, s->atMLtons, &worldFile);
+	i = processAtMLton (s, argc, argv, &worldFile);
 	unless (ratiosOk (s))
 		die ("invalid ratios");
 	setMemInfo (s);

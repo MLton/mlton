@@ -109,11 +109,6 @@ pash an option to the linker, you must use \fBgcc\fP's \fB-Wl,\fP
 syntax, e.g., \fB-link-opt '-Wl,--export-dynamic'\fP.
 
 .TP
-\fB-may-load-world \fI{\fBtrue\fP|\fBfalse\fP}\fP
-Controls whether or not the generated executable supports the
-\fBload-world\fP runtime system option. 
-
-.TP
 \fB-native \fI{\fBtrue\fP|\fBfalse\fP}\fP
 Controls whether or not to use native code generation as opposed to
 generating C and using \fBgcc\fP.  With native code generation,
@@ -137,6 +132,13 @@ extract information from this file.
 \fB-profile-stack \fI{\fBfalse\fP|\fBtrue\fP}\fR
 If true, the profiler will count the time spent (or bytes allocated)
 while a function is on the stack.
+
+.TP
+\fB-runtime \fIarg\fP\fP
+Pass argument to the runtime via \fB@MLton\fP.  The argument will be
+processed before other \fB@MLton\fP command line switches.  Multiple
+uses of \fB-runtime\fP are allowed, and will pass all the arguments in
+order.
 
 .TP
 \fB-safe \fI{\fBtrue\fP|\fBfalse\fP}\fR
@@ -218,7 +220,8 @@ A value of \fB0\fP means to use almost all the RAM present on the machine.
 Print a message at the start and end of every garbage collection.
 .TP
 \fBgc-summary\fP
-Print a summary of garbage collection statistics upon program termination.
+Print a summary of garbage collection statistics upon program
+termination.
 .TP
 \fBload-world \fIworld\fR
 Restart the computation with the file \fIworld\fP.
@@ -230,6 +233,10 @@ Run the computation with an automatically resized heap that is never larger
 than \fIn\fP.
 The meaning of \fI[\fBkm\fI]\fR is the same as with the \fBfixed-heap\fP
 option.
+.TP
+\fB-no-load-world\fP
+Disable \fBload-world\fP.  Can use this with the \fB-runtime\fP
+compiler switch to prevent executables from loading a world.
 .TP
 \fBram-slop \fIx\fR
 Multiply \fBx\fP by the amount of RAM on the machine to obtain what

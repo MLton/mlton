@@ -173,14 +173,12 @@ signature BASIS_2002 =
       structure NetServDB : NET_SERV_DB
       structure Pack32Big : PACK_WORD
       structure Pack32Little : PACK_WORD
-(*
-      structure PackRealBig : PACK_REAL
-*)
-      structure PackRealLittle : PACK_REAL
-(*
+      structure PackReal32Big : PACK_REAL
+      structure PackReal32Little : PACK_REAL
       structure PackReal64Big : PACK_REAL
-*)
       structure PackReal64Little : PACK_REAL
+      structure PackRealBig : PACK_REAL
+      structure PackRealLittle : PACK_REAL
       structure Posix : POSIX
       structure RealArray : MONO_ARRAY
       structure RealArraySlice : MONO_ARRAY_SLICE

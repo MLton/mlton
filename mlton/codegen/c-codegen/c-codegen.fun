@@ -313,6 +313,8 @@ fun outputDeclarations
 			       ", ", C.int size,
 			       ", frameOffsets", C.int frameOffsetsIndex,
 			       "}"])
+      fun declareAtMLtons () =
+	 declareArray ("string", "atMLtons", !Control.atMLtons, C.string o #2)
       fun declareObjectTypes () =
 	 declareArray
 	 ("GC_ObjectType", "objectTypes", objectTypes,
@@ -351,7 +353,6 @@ fun outputDeclarations
 			   C.int (!Control.cardSizeLog2),
 			   magic,
 			   C.int maxFrameSize,
-			   C.bool (!Control.mayLoadWorld),
 			   C.bool (!Control.markCards),
 			   C.bool (!Control.profileStack)]
 			  @ additionalMainArgs,
@@ -403,6 +404,7 @@ fun outputDeclarations
       ; declareFrameLayouts ()
       ; declareObjectTypes ()
       ; declareProfileInfo ()
+      ; declareAtMLtons ()
       ; rest ()
       ; declareMain ()
    end

@@ -20,6 +20,8 @@ signature CONTROL =
 
       datatype align = Align4 | Align8
       val align: align ref
+
+      val atMLtons: string vector ref
 	 
       val basisLibs: string list
       val basisLibrary: string ref

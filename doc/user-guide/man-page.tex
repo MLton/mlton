@@ -133,6 +133,12 @@ mlmon.out} file.  See \secref{profiling} for details.
 If true, the profiler will count the time spent (or bytes allocated)
 while a function is on the stack.
 
+\option{-runtime {\it arg}}
+Pass argument to the runtime via {\tt @MLton}.  The argument will be
+processed before other {\tt @MLton} command line switches.  Multiple
+uses of {\tt -runtime} are allowed, and will pass all the arguments in
+order.
+
 \option{-safe \trueFalse}
 This switch determines the value of the SML variable {\tt MLton.safe},
 which controls whether the basis library performs array, string, and
@@ -224,6 +230,10 @@ for details.
 Run the computation with an automatically resized heap that is never
 larger than n.  The meaning of [{\tt km}] is the same as with the
 {\tt fixed-heap} option.
+
+\option{no-load-world}
+Disable {\tt load-world}.  Can use this with the {\tt -runtime}
+compiler switch to prevent executables from loading a world.
 
 \option{ram-slop {\mbox{\rm x}}}
 Multiply {\tt x} by the amount of RAM on the machine to obtain what

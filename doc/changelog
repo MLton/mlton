@@ -1,5 +1,15 @@
 Here are the changes since version 20030716.
 
+* 2003-08-28
+  - Fixed PackReal{,64}Little to work correctly on Sparc.
+  - Added PackReal{,64}Big, PackReal32{Big,Little}.
+  - Added -runtime switch, which passes arguments to the runtime via
+    @MLton.  These arguments are processed before command line
+    switches.
+  - Eliminated MLton switch -may-load-world.  Can use -runtime
+    combined with new runtime switch -no-load-world to disable load
+    world in an executable.
+
 * 2003-08-26
   - Changed -host to -target.
   - Split MLton.Platform.{arch,os} into MLton.Platform.{Arch,OS}.t.

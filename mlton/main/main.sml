@@ -53,6 +53,7 @@ val keepSML = ref false
 val linkOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val output: string option ref = ref NONE
 val profileSet: bool ref = ref false
+val runtimeArgs: string list ref = ref ["@MLton"]
 val showBasis: bool ref = ref false
 val stop = ref Place.OUT
 
@@ -241,9 +242,6 @@ fun makeOptions {usage} =
 	    else usage (concat ["invalid -loop-passes arg: ", Int.toString i]))),
        (Expert, "mark-cards", " {true|false}", "mutator marks cards",
 	boolRef markCards),
-       (Normal, "may-load-world", " {true|false}",
-	"may @MLton load-world be used",
-	boolRef mayLoadWorld),
        (Normal, "native",
 	if !targetArch = Sparc then " {false}" else " {true|false}",
 	"use native code generator",
@@ -303,6 +301,8 @@ fun makeOptions {usage} =
 	  | _ => usage (concat ["invalid -profile-il arg: ", s]))),
        (Normal, "profile-stack", " {false|true}", "profile the stack",
 	boolRef profileStack),
+       (Normal, "runtime", " <arg>", "pass arg to runtime via @MLton",
+	push runtimeArgs),
        (Normal, "safe", " {true|false}", "bounds checking and other checks",
 	boolRef safe),
        (Normal, "show-basis", " {false|true}", "display the basis library",
@@ -557,6 +557,10 @@ fun commandLine (args: string list): unit =
 			case !output of
 			   NONE => suffix suf
 			 | SOME f => f
+		     val _ =
+			atMLtons :=
+			Vector.fromList
+			(maybeOut "" :: tokenize (rev ("--" :: (!runtimeArgs))))
 		     datatype debugFormat =
 			Dwarf | DwarfPlus | Dwarf2 | Stabs | StabsPlus
 		     (* The -Wa,--gstabs says to pass the --gstabs option to the

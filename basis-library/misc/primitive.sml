@@ -699,11 +699,30 @@ structure Primitive =
 	       end
 	 end
 
-      structure PackReal =
+      structure PackReal32 =
 	 struct
-	    val subVec = _import "PackReal_subVec": word8 vector * int -> real;
+	    type real = Real32.real
+	       
+	    val subVec = _import "PackReal32_subVec": word8 vector * int -> real;
+	    val subVecRev =
+	       _import "PackReal32_subVecRev": word8 vector * int -> real;
 	    val update =
-	       _import "PackReal_update": word8 array * int * real -> unit;
+	       _import "PackReal32_update": word8 array * int * real -> unit;
+	    val updateRev =
+	       _import "PackReal32_updateRev": word8 array * int * real -> unit;
+	 end
+
+      structure PackReal64 =
+	 struct
+	    type real = Real64.real
+	       
+	    val subVec = _import "PackReal64_subVec": word8 vector * int -> real;
+	    val subVecRev =
+	       _import "PackReal64_subVecRev": word8 vector * int -> real;
+	    val update =
+	       _import "PackReal64_update": word8 array * int * real -> unit;
+	    val updateRev =
+	       _import "PackReal64_updateRev": word8 array * int * real -> unit;
 	 end
 
       structure Ptrace =
@@ -1153,14 +1172,20 @@ structure Primitive =
 	 struct
 	    val subWord =
 	       _prim "Word8Array_subWord": word8 array * int -> word;
+	    val subWordRev =
+	       _import "Word8Array_subWord32Rev": word8 array * int -> word;
 	    val updateWord =
 	       _prim "Word8Array_updateWord": word8 array * int * word -> unit;
+	    val updateWordRev =
+	       _import "Word8Array_updateWord32Rev": word8 array * int * word -> unit;
 	 end
       
       structure Word8Vector =
 	 struct
 	    val subWord =
 	       _prim "Word8Vector_subWord": word8 vector * int -> word;
+	    val subWordRev =
+	       _import "Word8Vector_subWord32Rev": word8 vector * int -> word;
 	 end
 
       structure Word16 =
