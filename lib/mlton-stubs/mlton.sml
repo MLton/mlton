@@ -167,11 +167,10 @@ structure MLton: MLTON =
 		  val equals = fn _ => raise Fail "Profile.Data.equals"
 		  val free = fn _ => raise Fail "Profile.Data.free"
 		  val malloc = fn _ => raise Fail "Profile.Data.malloc"
-		  val reset = fn _ => raise Fail "Profile.Data.reset"
 		  val write = fn _ => raise Fail "Profile.Data.write"
 	       end
-	    val current = fn _ => raise Fail "Profile.current"
-	    val setCurrent = fn _ => raise Fail "Profile.setCurrent"
+	    val isOn = false
+	    val withData = fn _ => raise Fail "Profile.withData"
 	 end
       
       structure Ptrace =
@@ -361,7 +360,7 @@ structure MLton: MLTON =
 
       structure TextIO = IO (TextIO)
 
-      structure Thread = Thread
+      structure Thread = MLtonThread
 
       structure Vector =
 	 struct

@@ -1,4 +1,4 @@
-structure Thread =
+structure MLtonThread =
    struct
       type 'a t = unit
 
