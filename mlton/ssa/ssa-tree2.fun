@@ -196,12 +196,6 @@ structure Type =
 	       | Word s => str (concat ["word", WordSize.toString s])))
       end
 
-      fun join (t, t') =
-	 case (dest t, dest t') of
-	    (Object _, Datatype _) => t'
-	  | (Datatype _, Object _) => t
-	  | _ => t
-
       fun checkPrimApp {args, prim, result, targs}: bool =
 	 let
 	    datatype z = datatype Prim.Name.t
