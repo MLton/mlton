@@ -7,13 +7,14 @@ mlton [option ...] file.{cm|sml|c|o} [file.{S|o} ...] [library ...]
 \end{verbatim}
 The simplest case is to run {\tt mlton foo.sml}, where {\tt foo.sml} contains a
 valid SML program, in which case {\mlton} compiles the program to produce an
-executable called {\tt foo}.  {\mlton} has no notion of separate compilation.
-The program must be the entire program you wish to compile; however, it may
-refer to signatures and structures defined in the SML basis library.
+executable called {\tt foo}.  Since {\mlton} has no notion of separate
+compilation, the program must be the entire program you wish to
+compile.  However, the program may refer to signatures and structures
+defined in the SML basis library.
 
 For developing large programs spanning many files, {\mlton} supports a limited
 subset of SML/NJ Compilation Manager (CM) files.  For example, {\tt mlton
-foo.cm}, will compile the complete SML program consisting of the concatenatation
+foo.cm} will compile the complete SML program consisting of the concatenatation
 of all the SML files referred to (either directly or indirectly) by {\tt
 foo.cm}.  See \secref{cm} for details.
 
@@ -29,7 +30,7 @@ possibilities are {\tt .cm}, {\tt .sml}, {\tt .c}, {\tt .S} and {\tt .o}.
 With no arguments, {\mlton} prints the version number and exits.  For
 a usage message, run {\mlton} with an invalid switch, e.g. {\tt mlton
 -z}.  In the explanation below and in the usage message, for flags
-that take a boolean argument ({\tt {true|false}}), the first value
+that take a boolean argument {\tt \{true|false\}}, the first value
 listed is the default.  For example, by default, overflow checking on
 is performed on integer arithmetic.
 
@@ -39,6 +40,7 @@ is performed on integer arithmetic.
 
 \newcommand{\choices}{{\it \{}}
 \newcommand{\choice}{{\it |}}
+\renewcommand{\choice}{|}
 \newcommand{\choicesEnd}{{\it \}}}
 \newcommand{\choiceTwo}[2]{\choices #1\choice #2\choicesEnd}
 \newcommand{\choiceThree}[3]{\choices #1\choice #2\choice #3\choicesEnd}
@@ -68,10 +70,10 @@ arithmetic, in particular on {\tt Int.\{+,-,*,\~{},div,quot\}}.
 %{\tt MLton.debug} will be true.  The default is false.
 
 \option{-exn-history \falseTrue}
-Enable {\tt Exn.history}.  See \secref{exn} for details.  This has a
-performance impact, both in memory usage of exceptions and in runtime,
-because of additional work that must be performed at each exception
-construction, raise, and handle.
+Enable {\tt Exn.history}.  See \secref{exn} for details.  There is a
+performance cost to {\tt -exn-history true}, both in memory usage of
+exceptions and in runtime, because of additional work that must be
+performed at each exception construction, raise, and handle.
 
 \option{-host \choiceTwo{self}{\ldots}}
 Generate an executable that runs on the specified host.  The default is {\tt
@@ -107,10 +109,11 @@ no {\tt -keep} argument is given, then only the final file(s) is saved.\\
 
 \option{-lib-search {\it dir}}
 Specify an additional directory to be searched for libraries when
-linking.
+linking.  Like {\tt gcc -L}{\it dir}.
 
 \option{-link {\it lib}}
-Specify an additional library to link with.
+Specify an additional library to link with.  Like {\tt gcc -l}{\it
+lib}.
 
 \option{-may-load-world \trueFalse}
 Controls whether or not the generated executable supports the {\tt

@@ -51,26 +51,26 @@ within the root directory of the sources.
 \begin{verbatim}
 % make nj-mlton
 make dirs
-make[1]: Entering directory `/home/sweeks/mlton/src'
-mkdir -p /home/sweeks/mlton/src/build/bin /home/sweeks/mlton/src/build/lib/self/include
-make[1]: Leaving directory `/home/sweeks/mlton/src'
-cd /home/sweeks/mlton/src/mlton && make nj-mlton
-make[1]: Entering directory `/home/sweeks/mlton/src/mlton'
+make[1]: Entering directory `/tmp/mlton'
+mkdir -p /tmp/mlton/build/bin /tmp/mlton/build/lib/self/include
+make[1]: Leaving directory `/tmp/mlton'
+cd /tmp/mlton/mlton && make nj-mlton
+make[1]: Entering directory `/tmp/mlton/mlton'
 (									\
 	echo 'SMLofNJ.Internals.GC.messages false;';			\
 	echo '#set CM.Control.verbose false;';				\
 	echo '#set CM.Control.warn_obsolete false;';			\
 	echo 'Control.polyEqWarn := false;';				\
 	echo 'CM.make "sources.cm";';					\
-	echo 'Main.exportNJ("/home/sweeks/mlton/src/basis-library", "/home/sweeks/mlton/src/build/lib/mlton");'	\
+	echo 'Main.exportNJ("/tmp/mlton/basis-library", "/tmp/mlton/build/lib/mlton");'	\
 ) | time sml
 Standard ML of New Jersey v110.39 [FLINT v1.5], February 15, 2002
 ...
 Creating constants file.
-/home/sweeks/mlton/src/build/bin/mlton -build-constants >tmp.c
-/home/sweeks/mlton/src/build/bin/mlton -o tmp tmp.c
-./tmp >/home/sweeks/mlton/src/build/lib/self/constants
+/tmp/mlton/build/bin/mlton -build-constants >tmp.c
+/tmp/mlton/build/bin/mlton -o tmp tmp.c
+./tmp >/tmp/mlton/build/lib/self/constants
 rm -f tmp tmp.c
-make[1]: Leaving directory `/home/sweeks/mlton/src'
+make[1]: Leaving directory `/tmp/mlton'
 Build of MLton succeeded.
 \end{verbatim}

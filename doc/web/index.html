@@ -21,6 +21,8 @@
     </center>
     <hr>
 
+    <font color = red>Please enjoy our new release, MLton 20030312!</font>
+
     <h3>What is MLton?</h3>
     MLton is a whole-program optimizing 
     <a href="http://cm.bell-labs.com/cm/cs/what/smlnj/sml.html">Standard ML</a>
@@ -34,13 +36,16 @@
       <li> Generates standalone executables with
         <a href = "performance.html">excellent running times</a>
       <li> SML 97 compliant, with a 
-	<a href = "user-guide/Basis_library.html">mostly complete basis library</a>
+	<a href = "user-guide/Basis_library.html">mostly complete
+	      basis library</a> matching the 2002 basis library
+	    specification
       <li> Fast <tt>IntInf</tt> based on the
 	<a href = "http://www.gnu.org/software/gmp/gmp.html">GNU
 	  multiprecision library</a>
       <li> <a href = "user-guide/Foreign_function_interface.html">Fast C FFI</a>
-      <li> <a href = "user-guide/Profiling.html">Profiling</a>
-      <li> Supports large amounts of memory and large arrays.
+      <li> <a href = "user-guide/Profiling.html">Source-level
+		    profiling</a> of both time and allocation
+      <li> Supports large amounts of memory and large arrays
       <li> <a href = "user-guide/MLton_structure.html">Libraries</a> for
 	continuations,
 	interval timers,
@@ -48,43 +53,39 @@
 	resource limits,
 	resource usage,
 	signal handlers,
-	sockets,
 	system logging,
 	threads,
 	heap save and restore.
     </ul>
 
     <h3>What's new?</h3>
-    Version 20020923 is the latest stable release.  For a complete list of
+    Version 20030312 is the latest stable release.  For a complete list of
     changes and bug fixes since the last release, see the <a href = 
     "changelog">changelog</a>.  Notable changes since the last stable
-    release, 20020410, include:
+    release, 20020923, include:
 
     <ul>
-      <li> MLton now runs on FreeBSD.
+      <li> Added source-level profiling of both time and allocation.
 
-      <li> Major runtime system improvements.  The runtime now implements
-      mark-compact and generational collection, in addition to the copying
-      collection that was there before.  It automatically switches between the
-      the collection strategies to improve performance and to try to avoid
-      paging.
+      <li> Updated basis library to 2002 specification.  To obtain the
+	    old library, compile with <tt>-basis 1997</tt>.
 
-      <li> Performance when compiling <tt>-exn-history true</tt> has been
-	    improved. 
+      <li> Added many modules to basis library: 
+           <tt>BinPrimIO</tt>, <tt>GenericSock</tt>,
+	      <tt>ImperativeIO</tt>, <tt>INetSock</tt>,
+	      <tt>NetHostDB</tt>, <tt>NetProtDB</tt>,
+	      <tt>NetServDB</tt>, <tt>Socket</tt>, <tt>StreamIO</tt>,
+	      <tt>TextPrimIO</tt>, <tt>UnixSock</tt>.
 
-      <li> Added <tt>IntInf.log2</tt>, <tt>MLton.GC.pack</tt>, and
-	    <tt>MLton.GC.unpack</tt>. 
-
-      <li> Fixed bug in load world that could cause <tt>sread failed</tt> on 
-	      Cygwin.
-      <li> Fixed optimizer bug that could cause <tt>no analyze var value
-		property</tt> message. 
+      <li> Completed implementation of <tt>IntInf</tt> and
+		<tt>OS.IO</tt>.
     </ul>
 
-<!--    <h3>How do you pronounce MLton?</h3>
-    MLton is pronounced <tt>mill tin</tt>, with stress on the first
-      syllable.
- -->
+   <h3>How do you pronounce MLton?</h3>
+   MLton is pronounced in two syllables, with accent on the first
+      syllable.  The first syllable sounds like the word
+      <em>mill</em> (as in "steel mill"), the second like the word
+      <em>tin</em> (as in "cookie tin").
 
     <h3>Contact</h3>
     To send a comment, question, or bug report to MLton's authors, use
@@ -98,7 +99,7 @@
     <hr>
 <a href = "http://www.mlton.org">MLton</a><br>
 <!-- hhmts start -->
-Last modified: Sun Mar  9 15:34:30 PST 2003
+Last modified: Wed Mar 12 12:29:31 PST 2003
 <!-- hhmts end -->
 <p><a href="http://sourceforge.net">
     <img src="http://sourceforge.net/sflogo.php?group_id=50419&type=4"

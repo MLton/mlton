@@ -5,7 +5,7 @@ MULT_EX = fib-tak
 TIME_EX = tak
 
 .PHONY: all
-all: profile-time profile-stack profile-multiple profile-alloc
+all: profile-time profile-alloc profile-stack profile-multiple
 
 .PHONY: clean
 clean:
@@ -38,3 +38,5 @@ profile-time:
 	$(mlton) -profile time $(TIME_EX).sml
 	./$(TIME_EX)
 	$(mlprof) $(TIME_EX) mlmon.out
+	$(mlprof) -raw true $(TIME_EX) mlmon.out
+	$(mlprof) -show-line true $(TIME_EX) mlmon.out

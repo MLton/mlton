@@ -10,7 +10,7 @@ as functors, modules, polymorphism, and higher-order functions.  {\mlton} takes
 advantage of having the entire program to perform transformations such as:
 defunctorization, monomorphisation, higher-order control-flow analysis,
 inlining, unboxing, argument flattening, redundant-argument removal, constant
-folding, and representation selection.  Whole program compilation is an integral
+folding, and representation selection.  Whole-program compilation is an integral
 part of the design of {\mlton} and is not likely to change.
 
 \feature{SML 97 compliant}
@@ -21,9 +21,10 @@ program that is valid according to The Definition that is rejected by
 
 \feature{mostly complete basis library}
 {\mlton} contains a mostly complete implementation of the basis
-library.  A few functions are missing from {\tt BinIO}, {\tt OS.Path},
-{\tt Real}, {\tt StreamIO}, and {\tt TextIO}.  See
-\secref{basis-library} for details.
+library.  Both the 1997 and 2002 basis library specifications are
+available via the {\tt -basis} switch.  A few functions are missing
+from {\tt BinIO}, {\tt OS.Path}, {\tt Real}, {\tt StreamIO}, and {\tt
+TextIO}.  See \secref{basis-library} for details.
 
 \feature{excellent running times}
 {\mlton} generated executables have excellent running times.
@@ -32,7 +33,7 @@ For a comparison with other SML compilers, see
 For a comparison of many compilers, including {\mlton}, see
 \link{http://www.bagley.org/\~{}doug/shootout/}.
 
-\feature{native integers}
+\feature{native integers and words}
 In {\mlton}, integers and words are 32 bits and arithmetic does not have
 any overhead due to tagging.
 
@@ -111,19 +112,15 @@ well as support for access to {\tt /dev/random} and {\tt /dev/urandom}.
 function.
 
 \feature{signal handlers}
-{\mlton} supports signal handlers written in SML.  Signal handlers are 
-run in a separate thread, and have access to the thread that was
-interrupted by the signal.  Signal handlers can be used in conjunction with
-threads to implement preemptive multitasking.
+{\mlton} supports signal handlers written in SML.  Signal handlers run
+in a separate thread, and have access to the thread that was
+interrupted by the signal.  Signal handlers can be used in conjunction
+with threads to implement preemptive multitasking.
 
 \feature{size primitive}
 {\mlton} includes a primitive that returns the size (in bytes) of any
 object.  This can be quite useful in understanding the space behavior
 of a program.
-
-\feature{sockets}
-{\mlton} supports simple socket operations like {\tt accept}, 
-{\tt connect}, and {\tt listen}.
 
 \feature{system logging}
 {\mlton} has a complete interface to the C {\tt syslog} function.

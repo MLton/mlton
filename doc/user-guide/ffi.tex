@@ -128,7 +128,7 @@ so from the SML side.
 
 \subsection{Type checking programs that use {\tt \_ffi}}
 
-Because {\mlton} has nonstandard type checking, it is necessary to
+Because {\mlton} has relaxed type checking, it is necessary to
 type check programs that use {\tt \_ffi} with another SML compiler.
 This can be done by a standard process using a Makefile and {\tt sed}.
 Suppose that you have a file, {\tt mlxtest.cm}, that describes your
@@ -153,7 +153,7 @@ cast is constrained to the actual type of the foreign function or primitive. Of
 course, you should never actually run the code, but it's sufficient for type
 checking.
 
-\subsection{Example}
+\subsection{FFI Example}
 
 The example in the {\tt examples/ffi} directory demonstrates the use of
 {\ffi} declarations.  The {\tt Makefile} demonstrates how

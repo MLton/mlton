@@ -61,25 +61,40 @@ example run from within the {\tt examples/profiling} directory.
 % mlton -profile alloc list-rev.sml
 % ./list-rev
 % mlprof -show-line true -thresh 1 list-rev mlmon.out
-63,176 bytes allocated (4,672 bytes by GC)
-             function                cur 
------------------------------------ -----
-append list-rev.sml: 1              87.5%
-<gc>                                 6.9%
-tabulate <basis>/list/list.sml: 102  3.5%
-rev list-rev.sml: 6                  1.8%
+63,144 bytes allocated (4,632 bytes by GC)
+       function          cur 
+----------------------- -----
+append  list-rev.sml: 1 87.6%
+<gc>                     6.8%
+<main>                   3.8%
+rev  list-rev.sml: 6     1.8%
 \end{verbatim}
 
 The data shows that most of the allocation is done by the append
 function, defined on line 1 of {\tt list-rev.sml}.  The allocation by
-the garbage collector is due to it growing the stack.  Basis library
-functions are displayed with the {\tt <basis>} prefix.  The example
+the garbage collector is due to it growing the stack.
+%Basis library
+%functions are displayed with the {\tt <basis>} prefix.
+The example
 also shows how to filter out functions below a certain percentage with
 {\tt -thresh}.
 
 Time profiling typically has a very small performance impact.
 However, the performance impact of allocation profiling is noticeable,
 because it inserts additional C calls for object allocation.
+
+To make it easier to identify a function, {\tt mlprof} shows lexical
+nesting via a sequence of period-separated names indicating the
+structures and functions in which the function definition is nested.
+In all of the above examples, the functions were defined at the top
+level and so had a single name.  As an example of nesting, {\tt g} in
+the following code would appear as {\tt S.f.g}.
+\begin{verbatim}
+structure S =
+   struct
+       fun f = ... fun g ...
+   end
+\end{verbatim}
 
 \subsection{Profiling the stack}
 
@@ -91,19 +106,17 @@ while a function is on the stack.  Here is an example.
 % mlton -profile alloc -profile-stack true list-rev.sml
 % ./list-rev
 % mlprof -show-line true -thresh 1 list-rev mlmon.out
-63,176 bytes allocated (4,672 bytes by GC)
-             function                cur  stack  GC 
------------------------------------ ----- ----- ----
-<main>                               0.2% 93.1% 6.0%
-rev list-rev.sml: 6                  1.8% 87.6% 5.8%
-append list-rev.sml: 1              87.5% 87.5% 3.0%
-tabulate <basis>/list/list.sml: 102  3.5%  3.5% 0.0%
-dot list-rev.dot >list-rev.ps
+63,144 bytes allocated (4,632 bytes by GC)
+       function          cur  stack  GC 
+----------------------- ----- ----- ----
+append  list-rev.sml: 1 87.6% 87.6% 3.1%
+<main>                   3.8% 93.2% 6.0%
+rev  list-rev.sml: 6     1.8% 87.7% 5.8%
 \end{verbatim}
 
 In the above table, we see that {\tt rev}, defined on line 6 of {\tt
 list-rev.sml}, is on the stack while 87.6\% of the allocation is done
-by the user program and while 5.8\% of the allocation is done by the
+by the user program and while 3.1\% of the allocation is done by the
 garbage collector.  The above table also shows how special functions
 like {\tt main} are handled: they are printed with surrounding
 brackets.  C functions are displayed similarly.
@@ -132,7 +145,7 @@ following grammar.
 \begin{center}
 \begin{tabular}{lcl}
 {\it e} & ::= & {\tt all} \\
-& $\alt$ & {\tt ``{\it s}''} \\
+& $\alt$ & {\tt "{\it s}"} \\
 & $\alt$ & {\tt (and {\it e} ...)} \\
 & $\alt$ & {\tt (from {\it e})} \\
 & $\alt$ & {\tt (not {\it e})} \\
@@ -193,7 +206,15 @@ ticks, you would use {\tt -show-line true -graph '(and ".*/bar/.*"
 When compiling with {\tt -profile-stack false}, the default is {\tt
 -graph '(to (thresh {\it x}))'} where {\it x} is the threshold.  When
 compiling with {\tt -profile-stack true}, the default is {\tt -graph
-'(thresh {\it x})'} where {\it x} is the threshold.
+'(thresh-stack {\it x})'} where {\it x} is the threshold.
+
+{\mlton}'s optimizer may duplicate source functions for any of a
+number of reasons (functor duplication, monomorphisation,
+polyvariance, inlining).  By default, duplicates arising from functor
+duplication are treated as different functions, while duplicates
+arising from other optimizations are treated as the same function.  If
+you would like all the copies of a function to be treated as
+different, you can use {\tt -profile-split}.
 
 Another {\tt mlprof} option to improve the readability of call graphs
 is {\tt -ignore}, which takes a regexp specifying functions to ignore
@@ -208,7 +229,9 @@ predecessors and successors in the call graph.  Note that this is
 different than using {\tt -graph (not "o")}, which would only remove
 the node from the graph, leaving it disconnected.  Also, as with {\tt
 -graph}, the regexp must match the entire function name, including the
-source position with {\tt -show-line true}.
+source position if you use {\tt -show-line true}.  You will also
+likely want to use {\tt -profile-split} to treat all copies of compose
+as different functions.
 
 Technically speaking, the graph is a call-stack graph rather than a
 call graph because it describes the set of possible call stacks.  The
@@ -260,25 +283,6 @@ tak       11.3%
 \end{verbatim}
 
 \subsection{Profiling details}
-
-Function names are displayed as sequence of period-separated names,
-indicated the structures and functions in which the function
-definition is nested.  For example, {\tt g} in the following code
-would appear as {\tt S.f.g}.
-\begin{verbatim}
-structure S =
-   struct
-       fun f = ... fun g ...
-   end
-\end{verbatim}
-
-{\mlton}'s optimizer may duplicate source functions for any of a
-number of reasons (functor duplication, monomorphisation,
-polyvariance, inlining).  By default, duplicates arising from functor
-duplication are treated as different functions, while duplicates
-arising from other optimizations are treated as the same function.
-If you would like all the copies of a function to be treated
-as different, you can use {\tt -profile-split}.
 
 Conceptually, both allocation and time profiling work in the same way.
 The compiler produces information that maps machine code positions to

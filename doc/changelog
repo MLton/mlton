@@ -1,4 +1,16 @@
-Here are the changes from version 20020923.
+Here are the changes from version 20020923 to 20030312.
+
+Summary:
+  + Added source-level profiling of both time and allocation.
+  + Updated basis library to 2002 specification.  To obtain the old
+    library, compile with -basis 1997.
+  + Added many modules to basis library: 
+    BinPrimIO, GenericSock, ImperativeIO, INetSock, NetHostDB,
+    NetProtDB, NetServDB, Socket, StreamIO, TextPrimIO, UnixSock.
+  + Completed implementation of IntInf and OS.IO.
+
+* 2003-02-23
+  - Replaced -profile-combine wih -profile-split.
 
 * 2003-02-11
   - Regularization of options.

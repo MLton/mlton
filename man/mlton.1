@@ -1,4 +1,4 @@
-.TH mlton 1 "January 13, 2003"
+.TH mlton 1 "March 12, 2003"
 .SH NAME
 \fBmlton\fP \- whole-program compiler for the Standard ML (SML) programming
 language
@@ -60,9 +60,10 @@ arithmetic.
 
 .TP
 \fB-exn-history \fI{\fBfalse\fI|\fBtrue\fI}\fR
-Enable \fBExn.history\fP.  This has a performance impact, both in memory usage
-of exceptions and in runtime, because of additional work that must be performed
-at each exception construction, raise, and handle.
+Enable \fBExn.history\fP.  There is a performance cost to
+\fB-exn-history true\fP, both in memory usage of exceptions and in
+runtime, because of additional work that must be performed at each
+exception construction, raise, and handle.
 
 .TP
 \fB-host \fI{\fBself\fP|\fI...}\fR

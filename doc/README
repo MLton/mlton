@@ -6,10 +6,10 @@ or Cygwin/Windows.  MLton has the following features.
    + SML 97 compliant, with a mostly complete basis library
    + Fast IntInf based on the GNU multiprecision library (gmp)
    + Fast C FFI
-   + Profiling
-   + Supports large amounts of memory and large arrays.
+   + Source-level profiling of both time and allocation
+   + Supports large amounts of memory and large arrays
    + Libraries for continuations, interval timers, random numbers,
-       resource limits, resource usage, signal handlers, sockets, system
+       resource limits, resource usage, signal handlers, system
        logging, threads, and heap save and restore
 
 For more information, go to the MLton home page. 

@@ -234,8 +234,8 @@ signature MLTON_INT_INF =
        val gcd: int * int -> int 
        val isSmall: int -> bool
        datatype rep =
-          Small of word
-        | Big of word vector
+          Big of word vector
+        | Small of word
        val rep: int -> rep
        val size: int -> Int.int
    end
@@ -421,7 +421,7 @@ previously freed unit of profiling data.
 \entry{Data.malloc ()}
 returns a new unit of profiling data.  Each unit of profiling data is
 allocated from the process heap (\emph{not} the {\mlton} heap) and
-consumes memory equal in size to text segment of the executable.
+consumes memory proportional to the number of source functions.
 
 \entry{\tt write (x, f)}
 writes the accumulated ticks in the unit of profiling data {\tt x} to
@@ -660,7 +660,9 @@ unmasked signal is received and handled, and then resets the mask.
 \subsubsection{{\tt MLton.Socket}}
 This module contains a bare minimum of functionality to do TCP/IP
 programming.  This module is implemented on top of the {\tt Socket}
-module of the Standard Basis Library.
+module of the Standard Basis Library.  We encourage you to use the
+standard {\tt Socket} module, since we may eliminate {\tt
+MLton.Socket} some day.
 \begin{verbatim}
 signature MLTON_SOCKET =
    sig

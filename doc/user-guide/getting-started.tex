@@ -20,13 +20,14 @@ default).
 \htmladdnormallink{GNU multiprecision library (gmp)}
 		  {http://www.gnu.org/software/gmp/gmp.html}
 installed on your machine.  {\mlton} must be able to find both the
-{\tt gmp.h} include and the {\tt libgmp.a} or {\tt libgmp.so} library.
-If you see the error message {\tt gmp.h: No such file or directory},
-you should copy {\tt gmp.h} to {\tt usr/lib/mlton/include/self}.  If
-you see the error message, {\tt /usr/bin/ld: cannot find -lgmp}, you
-should add a {\tt -L} argument in the {\tt usr/bin/mlton} script so
-that the linker can find {\tt libgmp}, for example, {\tt
--L/\prefix/lib}.
+{\tt gmp.h} include file and the {\tt libgmp.a} or {\tt libgmp.so}
+library. If you see the error message {\tt gmp.h: No such file or
+directory}, you should copy {\tt gmp.h} to {\tt
+usr/lib/mlton/self/include}.  If you see the error message {\tt
+/usr/bin/ld: cannot find -lgmp}, you 
+should add a {\tt -lib-search} argument in the {\tt usr/bin/mlton}
+script so that the linker can find {\tt libgmp}, for example, {\tt
+-lib-search /\prefix/lib}.
 
 Installation of {\mlton} creates the following files and directories.
 
@@ -43,21 +44,18 @@ A profiler (see \secref{profiling}).
 \place{\prefix/bin/mlton}
 A script to call the compiler.
 This script may be moved anywhere, however,
-it makes use of files in {\tt /\prefix/lib/mlton}.
+it makes use of files in {\tt \prefix/lib/mlton}.
 
 \place{\prefix/bin/mlyacc}
 A parser generator.
 
-\place{\prefix/share/man/man1/mlprof.1}
-Man page for {\tt mlprof}.
-
-\place{\prefix/share/man/man1/mlton.1}
-Man page for {\tt mlton}.
+\place{\prefix/share/man/man1/mllex.1, mlprof.1, mlton.1, mlyacc.1}
+Man pages.
 
 \place{\prefix/share/doc/mlton}
-
-Directory containing the user guide, example SML programs (in the {\tt examples}
-dir), and license information.
+Directory containing the user guide for {\mlton}, mllex, and mlyacc,
+as well as example SML programs (in the {\tt examples} dir), and
+license information.
 
 \place{\prefix/lib/mlton}
 Directory containing libraries and include files needed during

@@ -8,16 +8,9 @@ the program with {\tt -verbose 2}.
 
 \subsection{Unresolved bugs}
 
-This section lists the known unresolved bugs in MLton or in the basis
-library implementation.  It does not list unimplemented portions of
-the basis library.
+This section lists the known unresolved bugs in MLton.
 
 \begin{itemize}
-
-\item
-{\tt Real.fmt}, {\tt Real.toString}, {\tt Real.fromString},
-{\tt Real.scan}
-do not match the basis library specification.
 
 \item
 Datatypes with free type variables are not accepted.  For example,
@@ -29,7 +22,7 @@ fun 'a f (x : 'a) =
    in 13
    end
 \end{verbatim}
-This may, in fact, be an oversight in the Definition of SML, since
-unchecked use of this feature can lead to type unsoundness.
+This may be an oversight in the Definition of SML, since unchecked use
+of this feature can lead to type unsoundness.
 
 \end{itemize}
