@@ -10,12 +10,12 @@
 \hspace*{2em}Stephen Weeks (\mailto{sweeks@acm.org})
 
 \item
-Stephen Weeks implemented most things except for what's listed below.
+Stephen Weeks implemented most of the original version of {\mlton}, and
+continues to keep his fingers in most every part.
 
 \item
 Henry Cejtin wrote the {\tt IntInf} implementation,
-{\tt prof.c},
-the original (Python) implementation of {\tt mlprof},
+the original profiling code,
 the original man pages,
 the {\tt .spec} files for the RPMs,
 and lots of little hacks to speed stuff up.
@@ -23,15 +23,31 @@ and lots of little hacks to speed stuff up.
 \item
 Matthew Fluet implemented the {\tt x86} native code generator,
 ported {\tt mlprof} to work with the native code generator,
-and implemented several CPS optimizations, including contification, common-block
-elimination, and unused argument removal.
+and did a lot of work on the SSA optimizer, both adding new optimizations
+and improving or portind existing optimizations.
 
 \item
 Suresh Jagannathan implemented alternate inlining and uncurrying optimizations.
 
 \item
-Tom 7 (\mailto{twm@andrew.cmu.edu}) wrote the original version of {\tt
+\'{A}NOQ of the Sun (\mailto{anoq@HardcoreProcessing.com}) modified MLton
+so it could cross compile to MinGW for Windows and provided useful
+discussion about cross-compilation.
+
+\item
+Alain Deutsch (\mailto{deutsch@polyspace.com}) and \htmladdnormallink{PolySpace
+Technologies}{http://www.polyspace.com/} provided many bug fixes and
+runtime system improvements.
+
+\item
+Tom Murphy (\mailto{twm@andrew.cmu.edu}) wrote the original version of {\tt
 MLton.Syslog} as part of his {\tt mlftpd} project.
+
+\item
+Barak Pearlmutter (\mailto{bap@cs.unm.edu}) maintains the
+\htmladdnormallink{Debian packages}
+		  {http://packages.debian.org/cgi-bin/search_packages.pl?keywords=mlton&searchon=names&subword=1&version=all&release=all}
+for {\mlton}.
 
 \item
 {\mlton} was developed using
@@ -81,6 +97,7 @@ for its implementation of {\tt IntInf}.
 
 \item
 We would like to thank to the following people for helpful discussions.\\
+\hspace*{2em}Alain Deutsch (\mailto{deutsch@polyspace.com})\\
 \hspace*{2em}Simon Helsen (\mailto{shelsen@acm.org})\\
 \hspace*{2em}Richard Kelsey (\mailto{kelsey@research.nj.nec.com})\\
 \hspace*{2em}Jeffrey Mark Siskind (\mailto{Qobi@research.nj.nec.com})\\
