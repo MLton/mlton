@@ -28,32 +28,33 @@ structure DeepFlatten = DeepFlatten (S)
 (* structure Redundant = Redundant (S) *)
 (* structure RedundantTests = RedundantTests (S) *)
 structure RefFlatten = RefFlatten (S)
-(* structure RemoveUnused = RemoveUnused (S) *)
+structure RemoveUnused2 = RemoveUnused2 (S)
 (* structure SimplifyTypes = SimplifyTypes (S) *)
 (* structure Useless = Useless (S) *)
 structure Zone = Zone (S)
 
-(* fun inlineNonRecursive (product, small) p =
- *    Ref.fluidLet
- *    (Control.inline, 
- *     Control.NonRecursive {product = product, small = small}, 
- *     fn () => Inline.inline p)
- * fun inlineLeaf size p =
- *    Ref.fluidLet
- *    (Control.inline, 
- *     Control.Leaf {size = SOME size}, 
- *     fn () => Inline.inline p)
- * fun inlineLeafNoLoop size p =
- *    Ref.fluidLet
- *    (Control.inline, 
- *     Control.LeafNoLoop {size = SOME size}, 
- *     fn () => Inline.inline p)
- *)
+(*
+fun inlineNonRecursive (product, small) p =
+   Ref.fluidLet
+   (Control.inline,
+    Control.NonRecursive {product = product, small = small},
+    fn () => Inline.inline p)
+fun inlineLeaf size p =
+   Ref.fluidLet
+   (Control.inline,
+    Control.Leaf {size = SOME size},
+    fn () => Inline.inline p)
+fun inlineLeafNoLoop size p =
+   Ref.fluidLet
+   (Control.inline,
+    Control.LeafNoLoop {size = SOME size},
+    fn () => Inline.inline p)
+*)
 
 type pass = {name: string,
 	     doit: Program.t -> Program.t}
 
-val ssaPasses : pass list ref = ref
+val ssa2Passes : pass list ref = ref
    [
 (*     {name = "removeUnused1", doit = RemoveUnused.remove}, *)
 (*     {name = "leafInline", doit = inlineLeaf 20}, *)
@@ -92,10 +93,7 @@ val ssaPasses : pass list ref = ref
 (*     {name = "redundantTests", doit = RedundantTests.simplify}, *)
 (*     {name = "redundant", doit = Redundant.redundant}, *)
 (*     {name = "knownCase", doit = KnownCase.simplify},  *)
-(*     {name = "removeUnused4", doit = RemoveUnused.remove}, *)
-    (* For now, do ref flattening last, because each pass that follows it will
-     * have to be modified to correctly handle mutable fields.
-     *)
+(*     {name = "removeUnused4", doit = RemoveUnused2.remove}, *)
      {name = "deepFlatten", doit = DeepFlatten.flatten},
      {name = "refFlatten", doit = RefFlatten.flatten},
      {name = "zone", doit = Zone.zone}
@@ -112,85 +110,85 @@ local
 			       doit = doit}
 		    else NONE
       end
-   
+
+(*   
    val inlinePassGen =
       let
-(*	 val count = Counter.new 1 *)
-(* 	 fun nums s =
- * 	    if s = ""
- * 	       then SOME []
- * 	    else if String.sub (s, 0) = #"(" 
- * 		  andalso String.sub (s, String.size s - 1)= #")"
- * 	       then let
- * 		       val s = String.dropFirst (String.dropLast s)
- * 		    in
- * 		       case List.fold (String.split (s, #","), SOME [],
- * 				       fn (s,SOME nums) => (case Int.fromString s of
- * 							       SOME i => SOME (i::nums)
- * 							     | NONE => NONE)
- * 					| (_, NONE) => NONE) of
- * 			  SOME (l as _::_) => SOME (List.rev l)
- * 			| _ => NONE
- * 		    end
- * 	    else NONE
- *)
+	 val count = Counter.new 1 
+	 fun nums s =
+	    if s = ""
+	       then SOME []
+	    else if String.sub (s, 0) = #"(" 
+		  andalso String.sub (s, String.size s - 1)= #")"
+	       then let
+		       val s = String.dropFirst (String.dropLast s)
+		    in
+		       case List.fold (String.split (s, #","), SOME [],
+				       fn (s,SOME nums) => (case Int.fromString s of
+							       SOME i => SOME (i::nums)
+							     | NONE => NONE)
+					| (_, NONE) => NONE) of
+			  SOME (l as _::_) => SOME (List.rev l)
+			| _ => NONE
+		    end
+	    else NONE
       in
 	 fn _ =>
-(* 	 if String.isPrefix {string = s, prefix = "inlineNonRecursive"}
- * 	    then let
- * 		    fun mk (product, small) =
- * 		       SOME {name = concat ["inlineNonRecursive(", 
- * 					    Int.toString product, ",",
- * 					    Int.toString small, ")#",
- * 					    Int.toString (Counter.next count)],
- * 			     doit = inlineNonRecursive (product, small)}
- * 		    val s = String.dropPrefix (s, String.size "inlineNonRecursive")
- * 		 in
- * 		    case nums s of
- * 		       SOME [] => mk (320, 60)
- * 		     | SOME [product, small] => mk (product, small)
- * 		     | _ => NONE
- * 		 end
- * 	 else if String.isPrefix {string = s, prefix = "inlineLeafNoLoop"}
- * 	    then let
- * 		    fun mk size =
- * 		       SOME {name = concat ["inlineLeafNoLoop(", 
- * 					    Int.toString size, ")#",
- * 					    Int.toString (Counter.next count)],
- * 			     doit = inlineLeafNoLoop size}
- * 		    val s = String.dropPrefix (s, String.size "inlineLeafNoLoop")
- * 		 in
- * 		    case nums s of
- * 		       SOME [] => mk 20
- * 		     | SOME [size] => mk size
- * 		     | _ => NONE
- * 		 end
- * 	 else if String.isPrefix {string = s, prefix = "inlineLeaf"}
- * 	    then let
- * 		    fun mk size =
- * 		       SOME {name = concat ["inlineLeaf(", 
- * 					    Int.toString size, ")#",
- * 					    Int.toString (Counter.next count)],
- * 			     doit = inlineLeaf size}
- * 		    val s = String.dropPrefix (s, String.size "inlineLeaf")
- * 		 in
- * 		    case nums s of
- * 		       SOME [] => mk 20
- * 		     | SOME [size] => mk size
- * 		     | _ => NONE
- * 		 end
- *)
-(*         else*) NONE
+	 if String.isPrefix {string = s, prefix = "inlineNonRecursive"}
+	    then let
+		    fun mk (product, small) =
+		       SOME {name = concat ["inlineNonRecursive(", 
+					    Int.toString product, ",",
+					    Int.toString small, ")#",
+					    Int.toString (Counter.next count)],
+			     doit = inlineNonRecursive (product, small)}
+		    val s = String.dropPrefix (s, String.size "inlineNonRecursive")
+		 in
+		    case nums s of
+		       SOME [] => mk (320, 60)
+		     | SOME [product, small] => mk (product, small)
+		     | _ => NONE
+		 end
+	 else if String.isPrefix {string = s, prefix = "inlineLeafNoLoop"}
+	    then let
+		    fun mk size =
+		       SOME {name = concat ["inlineLeafNoLoop(", 
+					    Int.toString size, ")#",
+					    Int.toString (Counter.next count)],
+			     doit = inlineLeafNoLoop size}
+		    val s = String.dropPrefix (s, String.size "inlineLeafNoLoop")
+		 in
+		    case nums s of
+		       SOME [] => mk 20
+		     | SOME [size] => mk size
+		     | _ => NONE
+		 end
+	 else if String.isPrefix {string = s, prefix = "inlineLeaf"}
+	    then let
+		    fun mk size =
+		       SOME {name = concat ["inlineLeaf(", 
+					    Int.toString size, ")#",
+					    Int.toString (Counter.next count)],
+			     doit = inlineLeaf size}
+		    val s = String.dropPrefix (s, String.size "inlineLeaf")
+		 in
+		    case nums s of
+		       SOME [] => mk 20
+		     | SOME [size] => mk size
+		     | _ => NONE
+		 end
       end
+*)
 
    val passGens = 
-      inlinePassGen ::
+(*    inlinePassGen :: *)
       (List.map([
 (* 		 ("commonArg", CommonArg.eliminate), *)
 (* 		 ("commonBlock", CommonBlock.eliminate), *)
 (* 		 ("commonSubexp", CommonSubexp.eliminate), *)
 (* 		 ("constantPropagation", ConstantPropagation.simplify), *)
 (* 		 ("contify", Contify.contify), *)
+                 ("deepFlatten", DeepFlatten.flatten),
 (* 		 ("flatten", Flatten.flatten), *)
 (* 		 ("introduceLoops", IntroduceLoops.introduceLoops), *)
 (* 		 ("knownCase", KnownCase.simplify), *)
@@ -200,19 +198,19 @@ local
 (* 		 ("polyEqual", PolyEqual.polyEqual), *)
 (* 		 ("redundant", Redundant.redundant), *)
 (* 		 ("redundantTests", RedundantTests.simplify), *)
-(* 		 ("removeUnused", RemoveUnused.remove), *)
+                 ("refFlatten", RefFlatten.flatten),
+ 		 ("removeUnused", RemoveUnused2.remove), 
 (* 		 ("simplifyTypes", SimplifyTypes.simplify), *)
 (* 		 ("useless", Useless.useless), *)
-(* 		 ("shrink", S.shrink)  *)
-		 ],
+ 		 ("shrink", S.shrink)],
 		mkSimplePassGen))
 
-   fun ssaPassesSet s =
+   fun ssa2PassesSet s =
       DynamicWind.withEscape
       (fn esc =>
        (let val ss = String.split (s, #":")
 	in 
-	   ssaPasses := 
+	   ssa2Passes := 
 	   List.map(ss, fn s =>
 		    case (List.peekMap (passGens, fn gen => gen s)) of
 		       NONE => esc (Result.No s)
@@ -220,7 +218,7 @@ local
 	   ; Result.Yes ss
 	end))
 in
-   val _ = Control.ssaPassesSet := ssaPassesSet
+   val _ = Control.ssa2PassesSet := ssa2PassesSet
 end
 
 fun stats p = Control.message (Control.Detail, fn () => Program.layoutStats p)
@@ -240,7 +238,7 @@ fun simplify p =
 	    else simplify' 
 	         (n + 1)
 		 (List.fold
-	          (!ssaPasses, p, fn ({name, doit}, p) =>
+	          (!ssa2Passes, p, fn ({name, doit}, p) =>
 		   if List.exists (!Control.dropPasses, fn re =>
 				   Regexp.Compiled.matchesAll (re, name))
 		      then p
@@ -249,13 +247,13 @@ fun simplify p =
 		       val _ =
 			  let open Control
 			  in maybeSaveToFile
-			     ({name = name, suffix = mkSuffix "pre.ssa"},
+			     ({name = name, suffix = mkSuffix "pre.ssa2"},
 			      Control.No, p, Control.Layouts Program.layouts)
 			  end
 		       val p =
 			  Control.passTypeCheck
 			  {name = name,
-			   suffix = mkSuffix "post.ssa",
+			   suffix = mkSuffix "post.ssa2",
 			   style = Control.No,
 			   thunk = fn () => doit p,
 			   display = Control.Layouts Program.layouts,

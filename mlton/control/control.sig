@@ -271,6 +271,8 @@ signature CONTROL =
       (* SSA Passes *)
       val ssaPassesSet: (string -> string list Result.t) ref
       val ssaPasses: string list ref
+      val ssa2PassesSet: (string -> string list Result.t) ref
+      val ssa2Passes: string list ref
 
       (* Force continuation formals to stack. *)
       val stackCont: bool ref 

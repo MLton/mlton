@@ -638,6 +638,14 @@ val ssaPasses : string list ref =
    control {name = "ssaPasses",
 	    default = ["default"],
 	    toString = List.toString String.toString}
+val ssa2PassesSet : (string -> string list Result.t) ref = 
+   control {name = "ssa2PassesSet",
+	    default = fn _ => Error.bug ("ssa2PassesSet not installed"),
+	    toString = fn _ => "<ssa2PassesSet>"}
+val ssa2Passes : string list ref = 
+   control {name = "ssa2Passes",
+	    default = ["default"],
+	    toString = List.toString String.toString}
 
 val stackCont = control {name = "stack cont",
 			 default = false,

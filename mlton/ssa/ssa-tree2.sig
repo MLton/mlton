@@ -27,6 +27,7 @@ signature SSA_TREE2 =
 	    val foreach: 'a t * ('a -> unit) -> unit
 	    val isEmpty: 'a t -> bool
 	    val isMutable: 'a t -> bool
+	    val keepAllMap: 'a t * ('a -> 'b option) -> 'b t
 	    val layout: 'a t * ('a -> Layout.t) -> Layout.t
 	    val length: 'a t -> int
 	    val make: {elt: 'a, isMutable: bool} vector -> 'a t
@@ -92,6 +93,7 @@ signature SSA_TREE2 =
 	     | VectorSub of {index: 'a,
 			     vector: 'a}
 
+	    val foreach: 'a t * ('a -> unit) -> unit
 	    val layout: 'a t * ('a -> Layout.t) -> Layout.t
 	    val map: 'a t * ('a -> 'b) -> 'b t
 	    val object: 'a t -> 'a

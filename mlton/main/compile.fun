@@ -473,7 +473,7 @@ fun preCodegen {input}: Machine.Program.t =
       val ssa =
 	 Control.passSimplify
 	 {name = "toSsa2",
-	  suffix = "ssa",
+	  suffix = "ssa2",
 	  style = Control.No,
 	  thunk = fn () => SsaToSsa2.convert ssa,
 	  typeCheck = Ssa2.typeCheck,

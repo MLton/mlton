@@ -90,7 +90,9 @@ redundant.fun
 ref-flatten.sig
 ref-flatten.fun
 remove-unused.sig
+remove-unused2.sig
 remove-unused.fun
+remove-unused2.fun
 simplify-types.sig
 simplify-types.fun
 useless.sig

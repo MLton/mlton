@@ -68,6 +68,13 @@ structure Prod =
 	 make (Vector.map (dest p, fn {elt, isMutable} =>
 			   {elt = f elt,
 			    isMutable = isMutable}))
+
+      val keepAllMap: 'a t * ('a -> 'b option) -> 'b t =
+	 fn (p, f) =>
+	 make (Vector.keepAllMap (dest p, fn {elt, isMutable} =>
+				  Option.map (f elt, fn elt => 
+					      {elt = elt, 
+					       isMutable = isMutable})))
    end
 
 structure ObjectCon =
