@@ -1,9 +1,22 @@
-\sec{Modules specific to {\mlton}}{mlton}
+\sec{{\mlton} extensions}{mlton}
 
-This section describes the modules {\mlton} makes available that are
-not part of the standard basis library.
+\subsection{{\nline} directives}
+To aid in the debugging of code produced by program genenerators such as
+\htmladdnormallink{Noweb}{http://www.eecs.harvard.edu/~nr/noweb/},
+{\mlton} supports comments with {\nline} directives of the form {\tt (*\#line
+}{\it line}{\tt.}{\it col} {\tt "}{\it file}{\tt"*)}.  Here, {\it line} and {\it
+col} are sequences of decimal digits and {\it file} is the source file.  A
+{\nline} directive causes the front end to believe that the character following
+the right parenthesis is at the line and column of the specified file.  A
+{\nline} directive only affects the reporting of error messages and does not
+affect program semantics (except for functions like {\tt MLton.Exn.history}
+which report source file positions).  Syntactically invalid {\nline} directives
+are ignored.
 
 \subsection{{\tt MLton}}
+
+The remainder of this section describes the modules {\mlton} makes available
+that are not part of the standard basis library.
 
 \begin{verbatim}
 structure MLton:
@@ -119,27 +132,8 @@ signature MLTON_EXN =
 \entry{history e}
 the file positions that have raised the exception {\tt e}, in reverse
 chronological order.   A {\tt handle} expression that implicitly reraises counts
-as a raise.  {\tt history} will return {\tt []} unless {\tt -exn-history true}
-is used.
-
-\entry{callcc f}
-apply {\tt f} to the current continuation.  At present, {\tt
-callcc} takes time proportional to the current stack size.
-
-\entry{prepend (k, f)}
-compose a function {\tt f} with a continuation {\tt k} to create a
-continuation that first does {\tt f} and then does {\tt k}.  {\tt
-prepend} is a constant time operation.
-
-\entry{throw (k, v)}
-throw value {\tt v} to continuation {\tt k}.  At present, {\tt throw}
-takes time proportional to the size of {\tt k}.
-
-\entry{throw' (k, th)}
-a generalization of throw that evaluates {\tt th ()} in the context
-of {\tt k}.  Thus, for example, if {\tt th ()} raises an exception or
-grabs another continuation, it will see {\tt k}, not the current
-continuation.
+as a raise.  {\tt history} will return {\tt []} unless the program is compiled
+with {\tt -exn-history true}.
 
 \end{description}
 

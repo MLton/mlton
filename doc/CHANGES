@@ -1,5 +1,13 @@
 Here are the changes from version 20010806 to version VERSION.
 
+Summary:
+   + Added MLton.Exn.history, which is similar to SMLofNJ.exnHistory
+   + Support for #line directives of the form (*#line line.col "file"*)
+   + Bug fix in heap save and restore to solve problem with excessive heap
+     usage by compiler. 
+   + Performance improvements in native codegenerator.
+   + Bug fixes in optimizer, register allocator.
+
 * 2001-10-1
   - added MLton.Exn.history.
   - Fixed register allocation bug with fucom instruction.  Was
@@ -53,7 +61,7 @@ Summary:
     + Programs of the form "exp ; program" are now accepted
     + Added the "MLton.Rlimit" structure
     + Added the "-keep dot" flag, which produces call graphs,
-      intraprocedural control-flow graphs, and dominator trees.
+      intraprocedural control-flow graphs, and dominator trees
 
 * 2001-8-6
   - Added simple common block elimination CPS optimization.
