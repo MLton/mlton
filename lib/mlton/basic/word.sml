@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under the GNU General Public License (GPL).
@@ -43,7 +43,7 @@ structure Word: WORD32 =
       val fromWord8 = Word8.toWord
       val toWord8 = Word8.fromWord
 
-      fun log2 (w: word): int =
+      fun log2 (w: t): t =
 	 if w = 0w0
 	    then Error.bug "Word.log2 0"
 	 else
@@ -61,10 +61,10 @@ structure Word: WORD32 =
 			loop (n, >> (s, 0w1), ac)
 		     end
 	    in
-	       toInt (loop (w, 0w16, 0w0))
+	       loop (w, 0w16, 0w0)
 	    end
 
-      fun roundDownToPowerOfTwo (w: word) = << (0w1, fromInt (log2 w))
+      fun roundDownToPowerOfTwo (w: t) = << (0w1, log2 w)
 
       fun roundUpToPowerOfTwo w =
 	 let
@@ -74,6 +74,13 @@ structure Word: WORD32 =
 	       then w
 	    else w' * 0w2
 	 end
+
+      structure M = MaxPow2ThatDivides (open Word
+					type t = word
+					val equals = op =
+					val one: t = 0w1
+					val zero: t = 0w0)
+      open M
 
       fun addCheck (w, w') =
 	 if w <= ~ 0w1 - w'

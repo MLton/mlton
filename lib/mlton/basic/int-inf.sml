@@ -13,14 +13,24 @@ structure IntInf: INT_INF =
 
       val hash = String.hash o toString
 	 
-      val andb = Pervasive.IntInf.andb
-      val notb = Pervasive.IntInf.notb
-      val orb = Pervasive.IntInf.orb
-      val xorb = Pervasive.IntInf.xorb
-      val op ~>> = Pervasive.IntInf.~>>
-      val op << = Pervasive.IntInf.<<
-      val fromInt = Trace.trace("IntInf.fromInt", Int.layout, layout) fromInt
-      val toInt = Trace.trace("IntInf.toInt", layout, Int.layout) toInt
+      local
+	 open Pervasive.IntInf
+      in
+	 val andb = andb
+	 val log2 = log2
+	 val notb = notb
+	 val orb = orb
+	 val xorb = xorb
+	 val op ~>> = ~>>
+	 val op << = <<
+      end
+
+      structure M = MaxPow2ThatDivides (open IntInf
+					val andb = andb
+					val orb = orb
+					val << = <<
+					val >> = ~>>)
+      open M
    end
 
 structure LargeInt = IntInf

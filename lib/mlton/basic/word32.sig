@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
 type int = Pervasive.Int.int
+type word = Pervasive.Word.word
 
 signature WORD32 =
    sig
@@ -16,7 +17,8 @@ signature WORD32 =
        * and f 3 should return the most significant.
        *)
       val fromWord8s: (int -> Word8.t) -> t
-      val log2: t -> int
+      val log2: t -> t (* 2 ^ (log2 w) <= w < 2 ^ (1 + log2 w) *)
+      val maxPow2ThatDivides: t -> word
       val toWord8: t -> Word8.t
       val rotateLeft: t * t -> t
       val roundDownToPowerOfTwo: t -> t
