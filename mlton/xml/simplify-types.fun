@@ -9,7 +9,7 @@ open S
 structure Graph = DirectedGraph
 structure Node = Graph.Node
 
-fun simplifyTypes (p as Program.T {datatypes, body}) =
+fun simplifyTypes (p as Program.T {datatypes, body, ...}) =
    let
       val g = Graph.new ()
       val {get = tyconInfo: Tycon.t -> {node: Node.t,

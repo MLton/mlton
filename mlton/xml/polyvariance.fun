@@ -67,9 +67,7 @@ fun shouldDuplicate (program as Program.T {body, ...}, small, product)
    : Var.t -> bool =
    let
       val costs: (Var.t * int * int * int) list ref = ref []
-
       val lambdaSize = lambdaSize program
-	 
       fun isOK (var: Var.t, size: int, numOccurrences: int): bool =
 	 let val cost = (numOccurrences - 1) * (size - small)
 	 in List.push (costs, (var, size, numOccurrences, cost))
@@ -130,7 +128,7 @@ fun shouldDuplicate (program as Program.T {body, ...}, small, product)
 				       | PrimApp {args, ...} => loopVars args
 				       | App {func, arg} =>
 					    (loopVar func; loopVar arg)
-				       | Raise x => loopVar x
+				       | Raise {exn, ...} => loopVar exn
 				       | Case {test, cases, default} =>
 					    (loopVar test
 					     ; Cases.foreach (cases, loopExp)
@@ -211,7 +209,7 @@ fun shouldDuplicate (program as Program.T {body, ...}, small, product)
        | SOME {shouldDuplicate, ...} => !shouldDuplicate
    end
 
-fun duplicate (program as Program.T {datatypes, body},
+fun duplicate (program as Program.T {datatypes, body, overflow},
 	       small: int,
 	       product: int) =
    let
@@ -307,7 +305,9 @@ fun duplicate (program as Program.T {datatypes, body},
 				   | App {func, arg} =>
 					App {func = loopVar func,
 					     arg = loopVar arg}
-				   | Raise x => Raise (loopVar x)
+				   | Raise {exn, filePos} =>
+					Raise {exn = loopVar exn,
+					       filePos = filePos}
 				   | Case {test, cases, default} =>
 					let
 					   datatype z = datatype Cases.t
@@ -387,9 +387,16 @@ fun duplicate (program as Program.T {datatypes, body},
 			 result = result}
 		     end
 		| _ => Error.bug "polyvariance saw bogus dec"
+      val body = loopExp body
+      val overflow =
+	 Option.map (overflow, fn x =>
+		     case varInfo x of
+			Replace y => y
+		      | _ => Error.bug "duplicating Overflow?")
       val program =
 	 Program.T {datatypes = datatypes,
-		    body = loopExp body}
+		    body = body,
+		    overflow = overflow}
       val _ = Program.clear program
    in
       program

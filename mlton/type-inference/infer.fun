@@ -25,6 +25,7 @@ end
 local open CoreML
 in structure Cdec = Dec
    structure Cexp = Exp
+   structure Cmatch = Match
    structure Ctype = Type
    structure Cpat = Pat
    structure Cprogram = Program
@@ -563,7 +564,7 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 	    fun done ac = make (ac, NONE)
 	 in Vector.fold' (cases, 0, [], step, done)
 	 end
-      fun forceRules ({argType, resultType, rules},
+      fun forceRules ({argType, resultType, rules, filePos},
 		      p: NestedPat.node,
 		      e: Xexp.t): Xml.Lambda.t =
 	 let
@@ -580,7 +581,9 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 						   (finishPat p, finishExp e)),
 				       Vector.new1
 				       (NestedPat.new (p, argType),
-					Xexp.raisee (e, resultType))]),
+					Xexp.raisee ({exn = e,
+						      filePos = filePos},
+						     resultType))]),
 			     caseType = resultType}))}
 	 end
       fun forceRulesMatch rs =
@@ -609,7 +612,9 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 				 {scheme = Scheme.T {tyvars = tyvars, ty = t},
 				  kind = kind}))
 	 end
-      fun patDec (p as (_, tp): patCode, e as (_, te): expCode): decCode =
+      fun patDec (p as (_, tp): patCode,
+		  e as (_, te): expCode,
+		  filePos): decCode =
 	 (Type.unify (tp, te)
 	  ; (fn (body, ty) =>
 	     let val p = finishPat p
@@ -620,10 +625,11 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 				 ((p, body),
 				  (NestedPat.new
 				   (NestedPat.Wild, NestedPat.ty p),
-				   Xexp.raisee (bind (), ty))))},
+				   Xexp.raisee ({exn = bind (),
+						 filePos = filePos},
+						ty))))},
 		 ty)
 	     end))
-
       fun checkTyvars (tyvars: Tyvar.t vector,
 		       tyvarsClose: Tyvar.t list,
 		       frees) =
@@ -637,19 +643,18 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 		  else Error.bug "can't generalize tyvars"
 	     | _ => ()
 	 end
-
       fun multiExtend (env, xts) =
 	 List.fold (xts, env, fn ((x, t), env) =>
 		    Env.extendVar (env, x, Scheme.fromType t))
-	 
       fun inferValDec (tyvars: Tyvar.t vector,
 		       pat: Cpat.t,
 		       exp: Cexp.t,
+		       filePos: string,
 		       e: expCode as (_, te),
 		       env: Env.t): decCode * Env.t =
 	 let
 	    val (p as (_, tp), xts) = inferPat (pat, [])
-	    fun simple () = (patDec (p, e), multiExtend (env, xts))
+	    fun simple () = (patDec (p, e, filePos), multiExtend (env, xts))
 	    val _ = Type.unify (te, tp)
 	 in if Cexp.isExpansive exp
 	       then if Vector.isEmpty tyvars
@@ -686,8 +691,10 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 			      then
 				 appendDec
 				 (d,
-				  patDec (#1 (inferPat (Cpat.removeVars pat, [])),
-					 varExp (x, env)))
+				  patDec
+				  (#1 (inferPat (Cpat.removeVars pat, [])),
+				   varExp (x, env),
+				   filePos))
 			   else d
 		     in List.fold
 			(Cpat.vars pat, (d, env), fn (y, (d, env)) =>
@@ -696,8 +703,8 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 			    val (p, xts) = inferPat (p, [])
 			    val e as (_, te) =
 			       delayExp
-			       (letExp (patDec (p, varExp (x, env)),
-				       varExp (y', multiExtend (env, xts))))
+			       (letExp (patDec (p, varExp (x, env), filePos),
+					varExp (y', multiExtend (env, xts))))
 			    val (d', env) =
 			       valDec (Type.close (te, fn () => Env.frees env),
 				       y, e, VarRange.Delayed, env)
@@ -731,8 +738,8 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 	 traceInferDec
 	 (fn (d: Cdec.t, env: Env.t) =>
 	  case d of
-	     Cdec.Val {tyvars, pat, exp} =>
-		inferValDec (tyvars, pat, exp, inferExp (exp, env), env)
+	     Cdec.Val {tyvars, pat, exp, filePos} =>
+		inferValDec (tyvars, pat, exp, filePos, inferExp (exp, env), env)
 	   | Cdec.Datatype dbs =>
 		(Vector.foreach
 		 (dbs, fn {tyvars, tycon, cons} =>
@@ -771,7 +778,7 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 		   val args: Tyvar.t vector ref = ref (Vector.new0 ())
 		   val (decs, env') =
 		      Vector.mapAndFold
-		      (decs, env, fn ({var, ty, rules}, env) =>
+		      (decs, env, fn ({var, ty, match}, env) =>
 		       let
 			  val argType = newType ()
 			  val resultType = newType ()
@@ -784,7 +791,7 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 			  ({var = var,
 			    argType = argType,
 			    resultType = resultType,
-			    rules = rules},
+			    match = match},
 			   Env.extendVarRange
 			   (env, var,
 			    VarRange.T {scheme = Scheme.fromType t,
@@ -792,9 +799,9 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 		       end)
 		   val decs =
 		      Vector.map
-		      (decs, fn {var, rules, argType, resultType} =>
+		      (decs, fn {var, match, argType, resultType} =>
 		       let
-			  val rs = inferRulesUnify (rules, env',
+			  val rs = inferMatchUnify (match, env',
 						    argType, resultType)
 		       in {var = var,
 			   ty = Type.arrow (argType, resultType),
@@ -872,10 +879,10 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 			       ty = Type.toXml ty}),
 		   ty)
 	       end
-	  | Cexp.Fn rules =>
+	  | Cexp.Fn m =>
 	       let
-		  val rs as {argType, resultType, rules} =
-		     inferRules (rules, env)
+		  val rs as {argType, resultType, rules, ...} =
+		     inferMatch (m, env)
 	       in (fn () => let
 			       val {arg, argType, body} =
 				  Xlambda.dest (forceRulesMatch rs)
@@ -899,10 +906,10 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 	       in
 		  ans
 	       end
-	  | Cexp.Handle (e, rs) =>
+	  | Cexp.Handle (e, m) =>
 	       let
 		  val (e, t) = inferExp (e, env)
-		  val rs as {argType, resultType, rules} = inferRules (rs, env)
+		  val rs as {argType, resultType, ...} = inferMatch (m, env)
 		  val _ = Type.unify (t, resultType)
 		  val _ = Type.unify (argType, Type.exn)
 	       in (fn () => let
@@ -916,13 +923,15 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 			    end,
 			 t)
 	       end
-	  | Cexp.Raise e =>
+	  | Cexp.Raise {exn, filePos} =>
 	       let
-		  val e as (_, t) = inferExp (e, env)
+		  val e as (_, t) = inferExp (exn, env)
 		  val resultType = newType ()
 		  val _ = Type.unify (t, Type.exn)
 	       in
-		  (fn () => Xexp.raisee (finishExp e, Type.toXml resultType),
+		  (fn () => Xexp.raisee ({exn = finishExp e,
+					  filePos = filePos},
+					 Type.toXml resultType),
 		   resultType)
 	       end) arg
       and applyOne (e as (_, t): expCode, e' as (_, t'): expCode): expCode =
@@ -1041,13 +1050,16 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 		     | SOME e2 => applyOne (e1, e2)
 		    end
 	 end
-      and inferRules (rs, env): {argType: Type.t, resultType: Type.t,
+      and inferMatch (m, env): {argType: Type.t,
+				filePos: string,
+				resultType: Type.t,
 				rules: (patCode * expCode) vector} =
-	 inferRulesUnify (rs, env, newType (), newType ())
-      and inferRulesUnify (rs, env, argType, resultType) =
+	 inferMatchUnify (m, env, newType (), newType ())
+      and inferMatchUnify (Cmatch.T {rules, filePos}, env, argType, resultType) =
 	 {argType = argType,
 	  resultType = resultType,
-	  rules = Vector.map (rs, fn (p, e) =>
+	  filePos = filePos,
+	  rules = Vector.map (rules, fn (p, e) =>
 			      let
 				 val (p as (_, tp), xts) = inferPat (p, [])
 				 val env = multiExtend (env, xts)
@@ -1070,7 +1082,8 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 	 Control.trace (Control.Pass, "finishInfer")
 	 ds (Xexp.unit (), Xtype.unit)
       val xml = Xml.Program.T {datatypes = Vector.fromList (!dbsRef),
-			       body = Xexp.toExp body}
+			       body = Xexp.toExp body,
+			       overflow = NONE}
       val _ = destroyCon ()
       val _ = destroyTycon ()
    in

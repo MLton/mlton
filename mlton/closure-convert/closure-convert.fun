@@ -144,7 +144,8 @@ structure VarInfo =
       end
    end
 
-fun closureConvert (program as Sxml.Program.T {datatypes, body}): Cps.Program.t =
+fun closureConvert
+   (program as Sxml.Program.T {datatypes, body, overflow}): Cps.Program.t =
    let
       val {get = conArg: Con.t -> Value.t option, set = setConArg} =
 	 Property.getSetOnce (Con.plist,
@@ -320,24 +321,12 @@ fun closureConvert (program as Sxml.Program.T {datatypes, body}): Cps.Program.t 
 						  str " ",
 						  Value.layout (value x)]
 					  end)))
-      (* Find the overflow exception. *)
-      val overflowVar =
-	 DynamicWind.withEscape
-	 (fn escape =>
-	  (Sexp.foreachPrimExp
-	   (body, fn (x, e) =>
-	    case e of
-	       SprimExp.ConApp {con, ...} =>
-		  if Con.equals (con, Con.overflow)
-		     then escape x
-		  else ()
-	     | _ => ())
-	   ; Error.bug "couldn't find overflow exception"))
+      val overflow = valOf overflow
       val _ =
 	 Control.trace (Control.Pass, "free variables")
 	 LambdaFree.lambdaFree
 	 (program,
-	  overflowVar,
+	  overflow,
 	  fn x => let val {frees, status, ...} = varInfo x
 		  in {frees = frees, status = status}
 		  end,
@@ -751,13 +740,14 @@ fun closureConvert (program as Sxml.Program.T {datatypes, body}): Cps.Program.t 
 				args = Vector.map (args, varInfoType),
 				result = ty,
 				dearray = Ctype.dearray,
+				dearrow = Ctype.dearrow,
 				deref = Ctype.deref,
 				devector = Ctype.devector},
 			       Vector.map (args, convertVarInfo))
 			   end
 		  val overflow =
 		     if Prim.mayOverflow prim
-			then SOME (Cexp.raisee (convertVar overflowVar))
+			then SOME (Cexp.raisee (convertVar overflow))
 		     else NONE
 	       in simple (Cexp.primApp' {prim = prim,
 					 overflow = overflow,
@@ -789,7 +779,7 @@ fun closureConvert (program as Sxml.Program.T {datatypes, body}): Cps.Program.t 
 				  else Vector.new1 (coerce (arg, argVal, conArg))
 			       end
 			  | _ => Error.bug "constructor mismatch")})
-	  | SprimExp.Raise y => simple (Cexp.raisee (convertVarExp y))
+	  | SprimExp.Raise {exn, ...} => simple (Cexp.raisee (convertVarExp exn))
 	  | SprimExp.Handle {try, catch = (catch, _), handler} =>
 	       let
 		  val catchInfo = varInfo catch

@@ -156,7 +156,21 @@ structure Primitive =
 
       structure Exn =
 	 struct
+	    (* The polymorphism with extra and setInitExtra is because primitives
+	     * are only supposed to deal with basic types.  The polymorphism
+	     * allows the various passes like monomorphisation to translate
+	     * the types appropriately.
+	     *)
+	    type extra = string list ref
+
+	    val extra = fn x => _prim "Exn_extra": exn -> 'a; x
+	    val extra: exn -> extra = extra
 	    val name = _prim "Exn_name": exn -> string;
+	    val keepHistory = _prim "Exn_keepHistory": bool;
+	    val setInitExtra =
+	       fn x => _prim "Exn_setInitExtra": (unit -> 'a) -> unit; x
+	    val setInitExtra: (unit -> extra) -> unit = setInitExtra
+	    val setRaise = _prim "Exn_setRaise": (string * exn -> unit) -> unit;
 	    val setTopLevelHandler =
 	       _prim "Exn_setTopLevelHandler": (exn -> unit) -> unit;
 	 end

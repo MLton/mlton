@@ -137,6 +137,8 @@ type rule = Pat.t * Exp.t
 type clause = {pats : Pat.t vector,
 	       resultType : Type.t option,
 	       body : Exp.t}
+type clauses = {clauses: clause vector,
+		filePos: string}
 type eb = Con.t * EbRhs.t
 type db = {tyvars: Tyvar.t vector,
 	   tycon: Tycon.t,
@@ -170,11 +172,11 @@ type funbind = {name : Fctid.t,
 		result : SigConst.t,
 		body : Strexp.t}
 
-type vb = Pat.t * Exp.t
+type vb = {pat: Pat.t, exp: Exp.t, filePos: string}
 type rvb = {var: Var.t,
 	    ty: Type.t option,
 	    fixity: Vid.t option,
-	    rules: rule vector}
+	    match: Match.t}
    
 fun ensureNonqualified (s,region) =
    if String.contains (s, #".")
@@ -267,7 +269,8 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | ty1 of Type.t
        | tyOpt of Type.t option
        | ty0_pc of Type.t list
-	 
+
+       | match of Match.t
        | rules of rule list
        | rule of rule
        | elabel of (Field.t * Exp.t)
@@ -295,13 +298,15 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | commapats of Pat.t list
        | opaspat of Pat.t option
 	 
+       | valbindTop of vb vector * rvb vector
        | valbind of vb list * rvb list
        | valbindRest of vb list * rvb list
        | rvalbind of rvb list
        | rvalbindRest of rvb list
        | constraint of Type.t option
        | vidOrOpVar of {var: Var.t, fixity: Vid.t option}
-       | funs of clause vector list
+       | funs of clauses list
+       | clausesTop of clauses
        | clauses of clause list
        | clause of clause
 
@@ -693,12 +698,12 @@ decnode : decnolocal              (decnolocal)
         | LOCAL decs IN decs END  (Dec.Local (decs1,decs2))
 
 decnolocal
-        : VAL valbind	        (Dec.Val {tyvars = Vector.new0 (),
-					  vbs = Vector.fromList (#1 valbind),
-					  rvbs = Vector.fromList (#2 valbind)})
-        | VAL tyvarseq valbind  (Dec.Val {tyvars = tyvarseq,
-					  vbs = Vector.fromList (#1 valbind),
-					  rvbs = Vector.fromList (#2 valbind)})
+        : VAL valbindTop	  (Dec.Val {tyvars = Vector.new0 (),
+					    vbs = #1 valbindTop,
+					    rvbs = #2 valbindTop})
+        | VAL tyvarseq valbindTop  (Dec.Val {tyvars = tyvarseq,
+					     vbs = #1 valbindTop,
+					     rvbs = #2 valbindTop})
 	| FUN funs		(Dec.Fun (Vector.new0 (), Vector.fromList funs))
 	| FUN tyvarseq funs	(Dec.Fun (tyvarseq, Vector.fromList funs))
 	| TYPE typBind		(Dec.Type typBind)
@@ -713,20 +718,29 @@ decnolocal
 	                        (Dec.Overload (var, ty,
 					       Vector.fromList longvarands))
 
-valbind	: pat EQUALOP exp valbindRest  (let val (vbs, rvbs) = valbindRest
-					in ((pat, exp) :: vbs, rvbs)
-					end)
+valbindTop : valbind (let val (vbs, rvbs) = valbind
+		      in (Vector.fromList vbs,
+			  Vector.fromList rvbs)
+		      end)
+
+valbind	: pat EQUALOP exp valbindRest
+          (let val (vbs, rvbs) = valbindRest
+	   in ({pat = pat, exp = exp, filePos = SourcePos.toString pat1left}
+	       :: vbs,
+	       rvbs)
+	   end)
         | REC rvalbind                 (([], rvalbind))
+
 
 valbindRest :                          (([], []))
 	    | AND valbind              (valbind)
 
 rvalbind : REC rvalbind                (rvalbind)
-         | vidOrOpVar constraint EQUALOP FN rules rvalbindRest
+         | vidOrOpVar constraint EQUALOP FN match rvalbindRest
             ({var = #var vidOrOpVar,
 	      fixity = #fixity vidOrOpVar,
 	      ty = constraint,
-	      rules = Vector.fromList rules} :: rvalbindRest)
+	      match = match} :: rvalbindRest)
 
 rvalbindRest :               ([])
              | AND rvalbind  (rvalbind)
@@ -737,8 +751,11 @@ vidOrOpVar : vid     ({var = Vid.toVar vid, fixity = SOME vid})
 constraint :	 		(NONE)
 	   | COLON ty	 	(SOME ty)
 
-funs	: clauses		([Vector.fromList clauses])
-	| clauses AND funs	(Vector.fromList clauses :: funs)
+funs	: clausesTop               ([clausesTop])
+	| clausesTop AND funs	   (clausesTop :: funs)
+
+clausesTop: clauses ({clauses = Vector.fromList clauses,
+		      filePos = SourcePos.toString clauses1left})
 
 clauses	: clause		([clause])
 	| clause BAR clauses	(clause :: clauses)
@@ -855,8 +872,11 @@ withtypes :                   (TypBind.empty)
 longvarands : longvar  ([longvar])
             | longvar AND longvarands (longvar :: longvarands)
 
+match : rules           (Match.T {rules = Vector.fromList rules,
+				  filePos = SourcePos.toString rules1left})
+
 rules : rule            ([rule])
-      | rule BAR rules  (rule::rules)
+      | rule BAR rules  (rule :: rules)
 
 rule	: pat DARROW exp        ((pat,exp))
 
@@ -870,17 +890,18 @@ exp_ps	: exp		        ([exp])
 
 exp : expnode (Exp.makeRegion' (expnode, expnodeleft, expnoderight))
 
-expnode	: exp HANDLE rules	(Exp.Handle (exp, Vector.fromList rules))
-
+expnode	: exp HANDLE match	(Exp.Handle (exp, match))
         | exp ORELSE exp        (Exp.Orelse (exp1, exp2))
 	| exp ANDALSO exp       (Exp.Andalso (exp1, exp2))
         | exp COLON ty	        (Exp.Constraint (exp, ty))
 	| app_exp	        (Exp.FlatApp (Vector.fromList app_exp))
-	| FN rules	        (Exp.Fn (Vector.fromList rules))
-	| CASE exp OF rules	(Exp.Case (exp, Vector.fromList rules))
+	| FN match	        (Exp.Fn match)
+	| CASE exp OF match	(Exp.Case (exp, match))
 	| WHILE exp DO exp	(Exp.While {test = exp1, expr = exp2})
 	| IF exp THEN exp ELSE exp (Exp.If (exp1, exp2, exp3))
-	| RAISE exp	        (Exp.Raise exp)
+	| RAISE exp	        (Exp.Raise
+				 {exn = exp,
+				  filePos = SourcePos.toString exp1left})
 
 app_exp	: aexp app_exp1     (Exp.makeRegion' (aexp, aexpleft, aexpright)
 			     :: app_exp1)

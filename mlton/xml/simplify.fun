@@ -111,7 +111,7 @@ structure Value =
 	  | Tuple vs => PrimExp.Tuple (Vector.map (vs, VarInfo.varExp))
    end
 
-fun simplifyOnce e =
+fun simplifyOnce (Program.T {datatypes, body, overflow}) =
    let
       val {get = varInfo: Var.t -> VarInfo.t, set = setVarInfo} =
 	 Property.getSet (Var.plist,
@@ -283,125 +283,128 @@ fun simplifyOnce e =
 		  val decs = rest ()
 	       in decs' @ decs
 	       end
-	 in case exp of
-	    Const c => nonExpansiveCon (fn () => (), Value.Const c)
-	  | Var x => let val x = varExpInfo x
-		     in replaceInfo (var, info, x)
-			; VarInfo.inc (x, ~1)
-			; rest ()
-		     end
-	  | Tuple xs =>
-	       let val xs = varExpInfos xs
-	       in nonExpansiveCon (fn () => VarInfo.deletes xs,
-				   Value.Tuple xs)
-	       end
-	  | Select {tuple, offset} =>
-	       let
-		  fun normal x = Select {tuple = x, offset = offset}
-	       in case varExpInfo tuple of
-		  VarInfo.Poly x => finish (normal x, rest ())
-		| VarInfo.Mono {numOccurrences, value, varExp, ...} =>
-		     nonExpansive
-		     (fn () => inc (numOccurrences, ~1),
-		      fn () =>
-		      case !value of
-			 NONE => SOME (fn () => normal varExp)
-		       | SOME (Value.Tuple vs) => 
-			    (inc (numOccurrences, ~1)
-			     ; replaceInfo (var, info, Vector.sub (vs, offset))
-			     ; NONE)
-		       | _ => Error.bug "simplifyMonoVal: Select")
-	       end
-	  | ConApp {con, targs, arg} =>
-	       if Con.equals (con, Con.overflow)
-		  then
-		     expansive
-		     (ConApp
-		      {con = con,
-		       targs = targs,
-		       arg = Option.map (arg, simplifyVarExp)})
-	       else
+	 in
+	    case exp of
+	       Const c => nonExpansiveCon (fn () => (), Value.Const c)
+	     | Var x => let val x = varExpInfo x
+			in replaceInfo (var, info, x)
+			   ; VarInfo.inc (x, ~1)
+			   ; rest ()
+			end
+	     | Tuple xs =>
+		  let val xs = varExpInfos xs
+		  in nonExpansiveCon (fn () => VarInfo.deletes xs,
+				      Value.Tuple xs)
+		  end
+	     | Select {tuple, offset} =>
 		  let
-		     val arg = Option.map (arg, varExpInfo)
-		  in nonExpansiveCon
-		     (fn () => Option.app (arg, VarInfo.delete),
-		      Value.ConApp {con = con, targs = targs, arg = arg})
-		  end			     
-	  | PrimApp {prim, args, targs} =>
-	       let
-		  fun make () =
-		     PrimApp {prim = prim, targs = targs,
-			      args = simplifyVarExps args}
-	       in if Prim.maySideEffect prim
-		     then expansive (make ())
-		  else nonExpansive (fn () => (), fn () => SOME make)
-	       end
-	  | Lambda l =>
-	       let val isInlined = ref false
-	       in nonExpansive
-		  (fn () => if !isInlined then () else deleteLambda l,
-		   fn () => (value := SOME (Value.Lambda {isInlined = isInlined,
-							  lam = l})
-			     ; SOME (fn () => Lambda (simplifyLambda l))))
-	       end
-	  | App {func, arg} =>
-	       let
-		  val arg = varExpInfo arg
-		  fun normal func =
-		     expansive (App {func = func,
-				     arg = VarInfo.varExp arg})
-	       in case varExpInfo func of
-		  VarInfo.Poly x => normal x
-		| VarInfo.Mono {numOccurrences, value, varExp, ...} => 
-		     case (!numOccurrences, !value) of
-			(1, SOME (Value.Lambda {isInlined, lam = l})) =>
-			   let
-			      val {arg = form, body, ...} = Lambda.dest l
-			   in VarInfo.inc (arg, ~1)
-			      ; replace (form, arg)
-			      ; isInlined := true
-			      ; numOccurrences := 0
-			      ; expression body
-			   end
-		      | _ => normal varExp
-	       end
-	  | Raise x => expansive (Raise (simplifyVarExp x))
-	  | Handle {try, catch, handler} =>
-	       expansive (Handle {try = simplifyExp try,
-				  catch = catch,
-				  handler = simplifyExp handler})
-	  | Case {test, cases, default} =>
-	       let
-		  fun match (cases, f): Dec.t list =
+		     fun normal x = Select {tuple = x, offset = offset}
+		  in case varExpInfo tuple of
+		     VarInfo.Poly x => finish (normal x, rest ())
+		   | VarInfo.Mono {numOccurrences, value, varExp, ...} =>
+			nonExpansive
+			(fn () => inc (numOccurrences, ~1),
+			 fn () =>
+			 case !value of
+			    NONE => SOME (fn () => normal varExp)
+			  | SOME (Value.Tuple vs) => 
+			       (inc (numOccurrences, ~1)
+				; replaceInfo (var, info, Vector.sub (vs, offset))
+				; NONE)
+			  | _ => Error.bug "simplifyMonoVal: Select")
+		  end
+	     | ConApp {con, targs, arg} =>
+		  if Con.equals (con, Con.overflow)
+		     then
+			expansive
+			(ConApp
+			 {con = con,
+			  targs = targs,
+			  arg = Option.map (arg, simplifyVarExp)})
+		  else
 		     let
-			val _ = deleteVarExp test
-			fun step (i, (c, e), ()) =
-			   if f c
-			      then
-				 (Vector.foreachR (cases, i + 1,
-						   Vector.length cases,
-						   deleteExp o #2)
-				  ; Option.app (default, deleteExp)
-				  ; Vector.Done (expression e))
-			   else (deleteExp e; Vector.Continue ())
-			fun done () =
-			   case default of
-			      SOME e => expression e
-			    | NONE => Error.bug "simplifyPrimExp: Case"
-		     in Vector.fold' (cases, 0, (), step, done)
-		     end
-		  fun normal test =
-		     expansive
-		     (Case {test = test,
-			    cases = Cases.map (cases, simplifyExp),
-			    default = Option.map (default,
-						  simplifyExp)})
-	       in case varExpInfo test of
-		  VarInfo.Poly test => normal test
-		| VarInfo.Mono {value, varExp, ...} => 
-		     case (cases, !value) of
-			(Cases.Con cases,
-			 SOME (Value.ConApp {con = c, arg, ...})) =>
+			val arg = Option.map (arg, varExpInfo)
+		     in nonExpansiveCon
+			(fn () => Option.app (arg, VarInfo.delete),
+			 Value.ConApp {con = con, targs = targs, arg = arg})
+		     end			     
+	     | PrimApp {prim, args, targs} =>
+		  let
+		     fun make () =
+			PrimApp {prim = prim, targs = targs,
+				 args = simplifyVarExps args}
+		  in if Prim.maySideEffect prim
+			then expansive (make ())
+		     else nonExpansive (fn () => (), fn () => SOME make)
+		  end
+	     | Lambda l =>
+		  let val isInlined = ref false
+		  in nonExpansive
+		     (fn () => if !isInlined then () else deleteLambda l,
+		      fn () => (value := SOME (Value.Lambda {isInlined = isInlined,
+							     lam = l})
+				; SOME (fn () => Lambda (simplifyLambda l))))
+		  end
+	     | App {func, arg} =>
+		  let
+		     val arg = varExpInfo arg
+		     fun normal func =
+			expansive (App {func = func,
+					arg = VarInfo.varExp arg})
+		  in case varExpInfo func of
+		     VarInfo.Poly x => normal x
+		   | VarInfo.Mono {numOccurrences, value, varExp, ...} => 
+			case (!numOccurrences, !value) of
+			   (1, SOME (Value.Lambda {isInlined, lam = l})) =>
+			      let
+				 val {arg = form, body, ...} = Lambda.dest l
+			      in VarInfo.inc (arg, ~1)
+				 ; replace (form, arg)
+				 ; isInlined := true
+				 ; numOccurrences := 0
+				 ; expression body
+			      end
+			 | _ => normal varExp
+		  end
+	     | Raise {exn, filePos} =>
+		  expansive (Raise {exn = simplifyVarExp exn,
+				    filePos = filePos})
+	     | Handle {try, catch, handler} =>
+		  expansive (Handle {try = simplifyExp try,
+				     catch = catch,
+				     handler = simplifyExp handler})
+	     | Case {test, cases, default} =>
+		  let
+		     fun match (cases, f): Dec.t list =
+			let
+			   val _ = deleteVarExp test
+			   fun step (i, (c, e), ()) =
+			      if f c
+				 then
+				    (Vector.foreachR (cases, i + 1,
+						      Vector.length cases,
+						      deleteExp o #2)
+				     ; Option.app (default, deleteExp)
+				     ; Vector.Done (expression e))
+			      else (deleteExp e; Vector.Continue ())
+			   fun done () =
+			      case default of
+				 SOME e => expression e
+			       | NONE => Error.bug "simplifyPrimExp: Case"
+			in Vector.fold' (cases, 0, (), step, done)
+			end
+		     fun normal test =
+			expansive
+			(Case {test = test,
+			       cases = Cases.map (cases, simplifyExp),
+			       default = Option.map (default,
+						     simplifyExp)})
+		  in case varExpInfo test of
+		     VarInfo.Poly test => normal test
+		   | VarInfo.Mono {value, varExp, ...} => 
+			case (cases, !value) of
+			   (Cases.Con cases,
+			    SOME (Value.ConApp {con = c, arg, ...})) =>
 			   let
 			      val match =
 				 fn f =>
@@ -416,41 +419,49 @@ fun simplifyOnce e =
 				 (fn SOME (x, _) => (replace (x, v); true)
 			       | _ => false)
 			   end
-		      | (_, SOME (Value.Const c)) =>
-			   let
-			      fun doit (l, z) = match (l, fn z' => z = z')
-			   in case (cases, Const.node c) of
-			      (Cases.Char l, Const.Node.Char c) => doit (l, c)
-			    | (Cases.Int l, Const.Node.Int i) => doit (l, i)
-			    | (Cases.Word l, Const.Node.Word w) => doit (l, w)
-			    | (Cases.Word8 l, Const.Node.Word w) =>
-				 doit (l, Word8.fromWord w)
-			    | _ => Error.bug "strange case"
-			   end
-		      | (_, NONE) => normal varExp
-		      | _ => Error.bug "simplifyMonoVal"
-	       end
+			  | (_, SOME (Value.Const c)) =>
+			       let
+				  fun doit (l, z) = match (l, fn z' => z = z')
+			       in case (cases, Const.node c) of
+				  (Cases.Char l, Const.Node.Char c) =>
+				     doit (l, c)
+				| (Cases.Int l, Const.Node.Int i) =>
+				     doit (l, i)
+				| (Cases.Word l, Const.Node.Word w) =>
+				     doit (l, w)
+				| (Cases.Word8 l, Const.Node.Word w) =>
+				     doit (l, Word8.fromWord w)
+				| _ => Error.bug "strange case"
+			       end
+			  | (_, NONE) => normal varExp
+			  | _ => Error.bug "simplifyMonoVal"
+		  end
 	 end
       and simplifyLambda l: Lambda.t =
 	 traceSimplifyLambda
 	 (fn l => 
 	  let val {arg, argType, body} = Lambda.dest l
 	  in Lambda.new {arg = arg,
-			argType = argType,
-			body = simplifyExp body}
+			 argType = argType,
+			 body = simplifyExp body}
 	  end) l
-      val _ = countExp e
-      val e = simplifyExp e
-      val _ = Exp.clear e
-   in e
+      val _ = countExp body
+      val _ = Option.app (overflow, fn x => VarInfo.inc (varInfo x, 1))
+      val body = simplifyExp body
+      val overflow =
+	 Option.map (overflow, fn x =>
+		     VarExp.var (VarInfo.varExp (varInfo x)))
+      val _ = Exp.clear body
+   in
+      Program.T {datatypes = datatypes,
+		 body = body,
+		 overflow = overflow}
    end
 
 val simplifyOnce =
-   Trace.trace ("Xml.simplifyOnce", Exp.layout, Exp.layout) simplifyOnce
+   Trace.trace ("Xml.simplifyOnce", Program.layout, Program.layout) simplifyOnce
 
-fun simplify (Program.T {datatypes, body}): Program.t =
-   Program.T {datatypes = datatypes,
-	      body = simplifyOnce (simplifyOnce body)}
+val simplify = simplifyOnce o simplifyOnce
 
 val simplify =
    Trace.trace ("Xml.simplify", Program.layout, Program.layout) simplify

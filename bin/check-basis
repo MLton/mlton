@@ -19,10 +19,10 @@ case "$#" in
 esac
 
 dir=`dirname $0`
-root=`cd $dir/../.. && pwd`
-basis="$root/src/basis-library/basis.sml"
+root=`cd $dir/.. && pwd`
+basis="$root/basis-library/basis.sml"
 
-cd $root/src/basis-library
+cd $root/basis-library
 rm -f $basis
 (
 cat <<-EOF

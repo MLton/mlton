@@ -53,21 +53,23 @@ signature CORE_ML =
       structure Exp:
 	 sig
 	    type dec
+	    type match
 	    datatype t =
 	       App of t * t
 	     | Con of Con.t
 	     | Const of Ast.Const.t
 	     | Constraint of t * Type.t
-	     | Fn of (Pat.t * t) vector
-	     | Handle of t * (Pat.t * t) vector
+	     | Fn of match
+	     | Handle of t * match
 	     | Let of dec vector * t
 	     | Prim of Prim.t
-	     | Raise of t
+	     | Raise of {exn: t,
+			 filePos: string}
 	     | Record of t Record.t
 	     | Var of Var.t
 
 	    val andAlso: t * t -> t
-	    val casee: t * (Pat.t * t) vector -> t
+	    val casee: t * match -> t
 	    val compose: unit -> t
 	    val delay: t -> t
 	    val force: t -> t
@@ -85,6 +87,15 @@ signature CORE_ML =
 	    val unit: t
 	    val whilee: {test: t, expr: t} -> t
 	 end
+
+      structure Match:
+	 sig
+	    datatype t = T of {rules: (Pat.t * Exp.t) vector,
+			       filePos: string}
+
+	    val filePos: t -> string
+	 end
+      where type t = Exp.match
 
       structure Dec:
 	 sig
@@ -106,7 +117,7 @@ signature CORE_ML =
 		       decs: {
 			      var: Var.t,
 			      ty: Type.t option,
-			      rules: (Pat.t * Exp.t) vector
+			      match: Match.t
 			     } vector
 		      }
 	     | Overload of {
@@ -114,9 +125,10 @@ signature CORE_ML =
 			    scheme: Scheme.t,
 			    ovlds: Var.t vector
 			   }
-	     | Val of {pat: Pat.t,
-		       tyvars: Tyvar.t vector,
-		       exp: Exp.t}
+	     | Val of {exp: Exp.t,
+		       filePos: string,
+		       pat: Pat.t,
+		       tyvars: Tyvar.t vector}
 
 	    val isExpansive: t -> bool
 	    val layout: t -> Layout.t

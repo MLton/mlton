@@ -92,14 +92,12 @@ signature MACHINE =
 	 sig
 	    type t
 	      
-	    val none : t
-	    val overflow : Label.t * Operand.t list -> t
-	    val runtime : GCInfo.t -> t
-	    val normal : Operand.t list -> t
-
-	    val deRuntime : t -> GCInfo.t
-
-	    val layout : t -> Layout.t
+	    val deRuntime: t -> GCInfo.t
+	    val layout: t -> Layout.t
+	    val none: t
+	    val normal: Operand.t list -> t
+	    val overflow: Label.t * Operand.t list -> t
+	    val runtime: GCInfo.t -> t
 	 end
 
       structure Statement:

@@ -14,6 +14,7 @@ signature SOURCE_POS =
 
       val bogus: t
       val file: t -> File.t
+      val toString: t -> string
    end
 
 

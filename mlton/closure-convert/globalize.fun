@@ -7,7 +7,7 @@ struct
 open S
 open Dec PrimExp
 
-fun globalize {program = Program.T {datatypes, body},
+fun globalize {program = Program.T {datatypes, body, ...},
 	       lambdaFree,
 	       varGlobal: Var.t -> bool ref} =
    let

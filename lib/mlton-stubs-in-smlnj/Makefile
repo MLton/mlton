@@ -1,6 +1,6 @@
 .PHONY: links
 links:
-	for f in array cont gc itimer mlton proc-env ptrace random rlimit 	\
+	for f in array cont exn gc itimer mlton proc-env ptrace random rlimit 	\
 			rusage signal socket syslog text-io thread vector	\
 			word world; do \
 		rm -f $$f.sig && \

@@ -31,6 +31,8 @@ signature CONTROL =
       (* List of optimization passes to skip. *)
       val dropPasses: string list ref
 
+      val exnHistory: bool ref
+	 
       (* SOME n means that the executable should use a fixed heap of size n *)
       val fixedHeap: int option ref
 

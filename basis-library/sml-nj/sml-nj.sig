@@ -22,6 +22,8 @@ signature SML_OF_NJ =
 		  val messages: bool -> unit
 	       end	       
 	 end
+
+      val exnHistory: exn -> string list
       val exportFn: string * (string * string list -> OS.Process.status) -> unit
       val exportML: string -> bool
       val getCmdName: unit -> string

@@ -44,6 +44,10 @@ val dropPasses =
 	    default = [],
 	    toString = List.toString String.toString}
 
+val exnHistory = control {name = "exn history",
+			  default = false,
+			  toString = Bool.toString}
+   
 val fixedHeap = control {name = "fixed heap",
 			 default = NONE,
 			 toString = Option.toString Int.toString}

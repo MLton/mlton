@@ -35,8 +35,10 @@ structure SMLofNJ: SML_OF_NJ =
 
       fun getAllArgs () = getCmdName () :: getArgs ()
 
-      structure World = MLton.World
+      val exnHistory = MLton.Exn.history
 	 
+      structure World = MLton.World
+
       fun exportFn (file: string, f) =
 	 let open MLton.World OS.Process
 	 in case save (file ^ ".mlton") of

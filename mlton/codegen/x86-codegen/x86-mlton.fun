@@ -785,7 +785,7 @@ struct
 	fun getPrimInfoNormal ()
 	  = case pinfo
 	      of PrimInfo.Normal live => live
-	       | _ => Error.bug "applyPrim: getPrimInfoOverflow"
+	       | _ => Error.bug "applyPrim: getPrimInfoNormal"
 
 	fun unimplemented s
 	  = AppendList.fromList
@@ -2183,6 +2183,12 @@ struct
 	     | IntInf_toVector => mov ()
 	     | IntInf_fromWord => mov ()
 	     | IntInf_toWord => mov ()
+	     | MLton_bug =>
+		  applyFF {target = Label.fromString "MLton_bug",
+			   args = args,
+			   dst = dst,
+			   live = getPrimInfoNormal (),
+			   liveInfo = liveInfo}
 	     | MLton_eq => cmp Instruction.E
 	     | MLton_halt 
 	     => let

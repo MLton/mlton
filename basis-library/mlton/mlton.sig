@@ -16,6 +16,7 @@ signature MLTON =
 
       structure Array: MLTON_ARRAY
       structure Cont: MLTON_CONT
+      structure Exn: MLTON_EXN
       structure GC: MLTON_GC
       structure Itimer: MLTON_ITIMER
       structure ProcEnv: MLTON_PROC_ENV

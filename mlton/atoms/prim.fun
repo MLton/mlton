@@ -45,7 +45,11 @@ structure Name =
        | Char_ord
        | Constant of string
        | Cpointer_isNull
+       | Exn_extra
+       | Exn_keepHistory
        | Exn_name
+       | Exn_setInitExtra
+       | Exn_setRaise
        | Exn_setTopLevelHandler
        | FFI of string
        | GC_collect
@@ -83,6 +87,7 @@ structure Name =
        | Int_sub
        | Int_subCheck
        | MLton_bogus
+       | MLton_bug
        | MLton_deserialize
        | MLton_eq
        | MLton_equal
@@ -254,6 +259,7 @@ structure Name =
       val impCall
 	= fn FFI _ => true
            | IntInf_toString => true
+	   | MLton_bug => true
 	   | MLton_size => true
 	   | String_equal => true
 	   | IntInf_compare => true
@@ -296,7 +302,11 @@ structure Name =
 	  (Char_lt, Functional, "Char_lt"),
 	  (Char_ord, Functional, "Char_ord"),
 	  (Cpointer_isNull, Functional, "Cpointer_isNull"),
+	  (Exn_extra, Functional, "Exn_extra"),
 	  (Exn_name, Functional, "Exn_name"),
+	  (Exn_setInitExtra, SideEffect, "Exn_setInitExtra"),
+	  (Exn_setRaise, SideEffect, "Exn_setRaise"),
+	  (Exn_setTopLevelHandler, SideEffect, "Exn_setTopLevelHandler"),
 	  (Exn_setTopLevelHandler, SideEffect, "Exn_setTopLevelHandler"),
 	  (GC_collect, SideEffect, "GC_collect"),
 	  (IntInf_add, Functional, "IntInf_add"),
@@ -334,6 +344,7 @@ structure Name =
 	  (Int_sub, Functional, "Int_sub"),
 	  (Int_subCheck, SideEffect, "Int_subCheck"),
 	  (MLton_bogus, Functional, "MLton_bogus"),
+	  (MLton_bug, SideEffect, "MLton_bug"),
 	  (MLton_deserialize, Moveable, "MLton_deserialize"),
 	  (MLton_eq, Functional, "MLton_eq"),
 	  (MLton_equal, Functional, "MLton_equal"),
@@ -543,7 +554,7 @@ in
    val array = new (Name.Array_array, make1 (fn a => int --> array a))
    val assign = new (Name.Ref_assign, make1 (fn a => tuple [reff a, a] --> unit))
    val bogus = new (Name.MLton_bogus, make1 (fn a => a))
-   val bug = new (Name.FFI "MLton_bug", make0 (string --> unit))
+   val bug = new (Name.MLton_bug, make0 (string --> unit))
    val deref = new (Name.Ref_deref, make1 (fn a => reff a --> a))
    val deserialize =
       new (Name.MLton_deserialize, make1 (fn a => vector word8 --> a))
@@ -646,7 +657,10 @@ fun returnsBool p =
       SOME (_, Type.Con (tycon, _)) => Tycon.equals (tycon, Tycon.bool)
     | _ => false
 
-fun extractTargs {prim, args, result, dearray, deref, devector} =
+fun 'a extractTargs {prim, args, result,
+		     dearray,
+		     dearrow: 'a -> 'a * 'a,
+		     deref, devector} =
    let
       val one = Vector.new1
       fun arg i = Vector.sub (args, i)
@@ -658,6 +672,8 @@ fun extractTargs {prim, args, result, dearray, deref, devector} =
        | Array_sub => one result
        | Array_update => one (arg 2)
        | Array_length => one (dearray (arg 0))
+       | Exn_extra => one result
+       | Exn_setInitExtra => one (#2 (dearrow (arg 0)))
        | MLton_bogus => one result
        | MLton_deserialize => one result
        | MLton_eq => one (arg 0)

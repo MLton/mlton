@@ -45,6 +45,11 @@ syntax (see \secref{compile-time-constant}).
 %If you compile {\tt -DMLton\_debug=1}, then the value of the variable
 %{\tt MLton.debug} will be true.  The default is false.
 
+\option{-exn-history \{false|true\}}
+Enable {\tt Exn.history}.  This has a performance impact, both in memory usage
+of exceptions and in runtime, because of additional work that must be performed
+at each exception construction, raise, and handle.  By default, it is disabled.
+
 \option{-h \mbox{\rm heapSize[}km\mbox{\rm ]}}
 The resulting executable will use a fixed size heap of heapSize size.  A value
 of {\tt 0} means that the heap size should be chosen almost as large as the

@@ -73,6 +73,7 @@ array2.sml
 char.sml
 cont.sig
 date.sml
+exn.sig
 gc.sig
 int-inf-sig.sml
 int-inf.sml

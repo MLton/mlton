@@ -1,6 +1,7 @@
 Here are the changes from version 20010806 to version VERSION.
 
-* 2001-10-01
+* 2001-10-1
+  - added MLton.Exn.history.
   - Fixed register allocation bug with fucom instruction.  Was
     allowing fucomp when the first source was not removable.
 

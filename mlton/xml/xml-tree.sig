@@ -89,7 +89,8 @@ signature XML_TREE =
 	     | PrimApp of {prim: Prim.t,
 			   targs: Type.t vector,
 			   args: VarExp.t vector}
-	     | Raise of VarExp.t
+	     | Raise of {exn: VarExp.t,
+			 filePos: string}
 	     | Select of {tuple: VarExp.t,
 			  offset: int}
 	     | Tuple of VarExp.t vector
@@ -195,7 +196,7 @@ signature XML_TREE =
 			  targs: Type.t vector,
 			  args: t vector,
 			  ty: Type.t} -> t
-	    val raisee: t * Type.t -> t
+	    val raisee: {exn: t, filePos: string} * Type.t -> t
 	    val reff: t -> t
 	    val select: {tuple: t, offset: int, ty: Type.t} -> t
 	    val seq: t vector * (t vector -> t) -> t
@@ -223,7 +224,11 @@ signature XML_TREE =
 					arg: Type.t option
 					} vector
 				 } vector,
-		     body: Exp.t}
+		     body: Exp.t,
+		     (* overflow is SOME only after exceptions have been
+		      * implemented.
+		      *)
+		     overflow: Var.t option}
 
 	    val clear: t -> unit (* clear all property lists *)
 	    val empty: t

@@ -27,6 +27,7 @@ val safe = Primitive.safe
 
 structure Array = Array
 structure Cont = Cont
+structure Exn = Exn
 structure GC = GC
 structure Itimer = Itimer
 structure ProcEnv = ProcEnv

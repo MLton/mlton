@@ -90,18 +90,18 @@ fun build (CoreML.Program.T {decs, ...},
 	     | Let (ds, e) => loopDecs (ds, loopExp (e, ac))
 	     | Constraint (e, _) => loopExp (e, ac)
 	     | Handle (e, m) => loopMatch (m, loopExp (e, ac))
-	     | Raise e => loopExp (e, ac)
+	     | Raise {exn, ...} => loopExp (exn, ac)
 	     | _ => ac
-	 and loopMatch (m: (Pat.t * Exp.t) vector, ac: ac): ac =
-	    Vector.fold (m, ac, fn ((_, e), ac) => loopExp (e, ac))
+	 and loopMatch (Match.T {rules,...}, ac: ac): ac =
+	    Vector.fold (rules, ac, fn ((_, e), ac) => loopExp (e, ac))
 	 and loopDecs (ds: Dec.t vector, ac: ac): ac =
 	    Vector.fold (ds, ac, loopDec)
 	 and loopDec (d: Dec.t, ac: ac): ac =
 	    case d of
 	       Val {exp, ...} => loopExp (exp, ac)
 	     | Fun {decs, ...} =>
-		  Vector.fold (decs, ac, fn ({rules, ...}, ac) =>
-			       loopMatch (rules, ac))
+		  Vector.fold (decs, ac, fn ({match, ...}, ac) =>
+			       loopMatch (match, ac))
 	     | _ => ac
       in
 	 val constants = loopDecs (decs, [])

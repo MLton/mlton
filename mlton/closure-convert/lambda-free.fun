@@ -119,7 +119,7 @@ fun lambdaFree (Program.T {body, ...},
 		  else ();
 		varExps (args, s))
 	  | App {func, arg} => (varExp (func, s); varExp (arg, s))
-	  | Raise x => varExp (x, s)
+	  | Raise {exn, ...} => varExp (exn, s)
 	  | Handle {try, catch, handler} =>
 	       (exp (try, s); bind (#1 catch, s); exp (handler, s))
 	  | Case {test, cases, default} =>

@@ -156,11 +156,14 @@ structure Pat =
    end
 
 datatype dec =
-   Val of {pat: Pat.t, tyvars: Tyvar.t vector, exp: exp}
+   Val of {exp: exp,
+	   filePos: string,
+	   pat: Pat.t,
+	   tyvars: Tyvar.t vector}
   | Fun of {tyvars: Tyvar.t vector,
 	    decs: {var: Var.t,
 		   ty: Type.t option,
-		   rules: rules} vector}
+		   match: match} vector}
   | Datatype of {
 		 tyvars: Tyvar.t vector,
 		 tycon: Tycon.t,
@@ -182,13 +185,29 @@ and exp =
   | Const of Ast.Const.t
   | Con of Con.t
   | Record of exp Record.t
-  | Fn of rules
+  | Fn of match
   | App of exp * exp
   | Let of dec vector * exp
   | Constraint of exp * Type.t
-  | Handle of exp * rules
-  | Raise of exp
-withtype rules = (Pat.t * exp) vector
+  | Handle of exp * match
+  | Raise of {exn: exp, filePos: string}
+
+and match = T of {filePos: string,
+		  rules: (Pat.t * exp) vector}
+
+structure Match =
+   struct
+      datatype t = datatype match
+
+      local
+	 fun make f (T r) = f r
+      in
+	 val filePos = make #filePos
+      end
+   
+      fun new rs = T {rules = rs,
+		      filePos = ""}
+   end
 
 local
    local open Ast
@@ -208,16 +227,18 @@ in
       
    fun decToAst d =
       case d of
-	 Val {pat, tyvars, exp} =>
+	 Val {pat, filePos, tyvars, exp} =>
 	    Dec.make (Dec.Val {tyvars = tyvars,
-			       vbs = Vector.new1 (Pat.toAst pat, expToAst exp),
+			       vbs = Vector.new1 {pat = Pat.toAst pat,
+						  exp = expToAst exp,
+						  filePos = filePos},
 			       rvbs = Vector.new0 ()})
        | Fun {tyvars, decs} =>
 	    Dec.funn (tyvars,
-		      Vector.map (decs, fn {var, ty, rules} =>
-				  (Var.toAst var,
-				   rulesToAst rules,
-				   Type.optionToAst ty)))
+		      Vector.map (decs, fn {var, ty, match} =>
+				  {var = Var.toAst var,
+				   match = matchToAst match,
+				   resultTy = Type.optionToAst ty}))
        | Datatype ds => astDatatype ds
        | Exception {con, arg} =>
 	    Dec.exceptionn (Con.toAst con, Type.optionToAst arg)
@@ -236,14 +257,19 @@ in
        | Const c => Exp.const c
        | Con c => Exp.con (Con.toAst c)
        | Record r => Exp.record (Record.map (r, expToAst))
-       | Fn rs => Exp.fnn (rulesToAst rs)
+       | Fn m => Exp.fnn (matchToAst m)
        | App (e1, e2) => Exp.app (expToAst e1, expToAst e2)
        | Let (ds, e) => Exp.lett (Vector.map (ds, decToAst), expToAst e)
        | Constraint (e, t) => Exp.constraint (expToAst e, Type.toAst t)
-       | Handle (e, rs) => Exp.handlee (expToAst e, rulesToAst rs)
-       | Raise e => Exp.raisee (expToAst e)
-   and rulesToAst rs =
-      Vector.map (rs, fn (p, e) => (Pat.toAst p, expToAst e))
+       | Handle (try, match) =>
+	    Exp.handlee (expToAst try, matchToAst match)
+       | Raise {exn, filePos} => Exp.raisee {exn = expToAst exn,
+					     filePos = filePos}
+	    
+   and matchToAst (Match.T {rules, filePos}) =
+      Ast.Match.T
+      {filePos = filePos,
+       rules = Vector.map (rules, fn (p, e) => (Pat.toAst p, expToAst e))}
 end
 
 fun makeForeachVar f =
@@ -252,19 +278,18 @@ fun makeForeachVar f =
 	 case e of
 	    Var x => f x
 	  | Record r => Record.foreach (r, exp)
-	  | Fn rs => rules rs
+	  | Fn m => match m
 	  | App (e1, e2) => (exp e1; exp e2)
 	  | Let (ds, e) => (Vector.foreach (ds, dec); exp e)
 	  | Constraint (e, _) => exp e
-	  | Handle (e, rs) => (exp e; rules rs)
-	  | Raise e => exp e
+	  | Handle (e, m) => (exp e; match m)
+	  | Raise {exn, ...} => exp exn
 	  | _ => ()
-      and rules rs = Vector.foreach (rs, fn (_, e) => exp e)
+      and match (Match.T {rules, ...}) = Vector.foreach (rules, exp o #2)
       and dec d =
 	 case d of
 	    Val {exp = e, ...} => exp e
-	  | Fun {decs, ...} => Vector.foreach (decs, fn {rules = rs, ...} =>
-					       rules rs)
+	  | Fun {decs, ...} => Vector.foreach (decs, match o #match)
 	  | Overload {ovlds, ...} => Vector.foreach (ovlds, f)
 	  | _ => ()
    in {exp = exp, dec = dec}
@@ -273,6 +298,7 @@ fun makeForeachVar f =
 structure Exp =
    struct
       type dec = dec
+      type match = match
       datatype t = datatype exp
 
       val toAst = expToAst
@@ -281,7 +307,7 @@ structure Exp =
 
       val fnn = Fn
 
-      val fn1 = fnn o Vector.new1
+      fun fn1 r = fnn (Match.new (Vector.new1 r))
 
       fun compose () =
 	 let val f = Var.newNoname ()
@@ -330,7 +356,8 @@ structure Exp =
 	       Let (Vector.map (es, fn e =>
 				Val {pat = Pat.Wild,
 				     tyvars = Vector.new0 (),
-				     exp = e}),
+				     exp = e,
+				     filePos = ""}),
 		    e)
 	    end
 
@@ -347,8 +374,8 @@ structure Exp =
 	 end
 
       fun iff (test, thenCase, elseCase) =
-	 casee (test, Vector.new2 ((Pat.truee, thenCase),
-				   (Pat.falsee, elseCase)))
+	 casee (test, Match.new (Vector.new2 ((Pat.truee, thenCase),
+					      (Pat.falsee, elseCase))))
 
       val truee = Con Con.truee
       val falsee = Con Con.falsee
@@ -364,13 +391,14 @@ structure Exp =
 		 (Fun {tyvars = Vector.new0 (),
 		       decs = (Vector.new1
 			       {var = loop, ty = NONE,
-				rules = (Vector.new1
-					 (Pat.tuple (Vector.new0 ()),
-					  iff (test,
-					       seq (Vector.new2
-						    (expr,
-						     App (Var loop, unit))),
-					       unit)))})}),
+				match = (Match.new
+					 (Vector.new1
+					  (Pat.tuple (Vector.new0 ()),
+					   iff (test,
+						seq (Vector.new2
+						     (expr,
+						      App (Var loop, unit))),
+						unit))))})}),
 		 App (Var loop, unit))
 	 end
 
@@ -413,19 +441,19 @@ structure Program =
 	    fun exp e =
 	       (inc ()
 		; (case e of
-		      Fn rs => rules rs
+		      Fn m => match m
 		    | Record r => Record.foreach (r, exp)
 		    | App (e, e') => (exp e; exp e')
 		    | Let (ds, e) => (Vector.foreach (ds, dec); exp e)
 		    | Constraint (e, _) => exp e
-		    | Handle (e, rs) => (exp e; rules rs)
-		    | Raise e => exp e
+		    | Handle (e, m) => (exp e; match m)
+		    | Raise {exn, ...} => exp exn
 		    | _ => ()))
-	    and rules rs = Vector.foreach (rs, exp o #2)
+	    and match (Match.T {rules, ...}) = Vector.foreach (rules, exp o #2)
 	    and dec d =
 	       case d of
 		  Val {exp = e, ...} => exp e
-		| Fun {decs, ...} => Vector.foreach (decs, rules o #rules)
+		| Fun {decs, ...} => Vector.foreach (decs, match o #match)
 		| Exception _ => inc ()
 		| _ => ()
 	    val _ = Vector.foreach (ds, dec)

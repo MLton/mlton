@@ -45,6 +45,11 @@ structure MLton: MLTON =
 	    fun prepend _ = raise Fail "Cont.prepend"
 	 end
 
+      structure Exn =
+	 struct
+	    val history = SMLofNJ.exnHistory
+	 end
+
       structure GC =
 	 struct
 	    fun collect _ = ()

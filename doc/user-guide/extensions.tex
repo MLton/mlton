@@ -14,6 +14,7 @@ structure MLton:
       val size: 'a -> int
 	 
       structure Cont: MLTON_CONT
+      structure Exn: MLTON_EXN
       structure GC: MLTON_GC
       structure Itimer: MLTON_ITIMER
       structure ProcEnv: MLTON_PROC_ENV
@@ -84,6 +85,42 @@ signature MLTON_CONT =
 
 \entry{type 'a t}
 the type of continuations that expect a value of type {\tt 'a}.
+
+\entry{callcc f}
+apply {\tt f} to the current continuation.  At present, {\tt
+callcc} takes time proportional to the current stack size.
+
+\entry{prepend (k, f)}
+compose a function {\tt f} with a continuation {\tt k} to create a
+continuation that first does {\tt f} and then does {\tt k}.  {\tt
+prepend} is a constant time operation.
+
+\entry{throw (k, v)}
+throw value {\tt v} to continuation {\tt k}.  At present, {\tt throw}
+takes time proportional to the size of {\tt k}.
+
+\entry{throw' (k, th)}
+a generalization of throw that evaluates {\tt th ()} in the context
+of {\tt k}.  Thus, for example, if {\tt th ()} raises an exception or
+grabs another continuation, it will see {\tt k}, not the current
+continuation.
+
+\end{description}
+
+\begin{verbatim}
+signature MLTON_EXN =
+   sig
+      val history: exn -> string list
+   end
+\end{verbatim}
+
+\begin{description}
+
+\entry{history e}
+the file positions that have raised the exception {\tt e}, in reverse
+chronological order.   A {\tt handle} expression that implicitly reraises counts
+as a raise.  {\tt history} will return {\tt []} unless {\tt -exn-history true}
+is used.
 
 \entry{callcc f}
 apply {\tt f} to the current continuation.  At present, {\tt
@@ -654,6 +691,7 @@ signature SML_OF_NJ =
                end             
          end
 
+      val exnHistory: exn -> string list
       val exportFn: string * (string * string list -> OS.Process.status) -> unit
       val exportML: string -> bool
       val getCmdName: unit -> string
@@ -677,6 +715,9 @@ returns {\tt "Linux"}.
 
 \entry{Internals.GC.messages b}
 the same as {\tt MLton.GC.messages b}.
+
+\entry{exnHistory}
+the same as {\tt MLton.Exn.history}.
 
 \entry{getCmdName ()}
 the same as {\tt CommandLine.name ()}.

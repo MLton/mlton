@@ -5,7 +5,7 @@ PATH = ../../bin:$(shell echo $$PATH)
 
 all:	$(NAME)
 
-$(NAME): $(shell $(MLTON) -stop f $(NAME).cm)
+$(NAME): $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)
 	@echo 'Compiling $(NAME)'
 	time $(MLTON) $(FLAGS) $(NAME).cm
 	strip $(NAME)
@@ -17,7 +17,6 @@ $(NAME).cm:
 		cmcat sources.cm | grep -v 'mlton-stubs-in-smlnj';	\
 		echo 'call-main.sml';					\
 	) >$(NAME).cm
-
 
 .PHONY: clean
 clean:

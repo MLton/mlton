@@ -10,7 +10,7 @@ open Dec PrimExp
 structure Graph = DirectedGraph
 structure Node = Graph.Node
 
-fun sccFuns (Program.T {datatypes, body}) =
+fun sccFuns (Program.T {datatypes, body, overflow}) =
    let
       (* For each function appearing in a fun dec record its node, which will
        * have edges to the nodes of other functions declared in the same dec
@@ -45,7 +45,7 @@ fun sccFuns (Program.T {datatypes, body}) =
 	  | ConApp {arg, ...} => (Option.app (arg, loopVarExp); e)
 	  | PrimApp {args, ...} => (loopVarExps args; e)
 	  | App {func, arg} => (loopVarExp func; loopVarExp arg; e)
-	  | Raise x => (loopVarExp x; e)
+	  | Raise {exn, ...} => (loopVarExp exn; e)
 	  | Case {test, cases, default} =>
 	       (loopVarExp test;
 		Case {test = test,
@@ -55,7 +55,6 @@ fun sccFuns (Program.T {datatypes, body}) =
 	       Handle {try = loopExp try,
 		       catch = catch,
 		       handler = loopExp handler}
-	       
       and loopExp (e: Exp.t): Exp.t =
 	 let val {decs, result} = Exp.dest e
 	    val decs =
@@ -110,6 +109,7 @@ fun sccFuns (Program.T {datatypes, body}) =
 	    Exp.new {decs = decs, result = result}
 	 end
    in Program.T {datatypes = datatypes,
-		 body = loopExp body}
+		 body = loopExp body,
+		 overflow = overflow}
    end
 end

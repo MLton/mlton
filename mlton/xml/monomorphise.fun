@@ -157,7 +157,7 @@ structure Cache:
 *)
    end
 
-fun monomorphise (Xprogram.T {datatypes, body}): Sprogram.t =
+fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
    let
       val {get = getVar: Var.t -> Stype.t vector -> SvarExp.t,
 	   set = setVar} =
@@ -358,7 +358,9 @@ fun monomorphise (Xprogram.T {datatypes, body}): Sprogram.t =
 				 args = monoVarExps args}
 	  | XprimExp.App {func, arg} =>
 	       SprimExp.App {func = monoVarExp func, arg = monoVarExp arg}
-	  | XprimExp.Raise x => SprimExp.Raise (monoVarExp x)
+	  | XprimExp.Raise {exn, filePos} =>
+	       SprimExp.Raise {exn = monoVarExp exn,
+			       filePos = filePos}
 	  | XprimExp.Handle {try, catch, handler} =>
 	       SprimExp.Handle {try = monoExp try,
 				catch = renameMono catch,
@@ -471,7 +473,8 @@ fun monomorphise (Xprogram.T {datatypes, body}): Sprogram.t =
       val datatypes = finishDbs []
       val program =
 	 Sprogram.T {datatypes = Vector.fromList datatypes,
-		     body = body} 
+		     body = body,
+		     overflow = NONE}
       val _ = Sprogram.clear program
       val _ = destroyCon ()
       val _ = destroyTycon ()

@@ -17,6 +17,7 @@ in
    structure Aconst = Const
    structure Adec = Dec
    structure Aexp = Exp
+   structure Amatch = Match
    structure Apat = Pat
    structure Atype = Type
    structure Avar = Var
@@ -37,6 +38,7 @@ in
    structure Con = Con
    structure Cdec = Dec
    structure Cexp = Exp
+   structure Cmatch = Match
    structure Cpat = Pat
    structure Cprim = Prim
    structure Ctype = Type
@@ -401,38 +403,41 @@ fun elaborateDec (d, E) =
 		let
 		   val clausess =
 		      Vector.map
-		      (fbs, fn clauses =>
-		       Vector.map
-		       (clauses, fn {pats, resultType, body} =>
-			let val {func, args} = Parse.parseClause (pats, E)
-			in {func = func,
-			    args = args,
-			    resultType = resultType,
-			    body =
-			    (if !Control.printAtFunEntry
-				then
-				   let
-				      val x = Avar.fromString "z"
-				      val c =
-					 Aexp.const
-					 (Aconst.String (Avar.toString func))
-				      fun make f = Aexp.app (f, c)
-				   in
-				      Aexp.seq
-				      (Vector.new2
-				       (make enterDebug,
-					Aexp.lett (Vector.new1
-						   (Adec.vall (Vector.new0 (),
-							       x, body)),
-						   Aexp.seq
-						   (Vector.new2
-						    (make leaveDebug,
-						     Aexp.var x)))))
-				   end
-			     else body)}
-			end))
+		      (fbs, fn {clauses, filePos} =>
+		       {filePos = filePos,
+			clauses = 
+			Vector.map
+			(clauses, fn {pats, resultType, body} =>
+			 let
+			    val {func, args} = Parse.parseClause (pats, E)
+			 in {func = func,
+			     args = args,
+			     resultType = resultType,
+			     body =
+			     (if !Control.printAtFunEntry
+				 then
+				    let
+				       val x = Avar.fromString "z"
+				       val c =
+					  Aexp.const
+					  (Aconst.String (Avar.toString func))
+				       fun make f = Aexp.app (f, c)
+				    in
+				       Aexp.seq
+				       (Vector.new2
+					(make enterDebug,
+					 Aexp.lett (Vector.new1
+						    (Adec.vall (Vector.new0 (),
+								x, body)),
+						    Aexp.seq
+						    (Vector.new2
+						     (make leaveDebug,
+						      Aexp.var x)))))
+				    end
+			      else body)}
+			 end)})
 		   val funcs =
-		      Vector.map (clausess, fn clauses =>
+		      Vector.map (clausess, fn {clauses, ...} =>
 				  if Vector.isEmpty clauses
 				     then Error.bug "no clauses in fundec"
 				  else #func (Vector.sub (clauses, 0)))
@@ -442,7 +447,7 @@ fun elaborateDec (d, E) =
 				       Env.extendVar (E, name, var))
 		   val decs =
 		      Vector.map2
-		      (clausess, newFuncs, fn (clauses, newFunc) =>
+		      (clausess, newFuncs, fn ({clauses, filePos}, newFunc) =>
 		       if Vector.isEmpty clauses
 			  then Error.bug "empty clauses in fundec"
 		       else
@@ -450,7 +455,7 @@ fun elaborateDec (d, E) =
 			     val {args, ...} = Vector.sub (clauses, 0)
 			     val numVars = Vector.length args
 			  in {var = newFunc, ty = NONE,
-			      rules =
+			      match =
 			      let
 				 val rs =
 				    Vector.map
@@ -474,17 +479,20 @@ fun elaborateDec (d, E) =
 					   (Vector.fromList
 					    (List.fold (xs, [], fn (x, xs) =>
 							(Cexp.Var x) :: xs))),
-					   rs)
+					   Cmatch.T {filePos = filePos,
+						     rules = rs})
 				    else 
 				       let val x = Cvar.newNoname ()
 				       in Cexp.lambda (x, make (i - 1, x :: xs))
 				       end
-			      in if numVars = 1 then rs
+			      in if numVars = 1
+				    then Cmatch.T {filePos = filePos,
+						   rules = rs}
 				 else (case make (numVars, []) of
-					  Cexp.Fn rules => rules
+					  Cexp.Fn m => m
 					| _ => Error.bug "elabFbs")
 			      end}
-			     end)
+			  end)
 		in Decs.single (Cdec.Fun {tyvars = tyvars,
 					  decs = decs})
 		end
@@ -522,7 +530,7 @@ fun elaborateDec (d, E) =
 		   (* Must do all the es and rvbs pefore the ps because of
 		    * scoping rules.
 		    *)
-		   val es = Vector.map (vbs, elabExp o #2)
+		   val es = Vector.map (vbs, elabExp o #exp)
 		   val vars = Vector.map (rvbs, #var)
 		   val newVars = Vector.map (vars, Cvar.fromAst)
 		   val _ = Vector.foreach2 (vars, newVars, fn (name, var) =>
@@ -530,13 +538,16 @@ fun elaborateDec (d, E) =
 		   val rvbs =
 		      Vector.map2
 		      (rvbs, newVars,
-		       fn ({var, fixity, rules, ty}, newvar) =>
+		       fn ({var, fixity, match, ty}, newvar) =>
 		       {var = newvar,
 			ty = elabTypeOpt ty,
-			rules = elabRules rules})
-		   val ps = Vector.map (vbs, fn (p, _) => elaboratePat (p, E))
-		   val vbs = Vector.map2 (ps, es, fn (p, e) =>
-					  Cdec.Val {pat = p,
+			match = elabMatch match})
+		   val ps = Vector.map (vbs, fn {pat, filePos, ...} =>
+					{pat = elaboratePat (pat, E),
+					 filePos = filePos})
+		   val vbs = Vector.map2 (ps, es, fn ({pat, filePos}, e) =>
+					  Cdec.Val {pat = pat,
+						    filePos = filePos,
 						    tyvars = tyvars,
 						    exp = e})
 		in Decs.append
@@ -557,17 +568,16 @@ fun elaborateDec (d, E) =
 		Cexp.andAlso (elabExp e, elabExp e')
 	   | Aexp.App (e1, e2) =>
 		Cexp.App (elabExp e1, elabExp e2)
-	   | Aexp.Case (e, rs) =>
-		Cexp.casee (elabExp e, elabRules rs)
+	   | Aexp.Case (e, m) => Cexp.casee (elabExp e, elabMatch m)
 	   | Aexp.Const c => Cexp.Const c
 	   | Aexp.Constraint (e, t) =>
 		Cexp.Constraint (elabExp e, Scheme.ty (elabType t))
 	   | Aexp.FFI {name, ty} =>
 		Cexp.Prim (Cprim.ffi (name, elabType ty))
 	   | Aexp.FlatApp items => elabExp (Parse.parseExp (items, E))
-	   | Aexp.Fn rs => Cexp.Fn (elabRules rs)
-	   | Aexp.Handle (e, rs) =>
-		Cexp.Handle (elabExp e, elabRules rs)
+	   | Aexp.Fn m => Cexp.Fn (elabMatch m)
+	   | Aexp.Handle (try, match) =>
+		Cexp.Handle (elabExp try, elabMatch match)
 	   | Aexp.If (a, b, c) =>
 		Cexp.iff (elabExp a, elabExp b, elabExp c)
 	   | Aexp.Let (d, e) =>
@@ -576,7 +586,8 @@ fun elaborateDec (d, E) =
 	   | Aexp.List es => Cexp.list (elabExps es)
 	   | Aexp.Orelse (e, e') => Cexp.orElse (elabExp e, elabExp e')
 	   | Aexp.Prim {name, ty} => Cexp.Prim (Cprim.new (name, elabType ty))
-	   | Aexp.Raise e => Cexp.Raise (elabExp e)
+	   | Aexp.Raise {exn, filePos} => Cexp.Raise {exn = elabExp exn,
+						      filePos = filePos}
 	   | Aexp.Record r => Cexp.Record (Record.map (r, elabExp))
 	   | Aexp.Selector f => Cexp.selector f
 	   | Aexp.Seq es => Cexp.seq (Vector.map (es, elabExp))
@@ -590,10 +601,12 @@ fun elaborateDec (d, E) =
 	   | Aexp.While {test, expr} =>
 		Cexp.whilee {test = elabExp test, expr = elabExp expr}
 	  end) arg
-      and elabRules rs =
-	 Vector.map (rs, fn (pat, exp) =>
-		     Env.scope (E, fn () => (elaboratePat (pat, E),
-					     elabExp exp)))
+      and elabMatch (Amatch.T {filePos, rules}) =
+	 Cmatch.T {filePos = filePos,
+		   rules = 
+		   Vector.map (rules, fn (pat, exp) =>
+			       Env.scope (E, fn () => (elaboratePat (pat, E),
+						       elabExp exp)))}
    in elabDec d
    end
 

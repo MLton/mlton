@@ -11,7 +11,7 @@ signature HASH_TYPE =
       include HASH_TYPE_STRUCTS
       include TYPE_OPS sharing type tycon = Tycon.t
 
-      structure Dest :
+      structure Dest:
 	 sig
 	    datatype dest =
 	       Var of Tyvar.t
@@ -36,7 +36,7 @@ signature HASH_TYPE =
 	  con: t * Tycon.t * 'a vector -> 'a}
 	 -> {hom: t -> 'a,
 	     destroy: unit -> unit}
-      val makeMonoHom :
+      val makeMonoHom:
 	 {con: t * Tycon.t * 'a vector -> 'a}
 	 -> {hom: t -> 'a,
 	     destroy: unit -> unit}

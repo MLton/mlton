@@ -41,7 +41,14 @@ PATH=.:$PATH
 		;;
 		*)
  			echo "testing $f"
-			$mlton -type-check true $f.sml
+			case "$f" in
+			exnHistory*)
+				flags='-exn-history true'
+			;;
+			*)
+			;;
+			esac
+			$mlton -type-check true $flags $f.sml
 			if [ $? -ne 0 ]; then
 				echo "compilation of $f failed"
 			elif [ ! -r $f.nonterm ]; then

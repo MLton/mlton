@@ -48,6 +48,12 @@ Define a compile-time constant accessible via \fBMLton\fR's \fB_prim\fR
 syntax.
 
 .TP
+.FB-exn-history \fI{\fBtrue\fI|\fBfalse\fI}\fR
+Enable \fBExn.history\fP.  This has a performance impact, both in memory usage
+of exceptions and in runtime, because of additional work that must be performed
+at each exception construction, raise, and handle.  By default, it is disabled.
+
+.TP
 \fB-h\fI heapSize[\fBkm\fP]\fR
 The resulting executable will use a fixed size heap of heapSize size.
 A value of 0 means that the heap size should be almost as large as the amount

@@ -146,6 +146,8 @@ mlton/syslog.sig
 mlton/syslog.sml
 mlton/random.sig
 mlton/random.sml
+mlton/exn.sig
+mlton/exn.sml
 mlton/mlton.sig
 mlton/mlton.sml
 

@@ -99,7 +99,7 @@ open Dec Exp
    
 fun renameDec (d, env) =
    case d of
-      Val {tyvars, pat, exp} =>
+      Val {tyvars, pat, exp, filePos} =>
 	 let
 	    val (env, tyvars) = TyvarEnv.rename (env, tyvars)
 	    val (pat, u1) = renamePat (pat, env)
@@ -110,17 +110,17 @@ fun renameDec (d, env) =
 			 (Tyvars.unions [u1, u2,
 					 Tyvars.fromList
 					 (Vector.toList tyvars)]))),
-	      pat = pat, exp = exp},
+	      pat = pat, exp = exp, filePos = filePos},
 	     Tyvars.empty)
 	 end
     | Fun {tyvars, decs} =>
 	 let
 	    val (env, tyvars) = TyvarEnv.rename (env, tyvars)
 	    val (decs, unguarded) =
-	       renames (decs, fn {var, ty, rules} =>
+	       renames (decs, fn {var, ty, match} =>
 			 let val (ty, u1) = renameTyOpt (ty, env)
-			    val (rules, u2) = renameRules (rules, env)
-			 in ({var = var, ty = ty, rules = rules},
+			    val (match, u2) = renameMatch (match, env)
+			 in ({var = var, ty = ty, match = match},
 			     Tyvars.+ (u1, u2))
 			 end)
 	 in (Fun {tyvars = (Vector.fromList
@@ -165,9 +165,9 @@ and renameExp (e, env) =
 	 let val (r, u) = Record.change (r, fn es => renameExps (es, env))
 	 in (Record r, u)
 	 end
-    | Fn rs =>
-	 let val (rs, unguarded) = renameRules (rs, env)
-	 in (Fn rs, unguarded)
+    | Fn m =>
+	 let val (m, unguarded) = renameMatch (m, env)
+	 in (Fn m, unguarded)
 	 end
     | App (e1, e2) =>
 	 let
@@ -187,23 +187,24 @@ and renameExp (e, env) =
 	    val (t, u2) = renameTy (t, env)
 	 in (Constraint (e, t), Tyvars.+ (u1, u2))
 	 end
-    | Handle (e, rs) =>
+    | Handle (e, m) =>
 	 let
 	    val (e, u1) = renameExp (e, env)
-	    val (rs, u2) = renameRules (rs, env)
-	 in (Handle (e, rs), Tyvars.+ (u1, u2))
+	    val (m, u2) = renameMatch (m, env)
+	 in (Handle (e, m), Tyvars.+ (u1, u2))
 	 end
-    | Raise e =>
+    | Raise {exn, filePos} =>
 	 let
-	    val (e, unguarded) = renameExp (e, env)
+	    val (exn, unguarded) = renameExp (exn, env)
 	 in
-	    (Raise e, unguarded)
+	    (Raise {exn = exn, filePos = filePos}, unguarded)
 	 end
    end
 and renameExps (es, env) = renames (es, fn e => renameExp (e, env))
-and renameRules (rs, env) =
-   let val (rs, unguarded) = renames (rs, fn r => renameRule (r, env))
-   in (rs, unguarded)
+and renameMatch (Match.T {rules, filePos}, env) =
+   let
+      val (rs, unguarded) = renames (rules, fn r => renameRule (r, env))
+   in (Match.T {rules = rs, filePos = filePos}, unguarded)
    end
 and renameRule ((p, e), env) =
    let val (p, u1) = renamePat (p, env)
@@ -211,10 +212,6 @@ and renameRule ((p, e), env) =
    in ((p, e), Tyvars.+ (u1, u2))
    end      
 
-(*---------------------------------------------------*)
-(*                      Remove                       *)
-(*---------------------------------------------------*)
-    
 fun bindNew (bound: Env.t, tyvars: Tyvar.t vector): Env.t * Tyvar.t vector =
    TyvarEnv.rename
    (bound,
@@ -263,19 +260,20 @@ fun removes (xs, scope, removeX) =
 
 fun removeDec (d: Dec.t, scope: Env.t): Dec.t =
    case d of
-      Val {tyvars, pat, exp} =>
+      Val {tyvars, pat, exp, filePos} =>
 	 let val (scope, tyvars) = bindNew (scope, tyvars)
 	 in Val {tyvars = tyvars,
 		 pat = removePat (pat, scope),
-		 exp = removeExp (exp, scope)}
+		 exp = removeExp (exp, scope),
+		 filePos = filePos}
 	 end
     | Fun {tyvars, decs} =>
 	 let val (scope, tyvars) = bindNew (scope, tyvars)
 	 in Fun {tyvars = tyvars,
-		 decs = Vector.map (decs, fn {var, ty, rules} =>
+		 decs = Vector.map (decs, fn {var, ty, match} =>
 				    {var = var,
 				     ty = removeTyOpt (ty, scope),
-				     rules = removeRules (rules, scope)})}
+				     match = removeMatch (match, scope)})}
 	 end
     | Exception {con, arg} => Exception {con = con,
 				       arg = removeTyOpt (arg, scope)}
@@ -298,26 +296,32 @@ and removeExp (e: Exp.t, scope: Env.t): Exp.t =
     | Const _ => e
     | Con _ => e
     | Record r => Record (Record.map (r, fn e => removeExp (e, scope)))
-    | Fn rules => Fn (removeRules (rules, scope))
+    | Fn m => Fn (removeMatch (m, scope))
     | App (e1, e2) => App (removeExp (e1, scope), removeExp (e2, scope))
     | Let (ds, e) => Let (removes (ds, scope, removeDec),
 			  removeExp (e, scope))
     | Constraint (e, t) => Constraint (removeExp (e, scope), removeTy (t, scope))
-    | Handle (e, rs) => Handle (removeExp (e, scope), removeRules (rs, scope))
-    | Raise e => Raise (removeExp (e, scope))
-and removeRules (rs, scope) = removes (rs, scope, removeRule)
+    | Handle (e, m) => Handle (removeExp (e, scope), removeMatch (m, scope))
+    | Raise {exn, filePos} =>
+	 Raise {exn = removeExp (exn, scope),
+		filePos = filePos}
+and removeMatch (Match.T {rules, filePos}, scope) =
+   Match.T {rules = removes (rules, scope, removeRule),
+	    filePos = filePos}
 and removeRule ((p, e), scope) = (removePat (p, scope), removeExp (e, scope))
     
-fun scope d =
-   let val (d, unguarded) = renameDec (d, Env.empty)
-   in if Tyvars.isEmpty unguarded
+fun scopeDec d =
+   let
+      val (d, unguarded) = renameDec (d, Env.empty)
+   in
+      if Tyvars.isEmpty unguarded
 	 then removeDec (d, Env.empty)
       else Error.bug "scope: free type variable"
    end
 
-val scope =
-   fn Program.T {decs} =>
-   Program.T {decs = Vector.map (decs, scope)}
+val scopeDec = Trace.trace ("scopeDec", Dec.layout, Dec.layout) scopeDec
+
+fun scope (Program.T {decs}) = Program.T {decs = Vector.map (decs, scopeDec)}
 
 val scope = Trace.trace ("scope", Program.layout, Program.layout) scope
    

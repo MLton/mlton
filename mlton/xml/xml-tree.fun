@@ -6,8 +6,10 @@ struct
 
 open S
 local open Ast
-in structure Adec = Dec
+in
+   structure Adec = Dec
    structure Aexp = Exp
+   structure Amatch = Match
    structure Apat = Pat
 end
 
@@ -97,27 +99,28 @@ datatype exp =
    Exp of {decs: dec list,
 	   result: VarExp.t}
 and primExp =
-   Const of Const.t
-  | Var of VarExp.t
-  | Tuple of VarExp.t vector
-  | Select of {tuple: VarExp.t,
-	       offset: int}
-  | Lambda of lambda
-  | ConApp of {con: Con.t,
-	       targs: Type.t vector,
-	       arg: VarExp.t option}
-  | PrimApp of {prim: Prim.t,
-		targs: Type.t vector,
-		args: VarExp.t vector}
-  | App of {func: VarExp.t,
+    App of {func: VarExp.t,
 	    arg: VarExp.t}
   | Case of {test: VarExp.t,
 	     cases: exp Cases.t,
 	     default: exp option}
-  | Raise of VarExp.t
+  | ConApp of {con: Con.t,
+	       targs: Type.t vector,
+	       arg: VarExp.t option}
+  | Const of Const.t
   | Handle of {try: exp,
 	       catch: Var.t * Type.t,
 	       handler: exp}
+  | Lambda of lambda
+  | PrimApp of {prim: Prim.t,
+		targs: Type.t vector,
+		args: VarExp.t vector}
+  | Raise of {exn: VarExp.t,
+	      filePos: string}
+  | Select of {tuple: VarExp.t,
+	       offset: int}
+  | Tuple of VarExp.t vector
+  | Var of VarExp.t
 and dec =
    MonoVal of {var: Var.t,
 	       ty: Type.t,
@@ -152,11 +155,12 @@ and decToAst d : Adec.t =
 	 (Adec.Val
 	  {tyvars = Vector.new0 (),
 	   vbs = (Vector.new1
-		  (if !Control.showTypes
-		      then Apat.constraint (Apat.var (Var.toAst var),
-					    Type.toAst ty)
-		   else  Apat.var (Var.toAst var),
-		      primExpToAst exp)),
+		  {filePos = "",
+		   exp = primExpToAst exp,
+		   pat = if !Control.showTypes
+			    then Apat.constraint (Apat.var (Var.toAst var),
+						  Type.toAst ty)
+			 else  Apat.var (Var.toAst var)}),
 	   rvbs = Vector.new0 ()})
     | PolyVal {tyvars, var, exp, ...} =>
 	 Adec.vall (tyvars, Var.toAst var, expToAst exp)
@@ -166,15 +170,17 @@ and decToAst d : Adec.t =
 	  (tyvars,
 	   Vector.map
 	   (decs, fn {var, ty, lambda = Lam {arg, argType, body, ...}, ...} =>
-	    Vector.new1
-	    ({pats = (Vector.new2
+	    {filePos = "",
+	     clauses =
+	     Vector.new1
+	     {pats = (Vector.new2
 		      (Apat.var (Var.toAst var),
 		       if !Control.showTypes
 			  then Apat.constraint (Apat.var (Var.toAst arg),
 						Type.toAst argType)
 		       else Apat.var (Var.toAst arg))),
 	      resultType = SOME (Type.toAst (#2 (Type.dearrow ty))),
-	      body = expToAst body}))))
+	      body = expToAst body}})))
     | Exception {con, arg} =>
 	 Adec.exceptionn (Con.toAst con, Type.optionToAst arg)
 and primExpToAst e : Aexp.t =
@@ -184,7 +190,7 @@ and primExpToAst e : Aexp.t =
     | Tuple xs => Aexp.tuple (Vector.map (xs, VarExp.toAst))
     | Select {tuple, offset} =>
 	 Aexp.select {tuple = VarExp.toAst tuple,
-		      offset = offset + 1}
+		      offset = offset}
     | Lambda lambda => Aexp.fnn (lambdaToAst lambda)
     | ConApp {con, arg, ...} =>
 	 let val con = Aexp.con (Con.toAst con)
@@ -203,11 +209,14 @@ and primExpToAst e : Aexp.t =
 						  (args, VarExp.toAst)))
 	 end
     | App {func, arg} => Aexp.app (VarExp.toAst func, VarExp.toAst arg)
-    | Raise x => Aexp.raisee (VarExp.toAst x)
+    | Raise {exn, filePos} => Aexp.raisee {exn = VarExp.toAst exn,
+					   filePos = filePos}
     | Handle {try, catch, handler} =>
-	 Aexp.handlee (expToAst try,
-		       Vector.new1 ((Apat.var (Var.toAst (#1 catch)),
-				     expToAst handler)))
+	 Aexp.handlee
+	 (expToAst try,
+	  Amatch.T {filePos = "",
+		    rules = Vector.new1 (Apat.var (Var.toAst (#1 catch)),
+					 expToAst handler)})
     | Case {test, cases, default, ...} =>
 	 let
 	    fun doit (l, f) =
@@ -228,15 +237,18 @@ and primExpToAst e : Aexp.t =
 		| SOME e =>
 		     Vector.concat [cases,
 				    Vector.new1 (Ast.Pat.wild, expToAst e)]
-	 in Aexp.casee (VarExp.toAst test, cases)
+	 in Aexp.casee (VarExp.toAst test, Amatch.T {rules = cases,
+						     filePos = ""})
 	 end
 
-and lambdaToAst (Lam {arg, body, argType, ...}) =
-   Vector.new1 ((if !Control.showTypes
-		    then Apat.constraint (Apat.var (Var.toAst arg),
-					  Type.toAst argType)
-		 else Apat.var (Var.toAst arg), 
-		    expToAst body))
+and lambdaToAst (Lam {arg, body, argType, ...}): Amatch.t =
+   Amatch.T
+   {filePos = "",
+    rules = Vector.new1 ((if !Control.showTypes
+			     then Apat.constraint (Apat.var (Var.toAst arg),
+						   Type.toAst argType)
+			  else Apat.var (Var.toAst arg), 
+			     expToAst body))}
 
 fun layoutLambda f = Aexp.layout (Aexp.fnn (lambdaToAst f))
 
@@ -323,8 +335,8 @@ structure Exp =
 					     | SOME x => handleVarExp x)
 		    | App {func, arg} => (handleVarExp func
 					  ; handleVarExp arg)
-		    | Raise x => handleVarExp x
-		    | Handle {try, catch, handler} =>
+		    | Raise {exn, ...} => handleVarExp exn
+		    | Handle {try, catch, handler, ...} =>
 			 (loopExp try
 			  ; monoVar catch
 			  ; loopExp handler)
@@ -432,7 +444,7 @@ structure Exp =
 		| Case {cases, default, ...} =>
 		     (Cases.foreach' (cases, clearExp, clearPat)
 		      ; Option.app (default, clearExp))
-		| Handle {try, catch, handler} => 
+		| Handle {try, catch, handler, ...} => 
 		     (clearExp try
 		      ; Var.clear (#1 catch)
 		      ; clearExp handler)
@@ -599,8 +611,8 @@ structure DirectExp =
 				| SOME e => SOME (toExp e))},
 		   ty))
 
-      fun raisee (e: t, t: Type.t): t =
-	 convert (e, fn (x, _) => (Raise x, t))
+      fun raisee ({exn: t, filePos}, t: Type.t): t =
+	 convert (exn, fn (x, _) => (Raise {exn = x, filePos = filePos}, t))
 	 
       fun handlee {try, catch, handler, ty} =
 	 simple (Handle {try = toExp try,
@@ -753,11 +765,12 @@ structure Datatype =
 structure Program =
    struct
       datatype t = T of {datatypes: Datatype.t vector,
-			 body: Exp.t}
+			 body: Exp.t,
+			 overflow: Var.t option}
 
       fun size (T {body, ...}) = Exp.size body
 
-      fun toAst (T {datatypes, body}) =
+      fun toAst (T {datatypes, body, ...}) =
 	 let
 	    val body = Exp.toAst body
 	 in
@@ -770,19 +783,26 @@ structure Program =
 			  body)
 	 end
 
-      fun clear (T {datatypes, body}) =
+      fun layout (p as T {overflow, ...}) =
+	 let
+	    open Layout
+	 in
+	    align [seq [str "Overflow: ", Option.layout Var.layout overflow],
+		   Ast.Exp.layout (toAst p)]
+	 end
+
+      fun clear (T {datatypes, body, ...}) =
 	 (Vector.foreach (datatypes, fn {tycon, tyvars, cons} =>
 			  (Tycon.clear tycon
 			   ; Vector.foreach (tyvars, Tyvar.clear)
 			   ; Vector.foreach (cons, Con.clear o #con)))
 	  ; Exp.clear body)
 
-      fun layout p = Ast.Exp.layout (toAst p)
-
       val empty = T {datatypes = Vector.new0 (),
-		     body = Exp.unit ()}
+		     body = Exp.unit (),
+		     overflow = NONE}
 
-      fun layoutStats (T {datatypes, body}) =
+      fun layoutStats (T {datatypes, body, ...}) =
 	 let
 	    val numTypes = ref 0
 	    fun inc _ = numTypes := 1 + !numTypes

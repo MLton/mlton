@@ -79,6 +79,9 @@ val options =
 			 ; if s = "INSTRUMENT"
 			      then instrument := true
 			   else ()))),
+       (Normal, "exn-history", " {false|true}",
+	"enable Exn.history",
+	boolRef Control.exnHistory),
        (Expert, "g", "", "produce executable with debug info",
 	None (fn () => (debug := true
 			; lib := "mlton-gdb"))),
@@ -245,12 +248,13 @@ fun commandLine (args: string list): unit =
 		 then detectOverflow := true
 	      else detectOverflow := false
       val _ =
-	 List.push (defines,
-		    concat ["MLton_detectOverflow=",
-			    if !detectOverflow then "TRUE" else "FALSE"])
-      val _ =
-	 List.push (defines,
-		    concat ["MLton_safe=", if !safe then "TRUE" else "FALSE"])
+	 List.foreach
+	 ([(detectOverflow, "MLton_detectOverflow"),
+	   (exnHistory, "Exn_keepHistory"),
+	   (safe, "MLton_safe")],
+	  fn (b, x) =>
+	  List.push (defines,
+		     concat [x, if !b then "=TRUE" else "=FALSE"]))
       val _ = if !debug then () else List.push (defines, "NODEBUG")
       val _ = Control.includes := !includes
    in case result of
@@ -538,10 +542,15 @@ fun exportNJ (root: Dir.t, file: File.t): unit =
        (file,
 	fn (_, args) => ((commandLine args; OS.Process.success)
 			 handle e =>
-			    let open Layout
-			    in output (seq [str "mlton: ", Exn.layout e],
-				       Out.error)
-			       ; Out.newline Out.error
+			    let
+			       val out = Out.error
+			       open Layout
+			    in
+			       output (seq [str "mlton: ", Exn.layout e], out)
+			       ; List.foreach (Exn.history e, fn s =>
+					       (Out.output (out, "\n\t")
+						; Out.output (out, s)))
+			       ; Out.newline out
 			       ; OS.Process.failure
 			    end))))
    

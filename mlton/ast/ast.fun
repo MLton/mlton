@@ -345,32 +345,31 @@ structure Program =
 	    fun dec (d: Dec.t): unit =
 	       case Dec.node d of
 		  Val {vbs, rvbs, ...} =>
-		     (Vector.foreach (vbs, exp o #2)
-		      ; Vector.foreach (rvbs, fn {rules, ...} =>
-					Vector.foreach (rules, exp o #2)))
+		     (Vector.foreach (vbs, exp o #exp)
+		      ; Vector.foreach (rvbs, match o #match))
 		| Fun (_, ds) =>
-		     Vector.foreach (ds, fn cs =>
-				     Vector.foreach (cs, exp o #body))
+		     Vector.foreach (ds, fn {clauses, ...} =>
+				     Vector.foreach (clauses, exp o #body))
 		| Abstype {body, ...} => dec body
 		| Exception cs => Vector.foreach (cs, fn _ => inc ())
 		| SeqDec ds => Vector.foreach (ds, dec)
 		| Dec.Local (d, d') => (dec d; dec d')
 		| _ => ()
-		     
+
 	    and exp (e: Exp.t): unit =
 	       (inc ();
 		case Exp.node e of
-		   Fn rs => rules rs
+		   Fn m => match m
 		 | FlatApp es => exps es
 		 | Exp.App (e, e') => (exp e; exp e')
-		 | Case (e, rs) => (exp e; rules rs)
+		 | Case (e, m) => (exp e; match m)
 		 | Exp.Let (d, e) => (dec d; exp e)
 		 | Exp.Seq es => exps es
 		 | Record r => Record.foreach (r, exp)
 		 | List es => List.foreach (es, exp)
 		 | Constraint (e, _) => exp e
-		 | Handle (e, rs) => (exp e; rules rs)
-		 | Raise e => exp e
+		 | Handle (e, m) => (exp e; match m)
+		 | Raise {exn, ...} => exp exn
 		 | If (e1, e2, e3) => (exp e1; exp e2; exp e3)
 		 | Andalso (e1, e2) => (exp e1; exp e2)
 		 | Orelse (e1, e2) => (exp e1; exp e2)
@@ -379,8 +378,8 @@ structure Program =
 
 	    and exps es = Vector.foreach (es, exp)
 	       
-	    and rules rs = Vector.foreach (rs, exp o #2)
-
+	    and match (Match.T {rules, ...}) = Vector.foreach (rules, exp o #2)
+		     
 	    fun strdec d =
 	       case Strdec.node d of
 		  Structure ds => List.foreach (ds, fn {def, ...} => strexp def)

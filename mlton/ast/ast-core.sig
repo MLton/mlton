@@ -74,26 +74,28 @@ signature AST_CORE =
 	    val var: Var.t -> t
 	    val wild: t
 	 end
-      
+
       structure Exp:
 	 sig
 	    type dec
+	    type match
 	    type t
 	    datatype node =
 	       Const of Const.t
 	     | Var of {name: Longvid.t, fixop: Fixop.t}
-	     | Fn of (Pat.t * t) vector
+	     | Fn of match
 	     | FlatApp of t vector
 	     | App of t * t
-	     | Case of t * (Pat.t * t) vector
+	     | Case of t * match
 	     | Let of dec * t
 	     | Seq of t vector
 	     | Record of t Record.t
 	     | List of t list
 	     | Selector of Record.Field.t
 	     | Constraint of t * Type.t
-	     | Handle of t * (Pat.t * t) vector
-	     | Raise of t
+	     | Handle of t * match
+	     | Raise of {exn: t,
+			 filePos: string}
 	     | If of t * t * t
 	     | Andalso of t * t
 	     | Orelse of t * t
@@ -108,17 +110,17 @@ signature AST_CORE =
 			    sharing type obj = t
 	       
 	    val app: t * t -> t
-	    val casee: t * (Pat.t * t) vector -> t
+	    val casee: t * match -> t
 	    val con: Con.t -> t
 	    val const: Const.t -> t
 	    val constraint: t * Type.t -> t
-	    val fnn: (Pat.t * t) vector -> t
-	    val handlee: t * (Pat.t * t) vector -> t
+	    val fnn: match -> t
+	    val handlee: t * match -> t
 	    val iff: t * t * t -> t
 	    val layout: t -> Layout.t
 	    val lett: dec vector * t -> t
 	    val longvid: Longvid.t -> t
-	    val raisee: t -> t
+	    val raisee: {exn: t, filePos: string} -> t
 	    val record: t Record.t -> t
 	    val select: {tuple: t, offset: int} -> t
 	    val seq: t vector -> t
@@ -127,6 +129,12 @@ signature AST_CORE =
 	    val var: Var.t -> t
 	 end
 
+      structure Match:
+	 sig
+	    datatype t = T of {filePos: string,
+			       rules: (Pat.t * Exp.t) vector}
+	 end where type t = Exp.match
+      
       structure EbRhs:
 	 sig
 	    type t
@@ -142,14 +150,17 @@ signature AST_CORE =
 	    type t
 	    datatype node =
 	       Val of {tyvars: Tyvar.t vector,
-		       vbs: (Pat.t * Exp.t) vector,
+		       vbs: {pat: Pat.t,
+			     exp: Exp.t,
+			     filePos: string} vector,
 		       rvbs: {var: Var.t,
 			      ty: Type.t option,
 			      fixity: Vid.t option,
-			      rules: (Pat.t * Exp.t) vector} vector}
-	     | Fun of Tyvar.t vector * {pats: Pat.t vector,
-					resultType: Type.t option,
-					body: Exp.t} vector vector
+			      match: Match.t} vector}
+	     | Fun of Tyvar.t vector * {clauses: {pats: Pat.t vector,
+						  resultType: Type.t option,
+						  body: Exp.t} vector,
+					filePos: string} vector
 	     | Type of TypBind.t
 	     | Datatype of DatatypeRhs.t
 	     | Abstype of {datBind: DatBind.t,
@@ -170,10 +181,9 @@ signature AST_CORE =
             val empty: t
 	    val exceptionn: Con.t * Type.t option -> t
 	    val fromExp: Exp.t -> t
-	    val funn:
-	       Tyvar.t vector
-	       * (Var.t * (Pat.t * Exp.t) vector * Type.t option) vector
-	       -> t
+	    val funn: Tyvar.t vector * {var: Var.t,
+					match: Match.t,
+					resultTy: Type.t option} vector -> t
 	    val layout: t -> Layout.t
 	    val openn: Longstrid.t vector -> t
 	    val vall: Tyvar.t vector * Var.t * Exp.t -> t

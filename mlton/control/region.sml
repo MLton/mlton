@@ -16,11 +16,8 @@ val toString =
    fn Bogus => "Bogus"
     | T {left, right} =>
 	 let
-	    fun posToString p =
-	       let
-		  val SourcePos.T {line, column, ...} = p
-	       in concat [Int.toString line, ".", Int.toString column]
-	       end
+	    fun posToString (SourcePos.T {line, column, ...}) =
+	       concat [Int.toString line, ".", Int.toString column]
 	 in
 	    concat [SourcePos.file left, ":",
 		    posToString left, "-", posToString right]

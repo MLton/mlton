@@ -3,6 +3,10 @@ struct
 
 type t = exn
 
+val history = (* fn _ => [] *) MLton.Exn.history
+   
+val name = General.exnName
+   
 fun layout e =
    let open Layout
    in case e of

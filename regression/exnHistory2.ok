@@ -1,0 +1,3 @@
+unhandled exception: Fail foo
+with history:
+	exnHistory2.sml:1.15

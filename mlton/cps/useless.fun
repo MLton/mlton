@@ -686,6 +686,7 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
 					      args = argTypes,
 					      result = resultType,
 					      dearray = Type.dearray,
+					      dearrow = Type.dearrow,
 					      deref = Type.deref,
 					      devector = Type.devector}}
 	       end

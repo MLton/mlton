@@ -44,7 +44,7 @@ fun deadCode {basis, user} =
 	 case d of
 	    Val {exp, ...} => useExp exp
 	  | Fun {decs, ...} =>
-	       Vector.foreach (decs, fn {rules, ...} =>
+	       Vector.foreach (decs, fn {match = Match.T {rules, ...}, ...} =>
 			       Vector.foreach (rules, useExp o #2))
 	  | Datatype _ => ()
 	  | Exception _ => ()

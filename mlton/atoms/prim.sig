@@ -35,7 +35,11 @@ signature PRIM =
 	     | Char_ord
 	     | Constant of string (* implemented in infer.fun *)
 	     | Cpointer_isNull
+	     | Exn_extra (* implemented in implement-exceptions.fun *)
+	     | Exn_keepHistory (* a compile-time boolean *)
 	     | Exn_name (* implemented in implement-exceptions.fun *)
+	     | Exn_setInitExtra (* implemented in implement-exceptions.fun *)
+	     | Exn_setRaise (* implemented in implement-exceptions.fun *)
 	     | Exn_setTopLevelHandler (* implemented in implement-exceptions.fun *)
 	     | FFI of string
 	     | GC_collect
@@ -76,6 +80,7 @@ signature PRIM =
 			    *  of type unit -> 'a.
 			    * Makes a bogus value of any type
 			    *)
+	     | MLton_bug
 	     | MLton_deserialize
 	     | MLton_eq
 	     | MLton_equal (* implemented in cps/poly-equal.fun *)
@@ -191,6 +196,9 @@ signature PRIM =
 	     | Word8_toLargeWordX
 	     | Word8_xorb
 	     | World_save
+
+	    val layout: t -> Layout.t
+	    val toString: t -> string
 	 end
 
       type t
@@ -242,6 +250,7 @@ signature PRIM =
 			 args: 'a vector,
 			 result: 'a,
 			 dearray: 'a -> 'a,
+			 dearrow: 'a -> 'a * 'a,
 			 deref: 'a -> 'a,
 			 devector: 'a -> 'a} -> 'a vector
       val ffi: string * Scheme.t -> t

@@ -8,7 +8,7 @@ open S
 open XmlTree   
 open Dec PrimExp
 
-fun typeCheck (program as Program.T {datatypes, body}): unit =
+fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
    let
       val {get = getCon: Con.t -> {tyvars: Tyvar.t vector, ty: Type.t},
 	   set, destroy = destroyCon} =
@@ -86,9 +86,10 @@ fun typeCheck (program as Program.T {datatypes, body}): unit =
       fun checkExp arg: Type.t =
 	 traceCheckExp
 	 (fn (exp: Exp.t) =>
-	 let val {decs, result} = Exp.dest exp
-	 in List.foreach (decs, checkDec) ; checkVarExp result
-	 end) arg
+	  let val {decs, result} = Exp.dest exp
+	  in List.foreach (decs, checkDec)
+	     ; checkVarExp result
+	  end) arg
       and checkPrimExp arg: Type.t =
 	 traceCheckPrimExp
 	 (fn (e: PrimExp.t, ty: Type.t) => 
@@ -115,98 +116,97 @@ fun typeCheck (program as Program.T {datatypes, body}): unit =
 	       end
 	    fun checkApps (t, es) =
 	       List.fold (es, t, fn (e, t) => checkApp (t, e))
-	 in case e of
-	    Var x => checkVarExp x
-	  | Const c => Type.ofConst c
-	  | Tuple xs =>
-	       if 1 = Vector.length xs
-		  then error "unary tuple"
-	       else Type.tuple (checkVarExps xs)
-	  | Select {tuple, offset} =>
-	       (case Type.detupleOpt (checkVarExp tuple) of
-		   SOME ts => Vector.sub (ts, offset)
-		 | NONE => error "selection from nontuple")
-	  | Lambda l => checkLambda l
-	  | PrimApp {prim, targs, args} =>
-	       (case Prim.checkApp {prim = prim,
-				    targs = targs,
-				    args = checkVarExps args,
-				    con = Type.con,
-				    equals = Type.equals,
-				    dearrowOpt = Type.dearrowOpt,
-				    detupleOpt = Type.detupleOpt,
-				    isUnit = Type.isUnit
-				    } of
-		   NONE => error "bad primapp"
-		 | SOME t => t)
-	  | ConApp {con, targs, arg} =>
-	       let val t = checkConExp (con, targs)
-	       in case arg of
-		  NONE => t
-		| SOME e => checkApp (t, e)
-	       end
-	  | App {func, arg} => checkApp (checkVarExp func, arg)
-	  | Raise x => if isExnType (checkVarExp x)
-			  then ty
-		       else error "bad raise"
-	  | Handle {try, catch = (catch, catchType), handler} =>
-	       let
-		  val ty = checkExp try
-		  val _ = setVar (catch, {tyvars = Vector.new0 (),
-					  ty = catchType})
-		  val ty' = checkExp handler
-	       in if Type.equals (ty, ty') then ty
-		  else error "bad handle"
-	       end
-	  | Case {test, cases, default} =>
-	       let
-		  val ty = checkVarExp test
-		  fun doit (l, t) =
-		     (Vector.new1 t, Vector.map (l, fn (_, e) => checkExp e))
-		  fun equalss v =
-		     if Vector.isEmpty v
-			then Error.bug "equalss"
-		     else
-			let
-			   val t = Vector.sub (v, 0)
-			in
-			   if Vector.forall (v, fn t' => Type.equals (t, t'))
-			      then SOME t
-			   else NONE
-			end
-		  datatype z = datatype Cases.t
-		  val (ptys, etys) =
-		     case cases of
-			Char l => doit (l, Type.char)
-		      | Con cases =>
-			   Vector.unzip
-			   (Vector.map (cases, fn (p, e) =>
-					(checkPat p, checkExp e)))
-		      | Int l => doit (l, Type.int)
-		      | Word l => doit (l, Type.word)
-		      | Word8 l => doit (l, Type.word8)
-	       in case (equalss ptys, equalss etys) of
-		  (NONE, _) => error "patterns not of same type"
-		| (_, NONE) => error "branches not of same type"
-		| (SOME pty, SOME ety) =>
-		     if Type.equals (ty, pty)
-			then
-			   case default of
-			      NONE => ety
-			    | SOME e =>
-				 if Type.equals (ety, checkExp e)
-				    then ety
-				 else error "default of wrong type"
-		     else error "test and patterns of different types"
-	       end
+	 in
+	    case e of
+	       Var x => checkVarExp x
+	     | Const c => Type.ofConst c
+	     | Tuple xs =>
+		  if 1 = Vector.length xs
+		     then error "unary tuple"
+		  else Type.tuple (checkVarExps xs)
+	     | Select {tuple, offset} =>
+		  (case Type.detupleOpt (checkVarExp tuple) of
+		      SOME ts => Vector.sub (ts, offset)
+		    | NONE => error "selection from nontuple")
+	     | Lambda l => checkLambda l
+	     | PrimApp {prim, targs, args} =>
+		  (case Prim.checkApp {prim = prim,
+				       targs = targs,
+				       args = checkVarExps args,
+				       con = Type.con,
+				       equals = Type.equals,
+				       dearrowOpt = Type.dearrowOpt,
+				       detupleOpt = Type.detupleOpt,
+				       isUnit = Type.isUnit
+				       } of
+		      NONE => error "bad primapp"
+		    | SOME t => t)
+	     | ConApp {con, targs, arg} =>
+		  let val t = checkConExp (con, targs)
+		  in case arg of
+		     NONE => t
+		   | SOME e => checkApp (t, e)
+		  end
+	     | App {func, arg} => checkApp (checkVarExp func, arg)
+	     | Raise {exn, ...} => if isExnType (checkVarExp exn)
+				      then ty
+				   else error "bad raise"
+	     | Handle {try, catch = (catch, catchType), handler, ...} =>
+		  let
+		     val ty = checkExp try
+		     val _ = setVar (catch, {tyvars = Vector.new0 (),
+					     ty = catchType})
+		     val ty' = checkExp handler
+		  in if Type.equals (ty, ty') then ty
+		     else error "bad handle"
+		  end
+	     | Case {test, cases, default} =>
+		  let
+		     val ty = checkVarExp test
+		     fun doit (l, t) =
+			(Vector.new1 t, Vector.map (l, fn (_, e) => checkExp e))
+		     fun equalss v =
+			if Vector.isEmpty v
+			   then Error.bug "equalss"
+			else
+			   let
+			      val t = Vector.sub (v, 0)
+			   in
+			      if Vector.forall (v, fn t' => Type.equals (t, t'))
+				 then SOME t
+			      else NONE
+			   end
+		     datatype z = datatype Cases.t
+		     val (ptys, etys) =
+			case cases of
+			   Char l => doit (l, Type.char)
+			 | Con cases =>
+			      Vector.unzip
+			      (Vector.map (cases, fn (p, e) =>
+					   (checkPat p, checkExp e)))
+			 | Int l => doit (l, Type.int)
+			 | Word l => doit (l, Type.word)
+			 | Word8 l => doit (l, Type.word8)
+		  in case (equalss ptys, equalss etys) of
+		     (NONE, _) => error "patterns not of same type"
+		   | (_, NONE) => error "branches not of same type"
+		   | (SOME pty, SOME ety) =>
+			if Type.equals (ty, pty)
+			   then
+			      case default of
+				 NONE => ety
+			       | SOME e =>
+				    if Type.equals (ety, checkExp e)
+				       then ety
+				    else error "default of wrong type"
+			else error "test and patterns of different types"
+		  end
 	 end) arg
-      
       and checkLambda l: Type.t =
 	 let val {arg, argType, body} = Lambda.dest l
-	 in setVar (arg, {tyvars = Vector.new0 (), ty = argType}) ;
-	    Type.arrow (argType, checkExp body)
+	 in setVar (arg, {tyvars = Vector.new0 (), ty = argType})
+	    ; Type.arrow (argType, checkExp body)
 	 end
-	    
       and checkDec d =
 	 let val check = fn (t, t') => check (t, t', fn () => Dec.layout d)
 	 in case d of
@@ -241,6 +241,15 @@ fun typeCheck (program as Program.T {datatypes, body}): unit =
 	 if Type.equals (checkExp body, Type.unit)
 	    then ()
 	 else Error.bug "program must be of type unit"
+      val _ =
+	 case overflow of
+	    NONE => true
+	  | SOME x =>
+	       let val {tyvars, ty} = getVar x
+	       in
+		  0 = Vector.length tyvars
+		  andalso Type.equals (ty, Type.exn)
+	       end
       val _ = destroyCon ()
       val _ = destroyVar ()
    in

@@ -346,7 +346,8 @@ fun allocate {program = program as Program.T {globals, functions, ...},
 				     in
 				       primInfo :=
 				       MprimInfo.overflow 
-				       (jumpToLabel label, getLivePrimOperands var)
+				       (jumpToLabel label,
+					getLivePrimOperands var)
 				     end
 			     else if Prim.impCall prim
 				then primInfo := 
