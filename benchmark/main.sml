@@ -83,7 +83,7 @@ in
 				  save (seq [char #"-",
 					     star (isChar (fn #"-" => true
 					                    | c => Char.isAlphaNum c))],
-				   flagSave)]
+					flagSave)]
 		  val flagC = compileDFA flag
 
 		  val optionSave = Save.new ()
@@ -92,15 +92,16 @@ in
 		  val optionC = compileDFA option
 
 		  val optionsSave = Save.new ()
-		  val options = save (seq [char #"{",
-					   star (char #" "),
-					   option,
-					   star (seq [star (char #" "),
-						      char #",",
-						      star (char #" "),
-						      option]),
-					   star (char #" "),
-					   char #"}"],
+		  val options = save (or [option,
+					  seq [char #"{",
+					       star (char #" "),
+					       option,
+					       star (seq [star (char #" "),
+							  char #",",
+							  star (char #" "),
+							  option]),
+					       star (char #" "),
+					       char #"}"]],
 				      optionsSave)
 		  val optionsC = compileDFA options
 

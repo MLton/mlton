@@ -1,5 +1,5 @@
 NAME = benchmark
-MLTON = mlton
+MLTON = mlton-stable
 FLAGS =
 PATH = $(shell cd ../../bin && pwd):$(shell echo $$PATH)
 
@@ -43,7 +43,7 @@ test: $(NAME)
 
 QBENCH = $(BENCH)
 
-QBFLAGS = -mlton "mlton-stable -native-live-stack {true}" -mlton "mlton -native-live-stack {true} -native-live-transfer {0,4,8}"
+QBFLAGS = -mlton "mlton -drop-pass removeUnused1CPS -drop-pass leafInlineCPS -drop-pass raiseToJump1CPS -drop-pass contify1CPS -drop-pass localFlatten1CPS -drop-pass uselessCPS -drop-pass removeUnused2CPS -drop-pass unusedArgs1CPS -drop-pass simplifyTypesCPS -drop-pass polyEqualCPS -drop-pass contify2CPS -drop-pass inlineCPS -drop-pass localFlatten2CPS -drop-pass removeUnused3CPS -drop-pass raiseToJump2CPS -drop-pass contify3CPS -drop-pass unusedArgs2CPS -drop-pass introduceLoopsCPS -drop-pass loopInvariantCPS -drop-pass flattenCPS -drop-pass localFlatten3CPS -drop-pass commonSubexpCPS -drop-pass commonBlockCPS -drop-pass redundantTestsCPS -drop-pass redundantCPS -drop-pass unusedArgs3CPS -drop-pass removeUnused4CPS"
 
 .PHONY: qtest
 qtest: $(NAME)
