@@ -681,7 +681,7 @@ struct
 					   live = MemLocSet.empty,
 					   return = return})},
 	 Block.T'
-	 {entry = SOME (Entry.jump {label = return}),
+	 {entry = SOME (Entry.creturn {label = return}),
 	  profileInfo = ProfileInfo.none,
 	  statements = comment_end,
 	  transfer = NONE}]
@@ -1345,6 +1345,50 @@ struct
 		transfer = NONE}]
 	    end
 
+	fun imul2 ()
+	  = let
+	      val ((src1,src1size),
+		   (src2,src2size)) = getSrc2 ()
+	      val (dst,dstsize)
+		= case dst
+		    of NONE 
+		     => (overflowCheckTempContentsOperand, src1size)
+		     | SOME (dst,dstsize) => (dst,dstsize)
+	      val _ 
+		= Assert.assert
+		  ("applyPrim: pmd, dstsize/src1size/src2size",
+		   fn () => src1size = dstsize andalso
+		            src2size = dstsize)
+
+	      (* Reverse src1/src2 when src1 and src2 are temporaries
+	       * and the oper is commutative. 
+	       *)
+	      val (src1,src2)
+		= case (Operand.deMemloc src1, Operand.deMemloc src2)
+		    of (SOME memloc_src1, SOME memloc_src2)
+		     => if x86Liveness.track memloc_src1
+		           andalso
+			   x86Liveness.track memloc_src2
+			  then (src2,src1)
+			  else (src1,src2)
+		     | _ => (src1,src2)
+	    in
+	      AppendList.fromList
+	      [Block.T'
+	       {entry = NONE,
+		profileInfo = ProfileInfo.none,
+		statements
+		= [Assembly.instruction_mov
+		   {dst = dst,
+		    src = src1,
+		    size = src1size},
+		   Assembly.instruction_imul2
+		   {dst = dst,
+		    src = src2,
+		    size = dstsize}],
+		transfer = NONE}]
+	    end
+
 	fun pmd_check oper
 	  = let
 	      val ((src1,src1size),
@@ -1402,6 +1446,76 @@ struct
 		   Assembly.instruction_pmd
 		   {oper = oper,
 		    dst = overflowCheckTempContentsOperand,
+		    src = src2,
+		    size = dstsize}],
+		transfer 
+		= SOME (Transfer.iff {condition = Instruction.O,
+				      truee = OverflowLabel,
+				      falsee = noOverflowLabel})},
+	       Block.T'
+	       {entry = SOME (Entry.jump {label = noOverflowLabel}),
+		profileInfo = ProfileInfo.none,
+		statements 
+		= case dst
+		    of NONE => []
+		     | SOME dst
+		     => [Assembly.instruction_mov
+			 {dst = dst,
+			  src = overflowCheckTempContentsOperand,
+			  size = dstsize}],
+		transfer = NONE}]
+	    end
+
+	fun imul2_check ()
+	  = let
+	      val ((src1,src1size),
+		   (src2,src2size)) = getSrc2 ()
+	      val (dst,dstsize)
+		= case dst
+		    of NONE => (NONE, src1size)
+		     | SOME (dst,dstsize) => (SOME dst, dstsize)
+	      val _ 
+		= Assert.assert
+		  ("applyPrim: pmd_check, dstsize/src1size/src2size",
+		   fn () => src1size = dstsize andalso
+		            src2size = dstsize)
+	      val (OverflowLabel, 
+		   liveNoOverflow)
+		= getPrimInfoOverflow ()
+	      val noOverflowLabel = Label.newString "noOverflow"
+
+	      val _ = x86Liveness.LiveInfo.setLiveOperands
+	              (liveInfo, 
+		       noOverflowLabel, 
+		       case dst
+			 of SOME _ 
+			  => overflowCheckTempContentsOperand::liveNoOverflow
+			  | NONE => liveNoOverflow)
+
+	      (* Reverse src1/src2 when src1 and src2 are temporaries
+	       * and the oper is commutative. 
+	       *)
+	      val (src1,src2)
+		= case (Operand.deMemloc src1, Operand.deMemloc src2)
+		    of (SOME memloc_src1, SOME memloc_src2)
+		     => if x86Liveness.track memloc_src1
+		           andalso
+			   x86Liveness.track memloc_src2
+			  then (src2,src1)
+			  else (src1,src2)
+		     | _ => (src1,src2)
+	    in
+	      AppendList.fromList
+	      [Block.T'
+	       {entry = NONE,	
+		profileInfo = ProfileInfo.none,
+		statements
+		= [Assembly.instruction_mov
+		   {dst = overflowCheckTempContentsOperand,
+		    src = src1,
+		    size = src1size},
+		   Assembly.instruction_imul2
+		   {dst = overflowCheckTempContentsOperand,
 		    src = src2,
 		    size = dstsize}],
 		transfer 
@@ -1908,10 +2022,16 @@ struct
 		end
              | Int_add => binal Instruction.ADD
 	     | Int_sub => binal Instruction.SUB
+(*
 	     | Int_mul => pmd Instruction.IMUL
+*)
+	     | Int_mul => imul2 () 
 	     | Int_addCheck => binal_check Instruction.ADD
 	     | Int_subCheck => binal_check Instruction.SUB
+(*
 	     | Int_mulCheck => pmd_check Instruction.IMUL
+*)
+	     | Int_mulCheck => imul2_check ()
 	     | Int_quot => pmd Instruction.IDIV
 	     | Int_rem => pmd Instruction.IMOD
 	     | Int_neg => unal Instruction.NEG 
@@ -2701,7 +2821,10 @@ struct
 	     | Word32_andb => binal Instruction.AND
 	     | Word32_orb => binal Instruction.OR
 	     | Word32_xorb => binal Instruction.XOR
+(*
 	     | Word32_mul => pmd Instruction.MUL
+*)
+	     | Word32_mul => imul2 ()
 	     | Word32_div => pmd Instruction.DIV
 	     | Word32_mod => pmd Instruction.MOD
 	     | Word32_neg => unal Instruction.NEG

@@ -154,8 +154,8 @@ structure Native =
 			    toString = Int.toString}
 
       val liveTransfer = control {name = "native live transfer",
-				  default = true,
-				  toString = Bool.toString}
+				  default = 8,
+				  toString = Int.toString}
 
       val future = control {name = "native future",
 			    default = 64,

@@ -91,7 +91,7 @@ signature CONTROL =
 	    val cutoff: int ref 
 
 	    (* whether or not to use live transfer in native codegen *)
-	    val liveTransfer: bool ref 
+	    val liveTransfer: int ref 
 
 	    (* size of future list for register allocation *)
 	    val future: int ref

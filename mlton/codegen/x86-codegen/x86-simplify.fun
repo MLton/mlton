@@ -55,6 +55,8 @@ struct
 	     => true
 	     | Assembly.Instruction (Instruction.pMD {...})
 	     => true
+	     | Assembly.Instruction (Instruction.IMUL2 {...})
+	     => true
 	     | _ => false
 
 	val template : template
@@ -139,6 +141,49 @@ struct
 			     (Assembly.instruction_pmd
 			      {oper = oper2,
 			       src = dst1,
+			       dst = dst2,
+			       size = size1})::
+			     finish
+
+			 val statements
+			   = List.fold(start,
+				       List.concat [comments, 
+						    statements],
+				       op ::)
+		       in
+			 SOME (Block.T
+			       {entry = entry,
+				profileInfo = profileInfo,
+				statements = statements,
+				transfer = transfer})
+		       end
+		  else NONE
+	     | {entry,
+		profileInfo,
+		start, 
+		statements as
+		[[Assembly.Instruction (Instruction.MOV
+					{src = src1,
+					 dst = dst1, 
+					 size = size1})],
+		 comments,
+		 [Assembly.Instruction (Instruction.IMUL2
+					{src = src2,
+					 dst = dst2,
+					 size = size2})]],
+		finish, 
+		transfer}
+	     => if Size.eq(size1, size2) andalso
+	           Operand.eq(dst1, dst2) andalso
+		   Operand.eq(src1, src2)
+		  then let
+			 val statements
+			   = (Assembly.instruction_mov
+			      {src = src1,
+			       dst = dst1,
+			       size = size1})::
+			     (Assembly.instruction_imul2
+			      {src = dst1,
 			       dst = dst2,
 			       size = size1})::
 			     finish
@@ -380,6 +425,15 @@ struct
 			    (src::(MemLoc.utilized src),
 			     fn memloc => MemLoc.mayAlias(memloc, dst)))
 	            | _ => true)
+	     | Assembly.Instruction (Instruction.IMUL2
+				     {src, dst, ...})
+	     => (case (Operand.deMemloc src,
+		       Operand.deMemloc dst)
+		   of (SOME src, SOME dst)
+		    => not (List.exists
+			    (src::(MemLoc.utilized src),
+			     fn memloc => MemLoc.mayAlias(memloc, dst)))
+	            | _ => true)
 	     | _ => false
 
 	val template : template
@@ -471,6 +525,53 @@ struct
 				   (Assembly.instruction_pmd
 				    {oper = oper2,
 				     src = src1,
+				     dst = dst2,
+				     size = size2})::
+				   finish
+
+			       val statements
+				 = List.fold(start,
+					     List.concat [comments,
+							  statements],
+					     op ::)
+			     in
+			       SOME (Block.T
+				     {entry = entry,
+				      profileInfo = profileInfo,
+				      statements = statements,
+				      transfer = transfer})
+			     end
+			  | _ => NONE
+		  else NONE
+	     | {entry,
+		profileInfo,
+		start, 
+		statements as
+		[[Assembly.Instruction (Instruction.MOV
+					{src = src1, 
+					 dst = dst1, 
+					 size = size1})],
+		 comments,
+		 [Assembly.Instruction (Instruction.IMUL2
+					{src = src2,
+					 dst = dst2,
+					 size = size2})]],
+		finish, 
+		transfer}
+	     => if Size.eq(size1, size2) andalso
+	           Operand.eq(dst1, dst2)
+		  then case (src1, src2)
+			 of (Operand.Immediate _, Operand.Immediate _)
+			  => NONE
+			  | (Operand.Immediate _, _)
+			  => let
+			       val statements
+				 = (Assembly.instruction_mov
+				    {src = src2,
+				     dst = dst1,
+				     size = size1})::
+				   (Assembly.instruction_imul2
+				    {src = src1,
 				     dst = dst2,
 				     size = size2})::
 				   finish
@@ -1146,19 +1247,23 @@ struct
 	     | _ => NONE
 
 	val isInstructionMULorDIV_srcImmediatePow2 : statement_type -> bool
-	= fn Assembly.Instruction (Instruction.pMD 
-				   {oper,
-				    src = Operand.Immediate immediate,
-				    ...})
-	   => (case oper
-		 of Instruction.IMUL => true
-		  | Instruction.MUL => true
-		  | Instruction.IDIV => true
-		  | Instruction.DIV => true
-		  | _ => false)
-	      andalso
-	      isImmediatePow2 (Immediate.destruct immediate)
-	   | _ => false
+ 	 = fn Assembly.Instruction (Instruction.pMD 
+				    {oper,
+				     src = Operand.Immediate immediate,
+				     ...})
+	    => (case oper
+		  of Instruction.IMUL => true
+		   | Instruction.MUL => true
+		   | Instruction.IDIV => true
+		   | Instruction.DIV => true
+		   | _ => false)
+	       andalso
+	       isImmediatePow2 (Immediate.destruct immediate)
+ 	    | Assembly.Instruction (Instruction.IMUL2
+				    {src = Operand.Immediate immediate,
+				     ...})
+	    => isImmediatePow2 (Immediate.destruct immediate)
+	    | _ => false
 
 	val template : template 
 	  = {start = EmptyOrNonEmpty,
@@ -1556,6 +1661,187 @@ struct
 			      end
 			 else NONE
 	            | SOME (i,true) => NONE)
+	     | {entry,
+		profileInfo,
+		start, 
+		statements as
+		[[Assembly.Instruction (Instruction.IMUL2
+					{src = Operand.Immediate immediate, 
+					 dst, 
+					 size})],
+		 comments],
+		finish as [], 
+		transfer as Transfer.Iff {condition,
+					  truee,
+					  falsee}}
+	     => (case getImmediateLog2 (Immediate.destruct immediate)
+		   of NONE => Error.bug "Peephole: elimMDPow2"
+		    | SOME (0,false)
+		    => let
+			 val transfer
+			   = case condition
+			       of Instruction.O 
+				=> Transfer.Goto {target = falsee}
+				| Instruction.NO 
+				=> Transfer.Goto {target = truee}
+				| _ => Error.bug "Peephole: elimMDPow2"
+				 
+			 val statements
+			   = List.fold(start,
+				       comments,
+				       op ::)
+		       in
+			 SOME (Block.T
+			       {entry = entry,
+				profileInfo = profileInfo,
+				statements = statements,
+				transfer = transfer})
+		       end
+		    | SOME (0,true)
+		    => let
+			 val statements
+			   = List.fold
+			     (start,
+			      (Assembly.instruction_unal
+			       {oper = Instruction.NEG,
+				dst = dst,
+				size = size})::
+			      comments,
+			      op ::)
+		       in 
+			 SOME (Block.T
+			       {entry = entry,
+				profileInfo = profileInfo,
+				statements = statements,
+				transfer = transfer})
+		       end
+		    | SOME (1,b)
+		    => let
+			 val statements
+			   = List.fold
+			     (start,
+			      (fn l
+			        => if b
+				     then (Assembly.instruction_unal
+					   {oper = Instruction.NEG,
+					    dst = dst,
+					    size = size})::
+				          l
+				     else l)
+			      ((Assembly.instruction_binal
+				{oper = Instruction.ADD,
+				 src = dst,
+				 dst = dst,
+				 size = size})::
+			       comments),
+			      op ::)
+		       in
+			 SOME (Block.T
+			       {entry = entry,
+				profileInfo = profileInfo,
+				statements = statements,
+				transfer = transfer})
+		       end
+		    | _ => NONE)
+	     | {entry,
+		profileInfo,
+		start, 
+		statements as
+		[[Assembly.Instruction (Instruction.IMUL2
+					{src = Operand.Immediate immediate, 
+					 dst, 
+					 size})],
+		 comments],
+		finish, 
+		transfer}
+	     => (case getImmediateLog2 (Immediate.destruct immediate)
+		   of NONE => Error.bug "Peephole: elimMDPow2"
+		    | SOME (0,false) 
+		    => SOME (Block.T
+			     {entry = entry,
+			      profileInfo = profileInfo,
+			      statements = List.fold(start,
+						     List.concat [comments, finish],
+						     op ::),
+			      transfer = transfer})
+		    | SOME (0,true)
+		    => let
+			 val statements
+			   = (Assembly.instruction_unal
+			      {oper = Instruction.NEG,
+			       dst = dst,
+			       size = size})::
+			     (List.concat [comments, finish])
+
+			 val statements
+			   = List.fold(start, 
+				       statements,
+				       op ::)
+		       in
+			 SOME (Block.T
+			       {entry = entry,
+				profileInfo = profileInfo,
+				statements = statements,
+				transfer = transfer})
+		       end
+		    | SOME (1,b)
+		    => let
+			 val statements
+			   = List.fold
+			     (start,
+			      (fn l
+			        => if b
+				     then (Assembly.instruction_unal
+					   {oper = Instruction.NEG,
+					    dst = dst,
+					    size = size})::
+				          l
+				     else l)
+			      ((Assembly.instruction_binal
+				{oper = Instruction.ADD,
+				 src = dst,
+				 dst = dst,
+				 size = size})::
+			       (List.concat [comments, finish])),
+			      op ::)
+		       in
+			 SOME (Block.T
+			       {entry = entry,
+				profileInfo = profileInfo,
+				statements = statements,
+				transfer = transfer})
+		       end
+		    | SOME (i,b)
+		    => if i < (8 * Size.toBytes size)
+			 then let
+				val statements
+				  = (fn l
+				      => (Assembly.instruction_sral
+					  {oper = Instruction.SAL,
+					   count = Operand.immediate_const_int i,
+					   dst = dst,
+					   size = size})::
+				         (if b
+					    then (Assembly.instruction_unal
+						  {oper = Instruction.NEG,
+						   dst = dst,
+						   size = size})::
+					         l
+					    else l))
+                                    (List.concat [comments, finish])
+
+				val statements
+				  = List.fold(start,
+					      statements,
+					      op ::)
+			      in
+				SOME (Block.T
+				      {entry = entry,
+				       profileInfo = profileInfo,
+				       statements = statements,
+				       transfer = transfer})
+			      end
+			 else NONE)
  	     | _ => Error.bug "Peephole: elimMDPow2"
 
 	val (callback,elimMDPow2_msg) 
@@ -3235,6 +3521,11 @@ struct
 		
 		{...})
 	     => x86Liveness.track memloc
+	     | (Assembly.Instruction (Instruction.IMUL2
+				      {dst = Operand.MemLoc memloc,...}),
+		
+		{...})
+	     => x86Liveness.track memloc
 	     | (Assembly.Instruction (Instruction.UnAL
 				      {dst = Operand.MemLoc memloc,...}),
 		
@@ -3310,6 +3601,22 @@ struct
 		     | (Assembly.Instruction (Instruction.pMD
 					      {oper, 
 					       src, 
+					       dst as Operand.MemLoc memloc, 
+					       size}),
+			liveInfo)
+		     => Size.eq(size1,size) andalso
+                        MemLoc.eq(memloc1,memloc) andalso
+			(case (src,dst2)
+			   of (Operand.MemLoc memloc_src,
+			       Operand.MemLoc memloc_dst2)
+			    => List.forall
+			       (memloc_src::(MemLoc.utilized memloc_src),
+				fn memloc' 
+				 => not (MemLoc.mayAlias(memloc_dst2,memloc')))
+			    | (Operand.Immediate _, _) => true
+			    | _ => false)
+		     | (Assembly.Instruction (Instruction.IMUL2
+					      {src, 
 					       dst as Operand.MemLoc memloc, 
 					       size}),
 			liveInfo)
@@ -3476,7 +3783,11 @@ struct
 	     => (oper = Instruction.IMUL)
 	        orelse
 		(oper = Instruction.MUL)
-	   | _ => false
+	     | (Assembly.Instruction (Instruction.IMUL2
+				      {dst = Operand.MemLoc memloc,...}),
+		{...})
+	     => true 
+	     | _ => false
 
 	val template : template 
 	  = {start = EmptyOrNonEmpty,
@@ -3630,6 +3941,86 @@ struct
 			       [Assembly.instruction_pmd
 				{oper = oper2,
 				 src = src1,
+				 dst = dst2,
+				 size = size2}]])
+
+			 val {statements, ...}
+			   = LivenessBlock.toLivenessStatements
+			     {statements = statements,
+			      live = liveOut2}
+
+			 val statements
+			   = List.fold(start,
+				       List.concat [statements,
+						    finish],
+				       op ::)
+		       in
+			 SOME (LivenessBlock.T
+			       {entry = entry,
+				profileInfo = profileInfo,
+				statements = statements,
+				transfer = transfer})		 
+		       end
+		  else NONE
+	     | {entry,
+		profileInfo,
+		start, 
+		statements as
+		[[(Assembly.Instruction (Instruction.MOV 
+					 {src = src1,
+					  dst 
+					  = dst1 as Operand.MemLoc memloc_dst1,
+					  size = size1}),
+		   {dead = dead1,...})],
+		 comments,
+		 [(Assembly.Instruction (Instruction.IMUL2
+					 {src = src2,
+					  dst 
+					  = dst2 as Operand.MemLoc memloc_dst2,
+					  size = size2}),
+		   {dead = dead2,
+		    liveOut = liveOut2,...})]],
+		finish, 
+		transfer}
+	     => if Size.eq(size1,size2) andalso
+	           Operand.eq(dst1,dst2) andalso
+		   not (Operand.eq(src1,src2)) andalso
+		   (case (src1,src2)
+		      of (Operand.MemLoc memloc_src1,
+			  Operand.MemLoc memloc_src2)
+		       => LiveSet.contains(dead2,
+					   memloc_src2)
+			  andalso
+			  not (LiveSet.contains(dead1,
+						memloc_src1))
+		       | (_, Operand.MemLoc memloc_src2)
+		       => LiveSet.contains(dead2,
+					   memloc_src2)
+		       | _ => false) andalso
+		   (case src1
+		      of Operand.MemLoc memloc_src1
+		       => not (List.exists
+			       (memloc_src1::(MemLoc.utilized memloc_src1),
+				fn memloc'
+				 => MemLoc.mayAlias(memloc',memloc_dst1)))
+		       | _ => true) andalso
+		   (case src2
+		      of Operand.MemLoc memloc_src2
+		       => not (List.exists
+			       (memloc_src2::(MemLoc.utilized memloc_src2),
+				fn memloc'
+				 => MemLoc.mayAlias(memloc',memloc_dst1)))
+		       | _ => true)
+		  then let
+			 val statements
+			   = (Assembly.instruction_mov
+			      {src = src2,
+			       dst = dst1,
+			       size = size1})::
+			     (List.concat
+			      [List.map(comments, #1),
+			       [Assembly.instruction_imul2
+				{src = src1,
 				 dst = dst2,
 				 size = size2}]])
 

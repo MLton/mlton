@@ -392,6 +392,11 @@ signature X86 =
           | MD of {oper: md,
 		   src: Operand.t,
 		   size: Size.t}
+	  (* Integer signed/unsiged multiplication (two operand form); p. 335
+	   *)
+	  | IMUL2 of {src: Operand.t,
+		      dst: Operand.t, 
+		      size: Size.t}
   	  (* Integer unary arithmetic/logic instructions.
 	   *)
 	  | UnAL of {oper: unal,
@@ -858,6 +863,9 @@ signature X86 =
 	val instruction_md : {oper: Instruction.md,
 			      src: Operand.t,
 			      size: Size.t} -> t
+	val instruction_imul2 : {src: Operand.t,
+				 dst: Operand.t,
+				 size: Size.t} -> t
 	val instruction_unal : {oper: Instruction.unal,
 				dst: Operand.t,
 				size: Size.t} -> t
@@ -1009,6 +1017,7 @@ signature X86 =
 			frameInfo: FrameInfo.t}
 	  | Runtime of {label: Label.t,
 			frameInfo: FrameInfo.t}
+	  | CReturn of {label: Label.t}
 
 	val toString : t -> string
 	val uses_defs_kills : t -> {uses: Operand.t list, 
@@ -1028,6 +1037,7 @@ signature X86 =
 		       frameInfo: FrameInfo.t} -> t
 	val runtime : {label: Label.t,
 		       frameInfo: FrameInfo.t} -> t
+	val creturn : {label: Label.t} -> t
       end
 
     structure ProfileInfo :

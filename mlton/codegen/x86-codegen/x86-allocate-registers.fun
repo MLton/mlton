@@ -110,20 +110,17 @@ struct
 	   => concat [futureMemlocPredTag_toString tag]
 
 
-      type hint = Register.t * MemLoc.t * MemLocSet.t
+      type hint = Register.t * MemLoc.t list * MemLocSet.t
 
       val hint_toString
-	= fn (register, memloc, ignores) 
-	   => concat [MemLoc.toString memloc,
-		      " -> ",
+	= fn (register, memlocs, ignores) 
+	   => concat ["{ ",
+		      List.fold
+		      (memlocs,
+		       "",
+		       fn (memloc, s) => s ^ (MemLoc.toString memloc) ^ " "),
+		      "} -> ",
 		      Register.toString register]
-
-      val hint_eq
-	= fn ((register1,memloc1,ignores1),(register2,memloc2,ignore2))
-	   => MemLoc.eq(memloc1, memloc2)
-	      andalso
-	      Register.eq(register1, register2)
-
 
       type t = {dead: MemLocSet.t,
 		commit: MemLocSet.t,
@@ -559,26 +556,51 @@ struct
 
 	    val hint' = Assembly.hints assembly
 	    val hint
-	      = List.foldr
+	      = List.fold
 	        (case assembly
 		   of Assembly.Directive Directive.Reset => []
 		    | _ => hint,
-		 List.map(hint', 
-			  fn (memloc, register)
-			   => (register, memloc, MemLocSet.empty)),
-		 fn ((hint_register,hint_memloc,hint_ignore),hint)
+		 List.map
+		 (hint',
+		  fn (memloc, register)
+		   => (register, [memloc], MemLocSet.empty)),
+		 fn ((hint_register,hint_memlocs,hint_ignore),hint)
 		  => if List.exists
-		        (hint',
-			 fn (hint_memloc',hint_register')
-			  => MemLoc.eq(hint_memloc,
-				       hint_memloc')
-			     orelse
-			     Register.coincide(hint_register,
-					       hint_register'))
+		        (hint,
+			 fn (hint_register',_,_) => Register.coincide(hint_register,
+								      hint_register'))
 		       then hint
-		       else (hint_register,
-			     hint_memloc,
-			     MemLocSet.union(dead, hint_ignore))::hint)
+		       else let
+			      val hint_memloc = hd hint_memlocs
+			    in
+			      if List.fold
+				 (hint,
+				  false,
+				  fn ((_,hint_memlocs',_),b)
+				   => b orelse List.contains
+				               (hint_memlocs',
+						hint_memloc,
+						MemLoc.eq))
+				then hint
+				else (hint_register,
+				      [hint_memloc],
+				      MemLocSet.union(dead, hint_ignore))::hint
+			    end)
+	    val hint
+	      = case assembly
+		  of (Assembly.Instruction (Instruction.MOV 
+					    {src as Operand.MemLoc src', 
+					     dst as Operand.MemLoc dst',
+					     ...}))
+		   => List.map
+		      (hint,
+		       fn (hint_register,hint_memlocs,hint_ignore)
+		        => if List.contains(hint_memlocs, dst', MemLoc.eq)
+			     then (hint_register,
+				   src'::hint_memlocs,
+				   hint_ignore)
+			     else (hint_register,hint_memlocs,hint_ignore))
+		   | _ => hint
 
 	    val info = {dead = dead,
 			commit = commit,
@@ -1298,19 +1320,22 @@ struct
 			 = List.fold
 			   (hint,
 			    0,
-			    fn ((hint_register,hint_memloc,hint_ignore),
+			    fn ((hint_register,hint_memlocs,hint_ignore),
 				hint_cost)
 			     => if Register.eq(register',
 					       hint_register)
 				  then case memloc
 					 of SOME memloc
-					  => if MemLocSet.contains
-					        (hint_ignore, memloc)
-					       then hint_cost
-					     else if MemLoc.eq(memloc,
-							       hint_memloc)
-						    then hint_cost + 5
-						    else hint_cost - 5
+					  => (case (List.contains
+						    (hint_memlocs,
+						     memloc,
+						     MemLoc.eq),
+						    MemLocSet.contains
+						    (hint_ignore,
+						     memloc))
+						of (true, _) => hint_cost + 5
+						 | (false, true) => hint_cost
+						 | (false, false) => hint_cost - 5)
 					  | NONE => hint_cost - 5
 				else if Register.coincide(register',
 							  hint_register)
@@ -6171,52 +6196,6 @@ struct
 			  registerAllocation = registerAllocation}
 		       end
 		    | _ => Error.bug "allocateSrcDst"
-(*
-		    | _
-		    => let
-			 val {operand = final_src, 
-			      assembly = assembly_src,
-			      registerAllocation}
-			   = RA.allocateOperand 
-			     {operand = src,
-			      options = {register = true,
-					 immediate = true,
-					 label = false,
-					 address = false},
-			      info = info,
-			      size = size,
-			      move = true,
-			      supports = [dst],
-			      saves = [],
-			      force = [],
-			      registerAllocation 
-			      = registerAllocation}
-
-			 val {operand = final_dst,
-			      assembly = assembly_dst,
-			      registerAllocation}
-			   = RA.allocateOperand 
-			     {operand = dst,
-			      options = {register = true,
-					 immediate = false,
-					 label = false,
-					 address = true},
-			      info = info,
-			      size = size,
-			      move = move_dst,
-			      supports = [],
-			      saves = [src,final_src],
-			      force = [],
-			      registerAllocation 
-			      = registerAllocation}
-		       in
-			 {final_src = final_src,
-			  final_dst = final_dst,
-			  assembly_src_dst 
-			  = AppendList.appends [assembly_src, assembly_dst],
-			  registerAllocation = registerAllocation}
-		       end
-*)
 
       (* 
        * Require src1/src2 operands as follows:
@@ -6698,6 +6677,133 @@ struct
 		      (Assembly.instruction instruction),
 		      assembly_post],
 		   registerAllocation = registerAllocation}
+		end
+	     | IMUL2 {src, dst, size}
+	       (* Integer signed/unsigned multiplication (two operand form).
+		* Require src/dst operands as follows:
+		*
+		*              dst
+		*          reg imm lab add 
+		*      reg  X
+		*  src imm  X
+		*      lab
+		*      add  X
+		*)
+	     => let
+		  val {uses,defs,kills} 
+		    = Instruction.uses_defs_kills instruction
+		  val {assembly = assembly_pre,
+		       registerAllocation}
+		    = RA.pre {uses = uses,
+			      defs = defs,
+			      kills = kills,
+			      info = info,
+			      registerAllocation = registerAllocation}
+
+		  val {final_src,
+		       final_dst,
+		       assembly_src_dst,
+		       registerAllocation}
+		    = if Operand.eq(src, dst)
+			then let
+			       val {operand = final_src_dst, 
+				    assembly = assembly_src_dst,
+				    registerAllocation}
+				 = RA.allocateOperand 
+				   {operand = src,
+				    options = {register = true,
+					       immediate = false,
+					       label = false,
+					       address = false},
+				    info = info,
+				    size = size,
+				    move = true,
+				    supports = [],
+				    saves = [],
+				    force = [],
+				    registerAllocation 
+				    = registerAllocation}
+			     in
+			       {final_src = final_src_dst,
+				final_dst = final_src_dst,
+				assembly_src_dst = assembly_src_dst,
+				registerAllocation = registerAllocation}
+			     end
+			else let
+			       val {operand = final_dst,
+				    assembly = assembly_dst,
+				    registerAllocation}
+				 = RA.allocateOperand 
+				   {operand = dst,
+				    options = {register = true,
+					       immediate = false,
+					       label = false,
+					       address = false},
+				    info = info,
+				    size = size,
+				    move = true,
+				    supports = [src],
+				    saves = [],
+				    force = [],
+				    registerAllocation 
+				    = registerAllocation}
+ 
+			       val {operand = final_src, 
+				    assembly = assembly_src,
+				    registerAllocation}
+				 = RA.allocateOperand 
+				   {operand = src,
+				    options = {register = true,
+					       immediate = true,
+					       label = false,
+					       address = false},
+				    info = info,
+				    size = size,
+				    move = true,
+				    supports = [],
+				    saves = [dst,final_dst],
+				    force = [],
+				    registerAllocation 
+				    = registerAllocation}
+			     in
+			       {final_src = final_src,
+				final_dst = final_dst,
+				assembly_src_dst 
+				= AppendList.appends 
+				  [assembly_dst,
+				   assembly_src],
+				registerAllocation = registerAllocation}
+			     end
+			  
+		  val instruction 
+		    = Instruction.IMUL2
+		      {src = final_src,
+		       dst = final_dst,
+		       size = size}
+		      
+		  val {uses = final_uses,
+		       defs = final_defs,
+		       ...}
+		    = Instruction.uses_defs_kills instruction
+		    
+		  val {assembly = assembly_post,
+		       registerAllocation}
+		    = RA.post {uses = uses,
+			       final_uses = final_uses,
+			       defs = defs,
+			       final_defs = final_defs,
+			       kills = kills,
+			       info = info,
+			       registerAllocation = registerAllocation}
+		in
+		  {assembly
+		   = AppendList.appends 
+		     [assembly_pre,
+		      assembly_src_dst,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
+		     registerAllocation = registerAllocation}
 		end
 	     | UnAL {oper, dst, size}
 	       (* Integer unary arithmetic/logic instructions.

@@ -14,6 +14,10 @@ struct
   structure LiveInfo = x86Liveness.LiveInfo
   open x86JumpInfo
 
+  structure Graph = DirectedGraph
+  structure Node = Graph.Node
+  structure Edge = Graph.Edge
+
   fun take (l, n) 
     = let
 	val rec take'
@@ -35,15 +39,11 @@ struct
 	val baseUses
 	  = List.fold
 	    (uses,
-	     [],
+	     MemLocSet.empty,
 	     fn (operand, baseUses)
 	      => case Operand.deMemloc operand
 		   of SOME memloc => if x86Liveness.track memloc
-		                        andalso 
-					not (List.contains(baseUses,
-							   memloc,
-							   MemLoc.eq))
-				       then memloc::baseUses
+				       then MemLocSet.add(baseUses, memloc)
 				       else baseUses
 		    | NONE => baseUses)
 	    
@@ -60,14 +60,9 @@ struct
 				       tempUses,
 				       fn (memloc, tempUses)
 				        => if x86Liveness.track memloc
-				              andalso
-					      not (List.contains
-						   (tempUses,
-						    memloc,
-						    MemLoc.eq))
-					     then memloc::tempUses
+					     then MemLocSet.add(tempUses, memloc)
 					     else tempUses)
-			| NONE => tempUses)
+			  | NONE => tempUses)
 	    in
 	      doit(defs, 
 	      doit(uses, 
@@ -77,15 +72,11 @@ struct
 	val baseDefs
 	  = List.fold
 	    (defs,
-	     [],
+	     MemLocSet.empty,
 	     fn (operand, baseDefs)
 	      => case Operand.deMemloc operand
 		   of SOME memloc => if x86Liveness.track memloc
-		                        andalso 
-					not (List.contains(baseDefs,
-							   memloc,
-							   MemLoc.eq))
-				       then memloc::baseDefs
+				       then MemLocSet.add(baseDefs, memloc)
 				       else baseDefs
 		    | NONE => baseDefs)
 	val tempDefs = baseDefs
@@ -96,21 +87,31 @@ struct
 
   datatype t = T of {get: Label.t -> 
                           ((MemLoc.t * Register.t * bool) list *
-			   (MemLoc.t * bool) list) option,
+			   (MemLoc.t * bool) list),
 		     set: Label.t * 
                           ((MemLoc.t * Register.t * bool) list *
-			   (MemLoc.t * bool) list) option -> 
-                          unit}
+			   (MemLoc.t * bool) list) -> unit}
 
   local
 
   in
-    structure I' = Int
+    structure I' = struct
+		     open Int
+		     fun sign x = if x = 0
+				    then 0
+				  else if x > 0
+				    then 1
+				  else ~1
+		   end
     structure I =
       struct
 	datatype t = NegInfinity
 	           | Finite of I'.t
 	           | PosInfinity
+	val toString
+	  = fn NegInfinity => "-inf"
+	     | Finite n => I'.toString n
+	     | PosInfinity => "+inf"
 	val zero = Finite (I'.zero)
 	val one = Finite (I'.one)
 	val two = Finite (I'.two)
@@ -125,10 +126,44 @@ struct
 	fun NegInfinity + PosInfinity = zero
 	  | NegInfinity + _ = NegInfinity
 	  | (Finite x) + NegInfinity = NegInfinity
-	  | (Finite x) + (Finite y) = Finite (I'.+(x,y))
+	  | (Finite x) + (Finite y) 
+	  = ((Finite (I'.+(x,y))) handle Overflow => if x > 0 
+						       then PosInfinity
+						       else NegInfinity)
 	  | (Finite x) + PosInfinity = PosInfinity
 	  | PosInfinity + NegInfinity = zero
 	  | PosInfinity + _ = PosInfinity
+
+	fun NegInfinity * NegInfinity = PosInfinity
+	  | NegInfinity * (Finite x)
+	  = (case I'.sign x
+	       of ~1 => PosInfinity
+		| 0 => zero
+		| _ => NegInfinity)
+	  | NegInfinity * PosInfinity = NegInfinity
+	  | (Finite x) * NegInfinity
+	  = (case I'.sign x
+	       of ~1 => PosInfinity
+		| 0 => zero
+		| _ => NegInfinity)
+	  | (Finite x) * (Finite y)
+	  = ((Finite (I'.*(x, y))) handle Overflow => (case (I'.sign x, I'.sign y)
+							 of (~1, ~1) => PosInfinity
+							  | (1, ~1) => NegInfinity
+							  | (~1, 1) => NegInfinity
+							  | _ => PosInfinity))
+	  | (Finite x) * PosInfinity
+	  = (case I'.sign x
+	       of ~1 => NegInfinity
+		| 0 => zero
+		| _ => PosInfinity)
+	  | PosInfinity * NegInfinity = NegInfinity
+	  | PosInfinity * (Finite x)
+	  = (case I'.sign x
+	       of ~1 => NegInfinity
+		| 0 => zero
+		| _ => PosInfinity)
+	  | PosInfinity * PosInfinity = PosInfinity
 
 	fun min (NegInfinity, y) = NegInfinity
 	  | min (x, NegInfinity) = NegInfinity
@@ -136,6 +171,7 @@ struct
 	  | min (x, PosInfinity) = x
 	  | min (Finite x, Finite y) = Finite (I'.min(x, y))
       end
+    datatype u = Position of I.t | Length of I'.t
   end
 
   fun computeLiveTransfers {chunk as Chunk.T {blocks,...},
@@ -144,36 +180,454 @@ struct
 			    liveInfo : x86Liveness.LiveInfo.t,
 			    jumpInfo : x86JumpInfo.t}
     = let
+	val (useLF, useB, sync)
+	  = case !Control.Native.liveTransfer
+	      of 1 => (false, false, false)
+	       | 2 => (false, false, true)
+	       | 3 => (false, true, false)
+	       | 4 => (false, true, true)
+	       | 5 => (true, false, false)
+	       | 6 => (true, false, true)
+	       | 7 => (true, true, false)
+	       | _ => (true, true, true)
+
 	val cutoff = !Control.Native.cutoff
+	datatype u = Position of I.t | Length of I'.t
 
 	val info
-	  as {get = getInfo : 
-	      Label.t -> {block: Block.t,
-			  live: (MemLoc.t * 
-				 bool * 
-				 I.t option ref) list option ref},
+	  as {get = getInfo :
+	            Label.t -> 
+		    {block: Block.t,
+		     node: Node.t,
+		     pred: Label.t list ref,
+		     succ: Label.t list ref,
+		     live: {memloc: MemLoc.t,
+			    distanceF': u option ref,
+			    distanceF: (I.t * Label.t option) option ref,
+			    distanceB': u option ref,
+			    distanceB: (I.t * Label.t option) option ref} vector,
+		     liveTransfers: ((MemLoc.t * Register.t * bool ref) list *
+				     (MemLoc.t * bool ref) list) option ref,
+		     defed: MemLocSet.t option ref},
 	      set = setInfo}
 	  = Property.getSetOnce
 	    (Label.plist,
 	     Property.initRaise ("x86LiveTransfers:getInfo", Label.layout))
 
-	val funcs
+	val {get = getNodeInfo : Node.t -> Label.t, 
+	     set = setNodeInfo}
+	  = Property.getSetOnce
+	    (Node.plist,
+	     Property.initRaise ("nodeInfo", Node.layout))
+
+	val G = Graph.new ()
+	val root = Graph.newNode G
+	val rootLabel = Label.newString "root"
+	val _ = setNodeInfo(root, rootLabel)
+	fun addEdge edge
+	  = (Graph.addEdge (G, edge) ; ())
+	fun addEdge' edge
+	  = if Node.hasEdge edge
+	      then ()
+	      else addEdge edge
+
+	val (labels, funcs)
 	  = List.fold
 	    (blocks,
-	     [],
-	     fn (block as Block.T {entry, ...}, funcs)
+	     ([], []),
+	     fn (block as Block.T {entry, transfer, ...}, (labels, funcs))
 	      => let
 		   val label = Entry.label entry
-		 in 
-		   (setInfo(label,
-			    {block = block,
-			     live = ref NONE});
-		    case entry
-		      of Entry.Func {label, live} 
-		       => label::funcs
-		       | _ => funcs)
+		   val succ = Transfer.nearTargets transfer
+		   val live = LiveInfo.getLive(liveInfo, label)
+		   val live = List.fold
+		              (succ,
+			       live,
+			       fn (label, live)
+			        => LiveSet.+(live, LiveInfo.getLive(liveInfo, label)))
+		   val live = LiveSet.toList live
+		   val n = Graph.newNode G
+		   val _ = setNodeInfo(n, label)
+		   val _ 
+		     = setInfo(label,
+			       {block = block,
+				node = n,
+				pred = ref [],
+				succ = ref succ,
+				live = Vector.fromListMap
+				       (live,
+					fn memloc 
+					 => {memloc = memloc,
+					     distanceF' = ref NONE,
+					     distanceF = ref NONE,
+					     distanceB' = ref NONE,
+					     distanceB = ref NONE}),
+				liveTransfers = ref NONE,
+				defed = ref NONE})
+		   val labels = label::labels
+		   val funcs = case entry
+				 of Entry.Func _ => label::funcs
+				  | _ => funcs
+		 in
+		   (labels, funcs)
 		 end)
-	    
+
+	val labels = Vector.fromList labels
+	val funcs = Vector.fromList funcs
+
+	val _
+	  = Vector.foreach
+	    (labels,
+	     fn label
+	      => let
+		   val {node, block, ...} = getInfo label
+		   fun doit' target
+		     = let
+			 val {node = node', pred = pred', ...} = getInfo target
+		       in
+			 addEdge {from = node, to = node'};
+			 List.push (pred', label)
+		       end
+		   fun doit'' target
+		     = let
+			 val {node = node', pred = pred', ...} = getInfo target
+		       in
+			 addEdge {from = root, to = node'};
+			 List.push (pred', label)
+		       end
+		   val Block.T {entry, transfer, ...} = block
+		   datatype z = datatype Entry.t
+		   datatype z = datatype Transfer.t
+		 in
+		   case entry
+		     of Func {label, ...} => doit'' label
+		      | _ => () ;
+		   case transfer
+		     of Goto {target, ...} 
+		      => doit' target
+		      | Iff {truee, falsee, ...} 
+		      => (doit' truee; 
+			  doit' falsee)
+		      | Switch {cases, default, ...}
+		      => (doit' default;
+			  Transfer.Cases.foreach(cases, doit'))
+		      | Tail {...}
+		      => ()
+		      | NonTail {return, handler, ...}
+		      => (doit'' return;
+			  case handler 
+			    of SOME handler => doit'' handler
+			     | NONE => ())
+		      | Return {...}
+		      => ()
+		      | Raise {...}
+		      => ()
+		      | Runtime {return, ...}
+		      => (doit'' return)
+		      | CCall {dst, return, ...}
+		      => (doit' return)
+		 end)
+
+	val {forest, graphToForest, loopNodes, parent}
+	  = Graph.loopForestSteensgaard {graph = G, root = root}
+
+(*
+	val graphLayout
+	  = let
+	      open Graph.LayoutDot
+	    in
+	      layout
+	      {graph = G,
+	       title = "callGraph",
+	       options = [],
+	       edgeOptions = fn _ => [],
+	       nodeOptions = fn n => [NodeOption.label 
+				      (Label.toString (getNodeInfo n))]}
+	    end
+	val _ = Control.saveToFile
+	        ({suffix = concat [Label.toString (Vector.sub(funcs, 0)), 
+				   ".callGraph.dot"]}, 
+		 graphLayout)
+
+	val forestLayout
+	  = let
+	      open Graph.LayoutDot
+	    in
+	      layout
+	      {graph = forest,
+	       title = "loopForestSteensgaard",
+	       options = [],
+	       edgeOptions = fn _ => [],
+	       nodeOptions = let
+			       open NodeOption
+			     in 
+			       fn n => let
+					 val ns = loopNodes n
+				       in
+					 [label (List.toString 
+						 (Label.toString o getNodeInfo)
+						 ns),
+					  case ns
+					    of nil => Shape Diamond
+					     | _::nil => Shape Box
+					     | _ => Shape Ellipse]
+				       end
+			     end}
+	    end
+	val _ = Control.saveToFile
+	        ({suffix = concat [Label.toString (Vector.sub(funcs, 0)), 
+				   ".loopForest.dot"]}, 
+		 forestLayout)
+*)
+
+	val _
+	  = Vector.foreach
+	    (labels,
+	     fn label
+	      => let
+		   val {block, live, ...} = getInfo label
+		   val Block.T {entry, statements, transfer, ...} = block
+
+		   val l
+		     = List.fold
+		       (statements,
+			I'.two,
+			fn (Assembly.Comment _, l) => l
+			 | (_, l) => I'.+(l, I'.one))
+
+		   fun pos ([], n, m)
+		     = let
+			 val {uses, defs, ...}
+			   = Transfer.uses_defs_kills transfer
+			 val {uses,defs} 
+			   = temp_uses_defs {uses = uses,
+					     defs = defs}
+		       in
+			 Vector.foreach
+			 (live,
+			  fn {memloc, distanceF' as ref NONE, ...}
+			   => if MemLocSet.contains(uses,memloc)
+				then distanceF' := SOME (Position (I.Finite n))
+				else distanceF' := SOME (Length l)
+			   | _ => ());
+			 Vector.foreach
+			 (live,
+			  fn {memloc, distanceB', ...}
+			   => if MemLocSet.contains(uses,memloc)
+			         orelse
+				 MemLocSet.contains(defs,memloc)
+				then distanceB' := SOME (Position (I.Finite m))
+				else ())
+		       end
+		     | pos ((Assembly.Comment _)::assembly,n,m)
+		     = pos (assembly,n,m)
+		     | pos (asm::assembly,n,m)
+		     = let
+			 val {uses,defs,...} 
+			      = Assembly.uses_defs_kills asm
+			 val {uses,defs} 
+			   = temp_uses_defs {uses = uses,
+					     defs = defs}
+		       in
+			 Vector.foreach
+			 (live,
+			  fn {memloc, distanceF' as ref NONE, ...}
+			   => if MemLocSet.contains(uses,memloc)
+				then distanceF' := SOME (Position (I.Finite n))
+				else ()
+			   | _ => ());
+			 Vector.foreach
+			 (live,
+			  fn {memloc, distanceB', ...}
+			   => if MemLocSet.contains(uses,memloc)
+			         orelse
+				 MemLocSet.contains(defs,memloc)
+				then distanceB' := SOME (Position (I.Finite m))
+				else ());
+			 pos(assembly, I'.+(n, I'.one), I'.-(m, I'.one))
+		       end
+		 in
+		   let
+		     val n = I'.zero
+		     val m = I'.-(l, I'.one)
+		     val {uses,defs,...}
+		       = Entry.uses_defs_kills entry
+		     val {uses,defs} 
+		       = temp_uses_defs {uses = uses,
+					 defs = defs}
+		   in
+		     Vector.foreach
+		     (live,
+		      fn {memloc, distanceF' as ref NONE, ...}
+		       => if MemLocSet.contains(uses,memloc)
+			    then distanceF' := SOME (Position (I.Finite n))
+			    else ()
+		       | _ => ());
+		     Vector.foreach
+		     (live,
+		      fn {memloc, distanceB', ...}
+		       => if MemLocSet.contains(uses,memloc)
+		             orelse
+			     MemLocSet.contains(defs,memloc)
+			    then distanceB' := SOME (Position (I.Finite m))
+			    else distanceB' := SOME (Length l));
+		     pos(statements, I'.+(n, I'.one), I'.-(m, I'.one))
+		   end 
+		 end)
+
+	fun get_distanceF {temp: MemLoc.t,
+			   label: Label.t}
+	  = let
+	      val {block, node, succ, live, ...} = getInfo label
+	      val Block.T {transfer, ...} = block
+	    in
+	      case Vector.peek
+		   (live, 
+		    fn {memloc, ...} => MemLoc.eq(temp, memloc))
+		of SOME {distanceF as ref (SOME (df, dfl)), ...}
+		 => (df, dfl)
+		 | SOME {distanceF', distanceF, ...}
+		 => (case valOf (!distanceF')
+		       of Position n => (distanceF := SOME (n, SOME label); 
+					 (n, SOME label))
+			| Length n
+			=> let
+			     val loopLabels
+			       = case parent(graphToForest node)
+				   of NONE => []
+				    | SOME node 
+				    => List.map(loopNodes node, getNodeInfo)
+			     val _ = distanceF := SOME (I.PosInfinity, NONE)
+			     fun default ()
+			       = let
+				   val n = I.Finite n
+				   val (min, minl)
+				     = List.fold
+				       (!succ,
+					(I.PosInfinity, NONE),
+					fn (label, (min, minl))
+					 => let
+					      val (n', l') 
+						= get_distanceF {temp = temp,
+								 label = label}
+					      val n' = I.+(n, n')
+					      val n''
+						= case (l', useLF)
+						    of (NONE, _) => n'
+						     | (_, false) => n'
+						     | (SOME l', true)
+						     => if List.contains
+						           (loopLabels,
+							    l', Label.equals)
+							  then n'
+							  else I.*(I.Finite 5, n')
+					    in
+					      if I.<(n'', min)
+						then (n', l')
+						else (min, minl)
+					    end)
+				 in
+				   (min, minl)
+				 end
+			       
+			     datatype z = datatype Transfer.t
+			     val (n, l)
+			       = case transfer
+				   of Tail _ => (I.PosInfinity, NONE)
+				    | NonTail _ => (I.PosInfinity, NONE)
+				    | Runtime _ => (I.PosInfinity, NONE)
+				    | Return _ => (I.PosInfinity, NONE)
+				    | Raise _ => (I.PosInfinity, NONE)
+			            | CCall _
+				    => if Size.class (MemLoc.size temp) <> Size.INT
+					 then (I.PosInfinity, NONE)
+					 else default ()
+				  | _ => default ()
+			   in
+			     distanceF := SOME (n, l) ; (n, l)
+			   end)
+		 | _ => (I.PosInfinity, NONE)
+	    end
+
+	fun get_distanceB {temp: MemLoc.t,
+			   label: Label.t}
+	  = let
+	      val {block, node, pred, live, ...} = getInfo label
+	      val Block.T {entry, ...} = block
+	    in
+	      case Vector.peek
+		   (live, 
+		    fn {memloc, ...} => MemLoc.eq(temp, memloc))
+		of SOME {distanceB as ref (SOME (db, dbl)), ...}
+		 => (db, dbl)
+		 | SOME {distanceB, ...}
+		 => let
+		      val loopLabels
+			= case parent(graphToForest node)
+			    of NONE => []
+			     | SOME node 
+			     => List.map(loopNodes node, getNodeInfo)
+		      val _ = distanceB := SOME (I.PosInfinity, NONE)
+		      fun default () 
+			= List.fold
+			  (!pred, 
+			   (I.PosInfinity, NONE),
+			   fn (label, (min, minl))
+			    => let
+				 val {live, ...} = getInfo label
+			       in
+				 case Vector.peek
+				      (live, 
+				       fn {memloc, ...} => MemLoc.eq(temp, memloc))
+				   of SOME {distanceB', ...}
+				    => (case valOf(!distanceB')
+					  of Position n 
+					   => if I.<(n, min)
+						then (n, SOME label)
+						else (min, minl)
+					   | Length n
+					   => let
+						val n = I.Finite n
+						val (n', l') 
+						  = get_distanceB {temp = temp,
+								   label = label}
+						val n' = I.+(n, n')
+						val n''
+						  = case (l', useLF)
+						      of (NONE, _) => n'
+						       | (_, false) => n'
+						       | (SOME l', true)
+						       => if List.contains
+							     (loopLabels,
+							      l', Label.equals)
+							    then n'
+							    else I.*(I.Finite 5, n')
+					      in
+						if I.<(n'', min)
+						  then (n', l')
+						  else (min, minl)
+					      end)
+				    | _ => (min, minl)
+			       end)
+
+		      datatype z = datatype Entry.t
+		      val (n, l)
+			= case entry
+			    of Func {...} => (I.PosInfinity, NONE)
+			     | Cont {...} => (I.PosInfinity, NONE)
+			     | Handler {...} => (I.PosInfinity, NONE)
+			     | Runtime {...} => (I.PosInfinity, NONE)
+			     | CReturn {...}
+			     => if Size.class (MemLoc.size temp) <> Size.INT
+				  then (I.PosInfinity, NONE)
+				  else default ()
+			     | _ => default ()
+		    in
+		      distanceB := SOME (n, l) ; (n, l)
+		    end
+		 | _ => (I.PosInfinity, NONE)
+	    end
+
 	local
 	  val queue = ref (Queue.empty ())
 	in
@@ -184,437 +638,435 @@ struct
 						  SOME x)
 	end
 
-	fun doit {label, defed}
+	fun doit {label, hints}
 	  = let
-	      val live = LiveInfo.getLive(liveInfo, label)
-	      val defed = MemLocSet.subset
-		          (defed,
-			   fn memloc
-			    => MemLocSet.contains(live, memloc))
-
-	      val {block, live} = getInfo label
-	      val Block.T {entry, statements, transfer, ...} = block
-	      val (live', changed)
-		= case !live
-		    of NONE => let
-				 val live' = LiveInfo.getLive(liveInfo, label)
-				 val live' = List.map
-				             (LiveSet.toList live',
-					      fn memloc => (memloc, true, ref NONE))
-			       in
-				 (live', true)
-			       end
-		     | SOME live' => (live', false)
-	      val (live',changed)
-		= List.fold
-		  (live',
-		   ([],changed),
-		   fn ((memloc,sync,weight),(live',changed))
-		    => let
-			 val defed' = MemLocSet.contains(defed, memloc)
-			 val sync' = sync andalso (not defed')
-		       in
-			 ((memloc, sync', weight)::live',
-			  changed orelse (sync <> sync'))
-		       end)
+	      val {block, node, pred, succ, liveTransfers, ...} = getInfo label
 	    in
-	      if changed
-		then let
-		       val _ = live := SOME live'
-		       fun doit' (defed, defs)
-			 = List.fold
-			   (defs,
-			    defed,
-			    fn (def,defed)
-			     => case Operand.deMemloc def
-				  of SOME def => if track def
-						   then MemLocSet.add(defed, def)
-						   else defed
-				   | NONE => defed)
+	      case !liveTransfers
+		of SOME _ => ()
+		 | NONE 
+		 => let
+		      val loopLabels
+			= case parent(graphToForest node)
+			    of NONE => []
+			     | SOME node 
+			     => List.map(loopNodes node, getNodeInfo)
+		      val Block.T {transfer, ...} = block
+			
+		      val (regHints, fltregHints) = hints
 
-		       val {defs, ...} = Entry.uses_defs_kills entry
-		       val defed = doit' (defed, defs)
+		      val live = LiveSet.toList(LiveInfo.getLive(liveInfo, label))
 
-		       val defed
-			 = List.fold
-			   (statements,
-			    defed,
-			    fn (asm,defed)
-			     => let
-				  val {defs, ...} = Assembly.uses_defs_kills asm
-				in
-				  doit' (defed, defs)
-				end)
+(*
+		      val _ 
+			= (print (Label.toString label);
+			   print "\nloopLabels: ";
+			   print (List.toString Label.toString loopLabels);
+			   print "\ndistance_F:\n";
+			   List.foreach
+			   (live,
+			    fn memloc
+			     => (print (MemLoc.toString memloc);
+				 print ": ";
+				 let
+				   val (n, l) = get_distanceF {temp = memloc,
+							       label = label}
+				 in
+				   print (I.toString n);
+				   print " ";
+				   print (Option.toString Label.toString l)
+				 end;
+				 print "\n"));
+			   print "distance_B:\n";
+			   List.foreach
+			   (live,
+			    fn memloc
+			     => (print (MemLoc.toString memloc);
+				 print ": ";
+				 let
+				   val (n, l) = get_distanceF {temp = memloc,
+							       label = label}
+				 in
+				   print (I.toString n);
+				   print " ";
+				   print (Option.toString Label.toString l)
+				 end;
+				 print "\n"));
+			   print "\n")
+*)
 
-		       val {defs, ...} = Transfer.uses_defs_kills transfer
-		       val defed = doit' (defed, defs)
+		      val live
+			= if not useB
+			    then List.keepAllMap
+			         (live,
+				  fn memloc
+				   => case get_distanceF {temp = memloc, 
+							  label = label}
+				        of (I.Finite n, SOME l)
+					 => if n < cutoff
+					      then if useLF
+						     then if List.contains
+						             (loopLabels,
+							      l, Label.equals)
+							    then SOME (memloc, n)
+							    else SOME (memloc, n * 5)
+						     else SOME (memloc, n)
+					      else NONE
+				         | (I.PosInfinity, _)
+					 => NONE
+					 | _
+					 => Error.bug 
+					    "computeLiveTransfers::get_distance")
+			    else List.keepAllMap
+			         (live,
+				  fn memloc
+				   => case (get_distanceB {temp = memloc, 
+							   label = label},
+					    get_distanceF {temp = memloc, 
+							   label = label})
+				        of ((I.PosInfinity, _), _)
+					 => NONE
+				         | (_, (I.PosInfinity, _))
+					 => NONE
+				         | ((I.Finite n, SOME nl), 
+					    (I.Finite m, SOME ml))
+				         => if (n + m) < cutoff
+					      then if useLF
+						     then case (List.contains
+								(loopLabels,
+								 nl, Label.equals),
+								List.contains
+								(loopLabels,
+								 ml, Label.equals))
+							    of (true, true)
+							     => SOME (memloc, n + m)
+							     | (true, false)
+							     => SOME (memloc, 
+								      n + 5 * m)
+							     | (false, true)
+							     => SOME (memloc,
+								      5 * n + m)
+							     | (false, false)
+							     => SOME (memloc,
+								      5 * n + 5 * m)
+						     else SOME (memloc, n + m)
+					      else NONE
+					 | _
+					 => Error.bug 
+					    "computeLiveTransfers::get_distance")
 
-		       fun enque' label = enque {label = label, 
-						 defed = defed}
-		       fun enque'' label = enque {label = label, 
-						  defed = MemLocSet.empty}
-		       datatype z = datatype Transfer.t
-		     in
-		       case transfer
-			 of Goto {target, ...}
-			  => (enque' target)
-			  | Iff {truee, falsee, ...}
-			  => (enque' truee;
-			      enque' falsee)
-			  | Switch {cases, default, ...}
-			  => (Transfer.Cases.foreach(cases, enque');
-			      enque' default)
-			  | Tail {...}
-			  => ()
-			  | NonTail {return, handler, ...}
-			  => (enque'' return;
-			      case handler 
-				of SOME handler => enque'' handler
-				 | NONE => ())
-			  | Return {...}
-			  => ()
-			  | Raise {...}
-			  => ()
-			  | Runtime {return, ...}
-			  => (enque'' return)
-			  | CCall {dst, return, ...}
-			  => (enque' return)
-		     end
-		else ()
+		      (* List.partition will reverse the lists.
+		       * So sort in increasing order.
+		       *)
+		      val live
+			= List.insertionSort
+			  (live, fn ((_,n1),(_,n2)) => I'.>(n1, n2))
+
+		      val {yes = liveRegs, no = liveFltRegs}
+			= List.partition
+			  (live,
+			   fn (memloc,_) 
+			    => Size.class (MemLoc.size memloc) = Size.INT)
+
+		      val liveRegs
+			= List.map
+			  (liveRegs,
+			   fn (memloc,weight)
+			    => case List.peek
+			            (regHints,
+				     fn (memloc',register',_)
+				      => MemLoc.eq(memloc,memloc'))
+				 of SOME (memloc',register',_)
+				 => (memloc,weight,SOME register')
+				 | NONE 
+				 => (memloc,weight,NONE))		  
+
+		      val rec doitRegs
+			= fn ([],_,liveTransfers) => liveTransfers
+		           | (_,[],liveTransfers) => liveTransfers
+		           | (transferRegs,
+			      (memloc,weight,register)::live,
+			      liveTransfers)
+		           => let
+				fun finish register
+				  = let
+				      val transferRegs
+					= List.removeAll
+					  (transferRegs,
+					   fn register'
+					    => Register.coincide(register, 
+								 register'))
+				    in
+				      doitRegs 
+				      (transferRegs,
+				       live,
+				       (memloc,register,ref true)::liveTransfers)
+				    end
+
+				fun default ()
+				  = let
+				      val size = MemLoc.size memloc
+				      val transferRegs'
+					= List.keepAllMap
+					  (transferRegs,
+					   fn register
+					    => if Size.eq
+					          (size,
+						   Register.size register)
+						 then SOME
+						      (register,
+						       List.index
+						       (live,
+							fn (_,_,SOME register')
+						         => Register.eq
+						            (register,
+							     register')
+							 | (_,_,NONE) => false))
+						 else NONE)
+				      val transferRegs'
+					= List.insertionSort
+					  (transferRegs',
+					   fn ((_,SOME index1),(_,SOME index2))
+					    => Int.>(index1, index2)
+					    | ((_, NONE),_)
+					    => true
+					    | (_, (_, NONE))
+					    => false)
+				    in
+				      case transferRegs'
+					of nil
+					 => doitRegs (transferRegs,
+						      live,
+						      liveTransfers)
+					 | (register,_)::_
+					 => finish register
+				    end
+			      in
+				case register
+				  of SOME register
+				   => if List.contains(transferRegs,
+						       register,
+						       Register.eq)
+					then finish register
+					else default ()
+				   | NONE => default ()
+			      end
+
+		      val liveRegsTransfers = doitRegs(transferRegs, liveRegs, [])
+
+
+		      val liveFltRegs = take(liveFltRegs, transferFltRegs)
+		      val liveFltRegsTransfers
+			= List.map(liveFltRegs, fn (memloc, _) => (memloc, ref true))
+			  
+
+		      val _ = liveTransfers := SOME (liveRegsTransfers, 
+						     liveFltRegsTransfers)
+
+		      fun doit' label = enque {label = label, 
+					       hints = (liveRegsTransfers,
+							liveFltRegsTransfers)}
+		      fun doit'' label = enque {label = label, 
+						hints = ([],[])}
+		      datatype z = datatype Transfer.t
+		    in
+		      case transfer
+			of Goto {target, ...} 
+			 => (doit' target)
+			 | Iff {truee, falsee, ...}
+			 => (doit' truee;
+			     doit' falsee)
+			 | Switch {cases, default, ...}
+			 => (doit' default;
+			     Transfer.Cases.foreach(cases, doit'))
+			 | Tail {...}
+			 => ()
+			 | NonTail {return, handler, ...}
+			 => (doit'' return;
+			     case handler 
+			       of SOME handler => doit'' handler
+				| NONE => ())
+			 | Return {...}
+			 => ()
+			 | Raise {...}
+			 => ()
+			 | Runtime {return, ...}
+			 => (doit'' return)
+			 | CCall {dst, return, ...}
+			 => (doit'' return)
+		    end
 	    end
-	  
-	val _ = List.foreach
-	        (funcs,
-		 fn label => enque {label = label, 
-				    defed = MemLocSet.empty})
+
+	val _ = Vector.foreach
+	        (funcs, 
+		 fn label => enque {label = label, hints = ([],[])})
+
 	fun loop ()
 	  = (case deque ()
 	       of NONE => ()
-	        | SOME {label, defed}
-		=> (doit {label = label, defed = defed};
+		| SOME {label, hints}
+		=> (doit {label = label, hints = hints};
 		    loop ()))
 	val _ = loop ()
 
-	(* update weights *)
-	fun get_distanceF' {temp : MemLoc.t,
-			    label : Label.t}
+	fun doit {label, defed as defed'}
 	  = let
-	      val 
-		{block, live, ...} = getInfo label
-	    in
-	      case List.peek(valOf (!live),
-			     fn (temp',_,_) => MemLoc.eq(temp, temp'))
-		of SOME (_,_,temp_distanceF as (ref (SOME distance))) => distance
-		 | SOME (_,_,temp_distanceF as (ref NONE)) 
-		 => let
-		      val _ = temp_distanceF := SOME I.PosInfinity
-			
-		      val Block.T {statements, transfer, ...} = block
 
-		      datatype t = Position of I.t | Length of I'.t
-		      fun posF (assembly,n)
-			= if n < cutoff
-			    then posF'(assembly,n)
-			    else Position I.PosInfinity
-		      and posF' ([],n) 
-			= let
-			    val {uses,defs,...} 
-			      = Transfer.uses_defs_kills transfer
-			    val {uses,defs} 
-			      = temp_uses_defs {uses = uses,
-						defs = defs}
-			  in
-			    if List.contains(uses,
-					     temp,
-					     MemLoc.eq)
-			      then Position (I.Finite n)
-			      else Length (I'.+(n, I'.one))
-			  end
-			| posF' ((Assembly.Comment _)::assembly,n)
-			= posF (assembly, n)
-			| posF' (asm::assembly,n)
-			= let
-			    val {uses,defs,...} 
-			      = Assembly.uses_defs_kills asm
-			    val {uses,defs} 
-			      = temp_uses_defs {uses = uses,
-						defs = defs}
-			  in
-			    if List.contains(uses,
-					     temp,
-					     MemLoc.eq)
-			      then Position (I.Finite n)
-			      else posF (assembly, I'.+(n, I'.one))
-			  end
-			
-		      val distance
-			= case posF(statements, I'.one)
-			    of Position n => n
-			     | Length n
+	      val {block, liveTransfers, defed, ...} = getInfo label
+	      val (liveRegs, liveFltRegs) = valOf (!liveTransfers)
+
+	      val defed'
+		= case getNear(jumpInfo, label)
+		    of None => MemLocSet.empty
+		     | Count 0 => MemLocSet.empty
+		     | Count 1 => defed'
+		     | Count _ 
+		     => MemLocSet.subset
+		        (defed',
+			 fn memloc
+			  => List.exists
+			     (liveRegs, 
+			      fn (memloc',_,_) => MemLoc.eq(memloc', memloc))
+			     orelse
+			     List.exists
+			     (liveFltRegs, 
+			      fn (memloc',_) => MemLoc.eq(memloc', memloc)))
+
+	      fun default defed''
+		= let
+		    val Block.T {entry, statements, transfer, ...} = block
+
+		    val _ = List.foreach
+		            (liveRegs,
+			     fn (memloc,_,sync) 
+			      => if MemLocSet.contains(defed', memloc)
+				   then sync := false
+				   else ())
+		    val _ = List.foreach
+		            (liveFltRegs,
+			     fn (memloc,sync) 
+			      => if MemLocSet.contains(defed', memloc)
+				   then sync := false
+				   else ())
+
+		    val defed' = MemLocSet.+(defed'', defed')
+		    val _ = defed := SOME defed'
+
+		    fun doit' (defed', defs)
+		      = List.fold
+		        (defs,
+			 defed',
+			 fn (def,defed')
+			  => case Operand.deMemloc def
+			       of SOME def => if track def
+						then MemLocSet.add(defed', def)
+						else defed'
+			        | NONE => defed')
+
+		       val {defs, ...} = Entry.uses_defs_kills entry
+		       val defed' = doit' (defed', defs)
+
+		       val defed'
+			 = List.fold
+			   (statements,
+			    defed',
+			    fn (asm,defed')
 			     => let
-				  fun default ()
-				    = let
-					val n = I.Finite n
-				      in 
-					List.fold
-					(Transfer.nearTargets transfer,
-					 I.PosInfinity,
-					 fn (label, min)
-					  => if LiveSet.contains
-					        (LiveInfo.getLive(liveInfo, label),
-						 temp)
-					       then let
-						      val n'
-							= get_distanceF'
-							  {temp = temp,
-							   label = label}
-						    in 
-						      I.min(min, I.+(n, n'))
-						    end
-					       else min)
-				      end
+				  val {defs, ...} = Assembly.uses_defs_kills asm
 				in
-				  case transfer
-				    of Transfer.Tail _ => I.PosInfinity
-				     | Transfer.NonTail _ => I.PosInfinity
-				     | Transfer.Runtime _ => I.PosInfinity
-				     | Transfer.Return _ => I.PosInfinity
-				     | Transfer.Raise _ => I.PosInfinity
-				     | Transfer.CCall _
-				     => if Size.class (MemLoc.size temp) <> Size.INT
-					  then I.PosInfinity
-					  else default ()
-				     | _ => default ()
-				end
-		    in
-		      temp_distanceF := SOME distance;
-		      distance
-		    end
-		 | _ => Error.bug "computeLiveTransfers::get_distanceF'"
+				  doit' (defed', defs)
+				end)
+
+		       val {defs, ...} = Transfer.uses_defs_kills transfer
+		       val defed' = doit' (defed', defs)
+
+		       fun doit' label = doit {label = label,
+					       defed = defed'}
+		       fun doit'' label = doit {label = label,
+						defed = MemLocSet.empty}
+
+		       datatype z = datatype Transfer.t
+		  in
+		    case transfer
+		      of Goto {target, ...}
+		       => (doit' target)
+		       | Iff {truee, falsee, ...}
+		       => (doit' truee;
+			   doit' falsee)
+		       | Switch {cases, default, ...}
+		       => (Transfer.Cases.foreach(cases, doit');
+			   doit' default)
+		       | Tail {...}
+		       => ()
+		       | NonTail {return, handler, ...}
+		       => (doit'' return;
+			   case handler 
+			     of SOME handler => doit'' handler
+			      | NONE => ())
+		       | Return {...}
+		       => ()
+		       | Raise {...}
+		       => ()
+		       | Runtime {return, ...}
+		       => (doit'' return)
+		       | CCall {dst, return, ...}
+		       => (doit' return)
+		  end
+	    in
+	      case !defed
+		of NONE => default MemLocSet.empty
+		 | SOME defed => if MemLocSet.<=(defed',defed)
+				   then ()
+				   else default defed
 	    end
 	  
-	fun get_distanceF {temp : MemLoc.t,
-			   label : Label.t}
-	  = let
-	      val distance
-		= get_distanceF' {temp = temp,
-				  label = label}
-	    in
-	      distance
-	    end
+	val _ = Vector.foreach
+	        (funcs,
+		 fn label => doit {label = label, 
+				   defed = MemLocSet.empty})
 
 	val liveTransferInfo
 	 as {get = getLiveTransfers : 
 	     Label.t -> ((MemLoc.t * Register.t * bool) list *
-			 (MemLoc.t * bool) list) option,
+			 (MemLoc.t * bool) list),
 	     set = setLiveTransfers}
 	   = Property.getSet
-	     (Label.plist, Property.initConst NONE)
+	     (Label.plist, 
+	      Property.initRaise ("x86LiveTransfers:getLiveTransfers", Label.layout))
 
-	local
-	  val queue = ref (Queue.empty ())
-	in
-	  fun enque x = queue := Queue.enque(!queue, x)
-	  fun deque () = case Queue.deque(!queue)
-			   of NONE => NONE
-			    | SOME(x, queue') => (queue := queue';
-						  SOME x)
-	end
-      
-	fun doit {label, hints}
-	  = (case getLiveTransfers label
-	       of SOME _ => ()
-		| NONE 
-		=> let
-		     val {block, live} = getInfo label
-		     val Block.T {transfer, ...} = block
+	val _ = Vector.foreach
+	        (labels,
+		 fn label
+		  => let
+		       val {liveTransfers, live, ...} = getInfo label
+		       val (liveRegs, liveFltRegs) = valOf (!liveTransfers)
+		       val (liveRegs, liveFltRegs)
+			 = if sync
+			     then (List.map
+				   (liveRegs, 
+				    fn (memloc,reg, sync) => (memloc, reg, !sync)),
+				   List.map
+				   (liveFltRegs, 
+				    fn (memloc, sync) => (memloc, !sync)))
+			     else (List.map
+				   (liveRegs, 
+				    fn (memloc,reg, sync) => (memloc, reg, false)),
+				   List.map
+				   (liveFltRegs, 
+				    fn (memloc, sync) => (memloc, false)))
+		     in
+		       setLiveTransfers(label, (liveRegs, liveFltRegs))
+		     end)
 
-		     val (regHints, fltregHints) = hints
-
-		     val live
-		       = List.keepAllMap
-		         (valOf (!live),
-			  fn (temp,sync,_)
-			   => let
-				val n = get_distanceF {temp = temp,
-						       label = label}
-			      in
-				case n
-				  of I.NegInfinity
-				   => Error.bug "computeLiveTransfers::NegInfinity"
-				   | I.Finite n'
-				   => if n' < cutoff
-					then SOME (temp, sync, n')
-					else NONE
-				   | I.PosInfinity
-				   => NONE
-			      end)
-
-		     (* List.partition will reverse the lists.
-		      * So sort in increasing order.
-		      *)
-		     val live
-		       = List.insertionSort
-		         (live,
-			  fn ((_,_,n1),(_,_,n2))
-			   => I'.>(n1, n2))
-
-		     val {yes = liveRegs, no = liveFltRegs}
-		       = List.partition
-		         (live,
-			  fn (memloc,_,_) 
-			   => Size.class (MemLoc.size memloc) = Size.INT)
-
-		     val liveRegs
-		       = List.map
-		         (liveRegs,
-			  fn (memloc,sync,weight)
-			   => case List.peek
-			           (regHints,
-				    fn (memloc',register',weight')
-				     => MemLoc.eq(memloc,memloc'))
-				of SOME (memloc',register',weight')
-				 => (memloc,sync,weight,SOME register')
-				 | NONE 
-				 => (memloc,sync,weight,NONE))		  
-
-		     val rec doitRegs
-		       = fn ([],_,liveTransfers) => liveTransfers
-		          | (_,[],liveTransfers) => liveTransfers
-		          | (transferRegs,
-			     (memloc,sync,weight,register)::live,
-			     liveTransfers)
-		          => let
-			       fun finish register
-				 = let
-				     val transferRegs
-				       = List.removeAll
-				         (transferRegs,
-					  fn register'
-					   => Register.coincide(register, 
-								register'))
-				   in
-				     doitRegs (transferRegs,
-					       live,
-					       (memloc,register,sync)::liveTransfers)
-				   end
-
-			       fun default ()
-				 = let
-				     val size = MemLoc.size memloc
-				     val transferRegs'
-				       = List.keepAllMap
-				         (transferRegs,
-					  fn register
-					   => if Size.eq
-					         (size,
-						  Register.size register)
-						then SOME
-						     (register,
-						      List.index
-						      (live,
-						       fn (_,_,_,SOME register')
-						        => Register.eq
-						           (register,
-							    register')
-							| (_,_,_,NONE) => false))
-						else NONE)
-				     val transferRegs'
-				       = List.insertionSort
-				         (transferRegs',
-					  fn ((_,SOME index1),(_,SOME index2))
-					   => Int.>(index1, index2)
-					   | ((_, NONE),_)
-					   => true
-					   | (_, (_, NONE))
-					   => false)
-				   in
-				     case transferRegs'
-				       of nil
-					=> doitRegs (transferRegs,
-						     live,
-						     liveTransfers)
-					| (register,_)::_
-					=> finish register
-				   end
-			     in
-			       case register
-				 of SOME register
-				  => if List.contains(transferRegs,
-						      register,
-						      Register.eq)
-				       then finish register
-				       else default ()
-				  | NONE => default ()
-			     end
-
-		     val liveRegsTransfers = doitRegs(transferRegs, liveRegs, [])
-
-
-		     val liveFltRegs
-		       = take
-		         (liveFltRegs,
-			  transferFltRegs)
-		     val liveFltRegsTransfers
-		       = List.map
-		         (liveFltRegs,
-			  fn (memloc,sync,_) => (memloc, sync))
-			  
-
-		     val liveTransfers = (liveRegsTransfers, liveFltRegsTransfers)
-
-		     val _ = setLiveTransfers(label, SOME liveTransfers)
-		     fun enque' label = enque {label = label, 
-					       hints = liveTransfers}
-		     fun enque'' label = enque {label = label, 
-						hints = ([],[])}
-		     datatype z = datatype Transfer.t
-		   in
-		       case transfer
-			 of Goto {target, ...}
-			  => (enque' target)
-			  | Iff {truee, falsee, ...}
-			  => (enque' truee;
-			      enque' falsee)
-			  | Switch {cases, default, ...}
-			  => (Transfer.Cases.foreach(cases, enque');
-			      enque' default)
-			  | Tail {...}
-			  => ()
-			  | NonTail {return, handler, ...}
-			  => (enque'' return;
-			      case handler 
-				of SOME handler => enque'' handler
-				 | NONE => ())
-			  | Return {...}
-			  => ()
-			  | Raise {...}
-			  => ()
-			  | Runtime {return, ...}
-			  => (enque'' return)
-			  | CCall {dst, return, ...}
-			  => (enque'' return)
-		   end)
-
-	val _ = List.foreach
-	        (funcs,
-		 fn label => enque {label = label, 
-				    hints = ([],[])})
-	fun loop ()
-	  = (case deque ()
-	       of NONE => ()
-	        | SOME {label, hints}
-		=> (doit {label = label, hints = hints};
-		    loop ()))
-	val _ = loop ()
       in
 	T {get = getLiveTransfers,
 	   set = setLiveTransfers}
       end
 
+
   val computeLiveTransfers 
     = fn {chunk, transferRegs, transferFltRegs, liveInfo, jumpInfo}
-       => if !Control.Native.liveTransfer
+       => if !Control.Native.liveTransfer > 0
 	    then computeLiveTransfers {chunk = chunk, 
 				       transferRegs = transferRegs,
 				       transferFltRegs = transferFltRegs,
@@ -625,7 +1077,7 @@ struct
 		    as {get = getLiveTransfers,
 			set = setLiveTransfers}
 		     = Property.getSetOnce(Label.plist, 
-					   Property.initConst (SOME ([], [])))
+					   Property.initConst ([], []))
 		 in
 		   T {get = getLiveTransfers,
 		      set = setLiveTransfers}
@@ -644,7 +1096,7 @@ struct
   fun computeLiveTransfers_totals ()
     = (computeLiveTransfers_msg ())
       
-  fun getLiveTransfers (T {get, set}, label) = valOf (get label)
+  fun getLiveTransfers (T {get, set}, label) = get label
 
-  fun setLiveTransfersEmpty (T {get, set}, label) = set(label, SOME ([], []))
+  fun setLiveTransfersEmpty (T {get, set}, label) = set(label, ([], []))
 end

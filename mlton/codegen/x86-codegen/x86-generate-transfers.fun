@@ -25,23 +25,31 @@ struct
   val wordSize = x86MLton.wordSize
 
   val transferRegs
-    = [x86.Register.ebx,
-       x86.Register.bl,
-       x86.Register.ecx,
-       x86.Register.cl,
-       x86.Register.edx,
-       x86.Register.dl,
+    =
 (*
-       x86.Register.edi,
-       x86.Register.esi,
+      x86.Register.eax::
+      x86.Register.al::
 *)
-       x86.Register.esp,
-       x86.Register.ebp]
+      x86.Register.ebx::
+      x86.Register.bl::
+      x86.Register.ecx::
+      x86.Register.cl::
+      x86.Register.edx::
+      x86.Register.dl::
+      x86.Register.edi::
+      x86.Register.esi::
+(*
+      x86.Register.esp::
+      x86.Register.ebp::
+*)
+      nil
 
   val transferFltRegs : Int.t = 6
 
-  val stackTopReg = Register.edi
-  val frontierReg = Register.esi
+  val indexReg = x86.Register.eax
+
+  val stackTopReg = Register.ebp
+  val frontierReg = Register.esp
   val stackTop = x86MLton.gcState_stackTopContents
   val frontier = x86MLton.gcState_frontierContents
 
@@ -260,87 +268,92 @@ struct
 		     val profile_assembly
 		       = AppendList.fromList profile_assembly
 
+		     fun near label
+		       = if falling
+			   then if unique
+				  then AppendList.cons
+				       (Assembly.label label,
+					profile_assembly)
+				  else AppendList.append
+				       (AppendList.fromList
+					[Assembly.label label,
+					 (* near entry & 
+					  * live transfer assumptions *)
+					 (Assembly.directive_assume
+					  {assumes
+					   = ({register = stackTopReg,
+					       memloc = stackTop,
+					       weight = 1024,
+					       sync = false,
+					       reserve = false})::
+					   ({register = frontierReg,
+					     memloc = frontier,
+					     weight = 2048,
+					     sync = false,
+					     reserve = false})::
+					   (List.map
+					    (getLiveRegsTransfers
+					     (liveTransfers, label),
+					     fn (memloc,register,sync)
+					      => {register = register,
+						  memloc = memloc,
+						  sync = sync, 
+						  weight = 1024,
+						  reserve = false}))}),
+					 (Assembly.directive_fltassume
+					  {assumes
+					   = (List.map
+					      (getLiveFltRegsTransfers
+					       (liveTransfers, label),
+					       fn (memloc,sync)
+					        => {memloc = memloc,
+						    sync = sync,
+						    weight = 1024}))})],
+					profile_assembly)
+			   else AppendList.append
+			        (AppendList.fromList
+				 [Assembly.pseudoop_p2align 2,
+				  Assembly.label label,
+				  (* near entry & 
+				   * live transfer assumptions *)
+				  (Assembly.directive_assume
+				   {assumes
+				    = ({register = stackTopReg,
+					memloc = stackTop,
+					weight = 1024,
+					sync = false,
+					reserve = false})::
+				    ({register = frontierReg,
+				      memloc = frontier,
+				      weight = 2048,
+				      sync = false,
+				      reserve = false})::
+				    (List.map
+				     (getLiveRegsTransfers
+				      (liveTransfers, label),
+				      fn (memloc,register,sync)
+				       => {register = register,
+					   memloc = memloc,
+					   sync = sync, 
+					   weight = 1024,
+					   reserve = false}))}),
+				  (Assembly.directive_fltassume
+				   {assumes
+				    = (List.map
+				       (getLiveFltRegsTransfers
+					(liveTransfers, label),
+					fn (memloc,sync)
+					 => {memloc = memloc,
+					     sync = sync,
+					     weight = 1024}))})],
+				 profile_assembly)
+
 		     val pre
 		       = case entry
 			   of Jump {label}
-			    => if falling
-				 then if unique
-					then AppendList.cons
-					     (Assembly.label label,
-					      profile_assembly)
-					else AppendList.append
-					     (AppendList.fromList
-					      [Assembly.label label,
-					       (* near entry & 
-						* live transfer assumptions *)
-					       (Assembly.directive_assume
-						{assumes
-						 = ({register = stackTopReg,
-						     memloc = stackTop,
-						     weight = 1024,
-						     sync = false,
-						     reserve = false})::
-					           ({register = frontierReg,
-						     memloc = frontier,
-						     weight = 2048,
-						     sync = false,
-						     reserve = false})::
-						   (List.map
-						    (getLiveRegsTransfers
-						     (liveTransfers, label),
-						     fn (memloc,register,sync)
-						      => {register = register,
-							  memloc = memloc,
-							  sync = sync, 
-							  weight = 1024,
-							  reserve = false}))}),
-					       (Assembly.directive_fltassume
-						{assumes
-						 = (List.map
-						    (getLiveFltRegsTransfers
-						     (liveTransfers, label),
-						     fn (memloc,sync)
-						      => {memloc = memloc,
-							  sync = sync,
-							  weight = 1024}))})],
-					      profile_assembly)
-				 else AppendList.append
-				      (AppendList.fromList
-				       [Assembly.pseudoop_p2align 2,
-					Assembly.label label,
-					(* near entry & 
-					 * live transfer assumptions *)
-					(Assembly.directive_assume
-					 {assumes
-					  = ({register = stackTopReg,
-					      memloc = stackTop,
-					      weight = 1024,
-					      sync = false,
-					      reserve = false})::
-					    ({register = frontierReg,
-					      memloc = frontier,
-					      weight = 2048,
-					      sync = false,
-					      reserve = false})::
-					    (List.map
-					     (getLiveRegsTransfers
-					      (liveTransfers, label),
-					      fn (memloc,register,sync)
-					       => {register = register,
-						   memloc = memloc,
-						   sync = sync, 
-						   weight = 1024,
-						   reserve = false}))}),
-					(Assembly.directive_fltassume
-					 {assumes
-					  = (List.map
-					     (getLiveFltRegsTransfers
-					      (liveTransfers, label),
-					      fn (memloc,sync)
-					       => {memloc = memloc,
-						   sync = sync,
-						   weight = 1024}))})],
-				       profile_assembly)
+			    => near label
+			    | CReturn {label}
+			    => near label
 			    | Func {label,...}
 			    => AppendList.append
 			       (AppendList.fromList
@@ -911,14 +924,7 @@ struct
 
 			   val threadTemp
 			     = x86MLton.threadTempContentsOperand
-(*
-			   val threadTemp_stack
-			     = x86MLton.threadTemp_stackContentsOperand
-			   val threadTemp_stack_used
-			     = x86MLton.threadTemp_stack_usedContentsOperand
-			   val threadTemp_stack_reserved
-			     = x86MLton.threadTemp_stack_reservedContentsOperand
-*)
+
 			   val currentThread
 			     = x86MLton.gcState_currentThreadContentsOperand	
 			   val stack
@@ -1145,8 +1151,12 @@ struct
 			| Thread_copy => default "GC_copyThread"
 			| Thread_copyShrink => default "GC_copyThreadShrink"
 			| Thread_finishHandler => default "GC_finishHandler"
-			| Thread_switchTo => (* thread () *) default "GC_switchToThread"
-			| Thread_switchToCont => (* thread () *) default "GC_switchToThread"
+(*
+			| Thread_switchTo => default "GC_switchToThread"
+			| Thread_switchToCont => default "GC_switchToThread"
+*)
+			| Thread_switchTo => thread ()
+			| Thread_switchToCont => thread ()
 			| World_save => default "GC_saveWorld"
 			| _ => Error.bug "x86GenerateTransfers::Runtime: prim"
 		   end
@@ -1507,7 +1517,7 @@ struct
 			    dead_memlocs = MemLocSet.empty,
 			    dead_classes = ClassSet.empty},
 			   Assembly.directive_cache
-			   {caches = [{register = Register.eax,
+			   {caches = [{register = indexReg,
 				       memloc = indexTemp',
 				       reserve = false}]},
 			   Assembly.instruction_cmp
@@ -1793,8 +1803,22 @@ struct
 		       of Count 1 
 			=> generate gef
 			            {label = label,
-			             falling = true,
-			             unique = true}
+				     falling = true,
+				     unique = true}
+(*
+			=> AppendList.cons
+			   (Assembly.directive_force
+			    {commit_memlocs = live,
+			     commit_classes = ClassSet.empty,
+			     remove_memlocs = MemLocSet.empty,
+			     remove_classes = ClassSet.empty,
+			     dead_memlocs = MemLocSet.empty,
+			     dead_classes = ClassSet.empty},
+			    generate gef
+			             {label = label,
+			              falling = true,
+			              unique = true})
+*)
 		        | _ => AppendList.append
 			       (default false,
 				AppendList.cons

@@ -1158,7 +1158,7 @@ struct
       (* Integer multiplication and division. *)
       datatype md
 	= IMUL (* signed multiplication (one operand form); p. 335 *)
-	| MUL  (* unsigned multiplication; p. 488 *)
+        | MUL  (* unsigned multiplication; p. 488 *)
 	| IDIV (* signed division; p. 332 *)
 	| DIV  (* unsigned division; p. 188 *)
 	| IMOD (* signed modulus; *)
@@ -1434,6 +1434,11 @@ struct
         | MD of {oper: md,
 		 src: Operand.t,
 		 size: Size.t}
+	(* Integer signed/unsiged multiplication (two operand form); p. 335
+	 *)
+	| IMUL2 of {src: Operand.t,
+		    dst: Operand.t, 
+		    size: Size.t}
 	(* Integer unary arithmetic/logic instructions.
 	 *)
 	| UnAL of {oper: unal,
@@ -1687,6 +1692,11 @@ struct
 	     => un (md_layout oper, 
 		    Size.layout size,
 		    Operand.layout src)
+	     | IMUL2 {src, dst, size}
+	     => bin (str "imul",
+		     Size.layout size,
+		     Operand.layout src,
+		     Operand.layout dst)
 	     | UnAL {oper, dst, size}
 	     => un (unal_layout oper, 
 		    Size.layout size, 
@@ -1954,6 +1964,8 @@ struct
 			defs = [Operand.register hi, Operand.register lo],
 			kills = []}
 	      end
+	   | IMUL2 {src, dst, size}
+	   => {uses = [src, dst], defs = [dst], kills = []}
 	   | UnAL {oper, dst, size}
 	   => {uses = [dst], defs = [dst], kills = []}
 	   | SRAL {oper, count, dst, size}
@@ -2286,6 +2298,8 @@ struct
 			dsts = SOME [Operand.register hi, 
 				     Operand.register lo]}
 	      end
+	   | IMUL2 {src, dst, size}
+	   => {srcs = SOME [src, dst], dsts = SOME [dst]}
 	   | UnAL {oper, dst, size}
 	   => {srcs = SOME [dst], dsts = SOME [dst]}
 	   | SRAL {oper, count, dst, size}
@@ -2453,6 +2467,10 @@ struct
 	   => MD {oper = oper,
 		  src = replacer {use = true, def = false} src,
 		  size = size}
+	   | IMUL2 {src, dst, size}
+	   => IMUL2 {src = replacer {use = true, def = false} src,
+		     dst = replacer {use = true, def = true} dst,
+		     size = size}
 	   | UnAL {oper, dst, size}
 	   => UnAL {oper = oper,
 		    dst = replacer {use = true, def = true} dst,
@@ -2634,6 +2652,7 @@ struct
       val binal = BinAL
       val pmd = pMD
       val md = MD
+      val imul2 = IMUL2
       val unal = UnAL
       val sral = SRAL
       val cmp = CMP
@@ -3277,6 +3296,7 @@ struct
       val instruction_binal = Instruction o Instruction.binal
       val instruction_pmd = Instruction o Instruction.pmd
       val instruction_md = Instruction o Instruction.md
+      val instruction_imul2 = Instruction o Instruction.imul2
       val instruction_unal = Instruction o Instruction.unal
       val instruction_sral = Instruction o Instruction.sral
       val instruction_cmp = Instruction o Instruction.cmp
@@ -3356,6 +3376,7 @@ struct
 		      frameInfo: FrameInfo.t}
 	| Runtime of {label: Label.t,
 		      frameInfo: FrameInfo.t}
+	| CReturn of {label: Label.t}
 				    
       val toString
 	= fn Jump {label} => concat ["Jump::",
@@ -3400,6 +3421,9 @@ struct
 		      Label.toString label,
 		      " ",
 		      FrameInfo.toString frameInfo]
+	   | CReturn {label} 
+	   => concat ["CReturn::",
+		      Label.toString label]
       val layout = Layout.str o toString
 
       val uses_defs_kills
@@ -3411,6 +3435,7 @@ struct
 	   | Cont {label, ...} => label
 	   | Handler {label, ...} => label
 	   | Runtime {label, ...} => label
+	   | CReturn {label, ...} => label
 
       val live
 	= fn Func {live, ...} => live
@@ -3423,6 +3448,7 @@ struct
       val cont = Cont
       val handler = Handler
       val runtime = Runtime
+      val creturn = CReturn
     end
 
   structure ProfileInfo =

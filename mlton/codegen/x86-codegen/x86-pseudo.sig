@@ -255,6 +255,9 @@ signature X86_PSEUDO =
 			       src: Operand.t,
 			       dst: Operand.t,
 			       size: Size.t} -> t
+	val instruction_imul2 : {src: Operand.t,
+				 dst: Operand.t,
+				 size: Size.t} -> t
 	val instruction_unal : {oper: Instruction.unal,
 				dst: Operand.t,
 				size: Size.t} -> t
@@ -373,6 +376,7 @@ signature X86_PSEUDO =
 		       frameInfo: FrameInfo.t} -> t
 	val runtime : {label: Label.t,
 		       frameInfo: FrameInfo.t} -> t
+	val creturn : {label: Label.t} -> t
       end
 
     structure ProfileInfo :

@@ -91,7 +91,7 @@ int main(int argc, char **argv) {					\
 		*(pointer *)gcState.stackTop = (pointer)&ml;		\
 	}								\
 	__asm__ __volatile__ 						\
-        ("movl %%esp,%0\nmovl %1,%%edi\nmovl %2,%%esi\njmp *(%%edi)"	\
+        ("movl %%esp,%0\nmovl %1,%%ebp\nmovl %2,%%esp\njmp *(%%ebp)"	\
 	 : "=m" (c_stackP) 						\
 	 : "g" (gcState.stackTop), "g" (gcState.frontier) 		\
 	 : "%edi", "%esi");						\

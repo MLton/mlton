@@ -182,6 +182,57 @@ struct
 		     => Error.bug "validate: MD, src:Label"
 		     | _ => (Operand.validate {operand = src})
 		end
+	     | IMUL2 {src, dst, size}
+	       (* Integer signed/unsigned multiplication (two operand form).
+		* Require src/dst operands as follows:
+		*
+		*              dst
+		*          reg imm lab add 
+		*      reg  X
+		*  src imm  X
+		*      lab
+		*      add  X
+		*
+		* Require size modifier class as follows: INT(WORD, LONG)
+		*)
+	     => let
+		  val _ = case size
+			    of Size.WORD => ()
+			     | Size.LONG => ()
+			     | _ => Error.bug "validate: IMUL2, size"
+		  val _ = case Operand.size src
+			    of NONE => ()
+			     | SOME srcsize 
+			     => if srcsize = size
+				  then ()
+				  else Error.bug "validate: IMUL2, srcsize"
+ 		  val _ = case Operand.size dst
+			    of NONE => ()
+			     | SOME dstsize 
+			     => if dstsize = size
+				  then ()
+				  else Error.bug "validate: IMUL2, dstsize"
+		in
+		  case (src,dst)
+		    of (Operand.MemLoc _, _)
+		     => Error.bug "validate: IMUL2, src:MemLoc"
+		     | (_, Operand.MemLoc _)
+		     => Error.bug "validate: IMUL2, dst:MemLoc"
+		     | (Operand.FltRegister _, _)
+		     => Error.bug "validate: IMUL2, src:FltRegister"
+		     | (Operand.Label _, _)
+		     => Error.bug "validate: IMUL2, src:Label"
+		     | (_, Operand.FltRegister _)
+		     => Error.bug "validate: IMUL2, dst:FltRegister"
+		     | (_, Operand.Immediate _)
+		     => Error.bug "validate: IMUL2, dst:Immediate"
+		     | (_, Operand.Label _)
+                     => Error.bug "validate: IMUL2, dst:Label"
+		     | (Operand.Address _, _)
+		     => Error.bug "validate: IMUL2, src:Address"
+		     | _ => (Operand.validate {operand = src}) andalso
+                            (Operand.validate {operand = dst})
+		end
 	     | UnAL {oper, dst, size}
 	       (* Integer unary arithmetic/logic instructions.
 		* Require dst operand as follows:

@@ -34,6 +34,9 @@ struct
 	fun isRuntime l = case get l
 			    of SOME (Block.T {entry = Entry.Runtime _, ...}) => true
 			     | _ => false
+	fun isCReturn l = case get l
+			    of SOME (Block.T {entry = Entry.CReturn _, ...}) => true
+			     | _ => false
       in
 	List.forall
 	(blocks,
@@ -59,7 +62,7 @@ struct
 	         | Transfer.Runtime {return, ...} 
 	         => isRuntime return
 	         | Transfer.CCall {return, ...}
-	         => isJump return))
+	         => isCReturn return))
       end
 
   val (verifyEntryTranfer, verifyEntryTransfer_msg)
