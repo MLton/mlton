@@ -472,7 +472,7 @@ struct
 		     end
 	     val buckets = loop []
 	     val buckets =
-		MergeSort.sort
+		QuickSort.sortList
 		(buckets, fn ({addr = a, ...}, {addr = a', ...}) => a <= a')
 	   in 
 	     T {buckets = buckets,
@@ -739,7 +739,7 @@ fun display (kind: Kind.t,
 		end)
 	    val a = Array.fromList profileInfo
 	    val _ =
-	       QuickSort.sort
+	       QuickSort.sortArray
 	       (a, fn ({ticks = t1, ...}, {ticks = t2, ...}) =>
 		IntInf.>= (t1, t2))
 	    (* Colorize. *)
