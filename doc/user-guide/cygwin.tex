@@ -5,8 +5,7 @@ emulation layer to provide a Posix-like environment while running on a
 Windows machine.  To run {\mlton} on Windows, you must first install
 Cygwin on your machine.  To do this, visit the Cygwin site from your
 Windows machine and run their {\tt setup.exe} script.  Then, you can
-unpack the {\mlton} binary tgz in your Cygwin environment.  This
-version of {\mlton} was built on Cygwin 1.5.5-1.
+unpack the {\mlton} binary tgz in your Cygwin environment.
 
 To run {\mlton} cross-compiled executables on Windows, you must
 install the Cygwin {\tt dll} on the Windows machine.
@@ -17,13 +16,8 @@ Here are the known problems using {\mlton} on Cygwin.
 
 \item Time profiling is disabled.
 
-\item Due to several bugs in Cygwin's emulation of {\tt fork}, {\tt
-Posix.Process.fork} is disabled.  Any use of {\tt fork} will raise
-{\tt OS.SysErr}.  For idiomatic uses of {\tt fork} plus {\tt exec},
-you can instead use the {\tt MLton.Process.spawn} family of functions, which
-work on both Cygwin and Linux.
-
-\item We have seen some strangeness in Cygwin's emulation of signals and
-signal handlers, but have not been able to pin it down.
+\item Due to some recent Cygwin bugfixes involving fork/mmap, you must
+use a Cygwin version from 2004-Jul-15 or later, which translates to a
+release numbered 1.5.11-1 or higher.
 
 \end{itemize}

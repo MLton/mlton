@@ -30,6 +30,9 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 	  end)
 
       val fork =
+	 (* Enable fork everywhere, and in particular, on Cygwin. *)
+	 if true then fork
+	 else 
 	 if let open MLton.Platform.OS in host <> Cygwin end
 	    then fork
  	 else

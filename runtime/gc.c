@@ -35,7 +35,7 @@
 #include <sys/sysinfo.h>
 #endif
 
-#if (defined (__FreeBSD__))
+#if (defined (__CYGWIN__) || defined (__FreeBSD__))
 #include <limits.h>
 #endif
 
@@ -354,29 +354,34 @@ static void showMem () {
 
 #endif
 
+/* On any platform, exactly one of {USE_MMAP, USE_VIRTUAL_ALLOC} should be set
+ * to true.
+ */
+#if (defined (__CYGWIN__) || defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__sun__))
+#define USE_MMAP TRUE
+#else
+#error must define USE_MMAP or USE_VIRTUAL_ALLOC
+#endif
+
 static void *mmapAnon (void *start, size_t length) {
+	static int fd = -1;
 	void *result;
 
-#if (defined (__CYGWIN__))	
+#if USE_VIRTUAL_ALLOC
 	result = VirtualAlloc ((LPVOID)start, length, MEM_COMMIT, 
 				PAGE_READWRITE);
 	if (NULL == result)
 		result = (void*)-1;
-#elif (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__OpenBSD__))
+#elif USE_MMAP
+#if (defined (__sun__))
+	/* On Solaris 5.7, MAP_ANON causes EINVAL and mmap requires a file 
+	 * descriptor. 
+	 */ 
+	if (-1 == fd)
+		fd = open ("/dev/zero", O_RDONLY);
+#endif
 	result = mmap (start, length, PROT_READ | PROT_WRITE, 
-			MAP_PRIVATE | MAP_ANON, -1, 0);
-#elif (defined (__sun__))
-/* On Solaris 5.7, MAP_ANON causes EINVAL and mmap requires a file descriptor. */
-        {
-		static int fd = -1;
-
-		if (-1 == fd)
-			fd = open ("/dev/zero", O_RDONLY);
-		result = mmap (start, length, PROT_READ | PROT_WRITE, 
-				MAP_PRIVATE, fd, 0);
-	}
-#else
-#error mmapAnon not defined
+			MAP_PRIVATE, fd, 0);
 #endif	
 	if (DEBUG_MEM)
 		fprintf (stderr, "0x%08x = mmapAnon (0x%08x, %s)\n",
@@ -397,7 +402,7 @@ static void *smmap (size_t length) {
 	return result;
 }
 
-#if (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__sun__))
+#if USE_MMAP
 static void smunmap (void *base, size_t length) {
 	if (DEBUG_MEM)
 		fprintf (stderr, "smunmap (0x%08x, %s)\n",
@@ -445,13 +450,11 @@ static void release (void *base, size_t length) {
 	if (DEBUG_MEM)
 		fprintf (stderr, "release (0x%08x, %s)\n",
 				(uint)base, uintToCommaString (length));
-#if (defined (__CYGWIN__))
+#if USE_VIRTUAL_ALLOC
 	if (0 == VirtualFree (base, 0, MEM_RELEASE))
 		die ("VirtualFree release failed");
-#elif (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__sun__))
+#elif USE_MMAP
 	smunmap (base, length);
-#else
-#error release not defined
 #endif
 }
 
@@ -459,10 +462,10 @@ static void decommit (void *base, size_t length) {
 	if (DEBUG_MEM)
 		fprintf (stderr, "decommit (0x%08x, %s)\n",
 				(uint)base, uintToCommaString (length));
-#if (defined (__CYGWIN__))
+#if USE_VIRTUAL_ALLOC
 	if (0 == VirtualFree (base, length, MEM_DECOMMIT))
 		die ("VirtualFree decommit failed");
-#elif (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__sun__))
+#elif USE_MMAP
 	smunmap (base, length);
 #else
 #error decommit not defined	
@@ -1609,7 +1612,7 @@ static bool heapCreate (GC_state s, GC_heap h, W32 desiredSize, W32 minSize) {
  * This #if is here because on Windows, the address passed to mmapAnon, which 
  * calls VirtualAlloc, doesn't seem to matter.
  */
-#if (defined (__CYGWIN__))
+#if USE_VIRTUAL_ALLOC
 			address = 0; 
 			i = 31;
 #endif
