@@ -99,6 +99,7 @@ structure Relation
 structure ResizableArray
 structure Result
 structure SMLofNJ
+structure Sexp
 structure Signal
 structure Stream
 structure String

@@ -125,6 +125,7 @@ structure Regexp
 structure Relation
 structure ResizableArray
 structure Result
+structure Sexp
 structure Signal
 structure SMLofNJ
 structure Stream
