@@ -74,6 +74,8 @@ redundant-tests.sig
 redundant-tests.fun
 redundant.sig
 redundant.fun
+ref-flatten.sig
+ref-flatten.fun
 remove-unused.sig
 remove-unused.fun
 simplify-types.sig
