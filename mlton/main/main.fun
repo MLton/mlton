@@ -441,9 +441,9 @@ fun commandLine (args: string list): unit =
 	  | Self => "self"
       val _ = libTargetDir := concat [!libDir, "/", targetStr]
       val targetArch = !targetArch
-      val archStr = MLton.Platform.Arch.toString targetArch
+      val archStr = String.toLower (MLton.Platform.Arch.toString targetArch)
       val targetOS = !targetOS
-      val OSStr = MLton.Platform.OS.toString targetOS
+      val OSStr = String.toLower (MLton.Platform.OS.toString targetOS)
       fun tokenize l =
 	 String.tokens (concat (List.separate (l, " ")), Char.isSpace)
       fun addTargetOpts opts =
@@ -451,7 +451,12 @@ fun commandLine (args: string list): unit =
 	 (List.fold
 	  (!opts, [], fn ({opt, pred}, ac) =>
 	   if (case pred of
-		  OptPred.Target s => s = archStr orelse s = OSStr
+		  OptPred.Target s =>
+		     let
+			val s = String.toLower s
+		     in
+			s = archStr orelse s = OSStr
+		     end
 		| OptPred.Yes => true)
 	      then opt :: ac
 	   else ac))
