@@ -2118,11 +2118,11 @@ static Pointer hashCons (GC_state s, Pointer object, Bool countBytesHashConsed) 
 		goto done;
 	}
 	assert (ARRAY_TAG == tag or NORMAL_TAG == tag);
-	if (ARRAY_TAG == tag)
-		max = object + arrayNumBytes (s, object,
-						numPointers, numNonPointers);
-	else
-		max = object + toBytes (numPointers + numNonPointers);
+	max = object
+		+ (ARRAY_TAG == tag
+			? arrayNumBytes (s, object,
+						numPointers, numNonPointers)
+			: toBytes (numPointers + numNonPointers));
 	// Compute the hash.
 	hash = header;
 	for (p = (word*)object; p < (word*)max; ++p)
@@ -2130,9 +2130,17 @@ static Pointer hashCons (GC_state s, Pointer object, Bool countBytesHashConsed) 
 	/* Insert into table. */
        	res = tableInsert (s, t, hash, object, TRUE, header, tag, (Pointer)max);
 	maybeGrowTable (s, t);
+	if (countBytesHashConsed and res != object) {
+		uint amount;
+
+		amount = max - object;
+		if (ARRAY_TAG == tag)
+			amount += GC_ARRAY_HEADER_SIZE;
+		else
+			amount += GC_NORMAL_HEADER_SIZE;
+		s->bytesHashConsed += amount;
+	}
 done:
-	if (countBytesHashConsed and res != object)
-		s->bytesHashConsed += objectSize (s, object);
 	if (DEBUG_SHARE)
 		fprintf (stderr, "0x%08x = hashCons (0x%08x)\n", 
 				(uint)res, (uint)object);
@@ -2447,21 +2455,27 @@ ret:
 	assert (FALSE);
 }
 
+static void bytesHashConsedMessage (GC_state s, ullong total) {
+	fprintf (stderr, "%s bytes hash consed (%.1f%%).\n",
+		ullongToCommaString (s->bytesHashConsed),
+		100.0 * ((double)s->bytesHashConsed / (double)total));
+}
+
 void GC_share (GC_state s, Pointer object) {
+	W32 total;
+
 	if (DEBUG_SHARE)
 		fprintf (stderr, "GC_share 0x%08x\n", (uint)object);
 	if (DEBUG_SHARE or s->messages)
 		s->bytesHashConsed = 0;
 	// Don't hash cons during the first round of marking.
-	mark (s, object, MARK_MODE, FALSE);
+	total = mark (s, object, MARK_MODE, FALSE);
 	s->objectHashTable = newTable (s);
 	// Hash cons during the second round of marking.
 	mark (s, object, UNMARK_MODE, TRUE);
 	destroyTable (s->objectHashTable);
 	if (DEBUG_SHARE or s->messages)
-		fprintf (stderr, "%s bytes hash consed.\n",
-				ullongToCommaString (s->bytesHashConsed));
-
+		bytesHashConsedMessage (s, total);
 }
 
 /* ---------------------------------------------------------------- */
@@ -2734,10 +2748,8 @@ static void markCompact (GC_state s) {
 	if (DEBUG or s->messages) {
 		fprintf (stderr, "Major mark-compact GC done.\n");
 		if (s->hashConsDuringGC)
-			fprintf (stderr, "%s bytes hash consed (%.1f%%).\n",
-					ullongToCommaString (s->bytesHashConsed),
-					100.0 * (double)s->bytesHashConsed
-						/ (double)s->oldGenSize);
+			bytesHashConsedMessage 
+				(s, s->bytesHashConsed + s->oldGenSize);
 	}
 }
 
