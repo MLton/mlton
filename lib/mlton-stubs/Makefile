@@ -3,7 +3,10 @@ all: links
 .PHONY: links
 links:
 	for f in `cd ../../basis-library/mlton && ls *.sig`; do 	\
-		rm -f $$f && ln ../../basis-library/mlton/$$f .; 	\
+		if [ "$$f" != 'ffi.sig' ]; then				\
+			rm -f $$f && 					\
+				ln ../../basis-library/mlton/$$f .; 	\
+		fi							\
 	done
 
 .PHONY: clean
