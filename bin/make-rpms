@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -x
 
 # 
 # make-rpms srcdir topdir
@@ -21,35 +21,25 @@ usage () {
 	die "usage: $name srcdir topdir"
 }
 
-while [ "$#" -gt 0 ]; do
-	case "$1" in
-	*)
-		case "$#" in
-		2)
-			srcdir="$1"
-			shift
-			topdir="$1"
-			shift
-			;;
-		*)
-			usage
-			;;
-		esac
-	esac
-done
-if [ "$topdir" = 'unset' ]; then
+case "$#" in
+2)
+	srcdir="$1"
+	topdir="$2"
+;;
+*)
 	usage
-fi
+;;
+esac
 
 version=`date +%Y%m%d`
 release="1"
 package="mlton-$version-$release"
 
-tar.read () {
+readTar () {
 	tar -p -xf - "$@"
 }
 
-tar.write () {
+writeTar () {
 	tar -p -cf - "$@"
 }
 
@@ -63,7 +53,7 @@ rm -rf mlton-$version
 echo 'Getting sources'
 mkdir mlton-$version
 cd mlton-$version
-( cd $srcdir && tar.write . ) | tar.read
+( cd $srcdir && writeTar . ) | readTar
 make clean
 find . -type d | grep CVS | xargs rm -rf
 make VERSION=$version version
@@ -82,7 +72,7 @@ done
 
 echo 'Creating source tgz'
 cd $topdir/SOURCES
-tar.write mlton-$version | gzip >mlton-$version.tgz
+writeTar mlton-$version | gzip >mlton-$version.tgz
 rm -rf mlton-$version
 
 echo 'Building rpms'
