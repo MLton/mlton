@@ -325,9 +325,9 @@ fun valDec (tyvars: Tyvar.t vector,
 structure Xexp =
    struct
       open Xexp
-	 
-      val list: Xexp.t vector * Xtype.t -> Xexp.t =
-	 fn (es, ty) =>
+
+      fun list (es: Xexp.t vector, ty: Xtype.t, {forceLeftToRight: bool})
+	 : Xexp.t =
 	 let
 	    val targs = #2 (valOf (Xtype.deConOpt ty))
 	    val eltTy = Vector.sub (targs, 0)
@@ -346,7 +346,18 @@ structure Xexp =
 		targs = targs,
 		ty = ty}
 	 in
-	    if Vector.length es < 20
+	    if not forceLeftToRight
+	       then
+		  (* Build the list right to left. *)
+		  Vector.foldr (es, nill, fn (e, rest) =>
+				let
+				   val var = Var.newNoname ()
+				in
+				   Xexp.let1 {body = cons (e, monoVar (var, ty)),
+					      exp = rest,
+					      var = var}
+				end)
+	    else if Vector.length es < 20
 	       then Vector.foldr (es, nill, cons)
 	    else
 	       let
@@ -894,7 +905,18 @@ fun defunctorize (CoreML.Program.T {decs}) =
 				   ty = ty}
 		| Lambda l => Xexp.lambda (loopLambda l)
 		| Let (ds, e) => loopDecs (ds, loopExp e)
-		| List es => Xexp.list (Vector.map (es, #1 o loopExp), ty)
+		| List es =>
+		     let
+			(* Must evaluate list components left-to-right if there
+			 * is more than one expansive expression.
+			 *)
+			val numExpansive =
+			   Vector.fold (es, 0, fn (e, n) =>
+					if Cexp.isExpansive e then n + 1 else n)
+		     in
+			Xexp.list (Vector.map (es, #1 o loopExp), ty,
+				   {forceLeftToRight = 2 <= numExpansive})
+		     end
 		| PrimApp {args, prim, targs} =>
 		     let
 			val args = Vector.map (args, #1 o loopExp)
