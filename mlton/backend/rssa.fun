@@ -1079,6 +1079,15 @@ structure Program =
 			in
 			   Type.isSubtype (Type.pointer tycon, ty)
 			   andalso
+			   Bytes.equals
+			   (size,
+			    Bytes.align
+			    (size,
+			     {alignment = (Bytes.fromInt
+					   (case !Control.align of
+					       Control.Align4 => 4
+					     | Control.Align8 => 8))}))
+			   andalso
 			   (case tyconTy tycon of
 			       ObjectType.Normal t =>
 				  Bytes.equals
