@@ -10280,7 +10280,7 @@ struct
 	       | SOME label' => unroll label'
 
 	fun replacer _ oper
-	  = (case (Operand.deImmediate, Operand.deLabel) oper
+	  = (case (Operand.deImmediate oper, Operand.deLabel oper)
 	       of (SOME immediate, _) 
 		=> (case Immediate.deLabel immediate
 		      of SOME label => Operand.immediate_label (unroll label)
