@@ -20,6 +20,8 @@ functor MonoArray (type elem
       type array = elem array
       type vector = V.vector
       type vector_slice = V.MonoVectorSlice.slice
+      val fromPoly = fn a => a
+      val toPoly = fn a => a
       structure MonoArraySlice =
 	 struct
 	    open ArraySlice
@@ -28,5 +30,7 @@ functor MonoArray (type elem
 	    type slice = elem slice
 	    type vector = vector
 	    type vector_slice = vector_slice
+	    val fromPoly = fn s => s
+	    val toPoly = fn s => s
 	 end
    end

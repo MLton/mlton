@@ -38,15 +38,14 @@ signature MONO_ARRAY_EXTRA =
 	  and type vector = vector
 	  and type vector_slice = vector_slice
 
-      val rawArray: int -> array
-      val unsafeSub: array * int -> elem
-      val unsafeUpdate: array * int * elem -> unit
-
       val concat: array list -> array
       val duplicate: array -> array
+      val extract: array * int * int option -> vector (* Deprecated *)
+      val fromPoly: elem Array.array -> array
+      val rawArray: int -> array
       val toList: array -> elem list
+      val toPoly: array -> elem Array.array
       val unfoldi: int * 'a * (int * 'a -> elem * 'a) -> array
-
-      (* Deprecated *)
-      val extract: array * int * int option -> vector
+      val unsafeSub: array * int -> elem
+      val unsafeUpdate: array * int * elem -> unit
    end

@@ -6,6 +6,21 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 
+signature EQ_MONO =
+   sig
+      structure Array: MONO_ARRAY_EXTRA
+      structure Array2: MONO_ARRAY2
+      structure ArraySlice: MONO_ARRAY_SLICE_EXTRA
+      structure Vector: EQTYPE_MONO_VECTOR_EXTRA
+      structure VectorSlice: EQTYPE_MONO_VECTOR_SLICE_EXTRA
+      sharing type Array.array = ArraySlice.array = Vector.array
+      sharing type Array.elem = Array2.elem = ArraySlice.elem = Vector.elem
+	 = VectorSlice.elem
+      sharing type Array.vector = Array2.vector = ArraySlice.vector
+	 = Vector.vector = VectorSlice.vector
+      sharing type ArraySlice.vector_slice = VectorSlice.slice
+   end
+
 functor EqMono (eqtype elem) =
    struct
       structure Vector = EqtypeMonoVector (type elem = elem)
@@ -39,14 +54,19 @@ in
    structure BoolArray2 = Array2
 end
 local
-   structure S = EqMono (type elem = Char.char)
+   structure S:>
+      EQ_MONO
+      where type Array.elem = char
+      where type Vector.vector = string
+      = EqMono (type elem = char)
    open S
 in
+   structure CharArray = Array
+   structure CharArray2 = Array2
+   structure CharArraySlice = ArraySlice
    structure CharVector = Vector
    structure CharVectorSlice = VectorSlice
-   structure CharArray = Array
-   structure CharArraySlice = ArraySlice
-   structure CharArray2 = Array2
+   val _ = CharVector.fromArray: CharArray.array -> CharVector.vector
 end
 local
    structure S = EqMono (type elem = Int8.int)

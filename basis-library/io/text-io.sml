@@ -15,13 +15,13 @@ structure TextIO: TEXT_IO_EXTRA =
 					   toInt = fn i => i}
 		      structure Cleaner = Cleaner
 		    end
-      structure StreamIO = StreamIOExtraFile(open S)
+      structure StreamIO = StreamIOExtraFile (open S)
       structure SIO = StreamIO
       structure S = struct 
 		      open S 
 		      structure StreamIO = StreamIO
 		    end
-      structure BufferI = BufferIExtraFile(open S)
+      structure BufferI = BufferIExtraFile (open S)
       structure BI = BufferI
       structure S = struct
 		      open S
@@ -31,16 +31,16 @@ structure TextIO: TEXT_IO_EXTRA =
 		      val mkReader = Posix.IO.mkTextReader
 		      val mkWriter = Posix.IO.mkTextWriter
 		    end
-      structure FastImperativeIO = FastImperativeIOExtraFile(open S)
+      structure FastImperativeIO = FastImperativeIOExtraFile (open S)
       open FastImperativeIO
 
       structure StreamIO =
 	 struct
 	    open SIO
-	    val outputSubstr = outputSlice
+	    fun outputSubstr (s, ss) = outputSlice (s, ss)
 	 end
 
-      val outputSubstr = outputSlice
+      fun outputSubstr (s, ss) = outputSlice (s, ss)
       val openString = openVector
       fun print (s: string) = (output (stdOut, s); flushOut stdOut)
    end

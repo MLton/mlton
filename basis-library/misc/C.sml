@@ -43,7 +43,8 @@ structure C: C =
 	    val toWord8ArrayOfLength =
 	       charArrayToWord8Array o toCharArrayOfLength
 	       
-	    val toStringOfLength = String.fromArray o toCharArrayOfLength
+	    fun toStringOfLength cs =
+	       String.fromArray (CharArray.fromPoly (toCharArrayOfLength cs))
 
 	    val length = makeLength (sub, fn #"\000" => true | _ => false)
 

@@ -1,10 +1,11 @@
 signature MONO_ARRAY_SLICE =
    sig
-      type elem
       type array
+      type elem
       type slice
       type vector
       type vector_slice
+	 
       val length: slice -> int
       val sub: slice * int -> elem
       val update: slice * int * elem -> unit
@@ -36,13 +37,13 @@ signature MONO_ARRAY_SLICE_EXTRA =
    sig
       include MONO_ARRAY_SLICE
 
-      val concat: slice list -> array
-
-      val unsafeSub: slice * int -> elem
-      val unsafeUpdate: slice * int * elem -> unit
-      val unsafeSlice: array * int * int option -> slice
-      val unsafeSubslice: slice * int * int option -> slice
-
       val array: slice -> array
+      val concat: slice list -> array
+      val fromPoly: elem ArraySlice.slice -> slice
       val toList: slice -> elem list
+      val toPoly: slice -> elem ArraySlice.slice
+      val unsafeSlice: array * int * int option -> slice
+      val unsafeSub: slice * int -> elem
+      val unsafeSubslice: slice * int * int option -> slice
+      val unsafeUpdate: slice * int * elem -> unit
    end

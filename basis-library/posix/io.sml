@@ -34,11 +34,11 @@ structure PosixIO: POSIX_IO =
       fun close (FD fd) = checkResult (Prim.close fd)
 
       local
-	 fun make {read, write, writeVec} =
+	 fun make {read, toArraySlice, toVectorSlice, write, writeVec} =
 	    let
 	       fun readArr (FD fd, sl): int =
 		  let
-		     val (buf, i, sz) = ArraySlice.base sl
+		     val (buf, i, sz) = ArraySlice.base (toArraySlice sl)
 		  in
 		     checkReturnResult (read (fd, buf, i, sz))
 		  end
@@ -53,14 +53,14 @@ structure PosixIO: POSIX_IO =
 		  end
 	       fun writeArr (FD fd, sl) =
 		  let
-		     val (buf, i, sz) = ArraySlice.base sl
+		     val (buf, i, sz) = ArraySlice.base (toArraySlice sl)
 		  in
 		     checkReturnResult (write (fd, buf, i, sz))
 		  end
 	       val writeVec =
 		  fn (FD fd, sl) =>
 		  let
-		     val (buf, i, sz) = VectorSlice.base sl
+		     val (buf, i, sz) = VectorSlice.base (toVectorSlice sl)
 		  in
 		     checkReturnResult (writeVec (fd, buf, i, sz))
 		  end
@@ -70,9 +70,13 @@ structure PosixIO: POSIX_IO =
 	    end
       in
 	val rwChar = make {read = readChar,
+			   toArraySlice = CharArraySlice.toPoly,
+			   toVectorSlice = CharVectorSlice.toPoly,
 			   write = writeChar,
 			   writeVec = writeCharVec}
 	val rwWord8 = make {read = readWord8,
+			    toArraySlice = fn sl => sl,
+			    toVectorSlice = fn sl => sl,
 			    write = writeWord8,
 			    writeVec = writeWord8Vec}
       end
@@ -345,8 +349,8 @@ structure PosixIO: POSIX_IO =
 	  end
       in
 	val {mkReader = mkBinReader, mkWriter = mkBinWriter} =
-	  make rwWord8 (BinPrimIO.RD, BinPrimIO.WR)
+	   make rwWord8 (BinPrimIO.RD, BinPrimIO.WR)
 	val {mkReader = mkTextReader, mkWriter = mkTextWriter} =
-	  make rwChar (TextPrimIO.RD, TextPrimIO.WR)
+	   make rwChar (TextPrimIO.RD, TextPrimIO.WR)
       end
    end

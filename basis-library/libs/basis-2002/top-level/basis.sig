@@ -530,7 +530,9 @@ signature BASIS_2002 =
       sharing type Word32Array2.elem = Word32.word
       sharing type Word32Array2.vector = Word32Vector.vector
    end
-   (* Top-level types *)
+   (* Top-level types.  These appear free in basis signatures and hence must be
+    * the same in the basis as at the top level.
+    *)
    where type 'a array = 'a array
    where type 'a list = 'a list
    where type 'a option = 'a option

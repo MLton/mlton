@@ -5,7 +5,6 @@ structure Array =
 
 signature ARRAY_SLICE_GLOBAL =
    sig
-
    end
 
 signature ARRAY_SLICE =

@@ -5,10 +5,20 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-structure Substring: SUBSTRING =
+
+(* The :> is to hide the type substring.  We must add the where's to make char
+ * and string the same as the toplevel types.
+ *)
+structure Substring
+   :> SUBSTRING_EXTRA
+   where type char = char
+   where type string = string
+   where type substring = CharVectorSlice.slice
+   =
    struct
       open Substring0
 
+      val toSlice = CharVectorSlice.toPoly
       val size = length
       val extract = slice
       fun substring (s, start, len) = extract (s, start, SOME len)

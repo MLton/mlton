@@ -21,7 +21,7 @@ structure UnixSock : UNIX_SOCK =
 	  val sa = Socket.unpackSockAddr sa
 	  val len = Prim.pathLen sa
 	  val a = CharArray.array (len, #"\000")
-	  val _ = Prim.fromAddr (sa, a, len)
+	  val _ = Prim.fromAddr (sa, CharArray.toPoly a, len)
 	in
 	  CharArray.extract (a, 0, SOME len)
 	end 

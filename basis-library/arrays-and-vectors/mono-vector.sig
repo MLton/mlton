@@ -27,6 +27,8 @@ signature MONO_VECTOR_EXTRA_PRE =
    sig
       include MONO_VECTOR
 
+      type array
+
       val unsafeSub: vector * int -> elem
 
       (* Used to implement Substring/String functions *)
@@ -40,7 +42,7 @@ signature MONO_VECTOR_EXTRA_PRE =
       val fields: (elem -> bool) -> vector -> vector list
 
       val duplicate: vector -> vector
-      val fromArray: elem array -> vector
+      val fromArray: array -> vector
       val toList: vector -> elem list
       val unfoldi: int * 'a * (int * 'a -> elem * 'a) -> vector
       val vector: int * elem -> vector

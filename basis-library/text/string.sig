@@ -44,7 +44,7 @@ signature STRING_EXTRA =
    sig
       include STRING
 
-      val fromArray: char array -> string
+      val fromArray: CharArray.array -> string
       val new: int * char -> string
       val nullTerm: string -> string
       val tabulate: int * (int -> char) -> string

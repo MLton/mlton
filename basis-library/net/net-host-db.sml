@@ -87,11 +87,13 @@ structure NetHostDB: NET_HOST_DB_EXTRA =
 	let
 	  val n = 128
 	  val buf = CharArray.array (n, #"\000")
-	  val _ = Posix.Error.checkResult (Prim.getHostName (buf, n))
+	  val _ =
+	     Posix.Error.checkResult (Prim.getHostName (CharArray.toPoly buf, n))
 	in
 	  case CharArray.findi (fn (_, c) => c = #"\000") buf of
-	    NONE => CharArray.vector buf
-	  | SOME (i, _) => CharArraySlice.vector (CharArraySlice.slice (buf, 0, SOME i))
+	     NONE => CharArray.vector buf
+	   | SOME (i, _) =>
+		CharArraySlice.vector (CharArraySlice.slice (buf, 0, SOME i))
 	end
 
       fun scan reader state =

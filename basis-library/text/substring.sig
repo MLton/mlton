@@ -46,3 +46,10 @@ signature SUBSTRING =
       val foldl: (char * 'a -> 'a) -> 'a -> substring -> 'a
       val foldr: (char * 'a -> 'a) -> 'a -> substring -> 'a
    end
+
+signature SUBSTRING_EXTRA =
+   sig
+      include SUBSTRING
+
+      val toSlice: substring -> char Array.vector_slice
+   end

@@ -9,6 +9,7 @@ functor MonoVector (type elem): MONO_VECTOR_EXTRA
                                 where type elem = elem =
    struct
       open Vector
+      type array = elem array
       type elem = elem
       type vector = elem vector
       structure MonoVectorSlice = 
@@ -17,6 +18,8 @@ functor MonoVector (type elem): MONO_VECTOR_EXTRA
 	    type elem = elem
 	    type vector = vector
 	    type slice = elem slice
+	    val fromPoly = fn s => s
+	    val toPoly = fn s => s
 	 end
    end
 
@@ -24,6 +27,7 @@ functor EqtypeMonoVector (eqtype elem): EQTYPE_MONO_VECTOR_EXTRA
                                         where type elem = elem =
    struct
       open Vector
+      type array = elem array
       type elem = elem
       type vector = elem vector
       structure MonoVectorSlice = 
@@ -32,5 +36,7 @@ functor EqtypeMonoVector (eqtype elem): EQTYPE_MONO_VECTOR_EXTRA
 	    type elem = elem
 	    type vector = vector
 	    type slice = elem slice
+	    val fromPoly = fn s => s
+	    val toPoly = fn s => s
 	 end
    end
