@@ -301,7 +301,7 @@ fun makeOptions {usage} =
        (Expert, "profile-basis", " {false|true}",
 	"profile the basis implementation",
 	boolRef profileBasis),
-       (Expert, "profile-branch", " {true|false}",
+       (Normal, "profile-branch", " {false|true}",
 	"profile branches in addition to functions",
 	boolRef profileBranch),
        (Expert, "profile-il", " {source}", "where to insert profile exps",

@@ -1965,8 +1965,7 @@ fun elaborateDec (d, {env = E,
 			   align [seq [str "then: ", l1],
 				  seq [str "else: ", l2]]))
 		      val (b', c') =
-			 if !Control.profile <> Control.ProfileCount
-			    orelse not (!Control.profileBranch)
+			 if not (!Control.profileBranch)
 			    then (b', c')
 			 else
 			    let
@@ -2382,8 +2381,7 @@ fun elaborateDec (d, {env = E,
 				seq [str "previous: ", l2],
 				seq [str "in: ", lay ()]]))
 		    val e =
-		       if !Control.profile <> Control.ProfileCount
-			  orelse not (!Control.profileBranch)
+		       if not (!Control.profileBranch)
 			  then e
 		       else
 			  Cexp.enterLeave

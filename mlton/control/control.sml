@@ -368,7 +368,7 @@ val profileBasis = control {name = "profile basis",
 			    toString = Bool.toString}
 
 val profileBranch = control {name = "profile branch",
-			     default = true,
+			     default = false,
 			     toString = Bool.toString}
 
 structure ProfileIL =

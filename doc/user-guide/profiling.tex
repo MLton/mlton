@@ -1,13 +1,18 @@
 \sec{Profiling}{profiling}{Profiling.html}
+
+With {\mlton} and {\tt mlprof}, you can profile your program along
+different measures of performance.  To profile you program, compile
+with {\tt -profile {\em kind}}.  Then, run the executable, which, when
+it finishes, will write an {\tt mlmon.out} file.  You can then run
+{\tt mlprof} on the executable and the {\tt mlmon.out} file to see the
+gathered performance data.
+
 %
-With {\mlton} and {\tt mlprof}, you can profile your program to find
-out how much time is spent by each source function over an entire run
-of the program.  To profile your program, compile with {\tt -profile
-time}.  Then, run the executable, which, when it finishes, will write
-an {\tt mlmon.out} file.  You can then run {\tt mlprof} on the
-executable and the {\tt mlmon.out} file to see the percentage of the
-total time spent in each function.  Here is an example of time
-profiling, run from within the {\tt examples/profiling} directory.
+\subsec{Profiling time}{proftime}
+You can compile your program with {\tt -profile time} to find out how
+much time is spent by each source function over an entire run of the
+program.  Here is an example of time profiling, run from within the
+{\tt examples/profiling} directory.
 \begin{verbatim}
 % mlton -profile time tak.sml
 % ./tak
@@ -50,13 +55,14 @@ Tak.tak1  tak.sml: 3      24.2%
 \end{verbatim}
 
 Time profiling is designed to have a very small performance impact.
+You can also compile with {\tt -profile time -profile-branch true} to
+find out how much time is spent in each branch of a function; see
+\secref{profcounts} for more details.
 
-\subsection{Profiling allocation}
-
+\subsec{Profiling allocation}{profalloc}
 You can compile your program with {\tt -profile alloc} to find out how
 many bytes each function allocates.  Here is an example run from
 within the {\tt examples/profiling} directory.
-
 \begin{verbatim}
 % mlton -profile alloc list-rev.sml
 % ./list-rev
@@ -78,16 +84,19 @@ similarly.  Here, as is usually the case, the allocation done by the
 garbage collector is due to stack growth.
 
 The performance impact of allocation profiling is noticeable, because
-it inserts additional C calls for object allocation.
-%
-\subsection{Profiling counts}
+it inserts additional C calls for object allocation.  You can also
+compile with {\tt -profile alloc -profile-branch true} to find out how
+much allocation is done in each branch of a function; see
+\secref{profcounts} for more details.
 
-You can compile your program with {\tt -profile count} to find out how
-many times each function is called and how many times each branch is
-taken.  Here's an example.
+%
+\subsec{Profiling counts}{profcounts}
+You can compile your program with {\tt -profile count -profile-branch
+true} to find out how many times each function is called and how many
+times each branch is taken.  Here's an example.
 
 \begin{verbatim}
-% mlton -profile count tak.sml
+% mlton -profile count -profile-branch true tak.sml
 % ./tak
 % mlprof -raw true -show-line true tak mlmon.out
 623,610,002 ticks
@@ -121,7 +130,7 @@ since some code (e.g. the branch on line 23 above) will show up with
 {\tt 0.0\%} but may still have been executed and hence have a nonzero
 raw count.
 %
-\subsection{Profiling the stack}
+\subsec{Profiling the stack}{profstack}
 
 For both allocation and time profiling, you can use {\tt
 -profile-stack true} to count the time spent (or bytes allocated)
