@@ -7,8 +7,10 @@
  *)
 signature LONGID_STRUCTS =
    sig
-      structure Strid: AST_ID
       structure Id: AST_ID
+      structure Strid: AST_ID
+      structure Symbol: SYMBOL
+      sharing Symbol = Id.Symbol = Strid.Symbol
    end
 
 signature LONGID =
@@ -23,7 +25,7 @@ signature LONGID =
 		      sharing type obj = t
 
       val bogus: t
-      val fromString: string * Region.t -> t
+      val fromSymbols: Symbol.t list * Region.t -> t
       val isLong: t -> bool (* returns true if the list of strids is nonempty *)
       val long: Strid.t list * Id.t -> t
       (* prepend with a path: 

@@ -10,36 +10,42 @@ struct
 
 open S
 
-datatype t = T of {string: String.t,
-		   hash: Word.t,
+datatype t = T of {name: Symbol.t,
 		   region: Region.t}
+
 type obj = t
-type node' = string
+type node' = Symbol.t
 type region = Region.t
 
-fun makeRegion (s, r) = T {string = s,
-			   hash = String.hash s,
+local
+   fun make f (T r) = f r
+in
+   val name = make #name
+   val region = make #region
+end
+
+val node = name
+val toSymbol = name
+
+fun makeRegion (s, r) = T {name = s,
 			   region = r}
 
-val fromString = makeRegion
+val fromSymbol = makeRegion
 
 fun makeRegion' (s, x, y) =
    makeRegion (s, Region.make {left = x, right = y})
 
 fun make s = makeRegion (s, Region.bogus)
 
-fun dest (T {string, region, ...}) = (string, region)
+fun dest (T {name, region, ...}) = (name, region)
 
-val bogus = makeRegion ("<bogus>", Region.bogus)
+val bogus = makeRegion (Symbol.bogus, Region.bogus)
 
-fun toString (T {string, ...}) = string
-val node = toString
+val toString = Symbol.toString o name
 
 val layout = String.layout o toString
 
-fun region (T {region, ...}) = region
-
-fun hash (T {hash, ...}) = hash
+val hash = Symbol.hash o name
 val hash = Trace.trace ("AstId.hash", layout, Word.layout) hash
 
 (* val left = Region.left o region *)
@@ -48,7 +54,8 @@ val hash = Trace.trace ("AstId.hash", layout, Word.layout) hash
 local
    fun binary (f: string * string -> 'a) (x :t, y: t): 'a =
       f (toString x, toString y)
-in val op < = binary String.<
+in
+   val op < = binary String.<
    val op > = binary String.>
    val op >= = binary String.>=
    val op <= = binary String.<=
@@ -56,11 +63,10 @@ in val op < = binary String.<
 end
 
 fun max (x, y) = if x > y then x else y
+
 fun min (x, y) = if x < y then x else y
 
-val equals = fn (T {string = s, hash = h, ...},
-		 T {string = s', hash = h', ...}) =>
-   h = h' andalso String.equals (s, s')
+fun equals (x, x') = Symbol.equals (name x, name x')
 
 val equals = Trace.trace2 ("AstId.equals", layout, layout, Bool.layout) equals
 

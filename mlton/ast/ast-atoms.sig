@@ -7,23 +7,26 @@
  *)
 signature AST_ATOMS_STRUCTS = 
    sig
-      structure Const: AST_CONST
       structure Record: RECORD
       structure SortedRecord: RECORD
-      sharing Record.Field = SortedRecord.Field
+      structure Symbol: SYMBOL
       structure Tyvar: TYVAR
+      sharing Record.Field = SortedRecord.Field
+      sharing Symbol = Record.Field.Symbol
    end
 
 signature AST_ATOMS =
    sig
       include AST_ATOMS_STRUCTS
-      
+
+      structure Const: AST_CONST
+
       structure Tycon:
 	 sig
 	    include AST_ID
 	    include PRIM_TYCONS sharing type tycon = t
 	 end
-
+    
       structure Var: AST_ID
 
       structure Con:
@@ -81,6 +84,10 @@ signature AST_ATOMS =
 
       sharing Strid = Longtycon.Strid = Longvar.Strid = Longcon.Strid
 	 = Longvid.Strid = Longstrid.Strid
+
+      sharing Symbol = Con.Symbol = Fctid.Symbol = Longcon.Symbol
+	 = Longstrid.Symbol = Longtycon.Symbol = Longvar.Symbol = Longvid.Symbol
+	 = Sigid.Symbol = Strid.Symbol = Tycon.Symbol = Vid.Symbol = Var.Symbol
 
       structure Type:
 	 sig

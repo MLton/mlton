@@ -20,7 +20,6 @@ upgrade-basis.sml
 ../lib/mlton-stubs/rusage.sig
 ../lib/mlton-stubs/rlimit.sig
 ../lib/mlton-stubs/random.sig
-../lib/mlton-stubs/ptrace.sig
 ../lib/mlton-stubs/profile.sig
 ../lib/mlton-stubs/process.sig
 ../lib/mlton-stubs/proc-env.sig
@@ -286,6 +285,7 @@ atoms/tycon.sig
 atoms/type-ops.sig
 ast/wrapped.sig
 ast/tyvar.sig
+ast/symbol.sig
 ast/field.sig
 ast/record.sig
 atoms/var.sig
@@ -501,12 +501,13 @@ ast/ast-id.fun
 ast/word-size.fun
 ast/real-size.fun
 ast/int-size.fun
-ast/ast-atoms.fun
 ast/ast-const.fun
+ast/ast-atoms.fun
 ast/ast.fun
 ast/tyvar.fun
 ast/record.fun
 ast/field.fun
+ast/symbol.fun
 main/lookup-constant.sig
 main/lookup-constant.fun
 main/compile.sig

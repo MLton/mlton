@@ -27,6 +27,7 @@ functor Field
 functor PrimCons
 functor PrimTycons
 functor Record
+functor Symbol
 functor TyconKind
 functor Tyvar
    
@@ -61,6 +62,8 @@ real-size.fun
 real-size.sig
 record.fun
 record.sig
+symbol.fun
+symbol.sig
 tycon-kind.fun
 tycon-kind.sig
 tyvar.fun

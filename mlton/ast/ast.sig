@@ -7,10 +7,7 @@
  *)
 signature AST_STRUCTS =
    sig
-      structure Record: RECORD
-      structure SortedRecord: RECORD
-      sharing Record.Field = SortedRecord.Field
-      structure Tyvar: TYVAR
+      include AST_ATOMS_STRUCTS
    end
 
 signature AST =

@@ -11,30 +11,26 @@ struct
 open S
 
 datatype t =
-   String of string
- | Int of int
+   Int of int
+ | Symbol of Symbol.t
    
-val fromString = String
 val fromInt = Int
 
 val equals =
-   fn (String s, String s') => String.equals (s, s')
-    | (Int n, Int n') => Int.equals (n, n')
+   fn (Int n, Int n') => Int.equals (n, n')
+    | (Symbol s, Symbol s') => Symbol.equals (s, s')
     | _ => false
 
 val toString =
-   fn String s => s
-    | Int n => Int.toString (n + 1)
+   fn Int n => Int.toString (n + 1)
+    | Symbol s => Symbol.toString s
 	 
-fun layout f =
-   case f of
-      String s => Layout.str s
-    | Int n => Int.layout (n + 1)
+val layout = Layout.str o toString
 	 
 val op <= =
-   fn (String s, String s') => String.<= (s, s')
-    | (Int n, Int n') => Int.<= (n, n')
-    | (String _, Int _) => false
-    | (Int _, String _) => true
+   fn (Int n, Int n') => Int.<= (n, n')
+    | (Symbol s, Symbol s') => Symbol.<= (s, s')
+    | (Symbol _, Int _) => false
+    | (Int _, Symbol _) => true
 
 end

@@ -1593,7 +1593,7 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 			    in
 			       (region,
 				seq [str "variable type in structure disagrees with ", str sign],
-				align [seq [str "variable:  ",
+				align [seq [str "variable: ",
 					    Longvid.layout	
 					    (Longvid.long
 					     (rev strids, name))],

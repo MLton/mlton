@@ -74,7 +74,7 @@ val peek: 'a t * Field.t -> 'a option =
 		     if 0 <= i andalso i < Vector.length t
 			then SOME (Vector.sub (t, i))
 		     else NONE
-		| Field.String _ => NONE)
+		| Field.Symbol _ => NONE)
 
 fun range r =
    case r of

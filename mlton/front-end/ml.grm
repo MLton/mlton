@@ -70,10 +70,6 @@ structure Pat =
 
       val bogus = unit
 
-      fun var id =
-	 Var {name = Longvid.short (Vid.fromString id),
-	      fixop = Fixop.None}
-
       fun makeAs (p1: t, p2: t): node =
 	 let
 	    fun err () =
@@ -209,11 +205,11 @@ type vb = {pat: Pat.t,
 type rvb = {pat: Pat.t,
 	    match: Match.t}
    
-fun ensureNonqualified (s, region) =
-   if String.contains (s, #".")
-      then (error (region, "expected nonqualified id")
-	    ; "<bogus>")
-   else s
+fun ensureNonqualified (ss: Symbol.t list, r: Region.t): Symbol.t * Region.t =
+   case ss of
+      [s] => (s, r)
+    | _ => (error (r, "expected nonqualified id")
+	    ; (Symbol.bogus, r))
 
 fun cons1 (x, (l, r, y)) = (x :: l, r, y)
 
@@ -319,15 +315,15 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | funbinds'1' of funbind whereAnd
        | funbinds'2 of funbind list
        | funs of clauses list
-       | id of string * Region.t
-       | idEqual of string * Region.t
-       | idNoAsterisk of string * Region.t
+       | id of Symbol.t * Region.t
+       | idEqual of Symbol.t * Region.t
+       | idNoAsterisk of Symbol.t * Region.t
        | int of IntInf.t
        | leadExps of Topdec.t list list
        | longcon of Longcon.t
-       | longid of string * Region.t
-       | longidEqual of string * Region.t
-       | longidNoAsterisk of string * Region.t
+       | longid of Symbol.t list * Region.t
+       | longidEqual of Symbol.t list * Region.t
+       | longidNoAsterisk of Symbol.t list * Region.t
        | longstrid of Longstrid.t
        | longstrideqns of Longstrid.t list
        | longstrids of Longstrid.t list
@@ -599,16 +595,10 @@ strexp2 : strexp2node (Strexp.makeRegion'
 		       (strexp2node, strexp2nodeleft, strexp2noderight))
 
 strexp2node
-        : longid	             (Strexp.Var (Longstrid.fromString longid))
+        : longid	             (Strexp.Var (Longstrid.fromSymbols longid))
         | STRUCT strdecs END         (Strexp.Struct strdecs)
 	| longid arg_fct
-	  (let
-	      val (longid, region) = longid
-	   in
-	      Strexp.App (Fctid.fromString (ensureNonqualified (longid, region),
-					    region),
-			  arg_fct)
-	   end)
+	  (Strexp.App (Fctid.fromSymbol (ensureNonqualified longid), arg_fct))
 	| LET strdecs IN strexp END  (Strexp.Let (strdecs,strexp))
 
 arg_fct : LPAREN strexp RPAREN   (strexp)
@@ -846,9 +836,9 @@ typBind : typBind'
 		 reportDuplicates
 		 (typBind, "type definition",
 		  fn ({tycon = t, ...}, {tycon = t', ...}) =>
-		  Ast.Tycon.equals (t, t'),
-		  Ast.Tycon.layout o #tycon,
-		  Ast.Tycon.region o #tycon)
+		  Tycon.equals (t, t'),
+		  Tycon.layout o #tycon,
+		  Tycon.region o #tycon)
 	   in
 	      TypBind.makeRegion'
 	      (TypBind.T typBind, typBind'left, typBind'right)
@@ -982,9 +972,9 @@ datBind : dbs withtypes
 				    Vector.map (v, #tycon)
 				 end],
 		  "type definition",
-		  Ast.Tycon.equals,
-		  Ast.Tycon.layout,
-		  Ast.Tycon.region)
+		  Tycon.equals,
+		  Tycon.layout,
+		  Tycon.region)
 	   in
 	      DatBind.makeRegion' (DatBind.T {datatypes = dbs,
 					      withtypes = withtypes},
@@ -1113,14 +1103,16 @@ aexp	: OP vid		(Exp.Var {name = Longvid.short vid,
 	  (Exp.Prim {kind = PrimKind.Prim, name = STRING, ty = ty})
 
 attributes :               ([])
-           | id attributes (case #1 id of
-			       "cdecl" =>
-				  PrimKind.Attribute.Cdecl :: attributes
-			     | "stdcall" =>
-				  PrimKind.Attribute.Stdcall :: attributes
-			     | _ => (error (reg (idleft, idright),
-					    concat ["invalid attribute", #1 id])
-				     ; attributes))
+   | id attributes
+     (let
+	 val id = Symbol.toString (#1 id)
+      in
+	 case id of
+	    "cdecl" => PrimKind.Attribute.Cdecl :: attributes
+	  | "stdcall" => PrimKind.Attribute.Stdcall :: attributes
+	  | _ => (error (reg (idleft, idright), concat ["invalid attribute", id])
+		  ; attributes)
+      end)
 
 exp_2c	: exp COMMA exp_2c	(exp :: exp_2c)
 	| exp COMMA exp		([exp1, exp2])
@@ -1192,11 +1184,12 @@ patitems : patitem COMMA patitems  (let val (items, f) = patitems
          | patitem		([patitem], false)
 	 | DOTDOTDOT		([], true)
 
-patitem	: field EQUALOP pat
-          ((field, Pat.Item.Field pat))
-	| vidNoEqual constraint opaspat
-	  (Field.String (Ast.Vid.toString vidNoEqual),
-	   Pat.Item.Vid (vidNoEqual, constraint, opaspat))
+patitem
+   : field EQUALOP pat
+     ((field, Pat.Item.Field pat))
+   | vidNoEqual constraint opaspat
+     (Field.Symbol (Vid.toSymbol vidNoEqual),
+      Pat.Item.Vid (vidNoEqual, constraint, opaspat))
 
 opaspat :         (NONE)
         | AS pat  (SOME pat)
@@ -1255,36 +1248,39 @@ const'  : int			(Const.Int int)
 	| STRING		(Const.String STRING)
 	| CHAR 		        (Const.Char CHAR)
 
-idNoAsterisk : LONGID (let
-			  val region = reg (LONGIDleft, LONGIDright)
-		       in
-			  (ensureNonqualified (LONGID, region), region)
-		       end)
+idNoAsterisk : longidNoAsterisk (ensureNonqualified longidNoAsterisk)
 
 id : idNoAsterisk  (idNoAsterisk)
-   | ASTERISK      (("*", reg (ASTERISKleft, ASTERISKright)))
+   | ASTERISK      ((Symbol.asterisk, reg (ASTERISKleft, ASTERISKright)))
 
 idEqual : id      (id)
-        | EQUALOP (("=", reg (EQUALOPleft, EQUALOPright)))
+        | EQUALOP ((Symbol.equal, reg (EQUALOPleft, EQUALOPright)))
 
-longid : LONGID    ((LONGID, reg (LONGIDleft, LONGIDright)))
-       | ASTERISK  (("*", reg (ASTERISKleft, ASTERISKright)))
+longid
+   : longidNoAsterisk (longidNoAsterisk)
+   | ASTERISK  (([Symbol.asterisk], reg (ASTERISKleft, ASTERISKright)))
 
-longidNoAsterisk : LONGID ((LONGID, reg (LONGIDleft, LONGIDright)))
+longidNoAsterisk
+   : LONGID
+     (let
+	 val syms = List.map (String.split (LONGID, #"."), Symbol.fromString)
+      in
+	 (syms, reg (LONGIDleft, LONGIDright))
+      end)
 
 longidEqual : longid   (longid)
-            | EQUALOP  (("=", reg (EQUALOPleft, EQUALOPright)))
+            | EQUALOP  (([Symbol.equal], reg (EQUALOPleft, EQUALOPright)))
 
-vid : idEqual                  (Vid.fromString idEqual)
-vidNoEqual : id                (Vid.fromString id)
+vid : idEqual                  (Vid.fromSymbol idEqual)
+vidNoEqual : id                (Vid.fromSymbol id)
 vids : vid                     ([vid])
      | vid vids                (vid::vids)
-var : idEqual                  (Var.fromString idEqual)
-con : id 		       (Con.fromString id)
-tycon : idNoAsterisk 	       (Tycon.fromString idNoAsterisk)
+var : idEqual                  (Var.fromSymbol idEqual)
+con : id 		       (Con.fromSymbol id)
+tycon : idNoAsterisk 	       (Tycon.fromSymbol idNoAsterisk)
 tyvar : TYVAR 		       (Tyvar.newString (TYVAR, {left = TYVARleft,
 							 right = TYVARright}))
-field : id  		       (Field.String (#1 id))
+field : id  		       (Field.Symbol (#1 id))
       | int 		       (let
 				   val int =
 				      IntInf.toInt int
@@ -1302,18 +1298,18 @@ field : id  		       (Field.String (#1 id))
 				       int - 1)
 				end) (* int - 1 because fields are 0-based *)
 
-strid : id 		       (Strid.fromString id)
-sigid : id 		       (Sigid.fromString id)
+strid : id 		       (Strid.fromSymbol id)
+sigid : id 		       (Sigid.fromSymbol id)
 sigids : sigid         	       ([sigid])
-       | sigid sigids  	       (sigid::sigids)
-fctid : id 		       (Fctid.fromString id)
+       | sigid sigids  	       (sigid :: sigids)
+fctid : id 		       (Fctid.fromSymbol id)
 
-longtycon : longidNoAsterisk (Longtycon.fromString longidNoAsterisk)
-longvar : longidEqual      (Longvar.fromString longidEqual)
-longvid : longidEqual      (Longvid.fromString longidEqual)
-longvidNoEqual : longid    (Longvid.fromString longid)
-longcon : longid           (Longcon.fromString longid)
-longstrid : longid         (Longstrid.fromString longid)
+longtycon : longidNoAsterisk (Longtycon.fromSymbols longidNoAsterisk)
+longvar : longidEqual      (Longvar.fromSymbols longidEqual)
+longvid : longidEqual      (Longvid.fromSymbols longidEqual)
+longvidNoEqual : longid    (Longvid.fromSymbols longid)
+longcon : longid           (Longcon.fromSymbols longid)
+longstrid : longid         (Longstrid.fromSymbols longid)
 
 longstrids : longstrid             ([longstrid])
            | longstrid longstrids  (longstrid :: longstrids)

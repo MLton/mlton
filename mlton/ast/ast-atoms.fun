@@ -12,15 +12,15 @@ open S
 structure Wrap = Region.Wrap
 
 structure AdmitsEquality = AdmitsEquality ()
+structure Const = AstConst ()
 structure IntSize = IntSize ()
+structure Kind = TyconKind ()
 structure RealSize = RealSize ()
 structure WordSize = WordSize ()
 
-structure Kind = TyconKind ()
-
 structure Tycon =
    struct
-      structure Id = AstId (val className = "tycon")
+      structure Id = AstId (structure Symbol = Symbol)
       open Id
 
       structure P =
@@ -30,24 +30,26 @@ structure Tycon =
 		     structure RealSize = RealSize
 		     structure WordSize = WordSize
 		     open Id
-		     fun fromString s = Id.fromString (s, Region.bogus))
+		     fun fromString s =
+			Id.fromSymbol (Symbol.fromString s, Region.bogus))
       open P
    end
 
-structure Var = AstId (val className = "variable")
+structure Var = AstId (structure Symbol = Symbol)
    
 structure Con =
    struct
-      structure Id = AstId (val className = "constructor")
+      structure Id = AstId (structure Symbol = Symbol)
       open Id
 
       structure P =
 	 PrimCons (open Id
-		   val fromString = fn s => fromString (s, Region.bogus))
+		   fun fromString s = fromSymbol (Symbol.fromString s,
+						  Region.bogus))
 
       open P
 
-      val it = fromString ("it", Region.bogus)
+      val it = fromSymbol (Symbol.itt, Region.bogus)
 	 
       fun ensureRedefine c =
 	 if List.exists ([cons, falsee, it, nill, reff, truee],
@@ -63,24 +65,24 @@ structure Con =
 	 else ()
    end
 
-structure Sigid = AstId (val className = "signature")
-structure Strid = AstId (val className = "structure")
-structure Fctid = AstId (val className = "functor")
+structure Sigid = AstId (structure Symbol = Symbol)
+structure Strid = AstId (structure Symbol = Symbol)
+structure Fctid = AstId (structure Symbol = Symbol)
 
 structure Vid =
    struct
-      structure I = AstId (val className = "variable")
+      structure I = AstId (structure Symbol = Symbol)
       open I
 	 
-      fun fromCon c = fromString (Con.toString c, Con.region c)
-      fun fromVar x = fromString (Var.toString x, Var.region x)
+      fun fromCon c = fromSymbol (Con.toSymbol c, Con.region c)
+      fun fromVar x = fromSymbol (Var.toSymbol x, Var.region x)
       local
-	 fun make f v = f (toString v, region v)
+	 fun make f v = f (toSymbol v, region v)
       in
-	 val toCon = make Con.fromString
-	 val toVar = make Var.fromString
-	 val toFctid = make Fctid.fromString
-	 val toStrid = make Strid.fromString
+	 val toCon = make Con.fromSymbol
+	 val toVar = make Var.fromSymbol
+	 val toFctid = make Fctid.fromSymbol
+	 val toStrid = make Strid.fromSymbol
       end
       val bind = fromCon Con.bind
       val cons = fromCon Con.cons
@@ -93,8 +95,10 @@ structure Vid =
 
 structure Longtycon =
    struct
-      structure T = Longid (structure Strid = Strid
-			    structure Id = Tycon)
+      structure T = Longid (structure Id = Tycon
+			    structure Strid = Strid
+			    structure Symbol = Symbol)
+			    
       open T
 
       val arrow = short Tycon.arrow
@@ -106,26 +110,32 @@ structure Longtycon =
 	    ([], tycon) => Tycon.equals (tycon, Tycon.arrow)
 	  | _ => false
    end
-structure Longvar = Longid (structure Strid = Strid
-			   structure Id = Var)
+structure Longvar = Longid (structure Id = Var
+			    structure Strid = Strid
+			    structure Symbol = Symbol)
+			   
 structure Longcon =
    struct
-      structure L = Longid (structure Strid = Strid
-			   structure Id = Con)
+      structure L = Longid (structure Id = Con
+			    structure Strid = Strid
+			    structure Symbol = Symbol)
+			   
       open L
       val nill = short Con.nill
       val cons = short Con.cons
    end
 
-structure Longstrid = Longid (structure Strid = Strid
-			     structure Id = Strid)
-structure Longfctid = Longid (structure Strid = Strid
-			     structure Id = Fctid)
+structure Longstrid = Longid (structure Id = Strid
+			      structure Strid = Strid
+			      structure Symbol = Symbol)
+			     
 
 structure Longvid =
    struct
-      structure L = Longid (structure Strid = Strid
-			   structure Id = Vid)
+      structure L = Longid (structure Id = Vid
+			    structure Strid = Strid
+			    structure Symbol = Symbol)
+			   
       open L
       fun fromLongcon (c: Longcon.t): t =
 	 let
@@ -139,10 +149,10 @@ structure Longvid =
 	    let val (T {strids, id}, region) = dest x
 	    in make (node {strids = strids, id =  conv id}, region)
 	    end
-      in val toLongvar = to (Longvar.makeRegion, Longvar.T, Vid.toVar)
+      in
+	 val toLongvar = to (Longvar.makeRegion, Longvar.T, Vid.toVar)
 	 val toLongcon = to (Longcon.makeRegion, Longcon.T, Vid.toCon)
 	 val toLongstrid = to (Longstrid.makeRegion, Longstrid.T, Vid.toStrid)
-	 val toLongfctid = to (Longfctid.makeRegion, Longfctid.T, Vid.toFctid)
       end
 
       val bind = short Vid.bind

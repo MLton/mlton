@@ -197,9 +197,10 @@ hexnum={hexDigit}+;
 <INITIAL>"orelse" => (tok (Tokens.ORELSE, source, yypos, yypos + 6));
 <INITIAL>"andalso" => (tok (Tokens.ANDALSO, source, yypos, yypos + 7));
 <INITIAL>"'"{alphanum}? => (tok' (Tokens.TYVAR, yytext, source, yypos));
-<INITIAL>{longid} => (case yytext of
-			 "*" => tok (Tokens.ASTERISK, source, yypos, yypos + 1)
-		       | _ => tok' (Tokens.LONGID, yytext, source, yypos));
+<INITIAL>{longid} =>
+   (case yytext of
+       "*" => tok (Tokens.ASTERISK, source, yypos, yypos + 1)
+     | _ => tok' (Tokens.LONGID, yytext, source, yypos));
 <INITIAL>{real}	=> (tok' (Tokens.REAL, yytext, source, yypos));
 <INITIAL>{num} =>
    (int (yytext, 0, source, yypos, {negate = false}, StringCvt.DEC));

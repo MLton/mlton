@@ -34,6 +34,7 @@ in
    structure Record = Record
    structure SortedRecord = SortedRecord
    structure Strid = Strid
+   structure Symbol = Symbol
    structure TypBind = TypBind
 end
 
@@ -338,7 +339,7 @@ structure Var =
 val allowRebindEquals = ref true
    
 local
-   val eq = Avar.fromString ("=", Region.bogus)
+   val eq = Avar.fromSymbol (Symbol.equal, Region.bogus)
 in
    fun extendVar (E, x, x', s, region) =
       if not (!allowRebindEquals) andalso Avar.equals (x, eq)
@@ -811,11 +812,13 @@ fun export {attributes, name: string, region: Region.t, ty: Type.t}: Aexp.t =
 		  (id, us, t)
 	       end
       open Ast
-      fun id name =
-	 Aexp.longvid (Longvid.short (Vid.fromString (name, region)))
+      fun id (name: string) =
+	 Aexp.longvid (Longvid.short
+		       (Vid.fromSymbol (Symbol.fromString name,
+					region)))
       fun int (i: int): Aexp.t =
 	 Aexp.const (Aconst.makeRegion (Aconst.Int (IntInf.fromInt i), region))
-      val f = Var.fromString ("f", region)
+      val f = Var.fromSymbol (Symbol.fromString "f", region)
    in
       Exp.fnn
       (Vector.new1
@@ -837,9 +840,10 @@ fun export {attributes, name: string, region: Region.t, ty: Type.t}: Aexp.t =
 		    (args, fn (u, name) =>
 		     let
 			val x =
-			   Var.fromString
-			   (concat ["x",
-				    Int.toString (Counter.next varCounter)],
+			   Var.fromSymbol
+			   (Symbol.fromString
+			    (concat ["x",
+				     Int.toString (Counter.next varCounter)]),
 			    region)
 			val dec =
 			   Dec.vall (Vector.new0 (),
@@ -849,8 +853,8 @@ fun export {attributes, name: string, region: Region.t, ty: Type.t}: Aexp.t =
 		     in
 			(x, dec)
 		     end))
-		val resVar = Var.fromString ("res", region)
-		fun newVar () = Var.fromString ("none", region)
+		val resVar = Var.fromSymbol (Symbol.fromString "res", region)
+		fun newVar () = Var.fromSymbol (Symbol.fromString "none", region)
 	     in
 		Exp.lett
 		(Vector.concat
@@ -883,18 +887,22 @@ structure Aexp =
    struct
       open Aexp
 
-      fun selector (f: Field.t, r: Region.t): t =
-	 let
-	    val x = Avar.fromString ("x", r)
-	 in
-	    fnn (Vector.new1
-		 (Apat.makeRegion
-		  (Apat.Record {flexible = true,
-				items = (Vector.new1
-					 (f, Apat.Item.Field (Apat.var x)))},
-		   r),
-		  var x))
-	 end
+      local
+	 val x = Symbol.fromString "x"
+      in
+	 fun selector (f: Field.t, r: Region.t): t =
+	    let
+	       val x = Avar.fromSymbol (x, r)
+	    in
+	       fnn (Vector.new1
+		    (Apat.makeRegion
+		     (Apat.Record {flexible = true,
+				   items = (Vector.new1
+					    (f, Apat.Item.Field (Apat.var x)))},
+		      r),
+		     var x))
+	    end
+      end
    end
 
 structure Con =

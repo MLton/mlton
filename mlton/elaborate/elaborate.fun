@@ -15,13 +15,13 @@ local
 in
    structure FctArg = FctArg
    structure Longstrid = Longstrid
-   structure Topdec = Topdec
-
    structure SigConst = SigConst
    structure Sigexp = Sigexp
    structure Strdec = Strdec
-   structure Strid = Strid
    structure Strexp = Strexp
+   structure Strid = Strid
+   structure Symbol = Symbol
+   structure Topdec = Topdec
 end
 
 local
@@ -202,8 +202,9 @@ fun elaborateProgram (program,
 			 | FctArg.Spec spec =>
 			      let
 				 val strid =
-				    Strid.fromString ("ZZZNewStridZZZ",
-						      Region.bogus)
+				    Strid.fromSymbol
+				    (Symbol.fromString "ZZZNewStridZZZ",
+				     Region.bogus)
 			      in
 				 (strid,
 				  Sigexp.spec spec,

@@ -11,8 +11,9 @@ struct
 (*---------------------------------------------------*)
 (*              Intermediate Languages               *)
 (*---------------------------------------------------*)
-   
-structure Field = Field ()
+
+structure Symbol = Symbol ()
+structure Field = Field (structure Symbol = Symbol)
 structure Record = Record (val isSorted = false
 			   structure Field = Field)
 structure SortedRecord = Record (val isSorted = true
@@ -20,6 +21,7 @@ structure SortedRecord = Record (val isSorted = true
 structure Tyvar = Tyvar ()
 structure Ast = Ast (structure Record = Record
 		     structure SortedRecord = SortedRecord
+		     structure Symbol = Symbol
 		     structure Tyvar = Tyvar)
 local
    open Ast.Tycon
@@ -203,7 +205,9 @@ in
       struct
 	 open Con
 
-	 fun toAst c = Ast.Con.fromString (Con.toString c, Region.bogus)
+	 fun toAst c =
+	    Ast.Con.fromSymbol (Symbol.fromString (Con.toString c),
+				Region.bogus)
       end
 
    structure Env =
@@ -215,7 +219,8 @@ in
 	       open Tycon
 
 	       fun toAst c =
-		  Ast.Tycon.fromString (Tycon.toString c, Region.bogus)
+		  Ast.Tycon.fromSymbol (Symbol.fromString (Tycon.toString c),
+					Region.bogus)
 	    end
 	 structure Type = TypeEnv.Type
 	 structure Scheme = TypeEnv.Scheme
@@ -226,7 +231,8 @@ in
 		  List.foreach
 		  (Tycon.prims, fn (tycon, kind, _) =>
 		   extendTycon
-		   (E, Ast.Tycon.fromString (Tycon.originalName tycon,
+		   (E, Ast.Tycon.fromSymbol (Symbol.fromString
+					     (Tycon.originalName tycon),
 					     Region.bogus),
 		    TypeStr.tycon (tycon, kind)))
 	       val _ =
@@ -262,7 +268,8 @@ in
 				     TypeStr.Cons.T cs))
 		   end)
 	       val _ =
-		  extendTycon (E, Ast.Tycon.fromString ("unit", Region.bogus),
+		  extendTycon (E,
+			       Ast.Tycon.fromSymbol (Symbol.unit, Region.bogus),
 			       TypeStr.def (Scheme.fromType Type.unit,
 					    TypeStr.Kind.Arity 0))
 	       val scheme = Scheme.fromType Type.exn
@@ -344,7 +351,8 @@ in
 	     := SOME (Env.lookupLongstrid
 		      (basisEnv,
 		       Ast.Longstrid.short
-		       (Ast.Strid.fromString ("MLtonFFI", Region.bogus))))
+		       (Ast.Strid.fromSymbol (Symbol.fromString "MLtonFFI",
+					      Region.bogus))))
 	  val localTopFinish = fn g =>
 	     (localTopFinish g) before ((* Env.addEquals basisEnv *)
 					Env.clean basisEnv)

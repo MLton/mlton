@@ -10,14 +10,7 @@ struct
 
 open S
 
-structure Const = AstConst ()
-   
-structure AstAtoms = AstAtoms (structure Const = Const
-			       structure Record = Record
-			       structure SortedRecord = SortedRecord
-			       structure Tyvar = Tyvar)
-
-structure AstCore = AstCore (open AstAtoms)
+structure AstCore = AstCore (AstAtoms (S))
 
 open AstCore Layout
    

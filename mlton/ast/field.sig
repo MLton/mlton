@@ -10,6 +10,7 @@ type int = Int.t
    
 signature FIELD_STRUCTS = 
    sig
+      structure Symbol: SYMBOL
    end
 
 signature FIELD = 
@@ -17,8 +18,8 @@ signature FIELD =
       include FIELD_STRUCTS
       
       datatype t =
-	 String of string
-       | Int of int
+	 Int of int
+       | Symbol of Symbol.t
 
       val <= : t * t -> bool (* ordering used for sorting *)
       val equals: t * t -> bool
