@@ -304,10 +304,13 @@ in
    val str = str
 end
 
-val unify = Type.unify
+val unify =
+   fn (t, t', preError, error) =>
+   Type.unify (t, t', {error = error,
+		       preError = preError})
    
 fun unifyList (trs: (Type.t * Region.t) vector,
-	       preError: unit -> unit,
+	       z,
 	       lay: unit -> Layout.t): Type.t =
    if 0 = Vector.length trs
       then Type.list (Type.new ())
@@ -317,7 +320,7 @@ fun unifyList (trs: (Type.t * Region.t) vector,
 	 val _ =
 	    Vector.foreach
 	    (trs, fn (t', r) =>
-	     unify (t, t', preError, fn (l, l') =>
+	     unify (t, t', z, fn (l, l') =>
 		    (r,
 		     str "list element types disagree",
 		     align [seq [str "element:  ", l'],
@@ -913,6 +916,7 @@ fun elaborateDec (d, {env = E,
 		      lookupConstant: string * ConstType.t -> CoreML.Const.t,
 		      nest}) =
    let
+      val newTycons: (Tycon.t * Region.t) list ref = ref []
       val {get = recursiveTargs: Var.t -> (unit -> Type.t vector) option ref,
 	   ...} =
 	 Property.get (Var.plist, Property.initFun (fn _ => ref NONE))
@@ -1063,10 +1067,22 @@ fun elaborateDec (d, {env = E,
 	  Layout.ignore, Trace.assertTrue)
 	 (fn (d, nest, isTop) =>
 	  let
-	     val preError = Promise.lazy (fn () => Env.setTyconNames E)
-	     val unify = fn (t, t', f) => unify (t, t', preError, f)
-	     fun lay () = seq [str "in: ", approximate (Adec.layout d)]
 	     val region = Adec.region d
+	     fun lay () = seq [str "in: ", approximate (Adec.layout d)]
+	     val preError = Promise.lazy (fn () => Env.setTyconNames E)
+	     fun useBeforeDef (c: Tycon.t) =
+		let
+		   val _ = preError ()
+		   open Layout
+		in
+		   Control.error
+		   (region,
+		    seq [str "type ", Tycon.layout c,
+			 str " escapes the scope of its definition"],
+		    lay ())
+		end
+	     val _ = TypeEnv.tick {useBeforeDef = useBeforeDef}
+	     val unify = fn (t, t', f) => unify (t, t', preError, f)
 	     fun checkSchemes (v: (Var.t * Scheme.t) vector): unit =
 		if isTop
 		   then
@@ -1864,31 +1880,18 @@ fun elaborateDec (d, {env = E,
 		   Env.scope
 		   (E, fn () =>
 		    let
-		       val time = Time.tick ()
+		       (* Create a new type (at the current time) before
+			* elaborating the decs.  Then, unification with this
+			* type makes sure that any datatypes declared in the
+			* decs don't escape.
+			*)
+		       val t = Type.new ()
 		       val d = Decs.toVector (elabDec (d, nest, false))
 		       val e = elab e
 		       val ty = Cexp.ty e
-		       val cs = Type.tyconsCreatedAfter (ty, time)
-		       val n = List.length cs
 		       val _ =
-			  if n > 0
-			     then
-				let
-				   val _ = preError ()
-				   open Layout
-				in
-				   Control.error
-				   (region,
-				    seq [str (concat ["datatype",
-						      if n > 1 then "s escape"
-						      else " escapes",
-						      " defining let: "]),
-					 seq (separate (List.map
-							(cs, Tycon.layout),
-							", "))],
-				    lay ())
-				end
-			  else ()
+			  unify
+			  (t, ty, fn _ => Error.bug "elabExp Let unify failure")
 		    in
 		       Cexp.make (Cexp.Let (d, e), ty)
 		    end)

@@ -15,12 +15,7 @@ signature TYPE_ENV_STRUCTS =
 signature TYPE_ENV = 
    sig
       include TYPE_ENV_STRUCTS
-      structure Time:
-	 sig
-	    type t
 
-	    val tick: unit -> t
-	 end
       structure Type:
 	 sig
 	    include TYPE_OPS
@@ -53,11 +48,11 @@ signature TYPE_ENV =
 	    val record: t SortedRecord.t -> t
 	    val string: t
 	    val toString: t -> string
-	    val tyconsCreatedAfter: t * Time.t -> Tycon.t list
 	    (* make two types identical (recursively).  side-effecting. *)
 	    val unify:
-	       t * t * (unit -> unit)
-	       * (Layout.t * Layout.t -> Region.t * Layout.t * Layout.t)
+	       t * t *
+	       {error: Layout.t * Layout.t -> Region.t * Layout.t * Layout.t,
+		preError: unit -> unit}
 	       -> unit 
 	    val unresolvedInt: unit -> t
 	    val unresolvedReal: unit -> t
@@ -87,6 +82,7 @@ signature TYPE_ENV =
 		       tyvars: Tyvar.t vector} -> t
 	    val ty: t -> Type.t
 	 end
+
       (* close (e, t, ts, r) = {bound, scheme} close type
        * t with respect to environment e, including all the tyvars in ts
        * and ensuring than no tyvar in ts occurs free in e.  bound returns
@@ -101,6 +97,7 @@ signature TYPE_ENV =
 	     schemes: Scheme.t vector}
       val initAdmitsEquality: Tycon.t * Tycon.AdmitsEquality.t -> unit
       val setOpaqueTyconExpansion: Tycon.t * (Type.t vector -> Type.t) -> unit
+      val tick: {useBeforeDef: Tycon.t -> unit} -> unit
       val tyconAdmitsEquality: Tycon.t -> Tycon.AdmitsEquality.t ref
    end
 

@@ -16,48 +16,66 @@ structure Srecord = SortedRecord
 structure Set = DisjointSet
 
 (*
- * Keep a clock so that when we need to generalize a type we can tell which
- * unknowns were created in the expression being generalized.
+ * Keep a clock that the elaborator ticks for each declaration.  Associate each
+ * type with a time that indicates the earliest declaration at which the type
+ * occurs.  The time is used for several things.
  *
- * Keep track of all unknowns and the time allocated. 
+ * 1. When we need to generalize a type, we can tell which unknowns appear
+ *    only in the declaration under consideration, and can hence be generalized.
  *
- * Unify should always keep the older unknown.
+ * 2. Similarly, for type variables, we can tell if they appear in an earlier
+ *    declaration than the one in which they are to be bound, and hence can
+ *    not be generalized.
  *
- * If they are unknowns since the clock, they may be generalized.
+ * 3. For "FlexRecord" types, we can tell when it appears only in the declaration
+ *    under consideration, and can hence be converted to a "GenFlexRecord" type
+ *    which allows for generalization of fields not yet known to be in the
+ *    flexRecord.
  *
- * For type variables, keep track of the time that they need to be generalized
- * at.  If they are ever unified with an unknown of an earlier time, then
- * they can't be generalized.
+ * 4. For type constructors, we can tell if they are used outside of the scope
+ *    of their definition.  This handles the side conditions on rules 4, 17, and
+ *    19.
  *)
+   
 structure Time:>
    sig
       type t
 
       val <= : t * t -> bool
-      val equals: t * t -> bool
-      val min: t * t -> t
+      val useBeforeDef: t * Tycon.t -> unit
       val layout: t -> Layout.t
       val now: unit -> t
-      val tick: unit -> t
+      val tick: {useBeforeDef: Tycon.t -> unit} -> unit
    end =
    struct
-      type t = int
+      datatype t = T of {clock: int,
+			 useBeforeDef: Tycon.t -> unit}
 
-      val equals = op =
-	 
-      val min = Int.min
+      local
+	 fun make f (T r) = f r
+      in
+	 val clock = make #clock
+      end
 
-      val op <= = Int.<=
+      fun useBeforeDef (T {useBeforeDef = f, ...}, c) = f c
 
-      val layout = Int.layout
+      val layout = Int.layout o clock
 
-      val clock: t ref = ref 0
+      fun t <= t' = Int.<= (clock t, clock t')
 
-      fun now () = !clock
-
-      fun tick () = (clock := 1 + !clock
-		     ; !clock)
+      local
+	 val current: t ref =
+	    ref (T {clock = 0,
+		    useBeforeDef = fn _ => Error.bug "useBeforeDef clock 0"})
+      in
+	 fun now () = !current
+	 fun tick {useBeforeDef} =
+	    current := T {clock = 1 + clock (!current),
+			  useBeforeDef = useBeforeDef}
+      end
    end
+
+val tick = Time.tick
 
 structure Lay =
    struct
@@ -83,15 +101,20 @@ structure UnifyResult =
    end
 
 val {get = tyconInfo: Tycon.t -> {admitsEquality: AdmitsEquality.t ref,
-				  creation: Time.t},
+				  time: Time.t ref},
      set = setTyconInfo, ...} =
    Property.getSet (Tycon.plist, Property.initRaise ("info", Tycon.layout))
 
-val tyconAdmitsEquality = #admitsEquality o tyconInfo
+local
+   fun make f = f o tyconInfo
+in
+   val tyconAdmitsEquality = make #admitsEquality
+   val tyconTime = make #time
+end
 
 fun initAdmitsEquality (c, a) =
    setTyconInfo (c, {admitsEquality = ref a,
-		     creation = Time.now ()})
+		     time = ref (Time.now ())})
    
 val _ = List.foreach (Tycon.prims, fn (c, _, a) => initAdmitsEquality (c, a))
 
@@ -233,29 +256,16 @@ structure Equality:>
 structure Unknown =
    struct
       datatype t = T of {canGeneralize: bool,
-			 id: int,
-			 time: Time.t ref}
+			 id: int}
 
-      local
-	 fun make f (T r) = f r
-      in
-	 val time = ! o (make #time)
-      end
-
-      fun layout (T {canGeneralize, id, time, ...}) =
+      fun layout (T {canGeneralize, id, ...}) =
 	 let
 	    open Layout
 	 in
 	    seq [str "Unknown ",
 		 record [("canGeneralize", Bool.layout canGeneralize),
-			 ("id", Int.layout id),
-			 ("time", Time.layout (!time))]]
+			 ("id", Int.layout id)]]
 	 end
-
-      fun minTime (T {time, ...}, t) =
-	 if Time.<= (!time, t)
-	    then ()
-	 else time := t
 
       fun layoutPretty (T {id, ...}) =
 	 let
@@ -274,13 +284,11 @@ structure Unknown =
 
       fun new {canGeneralize} =
 	 T {canGeneralize = canGeneralize,
-	    id = newId (),
-	    time = ref (Time.now ())}
+	    id = newId ()}
 
       fun join (T r, T r'): t =
 	 T {canGeneralize = #canGeneralize r andalso #canGeneralize r',
-	    id = newId (),
-	    time = ref (Time.min (! (#time r), ! (#time r')))}
+	    id = newId ()}
    end
 
 (* Flexible record spine, i.e. a possibly extensible list of fields. *)
@@ -396,12 +404,12 @@ structure Type =
        *)
       datatype t = T of {equality: Equality.t,
 			 plist: PropertyList.t,
+			 time: Time.t ref,
 			 ty: ty} Set.t
       and ty =
 	 Con of Tycon.t * t vector
 	| FlexRecord of {fields: fields,
-			 spine: Spine.t,
-			 time: Time.t ref}
+			 spine: Spine.t}
 	(* GenFlexRecord only appears in type schemes.
 	 * It will never be unified.
 	 * The fields that are filled in after generalization are stored in
@@ -442,11 +450,10 @@ structure Type =
 	       Con (c, ts) =>
 		  paren (align [seq [str "Con ", Tycon.layout c],
 				Vector.layout layout ts])
-	     | FlexRecord {fields, spine, time} =>
+	     | FlexRecord {fields, spine} =>
 		  seq [str "Flex ",
 		       record [("fields", layoutFields fields),
-			       ("spine", Spine.layout spine),
-			       ("time", Time.layout (!time))]]
+			       ("spine", Spine.layout spine)]]
 	     | GenFlexRecord {fields, spine, ...} =>
 		  seq [str "GenFlex ",
 		       record [("fields", layoutFields fields),
@@ -520,10 +527,9 @@ structure Type =
 					 if expandOpaque then yes () else no ()
 				      end
 				 | Int => int t
-				 | FlexRecord {fields, spine, time} =>
+				 | FlexRecord {fields, spine} =>
 				      flexRecord (t, {fields = loopFields fields,
-						      spine = spine,
-						      time = time})
+						      spine = spine})
 				 | GenFlexRecord {extra, fields, spine} =>
 				      genFlexRecord
 				      (t, {extra = extra,
@@ -563,7 +569,7 @@ structure Type =
 	    fun maybeParen (b, t) = if b then Layout.paren t else t
 	    fun con (_, c, ts) = Tycon.layoutApp (c, ts)
 	    fun int _ = simple (str "int")
-	    fun flexRecord (_, {fields, spine, time}) =
+	    fun flexRecord (_, {fields, spine}) =
 	       layoutRecord
 	       (List.fold
 		(fields,
@@ -659,6 +665,7 @@ structure Type =
       fun newTy (ty: ty, eq: Equality.t): t =
 	 T (Set.singleton {equality = eq,
 			   plist = PropertyList.new (),
+			   time = ref (Time.now ()),
 			   ty = ty})
 
       fun unknown {canGeneralize, equality} =
@@ -675,8 +682,7 @@ structure Type =
 
       fun newFlex {fields, spine} =
 	 newTy (FlexRecord {fields = fields,
-			    spine = spine,
-			    time = ref (Time.now ())},
+			    spine = spine},
 		Equality.and2
 		(Equality.andd (Vector.fromListMap (fields, equality o #2)),
 		 Equality.unknown ()))
@@ -713,34 +719,6 @@ structure Type =
       val string = con (Tycon.vector, Vector.new1 char)
 
       fun var a = newTy (Var a, Equality.fromBool (Tyvar.isEquality a))
-
-      fun tyconsCreatedAfter (t: t, time: Time.t): Tycon.t list =
-	 let
-	    val tycons = ref []
-	    fun con (_, c, _) =
-	       let
-		  val {creation, ...} = tyconInfo c
-	       in
-		  if Time.<= (time, creation)
-		     andalso not (List.exists (!tycons, fn c' =>
-					       Tycon.equals (c, c')))
-		     then List.push (tycons, c)
-		  else ()
-	       end
-	    val _ = hom (t, {con = con,
-			     expandOpaque = false,
-			     flexRecord = fn _ => (),
-			     genFlexRecord = fn _ => (),
-			     int = fn _ => (),
-			     real = fn _ => (),
-			     record = fn _ => (),
-			     recursive = fn _ => (),
-			     unknown = fn _ => (),
-			     var = fn _ => (),
-			     word = fn _ => ()})
-	 in
-	    !tycons
-	 end
    end
 
 fun setOpaqueTyconExpansion (c, f) =
@@ -848,26 +826,60 @@ structure Type =
 	  | Word => 0 = Vector.length ts andalso Tycon.isWordX c
 	  | _ => false
 
-      fun minTime (t, time) =
+      (* minTime (t, bound) ensures that all components of t have times no larger
+       * than bound.  It calls the appropriate error function when it encounters
+       * a tycon that is used before it defined.
+       *)
+      fun minTime (t, bound: Time.t): unit =
 	 let
-	    fun doit r =
-	       if Time.<= (!r, time)
-		  then ()
-	       else r := time
-	    fun var (_, a) = doit (tyvarTime a)
-	    val _ =
-	       hom
-	       (t, {con = fn _ => (),
-		    expandOpaque = false,
-		    flexRecord = fn (_, {time = r, ...}) => doit r,
-		    genFlexRecord = fn _ => (),
-		    int = fn _ => (),
-		    real = fn _ => (),
-		    record = fn _ => (),
-		    recursive = fn _ => (),
-		    unknown = fn (_, u) => Unknown.minTime (u, time),
-		    var = var,
-		    word = fn _ => ()})
+	    fun loop (T s): unit =
+	       let
+		  val {time, ty, ...} = Set.value s
+	       in
+		  if Time.<= (!time, bound)
+		     then ()
+		  else
+		     let
+			val _ = time := bound
+		     in
+			case ty of
+			   Con (c, ts) =>
+			      let
+				 val r = tyconTime c
+				 val _ =
+				    if Time.<= (!r, bound)
+				       then ()
+				    else
+				       let
+					  val _ = r := bound
+					  val _ = Time.useBeforeDef (bound, c)
+				       in
+					  ()
+				       end
+				 val _ = Vector.foreach (ts, loop)
+			      in
+				 ()
+			      end
+			 | FlexRecord {fields, ...} => loopFields fields
+			 | GenFlexRecord {fields, ...} => loopFields fields
+			 | Int => ()
+			 | Real => ()
+			 | Record r => Srecord.foreach (r, loop)
+			 | Unknown _ => ()
+			 | Var a =>
+			      let
+				 val r = tyvarTime a
+			      in
+				 if Time.<= (!r, bound)
+				    then ()
+				 else r := bound
+			      end
+			 | Word => ()
+		     end
+	       end
+	    and loopFields (fs: (Field.t * t) list) =
+	       List.foreach (fs, loop o #2)
+	    val _ = loop t
 	 in
 	    ()
 	 end
@@ -876,7 +888,7 @@ structure Type =
 
       val traceUnify = Trace.trace2 ("unify", layout, layout, UnifyResult.layout)
 
-      fun unify (t, t', preError: unit -> unit): UnifyResult.t =
+      fun unify (t, t', {preError}): UnifyResult.t =
 	 let
 	    val {destroy, lay = layoutPretty} = makeLayoutPretty ()
 	    val dontCare' =
@@ -919,23 +931,21 @@ structure Type =
 			 (Srecord.toVector r,
 			  Vector.new0 (),
 			  fn f => isSome (Srecord.peek (r, f)))
-		      fun oneFlex ({fields, spine, time}, r, outer, swap) =
-			 let
-			    val _ = minTime (outer, !time)
-			 in
-			    unifyRecords
-			    (flexToRecord (fields, spine),
-			     rigidToRecord r,
-			     fn () => (Spine.noMoreFields spine
-				       ; (Unified, Record r)),
-			     fn (l, l') => notUnifiable (if swap
-							    then (l', l)
-							 else (l, l')))
-			 end
+		      fun oneFlex ({fields, spine}, time, r, outer, swap) =
+			 unifyRecords
+			 (flexToRecord (fields, spine),
+			  rigidToRecord r,
+			  fn () => (minTime (outer, time)
+				    ; Spine.noMoreFields spine
+				    ; (Unified, Record r)),
+			  fn (l, l') => notUnifiable (if swap
+							 then (l', l)
+						      else (l, l')))
 		      fun genFlexError () =
 			 Error.bug "GenFlexRecord seen in unify"
-		      val {equality = e, ty = t, plist} = Set.value s
-		      val {equality = e', ty = t', ...} = Set.value s'
+		      val {equality = e, time, ty = t, plist} = Set.value s
+		      val {equality = e', time = time', ty = t', ...} =
+			 Set.value s'
 		      fun not () =
 			 (preError ()
 			  ; notUnifiableBracket (layoutPretty outer,
@@ -1019,49 +1029,28 @@ structure Type =
 				  else not ()
 			     | _ => not ()
 			 end
-		      fun oneUnknown (u, t, outer, swap) =
+		      fun oneUnknown (u, time, t, outer, swap) =
 			 let
-			    val time = Unknown.time u
 			    val _ = minTime (outer, time)
-			    val cs = tyconsCreatedAfter (outer, time)
-			    val n = List.length cs
 			 in
-			    if n = 0
-			       then (Unified, t)
-			    else
-			       let
-				  val _ = preError ()
-				  open Layout
-				  val l =
-				     Lay.simple
-				     (seq [str (concat ["<can not contain type",
-							if n > 1 then "s "
-							else " "]),
-					   seq (separate
-						(List.map (cs, Tycon.layout),
-						 ", ")),
-					   str " due to use before def>"])
-				  val l' = layoutPretty outer
-				  val (l, l') = if swap then (l', l) else (l, l')
-			       in
-				  notUnifiableBracket (l, l')
-			       end
+			    (Unified, t)
 			 end
 		      val (res, t) =
 			 case (t, t') of
 			    (Unknown r, Unknown r') =>
 			       (Unified, Unknown (Unknown.join (r, r')))
-			  | (Unknown u, _) => oneUnknown (u, t', outer', false)
-			  | (_, Unknown u) => oneUnknown (u, t, outer, true)
+			  | (Unknown u, _) =>
+			       oneUnknown (u, !time, t', outer', false)
+			  | (_, Unknown u') =>
+			       oneUnknown (u', !time', t, outer, true)
 			  | (Con (c, ts), _) => conAnd (c, ts, t', t, false)
 			  | (_, Con (c, ts)) => conAnd (c, ts, t, t', true)
-			  | (FlexRecord f, Record r) =>
-			       oneFlex (f, r, outer', false)
-			  | (Record r, FlexRecord f) =>
-			       oneFlex (f, r, outer, true)
-			  | (FlexRecord {fields = fields, spine = s, time = t},
-			     FlexRecord {fields = fields', spine = s',
-					 time = t', ...}) =>
+			  | (FlexRecord f, Record r') =>
+			       oneFlex (f, !time, r', outer', false)
+			  | (Record r, FlexRecord f') =>
+			       oneFlex (f', !time', r, outer, true)
+			  | (FlexRecord {fields = fields, spine = s},
+			     FlexRecord {fields = fields', spine = s'}) =>
 			    let
 			       fun yes () =
 				  let
@@ -1075,10 +1064,8 @@ structure Type =
 					 else (f, t) :: ac)
 				  in
 				     (Unified,
-				      FlexRecord
-				      {fields = fields,
-				       spine = s,
-				       time = ref (Time.min (!t, !t'))})
+				      FlexRecord {fields = fields,
+						  spine = s})
 				  end
 			    in
 			       unifyRecords
@@ -1124,11 +1111,22 @@ structure Type =
 				  val _ =
 				     case res of
 					NotUnifiable _ => ()
-				      | Unified => 
-					   (Set.union (s, s')
-					    ;  Set.setValue (s, {equality = e,
-								 plist = plist,
-								 ty = t}))
+				      | Unified =>
+					   let
+					      val _ = Set.union (s, s')
+					      val _ =
+						 if Time.<= (!time, !time')
+						    then ()
+						 else time := !time'
+					      val _ =
+						 Set.setValue
+						 (s, {equality = e,
+						      plist = plist,
+						      time = time,
+						      ty = t})
+					   in
+					      ()
+					   end
 			       in
 				  res
 			       end
@@ -1217,8 +1215,8 @@ structure Type =
       datatype unifyResult = datatype UnifyResult'.t
 
       val unify =
-	 fn (t, t', preError) =>
-	 case unify (t, t', preError) of
+	 fn (t, t', z) =>
+	 case unify (t, t', z) of
 	    UnifyResult.NotUnifiable ((l, _), (l', _)) => NotUnifiable (l, l')
 	  | UnifyResult.Unified => Unified
 
@@ -1248,7 +1246,7 @@ structure Type =
 			 List.fold
 			 (extra (), fields, fn ({field, tyvar}, ac) =>
 			  (field, var (Type.var tyvar, tyvar)) :: ac))
-	    fun flexRecord (t, {fields, spine, time}) =
+	    fun flexRecord (t, {fields, spine}) =
 	       if Spine.canAddFields spine
 		  then Error.bug "Type.hom flexRecord"
 	       else unsorted (t,
@@ -1257,7 +1255,8 @@ structure Type =
 			       (f, unit) :: ac))
 	    fun recursive t = Error.bug "Type.hom recursive"
 	    fun default (t, tycon) =
-	       fn t' => (unify (t, t', fn _ => Error.bug "default unify")
+	       fn t' => (unify (t, t',
+				{preError = fn _ => Error.bug "default unify"})
 			 ; con (t, tycon, Vector.new0 ()))
 	    val int = default (int IntSize.default, Tycon.defaultInt)
 	    val real = default (real RealSize.default, Tycon.defaultReal)
@@ -1504,7 +1503,7 @@ fun close (ensure: Tyvar.t vector, region)
    : Type.t vector -> {bound: unit -> Tyvar.t vector,
 		       schemes: Scheme.t vector} =
    let
-      val genTime = Time.tick ()
+      val genTime = Time.now ()
       val _ = Vector.foreach (ensure, fn a => (tyvarTime a; ()))
    in
       fn tys =>
@@ -1527,69 +1526,87 @@ fun close (ensure: Tyvar.t vector, region)
 		      empty)
 		  end
 	    else ()
+	 val flexes = ref []
+	 val tyvars = ref (Vector.toList ensure)
 	 (* Convert all the unknown types bound at this level into tyvars. *)
-	 val (tyvars, ac) =
-	    List.fold
-	    (!Type.freeUnknowns, (Vector.toList ensure, []),
-	     fn (t, (tyvars, ac)) =>
-	     case Type.toType t of
-		Type.Unknown (Unknown.T {canGeneralize, time, ...}) =>
-		   if canGeneralize andalso Time.<= (genTime, !time)
-		      then
-			 let
-			    val equality = Type.equality t
-			    val b =
-			       case Equality.toBoolOpt equality of
-				  NONE =>
-				     (Equality.unify (equality, Equality.falsee)
-				      ; false)
-				| SOME b => b
-			    val a = Tyvar.newNoname {equality = b}
-			    val _ = Type.set (t, {equality = equality,
-						  plist = PropertyList.new (),
-						  ty = Type.Var a})
-			 in
-			    (a :: tyvars, ac)
-			 end
-		   else (tyvars, t :: ac)
-	      | _ => (tyvars, ac))
-	 val _ = Type.freeUnknowns := ac
+	 fun unknown (Type.T s, u as Unknown.T {canGeneralize, ...}) =
+	    let
+	       val {equality, time, ty, ...} = Set.value s
+	    in
+	       if canGeneralize andalso Time.<= (genTime, !time)
+		  then
+		     let
+			val b =
+			   case Equality.toBoolOpt equality of
+			      NONE =>
+				 (Equality.unify (equality, Equality.falsee)
+				  ; false)
+			    | SOME b => b
+			val a = Tyvar.newNoname {equality = b}
+			val _ = List.push (tyvars, a)
+			val _ =
+			   Set.setValue (s, {equality = equality,
+					     plist = PropertyList.new (),
+					     time = time,
+					     ty = Type.Var a})
+		     in
+			()
+		     end
+	       else ()
+	    end
 	 (* Convert all the FlexRecords bound at this level into GenFlexRecords.
 	  *)
-	 val (flexes, ac) =
-	    List.fold
-	    (!Type.freeFlexes, ([], []), fn (t as Type.T s, (flexes, ac)) =>
-	     let
-		val {equality, plist, ty} = Set.value s
-	     in
-		case ty of
-		   Type.FlexRecord {fields, spine, time, ...} =>
-		      if Time.<= (genTime, !time)
-			 then
-			    let
-			       val extra =
-				  Promise.lazy
-				  (fn () =>
-				   Spine.foldOverNew
-				   (spine, fields, [], fn (f, ac) =>
-				    {field = f,
-				     tyvar = Tyvar.newNoname {equality = false}}
-				    :: ac))
-			       val gfr = {extra = extra,
-					  fields = fields,
-					  spine = spine}
-			       val _ = 
-				  Set.setValue
-				  (s, {equality = equality,
-				       plist = plist,
-				       ty = Type.GenFlexRecord gfr})
-			    in
-			       (gfr :: flexes, ac)
-			    end
-		      else (flexes, t :: ac)
-                  | _ => (flexes, ac)
-	     end)
-	 val _ = Type.freeFlexes := ac
+	 fun flexRecord (Type.T s, {fields, spine}): unit =
+	    let
+	       val {equality, plist, time, ty} = Set.value s
+	    in
+	       if Time.<= (genTime, !time)
+		  then
+		     let
+			val fields =
+			   case ty of
+			      Type.FlexRecord {fields, ...} => fields
+			    | _ => Error.bug "close flexRecord"
+			val extra =
+			   Promise.lazy
+			   (fn () =>
+			    Spine.foldOverNew
+			    (spine, fields, [], fn (f, ac) =>
+			     {field = f,
+			      tyvar = Tyvar.newNoname {equality = false}}
+			     :: ac))
+			val gfr = {extra = extra,
+				   fields = fields,
+				   spine = spine}
+			val _ = List.push (flexes, gfr)
+			val _ = 
+			   Set.setValue
+			   (s, {equality = equality,
+				plist = plist,
+				time = time,
+				ty = Type.GenFlexRecord gfr})
+		     in
+			()
+		     end
+	       else ()
+	    end
+	 fun ignore _ = ()
+	 val {destroy, hom} =
+	    Type.makeHom {con = ignore,
+			  expandOpaque = false,
+			  flexRecord = flexRecord,
+			  genFlexRecord = ignore,
+			  int = ignore,
+			  real = ignore,
+			  record = ignore,
+			  recursive = ignore,
+			  unknown = unknown,
+			  var = ignore,
+			  word = ignore}
+	 val _ = Vector.foreach (tys, hom)
+	 val _ = destroy ()
+	 val flexes = !flexes
+	 val tyvars = !tyvars
 	 (* For all fields that were added to the generalized flex records, add
 	  * a type variable.
 	  *)
@@ -1703,10 +1720,11 @@ structure Type =
 	 end
 
       val unify =
-	 fn (t1: t, t2: t, preError: unit -> unit,
-	     f: Layout.t * Layout.t -> Region.t * Layout.t * Layout.t) =>
-	 case unify (t1, t2, preError) of
-	    NotUnifiable z => Control.error (f z)
+	 fn (t1: t, t2: t,
+	     {error: Layout.t * Layout.t -> Region.t * Layout.t * Layout.t,
+	      preError: unit -> unit}) =>
+	 case unify (t1, t2, {preError = preError}) of
+	    NotUnifiable z => Control.error (error z)
 	  | Unified => ()
    end
 

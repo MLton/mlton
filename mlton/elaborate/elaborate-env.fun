@@ -257,11 +257,6 @@ val newTycon: string * Kind.t * AdmitsEquality.t -> Tycon.t =
    let
       val c = Tycon.fromString s
       val _ = TypeEnv.initAdmitsEquality (c, a)
-      (* The tick is after initAdmitsEquality so that any unknowns subsequently
-       * created will have a later time than the tycon, and hence can be
-       * unified with it.
-       *)
-      val _ = TypeEnv.Time.tick ()
       val _ = List.push (allTycons, c)
       val _ = List.push (newTycons, (c, k))
    in
@@ -996,14 +991,14 @@ fun extendExn (E, c, c', s) =
 fun extendVar (E, x, x', s) =
    extendVals (E, Ast.Vid.fromVar x, (Vid.Var x', s))
 
-fun extendOverload (E, p, x, yts, s) =
-   extendVals (E, Ast.Vid.fromVar x, (Vid.Overload (p, yts), s))
-
 val extendVar =
    Trace.trace4
    ("extendVar", Layout.ignore, Ast.Var.layout, Var.layout, Scheme.layoutPretty,
     Unit.layout)
    extendVar
+
+fun extendOverload (E, p, x, yts, s) =
+   extendVals (E, Ast.Vid.fromVar x, (Vid.Overload (p, yts), s))
 
 (* ------------------------------------------------- *)   
 (*                       local                       *)
@@ -1411,6 +1406,17 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 	       Vector.tabulate
 	       (Vector.length tyvars', fn _ =>
 		Type.var (Tyvar.newNoname {equality = false}))
+	    fun error (l1, l2) =
+	       let
+		  open Layout
+	       in
+		  (r,
+		   seq [str (concat [thing, " in structure disagrees with ",
+				     sign])],
+		   align [seq [str (concat [name, ": "]), lay ()],
+			  seq [str "structure: ", l1],
+			  seq [str "signature: ", l2]])
+	       end
 	 in
 	    Type.unify
 	    (Scheme.apply (s, tyvars),
@@ -1418,18 +1424,8 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 					ty = ty',
 					tyvars = tyvars'},
 			   tyvars),
-	     preError,
-	     fn (l1, l2) =>
-	     let
-		open Layout
-	     in
-		(r,
-		 seq [str (concat [thing, " in structure disagrees with ",
-				   sign])],
-		 align [seq [str (concat [name, ": "]), lay ()],
-			seq [str "structure: ", l1],
-			seq [str "signature: ", l2]])
-	     end)
+	     {error = error,
+	      preError = preError})
 	 end
       val equalSchemes =
 	 Trace.trace
@@ -1620,21 +1616,20 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 		     let
 			val (tyvars, t) = Scheme.dest s
 			val {args, instance = t'} = Scheme.instantiate s'
-			val _ =
-			   Type.unify
-			   (t, t', preError, fn (l, l') =>
-			    let
-			       open Layout
-			    in
-			       (region,
-				seq [str "variable type in structure disagrees with ", str sign],
-				align [seq [str "variable: ",
-					    Longvid.layout	
-					    (Longvid.long
-					     (rev strids, name))],
-				       seq [str "structure: ", l'],
-				       seq [str "signature: ", l]])
-			    end)
+			fun error (l, l') =
+			   let
+			      open Layout
+			   in
+			      (region,
+			       seq [str "variable type in structure disagrees with ", str sign],
+			       align [seq [str "variable: ",
+					   Longvid.layout	
+					   (Longvid.long (rev strids, name))],
+				      seq [str "structure: ", l'],
+				      seq [str "signature: ", l]])
+			   end
+			val _ = Type.unify (t, t', {error = error,
+						    preError = preError})
 			fun addDec (n: Exp.node): Vid.t =
 			   let
 			      val x = Var.newNoname ()
@@ -1851,6 +1846,11 @@ fun functorClosure
     argInt: Interface.t,
     makeBody: Structure.t * string list -> Decs.t * Structure.t) =
    let
+      (* Need to tick here so that any tycons created in the dummy structure
+       * for the functor formal have a new time, and will therefore report an
+       * error if they occur before the functor declaration.
+       *)
+      val _ = TypeEnv.tick {useBeforeDef = fn _ => Error.bug "functor tick"}
       val (formal, instantiate) = dummyStructure (E, prefix, argInt)
       val _ = useFunctorSummary := true
       (* Keep track of all tycons created during the instantiation of the
