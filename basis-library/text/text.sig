@@ -1,12 +1,24 @@
 signature TEXT =
    sig
       structure Char: CHAR
+      structure CharArray: MONO_ARRAY
+      structure CharArraySlice: MONO_ARRAY_SLICE
+      structure CharVector: MONO_VECTOR
+      structure CharVectorSlice: MONO_VECTOR_SLICE
       structure String: STRING
       structure Substring: SUBSTRING
-      structure CharVector: MONO_VECTOR
-      structure CharArray: MONO_ARRAY
-      sharing type Char.char = String.char = Substring.char
-	= CharVector.elem = CharArray.elem
-      sharing type Char.string = String.string = Substring.string
-	= CharVector.vector = CharArray.vector
+      sharing type Char.char
+	 = CharArray.elem
+	 = CharArraySlice.elem
+	 = CharVector.elem
+	 = CharVectorSlice.elem
+	 = String.char
+	 = Substring.char
+      sharing type Char.string
+	 = CharArraySlice.vector
+	 = CharVector.vector
+	 = CharArray.vector
+	 = CharVectorSlice.vector
+	 = String.string
+	 = Substring.string
    end

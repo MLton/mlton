@@ -2,6 +2,7 @@ Here are the changes since version 20030716.
 
 * 2003-09-11
   - Added Real.realRound.
+  - Added Char{Array,Vector}Slice to Text.
 
 * 2003-09-11
   - OS.IO.poll and Socket.select now raise errors on negative
