@@ -162,11 +162,6 @@ fun restoreFunction (globals: Statement.t vector)
 	= Property.get
 	  (Label.plist, Property.initFun (fn _ => LabelInfo.new ()))
 
-      fun cleanup f
-	= (Vector.foreach (globals, fn Statement.T {var, ...} =>
-			   Option.app (var, remVarInfo));
-	   Function.clear f)
-
       fun mkQueue ()
 	= let
 	    val todo = ref []
@@ -194,29 +189,36 @@ fun restoreFunction (globals: Statement.t vector)
 	    {addPost = fn th => List.push (post, th),
 	     post = fn () => List.foreach(!post, fn th => th ())}
 	  end
+
+      val violations = ref []
+      fun addDef (x, ty) 
+	= let
+	    val vi = varInfo x
+	  in
+	    if VarInfo.violates vi
+	      then ()
+	      else (VarInfo.ty vi := ty ;
+		    VarInfo.addDef vi ;
+		    if VarInfo.violates vi
+		      then List.push (violations, x)
+		      else ())
+	  end
+
+      (* check for violations in globals *)
+      val _ = Vector.foreach
+	      (globals, fn Statement.T {var, ty, ...} =>
+	       Option.app (var, fn x => addDef (x, ty)))
+      val _ = if List.length (!violations) = 0
+		then ()
+		else Error.bug "Restore.restore: violation in globals"
     in
       fn (f: Function.t) =>
       let
 	val {name, args, start, blocks, returns, raises} = Function.dest f
 
 	(* check for violations *)
-	val violations = ref []
-	fun addDef (x, ty) 
-	  = let
-	      val vi = varInfo x
-	    in
-	      if VarInfo.violates vi
-		then ()
-		else (VarInfo.ty vi := ty ;
-		      VarInfo.addDef vi ;
-		      if VarInfo.violates vi
-			then List.push (violations, x)
-			else ())
-	    end
-	fun checkViolations ()
-	  = (Vector.foreach(globals, fn Statement.T {var, ty, ...} =>
-			    Option.app (var, fn x => addDef (x, ty)));
-	     Function.foreachVar (f, addDef))
+	val _ = violations := []
+	fun checkViolations () = Function.foreachVar (f, addDef)
 	val checkViolations = Control.trace (Control.Detail, "checkViolations")
 	                                    checkViolations
 	val _ = checkViolations ()
@@ -732,11 +734,8 @@ fun restoreFunction (globals: Statement.t vector)
 	      (block, post)
 	    end
 	fun visitBlock block
-	  = let 
-	      val (block, post) = visitBlock' block
-	    in
-	      List.push (blocks, block) ;
-	      post
+	  = let val (block, post) = visitBlock' block
+	    in List.push (blocks, block) ; post
 	    end
 	fun rewrite ()
 	  = let
@@ -765,12 +764,10 @@ fun restoreFunction (globals: Statement.t vector)
 	val rewrite = Control.trace (Control.Detail, "rewrite")
                                     rewrite
 	val f = rewrite ()
-
-	val _ = cleanup f
       in
 	f
       end
-      handle NoViolations => (cleanup f; f)
+      handle NoViolations => f
     end
 
 val traceRestoreFunction
