@@ -61,8 +61,8 @@ signature CPS_TREE =
 	 end
       sharing Atoms = Type.Atoms
 
-      structure Func: ID
-      structure Jump: ID
+      structure Func: HASH_ID
+      structure Jump: HASH_ID
 
       structure PrimInfo:
 	 sig

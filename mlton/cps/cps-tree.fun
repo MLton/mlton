@@ -503,7 +503,11 @@ structure Exp =
 			      (rev decs, [], fn (d, ac) =>
 			       case d of
 				  Dec.Bind b => Bind.layout b :: ac
-				| Dec.Fun _ => ac
+				| Dec.Fun {name, ...} => 
+				     seq [str "fun ",
+					  Jump.layout name,
+					  str " = ..."] ::
+				     ac
 				| Dec.HandlerPush h =>
 				     seq [str "val _ = HandlerPush ",
 					  Jump.layout h]
