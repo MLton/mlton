@@ -458,21 +458,37 @@ struct
 	  = fn Assembly.Instruction (Instruction.BinAL
 				     {oper,
 				      ...})
-	     => (oper = Instruction.ADD)
-	        orelse
-		(oper = Instruction.ADC)
-		orelse
-		(oper = Instruction.AND)
-		orelse
-		(oper = Instruction.OR)
-		orelse
-		(oper = Instruction.XOR)
+	     => ((oper = Instruction.ADD)
+		 orelse
+		 (oper = Instruction.ADC)
+		 orelse
+		 (oper = Instruction.AND)
+		 orelse
+		 (oper = Instruction.OR)
+		 orelse
+		 (oper = Instruction.XOR))
+	        andalso
+		(case (Operand.deMemloc src,
+		       Operand.deMemloc dst)
+		   of (SOME src, SOME dst)
+		    => not (MemLoc.mayAlias(src, dst))
+		       andalso
+		       not (List.contains(MemLoc.utilized src, dst, MemLoc.eq))
+	            | _ => true)
 	     | Assembly.Instruction (Instruction.pMD
 				     {oper,
 				      ...})
-	     => (oper = Instruction.IMUL)
-	        orelse
-		(oper = Instruction.MUL)
+	     => ((oper = Instruction.IMUL)
+		 orelse
+		 (oper = Instruction.MUL))
+		andalso
+		(case (Operand.deMemloc src,
+		       Operand.deMemloc dst)
+		   of (SOME src, SOME dst)
+		    => not (MemLoc.mayAlias(src, dst))
+		       andalso
+		       not (List.contains(MemLoc.utilized src, dst, MemLoc.eq))
+	            | _ => true)
 	     | _ => false
 
 	val template : template
