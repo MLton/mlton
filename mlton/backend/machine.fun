@@ -452,8 +452,9 @@ structure Statement =
 	  ; AllocateArray {user = user, limitCheck = ref NONE})
 	 
       fun moves {srcs, dsts} =
-	 List.map2 (srcs, dsts, fn (src, dst) =>
-		    move {src = src, dst = dst})
+	 rev (Vector.fold2
+	      (srcs, dsts, [], fn (src, dst, ac)  =>
+	       move {src = src, dst = dst} :: ac))
    end
 
 (* ------------------------------------------------- *)

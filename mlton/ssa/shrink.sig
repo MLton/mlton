@@ -1,6 +1,9 @@
 (* Copyright (C) 1997-1999 NEC Research Institute.
  * Please see the file LICENSE for license information.
  *)
+type int = Int.t
+type word = Word.t
+   
 signature SHRINK_STRUCTS = 
    sig
       include TYPE_CHECK

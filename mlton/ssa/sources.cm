@@ -31,8 +31,6 @@ flat-lattice.fun
 flat-lattice.sig
 global.fun
 global.sig
-implement-handlers.fun
-implement-handlers.sig
 inline.fun
 inline.sig
 introduce-loops.fun

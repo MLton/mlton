@@ -72,9 +72,10 @@ fun returnsTo (Program.T {functions, ...}) =
 	     (blocks, fn Block.T {transfer, ...} =>
 	      case transfer of
 		 Call {func, return, ...} => (case return of
-						 NONE => tailCall (name, func)
-					       | SOME {cont, ...} =>
-						    returnTo (func, cont))
+						 Return.NonTail {cont, ...} =>
+						    returnTo (func, cont)
+					       | _ => tailCall (name, func))
+
 	       | _ => ())
 	  end)
    in

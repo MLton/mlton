@@ -33,14 +33,13 @@ fun new () = T {lessThan = ref [],
 
 fun up (T {lessThan, upperBound, value, ...}, e: Elt.t): bool =
    let
-      val e' = !value
       fun continue e = List.forall (!lessThan, fn z => up (z, e))
       fun setTop () =
 	 not (isSome (!upperBound))
 	 andalso (value := Top
 		  ; continue Top)
    in
-      case (e, e') of
+      case (!value, e) of
 	 (_, Bottom) => true
        | (Top, _) => true
        | (_, Top) => setTop ()

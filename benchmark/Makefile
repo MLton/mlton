@@ -1,5 +1,5 @@
 NAME = benchmark
-MLTON = mlton-stable
+MLTON = mlton
 FLAGS =
 PATH = $(shell cd ../../bin && pwd):$(shell echo $$PATH)
 
@@ -36,6 +36,7 @@ BENCH = barnes-hut checksum count-graphs DLXSimulator fft fib hamlet knuth-bendi
 
 BFLAGS = -mlton "mlton" -mlkit -mosml -smlnj
 BFLAGS = -mlton "mlton"
+BFLAGS = -mlton "/usr/local/bin/mlton" -mlton "mlton -optimize-ssa {false,true}"
 
 .PHONY: test
 test: $(NAME)

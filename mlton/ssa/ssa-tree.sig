@@ -85,14 +85,15 @@ signature SSA_TREE =
 			       ty: Type.t,
 			       exp: Exp.t}
 
+	    val exp: t -> Exp.t
 	    val layout: t -> Layout.t
 	    val mayAllocate: t -> bool
-	    val setHandler: Label.t -> t
+	    val prettifyGlobals: t vector -> (Var.t -> string option)
 	    val setExnStackLocal: t
 	    val setExnStackSlot: t
+	    val setHandler: Label.t -> t
 	    val setSlotExnStack: t
 	    val var: t -> Var.t option
-	    val exp: t -> Exp.t
 	 end
       
       structure Cases: CASES sharing type Cases.con = Con.t
@@ -101,34 +102,36 @@ signature SSA_TREE =
 	 sig
 	    datatype t =
 	       CallerHandler
-	     | Handle of Label.t
 	     | None
+	     | Handle of Label.t
 
 	    val equals: t * t -> bool
 	    val foreachLabel: t * (Label.t -> unit) -> unit
 	    val layout: t -> Layout.t
 	    val map: t * (Label.t -> Label.t) -> t
 	 end
+
+      structure Return:
+	 sig
+	    datatype t =
+	       Dead
+	     | HandleOnly
+	     | NonTail of {cont: Label.t, handler: Handler.t}
+	     | Tail
+
+	    val compose: t * t -> t
+	    val foreachLabel: t * (Label.t -> unit) -> unit
+	    val isNonTail: t -> bool
+	    val layout: t -> Layout.t
+	 end
       
       structure Transfer:
 	 sig
 	    datatype t =
 	       Bug  (* MLton thought control couldn't reach here. *)
-	     | Call of {
-			func: Func.t,
+	     | Call of {func: Func.t,
 			args: Var.t vector,
-			(* Return specifies the continuation of the call.
-			 * NONE means a tail-call.
-			 * SOME {cont, handler} means a nontail-call, where cont
-			 * is the label that should be returned to for a normal
-			 * return, and handler is the label that should be
-			 * returned to for an exception.  If handler = NONE,
-			 * then, the current handler (for the caller of the
-			 * current function) should be preserved for the nontail
-			 * call.
-			 *)
-			return: {cont: Label.t,
-				 handler: Handler.t} option}
+			return: Return.t}
 	     | Case of {
 			test: Var.t,
 			cases: Label.t Cases.t,
@@ -146,10 +149,11 @@ signature SSA_TREE =
 	       (* Raise implicitly raises to the caller.  I.E. the local handler
 		* stack must be empty.
 		*)
-	     | Raise of Var.t
+	     | Raise of Var.t vector
 	     | Return of Var.t vector
 
 	    val foreachLabel: t * (Label.t -> unit) -> unit
+	    val foreachLabelVar: t * (Label.t -> unit) * (Var.t -> unit) -> unit
 	    val foreachVar: t * (Var.t -> unit) -> unit
 	    val layout: t -> Layout.t
 	    val replaceVar: t * (Var.t -> Var.t) -> t
@@ -165,8 +169,10 @@ signature SSA_TREE =
 		     transfer: Transfer.t
 		     }
 
+	    val args: t -> (Var.t * Type.t) vector
 	    val clear: t -> unit
 	    val label: t -> Label.t
+	    val transfer: t -> Transfer.t
 	 end
 
       structure Datatype:
@@ -196,17 +202,27 @@ signature SSA_TREE =
 				   nodeBlock: DirectedGraph.Node.t -> Block.t}
 	    val dest: t -> {args: (Var.t * Type.t) vector,
 			    blocks: Block.t vector,
+			    mayRaise: bool,
 			    name: Func.t,
-			    returns: Type.t vector,
+			    returns: Type.t vector option,
 			    start: Label.t}
 	    val dfsTree: t -> Block.t Tree.t
 	    val dominatorTree: t -> Block.t Tree.t
+	    val foreachVar: t * (Var.t * Type.t -> unit) -> unit
+	    (* inferHandlers uses the HandlerPush and HandlerPop statements
+	     * to infer the handler stack at the beginning of each block.
+	     *)
+	    val inferHandlers: t -> Label.t list option array
 	    val layout: t * (Var.t -> string option) -> Layout.t
+	    val layoutDot:
+	       t * (Var.t -> string option) -> {graph: Layout.t,
+						tree: unit -> Layout.t}
 	    val name: t -> Func.t
 	    val new: {args: (Var.t * Type.t) vector,
 		      blocks: Block.t vector,
+		      mayRaise: bool,
 		      name: Func.t,
-		      returns: Type.t vector,
+		      returns: Type.t vector option,
 		      start: Label.t} -> t
 	    val start: t -> Label.t
 	 end

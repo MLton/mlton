@@ -2,6 +2,7 @@ functor ImplementHandlers (S: IMPLEMENT_HANDLERS_STRUCTS): IMPLEMENT_HANDLERS =
 struct
 
 open S
+open Ssa
 datatype z = datatype Exp.t
 datatype z = datatype Transfer.t
 
@@ -23,7 +24,7 @@ fun doit (Program.T {datatypes, globals, functions, main}) =
    let
       fun implementFunction (f: Function.t): Function.t =
 	 let
-	    val {args, blocks, name, returns, start} = Function.dest f
+	    val {args, blocks, mayRaise, name, returns, start} = Function.dest f
 	    val {get = labelInfo: Label.t -> LabelInfo.t,
 		 set = setLabelInfo, ...} =
 	       Property.getSetOnce
@@ -67,11 +68,16 @@ fun doit (Program.T {datatypes, globals, functions, main}) =
 				    then ()
 				 else bug "handler stack mismatch"
 			val hs =
-			   if not (Vector.exists (statements, fn s =>
-						  case Statement.exp s of
-						     HandlerPop _ => true
-						   | HandlerPush _ => true
-						   | _ => false))
+			   if not (Vector.exists
+				   (statements, fn Statement.T {var, exp, ...} =>
+				    case exp of
+				       HandlerPop _ => true
+				     | HandlerPush _ => true
+				     | PrimApp {prim, ...} =>
+					  (Option.isNone var
+					   andalso (Prim.entersRuntime prim
+						    orelse Prim.impCall prim))
+				     | _ => false))
 			      (* An optimization to avoid recopying blocks
 			       * with no handlers.
 			       *)
@@ -82,35 +88,51 @@ fun doit (Program.T {datatypes, globals, functions, main}) =
 				 val (hs, ac) =
 				    Vector.fold
 				    (statements, (hs, []), fn (s, (hs, ac)) =>
-				     case Statement.exp s of
-					HandlerPop _ =>
-					   (case hs of
-					       [] => bug "pop of empty handler stack"
-					     | _ :: hs =>
-						  let
-						     val s =
-							case hs of
-							   [] =>
-							      Statement.setExnStackSlot
-							 | h :: _ =>
-							      Statement.setHandler h
-						  in (hs, s :: ac)
-						  end)
-				      | HandlerPush h =>
-					   let
-					      val ac =
-						 Statement.setHandler h :: ac
-					      val ac =
-						 case hs of
-						    [] =>
-						       Statement.setExnStackLocal
-						       :: Statement.setSlotExnStack
-						       :: ac
-						  | _ => ac
-					   in
-					      (h :: hs, ac)
-					   end
-				      | _ => (hs, s :: ac))
+				     let
+					val Statement.T {var, ty, exp, ...} = s
+				     in
+					case Statement.exp s of
+					   HandlerPop _ =>
+					      (case hs of
+						  [] => bug "pop of empty handler stack"
+						| _ :: hs =>
+						     let
+							val s =
+							   case hs of
+							      [] =>
+								 Statement.setExnStackSlot
+							    | h :: _ =>
+								 Statement.setHandler h
+						     in (hs, s :: ac)
+						     end)
+					 | HandlerPush h =>
+					      let
+						 val ac =
+						    Statement.setHandler h :: ac
+						 val ac =
+						    case hs of
+						       [] =>
+							  Statement.setExnStackLocal
+							  :: Statement.setSlotExnStack
+							  :: ac
+						     | _ => ac
+					      in
+						 (h :: hs, ac)
+					      end
+					 | PrimApp {prim, targs, args} =>
+					      (hs,
+					       if (Option.isNone var
+						   andalso
+						   (Prim.entersRuntime prim
+						    orelse Prim.impCall prim))
+						  then (Statement.T
+							{var = SOME (Var.newNoname()),
+							 ty = ty,
+							 exp = exp}
+							:: ac)
+					       else s :: ac)
+					 | _ => (hs, s :: ac)
+				     end)
 				 val _ =
 				    replacement := SOME (Vector.fromListRev ac)
 			      in
@@ -138,6 +160,7 @@ fun doit (Program.T {datatypes, globals, functions, main}) =
 	 in
 	    Function.new {args = args,
 			  blocks = blocks,
+			  mayRaise = mayRaise,
 			  name = name,
 			  returns = returns,
 			  start = start}

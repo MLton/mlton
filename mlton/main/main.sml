@@ -141,6 +141,8 @@ val options =
 	Bool (fn b => if b then () else polyvariance := NONE)),
        (Normal, "o", " file", "name of output file",
 	SpaceString (fn s => output := SOME s)),
+       (Expert, "optimize-ssa", " {true|false}", "optimize SSA",
+	boolRef Control.optimizeSSA),
        (Normal, "p", "", "produce executable suitable for profiling",
 	None (fn () => (profile := true; keepCps := true; keepSSA := true))),
        (Expert, "print-at-fun-entry", "",

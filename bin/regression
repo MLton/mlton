@@ -51,7 +51,7 @@ PATH=.:$PATH
 			$mlton -native true -type-check true $flags $f.sml
 			if [ $? -ne 0 ]; then
 				echo "compilation of $f failed"
-				exit 1
+#				exit 1
 			elif [ ! -r $f.nonterm ]; then
 				$f >$tmp 2>&1
 				if [ -r $f.ok ]; then

@@ -225,27 +225,28 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 		  Bug => ()
 		| Call {args, return, ...} =>
 		     (uses (b, args)
-		      ; (Option.app
-			 (return, fn {cont, handler} =>
-			  let
-			     val frameInfo = getFrameInfo (cont, handler)
-			     val _ = LiveInfo.addEdge (b, frameInfo)
-			  in
-			     Handler.foreachLabel
-			     (handler, fn h =>
-			      let
-				 val {argInfo, ...} = labelInfo h
-				 val _ = LiveInfo.addEdge (frameInfo, argInfo)
+		      ; (case return of
+			    Return.NonTail {cont, handler} =>
+			       let
+				  val frameInfo = getFrameInfo (cont, handler)
+				  val _ = LiveInfo.addEdge (b, frameInfo)
+			       in
+				  Handler.foreachLabel
+				  (handler, fn h =>
+				   let
+				      val {argInfo, ...} = labelInfo h
+				      val _ = LiveInfo.addEdge (frameInfo, argInfo)
 
-				 val ({defuse = code_defuse, ...},
-				      {defuse = link_defuse, ...}) =
-				    handlerSlotInfo
-				 val _ = List.push (code_defuse, Use b)
-				 val _ = List.push (link_defuse, Use b)
-			      in
-				 ()
-			      end)
-			  end)))
+				      val ({defuse = code_defuse, ...},
+					   {defuse = link_defuse, ...}) =
+					 handlerSlotInfo
+				      val _ = List.push (code_defuse, Use b)
+				      val _ = List.push (link_defuse, Use b)
+				   in
+				      ()
+				   end)
+			       end
+			  | _ => ()))
 		| Case {test, cases, default, ...} =>
 		     (use (b, test)
 		      ; Option.app (default, goto)
@@ -265,7 +266,7 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 		     (uses (b, args)
 		      ; goto failure
 		      ; goto success)
-		| Raise x => use (b, x)
+		| Raise xs => uses (b, xs)
 		| Return xs => uses (b, xs)
 	 in ()
 	 end
@@ -384,7 +385,8 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 	     (blocks, fn b =>
 	      let
 		 val l = Block.label b		 
-		 val {begin, beginNoFormals, frame, ...} = labelLive l
+		 val {begin, beginNoFormals, frame, handlerSlots, ...} =
+		    labelLive l
 	      in
 		 display (seq [Label.layout l,
 			       str " ",
@@ -395,7 +397,10 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 					List.layout 
 					(Layout.tuple2 (Handler.layout,
 							List.layout Var.layout)) 
-					frame)]])
+					frame),
+				       ("handlerSlots",
+					Layout.tuple2 (Bool.layout, Bool.layout)
+					handlerSlots)]])
 	      end)
 	  end)
    in {

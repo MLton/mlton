@@ -16,7 +16,7 @@ fun introduceLoops (Program.T {datatypes, globals, functions, main}) =
 	 List.map
 	 (functions, fn f =>
 	  let
-	     val {name, args, start, blocks, returns} = Function.dest f
+	     val {name, args, start, blocks, returns, mayRaise} = Function.dest f
 	     val tailCallsItself = ref false
 	     val noChange = (args, start, blocks)
 	     val (args, start, blocks) =
@@ -25,9 +25,8 @@ fun introduceLoops (Program.T {datatypes, globals, functions, main}) =
 		  case transfer of
 		     Call {func, return, ...} =>
 		        if Func.equals (name, func)
-			   then case return of
-			           NONE => tailCallsItself := true
-				 | SOME _ => ()
+			   andalso not (Return.isNonTail return)
+			   then tailCallsItself := true
 			else ()
 		   | _ => ()) ;
 		 if !tailCallsItself
@@ -52,7 +51,7 @@ fun introduceLoops (Program.T {datatypes, globals, functions, main}) =
 				    case transfer of
 				       Call {func, args, return} =>
 					  if Func.equals (name, func)
-					     andalso not (isSome return)
+					     andalso not (Return.isNonTail return)
 					     then Goto {dst = loopName, 
 						        args = args}
 					  else transfer
@@ -88,7 +87,8 @@ fun introduceLoops (Program.T {datatypes, globals, functions, main}) =
 			   args = args,
 			   start = start,
 			   blocks = blocks,
-			   returns = returns}
+			   returns = returns,
+			   mayRaise = mayRaise}
 	  end)
    in
       Program.T {datatypes = datatypes,

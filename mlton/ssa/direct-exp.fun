@@ -81,7 +81,7 @@ struct
 		  [Block.T {label = start,
 			    args = Vector.new0 (),
 			    statements = Vector.new0 (),
-			    transfer = Raise x}])
+			    transfer = Raise (Vector.new1 x)}])
 	       end)
 			      
       fun finish (k: t, ety: Exp.t * Type.t): u = k ety
@@ -172,13 +172,15 @@ struct
 	(args,
 	 fn args => 
 	 (start,
-	  Block.T {label = start,
-		   args = Vector.new0 (),
-		   statements = Vector.new0 (),
-		   transfer = Call {func = func,
-				    args = args,
-				    return = SOME {cont = cont,
-						   handler = Handler.CallerHandler}}}
+	  Block.T
+	  {label = start,
+	   args = Vector.new0 (),
+	   statements = Vector.new0 (),
+	   transfer = Call {func = func,
+			    args = args,
+			    return = (Return.NonTail
+				      {cont = cont,
+				       handler = Handler.None})}}
 	  :: Block.T {label = cont,
 		      args = Vector.new1 (result, ty),
 		      statements = Vector.new0 (),

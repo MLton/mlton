@@ -78,7 +78,7 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 	 List.revMap
 	 (functions, fn f =>
 	  let
-	     val {name, args, start, blocks, returns} = Function.dest f
+	     val {name, args, start, blocks, returns, mayRaise} = Function.dest f
 
 	     val _ =
 	        Vector.foreach
@@ -125,10 +125,7 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 			 Bug => ()
 		       | Call {args, return, ...} =>
 			    (forces args
-			     ; Option.app (return, fn {cont, handler, ...} =>
-					   (forceArgs cont
-					    ; Handler.foreachLabel 
-					      (handler, forceArgs))))
+			     ; Return.foreachLabel (return, forceArgs))
 		       | Case {cases, default, ...} =>
 			    (Cases.foreach (cases, forceArgs)
 			     ; Option.app (default, forceArgs))
@@ -145,7 +142,7 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 			    (forces args
 			     ; forceArgs failure
 			     ; forceArgs success) 
-		       | Raise x => force x
+		       | Raise xs => forces xs
 		       | Return xs => forces xs
 		in
 		   Vector.foreach (children, loop)
@@ -278,7 +275,8 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 				   args = args,
 				   start = start,
 				   blocks = blocks,
-				   returns = returns}
+				   returns = returns,
+				   mayRaise = mayRaise}
 	     val _ = Function.clear f
 	  in
 	     shrink f

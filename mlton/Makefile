@@ -5,8 +5,7 @@ SRC = $(ROOT)/src
 MLTON = mlton
 NAME = mlton
 AOUT = mlton-compile
-FLAGS = @MLton fixed-heap 450m -- -keep-pass removeUnused5 -keep dot -v2 -o $(AOUT)
-FLAGS = @MLton fixed-heap 450m -- -v -o $(AOUT)
+FLAGS = @MLton fixed-heap 500m -- -v2 -o $(AOUT)
 PATH = $(BIN):$(shell echo $$PATH)
 
 all: $(AOUT)

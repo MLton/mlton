@@ -33,7 +33,7 @@ structure Cont =
 
 (* Return = {Uncalled, Unknown} U Cont U Func
  *)
-structure Return =
+structure Areturn =
   struct
     datatype t
       = Uncalled
@@ -101,7 +101,7 @@ structure FuncData =
 				 tail: Func.t list ref},
 		       callees: {nontail: (Func.t * Cont.t) list ref,
 				 tail: Func.t list ref},
-		       A: Return.t ref,
+		       A: Areturn.t ref,
 		       prefixes: Func.t list ref,
 		       finished: bool ref,
 		       replace: {label: Label.t,
@@ -112,7 +112,7 @@ structure FuncData =
 		    reach = ref false,
 		    callers = {nontail = ref [], tail = ref []},
 		    callees = {nontail = ref [], tail = ref []},
-		    A = ref Return.Uncalled,
+		    A = ref Areturn.Uncalled,
 		    prefixes = ref [],
 		    finished = ref false,
 		    replace = ref NONE,
@@ -298,13 +298,14 @@ structure InitReachCallersCallees =
 		       => let
 			    val callers = FuncData.callers' (getFuncData g)
 			    val g_node = getFuncNode g
+			    val _ =
+			       case return of
+				  Return.NonTail c =>
+				     (List.push (#nontail callees, (g, c));
+				      List.push (#nontail callers, (f, c)))
+				| _ => (List.push (#tail callees, g);
+					List.push (#tail callers, f))
 			  in
-			    case return
-			      of NONE => (List.push (#tail callees, g);
-					  List.push (#tail callers, f))
-			       | SOME c
-			       => (List.push (#nontail callees, (g, c));
-				   List.push (#nontail callers, (f, c)));
 			    addEdge {from = f_node,
 				     to = g_node}
 			  end
@@ -357,7 +358,7 @@ structure AnalyzeDom =
 		    getContData: Cont.t -> ContData.t,
 		    getFuncData: Func.t -> FuncData.t} : unit
       = let
-	  datatype z = datatype Return.t
+	  datatype z = datatype Areturn.t
 
 	  val {G, addEdge, addEdge',
 	       getNodeInfo, getContNode, getFuncNode, 
@@ -388,30 +389,30 @@ structure AnalyzeDom =
 				   then let
 					  val g_node = getFuncNode g
 					in
-					  case return
-					    of NONE
-					     => (* {(f, g) | (f, g) in T 
-						 *       and Reach (f)} *)
-					        addEdge {from = f_node,
-							 to = g_node}
-					     | SOME c
-					     => let
-						  val c_node = getContNode c
-						  val rootEdge 
-						    = ContData.rootEdge'
+					  case return of
+					     Return.NonTail c =>
+						let
+						   val c_node = getContNode c
+						   val rootEdge 
+						      = ContData.rootEdge'
 						      (getContData c)
 						in
-						  if !rootEdge
-						    then ()
-						    else ((* {(Root, c) | c in Cont} *)
-						          addEdge {from = Root,
-								   to = c_node};
-							  rootEdge := true);
-						  (* {(c, g) | (f, g, c) in N
-						   *       and Reach (f)} *)
-						  addEdge {from = c_node,
-							   to = g_node}
+						   if !rootEdge
+						      then ()
+						   else ((* {(Root, c) | c in Cont} *)
+							 addEdge {from = Root,
+								  to = c_node};
+							 rootEdge := true);
+						      (* {(c, g) | (f, g, c) in N
+						       *       and Reach (f)} *)
+						      addEdge {from = c_node,
+							       to = g_node}
 						end
+					   | _ =>
+						(* {(f, g) | (f, g) in T 
+						 *       and Reach (f)} *)
+						addEdge {from = f_node,
+							 to = g_node}
 					end
 				   else ()
 			      | _ => ())
@@ -514,7 +515,7 @@ structure Transform =
 		   getFuncData: Func.t -> FuncData.t,
 		   getContData: Cont.t -> ContData.t} : Program.t
       = let
-	  datatype z = datatype Return.t
+	  datatype z = datatype Areturn.t
 
     	  (* For functions turned into continuations,
 	   *  record their args, blocks, and new name.
@@ -537,7 +538,7 @@ structure Transform =
 				  in display (seq [str "A(", 
 						   Func.layout f,
 						   str ") = ",
-						   Return.layout (!A)])
+						   Areturn.layout (!A)])
 				  end)
 						   
 
@@ -571,6 +572,18 @@ structure Transform =
 			| Func g => contify (FuncData.prefixes' (getFuncData g))
 		   end)
 
+	  val traceAddFuncs =
+	     Trace.trace3 ("addFuncs",
+			   Func.layout,
+			   List.layout Func.layout,
+			   Return.layout,
+			   Unit.layout)
+	  val traceTransBlock =
+	     Trace.trace3 ("transBlock",
+			   Func.layout,
+			   Label.layout o Block.label,
+			   Return.layout,
+			   Layout.ignore)
 	  (* Walk over all functions, removing those that aren't top level,
 	   *  and descening those that are, inserting local functions
 	   *  where necessary.
@@ -578,18 +591,9 @@ structure Transform =
 	   * - turn returns into gotos
 	   * - turn raises into gotos
 	   *)
-	  fun combine (c: Cont.t option, r: Cont.t option) =
-	     case (c, r) of
-		(NONE, r) => r
-	      | (c, NONE) => c
-	      | (SOME {handler = h1, ...},
-		 SOME {cont = c2, handler = Handler.CallerHandler}) =>
-		   SOME {cont = c2, handler = h1}
-	      | _ => r
-
 	  fun addFuncPrefixes (f: Func.t,
 			       g: Func.t,
-			       c: Cont.t option) : unit
+			       c: Return.t) : unit
 	    = let
 		val prefixes = FuncData.prefixes (getFuncData g)
 		val _ = Control.diagnostics
@@ -607,7 +611,7 @@ structure Transform =
 	      end
 	  and addContPrefixes (f: Func.t,
 			       r: Cont.t,
-			       c: Cont.t option) : unit
+			       c: Return.t): unit
 	    = let
 		val prefixes = ContData.prefixes (getContData r)
 		val _ = Control.diagnostics
@@ -622,12 +626,14 @@ structure Transform =
 			     end)
 
 	      in 
-		addFuncs (f, prefixes, combine (c, SOME r))
+		addFuncs (f, prefixes, Return.compose (c, Return.NonTail r))
 	      end
-	  and addFuncs (f: Func.t,
-			gs: Func.t list,
-			c: Cont.t option) : unit
-	    = List.foreach
+	  and addFuncs arg : unit =
+	     traceAddFuncs
+	     (fn (f: Func.t,
+		  gs: Func.t list,
+		  c: Return.t) =>
+	     List.foreach
 	      (gs,
 	       fn g => let
 			 val finished = FuncData.finished' (getFuncData g)
@@ -641,9 +647,10 @@ structure Transform =
 				  c);
 				 finished := true)
 		       end)
+	      ) arg
 	  and addBlocks (f: Func.t,
 			 blocks: Block.t list,
-			 c: Cont.t option) : unit
+			 c: Return.t) : unit
 	    = let
 		val contified' = List.map(blocks, 
 					  fn block => transBlock (f, block, c))
@@ -651,32 +658,36 @@ structure Transform =
 	      in
 		List.push(contified, contified')
 	      end
-	  and transBlock (f: Func.t, 
-			  block as Block.T {label, 
-					    args, 
-					    statements, 
-					    transfer}: Block.t,
-			  c: Cont.t option): Block.t
-	    = let
+	  and transBlock arg: Block.t =
+	     traceTransBlock
+	     (fn (f: Func.t, 
+		  block as Block.T {label, 
+				    args, 
+				    statements, 
+				    transfer}: Block.t,
+		  c: Return.t) =>
+	     let
 		val transfer
 		  = case transfer
 		      of Call {func, args, return}
-		       => (Option.app (return, fn r => addContPrefixes (f, r, c)); 
-			   case FuncData.replace (getFuncData func)
-			     of NONE => Call {func = func,
-					      args = args,
-					      return = combine (c, return)}
-			      | SOME {label, ...}
-			      => Goto {dst = label, args = args})
+		       => ((case return of
+			       Return.NonTail r => addContPrefixes (f, r, c)
+			     | _ => ());
+			   case FuncData.replace (getFuncData func) of
+			      NONE => Call {func = func,
+					    args = args,
+					    return = Return.compose (c, return)}
+			    | SOME {label, ...} =>
+				 Goto {dst = label, args = args})
 		       | Return xs
 		       => (case c
-			     of SOME {cont, ...}
+			     of Return.NonTail {cont, ...}
 			      => Goto {dst = cont, args = xs}
 			      | _ => transfer)
-		       | Raise x
+		       | Raise xs
 		       => (case c
-			     of SOME {handler = Handler.Handle handler, ...} 
-			      => Goto {dst = handler, args = Vector.new1 x}
+			     of Return.NonTail {handler = Handler.Handle handler, ...} 
+			      => Goto {dst = handler, args = xs}
 			      | _ => transfer)
 		       | _ => transfer
 	      in
@@ -684,7 +695,7 @@ structure Transform =
 			 args = args,
 			 statements = statements,
 			 transfer = transfer}
-	      end
+	      end) arg
 
 	  val shrink = shrinkFunction globals
 
@@ -696,16 +707,17 @@ structure Transform =
 		       start = f_start,
 		       args = f_args, 
 		       blocks = f_blocks,
-		       returns = f_returns} = Function.dest func
+		       returns = f_returns,
+		       mayRaise = f_mayRaise, ...} = Function.dest func
 	       in
 		  case FuncData.A (getFuncData f)
 		     of Unknown
 			=> let
-			      val _ = addFuncPrefixes(f, f, NONE)
-
-			      val f_blocks
-				 = Vector.toListMap
-			         (f_blocks, fn block => transBlock(f, block, NONE))
+			      val _ = addFuncPrefixes (f, f, Return.Tail)
+			      val f_blocks =
+				 Vector.toListMap
+				 (f_blocks, fn block =>
+				  transBlock (f, block, Return.Tail))
 			      val f_blocks
 				 = f_blocks::
 			         (FuncData.contified (getFuncData f))
@@ -716,7 +728,8 @@ structure Transform =
 						    start = f_start,
 						    args = f_args,
 						    blocks = f_blocks,
-						    returns = f_returns})
+						    returns = f_returns,
+						    mayRaise = f_mayRaise})
 			      :: ac
 			   end
 		      | _ => ac

@@ -89,7 +89,7 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 	   setConInfo (con, {argsTypes = args,
 			     args = Vector.map (args, Rep.fromType)})))
       val {get = funcInfo: Func.t -> {args: Rep.t vector,
-				      returns: Rep.t vector},
+				      returns: Rep.t vector option},
 	   set = setFuncInfo, ...} =
 	 Property.getSetOnce 
 	 (Func.plist, Property.initRaise ("funcInfo", Func.layout))
@@ -100,7 +100,7 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 	 (functions, fn f =>
 	  let val {name, args, returns, ...} = Function.dest f
 	  in setFuncInfo (name, {args = Rep.fromFormals args,
-				 returns = Rep.fromTypes returns})
+				 returns = Option.map (returns, Rep.fromTypes)})
 	  end)
       val {get = labelInfo: Label.t -> {args: Rep.t vector},
 	   set = setLabelInfo, ...} =
@@ -139,17 +139,29 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 	     ; Vector.foreach
 	       (blocks, fn Block.T {label, transfer, ...} =>
 		case transfer of
-		   Return xs => coerces (xs, returns)
+		   Return xs =>
+		      (case returns of
+			  NONE => Error.bug "return mismatch"
+			| SOME rs => coerces (xs, rs))
 		 | Call {func, args, return} =>
-		      let val {args = funcArgs, returns = funcReturns} = funcInfo func
-		      in coerces (args, funcArgs)
-			 ; case return of
-			      NONE => Rep.unifys (funcReturns, returns)
-			    | SOME {cont, handler} =>
-				 (Rep.unifys (funcReturns, labelArgs cont)
-				  ; Handler.foreachLabel
-				    (handler, fn handler => 
-				     Rep.tuplizes (labelArgs handler)))
+		      let
+			 val {args = funcArgs, returns = funcReturns} =
+			    funcInfo func
+			 val _ = coerces (args, funcArgs)
+		      in
+			 case return of
+			    Return.Dead => ()
+			  | Return.HandleOnly => ()
+			  | Return.NonTail {cont, handler} =>
+			       (Option.app (funcReturns, fn rs =>
+					    Rep.unifys (rs, labelArgs cont))
+				; (Handler.foreachLabel
+				   (handler, fn handler => 
+				    Rep.tuplizes (labelArgs handler))))
+			  | Return.Tail =>
+			       (case (funcReturns, returns) of
+				   (SOME rs, SOME rs') => Rep.unifys (rs, rs')
+				 | _ => ())
 		      end
 		 | Goto {dst, args} => coerces (args, labelArgs dst)
 		 | _ => ())
@@ -167,7 +179,8 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 	      display (seq [Func.layout name,
 			    str " ",
 			    align [Vector.layout Rep.layout args,
-				   Vector.layout Rep.layout returns]])
+				   Option.layout
+				   (Vector.layout Rep.layout) returns]])
 	   end))
       fun flattenTypes (ts: Type.t vector, rs: Rep.t vector): Type.t vector =
 	 Vector.fromList
@@ -204,7 +217,7 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 
       fun doitFunction f =
 	 let
-	    val {name, args, start, blocks, returns} = Function.dest f
+	    val {name, args, start, blocks, returns, mayRaise} = Function.dest f
 	    val {args = argsReps, returns = returnsReps} = funcInfo name
 
 	    val newBlocks = ref []
@@ -340,7 +353,7 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 
 	    fun doitTransfer transfer =
 	       case transfer of
-		  Return xs => Return (flattens (xs, returnsReps))
+		  Return xs => Return (flattens (xs, valOf returnsReps))
 		| Call {func, args, return} =>
 		     Call {func = func, 
 			   args = flattens (args, funcArgs func),
@@ -379,13 +392,17 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 	    val start = start'
 	    val blocks = Vector.map (blocks, doitBlock)
 	    val blocks = Vector.concat [Vector.fromList (!newBlocks), blocks]
-	    val returns = flattenTypes (returns, returnsReps)
+	    val returns =
+	       Option.map
+	       (returns, fn ts =>
+		flattenTypes (ts, valOf returnsReps))
 	 in
 	    Function.new {name = name,
 			  args = args,
 			  start = start,
 			  blocks = blocks,
-			  returns = returns}
+			  returns = returns,
+			  mayRaise = mayRaise}
 	 end
 
       val shrink = shrinkFunction globals

@@ -560,7 +560,7 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
 	  | Var _ => Keep e
 	  | _ => Keep e
       val simplifyExp =
-	 Trace.trace ("SimplifyTypes.simplifyPrimExp",
+	 Trace.trace ("SimplifyTypes.simplifyExp",
 		      Exp.layout, Result.layout Exp.layout)
 	 simplifyExp
       fun simplifyTransfer (t : Transfer.t): Statement.t vector * Transfer.t =
@@ -568,7 +568,8 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
 	    Bug => (Vector.new0 (), t)
 	  | Call {func, args, return} =>
 	       (Vector.new0 (),
-		Call {func = func, return = return, args = removeUselessVars args})
+		Call {func = func, return = return,
+		      args = removeUselessVars args})
 	  | Case {test, cases = Cases.Con cases, default} =>
 	       let
 		  val cases =
@@ -632,7 +633,7 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
 				      args = Vector.map (args, simplifyVar),
 				      failure = failure,
 				      success = success})
-	  | Raise x => (Vector.new0 (), Raise x)
+	  | Raise xs => (Vector.new0 (), Raise (removeUselessVars xs))
 	  | Return xs => (Vector.new0 (), Return (removeUselessVars xs))
       val simplifyTransfer =
 	 Trace.trace
@@ -640,22 +641,20 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
 	  Layout.tuple2 (Vector.layout Statement.layout, Transfer.layout))
 	 simplifyTransfer
       fun simplifyStatement (stmt as Statement.T {var, ty, exp}) =
-	 let val ty = simplifyMaybeVarType (var, ty)	 
-	     fun normal () =
-	        case simplifyExp exp of
-		   Bugg => Bugg
-		 | Delete => Delete
-		 | Keep exp => Keep (Statement.T {var = var, ty = ty, exp = exp})
-	 in case var of
-	       NONE => Keep stmt
-	     | SOME _ => if Type.isUnit ty
-			    then (case exp of
-				     PrimApp {prim, ...} =>
-				        if Prim.maySideEffect prim
-					   then normal ()
-					else Delete
-				   | _ => Delete)
-			 else normal ()
+	 let
+	    val ty = simplifyMaybeVarType (var, ty)	 
+	 in
+	    (* It is wrong to omit calling simplifyExp when var = NONE because
+	     * targs in a PrimApp may still need to be simplified.
+	     *)
+	    if not (Type.isUnit ty) orelse Exp.maySideEffect exp
+	       then
+		  (case simplifyExp exp of
+		      Bugg => Bugg
+		    | Delete => Delete
+		    | Keep exp =>
+			 Keep (Statement.T {var = var, ty = ty, exp = exp}))
+	    else Delete
 	 end
       fun simplifyBlock (Block.T {label, args, statements, transfer}) =
 	 let
@@ -686,18 +685,19 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
 		  end
 	 end
       fun simplifyFunction f =
-	 let val {name, args, start, returns, ...} = Function.dest f
+	 let val {name, args, start, returns, mayRaise, ...} = Function.dest f
 	     val args = simplifyFormals args
 	     val blocks = 
 	        Tree.foldPre 
 		(Function.dfsTree f, [], fn (block, blocks) =>
 		 (simplifyBlock block)::blocks)
-	     val returns = keepSimplifyTypes returns
+	     val returns = Option.map (returns, keepSimplifyTypes)
 	 in Function.new {name = name,
 			  args = args,
 			  start = start,
 			  blocks = Vector.fromList blocks,
-			  returns = returns}
+			  returns = returns,
+			  mayRaise = mayRaise}
 	 end
       val globals =
 	 Vector.concat

@@ -42,38 +42,73 @@ fun 'a analyze
 	 List.foreach
 	 (functions, fn f =>
 	  let
-	     val {name, args, returns, ...} = Function.dest f
+	     val {args, mayRaise, name, returns, ...} = Function.dest f
 	  in
 	     setFunc (name, {args = loopArgs args,
-			     returns = Vector.map (returns, fromType)})
+			     mayRaise = mayRaise,
+			     returns = Option.map (returns, fn ts =>
+						   Vector.map (ts, fromType))})
 	  end)
-      val exnVal: 'a option ref = ref NONE
-      fun getExnVal v =
-	 case !exnVal of
+      val exnVals: 'a vector option ref = ref NONE
+      fun getExnVals vs =
+	 case !exnVals of
 	    NONE => let
-		       val v = copy v
-		       val _ = exnVal := SOME v
+		       val vs = Vector.map (vs, copy)
+		       val _ = exnVals := SOME vs
 		    in
-		       v
+		       vs
 		    end
-	  | SOME v => v
-      fun loopTransfer (t, shouldReturns): unit =
+	  | SOME vs => vs
+      fun loopTransfer (t: Transfer.t,
+			shouldReturns: 'a vector option,
+			shouldRaise): unit =
 	(case t of
 	    Bug => ()
-	  | Call {func = f, args, return} =>
+	  | Call {func = f, args, return, ...} =>
 	       let
-		  val {args = formals, returns} = func f
+		  val {args = formals, mayRaise, returns} = func f
+		  val _ = coerces (values args, formals)
 	       in
-		  coerces (values args, formals)
-		; case return of
-		     SOME {cont, handler} =>
-		        (coerces (returns, labelArgs cont)
-			 ; Handler.foreachLabel 
-			   (handler, fn h =>
-			    let val v = Vector.sub (labelArgs h, 0)
-			    in coerce {from = getExnVal v, to = v}
-			    end))
-		   | _ => coerces (returns, shouldReturns)
+		  case return of
+		     Return.Dead =>
+			if isSome returns orelse mayRaise
+			   then Error.bug "return mismatch at Dead"
+			else ()
+		   | Return.HandleOnly =>
+			if isSome returns
+			   then Error.bug "return mismatch at HandleOnly"
+			else ()
+		   | Return.NonTail {cont, handler} =>
+		        (Option.app (returns, fn vs =>
+				     coerces (vs, labelArgs cont))
+			 ; (case handler of
+			       Handler.CallerHandler => ()
+			     | Handler.Handle h =>
+				  let
+				     val vs = labelArgs h
+				  in
+				     coerces (getExnVals vs, vs)
+				  end
+			     | Handler.None =>
+				  if mayRaise
+				     then Error.bug "return mismatch at NonTail"
+				  else ()))
+		   | Return.Tail =>
+			let
+			   val _ =
+			      if mayRaise andalso not shouldRaise
+				 then Error.bug "return mismatch at Tail raise"
+			      else ()
+			   val _ =
+			      case (returns, shouldReturns) of
+				 (NONE, NONE) => ()
+			       | (NONE, SOME _) => ()
+			       | (SOME _, NONE) =>
+				    Error.bug "return mismatch at Tail return"
+			       | (SOME vs, SOME vs') => coerces (vs, vs')
+			in
+			   ()
+			end
 	       end
 	  | Case {test, cases, default, ...} =>
 	       let val test = value test
@@ -107,10 +142,19 @@ fun 'a analyze
 					  resultType = Type.int,
 					  resultVar = NONE},
 			  to = Vector.sub (labelArgs success, 0)})
-	  | Raise x => let val v = value x
-		       in coerce {from = v, to = getExnVal v}
-		       end
-	  | Return xs => coerces (values xs, shouldReturns))
+	  | Raise xs =>
+	       let
+		  val _ =
+		     if not shouldRaise
+			then Error.bug "return mismatch at raise"
+		     else ()
+		  val vs = values xs
+	       in coerces (vs, getExnVals vs)
+	       end
+	  | Return xs =>
+	       (case shouldReturns of
+		   NONE => raise Fail "return mismatch at return"
+		 | SOME vs => coerces (values xs, vs)))
 	handle exn => 
 	   Error.bug (concat ["loopTransfer:", 
 			      Layout.toString (Transfer.layout t),
@@ -119,9 +163,10 @@ fun 'a analyze
 				  Fail msg => msg
 				| _ => "")])
       val loopTransfer =
-	 Trace.trace2
+	 Trace.trace3
 	 ("Analyze.loopTransfer",
-	  Transfer.layout, Layout.ignore, Layout.ignore) loopTransfer
+	  Transfer.layout, Layout.ignore, Bool.layout, Layout.ignore)
+	 loopTransfer
       fun loopStatement (s as Statement.T {var, exp, ty}): unit =
 	 let
 	    val v =
@@ -191,7 +236,7 @@ fun 'a analyze
 	 List.foreach
 	 (functions, fn f =>
 	  let
-	     val {name, blocks, start, ...} = Function.dest f
+	     val {blocks, mayRaise, name, start, ...} = Function.dest f
 	     val _ =
 		Vector.foreach
 		(blocks, fn b as Block.T {label, args, ...} =>
@@ -211,7 +256,7 @@ fun 'a analyze
 			 val Block.T {statements, transfer, ...} = block
 		      in
 			 Vector.foreach (statements, loopStatement)
-			 ; loopTransfer (transfer, returns)
+			 ; loopTransfer (transfer, returns, mayRaise)
 			 ; Transfer.foreachLabel (transfer, visit)
 		      end
 		end
@@ -229,7 +274,7 @@ fun 'a analyze
        value = value,
        func = func,
        label = labelArgs,
-       exnVal = !exnVal
+       exnVals = !exnVals
        }
    end
 

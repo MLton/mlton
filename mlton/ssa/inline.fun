@@ -425,21 +425,8 @@ fun inline (program as Program.T {datatypes, globals, functions, main}) =
 	 (Func.plist, Property.initRaise ("Inline.funcInfo", Func.layout))
       val _ = List.foreach (functions, fn f => setFuncInfo (Function.name f, f))
 
-      fun combine (r1: {cont: Label.t,
-			handler: Handler.t} option,
-		   r2: {cont: Label.t,
-			handler: Handler.t} option) =
-	 case (r1, r2) of
-	    (NONE, r) => r
-	  | (r, NONE) => r
-	  | (SOME {handler = h1, ...},
-	     SOME {cont = c2, handler = Handler.CallerHandler}) =>
-	       SOME {cont = c2, handler = h1}
-	  | _ => r2
-
       fun doit (blocks: Block.t vector,
-		return: {cont: Label.t,
-			 handler: Handler.t} option) : Block.t vector =
+		return: Return.t) : Block.t vector =
 	 let
 	    val newBlocks = ref []
 	    val blocks =
@@ -455,7 +442,7 @@ fun inline (program as Program.T {datatypes, globals, functions, main}) =
 		  case transfer of
 		     Call {func, args, return = return'} =>
 		        let
-			   val return = combine (return, return')
+			   val return = Return.compose (return, return')
 			in
 			   if shouldInline func
 			      then 
@@ -488,15 +475,18 @@ fun inline (program as Program.T {datatypes, globals, functions, main}) =
 					   args = args,
 					   return = return})
 			end
-	           | Raise x => (case return of
-				    SOME {handler = Handler.Handle handler, ...} =>
-				       new (Goto {dst = handler,
-						  args = Vector.new1 x})
-				  | _ => block)
-		   | Return xs => (case return of
-				      SOME {cont, ...} =>
-					 new (Goto {dst = cont, args = xs})
-				    | _ => block)
+	           | Raise xs =>
+			(case return of
+			    Return.NonTail
+			    {handler = Handler.Handle handler, ...} =>
+			       new (Goto {dst = handler,
+					  args = xs})
+			  | _ => block)
+		   | Return xs =>
+			(case return of
+			    Return.NonTail {cont, ...} =>
+			       new (Goto {dst = cont, args = xs})
+			  | _ => block)
 		   | _ => block
 		end)
 	 in
@@ -508,19 +498,20 @@ fun inline (program as Program.T {datatypes, globals, functions, main}) =
 	 List.fold
 	 (functions, [], fn (f, ac) =>
 	  let
-	     val {name, args, start, blocks, returns} = Function.dest f
+	     val {name, args, start, blocks, returns, mayRaise} = Function.dest f
 	  in
 	     if Func.equals (name, main)
 	        orelse
 		not (shouldInline name)
 		then let
-		        val blocks = doit (blocks, NONE)
+		        val blocks = doit (blocks, Return.Tail)
 		     in
-		        shrink (Function.new {name = name,
+			shrink (Function.new {name = name,
 					      args = args,
 					      start = start,
 					      blocks = blocks,
-					      returns = returns})
+					      returns = returns,
+					      mayRaise = mayRaise})
 			:: ac
 		     end
 	      else ac

@@ -133,8 +133,8 @@ signature MACHINE =
 	    val move: {dst: Operand.t, src: Operand.t} -> t
 	    (* Error if dsts and srcs aren't of same length. *)
 	    val moves: {
-			dsts: Operand.t list,
-			srcs: Operand.t list
+			dsts: Operand.t vector,
+			srcs: Operand.t vector
 		       } -> t list
 	    (* pop number of bytes from stack *)
 	    val pop: int -> t

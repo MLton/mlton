@@ -73,9 +73,7 @@ fun checkScopes (program as
 	  | Call {func, args, return} =>
 	       (getFunc func
 		; getVars args
-		; Option.app (return, fn {cont, handler} =>
-			      (getLabel cont
-			       ; Handler.foreachLabel (handler, getLabel))))
+		; Return.foreachLabel (return, getLabel))
 	  | Case {test, cases, default, ...} =>
 	       (getVar test
 		; Cases.foreach' (cases, getLabel, getCon)
@@ -83,7 +81,7 @@ fun checkScopes (program as
 	  | Goto {dst, args} => (getLabel dst; getVars args)
 	  | Prim {args, failure, success, ...} =>
 	       (getVars args; getLabel failure; getLabel success)
-	  | Raise x => getVar x
+	  | Raise xs => getVars xs
 	  | Return xs => getVars xs
       fun loopFunc (f: Function.t) =
 	 let
@@ -128,6 +126,7 @@ val checkScopes = Control.trace (Control.Pass, "checkScopes") checkScopes
 fun typeCheck (program as Program.T {datatypes, functions, ...}): unit =
    let
       val _ = checkScopes program
+      val _ = List.foreach (functions, fn f => (Function.inferHandlers f; ()))
       val out = Out.error
       val print = Out.outputc out
       exception TypeError
@@ -207,7 +206,7 @@ fun typeCheck (program as Program.T {datatypes, functions, ...}): unit =
 				 ("args", Vector.layout Type.layout args)]
 		      end,
 		      Type.layout) primApp
-      val {value = varType, ...} =
+      val {func, value = varType, ...} =
 	 analyze {
 		  coerce = coerce,
 		  conApp = conApp,

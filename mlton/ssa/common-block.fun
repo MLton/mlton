@@ -18,7 +18,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 				       transfer = transfer}
 			    end
       in
-	fun makeRaise var = make (Raise var)
+	fun makeRaise var = make (Raise (Vector.new1 var))
 	fun makeReturn var = make (Return (Vector.new1 var))
 	fun makeGoto (dst, var) = make (Goto {dst = dst, args = Vector.new1 var})
       end
@@ -44,7 +44,8 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 
       fun eliminateFunction f
 	= let
-	    val {name, args, start, blocks, returns} = Function.dest f
+	    val {args, blocks, mayRaise, name, returns, start, ...} =
+	       Function.dest f
 
 	    val newBlocks = ref []
 
@@ -130,8 +131,11 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 					  then doit (commonReturner 
 						     (Vector.sub(xs, 0)))
 					  else transfer
-				     | Raise x
-				     => doit (commonRaiser x)
+				     | Raise xs
+				     => if Vector.length xs = 1
+					   then doit (commonRaiser
+						      (Vector.sub (xs, 0)))
+					else transfer
 			             | _ => transfer
 			     else transfer
 		     in
@@ -145,6 +149,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 	     shrink (Function.new {name = name,
 				   start = start,
 				   args = args,
+				   mayRaise = mayRaise,
 				   blocks = blocks,
 				   returns = returns})
 	  end

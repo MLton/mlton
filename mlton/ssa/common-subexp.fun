@@ -314,7 +314,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 	 List.revMap
 	 (functions, fn f => 
 	  let
-	     val {name, args, start, blocks, returns} = Function.dest f
+	     val {args, blocks, mayRaise, name, returns, start} = Function.dest f
 	     val _ = Vector.foreach
 	             (blocks, fn Block.T {label, args, transfer, ...} =>
 		      (#args (labelInfo label) := args
@@ -323,11 +323,12 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 			  Int.inc(#inDeg (labelInfo label')))))
 
 	     val blocks = doitTree (Function.dominatorTree f)
-	     val f = Function.new {name = name,
-				   args = args,
-				   start = start,
+	     val f = Function.new {args = args,
 				   blocks = blocks,
-				   returns = returns}
+				   mayRaise = mayRaise,
+				   name = name,
+				   returns = returns,
+				   start = start}
 	     val _ = Function.clear f
 	  in
 	     shrink f

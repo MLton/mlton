@@ -76,7 +76,7 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
    let
       val {get = funcInfo: Func.t -> {
 				      arg: Eqrel.t,
-				      return: Eqrel.t
+				      return: Eqrel.t option
 				      },
 	   set = setFuncInfo, ...} =
 	 Property.getSetOnce
@@ -115,7 +115,8 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 		let val {name, args, returns, ...} = Function.dest f
 		in setFuncInfo (name, {
 				       arg = makeFormalsRel args,
-				       return = Eqrel.fromTypes returns
+				       return = Option.map (returns,
+							    Eqrel.fromTypes)
 				       })
 		end)
 
@@ -139,12 +140,18 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 		       Call {func, args, return = ret, ...} =>
 		          let
 			     val {arg = arg', return = return'} = funcInfo func
-			  in 
-			     Eqrel.refine (arg', varEquiv args) 
-			     ; Eqrel.unify (return',
-					    case ret of
-					       NONE => return
-					     | SOME {cont, ...} => labelInfo cont)
+			     val _ = Eqrel.refine (arg', varEquiv args)
+			  in
+			     case ret of
+				Return.Dead => ()
+			      | Return.HandleOnly => ()
+			      | Return.NonTail {cont, ...} =>
+				   Option.app (return', fn e =>
+					       Eqrel.unify (e, labelInfo cont))
+			      | Return.Tail =>
+				   (case (return, return') of
+				       (SOME e, SOME e') => Eqrel.unify (e, e')
+				     | _ => ())
 			  end
 		      | Case {cases = Cases.Con cases, ...} =>
 			   (* For now, assume that constructor arguments
@@ -156,7 +163,7 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 							 fn _ => false))
 		      | Goto {dst, args, ...} =>
 			   Eqrel.refine (labelInfo dst, varEquiv args)
-		      | Return xs => Eqrel.refine (return, varEquiv xs)
+		      | Return xs => Eqrel.refine (valOf return, varEquiv xs)
 		      | _ => ())
 		end)
 	    val _ = Eqrel.fixedPoint ()
@@ -173,7 +180,7 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 	   in display (seq [Func.layout name,
 			    str "  ",
 			    Eqrel.layout arg,
-			    Eqrel.layout return]) ;
+			    Option.layout Eqrel.layout return]) ;
 	      Vector.foreach
 	      (blocks, fn Block.T {label, args, ...} =>
 	       let val arg = labelInfo label
@@ -234,8 +241,8 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 			      | _ => NONE)
       val {get = funcReds : Func.t -> {argsRed: red vector,
 				       args: (Var.t * Type.t) vector,
-				       returnsRed: red vector,
-				       returns: Type.t vector},
+				       returnsRed: red vector option,
+				       returns: Type.t vector option},
 	   set = setFuncReds, ...} =
 	 Property.getSetOnce (Func.plist,
 			      Property.initRaise ("funcReds", Func.layout))
@@ -250,8 +257,16 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 	  let
 	     val {name, args, blocks, returns, ...} = Function.dest f
 	     val {arg, return} = funcInfo name
-	     val returnsRed = makeReds (returns, return)
-	     val returns = keepUseful (returnsRed, returns)
+	     val (returnsRed, returns) =
+		(case (returns, return) of
+		    (SOME r, SOME r') =>
+		       let
+			  val returnsRed = makeReds (r, r')
+			  val returns = keepUseful (returnsRed, r)
+		       in
+			  (SOME returnsRed, SOME returns)
+		       end
+		  | _ => (NONE, NONE))
 	     val (argsRed, args) = redundantFormals (args, arg)
 	  in
 	     setFuncReds (name, {args = args,
@@ -276,7 +291,7 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 	 List.map
 	 (functions, fn f =>
 	  let
-	     val {name, args, start, blocks, returns} = Function.dest f
+	     val {name, args, start, blocks, returns, mayRaise} = Function.dest f
 	     val {args, returns, returnsRed, ...} = funcReds name
 
 	     val blocks =
@@ -315,8 +330,10 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 				   args = loopVars args,
 				   failure = failure,
 				   success = success}
-			| Raise x => Raise (loopVar x)
-			| Return xs => Return (loopVars (keepUseful (returnsRed, xs)))
+			| Raise xs => Raise (loopVars xs)
+			| Return xs =>
+			     Return (loopVars
+				     (keepUseful (valOf returnsRed, xs)))
 
 		 in
 		    Block.T {label = label,
@@ -330,7 +347,8 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 			   args = args,
 			   start = start,
 			   blocks = blocks,
-			   returns = returns}
+			   returns = returns,
+			   mayRaise = mayRaise}
 	  end)
       val p = Program.T {datatypes = datatypes,
 			 globals = globals,

@@ -16,6 +16,7 @@ in
    structure Slabel = Label
    structure Prim = Prim
    structure Program = Program
+   structure Return = Return
    structure Sstatement = Statement
    structure Stransfer = Transfer
    structure Stype = Type
@@ -149,12 +150,11 @@ fun allocate {program = program as Program.T {globals, ...},
       fn f =>
       let
 	 val _ =
-	    Control.diagnostic
-	    (fn () =>
-	     let open Layout
-	     in seq [str "Function allocs for ",
-		     Func.layout (Function.name f)]
-	     end)
+	    Control.diagnostic (fn () =>
+				let open Layout
+				in seq [str "Function allocs for ",
+					Func.layout (Function.name f)]
+				end)
 	 val limitCheck = limitCheck f
 	 val {get = labelInfo: Slabel.t -> Info.t,
 	      set = setSlabelInfo, ...} =
@@ -249,7 +249,7 @@ fun allocate {program = program as Program.T {globals, ...},
 		     | _ => ())
 		val _ =
 		   case transfer of
-		      Stransfer.Call {return = SOME {cont, handler, ...}, ...} =>
+		      Stransfer.Call {return = Return.NonTail {cont, handler, ...}, ...} =>
 			 (forceStacks (liveBeginNoFormals cont)
 			  ; (Handler.foreachLabel
 			     (handler, fn l =>
@@ -323,50 +323,52 @@ fun allocate {program = program as Program.T {globals, ...},
 	    fun getOperands ((xs: Var.t list,
 			      (code, link): bool * bool),
 			     force: bool) =
-	       List.fold
-	       (xs,
-		((fn l =>
-		  if code
-		     then let
-			     val handlerOffset = valOf handlerOffset
-			  in
-			     (Operand.stackOffset {offset = handlerOffset,
-						   ty = Mtype.uint})
-			     :: l
-			  end
-		  else l) o
-		 (fn l =>
-		  if link
-		     then let
-			     val handlerOffset = valOf handlerOffset
-			  in
-			     (Operand.stackOffset
-			      {offset = handlerOffset + labelSize,
-			       ty = Mtype.uint})
-			     :: l
-			  end
-		  else l))
-		nil,
-		fn (x, operands) =>
-		let
-		   val {operand, ty, ...} = varInfo x
-		in
-		   case operand of
-		      NONE => operands
-		    | SOME r =>
-			 if force
-			    then (case place x of
-				     Register =>
-					Error.bug 
-					(concat
-					 ["live register ",
-					  Layout.toString (Var.layout x)])
-				   | Stack =>
-				        case Operand.deStackOffset (^r) of
-					   NONE => Error.bug "live slot"
-					 | SOME _ => (^r)::operands)
-			 else (^r)::operands
-		end)
+	       let
+		  val ops = []
+		  val ops =
+		     if code
+			then let
+				val handlerOffset = valOf handlerOffset
+			     in
+				(Operand.stackOffset {offset = handlerOffset,
+						      ty = Mtype.uint})
+				:: ops
+			     end
+		     else ops
+		  val ops =
+		     if link
+			then let
+				val handlerOffset = valOf handlerOffset
+			     in
+				(Operand.stackOffset
+				 {offset = handlerOffset + labelSize,
+				  ty = Mtype.uint})
+				:: ops
+			     end
+		     else ops
+	       in
+		  List.fold
+		  (xs, ops, fn (x, operands) =>
+		   let
+		      val {operand, ty, ...} = varInfo x
+		   in
+		      case operand of
+			 NONE => operands
+		       | SOME r =>
+			    if force
+			       then (case place x of
+					Register =>
+					   Error.bug 
+					   (concat
+					    ["live register ",
+					     Layout.toString (Var.layout x)])
+				      | Stack =>
+					   case Operand.deStackOffset (^r) of
+					      NONE => Error.bug "live slot"
+					    | SOME _ => (^r)::operands)
+			    else (^r)::operands
+		   end)
+	       end
 	 in
 	    val getOperands =
 	       Trace.trace ("Allocate.getOperands",

@@ -100,7 +100,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 	   set = setVectorEqualFunc,
 	   destroy = destroyType} =
 	 Property.destGetSet (Type.plist, Property.initConst NONE)
-      val returns = Vector.new1 Type.bool
+      val returns = SOME (Vector.new1 Type.bool)
       fun equalFunc (tycon: Tycon.t): Func.t =
 	 case getEqualFunc tycon of
 	    SOME f => f
@@ -160,7 +160,8 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 						    args = args,
 						    start = start,
 						    blocks = blocks,
-						    returns = returns}))
+						    returns = returns,
+						    mayRaise = false}))
 		  end
 	       in
 		  name
@@ -221,7 +222,8 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 						    args = args,
 						    start = start,
 						    blocks = blocks,
-						    returns = returns}))
+						    returns = returns,
+						    mayRaise = false}))
 		  end
 
 		  local
@@ -268,7 +270,8 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 						    args = args,
 						    start = start,
 						    blocks = blocks,
-						    returns = returns}))
+						    returns = returns,
+						    mayRaise = false}))
 		  end
 	       in
 		  name
@@ -413,13 +416,14 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 	 List.revMap 
 	 (functions, fn f =>
 	  let
-	     val {name, args, start, blocks, returns} = Function.dest f
+	     val {name, args, start, blocks, returns, mayRaise} = Function.dest f
 	  in
 	     shrink (Function.new {name = name,
 				   args = args,
 				   start = start,
 				   blocks = doit blocks,
-				   returns = returns})
+				   returns = returns,
+				   mayRaise = mayRaise})
 	  end)
       val program =
 	 Program.T {datatypes = datatypes,

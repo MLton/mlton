@@ -20,6 +20,7 @@ in
    structure Label = Label
    structure Sprogram = Program
    structure Prim = Prim
+   structure Return = Return
    structure Statement = Statement
    structure Stransfer = Transfer
    structure Tycon = Tycon
@@ -58,8 +59,10 @@ nonfix ^
 fun ^ r = valOf (!r)
 
 fun id x = x
+
+structure ImplementHandlers = ImplementHandlers (structure Ssa = Ssa)
    
-structure Chunkify = Chunkify (open Ssa)
+structure Chunkify = Chunkify (Ssa)
 
 structure ParallelMove = ParallelMove ()
 
@@ -112,9 +115,37 @@ structure VarOperand =
 	  | _ => ()
    end
 
-fun generate (program as Sprogram.T {datatypes, globals, functions, main})
-   : Mprogram.t =
+fun generate (p as Sprogram.T {functions, ...}): Mprogram.t =
    let
+      val _ =
+	 if true
+	    then ()
+	 else
+	    List.foreach
+	    (functions, fn f =>
+	     let
+		val {name, blocks, ...} = Function.dest f
+		val handlerStacks = Function.inferHandlers f
+		val _ =
+		   Int.for
+		   (0, Vector.length blocks, fn i =>
+		    let open Layout
+		    in
+		       outputl (seq [Label.layout (Block.label
+						   (Vector.sub (blocks, i))),
+				     str " ",
+				     Option.layout (List.layout Label.layout)
+				     (Array.sub (handlerStacks, i))],
+				Out.error)
+		    end)
+	     in
+		()
+	     end)
+      val program as Sprogram.T {datatypes, globals, functions, main} =
+	 ImplementHandlers.doit p
+      val _ =
+	 Control.trace (Control.Pass, "checkHandlers")
+	 Ssa.Program.checkHandlers program
       val {tyconRep, conRep, toMtype} = Representation.compute program
       val _ =
 	 Control.diagnostics
@@ -166,24 +197,27 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 	  end)
       (* The global raise operand. *)
       local
-	 val raiseGlobal: Operand.t option ref = ref NONE
+	 val raiseGlobals: Operand.t vector option ref = ref NONE
       in
-	 fun raiseOperand (t: Stype.t) =
-	    case !raiseGlobal of
+	 fun raiseOperands (ts: Stype.t vector): Operand.t vector =
+	    case !raiseGlobals of
 	       SOME z => z
 	     | NONE =>
 		  let
-		     val t = toMtype t
-		     val oper =
-			if Mtype.isPointer t
-			   then
-			      Mprogram.newGlobalPointerNonRoot
-			      mprogram
-			else
-			   Mprogram.newGlobal (mprogram, t)
-		     val _ = raiseGlobal := SOME oper
+		     val opers =
+			Vector.map
+			(ts, fn t =>
+			 let
+			    val t = toMtype t
+			 in
+			    if Mtype.isPointer t
+			       then
+				  Mprogram.newGlobalPointerNonRoot mprogram
+			    else Mprogram.newGlobal (mprogram, t)
+			 end)
+		     val _ = raiseGlobals := SOME opers
 		  in
-		     oper
+		     opers
 		  end
       end
       (* labelInfo, which is only set while processing each function. *)
@@ -782,10 +816,11 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 	       (blocks, fn Block.T {transfer, ...} =>
 		case transfer of
 		   Stransfer.Call {return, ...} =>
-		      Option.app (return, fn {cont, handler} =>
-				  (newCont (cont, handler);
-				   Handler.foreachLabel
-				   (handler, newHandler)))
+		      (case return of
+			  Return.NonTail {cont, handler} =>
+			     (newCont (cont, handler);
+			      Handler.foreachLabel (handler, newHandler))
+			| _ => ())
 		 | _ => ())
 	    val {handlerOffset, labelInfo = labelRegInfo, limitCheck, ...} =
 	       allocateFunc f
@@ -1099,11 +1134,12 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 			      Operand.stackOffset
 			      {offset = size' + shift + offset,
 			       ty = ty}
-			   val isUsed
-			     = case varInfo var of 
-			          {operand = VarOperand.Allocate {isUsed, ...}, ...} 
-				    => !isUsed
-				| _ => false
+			   val isUsed =
+			      case varInfo var of 
+				 {operand =
+				  VarOperand.Allocate {isUsed, ...}, ...} =>
+				    !isUsed
+			       | _ => false
 			in (arg,
 			    (if isUsed
 			       then arg::argsl
@@ -1166,8 +1202,7 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 						label = l})
 		  val Info.T {liveNoFormals, ...} = labelRegInfo j
 		  val offset = valOf handlerOffset
-		  val args = Vector.new1 (raiseOperand (#2 (Vector.sub
-							    (labelArgs j, 0))))
+		  val args = raiseOperands (Vector.map (labelArgs j, #2))
 		  val (statements, transfer) = tail (j, args, id)
 	       in Chunk.newBlock (labelChunk j,
 				  {label = l,
@@ -1205,8 +1240,10 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 					   end)))
 			val (frameSize, return, handlerLive) =
 			   case return of
-			      NONE => (0, NONE, [])
-			    | SOME {cont, handler} =>
+			      Return.Dead => (0, NONE, [])
+			    | Return.Tail => (0, NONE, [])
+			    | Return.HandleOnly => (0, NONE, [])
+			    | Return.NonTail {cont, handler} =>
 				 let
 				    val return = labelCont (cont, handler)
 				    val Info.T {size, adjustSize, ...} = 
@@ -1247,9 +1284,9 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 				 end
 			val (live, setupArgs) =
 			   let
-			      val (live,moves) =
+			      val (live, moves) =
 				 List.fold2
-				 (args, offsets, (handlerLive,[]), 
+				 (args, offsets, (handlerLive, []), 
 				  fn (arg, offset, (live, ac)) =>
 				  case varOperandOpt arg of
 				     NONE => (live, ac)
@@ -1370,9 +1407,10 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 			  prim = prim,
 			  success = noOverflowLabel})
 		     end
-		| Stransfer.Raise x =>
-		     ([Mstatement.move {dst = raiseOperand (#ty (varInfo x)),
-					src = vo x}],
+		| Stransfer.Raise xs =>
+		     (Mstatement.moves
+		      {dsts = raiseOperands (Vector.map (xs, #ty o varInfo)),
+		       srcs = Vector.map (xs, vo)},
 		      Mtransfer.raisee)
 		| Stransfer.Return xs =>
 		     let
@@ -1502,6 +1540,15 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 	    val genBlock = traceGenBlock genBlock
 	    val _ = Vector.foreach (blocks, genBlock)
 	    val _ = Vector.foreach (blocks, Block.clear)
+	    val _ =
+	       Control.diagnostic
+	       (fn () =>
+		let
+		   open Layout
+		in
+		   seq [str "Done generating code for function ",
+			Func.layout name]
+		end)
 	 in
 	    ()
 	 end

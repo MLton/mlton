@@ -18,7 +18,10 @@ signature DIRECT_EXP =
       | Int of (int * t) vector
       | Word of (word * t) vector
       | Word8 of (Word8.t * t) vector
-	
+
+     (* For now, call always uses Handler.None.  This means it should only
+      * be used for functions that cannot raise.
+      *)
      val call: {func: Func.t, args: t vector, ty: Type.t} -> t
      val casee: {test: t, 
 		 cases: cases,

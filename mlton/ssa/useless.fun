@@ -506,7 +506,7 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
 	     layout)
 	    primApp
       end
-      val {value, func, label, exnVal, ...} =
+      val {value, func, label, exnVals, ...} =
 	 analyze {
 		  coerce = Value.coerce,
 		  conApp = conApp,
@@ -529,17 +529,17 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
       (* Unify all handler args so that raise/handle has a consistent calling
        * convention.
        *)
-      val exnVal = fn () => (case exnVal of
-			        NONE => Error.bug "no exnVals"
-			      | SOME v => (filterGround v; v))
+      val exnVals = fn () => (case exnVals of
+				 NONE => Error.bug "no exnVals"
+			       | SOME vs => vs)
       val _ =
 	 List.foreach
 	 (functions, fn f =>
 	  Vector.foreach
 	  (Function.blocks f, fn Block.T {transfer, ...} =>
 	   case transfer of
-	      Call {return = SOME {handler = Handler.Handle h, ...}, ...} =>
-		 Value.unify (Vector.sub (label h, 0), exnVal ())
+	      Call {return = Return.NonTail {handler = Handler.Handle h, ...}, ...} =>
+		 Vector.foreach2 (label h, exnVals (), Value.unify)
 (*
 	    | Prim {success, ...} =>
 		 Value.unify (Vector.sub (label success, 0), )
@@ -548,24 +548,45 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
       val _ =
 	 Control.diagnostics
 	 (fn display =>
-	  let open Layout
+	  let
+	     open Layout
+	     val _ =
+		Vector.foreach
+		(datatypes, fn Datatype.T {tycon, cons} =>
+		 display
+		 (align
+		  [Tycon.layout tycon,
+		   indent (Vector.layout
+			   (fn {con, ...} =>
+			    seq [Con.layout con, str " ",
+				 Vector.layout Value.layout (conArgs con)])
+			   cons,
+			   2)]))
+	     val _ =
+		List.foreach
+		(functions, fn f =>
+		 let
+		    val {name, ...} = Function.dest f
+		    val _ = display (seq [str "Useless info for ",
+					  Func.layout name])
+		    val {args, returns, mayRaise} = func name
+		    val _ =
+		       display
+		       (record [("args", Vector.layout Value.layout args),
+				("returns",
+				 Option.layout (Vector.layout Value.layout)
+				 returns),
+				("mayRaise", Bool.layout mayRaise)])
+		    val _ =
+		       Function.foreachVar
+		       (f, fn (x, _) => 
+			display (seq [Var.layout x,
+				      str " ", Value.layout (value x)]))
+		 in
+		    ()
+		 end)
 	  in
-	     Vector.foreach
-	     (datatypes, fn Datatype.T {tycon, cons} =>
-	      display
-	      (align
-	       [Tycon.layout tycon,
-		indent (Vector.layout
-			(fn {con, ...} =>
-			 seq [Con.layout con, str " ",
-			      Vector.layout Value.layout (conArgs con)])
-			cons,
-			2)]))
-	     ; (Program.foreachVar
-		(program, fn (x, _) => 
-		 display (seq [Var.layout x,
-			       str " ",
-			       Value.layout (value x)])))
+	     ()
 	  end)
       val varExists = Value.isUseful o value
       val unitVar = Var.newString "unit"
@@ -585,12 +606,6 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
 					 args = Vector.new0 ()}})
 	      ; var
 	   end))
-      fun keepUseful1 (x: Var.t, v: Value.t): Var.t =
-	 let val (t, b) = Value.getNew v
-	 in if b
-	       then if varExists x then x else bogus t
-	    else bogus t
-	 end
       fun keepUseful (xs: Var.t vector, vs: Value.t vector): Var.t vector =
 	 Vector.keepAllMap2
 	 (xs, vs, fn (x, v) =>
@@ -753,37 +768,61 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
 	 Trace.trace ("Useless.doitStatement", 
 		      Statement.layout, Option.layout Statement.layout)
 	 doitStatement
-      fun agree (vs: Value.t vector, vs': Value.t vector): bool =
-	 Vector.forall2 (vs, vs', fn (v, v') =>
-			 not (Value.isUseful v) orelse Value.isUseful v')
-      fun doitTransfer (t: Transfer.t, returns: Value.t vector)
+      fun agree (v: Value.t, v': Value.t): bool =
+	 Value.isUseful v = Value.isUseful v'
+      fun agrees (vs, vs') = Vector.forall2 (vs, vs', agree)
+      val agrees =
+	 Trace.trace2 ("Useless.agrees",
+		       Vector.layout Value.layout,
+		       Vector.layout Value.layout,
+		       Bool.layout)
+	 agrees
+      fun doitTransfer (t: Transfer.t, returns: Value.t vector option)
 	 : Block.t list * Transfer.t =
 	 case t of
 	    Bug => ([], Bug)
 	  | Call {func = f, args, return} =>
 	       let
-		  val {args = fargs, returns = freturns} = func f
+		  val {args = fargs, returns = freturns, ...} = func f
 		  val (blocks, return) =
 		     case return of
-		        NONE => 
-			   if agree (freturns, returns)
-			      then ([], return)
-			   else let val (l, b) = dropUseless
-			                         (freturns, returns, Return)
-				in ([b],
-				    SOME {cont = l,
+			Return.Dead => ([], return)
+		      | Return.HandleOnly => ([], return)
+		      | Return.Tail =>
+			   (case (returns, freturns) of
+			       (NONE, NONE) => ([], Return.Tail)
+			     | (NONE, SOME _) => Error.bug "return mismatch"
+			     | (SOME _, NONE) => ([], Return.Tail)
+			     | (SOME returns, SOME freturns) =>
+				  if agrees (freturns, returns)
+				     then ([], Return.Tail)
+				  else
+				     let
+					val (l, b) =
+					   dropUseless
+					   (freturns, returns, Return)
+				     in ([b],
+					 Return.NonTail
+					 {cont = l,
 					  handler = Handler.CallerHandler})
-				end
-		      | SOME {cont, handler} =>
-			   let val returns = label cont
-			   in if agree (freturns, returns)
-				 then ([], return)
-			      else let val (l, b) = dropUseless
-				                    (freturns, returns, fn args =>
-						     Goto {dst = cont, args = args})
-				   in ([b], SOME {cont = l, handler = handler})
-				   end
-			   end
+				     end)
+		      | Return.NonTail {cont, handler} =>
+			   (case freturns of
+			       NONE => ([], return)
+			     | SOME freturns => 
+				  let val returns = label cont
+				  in if agrees (freturns, returns)
+					then ([], return)
+				     else let
+					     val (l, b) =
+						dropUseless
+						(freturns, returns, fn args =>
+						 Goto {dst = cont, args = args})
+					  in ([b],
+					      Return.NonTail
+					      {cont = l, handler = handler})
+					  end
+				  end)
 	       in (blocks,
 		   Call {func = f, 
 			 args = keepUseful (args, fargs), 
@@ -835,21 +874,14 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
 	       ([], Goto {dst = dst, args = keepUseful (args, label dst)})
 	  | Prim {prim, args, failure, success} =>
 	       let
-		  val _ = 
-		     Control.diagnostics
-		     (fn display => display (Transfer.layout t))
-		  val res = let val v = Value.fromType Type.int
-				val _ = Value.Useful.makeUseful (Value.deground v)
-			    in Vector.new1 v
-			    end
+		  val v = Value.fromType Type.int
+		  val _ = Value.Useful.makeUseful (Value.deground v)
+		  val res = Vector.new1 v
 		  val sargs = label success
 	       in
-		  if agree (res, sargs)
+		  if agree (v, Vector.sub (sargs, 0))
 		     then ([], t)
 		  else let
-			  val _ = 
-			     Control.diagnostics
-			     (fn display => display (Layout.str "dropUseless"))
 		          val (l, b) = dropUseless
 			               (res, sargs, fn args =>
 					Goto {dst = success, args = args})
@@ -861,16 +893,17 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
 				 success = l})
 		       end
 	       end
-	  | Raise x => ([], Raise (keepUseful1 (x, exnVal ())))
-	  | Return xs => ([], Return (keepUseful (xs, returns)))
+	  | Raise xs => ([], Raise (keepUseful (xs, exnVals ())))
+	  | Return xs => ([], Return (keepUseful (xs, valOf returns)))
       val doitTransfer =
 	 Trace.trace2 ("Useless.doitTransfer",
 		       Transfer.layout,
-		       Vector.layout Value.layout,
+		       Option.layout (Vector.layout Value.layout),
 		       Layout.tuple2 (List.layout (Label.layout o Block.label), 
 				      Transfer.layout))
 	 doitTransfer
-      fun doitBlock (Block.T {label, args, statements, transfer}, returns)
+      fun doitBlock (Block.T {label, args, statements, transfer},
+		     returns: Value.t vector option)
 	 : Block.t list * Block.t =
 	 let
 	    val args = keepUsefulArgs args
@@ -885,14 +918,14 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
       val doitBlock =
 	 Trace.trace2 ("Useless.doitBlock",
 		       Label.layout o Block.label,
-		       Vector.layout Value.layout,
+		       Option.layout (Vector.layout Value.layout),
 		       Layout.tuple2 (List.layout (Label.layout o Block.label), 
 				      (Label.layout o Block.label)))
 	 doitBlock
       fun doitFunction f =
 	 let
-	    val {name, args, start, blocks, returns} = Function.dest f
-	    val {args = argsvs, returns = returnvs} = func name
+	    val {name, args, start, blocks, returns, mayRaise} = Function.dest f
+	    val {args = argsvs, returns = returnvs, ...} = func name
 	    val args = keepUsefulArgs args
 	    val (blocks, blocks') =
 	       Vector.mapAndFold
@@ -900,14 +933,16 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
 		let val (blocks'', block) = doitBlock (block, returnvs)
 		in (block, blocks''::blocks')
 		end)
-	    val blocks = Vector.concat (blocks::(List.map(blocks', Vector.fromList)))
-	    val returns = Value.newTypes returnvs
+	    val blocks =
+	       Vector.concat (blocks :: List.map (blocks', Vector.fromList))
+	    val returns = Option.map (returnvs, Value.newTypes)
 	 in
 	    Function.new {name = name,
 			  args = args,
 			  start = start,
 			  blocks = blocks,
-			  returns = returns}
+			  returns = returns,
+			  mayRaise = mayRaise}
 	 end
       val datatypes =
 	 Vector.map

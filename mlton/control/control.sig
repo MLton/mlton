@@ -117,6 +117,8 @@ signature CONTROL =
       (* Whether or not to use the new non-tail call return convention.
        *)
       val newReturn: bool ref
+
+      val optimizeSSA: bool ref
 	 
       (* Only duplicate big functions when
        * (size - small) * (number of occurrences - 1) <= product
