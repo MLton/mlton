@@ -432,14 +432,15 @@ structure IntInf: INT_INF_EXTRA =
       (*
        * bigInt comparisions.
        *)
-      local fun makeTest (smallTest: smallInt * smallInt -> bool)
-	 (lhs: bigInt, rhs: bigInt)
-	 : bool =
-	 if areSmall (lhs, rhs)
-	    then smallTest (Word.toIntX (Prim.toWord lhs),
-			    Word.toIntX (Prim.toWord rhs))
-	 else smallTest (Prim.compare (lhs, rhs), 0)
-      in val bigGT = makeTest (op >)
+      local
+	 fun makeTest (smallTest: smallInt * smallInt -> bool)
+	    (lhs: bigInt, rhs: bigInt): bool =
+	    if areSmall (lhs, rhs)
+	       then smallTest (Word.toIntX (Prim.toWord lhs),
+			       Word.toIntX (Prim.toWord rhs))
+	    else smallTest (Prim.compare (lhs, rhs), 0)
+      in
+	 val bigGT = makeTest (op >)
 	 val bigGE = makeTest (op >=)
 	 val bigLE = makeTest (op <=)
 	 val bigLT = makeTest (op <)
