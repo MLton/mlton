@@ -285,10 +285,11 @@ datatype input = File of File.t | String of String.t
 
 local
    val (lexAndParseMLBFile, lexAndParseMLBFileMsg) =
-      Control.traceBatch (Control.Pass, "lex and parse") MLBFrontEnd.lexAndParseFile
+      Control.traceBatch (Control.Pass, "lex and parse")
+      MLBFrontEnd.lexAndParseFile
    val (lexAndParseMLBString, lexAndParseMLBStringMsg) =
-      Control.traceBatch (Control.Pass, "lex and parse") MLBFrontEnd.lexAndParseString
-      
+      Control.traceBatch (Control.Pass, "lex and parse")
+      MLBFrontEnd.lexAndParseString
    val lexAndParseMLBMsgRef = ref lexAndParseMLBFileMsg
 in
    fun lexAndParseMLB fs =
@@ -341,7 +342,8 @@ fun parseAndElaborateMLB (fs: input): Env.t * (Decs.t * bool) vector =
 fun outputBasisConstants (out: Out.t): unit =
    let
       val _ = amBuildingConstants := true
-      val (_, decs) = parseAndElaborateMLB (File "$(SML_LIB)/basis/libs/primitive.mlb")
+      val (_, decs) =
+	 parseAndElaborateMLB (File "$(SML_LIB)/basis/libs/primitive.mlb")
       val decs = Vector.map (decs, fn (decs, _) => Decs.toList decs)
       val decs = Vector.concatV (Vector.map (decs, Vector.fromList))
       (* Need to defunctorize so the constants are forced. *)
