@@ -21,6 +21,7 @@ signature VECTOR =
       val copy: 'a t -> 'a t
       val equals: 'a t * 'b t * ('a * 'b -> bool) -> bool
       val exists: 'a t * ('a -> bool) -> bool
+      val existsi: 'a t * (int * 'a -> bool) -> bool
       val existsR: 'a t * int * int * ('a -> bool) -> bool
       val fold2From: 'a t * 'b t * int * 'c * ('a * 'b * 'c -> 'c) -> 'c
       val fold2: 'a t * 'b t * 'c * ('a * 'b * 'c -> 'c) -> 'c
