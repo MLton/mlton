@@ -16,7 +16,7 @@ local
 
    local
       val validCharsString =
-	 "\n\t@abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ()[]<>!?-&#;'/=\"$."
+	 "\n\t@abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ()[]<>!?-&#;'/=\"$.\\"
    in	 
       val validChars =
 	 Vector.tabulate (numChars, fn i =>
@@ -43,7 +43,6 @@ local
 		else if (1 = String.size chars
 			 andalso not (String.contains
 				      (". ", String.sub (chars, 0))))
-		   
 			then chars
 		     else concat ["[", chars, "]"])
 	 end
