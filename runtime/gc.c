@@ -63,6 +63,7 @@ enum {
 	DEBUG_MARK_COMPACT = FALSE,
 	DEBUG_MEM = FALSE,
 	DEBUG_PROFILE_ALLOC = FALSE,
+	DEBUG_PROF = FALSE,
 	DEBUG_RESIZING = FALSE,
 	DEBUG_SIGNALS = FALSE,
 	DEBUG_STACKS = FALSE,
@@ -584,6 +585,46 @@ static inline bool stackIsEmpty (GC_stack stack) {
 	return 0 == stack->used;
 }
 
+word *GC_stackFrameIndices (GC_state s) {
+	pointer bottom;
+	int i;
+	word index;
+	GC_frameLayout *layout;
+	int numFrames;
+	word *res;
+	word returnAddress;
+	pointer top;
+
+	if (DEBUG_PROF)
+		fprintf (stderr, "walking stack\n");
+	assert (s->native);
+	bottom = stackBottom (s->currentThread->stack);
+	numFrames = 0;
+	for (top = s->stackTop; top > bottom; ++numFrames) {
+		returnAddress = *(word*)(top - WORD_SIZE);
+		index = *(word*)(returnAddress - WORD_SIZE);
+		if (DEBUG_PROF)
+			fprintf (stderr, "top = 0x%08x  index = %u\n",
+					(uint)top, index);
+		assert (0 <= index and index <= s->maxFrameIndex);
+		layout = &(s->frameLayouts[index]);
+		assert (layout->numBytes > 0);
+		top -= layout->numBytes;
+	}
+	res = (word*) malloc ((numFrames + 1) * sizeof(word));
+	i = numFrames - 1;
+	for (top = s->stackTop; top > bottom; --i) {
+		returnAddress = *(word*)(top - WORD_SIZE);
+		index = *(word*)(returnAddress - WORD_SIZE);
+		res[i] = index;
+		top -= s->frameLayouts[index].numBytes;
+	}
+	res[numFrames] = 0xFFFFFFFF;
+	if (DEBUG_PROF)
+		fprintf (stderr, "done walking stack\n");
+	return res;
+}
+
 static inline GC_frameLayout * getFrameLayout (GC_state s, word returnAddress) {
 	GC_frameLayout *layout;
 	uint index;
@@ -1076,6 +1117,7 @@ static inline void unblockSignals (GC_state s) {
 void enter (GC_state s) {
 	if (DEBUG)
 		fprintf (stderr, "enter\n");
+	s->amInGC = TRUE;
 	/* used needs to be set because the mutator has changed s->stackTop. */
 	s->currentThread->stack->used = currentStackUsed (s);
 	if (DEBUG) 
@@ -1098,6 +1140,7 @@ void leave (GC_state s) {
 		s->limit = 0;
 	unless (s->inSignalHandler)
 		unblockSignals (s);
+	s->amInGC = FALSE;
 	if (DEBUG)
 		fprintf (stderr, "leave ok\n");
 }
@@ -3187,6 +3230,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 	char *worldFile;
 	int i;
 
+	s->amInGC = FALSE;
 	s->bytesAllocated = 0;
 	s->bytesCopied = 0;
 	s->bytesCopiedMinor = 0;

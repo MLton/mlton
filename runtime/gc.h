@@ -230,6 +230,7 @@ typedef struct GC_state {
 	pointer stackTop;
 	pointer stackLimit;	/* stackBottom + stackSize - maxFrameSize */
 
+	bool amInGC;
 	pointer back;     	/* Points at next available word in toSpace. */
 	ullong bytesAllocated;
  	ullong bytesCopied;
@@ -510,6 +511,11 @@ void GC_saveWorld (GC_state s, int fd);
 
 /* Return the amount of heap space taken by the object pointed to by root. */
 uint GC_size (GC_state s, pointer root);
+
+/* Returns an array of indices corresponding to the current frames on the stack.
+ * The array is terminated by 0xFFFFFFFF.
+ */
+word *GC_stackFrameIndices (GC_state s);
 
 /* GC_startHandler should be called by the mutator just before switching to
  * the signal handler thread.

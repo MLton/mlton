@@ -149,6 +149,9 @@ static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {
 		++current[pc - START];
 	else
 		++current[card];
+	
+	unless (TRUE or gcState.amInGC)
+		free (GC_stackFrameIndices (&gcState));
 }
 
 void MLton_ProfileTime_init (void) {
