@@ -291,6 +291,8 @@ Group is
 /home/mfluet/mlton/mlton-cvs-live-stack-slots/mlton/mlton/cps/shrink.sig
 /home/mfluet/mlton/mlton-cvs-live-stack-slots/mlton/mlton/cps/simplify.sig
 /home/mfluet/mlton/mlton-cvs-live-stack-slots/mlton/mlton/cps/cps.sig
+/home/mfluet/mlton/mlton-cvs-live-stack-slots/mlton/mlton/cps/common-block.sig
+/home/mfluet/mlton/mlton-cvs-live-stack-slots/mlton/mlton/cps/common-block.fun
 /home/mfluet/mlton/mlton-cvs-live-stack-slots/mlton/mlton/cps/common-subexp.sig
 /home/mfluet/mlton/mlton-cvs-live-stack-slots/mlton/mlton/cps/common-subexp.fun
 /home/mfluet/mlton/mlton-cvs-live-stack-slots/mlton/mlton/cps/constant-propagation.sig
