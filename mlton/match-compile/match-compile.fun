@@ -11,6 +11,21 @@ struct
 
 open S
 
+local
+   open Layout
+in
+   val wild = str "_"
+
+   fun conApp (c, p) =
+      let
+	 val c = Con.layout c
+      in
+	 case p of
+	    NONE => c
+	  | SOME p => paren (seq [c, str " ", p])
+      end
+end
+
 structure Env = MonoEnv (structure Domain = Var
 			 structure Range = Var)
 
@@ -33,6 +48,17 @@ structure Fact =
 			| SOME x => seq [str " ", Var.layout x]]
 	     | Tuple xs => tuple (Vector.toListMap (xs, Var.layout))
 	 end
+   end
+
+structure Examples =
+   struct
+      datatype t = T of (Var.t * Layout.t) list
+
+      fun layout (T l) = List.layout (Layout.tuple2 (Var.layout, fn l => l)) l
+
+      val empty = T []
+	 
+      fun add (T es, x, l) = T ((x, l) :: es)
    end
 
 structure Facts =
@@ -89,10 +115,42 @@ structure Facts =
 	 in
 	    env
 	 end
+
       val bind =
 	 Trace.trace3 ("Facts.bind",
 		       layout, Var.layout, NestedPat.layout, Env.layout)
 	 bind
+
+      fun example (T facts, Examples.T es, x: Var.t): Layout.t =
+	 let
+	    val {destroy,
+		 get = fact: Var.t -> Fact.t option,
+		 set = setFact, ...} =
+	       Property.destGetSetOnce (Var.plist, Property.initConst NONE)
+	    val () = List.foreach (facts, fn {fact, var} =>
+				   setFact (var, SOME fact))
+	    fun loop (x: Var.t): Layout.t =
+	       case fact x of
+		  NONE =>
+		     (case List.peek (es, fn (x', _) => Var.equals (x, x')) of
+			 NONE => wild
+		       | SOME (_, l) => l)
+		| SOME f =>
+		     case f of
+			Fact.Con {arg, con} =>
+			   conApp (con, Option.map (arg, loop))
+		      | Fact.Tuple xs =>
+			   Layout.tuple (Vector.toListMap (xs, loop))
+	    val res = loop x
+	    val () = destroy ()
+	 in
+	    res
+	 end
+
+      val example =
+	 Trace.trace3 ("Facts.example", layout, Examples.layout, Var.layout,
+		       fn l => l)
+	 example
    end
    
 structure Pat =
@@ -277,37 +335,40 @@ fun unhandledConst (cs: Const.t vector): Const.t =
 	    end
    end
 
-local
-   open Layout
-in
-   val wild = str "_"
+structure Exp =
+   struct
+      open Exp
 
-   fun conApp (c, p) = paren (seq [Con.layout c, str " ", p])
-end
+      fun layout (_: t) = Layout.str "<exp>"
+   end
 
 val traceMatch =
-   Trace.trace3 ("MatchCompile.match",
-		 Vars.layout, Rules.layout, Facts.layout, Exp.layout)
+   Trace.trace4 ("MatchCompile.match",
+		 Vars.layout, Rules.layout, Facts.layout, Examples.layout,
+		 Exp.layout)
 val traceConst =
    Trace.trace ("MatchCompile.const",
-		fn (vars, rules, facts, _: Int.t, _: Exp.t) =>
+		fn (vars, rules, facts, es, _: Int.t, _: Exp.t) =>
 		Layout.tuple [Vars.layout vars,
 			      Rules.layout rules,
-			      Facts.layout facts],
+			      Facts.layout facts,
+			      Examples.layout es],
 		Exp.layout)
 val traceSum =
    Trace.trace ("MatchCompile.sum",
-		fn (vars, rules, facts, _: Int.t, _: Exp.t, _: Tycon.t) =>
+		fn (vars, rules, facts, es, _: Int.t, _: Exp.t, _: Tycon.t) =>
 		Layout.tuple [Vars.layout vars,
 			      Rules.layout rules,
-			      Facts.layout facts],
+			      Facts.layout facts,
+			      Examples.layout es],
 		Exp.layout)
 val traceTuple =
    Trace.trace ("MatchCompile.tuple",
-		fn (vars, rules, facts, _: Int.t, _: Exp.t) =>
+		fn (vars, rules, facts, es, _: Int.t, _: Exp.t) =>
 		Layout.tuple [Vars.layout vars,
 			      Rules.layout rules,
-			      Facts.layout facts],
+			      Facts.layout facts,
+			      Examples.layout es],
 		Exp.layout)
 
 (*---------------------------------------------------*)
@@ -326,15 +387,16 @@ fun matchCompile {caseType: Type.t,
       fun chooseColumn _ = 0
       fun match arg : Exp.t =
 	 traceMatch
-	 (fn (vars: Vars.t, rules: Rules.t, facts: Facts.t) =>
+	 (fn (vars: Vars.t, rules: Rules.t, facts: Facts.t, es) =>
 	 if 0 = Vector.length rules
 	    then Error.bug "match with no rules"
 	 else if Rule.allWild (Vector.sub (rules, 0))
 	    then (* The first rule matches. *)
 	       let
-		  val Rule.T {rest = {finish, nestedPat, ...}, ...} =
+		  val Rule.T {rest = {examples, finish, nestedPat, ...}, ...} =
 		     Vector.sub (rules, 0)
 		  val env = Facts.bind (facts, test, nestedPat)
+		  val () = List.push (examples, Facts.example (facts, es, test))
 	       in
 		  finish (fn x => Env.lookup (env, x))
 	       end
@@ -346,25 +408,25 @@ fun matchCompile {caseType: Type.t,
 				 not (Pat.isWild (Vector.sub (pats, i)))) of
 		  NONE => match (Vector.dropNth (vars, i),
 				 Rules.dropNth (rules, i),
-				 facts)
+				 facts, es)
 		| SOME (Rule.T {pats, ...}) =>
 		     let
 			datatype z = datatype Pat.t
 			val test = Exp.var (Vector.sub (vars, i))
 		     in
 			case Vector.sub (pats, i) of
-			   Const _ => const (vars, rules, facts, i, test)
+			   Const _ => const (vars, rules, facts, es, i, test)
 			 | Con {con, ...} =>
-			      sum (vars, rules, facts, i, test, conTycon con)
-			 | Tuple _ => tuple (vars, rules, facts, i, test)
+			      sum (vars, rules, facts, es, i, test, conTycon con)
+			 | Tuple _ => tuple (vars, rules, facts, es, i, test)
 			 | Wild => Error.bug "matches Wild"
 		     end
 	    end) arg
       and const arg =
 	 traceConst
-	 (fn (vars, rules, facts, i, test) =>
+	 (fn (vars, rules, facts, es, i, test) =>
 	 let
-	    val (_, ty) = Vector.sub (vars, i)
+	    val (var, ty) = Vector.sub (vars, i)
 	    val {isChar, isInt} =
 	       case Vector.peekMap (rules, fn Rule.T {pats, ...} =>
 				    case Vector.sub (pats, i) of
@@ -373,6 +435,27 @@ fun matchCompile {caseType: Type.t,
 				     | _ => NONE) of
 		  NONE => {isChar = false, isInt = false}
 		| SOME z => z
+	    fun layoutConst c =
+	       if isChar
+		  then
+		     case c of
+			Const.Word w =>
+			   let
+			      open Layout
+			   in
+			      seq [str "#\"",
+				   Char.layout (WordX.toChar w),
+				   str String.dquote]
+			   end
+		      | _ => Error.bug "strange char"
+	       else if isInt
+		  then
+		     case c of
+			Const.IntInf i => IntInf.layout i
+		      | Const.Word w =>
+			   IntInf.layout (WordX.toIntInfX w)
+		      | _ => Error.bug "strange int"
+	       else Const.layout c
 	    val (cases, defaults) =
 	       Vector.foldr
 	       (rules, ([], []),
@@ -407,50 +490,24 @@ fun matchCompile {caseType: Type.t,
 					     rules = Vector.fromList rules})
 	    val defaults = Vector.fromList defaults
 	    val vars = Vector.dropNth (vars, i)
-	    fun finish (rules: Rule.t vector): Exp.t =
-	       match (vars, rules, facts)
+	    fun finish (rules: Rule.t vector, e): Exp.t =
+	       match (vars, rules, facts, Examples.add (es, var, e))
 	    fun default (): Exp.t =
-	       let
-		  val cs = Vector.map (cases, #const)
-		  val unhandled = 
-		     if 0 = Vector.length cs
-			then wild
-		     else
-			let
-			   val c = unhandledConst cs
-			in
-			   if isChar
-			      then (case c of
-				       Const.Word w =>
-					  let
-					     open Layout
-					  in
-					     seq [str "#\"",
-						  Char.layout (WordX.toChar w),
-						  str String.dquote]
-					  end
-				     | _ => Error.bug "strange char")
-			   else (if isInt
-				    then
-				       case c of
-					  Const.IntInf i => IntInf.layout i
-					| Const.Word w =>
-					     IntInf.layout (WordX.toIntInfX w)
-					| _ => Error.bug "strange int"
-				 else Const.layout c)
-			end
-	       in
-                  finish defaults
-	       end
+	       finish (defaults,
+		       if 0 = Vector.length cases
+			  then wild
+		       else layoutConst (unhandledConst
+					 (Vector.map (cases, #const))))
 	 in
 	    case List.peek (directCases, fn {ty = ty', ...} =>
 			    Type.equals (ty, ty')) of
 	       NONE => 
-		  Vector.fold (cases, default (), fn ({const, rules}, rest) =>
-			       Exp.iff {test = Exp.equal (test, Exp.const const),
-					thenn = finish rules,
-					elsee = rest,
-					ty = caseType})
+		  Vector.fold
+		  (cases, default (), fn ({const, rules}, rest) =>
+		   Exp.iff {test = Exp.equal (test, Exp.const const),
+			    thenn = finish (rules, Const.layout const),
+			    elsee = rest,
+			    ty = caseType})
 	     | SOME {size, ...} =>
 		  let
 		     val default =
@@ -462,12 +519,12 @@ fun matchCompile {caseType: Type.t,
 			Vector.map
 			(cases, fn {const, rules} =>
 			 let
-			    val const = 
+			    val w = 
 			       case const of
 				  Const.Word w => w
 				| _ => Error.bug "caseWord type error"
 			 in
-			    (const, finish rules)
+			    (w, finish (rules, layoutConst const))
 			 end)
 		  in
 		     Exp.casee {cases = Cases.word (size, cases),
@@ -478,7 +535,8 @@ fun matchCompile {caseType: Type.t,
 	 end) arg
       and sum arg =
 	 traceSum
-	 (fn (vars: Vars.t, rules: Rules.t, facts: Facts.t, i, test, tycon) =>
+	 (fn (vars: Vars.t, rules: Rules.t, facts: Facts.t, es,
+	      i, test, tycon) =>
 	 let
 	    val (var, _) = Vector.sub (vars, i)
 	    val (cases, defaults) =
@@ -506,15 +564,9 @@ fun matchCompile {caseType: Type.t,
 					    (vars, fn (i', x) =>
 					     if i = i' then (arg, ty) else x))
 					end
-			       val facts =
-				  Facts.add
-				  (facts, var,
-				   Fact.Con {arg = Option.map (arg, #1),
-					     con = con})
 			    in
 			       {rest = {arg = arg,
 					con = con,
-					facts = facts,
 					targs = targs,
 					vars = vars},
 				rules = rule :: defaults}
@@ -539,7 +591,7 @@ fun matchCompile {caseType: Type.t,
 		 | _ => Error.bug "expected Con pat")
 	    val cases =
 	       Vector.fromListMap
-	       (cases, fn {rest = {arg, con, facts, targs, vars}, rules} =>
+	       (cases, fn {rest = {arg, con, targs, vars}, rules} =>
 		let
 		   val rules =
 		      Vector.fromListMap
@@ -558,19 +610,24 @@ fun matchCompile {caseType: Type.t,
 		       in
 			  Rule.T {pats = pats, rest = rest}
 		       end)
+		   val facts =
+		      Facts.add
+		      (facts, var,
+		       Fact.Con {arg = Option.map (arg, #1), con = con})
 		in
 		   {arg = arg,
 		    con = con,
-		    rhs = match (vars, rules, facts),
+		    rhs = match (vars, rules, facts, es),
 		    targs = targs}
 		end)
-	    fun done _ =
+	    fun done e =
 	       SOME (match (Vector.dropNth (vars, i),
 			    Rules.dropNth (Vector.fromList defaults, i),
-			    facts))
+			    facts,
+			    Examples.add (es, var, e)))
 	    val default =
 	       if Vector.isEmpty cases
-		  then done ()
+		  then done wild
 	       else if Tycon.equals (tycon, Tycon.exn)
 		  then done (Layout.str "e")
 	       else
@@ -587,9 +644,9 @@ fun matchCompile {caseType: Type.t,
 			       if Vector.exists (cases, fn {con = con', ...} =>
 						 Con.equals (con, con'))
 				  then NONE
-			       else SOME (if hasArg
-					     then conApp (con, wild)
-					  else Con.layout con))
+			       else SOME (conApp
+					  (con,
+					   if hasArg then SOME wild else NONE)))
 			   open Layout
 			in
 			   done (seq (separate (Vector.toList unhandled, " | ")))
@@ -620,7 +677,7 @@ fun matchCompile {caseType: Type.t,
 	 end) arg
       and tuple arg =
 	 traceTuple
-	 (fn (vars: Vars.t, rules: Rules.t, facts: Facts.t, i, test) =>
+	 (fn (vars: Vars.t, rules: Rules.t, facts: Facts.t, es, i, test) =>
 	 let
 	    val (var, _) = Vector.sub (vars, i)
 	    fun body vars' =
@@ -654,7 +711,8 @@ fun matchCompile {caseType: Type.t,
 	       in
 		  match (vars, rules,
 			 Facts.add (facts, var,
-				    Fact.Tuple (Vector.map (vars', #1))))
+				    Fact.Tuple (Vector.map (vars', #1))),
+			 es)
 	       end
 	 in
 	    Exp.detuple {body = body, tuple = test}
@@ -667,7 +725,8 @@ fun matchCompile {caseType: Type.t,
 				     rest = {examples = r,
 					     finish = f,
 					     nestedPat = p}}),
-		Facts.empty)
+		Facts.empty,
+		Examples.empty)
    in
       (res,
        fn () => Vector.map (examples, fn r => Layout.alignPrefix (! r, "| ")))
