@@ -68,26 +68,29 @@ Strings are just
 like char arrays, and are not null terminated, unless you manually do
 so from the SML side.
 
-\subsec{Compile-time constants}{compile-time-constant}
+% This section is no longer relevant, with the changes in place for
+% cross compiling.  Let's wait and see what we actually add before updating
+% the docs
+%\subsec{Compile-time constants}{compile-time-constant}
 
-{\mlton}'s \verb+_prim+ facility provides access to compile-time constants,
-which can be defined either via C include ({\tt .h}) files or on the command
-line with the {\tt -D} command-line option.
-The facility supports constants of type {\tt bool}, {\tt int}, {\tt real},
-{\tt string}, and {\tt word}.
-For example, the basis library
-implementation contains the following lines.
-\begin{verbatim}
-type syserror = int
-val acces = _prim "Posix_Error_acces": syserror;
-\end{verbatim}
-This defines the SML variable {\tt acces} to be an int whose value is the value
-of the C constant (macro) \verb+Posix_Error_access+, which is obtained from the
-(automatically) included file {\tt posix-constants.h}.  At compile-time, {\mlton}
-generates a C file that prints the values of all \verb+_prim+ constants, calls
-{\tt gcc} to produce an executable, runs the executable, and reads the result.
-The \verb+_prim+ expressions are then replaced by appropriate constants, which
-are available to the rest of the compilation process.
+%{\mlton}'s \verb+_prim+ facility provides access to compile-time constants,
+%which can be defined either via C include ({\tt .h}) files or on the command
+%line with the {\tt -D} command-line option.
+%The facility supports constants of type {\tt bool}, {\tt int}, {\tt real},
+%{\tt string}, and {\tt word}.
+%For example, the basis library
+%implementation contains the following lines.
+%\begin{verbatim}
+%type syserror = int
+%val acces = _prim "Posix_Error_acces": syserror;
+%\end{verbatim}
+%This defines the SML variable {\tt acces} to be an int whose value is the value
+%of the C constant (macro) \verb+Posix_Error_access+, which is obtained from the
+%(automatically) included file {\tt posix-constants.h}.  At compile-time, {\mlton}
+%generates a C file that prints the values of all \verb+_prim+ constants, calls
+%{\tt gcc} to produce an executable, runs the executable, and reads the result.
+%The \verb+_prim+ expressions are then replaced by appropriate constants, which
+%are available to the rest of the compilation process.
 
 \subsection{Example}
 
