@@ -6,11 +6,11 @@ structure Timer: TIMER =
 
       fun startCPUTimer (): cpu_timer =
 	 let
-	    val {gc = {utime = gcu, stime = gcs},
+	    val {gc = {utime = gcu, ...},
 		 self = {utime = selfu, stime = selfs}, ...} =
 	       MLtonRusage.rusage ()
 	 in
-	    {gc = Time.+ (gcu, gcs),
+	    {gc = gcu,
 	     sys = selfs,
 	     usr = selfu}
 	 end

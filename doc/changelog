@@ -1,5 +1,9 @@
 Here are the changes since version 20030716.
 
+* 2003-11-03
+  - Fixed Timer.checkGCTime so that only the GC user time is included,
+    not GC system time.
+
 * 2003-10-13
   - Added -warn-match to control display nonexhaustive and redundant
     match warnings. 
