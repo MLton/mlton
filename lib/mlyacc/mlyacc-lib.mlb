@@ -5,6 +5,7 @@ ann
 in
 local
     $(MLTON_ROOT)/basis/basis.mlb
+    $(MLTON_ROOT)/basis/unsafe.mlb
     base.sig
     join.sml
     lrtable.sml
@@ -25,5 +26,6 @@ in
     structure LrTable
     structure Stream
     structure LrParser
+    structure Unsafe
 end
 end
