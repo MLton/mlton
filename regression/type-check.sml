@@ -7,6 +7,7 @@ val 'a f = fn x =>
   let
      exception E of 'a
      fun g (E y) = y
+       | g _ = raise Fail "bug"
   in
      E x
   end

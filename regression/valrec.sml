@@ -41,7 +41,10 @@ end
 (* Checks parsing, scoping, typing and dynamic semantics of "val rec". *)
 
 fun x x = x
-val 1 = x 1;
+val _ =
+   case x 1 of
+      1 => ()
+    | _ => raise Fail "bug"
 
 val a = fn x => x
 val a = 1
