@@ -154,26 +154,30 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 			     raises = funcRaises} =
 			  funcInfo func
 			val _ = coerces (args, funcArgs)
+			fun unifyReturns () =
+			   case (funcReturns, returns) of
+			      (SOME rs, SOME rs') => Rep.unifys (rs, rs')
+			    | _ => ()		
+			fun unifyRaises () =
+			   case (funcRaises, raises) of
+			      (SOME rs, SOME rs') => Rep.unifys (rs, rs')
+			    | _ => ()
 		      in
 			case return of
 			   Return.Dead => ()
-			 | Return.HandleOnly => ()
+			 | Return.HandleOnly => unifyRaises ()
 			 | Return.NonTail {cont, handler} =>
 			      (Option.app 
 			       (funcReturns, fn rs =>
 				Rep.unifys (rs, labelArgs cont))
-			       ; (Handler.foreachLabel
-				  (handler, fn handler =>
-				   (Option.app 
-				    (funcRaises, fn rs =>
-				     Rep.unifys (rs, labelArgs handler))))))
-			 | Return.Tail =>
-			      (case (funcReturns, returns) of
-				  (SOME rs, SOME rs') => Rep.unifys (rs, rs')
-				| _ => ()
-			       ; case (funcRaises, raises) of
-				     (SOME rs, SOME rs') => Rep.unifys (rs, rs')
-				   | _ => ())
+			       ; case handler of
+			            Handler.CallerHandler => unifyRaises ()
+				  | Handler.Handle handler =>
+				       Option.app
+				       (funcRaises, fn rs =>
+					Rep.unifys (rs, labelArgs handler))
+				  | Handler.None => ())
+			 | Return.Tail => (unifyReturns (); unifyRaises ())
 		      end
 		 | Goto {dst, args} => coerces (args, labelArgs dst)
 		 | Case {cases = Cases.Con cases, ...} =>
