@@ -42,7 +42,7 @@ signature CONST =
 	 sig
 	    val isSmall: IntInf.t -> bool
 	    val toWord: IntInf.t -> word option
-	    val fromWord: word -> IntInf.t
+	    val fromWord: word -> IntInf.t option
 	 end
 
       type t

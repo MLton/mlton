@@ -855,8 +855,9 @@ fun 'a apply (p, args, varEquals) =
 	   | (IntInf_equal, [IntInf i1, IntInf i2]) =>
 		bool (IntInf.equals (i1, i2))
 	   | (IntInf_fromWord, [Word w]) =>
-		(intInf (SmallIntInf.fromWord w)
-		 handle _ => ApplyResult.Unknown)
+		(case SmallIntInf.fromWord w of
+		    NONE => ApplyResult.Unknown
+		  | SOME i => intInf i)
 	   | (IntInf_toWord, [IntInf i]) =>
 		(case SmallIntInf.toWord i of
 		    NONE => ApplyResult.Unknown

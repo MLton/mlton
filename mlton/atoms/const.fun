@@ -171,10 +171,10 @@ structure SmallIntInf =
 					  0w1)))
 	 else NONE
 
-      fun fromWord (w: word): IntInf.t =
-	 (Assert.assert ("SmallIntInf.fromWord", fn () =>
-			 w < 0wx80000000)
-	  ; IntInf.fromInt (Word.toIntX (Word.~>> (w, 0w1))))
+      fun fromWord (w: word): IntInf.t option =
+	 if w < 0wx80000000
+	    then SOME (IntInf.fromInt (Word.toIntX (Word.~>> (w, 0w1))))
+	 else NONE
    end
   
 end
