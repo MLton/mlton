@@ -57,8 +57,6 @@ functor Sequence (S: sig
 	    fromArray a
 	 end
 
-      fun unfold (n, a, f) = unfoldi (n, a, f o #2)
-	 
       (* Tabulate depends on the fact that the runtime system fills in the array
        * with reasonable bogus values.
        *)
@@ -174,17 +172,18 @@ functor Sequence (S: sig
 	       let
 		  val n = List.foldl (fn (v, s) => s + length v) 0 vs
 	       in
-		  unfold (n, (0, v, vs'),
-			  let
-			     fun loop (i, v, vs) =
-				if i < length v
-				   then (sub (v, i), (i + 1, v, vs))
-				else
-				   case vs of
-				      [] => raise Fail "concat bug"
-				    | v :: vs => loop (0, v, vs)
-			  in loop
-			  end)
+		  unfoldi (n, (0, v, vs'),
+			   fn (_, ac) =>
+			   let
+			      fun loop (i, v, vs) =
+				 if i < length v
+				    then (sub (v, i), (i + 1, v, vs))
+				 else
+				    case vs of
+				       [] => raise Fail "concat bug"
+				     | v :: vs => loop (0, v, vs)
+			   in loop ac
+			   end)
 	       end
  
       fun prefixToList (s, n) =

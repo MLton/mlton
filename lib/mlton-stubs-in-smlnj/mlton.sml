@@ -31,8 +31,6 @@ structure MLton: MLTON =
 			       b
 			    end)
 	       end
-
-	    fun unfold (n, a, f) = unfoldi (n, a, f o #2)
 	 end
       
       structure Cont =
@@ -296,8 +294,6 @@ structure MLton: MLTON =
 			       b
 			    end)
 	       end
-
-	    fun unfold (n, a, f) = unfoldi (n, a, f o #2)
 	 end
 
       structure World =
