@@ -44,7 +44,6 @@ structure Name =
        | Array_sub (* backend *)
        | Array_toVector (* backend *)
        | Array_update (* backend *)
-       | C_CS_charArrayToWord8Array (* type inference *)
        | Char_toWord8 (* type inference *)
        | Exn_extra (* implement exceptions *)
        | Exn_keepHistory (* a compile-time boolean *)
@@ -338,8 +337,6 @@ structure Name =
 	  (Array_sub, DependsOnState, "Array_sub"),
 	  (Array_toVector, DependsOnState, "Array_toVector"),
 	  (Array_update, SideEffect, "Array_update"),
-	  (C_CS_charArrayToWord8Array, DependsOnState,
-	   "C_CS_charArrayToWord8Array"),
 	  (Char_toWord8, Functional, "Char_toWord8"),
 	  (Exn_extra, Functional, "Exn_extra"),
 	  (Exn_name, Functional, "Exn_name"),

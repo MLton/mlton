@@ -825,8 +825,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
 			datatype z = datatype WordSize.t
 		     in
 			case Prim.name prim of
-			   C_CS_charArrayToWord8Array => id ()
-			 | Char_toWord8 => id ()
+			   Char_toWord8 => id ()
 			 | String_toWord8Vector => id ()
 			 | Word8_toChar => id ()
 			 | Word8Vector_toString => id ()

@@ -35,7 +35,6 @@ signature PRIM =
 	     | Array_sub (* backend *)
 	     | Array_toVector (* backend *)
 	     | Array_update (* backend *)
-	     | C_CS_charArrayToWord8Array (* type inference *)
 	     | Char_toWord8 (* type inference *)
 	     | Exn_extra (* implement exceptions *)
 	     | Exn_keepHistory (* a compile-time boolean *)
