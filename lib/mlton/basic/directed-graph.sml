@@ -848,11 +848,12 @@ fun loopForest {headers, graph, root}
       val F = new ()
 
       fun subGraph {graph,
-		    scc,
-		    headers'}
+		    scc}
 	= let
+	    val scc' = List.map(scc, #graphNode o subGraphNodeInfo)
+	    val headers = headers scc'
 	    val _ = List.foreach
-	            (headers', fn header => getIsHeader header := true)
+	            (headers, fn header => getIsHeader header := true)
 
 	    val graph' = new ()
 	  in
@@ -882,7 +883,7 @@ fun loopForest {headers, graph, root}
 				   (scc, to, Node.equals)
 				   andalso
 				   not (List.contains
-					(headers', graphNode to, Node.equals))
+					(headers, graphNode to, Node.equals))
 				  then let
 					 val from' = childSubGraphNode'' from
 					 val to' = childSubGraphNode'' to
@@ -894,103 +895,40 @@ fun loopForest {headers, graph, root}
 	    graph'
 	  end
 
-(*
-      fun nest {graph, parent}
-	= List.fold
-	  (stronglyConnectedComponents graph, [],
-	   fn (scc, trees) 
-	    => let
-		 val scc' = List.map(scc, graphNode)
-		 val headers' = headers scc'
-
-		 val n' = newNode F
-		 fun default ()
-		   = let
-		       val graph' = subGraph {graph = graph,
-					      scc = scc,
-					      headers' = headers'}
-		       val _ = setForestNodeInfo (n', {loopNodes = scc',
-						       parent = parent})
-		       val trees' = nest {graph = graph',
-					  parent = SOME n'}
-		     in
-		       (Tree.T ({headers = headers', loopNodes = scc'}, 
-				Vector.fromList trees'))::trees
-		     end
-
-		 fun default' n
-		   = let
-		       val _ = setForestNodeInfo (n', {loopNodes = [graphNode n], 
-						       parent = parent})
-		       val _ = setGraphNodeInfo (graphNode n, {forestNode = n'})
-		     in
-		       trees
-		     end
-
-		 fun default'' ()
-		   = (setForestNodeInfo (n', {loopNodes = [],
-					      parent = parent});
-		      trees)
-	       in
-		 case parent
-		   of NONE => ()
-		    | SOME parent => addEdge (F, {from = parent, to = n'}) ;
-		 case scc
-		   of [] => default'' ()
-		    | [n] => if Node.hasEdge {from = n, to = n}
-			       then default ()
-			       else default' n
-		    | scc => default ()
-	       end)
-*)
-
       fun nest {graph, parent}
 	= List.foreach
 	  (stronglyConnectedComponents graph,
-	   fn scc
-	    => let
-		 val scc' = List.map(scc, graphNode)
-		 val headers' = headers scc'
+	   fn scc => let
+		       val scc' = List.map(scc, graphNode)
+		       val n' = newNode F
+		       fun default ()
+			 = let
+			     val graph' = subGraph {graph = graph,
+						    scc = scc}
+			   in
+			     setForestNodeInfo(n', {loopNodes = scc',
+						    parent = parent}) ;
+			     nest {graph = graph',
+				   parent = SOME n'}
+			   end
 
-		 val n' = newNode F
-		 fun default ()
-		   = let
-		       val graph' = subGraph {graph = graph,
-					      scc = scc,
-					      headers' = headers'}
+		       fun default' n
+			 = let
+			   in
+			      setForestNodeInfo (n', {loopNodes = [graphNode n], 
+						      parent = parent}) ;
+			      setGraphNodeInfo (graphNode n, {forestNode = n'})
+			   end
 		     in
-		       setForestNodeInfo (n', {loopNodes = scc',
-					       parent = parent}) ;
-		       nest {graph = graph',
-			     parent = SOME n'}
-		     end
-
-		 fun default' n
-		   = let
-		     in
-		       setForestNodeInfo (n', {loopNodes = [graphNode n], 
-					       parent = parent}) ;
-		       setGraphNodeInfo (graphNode n, {forestNode = n'})
-		     end
-
-		 fun default'' ()
-		   = let
-		     in 
-		       setForestNodeInfo (n', {loopNodes = [],
-					       parent = parent})
-		     end
-	       in
-		 case parent
-		   of NONE => ()
-		    | SOME parent => addEdge (F, {from = parent, to = n'}) ;
-		 case scc
-		   of [] => default'' ()
-		    | [n] => if Node.hasEdge {from = n, to = n}
-			       then default ()
-			       else default' n
-		    | scc => default ()
-	       end)
-
+		       case parent
+			 of NONE => ()
+			  | SOME parent => addEdge (F, {from = parent, to = n'}) ;
+		       case scc
+			 of [n] => if Node.hasEdge {from = n, to = n}
+				     then default ()
+				     else default' n
+			  | scc => default ()
+		     end)
 
       val graph' 
 	= let
@@ -1023,19 +961,15 @@ fun loopForest {headers, graph, root}
 	    graph'
 	  end
 
-(*
-      val trees = nest {graph = graph', parent = NONE}
-*)
       val _ = nest {graph = graph', parent = NONE}
-      val trees = []
     in
       {forest = F,
-       trees = trees,
        graphToForest = forestNode,
        headers = headers,
        isHeader = ! o getIsHeader,
        loopNodes = loopNodes,
-       parent = parent}
+       parent = parent,
+       trees = []}
     end
 
 fun loopForestSteensgaard {graph, root}
