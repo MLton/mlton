@@ -16,7 +16,7 @@ PROF = mlprof
 YACC = mlyacc
 PATH = $(BIN):$(shell echo $$PATH)
 CP = /bin/cp -fpR
-GZIP = gzip --best
+GZIP = gzip --force --best
 
 VERSION = $(shell date +%Y%m%d)
 RELEASE = 1
