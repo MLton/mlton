@@ -177,6 +177,11 @@ functor PrimIO (S : PRIM_IO_ARG): PRIM_IO =
 	      ioDesc = NONE}
 	end
 
+      fun doBlock (f, block) x = (block (); SOME (f x))
+      fun doCanInput (f, canInput) x = if canInput ()
+					 then valOf (f x)
+					 else ()
+
       fun augmentReader (RD {name, chunkSize,
 			     readVec, readArr, readVecNB, readArrNB,
 			     block, canInput, avail,
@@ -235,47 +240,27 @@ functor PrimIO (S : PRIM_IO_ARG): PRIM_IO =
 				     SOME k
 				   end))
 	    | (NONE, NONE) => (NONE, NONE)
-	  fun augmentVec (readVec, readVecNB) =
-	    case (readVec, readVecNB) of
-	      (SOME readVec, SOME readVecNB) => (SOME readVec, SOME readVecNB)
-	    | (NONE, SOME readVecNB) =>
+	  fun augmentSeq (readSeq, readSeqNB) =
+	    case (readSeq, readSeqNB) of
+	      (SOME readSeq, SOME readSeqNB) => (SOME readSeq, SOME readSeqNB)
+	    | (NONE, SOME readSeqNB) =>
 		(case block of
 		   NONE => NONE
-		 | SOME block => SOME (fn i => (block ();
-						valOf (readVecNB i))),
-		 SOME readVecNB)
-	    | (SOME readVec, NONE) =>
-		(SOME readVec,
+		 | SOME block => SOME (doBlock (readSeqNB, block)),
+		 SOME readSeqNB)
+	    | (SOME readSeq, NONE) =>
+		(SOME readSeq,
 		 case canInput of
 		   NONE => NONE
-		 | SOME canInput => SOME (fn i => if canInput ()
-						    then SOME (readVec i)
-						    else NONE))
-	    | (NONE, NONE) => (NONE, NONE)
-	  fun augmentArr (readArr, readArrNB) =
-	    case (readArr, readArrNB) of
-	      (SOME readArr, SOME readArrNB) => (SOME readArr, SOME readArrNB)
-	    | (NONE, SOME readArrNB) =>
-		(case block of
-		   NONE => NONE
-		 | SOME block => SOME (fn x => (block ();
-						valOf (readArrNB x))),
-		 SOME readArrNB)
-	    | (SOME readArr, NONE) =>
-		(SOME readArr,
-		 case canInput of
-		   NONE => NONE
-		 | SOME canInput => SOME (fn x => if canInput ()
-						    then SOME (readArr x)
-						    else NONE))
+		 | SOME canInput => SOME (doCanInput (readSeq, canInput)))
 	    | (NONE, NONE) => (NONE, NONE)
 
 	  val ((readVec,readArr),(readVecNB,readArrNB)) =
 	    (augmentRead (readVec, readArr),
 	     augmentReadNB (readVecNB, readArrNB))
 	  val ((readVec,readVecNB),(readArr,readArrNB)) =
-	    (augmentVec (readVec, readVecNB),
-	     augmentArr (readArr, readArrNB))
+	    (augmentSeq (readVec, readVecNB),
+	     augmentSeq (readArr, readArrNB))
 	in
 	  RD {name = name, chunkSize = chunkSize,
 	      readVec = readVec, readArr = readArr, 

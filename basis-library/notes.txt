@@ -333,3 +333,10 @@ PrimIO and PRIM_IO
 
 functor arguments in PRIM_IO and STREAM_IO don't match
  (PRIM_IO uses A: MONO_ARRAY while STREAM_IO uses Array: MONO_ARRAY).
+
+STREAM_IO
+- what is the difference between a terminated output stream and a closed
+   output stream?  It seems as though the only way to terminate a stream
+   is to apply getWriter.  Some operations say what to do when the stream
+   is terminated or closed, but many are unspecified when the other condition
+   holds.
