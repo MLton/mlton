@@ -861,8 +861,8 @@ fun shrinkFunction (globals: Statement.t vector) =
 				    case LabelMeaning.aux m of
 				       LabelMeaning.Bug =>
 					  if handlerIsEta
-					     then nonTail ()
-					  else tail []
+					     then tail []
+					  else nonTail ()
 				     | LabelMeaning.Return {args, canMove} =>
 					  if isEta (m, args)
 					     then tail canMove
