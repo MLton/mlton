@@ -27,6 +27,9 @@ Here are the changes since version 20030312.
 * 2003-04
   - Added support for SPARC/SunOS using the C codegen.
 
+* 2003-03-25
+  - Added MLton.FFI, which allows callbacks to SML from C.
+
 * 2003-03-21
   - Fixed mlprof so that the default -graph arg for data from
     -profile-stack true is '(thresh-stack x)', not '(thresh x)'.
