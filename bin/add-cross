@@ -1,4 +1,4 @@
-#!/bin/sh -x
+#!/bin/sh
 
 # This script adds a new crosscompiler target for MLton.
 # You may need to set installLibDir, crossHost, or cygwin.
