@@ -34,27 +34,23 @@ signature PRE_REAL =
       val abs: real -> real
       val class: real -> int
       val copySign: real * real -> real
-      val frexp: real * int ref -> real;
-      val gdtoa: real * int * int * int ref -> Primitive.cstring;
+      val frexp: real * int ref -> real
+      val gdtoa: real * int * int * int ref -> Primitive.cstring
       val fromInt: int -> real
-      val isFinite: real -> bool
-      val isNan: real -> bool
-      val isNormal: real -> bool
+      val fromLarge: IEEEReal.rounding_mode -> LargeReal.real -> real
       val ldexp: real * int -> real
       val maxFinite: real
       val minNormalPos: real
       val minPos: real
       val modf: real * real ref -> real
       val nextAfter: real * real -> real
+      val precision: int
+      val radix: int
       val round: real -> real
       val signBit: real -> bool
       val strto: nullString -> real
       val toInt: real -> int
-	 
-      val fromLarge: IEEEReal.rounding_mode -> LargeReal.real -> real
-      val toLarge: real -> LargeReal.real
-      val precision: int
-      val radix: int
+      val toLarge: real -> LargeReal.real	 
   end
 
 signature REAL_GLOBAL =

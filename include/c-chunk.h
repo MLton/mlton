@@ -501,20 +501,12 @@ binaryReal(gt, >)
 binaryReal(le, <=)
 binaryReal(lt, <)
 
-Real64 ldexp (Real64 x, Int i);
-static inline Real64 Real64_ldexp (Real64 x, Int i) {
-	return ldexp (x, i);
-}
-static inline Real32 Real32_ldexp (Real32 x, Int i) {
-	return (Real32)(Real64_ldexp ((Real64)x, i));
-}
 #define Real32_muladd(x, y, z) ((x) * (y) + (z))
 #define Real32_mulsub(x, y, z) ((x) * (y) - (z))
 #define Real64_muladd(x, y, z) ((x) * (y) + (z))
 #define Real64_mulsub(x, y, z) ((x) * (y) - (z))
 #define Real32_neg(x) (-(x))
 #define Real64_neg(x) (-(x))
-Real64 Real64_round (Real64 x);
 #define Real32_toInt(x) ((Int)(x))
 #define Real64_toInt(x) ((Int)(x))
 

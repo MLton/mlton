@@ -18,9 +18,6 @@ functor Real (R: PRE_REAL): REAL =
 	 val abs = abs
 	 val copySign = copySign
 	 val fromInt = fromInt
-	 val isFinite = isFinite
-	 val isNan = isNan
-	 val isNormal = isNormal
 	 val maxFinite = maxFinite
 	 val minNormalPos = minNormalPos
 	 val minPos = minPos
@@ -39,11 +36,6 @@ functor Real (R: PRE_REAL): REAL =
 	 val signBit = signBit
 	 val ~ = ~
       end
-
-      val op ?= =
-	 if Primitive.MLton.native
-	    then op ?=
-	 else fn (r, r') => isNan r orelse isNan r' orelse r == r'
 	 
       val radix: int = Prim.radix
 
@@ -94,6 +86,33 @@ functor Real (R: PRE_REAL): REAL =
 	       else (acos, asin, ln, log10)
 	 end
 
+
+         (* See runtime/basis/Real.c for the integers returned by class. *)
+      fun class x =
+	 case Prim.class x of
+	    0 => NAN
+	  | 1 => NAN
+	  | 2 => INF
+	  | 3 => ZERO
+	  | 4 => NORMAL
+	  | 5 => SUBNORMAL
+	  | _ => raise Fail "Real_class returned bogus integer"
+
+      fun isFinite r =
+	 case class r of
+	    INF => false
+	  | NAN => false
+	  | _ => true
+	       
+      fun isNan r = class r = NAN
+
+      fun isNormal r = class r = NORMAL
+
+      val op ?= =
+	 if Primitive.MLton.native
+	    then op ?=
+	 else fn (r, r') => isNan r orelse isNan r' orelse r == r'
+
       val op != = not o op ==
 
       fun min (x, y) = if x < y orelse isNan y then x else y
@@ -129,18 +148,7 @@ functor Real (R: PRE_REAL): REAL =
       end
    
       fun unordered (x, y) = isNan x orelse isNan y
-
-      (* See runtime/basis/Real.c for the integers returned by class. *)
-      fun class x =
-	 case Prim.class x of
-	    0 => NAN (* QUIET *)
-	  | 1 => NAN (* SIGNALLING *)
-	  | 2 => INF
-	  | 3 => ZERO
-	  | 4 => NORMAL
-	  | 5 => SUBNORMAL
-	  | _ => raise Fail "Primitive.Real.class returned bogus integer"
-
+	 
       val toManExp =
 	 let
 	    val r: int ref = ref 0
