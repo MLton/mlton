@@ -169,7 +169,6 @@ ULIB = lib/mlton
 TLIB = $(DESTDIR)$(prefix)/$(ULIB)
 TMAN = $(DESTDIR)$(prefix)/man/man1
 TDOC = $(DESTDIR)$(prefix)/doc/mlton
-MANVERS = $(shell date '+%B %d, %Y')
 
 .PHONY: install
 install:
@@ -189,9 +188,6 @@ install:
 			<$(SRC)/bin/mlton >$(TBIN)/mlton
 	chmod +x $(TBIN)/mlton
 	$(CP) $(BIN)/$(LEX) $(BIN)/$(PROF) $(BIN)/$(YACC) $(TBIN)/
-	for f in mlprof mlton; do						\
-		sed "s/\(.*\)VERSION\(.*\)/\1$(MANVERS)\2/" <$(SRC)/man/$$f.1	\
-			>$(TMAN)/$$f.1;						\
-	done
+	$(CP) $(SRC)/man/mlprof.1 $(SRC)/man/mlton.1 $(TMAN)/
 	find $(TDOC) -name CVS -type d | xargs --no-run-if-empty rm -rf
 	find $(TDOC) -name .cvsignore -type f | xargs --no-run-if-empty rm -rf
