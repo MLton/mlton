@@ -6,23 +6,29 @@ type int = Int.t
 val fail = Process.fail
 
 val doHtml = ref false
+val doOnce = ref false
+val runArgs : string list ref = ref []
    
 local
    val trialTime = Time.seconds (IntInf.fromInt 60)
 in
    fun timeCall (com, args): real =
       let 
+	 fun doit ac =
+	    let
+	       val {user, system} =
+		  Process.time (fn () => Process.call' (com, args))
+	       val op + = Time.+
+	    in ac + user + system
+	    end
 	 fun loop (n, ac: Time.t): real =
 	    if Time.> (ac, trialTime)
 	       then Time.toReal ac / Real.fromInt n
-	    else loop (n + 1,
-		       let
-			  val {user, system} =
-			     Process.time (fn () => Process.call' (com, args))
-			  val op + = Time.+
-		       in ac + user + system
-		       end)
-      in (loop (0, Time.zero))
+	    else loop (n + 1, doit ac)
+      in 
+	 if !doOnce
+	    then Time.toReal (doit Time.zero)
+	 else loop (0, Time.zero)
       end
 end
 
@@ -46,7 +52,7 @@ fun compileSizeRun {args, compiler, exe, doTextPlusData: bool} =
 		end
 	  else SOME (File.size exe)
        val run =
-	  timeCall (exe, [])
+	  timeCall (exe, !runArgs)
 	  handle _ => Escape.escape (e, {compile = compile,
 					 run = NONE,
 					 size = size})
@@ -332,14 +338,55 @@ type 'a data = {bench: string,
 
 fun main args =
    let
-     val compilers: {name: string,
-		     abbrv: string,
-		     test: {bench: File.t} -> {compile: real option,
-					       run: real option,
-					       size: int option}} list ref 
-       = ref []
-     fun pushCompiler compiler = List.push(compilers, compiler)
-     fun pushCompilers compilers' = compilers := (List.rev compilers') @ (!compilers)
+      val compilers: {name: string,
+		      abbrv: string,
+		      test: {bench: File.t} -> {compile: real option,
+						run: real option,
+						size: int option}} list ref 
+	= ref []
+      fun pushCompiler compiler = List.push(compilers, compiler)
+      fun pushCompilers compilers' = compilers := (List.rev compilers') @ (!compilers)
+
+      fun setData (switch, data, str) =
+	 let
+	    fun die () = usage (concat ["invalid -", switch, " argument: ", str])
+	    open Regexp
+	    val numSave = Save.new ()
+	    val regexpSave = Save.new ()
+	    val re = seq [save (star digit, numSave),
+			  char #",",
+			  save (star any, regexpSave)]
+	    val reC = compileDFA re
+	 in
+	    case Compiled.matchAll (reC, str) of
+	       NONE => die ()
+	     | SOME match => 
+		  let
+		     val num = Match.lookupString (match, numSave)
+		     val num = case Int.fromString num of
+		                  NONE => die ()
+				| SOME num => num
+		     val regexp = Match.lookupString (match, regexpSave)
+		     val (regexp, saves) = 
+		        case Regexp.fromString regexp of
+			   NONE => die ()
+			 | SOME regexp => regexp
+		     val save = if 0 <= num andalso num < Vector.length saves
+				   then Vector.sub (saves, num)
+				else die ()
+		     val regexpC = compileDFA regexp
+		     fun doit s =
+		         Option.map
+			 (Compiled.matchAll (regexpC, s),
+			  fn match => Match.lookupString (match, save))
+		  in
+		    data := SOME (str, doit)
+		  end
+	 end
+      val outData : (string * (string -> string option)) option ref = ref NONE
+      val setOutData = fn str => setData ("out", outData, str)
+      val errData : (string * (string -> string option)) option ref = ref NONE
+      val setErrData = fn str => setData ("err", errData, str)
 
       (* Set the stack limit to its max, since mlkit segfaults on some benchmarks
        * otherwise.
@@ -356,7 +403,11 @@ fun main args =
       in
 	 val res =
 	    parse {switches = args,
-		   opts = [("html", trueRef doHtml),
+		   opts = [("args",
+			    SpaceString (fn args => runArgs := String.tokens
+					                       (args, Char.isSpace))),
+			   ("err", SpaceString setErrData),
+			   ("html", trueRef doHtml),
 			   ("mlkit", 
 			    None (fn () => pushCompiler
 					   {name = "ML-Kit",
@@ -367,14 +418,16 @@ fun main args =
 				           {name = "Moscow-ML",
 					    abbrv = "Moscow-ML",
 					    test = mosmlCompile})),
+			   ("mlton",
+			    SpaceString (fn arg => pushCompilers
+					           (makeMLton arg))),
+			   ("once", trueRef doOnce),
+			   ("out", SpaceString setOutData),
 			   ("smlnj",
 			    None (fn () => pushCompiler
                                            {name = "SML/NJ",
 					    abbrv = "SML/NJ",
 					    test = njCompile})),
-			   ("mlton",
-			    SpaceString (fn arg => pushCompilers
-					           (makeMLton arg))),
 			   trace]}
       end
    in case res of
@@ -389,7 +442,8 @@ fun main args =
 	       end
 	    fun r2s r = Real.format (r, Real.Format.fix (SOME 2))
 	    val i2s = Int.toCommaString
-	    fun show {compiles, runs, sizes} =
+	    val s2s = fn s => s
+	    fun show {compiles, runs, sizes, errs, outs} =
 	       let
 		  val out = Out.standard
 		  val _ = List.foreach
@@ -472,12 +526,19 @@ fun main args =
 			   | SOME {value = v, ...} => value / v} :: ac)
 		  val _ = show ("run time ratio", runs, r2s)
 		  val _ = show ("size", sizes, i2s)
+		  val _ = case !outData of
+		             SOME (out, _) => show (concat ["out: ", out], outs, s2s)
+			   | NONE => ()
+		  val _ = case !errData of
+		             SOME (err, _) => show (concat ["err: ", err], errs, s2s)
+			   | NONE => ()
 	       in ()
 	       end
 	    val totalFailures = ref []
 	    val data = 
 	       List.fold
-	       (benchmarks, {compiles = [], runs = [], sizes = []},
+	       (benchmarks, {compiles = [], runs = [], sizes = [],
+			     outs = [], errs = []},
 		fn (bench, ac) =>
 		let
 		   val _ =
@@ -491,16 +552,54 @@ fun main args =
 		      (compilers, ac, fn ({name, abbrv, test},
 					  ac as {compiles: real data,
 						 runs: real data,
-						 sizes: int data}) =>
+						 sizes: int data,
+						 outs: string data,
+						 errs: string data}) =>
 		       if true
 			  then
 			     let
+			        val (outTmpFile, outTmpOut) =
+				   File.temp
+				   {prefix = "tmp", suffix = "out"}
+			        val (errTmpFile, errTmpOut) =
+				   File.temp
+				   {prefix = "tmp", suffix = "err"}
 				val {compile, run, size} =
-				   Out.ignore
-				   (Out.standard, fn () =>
-				    Out.ignore
-				    (Out.error, fn () =>
+				   Out.fluidLet
+				   (Out.standard, outTmpOut, fn () =>
+				    Out.fluidLet
+				    (Out.error, errTmpOut, fn () =>
 				     test {bench = bench}))
+				val out = 
+				   case !outData of 
+				      NONE => NONE
+				    | SOME (_, doit) => 
+					 File.foldLines
+					 (outTmpFile, NONE, fn (s, v) =>
+					  let val s = String.removeTrailing
+					              (s, fn c => 
+						       Char.equals (c, Char.newline))
+					  in
+					     case doit s of
+					        NONE => v
+					      | v => v
+					  end)
+				val err = 
+				   case !errData of 
+				      NONE => NONE
+				    | SOME (_, doit) =>
+					 File.foldLines
+					 (errTmpFile, NONE, fn (s, v) =>
+					  let val s = String.removeTrailing
+					              (s, fn c => 
+						       Char.equals (c, Char.newline))
+					  in
+					     case doit s of
+					        NONE => v
+					      | v => v
+					  end)
+				val _ = File.remove outTmpFile
+				val _ = File.remove errTmpFile
 				fun add (v, ac) =
 				   case v of
 				      NONE => ac
@@ -512,7 +611,9 @@ fun main args =
 				val ac =
 				   {compiles = add (compile, compiles),
 				    runs = add (run, runs),
-				    sizes = add (size, sizes)}
+				    sizes = add (size, sizes),
+				    outs = add (out, outs),
+				    errs = add (err, errs)}
 			     in show ac
 				; Out.flush Out.standard
 				; ac
