@@ -521,12 +521,10 @@ fun commandLine (args: string list): unit =
 			   [["-S"],
 			    if !debug then ["-g"] else [],
 			    definesAndIncludes,
+			    [concat ["-O", Int.toString (!optimization)]],
 			    if !Native.native
 			       then []
-			    else
-			    List.concat
-			    [[concat ["-O", Int.toString (!optimization)]],
-			     gccSwitches]]
+			    else gccSwitches]
 			val switches =
 			   case host of
 			      Cross s => "-b" :: s :: switches
