@@ -266,11 +266,13 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
       fun indirectIndex (f: 'a CFunction.t): int =
 	 let
 	    val index = Counter.next callCounter
-	    val function = concat ["( *(", CFunction.cPointerType f, " fptr)) "]
+	    val function =
+	       concat ["(", "*(", CFunction.cPointerType f, " fptr)) "]
 	    val display =
-	       concat ["fptr = PopReg (Word32);\n",
+	       concat ["{\n\tWord32 fptr = PopReg (Word32);\n\t",
 		       callC {function = function,
-			      prototype = CFunction.prototype f}]
+			      prototype = CFunction.prototype f},
+		       "\t}\n"]
 	    val () =
 	       List.push (callCs, {display = display,
 				   index = index})
