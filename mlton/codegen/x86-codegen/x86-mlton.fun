@@ -51,7 +51,6 @@ struct
 	  = AppendList.fromList
 	    [Block.T'
 	     {entry = NONE,
-	      profileInfo = ProfileInfo.none,
 	      statements = [Assembly.comment ("UNIMPLEMENTED PRIM: " ^ s)],
 	      transfer = NONE}]
 		
@@ -83,7 +82,6 @@ struct
 	      AppendList.fromList
 	      [Block.T'
 	       {entry = NONE,
-		profileInfo = ProfileInfo.none,
 		statements 
 		= [Assembly.instruction_mov
 		   {dst = dst,
@@ -136,7 +134,6 @@ struct
 	      AppendList.fromList
 	      [Block.T'
 	       {entry = NONE,
-		profileInfo = ProfileInfo.none,
 		statements 
 		= [Assembly.instruction_mov
 		   {dst = dst,
@@ -189,7 +186,6 @@ struct
 	      AppendList.fromList
 	      [Block.T'
 	       {entry = NONE,
-		profileInfo = ProfileInfo.none,
 		statements 
 		= [Assembly.instruction_mov
 		   {dst = Operand.memloc memloc,
@@ -210,7 +206,6 @@ struct
 	      AppendList.fromList
 	      [Block.T'
 	       {entry = NONE,
-		profileInfo = ProfileInfo.none,
 		statements
 		= [Assembly.instruction_mov
 		   {dst = dst,
@@ -231,7 +226,6 @@ struct
 	      AppendList.fromList
 	      [Block.T'
 	       {entry = NONE,
-		profileInfo = ProfileInfo.none,
 		statements
 		= [Assembly.instruction_movx
 		   {oper = oper,
@@ -254,7 +248,6 @@ struct
 	      AppendList.fromList
 	      [Block.T'
 	       {entry = NONE,
-		profileInfo = ProfileInfo.none,
 		statements
 		= [Assembly.instruction_xvom
 		   {dst = dst,
@@ -301,7 +294,6 @@ struct
 	      AppendList.fromList
 	      [Block.T'
 	       {entry = NONE,
-		profileInfo = ProfileInfo.none,
 		statements
 		= [Assembly.instruction_mov
 		   {dst = dst,
@@ -346,7 +338,6 @@ struct
 	      AppendList.fromList
 	      [Block.T'
 	       {entry = NONE,
-		profileInfo = ProfileInfo.none,
 		statements
 		= [Assembly.instruction_mov
 		   {dst = dst,
@@ -387,7 +378,6 @@ struct
 	      AppendList.fromList
 	      [Block.T'
 	       {entry = NONE,
-		profileInfo = ProfileInfo.none,
 		statements
 		= [Assembly.instruction_mov
 		   {dst = dst,
@@ -412,7 +402,6 @@ struct
 	      AppendList.fromList
 	      [Block.T'
 	       {entry = NONE,
-		profileInfo = ProfileInfo.none,
 		statements 
 		= [Assembly.instruction_mov
 		   {dst = dst,
@@ -442,7 +431,6 @@ struct
 	      AppendList.fromList
 	      [Block.T'
 	       {entry = NONE,
-		profileInfo = ProfileInfo.none,
 		statements
 		= [Assembly.instruction_mov
 		   {dst = dst,
@@ -477,7 +465,6 @@ struct
 		of SOME _ => AppendList.fromList
 		             [Block.T'
 			      {entry = NONE,
-			       profileInfo = ProfileInfo.none,
 			       statements
 			       = [Assembly.instruction_cmp
 				  {src1 = src2,
@@ -492,7 +479,6 @@ struct
 		 | NONE => AppendList.fromList
 			   [Block.T'
 			    {entry = NONE,	
-			     profileInfo = ProfileInfo.none,
 			     statements
 			     = [Assembly.instruction_cmp
 				{src1 = src1,
@@ -526,7 +512,6 @@ struct
 		of SOME _ => AppendList.fromList
 		             [Block.T'
 			      {entry = NONE,
-			       profileInfo = ProfileInfo.none,
 			       statements
 			       = [Assembly.instruction_test
 				  {src1 = src2,
@@ -541,7 +526,6 @@ struct
 		 | NONE => AppendList.fromList
 			   [Block.T'
 			    {entry = NONE,
-			     profileInfo = ProfileInfo.none,
 			     statements
 			     = [Assembly.instruction_test
 				{src1 = src1,
@@ -580,7 +564,6 @@ struct
 	      AppendList.fromList
 	      [Block.T'
 	       {entry = NONE,
-		profileInfo = ProfileInfo.none,
 		statements
 		= [Assembly.instruction_pfmov
 		   {dst = dst,
@@ -610,7 +593,6 @@ struct
 	      AppendList.fromList
 	      [Block.T'
 	       {entry = NONE,
-		profileInfo = ProfileInfo.none,
 		statements
 		= [Assembly.instruction_pfmov
 		   {dst = dst,
@@ -641,7 +623,6 @@ struct
 	      AppendList.fromList
 	      [Block.T'
 	       {entry = NONE,
-		profileInfo = ProfileInfo.none,
 		statements 
 		= [Assembly.instruction_pfmov
 		   {dst = dst,
@@ -666,7 +647,6 @@ struct
 	      AppendList.fromList
 	      [Block.T'
 	       {entry = NONE,
-		profileInfo = ProfileInfo.none,
 		statements 
 		= [Assembly.instruction_pfldc
 		   {oper = oper,
@@ -689,7 +669,6 @@ struct
 		     (AppendList.single
 		      (x86.Block.T'
 		       {entry = NONE,
-			profileInfo = x86.ProfileInfo.none,
 			statements 
 			= [x86.Assembly.comment 
 			   ("begin prim: " ^ comment)],
@@ -697,7 +676,6 @@ struct
 		      AppendList.single
 		      (x86.Block.T'
 		       {entry = NONE,
-			profileInfo = x86.ProfileInfo.none,
 			statements 
 			= [x86.Assembly.comment 
 			   ("end prim: " ^ comment)],
@@ -724,7 +702,6 @@ struct
 		  AppendList.fromList
 		  [Block.T'
 		   {entry = NONE,
-		    profileInfo = ProfileInfo.none,
 		    statements 
 		    = [Assembly.instruction_cmp
 		       {src1 = src,
@@ -751,7 +728,6 @@ struct
 			 AppendList.fromList
 			 [Block.T'
 			  {entry = NONE,
-			   profileInfo = ProfileInfo.none,
 			   statements
 			   = [case Size.class dstsize
 				of Size.INT 
@@ -795,7 +771,6 @@ struct
 		  AppendList.fromList
 		  [Block.T'
 		   {entry = NONE,
-		    profileInfo = ProfileInfo.none,
 		    statements
 		    = [Assembly.instruction_pfmov
 		       {dst = realTemp1ContentsOperand,
@@ -846,7 +821,6 @@ struct
 		  AppendList.fromList
 		  [Block.T'
 		   {entry = NONE,
-		    profileInfo = ProfileInfo.none,
 		    statements
 		    = [Assembly.instruction_pfmov
 		       {dst = dst,
@@ -893,7 +867,6 @@ struct
 		  AppendList.fromList
 		  [Block.T'
 		   {entry = NONE,
-		    profileInfo = ProfileInfo.none,
 		    statements 
 		    = [Assembly.instruction_pfmov
 		       {dst = dst,
@@ -924,7 +897,6 @@ struct
 		  AppendList.fromList
 		  [Block.T'
 		   {entry = NONE,
-		    profileInfo = ProfileInfo.none,
 		    statements 
 		    = [Assembly.instruction_pfmov
 		       {dst = dst,
@@ -950,7 +922,6 @@ struct
 		  AppendList.fromList
 		  [Block.T'
 		   {entry = NONE,
-		    profileInfo = ProfileInfo.none,
 		    statements 
 		    = [Assembly.instruction_pfldc
 		       {oper = Instruction.L2E,
@@ -1010,7 +981,6 @@ struct
 		  AppendList.fromList
 		  [Block.T'
 		   {entry = NONE,
-		    profileInfo = ProfileInfo.none,
 		    statements 
 		    = [Assembly.instruction_pfmov
 		       {src = src,
@@ -1040,7 +1010,6 @@ struct
 		  AppendList.fromList
 		  [Block.T'
 		   {entry = NONE,
-		    profileInfo = ProfileInfo.none,
 		    statements
 		    = [Assembly.instruction_pfcom
 		       {src1 = src2,
@@ -1072,7 +1041,6 @@ struct
 		  AppendList.fromList
 		  [Block.T'
 		   {entry = NONE,
-		    profileInfo = ProfileInfo.none,
 		    statements
 		    = [Assembly.instruction_pfcom
 		       {src1 = src2,
@@ -1104,7 +1072,6 @@ struct
 		  AppendList.fromList
 		  [Block.T'
 		   {entry = NONE,
-		    profileInfo = ProfileInfo.none,
 		    statements
 		    = [Assembly.instruction_pfucom
 		       {src1 = src2,
@@ -1141,7 +1108,6 @@ struct
 		  AppendList.fromList
 		  [Block.T'
 		   {entry = NONE,
-		    profileInfo = ProfileInfo.none,
 		    statements
 		    = [Assembly.instruction_pfcom
 		       {src1 = src1,
@@ -1173,7 +1139,6 @@ struct
 		  AppendList.fromList
 		  [Block.T'
 		   {entry = NONE,
-		    profileInfo = ProfileInfo.none,
 		    statements
 		    = [Assembly.instruction_pfcom
 		       {src1 = src1,
@@ -1205,7 +1170,6 @@ struct
 		  AppendList.fromList
 		  [Block.T'
 		   {entry = NONE,
-		    profileInfo = ProfileInfo.none,
 		    statements
 		    = [Assembly.instruction_pfucom
 		       {src1 = src2,
@@ -1233,7 +1197,6 @@ struct
 		  AppendList.fromList
 		  [Block.T'
 		   {entry = NONE,
-		    profileInfo = ProfileInfo.none,
 		    statements 
 		    = [Assembly.instruction_pfmovfi
 		       {dst = dst,
@@ -1250,7 +1213,6 @@ struct
 		  AppendList.fromList
 		  [Block.T'
 		   {entry = NONE,
-		    profileInfo = ProfileInfo.none,
 		    statements 
 		    = [Assembly.instruction_pfmovti
 		       {dst = dst,
@@ -1276,7 +1238,6 @@ struct
 		  AppendList.fromList
 		  [Block.T'
 		   {entry = NONE,
-		    profileInfo = ProfileInfo.none,
 		    statements 
 		    = [Assembly.instruction_pfmovfi
 		       {dst = realTemp1ContentsOperand,
@@ -1362,7 +1323,6 @@ struct
 	  = if !Control.Native.commented > 0
 	      then AppendList.single (x86.Block.T'
 				      {entry = NONE,
-				       profileInfo = x86.ProfileInfo.none,
 				       statements 
 				       = [x86.Assembly.comment
 					  ("begin ccall: " ^ name)],
@@ -1374,7 +1334,6 @@ struct
 	 AppendList.single
 	 (Block.T'
 	  {entry = NONE,
-	   profileInfo = ProfileInfo.none,
 	   statements = [],
 	   transfer = SOME (Transfer.ccall 
 			    {args = Vector.toList args,
@@ -1407,7 +1366,6 @@ struct
 					     frameInfo = frameInfo,
 					     func = func,
 					     label = label}),
-		profileInfo = ProfileInfo.none,
 		statements = [],
 		transfer = NONE})
 	    end
@@ -1415,7 +1373,6 @@ struct
 	  = if !Control.Native.commented > 0
 	      then (AppendList.single
 		    (x86.Block.T' {entry = NONE,
-				   profileInfo = x86.ProfileInfo.none,
 				   statements = [x86.Assembly.comment 
 						 ("end creturn: " ^ name)],
 				   transfer = NONE}))
@@ -1445,7 +1402,6 @@ struct
 	  = AppendList.single
 	    (x86.Block.T'
 	     {entry = NONE,	
-	      profileInfo = x86.ProfileInfo.none,
 	      statements = [x86.Assembly.instruction_mov
 			    {dst = dst,
 			     src = src,
@@ -1562,7 +1518,6 @@ struct
 		     (AppendList.single
 		      (x86.Block.T'
 		       {entry = NONE,
-			profileInfo = x86.ProfileInfo.none,
 			statements 
 			= [x86.Assembly.comment 
 			   ("begin arith: " ^ comment)],
@@ -1570,7 +1525,6 @@ struct
 		      AppendList.single
 		      (x86.Block.T'
 		       {entry = NONE,
-			profileInfo = x86.ProfileInfo.none,
 			statements 
 			= [x86.Assembly.comment 
 			   ("end arith: " ^ comment)],

@@ -85,7 +85,6 @@ struct
 					    intInfs,
 					    main,
 					    maxFrameSize,
-					    profileInfo,
 					    strings,
 					    ...},
               includes: string list,

@@ -202,7 +202,6 @@ signature RSSA =
 	       T of {args: (Var.t * Type.t) vector,
 		     kind: Kind.t,
 		     label: Label.t,
-		     profileInfo: {ssa: {func: string, label: string}},
 		     statements: Statement.t vector,
 		     transfer: Transfer.t}
 
@@ -211,7 +210,6 @@ signature RSSA =
 	    val kind: t -> Kind.t
 	    val label: t -> Label.t
 	    val statements: t -> Statement.t vector
-	    val profileInfo: t -> {ssa: {func: string, label: string}}
 	    val transfer: t -> Transfer.t
 	 end
 

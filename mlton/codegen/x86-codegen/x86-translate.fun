@@ -222,7 +222,6 @@ struct
 		   AppendList.single
 		   (x86.Block.T'
 		    {entry = SOME (x86.Entry.jump {label = label}),
-		     profileInfo = x86.ProfileInfo.none,
 		     statements = [],
 		     transfer = NONE})
 		 end
@@ -241,7 +240,6 @@ struct
 		   (x86.Block.T'
 		    {entry = SOME (x86.Entry.func {label = label,
 						   live = args}),
-		     profileInfo = x86.ProfileInfo.none,
 		     statements = [],
 		     transfer = NONE})
 		 end
@@ -263,7 +261,6 @@ struct
 		    {entry = SOME (x86.Entry.cont {label = label,
 						   live = args,
 						   frameInfo = frameInfo}),
-		     profileInfo = x86.ProfileInfo.none,
 		     statements = [],
 		     transfer = NONE})
 		 end
@@ -275,7 +272,6 @@ struct
 		    {entry = SOME (x86.Entry.handler {label = label,
 						      live = x86.MemLocSet.empty,
 						      offset = offset}),
-		     profileInfo = x86.ProfileInfo.none,
 		     statements = [],
 		     transfer = NONE})
 		 end
@@ -304,7 +300,6 @@ struct
 		   (AppendList.single
 		    (x86.Block.T'
 		     {entry = NONE,
-		      profileInfo = x86.ProfileInfo.none,
 		      statements = [x86.Assembly.comment
 				    (concat ["begin: ",
 					     comment])],
@@ -312,7 +307,6 @@ struct
 		    AppendList.single
 		    (x86.Block.T'
 		     {entry = NONE,
-		      profileInfo = x86.ProfileInfo.none,
 		      statements = [x86.Assembly.comment
 				    (concat ["end: ",
 					     comment])],
@@ -346,7 +340,6 @@ struct
 		    AppendList.single
 		    (x86.Block.T'
 		     {entry = NONE,
-		      profileInfo = x86.ProfileInfo.none,
 		      statements
 		      = [(* dst = src *)
 			 case x86.Size.class srcsize
@@ -384,7 +377,6 @@ struct
 		      AppendList.single
 		      (x86.Block.T'
 		       {entry = NONE,
-			profileInfo = x86.ProfileInfo.none,
 			statements = [x86.Assembly.pseudoop_global label,
 				      x86.Assembly.label label],
 			transfer = NONE})
@@ -416,7 +408,6 @@ struct
 		    AppendList.single
 		    (x86.Block.T'
 		     {entry = NONE,
-		      profileInfo = x86.ProfileInfo.none,
 		      statements =
 		      [(* *(stackTop + offset) = exnStack *)
 		       x86.Assembly.instruction_mov 
@@ -441,7 +432,6 @@ struct
 		    AppendList.single
 		    (x86.Block.T'
 		     {entry = NONE,
-		      profileInfo = x86.ProfileInfo.none,
 		      statements
 		      = [(* exnStack = (stackTop + offset) - stackBottom *)
 			 x86.Assembly.instruction_mov 
@@ -489,7 +479,6 @@ struct
 		    AppendList.single
 		    (x86.Block.T'
 		     {entry = NONE,
-		      profileInfo = x86.ProfileInfo.none,
 		      statements 
 		      = [(* exnStack = *(stackTop + offset) *)
 			 x86.Assembly.instruction_mov 
@@ -563,7 +552,6 @@ struct
 		    AppendList.single
 		    (x86.Block.T'
 		     {entry = NONE,
-		      profileInfo = x86.ProfileInfo.none,
 		      statements
 		      = ((* *(frontier) = header *)
 			 x86.Assembly.instruction_mov 
@@ -599,7 +587,6 @@ struct
 	= AppendList.single
 	  (x86.Block.T'
 	   {entry = NONE,
-	    profileInfo = x86.ProfileInfo.none,
 	    statements = [],
 	    transfer = SOME (x86.Transfer.goto
 			     {target = l})})
@@ -613,7 +600,6 @@ struct
 	      then AppendList.single
 		   (x86.Block.T'
 		    {entry = NONE,
-		     profileInfo = x86.ProfileInfo.none,
 		     statements = [],
 		     transfer = SOME (x86.Transfer.goto {target = a})})
 	      else AppendList.single
@@ -622,7 +608,6 @@ struct
 		     *)
 		    x86.Block.T'
 		    {entry = NONE,
-		     profileInfo = x86.ProfileInfo.none,
 		     statements 
 		     = [x86.Assembly.instruction_test
 			{src1 = test,
@@ -644,7 +629,6 @@ struct
 	      then AppendList.single
 		   (x86.Block.T'
 		    {entry = NONE,
-		     profileInfo = x86.ProfileInfo.none,
 		     statements = [],
 		     transfer = SOME (x86.Transfer.goto {target = a})})
 	      else AppendList.single
@@ -653,7 +637,6 @@ struct
 		     *)
 		    x86.Block.T'
 		    {entry = NONE,
-		     profileInfo = x86.ProfileInfo.none,
 		     statements 
 		     = [x86.Assembly.instruction_cmp
 			{src1 = test,
@@ -673,7 +656,6 @@ struct
 	    AppendList.single
 	    (x86.Block.T'
 	     {entry = NONE,
-	      profileInfo = x86.ProfileInfo.none,
 	      statements = [],
 	      transfer = SOME (x86.Transfer.switch
 			       {test = test,
@@ -740,7 +722,6 @@ struct
 		   AppendList.single
 		   (x86.Block.T'
 		    {entry = NONE,
-		     profileInfo = x86.ProfileInfo.none,
 		     statements = [x86.Assembly.comment comment],
 		      transfer = NONE})
 		 end
@@ -783,7 +764,6 @@ struct
 		  AppendList.single
 		  (x86.Block.T'
 		   {entry = NONE,
-		    profileInfo = x86.ProfileInfo.none,
 		    statements = [],
 		    transfer 
 		    = SOME (x86.Transfer.return 
@@ -804,7 +784,6 @@ struct
 		  AppendList.single
 		  (x86.Block.T'
 		   {entry = NONE,
-		    profileInfo = x86.ProfileInfo.none,
 		    statements = [],
 		    transfer 
 		    = SOME (x86.Transfer.raisee 
@@ -838,7 +817,6 @@ struct
 				*)
 			       x86.Block.T'
 			       {entry = NONE,
-				profileInfo = x86.ProfileInfo.none,
 				statements 
 				= [x86.Assembly.instruction_test
 				   {src1 = test,
@@ -867,7 +845,6 @@ struct
 		   ((* goto label *)
 		    x86.Block.T'
 		    {entry = NONE,
-		     profileInfo = x86.ProfileInfo.none,
 		     statements = [],
 		     transfer = SOME (x86.Transfer.goto {target = label})})))
 	      | Call {label, live, return, ...}
@@ -896,7 +873,6 @@ struct
 		    (com,
 		     AppendList.single
 		     (x86.Block.T' {entry = NONE,
-				    profileInfo = x86.ProfileInfo.none,
 				    statements = [],
 				    transfer = SOME transfer}))
 		 end)
@@ -911,9 +887,6 @@ struct
       fun toX86Blocks {block as T {label, 
 				   live, 
 				   kind, 
-				   profileInfo as 
-				   {ssa as {func = funcProfileInfo,
-					    label = labelProfileInfo}, ...},
 				   raises,
 				   returns,
 				   statements, 
@@ -929,7 +902,6 @@ struct
 				     transInfo = transInfo},
 		  x86.Block.T'
 		  {entry = NONE,
-		   profileInfo = x86.ProfileInfo.none,
 		   statements 
 		   = if !Control.Native.commented > 0
 		       then let
@@ -957,40 +929,17 @@ struct
 		 
 	    val blocks = x86.Block.compress pseudo_blocks
 
-	    fun addProfileInfo profileInfo
-	      = let
-		  val profileInfo
-		    = x86.ProfileInfo.add
-		      (profileInfo,
-		       {profileLevel = 0,
-			profileName = funcProfileInfo})
-		  val profileInfo
-		    = x86.ProfileInfo.add
-		      (profileInfo,
-		       {profileLevel = 1,
-			profileName = labelProfileInfo})
-		in
-		  profileInfo
-		end
-
 	    val blocks
 	      = if !Control.profile = Control.ProfileNone
 		   then blocks
 		else
 		       List.map
 		       (blocks,
-			fn (x86.Block.T {entry, profileInfo, 
-					 statements, transfer})
+			fn (x86.Block.T {entry, statements, transfer})
 			 => let
 			      val label = x86.Entry.label entry
-			      val profileInfo
-				= x86.ProfileInfo.add
-				  (addProfileInfo profileInfo,
-				   {profileLevel = 2,
-				    profileName = Label.toString label})
 			    in
 			      x86.Block.T {entry = entry,
-					   profileInfo = profileInfo,
 					   statements = statements,
 					   transfer = transfer}
 			    end)

@@ -802,8 +802,7 @@ fun toMachine (program: Ssa.Program.t) =
 			    Layout.tuple2 (Vector.layout M.Statement.layout,
 					   M.Transfer.layout))
 	       genTransfer
-	    fun genBlock (R.Block.T {args, kind, label, profileInfo,
-				     statements, transfer,
+	    fun genBlock (R.Block.T {args, kind, label, statements, transfer,
 				     ...}) : unit =
 	       let
 		  val _ =
@@ -822,10 +821,6 @@ fun toMachine (program: Ssa.Program.t) =
 				 {label = funcToLabel name,
 				  kind = M.Kind.Func,
 				  live = live,
-				  profileInfo = 
-				  {ssa = #ssa profileInfo,
-				   rssa = {func = profileInfoFunc,
-					   label = Label.toString label}},
 				  raises = raises,
 				  returns = returns,
 				  statements = Vector.new0 (),
@@ -899,10 +894,6 @@ fun toMachine (program: Ssa.Program.t) =
 				  {kind = kind,
 				   label = label,
 				   live = live,
-				   profileInfo = 
-				   {ssa = #ssa profileInfo,
-				    rssa = {func = profileInfoFunc,
-					    label = Label.toString label}},
 				   raises = raises,
 				   returns = returns,
 				   statements = statements,

@@ -22,7 +22,6 @@ struct
     struct
       structure Peephole
 	= Peephole(type entry_type = Entry.t
-		   type profileInfo_type = ProfileInfo.t
 		   type statement_type = Assembly.t
 		   type transfer_type = Transfer.t
 		   datatype block = datatype Block.t)
@@ -73,7 +72,6 @@ struct
 
 	val rewriter : rewriter
 	  = fn {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[Assembly.Instruction (Instruction.MOV
@@ -112,13 +110,11 @@ struct
 		       in
 			 SOME (Block.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
 		  else NONE
 	     | {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[Assembly.Instruction (Instruction.MOV
@@ -157,13 +153,11 @@ struct
 		       in
 			 SOME (Block.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
 		  else NONE
 	     | {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[Assembly.Instruction (Instruction.MOV
@@ -200,7 +194,6 @@ struct
 		       in
 			 SOME (Block.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
@@ -242,7 +235,6 @@ struct
 
 	val rewriter : rewriter
 	  = fn {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[Assembly.Instruction (Instruction.pFMOV
@@ -281,13 +273,11 @@ struct
 		       in
 			 SOME (Block.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
 		  else NONE
 	     | {entry,
-		profileInfo, 
 		start, 
 		statements as
 		[[Assembly.Instruction (Instruction.pFMOV
@@ -326,13 +316,11 @@ struct
 		       in
 			 SOME (Block.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
 		  else NONE
 	     | {entry,
-	        profileInfo,
 		start, 
 		statements as
 		[[Assembly.Instruction (Instruction.pFMOV
@@ -371,7 +359,6 @@ struct
 		       in
 			 SOME (Block.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
@@ -450,7 +437,6 @@ struct
 
 	val rewriter : rewriter
 	  = fn {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[Assembly.Instruction (Instruction.MOV
@@ -492,14 +478,12 @@ struct
 			     in
 			       SOME (Block.T
 				     {entry = entry,
-				      profileInfo = profileInfo,
 				      statements = statements,
 				      transfer = transfer})
 			     end
 			  | _ => NONE
 		  else NONE
 	     | {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[Assembly.Instruction (Instruction.MOV
@@ -541,14 +525,12 @@ struct
 			     in
 			       SOME (Block.T
 				     {entry = entry,
-				      profileInfo = profileInfo,
 				      statements = statements,
 				      transfer = transfer})
 			     end
 			  | _ => NONE
 		  else NONE
 	     | {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[Assembly.Instruction (Instruction.MOV
@@ -588,7 +570,6 @@ struct
 			     in
 			       SOME (Block.T
 				     {entry = entry,
-				      profileInfo = profileInfo,
 				      statements = statements,
 				      transfer = transfer})
 			     end
@@ -634,7 +615,6 @@ struct
 
 	val rewriter : rewriter
 	  = fn {entry,
-		profileInfo,
 		start,
 		statements as
 		[[Assembly.Instruction (Instruction.MOV
@@ -707,13 +687,11 @@ struct
 		       in
 			 SOME (Block.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
 		  else NONE
 	     | {entry,
-		profileInfo,
 		start,
 		statements as
 		[[Assembly.Instruction (Instruction.MOV
@@ -786,13 +764,11 @@ struct
 		       in
 			 SOME (Block.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
 		  else NONE
 	     | {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[Assembly.Instruction (Instruction.MOV
@@ -858,7 +834,6 @@ struct
 		       in
 			 SOME (Block.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
@@ -904,7 +879,6 @@ struct
 
 	val rewriter : rewriter
 	  = fn {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[Assembly.Instruction (Instruction.MOV
@@ -970,13 +944,11 @@ struct
 		       in
 			 SOME (Block.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
 		  else NONE
 	     | {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[Assembly.Instruction (Instruction.MOV
@@ -1042,13 +1014,11 @@ struct
 		       in
 			 SOME (Block.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
 		  else NONE
 	     | {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[Assembly.Instruction (Instruction.MOV
@@ -1110,7 +1080,6 @@ struct
 		       in
 			 SOME (Block.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
@@ -1165,7 +1134,6 @@ struct
 
 	val rewriter : rewriter
 	  = fn {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[Assembly.Instruction (Instruction.BinAL 
@@ -1228,7 +1196,6 @@ struct
 		       in 
 			 SOME (Block.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
@@ -1309,7 +1276,6 @@ struct
 
 	val rewriter : rewriter
 	  = fn {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[Assembly.Instruction (Instruction.pMD 
@@ -1341,7 +1307,6 @@ struct
 		       in
 			 SOME (Block.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
@@ -1359,7 +1324,6 @@ struct
 		       in 
 			 SOME (Block.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
@@ -1386,13 +1350,11 @@ struct
 		       in
 			 SOME (Block.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
 		    | _ => NONE)
 	     | {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[Assembly.Instruction (Instruction.pMD 
@@ -1408,7 +1370,6 @@ struct
 		    | SOME (0,false) 
 		    => SOME (Block.T
 			     {entry = entry,
-			      profileInfo = profileInfo,
 			      statements = List.fold(start,
 						     List.concat [comments, finish],
 						     op ::),
@@ -1429,7 +1390,6 @@ struct
 		       in
 			 SOME (Block.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
@@ -1456,7 +1416,6 @@ struct
 		       in
 			 SOME (Block.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
@@ -1486,13 +1445,11 @@ struct
 			      in
 				SOME (Block.T
 				      {entry = entry,
-				       profileInfo = profileInfo,
 				       statements = statements,
 				       transfer = transfer})
 			      end
 			 else NONE)
 	     | {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[Assembly.Instruction (Instruction.pMD 
@@ -1508,7 +1465,6 @@ struct
 		    | SOME (0,false) 
 		    => SOME (Block.T
 			     {entry = entry,
-			      profileInfo = profileInfo,
 			      statements = List.fold(start,
 						     List.concat [comments, finish],
 						     op ::),
@@ -1531,7 +1487,6 @@ struct
 			      in 
 				SOME (Block.T
 				      {entry = entry,
-				       profileInfo = profileInfo,
 				       statements = statements,
 				       transfer = transfer})
 			      end
@@ -1539,7 +1494,6 @@ struct
 		    | SOME (i,true)
 		    => NONE)
 	     | {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[Assembly.Instruction (Instruction.pMD
@@ -1555,7 +1509,6 @@ struct
 		    | SOME (0,false) 
 		    => SOME (Block.T
 			     {entry = entry,
-			      profileInfo = profileInfo,
 			      statements = List.fold(start,
 						     List.concat [comments, finish],
 						     op ::),
@@ -1576,7 +1529,6 @@ struct
 		       in
 			 SOME (Block.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
@@ -1644,13 +1596,11 @@ struct
 			      in 
 				SOME (Block.T
 				      {entry = entry,
-				       profileInfo = profileInfo,
 				       statements = statements,
 				       transfer = transfer})
 			      end
 			 else NONE)
 	     | {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[Assembly.Instruction (Instruction.pMD
@@ -1666,7 +1616,6 @@ struct
 		    | SOME (0,false) 
 		    => SOME (Block.T
 			     {entry = entry,
-			      profileInfo = profileInfo,
 			      statements = List.fold(start,
 						     List.concat [comments, finish],
 						     op ::),
@@ -1689,14 +1638,12 @@ struct
 			      in 
 				SOME (Block.T
 				      {entry = entry,
-				       profileInfo = profileInfo,
 				       statements = statements,
 				       transfer = transfer})
 			      end
 			 else NONE
 	            | SOME (i,true) => NONE)
 	     | {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[Assembly.Instruction (Instruction.IMUL2
@@ -1727,7 +1674,6 @@ struct
 		       in
 			 SOME (Block.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
@@ -1745,7 +1691,6 @@ struct
 		       in 
 			 SOME (Block.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
@@ -1772,13 +1717,11 @@ struct
 		       in
 			 SOME (Block.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
 		    | _ => NONE)
 	     | {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[Assembly.Instruction (Instruction.IMUL2
@@ -1793,7 +1736,6 @@ struct
 		    | SOME (0,false) 
 		    => SOME (Block.T
 			     {entry = entry,
-			      profileInfo = profileInfo,
 			      statements = List.fold(start,
 						     List.concat [comments, finish],
 						     op ::),
@@ -1814,7 +1756,6 @@ struct
 		       in
 			 SOME (Block.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
@@ -1841,7 +1782,6 @@ struct
 		       in
 			 SOME (Block.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
@@ -1871,7 +1811,6 @@ struct
 			      in
 				SOME (Block.T
 				      {entry = entry,
-				       profileInfo = profileInfo,
 				       statements = statements,
 				       transfer = transfer})
 			      end
@@ -1925,7 +1864,6 @@ struct
 
 	val rewriter 
 	  = fn {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[Assembly.Instruction instruction],
@@ -1954,7 +1892,6 @@ struct
 					op ::)
 			 in
 			   SOME (Block.T {entry = entry,
-					  profileInfo = profileInfo,
 					  statements = statements,
 					  transfer = transfer})
 			 end
@@ -2000,7 +1937,6 @@ struct
 
 	val rewriter 
 	  = fn {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[Assembly.Instruction
@@ -2042,7 +1978,6 @@ struct
 				    falsee = falsee}
 		in 
 		  SOME (Block.T {entry = entry,
-				 profileInfo = profileInfo,
 				 statements = statements,
 				 transfer = transfer})
 		end
@@ -2098,7 +2033,6 @@ struct
 
 	val rewriter 
 	  = fn {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[Assembly.Instruction instruction],
@@ -2126,7 +2060,6 @@ struct
 				op ::)
 			 in
 			   SOME (Block.T {entry = entry,
-					  profileInfo = profileInfo,
 					  statements = statements,
 					  transfer = transfer})
 			 end
@@ -2242,7 +2175,6 @@ struct
 
 	    val rewriter 
 	      = fn {entry,
-		    profileInfo,
 		    start, 
 		    statements as [],
 		    finish as [],
@@ -2258,7 +2190,6 @@ struct
 		      val transfer = Transfer.goto {target = truee}
 		    in 
 		      SOME (Block.T {entry = entry,
-				     profileInfo = profileInfo,
 				     statements = statements,
 				     transfer = transfer})
 		    end
@@ -2291,7 +2222,6 @@ struct
 
 	    val rewriter 
 	      = fn {entry,
-		    profileInfo,
 		    start as [], 
 		    statements as [statements'],
 		    finish as [],
@@ -2336,7 +2266,6 @@ struct
 			  else Error.bug "elimSwitchTest"
 		    in
 		      SOME (Block.T {entry = entry,
-				     profileInfo = profileInfo,
 				     statements = statements,
 				     transfer = transfer})
 		    end
@@ -2375,7 +2304,6 @@ struct
 
 	    val rewriter 
 	      = fn {entry,
-		    profileInfo,
 		    start as [], 
 		    statements as [statements'],
 		    finish as [],
@@ -2428,7 +2356,6 @@ struct
 						 default = default})
 		    in 
 		      SOME (Block.T {entry = entry,	
-				     profileInfo = profileInfo,
 				     statements = statements,
 				     transfer = transfer})
 		    end
@@ -2455,7 +2382,6 @@ struct
 	      = List.keepAllMap
 	        (blocks,
 		 fn block as Block.T {entry as Entry.Jump {label}, 
-				      profileInfo,
 				      statements, 
 				      transfer as Transfer.Goto {target}}
 		  => if List.forall(statements,
@@ -2516,9 +2442,8 @@ struct
 	    val blocks
 	      = List.map
 	        (blocks,
-		 fn Block.T {entry, profileInfo, statements, transfer}
+		 fn Block.T {entry, statements, transfer}
 		  => Block.T {entry = entry,
-			      profileInfo = profileInfo,
 			      statements = statements,
 			      transfer = elimSimpleGoto' transfer})
 
@@ -2571,7 +2496,6 @@ struct
 		     => case get label
 			  of SOME (Block.T 
 				   {entry,
-				    profileInfo,
 				    statements,
 				    transfer as Transfer.Goto {target}})
 			   => (if Label.equals(label,target)
@@ -2580,16 +2504,11 @@ struct
 					 of NONE => b
 					  | SOME (Block.T
 						  {entry = entry',
-						   profileInfo = profileInfo',
 						   statements = statements',
 						   transfer = transfer'})
 					  => (set(label,
 						  SOME (Block.T
 							{entry = entry,
-							 profileInfo
-							 = ProfileInfo.combine
-							   (profileInfo,
-							    profileInfo'),
 							 statements
 							 = List.concat
 							   [statements, 
@@ -2606,7 +2525,6 @@ struct
 	    val changed = ref false
 	    val elimComplexGoto'
 	      = fn block as Block.T {entry, 
-				     profileInfo,
 				     statements, 
 				     transfer as Transfer.Goto {target}}
 		 => if Label.equals(Entry.label entry,target)
@@ -2614,7 +2532,6 @@ struct
 		      else (case get target
 			      of NONE => block
 			       | SOME (Block.T {entry = entry',
-						profileInfo = profileInfo',
 						statements = statements',
 						transfer = transfer'})
 			       => let
@@ -2630,10 +2547,6 @@ struct
 
 				    val block
 				      = Block.T {entry = entry,
-						 profileInfo 
-						 = ProfileInfo.combine
-						   (profileInfo,
-						    profileInfo'),
 						 statements 
 						 = List.concat
 						   [statements, 
@@ -2709,7 +2622,6 @@ struct
 		 fn label 
 		  => let
 		       val {block as Block.T {entry, 
-					      profileInfo, 
 					      statements, 
 					      transfer}, 
 			    reach} = get label
@@ -2718,7 +2630,6 @@ struct
 			 then SOME 
 			      (Block.T 
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements
 				= List.keepAll
 				  (statements,
@@ -2825,8 +2736,7 @@ struct
       structure Liveness = x86Liveness.Liveness
       structure LivenessBlock = x86Liveness.LivenessBlock
 
-      fun moveHoist {block as LivenessBlock.T 
-		              {entry, profileInfo, statements, transfer}}
+      fun moveHoist {block as LivenessBlock.T {entry, statements, transfer}}
 	= let
 	    val {transfer,live} 
 	      = LivenessBlock.reLivenessTransfer {transfer = transfer}
@@ -3116,7 +3026,6 @@ struct
 				      fn force as {age,...}
 				       => age <> 0)
 	    val block = LivenessBlock.T {entry = entry,
-					 profileInfo = profileInfo,
 					 statements = statements,
 					 transfer = transfer}
 	  in
@@ -3362,8 +3271,7 @@ struct
 	| copyPropagate' _ = Error.bug "copyPropagate'"
 
 
-      fun copyPropagate {block as LivenessBlock.T 
-			          {entry, profileInfo, statements, transfer},
+      fun copyPropagate {block as LivenessBlock.T {entry, statements, transfer},
 			 liveInfo}
 	= let
 	    val {pblock as {statements,transfer},changed}
@@ -3448,7 +3356,6 @@ struct
 		       changed = changed})
 	  in
 	    {block = LivenessBlock.T {entry = entry,
-				      profileInfo = profileInfo,
 				      statements = statements,
 				      transfer = transfer},
 	     changed = changed}
@@ -3481,7 +3388,6 @@ struct
 
       structure Peephole 
 	= Peephole(type entry_type = Entry.t * Liveness.t
-		   type profileInfo_type = ProfileInfo.t
 		   type statement_type = Assembly.t * Liveness.t
 		   type transfer_type = Transfer.t * Liveness.t
 		   datatype block = datatype LivenessBlock.t)
@@ -3534,7 +3440,6 @@ struct
 
 	val rewriter : rewriter
 	  = fn {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[(Assembly.Instruction instruction,
@@ -3593,7 +3498,6 @@ struct
 		       in
 			 SOME (LivenessBlock.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end
@@ -3666,7 +3570,6 @@ struct
 
 	val rewriter : rewriter
 	  = fn {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[(Assembly.Instruction (Instruction.MOV 
@@ -3792,7 +3695,6 @@ struct
 		       in
 			 SOME (LivenessBlock.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})		 
 		       end
@@ -3826,7 +3728,6 @@ struct
 
 	val rewriter : rewriter
 	  = fn {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[(Assembly.Instruction (Instruction.MOV 
@@ -3844,7 +3745,6 @@ struct
 		in 
 		  SOME (LivenessBlock.T
 			{entry = entry,
-			 profileInfo = profileInfo,
 			 statements = statements,
 			 transfer = transfer})
 		end
@@ -3905,7 +3805,6 @@ struct
 
 	val rewriter : rewriter
 	  = fn {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[(Assembly.Instruction (Instruction.MOV 
@@ -3981,13 +3880,11 @@ struct
 		       in
 			 SOME (LivenessBlock.T
 			       {entry = entry,	
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})		 
 		       end
 		  else NONE
 	     | {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[(Assembly.Instruction (Instruction.MOV 
@@ -4063,13 +3960,11 @@ struct
 		       in
 			 SOME (LivenessBlock.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})		 
 		       end
 		  else NONE
 	     | {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[(Assembly.Instruction (Instruction.MOV 
@@ -4143,7 +4038,6 @@ struct
 		       in
 			 SOME (LivenessBlock.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})		 
 		       end
@@ -4215,7 +4109,6 @@ struct
 
 	val rewriter : rewriter
 	  = fn {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[(Assembly.Instruction (Instruction.pFMOV 
@@ -4331,7 +4224,6 @@ struct
 		       in
 			 SOME (LivenessBlock.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})		 
 		       end
@@ -4365,7 +4257,6 @@ struct
 
 	val rewriter : rewriter
 	  = fn {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[(Assembly.Instruction (Instruction.pFMOV 
@@ -4384,7 +4275,6 @@ struct
 		in 
 		  SOME (LivenessBlock.T
 			{entry = entry,
-			 profileInfo = profileInfo,
 			 statements = statements,
 			 transfer = transfer})
 		end
@@ -4426,7 +4316,6 @@ struct
 
 	val rewriter : rewriter
 	  = fn {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[(Assembly.Instruction (Instruction.pFMOV 
@@ -4502,7 +4391,6 @@ struct
 		       in
 			 SOME (LivenessBlock.T
 			       {entry = entry,	
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})		 
 		       end
@@ -4555,7 +4443,6 @@ struct
 
 	val rewriter : rewriter
 	  = fn {entry,
-		profileInfo,
 		start, 
 		statements as
 		[[(statement as 
@@ -4629,7 +4516,6 @@ struct
 		       in
 			 SOME (LivenessBlock.T
 			       {entry = entry,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		       end

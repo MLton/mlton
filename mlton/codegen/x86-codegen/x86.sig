@@ -1062,15 +1062,6 @@ signature X86 =
 				    kills: Operand.t list}
       end
 
-    structure ProfileInfo :
-      sig
-	type t
-	val none : t
-	val add : t * {profileLevel: int, profileName: string} -> t
-	val profile_assembly : t -> Assembly.t list
-	val combine : t * t -> t
-      end
-
     structure Transfer :
       sig
 	structure Cases :
@@ -1175,11 +1166,9 @@ signature X86 =
     structure Block :
       sig
 	datatype t' = T' of {entry: Entry.t option,
-			     profileInfo: ProfileInfo.t,
 			     statements: Assembly.t list,
 			     transfer: Transfer.t option}
 	datatype t = T of {entry: Entry.t,
-			   profileInfo: ProfileInfo.t,
 			   statements: Assembly.t list,
 			   transfer: Transfer.t}
 

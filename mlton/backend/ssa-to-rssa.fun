@@ -224,7 +224,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			      offset = offset,
 			      ty = ty}))
       val extraBlocks = ref []
-      fun newBlock {args, kind, profileInfo,
+      fun newBlock {args, kind,
 		    statements: Statement.t vector,
 		    transfer: Transfer.t}: Label.t =
 	 let
@@ -233,7 +233,6 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			       Block.T {args = args,
 					kind = kind,
 					label = l,
-					profileInfo = profileInfo,
 					statements = statements,
 					transfer = transfer})
 	 in
@@ -242,7 +241,6 @@ fun convert (p: S.Program.t): Rssa.Program.t =
       val tagOffset = 0
       fun genCase {cases: (Con.t * Label.t) vector,
 		   default: Label.t option,
-		   profileInfo,
 		   test: Operand.t,
 		   testRep: TyconRep.t}: Transfer.t =
 	 let
@@ -300,7 +298,6 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 		      ; dst)
 		| _ => newBlock {args = Vector.new0 (),
 				 kind = Kind.Jump,
-				 profileInfo = profileInfo,
 				 statements = Vector.new0 (),
 				 transfer = transfer}
 	    fun switchEP (makePointersTransfer: Operand.t -> Transfer.t)
@@ -323,7 +320,6 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 		  fun block (var, ty, transfer) =
 		     newBlock {args = Vector.new0 (),
 			       kind = Kind.Jump,
-			       profileInfo = profileInfo,
 			       statements = (Vector.new1
 					     (Statement.Bind
 					      {isMutable = false,
@@ -349,7 +345,6 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 		  in
 		     newBlock {args = Vector.new0 (),
 			       kind = Kind.Jump,
-			       profileInfo = profileInfo,
 			       statements = Vector.new0 (),
 			       transfer = Goto {dst = l, args = args}}
 		  end
@@ -403,7 +398,6 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 				  newBlock
 				  {args = Vector.new0 (),
 				   kind = Kind.Jump,
-				   profileInfo = profileInfo,
 				   statements = statements,
 				   transfer =
 				   Goto {args = conSelects {rep = rep,
@@ -471,8 +465,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	     | TyconRep.IndirectTag => indirectTag test
 	     | TyconRep.Void => prim ()
 	 end
-      fun translateCase (profileInfo,
-			 {test: Var.t,
+      fun translateCase ({test: Var.t,
 			  cases: Label.t S.Cases.t,
 			  default: Label.t option}): Transfer.t =
 	 let
@@ -501,7 +494,6 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			    if Vector.isEmpty tys
 			       then genCase {cases = cases,
 					     default = default,
-					     profileInfo = profileInfo,
 					     test = varOp test,
 					     testRep = tyconRep tycon}
 			    else Error.bug "strange type in case"
@@ -514,7 +506,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	   set = setLabelInfo, ...} =
 	 Property.getSetOnce (Label.plist,
 			      Property.initRaise ("label info", Label.layout))
-      fun eta (profileInfo, l: Label.t, kind: Kind.t): Label.t =
+      fun eta (l: Label.t, kind: Kind.t): Label.t =
 	 let
 	    val {args, ...} = labelInfo l
 	    val args = Vector.keepAllMap (args, fn (x, t) =>
@@ -527,7 +519,6 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 		Block.T {args = args,
 			 kind = kind,
 			 label = l',
-			 profileInfo = profileInfo,
 			 statements = Vector.new0 (),
 			 transfer = (Transfer.Goto
 				     {dst = l,
@@ -537,21 +528,21 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	 in
 	    l'
 	 end
-      fun labelHandler (profileInfo, l: Label.t): Label.t =
+      fun labelHandler (l: Label.t): Label.t =
 	 let
 	    val info as {handler, ...} = labelInfo l
 	 in
 	    case !handler of
 	       NONE =>
 		  let
-		     val l' = eta (profileInfo, l, Kind.Handler)
+		     val l' = eta (l, Kind.Handler)
 		     val _ = handler := SOME l'
 		  in
 		     l'
 		  end
 	     | SOME l => l
 	 end
-      fun labelCont (profileInfo, l: Label.t, h: Handler.t): Label.t =
+      fun labelCont (l: Label.t, h: Handler.t): Label.t =
 	 let
 	    val info as {cont, ...} = labelInfo l
 	    datatype z = datatype Handler.t
@@ -570,21 +561,21 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			   CallerHandler => NONE
 			 | None => NONE
 			 | Handle l => SOME l
-		     val l' = eta (profileInfo, l, Kind.Cont {handler = handler})
+		     val l' = eta (l, Kind.Cont {handler = handler})
 		     val _ = List.push (cont, (handler, l'))
 		  in
 		     l'
 		  end
 	 end
       val labelCont =
-	 Trace.trace3 ("SsaToRssa.labelCont",
-		       Layout.ignore, Label.layout, Handler.layout, Label.layout)
+	 Trace.trace2 ("SsaToRssa.labelCont",
+		       Label.layout, Handler.layout, Label.layout)
 	 labelCont
       fun vos (xs: Var.t vector) =
 	 Vector.keepAllMap (xs, fn x =>
 			    Option.map (toRtype (varType x), fn _ =>
 					varOp x))
-      fun translateTransfer (profileInfo, t: S.Transfer.t): Transfer.t =
+      fun translateTransfer (t: S.Transfer.t): Transfer.t =
 	 case t of
 	    S.Transfer.Arith {args, overflow, prim, success, ty} =>
 	       let
@@ -594,7 +585,6 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 		     newBlock
 		     {args = Vector.new0 (),
 		      kind = Kind.Jump,
-		      profileInfo = profileInfo,
 		      statements = Vector.new0 (),
 		      transfer = (Transfer.Goto
 				  {dst = success,
@@ -620,9 +610,9 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			   let
 			      val handler = Handler.map 
 				            (handler, fn handler =>
-					     labelHandler (profileInfo, handler))
+					     labelHandler handler)
 			   in
-			      NonTail {cont = labelCont (profileInfo, cont, handler),
+			      NonTail {cont = labelCont (cont, handler),
 				       handler = handler}
 			   end
 		      | _ => return
@@ -631,7 +621,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 				 args = vos args,
 				 return = return}
 	       end
-	  | S.Transfer.Case r => translateCase (profileInfo, r)
+	  | S.Transfer.Case r => translateCase r
 	  | S.Transfer.Goto {dst, args} =>
 	       Transfer.Goto {dst = dst, args = vos args}
 	  | S.Transfer.Raise xs => Transfer.Raise (vos xs)
@@ -651,7 +641,6 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			   val l =
 			      newBlock {args = Vector.new0 (),
 					kind = Kind.CReturn {func = func},
-					profileInfo = profileInfo,
 					statements = Vector.new0 (),
 					transfer =
 					(Goto {args = Vector.new0 (),
@@ -688,7 +677,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	     | Type.Real => c (Const.fromReal "0.0")
 	     | Type.Word => c (Const.fromWord 0w0)
 	 end
-      fun translateStatementsTransfer (profileInfo, statements, transfer) =
+      fun translateStatementsTransfer (statements, transfer) =
 	 let
 	    fun loop (i, ss, t): Statement.t vector * Transfer.t =
 	       if i < 0
@@ -705,7 +694,6 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			let
 			   val l = newBlock {args = args,
 					     kind = kind,
-					     profileInfo = profileInfo,
 					     statements = Vector.fromList ss,
 					     transfer = t}
 			   val (ss, t) = make l
@@ -836,7 +824,6 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 						 newBlock
 						 {args = Vector.new0 (),
 						  kind = Kind.Jump,
-						  profileInfo = profileInfo,
 						  statements = Vector.new0 (),
 						  transfer = t}
 					   in
@@ -1104,7 +1091,6 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 					   newBlock
 					   {args = Vector.new0 (),
 					    kind = Kind.Jump,
-					    profileInfo = profileInfo,
 					    statements = statements,
 					    transfer = (Transfer.Goto
 							{args = Vector.new0 (),
@@ -1138,7 +1124,6 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 					   newBlock
 					   {args = Vector.new0 (),
 					    kind = Kind.Jump,
-					    profileInfo = profileInfo,
 					    statements = statements,
 					    transfer =
 					    Transfer.Goto
@@ -1148,7 +1133,6 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 					   newBlock
 					   {args = Vector.new0 (),
 					    kind = Kind.Jump,
-					    profileInfo = profileInfo,
 					    statements = Vector.new0 (),
 					    transfer =
 					    Transfer.ifInt
@@ -1227,7 +1211,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 		      | S.Exp.SetExnStackLocal => add SetExnStackLocal
 		      | S.Exp.SetExnStackSlot => add SetExnStackSlot
 		      | S.Exp.SetHandler h => 
-			   add (SetHandler (labelHandler (profileInfo, h)))
+			   add (SetHandler (labelHandler h))
 		      | S.Exp.SetSlotExnStack => add SetSlotExnStack
 		      | S.Exp.Tuple ys =>
 			   if 0 = Vector.length ys
@@ -1242,19 +1226,15 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 	 in
 	    loop (Vector.length statements - 1, [], transfer)
 	 end
-      fun translateBlock (S.Block.T {label, args, statements, transfer},
-			  profileInfo)= 
+      fun translateBlock (S.Block.T {label, args, statements, transfer}) = 
 	 let
 	    val (ss, t) =
 	       translateStatementsTransfer
-	       (profileInfo,
-		statements,
-		translateTransfer (profileInfo, transfer))
+	       (statements, translateTransfer transfer)
 	 in
 	    Block.T {args = translateFormals args,
 		     kind = Kind.Jump,
 		     label = label,
-		     profileInfo = profileInfo,
 		     statements = ss,
 		     transfer = t}
 	 end
@@ -1270,18 +1250,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 		setLabelInfo (label, {args = args,
 				      cont = ref [],
 				      handler = ref NONE}))
-	    val blocks =
-	       Vector.map
-	       (blocks,
-		let
-		   val func = Func.toString name
-		in
-		   fn block =>
-		   translateBlock
-		   (block,
-		    {ssa = {func = func,
-			    label = Label.toString (S.Block.label block)}})
-		end)
+	    val blocks = Vector.map (blocks, translateBlock)
 	    val blocks = Vector.concat [Vector.fromList (!extraBlocks), blocks]
 	    val _ = extraBlocks := []
 	    fun transTypes (ts : S.Type.t vector option)

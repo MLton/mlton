@@ -125,9 +125,6 @@ fun insertFunction (f: Function.t,
 		  let
 		     val l = Label.newNoname ()
 		     val _ = r := SOME l
-		     val profileInfo =
-			{ssa = {func = Func.toString name,
-				label = "AllocTooLarge"}}
 		     val cfunc =
 			CFunction.T {bytesNeeded = NONE,
 				     ensuresBytesFree = false,
@@ -143,7 +140,6 @@ fun insertFunction (f: Function.t,
 			Block.T {args = Vector.new0 (),
 				 kind = Kind.Jump,
 				 label = l,
-				 profileInfo = profileInfo,
 				 statements = Vector.new0 (),
 				 transfer =
 				 Transfer.CCall {args = Vector.new0 (),
@@ -156,8 +152,7 @@ fun insertFunction (f: Function.t,
       end
       val _ =
 	 Vector.foreachi
-	 (blocks, fn (i, Block.T {args, kind, label, profileInfo,
-				  statements, transfer}) =>
+	 (blocks, fn (i, Block.T {args, kind, label, statements, transfer}) =>
 	  let
 	     val transfer = 
 		case transfer of
@@ -201,7 +196,6 @@ fun insertFunction (f: Function.t,
 				   {args = Vector.new0 (),
 				    kind = Kind.Jump,
 				    label = dontCollect',
-				    profileInfo = profileInfo,
 				    statements = Vector.new0 (),
 				    transfer =
 				    Transfer.ifInt
@@ -224,7 +218,6 @@ fun insertFunction (f: Function.t,
 		      Block.T {args = Vector.new0 (),
 			       kind = Kind.Jump,
 			       label = collect,
-			       profileInfo = profileInfo,
 			       statements = Vector.new0 (),
 			       transfer = (Transfer.CCall
 					   {args = Vector.new5 (Operand.GCState,
@@ -238,14 +231,12 @@ fun insertFunction (f: Function.t,
 			  {args = Vector.new0 (),
 			   kind = Kind.CReturn {func = func},
 			   label = collectReturn,
-			   profileInfo = profileInfo,
 			   statements = collectReturnStatements,
 			   transfer = Transfer.Goto {dst = dontCollect,
 						     args = Vector.new0 ()}})
 		      :: Block.T {args = Vector.new0 (),
 				  kind = Kind.Jump,
 				  label = dontCollect,
-				  profileInfo = profileInfo,
 				  statements = statements,
 				  transfer = transfer}
 		      :: !newBlocks
@@ -265,7 +256,6 @@ fun insertFunction (f: Function.t,
 		       Block.T {args = args,
 				kind = kind,
 				label = label,
-				profileInfo = profileInfo,
 				statements = statements,
 				transfer = transfer})
 		in
@@ -306,7 +296,6 @@ fun insertFunction (f: Function.t,
 			       Block.T {args = args,
 					kind = kind,
 					label = label,
-					profileInfo = profileInfo,
 					statements = statements,
 					transfer = transfer})
 		    ; label)
@@ -726,8 +715,6 @@ fun insert (p as Program.T {functions, main, objectTypes}) =
 	 Block.T {args = Vector.new0 (),
 		  kind = Kind.Jump,
 		  label = newStart,
-		  profileInfo = {ssa = {func = Func.toString name, 
-					label = Label.toString newStart}},
 		  statements = (Vector.fromListMap
 				(!extraGlobals, fn x =>
 				 Statement.Bind {isMutable = true,

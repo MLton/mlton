@@ -472,7 +472,6 @@ structure Block =
 	       kind: Kind.t,
 	       label: Label.t,
 	       statements: Statement.t vector,
-	       profileInfo: {ssa: {func: string, label: string}},
 	       transfer: Transfer.t}
 
       local
@@ -482,7 +481,6 @@ structure Block =
 	 val kind = make #kind
 	 val label = make #label
 	 val statements = make #statements
-	 val profileInfo = make #profileInfo
 	 val transfer = make #transfer
       end
    

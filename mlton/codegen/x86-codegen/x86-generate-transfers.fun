@@ -341,21 +341,14 @@ struct
 			   destroy = destLayoutInfo}
 	  = Property.destGetSet(Label.plist, 
 				Property.initRaise ("layoutInfo", Label.layout))
-	val profileInfo as {get = getProfileInfo : Label.t -> ProfileInfo.t,
-			    set = setProfileInfo,
-			    destroy = destProfileInfo}
-	  = Property.destGetSet(Label.plist, 
-				Property.initRaise ("profileInfo", Label.layout))
-
 	val _ 
 	  = List.foreach
 	    (blocks,
-	     fn block as Block.T {entry,profileInfo,...}
+	     fn block as Block.T {entry, ...}
 	      => let
 		   val label = Entry.label entry
 		 in 
-		   setLayoutInfo(label, SOME block);
-		   setProfileInfo(label, profileInfo)
+		   setLayoutInfo(label, SOME block)
 		 end)
 
 	local	
@@ -377,16 +370,9 @@ struct
 	fun pushCompensationBlock {label, id}
 	  = let
 	      val label' = Label.new label
-	      val profileInfo
-		= ProfileInfo.add
-		  (getProfileInfo label,
-		   {profileLevel = 2,
-		    profileName = Label.toString label'})
-
 	      val live = getLive(liveInfo, label)
 	      val block
 		= Block.T {entry = Entry.jump {label = label'},
-			   profileInfo = profileInfo,
 			   statements 
 			   = (Assembly.directive_restoreregalloc
 			      {live = MemLocSet.add
@@ -404,7 +390,6 @@ struct
 			    fn () => getNear(jumpInfo, label') = Count 1);
 	      x86LiveTransfers.setLiveTransfersEmpty(liveTransfers, label');
 	      setLayoutInfo(label', SOME block);
-	      setProfileInfo(label', profileInfo);
 	      push label';
 	      label'
 	    end
@@ -435,15 +420,9 @@ struct
 			Assembly.t AppendList.t
 	  = (case getLayoutInfo label
 	       of NONE => AppendList.empty
-	        | SOME (Block.T {entry, profileInfo,
-				 statements, transfer})
+	        | SOME (Block.T {entry, statements, transfer})
 		=> let
 		     val _ = setLayoutInfo(label, NONE)
-
-		     val profile_assembly
-		       = ProfileInfo.profile_assembly profileInfo
-		     val profile_assembly
-		       = AppendList.fromList profile_assembly
 
 (*
 		     val isLoopHeader = fn _ => false
@@ -497,8 +476,7 @@ struct
 			   AppendList.appends
 			   [align,
 			    AppendList.single (Assembly.label label),
-			    assumes,
-			    profile_assembly]
+			    assumes]
 			end
 		     val pre
 		       = case entry
@@ -540,8 +518,7 @@ struct
 					    = valOf frameInfo
 					  val finish
 					    = AppendList.appends
-					      [profile_assembly,
-					       let	
+					      [let	
 						 val stackTop 
 						   = x86MLton.gcState_stackTopContentsOperand ()
 						 val bytes 
@@ -603,7 +580,7 @@ struct
 				 Assembly.pseudoop_global label,
 				 Assembly.label label],
 				(* entry from far assumptions *)
-				(farEntry profile_assembly))
+				(farEntry AppendList.empty))
 			    | Cont {label, 
 				    frameInfo as FrameInfo.T {size,
 							      frameLayoutsIndex},
@@ -618,14 +595,12 @@ struct
 				 Assembly.label label],
 				(* entry from far assumptions *)
 				(farEntry
-				 (AppendList.append
-				  (profile_assembly,
-				   let
+				 (let
 				     val stackTop 
-				       = x86MLton.gcState_stackTopContentsOperand ()
+					= x86MLton.gcState_stackTopContentsOperand ()
 				     val bytes 
-				       = x86.Operand.immediate_const_int (~ size)
-				   in
+					= x86.Operand.immediate_const_int (~ size)
+				  in
 				     AppendList.cons
 				     ((* stackTop += bytes *)
 				      x86.Assembly.instruction_binal 
@@ -634,8 +609,8 @@ struct
 				       src = bytes, 
 				       size = pointerSize},
 				      profileStackTopCommit)
-				   end))))
-			    | Handler {label,
+				  end)))
+		            | Handler {label,
 				       offset, 
 				       ...}
 			    => AppendList.append
@@ -645,14 +620,12 @@ struct
 				 Assembly.label label],
 				(* entry from far assumptions *)
 				(farEntry
-				 (AppendList.append
-				  (profile_assembly,
-				   let
+				 (let
 				     val stackTop 
-				       = x86MLton.gcState_stackTopContentsOperand ()
+					= x86MLton.gcState_stackTopContentsOperand ()
 				     val bytes 
-				       = x86.Operand.immediate_const_int (~ offset)
-				   in
+					= x86.Operand.immediate_const_int (~ offset)
+				  in
 				     AppendList.cons
 				     ((* stackTop += bytes *)
 				      x86.Assembly.instruction_binal 
@@ -661,8 +634,8 @@ struct
 				       src = bytes, 
 				       size = pointerSize},
 				      profileStackTopCommit)
-				   end))))
-		     val pre
+				  end)))
+val pre
 		       = AppendList.appends
 		         [if !Control.Native.commented > 1
 			    then AppendList.single
@@ -1911,7 +1884,6 @@ struct
 		       | block => block::(doit ())))
 	val assembly = doit ()
 	val _ = destLayoutInfo ()
-	val _ = destProfileInfo ()
       in
 	data::assembly
       end

@@ -542,8 +542,6 @@ structure Block =
       datatype t = T of {kind: Kind.t,
 			 label: Label.t,
 			 live: Operand.t vector,
-			 profileInfo: {ssa: {func: string, label: string},
-				       rssa: {func: string, label: string}},
 			 raises: Operand.t vector option,
 			 returns: Operand.t vector option,
 			 statements: Statement.t vector,
@@ -558,8 +556,7 @@ structure Block =
 	 val label = make #label
       end
 
-      fun layout (T {kind, label, live, profileInfo, raises, returns, statements,
-		     transfer}) =
+      fun layout (T {kind, label, live, raises, returns, statements, transfer}) =
 	 let
 	    open Layout
 	 in
@@ -723,18 +720,21 @@ structure Program =
 	       Vector.foreach
 	       (profileLabels, fn {sourceSeqsIndex = i, ...} =>
 		Err.check
-		("profileLabes",
+		("profileLabels",
 		 fn () => 0 <= i andalso i < maxProfileLabel,
 		 fn () => Int.layout i))
-	    local
-	       val {get, set, ...} =
-		  Property.getSetOnce
-		  (ProfileLabel.plist, Property.initConst false)
-	       val _ = Vector.foreach (profileLabels, fn {label, ...} =>
-				       set (label, true))
-	    in
-	       val profileLabelIsDefined = get
-	    end
+	    val {get = profileLabelCount, ...} =
+	       Property.get
+	       (ProfileLabel.plist, Property.initFun (fn _ => ref 0))
+	    val _ =
+	       Vector.foreach (profileLabels, fn {label, ...} =>
+			       let
+				  val r = profileLabelCount label
+			       in
+				  case !r of
+				     0 => r := 1
+				   | _ => Error.bug "duplicate profile label"
+			       end)
 	    val _ =
 	       let
 		  val maxFrameSourceSeq = Vector.length sourceSeqs
@@ -793,6 +793,25 @@ structure Program =
 	    val _ = globals ("real", reals, Type.real)
 	    val _ = globals ("intInf", intInfs, Type.intInf)
 	    val _ = globals ("string", strings, Type.string)
+	    (* Check for no duplicate labels. *)
+	    local
+	       val {get, ...} =
+		  Property.get (Label.plist,
+				Property.initFun (fn _ => ref false))
+	    in
+	       val _ =
+		  List.foreach
+		  (chunks, fn Chunk.T {blocks, ...} =>
+		   Vector.foreach
+		   (blocks, fn Block.T {label, ...} =>
+		    let
+		       val r = get label
+		    in
+		       if !r
+			  then Error.bug "duplicate label"
+		       else r := true
+		    end))
+	    end
 	    val {get = labelBlock: Label.t -> Block.t,
 		 set = setLabelBlock, ...} =
 	       Property.getSetOnce (Label.plist,
@@ -1005,9 +1024,13 @@ structure Program =
 			end
 		   | ProfileLabel l =>
 			if !Control.profile = Control.ProfileTime
-			   then if profileLabelIsDefined l
-				   then SOME alloc
-				else NONE
+			   then let
+				   val r = profileLabelCount l
+				in
+				   case !r of
+				      1 => (r := 2; SOME alloc)
+				    | _ => NONE
+				end
 			else SOME alloc
 		   | SetExnStackLocal {offset} =>
 			(checkOperand

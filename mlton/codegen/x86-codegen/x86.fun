@@ -3717,65 +3717,6 @@ struct
 
   fun setAddProfileLabel x = addProfileLabel := x
      
-  structure ProfileInfo =
-    struct
-      datatype t
-	= T of {zero: string,
-		one: string,
-		two: string}
-
-      val none = T {zero = "", one = "", two = ""}
-      fun add(T {zero, one, two}, 
-	      {profileLevel : int, profileName})
-	= if profileLevel = 0
-	    then T {zero = profileName,
-		    one = one,
-		    two = two}
-	  else if profileLevel = 1
-	    then T {zero = zero,
-		    one = profileName,
-		    two = two}
-	  else if profileLevel = 2
-	    then T {zero = zero,
-		    one = one,
-		    two = profileName}
-	  else Error.bug "ProfileInfo: add"
-
-      val profileHeader = "MLtonProfile"
-      val unique = Counter.new 0
-      fun profile_assembly (T {zero, one, two})
-	= if !Control.profile = Control.ProfileNone
-	     then []
-	  else
-	    let
-	       val profileHeader =
-		  profileHeader ^ (Int.toString (Counter.next unique))
-	       val profileString =
-		  concat [profileHeader,
-			  "$$0.", zero,
-			  "$$1.", one,
-			  "$$2.", two]
-	       val profileBegin = profileString ^ "$$Begin"
-	       val profileBeginLabel = Label.fromString profileBegin
-	       val _ = !addProfileLabel (one, profileBeginLabel)
-	    in
-	       [Assembly.pseudoop_global profileBeginLabel,
-		Assembly.label profileBeginLabel]
-	    end
-
-      fun combine (T {zero = zero1, 
-		      one = one1, 
-		      two = two1}, 
-		   T {zero = zero2, 
-		      one = one2, 
-		      two = two2})
-	= if zero1 = zero2 
-	    then T {zero = zero1,
-		    one = one2,
-		    two = two1}
-	    else Error.bug "ProfileInfo: combine"
-    end
-
   structure Transfer =
     struct
       structure Cases =
@@ -4125,15 +4066,13 @@ struct
   structure Block =
     struct
       datatype t' = T' of {entry: Entry.t option,
-			   profileInfo: ProfileInfo.t,
 			   statements: Assembly.t list,
 			   transfer: Transfer.t option}
       datatype t = T of {entry: Entry.t,
-			 profileInfo: ProfileInfo.t,
 			 statements: Assembly.t list,
 			 transfer: Transfer.t}
 
-      fun printBlock (T {entry, profileInfo, statements, transfer})
+      fun printBlock (T {entry, statements, transfer})
 	= (print (Entry.toString entry);
 	   print ":\n";
 	   List.foreach
@@ -4144,7 +4083,7 @@ struct
 	   print (Transfer.toString transfer);
 	   print "\n")
 
-      fun print_block' (T' {entry, profileInfo, statements, transfer})
+      fun print_block' (T' {entry, statements, transfer})
 	= (print (if isSome entry
 		    then Entry.toString (valOf entry)
 		    else "---");
@@ -4162,31 +4101,24 @@ struct
       val rec compress
 	= fn [] => []
            | [T' {entry = SOME entry1,
-		  profileInfo = profileInfo1,
 		  statements = statements1,
 		  transfer = SOME transfer1}]
 	   => [T {entry = entry1,
-		  profileInfo = profileInfo1,
 		  statements = statements1,
 		  transfer = transfer1}]
 	   | (T' {entry = SOME entry1,
-		  profileInfo = profileInfo1,
 		  statements = statements1,
 		  transfer = SOME transfer1})::blocks
 	   => (T {entry = entry1,
-		  profileInfo = profileInfo1,
 		  statements = statements1,
 		  transfer = transfer1})::(compress blocks)
 	   | (T' {entry = SOME entry1, 
-		  profileInfo = profileInfo1,
 		  statements = statements1, 
 		 transfer = NONE})::
 	     (T' {entry = NONE, 
-		  profileInfo = profileInfo2,
 		  statements = statements2, 
 		  transfer = transfer2})::blocks
            => compress ((T' {entry = SOME entry1,
-			     profileInfo = ProfileInfo.none,
 			     statements = statements1 @ statements2,
 			     transfer = transfer2})::blocks)
 	   | _ => Error.bug "Blocks.compress"

@@ -414,13 +414,6 @@ signature X86_PSEUDO =
 	val label: t -> Label.t
       end
 
-    structure ProfileInfo :
-      sig
-	type t
-	val none : t
-	val add : t * {profileLevel: int, profileName: string} -> t
-      end
-
     structure Transfer :
       sig
 	structure Cases :
@@ -461,11 +454,9 @@ signature X86_PSEUDO =
     structure Block :
       sig
 	datatype t' = T' of {entry: Entry.t option,
-			     profileInfo: ProfileInfo.t,
 			     statements: Assembly.t list,
 			     transfer: Transfer.t option}
 	datatype t = T of {entry: Entry.t,
-			   profileInfo: ProfileInfo.t,
 			   statements: Assembly.t list,
 			   transfer: Transfer.t}
 	val compress : t' list -> t list

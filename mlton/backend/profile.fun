@@ -149,7 +149,6 @@ fun profile program =
 			  kind,
 			  label,
 			  needsProfileAllocIndex,
-			  profileInfo,
 			  sourceSeq,
 			  statements: Statement.t list,
 			  transfer: Transfer.t}: unit =
@@ -201,7 +200,6 @@ fun profile program =
 			     Block.T {args = args,
 				      kind = kind,
 				      label = label,
-				      profileInfo = profileInfo,
 				      statements = Vector.fromList statements,
 				      transfer = transfer})
 	       end
@@ -236,8 +234,8 @@ fun profile program =
 		  else
 		     let
 			val _ = visited := true
-			val Block.T {args, kind, label, profileInfo, statements,
-				     transfer, ...} = block
+			val Block.T {args, kind, label, statements, transfer,
+				     ...} = block
 			val _ =
 			   if Kind.isFrame kind
 			      then List.push (frameProfileIndices,
@@ -266,7 +264,6 @@ fun profile program =
 						 kind = kind,
 						 label = label,
 						 needsProfileAllocIndex = true,
-						 profileInfo = profileInfo,
 						 sourceSeq = sourceSeq,
 						 statements = statements,
 						 transfer = transfer}
@@ -396,7 +393,6 @@ fun profile program =
 				  kind = kind,
 				  label = label,
 				  needsProfileAllocIndex = npai,
-				  profileInfo = profileInfo,
 				  sourceSeq = Push.toSources sourceSeq,
 				  statements = statements,
 				  transfer = transfer}

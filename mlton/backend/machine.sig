@@ -187,8 +187,6 @@ signature MACHINE =
 		     label: Label.t,
 		     (* Live registers and stack offsets at start of block. *)
 		     live: Operand.t vector,
-		     profileInfo: {ssa: {func: string, label: string},
-				   rssa: {func: string, label: string}},
 		     raises: Operand.t vector option,
 		     returns: Operand.t vector option,
 		     statements: Statement.t vector,

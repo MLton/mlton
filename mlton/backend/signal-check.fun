@@ -69,8 +69,7 @@ fun insertInFunction (f: Function.t): Function.t =
       fun addSignalCheck (i: int): unit =
 	 let
 	    val _ = Array.update (isHeader, i, true)
-	    val Block.T {args, kind, label, profileInfo,
-			 statements, transfer} =
+	    val Block.T {args, kind, label, statements, transfer} =
 	       Vector.sub (blocks, i)
 	    val failure = Label.newNoname ()
 	    val success = Label.newNoname ()
@@ -99,14 +98,12 @@ fun insertInFunction (f: Function.t): Function.t =
 	       Block.T {args = args,
 			kind = kind,
 			label = label,
-			profileInfo = profileInfo,
 			statements = compare,
 			transfer = compareTransfer}
 	       :: (Block.T
 		   {args = Vector.new0 (),
 		    kind = Kind.Jump,
 		    label = collect,
-		    profileInfo = profileInfo,
 		    statements = Vector.new0 (),
 		    transfer =
 		    Transfer.CCall
@@ -121,7 +118,6 @@ fun insertInFunction (f: Function.t): Function.t =
 		   {args = Vector.new0 (),
 		    kind = Kind.CReturn {func = func},
 		    label = collectReturn,
-		    profileInfo = profileInfo,
 		    statements = Vector.new0 (),
 		    transfer =
 		    Transfer.Goto {dst = dontCollect,
@@ -129,7 +125,6 @@ fun insertInFunction (f: Function.t): Function.t =
 	       :: Block.T {args = Vector.new0 (),
 			   kind = Kind.Jump,
 			   label = dontCollect,
-			   profileInfo = profileInfo,
 			   statements = statements,
 			   transfer = transfer}
 	       :: !extra

@@ -11,11 +11,9 @@ type word = Word.t
 signature PEEPHOLE_TYPES =
   sig
     type entry_type
-    type profileInfo_type
     type statement_type
     type transfer_type
     datatype block = T of {entry: entry_type,
-			   profileInfo: profileInfo_type,
 			   statements: statement_type list,
 			   transfer: transfer_type}
   end
@@ -40,7 +38,6 @@ signature PEEPHOLE =
 		     transfer: transfer_element}
 	
     type match = {entry: entry_type,
-		  profileInfo: profileInfo_type,
 		  start: statement_type list,
 		  statements: statement_type list list,
 		  finish: statement_type list,
