@@ -298,25 +298,13 @@ fun allocate {program = program as Program.T {globals, functions, ...},
 	    in
 	      val getOperands = getOperands
 	      fun getLiveOperands (j, force)
-		= {live 
-		   = getOperands (liveBegin' j, false)
-		     handle Fail s
-		      => Error.bug (concat [s, " A ", Layout.toString (Jump.layout j)]),
-		   liveNoFormals 
-		   = getOperands (liveBeginNoFormals' j, force)
-		     handle Fail s
-		      => Error.bug (concat [s, " B ", Layout.toString (Jump.layout j)]),
-		   liveFrame = getOperands (liveBeginFrame' j, force)
-		     handle Fail s
-		      => Error.bug (concat [s, " C ", Layout.toString (Jump.layout j)])}
+		= {live = getOperands (liveBegin' j, false),
+		   liveNoFormals = getOperands (liveBeginNoFormals' j, force),
+		   liveFrame = getOperands (liveBeginFrame' j, force)}
 	      fun getLivePrimOperands x
 		= getOperands (livePrim' x, false)
-		  handle Fail s
-		   => Error.bug (concat [s, " D ", Layout.toString (Var.layout x)])
 	      fun getLivePrimRuntimeOperands x
 		= getOperands (livePrim' x, true)
-		  handle Fail s
-		   => Error.bug (concat [s, " E ", Layout.toString (Var.layout x)])
 	    end
 	    local
 	      fun getGCInfo' live
@@ -326,117 +314,11 @@ fun allocate {program = program as Program.T {globals, functions, ...},
 	      val getGCInfo' = getGCInfo'
 	      fun getGCInfo j
 		= getGCInfo' (getOperands (liveBegin' j, true))
-		  handle Fail s
-		   => Error.bug (concat [s, " F ", Layout.toString (Jump.layout j)])
 	      fun getGCInfoPrim x
 		= getGCInfo' (getLivePrimOperands x)
-		  handle Fail s
-		   => Error.bug (concat [s, " G ", Layout.toString (Var.layout x)])
 	      fun getGCInfoPrimRuntime x
 		= getGCInfo' (getLivePrimRuntimeOperands x)
-		  handle Fail s
-		   => Error.bug (concat [s, " H ", Layout.toString (Var.layout x)])
 	    end
-(*
-	    fun getLiveOffsets (xs: Var.t list,
-				(code, link) : bool * bool): Operand.t list =
-	       List.fold
-	       (xs, 
-		((fn l 
-		   => if code
-			then let
-			       val handlerOffset = valOf handlerOffset
-			     in
-			       (Operand.stackOffset 
-				{offset = handlerOffset,
-				 ty = Mtype.uint})::
-			       l
-			     end
-			else l) o
-		 (fn l
-		   => if link
-			then let
-			       val handlerOffset = valOf handlerOffset
-			     in
-			       (Operand.stackOffset 
-				{offset = handlerOffset + labelSize,
-				 ty = Mtype.uint})::
-			       l
-			     end
-			else l))
-		nil,
-		fn (x, offsets) =>
-		let
-		   val {operand, ty, ...} = varInfo x
-		in
-		  case operand of
-		     SOME r =>
-		       (case place x of
-			   Register =>
-			      Error.bug "can't have live pointer register"
-			 | Stack =>
-			      case Operand.deStackOffset (^r) of
-				 NONE => Error.bug "must be a slot"
-			       | SOME _ => (^r)::offsets)
-                   | _ => offsets
-		end)
-	    val getLiveOffsets =
-	       Trace.trace ("getLiveOffsets", 
-			    fn (xs, hs) => 
-			    let open Layout in
-			      tuple [List.layout Var.layout xs,
-				     tuple2 (Bool.layout, Bool.layout) hs]
-			    end,
-			    List.layout Operand.layout)
-                           getLiveOffsets
-	    fun getOpers (xs: Var.t list,
-			  (code, link): bool * bool): Operand.t list =
-	       List.fold
-	       (xs, 
-		((fn l 
-		   => if code
-			then let
-			       val handlerOffset = valOf handlerOffset
-			     in
-			       (Operand.stackOffset 
-				{offset = handlerOffset,
-				 ty = Mtype.uint})::
-			       l
-			     end
-			else l) o
-		 (fn l
-		   => if link
-			then let
-			       val handlerOffset = valOf handlerOffset
-			     in
-			       (Operand.stackOffset 
-				{offset = handlerOffset + labelSize,
-				 ty = Mtype.uint})::
-			       l
-			     end
-			else l))
-		nil,
-		fn (x, opers) =>
-		let
-		   val {operand, ...} = varInfo x
-		in
-		  case operand of
-		     NONE => opers
-		   | SOME oper => (^oper) :: opers
-		end)
-	    val getOpers =
-	       Trace.trace ("getOpers",
-			    fn (xs, hs) => 
-			    let open Layout in
-			      tuple [List.layout Var.layout xs,
-				     tuple2 (Bool.layout, Bool.layout) hs]
-			    end,
-			    List.layout Operand.layout)
-                           getOpers
-	    fun getGCInfo (live: Var.t list, hs: (bool * bool)) =
-	       GCInfo.make {frameSize = !nextOffset,
-			    live = getLiveOffsets (live, hs)}
-*)
 	    val traceAllocate =
 	       Trace.trace ("allocate", Exp.layout o #1, Unit.layout)
 	    fun allocate arg =
@@ -570,7 +452,7 @@ fun allocate {program = program as Program.T {globals, functions, ...},
 	 Vector.foreach (functions, fn Function.T {name, args, body, ...} =>
 			 allocateFunc (name, args, body))
       val _ =
-	 Control.diagnostic
+	 Control.diagnostics
 	 (fn display =>
 	  let
 	     open Layout
@@ -605,12 +487,5 @@ fun allocate {program = program as Program.T {globals, functions, ...},
       {funcInfo = funcInfo,
        jumpInfo = jumpInfo}
    end
-
-val allocate =
-   Trace.trace
-   ("allocate",
-    fn {program, ...} => Cps.Program.layout program,
-    Layout.ignore)
-   allocate
    
 end
