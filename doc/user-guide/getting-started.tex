@@ -15,7 +15,20 @@ If you do not install {\mlton} in the root directory, you must
 set the {\tt lib} variable in {\tt \prefix/bin/mlton} to the
 directory that contains the libraries ({\tt /\prefix/lib/mlton} by
 default).
-Installation creates the following files and directories.
+
+{\mlton} requires that you have the
+\htmladdnormallink{GNU multiprecision library (gmp)}
+		  {http://www.gnu.org/software/gmp/gmp.html}
+installed on your machine.  {\mlton} must be able to find both the
+{\tt gmp.h} include and the {\tt libgmp.a} or {\tt libgmp.so} library.
+If you see the error message {\tt gmp.h: No such file or directory},
+you should copy {\tt gmp.h} to {\tt usr/lib/mlton/include/self}.  If
+you see the error message, {\tt /usr/bin/ld: cannot find -lgmp}, you
+should add a {\tt -L} argument in the {\tt usr/bin/mlton} script so
+that the linker can find {\tt libgmp}, for example, {\tt
+-L/\prefix/lib}.
+
+Installation of {\mlton} creates the following files and directories.
 
 \newcommand{\place}[1]{\item[\tt #1]\hspace{1in}\\}
 
@@ -51,19 +64,6 @@ Directory containing libraries and include files needed during
 compilation.
 
 \end{description}
-
-{\mlton} requires that you have the
-\htmladdnormallink{GNU multiprecision library (gmp)}
-		  {http://www.gnu.org/software/gmp/gmp.html}
-installed on your machine.  If you do not, then when you run {\mlton},
-you will see an error message like the following.
-\begin{verbatim}
-/usr/bin/ld: cannot find -lgmp
-collect2: ld returned 1 exit status
-\end{verbatim}
-If you have the gmp installed, and you still see this error, then you need to
-add a {\tt -L} argument in the {\tt bin/mlton} script so that the linker can
-find {\tt libgmp.so}, for example, {\tt -L/\prefix/lib}.
 
 \subsection{Hello, World!}
 

@@ -1,16 +1,16 @@
 \sec{Foreign function interface (FFI)}{ffi}
 
-{\mlton}'s FFI is {\em not} part of Standard ML and it is quite possible that
-this interface will change.  That having been said, it is easy to access C
-global variables and make calls to C functions from within SML using {\mlton},
-at least when dealing with simple types like {\tt char}, {\tt double}, {\tt
-int}, and {\tt word}.  It is not possible to call C macros or to call SML from
-C.
+{\mlton}'s FFI is {\em not} part of Standard ML and it is quite
+possible that this interface will change.  That having been said, with
+{\mlton} it is easy to access C global variables and make calls to C
+functions from within SML, at least when dealing with
+simple types like {\tt char}, {\tt double}, {\tt int}, and {\tt word}.
+It is not possible to call C macros or to call SML from C.
 
 Suppose you would like to call a C function with the following prototype
 from SML:
 \begin{verbatim}
-int foo(double d, unsigned char c);
+int foo (double d, unsigned char c);
 \end{verbatim}
 {\mlton} extends the syntax of SML to allow expressions like the following:
 \begin{verbatim}
@@ -27,7 +27,6 @@ The general form of an \verb+_ffi+ declaration is:
 \begin{center}
 {\tt \_ffi "}C global variable or function name{\tt ": }ty{\tt ;}
 \end{center}
-
 The semicolon is not optional.  Here is a grammar for the types that
 are currently allowed.
 \begin{latexonly}
@@ -84,14 +83,14 @@ SML type & C type\\
 {\tt unit} & {\tt void} \\
 {\tt word} & {\tt unsigned int} \\
 {\tt word8} & {\tt unsigned char} \\
-{\tt u array} & {\tt char *} \\
-{\tt u ref} & {\tt char *} \\
-{\tt u vector} & {\tt char *} \\
+{\tt array} & {\tt char *} \\
+{\tt ref} & {\tt char *} \\
+{\tt vector} & {\tt char *} \\
 \end{tabular}
 \end{center}
 Passing or returning tuples or datatypes is not allowed because the
 representation of these is decided late in the compilation
-process and because many optimizations can cause the representation to
+process and because optimizations can cause the representation to
 change.  Arrays, refs, and vectors may only be passed as arguments and
 not returned as results because C functions are not allowed to
 allocate in the SML heap.  Although the C type of an array, ref, or

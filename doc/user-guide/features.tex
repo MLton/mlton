@@ -20,10 +20,10 @@ program that is valid according to The Definition that is rejected by
 {\mlton}, it is a bug.
 
 \feature{mostly complete basis library}
-{\mlton} contains a mostly complete implementation of the basis library.
-Missing are some IO modules ({\tt ImperativeIO}, {\tt StreamIO},
-{\tt PrimIO}), and a few functions in the {\tt IntInf}, {\tt Os.IO}, {\tt Real},
-and {\tt TextIO} structures.  See \secref{basis-library} for details.
+{\mlton} contains a mostly complete implementation of the basis
+library.  A few functions are missing from {\tt BinIO}, {\tt OS.Path},
+{\tt Real}, {\tt StreamIO}, and {\tt TextIO}.  See
+\secref{basis-library} for details.
 
 \feature{excellent running times}
 {\mlton} generated executables have excellent running times.
@@ -44,7 +44,7 @@ representation.  This is fast and supports easy exchange of data with C.
 In {\mlton}, array lengths can be up to $2^{31} - 1$, the largest possible
 twos-complement 32 bit integer.
 
-\feature{runtime system supports large heaps}
+\feature{several garbage collection strategies}
 The {\mlton} runtime system uses copying, mark-compact, and generational
 collection, automatically deciding which to use based on the amount of live
 data relative to the amount of RAM.  The runtime system tries to keep the heap
@@ -77,7 +77,7 @@ The {\mlton} implementation of arbitrary precision arithmetic (the
 Hence, for {\tt IntInf} intensive programs, {\mlton} can be an order
 of magnitude or more faster than {\poly} or {\smlnj}.
 
-\feature{fast C FFI}
+\feature{simple and fast C FFI}
 {\mlton} has a straightforward and fast FFI for calling C routines
 from SML.  In fact, much of the {\tt Posix} structure in the basis library is
 implemented using the C FFI.
@@ -85,9 +85,9 @@ implemented using the C FFI.
 %compile-time constants.
 See \secref{ffi} for details.
 
-\feature{profiling}
-{\mlton} has support for profiling similar to {\tt gprof}.  See
-\secref{profiling} for details.
+\feature{source-level profiling}
+{\mlton} has support for source-level profiling and can profile both
+time and allocation.  See \secref{profiling} for details.
 
 \feature{useful libraries}
 {\mlton} has a collection of libraries that provide useful functionality that
@@ -95,11 +95,6 @@ cannot be implemented with the standard basis library.  See below for an
 overview and \secref{mlton} for details.
 
 \begin{description}
-
-\feature{size primitive}
-{\mlton} includes a primitive that returns the size (in bytes) of any
-object.  This can be quite useful in understanding the space behavior
-of a program.
 
 \feature{continuations}
 {\mlton} supports continuations via {\tt callcc} and {\tt throw}.
@@ -120,6 +115,11 @@ function.
 run in a separate thread, and have access to the thread that was
 interrupted by the signal.  Signal handlers can be used in conjunction with
 threads to implement preemptive multitasking.
+
+\feature{size primitive}
+{\mlton} includes a primitive that returns the size (in bytes) of any
+object.  This can be quite useful in understanding the space behavior
+of a program.
 
 \feature{sockets}
 {\mlton} supports simple socket operations like {\tt accept}, 

@@ -196,24 +196,24 @@ signature MLTON_GC =
 \end{verbatim}
 
 \begin{description}
-\entry{GC.collect ()}
+\entry{collect ()}
 causes a garbage collection to occur.
 
-\entry{GC.pack ()}
+\entry{pack ()}
 shrinks the heap as much as possible so that other processes can use available
 RAM.
 
-\entry{GC.setMessages b}
+\entry{setMessages b}
 controls whether diagnostic messages are
 printed at the beginning and end of each garbage collection.  It is
 the same as the {\tt gc-messages} runtime system option.
 
-\entry{GC.setSummary b}
+\entry{setSummary b}
 controls whether a summary of garbage
 collection statistics is printed upon termination of the program.  It
 is the same as the {\tt gc-summary} runtime system option.
 
-\entry{GC.unpack ()}
+\entry{unpack ()}
 resizes the heap to the desired size.
 
 \end{description}
@@ -221,10 +221,10 @@ resizes the heap to the desired size.
 \subsubsection{{\tt MLton.IntInf}}
 
 {\mlton} represents an arbitrary precision integer either as an
-unboxed 32 bit word with one tag bit and 31 bits representing a small
-integer in $[-2^{30}, 2^{30})$, or as a vector of words where the
-first word indicates the sign and the rest are the limbs of gmp big
-integer.
+unboxed 32 bit word with the bottom bit of 1 and 31 bits representing
+a small integer in $[-2^{30}, 2^{30})$, or as a vector of words where
+the first word indicates the sign and the rest are the limbs of gmp
+big integer.
 \begin{verbatim}
 signature MLTON_INT_INF =
    sig
@@ -252,8 +252,8 @@ using the gmp's fast gcd implementation.
 returns true iff {\tt a} is small.
 
 \entry{datatype rep}
-the underlying representation of an IntInf.  {\tt Small} has already stripped
-off the tag, so that the top bit of the word is zero.
+the underlying representation of an IntInf.  {\tt Small} has already
+stripped off the tag and shifted the word, so the top bit is zero.
 
 \entry{rep i}
 return the underlying representation of i.
@@ -322,8 +322,8 @@ signature MLTON_ITIMER =
 
 \begin{description}
 \entry{set (t, \{interval, value\})}
-set the interval timer (using {\tt setitimer}) specified by {\tt t} to the given
-{\tt interval} and {\tt value}.
+set the interval timer (using {\tt setitimer}) specified by {\tt t} to
+the given {\tt interval} and {\tt value}.
 
 \entry{signal t}
 return the signal corresponding to {\tt t}.
@@ -419,7 +419,7 @@ It is an error to free the current unit of profiling data or to free a
 previously freed unit of profiling data.
 
 \entry{Data.malloc ()}
-returns new unit of profiling data.  Each unit of profiling data is
+returns a new unit of profiling data.  Each unit of profiling data is
 allocated from the process heap (\emph{not} the {\mlton} heap) and
 consumes memory equal in size to text segment of the executable.
 
@@ -580,9 +580,11 @@ signature MLTON_SIGNAL =
 
       val getHandler: t -> Handler.t
       val handleDefault: t -> unit
-      val handleWith': t * (unit Thread.t -> unit Thread.t) -> unit
       val handleWith: t * (unit -> unit) -> unit
+      val handleWith': t * (unit Thread.t -> unit Thread.t) -> unit
       val ignore: t -> unit
+      val isHandledDefault: t -> bool
+      val isIgnored: t -> bool
       val setHandler: t * Handler.t -> unit
       val suspend: Mask.t -> unit
    end
@@ -630,6 +632,9 @@ signature MLTON_SIGNAL =
 
 \entry{handleDefault s} set the handler for signal {\tt s} to default.
 
+\entry{handleWith (s, f)} like {\tt handleWith'}, but always resumes with the
+interrupted thread.
+
 \entry{handleWith' (s, f)}
 set the handler for signal {\tt s} to be the function {\tt f}.  When run, {\tt
 f} will be passed the thread that was interrupted by signal {\tt s}, and should
@@ -638,10 +643,12 @@ raise an exception.  It is an error to {\tt Thread.switch'} to an interrupted
 thread with a thunk that raises an exception (either directly, or via {\tt
 Thread.prepend}).  This is to avoid the possibility of aynchronous exceptions.
 
-\entry{handleWith (s, f)} like {\tt handleWith'}, but always resumes with the
-interrupted thread.
-
 \entry{ignore s} set the handler for signal {\tt s} to ignore the signal.
+
+\entry{isHandledDefault s} returns {\tt true} if the default handler
+is installed for {\tt s}.
+
+\entry{isIgnored s} returns {\tt true} if {\tt s} is being ignored.
 
 \entry{setHandler (s, h)} set the handler for signal {\tt s} to {\tt h}.
 
