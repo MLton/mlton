@@ -513,8 +513,8 @@ fun elaborateDec (d, E) =
 				val {func, args, ...} = Vector.sub (clauses, 0)
 				val profile =
 				   SourceInfo.function
-				   {name = Ast.Var.toString func,
-				    region = region}
+				   {name = Avar.toString func,
+				    region = Avar.region func}
 				val numVars = Vector.length args
 				val match =
 				   let
