@@ -338,7 +338,10 @@ structure Value =
 		    finalTypes = ref NONE,
 		    value = v}
 
-      fun new v = T (Equatable.new (new' v))
+      fun delay (f: unit -> value): t =
+	 T (Equatable.delay (fn () => new' (f ())))
+	 
+      fun new (v: value) = T (Equatable.new (new' v))
 
       fun value (T e) = #value (Equatable.value e)
 
@@ -358,7 +361,7 @@ structure Value =
 
       val ground = new o Ground
 
-      fun weak (a: t): t = new (Weak {arg = a})
+      fun weak (a: t): value = Weak {arg = a}
 	       
       val traceCoerce =
 	 Trace.trace ("Value.coerce",
@@ -484,14 +487,14 @@ structure Value =
 	       orelse Prod.isMutable args
 	    val flat = if dontFlatten then Flat.NotFlat else Flat.Flat
 	 in
-	    new (Object {args = args,
-			 coercedFrom = ref [],
-			 con = con,
-			 flat = ref flat})
+	    Object {args = args,
+		    coercedFrom = ref [],
+		    con = con,
+		    flat = ref flat}
 	 end
 	    
       val tuple: t Prod.t -> t =
-	 fn vs => object {args = vs, con = ObjectCon.Tuple}
+	 fn vs => new (object {args = vs, con = ObjectCon.Tuple})
 
       val tuple =
 	 Trace.trace ("Value.tuple", fn p => Prod.layout (p, layout), layout)
@@ -627,12 +630,10 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		    let
 		       val args = Prod.map (args, makeTypeValue)
 		       fun doit () =
-			  let
-			     val args = Prod.map (args, fn f => f ())
-			     val v = Value.object {args = args, con = con}
-			  in
-			     v
-			  end
+			  Value.delay
+			  (fn () =>
+			   Value.object {args = Prod.map (args, fn f => f ()),
+					 con = con})
 		       datatype z = datatype ObjectCon.t
 		    in
 		       case con of
@@ -649,7 +650,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		    let
 		       val t = makeTypeValue t
 		    in
-		       fn () => Value.weak (t ())
+		       fn () => Value.delay (fn () => Value.weak (t ()))
 		    end
 	       | _ =>
 		    let
@@ -721,7 +722,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	     | MLton_equal => equal ()
 	     | MLton_size => dontFlatten ()
 	     | Weak_get => Value.deWeak (arg 0)
-	     | Weak_new => Value.weak (arg 0)
+	     | Weak_new => Value.new (Value.weak (arg 0))
 	     | _ => result ()
 	 end
       fun update {base, offset, value} =
