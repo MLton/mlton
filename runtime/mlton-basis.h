@@ -113,6 +113,23 @@ void Itimer_set (Int which,
 void MLton_arrayTooLarge ();
 /* print a bug message and exit (2) */
 void MLton_bug (Pointer msg);
+
+Cstring MLton_Callback_callbackName();
+Cstring MLton_Callback_callbackType();
+/* SML functions */
+Bool MLton_Callback_fetchB(Int l);
+Char MLton_Callback_fetchC(Int l);
+Int MLton_Callback_fetchI(Int l);
+Double MLton_Callback_fetchR(Int l);
+Word MLton_Callback_fetchW(Int l);
+void MLton_Callback_retB(Bool b);
+void MLton_Callback_retC(Char c);
+void MLton_Callback_retI(Int i);
+void MLton_Callback_retR(Double r);
+void MLton_Callback_retW(Word w);
+/* C functions */
+int MLton_Callback_call(char *rep, char *name, ...);
+
 Int MLton_errno ();
 /* halt the machine */
 void MLton_exit (Int status);

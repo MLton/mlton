@@ -31,6 +31,7 @@ void MLton_callFromC () {							\
  		cont=(*(struct cont(*)(void))cont.nextChunk)();			\
 	} while (not returnToC);						\
 	GC_switchToThread (s, s->savedThread);					\
+	s->canHandle--;								\
 	s->savedThread = BOGUS_THREAD;						\
 	if (DEBUG_CCODEGEN)							\
 		fprintf (stderr, "MLton_callFromC done\n");			\

@@ -48,10 +48,11 @@ structure BinIO =
 	 val stdOut = stdOut
       end
    end
+structure Callback = MLtonCallback
 structure Cont = MLtonCont
 structure Exn = MLtonExn
-structure Finalizable = MLtonFinalizable
 structure FFI = MLtonFFI
+structure Finalizable = MLtonFinalizable
 structure GC = MLtonGC
 structure IntInf = IntInf
 structure Itimer = MLtonItimer

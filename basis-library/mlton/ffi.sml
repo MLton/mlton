@@ -1,6 +1,6 @@
 structure MLtonFFI =
 struct
 
-val handleCallFromC = MLtonThread.setCallFromCHandler
+val handleCallFromC = fn f => MLtonThread.setCallFromCHandler (true, f)
    
 end

@@ -296,6 +296,22 @@ structure Primitive =
 (*       val serialize = _prim "MLton_serialize": 'a ref -> Word8Vector.vector; *)
 	    val size = fn x => _prim "MLton_size": 'a ref -> int; x
 
+	    structure Callback =
+	       struct
+		  val fetchB = _ffi "MLton_Callback_fetchB": int -> bool;
+		  val fetchC = _ffi "MLton_Callback_fetchC": int -> char;
+		  val fetchI = _ffi "MLton_Callback_fetchI": int -> int;
+		  val fetchR = _ffi "MLton_Callback_fetchR": int -> real;
+		  val fetchW = _ffi "MLton_Callback_fetchW": int -> word;
+		  val retB = _ffi "MLton_Callback_retB":  bool -> unit;
+		  val retC = _ffi "MLton_Callback_retC": char -> unit;
+		  val retI = _ffi "MLton_Callback_retI": int -> unit;
+		  val retR = _ffi "MLton_Callback_retR": real -> unit;
+		  val retW = _ffi "MLton_Callback_retW": word -> unit;
+		  val callbackName = _ffi "MLton_Callback_callbackName": unit -> cstring;
+		  val callbackType = _ffi "MLton_Callback_callbackType": unit -> cstring;
+	       end
+
 	    structure Platform =
 	       struct
 		  datatype arch = Sparc | X86

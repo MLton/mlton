@@ -9,6 +9,7 @@
 (* Non-standard signatures *)
 signature MLTON_ARRAY = MLTON_ARRAY
 signature MLTON_BIN_IO = MLTON_BIN_IO
+signature MLTON_CALLBACK = MLTON_CALLBACK
 signature MLTON_CONT = MLTON_CONT
 signature MLTON_EXN = MLTON_EXN
 signature MLTON_FFI = MLTON_FFI

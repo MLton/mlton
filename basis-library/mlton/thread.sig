@@ -32,7 +32,7 @@ signature MLTON_THREAD_EXTRA =
       include MLTON_THREAD
 
       val amInSignalHandler: unit -> bool
-      val setCallFromCHandler: (unit -> unit) -> unit
+      val setCallFromCHandler: (bool * (unit -> unit)) -> unit
       val setHandler: (unit t -> unit t) -> unit
       val switchToHandler: unit -> unit
    end

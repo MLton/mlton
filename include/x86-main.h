@@ -84,6 +84,7 @@ void MLton_callFromC () {						\
 	jump = *(pointer*)(s->stackTop - WORD_SIZE);			\
 	MLton_jumpToSML(jump);						\
 	GC_switchToThread (s, s->savedThread);				\
+	s->canHandle--;							\
 	s->savedThread = BOGUS_THREAD;					\
 	if (DEBUG_X86CODEGEN)						\
 		fprintf (stderr, "MLton_callFromC() done\n");		\
