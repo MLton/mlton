@@ -335,30 +335,55 @@ fun approximate (l: Layout.t): Layout.t =
        else concat [String.prefix (s, 35), "  ...  ", String.suffix (s, 25)])
    end
 
-fun elaboratePat (p: Apat.t, E: Env.t, preError: unit -> unit, amInRvb: bool)
-   : Cpat.t * (Avar.t * Var.t * Type.t) vector =
+val elaboratePat:
+   unit
+   -> Apat.t * Env.t * (unit -> unit) * bool
+   -> Cpat.t * (Avar.t * Var.t * Type.t) vector =
+   fn () =>
    let
-      val region = Apat.region p
-      val xts: (Avar.t * Var.t * Type.t) list ref = ref []
-      fun bindToType (x: Avar.t, t: Type.t): Var.t =
-	 let
-	    val x' = Var.fromAst x
-	    val _ =
-	       if List.exists (!xts, fn (x', _, _) => Avar.equals (x, x'))
-		  then
-		     let
-			open Layout
-		     in
-			Control.error (region,
-				       seq [str "variable ",
-					    Avar.layout x,
-					    str " occurs more than once in pattern "],
-				       seq [str "pattern: ",
-					    approximate (Apat.layout p)])
-		     end
-	       else
-		  (List.push (xts, (x, x', t))
-		   ; extendVar (E, x, x', Scheme.fromType t, region))
+      val others: (Apat.t * (Avar.t * Var.t * Type.t) vector) list ref = ref []
+   in
+      fn (p: Apat.t, E: Env.t, preError: unit -> unit, amInRvb: bool) =>
+      let
+	 val region = Apat.region p
+	 val xts: (Avar.t * Var.t * Type.t) list ref = ref []
+	 fun bindToType (x: Avar.t, t: Type.t): Var.t =
+	    let
+	       val x' = Var.fromAst x
+	       val _ =
+		  if List.exists (!xts, fn (x', _, _) => Avar.equals (x, x'))
+		     then
+			let
+			   open Layout
+			in
+			   Control.error (Avar.region x,
+					  seq [str "variable ",
+					       Avar.layout x,
+					       str " occurs more than once"],
+					  seq [str "pattern: ",
+					       approximate (Apat.layout p)])
+			end
+		  else
+		     case List.peek (!others, fn (p, v) =>
+				     Vector.exists (v, fn (x', _, _) =>
+						    Avar.equals (x, x'))) of
+			NONE =>
+			   (List.push (xts, (x, x', t))
+			    ; extendVar (E, x, x', Scheme.fromType t, region))
+		      | SOME (p', _) =>
+			   let
+			      open Layout
+			      fun err p =
+				 Control.error
+				 (Apat.region p,
+				  seq [str "variable ",
+				       Avar.layout x,
+				       str " occurs in multiple patterns"],
+				  seq [str "pattern: ",
+				       approximate (Apat.layout p)])
+			   in
+			     err p; err p'
+			   end
 	 in
 	    x'
 	 end
@@ -583,9 +608,12 @@ fun elaboratePat (p: Apat.t, E: Env.t, preError: unit -> unit, amInRvb: bool)
 	      | Apat.Wild =>
 		   Cpat.make (Cpat.Wild, Type.new ())
 	  end) arg
-      val p = loop p
-   in
-      (p, Vector.fromList (!xts))
+      val p' = loop p
+      val xts = Vector.fromList (!xts)
+      val _ = List.push (others, (p, xts))
+      in
+	 (p', xts)
+      end
    end
 
 (*---------------------------------------------------*)
@@ -1257,6 +1285,7 @@ fun elaborateDec (d, {env = E,
 				 Env.scope
 				 (E, fn () =>
 				  let
+				     val elaboratePat = elaboratePat ()
 				     val pats =
 					Vector.map
 					(args, fn p =>
@@ -1506,6 +1535,7 @@ fun elaborateDec (d, {env = E,
 					     Vector.map (tys, Scheme.fromType)}
 			       end
 		      val {markFunc, setBound, unmarkFunc} = recursiveFun ()
+		      val elaboratePat = elaboratePat ()
 		      val rvbs =
 			 Vector.map
 			 (rvbs, fn {pat, match} =>
@@ -2142,7 +2172,7 @@ fun elaborateDec (d, {env = E,
 			  approximate
 			  (seq [Apat.layout pat, str " => ", Aexp.layout exp])
 		       end
-		    val (p, xts) = elaboratePat (pat, E, preError, false)
+		    val (p, xts) = elaboratePat () (pat, E, preError, false)
 		    val _ =
 		       unify
 		       (Cpat.ty p, argType, preError, fn (l1, l2) =>
