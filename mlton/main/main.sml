@@ -273,9 +273,9 @@ fun commandLine (args: string list): unit =
    let
       open Control
       fun error () = Error.bug "incorrect args from shell script"
-      val (lib, cygwin, linux, gcc, gccSwitches, args) =
+      val (lib, cygwin, gcc, gccSwitches, args) =
 	 case args of
-	    lib :: cygwin :: linux :: gcc :: args =>
+	    lib :: cygwin :: gcc :: args =>
 	       let
 		  fun loop (args, ac) =
 		     case args of
@@ -286,17 +286,17 @@ fun commandLine (args: string list): unit =
 			   else loop (args, arg :: ac)
 		  val (gccSwitches, args) = loop (args, [])
 	       in
-		  (lib, cygwin, linux, gcc, gccSwitches, args)
+		  (lib, cygwin, gcc, gccSwitches, args)
 	       end
 	  | _ => error ()
       val result =
 	 Popt.parse {switches = args,
 		     opts = List.map (options, fn (_, a, _, _, c) => (a, c))}
-      val hostId =
-	 case !host of
-	    Cygwin => cygwin
-	  | Linux => linux
-      val lib = concat [lib, "/", hostId]
+      val host = !host
+      val lib = concat [lib, "/",
+			case host of
+			   Cygwin => cygwin
+			 | Linux => "linux"]
       val libDirs = lib :: !libDirs
       val includeDirs = concat [lib, "/include"] :: !includeDirs
       val _ =
@@ -416,10 +416,12 @@ fun commandLine (args: string list): unit =
 		     trace (Top, "Link")
 		     (fn () =>
 		      docc (inputs,
-			    maybeOut (case !host of
+			    maybeOut (case host of
 					 Cygwin => ".exe"
 				       | Linux => ""),
-			    List.concat [["-b", hostId],
+			    List.concat [case host of
+					    Cygwin => ["-b", cygwin]
+					  | Linux => [],
 					 if !debug then ["-g"] else [],
 					 if !static then ["-static"] else []],
 			    rest @ linkLibs))
@@ -442,7 +444,10 @@ fun commandLine (args: string list): unit =
 				       (if isMain then "-g" else "-Wa,--gstabs")
 					   :: switches
 				 else switches
-			      val switches = "-b" :: hostId :: switches
+			      val switches =
+				 case host of
+				    Cygwin => "-b" :: cygwin :: switches
+				  | Linux => switches
 			      val output =
 				 if stop = Place.O orelse !keepO
 				    then
@@ -487,7 +492,10 @@ fun commandLine (args: string list): unit =
 			    List.concat
 			    [[concat ["-O", Int.toString (!optimization)]],
 			     gccSwitches]]
-			val switches = "-b" :: hostId :: switches
+			val switches =
+			   case host of
+			      Cygwin =>"-b" :: cygwin :: switches
+			    | Linux => switches
 			val output = temp ".s"
 			val _ =
 			   trace (Top, "Compile C")

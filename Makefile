@@ -10,7 +10,7 @@ AOUT = mlton-compile
 LEX = mllex
 PROF = mlprof
 YACC = mlyacc
-LINUX = i686-pc-linux-gnu
+LINUX = linux
 CYGWIN = i686-pc-cygwin
 PATH = $(BIN):$(shell echo $$PATH)
 CP = /bin/cp -fp
@@ -21,10 +21,11 @@ all:
 	$(CP) $(COMP)/$(AOUT) $(LIB)
 	$(MAKE) world
 	$(MAKE) runtimes
-	@echo 'Setting root path in mlton script'
-	rm -f $(MLTON)
-	sed "/^lib=/s;'.*';'$(LIB)';" <bin/mlton >$(MLTON)
-	chmod a+x-w $(MLTON) 
+	@echo 'Setting lib and cygwin in mlton script'
+	cat bin/mlton | \
+		sed "/^lib=/s;'.*';'$(LIB)';" | \
+		sed "/^cygwin=/s;'.*';'$(CYGWIN)';" >$(MLTON)
+	chmod a+x $(MLTON) 
 	cd $(LEX) && $(MAKE) && $(CP) $(LEX) $(BIN)
 	cd $(YACC) && $(MAKE) && $(CP) $(YACC) $(BIN)
 	cd $(PROF) && $(MAKE) && $(CP) $(PROF) $(BIN)
@@ -37,6 +38,7 @@ dirs:
 
 .PHONY: runtimes
 runtimes:
+	@echo 'Making runtime system'
 	$(MAKE) runtime HOST=$(LINUX)
 	$(MAKE) runtime HOST=$(CYGWIN)
 

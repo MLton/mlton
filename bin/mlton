@@ -8,6 +8,7 @@ mlton="$lib/mlton-compile"
 world="$lib/world.mlton"
 nj='sml'
 njHeap="$lib/mlton.x86-linux"
+cygwin='cygwin'
 
 rargs=""
 case "$1" in
@@ -33,7 +34,7 @@ doit () {
 	exit 1
 }
 
-doit "$lib" i686-pc-cygwin i686-pc-linux-gnu \
+doit "$lib" "$cygwin" \
 	"$gcc" -w -fomit-frame-pointer -fno-strength-reduce \
 	-mcpu=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=5 \
 	-fschedule-insns -fschedule-insns2 END \
