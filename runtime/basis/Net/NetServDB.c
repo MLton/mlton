@@ -23,7 +23,7 @@ Int NetServDB_Entry_port() {
 }
 
 Cstring NetServDB_Entry_protocol() {
-	return servent->s_proto;
+	return (Cstring)servent->s_proto;
 }
 
 Int NetServDB_getByName(Cstring name, Cstring proto) {
