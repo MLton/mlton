@@ -45,7 +45,7 @@ test: $(NAME)
 
 QBENCH = $(BENCH)
 
-QBFLAGS = -mlton "mlton-stable" -mlton "mlton"
+QBFLAGS = -once -mlton "mlton -limit-check {pb,ebb,lh,lhf,lhle,lhfle} -limit-check-counts true" -args "@MLton gc-summary --" -err "0,number of LCs: ([0-9,]*)"
 
 .PHONY: qtest
 qtest: $(NAME)
