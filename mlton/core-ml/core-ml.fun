@@ -214,7 +214,7 @@ datatype decNode =
 	   tyvars: Tyvar.t vector}
   | Fun of {tyvars: Tyvar.t vector,
 	    decs: {match: match,
-		   profile: SourceInfo.t,
+		   profile: SourceInfo.t option,
 		   types: Type.t vector,
 		   var: Var.t} vector}
   | Datatype of {
@@ -392,11 +392,11 @@ structure Exp =
 
       fun fnn (m, r) = makeRegion (Fn m, r)
 
-      fun fn1 (p, e, r) =
+      fun fn1 {exp, pat, profile, region}= 
 	 fnn ({match = Match.new {filePos = "",
-				  rules = Vector.new1 (p, e)},
-	       profile = NONE},
-	      r)
+				  rules = Vector.new1 (pat, exp)},
+	       profile = profile},
+	      region)
 
       fun isExpansive e =
 	 case node e of
@@ -415,9 +415,11 @@ structure Exp =
 
       fun record (record, r) = makeRegion (Record record, r)
 	 
-      fun lambda (x, e, r) = fn1 (makeRegion (Pat.Var x, r), e, r)
-
-(*      fun delay (e, r) = fn1 (Pat.unit r, e, r) *)
+      fun lambda (x, e, p, r) =
+	 fn1 {exp = e,
+	      pat = makeRegion (Pat.Var x, r),
+	      profile = p,
+	      region = r}
 
       fun casee (test, rules, r) =
 	 makeRegion (App (makeRegion (Fn {match = rules,
@@ -463,12 +465,14 @@ structure Exp =
 	 let
 	    val x = Var.newNoname ()
 	 in
-	    fn1 (Pat.record {flexible = true,
-			     record = Record.fromVector (Vector.new1
-							 (f, Pat.var (x, r))),
-			     region = r},
-		 var (x, r),
-		 r)
+	    fn1 {exp = var (x, r),
+		 pat = (Pat.record
+			{flexible = true,
+			 record = Record.fromVector (Vector.new1
+						     (f, Pat.var (x, r))),
+			 region = r}),
+		 profile = NONE,
+		 region = r}
 	 end
 
       fun iff (test, thenCase, elseCase, r) =
@@ -504,7 +508,7 @@ structure Exp =
 		   (Fun {tyvars = Vector.new0 (),
 			 decs = (Vector.new1
 				 {match = match,
-				  profile = SourceInfo.anonymous r,
+				  profile = SOME (SourceInfo.anonymous r),
 				  types = Vector.new0 (),
 				  var = loop})},
 		    r)),

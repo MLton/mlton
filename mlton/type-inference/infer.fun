@@ -898,8 +898,13 @@ fun infer {program = p: CoreML.Program.t,
 					   Xlambda.dest
 					   (forceRulesMatch (rules, region))
 					val body =
-					   Xml.Exp.enterLeave
-					   (body, #2 (Xtype.dearrow ty), profile)
+					   case profile of
+					      NONE => body
+					    | SOME si =>
+						 Xml.Exp.enterLeave
+						 (body,
+						  #2 (Xtype.dearrow ty),
+						  si)
 					val lambda =
 					   Xlambda.new
 					   {arg = arg,

@@ -553,6 +553,9 @@ fun elaborateDec (d, E) =
 					       Cexp.lambda
 					       (x,
 						make (i - 1, x :: xs),
+						if i = 1
+						   then SOME profile
+						else NONE,
 						region)
 					    end
 				   in if numVars = 1
@@ -564,7 +567,9 @@ fun elaborateDec (d, E) =
 				   end
 			     in
 				{match = match,
-				 profile = profile,
+				 profile = if numVars = 1
+					      then SOME profile
+					   else NONE,
 				 types = Vector.new0 (),
 				 var = newFunc}
 			     end)
@@ -698,10 +703,10 @@ fun elaborateDec (d, E) =
 			 Vector.map2
 			 (rvbs, vts,
 			  fn ({pat, match, ...}, {name, types, var}) =>
-			  {match = elabMatch match,
-			   profile = (SourceInfo.function
-				      {name = name,
-				       region = Apat.region pat}),
+			  {match = elabMatch (match, SOME name),
+			   profile = SOME (SourceInfo.function
+					   {name = name,
+					    region = Apat.region pat}),
 			   types = types,
 			   var = var})
 		      val ps = Vector.map (vbs, fn {pat, filePos, ...} =>
@@ -752,7 +757,7 @@ fun elaborateDec (d, E) =
 					 Option.layout String.layout),
 			  Cexp.layout,
 			  Trace.assertTrue)
-	 (fn (e: Aexp.t, name) =>
+	 (fn (e: Aexp.t, name: string option) =>
 	  let
 	     val region = Aexp.region e
 	     fun doit n = Cexp.makeRegion (n, region)
@@ -763,7 +768,7 @@ fun elaborateDec (d, E) =
 	      | Aexp.App (e1, e2) =>
 		   doit (Cexp.App (elabExp e1, elabExp e2))
 	      | Aexp.Case (e, m) =>
-		   Cexp.casee (elabExp e, elabMatch m, region)
+		   Cexp.casee (elabExp e, elabMatch (m, NONE), region)
 	      | Aexp.Const c => doit (Cexp.Const c)
 	      | Aexp.Constraint (e, t) =>
 		   doit (Cexp.Constraint (elabExp' (e, name),
@@ -777,11 +782,11 @@ fun elaborateDec (d, E) =
 			  | SOME s => SourceInfo.function {name = s,
 							   region = region}
 		   in
-		      doit (Cexp.Fn {match = elabMatch m,
+		      doit (Cexp.Fn {match = elabMatch (m, name),
 				     profile = SOME profile})
 		   end
 	      | Aexp.Handle (try, match) =>
-		   doit (Cexp.Handle (elabExp try, elabMatch match))
+		   doit (Cexp.Handle (elabExp try, elabMatch (match, NONE)))
 	      | Aexp.If (a, b, c) =>
 		   Cexp.iff (elabExp a, elabExp b, elabExp c, region)
 	      | Aexp.Let (d, e) =>
@@ -824,12 +829,12 @@ fun elaborateDec (d, E) =
 				expr = elabExp expr,
 				region = region}
 	  end) arg
-      and elabMatch (Amatch.T {filePos, rules}) =
+      and elabMatch (Amatch.T {filePos, rules}, name: string option) =
 	 Cmatch.new {filePos = filePos,
 		     rules = 
 		     Vector.map (rules, fn (pat, exp) =>
 				 Env.scope (E, fn () => (elaboratePat (pat, E),
-							 elabExp exp)))}
+							 elabExp' (exp, name))))}
    in elabDec d
    end
 

@@ -84,13 +84,12 @@ signature CORE_ML =
 
 	    val andAlso: t * t * Region.t -> t
 	    val casee: t * match * Region.t -> t
-(*	    val delay: t * Region.t -> t *)
 	    val force: t * Region.t -> t
 	    val foreachVar: t * (Var.t -> unit) -> unit
 	    val iff: t * t * t * Region.t -> t
 	    (* true if the expression may side-effect. See p 19 of Definition *)
 	    val isExpansive: t -> bool
-	    val lambda: Var.t * t * Region.t -> t
+	    val lambda: Var.t * t * SourceInfo.t option * Region.t -> t
 	    val layout: t -> Layout.t
 	    val list: t list * Region.t -> t
 	    val orElse: t * t * Region.t -> t
@@ -132,7 +131,7 @@ signature CORE_ML =
 	     | Fun of {
 		       tyvars: Tyvar.t vector,
 		       decs: {match: Match.t,
-			      profile: SourceInfo.t,
+			      profile: SourceInfo.t option,
 			      types: Type.t vector, (* multiple constraints *)
 			      var: Var.t} vector
 		      }
