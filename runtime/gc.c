@@ -2456,16 +2456,23 @@ static void majorGC (GC_state s, W32 bytesRequested, bool mayResize) {
 }
 
 static void doGC (GC_state s, 
-		W32 oldGenBytesRequested,
-		W32 nurseryBytesRequested, 
-		bool forceMajor,
-		bool mayResize) {
+			W32 oldGenBytesRequested,
+			W32 nurseryBytesRequested, 
+			bool forceMajor,
+			bool mayResize) {
 	uint gcTime;
+	uint oldSource = -1;
 	bool stackTopOk;
 	W64 stackBytesRequested;
 	struct rusage ru_start;
 	W64 totalBytesRequested;
 	
+	if (s->profilingIsOn) {
+		oldSource = s->currentSource;
+		if (s->profileStack)
+			GC_profileEnter (s, s->currentSource);
+		s->currentSource = SOURCE_SEQ_GC;
+	}
 	if (DEBUG or s->messages)
 		fprintf (stderr, "Starting gc.  Request %s nursery bytes and %s old gen bytes.\n",
 				uintToCommaString (nurseryBytesRequested),
@@ -2506,6 +2513,11 @@ static void doGC (GC_state s,
 		GC_display (s, stderr);
 	assert (hasBytesFree (s, oldGenBytesRequested, nurseryBytesRequested));
 	assert (invariant (s));
+	if (s->profilingIsOn) {
+		s->currentSource = oldSource;
+		if (s->profileStack)
+			GC_profileLeave (s, s->currentSource);
+	}
 }
 
 /* ensureFree (s, b) ensures that upon return
