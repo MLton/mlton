@@ -1,27 +1,20 @@
-This package was debianized by Barak Pearlmutter <bap@cs.unm.edu> on
-Mon, 20 Aug 2001 01:57:57 -0600.
+This package was debianized by Stephen Weeks <sweeks@sweeks.com> on
+VERSION.  The original debianization was done by Barak Pearlmutter
+<bap@cs.unm.edu>.
 
-It was downloaded from http://www.mlton.org
-  http://telia.dl.sourceforge.net/sourceforge/mlton/mlton-20020728-1.src.tgz
-  and renamed mlton_20020728.1.orig.tar.gz
+The sources are available at:
+	http://prdownloads.sourceforge.net/mlton/mlton-VERSION-1.src.tgz
 
-Upstream Authors, according to http://www.mlton.org/people.html:
+Upstream Authors:
+ 
+ See http://www.mlton.org/team.html
+	Henry Cejtin (henry@sourcelight.com)
+	Matthew Fluet (fluet@cs.cornell.edu)
+	Suresh Jagannathan (suresh@cs.purdue.edu)
+	Stephen Weeks (sweeks@sweeks.com)
 
- Henry Cejtin
-    Chief Architect at Sourcelight Technologies and Servant of the State.
- Matthew Fluet
-    PhD student in the Computer Science department at Cornell University.
- Suresh Jagannathan
-    Employee at StorageNetworks.
- Stephen Weeks
-    Member of research staff at InterTrust's STAR Lab.
-
- The following contact information is on http://www.mlton.org:
-
-   To send a comment, question, or bug report to MLton's authors, use
-   MLton@mlton.org.  To send mail to the MLton user community, use
-   MLton-user@mlton.org.  You can also join the MLton-announce and
-   MLton-user mailing lists.
+ To send a comment, question, or bug report to MLton's authors, use
+ MLton@mlton.org.
 
 Copyright:
 
