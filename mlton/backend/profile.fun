@@ -101,8 +101,7 @@ fun profile program =
       val infoNodes: InfoNode.t list ref = ref []
       local
 	 val c = Counter.new 0
-      in
-	 fun sourceInfoNode si =
+	 fun new si =
 	    let
 	       val index = Counter.next c
 	       val infoNode = InfoNode.T {index = index,
@@ -112,6 +111,12 @@ fun profile program =
 	    in
 	       infoNode
 	    end
+      in	 
+	 val sourceInfoNode =
+	    if !Control.profileCoalesce
+	       then
+		  #get (Property.get (SourceInfo.plist, Property.initFun new))
+	    else new
       end
       fun firstEnter (ps: Push.t list): InfoNode.t option =
 	 List.peekMap (ps, fn p =>

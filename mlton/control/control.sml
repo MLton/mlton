@@ -370,6 +370,10 @@ val profileBasis = control {name = "profile basis",
 			    default = false,
 			    toString = Bool.toString}
 
+val profileCoalesce = control {name = "profile coalesce",
+			       default = false,
+			       toString = Bool.toString}
+
 datatype profileIL = datatype ProfileIL.t
    
 val profileIL = control {name = "profile IL",

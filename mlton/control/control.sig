@@ -198,6 +198,8 @@ signature CONTROL =
 
       val profileBasis: bool ref
 
+      val profileCoalesce: bool ref
+
       datatype profileIL = ProfileSSA | ProfileSource
       val profileIL: profileIL ref
 	 

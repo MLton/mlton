@@ -130,6 +130,11 @@ information.  When such an executable is run, it will produce an
 extract information from this file. 
 
 .TP
+\fB-profile-combine \fI{\fBfalse\fP|\fBtrue\fP}\fR
+When \fBtrue\fP, combine all copies of each function together for
+profiling data and for the call graph.
+
+.TP
 \fB-profile-stack \fI{\fBfalse\fP|\fBtrue\fP}\fR
 If true, the profiler will count the time spent (or bytes allocated)
 while a function is on the stack.

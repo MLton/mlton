@@ -1,5 +1,8 @@
 Here are the changes from version 20020923.
 
+* 2003-02-10
+  - Added option to mlton: -profile-combine {false|true}
+
 * 2003-02-09
   - Added options to mlprof: -graph-title, -gray, -ignore, -mlmon,
 	-tolerant.

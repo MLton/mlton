@@ -272,6 +272,9 @@ fun makeOptions {usage} =
        (Expert, "profile-basis", " {false|true}",
 	"profile the basis implementation",
 	boolRef profileBasis),
+       (Normal, "profile-combine", " {false|true}",
+	"combine all occurrences of a function",
+	boolRef profileCoalesce),
        (Expert, "profile-il", " {source}", "where to insert profile exps",
 	SpaceString
 	(fn s =>
@@ -310,7 +313,7 @@ fun makeOptions {usage} =
 	intRef textIOBufSize),
        (Expert, "type-check", " {false|true}", "type check ILs",
 	boolRef typeCheck),
-       (Normal, "v", "{|0|1|2|3}", "verbosity (also version number)"
+       (Normal, "v", "{|0|1|2|3}", "verbosity (also version number)",
 	String
 	(fn s =>
 	 verbosity := (case s of
