@@ -5,6 +5,7 @@ signature RUNTIME =
    sig
       (* All sizes are in bytes, unless they explicitly say "pointers". *)
 
+      val allocTooLarge: word
       val arrayHeader: {numBytesNonPointers: int,
 			numPointers: int} -> word
       val arrayHeaderSize: int
@@ -24,6 +25,6 @@ signature RUNTIME =
       val objectSize: {numPointers: int,
 		       numWordsNonPointers: int} -> int
       val pointerSize: int
-      val wordAlign: word -> word
+      val wordAlign: word -> word (* Can raise Overflow. *)
       val wordSize: int
    end

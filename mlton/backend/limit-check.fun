@@ -251,6 +251,9 @@ fun insertFunction (f: Function.t,
 		   val z as {collect, dontCollect} = insert amount
 		   val res = Var.newNoname ()
 		   val s =
+		      (* Can't do Limit - Frontier, because don't know that
+		       * Frontier < Limit.
+		       *)
 		      Statement.PrimApp
 		      {args = Vector.new2 (Operand.Runtime LimitPlusSlop,
 					   Operand.Runtime Frontier),
@@ -310,7 +313,9 @@ fun insertFunction (f: Function.t,
 		      Operand.Const c =>
 			 (case Const.node c of
 			     Const.Node.Word w =>
-				heapCheckNonZero (w + extraBytes)
+				heapCheckNonZero
+				(MLton.Word.addCheck (w, extraBytes)
+				 handle Overflow => Runtime.allocTooLarge)
 			   | _ => Error.bug "strange array bytes")
 		    | _ =>
 			 let

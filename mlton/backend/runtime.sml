@@ -9,6 +9,8 @@ val objectHeaderSize = wordSize
 val pointerSize = wordSize
 val array0Size = arrayHeaderSize + wordSize (* for the forwarding pointer *)
 
+val allocTooLarge: word = 0wxFFFFFFFC
+   
 (* These checks, and in particular pointerBits and nonPointerBits
  * must agree with runtime/gc.h.
  *)
@@ -71,7 +73,7 @@ fun wordAlign (w: word): word =
    let
       open Word
    in
-      andb (w + 0w3, notb 0w3)
+      andb (MLton.Word.addCheck (w, 0w3), notb 0w3)
    end
    
 fun isWordAligned (n: int): bool =
