@@ -1,5 +1,9 @@
 Here are the changes since version 20040227.
 
+* 2004-03-11
+  - Fixed Time.fromReal to raise Time, not Overflow, on
+    unrepresentable times.
+
 * 2004-03-04
   - Added structures Word2, Word3, ..., Word31.
 

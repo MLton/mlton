@@ -23,7 +23,8 @@ val zeroTime = T 0
 
 fun fromReal r =
    T (Real.toLargeInt IEEEReal.TO_NEAREST 
-                      (Real.* (r, Real.fromLargeInt ticksPerSecond)))
+      (Real.* (r, Real.fromLargeInt ticksPerSecond)))
+   handle Overflow => raise Time
 
 fun toReal (T i) =
    Real./ (Real.fromLargeInt i, Real.fromLargeInt ticksPerSecond)
