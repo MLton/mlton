@@ -40,8 +40,8 @@ doit () {
 
 doit "$lib" \
 	-cc "$gcc" \
-	-ccopt '-falign-functions=5
-		-falign-jumps=2 
+	-ccopt '-malign-functions=5
+		-malign-jumps=2 
 		-fno-strength-reduce
 		-fomit-frame-pointer
 		-fschedule-insns 

@@ -61,11 +61,15 @@ constants:
 	./tmp >$(LIB)/$(HOST)/constants
 	rm -f tmp tmp.c
 
+DEBSRC = mlton-$(VERSION).orig
 .PHONY: deb
 deb:
 	$(MAKE) clean clean-cvs version
-	cd .. && tar cf - mlton-$(VERSION) | gzip >mlton_$(VERSION).orig.tar.gz
-	dpkg-buildpackage -rfakeroot -us -uc
+	tar -cpf - . | \
+		( cd .. && mkdir $(DEBSRC) && cd $(DEBSRC) && tar -xpf - )
+	cd .. && tar -cpf - $(DEBSRC) | gzip >mlton_$(VERSION).orig.tar.gz
+	cd .. && mv $(DEBSRC) mlton-$(VERSION)
+	cd ../mlton-$(VERSION) && dpkg-buildpackage -rfakeroot -us -uc
 
 .PHONY: deb-binary
 deb-binary:
@@ -206,8 +210,8 @@ install:
 	for f in callcc command-line hello-world same-fringe signals size taut thread1 thread2 thread-switch timeout; do \
  		cp $(SRC)/regression/$$f.sml $(TDOC)/examples; \
 	done
-	gzip -c $(LEX)/$(LEX).ps >$(TDOC)/
-	gzip -c $(YACC)/$(YACC).ps >$(TDOC)/
+	gzip -c $(LEX)/$(LEX).ps >$(TDOC)/$(LEX).ps.gz
+	gzip -c $(YACC)/$(YACC).ps >$(TDOC)/$(YACC).ps.gz
 	$(CP) $(LIB)/. $(TLIB)/
 	sed "/^lib=/s;'.*';'$(prefix)/$(ULIB)';" 			\
 			<$(SRC)/bin/mlton >$(TBIN)/mlton

@@ -6,7 +6,7 @@ else
 AR = $(HOST)-ar rc
 HOSTFLAGS = -b $(HOST)
 endif
-CC =		gcc -Wall -I. -mcpu=pentiumpro -falign-loops=2 -falign-jumps=2 -falign-functions=5 -fomit-frame-pointer $(HOSTFLAGS)
+CC =		gcc -Wall -I. -mcpu=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=5 -fomit-frame-pointer $(HOSTFLAGS)
 # Can't use more optimization than -O1 because gcc doesn't correctly compile
 #  Real_class in basis/Real.c
 CFLAGS =	-O1 -DNODEBUG
@@ -321,7 +321,6 @@ all: libmlton.a libmlton-gdb.a
 
 libmlton.a: $(OBJS) 
 	$(AR) libmlton.a $(OBJS)
-	strip libmlton.a
 
 libmlton-gdb.a: $(DEBUG_OBJS)
 	$(AR) libmlton-gdb.a $(DEBUG_OBJS)
