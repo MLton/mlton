@@ -17,7 +17,8 @@ YACC = mlyacc
 PATH = $(BIN):$(shell echo $$PATH)
 CP = /bin/cp -fpR
 
-VERSION = $(shell echo `date +%Y%m%d`)
+VERSION = $(shell date +%Y%m%d)
+DATE = $(shell date '+%a, %d %b %Y %H:%M:%S %z')
 RELEASE = 1
 
 .PHONY: all
@@ -135,15 +136,18 @@ version:
 	@echo 'Instantiating version numbers.'
 	for f in							\
 		debian/changelog					\
+		debian/copyright					\
 		doc/mlton.spec						\
 		doc/user-guide/macros.tex				\
 		mlton/control/control.sml; 				\
 	do								\
 		sed "s/\(.*\)VERSION\(.*\)/\1$(VERSION)\2/" <$$f >z &&	\
-		mv z $$f;						\
+		sed "s/\(.*\)DATE\(.*\)/\1$(DATE)\2/" <z >$$f &&	\
+		rm -f z;						\
 	done
 	sed <$(SPEC) >z "/^Release:/s;.*;Release: $(RELEASE);"
 	mv z $(SPEC)
+
 
 .PHONY: world
 world: 

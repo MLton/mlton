@@ -1,6 +1,7 @@
 This package was debianized by Stephen Weeks <sweeks@sweeks.com> on
-VERSION.  The original debianization was done by Barak Pearlmutter
-<bap@cs.unm.edu>.
+DATE.  
+
+The original debianization was done by Barak Pearlmutter <bap@cs.unm.edu>.
 
 The sources are available at:
 	http://prdownloads.sourceforge.net/mlton/mlton-VERSION-1.src.tgz
