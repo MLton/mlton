@@ -18,4 +18,12 @@ only arise if you are working with the {\mlton} sources.
 \item {\mlton} {\tt Makefile}s use GNU extensions, so you should use {\tt gmake}
 instead of {\tt make}.
 
+\item {\mlton} requires GNU MP version 3 or higher.  The default that comes with
+FreeBSD is version 2.  So to build MLton, in particular the runtime, requires
+putting gmp.h and libgmp.a in the {\tt runtime} directory.  You can get them
+by either downloading from \htmlurl{http://www.gnu.org/software/gmp/gmp.html}
+and compiling yourself (we use 4.0.1), or just copying them from a MLton
+binary package for FreeBSD ({\tt /usr/local/lib/mlton/self/libgmp.a} or {\tt
+/usr/local/lib/mlton/self/include/gmp.h}).
+
 \end{itemize}
