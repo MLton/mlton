@@ -91,7 +91,7 @@ local
       in
 	 List.foreach
 	 (functions, fn f =>
-	  if dontInlineFunc (f, a)
+	  if not (Function.mayInline f) orelse dontInlineFunc (f, a)
 	     then ()
 	  else setShouldInline (Function.name f, true))
 	 ; Control.diagnostics
@@ -177,10 +177,11 @@ fun product (Program.T {functions, ...}, {small: int, product: int}) =
 	  let 
 	     val name = Function.name f
 	     val n = Graph.newNode graph
-	  in setNodeFunc (n, name)
-	     ; setFuncInfo (name, {node = n,
-				   doesCallSelf = ref false,
+	  in
+	     setNodeFunc (n, name)
+	     ; setFuncInfo (name, {doesCallSelf = ref false,
 				   function = f,
+				   node = n,
 				   numCalls = ref 0,
 				   shouldInline = ref false,
 				   size = ref 0})
@@ -208,7 +209,8 @@ fun product (Program.T {functions, ...}, {small: int, product: int}) =
 	  end)
       fun mayInline (setSize: bool,
 		     {function, doesCallSelf, numCalls, size, ...}: info): bool =
-	 not (!doesCallSelf)
+	 Function.mayInline function
+	 andalso not (!doesCallSelf)
 	 andalso let
 		    val (n, _) = 
 		       Size.functionSize
@@ -386,13 +388,15 @@ fun inline (program as Program.T {datatypes, globals, functions, main}) =
 	 List.fold
 	 (functions, [], fn (f, ac) =>
 	  let
-	     val {args, blocks, name, raises, returns, start} = Function.dest f
+	     val {args, blocks, mayInline, name, raises, returns, start} =
+		Function.dest f
 	     fun keep () =
 		let
 		   val blocks = doit (blocks, Return.Tail)
 		in
 		   shrink (Function.new {args = args,
 					 blocks = blocks,
+					 mayInline = mayInline,
 					 name = name,
 					 raises = raises,
 					 returns = returns,

@@ -164,12 +164,12 @@ fun casee {caseType: Xtype.t,
 		       (Xlambda.make
 			{arg = arg,
 			 argType = argType,
-			 body =
-			 Xexp.toExp
-			 (Xexp.detupleBind
-			  {tuple = Xexp.monoVar (arg, argType),
-			   components = vars,
-			   body = e})})}
+			 body = (Xexp.toExp
+				 (Xexp.detupleBind
+				  {tuple = Xexp.monoVar (arg, argType),
+				   components = vars,
+				   body = e})),
+			 mayInline = true})}
 		   fun finish rename =
 		      (Int.inc numUses
 		       ; (Xexp.app
@@ -372,6 +372,7 @@ structure Xexp =
 		     Xlambda.make
 		     {arg = revArg,
 		      argType = revArgTy,
+		      mayInline = true,
 		      body =
 		      Xexp.toExp
 		      (detuple2
@@ -642,11 +643,13 @@ fun defunctorize (CoreML.Program.T {decs}) =
 	       Vector.map
 	       (v, fn {lambda, var} =>
 		let
-		   val {arg, argType, body, bodyType} = loopLambda lambda
+		   val {arg, argType, body, bodyType, mayInline} =
+		      loopLambda lambda
 		in
 		   {lambda = Xlambda.make {arg = arg,
 					   argType = argType,
-					   body = Xexp.toExp body},
+					   body = Xexp.toExp body,
+					   mayInline = mayInline},
 		    ty = Xtype.arrow (argType, bodyType),
 		    var = var}
 		end)
@@ -859,7 +862,8 @@ fun defunctorize (CoreML.Program.T {decs}) =
 					   con = con,
 					   targs = targs,
 					   ty = bodyType}),
-				  bodyType = bodyType}
+				  bodyType = bodyType,
+				  mayInline = true}
 			      end
 		     end
 		| Const f =>
@@ -939,13 +943,14 @@ fun defunctorize (CoreML.Program.T {decs}) =
 	 end
       and loopLambda (l: Clambda.t) =
 	 let
-	    val {arg, argType, body} = Clambda.dest l
+	    val {arg, argType, body, mayInline} = Clambda.dest l
 	    val (body, bodyType) = loopExp body
 	 in
 	    {arg = arg,
 	     argType = loopTy argType,
 	     body = body,
-	     bodyType = bodyType}
+	     bodyType = bodyType,
+	     mayInline = mayInline}
 	 end
       val body = Xexp.toExp (loopDecs (decs, (Xexp.unit (), Xtype.unit)))
       val _ = List.foreach (!warnings, fn f => f ())

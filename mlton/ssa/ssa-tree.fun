@@ -870,6 +870,7 @@ structure Function =
      
       type dest = {args: (Var.t * Type.t) vector,
 		   blocks: Block.t vector,
+		   mayInline: bool,
 		   name: Func.t,
 		   raises: Type.t vector option,
 		   returns: Type.t vector option,
@@ -896,6 +897,7 @@ structure Function =
       in
 	 val blocks = make #blocks
 	 val dest = make (fn d => d)
+	 val mayInline = make #mayInline
 	 val name = make #name
 	 val start = make #start
       end
@@ -1300,7 +1302,7 @@ structure Function =
 	       val (bindLabel, lookupLabel, destroyLabel) =
 		  make (Label.new, Label.plist)
 	    end
-	    val {args, blocks, name, raises, returns, start, ...} =
+	    val {args, blocks, mayInline, name, raises, returns, start, ...} =
 	       dest f
 	    val args = Vector.map (args, fn (x, ty) => (bindVar x, ty))
 	    val bindLabel = ignore o bindLabel
@@ -1335,6 +1337,7 @@ structure Function =
 	 in
 	    new {args = args,
 		 blocks = blocks,
+		 mayInline = mayInline,
 		 name = name,
 		 raises = raises,
 		 returns = returns,
@@ -1348,7 +1351,7 @@ structure Function =
 	 else 
 	 let
 	    val _ = Control.diagnostic (fn () => layout f)
-	    val {args, blocks, name, raises, returns, start} = dest f
+	    val {args, blocks, mayInline, name, raises, returns, start} = dest f
 	    val extraBlocks = ref []
 	    val {get = labelBlock, set = setLabelBlock, rem} =
 	       Property.getSetOnce
@@ -1462,6 +1465,7 @@ structure Function =
 	    val f = 
 	       new {args = args,
 		    blocks = blocks,
+		    mayInline = mayInline,
 		    name = name,
 		    raises = raises,
 		    returns = returns,
@@ -1725,7 +1729,7 @@ structure Program =
 	       List.map
 	       (functions, fn f =>
 		let
-		   val {args, blocks, name, raises, returns, start} =
+		   val {args, blocks, mayInline, name, raises, returns, start} =
 		      Function.dest f
 		   val blocks =
 		      Vector.map
@@ -1750,6 +1754,7 @@ structure Program =
 		in
 		   Function.new {args = args,
 				 blocks = blocks,
+				 mayInline = mayInline,
 				 name = name,
 				 raises = raises,
 				 returns = returns,

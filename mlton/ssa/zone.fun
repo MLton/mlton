@@ -16,7 +16,8 @@ structure Set = DisjointSet
    
 fun zoneFunction (f, ac) =
    let
-      val {args, blocks, name, raises, returns, start} = Function.dest f
+      val {args, blocks, mayInline, name, raises, returns, start} =
+	 Function.dest f
    in
       if Vector.length blocks <= !Control.maxFunctionSize
 	 then f :: ac

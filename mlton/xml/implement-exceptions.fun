@@ -338,8 +338,9 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 					  {var = defaultVar,
 					   exp = lambda {arg = unit,
 							 argType = Type.unit,
+							 body = body,
 							 bodyType = ty,
-							 body = body}}
+							 mayInline = true}}
 				    in
 				       makeExp
 				       (lett
@@ -435,11 +436,12 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 	 end
       and loopLambda l =
 	 let
-	    val {arg, argType, body} = Lambda.dest l
+	    val {arg, argType, body, mayInline} = Lambda.dest l
 	 in
 	    Lambda.make {arg = arg,
 			 argType = argType,
-			 body = loop body}
+			 body = loop body,
+			 mayInline = mayInline}
 	 end
       val body =
 	 let
@@ -469,8 +471,9 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 	  exp = Dexp.reff (Dexp.lambda
 			   {arg = Var.newNoname (),
 			    argType = Type.exn,
+			    body = bug "toplevel handler not installed",
 			    bodyType = Type.unit,
-			    body = bug "toplevel handler not installed"}),
+			    mayInline = true}),
 	  body = body}
       val body = wrapBody body
       val (datatypes, body) =
@@ -491,6 +494,7 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 			 (Lambda.make
 			  {arg = exn,
 			   argType = Type.exn,
+			   mayInline = true,
 			   body =
 			   let
 			      open Dexp

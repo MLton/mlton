@@ -319,12 +319,13 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
 	  | XprimExp.Var x => SprimExp.Var (monoVarExp x)
       and monoLambda l: Slambda.t =
 	 let
-	    val {arg, argType, body} = Xlambda.dest l
+	    val {arg, argType, body, mayInline} = Xlambda.dest l
 	    val (arg, argType) = renameMono (arg, argType)
 	 in
 	    Slambda.make {arg = arg,
 			  argType = argType,
-			  body = monoExp body}
+			  body = monoExp body,
+			  mayInline = mayInline}
 	 end
       (*------------------------------------*)
       (*              monoDec               *)

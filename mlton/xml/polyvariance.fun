@@ -271,11 +271,12 @@ fun duplicate (program as Program.T {datatypes, body, overflow},
 	 end
       and loopLambda (l: Lambda.t): Lambda.t =
 	 let
-	    val {arg, argType, body} = Lambda.dest l
+	    val {arg, argType, body, mayInline} = Lambda.dest l
 	 in
 	    Lambda.make {arg = bind arg,
 			 argType = argType,
-			 body = loopExp body}
+			 body = loopExp body,
+			 mayInline = mayInline}
 	 end
       and loopDecs (ds: Dec.t list, result): {decs: Dec.t list,
 					      result: VarExp.t} =

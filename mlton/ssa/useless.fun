@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -1000,7 +1000,7 @@ fun useless (program: Program.t): Program.t =
 	 doitBlock
       fun doitFunction f =
 	 let
-	    val {args, blocks, name, start, ...} = Function.dest f
+	    val {args, blocks, mayInline, name, start, ...} = Function.dest f
 	    val {returns = returnvs, raises = raisevs, ...} = func name
 	    val args = keepUsefulArgs args
 	    val (blocks, blocks') =
@@ -1016,6 +1016,7 @@ fun useless (program: Program.t): Program.t =
 	 in
 	    Function.new {args = args,
 			  blocks = blocks,
+			  mayInline = mayInline,
 			  name = name,
 			  raises = raises,
 			  returns = returns,

@@ -330,7 +330,8 @@ fun eliminate (Program.T {globals, datatypes, functions, main}) =
 	 List.revMap
 	 (functions, fn f => 
 	  let
-	     val {args, blocks, name, raises, returns, start} = Function.dest f
+	     val {args, blocks, mayInline, name, raises, returns, start} =
+		Function.dest f
 	     val _ =
 		Vector.foreach
 		(blocks, fn Block.T {label, args, ...} =>
@@ -346,6 +347,7 @@ fun eliminate (Program.T {globals, datatypes, functions, main}) =
 	  in
 	     shrink (Function.new {args = args,
 				   blocks = blocks,
+				   mayInline = mayInline,
 				   name = name,
 				   raises = raises,
 				   returns = returns,

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -85,7 +85,8 @@ fun flatten (Program.T {globals, datatypes, functions, main}) =
 	 List.revMap
 	 (functions, fn f =>
 	  let
-	     val {args, blocks, name, raises, returns, start} = Function.dest f
+	     val {args, blocks, mayInline, name, raises, returns, start} =
+		Function.dest f
 	     val _ =
 	        Vector.foreach
 		(blocks, fn Block.T {label, args, ...} =>
@@ -281,9 +282,10 @@ fun flatten (Program.T {globals, datatypes, functions, main}) =
 	  in
 	     shrink (Function.new {args = args,
 				   blocks = blocks,
+				   mayInline = mayInline,
+				   name = name,
 				   raises = raises,
 				   returns = returns,
-				   name = name,
 				   start = start})
 	  end)
       val program = Program.T {datatypes = datatypes,

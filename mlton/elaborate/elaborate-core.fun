@@ -1519,7 +1519,8 @@ fun elaborateDec (d, {env = E,
 				       (Lambda.make
 					{arg = Vector.sub (xs, i),
 					 argType = argType,
-					 body = body}),
+					 body = body,
+					 mayInline = true}),
 				       Type.arrow (argType, Cexp.ty body))
 				   end
 			     val lambda = make 0
@@ -1733,7 +1734,8 @@ fun elaborateDec (d, {env = E,
 			     val lambda =
 				Lambda.make {arg = arg,
 					     argType = argType,
-					     body = body}
+					     body = body,
+					     mayInline = true}
 			  in
 			     {bound = bound,
 			      lambda = lambda,
@@ -1923,7 +1925,8 @@ fun elaborateDec (d, {env = E,
 		   in
 		      Cexp.make (Cexp.Lambda (Lambda.make {arg = arg,
 							   argType = argType,
-							   body = body}),
+							   body = body,
+							   mayInline = true}),
 				 Type.arrow (argType, Cexp.ty body))
 		   end
 	      | Aexp.Handle (try, match) =>
@@ -2111,7 +2114,8 @@ fun elaborateDec (d, {env = E,
 				  Cexp.make (Cexp.Lambda
 					     (Lambda.make {arg = arg,
 							   argType = argType,
-							   body = body}),
+							   body = body,
+							   mayInline = true}),
 					     ty)
 			       end
 		      fun lookConst (name: string) =

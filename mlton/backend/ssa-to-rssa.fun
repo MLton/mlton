@@ -1209,6 +1209,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 			    args = Vector.new0 (),
 			    statements = Vector.new0 (),
 			    transfer = S.Transfer.Bug})),
+		mayInline = false, (* doesn't matter *)
 		name = Func.newNoname (),
 		raises = NONE,
 		returns = NONE,

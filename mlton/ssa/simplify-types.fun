@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -689,7 +689,8 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
 	 end
       fun simplifyFunction f =
 	 let
-	    val {args, name, raises, returns, start, ...} = Function.dest f
+	    val {args, mayInline, name, raises, returns, start, ...} =
+	       Function.dest f
 	     val args = simplifyFormals args
 	     val blocks = ref []
 	     val _ =
@@ -701,6 +702,7 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
 	 in
 	    Function.new {args = args,
 			  blocks = Vector.fromList (!blocks),
+			  mayInline = mayInline,
 			  name = name,
 			  raises = raises,
 			  returns = returns,

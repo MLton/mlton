@@ -106,6 +106,7 @@ structure Accum =
 		 (Vector.new0 ())
 		 (Function.new {args = Vector.new0 (),
 				blocks = Vector.fromList blocks,
+				mayInline = false, (* doesn't matter *)
 				name = Func.newNoname (),
 				raises = NONE,
 				returns = NONE, (* bogus *)
@@ -679,7 +680,7 @@ fun closureConvert
 	    handle Yes ts => SOME ts
 	 end
       val shrinkFunction = Ssa.shrinkFunction (Vector.new0 ())
-      fun addFunc (ac, {args, body, isMain, name, returns}) =
+      fun addFunc (ac, {args, body, isMain, mayInline, name, returns}) =
 	 let
 	    val (start, blocks) =
 	       Dexp.linearize (body, Ssa.Handler.Caller)
@@ -687,6 +688,7 @@ fun closureConvert
 	       shrinkFunction
 	       (Function.new {args = args,
 			      blocks = Vector.fromList blocks,
+			      mayInline = mayInline,
 			      name = name,
 			      raises = raises,
 			      returns = SOME returns,
@@ -998,7 +1000,7 @@ fun closureConvert
 			 info as LambdaInfo.T {frees, name, recs, ...},
 			 ac: Accum.t): Accum.t =
 	 let
-	    val {arg = argVar, body, ...} = Slambda.dest lambda
+	    val {arg = argVar, body, mayInline, ...} = Slambda.dest lambda
 	    val argVarInfo = varInfo argVar
 	    val env = Var.newString "env"
 	    val envType = lambdaInfoType info
@@ -1027,6 +1029,7 @@ fun closureConvert
 		 addFunc (ac, {args = args,
 			       body = body,
 			       isMain = false,
+			       mayInline = mayInline,
 			       name = name,
 			       returns = returns})
 	      end))
@@ -1042,6 +1045,7 @@ fun closureConvert
 	     val (body, ac) = convertExp (body, Accum.empty)
 	     val ac = addFunc (ac, {args = Vector.new0 (),
 				    body = body,
+				    mayInline = false,
 				    isMain = true,
 				    name = main,
 				    returns = Vector.new1 Type.unit})

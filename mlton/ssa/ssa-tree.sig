@@ -216,6 +216,7 @@ signature SSA_TREE =
 		     nodeBlock: unit DirectedGraph.Node.t -> Block.t}
 	    val dest: t -> {args: (Var.t * Type.t) vector,
 			    blocks: Block.t vector,
+			    mayInline: bool,
 			    name: Func.t,
 			    raises: Type.t vector option,
 			    returns: Type.t vector option,
@@ -231,9 +232,11 @@ signature SSA_TREE =
 	    val layoutDot:
 	       t * (Var.t -> string option) -> {graph: Layout.t,
 						tree: unit -> Layout.t}
+	    val mayInline: t -> bool
 	    val name: t -> Func.t
 	    val new: {args: (Var.t * Type.t) vector,
 		      blocks: Block.t vector,
+		      mayInline: bool,
 		      name: Func.t,
 		      raises: Type.t vector option,
 		      returns: Type.t vector option,

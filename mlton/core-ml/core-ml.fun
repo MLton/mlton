@@ -174,7 +174,8 @@ and expNode =
   | Var of (unit -> Var.t) * (unit -> Type.t vector)
 and lambda = Lam of {arg: Var.t,
 		     argType: Type.t,
-		     body: exp}
+		     body: exp,
+		     mayInline: bool}
 
 local
    open Layout
@@ -276,7 +277,8 @@ structure Lambda =
       val bogus = make {arg = Var.newNoname (),
 			argType = Type.unit,
 			body = Exp {node = Seq (Vector.new0 ()),
-				    ty = Type.unit}}
+				    ty = Type.unit},
+			mayInline = true}
    end
 
 structure Exp =
@@ -376,7 +378,8 @@ structure Exp =
 		body = iff (test,
 			    make (Seq (Vector.new2 (expr, call)),
 				  Type.unit),
-			    unit)}
+			    unit),
+		mayInline = true}
 	 in
 	    make
 	    (Let (Vector.new1 (Fun {decs = Vector.new1 {lambda = lambda,

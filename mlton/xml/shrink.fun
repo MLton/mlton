@@ -251,15 +251,16 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
 				  let
 				     val {numOccurrences, value, ...} =
 					monoVarInfo var
-				  in case !value of
-				     SOME (Value.Lambda {isInlined, ...}) =>
-					not (!isInlined)
-					andalso
-					if 0 = !numOccurrences
-					   then (deleteLambda lambda
-						 ; false)
-					else (value := NONE; true)
-				   | _ => Error.bug "should be a lambda"
+				  in
+				     case !value of
+					SOME (Value.Lambda {isInlined, ...}) =>
+					   not (!isInlined)
+					   andalso
+					   if 0 = !numOccurrences
+					      then (deleteLambda lambda
+						    ; false)
+					   else (value := NONE; true)
+				      | _ => Error.bug "should be a lambda"
 				  end)
 			   in
 			      if Vector.isEmpty decs'
@@ -330,14 +331,18 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
 		   | VarInfo.Mono {numOccurrences, value, varExp, ...} => 
 			case (!numOccurrences, !value) of
 			   (1, SOME (Value.Lambda {isInlined, lam = l})) =>
-			      let
-				 val {arg = form, body, ...} = Lambda.dest l
-			      in VarInfo.inc (arg, ~1)
-				 ; replace (form, arg)
-				 ; isInlined := true
-				 ; numOccurrences := 0
-				 ; expression body
-			      end
+			      if not (Lambda.mayInline l)
+				 then normal varExp
+			      else
+				 let
+				    val {arg = form, body, ...} = Lambda.dest l
+				 in
+				    VarInfo.inc (arg, ~1)
+				    ; replace (form, arg)
+				    ; isInlined := true
+				    ; numOccurrences := 0
+				    ; expression body
+				 end
 			 | _ => normal varExp
 		  end
 	     | Case {test, cases, default} =>
@@ -428,8 +433,9 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
 		  let val isInlined = ref false
 		  in nonExpansive
 		     (fn () => if !isInlined then () else deleteLambda l,
-		      fn () => (value := SOME (Value.Lambda {isInlined = isInlined,
-							     lam = l})
+		      fn () => (value := SOME (Value.Lambda
+					       {isInlined = isInlined,
+						lam = l})
 				; SOME (fn () => Lambda (shrinkLambda l))))
 		  end
 	     | PrimApp {prim, args, targs} =>
@@ -477,11 +483,12 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
 	 traceShrinkLambda
 	 (fn l => 
 	  let
-	     val {arg, argType, body} = Lambda.dest l
+	     val {arg, argType, body, mayInline} = Lambda.dest l
 	  in
 	     Lambda.make {arg = arg,
 			  argType = argType,
-			  body = shrinkExp body}
+			  body = shrinkExp body,
+			  mayInline = mayInline}
 	  end) l
       val _ = countExp body
       val _ =

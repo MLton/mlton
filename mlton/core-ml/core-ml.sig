@@ -129,11 +129,13 @@ signature CORE_ML =
 	    val bogus: t
 	    val dest: t -> {arg: Var.t,
 			    argType: Type.t,
-			    body: Exp.t}
+			    body: Exp.t,
+			    mayInline: bool}
 	    val layout: t -> Layout.t
 	    val make: {arg: Var.t,
 		       argType: Type.t,
-		       body: Exp.t} -> t
+		       body: Exp.t,
+		       mayInline: bool} -> t
 	 end
       sharing type Exp.lambda = Lambda.t
 

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -227,9 +227,8 @@ fun eliminate (program: Program.t): Program.t
 	   if funcIsMultiUsed (Function.name f)
 	     then (f::functions,globals)
 	     else let
-		    val {args, blocks, name, raises, returns, start} =
+		    val {args, blocks, mayInline, name, raises, returns, start} =
 		       Function.dest f
-
 		    val (globals, locals)
 		      = List.fold
 		        (globals, ([],[]), fn (s as Statement.T {var, ...},
@@ -266,6 +265,7 @@ fun eliminate (program: Program.t): Program.t
 				   in
 				     Function.new {args = args,
 						   blocks = blocks,
+						   mayInline = mayInline,
 						   name = name,
 						   raises = raises,
 						   returns = returns,
@@ -298,8 +298,8 @@ fun eliminate (program: Program.t): Program.t
 	= List.revMap
 	  (functions, fn f =>
 	   let
-	     val {args, blocks, name, raises, returns, start} = Function.dest f
-
+	     val {args, blocks, mayInline, name, raises, returns, start} =
+		Function.dest f
 	     (* Find all localizable refs. *)
 	     val refs = ref []
 	     fun visitStatement label (Statement.T {var, ty, exp})
@@ -510,6 +510,7 @@ fun eliminate (program: Program.t): Program.t
 	     val blocks = Vector.map (blocks, rewriteBlock)
 	     val f = Function.new {args = args,
 				   blocks = blocks,
+				   mayInline = mayInline,
 				   name = name,
 				   raises = raises,
 				   returns = returns,

@@ -195,6 +195,7 @@ and dec =
 and lambda = Lam of {arg: Var.t,
 		     argType: Type.t,
 		     body: exp,
+		     mayInline: bool,
 		     plist: PropertyList.t}
 
 local
@@ -537,16 +538,18 @@ structure Lambda =
 	 val arg = make #arg
 	 val argType = make #argType
 	 val body = make #body
+	 val mayInline = make #mayInline
       end
 
-      fun make {arg, argType, body} =
+      fun make {arg, argType, body, mayInline} =
 	 Lam {arg = arg,
 	      argType = argType,
 	      body = body,
+	      mayInline = mayInline,
 	      plist = PropertyList.new ()}
 
-      fun dest (Lam {arg, argType, body, ...}) =
-	 {arg = arg, argType = argType, body = body}
+      fun dest (Lam {arg, argType, body, mayInline, ...}) =
+	 {arg = arg, argType = argType, body = body, mayInline = mayInline}
 	 
       fun plist (Lam {plist, ...}) = plist
 	 
@@ -748,10 +751,11 @@ structure DirectExp =
 	       Exp.prefix (send (body, k),
 			   Dec.MonoVal {var = var, ty = ty, exp = exp}))
 	 
-      fun lambda {arg, argType, body, bodyType} =
+      fun lambda {arg, argType, body, bodyType, mayInline} =
 	 simple (Lambda (Lambda.make {arg = arg,
 				      argType = argType,
-				      body = toExp body}),
+				      body = toExp body,
+				      mayInline = mayInline}),
 		 Type.arrow (argType, bodyType))
       
       fun detupleGen (e: PrimExp.t,

@@ -80,13 +80,13 @@ fun doit (Program.T {datatypes, body, overflow, ...}): Program.t =
 	 end
       and loopLambda l =
 	 let
-	    val {arg, argType, body} = Lambda.dest l
+	    val {arg, argType, body, mayInline} = Lambda.dest l
 	 in
 	    Lambda.make {arg = arg,
 			 argType = argType,
-			 body = loop body}
+			 body = loop body,
+			 mayInline = mayInline}
 	 end
-
       fun bug s =
 	 Dexp.primApp {prim = Prim.bug,
 		       targs = Vector.new0 (),
@@ -98,8 +98,9 @@ fun doit (Program.T {datatypes, body, overflow, ...}): Program.t =
 	  exp = Dexp.reff (Dexp.lambda
 			   {arg = Var.newNoname (),
 			    argType = Type.unit,
+			    body = bug "toplevel suffix not installed",
 			    bodyType = Type.unit,
-			    body = bug "toplevel suffix not installed"}),
+			    mayInline = true}),
 	  body =
 	  (Dexp.sequence o Vector.new2)
 	  (Dexp.fromExp (loop body, Type.unit),

@@ -204,7 +204,7 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 	 List.map
 	 (functions, fn f =>
 	  let
-	     val {args, blocks, name, raises, returns, start} =
+	     val {args, blocks, mayInline, name, raises, returns, start} =
 		S.Function.dest f
 	     fun rr tvo = Option.map (tvo, convertTypes)
 	     val blocks = Vector.map (blocks, convertBlock)
@@ -213,6 +213,7 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 	  in
 	     S2.Function.new {args = convertFormals args,
 			      blocks = blocks,
+			      mayInline = mayInline,
 			      name = name,
 			      raises = rr raises,
 			      returns = rr returns,

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -241,10 +241,10 @@ fun flatten (Program.T {datatypes, globals, functions, main}) =
 					  args = flattens (args, conArgs con)}}
 	  | _ => stmt
       val globals = Vector.map (globals, doitStatement)
-
       fun doitFunction f =
 	 let
-	    val {args, name, raises, returns, start, ...} = Function.dest f
+	    val {args, mayInline, name, raises, returns, start, ...} =
+	       Function.dest f
 	    val {args = argsReps, returns = returnsReps, raises = raisesReps} = 
 	      funcInfo name
 
@@ -435,6 +435,7 @@ fun flatten (Program.T {datatypes, globals, functions, main}) =
 	 in
 	    Function.new {args = args,
 			  blocks = blocks,
+			  mayInline = mayInline,
 			  name = name,
 			  raises = raises,
 			  returns = returns,

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -170,6 +170,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 		  val _ =
 		     newFunction {args = args,
 				  blocks = blocks,
+				  mayInline = true,
 				  name = name,
 				  raises = NONE,
 				  returns = returns,
@@ -220,6 +221,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 		     val _ =
 			newFunction {args = args,
 				     blocks = blocks,
+				     mayInline = true,
 				     name = name,
 				     raises = NONE,
 				     returns = returns,
@@ -262,6 +264,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 		     val _ =
 			newFunction {args = args,
 				     blocks = blocks,
+				     mayInline = true,
 				     name = loop,
 				     raises = NONE,
 				     returns = returns,
@@ -406,11 +409,12 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 	 List.revMap 
 	 (functions, fn f =>
 	  let
-	     val {args, blocks, name, raises, returns, start} =
+	     val {args, blocks, mayInline, name, raises, returns, start} =
 		Function.dest f
 	  in
 	     shrink (Function.new {args = args,
 				   blocks = doit blocks,
+				   mayInline = mayInline,
 				   name = name,
 				   raises = raises,
 				   returns = returns,

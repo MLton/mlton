@@ -94,7 +94,8 @@ fun eliminate (Program.T {datatypes, globals, functions, main}) =
 	 List.foreach
 	 (functions, fn f =>
 	  let
-	     val {name, args, start, blocks, returns, raises} = Function.dest f
+	     val {args, blocks, mayInline, name, start, returns, raises} =
+		Function.dest f
 	     val () = 
 		Vector.foreach
 		(blocks, fn Block.T {label, args, ...} =>
@@ -186,7 +187,8 @@ fun eliminate (Program.T {datatypes, globals, functions, main}) =
 	 List.revMap
 	 (functions, fn f =>
 	  let
-	     val {args, blocks, name, start, raises, returns} = Function.dest f
+	     val {args, blocks, mayInline, name, start, raises, returns} =
+		Function.dest f
 	     val blocks = 
 		Vector.map
 		(blocks, fn Block.T {args, label, statements, transfer} =>
@@ -225,6 +227,7 @@ fun eliminate (Program.T {datatypes, globals, functions, main}) =
 	  in
 	     shrink (Function.new {args = args,
 				   blocks = blocks,
+				   mayInline = mayInline,
 				   name = name,
 				   start = start,
 				   raises = raises,
