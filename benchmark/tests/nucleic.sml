@@ -3641,7 +3641,7 @@ end;
 
 signature BMARK =
   sig
-    val doit : unit -> unit
+    val doit : int -> unit
   end;
 (* main.sml
  *

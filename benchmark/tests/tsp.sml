@@ -410,7 +410,7 @@ structure BuildTree : sig
 
 signature BMARK =
   sig
-    val doit : unit -> unit
+    val doit : int -> unit
     val testit : TextIO.outstream -> unit
   end;
 (* main.sml

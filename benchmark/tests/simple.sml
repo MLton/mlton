@@ -28,7 +28,7 @@ structure Array2 : sig
   end; (* Array2 *)
 signature BMARK =
   sig
-    val doit : unit -> unit
+    val doit : int -> unit
     val testit : TextIO.outstream -> unit
   end;
 (* Simple

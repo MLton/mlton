@@ -1209,7 +1209,7 @@ structure Vector3 : VECTOR =
 
 signature BMARK =
   sig
-    val doit : unit -> unit
+    val doit : int -> unit
     val testit : TextIO.outstream -> unit
   end;
 (* load file for bmark version *)
