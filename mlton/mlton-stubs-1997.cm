@@ -319,6 +319,7 @@ ssa/direct-exp.fun
 ../lib/mlton/basic/clearable-promise.sml
 atoms/hash-type.fun
 atoms/cases.fun
+ssa/source-info.fun
 ssa/ssa-tree.fun
 ssa/ssa.fun
 backend/mtype.sig

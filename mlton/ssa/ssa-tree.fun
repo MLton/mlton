@@ -10,31 +10,7 @@ struct
 
 open S
 
-structure SourceInfo =
-   struct
-      datatype t =
-	 Bogus
-       | Main
-       | PolyEqual
-       | Region of Region.t
-
-      val bogus = Bogus
-      val fromRegion = Region
-      val main = Main
-      val polyEqual = PolyEqual
-
-      val toString =
-	 fn Bogus => "<unknown>"
-	  | Main => "<main>"
-	  | PolyEqual => "<poly equal>"
-	  | Region r =>
-	       (case Region.left r of
-		   NONE => "<unknown>"
-		 | SOME (SourcePos.T {file, line, ...}) =>
-		      concat [file, ":", Int.toString line])
-
-      val layout = Layout.str o toString
-   end
+structure SourceInfo = SourceInfo ()
 
 structure Type =
    struct

@@ -70,6 +70,7 @@ simplify.fun
 simplify.sig
 simplify-types.fun
 simplify-types.sig
+source-info.fun
 source-info.sig
 ssa-tree.fun
 ssa-tree.sig
