@@ -30,6 +30,7 @@ OBJS =						\
 	basis/Itimer/set.o			\
 	basis/MLton/allocTooLarge.o		\
 	basis/MLton/bug.o			\
+	basis/MLton/errno.o			\
 	basis/MLton/exit.o			\
 	basis/MLton/profile.o			\
 	basis/MLton/random.o			\
@@ -178,6 +179,7 @@ DEBUG_OBJS =					\
 	basis/Itimer/set-gdb.o			\
 	basis/MLton/allocTooLarge-gdb.o		\
 	basis/MLton/bug-gdb.o			\
+	basis/MLton/errno-gdb.o			\
 	basis/MLton/exit-gdb.o			\
  	basis/MLton/profile-gdb.o		\
 	basis/MLton/random-gdb.o		\

@@ -48,6 +48,7 @@ structure Primitive =
       val debug = _build_const "MLton_debug": bool;
       val detectOverflow = _build_const "MLton_detectOverflow": bool;
       val eq = fn z => _prim "MLton_eq": 'a * 'a -> bool; z
+      val errno = _ffi "MLton_errno": unit -> int;
       val halt = _prim "MLton_halt": int -> unit;
       val handlesSignals = _prim "MLton_handlesSignals": bool;
       val installSignalHandler = _prim "MLton_installSignalHandler": unit -> unit;

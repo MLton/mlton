@@ -24,6 +24,7 @@ fun cleanAtExit () = let open Cleaner in clean atExit end
 
 val debug = Primitive.debug
 val eq = Primitive.eq
+val errno = Primitive.errno
 val safe = Primitive.safe
 
 structure Array = Array

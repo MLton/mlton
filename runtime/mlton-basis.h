@@ -118,6 +118,7 @@ void Itimer_set(Int which,
 void MLton_arrayTooLarge ();
 /* print a bug message and exit (2) */
 void MLton_bug (Pointer msg);
+Int MLton_errno ();
 /* halt the machine */
 void MLton_exit (Int status);
 Word MLton_random ();
