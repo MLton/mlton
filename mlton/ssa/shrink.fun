@@ -842,7 +842,7 @@ val shrinkFunction =
       fn f =>
       let
 	 fun doit (f, s) =
-	    case 1 of
+	    case 0 of
 	       0 => ()
 	     | 1 =>
 		  File.withOut
