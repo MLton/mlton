@@ -256,7 +256,6 @@ typedef struct GC_state {
 	uint cardSizeLog2;
 	GC_heap crossMapHeap;	/* only used during GC. */
 	GC_thread currentThread; /* This points to a thread in the heap. */
-	bool doingMinorGC;	/* Set to true during a minor GC. */
 	uint fixedHeapSize; 	/* Only meaningful if useFixedHeap. */
 	GC_frameLayout *frameLayouts;
 	bool generational;	/* Whether or not to use generational gc. */
@@ -271,6 +270,14 @@ typedef struct GC_state {
 	volatile int canHandle;
 	bool isOriginal;
 	pointer limitPlusSlop; /* limit + LIMIT_SLOP */
+	float liveRatioCopy;	/* Minimum live ratio to use copying GC. */
+	float liveRatioDesired;	/* Desired ratio of heap size to live data. */
+	/* Only use generational GC if the live ratio is below 
+	 * liveRatioGenerational.
+	 */
+	float liveRatioGenerational;
+	/* Minimum live ratio to us mark-compact GC. */
+	float liveRatioMarkCompact; 
 	/* loadGlobals loads the globals from the stream. */
 	void (*loadGlobals)(FILE *file);
 	uint magic; /* The magic number required for a valid world file. */
@@ -297,8 +304,13 @@ typedef struct GC_state {
  	uint numMarkCompactGCs;
 	uint numMinorGCs;
 	uint numMinorsSinceLastMajor;
+	/* As long as the ratio of bytes live to nursery size is greater than
+	 * nurseryRatio, use minor GCs.
+	 */
+	float nurseryRatio;
 	GC_ObjectType *objectTypes; /* Array of object types. */
 	uint pageSize; /* bytes */
+	W32 ram;		/* ramSlop * totalRam */
 	float ramSlop;
  	struct rusage ru_gc; /* total resource usage spent in gc */
 	/* savedThread is only set
@@ -333,6 +345,8 @@ typedef struct GC_state {
 	 * is done .
 	 */
 	bool summary; 
+	pointer toSpace;	/* used during copying */
+	pointer toLimit;	/* used during copying */
 	uint totalRam;		/* bytes */
 	uint totalSwap; 	/* bytes */
 	uint translateDiff;	/* used by translateHeap */
