@@ -34,6 +34,11 @@ bootstrap:
 	rm -f $(COMP)/$(AOUT)
 	$(MAKE) all
 
+.PHONY: bootstrap-nj
+bootstrap-nj:
+	$(MAKE) nj-mlton
+	$(MAKE) all
+
 .PHONY: clean
 clean:
 	bin/clean
