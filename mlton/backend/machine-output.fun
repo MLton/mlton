@@ -227,7 +227,12 @@ structure Statement =
 		       str "] ",
 		       case limitCheck
 			 of NONE => empty
-			  | SOME {gcInfo, ...} => GCInfo.layout gcInfo]
+			  | SOME {bytesPerElt, bytesAllocated, gcInfo, ...} =>
+			       record [("bytesPerElt", Int.layout bytesPerElt),
+				       ("bytesAllocated",
+					Int.layout bytesAllocated),
+				       ("gcInfo", GCInfo.layout gcInfo),
+				       ]]
 	 end
 
    end
