@@ -13,11 +13,11 @@ typedef Word16 ArrayOffset;
 typedef Word16 CallCIndex;
 typedef Word16 GlobalIndex;
 typedef Word32 Label;
-typedef WordS16 Offset;  // Offset must be signed.
+typedef Int16 Offset;  // Offset must be signed.
 typedef Pointer ProgramCounter;
 typedef Word16 RegIndex;
 typedef Word8 Scale;
-typedef WordS16 StackOffset;  // StackOffset must be signed.
+typedef Word16 StackOffset;  // StackOffset must be signed.
 typedef Pointer StackTop;
 
 struct GC_state gcState;
@@ -195,18 +195,20 @@ enum {
 		goto f##Continue;						\
 	f##Overflow:								\
 		overflow = TRUE;						\
-	f##Continue:
+	f##Continue:								\
+	goto mainLoop;
 
-#define unaryCheck(ty, f)							\
-	case opcodeSym (f):							\
-		if (disassemble) goto mainLoop;					\
-		Temp (ty, 0) = PopReg (ty);					\
-		f (PushReg (ty), Temp (ty, 0), f##Overflow);			\
-		overflow = FALSE;						\
-		goto f##Continue;						\
-	f##Overflow:								\
-		overflow = TRUE;						\
-	f##Continue:
+#define unaryCheck(ty, f)					\
+	case opcodeSym (f):					\
+		if (disassemble) goto mainLoop;			\
+		Temp (ty, 0) = PopReg (ty);			\
+		f (PushReg (ty), Temp (ty, 0), f##Overflow);	\
+		overflow = FALSE;				\
+		goto f##Continue;				\
+	f##Overflow:						\
+		overflow = TRUE;				\
+	f##Continue:						\
+	goto mainLoop;
 
 #define coerce(f1, t1, f2, t2)					\
 	case coerceOp (f2, t2):					\
@@ -260,6 +262,7 @@ enum {
 #define Switch(size)							\
 	case OPCODE_Switch##size:					\
 		maybe caseTest##size = PopReg (Word##size);		\
+		assertRegsEmpty ();					\
 		Fetch (numCases);					\
 		lastCase = pc + (4 + size/8) * numCases;		\
 		while (pc < lastCase) {					\
@@ -281,10 +284,10 @@ enum {
 
 typedef char *String;
 
-#define Cache()						\
-	do {						\
-			frontier = gcState.frontier;	\
-			stackTop = gcState.stackTop;	\
+#define Cache()					\
+	do {					\
+		frontier = gcState.frontier;	\
+		stackTop = gcState.stackTop;	\
 	} while (0)
 
 #define Flush()					\
@@ -366,7 +369,6 @@ static inline void interpret (Bytecode b, Word32 codeOffset, Bool disassemble) {
 	}
 mainLoop:
 	if (DEBUG) {
-		fprintf (stderr, "\nfrontier = 0x%08x", (uint)frontier);
 		displayRegs ();
 	}
 	if (DEBUG or disassemble) {
@@ -394,12 +396,7 @@ mainLoop:
 		}
 		goto doReturn;
  	case opcodeSym (Goto):
-		assert (0 == Word8RegI);
-		assert (0 == Word16RegI);
-		assert (0 == Word32RegI);
-		assert (0 == Word64RegI);
-		assert (0 == Real32RegI);
-		assert (0 == Real64RegI);
+		assertRegsEmpty ();
 		Fetch (label);
  		Goto (label);
 	case opcodeSym (JumpOnOverflow):

@@ -66,6 +66,15 @@ structure CType =
 
       val toStringOrig = toString
       val toString = memo toString
+
+      val toStringNoInt =
+	 memo (fn t =>
+	       case t of
+		  Int8 => toString Word8
+		| Int16 => toString Word16
+		| Int32 => toString Word32
+		| Int64 => toString Word64
+		| _ => toString t)
    end
 
 structure LoadStore =
@@ -130,7 +139,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	       (args, fn cty =>
 		let
 		   val temp = concat ["t", Int.toString (Counter.next c)]
-		   val cty = CType.toString cty
+		   val cty = CType.toStringNoInt cty
 		in
 		   {declare = concat ["\t", cty, " ",
 				      temp, " = PopReg (", cty, ");\n"],
@@ -139,11 +148,13 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	    val result =
 	       case result of
 		  NONE => ""
-		| SOME cty => concat ["PushReg (", CType.toString cty, ") = "]
+		| SOME cty =>
+		     concat ["PushReg (", CType.toStringNoInt cty, ") = "]
 	 in
 	    concat
 	    ["{\n",
 	     concat (Vector.toListMap (args, #declare)),
+	     "\tassertRegsEmpty ();\n",
 	     "\t", result, function,
 	     " (",
 	     concat (List.separate (Vector.toListMap (args, #temp), ", ")),
@@ -309,25 +320,26 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	       val bits = Bits.fromInt bits
 	    in
 	       fn i =>
-	       if WordSize.isInRange (WordSize.fromBits bits, i,
-				      {signed = signed})
-		  then
-		     let
-			fun loop (j, i) =
-			   if 0 = j
-			      then ()
-			   else
-			      let
-				 val (q, r) = IntInf.quotRem (i, 0x100)
-				 val () = emitByte (Word8.fromIntInf r)
-			      in
-				 loop (j - 1, q)
-			      end
-		     in
-			loop (Bytes.toInt (Bits.toBytes bits), i)
-		     end
-	       else Error.bug (concat ["emitWord", Bits.toString bits,
-				       " failed on ", IntInf.toString i])
+	       if not (WordSize.isInRange (WordSize.fromBits bits, i,
+					   {signed = signed}))
+		  then Error.bug (concat ["emitWord", Bits.toString bits,
+					  " failed on ", IntInf.toString i])
+	       else
+		  let
+		     fun loop (j, i) =
+			if 0 = j
+			   then ()
+			else
+			   let
+			      val (q, r) = IntInf.quotRem (i, 0x100)
+			      val () = emitByte (Word8.fromIntInf r)
+			   in
+			      loop (j - 1, q)
+			   end
+		  in
+		     loop (Bytes.toInt (Bits.toBytes bits),
+			   IntInf.mod (i, IntInf.<< (1, Bits.toWord bits)))
+		  end
 	    end
       in
 	 val emitWord8 = make (8, {signed = false})
@@ -358,6 +370,9 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
       fun emitLoadWord32Zero () =
 	 (emitOpcode (wordOpcode (Load, CType.Word32))
 	  ; emitWord32 0)
+      fun loadStoreStackOffset (offset, cty, ls) =
+	 (emitOpcode (stackOffset (ls, cty))
+	  ; emitWord16 (Bytes.toIntInf offset))
       val rec emitLoadOperand = fn z => emitOperand (z, Load)
       and emitOperand: Operand.t * LoadStore.t -> unit =
 	 fn (z, ls) =>
@@ -395,8 +410,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 		  (emitOpcode (register (ls, cty))
 		   ; emitWord16 (Int.toIntInf (Register.index r)))
 	     | StackOffset (StackOffset.T {offset, ...}) =>
-		  (emitOpcode (stackOffset (ls, cty))
-		   ; emitWord16 (Bytes.toIntInf offset))
+		  loadStoreStackOffset (offset, cty, ls)
 	     | StackTop => emitOpcode (stackTop ls)
 	     | Word w =>
 		  case ls of
@@ -493,14 +507,26 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	     | Raise => emitOpcode raisee
 	     | Return => emitOpcode return
 	     | Switch (Switch.T {cases, default, size, test}) =>
-		  (emitLoadOperand test
-		   ; emitOpcode (switch size)
-		   ; emitWord16 (Int.toIntInf (Vector.length cases))
-		   ; Vector.foreach (cases, fn (w, l) =>
-				     (emitWordX w; emitLabel l))
-		   ; (case default of
-			 NONE => emitWord32 0 (* default is required *)
-		       | SOME l => emitLabel l))
+		  let
+		     val numCases =
+			Vector.length cases
+			+ (if isSome default then 1 else 0)
+			- 1
+		     val () =
+			(emitLoadOperand test
+			 ; emitOpcode (switch size)
+			 ; emitWord16 (Int.toIntInf numCases))
+		     fun emitCases cases =
+			Vector.foreach (cases, fn (w, l) =>
+					(emitWordX w; emitLabel l))
+		  in
+		     case default of
+			NONE =>
+			   (emitCases (Vector.dropSuffix (cases, 1))
+			    ; emitLabel (#2 (Vector.last cases)))
+		      | SOME l =>
+			   (emitCases cases; emitLabel l)
+		  end
 	 end
       val emitTransfer =
 	 Trace.trace ("emitTransfer", Transfer.layout, Unit.layout)
@@ -516,14 +542,26 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	  (blocks, fn Block.T {kind, label, statements, transfer, ...} =>
 	   (Option.app (Kind.frameInfoOpt kind,
 			fn FrameInfo.T {frameLayoutsIndex} =>
-			emitWord32 (Int.toIntInf frameLayoutsIndex))
+			((* This load will never be used.  We just have it there
+			  * so the disassembler doesn't get confused when it
+			  * sees the frameLayoutsIndex.
+			  *)
+			 emitOpcode (wordOpcode (Load, CType.Word32))
+			 ; emitWord32 (Int.toIntInf frameLayoutsIndex)))
 	    ; setLabelOffset (label, !offset)
 	    ; Option.app (Kind.frameInfoOpt kind, fn fi =>
 			  pop (Program.frameSize (program, fi)))
 	    ; (case kind of
-		  Kind.CReturn {dst, ...} =>
-		     Option.app (dst, fn x =>
-				 emitStoreOperand (Live.toOperand x))
+		  Kind.CReturn {dst, func, ...} =>
+		     Option.app
+		     (#2 (CFunction.prototype func), fn cty =>
+		      case dst of
+			 NONE =>
+			    (* Even if there is no dst, we still need to pop the
+			     * value returned by the C function.
+			     *)
+			    loadStoreStackOffset (Bytes.zero, cty, Store)
+		       | SOME z => emitStoreOperand (Live.toOperand z))
 		| _ => ())
 	    ; Vector.foreach (statements, emitStatement)
 	    ; emitTransfer transfer)))
