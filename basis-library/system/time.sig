@@ -25,11 +25,3 @@ signature TIME =
       val fromString: string -> time option 
       val scan: (char, 'a) StringCvt.reader -> (time, 'a) StringCvt.reader
    end
-
-signature TIME_EXTRA =
-   sig
-      include TIME
-
-      datatype time' = T of {sec: Int.int, usec: Int.int}
-      sharing type time = time'
-   end

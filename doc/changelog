@@ -1,7 +1,10 @@
 Here are the changes since version 20030716.
 
 * 2003-09-11
-  - OS.IO.poll and Socket.select now raise errors on negative timeouts.
+  - OS.IO.poll and Socket.select now raise errors on negative
+    timeouts.
+  - Time.time is now implemented using IntInf instead of Int, which
+    means that a much larger range of time values is representable.
 
 * 2003-09-10
   - Word64 is now there.

@@ -56,8 +56,8 @@ val test3a =
 		   andalso fromReal 10.25 = fromSeconds 10 + fromMilliseconds 250);
 val test3b = tst0 "test3b" ((fromReal ~1.0 seq "OK")
 			   handle _ => "WRONG")
-val test3c = tst0 "test3c" ((fromReal 1E300 seq "WRONG")
-			   handle Time => "OK" | _ => "WRONG") 
+val test3c = tst0 "test3c" ((fromReal 1E300 seq "OK")
+			   handle Time => "WRONG" | _ => "OK") 
 
 val test4a = 
     tst' "test4a" (fn _ => Real.==(toReal (fromReal 100.25), 100.25));

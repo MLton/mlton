@@ -14,9 +14,14 @@ structure MLtonItimer =
 	  | Real => Prim.real
 	  | Virtual => Prim.virtual
 
-      fun set' (t, {interval = Time.T {sec = s1, usec = u1},
-		   value = Time.T {sec = s2, usec = u2}}) =
-	 Prim.set (toInt t, s1, u1, s2, u2)
+      fun set' (t, {interval, value}) =
+	 let
+	    fun split t = IntInf.quotRem (Time.toMicroseconds t, 1000000)
+	    val (s1, u1) = split interval
+	    val (s2, u2) = split value
+	 in
+	    Prim.set (toInt t, s1, u1, s2, u2)
+	 end
 	    
       fun set (z as (t, _)) =
 	 if Primitive.MLton.Profile.isOn
