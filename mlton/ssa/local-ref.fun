@@ -12,7 +12,18 @@ struct
 open S
 open Exp Transfer
 
-structure FuncLattice = FlatLattice(structure Point = Func)
+structure Prim =
+   struct
+      open Prim
+
+      val isReff: 'a t -> bool =
+	 fn p =>
+	 case name p of
+	    Name.Ref_ref => true
+	  | _ => false
+   end
+
+structure FuncLattice = FlatLattice (structure Point = Func)
 
 structure GlobalInfo =
   struct
@@ -128,158 +139,117 @@ structure LabelInfo =
 
 structure Multi = Multi (S)
 
-fun eliminate (program: Program.t): Program.t
-  = let
-      val program as Program.T {datatypes, globals, functions, main}
-	= eliminateDeadBlocks program
-
+fun eliminate (program: Program.t): Program.t =
+   let
+      val program as Program.T {datatypes, globals, functions, main} =
+	 eliminateDeadBlocks program
       exception NoLocalRefs
-
       (* Compute multi *)
       val multi = Control.trace (Control.Detail, "multi") Multi.multi
       val {usesThreadsOrConts: bool,
 	   funcIsMultiUsed: Func.t -> bool, 
-	   labelDoesThreadCopyCurrent: Label.t -> bool, ...} 
-	= multi program
-
+	   labelDoesThreadCopyCurrent: Label.t -> bool, ...} = multi program
       (* Initialize globalInfo *)
       val {get = globalInfo: Var.t -> GlobalInfo.t,
-	   set = setGlobalInfo, ...}
-	= Property.getSetOnce
-	  (Var.plist, Property.initFun (fn _ => GlobalInfo.new false))
-
-      val _ = Vector.foreach
-	      (globals, fn Statement.T {var, exp, ...} =>
-	       Option.app (var, fn var => 
-			   case exp
-			     of PrimApp {prim, ...}
-			      => if (case Prim.name prim of
-					Prim.Name.Ref_ref => true
-				      | _ => false)
-				   then setGlobalInfo(var, GlobalInfo.new true)
-				   else ()
-			      | _ => ()))
-
+	   set = setGlobalInfo, ...} =
+	 Property.getSetOnce
+	 (Var.plist, Property.initFun (fn _ => GlobalInfo.new false))
+      val varFuncUses = GlobalInfo.funcUses o globalInfo
+      val _ =
+	 Vector.foreach
+	 (globals, fn Statement.T {var, exp, ...} =>
+	  Option.app (var, fn var => 
+		      case exp of
+			 PrimApp {prim, ...} =>
+			    if Prim.isReff prim
+			       then setGlobalInfo (var, GlobalInfo.new true)
+			    else ()
+		       | _ => ()))
       (* Compute funcUses *)
-      fun addFunc f x
-	= let 
+      fun addFunc f x =
+	 let 
 	    val gi = globalInfo x
-	  in 
+	 in 
 	    if GlobalInfo.isGlobalRef gi
-	      then ignore (FuncLattice.lowerBound (GlobalInfo.funcUses gi, f))
-	      else ()
-	  end
+	       then ignore (FuncLattice.lowerBound (GlobalInfo.funcUses gi, f))
+	    else ()
+	 end
       val dummy = Func.newNoname ()
-      val _ = Vector.foreach
-	      (globals, fn Statement.T {var, exp, ...} =>
-	       let
-		 fun default () = Exp.foreachVar (exp, addFunc dummy)
-	       in
-		 case exp
-		   of PrimApp {prim, args, ...}
-		    => if (case Prim.name prim of
-			      Prim.Name.Ref_ref => true
-			    | _ => false)
-			 then ignore
-			      (FuncLattice.<=
-			       (GlobalInfo.funcUses 
-				(globalInfo (valOf var)),
-				GlobalInfo.funcUses 
-				(globalInfo (Vector.sub (args, 0)))))
-			 else default ()
-		    | _ => default ()
-	       end)
-      val _ = List.foreach
-	      (functions, fn f =>
-	       let
-		 val {name, blocks, ...} = Function.dest f
-	       in
-		 Vector.foreach
-		 (blocks, fn Block.T {statements, transfer, ...} =>
-		  (Vector.foreach
-		   (statements, fn Statement.T {exp, ...} =>
-		    Exp.foreachVar (exp, addFunc name)) ;
-		   Transfer.foreachVar (transfer, addFunc name)))
-	       end)
-
+      val _ =
+	 Vector.foreach
+	 (globals, fn Statement.T {var, exp, ...} =>
+	  let
+	     fun default () = Exp.foreachVar (exp, addFunc dummy)
+	  in
+	     case exp of
+		PrimApp {prim, args, ...} =>
+		   if Prim.isReff prim
+		      then
+			 ignore
+			 (FuncLattice.<= (varFuncUses (valOf var),
+					  varFuncUses (Vector.sub (args, 0))))
+		   else default ()
+	      | _ => default ()
+	  end)
+      val _ =
+	 List.foreach
+	 (functions, fn f =>
+	  let
+	     val {name, blocks, ...} = Function.dest f
+	  in
+	     Vector.foreach
+	     (blocks, fn Block.T {statements, transfer, ...} =>
+	      (Vector.foreach (statements, fn Statement.T {exp, ...} =>
+			       Exp.foreachVar (exp, addFunc name))
+	       ; Transfer.foreachVar (transfer, addFunc name)))
+	  end)
       (* Diagnostics *)
-      val _ = Control.diagnostics
-	      (fn display =>
-	       let
-		 open Layout
-	       in
-		 display (str "\n\nGlobals:") ;
-		 Vector.foreach
-		 (globals, fn Statement.T {var, ...} =>
-		  Option.app 
-		  (var, fn x =>
-		   if GlobalInfo.isGlobalRef (globalInfo x)
+      val _ =
+	 Control.diagnostics
+	 (fn display =>
+	  let
+	     open Layout
+	  in
+	     display (str "\n\nGlobals:")
+	     ; (Vector.foreach
+		(globals, fn Statement.T {var, ...} =>
+		 Option.app 
+		 (var, fn x =>
+		  if GlobalInfo.isGlobalRef (globalInfo x)
 		     then display (seq [Var.layout x,
 					str ": ",
 					GlobalInfo.layout (globalInfo x)])
-		     else ()))
-	       end)
-
+		  else ())))
+	  end)
       (* Localize global refs *)
-      val (functions,globals)
-	= List.fold
-	  (functions, ([],Vector.toList globals), fn (f, (functions, globals)) =>
-	   if funcIsMultiUsed (Function.name f)
-	     then (f::functions,globals)
-	     else let
-		    val {args, blocks, mayInline, name, raises, returns, start} =
-		       Function.dest f
-		    val (globals, locals)
-		      = List.fold
-		        (globals, ([],[]), fn (s as Statement.T {var, ...},
-					       (globals, locals)) =>
-			 if case var
-			      of NONE => false
-			       | SOME x 
-			       => let
-				    val gi = globalInfo x
-				  in 
-				    GlobalInfo.isGlobalRef gi
-				    andalso
-				    FuncLattice.isPointEq
-				    (GlobalInfo.funcUses gi, name)
-				  end
-			   then (globals,s::locals)
-			   else (s::globals,locals))
-
-		    val locals = Vector.fromListRev locals
-		    val f = if Vector.length locals = 0
-			      then f
-			      else let
-				     val localsLabel = Label.newNoname ()
-				     val localsBlock
-				       = Block.T
-				         {label = localsLabel,
-					  args = Vector.new0 (),
-					  statements = locals,
-					  transfer = Goto {dst = start,
-							   args = Vector.new0 ()}}
-				     val blocks = Vector.concat 
-				                  [Vector.new1 localsBlock,
-						   blocks]
-				   in
-				     Function.new {args = args,
-						   blocks = blocks,
-						   mayInline = mayInline,
-						   name = name,
-						   raises = raises,
-						   returns = returns,
-						   start = localsLabel}
-				   end
-		  in
-		    (f::functions, List.rev globals)
-		  end)
-      val globals = Vector.fromList globals
-
+      val {get = funcInfo: Func.t -> {locals: Statement.t list ref}, ...} =
+	 Property.get (Func.plist,
+		       Property.initFun (fn _ => {locals = ref []}))
+      val globals =
+	 Vector.keepAllMap
+	 (globals, fn (s as Statement.T {var, ...}) =>
+	  case var of
+	     NONE => SOME s
+	   | SOME x =>
+		let
+		   val GlobalInfo.T {isGlobalRef, funcUses} = globalInfo x
+		in 
+		   if not isGlobalRef
+		      then SOME s
+		   else
+		      (case FuncLattice.getPoint funcUses of
+			  NONE => SOME s
+			| SOME f =>
+			     if funcIsMultiUsed f
+				orelse Func.equals (f, dummy)
+				then SOME s
+			     else
+				(List.push (#locals (funcInfo f), s)
+				 ; NONE))
+		end)
       (* restore and shrink *)
       val restore = restoreFunction globals
       val shrink = shrinkFunction globals
-
       (* varInfo *)
       val {get = varInfo: Var.t -> VarInfo.t,
 	   set = setVarInfo, ...} 
@@ -287,17 +257,43 @@ fun eliminate (program: Program.t): Program.t
 	  (Var.plist, Property.initFun (fn _ => VarInfo.new NONE))
       fun nonLocal x = VarInfo.nonLocal (varInfo x)
       fun isLocal x = VarInfo.isLocal (varInfo x)
-
       (* labelInfo *)
       val {get = labelInfo: Label.t -> LabelInfo.t, 
 	   set = setLabelInfo, ...}
 	= Property.getSetOnce
 	  (Label.plist, Property.initRaise ("localRef.labelInfo", Label.layout))
-
-      val functions
-	= List.revMap
-	  (functions, fn f =>
-	   let
+      val functions =
+	 List.revMap
+	 (functions, fn f =>
+	  let
+	     val {locals, ...} = funcInfo (Function.name f)
+	     val locals = !locals
+	     val f =
+		if List.isEmpty locals
+		   then f
+		else
+		   let
+		      val {args, blocks, mayInline, name, raises, returns,
+			   start} = Function.dest f
+		      val locals = Vector.fromListRev locals
+		      val localsLabel = Label.newNoname ()
+		      val localsBlock =
+			 Block.T {label = localsLabel,
+				  args = Vector.new0 (),
+				  statements = locals,
+				  transfer = Goto {dst = start,
+						   args = Vector.new0 ()}}
+		      val blocks =
+			 Vector.concat [Vector.new1 localsBlock, blocks]
+		   in
+		      Function.new {args = args,
+				    blocks = blocks,
+				    mayInline = mayInline,
+				    name = name,
+				    raises = raises,
+				    returns = returns,
+				    start = localsLabel}
+		   end
 	     val {args, blocks, mayInline, name, raises, returns, start} =
 		Function.dest f
 	     (* Find all localizable refs. *)
