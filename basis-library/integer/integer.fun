@@ -5,9 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-functor Integer (I: sig
-		      include PRE_INTEGER_EXTRA
-		    end) : INTEGER_EXTRA =
+functor Integer (I: PRE_INTEGER_EXTRA): INTEGER_EXTRA =
 struct
 
 open I

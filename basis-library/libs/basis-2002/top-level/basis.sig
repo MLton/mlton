@@ -144,23 +144,29 @@ signature BASIS_2002 =
       structure IntVectorSlice : MONO_VECTOR_SLICE
       structure IntArray2 : MONO_ARRAY2
       structure Int8 : INTEGER
+      structure Int16 : INTEGER
+      structure Int32 : INTEGER
+      structure Int64 : INTEGER
       structure Int8Array : MONO_ARRAY
       structure Int8ArraySlice : MONO_ARRAY_SLICE
       structure Int8Vector : MONO_VECTOR
       structure Int8VectorSlice : MONO_VECTOR_SLICE
       structure Int8Array2 : MONO_ARRAY2
-      structure Int16 : INTEGER
       structure Int16Array : MONO_ARRAY
       structure Int16ArraySlice : MONO_ARRAY_SLICE
       structure Int16Vector : MONO_VECTOR
       structure Int16VectorSlice : MONO_VECTOR_SLICE
       structure Int16Array2 : MONO_ARRAY2
-      structure Int32 : INTEGER
       structure Int32Array : MONO_ARRAY
       structure Int32ArraySlice : MONO_ARRAY_SLICE
       structure Int32Vector : MONO_VECTOR
       structure Int32VectorSlice : MONO_VECTOR_SLICE
       structure Int32Array2 : MONO_ARRAY2
+      structure Int64Array : MONO_ARRAY
+      structure Int64ArraySlice : MONO_ARRAY_SLICE
+      structure Int64Vector : MONO_VECTOR
+      structure Int64VectorSlice : MONO_VECTOR_SLICE
+      structure Int64Array2 : MONO_ARRAY2
       structure IntInf : INT_INF
       structure NetHostDB : NET_HOST_DB
       structure NetProtDB : NET_PROT_DB
@@ -181,6 +187,12 @@ signature BASIS_2002 =
       structure RealVector : MONO_VECTOR
       structure RealVectorSlice : MONO_VECTOR_SLICE
       structure RealArray2 : MONO_ARRAY2
+(*      structure Real32 : REAL *)
+      structure Real32Array : MONO_ARRAY
+      structure Real32ArraySlice : MONO_ARRAY_SLICE
+      structure Real32Vector : MONO_VECTOR
+      structure Real32VectorSlice : MONO_VECTOR_SLICE
+      structure Real32Array2 : MONO_ARRAY2
       structure Real64 : REAL
       structure Real64Array : MONO_ARRAY
       structure Real64ArraySlice : MONO_ARRAY_SLICE

@@ -14,8 +14,16 @@
  *)
 
 type 'a array = 'a array
-datatype bool = datatype bool
-type char = char
+structure Bool =
+   struct
+      datatype bool = datatype bool
+   end
+datatype bool = datatype Bool.bool
+structure Char =
+   struct
+      type char = char
+   end
+type char = Char.char
 type exn = exn
 structure Int8 =
    struct
@@ -33,7 +41,10 @@ structure Int64 =
    struct
       type int = int64
    end
-type intInf = intInf
+structure IntInf =
+   struct
+      type int = intInf
+   end
 datatype list = datatype list
 type pointer = pointer (* C integer, not SML heap pointer *)
 structure Real32 =
@@ -99,6 +110,13 @@ structure Primitive =
       val safe = _build_const "MLton_safe": bool;
       val touch = fn z => _prim "MLton_touch": 'a -> unit; z
       val usesCallcc: bool ref = ref false;
+
+      structure Stdio =
+	 struct
+	    val print = _ffi "Stdio_print": string -> unit;
+	    val sprintf =
+	       _ffi "Stdio_sprintf": char array * nullString * real -> int;
+	 end
 
       structure Array =
 	 struct
@@ -277,7 +295,8 @@ structure Primitive =
 
       structure Int8 =
 	 struct
-	    type int = int8
+	    type int = Int8.int
+	       
 	    val precision' : Int.int = 8
 	    val maxInt' : int = 0x7f
 	    val minInt' : int = ~0x80
@@ -313,7 +332,8 @@ structure Primitive =
 	 end
       structure Int16 =
 	 struct
-	    type int = int16
+	    type int = Int16.int
+	       
 	    val precision' : Int.int = 16
 	    val maxInt' : int = 0x7fff
 	    val minInt' : int = ~0x8000
@@ -349,7 +369,7 @@ structure Primitive =
 	 end
       structure Int32 =
 	 struct
-	    type int = int32
+	    type int = Int32.int
 	    val precision' : Int.int = 32
 	    val maxInt' : int = 0x7fffffff
 	    val minInt' : int = ~0x80000000
@@ -384,6 +404,66 @@ structure Primitive =
 	    val toInt : int -> int = fn x => x
 	 end
       structure Int = Int32
+      structure Int64 =
+	 struct
+	    infix 7 *?
+	    infix 6 +? -?
+	    infix 4 = <> > >= < <=
+
+	    type int = Int64.int
+
+	    val precision' : Int.int = 64
+	    val maxInt' : int = 0x7FFFFFFFFFFFFFFF
+	    val minInt' : int = ~0x8000000000000000
+
+	    val op +? = _ffi "Int64_add": int * int -> int;
+	    val op *? = _ffi "Int64_mul": int * int -> int;
+	    val op -? = _ffi "Int64_sub": int * int -> int;
+	    val ~? = fn i => 0 -? i
+	    val op < = _ffi "Int64_lt": int * int -> bool;
+	    val op <= = _ffi "Int64_le": int * int -> bool;
+	    val op > = _ffi "Int64_gt": int * int -> bool;
+	    val op >= = _ffi "Int64_ge": int * int -> bool;
+	    val quot = _ffi "Int64_quot": int * int -> int;
+	    val rem = _ffi "Int64_rem": int * int -> int;
+	    val geu = _ffi "Int64_geu": int * int -> bool;
+	    val gtu = _ffi "Int64_gtu": int * int -> bool;
+	    val fromInt = _ffi "Int32_toInt64": Int.int -> int;
+	    val fromWord = _ffi "Word32_toInt64": word -> int;
+	    val toInt = _ffi "Int64_toInt32": int -> Int.int;
+	    val toWord = _ffi "Int64_toWord32": int -> word;
+
+	    val ~ =
+	       if detectOverflow
+		  then (fn i: int => if i = minInt'
+					then raise Overflow
+				     else ~? i)
+	       else ~?
+		  
+	    val + =
+	       if detectOverflow
+		  then
+		     fn (i, j) =>
+		     if (if i >= 0
+			    then j > maxInt' -? i
+			 else j < minInt' -? i)
+			then raise Overflow
+		     else i +? j
+	       else op +?
+
+	    val - =
+	       if detectOverflow
+		  then
+		     fn (i, j) =>
+		     if (if i >= 0
+			    then j < i -? maxInt'
+			 else j > i -? minInt')
+			then raise Overflow
+		     else i -? j
+	       else op -?
+
+	    val * = fn _ => raise Fail "Int64.* unimplemented"
+	 end
 
       structure Array =
 	 struct
@@ -398,7 +478,7 @@ structure Primitive =
 
       structure IntInf =
 	 struct
-	    type int = intInf
+	    open IntInf
 
 	    val + = _prim "IntInf_add": int * int * word -> int;
 	    val andb = _prim "IntInf_andb": int * int * word -> int;
@@ -884,13 +964,6 @@ structure Primitive =
 		     struct
 		     end
 	       end
-	 end
-
-      structure Stdio =
-	 struct
-	    val print = _ffi "Stdio_print": string -> unit;
-	    val sprintf =
-	       _ffi "Stdio_sprintf": char array * nullString * real -> int;
 	 end
 
       structure String =

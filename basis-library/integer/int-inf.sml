@@ -10,7 +10,7 @@
  * bits are the signed integer, or else the bottom bit is 0, in which case
  * they point to an vector of Word.word's.  The first word is either 0,
  * indicating that the number is positive, or 1, indicating that it is
- * negative.  The rest of the vector contains the `limbs' (big digits) or
+ * negative.  The rest of the vector contains the `limbs' (big digits) of
  * the absolute value of the number, from least to most significant.
  *)
 structure IntInf: INT_INF_EXTRA =
@@ -175,6 +175,73 @@ structure IntInf: INT_INF_EXTRA =
 			   else raise Overflow
 		   end
 
+      fun bigFromInt64 (i: Int64.int): bigInt =
+	 if Int64.<= (~0x40000000, i) andalso Int64.<= (i, 0x3FFFFFFF)
+	    then Prim.fromWord (addTag (Word.fromInt (Int64.toInt i)))
+	 else
+	    let
+	       fun doit (i: Int64.int, isNeg): bigInt =
+		  if Int64.<= (i, 0xFFFFFFFF)
+		     then
+			let
+			   val a = Primitive.Array.array 2
+			   val _ = Array.update (a, 0, isNeg)
+			   val _ = Array.update (a, 1, Int64.toWord i)
+			in
+			   Prim.fromVector (Vector.fromArray a)
+			end
+		  else
+		     let
+			val a = Primitive.Array.array 3
+			val _ = Array.update (a, 0, isNeg)
+			val r = Int64.rem (i, 0x100000000)
+			val _ = Array.update (a, 1, Int64.toWord r)
+			val q = Int64.quot (i, 0x100000000)
+			val _ = Array.update (a, 2, Int64.toWord q)
+		     in
+			Prim.fromVector (Vector.fromArray a)
+		     end
+	    in
+	       if Int64.>= (i, 0)
+		  then doit (i, 0w0)
+	       else
+		  if i = valOf Int64.minInt
+		     then ~0x8000000000000000
+		  else doit (Int64.~? i, 0w1)
+	    end
+		
+      fun bigToInt64 (arg: bigInt): Int64.int =
+	 case rep arg of
+	    Small w => Int64.fromInt (Word.toIntX w)
+	  | Big v => 
+	       if Vector.length v > 3
+		 then raise Overflow
+	      else let
+		      val sign = Primitive.Vector.sub (v, 0)
+		      val w1 = Primitive.Vector.sub (v, 1)
+		      val w2 = Primitive.Vector.sub (v, 2)
+		   in
+		      if Word.> (w2, 0wx80000000)
+			 then raise Overflow
+		      else if w2 = 0wx80000000
+			      then if w1 = 0w0 andalso sign = 0w1
+				      then valOf Int64.minInt
+				   else raise Overflow
+				      
+			   else
+			      let
+				 val n =
+				    Int64.+?
+				    (Primitive.Int64.fromWord w1,
+				     Int64.*? (Primitive.Int64.fromWord w2,
+					       0x100000000))
+			      in
+				 if sign = 0w1
+				    then Int64.~ n
+				 else n
+			      end
+		   end
+			 
       (*
        * bigInt negation.
        *)
@@ -911,6 +978,7 @@ structure IntInf: INT_INF_EXTRA =
       val divMod = divMod
       val fmt = bigFmt
       val fromInt = bigFromInt
+      val fromInt64 = bigFromInt64
       val fromLarge = fn x => x
       val fromString = bigFromString
       val gcd = bigGcd
@@ -938,6 +1006,7 @@ structure IntInf: INT_INF_EXTRA =
       val sign = bigSign
       val size = size
       val toInt = bigToInt
+      val toInt64 = bigToInt64
       val toLarge = fn x => x
       val toString = bigToString
       val ~ = bigNegate

@@ -8,6 +8,20 @@
 (* Patch in fromLarge and toLarge now that IntInf is defined.
  *)
 
+structure Int8: INTEGER_EXTRA =
+   struct
+      open Int8
+       
+      val fromLarge = fromInt o IntInf.toInt
+      val toLarge = IntInf.fromInt o toInt
+   end
+structure Int16: INTEGER_EXTRA =
+   struct
+      open Int16
+       
+      val fromLarge = fromInt o IntInf.toInt
+      val toLarge = IntInf.fromInt o toInt
+   end
 structure Int32: INTEGER_EXTRA =
    struct
       open Int32
@@ -15,19 +29,27 @@ structure Int32: INTEGER_EXTRA =
       val fromLarge = IntInf.toInt
       val toLarge = IntInf.fromInt
    end
-structure Int16: INTEGER_EXTRA =
+structure Int64: INTEGER_EXTRA =
    struct
-      open Int16
-       
-      val fromLarge = fromInt o Int32.fromLarge
-      val toLarge = Int32.toLarge o toInt
-   end
-structure Int8: INTEGER_EXTRA =
-   struct
-      open Int8
-       
-      val fromLarge = fromInt o Int32.fromLarge
-      val toLarge = Int32.toLarge o toInt
+      open Int64
+
+      val fromLarge = IntInf.toInt64
+      val toLarge = IntInf.fromInt64
+
+      val op * =
+	 if Primitive.detectOverflow
+	    then fn (i, j) => fromLarge (IntInf.* (toLarge i, toLarge j))
+	 else op *?
+
+      (* Must redefine scan because the Integer functor defines it in terms of
+       * Int64.*, which wasn't defined yet.
+       *)
+      fun scan radix reader state =
+	 case IntInf.scan radix reader state of
+	    NONE => NONE
+	  | SOME (i, s) => SOME (fromLarge i, s)
+		      
+      val fromString = StringCvt.scanString (scan StringCvt.DEC)
    end
 
 structure Int = Int32

@@ -35,6 +35,7 @@ arrays-and-vectors/mono-array.sig
 arrays-and-vectors/mono-array.fun
 arrays-and-vectors/mono-array2.sig
 arrays-and-vectors/mono-array2.fun
+arrays-and-vectors/mono.sml
 text/string0.sml
 text/char0.sml
 misc/reader.sig
@@ -48,6 +49,7 @@ integer/integer.fun
 integer/int8.sml
 integer/int16.sml
 integer/int32.sml
+integer/int64.sml
 text/char.sig
 text/char.sml
 text/substring.sig
@@ -72,9 +74,6 @@ integer/patch.sml
 
 top-level/overloads.sml
 
-arrays-and-vectors/mono-vector.sml
-arrays-and-vectors/mono-array.sml
-arrays-and-vectors/mono-array2.sml
 integer/pack-word.sig
 integer/pack32.sml
 text/byte.sig

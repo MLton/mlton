@@ -28,25 +28,18 @@ functor Test (I: INTEGER) =
 	  foreach
 	  ([("toString", I.toString, LargeInt.toString),
 	    ("fmt BIN", I.fmt BIN, LargeInt.fmt BIN),
-	    ("fmt OCT", I.fmt BIN, LargeInt.fmt BIN),
-	    ("fmt DEC", I.fmt BIN, LargeInt.fmt BIN),
-	    ("fmt HEX", I.fmt BIN, LargeInt.fmt BIN)],
+	    ("fmt OCT", I.fmt OCT, LargeInt.fmt OCT),
+	    ("fmt DEC", I.fmt DEC, LargeInt.fmt DEC),
+	    ("fmt HEX", I.fmt HEX, LargeInt.fmt HEX)],
 	   fn (name, f, f') =>
 	   let
 	      val s = f i
-	      val s' = f' (I.toLarge i)
+	      val s' = f' (I.toLarge i) handle Overflow => "Overflow"
 	   in
 	      if s = s'
 		 then ()
 	      else err [name, " ", s, " <> ", name, " ", s']
 	   end))
-
-      val _ =
-	 foreach
-	 (nums, fn i =>
-	  if SOME i = (SOME (I.fromLarge (I.toLarge i)) handle Overflow => NONE)
-	     then ()
-	  else err ["{from,to}Large ", I.toString i, "\n"])
 
       structure Answer =
 	 struct
@@ -67,6 +60,19 @@ functor Test (I: INTEGER) =
 
 	    val equals: t * t -> bool = op =
 	 end
+
+      val _ =
+	 foreach
+	 (nums, fn i =>
+	  let
+	     val a1 = Answer.Int i
+	     val a2 = Answer.run (fn () => I.fromLarge (I.toLarge i))
+	  in
+	     if Answer.equals (a1, a2)
+		then ()
+	     else err ["fromLarge (toLarge ", I.toString i, ") = ",
+		       Answer.toString a2]
+	  end)
 
       val _ =
 	 foreach
@@ -207,3 +213,4 @@ functor Test (I: INTEGER) =
 structure S = Test (Int8)
 structure S = Test (Int16)
 structure S = Test (Int32)
+structure S = Test (Int64)

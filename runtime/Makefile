@@ -32,6 +32,7 @@ OBJS =						\
 	basis/GC/setSummary.o			\
 	basis/IEEEReal.o			\
 	basis/IntInf.o				\
+	basis/Int/Int64.o			\
 	basis/Int/addOverflow.o			\
 	basis/Int/mulOverflow.o			\
 	basis/Int/negOverflow.o			\
@@ -198,6 +199,7 @@ DEBUG_OBJS =					\
 	basis/GC/setSummary-gdb.o		\
 	basis/IEEEReal-gdb.o			\
 	basis/IntInf-gdb.o			\
+	basis/Int/Int64-gdb.o			\
 	basis/Int/addOverflow-gdb.o		\
 	basis/Int/mulOverflow-gdb.o		\
 	basis/Int/negOverflow-gdb.o		\
