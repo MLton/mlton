@@ -358,6 +358,46 @@ structure Real: REAL =
 	 end
 
       fun fromString s = StringCvt.scanString scan s
+
+      val fromLargeInt: IntInf.int -> real =
+	 let
+	    val m = 52 (* The number of mantissa bits in 64 bit IEEE 854. *)
+	    val half = Int.quot (m, 2)
+	    val two = IntInf.fromInt 2
+	    fun pos (i: IntInf.int): real = 
+	       let
+		  val exp: Int.int = IntInf.log2 i
+	       in
+		  if Int.< (exp, Int.- (valOf Int.precision, 1))
+		     then fromInt (IntInf.toInt i)
+		  else if Int.>= (exp, 1024)
+		     then posInf
+		  else
+		     let
+			val shift = Int.- (exp, m)
+			val man: IntInf.int =
+			   if Int.>= (shift, 0)
+			      then IntInf.quot (i, IntInf.pow (two, shift))
+			   else IntInf.* (i, IntInf.pow (two, Int.~ shift))
+			(* 2^m <= man < 2^(m+1) *)
+			val (q, r) = IntInf.quotRem (man, IntInf.pow (two, half))
+			val fromManExp =
+			   fn (man, exp) =>
+			   fromManExp
+			   {man = fromInt (IntInf.toInt man),
+			    exp = exp}
+		     in
+			fromManExp (q, Int.+ (half, shift))
+			+ fromManExp (r, shift)
+		     end
+	       end
+	 in
+	    fn i =>
+	    case IntInf.compare (i, IntInf.fromInt 0) of
+	       General.LESS => ~ (pos (IntInf.~ i))
+	     | General.EQUAL => 0.0
+	     | General.GREATER => pos i
+	 end
    end
 
 structure RealGlobal: REAL_GLOBAL = Real

@@ -40,6 +40,7 @@ signature REAL =
       val fmt: StringCvt.realfmt -> real -> string 
       val fromInt: int -> real 
       val fromLarge: IEEEReal.rounding_mode -> LargeReal.real -> real 
+      val fromLargeInt: LargeInt.int -> real
       val fromManExp: {man: real, exp: int} -> real 
       val fromString: string -> real option
       val isFinite: real -> bool 
@@ -72,7 +73,6 @@ signature REAL =
       val ~ : real -> real 
 (*     val nextAfter: real * real -> real *)
 (*     val toLargeInt: IEEEReal.rounding_mode -> real -> LargeInt.int   *)
-(*     val fromLargeInt: LargeInt.int -> real  *)
 (*     val toDecimal: real -> IEEEReal.decimal_approx  *)
 (*     val fromDecimal: IEEEReal.decimal_approx -> real *)
    end

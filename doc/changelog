@@ -2,6 +2,7 @@ Here are the changes from version 20020923.
 
 * 2002-10-22
   - Fixed Real.toManExp so that the mantissa is in [1, 2), not [0.5, 1).
+  - Added Real.fromLargeInt.
 
 * 2002-09-30
   - Fixed rpath problem with packaging.  All executables in packages previously
