@@ -25,7 +25,6 @@
 	static pointer deserializeRes;						\
 	static pointer stackRes;						\
 	static struct intInfRes_t *intInfRes;					\
-	static void (*nextChunk)();						\
 	static int nextFun;							\
 	static char globaluchar[c];						\
 	static double globaldouble[d];						\
@@ -78,6 +77,11 @@
 		if (x == 0) goto l;		\
 	} while (0)
 
+#define BNZ(x, l)				\
+	do {					\
+		if (x) goto l;		        \
+	} while (0)
+
 /* ------------------------------------------------- */
 /*                       Chunk                       */
 /* ------------------------------------------------- */
@@ -86,11 +90,17 @@
 
 #define Chunkp(n) &(ChunkName(n))
 
+struct cont {
+	void *nextChunk;
+};
+
 #define DeclareChunk(n)				\
-	static void ChunkName(n)()
+	static struct cont ChunkName(n)(void)
 
 #define Chunk(n)				\
-	static void ChunkName(n)() {		\
+	DeclareChunk(n) {			\
+		struct cont cont;		\
+		int l_nextFun = nextFun;	\
 		char *stackTop;			\
 		pointer frontier;
 		char CReturnC;
@@ -101,17 +111,20 @@
 
 #define ChunkSwitch				\
 		CacheGC();			\
+		while (1) {			\
 		top:				\
-		switch (nextFun) {
+		switch (l_nextFun) {
 
-#define EndChunk						\
-		default:					\
-			/* interchunk return */			\
-			nextChunk = nextChunks[nextFun];	\
-			leaveChunk:				\
-				FlushGC();			\
-				return;				\
-		} /* end switch (nextFun) */			\
+#define EndChunk							\
+		default:						\
+			/* interchunk return */				\
+			nextFun = l_nextFun;				\
+			cont.nextChunk = (void*)nextChunks[nextFun];	\
+			leaveChunk:					\
+				FlushGC();				\
+				return(cont);				\
+		} /* end switch (l_nextFun) */				\
+		} /* end while (1) */
 	} /* end chunk */
 
 /* ------------------------------------------------- */
@@ -120,6 +133,8 @@
 
 #define Main(ufh, fs, bl, mfs, mfi, mg, mc, ml)				\
 int main(int argc, char **argv) {					\
+	struct cont cont;						\
+	int l_nextFun;							\
 	gcState.useFixedHeap = ufh;					\
 	gcState.fromSize = fs;						\
 	gcState.bytesLive = bl;						\
@@ -129,7 +144,7 @@ int main(int argc, char **argv) {					\
 	gcState.globals = globalpointer;				\
 	gcState.maxFrameIndex = mfi;					\
 	gcState.frameLayouts = frameLayouts;				\
-	gcState.native = FALSE;       					\
+	gcState.native = FALSE;						\
 	if (MLton_init(argc, argv, &loadGlobals)) {			\
  		/* The (> 1) check is so that the C compiler can	\
 		 * eliminate the call if there are no IntInfs and we	\
@@ -143,11 +158,18 @@ int main(int argc, char **argv) {					\
 	} else {							\
 		/* Return to the saved world */				\
 		nextFun = *(int*)(gcState.stackTop - WORD_SIZE);	\
-		nextChunk = nextChunks[nextFun];			\
+		cont.nextChunk = nextChunks[nextFun];			\
 	}								\
 	/* Trampoline */						\
 	while (1) {							\
-		(*nextChunk)();						\
+ 		cont=(*(struct cont(*)(void))cont.nextChunk)();		\
+ 		cont=(*(struct cont(*)(void))cont.nextChunk)();		\
+ 		cont=(*(struct cont(*)(void))cont.nextChunk)();		\
+ 		cont=(*(struct cont(*)(void))cont.nextChunk)();		\
+ 		cont=(*(struct cont(*)(void))cont.nextChunk)();		\
+ 		cont=(*(struct cont(*)(void))cont.nextChunk)();		\
+ 		cont=(*(struct cont(*)(void))cont.nextChunk)();		\
+ 		cont=(*(struct cont(*)(void))cont.nextChunk)();		\
 	}								\
 }
 
@@ -155,10 +177,10 @@ int main(int argc, char **argv) {					\
 /*                      farJump                      */
 /* ------------------------------------------------- */
 
-#define PrepFarJump(n, l)			\
-	do {					\
-		nextChunk = ChunkName(n);	\
-		nextFun = l;			\
+#define PrepFarJump(n, l)				\
+	do {						\
+		cont.nextChunk = (void*)ChunkName(n);	\
+		nextFun = l;				\
 	} while (0)
 
 #define FarJump(n, l)	 			\
@@ -225,7 +247,7 @@ int main(int argc, char **argv) {					\
 
 #define Return()						\
 	do {							\
-		nextFun = *(word*)(stackTop - WORD_SIZE);	\
+		l_nextFun = *(word*)(stackTop - WORD_SIZE);	\
 		goto top;					\
 	} while (0)
 
@@ -235,7 +257,7 @@ int main(int argc, char **argv) {					\
 #define Raise()							\
 	do {							\
 		stackTop = StackBottom + ExnStack;		\
-		nextFun = *(int*)stackTop;			\
+		l_nextFun = *(int*)stackTop;			\
 		goto top;					\
 	} while (0)
 
