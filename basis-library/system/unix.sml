@@ -14,7 +14,7 @@
 structure Unix: UNIX =
   struct
 
-    structure P = Posix.Process
+    structure PP = Posix.Process
     structure PE = Posix.ProcEnv
     structure PF = Posix.FileSys
     structure PIO = Posix.IO
@@ -30,8 +30,8 @@ structure Unix: UNIX =
        let val _ = Mask.block Mask.all
        in DynamicWind.wind(fn () => f x, fn () => Mask.unblock Mask.all)
        end
-       
-    datatype ('a, 'b) proc = PROC of {pid: P.pid,
+
+    datatype ('a, 'b) proc = PROC of {pid: PP.pid,
 				      ins: 'a,
 				      outs: 'b}
 
@@ -48,7 +48,7 @@ structure Unix: UNIX =
 			      PIO.close (#infd p2))
 	     val base = SS.string(SS.taker (fn c => c <> #"/") (SS.all cmd))
 	     fun startChild () =
-		case protect P.fork () of
+		case protect PP.fork () of
 		   SOME pid => pid (* parent *)
 		 | NONE => let
 			      val oldin = #infd p1
@@ -64,7 +64,7 @@ structure Unix: UNIX =
 			      if (oldout = newout) then ()
 			      else (PIO.dup2{old = oldout, new = newout};
 				    PIO.close oldout);
-			      P.exece (cmd, base :: argv, env)
+			      PP.exece (cmd, base :: argv, env)
 			   end
 	     (* end case *)
 	     val _ = TextIO.flushOut TextIO.stdOut
@@ -101,7 +101,7 @@ structure Unix: UNIX =
 	   *)
 	protect OS_Process.wait pid)
 
-    fun kill (PROC{pid, ...}, signal) = P.kill (P.K_PROC pid, signal)
+    fun kill (PROC{pid, ...}, signal) = PP.kill (PP.K_PROC pid, signal)
 
     fun exit st = OS_Process.exit (Word8.toInt st)
   end (* structure Unix *)
