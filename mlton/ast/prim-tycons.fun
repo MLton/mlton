@@ -146,11 +146,11 @@ fun layoutApp (c: t,
 			 seq [str "-> ", maybe (Vector.sub (args, 1))]],
 	       {isChar = false, needsParen = true})
       else if equals (c, tuple)
-         then (if 0 = Vector.length args
-		  then str "unit"
-	       else mayAlign (Layout.separateLeft
+         then if 0 = Vector.length args
+		 then (str "unit", {isChar = false, needsParen = false})
+	      else (mayAlign (Layout.separateLeft
 			      (Vector.toListMap (args, maybe), "* ")),
-	       {isChar = false, needsParen = true})
+		    {isChar = false, needsParen = true})
       else if equals (c, vector)
          then if #isChar (#2 (Vector.sub (args, 0)))
 		 then (str "string", {isChar = false, needsParen = false})
