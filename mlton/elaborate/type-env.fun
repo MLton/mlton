@@ -567,7 +567,8 @@ structure Type =
 	    val str = Layout.str
 	    fun maybeParen (b, t) = if b then Layout.paren t else t
 	    fun con (_, c, ts) = Tycon.layoutApp (c, ts)
-	    fun int _ = simple (str "int")
+	    fun con0 c = Tycon.layoutApp (c, Vector.new0 ())
+	    fun int _ = con0 Tycon.defaultInt
 	    fun flexRecord (_, {fields, spine}) =
 	       layoutRecord
 	       (List.fold
@@ -585,7 +586,7 @@ structure Type =
 			      (field, false, simple (Tyvar.layout tyvar))),
 		 fn ((f, t), ac) => (f, false, t) :: ac),
 		Spine.canAddFields spine)
-	    fun real _ = simple (str "real")
+	    fun real _ = con0 Tycon.defaultReal
 	    fun record (_, r) =
 	       case Srecord.detupleOpt r of
 		  NONE =>
@@ -614,7 +615,7 @@ structure Type =
 		    end
 		 end))
 	    fun var (_, a) = prettyTyvar a
-	    fun word _ = simple (str "word")
+	    fun word _ = con0 Tycon.defaultWord
 	    fun lay t =
 	       hom (t, {con = con,
 			expandOpaque = false,

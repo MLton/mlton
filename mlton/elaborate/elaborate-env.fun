@@ -249,7 +249,7 @@ structure Info =
 	      range = f (r, r')}))
    end
 
-val allTycons: Tycon.t list ref = ref []
+val allTycons: Tycon.t list ref = ref (List.map (Tycon.prims, #1))
 val newTycons: (Tycon.t * Kind.t) list ref = ref []
 
 val newTycon: string * Kind.t * AdmitsEquality.t -> Tycon.t =

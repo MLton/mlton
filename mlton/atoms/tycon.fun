@@ -24,8 +24,13 @@ structure P = PrimTycons (structure AdmitsEquality = AdmitsEquality
 			  open Id)
 open P
 
+val setPrintName =
+   Trace.trace2 ("Tycon.setPrintName", layout, String.layout, Unit.layout)
+   setPrintName
+
 fun stats () =
-   let open Layout
+   let
+      open Layout
    in
       align
       (List.map (prims, fn (c, _, _) =>
@@ -34,8 +39,5 @@ fun stats () =
 		      str " plist length is ",
 		      Int.layout (PropertyList.length (plist c))]))
    end
-
-val _ =
-   Trace.trace2 ("Tycon.equals", layout, layout, Bool.layout) equals
 
 end
