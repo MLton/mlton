@@ -14,19 +14,19 @@ signature PRIM_IO_ARG =
       val someElem: Vector.elem
 
       eqtype pos
-      val compare: (pos * pos) -> order
+      val compare: pos * pos -> order
    end
 
-functor PrimIO 
-        (S: PRIM_IO_ARG) :> 
-	PRIM_IO where type elem = S.Vector.elem
-	        where type vector = S.Vector.vector
-		where type vector_slice = S.VectorSlice.slice
-		where type array = S.Array.array
-		where type array_slice = S.ArraySlice.slice
-		where type pos = S.pos =
-   struct
-      
+functor PrimIO (S: PRIM_IO_ARG)
+   :> PRIM_IO
+      where type array = S.Array.array
+      where type array_slice = S.ArraySlice.slice
+      where type elem = S.Vector.elem
+      where type pos = S.pos
+      where type vector = S.Vector.vector
+      where type vector_slice = S.VectorSlice.slice
+   =
+   struct 
       open S
 	 
       structure V = Vector

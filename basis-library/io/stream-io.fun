@@ -844,12 +844,7 @@ functor StreamIO
 		  val line = NONE
 		  val xlatePos = NONE)
 
-signature STREAM_IO_EXTRA_FILE_ARG =
-   sig
-      include STREAM_IO_EXTRA_ARG
-
-      structure Cleaner: CLEANER
-   end
+signature STREAM_IO_EXTRA_FILE_ARG = STREAM_IO_EXTRA_ARG
 
 functor StreamIOExtraFile 
         (S: STREAM_IO_EXTRA_FILE_ARG) :>

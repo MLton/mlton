@@ -1,30 +1,36 @@
-signature IMPERATIVE_IO_ARG =
+signature IMPERATIVE_IO_EXTRA_ARG =
    sig
-      structure PrimIO: PRIM_IO
       structure Array: sig
                           include MONO_ARRAY
 			  val rawArray: int -> array
 			  val unsafeSub: array * int -> elem
 		       end
       structure ArraySlice: MONO_ARRAY_SLICE
+      structure PrimIO: PRIM_IO
       structure Vector: sig 
 	                   include MONO_VECTOR
                            val fromArray: Array.array -> vector
 			end
       structure VectorSlice: MONO_VECTOR_SLICE
-      sharing type PrimIO.elem
-	 = Vector.elem = VectorSlice.elem
-	 = Array.elem = ArraySlice.elem
-      sharing type PrimIO.vector
-	 = Vector.vector = VectorSlice.vector
-	 = Array.vector = ArraySlice.vector
-      sharing type PrimIO.vector_slice
-	 = VectorSlice.slice = ArraySlice.vector_slice
-      sharing type PrimIO.array = Array.array = ArraySlice.array
-      sharing type PrimIO.array_slice = ArraySlice.slice
+      sharing type Array.array
+	 = ArraySlice.array
+	 = PrimIO.array
+      sharing type Array.elem
+	 = ArraySlice.elem
+	 = PrimIO.elem
+	 = Vector.elem
+	 = VectorSlice.elem
+      sharing type Array.vector
+	 = ArraySlice.vector
+	 = PrimIO.vector
+	 = Vector.vector
+	 = VectorSlice.vector
+      sharing type ArraySlice.slice
+	 = PrimIO.array_slice
+      sharing type ArraySlice.vector_slice
+	 = PrimIO.vector_slice
+	 = VectorSlice.slice
 	 
-      structure Cleaner: CLEANER
-
       val chunkSize: int
       val fileTypeFlags: Posix.FileSys.O.flags list
       val line : {isLine: Vector.elem -> bool,
@@ -42,7 +48,7 @@ signature IMPERATIVE_IO_ARG =
 		      fromInt : Position.int -> PrimIO.pos} option
    end
 
-functor ImperativeIO (S: IMPERATIVE_IO_ARG): IMPERATIVE_IO_EXTRA =
+functor ImperativeIOExtra (S: IMPERATIVE_IO_EXTRA_ARG): IMPERATIVE_IO_EXTRA =
 struct
 
 open S
@@ -734,3 +740,77 @@ fun openIn file =
     end)
 
 end
+
+signature IMPERATIVE_IO_ARG =
+   sig
+      structure Array: MONO_ARRAY
+      structure ArraySlice: MONO_ARRAY_SLICE
+      structure StreamIO: STREAM_IO
+      structure Vector: MONO_VECTOR
+      structure VectorSlice: MONO_VECTOR_SLICE
+      sharing type Array.array = ArraySlice.array
+      sharing type
+	 Array.elem
+	 = ArraySlice.elem
+	 = StreamIO.elem
+	 = Vector.elem
+	 = VectorSlice.elem
+      sharing type
+	 Array.vector
+	 = ArraySlice.vector
+	 = Vector.vector
+	 = VectorSlice.vector
+      sharing type ArraySlice.vector_slice = VectorSlice.slice
+   end
+
+functor ImperativeIO (S: IMPERATIVE_IO_ARG): IMPERATIVE_IO =
+   struct
+      open S
+
+      structure SIO = StreamIO
+      structure V = Vector
+      structure A = Array
+
+      type elem = SIO.elem
+      type vector = SIO.vector
+
+      datatype outstream = Out of SIO.outstream ref
+
+      fun output (Out os, v) = SIO.output (!os, v)
+      fun output1 (Out os, v) = SIO.output1 (!os, v)
+      fun flushOut (Out os) = SIO.flushOut (!os)
+      fun closeOut (Out os) = SIO.closeOut (!os)
+      fun mkOutstream os = Out (ref os)
+      fun getOutstream (Out os) = !os
+      fun setOutstream (Out os, os') = os := os'
+      fun getPosOut (Out os) = SIO.getPosOut (!os)
+      fun setPosOut (Out os, out_pos) = os := SIO.setPosOut out_pos
+
+      datatype instream = In of SIO.instream ref
+
+      fun canInput (In is, n) = SIO.canInput (!is, n)
+      fun closeIn (In is) = SIO.closeIn (!is)
+      fun endOfStream (In is) = SIO.endOfStream (!is)
+      fun getInstream (In is) = !is
+      fun input (In is) = let val (v, is') = SIO.input (!is)
+			  in is := is'; v
+			  end 
+      (* input1 will never move past a temporary end of stream *)
+      fun input1 (In is) = 
+	case SIO.input1 (!is) of
+	  SOME (c,is') => (is := is'; SOME c)
+	| NONE => NONE
+      fun inputAll (In is) = let val (v, is') = SIO.inputAll (!is)
+			     in is := is'; v
+			     end
+      fun inputN (In is, n) = let val (v, is') = SIO.inputN (!is, n)
+			      in is := is'; v
+			      end
+      fun lookahead (In is) = Option.map (fn (c, is') => c) (SIO.input1 (!is))
+      fun mkInstream is = In (ref is)
+      fun setInstream (In is, is') = is := is'
+      fun scanStream f is =
+	case f SIO.input1 (getInstream is) of
+	  NONE => NONE
+	| SOME (v, is') => (setInstream (is, is'); SOME v)
+   end

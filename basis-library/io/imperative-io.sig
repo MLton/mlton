@@ -37,7 +37,7 @@ signature IMPERATIVE_IO_EXTRA =
       type instream
       type outstream
       type vector = StreamIO.vector
-      type vector_slice
+      type vector_slice = StreamIO.vector_slice
 
       val canInput: instream * int -> int option
       val closeIn: instream -> unit
