@@ -149,12 +149,13 @@ structure PosixPrimitive =
 	    val usr1 = _const "Posix_Signal_usr1": signal;
 	    val usr2 = _const "Posix_Signal_usr2": signal;
 	    val vtalrm = _const "Posix_Signal_vtalrm": signal;
-	       
+
 	    val block = _const "Posix_Signal_block": how;
 	    val default = _ffi "Posix_Signal_default": signal -> int;
 	    val handlee = _ffi "Posix_Signal_handle": signal -> int;
 	    val ignore = _ffi "Posix_Signal_ignore": signal -> int;
-	    val isDefault = _ffi "Posix_Signal_isDefault": signal * bool ref -> int;
+	    val isDefault =
+	       _ffi "Posix_Signal_isDefault": signal * bool ref -> int;
 	    val isPending = _ffi "Posix_Signal_isPending": signal -> bool;
 	    val numSignals = _const "Posix_Signal_numSignals": int;
 	    val setmask = _const "Posix_Signal_setmask": how;
@@ -221,7 +222,8 @@ structure PosixPrimitive =
 		(_const "Posix_ProcEnv_BC_DIM_MAX": int;, "BC_DIM_MAX"),
 		(_const "Posix_ProcEnv_BC_SCALE_MAX": int;, "BC_SCALE_MAX"),
 		(_const "Posix_ProcEnv_BC_STRING_MAX": int;, "BC_STRING_MAX"),
-		(_const "Posix_ProcEnv_COLL_WEIGHTS_MAX": int;, "COLL_WEIGHTS_MAX"),
+		(_const "Posix_ProcEnv_COLL_WEIGHTS_MAX": int;,
+		 "COLL_WEIGHTS_MAX"),
 		(_const "Posix_ProcEnv_EXPR_NEST_MAX": int;, "EXPR_NEST_MAX"),
 		(_const "Posix_ProcEnv_LINE_MAX": int;, "LINE_MAX"),
 		(_const "Posix_ProcEnv_RE_DUP_MAX": int;, "RE_DUP_MAX"),
@@ -245,7 +247,8 @@ structure PosixPrimitive =
 	    val getpid = _ffi "Posix_ProcEnv_getpid": unit -> pid;
 	    val getppid = _ffi "Posix_ProcEnv_getppid": unit -> pid;
 	    val getuid = _ffi "Posix_ProcEnv_getuid": unit -> uid;
-	    val setenv = _ffi "Posix_ProcEnv_setenv": nullString * nullString -> int;
+	    val setenv =
+	       _ffi "Posix_ProcEnv_setenv": nullString * nullString -> int;
 	    val setgid = _ffi "Posix_ProcEnv_setgid": gid -> int;
 	    val setpgid = _ffi "Posix_ProcEnv_setpgid": pid * pid -> int;
 	    val setsid = _ffi "Posix_ProcEnv_setsid": unit -> pid;
