@@ -122,6 +122,7 @@ val gcFields =
     "canHandle",
     "currentThread",
     "frontier",
+    "heap.cardMap",
     "limit",
     "limitPlusSlop",
     "maxFrameSize",

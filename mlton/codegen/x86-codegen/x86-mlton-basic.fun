@@ -338,6 +338,9 @@ struct
   val (_, _, gcState_canHandleContentsOperand) =
      make (Field.CanHandle, wordSize, Classes.GCState)
 
+  val (_, _, gcState_cardMapContentsOperand) =
+     make (Field.CardMap, wordSize, Classes.GCState)
+
   val (gcState_currentThread, gcState_currentThreadContents,
        gcState_currentThreadContentsOperand) =
      make (Field.CurrentThread, pointerSize, Classes.GCState)

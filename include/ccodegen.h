@@ -331,7 +331,7 @@ int main(int argc, char **argv) {					\
 
 #define Array_length GC_arrayNumElements
 
-#define ArrayOffset(ty, b, i) (*(ty*)((b) + ((i) * sizeof(ty))))
+#define ArrayOffset(ty, b, i) ((b) + ((i) * sizeof(ty)))
 
 #define XC(b, i) ArrayOffset(uchar, b, i)
 #define XD(b, i) ArrayOffset(double, b, i)

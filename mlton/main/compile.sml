@@ -322,7 +322,6 @@ fun preCodegen {input, docc}: Machine.Program.t =
       (* Set GC_state offsets. *)
       val _ =
 	 let
-
 	    fun get s =
 	       case lookupConstant s of
 		  LookupConstant.Const.Int n => n
@@ -331,6 +330,7 @@ fun preCodegen {input, docc}: Machine.Program.t =
 	    Runtime.GCField.setOffsets
 	    {
 	     canHandle = get "canHandle",
+	     cardMap = get "heap.cardMap",
 	     currentThread = get "currentThread",
 	     frontier = get "frontier",
 	     limit = get "limit",

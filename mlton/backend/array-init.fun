@@ -28,9 +28,11 @@ fun insertFunction (f: Function.t) =
 	    val loopStatements =
 	       Vector.new3
 	       (Statement.Move
-		{dst = Operand.ArrayOffset {base = array,
-					    index = i,
-					    ty = Type.pointer},
+		{dst = (Operand.ArrayOffset
+			{base = Operand.Var {var = array,
+					     ty = Type.pointer},
+			 index = i,
+			 ty = Type.pointer}),
 		 src = Operand.Pointer 1},
 		Statement.PrimApp
 		{args = Vector.new2 (Operand.Var {var = i, ty = Type.int},

@@ -199,20 +199,28 @@ typedef struct GC_thread {
  * | card map | cross map |    old generation    |   to space   |   nursery   |
  *  --------------------------------------------------------------------------
  *
- * If generational collection is not used then the old generation and the
- * nursery are identical, and the card map, cross map, and to space are empty.
+ * If generational collection is not used then the card map, cross map, and 
+ * to space are empty. 
  */
 
 typedef struct GC_heap {
 	pointer cardMap;
 	pointer crossMap;
+	uint numCards;
 	pointer nursery;
 	uint nurserySize;
 	pointer oldGen;
 	uint oldGenSize;
-	uint size;		/* size (in bytes) of memory area */
+        /* size is the amount (in bytes) of usable heap, i.e. not including the
+	 * cardMap and crossMap.
+	*/
+	uint size;
 	pointer start;		/* start of memory area */
 	pointer toSpace;
+	/* totalSize is the total length of the memory area.  i.e., the memory
+	 * range is [start, start + totalSize)
+         */
+	uint totalSize;
 
 } *GC_heap;
 
@@ -245,6 +253,7 @@ typedef struct GC_state {
 	GC_thread currentThread; /* This points to a thread in the heap. */
 	uint fixedHeapSize; 	/* Only meaningful if useFixedHeap. */
 	GC_frameLayout *frameLayouts;
+	bool generational;	/* Whether or not to use generational gc. */
 	pointer *globals; 	/* An array of size numGlobals. */
 	struct GC_heap heap;
 	struct GC_heap heap2;

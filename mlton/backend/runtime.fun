@@ -17,6 +17,7 @@ structure GCField =
    struct
       datatype t =
 	 CanHandle
+       | CardMap
        | CurrentThread
        | Frontier
        | Limit
@@ -29,6 +30,7 @@ structure GCField =
 
       val ty =
 	 fn CanHandle => Type.int
+	  | CardMap => Type.pointer
 	  | CurrentThread => Type.pointer
 	  | Frontier => Type.pointer
 	  | Limit => Type.pointer
@@ -40,6 +42,7 @@ structure GCField =
 	  | StackTop => Type.pointer
 
       val canHandleOffset: int ref = ref 0
+      val cardMapOffset: int ref = ref 0
       val currentThreadOffset: int ref = ref 0
       val frontierOffset: int ref = ref 0
       val limitOffset: int ref = ref 0
@@ -50,10 +53,11 @@ structure GCField =
       val stackLimitOffset: int ref = ref 0
       val stackTopOffset: int ref = ref 0
 
-      fun setOffsets {canHandle, currentThread, frontier, limit,
+      fun setOffsets {canHandle, cardMap, currentThread, frontier, limit,
 		      limitPlusSlop, maxFrameSize, signalIsPending, stackBottom,
 		      stackLimit, stackTop} =
 	 (canHandleOffset := canHandle
+	  ; cardMapOffset := cardMap
 	  ; currentThreadOffset := currentThread
 	  ; frontierOffset := frontier
 	  ; limitOffset := limit
@@ -66,6 +70,7 @@ structure GCField =
 
       val offset =
 	 fn CanHandle => !canHandleOffset
+	  | CardMap => !cardMapOffset
 	  | CurrentThread => !currentThreadOffset
 	  | Frontier => !frontierOffset
 	  | Limit => !limitOffset
@@ -78,6 +83,7 @@ structure GCField =
 
       val toString =
 	 fn CanHandle => "CanHandle"
+	  | CardMap => "CardMap"
 	  | CurrentThread => "CurrentThread"
 	  | Frontier => "Frontier"
 	  | Limit => "Limit"
@@ -141,6 +147,8 @@ val array0Size = arrayHeaderSize + wordSize (* for the forwarding pointer *)
 val arrayLengthOffset = ~ (2 * wordSize)
 val allocTooLarge: word = 0wxFFFFFFFC
 
+val bytesPerCardLog2: word = 0w8
+   
 fun normalSize {numPointers, numWordsNonPointers} =
    wordSize * (numPointers + numWordsNonPointers)
 

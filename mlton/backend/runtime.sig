@@ -23,6 +23,7 @@ signature RUNTIME =
 	 sig
 	    datatype t =
 	       CanHandle
+	     | CardMap
 	     | CurrentThread
 	     | Frontier (* The place where the next object is allocated. *)
 	     | Limit (* frontier + heapSize - LIMIT_SLOP *)
@@ -36,6 +37,7 @@ signature RUNTIME =
 	    val layout: t -> Layout.t
 	    val offset: t -> int (* Field offset in struct GC_state. *)
 	    val setOffsets: {canHandle: int,
+			     cardMap: int,
 			     currentThread: int,
 			     frontier: int,
 			     limit: int,
@@ -67,6 +69,7 @@ signature RUNTIME =
       val arrayHeaderSize: int
       val arrayLengthOffset: int
       val array0Size: int
+      val bytesPerCardLog2: word
       val headerToTypeIndex: word -> int
       val isWordAligned: int -> bool
       val intInfOverheadSize: int

@@ -134,6 +134,7 @@ struct
 	      in
 		case oper of
 		   CanHandle => gcState_canHandleContentsOperand ()
+		 | CardMap => gcState_cardMapContentsOperand ()
 		 | CurrentThread => gcState_currentThreadContentsOperand ()
 		 | Frontier => gcState_frontierContentsOperand ()
 		 | Limit => gcState_limitContentsOperand ()

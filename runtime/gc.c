@@ -43,6 +43,7 @@
 enum {
 	BOGUS_EXN_STACK = 0xFFFFFFFF,
 	BOGUS_POINTER = 0x1,
+	BYTES_PER_CARD = 256,
 	DEBUG = FALSE,
 	DEBUG_DETAILED = FALSE,
 	DEBUG_MARK_COMPACT = FALSE,
@@ -52,7 +53,6 @@ enum {
 	DEBUG_STACKS = FALSE,
 	DEBUG_THREADS = FALSE,
 	FORWARDED = 0xFFFFFFFF,
-	GENERATIONAL = FALSE,
 	HEADER_SIZE = WORD_SIZE,
 	LIVE_RATIO = 8,	/* The desired live ratio. */
 	STACK_HEADER_SIZE = WORD_SIZE,
@@ -129,13 +129,20 @@ static inline W64 max64 (W64 x, W64 y) {
 	return ((x > y) ? x : y);
 }
 
+
+static inline uint roundUp (uint a, uint b) {
+	assert (a >= 0);
+	assert (b >= 1);
+	a += b - 1;
+	a -= a % b;
+	return a;	
+}
+
 /*
  * Round size up to a multiple of the size of a page.
  */
 static inline size_t roundPage (GC_state s, size_t size) {
-	size += s->pageSize - 1;
-	size -= size % s->pageSize;
-	return (size);
+	return roundUp (size, s->pageSize);
 }
 
 #ifndef NODEBUG
@@ -172,7 +179,7 @@ static void *ssmmap(size_t length, size_t dead_low, size_t dead_high) {
 static void release (void *base, size_t length) {
 #if (defined (__CYGWIN__))
 	if (DEBUG_MEM)
-		fprintf(stderr, "VirtualFree (0x%x, 0, MEM_RELEASE)\n", 
+		fprintf (stderr, "VirtualFree (0x%x, 0, MEM_RELEASE)\n", 
 				(uint)base);
 	if (0 == VirtualFree (base, 0, MEM_RELEASE))
 		die ("VirtualFree release failed");
@@ -184,7 +191,7 @@ static void release (void *base, size_t length) {
 static void decommit (void *base, size_t length) {
 #if (defined (__CYGWIN__))
 	if (DEBUG_MEM)
-		fprintf(stderr, "VirtualFree (0x%x, %u, MEM_DECOMMIT)\n", 
+		fprintf (stderr, "VirtualFree (0x%x, %u, MEM_DECOMMIT)\n", 
 				(uint)base, (uint)length);
 	if (0 == VirtualFree (base, length, MEM_DECOMMIT))
 		die ("VirtualFree decommit failed");
@@ -454,8 +461,9 @@ static inline uint currentTime () {
 /* ---------------------------------------------------------------- */
 
 void GC_display (GC_state s, FILE *stream) {
-	fprintf (stream, "GC state\n\toldGen = 0x%08x\n\tnursery = 0x%08x\n\tfrontier - nursery = %u\n\tlimitPlusSlop - frontier = %d\n",
-			(uint) s->heap.oldGen,
+	fprintf (stream, "GC state\n\tcardMap = 0x%08x\n\toldGen = 0x%08x\n\tnursery = 0x%08x\n\tfrontier - nursery = %u\n\tlimitPlusSlop - frontier = %d\n",
+			(uint) s->heap.cardMap,
+       			(uint) s->heap.oldGen,
 			(uint) s->heap.nursery, 
 			s->frontier - s->heap.nursery,
 			s->limitPlusSlop - s->frontier);
@@ -821,7 +829,7 @@ static inline void assertIsInFromSpace (GC_state s, pointer *p) {
 static inline bool isInToSpace (GC_state s, pointer p) {
 	return (not (GC_isPointer (p))
 		or (s->heap2.oldGen <= p 
-			and p < s->heap2.start + s->heap2.size));
+			and p < s->heap2.oldGen + s->heap2.size));
 }
 
 static bool invariant (GC_state s) {
@@ -848,7 +856,7 @@ static bool invariant (GC_state s) {
 	assert (isWordAligned ((uint)s->frontier));
 	assert (s->heap.nursery <= s->frontier);
 	assert (0 == s->heap.size
-		or (isPageAligned (s, s->heap.size)
+		or (isPageAligned (s, s->heap.totalSize)
 			and s->frontier <= s->limitPlusSlop
 			and s->limitPlusSlop == s->heap.nursery + s->heap.nurserySize
 			and s->limit == s->limitPlusSlop - LIMIT_SLOP));
@@ -940,7 +948,6 @@ static W32 heapDesiredSize (GC_state s, W64 live) {
 				max64 (live * LIVE_RATIO_MIN, 
 					min64 (s->ramSlop * s->totalRam,
 						live * LIVE_RATIO)));
-	res = roundPage (s, res);
 	if (DEBUG_RESIZING)
 		fprintf (stderr, "%u = heapDesiredSize (%llu)\n",
 				(uint)res, live);
@@ -950,17 +957,19 @@ static W32 heapDesiredSize (GC_state s, W64 live) {
 static inline void heapInit (GC_state s, GC_heap h) {
 	h->size = 0;
 	h->start = NULL;
+	h->totalSize = 0;
 }
 
 static inline void heapRelease (GC_state s, GC_heap h) {
-	if (0 == h->size)
+	if (NULL == h->start)
 		return;
 	if (s->messages)
 		fprintf (stderr, "Releasing heap at 0x%08x of size %u.\n", 
-				(uint)h->start, (uint)h->size);
-	release (h->start, h->size);
-	h->start = NULL;
+				(uint)h->start, (uint)h->totalSize);
+	release (h->start, h->totalSize);
 	h->size = 0;
+	h->start = NULL;
+	h->totalSize = 0;
 }
 
 static inline void releaseFromSpace (GC_state s) {
@@ -973,16 +982,25 @@ static inline void releaseToSpace (GC_state s) {
 
 static inline void heapShrink (GC_state s, GC_heap h, W32 keep) {
 	assert (keep <= h->size);
-	assert (isPageAligned (s, keep));
 	if (0 == keep)
 		heapRelease (s, h);
 	else if (keep < h->size) {
+		uint remove;
+
+		remove = (uint)h->start + h->totalSize 
+				- roundPage (s, (uint)h->oldGen + keep);
+		assert (isPageAligned (s, remove));
 		if (DEBUG or s->messages)
 			fprintf (stderr, 
-				"Shrinking space at 0x%08x from %u to %u bytes.\n",
-				(uint)h->start, (uint)h->size, (uint)keep);
-		decommit (h->start + keep, h->size - keep);
+				"Shrinking space at 0x%08x of size %u by %u bytes.\n",
+				(uint)h->start, 
+				(uint)h->totalSize, 
+				(uint)remove);
 		h->size = keep;
+		if (remove > 0) {
+			decommit (h->start + h->totalSize - remove, remove);
+			h->totalSize -= remove;
+		}
 	}
 }
 
@@ -997,23 +1015,21 @@ static inline void setNursery (GC_state s) {
 	h = &s->heap;
 	h->oldGenSize = s->bytesLive;
 	h->toSpace = h->oldGen + h->oldGenSize;
-	h->nurserySize = h->start + h->size - h->toSpace;
-	if (GENERATIONAL)
+	h->nurserySize = h->oldGen + h->size - h->toSpace;
+	if (FALSE and s->generational) /* FIXME */
 		h->nurserySize /= 2;
-	h->nursery = h->start + h->size - h->nurserySize;
+	h->nursery = h->oldGen + h->size - h->nurserySize;
 	s->frontier = h->nursery;
 	setLimit (s);
 }
 
 static inline void shrinkFromSpace (GC_state s, W32 keep) {
 	assert (keep <= s->heap.size);
-	assert (isPageAligned (s, keep));
 	heapShrink (s, &s->heap, keep);
 }
 
 static inline void shrinkToSpace (GC_state s, W32 keep) {
 	assert (keep <= s->heap2.size);
-	assert (isPageAligned (s, keep));
 	heapShrink (s, &s->heap2, keep);
 }
 
@@ -1030,7 +1046,6 @@ static inline bool heapCreate (GC_state s, GC_heap h, W64 need, W32 minSize) {
 	if (DEBUG)
 		fprintf (stderr, "heapCreate  need = %llu  minSize = %u\n",
 				need, (uint)minSize);
-	minSize = roundPage (s, minSize);
 	requested = heapDesiredSize (s, need);
 	if (requested < minSize)
 		requested = minSize;
@@ -1040,20 +1055,31 @@ static inline bool heapCreate (GC_state s, GC_heap h, W64 need, W32 minSize) {
 	else
 		heapRelease (s, h);
 	assert (0 == h->size and NULL == h->start);
-	backoff = (requested == minSize)
-		? s->pageSize
-		: roundPage (s, (requested - minSize) / 20);
-	assert (isPageAligned (s, requested));
-	assert (isPageAligned (s, backoff));
+	backoff = (requested - minSize) / 20;
+	if (0 == backoff)
+		backoff = 1; /* enough to terminate the loop below */
 	/* mmap toggling back and forth between high and low addresses to
          * decrease the chance of virtual memory fragmentation causing an mmap
 	 * to fail.  This is important for large heaps.
 	 */
 	for (h->size = requested; h->size >= minSize; h->size -= backoff) {
+		uint cardMapSpace;
 		static int direction = 1;
 		int i;
 
-		assert (isPageAligned (s, h->size));
+		if (s->generational)
+			h->numCards = roundUp (h->size, BYTES_PER_CARD) 
+						/ BYTES_PER_CARD;
+		else
+			h->numCards = 0;
+		if (DEBUG_DETAILED)
+			fprintf (stderr, "numCards = %u\n", h->numCards);
+		/* We make sure that the card maps take up a multiple of
+		 * BYTES_PER_CARD bytes so that the heap starts on a card
+		 * boundary.
+		 */
+		cardMapSpace = roundUp (2 * h->numCards, BYTES_PER_CARD);
+		h->totalSize = roundPage (s, h->size + cardMapSpace);
 		for (i = 0; i < 32; i++) {
 			unsigned long address;
 
@@ -1063,36 +1089,42 @@ static inline bool heapCreate (GC_state s, GC_heap h, W64 need, W32 minSize) {
 #if (defined (__CYGWIN__))
 			address = 0; /* FIXME */
 			i = 31; /* FIXME */
-			h->start = VirtualAlloc ((LPVOID)address, h->size,
+			h->start = VirtualAlloc ((LPVOID)address, h->totalSize,
 							MEM_COMMIT,
 							PAGE_READWRITE);
 			if (DEBUG_MEM)
 				fprintf (stderr, "0x%08x = VirtualAlloc (0x%08x, %u, MEM_COMMIT, PAGE_READWRITE)\n",
-						(uint)h->start, (uint)address,
-						(uint)h->size);
+						(uint)h->start, 
+						(uint)address,
+						(uint)h->totalSize);
 #elif (defined (__linux__) || defined (__FreeBSD__))
-			h->start = mmap (address+(void*)0, h->size, PROT_READ | PROT_WRITE,
-					MAP_PRIVATE | MAP_ANON, -1, 0);
+			h->start = mmap (address+(void*)0, h->totalSize, 
+						PROT_READ | PROT_WRITE,
+						MAP_PRIVATE | MAP_ANON, -1, 0);
 			if ((void*)-1 == h->start)
 				h->start = (void*)NULL;
 #endif
 			unless ((void*)NULL == h->start) {
 				direction = (direction==0);
-				assert (isPageAligned (s, h->size));
-				if (h->size > s->maxHeapSizeSeen)
-					s->maxHeapSizeSeen = h->size;
-				h->oldGen = h->start;
+				assert (isPageAligned (s, h->totalSize));
+				if (h->totalSize > s->maxHeapSizeSeen)
+					s->maxHeapSizeSeen = h->totalSize;
+				h->oldGen = h->start + cardMapSpace;
+				assert ((uint)h->oldGen / BYTES_PER_CARD <= (uint)h->start);
+				h->cardMap = h->start - ((uint)h->oldGen / BYTES_PER_CARD);
+
 				if (DEBUG or s->messages)
 					fprintf (stderr, "Created heap of size %s at 0x%08x.\n",
-							uintToCommaString (h->size),
+							uintToCommaString (h->totalSize),
 							(uint)h->start);
 				return TRUE;
 			}
 		}
 		if (s->messages)
 			fprintf(stderr, "[Requested %luM cannot be satisfied, backing off by %luM (need = %luM).\n",
-				meg (h->size), meg (backoff), meg (need));
+				meg (h->totalSize), meg (backoff), meg (need));
 	}
+	h->totalSize = 0;
 	h->size = 0;
 	return FALSE;
 }
@@ -1150,11 +1182,11 @@ static inline void forward (GC_state s, pointer *pp) {
 			skip = stack->reserved - stack->used;
 		}
 		size = headerBytes + objectBytes;
-		assert (s->back + size + skip <= s->heap2.start + s->heap2.size);
+		assert (s->back + size + skip <= s->heap2.oldGen + s->heap2.size);
   		/* Copy the object. */
 		if (DEBUG_DETAILED)
-			fprintf (stderr, "copying from 0x%08x to 0x%08x\n",
-					(uint)p, (uint)s->back);
+			fprintf (stderr, "copying from 0x%08x to 0x%08x of size %u\n",
+					(uint)p, (uint)s->back, size);
 		copy (p - headerBytes, s->back, size);
 #if METER
 		if (size < sizeof(sizes)/sizeof(sizes[0])) sizes[size]++;
@@ -1212,6 +1244,7 @@ static inline void cheneyCopy (GC_state s) {
   	 * because that is too strong.
 	 */
 	assert (s->heap2.size >= s->frontier - s->heap.nursery);
+
 	s->back = s->heap2.oldGen;
 	foreachGlobal (s, forward);
 	forwardEachPointerInRange (s, s->heap2.oldGen, &s->back);
@@ -1632,14 +1665,14 @@ static inline void updateBackwardPointersAndSlide (GC_state s) {
 	Header header;
 	pointer p;
 	uint size;
-	uint totalSize;
+	uint live;
 
 	if (DEBUG_MARK_COMPACT)
 		fprintf (stderr, "updateBackwardPointersAndSlide\n");
 	back = s->frontier;
 	front = s->heap.oldGen;
 	gap = 0;
-	totalSize = 0;
+	live = 0;
 updateObject:
 	if (front == back)
 		goto done;
@@ -1668,7 +1701,7 @@ unmark:
 					fprintf (stderr, "sliding 0x%08x down %u\n",
 							(uint)front, gap);
 			copy (front, front - gap, size);
-			totalSize += size;
+			live += size;
 			front += size;
 			goto updateObject;
 		} else {
@@ -1701,7 +1734,7 @@ unmark:
 	}
 	assert (FALSE);
 done:
-	s->bytesLive = totalSize;
+	s->bytesLive = live;
 	return;
 }
 
@@ -1796,8 +1829,8 @@ static inline void resizeHeap (GC_state s, W64 need) {
 				(uint)s->heap.size, (uint)need, (uint)keep);
 	/* Shrink or grow the heap. */
 	if (not grow) {
-		assert (roundPage (s, keep) <= s->heap.size);
-		shrinkFromSpace (s, roundPage (s, keep));
+		assert (keep <= s->heap.size);
+		shrinkFromSpace (s, keep);
 	} else {
 		pointer old;
 
@@ -1806,8 +1839,8 @@ static inline void resizeHeap (GC_state s, W64 need) {
 					(uint)s->bytesLive);
 		releaseToSpace (s);
 		old = s->heap.oldGen;
-		assert (roundPage (s, s->bytesLive) <= s->heap.size);
-		shrinkFromSpace (s, roundPage (s, s->bytesLive));
+		assert (s->bytesLive <= s->heap.size);
+		shrinkFromSpace (s, s->bytesLive);
 		/* Allocate a space of the desired size. */
 		if (heapCreate (s, &s->heap2, need, need)) {
 			copy (s->heap.oldGen, s->heap2.oldGen, s->bytesLive);
@@ -1857,7 +1890,6 @@ static inline void resizeHeap (GC_state s, W64 need) {
 	else
 		shrinkToSpace (s, s->heap.size);
 	assert (s->heap.size >= need);
-	assert (0 == s->heap2.size or s->heap.size == s->heap2.size);
 	assert (invariant (s));
 }
 
@@ -2208,16 +2240,16 @@ pointer GC_copyThread (GC_state s, pointer thread) {
 /*                          Initialization                          */
 /* ---------------------------------------------------------------- */
 
-static inline void initSignalStack(GC_state s) {
+static inline void initSignalStack (GC_state s) {
 #if (defined (__linux__) || defined (__FreeBSD__))
         static stack_t altstack;
-	size_t ss_size = roundPage(s, SIGSTKSZ);
+	size_t ss_size = roundPage (s, SIGSTKSZ);
 	size_t psize = s->pageSize;
-	void *ss_sp = ssmmap(2 * ss_size, psize, psize);
+	void *ss_sp = ssmmap (2 * ss_size, psize, psize);
 	altstack.ss_sp = ss_sp + ss_size;
 	altstack.ss_size = ss_size;
 	altstack.ss_flags = 0;
-	sigaltstack(&altstack, NULL);
+	sigaltstack (&altstack, NULL);
 #endif
 }
 
@@ -2537,6 +2569,9 @@ static inline void initStrings (GC_state s) {
 		}
 		frontier += numBytes;
 	}
+	if (DEBUG_DETAILED)
+		fprintf (stderr, "frontier after string allocation is 0x%08x\n",
+				(uint)frontier);
 	s->frontier = frontier;
 }
 
@@ -2607,6 +2642,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->canHandle = 0;
 	s->currentThread = BOGUS_THREAD;
 	rusageZero (&s->ru_gc);
+	s->generational = TRUE;
 	s->inSignalHandler = FALSE;
 	s->isOriginal = TRUE;
 	s->maxBytesLive = 0;
@@ -2810,7 +2846,7 @@ void GC_pack (GC_state s) {
 	 * allocated since the last collection.
  	 */
 	doGC (s, 0);
-	shrinkFromSpace (s, roundPage (s, s->bytesLive * 1.1));
+	shrinkFromSpace (s, s->bytesLive * 1.1);
 	setNursery (s);
 	if (DEBUG or s->messages)
 		fprintf (stderr, "Packed heap to size %s.\n",
