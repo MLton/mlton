@@ -342,9 +342,9 @@ struct
   val (_, _, gcState_cardMapContentsOperand) =
      make (Field.CardMap, wordSize, Classes.GCState)
 
-  val (gcState_currentThread, gcState_currentThreadContents,
-       gcState_currentThreadContentsOperand) =
-     make (Field.CurrentThread, pointerSize, Classes.GCState)
+   val (gcState_currentThread, gcState_currentThreadContents,
+        gcState_currentThreadContentsOperand) =
+      make (Field.CurrentThread, pointerSize, Classes.GCState)
 
   val (_, gcState_frontierContents, gcState_frontierContentsOperand) =
      make (Field.Frontier, pointerSize, Classes.GCStateHold)
@@ -406,30 +406,6 @@ struct
 		    class = Classes.Heap}
   fun gcState_currentThread_exnStackContentsOperand () =
      Operand.memloc (gcState_currentThread_exnStackContents ())
-  fun gcState_currentThread_stackContents () =
-     MemLoc.simple {base = gcState_currentThreadContents (),
-		    index = Immediate.const_int 2,
-		    size = pointerSize,
-		    scale = wordScale,
-		    class = Classes.Heap}
-  fun gcState_currentThread_stackContentsOperand () =
-     Operand.memloc (gcState_currentThread_stackContents ())
-  fun gcState_currentThread_stack_reservedContents () =
-     MemLoc.simple {base = gcState_currentThread_stackContents (),
-		    index = Immediate.const_int 0,
-		    size = pointerSize,
-		    scale = wordScale,
-		    class = Classes.ThreadStack}
-  fun gcState_currentThread_stack_reservedContentsOperand () =
-     Operand.memloc (gcState_currentThread_stack_reservedContents ())
-  fun gcState_currentThread_stack_usedContents () =
-     MemLoc.simple {base = gcState_currentThread_stackContents (),
-		    index = Immediate.const_int 1,
-		    size = pointerSize,
-		    scale = wordScale,
-		    class = Classes.ThreadStack}
-  fun gcState_currentThread_stack_usedContentsOperand () =
-     Operand.memloc (gcState_currentThread_stack_usedContents ())
 
   (* init *)
   fun init () = let

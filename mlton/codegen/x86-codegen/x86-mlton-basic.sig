@@ -102,13 +102,9 @@ signature X86_MLTON_BASIC =
     (* gcState relative locations defined in gc.h *)
     val gcState_canHandleContentsOperand: unit -> x86.Operand.t
     val gcState_cardMapContentsOperand: unit -> x86.Operand.t
-    val gcState_currentThread: unit -> x86.Immediate.t
     val gcState_currentThreadContentsOperand: unit -> x86.Operand.t
     val gcState_currentThread_exnStackContents: unit -> x86.MemLoc.t
     val gcState_currentThread_exnStackContentsOperand: unit -> x86.Operand.t
-    val gcState_currentThread_stackContentsOperand: unit -> x86.Operand.t
-    val gcState_currentThread_stack_reservedContentsOperand: unit -> x86.Operand.t
-    val gcState_currentThread_stack_usedContentsOperand: unit -> x86.Operand.t
     val gcState_frontierContents: unit -> x86.MemLoc.t
     val gcState_frontierContentsOperand: unit -> x86.Operand.t
     val gcState_frontierDerefOperand: unit -> x86.Operand.t
