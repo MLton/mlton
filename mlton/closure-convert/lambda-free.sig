@@ -37,6 +37,7 @@ signature LAMBDA_FREE =
        *)
       val lambdaFree:
 	 Program.t
+	 * Var.t
 	 * (Var.t -> {frees: Var.t list ref ref,
 		      status: Status.t ref})
 	 * (Lambda.t -> {frees: Var.t vector ref,

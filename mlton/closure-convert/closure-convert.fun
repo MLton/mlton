@@ -320,10 +320,24 @@ fun closureConvert (program as Sxml.Program.T {datatypes, body}): Cps.Program.t 
 						  str " ",
 						  Value.layout (value x)]
 					  end)))
+      (* Find the overflow exception. *)
+      val overflowVar =
+	 DynamicWind.withEscape
+	 (fn escape =>
+	  (Sexp.foreachPrimExp
+	   (body, fn (x, e) =>
+	    case e of
+	       SprimExp.ConApp {con, ...} =>
+		  if Con.equals (con, Con.overflow)
+		     then escape x
+		  else ()
+	     | _ => ())
+	   ; Error.bug "couldn't find overflow exception"))
       val _ =
 	 Control.trace (Control.Pass, "free variables")
 	 LambdaFree.lambdaFree
 	 (program,
+	  overflowVar,
 	  fn x => let val {frees, status, ...} = varInfo x
 		  in {frees = frees, status = status}
 		  end,
@@ -347,23 +361,6 @@ fun closureConvert (program as Sxml.Program.T {datatypes, body}): Cps.Program.t 
 			  end)
       in
       end
-      (* Find the overflow exception. *)
-      val overflowVar =
-	 DynamicWind.withEscape
-	 (fn escape =>
-	  (Sexp.foreachPrimExp
-	   (body, fn (x, e) =>
-	    case e of
-	       SprimExp.ConApp {con, ...} =>
-		  if Con.equals (con, Con.overflow)
-		     then if isGlobal x
-			     then escape x
-			  else Error.bug "overflow must be global"
-		  else ()
-	     | _ => ())
-	   ; Error.bug "couldn't find overflow exception"))
-      val exnType = Ctype.con (Tycon.exn, Vector.new0 ())
-      val overflowExp =	 Cexp.raisee (Cexp.var (overflowVar, exnType))
       val {get = lambdasInfoOpt} =
 	 Property.get (Lambdas.plist, Property.initFun (fn _ => ref NONE))
       val {hom = convertType, destroy = destroyConvertType} =
@@ -760,7 +757,7 @@ fun closureConvert (program as Sxml.Program.T {datatypes, body}): Cps.Program.t 
 			   end
 		  val overflow =
 		     if Prim.mayOverflow prim
-			then SOME overflowExp
+			then SOME (Cexp.raisee (convertVar overflowVar))
 		     else NONE
 	       in simple (Cexp.primApp' {prim = prim,
 					 overflow = overflow,
