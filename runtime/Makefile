@@ -72,7 +72,6 @@ OBJS =						\
 	basis/Net/Socket/shutdown.o		\
 	basis/Net/Socket/socket.o		\
 	basis/Net/Socket/socketPair.o		\
-	basis/OS/FileSys/tmpnam.o		\
 	basis/OS/IO/poll.o			\
 	basis/PackReal/subVec.o			\
 	basis/PackReal/update.o			\
@@ -239,7 +238,6 @@ DEBUG_OBJS =					\
 	basis/Net/Socket/shutdown-gdb.o		\
 	basis/Net/Socket/socket-gdb.o		\
 	basis/Net/Socket/socketPair-gdb.o	\
-	basis/OS/FileSys/tmpnam-gdb.o		\
 	basis/OS/IO/poll-gdb.o			\
 	basis/PackReal/subVec-gdb.o		\
 	basis/PackReal/update-gdb.o		\
