@@ -804,7 +804,7 @@ fun dimport {attributes: Attribute.t list,
 	    let
 	       val () =
 		  Control.error (region,
-				 str "invalid type for import: ",
+				 str "invalid type for import",
 				 Type.layoutPretty ty)
 	    in
 	       Prim.bogus
@@ -867,7 +867,7 @@ fun import {attributes: Attribute.t list,
 	       let
 		  val () =
 		     Control.error (region,
-				    str "invalid type for import: ",
+				    str "invalid type for import",
 				    Type.layoutPretty ty)
 	       in
 		  Prim.bogus
@@ -2385,7 +2385,7 @@ fun elaborateDec (d, {env = E, nest}) =
 					    | _ => 
 						 Control.error
 						 (region,
-						  str "invalid type for import: ",
+						  str "invalid type for import",
 						  Type.layoutPretty fptrExpandedTy)
 					val fptr = Var.newNoname ()
 					val fptrArg = Cexp.var (fptr, fptrTy)
@@ -2407,7 +2407,7 @@ fun elaborateDec (d, {env = E, nest}) =
 				| _ => 
 				     (Control.error
 				      (region,
-				       str "invalid type for import: ",
+				       str "invalid type for import",
 				       Type.layoutPretty ty);
 				      eta Prim.bogus)
 			    end
