@@ -40,6 +40,29 @@ word threadTemp;
 	uint localuint[u]
 
 #define Main(cs, mg, mfs, mlw, mmc, ps, ml, reserveEsp)			\
+void MLton_jumpToSML (pointer jump) {					\
+	word lc_stackP;							\
+			       						\
+	if (DEBUG_X86CODEGEN)						\
+		fprintf (stderr, "MLton_jumpToSML(0x%08x) starting\n", (uint)jump); \
+	lc_stackP = c_stackP;						\
+	if (reserveEsp)							\
+		__asm__ __volatile__					\
+		("pusha\nmovl %%esp,%0\nmovl %1,%%ebp\nmovl %2,%%edi\njmp *%3\n.global Thread_returnToC\nThread_returnToC:\nmovl %0,%%esp\npopa" \
+		: "=o" (c_stackP)					\
+		: "o" (gcState.stackTop), "o" (gcState.frontier), "r" (jump) \
+		);							\
+	else								\
+		__asm__ __volatile__ 					\
+		("pusha\nmovl %%esp,%0\nmovl %1,%%ebp\nmovl %2,%%esp\njmp *%3\n.global Thread_returnToC\nThread_returnToC:\nmovl %0,%%esp\npopa" \
+		: "=o" (c_stackP)					\
+		: "o" (gcState.stackTop), "o" (gcState.frontier), "r" (jump) \
+		);							\
+	c_stackP = lc_stackP;						\
+	if (DEBUG_X86CODEGEN)						\
+		fprintf (stderr, "MLton_jumpToSML(0x%08x) done\n", (uint)jump); \
+	return;								\
+}									\
 void MLton_callFromC () {						\
 	pointer jump;							\
 	GC_state s;							\
@@ -51,22 +74,11 @@ void MLton_callFromC () {						\
 	/* Return to the C Handler thread. */				\
 	GC_switchToThread (s, s->callFromCHandler);			\
 	jump = *(pointer*)(s->stackTop - WORD_SIZE);			\
-	if (reserveEsp)							\
-		__asm__ __volatile__					\
-		("pusha;movl %%esp,%0;movl %1,%%eax;movl %2,%%ebp;movl %3,%%edi;jmp *%%eax;.global Thread_returnToC;Thread_returnToC:;movl %0,%%esp;popa" \
-		: "=m" (c_stackP)					\
-		: "m" (jump), "m" (gcState.stackTop), "m" (gcState.frontier) \
-		);							\
-	else								\
-		__asm__ __volatile__ 					\
-		("pusha;movl %%esp,%0;movl %1,%%eax;movl %2,%%ebp;movl %3,%%esp;jmp *%%eax;.global Thread_returnToC;Thread_returnToC:;movl %0,%%esp;popa" \
-		: "=m" (c_stackP) 					\
- 		: "m" (jump), "m" (gcState.stackTop), "m" (gcState.frontier) \
-		); \
+	MLton_jumpToSML(jump);						\
 	GC_switchToThread (s, s->savedThread);				\
 	s->savedThread = BOGUS_THREAD;					\
 	if (DEBUG_X86CODEGEN)						\
-		fprintf (stderr, "Thread_returnToC done");		\
+		fprintf (stderr, "MLton_callFromC() done\n");		\
 	return;								\
 }									\
 int main (int argc, char **argv) {					\
@@ -80,18 +92,7 @@ int main (int argc, char **argv) {					\
 	} else {       							\
 		jump = *(pointer*)(gcState.stackTop - WORD_SIZE); 	\
 	}								\
-	if (reserveEsp)							\
-		__asm__ __volatile__					\
-		("movl %%esp,%0;movl %1,%%eax;movl %2,%%ebp;movl %3,%%edi;jmp *%%eax" \
-		: "=m" (c_stackP)					\
-		: "m" (jump), "m" (gcState.stackTop), "m" (gcState.frontier) \
-		);							\
-	else								\
-		__asm__ __volatile__ 					\
-		("movl %%esp,%0;movl %1,%%eax;movl %2,%%ebp;movl %3,%%esp;jmp *%%eax" \
-		: "=m" (c_stackP) 					\
- 		: "m" (jump), "m" (gcState.stackTop), "m" (gcState.frontier) \
-		);							\
+	MLton_jumpToSML(jump);						\
 	return 1;							\
 }
 
