@@ -19,37 +19,21 @@ signature ONCE =
       val once: Program.t -> Var.t -> bool
    end
 
-signature NEW_ONCE_STRUCTS = 
+signature MULTI_STRUCTS = 
    sig
       include SSA_TREE
    end
 
-signature NEW_ONCE = 
+signature MULTI = 
    sig
-      include NEW_ONCE_STRUCTS
+      include MULTI_STRUCTS
 
-      val once: Program.t -> {(* Returns true for functions that
-			       *  are guaranteed to never have 
-			       *  their stack frame duplicated
-			       *  at a thread copy.
-			       *)
-			      funcIsSingleThreaded: Func.t -> bool,
-			      (* Returns true for functions that
-			       *  are guaranteed to be used no
-			       *  more than once during the entire
-			       *  program.
-			       *)
-			      funcIsUsedOnce: Func.t -> bool,
-			      (* Returns true for labels that
-			       *  are guaranteed to be used no
-			       *  more than once during the entire
-			       *  program.
-			       *)
-			      labelIsUsedOnce: Label.t -> bool,
-			      (* Returns true for variables that
-			       *  are guaranteed to be bound no
-			       *  more than once during the entire
-			       *  program.
-			       *)
-			      varIsBoundOnce: Var.t -> bool}
+      val multi: Program.t -> {usesThreadsOrConts: bool,
+			       funcDoesThreadCopyCurrent: Func.t -> bool,
+			       funcIsMultiThreaded: Func.t -> bool,
+			       funcIsMultiUsed: Func.t -> bool,
+			       labelDoesThreadCopyCurrent: Label.t -> bool,
+			       labelIsMultiThreaded: Label.t -> bool,
+			       labelIsMultiUsed: Label.t -> bool,
+			       varIsMultiDefed: Var.t -> bool}
    end

@@ -1,7 +1,19 @@
 (* Copyright (C) 1997-1999 NEC Research Institute.
  * Please see the file LICENSE for license information.
  *)
-functor NewOnce (S: NEW_ONCE_STRUCTS): NEW_ONCE = 
+
+(*
+Defn:
+A label is exactly-multi-threaded if it may be executed by two
+different threads during some run of the program.  The initial call to
+main counts as one thread.
+
+Defn:
+A label is actually-multi-used if it may be executed more than once
+during the execution of the program.
+*)
+
+functor Multi (S: MULTI_STRUCTS): MULTI =
 struct
 
 open S
@@ -10,123 +22,159 @@ open Exp Transfer
 structure Graph = DirectedGraph
 local open Graph
 in
-   structure Edge = Edge
-   structure Node = Node
+  structure Edge = Edge
+  structure Node = Node
 end
 
-structure Multi =
+structure Calls =
   struct
-    structure L = TwoPointLattice (val bottom = "once"
-				   val top = "multi")
+    datatype t = T of value ref
+    and value = Zero | One | Many
+    val layout
+      = fn (T (ref Zero)) => Layout.str "Zero"
+         | (T (ref One)) => Layout.str "One"
+         | (T (ref Many)) => Layout.str "Many"
+    fun new (): t = T (ref Zero)
+    fun inc (T r)
+      = case !r 
+	  of Zero => r := One
+	   | _ => r := Many
+    val isMany
+      = fn (T (ref Many)) => true
+         | _ => false
+  end
 
+structure ThreadCopyCurrent =
+  struct
+    structure L = TwoPointLattice (val bottom = "false"
+				   val top = "true")
     open L
-    val forceMulti = makeTop
-    val isMulti = isTop
-    val whenMulti = addHandler
+    val force = makeTop
+    val does = isTop
+    val when = addHandler
   end
 
 structure MultiThreaded =
   struct
-    structure L = TwoPointLattice (val bottom = "single threaded"
-				   val top = "multi threaded")
-
+    structure L = TwoPointLattice (val bottom = "false"
+				   val top = "true")
     open L
-    val forceMultiThreaded = makeTop
-    val isMultiThreaded = isTop
-    val whenMultiThreaded = addHandler
+    val force = makeTop
+    val is = isTop
+    val when = addHandler
   end
+
+structure MultiUsed =
+  struct
+    structure L = TwoPointLattice (val bottom = "false"
+				   val top = "true")
+    open L
+    val force = makeTop
+    val is = isTop
+    val when = addHandler
+  end
+
 
 structure FuncInfo =
   struct
-    datatype t = T of {calls: int ref,
-		       multi: Multi.t,
+    datatype t = T of {calls: Calls.t,
+		       threadCopyCurrent: ThreadCopyCurrent.t,
 		       multiThreaded: MultiThreaded.t,
-		       node: Node.t}
+		       multiUsed: MultiUsed.t}
 
-    fun layout (T {calls, multi, multiThreaded, ...}) 
-      = Layout.record [("calls", Int.layout (!calls)),
-		       ("multi", Multi.layout multi),
-		       ("multiThreaded", MultiThreaded.layout multiThreaded)]
+    fun layout (T {calls, threadCopyCurrent, multiUsed, multiThreaded, ...}) 
+      = Layout.record 
+        [("calls", Calls.layout calls),
+	 ("threadCopyCurrent", ThreadCopyCurrent.layout threadCopyCurrent),
+	 ("multiThreaded", MultiThreaded.layout multiThreaded),
+	 ("multiUsed", MultiUsed.layout multiUsed)]
 
     local
        fun make f (T r) = f r
        fun make' f = (make f, ! o (make f))
     in
-      val (calls,calls') = make' #calls
-      val multi = make #multi
+      val calls = make #calls
+      val threadCopyCurrent = make #threadCopyCurrent
       val multiThreaded = make #multiThreaded
-      val node = make #node
+      val multiUsed = make #multiUsed
     end
    
-    fun new node: t = T {calls = ref 0,
-			 multi = Multi.new (),
-			 multiThreaded = MultiThreaded.new (),
-			 node = node}
-
-    val forceMulti = Multi.forceMulti o multi
-    val isMulti = Multi.isMulti o multi
-    fun whenMulti (vi, th) = Multi.whenMulti (multi vi, th)
-    val forceMultiThreaded = MultiThreaded.forceMultiThreaded o multiThreaded
-    val isMultiThreaded = MultiThreaded.isMultiThreaded o multiThreaded
-    fun whenMultiThreaded (vi, th) = MultiThreaded.whenMultiThreaded (multiThreaded vi, th)
+    fun new (): t = T {calls = Calls.new (),
+		       threadCopyCurrent = ThreadCopyCurrent.new (),
+		       multiUsed = MultiUsed.new (),
+		       multiThreaded = MultiThreaded.new ()}
   end
 
 structure LabelInfo =
   struct
-    datatype t = T of {multi: Multi.t}
+    datatype t = T of {threadCopyCurrent: ThreadCopyCurrent.t,
+		       multiThreaded: MultiThreaded.t,
+		       multiUsed: MultiUsed.t}
 
-    fun layout (T {multi, ...}) 
-      = Layout.record [("multi", Multi.layout multi)]
+    fun layout (T {threadCopyCurrent, multiThreaded, multiUsed, ...}) 
+      = Layout.record 
+        [("threadCopyCurrent", ThreadCopyCurrent.layout threadCopyCurrent),
+	 ("multiThreaded", MultiThreaded.layout multiThreaded),
+	 ("multiUsed", MultiUsed.layout multiUsed)]
 
     local
        fun make f (T r) = f r
        fun make' f = (make f, ! o (make f))
      in
-       val multi = make #multi
+       val threadCopyCurrent = make #threadCopyCurrent
+       val multiThreaded = make #multiThreaded
+       val multiUsed = make #multiUsed
      end
    
-     fun new (): t = T {multi = Multi.new ()}
-		      
-     val forceMulti = Multi.forceMulti o multi
-     val isMulti = Multi.isMulti o multi
-     fun whenMulti (vi, th) = Multi.whenMulti (multi vi, th)
+     fun new (): t = T {threadCopyCurrent = ThreadCopyCurrent.new (),
+			multiThreaded = MultiThreaded.new (),
+			multiUsed = MultiUsed.new ()}
    end
 
 structure VarInfo =
   struct
-    datatype t = T of {multi: Multi.t}
+    datatype t = T of {multiThreaded: MultiThreaded.t,
+		       multiUsed: MultiUsed.t}
 
-    fun layout (T {multi, ...}) 
-      = Layout.record [("multi", Multi.layout multi)]
+    fun layout (T {multiThreaded, multiUsed, ...}) 
+      = Layout.record 
+        [("multiThreaded", MultiThreaded.layout multiThreaded),
+	 ("multiUsed", MultiUsed.layout multiUsed)]
 
     local
        fun make f (T r) = f r
        fun make' f = (make f, ! o (make f))
      in
-       val multi = make #multi
+       val multiThreaded = make #multiThreaded
+       val multiUsed = make #multiUsed
      end
    
-     fun new (): t = T {multi = Multi.new ()}
-		      
-     val forceMulti = Multi.forceMulti o multi
-     val isMulti = Multi.isMulti o multi
-     fun whenMulti (vi, th) = Multi.whenMulti (multi vi, th)
+     fun new (): t = T {multiThreaded = MultiThreaded.new (),
+			multiUsed = MultiUsed.new ()}
    end
 
-
-fun once (p as Program.T {globals, functions, main, ...})
+fun multi (p as Program.T {globals, functions, main, ...})
   = let
-      (* funcInfo *)
-      val {get = funcInfo: Func.t -> FuncInfo.t,
-	   set = setFuncInfo, ...}
-	= Property.getSetOnce
-	  (Func.plist, Property.initRaise ("Once.funcInfo", Func.layout))
+      val usesThreadsOrConts 
+	= Program.hasPrim (p, fn p => Prim.name p = Prim.Name.Thread_switchTo)
 
-      (* nodeInfo *)
-      val {get = nodeInfo: Node.t -> Function.t,
-	   set = setNodeInfo, ...}
+      (* funcNode *)
+      val {get = funcNode: Func.t -> Node.t,
+	   set = setFuncNode, 
+	   rem = remFuncNode, ...}
+	= Property.getSetOnce
+	  (Func.plist, Property.initRaise ("Once.funcNode", Func.layout))
+
+      (* nodeFunction *)
+      val {get = nodeFunction: Node.t -> Function.t,
+	   set = setNodeFunction, ...}
 	= Property.getSetOnce 
-	  (Node.plist, Property.initRaise ("Once.nodeInfo", Node.layout))
+	  (Node.plist, Property.initRaise ("Once.nodeFunc", Node.layout))
+
+      (* funcInfo *)
+      val {get = funcInfo: Func.t -> FuncInfo.t, ...}
+	= Property.get
+	  (Func.plist, Property.initFun (fn _ => FuncInfo.new ()))
 
       (* labelInfo *)
       val {get = labelInfo: Label.t -> LabelInfo.t, ...}
@@ -138,9 +186,9 @@ fun once (p as Program.T {globals, functions, main, ...})
 	= Property.get
 	  (Var.plist, Property.initFun (fn _ => VarInfo.new ()))
 
-      (* update call counts 
-       * construct call graph 
-       * compute multiThreaded
+      (* construct call graph
+       * compute calls
+       * compute threadCopyCurrent
        *)
       val G = Graph.new ()
       fun newNode () = Graph.newNode G
@@ -151,9 +199,10 @@ fun once (p as Program.T {globals, functions, main, ...})
 	       let
 		 val n = newNode ()
 	       in 
-		 setFuncInfo (Function.name f, FuncInfo.new n) ;
-		 setNodeInfo (n, f)
+		 setFuncNode (Function.name f, n) ;
+		 setNodeFunction (n, f)
 	       end)
+      val _ = Calls.inc (FuncInfo.calls (funcInfo main))
       val _ = List.foreach
 	      (functions, fn f =>
 	       let
@@ -161,131 +210,276 @@ fun once (p as Program.T {globals, functions, main, ...})
 		 val fi = funcInfo f
 	       in
 		 Vector.foreach
-		 (blocks, fn Block.T {transfer, ...} =>
-		  case transfer
-		    of Call {func = g, ...}
-		     => let
-			  val gi = funcInfo g
-			in 
-			  FuncInfo.whenMultiThreaded
-			  (gi, fn () => FuncInfo.forceMultiThreaded fi) ;
-			  Int.inc (FuncInfo.calls gi) ;
-			  addEdge {from = FuncInfo.node fi,
-				   to = FuncInfo.node gi}
-			end
-		     | Runtime {prim, ...}
-		     => if Prim.name prim = Prim.Name.Thread_copyCurrent
-			  then FuncInfo.forceMultiThreaded fi
-			  else ()
-		     | _ => ())
+		 (blocks, fn Block.T {label, transfer, ...} =>
+		  let
+		    val li = labelInfo label
+		  in
+		    case transfer
+		      of Call {func = g, ...}
+		       => let
+			    val gi = funcInfo g
+			  in 
+			    Calls.inc (FuncInfo.calls gi) ;
+			    addEdge' {from = funcNode f,
+				      to = funcNode g} ;
+			    if usesThreadsOrConts
+			      then ThreadCopyCurrent.when
+				   (FuncInfo.threadCopyCurrent gi,
+				    fn () =>
+				    (ThreadCopyCurrent.force
+				     (LabelInfo.threadCopyCurrent li) ;
+				     ThreadCopyCurrent.force
+				     (FuncInfo.threadCopyCurrent fi)))
+			      else ()
+			  end
+		      | Runtime {prim, ...}
+		      => if usesThreadsOrConts
+			    andalso
+			    Prim.name prim = Prim.Name.Thread_copyCurrent
+			   then (ThreadCopyCurrent.force
+				 (LabelInfo.threadCopyCurrent li) ;
+				 ThreadCopyCurrent.force
+				 (FuncInfo.threadCopyCurrent fi))
+			   else ()
+		      | _ => ()
+		  end)
 	       end)
 
-      fun visitFunc f
-	= let
-	    val {name, args, blocks, ...} = Function.dest f
-	    val fi = funcInfo name
-	    val _ = if FuncInfo.calls' fi > 1
-		      then FuncInfo.forceMulti fi
-		      else ()
-
-	    fun forceMultiBlock (Block.T {label, args, statements, transfer})
-	      = let
-		  val li = labelInfo label
-		in
-		  if LabelInfo.isMulti li
-		    then ()
-		    else (LabelInfo.forceMulti li ;
-			  Vector.foreach
-			  (args, VarInfo.forceMulti o varInfo o #1) ;
-			  Vector.foreach
-			  (statements, fn Statement.T {var, ...} =>
-			   Option.app (var, VarInfo.forceMulti o varInfo)) ;
-			  Transfer.foreachFunc
-			  (transfer, FuncInfo.forceMulti o funcInfo))
-		end
-
-	    fun forceMultiFunc ()
-	      = (Vector.foreach (args, VarInfo.forceMulti o varInfo o #1) ;
-		 Vector.foreach (blocks, forceMultiBlock))
+      val rec forceMultiThreadedVar
+	= fn x =>
+	  let
+	    val vi = varInfo x
 	  in
-	    if FuncInfo.isMulti fi
-	      then forceMultiFunc ()
-	      else let
-		     val _ = FuncInfo.whenMulti (fi, forceMultiFunc)
-
-		     val {graph, labelNode, nodeBlock}
-		       = Function.controlFlow f
-
-		     fun forceMultiBlocksReachable nodes
-		       = Graph.dfsNodes
-		         (graph, nodes,
-			  Graph.DfsParam.finishNode
-			  (forceMultiBlock o nodeBlock))
-
-		     fun visitBlock (Block.T {transfer, ...})
-		       = case transfer
-			   of Call {func, return, ...}
-			    => if FuncInfo.isMultiThreaded (funcInfo func)
-				 then forceMultiBlocksReachable
-				      (let val nodes = ref []
-				       in Return.foreachLabel
-					  (return, fn l =>
-					   List.push (nodes, labelNode l)) ;
-					  !nodes
-				       end)
-				 else ()
-			    | Runtime {prim, return, ...}
-			    => if Prim.name prim = Prim.Name.Thread_copyCurrent
-				 then forceMultiBlocksReachable [labelNode return]
-				 else ()
-			    | _ => ()
-		     val forceMultiBlock
-		       = fn block => (forceMultiBlock block; visitBlock block)
-		   in
-		     List.foreach
-		     (Graph.stronglyConnectedComponents graph,
-		      fn [] => ()
-		       | [n] => if Node.hasEdge {from = n, to = n}
-				  then forceMultiBlock (nodeBlock n)
-				  else visitBlock (nodeBlock n)
-		       | ns => List.foreach (ns, forceMultiBlock o nodeBlock))
-		   end
+	    MultiThreaded.force (VarInfo.multiThreaded vi) ;
+	    MultiUsed.force (VarInfo.multiUsed vi)
 	  end
-      fun forceMultiFunc f
-	= (FuncInfo.forceMulti (funcInfo (Function.name f)) ; visitFunc f)
+      val rec forceMultiUsedVar
+	= fn x =>
+	  let
+	    val vi = varInfo x
+	  in
+	    MultiUsed.force (VarInfo.multiUsed vi)
+	  end
+      val rec forceMultiThreadedFunc
+	= fn f =>
+	  let
+	    val fi = funcInfo f
+	  in
+	    MultiThreaded.force (FuncInfo.multiThreaded fi) ;
+	    MultiUsed.force (FuncInfo.multiUsed fi)
+	  end
+      val rec forceMultiUsedFunc
+	= fn f =>
+	  let
+	    val fi = funcInfo f
+	  in
+	    MultiUsed.force (FuncInfo.multiUsed fi)
+	  end
+      val rec forceMultiThreadedBlock
+	= fn Block.T {label, args, statements, transfer} =>
+	  let
+	    val li = labelInfo label
+	  in
+	    if MultiThreaded.is (LabelInfo.multiThreaded li)
+	      then ()
+	      else (MultiThreaded.force (LabelInfo.multiThreaded li) ;
+		    MultiUsed.force (LabelInfo.multiUsed li) ;
+		    Vector.foreach (args, forceMultiThreadedVar o #1) ;
+		    Vector.foreach 
+		    (statements, fn Statement.T {var, ...} =>
+		     Option.app (var, forceMultiThreadedVar)) ;
+		    Transfer.foreachFunc
+		    (transfer, forceMultiThreadedFunc))
+	  end
+      val rec forceMultiThreadedBlockDFS
+	= fn controlFlow as {graph, labelNode, nodeBlock} =>
+	  fn block as Block.T {label, transfer, ...} =>
+	  let
+	    val li = labelInfo label
+	  in
+	    if MultiThreaded.is (LabelInfo.multiThreaded li)
+	      then ()
+	      else (forceMultiThreadedBlock block ;
+		    Transfer.foreachLabel
+		    (transfer, fn l =>
+		     forceMultiThreadedBlockDFS controlFlow 
+		     (nodeBlock (labelNode l))))
+	  end
+      val rec forceMultiUsedBlock
+	= fn Block.T {label, args, statements, transfer} =>
+	  let
+	    val li = labelInfo label
+	  in
+	    if MultiUsed.is (LabelInfo.multiUsed li)
+	      then ()
+	      else (MultiUsed.force (LabelInfo.multiUsed li) ;
+		    Vector.foreach (args, forceMultiUsedVar o #1) ;
+		    Vector.foreach 
+		    (statements, fn Statement.T {var, ...} =>
+		     Option.app (var, forceMultiUsedVar)) ;
+		    Transfer.foreachFunc
+		    (transfer, forceMultiUsedFunc))
+	  end
+      val rec visitBlock
+	= fn controlFlow as {graph, labelNode, nodeBlock} =>
+	  fn Block.T {label, transfer, ...} =>
+	  if ThreadCopyCurrent.does (LabelInfo.threadCopyCurrent (labelInfo label))
+	    then Transfer.foreachLabel
+	         (transfer, fn l =>
+		  forceMultiThreadedBlockDFS controlFlow 
+		  (nodeBlock (labelNode l)))
+	    else ()
+      val rec visitForceMultiUsedBlock
+	= fn controlFlow =>
+	  fn block =>
+	  (forceMultiUsedBlock block ;
+	   visitBlock controlFlow block)
+
+      val rec forceMultiThreadedFunc
+	= fn f =>
+	  let
+	    val {args, blocks, ...} = Function.dest f
+	  in
+	    Vector.foreach
+	    (args, forceMultiThreadedVar o #1) ;
+	    Vector.foreach
+	    (blocks, forceMultiThreadedBlock)
+	  end
+      val rec forceMultiUsedFunc
+	= fn f =>
+	  let
+	    val {args, blocks, ...} = Function.dest f
+	  in
+	    Vector.foreach
+	    (args, forceMultiUsedVar o #1) ;
+	    Vector.foreach
+	    (blocks, forceMultiUsedBlock)
+	  end
+
+      fun visitFunc multiUsed f
+	= let
+	    val _ = remFuncNode (Function.name f)
+
+	    val fi = funcInfo (Function.name f)
+	    val _ = if multiUsed
+	               orelse
+		       Calls.isMany (FuncInfo.calls fi)
+		      then MultiUsed.force (FuncInfo.multiUsed fi)
+		      else ()
+	  in
+	    if MultiThreaded.is (FuncInfo.multiThreaded fi)
+	      then forceMultiThreadedFunc f
+	    else if MultiUsed.is (FuncInfo.multiUsed fi)
+	      then (forceMultiUsedFunc f ;
+		    if usesThreadsOrConts
+		      then let
+			     val _ = MultiThreaded.when
+			             (FuncInfo.multiThreaded fi,
+				      fn () => forceMultiThreadedFunc f)
+			     val controlFlow = Function.controlFlow f
+			   in
+			     Vector.foreach
+			     (Function.blocks f, visitBlock controlFlow)
+			   end
+		      else ())
+	      else if usesThreadsOrConts
+		     then let	
+			    val _ = MultiThreaded.when
+			            (FuncInfo.multiThreaded fi,
+				     fn () => forceMultiThreadedFunc f)
+			    val _ = MultiUsed.when
+			            (FuncInfo.multiUsed fi,
+				     fn () => forceMultiUsedFunc f)
+			    val controlFlow as {graph, labelNode, nodeBlock}
+			      = Function.controlFlow f
+			  in
+			    List.foreach
+			    (Graph.stronglyConnectedComponents graph,
+			     fn [] => ()
+			      | [n] => if Node.hasEdge {from = n, to = n}
+					 then visitForceMultiUsedBlock controlFlow
+					      (nodeBlock n)
+					 else visitBlock controlFlow
+					      (nodeBlock n)
+			      | ns => List.foreach
+				      (ns, fn n =>
+				       visitForceMultiUsedBlock controlFlow
+				       (nodeBlock n)))
+			  end
+		     else let	
+			    val _ = MultiUsed.when
+			            (FuncInfo.multiUsed fi,
+				     fn () => forceMultiUsedFunc f)
+			    val controlFlow as {graph, labelNode, nodeBlock}
+			      = Function.controlFlow f
+			  in
+			    List.foreach
+			    (Graph.stronglyConnectedComponents graph,
+			     fn [] => ()
+			      | [n] => if Node.hasEdge {from = n, to = n}
+					 then forceMultiUsedBlock (nodeBlock n)
+					 else ()
+			      | ns => List.foreach 
+				      (ns, fn n =>
+				       forceMultiUsedBlock (nodeBlock n)))
+			  end
+	  end
 
       val _ = List.foreach
 	      (Graph.stronglyConnectedComponents G,
 	       fn [] => ()
 	        | [n] => if Node.hasEdge {from = n, to = n}
-			   then forceMultiFunc (nodeInfo n)
-			   else visitFunc (nodeInfo n)
-		| ns => List.foreach (ns, forceMultiFunc o nodeInfo))
+			   then visitFunc true (nodeFunction n)
+			   else visitFunc false (nodeFunction n)
+		| ns => List.foreach 
+			(ns, fn n =>
+			 visitFunc true (nodeFunction n)))
 
+(*
       val _ = Control.diagnostics
 	      (fn display =>
 	       let open Layout
 	       in 
+		 display (Layout.str "\n\nMulti:") ;
+		 display (seq [Layout.str "usesThreadsOrConts: ",
+			       Bool.layout usesThreadsOrConts]) ;
 		 List.foreach
 		 (functions, fn f =>
 		  let 
 		    val {name = f, blocks, ...} = Function.dest f
 		  in 
 		    display (seq [Func.layout f,
-				  str " ",
+				  str ": ",
 				  FuncInfo.layout (funcInfo f)]) ;
 		    Vector.foreach
 		    (blocks, fn Block.T {label, ...} =>
 		     display (seq [Label.layout label,
-				   str " ",
+				   str ": ",
 				   LabelInfo.layout (labelInfo label)]))
 		  end)
 	       end)
+*)
     in
-      {funcIsSingleThreaded = not o FuncInfo.isMultiThreaded o funcInfo,
-       funcIsUsedOnce = not o FuncInfo.isMulti o funcInfo,
-       labelIsUsedOnce = not o LabelInfo.isMulti o labelInfo,
-       varIsBoundOnce = not o VarInfo.isMulti o varInfo}
+      {
+       usesThreadsOrConts = usesThreadsOrConts,
+
+       funcDoesThreadCopyCurrent 
+       = ThreadCopyCurrent.does o FuncInfo.threadCopyCurrent o funcInfo,
+       funcIsMultiThreaded 
+       = MultiThreaded.is o FuncInfo.multiThreaded o funcInfo,
+       funcIsMultiUsed 
+       = MultiUsed.is o FuncInfo.multiUsed o funcInfo,
+
+       labelDoesThreadCopyCurrent 
+       = ThreadCopyCurrent.does o LabelInfo.threadCopyCurrent o labelInfo,
+       labelIsMultiThreaded 
+       = MultiThreaded.is o LabelInfo.multiThreaded o labelInfo,
+       labelIsMultiUsed 
+       = MultiUsed.is o LabelInfo.multiUsed o labelInfo,
+
+       varIsMultiDefed
+       = MultiUsed.is o VarInfo.multiUsed o varInfo
+       }
     end
 end
 

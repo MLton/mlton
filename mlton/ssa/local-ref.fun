@@ -1,5 +1,4 @@
 
-
 functor LocalRef (S: LOCAL_REF_STRUCTS): LOCAL_REF = 
 struct
 
@@ -9,38 +8,17 @@ open Exp Transfer
 type int = Int.t
 type word = Word.t
 
-structure Graph = DirectedGraph
-structure Node = Graph.Node
+structure FuncLattice = FlatLattice(structure Point = Func)
 
-structure FuncInfo =
-  struct
-
-    datatype t = T of {once: bool}
-
-    fun layout (T {once, ...})
-      = let open Layout
-	in record [("once", Bool.layout once)]
-	end
-
-    local 
-      fun make f (T r) = f r
-      fun make' f = (make f, ! o (make f))
-    in
-      val once = make #once
-    end
-
-    fun new once: t = T {once = once}
-  end
-		       
 structure GlobalInfo =
   struct
     datatype t = T of {isGlobalRef: bool,
-		       funcs: Func.t list ref}
+		       funcUses: FuncLattice.t}
 
-    fun layout (T {isGlobalRef, funcs, ...})
+    fun layout (T {isGlobalRef, funcUses, ...})
       = let open Layout
 	in record [("isGlobalRef", Bool.layout isGlobalRef),
-		   ("funcs", List.layout Func.layout (!funcs))]
+		   ("funcUses", FuncLattice.layout funcUses)]
 	end
 
     local 
@@ -48,10 +26,20 @@ structure GlobalInfo =
       fun make' f = (make f, ! o (make f))
     in
       val isGlobalRef = make #isGlobalRef
-      val (funcs, funcs') = make' #funcs
+      val funcUses = make #funcUses
     end
 
-    fun new isGlobalRef = T {isGlobalRef = isGlobalRef, funcs = ref []}
+    fun new isGlobalRef = T {isGlobalRef = isGlobalRef, 
+			     funcUses = FuncLattice.new ()}
+  end
+
+structure Local =
+  struct
+    structure L = TwoPointLattice (val bottom = "local"
+				   val top = "non local")
+    open L
+    val isLocal = isBottom
+    val nonLocal = makeTop
   end
 
 structure VarInfo =
@@ -59,14 +47,19 @@ structure VarInfo =
     datatype t = T of {reff: (Label.t * Type.t) option,
 		       assigns: Label.t list ref,
 		       derefs: Label.t list ref,
-		       isLocal: bool ref}
+		       locall: Local.t, 
+		       threadCopyCurrent: {assign: bool ref,
+					   deref: bool ref}}
 
-    fun layout (T {reff, assigns, derefs, isLocal, ...})
+    fun layout (T {reff, assigns, derefs, locall, 
+		   threadCopyCurrent as {assign, deref, ...}, ...})
       = let open Layout
 	in record [("reff", Option.layout (tuple2 (Label.layout, Type.layout)) reff),
 		   ("assigns", List.layout Label.layout (!assigns)),
 		   ("derefs", List.layout Label.layout (!derefs)),
-		   ("isLocal", Bool.layout (!isLocal))]
+		   ("locall", Local.layout locall),
+		   ("threadCopyCurrent", record [("assign", Bool.layout (!assign)),
+						 ("deref", Bool.layout (!deref))])]
 	end
 
     local 
@@ -76,20 +69,41 @@ structure VarInfo =
       val reff = make #reff
       val (assigns, assigns') = make' #assigns
       val (derefs, derefs') = make' #derefs
-      val (isLocal, isLocal') = make' #isLocal
+      val locall = make #locall
+      val threadCopyCurrent = make #threadCopyCurrent
+    end
+    val isLocal = Local.isLocal o locall
+    val nonLocal = Local.nonLocal o locall
+    local
+      fun make f = f o threadCopyCurrent
+      fun make' f = (make f, ! o (make f))
+    in
+      val (threadCopyCurrentAssign,threadCopyCurrentAssign') = make' #assign
+      val (threadCopyCurrentDeref,threadCopyCurrentDeref') = make' #deref
     end
 
     fun new reff: t = T {reff = reff, 
 			 assigns = ref [],
 			 derefs = ref [],
-			 isLocal = ref (isSome reff)}
+			 locall = let
+				    val locall = Local.new ()
+				    val _ = if isSome reff
+					      then ()
+					      else Local.nonLocal locall
+				  in
+				    locall
+				  end,
+			 threadCopyCurrent = {assign = ref false,
+					      deref = ref false}}
   end
 
 structure LabelInfo =
   struct
     datatype t = T of {reffs: Var.t list ref,
 		       assigns: Var.t list ref,
-		       derefs: Var.t list ref}
+		       derefs: Var.t list ref,
+		       preds: Label.t list ref,
+		       visited: bool ref}
 
     fun layout (T {reffs, assigns, derefs, ...})
       = let open Layout
@@ -105,22 +119,29 @@ structure LabelInfo =
       val (reffs, reffs') = make' #reffs
       val (assigns, assigns') = make' #assigns
       val (derefs, derefs') = make' #derefs
+      val (preds, preds') = make' #preds
+      val (visited, visited') = make' #visited
     end
 
     fun new (): t = T {reffs = ref [],
 		       assigns = ref [],
-		       derefs = ref []}
+		       derefs = ref [],
+		       preds = ref [],
+		       visited = ref false}
   end
+
+structure Multi = Multi (S)
 
 fun eliminate (program as Program.T {globals, datatypes, functions, main})
   = let
       exception NoLocalRefs
 
-      (* Initialize funcInfo *)
-      val {get = funcInfo: Func.t -> FuncInfo.t,
-	   set = setFuncInfo, ...}
-	= Property.getSetOnce
-	  (Func.plist, Property.initRaise ("LocalRef.funcInfo", Func.layout))
+      (* Compute multi *)
+      val multi = Control.trace (Control.Pass, "multi") Multi.multi
+      val {usesThreadsOrConts: bool,
+	   funcIsMultiUsed: Func.t -> bool, 
+	   labelDoesThreadCopyCurrent: Label.t -> bool, ...} 
+	= multi program
 
       (* Initialize globalInfo *)
       val {get = globalInfo: Var.t -> GlobalInfo.t,
@@ -138,44 +159,71 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 				   else ()
 			      | _ => ()))
 
-      (* Update once and func *)
+      (* Compute funcUses *)
       fun addFunc f x
-	= let
+	= let 
 	    val gi = globalInfo x
-	  in
+	  in 
 	    if GlobalInfo.isGlobalRef gi
-	      then if List.contains
-		      (GlobalInfo.funcs' gi, f, Func.equals)
-		     then ()
-		     else List.push (GlobalInfo.funcs gi, f)
+	      then ignore (FuncLattice.lowerBound (GlobalInfo.funcUses gi, f))
 	      else ()
 	  end
       val dummy = Func.newNoname ()
-      val _ = setFuncInfo (dummy, FuncInfo.new true)
       val _ = Vector.foreach
-	      (globals, fn Statement.T {exp, ...} =>
-	       Exp.foreachVar (exp, addFunc dummy))
+	      (globals, fn Statement.T {var, exp, ...} =>
+	       let
+		 fun default () = Exp.foreachVar (exp, addFunc dummy)
+	       in
+		 case exp
+		   of PrimApp {prim, args, ...}
+		    => if Prim.name prim = Prim.Name.Ref_ref
+			 then ignore
+			      (FuncLattice.<=
+			       (GlobalInfo.funcUses 
+				(globalInfo (valOf var)),
+				GlobalInfo.funcUses 
+				(globalInfo (Vector.sub (args, 0)))))
+			 else default ()
+		    | _ => default ()
+	       end)
       val _ = List.foreach
 	      (functions, fn f =>
 	       let
 		 val {name, blocks, ...} = Function.dest f
-		 val _ = setFuncInfo (name, FuncInfo.new (Func.equals(name, main)))
-		 val addFunc = addFunc name
 	       in
 		 Vector.foreach
 		 (blocks, fn Block.T {statements, transfer, ...} =>
 		  (Vector.foreach
 		   (statements, fn Statement.T {exp, ...} =>
-		    Exp.foreachVar (exp, addFunc)) ;
-		   Transfer.foreachVar (transfer, addFunc)))
+		    Exp.foreachVar (exp, addFunc name)) ;
+		   Transfer.foreachVar (transfer, addFunc name)))
 	       end)
 
-      (* localize global refs *)
+      (* Diagnostics *)
+      val _ = Control.diagnostics
+	      (fn display =>
+	       let
+		 open Layout
+	       in
+		 display (str "\n\nGlobals:") ;
+		 Vector.foreach
+		 (globals, fn Statement.T {var, ...} =>
+		  Option.app 
+		  (var, fn x =>
+		   if GlobalInfo.isGlobalRef (globalInfo x)
+		     then display (seq [Var.layout x,
+					str ": ",
+					GlobalInfo.layout (globalInfo x)])
+		     else ()))
+	       end)
+
+      (* Localize global refs *)
       val (functions,globals)
 	= List.fold
 	  (functions, ([],Vector.toList globals), fn (f, (functions, globals)) =>
-	   if FuncInfo.once (funcInfo (Function.name f))
-	     then let
+	   if funcIsMultiUsed (Function.name f)
+	     then (f::functions,globals)
+	     else let
 		    val {name, args, start, blocks, returns, raises}
 		      = Function.dest f
 
@@ -191,9 +239,8 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 				  in 
 				    GlobalInfo.isGlobalRef gi
 				    andalso
-				    List.forall
-				    (GlobalInfo.funcs' gi, fn f =>
-				     Func.equals (f, name))
+				    FuncLattice.isPointEq
+				    (GlobalInfo.funcUses gi, name)
 				  end
 			   then (globals,s::locals)
 			   else (s::globals,locals))
@@ -223,13 +270,12 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 				   end
 		  in
 		    (f::functions, List.rev globals)
-		  end
-	     else (f::functions, globals))
+		  end)
       val globals = Vector.fromList globals
 
       (* restore and shrink *)
       val restore = restoreFunction globals
-      val restore = Control.trace (Control.Detail, "restore") restore
+      val restore = Control.trace (Control.Pass, "restore") restore
       val shrink = shrinkFunction globals
 
       (* varInfo *)
@@ -238,14 +284,14 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 	   rem = remVarInfo, ...} 
 	= Property.getSetOnce
 	  (Var.plist, Property.initFun (fn _ => VarInfo.new NONE))
-      fun nonLocal x = VarInfo.isLocal (varInfo x) := false
-      fun isLocal x = VarInfo.isLocal' (varInfo x)
+      fun nonLocal x = VarInfo.nonLocal (varInfo x)
+      fun isLocal x = VarInfo.isLocal (varInfo x)
 
       (* labelInfo *)
       val {get = labelInfo: Label.t -> LabelInfo.t, 
 	   set = setLabelInfo, ...}
 	= Property.getSetOnce
-	  (Label.plist, Property.initRaise ("LocalRef.labelInfo", Label.layout))
+	  (Label.plist, Property.initRaise ("localRef.labelInfo", Label.layout))
 
       val functions
 	= List.revMap
@@ -259,18 +305,16 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 				(s: Statement.t as Statement.T {var, ty, exp})
 	       = let
 		   val li = labelInfo label
-		   fun setReff isRef
+		   fun setReff ()
 		     = Option.app
 		       (var, fn var =>
-			if isRef
-			  then let
-				 val reff = SOME (label, Type.deref ty)
-			       in
-				 setVarInfo (var, VarInfo.new reff) ;
-				 List.push (LabelInfo.reffs li, var) ;
-				 List.push (refs, var)
-			       end
-			  else setVarInfo (var, VarInfo.new NONE))
+			let
+			  val vi = VarInfo.new (SOME (label, Type.deref ty))
+			  val _ = setVarInfo (var, vi)
+			in
+			  List.push (LabelInfo.reffs li, var) ;
+			  List.push (refs, var)
+			end)
 		   fun setAssign var
 		     = (List.push (VarInfo.assigns (varInfo var), label) ;
 			List.push (LabelInfo.assigns li, var))
@@ -286,15 +330,13 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 			   fun arg n = Vector.sub (args, n)
 			 in
 			   case Prim.name prim
-			     of Ref_ref => (setReff true; default ())
-			      | Ref_assign => (setReff false;
-					       setAssign (arg 0); 
+			     of Ref_ref => (setReff (); default ())
+			      | Ref_assign => (setAssign (arg 0); 
 					       nonLocal (arg 1))
-			      | Ref_deref => (setReff false;
-					      setDeref (arg 0))
-			      | _ => (setReff false; default ())
+			      | Ref_deref => setDeref (arg 0)
+			      | _ => default ()
 			 end
-		    | _ => (setReff false; default ())
+		      | _ => default ()
 		 end
 	     fun visitBlock (Block.T {label, args, statements, transfer, ...})
 	       = let
@@ -303,10 +345,67 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 		   val _ = Vector.foreach (statements, visitStatement label)
 		   val _ = Transfer.foreachVar (transfer, nonLocal)
 		 in
-		   ignore
+		   if usesThreadsOrConts
+		     then fn () => Transfer.foreachLabel
+		                   (transfer, fn l =>
+				    List.push (LabelInfo.preds (labelInfo l), label))
+		     else fn () => ()
 		 end
 	     val _ = Function.dfs (f, visitBlock)
 	     val refs = List.keepAll (!refs, isLocal)
+
+	     (* Thread criteria *)
+	     val refs
+	       = if usesThreadsOrConts
+		   then (List.foreach
+			 (refs, fn x =>
+			  let
+			    val vi = varInfo x
+			    val def = #1 (valOf (VarInfo.reff vi))
+			    val assigns = VarInfo.assigns' vi
+			    val derefs = VarInfo.derefs' vi
+
+			    fun doit (threadCopyCurrent, uses)
+			      = let
+				  val visited = ref []
+				  fun doit' l
+				    = let
+					val li = labelInfo l
+				      in
+					if LabelInfo.visited' li
+					  then ()
+					  else (List.push (visited, l);
+						LabelInfo.visited li := true;
+						if labelDoesThreadCopyCurrent l
+						  then threadCopyCurrent := true
+						  else ();
+						if Label.equals (def, l)
+						  then ()
+						  else List.foreach
+						       (LabelInfo.preds' li, doit'))
+				      end
+				  val _ = List.foreach 
+				          (uses, fn l =>
+					   List.foreach
+					   (LabelInfo.preds' (labelInfo l), doit'))
+				in
+				  List.foreach
+				  (!visited, fn l =>
+				   LabelInfo.visited (labelInfo l) := false)
+				end
+			    val _ = doit (VarInfo.threadCopyCurrentAssign vi,
+					  !(VarInfo.assigns vi))
+			    val _ = doit (VarInfo.threadCopyCurrentDeref vi,
+					  !(VarInfo.derefs vi))
+			  in
+			    if VarInfo.threadCopyCurrentAssign' vi
+			       andalso
+			       VarInfo.threadCopyCurrentDeref' vi
+			      then VarInfo.nonLocal vi
+			      else ()
+			  end);
+			 List.keepAll (refs, isLocal))
+		   else refs
 
 	     (* Escape early when there are no localizable refs *)
 	     val _ = if List.length refs = 0
@@ -316,7 +415,8 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 			      let
 				open Layout
 			      in
-				display (seq [Func.layout name,
+				display (seq [str "\n",
+					      Func.layout name,
 					      str " NoLocalRefs"])
 			      end);
 			     raise NoLocalRefs)
@@ -328,10 +428,16 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 		      let
 			open Layout
 		      in
-			display (seq [Func.layout name,
+			display (seq [str "\n",
+				      Func.layout name,
 				      str " LocalRefs: ",
-				      List.layout Var.layout (refs)])
-		      end);
+				      List.layout 
+				      (fn x =>
+				       seq [Var.layout x,
+					    str ": ",
+					    VarInfo.layout (varInfo x)])
+				      refs])
+		      end)
 
 	     (* Rewrite. *)
 	     fun rewriteStatement (s: Statement.t as Statement.T {var, ty, exp})
@@ -347,7 +453,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 			     = let
 				 val vi = varInfo rvar
 			       in
-				 if VarInfo.isLocal' vi
+				 if VarInfo.isLocal vi
 				   then Statement.T
 				        {var = SOME rvar,
 					 ty = #2 (valOf (VarInfo.reff vi)),
@@ -363,7 +469,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 			     = let
 				 val vi = varInfo rvar
 			       in
-				 if VarInfo.isLocal' vi
+				 if VarInfo.isLocal vi
 				   then let
 					in
 					  Statement.T
@@ -412,17 +518,23 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 				   blocks = blocks,
 				   returns = returns,
 				   raises = raises}
+(*
 	     val _ = Control.diagnostics
 	             (fn display =>
 		      display (Function.layout (f, fn _ => NONE)))
+*)
 	     val f = restore f
+(*
 	     val _ = Control.diagnostics
 	             (fn display =>
 		      display (Function.layout (f, fn _ => NONE)))
+*)
 	     val f = shrink f
+(*
 	     val _ = Control.diagnostics
 	             (fn display =>
 		      display (Function.layout (f, fn _ => NONE)))
+*)
 	   in
 	     f
 	   end
@@ -435,16 +547,4 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
     in
       program
     end
-
-fun usesConts p 
-  = Program.hasPrim (p, fn p => Prim.name p = Prim.Name.Thread_switchTo)
-
-structure NewOnce = NewOnce (S)
-
-val eliminate 
-  = fn p => (NewOnce.once p;
-	     if usesConts p
-	       then p
-	       else eliminate p)
-
 end
