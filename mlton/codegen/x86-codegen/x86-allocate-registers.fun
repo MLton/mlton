@@ -576,7 +576,7 @@ struct
 	        (case assembly
 		   of Assembly.Directive Directive.Reset => []
 		    | _ => hint,
-		 List.map
+		 List.revMap
 		 (hint',
 		  fn (memloc, register)
 		   => (register, [memloc], MemLocSet.empty)),
@@ -608,7 +608,7 @@ struct
 					    {src as Operand.MemLoc src', 
 					     dst as Operand.MemLoc dst',
 					     ...}))
-		   => List.map
+		   => List.revMap
 		      (hint,
 		       fn (hint_register,hint_memlocs,hint_ignore)
 		        => if List.contains(hint_memlocs, dst', MemLoc.eq)
@@ -868,7 +868,7 @@ struct
 		      registerAllocation = {entries, reserved, fltstack}: t}
 	= {assembly = AppendList.empty,
 	   registerAllocation = {entries = entries,
-				 reserved = List.removeAll
+				 reserved = List.revRemoveAll
 				            (reserved,
 					     fn register' 
 					      => Register.eq
@@ -880,7 +880,7 @@ struct
 		     registerAllocation = {entries, reserved, fltstack}: t}
 	= {assembly = AppendList.empty,
 	   registerAllocation = {entries = entries,
-				 reserved = List.removeAll
+				 reserved = List.revRemoveAll
 				            (reserved,
 					     fn register' 
 					     => List.contains
@@ -893,7 +893,7 @@ struct
 		    registerAllocation as {entries,
 					   reserved, 
 					   fltstack}: t}
-	= {entries = List.map(entries, map),
+	= {entries = List.revMap(entries, map),
 	   reserved = reserved,
 	   fltstack = fltstack}
 
@@ -901,7 +901,7 @@ struct
 		       registerAllocation as {entries, 
 					      reserved, 
 					      fltstack}: t}
-	= List.keepAll(entries, filter)
+	= List.revKeepAll(entries, filter)
 
       fun valueRegister {register,
 			 registerAllocation}
@@ -916,11 +916,11 @@ struct
 			  registerAllocation as {entries, 
 						 reserved, 
 						 fltstack}: t}
-	= List.keepAll(entries, 
-		       fn {register 
-			   = register' as Register.T {reg = reg',
-						      part = part'},...}
-		        => reg = reg')
+	= List.revKeepAll(entries, 
+			  fn {register 
+			      = register' as Register.T {reg = reg',
+							 part = part'},...}
+			   => reg = reg')
 
       fun fltvalueMap {map,
 		       registerAllocation as {entries, 
@@ -940,18 +940,18 @@ struct
 			     registerAllocation as {entries,
 						    reserved,
 						    fltstack} : t}
-	= List.keepAll(fltstack,
-		       fn {fltregister 
-			   = fltregister' as FltRegister.T i', ...}
-		        => i = i')
+	= List.revKeepAll(fltstack,
+			  fn {fltregister 
+			      = fltregister' as FltRegister.T i', ...}
+			   => i = i')
 
       fun update {value as {register,...},
 		  registerAllocation as {entries, reserved, fltstack}: t}
 	= {entries = let
 		       val entries 
-			 = List.removeAll(entries,
-					  fn {register = register',...} 
-					   => Register.eq(register,register'))
+			 = List.revRemoveAll(entries,
+					     fn {register = register',...} 
+					      => Register.eq(register,register'))
 		     in
 		       value::entries
 		     end,
@@ -988,9 +988,9 @@ struct
 
       fun delete {register,
 		  registerAllocation as {entries, reserved, fltstack}: t}
-	= {entries = List.removeAll(entries,
-				    fn {register = register',...}
-				     => Register.eq(register, register')),
+	= {entries = List.revRemoveAll(entries,
+				       fn {register = register',...}
+				        => Register.eq(register, register')),
 	   reserved = reserved,
 	   fltstack = fltstack}
       fun deletes {registers, registerAllocation: t}
@@ -1015,7 +1015,7 @@ struct
 						    weight,
 						    sync,
 						    commit}
-					         => {fltregister =
+						 => {fltregister =
 						     FltRegister.T (i + 1),
 						     memloc = memloc,
 						     weight = weight,
@@ -1233,7 +1233,7 @@ struct
       fun fltsavedMemLocs {saves: Operand.t list,
 			   registerAllocation: t} :
                           MemLoc.t list
-	= List.keepAllMap
+	= List.revKeepAllMap
 	  (saves,
 	   fn Operand.MemLoc m
 	    => (case fltallocated {memloc = m,
@@ -1245,7 +1245,7 @@ struct
       fun fltsupportedMemLocs {supports: Operand.t list,
 			       registerAllocation: t} :
 	                      MemLoc.t list
-	= List.keepAllMap
+	= List.revKeepAllMap
 	  (supports,
 	   fn Operand.MemLoc m
 	    => (case fltallocated {memloc = m,
@@ -1299,11 +1299,11 @@ struct
                              Register.t list
 	= case force
 	    of [] => Register.registers size
-	     | registers => List.keepAll(Register.registers size,
-					 fn register 
-					  => List.contains(registers, 
-							   register, 
-							   Register.eq))
+	     | registers => List.revKeepAll(Register.registers size,
+					    fn register 
+					     => List.contains(registers, 
+							      register, 
+							      Register.eq))
 
       fun chooseRegister {info as {futures as {pre = future, ...},
 				   hint,...}: Liveness.t,
@@ -1345,7 +1345,7 @@ struct
 		end
 
 	    val registers 
-	      = List.removeAll
+	      = List.revRemoveAll
 	        (registers,
 		 fn register'
 		  => List.exists
@@ -1359,10 +1359,10 @@ struct
 
 	    val values = valueFilter {filter = fn _ => true,
 				      registerAllocation = registerAllocation}
-	    val memlocs = List.map(values, #memloc)
+	    val memlocs = List.revMap(values, #memloc)
 
 	    val registers_costs
-	      = List.map
+	      = List.revMap
 	        (registers,
 		 fn register'
 		  => let
@@ -1554,9 +1554,9 @@ struct
 					 registerAllocation 
 					 = registerAllocation}
 	    val coincide_values
-	      = List.keepAll(values,
-			     fn value as {register = register',...}
-			      => Register.coincide(register',register))
+	      = List.revKeepAll(values,
+				fn value as {register = register',...}
+				 => Register.coincide(register',register))
 	  in
 	    {register = register,
 	     coincide_values = coincide_values}
@@ -1623,7 +1623,7 @@ struct
 			      val supports = supportRemove memloc
 
 			      val force
-				= List.removeAll
+				= List.revRemoveAll
 				  (Register.registers (MemLoc.size memloc),
 				   fn register'
 				    => Register.coincide(final_register,
@@ -1733,14 +1733,14 @@ struct
 							  = registerAllocation}
 
 		     val values
-		       = List.removeAll(values,
-					fn {memloc,...}
-					 => List.contains(saved,
-							  memloc,
-							  MemLoc.eq))
+		       = List.revRemoveAll(values,
+					   fn {memloc,...}
+					    => List.contains(saved,
+							     memloc,
+							     MemLoc.eq))
 
 		     val values_costs
-		       = List.map
+		       = List.revMap
 		         (values,
 			  fn value as {memloc,weight,sync,commit,...}
 			   => let
@@ -1884,7 +1884,7 @@ struct
 			               | _ => false, 
 			     registerAllocation = registerAllocation}
 
-	    val commit_memlocs = List.map(commit_values, #memloc)
+	    val commit_memlocs = List.revMap(commit_values, #memloc)
 
 	    val commit_memlocs
 	      = totalOrder
@@ -5157,7 +5157,7 @@ struct
 		 registerAllocation}
 	= let
 	    val supports
-	      = List.map
+	      = List.revMap
 	        (caches,
 		 fn {memloc, ...} => Operand.memloc memloc)
 
@@ -5165,7 +5165,7 @@ struct
 	      
 	    fun computeEdges' {reg,
 			       registerAllocation}
-	      = List.map
+	      = List.revMap
 	        (Register.coincident' reg,
 		 fn register'
 		  => let
@@ -5201,7 +5201,7 @@ struct
 		     end)
 
 	    fun computeEdges {registerAllocation}
-	      = List.map
+	      = List.revMap
 	        (Register.allReg,
 		 fn reg
 		  => (reg, computeEdges' {reg = reg,
@@ -5430,7 +5430,7 @@ struct
 		       fn ((reg, edges'), edges)
 		        => let
 			     val edges' 
-			       = List.removeAll
+			       = List.revRemoveAll
 			         (edges',
 				  fn (None, _, _, None) => true
 				   | _ => false)
@@ -5458,7 +5458,7 @@ struct
 
 	    val {assembly = assembly_reserve,
 		 registerAllocation}
-	      = reserve {registers = List.keepAllMap
+	      = reserve {registers = List.revKeepAllMap
                                      (caches, 
 				      fn {register, reserve, ...} 
 				       => if reserve 
@@ -5536,7 +5536,7 @@ struct
 		    registerAllocation}
 	= let
 	    val supports
-	      = List.map
+	      = List.revMap
 	        (caches,
 		 fn {memloc, ...} => Operand.memloc memloc)
 
@@ -6035,7 +6035,7 @@ struct
 					  MemLoc.mayAlias(return_memloc,
 							  memloc),
 			     registerAllocation = registerAllocation}
-	    val killed_memlocs = List.map(killed_values, #memloc)
+	    val killed_memlocs = List.revMap(killed_values, #memloc)
 
 	    val registerAllocation
 	      = removes {memlocs = killed_memlocs,
@@ -6777,7 +6777,7 @@ struct
 				    = registerAllocation}
 
 			       val force_src 
-				 = List.keepAll
+				 = List.revKeepAll
 				   (Register.registers size,
 				    fn r => not (Register.eq(r, hi) orelse 
 						 Register.eq(r, lo)))
@@ -8760,9 +8760,9 @@ struct
 			  = Instruction.uses_defs_kills instruction
 		    
 			val final_uses
-			  = List.map(final_uses, RA.fltrenameLift fltrename_pop)
+			  = List.revMap(final_uses, RA.fltrenameLift fltrename_pop)
 			val final_defs
-			  = List.map(final_defs, RA.fltrenameLift fltrename_pop)
+			  = List.revMap(final_defs, RA.fltrenameLift fltrename_pop)
 
 			val {assembly = assembly_post,
 			     registerAllocation}
@@ -9131,9 +9131,9 @@ struct
 			  = Instruction.uses_defs_kills instruction
  
 			val final_uses
-			  = List.map(final_uses, RA.fltrenameLift fltrename_pop)
+			  = List.revMap(final_uses, RA.fltrenameLift fltrename_pop)
 			val final_defs
-			  = List.map(final_defs, RA.fltrenameLift fltrename_pop)
+			  = List.revMap(final_defs, RA.fltrenameLift fltrename_pop)
 
 			val {assembly = assembly_post,
 			     registerAllocation}
@@ -9385,9 +9385,9 @@ struct
 		    = Instruction.uses_defs_kills instruction
 		    
 		  val final_uses
-		    = List.map(final_uses, RA.fltrenameLift fltrename_pop)
+		    = List.revMap(final_uses, RA.fltrenameLift fltrename_pop)
 		  val final_defs
-		    = List.map(final_defs, RA.fltrenameLift fltrename_pop)
+		    = List.revMap(final_defs, RA.fltrenameLift fltrename_pop)
 
 		  val {assembly = assembly_post,
 		       registerAllocation}
@@ -9640,9 +9640,9 @@ struct
 		    = Instruction.uses_defs_kills instruction
 		    
 		  val final_uses
-		    = List.map(final_uses, RA.fltrenameLift fltrename_pop)
+		    = List.revMap(final_uses, RA.fltrenameLift fltrename_pop)
 		  val final_defs
-		    = List.map(final_defs, RA.fltrenameLift fltrename_pop)
+		    = List.revMap(final_defs, RA.fltrenameLift fltrename_pop)
 
 		  val {assembly = assembly_post,
 		       registerAllocation}
@@ -10115,9 +10115,9 @@ struct
 		    = Instruction.uses_defs_kills instruction
 		    
 		  val final_uses
-		    = List.map(final_uses, RA.fltrenameLift fltrename_pop)
+		    = List.revMap(final_uses, RA.fltrenameLift fltrename_pop)
 		  val final_defs
-		    = List.map(final_defs, RA.fltrenameLift fltrename_pop)
+		    = List.revMap(final_defs, RA.fltrenameLift fltrename_pop)
 
 		  val {assembly = assembly_post,
 		       registerAllocation}
@@ -10420,9 +10420,9 @@ struct
 		    = Instruction.uses_defs_kills instruction
 		    
 		  val final_uses
-		    = List.map(final_uses, RA.fltrenameLift fltrename_pop)
+		    = List.revMap(final_uses, RA.fltrenameLift fltrename_pop)
 		  val final_defs
-		    = List.map(final_defs, RA.fltrenameLift fltrename_pop)
+		    = List.revMap(final_defs, RA.fltrenameLift fltrename_pop)
 
 		  val {assembly = assembly_post,
 		       registerAllocation}
