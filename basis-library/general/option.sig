@@ -1,7 +1,9 @@
 signature OPTION_GLOBAL =
    sig
       datatype 'a option = NONE | SOME of 'a 
+
       exception Option
+
       val getOpt: 'a option * 'a -> 'a 
       val isSome: 'a option -> bool 
       val valOf: 'a option -> 'a 
