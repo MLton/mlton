@@ -7,7 +7,7 @@ void decommit (void *base, size_t length) {
 }
 
 HANDLE fileDesHandle (int fd) {
-	return _get_osfhandle (fd);
+	return (HANDLE)(_get_osfhandle (fd));
 }
 
 int getpagesize (void) {
@@ -207,7 +207,7 @@ long fpathconf (int filedes, int name) {
 }
 
 int ftruncate (int fd, off_t length) {
-	die ("ftruncate not implemented");
+	return _chsize (fd, length);
 }
 
 int link (const char *oldpath, const char *newpath) {
@@ -248,7 +248,7 @@ int fcntl (int fd, int cmd, ...) {
 }
 
 int fsync (int fd) {
-	die ("fsync not implemented");
+	return _commit (fd);
 }
 
 int pipe (int filedes[2]) {

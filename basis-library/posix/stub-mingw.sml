@@ -23,7 +23,6 @@ in
 	       val chown = stub ("chown", chown)
 	       val fchown = stub ("fchown", fchown)
 	       val fpathconf = stub ("fpathconf", fpathconf)
-	       val ftruncate = stub ("ftruncate", ftruncate)
 	       val link = stub ("link", link)
 	       val mkfifo = stub ("mkfifo", mkfifo)
 	       val pathconf = stub ("pathconf", pathconf)
