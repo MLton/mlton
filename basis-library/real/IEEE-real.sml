@@ -55,11 +55,26 @@ structure IEEEReal: IEEE_REAL_EXTRA =
 	    res
 	 end
 
-      type decimal_approx = {class: float_class,
-			     digits: int list,
-			     exp: int,
-			     sign: bool}
+      structure DecimalApprox =
+	 struct
+	    type t = {class: float_class,
+		      digits: int list,
+		      exp: int,
+		      sign: bool}
 
+	    val inf: t = {class = INF,
+			  digits = [],
+			  exp = 0,
+			  sign = false}
+
+	    val zero: t = {class = ZERO,
+			   digits = [],
+			   exp = 0,
+			   sign = false}
+	 end
+
+      type decimal_approx = DecimalApprox.t
+	 
       fun 'a scan reader (state: 'a) =
 	 let
 	    val state = StringCvt.skipWS reader state
@@ -174,7 +189,6 @@ structure IEEEReal: IEEE_REAL_EXTRA =
 	       end
 	    fun stripTrailingZeros ds =
 	       rev (#2 (stripLeadingZeros (rev ds)))
-	    exception Inf of 'a
 	    fun done (whole: int list,
 		      frac: int list,
 		      {digits: int list, negate: bool},
@@ -182,33 +196,41 @@ structure IEEEReal: IEEE_REAL_EXTRA =
 	       let
 		  val (_, il) = stripLeadingZeros whole
 		  val fl = stripTrailingZeros frac
-		  fun exp (): int =
-		     let
-			val e = List.foldl (fn (d, n) => n * 10 + d) 0 digits
-		     in
-			if negate then Int.~ e else e
-		     end handle Overflow => raise Inf state
+		  datatype exp =
+		     Int of int
+		   | Overflow of DecimalApprox.t
+		  val exp =
+		     case (SOME (List.foldl (fn (d, n) => n * 10 + d) 0 digits)
+			   handle General.Overflow => NONE) of
+			NONE => Overflow (if negate
+					     then DecimalApprox.zero
+					  else DecimalApprox.inf)
+		      | SOME i => Int i
 		  val da =
 		     case il of
 			[] =>
 			   (case fl of
-			       [] => {class = ZERO,
-				      digits = [],
-				      exp = 0,
-				      sign = false}
+			       [] => DecimalApprox.zero
 			     | _ =>
-				  let
-				     val (m, fl) = stripLeadingZeros fl
-				  in
-				     {class = NORMAL,
-				      digits = fl,
-				      exp = exp () - m,
-				      sign = false}
-				  end)
-		      | _ => {class = NORMAL,
-			      digits = stripTrailingZeros (il @ fl),
-			      exp = exp () + length il,
-			      sign = false}
+				  case exp of
+				     Int e =>
+					let
+					   val (m, fl) = stripLeadingZeros fl
+					in
+					   {class = NORMAL,
+					    digits = fl,
+					    exp = e - m,
+					    sign = false}
+					end
+				   | Overflow da => da)
+		      | _ =>
+			   case exp of
+			      Int e =>
+				 {class = NORMAL,
+				  digits = stripTrailingZeros (il @ fl),
+				  exp = e + length il,
+				  sign = false}
+			    | Overflow da => da
 	       in
 		  SOME (da, state)
 	       end
@@ -266,13 +288,6 @@ structure IEEEReal: IEEE_REAL_EXTRA =
 				     | _ => no ()
 			   end
 		     else NONE
-	    val normal' =
-	       fn z => normal' z
-	       handle Inf state => SOME ({class = INF,
-					  digits = [],
-					  exp = 0,
-					  sign = false},
-					 state)
 	    fun normal state =
 	       case reader state of
 		  NONE => NONE
