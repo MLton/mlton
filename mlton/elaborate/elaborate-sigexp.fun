@@ -375,16 +375,24 @@ fun elaborateSigexp (sigexp: Sigexp.t, E: StructureEnv.t): Interface.t option =
 		      (equations, fn eqn =>
 		       case Equation.node eqn of
 			  Equation.Structure ss =>
-			     ignore
-			     (List.fold
-			      (ss, NONE, fn (s', io) =>
-			       case (io, Env.lookupLongstrid (E, s')) of
-				  (NONE, NONE) => NONE
-				| (SOME _, NONE) => io
-				| (NONE, SOME I') => SOME (I', s')
-				| (SOME (I, s), SOME I') =>
-				     (Interface.share (I, s, I', s', time)
-				      ; SOME (I', s'))))
+			     let
+				(* The following implements the "all pairs"
+				 * sharing as specified in G.3.3.
+				 *)
+				fun loop Is =
+				   case Is of
+				      [] => ()
+				    | (s, I) :: Is =>
+					 List.foreach 
+					 (Is, fn (s', I') =>
+					  Interface.share (I, s, I', s', time))
+			     in
+				loop (List.fold
+				      (ss, [], fn (s, ac) =>
+				       case Env.lookupLongstrid (E, s) of
+					  NONE => ac
+					| SOME I => (s, I) :: ac))
+			     end
 			| Equation.Type cs =>
 			     ignore
 			     (List.fold
