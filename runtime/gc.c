@@ -157,7 +157,7 @@ static void *ssmmap (size_t length, size_t dead_low, size_t dead_high) {
 		diee ("mprotect failed");
 	result = low + dead_low;
 	high = result + length;
-	if (mprotect(high, dead_high, PROT_NONE))
+	if (mprotect (high, dead_high, PROT_NONE))
 		diee ("mprotect failed");
 	return result;
 }
