@@ -241,12 +241,17 @@ structure Immediate =
 	 let
 	    open Layout
 	    fun call () = (message (seq [str name, str " ==> ",
-				      outArg ()
-				      handle _ => str "<layout argument error>"])
+					 outArg ()
+					 handle e =>
+					    seq [str "layout argument error: ",
+						 Exn.layout e]])
 			   ; right ())
 	    fun raisee (t, e) = finish (t, seq [str "raise: ", Exn.layout e])
 	    fun return (ans, t) =
-	       finish (t, layoutAns ans handle _ => str "<layout answer error>")
+	       finish (t,
+		       layoutAns ans
+		       handle e => seq [str "layout answer error: ",
+					Exn.layout e])
 	 in {call = call,
 	     raisee = raisee,
 	     return = return}
