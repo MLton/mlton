@@ -53,10 +53,10 @@ On {\intel}, the default is {\tt 4} and on {\sparc} the default is
 \option{-cc-opt {\it option}}
 Pass the option to {\tt gcc} when compiling C code.
 
-\option{-codegen \choiceTwo{native}{c}}
-Generate native code , as opposed to generating C and using {\tt gcc}.
-With {\tt -codegen native}, {\mlton} typically compiles more quickly and
-generates better code.
+\option{-codegen \choiceThree{native}{bytecode}{c}}
+Generate native code, byte code, or C code.  With {\tt -codegen
+native}, {\mlton} typically compiles more quickly and generates better
+code.
 
 \option{-const '{\it name} {\it value}'}
 Set the value of a compile-time constant.  Here is a list of available

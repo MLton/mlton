@@ -1,4 +1,4 @@
-.TH mlton 1 "February 27, 2004"
+.TH mlton 1 "November 9, 2004"
 .SH NAME
 \fBmlton\fP \- whole-program compiler for the Standard ML (SML) programming
 language
@@ -55,8 +55,8 @@ On x86, the default is \fB4\fP and on Sparc the default is
 Pass the option to \fBgcc\fP when compiling C code.
 
 .TP
-\fB-codegen \fI{\fBnative\fI|\fBc\fI}\fR
-Generate native code or generate C and use \fBgcc\fP.  With \fB-codegen
+\fB-codegen \fI{\fBnative\fI|\fBbytecode|\fBc\fI}\fR
+Generate native code, byte code, or C code.  With \fB-codegen
 native\fP, \fBMLton\fP typically compiles more quickly and generates
 better code.
 
@@ -77,9 +77,7 @@ construction, raise, and handle.
 \fB-default-ann \fIanns\fR
 Specify the default annotation values for \fBmlb\fP files.  For
 example, \fB-default-ann 'warnUnused true'\fP 
-causes unused variable warnings to be enabled by default.  You can
-supply multiple annotations separated by commas, as in 
-\fB-default-ann 'sequenceUnit true, warnUnused true'\fP.
+causes unused variable warnings to be enabled by default.
 Defaults may be overridden by an annotation in an \fBmlb\fP file.
 
 .TP
@@ -159,13 +157,6 @@ will be processed before other \fB@MLton\fP command line switches.
 Multiple uses of \fB-runtime\fP are allowed, and will pass all the
 arguments in order.  If the same runtime switch occurs more than once,
 then the last setting will dominate, except for \fBno-load-world\fP.
-
-.TP
-\fB-sequence-unit \fI{\fBfalse\fP|\fBtrue\fP}\fR
-If true, then in the sequence expression \fB(e1; e2)\fP, it is a type
-error if \fBe1\fP is not of type \fB unit\fP.  This can be helpful in
-detecting curried applications that are mistakenly not fully applied.
-To silence spurious errors, you can use \fBignore e1\fP.
 
 .TP
 \fB-show-basis \fIfile\fR
