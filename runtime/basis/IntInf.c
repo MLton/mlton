@@ -354,6 +354,8 @@ IntInf_do_toString(pointer arg, int base, uint bytes)
 	mp_limb_t	argspace[2];
 	char		*str;
 	uint		size;
+	int		i;
+	char		c;
 
 	assert(base == 2 || base == 8 || base == 10 || base == 16);
 	fill(arg, &argmpz, argspace);
@@ -363,6 +365,12 @@ IntInf_do_toString(pointer arg, int base, uint bytes)
 	size = strlen(str);
 	if (*sp->chars == '-')
 		*sp->chars = '~';
+        if (base > 0)
+		for (i = 0; i < size; i++) {
+			c = sp->chars[i];
+			if (('a' <= c) && (c <= 'z'))
+				sp->chars[i] = c + ('A' - 'a');
+		}
 	sp->counter = 0;
 	sp->card = size;
 	sp->magic = STRMAGIC;
