@@ -123,7 +123,10 @@ structure Operand =
 	     | Var {var, ty} => seq [Var.layout var, constrain ty]
 	 end
 
-      val cast = Cast
+      fun cast (z: t, t: Type.t): t =
+	 if Type.equals (t, ty z)
+	    then z
+	 else Cast (z, t)
 
       val cast = Trace.trace2 ("Operand.cast", layout, Type.layout, layout) cast
 
