@@ -237,6 +237,7 @@ typedef struct GC_state {
 	ullong bytesAllocated;
  	ullong bytesCopied;
  	uint numGCs; 
+ 	ullong numLCs; 
  	struct rusage ru_gc; /* total resource usage spent in gc */
 	uint maxPause;  /* max time spent in any gc in milliseconds. */
  	uint startTime; /* the time when GC_init or GC_loadWorld is called */

@@ -154,6 +154,10 @@ signature X86_MLTON_BASIC =
     val gcState_canHandleContentsOperand : x86.Operand.t
     val gcState_signalIsPendingContents : x86.MemLoc.t
     val gcState_signalIsPendingContentsOperand : x86.Operand.t
+    val gcState_numLCsLowContents : x86.MemLoc.t
+    val gcState_numLCsLowContentsOperand : x86.Operand.t
+    val gcState_numLCsHighContents : x86.MemLoc.t
+    val gcState_numLCsHighContentsOperand : x86.Operand.t
 
     (*
      * GC related constants and functions

@@ -997,6 +997,7 @@ GC_initCounters(GC_state s)
 	s->maxStackSizeSeen = 0;
 	s->maxBytesLive = 0;
 	s->numGCs = 0;
+	s->numLCs = 0;
 	s->savedThread = BOGUS_THREAD;
 	s->signalHandler = BOGUS_THREAD;
 	sigemptyset(&s->signalsHandled);
@@ -1432,6 +1433,7 @@ GC_done (GC_state s)
 			: 100.0 * ((double) gcTime) / time);
 		displayUint("maxPause(ms)", s->maxPause);
 		displayUint("number of GCs", s->numGCs);
+		displayUllong("number of LCs", s->numLCs);
 		displayUllong("bytes allocated",
 	 			s->bytesAllocated 
 				+ (s->frontier - s->base - s->bytesLive));

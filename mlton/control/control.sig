@@ -76,6 +76,9 @@ signature CONTROL =
       (* List of pass names to save the result of. *)
       val keepPasses: string list ref
 
+      (* Whether or not dynamic counts of limit checks are computed. *)
+      val limitCheckCounts: bool ref
+
       (* Whether or not limit checks are forced to occur every block -- thus
        * hopefully avoiding a bug in limit check insertion when it attempts
        * to coalesce checks across blocks.

@@ -573,6 +573,27 @@ struct
   val gcState_signalIsPendingContentsOperand
     = Operand.memloc gcState_signalIsPendingContents
 
+  val gcState_numLCsLow
+    = Immediate.binexp {oper = Immediate.Addition,
+			exp1 = Immediate.label gcState,
+			exp2 = Immediate.const_int 424}
+  val gcState_numLCsLowContents
+    = makeContents {base = gcState_numLCsLow,
+		    size = wordSize,
+		    class = Classes.GCState}
+  val gcState_numLCsLowContentsOperand
+    = Operand.memloc gcState_numLCsLowContents
+  val gcState_numLCsHigh
+    = Immediate.binexp {oper = Immediate.Addition,
+			exp1 = Immediate.label gcState,
+			exp2 = Immediate.const_int 428}
+  val gcState_numLCsHighContents
+    = makeContents {base = gcState_numLCsHigh,
+		    size = wordSize,
+		    class = Classes.GCState}
+  val gcState_numLCsHighContentsOperand
+    = Operand.memloc gcState_numLCsHighContents
+
   (*
    * GC related constants and functions
    *)

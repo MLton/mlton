@@ -638,6 +638,23 @@ struct
 	    [x86.Block.T'
 	     {entry = NONE,
 	      profileInfo = x86.ProfileInfo.none,
+	      statements = 
+	      if !Control.limitCheckCounts
+		then [x86.Assembly.instruction_binal
+		      {oper = x86.Instruction.ADD,
+		       src = x86.Operand.immediate_const_int 1,
+		       dst = x86MLton.gcState_numLCsLowContentsOperand,
+		       size = x86.Size.LONG},
+		      x86.Assembly.instruction_binal
+		      {oper = x86.Instruction.ADC,
+		       src = x86.Operand.immediate_const_int 0,
+		       dst = x86MLton.gcState_numLCsHighContentsOperand,
+		       size = x86.Size.LONG}]
+		else [],
+	      transfer = NONE},
+	     x86.Block.T'
+	     {entry = NONE,
+	      profileInfo = x86.ProfileInfo.none,
 	      statements = computeBytes,
 	      transfer = SOME (x86.Transfer.goto {target = checkForce})},
 	     let

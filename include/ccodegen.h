@@ -320,6 +320,7 @@ int main(int argc, char **argv) {					\
 		declareFirst;						\
 									\
 /*		fprintf(stderr, "%d  LimitCheck\n", __LINE__); 	*/	\
+		gcState.numLCs++;					\
 		if (GC_EVERY_CHECK					\
 		or (GC_FIRST_CHECK and gc_first)			\
 		or frontier + (b) > gcState.limit			\

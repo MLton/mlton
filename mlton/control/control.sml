@@ -150,6 +150,10 @@ val keepPasses = control {name = "keep passes",
 			  default = [],
 			  toString = List.toString (fn s => s)}
 
+val limitCheckCounts = control {name = "limit check counts",
+				default = false,
+				toString = Bool.toString}
+
 val limitCheckPerBlock = control {name = "limit check per block",
 				  default = false,
 				  toString = Bool.toString}

@@ -1171,33 +1171,42 @@ struct
 					 size})]],
 		finish, 
 		transfer}
-	     => let
-		  val oper
-		    = case (oper, getImmediate1 (Immediate.destruct immediate))
-		        of (Instruction.ADD, SOME false) => Instruction.INC
-		         | (Instruction.ADD, SOME true ) => Instruction.DEC
-		         | (Instruction.SUB, SOME false) => Instruction.DEC
-		         | (Instruction.SUB, SOME true ) => Instruction.INC
-			 | _ => Error.bug "elimAddSub1"
+	     => if case finish
+		     of (Assembly.Instruction 
+			 (Instruction.BinAL
+			  {oper = Instruction.ADC, ...}))::_ => false
+		      | (Assembly.Instruction 
+			 (Instruction.BinAL
+			  {oper = Instruction.SBB, ...}))::_ => false
+		      | _ => true
+		  then let
+			 val oper
+			   = case (oper, getImmediate1 (Immediate.destruct immediate))
+			       of (Instruction.ADD, SOME false) => Instruction.INC
+				| (Instruction.ADD, SOME true ) => Instruction.DEC
+				| (Instruction.SUB, SOME false) => Instruction.DEC
+				| (Instruction.SUB, SOME true ) => Instruction.INC
+				| _ => Error.bug "elimAddSub1"
 
-		  val statements
-		    = (Assembly.instruction_unal
-		       {oper = oper,
-			dst = dst,
-			size = size})::
-		      finish
+			 val statements
+			   = (Assembly.instruction_unal
+			      {oper = oper,
+			       dst = dst,
+			       size = size})::
+			     finish
 
-		  val statements
-		    = List.fold(start,
-				statements,
-				op ::)
-		in 
-		  SOME (Block.T
-			{entry = entry,
-			 profileInfo = profileInfo,
-			 statements = statements,
-			 transfer = transfer})
-		end
+			 val statements
+			   = List.fold(start,
+				       statements,
+				       op ::)
+		       in 
+			 SOME (Block.T
+			       {entry = entry,
+				profileInfo = profileInfo,
+				statements = statements,
+				transfer = transfer})
+		       end
+		  else NONE
 	     | _ => Error.bug "Peephole: elimAddSub1"
  
 	val (callback,elimAddSub1_msg) 
