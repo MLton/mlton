@@ -3,8 +3,6 @@ signature MLTON_SIGNAL =
       type t
       type signal = t
 
-      val sigismember : signal -> int;
-
       structure Handler:
 	 sig
 	    type t
@@ -25,6 +23,7 @@ signature MLTON_SIGNAL =
 	    val allBut: signal list -> t
 	    val block: t -> unit
 	    val getBlocked: unit -> t
+	    val handled: unit -> t
 	    val isMember: t * signal -> bool
 	    val none: t
 	    val setBlocked: t -> unit
@@ -33,7 +32,6 @@ signature MLTON_SIGNAL =
 	 end
 
       val getHandler: t -> Handler.t
-      val handlers: Handler.t array
       val prof: t
       val setHandler: t * Handler.t -> unit
       (* suspend m temporarily sets the signal mask to m and suspends until an

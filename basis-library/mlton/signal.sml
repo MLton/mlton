@@ -14,8 +14,6 @@ structure Error = PosixError
 
 type t = signal
 
-val sigismember = Prim.sigismember
-
 val prof = Prim.prof
 val vtalrm = Prim.vtalrm
 
@@ -114,7 +112,7 @@ in
       else InvalidSignal
 end
 
-val (getHandler, set, handlers) =
+val (getHandler, setHandler, handlers) =
    let
       val handlers = Array.tabulate (Prim.numSignals, initHandler o fromInt)
       val _ =
@@ -130,6 +128,19 @@ val (getHandler, set, handlers) =
    end
 
 val gcHandler = ref Ignore
+
+structure Mask =
+   struct
+      open Mask
+
+      fun handled () =
+	 Mask.some
+	 (Array.foldri
+	  (fn (s, h, sigs) =>
+	   case h of 
+	      Handler _ => (fromInt s)::sigs
+	    | _ => sigs) [] handlers)
+   end
    
 structure Handler =
    struct
@@ -160,13 +171,7 @@ structure Handler =
 	       (fn t =>
 		let
 		   val mask = Mask.getBlocked ()
-		   val () =
-		      (Mask.block o Mask.some)
-		      (Array.foldri
-		       (fn (s, h, sigs) =>
-			case h of 
-			   Handler _ => (fromInt s)::sigs
-			 | _ => sigs) [] handlers)
+		   val () = Mask.block (Mask.handled ())
 		   val fs = 
 		      case !gcHandler of
 			 Handler f => if Prim.isGCPending () then [f] else []
@@ -190,22 +195,22 @@ structure Handler =
       fun simple f = handler (fn t => (f (); t))
    end
 
-fun setHandler (s, h) =
+val setHandler = fn (s, h) =>
    case (getHandler s, h) of
       (InvalidSignal, _) => raiseInval ()
     | (_, InvalidSignal) => raiseInval ()
     | (Default, Default) => ()
     | (_, Default) => 
-	 (set (s, Default)
+	 (setHandler (s, Default)
 	  ; checkResult (Prim.default s))
     | (Handler _, Handler _) =>
-	 set (s, h)
+	 setHandler (s, h)
     | (_, Handler _) =>
-	 (set (s, h)
+	 (setHandler (s, h)
 	  ; checkResult (Prim.handlee s))
     | (Ignore, Ignore) => ()
     | (_, Ignore) => 
-	 (set (s, Ignore)
+	 (setHandler (s, Ignore)
 	  ; checkResult (Prim.ignore s))
 
 fun suspend m =
