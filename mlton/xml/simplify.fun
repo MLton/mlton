@@ -115,21 +115,27 @@ structure Value =
 
 fun simplifyOnce (Program.T {datatypes, body, overflow}) =
    let
-      (* before implementExceptions, the exn tycon has no definition *)
-      exception TyconDef
-      val {get = tyconInfo: Tycon.t -> int, set = setTyconInfo, ...} =
-	 Property.getSetOnce
-	 (Tycon.plist, Property.initFun (fn _ => raise TyconDef))
-      val {get = conInfo: Con.t -> int, set = setConInfo, ...} =
-	 Property.getSetOnce
-	 (Con.plist, Property.initRaise ("simplify conInfo", Con.layout))
-      val _ = 
+      (* Keep track of the number of constuctors in each datatype so that
+       * we can eliminate redundant defaults.
+       *)
+      val {get = conNumCons: Con.t -> int , set = setConNumCons, ...} =
+	 Property.getSetOnce (Con.plist,
+			      Property.initRaise ("numCons", Con.layout))
+      val _ =
 	 Vector.foreach
-	 (datatypes, fn {tycon, cons, ...} =>
-	  (setTyconInfo (tycon, Vector.length cons)
-	   ; Vector.foreachi
-	     (cons, fn (i, {con, ...}) => 
-	      setConInfo (con, i))))
+	 (datatypes, fn {cons, ...} =>
+	  let
+	     val n = Vector.length cons
+	  in
+	     Vector.foreach (cons, fn {con, ...} => setConNumCons (con, n))
+	  end)
+      fun isExhaustive (cases: exp Cases.t): bool =
+	 case cases of
+	    Cases.Con v =>
+	       0 < Vector.length v
+	       andalso (Vector.length v
+			= conNumCons (Pat.con (#1 (Vector.sub (v, 0)))))
+	  | _ => false
       val {get = varInfo: Var.t -> VarInfo.t, set = setVarInfo, ...} =
 	 Property.getSet (Var.plist,
 			  Property.initRaise ("simplify varInfo", Var.layout))
@@ -412,11 +418,19 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
 			in Vector.fold' (cases, 0, (), step, done)
 			end
 		     fun normal test =
-			expansive
-			(Case {test = test,
-			       cases = Cases.map (cases, simplifyExp),
-			       default = Option.map (default,
-						     simplifyExp)})
+			let
+			   (* Eliminate redundant default case. *)
+			   val default =
+			      if isExhaustive cases
+				 then (Option.app (default, deleteExp)
+				       ; NONE)
+			      else Option.map (default, simplifyExp)
+			in
+			   expansive
+			   (Case {test = test,
+				  cases = Cases.map (cases, simplifyExp),
+				  default = default})
+			end
 		  in case varExpInfo test of
 		     VarInfo.Poly test => normal test
 		   | VarInfo.Mono {ty, value, varExp, ...} => 
@@ -437,28 +451,6 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
 				 (fn SOME (x, _) => (replace (x, v); true)
 			       | _ => false)
 			   end
-			  | (Cases.Con cases, NONE) =>
-			       (let
-				   val tycon = case Type.dest ty of
-				                  Type.Con (tycon, _) => tycon
-						| _ => Error.bug "expected Con"
-				   val cons = Array.array (tyconInfo tycon, false)
-				   val cases =
-				      Vector.map
-				      (cases, fn (pat as Pat.T {con, ...}, exp) =>
-				       (Array.update (cons, conInfo con, true)
-					; (pat, simplifyExp exp)))
-				   val default =
-				      if Array.forall (cons, fn b => b)
-				         then NONE
-				      else Option.map (default, simplifyExp)
-				in
-				   expansive
-				   (Case {test = varExp,
-					  cases = Cases.Con cases,
-					  default = default})
-				end
-				handle TyconDef => normal varExp)
 			  | (_, SOME (Value.Const c)) =>
 			       let
 				  fun doit (l, z) = match (l, fn z' => z = z')
@@ -492,6 +484,8 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
 	 Option.map (overflow, fn x =>
 		     VarExp.var (VarInfo.varExp (varInfo x)))
       val _ = Exp.clear body
+      val _ = Vector.foreach (datatypes, fn {cons, ...} =>
+			      Vector.foreach (cons, Con.clear o #con))
    in
       Program.T {datatypes = datatypes,
 		 body = body,
