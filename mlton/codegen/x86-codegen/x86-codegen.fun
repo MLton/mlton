@@ -128,13 +128,14 @@ struct
 	      outputS}: unit
     = let
 	 val reserveEsp =
-	    (* There is no sigaltstack on cygwin, so if the program handles
-	     * signals, we need to reserve %esp to hold the C stack pointer.
+	    (* There is no sigaltstack on cygwin, we need to reserve %esp to
+	     * hold the C stack pointer.  We need to do this even in programs
+	     * that don't handle signals, since signals get used under the hood
+	     * in Cygwin.
 	     *)
-(*	    handlesSignals
-	    andalso *) (case !Control.hostType of
-			Control.Cygwin => true
-		      | Control.Linux => false)
+	    case !Control.hostType of
+	       Control.Cygwin => true
+	     | Control.Linux => false
 
 	val makeC = outputC
 	val makeS = outputS
