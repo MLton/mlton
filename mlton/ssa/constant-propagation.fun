@@ -514,9 +514,10 @@ val traceMakeDataUnknown =
 (*                     simplify                      *)
 (* ------------------------------------------------- *)
 
-fun simplify (program as Program.T {datatypes, globals, functions, main})
-   : Program.t =
+fun simplify (program: Program.t): Program.t =
    let
+      val program as Program.T {datatypes, globals, functions, main} =
+	 eliminateDeadBlocks program
       val {varIsMultiDefed, ...} = Multi.multi program
       val once = not o varIsMultiDefed
       val {get = conInfo: Con.t -> {result: Type.t,

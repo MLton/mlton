@@ -12,8 +12,6 @@ open S
 datatype z = datatype Exp.t
 datatype z = datatype Transfer.t
 
-fun equalss (ts, ts') = List.equals (ts, ts', Type.equals)
-
 structure Graph = DirectedGraph
 structure Node = Graph.Node
 

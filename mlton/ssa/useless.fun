@@ -361,8 +361,10 @@ structure Value =
 
 structure Exists = Value.Exists
 
-fun useless (program as Program.T {datatypes, globals, functions, main}) =
+fun useless (program: Program.t): Program.t =
    let
+      val program as Program.T {datatypes, globals, functions, main} =
+	 eliminateDeadBlocks program
       val {get = conInfo: Con.t -> {args: Value.t vector,
 				    argTypes: Type.t vector,
 				    value: unit -> Value.t},
@@ -445,7 +447,7 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
 
 	 type value = t
 
-	 fun primApp {prim, targs, args: t vector, resultVar, resultType} =
+	 fun primApp {prim, targs, args: t vector, resultVar = _, resultType} =
 	    let
 	       val result = fromType resultType
 	       fun return v = coerce {from = v, to = result}
@@ -975,7 +977,8 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
       fun doitFunction f =
 	 let
 	    val {name, args, start, blocks, returns, raises} = Function.dest f
-	    val {args = argsvs, returns = returnvs, raises = raisevs, ...} = func name
+	    val {args = argsvs, returns = returnvs, raises = raisevs, ...} =
+	       func name
 	    val args = keepUsefulArgs args
 	    val (blocks, blocks') =
 	       Vector.mapAndFold

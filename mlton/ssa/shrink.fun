@@ -1286,4 +1286,33 @@ fun shrink (Program.T {datatypes, globals, functions, main}) =
 		 main = main}
    end
 
+fun eliminateDeadBlocks (Program.T {datatypes, globals, functions, main}) =
+   let
+      val functions =
+	 List.revMap
+	 (functions, fn f =>
+	  let
+	     val {args, blocks, name, raises, returns, start} = Function.dest f
+	     val {get, set, rem} =
+		Property.getSetOnce (Label.plist, Property.initConst false)
+	     val _ = Function.dfs (f, fn Block.T {label, ...} =>
+				   (set (label, true)
+				    ; fn () => ()))
+	     val blocks = Vector.keepAll (blocks, get o Block.label)
+	     val _ = Vector.foreach (blocks, rem o Block.label)
+	  in
+	     Function.new {args = args,
+			   blocks = blocks,
+			   name = name,
+			   raises = raises,
+			   returns = returns,
+			   start = start}
+	  end)
+   in
+      Program.T {datatypes = datatypes,
+		 globals = globals,
+		 functions = functions,
+		 main = main}
+   end
+
 end
