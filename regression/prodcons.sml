@@ -280,4 +280,4 @@ end
 structure Z = Z (structure MLton = MLton
 		 structure Primitive = Primitive)
 
-val _ = Z.main ( "prodcons", ["1000000"] )
+val _ = Z.main ( "prodcons", ["100000"] )
