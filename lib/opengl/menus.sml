@@ -166,23 +166,29 @@ fun main () =
     glutInitDisplayMode (GLUT_SINGLE + GLUT_RGB);
     win := glutCreateWindow "Menu Test";
     glClearColor 0.3 0.3 0.3 0.0;
+
     glutDisplayFunc display;
     print("Click the close icon to close the window.");
     glutKeyboardFunc keyboard;
+
     submenu := glutCreateMenu menu2;
     glutAddMenuEntry "Sub menu 1" 1001;
     glutAddMenuEntry "Sub menu 2" 1002;
     glutAddMenuEntry "Sub menu 3" 1003;
+
     mainmenu := glutCreateMenu menu;
     glutAddMenuEntry "First" ~1;
     glutAddMenuEntry "Second" ~2;
     glutAddMenuEntry "Third" ~3;
     glutAddSubMenu "Submenu init" (!submenu);
     glutAttachMenu GLUT_RIGHT_BUTTON;
+
     subwin := glutCreateSubWindow (!win) 50 50 50 50;
+
     glClearColor 0.7 0.7 0.7 0.0;
     glutDisplayFunc display;
     glutKeyboardFunc keyboard2;
+
     glutMainLoop()
     )
 
