@@ -2407,8 +2407,9 @@ struct
 			  jumpInfo : x86JumpInfo.t} 
 	= let
 	    val gotoInfo as {get: Label.t -> Label.t option,
-			     set: Label.t * Label.t option -> unit}
-	      = Property.getSet(Label.plist, Property.initConst NONE)
+			     set: Label.t * Label.t option -> unit,
+			     destroy}
+	      = Property.destGetSet(Label.plist, Property.initConst NONE)
 	    val changed = ref false
 	      
 	    val labels
@@ -2493,6 +2494,8 @@ struct
 							       label');
 					   true)
 			 | NONE => false))
+
+	    val _ = destroy ()
 	  in
 	    {chunk = Chunk.T {blocks = blocks},
 	     changed = !changed}
@@ -2509,8 +2512,9 @@ struct
 	    datatype z = datatype x86JumpInfo.status
 
 	    val gotoInfo as {get: Label.t -> Block.t option,
-			     set: Label.t * Block.t option -> unit}
-	      = Property.getSet(Label.plist, Property.initConst NONE)
+			     set: Label.t * Block.t option -> unit,
+			     destroy}
+	      = Property.destGetSet(Label.plist, Property.initConst NONE)
 
 	    val labels
 	      = List.keepAllMap
@@ -2631,6 +2635,8 @@ struct
 		end
 
 	    val {blocks, changed} = loop {blocks = blocks, changed = false}
+
+	    val _ = destroy ()
 	  in
 	    {chunk = Chunk.T {blocks = blocks},
 	     changed = changed}

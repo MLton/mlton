@@ -12,6 +12,8 @@ signature X86_GENERATE_TRANSFERS_STRUCTS =
     sharing x86.MemLocSet = x86Liveness.LiveSet
     structure x86JumpInfo : X86_JUMP_INFO
     sharing x86 = x86JumpInfo.x86
+    structure x86LoopInfo : X86_LOOP_INFO
+    sharing x86 = x86LoopInfo.x86
     structure x86EntryTransfer : X86_ENTRY_TRANSFER
     sharing x86 = x86EntryTransfer.x86
   end

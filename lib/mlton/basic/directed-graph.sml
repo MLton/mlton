@@ -1152,9 +1152,9 @@ fun loopForest {headers, graph, root}
 
 		       fun default' n
 			 = let
-			   in 
-			     setForestNodeInfo (n', {loopNodes = [], 
-						     parent = parent}) ;
+			   in
+			      setForestNodeInfo (n', {loopNodes = [graphNode n], 
+						      parent = parent}) ;
 			     setGraphNodeInfo (graphNode n, {forestNode = n'})
 			   end
 		     in

@@ -73,7 +73,15 @@ struct
   fun verifyJumpInfo {chunk as Chunk.T {blocks, ...}, 
 		      jumpInfo: t}
     = let
-	val jumpInfo' = newJumpInfo ()
+	local
+	  val {get : Label.t -> status ref,
+	       destroy}
+	    = Property.destGet(Label.plist,
+			       Property.initFun (fn _ => ref (Count 0)))
+	in
+	  val jumpInfo' = T {get = get}
+	  val destroy = destroy
+	end
 	val _ = completeJumpInfo {chunk = chunk,
 				  jumpInfo = jumpInfo'}
 
@@ -98,6 +106,8 @@ struct
 			   print "\n";
 			   false)
 		 end)
+
+	val _ = destroy ()
       in
 	verified
       end

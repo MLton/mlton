@@ -284,8 +284,9 @@ struct
 	      as {get = getBlockInfo : 
 		        Label.t -> {pred: Label.t list ref,
 				    block: Block.t option ref,
-				    topo: int ref}}
-	      = Property.get
+				    topo: int ref},
+		  destroy = destBlockInfo}
+	      = Property.destGet
 	        (Label.plist,
 		 Property.initFun (fn label => {pred = ref [],
 						block = ref NONE,
@@ -452,8 +453,11 @@ struct
 				 changed := true);
 			 doit ()
 		       end)
+
+	    val _ = doit ()
+	    val _ = destBlockInfo ()
 	  in
-	    doit ()
+	    ()
 	  end
 	
       val (completeLiveInfo : {chunk: Chunk.t, 

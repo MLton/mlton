@@ -8,9 +8,10 @@ struct
   fun verifyEntryTransfer {chunk as Chunk.T {blocks, ...}}
     = let
 	val info as {get : Label.t -> Block.t option,
-		     set}
-	  = Property.getSetOnce(Label.plist,
-				Property.initConst NONE)
+		     set,
+		     destroy}
+	  = Property.destGetSetOnce(Label.plist,
+				    Property.initConst NONE)
 
 	val _
 	  = List.foreach
@@ -63,6 +64,7 @@ struct
 	         => isRuntime return
 	         | Transfer.CCall {return, ...}
 	         => isCReturn return))
+	before destroy ()
       end
 
   val (verifyEntryTranfer, verifyEntryTransfer_msg)

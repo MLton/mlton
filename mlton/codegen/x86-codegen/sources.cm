@@ -29,6 +29,8 @@ peephole.sig
 peephole.fun
 x86-simplify.sig
 x86-simplify.fun
+x86-loop-info.sig
+x86-loop-info.fun
 x86-live-transfers.sig
 x86-live-transfers.fun
 x86-generate-transfers.sig

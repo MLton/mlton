@@ -26,6 +26,9 @@ struct
   structure x86JumpInfo
     = x86JumpInfo(structure x86 = x86)
 
+  structure x86LoopInfo
+    = x86LoopInfo(structure x86 = x86)
+
   structure x86EntryTransfer
     = x86EntryTransfer(structure x86 = x86)
 
@@ -49,6 +52,7 @@ struct
                            structure x86MLton = x86MLton
 			   structure x86Liveness = x86Liveness
 			   structure x86JumpInfo = x86JumpInfo
+			   structure x86LoopInfo = x86LoopInfo
 			   structure x86EntryTransfer = x86EntryTransfer)
 
   structure x86AllocateRegisters
