@@ -200,40 +200,71 @@ in
 end
 
 fun output (out as ref (Out {fd, closed, bufStyle, ...}), s: string): unit =
-   let
-      val v = String.toWord8Vector s
-   in
+   if !closed
+      then raise IO.Io {name = "<unimplemented>",
+			function = "output",
+			cause = IO.ClosedStream}
+   else
+      let
+	 val v = String.toWord8Vector s
+	 fun put () = flushGen (fd, v, 0, Vector.length v, PIO.writeVec)
+	 fun doit (b as Buf {size, array}, maybe) =
+	    let
+	       val curSize = !size
+	       val newSize = curSize + Vector.length v
+	    in
+	       if newSize >= Array.length array orelse maybe ()
+		  then (flush (fd, b); put ())
+	       else
+		  (Array.copyVec {src = v, si = 0, len = NONE,
+				  dst = array, di = curSize}
+		   ; size := newSize)
+	    end
+      in
+	 case bufStyle of
+	    Unbuffered => put ()
+	  | Line b => doit (b, fn () => Char.contains s #"\n")
+	  | Buffered b => doit (b, fn () => false)
+      end handle exn => raise IO.Io {name = "<unimplemented>",
+				     function = "output",
+				     cause = exn}
+
+local
+   val buf1 = Primitive.Array.array 1
+in
+   fun output1 (out as ref (Out {fd, closed, bufStyle, ...}), c: elem): unit =
       if !closed
 	 then raise IO.Io {name = "<unimplemented>",
-			   function = "output",
+			   function = "output1",
 			   cause = IO.ClosedStream}
       else
 	 let
-	    fun put () =
-	       flushGen (fd, v, 0, Vector.length v, PIO.writeVec)
 	    fun doit (b as Buf {size, array}, maybe) =
 	       let
-		  val curSize = !size
-		  val newSize = curSize + Vector.length v
+		  val _ =
+		     if 1 + !size >= Array.length array
+			then flush (fd, b)
+		     else ()
+		  val _ = Array.update (array, !size, Byte.charToByte c)
+		  val _ = size := 1 + !size
+		  val _ =
+		     if maybe
+			then flush (fd, b)
+		     else ()
 	       in
-		  if newSize >= Array.length array orelse maybe ()
-		     then (flush (fd, b); put ())
-		  else
-		     (Array.copyVec {src = v, si = 0, len = NONE,
-				     dst = array, di = curSize}
-		      ; size := newSize)
+		  ()
 	       end
 	 in
 	    case bufStyle of
-	       Unbuffered => put ()
-	     | Line b => doit (b, fn () => Char.contains s #"\n")
-	     | Buffered b => doit (b, fn () => false)
+	       Unbuffered =>
+		  (Array.update (buf1, 0, Byte.charToByte c)
+		   ; flushGen (fd, buf1, 0, 1, PIO.writeArr))
+	     | Line b => doit (b, c = #"\n")
+	     | Buffered b => doit (b, false)
 	 end handle exn => raise IO.Io {name = "<unimplemented>",
 					function = "output",
 					cause = exn}
-   end
-
-fun output1 (out, c: elem): unit = output (out, str c)
+end
 
 fun outputSubstr (out, ss): unit = output (out, Substring.string ss)
    
