@@ -234,9 +234,9 @@ structure Statement =
 			       => let
 				     val bytes =
 					concat [numElts, 
-					       " * ", C.int bytesPerElt, 
-					       " + ", 
-					       C.int bytesAllocated];
+						" * ", C.int bytesPerElt, 
+						" + ", 
+						C.int bytesAllocated];
 				  in
 				     GCInfo.outputLimitCheck (gcInfo, bytes,
 							     false, print);
