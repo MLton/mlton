@@ -464,7 +464,7 @@ fun main args =
 	       val base = #name (hd compilers)
 	       val _ =
 		  let open Signal
-		  in setHandler (pipe, Ignore)
+		  in ignore pipe
 		  end
 	       fun r2s r = Real.format (r, Real.Format.fix (SOME 1))
 	       val i2s = Int.toCommaString
