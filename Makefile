@@ -37,7 +37,7 @@ all-no-docs:
 ifeq (other, $(shell if [ ! -x $(BIN)/mlton ]; then echo other; fi))
 	rm -f $(COMP)/$(AOUT)
 endif
-	$(MAKE) script mlbpathmap targetmap constants compiler world tools
+	$(MAKE) script mlbpathmap targetmap constants compiler world libraries tools
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: basis
@@ -136,8 +136,22 @@ freebsd:
 	cd /tmp && tar -cpf - mlton-$(VERSION) | \
 		 $(GZIP) >/usr/ports/distfiles/mlton-$(VERSION)-1.freebsd.src.tgz
 	cd $(BSDSRC)/freebsd && make build-package
-
 #	rm -rf $(BSDSRC)
+
+.PHONY: libraries
+libraries:
+	$(CP) $(SRC)/lib/mlyacc $(LIB)/sml/mlyacc-lib
+	@echo 'Type checking mlyacc-lib library.'
+	$(MLTON) -disable-ann deadCode \
+		-stop tc \
+		'$$(MLTON_ROOT)/mlyacc-lib/mlyacc-lib.mlb' \
+		>/dev/null
+	$(CP) $(SRC)/lib/cml $(LIB)/sml/cml
+	@echo 'Type checking cml library.'
+	$(MLTON) -disable-ann deadCode \
+		-stop tc \
+		'$$(MLTON_ROOT)/cml/cml.mlb' \
+		>/dev/null
 
 .PHONY: nj-mlton
 nj-mlton:

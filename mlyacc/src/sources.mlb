@@ -1,7 +1,7 @@
 local
   $(MLTON_ROOT)/basis/basis.mlb
   $(MLTON_ROOT)/basis/unsafe.mlb
-  ../../lib/mlyacc/mlyacc-lib.mlb
+  $(MLTON_ROOT)/mlyacc-lib/mlyacc-lib.mlb
 
   utils.sig
   utils.sml
