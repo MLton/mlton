@@ -711,7 +711,6 @@ fun doMany ()
 				   raises = raises}
 	     val f = restore f
 	     val f = shrink f
-	     val f = shrink f
 	     val _ = Function.clear f
 	   in
 	     f
