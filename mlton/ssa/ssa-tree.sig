@@ -208,13 +208,9 @@ signature SSA_TREE =
       structure Datatype:
 	 sig
 	    datatype t =
-	       T of {
-		     tycon: Tycon.t,
-		     cons: {
-			    con: Con.t,
-			    args: Type.t vector
-			    } vector
-		     }
+	       T of {cons: {args: Type.t vector,
+			    con: Con.t} vector,
+		     tycon: Tycon.t}
 
 	    val layout: t -> Layout.t
 	 end
