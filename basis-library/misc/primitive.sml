@@ -2186,6 +2186,7 @@ local
 			  ; Stdio.print msg)
 	   | _ => Stdio.print (Exn.name exn)
 	; Stdio.print ("\n")
-	; bug (NullString.fromString "unhandled exception in Basis Library.\000")))
+	; bug (NullString.fromString 
+	       "unhandled exception in Basis Library\000")))
 in
 end
