@@ -162,7 +162,7 @@ version:
 		freebsd/Makefile					\
 		mlton/control/control.sml; 				\
 	do								\
-		sed "s/\(.*\)MLTON_VERSION\(.*\)/\1$(VERSION)\2/" <$$f >z && \
+		sed "s/\(.*\)MLTONVERSION\(.*\)/\1$(VERSION)\2/" <$$f >z && \
 		mv z $$f;						\
 	done
 	sed <$(SPEC) >z "/^Release:/s;.*;Release: $(RELEASE);"

@@ -1,4 +1,4 @@
-mlton (MLTON_VERSION-1) unstable; urgency=low
+mlton (MLTONVERSION-1) unstable; urgency=low
 
   * Renaming original source package.
 
