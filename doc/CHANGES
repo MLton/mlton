@@ -1,5 +1,8 @@
 Here are the changes from version 20010706 to version VERSION.
 
+* 2000-8-6
+  - Added simple common block elimination CPS optimization.
+
 * 2000-8-2
   - Took out -keep il.
 
@@ -10,7 +13,7 @@ Here are the changes from version 20010706 to version VERSION.
   - Added redundant-test elimination CPS optimization.
 
 * 2000-7-21
-  - Added common-supexpression elimination CPS optimization.
+  - Added common-subexpression elimination CPS optimization.
 
 * 2000-7-20
   - Bug fix to x86 codegen.  The commuteBinALMD peephole optimization would
