@@ -306,7 +306,7 @@ fun preSuf style =
    end
 
 val build = concat [" (built ", Date.toString (Date.now ()),
-		   " on ", Net.fullHostname, ")"]
+		    " on ", Process.hostName (), ")"]
 
 fun outputHeader (style: style, output: Layout.t -> unit) =
    let
