@@ -75,13 +75,16 @@ fun makeOptions {usage} =
    in List.map
       (
        [
-       (Normal, "basis", " {basis-2002|...}",
+       (Normal, "basis", " {2002|1997|...}",
 	"select basis library to prefix to the program",
-	SpaceString (fn s => 
-		     basisLibrary :=
-		     (if List.contains (Control.basisLibs, s, String.equals)
-			then s
-			else usage (concat ["invalid -basis flag: ", s])))),
+	SpaceString (fn s =>
+		     let
+			val s' = concat ["basis-", s]
+		     in
+			if List.contains (Control.basisLibs, s', String.equals)
+			   then basisLibrary := s'
+			else usage (concat ["invalid -basis flag: ", s])
+		     end)),
        (Expert, "build-constants", "",
 	"output C file that prints basis constants",
 	trueRef buildConstants),

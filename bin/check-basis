@@ -6,9 +6,13 @@
 set -e 
 
 name=`basename $0`
+dir=`dirname $0`
+root=`cd $dir/.. && pwd`
+here=`pwd`
+basis="$root/basis-library/basis.sml"
 
 function usage() {
-	echo >&2 "usage: $name lib [file.sml | file.cm]"
+	echo >&2 "usage: $name [{2002|1997|...} [file.sml | file.cm]]"
 	exit 1
 }
 
@@ -46,10 +50,9 @@ done | rewrite
 
 SML_FILE=""
 CM_FILE=""
-LIB=""
 case "$#" in
 0)
-	usage
+	LIB='2002'
 	;;
 1)
 	LIB=$1
@@ -68,10 +71,12 @@ case "$#" in
 	;;
 esac
 
-dir=`dirname $0`
-root=`cd $dir/.. && pwd`
-here=`pwd`
-basis="$root/basis-library/basis.sml"
+if [ ! -r "$root/basis-library/libs/basis-$LIB/bind" ]; then
+	echo >&2 "invalid lib: $LIB"
+	usage
+fi
+
+LIB="basis-$LIB"
 
 rm -f $basis
 (
