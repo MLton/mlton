@@ -1303,34 +1303,44 @@ fun eliminateDeadBlocks (Program.T {datatypes, globals, functions, main}) =
 		   HandlerPop l => isLive l
 		 | HandlerPush l => isLive l
 		 | _ => true
-	     val blocks =
-		Vector.keepAllMap
-		(blocks,
-		 fn block as Block.T {args, label, statements, transfer} =>
-		 if isLive label
-		    then
-		       SOME
-		       (if Vector.forall (statements, statementIsLive)
-			   then block
-			else
-			   let
-			      val statements =
-				 Vector.keepAll (statements, statementIsLive)
-			   in
-			      Block.T {args = args,
-				       label = label,
-				       statements = statements,
-				       transfer = transfer}
-			   end)
-		 else NONE)
+	     val f =
+		if Vector.forall (blocks, isLive o Block.label)
+		   then f
+		else
+		   let 
+		      val blocks =
+			 Vector.keepAllMap
+			 (blocks,
+			  fn block as Block.T {args, label, statements,
+					       transfer} =>
+			  if isLive label
+			     then
+				SOME
+				(if Vector.forall (statements, statementIsLive)
+				    then block
+				 else
+				    let
+				       val statements =
+					  Vector.keepAll
+					  (statements, statementIsLive)
+				    in
+				       Block.T {args = args,
+						label = label,
+						statements = statements,
+						transfer = transfer}
+				    end)
+			  else NONE)
+		   in
+		      Function.new {args = args,
+				    blocks = blocks,
+				    name = name,
+				    raises = raises,
+				    returns = returns,
+				    start = start}
+		   end
 	     val _ = Vector.foreach (blocks, rem o Block.label)
 	  in
-	     Function.new {args = args,
-			   blocks = blocks,
-			   name = name,
-			   raises = raises,
-			   returns = returns,
-			   start = start}
+	     f
 	  end)
    in
       Program.T {datatypes = datatypes,
