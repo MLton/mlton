@@ -369,6 +369,7 @@ fun commandLine (args: string list): unit =
 		      else ()
 	  | FreeBSD => ()
 	  | Linux => ()
+      fun printVersion () = print (concat [version, " ", build, "\n"])
    in case result of
       Result.No switch => usage (concat ["invalid switch: ", switch])
     | Result.Yes [] =>
@@ -380,7 +381,7 @@ fun commandLine (args: string list): unit =
 		else if !buildConstants
 			then Compile.outputBasisConstants Out.standard
 		     else usage "must supply a file"
-	   | Top => print (concat [version, " ", build, "\n"])
+	   | Top => printVersion ()
 	   | _ => (inputFile := ""
 		   ; outputHeader' (No, Out.standard)))
     | Result.Yes (input :: rest) =>
@@ -416,6 +417,10 @@ fun commandLine (args: string list): unit =
 	  | EQUAL => usage "nothing to do"
 	  | LESS =>
 	       let
+		  val _ =
+		     if !verbosity = Top
+			then printVersion ()
+		     else ()
 		  val tempFiles: File.t list ref = ref []
 		  fun temp (suf: string): File.t =
 		     let
