@@ -755,10 +755,10 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	       src = fn {index} => oper (Vector.sub (components, index))})
       fun conApp {args, con, dst, oper, ty} =
 	 let
-	    fun move (oper: Operand.t) =
-	       [Statement.Bind {isMutable = false,
-				oper = oper,
-				var = dst ()}]
+	    fun move (src: Operand.t) =
+	       [Statement.Bind {dst = (dst (), ty ()),
+				isMutable = false,
+				src = src}]
 	    fun allocate (ys, tr) =
 	       tuple (tr, {components = ys,
 			   dst = dst (),
@@ -874,9 +874,9 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 			       kind = Kind.Jump,
 			       statements = (Vector.fromList
 					     (Statement.Bind
-					      {isMutable = false,
-					       oper = Cast (test, ty),
-					       var = var}
+					      {dst = (var, ty),
+					       isMutable = false,
+					       src = Cast (test, ty)}
 					      :: statements)),
 			       transfer = transfer}
 		  val (s, t) = makePointersTransfer pointersOp
@@ -946,9 +946,9 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 			       val statements =
 				  Vector.new1
 				  (Statement.Bind
-				   {isMutable = false,
-				    oper = Cast (test, pointerTy),
-				    var = pointerVar})
+				   {dst = (pointerVar, pointerTy),
+				    isMutable = false,
+				    src = Cast (test, pointerTy)})
 			       val dst =
 				  newBlock
 				  {args = Vector.new0 (),
@@ -1050,11 +1050,11 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	       NONE => []
 	     | SOME {offset, ty} =>
 		  [R.Statement.Bind
-		   {isMutable = false,
-		    oper = R.Operand.Offset {base = tuple (),
-					     offset = offset,
-					     ty = ty},
-		    var = dst ()}]
+		   {dst = (dst (), ty),
+		    isMutable = false,
+		    src = R.Operand.Offset {base = tuple (),
+					    offset = offset,
+					    ty = ty}}]
 	 end
       fun reff {arg, dst, ty} =
 	 tuple (refRep ty,

@@ -101,7 +101,7 @@ structure Operand =
 	 end
 
       fun cast (z, t) =
-	 if Type.equals (t, ty z)
+	 if Type.isSubtype (t, ty z)
 	    then z
 	 else Cast (z, t)
 
@@ -151,9 +151,9 @@ structure Switch = Switch (open S
 structure Statement =
    struct
       datatype t =
-	 Bind of {isMutable: bool,
-		  oper: Operand.t,
-		  var: Var.t}
+	 Bind of {dst: Var.t * Type.t,
+		  isMutable: bool,
+		  src: Operand.t}
        | Move of {dst: Operand.t,
 		  src: Operand.t}
        | Object of {dst: Var.t * Type.t,
@@ -177,8 +177,7 @@ structure Statement =
 	    fun useOperand (z: Operand.t, a) = Operand.foldVars (z, a, use)
 	 in
 	    case s of
-	       Bind {oper, var, ...} =>
-		  def (var, Operand.ty oper, useOperand (oper, a))
+	       Bind {dst = (x, t), src, ...} => def (x, t, useOperand (src, a))
 	     | Move {dst, src} => useOperand (src, useOperand (dst, a))
 	     | Object {dst = (dst, ty), stores, ...} =>
 		  Vector.fold (stores, def (dst, ty, a),
@@ -215,9 +214,8 @@ structure Statement =
 	 let
 	    open Layout
 	 in
-	    fn Bind {oper, var, ...} =>
-		  seq [Var.layout var, constrain (Operand.ty oper),
-		       str " = ", Operand.layout oper]
+	    fn Bind {dst = (x, t), src, ...} =>
+		  seq [Var.layout x, constrain t, str " = ", Operand.layout src]
 	     | Move {dst, src} =>
 		  mayAlign [Operand.layout dst,
 			    seq [str " = ", Operand.layout src]]
@@ -1065,7 +1063,7 @@ structure Program =
 		  datatype z = datatype Statement.t
 	       in
 		  case s of
-		     Bind {oper, ...} => (checkOperand oper; true)
+		     Bind {src, ...} => (checkOperand src; true)
 		   | Move {dst, src} =>
 			(checkOperand dst
 			 ; checkOperand src

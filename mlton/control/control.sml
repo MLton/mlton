@@ -387,17 +387,17 @@ val profileStack = control {name = "profile stack",
 
 structure Representation =
    struct
-      datatype t = Normal | Packed
+      datatype t = Packed | Unpacked
 
       val toString =
-	 fn Normal => "Normal"
-	  | Packed => "Packed"
+	 fn Packed => "Packed"
+	  | Unpacked => "Unpacked"
    end
 
 datatype representation = datatype Representation.t
 
 val representation = control {name = "representation",
-			      default = Normal,
+			      default = Packed,
 			      toString = Representation.toString}
 
 val reserveEsp = control {name = "reserve esp",

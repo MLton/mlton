@@ -458,14 +458,14 @@ fun toMachine (program: Ssa.Program.t) =
 	    datatype z = datatype R.Statement.t
 	 in
 	    case s of
-               Bind {isMutable, oper, var} =>
+               Bind {dst = (var, _), isMutable, src} =>
 		  if isMutable
 		     orelse (case #operand (varInfo var) of
 				VarOperand.Const _ => false
 			      | _ => true)
 		     then (Vector.new1
 			   (M.Statement.move {dst = varOperand var,
-					      src = translateOperand oper}))
+					      src = translateOperand src}))
 		  else Vector.new0 ()
 	     | Move {dst, src} =>
 		  Vector.new1
@@ -606,7 +606,7 @@ fun toMachine (program: Ssa.Program.t) =
 			  fun normal () = R.Statement.foreachDef (s, newVarInfo)
 		       in
 			  case s of
-			     R.Statement.Bind {isMutable, oper, var} =>
+			     R.Statement.Bind {dst = (var, _), isMutable, src} =>
 				if isMutable
 				   then normal ()
 				else
@@ -637,7 +637,7 @@ fun toMachine (program: Ssa.Program.t) =
 						      normal ())
 					  | _ => normal ()
 				   in
-				      loop (oper, [])
+				      loop (src, [])
 				   end
 			   | _ => normal ()
 		       end)

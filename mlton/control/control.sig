@@ -208,7 +208,7 @@ signature CONTROL =
 
       val profileStack: bool ref
 
-      datatype representation = Normal | Packed 
+      datatype representation = Packed | Unpacked
       val representation: representation ref
 
       val reserveEsp: bool option ref

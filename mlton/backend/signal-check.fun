@@ -82,7 +82,7 @@ fun insertInFunction (f: Function.t): Function.t =
 			 (Operand.Runtime Runtime.GCField.Limit,
 			  Operand.word (WordX.zero (WordSize.pointer ())))),
 		 dst = SOME (res, Type.bool),
-		 prim = Prim.eq})
+		 prim = Prim.wordEqual (WordSize.pointer ())})
 	    val compareTransfer =
 	       Transfer.ifBool
 	       (Operand.Var {var = res, ty = Type.bool},

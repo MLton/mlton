@@ -244,9 +244,9 @@ structure WordRep =
 			  end
 		 end))
 	    val statements =
-	       Bind {isMutable = false,
-		     oper = res,
-		     var = dstVar}
+	       Bind {dst = (dstVar, dstTy),
+		     isMutable = false,
+		     src = res}
 	       :: statements
 	 in
 	    List.rev statements
@@ -322,9 +322,9 @@ structure Component =
 		  val (src, ss) = Statement.resize (src {index = index},
 						    Type.width (#2 dst))
 	       in
-		  [Bind {isMutable = false,
-			 oper = src,
-			 var = #1 dst}]
+		  [Bind {dst = dst,
+			 isMutable = false,
+			 src = src}]
 	       end
 	  | Word wr => WordRep.tuple (wr, {dst = dst, src = src})
 
@@ -390,9 +390,9 @@ structure Unpack =
 	 in
 	    if Bits.equals (w, w')
 	       then
-		  ss1 @ ss2 @ [Bind {isMutable = false,
-				     oper = src,
-				     var = dst}]
+		  ss1 @ ss2 @ [Bind {dst = (dst, dstTy),
+				     isMutable = false,
+				     src = src}]
 	    else
 	       let
 		  val mask = WordX.resize (WordX.max s, s')
@@ -487,15 +487,15 @@ structure Select =
 	    fun move oper =
 	       let
 		  val (dst, dstTy) = dst ()
-		  val (oper, ss) =
+		  val (src, ss) =
 		     if Bits.equals (Type.width dstTy,
 				     Type.width (Operand.ty oper))
 			then (oper, [])
 		     else Statement.resize (oper, Type.width dstTy)
 	       in
-		  ss @ [Bind {isMutable = false,
-			      oper = oper,
-			      var = dst}]
+		  ss @ [Bind {dst = (dst, dstTy),
+			      isMutable = false,
+			      src = src}]
 	       end
 	 in
 	    case s of
@@ -510,11 +510,11 @@ structure Select =
 		     val tmpVar = Var.newNoname ()
 		     val tmpOp = Var {ty = ty, var = tmpVar}
 		  in
-		     Bind {isMutable = false,
-			   oper = Operand.Offset {base = tuple (),
-						  offset = offset,
-						  ty = ty},
-			   var = tmpVar}
+		     Bind {dst = (tmpVar, ty),
+			   isMutable = false,
+			   src = Operand.Offset {base = tuple (),
+						 offset = offset,
+						 ty = ty}}
 		     :: Unpack.select (rest, {dst = dst (), src = tmpOp})
 		  end
 	     | Unpack u => Unpack.select (u, {dst = dst (), src = tuple ()})
@@ -1014,16 +1014,16 @@ structure ConRep =
 	       let
 		  val (dstVar, dstTy) = dst ()
 	       in
-		  [Bind {isMutable = false,
-			 oper = (Operand.word
-				 (WordX.resize
-				  (tag, WordSize.fromBits (Type.width dstTy)))),
-			 var = dstVar}]
+		  [Bind {dst = (dstVar, dstTy),
+			 isMutable = false,
+			 src = (Operand.word
+				(WordX.resize
+				 (tag, WordSize.fromBits (Type.width dstTy))))}]
 	       end
 	  | Transparent =>
-	       [Bind {isMutable = false,
-		      oper = src {index = 0},
-		      var = #1 (dst ())}]
+	       [Bind {dst = dst (),
+		      isMutable = false,
+		      src = src {index = 0}}]
 	  | Unit => []
 
       val conApp =
@@ -1124,9 +1124,9 @@ structure Pointers =
 					  fn () => pointerOp)
 			 val ss =
 			    Vector.fromList
-			    (Bind {isMutable = false,
-				   oper = Cast (test, pointerTy),
-				   var = pointerVar}
+			    (Bind {dst = (pointerVar, pointerTy),
+				   isMutable = false,
+				   src = Cast (test, pointerTy)}
 			     :: ss)
 			 val dst =
 			    Block.new {statements = ss,

@@ -395,9 +395,7 @@ mulOverflow(Word, 32, 64)
 	intBinary(name,op,16)			\
 	intBinary(name,op,32)			\
 	intBinary(name,op,64)
-intAllBinary (add, +)
 intAllBinary (mul, *)
-intAllBinary (sub, -)
 #undef intBinary
 #undef intAllBinary
 
@@ -411,7 +409,6 @@ intAllBinary (sub, -)
 	intBinaryCompare(name,op,16)		\
 	intBinaryCompare(name,op,32)		\
 	intBinaryCompare(name,op,64)
-intAllBinaryCompare (equal, ==)
 intAllBinaryCompare (ge, >=)
 intAllBinaryCompare (gt, >)
 intAllBinaryCompare (le, <=)
@@ -419,25 +416,6 @@ intAllBinaryCompare (lt, <)
 #undef intBinaryCompare
 #undef intAllBinaryCompare
 
-#define Int_neg(size)							\
-	static inline Int##size Int##size##_##neg (Int##size i) {	\
-		return -i;						\
-	}
-Int_neg(8)
-Int_neg(16)
-Int_neg(32)
-Int_neg(64)
-#undef Int_neg
-
-/* ------------------------------------------------- */
-/*                       MLton                       */
-/* ------------------------------------------------- */
-
-/* Used by polymorphic equality to implement equal on ground types
- * like char, int, word,  and on ref cells.
- * It is emitted by backend/machine.fun.
- */
-#define MLton_eq(x, y) ((x) == (y))
 
 /* ------------------------------------------------- */
 /*                       Real                        */
@@ -627,34 +605,12 @@ wordOps(64)
 	static inline t f##_to##t (f x) {	\
 		return (t)x;			\
 	}
-coerce (Int16, Int16)
-coerce (Int16, Int32)
-coerce (Int16, Int8)
 coerce (Int16, Real32)
 coerce (Int16, Real64)
-coerce (Int16, Word16)
-coerce (Int16, Word32)
-coerce (Int16, Word8)
-coerce (Int32, Int16)
-coerce (Int32, Int32)
-coerce (Int32, Int64)
-coerce (Int32, Int8)
 coerce (Int32, Real32)
 coerce (Int32, Real64)
-coerce (Int32, Word16)
-coerce (Int32, Word32)
-coerce (Int32, Word64)
-coerce (Int32, Word8)
-coerce (Int64, Int32)
-coerce (Int64, Word32)
-coerce (Int8, Int16)
-coerce (Int8, Int32)
-coerce (Int8, Int8)
 coerce (Int8, Real32)
 coerce (Int8, Real64)
-coerce (Int8, Word16)
-coerce (Int8, Word32)
-coerce (Int8, Word8)
 coerce (Real32, Int16)
 coerce (Real32, Int32)
 coerce (Real32, Int8)
@@ -665,68 +621,30 @@ coerce (Real64, Int32)
 coerce (Real64, Int8)
 coerce (Real64, Real32)
 coerce (Real64, Real64)
-coerce (Word16, Int16)
-coerce (Word16, Int32)
-coerce (Word16, Int8)
-coerce (Word16, Word16)
 coerce (Word16, Word32)
 coerce (Word16, Word64)
 coerce (Word16, Word8)
-coerce (Word32, Int16)
-coerce (Word32, Int32)
-coerce (Word32, Int64)
-coerce (Word32, Int8)
 coerce (Word32, Word16)
-coerce (Word32, Word32)
 coerce (Word32, Word64)
 coerce (Word32, Word8)
 coerce (Word64, Word16)
 coerce (Word64, Word32)
 coerce (Word64, Word8)
-coerce (Word8, Int16)
-coerce (Word8, Int32)
-coerce (Word8, Int8)
 coerce (Word8, Word16)
 coerce (Word8, Word32)
 coerce (Word8, Word64)
-coerce (Word8, Word8)
 #undef coerce
 
 #define coerceX(size, t)					\
 	static inline t Word##size##_to##t##X (Word##size x) {	\
 		return (t)(Int##size)x;				\
 	}
-//coerceX (64, Int64)
-//coerceX (64, Int32)
-//coerceX (64, Int16)
-//coerceX (64, Int8)
-//coerceX (64, Word32)
-//coerceX (64, Word16)
-//coerceX (64, Word8)
-//coerceX (64, Int64)
-coerceX (32, Int32)
-coerceX (32, Int16)
-coerceX (32, Int8)
 coerceX (32, Word64)
-coerceX (32, Word32)
-coerceX (32, Word16)
-coerceX (32, Word8)
-//coerceX (16, Int64)
-coerceX (16, Int32)
-coerceX (16, Int16)
-coerceX (16, Int8)
 coerceX (16, Word64)
 coerceX (16, Word32)
-coerceX (16, Word16)
-coerceX (16, Word8)
-//coerceX (8, Int64)
-coerceX (8, Int32)
-coerceX (8, Int16)
-coerceX (8, Int8)
 coerceX (8, Word64)
 coerceX (8, Word32)
 coerceX (8, Word16)
-coerceX (8, Word8)
 #undef coerceX
 
 #endif /* #ifndef _C_CHUNK_H_ */

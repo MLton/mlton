@@ -770,6 +770,7 @@ val wordSub = Word_sub
 val wordToInt = Word_toInt
 val wordToIntX = Word_toIntX
 val wordToWord = Word_toWord
+val wordToWordX = Word_toWordX
 
 val isCommutative =
    fn Int_add _ => true

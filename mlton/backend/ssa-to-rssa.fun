@@ -285,26 +285,14 @@ structure Name =
 			return = word s}
 	 in
 	    case n of
-	       Int_add s => intBinary (s, "add")
-	     | Int_equal s =>
-		  let
-		     val s = IntSize.roundUpToPrim s
-		  in
-		     vanilla {args = Vector.new2 (Type.int s, Type.int s),
-			      name = concat ["Int", IntSize.toString s,
-					     "_equal"],
-			      return = Type.bool}
-		  end
-	     | Int_ge s => intCompare (s, "ge")
+	       Int_ge s => intCompare (s, "ge")
 	     | Int_gt s => intCompare (s, "gt")
 	     | Int_le s => intCompare (s, "le")
 	     | Int_lt s => intCompare (s, "lt")
 	     | Int_mul s => intBinary (s, "mul")
 	     | Int_quot s => intBinary (s, "quot")
 	     | Int_rem s => intBinary (s, "rem")
-	     | Int_toInt (s1, s2) => coerce (s1, intC, s2, intC)
 	     | Int_toReal (s1, s2) => coerce (s1, intC, s2, realC)
-	     | Int_toWord (s1, s2) => coerce (s1, intC, s2, wordC)
 	     | IntInf_add => intInfBinary "add"
 	     | IntInf_andb => intInfBinary "andb"
 	     | IntInf_arshift => intInfShift "arshift"
@@ -348,8 +336,6 @@ structure Name =
 	     | Word_ror s => wordShift (s, "ror")
 	     | Word_rshift s => wordShift (s, "rshift")
 	     | Word_sub s => wordBinary (s, "sub")
-	     | Word_toInt (s1, s2) => coerce (s1, wordC, s2, intC)
-	     | Word_toIntX (s1, s2) => coerceX (s1, wordC, s2, intC)
 	     | Word_toWord (s1, s2) => coerce (s1, wordC, s2, wordC)
 	     | Word_toWordX (s1, s2) => coerceX (s1, wordC, s2, wordC)
 	     | Word_xorb s => wordBinary (s, "xorb")
@@ -364,19 +350,12 @@ structure Name =
 	 in
 	    case n of
 	       FFI_Symbol _ => true
-	     | Int_add _ => true
-	     | Int_equal _ => true
 	     | Int_ge _ => true
 	     | Int_gt _ => true
 	     | Int_le _ => true
 	     | Int_lt _ => true
 	     | Int_mul _ => true
-	     | Int_neg _ => true
-	     | Int_sub _ => true
-	     | Int_toInt _ => true
 	     | Int_toReal _ => true
-	     | Int_toWord _ => true
-	     | MLton_eq => true
 	     | Real_Math_acos _ => true
 	     | Real_Math_asin _ => true
 	     | Real_Math_atan _ => true
@@ -424,8 +403,6 @@ structure Name =
 	     | Word_ror _ => true
 	     | Word_rshift _ => true
 	     | Word_sub _ => true
-	     | Word_toInt _ => true
-	     | Word_toIntX _ => true
 	     | Word_toWord _ => true
 	     | Word_toWordX _ => true
 	     | Word_xorb _ => true
@@ -452,32 +429,17 @@ structure Name =
 	 in
 	    case n of
 	       FFI_Symbol _ => true
-	     | Int_add _ => true
 	     | Int_addCheck _ => true
-	     | Int_equal s => i32168 s
 	     | Int_ge s => i32168 s
 	     | Int_gt s => i32168 s
 	     | Int_le s => i32168 s
 	     | Int_lt s => i32168 s
 	     | Int_mul s => i32168 s
 	     | Int_mulCheck s => i32168 s
-	     | Int_neg _ => true
 	     | Int_negCheck _ => true
 	     | Int_quot s => i32168 s
 	     | Int_rem s => i32168 s
-	     | Int_sub _ => true
 	     | Int_subCheck _ => true
-	     | Int_toInt (s1, s2) =>
-		  (case (IntSize.prim s1, IntSize.prim s2) of
-		      (I32, I32) => true
-		    | (I32, I16) => true
-		    | (I32, I8) => true
-		    | (I16, I32) => true
-		    | (I16, I16) => true
-		    | (I16, I8) => true
-		    | (I8, I32) => true
-		    | (I8, I16) => true
-		    | _ => false)
 	     | Int_toReal (s1, s2) =>
 		  (case (IntSize.prim s1, s2) of
 		      (I32, R64) => true
@@ -487,19 +449,6 @@ structure Name =
 		    | (I8, R64) => true
 		    | (I8, R32) => true
 		    | _ => false)
-	      | Int_toWord (s1, s2) =>
-		   (case (IntSize.prim s1, WordSize.prim s2) of
-		       (I32, W32) => true
-		     | (I32, W16) => true
-		     | (I32, W8) => true
-		     | (I16, W32) => true
-		     | (I16, W16) => true
-		     | (I16, W8) => true
-		     | (I8, W32) => true
-		     | (I8, W16) => true
-		     | (I8, W8) => true
-		     | _ => false)
-	      | MLton_eq => true
 	      | Real_Math_acos _ => true
 	      | Real_Math_asin _ => true
 	      | Real_Math_atan _ => true
@@ -558,30 +507,6 @@ structure Name =
 	      | Word_ror s => w32168 s
 	      | Word_rshift s => w32168 s
 	      | Word_sub _ => true
-	      | Word_toInt (s1, s2) =>
-		   (case (WordSize.prim s1, IntSize.prim s2) of
-		       (W32, I32) => true
-		     | (W32, I16) => true
-		     | (W32, I8) => true
-		     | (W16, I32) => true
-		     | (W16, I16) => true
-		     | (W16, I8) => true
-		     | (W8, I32) => true
-		     | (W8, I16) => true
-		     | (W8, I8) => true
-		     | _ => false)
-	      | Word_toIntX (s1, s2) =>
-		   (case (WordSize.prim s1, IntSize.prim s2) of
-		       (W32, I32) => true
-		     | (W32, I16) => true
-		     | (W32, I8) => true
-		     | (W16, I32) => true
-		     | (W16, I16) => true
-		     | (W16, I8) => true
-		     | (W8, I32) => true
-		     | (W8, I16) => true
-		     | (W8, I8) => true
-		     | _ => false)
 	      | Word_toWord (s1, s2) =>
 		   (case (WordSize.prim s1, WordSize.prim s2) of
 		       (W32, W32) => true
@@ -642,9 +567,7 @@ fun updateCard (addr: Operand.t): Statement.t list =
 		prim = Prim.wordRshift WordSize.default},
        Move {dst = (Operand.ArrayOffset
 		    {base = Operand.Runtime GCField.CardMap,
-		     index = (Operand.Cast
-			      (Operand.Var {ty = indexTy, var = index},
-			       Type.defaultInt)),
+		     index = Operand.Var {ty = indexTy, var = index},
 		     ty = Type.word Bits.inByte}),
 	     src = Operand.word (WordX.one (WordSize.fromBits Bits.inByte))}]
    end
@@ -677,9 +600,7 @@ fun arrayUpdate {array, arrayElementTy, index, elt}: Statement.t list =
 	    val tempOp = Operand.Var {ty = tempTy, var = temp}
 	 in
 	    ss
-	    @ [PrimApp {args = Vector.new2 (Operand.cast
-					    (index, Type.defaultWord),
-					    shiftOp),
+	    @ [PrimApp {args = Vector.new2 (index, shiftOp),
 			dst = SOME (temp, tempTy),
 			prim = Prim.wordLshift WordSize.default},
 	       PrimApp {args = Vector.new2 (Cast (array, addrTy), tempOp),
@@ -736,8 +657,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
       val {conApp, diagnostic, genCase, objectTypes, reff, select, toRtype,
 	   tuple} =
 	 (case !Control.representation of
-	     Control.Normal => Representation.compute
-	   | Control.Packed => PackedRepresentation.compute) program
+	     Control.Packed => PackedRepresentation.compute
+	   | Control.Unpacked => Representation.compute) program
       val objectTypes = Vector.concat [ObjectType.basic, objectTypes]
       val () =
 	 Vector.foreachi
@@ -785,7 +706,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			  default: Label.t option})
 	 : Statement.t list * Transfer.t =
 	 let
-	    fun simple (s, cs, cast) =
+	    fun simple (s, cs) =
 	       ([],
 		Switch
 		(Switch.T
@@ -793,7 +714,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			   (cs, fn ((w, _), (w', _)) => WordX.<= (w, w'))),
 		  default = default,
 		  size = s,
-		  test = cast (varOp test)}))
+		  test = varOp test}))
 	 in
 	    case cases of
 	       S.Cases.Con cases =>
@@ -825,12 +746,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 		     val cs = Vector.map (cs, fn (i, l) =>
 					  (WordX.fromIntInf (IntX.toIntInf i, s),
 					   l))
-		     val t = word s
 		  in
-		     simple (s, cs, fn z => Operand.Cast (z, t))
+		     simple (s, cs)
 		  end
-	     | S.Cases.Word (s, cs) =>
-		  simple (s, cs, fn z => z)
+	     | S.Cases.Word (s, cs) => simple (s, cs)
 	 end
       val {get = labelInfo: (Label.t ->
 			     {args: (Var.t * S.Type.t) vector,
@@ -1036,10 +955,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			in
 			   loop (i - 1, ss, t)
 			end
-		     fun move (oper: Operand.t) =
-			add (Bind {isMutable = false,
-				   oper = oper,
-				   var = valOf var})
+		     fun move (src: Operand.t) =
+			add (Bind {dst = (valOf var, valOf (toRtype ty)),
+				   isMutable = false,
+				   src = src})				   
 		  in
 		     case exp of
 			S.Exp.ConApp {con, args} =>
@@ -1073,15 +992,15 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				 let
 				    val base = a 0
 				    val index = a 1
-				    val (oper, ss) =
+				    val (src, ss) =
 				       Statement.resize
 				       (ArrayOffset {base = base,
 						     index = index,
 						     ty = arrayElementType base},
 					Type.width ty)
-				    val s = Bind {isMutable = false,
-						  oper = oper,
-						  var = valOf var}
+				    val s = Bind {dst = (valOf var, ty),
+						  isMutable = false,
+						  src = src}
 				 in
 				    adds (ss @ [s])
 				 end
@@ -1233,6 +1152,22 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 							  Name.toString n])
 				  | SOME f => simpleCCall f)
 			end
+		     fun wordToWord (s1: WordSize.t, s2: WordSize.t) =
+			if WordSize.equals (s1, s2)
+			   then move (a 0)
+			else nativeOrC (Prim.wordToWord (s1, s2))
+		     fun wordToWordX (s1: WordSize.t, s2: WordSize.t) =
+			if WordSize.equals (s1, s2)
+			   then move (a 0)
+			else
+			   let
+			      val p = 
+				 if Bits.< (WordSize.bits s1, WordSize.bits s2)
+				    then Prim.wordToWordX
+				 else Prim.wordToWord
+			   in
+			      nativeOrC (p (s1, s2))
+			   end
 		     datatype z = datatype Prim.Name.t
 			   in
 			      case Prim.name prim of
@@ -1259,10 +1194,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 						 offset = Runtime.headerOffset,
 						 ty = Type.defaultWord}),
 					 src = PointerTycon pt}
-					:: Bind {isMutable = false,
-						 oper = (Operand.Cast
-							 (array, vecTy)),
-						 var = valOf var}
+					:: Bind {dst = (valOf var, vecTy),
+						 isMutable = false,
+						 src = (Operand.Cast
+							(array, vecTy))}
 					:: ss,
 					t)
 				    end
@@ -1299,25 +1234,33 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			       | GC_unpack =>
 				    ccall {args = Vector.new1 Operand.GCState,
 					   func = CFunction.unpack}
+			       | Int_add s =>
+				    nativeOrC (Prim.wordAdd
+					       (intSizeToWordSize s))
+			       | Int_arshift s =>
+				    nativeOrC (Prim.wordArshift
+					       (intSizeToWordSize s))
 			       | Int_equal s =>
 				    nativeOrC (Prim.wordEqual
 					       (intSizeToWordSize
 						(IntSize.roundUpToPrim s)))
-			       | Int_arshift s =>
-				    nativeOrC (Prim.wordArshift
-					       (intSizeToWordSize s))
 			       | Int_lshift s =>
 				    nativeOrC (Prim.wordLshift
 					       (intSizeToWordSize s))
+			       | Int_neg s =>
+				    nativeOrC (Prim.wordNeg
+					       (intSizeToWordSize s))
+			       | Int_sub s =>
+				    nativeOrC (Prim.wordSub
+					       (intSizeToWordSize s))
 			       | Int_toInt (s1, s2) =>
-				    let
-				       val s1 = IntSize.roundUpToPrim s1
-				       val s2 = IntSize.roundUpToPrim s2
-				    in
-				       if IntSize.equals (s1, s2)
-					  then cast ()
-				       else nativeOrC (Prim.intToInt (s1, s2))
-				    end
+				    wordToWordX
+				    (intSizeToWordSize
+				     (IntSize.roundUpToPrim s1),
+				     intSizeToWordSize
+				     (IntSize.roundUpToPrim s2))
+			       | Int_toWord (s1, s2) =>
+				    wordToWordX (intSizeToWordSize s1, s2)
 			       | IntInf_toVector => cast ()
 			       | IntInf_toWord => cast ()
 			       | MLton_bogus =>
@@ -1327,7 +1270,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			       | MLton_eq =>
 				    (case targ () of
 					NONE => move (Operand.bool true)
-				      | SOME _ => primApp prim)
+				      | SOME t =>
+					   nativeOrC
+					   (Prim.wordEqual
+					    (WordSize.fromBits (Type.width t))))
 			       | MLton_installSignalHandler => none ()
 			       | MLton_size =>
 				    simpleCCall
@@ -1473,9 +1419,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 							   dst = continue})
 				     end)
 			       | Thread_canHandle =>
-				    move (Operand.Cast
-					  (Operand.Runtime GCField.CanHandle,
-					   Type.defaultInt))
+				    move (Operand.Runtime GCField.CanHandle)
 			       | Thread_copy =>
 				    ccall {args = (Vector.concat
 						   [Vector.new1 Operand.GCState,
@@ -1528,17 +1472,15 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			       | Word_equal s =>
 				    nativeOrC (Prim.wordEqual
 					       (WordSize.roundUpToPrim s))
-			       | Word_toIntInf => cast ()
+			       | Word_toInt (s1, s2) =>
+				    wordToWord (s1, intSizeToWordSize s2)
+			       | Word_toIntX (s1, s2) =>
+				    wordToWordX (s1, intSizeToWordSize s2)
+			       | Word_toIntInf => move (a 0)
 			       | Word_toWord (s1, s2) =>
-				    let
-				       val s1 = WordSize.roundUpToPrim s1
-				       val s2 = WordSize.roundUpToPrim s2
-				    in
-				       if WordSize.equals (s1, s2)
-					  then cast ()
-				       else nativeOrC (Prim.wordToWord (s1, s2))
-				    end
-			       | WordVector_toIntInf => cast ()
+				    wordToWord (WordSize.roundUpToPrim s1,
+						WordSize.roundUpToPrim s2)
+			       | WordVector_toIntInf => move (a 0)
 			       | Word8Array_subWord => subWord ()
 			       | Word8Array_updateWord =>
 				    add (Move {dst = (ArrayOffset

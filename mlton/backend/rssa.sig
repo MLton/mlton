@@ -75,9 +75,9 @@ signature RSSA =
       structure Statement:
 	 sig
 	    datatype t =
-	       Bind of {isMutable: bool,
-			oper: Operand.t,
-			var: Var.t}
+	       Bind of {dst: Var.t * Type.t,
+			isMutable: bool,
+			src: Operand.t}
 	     | Move of {dst: Operand.t,
 			src: Operand.t}
 	     | Object of {dst: Var.t * Type.t,

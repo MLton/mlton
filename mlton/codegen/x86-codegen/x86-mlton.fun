@@ -606,18 +606,6 @@ struct
 			    | _ => Error.bug "prim: FFI"],
 		     transfer = NONE}]
 		end
-             | Int_add s => 
-		(case IntSize.prim s of
-		    I8 => binal Instruction.ADD
-		  | I16 => binal Instruction.ADD
-		  | I32 => binal Instruction.ADD
-		  | I64 => binal64 (Instruction.ADD, Instruction.ADC))
-	     | Int_equal s => 	
-		(case IntSize.prim s of
-		    I8 => cmp Instruction.E
-		  | I16 => cmp Instruction.E
-		  | I32 => cmp Instruction.E
-		  | I64 => Error.bug "FIXME")
 	     | Int_ge s => 	
 		(case IntSize.prim s of
 		    I8 => cmp Instruction.GE
@@ -648,17 +636,6 @@ struct
 		  | I16 => imul2 () 
 		  | I32 => imul2 ()
 		  | I64 => Error.bug "FIXME")
-	     | Int_neg s => 
-		(case IntSize.prim s of
-		    I8 => unal Instruction.NEG 
-		  | I16 => unal Instruction.NEG 
-		  | I32 => unal Instruction.NEG 
-		  | I64 => unal64 (Instruction.NEG, 
-				   fn (dst,dstsize) => [Assembly.instruction_binal
-							{dst = dst,
-							 oper = Instruction.ADC,
-							 src = Operand.immediate_const_int 0,
-							 size = dstsize}]))
 	     | Int_quot s => 
 		(case IntSize.prim s of
 		    I8 => pmd Instruction.IDIV
@@ -671,30 +648,6 @@ struct
 		  | I16 => pmd Instruction.IMOD
 		  | I32 => pmd Instruction.IMOD
 		  | I64 => Error.bug "FIXME")
-	     | Int_sub s => 
-		(case IntSize.prim s of
-		    I8 => binal Instruction.SUB
-		  | I16 => binal Instruction.SUB
-		  | I32 => binal Instruction.SUB
-		  | I64 => binal64 (Instruction.SUB, Instruction.SBB))
-	     | Int_toInt (s, s') =>
-		(case (IntSize.prim s, IntSize.prim s') of
-		    (I64, I64) => Error.bug "FIXME"
-		  | (I64, I32) => Error.bug "FIXME"
-		  | (I64, I16) => Error.bug "FIXME"
-		  | (I64, I8) => Error.bug "FIXME"
-		  | (I32, I64) => Error.bug "FIXME"
-		  | (I32, I32) => mov ()
-		  | (I32, I16) => xvom ()
-		  | (I32, I8) => xvom ()
-		  | (I16, I64) => Error.bug "FIXME"
-		  | (I16, I32) => movx Instruction.MOVSX
-		  | (I16, I16) => mov ()
-		  | (I16, I8) => xvom ()
-		  | (I8, I64) => Error.bug "FIXME"
-		  | (I8, I32) => movx Instruction.MOVSX
-		  | (I8, I16) => movx Instruction.MOVSX
-		  | (I8, I8) => mov ())
 	     | Int_toReal (s, s')
 	     => let
 		  fun default () =
@@ -748,25 +701,6 @@ struct
 		    | (I8, R64) => default' ()
 		    | (I8, R32) => default' ()
 		end
-	     | Int_toWord (s, s') =>
-		(case (IntSize.prim s, WordSize.prim s') of
-		    (I64, W64) => Error.bug "FIXME"
-		  | (I64, W32) => Error.bug "FIXME"
-		  | (I64, W16) => Error.bug "FIXME"
-		  | (I64, W8) => Error.bug "FIXME"
-		  | (I32, W64) => Error.bug "FIXME"
-		  | (I32, W32) => mov ()
-		  | (I32, W16) => xvom ()
-		  | (I32, W8) => xvom ()
-		  | (I16, W64) => Error.bug "FIXME"
-		  | (I16, W32) => movx Instruction.MOVSX
-		  | (I16, W16) => mov ()
-		  | (I16, W8) => xvom ()
-		  | (I8, W64) => Error.bug "FIXME"
-		  | (I8, W32) => movx Instruction.MOVSX
-		  | (I8, W16) => movx Instruction.MOVSX
-		  | (I8, W8) => mov ())
-	     | MLton_eq => cmp Instruction.E
 	     | Real_Math_acos _
 	     => let
 		  val (dst,dstsize) = getDst1 ()
@@ -1456,42 +1390,6 @@ struct
 		  | W16 => binal Instruction.SUB
 		  | W32 => binal Instruction.SUB
 		  | W64 => binal64 (Instruction.SUB, Instruction.SBB))
-	     | Word_toInt (s, s') =>
-		(case (WordSize.prim s, IntSize.prim s') of
-		   (W64, I64) => Error.bug "FIXME"
-		 | (W64, I32) => Error.bug "FIXME"
-		 | (W64, I16) => Error.bug "FIXME"
-		 | (W64, I8) => Error.bug "FIXME"
-		 | (W32, I64) => Error.bug "FIXME"
-		 | (W32, I32) => mov ()
-		 | (W32, I16) => xvom ()
-		 | (W32, I8) => xvom ()
-		 | (W16, I64) => Error.bug "FIXME"
-		 | (W16, I32) => movx Instruction.MOVZX
-		 | (W16, I16) => mov ()
-		 | (W16, I8) => xvom ()
-		 | (W8, I64) => Error.bug "FIXME"
-		 | (W8, I32) => movx Instruction.MOVZX
-		 | (W8, I16) => movx Instruction.MOVZX
-		 | (W8, I8) => mov ())
-	     | Word_toIntX (s, s') =>
-		(case (WordSize.prim s, IntSize.prim s') of
-		   (W64, I64) => Error.bug "FIXME"
-		 | (W64, I32) => Error.bug "FIXME"
-		 | (W64, I16) => Error.bug "FIXME"
-		 | (W64, I8) => Error.bug "FIXME"
-		 | (W32, I64) => Error.bug "FIXME"
-		 | (W32, I32) => mov ()
-		 | (W32, I16) => xvom ()
-		 | (W32, I8) => xvom ()
-		 | (W16, I64) => Error.bug "FIXME"
-		 | (W16, I32) => movx Instruction.MOVSX
-		 | (W16, I16) => mov ()
-		 | (W16, I8) => xvom ()
-		 | (W8, I64) => Error.bug "FIXME"
-		 | (W8, I32) => movx Instruction.MOVSX
-		 | (W8, I16) => movx Instruction.MOVSX
-		 | (W8, I8) => mov ())
 	     | Word_toWord (s, s') =>
 	        (case (WordSize.prim s, WordSize.prim s') of
 		    (W64, W64) => Error.bug "FIXME"

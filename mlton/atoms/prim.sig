@@ -261,8 +261,6 @@ signature PRIM =
       val intMulCheck: IntSize.t -> 'a t
       val intSub: IntSize.t -> 'a t
       val intSubCheck: IntSize.t -> 'a t
-      val intToInt: IntSize.t * IntSize.t -> 'a t
-      val intToWord: IntSize.t * WordSize.t -> 'a t
       val isCommutative: 'a t -> bool
       (*
        * isFunctional p = true iff p always returns same result when given
@@ -300,10 +298,10 @@ signature PRIM =
       val wordLshift: WordSize.t -> 'a t
       val wordMul: WordSize.t -> 'a t
       val wordMulCheck: WordSize.t -> 'a t
+      val wordNeg: WordSize.t -> 'a t
       val wordOrb: WordSize.t -> 'a t
       val wordRshift: WordSize.t -> 'a t
       val wordSub: WordSize.t -> 'a t
-      val wordToInt: WordSize.t * IntSize.t -> 'a t
-      val wordToIntX: WordSize.t * IntSize.t -> 'a t
       val wordToWord: WordSize.t * WordSize.t -> 'a t
+      val wordToWordX: WordSize.t * WordSize.t -> 'a t
    end

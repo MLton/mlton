@@ -349,7 +349,7 @@ fun insertFunction (f: Function.t,
 		   if handlesSignals
 		      then
 			 frontierCheck (isFirst,
-					Prim.eq,
+					Prim.wordEqual WordSize.default,
 					Operand.Runtime Limit,
 					Operand.word (WordX.zero
 						      WordSize.default),
@@ -748,10 +748,10 @@ fun insert (Program.T {functions, handlesSignals, main, objectTypes}) =
 		  statements = (Vector.fromListMap
 				(!extraGlobals, fn x =>
 				 Statement.Bind
-				 {isMutable = true,
-				  oper = Operand.Cast (Operand.bool true,
-						       Type.bool),
-				  var = x})),
+				 {dst = (x, Type.bool),
+				  isMutable = true,
+				  src = Operand.Cast (Operand.bool true,
+						      Type.bool)})),
 		  transfer = Transfer.Goto {args = Vector.new0 (),
 					    dst = start}}
       val blocks = Vector.concat [Vector.new1 block, blocks]
