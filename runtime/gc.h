@@ -242,6 +242,10 @@ typedef struct GC_state {
 	uint cardMapSize;
 	uint cardSize;
 	uint cardSizeLog2;
+	/* Only use generational GC with copying collection if the ratio of 
+ 	 * semispace size to live data size is below copyGenerationalRatio.
+	 */
+	float copyGenerationalRatio;
 	float copyRatio;	/* Minimum live ratio to use copying GC. */
 	GC_heap crossMapHeap;	/* only used during GC. */
 	pointer crossMap;
@@ -249,9 +253,6 @@ typedef struct GC_state {
 	GC_thread currentThread; /* This points to a thread in the heap. */
 	uint fixedHeapSize; 	/* Only meaningful if useFixedHeap. */
 	GC_frameLayout *frameLayouts;
-	/* Only use generational GC if the live ratio is below generationalRatio.
-	 */
-	float generationalRatio;
 	pointer *globals; 	/* An array of size numGlobals. */
 	float growRatio;
 	struct GC_heap heap;
@@ -271,6 +272,10 @@ typedef struct GC_state {
 	/* Minimum live ratio to us mark-compact GC. */
 	float markCompactRatio; 
 	ullong markedCards; /* Number of marked cards seen during minor GCs. */
+	/* Only use generational GC with mark-compact collection if the ratio of 
+ 	 * heap size to live data size is below markCompactGenerationalRatio.
+	 */
+	float markCompactGenerationalRatio;
 	uint maxBytesLive;
 	uint maxFrameIndex; /* 0 <= frameIndex < maxFrameIndex */
 	uint maxFrameSize;

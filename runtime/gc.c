@@ -1205,7 +1205,9 @@ static void setNursery (GC_state s, W32 oldGenBytesRequested,
 		 * worthwhile.
 		 */
 		and (float)h->size / (float)s->bytesLive 
-			<= s->generationalRatio
+			<= (h->size < s->ram
+				? s->copyGenerationalRatio
+				: s->markCompactGenerationalRatio)
 		/* The nursery is large enough to be worth it. */
 		and ((float)(h->size - s->bytesLive) 
 			/ (float)s->nurserySize) <= s->nurseryRatio
@@ -3149,13 +3151,14 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->canHandle = 0;
 	s->cardSize = 0x1 << s->cardSizeLog2;
 	s->copyRatio = 4.0;
+	s->copyGenerationalRatio = 4.0;
 	s->currentThread = BOGUS_THREAD;
-	s->generationalRatio = 5.0;
 	s->growRatio = 8.0;
 	s->inSignalHandler = FALSE;
 	s->isOriginal = TRUE;
 	s->liveRatio = 8.0;
 	s->markCompactRatio = 1.04;
+	s->markCompactGenerationalRatio = 8.0;
 	s->markedCards = 0;
 	s->maxBytesLive = 0;
 	s->maxHeap = 0;
@@ -3226,11 +3229,11 @@ int GC_init (GC_state s, int argc, char **argv) {
 				} else if (0 == strcmp (arg, "gc-summary")) {
 					++i;
 					s->summary = TRUE;
-				} else if (0 == strcmp (arg, "generational-ratio")) {
+				} else if (0 == strcmp (arg, "copy-generational-ratio")) {
 					++i;
 					if (i == argc)
 						usage (argv[0]);
-					s->generationalRatio =
+					s->copyGenerationalRatio =
 						stringToFloat (argv[i++]);
 				} else if (0 == strcmp (arg, "grow-ratio")) {
 					++i;
@@ -3256,6 +3259,12 @@ int GC_init (GC_state s, int argc, char **argv) {
 						usage (argv[0]);
 					s->useFixedHeap = FALSE;
 					s->maxHeap = stringToBytes (argv[i++]);
+				} else if (0 == strcmp (arg, "mark-compact-generational-ratio")) {
+					++i;
+					if (i == argc)
+						usage (argv[0]);
+					s->markCompactGenerationalRatio =
+						stringToFloat (argv[i++]);
 				} else if (0 == strcmp (arg, "mark-compact-ratio")) {
 					++i;
 					if (i == argc)
@@ -3286,7 +3295,11 @@ int GC_init (GC_state s, int argc, char **argv) {
 	unless (ratiosOk (s))
 		die ("invalid ratios");
 	setMemInfo (s);
-	s->ram = s->ramSlop * s->totalRam;
+	/* We align s->ram by pageSize so that we can test whether or not we
+	 * we are using mark-compact by comparing heap size to ram size.  If 
+	 * we didn't round, the size might be slightly off.
+         */
+	s->ram = align (s->ramSlop * s->totalRam, s->pageSize);
 	if (DEBUG or DEBUG_RESIZING or s->messages)
 		fprintf (stderr, "totalRam = %s  totalSwap = %s  ram = %s\n",
 				uintToCommaString (s->totalRam), 
