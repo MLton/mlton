@@ -1,4 +1,37 @@
-Here are the changes since version 20040227.
+Here are the changes from version 20040227 to 20041109.
+
+Summary:
+  + New platforms:
+   o x86: FreeBSD 5.x, OpenBSD
+   o PowerPC: Darwin (MacOSX)
+  + Support for MLBasis files.
+  + Support for dynamic libraries.
+  + Support for Concurrent ML (CML).
+  + New structures: Int2, Int3, ..., Int31 and Word2, Word3, ..., Word31.
+  + A new form of profiling, -profile count.
+  + A bytecode generator.
+  + Data representation improvements.
+  + MLton structure changes.
+    o Added: share, shareAll
+    o Changed: Exn, IntInf, Signal, Thread.
+  + Command-line switch changes.
+    o Deprecated: 
+        -native (use -codegen)
+        -sequence-unit (use -default-ann)
+        -warn-match (use -default-ann)
+        -warn-unused (use -default-ann)
+    o Removed: 
+        -detect-overflow
+        -exn-history (use -const)
+        -safe
+        -show-basis-used
+    o Added: 
+        -codegen
+        -const
+        -default-ann
+        -disable-ann
+        -profile-branch
+        -target-link-opt
 
 * 2004-09-22
   - Extended _import to support indirect function calls.
