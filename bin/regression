@@ -1,6 +1,7 @@
 #!/bin/sh
 
 # This script runs the regression tests in src/regression.
+# It also compiles the tests in benchmark/tests
 
 name=`basename $0`
 
@@ -41,19 +42,60 @@ PATH=.:$PATH
 		*)
  			echo "testing $f"
 			$mlton -type-check true $f.sml
-			if [ $? -eq 0 ]; then
+			if [ $? -ne 0 ]; then
+				echo "compilation of $f failed"
+			else
 				$f >$tmp 2>&1
 				if [ -r $f.ok ]; then
 					diff $f.ok $tmp
 				fi
-			else
-				echo "compilation of $f failed"
 			fi
 			rm -f $f $f.cps $f.c
 		;;
 		esac
 	done 
-	make clean
+	make clean > /dev/null
+        cd $src/benchmark/tests
+	for f in `ls *.sml`
+	do
+		f=`basename $f .sml`
+		tmpf=/tmp/$f.$$
+		case "$f" in
+		fxp)
+			echo "skipping $f"
+		;;
+		*)
+ 			echo "testing $f"
+			echo "val _ = Main.doit ()" | cat $f.sml - > $tmpf.sml
+			$mlton -type-check true $tmpf.sml
+			if [ $? -ne 0 ]; then
+				echo "compilation of $f failed"
+			fi
+			rm -f $tmpf $tmpf.sml
+		;;
+		esac
+	done 
+	make clean > /dev/null
+	cd $src
+	for f in mllex mlyacc mlprof
+	do
+	    tmpf=/tmp/$f.$$
+	    cd $src/$f
+	    case "$f" in
+	    foobar)
+		    echo "skipping $f"
+	    ;;
+	    *)
+		    echo "testing $f"
+		    make $f.cm > /dev/null
+		    $mlton -type-check true -o $tmpf $f.cm
+		    if [ $? -ne 0 ]; then
+				echo "compilation of $f failed"
+		    fi
+		    rm -f $tmpf
+	    ;;
+	    esac
+      done
 ) 2>&1 | tee $log
 
 rm -f $tmp
