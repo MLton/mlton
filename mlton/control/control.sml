@@ -745,10 +745,15 @@ local
 	    case Region.left r of
 	       NONE => "<bogus>"
 	     | SOME p => SourcePos.toString p
+	 val msg = Layout.toString msg
+	 val msg =
+	    Layout.str
+	    (concat [String.fromChar (Char.toUpper (String.sub (msg, 0))),
+		     String.dropPrefix (msg, 1),
+		     "."])
 	 in
-	    outputl (align [seq [str (concat [kind, ": "]),
-				 str p, str ": ", msg],
-			    indent (extra, 3)],
+	    outputl (align [seq [str (concat [kind, ": "]), str p, str "."],
+			    indent (align [msg, extra], 3)],
 		     Out.error)
       end
 in
