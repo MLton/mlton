@@ -2,6 +2,10 @@ Here are the changes since version 20030312.
 
 At this point, the only missing basis library function is "use".
 
+* 2003-07-07
+  - When calling gcc for linking, put -link args in same order as they
+    appeared on the MLton command line (they used to be reversed).
+
 * 2003-07-03
   - Making OS.Process.{atExit,exit} conform to the basis library spec
     in that exceptions raised during cleaners are caught and ignored.

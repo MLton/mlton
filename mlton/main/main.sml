@@ -637,7 +637,7 @@ fun commandLine (args: string list): unit =
 				     list ("-l",
 					   (if !debug then "mlton-gdb"
 					    else "mlton")
-					    :: (defaultLibs @ (!libs))),
+					    :: (rev (!libs) @ defaultLibs)),
 				     linkWithGmp]
 		     datatype debugFormat =
 			Dwarf | DwarfPlus | Dwarf2 | Stabs | StabsPlus
