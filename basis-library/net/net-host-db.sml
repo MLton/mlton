@@ -12,7 +12,7 @@ structure NetHostDB:> NET_HOST_DB_EXTRA =
       structure PW = PackWord32Big
       fun new_in_addr () =
 	let
-	  val ia = Array.array (Prim.inAddrLen, 0wx0: Word8.word)
+	  val ia: pre_in_addr = Array.array (Prim.inAddrLen, 0wx0: Word8.word)
 	  fun finish () = Array.vector ia
 	in
 	  (ia, finish)
