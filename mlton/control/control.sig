@@ -81,11 +81,11 @@ signature CONTROL =
 	    val current: 'a t -> 'a
 	    val default: 'a t -> 'a ref
 	    val enabled: 'a t -> bool ref
-
-	    val withDef: (unit -> 'a) -> 'a
-	    val withAnn: string list -> (unit -> unit) option
-	    val setDef: string list -> bool
+	    val name: 'a t -> string
 	    val setAble: bool * string -> bool
+	    val setDef: string list -> bool
+	    val withAnn: string list -> (unit -> unit) option
+	    val withDef: (unit -> 'a) -> 'a
 	 end
 
       (* stop after elaboration.  So, no need for the elaborator to generate

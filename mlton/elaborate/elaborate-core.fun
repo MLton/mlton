@@ -993,7 +993,22 @@ val {get = recursiveTargs: Var.t -> (unit -> Type.t vector) option ref,
 
 val {get = tyconRegion: Tycon.t -> Region.t, set = setTyconRegion, ...} =
    Property.getSetOnce (Tycon.plist, Property.initRaise ("region", Tycon.layout))
+
+structure ElabControl = Control.Elaborate
    
+fun check (c: bool ElabControl.t, keyword: string, region) =
+   if ElabControl.current c
+      then ()
+   else
+      let
+	 open Layout
+      in
+	 Control.error (region,
+			str (concat [keyword, " disallowed, compile with -default-ann '",
+				     ElabControl.name c, " true'"]),
+			empty)
+      end
+
 fun elaborateDec (d, {env = E, nest}) =
    let
       fun recursiveFun () =
@@ -1631,11 +1646,7 @@ fun elaborateDec (d, {env = E, nest}) =
 		      Decs.empty
 		   end
 	      | Adec.Overload (p, x, tyvars, ty, xs) =>
-		   (if not (allowOverload ())
-		       then let open Layout
-			    in Control.error (region, str "_overload disallowed", empty)
-			    end
-		       else ()
+		   (check (ElabControl.allowOverload, "_overload", region)
 		    ; let
 			 (* Lookup the overloads before extending the var in case
 			  * x appears in the xs.
@@ -2093,10 +2104,6 @@ fun elaborateDec (d, {env = E, nest}) =
 		   end
 	      | Aexp.Prim {kind, name, ty} =>
 		   let
-		      fun disallowed d =
-			 let open Layout
-			 in Control.error (region, str (d ^ " disallowed"), empty)
-			 end
 		      val ty = elabType ty
 		      val expandedTy =
 			 Type.hom
@@ -2225,23 +2232,18 @@ fun elaborateDec (d, {env = E, nest}) =
 				  Cexp.make (Cexp.Const finish, ty)
 			       end
 			 end
+		      val check = fn (c, n) => check (c, n, region)
 		      datatype z = datatype Ast.PrimKind.t
 		   in
 		      case kind of
-			 BuildConst => 
-			    (if not (allowConstant ())
-				then disallowed "_build_const"
-				else ()
+			 BuildConst =>
+			    (check (ElabControl.allowConstant, "_build_const")
 			     ; lookConst name)
 		       | Const => 
-			    (if not (allowConstant ())
-				then disallowed "_const"
-				else ()
+			    (check (ElabControl.allowConstant, "_const")
 			     ; lookConst name)
 		       | Export attributes =>
-			    (if not (allowExport ())
-				then disallowed "_export"
-				else ()
+			    (check (ElabControl.allowExport, "_export")
 			     ; let
 				  val e =
 				     Env.scope
@@ -2271,17 +2273,13 @@ fun elaborateDec (d, {env = E, nest}) =
 				  wrap (e, Type.arrow (ty, Type.unit))
 			       end)
 		       | Import attributes =>
-			    (if not (allowImport ())
-				then disallowed "_import"
-				else ()
+			    (check (ElabControl.allowImport, "_import")
 			     ; eta (import {attributes = attributes,
 					    name = name,
 					    region = region,
 					    ty = expandedTy}))
 		       | Prim => 
-			    (if not (allowPrim ())
-				then disallowed "_prim"
-				else ()
+			    (check (ElabControl.allowPrim, "_prim")
 			     ; eta (Prim.fromString name))
 		   end
 	      | Aexp.Raise exn =>

@@ -113,10 +113,13 @@ structure Elaborate =
    struct
       datatype 'a t = T of {cur: 'a ref,
 			    def: 'a ref,
-			    enabled: bool ref}
+			    enabled: bool ref,
+			    name: string}
+
       fun current (T {cur, ...}) = !cur
       fun default (T {def, ...}) = def
       fun enabled (T {enabled, ...}) = enabled
+      fun name (T {name, ...}) = name
 
       local
 	 fun make ({name: string, 
@@ -131,7 +134,7 @@ structure Elaborate =
 		    setDef: string list -> bool,
 		    setAble: bool * string -> bool}) =
 	    let
-	       val ctrl as T {cur, def, enabled} =
+	       val ctrl as T {cur, def, enabled, ...} =
 		  T {cur = ref default,
 		     def = control {name = concat ["elaborate ",name,
 						   " (default)"],
@@ -140,7 +143,8 @@ structure Elaborate =
 		     enabled = control {name = concat ["elaborate ",name,
 						       " (enabled)"],
 					default = true,
-					toString = Bool.toString}}
+					toString = Bool.toString},
+		     name = name}
 	       val withDef : unit -> (unit -> unit) =
 		  fn () =>
 		  let
