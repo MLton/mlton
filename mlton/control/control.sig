@@ -179,7 +179,7 @@ signature CONTROL =
       (*------------------------------------*)
       (*          Compiler Passes           *)
       (*------------------------------------*)
-      datatype style = No | Assembly | C | ML
+      datatype style = No | Assembly | C | Dot | ML
 
       datatype 'a display =
 	 NoDisplay

@@ -252,7 +252,7 @@ val verbosity = control {name = "verbosity",
 
 val version = "MLton VERSION"
 
-datatype style = No | Assembly | C | ML
+datatype style = No | Assembly | C | Dot | ML
 
 fun preSuf style =
    let
@@ -261,6 +261,7 @@ fun preSuf style =
 	    No => ("", "")
 	  | Assembly => ("# ", "")
 	  | C => ("/* ", " */")
+	  | Dot => ("// ", "")
 	  | ML => ("(* ", " *)")
    in (p, s)
    end

@@ -1042,7 +1042,7 @@ structure Function =
 			 in
 			    saveToFile
 			    ({suffix = concat [name, ".", s, ".dot"]},
-			     No, (), Layout (fn () => g))
+			     Dot, (), Layout (fn () => g))
 			 end
 		      val _ = doit ("cfg", graph)
 		      val _ = doit ("dom", tree ())
