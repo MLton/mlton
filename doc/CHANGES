@@ -1,5 +1,8 @@
 Here are the changes from version 20011006 to version VERSION.
 
+* 2001-12-05
+  - Added local ref elimination SSA optimization.
+
 * 2001-11-19
   - The CPS IL has been replaced with an SSA (static-single assignment) IL.
     All of the optimizations have been ported from CPS to SSA.
