@@ -19,16 +19,20 @@ exception Overflow = Overflow
 exception Subscript = Subscript
    
 fun layout e =
-   let open Layout
-   in case e of
-      OS.SysErr(s, so) =>
-	 seq[str "error: ",
-	     case so of
-		NONE => empty
-	      | SOME se => seq[str(OS.errorName se), str ": "],
-             str s]
-    | Fail s => str s
-    | _ => seq[str "unhandled exception: ", str(exnName e)]
+   let
+      open Layout
+   in
+      case e of
+	 OS.SysErr (s, so) =>
+	    seq [str "error: ",
+		 case so of
+		    NONE => empty
+		  | SOME se => seq [str (OS.errorName se), str ": "],
+		       str s]
+       | Fail s => str s
+       | IO.Io {cause, function, ...} =>
+	    seq [str (concat ["IO ", function, ": "]), layout cause]
+       | _ => seq [str "unhandled exception: ", str (exnName e)]
    end
 
 end
