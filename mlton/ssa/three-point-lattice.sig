@@ -28,6 +28,7 @@ signature THREE_POINT_LATTICE =
       val makeTop: t -> unit
       val makeMid: t -> unit
       val new: unit -> t (* a new bottom *)
+      val up: t -> unit
       (* handler will be run once iff value gte mid *)
       val whenMid: t * (unit -> unit) -> unit
       (* handler will be run once iff value gte top *)

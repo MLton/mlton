@@ -10,7 +10,7 @@ struct
 
 open S
 
-val N = List.length names
+val N = List.length names - 1
 
 structure Set = DisjointSet
    
@@ -26,7 +26,7 @@ fun toString e =
 val layout = Layout.str o toString
 
 fun new (): t = 
-   T (Set.singleton (0, List.duplicate (N - 1, fn () => ref AppendList.empty)))
+   T (Set.singleton (0, List.duplicate (N, fn () => ref AppendList.empty)))
 
 fun equals (T s, T s') = Set.equals (s, s')
 
