@@ -198,7 +198,7 @@ signature CONTROL =
 
       val profileBasis: bool ref
 
-      val profileCombine: bool ref
+      val profileSplit: Regexp.t ref
 
       datatype profileIL = ProfileSSA | ProfileSource
       val profileIL: profileIL ref

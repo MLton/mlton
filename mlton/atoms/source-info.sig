@@ -25,5 +25,6 @@ signature SOURCE_INFO =
       val plist: t -> PropertyList.t
       val polyEqual: t
       val toString: t -> string
+      val toString': t * string -> string
       val unknown: t
    end

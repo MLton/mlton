@@ -262,12 +262,12 @@ tak       11.3%
 \subsection{Profiling details}
 
 {\mlton}'s optimizer may duplicate source functions for any of a
-number of reasons.  By default, each of these duplicates is treated as
-a different function for the purposes of profiling.  It you would like
-all of the copies of a function to be treated as one, you can compile
-the program with {\tt -profile-combine true}.  Even with this, copies
-of a function that arise from functor duplication are still kept
-separate.
+number of reasons (functor duplication, monomorphisation,
+polyvariance, inlining).  By default, duplicates arising from functor
+duplication are treated as different functions, while duplicates
+arising from other optimizations are treated as the same function.
+If you would like all the copies of a function to be treated
+as different, you can use {\tt -profile-split}.
 
 Conceptually, both allocation and time profiling work in the same way.
 The compiler produces information that maps machine code positions to

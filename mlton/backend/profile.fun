@@ -111,12 +111,14 @@ fun profile program =
 	    in
 	       infoNode
 	    end
+	 val {get = share, ...} =
+	    Property.get (SourceInfo.plist, Property.initFun new)
+	 val rc = Regexp.compileNFA (!Control.profileSplit)
       in	 
-	 val sourceInfoNode =
-	    if !Control.profileCombine
-	       then
-		  #get (Property.get (SourceInfo.plist, Property.initFun new))
-	    else new
+	 fun sourceInfoNode (si: SourceInfo.t) =
+	    if Regexp.Compiled.matchesAll (rc, SourceInfo.toString si)
+	       then new si
+	    else share si
       end
       fun firstEnter (ps: Push.t list): InfoNode.t option =
 	 List.peekMap (ps, fn p =>

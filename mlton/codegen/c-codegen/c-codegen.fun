@@ -261,7 +261,8 @@ fun outputDeclarations
 			    concat ["{(pointer)", ProfileLabel.toString label,
 				    ", ", C.int sourceSeqsIndex, "}"])
 	    ; declareArray ("string", "sources", sources,
-			    C.string o SourceInfo.toString o #2)
+			    fn (_, si) =>
+			    C.string (SourceInfo.toString' (si, "\t")))
 	    ; Vector.foreachi (sourceSeqs, fn (i, v) =>
 			       (print (concat ["static int sourceSeq",
 					       Int.toString i,

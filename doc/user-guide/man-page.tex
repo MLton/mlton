@@ -37,7 +37,16 @@ is performed on integer arithmetic.
 
 \begin{description}
 
-\option{-basis \{2002|2002-strict|1997|none\}}
+\newcommand{\choices}{{\it \{}}
+\newcommand{\choice}{{\it |}}
+\newcommand{\choicesEnd}{{\it \}}}
+\newcommand{\choiceTwo}[2]{\choices #1\choice #2\choicesEnd}
+\newcommand{\choiceThree}[3]{\choices #1\choice #2\choice #3\choicesEnd}
+\newcommand{\choiceFour}[4]{\choices #1\choice #2\choice #3\choice #4\choicesEnd}
+\newcommand{\falseTrue}{\choiceTwo{false}{true}}
+\newcommand{\trueFalse}{\choiceTwo{true}{false}}
+
+\option{-basis \choices 2002\choice 2002-strict\choice 1997\choice none\choicesEnd}
 Selects a Basis Library to be used by the input program.  {\tt 2002}
 and {\tt 2002-strict} implement the 2002 Basis Library
 specification; {\tt 2002-strict} removes all extensions described in
@@ -45,7 +54,7 @@ specification; {\tt 2002-strict} removes all extensions described in
 Library specification; see \secref{basis1997} for more information.
 {\tt none} removes all Basis Library functionality.
 
-\option{-detect-overflow \{true|false\}}
+\option{-detect-overflow \trueFalse}
 This flag controls whether or not overflow checking is performed on integer
 arithmetic, in particular on {\tt Int.\{+,-,*,\~{},div,quot\}}.
 
@@ -58,19 +67,19 @@ arithmetic, in particular on {\tt Int.\{+,-,*,\~{},div,quot\}}.
 %If you compile {\tt -DMLton\_debug=1}, then the value of the variable
 %{\tt MLton.debug} will be true.  The default is false.
 
-\option{-exn-history \{false|true\}}
+\option{-exn-history \falseTrue}
 Enable {\tt Exn.history}.  See \secref{exn} for details.  This has a
 performance impact, both in memory usage of exceptions and in runtime,
 because of additional work that must be performed at each exception
 construction, raise, and handle.
 
-\option{-host \{self|...\}}
+\option{-host \choiceTwo{self}{\ldots}}
 Generate an executable that runs on the specified host.  The default is {\tt
 self}, which means to compile for the machine that {\mlton} is running on.  To
 use any other host, you must first install a cross-compiler.  See
 \secref{cross-compiling}.
 
-\option{-ieee-fp \{false|true\}}
+\option{-ieee-fp \falseTrue}
 Control whether or not the native code generator is pedantic about following
 the IEEE floating point standard.  By default, it is not, because of the
 performance cost.  This has no effect with {\tt -native false}.
@@ -80,14 +89,14 @@ performance cost.  This has no effect with {\tt -native false}.
 %constants (see \secref{compile-time-constant}).  The file will be included with
 %{\tt \#include <file.h>}.
 
-\option{-inline \mbox{\rm n}}
+\option{-inline {\it n}}
 Set the inlining threshold used in the optimizer.  The default is 320.
 
 %\option{-I\mbox{\rm dir}}
 %Specify an additional directory to be searched for include files (included with
 %{\tt -i}).
 
-\option{-keep \{g|o|sml|...\}}
+\option{-keep \choiceThree{g}{o}{sml}}
 Save the intermediate file(s) corresponding to the given arg.  If
 no {\tt -keep} argument is given, then only the final file(s) is saved.\\
 \begin{tabular}{ll}
@@ -96,55 +105,61 @@ no {\tt -keep} argument is given, then only the final file(s) is saved.\\
 {\tt sml} & SML file\\
 \end{tabular}
 
-\option{-lib-search \mbox{\rm dir}}
+\option{-lib-search {\it dir}}
 Specify an additional directory to be searched for libraries when
 linking.
 
-\option{-link \mbox{\rm lib}}
+\option{-link {\it lib}}
 Specify an additional library to link with.
 
-\option{-may-load-world \{true|false\}}
+\option{-may-load-world \trueFalse}
 Controls whether or not the generated executable supports the {\tt
 @MLton load-world} runtime system option.
 
-\option{-native \{true|false\}}
+\option{-native \trueFalse}
 Controls whether or not to use native code generation, as opposed to
 generating C and using {\tt gcc}.  With native code generation,
 {\mlton} typically compiles more quickly and generates better code.
 
-\option{-output \mbox{\rm file}}
+\option{-output {\it file}}
 Specify the name of the final output file. The default name is the
 input file name with its suffix removed and an appropriate suffix
 added.
 
-\option{-profile \{no|alloc|time\}}
+\option{-profile \choiceThree{no}{alloc}{time}}
 Produce an executable that will gather allocation or time profiling
 information.  When such an executable is run, it will produce an {\tt
 mlmon.out} file.  See \secref{profiling} for details.
 
-\option{-profile-stack \{false|true\}}
+\option{-profile-split {\it regexp}}
+Attribute time or allocation costs separately to duplicates of
+functions whose name and source position matches {\it regexp}.
+Multiple {\tt -profile-split} args can be used and will be or-ed
+together.
+
+\option{-profile-stack \falseTrue}
 If true, the profiler will count the time spent (or bytes allocated)
 while a function is on the stack.
 
-\option{-safe \{true|false\}}
+\option{-safe \trueFalse}
 This switch determines the value of the SML variable {\tt MLton.safe}, which
 controls whether the basis library performs array, string, and vector bounds
 checks, division for zero checks, and other checks.  Compiling {\tt -safe false}
 changes the behavior of some programs, does not conform to the basis library
 specification, and may cause programs to seg fault.
 
-\option{-show-basis \{false|true\}}
+\option{-show-basis \falseTrue}
 If true, the compiler shows the basis library and exits.
 
-\option{-show-basis-used \{false|true\}}
+\option{-show-basis-used \falseTrue}
 If true, then the compiler prints out the types, values, signatures, structures,
 and functors from the basis library that the input program uses, and then exits.
 
-\option{-static \{false|true\}}
+\option{-static \falseTrue}
 If true, then produce a statically linked executable.  This option only
 affects the linker.
 
-\option{-stop \{f|g|o|sml\}}
+\option{-stop \choiceFour{f}{g}{o}{sml}}
 Secify pass to stop at.\\
 \begin{tabular}{ll}
 {\tt f} & list of files on stdout (only makes sense when input is {\tt foo.cm})\\
@@ -155,7 +170,7 @@ Secify pass to stop at.\\
 If you compile {\tt -stop g} or {\tt -stop o}, you can resume compilation by
 running {\tt mlton} on the generated {\tt .c} and {\tt .S} or {\tt .o} files.
 
-\option{-verbose \{0|1|2|3\}}
+\option{-verbose \choiceFour{0}{1}{2}{3}}
 How verbose to be about what passes are running.  The default is 0.\\
 \begin{tabular}{ll}
 {\tt 0} & silent\\

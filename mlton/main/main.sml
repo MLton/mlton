@@ -172,7 +172,7 @@ fun makeOptions {usage} =
 (*        (Normal, "I", "dir", "search dir for include files",
  * 	push includeDirs),
  *)
-       (Normal, "keep", " {dot|g|o|sml|ssa}", "save intermediate files",
+       (Normal, "keep", " {g|o|sml}", "save intermediate files",
 	SpaceString (fn s =>
 		     case s of
 			"dot" => keepDot := true
@@ -274,15 +274,19 @@ fun makeOptions {usage} =
        (Expert, "profile-basis", " {false|true}",
 	"profile the basis implementation",
 	boolRef profileBasis),
-       (Normal, "profile-combine", " {false|true}",
-	"combine all occurrences of a function",
-	boolRef profileCombine),
        (Expert, "profile-il", " {source}", "where to insert profile exps",
 	SpaceString
 	(fn s =>
 	 case s of
 	    "source" => profileIL := ProfileSource
 	  | _ => usage (concat ["invalid -profile-il arg: ", s]))),
+       (Normal, "profile-split", " <regexp>",
+	"split occurrences of function",
+	SpaceString
+	(fn s =>
+	 case Regexp.fromString s of
+	    NONE => usage (concat ["invalid -profile-split regexp: ", s])
+	  | SOME (r, _) => profileSplit := Regexp.or [r, !profileSplit])),
        (Normal, "profile-stack", " {false|true}",
 	"profile the stack",
 	boolRef profileStack),

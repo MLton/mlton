@@ -137,9 +137,11 @@ information.  When such an executable is run, it will produce an
 extract information from this file. 
 
 .TP
-\fB-profile-combine \fI{\fBfalse\fP|\fBtrue\fP}\fR
-When \fBtrue\fP, combine all copies of each function together for
-profiling data and for the call graph.
+\fB-profile-split \fIregexp\fP
+Attribute time or allocation costs separately to duplicates of
+functions whose name and source position matches \fIregexp\fP.
+Multiple \fB-profile-split\fP args can be used and will be or-ed
+together.
 
 .TP
 \fB-profile-stack \fI{\fBfalse\fP|\fBtrue\fP}\fR

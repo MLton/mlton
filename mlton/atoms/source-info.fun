@@ -78,12 +78,14 @@ fun function {name, region} =
    new (Function {name = name,
 		  pos = Pos.fromRegion region})
 
-fun toString si =
+fun toString' (si, sep) =
    case info si of
       Anonymous p => Pos.toString p
     | C s => concat ["<", s, ">"]
-    | Function {name, pos} => concat [name, "\t", Pos.toString pos]
+    | Function {name, pos} => concat [name, sep, Pos.toString pos]
 
+fun toString si = toString' (si, " ")
+   
 val layout = Layout.str o toString
 
 val equals: t * t -> bool =

@@ -370,9 +370,9 @@ val profileBasis = control {name = "profile basis",
 			    default = false,
 			    toString = Bool.toString}
 
-val profileCombine = control {name = "profile combine",
-			      default = false,
-			      toString = Bool.toString}
+val profileSplit = control {name = "profile split",
+			    default = Regexp.none,
+			    toString = Regexp.toString}
 
 datatype profileIL = datatype ProfileIL.t
    
