@@ -160,10 +160,10 @@ struct
 			       of NONE => s
 				| SOME x' => add (s, x'))
    fun map (s, f) = replace (s, fn x => SOME (f x))
+   fun subset (s, p) = replace (s, fn x => if p x then SOME x else NONE)
    fun partition (s, p) = let val yes = subset (s, p)
 			  in {yes = yes, no = difference (s, yes)}
 			  end
-   fun subset (s, p) = replace (s, fn x => if p x then SOME x else NONE)
 
    fun fromList l = List.fold (l, empty, fn (x, s) => add (s, x))
    fun toList s = fold (s, nil, op ::)
@@ -176,6 +176,6 @@ struct
    val op > = isSuperset
    val op >= = isSupersetEq
 
-   fun power _ = Error.unimplemented "power"
-   fun subsets _ = Error.unimplemented "subsets"
+   fun power _ = Error.unimplemented "BitVectorSet.power"
+   fun subsets _ = Error.unimplemented "BitVectorSet.subsets"
 end

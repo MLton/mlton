@@ -266,7 +266,7 @@ fun subset (s as T {elements = xs, length = n}, p)
       T' "subset" {elements = List.rev xs, length = n}
     end
 
-fun subsets (s, n) = Error.bug "OrderedUniqueSet: subsets"
+fun subsets (s, n) = Error.unimplemented "OrderedUniqueSet: subsets"
 
 fun subsetSize (s as T {elements = xs, length = n}, p)
   = List.fold(xs, 0: int, fn (x, n) => if p x then n + 1 else n)
