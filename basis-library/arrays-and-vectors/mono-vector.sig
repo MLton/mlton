@@ -2,25 +2,26 @@ signature MONO_VECTOR =
    sig
       type vector
       type elem
-      val maxLen: int 
-      val fromList: elem list -> vector 
-      val tabulate: int * (int -> elem) -> vector 
-      val length: vector -> int 
-      val sub: vector * int -> elem 
-      val update: vector * int * elem -> vector
-      val concat: vector list -> vector 
-      val appi: (int * elem -> unit) -> vector -> unit 
-      val app: (elem -> unit) -> vector -> unit 
-      val mapi: (int * elem -> elem) -> vector -> vector 
-      val map: (elem -> elem) -> vector -> vector 
-      val foldli: (int * elem * 'a -> 'a) -> 'a -> vector -> 'a 
-      val foldri: (int * elem * 'a -> 'a) -> 'a -> vector -> 'a 
-      val foldl: (elem * 'a -> 'a) -> 'a -> vector -> 'a 
-      val foldr: (elem * 'a -> 'a) -> 'a -> vector -> 'a 
-      val findi: (int * elem -> bool) -> vector -> (int * elem) option
-      val exists: (elem -> bool) -> vector -> bool
+
       val all: (elem -> bool) -> vector -> bool
+      val app: (elem -> unit) -> vector -> unit 
+      val appi: (int * elem -> unit) -> vector -> unit 
       val collate: (elem * elem -> order) -> vector * vector -> order
+      val concat: vector list -> vector 
+      val exists: (elem -> bool) -> vector -> bool
+      val findi: (int * elem -> bool) -> vector -> (int * elem) option
+      val foldl: (elem * 'a -> 'a) -> 'a -> vector -> 'a 
+      val foldli: (int * elem * 'a -> 'a) -> 'a -> vector -> 'a 
+      val foldr: (elem * 'a -> 'a) -> 'a -> vector -> 'a 
+      val foldri: (int * elem * 'a -> 'a) -> 'a -> vector -> 'a 
+      val fromList: elem list -> vector 
+      val length: vector -> int 
+      val map: (elem -> elem) -> vector -> vector 
+      val mapi: (int * elem -> elem) -> vector -> vector 
+      val maxLen: int 
+      val sub: vector * int -> elem 
+      val tabulate: int * (int -> elem) -> vector 
+      val update: vector * int * elem -> vector
    end
 
 signature MONO_VECTOR_EXTRA_PRE = 
@@ -29,7 +30,6 @@ signature MONO_VECTOR_EXTRA_PRE =
 
       type array
 
-      (* Used to implement Substring/String functions *)
       val append: vector * vector -> vector
       val concatWith: vector -> vector list -> vector
       val duplicate: vector -> vector
@@ -49,17 +49,20 @@ signature MONO_VECTOR_EXTRA_PRE =
 signature MONO_VECTOR_EXTRA =
    sig
       include MONO_VECTOR_EXTRA_PRE
+
       structure MonoVectorSlice: MONO_VECTOR_SLICE_EXTRA 
-	where type elem = elem
-	  and type vector = vector
+	 where type elem = elem
+	   and type vector = vector
    end
 
 signature EQTYPE_MONO_VECTOR_EXTRA =
    sig
       include MONO_VECTOR_EXTRA_PRE
+
+      structure MonoVectorSlice: EQTYPE_MONO_VECTOR_SLICE_EXTRA 
+	 where type elem = elem
+	   and type vector = vector
+
       val fromPoly: elem Vector.vector -> vector 
       val toPoly: vector -> elem Vector.vector
-      structure MonoVectorSlice: EQTYPE_MONO_VECTOR_SLICE_EXTRA 
-	where type elem = elem
-	  and type vector = vector
    end
