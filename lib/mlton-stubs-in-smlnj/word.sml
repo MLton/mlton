@@ -23,6 +23,30 @@ functor FixWord (W: WORD) =
    end
 
 structure Word8 = FixWord (Pervasive.Word8)
-structure Word = FixWord (Pervasive.Word32)
+structure Word =
+   struct
+      local
+	 structure S = FixWord (Pervasive.Word32)
+	 open S
+	 val highBit: word = 0wx80000000
+	 val highBitInt = IntInf.* (IntInf.fromInt 2,
+				    Pervasive.IntInf.fromLarge 0x40000000)
+      in
+	 open S
+
+	 fun fromLargeInt (n: IntInf.int) =
+	    if IntInf.< (n, highBitInt)
+	       then fromInt (IntInf.toInt n)
+	    else
+	       highBit + fromInt (IntInf.toInt (IntInf.mod (n, highBitInt)))
+	 fun toLargeInt (w: word): IntInf.int =
+	    if w < highBit
+	       then IntInf.fromInt (toInt w)
+	    else IntInf.+ (highBitInt,
+			   IntInf.fromInt (toInt
+					   (andb (w, notb highBit))))
+
+      end
+   end
 structure Word32 = Word
 structure SysWord = Word
