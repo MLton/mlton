@@ -258,8 +258,6 @@ structure PosixPrimitive =
 
 	    structure Uname =
 	       struct
-		  type uname = pointer
-
 		  val uname = _ffi "Posix_ProcEnv_Uname_uname": unit -> int;
 		  val sysname =
 		     _ffi "Posix_ProcEnv_Uname_sysname": unit -> cstring;
