@@ -1422,18 +1422,25 @@ fun elaborateDec (d, {env = E, nest}) =
 					      (clauses, fn {lay, ...} => lay ()),
 					      " | ")))]
 				   end
-				val {args, func, ...} = Vector.sub (clauses, 0)
+				val {args, func, lay = lay0, ...} =
+				   Vector.sub (clauses, 0)
 				val numArgs = Vector.length args
 				val _ =
 				   Vector.foreach
-				   (clauses, fn {args, ...} =>
+				   (clauses, fn {args, lay = layN, ...} =>
 				    if numArgs = Vector.length args
-				       then ()
+				       then  ()
 				    else
-				       Control.error
-				       (region,
-					seq [str "function defined with different numbers of arguments"],
-					lay ()))
+				       let
+					  fun one lay =
+					     seq [str "clause: ",
+						  approximate (lay ())]
+				       in
+					  Control.error
+					  (region,
+					   seq [str "function defined with different numbers of arguments"],
+					   align [one lay0, one layN])
+				       end)
 				val diff =
 				   Vector.fold
 				   (clauses, [], fn ({func = func', ...}, ac) =>
