@@ -67,6 +67,7 @@ signature REAL =
       val round: t -> int
       val signBit: t -> bool
       val sin: t -> t
+      val split: t -> {frac: t, whole: t}
       val sqrt: t -> t
       val sub1: t -> t
       val tan: t -> t
