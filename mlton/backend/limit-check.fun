@@ -36,6 +36,7 @@ fun limitCheck (program as Program.T {functions, ...}) =
 	 if !r < v
 	    then r := v
 	 else ()
+	    
       fun jump j =
 	 let val info as {inBody, ...} = jumpInfo j
 	 in if !inBody

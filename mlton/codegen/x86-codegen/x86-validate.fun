@@ -7,11 +7,8 @@ struct
   open S;
   open x86;
 
-  val tracer
-    = Control.traceBatch
-(*
-    = fn s => fn f => (Control.traceCall s f, fn () => ())
-*)
+  val tracer = x86.tracer
+  val tracerTop = x86.tracerTop
 
   structure Register =
     struct
@@ -102,7 +99,8 @@ struct
 
       fun validate {instruction: t}
 	= case instruction
-	    of BinAL {oper, src, dst, size}
+	    of NOP => true
+	     | BinAL {oper, src, dst, size}
 	       (* Integer binary arithmetic(w/o mult & div)/logic instructions.
 		* Require src/dst operands as follows:
 		*
@@ -1235,7 +1233,7 @@ struct
 	 else Error.bug "x86Validate.validate")       
 
   val (validate, validate_msg)
-    = tracer
+    = tracerTop
       "validate"
       validate
 

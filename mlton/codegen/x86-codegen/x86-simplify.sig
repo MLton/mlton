@@ -7,6 +7,12 @@ type word = Word.t
 signature X86_SIMPLIFY_STRUCTS =
   sig
     structure x86 : X86
+    structure x86Liveness : X86_LIVENESS
+    sharing x86 = x86Liveness.x86
+    structure x86JumpInfo : X86_JUMP_INFO
+    sharing x86 = x86JumpInfo.x86
+    structure x86EntryTransfer : X86_ENTRY_TRANSFER
+    sharing x86 = x86EntryTransfer.x86
   end
 
 signature X86_SIMPLIFY =
@@ -15,15 +21,8 @@ signature X86_SIMPLIFY =
 
     val simplify : {chunk : x86.Chunk.t,
 		    optimize : int,
-		    block_pre : x86.Label.t -> x86.Assembly.t list option,
-		    block_begin : x86.Assembly.t list,
-		    block_end : x86.Assembly.t list,
-		    block_fall : x86.Assembly.t list,
-		    transferRegs : x86.Register.t list,
-		    liveInfo : {get : x86.Label.t -> x86.MemLoc.t list,
-				set : x86.Label.t * x86.MemLoc.t list
-				      -> unit}}
-                   -> x86.Assembly.t list list
+		    liveInfo : x86Liveness.LiveInfo.t,
+		    jumpInfo : x86JumpInfo.t} -> x86.Chunk.t
 
     val simplify_totals : unit -> unit
   end

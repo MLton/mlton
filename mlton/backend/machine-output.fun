@@ -74,7 +74,7 @@ structure Operand =
             concat ["X", Type.name ty, 
 		    "(", toString base, ",", toString offset, ")"]
 	| CastInt oper => concat ["PointerToInt (", toString oper, ")"]
-	| Char c => Char.toString c
+	| Char c => Char.escapeC c
 	| Contents {oper, ty} =>
 	     concat ["C", Type.name ty, "(", toString oper, ")"]
 	| Global g => Global.toString g
@@ -117,19 +117,49 @@ structure GCInfo =
    struct
       datatype t = T of {(* Size of frame, including return address. *)
 			 frameSize: int,
+			 (* Live stack offsets. *)
+			 live: Operand.t list,
 			 return: Label.t}
+
+      fun layout (T {frameSize, live, return})
+	= let open Layout
+	  in
+	    seq [str "GCInfo ",
+		 record [("frameSize", Int.layout frameSize),
+			 ("live", List.layout Operand.layout live),
+			 ("return", Label.layout (return))]]
+	  end
    end
 
 structure PrimInfo =
    struct
       datatype t =
 	 None
-       | Overflow of Label.t
+       | Overflow of Label.t * Operand.t list
+       | Runtime of GCInfo.t
+       | Normal of Operand.t list
 
       fun foreachLabel (i: t, f) =
 	 case i of
-	    None => ()
-	  | Overflow l => f l
+	    Overflow (l, _) => f l
+	  | _ => ()
+
+      fun layout i
+	= let open Layout
+	  in
+	    case i
+	      of None => empty
+	       | Overflow (l,live) 
+	       => seq [str "Overflow ",
+		       record [("label", Label.layout l),
+			       ("live", List.layout Operand.layout live)]]
+	       | Runtime gcInfo 
+	       => seq [str "Runtime ",
+		       record [("gcInfo", GCInfo.layout gcInfo)]]
+	       | Normal live 
+	       => seq [str "Normal ",
+		       record [("live", List.layout Operand.layout live)]]
+	  end
    end
 
 structure Statement =
@@ -142,8 +172,7 @@ structure Statement =
        | Assign of {dst: Operand.t option,
 		    oper: Prim.t,
 		    pinfo: PrimInfo.t,
-		    args: Operand.t list,
-		    info: GCInfo.t option}		    
+		    args: Operand.t list}
        | LimitCheck of {info: GCInfo.t,
 			bytes: int,
 			stackCheck: bool}
@@ -159,6 +188,7 @@ structure Statement =
 			   numElts: Operand.t,
 			   numPointers: int,
 			   numBytesNonPointers: int,
+			   live: Operand.t list,
 			   limitCheck: {gcInfo: GCInfo.t,
 					bytesPerElt: int,
 					bytesAllocated: int} option}
@@ -170,19 +200,41 @@ structure Statement =
 	     | Move {dst, src} =>
 		  seq [Operand.layout dst, str " = ", Operand.layout src]
 	     | Push i => seq [str "Push (", Int.layout i, str ")"]
-	     | Assign {dst, oper, args, ...} =>
-		  seq [Option.layout Operand.layout dst, str " = ",
+	     | Assign {dst, oper, args, pinfo} =>
+		  seq [case dst
+			 of NONE => empty
+			  | SOME dst => seq [Operand.layout dst, str " = "],
 		       Prim.layout oper, str " ",
-		       List.layout Operand.layout args]
-	     | LimitCheck _ => str "LimitCheck"
-	     | SaveExnStack {offset, ...} =>
+		       List.layout Operand.layout args, str " ",
+		       PrimInfo.layout pinfo]
+	     | LimitCheck {info, bytes, stackCheck} => 
+		  seq [str "LimitCheck ",
+		       record [("info", GCInfo.layout info),
+			       ("bytes", Int.layout bytes),
+			       ("stackCheck", Bool.layout stackCheck)]]
+	     | SaveExnStack {offset} =>
 		  seq [str "SaveExnStack (", Int.layout offset, str ")"]
-	     | RestoreExnStack {offset, ...} =>
+	     | RestoreExnStack {offset} =>
 		  seq [str "RestoreExnStack (", Int.layout offset, str ")"]
-	     | Allocate {dst, ...} =>
-		  seq [Operand.layout dst, str " = Allocate"]
-	     | AllocateArray {dst, ...} =>
-		  seq [Operand.layout dst, str " = AllocateArray"]
+	     | Allocate {dst, stores, ...} =>
+		  seq [Operand.layout dst, 
+		       str " = Allocate[",
+		       (paren o seq)
+		       (separateRight(List.map(stores,
+					       fn {offset, value}
+					        => seq [Int.layout offset,
+							str " <- ",
+							Operand.layout value]),
+				      ", ")),
+		       str "]"]
+	     | AllocateArray {dst, numElts, limitCheck, ...} =>
+		  seq [Operand.layout dst, 
+		       str " = AllocateArray[",
+		       Operand.layout numElts,
+		       str "] ",
+		       case limitCheck
+			 of NONE => empty
+			  | SOME {gcInfo, ...} => GCInfo.layout gcInfo]
 	 end
 
    end
@@ -193,7 +245,7 @@ structure Transfer =
    struct
       datatype t =
 	 Bug
-       | Return
+       | Return of {live: Operand.t list}
        | Raise
        | Switch of {test: Operand.t,
 		    cases: Cases.t,
@@ -201,18 +253,44 @@ structure Transfer =
        | SwitchIP of {test: Operand.t,
 		      int: Label.t,
 		      pointer: Label.t}
-       | NearJump of {label: Label.t}
+       | NearJump of {label: Label.t,
+		      return: {return: Label.t,
+			       handler: Label.t option,
+			       size: int} option}
        | FarJump of {chunkLabel: ChunkLabel.t,
-		     label: Label.t}
+		     label: Label.t,
+		     live: Operand.t list,
+		     return: {return: Label.t,
+			      handler: Label.t option,
+			      size: int} option}
 
       fun layout t =
 	 let open Layout
 	 in case t of
 	    Bug => str "Bug"
-	  | FarJump {label, ...} => seq [str "FarJump ", Label.layout label]
-	  | NearJump {label, ...} => seq [str "NearJump ", Label.layout label]
+	  | FarJump {label, live, return, ...} => 
+               seq [str "FarJump ", 
+		    record [("label", Label.layout label),
+			    ("live", List.layout Operand.layout live),
+			    ("return", Option.layout 
+			               (fn {return, handler, size}
+					 => record [("return", Label.layout return),
+						    ("handler", Option.layout Label.layout handler),
+						    ("size", Int.layout size)])
+                                       return)]]
+	  | NearJump {label, return} => 
+               seq [str "NearJump ", 
+		    record [("label", Label.layout label),
+			    ("return", Option.layout 
+			               (fn {return, handler, size}
+					 => record [("return", Label.layout return),
+						    ("handler", Option.layout Label.layout handler),
+						    ("size", Int.layout size)])
+				       return)]]
 	  | Raise => str "Raise"
-	  | Return => str "Return"
+	  | Return {live} => 
+               seq [str "Return ",
+		    record [("live", List.layout Operand.layout live)]]
 	  | Switch {test, cases, default} =>
 	       seq [str "Switch ",
 		    tuple [Operand.layout test,
@@ -227,11 +305,49 @@ structure Transfer =
 
 structure Block =
    struct
+      structure Kind =
+	struct
+	  datatype t = Func of {args: Operand.t list}
+	             | Jump
+	             | Cont of {args: Operand.t list,
+				size: int}
+	             | Handler of {size: int}
+
+	  val layout
+	    = let open Layout
+	      in
+		fn Func {args} 
+		 => seq [str "Func ",
+			 record [("args", List.layout Operand.layout args)]]
+		 | Jump => str "Jump"
+		 | Cont {args, size} 
+		 => seq [str "Cont", paren(Int.layout size), str " ",
+			 record [("args", List.layout Operand.layout args)]]
+		 | Handler {size} 
+		 => seq [str "Handler", paren(Int.layout size)]
+	      end
+	end
       datatype t = T of {label: Label.t,
-			 live: Register.t list,
+			 kind: Kind.t,
+			 live: Operand.t list,
 			 profileName: string,
 			 statements: Statement.t array,
 			 transfer: Transfer.t}
+
+      fun layout (T {label, kind, live, profileName, statements, transfer})
+	= let open Layout
+	  in
+	    align [seq [Label.layout label, 
+			str " ",
+			record [("kind", Kind.layout kind),
+				("live", List.layout Operand.layout live)],
+			str ":"],		   
+		   align (Array.toListMap(statements, Statement.layout)),
+		   Transfer.layout transfer]
+	  end
+
+      fun layouts (block, output' : Layout.t -> unit)
+	= output'(layout block)
    end
 
 structure Chunk =
@@ -243,6 +359,16 @@ structure Chunk =
 			 blocks: Block.t list,
 			 (* for each type, gives the max # regs used *)
 			 regMax: Type.t -> int}
+      fun layout (T {blocks, ...})
+	= let open Layout
+	  in
+	    align (List.map(blocks, Block.layout))
+	  end
+
+      fun layouts (c as T {blocks, ...}, output' : Layout.t -> unit)
+	= let open Layout
+	  in List.foreach(blocks, fn block => Block.layouts(block, output'))
+	  end
    end
 
 structure Program =
@@ -261,8 +387,16 @@ structure Program =
 			 main: {chunkLabel: ChunkLabel.t,
 				label: Label.t}}
 
+      fun layout (T {chunks, ...})
+	= let open Layout
+	  in 
+	    align (List.map(chunks, Chunk.layout))
+	  end
 
-      fun layouts (_,output) = output (Layout.str "no MachineOutput.layouts")
+      fun layouts (p as T {chunks, ...}, output': Layout.t -> unit)
+	= let open Layout
+	  in List.foreach(chunks, fn chunk => Chunk.layouts(chunk, output'))
+	  end 
    end
 
 end

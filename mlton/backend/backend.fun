@@ -31,6 +31,7 @@ in
    structure Mcases = Cases
    structure Chunk = Chunk
    structure GCInfo = GCInfo
+   structure Kind = Block.Kind
    structure Label = Label
    structure MlimitCheck = LimitCheck
    structure Mtype = Type
@@ -123,13 +124,16 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 			      cons,
 			      2))
 	       end))))
+
       fun toMtypes ts = Vector.map (ts, toMtype)
       val wordSize = 4
+      val labelSize = Mtype.size Mtype.label
       val tagOffset = 0
       val tagType = Mtype.int
       val jumpHandlers = Cps.inferHandlers program
       val chunks = Chunkify.chunkify {program = program,
 				      jumpHandlers = jumpHandlers}
+
       val _ = 
 	 Control.diagnostics
 	 (fn display =>
@@ -141,6 +145,7 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 		  (record ([("funcs", List.layout Func.layout funcs),
 			    ("jumps", List.layout Jump.layout jumps)]))
 	       end))))
+
       val {get = jumpInfo: Jump.t -> {args: (Var.t * Ctype.t) vector,
 				      chunk: Chunk.t option ref,
 				      cont: Label.t option ref,
@@ -215,8 +220,10 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 		     in new (h, #handler)
 		     end
 		| _ => ()
+
 	    val _ = Vector.foreach (functions, fn Function.T {body, ...} =>
 				    loopExp body)
+
 	 in ()
 	 end
       val machineChunks = ref []
@@ -246,7 +253,7 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 	  end)
       (* primInfo is defined for primitives that enter the runtime system. *)
       val {get = varInfo: Var.t -> {operand: VarOperand.t,
-				    primInfo: GCInfo.t option ref,
+				    primInfo: MPrimInfo.t ref,
 				    ty: Ctype.t},
 	   set = setVarInfo} =
 	 Property.getSetOnce (Var.plist,
@@ -256,12 +263,11 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 		      Var.layout,
 		      fn {operand, primInfo, ...} =>
 		      Layout.record [("operand", VarOperand.layout operand),
-				     ("primInfo",
-				      Option.layout GCInfo.layout (!primInfo))])
+				     ("primInfo", MPrimInfo.layout (!primInfo))])
 	 varInfo
       fun newVarInfo (x, oper, ty) =
 	 setVarInfo (x, {operand = oper,
-			 primInfo = ref NONE,
+			 primInfo = ref MPrimInfo.none,
 			 ty = ty})
       val varOperand = #operand o varInfo
       fun varOperands xs = List.map (xs, varOperand)
@@ -408,7 +414,7 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 			 Prim.Name.MLton_bogus =>
 			    set (case Mtype.dest (toMtype ty) of
 				    Mtype.Char => Operand.char #"\000"
-				  (*                                  | Mtype.Double => Operand.float "0.0" *)
+(*				  | Mtype.Double => Operand.float "0.0" *)
 				  | Mtype.Int => Operand.int 0
 
 				  | Mtype.Uint => Operand.uint 0w0
@@ -471,6 +477,7 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 			else set (var, ty))
 		| Cdec.Fun {args, body, ...} => (sets args; loopExp body)
 		| _ => ()
+
 	    val _ = Vector.foreach (functions, fn Function.T {args, body, ...} =>
 				    (sets args; loopExp body))
 	 in ()
@@ -489,11 +496,12 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 		ty = toMtype ty}
 	    end
       in
-	 val {contInfo, funcInfo = funcRegInfo, handlerInfo,
-	      jumpInfo = jumpRegInfo} =
+	 val {funcInfo = funcAllocateInfo,
+	      jumpInfo = jumpAllocateInfo} =
 	    Control.trace (Control.Pass, "allocate registers")
 	    AllocateRegisters.allocate {funcChunk = funcChunk,
 					jumpChunk = jumpChunk,
+					jumpToLabel = jumpToLabel,
 					jumpHandlers = jumpHandlers,
 					program = program,
 					varInfo = varInfo}
@@ -501,12 +509,13 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
    
       local
 	 fun make sel (j: Jump.t) =
-	    let val Info.T r = jumpRegInfo j
+	    let val Info.T r = jumpAllocateInfo j
 	    in sel r
 	    end
       in
 	 val jumpLive = make #live
 	 val jumpLiveNoFormals = make #liveNoFormals
+	 val jumpLiveFrame = make #liveFrame
       end
 
       fun parallelMove {srcs, dsts, chunk} =
@@ -540,7 +549,8 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
       fun tail' (to: Jump.t, srcs: 'a vector, srcOp: 'a -> Operand.t)
 	 : Statement.t list * Mtransfer.t * bool =
 	 let
-	    val t = Mtransfer.nearJump {label = jumpToLabel to}
+	    val t = Mtransfer.nearJump {label = jumpToLabel to,
+					return = NONE}
 	 in
 	    if Vector.isEmpty srcs
 	       then ([], t, false)
@@ -605,13 +615,10 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 		   cases: (Con.t * Jump.t) vector,
 		   default: Jump.t option} =
 	 let
-	    fun maybeAddTest (rs: Register.t list): Register.t list =
+	    fun addTest (os: Operand.t list): Operand.t list =
 	       case varOperand test of
-		  VarOperand.Allocate {operand, ...} =>
-		     (case Operand.deRegister (^operand) of
-			 NONE => rs
-		       | SOME r => r :: rs)
-		| _ => rs
+		  VarOperand.Allocate {operand, ...} => (^operand) :: os
+		| _ => os
 	    (* Creating this new block without limit checks is OK because all
 	     * it does is a few moves and then a transfer.  I.E. it does no
 	     * allocations and can not trigger a GC.
@@ -620,6 +627,7 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 	       let val l = Label.newNoname ()
 	       in Chunk.newBlock (chunk,
 				  {label = l,
+				   kind = Kind.jump,
 				   profileName = profileName,
 				   live = live,
 				   statements = statements,
@@ -627,22 +635,43 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 		  ; l
 	       end
 	    fun switch {test = test', cases, default, live, numLeft}
-	       : {live: Register.t list, transfer: Mtransfer.t} =
+	       : {live: Operand.t list, transfer: Mtransfer.t} =
 	       let
-		  val (live, default) =
-		     if 0 = numLeft
+		  datatype z = None | One of Label.t | Many
+
+		  val (live, default)
+		    = if numLeft = 0
 			then (live, NONE)
-		     else (case default of
-			      NONE => (live, NONE)
-			    | SOME j =>
-				 (jumpLive j @ live, SOME (jumpToLabel j)))
-		  val transfer =
-		     Mtransfer.switch
-		     {test = test', cases = cases, default = default}
-		  val live =
-		     if Mtransfer.isSwitch transfer
-			then maybeAddTest live
-		     else live
+			else case default
+			       of NONE => (live, NONE)
+			        | SOME j
+				=> (jumpLive j @ live, SOME (jumpToLabel j))
+		    
+		  val targets
+		    = Mcases.fold
+		      (cases,
+		       case default
+			 of SOME l => One l
+			  | NONE => None,
+		       fn (l, Many) => Many
+		        | (l, One l') => if Label.equals(l, l')
+					   then One l'
+					   else Many
+			| (l, None) => One l)
+
+		  val (live, transfer)
+		    = case targets
+			of None 
+			 => Error.bug "no targets"
+			 | One l 
+			 => (live,
+			     Mtransfer.nearJump {label = l,
+						 return = NONE})
+			 | Many 
+			 => (addTest live,
+			     Mtransfer.switch {test = test',
+					       cases = cases,
+					       default = default})
 	       in {live = live, 
 		   transfer = transfer}
 	       end
@@ -651,16 +680,16 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 		  val (live, cases, numLeft) =
 		     Vector.fold
 		     (cases, ([], [], numEnum),
-		      fn ((c, j), (regs, cases, numLeft)) =>
+		      fn ((c, j), (os, cases, numLeft)) =>
 		      let
 			 fun keep n =
-			    (jumpLiveNoFormals j @ regs,
+			    (jumpLiveNoFormals j @ os,
 			     (n, jumpToLabel j) :: cases,
 			     numLeft - 1)
 		      in case conRep c of
 			 ConRep.Int n => keep n
 		       | ConRep.IntCast n => keep n
-		       | _ => (regs, cases, numLeft)
+		       | _ => (os, cases, numLeft)
 		      end)
 	       in switch {test = test,
 			  cases = Mcases.Int cases, default = default,
@@ -680,17 +709,17 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 				      pointer = pointer}
 	       end
 	    fun doTail (j: Jump.t, args: Operand.t vector)
-	       : Register.t list * Label.t =
+	       : Operand.t list * Label.t =
 	       let
 		  val (s, t, testIsUsed) = tail' (j, args, fn a => a)
 	       in
 		  case (s, Mtransfer.toMOut t) of
-		     ([], MOtransfer.NearJump {label}) => (jumpLive j, label)
+		     ([], MOtransfer.NearJump {label, ...}) => (jumpLive j, label)
 		   | _ => let
 			     val live = jumpLiveNoFormals j
-			      val live = if testIsUsed
-					    then maybeAddTest live
-					 else live
+			     val live = if testIsUsed
+					  then addTest live
+					  else live
 			  in (live, newBlock (live, s, t))
 			  end
 	       end
@@ -824,7 +853,7 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 			   allocateTagged (n, args, #info (conInfo con))
 		      | _ => Error.bug "strange ConApp"
 		     end
-		| PrimExp.PrimApp {prim, info, targs, args} =>
+		| PrimExp.PrimApp {prim, targs, args, ...} =>
 		     let
 			fun a i = Vector.sub (args, i)
 			fun offset (a, i, ty) =
@@ -839,20 +868,17 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 				 if Mtype.isPointer t
 				    then (0, 1)
 				 else (Mtype.size t, 0)
+			      val gcInfo = MPrimInfo.deRuntime (!primInfo)
 			   in [Statement.allocateArray
 			       {dst = xop (),
 				numElts = n,
 				numBytesNonPointers = nbnp,
 				numPointers = np,
-				gcInfo = ^primInfo}]
+				gcInfo = gcInfo}]
 			   end
 			fun normal () =
 			   let
-			      val pinfo =
-				 case info of
-				    CPrimInfo.None => MPrimInfo.None
-				  | CPrimInfo.Overflow l =>
-				       MPrimInfo.Overflow (jumpToLabel l)
+			      val pinfo = !primInfo
 			      val dst =
 				 let datatype z = datatype VarOperand.t
 				 in case operand of
@@ -869,8 +895,7 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 			       {dst = dst,
 				oper = prim,
 				args = Vector.map (args, vo),
-				pinfo = pinfo,
-				info = !primInfo}]
+				pinfo = pinfo}]
 			   end
 			fun targ () = toMtype (Vector.sub (targs, 0))
 			datatype z = datatype Prim.Name.t
@@ -960,44 +985,59 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 		   args: (Var.t * Ctype.t) vector,
 		   profileName: string): unit =
 	 let
-	    val {size, liveOffsets} = contInfo j
+	    val Info.T {liveFrame, liveNoFormals, cont, ...} = jumpAllocateInfo j
+	    val size
+	      = case cont
+		  of SOME {size, ...} => size
+		   | NONE => Error.bug "no cont"
+
+	    (* Need liveFrame
+	     * because some vars might be live down a handler
+	     * that handles raises from the function returning here.
+	     *)
 	    val _ = Mprogram.newFrame (mprogram,
 				       {return = l,
 					chunkLabel = Chunk.label c,
 					size = size,
-					liveOffsets = liveOffsets})
-	    val (args, (offset, offsets)) =
+					live = liveFrame})
+
+	    val (args, (argsl, offset)) =
 	       Vector.mapAndFold
-	       (args, (4, liveOffsets),
-		fn ((_, ty), (offset, offsets)) =>
+	       (args, ([], 4),
+		fn ((var, ty), (argsl, offset)) =>
 		let
 		   val ty = toMtype ty
 		   val offset = Mtype.align (ty, offset)
 		   val calleeOffset = offset + size
 		   val arg = Operand.stackOffset {offset = calleeOffset,
 						  ty = ty}
-		   val offsets =
-		      if Mtype.isPointer ty
-			 then calleeOffset :: offsets
-		      else offsets
+		   val isUsed
+		     = case varInfo var
+			 of {operand = VarOperand.Allocate {isUsed, ...}, ...} 
+			  => !isUsed
+			  | _ => false
 		in (arg,
-		    (offset + Mtype.size ty,
-		     offsets))
+		    (if isUsed
+		       then arg::argsl
+		       else argsl,
+		     offset + Mtype.size ty))
 		end)
-	    val limitCheck =
-	       MlimitCheck.Maybe
-	       (GCInfo.make {frameSize = size + offset,
-			     offsets = offsets})
 	    val (statements, transfer) = tail (j, args, id)
-	    val chunk = jumpChunk j
+
+	    val limitCheck =
+	       MlimitCheck.Maybe (GCInfo.make 
+				  {frameSize = size + offset,
+				   live = argsl @ liveNoFormals})
 	    val statements =
-	       Statement.pop size
-	       :: Statement.limitCheck limitCheck
+	          Statement.limitCheck limitCheck
 	       :: statements
+	    val chunk = jumpChunk j
 	    val _ =
 	       Chunk.newBlock
 	       (chunk, {label = l,
-			live = [],
+			kind = Kind.cont {args = argsl,
+					  size = size},
+			live = liveNoFormals,
 			profileName = profileName,
 			statements = statements,
 			transfer = transfer})
@@ -1011,16 +1051,20 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 		      j: Jump.t,
 		      profileName: string): unit =
 	 let
-	    val _ = Mprogram.newHandler (mprogram, {chunkLabel = Chunk.label c,
-						    label = l})
-	    val {size, liveOffsets} = handlerInfo j
+	    val _ = Mprogram.newHandler (mprogram, 
+					 {chunkLabel = Chunk.label c,
+					  label = l})
+	    val Info.T {liveNoFormals, handler, ...} = jumpAllocateInfo j
+	    val size
+	      = case handler
+		  of SOME {size, ...} => size
+		   | NONE => Error.bug "no handler"
 	    val args = Vector.new1 (raiseOperand ())
 	    val (statements, transfer) = tail (j, args, id)
-	    (* restore stack pointer *)
-	    val statements = Statement.pop size :: statements
 	 in Chunk.newBlock (jumpChunk j,
 			    {label = l,
-			     live = [],
+			     kind = Kind.handler {size = size},
+			     live = liveNoFormals,
 			     profileName = profileName,
 			     statements = statements,
 			     transfer = transfer})
@@ -1031,6 +1075,7 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
       fun genTransfer (t: Ctransfer.t,
 		       chunk: Chunk.t,
 		       profileName: string,
+		       handlerOffset: int option,
 		       handlers: Jump.t list): Statement.t list * Mtransfer.t =
 	 case t of
 	    Ctransfer.Bug => ([], Mtransfer.bug)
@@ -1049,61 +1094,95 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 				     in (offset + Mtype.size ty,
 					 offset :: offsets)
 				     end)))
-		  val (frameSize, changeFrame) =
-		     case cont of
-			NONE => (0, [])
-		      | SOME c =>
-			   let val {size, liveOffsets} = contInfo c
-			   in (size,
-			       [Statement.push size,
-				Statement.move
-				{dst = Operand.stackOffset {offset = 0,
-							    ty = Mtype.int},
-				 src = Operand.label (jumpCont c)}])
-			   end
-		  val setupArgs =
+
+		  val (frameSize, return, handlerLive)
+		    = case cont
+			of NONE => (0, NONE, [])
+			 | SOME c 
+			 => let
+			      val Info.T {cont, ...} = jumpAllocateInfo c
+			      val size
+				= case cont
+				    of SOME {size, ...} => size
+				     | NONE => Error.bug "no cont"
+
+			      val return = jumpCont c
+
+			      val (handler, handlerLive)
+				= case jumpHandlers c
+				    of h::_ 
+				     => let
+					  val handlerOffset 
+					    = valOf handlerOffset
+					in
+					  (SOME (jumpHandler h),
+					   (Operand.stackOffset 
+					    {offset = handlerOffset,
+					     ty = Mtype.uint})::
+					   (Operand.stackOffset 
+					    {offset = handlerOffset + 
+					              labelSize,
+					     ty = Mtype.uint})::
+					   nil)
+					end
+				     | _ => (NONE, [])
+			    in
+			      (size, 
+			       SOME {return = return,
+				     handler = handler,
+				     size = size},
+			       handlerLive)
+			    end
+
+		  val (live, setupArgs) =
 		     let
-			val moves =
+			val (live,moves) =
 			   List.fold2
-			   (args, offsets, [], fn (arg, offset, ac) =>
+			   (args, offsets, (handlerLive,[]), 
+			    fn (arg, offset, (live, ac)) =>
 			    case varOperandOpt arg of
-			       NONE => ac
+			       NONE => (live, ac)
 			     | SOME oper =>
-				  {src = oper,
-				   dst = (Operand.stackOffset
-					  {offset = frameSize + offset,
-					   ty = Operand.ty oper})}
-				  :: ac)
+				  let
+				    val so = Operand.stackOffset
+				             {offset = frameSize + offset,
+					      ty = Operand.ty oper}
+				  in
+				    (so::live,
+				     {src = oper,
+				      dst = so}::ac)
+				  end)
 			fun temp r =
 			   Operand.register
 			   (Chunk.tempRegister (chunk, Operand.ty r))
 		     in
-			(* 			 Trace.trace
-			 * 			 ("parallelMove",
-			 * 			  fn {moves, ...} =>
-			 * 			  List.layout (fn {src, dst} =>
-			 * 				       Layout.tuple
-			 * 				       [Operand.layout src, Operand.layout dst])
-			 * 			  moves,
-			 * 			  fn ss => (List.foreach (ss, fn s =>
-			 * 						 (Statement.output (s, print)
-			 * 						  ; print "\n"))
-			 * 				    ; Layout.empty))
-			 *)
+		       (live,
+(* 			 Trace.trace
+ * 			 ("parallelMove",
+ * 			  fn {moves, ...} =>
+ * 			  List.layout (fn {src, dst} =>
+ * 				       Layout.tuple
+ * 				       [Operand.layout src, Operand.layout dst])
+ * 			  moves,
+ * 			  fn ss => (List.foreach (ss, fn s =>
+ * 						 (Statement.output (s, print)
+ * 						  ; print "\n"))
+ * 				    ; Layout.empty))
+ *)
 			ParallelMove.move {equals = Operand.equals,
 					   move = Statement.move,
 					   moves = moves,
 					   interfere = Operand.interfere,
-					   temp = temp}
+					   temp = temp})
 		     end
+
 		  val chunk' = funcChunk func
-		  val func = funcToLabel func
-		  val transfer =
-		     if Chunk.equals (chunk, chunk')
-			then Mtransfer.nearJump {label = func}
-		     else Mtransfer.farJump {chunkLabel = Chunk.label chunk', 
-					     label = func}
-	       in (setupArgs @ changeFrame, transfer)
+		  val transfer = Mtransfer.farJump
+			         {chunkLabel = Chunk.label chunk',
+				  label = funcToLabel func,
+				  live = live,
+				  return = return}
+	       in (setupArgs, transfer)
 	       end
 	  | Ctransfer.Case {test, cases, default, ...} =>
 	       let
@@ -1149,20 +1228,22 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 	       let
 		  val xs = Vector.toList xs
 		  val rets = varOperands xs
-		  val (_, moves) =
+		  val (_, live, moves) =
 		     List.fold
-		     (xs, (4, []), fn (x, (offset, moves)) =>
+		     (xs, (4, [], []), fn (x, (offset, live, moves)) =>
 		      case varOperandOpt x of
-			 NONE => (offset, moves)
+			 NONE => (offset, live, moves)
 		       | SOME x =>
 			    let 
 			       val ty = Operand.ty x
 			       val offset = Mtype.align (ty, offset)
+			       val so = Operand.stackOffset {offset = offset, 
+							     ty = ty}
 			    in 
 			       (offset + Mtype.size ty,
+				so::live,
 				{src = x,
-				 dst = Operand.stackOffset {offset = offset,
-							    ty = ty}}
+				 dst = so}
 				:: moves)
 			    end)
 		  fun temp r =
@@ -1174,7 +1255,7 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 				      moves = moves,
 				      interfere = Operand.interfere,
 				      temp = temp},
-		   Mtransfer.return)
+		   Mtransfer.return {live = live})
 	       end
       val genTransfer =
 	 Trace.trace ("genTransfer",
@@ -1188,6 +1269,7 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
       fun genExp {exp = e: Cexp.t,
 		  profileName: string,
 		  label: Label.t,
+		  kind: Kind.t,
 		  chunk: Chunk.t,
 		  info = Info.T {limitCheck, live, ...},
 		  handlerOffset: int option,
@@ -1195,14 +1277,15 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 	 let
 	    val {decs, transfer} = Cexp.dest e
 	    val (decs, handlers) =
-	       genDecs (decs, chunk, profileName, handlers, handlerOffset)
+	       genDecs (decs, chunk, profileName, handlerOffset, handlers)
 	    val (preTransfer, transfer) =
-	       genTransfer (transfer, chunk, profileName, handlers)
+	       genTransfer (transfer, chunk, profileName, handlerOffset, handlers)
 	    val statements =
 	       Statement.limitCheck limitCheck :: (decs @ preTransfer)
 	 in
 	    Chunk.newBlock
 	    (chunk, {label = label,
+		     kind = kind,
 		     live = live,
 		     profileName = profileName,
 		     statements = statements,
@@ -1212,8 +1295,8 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
       and genDecs (ds: Cdec.t list,
 		   chunk: Chunk.t,
 		   profileName: string,
-		   handlers: Jump.t list,
-		   handlerOffset): Statement.t list * Jump.t list =
+		   handlerOffset,
+		   handlers: Jump.t list): Statement.t list * Jump.t list =
 	 let
 	    val (statements, handlers) =
 	       List.fold
@@ -1223,6 +1306,7 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 		       genPrimExp (var, ty, exp, chunk) :: statements
 		  | Cdec.Fun {name, args, body} =>
 		       let
+			  val chunk' = chunk
 			  val {chunk, cont, handler, ...} = jumpInfo name
 			  val chunk = ^chunk
 			  val _ =
@@ -1239,8 +1323,11 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 			     genExp {exp = body,
 				     profileName = profileName,
 				     label = jumpToLabel name,
+				     kind = if Chunk.equals(chunk, chunk')
+					      then Kind.jump
+					      else Kind.func {args = jumpLive name},
 				     chunk = chunk,
-				     info = jumpRegInfo name,
+				     info = jumpAllocateInfo name,
 				     handlerOffset = handlerOffset,
 				     handlers = jumpHandlers name}
 		       in statements
@@ -1284,8 +1371,9 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
 				     entries = [initGlobals]}
       val initGlobalsStatements =
 	 Statement.limitCheck
-	 (MlimitCheck.Maybe (GCInfo.make {offsets = [],
-					  frameSize = Mtype.size Mtype.label}))
+	 (MlimitCheck.Maybe
+	  (GCInfo.make {live = [],
+			frameSize = Mtype.size Mtype.label}))
 	 ::
 	 List.fold
 	 (Vector.fold (globals, [], fn ({var, ty, exp}, statements) =>
@@ -1297,19 +1385,24 @@ fun generate (program as Cprogram.T {datatypes, globals, functions, main})
       val _ =
 	 Chunk.newBlock
 	 (chunk, {label = initGlobals,
+		  kind = Kind.func {args = []},
 		  live = [],
 		  profileName = "initGlobals",
 		  statements = initGlobalsStatements,
 		  transfer = Mtransfer.farJump {chunkLabel = funcChunkLabel main,
-					        label = funcToLabel main}})
+					        label = funcToLabel main,
+						live = [],
+						return = NONE}})
       val _ =
 	 Control.trace (Control.Pass, "generate")
 	 Vector.foreach
 	 (functions, fn Function.T {name, body, ...} =>
-	  let val {info, handlerOffset, ...} = funcRegInfo name
+	  let val {info as Info.T {live, ...}, 
+		   handlerOffset, ...} = funcAllocateInfo name
 	  in genExp {exp = body,
 		     profileName = Func.toString name,
 		     label = funcToLabel name,
+		     kind = Kind.func {args = live},
 		     chunk = funcChunk name,
 		     info = info,
 		     handlerOffset = handlerOffset,

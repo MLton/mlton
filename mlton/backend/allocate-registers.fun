@@ -15,6 +15,7 @@ in
    structure Jump = Jump
    structure Prim = Prim
    structure PrimExp = PrimExp
+   structure PrimInfo = PrimInfo
    structure Program = Program
    structure Ctransfer = Transfer
    structure Var = Var
@@ -26,6 +27,7 @@ in
    structure GCInfo = GCInfo
    structure Operand = Operand
    structure MlimitCheck = LimitCheck
+   structure MprimInfo = PrimInfo   
    structure Mtype = Type
    structure Register = Register
    structure Statement = Statement
@@ -49,15 +51,23 @@ structure Info =
       datatype t =
 	 T of {
 	       limitCheck: Machine.LimitCheck.t,
-	       live: Register.t list,
-	       liveNoFormals: Register.t list
+	       live: Operand.t list,
+	       liveNoFormals: Operand.t list,
+	       liveFrame: Operand.t list,
+	       cont: {size: int} option,
+	       handler: {size: int} option
 	       }
 
-      fun layout (T {limitCheck, live, liveNoFormals}) =
+      fun layout (T {limitCheck, 
+		     live, liveNoFormals, liveFrame,
+		     cont, handler}) =
 	 Layout.record
 	 [("limitCheck", Machine.LimitCheck.layout limitCheck),
-	  ("live", List.layout Register.layout live),
-	  ("liveNoFormals", List.layout Register.layout liveNoFormals)]
+	  ("live", List.layout Operand.layout live),
+	  ("liveNoFormals", List.layout Operand.layout liveNoFormals),
+	  ("liveFrame", List.layout Operand.layout liveFrame),
+	  ("cont", Option.layout (Int.layout o #size) cont),
+	  ("handler", Option.layout (Int.layout o #size) handler)]
    end 
 
 nonfix ^
@@ -68,9 +78,9 @@ fun ^ r = valOf (!r)
 (* ------------------------------------------------- *)
 
 fun allocate {program = program as Program.T {globals, functions, ...},
-	      funcChunk, jumpChunk, jumpHandlers,
+	      funcChunk, jumpChunk, jumpToLabel, jumpHandlers,
 	      varInfo: Var.t -> {operand: Machine.Operand.t option ref option,
-				 primInfo: Machine.GCInfo.t option ref,
+				 primInfo: Machine.PrimInfo.t ref,
 				 ty: Machine.Type.t}} =
    let
       val shouldAllocate = isSome o #operand o varInfo
@@ -83,42 +93,28 @@ fun allocate {program = program as Program.T {globals, functions, ...},
       val setJumpInfo =
 	 Trace.trace2 ("setJumpInfo", Jump.layout, Info.layout, Unit.layout)
 	 setJumpInfo
-      val {get = contInfo: Jump.t ->  {
-				       size: int,
-				       liveOffsets: int list
-				       },
-	   set = setContInfo} =
-	 Property.getSetOnce (Jump.plist,
-			      Property.initRaise ("cont info", Jump.layout))
-      val setContInfo =
-	 Trace.trace2 ("setContInfo",
-		       Jump.layout,
-		       fn {size, liveOffsets} =>
-		       Layout.record
-		       [("size", Int.layout size),
-			("liveOffsets", List.layout Int.layout liveOffsets)],
-		       Unit.layout)
-	 setContInfo
-      val {get = handlerInfo: Jump.t ->  {
-					  size: int,
-					  liveOffsets: int list
-					  },
-	   set = setHandlerInfo} =
-	 Property.getSetOnce (Jump.plist,
-			      Property.initRaise ("handler info", Jump.layout))
-      val {get = funcInfo, set = setFuncInfo} =
+      val {get = funcInfo: Func.t -> {
+				      info: Info.t,
+				      handlerOffset: int option
+				      }, 
+	   set = setFuncInfo} =
 	 Property.getSetOnce (Func.plist,
 			      Property.initRaise ("func info", Func.layout))
       fun allocateFunc (name: Func.t,
 			args: (Var.t * Cps.Type.t) vector,
 			body: Exp.t): unit = 
 	 let
-	    val {liveBegin, liveBeginNoFormals, livePrim,
+	    val {liveBegin, liveBeginNoFormals, liveBeginFrame, liveBeginHS,
+		 livePrim, livePrimHS,
 		 destroy = destroyLive} =
 	       Live.live {formals = args,
 			  exp = body,
 			  shouldConsider = shouldAllocate,
 			  jumpHandlers = jumpHandlers}
+	    val liveBegin' = fn j => (liveBegin j, liveBeginHS j)
+	    val liveBeginNoFormals' = fn j => (liveBeginNoFormals j, liveBeginHS j)
+	    val liveBeginFrame' = fn j => (liveBeginFrame j, liveBeginHS j)
+	    val livePrim' = fn x => (livePrim x, livePrimHS x)
 	    (*
 	     * Decide which variables will live in stack slots and which
 	     * will live in registers.
@@ -202,12 +198,12 @@ fun allocate {program = program as Program.T {globals, functions, ...},
 	     *)
 	    val nextOffset = ref labelSize
 	    fun getNextOffset (ty: Mtype.t, size) =
-	       let
-		  val offset = Mtype.align (ty, !nextOffset)
-		  val _ = nextOffset := offset + size
-	       in
-		  offset
-	       end
+	      let
+		val offset = Mtype.align (ty, !nextOffset)
+		val _ = nextOffset := offset + size
+	      in
+		offset
+	      end
 	    (* The next available register number for each type. *)
 	    val nextReg = Mtype.memo (fn _ => ref 0)
 	    fun nextRegister (ty: Mtype.t, c: Chunk.t): Register.t =
@@ -216,9 +212,9 @@ fun allocate {program = program as Program.T {globals, functions, ...},
 	       in Int.inc r
 		  ; reg
 	       end
-	    fun allocateVarInfo (x: Var.t,
+	    fun allocateVarInfo (x: Var.t, 
 				 {operand, ty, primInfo},
-				 c: Chunk.t,
+				 c: Chunk.t, 
 				 force: bool): unit =
 	       if force orelse isSome operand
 		  then let
@@ -249,133 +245,191 @@ fun allocate {program = program as Program.T {globals, functions, ...},
 				    allocateVar (x, chunk, true))
 	    val handlerOffset =
 	       if !hasHandler
-		  then SOME (getNextOffset (Mtype.label, handlerSize))
+		  then (SOME (getNextOffset (Mtype.label, handlerSize)))
 	       else NONE
-	    fun getMask (xs: Var.t list): int list =
-	       List.fold
-	       (xs, [], fn (x, offsets) =>
-		let
-		   val {operand, ty, ...} = varInfo x
-		in
-		   case (operand, Mtype.isPointer ty) of
-		      (SOME r, true) => 		 
-			 (case place x of
-			     Register =>
-				Error.bug "can't have live pointer register"
-			   | Stack =>
-				case Operand.deStackOffset (^r) of
-				   NONE => Error.bug "must be a slot"
-				 | SOME  {offset, ...} => offset :: offsets)
-		    | _ => offsets
-		end)
-	    val getMask =
-	       Trace.trace ("getMask", List.layout Var.layout,
-			    List.layout Int.layout) getMask
-	    fun getGCInfo (live: Var.t list) =
-	       GCInfo.make {frameSize = !nextOffset,
-			    offsets = getMask live}
+	    local
+	      fun getOperands ((xs: Var.t list,
+				(code, link): bool * bool),
+			       force: bool)
+		= List.fold
+		  (xs,
+		   ((fn l 
+		      => if code
+			   then let
+				  val handlerOffset = valOf handlerOffset
+				in
+				  (Operand.stackOffset 
+				   {offset = handlerOffset,
+				    ty = Mtype.uint})::
+				  l
+				end
+			   else l) o
+		    (fn l
+		      => if link
+			   then let
+				  val handlerOffset = valOf handlerOffset
+				in
+				  (Operand.stackOffset 
+				   {offset = handlerOffset + labelSize,
+				    ty = Mtype.uint})::
+				  l
+				end
+			   else l))
+		   nil,
+		   fn (x, operands) 
+		    => let
+			 val {operand, ty, ...} = varInfo x
+		       in
+			 case operand 
+			   of SOME r 
+			    => if force
+				 then (case place x 
+					 of Register 
+					  => Error.bug 
+					     (concat ["live register ",
+						      Layout.toString (Var.layout x)])
+					  | Stack 
+					  => case Operand.deStackOffset (^r)
+					       of NONE => Error.bug "live slot"
+						| SOME _ => (^r)::operands)
+				 else (^r)::operands
+			    | _ => operands
+		       end)
+	    in
+	      val getOperands = getOperands
+	      fun getLiveOperands (j, force)
+		= {live = getOperands (liveBegin' j, false),
+		   liveNoFormals = getOperands (liveBeginNoFormals' j, force),
+		   liveFrame = getOperands (liveBeginFrame' j, force)}
+	      fun getLivePrimOperands x
+		= getOperands (livePrim' x, false)
+	      fun getLivePrimRuntimeOperands x
+		= getOperands (livePrim' x, true)
+	    end
+	    local
+	      fun getGCInfo' live
+		= GCInfo.make {frameSize = !nextOffset,
+			       live = live}
+	    in
+	      val getGCInfo' = getGCInfo'
+	      fun getGCInfo j
+		= getGCInfo' (getOperands (liveBegin' j, true))
+	      fun getGCInfoPrim x
+		= getGCInfo' (getLivePrimOperands x)
+	      fun getGCInfoPrimRuntime x
+		= getGCInfo' (getLivePrimRuntimeOperands x)
+	    end
 	    val traceAllocate =
 	       Trace.trace ("allocate", Exp.layout o #1, Unit.layout)
 	    fun allocate arg =
 	       traceAllocate
 	       (fn (e: Exp.t, c: Chunk.t) =>
-		List.foreach
-		(Exp.decs e,
-		 fn Dec.Bind {var, exp, ...} =>
-		 let
+		(List.foreach
+		 (Exp.decs e,
+		  fn Dec.Bind {var, exp, ...} =>
+		  let
 		    val info as {primInfo, ...} = varInfo var
 		    val _ = allocateVarInfo (var, info, c, false)
 		    val _ =
 		       case exp of
-			  PrimExp.PrimApp {prim, ...} =>
+			  PrimExp.PrimApp {prim, info, ...} =>
 			     if Prim.entersRuntime prim
-				then (primInfo :=
-				      SOME (getGCInfo (livePrim var)))
+				then primInfo :=
+				     MprimInfo.runtime (getGCInfoPrimRuntime var)
+			     else if Prim.mayOverflow prim
+			        then let
+				       val label
+					 = case info
+					     of PrimInfo.Overflow label => label
+					      | _ => Error.bug 
+					             "no overflow info for prim"
+				     in
+				       primInfo :=
+				       MprimInfo.overflow 
+				       (jumpToLabel label, getLivePrimOperands var)
+				     end
+			     else if Prim.impCall prim
+				then primInfo := 
+				     MprimInfo.normal (getLivePrimOperands var)
 			     else ()
 			| _ => ()
-		 in ()
-		 end
+		  in ()
+		  end
 		  | Dec.Fun {name, args, body, ...} =>
-		       let
-			  val saveReg = Mtype.memo (! o nextReg)
-			  val saveOffset = !nextOffset
-			  val _ = List.foreach (Mtype.all, ignore o saveReg)
-			  val c' = jumpChunk name
-			  val _ =
-			     if Chunk.equals (c, c')
-				then ()
-			     else (* We can reset all of the register counters
-				   * because we know that no registers live
-				   * across a chunk boundary.
-				   *)
-				List.foreach (Mtype.all, fn t => nextReg t := 0)
-			  val _ = Vector.foreach (args, fn (x, _) =>
-						  allocateVar (x, c', false))
-			  (* This must occur after allocating slots for the
-			   * args, since it must have the correct stack frame
-			   * size.
-			   *)
-			  val limitCheck = 
-			     let
-				fun doit make =
-				   make (getGCInfo (liveBegin name))
-			     in case limitCheck name of
-				LimitCheck.No => MlimitCheck.No
-			      | LimitCheck.Maybe => doit MlimitCheck.Maybe
-			      | LimitCheck.Yes => doit MlimitCheck.Yes
-			     end
-			  val _ = allocate (body, c')
-			  val _ = List.foreach (Mtype.all, fn t =>
-						nextReg t := saveReg t)
-			  val _ = nextOffset := saveOffset
-			  fun getLiveOffsets () =
-			     getMask (liveBeginNoFormals name)
-			  val _ =
-			     if isCont name
-				then
-				   setContInfo
-				   (name, {size = Mtype.wordAlign saveOffset,
-					   liveOffsets = getLiveOffsets ()})
-			     else ()
-			  val _ =
-			     if isHandler name
-				then
-				   setHandlerInfo
-				   (name, {size = valOf handlerOffset,
-					   liveOffsets = getLiveOffsets ()})
-			     else ()
-			  fun getRegs (xs: Var.t list): Register.t list =
-			     List.fold
-			     (xs, [], fn (x, rs) =>
-			      let val {operand, ...} = varInfo x
-			      in case operand of
-				 NONE => rs
-			       | SOME oper => 
-				    (case Operand.deRegister (^oper) of
-					NONE => rs
-				      | SOME r => r :: rs)
-			      end)
-			  val _ =
-			     setJumpInfo
-			     (name,
-			      Info.T
-			      {limitCheck = limitCheck,
-			       live = getRegs (liveBegin name),
-			       liveNoFormals = getRegs (liveBeginNoFormals name)})
-		       in ()
-		       end
-		  | _ => ())) arg
+		  let
+		    val saveReg = Mtype.memo (! o nextReg)
+		    val saveOffset = !nextOffset
+		    val _ = List.foreach (Mtype.all, ignore o saveReg)
+		    val c' = jumpChunk name
+		    val _ =
+		      if Chunk.equals (c, c')
+			then ()
+			else (* We can reset all of the register counters
+			      * because we know that no registers live
+			      * across a chunk boundary.
+			      *)
+			     List.foreach (Mtype.all, fn t => nextReg t := 0)
+		    val _ = Vector.foreach (args, fn (x, _) =>
+					    allocateVar (x, c', false))
+		    (* This must occur after allocating slots for the
+		     * args, since it must have the correct stack frame
+		     * size.
+		     *)
+		    val limitCheck = 
+		      let
+			fun doit make = make (getGCInfo name) 
+		      in case limitCheck name 
+			   of LimitCheck.No => MlimitCheck.No
+			    | LimitCheck.Maybe => doit MlimitCheck.Maybe
+			    | LimitCheck.Yes => doit MlimitCheck.Yes
+		      end
+		    val _ = allocate (body, c')
+		    val _ = List.foreach (Mtype.all, fn t =>
+					  nextReg t := saveReg t)
+		    val _ = nextOffset := saveOffset
+		      
+		    val cont = if isCont name
+				 then SOME {size = Mtype.wordAlign saveOffset}
+				 else NONE
+		    val handler = if isHandler name
+				    then SOME {size = valOf handlerOffset}
+				    else NONE
+		    val {live, liveNoFormals, liveFrame}
+		      = getLiveOperands (name,
+					 (isCont name) orelse (isHandler name))
+		    val _ =
+		      setJumpInfo
+		      (name,
+		       Info.T
+		       {limitCheck = limitCheck,
+			live = live,
+			liveNoFormals = liveNoFormals,
+			liveFrame = liveFrame,
+			cont = cont,
+			handler = handler})
+		  in ()
+		  end
+		  | _ => ()))) arg
+
 	    val _ = allocate (body, chunk)
+	    val live = getOperands ((Vector.toListMap (args, #1),
+				     (false, false)),
+				    true)
 	    val limitCheck =
-	       MlimitCheck.Stack (getGCInfo (Vector.toListMap (args, #1)))
+	       MlimitCheck.Stack (getGCInfo' live)
+
 	 in destroyPlace ()
 	    ; destroyIsCont ()
 	    ; destroyIsHandler ()
 	    ; destroyLive ()
 	    ; setFuncInfo (name,
-			   {info = Info.T {limitCheck = limitCheck,
-					   live = [],
-					   liveNoFormals = []},
+			   {info = Info.T 
+			           {limitCheck = limitCheck,
+				    live = live,
+				    liveNoFormals = live,
+				    liveFrame = live,
+				    cont = NONE,
+				    handler = NONE},
 			    handlerOffset = handlerOffset})
 	    ; ()
 	 end
@@ -384,15 +438,15 @@ fun allocate {program = program as Program.T {globals, functions, ...},
 	 (globals, fn {var, exp, ...} =>
 	  case exp of
 	     PrimExp.PrimApp {prim, ...} =>
-		if Prim.entersRuntime prim
-		   then let
-			   val {primInfo, ...} = varInfo var
-			in
-			   primInfo := SOME (GCInfo.make
-					     {frameSize = labelSize,
-					      offsets = []})
-			end
-		else ()
+	       let
+		 val {primInfo, ...} = varInfo var
+	       in 
+		 if Prim.entersRuntime prim
+		   then primInfo :=
+		        MprimInfo.runtime (GCInfo.make {frameSize = labelSize,
+							live = []})
+		   else primInfo :=  MprimInfo.normal []
+	       end
 	   | _ => ())
       val _ =
 	 Vector.foreach (functions, fn Function.T {name, args, body, ...} =>
@@ -430,10 +484,7 @@ fun allocate {program = program as Program.T {globals, functions, ...},
 	  end)
       val _ = destroyLimitCheck ()
    in
-      {contInfo = contInfo,
-       funcInfo = funcInfo,
-       handlerInfo = handlerInfo,
+      {funcInfo = funcInfo,
        jumpInfo = jumpInfo}
    end
-
 end

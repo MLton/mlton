@@ -14,19 +14,45 @@ struct
   structure x86 
     = x86(structure Label = MachineOutput.Label)
 
+  structure x86MLtonBasic
+    = x86MLtonBasic(structure x86 = x86
+		    structure MachineOutput = MachineOutput)
+
+  structure x86Liveness
+    = x86Liveness(structure x86 = x86
+		  structure x86MLtonBasic = x86MLtonBasic)
+
+  structure x86JumpInfo
+    = x86JumpInfo(structure x86 = x86)
+
+  structure x86EntryTransfer
+    = x86EntryTransfer(structure x86 = x86)
+
   structure x86MLton 
-    = x86MLton(structure x86 = x86
-	       structure MachineOutput = MachineOutput)
+    = x86MLton(structure x86MLtonBasic = x86MLtonBasic
+	       structure x86Liveness = x86Liveness)
 
   structure x86Translate 
     = x86Translate(structure x86 = x86
-		   structure x86MLton = x86MLton)
+		   structure x86MLton = x86MLton
+		   structure x86Liveness = x86Liveness)
 
   structure x86Simplify
-    = x86Simplify(structure x86 = x86)
+    = x86Simplify(structure x86 = x86
+		  structure x86Liveness = x86Liveness
+		  structure x86JumpInfo = x86JumpInfo
+		  structure x86EntryTransfer = x86EntryTransfer)
+
+  structure x86GenerateTransfers
+    = x86GenerateTransfers(structure x86 = x86
+                           structure x86MLton = x86MLton
+			   structure x86Liveness = x86Liveness
+			   structure x86JumpInfo = x86JumpInfo
+			   structure x86EntryTransfer = x86EntryTransfer)
 
   structure x86AllocateRegisters
-    = x86AllocateRegisters(structure x86 = x86)
+    = x86AllocateRegisters(structure x86 = x86
+			   structure x86MLton = x86MLton)
 
   structure x86Validate
     = x86Validate(structure x86 = x86)
@@ -99,7 +125,9 @@ struct
 	val makeC = outputC
 	val makeS = outputS
 
-	val {get = getFrameLayoutIndex : Label.t -> int option, 
+	val {get = getFrameLayoutIndex 
+	         : Label.t -> {size: int, 
+			       frameLayoutsIndex: int} option,
 	     set = setFrameLayoutIndex}
 	  = Property.getSetOnce(Label.plist,
 				Property.initConst NONE)
@@ -110,29 +138,39 @@ struct
 	     [],
 	     fn (MachineOutput.Chunk.T {entries,gcReturns,...}, l)
 	      => List.fold(entries @ gcReturns,
-			   [],
+			   l,
 			   fn (label, l')
 			    => case frameLayouts label
 				 of NONE => l'
-			          | SOME _ => label::l') @ l)
+			          | SOME _ => label::l'))
 
-	val frameLayoutsData
-	  = List.removeDuplicates(List.map(return_labels, 
-					   valOf o frameLayouts), 
-				  op =)
-
-	val _
-	  = List.foreach
+	val (frameLayoutsData,maxFrameLayoutIndex)
+	  = List.fold
 	    (return_labels,
-	     fn return_label
+	     ([],0),
+	     fn (label,(frameLayoutsData,maxFrameLayoutIndex))
 	      => let
-		   val info = valOf(frameLayouts return_label)
+		   val info as {size, ...} = valOf(frameLayouts label)
 		 in
-		   setFrameLayoutIndex(return_label,
-				       List.index(frameLayoutsData,
-						  fn info' => info = info'))
+		   case List.index(frameLayoutsData,
+				   fn info' => info = info')
+		     of SOME index 
+		      => (setFrameLayoutIndex
+			  (label, 
+			   SOME {size = size,
+				 frameLayoutsIndex 
+				 = maxFrameLayoutIndex - (index + 1)});
+			  (frameLayoutsData,
+			   maxFrameLayoutIndex))
+		      | NONE => (setFrameLayoutIndex
+				 (label, 
+				  SOME {size = size,
+					frameLayoutsIndex 
+					= maxFrameLayoutIndex});
+				 (info::frameLayoutsData,
+				  maxFrameLayoutIndex + 1))
 		 end)
-
+	val frameLayoutsData = List.rev frameLayoutsData
 
 	(* C specific *)
 	fun outputC ()
@@ -242,17 +280,15 @@ struct
 					 "frameOffsets" ^ (C.int offsetIndex), 
 					 "}"]))
 
-	      val maxFrameLayoutIndex = List.length frameLayoutsData
-		
 	      fun declareMain() 
 		= let
 		    val stringSizes 
 		      = List.fold(strings, 
 				  0, 
 				  fn ((_, s), n) 
-				  => n + arrayHeaderSize
-				     + Type.align(Type.pointer,
-						  String.size s))
+				   => n + arrayHeaderSize
+				        + Type.align(Type.pointer,
+						     String.size s)) 
 		    val intInfSizes 
 		      = List.fold(intInfs, 
 				  0, 
@@ -260,7 +296,6 @@ struct
 				   => n + intInfOverhead
 				        + Type.align(Type.pointer,
 						     String.size s))
-						     
 		    val bytesLive = intInfSizes + stringSizes
 		    val (usedFixedHeap, fromSize)
 		      = case !Control.fixedHeap 
@@ -272,7 +307,7 @@ struct
 						 "Warning: heap size used with -h is too small to hold static data.\n")
 				 else ();
 			       (true, n))
-		    val magic = C.word(Random.useed())
+		    val magic = C.word(Random.useed ())
 		    val mainLabel = Label.toString (#label main)
 		  in 
 		    C.callNoSemi("Main",
@@ -303,39 +338,8 @@ struct
         val outputC = Control.trace (Control.Pass, "outputC") outputC
 
 	(* Assembly specific *)
-	val block_begin
-	  = [x86.Assembly.directive_assume
-	     {register = x86.Register.edi,
-	      memloc = x86MLton.gcState_stackTopContents,
-	      weight = 2048,
-	      sync = false,
-	      reserve = false},
-	     x86.Assembly.directive_assume
-	     {register = x86.Register.esi,
-	      memloc = x86MLton.gcState_frontierContents,
-	      weight = 2048,
-	      sync = false,
-	      reserve = false}]
-	val block_end
-	  = [x86.Assembly.directive_cache
-	     {register = x86.Register.edi,
-	      memloc = x86MLton.gcState_stackTopContents,
-	      reserve = true},
-	     x86.Assembly.directive_cache
-	     {register = x86.Register.esi,
-	      memloc = x86MLton.gcState_frontierContents,
-	      reserve = true}]
-	val block_fall
-	  = [x86.Assembly.directive_unreserve {register = x86.Register.edi},
-	     x86.Assembly.directive_unreserve {register = x86.Register.esi}]
-	val transferRegs
-	  = [x86.Register.ebx,
-	     x86.Register.bl,
-	     x86.Register.ecx,
-	     x86.Register.cl,
-	     x86.Register.edx,
-	     x86.Register.dl,
-	     x86.Register.ebp]
+
+	val _ = x86MLtonBasic.init ()
 
 	fun file_begin file
 	  = [x86.Assembly.pseudoop_data (),
@@ -344,25 +348,30 @@ struct
 	     x86.Assembly.pseudoop_string [file],
 	     x86.Assembly.pseudoop_text ()]
 
+	val liveInfo = x86Liveness.LiveInfo.newLiveInfo ()
+	val jumpInfo = x86JumpInfo.newJumpInfo ()
+
 	fun outputChunk (chunk as MachineOutput.Chunk.T {chunkLabel, ...},
 			 print)
 	  = let
 	      val isMain 
 		= MachineOutput.ChunkLabel.equals(#chunkLabel main, chunkLabel)
 
-	      val {chunk as Chunk.T {exports, blocks},
-		   liveInfo}
+	      val {chunk as Chunk.T {blocks}}
 		= x86Translate.translateChunk 
-		  {chunk = chunk}
+		  {chunk = chunk,
+		   frameLayouts = getFrameLayoutIndex,
+		   liveInfo = liveInfo}
+		  handle exn
+		   => Error.bug ("x86Translate.translateChunk::" ^ 
+				 (case exn
+				    of Fail s => s
+				     | _ => "?"))
 
-	      (* for inlining frameLayouts info *)
-	      fun block_pre label
-		= Option.map(getFrameLayoutIndex label,
-			     fn index
-			      => [Assembly.pseudoop_long
-				  [Immediate.const_int index]])
+	      val chunk' = chunk
+	      val blocks' = blocks
 
-	      val pseudo_assembly : Assembly.t list list
+	      val chunk : x86.Chunk.t
 		= x86Simplify.simplify 
 		  {chunk = chunk,
 		   (* don't perform optimizations on
@@ -371,20 +380,38 @@ struct
 		   optimize = if isMain
 				then 0
 				else !Control.Native.optimize,
-		   block_pre = block_pre,
-		   block_begin = block_begin,
-		   block_end = block_end,
-		   block_fall = block_fall,
-		   transferRegs = transferRegs,
-		   liveInfo = liveInfo}
+		   liveInfo = liveInfo,
+		   jumpInfo = jumpInfo}
+		  handle exn
+		   => Error.bug ("x86Simplify.simplify::" ^
+				 (case exn
+				    of Fail s => s
+				     | _ => "?"))
+
+	      val unallocated_assembly : x86.Assembly.t list list
+		= x86GenerateTransfers.generateTransfers
+		  {chunk = chunk,
+		   optimize = !Control.Native.optimize,
+		   liveInfo = liveInfo,
+		   jumpInfo = jumpInfo}
+		  handle exn
+		   => (Error.bug ("x86GenerateTransfers.generateTransfers::" ^
+				  (case exn
+				     of Fail s => s
+				      | _ => "?")))
 
 	      val allocated_assembly : Assembly.t list list
 		= x86AllocateRegisters.allocateRegisters 
-		  {assembly = pseudo_assembly,
+		  {assembly = unallocated_assembly,
 		   (* don't calculate liveness info
 		    * on the main function (initGlobals)
 		    *)
 		   liveness = not isMain}
+		  handle exn
+		   => Error.bug ("x86AllocateRegister.allocateRegisters::" ^
+				 (case exn
+				    of Fail s => s
+				     | _ => "?"))
 
 	      val _ 
 		= Assert.assert
@@ -392,12 +419,22 @@ struct
 		   fn () => x86Validate.validate 
 		            {assembly = allocated_assembly})
 
-	      val validated_assembly : Assembly.t list
-		= List.concat allocated_assembly
+	      val validated_assembly = allocated_assembly
+
+	      val _ = x86.Immediate.clearAll ()
+	      val _ = x86.MemLoc.clearAll ()
 	    in
-	      List.foreach(validated_assembly,
-			   fn asm => print((Assembly.toString asm) ^ "\n"));
-	      List.length validated_assembly
+	      List.fold
+	      (validated_assembly,
+	       0,
+	       fn (block, n)
+	        => List.fold
+	           (block,
+		    n,
+		    fn (asm, n)
+		     => (Layout.print (Assembly.layout asm, print);
+			 print "\n";
+			 n + 1)))
 	    end
 	  
 	fun outputAssembly ()
@@ -408,7 +445,8 @@ struct
 		    val {file, print, done} = makeS()
 		    val _ = List.foreach
 		            (file_begin file,
-			     fn asm => print((Assembly.toString asm) ^ "\n"))
+			     fn asm => (Layout.print(Assembly.layout asm, print);
+					print "\n"))
 		    fun loop' (chunks, size) 
 		      = case chunks
 			  of [] => done ()
@@ -423,11 +461,12 @@ struct
 		    loop' (chunks, 0)
 		  end
 	    in 
-	      loop chunks;
-	      x86Translate.translateChunk_totals ();
-	      x86Simplify.simplify_totals ();
-	      x86AllocateRegisters.allocateRegisters_totals ();
-	      x86Validate.validate_totals ()
+	      loop chunks
+	      ; x86Translate.translateChunk_totals ()
+              ; x86Simplify.simplify_totals ()
+              ; x86GenerateTransfers.generateTransfers_totals ()
+	      ; x86AllocateRegisters.allocateRegisters_totals ()
+	      ; x86Validate.validate_totals ()
 	    end
 
 	val outputAssembly =

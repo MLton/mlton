@@ -6,12 +6,15 @@ type word = Word.t
 
 signature X86_STRUCTS =
   sig
-    structure Label : ID
+    structure Label : HASH_ID
   end
 
 signature X86 =
   sig
     include X86_STRUCTS
+
+    val tracer : string -> ('a -> 'b) -> (('a -> 'b) * (unit -> unit))
+    val tracerTop : string -> ('a -> 'b) -> (('a -> 'b) * (unit -> unit))
 
     structure Size :
       sig
@@ -87,6 +90,8 @@ signature X86 =
 
     structure Immediate :
       sig
+	type t 
+
 	datatype const
 	  = Char of char
 	  | Int of int
@@ -106,7 +111,7 @@ signature X86 =
 	  | BitOrNot
 	  | Addition
 	  | Subtraction
-	datatype t 
+	datatype u
 	  = Const of const
           | Label of Label.t
 	  | ImmedUnExp of {oper: un,
@@ -121,13 +126,17 @@ signature X86 =
 	val const_word : word -> t
 	val deConst : t -> const option
 	val label : Label.t -> t
+	val deLabel : t -> Label.t option
 	val unexp : {oper: un, 
 		     exp: t} -> t
 	val binexp : {oper: bin, 
 		      exp1: t,
 		      exp2: t} -> t
+	val destruct : t -> u
+	val clearAll : unit -> unit
 
 	val eval : t -> word option
+	val zero : t -> bool
 	val eq : t * t -> bool
     end
 
@@ -150,30 +159,32 @@ signature X86 =
 
     structure MemLoc :
       sig
-	structure Commit :
-	  sig
-	    type t
-	    val commit : {isTemp: bool, onFlush: bool} -> t
-	  end
-
 	structure Class :
           sig
 	    type t
-	    val new : string -> t
+
+	    val toString : t -> string
+
+	    val new : {name: string} -> t
+	    val Temp : t
 	    val CStack : t
 	    val Code : t
+
+	    val eq : t * t -> bool
+	    val compare : t * t -> order
 	  end
 
-	datatype t'
+	type t
+
+	datatype u'
 	  = Imm of Immediate.t
 	  | Mem of t
-	and t
-	  = T of {base: t',
-		  index: t',
+	and u
+	  = U of {base: u',
+		  index: u',
 		  scale: Scale.t,
 		  size: Size.t,
-		  class: Class.t,
-		  commit: Commit.t}
+		  class: Class.t}
 
 	val toString : t -> string
 
@@ -181,37 +192,40 @@ signature X86 =
 		   index: Immediate.t,
 		   scale: Scale.t,
 		   size: Size.t,
-		   commit: Commit.t,
 		   class: Class.t} -> t
 	val basic : {base: Immediate.t,
 		     index: t,
 		     scale: Scale.t,
 		     size: Size.t,
-		     commit: Commit.t,
 		     class: Class.t} -> t
 	val simple : {base: t,
 		      index: Immediate.t,
 		      scale: Scale.t,
 		      size: Size.t,
-		      commit: Commit.t,
 		      class: Class.t} -> t
 	val complex : {base: t,
 		       index: t,
 		       scale: Scale.t,
 		       size: Size.t,
-		       commit: Commit.t,
 		       class: Class.t} -> t
+	val destruct : t -> u
+	val clearAll : unit -> unit
 
 	val size : t -> Size.t
+	val class : t -> Class.t
 	val eq : t * t -> bool
+	val compare : t * t -> order
 
 	val utilized : t -> t list
-	val isTemp : t -> bool
-	val onFlush : t -> bool
 	val mayAlias : t * t -> bool
 
 	val replace : (t -> t) -> t -> t
     end
+
+    structure ClassSet : SET
+    sharing type ClassSet.Element.t = MemLoc.Class.t
+    structure MemLocSet : SET
+    sharing type MemLocSet.Element.t = MemLoc.t
 
     structure Operand :
       sig
@@ -237,6 +251,7 @@ signature X86 =
 	val immediate_label : Label.t -> t
 	val deImmediate : t -> Immediate.t option
 	val label : Label.t -> t
+	val deLabel : t -> Label.t option
 	val address : Address.t -> t
 	val memloc : MemLoc.t -> t
 	val deMemloc : t -> MemLoc.t option
@@ -351,9 +366,10 @@ signature X86 =
 	 * dst operands are changed by the instruction.
 	 *)
 	datatype t
+	  = NOP
 	  (* Integer binary arithmetic(w/o mult & div)/logic instructions.
 	   *)
-	  = BinAL of {oper: binal,
+	  | BinAL of {oper: binal,
 		      src: Operand.t,
 		      dst: Operand.t,
 		      size: Size.t}
@@ -593,6 +609,7 @@ signature X86 =
 	val uses_defs_kills : t -> {uses: Operand.t list,
 				    defs: Operand.t list,
 				    kills: Operand.t list}
+	val hints : t -> (MemLoc.t * Register.t) list
 	val srcs_dsts : t -> {srcs: Operand.t list option, 
 			      dsts: Operand.t list option}
 	val replace : ({use: bool, def: bool} -> Operand.t -> Operand.t) -> 
@@ -601,49 +618,127 @@ signature X86 =
 
     structure Directive :
       sig
-	datatype t 
-	  = Reset
-	  | Reserve of {register: Register.t}
-	  | Unreserve of {register: Register.t}
-	  | Cache of {register: Register.t, 
-		      memloc: MemLoc.t,
-		      reserve: bool}
-	  | Assume of {register: Register.t, 
-		       memloc: MemLoc.t, 
-		       weight: int,
-		       sync: bool,
-		       reserve: bool}
-	  | Eject of {memlocs: MemLoc.t list}
-	  | Commit of {memlocs: MemLoc.t list}
-	  | Flush
-	  | Clear
+	structure Id :
+	  sig
+	    type t
+	    val new : unit -> t
+	    val plist : t -> PropertyList.t
+	  end
+
+	datatype t
+	  (* Transfers *)
+	    (* Assert that a memloc is in a register with properties;
+	     * used at top of basic blocks to establish passing convention.
+	     *)
+	  = Assume of {assumes: {register: Register.t, 
+				 memloc: MemLoc.t, 
+				 weight: int,
+				 sync: bool,
+				 reserve: bool} list}
+	  | FltAssume of {assumes: {memloc: MemLoc.t, 
+				    weight: int,
+				    sync: bool} list}
+	    (* Ensure that memloc is in the register, possibly reserverd; 
+	     * used at bot of basic blocks to establish passing convention,
+	     * also used before C calls to set-up %esp.
+	     *)
+	  | Cache of {caches: {register: Register.t,
+			       memloc: MemLoc.t,
+			       reserve: bool} list}
+	  | FltCache of {caches: {memloc: MemLoc.t} list}
+	    (* Reset the register allocation;
+	     * used at bot of basic blocks that fall-thru
+	     * to a block with multiple incoming paths of control.
+	     *)
+	  | Reset
+	    (* Ensure that memlocs are commited to memory;
+	     * used at bot of basic blocks to establish passing conventions
+	     *)
+	  | Force of {commit_memlocs: MemLoc.t list,
+		      commit_classes: MemLoc.Class.t list,
+		      remove_memlocs: MemLoc.t list,
+		      remove_classes: MemLoc.Class.t list,
+		      dead_memlocs: MemLoc.t list,
+		      dead_classes: MemLoc.Class.t list}
+	  (* C calls *)
+	    (* Prepare for a C call; i.e., clear all caller save registers;
+	     * also, clear the flt. register stack;
+	     * used before C calls.
+	     *)
+	  | CCall
+	    (* Assert that the return value is in a register;
+	     * used after C calls.
+	     *)
 	  | Return of {memloc: MemLoc.t}
+	    (* Assert that the return value is in a float register;
+	     * used after C calls.
+	     *)
 	  | FltReturn of {memloc: MemLoc.t}
+	  (* Misc. *)
+	    (* Assert that the register is not free for the allocator;
+	     * used ???
+	     *)
+	  | Reserve of {registers: Register.t list}
+	    (* Assert that the register is free for the allocator;
+	     * used to free registers at fall-thru;
+	     * also used after C calls to free %esp.
+	     *)
+	  | Unreserve of {registers: Register.t list}
+	    (* Clear the floating point stack;
+	     * used at bot of basic blocks to establish passing convention,
+	     *)
+	  | ClearFlt
+  	    (* Save the register allocation in id and
+	     *  assert that live are used at this point;
+	     * used at bot of basic blocks to delay establishment
+	     *  of passing convention to compensation block
+	     *)
+	  | SaveRegAlloc of {live: MemLoc.t list,
+			     id: Id.t}
+	    (* Restore the register allocation from id and
+	     *  remove anything tracked that is not live;
+	     * used at bot of basic blocks to delay establishment
+	     *  of passing convention to compensation block
+	     *)
+	  | RestoreRegAlloc of {live: MemLoc.t list,
+				id: Id.t}
 
 	val toString : t -> string
 	val uses_defs_kills : t -> {uses: Operand.t list, 
 				    defs: Operand.t list, 
 				    kills: Operand.t list}
+	val hints : t -> (MemLoc.t * Register.t) list
 	val replace : ({use: bool, def: bool} -> Operand.t -> Operand.t) ->
                       t -> t
-
+	val assume : {assumes: {register: Register.t,
+				memloc: MemLoc.t,
+				weight: int,
+				sync: bool,
+				reserve: bool} list} -> t
+	val fltassume : {assumes: {memloc: MemLoc.t,
+				   weight: int,
+				   sync: bool} list} -> t
+	val cache : {caches: {register: Register.t,
+			      memloc: MemLoc.t,
+			      reserve: bool} list} -> t
+	val fltcache : {caches: {memloc: MemLoc.t} list} -> t
 	val reset : unit -> t
-	val reserve : {register: Register.t} -> t
-	val unreserve : {register: Register.t} -> t
-	val cache : {register: Register.t,
-		     memloc: MemLoc.t,
-		     reserve: bool} -> t
-	val assume : {register: Register.t,
-		      memloc: MemLoc.t,
-		      weight: int,
-		      sync: bool,
-		      reserve: bool} -> t
-	val eject : {memlocs: MemLoc.t list} -> t
-	val commit : {memlocs: MemLoc.t list} -> t
-	val flush : unit -> t
-	val clear : unit -> t
+	val force : {commit_memlocs: MemLoc.t list,
+		     commit_classes: MemLoc.Class.t list,
+		     remove_memlocs: MemLoc.t list,
+		     remove_classes: MemLoc.Class.t list,
+		     dead_memlocs: MemLoc.t list,
+		     dead_classes: MemLoc.Class.t list} -> t
+	val ccall : unit -> t
 	val return : {memloc: MemLoc.t} -> t
 	val fltreturn : {memloc: MemLoc.t} -> t
+	val reserve : {registers: Register.t list} -> t
+	val unreserve : {registers: Register.t list} -> t
+	val clearflt : unit -> t
+	val saveregalloc : {live: MemLoc.t list,
+			    id: Id.t} -> t
+	val restoreregalloc : {live: MemLoc.t list,
+			       id: Id.t} -> t
     end
 
     structure PseudoOp :
@@ -687,33 +782,47 @@ signature X86 =
 	  | Label of Label.t
           | Instruction of Instruction.t
 
+	val layout : t -> Layout.t
 	val toString : t -> string
 	val uses_defs_kills : t -> {uses: Operand.t list, 
 				    defs: Operand.t list,
 				    kills: Operand.t list}
+	val hints : t -> (MemLoc.t * Register.t) list
 	val replace : ({use: bool, def: bool} -> Operand.t -> Operand.t) ->
                       t -> t
 
 	val comment : string -> t
 	val isComment : t -> bool
 	val directive : Directive.t -> t
+	val directive_assume : {assumes: {register: Register.t,
+					  memloc: MemLoc.t,
+					  weight: int,
+					  sync: bool,
+					  reserve: bool} list} -> t
+	val directive_fltassume : {assumes: {memloc: MemLoc.t,
+					     weight: int,
+					     sync: bool} list} -> t
+	val directive_cache : {caches: {register: Register.t,
+					memloc: MemLoc.t,
+					reserve: bool} list} -> t
+	val directive_fltcache : {caches: {memloc: MemLoc.t} list} -> t
 	val directive_reset : unit -> t
-	val directive_reserve : {register: Register.t} -> t
-	val directive_unreserve : {register: Register.t} -> t
-	val directive_cache : {register: Register.t,
-			       memloc: MemLoc.t,
-			       reserve: bool} -> t
-	val directive_assume : {register: Register.t,
-				memloc: MemLoc.t,
-				weight: int,
-				sync: bool,
-				reserve: bool} -> t
-	val directive_eject : {memlocs: MemLoc.t list} -> t
-	val directive_commit : {memlocs: MemLoc.t list} -> t
-	val directive_flush : unit -> t
-	val directive_clear : unit -> t
+	val directive_force : {commit_memlocs: MemLoc.t list,
+			       commit_classes: MemLoc.Class.t list,
+			       remove_memlocs: MemLoc.t list,
+			       remove_classes: MemLoc.Class.t list,
+			       dead_memlocs: MemLoc.t list,
+			       dead_classes: MemLoc.Class.t list} -> t
+	val directive_ccall : unit -> t
 	val directive_return : {memloc: MemLoc.t} -> t
 	val directive_fltreturn : {memloc: MemLoc.t} -> t
+	val directive_reserve : {registers: Register.t list} -> t
+	val directive_unreserve : {registers: Register.t list} -> t
+	val directive_saveregalloc : {live: MemLoc.t list,
+				      id: Directive.Id.t} -> t
+	val directive_restoreregalloc : {live: MemLoc.t list,
+					 id: Directive.Id.t} -> t
+	val directive_clearflt : unit -> t
 	val pseudoop : PseudoOp.t -> t
 	val pseudoop_data : unit -> t
 	val pseudoop_text : unit -> t
@@ -729,6 +838,7 @@ signature X86 =
 	val pseudoop_comm : Label.t * int * int option -> t
 	val label : Label.t -> t
 	val instruction : Instruction.t -> t
+	val instruction_nop : unit -> t
 	val instruction_binal : {oper: Instruction.binal, 
 				 src: Operand.t,
 				 dst: Operand.t,
@@ -868,12 +978,56 @@ signature X86 =
 	val instruction_fbinasp : {oper: Instruction.fbinasp} -> t
     end
 
+    structure Entry :
+      sig
+	structure FrameInfo :
+	  sig
+	    datatype t = T of {size: int, 
+			       frameLayoutsIndex: int}
+
+	    val frameInfo : {size: int, 
+			     frameLayoutsIndex: int} -> t
+	  end
+
+	datatype t
+	  = Jump of {label: Label.t}
+	  | Func of {label: Label.t,
+		     live: MemLoc.t list}
+	  | Cont of {label: Label.t,
+		     live: MemLoc.t list,
+		     frameInfo: FrameInfo.t}
+	  | Handler of {label: Label.t,
+			live: MemLoc.t list,
+			frameInfo: FrameInfo.t}
+	  | Runtime of {label: Label.t,
+			frameInfo: FrameInfo.t}
+
+	val toString : t -> string
+	val uses_defs_kills : t -> {uses: Operand.t list, 
+				    defs: Operand.t list,
+				    kills: Operand.t list}
+	val label : t -> Label.t
+	val live : t -> MemLoc.t list
+
+	val jump : {label: Label.t} -> t
+	val func : {label: Label.t,
+		    live: MemLoc.t list} -> t
+	val cont : {label: Label.t,
+		    live: MemLoc.t list,
+		    frameInfo: FrameInfo.t} -> t
+	val handler : {label: Label.t,
+		       live: MemLoc.t list,
+		       frameInfo: FrameInfo.t} -> t
+	val runtime : {label: Label.t,
+		       frameInfo: FrameInfo.t} -> t
+      end
+
     structure ProfileInfo :
       sig
 	type t
 	val none : t
 	val add : t * {profileLevel: int, profileName: string} -> t
-	val profile_begin_end : t -> (Assembly.t list * Assembly.t list)
+	val profile_assembly : t -> Assembly.t list
 	val combine : t * t -> t
       end
 
@@ -903,6 +1057,11 @@ signature X86 =
                                   (char * 'a -> 'b) *
                                   (int * 'a -> 'b) *
                                   (word * 'a -> 'b) -> 'a t
+	    val forall : 'a t * ('a -> bool) -> bool
+	    val forall' : 'a t * ('b -> bool) *
+	                         (char * 'a -> 'b) *
+				 (int * 'a -> 'b) *
+				 (word * 'a -> 'b) -> bool
 	    val foreach : 'a t * ('a -> unit) -> unit
 	    val foreach' : 'a t * ('b -> unit) *
 	                          (char * 'a -> 'b) *
@@ -916,25 +1075,43 @@ signature X86 =
 	  end
 
 	datatype t
-	  = Assembly of Assembly.t list
-	  | Goto of {target: Label.t}
+	  = Goto of {target: Label.t}
 	  | Iff of {condition: Instruction.condition,
 		    truee: Label.t,
 		    falsee: Label.t}
 	  | Switch of {test: Operand.t,
 		       cases: Label.t Cases.t,
 		       default: Label.t}
+	  | Tail of {target: Label.t,
+		     live: MemLoc.t list}
+	  | NonTail of {target: Label.t,
+			live: MemLoc.t list,
+			return: Label.t,
+			handler: Label.t option,
+			size: int}
+	  | Return of {live: MemLoc.t list}
+	  | Raise of {live: MemLoc.t list}
+	  | Runtime of {target: Label.t,
+			args: (Operand.t * Size.t) list,
+			live: MemLoc.t list,
+			return: Label.t,
+			size: int}
+	  | CCall of {target: Label.t,
+		      args: (Operand.t * Size.t) list,
+		      dst: (Operand.t * Size.t) option,
+		      live: MemLoc.t list,
+		      return: Label.t}
 
 	val toString : t -> string
 
-	val targets : t -> Label.t list
 	val uses_defs_kills : t -> {uses: Operand.t list, 
 				    defs: Operand.t list,
 				    kills: Operand.t list}
+	val nearTargets : t -> Label.t list
+	val live : t -> MemLoc.t list
 	val replace : ({use: bool, def: bool} -> Operand.t -> Operand.t) -> 
                       t -> t
 
-	val assembly : Assembly.t list -> t
 	val goto : {target: Label.t} -> t
 	val iff : {condition: Instruction.condition,
 		   truee: Label.t,
@@ -942,26 +1119,44 @@ signature X86 =
 	val switch : {test: Operand.t,
 		      cases: Label.t Cases.t,
 		      default: Label.t} -> t
+	val tail : {target: Label.t,
+		    live: MemLoc.t list} -> t
+	val nontail : {target: Label.t, 
+		       live: MemLoc.t list,
+		       return: Label.t,
+		       handler: Label.t option,
+		       size: int} -> t
+	val return : {live: MemLoc.t list} -> t 
+	val raisee : {live: MemLoc.t list} -> t
+	val runtime : {target: Label.t,
+		       args: (Operand.t * Size.t) list,
+		       live: MemLoc.t list,
+		       return: Label.t,
+		       size: int} -> t
+	val ccall : {target: Label.t,
+		     args: (Operand.t * Size.t) list,
+		     dst: (Operand.t * Size.t) option,
+		     live: MemLoc.t list,
+		     return: Label.t} -> t		       
       end
 
     structure Block :
       sig
-	datatype t' = T' of {label: Label.t option,
+	datatype t' = T' of {entry: Entry.t option,
 			     profileInfo: ProfileInfo.t,
 			     statements: Assembly.t list,
 			     transfer: Transfer.t option}
-	datatype t = T of {label: Label.t,
+	datatype t = T of {entry: Entry.t,
 			   profileInfo: ProfileInfo.t,
 			   statements: Assembly.t list,
 			   transfer: Transfer.t}
 
-	val print_block : t -> unit
+	val printBlock : t -> unit
 	val compress : t' list -> t list
       end
 
     structure Chunk :
       sig
-	datatype t = T of {exports: Label.t list,
-			   blocks: Block.t list}
+	datatype t = T of {blocks: Block.t list}
       end
 end

@@ -9,27 +9,26 @@ signature X86_TRANSLATE_STRUCTS =
     structure x86: X86_PSEUDO
     structure x86MLton : X86_MLTON
     sharing x86 = x86MLton.x86
+    structure x86Liveness : X86_LIVENESS
+    sharing x86 = x86Liveness.x86
+    sharing x86MLton.x86Liveness = x86Liveness 
   end
 
 signature X86_TRANSLATE =
   sig
     include X86_TRANSLATE_STRUCTS
 
-    val translateChunk : {chunk: x86MLton.MachineOutput.Chunk.t} ->
-                         {chunk: x86.Chunk.t,
-			  liveInfo: {get: x86.Label.t 
-				          -> x86.MemLoc.t list,
-				     set: x86.Label.t * 
-				          x86.MemLoc.t list
-					  -> unit}}
+    val translateChunk : {chunk: x86MLton.MachineOutput.Chunk.t,
+			  frameLayouts: x86MLton.MachineOutput.Label.t ->
+			                {size: int, frameLayoutsIndex: int} option,
+			  liveInfo: x86Liveness.LiveInfo.t} ->
+                         {chunk: x86.Chunk.t}
 
-    val translateProgram : {program: x86MLton.MachineOutput.Program.t} ->
-                           {chunks: x86.Chunk.t list,
-			    liveInfo: {get: x86.Label.t 
-				            -> x86.MemLoc.t list,
-				       set: x86.Label.t * 
-				            x86.MemLoc.t list
-				            -> unit}}
+    val translateProgram : {program: x86MLton.MachineOutput.Program.t,
+			    frameLayouts: x86MLton.MachineOutput.Label.t ->
+			                  {size: int, frameLayoutsIndex: int} option,
+			    liveInfo: x86Liveness.LiveInfo.t} ->
+                           {chunks: x86.Chunk.t list}
 
     val translateChunk_totals : unit -> unit
     val translateProgram_totals : unit -> unit

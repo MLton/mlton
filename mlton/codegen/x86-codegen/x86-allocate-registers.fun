@@ -7,11 +7,21 @@ struct
   open S
   open x86
 
-  val tracer
-    = Control.traceBatch
-(*
-    = fn s => fn f => (Control.trace (Control.Detail, s) f, fn () => ())
-*)
+  val tracer = x86.tracer
+  val tracerTop = x86.tracerTop
+
+  fun track memloc = let
+		       val trackClasses 
+			 = ClassSet.add(ClassSet.+(!x86MLton.Classes.livenessClasses,
+						 !x86MLton.Classes.holdClasses),
+					x86MLton.Classes.StaticNonTemp)
+		     in
+		       ClassSet.contains(trackClasses, MemLoc.class memloc)
+		     end
+
+  fun mkBorder c
+    = AppendList.single
+      (Assembly.comment (String.make(40, c)))
 
   fun partition(l, p)
     = let
@@ -63,437 +73,524 @@ struct
 
   structure Liveness =
     struct
-      datatype future = USE of MemLoc.t
-	              | DEF of MemLoc.t
-	              | USEDEF of MemLoc.t
+
+      datatype futureMemlocTag = FLIVE 
+                               | FCOMMIT | FREMOVE | FDEAD 
+                               | FUSE | FUSEDEF | FDEF
+
+      val futureMemlocTag_toString
+	= fn FLIVE => "FLIVE"
+	   | FCOMMIT => "FCOMMIT"
+	   | FREMOVE => "FREMOVE"
+	   | FDEAD => "FDEAD"
+	   | FUSE => "FUSE"
+	   | FUSEDEF => "FUSEDEF"
+	   | FDEF => "FDEF"
+
+      type futureMemloc = futureMemlocTag * MemLoc.t
+
+      datatype futureMemlocPredTag = FCOMMITP | FREMOVEP | FDEADP 
+                                   | FMCOMMITP | FMREMOVEP
+
+      val futureMemlocPredTag_toString
+	= fn FCOMMITP => "FCOMMITP"
+	   | FREMOVEP => "FREMOVEP"
+	   | FDEADP => "FDEADP"
+	   | FMCOMMITP => "FMCOMMITP"
+	   | FMREMOVEP => "FMREMOVEP"
+
+      type futureMemlocPred = futureMemlocPredTag * (MemLoc.t -> bool)
+
+      datatype future = M of futureMemloc | MP of futureMemlocPred
 
       val future_toString
-	= fn USE memloc => concat ["USE ", MemLoc.toString memloc]
-	   | DEF memloc => concat ["DEF ", MemLoc.toString memloc]
-	   | USEDEF memloc => concat ["USEDEF ", MemLoc.toString memloc]
+	= fn (M (tag, memloc))
+	   => concat [futureMemlocTag_toString tag, " ", MemLoc.toString memloc]
+	   | (MP (tag, memlocOred))
+	   => concat [futureMemlocPredTag_toString tag]
 
-      val future_eq
-	= fn (USE memloc1, USE memloc2) => MemLoc.eq(memloc1,memloc2)
-	   | (USEDEF memloc1, USEDEF memloc2) => MemLoc.eq(memloc1,memloc2)
-	   | (DEF memloc1, DEF memloc2) => MemLoc.eq(memloc1,memloc2)
-	   | _ => false
 
-      type hint = MemLoc.t * Register.t
+      type hint = Register.t * MemLoc.t * MemLocSet.t
 
       val hint_toString
-	= fn (memloc, register) => concat [MemLoc.toString memloc,
-					   " -> ",
-					   Register.toString register]
+	= fn (register, memloc, ignores) 
+	   => concat [MemLoc.toString memloc,
+		      " -> ",
+		      Register.toString register]
 
       val hint_eq
-	= fn ((memloc1,register1),(memloc2,register2))
+	= fn ((register1,memloc1,ignores1),(register2,memloc2,ignore2))
 	   => MemLoc.eq(memloc1, memloc2)
 	      andalso
 	      Register.eq(register1, register2)
 
-      type t = {dead: MemLoc.t list,
-		commit: MemLoc.t list,
-		remove: MemLoc.t list,
-		future: future list,
+
+      type t = {dead: MemLocSet.t,
+		commit: MemLocSet.t,
+		remove: MemLocSet.t,
+		futures: {pre: future list,
+			  post: future list},
 		hint: hint list}
 
-      fun toString {dead, commit, remove, future, hint}
+      fun toString {dead, commit, remove, futures as {pre, post}, hint}
 	= let
 	    fun doit (name, l, toString, s)
 	      = List.fold(l, s,
 			  fn (x, s)
 			   => concat [name, toString x, "\n", s])
+	    fun doit' (name, l, toString, s)
+	      = MemLocSet.fold(l, s,
+			       fn (x, s)
+			        => concat [name, toString x, "\n", s])
 	  in
-	    doit("dead: ", dead, MemLoc.toString,
-	    doit("commit: ", commit, MemLoc.toString,
-	    doit("remove: ", remove, MemLoc.toString,
-	    doit("future: ", future, future_toString, 
+	    doit'("dead: ", dead, MemLoc.toString,
+	    doit'("commit: ", commit, MemLoc.toString,
+	    doit'("remove: ", remove, MemLoc.toString,
+(*	    doit("future (pre): ", List.rev pre, future_toString,  *)
+	    doit("future (post): ", List.rev post, future_toString, 
 	    doit("hint: ", hint, hint_toString, "")))))
 	  end
 
-      fun toComments {dead, commit, remove, future, hint} 
+      fun toComments {dead, commit, remove, futures as {pre, post}, hint} 
 	= let
 	    fun doit (name, l, toString, ac)
 	      = List.fold(l, ac, 
 			  fn (x, ac) 
-			   => (Assembly.comment (concat [name, toString x]))::
-			      ac)
+		           => (Assembly.comment (concat [name, toString x]))::
+		              ac)
+	    fun doit' (name, l, toString, ac)
+	      = MemLocSet.fold(l, ac, 
+			       fn (x, ac) 
+			        => (Assembly.comment (concat [name, toString x]))::
+			           ac)
 	  in
-	    doit("dead: ", dead, MemLoc.toString,
-	    doit("commit: ", commit, MemLoc.toString,
-	    doit("remove: ", remove, MemLoc.toString,
-	    doit("future: ", future, future_toString, 
+	    doit'("dead: ", dead, MemLoc.toString,
+	    doit'("commit: ", commit, MemLoc.toString,
+	    doit'("remove: ", remove, MemLoc.toString,
+(*	    doit("future (pre): ", List.rev pre, future_toString,  *)
+	    doit("future (post): ", List.rev post, future_toString,
 	    doit("hint: ", hint, hint_toString, [])))))
 	  end
 
-      datatype commit = NO | COMMIT | REMOVE
-      datatype scan = CONTINUE of commit | RETURN of commit
-      fun scan(future, default, f)
-	= case future
-	    of [] => default
-	     | h::future 
-	     => (case f(default, h)
-		   of CONTINUE default => scan(future, default, f)
-		    | RETURN commit => commit)
 
-      val rec split
-	= fn ([],p) => ([],[],[])
-           | (h::t,p) => let
-			   val (no,commit,remove) = split(t, p)
-			 in
-			   case p h
-			     of NO => (h::no,commit,remove)
-			      | COMMIT => (no,h::commit,remove)
-			      | REMOVE => (no,commit,h::remove)
-			 end
+      datatype commit = NO | COMMIT | REMOVE | DEAD
 
-      fun liveness {uses: MemLoc.t list,
-		    defs: MemLoc.t list,
-		    future: future list,
-		    hint: hint list} :
-	           {info: t,
-		    future: future list,
-		    hint: hint list}
+      fun predict(future, memloc)
+	= let
+	    val rec sawNothing
+	      = fn [] => if track memloc then DEAD else REMOVE
+	         | (M (tag',memloc'))::future
+	         => if MemLoc.eq(memloc, memloc')
+		      then case tag'
+			     of FLIVE => NO
+			      | FCOMMIT => sawCommit future
+			      | FREMOVE => sawRemove future
+			      | FDEAD => DEAD
+			      | FUSE => sawUse future
+			      | FUSEDEF => NO
+			      | FDEF => DEAD
+		    else if ((tag' = FUSEDEF) orelse (tag' = FDEF))
+                            andalso
+		            List.exists
+			    (MemLoc.utilized memloc,
+			     fn memloc'' => MemLoc.mayAlias(memloc'', memloc'))
+		      then REMOVE
+		    else if MemLoc.mayAlias(memloc, memloc')
+		      then case tag'
+			     of FUSE => sawCommit future
+			      | FUSEDEF => REMOVE
+			      | FDEF => REMOVE
+			      | _ => sawNothing future
+		    else sawNothing future
+		 | (MP (tag',pred'))::future
+		 => if pred' memloc
+		      then case tag'
+			     of FCOMMITP => sawCommit future
+			      | FREMOVEP => sawRemove future
+			      | FDEADP => DEAD
+			      | FMCOMMITP => sawCommit future
+			      | FMREMOVEP => sawRemove future
+		      else sawNothing future
+	    and sawCommit
+	      = fn [] => REMOVE
+	         | (M (tag',memloc'))::future
+	         => if MemLoc.eq(memloc, memloc')
+		      then case tag'
+			     of FLIVE => COMMIT
+			      | FCOMMIT => sawCommit future
+			      | FREMOVE => REMOVE
+			      | FDEAD => REMOVE
+			      | FUSE => COMMIT
+			      | FUSEDEF => COMMIT
+			      | FDEF => REMOVE
+		    else if MemLoc.mayAlias(memloc, memloc')
+		      then case tag'
+			     of FUSE => sawCommit future
+			      | FUSEDEF => REMOVE
+			      | FDEF => REMOVE
+			      | _ => sawCommit future
+		    else sawCommit future
+		 | (MP (tag',pred'))::future
+		 => if pred' memloc
+		      then case tag'
+			     of FCOMMITP => sawCommit future
+			      | FREMOVEP => REMOVE
+			      | FDEADP => REMOVE
+			      | FMCOMMITP => sawCommit future
+			      | FMREMOVEP => REMOVE
+		      else sawCommit future
+	    and sawRemove
+	      = fn [] => REMOVE
+	         | (M (tag',memloc'))::future
+	         => if MemLoc.eq(memloc, memloc')
+		      then case tag'
+			     of FLIVE => REMOVE
+			      | FCOMMIT => REMOVE
+			      | FREMOVE => sawRemove future
+			      | FDEAD => DEAD
+			      | FUSE => REMOVE
+			      | FUSEDEF => REMOVE
+			      | FDEF => DEAD
+		    else if MemLoc.mayAlias(memloc, memloc')
+		      then case tag'
+			     of FUSE => REMOVE
+			      | FUSEDEF => REMOVE
+			      | FDEF => REMOVE
+			      | _ => sawRemove future
+		    else sawRemove future
+		 | (MP (tag',pred'))::future
+		 => if pred' memloc
+		      then case tag'
+			     of FCOMMITP => REMOVE
+			      | FREMOVEP => REMOVE
+			      | FDEADP => DEAD
+			      | FMCOMMITP => REMOVE
+			      | FMREMOVEP => sawRemove future
+		      else sawRemove future
+	    and sawUse
+	      = fn [] => if track memloc then NO else COMMIT
+	         | (M (tag',memloc'))::future
+	         => if MemLoc.eq(memloc, memloc')
+		      then case tag'
+			     of FLIVE => NO
+			      | FCOMMIT => sawUseCommit future
+			      | FREMOVE => NO
+			      | FDEAD => NO
+			      | FUSE => sawUse future
+			      | FUSEDEF => NO
+			      | FDEF => NO
+		    else if MemLoc.mayAlias(memloc, memloc')
+		      then case tag'
+			     of FUSE => sawUseCommit future
+			      | FUSEDEF => NO
+			      | FDEF => NO
+			      | _ => sawUse future
+		    else sawUse future
+		 | (MP (tag',pred'))::future
+		 => if pred' memloc
+		      then case tag'
+			     of FCOMMITP => sawUseCommit future
+			      | FREMOVEP => NO
+			      | FDEADP => NO
+			      | FMCOMMITP => sawUseCommit future
+			      | FMREMOVEP => NO
+		      else sawUse future
+	    and sawUseCommit
+	      = fn [] => NO
+	         | (M (tag',memloc'))::future
+	         => if MemLoc.eq(memloc, memloc')
+		      then case tag'
+			     of FLIVE => COMMIT
+			      | FCOMMIT => sawUseCommit future
+			      | FREMOVE => NO
+			      | FDEAD => NO
+			      | FUSE => COMMIT
+			      | FUSEDEF => COMMIT
+			      | FDEF => NO
+		    else if MemLoc.mayAlias(memloc, memloc')
+		      then case tag'
+			     of FUSE => sawUseCommit future
+			      | FUSEDEF => NO
+			      | FDEF => NO
+			      | _ => sawUseCommit future
+		    else sawUseCommit future
+		 | (MP (tag',pred'))::future
+		 => if pred' memloc
+		      then case tag'
+			     of FCOMMITP => sawUseCommit future
+			      | FREMOVEP => NO
+			      | FDEADP => NO
+			      | FMCOMMITP => sawUseCommit future
+			      | FMREMOVEP => NO
+		      else sawUseCommit future
+
+	    fun check commit
+	      = if List.exists
+	           (MemLoc.utilized memloc,
+		    fn memloc' => case predict (future, memloc')
+				    of REMOVE => true
+				     | DEAD => true
+				     | _ => false)
+		  then REMOVE
+		  else commit
+
+	  in
+	    case sawNothing future
+	      of REMOVE => REMOVE
+	       | DEAD => DEAD
+	       | commit => check commit
+	  end
+
+      val split
+	= fn (set, p)
+	   => MemLocSet.fold
+	      (set,
+	       (MemLocSet.empty,MemLocSet.empty,MemLocSet.empty,MemLocSet.empty),
+	       fn (memloc, (no, commit, remove, dead))
+	        => let
+		     val add = fn set => MemLocSet.add(set, memloc)
+		   in
+		     case p memloc
+		       of NO => (add no, commit, remove, dead)
+			| COMMIT => (no, add commit, remove, dead)
+			| REMOVE => (no, commit, add remove, dead)
+			| DEAD => (no, commit, remove, add dead)
+		   end)
+
+      fun liveness {uses: MemLocSet.t,
+		    defs: MemLocSet.t,
+		    future: future list} :
+	           {dead: MemLocSet.t,
+		    commit: MemLocSet.t,
+		    remove: MemLocSet.t,
+		    future: future list}
 	= let
 	    local
-	      fun doit(memlocs, all)
-		= List.fold
+	      fun doit' (memlocs, set)
+		= MemLocSet.fold
 		  (memlocs,
-		   all,
-		   fn (memloc,all)
-		    => if List.contains(all,
-					memloc,
-					MemLoc.eq)
-			 then all
-			 else memloc::all)
-
-	      fun doit'(memlocs, all)
-		= List.fold
-		  (memlocs,
-		   all,
-		   fn (memloc,all)
-		    => doit(MemLoc.utilized memloc, all))
+		   set,
+		   fn (memloc, set)
+		    => MemLocSet.union
+		       (set, MemLocSet.fromList (MemLoc.utilized memloc)))
 	    in
-	      val allUses 
+	      val allUses
 		= doit'(defs,
 		  doit'(uses,
-		  doit(uses,
-		       [])))
-	      val allDefs
-		= doit(defs,
-		       [])
+			uses))
+	      val allDefs 
+		= defs
 	    end
 
-	    val current_usedef 
-	      = List.keepAll(allDefs,
-			     fn memloc => List.contains(allUses,
-							memloc,
-							MemLoc.eq))
+	    val current
+	      = MemLocSet.+(allUses, allDefs)
+	    val current_usedef
+	      = MemLocSet.intersect(allUses, allDefs)
 	    val current_use
-	      = List.keepAll(allUses,
-			     fn memloc => not (List.contains(current_usedef,
-							     memloc,
-							     MemLoc.eq)))
-
+	      = MemLocSet.-(allUses, current_usedef)
 	    val current_def
-	      = List.keepAll(allDefs,
-			     fn memloc => not (List.contains(current_usedef,
-							     memloc,
-							     MemLoc.eq)))
+	      = MemLocSet.-(allDefs, current_usedef)
 
-	    local
-	      fun doit (USE memloc)
-		= if not (List.contains(allDefs,
-					memloc,
-					MemLoc.eq))
-		     andalso
-		     List.exists
-		     (memloc::(MemLoc.utilized memloc),
-		      fn memloc'
-		       => List.exists
-		          (allDefs,
-			   fn memloc''
-			    => MemLoc.mayAlias(memloc',
-					       memloc'')))
-		    then NONE
-		    else SOME (USE memloc)
-		| doit (USEDEF memloc)
-		= if not (List.contains(allDefs,
-					memloc,
-					MemLoc.eq))
-		     andalso
-		     List.exists
-		     (memloc::(MemLoc.utilized memloc),
-		      fn memloc'
-		       => List.exists
-		          (allDefs,
-			   fn memloc''
-			    => MemLoc.mayAlias(memloc',
-					       memloc'')))
-		    then NONE 
-		  else if not (List.contains(allUses,
-					     memloc,
-					     MemLoc.eq))
-		          andalso 
-			  List.exists
-			  (allUses,
-			   fn memloc'
-			    => MemLoc.mayAlias(memloc,
-					       memloc'))
-			 then SOME (USE memloc)
-		  else SOME (USEDEF memloc)
-		| doit (DEF memloc)
-		= if (not (List.contains(allDefs,
-					 memloc,
-					 MemLoc.eq))
-		      andalso
-		      List.exists
-		      (memloc::(MemLoc.utilized memloc),
-		       fn memloc'
-		        => List.exists
-		           (allDefs,
-			    fn memloc''
-			     => MemLoc.mayAlias(memloc',
-						memloc''))))
-		     orelse
-		     (not (List.contains(allUses,
-					 memloc,
-					 MemLoc.eq))
-		      andalso 
-		      List.exists
-		      (allUses,
-		       fn memloc'
-		        => MemLoc.mayAlias(memloc,
-					   memloc')))
-		    then NONE
-		    else SOME (DEF memloc)
-	    in
-	      val future = List.keepAllMap(future, doit)
-	    end
-
-	    val (no_use,commit_use,remove_use)
-	      = split(current_use,
-		      fn memloc
-		       => scan
-		          (future,
-			   REMOVE,
-			   fn (default, USE memloc') 
-			    => if MemLoc.eq(memloc,memloc')
-				 then RETURN NO
-				 else if MemLoc.mayAlias(memloc,memloc')
-					then CONTINUE default
-					else CONTINUE default
-			    | (default, USEDEF memloc')
-			    => if MemLoc.eq(memloc,memloc')
-				 then RETURN NO
-				 else if MemLoc.mayAlias(memloc,memloc')
-					then RETURN REMOVE
-					else CONTINUE default
-			    | (default, DEF memloc')
-			    => if MemLoc.eq(memloc,memloc')
-				 then RETURN REMOVE
-				 else if MemLoc.mayAlias(memloc,memloc')
-					then RETURN REMOVE
-					else CONTINUE default))
-
-	    val (no_usedef,commit_usedef,remove_usedef)
-	      = split(current_usedef,
-		      fn memloc
-		       => scan
-		          (future,
-			   REMOVE,
-			   fn (default, USE memloc')
-			    => if MemLoc.eq(memloc,memloc')
-				 then CONTINUE COMMIT
-				 else if MemLoc.mayAlias(memloc,memloc')
-					then RETURN COMMIT
-					else CONTINUE default
-			    | (default, USEDEF memloc')
-			    => if MemLoc.eq(memloc,memloc')
-				 then RETURN NO
-				 else if MemLoc.mayAlias(memloc,memloc')
-					then RETURN REMOVE
-					else CONTINUE default
-			    | (default, DEF memloc')
-			    => if MemLoc.eq(memloc,memloc')
-				 then RETURN NO
-				 else if MemLoc.mayAlias(memloc,memloc')
-					then RETURN REMOVE
-					else CONTINUE default))
-
-	    val (no_def,commit_def,remove_def)
-	      = split(current_def,
-		      fn memloc
-		       => scan
-		          (future,
-			   REMOVE,
-			   fn (default, USE memloc')
-			    => if MemLoc.eq(memloc,memloc')
-				 then CONTINUE COMMIT
-				 else if MemLoc.mayAlias(memloc,memloc')
-					then RETURN COMMIT
-					else CONTINUE default
-			    | (default, USEDEF memloc')
-			    => if MemLoc.eq(memloc,memloc')
-				 then RETURN NO
-				 else if MemLoc.mayAlias(memloc,memloc')
-					then RETURN REMOVE
-					else CONTINUE default
-			    | (default, DEF memloc')
-			    => if MemLoc.eq(memloc,memloc')
-				 then RETURN NO
-				 else if MemLoc.mayAlias(memloc,memloc')
-					then RETURN REMOVE
-					else CONTINUE default))
-
-	    val no = List.concat [no_use,no_usedef,no_def]
-	    val commit = List.concat [commit_use,commit_usedef,commit_def]
-	    val {yes = _, no = commit} = List.partition(commit, MemLoc.isTemp)
-	    val remove = List.concat [remove_use,remove_usedef,remove_def]
-	    val {yes = dead, no = remove} = List.partition(remove, MemLoc.isTemp)
+	    val (no,commit,remove,dead)
+	      = split(current, fn memloc => predict(future, memloc))
 
 	    val future
 	      = let
-		  val future
-		    = List.removeAll
-		      (future,
-		       fn USE memloc => List.contains(current_use,
-						      memloc,
-						      MemLoc.eq)
-		        | USEDEF memloc => List.contains(current_usedef,
-							 memloc,
-							 MemLoc.eq)
-		        | DEF memloc => List.contains(current_def,
-						      memloc,
-						      MemLoc.eq))
-
-		  fun doit(memlocs, constructor, future)
-		    = List.fold
+		  fun doit(memlocs, tag, future)
+		    = MemLocSet.fold
 		      (memlocs,
 		       future,
-		       fn (memloc,future) 
-		        => (constructor memloc)::future)
+		       fn (memloc,future)
+		        => (M (tag, memloc))::future)
 		in
-		  doit(current_use, USE,
-		  doit(current_usedef, USEDEF,
-		  doit(current_def, DEF,
+		  doit(current_use, FUSE,
+		  doit(current_usedef, FUSEDEF,
+		  doit(current_def, FDEF,
 		       future)))
 		end
 
-	    val future
-	      = let
-		  val rec cut
-		    = fn ([],_) => []
-		       | (future,0) 
-		       => List.keepAll
-		          (future,
-			   MemLoc.isTemp o (fn USE memloc => memloc
-			                     | USEDEF memloc => memloc
-					     | DEF memloc => memloc))
-		       | (h::future,n) => h::(cut(future,n-1))
-		in 
-		  cut(future, !Control.Native.future)
-		end
-
-	    val info 
+	    val info
 	      = {dead = dead,
 		 commit = commit,
 		 remove = remove,
-		 future = future,
-		 hint = hint}
+		 future = future}
 	  in
-	    {info = info,
-	     future = future,
-	     hint = hint}
+	    info
+	  end
+
+      fun livenessInstruction {instruction: Instruction.t,
+			       future: future list}
+        = let
+	    val future_post = future
+
+	    val {uses, defs, ...} = Instruction.uses_defs_kills instruction
+	    local 
+	      fun doit operands
+		= List.fold
+		  (operands,
+		   MemLocSet.empty,
+		   fn (operand, memlocs)
+		    => case Operand.deMemloc operand
+			 of SOME memloc => MemLocSet.add(memlocs, memloc)
+			  | NONE => memlocs)
+	    in
+	      val uses = doit uses
+	      val defs = doit defs
+	    end 
+
+	    val {dead,commit,remove,future}
+	      = liveness {uses = uses,
+			  defs = defs,
+			  future = future_post}
+	    val future_pre = future
+
+	    val info = {dead = dead,
+			commit = commit,
+			remove = remove,
+			futures = {pre = future_pre, post = future_post}}
+
+	  in
+	    info
+	  end
+
+      fun livenessDirective {directive: Directive.t,
+			     future: future list}
+	= let
+	    val future_post = future
+
+	    fun addLive (memlocsX, f)
+	      = List.fold
+	        (memlocsX,
+		 future,
+		 fn (X, future) => (M (FLIVE, f X))::future)
+	    fun addRemove (memlocsX, f)
+	      = List.fold
+	        (memlocsX,
+		 future,
+		 fn (X, future) => (M (FREMOVE, f X))::future)
+
+	    val future_pre
+	      = case directive
+		  of Directive.Reset 
+		   => []
+		   | Directive.Cache {caches, ...}
+		   => addLive(caches, fn {memloc, ...} => memloc)
+		   | Directive.FltCache {caches, ...}
+		   => addLive(caches, fn {memloc, ...} => memloc)
+		   | Directive.Force {commit_memlocs,
+				      commit_classes,
+				      remove_memlocs,
+				      remove_classes,
+				      dead_memlocs,
+				      dead_classes,
+				      ...}
+		   => List.fold
+		      (commit_memlocs,
+		       List.fold
+		       (remove_memlocs,
+			List.fold
+			(dead_memlocs,
+			 (MP (FCOMMITP, 
+			      fn memloc 
+			       => List.contains(commit_classes,
+						MemLoc.class memloc,
+						MemLoc.Class.eq)))::
+			 (MP (FREMOVEP, 
+			      fn memloc 
+			       => List.contains(remove_classes,
+						MemLoc.class memloc,
+						MemLoc.Class.eq)))::
+			 (MP (FDEADP, 
+			      fn memloc 
+			       => List.contains(dead_classes,
+						MemLoc.class memloc,
+						MemLoc.Class.eq)))::
+			 future,
+			 fn (memloc,future) => (M (FDEAD, memloc))::future),
+			fn (memloc,future) => (M (FREMOVE, memloc))::future),
+		       fn (memloc,future) => (M (FCOMMIT, memloc))::future)
+		   | Directive.CCall
+		   => (MP (FCOMMITP,
+			   fn memloc
+			    => MemLoc.Class.eq
+			       (MemLoc.class memloc, 
+				MemLoc.Class.CStack)))::
+		      (MP (FMREMOVEP,
+			   fn memloc
+			    => (not (MemLoc.Class.eq
+				     (MemLoc.class memloc,
+				      MemLoc.Class.CStack)))
+			       andalso
+			       (Size.class (MemLoc.size memloc) <> Size.INT)))::
+		      future
+		   | Directive.ClearFlt
+		   => (MP (FMREMOVEP,
+			   fn memloc
+			    => (Size.class (MemLoc.size memloc) <> Size.INT)))::
+		      future
+		   | Directive.SaveRegAlloc {live, ...}
+		   => addLive(live, fn memloc => memloc)
+		   | _ => future
+
+	    val info = {dead = MemLocSet.empty,
+			commit = MemLocSet.empty,
+			remove = MemLocSet.empty,
+			futures = {pre = future_pre, post = future_post}}
+	  in
+	    info
 	  end
 
       fun livenessAssembly {assembly: Assembly.t,
 			    future: future list,
-			    hint: hint list} :
-	                   {info: t,
-			    future: future list,
-			    hint: hint list}
-	= case assembly
-	    of Assembly.Directive Directive.Reset 
-	     => liveness {uses = [],
-			  defs = [],
-			  future = [],
-			  hint = []}
-	     | Assembly.Directive Directive.Flush
-	     => liveness {uses = [],
-			  defs = [],
-			  future
-			  = List.keepAllMap
-			    (future,
-			     fn USE memloc 
-			      => if MemLoc.onFlush memloc
-				   then (case Size.class (MemLoc.size memloc)
-					   of Size.INT => SOME (USE memloc)
-					    | _ => NONE)
-				   else SOME (USE memloc)
-			      | USEDEF memloc 
-			      => if MemLoc.onFlush memloc
-				   then (case Size.class (MemLoc.size memloc)
-					   of Size.INT => SOME (USE memloc)
-					    | _ => NONE)
-				   else SOME (USEDEF memloc)
-			      | DEF memloc
-			      => if MemLoc.onFlush memloc
-				   then NONE
-				   else SOME (DEF memloc)),
-			  hint = hint}
-	     | Assembly.Directive Directive.Clear
-	     => liveness {uses = [],
-			  defs = [],
-			  future
-			  = List.keepAllMap
-			    (future,
-			     fn USE memloc 
-			      => if MemLoc.onFlush memloc
-				   then (case Size.class (MemLoc.size memloc)
-					   of Size.INT => SOME (USE memloc)
-					    | _ => NONE)
-				   else SOME (USE memloc)
-			      | USEDEF memloc 
-			      => if MemLoc.onFlush memloc
-				   then (case Size.class (MemLoc.size memloc)
-					   of Size.INT => SOME (USE memloc)
-					    | _ => NONE)
-				   else SOME (USEDEF memloc)
-			      | DEF memloc
-			      => if MemLoc.onFlush memloc
-				   then NONE
-				   else SOME (DEF memloc)),
-			  hint = hint}
-	     | Assembly.Directive (Directive.Cache {memloc, register, reserve})
-	     => let
-		  val {uses,defs,...} = Assembly.uses_defs_kills assembly
-		  val hint
-		    = (memloc,register)::
-		      (List.foldr
-		       (hint,
-			[],
-			fn ((hint_memloc,hint_register),hint)
-		         => if MemLoc.eq(hint_memloc,
-					 memloc)
-			      then hint
-			      else (hint_memloc,hint_register)::hint))
+			    hint: hint list} : t
+	= let
+	    fun default () = {dead = MemLocSet.empty,
+			      commit = MemLocSet.empty,
+			      remove = MemLocSet.empty,
+			      futures = {pre = future, post = future}}
+	    val info as {dead, commit, remove, futures}
+	      = case assembly
+		  of Assembly.Comment _ => default ()
+		   | Assembly.Directive d 
+		   => livenessDirective {directive = d,
+					 future = future}
+		   | Assembly.Instruction i 
+		   => livenessInstruction {instruction = i,
+					   future = future}
+		   | Assembly.Label _ => default ()
+		   | Assembly.PseudoOp _ => default ()
 
-		in
-		  liveness {uses = List.keepAllMap(uses,Operand.deMemloc),
-			    defs = List.keepAllMap(defs,Operand.deMemloc),
-			    future = future,
-			    hint = hint}
-		end
-	     | _ 
-	     => let
-		  val {uses,defs,...} = Assembly.uses_defs_kills assembly
-		in
-		  liveness {uses = List.keepAllMap(uses,Operand.deMemloc),
-			    defs = List.keepAllMap(defs,Operand.deMemloc),
-			    future = future,
-			    hint = hint}
-		end
+	    val hint' = Assembly.hints assembly
+	    val hint
+	      = List.foldr
+	        (case assembly
+		   of Assembly.Directive Directive.Reset => []
+		    | _ => hint,
+		 List.map(hint', 
+			  fn (memloc, register)
+			   => (register, memloc, MemLocSet.empty)),
+		 fn ((hint_register,hint_memloc,hint_ignore),hint)
+		  => if List.exists
+		        (hint',
+			 fn (hint_memloc',hint_register')
+			  => MemLoc.eq(hint_memloc,
+				       hint_memloc')
+			     orelse
+			     Register.coincide(hint_register,
+					       hint_register'))
+		       then hint
+		       else (hint_register,
+			     hint_memloc,
+			     MemLocSet.union(dead, hint_ignore))::hint)
+
+	    val info = {dead = dead,
+			commit = commit,
+			remove = remove,
+			futures = futures,
+			hint = hint}
+	  in
+	    info
+	  end
 
       fun toLiveness (assembly: Assembly.t list) : ((Assembly.t * t) list)
 	= let
@@ -503,13 +600,13 @@ struct
 		 {assembly = [], future = [], hint = []},
 		 fn (asm, {assembly,future,hint})
 		  => let
-		       val {info,future,hint}
+		       val info as {futures as {pre, ...}, hint, ...}
 			 = livenessAssembly {assembly = asm,
 					     future = future,
 					     hint = hint}
 		     in
 		       {assembly = (asm,info)::assembly,
-			future = future,
+			future = pre,
 			hint = hint}
 		     end)
 	  in
@@ -522,11 +619,11 @@ struct
 	  toLiveness
 
       fun toNoLiveness (assembly: Assembly.t list) : ((Assembly.t * t) list)
-	= List.map(assembly, fn asm => (asm,{dead = [],
-					     commit = [],
-					     remove = [],
-					     future = [],
-					     hint = []})) 
+	= List.map(assembly, fn asm => (asm,{dead = MemLocSet.empty,
+					     commit = MemLocSet.empty,
+					     remove = MemLocSet.empty,
+					     futures = {pre = [], post = []},
+					     hint = []}))
 
       val (toNoLiveness,toNoLiveness_msg)
 	= tracer
@@ -537,10 +634,9 @@ struct
   structure RegisterAllocation =
     struct
       exception Spill
-      val spillClass = MemLoc.Class.new "Spill"
       val spill : Int.t ref = ref 0
       val spillLabel = Label.fromString "spill"
-      val commitDepth : Int.t ref = ref 0
+      val depth : Int.t ref = ref 0
 
       datatype commit 
 	= NO 
@@ -649,11 +745,18 @@ struct
 			    => (Assembly.comment (toString x))::
 			       ac))
 	  in
-	    doit("entries:", entries, value_toString,
-	    doit("reserved:", reserved, Register.toString,
-	    doit("fltstack:", fltstack, fltvalue_toString,
-		 [])))
+	    AppendList.fromList
+	    (doit("entries:", entries, value_toString,
+	     doit("reserved:", reserved, Register.toString,
+	     doit("fltstack:", fltstack, fltvalue_toString,
+		  []))))
 	  end
+
+      val {get = getRA : Directive.Id.t -> {registerAllocation: t},
+	   set = setRA}
+	= Property.getSetOnce
+	  (Directive.Id.plist,
+	   Property.initRaise ("getRA", fn _ => Layout.empty))
 
       fun eq (registerAllocation1 as {entries = entries1, 
 				      reserved = reserved1,
@@ -677,6 +780,45 @@ struct
 	= {entries = [],
 	   reserved = [],
 	   fltstack = []}
+
+      fun reserve' {register: Register.t,
+		    registerAllocation = {entries, reserved, fltstack}: t}
+	= {assembly = AppendList.empty,
+	   registerAllocation = {entries = entries,
+				 reserved = register::reserved,
+				 fltstack = fltstack}}
+
+      fun reserve {registers: Register.t list,
+		   registerAllocation = {entries, reserved, fltstack}: t}
+	= {assembly = AppendList.empty,
+	   registerAllocation = {entries = entries,
+				 reserved = registers @ reserved,
+				 fltstack = fltstack}}
+
+      fun unreserve' {register: Register.t,
+		      registerAllocation = {entries, reserved, fltstack}: t}
+	= {assembly = AppendList.empty,
+	   registerAllocation = {entries = entries,
+				 reserved = List.removeAll
+				            (reserved,
+					     fn register' 
+					      => Register.eq
+					         (register',
+						  register)),
+				 fltstack = fltstack}}
+
+      fun unreserve {registers: Register.t list,
+		     registerAllocation = {entries, reserved, fltstack}: t}
+	= {assembly = AppendList.empty,
+	   registerAllocation = {entries = entries,
+				 reserved = List.removeAll
+				            (reserved,
+					     fn register' 
+					     => List.contains
+					        (registers,
+						 register',
+						 Register.eq)),
+				 fltstack = fltstack}}
 
       fun valueMap {map, 
 		    registerAllocation as {entries,
@@ -724,24 +866,6 @@ struct
 		       fn {fltregister 
 			   = fltregister' as FltRegister.T i', ...}
 		        => i = i')
-
-      fun reserve {register: Register.t,
-		   registerAllocation = {entries, reserved, fltstack}: t}
-	= {assembly = [],
-	   registerAllocation = {entries = entries,
-				 reserved = register::reserved,
-				 fltstack = fltstack}}
-
-      fun unreserve {register: Register.t,
-		     registerAllocation = {entries, reserved, fltstack}: t}
-	= {assembly = [],
-	   registerAllocation = {entries = entries,
-				 reserved = List.removeAll
-				            (reserved,
-					     fn register' 
-					     => Register.eq(register, 
-							    register')),
-				 fltstack = fltstack}}
 
       fun update {value as {register,...},
 		  registerAllocation as {entries, reserved, fltstack}: t}
@@ -800,7 +924,7 @@ struct
 
       fun fltpush {value,
 		   registerAllocation as {entries, reserved, fltstack}: t}
-	= {rename = FltRegister.push,
+	= {fltrename = FltRegister.push,
 	   registerAllocation
 	   = {entries = entries,
 	      reserved = reserved,
@@ -822,7 +946,7 @@ struct
 			    | _ => Error.bug "fltpush"}}
 
       fun fltpop {registerAllocation as {entries, reserved, fltstack}: t}
-	= {rename = FltRegister.pop,
+	= {fltrename = FltRegister.pop,
 	   registerAllocation
 	   = {entries = entries,
 	      reserved = reserved,
@@ -860,7 +984,7 @@ struct
 		  commit = commit'}, 
 		 fltstack_post) = split ([], fltstack)
 	  in 
-	    {rename = fn fltregister 
+	    {fltrename = fn fltregister 
 	               => if FltRegister.eq(fltregister,
 					    fltregister')
 			    then FltRegister.top
@@ -1052,6 +1176,44 @@ struct
 		   | NONE => NONE)
 	    | _ => NONE)
 
+      fun 'a spillAndReissue {info: Liveness.t,
+			      supports: Operand.t list,
+			      saves: Operand.t list,
+			      registerAllocation: t,
+			      spiller : {info: Liveness.t,
+					 supports: Operand.t list,
+					 saves: Operand.t list,
+					 registerAllocation: t} ->
+			                {assembly: Assembly.t AppendList.t,
+					 registerAllocation: t},
+			      msg : string,
+			      reissue : {assembly: Assembly.t AppendList.t,
+					 registerAllocation: t} -> 'a} : 'a
+	= (Int.dec depth;
+	   if !depth = 0
+	     then let
+		    val _ = Int.inc depth
+		    val {assembly, registerAllocation}
+		      = spiller
+		        {info = info,
+			 supports = supports,
+			 saves = saves,
+			 registerAllocation = registerAllocation}
+		    val return
+		      = reissue {assembly = assembly,
+				 registerAllocation = registerAllocation}
+		        handle Spill
+			 => (print (concat ["handling respill in",
+					    msg,
+					    "\n"]);
+			     print (toString registerAllocation);
+			     Error.bug (concat [msg, ":reSpill"]))
+		    val _ = Int.dec depth
+		  in
+		    return
+		  end
+	     else raise Spill)
+
       fun potentialRegisters {size: Size.t,
 			      saves: Operand.t list,
 			      force: Register.t list,
@@ -1065,7 +1227,8 @@ struct
 							   register, 
 							   Register.eq))
 
-      fun chooseRegister {info as {future,hint,...}: Liveness.t,
+      fun chooseRegister {info as {futures as {pre = future, ...},
+				   hint,...}: Liveness.t,
 			  memloc: MemLoc.t option,
 			  size: Size.t,
 			  supports: Operand.t list,
@@ -1129,14 +1292,19 @@ struct
 			 = List.fold
 			   (hint,
 			    0,
-			    fn ((hint_memloc,hint_register),hint_cost)
+			    fn ((hint_register,hint_memloc,hint_ignore),
+				hint_cost)
 			     => if Register.eq(register',
 					       hint_register)
 				  then case memloc
 					 of SOME memloc
-					  => if MemLoc.eq(memloc,hint_memloc)
-					       then hint_cost + 5
-					       else hint_cost - 5
+					  => if MemLocSet.contains
+					        (hint_ignore, memloc)
+					       then hint_cost
+					     else if MemLoc.eq(memloc,
+							       hint_memloc)
+						    then hint_cost + 5
+						    else hint_cost - 5
 					  | NONE => hint_cost - 5
 				else if Register.coincide(register',
 							  hint_register)
@@ -1178,11 +1346,17 @@ struct
 					 val future_cost'
 					   = List.index
 					     (future,
-					      fn Liveness.USE memloc'
-					       => MemLoc.eq(memloc,memloc')
-					       | Liveness.USEDEF memloc'
-					       => MemLoc.eq(memloc,memloc')
-					       | _ => false)
+					      fn Liveness.M (tag, memloc')
+					       => let
+						    val eq = MemLoc.eq(memloc, memloc')
+						  in 
+						    case tag
+						      of Liveness.FLIVE => eq
+						       | Liveness.FUSE => eq
+						       | Liveness.FUSEDEF => eq
+						       | _ => false
+						  end
+                                               | _ => false)
 
 					 val utilized_cost'
 					   = List.fold
@@ -1218,9 +1392,9 @@ struct
 		     in
 		       (register',
 			(support_cost,
-			 hint_cost,
 			 commit_cost,
 			 future_cost,
+			 hint_cost,
 			 utilized_cost,
 			 sync_cost,
 			 weight_cost))
@@ -1230,27 +1404,27 @@ struct
 	      = List.insertionSort
 	        (registers_costs,
 		 fn ((_,(support_c1,
-			 hint_c1,
 			 commit_c1,
 			 future_c1,
+			 hint_c1,
 			 utilized_c1,
 			 sync_c1,
 			 weight_c1)),
 		     (_,(support_c2,
-			 hint_c2,
 			 commit_c2,
 			 future_c2,
+			 hint_c2,
 			 utilized_c2,
 			 sync_c2,
-			 weight_c2))) 
+			 weight_c2)))
 		  => bool_lt(support_c1,support_c2) orelse
 		     (support_c1 = support_c2 andalso
-		      (hint_c1 > hint_c2 orelse
-		       (hint_c1 = hint_c2 andalso
-			(bool_lt(commit_c1,commit_c2) orelse
-			 (commit_c1 = commit_c2 andalso
-			  (option_lt (op >) (future_c1, future_c2) orelse
-			   (future_c1 = future_c2 andalso
+		      (bool_lt(commit_c1,commit_c2) orelse
+		       (commit_c1 = commit_c2 andalso
+			(option_lt (op >) (future_c1, future_c2) orelse
+			 (future_c1 = future_c2 andalso
+			  (hint_c1 > hint_c2 orelse
+			   (hint_c1 = hint_c2 andalso
 			    (utilized_c1 < utilized_c2 orelse
 			     (utilized_c1 = utilized_c2 andalso
 			      (bool_gt(sync_c1,sync_c2) orelse
@@ -1262,7 +1436,7 @@ struct
 
 	    val register
 	      = case registers
-		  of []
+		  of [] 
 		   => raise Spill
 (*
 		   => let
@@ -1284,11 +1458,12 @@ struct
 					 (toString registerAllocation),
 					 "size = ", size, "\n",
 					 "saves = ", saves, "\n",
-					 "force = ", force, "\n"]
+					 "force = ", force, "\n",
+					 "depth = ", Int.toString (!depth), "\n"]
 
 			val _ = print msg
 		      in
-(*			Error.bug "chooseRegister, registers:[]" *)
+			print "Raising Spill in chooseRegister\n";
 			raise Spill
 		      end
 *)
@@ -1306,17 +1481,19 @@ struct
 	     coincide_values = coincide_values}
 	  end
 
-      fun freeRegister {info: Liveness.t,
-			memloc: MemLoc.t option,
-			size: Size.t,
-			supports: Operand.t list,
-			saves: Operand.t list,
-			force: Register.t list, 
-			registerAllocation: t} :
+      fun freeRegister (args as {info: Liveness.t,
+				 memloc: MemLoc.t option,
+				 size: Size.t,
+				 supports: Operand.t list,
+				 saves: Operand.t list,
+				 force: Register.t list, 
+				 registerAllocation: t}) :
                        {register: Register.t,
-			assembly: Assembly.t list,
+			assembly: Assembly.t AppendList.t,
 			registerAllocation: t}
 	= let
+	    val _ = Int.inc depth
+
 	    val {register = final_register,
 		 coincide_values}
 	      = chooseRegister {info = info,
@@ -1353,7 +1530,7 @@ struct
 		 registerAllocation}
 	      = List.fold
 	        (coincide_values,
-		 {assembly = [],
+		 {assembly = AppendList.empty,
 		  registerAllocation = registerAllocation},
 		 fn (value as {memloc,...},
 		     {assembly,
@@ -1385,7 +1562,8 @@ struct
 				   force = force,
 				   registerAllocation = registerAllocation}
 			    in
-			      {assembly = List.concat [assembly, assembly_register],
+			      {assembly = AppendList.append (assembly, 
+							     assembly_register),
 			       registerAllocation = registerAllocation}
 			    end
 		       else {assembly = assembly,
@@ -1414,19 +1592,48 @@ struct
 				 supports = supports,
 				 saves = saves,
 				 registerAllocation = registerAllocation}
+
+	    val _ = Int.dec depth
 	  in
 	    {register = final_register,
-	     assembly = List.concat [assembly_support, assembly_commit],
+	     assembly = AppendList.appends [assembly_support, 
+					    assembly_commit],
 	     registerAllocation = registerAllocation}
 	  end
+	  handle Spill 
+	   => spillAndReissue 
+	      {info = info,
+	       supports = supports,
+	       saves = saves,
+	       registerAllocation = registerAllocation,
+	       spiller = spillRegisters,
+	       msg = "freeRegisters",
+	       reissue = fn {assembly = assembly_spill,
+			     registerAllocation}
+	                  => let
+			       val {register, assembly, registerAllocation}
+				 = freeRegister 
+				   {info = info,
+				    memloc = memloc,
+				    size = size,
+				    supports = supports,
+				    saves = saves,
+				    force = force,
+				    registerAllocation = registerAllocation}
+			     in
+			       {register = register,
+				assembly = AppendList.append (assembly_spill,
+							      assembly),
+				registerAllocation = registerAllocation}
+			     end}
 
-      and freeFltRegister {info as {future,...}: Liveness.t,
+      and freeFltRegister {info as {futures as {pre = future, ...},...}: Liveness.t,
 			   size: Size.t,
 			   supports: Operand.t list,
 			   saves: Operand.t list,
 			   registerAllocation: t} :
-	                  {assembly: Assembly.t list,
-			   rename: FltRegister.t -> FltRegister.t,
+	                  {assembly: Assembly.t AppendList.t,
+			   fltrename: FltRegister.t -> FltRegister.t,
 			   registerAllocation: t}
 	= let
 	    val values
@@ -1467,12 +1674,19 @@ struct
 				       | _ => true
 
 				val future_cost
-				  = List.index(future,
-					       fn Liveness.USE memloc'
-					        => MemLoc.eq(memloc,memloc')
-					        | Liveness.USEDEF memloc'
-					        => MemLoc.eq(memloc,memloc')
-					        | _ => false)
+				  = List.index
+				    (future,
+				     fn Liveness.M (tag, memloc')
+				      => let
+					   val eq = MemLoc.eq(memloc, memloc')
+					 in
+					   case tag
+					     of Liveness.FLIVE => eq
+					      | Liveness.FUSE => eq
+					      | Liveness.FUSEDEF => eq
+					      | _ => false
+					 end
+                                      | _ => false)
 
 				val sync_cost = sync
 
@@ -1530,7 +1744,7 @@ struct
 					    = registerAllocation}
 
 			     val {assembly = assembly_commit,
-				  rename = rename_commit,
+				  fltrename = fltrename_commit,
 				  registerAllocation}
 			       = commitFltRegisters {info = info,
 						     supports = supports,
@@ -1539,23 +1753,47 @@ struct
 						     = registerAllocation}
 			   in
 			     {assembly = assembly_commit,
-			      rename = rename_commit,
+			      fltrename = fltrename_commit,
 			      registerAllocation = registerAllocation}
 			   end
 		   end
-	      else {assembly = [],
-		    rename = FltRegister.id,
+	      else {assembly = AppendList.empty,
+		    fltrename = FltRegister.id,
 		    registerAllocation = registerAllocation}
 	  end
+	  handle Spill 
+	   => spillAndReissue 
+	      {info = info,
+	       supports = supports,
+	       saves = saves,
+	       registerAllocation = registerAllocation,
+	       spiller = spillRegisters,
+	       msg = "freeFltRegisters",
+	       reissue = fn {assembly = assembly_spill,
+			     registerAllocation}
+	                  => let
+			       val {assembly, fltrename, registerAllocation}
+				 = freeFltRegister 
+				   {info = info,
+				    size = size,
+				    supports = supports,
+				    saves = saves,
+				    registerAllocation = registerAllocation}
+			     in
+			       {assembly = AppendList.append (assembly_spill,
+							      assembly),
+				fltrename = fltrename,
+				registerAllocation = registerAllocation}
+			     end}
 
       and commitRegisters {info: Liveness.t,
 			   supports: Operand.t list,
 			   saves: Operand.t list,
 			   registerAllocation as {reserved,...}: t} :
-	                  {assembly: Assembly.t list,
+	                  {assembly: Assembly.t AppendList.t,
 			   registerAllocation: t}
 	= let
-	    val _ = Int.inc(commitDepth)
+	    val _ = Int.inc depth
             val commit_values
 	      = valueFilter {filter = fn {commit = COMMIT 0, ...} => true
 			               | {commit = REMOVE 0, ...} => true
@@ -1567,7 +1805,7 @@ struct
 	    val commit_memlocs = List.map(commit_values, #memloc)
 
 	    val commit_memlocs
-	      = List.insertionSort
+	      = totalOrder
 	        (commit_memlocs,
 		 fn (memloc1,memloc2)
 		  => List.contains(MemLoc.utilized memloc1,
@@ -1578,7 +1816,7 @@ struct
 		 registerAllocation}
 	      = List.fold
 	        (commit_memlocs,
-		 {assembly = [],
+		 {assembly = AppendList.empty,
 		  registerAllocation = registerAllocation},
 		 fn (memloc,
 		     {assembly,
@@ -1631,13 +1869,14 @@ struct
 						   = registerAllocation}
 				  in
 				    {assembly 
-				     = List.concat 
+				     = AppendList.appends 
 				       [assembly,
 					assembly_address,
-					[Assembly.instruction_mov
+					AppendList.single
+					(Assembly.instruction_mov
 					 {dst = Operand.Address address,
 					  src = Operand.Register register,
-					  size = size}]],
+					  size = size})],
 				     registerAllocation = registerAllocation}
 				  end
 
@@ -1703,13 +1942,14 @@ struct
 						       = registerAllocation}
 				  in
 				    {assembly 
-				     = List.concat 
+				     = AppendList.appends
 				       [assembly,
 					assembly_address,
-					[Assembly.instruction_mov
+					AppendList.single
+					(Assembly.instruction_mov
 					 {dst = Operand.Address address,
 					  src = Operand.Register register,
-					  size = size}]],
+					  size = size})],
 				     registerAllocation = registerAllocation}
 				  end
 
@@ -1750,31 +1990,387 @@ struct
 				 | _ 
 				 => Error.bug "commitRegisters"
 			    end))
-	    val _ = Int.dec(commitDepth)
+	    val _ = Int.dec depth
 	  in
 	    {assembly = assembly_commit,
 	     registerAllocation = registerAllocation}
 	  end
-	  handle Spill => (Int.dec(commitDepth);
-			   spillRegisters {info = info,
-					  supports = supports,
-					  saves = saves,
-					  registerAllocation = registerAllocation})
+	  handle Spill 
+	   => spillAndReissue 
+	      {info = info,
+	       supports = supports,
+	       saves = saves,
+	       registerAllocation = registerAllocation,
+	       spiller = spillRegisters,
+	       msg = "commitRegisters",
+	       reissue = fn {assembly = assembly_spill,
+			     registerAllocation}
+	                  => let
+			       val {assembly, registerAllocation}
+				 = commitRegisters 
+				   {info = info,
+				    supports = supports,
+				    saves = saves,
+				    registerAllocation = registerAllocation}
+			     in
+			       {assembly = AppendList.append (assembly_spill,
+							      assembly),
+				registerAllocation = registerAllocation}
+			     end}
+
+      and commitFltRegisters {info: Liveness.t,
+			      supports: Operand.t list,
+			      saves: Operand.t list,
+			      registerAllocation: t} :
+	                     {assembly: Assembly.t AppendList.t,
+			      fltrename: FltRegister.t -> FltRegister.t,
+			      registerAllocation: t}
+	= let
+	    val _ = Int.inc depth
+	    val commit_values
+	      = fltvalueFilter {filter
+				= fn {commit = COMMIT 0, ...} => true
+			           | {commit = REMOVE 0, ...} => true
+			           | {commit = TRYCOMMIT 0, ...} => true
+			           | {commit = TRYREMOVE 0, ...} => true
+				   | _ => false,
+				registerAllocation = registerAllocation}
+
+	    val {assembly = assembly_commit,
+		 fltrename = fltrename_commit,
+		 registerAllocation}
+	      = List.fold
+	        (commit_values,
+		 {assembly = AppendList.empty,
+		  fltrename = FltRegister.id,
+		  registerAllocation = registerAllocation},
+		 fn (value as {fltregister,
+			       memloc,
+			       weight,
+			       sync,
+			       commit},
+		     {assembly, fltrename, registerAllocation})
+		  => let
+		       fun doCommitFalse ()
+			 = let
+			     val fltregister = fltrename fltregister
+			     val {assembly = assembly_xch,
+				  fltrename = fltrename_xch,
+				  registerAllocation}
+			       = if FltRegister.eq(fltregister, 
+						   FltRegister.top)
+				   then {assembly = AppendList.empty,
+					 fltrename = FltRegister.id,
+					 registerAllocation 
+					 = registerAllocation}
+				   else let
+					  val {fltrename = fltrename_xch,
+					       registerAllocation}
+					    = fltxch' 
+					      {fltregister = fltregister,
+					       registerAllocation 
+					       = registerAllocation}
+					in
+					  {assembly
+					   = AppendList.single
+					     (Assembly.instruction_fxch
+					      {src = Operand.fltregister 
+					             fltregister}),
+					   fltrename = fltrename_xch,
+					   registerAllocation 
+					   = registerAllocation}
+					end
+
+			     val size = MemLoc.size memloc
+			       
+			     val {address,
+				  assembly = assembly_address,
+				  registerAllocation}
+			       = toAddressMemLoc {memloc = memloc,
+						  info = info,
+						  size = size,
+						  supports = supports,
+						  saves = saves,
+						  registerAllocation 
+						  = registerAllocation}
+			       
+			     val registerAllocation
+			       = fltupdate {value 
+					    = {fltregister = FltRegister.top,
+					       memloc = memloc,
+					       weight = weight,
+					       sync = true,
+					       commit = NO},
+					    registerAllocation 
+					    = registerAllocation}
+			   in
+			     {assembly 
+			      = AppendList.appends
+			        [assembly,
+				 assembly_xch,
+				 assembly_address,
+				 case Size.class size
+				   of Size.FLT 
+				    => AppendList.single
+				       (Assembly.instruction_fst
+					{dst = Operand.Address address,
+					 size = size,
+					 pop = false})
+				    | Size.FPI 
+				    => AppendList.single
+				       (Assembly.instruction_fist
+					{dst = Operand.Address address,
+					 size = size,
+					 pop = false})
+				    | _ => Error.bug "commitFltRegisters"],
+			      fltrename 
+			      = fltrename_xch o fltrename,
+			      registerAllocation  = registerAllocation}
+			   end
+
+		       fun doCommitTrue ()
+			 = let
+			     val fltregister = fltrename fltregister
+			     val registerAllocation
+			       = fltupdate 
+			         {value = {fltregister = fltregister,
+					   memloc = memloc,
+					   weight = weight,
+					   sync = true,
+					   commit = NO},
+				  registerAllocation = registerAllocation}
+			   in
+			     {assembly = assembly,
+			      fltrename = fltrename,
+			      registerAllocation = registerAllocation}
+			   end
+
+		       fun doRemoveFalse ()
+			 = let
+			     val fltregister = fltrename fltregister
+			     val {assembly = assembly_xch,
+				  fltrename = fltrename_xch,
+				  registerAllocation}
+			       = if FltRegister.eq(fltregister, 
+						   FltRegister.top)
+				   then {assembly = AppendList.empty,
+					 fltrename = FltRegister.id,
+					 registerAllocation 
+					 = registerAllocation}
+				   else let
+					  val {fltrename = fltrename_xch,
+					       registerAllocation}
+					    = fltxch' 
+					      {fltregister = fltregister,
+					       registerAllocation 
+					       = registerAllocation}
+					in
+					  {assembly
+					   = AppendList.single
+					     (Assembly.instruction_fxch
+					      {src = Operand.fltregister 
+					             fltregister}),
+					   fltrename = fltrename_xch,
+					   registerAllocation 
+					   = registerAllocation}
+					end
+
+			     val size = MemLoc.size memloc
+			       
+			     val {address,
+				  assembly = assembly_address,
+				  registerAllocation}
+			       = toAddressMemLoc {memloc = memloc,
+						  info = info,
+						  size = size,
+						  supports = supports,
+						  saves = saves,
+						  registerAllocation 
+						  = registerAllocation}
+
+			     val {fltrename = fltrename_pop,
+				  registerAllocation}
+			       = fltpop 
+			         {registerAllocation = registerAllocation}
+			   in
+			     {assembly 
+			      = AppendList.appends
+			        [assembly,
+				 assembly_xch,
+				 assembly_address,
+				 case Size.class size
+				   of Size.FLT 
+				    => AppendList.single
+				       (Assembly.instruction_fst
+					{dst = Operand.Address address,
+					 size = size,
+					 pop = true})
+				    | Size.FPI 
+				    => AppendList.single
+				       (Assembly.instruction_fist
+					{dst = Operand.Address address,
+					 size = size,
+					 pop = true})
+				    | _ => Error.bug "commitFltRegisters"],
+			      fltrename 
+			      = fltrename_pop o fltrename_xch o fltrename,
+			      registerAllocation  = registerAllocation}
+			   end
+
+		       fun doRemoveTrue ()
+			 = let
+			     val fltregister = fltrename fltregister
+			     val {assembly = assembly_xch,
+				  fltrename = fltrename_xch,
+				  registerAllocation}
+			       = if FltRegister.eq(fltregister, 
+						   FltRegister.top)
+				   then {assembly = AppendList.empty,
+					 fltrename = FltRegister.id,
+					 registerAllocation 
+					 = registerAllocation}
+				   else let
+					  val {fltrename = fltrename_xch,
+					       registerAllocation}
+					    = fltxch' 
+					      {fltregister = fltregister,
+					       registerAllocation 
+					       = registerAllocation}
+					in
+					  {assembly 
+					   = AppendList.single
+					     (Assembly.instruction_fxch
+					      {src = Operand.fltregister 
+					       fltregister}),
+					   fltrename = fltrename_xch,
+					   registerAllocation 
+					   = registerAllocation}
+					end
+		     
+			     val {fltrename = fltrename_pop,
+				  registerAllocation}
+			       = fltpop {registerAllocation 
+					 = registerAllocation}
+
+			     val size = MemLoc.size memloc
+			   in
+			     {assembly 
+			      = AppendList.appends
+			        [assembly,
+				 assembly_xch,
+				 case Size.class size
+				   of Size.FLT 
+				    => AppendList.single
+				       (Assembly.instruction_fst
+					{dst = Operand.fltregister 
+					       FltRegister.top,
+					 size = size,
+					 pop = true})
+				  | Size.FPI 
+				  => AppendList.single
+				     (Assembly.instruction_fst
+				      {dst = Operand.fltregister
+				             FltRegister.top,
+				       size = Size.DBLE,
+				       pop = true})
+				  | _ => Error.bug "commitFltRegisters"],
+			      fltrename = fltrename_pop o fltrename_xch o fltrename,
+			      registerAllocation  = registerAllocation}
+			   end
+
+		       fun doNothing ()
+			 = {assembly = assembly,
+			    fltrename = fltrename,
+			    registerAllocation = registerAllocation}
+		     in
+		       case (commit,sync)
+			 of (COMMIT 0, false) => doCommitFalse ()
+			  | (COMMIT 0, true) => doCommitTrue ()
+			  | (REMOVE 0, false) => doRemoveFalse ()
+			  | (REMOVE 0, true) => doRemoveTrue ()
+			  | (TRYCOMMIT 0, false)
+			  => if FltRegister.eq(fltrename fltregister, 
+					       FltRegister.top)
+			       then doCommitFalse ()
+			       else doNothing ()
+			  | (TRYCOMMIT 0, true)
+			  => if FltRegister.eq(fltrename fltregister, 
+					       FltRegister.top)
+			       then doCommitTrue ()
+			       else doNothing ()
+			  | (TRYREMOVE 0, false)
+			  => if FltRegister.eq(fltrename fltregister, 
+					       FltRegister.top)
+			       then doRemoveFalse ()
+			       else doNothing ()
+			  | (TRYREMOVE 0, true)
+			  => if FltRegister.eq(fltrename fltregister, 
+					       FltRegister.top)
+			       then doRemoveTrue ()
+			       else doNothing ()
+			  | _ => Error.bug "commitFltRegisters"
+		     end)
+
+	    val _ = Int.dec depth
+	  in
+	    {assembly = assembly_commit,
+	     fltrename = fltrename_commit,
+	     registerAllocation = registerAllocation}
+	  end
+	  handle Spill 
+	   => spillAndReissue 
+	      {info = info,
+	       supports = supports,
+	       saves = saves,
+	       registerAllocation = registerAllocation,
+	       spiller = spillRegisters,
+	       msg = "commitFltRegisters",
+	       reissue = fn {assembly = assembly_spill,
+			     registerAllocation}
+	                  => let
+			       val {assembly, fltrename, registerAllocation}
+				 = commitFltRegisters 
+				   {info = info,
+				    supports = supports,
+				    saves = saves,
+				    registerAllocation = registerAllocation}
+			     in
+			       {assembly = AppendList.append (assembly_spill,
+							      assembly),
+				fltrename = fltrename,
+				registerAllocation = registerAllocation}
+			     end}
 
       and spillRegisters {info: Liveness.t,
 			  supports: Operand.t list,
 			  saves: Operand.t list,
 			  registerAllocation} :
-	                 {assembly: Assembly.t list,
+	                 {assembly: Assembly.t AppendList.t,
 			  registerAllocation: t}
-	= if !commitDepth = 0
-	    then let
+	= let
+	    val _ = Int.inc depth
 	    val spillStart = !spill
 
-	    val assembly_registerAllocationIn
-	      = toComments registerAllocation
-
 	    val {reserved, ...} = registerAllocation
+	    val {assembly = assembly_unreserve,
+		 registerAllocation}
+	      = List.fold
+	        (reserved,
+		 {assembly = AppendList.empty,
+		  registerAllocation = registerAllocation},
+		 fn (register, 
+		     {assembly, registerAllocation})
+		  => let
+		       val {assembly = assembly_unreserve,
+			    registerAllocation}
+			 = unreserve'
+			   {register = register,
+			    registerAllocation = registerAllocation}
+		     in
+		       {assembly = AppendList.append (assembly,
+						      assembly_unreserve),
+			registerAllocation = registerAllocation}
+		     end)
 
 	    val saved = savedRegisters {saves = saves,
 					registerAllocation = registerAllocation}
@@ -1850,11 +2446,9 @@ struct
 		       val spillMemLoc
 			 = MemLoc.imm {base = Immediate.label spillLabel,
 				       index = Immediate.const_int spillEnd,
-				       scale = Scale.Four,
+				       scale = x86MLton.wordScale,
 				       size = MemLoc.size memloc,
-				       commit = MemLoc.Commit.commit {isTemp = true,
-								      onFlush = false},
-				       class = spillClass}
+				       class = x86MLton.Classes.Temp}
 		     in
 		       ((value,spillMemLoc)::spillMap, 
 			spillEnd + 1)
@@ -1872,12 +2466,12 @@ struct
 					fn ({memloc = memloc',...},_)
 					 => MemLoc.eq(memloc,memloc'))
 				      then {register = register,
-					    memloc = replacer memloc,
+					    memloc = MemLoc.replace replacer memloc,
 					    weight = weight,
 					    sync = false,
 					    commit = NO}
 				      else {register = register,
-					    memloc = replacer memloc,
+					    memloc = MemLoc.replace replacer memloc,
 					    weight = weight,
 					    sync = sync,
 					    commit = case commit
@@ -1887,9 +2481,6 @@ struct
 							| REMOVE _ => REMOVE 0
 							| TRYREMOVE _ => REMOVE 0},
 			  registerAllocation = registerAllocation}
-
-	    val assembly_registerAllocationSetup
-	      = toComments registerAllocation
 
 	    (* update next available spill slot for cascading spills *)
 	    val _ = spill := spillEnd
@@ -1905,9 +2496,7 @@ struct
 		 supports = [],
 		 saves = [],
 		 registerAllocation = registerAllocation}
-
-	    val assembly_registerAllocationCommit1
-	      = toComments registerAllocation
+	        handle Spill => Error.bug "spillRegisters::reSpill:commitRegisters1"
 
 	    (* unspill; as we pull values in, we update the memloc to what it 
 	     * looks under the pending unspills, and then replace any occurences 
@@ -1927,7 +2516,7 @@ struct
 			  {assembly, registerAllocation})
 		       => let
 			    val replacer = mkReplacer spillMap
-			    val memloc' = replacer memloc
+			    val memloc' = MemLoc.replace replacer memloc
 			      
 			    val {register,
 				 assembly = assembly_unspill,
@@ -1977,20 +2566,17 @@ struct
 
 			  in
 			    doit(spillMap,
-				 {assembly = List.concat[assembly,
-							 assembly_unspill],
+				 {assembly = AppendList.append (assembly,
+								assembly_unspill),
 				  registerAllocation = registerAllocation})
 			  end
 		in
 		  doit(spillMap,
-		       {assembly = [], 
+		       {assembly = AppendList.empty, 
 			registerAllocation = registerAllocation})
 		end
 	    (* everything is unspilled *)
 	    val _ = spill := spillStart
-
-	    val assembly_registerAllocationUnspill
-	      = toComments registerAllocation
 
 	    (* commit all the memlocs that got spilt.
 	     *)
@@ -2001,10 +2587,8 @@ struct
 		 supports = [],
 		 saves = [],
 		 registerAllocation = registerAllocation}
+	        handle Spill => Error.bug "spillRegisters::reSpill:commitRegisters2"
 	    val _ = spill := spillStart
-
-	    val assembly_registerAllocationCommit2
-	      = toComments registerAllocation
 
 	    (* restore the saved operands to their previous locations.
 	     *)
@@ -2012,7 +2596,7 @@ struct
 		 registerAllocation}
 	      = List.fold
 	        (saves,
-		 {assembly = [],
+		 {assembly = AppendList.empty,
 		  registerAllocation = registerAllocation},
 		 fn (value as {register, memloc, weight, commit, ...},
 		     {assembly, registerAllocation})
@@ -2038,351 +2622,65 @@ struct
 				   registerAllocation = registerAllocation}
 		       val {assembly = assembly_reserve,
 			    registerAllocation}
-			 = reserve {register = register,
-				    registerAllocation = registerAllocation}
+			 = reserve' {register = register,
+				     registerAllocation = registerAllocation}
 		     in
-		       {assembly = List.concat [assembly,
-						assembly_register,
-						assembly_reserve],
+		       {assembly = AppendList.appends [assembly,
+						       assembly_register,
+						       assembly_reserve],
 			registerAllocation = registerAllocation}
 		     end)
+	        handle Spill => Error.bug "spillRegisters::reSpill:restore"
 	    val {assembly = assembly_unreserve,
 		 registerAllocation}
 	      = List.fold
 	        (saved,
-		 {assembly = [],
+		 {assembly = AppendList.empty,
 		  registerAllocation = registerAllocation},
 		 fn (register, 
 		     {assembly, registerAllocation})
 		  => let
 		       val {assembly = assembly_unreserve,
 			    registerAllocation}
-			 = unreserve
+			 = unreserve'
 			   {register = register,
 			    registerAllocation = registerAllocation}
 		     in
-		       {assembly = assembly @ assembly_unreserve,
+		       {assembly = AppendList.append (assembly,
+						      assembly_unreserve),
 			registerAllocation = registerAllocation}
 		     end)
 	    val {assembly = assembly_reserve,
 		 registerAllocation}
 	      = List.fold
 	        (reserved,
-		 {assembly = [],
+		 {assembly = AppendList.empty,
 		  registerAllocation = registerAllocation},
 		 fn (register, 
 		     {assembly, registerAllocation})
 		  => let
 		       val {assembly = assembly_reserve,
 			    registerAllocation}
-			 = reserve
+			 = reserve'
 			   {register = register,
 			    registerAllocation = registerAllocation}
 		     in
-		       {assembly = assembly @ assembly_reserve,
+		       {assembly = AppendList.append (assembly,
+						      assembly_reserve),
 			registerAllocation = registerAllocation}
 		     end)
 
-	    val assembly_registerAllocationOut
-	      = toComments registerAllocation
+	    val _ = Int.dec depth
 	  in
-	    {assembly = List.concat [assembly_commit1,
-				     assembly_unspill,
-				     assembly_commit2,
-				     assembly_restore,
-				     assembly_unreserve,
-				     assembly_reserve],
+	    {assembly = AppendList.appends [assembly_unreserve,
+					    assembly_commit1,
+					    assembly_unspill,
+					    assembly_commit2,
+					    assembly_restore,
+					    assembly_reserve],
 	     registerAllocation = registerAllocation}
 	  end
-	    else raise Spill
-
-      and commitFltRegisters {info: Liveness.t,
-			      supports: Operand.t list,
-			      saves: Operand.t list,
-			      registerAllocation: t} :
-	                     {assembly: Assembly.t list,
-			      rename: FltRegister.t -> FltRegister.t,
-			      registerAllocation: t}
-	= let
-	    val commit_values
-	      = fltvalueFilter {filter
-				= fn {commit = COMMIT 0, ...} => true
-			           | {commit = REMOVE 0, ...} => true
-			           | {commit = TRYCOMMIT 0, ...} => true
-			           | {commit = TRYREMOVE 0, ...} => true
-				   | _ => false,
-				registerAllocation = registerAllocation}
-
-	    val {assembly = assembly_commit,
-		 rename = rename_commit,
-		 registerAllocation}
-	      = List.fold
-	        (commit_values,
-		 {assembly = [],
-		  rename = FltRegister.id,
-		  registerAllocation = registerAllocation},
-		 fn (value as {fltregister,
-			       memloc,
-			       weight,
-			       sync,
-			       commit},
-		     {assembly, rename, registerAllocation})
-		  => let
-		       fun doCommitFalse ()
-			 = let
-			     val fltregister = rename fltregister
-			     val {assembly = assembly_xch,
-				  rename = rename_xch,
-				  registerAllocation}
-			       = if FltRegister.eq(fltregister, 
-						   FltRegister.top)
-				   then {assembly = [],
-					 rename = FltRegister.id,
-					 registerAllocation 
-					 = registerAllocation}
-				   else let
-					  val {rename = rename_xch,
-					       registerAllocation}
-					    = fltxch' 
-					      {fltregister = fltregister,
-					       registerAllocation 
-					       = registerAllocation}
-					in
-					  {assembly
-					   = [Assembly.instruction_fxch
-					      {src = Operand.fltregister 
-					             fltregister}],
-					   rename = rename_xch,
-					   registerAllocation 
-					   = registerAllocation}
-					end
-
-			     val size = MemLoc.size memloc
-			       
-			     val {address,
-				  assembly = assembly_address,
-				  registerAllocation}
-			       = toAddressMemLoc {memloc = memloc,
-						  info = info,
-						  size = size,
-						  supports = supports,
-						  saves = saves,
-						  registerAllocation 
-						  = registerAllocation}
-			       
-			     val registerAllocation
-			       = fltupdate {value 
-					    = {fltregister = FltRegister.top,
-					       memloc = memloc,
-					       weight = weight,
-					       sync = true,
-					       commit = NO},
-					    registerAllocation 
-					    = registerAllocation}
-			   in
-			     {assembly 
-			      = List.concat
-			        [assembly,
-				 assembly_xch,
-				 assembly_address,
-				 case Size.class size
-				   of Size.FLT 
-				    => [Assembly.instruction_fst
-					{dst = Operand.Address address,
-					 size = size,
-					 pop = false}]
-				    | Size.FPI 
-				    => [Assembly.instruction_fist
-					{dst = Operand.Address address,
-					 size = size,
-					 pop = false}]
-				    | _ => Error.bug "commitFltRegisters"],
-			      rename 
-			      = rename_xch o rename,
-			      registerAllocation  = registerAllocation}
-			   end
-
-		       fun doCommitTrue ()
-			 = let
-			     val fltregister = rename fltregister
-			     val registerAllocation
-			       = fltupdate 
-			         {value = {fltregister = fltregister,
-					   memloc = memloc,
-					   weight = weight,
-					   sync = true,
-					   commit = NO},
-				  registerAllocation = registerAllocation}
-			   in
-			     {assembly = assembly,
-			      rename = rename,
-			      registerAllocation = registerAllocation}
-			   end
-
-		       fun doRemoveFalse ()
-			 = let
-			     val fltregister = rename fltregister
-			     val {assembly = assembly_xch,
-				  rename = rename_xch,
-				  registerAllocation}
-			       = if FltRegister.eq(fltregister, 
-						   FltRegister.top)
-				   then {assembly = [],
-					 rename = FltRegister.id,
-					 registerAllocation 
-					 = registerAllocation}
-				   else let
-					  val {rename = rename_xch,
-					       registerAllocation}
-					    = fltxch' 
-					      {fltregister = fltregister,
-					       registerAllocation 
-					       = registerAllocation}
-					in
-					  {assembly
-					   = [Assembly.instruction_fxch
-					      {src = Operand.fltregister 
-					             fltregister}],
-					   rename = rename_xch,
-					   registerAllocation 
-					   = registerAllocation}
-					end
-
-			     val size = MemLoc.size memloc
-			       
-			     val {address,
-				  assembly = assembly_address,
-				  registerAllocation}
-			       = toAddressMemLoc {memloc = memloc,
-						  info = info,
-						  size = size,
-						  supports = supports,
-						  saves = saves,
-						  registerAllocation 
-						  = registerAllocation}
-
-			     val {rename = rename_pop,
-				  registerAllocation}
-			       = fltpop 
-			         {registerAllocation = registerAllocation}
-			   in
-			     {assembly 
-			      = List.concat
-			        [assembly,
-				 assembly_xch,
-				 assembly_address,
-				 case Size.class size
-				   of Size.FLT 
-				    => [Assembly.instruction_fst
-					{dst = Operand.Address address,
-					 size = size,
-					 pop = true}]
-				    | Size.FPI 
-				    => [Assembly.instruction_fist
-					{dst = Operand.Address address,
-					 size = size,
-					 pop = true}]
-				    | _ => Error.bug "commitFltRegisters"],
-			      rename 
-			      = rename_pop o rename_xch o rename,
-			      registerAllocation  = registerAllocation}
-			   end
-
-		       fun doRemoveTrue ()
-			 = let
-			     val fltregister = rename fltregister
-			     val {assembly = assembly_xch,
-				  rename = rename_xch,
-				  registerAllocation}
-			       = if FltRegister.eq(fltregister, 
-						   FltRegister.top)
-				   then {assembly = [],
-					 rename = FltRegister.id,
-					 registerAllocation 
-					 = registerAllocation}
-				   else let
-					  val {rename = rename_xch,
-					       registerAllocation}
-					    = fltxch' 
-					      {fltregister = fltregister,
-					       registerAllocation 
-					       = registerAllocation}
-					in
-					  {assembly 
-					   = [Assembly.instruction_fxch
-					      {src = Operand.fltregister 
-					       fltregister}],
-					   rename = rename_xch,
-					   registerAllocation 
-					   = registerAllocation}
-					end
-		     
-			     val {rename = rename_pop,
-				  registerAllocation}
-			       = fltpop {registerAllocation 
-					 = registerAllocation}
-
-			     val size = MemLoc.size memloc
-			   in
-			     {assembly 
-			      = List.concat
-			        [assembly,
-				 assembly_xch,
-				 case Size.class size
-				   of Size.FLT 
-				    => [Assembly.instruction_fst
-					{dst = Operand.fltregister 
-					       FltRegister.top,
-					 size = size,
-					 pop = true}]
-				  | Size.FPI 
-				  => [Assembly.instruction_fst
-				      {dst = Operand.fltregister
-				             FltRegister.top,
-				       size = Size.DBLE,
-				       pop = true}]
-				  | _ => Error.bug "commitFltRegisters"],
-			      rename = rename_pop o rename_xch o rename,
-			      registerAllocation  = registerAllocation}
-			   end
-
-		       fun doNothing ()
-			 = {assembly = assembly,
-			    rename = rename,
-			    registerAllocation = registerAllocation}
-		     in
-		       case (commit,sync)
-			 of (COMMIT 0, false) => doCommitFalse ()
-			  | (COMMIT 0, true) => doCommitTrue ()
-			  | (REMOVE 0, false) => doRemoveFalse ()
-			  | (REMOVE 0, true) => doRemoveTrue ()
-			  | (TRYCOMMIT 0, false)
-			  => if FltRegister.eq(rename fltregister, 
-					       FltRegister.top)
-			       then doCommitFalse ()
-			       else doNothing ()
-			  | (TRYCOMMIT 0, true)
-			  => if FltRegister.eq(rename fltregister, 
-					       FltRegister.top)
-			       then doCommitTrue ()
-			       else doNothing ()
-			  | (TRYREMOVE 0, false)
-			  => if FltRegister.eq(rename fltregister, 
-					       FltRegister.top)
-			       then doRemoveFalse ()
-			       else doNothing ()
-			  | (TRYREMOVE 0, true)
-			  => if FltRegister.eq(rename fltregister, 
-					       FltRegister.top)
-			       then doRemoveTrue ()
-			       else doNothing ()
-			  | _ => Error.bug "commitFltRegisters"
-		     end)
-	  in
-	    {assembly = assembly_commit,
-	     rename = rename_commit,
-	     registerAllocation = registerAllocation}
-	  end
+	  handle Spill => Error.bug "spillRegisters::reSpill"
 
       and toRegisterMemLoc {memloc: MemLoc.t, 
 			    info: Liveness.t,
@@ -2393,378 +2691,522 @@ struct
 			    force: Register.t list, 
 			    registerAllocation: t} :
 	                   {register: Register.t,
-			    assembly: Assembly.t list,
+			    assembly: Assembly.t AppendList.t,
 			    registerAllocation: t}
-	= (case allocated {memloc = memloc,
-			   registerAllocation = registerAllocation}
-	     of SOME (value as {register,memloc,weight,sync,commit})
-	      => let
-		   val registers
-		     = potentialRegisters {size = size,
-					   saves = saves,
-					   force = force,
-					   registerAllocation
-					   = registerAllocation}
-		 in
-		   if List.contains(registers, register, Register.eq)
-		     then {register = register,
-			   assembly = [],
-			   registerAllocation = registerAllocation}
-		     else let
-			    val {register = final_register,
-				 coincide_values}
-			      = chooseRegister 
-				{info = info,
-				 memloc = SOME memloc,
-				 size = size,
-				 supports = supports,
-				 saves = (Operand.register register)::saves,
-				 force = force,
-				 registerAllocation = registerAllocation}
-			    val {memloc, 
-				 registerAllocation}
-			      = if List.contains(saves, 
-						 Operand.register final_register,
-						 Operand.eq)
-			           orelse
-				   List.contains(saves,
-						 Operand.memloc memloc,
-						 Operand.eq)
-				  then {memloc 
-					= MemLoc.imm
-					  {base = Immediate.label
-					          (Label.fromString "BUG"),
-					   index = Immediate.const_int 0,
-					   scale = Scale.One,
-					   size = MemLoc.size memloc,
-					   commit = MemLoc.Commit.commit
-					            {isTemp = true,
-						     onFlush = false},
-					   class = MemLoc.Class.new "X"},
-					registerAllocation
-					= registerAllocation}
-				  else {memloc = memloc,
-					registerAllocation
-					= delete {register = register,
-						  registerAllocation
-						  = registerAllocation}}
-			  in
-			    case coincide_values
-			      of [] 
-			       => if move
-				    then let
-					   val registerAllocation
-					     = update {value 
-						       = {register 
-							  = final_register,
-							  memloc = memloc,
-							  weight = weight,
-							  sync = sync,
-							  commit = commit},
-						       registerAllocation
-						       = registerAllocation}
-					 in
-					   {register = final_register,
-					    assembly
-					    = [Assembly.instruction_mov
-					       {src = Operand.register register,
-						dst = Operand.register final_register,
-						size = size}],
-					    registerAllocation 
-					    = registerAllocation}
-					 end
-				    else let
-					   val registerAllocation
-					     = update {value 
-						       = {register 
-							  = final_register,
-							  memloc = memloc,
-							  weight = weight,
-							  sync = true,
-							  commit = commit},
-						       registerAllocation
-						       = registerAllocation}
-					 in
-					   {register = final_register,
-					    assembly = [],
+	= (Int.inc depth;
+	   (case allocated {memloc = memloc,
+			    registerAllocation = registerAllocation}
+	      of SOME (value as {register,memloc,weight,sync,commit})
+	       => let
+		    val registers
+		      = potentialRegisters {size = size,
+					    saves = saves,
+					    force = force,
 					    registerAllocation
 					    = registerAllocation}
-					 end
-			       | [value' as {register = register',
-					     memloc = memloc',
-					     weight = weight',
-					     sync = sync',
-					     commit = commit'}] 
-			       => if Register.eq(register',final_register)
-				    then let
-					   val registerAllocation
-					     = delete {register
-						       = register',
-						       registerAllocation
-						       = registerAllocation}
-					   val registerAllocation
-					     = update {value
-						       = {register 
-							  = register,
-							  memloc = memloc',
-							  weight = weight',
-							  sync = sync',
-							  commit = commit'},
-						       registerAllocation
-						       = registerAllocation}
-					 in
-					   if move
-					     then let
-						    val registerAllocation
-						      = update
-							{value
-							 = {register 
-							    = final_register,
-							    memloc = memloc,
-							    weight = weight,
-							    sync = sync,
-							    commit = commit},
-							 registerAllocation
-							 = registerAllocation}
-						  in
-						    {register = final_register,
-						     assembly 
-						     = [Assembly.instruction_xchg
-							{src = Operand.register register,
-							 dst = Operand.register final_register,
-							 size = size}],
-						     registerAllocation
-						     = registerAllocation}
-						  end
-					     else let
-						    val registerAllocation
-						      = update
-							{value
-							 = {register 
-							    = final_register,
-							    memloc = memloc,
-							    weight = weight,
-							    sync = true,
-							    commit = commit},
-							 registerAllocation
-							 = registerAllocation}
-						  in
-						    {register = final_register,
-						     assembly 
-						     = [Assembly.instruction_mov
-							{src = Operand.register final_register,
-							 dst = Operand.register register,
-							 size = size}],
-						     registerAllocation
-						     = registerAllocation}
-						  end
-					 end
-				    else let
-					   val {register = final_register,
-						assembly = assembly_register,
-						registerAllocation}
-					     = freeRegister
-					       {info = info,
-						memloc = SOME memloc,
-						size = size,
-						supports = supports,
-						saves = (Operand.register
-							 register)::saves,
-						force = force,
-						registerAllocation
-						= registerAllocation}
-					   val registerAllocation
-					     = remove 
-					       {memloc = memloc,
-						registerAllocation
-						= registerAllocation}
-					 in
-					   if move
-					     then let
-						    val registerAllocation
-						      = update {value
-								= {register
-								   = final_register,
-								   memloc = memloc,
-								   weight = weight,
-								   sync = sync,
-								   commit = commit},
-								registerAllocation
-								= registerAllocation}
-						  in
-						    {register = final_register,
-						     assembly 
-						     = List.concat
-						       [assembly_register,
-							[Assembly.instruction_mov
-							 {src = Operand.register register,
-							  dst = Operand.register final_register,
-							  size = size}]],
-						     registerAllocation
-						     = registerAllocation}
-						  end
-					     else let
-						    val registerAllocation
-						      = update {value
-								= {register
-								   = final_register,
-								   memloc = memloc,
-								   weight = weight,
-								   sync = true,
-								   commit = commit},
-								registerAllocation
-								= registerAllocation}
-						  in
-						    {register = final_register,
-						     assembly 
-						     = assembly_register,
-						     registerAllocation
-						     = registerAllocation}
-						  end
-					 end
-			       | coincide_values 
-			       => let
-				    val {register = final_register,
-					 assembly = assembly_register,
-					 registerAllocation}
-				      = freeRegister {info = info,
-						      memloc = SOME memloc,
-						      size = size,
-						      supports = supports,
-						      saves = (Operand.register
-							       register)::saves,
-						      force = force,
+		  in
+		    if List.contains(registers, register, Register.eq)
+		      then {register = register,
+			    assembly = AppendList.empty,
+			    registerAllocation = registerAllocation}
+		      else let
+			     val {register = final_register,
+				  coincide_values}
+			       = chooseRegister 
+				 {info = info,
+				  memloc = SOME memloc,
+				  size = size,
+				  supports = supports,
+				  saves = (Operand.register register)::saves,
+				  force = force,
+				  registerAllocation = registerAllocation}
+
+			     val {memloc,
+				  sync,
+				  registerAllocation}
+			       = if List.contains(saves, 
+						  Operand.register final_register,
+						  Operand.eq)
+			            orelse
+                                    List.contains(saves,
+						  Operand.memloc memloc,
+						  Operand.eq)
+				   then {memloc 
+					 = MemLoc.imm
+					   {base = Immediate.label
+					           (Label.fromString "BUG"),
+					    index = Immediate.const_int 0,
+					    scale = Scale.One,
+					    size = MemLoc.size memloc,
+					    class = MemLoc.Class.Temp},
+					 sync = true,
+					 registerAllocation
+					 = registerAllocation}
+				   else {memloc = memloc,
+					 sync = sync,
+					 registerAllocation
+					 = delete {register = register,
+						   registerAllocation
+						   = registerAllocation}}
+(*
+			     val registerAllocation
+			       = delete {register = register,
+					 registerAllocation
+					 = registerAllocation}
+*)
+			   in
+			     case coincide_values
+			       of [] 
+				=> if move
+				     then let
+					    val registerAllocation
+					      = update {value 
+							= {register 
+							   = final_register,
+							   memloc = memloc,
+							   weight = weight,
+							   sync = sync,
+							   commit = commit},
+							registerAllocation
+							= registerAllocation}
+					  in
+					    {register = final_register,
+					     assembly
+					     = AppendList.single
+					       (Assembly.instruction_mov
+						{src = Operand.register register,
+						 dst = Operand.register final_register,
+						 size = size}),
+					     registerAllocation 
+					     = registerAllocation}
+					  end
+				     else let
+					    val registerAllocation
+					      = update {value 
+							= {register 
+							   = final_register,
+							   memloc = memloc,
+							   weight = weight,
+							   sync = true,
+							   commit = commit},
+							registerAllocation
+							= registerAllocation}
+					  in
+					    {register = final_register,
+					     assembly = AppendList.empty,
+					     registerAllocation
+					     = registerAllocation}
+					  end
+				| [value' as {register = register',
+					      memloc = memloc',
+					      weight = weight',
+					      sync = sync',
+					      commit = commit'}] 
+				=> if Register.eq(register',final_register)
+				     then let
+					    val registerAllocation
+					      = delete {register
+							= register',
+							registerAllocation
+							= registerAllocation}
+					    val registerAllocation
+					      = update {value
+							= {register 
+							   = register,
+							   memloc = memloc',
+							   weight = weight',
+							   sync = sync',
+							   commit = commit'},
+							registerAllocation
+							= registerAllocation}
+					  in
+					    if move
+					      then let
+						     val registerAllocation
+						       = update
+							 {value
+							  = {register 
+							     = final_register,
+							     memloc = memloc,
+							     weight = weight,
+							     sync = sync,
+							     commit = commit},
+							  registerAllocation
+							  = registerAllocation}
+						   in
+						     {register = final_register,
+						      assembly 
+						      = AppendList.single
+						        (Assembly.instruction_xchg
+							 {src = Operand.register 
+							        register,
+							  dst = Operand.register 
+							        final_register,
+							  size = size}),
 						      registerAllocation
 						      = registerAllocation}
-				    val registerAllocation
-				      = remove {memloc = memloc,
-						registerAllocation
-						= registerAllocation}
-				  in
-				    if move
-				      then let
-					     val registerAllocation
-					       = update {value
-							 = {register
-							    = final_register,
-							    memloc = memloc,
-							    weight = weight,
-							    sync = sync,
-							    commit = commit},
-							 registerAllocation
-							 = registerAllocation}
-					   in
-					     {register = final_register,
-					      assembly 
-					      = List.concat
-						[assembly_register,
-						 [Assembly.instruction_mov
-						  {src = Operand.register register,
-						   dst = Operand.register final_register,
-						   size = size}]],
-					      registerAllocation
-					      = registerAllocation}
-					   end
-				      else let
-					     val registerAllocation
-					       = update {value
-							 = {register
-							    = final_register,
-							    memloc = memloc,
-							    weight = weight,
-							    sync = true,
-							    commit = commit},
-							 registerAllocation
-							 = registerAllocation}
-					   in
-					     {register = final_register,
-					      assembly 
-					      = assembly_register,
-					      registerAllocation
-					      = registerAllocation}
-					   end
-				  end
-			  end
-
-		 end
-	      | NONE 
-	      => if move
-		   then let
-			  val {register, 
-			       assembly = assembly_register,
-			       registerAllocation}
-			    = freeRegister {info = info,
-					    memloc = SOME memloc,
-					    size = size,
-					    supports = (Operand.memloc memloc)::
-						       supports,
-					    saves = saves,
-					    force = force,
-					    registerAllocation 
-					    = registerAllocation}
-
-			  val {address, 
-			       assembly = assembly_address,
-			       registerAllocation}
-			    = toAddressMemLoc {memloc = memloc,
-					       info = info,
-					       size = size,
-					       supports = supports,
-					       saves = (Operand.register register)::
-						       saves,
-					       registerAllocation 
+						   end
+					      else let
+						     val registerAllocation
+						       = update
+							 {value
+							  = {register 
+							     = final_register,
+							     memloc = memloc,
+							     weight = weight,
+							     sync = true,
+							     commit = commit},
+							  registerAllocation
+							  = registerAllocation}
+						   in
+						     {register = final_register,
+						      assembly 
+						      = AppendList.single
+						        (Assembly.instruction_mov
+							 {src = Operand.register 
+							        final_register,
+							  dst = Operand.register 
+							        register,
+							  size = size}),
+						      registerAllocation
+						      = registerAllocation}
+						   end
+					  end
+				     else let
+					    val {register = final_register,
+						 assembly = assembly_register,
+						 registerAllocation}
+					      = freeRegister
+						{info = info,
+						 memloc = SOME memloc,
+						 size = size,
+						 supports = supports,
+						 saves = (Operand.register
+							  register)::saves,
+						 force = force,
+						 registerAllocation
+						 = registerAllocation}
+					    val registerAllocation
+					      = remove 
+						{memloc = memloc,
+						 registerAllocation
+						 = registerAllocation}
+					  in
+					    if move
+					      then let
+						     val registerAllocation
+						       = update {value
+								 = {register
+								    = final_register,
+								    memloc = memloc,
+								    weight = weight,
+								    sync = sync,
+								    commit = commit},
+								 registerAllocation
+								 = registerAllocation}
+						   in
+						     {register = final_register,
+						      assembly 
+						      = AppendList.appends
+							[assembly_register,
+							 AppendList.single
+							 (Assembly.instruction_mov
+							  {src = Operand.register 
+							         register,
+							   dst = Operand.register 
+							         final_register,
+							   size = size})],
+						      registerAllocation
+						      = registerAllocation}
+						   end
+					      else let
+						     val registerAllocation
+						       = update {value
+								 = {register
+								    = final_register,
+								    memloc = memloc,
+								    weight = weight,
+								    sync = true,
+								    commit = commit},
+								 registerAllocation
+								 = registerAllocation}
+						   in
+						     {register = final_register,
+						      assembly 
+						      = assembly_register,
+						      registerAllocation
+						      = registerAllocation}
+						   end
+					  end
+				| coincide_values 
+				=> let
+				     val {register = final_register,
+					  assembly = assembly_register,
+					  registerAllocation}
+				       = freeRegister {info = info,
+						       memloc = SOME memloc,
+						       size = size,
+						       supports = supports,
+						       saves = (Operand.register
+								register)::saves,
+						       force = force,
+						       registerAllocation
+						       = registerAllocation}
+				     val registerAllocation
+				       = remove {memloc = memloc,
+						 registerAllocation
+						 = registerAllocation}
+				   in
+				     if move
+				       then let
+					      val registerAllocation
+						= update {value
+							  = {register
+							     = final_register,
+							     memloc = memloc,
+							     weight = weight,
+							     sync = sync,
+							     commit = commit},
+							  registerAllocation
+							  = registerAllocation}
+					    in
+					      {register = final_register,
+					       assembly 
+					       = AppendList.appends
+						 [assembly_register,
+						  AppendList.single
+						  (Assembly.instruction_mov
+						   {src = Operand.register 
+						          register,
+						    dst = Operand.register 
+						          final_register,
+						    size = size})],
+					       registerAllocation
 					       = registerAllocation}
+					    end
+				       else let
+					      val registerAllocation
+						= update {value
+							  = {register
+							     = final_register,
+							     memloc = memloc,
+							     weight = weight,
+							     sync = true,
+							     commit = commit},
+							  registerAllocation
+							  = registerAllocation}
+					    in
+					      {register = final_register,
+					       assembly 
+					       = assembly_register,
+					       registerAllocation
+					       = registerAllocation}
+					    end
+				   end
+			   end
 
-			  val registerAllocation
-			    = remove {memloc = memloc,
-				      registerAllocation = registerAllocation}
+		  end
+	       | NONE 
+	       => if move
+		    then let
+			   val {register = register', 
+				assembly = assembly_register,
+				registerAllocation}
+			     = freeRegister {info = info,
+					     memloc = SOME memloc,
+					     size = size,
+					     supports = (Operand.memloc memloc)::
+							supports,
+					     saves = saves,
+					     force = [],
+					     registerAllocation 
+					     = registerAllocation}
 
-			  val registerAllocation
-			    = update {value = {register = register,
-					       memloc = memloc,
-					       weight = 1024,
-					       sync = true,
-					       commit = NO},
-				      registerAllocation = registerAllocation}
-			in
-			  {register = register,
-			   assembly 
-			   = List.concat [assembly_register,
-					  assembly_address,
-					  [Assembly.instruction_mov
-					   {dst = Operand.register register,
-					    src = Operand.address address,
-					    size = size}]],
-			   registerAllocation = registerAllocation}
-			end
-		   else let
-			  val {register, 
-			       assembly = assembly_register,
-			       registerAllocation}
-			    = freeRegister {info = info,
-					    memloc = SOME memloc,
-					    size = size,
-					    supports = supports,
-					    saves = saves,
-					    force = force,
-					    registerAllocation 
-					    = registerAllocation}
-			  val registerAllocation
-			    = remove {memloc = memloc,
-				      registerAllocation = registerAllocation}
+			   val {address, 
+				assembly = assembly_address,
+				registerAllocation}
+			     = toAddressMemLoc {memloc = memloc,
+						info = info,
+						size = size,
+						supports = supports,
+						saves = (Operand.register register')::
+							saves,
+						registerAllocation 
+						= registerAllocation}
 
-			  val registerAllocation
-			    = update {value = {register = register,
-					       memloc = memloc,
-					       weight = 1024,
-					       sync = true,
-					       commit = NO},
-				      registerAllocation = registerAllocation}
-			in
-			  {register = register,
-			   assembly = assembly_register,
-			   registerAllocation = registerAllocation}
-			end) 
+
+			   val registerAllocation
+			     = remove {memloc = memloc,
+				       registerAllocation = registerAllocation}
+
+			   val registerAllocation
+			     = update {value = {register = register',
+						memloc = memloc,
+						weight = 1024,
+						sync = true,
+						commit = NO},
+				       registerAllocation = registerAllocation}
+
+			   val {register,
+				assembly = assembly_force,
+				registerAllocation}
+			     = toRegisterMemLoc
+			       {memloc = memloc,
+				info = info,
+				size = size,
+				move = move,
+				supports = supports,
+				saves = saves,
+				force = force,
+				registerAllocation = registerAllocation}
+				
+			 in
+			   {register = register,
+			    assembly 
+			    = AppendList.appends
+			      [assembly_register,
+			       assembly_address,
+			       AppendList.single
+			       (Assembly.instruction_mov
+				{dst = Operand.register register',
+				 src = Operand.address address,
+				 size = size}),
+			       assembly_force],
+			    registerAllocation = registerAllocation}
+			 end
+(*
+			   val {address, 
+				assembly = assembly_address,
+				registerAllocation}
+			     = toAddressMemLoc {memloc = memloc,
+						info = info,
+						size = size,
+						supports = supports,
+						saves = saves,
+						registerAllocation 
+						= registerAllocation}
+
+			   val saves'
+			     = case address
+				 of Address.T {base = SOME base',
+					       index = SOME index',
+					       ...}
+				  => (Operand.register base')::
+				     (Operand.register index')::saves
+				  | Address.T {base = SOME base',
+					       ...}
+				  => (Operand.register base')::saves
+				  | Address.T {index = SOME index',
+					       ...}
+				  => (Operand.register index')::saves
+				  | _ => saves
+
+			   val {register = register', 
+				assembly = assembly_register,
+				registerAllocation}
+			     = freeRegister {info = info,
+					     memloc = SOME memloc,
+					     size = size,
+					     supports = supports,
+					     saves = saves',
+					     force = [],
+					     registerAllocation 
+					     = registerAllocation}
+
+			   val registerAllocation
+			     = remove {memloc = memloc,
+				       registerAllocation = registerAllocation}
+
+			   val registerAllocation
+			     = update {value = {register = register',
+						memloc = memloc,
+						weight = 1024,
+						sync = true,
+						commit = NO},
+				       registerAllocation = registerAllocation}
+
+			   val {register,
+				assembly = assembly_force,
+				registerAllocation}
+			     = toRegisterMemLoc
+			       {memloc = memloc,
+				info = info,
+				size = size,
+				move = move,
+				supports = supports,
+				saves = saves,
+				force = force,
+				registerAllocation = registerAllocation}
+				
+			 in
+			   {register = register,
+			    assembly 
+			    = List.concat [assembly_address,
+					   assembly_register,
+					   [Assembly.instruction_mov
+					    {dst = Operand.register register',
+					     src = Operand.address address,
+					     size = size}],
+					   assembly_force],
+			    registerAllocation = registerAllocation}
+			 end
+*)
+		    else let
+			   val {register, 
+				assembly = assembly_register,
+				registerAllocation}
+			     = freeRegister {info = info,
+					     memloc = SOME memloc,
+					     size = size,
+					     supports = supports,
+					     saves = saves,
+					     force = force,
+					     registerAllocation 
+					     = registerAllocation}
+			   val registerAllocation
+			     = remove {memloc = memloc,
+				       registerAllocation = registerAllocation}
+
+			   val registerAllocation
+			     = update {value = {register = register,
+						memloc = memloc,
+						weight = 1024,
+						sync = true,
+						commit = NO},
+				       registerAllocation = registerAllocation}
+			 in
+			   {register = register,
+			    assembly = assembly_register,
+			    registerAllocation = registerAllocation}
+			 end) 
+	      before (Int.dec depth))
+	  handle Spill 
+	   => spillAndReissue 
+	      {info = info,
+	       supports = supports,
+	       saves = saves,
+	       registerAllocation = registerAllocation,
+	       spiller = spillRegisters,
+	       msg = "toRegisterMemLoc",
+	       reissue = fn {assembly = assembly_spill,
+			     registerAllocation}
+	                  => let
+			       val {register, assembly, registerAllocation}
+				 = toRegisterMemLoc
+				   {memloc = memloc,
+				    info = info,
+				    size = size,
+				    move = move,
+				    supports = supports,
+				    saves = saves,
+				    force = force,
+				    registerAllocation = registerAllocation}
+			     in
+			       {register = register,
+				assembly = AppendList.append (assembly_spill,
+							      assembly),
+				registerAllocation = registerAllocation}
+			     end}
 
       and toFltRegisterMemLoc {memloc: MemLoc.t,
 			       info: Liveness.t,
@@ -2775,181 +3217,218 @@ struct
 			       top: bool option,
 			       registerAllocation: t} :
 	                      {fltregister: FltRegister.t,
-			       assembly: Assembly.t list,
-			       rename : FltRegister.t -> FltRegister.t,
+			       assembly: Assembly.t AppendList.t,
+			       fltrename : FltRegister.t -> FltRegister.t,
 			       registerAllocation: t}
-	= case fltallocated {memloc = memloc,
-			     registerAllocation = registerAllocation}
-	    of SOME (value as {fltregister,memloc,weight,sync,commit})
-	     => (case (FltRegister.eq(fltregister, FltRegister.top),
-		       top)
-		   of (true, NONE)
-		    => let
-			 val {rename = rename_pop,
-			      registerAllocation}
-			   = fltpop {registerAllocation
-				     = registerAllocation}
-			 val assembly_pop
-			   = [Assembly.instruction_fst
-			      {dst = Operand.fltregister FltRegister.top,
-			       size = size,
-			       pop = true}]
+	= (Int.inc depth;
+	   (case fltallocated {memloc = memloc,
+			       registerAllocation = registerAllocation}
+	      of SOME (value as {fltregister,memloc,weight,sync,commit})
+	       => (case (FltRegister.eq(fltregister, FltRegister.top),
+			 top)
+		     of (true, NONE)
+		      => let
+			   val {fltrename = fltrename_pop,
+				registerAllocation}
+			     = fltpop {registerAllocation
+				       = registerAllocation}
+			   val assembly_pop
+			     = AppendList.single
+			       (Assembly.instruction_fst
+				{dst = Operand.fltregister FltRegister.top,
+				 size = size,
+				 pop = true})
 
-			 val {rename = rename_push,
-			      registerAllocation}
-			   = fltpush {value = {fltregister = FltRegister.top,
-					       memloc = memloc,
-					       weight = weight,
-					       sync = sync,
-					       commit = commit},
-				      registerAllocation = registerAllocation}
-		       in
-			 {fltregister = FltRegister.top,
-			  assembly = assembly_pop,
-			  rename = rename_pop,
-			  registerAllocation = registerAllocation}
-		       end
-		    | (false, NONE)
-		    => let
-			 val {rename = rename_xch,
-			      registerAllocation}
-			   = fltxch {value = value,
-				     registerAllocation 
-				     = registerAllocation}
-			 val assembly_xch
-			   = [Assembly.instruction_fxch
-			      {src = Operand.fltregister fltregister}]
+			   val {fltrename = fltrename_push,
+				registerAllocation}
+			     = fltpush {value = {fltregister = FltRegister.top,
+						 memloc = memloc,
+						 weight = weight,
+						 sync = sync,
+						 commit = commit},
+					registerAllocation = registerAllocation}
+			 in
+			   {fltregister = FltRegister.top,
+			    assembly = assembly_pop,
+			    fltrename = fltrename_pop,
+			    registerAllocation = registerAllocation}
+			 end
+		      | (false, NONE)
+		      => let
+			   val {fltrename = fltrename_xch,
+				registerAllocation}
+			     = fltxch {value = value,
+				       registerAllocation 
+				       = registerAllocation}
+			   val assembly_xch
+			     = AppendList.single
+			       (Assembly.instruction_fxch
+				{src = Operand.fltregister fltregister})
 
-			 val {rename = rename_pop,
-			      registerAllocation}
-			   = fltpop {registerAllocation
-				     = registerAllocation}
-			 val assembly_pop
-			   = [Assembly.instruction_fst
-			      {dst = Operand.fltregister FltRegister.top,
-			       size = size,
-			       pop = true}]
+			   val {fltrename = fltrename_pop,
+				registerAllocation}
+			     = fltpop {registerAllocation
+				       = registerAllocation}
+			   val assembly_pop
+			     = AppendList.single
+			       (Assembly.instruction_fst
+				{dst = Operand.fltregister FltRegister.top,
+				 size = size,
+				 pop = true})
 
-			 val {rename = rename_push,
-			      registerAllocation}
-			   = fltpush {value = {fltregister = FltRegister.top,
-					       memloc = memloc,
-					       weight = weight,
-					       sync = sync,
-					       commit = commit},
-				      registerAllocation = registerAllocation}
-		       in
-			 {fltregister = FltRegister.top,
-			  assembly = List.concat [assembly_xch, assembly_pop],
-			  rename = rename_pop o rename_xch,
-			  registerAllocation = registerAllocation}
-		       end
-		    | (false, SOME true)
-		    => let
-			 val {rename = rename_xch,
-			      registerAllocation}
-			   = fltxch {value = value,
-				     registerAllocation 
-				     = registerAllocation}
-			 val assembly_xch
-			   = [Assembly.instruction_fxch
-			      {src = Operand.fltregister fltregister}]
-		       in
-			 {fltregister = FltRegister.top,
-			  assembly = assembly_xch,
-			  rename = rename_xch,
-			  registerAllocation = registerAllocation}
-		       end
-		    | (_, SOME _)
-		    => {fltregister = fltregister,
-			assembly = [],
-			rename = FltRegister.id,
-			registerAllocation = registerAllocation})
-	     | NONE
-	     => (case (top, move)
-		   of (NONE, _)
-		    => let
-			 val {assembly = assembly_free,
-			      rename = rename_free,
-			      registerAllocation
-			      = registerAllocation}
-			   = freeFltRegister {info = info,
-					      size = size,
-					      supports = supports,
-					      saves = saves,
-					      registerAllocation
-					      = registerAllocation}
+			   val {fltrename = fltrename_push,
+				registerAllocation}
+			     = fltpush {value = {fltregister = FltRegister.top,
+						 memloc = memloc,
+						 weight = weight,
+						 sync = sync,
+						 commit = commit},
+					registerAllocation = registerAllocation}
+			 in
+			   {fltregister = FltRegister.top,
+			    assembly = AppendList.append (assembly_xch, 
+							  assembly_pop),
+			    fltrename = fltrename_pop o fltrename_xch,
+			    registerAllocation = registerAllocation}
+			 end
+		      | (false, SOME true)
+		      => let
+			   val {fltrename = fltrename_xch,
+				registerAllocation}
+			     = fltxch {value = value,
+				       registerAllocation 
+				       = registerAllocation}
+			   val assembly_xch
+			     = AppendList.single
+			       (Assembly.instruction_fxch
+				{src = Operand.fltregister fltregister})
+			 in
+			   {fltregister = FltRegister.top,
+			    assembly = assembly_xch,
+			    fltrename = fltrename_xch,
+			    registerAllocation = registerAllocation}
+			 end
+		      | (_, SOME _)
+		      => {fltregister = fltregister,
+			  assembly = AppendList.empty,
+			  fltrename = FltRegister.id,
+			  registerAllocation = registerAllocation})
+	       | NONE
+	       => (case (top, move)
+		     of (NONE, _)
+		      => let
+			   val {assembly = assembly_free,
+				fltrename = fltrename_free,
+				registerAllocation
+				= registerAllocation}
+			     = freeFltRegister {info = info,
+						size = size,
+						supports = supports,
+						saves = saves,
+						registerAllocation
+						= registerAllocation}
 
-			 val {rename = rename_push,
-			      registerAllocation}
-			   = fltpush {value = {fltregister = FltRegister.top,
-					       memloc = memloc,
-					       weight = 1024,
-					       sync = true,
-					       commit = NO},
-				      registerAllocation = registerAllocation}
-		       in
-			 {fltregister = FltRegister.top,
-			  assembly = assembly_free,
-			  rename = rename_free,
-			  registerAllocation = registerAllocation}
-		       end
-		    | (SOME _, true)
-		    => let
-			 val {assembly = assembly_free,
-			      rename = rename_free,
-			      registerAllocation
-			      = registerAllocation}
-			   = freeFltRegister {info = info,
-					      size = size,
-					      supports = supports,
-					      saves = saves,
-					      registerAllocation
-					      = registerAllocation}
+			   val {fltrename = fltrename_push,
+				registerAllocation}
+			     = fltpush {value = {fltregister = FltRegister.top,
+						 memloc = memloc,
+						 weight = 1024,
+						 sync = true,
+						 commit = NO},
+					registerAllocation = registerAllocation}
+			 in
+			   {fltregister = FltRegister.top,
+			    assembly = assembly_free,
+			    fltrename = fltrename_free,
+			    registerAllocation = registerAllocation}
+			 end
+		      | (SOME _, true)
+		      => let
+			   val {assembly = assembly_free,
+				fltrename = fltrename_free,
+				registerAllocation
+				= registerAllocation}
+			     = freeFltRegister {info = info,
+						size = size,
+						supports = supports,
+						saves = saves,
+						registerAllocation
+						= registerAllocation}
 
-			 val {address,
-			      assembly = assembly_address,
-			      registerAllocation}
-			   = toAddressMemLoc {memloc = memloc,
-					      info = info,
-					      size = size,
-					      supports = supports,
-					      saves = saves,
-					      registerAllocation 
-					      = registerAllocation}
+			   val {address,
+				assembly = assembly_address,
+				registerAllocation}
+			     = toAddressMemLoc {memloc = memloc,
+						info = info,
+						size = size,
+						supports = supports,
+						saves = saves,
+						registerAllocation 
+						= registerAllocation}
 
-			 val {rename = rename_push,
-			      registerAllocation}
-			   = fltpush {value = {fltregister = FltRegister.top,
-					       memloc = memloc,
-					       weight = 1024,
-					       sync = true,
-					       commit = NO},
-				      registerAllocation = registerAllocation}
+			   val {fltrename = fltrename_push,
+				registerAllocation}
+			     = fltpush {value = {fltregister = FltRegister.top,
+						 memloc = memloc,
+						 weight = 1024,
+						 sync = true,
+						 commit = NO},
+					registerAllocation = registerAllocation}
 
-			 val assembly_load
-			   = case Size.class size
-			       of Size.FLT
-				=> Assembly.instruction_fld
-				   {src = Operand.address address,
-				    size = size}
-				| Size.FPI
-				=> Assembly.instruction_fild
-				   {src = Operand.address address,
-				    size = size}
-				| _ 
-				=> Error.bug "toFltRegisterMemLoc, size"
-		       in
-			 {fltregister = FltRegister.top,
-			  assembly = List.concat
-			             [assembly_free,
-				      assembly_address,
-				      [assembly_load]],
-			  rename = rename_push o rename_free,
-			  registerAllocation = registerAllocation}
-		       end
-		    | (SOME _, false)
-		    => Error.bug "toFltRegisterMemLoc: (top, move)")
+			   val assembly_load
+			     = case Size.class size
+				 of Size.FLT
+				  => AppendList.single
+				     (Assembly.instruction_fld
+				      {src = Operand.address address,
+				       size = size})
+				  | Size.FPI
+				  => AppendList.single
+				     (Assembly.instruction_fild
+				      {src = Operand.address address,
+				       size = size})
+				  | _ 
+				  => Error.bug "toFltRegisterMemLoc, size"
+			 in
+			   {fltregister = FltRegister.top,
+			    assembly = AppendList.appends
+				       [assembly_free,
+					assembly_address,
+					assembly_load],
+			    fltrename = fltrename_push o fltrename_free,
+			    registerAllocation = registerAllocation}
+			 end
+		      | (SOME _, false)
+		      => Error.bug "toFltRegisterMemLoc: (top, move)")) 
+	      before (Int.dec depth))
+	  handle Spill 
+	   => spillAndReissue 
+	      {info = info,
+	       supports = supports,
+	       saves = saves,
+	       registerAllocation = registerAllocation,
+	       spiller = spillRegisters,
+	       msg = "toFltRegisterMemLoc",
+	       reissue = fn {assembly = assembly_spill,
+			     registerAllocation}
+	                  => let
+			       val {fltregister, assembly, fltrename, registerAllocation}
+				 = toFltRegisterMemLoc
+				   {memloc = memloc,
+				    info = info,
+				    size = size,
+				    move = move,
+				    supports = supports,
+				    saves = saves,
+				    top = top,
+				    registerAllocation = registerAllocation}
+			     in
+			       {fltregister = fltregister,
+				assembly = AppendList.append (assembly_spill,
+							      assembly),
+				fltrename = fltrename,
+				registerAllocation = registerAllocation}
+			     end}
 
       and toAddressMemLoc {memloc: MemLoc.t, 
 			   info: Liveness.t,
@@ -2958,132 +3437,160 @@ struct
 			   saves: Operand.t list, 
 			   registerAllocation: t} :
 	                  {address: Address.t,
-			   assembly: Assembly.t list,
+			   assembly: Assembly.t AppendList.t,
 			   registerAllocation: t}
-        = (case memloc
-	     of MemLoc.T {base = MemLoc.Imm base, index = MemLoc.Imm index,
-			  scale, size, ...}
-	      => let
-		   val disp' 
-		     = if Immediate.eq(index, Immediate.const_int 0)
-			 then NONE
-			 else SOME (Immediate.binexp 
-				    {oper = Immediate.Multiplication, 
-				     exp1 = index, 
-				     exp2 = Scale.toImmediate scale})
-		   val disp
-		     = case disp'
-			 of NONE => SOME base
-			  | SOME disp' => SOME (Immediate.binexp 
-						{oper = Immediate.Addition,
-						 exp1 = base, 
-						 exp2 = disp'})
-		 in
-		   {address = Address.T {disp = disp,
-					 base = NONE,
-					 index = NONE,
-					 scale = NONE},
-		    assembly = [],
-		    registerAllocation = registerAllocation}
-		 end
-	      | MemLoc.T {base = MemLoc.Imm base, index = MemLoc.Mem index,
-			  scale, size, ...}
-	      => let
-		   val disp = SOME base
+        = (Int.inc depth;
+	   (case MemLoc.destruct memloc
+	      of MemLoc.U {base = MemLoc.Imm base, index = MemLoc.Imm index,
+			   scale, size, ...}
+	       => let
+		    val disp' 
+		      = if Immediate.eq(index, Immediate.const_int 0)
+			  then NONE
+			  else SOME (Immediate.binexp 
+				     {oper = Immediate.Multiplication, 
+				      exp1 = index, 
+				      exp2 = Scale.toImmediate scale})
+		    val disp
+		      = case disp'
+			  of NONE => SOME base
+			   | SOME disp' => SOME (Immediate.binexp 
+						 {oper = Immediate.Addition,
+						  exp1 = base, 
+						  exp2 = disp'})
+		  in
+		    {address = Address.T {disp = disp,
+					  base = NONE,
+					  index = NONE,
+					  scale = NONE},
+		     assembly = AppendList.empty,
+		     registerAllocation = registerAllocation}
+		  end
+	       | MemLoc.U {base = MemLoc.Imm base, index = MemLoc.Mem index,
+			   scale, size, ...}
+	       => let
+		    val disp = SOME base
 
-		   val {register = register_index,
-			assembly = assembly_index,
-			registerAllocation}
-		     = toRegisterMemLoc {memloc = index,
-					 info = info,
-					 size = MemLoc.size index,
-					 move = true,
-					 supports = supports,
-					 saves = saves,
-					 force = Register.indexRegisters,
-					 registerAllocation 
-					 = registerAllocation}
-		 in
-		   {address = Address.T {disp = disp,
-					 base = NONE,
-					 index = SOME register_index,
-					 scale = SOME scale},
-		    assembly = assembly_index,
-		    registerAllocation = registerAllocation}
-		 end
-	      | MemLoc.T {base = MemLoc.Mem base, index = MemLoc.Imm index,
-			  scale, size, ...}
-	      => let
-		   val disp
-		     = if Immediate.eq(index, Immediate.const_int 0)
-			 then NONE
-			 else SOME (Immediate.binexp 
-				    {oper = Immediate.Multiplication,
-				     exp1 = index, 
-				     exp2 = Scale.toImmediate scale})
+		    val {register = register_index,
+			 assembly = assembly_index,
+			 registerAllocation}
+		      = toRegisterMemLoc {memloc = index,
+					  info = info,
+					  size = MemLoc.size index,
+					  move = true,
+					  supports = supports,
+					  saves = saves,
+					  force = Register.indexRegisters,
+					  registerAllocation 
+					  = registerAllocation}
+		  in
+		    {address = Address.T {disp = disp,
+					  base = NONE,
+					  index = SOME register_index,
+					  scale = SOME scale},
+		     assembly = assembly_index,
+		     registerAllocation = registerAllocation}
+		  end
+	       | MemLoc.U {base = MemLoc.Mem base, index = MemLoc.Imm index,
+			   scale, size, ...}
+	       => let
+		    val disp
+		      = if Immediate.eq(index, Immediate.const_int 0)
+			  then NONE
+			  else SOME (Immediate.binexp 
+				     {oper = Immediate.Multiplication,
+				      exp1 = index, 
+				      exp2 = Scale.toImmediate scale})
 
-		   val {register = register_base,
-			assembly = assembly_base,
-			registerAllocation}
-		     = toRegisterMemLoc {memloc = base,
-					 info = info,
-					 size = MemLoc.size base,
-					 move = true,
-					 supports = supports,
-					 saves = saves,
-					 force = Register.baseRegisters,
-					 registerAllocation 
-					 = registerAllocation}
-		 in
-		   {address = Address.T {disp = disp,
-					 base = SOME register_base,
-					 index = NONE,
-					 scale = NONE},
-		    assembly = assembly_base,
-		    registerAllocation = registerAllocation}
-		 end
-	      | MemLoc.T {base = MemLoc.Mem base, index = MemLoc.Mem index,
-			  scale, size, ...}
-	      => let
-		   val {register = register_base,
-			assembly = assembly_base,
-			registerAllocation}
-		     = toRegisterMemLoc {memloc = base,
-					 info = info,
-					 size = MemLoc.size base,
-					 move = true,
-					 supports 
-					 = (Operand.memloc index)::supports,
-					 saves = saves,
-					 force = Register.baseRegisters,
-					 registerAllocation 
-					 = registerAllocation}
+		    val {register = register_base,
+			 assembly = assembly_base,
+			 registerAllocation}
+		      = toRegisterMemLoc {memloc = base,
+					  info = info,
+					  size = MemLoc.size base,
+					  move = true,
+					  supports = supports,
+					  saves = saves,
+					  force = Register.baseRegisters,
+					  registerAllocation 
+					  = registerAllocation}
+		  in
+		    {address = Address.T {disp = disp,
+					  base = SOME register_base,
+					  index = NONE,
+					  scale = NONE},
+		     assembly = assembly_base,
+		     registerAllocation = registerAllocation}
+		  end
+	       | MemLoc.U {base = MemLoc.Mem base, index = MemLoc.Mem index,
+			   scale, size, ...}
+	       => let
+		    val {register = register_base,
+			 assembly = assembly_base,
+			 registerAllocation}
+		      = toRegisterMemLoc {memloc = base,
+					  info = info,
+					  size = MemLoc.size base,
+					  move = true,
+					  supports 
+					  = (Operand.memloc index)::supports,
+					  saves = saves,
+					  force = Register.baseRegisters,
+					  registerAllocation 
+					  = registerAllocation}
 
-		   val {register = register_index,
-			assembly = assembly_index,
-			registerAllocation}
-		     = toRegisterMemLoc {memloc = index,
-					 info = info,
-					 size = MemLoc.size index,
-					 move = true,
-					 supports = supports,
-					 saves = (Operand.memloc base)::
-						 (Operand.register 
-						  register_base)::
-						 saves,
-					 force = Register.indexRegisters,
-					 registerAllocation 
-					 = registerAllocation}
-		 in
-		   {address = Address.T {disp = NONE,
-					 base = SOME register_base,
-					 index = SOME register_index,
-					 scale = SOME scale},
-		    assembly = List.concat [assembly_base, assembly_index],
-		    registerAllocation = registerAllocation}
-		 end) 
+		    val {register = register_index,
+			 assembly = assembly_index,
+			 registerAllocation}
+		      = toRegisterMemLoc {memloc = index,
+					  info = info,
+					  size = MemLoc.size index,
+					  move = true,
+					  supports = supports,
+					  saves = (Operand.memloc base)::
+						  (Operand.register 
+						   register_base)::
+						  saves,
+					  force = Register.indexRegisters,
+					  registerAllocation 
+					  = registerAllocation}
+		  in
+		    {address = Address.T {disp = NONE,
+					  base = SOME register_base,
+					  index = SOME register_index,
+					  scale = SOME scale},
+		     assembly = AppendList.append (assembly_base, 
+						   assembly_index),
+		     registerAllocation = registerAllocation}
+		  end)
+	      before (Int.dec depth))
+	  handle Spill 
+	   => spillAndReissue 
+	      {info = info,
+	       supports = supports,
+	       saves = saves,
+	       registerAllocation = registerAllocation,
+	       spiller = spillRegisters,
+	       msg = "toAddressMemLoc",
+	       reissue = fn {assembly = assembly_spill,
+			     registerAllocation}
+	                  => let
+			       val {address, assembly, registerAllocation}
+				 = toAddressMemLoc
+				   {memloc = memloc,
+				    info = info,
+				    size = size,
+				    supports = supports,
+				    saves = saves,
+				    registerAllocation = registerAllocation}
+			     in
+			       {address = address,
+				assembly = AppendList.append (assembly_spill,
+							      assembly),
+				registerAllocation = registerAllocation}
+			     end}
 
-      fun toRegisterImmediate {immediate: Immediate.t,
+      and toRegisterImmediate {immediate: Immediate.t,
 			       info: Liveness.t, 
 			       size: Size.t,
 			       supports: Operand.t list,
@@ -3091,9 +3598,10 @@ struct
 			       force: Register.t list,
 			       registerAllocation: t} :
 	                      {register: Register.t,
-			       assembly: Assembly.t list,
+			       assembly: Assembly.t AppendList.t,
 			       registerAllocation: t}
 	= let
+	    val _ = Int.inc depth
 	    val {register = final_register, assembly, registerAllocation}
 	      = freeRegister {info = info,
 			      memloc = NONE,
@@ -3102,16 +3610,44 @@ struct
 			      saves = saves,
 			      force = force,
 			      registerAllocation = registerAllocation}
+	    val _ = Int.dec depth
 	  in
 	    {register = final_register,
-	     assembly = List.concat
+	     assembly = AppendList.appends
 	                [assembly,
-			 [Assembly.instruction_mov
+			 AppendList.single
+			 (Assembly.instruction_mov
 			  {dst = Operand.Register final_register,
 			   src = Operand.Immediate immediate,
-			   size = size}]],
+			   size = size})],
 	     registerAllocation = registerAllocation}
 	  end
+	  handle Spill 
+	   => spillAndReissue 
+	      {info = info,
+	       supports = supports,
+	       saves = saves,
+	       registerAllocation = registerAllocation,
+	       spiller = spillRegisters,
+	       msg = "toRegisterImmediate",
+	       reissue = fn {assembly = assembly_spill,
+			     registerAllocation}
+	                  => let
+			       val {register, assembly, registerAllocation}
+				 = toRegisterImmediate
+				   {immediate = immediate,
+				    info = info,
+				    size = size,
+				    supports = supports,
+				    saves = saves,
+				    force = force,
+				    registerAllocation = registerAllocation}
+			     in
+			       {register = register,
+				assembly = AppendList.append (assembly_spill,
+							      assembly),
+				registerAllocation = registerAllocation}
+			     end}
 
       fun pre {uses: Operand.t list,
 	       defs: Operand.t list,
@@ -3121,7 +3657,7 @@ struct
 			remove,
 			...}: Liveness.t,
 	       registerAllocation: t} :
-	      {assembly: Assembly.t list,
+	      {assembly: Assembly.t AppendList.t,
 	       registerAllocation: t}
 	= let
 	    val ra = registerAllocation 
@@ -3135,23 +3671,25 @@ struct
 		  fun doit operands
 		    = List.fold
 		      (operands,
-		       [],
-		       fn (operand,memlocs)
+		       MemLocSet.empty,
+		       fn (operand,set)
 		        => case Operand.deMemloc operand
 			     of SOME memloc
-			      => memloc::memlocs
-			      | NONE => memlocs)
+			      => MemLocSet.add(set, memloc)
+			      | NONE => set)
 
 		  val uses = doit uses
 		  val defs = doit defs
 		  val kills = doit kills
 
-		  fun doit' (memlocs, memlocs')
-		    = List.fold
+		  fun doit' (memlocs, set)
+		    = MemLocSet.fold
 		      (memlocs,
-		       memlocs',
-		       fn (memloc, memlocs')
-		        => (MemLoc.utilized memloc) @ memlocs')
+		       set,
+		       fn (memloc, set)
+		        => MemLocSet.union
+		           (set,
+			    MemLocSet.fromList (MemLoc.utilized memloc)))
 		  val allUses
 		    = doit'(uses,
 		      doit'(defs,
@@ -3162,9 +3700,9 @@ struct
 		  (allUses, allDefs, allKills)
 		end
 
-	    val allDest = List.concat
+	    val allDest = MemLocSet.unions 
 	                  [allDefs, allKills, dead_memlocs, remove_memlocs]
-            val allKeep = List.concat
+            val allKeep = MemLocSet.unions 
 	                  [allUses, allDefs, allKills]
 
 	    val registerAllocation
@@ -3176,7 +3714,7 @@ struct
 				    commit}
 		        => let
 			     val must_commit1
-			       = (List.exists
+			       = (MemLocSet.exists
 				  (allUses,
 				   fn memloc' 
 				    => not (MemLoc.eq(memloc', memloc))
@@ -3185,17 +3723,16 @@ struct
 			       = (List.exists
 				  (MemLoc.utilized memloc,
 				   fn memloc
-				    => List.contains (allDest, memloc, MemLoc.eq)))
+				    => MemLocSet.contains (allDest, memloc)))
 			     val must_commit3
-			       = (List.contains(allKills, memloc, MemLoc.eq)
-				  andalso
-				  not (List.contains(dead_memlocs, memloc, MemLoc.eq)))
+			       = (MemLocSet.contains
+				  (MemLocSet.-(allKills, dead_memlocs), memloc))
 			     val commit
 			       = if must_commit3
 				   then COMMIT 0
 				 else if must_commit2
-				   then if List.contains
-				           (allKeep, memloc, MemLoc.eq)
+				   then if MemLocSet.contains
+				           (allKeep, memloc)
 					  then COMMIT 0
 					  else REMOVE 0
 				 else if must_commit1
@@ -3214,7 +3751,7 @@ struct
 		 registerAllocation = registerAllocation}
 
 	    val {assembly = assembly_commit_fltregisters,
-		 rename = rename_commit_fltregisters,
+		 fltrename = fltrename_commit_fltregisters,
 		 registerAllocation}
 	      = commitFltRegisters {info = info,
 				    supports = [],
@@ -3230,7 +3767,7 @@ struct
 				    commit}
 		        => let
 			     val must_commit1
-			       = (List.exists
+			       = (MemLocSet.exists
 				  (allUses,
 				   fn memloc' 
 				    => not (MemLoc.eq(memloc', memloc))
@@ -3239,17 +3776,16 @@ struct
 			       = (List.exists
 				  (MemLoc.utilized memloc,
 				   fn memloc
-				    => List.contains (allDest, memloc, MemLoc.eq)))
+				    => MemLocSet.contains (allDest, memloc)))
 			     val must_commit3
-			       = (List.contains(allKills, memloc, MemLoc.eq)
-				  andalso
-				  not (List.contains(dead_memlocs, memloc, MemLoc.eq)))
+			       = (MemLocSet.contains
+				  (MemLocSet.-(allKills, dead_memlocs), memloc))
 			     val commit
 			       = if must_commit3
 				   then COMMIT 0
 				 else if must_commit2
-				   then if List.contains
-				           (allKeep, memloc, MemLoc.eq)
+				   then if MemLocSet.contains
+				           (allKeep, memloc)
 					  then COMMIT 0
 					  else REMOVE 0
 				 else if must_commit1
@@ -3274,230 +3810,21 @@ struct
 				 saves = [],
 				 registerAllocation = registerAllocation}
 	  in
-	    {assembly = List.concat
+	    {assembly = AppendList.appends
 	                [if !Control.Native.commented > 3
-			   then (Assembly.comment "pre begin:")::
-				(toComments ra)
-			   else [],
+			   then AppendList.cons
+			        ((Assembly.comment "pre begin:"),
+				 (toComments ra))
+			   else AppendList.empty,
 			 assembly_commit_fltregisters,
 			 assembly_commit_registers,
 			 if !Control.Native.commented > 3
-			   then (Assembly.comment "pre end:")::
-			        (toComments registerAllocation)
-			   else []],
+			   then AppendList.cons
+			        ((Assembly.comment "pre end:"),
+				 (toComments registerAllocation))
+			   else AppendList.empty],
 	     registerAllocation = registerAllocation}
 	  end
-
-(*
-      fun pre {uses: Operand.t list,
-	       defs: Operand.t list,
-	       kills: Operand.t list,
-	       info as {dead,
-			commit,
-			remove,
-			...}: Liveness.t,
-	       registerAllocation: t} :
-	      {assembly: Assembly.t list,
-	       registerAllocation: t}
-	= let
-	    val (allUses, allDefs, allKills)
-	      = let
-		  fun doit(operands, all)
-		    = List.fold
-		      (operands,
-		       all,
-		       fn (operand,all)
-		        => case Operand.deMemloc operand
-			     of SOME memloc 
-			      => if List.contains(all,
-						  memloc,
-						  MemLoc.eq)
-				   then all
-				   else memloc::all
-			      | NONE => all)
-		  val uses = doit(uses, [])
-		  val defs = doit(defs, [])
-		  val kills = doit(kills, [])
-
-		  val allUses
-		    = let
-			fun doit(memlocs, all)
-			  = List.fold
-			    (memlocs,
-			     all,
-			     fn (memloc,all)
-			      => if List.contains(all,
-						  memloc,
-						  MemLoc.eq)
-				   then all
-				   else memloc::all)
-			fun doit'(memlocs, all)
-			  = List.fold
-			    (memlocs,
-			     all,
-			     fn (memloc,all)
-			      => doit(MemLoc.utilized memloc, all))
-		      in
-			doit'(uses,
-			doit'(defs,
-			      uses))
-		      end
-		  val allDefs = defs
-		  val allKills = kills
-		in
-		  (allUses, allDefs, allKills)
-		end
-
-	    val registerAllocation
-	      = fltvalueMap 
-	        {map = fn value as {fltregister,
-				    memloc,
-				    weight,
-				    sync,
-				    commit}
-		        => if List.contains
-		              (allKills,
-			       memloc,
-			       MemLoc.eq)
-			     then if List.contains
-			             (dead,
-				      memloc,
-				      MemLoc.eq)
-				    then {fltregister = fltregister,
-					  memloc = memloc,
-					  weight = weight,
-					  sync = true,
-					  commit = NO}
-				    else {fltregister = fltregister,
-					  memloc = memloc,
-					  weight = weight,
-					  sync = sync,
-					  commit = COMMIT 0}
-			     else if not (List.contains(allDefs,
-							memloc,
-							MemLoc.eq))
-			             andalso
-				     List.exists
-				     (memloc::(MemLoc.utilized memloc),
-				      fn memloc'
-				       => List.exists
-				          (allDefs,
-					   fn memloc''
-					    => MemLoc.mayAlias(memloc',
-							       memloc'')))
-				    then {fltregister = fltregister,
-					  memloc = memloc,
-					  weight = weight,
-					  sync = sync,
-					  commit = REMOVE 0}
-			     else if not (List.contains(allUses,
-							memloc,
-							MemLoc.eq))
-			             andalso 
-				     List.exists
-				     (allUses,
-				      fn memloc'
-				       => MemLoc.mayAlias(memloc,
-							  memloc'))
-				    then {fltregister = fltregister,
-					  memloc = memloc,
-					  weight = weight,
-					  sync = sync,
-					  commit = case commit
-						     of TRYREMOVE _ => REMOVE 0
-						      | REMOVE _ => REMOVE 0
-						      | _ => COMMIT 0}
-				    else value,
-		 registerAllocation = registerAllocation}
-
-	    val {assembly = assembly_commit_fltregisters,
-		 rename = rename_commit_fltregisters,
-		 registerAllocation}
-	      = commitFltRegisters {info = info,
-				    supports = [],
-				    saves = [],
-				    registerAllocation = registerAllocation}
-
-	    val registerAllocation
-	      = valueMap 
-	        {map = fn value as {register,
-				    memloc,
-				    weight,
-				    sync,
-				    commit}
-		        => if List.contains
-		              (allKills,
-			       memloc,
-			       MemLoc.eq)
-			     then if List.contains
-			             (dead,
-				      memloc,
-				      MemLoc.eq)
-				    then {register = register,
-					  memloc = memloc,
-					  weight = weight,
-					  sync = true,
-					  commit = NO}
-				    else {register = register,
-					  memloc = memloc,
-					  weight = weight,
-					  sync = sync,
-					  commit = COMMIT 0}
-			     else if (not (List.contains(allUses,
-							 memloc,
-							 MemLoc.eq))
-				      andalso 
-				      List.exists
-				      (allUses,
-				       fn memloc'
-				        => MemLoc.mayAlias(memloc,
-							   memloc')))
-			             orelse
-				     (not (List.contains(allDefs,
-							 memloc,
-							 MemLoc.eq))
-				      andalso
-				      List.exists
-				      (memloc::(MemLoc.utilized memloc),
-				       fn memloc'
-				        => List.exists
-				           (allDefs,
-					    fn memloc''
-					     => MemLoc.mayAlias(memloc',
-								memloc''))))
-				    then {register = register,
-					  memloc = memloc,
-					  weight = weight,
-					  sync = sync,
-					  commit = COMMIT 0}
-				    else value,
-		 registerAllocation = registerAllocation}
-
-	    val {assembly = assembly_commit_registers,
-		 registerAllocation}
-	      = commitRegisters {info = info,
-				 supports = [],
-				 saves = [],
-				 registerAllocation = registerAllocation}
-	  in
-(*
-	    {assembly = if not (List.isEmpty assembly_commit_fltregisters)
-	                   orelse
-			   not (List.isEmpty assembly_commit_registers)
-			  then (print "pre non-empty\n";
-				[Assembly.comment "pre begin:"] @
-				assembly_commit_fltregisters @
-				assembly_commit_registers @
-				[Assembly.comment "pre end:"])
-			  else assembly_commit_fltregisters @
-			       assembly_commit_registers,
-*)
-	    {assembly = List.concat
-	                [assembly_commit_fltregisters,
-			 assembly_commit_registers],
-	     registerAllocation = registerAllocation}
-	  end
-*)
 
       val (pre, pre_msg)
 	= tracer
@@ -3508,12 +3835,13 @@ struct
 		final_uses: Operand.t list,
 		defs: Operand.t list,
 		final_defs: Operand.t list,
+		kills: Operand.t list,
 		info as {dead,
 			 commit,
 			 remove,
 			 ...}: Liveness.t,
 		registerAllocation: t} :
-	       {assembly: Assembly.t list,
+	       {assembly: Assembly.t AppendList.t,
 		registerAllocation: t}
 	= let 
 	    val ra = registerAllocation
@@ -3562,37 +3890,42 @@ struct
 	    val commit_memlocs = commit
 	    val remove_memlocs = remove
 
-	    val (allUses, allDefs)
+	    val (allUses, allDefs, allKills)
 	      = let
 		  fun doit operands
 		    = List.fold
 		      (operands,
-		       [],
-		       fn (operand,memlocs)
+		       MemLocSet.empty,
+		       fn (operand,set)
 		        => case Operand.deMemloc operand
 			     of SOME memloc
-			      => memloc::memlocs
-			      | NONE => memlocs)
+			      => MemLocSet.add(set, memloc)
+			      | NONE => set)
 
 		  val uses = doit uses
 		  val defs = doit defs
+		  val kills = doit kills
 
-		  fun doit' (memlocs, memlocs')
-		    = List.fold
+		  fun doit' (memlocs, set)
+		    = MemLocSet.fold
 		      (memlocs,
-		       memlocs',
-		       fn (memloc, memlocs')
-		        => (MemLoc.utilized memloc) @ memlocs')
+		       set,
+		       fn (memloc, set)
+		        => MemLocSet.union
+		           (set,
+			    MemLocSet.fromList (MemLoc.utilized memloc)))
 		  val allUses
 		    = doit'(uses,
 		      doit'(defs,
 			    uses))
 		  val allDefs = defs
+		  val allKills = kills
 		in
-		  (allUses, allDefs)
+		  (allUses, allDefs, allKills)
 		end
 
-	    val allDest = List.concat [dead_memlocs, remove_memlocs]
+	    val allDest = MemLocSet.unions 
+	                  [allDefs, allKills, dead_memlocs, remove_memlocs]
 
 	    val registerAllocation
 	      = fltvalueMap 
@@ -3601,8 +3934,8 @@ struct
 				    weight,
 				    sync,
 				    commit}
-		        => if List.contains
-		              (dead_memlocs, memloc, MemLoc.eq)
+		        => if MemLocSet.contains
+		              (dead_memlocs, memloc)
 			     then {fltregister = fltregister,
 				   memloc = memloc,
 				   sync = true,
@@ -3640,27 +3973,23 @@ struct
 						else if List.exists
 						        (MemLoc.utilized memloc,
 							 fn memloc'
-							  => List.contains
-							     (allDest, 
-							      memloc', 
-							      MemLoc.eq))
+							  => MemLocSet.contains
+							     (allDest, memloc'))
 						       then REMOVE 0
-						     else if List.contains
+						     else if MemLocSet.contains
 						             (remove_memlocs,
-							      memloc,
-							      MemLoc.eq)
+							      memloc)
 						       then TRYREMOVE 0
-						     else if List.contains
+						     else if MemLocSet.contains
 						             (commit_memlocs,
-							      memloc,
-							      MemLoc.eq)
+							      memloc)
 						       then TRYCOMMIT 0
 						     else commit}
 				  end,
 		  registerAllocation = registerAllocation}
 
 	    val {assembly = assembly_commit_fltregisters,
-		 rename = rename_commit_fltregisters,
+		 fltrename = fltrename_commit_fltregisters,
 		 registerAllocation}
 	      = commitFltRegisters {info = info,
 				    supports = [],
@@ -3674,8 +4003,8 @@ struct
 				    weight,
 				    sync,
 				    commit}
-		        => if List.contains
-		              (dead_memlocs, memloc, MemLoc.eq)
+		        => if MemLocSet.contains
+		              (dead_memlocs, memloc)
 			     then value
 			     else let
 				    val isSrc
@@ -3705,20 +4034,16 @@ struct
 				     commit = if List.exists
 				                 (MemLoc.utilized memloc,
 						  fn memloc'
-						   => List.contains
-						      (allDest, 
-						       memloc',
-						       MemLoc.eq))
+						   => MemLocSet.contains
+						      (allDest, memloc'))
 						then REMOVE 0
-					      else if List.contains
+					      else if MemLocSet.contains
 						      (remove_memlocs,
-						       memloc,
-						       MemLoc.eq)
+						       memloc)
 						then TRYREMOVE 0
-					      else if List.contains
+					      else if MemLocSet.contains
 						      (commit_memlocs,
-						       memloc,
-						       MemLoc.eq)
+						       memloc)
 						then TRYCOMMIT 0
 					      else commit}
 				  end,
@@ -3738,8 +4063,8 @@ struct
 				    weight,
 				    sync,
 				    commit}
-		        => if List.contains
-		              (dead_memlocs, memloc, MemLoc.eq)
+		        => if MemLocSet.contains
+		              (dead_memlocs, memloc)
 			     then {register = register,
 				   memloc = memloc,
 				   sync = true,
@@ -3755,305 +4080,22 @@ struct
 				 saves = [],
 				 registerAllocation = registerAllocation}
 	  in
-	    {assembly = List.concat
+	    {assembly = AppendList.appends
 	                [if !Control.Native.commented > 3
-			   then (Assembly.comment "post begin:")::
-			        (toComments ra)
-			   else [],
+			   then AppendList.cons
+			        ((Assembly.comment "post begin:"),
+				 (toComments ra))
+			   else AppendList.empty,
 			 assembly_commit_fltregisters,
 			 assembly_commit_registers,
 			 assembly_dead_registers,
 			 if !Control.Native.commented > 3
-			   then (Assembly.comment "post end:")::
-			        (toComments registerAllocation)
-			   else []],
+			   then AppendList.cons
+			        ((Assembly.comment "post end:"),
+				 (toComments registerAllocation))
+			   else AppendList.empty],
 	     registerAllocation = registerAllocation}
 	  end
-
-(*
-      fun post {uses: Operand.t list,
-		final_uses: Operand.t list,
-		defs: Operand.t list,
-		final_defs: Operand.t list,
-		info as {dead,
-			 commit,
-			 remove,
-			 ...}: Liveness.t,
-		registerAllocation: t} :
-	       {assembly: Assembly.t list,
-		registerAllocation: t}
-	= let 
-	    val (final_uses_registers,
-		 final_defs_registers,
-		 final_uses_fltregisters,
-		 final_defs_fltregisters)
-	      = let
-		  fun doit(operands, (final_registers, final_fltregisters))
-		    = List.fold
-		      (operands,
-		       (final_registers, final_fltregisters),
-		       fn (operand, (final_registers, final_fltregisters))
-		        => case (Operand.deRegister operand,
-				 Operand.deFltregister operand)
-			     of (SOME register, _) 
-			      => if List.contains(final_registers,
-						  register,
-						  Register.eq)
-				   then (final_registers,
-					 final_fltregisters)
-				   else (register::final_registers,
-					 final_fltregisters)
-			      | (_, SOME fltregister)
-			      => if List.contains(final_fltregisters,
-						  fltregister,
-						  FltRegister.eq)
-				   then (final_registers,
-					 final_fltregisters)
-				   else (final_registers,
-					 fltregister::final_fltregisters)
-			      | _ => (final_registers, final_fltregisters))
-		  val (final_uses_registers, final_uses_fltregisters)
-		    = doit(final_uses, ([], []))
-		  val (final_defs_registers, final_defs_fltregisters)
-		    = doit(final_defs, ([], []))
-		in
-		  (final_uses_registers,
-		   final_defs_registers,
-		   final_uses_fltregisters,
-		   final_defs_fltregisters)
-		end
-
-	    val (allUses, allDefs)
-	      = let
-		  fun doit(operands, all)
-		    = List.fold
-		      (operands,
-		       all,
-		       fn (operand,all)
-		        => case Operand.deMemloc operand
-			     of SOME memloc 
-			      => if List.contains(all,
-						  memloc,
-						  MemLoc.eq)
-				   then all
-				   else memloc::all
-			      | NONE => all)
-		  val uses = doit(uses, [])
-		  val defs = doit(defs, [])
-
-		  val allUses
-		    = let
-			fun doit(memlocs, all)
-			  = List.fold
-			    (memlocs,
-			     all,
-			     fn (memloc,all)
-			      => if List.contains(all,
-						  memloc,
-						  MemLoc.eq)
-				   then all
-				   else memloc::all)
-			fun doit'(memlocs, all)
-			  = List.fold
-			    (memlocs,
-			     all,
-			     fn (memloc,all)
-			      => doit(MemLoc.utilized memloc, all))
-		      in
-			doit'(uses,
-			doit'(defs,
-			      uses))
-		      end
-		  val allDefs = defs
-		in
-		  (allUses, allDefs)
-		end
-
-	    val commit_memlocs 
-	      = List.keepAll(commit, fn memloc 
-			              => MemLoc.onFlush memloc
-			                 orelse
-					 MemLoc.isTemp memloc)
-	    val remove_memlocs 
-	      = List.keepAll(remove, fn memloc 
-			              => MemLoc.onFlush memloc
-			                 orelse
-					 MemLoc.isTemp memloc)
-
-	    val registerAllocation
-	      = fltvalueMap 
-	        {map = fn value as {fltregister,
-				    memloc,
-				    weight,
-				    sync,
-				    commit}
-		        => if List.contains(dead,
-					    memloc,
-					    MemLoc.eq)
-			     then {fltregister = fltregister,
-				   memloc = memloc,
-				   sync = true,
-				   weight = weight - 500,
-				   commit = TRYREMOVE 0}
-			     else let
-				    val isSrc
-				      = List.contains
-				        (final_uses_fltregisters,
-					 fltregister,
-					 FltRegister.eq)
-
-				    val isDst
-				      = List.contains
-				        (final_defs_fltregisters,
-					 fltregister,
-					 FltRegister.eq)
-			       
-				    val isDef = isDst
-				  in
-				    {fltregister = fltregister,
-				     memloc = memloc,
-				     weight = weight - 5
-				              + (if isSrc
-						   then 5
-						   else 0)
-				              + (if isDst
-						   then 10
-						   else 0),
-				     sync = sync andalso (not isDef),
-				     commit = if !Control.Native.IEEEFP
-				                 andalso
-						 not (sync andalso (not isDef))
-						then REMOVE 0
-						else if List.contains
-				                        (remove_memlocs,
-							 memloc,
-							 MemLoc.eq)
-						       then TRYREMOVE 0
-						     else if List.contains
-					                     (commit_memlocs,
-							      memloc,
-							      MemLoc.eq)
-						       then TRYCOMMIT 0
-						     else commit}
-				  end,
-		  registerAllocation = registerAllocation}
-
-	    val {assembly = assembly_commit_fltregisters,
-		 rename = rename_commit_fltregisters,
-		 registerAllocation}
-	      = commitFltRegisters {info = info,
-				    supports = [],
-				    saves = [],
-				    registerAllocation = registerAllocation}
-
-	    val registerAllocation
-	      = valueMap 
-	        {map = fn value as {register,
-				    memloc,
-				    weight,
-				    sync,
-				    commit}
-		        => if not (List.contains(allDefs,
-						 memloc,
-						 MemLoc.eq))
-		              andalso
-			      List.exists
-			      (memloc::(MemLoc.utilized memloc),
-			       fn memloc'
-			        => List.exists
-			           (allDefs,
-				    fn memloc''
-				     => MemLoc.mayAlias(memloc',
-							memloc'')))
-			     then {register = register,
-				   memloc = memloc,
-				   weight = weight,
-				   sync = sync,
-				   commit = REMOVE 0}
-			   else if List.contains(dead,
-						 memloc,
-						 MemLoc.eq)
-			     then value
-			   else let
-				  val isSrc
-				    = List.exists
-				      (final_uses_registers,
-				       fn register'
-				        => Register.coincide(register,
-							     register'))
-
-				  val isDst
-				    = List.exists
-				      (final_defs_registers,
-				       fn register'
-				        => Register.coincide(register,
-							     register'))
-			       
-				  val isDef = isDst
-				in
-				  {register = register,
-				   memloc = memloc,
-				   weight = weight - 5
-				            + (if isSrc
-						 then 5
-						 else 0)
-				            + (if isDst
-						 then 10
-						 else 0),
-				   sync = sync andalso (not isDef),
-				   commit = if List.contains
-				               (remove_memlocs,
-						memloc,
-						MemLoc.eq)
-					      then TRYREMOVE 0
-					    else if List.contains
-					            (commit_memlocs,
-						     memloc,
-						     MemLoc.eq)
-					      then TRYCOMMIT 0
-					    else commit}
-				end,
-		  registerAllocation = registerAllocation}
-
-	    val {assembly = assembly_commit_registers,
-		 registerAllocation}
-	      = commitRegisters {info = info,
-				 supports = [],
-				 saves = [],
-				 registerAllocation = registerAllocation}
-
-	    val registerAllocation
-	      = valueMap 
-	        {map = fn value as {register,
-				    memloc,
-				    weight,
-				    sync,
-				    commit}
-		        => if List.contains(dead,
-					    memloc,
-					    MemLoc.eq)
-			     then {register = register,
-				   memloc = memloc,
-				   sync = true,
-				   weight = weight,
-				   commit = REMOVE 0}
-			     else value,
-		 registerAllocation = registerAllocation}
-
-	    val {assembly = assembly_dead_registers,
-		 registerAllocation}
-	      = commitRegisters {info = info,
-				 supports = [],
-				 saves = [],
-				 registerAllocation = registerAllocation}
-	  in
-	    {assembly = List.concat
-	                [assembly_commit_fltregisters,
-			 assembly_commit_registers,
-			 assembly_dead_registers],
-	     registerAllocation = registerAllocation}
-	  end
-*)
 
       val (post, post_msg)
 	= tracer
@@ -4076,13 +4118,13 @@ struct
 			   force: Register.t list,
 			   registerAllocation: t} :
 	                  {operand: Operand.t,
-			   assembly: Assembly.t list,
+			   assembly: Assembly.t AppendList.t,
 			   registerAllocation: t}
 	= case operand
 	    of Operand.Immediate i
 	     => if immediate
 		  then {operand = operand,
-			assembly = [],
+			assembly = AppendList.empty,
 			registerAllocation = registerAllocation}
 		else if register
 		  then let
@@ -4104,29 +4146,30 @@ struct
 		       end
 		else if address
 		  then let
-			 val address 
+			 val address
 			   = Address.T 
-			     {disp = SOME (Immediate.label (Label.fromString "raTemp")),
+			     {disp = SOME (Immediate.label (Label.fromString "raTemp1")),
 			      base = NONE,
 			      index = NONE,
 			      scale = NONE}
 		       in 
 			 {operand = Operand.address address,
-			  assembly = [Assembly.instruction_mov
+			  assembly = AppendList.single
+			             (Assembly.instruction_mov
 				      {src = Operand.immediate i,
 				       dst = Operand.address address,
-				       size = size}],
+				       size = size}),
 			  registerAllocation = registerAllocation}
 		       end 
 	       else Error.bug "allocateOperand: operand:Immediate"
 	     | Operand.Label l
 	     => if label
 		  then {operand = operand,
-			assembly = [],
+			assembly = AppendList.empty,
 			registerAllocation = registerAllocation}
 		else if immediate
 		  then {operand = Operand.immediate_label l,
-			assembly = [],
+			assembly = AppendList.empty,
 			registerAllocation = registerAllocation}
 		else if register
 		  then let
@@ -4223,7 +4266,8 @@ struct
 					     = registerAllocation}
 		      in
 			{operand = Operand.Address address,
-			 assembly = assembly_commit @ assembly,
+			 assembly = AppendList.append (assembly_commit,
+						       assembly),
 			 registerAllocation = registerAllocation}
 		      end
 		in 
@@ -4232,13 +4276,9 @@ struct
 					 registerAllocation 
 					 = registerAllocation}
 			   of NONE 
-			    => if List.contains(dead,
-						m,
-						MemLoc.eq)
+			    => if MemLocSet.contains(dead, m)
 			          orelse
-				  List.contains(remove,
-						m,
-						MemLoc.eq)
+				  MemLocSet.contains(remove, m)
 				 then toAddressMemLoc' ()
 				 else toRegisterMemLoc' ()
 		            | SOME _
@@ -4270,8 +4310,8 @@ struct
 			      top: bool option,
 			      registerAllocation: t} :
 	                     {operand: Operand.t,
-			      assembly: Assembly.t list,
-			      rename: FltRegister.t -> FltRegister.t,
+			      assembly: Assembly.t AppendList.t,
+			      fltrename: FltRegister.t -> FltRegister.t,
 			      registerAllocation: t}
 	= case operand
             of Operand.MemLoc m 
@@ -4280,13 +4320,9 @@ struct
 					  registerAllocation 
 					  = registerAllocation}
 			 of NONE 
-			  => if List.contains(dead,
-					      m,
-					      MemLoc.eq)
+			  => if MemLocSet.contains(dead, m)
 			        orelse 
-				List.contains(remove,
-					      m,
-					      MemLoc.eq)
+				MemLocSet.contains(remove, m)
 			       then let
 				      val {address, 
 					   assembly, 
@@ -4302,13 +4338,13 @@ struct
 				    in
 				      {operand = Operand.Address address,
 				       assembly = assembly,
-				       rename = FltRegister.id,
+				       fltrename = FltRegister.id,
 				       registerAllocation = registerAllocation}
 				    end
 			       else let
 				      val {fltregister, 
 					   assembly, 
-					   rename,
+					   fltrename,
 					   registerAllocation}
 					= toFltRegisterMemLoc 
 					  {memloc = m,
@@ -4324,14 +4360,14 @@ struct
 				      {operand 
 				       = Operand.FltRegister fltregister,
 				       assembly = assembly,
-				       rename = rename,
+				       fltrename = fltrename,
 				       registerAllocation = registerAllocation}
 				    end
 	                  | SOME _
 			  => let
 			       val {fltregister, 
 				    assembly, 
-				    rename,
+				    fltrename,
 				    registerAllocation}
 				 = toFltRegisterMemLoc {memloc = m,
 							info = info,
@@ -4345,14 +4381,14 @@ struct
 			     in
 			       {operand = Operand.FltRegister fltregister,
 				assembly = assembly,
-				rename = rename,
+				fltrename = fltrename,
 				registerAllocation = registerAllocation}
 			     end
 		else if fltregister
 		  then let
 			 val {fltregister, 
 			      assembly, 
-			      rename, 
+			      fltrename, 
 			      registerAllocation}
 			   = toFltRegisterMemLoc {memloc = m,
 						  info = info,
@@ -4366,7 +4402,7 @@ struct
 		       in
 			 {operand = Operand.FltRegister fltregister,
 			  assembly = assembly,
-			  rename = rename,
+			  fltrename = fltrename,
 			  registerAllocation = registerAllocation}
 		       end
 		else if address
@@ -4390,7 +4426,7 @@ struct
 					  = registerAllocation}
 		     
 			 val {assembly = assembly_commit,
-			      rename = rename_commit,
+			      fltrename = fltrename_commit,
 			      registerAllocation}
 			   = commitFltRegisters {info = info,
 						 supports = supports,
@@ -4398,7 +4434,9 @@ struct
 						 registerAllocation 
 						 = registerAllocation}
 
-			 val {address, assembly, registerAllocation}
+			 val {address, 
+			      assembly = assembly_address, 
+			      registerAllocation}
 			   = toAddressMemLoc {memloc = m,
 					      info = info,
 					      size = size,
@@ -4408,8 +4446,9 @@ struct
 					      = registerAllocation}
 		       in
 			 {operand = Operand.Address address,
-			  assembly = assembly,
-			  rename = rename_commit,
+			  assembly = AppendList.append (assembly_commit,
+							assembly_address),
+			  fltrename = fltrename_commit,
 			  registerAllocation = registerAllocation}
 		       end
 		else Error.bug "allocateFltOperand: operand:MemLoc"
@@ -4424,42 +4463,44 @@ struct
 	fun allocateFltStackOperands' {fltregister_top: FltRegister.t,
 				       fltregister_one: FltRegister.t,
 				       registerAllocation: t} :
-	                              {assembly: Assembly.t list,
-				       rename: FltRegister.t -> FltRegister.t,
+	                              {assembly: Assembly.t AppendList.t,
+				       fltrename: FltRegister.t -> FltRegister.t,
 				       registerAllocation: t}
 	  = case (fltregister_top, fltregister_one)
 	      of (FltRegister.T 0, FltRegister.T 1)
-	       => {assembly = [],
-		   rename = FltRegister.id,
+	       => {assembly = AppendList.empty,
+		   fltrename = FltRegister.id,
 		   registerAllocation = registerAllocation}
 	       | (FltRegister.T 1, FltRegister.T 0)
 	       => let
-		    val {rename = rename,
+		    val {fltrename = fltrename,
 			 registerAllocation}
 		      = fltxch1 {registerAllocation = registerAllocation}
 		  in
-		    {assembly = [Assembly.instruction_fxch 
+		    {assembly = AppendList.single
+		                (Assembly.instruction_fxch 
 				 {src = Operand.fltregister 
-				        (FltRegister.T 1)}],
-		     rename = rename,
+				        (FltRegister.T 1)}),
+		     fltrename = fltrename,
 		     registerAllocation = registerAllocation}
 		  end
 	       | (FltRegister.T 0, FltRegister.T j)
 	       => let
-		    val {rename = rename,
+		    val {fltrename = fltrename,
 			 registerAllocation}
 		      = fltxch1 {registerAllocation = registerAllocation}
 
-		    val {rename = rename',
+		    val {fltrename = fltrename',
 			 registerAllocation}
 		      = fltxch' {fltregister = FltRegister.T j,
 				 registerAllocation = registerAllocation}
 
-		    val {rename = rename'',
+		    val {fltrename = fltrename'',
 			 registerAllocation}
 		      = fltxch1 {registerAllocation = registerAllocation}
 		  in
-		    {assembly = [Assembly.instruction_fxch 
+		    {assembly = AppendList.fromList
+		                [Assembly.instruction_fxch 
 				 {src = Operand.fltregister 
 				        (FltRegister.T 1)},
 				 Assembly.instruction_fxch 
@@ -4468,79 +4509,83 @@ struct
 				 Assembly.instruction_fxch 
 				 {src = Operand.fltregister 
 				        (FltRegister.T 1)}],
-		     rename = rename'' o rename' o rename,
+		     fltrename = fltrename'' o fltrename' o fltrename,
 		     registerAllocation = registerAllocation}
 		  end
 	       | (FltRegister.T 1, FltRegister.T j)
 	       => let
-		    val {rename = rename,
+		    val {fltrename = fltrename,
 			 registerAllocation}
 		      = fltxch' {fltregister = FltRegister.T j,
 				 registerAllocation = registerAllocation}
 
-		    val {rename = rename',
+		    val {fltrename = fltrename',
 			 registerAllocation}
 		      = fltxch1 {registerAllocation = registerAllocation}
 		  in
-		    {assembly = [Assembly.instruction_fxch 
+		    {assembly = AppendList.fromList
+		                [Assembly.instruction_fxch 
 				 {src = Operand.fltregister 
 				        (FltRegister.T j)},
 				 Assembly.instruction_fxch 
 				 {src = Operand.fltregister 
 				        (FltRegister.T 1)}],
-		     rename = rename' o rename,
+		     fltrename = fltrename' o fltrename,
 		     registerAllocation = registerAllocation}
 		  end
 	       | (FltRegister.T i, FltRegister.T 1)
 	       => let
-		    val {rename = rename,
+		    val {fltrename = fltrename,
 			 registerAllocation}
 		      = fltxch' {fltregister = FltRegister.T i,
 				 registerAllocation = registerAllocation}
 		  in
-		    {assembly = [Assembly.instruction_fxch 
+		    {assembly = AppendList.single
+		                (Assembly.instruction_fxch 
 				 {src = Operand.fltregister 
-				        (FltRegister.T i)}],
-		     rename = rename,
+				        (FltRegister.T i)}),
+		     fltrename = fltrename,
 		     registerAllocation = registerAllocation}
 		  end
 	       | (FltRegister.T i, FltRegister.T 0)
 	       => let
-		    val {rename = rename,
+		    val {fltrename = fltrename,
 			 registerAllocation}
 		      = fltxch1 {registerAllocation = registerAllocation}
 
-		    val {rename = rename',
+		    val {fltrename = fltrename',
 			 registerAllocation}
 		      = fltxch' {fltregister = FltRegister.T i,
 				 registerAllocation = registerAllocation}
 		  in
-		    {assembly = [Assembly.instruction_fxch 
+		    {assembly = AppendList.fromList
+		                [Assembly.instruction_fxch 
 				 {src = Operand.fltregister 
 				        (FltRegister.T 1)},
 				 Assembly.instruction_fxch 
 				 {src = Operand.fltregister 
 				        (FltRegister.T i)}],
-		     rename = rename' o rename,
+		     fltrename = fltrename' o fltrename,
 		     registerAllocation = registerAllocation}
 		  end
 	       | (FltRegister.T i, FltRegister.T j)
 	       => let
-		    val {rename = rename,
+		    val {fltrename = fltrename,
 			 registerAllocation}
 		      = fltxch' {fltregister = FltRegister.T j,
 				 registerAllocation = registerAllocation}
 
-		    val {rename = rename',
+		    val {fltrename = fltrename',
 			 registerAllocation}
 		      = fltxch1 {registerAllocation = registerAllocation}
 		      
-		    val {rename = rename'',
+		    val {fltrename = fltrename'',
 			 registerAllocation}
 		      = fltxch' {fltregister = FltRegister.T i,
 				 registerAllocation = registerAllocation}
 		  in
-		    {assembly = [Assembly.instruction_fxch 
+		    {assembly = AppendList.fromList
+		                [Assembly.instruction_fxch 
 				 {src = Operand.fltregister 
 				        (FltRegister.T j)},
 				 Assembly.instruction_fxch 
@@ -4549,7 +4594,7 @@ struct
 				 Assembly.instruction_fxch 
 				 {src = Operand.fltregister 
 				        (FltRegister.T i)}],
-		     rename = rename'' o rename' o rename,
+		     fltrename = fltrename'' o fltrename' o fltrename,
 		     registerAllocation = registerAllocation}
 		  end
       in
@@ -4565,13 +4610,13 @@ struct
 				      registerAllocation: t} :
 	                             {operand_top: Operand.t,
 				      operand_one: Operand.t,
-				      assembly: Assembly.t list,
-				      rename: FltRegister.t -> FltRegister.t,
+				      assembly: Assembly.t AppendList.t,
+				      fltrename: FltRegister.t -> FltRegister.t,
 				      registerAllocation: t}
 	  = if Operand.eq(operand_top, operand_one)
 	      then let
 		     val {assembly = assembly_free,
-			  rename = rename_free,
+			  fltrename = fltrename_free,
 			  registerAllocation}
 		       = freeFltRegister {info = info,
 					  size = size_top,
@@ -4582,7 +4627,7 @@ struct
 
 		     val {operand = operand_allocate_top_one,
 			  assembly = assembly_allocate_top_one,
-			  rename = rename_allocate_top_one,
+			  fltrename = fltrename_allocate_top_one,
 			  registerAllocation}
 		       = allocateFltOperand 
 		         {operand = operand_top,
@@ -4597,17 +4642,15 @@ struct
 			  registerAllocation 
 			  = registerAllocation}
 
-		     val temp
+		     val temp 
 		       = MemLoc.imm
-		         {base = Immediate.const_int 0,
+		         {base = Immediate.label (Label.fromString "raTemp2"),
 			  index = Immediate.const_int 0,
-			  scale = Scale.One,
+			  scale = Scale.Eight,
 			  size = Size.DBLE,
-			  commit = MemLoc.Commit.commit {isTemp = true,
-							 onFlush = false},
-			  class = MemLoc.Class.new "Temp"}
+			  class = MemLoc.Class.Temp}
 
-		     val {rename = rename_push,
+		     val {fltrename = fltrename_push,
 			  registerAllocation}
 		       = fltpush {value = {fltregister = FltRegister.top,
 					   memloc = temp,
@@ -4618,21 +4661,22 @@ struct
 		   in
 		     {operand_top = Operand.FltRegister FltRegister.top,
 		      operand_one = Operand.FltRegister FltRegister.one,
-		      assembly = List.concat
+		      assembly = AppendList.appends
 		                 [assembly_free,
 				  assembly_allocate_top_one,
-				  [Assembly.instruction_fld
+				  AppendList.single
+				  (Assembly.instruction_fld
 				   {src = Operand.FltRegister FltRegister.top,
-				    size = size_top}]],
-		      rename = rename_push o
-		               rename_allocate_top_one o
-                               rename_free,
+				    size = size_top})],
+		      fltrename = fltrename_push o
+		               fltrename_allocate_top_one o
+                               fltrename_free,
 		      registerAllocation = registerAllocation}
 		   end
 	      else let
 		     val {operand = operand_allocate_one,
 			  assembly = assembly_allocate_one,
-			  rename = rename_allocate_one,
+			  fltrename = fltrename_allocate_one,
 			  registerAllocation}
 		       = case operand_one
 			   of (Operand.MemLoc memloc_one)
@@ -4642,8 +4686,8 @@ struct
 				  of SOME value_one
 				    => {operand = Operand.FltRegister 
 					          (#fltregister value_one),
-					assembly = [],
-					rename = FltRegister.id,
+					assembly = AppendList.empty,
+					fltrename = FltRegister.id,
 					registerAllocation 
 					= registerAllocation}
 				    | NONE
@@ -4673,7 +4717,7 @@ struct
 
 		     val {operand = operand_allocate_top,
 			  assembly = assembly_allocate_top,
-			  rename = rename_allocate_top,
+			  fltrename = fltrename_allocate_top,
 			  registerAllocation}
 		       = case operand_top
 			   of (Operand.MemLoc memloc_top)
@@ -4683,8 +4727,8 @@ struct
 				  of SOME value_top
 				    => {operand = Operand.FltRegister 
 					          (#fltregister value_top),
-					assembly = [],
-					rename = FltRegister.id,
+					assembly = AppendList.empty,
+					fltrename = FltRegister.id,
 					registerAllocation 
 					= registerAllocation}
 				    | NONE
@@ -4716,7 +4760,7 @@ struct
 		       = case operand_allocate_one
 			   of Operand.FltRegister f => f
 			    | _ => Error.bug "allocateFltStackOperand"
-		     val fltregister_one = rename_allocate_top fltregister_one
+		     val fltregister_one = fltrename_allocate_top fltregister_one
 
 		     val fltregister_top
 		       = case operand_allocate_top
@@ -4724,7 +4768,7 @@ struct
 			    | _ => Error.bug "allocateFltStackOperand"
 
 		     val {assembly,
-			  rename,
+			  fltrename,
 			  registerAllocation}
 		       = allocateFltStackOperands'
   		         {fltregister_top = fltregister_top,
@@ -4733,13 +4777,13 @@ struct
 		   in
 		     {operand_top = Operand.FltRegister FltRegister.top,
 		      operand_one = Operand.FltRegister FltRegister.one,
-		      assembly = List.concat
+		      assembly = AppendList.appends
 		                 [assembly_allocate_one,
 				  assembly_allocate_top,
 				  assembly],
-		      rename = rename o
-		               rename_allocate_top o
-			       rename_allocate_one,
+		      fltrename = fltrename o
+		               fltrename_allocate_top o
+			       fltrename_allocate_one,
 		      registerAllocation = registerAllocation}
 		   end
       end
@@ -4749,126 +4793,539 @@ struct
 	  "allocateFltStackOperands"
 	  allocateFltStackOperands
 
-      fun renameLift rename 
+      fun fltrenameLift fltrename 
 	= fn Operand.FltRegister f
-	   => Operand.FltRegister (rename f)
+	   => Operand.FltRegister (fltrename f)
 	   | operand => operand
 
+      fun renameLift rename
+	= fn Operand.Register r
+	   => Operand.Register (rename r)
+           | Operand.Address (Address.T {disp, base, index, scale})
+	   => Operand.Address (Address.T {disp = disp,
+					  base = Option.map(base, rename),
+					  index = Option.map(index, rename),
+					  scale = scale})
+	   | operand => operand
+
+      (* Implementation of directives. *)
+
+      fun assume {assumes : {register: Register.t, 
+			     memloc: MemLoc.t, 
+			     weight: int,
+			     sync: bool,
+			     reserve: bool} list,
+		  info,
+		  registerAllocation}
+	= let
+	    val {assembly,
+		 registerAllocation}
+	      = List.foldr
+	        (assumes,
+		 {assembly = AppendList.empty,
+		  registerAllocation = registerAllocation},
+		 fn (assume as {register,
+				memloc,
+				weight,
+				sync,
+				reserve},
+		     {assembly, registerAllocation})
+		  => let
+		       val registerAllocation
+			 = update
+			   {value = {register = register,
+				     memloc = memloc,
+				     weight = weight,
+				     sync = sync,
+				     commit = NO},
+			    registerAllocation = registerAllocation}
+			   
+		       val {assembly = assembly_reserve,
+			    registerAllocation}
+			 = if reserve
+			     then reserve' {register = register,
+					    registerAllocation = registerAllocation}
+			     else unreserve' {register = register,
+					      registerAllocation = registerAllocation}
+		     in
+		       {assembly = AppendList.append (assembly,
+						      assembly_reserve),
+			registerAllocation = registerAllocation}
+		     end)
+	  in
+	    {assembly = assembly,
+	     registerAllocation = registerAllocation}
+	  end 
+
+      fun fltassume {assumes : {memloc: MemLoc.t,
+				weight: int,
+				sync: bool} list,
+		     info,
+		     registerAllocation as {entries,
+					    reserved,
+					    fltstack}}
+	= let
+	    val registerAllocation
+	      = {entries = entries,
+		 reserved = reserved,
+		 fltstack = []}
+
+	    val {assembly, 
+		 registerAllocation}
+	      = List.foldr
+	        (assumes,
+		 {assembly = AppendList.empty,
+		  registerAllocation = registerAllocation},
+		 fn (assume as {memloc,
+				weight,
+				sync},
+		     {assembly, registerAllocation})
+		  => let
+		       val {registerAllocation, ...}
+			 = fltpush {value = {fltregister = FltRegister.top,
+					     memloc = memloc,
+					     weight = weight,
+					     sync = sync,
+					     commit = NO},
+				    registerAllocation = registerAllocation}
+		     in
+		       {assembly = assembly,
+			registerAllocation = registerAllocation}
+		     end)
+	  in
+	    {assembly = assembly,
+	     registerAllocation = registerAllocation}
+	  end
+
+      fun cache {caches : {register: Register.t,
+			   memloc: MemLoc.t,
+			   reserve: bool} list,
+		 info,
+		 registerAllocation}
+	= let
+	    val supports
+	      = List.map
+	        (caches,
+		 fn {memloc, ...} => Operand.memloc memloc)
+
+	    val {assembly,
+		 registerAllocation,
+		 ...}
+	      = List.foldr
+	        (caches,
+		 {assembly = AppendList.empty,
+		  registerAllocation = registerAllocation,
+		  saves = []},
+		 fn (cache as {register,
+			       memloc,
+			       reserve},
+		     {assembly,
+		      registerAllocation,
+		      saves})
+		  => let
+		       val {register,
+			    assembly = assembly_register,
+			    registerAllocation}
+			 = toRegisterMemLoc 
+			   {memloc = memloc,
+			    info = info,
+			    size = MemLoc.size memloc,
+			    move = true,
+			    supports = supports,
+			    saves = saves, 
+			    force = [register], 
+			    registerAllocation = registerAllocation}
+			   
+		       val {assembly = assembly_reserve,
+			    registerAllocation}
+			 = if reserve
+			     then reserve' {register = register,
+					    registerAllocation = registerAllocation}
+			     else {assembly = AppendList.empty,
+				   registerAllocation = registerAllocation}
+		     in
+		       {assembly = AppendList.appends [assembly,
+						       assembly_register,
+						       assembly_reserve],
+			registerAllocation = registerAllocation,
+			saves = (Operand.memloc memloc)::saves}
+		     end)
+	  in
+	    {assembly = assembly,
+	     registerAllocation = registerAllocation}
+	  end
+
+      fun fltcache {caches : {memloc: MemLoc.t} list,
+		    info,
+		    registerAllocation}
+	= let
+	    val supports
+	      = List.map
+	        (caches,
+		 fn {memloc, ...} => Operand.memloc memloc)
+
+	    val {assembly = assembly_load,
+		 registerAllocation,
+		 ...}
+	      = List.foldr
+	        (caches,
+		 {assembly = AppendList.empty,
+		  registerAllocation = registerAllocation,
+		  saves = []},
+		 fn (cache as {memloc: MemLoc.t},
+		     {assembly,
+		      registerAllocation,
+		      saves})
+		  => let
+		       val {fltregister,
+			    assembly = assembly_fltregister,
+			    fltrename,
+			    registerAllocation}
+			 = toFltRegisterMemLoc 
+			   {memloc = memloc,
+			    info = info,
+			    size = MemLoc.size memloc,
+			    move = true,
+			    supports = supports,
+			    saves = saves, 
+			    top = SOME false,
+			    registerAllocation = registerAllocation}
+		     in
+		       {assembly = AppendList.append (assembly,
+						      assembly_fltregister),
+			registerAllocation = registerAllocation,
+			saves = (Operand.memloc memloc)::saves}
+		     end)
+
+	    val (num_caches,
+		 dest_caches)
+	      = List.fold
+	        (caches,
+		 (0,[]),
+		 fn ({memloc},
+		     (num_caches, dest_caches))
+		  => (num_caches + 1,
+		      {memloc = memloc, 
+		       fltregister = FltRegister.T num_caches}::dest_caches))
+
+	    fun check {assembly, registerAllocation}
+	      = let
+		  val {fltstack, ...} = registerAllocation
+		  val disp = (List.length fltstack) - num_caches
+
+		  val dest
+		    = fn (FltRegister.T i) => FltRegister.T (i + disp)
+
+		  val rec check'
+		    = fn [] => {assembly = assembly,
+				registerAllocation = registerAllocation}
+		       | (value as {fltregister,
+				    memloc,
+				    weight,
+				    sync,
+				    commit})::fltstack
+		       => (case List.peek
+			        (dest_caches,
+				 fn {memloc = memloc', ...}
+				  => MemLoc.eq(memloc, memloc'))
+			     of SOME {fltregister = fltregister', ...}
+			      => let
+				   val fltregister' = dest fltregister'
+				 in
+				   if FltRegister.eq
+				      (fltregister,
+				       fltregister')
+				     then check' fltstack
+				     else let
+					    val fltregister''
+					      = if FltRegister.eq
+					           (fltregister,
+						    FltRegister.top)
+						  then fltregister'
+						  else fltregister
+
+					    val {registerAllocation,
+						 ...}
+					      = fltxch'
+					        {fltregister = fltregister'',
+						 registerAllocation
+						 = registerAllocation}
+
+					    val assembly_xch
+					      = AppendList.single
+					        (Assembly.instruction_fxch
+						 {src = Operand.fltregister
+						        fltregister''})
+					  in
+					    check
+					    {assembly 
+					     = AppendList.append (assembly, 
+								  assembly_xch),
+					     registerAllocation = registerAllocation}
+					  end
+				 end
+			      | NONE
+			      => let
+				   val registerAllocation
+				     = fltvalueMap
+				       {map = fn value as {fltregister,
+							   memloc,
+							   weight,
+							   sync,
+							   commit}
+					       => if FltRegister.eq
+					             (fltregister,
+						      FltRegister.top)
+						    then {fltregister = fltregister,
+							  memloc = memloc,
+							  weight = weight,
+							  sync = sync,
+							  commit = REMOVE 0}
+						    else value,
+					registerAllocation = registerAllocation}
+
+				   val {assembly = assembly_commit,
+					registerAllocation,
+					...}
+				     = commitFltRegisters
+				       {info = info,
+					supports = supports,
+					saves = [],
+					registerAllocation
+					= registerAllocation}
+				 in
+				   check {assembly 
+					  = AppendList.append (assembly,
+							       assembly_commit),
+					  registerAllocation = registerAllocation}
+				 end)
+		in
+		  check' fltstack
+		end
+
+	    val {assembly = assembly_shuffle, 
+		 registerAllocation}
+	      = check {assembly = AppendList.empty,
+		       registerAllocation = registerAllocation}
+	  in
+	    {assembly = AppendList.appends [assembly_load,
+					    assembly_shuffle],
+	     registerAllocation = registerAllocation}
+	  end
+
+
       fun reset {registerAllocation: t}
-	= {assembly = [],
+	= {assembly = AppendList.empty,
 	   registerAllocation = empty ()}
 
-      fun cache {register: Register.t, 
-		 memloc: MemLoc.t, 
-		 reserve: bool, 
+      fun force {commit_memlocs: MemLoc.t list,
+		 commit_classes: MemLoc.Class.t list,
+		 remove_memlocs: MemLoc.t list,
+		 remove_classes: MemLoc.Class.t list,
+		 dead_memlocs: MemLoc.t list,
+		 dead_classes: MemLoc.Class.t list,
 		 info: Liveness.t,
 		 registerAllocation: t}
 	= let
-	    val {register,
-		 assembly = assembly_register,
-		 registerAllocation as {entries, reserved, fltstack}}
-	      = toRegisterMemLoc 
-	        {memloc = memloc,
-		 info = info,
-		 size = Register.size register, 
-		 move = true,
-		 supports = [],
-		 saves = [], 
-		 force = [register], 
-		 registerAllocation = registerAllocation}
+	    val toCommit 
+	      = fn TRYREMOVE _ => REMOVE 0
+	         | REMOVE _ => REMOVE 0
+	         | _ => COMMIT 0
+	    val toRemove
+	      = fn _ => REMOVE 0
 
-	    val reserved = if reserve
-			     then register::reserved
-			     else reserved
-	  in
-	    {assembly = assembly_register,
-	     registerAllocation = {entries = entries,
-				   reserved = reserved,
-				   fltstack = fltstack}}
-	  end
-
-      fun assume {register: Register.t, 
-		  memloc: MemLoc.t, 
-		  weight: int,
-		  sync: bool,
-		  reserve: bool, 
-		  registerAllocation: t}
-	= let
-	    val registerAllocation as {entries, reserved, fltstack}
-	      = update
-                {value = {register = register,
-			  memloc = memloc,
-			  weight = weight,
-			  sync = sync,
-			  commit = NO},
-		 registerAllocation = registerAllocation}
-
-	    val reserved
-	      = if reserve
-		  then register::reserved
-		  else reserved
-	  in
-	    {assembly = [],
-	     registerAllocation = {entries = entries,
-				   reserved = reserved,
-				   fltstack = fltstack}}
-	  end
-
-      fun flush {info: Liveness.t,
-		 registerAllocation: t}
-	= let
-	    val registerAllocation
-	      = valueMap {map = fn value as {register,
-					     memloc,
-					     weight,
-					     sync,
-					     commit}
-				 => if MemLoc.onFlush memloc
-				      then {register = register, 
-					    memloc = memloc, 
-					    weight = weight, 
-					    sync = sync, 
-					    commit = COMMIT 0}
-				      else value,
-			  registerAllocation = registerAllocation}
+	    val shouldCommit 
+	      = fn memloc => (List.contains(commit_memlocs,
+					    memloc,
+					    MemLoc.eq)
+			      orelse
+			      List.contains(commit_classes,
+					    MemLoc.class memloc,
+					    MemLoc.Class.eq))
+	    val shouldRemove
+	      = fn memloc => (List.contains(remove_memlocs,
+						    memloc,
+						    MemLoc.eq)
+			      orelse
+			      List.contains(remove_classes,
+					    MemLoc.class memloc,
+					    MemLoc.Class.eq))
+	    val shouldDead
+	      = fn memloc => (List.contains(dead_memlocs,
+					    memloc,
+					    MemLoc.eq)
+			      orelse
+			      List.contains(dead_classes,
+					    MemLoc.class memloc,
+					    MemLoc.Class.eq))
 
 	    val registerAllocation
-	      = fltvalueMap {map = fn value as {fltregister,
-						memloc,
-						weight,
-						sync,
-						commit}
-				    => {fltregister = fltregister, 
-					memloc = memloc, 
-					weight = weight, 
-					sync = sync, 
-					commit = REMOVE 0},
+	      = fltvalueMap {map 
+			     = fn value as {fltregister,
+					    memloc,
+					    weight,
+					    sync,
+					    commit}
+				 => case (shouldCommit memloc,
+					  shouldRemove memloc,
+					  shouldDead memloc)
+				      of (true,false,false)
+				       => {fltregister = fltregister, 
+					   memloc = memloc, 
+					   weight = weight, 
+					   sync = sync, 
+					   commit = toCommit commit}
+				       | (false,true,false)
+				       => {fltregister = fltregister, 
+					   memloc = memloc, 
+					   weight = weight, 
+					   sync = sync, 
+					   commit = toRemove commit}
+				       | (false,false,true)
+				       => {fltregister = fltregister, 
+					   memloc = memloc, 
+					   weight = weight, 
+					   sync = true, 
+					   commit = toRemove commit}
+				       | (false,false,false)
+				       => if List.exists
+					     (MemLoc.utilized memloc,
+					      fn memloc' => shouldDead memloc')
+					    then {fltregister = fltregister, 
+						  memloc = memloc, 
+						  weight = weight, 
+						  sync = sync, 
+						  commit = toRemove commit}
+					  else if List.exists
+					          (MemLoc.utilized memloc,
+						   fn memloc' => shouldRemove memloc')
+					    then {fltregister = fltregister, 
+						  memloc = memloc, 
+						  weight = weight, 
+						  sync = sync, 
+						  commit = toCommit commit}
+					    else value
+				       | _ => Error.bug "commit",
 			  registerAllocation = registerAllocation}
 
 	    val {assembly = assembly_commit_fltregisters,
-		 rename = rename_commit_fltregisters,
+		 fltrename = fltrename_commit_fltregisters,
 		 registerAllocation}
 	      = commitFltRegisters {info = info,
 				    supports = [],
 				    saves = [],
-				    registerAllocation = registerAllocation}
+				    registerAllocation 
+				    = registerAllocation}
+
+	    val registerAllocation
+	      = valueMap {map 
+			  = fn value as {register,
+					 memloc,
+					 weight,
+					 sync,
+					 commit}
+			     => case (shouldCommit memloc,
+				      shouldRemove memloc,
+				      shouldDead memloc)
+				  of (true,false,false)
+				   => {register = register, 
+				       memloc = memloc, 
+				       weight = weight, 
+				       sync = sync, 
+				       commit = toCommit commit}
+				   | (false,true,false)
+				   => {register = register, 
+				       memloc = memloc, 
+				       weight = weight, 
+				       sync = sync, 
+				       commit = toRemove commit}
+				   | (false,false,true)
+				   => value
+				   | (false,false,false)
+				   => if List.exists
+	                                 (MemLoc.utilized memloc,
+					  fn memloc' => shouldDead memloc')
+					then {register = register, 
+					      memloc = memloc, 
+					      weight = weight, 
+					      sync = sync, 
+					      commit = toRemove commit}
+				      else if List.exists
+					        (MemLoc.utilized memloc,
+						 fn memloc' => shouldRemove memloc')
+					then {register = register, 
+					      memloc = memloc, 
+					      weight = weight, 
+					      sync = sync, 
+					      commit = toCommit commit}
+					else value
+				   | _ => Error.bug "commit",
+			  registerAllocation = registerAllocation}
 
 	    val {assembly = assembly_commit_registers,
 		 registerAllocation}
 	      = commitRegisters {info = info,
 				 supports = [],
 				 saves = [],
-				 registerAllocation = registerAllocation}
+				 registerAllocation 
+				 = registerAllocation}
+
+	    val registerAllocation
+	      = valueMap {map 
+			  = fn value as {register,
+					 memloc,
+					 weight,
+					 sync,
+					 commit}
+			     => if shouldDead memloc
+				  then {register = register, 
+					memloc = memloc, 
+					weight = weight, 
+					sync = true, 
+					commit = toRemove commit}
+				  else value,
+			  registerAllocation = registerAllocation}
+
+	    val {assembly = assembly_dead_registers,
+		 registerAllocation}
+	      = commitRegisters {info = info,
+				 supports = [],
+				 saves = [],
+				 registerAllocation 
+				 = registerAllocation}
 	  in
-	    {assembly = List.concat
-	                [assembly_commit_registers,
-			 assembly_commit_fltregisters],
+	    {assembly = AppendList.appends
+	                [assembly_commit_fltregisters,
+			 assembly_commit_registers,
+			 assembly_dead_registers],
 	     registerAllocation = registerAllocation}
 	  end
 
-      fun clear {info: Liveness.t,
+      fun ccall {info: Liveness.t,
 		 registerAllocation: t}
 	= let
+	    val cstaticClasses = !x86MLton.Classes.cstaticClasses
+
+	    val {reserved = reservedStart, ...} = registerAllocation
+
+	    val {assembly = assembly_reserve,
+		 registerAllocation}
+	      = List.fold
+	        (Register.callerSaveRegisters,
+		 {assembly = AppendList.empty, 
+		  registerAllocation = registerAllocation},
+		 fn (register, {assembly, registerAllocation})
+		  => let
+		       val {assembly = assembly_reserve,
+			    registerAllocation}
+			 = reserve' {register = register,
+				     registerAllocation = registerAllocation}
+		     in
+		       {assembly = AppendList.append (assembly,
+						      assembly_reserve),
+			registerAllocation = registerAllocation}
+		     end)
+
 	    val registerAllocation
 	      = valueMap {map = fn value as {register,
 					     memloc,
@@ -4879,6 +5336,10 @@ struct
 			               (Register.callerSaveRegisters,
 					register,
 					Register.eq)
+				       orelse
+				       ClassSet.contains
+				       (cstaticClasses,
+					MemLoc.class memloc)
 				      then {register = register, 
 					    memloc = memloc, 
 					    weight = weight, 
@@ -4901,7 +5362,7 @@ struct
 			     registerAllocation = registerAllocation}
 
 	    val {assembly = assembly_commit_fltregisters,
-		 rename = rename_commit_fltregisters,
+		 fltrename = fltrename_commit_fltregisters,
 		 registerAllocation}
 	      = commitFltRegisters {info = info,
 				    supports = [],
@@ -4914,151 +5375,38 @@ struct
 				 supports = [],
 				 saves = [],
 				 registerAllocation = registerAllocation}
+
+	    val {assembly = assembly_unreserve,
+		 registerAllocation}
+	      = List.fold
+	        (List.removeAll
+		 (Register.callerSaveRegisters,
+		  fn register => List.contains(reservedStart, register, Register.eq)),
+		 {assembly = AppendList.empty, 
+		  registerAllocation = registerAllocation},
+		 fn (register, {assembly, registerAllocation})
+		  => let
+		       val {assembly = assembly_unreserve,
+			    registerAllocation}
+			 = unreserve' {register = register,
+				       registerAllocation = registerAllocation}
+		     in
+		       {assembly = AppendList.append (assembly,
+						      assembly_reserve),
+			registerAllocation = registerAllocation}
+		     end)
+
+	    val registerAllocation
+	      = deletes {registers = Register.callerSaveRegisters,
+			 registerAllocation = registerAllocation}
 	  in
-	    {assembly = List.concat
-	                [assembly_commit_registers,
-			 assembly_commit_fltregisters],
+	    {assembly = AppendList.appends
+	                [assembly_reserve,
+			 assembly_commit_registers,
+			 assembly_commit_fltregisters,
+			 assembly_unreserve],
 	     registerAllocation = registerAllocation}
 	  end
-
-      fun eject {memlocs: MemLoc.t list,
-		 info: Liveness.t,
-		 registerAllocation: t}
-	= (case memlocs
-	     of [] => {assembly = [],
-		       registerAllocation = registerAllocation}
-	      | _
-	      => let
-		   val registerAllocation
-		     = valueMap {map 
-				 = fn value as {register,
-						memloc,
-						weight,
-						sync,
-						commit}
-			            => if List.contains(memlocs,
-							memloc,
-							MemLoc.eq)
-					 then {register = register, 
-					       memloc = memloc, 
-					       weight = weight, 
-					       sync = true, 
-					       commit = REMOVE 0}
-					 else value,
-				 registerAllocation 
-				 = registerAllocation}
-
-		   val registerAllocation
-		     = fltvalueMap {map 
-				    = fn value as {fltregister,
-						   memloc,
-						   weight,
-						   sync,
-						   commit}
-			               => if List.contains(memlocs,
-							   memloc,
-							   MemLoc.eq)
-					    then {fltregister = fltregister, 
-						  memloc = memloc, 
-						  weight = weight, 
-						  sync = true, 
-						  commit = REMOVE 0}
-					    else value,
-				    registerAllocation 
-				    = registerAllocation}
-
-		   val {assembly = assembly_commit_fltregisters,
-			rename = rename_commit_fltregisters,
-			registerAllocation}
-		     = commitFltRegisters {info = info,
-					   supports = [],
-					   saves = [],
-					   registerAllocation 
-					   = registerAllocation}
-
-		   val {assembly = assembly_commit_registers,
-			registerAllocation}
-		     = commitRegisters {info = info,
-					supports = [],
-					saves = [],
-					registerAllocation 
-					= registerAllocation}
-		 in
-		   {assembly = List.concat
-		               [assembly_commit_registers,
-				assembly_commit_fltregisters],
-		    registerAllocation = registerAllocation}
-		 end)
-
-      fun commit {memlocs: MemLoc.t list,
-		  info: Liveness.t,
-		  registerAllocation: t}
-	= (case memlocs
-	     of [] => {assembly = [],
-		       registerAllocation = registerAllocation}
-	      | _
-	      => let
-		   val registerAllocation
-		     = valueMap {map 
-				 = fn value as {register,
-						memloc,
-						weight,
-						sync,
-						commit}
-			            => if List.contains(memlocs,
-							memloc,
-							MemLoc.eq)
-					 then {register = register, 
-					       memloc = memloc, 
-					       weight = weight, 
-					       sync = sync, 
-					       commit = COMMIT 0}
-					 else value,
-				 registerAllocation 
-				 = registerAllocation}
-
-		   val registerAllocation
-		     = fltvalueMap {map 
-				    = fn value as {fltregister,
-						   memloc,
-						   weight,
-						   sync,
-						   commit}
-			               => if List.contains(memlocs,
-							   memloc,
-							   MemLoc.eq)
-					    then {fltregister = fltregister, 
-						  memloc = memloc, 
-						  weight = weight, 
-						  sync = sync, 
-						  commit = COMMIT 0}
-					    else value,
-				    registerAllocation 
-				    = registerAllocation}
-
-		   val {assembly = assembly_commit_fltregisters,
-			rename = rename_commit_fltregisters,
-			registerAllocation}
-		     = commitFltRegisters {info = info,
-					   supports = [],
-					   saves = [],
-					   registerAllocation 
-					   = registerAllocation}
-
-		   val {assembly = assembly_commit_registers,
-			registerAllocation}
-		     = commitRegisters {info = info,
-					supports = [],
-					saves = [],
-					registerAllocation 
-					= registerAllocation}
-
-		 in
-		   {assembly = List.concat
-		               [assembly_commit_registers,
-                                assembly_commit_fltregisters],
-		    registerAllocation = registerAllocation}
-		 end)
 
       fun return {memloc = return_memloc,
 		  info: Liveness.t,
@@ -5097,6 +5445,7 @@ struct
 		      final_uses = [],
 		      defs = [Operand.memloc return_memloc],
 		      final_defs = [Operand.register return_register],
+		      kills = [],
 		      info = info,
 		      registerAllocation = registerAllocation}
 	  in
@@ -5110,7 +5459,7 @@ struct
 	= let
 	    val return_register = FltRegister.return
 
-	    val {rename = rename_push,
+	    val {fltrename = fltrename_push,
 		 registerAllocation}
 	      = fltpush
                 {value = {fltregister = return_register,
@@ -5126,11 +5475,129 @@ struct
 		      final_uses = [],
 		      defs = [Operand.memloc return_memloc],
 		      final_defs = [Operand.fltregister return_register],
+		      kills = [],
 		      info = info,
 		      registerAllocation = registerAllocation}
 
 	  in
 	    {assembly = assembly_post,
+	     registerAllocation = registerAllocation}
+	  end
+
+      fun clearflt {info: Liveness.t,
+		    registerAllocation: t}
+	= let
+	    val registerAllocation
+	      = fltvalueMap {map = fn value as {fltregister,
+						memloc,
+						weight,
+						sync,
+						commit}
+			            => {fltregister = fltregister, 
+					memloc = memloc, 
+					weight = weight, 
+					sync = sync, 
+					commit = REMOVE 0},
+			     registerAllocation = registerAllocation}
+
+	    val {assembly = assembly_commit_fltregisters,
+		 fltrename = fltrename_commit_fltregisters,
+		 registerAllocation}
+	      = commitFltRegisters {info = info,
+				    supports = [],
+				    saves = [],
+				    registerAllocation = registerAllocation}
+	  in
+	    {assembly = assembly_commit_fltregisters,
+	     registerAllocation = registerAllocation}
+	  end
+
+      fun saveregalloc {live: MemLoc.t list,
+			id: Directive.Id.t,
+			info: Liveness.t,
+			registerAllocation: t}
+	= let
+	    val _ = setRA(id, {registerAllocation = registerAllocation})
+	  in
+	    {assembly = if !Control.Native.commented > 2
+			  then (toComments registerAllocation)
+			  else AppendList.empty,
+	     registerAllocation = registerAllocation}
+	  end
+
+      fun restoreregalloc {live: MemLoc.t list,
+			   id: Directive.Id.t,
+			   info: Liveness.t,
+			   registerAllocation: t}
+	= let
+	    val {registerAllocation} = getRA id
+
+	    fun dump memloc
+	      = (track memloc) andalso 
+	        not (List.contains(live,memloc,MemLoc.eq))
+
+	    val registerAllocation
+	      = fltvalueMap
+	        {map = fn value as {fltregister,
+				    memloc,
+				    weight,
+				    sync,
+				    commit}
+		        => if dump memloc
+			     then {fltregister = fltregister,
+				   memloc = memloc,
+				   weight = weight,
+				   sync = true,
+				   commit = TRYREMOVE 0}
+			   else if List.exists(MemLoc.utilized memloc, dump)
+			      then {fltregister = fltregister,
+				    memloc = memloc,
+				    weight = weight,
+				    sync = true,
+				    commit = TRYREMOVE 0}
+			   else value,
+		 registerAllocation = registerAllocation}
+
+	    val {assembly = assembly_commit_fltregisters,
+		 registerAllocation,
+		 ...}
+	      = commitFltRegisters {info = info,
+				    supports = [],
+				    saves = [],
+				    registerAllocation = registerAllocation}
+
+	    val registerAllocation
+	      = valueMap
+	        {map = fn value as {register,
+				    memloc,
+				    weight,
+				    sync,
+				    commit}
+		        => if dump memloc
+			     then {register = register,
+				   memloc = memloc,
+				   weight = weight,
+				   sync = true,
+				   commit = TRYREMOVE 0}
+			   else if List.exists(MemLoc.utilized memloc, dump)
+			      then {register = register,
+				    memloc = memloc,
+				    weight = weight,
+				    sync = true,
+				    commit = TRYREMOVE 0}
+			   else value,
+		 registerAllocation = registerAllocation}
+
+	    val {assembly = assembly_commit_registers,
+		 registerAllocation,
+		 ...}
+	      = commitRegisters {info = info,
+				 supports = [],
+				 saves = [],
+				 registerAllocation = registerAllocation}
+	  in
+	    {assembly = AppendList.append (assembly_commit_fltregisters,
+					   assembly_commit_registers),
 	     registerAllocation = registerAllocation}
 	  end
     end
@@ -5184,13 +5651,11 @@ struct
 	    else case (src, dst)
 		   of (Operand.MemLoc memloc_src,
 		       Operand.MemLoc memloc_dst)
-		    => if List.contains(dead,
-					memloc_dst,
-					MemLoc.eq)
+		    => if MemLocSet.contains(dead,
+					     memloc_dst)
 		          orelse
-			  List.contains(remove,
-					memloc_dst,
-					MemLoc.eq)
+			  MemLocSet.contains(remove,
+					     memloc_dst)
 			 then let
 				val {operand = final_dst,
 				     assembly = assembly_dst,
@@ -5241,7 +5706,9 @@ struct
 				{final_src = final_src,
 				 final_dst = final_dst,
 				 assembly_src_dst 
-				 = List.concat [assembly_dst, assembly_src],
+				 = AppendList.appends 
+				   [assembly_dst,
+				    assembly_src],
 				 registerAllocation = registerAllocation}
 			      end
  			 else let
@@ -5284,9 +5751,97 @@ struct
 				{final_src = final_src,
 				 final_dst = final_dst,
 				 assembly_src_dst 
-				 = List.concat [assembly_src, assembly_dst],
+				 = AppendList.appends 
+				   [assembly_src, 
+				    assembly_dst],
 				 registerAllocation = registerAllocation}
 			      end
+		    | (_,
+		       Operand.MemLoc memloc_dst)
+		    => let
+			 val {operand = final_src, 
+			      assembly = assembly_src,
+			      registerAllocation}
+			   = RA.allocateOperand 
+			     {operand = src,
+			      options = {register = true,
+					 immediate = true,
+					 label = false,
+					 address = false},
+			      info = info,
+			      size = size,
+			      move = true,
+			      supports = [dst],
+			      saves = [],
+			      force = [],
+			      registerAllocation 
+			      = registerAllocation}
+
+			 fun default ()
+			   = RA.allocateOperand 
+			     {operand = dst,
+			      options = {register = true,
+					 immediate = false,
+					 label = false,
+					 address = true},
+			      info = info,
+			      size = size,
+			      move = move_dst,
+			      supports = [],
+			      saves = [src,final_src],
+			      force = [],
+			      registerAllocation 
+			      = registerAllocation}
+			   
+			 val {operand = final_dst,
+			      assembly = assembly_dst,
+			      registerAllocation}
+			   = if MemLocSet.contains(dead,
+						   memloc_dst)
+			        orelse
+				MemLocSet.contains(remove,
+						   memloc_dst)
+			       then case RA.allocated 
+				         {memloc = memloc_dst,
+					  registerAllocation = registerAllocation}
+				      of SOME {register, sync, ...}
+				       => if sync
+					    then let
+						   val registerAllocation
+						     = RA.delete
+						       {register = register,
+							registerAllocation 
+							= registerAllocation}
+						 in
+						   RA.allocateOperand 
+						   {operand = dst,
+						    options = {register = false,
+							       immediate = false,
+							       label = false,
+							       address = true},
+						    info = info,
+						    size = size,
+						    move = move_dst,
+						    supports = [],
+						    saves = [src,final_src],
+						    force = [],
+						    registerAllocation 
+						    = registerAllocation}
+						 end
+					    else default ()
+				       | NONE => default ()
+			       else default ()
+		       in
+			 {final_src = final_src,
+			  final_dst = final_dst,
+			  assembly_src_dst 
+			  = AppendList.appends 
+			    [assembly_src, 
+			     assembly_dst],
+			  registerAllocation = registerAllocation}
+		       end
+		    | _ => Error.bug "allocateSrcDst"
+(*
 		    | _
 		    => let
 			 val {operand = final_src, 
@@ -5328,9 +5883,10 @@ struct
 			 {final_src = final_src,
 			  final_dst = final_dst,
 			  assembly_src_dst 
-			  = List.concat [assembly_src, assembly_dst],
+			  = AppendList.appends [assembly_src, assembly_dst],
 			  registerAllocation = registerAllocation}
 		       end
+*)
 
       (* 
        * Require src1/src2 operands as follows:
@@ -5422,31 +5978,74 @@ struct
 		   {final_src1 = final_src1,
 		    final_src2 = final_src2,
 		    assembly_src1_src2 
-		    = List.concat [assembly_src1, assembly_src2],
+		    = AppendList.appends 
+		      [assembly_src1, 
+		       assembly_src2],
 		    registerAllocation = registerAllocation}
 		 end
 
       fun removable {memloc,
 		     info as {dead, commit, remove, ...}: Liveness.t,
 		     registerAllocation}
-	= List.contains(dead,
-			memloc,
-			MemLoc.eq)
+	= MemLocSet.contains(dead,
+			     memloc)
 	  orelse
-	  (List.contains(remove,
-			 memloc,
-			 MemLoc.eq)
+	  (MemLocSet.contains(remove,
+			      memloc)
 	   andalso
 	   (case RA.fltallocated {memloc = memloc,
 				  registerAllocation = registerAllocation}
 	      of SOME {sync,...} => sync
 	       | NONE => true))
 
+      fun assemblyMsg s
+	= ([Assembly.comment (String.make(60,#"*")),
+	    Assembly.comment (s ^ "begin")],
+	   [Assembly.comment (s ^ "end"),
+	    Assembly.comment (String.make(60,#"*"))])
+
       fun allocateRegisters {instruction: t,
 			     info as {dead, commit, remove, ...}: Liveness.t,
 			     registerAllocation: RegisterAllocation.t}
 	= case instruction
-	    of BinAL {oper, src, dst, size}
+	    of NOP
+	       (* No operation; p. 496 *)
+	     => let
+		  val {uses,defs,kills} 
+		    = Instruction.uses_defs_kills instruction
+		  val {assembly = assembly_pre,
+		       registerAllocation}
+		    = RA.pre {uses = uses,
+			      defs = defs,
+			      kills = kills,
+			      info = info,
+			      registerAllocation = registerAllocation}
+
+		  val instruction 
+		    = Instruction.NOP
+
+		  val {uses = final_uses,
+		       defs = final_defs,
+		       ...}
+		    = Instruction.uses_defs_kills instruction
+
+		  val {assembly = assembly_post,
+		       registerAllocation}
+		    = RA.post {uses = uses,
+			       final_uses = final_uses,
+			       defs = defs,
+			       final_defs = final_defs,
+			       kills = kills,
+			       info = info,
+			       registerAllocation = registerAllocation}
+		in
+		  {assembly
+		   = AppendList.appends 
+		     [assembly_pre,
+		      assembly_post],
+		   registerAllocation = registerAllocation}
+		end
+	     | BinAL {oper, src, dst, size}
 	       (* Integer binary arithmetic(w/o mult & div)/logic instructions.
 		* Require src/dst operands as follows:
 		*
@@ -5468,44 +6067,92 @@ struct
 			      info = info,
 			      registerAllocation = registerAllocation}
 
-		  val {final_src,
-		       final_dst,
-		       assembly_src_dst,
-		       registerAllocation}
-		    = allocateSrcDst {src = src,
-				      dst = dst,
-				      move_dst = true,
-				      size = size,
-				      info = info,
-				      registerAllocation = registerAllocation}
+		  fun default ()
+		    = let
+			val {final_src,
+			     final_dst,
+			     assembly_src_dst,
+			     registerAllocation}
+			  = allocateSrcDst {src = src,
+					    dst = dst,
+					    move_dst = true,
+					    size = size,
+					    info = info,
+					    registerAllocation = registerAllocation}
+			  
+			val instruction 
+			  = Instruction.BinAL
+			    {oper = oper,
+			     src = final_src,
+			     dst = final_dst,
+			     size = size}
+			    
+			val {uses = final_uses,
+			     defs = final_defs,
+			     ...}
+			  = Instruction.uses_defs_kills instruction
+			  
+			val {assembly = assembly_post,
+			     registerAllocation}
+			  = RA.post {uses = uses,
+				     final_uses = final_uses,
+				     defs = defs,
+				     final_defs = final_defs,
+				     kills = kills,
+				     info = info,
+				     registerAllocation = registerAllocation}
+		      in
+			{assembly
+			 = AppendList.appends 
+			   [assembly_pre,
+			    assembly_src_dst,
+			    AppendList.single
+			    (Assembly.instruction instruction),
+			    assembly_post],
+			   registerAllocation = registerAllocation}
+		      end
 
-		  val instruction 
-		    = Instruction.BinAL
-		      {oper = oper,
-		       src = final_src,
-		       dst = final_dst,
-		       size = size}
+		  fun default' ()
+		    = let
+			val instruction 
+			  = Instruction.NOP
 
-		  val {uses = final_uses,
-		       defs = final_defs,
-		       ...}
-		    = Instruction.uses_defs_kills instruction
-
-		  val {assembly = assembly_post,
-		       registerAllocation}
-		    = RA.post {uses = uses,
-			       final_uses = final_uses,
-			       defs = defs,
-			       final_defs = final_defs,
-			       info = info,
-			       registerAllocation = registerAllocation}
+			val {uses = final_uses,
+			     defs = final_defs,
+			     ...}
+			  = Instruction.uses_defs_kills instruction
+			  
+			val {assembly = assembly_post,
+			     registerAllocation}
+			  = RA.post {uses = uses,
+				     final_uses = final_uses,
+				     defs = defs,
+				     final_defs = final_defs,
+				     kills = kills,
+				     info = info,
+				     registerAllocation = registerAllocation}
+		      in
+			{assembly
+			 = AppendList.appends 
+			   [assembly_pre,
+			    assembly_post],
+			   registerAllocation = registerAllocation}
+		      end
 		in
-		  {assembly
-		   = List.concat [assembly_pre,
-				  assembly_src_dst,
-				  (Assembly.instruction instruction)::
-				  assembly_post],
-		   registerAllocation = registerAllocation}
+		  case (oper, src, dst)
+		    of (Instruction.ADD,
+			Operand.Immediate immediate_src,
+			Operand.MemLoc memloc_dst)
+		     => if MemLoc.eq(memloc_dst, x86MLton.c_stackPContents)
+		           andalso
+			   MemLocSet.contains(dead, memloc_dst)
+			   andalso
+			   (case Immediate.deConst immediate_src
+			      of SOME (Immediate.Int _) => true
+			       | _ => false)
+			  then default' ()
+			  else default ()
+		     | _ => default ()
 		end
 	     | pMD {oper, dst, src, size}
 	       (* Integer multiplication and division.
@@ -5630,7 +6277,10 @@ struct
 			     in
 			       {final_src = final_src,
 				final_dst = final_dst,
-				assembly_src_dst = List.concat [assembly_dst, assembly_src],
+				assembly_src_dst 
+				= AppendList.appends 
+				  [assembly_dst, 
+				   assembly_src],
 				registerAllocation = registerAllocation}
 			     end
 
@@ -5691,26 +6341,33 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
 		  {assembly 
-		   = List.concat [assembly_pre,
-				  assembly_clear,
-				  assembly_src_dst,
-				  (if oper = Instruction.IMUL orelse
-				     oper = Instruction.IDIV orelse
-				     oper = Instruction.IMOD
-				     then Assembly.instruction_cx
-				          {size = size}
-				     else Assembly.instruction_binal
-				          {oper = Instruction.XOR,
-					   dst = Operand.register hi,
-					   src = Operand.register hi,
-					   size = size})::
-				  (Assembly.instruction instruction)::
-				  assembly_post],
-                   registerAllocation = registerAllocation}
+		   = AppendList.appends 
+		     [assembly_pre,
+		      assembly_clear,
+		      assembly_src_dst,
+		      (if oper = Instruction.IDIV orelse
+			  oper = Instruction.IMOD
+			 then AppendList.single
+			      (Assembly.instruction_cx
+			       {size = size})
+			 else if oper = Instruction.DIV orelse
+			         oper = Instruction.MOD
+				then AppendList.single
+				     (Assembly.instruction_binal
+				      {oper = Instruction.XOR,
+				       dst = Operand.register hi,
+				       src = Operand.register hi,
+				       size = size})
+				else AppendList.empty),
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
+		   registerAllocation = registerAllocation}
 		end
 	     | UnAL {oper, dst, size}
 	       (* Integer unary arithmetic/logic instructions.
@@ -5765,14 +6422,17 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
 		  {assembly 
-		   = List.concat [assembly_pre,
-				  assembly_dst,
-				  (Assembly.instruction instruction)::
-				  assembly_post],
+		   = AppendList.appends 
+		     [assembly_pre,
+		      assembly_dst,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
 	     | SRAL {oper, count, dst, size}
@@ -5833,7 +6493,7 @@ struct
 				    = registerAllocation}
 
 			       val final_dst = final_count
-			       val assembly_dst = []
+			       val assembly_dst = AppendList.empty
 			     in
 			       {final_count = final_count,
 				assembly_count = assembly_count,
@@ -5921,15 +6581,18 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
 		  {assembly 
-		   = List.concat [assembly_pre,
-				  assembly_count,
-				  assembly_dst,
-				  (Assembly.instruction instruction)::
-				  assembly_post],
+		   = AppendList.appends 
+		     [assembly_pre,
+		      assembly_count,
+		      assembly_dst,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
              | CMP {src2, src1, size}
@@ -5982,14 +6645,17 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
 		  {assembly 
-		   = List.concat [assembly_pre,
-				  assembly_src1_src2,
-				  (Assembly.instruction instruction)::
-				  assembly_post],
+		   = AppendList.appends 
+		     [assembly_pre,
+		      assembly_src1_src2,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
              | TEST {src2, src1, size}
@@ -6042,14 +6708,17 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
 		  {assembly 
-		   = List.concat [assembly_pre,
-				  assembly_src1_src2,
-				  (Assembly.instruction instruction)::
-				  assembly_post],
+		   = AppendList.appends 
+		     [assembly_pre,
+		      assembly_src1_src2,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
 	     | SETcc {condition, dst, size}
@@ -6105,6 +6774,7 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 
@@ -6116,21 +6786,24 @@ struct
 			 => Error.bug "allocateRegisters: SETcc, temp_reg"
 		in
 		  {assembly 
-		   = List.concat [assembly_pre,
-				   assembly_dst,
-				   [Assembly.instruction_setcc
-				    {condition = condition,
-				     dst = Operand.register temp_reg,
-				     size = Size.BYTE}],
-				   if size = Size.BYTE
-				     then []
-				     else [Assembly.instruction_movx
-					   {oper = Instruction.MOVZX,
-					    dst = final_dst,
-					    src = Operand.register temp_reg,
-					    dstsize = size,
-					    srcsize = Size.BYTE}],
-				   assembly_post],
+		   = AppendList.appends 
+		     [assembly_pre,
+		      assembly_dst,
+		      AppendList.single
+		      (Assembly.instruction_setcc
+		       {condition = condition,
+			dst = Operand.register temp_reg,
+			size = Size.BYTE}),
+		      if size = Size.BYTE
+			then AppendList.empty
+			else AppendList.single
+			     (Assembly.instruction_movx
+			      {oper = Instruction.MOVZX,
+			       dst = final_dst,
+			       src = Operand.register temp_reg,
+			       dstsize = size,
+			       srcsize = Size.BYTE}),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
              | JMP {target, absolute}
@@ -6156,7 +6829,7 @@ struct
 		       assembly = assembly_target,
 		       registerAllocation = registerAllocation}
 		    = RA.allocateOperand {operand = target,
-					  options = {register = true,
+					  options = {register = false,
 						     immediate = true,
 						     label = true,
 						     address = true},
@@ -6185,14 +6858,17 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
 		  {assembly 
-		   = List.concat [assembly_pre,
-				   assembly_target,
-				   [Assembly.instruction instruction],
-				   assembly_post],
+		   = AppendList.appends 
+		     [assembly_pre,
+		      assembly_target,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
 	     | Jcc {condition, target}
@@ -6247,14 +6923,17 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
 		  {assembly 
-		   = List.concat [assembly_pre,
-				   assembly_target,
-				   [Assembly.instruction instruction],
-				   assembly_post],
+		   = AppendList.appends 
+		     [assembly_pre,
+		      assembly_target,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
              | CALL {target, absolute}
@@ -6309,14 +6988,17 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
 		  {assembly 
-		   = List.concat [assembly_pre,
-				   assembly_target,
-				   [Assembly.instruction instruction],
-				   assembly_post],
+		   = AppendList.appends 
+		     [assembly_pre,
+		      assembly_target,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
              | RET {src = SOME src}
@@ -6370,13 +7052,16 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
 		  {assembly 
-		   = List.concat [assembly_pre,
-				   [Assembly.instruction instruction],
-				   assembly_post],
+		   = AppendList.appends 
+		     [assembly_pre,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
              | RET {src = NONE}
@@ -6406,13 +7091,16 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
 		  {assembly 
-		   = List.concat [assembly_pre,
-				   [Assembly.instruction instruction],
-				   assembly_post],
+		   = AppendList.appends 
+		     [assembly_pre,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
 	     | MOV {src, dst, size}
@@ -6427,18 +7115,18 @@ struct
 		*      add  X
 		*)
 	     => let
+		  val {uses,defs,kills} 
+		    = Instruction.uses_defs_kills instruction
+		  val {assembly = assembly_pre,
+		       registerAllocation}
+		    = RA.pre {uses = uses,
+			      defs = defs,
+			      kills = kills,
+			      info = info,
+			      registerAllocation = registerAllocation}
+
 		  fun default ()
 		    = let
-			val {uses,defs,kills} 
-			  = Instruction.uses_defs_kills instruction
-			val {assembly = assembly_pre,
-			     registerAllocation}
-			  = RA.pre {uses = uses,
-				    defs = defs,
-				    kills = kills,
-				    info = info,
-				    registerAllocation = registerAllocation}
-			  
 			val {final_src,
 			     final_dst,
 			     assembly_src_dst,
@@ -6452,18 +7140,18 @@ struct
 			     registerAllocation = registerAllocation}
 	
 			val isConst0
-			  = fn Immediate.Char #"\000" => true
-			     | Immediate.Int 0 => true
-			     | Immediate.Word 0wx0 => true
+			  = fn Immediate.Const (Immediate.Char #"\000") => true
+			     | Immediate.Const (Immediate.Int 0) => true
+			     | Immediate.Const (Immediate.Word 0wx0) => true
 			     | _ => false
 
 			(* special case moving 0 to a register
 			 *)
 			val instruction
 			  = case (final_src, final_dst)
-			      of (Operand.Immediate (Immediate.Const c),
+			      of (Operand.Immediate immediate,
 				  Operand.Register _)
-			       => if isConst0 c
+			       => if isConst0 (Immediate.destruct immediate)
 				    then Instruction.BinAL
 				         {oper = XOR,
 					  src = final_dst,
@@ -6489,83 +7177,145 @@ struct
 				     final_uses = final_uses,
 				     defs = defs,
 				     final_defs = final_defs,
+				     kills = kills,
 				     info = info,
 				     registerAllocation = registerAllocation}
 		      in
 			{assembly 
-			 = List.concat [assembly_pre,
-					assembly_src_dst,
-					[Assembly.instruction instruction],
-					assembly_post],
+			 = AppendList.appends 
+			   [assembly_pre,
+			    assembly_src_dst,
+			    AppendList.single
+			    (Assembly.instruction instruction),
+			    assembly_post],
 			 registerAllocation = registerAllocation}
 		      end
+
+		  fun default' ({register = register_src,
+				 memloc = memloc_src,
+				 weight = weight_src,
+				 sync = sync_src,
+				 commit = commit_src},
+				memloc_dst)
+		    = let
+			val registerAllocation
+			  = RA.remove
+			    {memloc = memloc_dst,
+			     registerAllocation = registerAllocation}
+			    
+			val registerAllocation
+			  = RA.update
+			    {value = {register = register_src,
+				      memloc = memloc_dst,
+				      weight = 1024,
+				      sync = false,
+				      commit = commit_src},
+			     registerAllocation = registerAllocation}
+
+			val final_uses = []
+			val final_defs 
+			  = [Operand.register register_src]
+
+			val {assembly = assembly_post,
+			     registerAllocation}
+			  = RA.post {uses = uses,
+				     final_uses = final_uses,
+				     defs = defs,
+				     final_defs = final_defs,
+				     kills = kills,
+				     info = info,
+				     registerAllocation = registerAllocation}
+		      in
+			{assembly 
+			 = AppendList.appends [assembly_pre,
+					       assembly_post],
+			 registerAllocation = registerAllocation}
+		      end
+
+		  fun default'' (memloc_dst)
+		    = let
+			val registerAllocation
+			  = RA.remove
+			    {memloc = memloc_dst,
+			     registerAllocation = registerAllocation}
+
+			val {final_src,
+			     final_dst,
+			     assembly_src_dst,
+			     registerAllocation}
+			  = allocateSrcDst
+			    {src = src,
+			     dst = dst,
+			     move_dst = false,
+			     size = size,
+			     info = info,
+			     registerAllocation = registerAllocation}
+
+			val instruction
+			  = Instruction.MOV
+			    {src = final_src,
+			     dst = final_dst,
+			     size = size}
+
+			val {uses = final_uses,
+			     defs = final_defs,
+			     ...}
+			  = Instruction.uses_defs_kills instruction
+
+			val {assembly = assembly_post,
+			     registerAllocation}
+			  = RA.post {uses = uses,
+				     final_uses = final_uses,
+				     defs = defs,
+				     final_defs = final_defs,
+				     kills = kills,
+				     info = info,
+				     registerAllocation = registerAllocation}
+		      in
+			{assembly 
+			 = AppendList.appends 
+			   [assembly_pre,
+			    assembly_src_dst,
+			    AppendList.single
+			    (Assembly.instruction instruction),
+			    assembly_post],
+			 registerAllocation = registerAllocation}
+		      end
+
+		  val memloc_src = Operand.deMemloc src
+		  val value_src 
+		    = case memloc_src
+			of NONE => NONE
+			 | SOME memloc_src
+			 => RA.allocated {memloc = memloc_src,
+					  registerAllocation 
+					  = registerAllocation}
+		  val memloc_dst = Operand.deMemloc dst
 		in
-		  case (src,dst)
-		    of (Operand.MemLoc memloc_src, Operand.MemLoc memloc_dst)
-		     => (case RA.allocated
-			      {memloc = memloc_src,
-			       registerAllocation = registerAllocation}
-			   of SOME {register = register_src,
-				    sync = sync_src,
-				    commit = commit_src,
-				    ...}
-			    => if List.contains(dead,memloc_src,MemLoc.eq)
-			          orelse
-				  (List.contains(remove,memloc_src,MemLoc.eq)
-				   andalso
-				   sync_src)
-				 then let
-					val {uses,defs,kills} 
-					  = Instruction.uses_defs_kills 
-					    instruction
-					val {assembly = assembly_pre,
-					     registerAllocation}
-					  = RA.pre {uses = uses,
-						    defs = defs,
-						    kills = kills,
-						    info = info,
-						    registerAllocation 
-						    = registerAllocation}
-
-					val registerAllocation
-					  = RA.remove
-					    {memloc = memloc_dst,
-					     registerAllocation
-					     = registerAllocation}
-			  
-					val registerAllocation
-					  = RA.update
-					    {value = {register = register_src,
-						      memloc = memloc_dst,
-						      weight = 1024,
-						      sync = false,
-						      commit = commit_src},
-					     registerAllocation 
-					     = registerAllocation}
-
-					val final_uses = []
-					val final_defs 
-					  = [Operand.register register_src]
-
-					val {assembly = assembly_post,
-					     registerAllocation}
-					  = RA.post {uses = uses,
-						     final_uses = final_uses,
-						     defs = defs,
-						     final_defs = final_defs,
-						     info = info,
-						     registerAllocation 
-						     = registerAllocation}
-				      in
-					{assembly 
-					 = List.concat [assembly_pre,
-							assembly_post],
-					 registerAllocation 
-					 = registerAllocation}
-				      end
-				 else default ()
-			    | _ => default ())
-		     | _ => default ()
+		  case memloc_dst
+		    of SOME memloc_dst
+		     => if MemLocSet.contains(remove,memloc_dst)
+			  then (case memloc_src
+				  of SOME memloc_src
+				   => if List.contains
+				         (memloc_src::(MemLoc.utilized memloc_src),
+					  memloc_dst,
+					  MemLoc.eq)
+					then default ()
+					else default'' memloc_dst
+				   | NONE => default'' memloc_dst)
+			  else (case value_src
+				  of SOME (value_src as {memloc = memloc_src,
+							 sync = sync_src, ...})
+				    => if MemLocSet.contains(dead,memloc_src)
+				          orelse
+					  (MemLocSet.contains(remove,memloc_src)
+					   andalso
+					   sync_src)
+					 then default' (value_src, memloc_dst)
+					 else default ()
+				    | NONE => default ())
+		     | NONE => default ()
 		end
              | CMOVcc {condition, src, dst, size}
                (* Conditional move; p. 112
@@ -6641,15 +7391,18 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
 		  {assembly 
-		   = List.concat [assembly_pre,
-				   assembly_src,
-				   assembly_dst,
-				   [Assembly.instruction instruction],
-				   assembly_post],
+		   = AppendList.appends 
+		     [assembly_pre,
+		      assembly_src,
+		      assembly_dst,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
              | XCHG {src, dst, size}
@@ -6702,14 +7455,17 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
 		  {assembly 
-		   = List.concat [assembly_pre,
-				   assembly_src_dst,
-				   [Assembly.instruction instruction],
-				   assembly_post],
+		   = AppendList.appends 
+		     [assembly_pre,
+		      assembly_src_dst,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
              | pPUSH {src, base, size}
@@ -6802,15 +7558,18 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
 		  {assembly 
-		   = List.concat [assembly_pre,
-				   assembly_base,
-				   assembly_src,
-				   [Assembly.instruction instruction],
-				   assembly_post],
+		   = AppendList.appends 
+		     [assembly_pre,
+		      assembly_base,
+		      assembly_src,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
              | pPOP {dst, base, size}
@@ -6902,15 +7661,18 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
 		  {assembly 
-		   = List.concat [assembly_pre,
-				   assembly_base,
-				   assembly_dst,
-				   [Assembly.instruction instruction],
-				   assembly_post],
+		   = AppendList.appends 
+		     [assembly_pre,
+		      assembly_base,
+		      assembly_dst,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
              | MOVX {oper, src, dst, srcsize, dstsize}
@@ -6988,15 +7750,18 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
 		  {assembly 
-		   = List.concat [assembly_pre,
-				   assembly_src,
-				   assembly_dst,
-				   [Assembly.instruction instruction],
-				   assembly_post],
+		   = AppendList.appends 
+		     [assembly_pre,
+		      assembly_src,
+		      assembly_dst,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
              | XVOM {src, dst, srcsize, dstsize}
@@ -7086,15 +7851,18 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
 		  {assembly 
-		   = List.concat [assembly_pre,
-				   assembly_src,
-				   assembly_dst,
-				   [Assembly.instruction instruction],
-				   assembly_post],
+		   = AppendList.appends 
+		     [assembly_pre,
+		      assembly_src,
+		      assembly_dst,	
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
              | LEA {src, dst, size}
@@ -7170,21 +7938,24 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
 		  {assembly 
-		   = List.concat [assembly_pre,
-				   assembly_src,
-				   assembly_dst,
-				   [Assembly.instruction instruction],
-				   assembly_post],
+		   = AppendList.appends 
+		     [assembly_pre,
+		      assembly_src,
+		      assembly_dst,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
 	     | pFMOV {src, dst, size}
 	       (* Pseudo floating-point move.
 		*)
-	     => (let
+	     => let
 		  fun default ()
 		    = let
 			val {uses,defs,kills} 
@@ -7199,7 +7970,7 @@ struct
 
 			val {operand = final_src,
 			     assembly = assembly_src,
-			     rename = rename_src,
+			     fltrename = fltrename_src,
 			     registerAllocation}
 			  = RA.allocateFltOperand 
 			    {operand = src,
@@ -7216,7 +7987,7 @@ struct
 
 			val {operand = final_dst,
 			     assembly = assembly_dst,
-			     rename = rename_dst,
+			     fltrename = fltrename_dst,
 			     registerAllocation}
 			  = RA.allocateFltOperand 
 			    {operand = dst,
@@ -7231,7 +8002,7 @@ struct
 			     registerAllocation
 			     = registerAllocation}
 
-			val final_src = (RA.renameLift rename_dst) final_src
+			val final_src = (RA.fltrenameLift fltrename_dst) final_src
 
 			val instruction
 			  = Instruction.FLD
@@ -7249,15 +8020,18 @@ struct
 				     final_uses = final_uses,
 				     defs = defs,
 				     final_defs = final_defs,
+				     kills = kills,
 				     info = info,
 				     registerAllocation = registerAllocation}
 		      in
-			{assembly = List.concat
-			            [assembly_pre,
-				     assembly_src,	
-				     assembly_dst,
-				     [Assembly.instruction instruction],
-				     assembly_post],
+			{assembly 
+			 = AppendList.appends
+			   [assembly_pre,
+			    assembly_src,	
+			    assembly_dst,
+			    AppendList.single
+			    (Assembly.instruction instruction),
+			    assembly_post],
 			 registerAllocation = registerAllocation}
 		      end
 
@@ -7275,7 +8049,7 @@ struct
 
 			val {operand = final_src,
 			     assembly = assembly_src,
-			     rename = rename_src,
+			     fltrename = fltrename_src,
 			     registerAllocation}
 			  = RA.allocateFltOperand 
 			    {operand = src,
@@ -7291,7 +8065,7 @@ struct
 
 			val {operand = final_dst,
 			     assembly = assembly_dst,
-			     rename = rename_dst,
+			     fltrename = fltrename_dst,
 			     registerAllocation}
 			  = RA.allocateFltOperand 
 			    {operand = dst,
@@ -7305,7 +8079,7 @@ struct
 			     top = SOME false,
 			     registerAllocation = registerAllocation}
 			    
-			val final_src = (RA.renameLift rename_dst) final_src
+			val final_src = (RA.fltrenameLift fltrename_dst) final_src
 
 			val instruction
 			  = Instruction.FST
@@ -7313,7 +8087,7 @@ struct
 			     size = size,
 			     pop = true}
 			    
-			val {rename = rename_pop,
+			val {fltrename = fltrename_pop,
 			     registerAllocation}
 			  = RA.fltpop {registerAllocation = registerAllocation}
 			    
@@ -7323,9 +8097,9 @@ struct
 			  = Instruction.uses_defs_kills instruction
 		    
 			val final_uses
-			  = List.map(final_uses, RA.renameLift rename_pop)
+			  = List.map(final_uses, RA.fltrenameLift fltrename_pop)
 			val final_defs
-			  = List.map(final_defs, RA.renameLift rename_pop)
+			  = List.map(final_defs, RA.fltrenameLift fltrename_pop)
 
 			val {assembly = assembly_post,
 			     registerAllocation}
@@ -7333,15 +8107,18 @@ struct
 				     final_uses = final_uses,
 				     defs = defs,
 				     final_defs = final_defs,
+				     kills = kills,
 				     info = info,
 				     registerAllocation = registerAllocation}
 		      in
-			{assembly = List.concat 
-			            [assembly_pre,
-				     assembly_src,
-				     assembly_dst,
-				     [Assembly.instruction instruction],
-				     assembly_post],
+			{assembly 
+			 = AppendList.appends 
+			   [assembly_pre,
+			    assembly_src,
+			    assembly_dst,
+			    AppendList.single
+			    (Assembly.instruction instruction),
+			    assembly_post],
 			 registerAllocation = registerAllocation}
 		      end
 		in
@@ -7359,14 +8136,13 @@ struct
 				     commit = commit_src, 
 				     ...},
 			       NONE)
-			    => if List.contains(dead,memloc_src,MemLoc.eq)
+			    => if MemLocSet.contains(dead,memloc_src)
 			          orelse
-				  (List.contains(remove,memloc_src,MemLoc.eq)
+				  (MemLocSet.contains(remove,memloc_src)
 				   andalso
 				   sync_src)
-				 then if List.contains(remove,
-						       memloc_dst,
-						       MemLoc.eq)
+				 then if MemLocSet.contains(remove,
+							    memloc_dst)
 					then default' ()
 					else let
 					       val registerAllocation
@@ -7407,20 +8183,22 @@ struct
 						    final_uses = final_uses,
 						    defs = defs,
 						    final_defs = final_defs,
+						    kills = kills,
 						    info = info,
 						    registerAllocation 
 						    = registerAllocation}
 					     in
-					       {assembly = List.concat 
-						           [assembly_pre,
-							    assembly_post],
+					       {assembly 
+						= AppendList.appends 
+						  [assembly_pre,
+						   assembly_post],
 						registerAllocation 
 						= registerAllocation}
 					     end
 				 else default ()
 			    | _ => default ())
                      | _ => default ()
-		end)
+		end
              | pFLDC {oper, dst, size}
              (* Pseudo floating-point load constant.
 	      *)
@@ -7437,7 +8215,7 @@ struct
 
 		  val {operand = final_dst,
 		       assembly = assembly_dst,
-		       rename = rename_dst,
+		       fltrename = fltrename_dst,
 		       registerAllocation}
 		    = RA.allocateFltOperand {operand = dst,
 					     options = {fltregister = true,
@@ -7466,14 +8244,17 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
-		  {assembly = List.concat
-		              [assembly_pre,
-			       assembly_dst,
-			       [Assembly.instruction instruction],
-			       assembly_post],
+		  {assembly 
+		   = AppendList.appends
+		     [assembly_pre,
+		      assembly_dst,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
 	     | pFMOVFI {src, dst, srcsize, dstsize}
@@ -7509,7 +8290,7 @@ struct
 
 		  val {operand = final_dst,
 		       assembly = assembly_dst,
-		       rename = rename_dst,
+		       fltrename = fltrename_dst,
 		       registerAllocation}
 		    = RA.allocateFltOperand {operand = dst,
 					     options = {fltregister = true,
@@ -7539,36 +8320,39 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
-		  {assembly = List.concat
-		              [assembly_pre,
-                               assembly_src,
-			       assembly_dst,
-			       [Assembly.instruction instruction],
-			       assembly_post],
+		  {assembly 
+		   = AppendList.appends
+		     [assembly_pre,
+		      assembly_src,
+		      assembly_dst,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
 	     | pFMOVTI {src, dst, srcsize, dstsize}
 	     (* Pseudo floating-point to integer.
 	      *)
 	     => let
+		  val {uses,defs,kills} 
+		    = Instruction.uses_defs_kills instruction
+		  val {assembly = assembly_pre,
+		       registerAllocation}
+		    = RA.pre {uses = uses,
+			      defs = defs,
+			      kills = kills,
+			      info = info,
+			      registerAllocation = registerAllocation}
+
 		  fun default ()
 		    = let
-			val {uses,defs,kills} 
-			  = Instruction.uses_defs_kills instruction
-			val {assembly = assembly_pre,
-			     registerAllocation}
-			  = RA.pre {uses = uses,
-				    defs = defs,
-				    kills = kills,
-				    info = info,
-				    registerAllocation = registerAllocation}
-
 			val {operand = final_src,
 			     assembly = assembly_src,
-			     rename = rename_src,
+			     fltrename = fltrename_src,
 			     registerAllocation}
 			  = RA.allocateFltOperand 
 			    {operand = src,
@@ -7616,33 +8400,26 @@ struct
 				     final_uses = final_uses,
 				     defs = defs,
 				     final_defs = final_defs,
+				     kills = kills,
 				     info = info,
 				     registerAllocation = registerAllocation}
 		      in
-			{assembly = List.concat
-			            [assembly_pre,
-				     assembly_src,
-				     assembly_dst,
-				     [Assembly.instruction instruction],
-				     assembly_post],
+			{assembly 
+			 = AppendList.appends
+			   [assembly_pre,
+			    assembly_src,
+			    assembly_dst,
+			    AppendList.single
+			    (Assembly.instruction instruction),
+			    assembly_post],
 			 registerAllocation = registerAllocation}
 		      end
 
 		  fun default' ()
 		    = let
-			val {uses,defs,kills} 
-			  = Instruction.uses_defs_kills instruction
-			val {assembly = assembly_pre,
-			     registerAllocation}
-			  = RA.pre {uses = uses,
-				    defs = defs,
-				    kills = kills,
-				    info = info,
-				    registerAllocation = registerAllocation}
-
 			val {operand = final_src,
 			     assembly = assembly_src,
-			     rename = rename_src,
+			     fltrename = fltrename_src,
 			     registerAllocation}
 			  = RA.allocateFltOperand 
 			    {operand = src,
@@ -7658,7 +8435,7 @@ struct
 
 			val {operand = final_dst,
 			     assembly = assembly_dst,
-			     rename = rename_dst,
+			     fltrename = fltrename_dst,
 			     registerAllocation}
 			  = RA.allocateFltOperand 
 			    {operand = dst,
@@ -7673,7 +8450,7 @@ struct
 			     registerAllocation = registerAllocation}
 
 			val final_src 
-			  = (RA.renameLift rename_dst) final_src
+			  = (RA.fltrenameLift fltrename_dst) final_src
 
 			val instruction
 			  = Instruction.FIST
@@ -7681,7 +8458,7 @@ struct
 			     size = Size.toFPI dstsize,
 			     pop = true}
 
-			val {rename = rename_pop,
+			val {fltrename = fltrename_pop,
 			     registerAllocation}
 			  = RA.fltpop {registerAllocation = registerAllocation}
 
@@ -7691,9 +8468,9 @@ struct
 			  = Instruction.uses_defs_kills instruction
  
 			val final_uses
-			  = List.map(final_uses, RA.renameLift rename_pop)
+			  = List.map(final_uses, RA.fltrenameLift fltrename_pop)
 			val final_defs
-			  = List.map(final_defs, RA.renameLift rename_pop)
+			  = List.map(final_defs, RA.fltrenameLift fltrename_pop)
 
 			val {assembly = assembly_post,
 			     registerAllocation}
@@ -7701,16 +8478,19 @@ struct
 				     final_uses = final_uses,
 				     defs = defs,
 				     final_defs = final_defs,
+				     kills = kills,
 				     info = info,
 				     registerAllocation 
 				     = registerAllocation}
 		      in
-			{assembly = List.concat 
-			            [assembly_pre,
-				     assembly_src,
-				     assembly_dst,
-				     [Assembly.instruction instruction],
-				     assembly_post],
+			{assembly 
+			 = AppendList.appends 
+			   [assembly_pre,
+			    assembly_src,
+			    assembly_dst,
+			    AppendList.single
+			    (Assembly.instruction instruction),
+			    assembly_post],
 			 registerAllocation = registerAllocation}
 		      end
 		in
@@ -7749,7 +8529,7 @@ struct
 		  val {final_src1,
 		       final_src2,
 		       assembly_src1_src2,
-		       rename_src1_src2,
+		       fltrename_src1_src2,
 		       pop,
 		       pop',
 		       registerAllocation}
@@ -7759,7 +8539,7 @@ struct
 				 = let
 				     val {operand = final_src1_src2,
 					  assembly = assembly_src1_src2,
-					  rename = rename_src1_src2,
+					  fltrename = fltrename_src1_src2,
 					  registerAllocation}
 				       = RA.allocateFltOperand 
 				         {operand = src1,
@@ -7777,7 +8557,7 @@ struct
 				     {final_src1 = final_src1_src2,
 				      final_src2 = final_src1_src2,
 				      assembly_src1_src2 = assembly_src1_src2,
-				      rename_src1_src2 = rename_src1_src2,
+				      fltrename_src1_src2 = fltrename_src1_src2,
 				      pop = b,
 				      pop' = false,
 				      registerAllocation = registerAllocation}
@@ -7798,7 +8578,7 @@ struct
 				 = let
 				     val {operand = final_src2,
 					  assembly = assembly_src2,
-					  rename = rename_src2,
+					  fltrename = fltrename_src2,
 					  registerAllocation}
 				       = RA.allocateFltOperand 
 				         {operand = src2,
@@ -7815,7 +8595,7 @@ struct
 					 
 				     val {operand = final_src1,
 					  assembly = assembly_src1,
-					  rename = rename_src1,
+					  fltrename = fltrename_src1,
 					  registerAllocation}
 				       = RA.allocateFltOperand 
 				       {operand = src1,
@@ -7831,15 +8611,16 @@ struct
 					= registerAllocation}
 		    
 				     val final_src2 
-				       = (RA.renameLift rename_src1) final_src2
+				       = (RA.fltrenameLift fltrename_src1) final_src2
 				   in
 				     {final_src1 = final_src1,
 				      final_src2 = final_src2,
-				      assembly_src1_src2 = List.concat 
-				                           [assembly_src2,
-							    assembly_src1],
-				      rename_src1_src2 = rename_src1 o 
-				                         rename_src2,
+				      assembly_src1_src2 
+				      = AppendList.appends 
+				        [assembly_src2,
+					 assembly_src1],
+				      fltrename_src1_src2 = fltrename_src1 o 
+				                         fltrename_src2,
 				      pop = b,
 				      pop' = false,
 				      registerAllocation = registerAllocation}
@@ -7850,7 +8631,7 @@ struct
 				     val {operand_top = final_src1,
 					  operand_one = final_src2,
 					  assembly = assembly_src1_src2,
-					  rename = rename_src1_src2,
+					  fltrename = fltrename_src1_src2,
 					  registerAllocation}
 				       = RA.allocateFltStackOperands
 				         {operand_top = src1,
@@ -7868,7 +8649,7 @@ struct
 				     {final_src1 = final_src1,
 				      final_src2 = final_src2,
 				      assembly_src1_src2 = assembly_src1_src2,
-				      rename_src1_src2 = rename_src1_src2,
+				      fltrename_src1_src2 = fltrename_src1_src2,
 				      pop = true,
 				      pop' = true,
 				      registerAllocation = registerAllocation}
@@ -7886,15 +8667,13 @@ struct
 						  registerAllocation
 						  = registerAllocation}
 					      of SOME {sync,...}
-					       => if List.contains
+					       => if MemLocSet.contains
 						     (dead,
-						      memloc_src2,
-						      MemLoc.eq)
+						      memloc_src2)
 						     orelse
-						     (List.contains
+						     (MemLocSet.contains
 						      (remove,
-						       memloc_src2,
-						       MemLoc.eq)
+						       memloc_src2)
 						      andalso
 						      sync)
 						    then default' ()
@@ -7911,7 +8690,7 @@ struct
 				       else default false
 				  | _ => default false
 			     end
- 
+
 		  val instruction
 		    = Instruction.FCOM
 		      {src = final_src2,
@@ -7919,33 +8698,33 @@ struct
 		       pop = pop,
 		       pop' = pop'}
 			    
-		  val {rename = rename_pop,
+		  val {fltrename = fltrename_pop,
 		       registerAllocation}
 		    = if pop
 			then if pop'
 			       then let
-				      val {rename = rename_pop,
+				      val {fltrename = fltrename_pop,
 					   registerAllocation}
 					= RA.fltpop {registerAllocation 
 						     = registerAllocation}
-				      val {rename = rename_pop',
+				      val {fltrename = fltrename_pop',
 					   registerAllocation}
 					= RA.fltpop {registerAllocation 
 						     = registerAllocation}
 				    in
-				      {rename = rename_pop' o rename_pop,
+				      {fltrename = fltrename_pop' o fltrename_pop,
 				       registerAllocation= registerAllocation}
 				    end
 			       else let
-				      val {rename = rename_pop,
+				      val {fltrename = fltrename_pop,
 					   registerAllocation}
 					= RA.fltpop {registerAllocation 
 						     = registerAllocation}
 				    in
-				      {rename = rename_pop,
+				      {fltrename = fltrename_pop,
 				       registerAllocation = registerAllocation}
 				    end
-			else {rename = FltRegister.id,
+			else {fltrename = FltRegister.id,
 			      registerAllocation = registerAllocation}
 
 		  val {uses = final_uses,
@@ -7954,9 +8733,9 @@ struct
 		    = Instruction.uses_defs_kills instruction
 		    
 		  val final_uses
-		    = List.map(final_uses, RA.renameLift rename_pop)
+		    = List.map(final_uses, RA.fltrenameLift fltrename_pop)
 		  val final_defs
-		    = List.map(final_defs, RA.renameLift rename_pop)
+		    = List.map(final_defs, RA.fltrenameLift fltrename_pop)
 
 		  val {assembly = assembly_post,
 		       registerAllocation}
@@ -7964,13 +8743,17 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
-		  {assembly = List.concat [assembly_pre,
-					    assembly_src1_src2,
-					    [Assembly.instruction instruction],
-					    assembly_post],
+		  {assembly 
+		   = AppendList.appends 
+		     [assembly_pre,
+		      assembly_src1_src2,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
 	     | pFUCOM {src1, src2, size}
@@ -7996,7 +8779,7 @@ struct
 		  val {final_src1,
 		       final_src2,
 		       assembly_src1_src2,
-		       rename_src1_src2,
+		       fltrename_src1_src2,
 		       pop,
 		       pop',
 		       registerAllocation}
@@ -8006,7 +8789,7 @@ struct
 				 = let
 				     val {operand = final_src1_src2,
 					  assembly = assembly_src1_src2,
-					  rename = rename_src1_src2,
+					  fltrename = fltrename_src1_src2,
 					  registerAllocation}
 				       = RA.allocateFltOperand 
 				         {operand = src1,
@@ -8024,7 +8807,7 @@ struct
 				     {final_src1 = final_src1_src2,
 				      final_src2 = final_src1_src2,
 				      assembly_src1_src2 = assembly_src1_src2,
-				      rename_src1_src2 = rename_src1_src2,
+				      fltrename_src1_src2 = fltrename_src1_src2,
 				      pop = b,
 				      pop' = false,
 				      registerAllocation = registerAllocation}
@@ -8045,7 +8828,7 @@ struct
 				 = let
 				     val {operand = final_src2,
 					  assembly = assembly_src2,
-					  rename = rename_src2,
+					  fltrename = fltrename_src2,
 					  registerAllocation}
 				       = RA.allocateFltOperand 
 				         {operand = src2,
@@ -8062,7 +8845,7 @@ struct
 					 
 				     val {operand = final_src1,
 					  assembly = assembly_src1,
-					  rename = rename_src1,
+					  fltrename = fltrename_src1,
 					  registerAllocation}
 				       = RA.allocateFltOperand 
 				       {operand = src1,
@@ -8078,15 +8861,16 @@ struct
 					= registerAllocation}
 		    
 				     val final_src2 
-				       = (RA.renameLift rename_src1) final_src2
+				       = (RA.fltrenameLift fltrename_src1) final_src2
 				   in
 				     {final_src1 = final_src1,
 				      final_src2 = final_src2,
-				      assembly_src1_src2 = List.concat
-				                           [assembly_src2,
-							    assembly_src1],
-				      rename_src1_src2 = rename_src1 o 
-				                         rename_src2,
+				      assembly_src1_src2 
+				      = AppendList.appends
+				        [assembly_src2,
+					 assembly_src1],
+				      fltrename_src1_src2 = fltrename_src1 o 
+				                         fltrename_src2,
 				      pop = b,
 				      pop' = false,
 				      registerAllocation = registerAllocation}
@@ -8109,8 +8893,8 @@ struct
 							= final_src2,
 							assembly 
 							= assembly_src1_src2,
-							rename 
-							= rename_src1_src2,
+							fltrename 
+							= fltrename_src1_src2,
 							registerAllocation}
 						     = RA.allocateFltStackOperands
 						       {operand_top = src1,
@@ -8129,8 +8913,8 @@ struct
 						    final_src2 = final_src2,
 						    assembly_src1_src2 
 						    = assembly_src1_src2,
-						    rename_src1_src2 
-						    = rename_src1_src2,
+						    fltrename_src1_src2 
+						    = fltrename_src1_src2,
 						    pop = true,
 						    pop' = true,
 						    registerAllocation 
@@ -8169,33 +8953,33 @@ struct
 		       pop = pop,
 		       pop' = pop'}
 
-		  val {rename = rename_pop,
+		  val {fltrename = fltrename_pop,
 		       registerAllocation}
 		    = if pop
 			then if pop'
 			       then let
-				      val {rename = rename_pop,
+				      val {fltrename = fltrename_pop,
 					   registerAllocation}
 					= RA.fltpop {registerAllocation 
 						     = registerAllocation}
-				      val {rename = rename_pop',
+				      val {fltrename = fltrename_pop',
 					   registerAllocation}
 					= RA.fltpop {registerAllocation 
 						     = registerAllocation}
 				    in
-				      {rename = rename_pop' o rename_pop,
+				      {fltrename = fltrename_pop' o fltrename_pop,
 				       registerAllocation= registerAllocation}
 				    end
 			       else let
-				      val {rename = rename_pop,
+				      val {fltrename = fltrename_pop,
 					   registerAllocation}
 					= RA.fltpop {registerAllocation 
 						     = registerAllocation}
 				    in
-				      {rename = rename_pop,
+				      {fltrename = fltrename_pop,
 				       registerAllocation = registerAllocation}
 				    end
-			else {rename = FltRegister.id,
+			else {fltrename = FltRegister.id,
 			      registerAllocation = registerAllocation}
 
 		  val {uses = final_uses,
@@ -8204,9 +8988,9 @@ struct
 		    = Instruction.uses_defs_kills instruction
 		    
 		  val final_uses
-		    = List.map(final_uses, RA.renameLift rename_pop)
+		    = List.map(final_uses, RA.fltrenameLift fltrename_pop)
 		  val final_defs
-		    = List.map(final_defs, RA.renameLift rename_pop)
+		    = List.map(final_defs, RA.fltrenameLift fltrename_pop)
 
 		  val {assembly = assembly_post,
 		       registerAllocation}
@@ -8214,13 +8998,17 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
-		  {assembly = List.concat [assembly_pre,
-					    assembly_src1_src2,
-					    [Assembly.instruction instruction],
-					    assembly_post],
+		  {assembly 
+		   = AppendList.appends 
+		     [assembly_pre,
+		      assembly_src1_src2,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
 	     | pFBinA {oper, src, dst, size}
@@ -8257,7 +9045,7 @@ struct
 		  val {final_src,
 		       final_dst,
 		       assembly_src_dst,
-		       rename_src_dst,
+		       fltrename_src_dst,
 		       oper,
 		       pop,
 		       registerAllocation}
@@ -8265,7 +9053,7 @@ struct
 			then let
 			       val {operand = final_src_dst,
 				    assembly = assembly_src_dst,
-				    rename = rename_src_dst,
+				    fltrename = fltrename_src_dst,
 				    registerAllocation}
 				 = RA.allocateFltOperand 
 				   {operand = dst,
@@ -8283,7 +9071,7 @@ struct
 			       {final_src = final_src_dst,
 				final_dst = final_src_dst,
 				assembly_src_dst = assembly_src_dst,
-				rename_src_dst = rename_src_dst,
+				fltrename_src_dst = fltrename_src_dst,
 				oper = oper,
 				pop = false,
 				registerAllocation = registerAllocation}
@@ -8293,7 +9081,7 @@ struct
 				 = let
 				     val {operand = final_src,
 					  assembly = assembly_src,
-					  rename = rename_src,
+					  fltrename = fltrename_src,
 					  registerAllocation}
 				       = RA.allocateFltOperand 
 				         {operand = src,
@@ -8310,7 +9098,7 @@ struct
 
 				     val {operand = final_dst,
 					  assembly = assembly_dst,
-					  rename = rename_dst,
+					  fltrename = fltrename_dst,
 					  registerAllocation}
 				       = case final_src
 					   of Operand.Address _
@@ -8360,15 +9148,16 @@ struct
 					       "allocateRegisters: pFBinA, final_src"
 
 				     val final_src 
-				       = (RA.renameLift rename_dst) final_src
+				       = (RA.fltrenameLift fltrename_dst) final_src
 				   in
 				     {final_src = final_src,
 				      final_dst = final_dst,
-				      assembly_src_dst = List.concat
-				                         [assembly_src,
-							  assembly_dst],
-				      rename_src_dst = rename_dst o
-				                       rename_src,
+				      assembly_src_dst 
+				      = AppendList.appends
+				        [assembly_src,
+					 assembly_dst],
+				      fltrename_src_dst = fltrename_dst o
+				                          fltrename_src,
 				      oper = oper,
 				      pop = false,
 				      registerAllocation = registerAllocation}
@@ -8378,7 +9167,7 @@ struct
 				 = let
 				     val {operand = final_dst,
 					  assembly = assembly_dst,
-					  rename = rename_dst,
+					  fltrename = fltrename_dst,
 					  registerAllocation}
 				       = RA.allocateFltOperand 
 				         {operand = dst,
@@ -8395,7 +9184,7 @@ struct
 					 
 				     val {operand = final_src,
 					  assembly = assembly_src,
-					  rename = rename_src,
+					  fltrename = fltrename_src,
 					  registerAllocation}
 				       = RA.allocateFltOperand 
 				         {operand = src,
@@ -8411,15 +9200,16 @@ struct
 					  = registerAllocation}
 		    
 				     val final_dst 
-				       = (RA.renameLift rename_src) final_dst
+				       = (RA.fltrenameLift fltrename_src) final_dst
 				   in
 				     {final_src = final_src,
 				      final_dst = final_dst,
-				      assembly_src_dst = List.concat
-				                         [assembly_dst,
-							  assembly_src],
-				      rename_src_dst = rename_src o 
-				                       rename_dst,
+				      assembly_src_dst 
+				      = AppendList.appends
+				        [assembly_dst,
+					 assembly_src],
+				      fltrename_src_dst = fltrename_src o 
+				                          fltrename_dst,
 				      oper = oper,
 				      pop = true,
 				      registerAllocation = registerAllocation}
@@ -8429,7 +9219,7 @@ struct
 				 = let
 				     val {operand = final_dst,
 					  assembly = assembly_dst,
-					  rename = rename_dst,
+					  fltrename = fltrename_dst,
 					  registerAllocation}
 				       = RA.allocateFltOperand 
 				         {operand = dst,
@@ -8446,7 +9236,7 @@ struct
 					 
 				     val {operand = final_src,
 					  assembly = assembly_src,
-					  rename = rename_src,
+					  fltrename = fltrename_src,
 					  registerAllocation}
 				       = RA.allocateFltOperand 
 				         {operand = src,
@@ -8462,7 +9252,7 @@ struct
 					  = registerAllocation}
 
 				     val final_dst 
-				       = (RA.renameLift rename_src) final_dst
+				       = (RA.fltrenameLift fltrename_src) final_dst
 
 				     val {fltregister = fltregister_dst,
 					  memloc = memloc_dst,
@@ -8490,11 +9280,12 @@ struct
 				   in
 				     {final_src = final_dst,
 				      final_dst = final_src,
-				      assembly_src_dst = List.concat
-				                         [assembly_dst,
-							  assembly_src],
-				      rename_src_dst = rename_src o 
-				                       rename_dst,
+				      assembly_src_dst 
+				      = AppendList.appends
+				        [assembly_dst,
+					 assembly_src],
+				      fltrename_src_dst = fltrename_src o 
+				                          fltrename_dst,
 				      oper = Instruction.fbina_reverse oper,
 				      pop = true,
 				      registerAllocation = registerAllocation}
@@ -8504,7 +9295,7 @@ struct
 				 = let
 				     val {operand = final_dst,
 					  assembly = assembly_dst,
-					  rename = rename_dst,
+					  fltrename = fltrename_dst,
 					  registerAllocation}
 				       = RA.allocateFltOperand 
 				         {operand = dst,
@@ -8521,7 +9312,7 @@ struct
 					 
 				     val {operand = final_src,
 					  assembly = assembly_src,
-					  rename = rename_src,
+					  fltrename = fltrename_src,
 					  registerAllocation}
 				       = RA.allocateFltOperand 
 				         {operand = src,
@@ -8537,15 +9328,15 @@ struct
 					  = registerAllocation}
 
 				     val final_dst 
-				       = (RA.renameLift rename_src) final_dst
+				       = (RA.fltrenameLift fltrename_src) final_dst
 
-				     val {rename = rename_pop,
+				     val {fltrename = fltrename_pop,
 					  registerAllocation}
 				       = RA.fltpop 
 				         {registerAllocation
 					  = registerAllocation}
 
-				     val {rename = rename_push,
+				     val {fltrename = fltrename_push,
 					  registerAllocation}
 				       = RA.fltpush
 				         {value
@@ -8559,13 +9350,14 @@ struct
 				   in
 				     {final_src = final_dst,
 				      final_dst = final_src,
-				      assembly_src_dst = List.concat
-				                         [assembly_dst,
-							  assembly_src],
-				      rename_src_dst = rename_push o
-				                       rename_pop o
-						       rename_src o 
-				                       rename_dst,
+				      assembly_src_dst 
+				      = AppendList.appends
+				        [assembly_dst,
+					 assembly_src],
+				      fltrename_src_dst = fltrename_push o
+				                          fltrename_pop o
+							  fltrename_src o 
+							  fltrename_dst,
 				      oper = Instruction.fbina_reverse oper,
 				      pop = false,
 				      registerAllocation = registerAllocation}
@@ -8591,13 +9383,11 @@ struct
 						  {fltregister 
 						   = fltregister_dst,
 						   ...}))
-					 => if List.contains(dead,
-							     memloc_src,
-							     MemLoc.eq)
+					 => if MemLocSet.contains(dead,
+								  memloc_src)
 					       orelse
-					       (List.contains(remove,
-							      memloc_src,
-							      MemLoc.eq)
+					       (MemLocSet.contains(remove,
+								   memloc_src)
 						andalso
 						sync_src)
 					      then if FltRegister.eq
@@ -8608,13 +9398,11 @@ struct
 					      else default ()
 					 | (SOME {sync = sync_src,...},
 					    NONE)
-					 => if List.contains(dead,
-							     memloc_src,
-							     MemLoc.eq)
+					 => if MemLocSet.contains(dead,
+								  memloc_src)
 					       orelse
-					       (List.contains(remove,
-							      memloc_src,
-							      MemLoc.eq)
+					       (MemLocSet.contains(remove,
+								   memloc_src)
 						andalso
 						sync_src)
 					      then default''' memloc_dst
@@ -8626,13 +9414,11 @@ struct
 					    registerAllocation 
 					    = registerAllocation}
 					of SOME {sync = sync_src,...}
-					 => if List.contains(dead,
-							     memloc_src,
-							     MemLoc.eq)
+					 => if MemLocSet.contains(dead,
+								  memloc_src)
 					       orelse
-					       (List.contains(remove,
-							      memloc_src,
-							      MemLoc.eq)
+					       (MemLocSet.contains(remove,
+								   memloc_src)
 						andalso
 						sync_src)
 					      then default' ()
@@ -8656,19 +9442,19 @@ struct
 		       size = size,
 		       pop = pop}
 
-		  val {rename = rename_pop,
+		  val {fltrename = fltrename_pop,
 		       registerAllocation}
 		    = if pop
 			then let
-			       val {rename = rename_pop,
+			       val {fltrename = fltrename_pop,
 				    registerAllocation}
 				 = RA.fltpop {registerAllocation 
 					      = registerAllocation}
 			     in
-			       {rename = rename_pop,
+			       {fltrename = fltrename_pop,
 				registerAllocation = registerAllocation}
 			     end
-			else {rename = FltRegister.id,
+			else {fltrename = FltRegister.id,
 			      registerAllocation = registerAllocation}
 
 		  val {uses = final_uses,
@@ -8677,9 +9463,9 @@ struct
 		    = Instruction.uses_defs_kills instruction
 		    
 		  val final_uses
-		    = List.map(final_uses, RA.renameLift rename_pop)
+		    = List.map(final_uses, RA.fltrenameLift fltrename_pop)
 		  val final_defs
-		    = List.map(final_defs, RA.renameLift rename_pop)
+		    = List.map(final_defs, RA.fltrenameLift fltrename_pop)
 
 		  val {assembly = assembly_post,
 		       registerAllocation}
@@ -8687,15 +9473,18 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 
 		in
-		  {assembly = List.concat
-		              [assembly_pre,
-			       assembly_src_dst,
-			       [Assembly.instruction instruction],
-			       assembly_post],
+		  {assembly 
+		   = AppendList.appends
+		     [assembly_pre,
+		      assembly_src_dst,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
 	     | pFUnA {oper, dst, size}
@@ -8722,7 +9511,7 @@ struct
 
 		  val {operand = final_dst,
 		       assembly = assembly_dst,
-		       rename = rename_dst,
+		       fltrename = fltrename_dst,
 		       registerAllocation}
 		    = RA.allocateFltOperand {operand = dst,
 					     options = {fltregister = true,
@@ -8751,14 +9540,17 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
-		  {assembly = List.concat
-		              [assembly_pre,
-			       assembly_dst,
-			       [Assembly.instruction instruction],
-			       assembly_post],
+		  {assembly 
+		   = AppendList.appends
+		     [assembly_pre,
+		      assembly_dst,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
 	     | pFPTAN {dst, size}
@@ -8785,7 +9577,7 @@ struct
 			      registerAllocation = registerAllocation}
 
 		  val {assembly = assembly_free,
-		       rename = rename_free,
+		       fltrename = fltrename_free,
 		       registerAllocation}
 		    = RA.freeFltRegister
 		      {info = info,
@@ -8796,7 +9588,7 @@ struct
 
 		  val {operand = final_dst,
 		       assembly = assembly_dst,
-		       rename = rename_dst,
+		       fltrename = fltrename_dst,
 		       registerAllocation}
 		    = RA.allocateFltOperand {operand = dst,
 					     options = {fltregister = true,
@@ -8824,18 +9616,22 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
-		  {assembly = List.concat
-		              [assembly_pre,
-			       assembly_dst,
-			       [Assembly.instruction instruction],
-			       [Assembly.instruction_fst
-				{dst = Operand.fltregister FltRegister.top,
-				 size = Size.DBLE,
-				 pop = true}],
-			       assembly_post],
+		  {assembly 
+		   = AppendList.appends
+		     [assembly_pre,
+		      assembly_dst,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      AppendList.single
+		      (Assembly.instruction_fst
+		       {dst = Operand.fltregister FltRegister.top,
+			size = Size.DBLE,
+			pop = true}),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
 	     | pFBinAS {oper, src, dst, size}
@@ -8870,7 +9666,7 @@ struct
 		  val {operand_top = final_dst,
 		       operand_one = final_src,
 		       assembly = assembly_dst_src,
-		       rename = rename_dst_src,
+		       fltrename = fltrename_dst_src,
 		       registerAllocation}
 		    = RA.allocateFltStackOperands
 		      {operand_top = dst,
@@ -8899,14 +9695,17 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
-		  {assembly = List.concat
-		              [assembly_pre,
-			       assembly_dst_src,
-			       [Assembly.instruction instruction],
-			       assembly_post],
+		  {assembly 
+		   = AppendList.appends
+		     [assembly_pre,
+		      assembly_dst_src,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
 	     | pFBinASP {oper, src, dst, size}
@@ -8941,7 +9740,7 @@ struct
 		  val {operand_top = final_src,
 		       operand_one = final_dst,
 		       assembly = assembly_src_dst,
-		       rename = rename_src_dst,
+		       fltrename = fltrename_src_dst,
 		       registerAllocation}
 		    = RA.allocateFltStackOperands
 		      {operand_top = src,
@@ -8959,7 +9758,7 @@ struct
 		    = Instruction.FBinASP
 		      {oper = oper}
 
-		  val {rename = rename_pop,
+		  val {fltrename = fltrename_pop,
 		       registerAllocation}
 		    = RA.fltpop {registerAllocation = registerAllocation}
 
@@ -8969,9 +9768,9 @@ struct
 		    = Instruction.uses_defs_kills instruction
 		    
 		  val final_uses
-		    = List.map(final_uses, RA.renameLift rename_pop)
+		    = List.map(final_uses, RA.fltrenameLift fltrename_pop)
 		  val final_defs
-		    = List.map(final_defs, RA.renameLift rename_pop)
+		    = List.map(final_defs, RA.fltrenameLift fltrename_pop)
 
 		  val {assembly = assembly_post,
 		       registerAllocation}
@@ -8979,14 +9778,17 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
-		  {assembly = List.concat
-		              [assembly_pre,
-			       assembly_src_dst,
-			       [Assembly.instruction instruction],
-			       assembly_post],
+		  {assembly 
+		   = AppendList.appends
+		     [assembly_pre,
+		      assembly_src_dst,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
 	     | FLDCW {src}
@@ -9040,14 +9842,17 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
 		  {assembly 
-		   = List.concat [assembly_pre,
-				   assembly_src,
-				   [Assembly.instruction instruction],
-				   assembly_post],
+		   = AppendList.appends 
+		     [assembly_pre,
+		      assembly_src,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
 	     | FSTCW {dst, check}
@@ -9102,14 +9907,17 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
 		  {assembly 
-		   = List.concat [assembly_pre,
-				   assembly_dst,
-				   [Assembly.instruction instruction],
-				   assembly_post],
+		   = AppendList.appends 
+		     [assembly_pre,
+		      assembly_dst,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
 	     | FSTSW {dst, check}
@@ -9167,14 +9975,17 @@ struct
 			       final_uses = final_uses,
 			       defs = defs,
 			       final_defs = final_defs,
+			       kills = kills,
 			       info = info,
 			       registerAllocation = registerAllocation}
 		in
 		  {assembly 
-		   = List.concat [assembly_pre,
-				  assembly_dst,
-				  [Assembly.instruction instruction],
-				  assembly_post],
+		   = AppendList.appends 
+		     [assembly_pre,
+		      assembly_dst,
+		      AppendList.single
+		      (Assembly.instruction instruction),
+		      assembly_post],
 		   registerAllocation = registerAllocation}
 		end
 	     | _ => Error.bug "allocateRegisters: unimplemented"
@@ -9193,48 +10004,43 @@ struct
 	= let 
 	    val {assembly, registerAllocation}
 	      = case directive
-		  of Reset
+		  of Assume {assumes}
+                   => RegisterAllocation.assume 
+		      {assumes = assumes,
+		       info = info,
+		       registerAllocation = registerAllocation}
+		   | FltAssume {assumes}
+		   => RegisterAllocation.fltassume
+		      {assumes = assumes,
+		       info = info,
+		       registerAllocation = registerAllocation}
+	           | Cache {caches}
+	           => RegisterAllocation.cache 
+		      {caches = caches,
+		       info = info,
+		       registerAllocation = registerAllocation}
+		   | FltCache {caches}
+		   => RegisterAllocation.fltcache
+		      {caches = caches,
+		       info = info,
+		       registerAllocation = registerAllocation}
+		   | Reset
 		   => RegisterAllocation.reset 
 		      {registerAllocation = registerAllocation}
-		   | Reserve {register}
-		   => RegisterAllocation.reserve 
-		      {register = register,
-		       registerAllocation = registerAllocation}
-		   | Unreserve {register}
-		   => RegisterAllocation.unreserve 
-	              {register = register,
-		       registerAllocation = registerAllocation}
-	           | Cache {register, memloc, reserve}
-	           => RegisterAllocation.cache 
-		      {register = register,
-		       memloc = memloc,
-		       reserve = reserve,
+		   | Force {commit_memlocs, commit_classes, 
+			    remove_memlocs, remove_classes, 
+			    dead_memlocs, dead_classes}
+		   => RegisterAllocation.force
+		      {commit_memlocs = commit_memlocs,
+		       commit_classes = commit_classes,
+		       remove_memlocs = remove_memlocs,
+		       remove_classes = remove_classes,
+		       dead_memlocs = dead_memlocs,
+		       dead_classes = dead_classes,
 		       info = info,
 		       registerAllocation = registerAllocation}
-		   | Assume {register, memloc, weight, sync, reserve}
-                   => RegisterAllocation.assume 
-		      {register = register,
-		       memloc = memloc,
-		       weight = weight,
-		       sync = sync,
-		       reserve = reserve,
-		       registerAllocation = registerAllocation}
-		   | Eject {memlocs}
-		   => RegisterAllocation.eject 
-		      {memlocs = memlocs,
-		       info = info,
-		       registerAllocation = registerAllocation}
-		   | Commit {memlocs}
-		   => RegisterAllocation.commit
-		      {memlocs = memlocs,
-		       info = info,
-		       registerAllocation = registerAllocation}
-	           | Flush
-		   => RegisterAllocation.flush
-		      {info = info,
-		       registerAllocation = registerAllocation}
-	           | Clear
-		   => RegisterAllocation.clear
+		   | CCall
+		   => RegisterAllocation.ccall
 		      {info = info,
 		       registerAllocation = registerAllocation}
 		   | Return {memloc}
@@ -9247,15 +10053,32 @@ struct
 		      {memloc = memloc,
 		       info = info,
 		       registerAllocation = registerAllocation}		      
-		      
-	    val s = Directive.toString directive
+		   | Reserve {registers}
+		   => RegisterAllocation.reserve 
+		      {registers = registers,
+		       registerAllocation = registerAllocation}
+		   | Unreserve {registers}
+		   => RegisterAllocation.unreserve 
+	              {registers = registers,
+		       registerAllocation = registerAllocation}
+		   | ClearFlt
+		   => RegisterAllocation.clearflt
+		      {info = info,
+		       registerAllocation = registerAllocation}
+		   | SaveRegAlloc {live, id}
+		   => RegisterAllocation.saveregalloc 
+		      {live = live,
+		       id = id,
+		       info = info,
+		       registerAllocation = registerAllocation}
+		   | RestoreRegAlloc {live, id}
+		   => RegisterAllocation.restoreregalloc
+		      {live = live,
+		       id = id,
+		       info = info,
+		       registerAllocation = registerAllocation}
 	  in
-	    {assembly = if !Control.Native.commented > 1
-			  then List.concat
-			       [(Assembly.comment ("begin directive: " ^ s))::
-				assembly,
-				[Assembly.comment ("end directive: " ^ s)]]
-			  else assembly,
+	    {assembly = assembly,
 	     registerAllocation = registerAllocation}
 	  end
 
@@ -9275,10 +10098,12 @@ struct
 	    val {assembly, registerAllocation}
 	      = List.fold
 	        (assembly,
-		 {assembly = [],
+		 {assembly = AppendList.empty,
 		  registerAllocation = registerAllocation},
 		 fn ((Comment s,info), {assembly, registerAllocation})
-		  => {assembly = ([Comment s])::assembly,
+		  => {assembly = AppendList.snoc
+		                 (assembly,
+				  Comment s),
 		      registerAllocation = registerAllocation}
 		   | ((Directive d,info), {assembly, registerAllocation})
 		   => let
@@ -9288,44 +10113,54 @@ struct
 			    {directive = d,
 			     info = info,
 			     registerAllocation = registerAllocation}
-(*
-			    handle exn
+			    handle Fail msg
 			    => (print (toString (Directive d));
 				print "\n";
 				print (RegisterAllocation.toString 
 				       registerAllocation);
 				print "\n";
-				Error.bug (case exn
-					     of Fail msg => msg
-					      | Spill => "spill"))
-*)
+				Error.bug msg)
+			    | RegisterAllocation.Spill
+			    => (print (toString (Directive d));
+				print "\n";
+				print (RegisterAllocation.toString 
+				       registerAllocation);
+				print "\n";
+				Error.bug "Spill")
 
 			val assembly''
-			  = ((fn l 
-			       => if !Control.Native.commented > 2
-				    then (Assembly.comment
-					  (Directive.toString d))::
-				         l
-				    else l) o
-			     (fn l
-			       => if !Control.Native.commented > 3
-				    then (Liveness.toComments info) @ l
-				    else l))
-			    (if !Control.Native.commented > 4
-			       then List.concat
-				    [assembly',
-				     RegisterAllocation.toComments 
-				     registerAllocation]
-			       else assembly')
+			  = AppendList.appends
+			    [if !Control.Native.commented > 1
+			       then AppendList.fromList
+				    [Assembly.comment
+				     (String.make (60, #"*")),
+				     (Assembly.comment
+				      (Directive.toString d))]
+			       else AppendList.empty,
+			     if !Control.Native.commented > 4
+			       then AppendList.fromList
+				    (Liveness.toComments info)
+			       else AppendList.empty,
+			     assembly',
+			     if !Control.Native.commented > 5
+			       then (RegisterAllocation.toComments 
+				     registerAllocation)
+			       else AppendList.empty]
 		      in
-			{assembly = assembly''::assembly,
+			{assembly = AppendList.append 
+			            (assembly, 
+				     assembly''),
 			 registerAllocation = registerAllocation}
 		      end
 		   | ((PseudoOp p,info), {assembly, registerAllocation})
-		   => {assembly = ([PseudoOp p])::assembly,
+		   => {assembly = AppendList.snoc
+		                  (assembly,
+				   PseudoOp p),
 		       registerAllocation = registerAllocation}
 		   | ((Label l,info), {assembly, registerAllocation})
-		   => {assembly = ([Label l])::assembly,
+		   => {assembly = AppendList.snoc
+		                  (assembly,
+				   Label l),
 		       registerAllocation = registerAllocation}
 		   | ((Instruction i,info), {assembly, registerAllocation})
 		   => let
@@ -9335,41 +10170,56 @@ struct
 			    {instruction = i,
 			     info = info,
 			     registerAllocation = registerAllocation}
-(*
-			    handle exn
+			    handle Fail msg
 			    => (print (toString (Instruction i));
 				print "\n";
 				print (RegisterAllocation.toString 
 				       registerAllocation);
 				print "\n";
-				Error.bug (case exn
-					     of Fail msg => msg
-					      | Spill => "spill"))
-*)
+				Error.bug msg)
+			    | RegisterAllocation.Spill
+			    => (print (toString (Instruction i));
+				print "\n";
+				print (RegisterAllocation.toString 
+				       registerAllocation);
+				print "\n";
+				Error.bug "Spill")
 
 			val assembly''
-			  = ((fn l 
-			       => if !Control.Native.commented > 2
-				    then (Assembly.comment
-					  (Instruction.toString i))::
-				         l
-				    else l) o
-			     (fn l
-			       => if !Control.Native.commented > 3
-				    then (Liveness.toComments info) @ l
-				    else l))
-			    (if !Control.Native.commented > 4
-			       then List.concat
-				    [assembly',
-				     RegisterAllocation.toComments 
-				     registerAllocation]
-			       else assembly')
+			  = AppendList.appends
+			    [if !Control.Native.commented > 1
+			       then AppendList.fromList
+				    [Assembly.comment
+				     (String.make (60, #"*")),
+				     (Assembly.comment
+				      (Instruction.toString i))]
+			       else AppendList.empty,
+			     if !Control.Native.commented > 4
+			       then AppendList.fromList
+				    (Liveness.toComments info)
+			       else AppendList.empty,
+			     assembly',
+			     if !Control.Native.commented > 5
+			       then (RegisterAllocation.toComments 
+				     registerAllocation)
+			       else AppendList.empty]
 		      in
-			{assembly = assembly''::assembly,
+			{assembly = AppendList.append
+			            (assembly,
+				     assembly''),
 			 registerAllocation = registerAllocation}
 		      end)
+		
+	    val assembly = AppendList.toList assembly
+	    val assembly = if !Control.Native.commented > 1
+			     then (Assembly.comment
+				   (String.make (60, #"&"))::
+				   Assembly.comment
+				   (String.make (60, #"&"))::
+				   assembly)
+			     else assembly
 	  in
-	    {assembly = List.concatRev assembly,
+	    {assembly = assembly,
 	     registerAllocation = registerAllocation}
 	  end
 
@@ -9382,35 +10232,102 @@ struct
   fun allocateRegisters {assembly : Assembly.t list list,
 			 liveness : bool} :
                         Assembly.t list list
-    = List.map(assembly,
-	       fn assembly 
-	        => let
-		     val assembly
-		       = if liveness
-			   then Liveness.toLiveness assembly
-			   else Liveness.toNoLiveness assembly
+    = let
+	val {get = getInfo : Label.t -> Label.t option,
+	     set = setInfo}
+	  = Property.getSetOnce
+	    (Label.plist,
+	     Property.initConst NONE)
 
-		     val {assembly, registerAllocation}
-		       = Assembly.allocateRegisters 
-		         {assembly = assembly,
-			  registerAllocation 
-			  = RegisterAllocation.empty ()}
-(*
-			 handle Fail msg
-			 => (List.foreach(assembly,
-					  fn (asm,info)
-					   => (print (Assembly.toString asm);
-					       print "\n";
-					       print (Liveness.toString info);
-					       print "\n"));
-			     Error.bug msg)
-*)
-		   in
-		     assembly
-		   end)
+	val assembly
+	  = List.fold
+	    (assembly,
+	     [],
+	     fn (assembly,assembly')
+	      => let
+		   val assembly
+		     = if liveness
+			 then Liveness.toLiveness assembly
+			 else Liveness.toNoLiveness assembly
+
+		   val {assembly, registerAllocation}
+		     = Assembly.allocateRegisters
+		       {assembly = assembly,
+			registerAllocation
+			= RegisterAllocation.empty ()}
+		       handle Fail msg
+		       => (List.foreach(assembly,
+					fn (asm,info)
+					 => (print (Assembly.toString asm);
+					     print "\n";
+					     print (Liveness.toString info);
+					     print "\n"));
+			   Error.bug msg)
+
+		   val rec doit 
+		     = fn (Assembly.Comment _)::assembly 
+		        => doit assembly
+			| (Assembly.PseudoOp (PseudoOp.P2align 2))::assembly
+		        => doit' (assembly, [])
+		        | _ => false
+		   and doit'
+		     = fn ((Assembly.Comment _)::assembly, labels) 
+		        => doit' (assembly, labels)
+		        | ((Assembly.PseudoOp (PseudoOp.Local _))::assembly, labels)
+		        => doit' (assembly, labels)
+			| ((Assembly.Label l)::assembly, labels)
+		        => doit' (assembly, l::labels)
+		        | (assembly, labels) => doit'' (assembly, labels)
+		   and doit''
+		     = fn ((Assembly.Comment _)::assembly, labels)
+		        => doit'' (assembly, labels)
+			| ((Assembly.Instruction 
+			    (Instruction.JMP 
+			     {target = Operand.Label label, 
+			      absolute = false}))::assembly, labels)
+		        => doit''' (assembly, labels, label)
+		        | _ => false
+		   and doit'''
+		     = fn ([], labels, label)
+		        => (List.foreach
+			    (labels, 
+			     fn label' => setInfo(label', SOME label))
+			    ; true)
+			| ((Assembly.Comment _)::assembly, labels, label)
+		        => doit''' (assembly, labels, label)
+		        | _ => false
+		 in
+		   if doit assembly
+		     then assembly'
+		     else assembly::assembly'
+		 end)
+
+	fun unroll label
+	  = case getInfo label
+	      of NONE => label
+	       | SOME label' => unroll label'
+
+	fun replacer _ oper
+	  = (case (Operand.deImmediate oper, Operand.deLabel oper)
+	       of (SOME immediate, _) 
+		=> (case Immediate.deLabel immediate
+		      of SOME label => Operand.immediate_label (unroll label)
+		       | NONE => oper)
+	        | (_, SOME label) => Operand.label (unroll label)
+		| _ => oper)
+
+	val assembly
+	  = List.fold
+	    (assembly,
+	     [],
+	     fn (assembly,assembly')
+	      => (List.map(assembly, Assembly.replace replacer))::assembly')
+      in
+	assembly
+      end
 
   val (allocateRegisters, allocateRegisters_msg)
-    = tracer
+    = tracerTop
       "allocateRegisters"
       allocateRegisters
 
