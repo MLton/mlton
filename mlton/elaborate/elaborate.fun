@@ -216,8 +216,10 @@ fun elaborateProgram (program,
 		     val closure =
 			Env.functorClosure
 			(E, prefix, argInt,
-			 fn (formal, nest) => (Env.extendStrid (E, arg, formal)
-					       ; elabStrexp (body, nest)))
+			 fn (formal, nest) =>
+			 Env.scope (E, fn () =>
+				    (Env.extendStrid (E, arg, formal)
+				     ; elabStrexp (body, nest))))
 		  in Env.extendFctid (E, name, closure)
 		  end)
 		 ; Decs.empty)
