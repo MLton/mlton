@@ -112,10 +112,17 @@ datatype bufStyle =
   | Buffered of buf
     
 datatype outstream' =
-   Out of {fd: FS.file_desc,
+   Out of {bufStyle: bufStyle,
 	   closed: bool ref,
-	   bufStyle: bufStyle}
+	   fd: FS.file_desc,
+	   name: string}
 type outstream = outstream' ref
+
+local
+   fun make f (ref (Out r)) = f r
+in
+   val outName = make #name
+end
 
 fun equalsOut (os1, os2) = os1 = os2
 
@@ -125,13 +132,13 @@ val mkOutstream = ref
 val getOutstream = !
 val setOutstream = op :=
    
-fun flushOut (ref (Out {fd, bufStyle, closed, ...})): unit =
+fun flushOut (out as ref (Out {fd, bufStyle, closed, ...})): unit =
    (case (!closed, bufStyle) of
        (true, _) => ()
      | (_,    Unbuffered) => ()
      | (_,    Line b) => flush (fd, b)
      | (_,    Buffered b) => flush (fd, b))
-       handle exn => raise IO.Io {name = "<unimplemented>",
+       handle exn => raise IO.Io {name = outName out,
 				  function = "flushOut",
 				  cause = exn}
 
@@ -148,7 +155,7 @@ fun closeOut (out as ref (Out {fd, closed, ...})): unit =
 	     ; openOuts := List.filter (fn out' => out <> out') (!openOuts))
       in (* flushOut out must be before closed := true *)
 	 (flushOut out; clean ())
-	 handle exn => (clean (); raise IO.Io {name = "<unimplemented",
+	 handle exn => (clean (); raise IO.Io {name = outName out,
 					       function = "closeOut",
 					       cause = exn})
       end
@@ -175,30 +182,33 @@ val newOut =
 		       then flushOut out
 		    else closeOut out) (!openOuts))
    in
-      fn (fd, bufStyle) =>
+      fn (fd, bufStyle, name) =>
       let
-	 val out = ref (Out {fd = fd,
+	 val out = ref (Out {bufStyle = bufStyle,
 			     closed = ref false,
-			     bufStyle = bufStyle})
+			     fd = fd,
+			     name = name})
       in openOuts := out :: !openOuts
 	 ; out
       end
    end
 
-val stdErr = newOut (FS.stderr, Unbuffered)
+val stdErr = newOut (FS.stderr, Unbuffered, "<stderr>")
 
 val newOut =
-   fn fd =>
+   fn (fd, name) =>
    let
       val b = Buf {size = ref 0,
 		   array = Primitive.Array.array bufSize}
-   in newOut (fd,
-	      if Posix.ProcEnv.isatty fd
-		 then Line b
-	      else Buffered b)
+      val bufStyle =
+	 if Posix.ProcEnv.isatty fd
+	    then Line b
+	 else Buffered b
+   in
+      newOut (fd, bufStyle, name)
    end
 
-val stdOut = newOut FS.stdout
+val stdOut = newOut (FS.stdout, "<stdout>")
 
 local
    val readWrite =
@@ -210,8 +220,9 @@ in
       (newOut (FS.createf (path,
                            FS.O_WRONLY,
                            FS.O.flags (FS.O.trunc::fileTypeFlags),
-                           readWrite)))
-      handle exn => raise IO.Io {name = "<unimplemented>",
+                           readWrite),
+	       path))
+      handle exn => raise IO.Io {name = path,
 				 function = "openOut",
 				 cause = exn}
 	 
@@ -219,15 +230,16 @@ in
       (newOut (FS.createf (path,
                            FS.O_WRONLY,
                            FS.O.flags (FS.O.append::fileTypeFlags),
-                           readWrite)))
-      handle exn => raise IO.Io {name = "<unimplemented>",
+                           readWrite),
+	       path))
+      handle exn => raise IO.Io {name = path,
 				 function = "openAppend",
 				 cause = exn}
 end
 
-fun output (out as ref (Out {fd, closed, bufStyle, ...}), s): unit =
+fun output (out as ref (Out {bufStyle, closed, fd, ...}), s): unit =
    if !closed
-      then raise IO.Io {name = "<unimplemented>",
+      then raise IO.Io {name = outName out,
 			function = "output",
 			cause = IO.ClosedStream}
    else
@@ -250,7 +262,7 @@ fun output (out as ref (Out {fd, closed, bufStyle, ...}), s): unit =
 	    Unbuffered => put ()
 	  | Line b => doit (b, fn () => NativeVector.hasLine s)
 	  | Buffered b => doit (b, fn () => false)
-      end handle exn => raise IO.Io {name = "<unimplemented>",
+      end handle exn => raise IO.Io {name = outName out,
 				     function = "output",
 				     cause = exn}
 
@@ -259,7 +271,7 @@ local
 in
    fun output1 (out as ref (Out {fd, closed, bufStyle, ...}), c: elem): unit =
       if !closed
-	 then raise IO.Io {name = "<unimplemented>",
+	 then raise IO.Io {name = outName out,
 			   function = "output1",
 			   cause = IO.ClosedStream}
       else
@@ -286,7 +298,7 @@ in
 		   ; flushGen (fd, buf1, 0, 1, PIO.writeArr))
 	     | Line b => doit (b, NativeVector.isLine c)
 	     | Buffered b => doit (b, false)
-	 end handle exn => raise IO.Io {name = "<unimplemented>",
+	 end handle exn => raise IO.Io {name = outName out,
 					function = "output",
 					cause = exn}
 end
@@ -304,13 +316,15 @@ structure Buf =
 	       eof: bool ref,
 	       fd: FS.file_desc,
 	       first: int ref, (* index of first character *)
-	       last: int ref  (* one past the index of the last char *)
-	       }
-
-      local fun make f (T r) = f r
+	       last: int ref,  (* one past the index of the last char *)
+	       name: string}
+	 
+      local
+	 fun make f (T r) = f r
       in
 	 val closed = make #closed
 	 val fd = make #fd
+	 val name = make #name
       end
 
       val isClosed = ! o closed
@@ -340,13 +354,14 @@ structure Buf =
 					else closeIn b)
 		(!openIns))
 	 in
-	    fn fd =>
-	    let val b = T {fd = fd,
-			   eof = ref false,
+	    fn (fd, name) =>
+	    let val b = T {buf = Primitive.Array.array bufSize,
 			   closed = ref false,
+			   eof = ref false,
+			   fd = fd,
 			   first = ref 0,
 			   last = ref 0,
-			   buf = Primitive.Array.array bufSize}
+			   name = name}
 	    in openIns := b :: !openIns
 	       ; b
 	    end
@@ -355,10 +370,10 @@ structure Buf =
       (* update returns true iff there is a character now available.
        * Equivalently, it returns the value of not (!eof).
        *)
-      fun update (T {buf, closed, eof, fd, first, last, ...},
+      fun update (T {buf, closed, eof, fd, first, last, name, ...},
 		  function: string): bool =
 	 if !closed
-	    then raise IO.Io {name = "<unimplemented>",
+	    then raise IO.Io {name = name,
 			      function = function,
 			      cause = IO.ClosedStream}
 	 else if !eof
@@ -423,7 +438,8 @@ structure Buf =
 	       else NONE
 	 end
 
-      fun inputN (T {fd, eof, first, last, buf, ...}, bytesToRead: int): vector =
+      fun inputN (b as T {buf, eof, fd, first, last, name, ...},
+		  bytesToRead: int): vector =
 	 if !eof
 	    then (eof := false; NativeVector.empty)
 	 else
@@ -463,7 +479,7 @@ structure Buf =
 			   (Array.extract (dst, 0, SOME bytesRead)))
 		  end
 	    end
-	 handle exn => raise IO.Io {name = "<unimplemented>",
+	 handle exn => raise IO.Io {name = name,
 				    function = "inputN",
 				    cause = exn}
 
@@ -479,7 +495,7 @@ structure Buf =
 		 else SOME 0
 	 end
 
-      fun inputAll (T {fd, eof, first, last, buf, ...}) =
+      fun inputAll (T {buf, eof, fd, first, last, name, ...}) =
 	 if !eof
 	    then (eof := false; NativeVector.empty)
 	 else
@@ -492,7 +508,7 @@ structure Buf =
 		     else loop (v :: vs)
 		  end
 	    in loop vs
-	    end handle exn => raise IO.Io {name = "<unimplemented>",
+	    end handle exn => raise IO.Io {name = name,
 					   function = "inputAll",
 					   cause = exn}
 
@@ -693,15 +709,16 @@ fun closeIn (T r) =
       Buf b => Buf.closeIn b
     | Stream s => StreamIO.closeIn s
 
-fun newIn fd = T (ref (Buf (Buf.newIn fd)))
+fun newIn (fd, name) = T (ref (Buf (Buf.newIn (fd, name))))
    
-val stdIn = newIn FS.stdin
+val stdIn = newIn (FS.stdin, "<stdin>")
 
 fun openIn path =
    newIn (FS.openf (path,
                     FS.O_RDONLY,
-                    FS.O.flags fileTypeFlags))
-   handle exn => raise IO.Io {name = "<unimplemented>",
+                    FS.O.flags fileTypeFlags),
+	  path)
+   handle exn => raise IO.Io {name = path,
 			      function = "openIn",
 			      cause = exn}
 

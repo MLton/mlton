@@ -114,7 +114,7 @@ signature TEXT_IO_EXTRA =
       val equalsIn: instream * instream -> bool
       val equalsOut: outstream * outstream -> bool
       val inFd: instream -> Posix.IO.file_desc
-      val newIn: Posix.IO.file_desc -> instream
-      val newOut: Posix.IO.file_desc -> outstream
+      val newIn: Posix.IO.file_desc * string -> instream
+      val newOut: Posix.IO.file_desc * string -> outstream
       val outFd: outstream -> Posix.IO.file_desc
    end

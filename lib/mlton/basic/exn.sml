@@ -30,8 +30,8 @@ fun layout e =
 		  | SOME se => seq [str (OS.errorMsg se), str ": "],
 		       str s]
        | Fail s => str s
-       | IO.Io {cause, function, ...} =>
-	    seq [str (concat ["IO ", function, ": "]), layout cause]
+       | IO.Io {cause, function, name, ...} =>
+	    seq [str (concat [function, " ", name, ": "]), layout cause]
        | _ => seq [str "unhandled exception: ", str (exnName e)]
    end
 

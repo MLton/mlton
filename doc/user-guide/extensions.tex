@@ -274,8 +274,8 @@ signature MLTON_IO =
       val inFd: instream -> Posix.IO.file_desc
       val mkstemp: string -> string * outstream
       val mkstemps: {prefix: string, suffix: string} -> string * outstream
-      val newIn: Posix.IO.file_desc -> instream
-      val newOut: Posix.IO.file_desc -> outstream
+      val newIn: Posix.IO.file_desc * string -> instream
+      val newOut: Posix.IO.file_desc * string -> outstream
       val outFd: outstream -> Posix.IO.file_desc
    end
 \end{verbatim}
@@ -292,11 +292,13 @@ security risks.
 \entry{mkstemps \{prefix, suffix\}}
 {\tt mkstemps} is like {\tt mkstemp}, except it has both a prefix and suffix.
 
-\entry{newIn fd} create a new instream from file descriptor {\tt 
-fd}.
+\entry{newIn (fd, name)} create a new instream from file descriptor
+{\tt fd}, with {\tt name} used in {\tt Io} exceptions if later
+raised.
 
-\entry{newOut} create a new outstream from file descriptor {\tt 
-fd}.
+\entry{newOut (fd, name)} create a new outstream from file descriptor
+{\tt  fd}, with {\tt name} used in {\tt Io} exceptions if later
+raised.
 
 \entry{outFd out} return the file descriptor corresponding to
 {\tt out}.

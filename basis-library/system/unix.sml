@@ -99,21 +99,25 @@ structure Unix: UNIX =
     local
       fun mkInstreamOf (newIn, closeIn) (PROC {ins, ...}) =
 	case !ins of
-	  FD file_desc => let val str' = newIn file_desc
+	  FD file_desc => let val str' = newIn (file_desc, "<process>")
 			  in ins := STR (str', closeIn); str'
 			  end
 	| STR (str, _) => str
-      fun mkOutstreamOf (newOut, closeOut) (PROC {outs, ...}) =
+      fun mkOutstreamOf (newOut, closeOut) (PROC {outs, pid, ...}) =
 	case !outs of
-	  FD file_desc => let val str' = newOut file_desc
+	  FD file_desc => let val str' = newOut (file_desc, "<process>")
 			  in outs := STR (str', closeOut); str'
 			  end
 	| STR (str, _) => str
     in
-      fun textInstreamOf proc = mkInstreamOf (TextIO.newIn, TextIO.closeIn) proc
-      fun textOutstreamOf proc = mkOutstreamOf (TextIO.newOut, TextIO.closeOut) proc
-      fun binInstreamOf proc = mkInstreamOf (BinIO.newIn, BinIO.closeIn) proc
-      fun binOutstreamOf proc = mkOutstreamOf (BinIO.newOut, BinIO.closeOut) proc
+      fun textInstreamOf proc =
+	 mkInstreamOf (TextIO.newIn, TextIO.closeIn) proc
+      fun textOutstreamOf proc =
+	 mkOutstreamOf (TextIO.newOut, TextIO.closeOut) proc
+      fun binInstreamOf proc =
+	 mkInstreamOf (BinIO.newIn, BinIO.closeIn) proc
+      fun binOutstreamOf proc =
+	 mkOutstreamOf (BinIO.newOut, BinIO.closeOut) proc
     end
     fun streamsOf pr = (textInstreamOf pr, textOutstreamOf pr)
 

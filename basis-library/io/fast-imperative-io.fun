@@ -241,9 +241,9 @@ functor FastImperativeIOExtraFile
 	  end
           handle exn => liftExn file "openAppend" exn
       end
-      val newOut = fn fd => newOut {fd = fd, 
-				    name = "<unknown>", 
-				    appendMode = false}
+      val newOut = fn (fd, name) => newOut {fd = fd, 
+					    name = name,
+					    appendMode = false}
       val outFd = SIO.outFd o getOutstream
 
       (*---------------*)
@@ -275,6 +275,6 @@ functor FastImperativeIOExtraFile
 		 name = file}
 	end
         handle exn => liftExn file "newIn" exn
-      val newIn = fn fd => newIn {fd = fd, name = "<unknown>"}
+      val newIn = fn (fd, name) => newIn {fd = fd, name = name}
       fun inFd is = withIn (is, BI.inFd, SIO.inFd)
    end

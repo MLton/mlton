@@ -49,8 +49,8 @@ signature IMPERATIVE_IO_EXTRA_FILE =
 
       val inFd: instream -> Posix.IO.file_desc
       val outFd: outstream -> Posix.IO.file_desc
-      val newIn: Posix.IO.file_desc -> instream
-      val newOut: Posix.IO.file_desc -> outstream
+      val newIn: Posix.IO.file_desc * string -> instream
+      val newOut: Posix.IO.file_desc * string -> outstream
       val stdIn: instream
       val stdErr: outstream
       val stdOut: outstream

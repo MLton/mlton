@@ -86,14 +86,17 @@ val fork = Trace.trace ("Process.fork", Command.layout, Pid.layout) fork
 
 fun closes l = List.foreach (l, FileDesc.close)
 
+val pname = "<process>"
+   
 fun forkIn (c: Out.t -> unit): Pid.t * In.t =
    let
       val {infd, outfd} = FileDesc.pipe ()
       val pid = fork (fn () =>
-		     (FileDesc.close infd
-		      ; c (MLton.TextIO.newOut outfd)))
+		      (FileDesc.close infd
+		       ; c (MLton.TextIO.newOut (outfd, pname))))
       val _ = FileDesc.close outfd
-   in (pid, MLton.TextIO.newIn infd)
+   in
+      (pid, MLton.TextIO.newIn (infd, pname))
    end
 
 fun forkOut (c: In.t -> unit): Pid.t * Out.t =
@@ -101,9 +104,10 @@ fun forkOut (c: In.t -> unit): Pid.t * Out.t =
       val {infd, outfd} = FileDesc.pipe ()
       val pid = fork (fn () =>
 		      (FileDesc.close outfd
-		       ; c (MLton.TextIO.newIn infd)))
+		       ; c (MLton.TextIO.newIn (infd, pname))))
       val _ = FileDesc.close infd
-   in (pid, MLton.TextIO.newOut outfd)
+   in
+      (pid, MLton.TextIO.newOut (outfd, pname))
    end
 
 fun forkInOut (c: In.t * Out.t -> unit): Pid.t * In.t * Out.t =
@@ -112,9 +116,12 @@ fun forkInOut (c: In.t * Out.t -> unit): Pid.t * In.t * Out.t =
       val {infd = in2, outfd = out2} = FileDesc.pipe ()
       val pid = fork (fn () =>
 		      (closes [in1, out2]
-		       ; c (MLton.TextIO.newIn in2, MLton.TextIO.newOut out1)))
+		       ; c (MLton.TextIO.newIn (in2, pname),
+			    MLton.TextIO.newOut (out1, pname))))
       val _ = closes [in2, out1]
-   in (pid, MLton.TextIO.newIn in1, MLton.TextIO.newOut out2)
+   in (pid,
+       MLton.TextIO.newIn (in1, pname),
+       MLton.TextIO.newOut (out2, pname))
    end
 
 fun wait (p: Pid.t): unit =

@@ -62,8 +62,8 @@ val listenAt: Port.t -> passive_socket =
 fun sockToIO sock =
    let
       val fd = Socket.sockToFD sock
-      val ins = TextIO.newIn fd
-      val out = TextIO.newOut (Posix.IO.dup fd)
+      val ins = TextIO.newIn (fd, "<socket>")
+      val out = TextIO.newOut (Posix.IO.dup fd, "<socket>")
    in (ins, out)
    end
 

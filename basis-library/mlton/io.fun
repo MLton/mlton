@@ -14,7 +14,8 @@ fun mkstemps {prefix, suffix}: string * outstream =
 	     newOut (createf (name, O_WRONLY, O.flags [O.excl],
 			      let open S
 			      in flags [irusr, iwusr]
-			      end)))
+			      end),
+		     name))
 	 end handle e as PosixError.SysErr (_, SOME s) =>
 	    if s = Posix.Error.exist
 	       then loop ()
