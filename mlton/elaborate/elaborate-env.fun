@@ -1323,7 +1323,7 @@ fun layout' (E: t, keep, showUsed): Layout.t =
 			typeSpec (domain, range))
       val strs = doit (strs, fn {domain, range, ...} => strSpec (domain, range))
    in
-      align [types, vals, sigs, fcts, strs]
+      align [types, vals, strs, fcts, sigs]
    end
 
 fun layout E = layout' (E, fn _ => true, {showUsed = false})
