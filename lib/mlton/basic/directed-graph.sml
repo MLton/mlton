@@ -49,9 +49,9 @@ structure Node =
 
       fun removeDuplicateSuccessors (Node {successors, ...}) =
 	 let
-	    val {get, ...} = Property.get (plist,
-					   Property.initFun (fn _ => ref false))
-	    val ns =
+	    val {get, rem, ...} =
+	       Property.get (plist, Property.initFun (fn _ => ref false))
+	    val es =
 	       List.fold (! successors, [], fn (e, ac) =>
 			  let
 			     val r = get (Edge.to e)
@@ -60,7 +60,8 @@ structure Node =
 				then ac
 			     else (r := true ; e :: ac)
 			  end)
-	    val _ = successors := ns
+	    val () = List.foreach (es, rem o Edge.to)
+	    val () = successors := es
 	 in
 	    ()
 	 end
@@ -538,7 +539,8 @@ fun dominators (graph, {root}) =
 			  setIdom (n, Idom (idom n))
 		       end)
       val _ = Int.for (0, numNodes, fn i => remove (ndfs i))
-   in {idom = idomFinal}
+   in
+      {idom = idomFinal}
    end
 
 fun dominatorTree (graph, {root: Node.t, nodeValue: Node.t -> 'a}): 'a Tree.t =
