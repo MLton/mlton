@@ -17,10 +17,8 @@
 #endif
 
 #if defined (__sun__)
-enum {
-	INT_MIN = 0x80000000,
-	INT_MAX = 0x7FFFFFFF,
-};
+#define INT_MIN ((int)0x80000000)
+#define	INT_MAX ((int)0x7FFFFFFF)
 #endif
 
 /*
