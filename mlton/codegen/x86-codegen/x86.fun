@@ -682,6 +682,15 @@ struct
 	  base = base' andalso
 	  index = index' andalso
 	  scale = scale'
+
+      fun shift (T {disp, base, index, scale}, i)
+	= T {disp = case disp
+		      of SOME disp 
+		       => SOME (Immediate.binexp {oper = Immediate.Addition,
+						  exp1 = disp,
+						  exp2 = i})
+		       | NONE => SOME i,
+	     base = base, index = index, scale = scale}
     end
 
   structure MemLoc =
@@ -950,6 +959,96 @@ struct
 	      T {memloc = memloc2 as U {class = class2, ...}, ...})
 	   => Class.mayAlias(class1, class2) andalso
 	      mayAliasU(memloc1, memloc2)
+
+      val rec mayAliasOrdImmIndex 
+	= fn ({immIndex = immIndex1, size = size1},
+	      {immIndex = immIndex2, size = size2})
+	   => let
+		val size1 = Size.toBytes size1
+		val size2 = Size.toBytes size2
+	      in
+		case (Immediate.eval (case immIndex1
+					of NONE => Immediate.const_int 0
+					 | SOME immIndex => immIndex),
+		      Immediate.eval (case immIndex2
+					of NONE => Immediate.const_int 0
+					 | SOME immIndex => immIndex))
+		  of (SOME pos1, SOME pos2)
+		   => (let
+			 val pos1 = Word.toInt pos1
+			 val pos2 = Word.toInt pos2
+		       in 
+			 if pos1 < pos2 
+			   then if pos2 < (pos1 + size1) 
+				  then SOME LESS
+				  else NONE
+			   else if pos1 < (pos2 + size2)
+				  then SOME GREATER
+				  else NONE
+		       end
+		       handle Overflow => NONE)
+	           | _ => SOME EQUAL
+	  end
+      and mayAliasOrdU
+	= fn (U {immBase = SOME immBase1, memBase = NONE,
+		 immIndex = immIndex1, memIndex = NONE,
+		 scale = scale1, size = size1, ...},
+	      U {immBase = SOME immBase2, memBase = NONE,
+		 immIndex = immIndex2, memIndex = NONE,
+		 scale = scale2, size = size2, ...})
+	   => if Immediate.eq(immBase1, immBase2)
+		then mayAliasOrdImmIndex ({immIndex = immIndex1, 
+					   size = size1},
+					  {immIndex = immIndex2,
+					   size = size2})
+		else NONE
+	   | (U {immBase = SOME immBase1, memBase = NONE,
+		 immIndex = immIndex1, memIndex = SOME memIndex1,
+		 scale = scale1, size = size1, ...},
+	      U {immBase = SOME immBase2, memBase = NONE,
+		 immIndex = immIndex2, memIndex = SOME memIndex2,
+		 scale = scale2, size = size2, ...})
+	   => if Immediate.eq(immBase1, immBase2)
+		then if not (eq(memIndex1, memIndex2))
+		       then SOME EQUAL
+		       else mayAliasOrdImmIndex ({immIndex = immIndex1,
+						  size = size1},
+						 {immIndex = immIndex2,
+						  size = size2})
+		else NONE
+	   | (U {immBase = NONE, memBase = SOME memBase1,
+		 immIndex = immIndex1, memIndex = NONE,
+		 scale = scale1, size = size1, ...},
+	      U {immBase = NONE, memBase = SOME memBase2,
+		 immIndex = immIndex2, memIndex = NONE,
+		 scale = scale2, size = size2, ...})
+	   => if not (eq(memBase1, memBase2))
+		then SOME EQUAL
+		else mayAliasOrdImmIndex ({immIndex = immIndex1,
+					   size = size1},
+					  {immIndex = immIndex2,
+					   size = size2})
+	   | (U {immBase = NONE, memBase = SOME memBase1,
+		 immIndex = immIndex1, memIndex = SOME memIndex1,
+		 scale = scale1, size = size1, ...},
+	      U {immBase = NONE, memBase = SOME memBase2,
+		 immIndex = immIndex2, memIndex = SOME memIndex2,
+		 scale = scale2, size = size2, ...})
+	   => if (not (eq(memBase1, memBase2))
+		  orelse
+		  not (eq(memIndex1, memIndex2)))
+		then SOME EQUAL
+		else mayAliasOrdImmIndex ({immIndex = immIndex1,
+					   size = size1},
+					  {immIndex = immIndex2,
+					   size = size2})
+	   | _ => SOME EQUAL
+      and mayAliasOrd
+	= fn (T {memloc = memloc1 as U {class = class1, ...}, ...},
+	      T {memloc = memloc2 as U {class = class2, ...}, ...})
+	   => if Class.mayAlias(class1, class2) 
+		then mayAliasOrdU(memloc1, memloc2)
+		else NONE
 
       val compare
 	= fn (T {counter = counter1, ...},

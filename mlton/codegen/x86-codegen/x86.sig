@@ -163,6 +163,7 @@ signature X86 =
 			   base: Register.t option,
 			   index: Register.t option,
 			   scale: Scale.t option}
+	val shift : t * Immediate.t -> t
       end
 
     structure MemLoc :
@@ -225,6 +226,7 @@ signature X86 =
 
 	val utilized : t -> t list
 	val mayAlias : t * t -> bool
+	val mayAliasOrd : t * t -> order option
 
 	val replace : (t -> t) -> t -> t
     end
