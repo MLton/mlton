@@ -68,6 +68,7 @@ exn.sig
 finalizable.sig
 gc.sig
 int-inf.sig
+int-inf.sml
 io.sig
 itimer.sig
 mlton.sig

@@ -4,6 +4,7 @@ Group is
 ../lib/mlyacc/stream.sml
 ../lib/mlyacc/parser2.sml
 ../lib/mlyacc/join.sml
+../lib/mlton-stubs/int-inf.sml
 ../lib/mlton-stubs/real.sml
 ../lib/mlton/pervasive/pervasive.sml
 ../lib/mlton/basic/dynamic-wind.sig
