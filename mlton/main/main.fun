@@ -99,9 +99,10 @@ fun setTargetType (target: string, usage): unit =
 		| _ => ())
 	 end
 
-fun warnDeprecated flag =
+fun warnDeprecated (flag, use) =
    Out.output (Out.error,
-	       concat ["Warning: -", flag, " is deprecated\n"])
+	       concat ["Warning: -", flag, " is deprecated.  ",
+		       "Use ", use, ".\n"])
    
 fun makeOptions {usage} = 
    let
@@ -128,18 +129,18 @@ fun makeOptions {usage} =
        (Expert, "allow-export", " {false|true}",
 	"allow _export expression in program",
 	Bool (fn b =>
-	      (warnDeprecated "allow-export"
-	       ; (Control.Elaborate.default Control.Elaborate.allowExport) := b))),
+	      (warnDeprecated ("allow-export", "-default-ann")
+	       ; Control.Elaborate.default Control.Elaborate.allowExport := b))),
        (Expert, "allow-import", " {false|true}",
 	"allow _import expression in program",
 	Bool (fn b =>
-	      (warnDeprecated "allow-import"
-	       ; (Control.Elaborate.default Control.Elaborate.allowImport) := b))),
+	      (warnDeprecated ("allow-import", "-default-ann")
+	       ; Control.Elaborate.default Control.Elaborate.allowImport := b))),
        (Expert, "basis", " {2002|1997|...}",
 	"select Basis Library revision to prefix to the program",
 	SpaceString (fn s =>
 		     let
-			val () = warnDeprecated "basis"
+			val () = warnDeprecated ("basis", "mlb files")
 			val s' = concat ["basis-", s]
 		     in
 			if List.contains (basisLibs, s', String.equals)
@@ -174,8 +175,8 @@ fun makeOptions {usage} =
        (Expert, "dead-code", " {true|false}",
 	"annotated dead code elimination",
 	Bool (fn b =>
-	      (warnDeprecated "dead-code"
-	       ; (Control.Elaborate.enabled Control.Elaborate.deadCode) := b))),
+	      (warnDeprecated ("dead-code", "-default-ann")
+	       ; Control.Elaborate.enabled Control.Elaborate.deadCode := b))),
        (Expert, "debug", " {false|true}", "produce executable with debug info",
 	boolRef debug),
        (Expert, "default-ann", " <ann>", "annotation default",
@@ -183,7 +184,8 @@ fun makeOptions {usage} =
 	(fn s =>
 	 List.foreach
 	 (String.tokens (s, fn #"," => true | _ => false), fn s =>
-	  if Control.Elaborate.setDef (String.tokens (s, fn #" " => true | _ => false))
+	  if Control.Elaborate.setDef (String.tokens
+				       (s, fn #" " => true | _ => false))
 	     then ()
 	     else usage (concat ["invalid -default-ann flag: ", s])))),
        (Normal, "detect-overflow", " {true|false}",
@@ -204,7 +206,7 @@ fun makeOptions {usage} =
 	(fn s =>
 	 List.foreach
 	 (String.tokens (s, fn #"," => true | _ => false), fn s =>
-	  if Control.Elaborate.setAble 
+	  if Control.Elaborate.setAble
 	     (false, String.deleteSurroundingWhitespace s)
 	     then ()
 	     else usage (concat ["invalid -disable-ann flag: ", s])))),
@@ -311,7 +313,7 @@ fun makeOptions {usage} =
 	if !targetArch = Sparc then " {false}" else " {true|false}",
 	"use native code generator",
 	Bool (fn b =>
-	      (warnDeprecated "native"
+	      (warnDeprecated ("native", "-codegen")
 	       ; Control.codegen := (if b then Native else CCodegen)))),
        (Expert, "native-commented", " <n>", "level of comments  (0)",
 	intRef Native.commented),
@@ -394,8 +396,8 @@ fun makeOptions {usage} =
        (Expert, "sequence-unit", " {false|true}",
 	"in (e1; e2), require e1: unit",
 	Bool (fn b =>
-	      (warnDeprecated "sequence-unit"
-	       ; (Control.Elaborate.default Control.Elaborate.sequenceUnit) := b))),
+	      (warnDeprecated ("sequence-unit", "-default-ann")
+	       ; Control.Elaborate.default Control.Elaborate.sequenceUnit := b))),
        (Normal, "show-basis", " <file>", "write out the final basis environment",
 	SpaceString (fn s => showBasis := SOME s)),
        (Normal, "show-def-use", " <file>", "write def-use information",
@@ -472,13 +474,13 @@ fun makeOptions {usage} =
        (Expert, "warn-match", " {true|false}",
 	"nonexhaustive and redundant match warnings",
 	Bool (fn b =>
-	      (warnDeprecated "warn-match"
-	       ; (Control.Elaborate.default Control.Elaborate.warnMatch) := b))),
+	      (warnDeprecated ("warn-match", "-default-ann")
+	       ; Control.Elaborate.default Control.Elaborate.warnMatch := b))),
        (Expert, "warn-unused", " {false|true}",
 	"unused identifier warnings",
 	Bool (fn b =>
-	      (warnDeprecated "warn-unused"
-	       ; (Control.Elaborate.default Control.Elaborate.warnUnused) := b))),
+	      (warnDeprecated ("warn-unused", "-default-ann")
+	       ; Control.Elaborate.default Control.Elaborate.warnUnused := b))),
        (Expert, "xml-passes", " <passes>", "xml optimization passes",
 	SpaceString
 	(fn s =>
