@@ -203,6 +203,7 @@ signature RSSA =
 	     * then applying v' ().
 	     *)
 	    val dfs: t * (Block.t -> unit -> unit) -> unit
+	    val foreachVar: t * (Var.t * Type.t -> unit) -> unit
 	    val name: t -> Func.t
 	    val new: {args: (Var.t * Type.t) vector,
 		      blocks: Block.t vector,

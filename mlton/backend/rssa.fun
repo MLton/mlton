@@ -555,6 +555,14 @@ structure Function =
 		   indent (align (Vector.toListMap (blocks, Block.layout)), 2)]
 	 end
 
+      fun foreachVar (T {args, blocks, ...}, f) =
+	 (Vector.foreach (args, f)
+	  ; (Vector.foreach
+	     (blocks, fn Block.T {args, statements, transfer, ...} =>
+	      (Vector.foreach (args, f)
+	       ; Vector.foreach (statements, fn s => Statement.foreachDef (s, f))
+	       ; Transfer.foreachDef (transfer, f)))))
+
       fun dfs (T {blocks, start, ...}, v) =
 	 let
 	    val numBlocks = Vector.length blocks
@@ -748,7 +756,7 @@ structure Program =
 	 end
 
       fun shrink (T {functions, handlesSignals, main, objectTypes}) =
-	 T {functions = List.revMap (functions, Function.shrink),
+	 T {functions = List.map (functions, Function.shrink),
 	    handlesSignals = handlesSignals,
 	    main = Function.shrink main,
 	    objectTypes = objectTypes}

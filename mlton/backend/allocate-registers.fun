@@ -299,13 +299,6 @@ fun allocate {argOperands,
 			     in seq [str "Function allocs for ",
 				     Func.layout (Function.name f)]
 			     end)
-      val {get = labelInfo: R.Label.t -> Info.t, set = setLabelInfo, ...} =
-	 Property.getSetOnce (R.Label.plist,
-			      Property.initRaise ("labelInfo", R.Label.layout))
-      val setLabelInfo =
-	 Trace.trace2
-	 ("Allocate.setLabelInfo", R.Label.layout, Info.layout, Unit.layout)
-	 setLabelInfo
       val labelLive =
 	 Live.live (f, {shouldConsider = isSome o #operand o varInfo})
       val {args, blocks, name, ...} = Function.dest f
@@ -320,7 +313,7 @@ fun allocate {argOperands,
        *   - live at a primitive that enters the runtime system
        *)
       datatype place = Stack | Register
-      val {get = place: Var.t -> place ref, ...} =
+      val {get = place: Var.t -> place ref, rem = removePlace, ...} =
 	 Property.get (Var.plist, Property.initFun (fn _ => ref Register))
       (* !hasHandler = true iff handlers are installed in this function. *)
       val hasHandler: bool ref = ref false
@@ -423,8 +416,15 @@ fun allocate {argOperands,
 		      Vector.layout Var.layout,
 		      Vector.layout Operand.layout)
 	 getOperands
+      val {get = labelInfo: R.Label.t -> Info.t, set = setLabelInfo, ...} =
+	 Property.getSetOnce (R.Label.plist,
+			      Property.initRaise ("labelInfo", R.Label.layout))
+      val setLabelInfo =
+	 Trace.trace2
+	 ("Allocate.setLabelInfo", R.Label.layout, Info.layout, Unit.layout)
+	 setLabelInfo
       (* Do a DFS of the control-flow graph. *)
-      val _ =
+      val () =
 	 Function.dfs
 	 (f, fn R.Block.T {args, label, kind, statements, transfer, ...} =>
 	  let
@@ -511,7 +511,8 @@ fun allocate {argOperands,
 	  in
 	     fn () => ()
 	  end)
-      val _ =
+      val () = Function.foreachVar (f, removePlace o #1)
+      val () =
 	 diagnostics
 	 (fn (display, diagVar, diagStatement) =>
 	  let
