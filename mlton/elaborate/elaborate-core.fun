@@ -2055,14 +2055,14 @@ fun elaborateDec (d, {env = E,
 			 let
 			    val targs =
 			       Prim.extractTargs
-			       {args = Vector.map (args, Cexp.ty),
-				deArray = Type.deArray,
-				deArrow = Type.deArrow,
-				deRef = Type.deRef,
-				deVector = Type.deVector,
-				deWeak = Type.deWeak,
-				prim = prim,
-				result = result}
+			       (prim,
+				{args = Vector.map (args, Cexp.ty),
+				 deArray = Type.deArray,
+				 deArrow = Type.deArrow,
+				 deRef = Type.deRef,
+				 deVector = Type.deVector,
+				 deWeak = Type.deWeak,
+				 result = result})
 			 in
 			    Cexp.make (Cexp.PrimApp {args = args,
 						     prim = prim,

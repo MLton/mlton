@@ -753,17 +753,18 @@ fun useless (program: Program.t): Program.t =
 				  in if b then (x, t)
 				     else (unitVar, Type.unit)
 				  end))
-	       in PrimApp
+	       in
+		  PrimApp
 		  {prim = prim,
 		   args = args,
-		   targs = Prim.extractTargs {prim = prim,
-					      args = argTypes,
-					      result = resultType,
-					      deArray = Type.deArray,
-					      deArrow = Type.deArrow,
-					      deRef = Type.deRef,
-					      deVector = Type.deVector,
-					      deWeak = Type.deWeak}}
+		   targs = Prim.extractTargs (prim,
+					      {args = argTypes,
+					       result = resultType,
+					       deArray = Type.deArray,
+					       deArrow = Type.deArrow,
+					       deRef = Type.deRef,
+					       deVector = Type.deVector,
+					       deWeak = Type.deWeak})}
 	       end
 	  | Select {tuple, offset} =>
 	       let

@@ -1033,14 +1033,14 @@ in
 	 fn () => Error.bug (concat ["unknown primitive: ", name]))))
 end
 
-fun 'a extractTargs {args: 'a vector,
-		     deArray: 'a -> 'a,
-		     deArrow: 'a -> 'a * 'a,
-		     deRef: 'a -> 'a,
-		     deVector: 'a -> 'a,
-		     deWeak: 'a -> 'a,
-		     prim: 'a t,
-		     result: 'a} =
+fun ('a, 'b) extractTargs (prim: 'b t,
+			   {args: 'a vector,
+			    deArray: 'a -> 'a,
+			    deArrow: 'a -> 'a * 'a,
+			    deRef: 'a -> 'a,
+			    deVector: 'a -> 'a,
+			    deWeak: 'a -> 'a,
+			    result: 'a}) =
    let
       val one = Vector.new1
       fun arg i = Vector.sub (args, i)
@@ -1078,7 +1078,7 @@ fun 'a extractTargs {args: 'a vector,
 
 val extractTargs =
    fn z =>
-   Trace.trace ("extractTargs", layout o #prim, Layout.ignore) extractTargs z
+   Trace.trace ("extractTargs", layout o #1, Layout.ignore) extractTargs z
 
 structure SmallIntInf = Const.SmallIntInf
 

@@ -215,14 +215,13 @@ signature PRIM =
       val eq: 'a t    (* pointer equality *)
       val equal: 'a t (* polymorphic equality *)
       val equals: 'a t * 'a t -> bool
-      val extractTargs: {args: 'a vector,
-			 deArray: 'a -> 'a,
-			 deArrow: 'a -> 'a * 'a,
-			 deRef: 'a -> 'a,
-			 deVector: 'a -> 'a,
-			 deWeak: 'a -> 'a,
-			 prim: 'a t,
-			 result: 'a} -> 'a vector
+      val extractTargs: 'a t * {args: 'b vector,
+				deArray: 'b -> 'b,
+				deArrow: 'b -> 'b * 'b,
+				deRef: 'b -> 'b,
+				deVector: 'b -> 'b,
+				deWeak: 'b -> 'b,
+				result: 'b} -> 'b vector
       val ffi: 'a CFunction.t -> 'a t
       val ffiSymbol: {name: string, ty: 'a} -> 'a t
       val fromString: string -> 'a t

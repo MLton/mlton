@@ -972,15 +972,15 @@ fun closureConvert
 				  in
 				     primApp
 				     (Prim.extractTargs
-				      {prim = prim,
-				       args = Vector.map (args, varInfoType),
-				       result = ty,
-				       deArray = Type.deArray,
-				       deArrow = Type.deArrow,
-				       deRef = Type.deRef,
-				       deVector = Type.deVector,
-				       deWeak = Type.deWeak},
-				      Vector.map (args, convertVarInfo))
+				      (prim,
+				       {args = Vector.map (args, varInfoType),
+					result = ty,
+					deArray = Type.deArray,
+					deArrow = Type.deArrow,
+					deRef = Type.deRef,
+					deVector = Type.deVector,
+					deWeak = Type.deWeak}),
+				       Vector.map (args, convertVarInfo))
 				  end)
 			end
 		  end
