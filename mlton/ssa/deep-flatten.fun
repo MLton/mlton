@@ -679,6 +679,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	     | MLton_eq => equal ()
 	     | MLton_equal => equal ()
 	     | MLton_size => dontFlatten ()
+	     | MLton_share => dontFlatten ()
 	     | Weak_get => Value.deWeak (arg 0)
 	     | Weak_new => Value.new (Value.weak (arg 0))
 	     | _ => result ()
