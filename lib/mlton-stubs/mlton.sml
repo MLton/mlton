@@ -166,6 +166,13 @@ structure MLton: MLTON =
 	 struct
 	    fun peek (l, f) = List.find f l
 	    fun omap (opt, f) = Option.map f opt
+
+	    structure String =
+	       struct
+		  open String
+
+		  val toLower = translate (str o Char.toLower)
+	       end
 	 
 	    structure Arch =
 	       struct
@@ -186,7 +193,13 @@ structure MLton: MLTON =
                              (Sparc, "Sparc"), 
                              (X86, "X86")]
 
-		  fun fromString s = omap (peek (all, fn (_, s') => s = s'), #1)
+		  fun fromString s =
+		     let
+			val s = String.toLower s
+		     in
+			omap (peek (all, fn (_, s') => s = String.toLower s'),
+			      #1)
+		     end
 
 		  fun toString a = #2 (valOf (peek (all, fn (a', _) => a = a')))
 	       end
@@ -205,16 +218,22 @@ structure MLton: MLTON =
 
 		  val host: t = Linux
 
-		  val all = [(Cygwin, "cygwin"),
-			     (Darwin, "darwin"),
-			     (FreeBSD, "freebsd"),
-			     (Linux, "linux"),
-			     (MinGW, "mingw"),
-			     (NetBSD, "netbsd"),
-			     (OpenBSD, "openbsd"),
-			     (Solaris, "solaris")]
+		  val all = [(Cygwin, "Cygwin"),
+			     (Darwin, "Darwin"),
+			     (FreeBSD, "FreeBSD"),
+			     (Linux, "Linux"),
+			     (MinGW, "MinGW"),
+			     (NetBSD, "NetBSD"),
+			     (OpenBSD, "OpenBSD"),
+			     (Solaris, "Solaris")]
 	       
-		  fun fromString s = omap (peek (all, fn (_, s') => s = s'), #1)
+		  fun fromString s =
+		     let
+			val s = String.toLower s
+		     in
+			omap (peek (all, fn (_, s') => s = String.toLower s'),
+			      #1)
+		     end
 
 		  fun toString a = #2 (valOf (peek (all, fn (a', _) => a = a')))
 	       end
