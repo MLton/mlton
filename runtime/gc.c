@@ -1429,7 +1429,7 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 			keep = s->fromSize;
 		assert (keep <= s->toSize);
 		if (keep < s->toSize) {
-			if (DEBUG or s->messages) {
+			if (DEBUG or s->messages)
 				fprintf(stderr, 
 					"Shrinking old space at %x to %u bytes.\n",
 					(uint)s->toBase , keep);
@@ -1438,7 +1438,6 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 			s->toSize = keep;
 			if (0 == keep)
 				s->toBase = NULL;
-			}
 		}
 	}
 	setLimit(s);
