@@ -33,7 +33,7 @@ esac
 # $njHeap (which exists), then use MLton, otherwise use SML/NJ.
 doit () {
 	if [ -x "$mlton" -a -s "$world" -a ! "$njHeap" -nt "$world" ]; then
-		exec "$mlton" @MLton load-world "$world" $rargs -- "$@"
+		exec "$mlton" @MLton load-world "$world" ram-slop 0.5 $rargs -- "$@"
 	elif [ -s "$njHeap" ]; then
 		exec "$nj" @SMLload="$njHeap" "$@"
 	fi

@@ -22,7 +22,7 @@ else
 endif
 endif
 
-FLAGS = @MLton $(RUNTIME_ARGS) gc-summary --
+FLAGS = @MLton ram-slop 0.8 gc-summary $(RUNTIME_ARGS) --
 ifeq (new,$(shell PATH=$(BIN):$$PATH; mlton -target self >/dev/null 2>&1 && echo new))
   FLAGS += -target $(TARGET)
 else
