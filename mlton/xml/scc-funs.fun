@@ -84,7 +84,7 @@ fun sccFuns (Program.T {datatypes, body, overflow}) =
 		       let val g = Graph.new ()
 			  val _ =
 			     Vector.foreach
-			     (lambdas, fn {var, ty, lambda} =>
+			     (lambdas, fn {var, ...} =>
 			      setFunInfo (var, SOME {node = Graph.newNode g,
 						     visit = ref ignore}))
 			  val _ = 

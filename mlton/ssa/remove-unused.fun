@@ -38,7 +38,6 @@ structure Deconed =
     open L
     val decon = makeTop
     val isDeconed = isTop
-    val whenDeconed = addHandler
   end
 
 structure SideEffects =
@@ -47,8 +46,6 @@ structure SideEffects =
 				   val top = "side effects")
     open L
     val sideEffect = makeTop
-    val doesSideEffect = isTop
-    val whenSideEffects = addHandler
   end
 
 structure MayReturn =
@@ -80,7 +77,6 @@ structure VarInfo =
        
      local
        fun make f (T r) = f r
-       fun make' f = (make f, ! o (make f))
      in
        val used = make #used
      end
@@ -96,13 +92,11 @@ structure TypeInfo =
   struct
     datatype t = T of {deconed: bool ref}
 
-    val layout = Layout.ignore
-
     local
       fun make f (T r) = f r
       fun make' f = (make f, ! o (make f))
     in
-      val (deconed', deconed) = make' #deconed
+      val (deconed', _) = make' #deconed
     end
 
     fun new (): t = T {deconed = ref false}
@@ -113,8 +107,6 @@ structure TyconInfo =
     datatype t = T of {cons: {con: Con.t, args: Type.t vector} vector,
 		       numCons: int ref}
 
-    val layout = Layout.ignore
-      
     local
       fun make f (T r) = f r
       fun make' f = (make f, ! o (make f))
@@ -143,7 +135,6 @@ structure ConInfo =
       
     local
       fun make f (T r) = f r
-      fun make' f = (make f, ! o (make f))
     in
       val args = make #args
       val coned = make #coned
@@ -158,7 +149,6 @@ structure ConInfo =
 
     val decon = Deconed.decon o deconed
     val isDeconed = Deconed.isDeconed o deconed
-    fun whenDeconed (ci, th) = Deconed.whenDeconed (deconed ci, th)
       
     fun new {args: Type.t vector, tycon: Tycon.t}: t
       = T {args = Vector.map (args, fn t => (VarInfo.new (), t)),
@@ -208,7 +198,6 @@ structure FuncInfo =
       fun make' f = (make f, ! o (make f))
     in
       val args = make #args
-      val bugLabel = make #bugLabel
       val mayRaise' = make #mayRaise
       val mayReturn' = make #mayReturn
       val raiseLabel = make #raiseLabel
@@ -235,8 +224,6 @@ structure FuncInfo =
     fun whenUsed (fi, th) = Used.whenUsed (used fi, th)
 
     val sideEffect = SideEffects.sideEffect o sideEffects
-    val doesSideEffect = SideEffects.doesSideEffect o sideEffects
-    fun whenSideEffects (fi, th) = SideEffects.whenSideEffects (sideEffects fi, th)
     fun flowSideEffects (fi, fi') = SideEffects.<= (sideEffects fi, sideEffects fi')
 
     fun new {args: (VarInfo.t * Type.t) vector, 
@@ -287,8 +274,7 @@ structure LabelInfo =
     fun whenUsed (li, th) = Used.whenUsed (used li, th)
   end
 
-
-fun remove (program as Program.T {datatypes, globals, functions, main})
+fun remove (Program.T {datatypes, globals, functions, main})
   = let
       val {get = varInfo: Var.t -> VarInfo.t, ...}
 	= Property.get 
@@ -333,9 +319,6 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	= Used.<= (VarInfo.used vi, VarInfo.used vi')
       fun flowVarInfoTysVarInfoTys (xs, ys)
 	= Vector.foreach2 (xs, ys, flowVarInfoTyVarInfoTy)
-      fun unifyVarInfoTysVarInfoTys (xs, ys)
-	= (flowVarInfoTysVarInfoTys (xs, ys);
-	   flowVarInfoTysVarInfoTys (ys, xs))
       fun flowVarInfoTyVar ((vi, _), x) 
 	= Used.<= (VarInfo.used vi, usedVar x)
       fun flowVarInfoTysVars (xs, ys)
@@ -347,9 +330,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
       val visitLabel = visitLabelInfo o labelInfo
       val visitLabelTh = fn l => fn () => visitLabel l
       val visitFuncInfo = FuncInfo.use
-      val visitFuncInfoTh = fn fi => fn () => visitFuncInfo fi
       val visitFunc = visitFuncInfo o funcInfo
-      val visitFuncTh = fn f => fn () => visitFunc f
 
       fun visitVar (x: Var.t) = useVar x
       fun visitVars (xs: Var.t Vector.t) = Vector.foreach (xs, visitVar)
@@ -414,8 +395,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
       val visitExpTh = fn e => fn () => visitExp e
       fun maybeVisitVarExp (var, exp)
 	= Option.app (var, fn var => VarInfo.whenUsed (varInfo var, visitExpTh exp))
-      fun visitStatement (s: Statement.t as Statement.T {var, ty, exp},
-			  fi: FuncInfo.t)
+      fun visitStatement (Statement.T {exp, var, ...}, fi: FuncInfo.t)
 	= if Exp.maySideEffect exp
 	    then (FuncInfo.sideEffect fi
 		  ; visitExp exp)
@@ -442,7 +422,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 				Handler.Caller => Caller
 			      | Handler.Dead => None
 			      | Handler.Handle h => Some h)
-			 | Tail => (Caller, Caller)
+		         | Return.Tail => (Caller, Caller)
 		  val fi' = funcInfo func
 		in
 		  flowVarInfoTysVars (FuncInfo.args fi', args);
@@ -562,8 +542,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 		       Layout.tuple2 (Transfer.layout, FuncInfo.layout),
 		       Unit.layout)
 	              visitTransfer
-      fun visitBlock (b: Block.t as Block.T {label, statements, transfer, ...},
-		      fi: FuncInfo.t) =
+      fun visitBlock (Block.T {statements, transfer, ...}, fi: FuncInfo.t) =
 	 (Vector.foreach (statements, fn s => visitStatement (s, fi))
 	  ; visitTransfer (transfer, fi))
       (* Visit all reachable expressions. *)
@@ -673,7 +652,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	     val r: Exp.t option ref = ref NONE
 	     val cons 
 	       = Vector.keepAllMap
-	         (cons, fn c as {con, args} =>
+	         (cons, fn {con, ...} =>
 		  let
 		    val c = conInfo con
 		  in
@@ -733,7 +712,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 					      else NONE)
 		   in 
 		     case List.peek 
-		          (LabelInfo.wrappers li, fn (args', l') =>
+		          (LabelInfo.wrappers li, fn (args', _) =>
 			   Vector.length args' = Vector.length tys
 			   andalso
 			   Vector.forall2 (args', tys, fn (ty', ty) =>
@@ -868,7 +847,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 		    then ConApp {con = con,
 				 args = (Vector.keepAllMap2
 					 (args, ConInfo.args c,
-					  fn (x, (y, t)) =>
+					  fn (x, (y, _)) =>
 					  if VarInfo.isUsed y
 					    then SOME x
 					    else NONE))}
@@ -880,8 +859,8 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 		       Exp.layout, 
 		       Exp.layout)
 	              simplifyExp
-      fun simplifyStatement (s as Statement.T {var, ty, exp},
-			     f: FuncInfo.t): Statement.t option 
+      fun simplifyStatement (s as Statement.T {var, ty, exp})
+	 : Statement.t option 
 	= case exp 
 	    of Profile _ => SOME s
 	     | _ => let
@@ -902,9 +881,8 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 					 else doit NONE
 			 | NONE => doit NONE
 		    end
-      fun simplifyStatements (ss: Statement.t Vector.t,
-			      fi: FuncInfo.t) : Statement.t Vector.t
-	= Vector.keepAllMap (ss, fn s => simplifyStatement (s, fi))
+      fun simplifyStatements (ss: Statement.t Vector.t) : Statement.t Vector.t
+	= Vector.keepAllMap (ss, simplifyStatement)
       fun simplifyTransfer (t: Transfer.t, fi: FuncInfo.t): Transfer.t
 	= case t
 	    of Arith {prim, args, overflow, success, ty} 
@@ -929,7 +907,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 				Handler.Caller => Caller
 			      | Handler.Dead => None
 			      | Handler.Handle h => Some h)
-			 | Tail => (Caller, Caller)
+		         | Return.Tail => (Caller, Caller)
 		  val cont 
 		    = if FuncInfo.mayReturn fi'
 			then case cont 
@@ -1000,7 +978,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 
 		  val args
 		    = Vector.keepAllMap2
-		      (args, FuncInfo.args fi', fn (x, (y, t)) =>
+		      (args, FuncInfo.args fi', fn (x, (y, _)) =>
 		       if VarInfo.isUsed y
 			 then SOME x
 			 else NONE)
@@ -1053,19 +1031,19 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	     => Goto {dst = dst, 
 		      args = (Vector.keepAllMap2
 			      (args, LabelInfo.args (labelInfo dst),
-			       fn (x, (y, t)) => if VarInfo.isUsed y
+			       fn (x, (y, _)) => if VarInfo.isUsed y
 						   then SOME x
 						   else NONE))}
 	     | Raise xs
 	     => Raise (Vector.keepAllMap2
 		       (xs, valOf (FuncInfo.raises fi),
-			fn (x, (y, t)) => if VarInfo.isUsed y
+			fn (x, (y, _)) => if VarInfo.isUsed y
 					    then SOME x
 					    else NONE))
 	     | Return xs 
 	     => Return (Vector.keepAllMap2
 			(xs, valOf (FuncInfo.returns fi),
-			 fn (x, (y, t)) => if VarInfo.isUsed y
+			 fn (x, (y, _)) => if VarInfo.isUsed y
 					     then SOME x
 					     else NONE))
 	     | Runtime {prim, args, return}
@@ -1077,9 +1055,8 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 		       Layout.tuple2 (Transfer.layout, FuncInfo.layout),
 		       Transfer.layout)
 	              simplifyTransfer
-      fun simplifyBlock (b: Block.t
-			 as Block.T {label, args, 
-				     statements, transfer}): Block.t option
+      fun simplifyBlock (Block.T {label, args, 
+				  statements, transfer}): Block.t option
 	= let
 	    val li = labelInfo label
 	  in 
@@ -1091,10 +1068,9 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 			  if VarInfo.isUsed vi
 			    then SOME (x, ty)
 			    else NONE)
-		     val statements
-		       = simplifyStatements (statements, LabelInfo.func li)
+		     val statements = simplifyStatements statements
 		     val transfer
-		       = simplifyTransfer (transfer, LabelInfo.func li)
+			= simplifyTransfer (transfer, LabelInfo.func li)
 		   in
 		     SOME (Block.T {label = label,
 				    args = args,
@@ -1105,7 +1081,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	  end
       fun simplifyBlocks (bs: Block.t Vector.t): Block.t Vector.t
 	= Vector.keepAllMap (bs, simplifyBlock)
-      val globals = simplifyStatements (globals, funcInfo main)
+      val globals = simplifyStatements globals
       val shrink = shrinkFunction globals
       fun simplifyFunction (f: Function.t): Function.t option
 	= let

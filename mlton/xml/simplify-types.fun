@@ -52,7 +52,7 @@ fun simplifyTypes (I.Program.T {body, datatypes, overflow}) =
 	 Property.getSetOnce (Tycon.plist, Property.initConst NONE)
       val _ =
 	 Vector.foreach
-	 (datatypes, fn {cons, tycon, tyvars} =>
+	 (datatypes, fn {tycon, tyvars, ...} =>
 	  setTyconInfo (tycon,
 			SOME {used = PowerSetLat.new (Vector.length tyvars)}))
       val _ =
@@ -132,7 +132,7 @@ fun simplifyTypes (I.Program.T {body, datatypes, overflow}) =
        *)
       val {hom = fixType: I.Type.t -> unit -> O.Type.t, ...} =
 	 I.Type.makeHom
-	 {con = (fn (t, tc, ts) =>
+	 {con = (fn (_, tc, ts) =>
 		 Promise.lazy
 		 (fn () =>
 		  let

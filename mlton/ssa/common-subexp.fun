@@ -15,7 +15,7 @@ open Exp Transfer
 type int = Int.t
 type word = Word.t
 
-fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
+fun eliminate (Program.T {globals, datatypes, functions, main}) =
    let
       (* Keep track of control-flow specific cse's,
        * arguments, and in-degree of blocks. 
@@ -119,7 +119,6 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 	   fn Statement.T {var, exp, ...}
 	    => let
 		 val exp = canon exp
-		 val hash = Exp.hash exp
 		 val _ = lookup (valOf var, exp, Exp.hash exp)
 	       in
 		 ()
@@ -184,7 +183,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 				     end
 			       in
 				  case exp of
-				     PrimApp (pa as {prim, args, ...}) =>
+				     PrimApp ({args, prim, ...}) =>
 				        let
 					   fun arg () = Vector.sub (args, 0)
 					   fun knownLength var' =
@@ -221,15 +220,13 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 		  val transfer = Transfer.replaceVar (transfer, canonVar)
 		  val transfer =
 		     case transfer of 
-		        Arith {prim, args, overflow, success, ty} =>
+		        Arith {prim, args, overflow, success, ...} =>
                            let
 			      val {args = succArgs,
 				   inDeg = succInDeg,
 				   add = succAdd, ...} = 
 				 labelInfo success
-			      val {args = overArgs,
-				   inDeg = overInDeg,
-				   add = overAdd, ...} =
+			      val {inDeg = overInDeg, add = overAdd, ...} =
 				 labelInfo overflow
 			      val exp = canon (PrimApp {prim = prim,
 							targs = Vector.new0 (),

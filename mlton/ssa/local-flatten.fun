@@ -70,7 +70,7 @@ structure VarInfo =
        | Tuple
    end
 
-fun flatten (program as Program.T {globals, datatypes, functions, main}) =
+fun flatten (Program.T {globals, datatypes, functions, main}) =
    let
       val {get = varInfo: Var.t -> VarInfo.t,
 	   set = setVarInfo, ...} =
@@ -113,8 +113,7 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 				fn NONE => ()
 				 | SOME (i, _) => ArgInfo.nonSelect i)
 
-	     fun visit (Block.T {label, args, statements, transfer})
-		: unit -> unit =
+	     fun visit (Block.T {statements, transfer, ...}): unit -> unit =
 	        let
 		   val _ = 
 		      Vector.foreach
@@ -186,7 +185,7 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 		     (formals, reps, [], fn ((x, ty), rep, stmts) =>
 		      case rep of
 			 NONE => (Vector.new1 (x, ty), stmts)
-		       | SOME (i, t) =>
+		       | SOME (i, _) =>
 			    if ArgInfo.isTupled i
 			       then (Vector.new1 (x, ty), stmts)
 			    else

@@ -116,8 +116,9 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 	 if Type.equals (t, t')
 	    then ()
 	 else Type.error ("type mismatch",
-			 Layout.align [Type.layout t,
-				      Type.layout t'])
+			  Layout.align [Type.layout t,
+					Type.layout t',
+					layout ()])
       fun checkExp arg: Type.t =
 	 traceCheckExp
 	 (fn (exp: Exp.t) =>
@@ -153,8 +154,6 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 					   PrimExp.layout e]]
 			    end)
 	       end
-	    fun checkApps (t, es) =
-	       List.fold (es, t, fn (e, t) => checkApp (t, e))
 	 in
 	    case e of
 	       App {arg, func} => checkApp (checkVarExp func, arg)
@@ -224,7 +223,7 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 		     else error "bad handle"
 		  end
 	     | Lambda l => checkLambda l
-	     | PrimApp {prim, targs, args} => 
+	     | PrimApp {targs, ...} => 
 		  let
 		     val _ = checkTypes targs
 		  in
@@ -261,7 +260,7 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
 	     | Fun {tyvars, decs} =>
 		  (bindTyvars tyvars
 		   ; (Vector.foreach
-		      (decs, fn {lambda, ty, var} =>
+		      (decs, fn {ty, var, ...} =>
 		       (checkType ty
 			; setVar (var, {tyvars = tyvars, ty = ty}))))
 		   ; Vector.foreach (decs, fn {ty, lambda, ...} =>

@@ -56,7 +56,7 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 	       val sumType = Type.con (sumTycon, Vector.new0 ())
 	       fun find (name: Prim.Name.t): Var.t * Type.t * PrimExp.t =
 		  let
-		     val (var, ty) =
+		     val var =
 			DynamicWind.withEscape
 			(fn escape =>
 			 let
@@ -64,11 +64,10 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 			       Exp.foreachPrimExp
 			       (body, fn (_, _, e) =>
 				case e of
-				   PrimApp {args, prim, targs, ...} =>
+				   PrimApp {args, prim, ...} =>
 				      if Prim.name prim = name 
 					 then escape (VarExp.var
-						      (Vector.sub (args, 0)),
-						      Vector.sub (targs, 0))
+						      (Vector.sub (args, 0)))
 				      else ()
 				 | _ => ())
 			 in
@@ -221,12 +220,7 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 	  | SOME _ => true
       val exnValCons: {con: Con.t, arg: Type.t} list ref = ref []
       val overflow = ref NONE
-      fun loopOpt e =
-	 (case e of
-	     NONE => NONE
-	   | SOME e => SOME (loop e))
-      and loops es = List.map (es, loop)
-      and loop (e: Exp.t): Exp.t =
+      fun loop (e: Exp.t): Exp.t =
 	 let
 	    val {decs, result} = Exp.dest e
 	    val decs = List.concatRev (List.fold (decs, [], fn (d, ds) =>
@@ -410,7 +404,7 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
 				   catch = (catch, ty),
 				   handler = loop handler})
 	     | Lambda l => primExp (Lambda (loopLambda l))
-	     | PrimApp {prim, targs, args} =>
+	     | PrimApp {args, prim, ...} =>
 		  let
 		     datatype z = datatype Prim.Name.t
 		     fun assign (var, ty) =

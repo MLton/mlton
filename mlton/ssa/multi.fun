@@ -26,7 +26,6 @@ open Exp Transfer
 structure Graph = DirectedGraph
 local open Graph
 in
-  structure Edge = Edge
   structure Node = Node
 end
 
@@ -86,16 +85,8 @@ structure FuncInfo =
 		       multiThreaded: MultiThreaded.t,
 		       multiUsed: MultiUsed.t}
 
-    fun layout (T {calls, threadCopyCurrent, multiUsed, multiThreaded, ...}) 
-      = Layout.record 
-        [("calls", Calls.layout calls),
-	 ("threadCopyCurrent", ThreadCopyCurrent.layout threadCopyCurrent),
-	 ("multiThreaded", MultiThreaded.layout multiThreaded),
-	 ("multiUsed", MultiUsed.layout multiUsed)]
-
     local
        fun make f (T r) = f r
-       fun make' f = (make f, ! o (make f))
     in
       val calls = make #calls
       val threadCopyCurrent = make #threadCopyCurrent
@@ -115,15 +106,8 @@ structure LabelInfo =
 		       multiThreaded: MultiThreaded.t,
 		       multiUsed: MultiUsed.t}
 
-    fun layout (T {threadCopyCurrent, multiThreaded, multiUsed, ...}) 
-      = Layout.record 
-        [("threadCopyCurrent", ThreadCopyCurrent.layout threadCopyCurrent),
-	 ("multiThreaded", MultiThreaded.layout multiThreaded),
-	 ("multiUsed", MultiUsed.layout multiUsed)]
-
     local
        fun make f (T r) = f r
-       fun make' f = (make f, ! o (make f))
      in
        val threadCopyCurrent = make #threadCopyCurrent
        val multiThreaded = make #multiThreaded
@@ -140,14 +124,8 @@ structure VarInfo =
     datatype t = T of {multiThreaded: MultiThreaded.t,
 		       multiUsed: MultiUsed.t}
 
-    fun layout (T {multiThreaded, multiUsed, ...}) 
-      = Layout.record 
-        [("multiThreaded", MultiThreaded.layout multiThreaded),
-	 ("multiUsed", MultiUsed.layout multiUsed)]
-
     local
        fun make f (T r) = f r
-       fun make' f = (make f, ! o (make f))
      in
        val multiThreaded = make #multiThreaded
        val multiUsed = make #multiUsed
@@ -157,7 +135,7 @@ structure VarInfo =
 			multiUsed = MultiUsed.new ()}
    end
 
-fun multi (p as Program.T {globals, functions, main, ...})
+fun multi (p as Program.T {functions, main, ...})
   = let
       val usesThreadsOrConts 
 	= Program.hasPrim (p, fn p => Prim.name p = Prim.Name.Thread_switchTo)
@@ -296,7 +274,7 @@ fun multi (p as Program.T {globals, functions, main, ...})
 		    (transfer, forceMultiThreadedFunc))
 	  end
       val rec forceMultiThreadedBlockDFS
-	= fn controlFlow as {graph, labelNode, nodeBlock} =>
+	= fn controlFlow as {graph = _, labelNode, nodeBlock} =>
 	  fn block as Block.T {label, transfer, ...} =>
 	  let
 	    val li = labelInfo label
@@ -325,7 +303,7 @@ fun multi (p as Program.T {globals, functions, main, ...})
 		    (transfer, forceMultiUsedFunc))
 	  end
       val rec visitBlock
-	= fn controlFlow as {graph, labelNode, nodeBlock} =>
+	= fn controlFlow as {graph = _, labelNode, nodeBlock} =>
 	  fn Block.T {label, transfer, ...} =>
 	  if ThreadCopyCurrent.does (LabelInfo.threadCopyCurrent (labelInfo label))
 	    then Transfer.foreachLabel
@@ -394,7 +372,7 @@ fun multi (p as Program.T {globals, functions, main, ...})
 			    val _ = MultiUsed.when
 			            (FuncInfo.multiUsed fi,
 				     fn () => forceMultiUsedFunc f)
-			    val controlFlow as {graph, labelNode, nodeBlock}
+			    val controlFlow as {graph, nodeBlock, ...}
 			      = Function.controlFlow f
 			  in
 			    List.foreach
@@ -414,8 +392,7 @@ fun multi (p as Program.T {globals, functions, main, ...})
 			    val _ = MultiUsed.when
 			            (FuncInfo.multiUsed fi,
 				     fn () => forceMultiUsedFunc f)
-			    val controlFlow as {graph, labelNode, nodeBlock}
-			      = Function.controlFlow f
+			    val {graph, nodeBlock, ...} = Function.controlFlow f
 			  in
 			    List.foreach
 			    (Graph.stronglyConnectedComponents graph,

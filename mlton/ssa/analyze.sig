@@ -23,7 +23,6 @@ signature ANALYZE =
 	  conApp: {args: 'a vector,
 		   con: Con.t} -> 'a,
 	  const: Const.t -> 'a,
-	  copy: 'a -> 'a,
 	  filter: 'a * Con.t * 'a vector -> unit,
 	  filterInt: 'a * IntSize.t -> unit,
 	  filterWord: 'a * WordSize.t -> unit,

@@ -326,7 +326,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 	     | Type.Word s => prim (Prim.wordEqual s, Vector.new0 ())
 	     | _ => Error.bug "equal of strange type"
 	 end
-      fun loopBind (Statement.T {var, ty, exp}) =
+      fun loopBind (Statement.T {exp, var, ...}) =
 	 let
 	    fun const () = setVarInfo (valOf var, {isConst = true})
 	 in
@@ -364,7 +364,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 		      Vector.fold
 		      (statements, 
 		       (blocks, {label = label, args = args, statements = []}),
-		       fn (stmt as Statement.T {var, ty, exp}, 
+		       fn (stmt as Statement.T {exp, var, ...}, 
 			   (blocks, las as {label, args, statements})) =>
 		       let
 			 fun normal () = (blocks,

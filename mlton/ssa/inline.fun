@@ -17,7 +17,7 @@ type word = Word.t
 structure Size =
    struct
       val check : (int * int option) -> bool =
-	 fn (size, NONE) => false
+	 fn (_, NONE) => false
 	  | (size, SOME size') => size > size'
 
       val defaultExpSize : Exp.t -> int = 
@@ -28,7 +28,7 @@ structure Size =
 	  | Select _ => 1 + 1
 	  | Tuple xs => 1 + Vector.length xs
 	  | Var _ => 0
-      fun expSize (size, max) (doExp, doTransfer) exp =
+      fun expSize (size, max) (doExp, _) exp =
 	 let
 	    val size' = doExp exp
 	    val size = size + size'
@@ -54,7 +54,7 @@ structure Size =
 	  | Raise xs => 1 + Vector.length xs
 	  | Return xs => 1 + Vector.length xs
 	  | Runtime {args, ...} => 1 + Vector.length args
-      fun transferSize (size, max) (doExp, doTransfer) transfer =
+      fun transferSize (size, max) (_, doTransfer) transfer =
 	 let
 	    val size' = doTransfer transfer
 	    val size = size + size'
@@ -78,20 +78,6 @@ structure Size =
 	 blocksSize (size, max) (doExp, doTransfer) (#blocks (Function.dest f))
 
       val default = (defaultExpSize, defaultTransferSize)
-      val exp = #1 o (expSize (0, NONE) default)
-      val statement = #1 o (statementSize (0, NONE) default)
-      val statements = #1 o (statementsSize (0, NONE) default)
-      val transfer = #1 o (transferSize (0, NONE) default)
-      val block = #1 o (blockSize (0, NONE) default)
-      val blocks = #1 o (blocksSize (0, NONE) default)
-      val function = #1 o (functionSize (0, NONE) default)
-
-      fun expGT max = #2 o (expSize (0, max) default)
-      fun statementGT max = #2 o (statementSize (0, max) default)
-      fun statementsGT max = #2 o (statementsSize (0, max) default)
-      fun transferGT max = #2 o (transferSize (0, max) default)
-      fun blockGT max = #2 o (blockSize (0, max) default)
-      fun blocksGT max = #2 o (blocksSize (0, max) default)
       fun functionGT max = #2 o (functionSize (0, max) default)
    end
 
@@ -167,120 +153,7 @@ end
 structure Graph = DirectedGraph
 structure Node = Graph.Node
 
-fun nonRecursive (program as Program.T {functions, ...}, 
-		  {size: int option}) =
-   let
-      val {get = funcInfo: Func.t -> {isBig: bool,
-				      node: unit Node.t,
-				      numCalls: int ref,
-				      shouldInline: bool ref},
-	   set = setFuncInfo, ...} =
-	 Property.getSetOnce
-	 (Func.plist, Property.initRaise ("funcInfo", Func.layout))
-      val {get = nodeFunc: unit Node.t -> Func.t,
-	   set = setNodeFunc, ...} = 
-	 Property.getSetOnce 
-	 (Node.plist, Property.initRaise ("nodeFunc", Node.layout))
-      val graph = Graph.new ()
-      (* initialize the info for each func *)
-      val _ = 
-	 List.foreach
-	 (functions, fn f =>
-	  let 
-	     val name = Function.name f
-	     val n = Graph.newNode graph
-	  in setNodeFunc (n, name)
-	     ; setFuncInfo (name, {node = n,
-				   isBig = Size.functionGT size f,
-				   numCalls = ref 0,
-				   shouldInline = ref true})
-	  end)
-      (* Update call counts. *)
-      val _ =
-	 List.foreach
-	 (functions, fn f => 
-	  let
-	     val {name, blocks, ...} = Function.dest f
-	  in
-	     Vector.foreach
-	     (blocks, fn Block.T {transfer, ...} =>
-	      case transfer of
-		 Call {func, ...} =>
-		    let
-		       val {numCalls, shouldInline, isBig, ...} = funcInfo func
-		       val numCalls' = !numCalls
-		    in
-		       if (numCalls' = 1 andalso isBig)
-			  orelse Func.equals (name, func)
-			  then shouldInline := false
-		       else ()
-		       ; numCalls := numCalls' + 1
-		    end
-	       | _ => ())
-	  end)
-      (* Build the call graph of potentially inlinable functions.
-       * Don't add edges for functions that are not inlined, since they
-       * can't cause infinite unrolling.
-       *)
-      val _ = 
-	 List.foreach
-	 (functions, fn f =>
-	  let 
-	     val {name, blocks, ...} = Function.dest f
-	     val {node = caller, shouldInline = siCaller, ...} = funcInfo name
-	  in 
-	     Vector.foreach
-	     (blocks, fn Block.T {transfer, ...} =>
-	      case transfer of
-		 Call {func, ...} =>
-		    let
-		       val {node = callee, shouldInline = siCallee, numCalls, ...} = 
-			  funcInfo func
-		    in
-		       if !siCaller andalso !siCallee
-			  then (Graph.addEdge (graph, {from = caller, to = callee})
-				; ())
-		       else ()
-		    end
-	       | _ => ())
-	  end)
-      (* Compute strongly-connected components and set any function that is
-       * in a nontrivial scc to be not inlined.
-       *)
-      val _ = 
-	 List.foreach
-	 (Graph.stronglyConnectedComponents graph,
-	  fn [] => ()
-	   | [_] => ()
-	   | ns => List.foreach (ns, fn n =>
-				 #shouldInline (funcInfo (nodeFunc n)) := false))
-      val _ =
-	 Control.diagnostics
-	 (fn display =>
-	  let open Layout
-	  in List.foreach
-	     (functions, fn f => 
-	      let 
-	         val name = Function.name f
-		 val {numCalls, shouldInline, ...} = funcInfo name
-		 val numCalls = !numCalls
-		 val shouldInline = !shouldInline
-		 val size = Size.function f
-	      in 
-		 display
-		 (seq [Func.layout name, str ": ",
-		       record [("size", Int.layout size),
-			       ("numCalls", Int.layout numCalls),
-			       ("size * numCalls", Int.layout (size * numCalls)),
-			       ("shouldInline", Bool.layout shouldInline)]])
-	      end)
-	  end)
-   in
-      ! o #shouldInline o funcInfo
-   end
-
-fun product (program as Program.T {functions, ...},
-	     {small: int, product: int}) =
+fun product (Program.T {functions, ...}, {small: int, product: int}) =
    let
       type info = {doesCallSelf: bool ref,
 		   function: Function.t,

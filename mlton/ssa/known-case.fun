@@ -28,7 +28,6 @@ structure TyconInfo =
 
     local 
       fun make f (T r) = f r
-      fun make' f = (make f, ! o (make f))
     in
       val cons = make #cons
     end
@@ -45,11 +44,9 @@ structure ConInfo =
 
     local 
       fun make f (T r) = f r
-      fun make' f = (make f, ! o (make f))
     in
       val args = make #args
       val index = make #index
-      val tycon = make #tycon
     end
 
     fun layout (T {index, ...}) 
@@ -65,13 +62,6 @@ structure ConValue =
 
     val equalsW : w * w -> bool
       = fn (x, y) => Vector.equals (x, y, fn (x, y) => Var.equals (!x, !y))
-    val equalsV : v * v -> bool
-      = fn (x, y) => Option.equals (x, y, equalsW)
-    val equalsU : u * u -> bool
-      = fn (x, y) => Option.equals (x, y, equalsV)
-    val equals : t * t -> bool
-      = fn ((conx, x), (cony, y)) => 
-        Con.equals (conx, cony) andalso equalsU (x, y)
 
     val layoutW = Vector.layout (Var.layout o !)
     val layoutV = Option.layout layoutW
@@ -100,7 +90,6 @@ structure ConValue =
     fun new con : t = (con, NONE)
 
     fun isTop ((_, x) : t) = isSome x
-    val isBot = not o isTop
 
     val con : t -> Con.t = fn (conx, _) => conx
   end
@@ -120,10 +109,8 @@ structure TyconValue =
 	 if Con.equals (con, con')
 	   then ConValue.newKnown (con, args)
 	   else ConValue.new con')
-    fun newUnknown cons
-      = Vector.map (cons, ConValue.newUnknown)
-    fun new cons
-      = Vector.map (cons, ConValue.new)
+
+    fun newUnknown cons = Vector.map (cons, ConValue.newUnknown)
 
     val cons : t -> Con.t vector
       = fn x => Vector.map (x, ConValue.con)
@@ -139,9 +126,7 @@ structure VarInfo =
       fun make f (T r) = f r
       fun make' f = (make f, ! o (make f))
     in
-      val (active, active') = make' #active
-      val (tyconValues, tyconValues') = make' #tyconValues
-      val var = make #var
+      val (_, active') = make' #active
     end
 
     fun layout (T {active, tyconValues, var, ...}) 
@@ -185,16 +170,6 @@ structure VarInfo =
 structure ReplaceInfo =
   struct
     datatype t = T of {replaces: Var.t ref list ref}
-
-    local 
-      fun make f (T r) = f r
-      fun make' f = (make f, ! o (make f))
-    in
-      val (replaces, replaces') = make' #replaces
-    end
-
-    fun layout (T {replaces, ...}) 
-      = Layout.record [("replaces", List.layout (Var.layout o !) (!replaces))]
 
     fun new var = T {replaces = ref [ref var]}
 
@@ -240,10 +215,8 @@ structure LabelInfo =
       fun make f (T r) = f r
       fun make' f = (make f, ! o (make f))
     in
-      val (activations, activations') = make' #activations
       val block = make #block
-      val (depth, depth') = make' #depth
-      val (pred, pred') = make' #pred
+      val (_, depth') = make' #depth
     end
 
     fun layout (T {pred, ...}) 
@@ -291,7 +264,7 @@ structure LabelInfo =
     val activate : t * ((unit -> unit) -> unit) -> unit
       = Trace.trace
         ("KnownCase.activate",
-	 fn (T {activations, block as Block.T {label, ...}, ...}, _) =>
+	 fn (T {activations, block = Block.T {label, ...}, ...}, _) =>
 	 let open Layout
 	 in
 	   seq [Label.layout label,
@@ -304,7 +277,7 @@ structure LabelInfo =
 	activate
   end
 
-fun simplify (program as Program.T {globals, datatypes, functions, main})
+fun simplify (Program.T {globals, datatypes, functions, main})
   = let
       (* restore and shrink *)
       val restore = restoreFunction globals
@@ -348,14 +321,13 @@ fun simplify (program as Program.T {globals, datatypes, functions, main})
 				  cons])
 		  end)
 	       end)
-      fun optimizeTycon tycon = true
+      fun optimizeTycon _ = true
       fun optimizeType ty = case Type.dest ty
 			      of Type.Datatype tycon => optimizeTycon tycon
 			       | _ => false
 
       (* varInfo *)
-      val {get = varInfo: Var.t -> VarInfo.t,
-	   set = setVarInfo, ...}
+      val {get = varInfo: Var.t -> VarInfo.t, ...}
 	= Property.getSetOnce
 	  (Var.plist, Property.initFun (fn x => VarInfo.new x))
       (* replaceInfo *)
@@ -394,7 +366,6 @@ fun simplify (program as Program.T {globals, datatypes, functions, main})
 	= Option.app 
 	  (var, fn x => 
 	   bindVar' (x, ty, SOME exp, addPost))
-      fun bindVarStatement statement = bindVarStatement' (statement, ignore)
       fun bindVarStatements' (statements, addPost)
 	= Vector.foreach 
 	  (statements, fn statement => 
@@ -497,6 +468,7 @@ fun simplify (program as Program.T {globals, datatypes, functions, main})
 		   in
 		     label
 		   end
+		val _ = newBlock' (* quell unused variable warning *)
 	       fun bugBlock () = newBlock Bug
 	     end
 
@@ -548,7 +520,7 @@ fun simplify (program as Program.T {globals, datatypes, functions, main})
 		      andalso
 		      Vector.fold
 		      (statementsDst, 0,
-		       fn (Statement.T {exp as Profile _, ...}, i) => i
+		       fn (Statement.T {exp = Profile _, ...}, i) => i
 		        | (_, i) => i + 1) <= 0
 		     then let
 			    val {addPost, post} = mkPost ()
@@ -656,7 +628,7 @@ fun simplify (program as Program.T {globals, datatypes, functions, main})
 			    = case Vector.peek
 			           (cases, fn (con', _) =>
 				    Con.equals (con, con'))
-				of SOME (con, dst)
+				of SOME (_, dst)
 				 => {dst = dst, args = Vector.map (args, !)}
 				 | NONE
 				 => {dst = valOf default,
@@ -699,7 +671,7 @@ fun doOneNone con
       case Vector.peek
 	   (cases, fn (con', _) =>
 	    Con.equals (con, con'))
-	of SOME (con, dst) => doit dst
+	of SOME (_, dst) => doit dst
          | NONE
 	 => let
 	      val args 
@@ -722,7 +694,7 @@ fun doOneNone con
 		   in
 		     (x, ty)
 		   end)
-	      val (xs, tys) = Vector.unzip args
+	      val (xs, _) = Vector.unzip args
 	      val conValues' = TyconValue.newKnown 
 		               (cons, con,
 				Vector.map 
@@ -813,7 +785,7 @@ fun doMany ()
 		           (SOME test,
 			    Vector.foldr
 			    (statements, SOME test',
-			     fn (Statement.T {var, exp, ...}, NONE) => NONE
+			     fn (Statement.T _, NONE) => NONE
 			      | (Statement.T {var, exp, ...}, SOME test') =>
 			     if Option.equals (var, SOME test', Var.equals)
 			       then case exp
@@ -878,14 +850,14 @@ val doMany
 		      then NONE
 		      else case Vector.foldi
 			        (conValues, None, 
-				 fn (i, conValue, Many) => Many
-				  | (i, conValue, One ccv)
+				 fn (_, _, Many) => Many
+				  | (_, conValue, One ccv)
 				  => (case conValue
-					of (con, NONE) => One ccv
-					 | (con, SOME cv) => Many)
-				  | (i, conValue, None)
+					of (_, NONE) => One ccv
+					 | (_, SOME _) => Many)
+				  | (_, conValue, None)
 				  => (case conValue
-					of (con, NONE) => None
+					of (_, NONE) => None
 					 | (con, SOME cv) => One (con, cv)))
 			     of None => SOME (Vector.new0 (), Bug)
 			      | One (con, SOME args) => doOneSome (con, args)

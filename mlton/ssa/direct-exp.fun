@@ -90,14 +90,14 @@ val var = Var
 
 fun primApp {args, prim, targs, ty} =
    let
-      fun runtime resultTy =
+      fun runtime () =
 	 Runtime {args = args,
 		  prim = prim,
 		  ty = ty}
    in
       case Prim.name prim of
-	 Prim.Name.MLton_halt => runtime NONE
-       | Prim.Name.Thread_copyCurrent => runtime (SOME Type.preThread)
+	 Prim.Name.MLton_halt => runtime ()
+       | Prim.Name.Thread_copyCurrent => runtime ()
        | _ => PrimApp {args = args,
 		       prim = prim,
 		       targs = targs,
@@ -128,13 +128,13 @@ local
 in
    fun layout e : Layout.t =
       case e of
-         Arith {prim, args, overflow, ty} =>
+         Arith {prim, args, overflow, ...} =>
 	    align [Prim.layoutApp (prim, args, layout),
 		   seq [str "Overflow => ", layout overflow]]
        | Call {func, args, ty} =>
 	    seq [Func.layout func, str " ", layouts args,
 		 str ": ", Type.layout ty]
-       | Case {cases, default, test, ty} =>
+       | Case {cases, default, test, ...} =>
 	    align
 	    [seq [str "case ", layout test, str " of"],
 	     indent
@@ -172,7 +172,7 @@ in
 	    lett (seq [Vector.layout Var.layout components,
 		       str " = ", Var.layout tuple],
 		  layout body)
-       | Handle {try, catch, handler, ty} =>
+       | Handle {try, catch, handler, ...} =>
 	    align [layout try,
 		   seq [str "handle ", Var.layout (#1 catch),
 			str " => ", layout handler]]
@@ -182,7 +182,7 @@ in
 			     seq [Var.layout var, str " = ", layout exp])),
 		     layout body)
        | Name _ => str "Name"
-       | PrimApp {prim, targs, args, ty} =>
+       | PrimApp {args, prim, ...} =>
 	    Prim.layoutApp (prim, args, layout)
        | Profile e => ProfileExp.layout e
        | Raise e => seq [str "raise ", layout e]
@@ -223,7 +223,6 @@ structure Cont:
       val bind: Var.t * Res.t -> t
       val goto: Label.t -> t
       val layout: t -> Layout.t
-      val prefix: t * Statement.t -> t
       val receiveExp: (Exp.t * Type.t -> Res.t) -> t
       val receiveVar: (Var.t * Type.t -> Res.t) -> t
       val return: t
@@ -269,7 +268,6 @@ structure Cont:
 	       transfer = transfer}
 
       val goto = Goto
-      val prefix = Prefix
       val receiveExp = ReceiveExp
       val receiveVar = ReceiveVar
       val return = Return
@@ -303,7 +301,7 @@ structure Cont:
 				    exp = e} :: statements,
 	  transfer = transfer}
 
-      val sendVatr =
+      val sendVar =
 	 Trace.trace3 ("Cont.sendVar", layout, Type.layout, Var.layout,
 		       Res.layout)
 	 sendVar

@@ -30,26 +30,7 @@ structure VarInfo =
     fun new var = T {var = ref var}
   end
 
-structure LabelInfo =
-  struct
-    datatype t = T of {args: (Var.t * Type.t) vector}
-
-    fun layout (T {args, ...}) =
-      let open Layout
-      in record [("args", Vector.layout (tuple2 (Var.layout, Type.layout)) args)]
-      end
-
-    local
-      fun make f (T r) = f r
-      fun make' f = (make f, ! o (make f))
-    in
-      val args = make #args
-    end
-
-    fun new args = T {args = args}
-  end
-
-fun eliminate (program as Program.T {datatypes, globals, functions, main}) =
+fun eliminate (Program.T {datatypes, globals, functions, main}) =
   let
     val shrink = shrinkFunction globals
 
@@ -79,14 +60,14 @@ fun eliminate (program as Program.T {datatypes, globals, functions, main}) =
 			       then ()
 			       else var' := SOME v'
 	     end
-    fun flowVarVarTy (v, (v', ty')) = flowVarVar (v, v')
+    fun flowVarVarTy (v, (v', _)) = flowVarVar (v, v')
     fun flowVarsVarTys (vs, vts') = Vector.foreach2 (vs, vts', flowVarVarTy)
     fun flowVarsLabelArgs (vs, l) = flowVarsVarTys (vs, labelArgs l)
       
     (* Visit variables in unknown contexts. *)
     fun visitVar v = 
       VarInfo.var (varInfo v) := SOME v
-    fun visitVarTy (v, ty) = visitVar v
+    fun visitVarTy (v, _) = visitVar v
     fun visitArgs args = Vector.foreach (args, visitVarTy)
     fun visitLabelArgs l = visitArgs (labelArgs l)
 
@@ -98,7 +79,7 @@ fun eliminate (program as Program.T {datatypes, globals, functions, main}) =
 	val _ = 	
 	  Vector.foreach
 	  (blocks, fn Block.T {label, args, ...} =>
-	   (Vector.foreach(args, fn (v, ty) =>
+	   (Vector.foreach(args, fn (v, _) =>
 			   setVarInfo (v, VarInfo.new NONE));
 	    setLabelArgs (label, args)))
 
@@ -126,8 +107,8 @@ fun eliminate (program as Program.T {datatypes, globals, functions, main}) =
 		    Option.app (default, visitLabelArgs))
 	    | Goto {dst, args} => 
 		   (flowVarsLabelArgs (args, dst))
-	    | Raise args => ()
-	    | Return args => ()
+	    | Raise _ => ()
+	    | Return _ => ()
 	    | Runtime {return, ...} => 
 		   (visitLabelArgs return)))
 	  
@@ -144,12 +125,12 @@ fun eliminate (program as Program.T {datatypes, globals, functions, main}) =
 	     display (seq [str "\n",
 			   Func.layout name]);
 	     Vector.foreach
-	     (blocks, fn Block.T {args, label, statements, ...} =>
+	     (blocks, fn Block.T {args, label, ...} =>
 	      if Vector.exists(args, not o keepVar o #1)
 		then display (seq [Label.layout label,
 				   str " ",
 				   Vector.layout
-				   (fn (v, ty) =>
+				   (fn (v, _) =>
 				    seq [Var.layout v,
 					 str ": ",
 					 VarInfo.layout (varInfo v)])
@@ -181,7 +162,7 @@ fun eliminate (program as Program.T {datatypes, globals, functions, main}) =
 		   let
 		     val args =
 		       Vector.keepAllMap2
-		       (args, labelArgs dst, fn (arg, (v, ty)) =>
+		       (args, labelArgs dst, fn (arg, (v, _)) =>
 			if keepVar v
 			  then SOME arg
 			  else NONE)
@@ -239,33 +220,14 @@ structure VarInfo =
       fun make' f = (make f, ! o (make f))
     in
       val vl = make #vl
-      val (var,var') = make' #var
+      val (var, _) = make' #var
     end
 
     fun new () = T {vl = VarLattice.new (),
 		    var = ref NONE}
   end
 
-structure LabelInfo =
-  struct
-    datatype t = T of {args: (Var.t * Type.t) vector}
-
-    fun layout (T {args, ...}) =
-      let open Layout
-      in record [("args", Vector.layout (tuple2 (Var.layout, Type.layout)) args)]
-      end
-
-    local
-      fun make f (T r) = f r
-      fun make' f = (make f, ! o (make f))
-    in
-      val args = make #args
-    end
-
-    fun new args = T {args = args}
-  end
-
-fun eliminate (program as Program.T {datatypes, globals, functions, main}) =
+fun eliminate (Program.T {datatypes, globals, functions, main}) =
   let
     val shrink = shrinkFunction globals
 
@@ -295,8 +257,7 @@ fun eliminate (program as Program.T {datatypes, globals, functions, main}) =
 	    (setLabelArgs (label, args);
 	     Vector.foreach(args, setVarUsedTrue o #1);
 	     case transfer of
-	       Goto {dst, args} =>
-		 Vector.foreach(args, setVarUsedTrue)
+	       Goto {args, ...} => Vector.foreach (args, setVarUsedTrue)
 	     | _ => ())))
 
 	val {get = varInfo: Var.t -> VarInfo.t, ...} =
@@ -313,7 +274,7 @@ fun eliminate (program as Program.T {datatypes, globals, functions, main}) =
 	  in
 	    ()
 	  end
-	fun flowVarVarTy (v, (v', ty')) = flowVarVar (v, v')
+	fun flowVarVarTy (v, (v', _)) = flowVarVar (v, v')
 	fun flowVarsVarTys (vs, vts') = Vector.foreach2 (vs, vts', flowVarVarTy)
 	fun flowVarsLabelArgs (vs, l) = flowVarsVarTys (vs, labelArgs l)
 	  
@@ -329,7 +290,7 @@ fun eliminate (program as Program.T {datatypes, globals, functions, main}) =
 	    else ()
 	fun visitStatement stmt = Option.app (Statement.var stmt, visitVar)
 	fun visitStatements stmts = Vector.foreach (stmts, visitStatement)
-	fun visitVarTy (v, ty) = visitVar v
+	fun visitVarTy (v, _) = visitVar v
 	fun visitArgs args = Vector.foreach (args, visitVarTy)
 	fun visitLabelArgs l = visitArgs (labelArgs l)
 
@@ -338,7 +299,7 @@ fun eliminate (program as Program.T {datatypes, globals, functions, main}) =
 	val _ = visitArgs args
 	val _ = 
 	  Vector.foreach
-	  (blocks, fn Block.T {label, args, statements, transfer} =>
+	  (blocks, fn Block.T {statements, transfer, ...} =>
 	   (visitStatements statements ;
 	    case transfer of
 	      Arith {overflow, success, ...} =>
@@ -360,8 +321,8 @@ fun eliminate (program as Program.T {datatypes, globals, functions, main}) =
 		    Option.app (default, visitLabelArgs))
 	    | Goto {dst, args} => 
 		   (flowVarsLabelArgs (args, dst))
-	    | Raise args => ()
-	    | Return args => ()
+	    | Raise _ => ()
+	    | Return _ => ()
 	    | Runtime {return, ...} => 
 		   (visitLabelArgs return)))
 	  
@@ -402,12 +363,12 @@ fun eliminate (program as Program.T {datatypes, globals, functions, main}) =
 	     display (seq [str "\n",
 			   Func.layout name]);
 	     Vector.foreach
-	     (blocks, fn Block.T {args, label, statements, ...} =>
+	     (blocks, fn Block.T {args, label, ...} =>
 	      if Vector.exists(args, not o keepVar o #1)
 		then display (seq [Label.layout label,
 				   str " ",
 				   Vector.layout
-				   (fn (v, ty) =>
+				   (fn (v, _) =>
 				    seq [Var.layout v,
 					 str ": ",
 					 VarInfo.layout (varInfo v)])
@@ -439,7 +400,7 @@ fun eliminate (program as Program.T {datatypes, globals, functions, main}) =
 		   let
 		     val args =
 		       Vector.keepAllMap2
-		       (args, labelArgs dst, fn (arg, (v, ty)) =>
+		       (args, labelArgs dst, fn (arg, (v, _)) =>
 			if keepVar v
 			  then SOME arg
 			  else NONE)
@@ -481,7 +442,6 @@ open Exp Transfer
   
 structure Graph = DirectedGraph
 structure Node = Graph.Node
-structure Edge = Graph.Edge
 
 structure VarInfo =
   struct
@@ -494,7 +454,6 @@ structure VarInfo =
 
     local
       fun make f (T r) = f r
-      fun make' f = (make f, ! o (make f))
     in
       val node = make #node
     end
@@ -506,14 +465,8 @@ structure NodeInfo =
   struct
     datatype t = T of {var: Var.t}
 
-    fun layout (T {var, ...}) =
-      let open Layout
-      in record [("var", Var.layout var)]
-      end
-
     local
       fun make f (T r) = f r
-      fun make' f = (make f, ! o (make f))
     in
       val var = make #var
     end
@@ -521,26 +474,7 @@ structure NodeInfo =
     fun new var = T {var = var}
   end
 
-structure LabelInfo =
-  struct
-    datatype t = T of {args: (Var.t * Type.t) vector}
-
-    fun layout (T {args, ...}) =
-      let open Layout
-      in record [("args", Vector.layout (tuple2 (Var.layout, Type.layout)) args)]
-      end
-
-    local
-      fun make f (T r) = f r
-      fun make' f = (make f, ! o (make f))
-    in
-      val args = make #args
-    end
-
-    fun new args = T {args = args}
-  end
-
-fun eliminate (program as Program.T {datatypes, globals, functions, main}) =
+fun eliminate (Program.T {datatypes, globals, functions, main}) =
   let
     val shrink = shrinkFunction globals
 
@@ -585,9 +519,9 @@ fun eliminate (program as Program.T {datatypes, globals, functions, main}) =
 	(* Initialize *)
 	val _ = 
 	  Vector.foreach
-	  (blocks, fn Block.T {label, args, transfer, ...} =>
+	  (blocks, fn Block.T {label, args, ...} =>
 	   (setLabelArgs (label, args);
-	    Vector.foreach(args, fn (v, ty) =>
+	    Vector.foreach(args, fn (v, _) =>
 			   setVarInfo (v, VarInfo.new (newNode v)))))
 
 	(* Flow Transfer.Goto arguments. *)
@@ -603,7 +537,7 @@ fun eliminate (program as Program.T {datatypes, globals, functions, main}) =
 	  in
 	    ()
 	  end
-	fun flowVarVarTy (v, (v', ty')) = flowVarVar (v, v')
+	fun flowVarVarTy (v, (v', _)) = flowVarVar (v, v')
 	fun flowVarsVarTys (vs, vts') = Vector.foreach2 (vs, vts', flowVarVarTy)
 	fun flowVarsLabelArgs (vs, l) = flowVarsVarTys (vs, labelArgs l)
 	  
@@ -618,7 +552,7 @@ fun eliminate (program as Program.T {datatypes, globals, functions, main}) =
 	  in
 	    ()
 	  end
-	fun visitVarTy (v, ty) = visitVar v
+	fun visitVarTy (v, _) = visitVar v
 	fun visitArgs args = Vector.foreach (args, visitVarTy)
 	fun visitLabelArgs l = visitArgs (labelArgs l)
 
@@ -646,8 +580,8 @@ fun eliminate (program as Program.T {datatypes, globals, functions, main}) =
 		    Option.app (default, visitLabelArgs))
 	    | Goto {dst, args} => 
 		   (flowVarsLabelArgs (args, dst))
-	    | Raise args => ()
-	    | Return args => ()
+	    | Raise _ => ()
+	    | Return _ => ()
 	    | Runtime {return, ...} => 
 		   (visitLabelArgs return)))
 	  
@@ -693,7 +627,7 @@ fun eliminate (program as Program.T {datatypes, globals, functions, main}) =
 		fn out =>
 		Layout.outputl
 		(Graph.layoutDot 
-		 (G, fn {nodeName} =>
+		 (G, fn _ =>
 		  {title = concat [Func.toString name, " argument-flow graph"],
 		   options = [],
 		   edgeOptions = fn _ => [],
@@ -706,12 +640,12 @@ fun eliminate (program as Program.T {datatypes, globals, functions, main}) =
 	     display (seq [str "\n",
 			   Func.layout name]);
 	     Vector.foreach
-	     (blocks, fn Block.T {args, label, statements, ...} =>
+	     (blocks, fn Block.T {args, label, ...} =>
 	      if Vector.exists(args, not o keepVar o #1)
 		then display (seq [Label.layout label,
 				   str " ",
 				   Vector.layout
-				   (fn (v, ty) =>
+				   (fn (v, _) =>
 				    seq [Var.layout v,
 					 str ": ",
 					 VarInfo.layout lNode (varInfo v)])
@@ -743,7 +677,7 @@ fun eliminate (program as Program.T {datatypes, globals, functions, main}) =
 		   let
 		     val args =
 		       Vector.keepAllMap2
-		       (args, labelArgs dst, fn (arg, (v, ty)) =>
+		       (args, labelArgs dst, fn (arg, (v, _)) =>
 			if keepVar v
 			  then SOME arg
 			  else NONE)
@@ -778,7 +712,4 @@ fun eliminate (program as Program.T {datatypes, globals, functions, main}) =
 end
 
 functor CommonArg (S: COMMON_ARG_STRUCTS): COMMON_ARG = 
-struct
-  structure CA = CommonArgNode(S)
-  open CA
-end
+   CommonArgNode (S)

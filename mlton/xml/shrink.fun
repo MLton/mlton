@@ -16,14 +16,8 @@ struct
 open S
 open Dec PrimExp
 
-fun msg s = Out.output (Out.error, s)
-
 val traceShrinkExp =
    Trace.trace ("Xml.shrinkExp", Exp.layout, Exp.layout)
-
-val traceShrinkDecs =
-   Trace.trace
-   ("Xml.shrinkDecs", List.layout Dec.layout, List.layout Dec.layout)
 
 val traceShrinkLambda =
    Trace.trace ("Xml.shrinkLambda", Lambda.layout, Lambda.layout)
@@ -67,7 +61,7 @@ structure VarInfo =
 			 NONE => empty
 		       | SOME i => paren (layout i)]
 	     | Const c => Const.layout c
-	     | Lambda {isInlined, lam} =>
+	     | Lambda {isInlined, ...} =>
 		  seq [str "Lambda ", Bool.layout (!isInlined)]
 	     | Tuple is => Vector.layout layout is
       end
@@ -111,8 +105,6 @@ structure MonoVarInfo =
 structure Value =
    struct
       datatype t = datatype VarInfo.value
-
-      val layout = VarInfo.layoutValue
 
       fun toPrimExp v =
 	 case v of
@@ -183,7 +175,7 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
       val shrinkVarExp = VarInfo.varExp o varExpInfo
       fun shrinkVarExps xs = Vector.map (xs, shrinkVarExp)
       local
-	 fun handleBoundVar (x, ts, ty) =
+	 fun handleBoundVar (x, ts, _) =
 	    setVarInfo (x,
 			if Vector.isEmpty ts
 			   then (InternalVarInfo.VarInfo
@@ -234,7 +226,7 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
 			   let
 			      val decs' =
 				 Vector.keepAll
-				 (decs', fn {var, ty, lambda} =>
+				 (decs', fn {lambda, var, ...} =>
 				  let
 				     val {numOccurrences, value, ...} =
 					monoVarInfo var

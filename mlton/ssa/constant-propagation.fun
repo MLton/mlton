@@ -58,14 +58,6 @@ structure Value =
 	     | Const of Const.t
 	     | Unknown (* many possible values *)
 
-	    fun isZero (T {const, ...}) =
-	       case !const of
-		  Const c =>
-		     (case c of
-			 Const.Int i => IntX.isZero i
-		       | _ => false)
-		| _ => false
-
 	    fun new c = T {const = ref c,
 			   coercedTo = ref []}
 
@@ -242,7 +234,6 @@ structure Value =
 	 fun make sel (T s) = sel (Set.value s)
       in
 	 val value = make #value
-	 val global = make #global
 	 val ty = make #ty
       end
 
@@ -269,17 +260,12 @@ structure Value =
 	 and layoutData (Data {value, ...}) =
 	    case !value of
 	       Undefined => str "undefined datatype"
-	     | ConApp {con, args, uniq} =>
+	     | ConApp {con, uniq, ...} =>
 		  record [("con", Con.layout con),
 			  ("uniq", Unique.layout uniq)]
 	          (* Can't layout the args because there may be a circularity *)
 	     | Unknown => str "unknown datatype"
       end
-
-      fun isZero v =
-	 case value v of
-	    Const c => Const.isZero c
-	  | _ => false
 
       val globalsInfo = Trace.info "globals"
       val globalInfo = Trace.info "global"
@@ -400,11 +386,6 @@ structure Value =
 
       val zero = IntSize.memoize (fn s => const (S.Const.int (IntX.zero s)))
 
-      fun deconst v =
-	 case value v of
-	    Const c => c
-	  | _ => Error.bug "deconst"
-
       fun constToEltLength (c, err) =
 	 let
 	    val v = case c of
@@ -524,7 +505,7 @@ structure Value =
 		  Birth.unknown)
       end
 
-      fun select {tuple, offset, resultType} =
+      fun select {tuple, offset, resultType = _} =
 	 case value tuple of
 	    Tuple vs => Vector.sub (vs, offset)
 	  | _ => Error.bug "select of non-tuple" 
@@ -564,7 +545,6 @@ fun simplify (program: Program.t): Program.t =
 	 Property.getSetOnce
 	 (Con.plist, Property.initRaise ("conInfo", Con.layout))
       val conValues = #values o conInfo
-      val conResult = #result o conInfo
       val _ =
 	 Vector.foreach
 	 (datatypes, fn Datatype.T {tycon, cons} =>
@@ -664,7 +644,7 @@ fun simplify (program: Program.t): Program.t =
 			 ; coerce {from = x, to = x'})
 		   | (Tuple vs, Tuple vs') => coerces {froms = vs, tos = vs'}
 		   | (Weak v, Weak v') => unify (v, v')
-		   | (Const (Const.T {const = ref (Const.Const c), coercedTo}),
+		   | (Const (Const.T {const = ref (Const.Const c), ...}),
 		      Vector {elt, length}) =>
 			let
 			   val {elt = elt', length = length'} =
@@ -744,7 +724,7 @@ fun simplify (program: Program.t): Program.t =
 	     | Tuple vs => Vector.foreach (vs, sideEffect)
 	     | Weak v => makeUnknown v
 	 fun primApp {prim,
-		      targs,
+		      targs = _,
 		      args: Value.t vector,
 		      resultVar,
 		      resultType}: t =
@@ -834,7 +814,6 @@ fun simplify (program: Program.t): Program.t =
 		  coerce = coerce,
 		  conApp = conApp,
 		  const = Value.const,
-		  copy = Value.fromType o Value.ty,
 		  filter = filter,
 		  filterInt = filterIgnore,
 		  filterWord = filterIgnore,
@@ -876,8 +855,6 @@ fun simplify (program: Program.t): Program.t =
 	 case Value.global (value x, newGlobal) of
 	    NONE => x
 	  | SOME (g, _) => g
-      fun replaceVars xs = Vector.map (xs, replaceVar)
-
       fun doitStatement (Statement.T {var, ty, exp}) =
 	 let
 	    fun keep () =

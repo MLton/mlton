@@ -11,7 +11,7 @@ struct
 open S
 open Exp Transfer
 
-fun eliminate (program as Program.T {globals, datatypes, functions, main})
+fun eliminate (Program.T {globals, datatypes, functions, main})
   = let
        val shrink = shrinkFunction globals
 

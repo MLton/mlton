@@ -30,7 +30,6 @@ structure GlobalInfo =
 
     local 
       fun make f (T r) = f r
-      fun make' f = (make f, ! o (make f))
     in
       val isGlobalRef = make #isGlobalRef
       val funcUses = make #funcUses
@@ -59,7 +58,7 @@ structure VarInfo =
 					   deref: bool ref}}
 
     fun layout (T {reff, assigns, derefs, locall, 
-		   threadCopyCurrent as {assign, deref, ...}, ...})
+		   threadCopyCurrent = {assign, deref, ...}, ...})
       = let open Layout
 	in record [("reff", Option.layout (tuple2 (Label.layout, Type.layout)) reff),
 		   ("assigns", List.layout Label.layout (!assigns)),
@@ -74,8 +73,8 @@ structure VarInfo =
       fun make' f = (make f, ! o (make f))
     in
       val reff = make #reff
-      val (assigns, assigns') = make' #assigns
-      val (derefs, derefs') = make' #derefs
+      val (assigns, _) = make' #assigns
+      val (derefs, _) = make' #derefs
       val locall = make #locall
       val threadCopyCurrent = make #threadCopyCurrent
     end
@@ -111,13 +110,6 @@ structure LabelInfo =
 		       derefs: Var.t list ref,
 		       preds: Label.t list ref,
 		       visited: bool ref}
-
-    fun layout (T {reffs, assigns, derefs, ...})
-      = let open Layout
-	in record [("reffs", List.layout Var.layout (!reffs)),
-		   ("assigns", List.layout Var.layout (!assigns)),
-		   ("derefs", List.layout Var.layout (!derefs))]
-	end
 
     local 
       fun make f (T r) = f r
@@ -309,8 +301,7 @@ fun eliminate (program: Program.t): Program.t
 
 	     (* Find all localizable refs. *)
 	     val refs = ref []
-	     fun visitStatement label
-				(s: Statement.t as Statement.T {var, ty, exp})
+	     fun visitStatement label (Statement.T {var, ty, exp})
 	       = let
 		   val li = labelInfo label
 		   fun setReff ()
@@ -346,7 +337,7 @@ fun eliminate (program: Program.t): Program.t
 			 end
 		      | _ => default ()
 		 end
-	     fun visitBlock (Block.T {label, args, statements, transfer, ...})
+	     fun visitBlock (Block.T {label, statements, transfer, ...})
 	       = let
 		   val li = LabelInfo.new ()
 		   val _ = setLabelInfo (label, li)
@@ -370,9 +361,6 @@ fun eliminate (program: Program.t): Program.t
 			  let
 			    val vi = varInfo x
 			    val def = #1 (valOf (VarInfo.reff vi))
-			    val assigns = VarInfo.assigns' vi
-			    val derefs = VarInfo.derefs' vi
-
 			    fun doit (threadCopyCurrent, uses)
 			      = let
 				  val visited = ref []
@@ -448,7 +436,7 @@ fun eliminate (program: Program.t): Program.t
 		      end)
 
 	     (* Rewrite. *)
-	     fun rewriteStatement (s: Statement.t as Statement.T {var, ty, exp})
+	     fun rewriteStatement (s: Statement.t as Statement.T {exp, var, ...})
 	       = let
 		   datatype z = datatype Prim.Name.t
 		 in

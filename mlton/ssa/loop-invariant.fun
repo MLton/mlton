@@ -23,7 +23,7 @@ struct
 open S
 open Exp Transfer
 
-fun loopInvariant (program as Program.T {globals, datatypes, functions, main}) =
+fun loopInvariant (Program.T {globals, datatypes, functions, main}) =
    let
       val shrink = shrinkFunction globals
 
@@ -106,7 +106,6 @@ fun loopInvariant (program as Program.T {globals, datatypes, functions, main}) =
 		        NONE => (args, statements, transfer)
 		      | SOME label' =>
 			   let
-			      val label' = valOf (!newLabel)
 			      val _ =
 				 Control.diagnostic
 				 (fn () =>

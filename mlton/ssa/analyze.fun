@@ -13,10 +13,10 @@ datatype z = datatype Exp.t
 datatype z = datatype Transfer.t
    
 fun 'a analyze
-   {coerce, conApp, const, copy,
+   {coerce, conApp, const,
     filter, filterInt, filterWord,
     fromType, layout, primApp,
-    program = Program.T {main, datatypes, globals, functions},
+    program = Program.T {main, globals, functions, ...},
     select, tuple, useFromTypeOnBinds} =
    let
       val unit = fromType Type.unit

@@ -26,13 +26,6 @@ structure Cont =
 	in
 	  tuple2 (Label.layout, Handler.layout) (cont, handler)
 	end
-    val toString = Layout.toString o layout
-
-    val equals: t * t -> bool
-      = fn ({cont = c1, handler = h1}, {cont = c2, handler = h2})
-         => Label.equals(c1,c2) andalso Handler.equals (h1, h2)
-
-    fun plist _ = Error.bug "Cont.plist"
   end
 
 (* Return = {Uncalled, Unknown} U Cont U Func
@@ -55,21 +48,6 @@ structure Areturn =
 	     | Cont c => Cont.layout c
 	     | Func f => Func.layout f
 	end
-    val toString = Layout.toString o layout
-      
-    val equals
-      = fn (Uncalled, Uncalled) => true
-         | (Unknown, Unknown) => true
-	 | (Cont c1, Cont c2) => Cont.equals (c1, c2)
-	 | (Func f1, Func f2) => Func.equals (f1, f2)
-	 | _ => false
-
-    val isUncalled 
-      = fn Uncalled => true
-         | _ => false
-    val isUnknown
-      = fn Unknown => true
-         | _ => false
   end
 
 structure ContData =
@@ -90,8 +68,8 @@ structure ContData =
 		     (S', S)
 		   end
     in
-      val (node', node) = make #node
-      val (rootEdge', rootEdge) = make #rootEdge
+      val (node', _) = make #node
+      val (rootEdge', _) = make #rootEdge
       val (prefixes', prefixes) = make #prefixes
     end
     fun nodeReset (T {node, ...}) = node := NONE
@@ -135,14 +113,14 @@ structure FuncData =
 		      S'
 		    end
     in
-      val (node', node) = make #node
+      val (node', _) = make #node
       val (reach', reach) = make #reach
       val callers' = make' #callers
       val callees' = make' #callees
-      val (A', A) = make #A
+      val (_, A) = make #A
       val (prefixes', prefixes) = make #prefixes
-      val (finished', finished) = make #finished
-      val (replace', replace) = make #replace
+      val (finished', _) = make #finished
+      val (_, replace) = make #replace
       val (contified', contified) = make #contified
     end
     fun nodeReset (T {node, ...}) = node := NONE
@@ -152,8 +130,6 @@ structure ContFuncGraph =
   struct
     structure Graph = DirectedGraph
     structure Node = Graph.Node
-    structure Edge = Graph.Edge
-    structure DfsParam = Graph.DfsParam
 
     datatype t = ContNode of Cont.t
                | FuncNode of Func.t
@@ -228,10 +204,7 @@ structure ContFuncGraph =
 
     fun newFuncGraph {getFuncData: Func.t -> FuncData.t}
       = let
-	  val {G, addEdge, addEdge',
-	       getNodeInfo, 
-	       getContNode, getFuncNode, 
-	       reset}
+	  val {G, addEdge, addEdge', getNodeInfo, getFuncNode, reset, ...}
 	    = newContFuncGraph {getContData = fn _ => Error.bug "newFuncGraph",
 				getFuncData = getFuncData}
 	in
@@ -240,7 +213,7 @@ structure ContFuncGraph =
 	   addEdge' = addEdge',
 	   getNodeInfo = fn n => case getNodeInfo n
 				   of FuncNode f => f
-				    | ContNode c => Error.bug "newFuncGraph",
+				    | ContNode _ => Error.bug "newFuncGraph",
 	   getFuncNode = getFuncNode,
 	   reset = reset}
 	end
@@ -279,12 +252,10 @@ structure InitReachCallersCallees =
      *                = TailCallees
      *)
     fun initReachCallersCallees 
-        {program as Program.T {functions, main = fm, ...},
+        {program = Program.T {functions, main = fm, ...},
 	 getFuncData: Func.t -> FuncData.t} : unit
       = let
-	  val {G, addEdge, addEdge',
-	       getNodeInfo, getFuncNode, 
-	       reset}
+	  val {G, addEdge, getNodeInfo, getFuncNode, reset, ...}
 	    = ContFuncGraph.newFuncGraph {getFuncData = getFuncData}
 
 	  val _ 
@@ -359,15 +330,13 @@ structure AnalyzeDom =
      *                forall c in Cont. (ContData.node o getContData) c = NONE
      *                forall f in Func. (FuncData.node o getFuncData) f = NONE
      *)
-    fun analyzeDom {program as Program.T {functions, main = fm, ...},
+    fun analyzeDom {program = Program.T {functions, main = fm, ...},
 		    getContData: Cont.t -> ContData.t,
 		    getFuncData: Func.t -> FuncData.t} : unit
       = let
 	  datatype z = datatype Areturn.t
 
-	  val {G, addEdge, addEdge',
-	       getNodeInfo, getContNode, getFuncNode, 
-	       reset}
+	  val {G, addEdge, getNodeInfo, getContNode, getFuncNode, reset, ...}
 	    = ContFuncGraph.newContFuncGraph {getContData = getContData,
 					      getFuncData = getFuncData}
 	  val Root = DirectedGraph.newNode G
@@ -481,7 +450,6 @@ structure AnalyzeDom =
                               val l_node = ancestor f_node
 			      (* Use this for the parent version *)
 			      (* val l_node = idom f_node *)
-			      val l = getNodeInfo l_node
 			    in
 			      case getNodeInfo l_node
 				of FuncNode g => f_ADom := Func g
@@ -503,12 +471,6 @@ end
 
 structure Transform =
   struct
-
-    structure Graph = DirectedGraph
-    structure Node = Graph.Node
-    structure Edge = Graph.Edge
-    structure DfsParam = Graph.DfsParam
-
     (*
      * Precondition: forall c in Cont. (ContData.node o getContData) c = NONE
      *               forall c in Cont. (ContData.prefixes o getContData) c = []
@@ -525,8 +487,7 @@ structure Transform =
      * Postcondition: forall c in Cont. (ContData.node o getContData) c = NONE
      *                forall f in Func. (FuncData.node o getFuncData) f = NONE
      *)
-    fun transform {program as Program.T {datatypes, globals, 
-					 functions, main},
+    fun transform {program = Program.T {datatypes, globals, functions, main},
 		   getFuncData: Func.t -> FuncData.t,
 		   getContData: Cont.t -> ContData.t} : Program.t
       = let
@@ -676,10 +637,7 @@ structure Transform =
 	  and transBlock arg: Block.t =
 	     traceTransBlock
 	     (fn (f: Func.t, 
-		  block as Block.T {label, 
-				    args, 
-				    statements, 
-				    transfer}: Block.t,
+		  Block.T {label, args, statements, transfer},
 		  c: Return.t) =>
 	     let
 		val transfer
@@ -762,7 +720,7 @@ structure Transform =
       = Control.trace (Control.Detail, "transform") transform
   end
 
-fun contify (program as Program.T {functions, ...})
+fun contify (program as Program.T _)
   = let
       val {get = getLabelInfo : Label.t -> (Handler.t * ContData.t) list ref,
 	   ...}

@@ -38,7 +38,7 @@ val sxmlPasses : pass list ref = ref
 local
    type passGen = string -> pass option
      
-   fun mkSimplePassGen (name,doit) =
+   fun mkSimplePassGen (name, doit): passGen =
       let val count = Counter.new 1
       in fn s => if s = name
 		    then SOME {name = name ^ "#" ^ 

@@ -38,7 +38,6 @@ structure Oper =
 	 fn Const c => Const.layout c
 	  | Var x => Var.layout x
 
-      val zero = IntSize.memoize (fn s => Const (Const.int (IntX.zero s)))
       val equals =
 	 fn (Const c, Const c') => Const.equals (c, c')
 	  | (Var x, Var x') => Var.equals (x, x')
@@ -87,7 +86,7 @@ structure Fact =
 
 open Exp Transfer
 
-fun simplify (program as Program.T {globals, datatypes, functions, main}) =
+fun simplify (Program.T {globals, datatypes, functions, main}) =
    let
       datatype varInfo =
 	 Const of Const.t
@@ -98,7 +97,7 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 	 Property.getSetOnce (Var.plist, Property.initConst None)
       datatype z = datatype Fact.result
       datatype z = datatype Rel.t
-      fun makeVarInfo {prim, args, targs}: varInfo =
+      fun makeVarInfo {args, prim, targs = _}: varInfo =
 	 let
 	    fun arg i =
 	       let
@@ -203,7 +202,7 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 		 Transfer.foreachLabel
 		 (transfer, Int.inc o #inDeg o labelInfo))
 	     (* Perform analysis, set up facts, and set up ancestor. *)
-	     fun loop (Tree.T (Block.T {label, args, statements, transfer},
+	     fun loop (Tree.T (Block.T {label, statements, transfer, ...},
 			       children),
 		       ancestor') =
 	        let
@@ -331,7 +330,7 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 		 let
 		    val statements =
 		       Vector.map
-		       (statements, fn statement as Statement.T {var, ty, exp} =>
+		       (statements, fn statement as Statement.T {ty, var, ...} =>
 			let
 			   fun doit x =
 			      (Int.inc numSimplified

@@ -60,10 +60,6 @@ structure Cardinality =
    struct
       datatype t = Zero | One | Many
 
-      val isMany: t -> bool =
-	 fn Many => true
-	  | _ => false
-	       
       fun layout c =
 	 Layout.str (case c of
 			Zero => "zero"
@@ -71,10 +67,6 @@ structure Cardinality =
 		      | Many => "many")
 
       val equals: t * t -> bool = op =
-
-      val isZero: t -> bool =
-	 fn Zero => true
-	  | _ => false
    end
 
 structure ConRep =
@@ -115,7 +107,7 @@ structure Result =
 	 end
    end
 
-fun simplify (program as Program.T {datatypes, globals, functions, main}) =
+fun simplify (Program.T {datatypes, globals, functions, main}) =
    let
       val {get = conInfo: Con.t -> {rep: ConRep.t ref,
 				    args: Type.t vector},
@@ -133,11 +125,8 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
       val conArgs = #args o conInfo
       fun setConRep (con, r) = #rep (conInfo con) := r
       val conIsUseful = ConRep.isUseful o conRep
-      val conIsUseless = ConRep.isUseless o conRep
       val conIsUseful =
-	 Trace.trace 
-	 ("conIsUseful", Con.layout, Bool.layout) 
-	 conIsUseful
+	 Trace.trace ("conIsUseful", Con.layout, Bool.layout) conIsUseful
       val setConRep =
 	 Trace.trace2 
 	 ("setConRep", Con.layout, ConRep.layout, Unit.layout)
@@ -190,7 +179,7 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
        *)
       val _ =
 	 let
-	    fun handleStatement (Statement.T {var, ty, exp}) =
+	    fun handleStatement (Statement.T {exp, ...}) =
 	       case exp of
 		  ConApp {con, ...} => setConRep (con, ConRep.Useful)
 		| _ => ()
@@ -297,7 +286,7 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
 			     end)
 	      ; One))
       end
-      fun conCardinality {con, args} = tupleCardinality args
+      fun conCardinality {args, con = _} = tupleCardinality args
       (* Compute the tycon cardinalitues with a fixed point,
        * initially assuming every datatype tycon cardinality is Zero.
        *)
@@ -493,7 +482,6 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
 	 if Type.isUnit (newVarType x)
 	    then unitVar
 	 else x
-      fun simplifyVars xs = List.map (xs, simplifyVar)
       val varIsUseless = Type.isUnit o newVarType
       fun removeUselessVars xs = Vector.keepAll (xs, not o varIsUseless)
       fun tuple xs =
@@ -652,7 +640,7 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
 	 ("SimplifyTypes.simplifyTransfer", Transfer.layout,
 	  Layout.tuple2 (Vector.layout Statement.layout, Transfer.layout))
 	 simplifyTransfer
-      fun simplifyStatement (stmt as Statement.T {var, ty, exp}) =
+      fun simplifyStatement (Statement.T {var, ty, exp}) =
 	 let
 	    val ty = simplifyMaybeVarType (var, ty)	 
 	 in

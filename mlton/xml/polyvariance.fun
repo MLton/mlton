@@ -87,7 +87,7 @@ fun shouldDuplicate (program as Program.T {body, ...}, small, product)
 		   shouldDuplicate: bool ref}
       val {get = varInfo: Var.t -> info option, set = setVarInfo, ...} =
 	 Property.getSetOnce (Var.plist, Property.initConst NONE)
-      fun new {var, ty, lambda}: unit =
+      fun new {lambda = _, ty, var}: unit =
 	 if Type.isHigherOrder ty
 	    then setVarInfo (var, SOME {numOccurrences = ref 0,
 					shouldDuplicate = ref false})
@@ -175,8 +175,7 @@ fun shouldDuplicate (program as Program.T {body, ...}, small, product)
 				 let
 				    val size =
 				       List.fold
-				       (dups, 0, fn ({body, size, ...}, n) =>
-					n + size)
+				       (dups, 0, fn ({size, ...}, n) => n + size)
 				    val numOccurrences =
 				       List.fold
 				       (dups, 0,
@@ -259,7 +258,7 @@ fun duplicate (program as Program.T {datatypes, body, overflow},
 	 Pat.T {con = con,
 		targs = targs,
 		arg = Option.map (arg, bindVarType)}
-      fun new {var, ty, lambda}: unit =
+      fun new {lambda = _, ty = _, var}: unit =
 	 if shouldDuplicate var
 	    then setVarInfo (var, Dup {duplicates = ref []})
 	 else (bind var; ())
@@ -381,9 +380,9 @@ fun duplicate (program as Program.T {datatypes, body, overflow},
 			    case varInfo var of
 			       Replace _ => NONE
 			     | Dup {duplicates, ...} => SOME (dec, !duplicates))
-			val decs =
+			val _ =
 			   Vector.foreach
-			   (dups, fn ({var, ty, lambda}, duplicates) =>
+			   (dups, fn ({var, ...}, duplicates) =>
 			    List.foreach
 			    (duplicates, fn var' =>
 			     let

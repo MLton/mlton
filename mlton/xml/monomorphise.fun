@@ -57,20 +57,6 @@ structure Cache:
 	       end
 	 end
 
-      structure Stypes = MonoVector (Stype)
-
-      structure C1 =
- 	 struct
- 	    structure P = PolyCache
- 	       
- 	    type 'a t = (Stypes.t, 'a) P.t
- 	    fun new () = P.new {equal = Stypes.equals}
- 	    val getOrAdd = P.getOrAdd
-	       
- 	    val toList = P.toList
- 	 end
-      (*open C1*)
-
       structure C2 =
 	 (* use a splay tree based on lexicographic ordering of vectors of hash
 	  * values of types.  Use an alist (i.e. polycache) within each bucket
@@ -114,60 +100,6 @@ structure Cache:
 			  Cache.toList cache @ items)
 	 end
       open C2
-
-      (* This structure compares C1 and C2 to make sure they are behaving
-       * the same way.  Useful to find bugs in C2.
-       * In order to use it, uncomment the open following.
-       *)
-      structure C1C2 =
-	 struct
-	    type 'a t = 'a C1.t * 'a C2.t
-	       
-	    fun new () = (C1.new (), C2.new ())
-	       
-	    fun layout (c1, c2) =
-	       let
-		  fun layout c =
-		     Layout.list (List.map (c, fn (ts, _) => Stypes.layout ts))
-	       in Layout.align [layout (C1.toList c1), layout (C2.toList c2)]
-	       end
-	    
-	    fun getOrAdd (c as (c1, c2), ts, th) =
-	       let val th = Promise.lazy th
-		  val b1 = ref false
-		  val b2 = ref false
-		  fun check (g, c, b) = g (c, ts, fn () => (b := true; th ()))
-		  val x = check (C1.getOrAdd, c1, b1)
-	       in check (C2.getOrAdd, c2, b2);
-		  if !b1 = !b2
-		     then x
-		  else (Control.diagnostic
-			(fn () =>
-			 (let open Layout
-			  in seq [str "getOrAdd",
-				  tuple [layout c, Stypes.layout ts]]
-			  end))
-			; Error.bug "getOrAdd")
-	       end
-	    
-	    fun toList (c as (c1, c2)) =
-	       let val l1 = C1.toList c1
-		  val l2 = C2.toList c2
-		  fun sub (l1, l2) =
-		     List.forall (l1, fn (ts1, _) =>
-				  List.exists (l2, fn (ts2, _) =>
-					       Stypes.equals (ts1, ts2)))
-	       in if (List.length l1 = List.length l2
-		      andalso sub (l1, l2) andalso sub (l2, l1))
-		     then l1
-		  else (Control.diagnostic (fn () =>
-					    let open Layout
-					    in seq [str "toList ", layout c]
-					    end)
-			; Error.bug "toList")
-	       end
-	 end
-      (* open C1C2 *)
    end
 
 fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
@@ -242,7 +174,6 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
 			    | SOME x => SOME (renameMono x))}
 	 end
       val monoPat = Trace.trace ("monoPat", Xpat.layout, Spat.layout) monoPat
-      fun finishDecs decs = decs []
       val traceMonoExp =
 	 Trace.trace ("monoExp", Xexp.layout, Sexp.layout)
       val traceMonoDec =
@@ -443,7 +374,7 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
 				       exp = SprimExp.Var result} :: decs)
 		   end))
 	    end
-       | dec as Xdec.Fun {tyvars, decs} =>
+       | Xdec.Fun {tyvars, decs} =>
 	    let
 	       val cache = Cache.new ()
 	       val _ =

@@ -25,11 +25,11 @@ val xmlPasses : pass list ref = ref
 local
    type passGen = string -> pass option
      
-   fun mkSimplePassGen (name,doit) =
+   fun mkSimplePassGen (name, doit): passGen =
       let val count = Counter.new 1
       in fn s => if s = name
-		    then SOME {name = name ^ "#" ^ 
-			       (Int.toString (Counter.next count)),
+		    then SOME {name = concat [name, "#",
+					      Int.toString (Counter.next count)],
 			       doit = doit}
 		    else NONE
       end

@@ -208,11 +208,6 @@ structure Value =
 	 Trace.trace2 ("Useless.deepCoerce", layout, Useful.layout, Unit.layout)
 	 deepCoerce
 	 
-      fun isGround (v: t): bool =
-	 case value v of
-	    Ground g => true
-	  | _ => false
-	       
       fun deground (v: t): Useful.t =
 	 case value v of
 	    Ground g => g
@@ -287,7 +282,6 @@ structure Value =
 	 in
 	    v
 	 end
-      val int = fromType Type.defaultInt
 
       fun detupleSlots (v: t): slot vector =
 	 case value v of
@@ -304,7 +298,6 @@ structure Value =
 	 in
 	    v
 	 end
-      val unit = tuple (Vector.new0 ())
       fun select {tuple, offset, resultType} =
 	 let
 	    val v = fromType resultType
@@ -329,7 +322,6 @@ structure Value =
       in
 	 val dearray: t -> t = make ("dearray", #1 o #elt)
 	 val arrayLength = make ("arrayLength", #length)
-	 val arrayUseful = make ("arrayUseful", #useful)
       end
 
       fun deref (r: t): t =
@@ -502,7 +494,8 @@ fun useless (program: Program.t): Program.t =
 
 	 type value = t
 
-	 fun primApp {prim, targs, args: t vector, resultVar = _, resultType} =
+	 fun primApp {args: t vector, prim, resultVar = _, resultType,
+		      targs = _} =
 	    let
 	       val result = fromType resultType
 	       fun return v = coerce {from = v, to = result}
@@ -574,7 +567,6 @@ fun useless (program: Program.t): Program.t =
 		  coerce = Value.coerce,
 		  conApp = conApp,
 		  const = Value.const,
-		  copy = Value.fromType o Value.ty,
 		  filter = filter,
 		  filterInt = filterGround o #1,
 		  filterWord = filterGround o #1,
@@ -810,7 +802,7 @@ fun useless (program: Program.t): Program.t =
 		       Exp.layout, Layout.ignore, Layout.ignore,
 		       Exp.layout) 
 	 doitExp
-      fun doitStatement (stmt as Statement.T {var, exp, ty}) =
+      fun doitStatement (Statement.T {var, exp, ty}) =
 	 let
 	    val v = Option.map (var, value)
 	    val (ty, b) =
@@ -1014,9 +1006,8 @@ fun useless (program: Program.t): Program.t =
 	 doitBlock
       fun doitFunction f =
 	 let
-	    val {args, blocks, name, raises, returns, start} = Function.dest f
-	    val {args = argsvs, returns = returnvs, raises = raisevs, ...} =
-	       func name
+	    val {args, blocks, name, start, ...} = Function.dest f
+	    val {returns = returnvs, raises = raisevs, ...} = func name
 	    val args = keepUsefulArgs args
 	    val (blocks, blocks') =
 	       Vector.mapAndFold
@@ -1040,7 +1031,7 @@ fun useless (program: Program.t): Program.t =
 	 Vector.map
 	 (datatypes, fn Datatype.T {tycon, cons} =>
 	  Datatype.T {tycon = tycon,
-		      cons = Vector.map (cons, fn {con, args} =>
+		      cons = Vector.map (cons, fn {con, ...} =>
 					 {con = con,
 					  args = Value.newTypes (conArgs con)})})
       val globals =

@@ -68,7 +68,7 @@ fun from <= to =
       then ()
    else
       case (value from, value to) of
-	 ((n,hss), (n',hss')) => 
+	 ((n,hss), (n',_)) => 
 	    (makeN (to, n) ;
 	     List.foreachi
 	     (hss, fn (i,hs) =>
@@ -98,8 +98,7 @@ fun == (T s, T s') =
 			     (AppendList.foreach
 			      (!hs, fn h => h ()) ;
 			      drop (hss, n - 1))
-			   | ([], n) =>
-			     Error.bug "NPointLattice:=="
+			   | ([], _) => Error.bug "NPointLattice:=="
 		    in
 		      drop (hss, n'' - n)
 		    end

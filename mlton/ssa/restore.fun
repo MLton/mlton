@@ -63,9 +63,9 @@ structure LabelInfo =
       val (live, live') = make' #live
       val (dtindex, dtindex') = make' #dtindex
       val (df, df') = make' #df
-      val (phi, phi') = make' #phi
+      val (phi, _) = make' #phi
       val (phiArgs, phiArgs') = make' #phiArgs
-      val (queued, queued') = make' #queued
+      val (queued, _) = make' #queued
     end
 
     fun new (): t = T {args = ref (Vector.new0 ()),
@@ -126,10 +126,9 @@ structure VarInfo =
     in
       val defs = make #defs
       val (index,index') = make' #index
-      val (defSites,defSites') = make' #defSites
-      val (useSites,useSites') = make' #useSites
+      val (_,defSites') = make' #defSites
+      val (_,useSites') = make' #useSites
       val (ty,ty') = make' #ty
-      val (vars, vars') = make' #vars
     end
     fun addDef (T {defs, ...}) = Cardinality.inc defs
     fun addDefSite (T {defSites, ...}, l) = List.push(defSites, l)
@@ -155,13 +154,11 @@ fun restoreFunction (globals: Statement.t vector)
   = let
       exception NoViolations
 
-      val {get = varInfo: Var.t -> VarInfo.t,
-	   rem = remVarInfo, ...}
+      val {get = varInfo: Var.t -> VarInfo.t, ...}
 	= Property.get
 	  (Var.plist, Property.initFun (fn _ => VarInfo.new ()))
 
-      val {get = labelInfo: Label.t -> LabelInfo.t,
-	   rem = remLabelInfo, ...}
+      val {get = labelInfo: Label.t -> LabelInfo.t, ...}
 	= Property.get
 	  (Label.plist, Property.initFun (fn _ => LabelInfo.new ()))
 
@@ -389,7 +386,7 @@ fun restoreFunction (globals: Statement.t vector)
 	       val useSites = VarInfo.useSites' vi
 	       val _ = List.foreach (useSites, enque)
 
-	       fun doit (l,li)
+	       fun doit (_,li)
 		 = let
 		     val uses = LabelInfo.uses' li
 		     val defs = LabelInfo.defs' li
@@ -434,7 +431,7 @@ fun restoreFunction (globals: Statement.t vector)
 		       (defSites, fn l =>
 			enque (l, labelInfo l))
 		       
-	       fun doit (l,li) 
+	       fun doit (_,li) 
 		 = Vector.foreach
 		   (Promise.force (LabelInfo.df' li), fn l =>
 		    let
@@ -494,8 +491,7 @@ fun restoreFunction (globals: Statement.t vector)
 	  = case VarInfo.peekVar (varInfo x)
 	      of NONE => x
 	       | SOME x' => x'
-	fun rewriteStatement addPost
-	                     (s: Statement.t as Statement.T {var, ty, exp})
+	fun rewriteStatement addPost (Statement.T {var, ty, exp})
 	  = let
 	      val exp = Exp.replaceVar (exp, rewriteVar)
 	      val var

@@ -12,9 +12,6 @@ open S
 datatype z = datatype Exp.t
 datatype z = datatype Transfer.t
 
-structure Graph = DirectedGraph
-structure Node = Graph.Node
-
 fun checkScopes (program as
 		 Program.T {datatypes, globals, functions, main}): unit =
    let
@@ -48,7 +45,7 @@ fun checkScopes (program as
 	 in (fn x => bind (x, ()), reference, unbind)
 	 end
 
-      val (bindTycon, getTycon, getTycon', _) = make' (Tycon.layout, Tycon.plist)
+      val (bindTycon, _, getTycon', _) = make' (Tycon.layout, Tycon.plist)
       val (bindCon, getCon, getCon', _) = make' (Con.layout, Con.plist)
       val (bindVar, getVar, getVar', unbindVar) = make' (Var.layout, Var.plist)
       fun getVars xs = Vector.foreach (xs, getVar)
@@ -103,7 +100,7 @@ fun checkScopes (program as
 			val cons = Array.array (numCons, false)
 			val _ =
 			   Vector.foreach
-			   (cases, fn (con, l) =>
+			   (cases, fn (con, _) =>
 			    let
 			       val i = getCon' con
 			    in
@@ -134,7 +131,7 @@ fun checkScopes (program as
 	  | Runtime {args, ...} => getVars args
       fun loopFunc (f: Function.t) =
 	 let
-	    val {name, args, start, blocks, returns, ...} = Function.dest f
+	    val {args, blocks, ...} = Function.dest f
 	    (* Descend the dominator tree, verifying that variable definitions
 	     * dominate variable uses.
 	     *)
@@ -308,7 +305,7 @@ fun checkProf (Program.T {functions, ...}): unit =
 
 val checkProf = Control.trace (Control.Pass, "checkProf") checkProf
 
-fun typeCheck (program as Program.T {datatypes, functions, ...}): unit =
+fun typeCheck (program as Program.T {datatypes, ...}): unit =
    let
       val _ = checkScopes program
       val _ =
@@ -340,7 +337,7 @@ fun typeCheck (program as Program.T {datatypes, functions, ...}): unit =
 						  ("to", Type.layout to)]
 				       end,
 				    Unit.layout) coerce
-      fun select {tuple: Type.t, offset: int, resultType}: Type.t =
+      fun select {tuple: Type.t, offset: int, resultType = _}: Type.t =
 	 case Type.deTupleOpt tuple of
 	    NONE => error "select of non tuple"
 	  | SOME ts => Vector.sub (ts, offset)
@@ -372,23 +369,11 @@ fun typeCheck (program as Program.T {datatypes, functions, ...}): unit =
 	    val _ = coerces (args', args)
 	 in ()
 	 end
-      fun filterGround to (t: Type.t): unit = coerce {from = t, to = to}
-      fun primApp {prim, targs, args, resultType, resultVar} = resultType
-      val primApp =
-	 Trace.trace ("checkPrimApp",
-		      fn {prim, targs, args, ...} =>
-		      let open Layout
-		      in record [("prim", Prim.layout prim),
-				 ("targs", Vector.layout Type.layout targs),
-				 ("args", Vector.layout Type.layout args)]
-		      end,
-		      Type.layout) primApp
-      val {func, value = varType, ...} =
+      val _ =
 	 analyze {
 		  coerce = coerce,
 		  conApp = conApp,
 		  const = Type.ofConst,
-		  copy = fn x => x,
 		  filter = filter,
 		  filterInt = fn (from, s) => coerce {from = from,
 						      to = Type.int s},
@@ -396,7 +381,7 @@ fun typeCheck (program as Program.T {datatypes, functions, ...}): unit =
 						       to = Type.word s},
 		  fromType = fn x => x,
 		  layout = Type.layout,
-		  primApp = primApp,
+		  primApp = #resultType,
 		  program = program,
 		  select = select,
 		  tuple = Type.tuple,

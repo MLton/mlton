@@ -31,22 +31,19 @@ structure Rep =
 				     val top = "don't flatten")
 
       open L
-      val when = addHandler
 
       val isFlat = not o isTop
 
       fun fromType t =
 	 case Type.deTupleOpt t of
 	    NONE => let val r = new () in makeTop r; r end
-	  | SOME l => new ()
+	  | SOME _ => new ()
 
       fun fromTypes (ts: Type.t vector): t vector =
 	 Vector.map (ts, fromType)
 
       val tuplize: t -> unit = makeTop
 	
-      fun tuplizes rs = Vector.foreach (rs, tuplize)
-
       val coerce = op <=
 
       fun coerces (rs, rs') = Vector.foreach2 (rs, rs', coerce)
@@ -54,18 +51,15 @@ structure Rep =
       val unify = op ==
 	
       fun unifys (rs, rs') = Vector.foreach2 (rs, rs', unify)
-
-      val layouts = Vector.layout layout
    end
 
-fun flatten (program as Program.T {datatypes, globals, functions, main}) =
+fun flatten (Program.T {datatypes, globals, functions, main}) =
    let
       val {get = conInfo: Con.t -> {argsTypes: Type.t vector,
 				    args: Rep.t vector},
 	   set = setConInfo, ...} =
 	 Property.getSetOnce
 	 (Con.plist, Property.initRaise ("Flatten.conInfo", Con.layout))
-      val conArgsTypes = #argsTypes o conInfo
       val conArgs = #args o conInfo
       val {get = funcInfo: Func.t -> {args: Rep.t vector,
 				      returns: Rep.t vector option,
@@ -74,8 +68,6 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 	 Property.getSetOnce
 	 (Func.plist, Property.initRaise ("Flatten.funcInfo", Func.layout))
       val funcArgs = #args o funcInfo
-      val funcReturns = #returns o funcInfo
-      val funcRaises = #raises o funcInfo
       val {get = labelInfo: Label.t -> {args: Rep.t vector},
 	   set = setLabelInfo, ...} =
 	 Property.getSetOnce
@@ -121,7 +113,7 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 				raises = Option.map (raises, Rep.fromTypes)})
 	  end)
 
-      fun doitStatement (Statement.T {var, ty, exp}) =
+      fun doitStatement (Statement.T {exp, var, ...}) =
 	 case exp of
 	    Tuple xs =>
 	       Option.app
@@ -144,7 +136,7 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 	      (setLabelInfo (label, {args = fromFormals args})
 	       ; Vector.foreach (statements, doitStatement)))
 	     ; Vector.foreach
-	       (blocks, fn Block.T {label, transfer, ...} =>
+	       (blocks, fn Block.T {transfer, ...} =>
 		case transfer of
 		   Return xs =>
 		      (case returns of
@@ -252,7 +244,7 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 
       fun doitFunction f =
 	 let
-	    val {args, blocks, name, raises, returns, start} = Function.dest f
+	    val {args, name, raises, returns, start, ...} = Function.dest f
 	    val {args = argsReps, returns = returnsReps, raises = raisesReps} = 
 	      funcInfo name
 

@@ -199,16 +199,6 @@ structure Cases =
       fun length (c: t): int = fold (c, 0, fn (_, i) => i + 1)
 
       fun foreach (c, f) = fold (c, (), fn (x, ()) => f x)
-
-      fun foreach' (c: t, f: Label.t -> unit, fc: Con.t -> unit): unit =
-	 let
-	    fun doit l = Vector.foreach (l, fn (_, a) => f a)
-	 in
-	    case c of
-	       Con l => Vector.foreach (l, fn (c, a) => (fc c; f a))
-	     | Int (_, l) => doit l
-	     | Word (_, l) => doit l
-	 end
    end
 
 local open Layout
@@ -304,16 +294,6 @@ structure Exp =
 	     | Tuple xs => layoutTuple xs
 	     | Var x => Var.layout x
 	 end
-
-      val isFunctional =
-	 fn ConApp _ => true
-	  | Const _ => true
-	  | PrimApp {prim, ...} => Prim.isFunctional prim
-	  | Profile _ =>
-	       Error.bug "doesn't make sense to ask isFunctional Profile"
-	  | Select _ => true
-	  | Tuple _ => true
-	  | Var _ => true
 	       
       fun maySideEffect (e: t): bool =
 	 case e of
@@ -344,7 +324,6 @@ structure Exp =
 
       local
 	 val newHash = Random.word
-	 val conApp = newHash ()
 	 val primApp = newHash ()
 	 val profile = newHash ()
 	 val select = newHash ()
@@ -400,7 +379,6 @@ structure Statement =
 	 fun make f (T r) = f r
       in
 	 val var = make #var
-	 val ty = make #ty
 	 val exp = make #exp
       end
 
@@ -418,8 +396,6 @@ structure Statement =
 				 str " = "]],
                  Exp.layout exp]
 	 end
-
-      val toString = Layout.toString o layout
 
       fun equals (T {exp = e, ty = t, var = v},
 		  T {exp = e', ty = t', var = v'}): bool =
@@ -738,7 +714,7 @@ structure Transfer =
 	    end
 
 	 val layout =
-	    fn Arith {prim, args, overflow, success, ty} =>
+	    fn Arith {prim, args, overflow, success, ...} =>
 		  seq [Label.layout success,
 		       tuple [Prim.layoutApp (prim, args, Var.layout)],
 		       str " Overflow => ",
@@ -797,19 +773,12 @@ structure Transfer =
 
       local
 	 val newHash = Random.word
-	 val arith = newHash ()
 	 val bug = newHash ()
-	 val call = newHash ()
-	 val casee = newHash ()
-	 val goto = newHash ()
 	 val raisee = newHash ()
 	 val return = newHash ()
-	 val runtime = newHash ()
 	 fun hashVars (xs: Var.t vector, w: Word.t): Word.t =
 	    Vector.fold (xs, w, fn (x, w) => Word.xorb (w, Var.hash x))
 	 fun hash2 (w1: Word.t, w2: Word.t) = Word.xorb (w1, w2)
-	 fun hash3 (w1: Word.t, w2: Word.t, w3: Word.t) 
-	   = Word.xorb (hash2 (w1, w2), w3)
       in
 	 val hash: t -> Word.t =
 	    fn Arith {args, overflow, success, ...} =>
@@ -832,8 +801,7 @@ structure Transfer =
 		  hashVars (args, Label.hash dst)
 	     | Raise xs => hashVars (xs, raisee)
 	     | Return xs => hashVars (xs, return)
-	     | Runtime {prim, args, return} =>
-		  hashVars (args, Label.hash return)
+	     | Runtime {args, return, ...} => hashVars (args, Label.hash return)
       end
 
       val hash = Trace.trace ("Transfer.hash", layout, Word.layout) hash
@@ -957,8 +925,6 @@ structure Function =
 	 val blocks = make #blocks
 	 val dest = make (fn d => d)
 	 val name = make #name
-	 val raises = make #raises
-	 val returns = make #returns
 	 val start = make #start
       end
 
@@ -987,13 +953,12 @@ structure Function =
 	 fun make sel =
 	    fn T {controlFlow, ...} => sel (CPromise.force controlFlow) ()
       in
-	 val dfsTree = make #dfsTree
 	 val dominatorTree = make #dominatorTree
       end
 
       fun dfs (f, v) =
 	 let
-	    val {blocks, name, start, ...} = dest f
+	    val {blocks, start, ...} = dest f
 	    val numBlocks = Vector.length blocks
 	    val {get = labelIndex, set = setLabelIndex, rem, ...} =
 	       Property.getSetOnce (Label.plist,
@@ -1030,7 +995,7 @@ structure Function =
 	 structure Node = Graph.Node
 	 structure Edge = Graph.Edge
       in
-	 fun determineControlFlow ({args, blocks, name, start, ...}: dest) =
+	 fun determineControlFlow ({blocks, name, start, ...}: dest) =
 	    let
     	       open Dot
 	       val g = Graph.new ()
@@ -1089,7 +1054,7 @@ structure Function =
 
 	 fun layoutDot (f, global: Var.t -> string option) =
 	    let
-	       val {name, args, start, blocks, returns, raises, ...} = dest f
+	       val {name, start, blocks, ...} = dest f
 	       fun makeName (name: string,
 			     formals: (Var.t * Type.t) vector): string =
 		  concat [name, " ",
@@ -1106,25 +1071,6 @@ structure Function =
 					     Type.layout ty]
 				else Var.layout var)))
 			  end]
-	       fun makeName' (name: string,
-			      formals: (Var.t * Type.t) vector,
-			      returns: Type.t vector option,
-			      raises: Type.t vector option): string =
-		  concat [makeName (name, formals),
-			  if !Control.showTypes
-			     then let
-				     open Layout
-				  in
-				     toString
-				     (seq [str ": ",
-					   Option.layout
-					   (Vector.layout Type.layout) returns,
-					   str " (",
-					   Option.layout
-					   (Vector.layout Type.layout) raises,
-					   str ")"])
-				  end
-			  else ""]
 	       open Dot
 	       val graph = Graph.new ()
 	       val {get = nodeOptions, ...} =
@@ -1288,7 +1234,7 @@ structure Function =
 
       fun clear (T {controlFlow, dest, ...}) =
 	 let
-	    val {name, args, blocks, ...} = dest
+	    val {args, blocks, ...} = dest
 	    val _ = (Vector.foreach (args, Var.clear o #1)
 		     ; Vector.foreach (blocks, Block.clear))
       	    val _ = CPromise.clear controlFlow
@@ -1361,7 +1307,7 @@ structure Function =
       fun alphaRename f =
 	 let
 	    local
-	       fun make (new, plist, layout) =
+	       fun make (new, plist) =
 		  let
 		     val {get, set, destroy, ...} = 
 		        Property.destGetSetOnce (plist, Property.initConst NONE)
@@ -1380,11 +1326,10 @@ structure Function =
 		  end
 	    in
 	       val (bindVar, lookupVar, destroyVar) =
-		  make (Var.new, Var.plist, Var.layout)
+		  make (Var.new, Var.plist)
 	       val (bindLabel, lookupLabel, destroyLabel) =
-		  make (Label.new, Label.plist, Label.layout)
+		  make (Label.new, Label.plist)
 	    end
-	    fun lookupVars xs = Vector.map (xs, lookupVar)
 	    val {args, blocks, name, raises, returns, start, ...} =
 	       dest f
 	    val args = Vector.map (args, fn (x, ty) => (bindVar x, ty))
@@ -1529,7 +1474,7 @@ structure Function =
 						      func = func,
 						      return = return})
 					    end
-				       | Handler.Handle l =>
+				       | Handler.Handle _ =>
 					    (statements, transfer))
 				| Tail => addLeave ()
 			    end
@@ -1693,7 +1638,7 @@ structure Program =
 		 end
 	 end
 
-      fun layoutStats (T {datatypes, globals, functions, ...}) =
+      fun layoutStats (T {globals, functions, ...}) =
 	 let
 	    val numTypes = ref 0
 	    fun inc _ = Int.inc numTypes
@@ -1780,79 +1725,6 @@ structure Program =
 	 (fn escape =>
 	  (foreachPrim (p, fn prim => if f prim then escape true else ())
 	   ; false))
-
-      (* Print information about the number of arithmetic operations that check
-       * for overflow and how many have one constant argument.
-       *)
-      fun printArithStats (T {functions, globals, ...}): unit =
-	 let
-	    val {get = isConst, set = setIsConst, ...} =
-	       Property.getSetOnce (Var.plist, Property.initConst false)
-	    val _ =
-	       Vector.foreach
-	       (globals, fn Statement.T {var, exp, ...} =>
-		case (var, exp) of
-		   (SOME x, Exp.Const _) => setIsConst (x, true)
-		 | _ => ())
-	    fun newStats () =
-	       {one = ref 0,
-		two = ref 0,
-		zero = ref 0}
-	    fun printStats (name, {one, two, zero}) =
-	       let
-		  val zero = !zero
-		  val one = !one
-		  val two = !two
-		  val total = Real.fromInt (zero + one + two)
-		  fun per i =
-		     if Real.equals (0.0, total)
-			then "0"
-		     else Real.format (100.0 * Real.fromInt i / total,
-				       Real.Format.fix (SOME 1))
-		  fun line i = concat [Int.toString i, " (", per i, "%)  "]
-	       in
-		  print (concat [line zero, line one])
-	       end
-	    val add = newStats ()
-	    val mul = newStats ()
-	    val sub = newStats ()
-	    val _ =
-	       List.foreach
-	       (functions, fn f =>
-		let
-		   val {blocks, ...} = Function.dest f
-		in
-		   Vector.foreach
-		   (blocks, fn Block.T {transfer, ...} =>
-		    case transfer of
-		       Transfer.Arith {prim, args, ...} =>
-			  let
-			     fun doit {one, two, zero} =
-				let
-				   val x = Vector.sub (args, 0)
-				   val y = Vector.sub (args, 1)
-				in
-				   Int.inc
-				   (if isConst x
-				       then if isConst y then two else one
-				    else if isConst y then one else zero)
-				end
-			     datatype z = datatype Prim.Name.t
-			  in
-			     case Prim.name prim of
-				Int_addCheck _ => doit add
-			      | Int_subCheck _ => doit sub
-			      | Int_mulCheck _ => doit mul
-			      | _ => ()
-			  end
-		     | _ => ())
-		end)
-	    val _ = (printStats ("add", add)
-		     ; printStats ("sub", sub)
-		     ; printStats ("mul", mul))
-	 in
-	    ()
-	 end
 
       fun profile (T {datatypes, functions, globals, main}) =
 	 let

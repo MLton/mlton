@@ -76,22 +76,6 @@ structure VarInfo =
 structure Value =
    struct
       datatype t = datatype VarInfo.value
-
-      val layout = VarInfo.layoutValue
-
-      fun fromBool (b: bool): t =
-	 Con {con = if b then Con.truee else Con.falsee,
-	      args = Vector.new0 ()}
-
-      fun toExp (v: t): Exp.t =
-	 case v of
-	    Con {con, args} =>
-	       Exp.ConApp {con = con,
-			   args = Vector.map (args, VarInfo.var)}
-	  | Const c => Exp.Const c
-	  | Select {tuple, offset} => 
-	       Exp.Select {tuple = VarInfo.var tuple, offset = offset}
-	  | Tuple xs => Exp.Tuple (Vector.map (xs, VarInfo.var))
    end
 
 structure Position =
@@ -149,7 +133,7 @@ structure LabelMeaning =
 	 val blockIndex = make #blockIndex
       end
 
-      fun layout (T {aux, blockIndex, label, ...}) =
+      fun layout (T {aux, label, ...}) =
 	 let
 	    open Layout
 	 in
@@ -158,7 +142,7 @@ structure LabelMeaning =
 		 case aux of
 		    Block => str "Block "
 		  | Bug => str "Bug"
-		  | Case {cases, default} => str "Case"
+		  | Case _ => str "Case"
 		  | Goto {dst, args} =>
 		       seq [str "Goto ",
 			    tuple [layout dst, Positions.layout args]]
@@ -312,7 +296,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 	    end
 	 and computeMeaning (i: int): LabelMeaning.t =
 	    let
-	       val block as Block.T {label, args, statements, transfer, ...} =
+	       val Block.T {args, statements, transfer, ...} =
 		  Vector.sub (blocks, i)
 	       val _ =
 		  Vector.foreach (args, fn (x, ty) =>
@@ -331,9 +315,6 @@ fun shrinkFunction (globals: Statement.t vector) =
 		     val _ = destroy ()
 		  in ps
 		  end
-	       fun sameAsArgs args' =
-		  Vector.equals (args, args', fn ((x, _), x') =>
-				 Var.equals (x, x'))
 	       fun doit aux =
 		  LabelMeaning.T {aux = aux,
 				  blockIndex = i,
@@ -353,7 +334,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 			      else normal ()
 			else
 			   let
-			      val s as Statement.T {exp, ty, ...} =
+			      val Statement.T {exp, ty, ...} =
 				 Vector.sub (statements, i)
 			   in
 			      if (case exp of
@@ -385,7 +366,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 					Type.equals (t, t')))
 			then doit LabelMeaning.Bug
 		     else normal ()
-                | Call {func, args, return} =>
+                | Call {args, return, ...} =>
 		     let
 			val _ = incVars args
 			val _ =
@@ -497,8 +478,6 @@ fun shrinkFunction (globals: Statement.t vector) =
 	    Trace.trace ("Shrink.labelMeaning",
 			 Label.layout, LabelMeaning.layout)
 	    labelMeaning
-	 val labelIndex' = labelIndex
-	 val labelIndex = LabelMeaning.blockIndex o labelMeaning
 	 fun meaningLabel m =
 	    Block.label (Vector.sub (blocks, LabelMeaning.blockIndex m))
 	 fun save (f, s) =
@@ -509,7 +488,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 	     Layout.outputl
 	     (#graph (Function.layoutDot (f, fn _ => NONE)),
 	      out))
-(*	 val _ = save (f, "pre") *)
+	 val _ = if true then () else save (f, "pre")
 	 (* *)
 	 val _ =
 	    if true
@@ -587,9 +566,6 @@ fun shrinkFunction (globals: Statement.t vector) =
 	    (Assert.assert ("addLabelIndex", fn () =>
 			    Array.sub (inDegree, i) > 0)
 	     ; addLabelIndex i)
-	 val addLabel = addLabelIndex o labelIndex
-	 val addLabel =
-	    Trace.trace ("Shrink.addLabel", layoutLabel, Unit.layout) addLabel
 	 val addLabelMeaning = addLabelIndex o LabelMeaning.blockIndex
 	 fun layoutLabelMeaning m =
 	    Layout.record
@@ -641,7 +617,6 @@ fun shrinkFunction (globals: Statement.t vector) =
 		     end
 	       else ()
 	    end) arg
-	 val deleteIndex = deleteLabelMeaning o indexMeaning
 	 fun primApp (prim: Prim.t, args: VarInfo.t vector)
 	    : VarInfo.t Prim.ApplyResult.t =
 	    case Prim.name prim of
@@ -672,8 +647,6 @@ fun shrinkFunction (globals: Statement.t vector) =
 					   Layout.toString (Exn.layout e)])
 		  end
 	 (* Another DFS, this time accumulating the new blocks. *)
-	 fun layoutIndex i =
-	    layoutLabel (Block.label (Vector.sub (blocks, i)))
       	 val traceForceMeaningBlock =
 	    Trace.trace ("Shrink.forceMeaningBlock",
 			layoutLabelMeaning, Unit.layout)
@@ -706,7 +679,6 @@ fun shrinkFunction (globals: Statement.t vector) =
 	    in
 	       meaningLabel m
 	    end
-	 and forceBlock (l: Label.t): unit = forceMeaningBlock (labelMeaning l)
 	 and forceMeaningBlock arg =
 	    traceForceMeaningBlock
 	    (fn (LabelMeaning.T {aux, blockIndex = i, ...}) =>
@@ -749,7 +721,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 		end) arg
 	 and simplifyBlock arg : Statement.t list * Transfer.t =
 	    traceSimplifyBlock
-	    (fn (Block.T {label, statements, transfer, ...}) =>
+	    (fn (Block.T {statements, transfer, ...}) =>
 	    let
 	       val fs = Vector.map (statements, evalStatement)
 	       val (ss, transfer) = simplifyTransfer transfer
@@ -836,7 +808,6 @@ fun shrinkFunction (globals: Statement.t vector) =
 				     fn (i, Position.Formal i') => i = i'
 				      | _ => false)
 				 val m = labelMeaning cont
-				 val i = LabelMeaning.blockIndex m
 				 fun nonTail () =
 				    let
 				       val _ = forceMeaningBlock m
@@ -1114,7 +1085,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 	     end) arg
 	 and evalStatement arg : Statement.t list -> Statement.t list =
 	    traceEvalStatement
-	    (fn (s as Statement.T {var, ty, exp}) =>
+	    (fn (Statement.T {var, ty, exp}) =>
 	    let
 	       val _ = Option.app 
 		       (var, fn x => 

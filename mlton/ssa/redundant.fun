@@ -185,7 +185,7 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 			    Eqrel.layout arg,
 			    Option.layout Eqrel.layout return]) ;
 	      Vector.foreach
-	      (blocks, fn Block.T {label, args, ...} =>
+	      (blocks, fn Block.T {label, ...} =>
 	       let val arg = labelInfo label
 	       in display (seq [str "\t",
 				Label.layout label,
@@ -294,12 +294,12 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 	 List.revMap
 	 (functions, fn f =>
 	  let
-	     val {args, blocks, name, raises, returns, start} = Function.dest f
+	     val {blocks, name, raises, start, ...} = Function.dest f
 	     val {args, returns, returnsRed, ...} = funcReds name
 
 	     val blocks =
 	        Vector.map
-		(blocks, fn Block.T {label, args, statements, transfer} =>
+		(blocks, fn Block.T {label, statements, transfer, ...} =>
 		 let
 		    val {args, ...} = labelReds label
 

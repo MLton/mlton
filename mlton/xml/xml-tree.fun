@@ -113,18 +113,6 @@ structure Cases =
 	     | Word (s, l) => Word (s, doit l)
 	 end
       
-      fun forall (c: 'a t, f: 'a -> bool): bool =
-	 let
-	    fun doit l = Vector.forall (l, fn (_, x) => f x)
-	 in
-	    case c of
-	       Con l => doit l
-	     | Int (_, l) => doit l
-	     | Word (_, l) => doit l
-	 end
-
-      fun length (c: 'a t): int = fold (c, 0, fn (_, i) => i + 1)
-
       fun foreach (c, f) = fold (c, (), fn (x, ()) => f x)
 
       fun foreach' (c: 'a t, f: 'a -> unit, fc: Pat.t -> unit): unit =
@@ -428,7 +416,7 @@ structure Exp =
 		      ; loopExp exp)
 		| Exception _ => ()
 		| Fun {tyvars, decs, ...} =>
-		     (Vector.foreach (decs, fn {var, ty, lambda} =>
+		     (Vector.foreach (decs, fn {ty, var, ...} =>
 				      handleBoundVar (var, tyvars, ty))
 		      ; Vector.foreach (decs, fn {lambda, ...} =>
 					loopLambda lambda))
@@ -488,7 +476,6 @@ structure Exp =
 
       fun clear (e: t): unit =
 	 let open PrimExp
-	    val clear = PropertyList.clear
 	    fun clearTyvars ts = Vector.foreach (ts, Tyvar.clear)
 	    fun clearPat (Pat.T {arg, ...}) =
 	       case arg of
@@ -850,9 +837,7 @@ structure Program =
 			 datatypes: Datatype.t vector,
 			 overflow: Var.t option}
 
-      fun size (T {body, ...}) = Exp.size body
-
-      fun layout (p as T {body, datatypes, overflow, ...}) =
+      fun layout (T {body, datatypes, overflow, ...}) =
 	 let
 	    open Layout
 	 in
