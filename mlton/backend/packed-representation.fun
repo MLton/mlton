@@ -422,11 +422,11 @@ structure Unpack =
 	    val mask =
 	       Operand.word
 	       (WordX.notb
-		(WordX.resize
-		 (WordX.lshift (WordX.allOnes
-				(WordSize.fromBits (Type.width ty)),
-				shift),
-		  WordSize.fromBits chunkWidth)))
+		(WordX.lshift
+		 (WordX.resize (WordX.allOnes (WordSize.fromBits
+					       (Type.width ty)),
+				WordSize.fromBits chunkWidth),
+		  shift)))
 	    val (s1, chunk) = Statement.andb (chunk, mask)
 	    val (component, s2) = Statement.resize (component, chunkWidth)
 	    val (s3, component) =
