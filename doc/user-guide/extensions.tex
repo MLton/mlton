@@ -1116,16 +1116,21 @@ returns a weak pointer to {\tt x}.
 \begin{verbatim}
 signature MLTON_WORD =
    sig
-      type word
-         
-      val rol: word * Word.word -> word
-      val ror: word * Word.word -> word
+      type t
+	 
+      val rol: t * word -> t
+      val ror: t * word -> t
    end
 \end{verbatim}
 
 \begin{description}
+\entry{type t}
+the type of words.  For {\tt MLton.Word} this is {\tt Word.word}, for
+{\tt MLton.Word8} this is {\tt Word8.word}.
+
 \entry{rol (w, w')}
 rotate left.
+
 \entry{ror (w, w')}
 rotate right.
 \end{description}

@@ -49,9 +49,9 @@ signature MLTON =
       structure Word:
 	 sig
 	    include MLTON_WORD
-	    val addCheck: word * Word.word -> word (* may raise Overflow *)
-	    val mulCheck: word * Word.word -> word (* may raise Overflow *)
-	 end where type word = Word.word
-      structure Word8: MLTON_WORD where type word = Word8.word
+	    val addCheck: t * word -> t (* may raise Overflow *)
+	    val mulCheck: t * word -> t (* may raise Overflow *)
+	 end
+      structure Word8: MLTON_WORD
       structure World: MLTON_WORLD
    end

@@ -262,6 +262,8 @@ signature BASIS_2002 =
 
       sharing type MLton.IntInf.t = IntInf.int
       sharing type MLton.Signal.t = Posix.Signal.signal
+      sharing type MLton.Word.t = Word.word
+      sharing type MLton.Word8.t = Word8.word
 	 
       (* ************************************************** *)
       (* ************************************************** *)

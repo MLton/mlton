@@ -75,8 +75,16 @@ structure Thread = MLtonThread
 structure Vector = Vector
 structure Weak = MLtonWeak
 structure World = MLtonWorld
-structure Word = Primitive.Word32
-structure Word8 = Primitive.Word8
+structure Word =
+   struct
+      open Primitive.Word32
+      type t = word
+   end
+structure Word8 =
+   struct
+      open Primitive.Word8
+      type t = word
+   end
 
 end
 
