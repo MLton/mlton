@@ -732,7 +732,7 @@ fun simplify (program as Program.T {datatypes, globals, functions, main})
       end
       fun filterIgnore _ = ()
       val {value, ...} =
-	 Control.trace (Control.Pass, "fixed point")
+	 Control.trace (Control.Detail, "fixed point")
 	 analyze {
 		  coerce = coerce,
 		  conApp = conApp,
