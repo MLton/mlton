@@ -901,15 +901,30 @@ structure Primitive =
 			    | "netbsd" => NetBSD
 			    | "openbsd" => OpenBSD
 			    | "solaris" => Solaris
-			    | _ => raise Fail "strange MLton_Platform_OS_Host"
+			    | _ => raise Fail "strange MLton_Platform_OS_host"
+
+			local
+			   val cygwinUseMmap =
+			      _import "MLton_Platform_CygwinUseMmap": bool;
+			in
+			   val useWindowsProcess: bool =
+			      case host of
+				 Cygwin => not cygwinUseMmap
+			       | MinGW => true
+			       | _ => false
+			end
 		     end
 	       end
 
 	    structure Process =
 	       struct
+		  val create = 
+		     _import "MLton_Process_create"
+		     : NullString.t * NullString.t * int * int * int -> Pid.t;
 		  val spawne =
 		     _import "MLton_Process_spawne"
-		     : NullString.t * NullString.t array * NullString.t array -> Pid.t;
+		     : (NullString.t * NullString.t array * NullString.t array
+			-> Pid.t);
 		  val spawnp =
 		     _import "MLton_Process_spawnp"
 		     : NullString.t * NullString.t array -> Pid.t;

@@ -6,3 +6,4 @@
 #include "showMem.linux.c"
 #include "ssmmap.c"
 #include "totalRam.sysctl.c"
+#include "use-mmap.c"

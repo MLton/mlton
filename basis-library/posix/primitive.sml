@@ -540,18 +540,20 @@ structure PosixPrimitive =
 	    val lseek =
 	       _import "Posix_IO_lseek": fd * Position.int * int -> Position.int;
 	    val pipe = _import "Posix_IO_pipe": fd array -> int;
-	    val readChar = _import "Posix_IO_read":
-	       fd * char array * int * size -> ssize;
-	    val writeChar = _import "Posix_IO_write":
-	       fd * char array * int * size -> ssize;
-	    val writeCharVec = _import "Posix_IO_write":
-	       fd * char vector * int * size -> ssize;
-	    val readWord8 = _import "Posix_IO_read":
-	       fd * word8 array * int * size -> ssize;
-	    val writeWord8 = _import "Posix_IO_write":
-	       fd * word8 array * int * size -> ssize;
-	    val writeWord8Vec = _import "Posix_IO_write":
-	       fd * word8 vector * int * size -> ssize;
+	    val readChar =
+	       _import "Posix_IO_read": fd * char array * int * size -> ssize;
+	    val setbin = _import "Posix_IO_setbin": fd * bool -> unit;
+	    val settext = _import "Posix_IO_settext": fd * bool -> unit;
+	    val writeChar =
+	       _import "Posix_IO_write": fd * char array * int * size -> ssize;
+	    val writeCharVec =
+	       _import "Posix_IO_write": fd * char vector * int * size -> ssize;
+	    val readWord8 =
+	       _import "Posix_IO_read": fd * word8 array * int * size -> ssize;
+	    val writeWord8 =
+	       _import "Posix_IO_write": fd * word8 array * int * size -> ssize;
+	    val writeWord8Vec =
+	       _import "Posix_IO_write": fd * word8 vector * int * size -> ssize;
 	 end	       
 
       structure SysDB =

@@ -83,6 +83,15 @@ structure MLton: MLTON =
 	    fun setIn _ = raise Fail "setIn"
 	 end
 
+      structure CallStack =
+	 struct
+	    type t = unit
+
+	    val keep = false
+	    fun current () = ()
+	    fun toStrings () = []
+	 end
+
       structure Cont =
 	 struct
 	    type 'a t = unit
@@ -214,6 +223,7 @@ structure MLton: MLTON =
 	    val add = fn _ => raise Fail "Pointer.add"
 	    val compare = fn _ => raise Fail "Pointer.compare"
 	    val diff = fn _ => raise Fail "Pointer.diff"
+	    val free = fn _ => raise Fail "Pointer.free"
 	    val getInt8 = fn _ => raise Fail "Pointer.getInt8"
 	    val getInt16 = fn _ => raise Fail "Pointer.getInt16"
 	    val getInt32 = fn _ => raise Fail "Pointer.getInt32"
@@ -248,6 +258,48 @@ structure MLton: MLTON =
 
       structure Process =
 	 struct
+            type ('stdin, 'stdout, 'stderr) t = unit
+            type input = unit
+            type output = unit
+            type none = unit
+            type chain = unit
+            type any = unit
+            
+            exception MisuseOfForget
+            exception DoublyRedirected
+            
+            structure Child =
+	       struct
+		  type ('use, 'dir) t = unit
+
+		  val binIOin = fn _ => raise Fail "Child.binIOin"
+		  val binIOout = fn _ => raise Fail "Child.binIOout"
+		  val fd = fn _ => raise Fail "Child.fd"
+		  val remember = fn _ => raise Fail "Child.remember"
+		  val textIOin = fn _ => raise Fail "Child.textIOin"
+		  val textIOout = fn _ => raise Fail "Child.textIOout"
+	       end
+            
+            structure Param =
+	       struct
+		  type ('use, 'dir) t = unit
+
+		  val child = fn _ => raise Fail "Param.child"
+		  val fd = fn _ => raise Fail "Param.fd"
+		  val file = fn _ => raise Fail "Param.file"
+		  val forget = fn _ => raise Fail "Param.forget"
+		  val null = ()
+		  val pipe = ()
+		  val self = ()
+	       end
+            
+            val create = fn _ => raise Fail "Process.create"
+            val getStderr = fn _ => raise Fail "Process.getStderr"
+            val getStdin  = fn _ => raise Fail "Process.getStdin"
+            val getStdout = fn _ => raise Fail "Process.getStdout"
+            val kill = fn _ => raise Fail "Process.kill"
+            val reap = fn _ => raise Fail "Process.reap"
+
 	    type pid = Posix.Process.pid
 
 	    val atExit = OS.Process.atExit

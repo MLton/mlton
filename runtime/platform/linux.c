@@ -5,6 +5,7 @@
 #include "showMem.linux.c"
 #include "ssmmap.c"
 #include "totalRam.sysconf.c"
+#include "use-mmap.c"
 
 /* Work around Linux kernel bugs associated with the user and system times. */
 

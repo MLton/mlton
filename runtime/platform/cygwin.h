@@ -18,6 +18,7 @@
 #include <syslog.h>
 #include <termios.h>
 #include <windows.h>
+#include <io.h>
 
 #include "gmp.h"
 
@@ -51,3 +52,5 @@
 
 struct sockaddr_in6 {};
 
+int _setmode (int, int);
+HANDLE _get_osfhandle (int fd);

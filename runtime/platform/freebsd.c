@@ -3,6 +3,8 @@
 #include "getrusage.c"
 #include "getText.c"
 #include "mkdir2.c"
+#include "ssmmap.c"
+#include "use-mmap.c"
 
 void showMem () {
 	static char buffer[256];
@@ -10,8 +12,6 @@ void showMem () {
 	sprintf (buffer, "/bin/cat /proc/%d/map\n", (int)getpid ());
 	(void)system (buffer);
 }
-
-#include "ssmmap.c"
 
 W32 totalRam (GC_state s) {
 	int mem, len;

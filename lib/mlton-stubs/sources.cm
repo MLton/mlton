@@ -63,6 +63,7 @@ is
 
 ../mlton-stubs-in-smlnj/sources.cm
 
+call-stack.sig
 thread.sig
 thread.sml
 world.sig

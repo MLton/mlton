@@ -38,7 +38,6 @@ enum {
 	DEBUG_ENTER_LEAVE = FALSE,
 	DEBUG_GENERATIONAL = FALSE,
 	DEBUG_MARK_COMPACT = FALSE,
-	DEBUG_MEM = FALSE,
 	DEBUG_RESIZING = FALSE,
 	DEBUG_SHARE = FALSE,
 	DEBUG_SIZE = FALSE,
@@ -185,42 +184,22 @@ static void sunlink (char *path) {
 /*                    Virtual Memory Management                     */
 /* ---------------------------------------------------------------- */
 
-static void *mmapAnon (void *start, size_t length) {
-#if USE_MMAP
-	static int fd = -1;
-	int flags;
-#endif
-	void *result;
+static inline void *GC_mmapAnon (void *start, size_t length) {
+	void *res;
 
-#if USE_VIRTUAL_ALLOC
-	result = VirtualAlloc ((LPVOID)start, length, MEM_COMMIT, 
-				PAGE_READWRITE);
-	if (NULL == result)
-		result = (void*)-1;
-#elif USE_MMAP
-	flags = MAP_PRIVATE | MAP_ANON;
-#if (defined (__sun__))
-	/* On Solaris 5.7, MAP_ANON causes EINVAL and mmap requires a file 
-	 * descriptor. 
-	 */ 
-	flags &= ~MAP_ANON;
-	if (-1 == fd)
-		fd = open ("/dev/zero", O_RDONLY);
-#endif
-	result = mmap (start, length, PROT_READ | PROT_WRITE, flags, fd, 0);
-#endif	
+	res = mmapAnon (start, length);
 	if (DEBUG_MEM)
 		fprintf (stderr, "0x%08x = mmapAnon (0x%08x, %s)\n",
-					(uint)result,
+					(uint)res,
 					(uint)start, 
 					uintToCommaString (length));
-	return result;
+	return res;
 }
 
 void *smmap (size_t length) {
 	void *result;
 
-	result = mmapAnon (NULL, length);
+	result = GC_mmapAnon (NULL, length);
 	if ((void*)-1 == result) {
 		showMem ();
 		die ("Out of memory.");
@@ -228,44 +207,18 @@ void *smmap (size_t length) {
 	return result;
 }
 
-#if USE_MMAP
-static void smunmap (void *base, size_t length) {
-	if (DEBUG_MEM)
-		fprintf (stderr, "smunmap (0x%08x, %s)\n",
-				(uint)base,
-				uintToCommaString (length));
-	assert (base != NULL);
-	if (0 == length)
-		return;
-	if (0 != munmap (base, length))
-		diee ("munmap failed");
-}
-#endif
-
-static void release (void *base, size_t length) {
+static inline void GC_release (void *base, size_t length) {
 	if (DEBUG_MEM)
 		fprintf (stderr, "release (0x%08x, %s)\n",
 				(uint)base, uintToCommaString (length));
-#if USE_VIRTUAL_ALLOC
-	if (0 == VirtualFree (base, 0, MEM_RELEASE))
-		die ("VirtualFree release failed");
-#elif USE_MMAP
-	smunmap (base, length);
-#endif
+	release (base, length);
 }
 
-static void decommit (void *base, size_t length) {
+static inline void GC_decommit (void *base, size_t length) {
 	if (DEBUG_MEM)
 		fprintf (stderr, "decommit (0x%08x, %s)\n",
 				(uint)base, uintToCommaString (length));
-#if USE_VIRTUAL_ALLOC
-	if (0 == VirtualFree (base, length, MEM_DECOMMIT))
-		die ("VirtualFree decommit failed");
-#elif USE_MMAP
-	smunmap (base, length);
-#else
-#error decommit not defined	
-#endif
+	decommit (base, length);
 }
 
 static inline void copy (pointer src, pointer dst, uint size) {
@@ -1185,7 +1138,7 @@ static void heapRelease (GC_state s, GC_heap h) {
 		fprintf (stderr, "Releasing heap at 0x%08x of size %s.\n", 
 				(uint)h->start, 
 				uintToCommaString (h->size));
-	release (h->start, h->size);
+	GC_release (h->start, h->size);
 	heapInit (h);
 }
 
@@ -1203,7 +1156,7 @@ static void heapShrink (GC_state s, GC_heap h, W32 keep) {
 				(uint)h->start, 
 				uintToCommaString (h->size),
 				uintToCommaString (keep));
-		decommit (h->start + keep, h->size - keep);
+		GC_decommit (h->start + keep, h->size - keep);
 		h->size = keep;
 	}
 }
@@ -1370,11 +1323,11 @@ static bool heapCreate (GC_state s, GC_heap h, W32 desiredSize, W32 minSize) {
 			address = 0; 
 			i = 31;
 #endif
-			h->start = mmapAnon ((void*)address, h->size);
+			h->start = GC_mmapAnon ((void*)address, h->size);
 			if ((void*)-1 == h->start)
 				h->start = (void*)NULL;
 			unless ((void*)NULL == h->start) {
-				direction = (direction==0);
+				direction = (0 == direction);
 				if (h->size > s->maxHeapSizeSeen)
 					s->maxHeapSizeSeen = h->size;
 				if (DEBUG or s->messages)
@@ -1665,7 +1618,7 @@ loopObjects:
 	}
 	for (i = 0; i < cardIndex; ++i)
 		assert (m[i] == s->crossMap[i]);
-	release (m, s->crossMapSize);
+	GC_release (m, s->crossMapSize);
 	return TRUE;
 }
 
@@ -2957,7 +2910,7 @@ static void resizeCardMapAndCrossMap (GC_state s) {
 			min (s->crossMapSize, oldCrossMapSize));
 		if (DEBUG_MEM)
 			fprintf (stderr, "Releasing card/cross map.\n");
-		release (oldCardMap, oldCardMapSize + oldCrossMapSize);
+		GC_release (oldCardMap, oldCardMapSize + oldCrossMapSize);
 	}
 }
 
@@ -4383,6 +4336,8 @@ static void loadWorld (GC_state s, char *fileName) {
 /*                             GC_init                              */
 /* ---------------------------------------------------------------- */
 
+Bool MLton_Platform_CygwinUseMmap;
+
 static int processAtMLton (GC_state s, int argc, char **argv, 
 				string *worldFile) {
 	int i;
@@ -4505,6 +4460,8 @@ static int processAtMLton (GC_state s, int argc, char **argv,
 						die ("@MLton thread-shrink-ratio missing argument.");
 					s->threadShrinkRatio =
 						stringToFloat (argv[i++]);
+				} else if (0 == strcmp (arg, "use-mmap")) {
+					MLton_Platform_CygwinUseMmap = TRUE;
 				} else if (0 == strcmp (arg, "--")) {
 					++i;
 					done = TRUE;
@@ -4526,6 +4483,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 				s->alignment));
 	assert (isAligned (GC_NORMAL_HEADER_SIZE + sizeof (struct GC_weak),
 				s->alignment));
+ 	MLton_Platform_CygwinUseMmap = FALSE;
 	s->amInGC = TRUE;
 	s->amInMinorGC = FALSE;
 	s->bytesAllocated = 0;

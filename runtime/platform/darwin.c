@@ -6,6 +6,8 @@
 
 #include "getrusage.c"
 #include "mkdir2.c"
+#include "ssmmap.c"
+#include "use-mmap.c"
 
 void *getTextEnd () {
 	return (void*)(get_etext ());
@@ -23,14 +25,11 @@ void *getTextStart () {
 
 void showMem () {
 	/* FIXME: this won't actually work. */
-	
 	static char buffer[256];
 
 	sprintf (buffer, "/bin/cat /proc/%d/map\n", (int)getpid ());
 	(void)system (buffer);
 }
-
-#include "ssmmap.c"
 
 W32 totalRam (GC_state s) {
 	int mem;

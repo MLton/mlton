@@ -153,6 +153,7 @@ void *getTextEnd ();
 #endif
 
 enum {
+	DEBUG_MEM = FALSE,
 	DEBUG_SIGNALS = FALSE,
 };
 
@@ -182,7 +183,10 @@ void showMem ();
 Word32 totalRam (GC_state s);
 
 string boolToString (bool b);
+void decommit (void *base, size_t length);
 string intToCommaString (int n);
+void *mmapAnon (void *start, size_t length);
+void release (void *base, size_t length);
 void *scalloc (size_t nmemb, size_t size);
 void sclose (int fd);
 void sfclose (FILE *file);
@@ -370,6 +374,8 @@ Word MLton_size (Pointer p);
 #error MLton_Platform_Arch_host not defined
 #endif
 
+extern Bool MLton_Platform_CygwinUseMmap;
+
 /* ---------------------------------- */
 /*           MLton.Profile            */
 /* ---------------------------------- */
@@ -386,6 +392,8 @@ void MLton_Profile_setCurrent (Pointer d);
 /*           MLton.Process            */
 /* ---------------------------------- */
 
+Pid MLton_Process_create (NullString cmds, NullString envs,
+				Fd in, Fd out, Fd err);
 Int MLton_Process_spawne (NullString p, Pointer a, Pointer e);
 Int MLton_Process_spawnp (NullString p, Pointer a);
 
@@ -695,6 +703,8 @@ Int Posix_IO_fsync (Fd f);
 Position Posix_IO_lseek (Fd f, Position i, Int j);
 Int Posix_IO_pipe (Pointer fds);
 Ssize Posix_IO_read (Fd fd, Pointer b, Int i, Size s);
+void Posix_IO_setbin (Fd fd, Bool useWindows);
+void Posix_IO_settext (Fd fd, Bool useWindows);
 Ssize Posix_IO_write (Fd fd, Pointer b, Int i, Size s);
 
 /* ---------------------------------- */

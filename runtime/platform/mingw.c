@@ -1,6 +1,13 @@
 #include "platform.h"
 
+#include "create.c"
+#include "setbintext.c"
 #include "showMem.win32.c"
+#include "virtualAlloc.c"
+
+void decommit (void *base, size_t length) {
+	decommitVirtual (base, length);
+}
 
 int getpagesize (void) {
 	SYSTEM_INFO sysinfo;
@@ -21,6 +28,14 @@ int mkstemp (char *template) {
 	if (0 == GetTempFileName (file_path, templ, 0, file_name))
 		diee ("unable to make temporary file");
 	return _open (file_name, _O_CREAT | _O_RDWR, _S_IREAD | _S_IWRITE);
+}
+
+void *mmapAnon (void *start, size_t length) {
+	return mmapAnonVirtual (start, length);
+}
+
+void release (void *base, size_t length) {
+	releaseVirtual (base);
 }
 
 Word32 totalRam (GC_state s) {
@@ -235,7 +250,35 @@ int fsync (int fd) {
 }
 
 int pipe (int filedes[2]) {
-	die ("pipe not implemented");
+	HANDLE read;
+	HANDLE write;
+	
+	/* We pass no security attributes (0), so the current policy gets
+	 * inherited. The pipe is set to NOT stay open in child processes.
+	 * This will be corrected using DuplicateHandle in create()
+	 * The 4k buffersize is choosen b/c that's what linux uses.
+	 */
+	if (!CreatePipe(&read, &write, 0, 4096)) {
+		errno = ENOMEM; /* fake errno: out of resources */
+		return -1;
+	}
+	/* This requires Win98+
+	 * Choosing text/binary mode is defered till a later setbin/text call
+	 */
+	filedes[0] = _open_osfhandle((long)read,  _O_RDONLY);
+	filedes[1] = _open_osfhandle((long)write, _O_WRONLY);
+	if (filedes[0] == -1 || filedes[1] == -1) {
+		if (filedes[0] == -1) 
+			CloseHandle(read); 
+		else	close(filedes[0]);
+		if (filedes[1] == -1) 
+			CloseHandle(write);
+		else	close(filedes[1]);
+		
+		errno = ENFILE;
+		return -1;
+	}
+	return 0;
 }
 
 /* ------------------------------------------------- */
@@ -280,6 +323,9 @@ int setenv (const char *name, const char *value, int overwrite) {
 }
 int setgid (gid_t gid) {
 	die ("setgid not implemented");
+}
+int setpgid (pid_t pid, pid_t pgid) {
+	die ("setpgid not implemented");
 }
 pid_t setsid (void) {
 	die ("setsid not implemented");
@@ -381,7 +427,19 @@ pid_t fork (void) {
 }
 
 int kill (pid_t pid, int sig) {
-	die ("kill not implemented");
+	HANDLE h;
+	
+	h = (HANDLE)pid;
+	/* We terminate with 'sig' for the _return_ code + 0x80
+	 * Then in the basis library I test for this to decide W_SIGNALED.
+	 * Perhaps not the best choice, but I have no better idea.
+	 */
+	if (!TerminateProcess(h, sig | 0x80)) {
+		errno = ECHILD;
+		return -1;
+	}
+	
+	return 0;
 }
 
 int pause (void) {
@@ -389,7 +447,8 @@ int pause (void) {
 }
 
 unsigned int sleep (unsigned int seconds) {
-	die ("int not implemented");
+	Sleep (seconds * 1000);
+	return 0;
 }
 
 pid_t wait (int *status) {
@@ -397,7 +456,11 @@ pid_t wait (int *status) {
 }
 
 pid_t waitpid (pid_t pid, int *status, int options) {
-	return _cwait (status, pid, options);
+	HANDLE h;
+
+	h = (HANDLE)pid;
+	/* -1 on error, the casts here are due to bad types on both sides */
+	return _cwait(status, (_pid_t)h, 0);
 }
 
 /* ------------------------------------------------- */

@@ -260,6 +260,7 @@ pid_t getppid (void);
 uid_t getuid (void);
 int setenv (const char *name, const char *value, int overwrite);
 int setgid (gid_t gid);
+int setpgid (pid_t pid, pid_t pgid);
 pid_t setsid (void);
 int setuid (uid_t uid);
 long sysconf (int name);

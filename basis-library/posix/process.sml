@@ -18,8 +18,6 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
       val wordToPid = Pid.fromInt o SysWord.toInt
       val pidToWord = SysWord.fromInt o Pid.toInt
 
-      structure MLton = Primitive.MLton
-	 
       fun fork () =
 	 SysCall.syscall
 	 (fn () =>
@@ -30,14 +28,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 	  end)
 
       val fork =
-	 if let
-	       open MLton.Platform.OS
-	    in
-	       case host of
-		  Cygwin => true
-		| MinGW => true
-		| _ => false
-	    end
+	 if Primitive.MLton.Platform.OS.useWindowsProcess
 	    then (fn () => Error.raiseSys Error.nosys)
 	 else fork
 

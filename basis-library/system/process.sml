@@ -15,23 +15,33 @@ structure OS_Process: OS_PROCESS_EXTRA =
    struct
       open Posix.Process
 
-      structure Status = Primitive.Status
-
       structure Signal = MLtonSignal
 	 
+      structure Status =
+	 struct
+	    open Primitive.Status
+
+	    val fromPosix =
+	       fn es =>
+	       let
+		  datatype z = datatype Posix.Process.exit_status
+	       in
+		  case es of
+		     W_EXITED => success
+		   | W_EXITSTATUS w => fromInt (Word8.toInt w)
+		   | W_SIGNALED _ => failure
+		   | W_STOPPED _ => failure
+	       end
+	 end
+
       type status = Status.t
 
       val failure = Status.failure
       val success = Status.success
-
       fun isSuccess st = st = success
-
+	 
       fun wait (pid: Pid.t): Status.t =
-	 case #2 (waitpid (W_CHILD pid, [])) of
-	    W_EXITED => success
-	  | W_EXITSTATUS w => Status.fromInt (Word8.toInt w)
-	  | W_SIGNALED _ => failure
-	  | W_STOPPED _ => failure
+	 Status.fromPosix (#2 (waitpid (W_CHILD pid, [])))
 	       
       fun system cmd =
 	 let
