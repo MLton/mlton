@@ -382,14 +382,27 @@ structure Structure =
       in
 	 fun layoutTypeSpec (d, _) = seq [str "type ", Ast.Tycon.layout d]
 	 fun layoutValSpec (d, (vid, scheme)) =
-	    seq [str (Vid.statusString vid),
-		 str " ",
-		 Ast.Vid.layout d,
-		 str ": ",
-		 Scheme.layoutPretty scheme]
+	    let
+	       fun simple s =
+		  seq [str s, str " ", Ast.Vid.layout d, str ": ",
+		       Scheme.layoutPretty scheme]
+	       datatype z = datatype Vid.t
+	    in
+	       case vid of
+		  Con _ => simple "con"
+		| ConAsVar _ => simple "val"
+		| Exn c =>
+		     seq [str "exception ", Con.layout c, 
+			  case Type.deArrowOpt (Scheme.ty scheme) of
+			     NONE => empty
+			   | SOME (t, _) =>
+				seq [str " of ", Type.layoutPretty t]]
+		| Overload  _ => simple "val"
+		| Var _ => simple "val"
+	    end
 	 fun layoutStrSpec (d, r) =
-	    seq [str "structure ", Ast.Strid.layout d, str ": ",
-		 layoutPretty r]
+	    align [seq [str "structure ", Ast.Strid.layout d, str ":"],
+		   indent (layoutPretty r, 3)]
 	 and layoutPretty (T {strs, vals, types, ...}) =
 	    let
 	       fun doit (Info.T a, layout) =

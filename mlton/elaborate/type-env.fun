@@ -194,7 +194,7 @@ in
    fun simple (l: Layout.t): z =
       (l, {isChar = false, needsParen = false})
    val dontCare: z = simple (str "_")
-   fun layoutRecord (ds: (Field.t * z) list) =
+   fun layoutRecord (ds: (Field.t * z) list, flexible: bool) =
       simple (case ds of
 		 [] => str "{...}"
 	       | _ => 
@@ -206,7 +206,9 @@ in
 						Field.<= (f, f')),
 			    fn (f, (l, _)) => seq [Field.layout f, str ": ", l]),
 			   ",")),
-			 str ", ...}"])
+			 str (if flexible
+				 then ", ...}"
+			      else "}")])
    fun layoutTuple (zs: z vector): z =
       Tycon.layoutApp (Tycon.tuple, zs)
 end
@@ -362,34 +364,58 @@ structure Type =
 		 Spine.foldOverNew (spine, fields, [], fn (f, ac) =>
 				    (f, simple (str "unit"))
 				    :: ac),
-		 fn ((f, t), ac) => (f, t) :: ac))
+		 fn ((f, t), ac) => (f, t) :: ac),
+		Spine.canAddFields spine)
 	    fun genFlexRecord (_, {extra, fields, spine}) =
 	       layoutRecord
 	       (List.fold
 		(fields,
 		 List.revMap (extra (), fn {field, tyvar} =>
 			      (field, simple (Tyvar.layout tyvar))),
-		 fn ((f, t), ac) => (f, t) :: ac))
+		 fn ((f, t), ac) => (f, t) :: ac),
+		Spine.canAddFields spine)
 	    fun real _ = simple (str "real")
 	    fun record (_, r) =
 	       case Srecord.detupleOpt r of
-		  NONE => layoutRecord (Vector.toList (Srecord.toVector r))
+		  NONE =>
+		     layoutRecord (Vector.toList (Srecord.toVector r), false)
 		| SOME ts => Tycon.layoutApp (Tycon.tuple, ts)
 	    fun recursive _ = simple (str "<recur>")
 	    fun unknown (_, u) = simple (str "???")
-	    fun var (_, a) = simple (Tyvar.layout a)
+	    val {destroy, get = prettyTyvar, ...} =
+	       Property.destGet
+	       (Tyvar.plist,
+		Property.initFun
+		(let
+		    val r = ref (Char.toInt #"a")
+		 in
+		    fn _ =>
+		    let
+		       val n = !r
+		       val l =
+			  simple
+			  (str (concat ["'", Char.toString (Char.fromInt n)]))
+		       val _ = r := 1 + n
+		    in
+		       l
+		    end
+		 end))
+	    fun var (_, a) = prettyTyvar a
 	    fun word _ = simple (str "word")
+	    val (res, _) =
+	       hom (t, {con = con,
+			flexRecord = flexRecord,
+			genFlexRecord = genFlexRecord,
+			int = int,
+			real = real,
+			record = record,
+			recursive = recursive,
+			unknown = unknown,
+			var = var,
+			word = word})
+	    val _ = destroy ()
 	 in
-	    #1 (hom (t, {con = con,
-			 flexRecord = flexRecord,
-			 genFlexRecord = genFlexRecord,
-			 int = int,
-			 real = real,
-			 record = record,
-			 recursive = recursive,
-			 unknown = unknown,
-			 var = var,
-			 word = word}))
+	    res
 	 end
 
       fun deConOpt t =
@@ -585,6 +611,7 @@ structure Type =
 
       fun unify (t, t'): UnifyResult.t =
 	 let
+	    val layoutRecord = fn z => layoutRecord (z, true)
 	    fun unify arg =
 	       traceUnify
 	       (fn (outer as T s, outer' as T s') =>
@@ -793,9 +820,8 @@ structure Type =
 					 {fields = fields,
 					  spine = s,
 					  time = ref (Time.min (!t, !t'))})
-				   | _ =>
-					notUnifiable (layoutRecord ac,
-						      layoutRecord ac')
+				   | _ => notUnifiable (layoutRecord ac,
+							layoutRecord ac')
 			       end
 			  | (GenFlexRecord _, _) => genFlexError ()
 			  | (_, GenFlexRecord _) => genFlexError ()
