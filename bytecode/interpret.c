@@ -101,12 +101,14 @@ enum {
 	case opcodeSymOfTy2 (ty, mode##ArrayOffset):				\
 	{									\
 		ArrayOffset arrayOffset;					\
+		Pointer base;							\
+		Word32 index;							\
 		Scale scale;							\
 		Fetch (arrayOffset);						\
 		Fetch (scale);							\
 		if (disassemble) goto mainLoop;					\
-		Word32 index = PopReg (Word32);					\
-		Pointer base = (Pointer) (PopReg (Word32));			\
+		index = PopReg (Word32);					\
+		base = (Pointer) (PopReg (Word32));				\
 		loadStore (mode, ty,						\
 				*(ty*)(base + (index * scale) + arrayOffset));	\
 		goto mainLoop;							\
