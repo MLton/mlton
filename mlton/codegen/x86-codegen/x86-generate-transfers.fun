@@ -223,6 +223,9 @@ struct
 
 	val loopInfo
 	  = x86LoopInfo.createLoopInfo {chunk = chunk, farLoops = false}
+	val isLoopHeader
+	  = fn label => isLoopHeader(loopInfo, label)
+	                handle _ => false
 
 	val liveTransfers
 	  = x86LiveTransfers.computeLiveTransfers
@@ -332,14 +335,16 @@ struct
 		     val profile_assembly
 		       = AppendList.fromList profile_assembly
 
+(*
 		     val isLoopHeader = fn _ => false
+*)
 
 		     fun near label
 		       = if falling
 			   then if unique
 				  then AppendList.appends
 				       [AppendList.fromList
-					(if isLoopHeader(loopInfo, label)
+					(if isLoopHeader label
 					    handle _ => false
 					   then [Assembly.pseudoop_p2align 
 						 (Immediate.const_int 4,
@@ -350,7 +355,7 @@ struct
 					profile_assembly]
 				  else AppendList.appends
 				       [AppendList.fromList
-					(if isLoopHeader(loopInfo, label)
+					(if isLoopHeader label
 					    handle _ => false
 					   then [Assembly.pseudoop_p2align 
 						 (Immediate.const_int 4,
@@ -394,7 +399,7 @@ struct
 					profile_assembly]
 			   else AppendList.appends
 			        [AppendList.fromList
-				 (if isLoopHeader(loopInfo, label)
+				 (if isLoopHeader label
 				     handle _ => false
 				    then [Assembly.pseudoop_p2align 
 					  (Immediate.const_int 4,
