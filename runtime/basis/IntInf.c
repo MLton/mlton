@@ -194,51 +194,51 @@ static pointer binary (pointer lhs, pointer rhs, uint bytes,
 	return answer (&resmpz);
 }
 
-pointer IntInf_do_add (pointer lhs, pointer rhs, uint bytes) {
+pointer IntInf_add (pointer lhs, pointer rhs, uint bytes) {
 	if (DEBUG_INT_INF)
-		fprintf (stderr, "IntInf_do_add (0x%08x, 0x%08x, %u)\n",
+		fprintf (stderr, "IntInf_add (0x%08x, 0x%08x, %u)\n",
 				(uint)lhs, (uint)rhs, bytes);
 	return binary (lhs, rhs, bytes, &mpz_add);
 }
 
-pointer IntInf_do_gcd (pointer lhs, pointer rhs, uint bytes) {
+pointer IntInf_gcd (pointer lhs, pointer rhs, uint bytes) {
 	if (DEBUG_INT_INF)
-		fprintf (stderr, "IntInf_do_gcd (0x%08x, 0x%08x, %u)\n",
+		fprintf (stderr, "IntInf_gcd (0x%08x, 0x%08x, %u)\n",
 				(uint)lhs, (uint)rhs, bytes);
 	return binary (lhs, rhs, bytes, &mpz_gcd);
 }
 
-pointer IntInf_do_mul (pointer lhs, pointer rhs, uint bytes) {
+pointer IntInf_mul (pointer lhs, pointer rhs, uint bytes) {
 	if (DEBUG_INT_INF)
-		fprintf (stderr, "IntInf_do_mul (0x%08x, 0x%08x, %u)\n",
+		fprintf (stderr, "IntInf_mul (0x%08x, 0x%08x, %u)\n",
 				(uint)lhs, (uint)rhs, bytes);
 	return binary (lhs, rhs, bytes, &mpz_mul);
 }
 
-pointer IntInf_do_sub (pointer lhs, pointer rhs, uint bytes) {
+pointer IntInf_sub (pointer lhs, pointer rhs, uint bytes) {
 	if (DEBUG_INT_INF)
-		fprintf (stderr, "IntInf_do_sub (0x%08x, 0x%08x, %u)\n",
+		fprintf (stderr, "IntInf_sub (0x%08x, 0x%08x, %u)\n",
 				(uint)lhs, (uint)rhs, bytes);
 	return binary (lhs, rhs, bytes, &mpz_sub);
 }
 
-pointer IntInf_do_andb(pointer lhs, pointer rhs, uint bytes) {
+pointer IntInf_andb(pointer lhs, pointer rhs, uint bytes) {
 	if (DEBUG_INT_INF)
-		fprintf (stderr, "IntInf_do_andb (0x%08x, 0x%08x, %u)\n",
+		fprintf (stderr, "IntInf_andb (0x%08x, 0x%08x, %u)\n",
 				(uint)lhs, (uint)rhs, bytes);
 	return binary(lhs, rhs, bytes, &mpz_and);
 }
 
-pointer IntInf_do_orb(pointer lhs, pointer rhs, uint bytes) {
+pointer IntInf_orb(pointer lhs, pointer rhs, uint bytes) {
 	if (DEBUG_INT_INF)
-		fprintf (stderr, "IntInf_do_orb (0x%08x, 0x%08x, %u)\n",
+		fprintf (stderr, "IntInf_orb (0x%08x, 0x%08x, %u)\n",
 				(uint)lhs, (uint)rhs, bytes);
 	return binary(lhs, rhs, bytes, &mpz_ior);
 }
 
-pointer IntInf_do_xorb(pointer lhs, pointer rhs, uint bytes) {
+pointer IntInf_xorb(pointer lhs, pointer rhs, uint bytes) {
 	if (DEBUG_INT_INF)
-		fprintf (stderr, "IntInf_do_xorb (0x%08x, 0x%08x, %u)\n",
+		fprintf (stderr, "IntInf_xorb (0x%08x, 0x%08x, %u)\n",
 				(uint)lhs, (uint)rhs, bytes);
 	return binary(lhs, rhs, bytes, &mpz_xor);
 }
@@ -258,16 +258,16 @@ unary(pointer arg, uint bytes,
 	return answer(&resmpz);
 }
 
-pointer IntInf_do_neg(pointer arg, uint bytes) {
+pointer IntInf_neg(pointer arg, uint bytes) {
 	if (DEBUG_INT_INF)
-		fprintf (stderr, "IntInf_do_neg (0x%08x, %u)\n",
+		fprintf (stderr, "IntInf_neg (0x%08x, %u)\n",
 				(uint)arg, bytes);
 	return unary(arg, bytes, &mpz_neg);
 }
 
-pointer IntInf_do_notb(pointer arg, uint bytes) {
+pointer IntInf_notb(pointer arg, uint bytes) {
 	if (DEBUG_INT_INF)
-		fprintf (stderr, "IntInf_do_notb (0x%08x, %u)\n",
+		fprintf (stderr, "IntInf_notb (0x%08x, %u)\n",
 				(uint)arg, bytes);
 	return unary(arg, bytes, &mpz_com);
 }
@@ -288,16 +288,16 @@ shary(pointer arg, uint shift, uint bytes,
 	return answer(&resmpz);
 }
 
-pointer IntInf_do_arshift(pointer arg, uint shift, uint bytes) {
+pointer IntInf_arshift(pointer arg, uint shift, uint bytes) {
 	if (DEBUG_INT_INF)
-		fprintf (stderr, "IntInf_do_arshift (0x%08x, %u, %u)\n",
+		fprintf (stderr, "IntInf_arshift (0x%08x, %u, %u)\n",
 				(uint)arg, shift, bytes);
 	return shary(arg, shift, bytes, &mpz_fdiv_q_2exp);
 }
 
-pointer IntInf_do_lshift(pointer arg, uint shift, uint bytes) {
+pointer IntInf_lshift(pointer arg, uint shift, uint bytes) {
 	if (DEBUG_INT_INF)
-		fprintf (stderr, "IntInf_do_lshift (0x%08x, %u, %u)\n",
+		fprintf (stderr, "IntInf_lshift (0x%08x, %u, %u)\n",
 				(uint)arg, shift, bytes);
 	return shary(arg, shift, bytes, &mpz_mul_2exp);
 }
@@ -316,14 +316,14 @@ IntInf_smallMul(Word lhs, Word rhs, pointer carry)
  * Return an integer which compares to 0 as the two intInf args compare
  * to each other.
  */
-int IntInf_do_compare (pointer lhs, pointer rhs) {
+int IntInf_compare (pointer lhs, pointer rhs) {
 	__mpz_struct		lhsmpz,
 				rhsmpz;
 	mp_limb_t		lhsspace[2],
 				rhsspace[2];
 
 	if (DEBUG_INT_INF)
-		fprintf (stderr, "IntInf_do_compare (0x%08x, 0x%08x)\n",
+		fprintf (stderr, "IntInf_compare (0x%08x, 0x%08x)\n",
 				(uint)lhs, (uint)rhs);
 	fill (lhs, &lhsmpz, lhsspace);
 	fill (rhs, &rhsmpz, rhsspace);
@@ -333,13 +333,13 @@ int IntInf_do_compare (pointer lhs, pointer rhs) {
 /*
  * Check if two IntInf.int's are equal.
  */
-int IntInf_do_equal (pointer lhs, pointer rhs) {
+int IntInf_equal (pointer lhs, pointer rhs) {
 	if (lhs == rhs)
 		return TRUE;
 	if (eitherIsSmall (lhs, rhs))
 		return FALSE;
 	else
-		return 0 == IntInf_do_compare (lhs, rhs);
+		return 0 == IntInf_compare (lhs, rhs);
 }
 
 /*
@@ -347,7 +347,7 @@ int IntInf_do_equal (pointer lhs, pointer rhs) {
  * Arg is an intInf, base is the base to use (2, 8, 10 or 16) and space is a
  * string (mutable) which is large enough.
  */
-pointer IntInf_do_toString (pointer arg, int base, uint bytes) {
+pointer IntInf_toString (pointer arg, int base, uint bytes) {
 	strng		*sp;
 	__mpz_struct	argmpz;
 	mp_limb_t	argspace[2];
@@ -357,7 +357,7 @@ pointer IntInf_do_toString (pointer arg, int base, uint bytes) {
 	char		c;
 
 	if (DEBUG_INT_INF)
-		fprintf (stderr, "IntInf_do_toString (0x%08x, %d, %u)\n",
+		fprintf (stderr, "IntInf_toString (0x%08x, %d, %u)\n",
 				(uint)arg, base, bytes);
 	assert (base == 2 || base == 8 || base == 10 || base == 16);
 	fill (arg, &argmpz, argspace);
@@ -393,7 +393,7 @@ pointer IntInf_do_toString (pointer arg, int base, uint bytes) {
  * num is the numerator bignum, den is the denominator and frontier is
  * the current frontier.
  */
-pointer IntInf_do_quot (pointer num, pointer den, uint bytes) {
+pointer IntInf_quot (pointer num, pointer den, uint bytes) {
 	__mpz_struct	resmpz,
 			nmpz,
 			dmpz;
@@ -479,7 +479,7 @@ pointer IntInf_do_quot (pointer num, pointer den, uint bytes) {
  * num is the numerator bignum, den is the denominator and frontier is
  * the current frontier.
  */
-pointer IntInf_do_rem (pointer num, pointer den, uint bytes) {
+pointer IntInf_rem (pointer num, pointer den, uint bytes) {
 	__mpz_struct	resmpz,
 			nmpz,
 			dmpz;
