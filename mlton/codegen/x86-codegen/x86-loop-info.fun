@@ -111,7 +111,7 @@ struct
 		      => (doit' return)
 		 end)
 
-	val {forest, graphToForest, headers, isHeader, loopNodes, parent}
+	val {forest, graphToForest, headers, isHeader, loopNodes, parent, ...}
 	  = Graph.loopForestSteensgaard {graph = G, root = root}
 
 	val loopForest

@@ -88,6 +88,8 @@ signature DIRECTED_GRAPH =
 	  graph: t,
 	  root: (* graph *) Node.t}
 	 -> {forest: t,
+	     trees: {headers: (* graph *) Node.t list,
+		     loopNodes: (* graph *) Node.t list} Tree.t list,
 	     graphToForest: (* graph *) Node.t -> (* forest *) Node.t,
 	     headers: (* graph *) Node.t list -> (* graph *) Node.t list,
 	     isHeader: (* graph *) Node.t -> bool,
@@ -97,6 +99,8 @@ signature DIRECTED_GRAPH =
 	 {graph: t,
 	  root: (* graph *) Node.t}
 	 -> {forest: t,
+	     trees: {headers: (* graph *) Node.t list,
+		     loopNodes: (* graph *) Node.t list} Tree.t list,
 	     graphToForest: (* graph *) Node.t -> (* forest *) Node.t,
 	     headers: (* graph *) Node.t list -> (* graph *) Node.t list,
 	     isHeader: (* graph *) Node.t -> bool,
