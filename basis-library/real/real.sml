@@ -13,58 +13,6 @@ structure Real: REAL =
       open Real IEEEReal
       infix 4 == != ?=
       type real = real
-
-(*
-      local
-	 (* In computing minNormalPos, minPos, and maxFinite, we use a C routine
-	  * (isNormal, isPositive, and isFinite) to check that the value is OK.
-	  * Because of the C calling convention, which passes the float argument
-	  * on the stack, the float is ejected from the FPU, and is hence
-	  * converted from 80 to 64 bits.  This conversion is essential so that
-	  * we don't end up with something that meets the predicate (especially
-	  * in the isPositive case) with 80 bits but fails with 64.
-	  *)
-	 fun min (p: real -> bool): real =
-	    let
-	       fun loop (x: real): real =
-		  let
-		     val y = x / 2.0
-		  in
-		     if p y
-			then loop y
-		     else x
-		  end
-	    in loop 1.0
-	    end
-      in
-	 val minNormalPos = min isNormal
-	 val minPos = min isPositive
-
-	 val maxFinite =
-	    let
-	       fun up (x: real): real =
-		  let
-		     val y = x * 2.0
-		  in
-		     if isFinite y
-			then up y
-		     else x
-		  end
-	       fun down (x: real, y: real): real =
-		  let
-		     val y = y / 2.0
-		     val z = x + y
-		  in
-		     if isFinite z
-			then down (z, y)
-		     else x
-		  end
-	       val z = up 1.0
-	    in
-	       down (z, z)
-	    end
-      end
-*)
    
       val radix: int = 2
 
