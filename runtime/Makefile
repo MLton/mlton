@@ -13,11 +13,15 @@ OBJS =						\
 	basis/IEEEReal.o			\
 	basis/IntInf.o				\
 	basis/Int/addOverflow.o			\
+	basis/Int/addOverflowNew.o		\
 	basis/Int/mulOverflow.o			\
+	basis/Int/mulOverflowNew.o		\
 	basis/Int/negOverflow.o			\
+	basis/Int/negOverflowNew.o		\
 	basis/Int/quot.o			\
 	basis/Int/rem.o				\
 	basis/Int/subOverflow.o			\
+	basis/Int/subOverflowNew.o		\
 	basis/Itimer/set.o			\
 	basis/MLton/bug.o			\
 	basis/MLton/exit.o			\
@@ -156,11 +160,15 @@ DEBUG_OBJS =					\
 	basis/IEEEReal-gdb.o			\
 	basis/IntInf-gdb.o			\
 	basis/Int/addOverflow-gdb.o		\
+	basis/Int/addOverflowNew-gdb.o		\
 	basis/Int/mulOverflow-gdb.o		\
+	basis/Int/mulOverflowNew-gdb.o		\
 	basis/Int/negOverflow-gdb.o		\
+	basis/Int/negOverflowNew-gdb.o		\
 	basis/Int/quot-gdb.o			\
 	basis/Int/rem-gdb.o			\
 	basis/Int/subOverflow-gdb.o		\
+	basis/Int/subOverflowNew-gdb.o		\
 	basis/Itimer/set-gdb.o			\
 	basis/MLton/bug-gdb.o			\
 	basis/MLton/exit-gdb.o			\

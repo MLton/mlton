@@ -483,7 +483,7 @@ structure AnalyzeDom =
 	  val _ = buildGraph ()
 
 	  fun computeDominators () = let
-	  val {idom} = Graph.dominators {graph = G, root = Root}
+	  val {idom} = Graph.dominators (G, {root = Root})
           in idom end
 	  val computeDominators 
 	    = Control.trace (Control.Pass, "computeDominators") computeDominators

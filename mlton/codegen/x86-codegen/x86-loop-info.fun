@@ -146,11 +146,12 @@ struct
 					  node::unfinished_nodes)
 			     end)
 
-		    val up = Tree.T (loopLabels, up)
-		    val down = Tree.T (loopLabels, 
-				       List.map(unfinished_nodes, 
-						fn node => doit {node = node, 
-								 up = [up]}))
+		    val up = Tree.T (loopLabels, Vector.fromList up)
+		    val down =
+		       Tree.T (loopLabels, 
+			       Vector.fromListMap
+			       (unfinished_nodes, fn node =>
+				doit {node = node, up = [up]}))
 		  in
 		    List.foreach
 		    (finished_nodes, 
@@ -196,9 +197,9 @@ struct
 	  | (SOME {up = up_from, ...}, SOME {up = up_to, ...})
 	  => let
 	       fun depth' (Tree.T (labels, tree), d)
-		 = (case tree
-		      of [] => d
-		       | [tree] => depth' (tree, d + 1)
+		 = (case Vector.length tree
+		      of 0 => d
+		       | 1 => depth' (Vector.sub (tree, 0), d + 1)
 		       | _ => Error.bug "x86LoopInfo:depth'")
 	       fun depth tree = depth' (tree, 0:int)
 

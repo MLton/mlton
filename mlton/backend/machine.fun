@@ -183,17 +183,10 @@ structure PrimInfo =
   struct
     datatype t =
       None
-    | Overflow of Label.t * Operand.t list
     | Runtime of GCInfo.t
     | Normal of Operand.t list
 
-    fun foreachLabel (i: t, f) =
-      case i
-	of Overflow (l, _) => f l
-	 | _ => ()
-
     val none = None
-    val overflow = Overflow
     val runtime = Runtime
     val normal = Normal
 
@@ -205,10 +198,6 @@ structure PrimInfo =
 	in
 	  case i
 	    of None => empty
-	     | Overflow (l,live) 
-	     => seq [str "Overflow ",
-		     record [("label", Label.layout l),
-			     ("live", List.layout Operand.layout live)]]
 	     | Runtime gcInfo 
 	     => seq [str "Runtime ",
 		     record [("gcInfo", GCInfo.layout gcInfo)]]
@@ -222,9 +211,6 @@ structure PrimInfo =
     in
       val toMOut =
 	 fn None => P.None
-	  | Overflow (l,live) 
-	  => P.Overflow (l,
-			 List.map(live,Operand.toMOut))
 	  | Runtime gcInfo 
 	  => P.Runtime (GCInfo.toMOut gcInfo)
 	  | Normal live 
@@ -316,8 +302,9 @@ structure Statement =
 		    pinfo: PrimInfo.t,
 		    args: Operand.t vector}
        | LimitCheck of LimitCheck.t
-       | SaveExnStack of {offset: int}
-       | RestoreExnStack of {offset: int}
+       | SetExnStackLocal of {offset: int}
+       | SetExnStackSlot of {offset: int}
+       | SetSlotExnStack of {offset: int}
        | Allocate of {dst: Operand.t,
 		      size: int,
 		      numPointers: int,
@@ -328,23 +315,26 @@ structure Statement =
 
       val layout =
 	 let open Layout
-	 in fn Noop => str "Noop"
-       | Move {dst, src} =>
-	    seq [Operand.layout dst, str " = ", Operand.layout src]
-       | Push i => seq [str "Push (", Int.layout i, str ")"]
-       | Assign {dst, oper, args, ...} =>
-	    seq [Option.layout Operand.layout dst, str " = ",
-		 Prim.layout oper, str " ",
-		 Vector.layout Operand.layout args]
-       | LimitCheck _ => str "LimitCheck"
-       | SaveExnStack {offset, ...} =>
-	    seq [str "SaveExnStack (", Int.layout offset, str ")"]
-       | RestoreExnStack {offset, ...} =>
-	    seq [str "RestoreExnStack (", Int.layout offset, str ")"]
-       | Allocate {dst, ...} =>
-	    seq [Operand.layout dst, str " = Allocate"]
-       | AllocateArray {user = {dst, ...}, ...} =>
-	    seq [Operand.layout dst, str " = AllocateArray"]
+	 in
+	    fn Noop => str "Noop"
+	     | Move {dst, src} =>
+		  seq [Operand.layout dst, str " = ", Operand.layout src]
+	     | Push i => seq [str "Push (", Int.layout i, str ")"]
+	     | Assign {dst, oper, args, ...} =>
+		  seq [Option.layout Operand.layout dst, str " = ",
+		       Prim.layout oper, str " ",
+		       Vector.layout Operand.layout args]
+	     | LimitCheck _ => str "LimitCheck"
+	     | SetExnStackLocal {offset} =>
+		  seq [str "SetExnStackLocal ", Int.layout offset]
+	     | SetExnStackSlot {offset} =>
+		  seq [str "SetExnStackSlot ", Int.layout offset]
+	     | SetSlotExnStack {offset} =>
+		  seq [str "SetSlotExnStack ", Int.layout offset]
+	     | Allocate {dst, ...} =>
+		  seq [Operand.layout dst, str " = Allocate"]
+	     | AllocateArray {user = {dst, ...}, ...} =>
+		  seq [Operand.layout dst, str " = AllocateArray"]
 	 end
 
       local
@@ -387,8 +377,9 @@ structure Statement =
 					  src = Operand.toMOut src}
 	     | Noop => S.Noop
 	     | Push i => S.Push i
-	     | SaveExnStack r => S.SaveExnStack r
-	     | RestoreExnStack r => S.RestoreExnStack r
+	     | SetExnStackLocal z => S.SetExnStackLocal z
+	     | SetExnStackSlot z => S.SetExnStackSlot z
+	     | SetSlotExnStack z => S.SetSlotExnStack z
       end
 
       fun push x =
@@ -416,8 +407,9 @@ structure Statement =
 
       val assign = Assign
       val limitCheck = LimitCheck o LimitCheck.new
-      val saveExnStack = SaveExnStack
-      val restoreExnStack = RestoreExnStack
+      val setExnStackLocal = SetExnStackLocal
+      val setExnStackSlot = SetExnStackSlot
+      val setSlotExnStack = SetSlotExnStack
 
       (* These checks, and in particular POINTER_BITS and NON_POINTER_BITS must
        * agree with runtime/gc.h.
@@ -497,11 +489,12 @@ structure Transfer =
 	  | _ => false
 	       
       val bug = Bug
+      val farJump = FarJump
+      val nearJump = NearJump
+      val overflow = Overflow
       val return = Return
       val raisee = Raise
       val switchIP = SwitchIP
-      val nearJump = NearJump
-      val farJump = FarJump
 
       fun switch (arg as {cases, default, ...}) =
 	 let
@@ -566,17 +559,19 @@ structure Chunk =
    struct
       datatype t = T of {chunkLabel: ChunkLabel.t,
 			 (* where to start *)
-			 entries: Label.t list,
+			 entries: Label.t list ref,
 			 gcReturns: Label.t list option ref,
 			 blocks: Block.t list ref,
 			 (* for each type, gives the max # registers used *)
 			 regMax: Type.t -> int ref}
 
+      fun addEntry (T {entries, ...}, l) = List.push (entries, l)
+
       fun clear (T {blocks, ...}) = List.foreach (!blocks, Block.clear)
 
       fun toMOut (T {chunkLabel, entries, gcReturns, blocks, regMax, ...}) =
 	 MachineOutput.Chunk.T {chunkLabel = chunkLabel,
-				entries = entries,
+				entries = !entries,
 				gcReturns = (case !gcReturns of
 						NONE => Error.bug "gcReturns"
 					      | SOME gcReturns => gcReturns),
@@ -591,7 +586,8 @@ structure Chunk =
       (*                 insertLimitChecks                 *)
       (* ------------------------------------------------- *)
 	 
-      fun insertLimitChecks (self as T {chunkLabel, blocks, gcReturns, ...},
+      fun insertLimitChecks (self as T {chunkLabel, blocks,
+					entries, gcReturns, ...},
 			     frames): unit =
 	 let
 	    val returns: Label.t list ref = ref []
@@ -622,95 +618,126 @@ structure Chunk =
 	    open Block Transfer
 	    val _ = List.foreach (!blocks, fn b as T {label, ...} =>
 				  setLabelBlock (label, b))
-	    fun memo (T {bytesNeeded, label, statements, transfer, ...}) =
-	       case !bytesNeeded of
-		  SOME n => n
-		| NONE =>
-		     let
-			val _ = bytesNeeded := SOME 0
-			val goto = memo o labelBlock
-			val rest =
-			   case transfer of
-			      NearJump {label, ...} => goto label
-			    | SwitchIP {int, pointer, ...} =>
-				 Int.max (goto int, goto pointer)
-			    | Switch {cases, default, ...} =>
-				 Cases.fold
-				 (cases, (case default of
-					     NONE => 0
-					   | SOME l => goto l),
-				  fn (j, rest) => Int.max (goto j, rest))
-			    | _ => 0
-			fun allocateArray ({user = {gcInfo, numElts, numPointers,
-						    numBytesNonPointers, ...},
-					    limitCheck}: Statement.allocateArray,
-					   bytesAllocated: int): int =
-			   let
-			      val bytesPerElt =
-				 if numPointers = 0
-				    then numBytesNonPointers
-				 else if numBytesNonPointers = 0
-					 then numPointers * pointerSize
-				      else Error.unimplemented "tricky arrays"
-			      val bytesAllocated =
-				 bytesAllocated
-				 (* space for array header *)
-				 + arrayHeaderSize
-				 (* space for forwarding pointer for zero
-				  * length arrays *)
-				 + pointerSize
-			      fun here () =
-				 let val _ = newFrame gcInfo
-				    val lc = {bytesPerElt = bytesPerElt,
-					      bytesAllocated = bytesAllocated};
-				 in limitCheck := SOME lc; 0
-				 end
-			      (* maxArrayLimitCheck is arbitrary -- it's just there
-			       * to ensure that really huge array allocations don't
-			       * get moved too early.
-			       *)
-			      val maxArrayLimitCheck = 10000
-			   in case numElts of
-			      Operand.Int numElts =>
-				 if numElts <= maxArrayLimitCheck
-				    then (bytesAllocated
-					  + Type.align (Type.pointer,
-							numElts * bytesPerElt))
-				 else here ()
-			    | _ => here ()
-			   end
-			val bytesAllocated =
-			   Array.foldr
-			   (statements, rest, fn (statement, bytesAllocated) =>
-			    let datatype z = datatype Statement.t
-			    in case statement of
-			       AllocateArray r => allocateArray (r, bytesAllocated)
-			     | Allocate {size, ...} =>
-				  objectHeaderSize + size + bytesAllocated
-			     | Assign {pinfo, ...} =>
-				  (case pinfo
-				     of PrimInfo.Runtime gcInfo => newFrame gcInfo
-				      | _ => ()
-				   ; bytesAllocated)
-			     | LimitCheck lc =>
-				  LimitCheck.set (lc, bytesAllocated, newFrame)
-			     | _ => bytesAllocated
-			    end)
-		     in bytesNeeded := SOME bytesAllocated
-			; bytesAllocated
-		     end
-	 in List.foreach (!blocks, fn b => (memo b; ()))
-	    ; gcReturns := SOME (!returns)
-	    ; destroy ()
+	    fun memo (l: Label.t): int =
+	       let
+		  val T {bytesNeeded, label, statements, transfer, ...} =
+		     labelBlock l
+	       in
+		  case !bytesNeeded of
+		     SOME n => n
+		   | NONE =>
+			let
+			   val _ = bytesNeeded := SOME 0
+			   val goto = memo
+			   val rest =
+			      case transfer of
+				 NearJump {label, ...} => goto label
+			       | Overflow {failure, success, ...} =>
+				    Int.max (goto failure, goto success)
+			       | SwitchIP {int, pointer, ...} =>
+				    Int.max (goto int, goto pointer)
+			       | Switch {cases, default, ...} =>
+				    Cases.fold
+				    (cases, (case default of
+						NONE => 0
+					      | SOME l => goto l),
+				     fn (j, rest) => Int.max (goto j, rest))
+			       | _ => 0
+			   fun allocateArray
+			      ({user = {gcInfo, numElts, numPointers,
+					numBytesNonPointers, ...},
+				limitCheck}: Statement.allocateArray,
+			       bytesAllocated: int): int =
+			      let
+				 val bytesPerElt =
+				    if numPointers = 0
+				       then numBytesNonPointers
+				    else if numBytesNonPointers = 0
+					    then numPointers * pointerSize
+					 else Error.unimplemented "tricky arrays"
+				 val bytesAllocated =
+				    bytesAllocated
+				    (* space for array header *)
+				    + arrayHeaderSize
+				    (* space for forwarding pointer for zero
+				     * length arrays *)
+				    + pointerSize
+				 fun here () =
+				    let val _ = newFrame gcInfo
+				       val lc = {bytesPerElt = bytesPerElt,
+						 bytesAllocated = bytesAllocated};
+				    in limitCheck := SOME lc; 0
+				    end
+				 (* maxArrayLimitCheck is arbitrary -- it's just
+				  * there to ensure that really huge array
+				  * allocations don't get moved too early.
+				  *)
+				 val maxArrayLimitCheck = 10000
+			      in case numElts of
+				 Operand.Int numElts =>
+				    if numElts <= maxArrayLimitCheck
+				       then (bytesAllocated +
+					     Type.align
+					     (Type.pointer,
+					      numElts * bytesPerElt))
+				    else here ()
+			       | _ => here ()
+			      end
+			   val bytesAllocated =
+			      Array.foldr
+			      (statements, rest,
+			       fn (statement, bytesAllocated) =>
+			       let datatype z = datatype Statement.t
+			       in case statement of
+				  AllocateArray r =>
+				     allocateArray (r, bytesAllocated)
+				| Allocate {size, ...} =>
+				     objectHeaderSize + size + bytesAllocated
+				| Assign {pinfo, ...} =>
+				     (case pinfo
+					 of PrimInfo.Runtime gcInfo =>
+					    newFrame gcInfo
+				       | _ => ()
+					    ; bytesAllocated)
+				| LimitCheck lc =>
+				     LimitCheck.set
+				     (lc, bytesAllocated, newFrame)
+				| _ => bytesAllocated
+			       end)
+			in bytesNeeded := SOME bytesAllocated
+			   ; bytesAllocated
+			end
+	       end
+	    val _ = List.foreach (!entries, fn l => (memo l; ()))
+	    val _ = gcReturns := SOME (!returns)
+	    val _ = destroy ()
+	    val _ =
+	       Control.diagnostics
+	       (fn display =>
+		let
+		   open Layout
+		   val _ = display (seq [str "limit checks for ",
+					 ChunkLabel.layout chunkLabel])
+		   val _ =
+		      List.foreach
+		      (!blocks, fn Block.T {bytesNeeded, label, ...} =>
+		       display
+		       (seq [Label.layout label, str " ",
+			     Option.layout Int.layout (!bytesNeeded)]))
+		in
+		   ()
+		end)
+	 in
+	    ()
 	 end
       
       fun label (T {chunkLabel, ...}) = chunkLabel
 	 
       fun equals (T {blocks = r, ...}, T {blocks = r', ...}) = r = r'
 	 
-      fun new (entries: Label.t list): t =
+      fun new (): t =
 	 T {chunkLabel = ChunkLabel.new (),
-	    entries = entries,
+	    entries = ref [],
 	    blocks = ref [],
 	    regMax = Type.memo (fn _ => ref 0),
 	    gcReturns = ref NONE}
@@ -803,10 +830,12 @@ structure Program =
       fun newHandler (T {handlers, ...}, {chunkLabel, label}) =
 	 List.push (handlers, {chunkLabel = chunkLabel, label = label})
 
-      fun newChunk {program = T {chunks, ...}, entries} =
-	 let val c = Chunk.new (entries)
-	 in List.push (chunks, c)
-	    ; c
+      fun newChunk (T {chunks, ...}) =
+	 let
+	    val c = Chunk.new ()
+	    val _ = List.push (chunks, c)
+	 in
+	    c
 	 end
 
       fun newGlobal (T {globalCounter, ...}, ty) =

@@ -135,24 +135,14 @@ structure PrimInfo =
    struct
       datatype t =
 	 None
-       | Overflow of Label.t * Operand.t list
        | Runtime of GCInfo.t
        | Normal of Operand.t list
-
-      fun foreachLabel (i: t, f) =
-	 case i of
-	    Overflow (l, _) => f l
-	  | _ => ()
 
       fun layout i
 	= let open Layout
 	  in
 	    case i
 	      of None => empty
-	       | Overflow (l,live) 
-	       => seq [str "Overflow ",
-		       record [("label", Label.layout l),
-			       ("live", List.layout Operand.layout live)]]
 	       | Runtime gcInfo 
 	       => seq [str "Runtime ",
 		       record [("gcInfo", GCInfo.layout gcInfo)]]
@@ -165,20 +155,7 @@ structure PrimInfo =
 structure Statement =
    struct
       datatype t =
-	 Noop
-       | Move of {dst: Operand.t,
-		  src: Operand.t}
-       | Push of int
-       | Assign of {dst: Operand.t option,
-		    oper: Prim.t,
-		    pinfo: PrimInfo.t,
-		    args: Operand.t list}
-       | LimitCheck of {info: GCInfo.t,
-			bytes: int,
-			stackCheck: bool}
-       | SaveExnStack of {offset: int}
-       | RestoreExnStack of {offset: int}
-       | Allocate of {dst: Operand.t,
+	 Allocate of {dst: Operand.t,
 		      size: int,
 		      numPointers: int,
 		      numWordsNonPointers: int,
@@ -192,6 +169,20 @@ structure Statement =
 			   limitCheck: {gcInfo: GCInfo.t,
 					bytesPerElt: int,
 					bytesAllocated: int} option}
+       | Assign of {dst: Operand.t option,
+		    oper: Prim.t, 
+		    pinfo: PrimInfo.t,
+		    args: Operand.t list}
+       | LimitCheck of {info: GCInfo.t,
+			bytes: int,
+			stackCheck: bool}
+       | Move of {dst: Operand.t,
+		  src: Operand.t}
+       | Noop
+       | Push of int
+       | SetExnStackLocal of {offset: int}
+       | SetExnStackSlot of {offset: int}
+       | SetSlotExnStack of {offset: int}
 
       val layout =
 	 let open Layout
@@ -212,10 +203,12 @@ structure Statement =
 		       record [("info", GCInfo.layout info),
 			       ("bytes", Int.layout bytes),
 			       ("stackCheck", Bool.layout stackCheck)]]
-	     | SaveExnStack {offset} =>
-		  seq [str "SaveExnStack (", Int.layout offset, str ")"]
-	     | RestoreExnStack {offset} =>
-		  seq [str "RestoreExnStack (", Int.layout offset, str ")"]
+	     | SetExnStackLocal {offset} =>
+		  seq [str "SetExnStackLocal ", Int.layout offset]
+	     | SetExnStackSlot {offset} =>
+		  seq [str "SetExnStackSlot ", Int.layout offset]
+	     | SetSlotExnStack {offset} =>
+		  seq [str "SetSlotExnStack ", Int.layout offset]
 	     | Allocate {dst, stores, ...} =>
 		  seq [Operand.layout dst, 
 		       str " = Allocate[",
@@ -245,24 +238,30 @@ structure Transfer =
    struct
       datatype t =
 	 Bug
-       | Return of {live: Operand.t list}
-       | Raise
-       | Switch of {test: Operand.t,
-		    cases: Cases.t,
-		    default: Label.t option}
-       | SwitchIP of {test: Operand.t,
-		      int: Label.t,
-		      pointer: Label.t}
-       | NearJump of {label: Label.t,
-		      return: {return: Label.t,
-			       handler: Label.t option,
-			       size: int} option}
        | FarJump of {chunkLabel: ChunkLabel.t,
 		     label: Label.t,
 		     live: Operand.t list,
 		     return: {return: Label.t,
 			      handler: Label.t option,
 			      size: int} option}
+       | NearJump of {label: Label.t,
+		      return: {return: Label.t,
+			       handler: Label.t option,
+			       size: int} option}
+       | Overflow of {args: Operand.t vector,
+		      dst: Operand.t,
+		      failure: Label.t,
+		      prim: Prim.t,
+		      success: Label.t}
+       | Raise
+       | Return of {live: Operand.t list}
+       | Switch of {test: Operand.t,
+		    cases: Cases.t,
+		    default: Label.t option}
+       | SwitchIP of {test: Operand.t,
+		      int: Label.t,
+		      pointer: Label.t}
+
 
       fun layout t =
 	 let open Layout
@@ -287,6 +286,13 @@ structure Transfer =
 						    ("handler", Option.layout Label.layout handler),
 						    ("size", Int.layout size)])
 				       return)]]
+	  | Overflow {args, dst, failure, prim, success} =>
+	       seq [str "Overflow ",
+		    record [("args", Vector.layout Operand.layout args),
+			    ("dst", Operand.layout dst),
+			    ("failure", Label.layout failure),
+			    ("prim", Prim.layout prim),
+			    ("success", Label.layout failure)]]
 	  | Raise => str "Raise"
 	  | Return {live} => 
                seq [str "Return ",
@@ -327,12 +333,19 @@ structure Block =
 		 => seq [str "Handler", paren(Int.layout size)]
 	      end
 	end
+
       datatype t = T of {label: Label.t,
 			 kind: Kind.t,
 			 live: Operand.t list,
 			 profileName: string,
 			 statements: Statement.t array,
 			 transfer: Transfer.t}
+
+      local
+	 fun make g (T r) = g r
+      in
+	 val label = make #label
+      end
 
       fun layout (T {label, kind, live, profileName, statements, transfer})
 	= let open Layout

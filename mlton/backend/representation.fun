@@ -8,9 +8,10 @@ functor Representation (S: REPRESENTATION_STRUCTS): REPRESENTATION =
 struct
 
 open S
-local open Cps
+local open Ssa
 in
    structure Con = Con
+   structure Datatype = Datatype
    structure Tycon = Tycon
    structure Type = Type
 end
@@ -91,7 +92,7 @@ structure ConRep =
  * a useful component
  *)
 
-fun compute (Cps.Program.T {datatypes, ...}) =
+fun compute (Ssa.Program.T {datatypes, ...}) =
    let 
       val {get = tyconRep, set = setTyconRep} =
 	 Property.getSet (Tycon.plist, Property.initRaise ("rep", Tycon.layout))
@@ -131,13 +132,13 @@ fun compute (Cps.Program.T {datatypes, ...}) =
 		      else (no, {con = con, args = args} :: have))
       (* Compute a least-fixed-point on tycon representations. *)
       val _ =
-	 Vector.foreach (datatypes, fn {tycon, ...} =>
-			setTyconRep (tycon, TyconRep.void))
+	 Vector.foreach (datatypes, fn Datatype.T {tycon, ...} =>
+			 setTyconRep (tycon, TyconRep.void))
       val _ =
 	 FixedPoint.fix'
 	 (fn continue =>
 	  Vector.foreach
-	  (datatypes, fn {tycon, cons} =>
+	  (datatypes, fn Datatype.T {tycon, cons} =>
 	   let
 	      val (noArgs, haveArgs) = splitCons cons
 	      val numEnum = List.length noArgs
@@ -213,7 +214,7 @@ fun compute (Cps.Program.T {datatypes, ...}) =
 			setConRep (con, ConRep.TagTuple i))
       val _ =
 	 Vector.foreach
-	 (datatypes, fn {tycon, cons} =>
+	 (datatypes, fn Datatype.T {tycon, cons} =>
 	  let val (noArgs, haveArgs) = splitCons cons
 	  in case tyconRep tycon of
 	     TyconRep.Prim t =>

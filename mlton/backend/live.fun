@@ -5,7 +5,7 @@
  * page 132, of Morgan's "Building and Optimizing Compiler".  BTW, the Dragon
  * book and Muchnick's book provided no help at all on speeding up liveness.
  * They suggest using bit-vectors, which is infeasible for MLton due to the
- * large size of and number of variables in CPS functions.
+ * large size of and number of variables in SSA functions.
  *
  * Here is a description of the algorithm.
  *
@@ -28,9 +28,10 @@ functor Live (S: LIVE_STRUCTS): LIVE =
 struct
 
 open S
-open Dec PrimExp Transfer
+datatype z = datatype Exp.t
+datatype z = datatype Transfer.t
 
-structure Block =
+structure LiveInfo =
    struct
       datatype t = T of {live: Var.t list ref,
 			 liveHS: bool ref * bool ref,
@@ -51,247 +52,270 @@ structure Block =
 	 else List.push (preds, b)
    end
 
-
-fun live {exp, formals: (Var.t * Type.t) vector, jumpHandlers, shouldConsider} =
+fun live (function, {isCont: Label.t -> bool,
+		     shouldConsider: Var.t -> bool}) =
    let
-      val {get = isCont: Jump.t -> bool,
-	   set = setCont, destroy = destroyCont} =
-	 Property.destGetSet (Jump.plist, Property.initConst false)
-      val {get = jumpInfo: Jump.t -> {frameBlock: Block.t,
-				      argBlock: Block.t,
-				      bodyBlock: Block.t,
-				      formals: (Var.t * Type.t) vector},
-	   set = setJumpInfo,
-	   destroy = destroyJumpInfo} =
-	 Property.destGetSetOnce (Jump.plist,
-				  Property.initRaise ("live info", Jump.layout))
-      val {get = varInfo: Var.t -> {defined: Block.t,
-				    used: Block.t list ref},
+      val _ =
+	 Control.diagnostic
+	 (fn () =>
+	  let open Layout
+	  in seq [str "Live info for ",
+		  Func.layout (Function.name function)]
+	  end)
+      val {args, blocks, start, ...} = Function.dest function
+      val {get = labelInfo: Label.t -> {
+					argInfo: LiveInfo.t,
+					block: Block.t,
+					bodyInfo: LiveInfo.t,
+					frameInfo: LiveInfo.t,
+					isContSet: bool ref,
+					visited: bool ref (* for dfs *)
+					},
+	   set = setLabelInfo} =
+	 Property.getSetOnce (Label.plist,
+			      Property.initRaise ("live info", Label.layout))
+      val {get = varInfo: Var.t -> {defined: LiveInfo.t,
+				    used: LiveInfo.t list ref},
 	   set = setVarInfo,
 	   destroy = destroyVarInfo} =
 	 Property.destGetSetOnce (Var.plist,
 				  Property.initRaise ("live info", Var.layout))
-      datatype u = Def of Block.t | Use of Block.t
+      datatype u = Def of LiveInfo.t | Use of LiveInfo.t
       val handlerSlotInfo = ({defuse = ref [] : u list ref}, 
 			     {defuse = ref [] : u list ref})
-      val allPrims: (Var.t * Block.t) list ref = ref []
-      val allJumps: Jump.t list ref = ref []
+      val allPrims: (Var.t * LiveInfo.t) list ref = ref []
       val allVars: Var.t list ref = ref []
-      fun newVarInfo (x: Var.t, {defined}) =
+      fun newVarInfo (x: Var.t, {defined}): unit =
 	 if shouldConsider x
 	    then (List.push (allVars, x)
 		  ; setVarInfo (x, {defined = defined,
 				    used = ref []}))
 	 else ()
-
       val _ =
-	 Exp.foreach''
-	 (exp,
-	  {handleDec 
-	   = fn Fun {name, args, ...}
-	      => (fn () => let 
-			     val _ = List.push (allJumps, name)
-			     val (frameBlock, argBlock, bodyBlock) =
-			       case (Vector.length args, isCont name)
-				 of (0, false) => let val b = Block.new ()
-						  in (b, b, b)
-						  end
-				  | (_, false) => let val b = Block.new ()
-						      val b' = Block.new ()
-						      val _ = Block.addEdge (b, b')
-						  in (b, b, b')
-						  end
-				  | (0, true) => let val b = Block.new ()
-						     val b' = Block.new ()
-						     val _ = Block.addEdge (b, b')
-						 in (b, b', b')
-						 end
-				  | _ => let val b = Block.new ()
-					     val b' = Block.new ()
-					     val b'' = Block.new ()
-					     val _ = Block.addEdge (b, b')
-					     val _ = Block.addEdge (b', b'')
-					 in (b, b', b'')
-					 end
-			     val _ = Vector.foreach
-			             (args, fn (x, _) =>
-				      newVarInfo (x, {defined = argBlock}))
-			   in
-			     setJumpInfo (name, 
-					  {frameBlock = frameBlock,
-					   argBlock = argBlock,
-					   bodyBlock = bodyBlock,
-					   formals = args})
-			   end)
-	      | _ => fn () => (),
-	   handleTransfer
-	   = fn Call {cont = SOME j, ...} => setCont (j, true)
-	      | _ => ()})
-
-      val head = Block.new ()
-      val _ = Vector.foreach (formals, fn (x, _) =>
-			      newVarInfo (x, {defined = head}))
+	 Trace.trace2 ("Live.newVarInfo", Var.layout, Layout.ignore, Unit.layout)
+	 newVarInfo
+      val _ =
+	 Vector.foreach
+	 (blocks, fn block as Block.T {label, args, ...} =>
+	  let 
+	     val (frameInfo, argInfo, bodyInfo) =
+		case (Vector.length args, isCont label) of
+		   (0, false) => let val b = LiveInfo.new ()
+				 in (b, b, b)
+				 end
+		 | (_, false) => let val b = LiveInfo.new ()
+				     val b' = LiveInfo.new ()
+				     val _ = LiveInfo.addEdge (b, b')
+				 in (b, b, b')
+				 end
+		 | (0, true) => let val b = LiveInfo.new ()
+				    val b' = LiveInfo.new ()
+				    val _ = LiveInfo.addEdge (b, b')
+				in (b, b', b')
+				end
+		 | _ => let val b = LiveInfo.new ()
+			    val b' = LiveInfo.new ()
+			    val b'' = LiveInfo.new ()
+			    val _ = LiveInfo.addEdge (b, b')
+			    val _ = LiveInfo.addEdge (b', b'')
+			in (b, b', b'')
+			end
+	     val _ =
+		Vector.foreach (args, fn (x, _) =>
+				newVarInfo (x, {defined = argInfo}))
+	  in
+	     setLabelInfo (label, {argInfo = argInfo,
+				   block = block,
+				   bodyInfo = bodyInfo,
+				   frameInfo = frameInfo,
+				   isContSet = ref false,
+				   visited = ref false
+				   })
+	  end)
+      val _ = 
+	 Vector.foreach
+	 (blocks, fn Block.T {label, transfer, ...} =>
+	  case transfer of
+	     Call {return = SOME {cont, handler}, ...} =>
+		let
+		   val {frameInfo, isContSet, ...} = labelInfo cont
+		in
+		   if !isContSet
+		      then ()
+		   else
+		      let
+			 val _ = isContSet := true
+		      in
+			 Option.app
+			 (handler, fn h =>
+			  (* In case there is a raise to h. *)
+			  LiveInfo.addEdge (frameInfo, #argInfo (labelInfo h)))
+		      end
+		end
+	   | _ => ())
       fun use (b, x) =
 	 if shouldConsider x
 	    then
 	       let val {used, ...} = varInfo x
 	       in if (case !used of
 			 [] => false
-		       | b' :: _ => Block.equals (b, b'))
+		       | b' :: _ => LiveInfo.equals (b, b'))
 		     then ()
 		  else List.push (used, b)
 	       end
 	 else ()
-      fun uses (b: Block.t, xs: Var.t vector) =
+      fun uses (b: LiveInfo.t, xs: Var.t vector) =
 	 Vector.foreach (xs, fn x => use (b, x))
-      fun loopExp (e: Exp.t, b: Block.t, handlers: Jump.t list): unit =
+      fun addEdgesForBlock (Block.T {label, statements, transfer, ...}): unit =
 	 let
-	    val {decs, transfer} = Exp.dest e
-	    val (b,handlers) =
-	       List.fold
-	       (decs, (b,handlers), fn (d, (b,handlers)) =>
-		(case d of
-		   Bind {var, exp, ...} =>
-		      let
-			 val b =
-			    case exp of
-			       ConApp {args, ...} => (uses (b, args); b)
-			     | Const _ => b
-			     | PrimApp {prim, info, args, ...} =>
-				  (uses (b, args)
-				   ; (PrimInfo.foreachJump
-				      (info, fn j =>
-				       Block.addEdge
-				       (b, #argBlock (jumpInfo j))))
-				   ; if Prim.entersRuntime prim
-				        orelse
-					Prim.mayOverflow prim
-					orelse
-					Prim.impCall prim
-					then 
-					   let val b' = Block.new ()
-					   in Block.addEdge (b, b')
-					      ; List.push (allPrims, (var, b'))
-					      ; b'
-					   end
-				     else b)
-			     | Select {tuple, ...} => (use (b, tuple); b)
-			     | Tuple xs => (uses (b, xs); b)
-			     | Var y => (use (b, y); b)
-			 val _ = newVarInfo (var, {defined = b})
-		      in b
-		      end
-		 | Fun {name, args, body} =>
-		      let
-			 val {frameBlock, argBlock, bodyBlock, ...} = jumpInfo name
-			 val _ =
-			    (* In case there is a raise to h. *)
-			    if isCont name
-			       then
-				  case jumpHandlers name of
-				     h :: _ =>
-					Block.addEdge (frameBlock,
-						       #argBlock (jumpInfo h))
-				   | _ => ()
-			    else ()
-			 val _ = loopExp (body, bodyBlock, jumpHandlers name)
-		      in b
-		      end
-		 | HandlerPush _ =>
-		      let
-			val ({defuse = code_defuse, ...},
-			     {defuse = link_defuse, ...})
-			  = handlerSlotInfo
-			  
-			val _ = List.push(code_defuse, Def b)
-			val _ = case handlers
-				  of [] => List.push(link_defuse, Def b)
-				   | _ => ()
-		      in
-			b
-		      end
-		 | HandlerPop => 
-		      let
-			val ({defuse = code_defuse, ...},
-			     {defuse = link_defuse, ...})
-			  = handlerSlotInfo
-
-			val _ = case handlers
-				  of [] => Error.bug "pop of empty handler stack"
-				   | _ :: [] => List.push(link_defuse, Use b)
-				   | _ => List.push(code_defuse, Def b)
-		      in
-			b
-		      end,
-		 deltaHandlers (d, handlers)))
-	    fun jump j = Block.addEdge (b, #argBlock (jumpInfo j))
-	    fun call j = Block.addEdge (b, #frameBlock (jumpInfo j))
+	    val {bodyInfo, ...} = labelInfo label
+	    val b =
+	       Vector.fold
+	       (statements, bodyInfo,
+		fn (Statement.T {var, exp, ...}, b) =>
+		let
+		   val b =
+		      case exp of
+			 ConApp {args, ...} => (uses (b, args); b)
+		       | Const _ => b
+		       | PrimApp {prim, args, ...} =>
+			    (uses (b, args)
+			     ; if (Prim.entersRuntime prim
+				   orelse Prim.impCall prim)
+				  then 
+				     let
+					val b' = LiveInfo.new ()
+					val var =
+					   case var of
+					      NONE =>
+						 Error.bug "Live.live needs var"
+					    | SOME var => var
+				     in
+					LiveInfo.addEdge (b, b')
+					; List.push (allPrims, (var, b'))
+					; b'
+				     end
+			       else b)
+		       | Select {tuple, ...} => (use (b, tuple); b)
+		       | SetExnStackLocal => b
+		       | SetExnStackSlot =>
+			    let
+			       val (_, {defuse}) = handlerSlotInfo
+			       val _ = List.push (defuse, Use b)
+			    in
+			       b
+			    end
+		       | SetHandler _ =>
+			    let
+			       val ({defuse, ...}, _) = handlerSlotInfo
+			       val _ = List.push (defuse, Def b)
+			    in
+			       b
+			    end
+		       | SetSlotExnStack =>
+			    let
+			       val (_, {defuse}) = handlerSlotInfo
+			       val _ = List.push (defuse, Def b)
+			    in
+			       b
+			    end
+		       | Tuple xs => (uses (b, xs); b)
+		       | Var y => (use (b, y); b)
+		   val _ =
+		      Option.app (var, fn x =>
+				  newVarInfo (x, {defined = b}))
+		in
+		   b
+		end)
+	    fun goto l = LiveInfo.addEdge (b, #argInfo (labelInfo l))
 	    val _ =
 	       case transfer of
 		  Bug => ()
-		| Call {args, cont, ...} =>
+		| Call {args, return, ...} =>
 		     (uses (b, args)
-		      ; case handlers
-			  of [] => ()
-			   | h::_ => let
-				       val ({defuse = code_defuse, ...},
-					    {defuse = link_defuse, ...})
-					 = handlerSlotInfo
-				     in
-				       List.push(code_defuse, Use b);
-				       List.push(link_defuse, Use b)
-				     end
-		      ; Option.app (cont, call))
+		      ; (Option.app
+			 (return, fn {cont, handler} =>
+			  let
+			     val _ =
+				LiveInfo.addEdge (b, #frameInfo (labelInfo cont))
+			  in
+			     if isSome handler
+				then
+				   let val ({defuse = code_defuse, ...},
+					    {defuse = link_defuse, ...}) =
+				      handlerSlotInfo
+				   in
+				      List.push (code_defuse, Use b)
+				      ; List.push (link_defuse, Use b)
+				   end
+			     else ()
+			  end)))
 		| Case {test, cases, default, ...} =>
 		     (use (b, test)
-		      ; Option.app (default, jump)
-		      ; Cases.foreach (cases, jump))
-		| Jump {dst, args, ...} =>
-		     let val {formals, ...} = jumpInfo dst
-		     in Vector.foreach2 (formals, args, fn ((f, _), a) =>
-					if shouldConsider f
-					   then use (b, a)
-					else ())
-			; jump dst
+		      ; Option.app (default, goto)
+		      ; Cases.foreach (cases, goto))
+		| Goto {dst, args, ...} =>
+		     let
+			val {block = Block.T {args = formals, ...}, ...} =
+			   labelInfo dst
+		     in
+			Vector.foreach2 (formals, args, fn ((f, _), a) =>
+					 if shouldConsider f
+					    then use (b, a)
+					 else ())
+			; goto dst
 		     end
+		| Prim {args, failure, success, ...} =>
+		     (uses (b, args)
+		      ; goto failure
+		      ; goto success)
 		| Return xs => uses (b, xs)
-		| Raise xs =>
-		     (uses (b, xs)
-		      ; (case handlers of
-			    h :: _ => jump h
-			  | _ => ()))
+		| Raise xs => uses (b, xs)
 	 in ()
 	 end
-      val b = Block.new ()
-      val _ = Block.addEdge (head, b)
-      val _ = loopExp (exp, b, [])
-      val _ = destroyCont () (* must happen after loopExp *)
+      val addEdgesForBlock =
+	 Trace.trace ("Live.addEdgesForBlock",
+		      Label.layout o Block.label,
+		      Unit.layout)
+	 addEdgesForBlock
+      val head = LiveInfo.new ()
+      val _ = Vector.foreach (args, fn (x, _) =>
+			      newVarInfo (x, {defined = head}))
+      val _ = Tree.foreachPre (Function.dominatorTree function,
+			       addEdgesForBlock)
+      fun processVar (x: Var.t): unit =
+	 if not (shouldConsider x)
+	    then ()
+	 else
+	    let
+	       val {defined, used, ...} = varInfo x
+	       val todo: LiveInfo.t list ref = ref []
+	       fun consider (b as LiveInfo.T {live, ...}) =
+		  if LiveInfo.equals (b, defined)
+		     orelse (case !live of
+				[] => false
+			      | x' :: _ => Var.equals (x, x'))
+		     then ()
+		  else (List.push (live, x)
+			; List.push (todo, b))
+	       val _ = List.foreach (!used, consider)
+	       fun loop () =
+		  case !todo of
+		     [] => ()
+		   | LiveInfo.T {preds, ...} :: bs =>
+			(todo := bs
+			 ; List.foreach (!preds, consider)
+			 ; loop ())
+	       val _ = loop ()
+	    in ()
+	    end
+      val _ = Vector.foreach (args, processVar o #1)
       val _ =
-	 List.foreach
-	 (!allVars, fn x =>
-	  let
-	     val {defined, used, ...} = varInfo x
-	     val todo: Block.t list ref = ref []
-	     fun consider (b as Block.T {live, ...}) =
-		if Block.equals (b, defined)
-		   orelse (case !live of
-			      [] => false
-			    | x' :: _ => Var.equals (x, x'))
-		   then ()
-		else (List.push (live, x)
-		      ; List.push (todo, b))
-	     val _ = List.foreach (!used, consider)
-	     fun loop () =
-		case !todo of
-		   [] => ()
-		 | Block.T {preds, ...} :: bs =>
-		      (todo := bs
-		       ; List.foreach (!preds, consider)
-		       ; loop ())
-	     val _ = loop ()
-	  in ()
-	  end)
-
+	 Vector.foreach
+	 (blocks, fn Block.T {args, statements, ...} =>
+	  (Vector.foreach (args, processVar o #1)
+	   ; Vector.foreach (statements, fn Statement.T {var, ...} =>
+			     Option.app (var, processVar))))
       (* handler code and link slots are harder; in particular, they don't
        * satisfy the SSA invariant -- there are multiple definitions;
        * furthermore, a def and use in a block does not mean that the def 
@@ -303,32 +327,27 @@ fun live {exp, formals: (Var.t * Type.t) vector, jumpHandlers, shouldConsider} =
 	 ([(#1, #1), (#2, #2)], fn (sel, sel') =>
 	  let
 	    val {defuse,...} = sel handlerSlotInfo
-	    val todo: Block.t list ref = ref []
-	      
-	    val defs
-	      = List.foldr
-	        (!defuse,
-		 [],
-		 fn (Def b, defs)
-		  => b::defs
-		  | (Use (b as Block.T {liveHS, ...}), defs)
-		  => if List.exists(defs, fn b' => Block.equals(b, b'))
-		       then defs
-		       else (sel' liveHS := true
-			     ; List.push(todo, b)
-			     ; defs))
-
-	    fun consider (b as Block.T {liveHS, ...})
-	      = if List.exists(defs, fn b' => Block.equals(b, b'))
-	           orelse !(sel' liveHS)
-		 then ()
-		 else (sel' liveHS := true
-		       ; List.push (todo, b))
-
+	    val todo: LiveInfo.t list ref = ref []
+	    val defs =
+	       List.foldr
+	       (!defuse, [],
+		fn (Def b, defs) => b::defs
+		 | (Use (b as LiveInfo.T {liveHS, ...}), defs) =>
+		      if List.exists (defs, fn b' => LiveInfo.equals (b, b'))
+			 then defs
+		      else (sel' liveHS := true
+			    ; List.push(todo, b)
+			    ; defs))
+	    fun consider (b as LiveInfo.T {liveHS, ...}) =
+	       if List.exists (defs, fn b' => LiveInfo.equals (b, b'))
+		  orelse !(sel' liveHS)
+		  then ()
+	       else (sel' liveHS := true
+		     ; List.push (todo, b))
 	    fun loop () =
 	       case !todo of
 		  [] => ()
-		| Block.T {preds, ...} :: bs =>
+		| LiveInfo.T {preds, ...} :: bs =>
 		     (todo := bs
 		      ; List.foreach (!preds, consider)
 		      ; loop ())
@@ -336,72 +355,49 @@ fun live {exp, formals: (Var.t * Type.t) vector, jumpHandlers, shouldConsider} =
 	 in
 	   ()
 	 end)
-
-      val {get = getJump: Jump.t -> 
-                          {liveBegin: Var.t list,
-			   liveBeginNoFormals: Var.t list,
-			   liveBeginFrame: Var.t list,
-			   liveBeginHS: (bool * bool)},
-	   set, destroy = destroyJump} =
-	 Property.destGetSetOnce (Jump.plist,
-				  Property.initRaise ("live", Jump.layout))
-      val set =
-	 Trace.trace2
-	 ("setJumpLive",
-	  Jump.layout,
-	  fn {liveBegin, liveBeginNoFormals, liveBeginFrame, liveBeginHS, ...} =>
-	  Layout.record
-	  [("liveBegin", List.layout Var.layout liveBegin),
-	   ("liveBeginNoFormals", List.layout Var.layout liveBeginNoFormals),
-	   ("liveBeginFrame", List.layout Var.layout liveBeginFrame),
-	   ("liveBeginHS", Layout.tuple2 (Bool.layout, Bool.layout) liveBeginHS)],
-	  Unit.layout)
-	 set
-      val _ =
-	 List.foreach (!allJumps, fn j =>
-		       let val {frameBlock, argBlock, bodyBlock, ...} = jumpInfo j
-		       in set (j, {liveBegin = Block.live bodyBlock,
-				   liveBeginNoFormals = Block.live argBlock,
-				   liveBeginFrame = Block.live frameBlock,
-				   liveBeginHS = Block.liveHS frameBlock})
-		       end)
-
-      val _ = destroyJumpInfo ()
-
-      val {get = getPrim: Var.t -> {livePrim: Var.t list,
-				    livePrimHS: (bool * bool)},
-	   set, destroy = destroyPrim} =
-	 Property.destGetSetOnce (Var.plist,
-				  Property.initRaise ("livePrim", Var.layout))
-      val set =
-	 Trace.trace2
-	 ("setPrimLive",
-	  Var.layout,
-	  fn {livePrim, livePrimHS, ...} =>
-	  Layout.record
-	  [("livePrim", List.layout Var.layout livePrim),
-	   ("livePrimHS", Layout.tuple2 (Bool.layout, Bool.layout) livePrimHS)],
-	  Unit.layout)
-	 set
+      val {get = primLive: Var.t -> {vars: Var.t list,
+				     handlerSlots: bool * bool},
+	   set} =
+	 Property.getSetOnce (Var.plist,
+			      Property.initRaise ("primLive", Var.layout))
       val _ =
 	 List.foreach (!allPrims, fn (x, b) =>
-		       set (x, {livePrim = Block.live b, 
-				livePrimHS = Block.liveHS b}))
-      val _ = destroyVarInfo ()
+		       set (x, {vars = LiveInfo.live b, 
+				handlerSlots = LiveInfo.liveHS b}))
+      fun labelLive (l: Label.t) =
+	 let
+	    val {bodyInfo, argInfo, frameInfo, ...} = labelInfo l
+	 in
+	    {begin = LiveInfo.live bodyInfo,
+	     beginNoFormals = LiveInfo.live argInfo,
+	     frame = LiveInfo.live frameInfo,
+	     handlerSlots = LiveInfo.liveHS frameInfo}
+	 end
+      val _ =
+	 Control.diagnostics
+	 (fn display =>
+	  let open Layout
+	  in
+	     Vector.foreach
+	     (blocks, fn b =>
+	      let
+		 val l = Block.label b		 
+		 val {begin, ...} = labelLive l
+	      in
+		 display (seq [Label.layout l,
+			       str ":",
+			       List.layout Var.layout begin])
+	      end)
+	  end)
    in {
-       liveBegin = #liveBegin o getJump,
-       liveBeginNoFormals = #liveBeginNoFormals o getJump,
-       liveBeginFrame = #liveBeginFrame o getJump,
-       liveBeginHS = #liveBeginHS o getJump,
-       livePrim = #livePrim o getPrim,
-       livePrimHS = #livePrimHS o getPrim,
-       destroy = fn () => (destroyJump ()
-			   ; destroyPrim ())
+       labelLive = labelLive,
+       primLive = primLive
        }
    end
 
 val live =
-   Trace.trace ("Live.live", fn {exp, ...} => Exp.layout exp, Layout.ignore)
+   Trace.trace2 ("Live.live", Func.layout o Function.name, Layout.ignore,
+		 Layout.ignore)
    live
-   
+
 end

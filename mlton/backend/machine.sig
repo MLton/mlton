@@ -96,7 +96,6 @@ signature MACHINE =
 	    val layout: t -> Layout.t
 	    val none: t
 	    val normal: Operand.t list -> t
-	    val overflow: Label.t * Operand.t list -> t
 	    val runtime: GCInfo.t -> t
 	 end
 
@@ -140,8 +139,9 @@ signature MACHINE =
 	    val pop: int -> t
 	    (* push number of bytes from stack *)
 	    val push: int -> t
-	    val restoreExnStack: {offset: int} -> t
-	    val saveExnStack: {offset: int} -> t
+	    val setExnStackLocal: {offset: int} -> t
+	    val setExnStackSlot: {offset: int} -> t
+	    val setSlotExnStack: {offset: int} -> t
 	 end
 
       structure Cases: MACHINE_CASES sharing Label = Cases.Label
@@ -163,6 +163,14 @@ signature MACHINE =
 			   return: {return: Label.t,
 				    handler: Label.t option,
 				    size: int} option} -> t
+	    (* In an overflow transfer, dst is modified whether or not the
+	     * prim succeeds.
+	     *)
+	    val overflow: {args: Operand.t vector,
+			   dst: Operand.t,
+			   failure: Label.t,
+			   prim: Prim.t,
+			   success: Label.t} -> t
 	    val return: {live: Operand.t list} -> t
 	    val raisee: t
 	    val switch: {
@@ -187,6 +195,7 @@ signature MACHINE =
 	  structure Kind:
 	    sig
 	      type t
+
 	      val func: {args: Operand.t list} -> t
 	      val jump: t
 	      val cont: {args: Operand.t list, size: int} -> t
@@ -210,6 +219,7 @@ signature MACHINE =
 		    transfer: Transfer.t
 		   } -> unit
 	    val register: t * int * Type.t -> Register.t
+	    val addEntry: t * Label.t -> unit
 	    val tempRegister: t * Type.t -> Register.t
 	 end
 
@@ -219,8 +229,7 @@ signature MACHINE =
 
 	    val clear: t -> unit
 	    val new: unit -> t
-	    val newChunk: {program: t,
-			   entries: Label.t list} -> Chunk.t
+	    val newChunk: t -> Chunk.t
 	    val newFrame:
 	       t * {return: Label.t, (* where to return to *)
 		    chunkLabel: ChunkLabel.t,

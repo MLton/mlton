@@ -5,7 +5,8 @@ SRC = $(ROOT)/src
 MLTON = mlton
 NAME = mlton
 AOUT = mlton-compile
-FLAGS = @MLton -- -v -o $(AOUT)
+FLAGS = @MLton gc-messages fixed-heap 500m -- -keep ssa -diag backend -v3 -o $(AOUT)
+FLAGS = @MLton gc-messages fixed-heap 0 -- -v -o $(AOUT)
 PATH = $(BIN):$(shell echo $$PATH)
 
 all: $(AOUT)

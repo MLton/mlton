@@ -59,6 +59,9 @@ signature CONTROL =
 
       (* Save the CPS to a file. *)
       val keepCps: bool ref
+
+      (* Save the SSA to a file. *)
+      val keepSSA: bool ref
 	 
       (* List of pass names to keep diagnostic info on. *)
       val keepDiagnostics: string list ref

@@ -111,15 +111,14 @@ fun once (program as Program.T {globals, functions, main, ...}) =
 	 (fn display =>
 	  (display (Exp.layout body)
 	   ; display (Layout.str "\n\n")
-	   ; let open Graph.LayoutDot
-	     in display (layout {graph = graph,
-				 title = "once",
-				 options = [],
-				 edgeOptions = fn _ => [],
-				 nodeOptions = fn n => [NodeOption.label
-							(Layout.toString
-							 (nodeName n))]})
-	     end))
+	   ; (display
+	      (Graph.layoutDot
+	       (graph,
+		{title = "once",
+		 options = [],
+		 edgeOptions = fn _ => [],
+		 nodeOptions = fn n => [Dot.NodeOption.label
+					(Layout.toString (nodeName n))]})))))
       val _ =
 	 List.foreach
 	 (Graph.stronglyConnectedComponents graph,

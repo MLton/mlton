@@ -3,7 +3,7 @@
  *)
 signature LIMIT_CHECK_STRUCTS = 
    sig
-      include CPS
+      include SSA
    end
 
 signature LIMIT_CHECK = 
@@ -17,6 +17,5 @@ signature LIMIT_CHECK =
       datatype t = No | Maybe | Yes
 
       (* Determine at which jumps limit checks should be inserted. *)
-      val limitCheck: Program.t -> {destroy: unit -> unit,
-				    limitCheck: Jump.t -> t}
+      val limitCheck: Program.t -> Function.t -> Label.t -> t
    end

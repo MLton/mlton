@@ -39,10 +39,14 @@ fun 'a analyze
 			; v
 		     end)
       val _ =
-	 Vector.foreach
-	 (functions, fn Function.T {name, args, returns, ...} =>
-	  setFunc (name, {args = loopArgs args,
-			  returns = Vector.map (returns, fromType)}))
+	 List.foreach
+	 (functions, fn f =>
+	  let
+	     val {name, args, returns, ...} = Function.dest f
+	  in
+	     setFunc (name, {args = loopArgs args,
+			     returns = Vector.map (returns, fromType)})
+	  end)
       val exnVals: 'a vector option ref = ref NONE
       fun getExnVals vs =
 	 case !exnVals of
@@ -59,7 +63,7 @@ fun 'a analyze
 		  val shouldReturns =
 		     case return of
 			NONE => shouldReturns
-		      | SOME l => labelArgs l
+		      | SOME {cont, ...} => labelArgs cont
 	       in coerces (values args, formals)
 		  ; coerces (returns, shouldReturns)
 	       end
@@ -143,14 +147,15 @@ fun 'a analyze
 		     in
 			()
 		     end
-	     else ())
+	     else setValue (var, v))
 	 end
       val _ = coerces (Vector.new0 (), #args (func main))
       val _ = Vector.foreach (globals, loopStatement)
       val _ =
-	 Vector.foreach
-	 (functions, fn Function.T {name, blocks, start, ...} =>
+	 List.foreach
+	 (functions, fn f =>
 	  let
+	     val {name, blocks, start, ...} = Function.dest f
 	     val _ =
 		Vector.foreach
 		(blocks, fn b as Block.T {label, args, ...} =>
