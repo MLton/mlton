@@ -792,6 +792,40 @@ structure TypeStr =
 
 structure UniqueId = IntUniqueId ()
 
+   structure TyconMap =
+   struct
+      datatype 'a t = T of {strs: (Strid.t * 'a t) array,
+			    types: (Ast.Tycon.t * 'a) array}
+
+      fun layout layoutA =
+	 let
+	    open Layout
+	    fun loop (T {strs, types}) =
+	       record [("strs",
+			Array.layout (Layout.tuple2 (Strid.layout, loop)) strs),
+		       ("types",
+			Array.layout (Layout.tuple2 (Ast.Tycon.layout, layoutA))
+			types)]
+	 in
+	    loop
+	 end
+	 
+      fun empty (): 'a t = T {strs = Array.new0 (),
+			      types = Array.new0 ()}
+
+      fun isEmpty (T {strs, types}) =
+	 0 = Array.length strs andalso 0 = Array.length types
+
+      fun map (tm, f) =
+	 let
+	    fun loop (T {strs, types}) =
+	       T {strs = Array.map (strs, fn (s, tm) => (s, loop tm)),
+		  types = Array.map (types, fn (t, a) => (t, f a))}
+	 in
+	    loop tm
+	 end
+   end
+
 (*---------------------------------------------------*)
 (*                   Main Datatype                   *)
 (*---------------------------------------------------*)
@@ -799,6 +833,7 @@ structure UniqueId = IntUniqueId ()
 (* The shape of interface is the set of longtycons that are accessible in it. *)
 
 datatype t = T of {copy: copy,
+		   flexible: FlexibleTycon.t TyconMap.t option ref,
 		   plist: PropertyList.t,
 		   shape: Shape.t,
 		   strs: (Strid.t * t) array,
@@ -818,6 +853,7 @@ end
 
 fun new {strs, types, vals} =
    T (Set.singleton {copy = ref NONE,
+		     flexible = ref NONE,
 		     plist = PropertyList.new (),
 		     shape = Shape.new (),
 		     strs = strs,
@@ -1056,6 +1092,7 @@ fun copy (I: t): t =
 		     val strs =
 			Array.map (strs, fn (name, I) => (name, loop I))
 		     val I = T (Set.singleton {copy = ref NONE,
+					       flexible = ref NONE,
 					       plist = PropertyList.new (),
 					       shape = shape,
 					       strs = strs,
@@ -1079,40 +1116,6 @@ fun copy (I: t): t =
    end
 
 val copy = Trace.trace ("Interface.copy", layout, layout) copy
-
-structure TyconMap =
-   struct
-      datatype 'a t = T of {strs: (Strid.t * 'a t) array,
-			    types: (Ast.Tycon.t * 'a) array}
-
-      fun layout layoutA =
-	 let
-	    open Layout
-	    fun loop (T {strs, types}) =
-	       record [("strs",
-			Array.layout (Layout.tuple2 (Strid.layout, loop)) strs),
-		       ("types",
-			Array.layout (Layout.tuple2 (Ast.Tycon.layout, layoutA))
-			types)]
-	 in
-	    loop
-	 end
-	 
-      fun empty (): 'a t = T {strs = Array.new0 (),
-			      types = Array.new0 ()}
-
-      fun isEmpty (T {strs, types}) =
-	 0 = Array.length strs andalso 0 = Array.length types
-
-      fun map (tm, f) =
-	 let
-	    fun loop (T {strs, types}) =
-	       T {strs = Array.map (strs, fn (s, tm) => (s, loop tm)),
-		  types = Array.map (types, fn (t, a) => (t, f a))}
-	 in
-	    loop tm
-	 end
-   end
 
 fun flexibleTycons (I: t): FlexibleTycon.t TyconMap.t =
    let
@@ -1192,6 +1195,22 @@ fun flexibleTycons (I: t): FlexibleTycon.t TyconMap.t =
 	 end
    in
       collapse tm
+   end
+
+val flexibleTycons =
+   fn I as T s =>
+   let
+      val {flexible, ...} = Set.value s
+   in
+      case !flexible of
+	 NONE =>
+	    let
+	       val f = flexibleTycons I
+	       val _ = flexible := SOME f
+	    in
+	       f
+	    end
+       | SOME f => f
    end
 
 val flexibleTycons =
