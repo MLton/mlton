@@ -427,31 +427,36 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 	  | Select {base, offset} => 
 	       let
 		  datatype z = datatype Base.t
-		  val base =
-		     case base of
-			Object base => base
-		      | _ => Error.bug "Select:non-Object"
-		  val () = visitVar base
-		  datatype z = datatype ObjectCon.t
-		  datatype z = datatype Type.dest
-		  val () =
-		     case Type.dest (tyVar base) of
-			Object {con, ...} =>
-			   (case con of
-			       Con con => 
-				  let
-				     val ci = conInfo con
-				     val () = 
-					(VarInfo.use o #1 o #elt)
-					(Prod.sub (ConInfo.args ci, offset))
-				  in
-				     ()
-				  end
-			     | Tuple => ()
-			     | Vector => ())
-		      | _ => Error.bug "Select:non-Object"
 	       in
-		  ()
+		  case base of
+		     Object base => 
+			let
+			   val () = visitVar base
+			   datatype z = datatype ObjectCon.t
+			   datatype z = datatype Type.dest
+			   val () =
+			      case Type.dest (tyVar base) of
+				 Object {con, ...} =>
+				    (case con of
+					Con con => 
+					   let
+					      val ci = conInfo con
+					      val () = ConInfo.decon ci
+					      val () = 
+						 (VarInfo.use o #1 o #elt)
+						 (Prod.sub (ConInfo.args ci, offset))
+					   in
+					      ()
+					   end
+				      | Tuple => ()
+				      | Vector => Error.bug "Update:non-Con|Tuple")
+			       | _ => Error.bug "Select:non-Object"
+			in
+			   ()
+			end
+		   | VectorSub {index, vector} =>
+			(visitVar index
+			 ; visitVar vector)
 	       end 
 	  | Var x => visitVar x
       val visitExpTh = fn e => fn () => visitExp e
@@ -499,18 +504,17 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 					       VarInfo.whenUsed
 					       (vi, fn () =>
 						(Option.app (fi, FuncInfo.sideEffect)
+						 ; ConInfo.decon ci
 						 ; visitVar base
 						 ; visitVar value))
 					    end)
 					end
 				   | Tuple => 
-					(visitVar base
+					(Option.app (fi, FuncInfo.sideEffect)
+					 ; visitVar base
 					 ; Vector.foreach 
 					   (args, visitVar o #value))
-				   | Vector => 
-					(visitVar base
-					 ; Vector.foreach 
-					   (args, visitVar o #value)))
+				   | Vector => Error.bug "Update:non-Con|Tuple")
 			    | _ => Error.bug "Update:non-Object"
 			end
 		   | VectorSub {index, vector} =>
@@ -776,7 +780,6 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 		  end)
 	       end)
 
-(*
       (* Analysis is done,  Now build the resulting program. *)
       val datatypes
 	= Vector.map
@@ -805,15 +808,14 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 				   NONE => 
 				      let
 					 val c = Con.newString "dummy"
-					 val targs = Prod.empty ()
-					 val args = Vector.new0 ()
+					 val args = Prod.empty ()
 					 val e = Object {con = SOME c,
-							 args = args}
+							 args = Vector.new0 ()}
 				      in
 					 r := SOME e 
-					 ; newConInfo (c, targs, tycon) 
+					 ; newConInfo (c, args, tycon) 
 					 ; (e, SOME {con = c, 
-						     args = targs})
+						     args = args})
 				      end
 				 | SOME e => (e, NONE)
 			     val () = ConInfo.dummy ci := SOME e
@@ -857,8 +859,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 			     andalso
 			     Vector.forall2 (args', tys, fn (ty', ty) =>
 					     Type.equals (ty', ty))) of
-			  SOME (_, l') => l'
-			| NONE => 
+			  NONE => 
 			     let
 				val liArgs = LabelInfo.args li
 				val l' = Label.newNoname ()
@@ -894,9 +895,9 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 			     in
 				l'
 			     end
+			| SOME (_, l') => l'
 		    end
 	 end
-      val getConWrapperLabel = getWrapperLabel
       val getContWrapperLabel = getWrapperLabel
       val getHandlerWrapperLabel = getWrapperLabel
       fun getOriginalWrapperLabel l =
@@ -930,8 +931,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 	    val r = FuncInfo.returnLabel fi
 	 in
 	    case !r of 
-	       SOME l => l
-		| NONE => 
+	       NONE => 
 		  let
 		     val l = Label.newNoname ()
 		     val returns = valOf (FuncInfo.returns fi)
@@ -953,6 +953,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 		  in
 		     l
 		  end
+	     | SOME l => l
 	 end
       fun getReturnContFunc (fi, args) = 
 	 getWrapperLabel (getReturnFunc fi, args)
@@ -961,8 +962,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 	    val r = FuncInfo.raiseLabel fi
 	 in
 	    case !r of 
-	       SOME l => l
-	     | NONE => 
+	       NONE => 
 		  let
 		     val l = Label.newNoname ()
 		     val raises = valOf (FuncInfo.raises fi)
@@ -984,6 +984,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 		  in
 		     l
 		  end
+	     | SOME l => l
 	 end
       fun getRaiseHandlerFunc (fi, args) = getWrapperLabel (getRaiseFunc fi, args)
 	 
@@ -1012,13 +1013,47 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 				 end
 			    else valOf (! (ConInfo.dummy ci))
 		      end)
-	     | _ => e
+	  | Select {base, offset} => 
+	       let
+		  datatype z = datatype Base.t
+	       in
+		  case base of 
+		     Object base => 
+			let
+			   datatype z = datatype ObjectCon.t
+			   datatype z = datatype Type.dest
+			in
+			   case Type.dest (tyVar base) of
+			      Object {con, ...} =>
+				 (case con of
+				     Con con =>
+					let
+					   val ci = conInfo con
+					   val ciArgs = ConInfo.args ci
+					   val offset =
+					      Int.fold
+					      (0, offset, 0, fn (i, offset) =>
+					       if (VarInfo.isUsed o #1 o #elt)
+						  (Prod.sub (ciArgs, i))
+						  then offset + 1
+						  else offset)
+					in
+					   Select {base = Base.Object base,
+						   offset = offset}
+					end
+				   | Tuple => e
+				   | Vector => Error.bug "Update:non-Con|Tuple")
+			    | _ => Error.bug "Select:non-Object"
+			end
+		   | _ => e
+	       end
+	  | _ => e
       val simplifyExp =
 	 Trace.trace 
 	 ("RemoveUnused.simplifyExp", 
 	  Exp.layout, Exp.layout)
 	 simplifyExp
-      fun simplifyStatement (s : Statement.t) : : Statement.t option =
+      fun simplifyStatement (s : Statement.t) : Statement.t option =
 	 case s of
 	    Bind {exp, ty, var} =>
 	       let
@@ -1041,270 +1076,311 @@ fun remove (program as Program.T {datatypes, globals, functions, main}) =
 		   | NONE => doit NONE
 	       end
 	  | Profile _ => SOME s
-	  | Updates (base, args) => SOME s
+	  | Updates (base, args) => 
+	       let
+		  datatype z = datatype Base.t
+	       in
+		  case base of 
+		     Object base => 
+			let
+			   datatype z = datatype ObjectCon.t
+			   datatype z = datatype Type.dest
+			in
+			   case Type.dest (tyVar base) of
+			      Object {con, ...} =>
+				 (case con of
+				     Con con =>
+					let
+					   val ci = conInfo con
+					   val ciArgs = ConInfo.args ci
+					   val args =
+					      Vector.keepAllMap
+					      (args, fn {offset, value, ...} =>
+					       if (VarInfo.isUsed o #1 o #elt)
+						  (Prod.sub (ciArgs, offset))
+						  then let
+							  val offset =
+							     Int.fold
+							     (0, offset, 0, fn (i, offset) =>
+							      if (VarInfo.isUsed o #1 o #elt)
+								 (Prod.sub (ciArgs, i))
+								 then offset + 1
+								 else offset)
+						       in
+							  SOME {offset = offset, 
+								value = value}
+						       end
+						  else NONE)
+					in
+					   if Vector.length args > 0
+					      then SOME (Updates (Base.Object base, args))
+					      else NONE
+					end
+				   | Tuple => SOME s
+				   | Vector => Error.bug "Update:non-Con|Tuple")
+			    | _ => Error.bug "Select:non-Object"
+			end
+		   | _ => SOME s
+	       end
       fun simplifyStatements (ss: Statement.t Vector.t) : Statement.t Vector.t =
 	 Vector.keepAllMap (ss, simplifyStatement)
-      fun simplifyTransfer (t: Transfer.t, fi: FuncInfo.t): Transfer.t
-	= case t
-	    of Arith {prim, args, overflow, success, ty} 
-	     => Arith {prim = prim,
-		       args = args,
-		       overflow = getArithOverflowWrapperLabel overflow,
-		       success = getArithSuccessWrapperLabel success,
-		       ty = ty}
-	     | Bug => Bug
-	     | Call {func, args, return}
-	     => let
+      fun simplifyTransfer (t: Transfer.t, fi: FuncInfo.t): Transfer.t =
+	 case t of
+	    Arith {prim, args, overflow, success, ty} =>
+	       Arith {prim = prim,
+		      args = args,
+		      overflow = getArithOverflowWrapperLabel overflow,
+		      success = getArithSuccessWrapperLabel success,
+		      ty = ty}
+	  | Bug => Bug
+	  | Call {func, args, return} =>
+	       let
 		  val fi' = funcInfo func
 		  datatype u = None
 		             | Caller
 		             | Some of Label.t
-		  val (cont, handler)
-		    = case return
-			of Return.Dead => (None, None)
-			 | Return.NonTail {cont, handler}
-			 => (Some cont,
-			     case handler of
-				Handler.Caller => Caller
-			      | Handler.Dead => None
-			      | Handler.Handle h => Some h)
-		         | Return.Tail => (Caller, Caller)
-		  val cont 
-		    = if FuncInfo.mayReturn fi'
-			then case cont 
-			       of None => Error.bug "cont:None"
-				| Caller
-				=> if (case (FuncInfo.returns fi,
-					     FuncInfo.returns fi')
-					 of (SOME xts, SOME yts)
-					  => Vector.forall2
+		  val (cont, handler) =
+		     case return of
+			Return.Dead => (None, None)
+		      | Return.NonTail {cont, handler} =>
+			   (Some cont,
+			    case handler of
+			       Handler.Caller => Caller
+			     | Handler.Dead => None
+			     | Handler.Handle h => Some h)
+		      | Return.Tail => (Caller, Caller)
+		  val cont = 
+		     if FuncInfo.mayReturn fi'
+			then case cont of 
+			        None => Error.bug "cont:None"
+			      | Caller =>
+				   if (case (FuncInfo.returns fi,
+					     FuncInfo.returns fi') of
+					  (SOME xts, SOME yts) =>
+					     Vector.forall2
 					     (xts, yts, fn ((x, _), (y, _)) =>
 					      VarInfo.isUsed x = VarInfo.isUsed y)
-					  | _ => Error.bug "cont:Caller")
-				     then Caller
-				     else Some (getReturnContFunc
-						(fi, valOf (FuncInfo.returns fi')))
-				| Some l
-			        => Some (getContWrapperLabel
+					| _ => Error.bug "cont:Caller")
+				      then Caller
+				      else Some (getReturnContFunc
+						 (fi, valOf (FuncInfo.returns fi')))
+			      | Some l => 
+				   Some (getContWrapperLabel
 					 (l, valOf (FuncInfo.returns fi')))
 			else None
-
-		  val handler
-		    = if FuncInfo.mayRaise fi'
-			then case handler
-			       of None => Error.bug "handler:None"
-				| Caller
-				=> if (case (FuncInfo.raises fi,
-					     FuncInfo.raises fi')
-					 of (SOME xts, SOME yts)
-					  => Vector.forall2
+		  val handler =
+		     if FuncInfo.mayRaise fi'
+			then case handler of
+			        None => Error.bug "handler:None"
+			      | Caller =>
+				   if (case (FuncInfo.raises fi,
+					     FuncInfo.raises fi') of
+					  (SOME xts, SOME yts) =>
+					     Vector.forall2
 					     (xts, yts, fn ((x, _), (y, _)) =>
 					      VarInfo.isUsed x = VarInfo.isUsed y)
-					  | _ => Error.bug "handler:Caller")
-				     then Caller
-				     else Some (getRaiseHandlerFunc
-						(fi, valOf (FuncInfo.raises fi')))
-				| Some l
-			        => Some (getHandlerWrapperLabel
+					| _ => Error.bug "handler:Caller")
+				      then Caller
+				      else Some (getRaiseHandlerFunc
+						 (fi, valOf (FuncInfo.raises fi')))
+			      | Some l =>
+				   Some (getHandlerWrapperLabel
 					 (l, valOf (FuncInfo.raises fi')))
 			else None
+		  val return =
+		     case (cont, handler) of
+			(None, None) => Return.Dead
+		      | (None, Caller) => Return.Tail
+		      | (None, Some h) =>
+			   Return.NonTail
+			   {cont = getBugFunc fi,
+			    handler = Handler.Handle h}
+		      | (Caller, None) => Return.Tail
+		      | (Caller, Caller) => Return.Tail
+		      | (Caller, Some h) =>
+			   Return.NonTail
+			   {cont = getReturnContFunc
+			    (fi, valOf (FuncInfo.returns fi')),
+			    handler = Handler.Handle h}
+		      | (Some c, None) =>
+			   Return.NonTail
+			   {cont = c,
+			    handler = Handler.Dead}
+		      | (Some c, Caller) =>
+			   Return.NonTail
+			   {cont = c,
+			    handler = Handler.Caller}
+		      | (Some c, Some h) =>
+			   Return.NonTail 
+			   {cont = c,
+			    handler = Handler.Handle h}
 
-		  val return
-		    = case (cont, handler)
-			of (None, None) => Return.Dead
-			 | (None, Caller) => Return.Tail
-			 | (None, Some h)
-			 => Return.NonTail
-			    {cont = getBugFunc fi,
-			     handler = Handler.Handle h}
-			 | (Caller, None) => Return.Tail
-			 | (Caller, Caller) => Return.Tail
-			 | (Caller, Some h)
-			 => Return.NonTail
-			    {cont = getReturnContFunc
-			            (fi, valOf (FuncInfo.returns fi')),
-			     handler = Handler.Handle h}
-			 | (Some c, None)
-			 => Return.NonTail
-			    {cont = c,
-			     handler = Handler.Dead}
-			 | (Some c, Caller)
-			 => Return.NonTail
-			    {cont = c,
-			     handler = Handler.Caller}
-			 | (Some c, Some h)
-			 => Return.NonTail 
-			    {cont = c,
-			     handler = Handler.Handle h}
-
-		  val args
-		    = Vector.keepAllMap2
-		      (args, FuncInfo.args fi', fn (x, (y, _)) =>
-		       if VarInfo.isUsed y
+		  val args =
+		     Vector.keepAllMap2
+		     (args, FuncInfo.args fi', fn (x, (y, _)) =>
+		      if VarInfo.isUsed y
 			 then SOME x
 			 else NONE)
-		in 
+	       in 
 		  Call {func = func,
 			args = args,
 			return = return}
-		end 
-	     | Case {test, cases = Cases.Con cases, default}
-	     => let
-		  val cases
-		    = Vector.keepAllMap
-		      (cases, fn (con, l) =>
-		       let
+	       end 
+	  | Case {test, cases = Cases.Con cases, default} =>
+	       let
+		  val cases =
+		     Vector.keepAllMap
+		     (cases, fn (con, l) =>
+		      let
 			 val ci = conInfo con
-		       in
+		      in
 			 if ConInfo.isConed ci
-			   then SOME (con, getConWrapperLabel (l, ConInfo.args ci))
-			   else NONE
-		       end)
+			    then SOME (con, l)
+			    else NONE
+		      end)
 		  fun keep default = Case {test = test,
 					   cases = Cases.Con cases,
 					   default = default}
 		  fun none () = keep NONE
-		in
-		  case default
-		    of NONE => none ()
-		     | SOME l => if Vector.length cases = 0
-				   then if LabelInfo.isUsed (labelInfo l)
+	       in
+		  case default of
+		     NONE => none ()
+		   | SOME l => if Vector.length cases = 0
+				  then if LabelInfo.isUsed (labelInfo l)
 					  then Goto {dst = l, args = Vector.new0 ()}
 					  else Bug
-				   else let
-					  val numCons
-					    = TyconInfo.numCons
-					      (tyconInfo
-					       (ConInfo.tycon
-						(conInfo
-						 (#1 (Vector.sub (cases, 0))))))
-					in 
+				  else let
+					  val numCons =
+					     TyconInfo.numCons
+					     (tyconInfo
+					      (ConInfo.tycon
+					       (conInfo
+						(#1 (Vector.sub (cases, 0))))))
+				       in 
 					  if Vector.length cases = numCons
-					    then none ()
-					    else keep (SOME l)
-					end
-		end
-	     | Case {test, cases, default}
-	     => Case {test = test,
-		      cases = cases,
-		      default = default}
-	     | Goto {dst, args}
-	     => Goto {dst = dst, 
-		      args = (Vector.keepAllMap2
-			      (args, LabelInfo.args (labelInfo dst),
-			       fn (x, (y, _)) => if VarInfo.isUsed y
+					     then none ()
+					     else keep (SOME l)
+				       end
+	       end
+	  | Case {test, cases, default} =>
+	       Case {test = test,
+		     cases = cases,
+		     default = default}
+	  | Goto {dst, args} =>
+	       Goto {dst = dst, 
+		     args = (Vector.keepAllMap2
+			     (args, LabelInfo.args (labelInfo dst),
+			      fn (x, (y, _)) => if VarInfo.isUsed y
 						   then SOME x
 						   else NONE))}
-	     | Raise xs
-	     => Raise (Vector.keepAllMap2
-		       (xs, valOf (FuncInfo.raises fi),
-			fn (x, (y, _)) => if VarInfo.isUsed y
+	  | Raise xs =>
+	       Raise (Vector.keepAllMap2
+		      (xs, valOf (FuncInfo.raises fi),
+		       fn (x, (y, _)) => if VarInfo.isUsed y
 					    then SOME x
 					    else NONE))
-	     | Return xs 
-	     => Return (Vector.keepAllMap2
-			(xs, valOf (FuncInfo.returns fi),
-			 fn (x, (y, _)) => if VarInfo.isUsed y
+	  | Return xs =>
+	       Return (Vector.keepAllMap2
+		       (xs, valOf (FuncInfo.returns fi),
+			fn (x, (y, _)) => if VarInfo.isUsed y
 					     then SOME x
 					     else NONE))
-	     | Runtime {prim, args, return}
-	     => Runtime {prim = prim,
-			 args = args,
-			 return = getRuntimeWrapperLabel return}
-      val simplifyTransfer
-	= Trace.trace ("RemoveUnused.simplifyTransfer",
-		       Layout.tuple2 (Transfer.layout, FuncInfo.layout),
-		       Transfer.layout)
-	              simplifyTransfer
-      fun simplifyBlock (Block.T {label, args, 
-				  statements, transfer}): Block.t option
-	= let
+	  | Runtime {prim, args, return} =>
+	       Runtime {prim = prim,
+			args = args,
+			return = getRuntimeWrapperLabel return}
+      val simplifyTransfer =
+	 Trace.trace 
+	 ("RemoveUnused.simplifyTransfer",
+	  Layout.tuple2 (Transfer.layout, FuncInfo.layout), Transfer.layout)
+	 simplifyTransfer
+      fun simplifyBlock (Block.T {label, args, statements, transfer}): Block.t option =
+	 let
 	    val li = labelInfo label
-	  in 
+	 in 
 	    if LabelInfo.isUsed li
-	      then let
-		     val args
-		       = Vector.keepAllMap2
-		         (LabelInfo.args li, args, fn ((vi, _), (x, ty)) =>
-			  if VarInfo.isUsed vi
-			    then SOME (x, ty)
-			    else NONE)
-		     val statements = simplifyStatements statements
-		     val transfer
-			= simplifyTransfer (transfer, LabelInfo.func li)
-		   in
-		     SOME (Block.T {label = label,
-				    args = args,
-				    statements = statements,
-				    transfer = transfer})
-		   end
-	      else NONE
-	  end
-      fun simplifyBlocks (bs: Block.t Vector.t): Block.t Vector.t
-	= Vector.keepAllMap (bs, simplifyBlock)
+	       then let
+		       val args =
+			  Vector.keepAllMap2
+			  (LabelInfo.args li, args, fn ((vi, _), (x, ty)) =>
+			   if VarInfo.isUsed vi
+			      then SOME (x, ty)
+			      else NONE)
+		       val statements = simplifyStatements statements
+		       val transfer =
+			  simplifyTransfer (transfer, LabelInfo.func li)
+		    in
+		       SOME (Block.T {label = label,
+				      args = args,
+				      statements = statements,
+				      transfer = transfer})
+		    end
+	       else NONE
+	 end
+      fun simplifyBlocks (bs: Block.t Vector.t): Block.t Vector.t =
+	 Vector.keepAllMap (bs, simplifyBlock)
       val globals = simplifyStatements globals
-      val shrink = shrinkFunction globals
-      fun simplifyFunction (f: Function.t): Function.t option
-	= let
+      val shrink = shrinkFunction {globals = globals}
+      fun simplifyFunction (f: Function.t): Function.t option =
+	 let
 	    val {args, blocks, mayInline, name, start, ...} = Function.dest f
 	    val fi = funcInfo name
-	  in
+	 in
 	    if FuncInfo.isUsed fi
-	      then let
-		     val args
-		       = Vector.keepAllMap2
-		         (FuncInfo.args fi, args, fn ((vi, _), (x, t)) =>
-			  if VarInfo.isUsed vi
-			    then SOME (x, t)
-			    else NONE)
-		     val blocks = simplifyBlocks blocks
-		     val wrappers = Vector.fromList (FuncInfo.wrappers fi)
-		     val blocks = Vector.concat [wrappers, blocks]
-		     val returns 
-		       = case FuncInfo.returns fi
-			   of NONE => NONE
-			    | SOME xts 
-			    => if FuncInfo.mayReturn fi
-				 then SOME (Vector.keepAllMap
-					    (xts, fn (x, t) => 
-					     if VarInfo.isUsed x
-					       then SOME t
-					       else NONE))
-				 else NONE
-		     val raises 
-		       = case FuncInfo.raises fi
-			   of NONE => NONE
-			    | SOME xts 
-			    => if FuncInfo.mayRaise fi
-				 then SOME (Vector.keepAllMap
-					    (xts, fn (x, t) => 
-					     if VarInfo.isUsed x
-					       then SOME t
-					       else NONE))
-				 else NONE
-		   in
-		      SOME (shrink (Function.new {args = args,
-						  blocks = blocks,
-						  mayInline = mayInline,
-						  name = name,
-						  raises = raises,
-						  returns = returns,
-						  start = start}))
-		   end
-	      else NONE
-	  end
-      fun simplifyFunctions (fs: Function.t List.t): Function.t List.t
-	= List.keepAllMap (fs, simplifyFunction)
+	       then let
+		       val args =
+			  Vector.keepAllMap2
+			  (FuncInfo.args fi, args, fn ((vi, _), (x, t)) =>
+			   if VarInfo.isUsed vi
+			      then SOME (x, t)
+			      else NONE)
+		       val blocks = simplifyBlocks blocks
+		       val wrappers = Vector.fromList (FuncInfo.wrappers fi)
+		       val blocks = Vector.concat [wrappers, blocks]
+		       val returns =
+			  case FuncInfo.returns fi of
+			     NONE => NONE
+			   | SOME xts =>
+				if FuncInfo.mayReturn fi
+				   then SOME (Vector.keepAllMap
+					      (xts, fn (x, t) => 
+					       if VarInfo.isUsed x
+						  then SOME t
+						  else NONE))
+				   else NONE
+		       val raises =
+			  case FuncInfo.raises fi of
+			     NONE => NONE
+			   | SOME xts =>
+				if FuncInfo.mayRaise fi
+				   then SOME (Vector.keepAllMap
+					      (xts, fn (x, t) => 
+					       if VarInfo.isUsed x
+						  then SOME t
+						  else NONE))
+				   else NONE
+		    in
+		       SOME (shrink (Function.new {args = args,
+						   blocks = blocks,
+						   mayInline = mayInline,
+						   name = name,
+						   raises = raises,
+						   returns = returns,
+						   start = start}))
+		    end
+	       else NONE
+	 end
+      fun simplifyFunctions (fs: Function.t List.t): Function.t List.t =
+	 List.keepAllMap (fs, simplifyFunction)
       val functions = simplifyFunctions functions
       val program = Program.T {datatypes = datatypes,
 			       globals = globals,
 			       functions = functions,
 			       main = main}
-*)
       val _ = destroy ()
       val _ = Program.clearTop program
-    in
+   in
       program
-    end
- 
+   end
+
 end
