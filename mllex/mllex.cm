@@ -11,8 +11,6 @@ Group is
 ../lib/mlton/basic/layout.sig
 ../lib/mlton/basic/layout.sml
 ../lib/mlton/basic/fold.sig
-../lib/mlton/basic/option.sig
-../lib/mlton/basic/option.sml
 ../lib/mlton/basic/fold.fun
 ../lib/mlton/basic/assert.sig
 ../lib/mlton/basic/assert.sml
@@ -35,6 +33,8 @@ Group is
 ../lib/mlton/basic/order.sig
 ../lib/mlton/basic/time.sig
 ../lib/mlton/basic/time.sml
+../lib/mlton/basic/option.sig
+../lib/mlton/basic/option.sml
 ../lib/mlton/basic/pid.sig
 ../lib/mlton/basic/pid.sml
 ../lib/mlton/basic/exn.sig

@@ -40,8 +40,6 @@ src/link.sml
 ../lib/mlton/basic/result.sig
 ../lib/mlton/basic/result.sml
 ../lib/mlton/basic/fold.sig
-../lib/mlton/basic/option.sig
-../lib/mlton/basic/option.sml
 ../lib/mlton/basic/fold.fun
 ../lib/mlton/basic/assert.sig
 ../lib/mlton/basic/assert.sml
@@ -62,6 +60,8 @@ src/link.sml
 ../lib/mlton/basic/order.sig
 ../lib/mlton/basic/time.sig
 ../lib/mlton/basic/time.sml
+../lib/mlton/basic/option.sig
+../lib/mlton/basic/option.sml
 ../lib/mlton/basic/pid.sig
 ../lib/mlton/basic/pid.sml
 ../lib/mlton/basic/exn.sig

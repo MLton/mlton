@@ -13,8 +13,6 @@ Group is
 ../lib/mlton/basic/layout.sig
 ../lib/mlton/basic/layout.sml
 ../lib/mlton/basic/fold.sig
-../lib/mlton/basic/option.sig
-../lib/mlton/basic/option.sml
 ../lib/mlton/basic/fold.fun
 ../lib/mlton-stubs/thread.sml
 ../lib/mlton-stubs/random.sig
@@ -35,9 +33,11 @@ Group is
 ../lib/mlton-stubs/process.sig
 ../lib/mlton-stubs/proc-env.sig
 ../lib/mlton-stubs/array.sig
+../lib/mlton-stubs/bin-io.sml
 ../lib/mlton-stubs/bin-io.sig
 ../lib/mlton-stubs/cont.sig
 ../lib/mlton-stubs/exn.sig
+../lib/mlton-stubs/ffi.sig
 ../lib/mlton-stubs/gc.sig
 ../lib/mlton-stubs/int-inf.sig
 ../lib/mlton-stubs/itimer.sig
@@ -64,6 +64,8 @@ Group is
 ../lib/mlton/basic/order.sig
 ../lib/mlton/basic/time.sig
 ../lib/mlton/basic/time.sml
+../lib/mlton/basic/option.sig
+../lib/mlton/basic/option.sml
 ../lib/mlton/basic/pid.sig
 ../lib/mlton/basic/pid.sml
 ../lib/mlton/basic/exn.sig

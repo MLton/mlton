@@ -11,8 +11,6 @@ Group is
 ../lib/mlton/basic/layout.sig
 ../lib/mlton/basic/layout.sml
 ../lib/mlton/basic/fold.sig
-../lib/mlton/basic/option.sig
-../lib/mlton/basic/option.sml
 ../lib/mlton/basic/fold.fun
 ../lib/mlton/basic/assert.sig
 ../lib/mlton/basic/assert.sml
@@ -27,6 +25,10 @@ Group is
 ../lib/mlton/basic/substring.sml
 ../lib/mlton/basic/outstream.sig
 ../lib/mlton/basic/outstream.sml
+../lib/mlton/basic/option.sig
+../lib/mlton/basic/option.sml
+../lib/mlton/basic/exn.sig
+../lib/mlton/basic/exn.sml
 ../lib/mlton/basic/promise.sig
 ../lib/mlton/basic/promise.sml
 ../lib/mlton/basic/instream0.sml
@@ -55,8 +57,6 @@ Group is
 ../lib/mlton/basic/pid.sml
 ../lib/mlton/basic/date.sig
 ../lib/mlton/basic/date.sml
-../lib/mlton/basic/exn.sig
-../lib/mlton/basic/exn.sml
 ../lib/mlton/basic/t.sig
 ../lib/mlton/basic/unit.sig
 ../lib/mlton/basic/unit.sml
@@ -103,12 +103,12 @@ Group is
 ../lib/mlton/basic/dot-color.sml
 ../lib/mlton/basic/dot.sig
 ../lib/mlton/basic/dot.sml
-../lib/mlton/basic/counter.sig
-../lib/mlton/basic/counter.sml
 ../lib/mlton/basic/instream.sig
 ../lib/mlton/basic/instream.sml
 ../lib/mlton/basic/file.sig
 ../lib/mlton/basic/file.sml
+../lib/mlton/basic/counter.sig
+../lib/mlton/basic/counter.sml
 ../lib/mlton/basic/tree.sig
 ../lib/mlton/basic/tree.sml
 ../lib/mlton/basic/directed-graph.sig
