@@ -30,7 +30,7 @@ all:
 .PHONY: bootstrap
 bootstrap:
 	$(MAKE) all
-	rm -f mlton/mlton-compile
+	rm -f $(COMP)/$(AOUT)
 	$(MAKE) all
 
 .PHONY: clean
@@ -92,7 +92,8 @@ freebsd:
 	cd /tmp && tar -cpf - mlton-$(VERSION) | \
 		 gzip >/usr/ports/distfiles/mlton-$(VERSION)-1.src.tgz
 	cd $(BSDSRC)/freebsd && make build-package
-	rm -rf $(BSDSRC)
+
+#	rm -rf $(BSDSRC)
 
 .PHONY: hostmap
 hostmap:
@@ -161,7 +162,7 @@ version:
 		freebsd/Makefile					\
 		mlton/control/control.sml; 				\
 	do								\
-		sed "s/\(.*\)VERSION\(.*\)/\1$(VERSION)\2/" <$$f >z &&	\
+		sed "s/\(.*\)MLTON_VERSION\(.*\)/\1$(VERSION)\2/" <$$f >z && \
 		mv z $$f;						\
 	done
 	sed <$(SPEC) >z "/^Release:/s;.*;Release: $(RELEASE);"

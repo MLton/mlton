@@ -1,6 +1,6 @@
 Summary: An optimizing compiler for the Standard ML programming language.
 Name: mlton
-Version: VERSION
+Version: MLTON_VERSION
 Release:
 Copyright: GPL
 Group: Development/Languages

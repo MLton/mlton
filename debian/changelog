@@ -1,4 +1,4 @@
-mlton (VERSION.1-1) unstable; urgency=low
+mlton (20021018.1-1) unstable; urgency=low
 
   * Build in a testing environment instead of stable.
   * Put doc files in /usr/share/doc, not /usr/doc.
