@@ -128,10 +128,12 @@ struct
 	      outputS}: unit
     = let
 	 val reserveEsp =
-	    handlesSignals
-	    andalso (case !Control.hostType of
-			Control.Cygwin => true
-		      | Control.Linux => false)
+	    !Control.Native.reserveEsp
+	    orelse
+	    (handlesSignals
+	     andalso (case !Control.hostType of
+			 Control.Cygwin => true
+		       | Control.Linux => false))
 
 	val makeC = outputC
 	val makeS = outputS

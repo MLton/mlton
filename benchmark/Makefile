@@ -45,7 +45,7 @@ test: $(NAME)
 
 QBENCH = $(BENCH)
 
-QBFLAGS = -mlton "mlton-stable" -mlton "mlton"
+QBFLAGS = -mlton "mlton-stable" -mlton "mlton" -mlton "mlton -native-reserve-esp true" 
 
 .PHONY: qtest
 qtest: $(NAME)

@@ -6557,6 +6557,8 @@ struct
 			   registerAllocation = registerAllocation}
 		      end
 		in
+		  default ()
+(*
 		  case (oper, src, dst)
 		    of (Instruction.ADD,
 			Operand.Immediate immediate_src,
@@ -6571,6 +6573,7 @@ struct
 			  then default' ()
 			  else default ()
 		     | _ => default ()
+*)
 		end
 	     | pMD {oper, dst, src, size}
 	       (* Integer multiplication and division.
