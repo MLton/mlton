@@ -168,11 +168,6 @@ structure Statement =
        | SetHandler of Label.t
        | SetSlotExnStack
 
-      fun hasPrim (s, f) =
-	 case s of
-	    PrimApp {prim, ...} => f prim
-	  | _ => false
-
       fun 'a foldDefUse (s, a: 'a, {def: Var.t * Type.t * 'a -> 'a,
 				    use: Var.t * 'a -> 'a}): 'a =
 	 let
@@ -476,9 +471,6 @@ structure Block =
 	  ; Label.clear label
 	  ; Vector.foreach (statements, Statement.clear)
 	  ; Transfer.clear transfer)
-
-      fun hasPrim (T {statements, ...}, f) =
-	 Vector.exists (statements, fn s => Statement.hasPrim (s, f))
 
       fun layout (T {args, kind, label, statements, transfer, ...}) =
 	 let
