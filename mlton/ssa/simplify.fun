@@ -79,6 +79,52 @@ fun stats p =
    Control.message (Control.Detail, fn () => Program.layoutStats p)
 
 fun simplify p =
+   let
+      fun simplify' n p =
+	 let
+	    val n' = Int.toString n
+	 in
+	    if n = !Control.loopPasses
+	       then p
+	    else simplify' 
+	         (n + 1)
+		 (List.fold
+	          (passes, p, fn ((name, pass), p) =>
+		   if List.contains (!Control.dropPasses, name, String.equals)
+		      then p
+		   else
+		     let
+(*
+		       val _ = List.push(Control.keepPasses, name)
+		       val _ = List.push(Control.keepDiagnostics, name)
+*)
+		       val _ =
+			  let
+			     open Control
+			  in maybeSaveToFile
+			     ({name = name, suffix = n' ^ ".pre.ssa"},
+			      Control.No, p, Control.Layouts Program.layouts)
+			  end
+		       val p =
+			  Control.passTypeCheck
+			  {name = name,
+			   suffix = n' ^ ".post.ssa",
+			   style = Control.No,
+			   thunk = fn () => pass p,
+			   display = Control.Layouts Program.layouts,
+			   typeCheck = typeCheck}
+		       val _ = stats p
+		     in
+		       p
+		     end))
+	 end
+   in
+     stats p
+     ; simplify' 0 p
+   end
+
+(*
+fun simplify p =
    (stats p
     ; (List.fold
        (passes, p, fn ((name, pass), p) =>
@@ -109,6 +155,7 @@ fun simplify p =
          in
             p
          end)))
+*)
 
 val typeCheck = S.typeCheck
 

@@ -239,6 +239,7 @@ structure Primitive =
 	    type int = intInf
 
 	    val + = _prim "IntInf_add": int * int * word array -> int;
+(*	    val + = _prim "IntInf_add": int * int * Int.int -> int; *)
 	    val areSmall = _prim "IntInf_areSmall": int * int -> bool;
 	    val compare = _prim "IntInf_compare": int * int -> Int.int;
 	    val fromArray = _prim "IntInf_fromArray": word array -> int;
@@ -248,14 +249,21 @@ structure Primitive =
 	    val fromWord = _prim "IntInf_fromWord": word -> int;
 	    val isSmall = _prim "IntInf_isSmall": int -> bool;
 	    val * = _prim "IntInf_mul": int * int * word array -> int;
+(*	    val * = _prim "IntInf_mul": int * int * Int.t -> int; *)
 	    val ~ = _prim "IntInf_neg": int * word array -> int;
-	    val quot = _prim "IntInf_quot": int * int * word array -> int;
+(*	    val ~ = _prim "IntInf_neg": int * Int.t -> int; *)
+	    val quot = _prim "IntInf_quot": int * int * word array -> int; 
+(*	    val quot = _prim "IntInf_quot": int * int * Int.t -> int; *)
 	    val rem = _prim "IntInf_rem": int * int * word array -> int;
+(*	    val rem = _prim "IntInf_rem": int * int * Int.t -> int; *)
 	    val smallMul =
 	       _ffi "IntInf_smallMul": word * word * word ref -> word;
-	    val - = _prim "IntInf_sub": int * int * word array -> int;
+	    val - = _prim "IntInf_sub": int * int * word array -> int; 
+(*	    val - = _prim "IntInf_sub": int * int * Int.t -> int; *)
 	    val toString
 	       = _prim "IntInf_toString": int * Int.int * char array -> string;
+(* 	    val toString
+	       = _prim "IntInf_toString": int * Int.int * Int.int -> string; *)
 	    val toVector = _prim "IntInf_toVector": int -> word vector;
 	    val toWord = _prim "IntInf_toWord": int -> word;
 	 end

@@ -23,54 +23,35 @@ open Exp Transfer
 
 structure Rep =
    struct
-      structure Set = DisjointSet
-	 
-      datatype t =
-	 Leaf
-       | Tuple of bool Set.t (* true means keep it as a tuple *)
+      structure L = TwoPointLattice (val bottom = "flatten"
+				     val top = "don't flatten")
 
-      local open Layout
-      in
-	 val layout =
-	    fn Leaf => str "leaf"
-	     | Tuple s => Bool.layout (Set.value s)
-      end
+      open L
+      val when = addHandler
 
-      val isFlat =
-	 fn Tuple s => not (Set.value s)
-	  | _ => false
-	       
+      val isFlat = not o isTop
+
       fun fromType t =
 	 case Type.detupleOpt t of
-	    NONE => Leaf
-	  | SOME l => Tuple (Set.singleton false)
+	    NONE => let val r = new () in makeTop r; r end
+	  | SOME l => new ()
 
       fun fromTypes (ts: Type.t vector): t vector =
 	 Vector.map (ts, fromType)
 
-      fun fromFormals (xts: (Var.t * Type.t) vector): t vector =
-	 Vector.map (xts, fromType o #2)
-
-      val tuplize: t -> unit =
-	 fn Leaf => ()
-	  | Tuple s => Set.setValue (s, true)
-
+      val tuplize: t -> unit = makeTop
+	
       fun tuplizes rs = Vector.foreach (rs, tuplize)
 
-      val unify =
-	 fn (Leaf, Leaf) => ()
-	  | (Tuple s, Tuple s') =>
-	       let val isTuple = Set.value s orelse Set.value s'
-	       in Set.union (s, s')
-		  ; Set.setValue (s, isTuple)
-	       end
-	  | _ => Error.bug "unify"
+      val coerce = op <=
 
+      fun coerces (rs, rs') = Vector.foreach2 (rs, rs', coerce)
+
+      val unify = op ==
+	
       fun unifys (rs, rs') = Vector.foreach2 (rs, rs', unify)
 
       val layouts = Vector.layout layout
-	 
-      val unifys = Trace.trace2 ("unifys", layouts, layouts, Unit.layout) unifys
    end
 
 fun flatten (program as Program.T {datatypes, globals, functions, main}) =
@@ -78,9 +59,47 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
       val {get = conInfo: Con.t -> {argsTypes: Type.t vector,
 				    args: Rep.t vector},
 	   set = setConInfo, ...} =
-	 Property.getSetOnce 
-	 (Con.plist, Property.initRaise ("conInfo", Con.layout))
+	 Property.getSetOnce
+	 (Con.plist, Property.initRaise ("Flatten.conInfo", Con.layout))
+      val conArgsTypes = #argsTypes o conInfo
       val conArgs = #args o conInfo
+      val {get = funcInfo: Func.t -> {args: Rep.t vector,
+				      returns: Rep.t vector option,
+				      raises: Rep.t vector option},
+	   set = setFuncInfo, ...} =
+	 Property.getSetOnce
+	 (Func.plist, Property.initRaise ("Flatten.funcInfo", Func.layout))
+      val funcArgs = #args o funcInfo
+      val funcReturns = #returns o funcInfo
+      val funcRaises = #raises o funcInfo
+      val {get = labelInfo: Label.t -> {args: Rep.t vector},
+	   set = setLabelInfo, ...} =
+	 Property.getSetOnce
+	 (Label.plist, Property.initRaise ("Flatten.labelInfo", Label.layout))
+      val labelArgs = #args o labelInfo
+      val {get = varInfo: Var.t -> {rep: Rep.t, 
+				    tuple: Var.t vector option ref},
+	   set = setVarInfo, ...} =
+	 Property.getSetOnce
+	 (Var.plist, Property.initFun 
+	             (fn _ => {rep = let val r = Rep.new ()
+				     in Rep.tuplize r; r 
+				     end,
+			       tuple = ref NONE}))
+      val fromFormal = fn (x, ty) => let val r = Rep.fromType ty
+				     in
+				       setVarInfo (x, {rep = r,
+						       tuple = ref NONE})
+				       ; r
+				     end
+      val fromFormals = fn xtys => Vector.map (xtys, fromFormal)
+      val varRep = #rep o varInfo
+      val varTuple = #tuple o varInfo
+      fun coerce (x: Var.t, r: Rep.t) =
+	 Rep.coerce (varRep x, r)
+      fun coerces (xs: Var.t vector, rs: Rep.t vector) =
+	 Vector.foreach2 (xs, rs, coerce)
+
       val _ =
 	 Vector.foreach
 	 (datatypes, fn Datatype.T {cons, ...} =>
@@ -88,41 +107,22 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 	  (cons, fn {con, args} =>
 	   setConInfo (con, {argsTypes = args,
 			     args = Vector.map (args, Rep.fromType)})))
-      val {get = funcInfo: Func.t -> {args: Rep.t vector,
-				      returns: Rep.t vector option},
-	   set = setFuncInfo, ...} =
-	 Property.getSetOnce 
-	 (Func.plist, Property.initRaise ("funcInfo", Func.layout))
-      val funcArgs = #args o funcInfo
-      val funcReturns = #returns o funcInfo
-      val _ =
+      val _ = 
 	 List.foreach
 	 (functions, fn f =>
-	  let val {name, args, returns, ...} = Function.dest f
-	  in setFuncInfo (name, {args = Rep.fromFormals args,
-				 returns = Option.map (returns, Rep.fromTypes)})
+	  let val {name, args, returns, raises, ...} = Function.dest f
+	  in 
+	    setFuncInfo (name, {args = fromFormals args,
+				returns = Option.map (returns, Rep.fromTypes),
+				raises = Option.map (raises, Rep.fromTypes)})
 	  end)
-      val {get = labelInfo: Label.t -> {args: Rep.t vector},
-	   set = setLabelInfo, ...} =
-	 Property.getSetOnce
-	 (Label.plist, Property.initRaise ("labelInfo", Label.layout))
-      val labelArgs = #args o labelInfo
-      val {get = varInfo: Var.t -> {tuple: Var.t vector option},
-	   set = setVarInfo, ...} =
-	 Property.getSetOnce
-	 (Var.plist, Property.initConst {tuple = NONE})
-      val varTuple = #tuple o varInfo
-      fun coerce (x: Var.t, r: Rep.t) =
-	 case varTuple x of
-	    NONE => Rep.tuplize r
-	  | _ => ()
-      fun coerces (xs: Var.t vector, rs: Rep.t vector) =
-	 Vector.foreach2 (xs, rs, coerce)
 
       fun doitStatement (Statement.T {var, ty, exp}) =
 	 case exp of
-	    Tuple xs => setVarInfo (valOf var, {tuple = SOME xs})
+	    Tuple xs => setVarInfo (valOf var, {rep = Rep.new (),
+						tuple = ref (SOME xs)})
 	  | ConApp {con, args} => coerces (args, conArgs con)
+	  | Var x => setVarInfo (valOf var, varInfo x)
 	  | _ => ()
       val _ = Vector.foreach (globals, doitStatement)
       val _ =
@@ -130,11 +130,11 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 	 (functions, fn f =>
 	  let
 	     val {name, blocks, ...} = Function.dest f
-	     val returns = funcReturns name
+	     val {returns, raises, ...} = funcInfo name
 	  in
 	     Vector.foreach
 	     (blocks, fn Block.T {label, args, statements, ...} =>
-	      (setLabelInfo (label, {args = Rep.fromFormals args})
+	      (setLabelInfo (label, {args = fromFormals args})
 	       ; Vector.foreach (statements, doitStatement)))
 	     ; Vector.foreach
 	       (blocks, fn Block.T {label, transfer, ...} =>
@@ -143,27 +143,43 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 		      (case returns of
 			  NONE => Error.bug "return mismatch"
 			| SOME rs => coerces (xs, rs))
+		 | Raise xs =>
+		      (case raises of
+			  NONE => Error.bug "raise mismatch"
+			| SOME rs => coerces (xs, rs))
 		 | Call {func, args, return} =>
 		      let
-			 val {args = funcArgs, returns = funcReturns} =
-			    funcInfo func
-			 val _ = coerces (args, funcArgs)
+			val {args = funcArgs, 
+			     returns = funcReturns,
+			     raises = funcRaises} =
+			  funcInfo func
+			val _ = coerces (args, funcArgs)
 		      in
-			 case return of
-			    Return.Dead => ()
-			  | Return.HandleOnly => ()
-			  | Return.NonTail {cont, handler} =>
-			       (Option.app (funcReturns, fn rs =>
-					    Rep.unifys (rs, labelArgs cont))
-				; (Handler.foreachLabel
-				   (handler, fn handler => 
-				    Rep.tuplizes (labelArgs handler))))
-			  | Return.Tail =>
-			       (case (funcReturns, returns) of
-				   (SOME rs, SOME rs') => Rep.unifys (rs, rs')
-				 | _ => ())
+			case return of
+			   Return.Dead => ()
+			 | Return.HandleOnly => ()
+			 | Return.NonTail {cont, handler} =>
+			      (Option.app 
+			       (funcReturns, fn rs =>
+				Rep.unifys (rs, labelArgs cont))
+			       ; (Handler.foreachLabel
+				  (handler, fn handler =>
+				   (Option.app 
+				    (funcRaises, fn rs =>
+				     Rep.unifys (rs, labelArgs handler))))))
+			 | Return.Tail =>
+			      (case (funcReturns, returns) of
+				  (SOME rs, SOME rs') => Rep.unifys (rs, rs')
+				| _ => ()
+			       ; case (funcRaises, raises) of
+				     (SOME rs, SOME rs') => Rep.unifys (rs, rs')
+				   | _ => ())
 		      end
 		 | Goto {dst, args} => coerces (args, labelArgs dst)
+		 | Case {cases = Cases.Con cases, ...} =>
+		      Vector.foreach
+		      (cases, fn (con, label) =>
+		       Rep.coerces (conArgs con, labelArgs label))
 		 | _ => ())
 	  end)
       val _ =
@@ -173,14 +189,16 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 	  (functions, fn f => 
 	   let 
 	      val name = Function.name f
-	      val {args, returns} = funcInfo name
+	      val {args, returns, raises} = funcInfo name
 	      open Layout
 	   in 
-	      display (seq [Func.layout name,
-			    str " ",
-			    align [Vector.layout Rep.layout args,
-				   Option.layout
-				   (Vector.layout Rep.layout) returns]])
+	      display
+	      (seq [Func.layout name,
+		    str " ",
+		    record
+		    [("args", Vector.layout Rep.layout args),
+		     ("returns", Option.layout (Vector.layout Rep.layout) returns),
+		     ("raises", Option.layout (Vector.layout Rep.layout) raises)]])
 	   end))
       fun flattenTypes (ts: Type.t vector, rs: Rep.t vector): Type.t vector =
 	 Vector.fromList
@@ -196,15 +214,22 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 			      (cons, fn {con, args} =>
 			       {con = con,
 				args = flattenTypes (args, conArgs con)}))})
-      fun flattens (xs: Var.t vector, rs: Rep.t vector) =
+      fun flattens (xs as xsX: Var.t vector, rs: Rep.t vector) =
 	 Vector.fromList
 	 (Vector.fold2 (xs, rs, [],
-		       fn (x, r, xs) =>
-		       if Rep.isFlat r
-			  then (case varTuple x of
-				   SOME ys => Vector.fold (ys, xs, op ::)
-				 | _ => Error.bug "tuple unavailable")
-		       else x :: xs))
+			fn (x, r, xs) =>
+			if Rep.isFlat r
+			   then (case !(varTuple x) of
+				    SOME ys => Vector.fold (ys, xs, op ::)
+				  | _ => (Error.bug 
+					  (concat
+					   ["tuple unavailable: ",
+					    (Var.toString x), " ",
+					    (Layout.toString
+					     (Vector.layout Var.layout xsX))])))
+(*				  | _ => []) *)
+(*			          | _ => Error.bug "tuple unavailable") *)
+			else x :: xs))
       fun doitStatement (stmt as Statement.T {var, ty, exp}) =
 	 case exp of
 	    ConApp {con, args} =>
@@ -218,7 +243,8 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
       fun doitFunction f =
 	 let
 	    val {name, args, start, blocks, returns, raises} = Function.dest f
-	    val {args = argsReps, returns = returnsReps} = funcInfo name
+	    val {args = argsReps, returns = returnsReps, raises = raisesReps} = 
+	      funcInfo name
 
 	    val newBlocks = ref []
 
@@ -231,6 +257,7 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 			 then let
 			         val tys = Type.detuple ty
 				 val xs = Vector.map (tys, fn _ => Var.newNoname ())
+				 val _ = varTuple x := SOME xs
 				 val args =
 				    Vector.fold2
 				    (xs, tys, args, fn (x, ty, args) =>
@@ -354,6 +381,7 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 	    fun doitTransfer transfer =
 	       case transfer of
 		  Return xs => Return (flattens (xs, valOf returnsReps))
+		| Raise xs => Raise (flattens (xs, valOf raisesReps))
 		| Call {func, args, return} =>
 		     Call {func = func, 
 			   args = flattens (args, funcArgs func),
@@ -390,12 +418,19 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 			      transfer = Goto {dst = start, 
 					       args = Vector.new0 ()}})
 	    val start = start'
-	    val blocks = Vector.map (blocks, doitBlock)
-	    val blocks = Vector.concat [Vector.fromList (!newBlocks), blocks]
+	    val _ = Function.dfs 
+	            (f, fn b => let val _ = List.push (newBlocks, doitBlock b)
+				in fn () => ()
+				end)
+	    val blocks = Vector.fromList (!newBlocks)
 	    val returns =
 	       Option.map
 	       (returns, fn ts =>
 		flattenTypes (ts, valOf returnsReps))
+	    val raises =
+	       Option.map
+	       (raises, fn ts =>
+		flattenTypes (ts, valOf raisesReps))
 	 in
 	    Function.new {name = name,
 			  args = args,
@@ -416,4 +451,5 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
    in
       program
    end
+
 end

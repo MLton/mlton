@@ -21,20 +21,23 @@ structure VarInfo =
    struct
       datatype t = T of {isUsed: bool ref,
 			 numOccurrences: int ref,
+			 ty: Type.t option,
 			 value: value option ref,
 			 var: Var.t}
       and value =
 	 Con of {con: Con.t,
 		 args: t vector}
 	| Const of Const.t
+	| Select of {tuple: t, offset: int}
 	| Tuple of t vector
 
       fun equals (T {var = x, ...}, T {var = y, ...}) = Var.equals (x, y)
 	 
-      fun layout (T {isUsed, numOccurrences, value, var}) =
+      fun layout (T {isUsed, numOccurrences, ty, value, var}) =
 	 let open Layout
 	 in record [("isUsed", Bool.layout (!isUsed)),
 		    ("numOccurrences", Int.layout (!numOccurrences)),
+		    ("ty", Option.layout Type.layout ty),
 		    ("value", Option.layout layoutValue (!value)),
 		    ("var", Var.layout var)]
 	 end
@@ -44,21 +47,26 @@ structure VarInfo =
 	    Con {con, args} => seq [Con.layout con,
 				    Vector.layout layout args]
 	  | Const c => Const.layout c
+	  | Select {tuple, offset} => seq [str "#", Int.layout (offset + 1), 
+					   str " ", layout tuple]
 	  | Tuple vis => Vector.layout layout vis
 	 end
 
-      fun new (x: Var.t) = T {isUsed = ref false,
-			      numOccurrences = ref 0,
-			      value = ref NONE,
-			      var = x}
+      fun new (x: Var.t, ty: Type.t option) = T {isUsed = ref false,
+						 numOccurrences = ref 0,
+						 ty = ty,
+						 value = ref NONE,
+						 var = x}
 
       fun setValue (T {value, ...}, v) =
 	 (Assert.assert ("VarInfo.setValue", fn () => Option.isNone (!value))
 	  ; value := SOME v)
 
-      fun var (T {var, ...}): Var.t = var
+
       fun numOccurrences (T {numOccurrences = r, ...}) = r
+      fun ty (T {ty, ...}): Type.t option = ty
       fun value (T {value, ...}): value option = !value
+      fun var (T {var, ...}): Var.t = var
    end
 
 structure Value =
@@ -77,6 +85,8 @@ structure Value =
 	       Exp.ConApp {con = con,
 			   args = Vector.map (args, VarInfo.var)}
 	  | Const c => Exp.Const c
+	  | Select {tuple, offset} => 
+	       Exp.Select {tuple = VarInfo.var tuple, offset = offset}
 	  | Tuple xs => Exp.Tuple (Vector.map (xs, VarInfo.var))
    end
 
@@ -188,7 +198,9 @@ fun shrinkFunction (globals: Statement.t vector) =
       fun uses (vis: VarInfo.t vector): Var.t vector = Vector.map (vis, use)
       (* varInfo can't be getSetOnce because of setReplacement. *)
       val {get = varInfo: Var.t -> VarInfo.t, set = setVarInfo, ...} =
-	 Property.getSet (Var.plist, Property.initFun VarInfo.new)
+	 Property.getSet (Var.plist, 
+			  Property.initFun (fn x => VarInfo.new (x, NONE)))
+(*	 Property.getSet (Var.plist, Property.initFun VarInfo.new) *)
       val setVarInfo =
 	 Trace.trace2 ("Shrink.setVarInfo",
 		       Var.layout, VarInfo.layout, Unit.layout)
@@ -208,6 +220,9 @@ fun shrinkFunction (globals: Statement.t vector) =
 	 Vector.foreach
 	 (globals, fn Statement.T {var, exp, ty} =>
 	  let
+	     val _ = Option.app
+	             (var, fn x =>
+		      setVarInfo (x, VarInfo.new (x, SOME ty)))
 	     fun construct v =
 		Option.app (var, fn x => VarInfo.setValue (varInfo x, v))
 	  in case exp of
@@ -215,6 +230,9 @@ fun shrinkFunction (globals: Statement.t vector) =
 		construct (Value.Con {con = con,
 				      args = Vector.map (args, varInfo)})
 	   | Const c => construct (Value.Const c)
+	   | Select {tuple, offset} =>
+		construct (Value.Select {tuple = varInfo tuple,
+					 offset = offset})
 	   | Tuple xs => construct (Value.Tuple (Vector.map (xs, varInfo)))
 	   | Var y => Option.app (var, fn x => setVarInfo (x, varInfo y))
 	   | _ => ()
@@ -225,6 +243,9 @@ fun shrinkFunction (globals: Statement.t vector) =
 	 val _ = Function.clear f
 	 val {args, blocks, name, raises, returns, start, ...} =
 	    Function.dest f
+	 val _ = Vector.foreach
+	         (args, fn (x, ty) => 
+		  setVarInfo (x, VarInfo.new (x, SOME ty)))
 	 (* Index the labels by their defining block in blocks. *)
 	 val {get = labelIndex, set = setLabelIndex, ...} =
 	    Property.getSetOnce (Label.plist,
@@ -287,6 +308,9 @@ fun shrinkFunction (globals: Statement.t vector) =
 	    let
 	       val block as Block.T {label, args, statements, transfer, ...} =
 		  Vector.sub (blocks, i)
+	       val _ = Vector.foreach
+		       (args, fn (x, ty) =>
+			setVarInfo (x, VarInfo.new (x, SOME ty)))
 	       val _ =
 		  Vector.foreach
 		  (statements, fn s => Exp.foreachVar (Statement.exp s, incVar))
@@ -726,6 +750,7 @@ fun shrinkFunction (globals: Statement.t vector) =
 			       val vi =
 				  VarInfo.T {isUsed = isUsed,
 					     numOccurrences = ref 0,
+					     ty = SOME Type.int,
 					     value = ref (SOME (Value.Const c)),
 					     var = x}
 			       val (ss, t) = goto (success, Vector.new1 vi)
@@ -955,12 +980,15 @@ fun shrinkFunction (globals: Statement.t vector) =
 			    | (SOME (Value.Con {con, args}), Cases.Con cases) =>
 				 findCase (cases, fn c =>
 					   Con.equals (con, c), args)
+			    | _ => cantSimplify ()
+(*
 			    | (NONE, _) => cantSimplify ()
 			    | (_, _) =>
 				 Error.bug
 				 (concat
 				  ["strange bind for case test: ",
 				   Layout.toString (VarInfo.layout test)])
+*)
 			end
 		  end
 	    end
@@ -1034,6 +1062,9 @@ fun shrinkFunction (globals: Statement.t vector) =
 	    traceEvalStatement
 	    (fn (s as Statement.T {var, ty, exp}) =>
 	    let
+	       val _ = Option.app 
+		       (var, fn x => 
+			setVarInfo (x, VarInfo.new (x, SOME ty)))
 	       fun delete ss = ss
 	       fun doit {makeExp: unit -> Exp.t,
 			 sideEffect: bool,
@@ -1147,24 +1178,55 @@ fun shrinkFunction (globals: Statement.t vector) =
 		     end
 		| Select {tuple, offset} =>
 		     let
-			val vi as VarInfo.T {value, ...} = varInfo tuple
+			val tuple as VarInfo.T {value, ...} = varInfo tuple
 		     in
 			case !value of
-			   NONE =>
-			      doit {makeExp = fn () => Select {tuple = use vi,
-							       offset = offset},
-				    sideEffect = false,
-				    value = NONE}
-			 | SOME (Value.Tuple vs) =>
+			   SOME (Value.Tuple vs) =>
 			      setVar (Vector.sub (vs, offset))
-			 | _ => Error.bug "select of non-tuple"
+			 | _ =>
+			      construct (Value.Select {tuple = tuple, 
+						       offset = offset},
+					 fn () => Select {tuple = use tuple,
+							  offset = offset})
+(*
+			 | _ => Error.bug
+				(concat
+				  ["select of non-tuple: ",
+				   Layout.toString (VarInfo.layout tuple)])
+*)
 		     end
 		| Tuple xs =>
 		     let
 			val xs = varInfos xs
 		     in
-			construct (Value.Tuple xs,
-				   fn () => Tuple (uses xs))
+                        case DynamicWind.withEscape
+			     (fn escape =>
+			      Vector.foldri
+			      (xs, NONE, fn (i, VarInfo.T {value, ...}, tuple') => 
+			       case !value of
+				  SOME (Value.Select {offset, tuple}) =>
+				     if offset = i
+				        then case tuple' of
+					        NONE => 
+						   (case VarInfo.ty tuple of
+						       SOME ty =>
+							  (case Type.detupleOpt ty of
+							      SOME ts =>
+								 if Vector.length xs =
+								    Vector.length ts
+								    then SOME tuple
+								 else escape NONE
+							    | NONE => escape NONE)
+						     | NONE => escape NONE)
+					      | SOME tuple'' => 
+						   if VarInfo.equals (tuple'', tuple)
+						      then tuple'
+						   else escape NONE
+				     else escape NONE
+				| _ => escape NONE)) of
+			  SOME tuple => setVar tuple
+			| NONE => construct (Value.Tuple xs,
+					     fn () => Tuple (uses xs))
 		     end
 		| Var x => setVar (varInfo x)
 		| _ => doit {makeExp = fn () => exp,

@@ -82,6 +82,9 @@ signature CONTROL =
        *)
       val limitCheckPerBlock: bool ref
 
+      (* Number of times to loop through optimization passes. *)
+      val loopPasses: int ref
+
       structure Native:
 	 sig
 	    (* whether or not to use native codegen *)

@@ -154,10 +154,10 @@ val limitCheckPerBlock = control {name = "limit check per block",
 				  default = true,
 				  toString = Bool.toString}
 
-val newReturn = control {name = "new return",
-			 default = false,
-			 toString = Bool.toString}
-   
+val loopPasses = control {name = "loop passes",
+			  default = 1,
+			  toString = Int.toString}
+
 structure Native =
    struct
       val native = control {name = "native",
@@ -208,6 +208,10 @@ structure Native =
 			   default = SOME 20000,
 			   toString = Option.toString Int.toString}
    end
+
+val newReturn = control {name = "new return",
+			 default = false,
+			 toString = Bool.toString}
 
 val polyvariance =
    control {name = "polyvariance",

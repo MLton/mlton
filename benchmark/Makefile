@@ -44,7 +44,7 @@ test: $(NAME)
 
 QBENCH = $(BENCH)
 
-QBFLAGS = -mlton "mlton -drop-pass localRef" -mlton "mlton"
+QBFLAGS = -mlton "mlton -new-flatten {false, true} -tuple-recon-elim {0,1,2}"
 
 .PHONY: qtest
 qtest: $(NAME)

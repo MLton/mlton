@@ -118,6 +118,12 @@ val options =
        (Expert, "limit-check-per-block", " {true|false}",
 	" force limit checks at each block",
 	boolRef limitCheckPerBlock),
+       (Expert, "loop-passes", " n", "loop optimization passes (1)",
+	Int 
+	(fn i => 
+	 if i >= 1
+	    then loopPasses := i
+	    else usage (concat ["invalid -loop-passes arg: ", Int.toString i]))),
        (Normal, "L", "dir", "search dir for libraries",
 	push libDirs),
        (Normal, "native", " {true|false}", "use native x86 code generator",
