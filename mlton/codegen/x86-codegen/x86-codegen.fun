@@ -133,7 +133,7 @@ struct
 	val {get = getFrameLayoutIndex 
 	         : Label.t -> {size: int, 
 			       frameLayoutsIndex: int} option,
-	     set = setFrameLayoutIndex}
+	     set = setFrameLayoutIndex, ...}
 	  = Property.getSetOnce(Label.plist,
 				Property.initConst NONE)
 

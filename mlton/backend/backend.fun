@@ -140,11 +140,11 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
       val tagType = Mtype.int
       (* Chunk information *)
       val chunks = Chunkify.chunkify program
-      val {get = labelChunk, set = setLabelChunk} =
+      val {get = labelChunk, set = setLabelChunk, ...} =
 	 Property.getSetOnce (Label.plist,
 			      Property.initRaise ("labelChunk", Label.layout))
       val {get = funcChunk: Func.t -> Chunk.t,
-	   set = setFuncChunk} =
+	   set = setFuncChunk, ...} =
 	 Property.getSetOnce (Func.plist,
 			      Property.initRaise ("funcChunk", Func.layout))
       val funcChunkLabel = Chunk.label o funcChunk
@@ -192,7 +192,7 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
       val {get = labelInfo: Label.t -> {args: (Var.t * Stype.t) vector,
 					cont: Mlabel.t option ref,
 					handler: Mlabel.t option ref},
-	   set = setLabelInfo} =
+	   set = setLabelInfo, ...} =
 	 Property.getSetOnce (Label.plist,
 			      Property.initRaise ("label info", Label.layout))
       val labelArgs = #args o labelInfo
@@ -210,7 +210,7 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
       val {get = varInfo: Var.t -> {operand: VarOperand.t,
 				    primInfo: MPrimInfo.t ref,
 				    ty: Stype.t},
-	   set = setVarInfo} =
+	   set = setVarInfo, ...} =
 	 Property.getSetOnce (Var.plist,
 			      Property.initRaise ("Backend.info", Var.layout))
       val varInfo =
@@ -287,7 +287,7 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 	 end
       (* Compute layout for each con and associate it with the con. *)
       local
-	 val {get, set} =
+	 val {get, set, ...} =
 	    Property.getSetOnce (Con.plist,
 				 Property.initRaise ("con info", Con.layout))
       in
@@ -312,7 +312,7 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
       end
       (* Compute layout for each tuple type. *)
       local
-	 val {get} =
+	 val {get, ...} =
 	    Property.get (Stype.plist,
 			  Property.initFun
 			  (fn t => sortTypes (0, toMtypes (Stype.detuple t))))

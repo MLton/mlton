@@ -154,7 +154,7 @@ fun allocate {program = program as Program.T {globals, ...},
 	     end)
 	 val limitCheck = limitCheck f
 	 val {get = labelInfo: Slabel.t -> Info.t,
-	      set = setSlabelInfo} =
+	      set = setSlabelInfo, ...} =
 	    Property.getSetOnce
 	    (Slabel.plist,
 	     Property.initRaise ("label info", Slabel.layout))
@@ -166,7 +166,7 @@ fun allocate {program = program as Program.T {globals, ...},
 					 info: Info.t,
 					 handlerOffset: int option
 					 }, 
-	      set = setFuncInfo} =
+	      set = setFuncInfo, ...} =
 	    Property.getSetOnce (Func.plist,
 				 Property.initRaise ("func info", Func.layout))
 	 val {labelLive, primLive} =
@@ -203,7 +203,7 @@ fun allocate {program = program as Program.T {globals, ...},
 	  *   - live at a primitive that enters the runtime system
 	  *)
 	 datatype place = Stack | Register
-	 val {get = place: Var.t -> place, set = setPlace} =
+	 val {get = place: Var.t -> place, set = setPlace, ...} =
 	    (* FIXME: could use destGetSetOnce? *)
 	    Property.getSet (Var.plist, Property.initConst Register)
 	 (* !hasHandler = true iff handlers are installed in this function. *)

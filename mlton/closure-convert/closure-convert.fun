@@ -147,10 +147,10 @@ structure VarInfo =
 fun closureConvert
    (program as Sxml.Program.T {datatypes, body, overflow}): Cps.Program.t =
    let
-      val {get = conArg: Con.t -> Value.t option, set = setConArg} =
+      val {get = conArg: Con.t -> Value.t option, set = setConArg, ...} =
 	 Property.getSetOnce (Con.plist,
 			      Property.initRaise ("conArg", Con.layout))
-      val {get = varInfo: Var.t -> VarInfo.t, set = setVarInfo} =
+      val {get = varInfo: Var.t -> VarInfo.t, set = setVarInfo, ...} =
 	 Property.getSetOnce
 	 (Var.plist, Property.initRaise ("closure convert info", Var.layout))
       val varInfo =
@@ -166,7 +166,7 @@ fun closureConvert
       (*             lambdaInfo             *)
       (* ---------------------------------- *)
       val {get = lambdaInfo: Slambda.t -> LambdaInfo.t,
-	   set = setLambdaInfo} =
+	   set = setLambdaInfo, ...} =
 	 Property.getSetOnce
 	 (Slambda.plist,
 	  Property.initRaise ("closure convert info", Layout.ignore))
@@ -350,7 +350,7 @@ fun closureConvert
 			  end)
       in
       end
-      val {get = lambdasInfoOpt} =
+      val {get = lambdasInfoOpt, ...} =
 	 Property.get (Lambdas.plist, Property.initFun (fn _ => ref NONE))
       val {hom = convertType, destroy = destroyConvertType} =
 	 Stype.makeMonoHom {con = fn (_, c, ts) => Ctype.con (c, ts)}

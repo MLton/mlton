@@ -158,6 +158,7 @@ signature SSA_TREE =
 	    type t
 
 	    val blocks: t -> Block.t vector
+	    val checkHandlers: t -> unit
 	    val clear: t -> unit
 	    val controlFlow: t -> {graph: DirectedGraph.t,
 				   labelNode: Label.t -> DirectedGraph.Node.t,

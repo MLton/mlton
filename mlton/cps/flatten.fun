@@ -91,7 +91,7 @@ fun flatten (Program.T {datatypes, globals, functions, main}) =
    let
       val {get = conInfo: Con.t -> {argTypes: Type.t vector,
 				    args: Rep.t vector},
-	   set = setConInfo} =
+	   set = setConInfo, ...} =
 	 Property.getSetOnce (Con.plist, Property.initRaise ("args", Con.layout))
       val conArgs = #args o conInfo
       val _ =
@@ -103,7 +103,7 @@ fun flatten (Program.T {datatypes, globals, functions, main}) =
 			     args = Vector.map (args, Rep.fromType)})))
       val {get = funcInfo: Func.t -> {args: Rep.t vector,
 				      returns: Rep.t vector},
-	   set = setFuncInfo} =
+	   set = setFuncInfo, ...} =
 	 Property.getSetOnce (Func.plist,
 			      Property.initRaise ("Flatten.info", Func.layout))
       val funcArgs = #args o funcInfo
@@ -118,9 +118,9 @@ fun flatten (Program.T {datatypes, globals, functions, main}) =
 	 (functions, fn Function.T {name, args, returns, ...} =>
 	  setFuncInfo (name, {args = Rep.fromFormals args,
 			      returns = Rep.fromTypes returns}))
-      val {get = varTuple, set = setVarTuple} =
+      val {get = varTuple, set = setVarTuple, ...} =
 	 Property.getSetOnce (Var.plist, Property.initConst NONE)
-      val {get = jumpArgs: Jump.t -> Rep.t vector, set = setJumpArgs} =
+      val {get = jumpArgs: Jump.t -> Rep.t vector, set = setJumpArgs, ...} =
 	 Property.getSetOnce (Jump.plist,
 			      Property.initRaise ("args", Jump.layout))
       fun coerce (x: Var.t, r: Rep.t) =

@@ -358,11 +358,11 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
       val {get = conInfo: Con.t -> {args: Value.t vector,
 				    argTypes: Type.t vector,
 				    value: unit -> Value.t},
-	   set = setConInfo} =
+	   set = setConInfo, ...} =
 	 Property.getSetOnce (Con.plist, Property.initRaise ("arg", Con.layout))
       val {get = tyconInfo: Tycon.t -> {useful: bool ref,
 					cons: Con.t vector},
-	   set = setTyconInfo} =
+	   set = setTyconInfo, ...} =
 	 Property.getSetOnce (Tycon.plist,
 			      Property.initRaise ("cons", Tycon.layout))
       local open Value

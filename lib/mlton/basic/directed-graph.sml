@@ -518,7 +518,7 @@ fun dominators (graph, {root}) =
 	  preds = ref [],
 	  sdno = ref ~1,
 	  size = ref 1}
-      val {get = nodeInfo: Node.t -> NodeInfo.t} =
+      val {get = nodeInfo: Node.t -> NodeInfo.t, ...} =
 	 Property.get (Node.plist, Property.initFun newNode)
       local
 	 fun 'a make (sel: NodeInfo.t -> 'a ref) =
@@ -679,7 +679,7 @@ fun dominators (graph, {root}) =
 fun dominatorTree (graph, {root: Node.t, nodeValue: Node.t -> 'a}): 'a Tree.t =
    let
       val {idom} = dominators (graph, {root = root})
-      val {get = nodeInfo} =
+      val {get = nodeInfo, ...} =
 	 Property.get (Node.plist,
 		       Property.initFun (fn n => {children = ref [],
 						  value = nodeValue n}))
@@ -759,20 +759,20 @@ fun loopForest {headers, graph, root}
       val addEdge = ignore o addEdge
 
       val {get = graphNodeInfo : Node.t -> GraphNodeInfo.t,
-	   set = setGraphNodeInfo}
+	   set = setGraphNodeInfo, ...}
 	= Property.getSetOnce 
 	  (Node.plist, Property.initRaise ("graphNodeInfo", Node.layout))
       val forestNode = #forestNode o graphNodeInfo
 
       val {get = forestNodeInfo : Node.t -> ForestNodeInfo.t,
-	   set = setForestNodeInfo}
+	   set = setForestNodeInfo, ...}
 	= Property.getSetOnce 
 	  (Node.plist, Property.initRaise ("forestNodeInfo", Node.layout))
       val parent = #parent o forestNodeInfo 
       val loopNodes = #loopNodes o forestNodeInfo
 
       val {get = subGraphNodeInfo : Node.t -> SubGraphNodeInfo.t,
-	   set = setSubGraphNodeInfo}
+	   set = setSubGraphNodeInfo, ...}
 	= Property.getSetOnce 
 	  (Node.plist, Property.initRaise ("subGraphNodeInfo", Node.layout))
       val childSubGraphNode = #childSubGraphNode o subGraphNodeInfo

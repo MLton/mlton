@@ -20,7 +20,7 @@ struct
 	val G = Graph.new ()
 
 	val nodeInfo as {get = getNodeInfo : Node.t -> Label.t,
-			 set = setNodeInfo}
+			 set = setNodeInfo, ...}
 	  = Property.getSetOnce
 	    (Node.plist,
 	     Property.initRaise ("x86LoopInfo:getNodeInfo", Node.layout))
@@ -40,7 +40,7 @@ struct
 			       Label.t -> 
 			       {treeAt: {up: x86.Label.t list Tree.t,
 					 down: x86.Label.t list Tree.t} option},
-			 set = setLoopInfo}
+			 set = setLoopInfo, ...}
 	  = Property.getSetOnce
 	    (Label.plist,
 	     Property.initRaise ("x86LoopInfo:getLoopInfo", Label.layout))

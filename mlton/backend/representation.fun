@@ -94,11 +94,11 @@ structure ConRep =
 
 fun compute (Ssa.Program.T {datatypes, ...}) =
    let 
-      val {get = tyconRep, set = setTyconRep} =
+      val {get = tyconRep, set = setTyconRep, ...} =
 	 Property.getSet (Tycon.plist, Property.initRaise ("rep", Tycon.layout))
       val tyconRep =
 	 Trace.trace ("tyconRep", Tycon.layout, TyconRep.layout) tyconRep
-      val {get = conRep, set = setConRep} =
+      val {get = conRep, set = setConRep, ...} =
 	 Property.getSetOnce (Con.plist, Property.initRaise ("rep", Con.layout))
       val tyconMtype = TyconRep.toMtype o tyconRep
       fun toMtype t =
@@ -192,7 +192,8 @@ fun compute (Ssa.Program.T {datatypes, ...}) =
 		    ; setTyconRep (tycon, new))
 	   end))
       (* Now we can memoize toMtype. *)
-      val {get = toMtype} = Property.get (Type.plist, Property.initFun toMtype)
+      val {get = toMtype, ...} =
+	 Property.get (Type.plist, Property.initFun toMtype)
       (* Set constructor representations. *)
       fun direct (con, args, t) =
 	 setConRep (con,

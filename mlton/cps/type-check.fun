@@ -20,7 +20,7 @@ fun checkScopes (program as
 
       fun make (layout, plist) =
 	 let
-	    val {get, set} =
+	    val {get, set, ...} =
 	       Property.getSet (plist, Property.initConst Undefined)
 	    fun bind x =
 	       case get x of

@@ -949,7 +949,7 @@ struct
 	 as {get = getLiveTransfers : 
 	     Label.t -> ((MemLoc.t * Register.t * bool) list *
 			 (MemLoc.t * bool) list),
-	     set = setLiveTransfers}
+	     set = setLiveTransfers, ...}
 	   = Property.getSet
 	     (Label.plist, 
 	      Property.initRaise ("x86LiveTransfers:getLiveTransfers", Label.layout))
@@ -997,7 +997,7 @@ struct
 	    else let
 		   val liveTransfers
 		    as {get = getLiveTransfers,
-			set = setLiveTransfers}
+			set = setLiveTransfers, ...}
 		     = Property.getSetOnce(Label.plist, 
 					   Property.initConst ([], []))
 		 in

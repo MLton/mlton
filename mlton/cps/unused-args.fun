@@ -18,7 +18,7 @@ structure Used =
 
 fun unusedArgs (program as Program.T {datatypes, globals, functions, main})
   = let
-      val {get = varInfo : Var.t -> {used: Used.t}}
+      val {get = varInfo : Var.t -> {used: Used.t}, ...}
 	= Property.get (Var.plist,
 			Property.initFun (fn _ => {used = Used.new ()}))
       fun used x = #used (varInfo x)
@@ -31,7 +31,7 @@ fun unusedArgs (program as Program.T {datatypes, globals, functions, main})
 				       wrapper: Jump.t option ref,
 				       needArgs: bool ref,
 				       cedeArgs: bool ref},
-	   set = setJumpInfo}
+	   set = setJumpInfo, ...}
 	= Property.getSetOnce
 	  (Jump.plist,
 	   Property.initRaise ("jumpInfo", Jump.layout))

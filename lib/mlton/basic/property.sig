@@ -35,13 +35,15 @@ signature PROPERTY =
       val get:
 	 ('sym -> Plist.t) * ('sym, 'val) init
 	 -> {
-	     get: 'sym -> 'val
+	     get: 'sym -> 'val,
+	     rem: 'sym -> unit
 	     }
 
       val getSet:
 	 ('sym -> Plist.t) * ('sym, 'val) init
 	 -> {
 	     get: 'sym -> 'val,
+	     rem: 'sym -> unit,
 	     set: 'sym * 'val -> unit
 	    }
 
@@ -50,6 +52,7 @@ signature PROPERTY =
 	 ('sym -> Plist.t) * ('sym, 'val) init
 	 -> {
 	     get: 'sym -> 'val,
+	     rem: 'sym -> unit,
 	     set: 'sym * 'val -> unit
 	    }
 

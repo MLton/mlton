@@ -618,7 +618,7 @@ structure Program =
 	     *)
 	    local
 	       val allLabels = ref []
-	       val {get: Label.t -> int, set} =
+	       val {get: Label.t -> int, set, ...} =
 		  Property.getSetOnce (Label.plist,
 				      Property.initRaise ("index", Label.layout))
 	       val indexCounter = Counter.new 0

@@ -113,7 +113,7 @@ open S
 (* Section 7.3 of Muchnick. *)
 local
    val g = new ()
-   val {get = name, set = setName} =
+   val {get = name, set = setName, ...} =
       Property.getSetOnce (Node.plist,
 			   Property.initRaise ("name", Node.layout))
    val node = String.memoize (fn s =>
@@ -151,10 +151,10 @@ local
        end)
    val {idom} = dominators (g, {root = node "entry\nfoo"})
    val g2 = new ()
-   val {get = oldNode, set = setOldNode} =
+   val {get = oldNode, set = setOldNode, ...} =
       Property.getSetOnce (Node.plist,
 			   Property.initRaise ("oldNode", Node.layout))
-   val {get = newNode} =
+   val {get = newNode, ...} =
       Property.get (Node.plist,
 		    Property.initFun (fn n =>
 				      let

@@ -665,13 +665,13 @@ local
 	       val g = Graph.new ()
 	       val nodes = Vector.tabulate (numStates, fn _ => Graph.newNode g)
 	       fun node i = Vector.sub (nodes, i)
-	       val {get = nodeOptions} =
+	       val {get = nodeOptions, ...} =
 		  Property.get (Graph.Node.plist,
 				Property.initFun
 				(fn _ => let open NodeOption
 					 in ref []
 					 end))
-	       val {get = edgeOptions} =
+	       val {get = edgeOptions, ...} =
 		  Property.get (Graph.Edge.plist,
 				Property.initFun
 				(fn _ => let open EdgeOption
@@ -1146,13 +1146,13 @@ local
 	       val g = Graph.new ()
 	       val nodes = Vector.tabulate (numStates, fn _ => Graph.newNode g)
 	       fun node i = Vector.sub (nodes, i)
-	       val {get = nodeOptions} =
+	       val {get = nodeOptions, ...} =
 		  Property.get (Graph.Node.plist,
 				Property.initFun
 				(fn _ => let open NodeOption
 					 in ref []
 					 end))
-	       val {get = edgeOptions} =
+	       val {get = edgeOptions, ...} =
 		  Property.get (Graph.Edge.plist,
 				Property.initFun
 				(fn _ => let open EdgeOption

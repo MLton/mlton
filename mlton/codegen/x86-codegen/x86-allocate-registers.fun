@@ -772,7 +772,7 @@ struct
 	  end
 
       val {get = getRA : Directive.Id.t -> {registerAllocation: t},
-	   set = setRA}
+	   set = setRA, ...}
 	= Property.getSetOnce
 	  (Directive.Id.plist,
 	   Property.initRaise ("getRA", fn _ => Layout.empty))
@@ -10748,7 +10748,7 @@ struct
                         Assembly.t list list
     = let
 	val {get = getInfo : Label.t -> Label.t option,
-	     set = setInfo}
+	     set = setInfo, ...}
 	  = Property.getSetOnce
 	    (Label.plist,
 	     Property.initConst NONE)

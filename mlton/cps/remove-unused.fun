@@ -11,16 +11,16 @@ structure VarInfo =
 
 fun remove (Program.T {datatypes, globals, functions, main}) =
    let
-      val {get = varInfo: Var.t -> VarInfo.t, set = setVarInfo} =
+      val {get = varInfo: Var.t -> VarInfo.t, set = setVarInfo, ...} =
 	 Property.getSet (Var.plist, Property.initConst VarInfo.NotGlobal)
       val _ = Vector.foreach (globals, fn {var, exp, ...} =>
 			     setVarInfo (var, VarInfo.Unused exp))
       val {get = tyInfo: Type.t -> {haveDeconed: bool ref}, 
-	   set = setTyInfo} =
+	   set = setTyInfo, ...} =
 	 Property.getSetOnce (Type.plist, 
 			      Property.initFun 
 			      (fn _ => {haveDeconed = ref false}))
-      val {get = tyconCons, set = setTyconCons} =
+      val {get = tyconCons, set = setTyconCons, ...} =
 	 Property.getSetOnce (Tycon.plist,
 			      Property.initRaise ("cons", Tycon.layout))
       val {get = conInfo: Con.t -> {caseTargets: Jump.t list ref,
@@ -30,7 +30,7 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
 				    isDecon: bool ref,
 				    numCons: int ref,
 				    tycon: Tycon.t},
-	   set = setConInfo} =
+	   set = setConInfo, ...} =
 	 Property.getSetOnce
 	 (Con.plist, Property.initRaise ("RemoveUnused.info", Con.layout))
       val conInfo =
@@ -56,7 +56,7 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
 	   ; Vector.foreach (cons, fn {con, ...} => newConInfo (con, tycon))))
       val {get = funcInfo: Func.t -> {body: Exp.t,
 				      visited: bool ref},
-	   set = setFuncInfo} =
+	   set = setFuncInfo, ...} =
 	 Property.getSetOnce
 	 (Func.plist, Property.initRaise ("RemoveUnused.info", Func.layout))
       val _ =
@@ -64,7 +64,7 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
 			 setFuncInfo (name, {body = body, visited = ref false}))
       val {get = jumpInfo: Jump.t -> {body: Exp.t,
 				      visited: bool ref},
-	   set = setJumpInfo} =
+	   set = setJumpInfo, ...} =
 	 Property.getSetOnce
 	 (Jump.plist, Property.initRaise ("RemoveUnused.info", Jump.layout))
       val todo: Exp.t list ref = ref []

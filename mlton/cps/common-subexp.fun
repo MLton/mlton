@@ -9,12 +9,12 @@ type word = Word.t
 fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
    let
       (* Keep track of the replacements of variables. *)
-      val {get = replace: Var.t -> Var.t option, set = setReplace} =
+      val {get = replace: Var.t -> Var.t option, set = setReplace, ...} =
 	 Property.getSetOnce (Var.plist, Property.initConst NONE)
       (* Keep track of the variable that holds the length of arrays (and
        * vectors and strings).
        *) 
-      val {get = getLength: Var.t -> Var.t option, set = setLength} =
+      val {get = getLength: Var.t -> Var.t option, set = setLength, ...} =
 	 Property.getSetOnce (Var.plist, Property.initConst NONE)
       fun canonVar x =
 	 case replace x of

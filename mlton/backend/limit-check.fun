@@ -42,7 +42,7 @@ fun limitCheck (program as Program.T {functions, ...})=
       let
 	 val {blocks, name, ...} = Function.dest f
 	 val {get = labelInfo: Label.t -> {inBody: bool ref,
-					   limitCheck: t ref}} =
+					   limitCheck: t ref}, ...} =
 	    Property.get (Label.plist,
 			  Property.initFun (fn _ => {inBody = ref false,
 						     limitCheck = ref No}))

@@ -66,11 +66,11 @@ structure VarInfo =
 fun flatten (program as Program.T {globals, datatypes, functions, main}) =
    let
       val {get = varInfo: Var.t -> VarInfo.t,
-	   set = setVarInfo} =
+	   set = setVarInfo, ...} =
 	 Property.getSetOnce (Var.plist, Property.initConst VarInfo.None)
       type argsInfo = (ArgInfo.t * Type.t) option vector
       val {get = jumpArgs: Jump.t -> argsInfo,
-	   set = setJumpArgs} =
+	   set = setJumpArgs, ...} =
 	 Property.getSetOnce (Jump.plist,
 			      Property.initRaise ("args", Jump.layout))
       val shrinkExp = shrinkExp globals

@@ -160,7 +160,7 @@ structure Cache:
 fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
    let
       val {get = getVar: Var.t -> Stype.t vector -> SvarExp.t,
-	   set = setVar} =
+	   set = setVar, ...} =
 	 Property.getSet (Var.plist, Property.initRaise ("var", Var.layout))
       val setVar =
 	 Trace.trace2 ("setVar", Var.layout, Layout.ignore, Unit.layout) setVar
@@ -176,7 +176,7 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
       val _ =
 	 List.foreach (Tycon.prims, fn t =>
 		       setTycon (t, fn ts => Stype.con (t, ts)))
-      val {set = setTyvar, get = getTyvar: Tyvar.t -> Stype.t} =
+      val {set = setTyvar, get = getTyvar: Tyvar.t -> Stype.t, ...} =
 	 Property.getSet (Tyvar.plist,
 			  Property.initRaise ("tyvar", Tyvar.layout))
       val getTyvar =

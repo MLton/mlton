@@ -11,7 +11,7 @@ structure VarInfo =
 
 fun remove (program as Program.T {datatypes, globals, functions, main})
   = let
-      val {get = varInfo: Var.t -> VarInfo.t, set = setVarInfo}
+      val {get = varInfo: Var.t -> VarInfo.t, set = setVarInfo, ...}
 	= Property.getSet 
 	  (Var.plist,
 	   Property.initConst VarInfo.NotGlobal)
@@ -20,7 +20,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	       fn Statement.T {var = SOME var, exp, ...} 
 	        => setVarInfo(var, VarInfo.Unused exp)
 	        | _ => ())
-      val {get = tyInfo: Type.t -> {haveDeconed: bool ref}, set = setTyInfo}
+      val {get = tyInfo: Type.t -> {haveDeconed: bool ref}, set = setTyInfo, ...}
 	= Property.getSetOnce 
 	  (Type.plist,
 	   Property.initFun (fn _ => {haveDeconed = ref false}))
@@ -30,7 +30,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	val (haveDeconed, haveDeconed') = make #haveDeconed
       end
       val {get = tyconCons: Tycon.t -> {con: Con.t, args: Type.t vector} vector, 
-	   set = setTyconCons}
+	   set = setTyconCons, ...}
 	= Property.getSetOnce 
 	  (Tycon.plist, 
 	   Property.initRaise ("RemovedUnused.tyconCons", Tycon.layout))
@@ -41,7 +41,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 				    isDecon: bool ref,
 				    numCons: int ref,
 				    tycon: Tycon.t},
-	   set = setConInfo} 
+	   set = setConInfo, ...} 
 	= Property.getSetOnce 
 	  (Con.plist, 
 	   Property.initRaise ("RemoveUnused.conInfo", Con.layout))
@@ -78,7 +78,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	        => (setTyconCons (tycon, cons);
 		    Vector.foreach (cons, fn {con, ...} => newConInfo (con, tycon))))
       val {get = funcInfo: Func.t -> {start: Label.t},
-	   set = setFuncInfo}
+	   set = setFuncInfo, ...}
 	= Property.getSetOnce
 	  (Func.plist,
 	   Property.initRaise ("RemoveUnused.funcInfo", Func.layout))
@@ -89,7 +89,7 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
       end
       val {get = labelInfo: Label.t -> {block: Block.t,
 					visited: bool ref},
-	   set = setLabelInfo}
+	   set = setLabelInfo, ...}
 	= Property.getSetOnce
 	  (Label.plist,
 	   Property.initRaise ("RemoveUnused.labelInfo", Label.layout))

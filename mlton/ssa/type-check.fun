@@ -23,7 +23,7 @@ fun checkScopes (program as
 
       fun make (layout, plist) =
 	 let
-	    val {get, set} =
+	    val {get, set, ...} =
 	       Property.getSet (plist, Property.initConst Undefined)
 	    fun bind x =
 	       case get x of
@@ -126,6 +126,7 @@ val checkScopes = Control.trace (Control.Pass, "checkScopes") checkScopes
 fun typeCheck (program as Program.T {datatypes, functions, ...}): unit =
    let
       val _ = checkScopes program
+(*      val _ = Vector.foreach (functions, Function.checkHandlers) *)
       val out = Out.error
       val print = Out.outputc out
       exception TypeError

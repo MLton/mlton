@@ -11,6 +11,9 @@ $(NAME): $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)
 	strip $(NAME)
 	size $(NAME)
 
+$(NAME).sml: $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)
+	mlton -stop sml $(NAME).cm
+
 .PHONY:	$(NAME)_cm
 $(NAME)_cm:
 	(								\

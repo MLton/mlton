@@ -27,7 +27,7 @@ fun introExp (e: Exp.t): Exp.t =
 				      invariant: (Var.t * bool ref) vector,
 				      newName: Jump.t option ref
 				      },
-	   set = setJumpInfo} =
+	   set = setJumpInfo, ...} =
 	 Property.getSetOnce
 	 (Jump.plist, Property.initRaise ("LoopInvariant.info", Jump.layout))
       fun loopTransfer t =

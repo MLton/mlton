@@ -881,7 +881,7 @@ structure Program =
 	       val _ = IntSet.reset ()
 	       val c = Counter.new 0
 	       val frameOffsets = ref []
-	       val {get: IntSet.t -> int} =
+	       val {get: IntSet.t -> int, ...} =
 		  Property.get
 		  (IntSet.plist,
 		   Property.initFun
@@ -902,10 +902,10 @@ structure Program =
 *)
 	       val {get = getFrameLayout: Label.t -> {size: int,
 						      offsetIndex: int} option,
-		    set = setFrameLayout} = 
+		    set = setFrameLayout, ...} = 
 		  Property.getSetOnce (Label.plist, Property.initConst NONE)
 	       val {get = getNextChunk: Label.t -> ChunkLabel.t option,
-		    set = setNextChunk} =
+		    set = setNextChunk, ...} =
 		  Property.getSetOnce (Label.plist, Property.initConst NONE)
 	       val _ = List.foreach (!handlers, fn {label, chunkLabel} =>
 				     setNextChunk (label, SOME chunkLabel))

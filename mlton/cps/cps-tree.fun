@@ -34,7 +34,7 @@ structure Type =
 	| Tuple of t vector
 
       local
-	 val {get, set} =
+	 val {get, set, ...} =
 	    Property.getSetOnce (Tycon.plist, Property.initConst NONE)
 
 	 fun nullary c v =
@@ -1208,7 +1208,7 @@ structure Function =
 	    let
 	       val g = Graph.new ()
 	       fun newNode () = Graph.newNode g
-	       val {get = jumpNode} =
+	       val {get = jumpNode, ...} =
 		  Property.get
 		  (Jump.plist, Property.initFun (fn _ => newNode ()))
 	       fun loop (e: Exp.t, from: Node.t, handlers) =
@@ -1263,7 +1263,7 @@ structure Function =
 	    let
 	       open Dot
 	       val graph = Graph.new ()
-	       val {get = nodeOptions} =
+	       val {get = nodeOptions, ...} =
 		  Property.get (Node.plist, Property.initFun (fn _ => ref []))
 	       fun label (n: Node.t, l): unit =
 		  List.push (nodeOptions n, NodeOption.Label l)
@@ -1271,7 +1271,7 @@ structure Function =
 	       val {destroy, get = jumpNode} =
 		  Property.destGet (Jump.plist,
 				    Property.initFun (fn _ => newNode ()))
-	       val {get = edgeOptions, set = setEdgeOptions} =
+	       val {get = edgeOptions, set = setEdgeOptions, ...} =
 		  Property.getSetOnce (Edge.plist, Property.initConst [])
 	       fun loop (e: Exp.t, from: Node.t,
 			 handlers: Jump.t list,
@@ -1505,7 +1505,7 @@ val traceSetJump =
    
 fun inferHandlers (Program.T {functions, ...}) =
    let
-      val {get = jump, set = setJump} =
+      val {get = jump, set = setJump, ...} =
 	 Property.getSetOnce (Jump.plist,
 			      Property.initRaise ("handlers", Jump.layout))
       val jump = traceJump jump
@@ -1614,7 +1614,7 @@ structure Program =
 		    in
 		       n
 		    end))
-	       val {get = edgeOptions, set = setEdgeOptions} =
+	       val {get = edgeOptions, set = setEdgeOptions, ...} =
 		  Property.getSetOnce (Edge.plist, Property.initConst [])
 	       val _ =
 		  Vector.foreach
@@ -1669,7 +1669,7 @@ structure Program =
       fun layouts (p as T {datatypes, globals, functions, main},
 		   output': Layout.t -> unit) =
 	 let
-	    val {get = global, set = setGlobal} =
+	    val {get = global, set = setGlobal, ...} =
 	       Property.getSet (Var.plist,
 				Property.initConst NONE)
 	    val _ = 

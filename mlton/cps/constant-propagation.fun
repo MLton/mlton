@@ -493,7 +493,7 @@ fun simplify (program as Program.T {datatypes, globals, functions, main})
       val {get = conInfo: Con.t -> {result: Type.t,
 				    types: Type.t vector,
 				    values: Value.t vector},
-	   set = setConInfo} =
+	   set = setConInfo, ...} =
 	 Property.getSetOnce
 	 (Con.plist,
 	  Property.initRaise ("constant propagation info", Con.layout))

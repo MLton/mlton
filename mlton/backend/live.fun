@@ -71,7 +71,7 @@ fun live (function, {isCont: Label.t -> bool,
 					isContSet: bool ref,
 					visited: bool ref (* for dfs *)
 					},
-	   set = setLabelInfo} =
+	   set = setLabelInfo, ...} =
 	 Property.getSetOnce (Label.plist,
 			      Property.initRaise ("live info", Label.layout))
       val {get = varInfo: Var.t -> {defined: LiveInfo.t,
@@ -357,7 +357,7 @@ fun live (function, {isCont: Label.t -> bool,
 	 end)
       val {get = primLive: Var.t -> {vars: Var.t list,
 				     handlerSlots: bool * bool},
-	   set} =
+	   set, ...} =
 	 Property.getSetOnce (Var.plist,
 			      Property.initRaise ("primLive", Var.layout))
       val _ =

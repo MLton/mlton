@@ -651,9 +651,11 @@ structure Function =
       fun dominatorTree (T {controlFlow, ...}) =
 	 #dominatorTree (CPromise.force controlFlow) ()
 
-      fun checkHandlers ({start, blocks, ...}: dest) =
+      fun checkHandlers (f: t): unit =
 	 let
+	    val {start, blocks, ...} = dest f
 	    val {get = labelInfo: Label.t -> HandlerInfo.t,
+		 rem = remLabelInfo, 
 		 set = setLabelInfo} =
 	       Property.getSetOnce
 	       (Label.plist, Property.initRaise ("info", Label.layout))
@@ -749,11 +751,9 @@ structure Function =
 	    val info as HandlerInfo.T {global, ...} = labelInfo start
 	    val _ = ExnStack.forcePoint (global, ExnStack.Point.Caller)
 	    val _ = loop info
-	    val _ =
-	       Control.diagnostics
-	       (fn display => Vector.foreach (blocks, display o Block.layout))
+	    val _ = Vector.foreach (blocks, fn b => remLabelInfo (Block.label b))
 	 in
-	    labelInfo
+	    ()
 	 end
 			    
       local
@@ -766,11 +766,11 @@ structure Function =
     	       open Dot
 	       val g = Graph.new ()
 	       fun newNode () = Graph.newNode g
-	       val {get = labelNode} =
+	       val {get = labelNode, ...} =
 		  Property.get
 		  (Label.plist, Property.initFun (fn _ => newNode ()))
 	       val {get = nodeInfo: Node.t -> {block: Block.t},
-		    set = setNodeInfo} =
+		    set = setNodeInfo, ...} =
 		  Property.getSetOnce
 		  (Node.plist, Property.initRaise ("info", Node.layout))
 	       val _ =
@@ -842,7 +842,7 @@ structure Function =
 	       val {destroy, get = labelNode} =
 		  Property.destGet (Label.plist,
 				    Property.initFun (fn _ => newNode ()))
-	       val {get = edgeOptions, set = setEdgeOptions} =
+	       val {get = edgeOptions, set = setEdgeOptions, ...} =
 		  Property.getSetOnce (Edge.plist, Property.initConst [])
 	       val _ =
 		  Vector.foreach
@@ -1084,7 +1084,7 @@ structure Program =
 		    in
 		       n
 		    end))
-	       val {get = edgeOptions, set = setEdgeOptions} =
+	       val {get = edgeOptions, set = setEdgeOptions, ...} =
 		  Property.getSetOnce (Edge.plist, Property.initConst [])
 	       val _ =
 		  List.foreach
@@ -1139,7 +1139,7 @@ structure Program =
       fun layouts (p as T {datatypes, globals, functions, main},
 		   output': Layout.t -> unit) =
 	 let
-	    val {get = global: Var.t -> string option, set = setGlobal} =
+	    val {get = global: Var.t -> string option, set = setGlobal, ...} =
 	       Property.getSet (Var.plist, Property.initConst NONE)
 	    val _ = 
 	       Vector.foreach

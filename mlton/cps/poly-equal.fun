@@ -83,10 +83,10 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
       val {get = info: Tycon.t -> {isEnum: bool,
 				   cons: {con: Con.t,
 					  args: Type.t vector} vector},
-	   set = setInfo} =
+	   set = setInfo, ...} =
 	 Property.getSetOnce
 	 (Tycon.plist, Property.initRaise ("PolyEqual.info", Tycon.layout))
-      val {get = isConst, set = setConst} =
+      val {get = isConst, set = setConst, ...} =
 	 Property.getSetOnce (Var.plist, Property.initConst false)
       val isEnum = #isEnum o info
       val tyconCons = #cons o info
@@ -98,7 +98,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 					    Vector.isEmpty args),
 		    cons = cons}))
       val newFunctions: Function.t list ref = ref []
-      val {get = getEqualFunc, set = setEqualFunc} =
+      val {get = getEqualFunc, set = setEqualFunc, ...} =
 	 Property.getSet (Tycon.plist, Property.initConst NONE)
       val {get = getVectorEqualFunc, set = setVectorEqualFunc,
 	   destroy = destroyType} =

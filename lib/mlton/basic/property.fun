@@ -44,7 +44,7 @@ fun ('sym, 'val) nondestructable (plist: 'sym -> Plist.t,
 	    NONE => add (p, none ())
 	  | SOME v => some v
 	 end
-   in {get = get, remove = remove, set = set}
+   in {get = get, rem = remove o plist, remove = remove, set = set}
    end
 
 fun ('sym, 'val) destructable (plist, init) =
@@ -78,13 +78,13 @@ fun destGet z =
    end
 
 fun getSetOnce z =
-   let val {get, set, ...} = nondestructable z
-   in {get = get, set = setToSetOnce set}
+   let val {get, rem, set, ...} = nondestructable z
+   in {get = get, rem = rem, set = setToSetOnce set}
    end
 
 fun get z =
-   let val {get, ...} = getSetOnce z
-   in {get = get}
+   let val {get, rem, ...} = getSetOnce z
+   in {get = get, rem = rem}
    end
 
 fun setInit (plist, init) =
@@ -102,9 +102,9 @@ fun destGetSet z =
    end
 
 fun getSet z =
-   let val {get, set, ...} = nondestructable (setInit z)
+   let val {get, rem, set, ...} = nondestructable (setInit z)
       val set = fn (s, v) => set (s, fn () => ref v, fn r => r := v)
-   in {get = ! o get, set = set}
+   in {get = ! o get, rem = rem, set = set}
    end
 
 end

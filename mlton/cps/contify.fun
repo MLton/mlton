@@ -157,7 +157,7 @@ structure JumpFuncGraph =
 		else addEdge edge
 
 	  val {get = getNodeInfo : Node.t -> t, 
-	       set = setNodeInfo}
+	       set = setNodeInfo, ...}
 	    = Property.getSetOnce
 	      (Node.plist,
 	       Property.initRaise ("nodeInfo", Node.layout))
@@ -1002,11 +1002,11 @@ structure Transform =
 
 fun contify (program as Program.T {functions, ...})
   = let
-      val {get = getFuncData : Func.t -> FuncData.t}
+      val {get = getFuncData : Func.t -> FuncData.t, ...}
 	= Property.get (Func.plist,
 			Property.initFun
 			(fn _ => FuncData.new ()))
-      val {get = getJumpData : Jump.t -> JumpData.t}
+      val {get = getJumpData : Jump.t -> JumpData.t, ...}
 	= Property.get (Jump.plist,
 			Property.initFun
 			(fn _ => JumpData.new ()))

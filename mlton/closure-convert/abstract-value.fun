@@ -345,7 +345,7 @@ open Dest
 (*---------------------------------------------------*)
 structure Name = Prim.Name
 
-val {get = serialValue: Type.t -> t} =
+val {get = serialValue: Type.t -> t, ...} =
    Property.get (Type.plist, Property.initFun fromType)
 
 fun primApply {prim: Prim.t, args: t vector, resultTy: Type.t}: t =
