@@ -84,7 +84,7 @@ GLUT_h.h: $(GLUT_SML)
 GLUT_c.o: $(GLUT_C)
 	gcc -c GLUT_c.c
 
-test: shortest hello solar atom triangle spin_cube blender molehill bits
+test: shortest hello solar atom triangle spin_cube blender molehill bits points
 
 shortest: $(GLUT_SML) $(GL_SML) $(GL_OBJS) shortest.sml
 	$(mlton) $(GL_LINK_OPTS) shortest.cm $(GL_OBJS)
@@ -113,6 +113,10 @@ blender: $(GLUT_SML) $(GLU_SML) $(GL_SML) $(GL_OBJS) blender.sml
 molehill: $(GLUT_SML) $(GLU_SML) $(GL_SML) $(GL_OBJS) molehill.sml
 	$(mlton) $(GL_LINK_OPTS) molehill.cm $(GL_OBJS)
 
+points: $(GLUT_SML) $(GLU_SML) $(GL_SML) $(GL_OBJS) points.sml
+	$(mlton) $(GL_LINK_OPTS) points.cm $(GL_OBJS)
+
 .PHONY: clean
+
 clean:
 	../../../bin/clean
