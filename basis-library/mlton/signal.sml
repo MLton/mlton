@@ -11,6 +11,8 @@ struct
 open Posix.Signal
 structure Prim = PosixPrimitive.Signal
 structure Error = PosixError
+structure SysCall = Error.SysCall
+val restart = SysCall.restartFlag
 
 type t = signal
 
@@ -21,8 +23,6 @@ type how = Prim.how
 
 (* val toString = SysWord.toString o toWord *)
    
-val checkResult = Error.checkResult
-val checkReturnResult = Error.checkReturnResult
 fun raiseInval () =
    let
       open PosixError
@@ -52,7 +52,7 @@ structure Mask =
 	 (Array.foldri
 	  (fn (i, b, sigs) =>
 	   if b
-	      then if checkReturnResult(Prim.sigismember(fromInt i)) = 1
+	      then if (Prim.sigismember(fromInt i)) = 1
 		      then (fromInt i)::sigs
 		      else sigs
 	      else sigs)
@@ -62,15 +62,15 @@ structure Mask =
       fun write m =
 	 case m of
 	    AllBut signals =>
-	       (checkResult (Prim.sigfillset ())
-		; List.app (checkResult o Prim.sigdelset) signals)
+	       (SysCall.simple Prim.sigfillset
+		; List.app (fn s => SysCall.simple (fn () => Prim.sigdelset s)) signals)
 	  | Some signals =>
-	       (checkResult (Prim.sigemptyset ())
-		; List.app (checkResult o Prim.sigaddset) signals)
+	       (SysCall.simple Prim.sigemptyset
+		; List.app (fn s => SysCall.simple (fn () => Prim.sigaddset s)) signals)
 	       
       local
 	 fun make (how: how) (m: t) =
-	    (write m; checkResult (Prim.sigprocmask how))
+	    (write m; SysCall.simpleRestart (fn () => Prim.sigprocmask how))
       in
 	 val block = make Prim.block
 	 val unblock = make Prim.unblock
@@ -140,6 +140,15 @@ structure Mask =
 	   case h of 
 	      Handler _ => (fromInt s)::sigs
 	    | _ => sigs) [] handlers)
+
+      val () =
+	 PosixError.SysCall.blocker :=
+	 (fn () => let
+		      val m = getBlocked ()
+		      val () = block (handled ())
+		   in
+		      fn () => setBlocked m
+		   end)
    end
    
 structure Handler =
@@ -202,16 +211,16 @@ val setHandler = fn (s, h) =>
     | (Default, Default) => ()
     | (_, Default) => 
 	 (setHandler (s, Default)
-	  ; checkResult (Prim.default s))
+	  ; SysCall.simpleRestart (fn () => Prim.default s))
     | (Handler _, Handler _) =>
 	 setHandler (s, h)
     | (_, Handler _) =>
 	 (setHandler (s, h)
-	  ; checkResult (Prim.handlee s))
+	  ; SysCall.simpleRestart (fn () => Prim.handlee s))
     | (Ignore, Ignore) => ()
     | (_, Ignore) => 
 	 (setHandler (s, Ignore)
-	  ; checkResult (Prim.ignore s))
+	  ; SysCall.simpleRestart (fn () => Prim.ignore s))
 
 fun suspend m =
    (Mask.write m

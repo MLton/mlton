@@ -71,4 +71,15 @@ signature POSIX_ERROR_EXTRA =
       val getErrno: unit -> int
       val clearErrno: unit -> unit
       val error: unit -> 'a
+
+      structure SysCall :
+	 sig
+	    val blocker: (unit -> (unit -> unit)) ref
+	    val restartFlag: bool ref
+	    val simple: (unit -> int) -> unit
+	    val simpleRestart: (unit -> int) -> unit
+	    val simpleResult: (unit -> int) -> int
+	    val simpleResultRestart: (unit -> int) -> int
+	    val syscall: {restart: bool} * (unit -> int * (unit -> 'a)) -> 'a
+	 end
    end

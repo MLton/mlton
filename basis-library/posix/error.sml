@@ -40,4 +40,55 @@ structure PosixError: POSIX_ERROR_EXTRA =
       fun checkReturnPosition (n: Position.int) =
 	 if n = ~1 then error () else n
       fun checkResult n = (ignore (checkReturnResult n); ())
+
+      structure SysCall =
+	 struct
+	    structure Thread = Primitive.Thread
+
+	    val blocker: (unit -> (unit -> unit)) ref =
+	       ref (fn () => raise Fail "blocker not installed")
+	    val restartFlag = ref true
+	       
+	    val syscall: {restart: bool} * 
+	                 (unit -> int * (unit -> 'a)) -> 'a =
+	       fn ({restart}, f) =>
+	       let
+		  fun call (err: int -> 'a): 'a =
+		     let
+			val () = Thread.atomicBegin ()
+			val (n, post) = f ()
+		     in
+			if n = ~1
+			   then let val e = getErrno ()
+				in Thread.atomicEnd () ; err e
+				end
+			   else (post () before Thread.atomicEnd ())
+		     end
+		  fun err (e: int): 'a =
+		     if restart andalso e = intr andalso !restartFlag
+			then if Thread.canHandle () = 0
+				then call err
+				else let val finish = !blocker ()
+				     in
+					DynamicWind.wind
+					(fn () => call raiseSys, finish)
+				     end
+			else raiseSys e
+	       in
+		  call err
+	       end
+
+	    local
+	       val simpleResult' = fn ({restart}, f) =>
+		  syscall ({restart = restart}, fn () => let val n = f () in (n, fn () => n) end)
+	    in
+	       val simpleResultRestart = fn f =>
+		  simpleResult' ({restart = true}, f)
+	       val simpleResult = fn f =>
+		  simpleResult' ({restart = false}, f)
+	    end
+
+	    val simpleRestart = ignore o simpleResultRestart
+	    val simple = ignore o simpleResult
+	 end
    end
