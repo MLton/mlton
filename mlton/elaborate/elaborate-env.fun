@@ -489,11 +489,36 @@ structure Status =
 	  | Var => "variable"
    end
 
+structure Time:>
+   sig
+      type t
+
+      val >= : t * t -> bool
+      val next: unit -> t
+      val toString: t -> string
+   end =
+   struct
+      type t = int
+
+      val toString = Int.toString
+
+      val layout = Int.layout
+
+      val op >= : t * t -> bool = op >=
+
+      val c = Counter.new 0
+
+      fun next () = Counter.next c
+
+      val next = Trace.trace ("Time.next", Unit.layout, layout) next
+   end
+
 structure Info =
    struct
       (* The array is sorted by domain element. *)
       datatype ('a, 'b) t = T of {domain: 'a,
 				  range: 'b,
+				  time: Time.t,
 				  uses: 'a Uses.t} array
 	 
       fun layout (layoutDomain, layoutRange) (T a) =
@@ -518,17 +543,19 @@ structure Info =
 
       val map: ('a, 'b) t * ('b -> 'b) -> ('a, 'b) t =
 	 fn (T a, f) =>
-	 T (Array.map (a, fn {domain, range, uses} =>
+	 T (Array.map (a, fn {domain, range, time, uses} =>
 		       {domain = domain,
 			range = f range,
+			time = time,
 			uses = uses}))
 
       val map2: ('a, 'b) t * ('a, 'b) t * ('b * 'b -> 'b) -> ('a, 'b) t =
 	 fn (T a, T a', f) =>
 	 T (Array.map2
-	    (a, a', fn ({domain, range = r, uses}, {range = r', ...}) =>
+	    (a, a', fn ({domain, range = r, time, uses}, {range = r', ...}) =>
 	     {domain = domain,
 	      range = f (r, r'),
+	      time = time,
 	      uses = uses}))
    end
 
@@ -800,7 +827,7 @@ structure Structure =
 		  let
 		     fun doit (Info.T a, layout) =
 			align (Array.foldr
-			       (a, [], fn ({domain, range, uses}, ac) =>
+			       (a, [], fn ({domain, range, uses, ...}, ac) =>
 				if showUsed andalso not (Uses.hasUse uses)
 				   then ac
 				else
@@ -943,23 +970,6 @@ structure Basis =
 		    vals))]
    end
 
-structure Time:>
-   sig
-      type t
-
-      val >= : t * t -> bool
-      val next: unit -> t
-   end =
-   struct
-      type t = int
-
-      val op >= : t * t -> bool = op >=
-
-      val c = Counter.new 0
-
-      fun next () = Counter.next c
-   end
-
 (* ------------------------------------------------- *)
 (*                     NameSpace                     *)
 (* ------------------------------------------------- *)
@@ -1032,11 +1042,12 @@ structure NameSpace =
 	       val elts =
 		  List.revMap (!current, fn values =>
 			       let
-				  val {domain, range, uses, ...} =
+				  val {domain, range, time, uses, ...} =
 				     Values.pop values
 			       in
 				  {domain = domain,
 				   range = range,
+				   time = time,
 				   uses = uses}
 			       end)
 	       val _ = current := old
@@ -1327,6 +1338,7 @@ fun setTyconNames (E: t): unit =
 fun dummyStructure (I: Interface.t, {prefix: string})
    : Structure.t * (Structure.t * (Tycon.t * TypeStr.t -> unit) -> unit) =
    let
+      val time = Time.next ()
       val I = Interface.copy I
       fun realize (TyconMap.T {strs, types}, nest) =
 	 let
@@ -1365,11 +1377,13 @@ fun dummyStructure (I: Interface.t, {prefix: string})
 		 Array.map (strs, fn (name, I) =>
 			    {domain = name,
 			     range = get I,
+			     time = time,
 			     uses = Uses.new ()})
 	      val types =
 		 Array.map (types, fn (name, s) =>
 			    {domain = name,
 			     range = Interface.TypeStr.toEnv s,
+			     time = time,
 			     uses = Uses.new ()})
 	      val vals =
 		 Array.map (vals, fn (name, (status, scheme)) =>
@@ -1384,6 +1398,7 @@ fun dummyStructure (I: Interface.t, {prefix: string})
 			    in
 			       {domain = name,
 				range = (vid, Interface.Scheme.toEnv scheme),
+				time = time,
 				uses = Uses.new ()}
 			    end)
 	   in
@@ -2183,12 +2198,12 @@ fun openStructure (E as T {currentScope, strs, vals, types, ...},
    let
       val scope = !currentScope
       fun doit (ns, Info.T a) =
-	 Array.foreach (a, fn {domain, range, uses} =>
+	 Array.foreach (a, fn {domain, range, time, uses} =>
 			extend (E, ns, {domain = domain,
 					forceUsed = false,
 					range = range,
 					scope = scope,
-					time = Time.next (),
+					time = time,
 					uses = ExtendUses.Old uses}))
       val _ = doit (strs, strs')
       val _ = doit (vals, vals')
@@ -2208,12 +2223,12 @@ fun openBasis (E as T {currentScope, bass, fcts, fixs, sigs, strs, vals, types, 
    let
       val scope = !currentScope
       fun doit (ns, Info.T a) =
-	 Array.foreach (a, fn {domain, range, uses} =>
+	 Array.foreach (a, fn {domain, range, time, uses} =>
 			extend (E, ns, {domain = domain,
 					forceUsed = false,
 					range = range,
 					scope = scope,
-					time = Time.next (),
+					time = time,
 					uses = ExtendUses.Old uses}))
       val _ = doit (bass, bass')
       val _ = doit (fcts, fcts')
@@ -2544,17 +2559,19 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
 			    in
 			       {domain = name,
 				range = bogus c,
+				time = Time.next (),
 				uses = Uses.new ()}
 			    end
 		      else
 			 let
-			    val {domain, range, uses} =
+			    val {domain, range, time, uses} =
 			       Array.sub (structArray, i)
 			 in
 			    if namesEqual (domain, name)
 			       then (r := i + 1
 				     ; {domain = domain,
 					range = doit (name, range, c),
+					time = time,
 					uses = uses})
 			    else find (i + 1)
 			 end
