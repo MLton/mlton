@@ -79,29 +79,34 @@ structure Type =
 	     | _ => Error.bug "dest"
       end
 
-      local open Layout
+      local
+	 open Layout
       in
-	 fun layout t =
-	    case dest t of
-	       Array t => seq [layout t, str " array"]
-	     | Char => str "char"
-	     | Datatype t => Tycon.layout t
-	     | Int => str "int"
-	     | IntInf => str "IntInf.int"
-	     | Pointer => str "pointer"
-	     | PreThread => str "preThread"
-	     | Real => str "real"
-	     | Ref t => seq [layout t, str " ref"]
-	     | String => str "string"
-	     | Thread => str "thread"
-	     | Tuple ts =>
-		  if Vector.isEmpty ts
-		     then str "unit"
-		  else paren (seq (separate (Vector.toListMap (ts, layout),
-					     " * ")))
-	     | Vector t => seq [layout t, str " vector"]
-	     | Word => str "word"
-	     | Word8 => str "word8"
+	 val {get = layout, ...} =
+	    Property.get
+	    (plist,
+	     Property.initRec
+	     (fn (t, layout) =>
+	      case dest t of
+		 Array t => seq [layout t, str " array"]
+	       | Char => str "char"
+	       | Datatype t => Tycon.layout t
+	       | Int => str "int"
+	       | IntInf => str "IntInf.int"
+	       | Pointer => str "pointer"
+	       | PreThread => str "preThread"
+	       | Real => str "real"
+	       | Ref t => seq [layout t, str " ref"]
+	       | String => str "string"
+	       | Thread => str "thread"
+	       | Tuple ts =>
+		    if Vector.isEmpty ts
+		       then str "unit"
+		    else paren (seq (separate (Vector.toListMap (ts, layout),
+					       " * ")))
+	       | Vector t => seq [layout t, str " vector"]
+	       | Word => str "word"
+	       | Word8 => str "word8"))
       end
    end
 
@@ -1564,60 +1569,67 @@ structure Function =
 	    ()
 	 end
 
-      fun layout (f: t, global: Var.t -> string option) =
+      fun layoutHeader (f: t): Layout.t =
 	 let
-	    val {args, blocks, name, raises, returns, start, ...} = dest f
+	    val {args, name, raises, returns, start, ...} = dest f
 	    open Layout
 	 in
-	    align [seq [str "fun ",
-			Func.layout name,
-			str " ",
-			layoutFormals args,
-			if !Control.showTypes
-			   then seq [str ": ",
-				     Option.layout
-				     (Vector.layout Type.layout) returns,
-				     str " (",
-				     Option.layout
-				     (Vector.layout Type.layout) raises,
-				     str ")"]
-			else empty,
-			str " = ", Label.layout start, str " ()"],
+	    seq [str "fun ",
+		 Func.layout name,
+		 str " ",
+		 layoutFormals args,
+		 if !Control.showTypes
+		    then seq [str ": ",
+			      Option.layout
+			      (Vector.layout Type.layout) returns,
+			      str " (",
+			      Option.layout
+			      (Vector.layout Type.layout) raises,
+			      str ")"]
+		 else empty,
+		    str " = ", Label.layout start, str " ()"]
+	 end
+
+      fun layout (f: t) =
+	 let
+	    val {blocks, ...} = dest f
+	    open Layout
+	 in
+	    align [layoutHeader f,
 		   indent (align (Vector.toListMap (blocks, Block.layout)), 2)]
 	 end
       
-      fun layouts (fs: t list, global,
-		   output: Layout.t -> unit): unit =
-	 List.foreach
-	 (fs, fn f =>
-	  let
-	     val name = name f
-	     val _ = output (layout (f, global))
-	     val _ =
-		if not (!Control.keepDot)
-		   then ()
-		else
-		   let
-		      val {graph, tree} = layoutDot (f, global)
-		      val name = Func.toString name
-		      fun doit (s, g) =
-			 let
-			    open Control
-			 in
-			    saveToFile
-			    ({suffix = concat [name, ".", s, ".dot"]},
-			     Dot, (), Layout (fn () => g))
-			 end
-		      val _ = doit ("cfg", graph)
-			      handle _ => Error.warning "couldn't layout cfg"
-		      val _ = doit ("dom", tree ())
-			      handle _ => Error.warning "couldn't layout dom"
-		   in
-		      ()
-		   end
-	  in
-	     ()
-	  end)
+      fun layouts (f: t, global, output: Layout.t -> unit): unit =
+	 let
+	    val {blocks, name, ...} = dest f
+	    val _ = output (layoutHeader f)
+	    val _ = Vector.foreach (blocks, fn b =>
+				    output (Layout.indent (Block.layout b, 2)))
+	    val _ =
+	       if not (!Control.keepDot)
+		  then ()
+	       else
+		  let
+		     val {graph, tree} = layoutDot (f, global)
+		     val name = Func.toString name
+		     fun doit (s, g) =
+			let
+			   open Control
+			in
+			   saveToFile
+			   ({suffix = concat [name, ".", s, ".dot"]},
+			    Dot, (), Layout (fn () => g))
+			end
+		     val _ = doit ("cfg", graph)
+			handle _ => Error.warning "couldn't layout cfg"
+		     val _ = doit ("dom", tree ())
+			handle _ => Error.warning "couldn't layout dom"
+		  in
+		     ()
+		  end
+	 in
+	    ()
+	 end
 
       fun alphaRename f =
 	 let
@@ -1797,13 +1809,19 @@ structure Program =
 	 let
 	    val global = Statement.prettifyGlobals globals
 	    open Layout
-	    val output = output'
-	 in output (align (Vector.toListMap (datatypes, Datatype.layout)))
+	    (* Layout includes an output function, so we need to rebind output
+	     * to the one above.
+	     *)
+	    val output = output' 
+	 in
+	    output (str "\n\nDatatypes:")
+	    ; Vector.foreach (datatypes, output o Datatype.layout)
 	    ; output (str "\n\nGlobals:")
 	    ; Vector.foreach (globals, output o Statement.layout)
-	    ; output (str "\n\nFunctions:")
-	    ; Function.layouts (functions, global, output)
 	    ; output (seq [str "\n\nMain: ", Func.layout main])
+	    ; output (str "\n\nFunctions:")
+	    ; List.foreach (functions, fn f =>
+			    Function.layouts (f, global, output))
 	    ; if not (!Control.keepDot)
 		 then ()
 	      else

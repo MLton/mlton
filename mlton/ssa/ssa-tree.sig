@@ -264,7 +264,7 @@ signature SSA_TREE =
 	     * to infer the handler stack at the beginning of each block.
 	     *)
 	    val inferHandlers: t -> Label.t list option array
-	    val layout: t * (Var.t -> string option) -> Layout.t
+	    val layout: t -> Layout.t
 	    val layoutDot:
 	       t * (Var.t -> string option) -> {graph: Layout.t,
 						tree: unit -> Layout.t}

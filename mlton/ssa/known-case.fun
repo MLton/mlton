@@ -1012,15 +1012,15 @@ val doMany
 				   raises = raises}
 	     val _ = Control.diagnostics
 	             (fn display =>
-		      display (Function.layout (f, fn _ => NONE)))
+		      display (Function.layout f))
 	     val f = restore f
 	     val _ = Control.diagnostics
 	             (fn display =>
-		      display (Function.layout (f, fn _ => NONE)))
+		      display (Function.layout f))
 	     val f = shrink f
 	     val _ = Control.diagnostics
 	             (fn display =>
-		      display (Function.layout (f, fn _ => NONE)))
+		      display (Function.layout f))
 	     val _ = Function.clear f
 	   in
 	     f
