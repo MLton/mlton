@@ -214,10 +214,17 @@ structure Statement =
 				  NONE => ()
 				| SOME dst =>
 				     print (concat [Operand.toString dst, " = "])
-			    val _ =
-			       C.call (Prim.toString prim,
-				       Vector.toListMap (args, Operand.toString),
-				       print)
+			   fun doit () =
+			      C.call (Prim.toString prim,
+				      Vector.toListMap (args, Operand.toString),
+				      print)
+			   val _ =
+			      case Prim.name prim of
+				 Prim.Name.FFI s =>
+				    (case Prim.numArgs prim of
+					NONE => print (concat [s, ";\n"])
+				      | SOME _ => doit ())
+			       | _ => doit ()
 			 in 
 			    ()
 			 end
