@@ -75,7 +75,7 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 			      Property.initRaise ("args", Label.layout))
       val shrink = shrinkFunction globals
       val functions =
-	 List.map
+	 List.revMap
 	 (functions, fn f =>
 	  let
 	     val {name, args, start, blocks, returns} = Function.dest f

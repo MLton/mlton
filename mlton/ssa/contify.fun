@@ -686,43 +686,41 @@ structure Transform =
 			 transfer = transfer}
 	      end
 
-(*
-	  val shrinkBlock = shrinkBlock globals
-*)
-	  val functions
-	    = List.keepAllMap
-	      (functions,
-	       fn func
-	        => let
-		     val {name = f, 
-			  start = f_start,
-			  args = f_args, 
-			  blocks = f_blocks,
-			  returns = f_returns} = Function.dest func
-		   in
-		     case FuncData.A (getFuncData f)
-		       of Unknown
-			=> let
-			     val _ = addFuncPrefixes(f, f, NONE)
+	  val shrink = shrinkFunction globals
 
-			     val f_blocks
-			       = Vector.toListMap
+	  val functions
+	    = List.fold
+	      (functions, [], fn (func, ac) =>
+	       let
+		  val {name = f, 
+		       start = f_start,
+		       args = f_args, 
+		       blocks = f_blocks,
+		       returns = f_returns} = Function.dest func
+	       in
+		  case FuncData.A (getFuncData f)
+		     of Unknown
+			=> let
+			      val _ = addFuncPrefixes(f, f, NONE)
+
+			      val f_blocks
+				 = Vector.toListMap
 			         (f_blocks, fn block => transBlock(f, block, NONE))
-			     val f_blocks
-			       = f_blocks::
+			      val f_blocks
+				 = f_blocks::
 			         (FuncData.contified (getFuncData f))
-			     val f_blocks
-			       = Vector.fromList (List.concat f_blocks)
-			   in
-			     SOME (Function.new
-				   {name = f,
-				    start = f_start,
-				    args = f_args,
-				    blocks = (* shrinkBlocks *) f_blocks,
-				    returns = f_returns})
+			      val f_blocks
+				 = Vector.fromList (List.concat f_blocks)
+			   in 
+			      shrink (Function.new {name = f,
+						    start = f_start,
+						    args = f_args,
+						    blocks = f_blocks,
+						    returns = f_returns})
+			      :: ac
 			   end
-		       | _ => NONE
-		   end)
+		      | _ => ac
+	       end)
 
 	  val program 
 	    = Program.T {datatypes = datatypes,

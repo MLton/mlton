@@ -389,7 +389,7 @@ fun flatten (program as Program.T {datatypes, globals, functions, main}) =
 	 end
 
       val shrink = shrinkFunction globals
-      val functions = List.map (functions, shrink o doitFunction)
+      val functions = List.revMap (functions, shrink o doitFunction)
       val program =
 	 Program.T {datatypes = datatypes,
 		    globals = globals,

@@ -410,7 +410,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 	 end
 
       val functions =
-	 List.map 
+	 List.revMap 
 	 (functions, fn f =>
 	  let
 	     val {name, args, start, blocks, returns} = Function.dest f

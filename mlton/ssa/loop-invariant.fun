@@ -158,7 +158,7 @@ fun loopInvariant (program as Program.T {globals, datatypes, functions, main}) =
 	 in
 	    f
 	 end
-      val functions = List.map (functions, shrink o simplifyFunction)
+      val functions = List.revMap (functions, shrink o simplifyFunction)
       val program = 
 	 Program.T {datatypes = datatypes,
 		    globals = globals,

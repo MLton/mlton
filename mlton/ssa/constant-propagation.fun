@@ -817,13 +817,13 @@ fun simplify (program as Program.T {datatypes, globals, functions, main})
 			  returns = returns}
 	 end
 
-      val functions = List.map (functions, doitFunction)
+      val functions = List.revMap (functions, doitFunction)
       val globals = Vector.keepAllMap (globals, doitStatement)
       val globals = Vector.concat [allGlobals (), globals]
       val shrink = shrinkFunction globals
       val program = Program.T {datatypes = datatypes,
 			       globals = globals,
-			       functions = List.map (functions, shrink),
+			       functions = List.revMap (functions, shrink),
 			       main = main}
       val _ = Program.clear program
    in

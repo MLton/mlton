@@ -505,8 +505,8 @@ fun inline (program as Program.T {datatypes, globals, functions, main}) =
 
       val shrink = shrinkFunction globals
       val functions =
-	 List.keepAllMap
-	 (functions, fn f =>
+	 List.fold
+	 (functions, [], fn (f, ac) =>
 	  let
 	     val {name, args, start, blocks, returns} = Function.dest f
 	  in
@@ -516,14 +516,14 @@ fun inline (program as Program.T {datatypes, globals, functions, main}) =
 		then let
 		        val blocks = doit (blocks, NONE)
 		     in
-		        SOME (shrink (Function.new {name = name,
-						    args = args,
-						    start = start,
-						    blocks = blocks,
-						    returns = returns}))
-				      
+		        shrink (Function.new {name = name,
+					      args = args,
+					      start = start,
+					      blocks = blocks,
+					      returns = returns})
+			:: ac
 		     end
-	      else NONE
+	      else ac
 	  end)
       val program =
 	 Program.T {datatypes = datatypes,
