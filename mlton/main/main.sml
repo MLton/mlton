@@ -48,6 +48,7 @@ val libs: string list ref = ref []
 val libDirs: string list ref = ref []
 val output: string option ref = ref NONE
 val optimization: int ref = ref 1
+val profileSet: bool ref = ref false
 val showBasis: bool ref = ref false
 val stop = ref Place.OUT
 
@@ -255,11 +256,16 @@ fun makeOptions {usage} =
 	"produce executable suitable for profiling",
 	SpaceString
 	(fn s =>
-	 profile := (case s of
-			"no" => ProfileNone
-		      | "alloc" => ProfileAlloc
-		      | "time" => ProfileTime
-		      | _ => usage (concat ["invalid -profile arg: ", s])))),
+	 if !profileSet
+	    then usage "can't have multiple -profile switches"
+	 else
+	    (profileSet := true
+	     ; profile := (case s of
+			      "no" => ProfileNone
+			    | "alloc" => ProfileAlloc
+			    | "time" => ProfileTime
+			    | _ => usage (concat
+					  ["invalid -profile arg: ", s]))))),
        (Expert, "profile-basis", " {false|true}",
 	"profile the basis implementation",
 	boolRef profileBasis),
