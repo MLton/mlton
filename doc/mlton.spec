@@ -17,7 +17,7 @@ language.  The MLton home page is http://www.mlton.org/.
 %setup
 
 %build
-make all # bootstrap VERSION=%{version} 
+make bootstrap VERSION=%{version} 
 
 %install
 rm -rf $RPM_BUILD_ROOT
