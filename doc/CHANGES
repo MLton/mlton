@@ -9,6 +9,7 @@ Here are the changes from the 20010706 version to the 200????? version.
     allocations in loops.  Decent speedup on a few benchmarks
     (count-graphs, psdes-random, wc-scanStream) and no noticeable
     slowdowns.
+  - Added -keep dot flag.
 
 * 2000-7-17
   - Modified grammar to properly handle val rec.  There were several problems.
