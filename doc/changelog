@@ -1,5 +1,8 @@
 Here are the changes since version 20041109.
 
+* 2004-12-02
+  - Unix.create now works on all platforms (including Cygwin and MinGW).
+
 * 2004-11-24
   - Added support for MLton.Process.create, which works on all
   platforms (including Windows-based ones like Cygwin and MinGW) and
