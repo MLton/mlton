@@ -85,14 +85,14 @@ fun live {exp, formals: (Var.t * Type.t) vector, jumpHandlers, shouldConsider} =
 	 else ()
 
       val _ =
-	 Exp.foreach
+	 Exp.foreach''
 	 (exp,
 	  {handleDec 
 	   = fn Fun {name, args, ...}
 	      => (fn () => let 
 			     val _ = List.push (allJumps, name)
 			     val (frameBlock, argBlock, bodyBlock) =
-			       case (Vector.length args, isCont)
+			       case (Vector.length args, isCont name)
 				 of (0, false) => let val b = Block.new ()
 						  in (b, b, b)
 						  end
@@ -118,7 +118,8 @@ fun live {exp, formals: (Var.t * Type.t) vector, jumpHandlers, shouldConsider} =
 				      newVarInfo (x, {defined = argBlock}))
 			   in
 			     setJumpInfo (name, 
-					  {argBlock = argBlock,
+					  {frameBlock = frameBlock,
+					   argBlock = argBlock,
 					   bodyBlock = bodyBlock,
 					   formals = args})
 			   end)
@@ -182,7 +183,7 @@ fun live {exp, formals: (Var.t * Type.t) vector, jumpHandlers, shouldConsider} =
 		      end
 		 | Fun {name, args, body} =>
 		      let
-			 val (frameBlock, argBlock, bodyBlock) = jumpInfo name
+			 val {frameBlock, argBlock, bodyBlock, ...} = jumpInfo name
 			 val _ =
 			    (* In case there is a raise to h. *)
 			    if isCont name
@@ -364,6 +365,7 @@ fun live {exp, formals: (Var.t * Type.t) vector, jumpHandlers, shouldConsider} =
 				   liveBeginFrame = Block.live frameBlock,
 				   liveBeginHS = Block.liveHS frameBlock})
 		       end)
+
       val _ = destroyJumpInfo ()
 
       val {get = getPrim: Var.t -> {livePrim: Var.t list,
