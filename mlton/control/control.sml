@@ -136,7 +136,7 @@ structure Native =
 			       toString = Int.toString}
 
       val liveStack = control {name = "native live stack",
-			       default = true,
+			       default = false,
 			       toString = Bool.toString}
 
       val optimize = control {name = "native optimize",
