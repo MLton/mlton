@@ -1476,6 +1476,7 @@ structure Function =
 			 ({suffix = concat [name, ".", s, ".dot"]}, g)
 		      val _ = doit ("cfg", graph)
 		      val _ = doit ("dom", tree ())
+			      handle _ => Error.warning "could not produce dom\n"
 		   in
 		      ()
 		   end
