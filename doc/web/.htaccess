@@ -13,6 +13,10 @@ RedirectMatch permanent /user-guide/node* http://www.mlton.org/user-guide/index.
 Redirect permanent /improvements.html http://www.mlton.org/projects.html
 Redirect permanent /sources.html http://www.mlton.org/download.html
 
+Redirect permanent /favicon.ico	http://www.mlton.org/not-found.html
+RedirectMatch permanent /*formmail.pl http://www.mlton.org/not-found.html
+RedirectMatch permanent /*Formmail.pl http://www.mlton.org/not-found.html
+
 #ErrorDocument 401 
 #ErrorDocument 403
 
