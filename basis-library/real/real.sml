@@ -89,14 +89,19 @@ structure Real: REAL =
 	  | 5 => SUBNORMAL
 	  | _ => raise Fail "Primitive.Real.class returned bogus integer"
 
-      local
-	 val r: int ref = ref 0
-      in
-	 fun toManExp x =
-	    let val man = frexp (x, r)
-	    in {man = man, exp = !r}
-	    end
-      end
+      val toManExp =
+	 let
+	    val r: int ref = ref 0
+	 in
+	    fn x => if x == 0.0
+		       then {exp = 0, man = 0.0}
+		    else
+		       let
+			  val man = frexp (x, r)
+		       in
+			  {man = man * 2.0, exp = Int.- (!r, 1)}
+		       end
+	 end
 
       fun fromManExp {man, exp} = ldexp (man, exp)
 

@@ -1,12 +1,15 @@
 Here are the changes from version 20020923.
 
+* 2002-10-22
+  - Fixed Real.toManExp so that the mantissa is in [1, 2), not [0.5, 1).
+
 * 2002-09-30
   - Fixed rpath problem with packaging.  All executables in packages previously
     made had included a setting for RPATH.
 
 --------------------------------------------------------------------------------
 
-Here are the changes from version 20020410.
+Here are the changes from version 20020410 to 20020923.
 
 Summary:
   + MLton now runs on FreeBSD.
