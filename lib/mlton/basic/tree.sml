@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under the GNU General Public License (GPL).
@@ -8,6 +8,8 @@ structure Tree: TREE =
 struct
 
 datatype 'a t = T of 'a * 'a t vector
+
+fun children (T (_, v)) = v
 
 fun foldPre (T (a, v), b, f) =
    Vector.fold (v, f (a, b), fn (t, b) =>
@@ -70,4 +72,6 @@ fun layout layout' (T (x, ts))
 	    str ")"]
     end
 
+fun map (T (a, ts), f) = T (f a, Vector.map (ts, fn t => map (t, f)))
+   
 end
