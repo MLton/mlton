@@ -2276,7 +2276,7 @@ struct
 			   fn (w,target) 
 			    => (x86JumpInfo.decNear(jumpInfo, target);
 				w))
-			  
+
 		      val transfer
 			= if Transfer.Cases.isEmpty cases
 			    then Transfer.goto {target = default}
@@ -2570,6 +2570,7 @@ struct
 
 	    val _ = loop ()
 
+	    val changed = ref false
 	    val elimComplexGoto'
 	      = fn block as Block.T {entry, 
 				     profileInfo,
@@ -2584,6 +2585,7 @@ struct
 						statements = statements',
 						transfer = transfer'})
 			       => let
+				    val _ = changed := true
 				    val _ = x86JumpInfo.decNear
 				            (jumpInfo, 
 					     Entry.label entry')
@@ -2612,45 +2614,79 @@ struct
 	    val blocks
 	      = List.map(blocks, elimComplexGoto')
 
-	    fun loop {blocks, changed}
-	      = let
-		  val {blocks,changed'}
-		    = List.foldr
-		      (blocks,
-		       {blocks = [], changed' = false},
-		       fn (block as Block.T {entry,transfer,...},
-			   {blocks, changed'})
-		        => if x86JumpInfo.getNear(jumpInfo, Entry.label entry) = Count 0
-			     then let
-				    val _ = List.foreach
-				            (Transfer.nearTargets transfer,
-					     fn target 
-					      => x86JumpInfo.decNear
-					         (jumpInfo, target))
-				  in
-				    {blocks = blocks,
-				     changed' = true}
-				  end
-			     else {blocks = block::blocks,
-				   changed' = changed'})
-		in
-		  if changed'
-		    then loop {blocks = blocks, changed = true}
-		    else {blocks = blocks, changed = changed}
-		end
-
-	    val {blocks, changed} = loop {blocks = blocks, changed = false}
-
 	    val _ = destroy ()
 	  in
 	    {chunk = Chunk.T {blocks = blocks},
-	     changed = changed}
+	     changed = !changed}
 	  end
 
       val (elimComplexGoto, elimComplexGoto_msg)
 	= tracer
 	  "elimComplexGoto"
 	  elimComplexGoto
+
+      fun elimBlocks {chunk as Chunk.T {blocks, ...},
+		      jumpInfo : x86JumpInfo.t}
+	= let
+	    val gotoInfo as {get: Label.t -> {block: Block.t,
+					      reach: bool ref},
+			     set, 
+			     destroy}
+	      = Property.destGetSetOnce
+	        (Label.plist, Property.initRaise ("gotoInfo", Label.layout))
+
+	    val (labels, funcs)
+	      = List.fold
+	        (blocks, ([], []),
+		 fn (block as Block.T {entry, ...}, (labels, funcs))
+		  => let
+		       val label = Entry.label entry
+		     in
+		       set(label, {block = block,
+				   reach = ref false}) ;
+		       case entry
+			 of Entry.Func _ => (label::labels, label::funcs)
+			  | _ => (label::labels, funcs)
+		     end)
+
+	    fun loop label
+	      = let
+		  val {block as Block.T {transfer, ...}, reach} = get label
+		in
+		  if !reach
+		    then ()
+		    else (reach := true ;
+			  List.foreach (Transfer.nearTargets transfer, loop))
+		end
+	    val _ = List.foreach (funcs, loop)
+
+	    val changed = ref false
+	    val blocks
+	      = List.keepAllMap
+	        (labels,
+		 fn label 
+		  => let
+		       val {block as Block.T {transfer, ...}, reach} = get label
+		     in
+		       if !reach
+			 then SOME block
+			 else (changed := true ;
+			       List.foreach 
+			       (Transfer.nearTargets transfer,
+				fn label => x86JumpInfo.decNear (jumpInfo, label));
+			       NONE)
+		     end)
+
+	    val _ = destroy ()
+	  in
+	    {chunk = Chunk.T {blocks = blocks},
+	     changed = !changed}
+	  end
+
+      val (elimBlocks, elimBlocks_msg)
+	= tracer
+	  "elimBlocks"
+	  elimBlocks
 
       fun elimGoto {chunk : Chunk.t,
 		    jumpInfo : x86JumpInfo.t}
@@ -2695,9 +2731,15 @@ struct
 	      = elimComplexGoto {chunk = chunk,
 				 jumpInfo = jumpInfo}
 
+	    val {chunk,
+		 changed = changed_elimBlocks}
+	      = elimBlocks {chunk = chunk,
+			    jumpInfo = jumpInfo}
 	  in
 	    {chunk = chunk,
-	     changed = changed_loop orelse changed_elimComplexGoto}
+	     changed = changed_loop 
+	               orelse changed_elimComplexGoto 
+		       orelse changed_elimBlocks}
 	  end
 
       val (elimGoto, elimGoto_msg)
@@ -2713,6 +2755,7 @@ struct
 		    PeepholeBlock.elimSwitchCases_msg ();
 		    elimSimpleGoto_msg ();
 		    elimComplexGoto_msg ();
+		    elimBlocks_msg ();
 		    Control.unindent ())
     end
 
