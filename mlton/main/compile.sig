@@ -3,6 +3,8 @@
  *)
 signature COMPILE =
    sig
+      (* output a C file to print out the basis constants. *)
+      val outputBasisConstants: Out.t -> unit
       val compile: {input: File.t list,
 		    outputC: unit -> {file: File.t,
 				      print: string -> unit,

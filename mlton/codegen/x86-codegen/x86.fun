@@ -44,7 +44,7 @@ struct
 	open Label
 
 	fun toString l =
-	   case !Control.host of
+	   case !Control.hostType of
 	      Control.Cygwin => concat ["_", Label.toString l]
 	    | Control.Linux => Label.toString l
 

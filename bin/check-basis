@@ -38,6 +38,10 @@ cat <<-EOF
 	nonfix * / mod div ^ + - := o > < >= <= = <> :: @ before
 EOF
 (cat build-basis; cat bind-basis) | egrep -v overload | xargs cat |
+	sed 's/_build_const\(.*\);/(PRIM\1)/' |
+	sed 's/_build_const/PRIM/' |
+	sed 's/_const\(.*\);/(PRIM\1)/' |
+	sed 's/_const/PRIM/' |
 	sed 's/_prim\(.*\);/(PRIM\1)/' |
 	sed 's/_prim/PRIM/' |
 	sed 's/_ffi\(.*\);/(PRIM\1)/' |

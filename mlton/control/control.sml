@@ -78,6 +78,22 @@ val gcCheck = control {name = "gc check",
 structure Host =
    struct
       datatype t =
+	 Cross of string
+       | Self
+
+      val toString =
+	 fn Cross s => s
+	  | Self => "self"
+   end
+
+datatype host = datatype Host.t
+val host = control {name = "host",
+		    default = Self,
+		    toString = Host.toString}
+
+structure HostType =
+   struct
+      datatype t =
 	 Cygwin
        | Linux
 
@@ -86,10 +102,10 @@ structure Host =
 	  | Linux => "Linux"
    end
 
-datatype host = datatype Host.t
-val host = control {name = "host",
-		    default = Linux,
-		    toString = Host.toString}
+datatype hostType = datatype HostType.t
+val hostType = control {name = "host type",
+			default = Linux,
+			toString = HostType.toString}
 
 val indentation = control {name = "indentation",
 			   default = 3,
@@ -170,6 +186,10 @@ val keepPasses = control {name = "keep passes",
 			             (Layout.toString o 
 				      Regexp.Compiled.layout)}
 
+val libDir = control {name = "lib dir",
+		      default = "<none>",
+		      toString = fn s => s}
+   
 structure LimitCheck =
    struct
       datatype t = 
@@ -297,6 +317,10 @@ val stackCont = control {name = "stack cont",
 val static = control {name = "static",
 		      default = false,
 		      toString = Bool.toString}
+
+val textIOBufSize = control {name = "TextIO buffer size",
+			     default = 4096,
+			     toString = Int.toString}
 
 val typeCheck = control {name = "type check",
 			 default = false,

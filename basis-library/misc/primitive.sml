@@ -44,12 +44,12 @@ structure Primitive =
    
 structure Primitive =
    struct
-      val debug = _prim "MLton_debug": bool;
-      val detectOverflow = _prim "MLton_detectOverflow": bool;
+      val debug = _build_const "MLton_debug": bool;
+      val detectOverflow = _build_const "MLton_detectOverflow": bool;
       val eq = fn z => _prim "MLton_eq": 'a * 'a -> bool; z
       val halt = _prim "MLton_halt": int -> unit;
-      val isLittleEndian = _prim "MLton_isLittleEndian": bool;
-      val safe = _prim "MLton_safe": bool;
+      val isLittleEndian = _const "MLton_isLittleEndian": bool;
+      val safe = _build_const "MLton_safe": bool;
       val usesCallcc: bool ref = ref false;
 
       structure Array =
@@ -170,7 +170,7 @@ structure Primitive =
 	    val extra = fn x => _prim "Exn_extra": exn -> 'a; x
 	    val extra: exn -> extra = extra
 	    val name = _prim "Exn_name": exn -> string;
-	    val keepHistory = _prim "Exn_keepHistory": bool;
+	    val keepHistory = _build_const "Exn_keepHistory": bool;
 	    val setInitExtra =
 	       fn x => _prim "Exn_setInitExtra": (unit -> 'a) -> unit; x
 	    val setInitExtra: (unit -> extra) -> unit = setInitExtra
@@ -276,17 +276,17 @@ structure Primitive =
 	 struct
 	    type which = int
 	       
-	    val prof = _prim "Itimer_prof": which;
-	    val real = _prim "Itimer_real": which;
+	    val prof = _const "Itimer_prof": which;
+	    val real = _const "Itimer_real": which;
 	    val set = _ffi "Itimer_set": which * int * int * int * int -> unit;
-	    val virtual = _prim "Itimer_virtual": which;
+	    val virtual = _const "Itimer_virtual": which;
 	 end
 
       structure MLton =
 	 struct
 	    structure Profile =
 	       struct
-		  val profile = _prim "MLton_profile": bool;
+		  val profile = _build_const "MLton_profile": bool;
 		  structure Data =
 		     struct
 		        type t = word
@@ -309,24 +309,30 @@ structure Primitive =
 	       struct
 		  type rlim = word
 		     
-		  val infinity = _prim "MLton_Rlimit_infinity": rlim;
+		  val infinity = _const "MLton_Rlimit_infinity": rlim;
 
 		  type resource = int
 
-		  val cpuTime = _prim "MLton_Rlimit_cpuTime": resource;
-		  val coreFileSize = _prim "MLton_Rlimit_coreFileSize": resource;
-		  val dataSize = _prim "MLton_Rlimit_dataSize": resource;
-		  val fileSize = _prim "MLton_Rlimit_fileSize": resource;
+		  val cpuTime =
+		     _const "MLton_Rlimit_cpuTime": resource;
+		  val coreFileSize =
+		     _const "MLton_Rlimit_coreFileSize": resource;
+		  val dataSize =
+		     _const "MLton_Rlimit_dataSize": resource;
+		  val fileSize =
+		     _const "MLton_Rlimit_fileSize": resource;
 		  val lockedInMemorySize =
-		     _prim "MLton_Rlimit_lockedInMemorySize": resource;
-		  val numFiles = _prim "MLton_Rlimit_numFiles": resource;
-		  val numProcesses = _prim "MLton_Rlimit_numProcesses": resource;
+		     _const "MLton_Rlimit_lockedInMemorySize": resource;
+		  val numFiles =
+		     _const "MLton_Rlimit_numFiles": resource;
+		  val numProcesses =
+		     _const "MLton_Rlimit_numProcesses": resource;
 		  val residentSetSize =
-		     _prim "MLton_Rlimit_residentSetSize": resource;
-		  val stackSize = _prim "MLton_Rlimit_stackSize": resource;
+		     _const "MLton_Rlimit_residentSetSize": resource;
+		  val stackSize =
+		     _const "MLton_Rlimit_stackSize": resource;
 		  val virtualMemorySize =
-		     _prim "MLton_Rlimit_virtualMemorySize": resource;
-
+		     _const "MLton_Rlimit_virtualMemorySize": resource;
 		     
 		  val get = _ffi "MLton_Rlimit_get": resource -> int;
 		  val getHard = _ffi "MLton_Rlimit_getHard": unit -> rlim;
@@ -381,23 +387,23 @@ structure Primitive =
 	     *   /usr/include/linux/ptrace.h
 	     *   /usr/src/linux/include/asm-i386/ptrace.h
 	     *)
-	    val TRACEME = _prim "Ptrace_TRACEME": int;
-	    val PEEKTEXT = _prim "Ptrace_PEEKTEXT": int;
-	    val PEEKDATA = _prim "Ptrace_PEEKDATA": int;
-(*	    val PEEKUSR = _prim "Ptrace_PEEKUSR": int; *)
-	    val POKETEXT = _prim "Ptrace_POKETEXT": int;
-	    val POKEDATA = _prim "Ptrace_POKEDATA": int;
-(*	    val POKEUSR = _prim "Ptrace_POKEUSR": int; *)
-	    val CONT = _prim "Ptrace_CONT": int;
-	    val KILL = _prim "Ptrace_KILL": int;
-	    val SINGLESTEP = _prim "Ptrace_SINGLESTEP": int;
-	    val ATTACH = _prim "Ptrace_ATTACH": int;
-	    val DETACH = _prim "Ptrace_DETACH": int;
-	    val GETREGS = _prim "Ptrace_GETREGS": int;
-	    val SETREGS = _prim "Ptrace_SETREGS": int;
-	    val GETFPREGS = _prim "Ptrace_GETFPREGS": int;
-	    val SETFPREGS = _prim "Ptrace_SETFPREGS": int;
-	    val SYSCALL = _prim "Ptrace_SYSCALL": int;
+	    val TRACEME = _const "Ptrace_TRACEME": int;
+	    val PEEKTEXT = _const "Ptrace_PEEKTEXT": int;
+	    val PEEKDATA = _const "Ptrace_PEEKDATA": int;
+(*	    val PEEKUSR = _const "Ptrace_PEEKUSR": int; *)
+	    val POKETEXT = _const "Ptrace_POKETEXT": int;
+	    val POKEDATA = _const "Ptrace_POKEDATA": int;
+(*	    val POKEUSR = _const "Ptrace_POKEUSR": int; *)
+	    val CONT = _const "Ptrace_CONT": int;
+	    val KILL = _const "Ptrace_KILL": int;
+	    val SINGLESTEP = _const "Ptrace_SINGLESTEP": int;
+	    val ATTACH = _const "Ptrace_ATTACH": int;
+	    val DETACH = _const "Ptrace_DETACH": int;
+	    val GETREGS = _const "Ptrace_GETREGS": int;
+	    val SETREGS = _const "Ptrace_SETREGS": int;
+	    val GETFPREGS = _const "Ptrace_GETFPREGS": int;
+	    val SETFPREGS = _const "Ptrace_SETFPREGS": int;
+	    val SYSCALL = _const "Ptrace_SYSCALL": int;
 
 	    val ptrace2 = _ffi "Ptrace_ptrace2": int * pid -> int;
 	    val ptrace4 =
@@ -492,9 +498,9 @@ structure Primitive =
 	    val connect = _ffi "Socket_connect": string * port -> socket;
 	    val listen = _ffi "Socket_listen": port ref * socket ref -> int;
 	    type how = int;
-	    val shutdownRead = _prim "Socket_shutdownRead": how;
-	    val shutdownWrite = _prim "Socket_shutdownWrite": how;
-	    val shutdownReadWrite = _prim "Socket_shutdownReadWrite": how;
+	    val shutdownRead = _const "Socket_shutdownRead": how;
+	    val shutdownWrite = _const "Socket_shutdownWrite": how;
+	    val shutdownReadWrite = _const "Socket_shutdownReadWrite": how;
 	    val shutdown = _ffi "Socket_shutdown": fd * how -> int;
 	 end
 
@@ -521,7 +527,7 @@ structure Primitive =
 
       structure TextIO =
 	 struct
-	    val bufSize = _prim "TextIO_bufSize": int;
+	    val bufSize = _build_const "TextIO_bufSize": int;
 	 end
       
       structure Thread =

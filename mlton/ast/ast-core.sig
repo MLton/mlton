@@ -75,6 +75,11 @@ signature AST_CORE =
 	    val wild: t
 	 end
 
+      structure PrimKind:
+	 sig
+	    datatype t = BuildConst | Const | FFI | Prim
+	 end
+      
       structure Exp:
 	 sig
 	    type dec
@@ -101,10 +106,9 @@ signature AST_CORE =
 	     | Orelse of t * t
 	     | While of {test: t,
 			 expr: t}
-	     | Prim of {name: string,
+	     | Prim of {kind: PrimKind.t,
+			name: string,
 			ty: Type.t}
-	     | FFI of {name: string,
-		       ty: Type.t}
 
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t

@@ -35,6 +35,7 @@ structure Name =
        | Array_length
        | Array_sub
        | Array_update
+       | BuildConstant of string
        | Byte_byteToChar
        | Byte_charToByte
        | C_CS_charArrayToWord8Array
@@ -460,7 +461,8 @@ structure Name =
 
       fun toString n =
 	 case n of
-	    Constant s => s
+	    BuildConstant s => s
+	  | Constant s => s
 	  | FFI s => s
 	  | _ => (case List.peek (strings, fn (n', _, _) => n = n') of
 		     NONE => Error.bug "Prim.toString missing name"
@@ -527,6 +529,14 @@ fun new (n: Name.t, k: Kind.t, s: Scheme.t): t =
       numArgs = Scheme.numArgs s,
       scheme = s
       }
+
+local
+   fun make f (name: string, s: Scheme.t): t =
+      new (f name, Kind.Functional, s)
+in
+   val buildConstant = make Name.BuildConstant
+   val constant = make Name.Constant
+end
 
 fun equals (p, p') = Name.equals (name p, name p')
 
@@ -625,7 +635,7 @@ val new: string * Scheme.t -> t =
    let
       val (name, kind) =
 	 case List.peek (Name.strings, fn (_, _, s) => s = name) of
-	    NONE => (Name.Constant name, Kind.Functional)
+	    NONE => Error.bug (concat ["unknown primitive: ", name])
 	  | SOME (n, k, _) => (n, k)
    in
       new (name, kind, scheme)

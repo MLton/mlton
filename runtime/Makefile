@@ -1,8 +1,8 @@
-ifeq ($(HOST), linux)
-AR =	ar rc
+ifeq ($(HOST), self)
+AR = ar rc
 HOSTFLAGS =
 else
-AR = 	$(HOST)-ar rc
+AR = $(HOST)-ar rc
 HOSTFLAGS = -b $(HOST)
 endif
 CC =		gcc -Wall -I. -mcpu=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=5 -fomit-frame-pointer $(HOSTFLAGS)
@@ -326,7 +326,7 @@ libmlton.a: $(OBJS)
 libmlton-gdb.a: $(DEBUG_OBJS)
 	$(AR) libmlton-gdb.a $(DEBUG_OBJS)
 
-ifneq ($(HOST), linux)
+ifneq ($(HOST), self)
 basis/IntInf.o: gmp.h
 endif
 

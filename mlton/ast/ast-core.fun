@@ -238,6 +238,11 @@ structure Eb =
 
 structure EbRhs = Eb.Rhs
 
+structure PrimKind =
+   struct
+      datatype t = BuildConst | Const | FFI | Prim
+   end
+
 datatype expNode =
    Var of {name: Longvid.t, fixop: Fixop.t}
   | Fn of match
@@ -257,8 +262,9 @@ datatype expNode =
   | Andalso of exp * exp
   | Orelse of exp * exp
   | While of {test: exp, expr: exp}
-  | Prim of {name: string, ty: Type.t}
-  | FFI of {name: string, ty: Type.t}
+  | Prim of {kind: PrimKind.t,
+	     name: string,
+	     ty: Type.t}
 and decNode =
     Val of {tyvars: Tyvar.t vector,
 	    vbs: {pat: Pat.t,
@@ -305,56 +311,57 @@ fun layoutAndsTyvars (prefix, (tyvars, xs), layoutX) =
 	      fn (prefix, x) => seq [prefix, x])
 
 fun layoutExp (e, isDelimited) =
-   let fun delimit t = if isDelimited then t else paren t
-   in case node e of
-      Var {name, fixop} => seq [Fixop.layout fixop, layoutLongvid name]
-    | Fn m => delimit (seq [str "fn ", layoutMatch m])
-    | FlatApp es => seq (separate (Vector.toListMap (es, layoutExpF), " "))
-    | App (function, argument) =>
-	 delimit (mayAlign [layoutExpF function, layoutExpF argument])
-    | Case (expr, match) =>
-	 delimit (align [seq [str "case ", layoutExpT expr,
-				str " of"],
+   let
+      fun delimit t = if isDelimited then t else paren t
+   in
+      case node e of
+	 Var {name, fixop} => seq [Fixop.layout fixop, layoutLongvid name]
+       | Fn m => delimit (seq [str "fn ", layoutMatch m])
+       | FlatApp es => seq (separate (Vector.toListMap (es, layoutExpF), " "))
+       | App (function, argument) =>
+	    delimit (mayAlign [layoutExpF function, layoutExpF argument])
+       | Case (expr, match) =>
+	    delimit (align [seq [str "case ", layoutExpT expr,
+				 str " of"],
 			    indent (layoutMatch match, 2)])
-    | Let (dec, expr) => layoutLet (layoutDec dec, layoutExpT expr)
-    | Seq es => paren (align (separateRight (layoutExpsT es, " ;")))
-    | Const c => Const.layout c
-    | Record r =>
-	 let
-	    fun layoutTuple es =
-	       if 1 = Vector.length es
-		  then layoutExp (Vector.sub (es, 0), isDelimited)
-	       else tuple (layoutExpsT es)
-	 in
-	    Record.layout {record = r,
-			   separator = " =",
-			   extra = "",
-			   layoutTuple = layoutTuple,
-			   layoutElt = layoutExpT}
-	 end
-    | List es => list (List.map (es, layoutExpT))
-    | Selector f => seq [str "#", Field.layout f]
-    | Constraint (expr, constraint) =>
-	 delimit (layoutConstraint (layoutExpF expr, constraint))
-    | Handle (try, match) =>
-	 delimit (align [layoutExpF try,
-			 seq [str "handle ", layoutMatch match]])
-    | Raise {exn, ...} => delimit (seq [str "raise ", layoutExpF exn])
-    | If (test, thenCase, elseCase) =>
-	 delimit (mayAlign [seq [str "if ", layoutExpT test],
-		       seq [str "then ", layoutExpT thenCase],
-		       seq [str "else ", layoutExpT elseCase]])
-    | Andalso (e, e') =>
-	 delimit (mayAlign [layoutExpF e,
-		       seq [str "andalso ", layoutExpF e']])
-    | Orelse (e, e') =>
-	 delimit (mayAlign [layoutExpF e,
-		       seq [str "orelse ", layoutExpF e']])
-    | While {test, expr} =>
-	 delimit (align [seq [str "while ", layoutExpT test],
-		       seq [str "do ", layoutExpT expr]])
-    | Prim {name, ...} => str name
-    | FFI {name, ...} => str name
+       | Let (dec, expr) => layoutLet (layoutDec dec, layoutExpT expr)
+       | Seq es => paren (align (separateRight (layoutExpsT es, " ;")))
+       | Const c => Const.layout c
+       | Record r =>
+	    let
+	       fun layoutTuple es =
+		  if 1 = Vector.length es
+		     then layoutExp (Vector.sub (es, 0), isDelimited)
+		  else tuple (layoutExpsT es)
+	    in
+	       Record.layout {record = r,
+			      separator = " =",
+			      extra = "",
+			      layoutTuple = layoutTuple,
+			      layoutElt = layoutExpT}
+	    end
+       | List es => list (List.map (es, layoutExpT))
+       | Selector f => seq [str "#", Field.layout f]
+       | Constraint (expr, constraint) =>
+	    delimit (layoutConstraint (layoutExpF expr, constraint))
+       | Handle (try, match) =>
+	    delimit (align [layoutExpF try,
+			    seq [str "handle ", layoutMatch match]])
+       | Raise {exn, ...} => delimit (seq [str "raise ", layoutExpF exn])
+       | If (test, thenCase, elseCase) =>
+	    delimit (mayAlign [seq [str "if ", layoutExpT test],
+			       seq [str "then ", layoutExpT thenCase],
+			       seq [str "else ", layoutExpT elseCase]])
+       | Andalso (e, e') =>
+	    delimit (mayAlign [layoutExpF e,
+			       seq [str "andalso ", layoutExpF e']])
+       | Orelse (e, e') =>
+	    delimit (mayAlign [layoutExpF e,
+			       seq [str "orelse ", layoutExpF e']])
+       | While {test, expr} =>
+	    delimit (align [seq [str "while ", layoutExpT test],
+			    seq [str "do ", layoutExpT expr]])
+       | Prim {name, ...} => str name
    end
 and layoutExpsT es = Vector.toListMap (es, layoutExpT)
 and layoutExpT e = layoutExp (e, true)

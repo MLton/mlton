@@ -175,6 +175,13 @@ Int Real_signBit(Double d);
 
 #include <sys/resource.h>
 
+#if (defined (__CYGWIN__))
+#define RLIMIT_BOGUS 0xFFFFFFFF
+#define RLIMIT_RSS RLIMIT_BOGUS
+#define RLIMIT_NPROC RLIMIT_BOGUS
+#define RLIMIT_MEMLOCK RLIMIT_BOGUS
+#endif
+
 #define MLton_Rlimit_cpuTime RLIMIT_CPU
 #define MLton_Rlimit_coreFileSize RLIMIT_CORE
 #define MLton_Rlimit_dataSize RLIMIT_DATA

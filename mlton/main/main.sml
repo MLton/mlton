@@ -31,6 +31,7 @@ structure Place =
       fun compare (p, p') = Int.compare (toInt p, toInt p')
    end
 
+val buildConstants: bool ref = ref false
 val coalesce: int option ref = ref NONE
 val includes: string list ref = ref []
 val includeDirs: string list ref = ref []
@@ -43,7 +44,6 @@ val output: string option ref = ref NONE
 val optimization: int ref = ref 1
 val showBasis: bool ref = ref false
 val stop = ref Place.OUT
-val textIOBufSize: int ref = ref 4096
 
 val usageRef: (string -> unit) option ref = ref NONE
 
@@ -57,11 +57,36 @@ fun usage (s: string): 'a =
 
 datatype optionStyle = Normal | Expert
 
-val options = 
+val libRef: Dir.t option ref = ref NONE
+fun getLib (): Dir.t =
+   case !libRef of
+      NONE => Error.bug "lib not set"
+    | SOME l => l
+
+val hostMap: unit -> {host: string, hostType: Control.hostType} list =
+   Promise.lazy
+   (fn () =>
+    List.map
+    (File.lines (concat [getLib (), "/hostmap"]), fn line =>
+     case String.tokens (line, Char.isSpace) of
+	[host, hostType] =>
+	   {host = host,
+	    hostType =
+	    (case hostType of
+		"cygwin" => Control.Cygwin
+	      | "linux" => Control.Linux
+	      | _ => Error.bug (concat ["strange hostType: ",
+					hostType]))}
+      | _ => Error.bug (concat ["strange host mapping: ", line])))
+   
+fun options () = 
    let
       open Control Popt
       fun push r = String (fn s => List.push (r, s))
    in [
+       (Expert, "build-constants", "",
+	"output C file that prints basis constants",
+	trueRef buildConstants),
        (Expert, "coalesce", " n", "coalesce chunk size for C codegen",
 	Int (fn n => coalesce := SOME n)),
        (Normal, "detect-overflow", " {true|false}",
@@ -99,13 +124,12 @@ val options =
        (Normal, "h", " heapSize [{k|m}]",
 	"heap size used by resulting executable",
 	Mem (fn n => fixedHeap := SOME n)),
-       (Normal, "host", " {linux|cygwin}",
+       (Normal, "host",
+	concat [" {",
+		concat (List.separate (List.map (hostMap (), #host), "|")),
+		"}"],
 	"host type that executable will run on",
-	SpaceString (fn s =>
-		     host := (case s of
-				 "cygwin" => Cygwin
-			       | "linux" => Linux
-			       | _ => usage (concat ["invalid host: ", s])))),
+	SpaceString (fn s => host := (if s = "self" then Self else Cross s))),
        (Normal, "ieee-fp", " {false|true}", "use strict IEEE floating-point",
 	boolRef Native.IEEEFP),
        (Expert, "indentation", " n", "indentation level in ILs",
@@ -126,11 +150,12 @@ val options =
 		      | "ssa" => keepSSA := true
 		      | _ => usage (concat ["invalid -keep flag: ", s]))),
        (Expert, "keep-pass", " pass", "keep the results of pass",
-	SpaceString (fn s => (case Regexp.fromString s of
-				 SOME (re,_) => let val re = Regexp.compileDFA re
-						in List.push (keepPasses, re)
-						end
-			       | NONE => usage (concat ["invalid -keep-pass flag: ", s])))),
+	SpaceString
+	(fn s => (case Regexp.fromString s of
+		     SOME (re,_) => let val re = Regexp.compileDFA re
+				    in List.push (keepPasses, re)
+				    end
+		   | NONE => usage (concat ["invalid -keep-pass flag: ", s])))),
        (Normal, "l", "library", "link with library", push libs),
        (Expert, "limit-check", " {lhle|pb|ebb|lh|lhf|lhfle}",
 	"limit check insertion algorithm",
@@ -247,7 +272,7 @@ val _ =
        fun message s = Out.output (Out.error, s)
        val opts =
 	  List.fold
-	  (rev options, [], fn ((style, opt, arg, desc, _), rest) =>
+	  (rev (options ()), [], fn ((style, opt, arg, desc, _), rest) =>
 	   if style = Normal
 	      orelse let open Control
 		     in !verbosity <> Silent
@@ -273,9 +298,9 @@ fun commandLine (args: string list): unit =
    let
       open Control
       fun error () = Error.bug "incorrect args from shell script"
-      val (lib, cygwin, gcc, gccSwitches, args) =
+      val (lib, gcc, gccSwitches, args) =
 	 case args of
-	    lib :: cygwin :: gcc :: args =>
+	    lib :: gcc :: args =>
 	       let
 		  fun loop (args, ac) =
 		     case args of
@@ -286,19 +311,26 @@ fun commandLine (args: string list): unit =
 			   else loop (args, arg :: ac)
 		  val (gccSwitches, args) = loop (args, [])
 	       in
-		  (lib, cygwin, gcc, gccSwitches, args)
+		  (lib, gcc, gccSwitches, args)
 	       end
 	  | _ => error ()
+      val _ = libRef := SOME lib
       val result =
 	 Popt.parse {switches = args,
-		     opts = List.map (options, fn (_, a, _, _, c) => (a, c))}
+		     opts = List.map (options (), fn (_, a, _, _, c) => (a, c))}
       val host = !host
-      val lib = concat [lib, "/",
-			case host of
-			   Cygwin => cygwin
-			 | Linux => "linux"]
+      val hostString =
+	 case host of
+	    Cross s => s
+	  | Self => "self"
+      val lib = concat [lib, "/", hostString]
+      val _ = Control.libDir := lib
       val libDirs = lib :: !libDirs
       val includeDirs = concat [lib, "/include"] :: !includeDirs
+      val _ =
+	 case List.peek (hostMap (), fn {host = h, ...} => h = hostString) of
+	    NONE => usage (concat ["host ", hostString, " not in hostmap"])
+	  | SOME {hostType = t, ...} => hostType := t
       val _ =
 	 chunk := (if !Native.native
 		      then
@@ -316,15 +348,6 @@ fun commandLine (args: string list): unit =
 	    then keepSSA := true
 	 else ()
       val _ =
-	 List.foreach
-	 ([(detectOverflow, "MLton_detectOverflow"),
-	   (exnHistory, "Exn_keepHistory"),
-	   (limitCheckCounts, "LIMIT_CHECK_COUNTS"),
-	   (profile, "MLton_profile"),
-	   (safe, "MLton_safe")],
-	  fn (b, x) =>
-	  List.push (defines, concat [x, if !b then "=TRUE" else "=FALSE"]))
-      val _ =
 	 List.push (defines,
 		    concat ["TextIO_bufSize=", Int.toString (!textIOBufSize)])
       val _ = if !debug then () else List.push (defines, "NODEBUG")
@@ -335,12 +358,11 @@ fun commandLine (args: string list): unit =
 	 (case !verbosity of
 	     Silent =>
 		if !showBasis
-		   then let
-			   val out = Out.standard
-			in Layout.output (Compile.layoutBasisLibrary (), out)
-			   ; Out.newline out
-			end
-		else usage "must supply a file"
+		   then Layout.outputl (Compile.layoutBasisLibrary (),
+					Out.standard)
+		else if !buildConstants
+			then Compile.outputBasisConstants Out.standard
+		     else usage "must supply a file"
 	   | _ => 
 		(inputFile := ""
 		 ; outputHeader' (No, Out.standard)))
@@ -416,12 +438,12 @@ fun commandLine (args: string list): unit =
 		     trace (Top, "Link")
 		     (fn () =>
 		      docc (inputs,
-			    maybeOut (case host of
+			    maybeOut (case !hostType of
 					 Cygwin => ".exe"
 				       | Linux => ""),
 			    List.concat [case host of
-					    Cygwin => ["-b", cygwin]
-					  | Linux => [],
+					    Cross s => ["-b", s]
+					  | Self => [],
 					 if !debug then ["-g"] else [],
 					 if !static then ["-static"] else []],
 			    rest @ linkLibs))
@@ -446,8 +468,8 @@ fun commandLine (args: string list): unit =
 				 else switches
 			      val switches =
 				 case host of
-				    Cygwin => "-b" :: cygwin :: switches
-				  | Linux => switches
+				    Cross s => "-b" :: s :: switches
+				  | Self => switches
 			      val output =
 				 if stop = Place.O orelse !keepO
 				    then
@@ -494,8 +516,8 @@ fun commandLine (args: string list): unit =
 			     gccSwitches]]
 			val switches =
 			   case host of
-			      Cygwin =>"-b" :: cygwin :: switches
-			    | Linux => switches
+			      Cross s => "-b" :: s :: switches
+			    | Self => switches
 			val output = temp ".s"
 			val _ =
 			   trace (Top, "Compile C")
@@ -610,7 +632,6 @@ fun commandLine (args: string list): unit =
 		      | Place.Generated => compileC (input, sfiles)
 		      | Place.O => compileO [input]
 		      | _ => Error.bug "invalid start"
-
 		  val doit 
 		    = trace (Top, "MLton")
 		      (fn () => 

@@ -339,7 +339,7 @@ struct
 		    (* Drop the leading _ with Cygwin, because gcc will add it.
 		     *)
 		    val mainLabel =
-		       case !Control.host of
+		       case !Control.hostType of
 			  Control.Cygwin => String.dropPrefix (mainLabel, 1)
 			| Control.Linux => mainLabel
 		  in 

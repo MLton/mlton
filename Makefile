@@ -10,55 +10,59 @@ AOUT = mlton-compile
 LEX = mllex
 PROF = mlprof
 YACC = mlyacc
-LINUX = linux
-CYGWIN = i686-pc-cygwin
 PATH = $(BIN):$(shell echo $$PATH)
 CP = /bin/cp -fp
+HOST=self
+HOSTTYPE=linux
 
 all:
-	$(MAKE) dirs
+	mkdir -p $(BIN) $(LIB)
 	cd $(COMP) && $(MAKE)
-	$(CP) $(COMP)/$(AOUT) $(LIB)
+	mv $(COMP)/$(AOUT) $(LIB)
 	$(MAKE) world
-	$(MAKE) runtimes
+	$(MAKE) runtime HOST=$(HOST) HOSTTYPE=$(HOSTTYPE)
 	$(MAKE) script
+	$(MAKE) constants HOST=$(HOST)
 	cd $(LEX) && $(MAKE) && $(CP) $(LEX) $(BIN)
 	cd $(YACC) && $(MAKE) && $(CP) $(YACC) $(BIN)
 	cd $(PROF) && $(MAKE) && $(CP) $(PROF) $(BIN)
 	cd $(SRC)/doc/user-guide && $(MAKE)
-	@echo 'Build of MLton succeeded'
+	@echo 'Build of MLton succeeded.'
 
-.PHONY: dirs
-dirs:
-	mkdir -p $(BIN) $(LIB)/$(LINUX)/include $(LIB)/$(CYGWIN)/include
-
-.PHONY: runtimes
-runtimes:
-	@echo 'Making runtime system'
-	$(MAKE) runtime HOST=$(LINUX)
-	$(MAKE) runtime HOST=$(CYGWIN)
-
+HOSTMAP=$(LIB)/hostmap
 .PHONY: runtime
 runtime:
-	$(MAKE) dirs
-	@echo 'Compiling MLton runtime system for $(HOST)'
+	@echo 'Making runtime system.'
+	mkdir -p $(LIB)/$(HOST)/include
+	@echo 'Compiling MLton runtime system for $(HOST).'
 	cd runtime && $(MAKE) HOST=$(HOST)
 	$(CP) $(RUN)/*.a $(LIB)/$(HOST)
 	$(CP) runtime/*.h include/*.h $(LIB)/$(HOST)/include
 	cd runtime && $(MAKE) clean
+	touch $(HOSTMAP)
+	( sed '/$(HOST)/d' <$(HOSTMAP); echo '$(HOST) $(HOSTTYPE)' ) \
+		>>$(HOSTMAP).tmp
+	mv $(HOSTMAP).tmp $(HOSTMAP)
+	cat $(HOSTMAP)
 
 .PHONY: script
 script:
-	@echo 'Setting lib and cygwin in mlton script'
-	cat bin/mlton | \
-		sed "/^lib=/s;'.*';'$(LIB)';" | \
-		sed "/^cygwin=/s;'.*';'$(CYGWIN)';" >$(MLTON)
+	@echo 'Setting lib in mlton script.'
+	sed "/^lib=/s;'.*';'$(LIB)';" <bin/mlton >$(MLTON)
 	chmod a+x $(MLTON) 
 
 .PHONY: world
 world: 
-	@echo 'Processing basis library'
+	@echo 'Processing basis library.'
 	$(LIB)/$(AOUT) $(SRC)/basis-library $(LIB)/world
+
+.PHONY: constants
+constants:
+	@echo 'Creating constants file.'
+	$(BIN)/mlton -build-constants >tmp.c
+	$(BIN)/mlton -v -o tmp tmp.c
+	tmp >$(LIB)/$(HOST)/constants
+	rm -f tmp tmp.c
 
 .PHONY: clean
 clean:

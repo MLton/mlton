@@ -66,6 +66,8 @@ val eof: lexarg -> lexresult =
       Tokens.EOF (pos, pos)
    end
 
+val size = String.size
+
 fun tok (t, s, l, r) =
    let
       val l = Source.getPos (s, l)
@@ -82,12 +84,13 @@ fun tok (t, s, l, r) =
    in
       t (l, r)
    end
-fun tok' (t, x, s, l) = tok (fn (l, r) => t (x, l, r), s, l, l + String.size x)
+
+fun tok' (t, x, s, l) = tok (fn (l, r) => t (x, l, r), s, l, l + size x)
 
 local 
    fun make (scan, token, default, msg) (radix, str, source, left) =
       let
-	 val right = left + String.size str
+	 val right = left + size str
       in
 	 token ((case StringCvt.scanString (scan radix) str of
 		    NONE => (error (source, left, right,
@@ -131,9 +134,16 @@ hexnum={hexDigit}+;
 %%
 <INITIAL>{ws}	=> (continue ());
 <INITIAL>{eol}	=> (Source.newline (source, yypos); continue ());
-<INITIAL>"_overload" => (tok (Tokens.OVERLOAD, source, yypos, yypos + 9));
-<INITIAL>"_prim" => (tok (Tokens.PRIM, source, yypos, yypos + 5));
-<INITIAL>"_ffi" => (tok (Tokens.FFI, source, yypos, yypos + 5));
+<INITIAL>"_overload" => (tok (Tokens.OVERLOAD, source, yypos,
+			      yypos + size yytext));
+<INITIAL>"_prim" => (tok (Tokens.PRIM, source, yypos,
+			  yypos + size yytext));
+<INITIAL>"_const" => (tok (Tokens.CONST, source, yypos,
+			   yypos + size yytext));
+<INITIAL>"_build_const" => (tok (Tokens.BUILD_CONST, source, yypos,
+				 yypos + size yytext));
+<INITIAL>"_ffi" => (tok (Tokens.FFI, source, yypos,
+			 yypos + size yytext));
 <INITIAL>"_"	=> (tok (Tokens.WILD, source, yypos, yypos + 1));
 <INITIAL>","	=> (tok (Tokens.COMMA, source, yypos, yypos + 1));
 <INITIAL>"{"	=> (tok (Tokens.LBRACE, source, yypos, yypos + 1));
@@ -266,7 +276,7 @@ hexnum={hexDigit}+;
 			  then make (Tokens.STRING, s)
 		       else
 			  make (Tokens.CHAR,
-				if String.size s <> 1 
+				if size s <> 1 
 				   then (error
 					 (source, yypos, yypos + 1,
 					  "character constant not length 1")

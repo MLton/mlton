@@ -1,0 +1,79 @@
+#!/bin/sh -x
+
+# This script adds a new crosscompiler target for MLton.
+# You may need to set installLibDir, crossHost, or cygwin.
+# This script builds an executable in the current directory that you must
+# run on the target machine.  This executable prints on standard output
+# the values of the compile time constants needed by the MLton when 
+# cross compiling.  You must place the output of running the executable in
+# $libDir/$crossHost/constants.
+
+original=`pwd`
+dir=`dirname $0`
+src=`cd $dir/.. && pwd`
+
+# libDir is the mlton lib directory where you would like the 
+# cross-compiler information to be installed.  If you have installed from the
+# rpms, this will usually be /usr/local/lib/mlton.  You must have write 
+# permission there. 
+
+lib="$src/build/lib"
+
+# crossHost will be used via the -b flag passed to the GCC cross-compiler tools.
+# You must already have installed the GCC cross-compiler tools.  This script
+# does not do that, although you may find the script build-cross-gcc helpful.
+# crossHost here should be the same as target in build-cross-gcc.
+crossHost='i686-pc-cygwin'
+
+# There are two possible types for the target machine: cygwin and linux. 
+# It should be obvious which of those you want.
+
+crossType='cygwin'
+
+# You shouldn't need to change anything below this line.
+
+name=`basename $0`
+
+function die {
+	echo >&2 $1
+	exit 1
+}
+
+function usage {
+	die "usage: $name"
+}
+
+case "$#" in
+0)
+;;
+*)
+	usage
+;;
+esac
+
+if [ "$crossType" != 'linux' -a "$crossType" != 'cygwin' ]; then
+	die "invalid crossType: $crossType"
+fi
+
+PATH=$src/build/bin:$PATH
+
+mkdir -p "$lib/$crossHost/include" ||
+	die "Cannot write to $lib."
+
+echo 'Making runtime.' 
+(cd $src && 
+	make runtime HOST=$crossHost HOSTTYPE=$crossType LIB=$lib \
+		>runtime-log 2>&1 &&
+	rm -f runtime-log) ||
+	die "Unable to make runtime.  See $src/runtime-log."
+
+exe='print-constants'
+echo 'Building print-constants executable.'
+(
+	mlton -build-constants >$exe.c &&
+	mlton -o $original/$exe -host $crossHost $exe.c &&
+	rm -f $exe.c
+) || die "Unable to build $exe executable."
+
+echo "You must now run $exe on the $crossHost machine"
+echo "and put the output in $lib/$crossHost/constants."

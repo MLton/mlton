@@ -20,9 +20,8 @@ signature LOOKUP_CONSTANT =
 	     | Word of word
 	 end
 
-      val build:
-	 CoreML.Program.t * ({input: File.t, output: File.t} -> unit)
-	 -> string -> Const.t
+      val build: CoreML.Dec.t vector * Out.t -> unit
+      val load: CoreML.Dec.t vector * In.t -> string -> Const.t
    end
 
 

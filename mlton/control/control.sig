@@ -44,9 +44,14 @@ signature CONTROL =
       val gcCheck: gcCheck ref
 
       datatype host =
+	 Cross of string
+       | Self
+      val host: host ref
+
+      datatype hostType =
 	 Cygwin
        | Linux
-      val host: host ref
+      val hostType: hostType ref
 
       (* Indentation used in laying out ILs. *)
       val indentation: int ref
@@ -80,6 +85,9 @@ signature CONTROL =
 
       (* List of pass names to save the result of. *)
       val keepPasses: Regexp.Compiled.t list ref
+
+      (* Host dependent lib directory. *)
+      val libDir: Dir.t ref
 
       datatype limitCheck =
 	 (* per block *)
@@ -176,6 +184,8 @@ signature CONTROL =
       (* Generate a statically linked executable. *)
       val static: bool ref
 
+      val textIOBufSize: int ref
+	 
       (* Type check ILs. *)
       val typeCheck: bool ref
 	 

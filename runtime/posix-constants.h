@@ -129,28 +129,45 @@
 #define Posix_IO_FD_cloexec FD_CLOEXEC
 
 #include <unistd.h>
+#if (defined (__CYGWIN__))
+#define _SC_BOGUS 0xFFFFFFFF
+#define _SC_2_FORT_DEV _SC_BOGUS
+#define _SC_2_FORT_RUN _SC_BOGUS
+#define _SC_2_SW_DEV _SC_BOGUS
+#define _SC_2_VERSION _SC_BOGUS
+#define _SC_BC_BASE_MAX _SC_BOGUS
+#define _SC_BC_DIM_MAX _SC_BOGUS
+#define _SC_BC_SCALE_MAX _SC_BOGUS
+#define _SC_BC_STRING_MAX _SC_BOGUS
+#define _SC_COLL_WEIGHTS_MAX _SC_BOGUS
+#define _SC_EXPR_NEST_MAX _SC_BOGUS
+#define _SC_LINE_MAX _SC_BOGUS
+#define _SC_RE_DUP_MAX _SC_BOGUS
+#define _SC_STREAM_MAX _SC_BOGUS
+#endif
+
 /* used by sysconf. */
+#define Posix_ProcEnv_2_FORT_DEV _SC_2_FORT_DEV
+#define Posix_ProcEnv_2_FORT_RUN _SC_2_FORT_RUN
+#define Posix_ProcEnv_2_SW_DEV _SC_2_SW_DEV
+#define Posix_ProcEnv_2_VERSION _SC_2_VERSION
 #define Posix_ProcEnv_ARG_MAX _SC_ARG_MAX
-#define Posix_ProcEnv_CHILD_MAX _SC_CHILD_MAX
-#define Posix_ProcEnv_CLK_TCK _SC_CLK_TCK
-#define Posix_ProcEnv_STREAM_MAX _SC_STREAM_MAX
-#define Posix_ProcEnv_TZNAME_MAX _SC_TZNAME_MAX
-#define Posix_ProcEnv_OPEN_MAX _SC_OPEN_MAX
-#define Posix_ProcEnv_JOB_CONTROL _SC_JOB_CONTROL
-#define Posix_ProcEnv_SAVED_IDS _SC_SAVED_IDS
-#define Posix_ProcEnv_VERSION _SC_VERSION
 #define Posix_ProcEnv_BC_BASE_MAX _SC_BC_BASE_MAX
 #define Posix_ProcEnv_BC_DIM_MAX _SC_BC_DIM_MAX
 #define Posix_ProcEnv_BC_SCALE_MAX _SC_BC_SCALE_MAX
 #define Posix_ProcEnv_BC_STRING_MAX _SC_BC_STRING_MAX
+#define Posix_ProcEnv_CHILD_MAX _SC_CHILD_MAX
+#define Posix_ProcEnv_CLK_TCK _SC_CLK_TCK
 #define Posix_ProcEnv_COLL_WEIGHTS_MAX _SC_COLL_WEIGHTS_MAX
 #define Posix_ProcEnv_EXPR_NEST_MAX _SC_EXPR_NEST_MAX
+#define Posix_ProcEnv_JOB_CONTROL _SC_JOB_CONTROL
 #define Posix_ProcEnv_LINE_MAX _SC_LINE_MAX
+#define Posix_ProcEnv_OPEN_MAX _SC_OPEN_MAX
 #define Posix_ProcEnv_RE_DUP_MAX _SC_RE_DUP_MAX
-#define Posix_ProcEnv_2_VERSION _SC_2_VERSION
-#define Posix_ProcEnv_2_FORT_DEV _SC_2_FORT_DEV
-#define Posix_ProcEnv_2_FORT_RUN _SC_2_FORT_RUN
-#define Posix_ProcEnv_2_SW_DEV _SC_2_SW_DEV
+#define Posix_ProcEnv_SAVED_IDS _SC_SAVED_IDS
+#define Posix_ProcEnv_STREAM_MAX _SC_STREAM_MAX
+#define Posix_ProcEnv_TZNAME_MAX _SC_TZNAME_MAX
+#define Posix_ProcEnv_VERSION _SC_VERSION
 
 enum {
 	Posix_ProcEnv_numgroups = 100,
@@ -185,7 +202,11 @@ enum {
 #define Posix_Signal_vtalrm SIGVTALRM
 
 #define Posix_Signal_block SIG_BLOCK
+#if (defined (__CYGWIN__))
+#define Posix_Signal_numSignals NSIG
+#elif (defined (__linux__))
 #define Posix_Signal_numSignals _NSIG
+#endif
 #define Posix_Signal_setmask SIG_SETMASK
 #define Posix_Signal_unblock SIG_UNBLOCK
 

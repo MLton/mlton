@@ -354,7 +354,7 @@ struct
   val fileLineLabel =
      Promise.lazy
      (fn () =>
-      Label.fromString (case !Control.host of
+      Label.fromString (case !Control.hostType of
 			   Control.Cygwin => "_LINE__"
 			 | Control.Linux => "__LINE__"))
   val fileLine

@@ -34,6 +34,24 @@
 
 #if (defined (__linux__))
 #include <sys/ptrace.h>
+#elif (defined (__CYGWIN__))
+#define PTRACE_BOGUS 0xFFFFFFFF
+#define PTRACE_SYSCALL PTRACE_BOGUS
+#define PTRACE_SETFPREGS PTRACE_BOGUS
+#define PTRACE_GETFPREGS PTRACE_BOGUS
+#define PTRACE_SETREGS PTRACE_BOGUS
+#define PTRACE_GETREGS PTRACE_BOGUS
+#define PTRACE_DETACH PTRACE_BOGUS
+#define PTRACE_ATTACH PTRACE_BOGUS
+#define PTRACE_SINGLESTEP PTRACE_BOGUS
+#define PTRACE_KILL PTRACE_BOGUS
+#define PTRACE_CONT PTRACE_BOGUS
+#define PTRACE_POKEDATA PTRACE_BOGUS
+#define PTRACE_POKETEXT PTRACE_BOGUS
+#define PTRACE_PEEKDATA PTRACE_BOGUS
+#define PTRACE_PEEKTEXT PTRACE_BOGUS
+#define PTRACE_TRACEME PTRACE_BOGUS
+#endif
 
 #define Ptrace_TRACEME PTRACE_TRACEME
 #define Ptrace_PEEKTEXT PTRACE_PEEKTEXT
@@ -52,7 +70,7 @@
 #define Ptrace_GETFPREGS PTRACE_GETFPREGS
 #define Ptrace_SETFPREGS PTRACE_SETFPREGS
 #define Ptrace_SYSCALL PTRACE_SYSCALL
-#endif
+
 /* ------------------------------------------------- */
 /*                      Socket                       */
 /* ------------------------------------------------- */

@@ -204,6 +204,16 @@ in
 	| _ => ()
 	     ; valOf (!r))
 end
+   
+fun basisDecs () =
+   let
+      val {prefix, ...} = basisLibrary ()
+   in
+      Decs.toVector prefix
+   end
+   
+fun outputBasisConstants (out: Out.t): unit =
+   LookupConstant.build (basisDecs (), out)
 
 fun layoutBasisLibrary () = Env.layoutPretty basisEnv
 
@@ -224,7 +234,7 @@ fun preCodegen {input, docc}: Machine.Program.t =
 			   (primitiveExcons, fn c =>
 			    make (Exception {con = c, arg = NONE}))]
 	 end
-      val coreML =
+      val decs =
 	 if !Control.useBasisLibrary
 	    then
 	       let
@@ -257,10 +267,9 @@ fun preCodegen {input, docc}: Machine.Program.t =
 		      thunk = fn () => DeadCode.deadCode {basis = basis,
 							  user = user},
 		      display = Control.Layout (List.layout CoreML.Dec.layout)}
-	       in CoreML.Program.T
-		  {decs = Vector.concat [primitiveDecs,
-					 Vector.fromList basis,
-					 Vector.fromList user]}
+	       in Vector.concat [primitiveDecs,
+				 Vector.fromList basis,
+				 Vector.fromList user]
 	       end
 	 else
 	    let
@@ -268,19 +277,40 @@ fun preCodegen {input, docc}: Machine.Program.t =
 	       val _ = Env.addPrim E
 	       val decs = parseAndElaborateFiles (input, E)
 	       val _ = parseElabMsg ()
-	    in CoreML.Program.T {decs = Vector.concat [primitiveDecs,
-						       Decs.toVector decs]}
+	    in Vector.concat [primitiveDecs, Decs.toVector decs]
 	    end
+      val coreML = CoreML.Program.T {decs = decs}
       val _ = Control.message (Control.Detail, fn () =>
 			       CoreML.Program.layoutStats coreML)
-      val lookupConstant = LookupConstant.build (coreML, docc)
+      val buildConstants =
+	 let
+	    datatype z = datatype LookupConstant.Const.t
+	    open Control
+	 in
+	    [("Exn_keepHistory", Bool (!exnHistory)),
+	     ("MLton_debug", Bool (!debug)),
+	     ("MLton_detectOverflow", Bool (!detectOverflow)),
+	     ("MLton_profile", Bool (!profile)),
+	     ("MLton_safe", Bool (!safe)),
+	     ("TextIO_bufSize", Int (!textIOBufSize))]
+	 end
+      fun lookupBuildConstant (c: string) =
+	 case List.peek (buildConstants, fn (c', _) => c = c') of
+	    NONE => Error.bug (concat ["strange build constant: ", c])
+	  | SOME (_, v) => v
+      val lookupConstant =
+	 File.withIn
+	 (concat [!Control.libDir, "/constants"], fn ins =>
+	  LookupConstant.load (basisDecs (), ins))
       val xml =
 	 Control.passSimplify
 	 {name = "infer",
 	  suffix = "xml",
 	  style = Control.ML,
-	  thunk = fn () => Infer.infer {program = coreML,
-					lookupConstant = lookupConstant},
+	  thunk = fn () => (Infer.infer
+			    {program = coreML,
+			     lookupBuildConstant = lookupBuildConstant,
+			     lookupConstant = lookupConstant}),
 	  display = Control.Layout Xml.Program.layout,
 	  typeCheck = Xml.typeCheck,
 	  simplify = Xml.simplify}

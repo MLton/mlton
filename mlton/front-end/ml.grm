@@ -226,7 +226,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
     | ASTERISK | COLON | COLONGT | COMMA | LBRACE | LBRACKET | LPAREN | RBRACE 
     | RBRACKET | RPAREN | ORELSE | ANDALSO | FUNSIG
       (* primitives *)
-    | PRIM | FFI
+    | PRIM | FFI | CONST | BUILD_CONST
 
 %nonterm digit of int
        | int of int
@@ -925,9 +925,14 @@ aexp	: OP vid		(Exp.Var {name = Longvid.short vid,
 	    (Exp.Let (decs, Exp.makeRegion' (Exp.Seq (Vector.fromList exp_ps),
 					     exp_psleft,
 					     exp_psright)))
-        | PRIM STRING COLON ty SEMICOLON (Exp.Prim {name = STRING, ty = ty})
-        | FFI STRING COLON ty SEMICOLON (Exp.FFI {name =  STRING, ty = ty})
-
+        | BUILD_CONST STRING COLON ty SEMICOLON
+	  (Exp.Prim {kind = PrimKind.BuildConst, name = STRING, ty = ty})
+        | CONST STRING COLON ty SEMICOLON
+	  (Exp.Prim {kind = PrimKind.Const, name = STRING, ty = ty})
+        | FFI STRING COLON ty SEMICOLON
+	  (Exp.Prim {kind = PrimKind.FFI, name = STRING, ty = ty})
+        | PRIM STRING COLON ty SEMICOLON
+	  (Exp.Prim {kind = PrimKind.Prim, name = STRING, ty = ty})
 
 exp_2c	: exp COMMA exp_2c	(exp :: exp_2c)
 	| exp COMMA exp		([exp1, exp2])

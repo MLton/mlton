@@ -18,6 +18,7 @@ signature INFER =
       
       val infer:
 	 {program: CoreML.Program.t,
+	  lookupBuildConstant: string -> LookupConstant.Const.t,
 	  lookupConstant: string -> LookupConstant.Const.t}
 	 -> Xml.Program.t
    end

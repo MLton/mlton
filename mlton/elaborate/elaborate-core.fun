@@ -718,8 +718,6 @@ fun elaborateDec (d, E) =
 	      | Aexp.Const c => doit (Cexp.Const c)
 	      | Aexp.Constraint (e, t) =>
 		   doit (Cexp.Constraint (elabExp e, Scheme.ty (elabType t)))
-	      | Aexp.FFI {name, ty} =>
-		   doit (Cexp.Prim (Cprim.ffi (name, elabType ty)))
 	      | Aexp.FlatApp items => elabExp (Parse.parseExp (items, E))
 	      | Aexp.Fn m => doit (Cexp.Fn (elabMatch m))
 	      | Aexp.Handle (try, match) =>
@@ -733,8 +731,19 @@ fun elaborateDec (d, E) =
 	      | Aexp.List es => Cexp.list (elabExps es, region)
 	      | Aexp.Orelse (e, e') =>
 		   Cexp.orElse (elabExp e, elabExp e', region)
-	      | Aexp.Prim {name, ty} =>
-		   doit (Cexp.Prim (Cprim.new (name, elabType ty)))
+	      | Aexp.Prim {kind, name, ty} =>
+		   let
+		      val ty = elabType ty
+		      datatype z = datatype Ast.PrimKind.t
+		   in
+		      doit
+		      (Cexp.Prim
+		       (case kind of
+			   BuildConst => Cprim.buildConstant (name, ty)
+			 | Const => Cprim.constant (name, ty)
+			 | FFI => Cprim.ffi (name, ty)
+			 | Prim => Cprim.new (name, ty)))
+		   end
 	      | Aexp.Raise {exn, filePos} =>
 		   doit (Cexp.Raise {exn = elabExp exn, filePos = filePos})
 	      | Aexp.Record r =>

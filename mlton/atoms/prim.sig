@@ -25,6 +25,7 @@ signature PRIM =
 	     | Array_length
 	     | Array_sub (* implemented in backend.fun *)
 	     | Array_update (* implemented in backend.fun *)
+	     | BuildConstant of string
 	     | Byte_byteToChar
 	     | Byte_charToByte
 	     | C_CS_charArrayToWord8Array
@@ -236,6 +237,7 @@ signature PRIM =
       val assign: t
       val bogus: t
       val bug: t
+      val buildConstant: string * Scheme.t -> t
       val checkApp: {
 		     prim: t,
 		     targs: 'a vector,
@@ -246,6 +248,7 @@ signature PRIM =
 		     detupleOpt: 'a -> 'a vector option,
 		     isUnit: 'a -> bool
 		     } -> 'a option
+      val constant: string * Scheme.t -> t
       val deref: t
       val deserialize: t
       val entersRuntime: t -> bool

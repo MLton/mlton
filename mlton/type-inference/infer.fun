@@ -244,7 +244,8 @@ in
 		    Layout.tuple2 (layoutPatCode, ll))
 end
 
-fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
+fun infer {program = p: CoreML.Program.t,
+	   lookupBuildConstant, lookupConstant}: Xml.Program.t =
    let
       val matchCompileCalls = ref 0
       val {get = tyconCons: Tycon.t -> Con.t vector,
@@ -1100,20 +1101,25 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
 			instantiatePrim (Prim.scheme prim, region)
 		  in eta (instance, fn (arg, resultType) =>
 			  let
+			     fun constant c =
+				let
+				   datatype z = datatype LookupConstant.Const.t
+				in
+				   case c of
+				      Bool b => if b then Xexp.truee ()
+						else Xexp.falsee ()
+				    | Int i => Xexp.const (Const.fromInt i)
+				    | Real r => Xexp.const (Const.fromReal r)
+				    | String s =>
+					 Xexp.const (Const.fromString s)
+				    | Word w => Xexp.const (Const.fromWord w)
+				end
 			     fun make (args: Xexp.t vector): Xexp.t =
 				case Prim.name prim of
-				   Prim.Name.Constant c =>
-				      let
-					 datatype z = datatype LookupConstant.Const.t
-				      in case lookupConstant c of
-					 Bool b => if b then Xexp.truee ()
-						   else Xexp.falsee ()
-				       | Int i => Xexp.const (Const.fromInt i)
-				       | Real r => Xexp.const (Const.fromReal r)
-				       | String s =>
-					    Xexp.const (Const.fromString s)
-				       | Word w => Xexp.const (Const.fromWord w)
-				      end
+				   Prim.Name.BuildConstant c =>
+				      constant (lookupBuildConstant c)
+				 | Prim.Name.Constant c =>
+				      constant (lookupConstant c)
 				 | _ => 
 				      Xexp.primApp {prim = prim,
 						    targs = targs (),
