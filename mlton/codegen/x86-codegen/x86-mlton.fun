@@ -17,9 +17,10 @@ struct
      structure CFunction = CFunction
      structure IntSize = IntSize
      structure Prim = Prim
+     structure WordSize = WordSize
      datatype z = datatype IntSize.prim
      datatype z = datatype RealSize.t
-     datatype z = datatype WordSize.t
+     datatype z = datatype WordSize.prim
   end
 
   type transInfo = {addData : x86.Assembly.t list -> unit,
@@ -748,7 +749,7 @@ struct
 		    | (I8, R32) => default' ()
 		end
 	     | Int_toWord (s, s') =>
-		(case (IntSize.prim s, s') of
+		(case (IntSize.prim s, WordSize.prim s') of
 		    (I64, W64) => Error.bug "FIXME"
 		  | (I64, W32) => Error.bug "FIXME"
 		  | (I64, W16) => Error.bug "FIXME"
@@ -1337,79 +1338,79 @@ struct
 	     | Real_neg _ => funa Instruction.FCHS
 	     | Real_round _ => funa Instruction.FRNDINT
 	     | Word_add s => 
-		(case s of
+		(case WordSize.prim s of
 		    W8 => binal Instruction.ADD
 		  | W16 => binal Instruction.ADD
 		  | W32 => binal Instruction.ADD
 		  | W64 => binal64 (Instruction.ADD, Instruction.ADC))
 	     | Word_andb s => 
-		(case s of
+		(case WordSize.prim s of
 		    W8 => binal Instruction.AND
 		  | W16 => binal Instruction.AND
 		  | W32 => binal Instruction.AND
 		  | W64 => binal64 (Instruction.AND, Instruction.AND))
 	     | Word_arshift s => 
-		(case s of
+		(case WordSize.prim s of
 		    W8 => sral Instruction.SAR
 		  | W16 => sral Instruction.SAR
 		  | W32 => sral Instruction.SAR
 		  | W64 => Error.bug "FIXME")
 	     | Word_div s => 
-		(case s of
+		(case WordSize.prim s of
 		    W8 => pmd Instruction.DIV
 		  | W16 => pmd Instruction.DIV
 		  | W32 => pmd Instruction.DIV
 		  | W64 => Error.bug "FIXME")
 	     | Word_equal s => 
-		(case s of
+		(case WordSize.prim s of
 		    W8 => cmp Instruction.E
 		  | W16 => cmp Instruction.E
 		  | W32 => cmp Instruction.E
 		  | W64 => Error.bug "FIXME")
 	     | Word_ge s => 
-		(case s of
+		(case WordSize.prim s of
 		    W8 => cmp Instruction.AE
 		  | W16 => cmp Instruction.AE
 		  | W32 => cmp Instruction.AE
 		  | W64 => Error.bug "FIXME")
 	     | Word_gt s => 
-		(case s of
+		(case WordSize.prim s of
 		    W8 => cmp Instruction.A
 		  | W16 => cmp Instruction.A
 		  | W32 => cmp Instruction.A
 		  | W64 => Error.bug "FIXME")
 	     | Word_le s => 
-		(case s of
+		(case WordSize.prim s of
 		    W8 => cmp Instruction.BE
 		  | W16 => cmp Instruction.BE
 		  | W32 => cmp Instruction.BE
 		  | W64 => Error.bug "FIXME")
 	     | Word_lshift s => 
-		(case s of
+		(case WordSize.prim s of
 		    W8 => sral Instruction.SHL
 		  | W16 => sral Instruction.SHL
 		  | W32 => sral Instruction.SHL
 		  | W64 => Error.bug "FIXME")
 	     | Word_lt s => 
-		(case s of
+		(case WordSize.prim s of
 		    W8 => cmp Instruction.B
 		  | W16 => cmp Instruction.B
 		  | W32 => cmp Instruction.B
 		  | W64 => Error.bug "FIXME")
 	     | Word_mod s => 
-		(case s of
+		(case WordSize.prim s of
 		    W8 => pmd Instruction.MOD
 		  | W16 => pmd Instruction.MOD
 		  | W32 => pmd Instruction.MOD
 		  | W64 => Error.bug "FIXME")
 	     | Word_mul s =>
-		(case s of
+		(case WordSize.prim s of
 		    W8 => pmd Instruction.MUL
 		  | W16 => imul2 ()
 		  | W32 => imul2 ()
 		  | W64 => Error.bug "FIXME")
 	     | Word_neg s => 
-		(case s of
+		(case WordSize.prim s of
 		    W8 => unal Instruction.NEG
 		  | W16 => unal Instruction.NEG
 		  | W32 => unal Instruction.NEG
@@ -1420,43 +1421,43 @@ struct
 							 src = Operand.immediate_const_int 0,
 							 size = dstsize}]))
 	     | Word_notb s => 
-		(case s of
+		(case WordSize.prim s of
 		    W8 => unal Instruction.NOT
 		  | W16 => unal Instruction.NOT
 		  | W32 => unal Instruction.NOT
 		  | W64 => unal64 (Instruction.NOT, fn _ => []))
 	     | Word_orb s => 
-		(case s of
+		(case WordSize.prim s of
 		    W8 => binal Instruction.OR
 		  | W16 => binal Instruction.OR
 		  | W32 => binal Instruction.OR
 		  | W64 => binal64 (Instruction.OR, Instruction.OR))
 	     | Word_rol s => 
-		(case s of
+		(case WordSize.prim s of
 		    W8 => sral Instruction.ROL
 		  | W16 => sral Instruction.ROL
 		  | W32 => sral Instruction.ROL
 		  | W64 => Error.bug "FIXME")
 	     | Word_ror s => 
-		(case s of
+		(case WordSize.prim s of
 		    W8 => sral Instruction.ROR
 		  | W16 => sral Instruction.ROR
 		  | W32 => sral Instruction.ROR
 		  | W64 => Error.bug "FIXME")
 	     | Word_rshift s => 
-		(case s of
+		(case WordSize.prim s of
 		    W8 => sral Instruction.SHR
 		  | W16 => sral Instruction.SHR
 		  | W32 => sral Instruction.SHR
 		  | W64 => Error.bug "FIXME")
 	     | Word_sub s => 
-		(case s of
+		(case WordSize.prim s of
 		    W8 => binal Instruction.SUB
 		  | W16 => binal Instruction.SUB
 		  | W32 => binal Instruction.SUB
 		  | W64 => binal64 (Instruction.SUB, Instruction.SBB))
 	     | Word_toInt (s, s') =>
-		(case (s, IntSize.prim s') of
+		(case (WordSize.prim s, IntSize.prim s') of
 		   (W64, I64) => Error.bug "FIXME"
 		 | (W64, I32) => Error.bug "FIXME"
 		 | (W64, I16) => Error.bug "FIXME"
@@ -1474,7 +1475,7 @@ struct
 		 | (W8, I16) => movx Instruction.MOVZX
 		 | (W8, I8) => mov ())
 	     | Word_toIntX (s, s') =>
-		(case (s, IntSize.prim s') of
+		(case (WordSize.prim s, IntSize.prim s') of
 		   (W64, I64) => Error.bug "FIXME"
 		 | (W64, I32) => Error.bug "FIXME"
 		 | (W64, I16) => Error.bug "FIXME"
@@ -1492,7 +1493,7 @@ struct
 		 | (W8, I16) => movx Instruction.MOVSX
 		 | (W8, I8) => mov ())
 	     | Word_toWord (s, s') =>
-	        (case (s, s') of
+	        (case (WordSize.prim s, WordSize.prim s') of
 		    (W64, W64) => Error.bug "FIXME"
 		  | (W64, W32) => Error.bug "FIXME"
 		  | (W64, W16) => Error.bug "FIXME"
@@ -1510,7 +1511,7 @@ struct
 		  | (W8, W16) => movx Instruction.MOVZX
 		  | (W8, W8) => mov ())
 	     | Word_toWordX (s, s') =>
-		(case (s, s') of
+		(case (WordSize.prim s, WordSize.prim s') of
 		    (W64, W64) => Error.bug "FIXME"
 		  | (W64, W32) => Error.bug "FIXME"
 		  | (W64, W16) => Error.bug "FIXME"
@@ -1528,7 +1529,7 @@ struct
 		  | (W8, W16) => movx Instruction.MOVSX
 		  | (W8, W8) => mov ())
 	     | Word_xorb s => 
-		(case s of
+		(case WordSize.prim s of
 		    W8 => binal Instruction.XOR
 		  | W16 => binal Instruction.XOR
 		  | W32 => binal Instruction.XOR
@@ -1908,13 +1909,13 @@ struct
 		| I32 => unal (x86.Instruction.NEG, x86.Instruction.O)
 		| I64 => neg64 ())
 	   | Word_addCheck s => 
-	       (case s of
+	       (case WordSize.prim s of
 		   W8 => binal (x86.Instruction.ADD, x86.Instruction.C)
 		 | W16 => binal (x86.Instruction.ADD, x86.Instruction.C)
 		 | W32 => binal (x86.Instruction.ADD, x86.Instruction.C)
 		 | W64 => binal64 (x86.Instruction.ADD, x86.Instruction.ADC, x86.Instruction.C))
 	   | Word_mulCheck s => 
-	       (case s of
+	       (case WordSize.prim s of
 		  W8 => pmd (x86.Instruction.MUL, x86.Instruction.C)
 		| W16 => pmd (x86.Instruction.MUL, x86.Instruction.C)
 		| W32 => pmd (x86.Instruction.MUL, x86.Instruction.C)

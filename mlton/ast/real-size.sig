@@ -16,6 +16,7 @@ signature REAL_SIZE =
       val bytes: t -> int
       val default: t
       val equals: t * t -> bool
+      val layout: t -> Layout.t
       val memoize: (t -> 'a) -> t -> 'a
       val toString: t -> string
    end

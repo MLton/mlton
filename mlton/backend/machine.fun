@@ -193,7 +193,26 @@ structure Operand =
 	  | StackOffset _ => true
 	  | _ => false
 
-      fun layout (z: t): Layout.t =
+    val ty =
+       fn ArrayOffset {ty, ...} => ty
+	| Cast (_, ty) => ty
+	| Contents {ty, ...} => ty
+	| File => Type.cPointer ()
+	| Frontier => Type.defaultWord
+	| GCState => Type.cPointer ()
+	| Global g => Global.ty g
+	| Int i => Type.int (IntX.size i)
+	| Label l => Type.label l
+	| Line => Type.defaultInt
+	| Offset {ty, ...} => ty
+	| Real r => Type.real (RealX.size r)
+	| Register r => Register.ty r
+	| SmallIntInf _ => Type.intInf
+	| StackOffset {ty, ...} => ty
+	| StackTop => Type.defaultWord
+	| Word w => Type.word (WordX.size w)
+
+    fun layout (z: t): Layout.t =
 	 let
 	    open Layout 
 	    fun constrain (ty: Type.t): Layout.t =
@@ -227,31 +246,12 @@ structure Operand =
 	     | SmallIntInf w => seq [str "SmallIntInf ", paren (Word.layout w)]
 	     | StackOffset so => StackOffset.layout so
 	     | StackTop => str "<StackTop>"
-	     | Word w => WordX.layout w
+	     | Word w => seq [WordX.layout w, str ": ", Type.layout (ty z)]
 	 end
 
     val toString = Layout.toString o layout
-
-    val ty =
-       fn ArrayOffset {ty, ...} => ty
-	| Cast (_, ty) => ty
-	| Contents {ty, ...} => ty
-	| File => Type.cPointer ()
-	| Frontier => Type.defaultWord
-	| GCState => Type.cPointer ()
-	| Global g => Global.ty g
-	| Int i => Type.int (IntX.size i)
-	| Label l => Type.label l
-	| Line => Type.defaultInt
-	| Offset {ty, ...} => ty
-	| Real r => Type.real (RealX.size r)
-	| Register r => Register.ty r
-	| SmallIntInf _ => Type.intInf
-	| StackOffset {ty, ...} => ty
-	| StackTop => Type.defaultWord
-	| Word w => Type.word (WordX.size w)
-	 
-      val rec equals =
+			      
+    val rec equals =
 	 fn (ArrayOffset {base = b, index = i, ...},
 	     ArrayOffset {base = b', index = i', ...}) =>
 	        equals (b, b') andalso equals (i, i') 
@@ -1020,9 +1020,11 @@ structure Program =
 			       andalso (Type.equals (ty, ty')
 					orelse
 					(* Get a word from a word8 array.*)
-					(Type.equals (ty, Type.word WordSize.W32)
+					(Type.equals
+					 (ty, Type.word (WordSize.W 32))
 					 andalso
-					 Type.equals (ty', Type.word WordSize.W8)))
+					 Type.equals
+					 (ty', Type.word (WordSize.W 8))))
 			    end
 		       | _ => false)
 		| t => Type.isCPointer t

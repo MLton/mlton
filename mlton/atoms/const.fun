@@ -21,8 +21,6 @@ in
    structure WordSize = WordSize
 end
 
-datatype z = datatype WordSize.t
-
 structure SmallIntInf =
    struct
       structure Word = Pervasive.Word
@@ -79,7 +77,7 @@ fun hash (c: t): word =
       Int i => String.hash (IntX.toString i)
     | IntInf i => String.hash (IntInf.toString i)
     | Real r => RealX.hash r
-    | Word w => LargeWord.toWord (WordX.toLargeWord w)
+    | Word w => Word.fromIntInf (WordX.toIntInf w)
     | Word8Vector v => String.hash (Word8.vectorToString v)
    
 fun equals (c, c') =

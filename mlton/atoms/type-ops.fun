@@ -20,7 +20,7 @@ end
 type intSize = IntSize.t
 datatype realSize = datatype RealSize.t
 type tycon = Tycon.t
-datatype wordSize = datatype WordSize.t
+type wordSize = WordSize.t
    
 local
    fun nullary tycon = con (tycon, Vector.new0 ())
@@ -50,7 +50,7 @@ in
    val weak = unary Tycon.weak
 end
 
-val word8 = word W8
+val word8 = word (WordSize.W 8)
 val word8Vector = vector word8
    
 local

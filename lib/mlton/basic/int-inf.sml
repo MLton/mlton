@@ -4,8 +4,8 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-structure IntInf: INTEGER = Integer(open Pervasive.IntInf
-				    fun toIntInf x = x)
+structure IntInf: INTEGER = Integer (open Pervasive.IntInf
+				     fun toIntInf x = x)
 
 structure IntInf: INT_INF =
    struct

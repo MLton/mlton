@@ -1169,7 +1169,7 @@ structure Type =
 	    UnifyResult.NotUnifiable ((l, _), (l', _)) => NotUnifiable (l, l')
 	  | UnifyResult.Unified => Unified
 
-      val word8 = word WordSize.W8
+      val word8 = word (WordSize.W 8)
 	 
       fun 'a simpleHom {con: t * Tycon.t * 'a vector -> 'a,
 			expandOpaque: bool,
@@ -1217,7 +1217,9 @@ structure Type =
 	    val con =
 	       fn (t, c, ts) =>
 	       if replaceCharWithWord8 andalso Tycon.equals (c, Tycon.char)
-		  then con (word8, Tycon.word WordSize.W8, Vector.new0 ())
+		  then con (word8,
+			    Tycon.word (WordSize.W 8),
+			    Vector.new0 ())
 	       else con (t, c, ts)
 	 in
 	    makeHom {con = con,

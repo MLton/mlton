@@ -1569,7 +1569,232 @@ structure Primitive =
 	    val toLargeX: word -> LargeWord.word = fn x => x
 	    val xorb = _prim "Word64_xorb": word * word -> word;
 	 end
-	 
+
+      structure Word2 =
+	 struct
+	    type big = Word8.word
+	    type word = word2
+	    val fromBigUnsafe = _prim "Word8_toWord2": big -> word;
+	    val toBig = _prim "Word2_toWord8": word -> big;
+	    val wordSize = 2
+	 end
+      structure Word3 =
+	 struct
+	    type big = Word8.word
+	    type word = word3
+	    val fromBigUnsafe = _prim "Word8_toWord3": big -> word;
+	    val toBig = _prim "Word3_toWord8": word -> big;
+	    val wordSize = 3
+	 end
+      structure Word4 =
+	 struct
+	    type big = Word8.word
+	    type word = word4
+	    val fromBigUnsafe = _prim "Word8_toWord4": big -> word;
+	    val toBig = _prim "Word4_toWord8": word -> big;
+	    val wordSize = 4
+	 end
+      structure Word5 =
+	 struct
+	    type big = Word8.word
+	    type word = word5
+	    val fromBigUnsafe = _prim "Word8_toWord5": big -> word;
+	    val toBig = _prim "Word5_toWord8": word -> big;
+	    val wordSize = 5
+	 end
+      structure Word6 =
+	 struct
+	    type big = Word8.word
+	    type word = word6
+	    val fromBigUnsafe = _prim "Word8_toWord6": big -> word;
+	    val toBig = _prim "Word6_toWord8": word -> big;
+	    val wordSize = 6
+	 end
+      structure Word7 =
+	 struct
+	    type big = Word8.word
+	    type word = word7
+	    val fromBigUnsafe = _prim "Word8_toWord7": big -> word;
+	    val toBig = _prim "Word7_toWord8": word -> big;
+	    val wordSize = 7
+	 end
+      structure Word9 =
+	 struct
+	    type big = Word16.word
+	    type word = word9
+	    val fromBigUnsafe = _prim "Word16_toWord9": big -> word;
+	    val toBig = _prim "Word9_toWord16": word -> big;
+	    val wordSize = 9
+	 end
+      structure Word10 =
+	 struct
+	    type big = Word16.word
+	    type word = word10
+	    val fromBigUnsafe = _prim "Word16_toWord10": big -> word;
+	    val toBig = _prim "Word10_toWord16": word -> big;
+	    val wordSize = 10
+	 end
+      structure Word11 =
+	 struct
+	    type big = Word16.word
+	    type word = word11
+	    val fromBigUnsafe = _prim "Word16_toWord11": big -> word;
+	    val toBig = _prim "Word11_toWord16": word -> big;
+	    val wordSize = 11
+	 end
+      structure Word12 =
+	 struct
+	    type big = Word16.word
+	    type word = word12
+	    val fromBigUnsafe = _prim "Word16_toWord12": big -> word;
+	    val toBig = _prim "Word12_toWord16": word -> big;
+	    val wordSize = 12
+	 end
+      structure Word13 =
+	 struct
+	    type big = Word16.word
+	    type word = word13
+	    val fromBigUnsafe = _prim "Word16_toWord13": big -> word;
+	    val toBig = _prim "Word13_toWord16": word -> big;
+	    val wordSize = 13
+	 end
+      structure Word14 =
+	 struct
+	    type big = Word16.word
+	    type word = word14
+	    val fromBigUnsafe = _prim "Word16_toWord14": big -> word;
+	    val toBig = _prim "Word14_toWord16": word -> big;
+	    val wordSize = 14
+	 end
+      structure Word15 =
+	 struct
+	    type big = Word16.word
+	    type word = word15
+	    val fromBigUnsafe = _prim "Word16_toWord15": big -> word;
+	    val toBig = _prim "Word15_toWord16": word -> big;
+	    val wordSize = 15
+	 end
+      structure Word17 =
+	 struct
+	    type big = Word32.word
+	    type word = word17
+	    val fromBigUnsafe = _prim "Word32_toWord17": big -> word;
+	    val toBig = _prim "Word17_toWord32": word -> big;
+	    val wordSize = 17
+	 end
+      structure Word18 =
+	 struct
+	    type big = Word32.word
+	    type word = word18
+	    val fromBigUnsafe = _prim "Word32_toWord18": big -> word;
+	    val toBig = _prim "Word18_toWord32": word -> big;
+	    val wordSize = 18
+	 end
+      structure Word19 =
+	 struct
+	    type big = Word32.word
+	    type word = word19
+	    val fromBigUnsafe = _prim "Word32_toWord19": big -> word;
+	    val toBig = _prim "Word19_toWord32": word -> big;
+	    val wordSize = 19
+	 end
+      structure Word20 =
+	 struct
+	    type big = Word32.word
+	    type word = word20
+	    val fromBigUnsafe = _prim "Word32_toWord20": big -> word;
+	    val toBig = _prim "Word20_toWord32": word -> big;
+	    val wordSize = 20
+	 end
+      structure Word21 =
+	 struct
+	    type big = Word32.word
+	    type word = word21
+	    val fromBigUnsafe = _prim "Word32_toWord21": big -> word;
+	    val toBig = _prim "Word21_toWord32": word -> big;
+	    val wordSize = 21
+	 end
+      structure Word22 =
+	 struct
+	    type big = Word32.word
+	    type word = word22
+	    val fromBigUnsafe = _prim "Word32_toWord22": big -> word;
+	    val toBig = _prim "Word22_toWord32": word -> big;
+	    val wordSize = 22
+	 end
+      structure Word23 =
+	 struct
+	    type big = Word32.word
+	    type word = word23
+	    val fromBigUnsafe = _prim "Word32_toWord23": big -> word;
+	    val toBig = _prim "Word23_toWord32": word -> big;
+	    val wordSize = 23
+	 end
+      structure Word24 =
+	 struct
+	    type big = Word32.word
+	    type word = word24
+	    val fromBigUnsafe = _prim "Word32_toWord24": big -> word;
+	    val toBig = _prim "Word24_toWord32": word -> big;
+	    val wordSize = 24
+	 end
+      structure Word25 =
+	 struct
+	    type big = Word32.word
+	    type word = word25
+	    val fromBigUnsafe = _prim "Word32_toWord25": big -> word;
+	    val toBig = _prim "Word25_toWord32": word -> big;
+	    val wordSize = 25
+	 end
+      structure Word26 =
+	 struct
+	    type big = Word32.word
+	    type word = word26
+	    val fromBigUnsafe = _prim "Word32_toWord26": big -> word;
+	    val toBig = _prim "Word26_toWord32": word -> big;
+	    val wordSize = 26
+	 end
+      structure Word27 =
+	 struct
+	    type big = Word32.word
+	    type word = word27
+	    val fromBigUnsafe = _prim "Word32_toWord27": big -> word;
+	    val toBig = _prim "Word27_toWord32": word -> big;
+	    val wordSize = 27
+	 end
+      structure Word28 =
+	 struct
+	    type big = Word32.word
+	    type word = word28
+	    val fromBigUnsafe = _prim "Word32_toWord28": big -> word;
+	    val toBig = _prim "Word28_toWord32": word -> big;
+	    val wordSize = 28
+	 end
+      structure Word29 =
+	 struct
+	    type big = Word32.word
+	    type word = word29
+	    val fromBigUnsafe = _prim "Word32_toWord29": big -> word;
+	    val toBig = _prim "Word29_toWord32": word -> big;
+	    val wordSize = 29
+	 end
+      structure Word30 =
+	 struct
+	    type big = Word32.word
+	    type word = word30
+	    val fromBigUnsafe = _prim "Word32_toWord30": big -> word;
+	    val toBig = _prim "Word30_toWord32": word -> big;
+	    val wordSize = 30
+	 end
+      structure Word31 =
+	 struct
+	    type big = Word32.word
+	    type word = word31
+	    val fromBigUnsafe = _prim "Word32_toWord31": big -> word;
+	    val toBig = _prim "Word31_toWord32": word -> big;
+	    val wordSize = 31
+	 end
+
       structure World =
 	 struct
 	    val isOriginal = _import "World_isOriginal": unit -> bool;

@@ -172,8 +172,7 @@ fun load (ins: In.t): string * ConstType.t -> Const.t =
 		  (case IntInf.fromString value of
 		      NONE => Error.bug "strange Word constant"
 		    | SOME i =>
-			 Const.Word (WordX.make (LargeWord.fromIntInf i,
-						 WordSize.default)))
+			 Const.Word (WordX.fromIntInf (i, WordSize.default)))
 	 end
    in
       lookupConstant

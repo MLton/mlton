@@ -9,8 +9,6 @@ functor SsaTree (S: SSA_TREE_STRUCTS): SSA_TREE =
 struct
 
 open S
-datatype z = datatype RealSize.t
-datatype z = datatype WordSize.t
 
 structure Type =
    struct

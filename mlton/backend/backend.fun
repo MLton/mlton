@@ -15,6 +15,7 @@ local
    open Machine
 in
    structure Global = Global
+   structure IntSize = IntSize
    structure IntX = IntX
    structure Label = Label
    structure PointerTycon = PointerTycon
@@ -371,7 +372,10 @@ fun toMachine (program: Ssa.Program.t) =
 	       datatype z = datatype Const.t
 	    in
 	       case c of
-		  Int i => M.Operand.Int i
+		  Int i =>
+		     M.Operand.Int
+		     (IntX.make (IntX.toIntInf i,
+				 IntSize.roundUpToPrim (IntX.size i)))
 		| IntInf i =>
 		     (case Const.SmallIntInf.toWord i of
 			 NONE => globalIntInf i
@@ -380,7 +384,10 @@ fun toMachine (program: Ssa.Program.t) =
 		     if !Control.Native.native
 			then globalReal r
 		     else M.Operand.Real r
-		| Word w => M.Operand.Word w
+		| Word w =>
+		     M.Operand.Word
+		     (WordX.fromIntInf (WordX.toIntInf w,
+					WordSize.roundUpToPrim (WordX.size w)))
 		| Word8Vector v => globalString (Word8.vectorToString v)
 	    end
       end
@@ -436,9 +443,10 @@ fun toMachine (program: Ssa.Program.t) =
 				    ty = ty}
 	     | PointerTycon pt =>
 		  M.Operand.Word
-		  (WordX.make (Word.toLarge (Runtime.typeIndexToHeader
-					     (PointerTycon.index pt)),
-			       WordSize.default))
+		  (WordX.fromIntInf
+		   (Word.toIntInf (Runtime.typeIndexToHeader
+				   (PointerTycon.index pt)),
+		    WordSize.default))
 	     | Runtime f =>
 		  runtimeOp (f, R.Operand.ty oper)
 	     | SmallIntInf w => M.Operand.SmallIntInf w

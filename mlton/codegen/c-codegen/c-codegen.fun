@@ -43,7 +43,7 @@ in
 end
 
 datatype z = datatype RealSize.t
-datatype z = datatype WordSize.t
+datatype z = datatype WordSize.prim
 
 local
    open Runtime
@@ -122,7 +122,7 @@ structure WordX =
 	    fun simple s =
 	       concat ["(Word", s, ")0x", toString w]
 	 in
-	    case size w of
+	    case WordSize.prim (size w) of
 	       W8 => simple "8"
 	     | W16 => simple "16"
 	     | W32 => concat ["0x", toString w]
@@ -413,10 +413,10 @@ structure Type =
 		  if 0 = Vector.length pointers
 		     then int (IntSize.I 32)
 		  else pointer
-	     | ExnStack => word W32
+	     | ExnStack => word WordSize.default
 	     | Int s => int s
 	     | IntInf => pointer
-	     | Label _ => word W32
+	     | Label _ => word WordSize.default
 	     | Real s => real s
 	     | Word s => word s
 	     | _ => Error.bug (concat ["Type.toC strange type: ", toString t])

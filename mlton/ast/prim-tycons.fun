@@ -11,7 +11,6 @@ struct
 open S
 
 datatype z = datatype RealSize.t
-datatype z = datatype WordSize.t
 
 type tycon = t
 

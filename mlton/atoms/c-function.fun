@@ -82,9 +82,8 @@ datatype z = datatype Convention.t
 local
    open CType
 in
-   datatype z = datatype WordSize.t
    val Int32 = Int (IntSize.I 32)
-   val Word32 = Word W32
+   val Word32 = Word (WordSize.W 32)
 end
 	 
 local

@@ -117,7 +117,6 @@ signature BASIS_2002 =
       structure VectorSlice : VECTOR_SLICE	
       structure Vector : VECTOR	
       structure Word : WORD	
-      structure Word8 : WORD	
       structure Word8Array : MONO_ARRAY	
       structure Word8Array2 : MONO_ARRAY2	
       structure Word8ArraySlice : MONO_ARRAY_SLICE	
@@ -256,24 +255,53 @@ signature BASIS_2002 =
 (*
       structure Windows : WINDOWS
 *)
+      structure Word2: WORD
+      structure Word3: WORD
+      structure Word4: WORD
+      structure Word5: WORD
+      structure Word6: WORD
+      structure Word7: WORD
+      structure Word8: WORD
+      structure Word9: WORD
+      structure Word10: WORD
+      structure Word11: WORD
+      structure Word12: WORD
+      structure Word13: WORD
+      structure Word14: WORD
+      structure Word15: WORD
+      structure Word16: WORD
+      structure Word17: WORD
+      structure Word18: WORD
+      structure Word19: WORD
+      structure Word20: WORD
+      structure Word21: WORD
+      structure Word22: WORD
+      structure Word23: WORD
+      structure Word24: WORD
+      structure Word25: WORD
+      structure Word26: WORD
+      structure Word27: WORD
+      structure Word28: WORD
+      structure Word29: WORD
+      structure Word30: WORD
+      structure Word31: WORD
+      structure Word32: WORD
+      structure Word64: WORD
       structure WordArray : MONO_ARRAY
       structure WordArray2 : MONO_ARRAY2
       structure WordArraySlice : MONO_ARRAY_SLICE
       structure WordVector : MONO_VECTOR
       structure WordVectorSlice : MONO_VECTOR_SLICE
-      structure Word16 : WORD
       structure Word16Array : MONO_ARRAY
       structure Word16Array2 : MONO_ARRAY2
       structure Word16ArraySlice : MONO_ARRAY_SLICE
       structure Word16Vector : MONO_VECTOR
       structure Word16VectorSlice : MONO_VECTOR_SLICE
-      structure Word32 : WORD
       structure Word32Array : MONO_ARRAY
       structure Word32Array2 : MONO_ARRAY2
       structure Word32ArraySlice : MONO_ARRAY_SLICE
       structure Word32Vector : MONO_VECTOR
       structure Word32VectorSlice : MONO_VECTOR_SLICE
-      structure Word64 : WORD
       structure Word64Array : MONO_ARRAY
       structure Word64Array2 : MONO_ARRAY2
       structure Word64ArraySlice : MONO_ARRAY_SLICE
@@ -604,7 +632,6 @@ signature BASIS_2002 =
    where type string = string
    where type substring = substring
    where type unit = unit
-   where type word = word
 
    (* Types referenced in signatures by structure name *)
 (*
@@ -690,8 +717,37 @@ signature BASIS_2002 =
    where type Int64.int = Int64.int
    where type IntInf.int = IntInf.int
    where type Real32.real = Real32.real
+   where type Word2.word = Word2.word
+   where type Word3.word = Word3.word
+   where type Word4.word = Word4.word
+   where type Word5.word = Word5.word
+   where type Word6.word = Word6.word
+   where type Word7.word = Word7.word
    where type Word8.word = Word8.word
+   where type Word9.word = Word9.word
+   where type Word10.word = Word10.word
+   where type Word11.word = Word11.word
+   where type Word12.word = Word12.word
+   where type Word13.word = Word13.word
+   where type Word14.word = Word14.word
+   where type Word15.word = Word15.word
    where type Word16.word = Word16.word
+   where type Word17.word = Word17.word
+   where type Word18.word = Word18.word
+   where type Word19.word = Word19.word
+   where type Word20.word = Word20.word
+   where type Word21.word = Word21.word
+   where type Word22.word = Word22.word
+   where type Word23.word = Word23.word
+   where type Word24.word = Word24.word
+   where type Word25.word = Word25.word
+   where type Word26.word = Word26.word
+   where type Word27.word = Word27.word
+   where type Word28.word = Word28.word
+   where type Word29.word = Word29.word
+   where type Word30.word = Word30.word
+   where type Word31.word = Word31.word
+   where type Word32.word = Word32.word
    where type Word64.word = Word64.word
 
    where type 'a MLton.Thread.t = 'a MLton.Thread.t

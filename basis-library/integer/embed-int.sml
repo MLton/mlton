@@ -1,4 +1,4 @@
-signature EMBED =
+signature EMBED_INT =
    sig
       eqtype int
       type big
@@ -9,18 +9,19 @@ signature EMBED =
    end
 
 functor EmbedInt (structure Big: INTEGER
-		  structure Small: EMBED where type big = Big.int): INTEGER =
+		  structure Small: EMBED_INT where type big = Big.int): INTEGER =
    struct
+      val () = if Int.< (Small.precision', valOf Big.precision) then ()
+	       else raise Fail "EmbedWord"
+
       open Small
 	 
       val precision = SOME precision'
 
       val maxIntBig =
 	 Big.fromLarge
-	 (LargeInt.- (Word.toLargeInt (Word.<<
-				       (0w1,
-					Word.fromInt (Int.- (precision', 1)))),
-		      1))
+	 (IntInf.- (LargeInt.<< (1, Word.fromInt (Int.- (precision', 1))),
+		    1))
 
       val maxInt = SOME (fromBigUnsafe maxIntBig)
 
@@ -93,15 +94,15 @@ functor EmbedInt (structure Big: INTEGER
       val toString = Big.toString o toBig
    end
 
-functor Embed8 (Small: EMBED where type big = Int8.int): INTEGER =
+functor Embed8 (Small: EMBED_INT where type big = Int8.int): INTEGER =
    EmbedInt (structure Big = Int8
 	     structure Small = Small)
 
-functor Embed16 (Small: EMBED where type big = Int16.int): INTEGER =
+functor Embed16 (Small: EMBED_INT where type big = Int16.int): INTEGER =
    EmbedInt (structure Big = Int16
 	     structure Small = Small)
 
-functor Embed32 (Small: EMBED where type big = Int32.int): INTEGER =
+functor Embed32 (Small: EMBED_INT where type big = Int32.int): INTEGER =
    EmbedInt (structure Big = Int32
 	     structure Small = Small)
 

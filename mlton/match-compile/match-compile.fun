@@ -147,7 +147,8 @@ in
 	    IntSize.cardinality, Type.int, Cases.int,
 	    fn Const.Int i => i
 	     | _ => Error.bug "caseInt type error")
-      @ make (List.remove (WordSize.all, fn s => WordSize.W64 = s),
+      @ make (List.remove (WordSize.all, fn s =>
+			   WordSize.equals (s, WordSize.W 64)),
 	      WordSize.cardinality, Type.word, Cases.word,
 	      fn Const.Word w => w
 	       | _ => Error.bug "caseWord type error")
@@ -223,16 +224,16 @@ fun unhandledConst (cs: Const.t vector): Const.t =
 	       val s = WordX.size w
 	       fun extract c =
 		  case c of
-		     Word w => WordX.toLargeWord w
+		     Word w => WordX.toIntInf w
 		   | _ => Error.bug "expected Word"
 	    in
 	       search {<= = op <=,
 		       equals = op =,
 		       extract = extract,
-		       isMin = fn w => w = 0w0,
-		       make = fn w => Const.word (WordX.make (w, s)),
-		       next = fn w => w + 0w1,
-		       prev = fn w => w - 0w1}
+		       isMin = fn w => w = 0,
+		       make = fn w => Const.word (WordX.fromIntInf (w, s)),
+		       next = fn w => w + 1,
+		       prev = fn w => w - 1}
 	    end
        | Word8Vector _ =>
 	    let

@@ -303,4 +303,5 @@ signature PRIM =
       val wordSub: WordSize.t -> t
       val wordToInt: WordSize.t * IntSize.t -> t
       val wordToIntX: WordSize.t * IntSize.t -> t
+      val wordToWord: WordSize.t * WordSize.t -> t
    end

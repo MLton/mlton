@@ -225,7 +225,8 @@ fun 'a elabConst (c: Aconst.t,
       case Aconst.node c of
 	 Aconst.Bool b => if b then t else f
        | Aconst.Char c =>
-	    now (Const.Word (WordX.make (LargeWord.fromChar c, WordSize.W8)),
+	    now (Const.Word (WordX.fromIntInf (IntInf.fromInt (Char.toInt c),
+					       WordSize.W 8)),
 		 Type.char)
        | Aconst.Int i =>
 	    let
@@ -261,8 +262,8 @@ fun 'a elabConst (c: Aconst.t,
 	       (ty, fn tycon =>
 		choose (tycon, WordSize.all, Tycon.word, fn s =>
 			Const.Word
-			(if w <= LargeWord.toIntInf (WordSize.max s)
-			    then WordX.fromLargeInt (w, s)
+			(if w <= WordSize.max s
+			    then WordX.fromIntInf (w, s)
 			 else (error ty
 			       ; WordX.zero s))))
 	    end	       

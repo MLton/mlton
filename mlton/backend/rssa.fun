@@ -16,8 +16,6 @@ in
    structure GCField = GCField
 end
 
-datatype z = datatype WordSize.t
-
 structure Operand =
    struct
       datatype t =
@@ -132,10 +130,13 @@ structure Operand =
 	    Const c =>
 	       (case c of
 		   Const.Word w =>
-		      (* 512 is pretty arbitrary *)
-		      if WordX.<= (w, WordX.fromLargeInt (512, WordX.size w))
-			 then small (LargeWord.toWord (WordX.toLargeWord w))
-		      else big z
+		      let
+			 val w = WordX.toIntInf w
+		      in
+			 if w <= 512 (* 512 is pretty arbitrary *)
+			    then small (Word.fromIntInf w)
+			 else big z
+		      end
 		 | _ => Error.bug "strange numBytes")
 	  | _ => big z
    end
@@ -1065,9 +1066,11 @@ structure Program =
 				  andalso (Type.equals (ty, ty')
 					   orelse
 					   (* Get a word from a word8 array.*)
-					   (Type.equals (ty, Type.word W32)
+					   (Type.equals
+					    (ty, Type.word (WordSize.W 32))
 					    andalso
-					    Type.equals (ty', Type.word W8)))
+					    Type.equals
+					    (ty', Type.word (WordSize.W 8))))
 			       end
 			  | _ => false)
 		   | t => Type.isCPointer t

@@ -9,7 +9,6 @@ functor MachineAtoms (S: MACHINE_ATOMS_STRUCTS): MACHINE_ATOMS =
 struct
 
 open S
-datatype z = datatype WordSize.t
 
 structure ProfileLabel = ProfileLabel ()
 
@@ -352,9 +351,10 @@ structure ObjectType =
       val stack = Stack
 
       val word8Vector =
-	 Array (MemChunk.T {components = Vector.new1 {mutable = false,
-						      offset = 0,
-						      ty = Type.word W8},
+	 Array (MemChunk.T {components = (Vector.new1
+					  {mutable = false,
+					   offset = 0,
+					   ty = Type.word (WordSize.W 8)}),
 			    size = 1})
 
       val thread =

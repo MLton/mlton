@@ -815,7 +815,6 @@ fun defunctorize (CoreML.Program.T {decs}) =
 					 ty = ty}
 			fun id () = Vector.sub (args, 0)
 			datatype z = datatype Prim.Name.t
-			datatype z = datatype WordSize.t
 		     in
 			case Prim.name prim of
 			   Char_toWord8 => id ()

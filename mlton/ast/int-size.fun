@@ -42,17 +42,6 @@ val memoize: (t -> 'a) -> t -> 'a =
       fn T {precision = i, ...} => valOf (Vector.sub (v, i))
    end
 
-val bytes: t -> int =
-   memoize
-   (fn T {precision, ...} =>
-    if precision <= 8
-       then 1
-    else if precision <= 16
-	    then 2
-	 else if precision <= 32
-		 then 4
-	      else 8)
-
 val toString = Int.toString o bits
 
 val layout = Layout.str o toString
@@ -107,5 +96,7 @@ fun roundUpToPrim s =
    in
       I bits
    end
+
+val bytes: t -> int = memoize (fn s => bits (roundUpToPrim s) div 8)
 
 end

@@ -509,9 +509,8 @@ fun profile program =
 				       {args = (Vector.new2
 						(Operand.GCState,
 						 Operand.word
-						 (WordX.make
-						  (LargeWord.fromInt
-						   bytesAllocated,
+						 (WordX.fromIntInf
+						  (IntInf.fromInt bytesAllocated,
 						   WordSize.default)))),
 					func = func,
 					return = SOME newLabel}

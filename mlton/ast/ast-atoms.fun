@@ -13,6 +13,7 @@ structure Wrap = Region.Wrap
 
 structure AdmitsEquality = AdmitsEquality ()
 structure Const = AstConst ()
+
 structure IntSize = IntSize ()
 structure Kind = TyconKind ()
 structure RealSize = RealSize ()

@@ -32,9 +32,8 @@ struct
      structure WordX = WordX
   end
 
-  datatype z = datatype RealSize.t
-  datatype z = datatype WordSize.t
-  
+  datatype z = datatype WordSize.prim
+
   structure Global =
      struct
 	open Machine.Global
@@ -340,18 +339,18 @@ struct
 		  fun single size =
 		     Vector.new1
 		     (x86.Operand.immediate_const_word
-		      (Word.fromLarge (WordX.toLargeWord w)),
+		      (Word.fromIntInf (WordX.toIntInf w)),
 		      size)
 	       in
-		  case WordX.size w of
+		  case WordSize.prim (WordX.size w) of
 		     W8 => single x86.Size.BYTE
 		   | W16 => single x86.Size.WORD
 		   | W32 => single x86.Size.LONG
 		   | W64 =>
 			let
-			   val w = WordX.toLargeWord w
-			   val lo = Word.fromLarge w
-			   val hi = Word.fromLarge (LargeWord.>> (w, 0w32))
+			   val w = WordX.toIntInf w
+			   val lo = Word.fromIntInf w
+			   val hi = Word.fromIntInf (IntInf.~>> (w, 0w32))
 			in
 			   Vector.new2
 			   ((x86.Operand.immediate_const_word lo, x86.Size.LONG),
@@ -883,8 +882,8 @@ struct
 		     | Word {cases, default, test, ...} =>
 			  simple ({cases = (Vector.map
 					    (cases, fn (w, l) =>
-					     (Word.fromLarge
-					      (WordX.toLargeWord w),
+					     (Word.fromIntInf
+					      (WordX.toIntInf w),
 					      l))),
 				   default = default,
 				   test = test},

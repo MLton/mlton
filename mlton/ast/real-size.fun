@@ -25,6 +25,8 @@ val toString =
    fn R32 => "32"
     | R64 => "64"
 
+val layout = Layout.str o toString
+
 val bytes: t -> int =
    fn R32 => 4
     | R64 => 8

@@ -11,6 +11,9 @@ struct
 open S
 open Rssa
 
+datatype z = datatype IntSize.prim
+datatype z = datatype WordSize.prim
+
 structure S = Ssa
 local
    open Ssa
@@ -23,8 +26,6 @@ in
    structure GCField = GCField
 end
 
-datatype z = datatype WordSize.t
-
 structure CFunction =
    struct
       open CFunction 
@@ -34,8 +35,8 @@ structure CFunction =
       in
 	 val Int32 = Int (IntSize.I 32)
 	 val Int64 = Int (IntSize.I 64)
-	 val Word32 = Word W32
-	 val Word64 = Word W64
+	 val Word32 = Word (WordSize.W 32)
+	 val Word64 = Word (WordSize.W 64)
       end
 
       datatype z = datatype CType.t
@@ -1021,8 +1022,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			       {args = (Vector.new2
 					(Operand.Cast (addr, Type.defaultWord),
 					 Operand.word
-					 (WordX.make
-					  (LargeWord.fromInt
+					 (WordX.fromIntInf
+					  (IntInf.fromInt
 					   (!Control.cardSizeLog2),
 					   WordSize.default)))),
 				dst = SOME (index, Type.defaultInt),
@@ -1034,8 +1035,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					   index = (Operand.Var
 						    {ty = Type.defaultInt,
 						     var = index}),
-					   ty = Type.word W8}),
-				   src = Operand.word (WordX.one W8)})
+					   ty = Type.word (WordSize.W 8)}),
+				   src = Operand.word (WordX.one (WordSize.W 8))})
 			      :: assign
 			      :: ss
 			in
@@ -1066,9 +1067,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					       (Operand.Cast (varOp (a 1),
 							      Type.defaultWord),
 					        Operand.word
-						(WordX.make
-						 (LargeWord.fromInt
-						  (Type.size ty),
+						(WordX.fromIntInf
+						 (IntInf.fromInt (Type.size ty),
 						  WordSize.default))),
 				        dst = SOME (temp, Type.defaultWord),
 				        prim = Prim.wordMul WordSize.default})
@@ -1212,17 +1212,13 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					    else primApp (Prim.intToInt (s1, s2))
 				    end
 			       | Int_toWord (s1, s2) =>
-				    let
-				       datatype z = datatype IntSize.prim
-				       datatype z = datatype WordSize.t
-				    in
-				       if (case (IntSize.prim s1, s2) of
-					      (I64, W32) => true
-					    | _ => false)
-					  andalso !Control.Native.native
-					  then simpleCCall (CFunction.intToWord (s1, s2))
-				       else normal ()
-				    end
+				    if (case (IntSize.prim s1,
+					      WordSize.prim s2) of
+					   (I64, W32) => true
+					 | _ => false)
+				       andalso !Control.Native.native
+				       then simpleCCall (CFunction.intToWord (s1, s2))
+				    else normal ()
 			       | IntInf_add => simpleCCall CFunction.intInfAdd
 			       | IntInf_andb => simpleCCall CFunction.intInfAndb
 			       | IntInf_arshift =>
@@ -1305,8 +1301,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					    {args = (Vector.new2
 						     (Operand.Runtime LimitPlusSlop,
 						      Operand.word
-						      (WordX.make
-						       (LargeWord.fromInt
+						      (WordX.fromIntInf
+						       (IntInf.fromInt
 							Runtime.limitSlop,
 							size)))),
 					     dst = SOME (tmp, ty),
@@ -1421,22 +1417,33 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				     end,
 				     none)
 			       | Word_equal s =>
-				    if s = WordSize.W64
-				       then simpleCCall CFunction.word64Equal
-				    else normal ()
-			       | Word_toInt (s1, s2) =>
 				    let
-				       datatype z = datatype IntSize.prim
-				       datatype z = datatype WordSize.t
+				       val s = WordSize.roundUpToPrim s
 				    in
-				       if (case (s1, IntSize.prim s2) of
-					      (W32, I64) => true
-					    | _ => false)
+				       if 64 = WordSize.bits s
 					  andalso !Control.Native.native
-					  then simpleCCall (CFunction.wordToInt (s1, s2))
-				       else normal ()
+					  then simpleCCall CFunction.word64Equal
+				       else primApp (Prim.wordEqual s)
 				    end
+			       | Word_toInt (s1, s2) =>
+				    if (case (WordSize.prim s1, IntSize.prim s2) of
+					   (W32, I64) => true
+					 | _ => false)
+				       andalso !Control.Native.native
+				       then simpleCCall (CFunction.wordToInt (s1, s2))
+				    else normal ()
 			       | Word_toIntInf => cast ()
+			       | Word_toWord (s1, s2) =>
+				    let
+				       val s1 = WordSize.roundUpToPrim s1
+				       val s2 = WordSize.roundUpToPrim s2
+				       val b1 = WordSize.bits s1
+				       val b2 = WordSize.bits s2
+				    in
+				       if b1 = b2
+					  then cast ()
+				       else primApp (Prim.wordToWord (s1, s2))
+				    end
 			       | WordVector_toIntInf => cast ()
 			       | Word8Array_subWord => sub Type.defaultWord
 			       | Word8Array_updateWord =>

@@ -31,8 +31,8 @@ in
    structure Tycon = Tycon
 end
 
-datatype z = datatype WordSize.t
-   
+datatype z = datatype WordSize.prim
+
 structure TyconRep =
    struct
       datatype t =
@@ -531,8 +531,11 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		       then new ()
 		    else
 		       case S.Type.dest ty of
-			  Word W8 => R.Type.word8Vector
-			| Word W32 => R.Type.wordVector
+			  Word s =>
+			     (case WordSize.prim s of
+				 W8 => R.Type.word8Vector
+			       | W32 => R.Type.wordVector
+			       | _ => new ())
 			| _ => new ()
 		 end
 	      datatype z = datatype S.Type.dest
@@ -575,7 +578,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 				     SOME (R.Type.pointer pt)
 				  end
 			   else NONE)
-	       | Word s => SOME (R.Type.word s)
+	       | Word s => SOME (R.Type.word (WordSize.roundUpToPrim s))
 	   end))
       val toRtype =
 	 Trace.trace

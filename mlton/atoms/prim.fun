@@ -16,7 +16,6 @@ struct
 open S
 
 datatype z = datatype RealSize.t
-datatype z = datatype WordSize.t	       
 
 local
    open Const
@@ -578,6 +577,7 @@ in
    val intToWord = make (Name.Int_toWord, int, word)
    val wordToInt = make (Name.Word_toInt, word, int)
    val wordToIntX = make (Name.Word_toIntX, word, int)
+   val wordToWord = make (Name.Word_toWord, word, word)
 end
       
 val ffi = new o Name.FFI
@@ -743,7 +743,7 @@ fun 'a apply (p, args, varEquals) =
 	    val x' = x mod (Int.toIntInf (WordSize.bits s))
 	 in
 	    if x = x'
-	       then word (WordX.fromLargeInt (x, s))
+	       then word (WordX.fromIntInf (x, s))
 	    else ApplyResult.Overflow
 	 end
       val eq =
@@ -775,7 +775,7 @@ fun 'a apply (p, args, varEquals) =
 	   | (Int_toInt (_, s), [Int i]) =>
 	        int (IntX.make (IntX.toIntInf i, s))
 	   | (Int_toWord (_, s), [Int i]) =>
-		word (WordX.fromLargeInt (IntX.toIntInf i, s))
+		word (WordX.fromIntInf (IntX.toIntInf i, s))
 	   | (IntInf_compare, [IntInf i1, IntInf i2]) =>
 		int (IntX.make
 		     (IntInf.fromInt (case IntInf.compare (i1, i2) of
@@ -787,8 +787,8 @@ fun 'a apply (p, args, varEquals) =
 	   | (IntInf_toWord, [IntInf i]) =>
 		(case SmallIntInf.toWord i of
 		    NONE => ApplyResult.Unknown
-		  | SOME w => word (WordX.make (LargeWord.fromWord w,
-						WordSize.default)))
+		  | SOME w => word (WordX.fromIntInf (Word.toIntInf w,
+						      WordSize.default)))
 	   | (MLton_eq, [c1, c2]) => eq (c1, c2)
 	   | (MLton_equal, [c1, c2]) => equal (c1, c2)
 	   | (Word_add _, [Word w1, Word w2]) => word (WordX.+ (w1, w2))
@@ -817,7 +817,7 @@ fun 'a apply (p, args, varEquals) =
 		int (IntX.make (WordX.toIntInf w, s))
 	   | (Word_toIntInf, [Word w]) =>
 		intInf (SmallIntInf.fromWord
-			(LargeWord.toWord (WordX.toLargeWord w)))
+			(Word.fromIntInf (WordX.toIntInf w)))
 	   | (Word_toIntX (_, s), [Word w]) =>
 		int (IntX.make (WordX.toIntInfX w, s))
 	   | (Word_toWord (_, s), [Word w]) => word (WordX.resize (w, s))
@@ -907,8 +907,8 @@ fun 'a apply (p, args, varEquals) =
 			      if WordX.isZero
 				 (WordX.mod
 				  (w,
-				   WordX.make
-				   (LargeWord.fromInt (WordSize.bits s), s)))
+				   WordX.fromIntInf
+				   (IntInf.fromInt (WordSize.bits s), s)))
 				 then Var x
 			      else Unknown
 			   end
@@ -921,9 +921,10 @@ fun 'a apply (p, args, varEquals) =
 			then if WordX.isZero w
 				then Var x
 			     else if (WordX.>=
-				      (w, WordX.make (LargeWord.fromInt
-						      (WordSize.bits s),
-						      WordSize.default)))
+				      (w,
+				       WordX.fromIntInf (IntInf.fromInt
+							 (WordSize.bits s),
+							 WordSize.default)))
 				     then zero s
 				  else Unknown
 		     else if WordX.isZero w
@@ -1083,10 +1084,10 @@ fun 'a apply (p, args, varEquals) =
 		  (case name of
 		      IntInf_arshift =>
 			 intInf (IntInf.~>>
-				 (i1, LargeWord.toWord (WordX.toLargeWord w2)))
+				 (i1, Word.fromIntInf (WordX.toIntInf w2)))
 		    | IntInf_lshift =>
 			 intInf (IntInf.<<
-				 (i1, LargeWord.toWord (WordX.toLargeWord w2)))
+				 (i1, Word.fromIntInf (WordX.toIntInf w2)))
 		    | _ => Unknown)
 	     | (_, [Const (IntInf i1), _]) =>
 		  (case name of

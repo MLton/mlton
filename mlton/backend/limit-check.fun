@@ -169,8 +169,8 @@ fun insertFunction (f: Function.t,
 				       case z of
 					  Operand.EnsuresBytesFree =>
 					     Operand.word
-					     (WordX.make
-					      (Word.toLarge
+					     (WordX.fromIntInf
+					      (Word.toIntInf
 					       (ensureBytesFree (valOf return)),
 					       WordSize.default))
 					| _ => z)),
@@ -368,8 +368,9 @@ fun insertFunction (f: Function.t,
 				       insert (Operand.word
 					       (WordX.zero WordSize.default)))
 		else heapCheck (true,
-				Operand.word (WordX.make (Word.toLarge bytes,
-							  WordSize.default)))
+				Operand.word (WordX.fromIntInf
+					      (Word.toIntInf bytes,
+					       WordSize.default)))
 	     fun smallAllocation _ =
 		let
 		   val w = blockCheckAmount {blockIndex = i}
@@ -390,7 +391,7 @@ fun insertFunction (f: Function.t,
 			     Const.Word w =>
 				heapCheckNonZero
 				(Word.addCheck
-				 (Word.fromLarge (WordX.toLargeWord w),
+				 (Word.fromIntInf (WordX.toIntInf w),
 				  extraBytes)
 				 handle Overflow => Runtime.allocTooLarge)
 			   | _ => Error.bug "strange primitive bytes needed")
@@ -403,8 +404,8 @@ fun insertFunction (f: Function.t,
 			     Vector.new0 (),
 			     Transfer.Arith
 			     {args = Vector.new2 (Operand.word
-						  (WordX.make
-						   (Word.toLarge extraBytes,
+						  (WordX.fromIntInf
+						   (Word.toIntInf extraBytes,
 						    WordSize.default)),
 						  bytesNeeded),
 			      dst = bytes,

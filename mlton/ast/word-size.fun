@@ -3,61 +3,85 @@ struct
 
 open S
 
-datatype t = W8 | W16 | W32 | W64
+datatype t = T of {bits: int}
+
+fun bits (T {bits, ...}) = bits
+
+val toString = Int.toString o bits
+
+val layout = Layout.str o toString
 
 val equals: t * t -> bool = op =
 
-val all = [W8, W16, W32, W64]
+val sizes: int list =
+   List.tabulate (31, fn i => i + 2)
+   @ [64]
 
-val default = W32
+fun isValidSize (i: int) =
+   (2 <= i andalso i <= 32) orelse i = 64
 
-fun pointer () = W32
+fun make i = T {bits = i}
 
-val max: t -> LargeWord.t =
-   fn W8 => Word.toLarge 0wxFF
-    | W16 => Word.toLarge 0wxFFFF
-    | W32 => Word.toLarge 0wxFFFFFFFF
-    | W64 =>
-	 (* Would like to write 0wxFFFFFFFFFFFFFFFF, but can't because SML/NJ
-	  * doesn't have 64 bit words.
-	  *)
-	 let
-	    open LargeWord
-	 in
-	    orb (<< (fromWord 0wxFFFFFFFF, 0w32),
-		 fromWord 0wxFFFFFFFF)
-	 end
+val allVector = Vector.tabulate (65, fn i =>
+				  if isValidSize i
+				     then SOME (make i)
+				  else NONE)
 
-val allOnes = max
+fun W i =
+   case Vector.sub (allVector, i) handle Subscript => NONE of
+      NONE => Error.bug (concat ["strange word size: ", Int.toString i])
+    | SOME s => s
 
-val bits: t -> int =
-   fn W8 => 8
-    | W16 => 16
-    | W32 => 32
-    | W64 => 64
+val all = List.map (sizes, W)
 
-val bytes: t -> int = 
-   fn W8 => 1
-    | W16 => 2
-    | W32 => 4
-    | W64 => 8
+val prims = [W 8, W 16, W 32, W 64]
 
-val toString = Int.toString o bits
+val default = W 32
+
+fun pointer () = W 32
 
 val memoize: (t -> 'a) -> t -> 'a =
    fn f =>
    let
-      val a8 = f W8
-      val a16 = f W16
-      val a32 = f W32
-      val a64 = f W64
+      val v = Vector.map (allVector, fn opt => Option.map (opt, f))
    in
-      fn W8 => a8
-       | W16 => a16
-       | W32 => a32
-       | W64 => a64
+      fn T {bits = i, ...} => valOf (Vector.sub (v, i))
    end
+
+fun roundUpToPrim s =
+   let
+      val bits = bits s
+      val bits =
+	 if bits <= 8
+	    then 8
+	 else if bits <= 16
+		 then 16
+	      else if bits <= 32
+		      then 32
+		   else if bits = 64
+			   then 64
+			else Error.bug "IntSize.roundUpToPrim"
+   in
+      W bits
+   end
+
+val bytes: t -> int = memoize (fn s => bits (roundUpToPrim s) div 8)
+
+val max: t -> IntInf.t =
+   memoize (fn s => IntInf.<< (1, Word.fromInt (bits s)) - 1)
    
 val cardinality = memoize (fn s => IntInf.pow (2, bits s))
+
+datatype prim = W8 | W16 | W32 | W64
+
+val primOpt = memoize (fn T {bits, ...} =>
+		       List.peekMap ([(8, W8), (16, W16), (32, W32), (64, W64)],
+				     fn (b, p) =>
+				     if b = bits then SOME p else NONE))
+
+fun prim s =
+   case primOpt s of
+      NONE => Error.bug "IntSize.prim"
+    | SOME p => p
 
 end

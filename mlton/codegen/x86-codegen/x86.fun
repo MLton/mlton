@@ -158,8 +158,10 @@ struct
 		     | R64 => Vector.new1 DBLE
 		  end
 	     | Word s =>
-		  let datatype z = datatype WordSize.t
-		  in case s of
+		  let
+		     datatype z = datatype WordSize.prim
+		  in
+		     case WordSize.prim s of
 		       W8 => Vector.new1 BYTE
 		     | W16 => Vector.new1 WORD 
 		     | W32 => Vector.new1 LONG
@@ -717,12 +719,14 @@ struct
 		     | R64 => Eight
 		  end
 	     | Word s =>
-		  let datatype z = datatype WordSize.t
-		  in case s of
-		       W8 => One
-		     | W16 => Two
-		     | W32 => Four
-		     | W64 => Eight
+		  let
+		     datatype z = datatype WordSize.prim
+		  in
+		     case WordSize.prim s of
+			W8 => One
+		      | W16 => Two
+		      | W32 => Four
+		      | W64 => Eight
 		  end
       end
 
@@ -1466,8 +1470,10 @@ struct
 			    | R64 => [{src = fltregister FltRegister.top,
 				       dst = cReturnTempContent (0, DBLE)}]
 			 end
-	     | Word s => let datatype z = datatype WordSize.t
-			 in case s of
+	     | Word s => let
+			    datatype z = datatype WordSize.prim
+			 in
+			    case WordSize.prim s of
 			      W8 => [{src = register Register.al,
 				      dst = cReturnTempContent (0, BYTE)}]
 			    | W16 => [{src = register Register.ax,

@@ -5,7 +5,6 @@ Group is
 ../lib/mlyacc/parser2.sml
 ../lib/mlyacc/join.sml
 upgrade-basis.sml
-../lib/mlton-stubs/int-inf.sml
 ../lib/mlton-stubs/thread.sig
 ../lib/mlton-stubs/thread.sml
 ../lib/mlton-stubs/world.sig

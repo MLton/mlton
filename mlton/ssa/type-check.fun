@@ -126,8 +126,7 @@ fun checkScopes (program as
 		     Cases.Con cs => doitCon cs 
 		   | Cases.Int (_, cs) => doit (cs, IntX.equals, IntX.hash)
 		   | Cases.Word (_, cs) =>
-			doit (cs, WordX.equals,
-			      LargeWord.toWord o WordX.toLargeWord)
+			doit (cs, WordX.equals, Word.fromIntInf o WordX.toIntInf)
 	       end
 	  | Goto {args, ...} => getVars args
 	  | Raise xs => getVars xs
