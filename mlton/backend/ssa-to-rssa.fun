@@ -110,6 +110,22 @@ structure CFunction =
 	    needsArrayInit = false,
 	    returnTy = SOME Type.pointer}
 
+      local
+	 fun make name =
+	    T {bytesNeeded = NONE,
+	       ensuresBytesFree = false,
+	       mayGC = true,
+	       maySwitchThreads = false,
+	       modifiesFrontier = true,
+	       modifiesStackTop = true,
+	       name = name,
+	       needsArrayInit = false,
+	       returnTy = NONE}
+      in
+	 val pack = make "GC_pack"
+	 val unpack = make "GC_unpack"
+      end
+
       val threadSwitchTo =
 	 T {bytesNeeded = NONE,
 	    ensuresBytesFree = true,
@@ -1042,6 +1058,12 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 							 Operand.Line),
 				     func = (CFunction.gc
 					     {maySwitchThreads = false})}
+			       | GC_pack =>
+				    ccall {args = Vector.new1 Operand.GCState,
+					   func = CFunction.pack}
+			       | GC_unpack =>
+				    ccall {args = Vector.new1 Operand.GCState,
+					   func = CFunction.unpack}
 			       | IntInf_add => simpleCCall CFunction.intInfAdd
 			       | IntInf_compare =>
 				    simpleCCall CFunction.intInfCompare

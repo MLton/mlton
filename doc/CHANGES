@@ -1,5 +1,9 @@
 Here are the changes from version 20020410 to version VERSION.
 
+* 2002-07-28
+  - Added MLton.GC.{pack,unpack}.  pack shrinks the heap so that other processes
+    can use the RAM, and its dual, unpack, resizes the heap to the desired size.
+
 * 2002-06 and 2002-07
   - Added mark compact GC.
   - Changed array layout so that arrays have three, not two header words.

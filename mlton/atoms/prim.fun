@@ -60,6 +60,8 @@ structure Name =
        | Exn_setTopLevelHandler
        | FFI of string
        | GC_collect
+       | GC_pack
+       | GC_unpack
        | IntInf_add
        | IntInf_compare
        | IntInf_equal
@@ -280,6 +282,8 @@ structure Name =
 	  (Exn_setTopLevelHandler, SideEffect, "Exn_setTopLevelHandler"),
 	  (Exn_setTopLevelHandler, SideEffect, "Exn_setTopLevelHandler"),
 	  (GC_collect, SideEffect, "GC_collect"),
+	  (GC_pack, SideEffect, "GC_pack"),
+	  (GC_unpack, SideEffect, "GC_unpack"),
 	  (IntInf_add, Functional, "IntInf_add"),
 	  (IntInf_compare, Functional, "IntInf_compare"),
 	  (IntInf_equal, Functional, "IntInf_equal"),

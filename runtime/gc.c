@@ -991,7 +991,6 @@ static void setLimit (GC_state s) {
 	s->limit = s->limitPlusSlop - LIMIT_SLOP;
 }
 
-
 static inline void setNursery (GC_state s) {
 	GC_heap h;
 
@@ -1008,11 +1007,13 @@ static inline void setNursery (GC_state s) {
 
 static inline void shrinkFromSpace (GC_state s, W32 keep) {
 	assert (keep <= s->heap.size);
+	assert (isPageAligned (s, keep));
 	heapShrink (s, &s->heap, keep);
 }
 
 static inline void shrinkToSpace (GC_state s, W32 keep) {
 	assert (keep <= s->heap2.size);
+	assert (isPageAligned (s, keep));
 	heapShrink (s, &s->heap2, keep);
 }
 
@@ -1081,6 +1082,10 @@ static inline bool heapCreate (GC_state s, GC_heap h, W64 need, W32 minSize) {
 				if (h->size > s->maxHeapSizeSeen)
 					s->maxHeapSizeSeen = h->size;
 				h->oldGen = h->start;
+				if (DEBUG or s->messages)
+					fprintf (stderr, "Created heap of size %s at 0x%08x.\n",
+							uintToCommaString (h->size),
+							(uint)h->start);
 				return TRUE;
 			}
 		}
@@ -2793,5 +2798,35 @@ void GC_saveWorld (GC_state s, int fd) {
 	swriteUint (fd, (uint)s->signalHandler);
  	swrite (fd, s->heap.oldGen, s->bytesLive);
 	(*s->saveGlobals) (fd);
+	leave (s);
+}
+
+void GC_pack (GC_state s) {
+	enter (s);
+	if (DEBUG or s->messages)
+		fprintf (stderr, "Packing heap of size %s.\n",
+				uintToCommaString (s->heap.size));
+	/* Could put some code here to skip the GC if there hasn't been much
+	 * allocated since the last collection.
+ 	 */
+	doGC (s, 0);
+	shrinkFromSpace (s, roundPage (s, s->bytesLive * 1.1));
+	setNursery (s);
+	if (DEBUG or s->messages)
+		fprintf (stderr, "Packed heap to size %s.\n",
+				uintToCommaString (s->heap.size));
+	leave (s);
+}
+
+void GC_unpack (GC_state s) {
+	enter (s);
+	if (DEBUG or s->messages)
+		fprintf (stderr, "Unpacking heap of size %s.\n",
+				uintToCommaString (s->heap.size));
+	s->bytesLive = s->frontier - s->heap.oldGen;
+	resizeHeap (s, s->bytesLive);
+	if (DEBUG or s->messages)
+		fprintf (stderr, "Unpacked heap of size %s.\n",
+				uintToCommaString (s->heap.size));
 	leave (s);
 }

@@ -453,6 +453,9 @@ static inline word GC_objectHeader (W32 t) {
 	return 1 | (t << 1);
 }
 
+/* Pack the heap into a small amount of RAM. */
+void GC_pack (GC_state s);
+
 /* Write out the current world to the file descriptor. */
 void GC_saveWorld (GC_state s, int fd);
 

@@ -50,6 +50,8 @@ signature PRIM =
 	     | Exn_setTopLevelHandler (* implemented in implement-exceptions.fun *)
 	     | FFI of string
 	     | GC_collect
+	     | GC_pack
+	     | GC_unpack
 	     | Int_mul
 	     | Int_mulCheck
 	     | Int_add

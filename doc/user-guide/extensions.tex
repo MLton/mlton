@@ -191,14 +191,20 @@ with {\tt -exn-history true}.
 signature MLTON_GC =
    sig
       val collect: unit -> unit
+      val pack: unit -> unit
       val setMessages: bool -> unit
       val setSummary: bool -> unit
+      val unpack: unit -> unit
    end
 \end{verbatim}
 
 \begin{description}
 \entry{GC.collect ()}
 causes a garbage collection to occur.
+
+\entry{GC.pack ()}
+shrinks the heap as much as possible so that other processes can use available
+RAM.
 
 \entry{GC.setMessages b}
 controls whether diagnostic messages are
@@ -209,6 +215,9 @@ the same as the {\tt gc-messages} runtime system option.
 controls whether a summary of garbage
 collection statistics is printed upon termination of the program.  It
 is the same as the {\tt gc-summary} runtime system option.
+
+\entry{GC.unpack ()}
+resizes the heap to the desired size.
 
 \end{description}
 

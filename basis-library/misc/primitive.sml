@@ -191,8 +191,10 @@ structure Primitive =
       structure GC =
 	 struct
 	    val collect = _prim "GC_collect": unit -> unit;
+	    val pack = _prim "GC_pack": unit -> unit;
 	    val setMessages = _ffi "GC_setMessages": bool -> unit;
 	    val setSummary = _ffi "GC_setSummary": bool -> unit;
+	    val unpack = _prim "GC_unpack": unit -> unit;
 	 end
       
       structure IEEEReal =
