@@ -900,6 +900,22 @@ fun pass {name: string,
       result
    end
 
+(* Code for profiling each pass. *)
+val pass =
+   if true
+      then pass
+   else
+      fn z as {name, ...} =>
+      let
+	 open MLton.Profile
+	 val d = Data.malloc ()
+	 val res = withData (d, fn () => pass z)
+	 val _ = Data.write (d, concat ["/tmp/", name, ".mlmon"])
+	 val _ = Data.free d
+      in
+	 res
+      end
+
 fun passTypeCheck {name: string,
 		   suffix: string,
 		   style: style,
