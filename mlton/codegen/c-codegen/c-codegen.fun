@@ -976,8 +976,6 @@ fun output {program as Machine.Program.T {chunks,
 			      else ()
 			   val _ =
 			      if modifiesStackTop
-				 andalso (Option.isNone frameInfo
-					  orelse not profiling)
 				 then print "\tFlushStackTop();\n"
 			      else ()
 			   val _ = print "\t"
