@@ -25,12 +25,11 @@
  */
 #include "/usr/pkg/include/gmp.h"
 
-#define HAS_MREMAP FALSE
 #define HAS_PTRACE FALSE
+#define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK TRUE
 #define HAS_SPAWN FALSE
 #define HAS_TIME_PROFILING TRUE
 #define HAS_WEAK 1
-#define USE_MMAP TRUE
 
 #define MLton_Platform_OS_host "netbsd"

@@ -73,8 +73,12 @@
 #error MLton_Platform_OS_host not defined
 #endif
 
-#ifndef HAS_MREMAP
-#error HAS_MREMAP not defined
+#ifndef HAS_PTRACE
+#error HAS_PTRACE not defined
+#endif
+
+#ifndef HAS_REMAP
+#error HAS_REMAP not defined
 #endif
 
 #ifndef HAS_SIGALTSTACK
@@ -96,16 +100,6 @@ void *getTextEnd ();
 /* HAS_WEAK is true if the platform supports the weak attribute. */
 #ifndef HAS_WEAK
 #error HAS_WEAK not defined
-#endif
-
-/* On any platform, exactly one of {USE_MMAP, USE_VIRTUAL_ALLOC} should be set
- * to true.
- */
-#if (!defined (USE_MMAP) && !defined (USE_VIRTUAL_ALLOC))
-#error must define USE_MMAP or USE_VIRTUAL_ALLOC
-#endif
-#if (defined (USE_MMAP) && defined (USE_VIRTUAL_ALLOC))
-#error can not define both USE_MMAP and USE_VIRTUAL_ALLOC
 #endif
 
 #ifndef SPAWN_MODE
@@ -173,32 +167,30 @@ enum {
 /*                        Utility libraries                         */
 /* ---------------------------------------------------------------- */
 
-extern bool	isBigEndian(void);
+extern bool isBigEndian(void);
 #define MLton_Platform_Arch_bigendian isBigEndian()
-
-/* issue error message and exit */
-extern void	die (char *fmt, ...)
-			__attribute__ ((format(printf, 1, 2)))
-			__attribute__ ((noreturn));
-
-/* issue error message and exit.  Also print strerror(errno). */
-extern void	diee (char *fmt, ...)
-			__attribute__ ((format(printf, 1, 2)))
-			__attribute__ ((noreturn));
-
-/* Display virtual memory to stdout.  Used to diagnose memory problems. */
-void showMem ();
-
-/*
- * totalRam returns the amount of physical memory on the machine.
- */
-Word32 totalRam (GC_state s);
 
 string boolToString (bool b);
 void decommit (void *base, size_t length);
+/* issue error message and exit */
+extern void die (char *fmt, ...)
+			__attribute__ ((format(printf, 1, 2)))
+			__attribute__ ((noreturn));
+/* issue error message and exit.  Also print strerror(errno). */
+extern void diee (char *fmt, ...)
+			__attribute__ ((format(printf, 1, 2)))
+			__attribute__ ((noreturn));
+/*
+ * fixedGetrusage() works just like getrusage().  We have a wrapper because on 
+ * some platforms (e.g. Linux) we need to work around kernel bugs in getrusage.
+ */
+int fixedGetrusage (int who, struct rusage *rup);
+bool heapRemap (GC_state s, GC_heap h, W32 desired, W32 minSize);
 string intToCommaString (int n);
+int mkdir2 (const char *pathname, mode_t mode);
 void *mmapAnon (void *start, size_t length);
 void release (void *base, size_t length);
+void *remap (void *old,  size_t oldSize, size_t newSize);
 void *scalloc (size_t nmemb, size_t size);
 void sclose (int fd);
 void sfclose (FILE *file);
@@ -206,6 +198,10 @@ FILE *sfopen (char *fileName, char *mode);
 void sfread (void *ptr, size_t size, size_t nmemb, FILE *file);
 uint sfreadUint (FILE *file);
 void sfwrite (void *ptr, size_t size, size_t nmemb, FILE *file);
+/* showMem displays the virtual memory mapping to stdout.  
+ * It is used to diagnose memory problems. 
+ */
+void showMem ();
 void *smalloc (size_t length);
 int smkstemp (char *template);
 void *smmap (size_t length);
@@ -217,16 +213,12 @@ void *smmap (size_t length);
 void *ssmmap (size_t length, size_t dead_low, size_t dead_high);
 void swrite (int fd, const void *buf, size_t count);
 void swriteUint (int fd, uint n);
+/*
+ * totalRam returns the amount of physical memory on the machine.
+ */
+Word32 totalRam (GC_state s);
 string uintToCommaString (uint n);
 string ullongToCommaString (ullong n);
-
-int mkdir2 (const char *pathname, mode_t mode);
-
-/*
- * fixedGetrusage() works just like getrusage().  We have a wrapper because on 
- * some platforms (e.g. Linux) we need to work around kernel bugs in getrusage.
- */
-int fixedGetrusage (int who, struct rusage *rup);
 
 /* ---------------------------------------------------------------- */
 /*                         MLton libraries                          */

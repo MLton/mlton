@@ -13,13 +13,12 @@
 
 #include "gmp.h"
 
-#define HAS_MREMAP FALSE
 #define HAS_PTRACE FALSE
+#define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK FALSE
 #define HAS_SPAWN TRUE
 #define HAS_TIME_PROFILING FALSE
 #define HAS_WEAK FALSE
-#define USE_VIRTUAL_ALLOC TRUE
 
 #define MLton_Platform_OS_host "mingw"
 

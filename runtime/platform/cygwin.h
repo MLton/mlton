@@ -25,13 +25,12 @@
 
 #define MLton_Platform_OS_host "cygwin"
 
-#define HAS_MREMAP FALSE
 #define HAS_PTRACE FALSE
+#define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK FALSE
 #define HAS_SPAWN TRUE
 #define HAS_TIME_PROFILING FALSE
 #define HAS_WEAK 0
-#define USE_VIRTUAL_ALLOC TRUE
 
 #define _SC_BOGUS 0xFFFFFFFF
 #define _SC_2_FORT_DEV _SC_BOGUS

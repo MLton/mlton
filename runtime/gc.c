@@ -1316,14 +1316,6 @@ static bool heapCreate (GC_state s, GC_heap h, W32 desiredSize, W32 minSize) {
 			address = i * 0x08000000ul;
 			if (direction)
 				address = 0xf8000000ul - address;
-/* FIXME.
- * This #if is here because on Windows, the address passed to mmapAnon, which 
- * calls VirtualAlloc, doesn't seem to matter.
- */
-#if USE_VIRTUAL_ALLOC
-			address = 0; 
-			i = 31;
-#endif
 			h->start = GC_mmapAnon ((void*)address, h->size);
 			if ((void*)-1 == h->start)
 				h->start = (void*)NULL;
@@ -2749,18 +2741,13 @@ static void translateHeap (GC_state s, pointer from, pointer to, uint size) {
 /*                            heapRemap                             */
 /* ---------------------------------------------------------------- */
 
-#if !HAS_MREMAP
-
-static bool heapRemap (GC_state s, GC_heap h, W32 desired, W32 minSize) {
-	return FALSE;
-}
-
-#else
-
-static bool heapRemap (GC_state s, GC_heap h, W32 desired, W32 minSize) {
+bool heapRemap (GC_state s, GC_heap h, W32 desired, W32 minSize) {
 	W32 backoff;
 	W32 size;
 
+#if not HAS_REMAP
+	return FALSE;
+#endif
 	assert (minSize <= desired);
 	assert (desired >= h->size);
 	desired = align (desired, s->pageSize);
@@ -2771,14 +2758,8 @@ static bool heapRemap (GC_state s, GC_heap h, W32 desired, W32 minSize) {
 	for (size = desired; size >= minSize; size -= backoff) {
 		pointer new;
 
-		new = mremap (h->start, h->size, size, MREMAP_MAYMOVE);
+		new = remap (h->start, h->size, size);
 		unless ((void*)-1 == new) {
-			if (DEBUG_RESIZING)
-				fprintf (stderr, "Remapping heap at 0x%08x of size %s to heap at 0x%08x of size %s.\n",
-					(uint)h->start,
-					uintToCommaString (h->size),
-					(uint)new,
-					uintToCommaString (size));
 			h->start = new;
 			h->size = size;
 			if (h->size > s->maxHeapSizeSeen)
@@ -2789,8 +2770,6 @@ static bool heapRemap (GC_state s, GC_heap h, W32 desired, W32 minSize) {
 	}
 	return FALSE;
 }
-
-#endif /* HAS_MREMAP */
 
 /* ---------------------------------------------------------------- */
 /*                             heapGrow                             */
