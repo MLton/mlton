@@ -2179,6 +2179,7 @@ static bool heapRemap (GC_state s, GC_heap h, W32 desired, W32 minSize) {
 	W32 backoff;
 	W32 size;
 
+	assert (minSize <= desired);
 	assert (desired >= h->size);
 	desired = align (desired, s->pageSize);
 	backoff = (desired - minSize) / 20;
@@ -2198,6 +2199,7 @@ static bool heapRemap (GC_state s, GC_heap h, W32 desired, W32 minSize) {
 					uintToCommaString (size));
 			h->start = new;
 			h->size = size;
+			assert (minSize <= h->size and h->size <= desired);
 			return TRUE;
 		}
 	}
@@ -2332,22 +2334,24 @@ static void resizeHeap (GC_state s, W64 need) {
 
 /* Guarantee that heap2 is either the same size as heap or is unmapped. */
 static void resizeHeap2 (GC_state s) {
-	GC_heap h;
+	uint size;
+	uint size2;
 
-	h = &s->heap2;
+	size = s->heap.size;
+	size2 = s->heap2.size;
 	if (DEBUG_RESIZING)
 		fprintf (stderr, "resizeHeap2\n");
-	if (heapIsInit (h))
-		/* nothing */ ;
-	else if (/* heap2 is smaller than heap, so we won't be able to use it 
- 		  * for the next GC anyways.
- 		  */
- 		h->size < s->heap.size
-		or /* Holding on to heap2 may cause paging. */
-		s->heap.size + h->size > s->ram)
-		heapRelease (s, h);
-	else
-		heapShrink (s, h, s->heap.size);
+	if (0 == size2)
+		return;
+	if (2 * size > s->ram)
+		/* Holding on to heap2 might cause paging.  So don't. */
+		heapRelease (s, &s->heap2);
+	else if (size2 < size) {
+		unless (heapRemap (s, &s->heap2, size, size))
+			heapRelease (s, &s->heap2);
+        } else if (size2 > size)
+		heapShrink (s, &s->heap2, size);
+	assert (0 == s->heap2.size or s->heap.size == s->heap2.size);
 }
 
 static void growStack (GC_state s) {
