@@ -66,5 +66,8 @@ structure IEEEReal: IEEE_REAL =
 	       then "~" ^ num
 	    else num
 	 end
+
+      val scan = fn _ => raise (Fail "<IEEEReal.scan not implemented>")
+      fun fromString s = StringCvt.scanString scan s
    end
 
