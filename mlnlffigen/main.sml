@@ -129,6 +129,7 @@ fun commandLine args =
     in
        case rest of
 	  Result.No msg => usage msg
+	| Result.Yes [] => usage "no C-file(s)"
 	| Result.Yes cfiles => Gen.gen {cfiles = cfiles}
    end
 
