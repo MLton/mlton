@@ -18,7 +18,7 @@ is
 
 ../basic/sources.cm
 set.sig
-bit-vector.fun
+bit-vector-set.fun
 disjoint.sig
 disjoint.fun
 hashed-unique-set.fun
