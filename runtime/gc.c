@@ -40,6 +40,7 @@ enum {
 	DEBUG_MEM = FALSE,
 	DEBUG_RESIZING = FALSE,
 	DEBUG_SHARE = FALSE,
+	DEBUG_SIZE = FALSE,
 	DEBUG_STACKS = FALSE,
 	DEBUG_THREADS = FALSE,
 	DEBUG_WEAK = FALSE,
@@ -2171,6 +2172,7 @@ mark:
 			 * return.
 			 */
 			*headerp = header;
+			size += GC_NORMAL_HEADER_SIZE + toBytes (numNonPointers);
 			if (s->shouldHashCons)
 				cur = hashCons (s, cur);
 			goto ret;
@@ -4613,10 +4615,10 @@ void GC_handler (GC_state s, int signum) {
 uint GC_size (GC_state s, pointer root) {
 	uint res;
 
-	if (DEBUG_MARK_COMPACT)
+	if (DEBUG_SIZE)
 		fprintf (stderr, "GC_size marking\n");
 	res = mark (s, root, MARK_MODE);
-	if (DEBUG_MARK_COMPACT)
+	if (DEBUG_SIZE)
 		fprintf (stderr, "GC_size unmarking\n");
 	mark (s, root, UNMARK_MODE);
 	return res;
