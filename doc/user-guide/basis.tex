@@ -1,17 +1,19 @@
 \sec{Basis library}{basis-library}{Basis_library.html}
 %
 This section describes {\mlton}'s implementation of the Standard ML
-Basis Library specification, available at \link{\makeurl{basis/}}.
-By default, {\mlton} makes this library available to user programs.
-The original version of the specification comes from
-\link{http://www.StandardML.org/Basis/}, which may have been updated
-since this release of {\mlton}.
+Basis Library, which by default {\mlton} makes available to user
+programs.  The latest version of the Basis Library specification is at
+\link{http://www.standardml.org/Basis/}.  Please see
+\link{http://www.standardml.org/Basis/history.html} for a reverse
+chronological list of changes to the specification.  Since the
+specification does change, we place a snapshot at
+\link{\makeurl{basis/}} at the time of each {\mlton} public release.
+You can also obtain a complete and current list of what's available by
+calling {\tt mlton -show-basis true}.
 
 In summary, {\mlton} implements all of the required portions of the
 Basis Library.  {\mlton} also implements some of the optional
-structures, as described below.  You can always obtain a complete and
-current list of what's available by calling {\tt mlton -show-basis
-true}.
+structures, as seen below.
 %
 \subsection{Toplevel types and constructors}
 {
