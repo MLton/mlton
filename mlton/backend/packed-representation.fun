@@ -2234,6 +2234,9 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	   set = setTupleRep, ...} =
 	 Property.getSetOnce (S.Type.plist,
 			      Property.initRaise ("tupleRep", S.Type.layout))
+      val setTupleRep =
+	 Trace.trace ("setTupleRep", S.Type.layout o #1, Layout.ignore)
+	 setTupleRep
       fun vectorRep (t: S.Type.t): TupleRep.t = Value.get (tupleRep t)
       fun setVectorRep (t: S.Type.t, tr: TupleRep.t): unit =
 	 setTupleRep (t, Value.new {compute = fn () => tr,
@@ -2382,24 +2385,36 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 			   let
 			      val hasIdentity = Prod.isMutable args
 			      val args = Prod.dest args
-			      fun new () =
+			      fun tupleRep pt =
+				 let
+				    val tr =
+				       TupleRep.make
+				       (pt,
+					Vector.map
+					(args, fn {elt, isMutable} =>
+					 {isMutable = isMutable,
+					  rep = Value.get (typeRep elt),
+					  ty = elt}),
+					{forceBox = true,
+					 isVector = true})
+				    val () = setVectorRep (t, tr)
+				 in
+				    tr
+				 end
+			      fun now pt = (ignore (tupleRep pt); pt)
+			      fun delay () =
 				 let
 				    val pt = PointerTycon.new ()
 				    val () =
 				       List.push
 				       (delayedObjectTypes, fn () =>
 					let
-					   val tr =
-					      TupleRep.make
-					      (pt,
-					       Vector.map
-					       (args, fn {elt, isMutable} =>
-						{isMutable = isMutable,
-						 rep = Value.get (typeRep elt),
-						 ty = elt}),
-					       {forceBox = true,
-						isVector = true})
-					   val () = setVectorRep (t, tr)
+					   (* Delay computing tupleRep until the
+					    * delayedObjectTypes are computed
+					    * because the vector component types
+					    * may not be known yet.
+					    *)
+					   val tr = tupleRep pt
 					   val ty =
 					      case tr of
 						 TupleRep.Direct _ =>
@@ -2417,30 +2432,32 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 						  hasIdentity = hasIdentity})
 					end)
 				 in
-				    Type.pointer pt
+				    pt
 				 end
-			      datatype z = datatype S.Type.dest
-			      val ty =
-				 if 1 = Vector.length args
-				    then
-				       let
-					  val {elt, ...} =
-					     Vector.sub (args, 0)
-				       in
-					  case S.Type.dest elt of
-					     Word s =>
-						(case (Bits.toInt
-						       (WordSize.bits s)) of
-						    8 => Type.word8Vector
-						  | 32 => Type.wordVector
-						  | _ => new ())
-					   | _ => new ()
-				       end
-				 else new ()
+			      val pt =
+				 if 1 <> Vector.length args
+				    then delay ()
+				 else  
+				    let
+				       val {elt, isMutable, ...} =
+					  Vector.sub (args, 0)
+				    in
+				       if isMutable
+					  then delay ()
+				       else
+					  (case S.Type.dest elt of
+					      S.Type.Word s =>
+						 (case (Bits.toInt
+							(WordSize.bits s)) of
+						     8 => now PointerTycon.word8Vector
+						   | 32 => now PointerTycon.wordVector
+						   | _ => delay ())
+					    | _ => delay ())
+				    end
 			   in
 			      constant
 			      (Rep.T {rep = Rep.Pointer {endsIn00 = true},
-				      ty = ty})
+				      ty = Type.pointer pt})
 			   end)
 	       | Real s => nonPointer (Type.real s)
 	       | Thread =>
@@ -2477,6 +2494,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	     | Word s => nonPointer (Type.word (WordSize.bits s))
 	   end))
       val () = typeRepRef := typeRep
+      val _ = typeRep (S.Type.vector1 (S.Type.word WordSize.byte))
       (* Establish dependence between constructor argument type representations
        * and tycon representations.
        *)
@@ -2506,27 +2524,6 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 				     ty = PointerRep.componentsTy pr}) :: ac
 	    | _ => ac))
       val objectTypes = ref objectTypes
-      val () =
-	 List.foreach
-	 ([(WordSize.fromBits Bits.inByte, PointerTycon.word8Vector),
-	   (WordSize.default, PointerTycon.wordVector)],
-	  fn (size, pt) =>
-	  let
-	     val elt = S.Type.word size
-	  in
-	     List.foreach
-	     ([true, false], fn isMutable =>
-	      setVectorRep (S.Type.vector (Prod.make (Vector.new1
-						      {elt = elt,
-						       isMutable = isMutable})),
-			    TupleRep.make (pt,
-					   Vector.new1
-					   {isMutable = isMutable,
-					    rep = Value.get (typeRep elt),
-					    ty = elt},
-					   {forceBox = true,
-					    isVector = true})))
-	  end)
       val () =
 	 List.foreach (!delayedObjectTypes, fn f =>
 		       Option.app (f (), fn z => List.push (objectTypes, z)))

@@ -377,10 +377,10 @@ structure ObjectType =
 					     Type.defaultWord,
 					     Type.stack))}
 
-      val word8Vector = Array {hasIdentity = true,
+      val word8Vector = Array {hasIdentity = false,
 			       elt = Type.word8}
 
-      val wordVector = Array {hasIdentity = true,
+      val wordVector = Array {hasIdentity = false,
 			      elt = Type.defaultWord}
 
       (* Order in the following vector matters.  The basic pointer tycons must
