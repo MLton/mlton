@@ -1,4 +1,16 @@
-Here are the changes from version 20010706 to version VERSION.
+Here are the changes from version 20010806 to version VERSION.
+
+--------------------------------------------------------------------------------
+
+Here are the changes from version 20010706 to version 20010806.
+
+Summary:
+    + Word.andb (w, 0xFF) now works correctly
+    + MLton.Rusage.rusage has a patch to work around a linux kernel bug
+    + Programs of the form "exp ; program" are now accepted
+    + Added the "MLton.Rlimit" structure
+    + Added the "-keep dot" flag, which produces call graphs,
+      intraprocedural control-flow graphs, and dominator trees.
 
 * 2000-8-6
   - Added simple common block elimination CPS optimization.
@@ -95,6 +107,14 @@ Here are the changes from version 20010706 to version VERSION.
 --------------------------------------------------------------------------------
 
 Here are the changes from the 20000906 version to the 20010706 version.
+
+Summary:
+    + Native X86 code generator (instead of using gcc)
+    + Significantly improved compile times 
+    + Significantly improved run times for generated executables
+    + Many bug fixes
+    + Correct raising of the Overflow exception for integer arithmetic
+    + New modules in the MLton structure
 
 * 2001-7-6
   - GC mods from Henry.  Mostly adding inline declarations.
