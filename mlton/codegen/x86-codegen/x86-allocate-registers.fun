@@ -7,13 +7,16 @@ struct
   open S
   open x86
 
-  val cstaticClasses = x86MLton.Classes.cstaticClasses
-
-  val trackClasses = ClassSet.+(x86MLton.Classes.livenessClasses,
-				x86MLton.Classes.holdClasses)
-  fun track memloc = ClassSet.contains(trackClasses, MemLoc.class memloc)
-
   val tracer = x86.tracer
+  val tracerTop = x86.tracerTop
+
+  fun track memloc = let
+		       val trackClasses 
+			 = ClassSet.+(!x86MLton.Classes.livenessClasses,
+				      !x86MLton.Classes.holdClasses)
+		     in
+		       ClassSet.contains(trackClasses, MemLoc.class memloc)
+		     end
 
   fun partition(l, p)
     = let
@@ -395,6 +398,7 @@ struct
 			    future: future list,
 			    hint: hint list} : t
 	= let
+	    val cstaticClasses = !x86MLton.Classes.cstaticClasses
 	    val {uses,defs,...} = Assembly.uses_defs_kills assembly
 	    val future
 	      = case assembly
@@ -5207,6 +5211,8 @@ struct
       fun ccall {info: Liveness.t,
 		 registerAllocation: t}
 	= let
+	    val cstaticClasses = !x86MLton.Classes.cstaticClasses
+
 	    val {reserved = reservedStart, ...} = registerAllocation
 
 	    val {assembly = assembly_reserve,

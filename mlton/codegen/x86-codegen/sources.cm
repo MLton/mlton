@@ -13,6 +13,7 @@ x86-codegen.sig
 x86.sig
 x86.fun
 x86-pseudo.sig
+x86-mlton-basic.sig
 x86-liveness.sig
 x86-liveness.fun
 x86-jump-info.sig

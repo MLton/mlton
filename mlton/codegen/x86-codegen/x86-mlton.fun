@@ -11,10 +11,16 @@ struct
    * x86.Size.t equivalents
    *)
   val wordSize = Size.LONG
+  val wordBytes = Size.toBytes wordSize
   val wordScale = Scale.Four
   val pointerSize = Size.LONG
+  val pointerBytes = Size.toBytes pointerSize
   val pointerScale = Scale.Four
   val floatSize = Size.DBLE
+  val floatBytes = Size.toBytes floatSize
+  val objectHeaderBytes = wordBytes
+  val arrayHeaderBytes = wordBytes + wordBytes
+  val intInfOverheadBytes = arrayHeaderBytes + wordBytes
    
   local
     open MachineOutput.Type
@@ -64,41 +70,75 @@ struct
 	val IntInfRes = new "IntInfRes"
 	val ThreadStack = new "ThreadStack"
       end
-      val allClasses 
-	= x86.ClassSet.fromList 
-	  [Heap, Stack, Locals, Globals,
-	   Temp, CStack, Code,
-	   CStatic, StaticTemp, StaticNonTemp,
-	   GCState, GCStateHold,
-	   IntInfRes, ThreadStack]
-      val livenessClasses 
-	= x86.ClassSet.fromList 
-	  (
-	   Temp::
-	   Locals::
-	   StaticTemp::
-(*	   Stack:: *)
-	   nil)
-      val holdClasses
-	= x86.ClassSet.fromList
-	  (
-	   GCStateHold::
-	   nil)
-      val runtimeClasses
-	= x86.ClassSet.fromList
-	  (
-	   Heap::
-	   Stack::
-	   Globals::
-	   GCState::
-	   GCStateHold::
-	   ThreadStack::
-	   nil)
-      val cstaticClasses
-	= x86.ClassSet.fromList
-	  (
-	   CStatic::
-	   nil)
+
+      val allClasses = ref x86.ClassSet.empty 
+      val livenessClasses = ref x86.ClassSet.empty 
+      val holdClasses = ref x86.ClassSet.empty 
+      val runtimeClasses = ref x86.ClassSet.empty 
+      val cstaticClasses = ref x86.ClassSet.empty 
+
+      fun initClasses ()
+	= let
+	    val _ = allClasses :=	
+	            x86.ClassSet.fromList
+		    (
+		     Heap::
+		     Stack::
+		     Locals::
+		     Globals::
+		     Temp::
+		     CStack::
+		     Code::
+		     CStatic::
+		     StaticTemp::
+		     StaticNonTemp::
+		     GCState::
+		     GCStateHold::
+		     IntInfRes::
+		     ThreadStack::
+		     nil)
+
+	    val _ = livenessClasses :=
+	            (if !Control.Native.liveStack
+		       then x86.ClassSet.fromList
+			    (
+			     Temp::
+			     Locals::
+			     StaticTemp::
+			     Stack::
+			     nil)
+		       else x86.ClassSet.fromList
+			    (
+			     Temp::
+			     Locals::
+			     StaticTemp::
+			     nil))
+
+	    val _ = holdClasses :=
+	            x86.ClassSet.fromList
+		    (
+		     GCStateHold::
+		     nil)
+
+	    val _ = runtimeClasses :=
+	            x86.ClassSet.fromList
+		    (
+		     Heap::
+		     Stack::
+		     Globals::
+		     GCState::
+		     GCStateHold::
+		     ThreadStack::
+		     nil)
+
+	    val _ = cstaticClasses :=
+	            x86.ClassSet.fromList
+		    (
+		     CStatic::
+		     nil)
+	  in
+	    ()
+	  end
     end
 
   (*
@@ -573,6 +613,13 @@ struct
       in
 	Immediate.const_word w
       end
+
+  (* init *)
+  fun init () = let
+		  val _ = Classes.initClasses ()
+		in
+		  ()
+		end
 end
 
 functor x86MLton(S: X86_MLTON_STRUCTS): X86_MLTON =
@@ -595,90 +642,6 @@ struct
 	      in
 		p'
 	      end
-
-(*
-  fun applyFF {target: Label.t, 
-	       args: (Operand.t * Size.t) list, 
-	       dst: (Operand.t * Size.t) option} : Block.t' list
-    = let    
-	val (assembly_args,size_args)
-	  = List.fold(args,([],0),
-		     fn ((arg,size),(assembly_args,size_args)) 
-		      => (List.concat
-			  [(if Size.eq(size,Size.DBLE)
-			      then [Assembly.instruction_binal
-				    {oper = Instruction.SUB,
-				     dst = c_stackPContentsOperand,
-				     src = Operand.immediate_const_int 8,
-				     size = pointerSize},
-				    Assembly.instruction_pfmov
-				    {src = arg,
-				     dst = c_stackPDerefDoubleOperand,
-				     size = size}]
-			    else if Size.eq(size,Size.BYTE)
-			      then [Assembly.instruction_movx
-				    {oper = Instruction.MOVZX,
-				     dst = applyFFTempContentsOperand,
-				     src = arg,
-				     dstsize = wordSize,
-				     srcsize = size},
-				    Assembly.instruction_ppush
-				    {src = applyFFTempContentsOperand,
-				     base = c_stackPContentsOperand,
-				     size = wordSize}]
-			      else [Assembly.instruction_ppush
-				    {src = arg,
-				     base = c_stackPContentsOperand,
-				     size = size}]),
-			   assembly_args],
-			  (Size.toBytes size) + size_args))
-
-	val (comment_begin,
-	     comment_end)
-	  = if !Control.Native.commented > 0
-	      then ([x86.Assembly.comment "begin applyFF"],
-		    [x86.Assembly.comment "end applyFF"])
-	      else ([],[])		 
-      in 
-	[Block.T'
-	 {entry = NONE,
-	  profileInfo = ProfileInfo.none,
-	  statements 
-	  = List.concat
-	    [comment_begin,
-	     assembly_args,
-	     (Assembly.instruction_call 
-	      {target = Operand.label target,
-	       absolute = false})::
-	     (case dst
-		of NONE => []
-		 | SOME (dst,dstsize) 
-	         => (case Operand.deMemloc dst
-		       of NONE => Error.bug "applyFF: dst"
-		        | SOME dst
-			=> (case Size.class dstsize
-			      of Size.INT
-			       => [Assembly.instruction_mov
-				   {src = Operand.register (Register.return dstsize),
-				    dst = Operand.memloc dst,
-				    size = dstsize}]
-			       | Size.FLT
-			       => [Assembly.instruction_pfmov
-				   {src = Operand.fltregister FltRegister.return,
-				    dst = Operand.memloc dst,
-				    size = dstsize}]
-			       | _ => Error.bug "applyFF: dstsize"))),
-	      (if size_args > 0
-		 then [Assembly.instruction_binal
-		       {oper = Instruction.ADD,
-			dst = c_stackPContentsOperand,
-			src = Operand.immediate_const_int size_args,
-			size = pointerSize}]
-		 else []),
-	      comment_end],
-	  transfer = NONE}]
-      end
-*)
 
   fun applyFF {target: Label.t,
 	       args: (Operand.t * Size.t) list,

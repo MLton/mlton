@@ -20,7 +20,7 @@ struct
 
   structure x86Liveness
     = x86Liveness(structure x86 = x86
-		  val livenessClasses = x86MLtonBasic.Classes.livenessClasses)
+		  structure x86MLtonBasic = x86MLtonBasic)
 
   structure x86JumpInfo
     = x86JumpInfo(structure x86 = x86)
@@ -338,6 +338,8 @@ struct
         val outputC = Control.trace (Control.Pass, "outputC") outputC
 
 	(* Assembly specific *)
+
+	val _ = x86MLtonBasic.init ()
 
 	fun file_begin file
 	  = [x86.Assembly.pseudoop_data (),

@@ -9,11 +9,11 @@ struct
   val tracer = x86.tracer
   val tracerTop = x86.tracerTop
 
-  val wordSize: int = 4
-  val pointerSize = wordSize
-  val objectHeaderSize = wordSize
-  val arrayHeaderSize = 2 * wordSize
-  val intInfOverhead = arrayHeaderSize + wordSize (* for the sign *)
+  val wordBytes = x86MLton.wordBytes
+  val pointerBytes = x86MLton.pointerBytes
+  val objectHeaderBytes = x86MLton.objectHeaderBytes
+  val arrayHeaderBytes = x86MLton.arrayHeaderBytes
+  val intInfOverheadBytes = x86MLton.intInfOverheadBytes
 
   fun argsToString(ss: string list): string
     = "(" ^ (concat (List.separate(ss, ", "))) ^ ")"
@@ -874,7 +874,7 @@ struct
 		val frontierPlusAHW
 		  = (x86.Operand.memloc o x86.MemLoc.simple)
 		    {base = x86MLton.gcState_frontierContents, 
-		     index = x86.Immediate.const_int arrayHeaderSize,
+		     index = x86.Immediate.const_int arrayHeaderBytes,
 		     scale = x86.Scale.One,
 		     size = x86MLton.pointerSize,
 		     class = x86MLton.Classes.Heap}
@@ -933,8 +933,7 @@ struct
 			    x86.Assembly.instruction_binal
 			    {oper = x86.Instruction.ADD,
 			     dst = frontier,
-			     src = x86.Operand.immediate_const_int 
-			           pointerSize,
+			     src = x86.Operand.immediate_const_int pointerBytes,
 			     size = x86MLton.pointerSize}],
 			  transfer = NONE})
 		  else AppendList.single
@@ -984,7 +983,7 @@ struct
 			    {oper = x86.Instruction.ADD,
 			     dst = frontier,
 			     src = x86.Operand.immediate_const_int
-			           pointerSize,
+			           pointerBytes,
 			     size = x86MLton.pointerSize}],
 			 transfer = NONE})
 		  else let
@@ -1069,8 +1068,7 @@ struct
 			      x86.Assembly.instruction_binal
 			      {oper = x86.Instruction.ADD,
 			       dst = frontier,
-			       src = x86.Operand.immediate_const_int
-			             pointerSize,
+			       src = x86.Operand.immediate_const_int pointerBytes,
 			       size = x86MLton.pointerSize}],
 			   (* goto arrayNoPointersZJoin *)
 			   transfer 
@@ -1181,8 +1179,7 @@ struct
 		     x86.Assembly.instruction_binal
 		     {oper = x86.Instruction.ADD,
 		      dst = arrayAllocateLoopTemp,
-		      src = x86.Operand.immediate_const_int 
-		            pointerSize,
+		      src = x86.Operand.immediate_const_int pointerBytes,
 		      size = x86MLton.pointerSize},
 		     x86.Assembly.instruction_cmp
 		     {src1 = arrayAllocateLoopTemp,
@@ -1220,8 +1217,7 @@ struct
 			     x86.Assembly.instruction_binal
 			     {oper = x86.Instruction.ADD,
 			      dst = frontier,
-			      src = x86.Operand.immediate_const_int
-			            pointerSize,
+			      src = x86.Operand.immediate_const_int pointerBytes,
 			      size = x86MLton.pointerSize}
 			else (* frontier 
 			      *    += numElts * numPointers * pointerSize 
@@ -1230,7 +1226,7 @@ struct
 			     {oper = x86.Instruction.ADD,
 			      dst = frontier,
 			      src = x86.Operand.immediate_const_int
-			            (numElts' * numPointers * pointerSize),
+			            (numElts' * numPointers * pointerBytes),
 				    size = x86MLton.pointerSize}],
 		   transfer = NONE}),
 		 (toX86Blocks_AllocateArray_arrayPointers_loop 
@@ -1318,7 +1314,7 @@ struct
 		       {oper = x86.Instruction.MUL,
 			dst = arrayAllocateTemp,
 			src = x86.Operand.immediate_const_int 
-		              (numPointers * pointerSize),
+		              (numPointers * pointerBytes),
 			size = x86MLton.wordSize},
 		       x86.Assembly.instruction_binal
 		       {oper = x86.Instruction.ADD,
@@ -1338,8 +1334,7 @@ struct
 		       x86.Assembly.instruction_binal
 		       {oper = x86.Instruction.ADD,
 			dst = frontier,
-			src = x86.Operand.immediate_const_int
-			      pointerSize,
+			src = x86.Operand.immediate_const_int pointerBytes,
 			size = x86MLton.pointerSize}],
 		    (* goto arrayPointersZJoin *)
 		    transfer 
@@ -1531,7 +1526,7 @@ struct
 		  val tempP 
 		    = let
 			val index 
-			  = x86.Immediate.const_int (offset + wordSize)
+			  = x86.Immediate.const_int (offset + wordBytes)
 			val memloc 
 			  = x86.MemLoc.simple 
 			    {base = x86MLton.gcState_stackTopContents, 
@@ -1585,7 +1580,7 @@ struct
 		  val tempP 
 		    = let
 			val index 
-			  = x86.Immediate.const_int (offset + wordSize)
+			  = x86.Immediate.const_int (offset + wordBytes)
 			val memloc 
 			  = x86.MemLoc.simple 
 			    {base = x86MLton.gcState_stackTopContents, 
@@ -1629,7 +1624,7 @@ struct
 		  val frontierPlusOHW
 		    = (x86.Operand.memloc o x86.MemLoc.simple)
 		      {base = x86MLton.gcState_frontierContents, 
-		       index = x86.Immediate.const_int objectHeaderSize,
+		       index = x86.Immediate.const_int objectHeaderBytes,
 		       scale = x86.Scale.One,
 		       size = x86MLton.pointerSize,
 		       class = x86MLton.Classes.Heap}
@@ -1646,8 +1641,7 @@ struct
 			val dst
 			  = let
 			      val index 
-				= x86.Immediate.const_int 
-			          (objectHeaderSize + offset)
+				= x86.Immediate.const_int (objectHeaderBytes + offset)
 			      val memloc 
 				= x86.MemLoc.simple 
 			          {base = x86MLton.gcState_frontierContents, 
@@ -1700,7 +1694,7 @@ struct
 				    {oper = x86.Instruction.ADD,
 				     dst = frontier,
 				     src = x86.Operand.immediate_const_int 
-				           (objectHeaderSize + size),
+				           (objectHeaderBytes + size),
 				     size = x86MLton.pointerSize}],
 				   stores_toX86Assembly)),
 (*
