@@ -34,10 +34,18 @@ else
   FLAGS += -v -o $(AOUT)
 endif
 
+SOURCES =			\
+	mlton.cm		\
+	$(UP)			\
+	front-end/ml.lex.sml 	\
+	front-end/ml.grm.sig 	\
+	front-end/ml.grm.sml	\
+	$(shell if [ -r mlton.cm ]; then mlton -stop f mlton.cm; fi)
+
 .PHONY: all
 all: $(AOUT)
 
-$(AOUT): mlton.cm $(shell mlton -stop f mlton.cm)
+$(AOUT): $(SOURCES)
 	rm -f $(UP)
 	make $(UP)
 	@echo 'Compiling mlton (takes a while)'
@@ -56,7 +64,7 @@ mlton.cm: mlton-stubs.cm
 # This makes a version of MLton that can be compiled in the standard basis
 # library.  I.E. it doesn't require a MLton structure.
 .PHONY:	mlton-stubs_cm
-mlton-stubs_cm: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
+mlton-stubs_cm:
 	(								\
 		echo 'Group is' &&					\
 		cmcat sources.cm | grep -v 'basis-stubs' | 		\
@@ -69,7 +77,7 @@ mlton-stubs_cm: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 		echo 'call-main.sml';					\
 	) >mlton-stubs.cm
 
-mlton.sml: mlton.cm $(shell mlton -stop f mlton.cm)
+mlton.sml: $(SOURCES)
 	rm -f mlton.sml && mlton -stop sml mlton.cm && chmod -w mlton.sml
 
 front-end/ml.lex.sml: front-end/ml.lex
@@ -96,7 +104,7 @@ clean:
 SML	= sml
 
 .PHONY: nj-mlton
-nj-mlton: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
+nj-mlton: $(SOURCES)
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
@@ -107,7 +115,7 @@ nj-mlton: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 	) | $(SML)
 
 .PHONY: nj-mlton-dual
-nj-mlton-dual: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
+nj-mlton-dual: $(SOURCES)
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
@@ -120,7 +128,7 @@ nj-mlton-dual: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 	) | $(SML)
 
 .PHONY: nj-whole
-nj-whole: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
+nj-whole: $(SOURCES)
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
