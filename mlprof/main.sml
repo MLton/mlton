@@ -740,22 +740,22 @@ fun makeOptions {usage} =
       open Popt
    in
       List.map
-      ([(Normal, "graph", " <pred>", " show graph nodes",
+      ([(Normal, "graph", " <pred>", "show graph nodes",
 	 SpaceString (fn s =>
 		      case NodePred.fromString s of
 			 Result.No s =>
 			    usage (concat ["invalid -graph arg: ", s])
 		       | Result.Yes p => graphPred := SOME p)),
-	(Normal, "graph-title", " <string>", " set call-graph title",
+	(Normal, "graph-title", " <string>", "set call-graph title",
 	 SpaceString (fn s => title := SOME s)),
-	(Normal, "mlmon", " <file>", " file with list of mlmon files",
+	(Normal, "mlmon", " <file>", "file with list of mlmon files",
 	 SpaceString (fn s =>
 		      mlmonFiles :=
 		      List.concat [String.tokens (File.contents s, Char.isSpace),
 				   !mlmonFiles])),
 	(Normal, "raw", " {false|true}", "show raw counts",
 	 boolRef raw),
-	(Normal, "show-line", " {false|true}", " show line numbers",
+	(Normal, "show-line", " {false|true}", "show line numbers",
 	 boolRef showLine),
 	(Normal, "thresh", " {0|1|...|100}", "only show counts above threshold",
 	 Real (fn x => if x < 0.0 orelse x > 100.0
