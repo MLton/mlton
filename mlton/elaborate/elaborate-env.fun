@@ -351,16 +351,15 @@ structure TypeStr =
 		  (Vector.toList
 		   (Vector.keepAllMap
 		    (v, fn {name, scheme, ...} =>
-		     let
-			val arg =
-			   Type.arg (#instance (Scheme.instantiate scheme))
-		     in
-			if Type.admitsEquality arg
-			   then NONE
-			else 
-			   SOME (seq [Ast.Con.layout name, str " of ",
-				      Type.explainDoesNotAdmitEquality arg])
-		     end)))
+		     case (Type.deArrowOpt
+			   (#instance (Scheme.instantiate scheme))) of
+			NONE => NONE
+		      | SOME (arg, _) =>
+			   if Type.admitsEquality arg
+			      then NONE
+			   else 
+			      SOME (seq [Ast.Con.layout name, str " of ",
+					 Type.explainDoesNotAdmitEquality arg]))))
 	     | Scheme s => Scheme.explainDoesNotAdmitEquality s
 	     | Tycon c => Tycon.layout c
 	 end
