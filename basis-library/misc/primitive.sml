@@ -281,6 +281,8 @@ structure Primitive =
       structure GC =
 	 struct
 	    val collect = _prim "GC_collect": unit -> unit;
+	    val getHashConsDuringGC =
+	       _import "GC_getHashConsDuringGC": unit -> bool;
 	    val pack = _import "MLton_GC_pack": unit -> unit;
 	    val setHashConsDuringGC =
 	       _import "GC_setHashConsDuringGC": bool -> unit;

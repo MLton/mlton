@@ -23,10 +23,11 @@ structure GC = MLtonGC
 
 fun shareAll () =
    let
+      val cur = GC.getHashConsDuringGC ()
       val set = GC.setHashConsDuringGC
       val () = set true
       val () = GC.collect ()
-      val () = set false
+      val () = set cur
    in
       ()
    end
