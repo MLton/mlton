@@ -120,6 +120,7 @@ struct
 		  x86.Operand.memloc memloc
 	       end
 	  | File => x86MLton.fileName
+	  | Frontier => x86MLton.gcState_frontierContentsOperand ()
 	  | GCState => x86.Operand.label x86MLton.gcState_label
 	  | Global g => x86.Operand.memloc (Global.toX86MemLoc g)
 	  | Int i => x86.Operand.immediate_const_int i
@@ -193,6 +194,7 @@ struct
 	       in
 		  x86.Operand.memloc memloc
 	       end
+	  | StackTop => x86MLton.gcState_stackTopContentsOperand ()
 	  | Word w => x86.Operand.immediate_const_word w
 	       
       val toX86Operand =

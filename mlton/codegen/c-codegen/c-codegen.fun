@@ -476,6 +476,7 @@ fun output {program as Machine.Program.T {chunks,
 	     | Contents {oper, ty} =>
 		  concat ["C", Type.name ty, "(", toString oper, ")"]
 	     | File => "__FILE__"
+	     | Frontier => "Frontier"
 	     | GCState => "GCState"
 	     | Global g =>
 		  concat ["G", Type.name (Global.ty g),
@@ -498,6 +499,7 @@ fun output {program as Machine.Program.T {chunks,
 		  concat ["SmallIntInf", C.args [concat ["0x", Word.toString w]]]
 	     | StackOffset {offset, ty} =>
 		  concat ["S", Type.name ty, "(", C.int offset, ")"]
+	     | StackTop => "StackTop"
 	     | Word w => C.word w
       in
 	 val operandToString = toString
@@ -733,7 +735,10 @@ fun output {program as Machine.Program.T {chunks,
 			       src = operandToString (Operand.Label return),
 			       srcIsMem = false,
 			       ty = Type.Label return})
-		; C.push (size, print))
+		; C.push (size, print)
+		; if profiling
+		     then print "\tFlushStackTop();\n"
+		  else ())
 	    fun copyArgs (args: Operand.t vector): string list * (unit -> unit) =
 	       if Vector.exists (args,
 				 fn Operand.StackOffset _ => true
@@ -808,7 +813,10 @@ fun output {program as Machine.Program.T {chunks,
 			   end 
 		      | _ => ()
 		  fun pop (fi: FrameInfo.t) =
-		     C.push (~ (Program.frameSize (program, fi)), print)
+		     (C.push (~ (Program.frameSize (program, fi)), print)
+		      ; if profiling
+			   then print "\tFlushStackTop();\n"
+			else ())
 		  val _ =
 		     case kind of
 			Kind.Cont {frameInfo, ...} => pop frameInfo
@@ -918,7 +926,10 @@ fun output {program as Machine.Program.T {chunks,
 			end
 		   | CCall {args, frameInfo, func, return} =>
 			let
-			   val {maySwitchThreads, name, returnTy, ...} =
+			   val {maySwitchThreads,
+				modifiesFrontier,
+				modifiesStackTop,
+				name, returnTy, ...} =
 			      CFunction.dest func
 			   val (args, afterCall) =
 			      case frameInfo of
@@ -934,6 +945,16 @@ fun output {program as Machine.Program.T {chunks,
 				    in
 				       res
 				    end
+			   val _ =
+			      if modifiesFrontier
+				 then print "\tFlushFrontier();\n"
+			      else ()
+			   val _ =
+			      if modifiesStackTop
+				 andalso (Option.isNone frameInfo
+					  orelse not profiling)
+				 then print "\tFlushStackTop();\n"
+			      else ()
 			   val _ = print "\t"
 			   val _ =
 			      case returnTy of
@@ -941,6 +962,14 @@ fun output {program as Machine.Program.T {chunks,
 			       | SOME t => print (concat [creturn t, " = "])
 			   val _ = C.call (name, args, print)
 			   val _ = afterCall ()
+ 			   val _ =
+			      if modifiesFrontier
+				 then print "\tCacheFrontier();\n"
+			      else ()
+			   val _ =
+			      if modifiesStackTop
+				 then print "\tCacheStackTop();\n"
+			      else ()
 			   val _ =
 			      if maySwitchThreads
 				 then print "\tReturn();\n"
@@ -1062,8 +1091,8 @@ fun output {program as Machine.Program.T {chunks,
 		print (concat ["#define ", name, " ",
 			       Int.toString (GCField.offset f), "\n"]))
 	 in
-	    outputOffsets ()
-	    ; outputIncludes (["c-chunk.h"], print)
+	    outputIncludes (["c-chunk.h"], print)
+	    ; outputOffsets ()
 	    ; declareFFI ()
 	    ; declareChunks ()
 	    ; declareProfileLabels ()

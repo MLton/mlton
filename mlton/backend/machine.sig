@@ -67,6 +67,7 @@ signature MACHINE =
 	     | Contents of {oper: t,
 			    ty: Type.t}
 	     | File (* expand by codegen into string constant *)
+	     | Frontier
 	     | GCState
 	     | Global of Global.t
 	     | Int of int
@@ -81,6 +82,7 @@ signature MACHINE =
 	     | SmallIntInf of word
 	     | StackOffset of {offset: int,
 			       ty: Type.t}
+	     | StackTop
 	     | Word of Word.t
 
 	    val equals: t * t -> bool

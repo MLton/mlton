@@ -178,6 +178,7 @@ structure Operand =
        | Contents of {oper: t,
 		      ty: Type.t}
        | File
+       | Frontier
        | GCState
        | Global of Global.t
        | Int of int
@@ -189,6 +190,7 @@ structure Operand =
        | Real of string
        | Runtime of GCField.t
        | StackOffset of StackOffset.t
+       | StackTop
        | Word of Word.t
     
       val rec isLocation =
@@ -222,6 +224,7 @@ structure Operand =
 		  seq [str (concat ["C", Type.name ty, " "]),
 		       paren (layout oper)]
 	     | File => str "<File>"
+	     | Frontier => str "<Frontier>"
 	     | GCState => str "<GCState>"
 	     | Global g => Global.layout g
 	     | Int i => Int.layout i
@@ -236,6 +239,7 @@ structure Operand =
 	     | Runtime r => GCField.layout r
 	     | SmallIntInf w => seq [str "SmallIntInf ", paren (Word.layout w)]
 	     | StackOffset so => StackOffset.layout so
+	     | StackTop => str "<StackTop>"
 	     | Word w => seq [str "0x", Word.layout w]
 	 end
 
@@ -247,6 +251,7 @@ structure Operand =
 	| Char _ => Type.char
 	| Contents {ty, ...} => ty
 	| File => Type.cpointer
+	| Frontier => Type.word
 	| GCState => Type.cpointer
 	| Global g => Global.ty g
 	| Int _ => Type.int
@@ -261,6 +266,7 @@ structure Operand =
 	       | _ => Type.fromRuntime (GCField.ty f))
 	| SmallIntInf _ => Type.intInf
 	| StackOffset {ty, ...} => ty
+	| StackTop => Type.word
 	| Word _ => Type.word
 	 
       val rec equals =
@@ -949,6 +955,7 @@ structure Program =
 			    ; Type.equals (Operand.ty oper,
 					   Type.cpointer))
 		      | File => true
+		      | Frontier => true
 		      | GCState => true
 		      | Global _ =>
 			   (* For now, we don't check that globals are
@@ -997,6 +1004,7 @@ structure Program =
 					      | Kind.Jump => true
 					  end
 				     | _ => true)
+		      | StackTop => true
 		      | Word _ => true
 	       in
 		  Err.check ("operand", ok, fn () => Operand.layout x)

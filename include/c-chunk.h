@@ -38,9 +38,11 @@ extern Pointer globalpointerNonRoot[];
 
 #define GCState ((Pointer)&gcState)
 #define ExnStack *(Word*)(GCState + ExnStackOffset)
-#define Frontier *(Word*)(GCState + FrontierOffset)
+#define FrontierMem *(Word*)(GCState + FrontierOffset)
+#define Frontier frontier
 #define StackBottom *(Word*)(GCState + StackBottomOffset)
-#define StackTop *(Word*)(GCState + StackTopOffset)
+#define StackTopMem *(Word*)(GCState + StackTopOffset)
+#define StackTop stackTop
 
 #define IsInt(p) (0x3 & (int)(p))
 
@@ -60,6 +62,26 @@ extern Pointer globalpointerNonRoot[];
 		if (x) goto l;						\
 	} while (0)
 
+#define FlushFrontier()				\
+	do {					\
+		FrontierMem = Frontier;		\
+	} while (0)
+
+#define FlushStackTop()				\
+	do {					\
+		StackTopMem = StackTop;		\
+	} while (0)
+
+#define CacheFrontier()				\
+	do {					\
+		Frontier = FrontierMem;		\
+	} while (0)
+
+#define CacheStackTop()				\
+	do {					\
+		StackTop = StackTopMem;		\
+	} while (0)
+
 /* ------------------------------------------------- */
 /*                       Chunk                       */
 /* ------------------------------------------------- */
@@ -67,12 +89,16 @@ extern Pointer globalpointerNonRoot[];
 #define Chunk(n)				\
 	DeclareChunk(n) {			\
 		struct cont cont;		\
-		int l_nextFun = nextFun;
+		Pointer frontier;		\
+		int l_nextFun = nextFun;	\
+		Pointer stackTop;
 
 #define ChunkSwitch(n)							\
 		if (DEBUG_CCODEGEN)					\
 			fprintf (stderr, "%s:%d: entering chunk %d  l_nextFun = %d\n",	\
-					__FILE__, __LINE__, n, l_nextFun);	\
+					__FILE__, __LINE__, n, l_nextFun);	\	
+		CacheFrontier();					\
+		CacheStackTop();					\
 		while (1) {						\
 		top:							\
 		switch (l_nextFun) {
@@ -83,6 +109,8 @@ extern Pointer globalpointerNonRoot[];
 			nextFun = l_nextFun;				\
 			cont.nextChunk = (void*)nextChunks[nextFun];	\
 			leaveChunk:					\
+				FlushFrontier();			\
+				FlushStackTop();			\
 				return cont;				\
 		} /* end switch (l_nextFun) */				\
 		} /* end while (1) */					\
