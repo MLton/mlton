@@ -66,7 +66,7 @@ src/link.sml
 ../lib/mlton-stubs/bin-io.sig
 ../lib/mlton-stubs/cont.sig
 ../lib/mlton-stubs/exn.sig
-../lib/mlton-stubs/finalize.sig
+../lib/mlton-stubs/finalizable.sig
 ../lib/mlton-stubs/ffi.sig
 ../lib/mlton-stubs/gc.sig
 ../lib/mlton-stubs/int-inf.sig

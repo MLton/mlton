@@ -48,7 +48,7 @@ structure BinIO =
    end
 structure Cont = MLtonCont
 structure Exn = MLtonExn
-structure Finalize = MLtonFinalize
+structure Finalizable = MLtonFinalizable
 structure FFI = MLtonFFI
 structure GC = MLtonGC
 structure IntInf = IntInf

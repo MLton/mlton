@@ -66,7 +66,7 @@ bin-io.sml
 cont.sig
 exn.sig
 ffi.sig
-finalize.sig
+finalizable.sig
 gc.sig
 int-inf.sig
 int-inf.sml

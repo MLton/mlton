@@ -34,7 +34,7 @@ structure MLton:
       structure BinIO: MLTON_BIN_IO
       structure Cont: MLTON_CONT
       structure Exn: MLTON_EXN
-      structure Finalize: MLTON_FINALIZE
+      structure Finalizable: MLTON_FINALIZABLE
       structure GC: MLTON_GC
       structure IntInf: MLTON_INT_INF
       structure Itimer: MLTON_ITIMER
@@ -185,23 +185,52 @@ with {\tt -exn-history true}.
 
 \end{description}
 
-\subsubsec{{\tt MLton.Finalize}}{finalize}
+\subsubsec{{\tt MLton.Finalizable}}{finalizable}
+A finalizable value is a value to which {\em finalizers} can be
+attached.  A finalizer is a function that runs after a garbage
+collection determines that the value to which it is attached is
+unreachable.  Reachability is the same as with weak pointers (see
+\secref{weak}).  The finalizer is treated like a signal handler, in
+that it runs asynchronously in a separate thread, with signals
+blocked, and will not run within a critical section (see
+\secref{thread}).
+
+For an example, see the {\tt examples/finalizable} directory.
+
 \begin{verbatim}
-signature MLTON_FINALIZE =
+signature MLTON_FINALIZABLE =
    sig
-      val finalize: 'a * (unit -> unit) -> unit
+      type 'a t
+
+      val finalize: 'a t * ('a -> unit) -> unit
+      val finalizeBefore: 'a t * 'b t -> unit
+      val new: 'a -> 'a t
+      val withValue: 'a t * ('a -> 'b) -> 'b
    end
 \end{verbatim}
 
 \begin{description}
 
-\entry{finalize (a, f)}
-will run {\tt f ()} when {\tt a} becomes unreachable.  The finalizer
-runs after a garbage collection determines that {\tt a} is
-unreachable, which is done by keeping a weak pointer to {\tt a} (see
-\secref{weak}).  The finalizer is treated like a signal handler, in
-that it runs asynchronously in a separate thread with signals blocked
-and will not run within a critical section (see \secref{thread}).
+\entry{addFinalizer (v, f)}
+adds {\tt f} as a finalizer to {\tt v}.  This means that after the
+last call to {\tt withValue} on {\tt v} completes and {\tt v} becomes
+unreachable, {\tt f x} will run.
+
+\entry{finalizeBefore (v1, v2)}
+ensures that {\tt v1} will be finalized before {\tt v2}.  A cycle of
+values {\tt v} = {\tt v1}, \ldots, {\tt vn} = {\tt v} with {\tt
+finalizeBefore (vi, vi+1)} will result in none of the {\tt vi} being
+finalized.
+
+\entry{new x}
+creates a new finalizable value, {\tt v}, with value {\tt x}.  The
+finalizers of {\tt v} will run after the last call to {\tt withValue}
+on {\tt v}.
+
+\entry{withValue (v, f)}
+returns the result of applying {\tt f} to the value of {\tt v} and
+ensures that {\tt v}'s finalizers will not run until {\tt f}
+completes.
 
 \end{description}
 

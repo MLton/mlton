@@ -3,6 +3,8 @@ Here are the changes since version 20030312.
 * 2003-05-15
   - Fixed bug in Real.class introduced on 04-28 that cause many
     regression failures with reals when using newer gccs.
+  - Replaced MLton.Finalize with MLton.Finalizable, which has a more
+    robust approach to finalization.
 
 * 2003-05-13
   - Fixed bug in MLton.FFI on Cygwin that caused Thread_returnToC to
