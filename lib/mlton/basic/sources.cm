@@ -58,6 +58,7 @@ structure Http
 structure In
 structure InitScript
 structure Int
+structure Int32
 structure IntInf
 structure Iterate
 structure Itimer

@@ -16,6 +16,8 @@ structure Word: WORD32 =
 
       val equals = op =
 
+      fun format (w, f) = Word.fmt f w
+
       val fromChar = Word8.toWord o Byte.charToByte
       val toChar = Byte.byteToChar o Word8.fromWord
 
@@ -44,6 +46,7 @@ structure Word: WORD32 =
       val toWord = fn x => x
       val toWordX = fn x => x
 
+      val fromIntInf = fromLargeInt
       val toIntInf = toLargeInt
       val toIntInfX = toLargeIntX
 

@@ -65,7 +65,7 @@ signature REAL =
       val sub1: t -> t
       val tan: t -> t
       val three: t
-      val toIntInf: t -> IntInf.t
+      val toIntInf: t -> Pervasive.IntInf.int
       val toString: t -> string
       val trunc: t -> int
       val two: t

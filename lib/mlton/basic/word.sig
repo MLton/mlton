@@ -5,14 +5,15 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 type int = Pervasive.Int.int
+type word = Pervasive.Word.word
    
 signature WORD =
    sig
       type t
 
-      val << : t * Pervasive.Word.word -> t
-      val >> : t * Pervasive.Word.word -> t
-      val ~>> : t * Pervasive.Word.word -> t
+      val << : t * word -> t
+      val >> : t * word -> t
+      val ~>> : t * word -> t
       val + : t * t -> t 
       val - : t * t -> t 
       val * : t * t -> t 
@@ -24,9 +25,11 @@ signature WORD =
       val compare: t * t -> order 
       val div: t * t -> t
       val equals: t * t -> bool
+      val format: t * StringCvt.radix -> string
       val fromChar: char -> t
       val fromInt: int -> t
-      val fromWord: Pervasive.Word.word -> t
+      val fromIntInf: Pervasive.IntInf.int -> t
+      val fromWord: word -> t
       val fromString: string -> t option
       val layout: t -> Layout.t
       val max: t * t -> t
@@ -35,15 +38,17 @@ signature WORD =
       val notb: t -> t
       val nthBitIsSet: t * int -> bool
       val orb: t * t -> t
-      val rol: t * Pervasive.Word.word -> t
-      val ror: t * Pervasive.Word.word -> t
+      val rol: t * word -> t
+      val ror: t * word -> t
       val toChar: t -> char
       val toInt: t -> int
       val toIntX: t -> int
       val toIntInf: t -> Pervasive.IntInf.int
       val toIntInfX: t -> Pervasive.IntInf.int
-      val toWord: t -> Pervasive.Word.word
-      val toWordX: t -> Pervasive.Word.word
+      val toLargeWord: t -> word
+      val toLargeWordX: t -> word
+      val toWord: t -> word
+      val toWordX: t -> word
       val toString: t -> string
       val wordSize: int
       val xorb: t * t -> t 

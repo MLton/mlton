@@ -11,6 +11,8 @@ structure IntInf: INT_INF =
    struct
       open IntInf 
 
+      val hash = String.hash o toString
+	 
       val andb = Pervasive.IntInf.andb
       val notb = Pervasive.IntInf.notb
       val orb = Pervasive.IntInf.orb

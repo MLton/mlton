@@ -27,3 +27,5 @@ structure Int:
       val minInt = valOf Int.minInt
       val toReal = Pervasive.Real.fromInt
    end
+
+structure Int32: INTEGER = Int

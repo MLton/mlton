@@ -87,8 +87,7 @@ signature INTEGER =
       (* val sum: {from: t, to: t, term: t -> t} -> t *)
       val toCommaString: t -> string
       val toInt: t -> Pervasive.Int.int
+      val toIntInf: t -> Pervasive.IntInf.int
+      val toLarge: t -> Pervasive.LargeInt.int
       val toString: t -> string
    end
-
-
-
