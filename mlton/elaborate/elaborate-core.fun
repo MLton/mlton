@@ -291,7 +291,7 @@ fun unifyList (trs: (Type.t * Region.t) vector,
 	    (trs, fn (t', r) =>
 	     unify (t, t', preError, fn (l, l') =>
 		    (r,
-		     str "list elements of different types",
+		     str "list element types disagree",
 		     align [seq [str "element:  ", l'],
 			    seq [str "previous: ", l],
 			    lay ()])))
@@ -1711,7 +1711,8 @@ fun elaborateDec (d, {env = E,
 			 (Cexp.ty e, elabType t', fn (l1, l2) =>
 			  (region,
 			   str "expression and constraint disagree",
-			   seq [str "exp type:   ", l1]))
+			   align [seq [str "expects: ", l2],
+				  seq [str "but got: ", l1]]))
 		   in
 		      e
 		   end
@@ -1741,7 +1742,7 @@ fun elaborateDec (d, {env = E,
 			 unify
 			 (Cexp.ty try, Cexp.ty body, fn (l1, l2) =>
 			  (region,
-			   str "expression and handler of different types",
+			   str "expression and handler disagree",
 			   align [seq [str "expression: ", l1],
 				  seq [str "handler:    ", l2]]))
 		      val _ =
@@ -1771,7 +1772,7 @@ fun elaborateDec (d, {env = E,
 			 unify
 			 (Cexp.ty b', Cexp.ty c', fn (l1, l2) =>
 			  (region,
-			   str "then and else branches of different types",
+			   str "then and else branches disagree",
 			   align [seq [str "then: ", l1],
 				  seq [str "else: ", l2]]))
 		   in
@@ -2067,7 +2068,7 @@ fun elaborateDec (d, {env = E,
 		       unify
 		       (Cpat.ty p, argType, preError, fn (l1, l2) =>
 			(Apat.region pat,
-			 str "rule patterns of different types",
+			 str "rule patterns of disagree",
 			 align [seq [str "pattern:  ", l1],
 				seq [str "previous: ", l2],
 				seq [str "in: ", lay ()]]))
@@ -2076,7 +2077,7 @@ fun elaborateDec (d, {env = E,
 		       unify
 		       (Cexp.ty e, resultType, preError, fn (l1, l2) =>
 			(Aexp.region exp,
-			 str "rule results of different types",
+			 str "rule results of disagree",
 			 align [seq [str "result:   ", l1],
 				seq [str "previous: ", l2],
 				seq [str "in: ", lay ()]]))
