@@ -92,6 +92,8 @@ signature REGEXP =
       val star: t -> t
       val string: string -> t (* case matters *)
       val stringIgnoreCase: string -> t (* case doesn't matter *)
+
+      val fromString: string -> (t * Save.t vector) option
    end
 
 

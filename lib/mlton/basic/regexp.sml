@@ -1406,6 +1406,9 @@ in
 	 fun string (s: string): t =
 	    seq (Int.foldDown (0, String.size s, [], fn (i, ac) =>
 			       char (String.sub (s, i)) :: ac))
+	 fun notString (s: string): t =
+	    seq (Int.foldDown (0, String.size s, [], fn (i, ac) =>
+			       notChar (String.sub (s, i)) :: ac))
 
 	 fun stringIgnoreCase (s: string): t =
 	    seq (Int.foldDown
@@ -1419,6 +1422,14 @@ in
 	 val null = seq [] (* Language containing the empty string only. *)
 	 fun oneOrMore r = seq [r, star r]
 	 fun optional r = or [null, r]
+	 fun repeat (r, n: int) = seq (List.tabulate (n, fn _ => r))
+	 fun lower (r, n: int) = seq [repeat (r, n), star r]
+	 fun upper (r, n: int) =
+	    if n = 0
+	       then null
+	    else or [r, upper (r, n - 1)]
+	 fun range (r, n: int, m: int) =
+	    seq [repeat (r, n), upper (r, m - n)]
 	    
 	 val empty = or [] (* Empty Language. *)
 
@@ -1598,6 +1609,383 @@ in
 
 	 val compileNFA =
 	    Trace.trace ("Regexp.compileNFA", layout, Compiled.layout) compileNFA
+
+         (* POSIX 1003.2 regular expressions 
+	  *  caveats: does not support back references '\N'
+	  *           does not support unmatched ')'
+	  *           does not support '^' or '$'
+	  *           does not support '[=' style coallating elements
+	  *           does not support coallating elements as range endpoints
+	  * 
+	  * grammer:
+	  *    S ::= Re
+          *   Re ::= Br Re0
+	  *  Re0 ::= e | '|' Br Re0
+	  *   Br ::= P Br0
+	  *  Br0 ::= e | P Br0
+	  *    P ::= A P0
+	  *   P0 ::= e | '*' | '+' | '?' | Bnd
+	  *  Bnd ::= '{' N Bnd0 '}'
+          * Bnd0 ::= e | ',' Bnd1
+          * Bnd1 ::= e | N
+          *    A ::= '(' Re ')'
+          *        | '()'
+          *        | Be
+	  *        | '.'
+          *        | '^'
+          *        | '$'
+          *        | '\' C
+          *        | C
+          *   Be ::= '[' Be0 ']'
+          *  Be0 ::= '^' Be1 | Be1
+          *  Be1 ::= ']' Be2 | Be2
+          *  Be2 ::= '-' Be3 | Be3
+          *  Be3 ::= e
+          *        | '-'
+          *        | C '-' C Be3
+          *        | '[' ':' Ce ':' ']' Be3
+          *        | '[' ':' Cl ':' ']' Be3
+          *        | C Be3
+          *   Ce ::= e | C Ce
+          *   Cl ::= 'alnum' | ... | 'xdigit'
+          *)
+         local
+	    exception X of string
+	    
+	    fun S (s: char list) :
+	          (t * Save.t vector) =
+	       let
+		  val (s, re, saves) = Re s
+	       in
+		  case s of
+		     [] => (re, saves)
+		   | _ => raise (X "S")
+	       end
+	    and Re (s: char list) : 
+	           (char list * t * Save.t vector) =
+	       let
+		  val (s, re, saves) = Br s
+	       in
+		  Re0 (s, [re], [saves])
+	       end
+	    and Re0 (s: char list, 
+		     res: t list,
+		     savess: Save.t vector list) : 
+	            (char list * t * Save.t vector) =
+		let
+		   fun finish s =
+		      (s, or (List.rev res), Vector.concat (List.rev savess))
+		in
+		   case s of
+		      [] => finish s
+		    | #")"::_ => finish s
+		    | #"|"::s => let
+				    val (s, re, saves) = Br s
+				 in
+				    Re0 (s, re::res, saves::savess)
+				 end
+		    | _ => raise (X "Re0")
+		end
+	    and Br (s: char list) :
+	           (char list * t * Save.t vector) =
+	       let
+		  val (s, re, saves) = P s
+	       in
+		  Br0 (s, [re], [saves])
+	       end
+	    and Br0 (s: char list, res: t list, savess: Save.t vector list) :
+	            (char list * t * Save.t vector) =
+	       let
+		  fun finish s =
+		     (s, seq (List.rev res), Vector.concat (List.rev savess))
+	       in
+		  case s of
+		     [] => finish s
+		   | #")"::_ => finish s
+		   | #"|"::_ => finish s
+		   | _ => let
+			     val (s, re, saves) = P s
+			  in
+			     Br0 (s, re::res, saves::savess)
+			  end
+	       end
+	    and P (s: char list) :
+	          (char list * t * Save.t vector) =
+	       let
+		  val (s, re, saves) = A s
+	       in 
+		  P0 (s, re, saves, [], [])
+	       end
+	    and P0 (s: char list, re: t, saves: Save.t vector,
+		    res: t list, savess: Save.t vector list) :
+	           (char list * t * Save.t vector) =
+	       let
+		  fun finish (s, re) =
+		     (s, seq (List.rev (re::res)), 
+		      Vector.concat (List.rev (saves::savess)))
+		  fun default () =
+		     let
+		        val res = re::res
+			val savess = saves::savess
+			val (s, re, saves) = A s
+		     in
+		        P0 (s, re, saves, res, savess)
+		     end
+	       in
+		 case s of 
+		    [] => finish (s, re)
+		  | #")"::_ => finish (s, re)
+		  | #"|"::_ => finish (s, re)
+		  | #"*"::s => finish (s, star re)
+		  | #"+"::s => finish (s, oneOrMore re)
+		  | #"?"::s => finish (s, optional re)
+		  | #"{"::(c::s) => if Char.isDigit c
+		                       then Bnd (c::s, re, saves)
+				    else default ()
+		  | _ => default ()
+	       end
+	    and Bnd (s: char list, re: t, saves: Save.t vector) :
+	            (char list * t * Save.t vector) =
+	       let
+		  val (s, n) = N s
+		  val (s, re, saves) = Bnd0 (s, re, saves, n)
+		  fun finish s =
+		     (s, re, saves)
+	       in
+		  case s of
+		     #"}"::s => finish s
+		   | _ => raise (X "Bnd")
+	       end
+	    and Bnd0 (s: char list, re: t, saves: Save.t vector, n: int) :
+	             (char list * t * Save.t vector) =
+	       let
+		  fun finish (s, re) =
+		     (s, re, saves)
+	       in
+		  case s of
+		    #"}"::_ => finish (s, repeat (re, n))
+		  | #","::s => Bnd1 (s, re, saves, n)
+		  | _ => raise (X "Bnd0")
+	       end
+	    and Bnd1 (s: char list, re: t, saves: Save.t vector, n: int) :
+	             (char list * t * Save.t vector) =
+	       let
+		  fun finish (s, re) =
+		     (s, re, saves)
+	       in
+		  case s of 
+		     #"}"::_ => finish (s, lower (re, n))
+		   | _ => let
+			     val (s, m) = N s
+			  in
+			     if m < n
+			        then raise (X "Bnd1")
+			     else finish (s, range (re, n, m))
+			  end
+	       end
+	    and N (s: char list) :
+	          (char list * int) =
+	       let
+	       in
+		  case s of
+		     d::s' => if Char.isDigit d
+			         then N1 (s', [d])
+			      else raise (X "N")
+		   | _ => raise (X "N")
+	       end
+	    and N1 (s: char list, ds: char list) :
+	           (char list * int) =
+	       let
+		  fun finish s =
+		     case Int.fromString (implode (List.rev ds)) of
+		        SOME n => (s, n)
+		      | NONE => raise (X "N1")
+	       in
+		  case s of
+		     [] => finish s
+		   | d::s' => if Char.isDigit d
+				 then N1 (s', d::ds)
+			      else finish s
+	       end
+	    and A (s: char list) :
+	          (char list * t * Save.t vector) =
+	       let
+		  fun finish (s, re, saves) =
+		     (s, re, saves)
+		  fun finishR (s, re) =
+		     finish (s, re, Vector.new0 ())
+		  fun finishN s =
+		     finishR (s, null)
+		  fun finishC (s, c) =
+		     finishR (s, char c)
+	       in
+		  case s of 
+		     #"("::(#")"::s) => finishN s
+		   | #"("::s => let
+				   val save' = Save.new ()
+				   val (s, re, saves) = Re s
+				in
+				   case s of
+				      #")"::s => (s, save (re, save'), 
+						  Vector.concat 
+						  [Vector.new1 save', saves])
+				    | _ => raise (X "A")
+				end
+		   | #"["::_ => Be s
+		   | #"."::s => finishR (s, any)
+		   | #"^"::s => raise (X "A:^")
+		   | #"$"::s => raise (X "A:$")
+		   | #"\\"::(c::s) => finishC (s, c)
+		   | c::s => if String.contains (")|*+?{", c)
+				then raise (X "A")
+			     else finishC (s, c)
+		   | _ => raise (X "A")
+	       end
+	    and Be (s: char list) :
+	           (char list * t * Save.t vector) =
+	       let
+	       in
+		  case s of
+		     #"["::s => let 
+				   val (s, re, saves) = Be0 s
+				in
+				   case s of
+				      #"]"::s => (s, re, saves)
+				    | _ => raise (X "Be")
+				end
+		   | _ => raise (X "Be")
+	       end
+	    and Be0 (s: char list) :
+	            (char list * t * Save.t vector) =
+	       let
+	       in
+		  case s of
+		     #"^"::s => Be1 (s, true)
+		   | _ => Be1 (s, false)
+	       end
+	    and Be1 (s: char list, inv: bool) :
+	            (char list * t * Save.t vector) =
+	       let
+	       in
+		  case s of 
+		     #"]"::s => Be2 (s, inv, [#"]"])
+		   | _ => Be2 (s, inv, [])
+	       end
+	    and Be2 (s: char list, inv: bool, cs: char list) :
+	            (char list * t * Save.t vector) =
+	       let
+	       in
+		  case s of 
+		     #"-"::s => Be3 (s, inv, #"-"::cs, [], [])
+		   | _ => Be3 (s, inv, cs, [], [])
+	       end
+	    and Be3 (s: char list, inv: bool,
+		     cs: char list, cps: (char -> bool) list, ces: string list) :
+	            (char list * t * Save.t vector) =
+	       let
+		 fun finish (s, cs, cps, ces) =
+		    let
+		       fun finish' re =
+			  (s, re, Vector.new0 ())
+		       val s = implode cs
+		       val cp = fn c =>
+			        List.fold(cps, false, fn (cp, b) =>
+					  b orelse (cp c))
+		    in
+		       if inv
+		          then finish' (List.fold
+					(ces, or [isNotChar cp,
+						  notOneOf s],
+					 fn (ce, re) =>
+					 or [notString ce, re]))
+		       else  finish' (List.fold
+				      (ces, or [isChar cp,
+						oneOf s],
+				       fn (ce, re) =>
+				       or [string ce, re]))
+		    end
+	       in
+		  case s of
+		     #"]"::_ => finish (s, cs, cps, ces)
+		   | #"-"::s => (case s of
+				    #"]"::_ => finish (s, #"-"::cs, cps, ces)
+				  | _ => raise (X "Be3"))
+		   | c1::(#"-"::(c2::s)) => 
+		        let
+			   val r1 = Char.ord c1
+			   val r2 = Char.ord c2
+			   val cp = fn c =>
+			            let val r = Char.ord c
+				    in r1 <= r andalso r <= r2
+				    end
+			in 
+			   Be3 (s, inv, cs, cp::cps, ces)
+			end
+		   | #"["::(#"."::s) =>
+			let
+			   val (s, ce) = Ce (s, [])
+			in
+			   case s of
+			      #"."::(#"]"::s) => Be3 (s, inv, cs, cps, ce::ces)
+			    | _ => raise (X "Be3")
+			end
+		   | #"["::(#":"::s) =>
+			let
+			   val (s, cp) = Cl s
+			in
+			   case s of
+			      #":"::(#"]"::s) => Be3 (s, inv, cs, cp::cps, ces)
+			    | _ => raise (X "Be3")
+			end
+		   | c::s => Be3 (s, inv, c::cs, cps, ces)
+		   | _ => raise (X "Be3")
+	       end
+	    and Ce (s: char list, ce: char list) :
+	           (char list * string) =
+	       let
+		 fun finish s =
+		    (s, implode (List.rev ce))
+	       in
+		 case s of
+		    #"."::_ => finish s
+		  | c::s => Ce (s, c::ce)
+		  | _ => raise (X "Ce")
+	       end
+	    and Cl (s: char list) :
+	           (char list * (char -> bool)) =
+	       let
+	       in
+		 case s of
+		    #"a"::(#"l"::(#"n"::(#"u"::(#"m"::s)))) => 
+		       (s, Char.isAlphaNum)
+		  | #"a"::(#"l"::(#"p"::(#"h"::(#"a"::s)))) => 
+		       (s, Char.isAlpha)
+		  | #"b"::(#"l"::(#"a"::(#"n"::(#"k"::s)))) => 
+		       raise (X "Cl:blank")
+		  | #"c"::(#"n"::(#"t"::(#"r"::(#"l"::s)))) => 
+			 (s, Char.isCntrl)
+		  | #"d"::(#"i"::(#"g"::(#"i"::(#"t"::s)))) => 
+			 (s, Char.isDigit)
+		  | #"g"::(#"r"::(#"a"::(#"p"::(#"h"::s)))) => 
+			 (s, Char.isGraph)
+		  | #"l"::(#"o"::(#"w"::(#"e"::(#"r"::s)))) => 
+			 (s, Char.isLower)
+		  | #"p"::(#"r"::(#"i"::(#"n"::(#"t"::s)))) => 
+			 (s, Char.isPrint)
+		  | #"p"::(#"u"::(#"n"::(#"c"::(#"t"::s)))) => 
+			 raise (X "Cl:punct")
+		  | #"s"::(#"p"::(#"a"::(#"c"::(#"e"::s)))) => 
+			   (s, Char.isSpace)
+		  | #"u"::(#"p"::(#"p"::(#"e"::(#"r"::s)))) => 
+			   (s, Char.isUpper)
+		  | #"x"::(#"d"::(#"i"::(#"g"::(#"i"::(#"t"::s))))) => 
+		       (s, Char.isHexDigit)
+		  | _ => raise (X "Cl")
+	       end
+	 in
+	    val fromString: string -> (t * Save.t vector) option =
+	       fn s => (SOME (S (explode s))) handle X s => NONE
+	 end
       end
 
 (*    local
