@@ -350,7 +350,7 @@ structure Statement =
 		  mayAlign
 		  [Operand.layout dst,
 		   seq [str " = Object ",
-			record [("header", Word.layout header),
+			record [("header", seq [str "0x", Word.layout header]),
 				("size", Bytes.layout size)]]]
 	     | PrimApp {args, dst, prim, ...} =>
 		  let
