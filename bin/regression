@@ -8,13 +8,14 @@ set -e
 name=`basename $0`
 
 usage () {
-	echo >&2 "usage: $name [-cross target] [-run-only target] [mlton flags ...]"
+	echo >&2 "usage: $name [-cross target] [-run-only target] [-short] [mlton flags ...]"
 	exit 1
 }
 
 cross='no'
 fail='no'
 runOnly='no'
+short='no'
 while [ "$#" -gt 0 ]; do
 	case "$1" in
 	-cross)
@@ -39,6 +40,10 @@ while [ "$#" -gt 0 ]; do
 		crossTarget="$1"
 		shift
 		;;
+	-short)
+		short='yes'
+		shift
+		;;
 	*)
 		flags="$@"
 		break
@@ -56,7 +61,7 @@ if [ $cross = 'yes' ]; then
 fi
 cont='callcc.sml callcc2.sml callcc3.sml'
 intInf='conv.sml conv2.sml harmonic.sml int-inf.*.sml slow.sml slower.sml smith-normal-form.sml'
-signal='finalize.sml signals.sml suspend.sml'
+signal='finalize.sml signals.sml signals2.sml suspend.sml'
 thread='thread0.sml thread1.sml thread2.sml mutex.sml prodcons.sml same-fringe.sml timeout.sml'
 world='world1.sml world2.sml world3.sml world4.sml world5.sml world6.sml'
 tmp=/tmp/z.regression.$$
@@ -123,7 +128,7 @@ for f in `ls *.sml`; do
 	;;
 	esac
 done
-if [ "$cross" = 'yes' -o "$runOnly" = 'yes' ]; then
+if [ "$cross" = 'yes' -o "$runOnly" = 'yes' -o "$short" = 'yes' ]; then
  	exit 0
 fi
 make clean >/dev/null

@@ -445,6 +445,11 @@ typedef struct GC_state {
 	 * handler needs to run in order to handle the signal.
 	 */
 	sigset_t signalsHandled;
+        /* signalsBlocked is the set of signals which the mutator has blocked;
+	 * it is used in blockSignals and unblockSignals when blocking and 
+	 * restoring signals.
+	 */
+	sigset_t signalsBlocked;
 	/* signalIsPending is TRUE iff a signal has been received but not
 	 * processed by the mutator signal handler.
 	 */

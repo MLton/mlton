@@ -1296,12 +1296,12 @@ static inline bool shouldBlockSignals () {
 
 static inline void blockSignals (GC_state s) {
 	if (shouldBlockSignals ())
-		sigprocmask (SIG_BLOCK, &s->signalsHandled, NULL);
+		sigprocmask (SIG_BLOCK, &s->signalsHandled, &s->signalsBlocked);
 }
 
 static inline void unblockSignals (GC_state s) {
 	if (shouldBlockSignals ())
-		sigprocmask (SIG_UNBLOCK, &s->signalsHandled, NULL);
+		sigprocmask (SIG_SETMASK, &s->signalsBlocked, NULL);
 }
 
 /* ---------------------------------------------------------------- */
