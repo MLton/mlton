@@ -35,10 +35,14 @@ signature CONTROL =
 
       val defines: string list ref
 
+      (* whether the arithmetic primitives detect overflow *)
       val detectOverflow: bool ref
 
       (* List of optimization passes to skip. *)
       val dropPasses: string list ref
+
+      (* whether optimization passes should eliminate useless overflow tests *)
+      val eliminateOverflow: bool ref
 
       val exnHistory: bool ref
 	 

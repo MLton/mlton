@@ -171,7 +171,11 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 	 val (trueVar, t) = make Con.truee
 	 val (falseVar, f) = make Con.falsee
       end
-      val globals = Vector.concat [Vector.new2 (t, f), globals]
+      val one = Var.newNoname ()
+      val oneS = Statement.T {exp = Exp.Const (Const.fromInt 1),
+			      var = SOME one,
+			      ty = Type.int}
+      val globals = Vector.concat [Vector.new3 (t, f, oneS), globals]
       val shrink = shrinkFunction globals
       val numSimplified = ref 0
       fun simplifyFunction f =
@@ -294,6 +298,20 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 				   (! (#facts (labelInfo label)))])
 		  end))
              (* Transformation. *)
+	     fun isFact (l: Label.t, p: Fact.t -> bool): bool =
+		let
+		   fun loop (l: Label.t) =
+		      let
+			 val {ancestor, facts, ...} = labelInfo l
+		      in
+			 List.exists (!facts, p)
+			 orelse (case !ancestor of
+				    NONE => false
+				  | SOME l => loop l)
+		      end
+		in
+		   loop l
+		end
 	     fun determine (l: Label.t, f: Fact.t) =
 	        let
 		   fun loop {ancestor, facts, ...} =
@@ -349,6 +367,107 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 					  | Unknown => statement)
 				   | _ => statement)
 			end)
+		    val noChange = (statements, transfer)
+		    fun arith (args: Var.t vector,
+			       prim: Prim.t,
+			       success: Label.t)
+		       : Statement.t vector * Transfer.t =
+		       let
+			  fun simplify (prim: Prim.t, x: Var.t) =
+			     let
+				val res = Var.newNoname ()
+			     in
+				(Vector.concat
+				 [statements,
+				  Vector.new1
+				  (Statement.T
+				   {exp = PrimApp {args = Vector.new2 (x, one),
+						   prim = prim,
+						   targs = Vector.new0 ()},
+				    ty = Type.int,
+				    var = SOME res})],
+				 Goto {args = Vector.new1 res,
+				       dst = success})
+			     end
+			  fun add1 (x: Var.t) =
+			     if isFact (label, fn Fact.T {lhs, rel, rhs} =>
+					case (lhs, rel, rhs) of
+					   (Oper.Var x', Rel.LT, _) =>
+					      Var.equals (x, x')
+					 | (Oper.Var x', Rel.LE, Oper.Const c) =>
+					      Var.equals (x, x')
+					      andalso (case Const.node c of
+							  Const.Node.Int c =>
+							     c < Int.maxInt
+							| _ => Error.bug "strange fact")
+					 | _ => false)
+				then simplify (Prim.intAdd, x)
+			     else noChange
+			  fun sub1 (x: Var.t) =
+			     if isFact (label, fn Fact.T {lhs, rel, rhs} =>
+					case (lhs, rel, rhs) of
+					   (_, Rel.LT, Oper.Var x') =>
+					      Var.equals (x, x')
+					 | (Oper.Const c, Rel.LE, Oper.Var x') =>
+					      Var.equals (x, x')
+					      andalso (case Const.node c of
+							  Const.Node.Int c =>
+							     c > Int.minInt
+							| _ => Error.bug "strange fact")
+					 | _ => false)
+				then simplify (Prim.intSub, x)
+			     else noChange
+			  fun add (c: Const.t, x: Var.t) =
+			     case Const.node c of
+				Const.Node.Int i =>
+				   if i = 1
+				      then add1 x
+				   else if i = ~1
+					   then sub1 x
+					else noChange
+			      | _ => Error.bug "add of strange const"
+			  datatype z = datatype Prim.Name.t
+		       in
+			  case Prim.name prim of
+			     Int_addCheck =>
+				let
+				   val x1 = Vector.sub (args, 0)
+				   val x2 = Vector.sub (args, 1)
+				in
+				   case varInfo x1 of
+				      Const c => add (c, x2)
+				    | _ => (case varInfo x2 of
+					       Const c => add (c, x1)
+					     | _ => noChange)
+				end
+			   | Int_subCheck =>
+				let
+				   val x1 = Vector.sub (args, 0)
+				   val x2 = Vector.sub (args, 1)
+				in
+				   case varInfo x2 of
+				      Const c =>
+					 (case Const.node c of
+					     Const.Node.Int i =>
+						if i = ~1
+						   then add1 x1
+						else if i = 1
+							then sub1 x1
+						     else noChange
+					   | _ =>
+						Error.bug "sub of strage const")
+				    | _ => noChange
+				end
+			   | _ => noChange
+		       end
+		    val (statements, transfer) =
+		       if !Control.eliminateOverflow
+			  then
+			     case transfer of
+				Arith {args, prim, success, ...} =>
+				   arith (args, prim, success)
+			      | _ => noChange
+		       else noChange
 		 in
 		   Block.T {label = label,
 			    args = args,
@@ -369,6 +488,7 @@ fun simplify (program as Program.T {globals, datatypes, functions, main}) =
 	  let open Layout
 	  in seq [str "numSimplified = ", Int.layout (!numSimplified)]
 	  end)
+      val functions = List.revMap (functions, simplifyFunction)
       val program = 
 	 Program.T {datatypes = datatypes,
 		    globals = globals,

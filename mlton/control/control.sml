@@ -52,6 +52,11 @@ val dropPasses =
 	    default = [],
 	    toString = List.toString String.toString}
 
+val eliminateOverflow =
+   control {name = "eliminate overflow",
+	    default = true,
+	    toString = Bool.toString}
+   
 val exnHistory = control {name = "exn history",
 			  default = false,
 			  toString = Bool.toString}
