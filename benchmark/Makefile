@@ -44,7 +44,7 @@ install: $(NAME)
 tags:
 	etags *.fun *.sig *.sml
 
-BENCH = barnes-hut checksum count-graphs DLXSimulator fft fib hamlet imp-for knuth-bendix lexgen life logic mandelbrot matrix-multiply md5 merge mlyacc mpuz nucleic peek psdes-random ratio-regions ray raytrace simple smith-normal-form tailfib tak tensor tsp tyan vector-concat vector-rev vliw wc-input1 wc-scanStream zebra zern
+BENCH = barnes-hut boyer checksum count-graphs DLXSimulator fft fib hamlet imp-for knuth-bendix lexgen life logic mandelbrot matrix-multiply md5 merge mlyacc mpuz nucleic peek psdes-random ratio-regions ray raytrace simple smith-normal-form tailfib tak tensor tsp tyan vector-concat vector-rev vliw wc-input1 wc-scanStream zebra zern
 FPBENCH = barnes-hut fft hamlet mandelbrot matrix-multiply nucleic ray raytrace simple tensor tsp tyan vliw zern
 
 BFLAGS = -mlton "/usr/local/bin/mlton" -mlton "mlton -optimize-ssa {false,true}"
@@ -57,7 +57,7 @@ test: $(NAME)
 
 QBENCH = $(BENCH)
 
-QBFLAGS = -mlton "mlton-stable" -mlton "mlton" -mlton "mlton -native-reserve-esp true" 
+QBFLAGS = -mlton "mlton"
 
 .PHONY: qtest
 qtest: $(NAME)
