@@ -715,6 +715,9 @@ signature GL =
         val c_glBlendFunc : GLenum * GLenum -> unit
         val glBlendFunc : GLenum -> GLenum -> unit
 
+        val c_glCallList : int -> unit
+        val glCallList : int -> unit
+
         val c_glClearColor: GLreal * GLreal * GLreal * GLreal -> unit
         val glClearColor: GLreal -> GLreal -> GLreal -> GLreal -> unit
 
@@ -751,6 +754,9 @@ signature GL =
         val c_glEnd : unit -> unit
         val glEnd : unit -> unit
 
+        val c_glEndList : unit -> unit
+        val glEndList : unit -> unit
+
         val c_glRasterPos2i : int * int -> unit
         val glRasterPos2i : int -> int -> unit
 
@@ -781,8 +787,14 @@ signature GL =
         val c_glLoadIdentity : unit -> unit
         val glLoadIdentity : unit -> unit
 
+        val c_glMaterialfv : GLenum * GLenum * GLreal array -> unit
+        val glMaterialfv : GLenum -> GLenum -> GLreal array -> unit
+
         val c_glMatrixMode : GLenum -> unit
         val glMatrixMode : GLenum -> unit
+
+        val c_glNewList : int * GLenum -> unit
+        val glNewList : int -> GLenum -> unit
 
         val c_glOrtho : GLdouble * GLdouble * GLdouble * GLdouble * GLdouble * GLdouble -> unit
         val glOrtho : GLdouble -> GLdouble -> GLdouble -> GLdouble -> GLdouble -> GLdouble -> unit
@@ -801,6 +813,12 @@ signature GL =
 
         val c_glPopMatrix : unit -> unit
         val glPopMatrix : unit -> unit
+
+        val c_glPopAttrib : unit -> unit
+        val glPopAttrib : unit -> unit
+
+        val c_glPushAttrib : GLenum -> unit
+        val glPushAttrib : GLenum -> unit
 
         val c_glRotatef: GLreal * GLreal * GLreal * GLreal -> unit
         val glRotatef: GLreal -> GLreal -> GLreal -> GLreal -> unit
@@ -1554,6 +1572,9 @@ signature GL =
         val c_glBlendFunc : GLenum * GLenum -> unit
         val glBlendFunc : GLenum -> GLenum -> unit
 
+        val c_glCallList : int -> unit
+        val glCallList : int -> unit
+
         val c_glClearColor: GLreal * GLreal * GLreal * GLreal -> unit
         val glClearColor: GLreal -> GLreal -> GLreal -> GLreal -> unit
 
@@ -1590,6 +1611,9 @@ signature GL =
         val c_glEnd : unit -> unit
         val glEnd : unit -> unit
 
+        val c_glEndList : unit -> unit
+        val glEndList : unit -> unit
+
         val c_glRasterPos2i : int * int -> unit
         val glRasterPos2i : int -> int -> unit
 
@@ -1620,8 +1644,14 @@ signature GL =
         val c_glLoadIdentity : unit -> unit
         val glLoadIdentity : unit -> unit
 
+        val c_glMaterialfv : GLenum * GLenum * GLreal array -> unit
+        val glMaterialfv : GLenum -> GLenum -> GLreal array -> unit
+
         val c_glMatrixMode : GLenum -> unit
         val glMatrixMode : GLenum -> unit
+
+        val c_glNewList : int * GLenum -> unit
+        val glNewList : int -> GLenum -> unit
 
         val c_glOrtho : GLdouble * GLdouble * GLdouble * GLdouble * GLdouble * GLdouble -> unit
         val glOrtho : GLdouble -> GLdouble -> GLdouble -> GLdouble -> GLdouble -> GLdouble -> unit
@@ -1640,6 +1670,12 @@ signature GL =
 
         val c_glPopMatrix : unit -> unit
         val glPopMatrix : unit -> unit
+
+        val c_glPopAttrib : unit -> unit
+        val glPopAttrib : unit -> unit
+
+        val c_glPushAttrib : GLenum -> unit
+        val glPushAttrib : GLenum -> unit
 
         val c_glRotatef: GLreal * GLreal * GLreal * GLreal -> unit
         val glRotatef: GLreal -> GLreal -> GLreal -> GLreal -> unit
@@ -2400,6 +2436,9 @@ structure GL :> GL =
         val c_glBlendFunc = _import "glBlendFunc" stdcall: GLenum * GLenum -> unit;
         fun glBlendFunc (a:GLenum) (b:GLenum) = c_glBlendFunc (a,b) :unit
 
+        val c_glCallList = _import "glCallList" stdcall: int -> unit;
+        fun glCallList (a:int) = c_glCallList (a): unit;
+
         val c_glClearColor = _import "glClearColor" stdcall:
                                GLreal * GLreal * GLreal * GLreal -> unit;
         fun glClearColor (a:GLreal) (b:GLreal) (c:GLreal) (d:GLreal)
@@ -2462,6 +2501,9 @@ structure GL :> GL =
         val c_glClear = _import "glClear" stdcall: GLenum -> unit;
         fun glClear (a:GLenum)= c_glClear (a): unit;
 
+        val c_glEndList = _import "glEndList" stdcall: unit -> unit;
+        fun glEndList () = c_glEndList (): unit;
+
         val c_glFlush = _import "glFlush" stdcall: unit -> unit;
         fun glFlush () = c_glFlush (): unit;
 
@@ -2487,8 +2529,14 @@ structure GL :> GL =
         val c_glLoadIdentity = _import "glLoadIdentity" stdcall: unit -> unit;
         fun glLoadIdentity () = c_glLoadIdentity (): unit;
 
+        val c_glMaterialfv = _import "glMaterialfv" stdcall: GLenum * GLenum * GLreal array -> unit;
+        fun glMaterialfv (a:GLenum) (c:GLenum) (b:GLreal array) = c_glMaterialfv (a, c, b) :unit;
+
         val c_glMatrixMode = _import "glMatrixMode" stdcall: GLenum -> unit;
         fun glMatrixMode (a:GLenum)= c_glMatrixMode (a): unit;
+
+        val c_glNewList = _import "glNewList" stdcall: int * GLenum -> unit;
+        fun glNewList (b:int) (a:GLenum)= c_glNewList (b,a): unit;
 
         val c_glOrtho = _import "glOrtho" stdcall: GLdouble * GLdouble * GLdouble * GLdouble * GLdouble * GLdouble -> unit;
         fun glOrtho (a0 : GLdouble) (a1 : GLdouble) (a2 : GLdouble)
@@ -2497,6 +2545,12 @@ structure GL :> GL =
 
         val c_glPushMatrix = _import "glPushMatrix" stdcall: unit -> unit;
         fun glPushMatrix () = c_glPushMatrix (): unit;
+
+        val c_glPopAttrib = _import "glPopAttrib" stdcall: unit -> unit;
+        fun glPopAttrib () = c_glPopAttrib (): unit;
+
+        val c_glPushAttrib = _import "glPushAttrib" stdcall: GLenum -> unit;
+        fun glPushAttrib (a:GLenum)= c_glPushAttrib (a): unit;
 
         val c_glPolygonMode = _import "glPolygonMode" stdcall: GLenum * GLenum -> unit;
         fun glPolygonMode (a:GLenum) (b:GLenum) = c_glPolygonMode (a,b) :unit
@@ -3261,6 +3315,9 @@ signature GL =
         val c_glBlendFunc : GLenum * GLenum -> unit
         val glBlendFunc : GLenum -> GLenum -> unit
 
+        val c_glCallList : int -> unit
+        val glCallList : int -> unit
+
         val c_glClearColor: GLreal * GLreal * GLreal * GLreal -> unit
         val glClearColor: GLreal -> GLreal -> GLreal -> GLreal -> unit
 
@@ -3297,6 +3354,9 @@ signature GL =
         val c_glEnd : unit -> unit
         val glEnd : unit -> unit
 
+        val c_glEndList : unit -> unit
+        val glEndList : unit -> unit
+
         val c_glRasterPos2i : int * int -> unit
         val glRasterPos2i : int -> int -> unit
 
@@ -3327,8 +3387,14 @@ signature GL =
         val c_glLoadIdentity : unit -> unit
         val glLoadIdentity : unit -> unit
 
+        val c_glMaterialfv : GLenum * GLenum * GLreal array -> unit
+        val glMaterialfv : GLenum -> GLenum -> GLreal array -> unit
+
         val c_glMatrixMode : GLenum -> unit
         val glMatrixMode : GLenum -> unit
+
+        val c_glNewList : int * GLenum -> unit
+        val glNewList : int -> GLenum -> unit
 
         val c_glOrtho : GLdouble * GLdouble * GLdouble * GLdouble * GLdouble * GLdouble -> unit
         val glOrtho : GLdouble -> GLdouble -> GLdouble -> GLdouble -> GLdouble -> GLdouble -> unit
@@ -3347,6 +3413,12 @@ signature GL =
 
         val c_glPopMatrix : unit -> unit
         val glPopMatrix : unit -> unit
+
+        val c_glPopAttrib : unit -> unit
+        val glPopAttrib : unit -> unit
+
+        val c_glPushAttrib : GLenum -> unit
+        val glPushAttrib : GLenum -> unit
 
         val c_glRotatef: GLreal * GLreal * GLreal * GLreal -> unit
         val glRotatef: GLreal -> GLreal -> GLreal -> GLreal -> unit
@@ -3550,10 +3622,10 @@ signature GLU =
           val c_gluPerspective : GLdouble * GLdouble * GLdouble * GLdouble -> unit
           val gluPerspective : GLdouble -> GLdouble -> GLdouble -> GLdouble -> unit
 
-          (*val c_gluLookAt : GLreal * GLreal * GLreal * GLreal *
-                          GLreal * GLreal * GLreal * GLreal * GLreal -> unit
-          val gluLookAt : GLreal -> GLreal -> GLreal -> GLreal ->
-                          GLreal -> GLreal -> GLreal -> GLreal -> GLreal -> unit*)
+          val c_gluLookAt : GLdouble * GLdouble * GLdouble * GLdouble *
+                          GLdouble * GLdouble * GLdouble * GLdouble * GLdouble -> unit
+          val gluLookAt : GLdouble -> GLdouble -> GLdouble -> GLdouble ->
+                          GLdouble -> GLdouble -> GLdouble -> GLdouble -> GLdouble -> unit
   end
 
 
@@ -3730,8 +3802,10 @@ structure GLU :> GLU =
             fun gluPerspective (a:GLdouble) (b:GLdouble) (c:GLdouble) (d:GLdouble)
               = c_gluPerspective (a,b,c,d):unit
 
-            (*val gluLookAt_ : real * real * real * real *
-                real * real * real * real * real -> unit = *)
+            val c_gluLookAt = _import "gluLookAt" stdcall: GLdouble * GLdouble * GLdouble * GLdouble *
+                                                           GLdouble * GLdouble * GLdouble * GLdouble * GLdouble -> unit;
+            fun gluLookAt (a0:GLdouble) (a1:GLdouble) (a2:GLdouble) (a3:GLdouble) (a4:GLdouble) (a5:GLdouble) (a6:GLdouble)
+                          (a7:GLdouble) (a8:GLdouble) = c_gluLookAt (a0,a1,a2,a3,a4,a5,a6,a7,a8):unit
 
 
     end

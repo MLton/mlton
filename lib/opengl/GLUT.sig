@@ -250,11 +250,24 @@ signature GLUT =
         val GLUT_GAME_MODE_PIXEL_DEPTH : GL.GLenum
         val GLUT_GAME_MODE_REFRESH_RATE : GL.GLenum
         val GLUT_GAME_MODE_DISPLAY_CHANGED : GL.GLenum
+        val glutCreateMenu : (int -> unit) -> int
+        val glutDestroyMenu : int -> unit
+        val glutGetMenu : unit -> int
+        val glutSetMenu : int -> unit
+        val glutAddMenuEntry : string -> int -> unit
+        val glutAddSubMenu : string -> int -> unit
+        val glutChangeToMenuEntry : int -> string -> int -> unit
+        val glutChangeToSubMenu : int -> string -> int -> unit
+        val glutRemoveMenuItem : int -> unit
+        val glutAttachMenu : GL.GLenum -> unit
+        val glutDetachMenu : GL.GLenum -> unit
+
         val glutDisplayFunc: (unit -> unit) -> unit;
         val glutIdleFunc : (unit -> unit ) -> unit ;
         val glutReshapeFunc : (int * int -> unit) -> unit ;
         (*val glutKeyboardFunc : (char * int * int -> unit) -> unit ;*)
         val glutSpecialFunc : (int * int * int -> unit ) -> unit ;
+        val glutVisibilityFunc : (Word32.word -> unit ) -> unit
 
         val glutInit: unit -> unit;
         val glutInitDisplayMode : GLenum -> unit
@@ -263,8 +276,10 @@ signature GLUT =
         val glutInitWindowSize : int -> int -> unit
         val glutCreateWindow: string -> int;
         val glutMainLoop: unit -> unit;
-        val glutBitmapCharacter : glutfont -> int -> unit
-        val glutStrokeCharacter : glutfont -> int -> unit
+        val glutBitmapCharacter : glutfont -> char -> unit
+        val glutPostRedisplay : unit -> unit
+        val glutStrokeCharacter : glutfont -> char -> unit
         val glutSolidSphere : GLdouble -> int -> int -> unit
+        val glutSolidIcosahedron : unit -> unit
         val glutSwapBuffers: unit -> unit;
     end

@@ -722,6 +722,9 @@ signature GL =
         val c_glBlendFunc : GLenum * GLenum -> unit
         val glBlendFunc : GLenum -> GLenum -> unit
 
+        val c_glCallList : int -> unit
+        val glCallList : int -> unit
+
         val c_glClearColor: GLreal * GLreal * GLreal * GLreal -> unit
         val glClearColor: GLreal -> GLreal -> GLreal -> GLreal -> unit
 
@@ -758,6 +761,9 @@ signature GL =
         val c_glEnd : unit -> unit
         val glEnd : unit -> unit
 
+        val c_glEndList : unit -> unit
+        val glEndList : unit -> unit
+
         val c_glRasterPos2i : int * int -> unit
         val glRasterPos2i : int -> int -> unit
 
@@ -788,8 +794,14 @@ signature GL =
         val c_glLoadIdentity : unit -> unit
         val glLoadIdentity : unit -> unit
 
+        val c_glMaterialfv : GLenum * GLenum * GLreal array -> unit
+        val glMaterialfv : GLenum -> GLenum -> GLreal array -> unit
+
         val c_glMatrixMode : GLenum -> unit
         val glMatrixMode : GLenum -> unit
+
+        val c_glNewList : int * GLenum -> unit
+        val glNewList : int -> GLenum -> unit
 
         val c_glOrtho : GLdouble * GLdouble * GLdouble * GLdouble * GLdouble * GLdouble -> unit
         val glOrtho : GLdouble -> GLdouble -> GLdouble -> GLdouble -> GLdouble -> GLdouble -> unit
@@ -808,6 +820,12 @@ signature GL =
 
         val c_glPopMatrix : unit -> unit
         val glPopMatrix : unit -> unit
+
+        val c_glPopAttrib : unit -> unit
+        val glPopAttrib : unit -> unit
+
+        val c_glPushAttrib : GLenum -> unit
+        val glPushAttrib : GLenum -> unit
 
         val c_glRotatef: GLreal * GLreal * GLreal * GLreal -> unit
         val glRotatef: GLreal -> GLreal -> GLreal -> GLreal -> unit
@@ -1568,6 +1586,9 @@ structure GL :> GL =
         val c_glBlendFunc = _import "glBlendFunc" stdcall: GLenum * GLenum -> unit;
         fun glBlendFunc (a:GLenum) (b:GLenum) = c_glBlendFunc (a,b) :unit
 
+        val c_glCallList = _import "glCallList" stdcall: int -> unit;
+        fun glCallList (a:int) = c_glCallList (a): unit;
+
         val c_glClearColor = _import "glClearColor" stdcall:
                                GLreal * GLreal * GLreal * GLreal -> unit;
         fun glClearColor (a:GLreal) (b:GLreal) (c:GLreal) (d:GLreal)
@@ -1630,6 +1651,9 @@ structure GL :> GL =
         val c_glClear = _import "glClear" stdcall: GLenum -> unit;
         fun glClear (a:GLenum)= c_glClear (a): unit;
 
+        val c_glEndList = _import "glEndList" stdcall: unit -> unit;
+        fun glEndList () = c_glEndList (): unit;
+
         val c_glFlush = _import "glFlush" stdcall: unit -> unit;
         fun glFlush () = c_glFlush (): unit;
 
@@ -1655,8 +1679,14 @@ structure GL :> GL =
         val c_glLoadIdentity = _import "glLoadIdentity" stdcall: unit -> unit;
         fun glLoadIdentity () = c_glLoadIdentity (): unit;
 
+        val c_glMaterialfv = _import "glMaterialfv" stdcall: GLenum * GLenum * GLreal array -> unit;
+        fun glMaterialfv (a:GLenum) (c:GLenum) (b:GLreal array) = c_glMaterialfv (a, c, b) :unit;
+
         val c_glMatrixMode = _import "glMatrixMode" stdcall: GLenum -> unit;
         fun glMatrixMode (a:GLenum)= c_glMatrixMode (a): unit;
+
+        val c_glNewList = _import "glNewList" stdcall: int * GLenum -> unit;
+        fun glNewList (b:int) (a:GLenum)= c_glNewList (b,a): unit;
 
         val c_glOrtho = _import "glOrtho" stdcall: GLdouble * GLdouble * GLdouble * GLdouble * GLdouble * GLdouble -> unit;
         fun glOrtho (a0 : GLdouble) (a1 : GLdouble) (a2 : GLdouble)
@@ -1665,6 +1695,12 @@ structure GL :> GL =
 
         val c_glPushMatrix = _import "glPushMatrix" stdcall: unit -> unit;
         fun glPushMatrix () = c_glPushMatrix (): unit;
+
+        val c_glPopAttrib = _import "glPopAttrib" stdcall: unit -> unit;
+        fun glPopAttrib () = c_glPopAttrib (): unit;
+
+        val c_glPushAttrib = _import "glPushAttrib" stdcall: GLenum -> unit;
+        fun glPushAttrib (a:GLenum)= c_glPushAttrib (a): unit;
 
         val c_glPolygonMode = _import "glPolygonMode" stdcall: GLenum * GLenum -> unit;
         fun glPolygonMode (a:GLenum) (b:GLenum) = c_glPolygonMode (a,b) :unit
@@ -1962,11 +1998,24 @@ signature GLUT =
         val GLUT_GAME_MODE_PIXEL_DEPTH : GL.GLenum
         val GLUT_GAME_MODE_REFRESH_RATE : GL.GLenum
         val GLUT_GAME_MODE_DISPLAY_CHANGED : GL.GLenum
+        val glutCreateMenu : (int -> unit) -> int
+        val glutDestroyMenu : int -> unit
+        val glutGetMenu : unit -> int
+        val glutSetMenu : int -> unit
+        val glutAddMenuEntry : string -> int -> unit
+        val glutAddSubMenu : string -> int -> unit
+        val glutChangeToMenuEntry : int -> string -> int -> unit
+        val glutChangeToSubMenu : int -> string -> int -> unit
+        val glutRemoveMenuItem : int -> unit
+        val glutAttachMenu : GL.GLenum -> unit
+        val glutDetachMenu : GL.GLenum -> unit
+
         val glutDisplayFunc: (unit -> unit) -> unit;
         val glutIdleFunc : (unit -> unit ) -> unit ;
         val glutReshapeFunc : (int * int -> unit) -> unit ;
         (*val glutKeyboardFunc : (char * int * int -> unit) -> unit ;*)
         val glutSpecialFunc : (int * int * int -> unit ) -> unit ;
+        val glutVisibilityFunc : (Word32.word -> unit ) -> unit
 
         val glutInit: unit -> unit;
         val glutInitDisplayMode : GLenum -> unit
@@ -1975,9 +2024,11 @@ signature GLUT =
         val glutInitWindowSize : int -> int -> unit
         val glutCreateWindow: string -> int;
         val glutMainLoop: unit -> unit;
-        val glutBitmapCharacter : glutfont -> int -> unit
-        val glutStrokeCharacter : glutfont -> int -> unit
+        val glutBitmapCharacter : glutfont -> char -> unit
+        val glutPostRedisplay : unit -> unit
+        val glutStrokeCharacter : glutfont -> char -> unit
         val glutSolidSphere : GLdouble -> int -> int -> unit
+        val glutSolidIcosahedron : unit -> unit
         val glutSwapBuffers: unit -> unit;
     end
 
@@ -2227,6 +2278,10 @@ structure GLUT :> GLUT =
 
 
 
+            (* Create Menu callback *)
+            val gCreateMenuFA = _export "glutCreateMenuArgument": int -> unit;
+            val callGCreateMenuF = _import "callGlutCreateMenu": unit -> int;
+
             (* Display function callback *)
             val gDisplayFA = _export "glutDisplayFuncArgument": unit -> unit;
             val callGDisplayF = _import "callGlutDisplayFunc": unit -> unit;
@@ -2246,6 +2301,10 @@ structure GLUT :> GLUT =
             (* Special function callback *)
             val gSpecFA = _export "glutSpecialFuncArgument": int * int * int -> unit;
             val callGSpecF = _import "callGlutSpecialFunc": unit -> unit;
+
+            (* Visibility function callback *)
+            val gVisibilityFA = _export "glutVisibilityFuncArgument": Word32.word -> unit;
+            val callGVisibilityF = _import "callGlutVisibilityFunc": unit -> unit;
 
 
             (* GLUT initialisation *)
@@ -2281,12 +2340,43 @@ structure GLUT :> GLUT =
             val c_GLUT_BITMAP_HELVETICA_18 = _import "mlton_glut_bitmap_helvetica_18" : unit -> glutfont;
             val GLUT_BITMAP_HELVETICA_18 = c_GLUT_BITMAP_HELVETICA_18()
 
-
+            fun glutCreateMenu (cm : int -> unit) = ( gCreateMenuFA cm; callGCreateMenuF ()) : int;
             fun glutDisplayFunc (display: unit -> unit) = (gDisplayFA display; callGDisplayF ())
             fun glutIdleFunc (idle: unit -> unit) = (gIdleFA idle; callGIdleF ())
             fun glutReshapeFunc (reshape: int * int -> unit) = ( gReshapeFA reshape; callGReshapeF ())
             (*fun glutKeyboardFunc (kbd: char * int * int -> unit) = ( gKbdFA kbd; callGKbdF ())*)
             fun glutSpecialFunc (kbd: int * int * int -> unit) = ( gSpecFA kbd; callGSpecF ())
+            fun glutVisibilityFunc (vis: Word32.word -> unit) = ( gVisibilityFA vis; callGVisibilityF ())
+
+            val c_glutDestroyMenu = _import "glutDestroyMenu" stdcall: int -> unit;
+            fun glutDestroyMenu (a:int) = c_glutDestroyMenu (a): unit;
+
+            val c_glutGetMenu = _import "glutGetMenu" stdcall: unit -> int;
+            fun glutGetMenu () = c_glutGetMenu () : int;
+
+            val c_glutSetMenu = _import "glutSetMenu" stdcall: int -> unit ;
+            fun glutSetMenu (a:int) = c_glutSetMenu (a) : unit;
+
+            val c_glutAddMenuEntry = _import "glutAddMenuEntry" stdcall: string * int -> unit ;
+            fun glutAddMenuEntry (a:string) (b:int) = c_glutAddMenuEntry (a,b) : unit;
+
+            val c_glutAddSubMenu = _import "glutAddSubMenu" stdcall: string * int -> unit ;
+            fun glutAddSubMenu (a:string) (b:int) = c_glutAddSubMenu (a,b) : unit;
+
+            val c_glutChangeToMenuEntry = _import "glutChangeToMenuEntry" stdcall: int * string * int -> unit ;
+            fun glutChangeToMenuEntry (c:int) (a:string) (b:int) = c_glutChangeToMenuEntry (c,a,b) : unit;
+
+            val c_glutChangeToSubMenu = _import "glutChangeToSubMenu" stdcall: int * string * int -> unit ;
+            fun glutChangeToSubMenu (c:int) (a:string) (b:int) = c_glutChangeToSubMenu (c,a,b) : unit;
+
+            val c_glutRemoveMenuItem = _import "glutRemoveMenuItem" stdcall: int -> unit ;
+            fun glutRemoveMenuItem (a:int) = c_glutRemoveMenuItem (a) : unit;
+
+            val c_glutAttachMenu = _import "glutAttachMenu" stdcall: GL.GLenum -> unit ;
+            fun glutAttachMenu (a:GLenum) = c_glutAttachMenu (a): unit;
+
+            val c_glutDetachMenu = _import "glutDetachMenu" stdcall: GL.GLenum -> unit ;
+            fun glutDetachMenu (a:GLenum) = c_glutDetachMenu (a) : unit;
 
             fun glutInit () = cGI ()
 
@@ -2308,17 +2398,26 @@ structure GLUT :> GLUT =
 
             val glutMainLoop = _import "glutMainLoop" stdcall: unit -> unit;
 
+            val glutPostRedisplay = _import "glutPostRedisplay" stdcall: unit -> unit;
+
             val c_glutBitmapCharacter = _import "glutBitmapCharacter" stdcall: glutfont * int -> unit;
-            fun glutBitmapCharacter (a:glutfont) (b:int) = c_glutBitmapCharacter (a,b)
+            fun glutBitmapCharacter (a:glutfont) (b:char) =
+                let val c = ord (b)
+                in c_glutBitmapCharacter (a,c) end
 
             (*val c_glutBitmapWidth : glutfont -> int -> int =
                 Dynlib.app2 (Dynlib.dlsym dlh "mosml_glutBitmapWidth")*)
 
             val c_glutStrokeCharacter = _import "glutStrokeCharacter" stdcall: glutfont * int -> unit;
-            fun glutStrokeCharacter (a:glutfont) (b:int) = c_glutStrokeCharacter (a,b)
+            fun glutStrokeCharacter (a:glutfont) (b:char) =
+                let val c = ord (b)
+                in c_glutStrokeCharacter (a,c) end
 
             val c_glutSolidSphere = _import "glutSolidSphere" stdcall: GLdouble * int * int -> unit;
             fun glutSolidSphere (a:GLdouble) (b:int) (c:int) = c_glutSolidSphere (a,b,c)
+
+            val c_glutSolidIcosahedron = _import "glutSolidIcosahedron" stdcall: unit -> unit;
+            fun glutSolidIcosahedron () = c_glutSolidIcosahedron ()
 
             val glutSwapBuffers = _import "glutSwapBuffers" stdcall: unit -> unit;
         end

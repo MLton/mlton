@@ -3,6 +3,11 @@
 #include <GL/glut.h>
 #include "GLUT_h.h"
 
+int callGlutCreateMenu ()
+{
+  return glutCreateMenu (glutCreateMenuArgument);
+}
+
 void callGlutDisplayFunc ()
 {
   glutDisplayFunc (glutDisplayFuncArgument);
@@ -27,6 +32,11 @@ void callGlutSpecialFunc ()
 void callGlutIdleFunc ()
 {
   glutIdleFunc (glutIdleFuncArgument);
+}
+
+void callGlutVisibilityFunc ()
+{
+  glutVisibilityFunc (glutVisibilityFuncArgument);
 }
 
 void callGlutInit ()

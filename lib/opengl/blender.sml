@@ -12,8 +12,8 @@ val s = ref 0.0
 val angle1 = ref 0.0
 val angle2 = ref 0.0
 
-val amb = [0.4, 0.4, 0.4]
-val dif = [1.0, 1.0, 1.0]
+val amb = [0.4, 0.4, 0.4:GLreal]
+val dif = [1.0, 1.0, 1.0:GLreal]
 
 
 
@@ -21,21 +21,21 @@ fun output (x : GLreal) (y : GLreal)  (text : string) : unit =
 (
   glPushMatrix ();
   glTranslatef x y 0.0;
-  map ( glutStrokeCharacter GLUT_STROKE_ROMAN ) ( map ord ( String.explode text ) );
+  map ( glutStrokeCharacter GLUT_STROKE_ROMAN ) ( String.explode text );
   glPopMatrix()
 )
 
 fun display () :unit =
     (
      let 
-	 val a = Math.cos ( !s ) / 2.0 + 0.5
-	 val b = 0.5 - Math.cos ( !s * 0.95 ) / 2.0
+	 val a = (Real32.fromLarge IEEEReal.TO_NEAREST (Math.cos ( !s ) / 2.0 + 0.5))
+	 val b = (Real32.fromLarge IEEEReal.TO_NEAREST (0.5 - Math.cos ( !s * 0.95 ) / 2.0))
      in
 	 glClear ( GL_COLOR_BUFFER_BIT + GL_DEPTH_BUFFER_BIT );
 	 glEnable GL_LIGHT1;
 	 glDisable GL_LIGHT2;
-	 glMaterialfv GL_FRONT GL_AMBIENT (amb@[a] );
-	 glMaterialfv GL_FRONT GL_DIFFUSE (dif@[a]);
+	 glMaterialfv GL_FRONT GL_AMBIENT (Array.fromList (amb@[a]));
+	 glMaterialfv GL_FRONT GL_DIFFUSE (Array.fromList (dif@[a]));
 
 	 glPushMatrix ();
 	 glTranslatef (~0.3) (~0.3) 0.0;
@@ -46,8 +46,8 @@ fun display () :unit =
 	 glClear GL_DEPTH_BUFFER_BIT;
 	 glEnable GL_LIGHT2 ;
 	 glDisable GL_LIGHT1 ;
-	 glMaterialfv GL_FRONT GL_AMBIENT (amb@[b]);
-	 glMaterialfv GL_FRONT GL_DIFFUSE (dif@[b]);
+	 glMaterialfv GL_FRONT GL_AMBIENT (Array.fromList (amb@[b]));
+	 glMaterialfv GL_FRONT GL_DIFFUSE (Array.fromList (dif@[b]));
 
 	 glPushMatrix();
 	 glTranslatef 0.3 0.3 0.0;
@@ -66,7 +66,7 @@ fun display () :unit =
 	 glPushMatrix();
 	 glLoadIdentity();
 	 (* Rotate text slightly to help show jaggies. *)
-	 glRotatef4 0.0 0.0 1.0;
+	 glRotatef 4.0 0.0 0.0 1.0;
 	 output 200.0 225.0 "This is antialiased.";
 	 glDisable GL_LINE_SMOOTH;
 	 glDisable GL_BLEND;
@@ -83,18 +83,21 @@ fun display () :unit =
 
 fun idle() =
 (
- angle1 := toReal (((!angle1) + 0.8) mod 360.0);
- angle2 := toReal (((!angle2) + 1.1) mod 360.0);
+ angle1 := Real32.rem (((!angle1) + 0.8), 360.0);
+ angle2 := Real32.rem (((!angle2) + 1.1), 360.0);
  s := !s + 0.05;
  glutPostRedisplay()
  )
 
-fun visible ( vis : int ) : unit =
+fun idle_nuthin() =
+( )
+
+fun visible ( vis : Word32.word ) : unit =
 (
   if vis = GLUT_VISIBLE then
     glutIdleFunc(idle)
   else
-    glutIdleFunc(NULL)
+    glutIdleFunc(idle_nuthin)
 )
 
 fun main () =
