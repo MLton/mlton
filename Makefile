@@ -250,10 +250,12 @@ install-no-docs:
 		cd $(TMAN) && $(GZIP) mllex.1 mlprof.1 mlton.1		\
 			mlyacc.1;					\
 	fi
-	for f in $(TLIB)/$(AOUT) \
-		$(TBIN)/$(LEX) $(TBIN)/$(PROF) $(TBIN)/$(YACC); do \
-		strip --remove-section=.comment --remove-section=.note $$f; \
-	done
+	if [ $(TARGET_OS) != sunos ]; then					\
+	for f in $(TLIB)/$(AOUT) 						\
+		$(TBIN)/$(LEX) $(TBIN)/$(PROF) $(TBIN)/$(YACC); do 		\
+		strip --remove-section=.comment --remove-section=.note $$f; 	\
+	done									\
+	fi
 
 .PHONY: install-docs
 install-docs:
