@@ -117,10 +117,10 @@ runtime.c: $(CFILES)
 # with -fno-strict-aliasing to prevent gcc from taking advantage of
 # this aspect of the C spec.
 basis/Real/%.o: basis/Real/%.c
-	$(CC) $(CFLAGS) -fno-strict-aliasing -c -o $@ $<
+	$(CC) $(CFLAGS) -O1 -fno-strict-aliasing -c -o $@ $<
 
 %-gdb.o: %.c $(HFILES)
-	$(CC) $(DEBUGFLAGS) -DASSERT=1 -c -o $@ $<
+	$(CC) $(DEBUGFLAGS) -O1 -DASSERT=1 -c -o $@ $<
 
 %.o: %.c $(HFILES)
 	$(CC) $(CFLAGS) -c -o $@ $<
