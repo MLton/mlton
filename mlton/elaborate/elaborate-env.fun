@@ -1173,19 +1173,20 @@ fun setTyconNames (T {strs, types, ...}) =
 	 end
       val _ = foreach (types, Ast.Tycon.<=,
 		       fn (name, typeStr) => doType (typeStr, name, 0, []))
-      val {get = strSeen: Structure.t -> bool ref, ...} =
-	 Property.get (Structure.plist, Property.initFun (fn _ => ref false))
+      val {get = strShortest: Structure.t -> int ref, ...} =
+	 Property.get (Structure.plist,
+		       Property.initFun (fn _ => ref Int.maxInt))
       fun loopStr (s as Structure.T {strs, types, ...},
 		   length: int,
 		   strids: Strid.t list)
 	 : unit =
 	 let
-	    val r = strSeen s
+	    val r = strShortest s
 	 in
-	    if !r
+	    if length >= !r
 	       then ()
 	    else
-	       (r := true
+	       (r := length
 		; Info.foreach (types, fn (name, typeStr) =>
 				doType (typeStr, name, length, strids))
 		; Info.foreach (strs, fn (strid, str) =>
