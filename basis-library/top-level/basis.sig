@@ -11,7 +11,10 @@ signature BASIS =
       type exn
       eqtype 'a array 
       eqtype 'a vector
+(*
       eqtype 'a ref
+*)
+      datatype 'a ref = ref of 'a
       datatype bool = false | true
       datatype 'a option = NONE | SOME of 'a 
       datatype order = LESS | EQUAL | GREATER 
@@ -60,7 +63,9 @@ signature BASIS =
       val ord : char -> int
       val print : string -> unit
       val real : int -> real
+(*
       val ref : 'a -> 'a ref
+*)
       val rev : 'a list -> 'a list
       val round : real -> int
       val size : string -> int
@@ -73,6 +78,8 @@ signature BASIS =
 *)
       val valOf : 'a option -> 'a 
       val vector : 'a list -> 'a vector
+
+      val <> : ''a * ''a -> bool
 	
       (* Required structures *)
       structure Array : ARRAY	
@@ -201,6 +208,11 @@ signature BASIS =
       structure Word32Vector : MONO_VECTOR
       structure Word32VectorSlice : MONO_VECTOR_SLICE
       structure Word32 : WORD
+
+      (* Non-standard structures *)
+      structure MLton : MLTON
+      structure SMLofNJ : SML_OF_NJ
+      structure Unsafe : UNSAFE
 
       (* ************************************************** *)
       (* ************************************************** *)

@@ -52,6 +52,7 @@ functor Sequence (S: sig
        * with reasonable bogus values.
        *)
       fun tabulate (n, f) =
+(*
 	 if !Primitive.usesCallcc
 	    then
 	       (* This code is careful to use a list to accumulate the 
@@ -76,6 +77,7 @@ functor Sequence (S: sig
 		  ; fromArray a
 	       end
 	 else
+*)
 	    unfoldi (n, (), fn (i, ()) => (f i, ()))
 
       fun new (n, x) = tabulate (n, fn _ => x)

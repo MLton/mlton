@@ -187,7 +187,10 @@ fun sort (l, f) =
 fun alphabetize s = implode (sort (explode s, Char.<))
 
 fun fromCharArray (a: CharArray.array): t =
+(*
    CharArray.extract (a, 0, NONE)
+*)
+   CharArraySlice.vector (CharArraySlice.slice (a, 0, NONE))
 
 fun toString s = s
 

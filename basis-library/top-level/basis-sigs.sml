@@ -74,3 +74,8 @@ signature UNIX = UNIX
 signature UNIX_SOCK = UNIX_SOCK 
 signature WINDOWS = WINDOWS
 *)
+
+(* Non-standard signatures *)
+signature MLTON = MLTON
+signature SML_OF_NJ = SML_OF_NJ
+signature UNSAFE = UNSAFE

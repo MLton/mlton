@@ -128,6 +128,11 @@ structure Basis:> BASIS =
       structure Word32VectorSlice = Word32VectorSlice
       structure Word32 = Word32
 
+      (* Non-standard structures *)
+      structure MLton = MLton
+      structure SMLofNJ = SMLofNJ
+      structure Unsafe = Unsafe
+
       open ArrayGlobal
 	   BoolGlobal
 	   CharGlobal
