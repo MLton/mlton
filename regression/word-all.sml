@@ -194,7 +194,7 @@ val _ =
 
 val _ =
    for (fn w =>
-	if W.~ w = W.- (0w0, w)
+	if W.~ w = W.- (zero, w)
 	   then ()
 	else err ["~"])
 

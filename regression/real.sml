@@ -132,7 +132,7 @@ val _ =
       List.app
       (fn (r, s1, s2, s6, s12) =>
        if chkGEN(r, s1, s2, s6, s12) 
-	  andalso (r == 0.0 orelse 
+	  andalso (r == zero orelse 
 		   chkGEN(~r, "~"^s1, "~"^s2, "~"^s6, "~"^s12))
 	  then ()
        else raise Fail (concat ["fmt GEN bug: ", exact r]))
