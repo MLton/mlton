@@ -111,9 +111,10 @@ structure Time: TIME_EXTRA =
 		 then Int.compare (u, u')
 	      else (* s < s' *) LESS
 
-      (* There's a mess here to work around a bug in 2.4 Linux kernels, which
-       * may return a decreasing(!) sequence of time values.  This will cause
-       * some programs to raise Time exceptions where it should be impossible.
+      (* There's a mess here to work around a bug in vmware virtual machines
+       * that may return a decreasing(!) sequence of time values.  This will
+       * cause some programs to raise Time exceptions where it should be
+       * impossible.
        *)
       local
 	 fun getNow (): time =
