@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # This script checks MLton's basis library implementation for type errors using
 # SML/NJ.
@@ -81,7 +81,20 @@ LIB="basis-$LIB"
 rm -f $basis
 (
 cat <<-EOF
-	val _ = SMLofNJ.Internals.GC.messages false;
+	val _ = SMLofNJ.Internals.GC.messages false
+        val _ =
+   	   let
+	      open Control
+              open MC
+	   in
+              polyEqWarn := false
+	      ; bindNonExhaustiveWarn := true
+	      ; matchNonExhaustiveWarn := true
+	      ; matchNonExhaustiveError := true
+	      ; matchRedundantWarn := true
+	      ; matchRedundantError := false
+	   end
+        ;
 	fun PRIM (x:char vector) = raise Fail "_prim"
 	fun STRING_CONST (x:string) : char vector = raise Fail "<string constant>"
         structure Types = struct
@@ -330,7 +343,7 @@ case "$CM_FILE" in
 esac
 cat <<-EOF
 	(*#line 0.0 "check-basis"*)
-	val _ = () ()
+	val _ = case 1 of 1 => 1
 EOF
 ) >$basis
 
