@@ -1,4 +1,4 @@
-.TH mlton 1 "March 12, 2003"
+.TH mlton 1 "April 28, 2003"
 .SH NAME
 \fBmlton\fP \- whole-program compiler for the Standard ML (SML) programming
 language
@@ -41,6 +41,12 @@ default. For example, by default, overflow checking on is performed on
 integer arithmetic.
 
 .SH Compile-time options
+.TP
+\fB-align \fI{\fB4\fP|\fB8\fP}\fP
+Aligns object sizes and doubles in memory by the specified alignment.
+On x86's, the default is \fB4\fP and on Sparc's the default is
+\fB8\fP.
+
 .TP
 \fB-basis \fI{\fB2002\fP|\fB2002-strict\fP|\fB1997\fP|\fBnone\fP}\fP
 Selects a Basis Library to be used by the input program.  \fB2002\fP
