@@ -131,7 +131,7 @@ functor EmbedWord (structure Big: WORD
 
       val toLargeWordX = toLargeX
 	 
-      fun ~ w = fromInt 0 - w
+      fun ~ w = fromLarge 0w0 - w
    end
 
 functor EmbedWord8 (Small: EMBED_WORD where type big = Word8.word): WORD =
