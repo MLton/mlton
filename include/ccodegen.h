@@ -124,7 +124,7 @@ struct cont {
 				FlushGC();				\
 				return(cont);				\
 		} /* end switch (l_nextFun) */				\
-		} /* end while (1) */
+		} /* end while (1) */					\
 	} /* end chunk */
 
 /* ------------------------------------------------- */
