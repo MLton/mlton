@@ -74,5 +74,10 @@ structure Word: WORD32 =
 	       then w
 	    else w' * 0w2
 	 end
+
+      fun addCheck (w, w') =
+	 if w <= ~ 0w1 - w'
+	    then w + w'
+	 else raise Overflow
    end
 

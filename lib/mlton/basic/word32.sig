@@ -10,6 +10,7 @@ signature WORD32 =
    sig
       include WORD
 
+      val addCheck: t * t -> t (* may raise Overflow *)
       val fromWord8: Word8.t -> t
       (* fromWord8s f.  f 0 should return the least significant byte
        * and f 3 should return the most significant.
