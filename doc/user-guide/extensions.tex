@@ -1246,7 +1246,7 @@ signature MLTON_WORLD =
 
       val load: string -> 'a
       val save: string -> status
-      val saveThread: string * unit Thread.t -> unit
+      val saveThread: string * Thread.ready_t -> unit
    end
 \end{verbatim}
 
