@@ -24,6 +24,8 @@ fun handlee {catch, handler, try} =
    align [try,
 	  seq [str "handle ", catch, str " => ", handler]]
 
+fun longid (ls, l) = seq (separate (ls @ [l], "."))
+   
 fun nest (prefix, x, y) =
    align [seq [str prefix, x],
 	  str "in",

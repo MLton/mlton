@@ -13,6 +13,7 @@ signature PRETTY =
 		    try: t} -> t
       val lett: t * t -> t
       val locall: t * t -> t
+      val longid: t list * t -> t
       val primApp: {args: t vector,
 		    prim: t,
 		    targs: t vector} -> t
