@@ -1,5 +1,10 @@
 Here are the changes since version 20030716.
 
+* 2003-09-22
+  - Fixed Real.toManExp so that the mantissa is in [0.5, 1), 
+    not [1, 2).  The spec says that 1.0 <= man * radix < radix, which
+    since radix is 2, implies that the mantiss is in [0.5, 1).
+
 * 2003-09-11
   - Added Real.realRound.
   - Added Char{Array,Vector}Slice to Text.

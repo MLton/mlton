@@ -195,7 +195,7 @@ functor Real (R: PRE_REAL): REAL =
 		  let
 		     val man = Prim.frexp (x, r)
 		  in
-		     {exp = Int.- (!r, 1), man = man * two}
+		     {exp = !r, man = man}
 		  end
 	 end
 
