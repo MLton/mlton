@@ -62,7 +62,6 @@ bool MLton_init(int argc,
 		void (*loadGlobals)(FILE *file)) {
 	char *worldFile;
 	int i;
-	bool heapSizeCommandLine;
 	bool isOriginal;
 
 	Posix_ProcEnv_environ = (CstringArray)environ;
@@ -70,7 +69,6 @@ bool MLton_init(int argc,
 	worldFile = NULL;
 	gcState.messages = FALSE;
 	gcState.summary = FALSE;
-	heapSizeCommandLine = FALSE;
 	isOriginal = TRUE;
 	gcState.maxHeapSize = 0;
 	i = 1;
@@ -91,7 +89,6 @@ bool MLton_init(int argc,
 					++i;
 					if (i == argc)
 						usage(argv[0]);
-					heapSizeCommandLine = TRUE;
 					gcState.useFixedHeap = TRUE;
 					gcState.fromSize =
 						stringToBytes(argv[i++]);
@@ -99,7 +96,6 @@ bool MLton_init(int argc,
 					++i;
 					if (i == argc) 
 						usage(argv[0]);
-					heapSizeCommandLine = TRUE;
 					gcState.useFixedHeap = FALSE;
 					gcState.maxHeapSize =
 						stringToBytes(argv[i++]);
@@ -128,8 +124,7 @@ bool MLton_init(int argc,
 	if (isOriginal)
 		GC_init(&gcState);
 	else
-		GC_loadWorld(&gcState, worldFile, heapSizeCommandLine,
-				loadGlobals);
+		GC_loadWorld(&gcState, worldFile, loadGlobals);
 	
 	/* Setup argv and argc that SML sees. */
 	/* i is now the index of the first real arg */

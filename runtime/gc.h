@@ -372,7 +372,6 @@ void GC_saveWorld(GC_state s,
 
 void GC_loadWorld(GC_state s, 
 			char *fileName,
-			bool heapSizeCommandLine,
 			void (*loadGlobals)(FILE *file));
 
 /* ------------------------------------------------- */
