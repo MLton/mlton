@@ -18,6 +18,8 @@ structure Kind = TyconKind ()
 structure RealSize = RealSize ()
 structure WordSize = WordSize ()
 
+structure Field = Record.Field
+
 structure Tycon =
    struct
       structure Id = AstId (structure Symbol = Symbol)
@@ -166,14 +168,52 @@ structure Longvid =
 
 open Layout
 
+fun reportDuplicates (v: 'a vector,
+		      {equals: 'a * 'a -> bool,
+		       layout: 'a -> Layout.t,
+		       name: string,
+		       region: 'a -> Region.t,
+		       term: unit -> Layout.t}) =
+   Vector.foreachi
+   (v, fn (i, a) =>
+    let
+       fun loop i' =
+	  if i = i'
+	     then ()
+	  else
+	     if not (equals (a, Vector.sub (v, i')))
+		then ()
+	     else
+		let
+		   open Layout
+		in
+		   Control.error
+		   (region a,
+		    seq [str (concat ["duplicate ", name, ": "]), layout a],
+		    seq [str "in: ", term ()])
+		end
+    in
+       loop 0
+    end)
+
+fun reportDuplicateFields (v: (Field.t * 'a) vector,
+			   {region: Region.t,
+			    term: unit -> Layout.t}): unit =
+   reportDuplicates (v,
+		     {equals = fn ((f, _), (f', _)) => Field.equals (f, f'),
+		      layout = Field.layout o #1,
+		      name = "label",
+		      region = fn _ => region,
+		      term = term})
+
 structure Type =
    struct
       structure Record = SortedRecord
       open Wrap
       datatype node =
-	 Var of Tyvar.t
-       | Con of Longtycon.t * t vector
+	 Con of Longtycon.t * t vector
        | Record of node Wrap.t Record.t (* kit barfs on t Record.t *)
+       | Var of Tyvar.t
       withtype t = node Wrap.t
       type node' = node
       type obj = t
@@ -227,28 +267,40 @@ structure Type =
 	 case ty of
 	    NONE => empty
 	  | SOME ty => seq [str " of ", layout ty]
+
+      fun checkSyntax (t: t): unit =
+	 case node t of
+	    Con (_, ts) => Vector.foreach (ts, checkSyntax)
+	  | Record r =>
+	       (reportDuplicateFields (Record.toVector r,
+				       {region = region t,
+					term = fn () => layout t})
+		; Record.foreach (r, checkSyntax))
+	  | Var _ => ()
    end
 
 fun bind (x, y) = mayAlign [seq [x, str " ="], y]
 
 fun 'a layoutAnds (prefix: string,
-		   xs: 'a list, 
+		   xs: 'a vector, 
 		   layoutX: Layout.t * 'a -> Layout.t): Layout.t =
-   case xs of
-      x :: xs => align (layoutX (str (prefix ^ " "), x)
-		       :: List.map (xs, fn x => layoutX (str "and ", x)))
-    | [] => empty
+   case Vector.toList xs of
+      [] => empty
+    | x :: xs => align (layoutX (str (concat [prefix, " "]), x)
+			:: List.map (xs, fn x => layoutX (str "and ", x)))
 
 datatype bindStyle = OneLine | Split of int
 
 fun 'a layoutBind (bind: string,
 		   layout: 'a -> bindStyle * Layout.t * Layout.t)
    (prefix: Layout.t, x: 'a): Layout.t =
-   let val (style, lhs, rhs) = layout x
+   let
+      val (style, lhs, rhs) = layout x
       val lhs = seq [prefix, lhs, str " " , str bind]
-   in case style of
-      OneLine => seq [lhs, str " ", rhs]
-    | Split indentation => align [lhs, indent (rhs, indentation)]
+   in
+      case style of
+	 OneLine => seq [lhs, str " ", rhs]
+       | Split indentation => align [lhs, indent (rhs, indentation)]
    end
 
 fun layoutAndsBind (prefix, bind, xs, layout) =
@@ -274,7 +326,7 @@ structure TypBind =
 	    val T ds = node t
 	 in
 	    layoutAndsBind
-	    ("type", "=", Vector.toList ds, fn {tycon, def, tyvars} =>
+	    ("type", "=", ds, fn {tycon, def, tyvars} =>
 	     (OneLine,
 	      Type.layoutApp (Tycon.layout tycon,
 			      tyvars,
@@ -283,6 +335,20 @@ structure TypBind =
 	 end
       
       val empty = makeRegion (T (Vector.new0 ()), Region.bogus)
+
+      fun checkSyntax (b: t): unit =
+	 let
+	    val T v = node b
+	    val () = Vector.foreach (v, fn {def, ...} => Type.checkSyntax def)
+	 in
+	    reportDuplicates
+	    (v, {equals = (fn ({tycon = t, ...}, {tycon = t', ...}) =>
+			   Tycon.equals (t, t')),
+		 layout = Tycon.layout o #tycon,
+		 name = "type definition",
+		 region = Tycon.region o #tycon,
+		 term = fn () => layout b})
+	 end
    end
 
 (*---------------------------------------------------*)
@@ -292,9 +358,9 @@ structure TypBind =
 structure DatBind =
    struct
       datatype node =
-	 T of {datatypes: {tyvars: Tyvar.t vector,
+	 T of {datatypes: {cons: (Con.t * Type.t option) vector,
 			   tycon: Tycon.t,
-			   cons: (Con.t * Type.t option) vector} vector,
+			   tyvars: Tyvar.t vector} vector,
 	       withtypes: TypBind.t}
 
       open Wrap
@@ -308,7 +374,7 @@ structure DatBind =
 	 in
 	    align
 	    [layoutAndsBind
-	     (prefix, "=", Vector.toList datatypes, fn {tyvars, tycon, cons} =>
+	     (prefix, "=", datatypes, fn {tyvars, tycon, cons} =>
 	      (OneLine,
 	       Type.layoutApp (Tycon.layout tycon, tyvars, Tyvar.layout),
 	       alignPrefix (Vector.toListMap (cons, fn (c, to) =>
@@ -320,6 +386,41 @@ structure DatBind =
 		   if 0 = Vector.length v
 		      then empty
 		   else seq [str "with", TypBind.layout withtypes]]
+	 end
+
+      fun checkSyntax (b: t): unit =
+	 let
+	    val T {datatypes, withtypes} = node b
+	    val () =
+	       Vector.foreach
+	       (datatypes, fn {cons, ...} =>
+		Vector.foreach (cons, fn (c, to) =>
+				(Con.ensureRedefine c
+				 ; Option.app (to, Type.checkSyntax))))
+	    fun term () = layout ("datatype", b)
+	    val () =
+	       reportDuplicates
+	       (Vector.concatV (Vector.map (datatypes, #cons)),
+		{equals = fn ((c, _), (c', _)) => Con.equals (c, c'),
+		 layout = Con.layout o #1,
+		 name = "constructor",
+		 region = Con.region o #1,
+		 term = term})
+	    val () =
+	       reportDuplicates
+	       (Vector.concat [Vector.map (datatypes, #tycon),
+			       let
+				  val TypBind.T v = TypBind.node withtypes
+			       in
+				  Vector.map (v, #tycon)
+			       end],
+		{equals = Tycon.equals,
+		 layout = Tycon.layout,
+		 name = "type definition",
+		 region = Tycon.region,
+		 term = term})
+	 in
+	    ()
 	 end
    end
 
@@ -340,6 +441,11 @@ structure DatatypeRhs =
 	  | Repl {lhs, rhs} =>
 	       seq [str "datatype ", Tycon.layout lhs,
 		   str " = datatype ", Longtycon.layout rhs]
+
+      fun checkSyntax (rhs: t): unit =
+	 case node rhs of
+	    DatBind b => DatBind.checkSyntax b
+	  | Repl _ => ()
    end
 
 (*---------------------------------------------------*)
@@ -362,8 +468,7 @@ structure ModIdBind =
 	 let
 	    fun doit (prefix, l, bds) =
 	       layoutAndsBind
-	       (prefix, "=", Vector.toList bds, fn {lhs, rhs} =>
-		(OneLine, l lhs, l rhs))
+	       (prefix, "=", bds, fn {lhs, rhs} => (OneLine, l lhs, l rhs))
 	 in
 	    case node d of
 	       Fct bds => doit ("functor", Fctid.layout, bds)

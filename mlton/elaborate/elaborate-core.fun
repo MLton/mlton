@@ -385,7 +385,7 @@ val elaboratePat:
 					  seq [str "variable ",
 					       Avar.layout x,
 					       str " occurs more than once in pattern"],
-					  seq [str "pattern: ",
+					  seq [str "in: ",
 					       approximate (Apat.layout p)])
 			end
 		  else ()

@@ -184,9 +184,9 @@ signature AST_CORE =
 	     | Exception of (Con.t * EbRhs.t) vector
 	     | Fix of {fixity: Fixity.t,
 		       ops: Vid.t vector}
-	     | Fun of Tyvar.t vector * {pats: Pat.t vector,
-					resultType: Type.t option,
-					body: Exp.t} vector vector
+	     | Fun of Tyvar.t vector * {body: Exp.t,
+					pats: Pat.t vector,
+					resultType: Type.t option} vector vector
 	     | Local of t * t
 	     | Open of Longstrid.t vector
 	     | Overload of Priority.t *
@@ -203,6 +203,7 @@ signature AST_CORE =
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t
 
+            val checkSyntax: t -> unit
             val datatypee: {tyvars: Tyvar.t vector,
 			    tycon: Tycon.t,
 			    cons: (Con.t * Type.t option) vector} vector -> t

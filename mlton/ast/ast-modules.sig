@@ -22,9 +22,9 @@ signature AST_MODULES =
 	    datatype node =
 	       Spec of spec
 	     | Var of Sigid.t
-             | Where of t * {tyvars: Tyvar.t vector,
-			     longtycon: Longtycon.t,
-			     ty: Type.t} list
+             | Where of t * {longtycon: Longtycon.t,
+			     ty: Type.t,
+			     tyvars: Tyvar.t vector} vector
 
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t
@@ -32,7 +32,7 @@ signature AST_MODULES =
             val var: Sigid.t -> t
 	    val wheree: t * {tyvars: Tyvar.t vector,
 			     longtycon: Longtycon.t,
-			     ty: Type.t} list * Region.t -> t
+			     ty: Type.t} vector * Region.t -> t
 	    val spec: spec -> t
 
 	    val layout: t -> Layout.t
@@ -62,19 +62,19 @@ signature AST_MODULES =
 	    datatype node =
 	       Datatype of DatatypeRhs.t
 	     | Eqtype of {tycon: Tycon.t,
-			  tyvars: Tyvar.t vector} list
+			  tyvars: Tyvar.t vector} vector
 	     | Empty
-	     | Exception of (Con.t * Type.t option) list
+	     | Exception of (Con.t * Type.t option) vector
 	     | IncludeSigexp of Sigexp.t
-	     | IncludeSigids of Sigid.t list
+	     | IncludeSigids of Sigid.t vector
 	     | Seq of t * t
-	     | Sharing of {equations: Equation.t list,
+	     | Sharing of {equations: Equation.t vector,
 			   spec: t}
-	     | Structure of (Strid.t * Sigexp.t) list
+	     | Structure of (Strid.t * Sigexp.t) vector
 	     | Type of {tycon: Tycon.t,
-			tyvars: Tyvar.t vector} list
+			tyvars: Tyvar.t vector} vector
 	     | TypeDefs of TypBind.t
-	     | Val of (Var.t * Type.t) list
+	     | Val of (Var.t * Type.t) vector
 
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t
@@ -114,9 +114,9 @@ signature AST_MODULES =
 	       Core of Dec.t
 	     | Local of t * t
 	     | Seq of t list
-	     | Structure of {name: Strid.t,
+	     | Structure of {constraint: SigConst.t,
 			     def: Strexp.t,
-			     constraint: SigConst.t} vector
+			     name: Strid.t} vector
 
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t
@@ -158,6 +158,7 @@ signature AST_MODULES =
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t
 
+	    val checkSyntax: t -> unit
             val fromExp: Exp.t -> t
 	    val functorr: {name: Fctid.t,
 			   arg: FctArg.t,

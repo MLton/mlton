@@ -27,6 +27,9 @@ structure Program =
 				 Layout.paren 
 				 (Layout.align (List.map (ds, Topdec.layout)))))
 
+      fun checkSyntax (T dss) =
+	 List.foreach (dss, fn ds => List.foreach (ds, Topdec.checkSyntax))
+
       fun coalesce (T dss): t =
 	 let
 	    fun finish (sds, ac) =

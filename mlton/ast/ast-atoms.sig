@@ -98,14 +98,15 @@ signature AST_ATOMS =
 	 sig
 	    type t
 	    datatype node =
-	       Var of Tyvar.t
-	     | Con of Longtycon.t * t vector
+	       Con of Longtycon.t * t vector
 	     | Record of t SortedRecord.t
+	     | Var of Tyvar.t
 
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t
 
 	    val arrow: t * t -> t
+	    val checkSyntax: t -> unit
 	    val con: Tycon.t * t vector -> t
 	    val exn:  t
 	    val layout: t -> Layout.t
@@ -125,6 +126,7 @@ signature AST_ATOMS =
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t
 
+            val checkSyntax: t -> unit
             val empty: t
 	    val layout: t -> Layout.t
 	 end
@@ -138,6 +140,8 @@ signature AST_ATOMS =
 		     withtypes: TypBind.t}
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t
+
+            val checkSyntax: t -> unit
 	    val layout: string * t -> Layout.t
 	 end
       structure DatatypeRhs:
@@ -148,7 +152,9 @@ signature AST_ATOMS =
 	     | Repl of {lhs: Tycon.t, rhs: Longtycon.t}
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t
-	    val layout: t -> Layout.t
+
+            val checkSyntax: t -> unit
+            val layout: t -> Layout.t
 	 end
       structure ModIdBind:
 	 sig
@@ -163,11 +169,21 @@ signature AST_ATOMS =
 	 end
 
       val bind: Layout.t * Layout.t -> Layout.t
-      val layoutAnds: string * 'a list * (Layout.t * 'a -> Layout.t) -> Layout.t
+      val layoutAnds: (string * 'a vector * (Layout.t * 'a -> Layout.t)
+		       -> Layout.t)
       datatype bindStyle =
 	 OneLine
        | Split of int
       val layoutAndsBind:
-	 string * string * 'a list * ('a -> bindStyle * Layout.t * Layout.t)
+	 string * string * 'a vector * ('a -> bindStyle * Layout.t * Layout.t)
 	 -> Layout.t
+      val reportDuplicates:
+	 'a vector * {equals: 'a * 'a -> bool,
+		      layout: 'a -> Layout.t,
+		      name: string,
+		      region: 'a -> Region.t,
+		      term: unit -> Layout.t} -> unit
+      val reportDuplicateFields:
+	 (Record.Field.t * 'a) vector * {region: Region.t,
+					 term: unit -> Layout.t} -> unit
    end

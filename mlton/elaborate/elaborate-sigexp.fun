@@ -153,10 +153,10 @@ fun elaborateScheme (tyvars: Tyvar.t vector, ty: Atype.t, E): Scheme.t =
    end
 
 fun elaborateTypedescs (typedescs: {tycon: Ast.Tycon.t,
-				    tyvars: Tyvar.t vector} list,
+				    tyvars: Tyvar.t vector} vector,
 			{equality: bool},
 			E): unit =
-   List.foreach
+   Vector.foreach
    (typedescs, fn {tycon = name, tyvars} =>
     let
        val kind = Kind.Arity (Vector.length tyvars)
@@ -294,7 +294,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
 		   (elaborateSigexp (sigexp, {isTop = false}), fn I =>
 		    let
 		       val _ = 
-			  List.foreach
+			  Vector.foreach
 			  (wheres, fn {longtycon, ty, tyvars} =>
 			   Option.app
 			   (Interface.lookupLongtycon
@@ -340,7 +340,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
 		elaborateTypedescs (typedescs, {equality = true}, E)
 	   | Spec.Exception cons =>
 		(* rule 73 *)
-		List.foreach
+		Vector.foreach
 		(cons, fn (name: Ast.Con.t, arg: Ast.Type.t option) =>
 		 let
 		    val ty =
@@ -364,11 +364,11 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
 			    Env.openInterface (E, I, Sigexp.region sigexp))
 	   | Spec.IncludeSigids sigids =>
 		(* Appendix A, p.59 *)
-		List.foreach (sigids, fn x =>
-			      Option.app
-			      (Env.lookupSigid (E, x), fn I =>
-			       Env.openInterface
-			       (E, Interface.copy I, Sigid.region x)))
+		Vector.foreach (sigids, fn x =>
+				Option.app
+				(Env.lookupSigid (E, x), fn I =>
+				 Env.openInterface
+				 (E, Interface.copy I, Sigid.region x)))
 	   | Spec.Seq (s, s') =>
 		(* rule 77 *)
 		(elaborateSpec s; elaborateSpec s')
@@ -378,7 +378,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
 		   val time = Interface.Time.tick ()
 		   val () = elaborateSpec spec
 		   val () =
-		      List.foreach
+		      Vector.foreach
 		      (equations, fn eqn =>
 		       case Equation.node eqn of
 			  Equation.Structure ss =>
@@ -425,7 +425,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
 		end
 	   | Spec.Structure ss =>
 		(* rules 74, 84 *)
-		List.foreach
+		Vector.foreach
 		(ss, fn (strid, sigexp) =>
 		 Env.extendStrid
 		 (E, strid,
@@ -449,7 +449,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
 		end
 	   | Spec.Val xts =>
 		(* rules 68, 79 *)
-		List.foreach
+		Vector.foreach
 		(xts, fn (x, t) =>
 		 Env.extendVid
 		 (E, Ast.Vid.fromVar x, Status.Var,

@@ -197,6 +197,33 @@ structure Pat =
 
       val layoutDelimit = layoutF
       val layout = layoutT
+
+      fun checkSyntax (p: t): unit =
+	 let
+	    val c = checkSyntax
+	 in
+	    case node p of
+	       App (_, p) => c p
+	     | Const _ => ()
+	     | Constraint (p, t) => (c p; Type.checkSyntax t)
+	     | FlatApp ps => Vector.foreach (ps, c)
+	     | Layered {constraint, pat, ...} =>
+		  (c pat; Option.app (constraint, Type.checkSyntax))
+	     | List ps => Vector.foreach (ps, c)
+	     | Record {items, ...} =>
+		  (Vector.foreach (items, fn (_, i) =>
+				   case i of
+				      Item.Field p => c p
+				    | Item.Vid (_, to, po) =>
+					 (Option.app (to, Type.checkSyntax)
+					  ; Option.app (po, c)))
+		   ; reportDuplicateFields (items,
+					    {region = region p,
+					     term = fn () => layout p}))
+	     | Tuple ps => Vector.foreach (ps, c)
+	     | Var _ => ()
+	     | Wild => ()
+	 end
    end
 
 structure Eb =
@@ -205,16 +232,21 @@ structure Eb =
 	 struct
 	    open Wrap
 	    datatype node =
-	       Gen of Type.t option
-	     | Def of Longcon.t
+	       Def of Longcon.t
+	     | Gen of Type.t option
 	    type t = node Wrap.t
 	    type node' = node
 	    type obj = t
 	 
 	    fun layout rhs =
 	       case node rhs of
-		  Gen to => Type.layoutOption to
-		| Def c => seq [str " = ", Longcon.layout c]
+		  Def c => seq [str " = ", Longcon.layout c]
+		| Gen to => Type.layoutOption to
+
+	    fun checkSyntax (e: t): unit =
+	       case node e of
+		  Def _ => ()
+		| Gen to => Option.app (to, Type.checkSyntax)
 	 end
       
       type t = Con.t * Rhs.t
@@ -325,12 +357,13 @@ structure Match =
 
 fun layoutAndsTyvars (prefix, (tyvars, xs), layoutX) =
    layoutAnds (prefix,
-	       case Vector.toListMap (xs, layoutX) of
-		  x :: xs =>
-		     (if Vector.isEmpty tyvars
-			 then x
-		      else seq [Tyvar.layouts tyvars, str " ", x]) :: xs
-		| [] => [],
+	       Vector.fromList
+	       (case Vector.toListMap (xs, layoutX) of
+		   [] => []
+		 | x :: xs =>
+		      (if Vector.isEmpty tyvars
+			  then x
+		       else seq [Tyvar.layouts tyvars, str " ", x]) :: xs),
 	      fn (prefix, x) => seq [prefix, x])
 
 fun expNodeName e =
@@ -439,7 +472,7 @@ and layoutDec d =
 		str "end"]
     | Datatype rhs => DatatypeRhs.layout rhs
     | Exception ebs =>
-	 layoutAnds ("exception", Vector.toList ebs,
+	 layoutAnds ("exception", ebs,
 		     fn (prefix, eb) => seq [prefix, Eb.layout eb])
     | Fix {fixity, ops} =>
 	 seq [Fixity.layout fixity, str " ",
@@ -452,7 +485,7 @@ and layoutDec d =
     | Overload (p, x, _, t, xs) =>
 	 seq [str "_overload ", Priority.layout p, str " ",
 	      align [layoutConstraint (Var.layout x, t),
-		     layoutAnds ("as", Vector.toList xs, fn (prefix, x) =>
+		     layoutAnds ("as", xs, fn (prefix, x) =>
 				 seq [prefix, Longvar.layout x])]]
     | SeqDec ds => align (Vector.toListMap (ds, layoutDec))
     | Type typBind => TypBind.layout typBind
@@ -476,6 +509,78 @@ and layoutClause ({pats, resultType, body}) =
 	 layoutExpF body] (* this has to be layoutExpF in case body
 			   is a case expression *)
 
+fun checkSyntaxExp (e: exp): unit =
+   let
+      val c = checkSyntaxExp
+   in
+      case node e of
+	 Andalso (e1, e2) => (c e1; c e2)
+       | App (e1, e2) => (c e1; c e2)
+       | Case (e, m) => (c e; checkSyntaxMatch m)
+       | Const _ => ()
+       | Constraint (e, t) => (c e; Type.checkSyntax t)
+       | FlatApp es => Vector.foreach (es, c)
+       | Fn m => checkSyntaxMatch m
+       | Handle (e, m) => (c e; checkSyntaxMatch m)
+       | If (e1, e2, e3) => (c e1; c e2; c e3)
+       | Let (d, e) => (checkSyntaxDec d; c e)
+       | List es => Vector.foreach (es, c)
+       | Orelse (e1, e2) => (c e1; c e2)
+       | Prim _ => ()
+       | Raise e => c e
+       | Record r =>
+	    (Record.foreach (r, c)
+	     ; reportDuplicateFields (Record.toVector r,
+				      {region = region e,
+				       term = fn () => layoutExp (e, true)}))
+       | Selector _ => ()
+       | Seq es => Vector.foreach (es, c)
+       | Var _ => ()
+       | While {expr, test} => (c expr; c test)
+   end
+
+and checkSyntaxMatch (m: match): unit =
+   let
+      val T v = node m
+   in
+      Vector.foreach (v, fn (p, e) => (Pat.checkSyntax p; checkSyntaxExp e))
+   end
+      
+and checkSyntaxDec (d: dec): unit =
+   case node d of
+      Abstype {datBind, body} =>
+	 (DatBind.checkSyntax datBind
+	  ; checkSyntaxDec body)
+    | Datatype rhs => DatatypeRhs.checkSyntax rhs
+    | Exception v =>
+	 (Vector.foreach (v, fn (_, ebrhs) => EbRhs.checkSyntax ebrhs)
+	  ; (reportDuplicates
+	     (v, {equals = fn ((c, _), (c', _)) => Con.equals (c, c'),
+		  layout = Con.layout o #1,
+		  name = "exception declaration",
+		  region = Con.region o #1,
+		  term = fn () => layoutDec d})))
+    | Fix _ => () (* The Definition allows, e.g., "infix + +". *)
+    | Fun (tyvars, fs) =>
+	 Vector.foreach (fs, fn clauses =>
+			 Vector.foreach
+			 (clauses, fn {body, pats, resultType} =>
+			  (checkSyntaxExp body
+			   ; Vector.foreach (pats, Pat.checkSyntax)
+			   ; Option.app (resultType, Type.checkSyntax))))
+    | Local (d, d') => (checkSyntaxDec d; checkSyntaxDec d')
+    | Open _ => ()
+    | Overload (_, _, _, ty, _) => Type.checkSyntax ty
+    | SeqDec v => Vector.foreach (v, checkSyntaxDec)
+    | Type b => TypBind.checkSyntax b
+    | Val {rvbs, vbs, ...} =>
+	 (Vector.foreach (rvbs, fn {match, pat} =>
+			  (checkSyntaxMatch match
+			   ; Pat.checkSyntax pat))
+	  ; Vector.foreach (vbs, fn {exp, pat} =>
+			    (checkSyntaxExp exp
+			     ; Pat.checkSyntax pat)))
+	  
 structure Match =
    struct
       open Match
@@ -548,6 +653,8 @@ structure Dec =
       type node' = node
       type obj = t
 
+      val checkSyntax = checkSyntaxDec
+	 
       fun make n = makeRegion (n, Region.bogus)
 	 
       val openn = make o Open

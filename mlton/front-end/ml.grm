@@ -14,38 +14,6 @@ open Ast
 structure Field = Record.Field
 structure Srecord = SortedRecord
 
-fun reportDuplicates (v: 'a vector,
-		      name: string,
-		      equals: 'a * 'a -> bool,
-		      layout: 'a -> Layout.t,
-		      region: 'a -> Region.t) =
-   Vector.foreachi
-   (v, fn (i, a) =>
-    let
-       fun loop i' =
-	  if i = i'
-	     then ()
-	  else if equals (a, Vector.sub (v, i'))
-		  then 
-		     let
-			open Layout
-		     in
-			Control.error
-			(region a,
-			 seq [str (concat ["duplicate ", name, ": "]), layout a],
-			 empty)
-		     end
-	       else loop (i' + 1)
-    in
-       loop 0
-    end)
-
-fun reportDuplicateFields (v, name: string, left, right) =
-   reportDuplicates (v, concat ["label in ", name],
-		     fn ((f, _), (f', _)) => Field.equals (f, f'),
-		     Field.layout o #1,
-		     fn _ => reg (left, right))
-
 structure Type =
    struct
       open Type
@@ -55,6 +23,15 @@ structure Type =
       val unit = tuple (Vector.new0 ())
 
       fun arrow (t1, t2) = Con (Longtycon.arrow, Vector.new2 (t1, t2))
+   end
+
+structure DatBind =
+   struct
+      open DatBind
+
+      fun make (dbs, withtypes, left, right) =
+	 makeRegion' (T {datatypes = dbs, withtypes = withtypes},
+		      left, right)
    end
 
 structure Pat =
@@ -215,7 +192,7 @@ fun ensureNonqualified (ss: Symbol.t list, r: Region.t): Symbol.t * Region.t =
 fun cons1 (x, (l, r, y)) = (x :: l, r, y)
 
 fun augment (id, sigexp, (wherespecs, right, binds)) =
-   (id, Sigexp.wheree (sigexp, wherespecs,
+   (id, Sigexp.wheree (sigexp, Vector.fromList wherespecs,
 		       Region.extendRight (Sigexp.region sigexp, right)))
    :: binds
 
@@ -228,7 +205,7 @@ fun 'a augment1 ((strexp: Strexp.t,
    (Strexp.makeRegion
     (Strexp.Constrained
      (strexp, makesigconst (Sigexp.wheree
-			    (sigexp, wherespecs,
+			    (sigexp, Vector.fromList wherespecs,
 			     Region.extendRight (Sigexp.region sigexp, right)))),
      Region.extendRight (Strexp.region strexp, right)),
     z)
@@ -423,7 +400,8 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | vidNoEqual of Vid.t
        | vids of Vid.t list
        | wherespec of wherespec
-       | wherespecs of wherespec list
+       | wherespecs of wherespec vector
+       | wherespecs' of wherespec list
        | withtypes of TypBind.t
        | word of IntInf.t
 
@@ -497,28 +475,12 @@ topdecnode
    | SIGNATURE sigbinds
      (let
 	 val sigbinds = Vector.fromList sigbinds
-	 val _ =
-	    reportDuplicates (sigbinds,
-			      "signature definition",
-			      fn ((s, _), (s', _)) => Sigid.equals (s, s'),
-			      Sigid.layout o #1,
-			      Sigid.region o #1)
+	 val d = Topdec.Signature sigbinds
       in
-	 Topdec.Signature sigbinds
+	 d
       end)
    | FUNCTOR funbinds
-     (let
-	 val funbinds = Vector.fromList funbinds
-	 val _ =
-	    reportDuplicates (funbinds,
-			      "functor definition",
-			      fn ({name = n, ...}, {name = n', ...}) =>
-			      Fctid.equals (n, n'),
-			      Fctid.layout o #name,
-			      Fctid.region o #name)
-      in
-	 Topdec.Functor funbinds
-      end)
+     (Topdec.Functor (Vector.fromList funbinds))
    | BASIS_DONE longid (Topdec.BasisDone {ffi = Longstrid.fromSymbols longid})
 
 (*---------------------------------------------------*)
@@ -539,15 +501,12 @@ strdecnode
    : STRUCTURE strbinds
      (let
 	 val strbinds = Vector.fromList strbinds
-	 val _ =
-	    reportDuplicates
-	    (strbinds,
-	     "structure definition",
-	     fn ({name = n, ...}, {name = n', ...}) => Strid.equals (n, n'),
-	     Strid.layout o #name,
-	     Strid.region o #name)
+	 val d = Strdec.Structure strbinds
+
+
+
       in
-	 Strdec.Structure strbinds
+	 d
       end)
    | LOCAL strdecs IN strdecs END  (Strdec.Local (strdecs1, strdecs2))
    | decnolocal
@@ -624,13 +583,17 @@ sigexp
   | sigexp' wherespecs
     (Sigexp.wheree (sigexp', wherespecs, reg (sigexp'left, wherespecsright)))
 
-wherespecs : WHERE wherespec             ([wherespec])
-           | WHERE wherespec wherespecs  (wherespec::wherespecs)
-           | WHERE wherespec andspecs    (wherespec::andspecs)
+wherespecs : wherespecs' (Vector.fromList wherespecs')
+
+wherespecs'
+  : WHERE wherespec              ([wherespec])
+  | WHERE wherespec wherespecs'  (wherespec :: wherespecs')
+  | WHERE wherespec andspecs     (wherespec :: andspecs)
             
-andspecs : AND wherespec             ([wherespec])
-         | AND wherespec andspecs    (wherespec::andspecs)
-	 | AND wherespec wherespecs  (wherespec::wherespecs)
+andspecs
+  : AND wherespec              ([wherespec])
+  | AND wherespec andspecs     (wherespec :: andspecs)
+  | AND wherespec wherespecs'  (wherespec :: wherespecs')
 
 sigbinds: sigid EQUALOP sigexp' sigbinds'  (augment (sigid, sigexp', sigbinds'))
 
@@ -662,23 +625,24 @@ specs  :                   (Spec.makeRegion (Spec.Empty, Region.bogus))
 				
 spec : specnode (Spec.makeRegion' (specnode, specnodeleft, specnoderight))
 
-specnode : VAL valdescs		(Spec.Val valdescs)
-         | TYPE typdescs	(Spec.Type typdescs)
+specnode : VAL valdescs		(Spec.Val (Vector.fromList valdescs))
+         | TYPE typdescs	(Spec.Type (Vector.fromList typdescs))
          | TYPE typBind   	(Spec.TypeDefs typBind)
-         | EQTYPE typdescs	(Spec.Eqtype typdescs)
+         | EQTYPE typdescs	(Spec.Eqtype (Vector.fromList typdescs))
          | DATATYPE datatypeRhsNoWithtype (Spec.Datatype datatypeRhsNoWithtype)
-         | EXCEPTION exndescs	(Spec.Exception exndescs)
-         | STRUCTURE strdescs	(Spec.Structure strdescs)
+         | EXCEPTION exndescs	(Spec.Exception (Vector.fromList exndescs))
+         | STRUCTURE strdescs	(Spec.Structure (Vector.fromList strdescs))
          | INCLUDE sigexp       (Spec.IncludeSigexp sigexp)
-         | INCLUDE sigid sigids (Spec.IncludeSigids (sigid::sigids))  (* p. 59 *)
-	 | sharespec            (Spec.Sharing
-				 {spec = Spec.makeRegion' (Spec.Empty,
-							  sharespecleft,
-							  sharespecright),
-				  equations =
-				  [Equation.makeRegion' (sharespec,
-							sharespecleft,
-							sharespecright)]})
+         | INCLUDE sigid sigids (* p. 59 *)
+	   (Spec.IncludeSigids (Vector.fromList (sigid :: sigids)) )
+	 | sharespec
+	   (Spec.Sharing {spec = Spec.makeRegion' (Spec.Empty,
+						   sharespecleft,
+						   sharespecright),
+			  equations = (Vector.new1
+				       (Equation.makeRegion' (sharespec,
+							      sharespecleft,
+							      sharespecright)))})
 	   
 sharespec : SHARING TYPE longtyconeqns (Equation.Type longtyconeqns)
           | SHARING longstrideqns      (Equation.Structure longstrideqns)
@@ -774,18 +738,7 @@ decnolocal
 	| ABSTYPE datBind WITH decs END   (Dec.Abstype {datBind = datBind,
 							body = decs})
 	| EXCEPTION ebs
-	  (let
-	      val ebs = Vector.fromList ebs
-	      val _ =
-		 reportDuplicates
-		 (ebs,
-		  "exception declaration",
-		  fn ((c, _), (c', _)) => Con.equals (c, c'),
-		  Con.layout o #1,
-		  Con.region o #1)
-	   in
-	      Dec.Exception ebs
-	   end)
+	  (Dec.Exception (Vector.fromList ebs))
 	| OPEN longstrids	(Dec.Open (Vector.fromList longstrids))
 	| fixity vids		(Dec.Fix {fixity = fixity,
 					  ops = Vector.fromList vids})
@@ -841,16 +794,11 @@ clause	: apats constraint EQUALOP exp  ({pats = Vector.fromList apats,
 typBind : typBind'
           (let
 	      val typBind = Vector.fromList typBind'
-	      val _ =
-		 reportDuplicates
-		 (typBind, "type definition",
-		  fn ({tycon = t, ...}, {tycon = t', ...}) =>
-		  Tycon.equals (t, t'),
-		  Tycon.layout o #tycon,
-		  Tycon.region o #tycon)
+	      val b =
+		 TypBind.makeRegion'
+		 (TypBind.T typBind, typBind'left, typBind'right)
 	   in
-	      TypBind.makeRegion'
-	      (TypBind.T typBind, typBind'left, typBind'right)
+	      b
 	   end)
 
 typBind' : tyvars tycon EQUALOP ty typBind''
@@ -867,9 +815,14 @@ tyvarseq: tyvar			  (Vector.new1 tyvar)
 	| LPAREN tyvar_pc RPAREN
 	  (let
 	      val v = Vector.fromList tyvar_pc
-	      val _ = reportDuplicates (v, "type variable",
-					Tyvar.sameName, Tyvar.layout,
-					Tyvar.region)
+	      val () =
+		 reportDuplicates
+		 (v, {equals = Tyvar.sameName,
+		      layout = Tyvar.layout,
+		      name = "type variable",
+		      region = Tyvar.region,
+		      term = fn () => Layout.tuple (Vector.toListMap
+						    (v, Tyvar.layout))})
 	   in
 	      v
 	   end)
@@ -969,59 +922,32 @@ repl : tyvars tycon EQUALOP DATATYPE longtycon
 		    "nonempty tyvars in datatype repl")
 	; DatatypeRhs.Repl {lhs = tycon, rhs = longtycon})
 
-datBind : dbs withtypes
-          (let
-	      val _ =
-		 reportDuplicates
-		 (Vector.concat [Vector.map (dbs, #tycon),
-				 let
-				    val TypBind.T v = TypBind.node withtypes
-				 in
-				    Vector.map (v, #tycon)
-				 end],
-		  "type definition",
-		  Tycon.equals,
-		  Tycon.layout,
-		  Tycon.region)
-	   in
-	      DatBind.makeRegion' (DatBind.T {datatypes = dbs,
-					      withtypes = withtypes},
-				   dbsleft,
-				   withtypesright)
-	   end)
+datBind
+   : dbs withtypes
+     (DatBind.make (dbs, withtypes, dbsleft, withtypesright))
 
 datBindNoWithtype
    : dbs
-    (DatBind.makeRegion' (DatBind.T {datatypes = dbs,
-				     withtypes = TypBind.empty},
-			  dbsleft, dbsright))
+     (DatBind.make (dbs, TypBind.empty, dbsleft, dbsright))
 
-dbs : dbs' (let
-	       val datatypes = Vector.fromList dbs'
-	       val _ =
-		  reportDuplicates
-		  (Vector.concatV (Vector.map (datatypes, #cons)),
-		   "constructor",
-		   fn ((c, _), (c', _)) => Con.equals (c, c'),
-		   Con.layout o #1,
-		   Con.region o #1)
-	       val _ =
-		  Vector.foreach (datatypes, fn {cons, ...} =>
-				  Vector.foreach (cons, Con.ensureRedefine o #1))
-	    in
-	       datatypes
-	    end)
+dbs : dbs' (Vector.fromList dbs')
 
-dbs' : db           ([db])
-     | db AND dbs'  (db :: dbs')
+dbs'
+   : db
+     ([db])
+   | db AND dbs'
+     (db :: dbs')
 
-db	: tyvars tycon EQUALOP constrs	({cons = Vector.fromList constrs,
-					  tycon = tycon,
-					  tyvars = tyvars})
-					  
+db : tyvars tycon EQUALOP constrs
+     ({cons = Vector.fromList constrs,
+       tycon = tycon,
+       tyvars = tyvars})
 
-withtypes :                   (TypBind.empty)
-	  | WITHTYPE typBind  (typBind)
+withtypes
+   :
+     (TypBind.empty)
+   | WITHTYPE typBind
+     (typBind)
 
 longvarands : longvar  ([longvar])
             | longvar AND longvarands (longvar :: longvarands)
@@ -1070,13 +996,7 @@ aexp	: OP vid		(Exp.Var {name = Longvid.short vid,
 	| const                 (Exp.Const const)
 	| HASH field		(Exp.Selector field)
 	| LBRACE elabels RBRACE
-	  (let
-	      val v = Vector.fromList elabels
-	      val _ = reportDuplicateFields (v, "expression",
-					     elabelsleft, elabelsright)
-	   in
-	      Exp.Record (Record.fromVector v)
-	   end)
+	  (Exp.Record (Record.fromVector (Vector.fromList elabels)))
 	| LBRACE RBRACE		(Exp.unit)
 	| LPAREN RPAREN		(Exp.unit)
 	| LPAREN expnode RPAREN (expnode)
@@ -1172,12 +1092,9 @@ apatnode : longvidNoEqual        (Pat.Var {name = longvidNoEqual,
 	| LBRACE patitems RBRACE
 	  (let
 	      val (items, flexible) = patitems
-	      val items = Vector.fromList items
-	      val _ = reportDuplicateFields (items, "pattern",
-					     patitemsleft, patitemsright)
 	   in
 	      Pat.Record {flexible = flexible,
-			  items = items}
+			  items = Vector.fromList items}
 	   end)
 
 pats: ([])
@@ -1216,13 +1133,7 @@ ty' : ty'node (Type.makeRegion' (ty'node, ty'nodeleft, ty'noderight))
 
 ty'node	: tyvar		                  (Type.Var tyvar)
 	| LBRACE tlabels RBRACE
-	  (let
-	      val v = Vector.fromList tlabels
-	      val _ = reportDuplicateFields (v, "type",
-					     tlabelsleft, tlabelsright)
-	   in
-	      Type.Record (Srecord.fromVector v)
-	   end)
+	  (Type.Record (Srecord.fromVector (Vector.fromList tlabels)))
 	| LBRACE RBRACE	                  (Type.unit)
 	| LPAREN ty0_pc RPAREN longtycon  (Type.Con (longtycon,
 						     Vector.fromList ty0_pc))

@@ -17,7 +17,7 @@ structure Parse = JoinWithArg (structure ParserData = LrVals.ParserData
 			       structure Lex = Lex
 			       structure LrParser = LrParser)
    
-fun lexAndParse (source: Source.t, ins: In.t) =
+fun lexAndParse (source: Source.t, ins: In.t): Ast.Program.t =
    let
       val stream =
 	 Parse.makeLexer (fn n => In.inputN (ins, n))
@@ -38,7 +38,9 @@ fun lexAndParse (source: Source.t, ins: In.t) =
 	    in
 	       Ast.Program.T []
 	    end
-   in result
+      val () = Ast.Program.checkSyntax result
+   in
+      result
    end
    
 fun lexAndParseFile (f: File.t) =

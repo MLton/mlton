@@ -19,6 +19,7 @@ signature AST_PROGRAMS =
 	    datatype t = T of Topdec.t list list
 
 	    val append: t * t -> t
+	    val checkSyntax: t -> unit
 	    val coalesce: t -> t
 	    val empty: t
 	    val size: t -> int

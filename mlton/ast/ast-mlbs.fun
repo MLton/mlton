@@ -50,7 +50,7 @@ and layoutBasdec dec =
       Defs def => ModIdBind.layout def
     | Basis basbnds =>
 	 layoutAndsBind
-	 ("basis", "=", Vector.toList basbnds, fn {name, def} =>
+	 ("basis", "=", basbnds, fn {name, def} =>
 	  (case node def of Var _ => OneLine | _ => Split 3,
 	   Basid.layout name, layoutBasexp def))
     | Local (dec1, dec2) => Pretty.locall (layoutBasdec dec1, layoutBasdec dec2)
@@ -61,14 +61,15 @@ and layoutBasdec dec =
     | Prog (f,_) => File.layout f
     | MLB (f,_,_) => File.layout f
     | Prim => str "_prim"
-    | Ann (anns, dec) => align [str "ann", 
-				indent ((seq o separate)
-					(List.map (anns, fn (ann,_) =>
-						   (seq o separate) (List.map (ann, str), " ")), 
-					 ","),
-					3),
-				str "in", 
-				indent (layoutBasdec dec, 3), str "end"]
+    | Ann (anns, dec) =>
+	 align [str "ann", 
+		indent ((seq o separate)
+			(List.map (anns, fn (ann,_) =>
+				   (seq o separate) (List.map (ann, str), " ")), 
+			 ","),
+			3),
+		str "in", 
+		indent (layoutBasdec dec, 3), str "end"]
 and layoutBasdecs decs = layouts (decs, layoutBasdec)
 
 structure Basexp =

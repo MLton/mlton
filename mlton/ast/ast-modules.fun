@@ -39,13 +39,13 @@ structure Equation =
    end
 
 type typedescs = {tyvars: Tyvar.t vector,
-		  tycon: Tycon.t} list
+		  tycon: Tycon.t} vector
 
 datatype sigexpNode =
    Var of Sigid.t
  | Where of sigexp * {tyvars: Tyvar.t vector,
 		      longtycon: Longtycon.t,
-		      ty: Type.t} list
+		      ty: Type.t} vector
  | Spec of spec
 and sigConst =
    None
@@ -55,15 +55,16 @@ and specNode =
    Datatype of DatatypeRhs.t
   | Empty
   | Eqtype of typedescs
-  | Exception of (Con.t * Type.t option) list
+  | Exception of (Con.t * Type.t option) vector
   | IncludeSigexp of sigexp
-  | IncludeSigids of Sigid.t list
+  | IncludeSigids of Sigid.t vector
   | Seq of spec * spec
-  | Sharing of {spec: spec, equations: Equation.t list}
-  | Structure of (Strid.t * sigexp) list
+  | Sharing of {equations: Equation.t vector,
+		spec: spec}
+  | Structure of (Strid.t * sigexp) vector
   | Type of typedescs
   | TypeDefs of TypBind.t
-  | Val of (Var.t * Type.t) list
+  | Val of (Var.t * Type.t) vector
 withtype spec = specNode Wrap.t
 and sigexp = sigexpNode Wrap.t
 
@@ -76,7 +77,7 @@ fun layoutTypedefs (prefix, typBind) =
    let
       val TypBind.T ds = TypBind.node typBind
    in
-      layoutAnds (prefix, Vector.toList ds, fn (prefix, {def, tycon, tyvars}) =>
+      layoutAnds (prefix, ds, fn (prefix, {def, tycon, tyvars}) =>
 		  seq [prefix,
 		       Type.layoutApp (Tycon.layout tycon, tyvars, Tyvar.layout),
 		       str " = ", Type.layout def])
@@ -86,10 +87,12 @@ fun layoutSigexp (e: sigexp): Layout.t =
    case node e of
       Var s => Sigid.layout s
     | Where (e, ws) =>
-	 let val e = layoutSigexp e
-	 in case ws of
-	    [] => e
-	  | _ => 
+	 let
+	    val e = layoutSigexp e
+	 in
+	    if 0 = Vector.length ws
+	       then e
+	    else
 	       seq [e, 
 		    layoutAndsBind
 		    (" where", "=", ws, fn {tyvars, longtycon, ty} =>
@@ -112,8 +115,22 @@ and layoutSigConst sigConst =
 
 and layoutSpec (s: spec): t =
    case node s of
-      Empty => empty
+      Datatype rhs => DatatypeRhs.layout rhs
+    | Empty => empty
+    | Eqtype typedescs => layoutTypedescs ("eqtype", typedescs)
+    | Exception sts =>
+	 layoutAnds
+	 ("exception", sts, fn (prefix, (c, to)) => seq [prefix,
+							 Con.layout c,
+							 Type.layoutOption to])
+    | IncludeSigexp s => seq [str "include ", layoutSigexp s]
+    | IncludeSigids sigids =>
+	 seq (str "include "
+	      :: separate (Vector.toListMap (sigids, Sigid.layout), " "))
     | Seq (s, s') => align [layoutSpec s, layoutSpec s']
+    | Sharing {spec, equations} =>
+	 align [layoutSpec spec,
+		align (Vector.toListMap (equations, Equation.layout))]
     | Structure l =>
 	 layoutAndsBind ("structure", ":", l, fn (strid, sigexp) =>
 			 (case node sigexp of
@@ -123,23 +140,78 @@ and layoutSpec (s: spec): t =
 				layoutSigexp sigexp))
     | Type typedescs => layoutTypedescs ("type", typedescs)
     | TypeDefs typedefs => layoutTypedefs ("type", typedefs)
-    | Eqtype typedescs => layoutTypedescs ("eqtype", typedescs)
     | Val sts =>
 	 layoutAndsBind
 	 ("val", ":", sts, fn (x, t) => (OneLine, Var.layout x, Type.layout t))
-    | Datatype rhs => DatatypeRhs.layout rhs
-    | Exception sts =>
-	 layoutAnds
-	 ("exception", sts, fn (prefix, (c, to)) => seq [prefix,
-							 Con.layout c,
-							 Type.layoutOption to])
-    | IncludeSigexp s => seq [str "include ", layoutSigexp s]
-    | IncludeSigids sigids =>
-	 seq (str "include "
-	      :: separate (List.map (sigids, Sigid.layout), " "))
-    | Sharing {spec, equations} =>
-	 align [layoutSpec spec,
-		align (List.map (equations, Equation.layout))]
+
+fun checkSyntaxSigexp (e: sigexp): unit =
+   case node e of
+      Spec s => checkSyntaxSpec s
+    | Var _ => ()
+    | Where (e, v) =>
+	 (checkSyntaxSigexp e
+	  ; Vector.foreach (v, fn {ty, ...} => Type.checkSyntax ty))
+	  
+and checkSyntaxSigConst (s: sigConst): unit =
+   case s of
+      None => ()
+    | Opaque e => checkSyntaxSigexp e
+    | Transparent e => checkSyntaxSigexp e
+	 
+and checkSyntaxSpec (s: spec): unit =
+   let
+      fun term () = layoutSpec s
+   in
+      case node s of
+	 Datatype d => DatatypeRhs.checkSyntax d
+       | Eqtype v =>
+	    reportDuplicates
+	    (v, {equals = (fn ({tycon = c, ...}, {tycon = c', ...}) =>
+			   Tycon.equals (c, c')),
+		 layout = Tycon.layout o #tycon,
+		 name = "type",
+		 region = Tycon.region o #tycon,
+		 term = term})
+       | Empty => ()
+       | Exception v =>
+	    (Vector.foreach (v, fn (_, to) =>
+			     Option.app (to, Type.checkSyntax))
+	     ; (reportDuplicates
+		(v, {equals = fn ((c, _), (c', _)) => Con.equals (c, c'),
+		     layout = Con.layout o #1,
+		     name = "exception",
+		     region = Con.region o #1,
+		     term = term})))
+       | IncludeSigexp e => checkSyntaxSigexp e
+       | IncludeSigids _ => ()
+       | Seq (s, s') => (checkSyntaxSpec s; checkSyntaxSpec s')
+       | Sharing {spec, ...} => checkSyntaxSpec spec
+       | Structure v =>
+	    (Vector.foreach (v, checkSyntaxSigexp o #2)
+	     ; (reportDuplicates
+		(v, {equals = fn ((s, _), (s', _)) => Strid.equals (s, s'),
+		     layout = Strid.layout o #1,
+		     name = "structure specification",
+		     region = Strid.region o #1,
+		     term = term})))
+       | Type v =>
+	    reportDuplicates
+	    (v, {equals = (fn ({tycon = c, ...}, {tycon = c', ...}) =>
+			   Tycon.equals (c, c')),
+		 layout = Tycon.layout o #tycon,
+		 name = "type specification",
+		 region = Tycon.region o #tycon,
+		 term = term})
+       | TypeDefs b => TypBind.checkSyntax b
+       | Val v =>
+	    (Vector.foreach (v, fn (_, t) => Type.checkSyntax t)
+	     ; (reportDuplicates
+		(v, {equals = fn ((x, _), (x', _)) => Var.equals (x, x'),
+		     layout = Var.layout o #1,
+		     name = "value specification",
+		     region = Var.region o #1,
+		     term = term})))
+   end
 
 structure Sigexp =
    struct
@@ -149,12 +221,13 @@ structure Sigexp =
       datatype node = datatype sigexpNode
       type node' = node
       type obj = t
+
+      val checkSyntax = checkSyntaxSigexp
 	 
       fun wheree (sigexp: t, wherespecs, region): t =
-	 case wherespecs of
-	    [] => sigexp
-	  | _ => makeRegion (Where (sigexp, wherespecs),
-			     region)
+	 if 0 = Vector.length wherespecs
+	    then sigexp
+	 else makeRegion (Where (sigexp, wherespecs), region)
 
       fun make n = makeRegion (n, Region.bogus)
 	 
@@ -167,6 +240,8 @@ structure Sigexp =
 structure SigConst =
    struct
       datatype t = datatype sigConst
+
+      val checkSyntax = checkSyntaxSigConst
       val layout = layoutSigConst
    end
 
@@ -177,7 +252,8 @@ structure Spec =
       type t = spec
       type node' = node
       type obj = t
-	 
+
+      val checkSyntax = checkSyntaxSpec
       val layout = layoutSpec
    end
 
@@ -208,7 +284,7 @@ fun layoutStrdec d =
     | Local (d, d') => Pretty.locall (layoutStrdec d, layoutStrdec d')
     | Seq ds => align (layoutStrdecs ds)
     | Structure strbs =>
-	 layoutAndsBind ("structure", "=", Vector.toList strbs,
+	 layoutAndsBind ("structure", "=", strbs,
 			 fn {name, def, constraint} =>
 			 (case node def of
 			     Var _ => OneLine
@@ -227,6 +303,32 @@ and layoutStrexp exp =
 			 indent (layoutStrdec d, 3),
 			 str "end"]
     | Var s => Longstrid.layout s
+
+fun checkSyntaxStrdec (d: strdec): unit =
+   case node d of
+      Core d => Dec.checkSyntax d
+    | Local (d, d') => (checkSyntaxStrdec d; checkSyntaxStrdec d')
+    | Seq ds => List.foreach (ds, checkSyntaxStrdec)
+    | Structure v =>
+	 (Vector.foreach (v, fn {constraint, def, ...} =>
+			  (SigConst.checkSyntax constraint
+			   ; checkSyntaxStrexp def))
+	  ; (reportDuplicates
+	     (v, {equals = (fn ({name = n, ...}, {name = n', ...}) =>
+			    Strid.equals (n, n')),
+		  layout = Strid.layout o #name,
+		  name = "structure definition",
+		  region = Strid.region o #name,
+		  term = fn () => layoutStrdec d})))
+and checkSyntaxStrexp (e: strexp): unit =
+   case node e of
+      App (_, e) => checkSyntaxStrexp e
+    | Constrained (e, c) => (checkSyntaxStrexp e
+			     ; SigConst.checkSyntax c)
+    | Let (d, e) => (checkSyntaxStrdec d
+		     ; checkSyntaxStrexp e)
+    | Struct d => checkSyntaxStrdec d
+    | Var _ => ()
 	 
 structure Strexp =
    struct
@@ -237,6 +339,7 @@ structure Strexp =
       type node' = node
       type obj = t
 
+      val checkSyntax = checkSyntaxStrexp
       fun make n = makeRegion (n, Region.bogus)
       val var = make o Var
       val structt = make o Struct
@@ -254,6 +357,7 @@ structure Strdec =
       type node' = node
       type obj = t
 
+      val checkSyntax = checkSyntaxStrdec
       fun make n = makeRegion (n, Region.bogus)
       val structuree = make o Structure
 
@@ -341,6 +445,11 @@ structure FctArg =
 	    Structure (strid, sigexp) =>
 	       seq [Strid.layout strid, str ": ", Sigexp.layout sigexp]
 	  | Spec spec => Spec.layout spec
+
+      fun checkSyntax (fa: t): unit =
+	 case node fa of
+	    Structure (_, e) => Sigexp.checkSyntax e
+	  | Spec s => Spec.checkSyntax s
    end
 
 structure Topdec =
@@ -362,7 +471,7 @@ structure Topdec =
 	 case node d of
 	    BasisDone {ffi} => seq [str "_basis_done ", Longstrid.layout ffi]
 	  | Functor fctbs =>
-	       layoutAndsBind ("functor", "=", Vector.toList fctbs,
+	       layoutAndsBind ("functor", "=", fctbs,
 			       fn {name, arg, result, body} =>
 			       (Split 0,
 				seq [Fctid.layout name, str " ",
@@ -370,7 +479,7 @@ structure Topdec =
 				     layoutSigConst result],
 				layoutStrexp body))
 	  | Signature sigbs =>
-	       layoutAndsBind ("signature", "=", Vector.toList sigbs,
+	       layoutAndsBind ("signature", "=", sigbs,
 			       fn (name, def) =>
 			       (case Sigexp.node def of
 				   Sigexp.Var _ => OneLine
@@ -385,5 +494,33 @@ structure Topdec =
       val functorr = make o Functor
       val signaturee = make o Signature
       val strdec = make o Strdec
-   end			
+
+      fun checkSyntax (d: t): unit =
+	 case node d of
+	    BasisDone _ => ()
+	  | Functor v =>
+	       (Vector.foreach
+		(v, fn {arg, body, result, ...} =>
+		 (FctArg.checkSyntax arg
+		  ; Strexp.checkSyntax body
+		  ; SigConst.checkSyntax result))
+		; (reportDuplicates
+		   (v, {equals = (fn ({name = n, ...}, {name = n', ...}) =>
+				  Fctid.equals (n, n')),
+			layout = Fctid.layout o #name,
+			name = "functor definition",
+			region = Fctid.region o #name,
+			term = fn () => layout d})))
+	  | Signature bs =>
+	       (Vector.foreach (bs, Sigexp.checkSyntax o #2)
+		; (reportDuplicates
+		   (bs,
+		    {equals = fn ((s, _), (s', _)) => Sigid.equals (s, s'),
+		     layout = Sigid.layout o #1,
+		     name = "signature definition",
+		     region = Sigid.region o #1,
+		     term = fn () => layout d})))
+	  | Strdec d => Strdec.checkSyntax d
+   end
+
 end
