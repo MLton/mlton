@@ -352,8 +352,22 @@ structure MLton: MLTON =
 		  orb (>> (w, w'),
 		       << (w, fromInt wordSize - w'))
 	       end
-	    val addCheck = op +
-	    val mulCheck = op *
+	    local
+	       val max =    Word.toLargeInt 0wxFFFFFFFF
+	       val maxInt = Word.toLargeInt 0wx7FFFFFFF
+	       fun make (f: IntInf.int * IntInf.int -> IntInf.int)
+		  (w: word, w': word): word =
+		  let
+		     val res = f (Word.toLargeInt w, Word.toLargeInt w')
+		  in
+		     if IntInf.> (res, max)
+			then raise Overflow
+		     else Word.fromLargeInt res
+		  end
+	    in
+	       val addCheck = make IntInf.+
+	       val mulCheck = make IntInf.*
+	    end
 	 end
       
       structure Word8 =
