@@ -176,9 +176,10 @@ signature MLTON_EXN =
 
 \begin{description}
 
-\entry{addExnMessager}
-add a pretty-printer to be used by {\tt General.exnMessage} for
-converting exceptions to strings.
+\entry{addExnMessager f}
+adds {\tt f} as a pretty-printer to be used by {\tt
+General.exnMessage} for converting exceptions to strings.  Messagers
+are tried in order from most recently added to least recently added.
 
 \entry{history e}
 returns the file positions that have raised the exception {\tt e}, in reverse
@@ -402,7 +403,7 @@ signature MLTON_PLATFORM =
    sig
       structure Arch:
          sig
-            datatype t = Sparc | X86
+            datatype t = PowerPC | Sparc | X86
 
             val fromString: string -> t option
             val host: t
@@ -411,7 +412,8 @@ signature MLTON_PLATFORM =
          
       structure OS:
          sig
-            datatype t = Cygwin | FreeBSD | Linux | NetBSD | Solaris
+            datatype t = Cygwin | Darwin | FreeBSD | Linux | MinGW
+                       | NetBSD | OpenBSD | Solaris
 
             val fromString: string -> t option
             val host: t
@@ -456,6 +458,7 @@ signature MLTON_POINTER =
       eqtype t
 
       val add: t * word -> t
+      val compare: t * t -> order
       val diff: t * t -> word
       val getInt8: t * int -> Int8.int
       val getInt16: t * int -> Int16.int
@@ -491,6 +494,9 @@ The type of pointers, i.e. machine addresses.
 \entry{add (p, w)}
 returns the pointer {\tt w} bytes after than {\tt p}.  Does not check
 for overflow.
+
+\entry{compare (p1, p2)}
+compare the pointer {\tt p1} to the pointer {\tt p2} (as addresses).
 
 \entry{diff (p1, p2)}
 returns the number of bytes {\tt w} such that {\tt add (p2, w) = p1}.

@@ -71,15 +71,12 @@ but got: [real] * [int]
 Here the brackets make it easy to see that the components do not
 match.
 
-{\mlton}'s type checker is new with this release.  Because of this, in
-addition to differences with other SML compilers, {\mlton} may even
-differ from earlier versions of itself, when the type checker was not
-so careful.  If you encounter a difference between {\mlton} and
-another SML compiler, or even with an older version of {\mlton}, and
-are not able to determine if it is a bug, please send mail to
-{\mltonmail}.  We would also appreciate feedback on any type error
-messages that you find confusing, or suggestions you may have for
-improvements to error messages.
+{\mlton}'s type checker is fairly new.  If you encounter a difference
+between {\mlton} and another SML compiler, or even with an older
+version of {\mlton}, and are not able to determine if it is a bug,
+please send mail to {\mltonmail}.  We would also appreciate feedback
+on any type error messages that you find confusing, or suggestions you
+may have for improvements to error messages.
 
 \subsection{Type information about programs}
 
@@ -192,9 +189,9 @@ structure S2:> SIG = S
 is displayed as
 \begin{verbatim}
 structure S: SIG
-	     where type t = int
+             where type t = int
 structure S2: SIG
-	      where type t = S2.t
+              where type t = S2.t
 signature SIG = 
    sig
       type t = ?.t

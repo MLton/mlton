@@ -58,10 +58,8 @@ success
 
 It is also possibe to make indirect function calls; that is, function
 calls through a function pointer.  Suppose that you would like to
-indirectly call the C function {\tt foo} described above; we will
-assume that the address of {\tt foo} has been acquired and is
-available in the SML variable {\tt foo\_addr}.  {\mlton} extends the
-syntax of SML to allow expressions like the following:
+indirectly call the C function {\tt foo} described above; {\mlton}
+extends the syntax of SML to allow expressions like the following:
 \begin{verbatim}
 _import * : MLton.Pointer.t -> real * char -> int;
 \end{verbatim}
@@ -86,7 +84,7 @@ functions from a dynamic library.
 
 \begin{verbatim}
 % make iimport
-mlton -default-ann 'allowExport true, allowImport true' -link-opt '-ldl' iimport.sml
+mlton -default-ann 'allowExport true' -default-ann 'allowImport true' -link-opt '-ldl' iimport.sml
 % iimport
     Math.cos(2.0) = ~0.416146836547
 libm.so::cos(2.0) = ~0.416146836547
@@ -119,17 +117,17 @@ val _ = e (fn (x, c) => 13 + Real.floor x + Char.ord c)
 prototypes for all of the functions exported from SML.  Include this
 header file in your C files to type check calls to functions exported
 from SML.  This header file includes {\tt typedef}s for the types that
-can be passed between SML and C, as described in the next section.  An
-example in the {\tt examples/ffi} directory demonstrates the use of
-{\export} expressions and generating the header file.  Running {\tt
-make export} will produce an executable, {\tt export}, that should
-output {\tt success} when run.
+can be passed between SML and C, which are described in the next
+section.  An example in the {\tt examples/ffi} directory demonstrates
+the use of {\export} expressions and generating the header file.
+Running {\tt make export} will produce an executable, {\tt export},
+that should output {\tt success} when run.
 
 \begin{verbatim}
 % make export
-mlton -default-ann 'allowExport true, allowImport true' -export-header export.h -stop tc export.sml
+mlton -default-ann 'allowExport true' -default-ann 'allowImport true' -export-header export.h -stop tc export.sml
 gcc -c ffi-export.c
-mlton -default-ann 'allowExport true, allowImport true' export.sml ffi-export.o
+mlton -default-ann 'allowExport true' -default-ann 'allowImport true' export.sml ffi-export.o
 % ./export
 g starting
 ...

@@ -132,9 +132,9 @@ raw count.
 %
 \subsec{Profiling the stack}{profstack}
 
-For both allocation and time profiling, you can use {\tt
--profile-stack true} to count the time spent (or bytes allocated)
-while a function is on the stack.  Here is an example.
+For all forms of profiling, you can use {\tt -profile-stack true} to
+count the time spent (or bytes allocated) while a function is on the
+stack.  Here is an example.
 
 \begin{verbatim}
 % mlton -profile alloc -profile-stack true list-rev.sml
