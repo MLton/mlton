@@ -50,6 +50,7 @@ fun parse (peekChar: unit -> char option,
 	     | SOME c =>
 		  if Char.isSpace c
 		     orelse c = #"(" orelse c = #")" orelse c = #"\""
+			 orelse c = #";"
 		     then done ()
 		  else
 		     case getChar () of
@@ -66,6 +67,10 @@ fun parse (peekChar: unit -> char option,
 				NONE => error "eof in middle of string"
 			      | SOME c => string (c :: cs))
 	         | _ => string (c :: cs))
+      fun ignoreLine (): bool =
+	 case getChar () of
+	    NONE => false
+	  | SOME c => c = #"\n" orelse ignoreLine ()
       fun sexp (): t option =
 	 case getChar () of
 	    NONE => NONE
@@ -75,6 +80,9 @@ fun parse (peekChar: unit -> char option,
 	    #"(" => SOME (List (finishList []))
 	  | #")" => error "unmatched )"
 	  | #"\"" => SOME (string [])
+	  | #";" => if ignoreLine ()
+		       then sexp ()
+		    else NONE
 	  | _ => if Char.isSpace c
 		    then sexp ()
 		 else SOME (atom [c])
@@ -84,9 +92,17 @@ fun parse (peekChar: unit -> char option,
 	  | SOME c =>
 	       (case c of
 		   #")" => rev elts
-		 | _ => (case sexpChar c of
+		 | #";" =>
+		      if ignoreLine ()
+			 then finishList elts
+		      else error "unmatched ("
+		 | _ =>
+		      if Char.isSpace c
+			 then finishList elts
+		      else 
+			 case sexpChar c of
 			    NONE => error "unmatched ("
-			  | SOME s => finishList (s :: elts)))
+			  | SOME s => finishList (s :: elts))
    in
       (case sexp () of
 	  NONE => Eof
