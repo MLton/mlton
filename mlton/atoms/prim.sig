@@ -47,11 +47,13 @@ signature PRIM =
 	     | GC_unpack (* ssa to rssa *)
 	     | Int_add of IntSize.t (* codegen *)
 	     | Int_addCheck of IntSize.t (* codegen *)
+	     | Int_arshift of IntSize.t (* codegen *)
 	     | Int_equal of IntSize.t (* ssa to rssa / codegen *)
 	     | Int_ge of IntSize.t (* codegen *)
 	     | Int_gt of IntSize.t (* codegen *)
 	     | Int_le of IntSize.t (* codegen *)
 	     | Int_lt of IntSize.t (* codegen *)
+	     | Int_lshift of IntSize.t (* codegen *)
 	     | Int_mul of IntSize.t (* codegen *)
 	     | Int_mulCheck of IntSize.t (* codegen *)
 	     | Int_neg of IntSize.t (* codegen *)
@@ -289,6 +291,7 @@ signature PRIM =
       val wordAdd: WordSize.t -> 'a t
       val wordAddCheck: WordSize.t -> 'a t
       val wordAndb: WordSize.t -> 'a t
+      val wordArshift: WordSize.t -> 'a t
       val wordEqual: WordSize.t -> 'a t
       val wordGe: WordSize.t -> 'a t
       val wordGt: WordSize.t -> 'a t

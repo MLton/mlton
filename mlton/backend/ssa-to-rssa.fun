@@ -624,6 +624,9 @@ structure Representation = Representation (structure Rssa = Rssa
 structure PackedRepresentation = PackedRepresentation (structure Rssa = Rssa
 						       structure Ssa = Ssa)
 
+fun intSizeToWordSize (s: IntSize.t): WordSize.t =
+   WordSize.fromBits (IntSize.bits s)
+   
 fun updateCard (addr: Operand.t): Statement.t list =
    let
       val index = Var.newNoname ()
@@ -688,6 +691,41 @@ fun arrayUpdate {array, arrayElementTy, index, elt}: Statement.t list =
 					   ty = ty},
 		     src = elt}]
 	 end
+   end
+
+fun convertConst (c: Const.t): Const.t =
+   let
+      datatype z = datatype Const.t
+   in
+      case c of
+	 Int i =>
+	    let
+	       val s = IntX.size i
+	       val s' = IntSize.roundUpToPrim s
+	       val i =
+		  if IntSize.equals (s, s')
+		     then i
+		  else
+		     (* Represent a twos-complement s-bit integer in a
+		      * twos-complement s'-bit integer.  If the integer is
+		      * negative, to get the right bits, we need to make it
+		      * positive.
+		      *)
+		     let
+			val i' = IntX.toIntInf i
+			val i' =
+			   if i' >= 0
+			      then i'
+			   else
+			      i' - IntInf.<< (~1, Bits.toWord (IntSize.bits s))
+		     in
+			IntX.make (i', s')
+		     end
+	    in
+	       Int i
+	    end
+       | Word w => Word (WordX.resize (w, WordSize.roundUpToPrim (WordX.size w)))
+       | _ => c
    end
 
 val word = Type.word o WordSize.bits
@@ -960,7 +998,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 	 in
 	    case Type.dest t of
 	       Constant w => c (Const.word w)
-	     | Int s => c (Const.int (IntX.zero s))
 	     | Pointer _ =>
 		  Operand.Cast (Operand.int (IntX.one IntSize.default), t)
 	     | Real s => c (Const.real (RealX.zero s))
@@ -1012,24 +1049,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				  dst = fn () => valOf var,
 				  oper = varOp,
 				  ty = fn () => valOf (toRtype ty)})
-		      | S.Exp.Const c =>
-			   let
-			      datatype z = datatype Const.t
-			      val c =
-				 case c of
-				    Int i =>
-				       Int (IntX.make (IntX.toIntInf i,
-						       IntSize.roundUpToPrim
-						       (IntX.size i)))
-				  | Word w =>
-				       Word (WordX.fromIntInf
-					     (WordX.toIntInf w,
-					      WordSize.roundUpToPrim
-					      (WordX.size w)))
-				  | _ => c
-			   in
-			      move (Operand.Const c)
-			   end
+		      | S.Exp.Const c => move (Operand.Const (convertConst c))
 		      | S.Exp.PrimApp {prim, targs, args, ...} =>
 			   let
 			      val prim = translatePrim prim
@@ -1280,15 +1300,22 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				    ccall {args = Vector.new1 Operand.GCState,
 					   func = CFunction.unpack}
 			       | Int_equal s =>
-				    nativeOrC (Prim.intEqual
-					       (IntSize.roundUpToPrim s))
+				    nativeOrC (Prim.wordEqual
+					       (intSizeToWordSize
+						(IntSize.roundUpToPrim s)))
+			       | Int_arshift s =>
+				    nativeOrC (Prim.wordArshift
+					       (intSizeToWordSize s))
+			       | Int_lshift s =>
+				    nativeOrC (Prim.wordLshift
+					       (intSizeToWordSize s))
 			       | Int_toInt (s1, s2) =>
 				    let
 				       val s1 = IntSize.roundUpToPrim s1
 				       val s2 = IntSize.roundUpToPrim s2
 				    in
 				       if IntSize.equals (s1, s2)
-					  then move (a 0)
+					  then cast ()
 				       else nativeOrC (Prim.intToInt (s1, s2))
 				    end
 			       | IntInf_toVector => cast ()

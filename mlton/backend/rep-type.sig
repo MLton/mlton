@@ -46,7 +46,6 @@ signature REP_TYPE =
        | Constant of WordX.t
        | ExnStack
        | GCState (* The address of gcState. *)
-       | Int of IntSize.t
        | Junk of Bits.t
        | Label of Label.t
        | Pointer of PointerTycon.t
@@ -63,6 +62,7 @@ signature REP_TYPE =
 			    index: t,
 			    pointerTy: PointerTycon.t -> ObjectType.t,
 			    result: t} -> bool
+      val arshift: t * t -> t
       val bool: t
       val bytes: t -> Bytes.t
       val castIsOk: {from: t,

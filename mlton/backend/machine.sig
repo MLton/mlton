@@ -17,12 +17,17 @@ signature MACHINE =
    sig
       include MACHINE_STRUCTS
 
-      structure Type: REP_TYPE
-      sharing Type = RepType
-
+      structure ObjectType: OBJECT_TYPE
+      structure PointerTycon: POINTER_TYCON
+      structure Runtime: RUNTIME
       structure Switch: SWITCH
+      structure Type: REP_TYPE
+
+      sharing Atoms = Type
       sharing Atoms = Switch
-      sharing Type = Switch.Type
+      sharing ObjectType = Type.ObjectType
+      sharing PointerTycon = ObjectType.PointerTycon = Type.PointerTycon
+      sharing Runtime = ObjectType.Runtime = Type.Runtime
 
       structure ChunkLabel: ID
 

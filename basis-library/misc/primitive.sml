@@ -320,6 +320,8 @@ structure Primitive =
 	    val op >= = _prim "Int8_ge": int * int -> bool;
 	    val quot = _prim "Int8_quot": int * int -> int;
 	    val rem = _prim "Int8_rem": int * int -> int;
+	    val << = _prim "Int8_lshift": int * Word.word -> int;
+	    val ~>> = _prim "Int8_arshift": int * Word.word -> int;
 	    val ~? = _prim "Int8_neg": int -> int; 
 	    val ~ =
 	       if detectOverflow
@@ -328,6 +330,7 @@ structure Primitive =
 	    val fromInt = _prim "Int32_toInt8": Int.int -> int;
 	    val toInt = _prim "Int8_toInt32": int -> Int.int;
 	 end
+      
       structure Int16 =
 	 struct
 	    type int = Int16.int
@@ -357,6 +360,8 @@ structure Primitive =
 	    val op >= = _prim "Int16_ge": int * int -> bool;
 	    val quot = _prim "Int16_quot": int * int -> int;
 	    val rem = _prim "Int16_rem": int * int -> int;
+	    val << = _prim "Int16_lshift": int * Word.word -> int;
+	    val ~>> = _prim "Int16_arshift": int * Word.word -> int;
 	    val ~? = _prim "Int16_neg": int -> int; 
 	    val ~ =
 	       if detectOverflow
@@ -618,6 +623,8 @@ structure Primitive =
 	    val op >= = _prim "Int32_ge": int * int -> bool;
 	    val quot = _prim "Int32_quot": int * int -> int;
 	    val rem = _prim "Int32_rem": int * int -> int;
+	    val << = _prim "Int32_lshift": int * Word.word -> int;
+	    val ~>> = _prim "Int32_arshift": int * Word.word -> int;
 	    val ~? = _prim "Int32_neg": int -> int; 
 	    val ~ =
 	       if detectOverflow
@@ -652,6 +659,8 @@ structure Primitive =
 	    val op <= = _prim "Int64_le": int * int -> bool;
 	    val op > = _prim "Int64_gt": int * int -> bool;
 	    val op >= = _prim "Int64_ge": int * int -> bool;
+	    val << = _prim "Int64_lshift": int * Word.word -> int;
+	    val ~>> = _prim "Int64_arshift": int * Word.word -> int;
 	    val quot = _prim "Int64_quot": int * int -> int;
 	    val rem = _prim "Int64_rem": int * int -> int;
 	    val ~? = _prim "Int64_neg": int -> int; 

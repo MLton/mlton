@@ -15,7 +15,7 @@ signature X86_MLTON_BASIC_STRUCTS =
     sharing x86.CType = Machine.CType
     sharing x86.Label = Machine.Label
     sharing x86.ProfileLabel = Machine.ProfileLabel
-    sharing x86.RepType = Machine.RepType
+    sharing x86.RepType = Machine.Type
     sharing x86.Runtime = Machine.Runtime
   end
 
@@ -28,7 +28,7 @@ signature X86_MLTON_BASIC =
     structure RepType: REP_TYPE
     sharing CFunction = RepType.CFunction
     sharing CType = RepType.CType
-    sharing RepType = Machine.RepType
+    sharing RepType = Machine.Type
 
     val init : unit -> unit
 

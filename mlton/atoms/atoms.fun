@@ -13,7 +13,6 @@ structure Atoms =
    struct
       open S
 
-      structure PointerTycon = PointerTycon ()
       structure ProfileLabel = ProfileLabel ()
       structure SourceInfo = SourceInfo ()
       structure ProfileExp = ProfileExp (structure SourceInfo = SourceInfo)
@@ -26,7 +25,6 @@ structure Atoms =
       structure IntX = IntX (structure IntSize = IntSize)
       structure RealX = RealX (structure RealSize = RealSize)
       structure WordX = WordX (structure WordSize = WordSize)
-      structure Runtime = Runtime ()
       structure Func =
 	 struct
 	    open Var
@@ -48,20 +46,8 @@ structure Atoms =
 			     structure IntSize = IntSize
 			     structure RealSize = RealSize
 			     structure WordSize = WordSize)
-      structure RepType = RepType (structure CFunction = CFunction
-				   structure CType = CType
-				   structure IntSize = IntSize
-				   structure IntX = IntX
-				   structure Label = Label
-				   structure PointerTycon = PointerTycon
-				   structure Prim = Prim
-				   structure RealSize = RealSize
-				   structure Runtime = Runtime
-				   structure WordSize = WordSize
-				   structure WordX = WordX)
       structure Ffi = Ffi (structure CFunction = CFunction
 			   structure CType = CType)
-      structure ObjectType = RepType.ObjectType
       structure Tyvars = UnorderedSet (Tyvar)
       structure Vars = UnorderedSet (Var)
       structure Cons = UnorderedSet (Con)

@@ -383,17 +383,18 @@ structure Unpack =
 				prim = Prim.wordRshift wordSize}])
 		  end
 	    val w = Type.width ty
+	    val s = WordSize.fromBits w
 	    val w' = Type.width dstTy
+	    val s' = WordSize.fromBits w'
 	    val (src, ss2) = Statement.resize (src, w')
 	 in
 	    if Bits.equals (w, w')
-	       then ss1 @ ss2 @ [Bind {isMutable = false,
-				       oper = src,
-				       var = dst}]
+	       then
+		  ss1 @ ss2 @ [Bind {isMutable = false,
+				     oper = src,
+				     var = dst}]
 	    else
 	       let
-		  val s = WordSize.fromBits w
-		  val s' = WordSize.fromBits w'
 		  val mask = WordX.resize (WordX.max s, s')
 	       in
 		  ss1 @ ss2
@@ -2228,17 +2229,29 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 			      cons,
 			      2))
 	       end))))
-      fun toRtype t =
-	 if S.Type.equals (t, S.Type.bool)
-	    then SOME Type.bool
-	 else
-	    let
-	       val ty = Rep.ty (Value.get (typeRep t))
-	    in
-	       if Type.isUnit ty
-		  then NONE
-	       else SOME (Type.padToPrim ty)
-	    end
+      fun toRtype (t: S.Type.t): Type.t option =
+	 let
+	    fun normal () =
+	       let
+		  val ty = Rep.ty (Value.get (typeRep t))
+	       in
+		  if Type.isUnit ty
+		     then NONE
+		  else SOME (Type.padToPrim ty)
+	       end
+	    datatype z = datatype S.Type.dest
+	 in
+	    case S.Type.dest t of
+	       Datatype c =>
+		  if Tycon.equals (c, Tycon.bool)
+		     then SOME Type.bool
+		  else normal ()
+	     | Int s =>
+		  if true
+		     then normal ()
+		  else SOME (Type.int (IntSize.roundUpToPrim s))
+	     | _ => normal ()
+	 end
       fun makeSrc (v, oper) {index} = oper (Vector.sub (v, index))
       fun conApp {args, con, dst, oper, ty} =
 	 ConRep.conApp (conRep con,

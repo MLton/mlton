@@ -55,10 +55,12 @@ datatype 'a t =
  | GC_unpack (* ssa to rssa *)
  | Int_add of IntSize.t (* codegen *)
  | Int_addCheck of IntSize.t (* codegen *)
+ | Int_arshift of IntSize.t (* codegen *)
  | Int_equal of IntSize.t (* ssa to rssa / codegen *)
  | Int_ge of IntSize.t (* codegen *)
  | Int_gt of IntSize.t (* codegen *)
  | Int_le of IntSize.t (* codegen *)
+ | Int_lshift of IntSize.t (* codegen *)
  | Int_lt of IntSize.t (* codegen *)
  | Int_mul of IntSize.t (* codegen *)
  | Int_mulCheck of IntSize.t (* codegen *)
@@ -273,10 +275,12 @@ fun toString (n: 'a t): string =
        | IntInf_xorb => "IntInf_xorb"
        | Int_add s => int (s, "add")
        | Int_addCheck s => int (s, "addCheck")
+       | Int_arshift s => int (s, "arshift")
        | Int_equal s => int (s, "equal")
        | Int_ge s => int (s, "ge")
        | Int_gt s => int (s, "gt")
        | Int_le s => int (s, "le")
+       | Int_lshift s => int (s, "lshift")
        | Int_lt s => int (s, "lt")
        | Int_mul s => int (s, "mul")
        | Int_mulCheck s => int (s, "mulCheck")
@@ -412,10 +416,12 @@ val equals: 'a t * 'a t -> bool =
     | (GC_unpack, GC_unpack) => true
     | (Int_add s, Int_add s') => IntSize.equals (s, s')
     | (Int_addCheck s, Int_addCheck s') => IntSize.equals (s, s')
+    | (Int_arshift s, Int_arshift s') => IntSize.equals (s, s')
     | (Int_equal s, Int_equal s') => IntSize.equals (s, s')
     | (Int_ge s, Int_ge s') => IntSize.equals (s, s')
     | (Int_gt s, Int_gt s') => IntSize.equals (s, s')
     | (Int_le s, Int_le s') => IntSize.equals (s, s')
+    | (Int_lshift s, Int_lshift s') => IntSize.equals (s, s')
     | (Int_lt s, Int_lt s') => IntSize.equals (s, s')
     | (Int_mul s, Int_mul s') => IntSize.equals (s, s')
     | (Int_mulCheck s, Int_mulCheck s') => IntSize.equals (s, s')
@@ -578,10 +584,12 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | GC_unpack => GC_unpack
     | Int_add z => Int_add z
     | Int_addCheck z => Int_addCheck z
+    | Int_arshift z => Int_arshift z
     | Int_equal z => Int_equal z
     | Int_ge z => Int_ge z
     | Int_gt z => Int_gt z
     | Int_le z => Int_le z
+    | Int_lshift z => Int_lshift z
     | Int_lt z => Int_lt z
     | Int_mul z => Int_mul z
     | Int_mulCheck z => Int_mulCheck z
@@ -745,6 +753,7 @@ val vectorSub = Vector_sub
 val wordAdd = Word_add
 val wordAddCheck = Word_addCheck
 val wordAndb = Word_andb
+val wordArshift = Word_arshift
 val wordEqual = Word_equal
 val wordGe = Word_ge
 val wordGt = Word_gt
@@ -839,10 +848,12 @@ val kind: 'a t -> Kind.t =
        | IntInf_xorb => Functional
        | Int_add _ => Functional
        | Int_addCheck _ => SideEffect
+       | Int_arshift _ => Functional
        | Int_equal _ => Functional
        | Int_ge _ => Functional
        | Int_gt _ => Functional
        | Int_le _ => Functional
+       | Int_lshift _ => Functional
        | Int_lt _ => Functional
        | Int_mul _ => Functional
        | Int_mulCheck _ => SideEffect
@@ -963,10 +974,12 @@ local
    fun ints (s: IntSize.t) =
       [(Int_add s),
        (Int_addCheck s),
+       (Int_arshift s),
        (Int_equal s),
        (Int_ge s),
        (Int_gt s),
        (Int_le s),
+       (Int_lshift s),
        (Int_lt s),
        (Int_mul s),
        (Int_mulCheck s),
@@ -1328,10 +1341,14 @@ fun ('a, 'b) apply (p: 'a t,
 	 (case (p, cs) of
 	     (Int_add _, [Int i1, Int i2]) => io (IntX.+, i1, i2)
 	   | (Int_addCheck _, [Int i1, Int i2]) => io (IntX.+, i1, i2)
+	   | (Int_arshift _, [Int i, Word w]) =>
+		int (IntX.~>> (i, WordX.toIntInf w))
            | (Int_equal _, [Int i1, Int i2]) => bool (IntX.equals (i1, i2))
 	   | (Int_ge _, [Int i1, Int i2]) => bool (IntX.>= (i1, i2))
 	   | (Int_gt _, [Int i1, Int i2]) => bool (IntX.> (i1, i2))
 	   | (Int_le _, [Int i1, Int i2]) => bool (IntX.<= (i1, i2))
+	   | (Int_lshift _, [Int i, Word w]) =>
+		int (IntX.<< (i, WordX.toIntInf w))
 	   | (Int_lt _, [Int i1, Int i2]) => bool (IntX.< (i1, i2))
 	   | (Int_mul _, [Int i1, Int i2]) => io (IntX.*, i1, i2)
 	   | (Int_mulCheck _, [Int i1, Int i2]) => io (IntX.*, i1, i2)

@@ -10,8 +10,6 @@ struct
 
 open S
 
-structure Type = RepType
-   
 local
    open Runtime
 in

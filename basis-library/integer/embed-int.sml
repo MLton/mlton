@@ -8,13 +8,18 @@ signature EMBED_INT =
       val toBig: int -> big
    end
 
-functor EmbedInt (structure Big: INTEGER
+functor EmbedInt (structure Big: INTEGER_EXTRA
 		  structure Small: EMBED_INT where type big = Big.int): INTEGER =
    struct
       val () = if Int.< (Small.precision', valOf Big.precision) then ()
 	       else raise Fail "EmbedWord"
 
       open Small
+
+      val shift = Word.fromInt (Int.- (valOf Big.precision, Small.precision'))
+	 
+      val toBig: Small.int -> Big.int =
+	 fn s => Big.~>> (Big.<< (Small.toBig s, shift), shift)
 	 
       val precision = SOME precision'
 
@@ -23,17 +28,27 @@ functor EmbedInt (structure Big: INTEGER
 	 (IntInf.- (LargeInt.<< (1, Word.fromInt (Int.- (precision', 1))),
 		    1))
 
-      val maxInt = SOME (fromBigUnsafe maxIntBig)
-
       val minIntBig = Big.- (Big.~ maxIntBig, Big.fromInt 1)
 
-      val minInt = SOME (fromBigUnsafe minIntBig)
+      fun fromBig (i: Big.int): int =
+	 if Big.< (i, Big.fromInt 0)
+	    then
+	       if Big.<= (minIntBig, i)
+		  then
+		     fromBigUnsafe
+		     (Big.- (i,
+			     Big.<< (Big.fromInt ~1,
+				     Word.fromInt Small.precision')))
+	       else raise Overflow
+	 else
+	    if Big.<= (i, maxIntBig)
+	       then fromBigUnsafe i
+	    else raise Overflow
 
-      fun fromBig (i: Big.int): int = 
-	 if Big.<= (minIntBig, i) andalso Big.<= (i, maxIntBig)
-	    then fromBigUnsafe i
-	 else raise Overflow
+      val maxInt = SOME (fromBig maxIntBig)
 
+      val minInt = SOME (fromBig minIntBig)
+	 
       local
 	 val make: (Big.int * Big.int -> Big.int) -> (int * int -> int) =
 	    fn f => fn (x, y) => fromBig (f (toBig x, toBig y))

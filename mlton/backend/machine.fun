@@ -11,6 +11,21 @@ struct
 
 open S
 
+structure PointerTycon = PointerTycon ()
+structure Runtime = Runtime ()
+structure RepType = RepType (structure CFunction = CFunction
+			     structure CType = CType
+			     structure IntSize = IntSize
+			     structure IntX = IntX
+			     structure Label = Label
+			     structure PointerTycon = PointerTycon
+			     structure Prim = Prim
+			     structure RealSize = RealSize
+			     structure Runtime = Runtime
+			     structure WordSize = WordSize
+			     structure WordX = WordX)
+structure ObjectType = RepType.ObjectType
+
 structure Type = RepType
 
 structure ChunkLabel = Id (val noname = "ChunkLabel")

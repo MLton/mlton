@@ -21,6 +21,8 @@ signature INT_X =
       val < : t * t -> bool 
       val >= : t * t -> bool 
       val <= : t * t -> bool
+      val << : t * IntInf.t -> t
+      val ~>> : t * IntInf.t -> t
       val compare: t * t -> Relation.t
       val defaultInt: int -> t
       val equals: t * t -> bool

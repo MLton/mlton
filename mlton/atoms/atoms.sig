@@ -30,14 +30,10 @@ signature ATOMS' =
       structure Func: FUNC
       structure IntX: INT_X
       structure Label: LABEL
-      structure ObjectType: OBJECT_TYPE
-      structure PointerTycon: POINTER_TYCON
       structure Prim: PRIM
       structure ProfileLabel: PROFILE_LABEL
-      structure RepType: REP_TYPE
       structure ProfileExp: PROFILE_EXP
       structure RealX: REAL_X
-      structure Runtime: RUNTIME
       structure SourceInfo: SOURCE_INFO
       structure Tycon: TYCON
       structure Tycons: SET
@@ -47,24 +43,16 @@ signature ATOMS' =
       structure WordX: WORD_X
 
       sharing CFunction = Ffi.CFunction = Prim.CFunction
-      sharing CType = Ffi.CType = Prim.CType = RepType.CType
+      sharing CType = Ffi.CType = Prim.CType 
       sharing Con = Prim.Con
       sharing Const = Prim.Const
-      sharing IntSize = IntX.IntSize = Prim.IntSize = RepType.IntSize
-	 = Tycon.IntSize
-      sharing IntX = Const.IntX = RepType.IntX
-      sharing Label = RepType.Label
-      sharing ObjectType = RepType.ObjectType
-      sharing PointerTycon = ObjectType.PointerTycon = RepType.PointerTycon
-      sharing Prim = RepType.Prim
-      sharing RealSize = Prim.RealSize = RealX.RealSize = RepType.RealSize
-	 = Tycon.RealSize
+      sharing IntSize = IntX.IntSize = Prim.IntSize = Tycon.IntSize
+      sharing IntX = Const.IntX
+      sharing RealSize = Prim.RealSize = RealX.RealSize = Tycon.RealSize
       sharing RealX = Const.RealX
-      sharing Runtime = ObjectType.Runtime = RepType.Runtime
       sharing SourceInfo = ProfileExp.SourceInfo
-      sharing WordSize = Prim.WordSize = RepType.WordSize = Tycon.WordSize
-	 = WordX.WordSize
-      sharing WordX = Const.WordX = RepType.WordX
+      sharing WordSize = Prim.WordSize = Tycon.WordSize = WordX.WordSize
+      sharing WordX = Const.WordX
    end
 
 signature ATOMS =
@@ -92,16 +80,12 @@ signature ATOMS =
       sharing IntSize = Atoms.IntSize
       sharing IntX = Atoms.IntX
       sharing Label = Atoms.Label
-      sharing ObjectType = Atoms.ObjectType
-      sharing PointerTycon = Atoms.PointerTycon
       sharing Prim = Atoms.Prim
       sharing ProfileLabel = Atoms.ProfileLabel
       sharing ProfileExp = Atoms.ProfileExp
       sharing RealSize = Atoms.RealSize
       sharing RealX = Atoms.RealX
       sharing Record = Atoms.Record
-      sharing RepType = Atoms.RepType
-      sharing Runtime = Atoms.Runtime
       sharing SortedRecord = Atoms.SortedRecord
       sharing SourceInfo = Atoms.SourceInfo
       sharing Tycon = Atoms.Tycon

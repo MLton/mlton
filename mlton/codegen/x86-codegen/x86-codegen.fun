@@ -9,7 +9,8 @@ functor x86Codegen (S: X86_CODEGEN_STRUCTS): X86_CODEGEN =
 struct
   open S
      
-  structure x86 = x86 (Machine)
+  structure x86 = x86 (open Machine
+		       structure RepType = Type)
 
   structure x86MLtonBasic
     = x86MLtonBasic (structure x86 = x86

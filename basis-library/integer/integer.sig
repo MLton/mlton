@@ -35,6 +35,8 @@ signature PRE_INTEGER_EXTRA =
    sig
       include PRE_INTEGER
 
+      val << : int * Word.word -> int
+      val ~>> : int * Word.word -> int
       val *? : int * int -> int
       val +? : int * int -> int
       val -? : int * int -> int
@@ -72,7 +74,9 @@ signature INTEGER =
 signature INTEGER_EXTRA =
    sig
       include INTEGER
-      (* include PRE_INTEGER_EXTRA *)
+
+      val << : int * Word.word -> int
+      val ~>> : int * Word.word -> int
       val *? : int * int -> int
       val +? : int * int -> int
       val -? : int * int -> int

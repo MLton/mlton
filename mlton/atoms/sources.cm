@@ -25,8 +25,6 @@ signature PROFILE_EXP
 signature PROFILE_LABEL
 signature REAL_X
 signature RECORD
-signature REP_TYPE
-signature RUNTIME
 signature SOURCE_INFO
 signature TYCON
 signature TYPE_OPS
@@ -60,11 +58,6 @@ word-x.sig
 word-x.fun
 c-type.sig
 c-type.fun
-runtime.sig
-runtime.fun
-pointer-tycon.sig
-pointer-tycon.fun
-object-type.sig
 label.sig
 c-function.sig
 c-function.fun
@@ -72,8 +65,6 @@ const.sig
 const.fun
 prim.sig
 prim.fun
-rep-type.sig
-rep-type.fun
 ffi.sig
 ffi.fun
 func.sig

@@ -75,6 +75,22 @@ fun max s = make (IntSize.max s, s)
 
 fun min s = make (IntSize.min s, s)
 
+
+local
+   val make: (IntInf.t * Word.t -> IntInf.t) -> t * IntInf.t -> t =
+      fn f => fn (i, shift) =>
+      let
+	 val s = size i
+      in
+	 if shift >= Bits.toIntInf (IntSize.bits s)
+	    then zero s
+	 else make (f (int i, Word.fromIntInf shift), s)
+      end
+in
+   val << = make IntInf.<<
+   val ~>> = make IntInf.~>>
+end
+
 local
    fun make (f: IntInf.t * IntInf.t -> 'a): t * t -> 'a =
       fn (i, i') =>

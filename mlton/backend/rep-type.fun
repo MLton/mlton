@@ -22,7 +22,6 @@ structure Type =
 	| Constant of WordX.t
 	| ExnStack
 	| GCState
-	| Int of IntSize.t
 	| Junk of Bits.t
 	| Label of Label.t
 	| Pointer of PointerTycon.t
@@ -43,7 +42,6 @@ structure Type =
 				  WordSize.layout (WordX.size w)]
 	     | ExnStack => str "ExnStack"
 	     | GCState => str "GCState"
-	     | Int s => str (concat ["Int", IntSize.toString s])
 	     | Junk b => str (concat ["Junk", Bits.toString b])
 	     | Label l => seq [str "Label ", Label.layout l]
 	     | Pointer p => PointerTycon.layout p
@@ -69,8 +67,6 @@ structure Type =
 	  | (ExnStack, _) => LESS
 	  | (GCState, GCState) => EQUAL
 	  | (GCState, _) => LESS
-	  | (Int s, Int s') => IntSize.compare (s, s')
-	  | (Int _, _) => LESS
 	  | (Junk b, Junk b') => Bits.compare (b, b')
 	  | (Junk _, _) => LESS
 	  | (Label l, Label l') =>
@@ -104,7 +100,6 @@ structure Type =
 	     | Constant w => WordSize.bits (WordX.size w)
 	     | ExnStack => word
 	     | GCState => Bits.inPointer
-	     | Int s => IntSize.bits s
 	     | Junk b => b
 	     | Label _ => word
 	     | Pointer _ => word
@@ -121,12 +116,13 @@ structure Type =
       val constant = T o Constant
       val exnStack = T ExnStack
       val gcState = T GCState
-      val int = T o Int
       val junk = T o Junk
       val label = T o Label
       val pointer = T o Pointer
       val real = T o Real
       val word = T o Word
+
+      val int = word o IntSize.bits
 
       val char = word Bits.inByte
 
@@ -357,7 +353,12 @@ structure Type =
 		       layout)
 	 fragment
 
-      fun isSubtype (t: t, t': t): bool =
+      val traceIsSubtype =
+	 Trace.trace2 ("RepType.isSubtype", layout, layout, Bool.layout)
+
+      fun isSubtype arg: bool =
+	 traceIsSubtype
+	 (fn (t: t, t': t) =>
 	 Bits.equals (width t, width t')
 	 andalso
 	 (equals (t, t')
@@ -428,11 +429,8 @@ structure Type =
 		 end
 	    | (_, Sum ts') => Vector.exists (ts', fn t' => isSubtype (t, t'))
 	    | (_, Word _) => true
-	    | _ => false))
-
-      val isSubtype =
-	 Trace.trace2 ("RepType.isSubtype", layout, layout, Bool.layout)
-	 isSubtype
+	    | _ => false)))
+	 arg
 
       fun isValidInit (t, v) =
 	 let
@@ -568,12 +566,27 @@ structure Type =
 					      (WordSize.fromBits shift))))
 	       end
 	  | _ => shift (t, t')
-	 
+
       val rshift = Trace.trace2 ("RepType.rshift", layout, layout, layout) rshift
+
+      fun arshift (t1, t2): t =
+	 let
+	    val w = width t1
+	    val t1' = word w
+	    val t2' = word (width t2)
+	 in
+	    if isSubtype (t1, t1') andalso isSubtype (t2, t2')
+	       then t1'
+	    else junk w
+	 end
+
+      val arshift =
+	 Trace.trace2 ("RepType.arshift", layout, layout, layout) arshift
 
       local
 	 fun make (name: string,
 		   const: WordX.t * WordX.t -> WordX.t,
+		   isIdentity: WordX.t -> bool,
 		   bit: bool -> t)
 	    : t * t -> t option =
 	    let
@@ -623,8 +636,21 @@ structure Type =
 		  if not (Bits.equals (width t, WordSize.bits (WordX.size w)))
 		     then Error.bug (concat ["Type.", name, "Constant"])
 		  else
+		     if isIdentity w
+			then t
+		     else
 		     case dest t of
 			Constant w' => constant (const (w, w'))
+		      | Pointer _ =>
+			   let
+			      val zeros = Bits.fromInt 2
+			   in
+			      doConstant
+			      (seq (Vector.new2
+				    (zero zeros,
+				     word (Bits.- (Bits.inPointer, zeros)))),
+			       w)
+			   end
 		      | Seq ts =>
 			   seq
 			   (Vector.fromListRev
@@ -636,16 +662,6 @@ structure Type =
 			       in
 				  (hi, doConstant (t, lo) :: ac)
 			       end))))
-		      | Pointer _ =>
-			   let
-			      val zeros = Bits.fromInt 2
-			   in
-			      doConstant
-			      (seq (Vector.new2
-				    (zero zeros,
-				     word (Bits.- (Bits.inPointer, zeros)))),
-			       w)
-			   end
 		      | Sum ts =>
 			   sum (Vector.map (ts, fn t => doConstant (t, w)))
 		      | Word _ =>
@@ -658,11 +674,12 @@ structure Type =
 	       doit
 	    end
       in
-	 val andb = make ("andb", WordX.andb, fn b =>
+	 val andb = make ("andb", WordX.andb, WordX.isAllOnes,
+			  fn b =>
 			  if b
 			     then word (Bits.fromInt 1)
 			  else constant (WordX.zero WordSize.one))
-	 val orb = make ("orb", WordX.orb,
+	 val orb = make ("orb", WordX.orb, WordX.isZero,
 			 fn b =>
 			 if b
 			    then constant (WordX.one WordSize.one)
@@ -1066,7 +1083,7 @@ fun checkPrimApp {args: t vector, prim: t Prim.t, result: t option}: bool =
        | Word_add _ => twoWord add
        | Word_addCheck s => wordBinary s
        | Word_andb _ => twoOpt andb
-       | Word_arshift s => wordShift s
+       | Word_arshift s => wordShift' arshift
        | Word_div s => wordBinary s
        | Word_equal s => wordCompare s
        | Word_ge s => wordCompare s

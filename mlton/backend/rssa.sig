@@ -13,9 +13,18 @@ signature RSSA_STRUCTS =
       include ATOMS
 
       structure Handler: HANDLER
+      structure ObjectType: OBJECT_TYPE
+      structure PointerTycon: POINTER_TYCON
       structure Return: RETURN
+      structure Runtime: RUNTIME
+      structure Type: REP_TYPE
+
+      sharing Atoms = Type
       sharing Handler = Return.Handler
-      sharing Label = Handler.Label
+      sharing Label = Handler.Label = Return.Label
+      sharing ObjectType = Type.ObjectType
+      sharing PointerTycon = ObjectType.PointerTycon = Type.PointerTycon
+      sharing Runtime = Type.Runtime
    end
 
 signature RSSA = 
@@ -25,9 +34,6 @@ signature RSSA =
       structure Switch: SWITCH
       sharing Atoms = Switch
 
-      structure Type: REP_TYPE
-      sharing Type = RepType
-     
       structure Operand:
 	 sig
 	    datatype t =
