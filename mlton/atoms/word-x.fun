@@ -39,7 +39,7 @@ val toIntInf = value
 fun toIntInfX w =
    let
       val v = value w
-	    val m = modulus (size w)
+      val m = modulus (size w)
    in
       if v >= m div 2
 	 then v - m
