@@ -95,8 +95,8 @@ end
 
 fun switch f =
    switch' (fn t => let val (t, x) = f t
-		   in (t, fn () => x)
-		   end)
+		    in (t, fn () => x)
+		    end)
 
 (* fun prepend (t: 'a t, f: 'b -> 'a): 'b t =
  *    switch' (fn cur => (t, fn () => f (switch (fn t => (cur, t)))))
@@ -110,20 +110,23 @@ fun toPrimitive (t as T r : unit t): Prim.thread =
 	  ; f (fn () => ()) 
 	  ; t)
     | New _ => 
-	 switch' (fn (cur: Prim.thread t) =>
-		 (t, fn () => switch (fn t => (cur, toPrimitive t))))
+	 switch' (fn cur: Prim.thread t =>
+		  (t, fn () => switch (fn t => (cur, toPrimitive t))))
 
 fun fromPrimitive (t: Prim.thread): unit t =
-   T (ref (Paused (fn f =>
-		f () handle _ => die "Asynchronous exceptions are not allowed.\n",
-		t)))
+   T (ref (Paused
+	   (fn f => (f ()
+		     handle _ =>
+			die "Asynchronous exceptions are not allowed.\n"),
+	    t)))
 
 fun setHandler (f: unit t -> unit t): unit =
    let
       fun loop () =
 	 (Prim.finishHandler (toPrimitive (f (fromPrimitive (Prim.saved ()))))
 	  ; loop ())
-   in Prim.setHandler (toPrimitive (new loop))
+   in
+      Prim.setHandler (toPrimitive (new loop))
    end
 
 type 'a thread = 'a t
