@@ -921,4 +921,5 @@ end (* end local *)
 
 val structureName = import "RepeatParserCombinator.txt"
 val _ = print ("The name of the structure is: " ^ structureName)
+val _ = print "\n"
 (* stop of RepeatParserCombinatorTest.sml *)
