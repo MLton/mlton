@@ -18,7 +18,7 @@ datatype 'a t = T of {afters: (unit -> unit) list ref,
 fun touch (r: 'a ref) =
    if r = ref (!r)
       then print "bug\n"
-	 else ()
+   else ()
 	    
 fun withValue (T {value, ...}, f) =
    DynamicWind.wind (fn () => f (!value),
