@@ -69,7 +69,9 @@ signature SSA_TREE =
 	     | Tuple of Var.t vector
 	     | Var of Var.t
 
+	    val equals: t * t -> bool
 	    val foreachVar: t * (Var.t -> unit) -> unit
+	    val hash: t -> Word.t
 	    val layout: t -> Layout.t
 	    val mayAllocate: t -> bool
 	    val maySideEffect: t -> bool
@@ -148,6 +150,7 @@ signature SSA_TREE =
 	    val foreachLabel: t * (Label.t -> unit) -> unit
 	    val foreachVar: t * (Var.t -> unit) -> unit
 	    val layout: t -> Layout.t
+	    val replaceVar: t * (Var.t -> Var.t) -> t
 	 end
 
       structure Block:

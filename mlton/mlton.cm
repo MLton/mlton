@@ -282,6 +282,8 @@ ssa/type-check.fun
 ssa/shrink.sig
 ssa/simplify.sig
 ssa/ssa.sig
+ssa/common-subexp.sig
+ssa/common-subexp.fun
 ssa/contify.sig
 ssa/contify.fun
 ssa/implement-handlers.sig

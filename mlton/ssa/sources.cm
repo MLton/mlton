@@ -13,6 +13,8 @@ is
 
 analyze.fun
 analyze.sig
+common-subexp.fun
+common-subexp.sig
 contify.fun
 contify.sig
 flat-lattice.fun

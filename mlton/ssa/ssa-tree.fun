@@ -169,6 +169,25 @@ structure Exp =
 
       fun varsEquals (xs, xs') = Vector.equals (xs, xs', Var.equals)
 
+      fun equals (e: t, e': t): bool =
+	 case (e, e') of
+	    (ConApp {con, args}, ConApp {con = con', args = args'}) =>
+	       Con.equals (con, con') andalso varsEquals (args, args')
+	  | (Const c, Const c') => Const.equals (c, c')
+	  | (HandlerPop l, HandlerPop l') => Label.equals (l, l')
+	  | (HandlerPush l, HandlerPush l') => Label.equals (l, l')
+	  | (PrimApp {prim, args, ...}, PrimApp {prim = prim', args = args', ...}) =>
+	       Prim.equals (prim, prim') andalso varsEquals (args, args')
+	  | (Select {tuple, offset}, Select {tuple = tuple', offset = offset'}) =>
+	       Var.equals (tuple, tuple') andalso offset = offset'
+	  | (SetExnStackLocal, SetExnStackLocal) => true
+	  | (SetExnStackSlot, SetExnStackslot) => true
+	  | (SetHandler l, SetHandler l') => Label.equals (l, l')
+	  | (SetSlotExnStack, SetSlotExnStack) => true
+	  | (Tuple xs, Tuple xs') => varsEquals (xs, xs')
+	  | (Var x, Var x') => Var.equals (x, x')
+	  | _ => false
+
       local
 	 val newHash = Random.word
 	 val conApp = newHash ()

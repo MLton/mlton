@@ -7,7 +7,7 @@ struct
 open S
 
 (* structure CommonBlock = CommonBlock (S) *)
-(* structure CommonSubexp = CommonSubexp (S) *)
+structure CommonSubexp = CommonSubexp (S)
 (* structure ConstantPropagation = ConstantPropagation (S) *)
 structure Contify = Contify (S)
 (* structure Flatten = Flatten (S) *)
@@ -70,7 +70,7 @@ val passes =
 (*    ("loopInvariant", LoopInvariant.loopInvariant), *)
 (*    ("flatten", Flatten.flatten), *)
 (*    ("localFlatten3", LocalFlatten.flatten), *)
-(*    ("commonSubexp", CommonSubexp.eliminate), *)
+     ("commonSubexp2", CommonSubexp.eliminate),
 (*    ("commonBlock", CommonBlock.eliminate), *)
 (*    ("redundantTests", RedundantTests.simplify), *)
 (*    ("redundant", Redundant.redundant), *)
@@ -88,6 +88,29 @@ val passes =
 
 fun stats p =
    Control.message (Control.Detail, fn () => Program.layoutStats p)
+
+(*
+fun simplify p =
+   (stats p
+    ; (List.fold
+       (passes, p, fn ((name, pass), p) =>
+	if List.contains (!Control.dropPasses, name, String.equals)
+	   then p
+	else
+	   let
+	      val p =
+		 Control.passTypeCheck
+		 {name = name,
+		  suffix = "cps",
+		  style = Control.No,
+		  thunk = fn () => pass p,
+		  display = Control.Layouts Program.layouts,
+		  typeCheck = typeCheck}
+	      val _ = stats p
+	   in
+	      p
+	   end)))
+*)
 
 fun simplify p =
    (stats p
