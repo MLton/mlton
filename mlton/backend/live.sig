@@ -11,8 +11,7 @@ signature LIVE =
       include LIVE_STRUCTS
 
       val live:
-	 Function.t * {isCont: Label.t -> bool,
-		       shouldConsider: Var.t -> bool}
+	 Function.t * {shouldConsider: Var.t -> bool}
 	 -> {
 	     labelLive:
 	     Label.t -> {
@@ -21,7 +20,8 @@ signature LIVE =
 			 (* live at the beginning of a block, except formals. *)
 			 beginNoFormals: Var.t list,
 			 (* live at frame corresponding to the block. *)
-			 frame: Var.t list,
+			 (* only valid for continuations *)
+			 frame: (Label.t option * Var.t list) list,
 			 (* live handler slots at beginning of block. *)
 			 handlerSlots: bool * bool
 			 },

@@ -63,8 +63,7 @@ structure LiveInfo =
 
 val traceConsider = Trace.trace ("Live.consider", LiveInfo.layout, Bool.layout)
 
-fun live (function, {isCont: Label.t -> bool,
-		     shouldConsider: Var.t -> bool}) =
+fun live (function, {shouldConsider: Var.t -> bool}) =
    let
       val _ =
 	 Control.diagnostic
@@ -74,13 +73,13 @@ fun live (function, {isCont: Label.t -> bool,
 		  Func.layout (Function.name function)]
 	  end)
       val {args, blocks, start, ...} = Function.dest function
-      val {get = labelInfo: Label.t -> {
-					argInfo: LiveInfo.t,
-					block: Block.t,
-					bodyInfo: LiveInfo.t,
-					frameInfo: LiveInfo.t,
-					isContSet: bool ref
-					},
+      val {get = labelInfo: Label.t -> 
+	                    {
+			     argInfo: LiveInfo.t,
+			     block: Block.t,
+			     bodyInfo: LiveInfo.t,
+			     frameInfo: (Label.t option * LiveInfo.t) list ref
+			    },
 	   set = setLabelInfo, ...} =
 	 Property.getSetOnce (Label.plist,
 			      Property.initRaise ("live info", Label.layout))
@@ -109,39 +108,41 @@ fun live (function, {isCont: Label.t -> bool,
 	 (blocks, fn block as Block.T {label, args, ...} =>
 	  let
 	     val name = Label.toString label
-	     val (frameInfo, argInfo, bodyInfo) =
-		case (Vector.length args, isCont label) of
-		   (0, false) => let val b = LiveInfo.new (name ^ "a")
-				 in (b, b, b)
-				 end
-		 | (_, false) => let val b = LiveInfo.new (name ^ "b")
-				     val b' = LiveInfo.new (name ^ "c")
-				     val _ = LiveInfo.addEdge (b, b')
-				 in (b, b, b')
-				 end
-		 | (0, true) => let val b = LiveInfo.new (name ^ "d")
-				    val b' = LiveInfo.new (name ^ "e")
-				    val _ = LiveInfo.addEdge (b, b')
-				in (b, b', b')
-				end
-		 | _ => let val b = LiveInfo.new (name ^ "f")
-			    val b' = LiveInfo.new (name ^ "g")
-			    val b'' = LiveInfo.new (name ^ "h")
+	     val (argInfo, bodyInfo) =
+	        case Vector.length args of
+		   0 => let val b = LiveInfo.new (name ^ "a")
+			in (b, b)
+			end
+		 | _ => let val b = LiveInfo.new (name ^ "b")
+			    val b' = LiveInfo.new (name ^ "c")
 			    val _ = LiveInfo.addEdge (b, b')
-			    val _ = LiveInfo.addEdge (b', b'')
-			in (b, b', b'')
+			in (b, b')
 			end
 	     val _ =
-		Vector.foreach (args, fn (x, _) =>
+	        Vector.foreach (args, fn (x, _) =>
 				newVarInfo (x, {defined = argInfo}))
 	  in
 	     setLabelInfo (label, {argInfo = argInfo,
 				   block = block,
 				   bodyInfo = bodyInfo,
-				   frameInfo = frameInfo,
-				   isContSet = ref false
+				   frameInfo = ref []
 				   })
 	  end)
+      fun getFrameInfo (cont, handler) =
+	 let
+	    val {frameInfo, argInfo, ...} = labelInfo cont
+	 in
+	    case List.peek
+	         (!frameInfo, fn (handler', _) =>
+		  Option.equals(handler, handler', Label.equals)) of
+	       NONE => let val name = Label.toString cont
+			   val b = LiveInfo.new (name ^ "d")
+			   val _ = LiveInfo.addEdge (b, argInfo)
+			   val _ = List.push(frameInfo, (handler, b))
+		       in b 
+		       end
+	     | SOME (_, b) => b
+	 end
       fun use (b, x) =
 	 if shouldConsider x
 	    then
@@ -173,7 +174,8 @@ fun live (function, {isCont: Label.t -> bool,
 				   orelse Prim.impCall prim)
 				  then 
 				     let
-					val b' = LiveInfo.new (Label.toString label ^ "i")
+					val b' = 
+					   LiveInfo.new (Label.toString label ^ "e")
 					val var =
 					   case var of
 					      NONE =>
@@ -225,25 +227,22 @@ fun live (function, {isCont: Label.t -> bool,
 		      ; (Option.app
 			 (return, fn {cont, handler} =>
 			  let
-			     val {frameInfo, isContSet, ...} = labelInfo cont
+			     val frameInfo = getFrameInfo (cont, handler)
 			     val _ = LiveInfo.addEdge (b, frameInfo)
 			  in
 			     Option.app
 			     (handler, fn h =>
 			      let
+				 val {argInfo, ...} = labelInfo h
+				 val _ = LiveInfo.addEdge (frameInfo, argInfo)
+
 				 val ({defuse = code_defuse, ...},
 				      {defuse = link_defuse, ...}) =
 				    handlerSlotInfo
 				 val _ = List.push (code_defuse, Use b)
 				 val _ = List.push (link_defuse, Use b)
 			      in
-				 if !isContSet
-				    then ()
-				 else
-				    (* In case there is a raise to h. *)
-				    (isContSet := true
-				     ; (LiveInfo.addEdge
-					(frameInfo, #argInfo (labelInfo h))))
+				 ()
 			      end)
 			  end)))
 		| Case {test, cases, default, ...} =>
@@ -371,8 +370,9 @@ fun live (function, {isCont: Label.t -> bool,
 	 in
 	    {begin = LiveInfo.live bodyInfo,
 	     beginNoFormals = LiveInfo.live argInfo,
-	     frame = LiveInfo.live frameInfo,
-	     handlerSlots = LiveInfo.liveHS frameInfo}
+	     frame = List.map (!frameInfo, fn (handler, frameInfo) =>
+			       (handler, LiveInfo.live frameInfo)),
+	     handlerSlots = LiveInfo.liveHS bodyInfo}
 	 end
       val _ =
 	 Control.diagnostics
@@ -390,7 +390,11 @@ fun live (function, {isCont: Label.t -> bool,
 			       record [("begin", List.layout Var.layout begin),
 				       ("beginNoFormals",
 					List.layout Var.layout beginNoFormals),
-				       ("frame", List.layout Var.layout frame)]])
+				       ("frame",
+					List.layout 
+					(Layout.tuple2 (Option.layout Label.layout,
+							List.layout Var.layout)) 
+					frame)]])
 	      end)
 	  end)
    in {

@@ -933,17 +933,18 @@ structure Program =
 		   | SOME {chunkLabel, label} => {chunkLabel = chunkLabel, 
 						  label = label}
 	    in
-	       MachineOutput.Program.T {globals = globals, 
-					globalsNonRoot = globalsNonRoot, 
-					intInfs = !intInfs, 
-					strings = !strings,
-					floats = !floats,
-					nextChunks = nextChunks, 
-					frameOffsets = frameOffsets, 
-					frameLayouts = getFrameLayout, 
-					maxFrameSize = !Operand.maxStackOffset,
-					chunks = chunks,
-					main = main}
+	       MachineOutput.Program.T 
+	       {globals = globals, 
+		globalsNonRoot = globalsNonRoot, 
+		intInfs = !intInfs, 
+		strings = !strings,
+		floats = !floats,
+		nextChunks = nextChunks, 
+		frameOffsets = frameOffsets, 
+		frameLayouts = getFrameLayout, 
+		maxFrameSize = Type.wordAlign (!Operand.maxStackOffset),
+		chunks = chunks,
+		main = main}
 	    end
       end
    end

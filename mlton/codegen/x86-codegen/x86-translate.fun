@@ -1956,7 +1956,7 @@ struct
 					live = args,
 					frameInfo = frameInfo size}
 		      end
-		   | Kind.Handler {size}
+		   | Kind.Handler {offset}
 		   => let
 			val _ = x86Liveness.LiveInfo.setLiveMemlocs
 			        (liveInfo, label, live)		      
@@ -1964,9 +1964,7 @@ struct
 			x86.Entry.handler 
 			{label = label,
 			 live = x86.MemLocSet.empty,
-			 frameInfo = x86.Entry.FrameInfo.frameInfo
-			             {size = size,
-				      frameLayoutsIndex = ~1}}
+			 offset = offset}
 		      end
 		   
 	    val pseudo_blocks

@@ -373,7 +373,7 @@ signature X86_PSEUDO =
 		    frameInfo: FrameInfo.t} -> t
 	val handler : {label: Label.t,
 		       live: MemLocSet.t,
-		       frameInfo: FrameInfo.t} -> t
+		       offset: int} -> t
 	val runtime : {label: Label.t,
 		       frameInfo: FrameInfo.t} -> t
 	val creturn : {label: Label.t} -> t

@@ -73,9 +73,8 @@ structure Info =
 	       limitCheck: Machine.LimitCheck.t,
 	       live: Operand.t list,
 	       liveNoFormals: Operand.t list,
-	       liveFrame: Operand.t list,
-	       cont: {size: int} option,
-	       handler: {size: int} option
+	       liveFrame: (Slabel.t option * Operand.t list) list,
+	       size: int
 	       }
 
       local
@@ -86,15 +85,18 @@ structure Info =
 
       fun layout (T {limitCheck, 
 		     live, liveNoFormals, liveFrame,
-		     cont, handler}) =
+		     size}) =
 	 Layout.record
 	 [("limitCheck", Machine.LimitCheck.layout limitCheck),
 	  ("live", List.layout Operand.layout live),
 	  ("liveNoFormals", List.layout Operand.layout liveNoFormals),
-	  ("liveFrame", List.layout Operand.layout liveFrame),
-	  ("cont", Option.layout (Int.layout o #size) cont),
-	  ("handler", Option.layout (Int.layout o #size) handler)]
-   end 
+	  ("liveFrame", 
+	   List.layout 
+	   (Layout.tuple2 (Option.layout Slabel.layout,
+			   List.layout Operand.layout)) 
+	   liveFrame),
+	  ("size", Int.layout size)]
+   end
 
 nonfix ^
 fun ^ r = valOf (!r)
@@ -176,8 +178,7 @@ fun allocate {program = program as Program.T {globals, ...},
 	    Property.getSetOnce (Func.plist,
 				 Property.initRaise ("func info", Func.layout))
 	 val {labelLive, primLive} =
-	    Live.live (f, {isCont = isCont,
-			   shouldConsider = isSome o #operand o varInfo})
+	    Live.live (f, {shouldConsider = isSome o #operand o varInfo})
 	 val liveBegin = #begin o labelLive
 	 val liveBeginNoFormals = #beginNoFormals o labelLive
 	 val livePrim = #vars o primLive
@@ -384,7 +385,8 @@ fun allocate {program = program as Program.T {globals, ...},
 	       in
 		  {live = getOperands ((begin, hs), false),
 		   liveNoFormals = getOperands ((beginNoFormals, hs), force),
-		   liveFrame = getOperands ((frame, hs), force)}
+		   liveFrame = List.map(frame, fn (h, frame) => 
+					(h, getOperands ((frame, hs), force)))}
 	       end
 	    val getLiveOperands =
 	       Trace.trace ("Allocate.getLiveOperands",
@@ -397,7 +399,11 @@ fun allocate {program = program as Program.T {globals, ...},
 					   ("liveNoFormals",
 					    List.layout Operand.layout liveNoFormals),
 					   ("liveFrame", 
-					    List.layout Operand.layout liveFrame)])
+					    List.layout 
+					    (Layout.tuple2
+					     (Option.layout Slabel.layout,
+					      List.layout Operand.layout))
+					    liveFrame)])
 	                   getLiveOperands
 	    fun getLivePrimOperands x = getOperands (livePrim' x, false)
 	    fun getLivePrimRuntimeOperands x = getOperands (livePrim' x, true)
@@ -441,6 +447,7 @@ fun allocate {program = program as Program.T {globals, ...},
 		      | _ => ()
 		  end
 	 val allocateStatement = traceAllocateStatement allocateStatement
+	 val todo : (unit -> unit) list ref = ref []
 	 (* Descend the dominator tree. *)
 	 fun loop arg : unit =
 	    traceAllocateBlock
@@ -487,29 +494,33 @@ fun allocate {program = program as Program.T {globals, ...},
 	       val _ = nextOffset := saveOffset
 	       val isCont = isCont label
 	       val isHandler = isHandler label
-	       val cont =
-		  if isCont
-		     then SOME {size = Mtype.wordAlign saveOffset}
-		  else NONE
-	       val handler =
-		  if isHandler
-		     then SOME {size = valOf handlerOffset}
-		  else NONE
-	       val _ = here "Before getLiveOperands"
-	       val {live, liveNoFormals, liveFrame} =
-		  getLiveOperands (label, isCont orelse isHandler)
-	       val _ = here "After getLiveOperands"
-	       val _ =
-		  setSlabelInfo
-		  (label, Info.T {limitCheck = limitCheck,
-				  live = live,
-				  liveNoFormals = liveNoFormals,
-				  liveFrame = liveFrame,
-				  cont = cont,
-				  handler = handler})
+	       val size = Mtype.wordAlign saveOffset
+	       val th = fn () => let
+				   val {live, liveNoFormals, liveFrame} =
+				      getLiveOperands (label, isCont orelse isHandler)
+				 in 
+				    setSlabelInfo
+				    (label, Info.T {limitCheck = limitCheck,
+						    live = live,
+						    liveNoFormals = liveNoFormals,
+						    liveFrame = liveFrame,
+						    size = size})
+				 end
+	       val _ = if isCont
+			  then (* If this is a cont, then some handlers paired
+				* with it may not have yet been allocated;
+				* this can cause getLiveOperands to fail when
+				* looping through the liveFrames, which include
+				* variables live down the handlers.
+				* So, delay it for now and do it after all allocation
+				* has taken place.
+				*)
+			       List.push(todo, th)
+		       else th ()
 	    in ()
 	    end) arg
 	 val _ = loop (Function.dominatorTree f, chunk)
+	 val _ = List.foreach(!todo, fn th => th ())
 	 val Info.T {live, ...} = labelInfo start
 	 val limitCheck = MlimitCheck.Stack (getGCInfo' live)
 	 val _ =

@@ -18,7 +18,7 @@ signature ALLOCATE_REGISTERS =
 	    datatype t =
 	       T of {
 		     limitCheck: Machine.LimitCheck.t,
-		     (* Live operands at the beginning of the block. 
+		     (* Live operands at the beginning of the block
 		      *)
 		     live: Machine.Operand.t list,
 		     (* Live operands at the beginning of the block, 
@@ -26,14 +26,12 @@ signature ALLOCATE_REGISTERS =
 		      *)
 		     liveNoFormals: Machine.Operand.t list,
 		     (* Live variables at the frame corresponding to the block
+		      * only valid for continuations
 		      *)
-		     liveFrame: Machine.Operand.t list,
+		     liveFrame: (Ssa.Label.t option * Machine.Operand.t list) list,
 		     (* Number of bytes in frame including return address.
 		      *)
-		     cont: {size: int} option,
-		     (* Amount to subtract to get to the next frame.
-		      *)
-		     handler: {size: int} option
+		     size: int
 		     }
 
 	    val live: t -> Machine.Operand.t list

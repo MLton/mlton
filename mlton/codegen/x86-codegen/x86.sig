@@ -1013,7 +1013,7 @@ signature X86 =
 		     frameInfo: FrameInfo.t}
 	  | Handler of {label: Label.t,
 			live: MemLocSet.t,
-			frameInfo: FrameInfo.t}
+			offset: int}
 	  | Runtime of {label: Label.t,
 			frameInfo: FrameInfo.t}
 	  | CReturn of {label: Label.t}
@@ -1034,7 +1034,7 @@ signature X86 =
 		    frameInfo: FrameInfo.t} -> t
 	val handler : {label: Label.t,
 		       live: MemLocSet.t,
-		       frameInfo: FrameInfo.t} -> t
+		       offset: int} -> t
 	val runtime : {label: Label.t,
 		       frameInfo: FrameInfo.t} -> t
 	val creturn : {label: Label.t} -> t

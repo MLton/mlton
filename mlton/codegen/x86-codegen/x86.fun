@@ -3442,7 +3442,7 @@ struct
 		   frameInfo: FrameInfo.t}
 	| Handler of {label: Label.t,
 		      live: MemLocSet.t,
-		      frameInfo: FrameInfo.t}
+		      offset: int}
 	| Runtime of {label: Label.t,
 		      frameInfo: FrameInfo.t}
 	| CReturn of {label: Label.t}
@@ -3473,7 +3473,7 @@ struct
 		       ", "),
 		      "] ",
 		      FrameInfo.toString frameInfo]
-	   | Handler {label, live, frameInfo} 
+	   | Handler {label, live, offset} 
            => concat ["Handler::",
 		      Label.toString label,
 		      " [",
@@ -3483,8 +3483,9 @@ struct
 			[],
 			fn (memloc, l) => (MemLoc.toString memloc)::l),
 		       ", "),
-		      "] ",
-		      FrameInfo.toString frameInfo]
+		      "] (",
+		      Int.toString offset,
+		      ")"]
 	   | Runtime {label, frameInfo} 
 	   => concat ["Runtime::",
 		      Label.toString label,

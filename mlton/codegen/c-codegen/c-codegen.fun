@@ -475,8 +475,8 @@ structure Chunk =
 			| Block.Kind.Jump => ()
 			| Block.Kind.Cont {args, size}
 			=> Statement.output (Statement.Push (~ size), print)
-			| Block.Kind.Handler {size}
-			=> Statement.output (Statement.Push (~ size), print)
+			| Block.Kind.Handler {offset}
+			=> Statement.output (Statement.Push (~ offset), print)
 
 		  val _ = 
 		     Array.foreach (statements, fn s =>

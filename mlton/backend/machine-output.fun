@@ -317,7 +317,7 @@ structure Block =
 	             | Jump
 	             | Cont of {args: Operand.t list,
 				size: int}
-	             | Handler of {size: int}
+	             | Handler of {offset: int}
 
 	  val layout
 	    = let open Layout
@@ -329,8 +329,8 @@ structure Block =
 		 | Cont {args, size} 
 		 => seq [str "Cont", paren(Int.layout size), str " ",
 			 record [("args", List.layout Operand.layout args)]]
-		 | Handler {size} 
-		 => seq [str "Handler", paren(Int.layout size)]
+		 | Handler {offset} 
+		 => seq [str "Handler", paren(Int.layout offset)]
 	      end
 	end
 

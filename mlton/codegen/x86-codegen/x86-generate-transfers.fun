@@ -436,17 +436,13 @@ struct
 				      src = bytes, 
 				      size = pointerSize}
 				   end))))
-			    | Handler {label, 
-				       frameInfo as Entry.FrameInfo.T 
-				                    {size,
-						     frameLayoutsIndex},
+			    | Handler {label,
+				       offset, 
 				       ...}
 			    => AppendList.append
 			       (AppendList.fromList
 				[Assembly.pseudoop_p2align 
 				 (Immediate.const_int 4, NONE, NONE),
-				 Assembly.pseudoop_long
-				 [Immediate.const_int frameLayoutsIndex],
 				 Assembly.label label],
 				(* entry from far assumptions *)
 				(farEntry
@@ -456,7 +452,7 @@ struct
 				     val stackTop 
 				       = x86MLton.gcState_stackTopContentsOperand
 				     val bytes 
-				       = x86.Operand.immediate_const_int (~ size)
+				       = x86.Operand.immediate_const_int (~ offset)
 				   in
 				     (* stackTop += bytes *)
 				     x86.Assembly.instruction_binal 

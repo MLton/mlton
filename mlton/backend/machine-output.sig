@@ -156,7 +156,7 @@ signature MACHINE_OUTPUT =
 		          | Jump
 		          | Cont of {args: Operand.t list,
 				     size: int}
-		          | Handler of {size: int}
+		          | Handler of {offset: int}
 	     end
 	  
 	    datatype t = T of {label: Label.t,

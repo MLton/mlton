@@ -190,20 +190,18 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 	  | SOME z => z
       (* labelInfo, which is only set while processing each function. *)
       val {get = labelInfo: Label.t -> {args: (Var.t * Stype.t) vector,
-					cont: Mlabel.t option ref,
+					cont: (Label.t option * Mlabel.t) list ref,
 					handler: Mlabel.t option ref},
 	   set = setLabelInfo, ...} =
 	 Property.getSetOnce (Label.plist,
 			      Property.initRaise ("label info", Label.layout))
       val labelArgs = #args o labelInfo
-      val labelCont = ^  o #cont o labelInfo
+      fun labelCont (c, h) = 
+	 #2 (valOf (List.peek(!(#cont (labelInfo c)), fn (h', l') =>
+			      Option.equals(h, h', Label.equals))))
+      val isCont = not o List.isEmpty o ! o #cont o labelInfo
       val labelHandler = ^ o #handler o labelInfo
-      local
-	 fun make f l = isSome (! (f (labelInfo l)))
-      in
-	 val isCont = make #cont
-	 val isHandler = make #handler
-      end
+      val isHandler = isSome o ! o #handler o labelInfo
       val labelHandler =
 	 Trace.trace ("labelHandler", Label.layout, Mlabel.layout) labelHandler
       (* primInfo is defined for primitives that enter the runtime system. *)
@@ -749,44 +747,49 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 		in
 		   ()
 		end)
-	    (* Create info for labels used as conts. *)
-	    fun new (r, l) =
-	       case !r of
-		  SOME _ => ()
-		| NONE =>
-		     let
-			val c = labelChunk l
-			val l = Mlabel.new (labelToLabel l)
-			val _ = r := SOME l
-			val _ = Chunk.addEntry (c, l)
-		     in
-			()
-		     end
+	    (* Create info for labels used as conts and handlers. *)
+	    fun newCont (c, h) =
+	       let val {cont, ...} = labelInfo c
+	       in case List.peek(!cont, fn (h', _) => 
+				 Option.equals(h, h', Label.equals)) of
+		     SOME _ => ()
+		   | NONE => let
+				val l = Mlabel.new (labelToLabel c)
+				val _ = List.push(cont, (h, l))
+				val _ = Chunk.addEntry (labelChunk c, l)
+			     in
+			        ()
+			     end
+	       end
+	    fun newHandler h =
+	       let val {args, handler, ...} = labelInfo h
+		   val _ = maybeSetRaiseGlobal args
+	       in case !handler of
+		     SOME _ => ()
+		   | NONE => let
+				val l = Mlabel.new (labelToLabel h)	
+				val _ = handler := SOME l
+				val _ = Chunk.addEntry (labelChunk h, l)
+			     in
+			        ()
+			     end
+	       end
 	    val _ =
 	       Vector.foreach
 	       (blocks, fn Block.T {label, args, ...} =>
 		(setLabelInfo (label, {args = args,
-				       cont = ref NONE,
+				       cont = ref [],
 				       handler = ref NONE})))
 	    val _ =
 	       Vector.foreach
-	       (blocks, fn Block.T {statements, transfer, ...} =>
-		(Vector.foreach
-		 (statements, fn Statement.T {exp, ...} =>
-		  case exp of
-		     Exp.SetHandler h =>
-			let
-			   val {args, handler, ...} = labelInfo h
-			   val _ = maybeSetRaiseGlobal args
-			in
-			   new (handler, h)
-			end
-		   | _ => ())
-		 ; (case transfer of
-		       Stransfer.Call {return, ...} =>
-			  Option.app (return, fn {cont, ...} =>
-				      new (#cont (labelInfo cont), cont))
-		     | _ => ())))
+	       (blocks, fn Block.T {transfer, ...} =>
+		case transfer of
+		   Stransfer.Call {return, ...} =>
+		      Option.app (return, fn {cont, handler} =>
+				  (newCont (cont, handler);
+				   Option.app (handler, fn handler =>
+					       newHandler handler)))
+		 | _ => ())
 	    val {handlerOffset, labelInfo = labelRegInfo, limitCheck, ...} =
 	       allocateFunc f
 	    local
@@ -1043,25 +1046,26 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 	    fun genCont (c: Chunk.t,
 			 l: Mlabel.t,
 			 j: Label.t,
+			 h: Label.t option,
 			 args: (Var.t * Stype.t) vector,
 			 profileName: string): unit =
 	       let
-		  val Info.T {liveFrame, liveNoFormals, cont, ...} =
+		  val Info.T {liveFrame, liveNoFormals, size, ...} =
 		     labelRegInfo j
+		  val liveFrame =
+		     #2 (valOf (List.peek(liveFrame, fn (h', liveFrame) =>
+					  Option.equals(h, h', Label.equals))))
 		  val size =
-		     case cont of
-			SOME {size, ...} => size
-		      | NONE => Error.bug "no cont"
-		  (* Need liveFrame
-		   * because some vars might be live down a handler
-		   * that handles raises from the function returning here.
-		   *)
+		     case h of
+		        SOME h => let val Info.T {size = size', ...} = labelRegInfo h
+				  in Int.max(size, size')
+				  end
+		      | NONE => size
 		  val _ = Mprogram.newFrame (mprogram,
 					     {return = l,
 					      chunkLabel = Chunk.label c,
 					      size = size,
 					      live = liveFrame})
-
 		  val (args, (argsl, offset)) =
 		     Vector.mapAndFold
 		     (args, ([], 4),
@@ -1073,15 +1077,15 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 			 val arg = Operand.stackOffset {offset = calleeOffset,
 							ty = ty}
 			 val isUsed
-			    = case varInfo var
-			    of {operand = VarOperand.Allocate {isUsed, ...}, ...} 
-			       => !isUsed
-			     | _ => false
+			    = case varInfo var of 
+			         {operand = VarOperand.Allocate {isUsed, ...}, ...} 
+			           => !isUsed
+			       | _ => false
 		      in (arg,
 			  (if isUsed
 			      then arg::argsl
 			   else argsl,
-			      offset + Mtype.size ty))
+			   offset + Mtype.size ty))
 		      end)
 		  val (statements, transfer) = tail (j, args, id)
 		  val limitCheck =
@@ -1114,16 +1118,13 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 		  val _ = Mprogram.newHandler (mprogram, 
 					       {chunkLabel = Chunk.label c,
 						label = l})
-		  val Info.T {liveNoFormals, handler, ...} = labelRegInfo j
-		  val size
-		     = case handler
-		     of SOME {size, ...} => size
-		   | NONE => Error.bug "no handler"
+		  val Info.T {liveNoFormals, ...} = labelRegInfo j
+		  val offset = valOf handlerOffset
 		  val args = Vector.new1 (raiseOperand ())
 		  val (statements, transfer) = tail (j, args, id)
 	       in Chunk.newBlock (labelChunk j,
 				  {label = l,
-				   kind = Kind.handler {size = size},
+				   kind = Kind.handler {offset = offset},
 				   live = liveNoFormals,
 				   profileName = profileName,
 				   statements = statements,
@@ -1159,21 +1160,20 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 			      NONE => (0, NONE, [])
 			    | SOME {cont, handler} =>
 				 let
-				    val return = labelCont cont
-				    val Info.T {cont, ...} = labelRegInfo cont
-				    val size =
-				       case cont of
-					  SOME {size, ...} => size
-					| NONE => Error.bug "no cont"
-				    val (handler, handlerLive) =
+				    val return = labelCont (cont, handler)
+				    val Info.T {size, ...} = labelRegInfo cont
+				    val (size, handler, handlerLive) =
 				       case handler of
-					  NONE => (NONE, [])
+					  NONE => (size, NONE, [])
 					| SOME h =>
 					     let
+					        val Info.T {size = size', ...} =
+						   labelRegInfo h
 						val handlerOffset =
 						   valOf handlerOffset
 					     in
-						(SOME (labelHandler h),
+						(Int.max(size, size'),
+						 SOME (labelHandler h),
 						 (Operand.stackOffset 
 						  {offset = handlerOffset,
 						   ty = Mtype.uint})::
@@ -1379,14 +1379,16 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 			      Label.layout label]
 		      end)
 		  val Info.T {limitCheck, live, ...} = labelRegInfo label
-		  val {cont, handler, ...} = labelInfo label
 		  val chunk = labelChunk label
+
+		  val {cont, handler, ...} = labelInfo label
 		  val _ =
-		     Option.app (!cont, fn l =>
-				 genCont (chunk, l, label, args, profileName))
+		     List.foreach (!cont, fn (h, l) =>
+				   genCont (chunk, l, label, h, args, profileName))
 		  val _ =
 		     Option.app (!handler, fn l =>
 				 genHandler (chunk, l, label, profileName))
+
 		  val statements = 
 		     genStatements (statements, chunk, handlerOffset)
 		  val (preTransfer, transfer) =
@@ -1403,7 +1405,34 @@ fun generate (program as Sprogram.T {datatypes, globals, functions, main})
 					  transfer = transfer})
 	       end
 	    val genBlock = traceGenBlock genBlock
+(*
+	    fun genStubs (Block.T {label, ...}) =
+	       let
+		  val _ =
+		     Control.diagnostic
+		     (fn () =>
+		      let
+			 open Layout
+		      in
+			 seq [str "Generating stub code for block ",
+			      Label.layout label]
+		      end)
+		  val chunk = labelChunk label
+		  val {cont, handler, ...} = labelInfo label
+		  val _ =
+		     List.foreach (!cont, fn (_, l) =>
+				   genCont (chunk, l, label, args, profileName))
+		  val _ =
+		     Option.app (!handler, fn l =>
+				 genHandler (chunk, l, label, profileName))
+	       in
+		  ()
+	       end
+*)
 	    val _ = Vector.foreach (blocks, genBlock)
+(*
+	    val _ = Vector.foreach (blocks, genStubs)
+*)
 	    val _ = Vector.foreach (blocks, Block.clear)
 	 in
 	    ()

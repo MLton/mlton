@@ -199,7 +199,7 @@ signature MACHINE =
 	      val func: {args: Operand.t list} -> t
 	      val jump: t
 	      val cont: {args: Operand.t list, size: int} -> t
-	      val handler: {size: int} -> t
+	      val handler: {offset: int} -> t
 	    end
 	end
 
