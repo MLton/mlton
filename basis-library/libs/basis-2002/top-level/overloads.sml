@@ -7,106 +7,105 @@
  *)
 
 (*
-    * int  = {Int.int, Int8.int, Int16.int, Int32.int, Int64.int, 
-              IntInf.int, LargeInt.int, FixedInt.int, Position.int}
-    * word = {Word.word, Word8.word, Word16.word, Word32.word, 
-              LargeWord.word, SysWord.word}
-    * real = {Real.real, Real32.real, Real.64.real,
-              LargeReal.real}
-    * text = {String.string, Char.char}
-    * wordint = word union int
-    * realint = real union int
-    * num = word union int union real
-    * numtext = num union text 
-
-num ===
-_overload f : ?
-as  Int.f
-and Int8.f
-and Int16.f
-and Int32.f
-(* and Int64.f *)
-and IntInf.f
-and LargeInt.f
-and FixedInt.f
-and Position.f
-and Word.f
-and Word8.f
-and Word16.f
-and Word32.f
-and LargeWord.f
-and SysWord.f
-and Real.f
-and Real32.f
-and Real64.f
-and LargeReal.f
-
-wordint ===
-_overload f : ?
-as  Int.f
-and Int8.f
-and Int16.f
-and Int32.f
-(* and Int64.f *)
-and IntInf.f
-and LargeInt.f
-and FixedInt.f
-and Position.f
-and Word.f
-and Word8.f
-and Word16.f
-and Word32.f
-and LargeWord.f
-and SysWord.f
-
-realint ===
-_overload f : ?
-as  Int.f
-and Int8.f
-and Int16.f
-and Int32.f
-(* and Int64.f *)
-and IntInf.f
-and LargeInt.f
-and FixedInt.f
-and Position.f
-and Real.f
-and Real32.f
-and Real64.f
-and LargeReal.f
-
-numtext ===
-_overload f : ?
-as  Int.f
-and Int8.f
-and Int16.f
-and Int32.f
-(* and Int64.f *)
-and IntInf.f
-and LargeInt.f
-and FixedInt.f
-and Position.f
-and Word.f
-and Word8.f
-and Word16.f
-and Word32.f
-and LargeWord.f
-and SysWord.f
-and Real.f
-and Real32.f
-and Real64.f
-and LargeReal.f
-and String.f
-and Char.f
-
-*)
+ *     * int  = {Int.int, Int8.int, Int16.int, Int32.int, Int64.int, 
+ *               IntInf.int, LargeInt.int, FixedInt.int, Position.int}
+ *     * word = {Word.word, Word8.word, Word16.word, Word32.word, 
+ *               LargeWord.word, SysWord.word}
+ *     * real = {Real.real, Real32.real, Real.64.real,
+ *               LargeReal.real}
+ *     * text = {String.string, Char.char}
+ *     * wordint = word union int
+ *     * realint = real union int
+ *     * num = word union int union real
+ *     * numtext = num union text 
+ * 
+ * num ===
+ * _overload f : ?
+ * as  Int.f
+ * and Int8.f
+ * and Int16.f
+ * and Int32.f
+ * and Int64.f
+ * and IntInf.f
+ * and LargeInt.f
+ * and FixedInt.f
+ * and Position.f
+ * and Word.f
+ * and Word8.f
+ * and Word16.f
+ * and Word32.f
+ * and LargeWord.f
+ * and SysWord.f
+ * and Real.f
+ * and Real32.f
+ * and Real64.f
+ * and LargeReal.f
+ * 
+ * wordint ===
+ * _overload f : ?
+ * as  Int.f
+ * and Int8.f
+ * and Int16.f
+ * and Int32.f
+ * and Int64.f
+ * and IntInf.f
+ * and LargeInt.f
+ * and FixedInt.f
+ * and Position.f
+ * and Word.f
+ * and Word8.f
+ * and Word16.f
+ * and Word32.f
+ * and LargeWord.f
+ * and SysWord.f
+ * 
+ * realint ===
+ * _overload f : ?
+ * as  Int.f
+ * and Int8.f
+ * and Int16.f
+ * and Int32.f
+ * and Int64.f
+ * and IntInf.f
+ * and LargeInt.f
+ * and FixedInt.f
+ * and Position.f
+ * and Real.f
+ * and Real32.f
+ * and Real64.f
+ * and LargeReal.f
+ * 
+ * numtext ===
+ * _overload f : ?
+ * as  Int.f
+ * and Int8.f
+ * and Int16.f
+ * and Int32.f
+ * and Int64.f
+ * and IntInf.f
+ * and LargeInt.f
+ * and FixedInt.f
+ * and Position.f
+ * and Word.f
+ * and Word8.f
+ * and Word16.f
+ * and Word32.f
+ * and LargeWord.f
+ * and SysWord.f
+ * and Real.f
+ * and Real32.f
+ * and Real64.f
+ * and LargeReal.f
+ * and String.f
+ * and Char.f
+ *)
 
 _overload ~ :   ('a -> 'a) (* num -> num *)
 as  Int.~
 and Int8.~
 and Int16.~
 and Int32.~
-(* and Int64.~ *)
+and Int64.~
 and IntInf.~
 and LargeInt.~
 and FixedInt.~
@@ -127,7 +126,7 @@ as  Int.+
 and Int8.+
 and Int16.+
 and Int32.+
-(* and Int64.+ *)
+and Int64.+
 and IntInf.+
 and LargeInt.+
 and FixedInt.+
@@ -148,7 +147,7 @@ as  Int.-
 and Int8.-
 and Int16.-
 and Int32.-
-(* and Int64.- *)
+and Int64.-
 and IntInf.-
 and LargeInt.-
 and FixedInt.-
@@ -169,7 +168,7 @@ as  Int.*
 and Int8.*
 and Int16.*
 and Int32.*
-(* and Int64.* *)
+and Int64.*
 and IntInf.*
 and LargeInt.*
 and FixedInt.*
@@ -205,7 +204,7 @@ as  Int.div
 and Int8.div
 and Int16.div
 and Int32.div
-(* and Int64.div *)
+and Int64.div
 and IntInf.div
 and LargeInt.div
 and FixedInt.div
@@ -222,7 +221,7 @@ as  Int.mod
 and Int8.mod
 and Int16.mod
 and Int32.mod
-(* and Int64.mod *)
+and Int64.mod
 and IntInf.mod
 and LargeInt.mod
 and FixedInt.mod
@@ -239,7 +238,7 @@ as  Int.abs
 and Int8.abs
 and Int16.abs
 and Int32.abs
-(* and Int64.abs *)
+and Int64.abs
 and IntInf.abs
 and LargeInt.abs
 and FixedInt.abs
@@ -254,7 +253,7 @@ as  Int.<
 and Int8.<
 and Int16.<
 and Int32.<
-(* and Int64.< *)
+and Int64.<
 and IntInf.<
 and LargeInt.<
 and FixedInt.<
@@ -277,7 +276,7 @@ as  Int.<=
 and Int8.<=
 and Int16.<=
 and Int32.<=
-(* and Int64.<= *)
+and Int64.<=
 and IntInf.<=
 and LargeInt.<=
 and FixedInt.<=
@@ -300,7 +299,7 @@ as  Int.>
 and Int8.>
 and Int16.>
 and Int32.>
-(* and Int64.> *)
+and Int64.>
 and IntInf.>
 and LargeInt.>
 and FixedInt.>
@@ -323,7 +322,7 @@ as  Int.>=
 and Int8.>=
 and Int16.>=
 and Int32.>=
-(* and Int64.>= *)
+and Int64.>=
 and IntInf.>=
 and LargeInt.>=
 and FixedInt.>=

@@ -1,5 +1,8 @@
 Here are the changes since version 20030716.
 
+* 2003-09-06
+  - Int64 is completely there.
+
 * 2003-09-05
   - Fixed bug in Real.toDecimal, which return class NORMAL for
     subnormals.
