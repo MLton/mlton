@@ -5,6 +5,10 @@ structure MLton: MLTON =
 struct
 
 structure Prim = Primitive.MLton
+
+datatype hostType = datatype Prim.hostType
+
+val hostType = Prim.hostType
    
 val isMLton = true
    
