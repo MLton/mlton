@@ -81,6 +81,7 @@ OBJS =						\
 	basis/Real/frexp.o			\
 	basis/Real/gdtoa.o			\
 	basis/Real/modf.o			\
+	basis/Real/nextAfter.o			\
 	basis/Real/real.o			\
 	basis/Real/signBit.o			\
 	basis/Real/strto.o			\
@@ -245,6 +246,7 @@ DEBUG_OBJS =					\
 	basis/Real/frexp-gdb.o			\
 	basis/Real/gdtoa-gdb.o			\
 	basis/Real/modf-gdb.o			\
+	basis/Real/nextAfter-gdb.o			\
 	basis/Real/real-gdb.o			\
 	basis/Real/signBit-gdb.o		\
 	basis/Real/strto-gdb.o			\

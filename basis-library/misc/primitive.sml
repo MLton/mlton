@@ -785,7 +785,7 @@ structure Primitive =
 	    val minNormalPos = _import "Real64_minNormalPos": real;
 	    val minPos = _import "Real64_minPos": real;
 	    val modf = _import "Real64_modf": real * real ref -> real;
-	    val nextAfter = _import "nextAfter": real * real -> real;
+	    val nextAfter = _import "Real64_nextAfter": real * real -> real;
 	    val round =
 	       if MLton.native
 		  then _prim "Real64_round": real -> real;
