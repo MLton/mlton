@@ -25,13 +25,8 @@ structure String: STRING_EXTRA =
       fun scanString scanChar (reader: (char, 'a) StringCvt.reader)
 	: (string, 'a) StringCvt.reader =
 	 fn state =>
-	 case reader state of
-	    NONE => SOME ("", state)
-	  | _ =>
-	       case Reader.list (scanChar reader) state of
-		  NONE => NONE
-		| SOME ([], _) => NONE
-		| SOME (cs, state) => SOME (implode cs, state)
+	 Option.map (fn (cs, state) => (implode cs, state))
+	 (Reader.list (scanChar reader) state)
 
       val fromString = StringCvt.scanString (scanString Char.scan)
       val fromCString = StringCvt.scanString (scanString Char.scanC)
