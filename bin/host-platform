@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+
+set -e
+
+name=`basename $0`
+dir=`dirname $0`
+bin=`cd $dir && pwd`
+
+die () {
+	echo >&2 "$1"
+	exit 1
+}
+
+usage () {
+	die "usage: $name"
+}
+
+case "$#" in
+0)
+;;
+*)
+	usage
+;;
+esac
+
+uname=`uname`
+
+case "$uname" in
+Linux)
+	HOST_OS='linux'
+;;
+CYGWIN*)
+	HOST_OS='cygwin'
+;;
+FreeBSD*)
+	HOST_OS='freebsd'
+;;
+NetBSD*)
+	HOST_OS='netbsd'
+;;
+SunOS)
+	HOST_OS='sunos'
+;;
+*)
+	die "Unknown OS $uname."
+;;
+esac
+
+arch=`uname -m`
+
+case "$arch" in
+i?86)
+	HOST_ARCH=x86
+;;
+sun*)
+	HOST_ARCH=sparc
+;;
+*)
+	die "Unknown arch $arch."
+;;
+esac
+

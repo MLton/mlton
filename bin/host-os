@@ -1,33 +1,27 @@
 #!/usr/bin/env bash
 
 set -e
+name=`basename $0`
+dir=`dirname $0`
+bin=`cd $dir && pwd`
 
 die () {
 	echo >&2 "$1"
 	exit 1
 }
 
-uname=`uname`
+usage () {
+	die "usage: $name"
+}
 
-case "$uname" in
-Linux)
-	os=linux
-;;
-CYGWIN*)
-	os=cygwin
-;;
-FreeBSD*)
-	os=freebsd
-;;
-NetBSD*)
-	os=netbsd
-;;
-SunOS)
-	os=sunos
+case "$#" in
+0)
 ;;
 *)
-	die "Unknown OS $uname."
+	usage
 ;;
 esac
 
-echo $os
+source $bin/host-platform
+
+echo $HOST_OS

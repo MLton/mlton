@@ -176,7 +176,8 @@ runtime:
 script:
 	@echo 'Setting lib in mlton script.'
 	sed "/^lib=/s;'.*';\"\`dirname \$$0\`/../lib\";" <bin/mlton >$(MLTON)
-	chmod a+x $(MLTON) 
+	chmod a+x $(MLTON)
+	$(CP) $(SRC)/bin/host-platform $(LIB)
 
 .PHONY: tools
 tools:
@@ -240,6 +241,7 @@ install-no-docs:
 	sed "/^lib=/s;'.*';'$(prefix)/$(ULIB)';" 			\
 			<$(SRC)/bin/mlton >$(TBIN)/mlton
 	chmod +x $(TBIN)/mlton
+	$(CP) $(SRC)/bin/host-platform $(LIB)
 	$(CP) $(BIN)/$(LEX) $(BIN)/$(PROF) $(BIN)/$(YACC) $(TBIN)/
 	( cd $(SRC)/man && tar cf - mllex.1 mlprof.1 mlton.1 mlyacc.1 ) | \
 		( cd $(TMAN)/ && tar xf - )

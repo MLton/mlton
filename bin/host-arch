@@ -1,24 +1,27 @@
 #!/usr/bin/env bash
 
 set -e
+name=`basename $0`
+dir=`dirname $0`
+bin=`cd $dir && pwd`
 
 die () {
 	echo >&2 "$1"
 	exit 1
 }
 
-arch=`uname -m`
+usage () {
+	die "usage: $name"
+}
 
-case "$arch" in
-i?86)
-	arch=x86
-;;
-sun*)
-	arch=sparc
+case "$#" in
+0)
 ;;
 *)
-	die "Unknown arch $arch."
+	usage
 ;;
 esac
 
-echo $arch
+source $bin/host-platform
+
+echo $HOST_ARCH
