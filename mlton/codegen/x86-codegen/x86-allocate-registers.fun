@@ -3830,6 +3830,12 @@ struct
 				    sync, 
 				    commit}
 		        => let
+		             val must_commit0
+			       = (MemLocSet.exists
+				  (allDefs,
+				   fn memloc'
+				    => not (MemLoc.eq(memloc', memloc))
+				       andalso (MemLoc.mayAlias(memloc', memloc))))
 			     val must_commit1
 			       = (MemLocSet.exists
 				  (allUses,
@@ -3852,7 +3858,7 @@ struct
 				           (allKeep, memloc)
 					  then COMMIT 0
 					  else REMOVE 0
-				 else if must_commit1
+				 else if must_commit1 orelse must_commit0
 				   then case commit
 					  of TRYREMOVE _ => REMOVE 0
 					   | REMOVE _ => REMOVE 0
@@ -3883,6 +3889,12 @@ struct
 				    sync, 
 				    commit}
 		        => let
+		             val must_commit0
+			       = (MemLocSet.exists
+				  (allDefs,
+				   fn memloc'
+				    => not (MemLoc.eq(memloc', memloc))
+				       andalso (MemLoc.mayAlias(memloc', memloc))))
 			     val must_commit1
 			       = (MemLocSet.exists
 				  (allUses,
@@ -3899,7 +3911,7 @@ struct
 				  (MemLocSet.-(allKills, dead_memlocs), memloc))
 			     val commit
 			       = if MemLocSet.contains(allDefs, memloc)
-				   then if must_commit1
+				   then if must_commit1 orelse must_commit0
 					  then case commit
 						 of TRYREMOVE _ => REMOVE 0
 						  | REMOVE _ => REMOVE 0
@@ -3912,8 +3924,8 @@ struct
 				           (allKeep, memloc)
 					  then COMMIT 0
 					  else REMOVE 0
-				 else if must_commit1
-				   then case commit
+				 else if must_commit1 orelse must_commit0
+				   then case commit 
 					  of TRYREMOVE _ => REMOVE 0
 					   | REMOVE _ => REMOVE 0
 					   | _ => COMMIT 0
