@@ -403,6 +403,16 @@ mainLoop:
 		fprintf (stderr, "%s", opcodeStrings[opc]);
 	switch (opc) {
 	prims ();
+	case opcodeSym (BranchIfZero):
+	{
+		Label label;
+
+		Fetch (label);
+		if (disassemble) goto mainLoop;
+		if (0 == PopReg (Word32))
+			Goto (label);
+		goto mainLoop;
+	}
  	case opcodeSym (CallC):
  		Fetch (callCIndex);
 		unless (disassemble) {

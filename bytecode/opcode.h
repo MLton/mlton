@@ -109,6 +109,7 @@
 
 #define opcodes()				\
 	prims()					\
+	opcodeGen (BranchIfZero)		\
 	opcodeGen (CallC)			\
 	opcodeGen (Goto)			\
 	opcodeGen (loadGPNR)			\

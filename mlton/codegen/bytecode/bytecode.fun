@@ -317,6 +317,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	 val stackOffset = make ("StackOffset", false)
 	 val wordOpcode = make ("Word", false)
       end
+      val branchIfZero = opcode "BranchIfZero"
       fun gpnr ls = opcode (concat [LoadStore.toString ls, "GPNR"])
       local
 	 fun make name (ls: LoadStore.t): Opcode.t =
@@ -601,24 +602,49 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	     | Return => emitOpcode returnOp
 	     | Switch (Switch.T {cases, default, size, test}) =>
 		  let
-		     val numCases =
-			Vector.length cases
-			+ (if isSome default then 1 else 0)
-			- 1
-		     val () =
-			(emitLoadOperand test
-			 ; emitOpcode (switch size)
-			 ; emitWord16 (Int.toIntInf numCases))
-		     fun emitCases cases =
-			Vector.foreach (cases, fn (w, l) =>
-					(emitWordX w; emitLabel l))
+		     val () = emitLoadOperand test
+		     fun bool (test: Operand.t, a: Label.t, b: Label.t) =
+			(emitOpcode branchIfZero
+			 ; emitLabel b
+			 ; goto a)
+		     fun normal () =
+			let
+			   val numCases =
+			      Vector.length cases
+			      + (if isSome default then 1 else 0)
+			      - 1
+			   val () =
+			      (emitOpcode (switch size)
+			       ; emitWord16 (Int.toIntInf numCases))
+			   fun emitCases cases =
+			      Vector.foreach (cases, fn (w, l) =>
+					      (emitWordX w; emitLabel l))
+			in
+			   case default of
+			      NONE =>
+				 (emitCases (Vector.dropSuffix (cases, 1))
+				  ; emitLabel (#2 (Vector.last cases)))
+			    | SOME l =>
+				 (emitCases cases; emitLabel l)
+			end
 		  in
-		     case default of
-			NONE =>
-			   (emitCases (Vector.dropSuffix (cases, 1))
-			    ; emitLabel (#2 (Vector.last cases)))
-		      | SOME l =>
-			   (emitCases cases; emitLabel l)
+		     if 2 = Vector.length cases
+			andalso Option.isNone default
+			andalso WordSize.equals (size, WordSize.default)
+			then
+			   let
+			      val (c0, l0) = Vector.sub (cases, 0)
+			      val (c1, l1) = Vector.sub (cases, 1)
+			      val i0 = WordX.toIntInf c0
+			      val i1 = WordX.toIntInf c1
+			   in
+			      if i0 = 0 andalso i1 = 1
+				 then bool (test, l1, l0)
+			      else if i0 = 1 andalso i1 = 0
+				      then bool (test, l0, l1)
+				   else normal ()
+			   end
+		     else normal ()
 		  end
 	 end
       val emitTransfer =
