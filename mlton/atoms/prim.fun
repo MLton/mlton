@@ -548,6 +548,8 @@ in
    val intNegCheck = new0 (Name.Int_negCheck, int --> int)
    val intInfNeg =
       new0 (Name.IntInf_neg, tuple [intInf, word] --> intInf)
+   val intInfNotb =
+      new0 (Name.IntInf_notb, tuple [intInf, word] --> intInf)
    val intInfEqual = new0 (Name.IntInf_equal, tuple [intInf, intInf] --> bool)
    val word8Neg = new0 (Name.Word8_neg, word8 --> word8)
    val word8Notb = new0 (Name.Word8_notb, word8 --> word8)
@@ -802,6 +804,7 @@ fun 'a apply (p, args, varEquals) =
       val equal =
 	 fn (Char c1, Char c2) => bool (Char.equals (c1, c2))
 	  | (Int i1, Int i2) => bool (Int.equals (i1, i2))
+	  | (IntInf i1, IntInf i2) => bool (IntInf.equals (i1, i2))
 	  | (String s1, String s2) => bool (String.equals (s1, s2))
 	  | (Word w1, Word w2) => bool (Word.equals (w1, w2))
 	  | _ => ApplyResult.Unknown
@@ -913,21 +916,35 @@ fun 'a apply (p, args, varEquals) =
 	    val name = name p
 	    fun varIntInf (x, i: IntInf.t, space, inOrder) =
 	       let
-		  fun negate () = Apply (intInfNeg, [x, space])
+		  fun neg () = Apply (intInfNeg, [x, space])
+		  fun notb () = Apply (intInfNotb, [x, space])
 		  val i = IntInf.toInt i
 	       in
 		  case name of
 		     IntInf_add => if i = 0 then Var x else Unknown
+		   | IntInf_andb => if i = 0
+				       then intInfConst 0
+				    else if i = ~1
+				       then Var x
+				    else Unknown
+		   | IntInf_gcd => if (i = ~1 orelse i = 1)
+				      then intInfConst 1
+				   else Unknown
 		   | IntInf_mul =>
 			(case i of
 			    0 => intInfConst 0
 			  | 1 => Var x
-			  | ~1 => negate ()
+			  | ~1 => neg ()
 			  | _ => Unknown)
+		   | IntInf_orb => if i = 0
+				      then Var x
+				   else if i = ~1
+				      then intInfConst ~1
+				   else Unknown
 		   | IntInf_quot => if inOrder
 				       then (case i of
 						1 => Var x
-					      | ~1 => negate ()
+					      | ~1 => neg ()
 					      | _ => Unknown)
 				    else Unknown
 		   | IntInf_rem => if inOrder andalso (i = ~1 orelse i = 1)
@@ -936,8 +953,13 @@ fun 'a apply (p, args, varEquals) =
 		   | IntInf_sub => if i = 0
 				      then if inOrder
 					      then Var x
-					   else negate ()
+					   else neg ()
 				   else Unknown
+		   | IntInf_xorb => if i = 0
+				       then Var x
+				    else if i = ~1
+				       then notb ()
+				    else Unknown
 		   | _ => Unknown
 	       end handle Exn.Overflow => Unknown
 	    fun varWord (x, w, inOrder) =
@@ -1102,8 +1124,7 @@ fun 'a apply (p, args, varEquals) =
 	    datatype z = datatype ApplyArg.t
 	 in
 	    case (name, args) of
-	       (IntInf_neg, [Const (IntInf i), _]) => intInf (IntInf.~ i)
-	     | (IntInf_toString, [Const (IntInf i), Const (Int base), _]) =>
+	       (IntInf_toString, [Const (IntInf i), Const (Int base), _]) =>
 		  let
 		     val base =
 			case base of
@@ -1130,77 +1151,104 @@ fun 'a apply (p, args, varEquals) =
 	     | (_, [Const (IntInf i1), Const (IntInf i2), _]) =>
 		  (case name of
 		      IntInf_add => iio (IntInf.+, i1, i2)
+		    | IntInf_andb => iio (IntInf.andb, i1, i2)
+		    | IntInf_gcd => iio (IntInf.gcd, i1, i2)
 		    | IntInf_mul => iio (IntInf.*, i1, i2)
+		    | IntInf_orb => iio (IntInf.orb, i1, i2)
 		    | IntInf_quot => iio (IntInf.quot, i1, i2)
 		    | IntInf_rem => iio (IntInf.rem, i1, i2)
 		    | IntInf_sub => iio (IntInf.-, i1, i2)
+		    | IntInf_xorb => iio (IntInf.xorb, i1, i2)
+		    | _ => Unknown)
+	     | (_, [Const (IntInf i1), Const (Word w2), _]) =>
+		  (case name of
+		      IntInf_arshift => intInf (IntInf.~>> (i1, w2))
+		    | IntInf_lshift => intInf (IntInf.<< (i1, w2))
+		    | _ => Unknown)
+	     | (_, [Const (IntInf i1), _]) =>
+		  (case name of
+		      IntInf_neg => intInf (IntInf.~ i1)
+		    | IntInf_notb => intInf (IntInf.notb i1)
 		    | _ => Unknown)
 	     | (_, [Var x, Const (IntInf i), Var space]) =>
 		  varIntInf (x, i, space, true)
 	     | (_, [Const (IntInf i), Var x, Var space]) =>
 		  varIntInf (x, i, space, false)
+	     | (_, [Var x, Const (Word 0wx0), _]) =>
+		  (let datatype z = datatype ApplyResult.t
+		   in 
+		      case name of
+			 IntInf_arshift => Var x
+		       | IntInf_lshift => Var x
+		       | _ => Unknown
+		   end)
 	     | (_, [Var x, Var y, _]) =>
 		  if varEquals (x, y)
-		     then
-			(case name of
-			    IntInf_quot => intInfConst 1
-			  | IntInf_rem => intInfConst 0
-			  | IntInf_sub => intInfConst 0
-			  | _ => Unknown)
+		     then let datatype z = datatype ApplyResult.t
+			  in
+			     case name of
+			        IntInf_andb => Var x
+			      | IntInf_orb => Var x
+			      | IntInf_quot => intInfConst 1
+			      | IntInf_rem => intInfConst 0
+			      | IntInf_sub => intInfConst 0
+			      | IntInf_xorb => intInfConst 0
+			      | _ => Unknown
+			  end
 		  else Unknown
-			  | (_, [Var x, Var y]) =>
-			       if varEquals (x, y)
-				  then let
-					  val t = ApplyResult.truee
-					  val f = ApplyResult.falsee
-					  datatype z = datatype ApplyResult.t
-				       in case name of
-					  Char_lt => f
-					| Char_le => t
-					| Char_gt => f
-					| Char_ge => t
-					| Int_ge => t
-					| Int_geu => t
-					| Int_gt => f
-					| Int_gtu => f
-					| Int_le => t
-					| Int_lt => f
-					| Int_quot => int 1
-					| Int_rem => int 0
-					| Int_sub => int 0
-					| IntInf_compare => int 0
-					| IntInf_equal => t
-					| MLton_eq => t
-					| MLton_equal => t
-					| Real_lt => f
-					| Real_le => t
-					| Real_equal => t
-					| Real_gt => f
-					| Real_ge => t
-					| Real_qequal => t
-					| Word8_andb => Var x
-					| Word8_div => word8 0w1
-					| Word8_ge => t
-					| Word8_gt => f
-					| Word8_le => t
-					| Word8_lt => f
-					| Word8_mod => word8 0w0
-					| Word8_orb => Var x
-					| Word8_sub => word8 0w0
-					| Word8_xorb => word8 0w0
-					| Word32_andb => Var x
-					| Word32_div => word 0w1
-					| Word32_ge => t
-					| Word32_gt => f
-					| Word32_le => t
-					| Word32_lt => f
-					| Word32_mod => word 0w0
-					| Word32_orb => Var x
-					| Word32_sub => word 0w0
-					| Word32_xorb => word 0w0
-					| _ => Unknown
-				       end
-			       else Unknown
+	     | (_, [Var x, Var y]) =>
+		  if varEquals (x, y)
+		     then let
+			     val t = ApplyResult.truee
+			     val f = ApplyResult.falsee
+			     datatype z = datatype ApplyResult.t
+			  in case name of
+			        Char_lt => f
+			      | Char_le => t
+			      | Char_gt => f
+			      | Char_ge => t
+			      | Int_ge => t
+			      | Int_geu => t
+			      | Int_gt => f
+			      | Int_gtu => f
+			      | Int_le => t
+			      | Int_lt => f
+			      | Int_quot => int 1
+			      | Int_rem => int 0
+			      | Int_sub => int 0
+			      | IntInf_compare => int 0
+			      | IntInf_equal => t
+			      | MLton_eq => t
+			      | MLton_equal => t
+			      | Real_lt => f
+			      | Real_le => t
+			      | Real_equal => t
+			      | Real_gt => f
+			      | Real_ge => t
+			      | Real_qequal => t
+			      | Word8_andb => Var x
+			      | Word8_div => word8 0w1
+			      | Word8_ge => t
+			      | Word8_gt => f
+			      | Word8_le => t
+			      | Word8_lt => f
+			      | Word8_mod => word8 0w0
+			      | Word8_orb => Var x
+			      | Word8_sub => word8 0w0
+			      | Word8_xorb => word8 0w0
+			      | Word32_andb => Var x
+			      | Word32_div => word 0w1
+			      | Word32_ge => t
+			      | Word32_gt => f
+			      | Word32_le => t
+			      | Word32_lt => f
+			      | Word32_mod => word 0w0
+			      | Word32_orb => Var x
+			      | Word32_sub => word 0w0
+			      | Word32_xorb => word 0w0
+			      | _ => Unknown
+			  end
+		  else Unknown
              | _ => Unknown
 	 end
    in

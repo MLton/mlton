@@ -7,4 +7,11 @@
 signature INT_INF =
    sig
       include INTEGER
+
+      val orb: t * t -> t
+      val xorb: t * t -> t
+      val andb: t * t -> t
+      val notb: t -> t
+      val << : t * Pervasive.Word.word -> t
+      val ~>> : t * Pervasive.Word.word -> t
    end
