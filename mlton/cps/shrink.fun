@@ -608,35 +608,9 @@ fun shrinkExp globals =
 	     | HandlerPop => Exp.prefix (rest (), dec)
 	     | HandlerPush h =>
 		  let
-		     val info as JumpInfo.T {args, meaning, name, ...} =
-			jumpInfo h
+		     val info as JumpInfo.T {name, ...} = jumpInfo h
 		  in
-		     if (Jump.equals (h, name)
-			 andalso (case meaning of
-				     JumpInfo.Code _ => true
-				   | _ => false))
-			then Exp.prefix (rest (), dec)
-		     else
-			(* Need to create a wrapper. *)
-			let
-			   val _ = Out.output (Out.error, "creating wrapper\n")
-			   val formals =
-			      Vector.map (args, fn (x, t) =>
-					  (Var.new x, t))
-			   val handler = Jump.new h
-			in Exp.prefixs
-			   (rest (),
-			    [Fun {name = handler,
-				  args = formals,
-				  body = jump (info,
-					       Vector.map
-					       (formals, fn (x, _) =>
-						VarInfo.T
-						{var = x,
-						 numOccurrences = ref 1,
-						 value = ref NONE}))},
-			     HandlerPush handler])
-			end
+		     Exp.prefix (rest (), HandlerPush name)
 		  end
 	 and simplifyBind arg: Exp.t =
 	    traceSimplifyBind
