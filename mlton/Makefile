@@ -77,7 +77,7 @@ nj-whole: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 		echo 'val _ = Main.exportNJ ("$(SRC)/basis-library", "$(LIB)/mlton")';	\
 		echo 'end';							\
 	) >$(NAME).whole.sml
-	time $(SML) <$(NAME).whole.sml
+	$(SML) <$(NAME).whole.sml
 
 mlton.sml: $(NAME).cm $(shell $(MLTON) -stop f mlton.cm)
 	rm -f mlton.sml && mlton -stop sml mlton.cm && chmod -w mlton.sml
@@ -114,7 +114,7 @@ nj-mlton: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 		echo 'Control.polyEqWarn := false;';				\
 		echo 'CM.make "sources.cm";';					\
 		echo 'Main.exportNJ ("$(SRC)/basis-library", "$(LIB)/mlton");'	\
-	) | time $(SML)
+	) | $(SML)
 
 .PHONY: nj-mlton-dual
 nj-mlton-dual: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
@@ -127,7 +127,7 @@ nj-mlton-dual: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server2", pathtrans = NONE, pref = 0};';\
 		echo 'CM.make "sources.cm";';					\
 		echo 'Main.exportNJ ("$(SRC)/basis-library", "$(LIB)/mlton");'	\
-	) | time $(SML)
+	) | $(SML)
 
 .PHONY: nj-mlton-110.9.1
 nj-mlton-110.9.1: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
