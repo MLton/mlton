@@ -6,13 +6,6 @@ type int = Int.t
 val fail = Process.fail
 
 val doHtml = ref false
-val doKit = ref false
-val doMLton = ref true
-val doMLtonTop = ref false
-val doMLtonStable = ref false
-val doMosml = ref false
-val doNJ = ref false
-val doPoly = ref false
    
 local
    val trialTime = Time.seconds (IntInf.fromInt 60)
@@ -63,7 +56,8 @@ fun compileSizeRun {args, compiler, exe, doTextPlusData: bool} =
     end)
 
 fun batch bench = concat [bench, ".batch.sml"]
-   
+
+(*   
 local
    fun make (compiler, args) {bench} =
       let val exe = "a.out"
@@ -77,6 +71,29 @@ in
    val mltonStableCompile = make ("mlton-stable", [])
 (*   val mltonTopCompile = make ("/usr/local/bin/mlton", []) *)
    val mltonTopCompile = make ("mlton", ["-native-live-stack", "false"])
+end
+*)
+
+local
+  fun make (compiler, args) {bench} =
+      let val exe = "a.out"
+      in compileSizeRun {args = args @ ["-o", exe, batch bench],
+			 compiler = compiler,
+			 exe = exe,
+			 doTextPlusData = true}
+      end
+in
+  val makeMLton 
+    = fn compiler => let
+		       val name = compiler
+		       val (compiler,args)
+			 = case String.split(compiler, #" ")
+			     of compiler::args => (compiler, args)
+			      | _ => ("mlton", [])
+		     in
+		       {name = name,
+			test = make (compiler, args)}
+		     end
 end
 
 fun kitCompile {bench} =
@@ -197,30 +214,6 @@ fun njCompile {bench} =
  *     end)
  *)
 
-val compilers: {doit: bool ref,
-		name: string,
-		test: {bench: File.t} -> {compile: real option,
-					  run: real option,
-					  size: int option}} list =
-   [{doit = doKit,
-     name = "ML-Kit",
-     test = kitCompile},
-    {doit = doMLton,
-     name = "MLton",
-     test = mltonCompile},
-    {doit = doMLtonStable,
-     name = "stable-MLton",
-     test = mltonStableCompile},
-    {doit = doMLtonTop,
-     name = "old-MLton",
-     test = mltonTopCompile},
-    {doit = doMosml,
-     name = "Moscow-ML",
-     test = mosmlCompile},
-    {doit = doNJ,
-     name = "SML/NJ",
-     test = njCompile}]
-
 fun usage msg =
    Process.usage {usage = "[-mlkit] [-mosml] [-smlnj] bench1 bench2 ...",
 		  msg = msg}
@@ -231,6 +224,13 @@ type 'a data = {bench: string,
 
 fun main args =
    let
+     val compilers: {name: string,
+		     test: {bench: File.t} -> {compile: real option,
+					       run: real option,
+					       size: int option}} list ref 
+       = ref []
+     fun pushCompiler compiler = List.push(compilers, compiler)
+
       (* Set the stack limit to its max, since mlkit segfaults on some benchmarks
        * otherwise.
        *)
@@ -246,17 +246,29 @@ fun main args =
 	 val res =
 	    parse {switches = args,
 		   opts = [("html", trueRef doHtml),
-			   ("mlkit", trueRef doKit),
-			   ("mltonStable", trueRef doMLtonStable),
-			   ("mltonTop", trueRef doMLtonTop),
-			   ("mosml", trueRef doMosml),
-			   ("smlnj", trueRef doNJ),
+			   ("mlkit", 
+			    None (fn () => pushCompiler
+					   {name = "ML-Kit",
+					    test = kitCompile})),
+			   ("mosml",
+			    None (fn () => pushCompiler
+				           {name = "Moscow-ML",
+					    test = mosmlCompile})),
+			   ("smlnj",
+			    None (fn () => pushCompiler
+                                           {name = "SML/NJ",
+					    test = njCompile})),
+			   ("mlton",
+			    SpaceString (fn compiler => pushCompiler
+                                                        (makeMLton compiler))),
 			   trace]}
       end
    in case res of
       Result.No s => usage (concat ["invalid switch: ", s])
     | Result.Yes benchmarks =>
 	 let
+	    val compilers = List.rev(!compilers)
+	    val base = #name (hd compilers)
 	    val _ =
 	       let open Signal
 	       in Handler.set (pipe, Handler.Ignore)
@@ -325,18 +337,18 @@ fun main args =
 		     end
 		  val _ = show ("compile time", compiles, r2s)
 		  val _ = show ("run time", runs, r2s)
-		  val mltons = List.keepAll (runs, fn {compiler, ...} =>
-					     compiler = "MLton")
+		  val bases = List.keepAll (runs, fn {compiler, ...} =>
+					    compiler = base)
 		  val runs =
 		     List.fold
 		     (runs, [], fn ({bench, compiler, value}, ac) =>
-		      if compiler = "MLton"
+		      if compiler = base
 			 then ac
 		      else
 			 {bench = bench,
 			  compiler = compiler,
 			  value =
-			  case List.peek (mltons, fn {bench = b, ...} =>
+			  case List.peek (bases, fn {bench = b, ...} =>
 					  bench = b) of
 			     NONE => ~1.0
 			   | SOME {value = v, ...} => value / v} :: ac)
@@ -358,11 +370,11 @@ fun main args =
 		   val foundOne = ref false
 		   val res =
 		      List.fold
-		      (compilers, ac, fn ({doit, name, test},
+		      (compilers, ac, fn ({name, test},
 					  ac as {compiles: real data,
 						 runs: real data,
 						 sizes: int data}) =>
-		       if !doit
+		       if true
 			  then
 			     let
 				val {compile, run, size} =

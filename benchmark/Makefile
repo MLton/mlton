@@ -42,7 +42,7 @@ tags:
 
 BENCH = barnes-hut checksum count-graphs DLXSimulator fft fib hamlet knuth-bendix lexgen life logic mandelbrot matrix-multiply md5 merge mlyacc mpuz nucleic peek psdes-random ratio-regions ray raytrace simple smith-normal-form tailfib tak tensor tsp vector-concat vector-rev vliw wc-input1 wc-scanStream zebra zern
 
-BFLAGS = -mlkit -mosml -smlnj
+BFLAGS = -mlton "mlton" -mlkit -mosml -smlnj
 
 .PHONY: test
 test: $(NAME)
@@ -50,7 +50,7 @@ test: $(NAME)
 
 QBENCH = $(BENCH)
 
-QBFLAGS = -mltonTop -mltonStable
+QBFLAGS = -mlton "mlton-stable -native-live-stack true" -mlton "mlton -native-live-transfer 0 -native-live-stack true" -mlton "mlton -native-live-transfer 1 -native-live-stack true" -mlton "mlton -native-live-transfer 2 -native-live-stack true" -mlton "mlton -native-live-transfer 3 -native-live-stack true" -mlton "mlton -native-live-transfer 4 -native-live-stack true" 
 
 .PHONY: qtest
 qtest: $(NAME)
