@@ -482,7 +482,7 @@ structure Exp =
       fun foreachCall (e, f) =
 	 foreachTransfer (e, fn Transfer.Call r => f r | _ => ())
 
-      fun layoutFlat (e: t): Layout.t =
+      fun layoutFlat (e: t, jumpHandlers: Jump.t -> Jump.t list): Layout.t =
 	 let
 	    open Layout
 	    val funs = ref []
@@ -528,7 +528,11 @@ structure Exp =
 				 align [seq [Jump.layout name,
 					     str " ",
 					     layoutFormals args,
-					     str " = "]]],
+					     str " ",
+					     List.layout Jump.layout
+					     (jumpHandlers name),
+					     str " = "
+					     ]]],
 			    indent (layoutExp body, !Control.indentation)]))]
 	 end
 
@@ -1245,7 +1249,7 @@ structure Function =
 		      val body =
 			 if false
 			    then Exp.layout body
-			 else Exp.layoutFlat body
+			 else Exp.layoutFlat (body, jumpHandlers)
 		   in indent (body, !Control.indentation)
 		   end]
 	 end
