@@ -10,7 +10,8 @@ interpret-gdb.o: interpret.c interpret.h
 	gcc -o $@ -gstabs+ -g2 -DASSERT=1 -Wall -c $(INCLUDES) interpret.c
 
 print-opcodes: print-opcodes.c opcode.h
-	gcc -o print-opcodes -I../runtime print-opcodes.c 
+	gcc -o print-opcodes -I../runtime -L../runtime	\
+		print-opcodes.c -lmlton
 
 .PHONY: clean
 clean:
