@@ -9,7 +9,7 @@ structure Int32: INTEGER_EXTRA =
    struct
       structure Int = Primitive.Int
       open Int
-	 
+
       val precision: int option = SOME 32
 
       val maxInt: int option = SOME 0x7fffffff
