@@ -68,10 +68,14 @@ structure PosixFileSys: POSIX_FILESYS_EXTRA =
 			then if Error.getErrno () = 0
 				then ""
 			     else Error.error ()
-		     else (case C.CS.toString cs of
-			      "." => loop ()
-			    | ".." => loop ()
-			    | s => s)
+		     else
+			let
+			   val s = C.CS.toString cs
+			in
+			   if s = "." orelse s = ".."
+			      then loop ()
+			   else s
+			end
 		  end
 	    in loop ()
 	    end

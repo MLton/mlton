@@ -46,26 +46,30 @@ structure OS_FileSys: OS_FILE_SYS =
 	    val oldCWD = getDir()
 	    fun mkPath pathFromRoot =
 	       P.toString{isAbs=true, vol="", arcs=List.rev pathFromRoot}
-	    fun walkPath (0, _, _) =
-	       raise PosixError.SysErr("too many links", NONE)
-	      | walkPath (n, pathFromRoot, []) =
-		mkPath pathFromRoot
-	      | walkPath (n, pathFromRoot, "" :: al) =
-		walkPath (n, pathFromRoot, al)
-	      | walkPath (n, pathFromRoot, "." :: al) =
-		walkPath (n, pathFromRoot, al)
-	      | walkPath (n, [], ".." :: al) =
-		walkPath (n, [], al)
-	      | walkPath (n, _ :: r, ".." :: al) =
-		(chDir ".."; walkPath (n, r, al))
-	      | walkPath (n, pathFromRoot, [arc]) =
-		if (isLink arc)
-		   then expandLink (n, pathFromRoot, arc, [])
-		else mkPath (arc :: pathFromRoot)
-	      | walkPath (n, pathFromRoot, arc :: al) =
-		if (isLink arc)
-		   then expandLink (n, pathFromRoot, arc, al)
-		else (chDir arc; walkPath (n, arc :: pathFromRoot, al))
+	    fun walkPath (n, pathFromRoot, arcs) =
+	       if n = 0
+		  then raise PosixError.SysErr ("too many links", NONE)
+	       else
+		  case arcs of
+		     [] => mkPath pathFromRoot
+		   | arc :: al =>
+			if arc = "" orelse arc = "."
+			   then walkPath (n, pathFromRoot, al)
+			else if arc = ".."
+				then
+				   (case pathFromRoot of
+				       [] => walkPath (n, [], al)
+				     | _ :: r =>
+					  (chDir ".."; walkPath (n, r, al)))
+		        else
+			   if isLink arc
+			      then expandLink (n, pathFromRoot, arc, [])
+			   else
+			      case al of
+				 [] => mkPath (arc :: pathFromRoot)
+			       | _ =>
+				    (chDir arc
+				     ; walkPath (n, arc :: pathFromRoot, al))
 	    and expandLink (n, pathFromRoot, link, rest) =
 	       (
 		case (P.fromString(readLink link))
