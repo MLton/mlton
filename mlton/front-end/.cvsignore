@@ -1,4 +1,4 @@
-ml.grm.sml
-ml.grm.sig
 ml.grm.desc
+ml.grm.sig
+ml.grm.sml
 ml.lex.sml

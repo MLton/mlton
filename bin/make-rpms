@@ -104,7 +104,7 @@ if [ $home = 'yes' ]; then
 	find . -type d | grep CVS | xargs rm -rf
 	find . -type f | grep cvsignore | xargs rm -f
 	echo '  Building tgz'
-	tar.write -x Makefile -x .cvsignore . | gzip >$root/mlton-home.tgz
+	tar.write -x Makefile . | gzip >$root/mlton-home.tgz
 	echo '  ftp'\''ing'
 	remote='hirame'
 	cd $root
