@@ -3052,8 +3052,6 @@ static void majorGC (GC_state s, W32 bytesRequested, bool mayResize) {
 			/ (float)(s->numCopyingGCs + s->numMarkCompactGCs)
 			< s->hashConsFrequency))
 		s->hashConsDuringGC = TRUE;
-	fprintf (stderr, "hashConsDuringGC = %s\n",
-			boolToString (s->hashConsDuringGC));
         if ((not FORCE_MARK_COMPACT)
 		and not s->hashConsDuringGC // only markCompact can hash cons
  		and s->heap.size < s->ram
