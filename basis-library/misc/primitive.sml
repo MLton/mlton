@@ -890,7 +890,7 @@ structure Primitive =
 			    | "x86" => X86
 			    | _ => raise Fail "strange MLton_Platform_Arch_host"
 
-			val isBigEndian =
+			val hostIsBigEndian =
 			   case host of
 			      PowerPC => true
 			    | Sparc => true

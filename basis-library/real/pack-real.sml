@@ -12,7 +12,7 @@ struct
 open S
 
 val (sub, up) =
-   if isBigEndian = Primitive.MLton.Platform.Arch.isBigEndian
+   if isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian
       then (subVec, update)
    else (subVecRev, updateRev)
 

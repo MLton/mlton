@@ -14,7 +14,7 @@ val bytesPerElem: int = 4
 val isBigEndian = isBigEndian
 
 val (sub, up, subV) =
-   if isBigEndian = Primitive.MLton.Platform.Arch.isBigEndian
+   if isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian
       then (Primitive.Word8Array.subWord,
 	    Primitive.Word8Array.updateWord,
 	    Primitive.Word8Vector.subWord)
