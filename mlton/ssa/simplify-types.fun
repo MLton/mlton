@@ -692,7 +692,7 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
 	     | SOME statements =>
 		  let
 		     val (stmts, transfer) = simplifyTransfer transfer
-		     val statements = Vector.concat [stmts, statements]
+		     val statements = Vector.concat [statements, stmts]
 		  in
 		     Block.T {label = label,
 			      args = args,
