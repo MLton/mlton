@@ -12,11 +12,13 @@ CHANGES: ../CHANGES
 	cp -p ../CHANGES .
 
 HTML/main.html: $(UG)/main/main.html
-	cd $(UG) && $(MAKE)
 	gzip -c $(UG)/main.ps >user-guide.ps.gz
 	rm -rf HTML
 	mkdir -p HTML
 	(cd $(UG)/main && tar.write .) | (cd HTML && tar.read)
+
+$(UG)/main/main.html:
+	cd $(UG) && $(MAKE)
 
 
 .PHONY: clean
