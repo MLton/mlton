@@ -237,6 +237,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		    val tys = Vector.map (tys, toRtype)
 		    val bytes = ref []
 		    val doubleWords = ref []
+		    val halfWords = ref []
 		    val words = ref []
 		    val pointers = ref []
 		    val _ =
@@ -259,6 +260,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 				       then pointers
 				    else (case R.Type.size t of
 					     1 => bytes
+					   | 2 => halfWords
 					   | 4 => words
 					   | 8 => doubleWords
 					   | _ => Error.bug "strange size")
@@ -271,10 +273,11 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 			({index = index, offset = offset, ty = ty} :: res,
 			 offset + size))
 		    val (accum, offset: int) =
-		       build
-		       (bytes, 1,
-			build (words, 4,
-			       build (doubleWords, 8, ([], initialOffset))))
+		       build (bytes, 1,
+		       build (halfWords, 2,
+		       build (words, 4,
+		       build (doubleWords, 8, 
+			      ([], initialOffset)))))
 		    val offset =
 		       if isNormal
 			  then
