@@ -6,15 +6,20 @@
 name=`basename $0`
 
 function usage() {
-	echo >&2 "usage: $name [-home]"
+	echo >&2 "usage: $name [-home] [-local]"
 	exit 1
 }
 
 home='no'
+local='no'
 while [ "$#" -gt 0 ]; do
 	case "$1" in
 	-home)
 		home='yes'
+		shift
+		;;
+	-local)
+		local='yes'
 		shift
 		;;
 	*)
@@ -36,19 +41,24 @@ root=`pwd`
 src="$root/SOURCES/mlton-$version/src"
 mkdir -p BUILD RPMS/i386 SOURCES SPECS SRPMS
 
-echo 'Checking out sources'
 cd $root/SOURCES
 mkdir mlton-$version
 cd mlton-$version
 mkdir bin lib include
-cvs -Q co -d src mlton
-if [ ! -d src/basis-library ]; then
-	echo >&2 'Could'\''t check out sources.'
-	exit 1
+if [ $local = 'yes' ]; then
+	echo 'Getting local sources'
+	(cd /home/sweeks/mlton && tar.write src) | tar.read
+else
+ 	echo 'Checking out sources'
+ 	cvs -Q co -d src mlton
+ 	if [ ! -d src/basis-library ]; then
+ 		echo >&2 'Could'\''t check out sources.'
+		exit 1
+ 	fi
+ 	cvs rtag -d "release-$version" mlton
+ 	(cd src && cvs tag "release-$version")
+ 	cvs -Q release src
 fi
-cvs rtag -d "release-$version" mlton
-(cd src && cvs tag "release-$version")
-cvs -Q release src
 find src -type d | grep CVS | xargs rm -rf
 find src -type f | grep cvsignore | xargs rm -f
 
