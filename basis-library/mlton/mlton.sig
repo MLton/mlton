@@ -13,7 +13,8 @@ signature MLTON =
       val safe: bool
 (*      val serialize: 'a -> Word8Vector.vector *)
       val size: 'a -> int
-	 
+
+      structure Array: MLTON_ARRAY
       structure Cont: MLTON_CONT
       structure GC: MLTON_GC
       structure Itimer: MLTON_ITIMER
@@ -27,6 +28,7 @@ signature MLTON =
       structure Syslog: MLTON_SYSLOG
       structure Thread: MLTON_THREAD
       structure TextIO: MLTON_TEXT_IO
+      structure Vector: MLTON_VECTOR
       structure Word: MLTON_WORD where type word = Word.word
       structure Word8: MLTON_WORD where type word = Word8.word
       structure World: MLTON_WORLD

@@ -34,6 +34,8 @@ signature SEQUENCE =
       val sub: 'a sequence * int -> 'a elt 
       val tabulate: int * (int -> 'a elt) -> 'a sequence 
       val toList: 'a sequence -> 'a elt list
+      val unfold: int * 'a * ('a -> 'b elt * 'a) -> 'b sequence
+      val unfoldi: int * 'a * (int * 'a -> 'b elt * 'a) -> 'b sequence
       val update: 'a elt array * int * 'a elt -> unit
       val wholeSlice: 'a sequence -> 'a sequence * int * int option
    end

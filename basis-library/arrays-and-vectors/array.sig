@@ -43,6 +43,8 @@ signature ARRAY_EXTRA =
       val checkSliceMax: int * int option * int -> int
       val prefixToList: 'a array * int -> 'a list
       val toList: 'a array -> 'a list
+      val unfold: int * 'a * ('a -> 'b * 'a) -> 'b array
+      val unfoldi: int * 'a * (int * 'a -> 'b * 'a) -> 'b array
       val unsafeSub: 'a array * int -> 'a
       val unsafeUpdate: 'a array * int * 'a -> unit
    end

@@ -73,7 +73,7 @@ functor Array
 structure Array =
    let 
       structure A = Array (open Array
-			  type 'a elem = 'a)
+			   type 'a elem = 'a)
    in struct open Array A end
    end
 

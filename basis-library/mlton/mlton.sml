@@ -25,6 +25,7 @@ fun cleanAtExit () = let open Cleaner in clean atExit end
 val debug = Primitive.debug
 val safe = Primitive.safe
 
+structure Array = Array
 structure Cont = Cont
 structure GC = GC
 structure Itimer = Itimer
@@ -64,6 +65,7 @@ structure TextIO =
    end
 
 structure Thread = Thread
+structure Vector = Vector
 structure World = World
 
 structure Word =

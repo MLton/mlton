@@ -116,6 +116,8 @@ system/command-line.sml
 general/sml90.sig
 general/sml90.sml
 
+mlton/array.sig
+mlton/vector.sig
 mlton/itimer.sig
 mlton/itimer.sml
 mlton/thread.sig

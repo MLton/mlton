@@ -106,15 +106,49 @@ fun concatRev l = fold (l, [], append)
 
 fun concat l = concatRev (rev l) 
 
-fun tabulate (n: int, f) =
-   let
-      val _ = Assert.assert ("List.tabulate", fn () => n >= 0)
-      fun loop (n, ac) =
-	 if n < 0
-	    then ac
-	 else loop (n - 1, f n :: ac)
-   in loop (n - 1, [])
-   end
+val ('a, 'b) unfoldri: int * 'a * (int * 'a -> 'b * 'a) -> 'b list =
+   fn (n, a, f) =>
+   if n < 0
+      then Error.bug "List.unfoldri"
+   else
+      let
+	 fun loop (i, a, bs) =
+	    if i < 0
+	       then bs
+	    else
+	       let
+		  val (b, a') = f (i, a)
+	       in
+		  loop (i - 1, a', b :: bs)
+	       end
+      in
+	 loop (n - 1, a, [])
+      end
+
+fun unfoldr (n, a, f) = unfoldri (n, a, f o #2)
+
+val ('a, 'b) unfoldi: int * 'a * (int * 'a -> 'b * 'a) -> 'b list =
+   fn (n, a, f) =>
+   if n < 0
+      then Error.bug "List.unfoldi"
+   else
+      let
+	 fun loop (i, a, bs) =
+	    if i >= n
+	       then rev bs
+	    else
+	       let
+		  val (b, a') = f (i, a)
+	       in
+		  loop (i + 1, a', b :: bs)
+	       end
+      in
+	 loop (0, a, [])
+      end
+
+fun unfold (n, a, f) = unfoldi (n, a, f o #2)
+
+fun tabulate (n: int, f) = unfoldri (n, (), fn (i, ()) => (f i, ()))
 
 fun duplicate (n, f) = tabulate (n, fn _ => f ())
 

@@ -6,6 +6,10 @@ struct
 
 open S
 
+fun unfold (n, a, f) = unfoldi (n, a, f o #2)
+   
+fun tabulate (n, f) = unfoldi (n, (), fn (i, ()) => (f i, ()))
+
 datatype ('a, 'b) continue =
    Continue of 'a
   | Done of 'b
@@ -358,87 +362,43 @@ fun tabulator (n, f) =
    in v
    end
 
-(* Using a tabulator to implement concat costs a factor of 6.  Way too high. *)
-(* local
- *    fun doit (vs, fold, foreach') =
- *       tabulator (fold (vs, 0: int, fn (v, n) => n + length v),
- * 		 fn next => foreach' (vs, fn v => foreach (v, next)))
- * in
- *    fun concat vs = doit (vs, List.fold, List.foreach)
- *    fun concatV vs = doit (vs, fold, foreach)
- * end
- *)
-
 fun 'a concat (vs: 'a t list): 'a t =
    case vs of
       [] => new0 ()
-    | v :: vs' =>
+    | v :: vs' => 
 	 let
 	    val n = List.fold (vs, 0, fn (v, s) => s + length v)
-	    val v = ref v
-	    val vs = ref vs'
-	    val i = ref 0
-	    fun next () =
-	       let
-		  val i' = !i
-		  val v' = !v
-	       in
-		  if i' < length v'
-		     then
-			let
-			   val _ = i := i' + 1
-			in
-			   unsafeSub (v', i')
-			end
-		  else
-		     let
-			val _ =
-			   case !vs of
-			      [] => Error.bug "ran out of vectors"
-			    | v' :: vs' =>
-				 (v := v'
-				  ; vs := vs'
-				  ; i := 0)
-		     in
-			next ()
-		     end
-	       end
-	 in tabulate (n, fn _ => next ())
+	 in
+	    unfold (n, (0, v, vs'),
+		    let
+		       fun loop (i, v, vs) =
+			  if i < length v
+			     then (sub (v, i), (i + 1, v, vs))
+			  else
+			     case vs of
+				[] => Error.bug "concat"
+			      | v :: vs => loop (0, v, vs)
+		    in loop
+		    end)
 	 end
 
-fun 'a concatV (vs: 'a t t): 'a t =
-   if isEmpty vs
+fun concatV vs =
+   if 0 = length vs
       then new0 ()
    else
       let
 	 val n = fold (vs, 0, fn (v, s) => s + length v)
-	 val v = ref (unsafeSub (vs, 0))
-	 val j = ref 1
-	 val i = ref 0
-	 fun next () =
-	    let
-	       val i' = !i
-	       val v' = !v
-	    in
-	       if i' < length v'
-		  then
-		     let
-			val _ = i := i' + 1
-		     in
-			unsafeSub (v', i')
-		     end
-	       else
-		  let
-		     val j' = !j
-		     val _ = j := j' + 1
-		     val _ = v := unsafeSub (vs, j')
-		     val _ = i := 0
-		  in
-		     next ()
-		  end
-	    end
-      in tabulate (n, fn _ => next ())
-      end
+	 fun state i = (i, sub (vs, i), 0)
+      in
+	 unfold (n, state 0,
+		 let
+		    fun loop (i, v, j) =
+		       if j < length v
+			  then (sub (v, j), (i, v, j + 1))
+		       else loop (state (i + 1))
+		 in loop
+		 end)
+   end
 
 fun splitLast v =
    let

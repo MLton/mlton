@@ -1,9 +1,15 @@
 structure Vector =
    let
-      structure V = Vector (open Pervasive.Vector
-			    type 'a t = 'a vector
-			    exception New = Size
-			    val unsafeSub = Unsafe.Vector.sub)
+      structure V = Vector (local
+			       open Pervasive.Vector
+			    in
+			       type 'a t = 'a vector
+			       exception New = Size
+			       val length = length
+			       val sub = sub
+			       val unfoldi = MLton.Vector.unfoldi
+			       val unsafeSub = Unsafe.Vector.sub
+			    end)
    in
       struct
 	 open V

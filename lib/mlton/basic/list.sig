@@ -146,6 +146,10 @@ signature LIST =
       val tabulate: int * (int -> 'a) -> 'a t
 (*      val tail: 'a t -> 'a t *)
       val toString: ('a -> string) -> 'a t -> string
+      val unfold: int * 'a * ('a -> 'b * 'a) -> 'b list
+      val unfoldi: int * 'a * (int * 'a -> 'b * 'a) -> 'b list
+      val unfoldr: int * 'a * ('a -> 'b * 'a) -> 'b list
+      val unfoldri: int * 'a * (int * 'a -> 'b * 'a) -> 'b list
       val union: 'a t * 'a t * ('a * 'a -> bool) -> 'a t
       val unzip: ('a * 'b) t -> 'a t * 'b t
 (*      val unzip3: ('a * 'b * 'c) t -> 'a t * 'b t * 'c t *)

@@ -36,6 +36,8 @@ word.sig
 random.sig
 syslog.sig
 syslog.sml
+array.sig
+vector.sig
 mlton.sig
 mlton.sml
 unsafe.sml

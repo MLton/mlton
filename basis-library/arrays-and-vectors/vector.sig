@@ -32,5 +32,7 @@ signature VECTOR_EXTRA =
 
       val checkSlice: 'a vector * int * int option -> int
       val fromArray: 'a array -> 'a vector
+      val unfold: int * 'a * ('a -> 'b * 'a) -> 'b vector
+      val unfoldi: int * 'a * (int * 'a -> 'b * 'a) -> 'b vector
       val unsafeSub: 'a vector * int -> 'a
    end

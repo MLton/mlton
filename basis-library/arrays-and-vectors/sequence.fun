@@ -40,6 +40,26 @@ functor Sequence (S: sig
 	    then raise Subscript
 	 else Array.update (a, i, x)
 
+      fun unfoldi (n, b, f) =
+	 let
+	    val a = array n
+	    fun loop (i, b)  =
+	       if i = n
+		  then ()
+	       else
+		  let
+		     val (x, b') = f (i, b)
+		     val _ = Array.update (a, i, x)
+		  in
+		     loop (i + 1, b')
+		  end
+	    val _ = loop (0, b)
+	 in
+	    fromArray a
+	 end
+
+      fun unfold (n, a, f) = unfoldi (n, a, f o #2)
+	 
       (* Tabulate depends on the fact that the runtime system fills in the array
        * with reasonable bogus values.
        *)
@@ -154,6 +174,30 @@ functor Sequence (S: sig
 	 fn (s, 0, NONE) => s
 	  | slice => mapi #2 slice
 
+      (* This concat is not used for now, since it is 3X slower than the
+       * following one.  As soon as we get better intraprocedural flattening,
+       * we should replace it.
+       *)
+      fun 'a concat (vs: 'a sequence list): 'a sequence =
+	 case vs of
+	    [] => fromArray (Primitive.Array.array0 ())
+	  | v :: vs' => 
+	       let
+		  val n = List.foldl (fn (v, s) => s + length v) 0 vs
+	       in
+		  unfold (n, (0, v, vs'),
+			  let
+			     fun loop (i, v, vs) =
+				if i < length v
+				   then (sub (v, i), (i + 1, v, vs))
+				else
+				   case vs of
+				      [] => raise Fail "concat bug"
+				    | v :: vs => loop (0, v, vs)
+			  in loop
+			  end)
+	       end
+
       fun concat sequences =
 	 case sequences of
 	    [s] => s
@@ -169,16 +213,17 @@ functor Sequence (S: sig
 			 fun loop i =
 			    if i >= imax
 			       then ()
-			    else (Array.update (a, n +? i, S.sub (s, i))
+			    else (Array.update (a, n + i, S.sub (s, i))
 				  ; loop (i + 1))
-		      in loop 0
-			 ; n +? imax
+			 val _ = loop 0
+		      in
+			 n + imax
 		      end)
 		     0 sequences
 	       in
 		  fromArray a
 	       end
-
+     
       fun prefixToList (s, n) =
 	 let
 	    fun loop (i, l) =

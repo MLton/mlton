@@ -14,7 +14,27 @@ structure MLton: MLTON =
       val debug = true
       val safe = true
       fun size _ = ~1: int
-    
+
+      structure Array =
+	 struct
+	    open Array
+
+	    fun unfoldi (n, a, f) =
+	       let
+		  val r = ref a
+	       in
+		  tabulate (n, fn i =>
+			    let
+			       val (b, a') = f (i, !r)
+			       val _ = r := a'
+			    in
+			       b
+			    end)
+	       end
+
+	    fun unfold (n, a, f) = unfoldi (n, a, f o #2)
+	 end
+      
       structure Cont =
 	 struct
 	    structure Cont = SMLofNJ.Cont
@@ -259,6 +279,26 @@ structure MLton: MLTON =
 	 end
 
       structure Thread = Thread
+
+      structure Vector =
+	 struct
+	    open Vector
+
+	    fun unfoldi (n, a, f) =
+	       let
+		  val r = ref a
+	       in
+		  tabulate (n, fn i =>
+			    let
+			       val (b, a') = f (i, !r)
+			       val _ = r := a'
+			    in
+			       b
+			    end)
+	       end
+
+	    fun unfold (n, a, f) = unfoldi (n, a, f o #2)
+	 end
 
       structure World =
 	 struct

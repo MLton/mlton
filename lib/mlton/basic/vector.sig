@@ -7,7 +7,7 @@ signature VECTOR_STRUCTS =
 
       val length: 'a t -> int
       val sub: 'a t * int -> 'a
-      val tabulate: int * (int -> 'a) -> 'a t
+      val unfoldi: int * 'a * (int * 'a -> 'b * 'a) -> 'b t
    end
 
 signature VECTOR =
@@ -90,10 +90,12 @@ signature VECTOR =
        *)
       val sort: 'a t * ('a * 'a -> bool) -> 'a t
       val splitLast: 'a t -> 'a t * 'a
+      val tabulate: int * (int -> 'a) -> 'a t
       val tabulator: int * (('a -> unit) -> unit) -> 'a t
       val toList: 'a t -> 'a list
       val toListMap: 'a t * ('a -> 'b) -> 'b list
       val toListRev: 'a t -> 'a list
+      val unfold: int * 'a * ('a -> 'b * 'a) -> 'b t
       val unzip: ('a * 'b) t -> 'a t * 'b t
       val unzip3: ('a * 'b * 'c) t -> 'a t * 'b t * 'c t
       val zip: 'a t * 'b t -> ('a * 'b) t
