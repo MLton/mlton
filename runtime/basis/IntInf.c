@@ -316,14 +316,14 @@ IntInf_smallMul(Word lhs, Word rhs, pointer carry)
  * Return an integer which compares to 0 as the two intInf args compare
  * to each other.
  */
-int IntInf_compare (pointer lhs, pointer rhs) {
+int IntInf_do_compare (pointer lhs, pointer rhs) {
 	__mpz_struct		lhsmpz,
 				rhsmpz;
 	mp_limb_t		lhsspace[2],
 				rhsspace[2];
 
 	if (DEBUG_INT_INF)
-		fprintf (stderr, "IntInf_compare (0x%08x, 0x%08x)\n",
+		fprintf (stderr, "IntInf_do_compare (0x%08x, 0x%08x)\n",
 				(uint)lhs, (uint)rhs);
 	fill (lhs, &lhsmpz, lhsspace);
 	fill (rhs, &rhsmpz, rhsspace);
@@ -333,13 +333,13 @@ int IntInf_compare (pointer lhs, pointer rhs) {
 /*
  * Check if two IntInf.int's are equal.
  */
-int IntInf_equal (pointer lhs, pointer rhs) {
+int IntInf_do_equal (pointer lhs, pointer rhs) {
 	if (lhs == rhs)
 		return TRUE;
 	if (eitherIsSmall (lhs, rhs))
 		return FALSE;
 	else
-		return 0 == IntInf_compare (lhs, rhs);
+		return 0 == IntInf_do_compare (lhs, rhs);
 }
 
 /*

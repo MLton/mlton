@@ -239,7 +239,7 @@ structure Name =
 			    maySwitchThreads = false,
 			    modifiesFrontier = true,
 			    modifiesStackTop = false,
-			    name = concat ["IntInf_do", name],
+			    name = concat ["IntInf_do_", name],
 			    return = SOME CType.pointer}
 	    fun wordBinary (s, name) =
 	       let

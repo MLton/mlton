@@ -104,8 +104,8 @@ extern pointer			IntInf_do_add(pointer lhs,
 					      uint bytes);
 
 extern Word	IntInf_smallMul(Word lhs, Word rhs, pointer carry);
-extern int	IntInf_compare(pointer lhs, pointer rhs),
-		IntInf_equal(pointer lhs, pointer rhs);
+extern int	IntInf_do_compare(pointer lhs, pointer rhs),
+		IntInf_do_equal(pointer lhs, pointer rhs);
 
 #endif	/* #ifndef _MLTON_INT_INF_H */
 
