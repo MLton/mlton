@@ -52,11 +52,8 @@ $(AOUT): $(SOURCES)
 	mlton $(FLAGS) $(CM)
 	size $(AOUT)
 
-# We pass the full path to mlton, via `which mlton`, because
-# upgrade-basis is written with #!/usr/bin/env sh, which ignores the
-# current path.
 $(UP):
-	$(SRC)/bin/upgrade-basis `which mlton` >$(UP)
+	$(SRC)/bin/upgrade-basis >$(UP)
 
 mlton.cm: mlton-stubs.cm
 	grep -v mlton-stubs mlton-stubs.cm >mlton.cm

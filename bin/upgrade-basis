@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/bin/sh
 
 set -e
 
@@ -10,12 +10,11 @@ die () {
 name=`basename $0`
 
 usage () {
-	die "usage: $name /path/to/mlton"
+	die "usage: $name"
 }
 
 case "$#" in
-1)
-	mlton="$1"
+0)
 ;;
 *)
 	usage
@@ -27,7 +26,7 @@ tmp="$$.sml"
 hasFeature () {
 	feature="$1"
 	echo "$feature" >$tmp
-	$mlton $tmp >/dev/null 2>&1
+	mlton $tmp >/dev/null 2>&1
 }
 
 if ! hasFeature 'fun f x : string option = TextIO.inputLine x'; then
