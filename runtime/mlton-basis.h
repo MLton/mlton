@@ -150,6 +150,9 @@ Int Ptrace_ptrace4(Int request, Int pid, Word addr, Pointer data);
 extern Double Real_Math_e;
 extern Double Real_Math_pi;
 extern Double Real_posInf;
+extern Double Real_maxFinite;
+extern Double Real_minNormalPos;
+extern Double Real_minPos;
 
 Int Real_class(Double d);
 Int Real_isFinite(Double d);
