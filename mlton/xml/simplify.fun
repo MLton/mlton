@@ -45,7 +45,6 @@ structure VarInfo =
 		     lam: Lambda.t}
 	| Tuple of t vector
       withtype monoVarInfo = {numOccurrences: int ref,
-			      ty: Type.t,
 			      value: value option ref,
 			      varExp: VarExp.t}
 
@@ -53,9 +52,8 @@ structure VarInfo =
 	 open Layout
       in
 	 val rec layout =
-	    fn Mono {numOccurrences, ty, value, varExp} =>
+	    fn Mono {numOccurrences, value, varExp} =>
 	         record [("numOccurrences", Int.layout (!numOccurrences)),
-			 ("ty", Type.layout ty),
 			 ("value", Option.layout layoutValue (!value)),
 			 ("varExp", VarExp.layout varExp)]
 	     | Poly x => seq [str "Poly ", VarExp.layout x]
@@ -173,7 +171,6 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
 	    setVarInfo (x,
 			if Vector.isEmpty ts
 			   then VarInfo.Mono {numOccurrences = ref 0,
-					      ty = ty,
 					      value = ref NONE,
 					      varExp = VarExp.mono x}
 			else VarInfo.Poly dummyVarExp)
@@ -433,7 +430,7 @@ fun simplifyOnce (Program.T {datatypes, body, overflow}) =
 			end
 		  in case varExpInfo test of
 		     VarInfo.Poly test => normal test
-		   | VarInfo.Mono {ty, value, varExp, ...} => 
+		   | VarInfo.Mono {value, varExp, ...} => 
 			case (cases, !value) of
 			   (Cases.Con cases,
 			    SOME (Value.ConApp {con = c, arg, ...})) =>
