@@ -35,9 +35,9 @@ RANLIB = $(TARGET)-ranlib
 FLAGS += -b $(TARGET)
 endif
 
-CC = gcc -Wall -I. -Iplatform -D_FILE_OFFSET_BITS=64 $(FLAGS)
-CFLAGS = -O2
-DEBUGFLAGS = -gstabs+ -g2
+CC = gcc
+CFLAGS = -O2 -Wall -I. -Iplatform -D_FILE_OFFSET_BITS=64 $(FLAGS)
+DEBUGFLAGS = $(CFLAGS) -gstabs+ -g2
 
 CFILES = 							\
 	$(shell find basis -type f | grep '\.c$$' | grep -v Real/)	\
