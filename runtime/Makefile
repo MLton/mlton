@@ -9,17 +9,17 @@ AR = $(HOST)-ar rc
 HOSTFLAGS = -b $(HOST)
 endif
 
+ARCHFLAGS = -fomit-frame-pointer
+
 ifeq ($(HOST_ARCH), x86)
-ARCHFLAGS = -mcpu=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=5 -fomit-frame-pointer
+ARCHFLAGS += -mcpu=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=5
 endif
 ifeq ($(HOST_ARCH), sparc)
-ARCHFLAGS = 
+ARCHFLAGS += -Wa,-xarch=v8plusa -fcall-used-g5 -fcall-used-g7 -funroll-all-loops -m32 -mv8 -mcpu=ultrasparc
 endif
 
 CC =		gcc -Wall -I. $(ARCHFLAGS) $(HOSTFLAGS)
-# Can't use more optimization than -O1 because gcc doesn't correctly compile
-#  Real_class in basis/Real.c
-CFLAGS = -O1
+CFLAGS = -O2
 DEBUGFLAGS = -gstabs+ -g2
 
 OBJS =						\

@@ -379,27 +379,74 @@ fun commandLine (args: string list): unit =
       val _ = Control.libDir := lib
       val libDirs = lib :: !libDirs
       val includeDirs = concat [lib, "/include"] :: !includeDirs
-      val x86CFlags =
-	 ["-fno-strength-reduce",
+      (* Much of the commentary for the C flags is taken from the gcc docs. *)
+      val standardCFlags =
+	 [
+	  (* Do not allow gcc to assume the strictest aliasing rules, in which
+	   * an object of one type is assumed never to reside at the same
+	   * address as an object of a different type, unless the types are
+	   * almost the same.
+	   *)
 	  "-fno-strict-aliasing",
+	  (* Don't keep the frame pointer in a register for functions that
+	   * don't need one.
+	   *)
 	  "-fomit-frame-pointer",
-	  "-fschedule-insns",
-	  "-fschedule-insns2",
-	  "-malign-functions=5",
-	  "-malign-jumps=2",
-	  "-malign-loops=2",
-	  (* -mcpu=pentiumpro is the same as -mcpu=i686 *)
-	  "-mcpu=pentiumpro",
 	  "-w"]
+      val x86CFlags =
+	 standardCFlags
+	 @ [
+	    (* Don't perform the optimizations of loop strength reduction and
+	     * elimination of iteration variables.
+	     *)
+	    "-fno-strength-reduce",
+	     (* Attempt to reorder instructions to eliminate execution stalls
+	      * due to required data being unavailable.
+	      *)
+	    "-fschedule-insns",
+	    "-fschedule-insns2",
+	    (* For align-{functions,jumps,loops, we use -m for now instead of
+	     * -f because old gcc's will barf on -f, while newer ones only warn
+	     * about -m.  Someday, when we think we won't run into older gcc's,
+	     * these should be changed to -f.
+	     *)
+	    (* `-falign-functions=N'
+	     * Align the start of functions to the next power-of-two greater
+	     * than N, skipping up to N bytes.
+	     *)
+	    "-malign-functions=5",
+	    (* Align branch targets to a power-of-two boundary. *)
+	    "-malign-jumps=2",
+	    (* Align loops to a power-of-two boundary. *)
+	    "-malign-loops=2",
+            (* Assume the defaults for the machine type when scheduling
+	     * instructions.
+	     * pentiumpro is the same as i686.
+	     *)
+	     "-mcpu=pentiumpro"] 
       val x86LinkLibs = ["m"]
       val sparcCFlags =
-	 ["-Wa,-xarch=v8plusa",
-	  "-m32",
-	  "-malign-functions=4",
-	  "-mcpu=v9",
-	  "-mno-epilogue",
-	  "-mtune=ultrasparc",
-	  "-w"]
+	 standardCFlags
+	 @ [
+	    (* Enable the SPARC V9 instruction set with UltraSPARC extensions. *)
+	    "-Wa,-xarch=v8plusa",
+	    (* Treat the registers g5, g7 as allocable registers that are
+	     * clobbered by function calls.
+	     *)
+	    "-fcall-used-g5",
+	    "-fcall-used-g7",
+	    (* Generate code for a 32 bit environment. *)
+	    "-m32",
+	    (* Emit integer multiply and integer divide instructions that exist
+	     * in SPARC v8 but not in SPARC v7.
+	     *)
+	    "-mv8",
+	    (* Set the instruction set, register set, and instruction scheduling 
+	     * parameters for machine type.
+	     *)
+	    "-mcpu=ultrasparc",
+	    (* Emit exit code inline at every function exit. *)
+	    "-mno-epilogue"]
       val sparcLinkLibs = ["dl", "m", "nsl", "socket"]
       val (cFlags, defaultLibs) =
 	 case !hostArch of
