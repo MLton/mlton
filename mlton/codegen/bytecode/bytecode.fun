@@ -141,11 +141,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	 #opcode (HashSet.lookupOrInsert
 		  (table, String.hash name,
 		   fn {name = name', ...} => name = name',
-		   fn () =>
-		   (print (concat ["missing opcode: ", name, "\n"])
-		    ; {hash = String.hash name,
-		       opcode = 0,
-		       name = name})))
+		   fn () => Error.bug (concat ["missing opcode: ", name, "\n"])))
       val decls = ref []
       val callCounter = Counter.new 0
       val callCs = ref []
@@ -375,7 +371,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
 	   | W16 => emitWord16
 	   | W32 => emitWord32
 	   | W64 => emitWord64) (WordX.toIntInf w)
-      val emitOpcode = emitWord16
+      val emitOpcode = emitWord8
       val emitPrim: 'a Prim.t -> unit =
 	 fn p => emitOpcode (opcode (Prim.toString p))
       fun emitCallC (index: int): unit =

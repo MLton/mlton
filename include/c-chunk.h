@@ -274,8 +274,6 @@ binaryReal(sub, -)
 		return x op y;					\
 	}
 binaryReal(equal, ==)
-binaryReal(ge, >=)
-binaryReal(gt, >)
 binaryReal(le, <=)
 binaryReal(lt, <)
 #undef binaryReal
@@ -364,12 +362,6 @@ static inline void Real64_store (Real64 *dp, Real64 d) {
 	wordBinary (size, sub, -)						\
 	wordBinary (size, xorb, ^)						\
 	wordCmp (size, equal, ==)						\
-	wordCmp (S##size, ge, >=)						\
-	wordCmp (U##size, ge, >=)						\
-	wordCmp (S##size, gt, >)						\
-	wordCmp (U##size, gt, >)						\
-	wordCmp (S##size, le, <=)						\
-	wordCmp (U##size, le, <=)						\
 	wordCmp (S##size, lt, <)						\
 	wordCmp (U##size, lt, <)						\
 	wordShift (size, lshift, <<)						\

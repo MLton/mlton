@@ -26,7 +26,8 @@ structure Bool =
 
 structure Char =
    struct
-      type char = char
+      type t = char
+      type char = t
    end
 
 type char = Char.char
@@ -62,12 +63,14 @@ structure IntInf =
 
 structure Real32 =
    struct
-      type real = real32
+      type t = real32
+      type real = t
    end
 
 structure Real64 =
    struct
-      type real = real64
+      type t = real64
+      type real = t
    end
 
 structure Real = Real64
@@ -84,20 +87,24 @@ structure Thread:> sig type t end = struct type t = thread end
 
 structure Word8 =
    struct
-      type word = word8
+      type t = word8
+      type word = t
    end
 structure Word16 =
    struct
-      type word = word16
+      type t = word16
+      type word = t
    end
 structure Word32 =
    struct
-      type word = word32
+      type t = word32
+      type word = t
    end
 structure Word = Word32
 structure Word64 =
    struct
-      type word = word64
+      type t = word64
+      type word = t
    end
 structure LargeWord = Word64
 
@@ -153,6 +160,24 @@ exception Size
 
 datatype 'a option = NONE | SOME of 'a
 
+fun not b = if b then false else true
+   
+functor Comparisons (type t
+		     val < : t * t -> bool) =
+   struct
+      fun <= (a, b) = not (< (b, a))
+      fun > (a, b) = < (b, a)
+      fun >= (a, b) = <= (b, a)
+   end
+
+functor RealComparisons (type t
+			 val < : t * t -> bool
+			 val <= : t * t -> bool) =
+   struct
+      fun > (a, b) = < (b, a)
+      fun >= (a, b) = >= (b, a)
+   end
+
 structure Primitive =
    struct
       val detectOverflow =
@@ -186,13 +211,22 @@ structure Primitive =
 
       structure Char =
 	 struct
+	    open Char
+	       
 	    val op < = _prim "WordU8_lt": char * char -> bool;
-	    val op <= = _prim "WordU8_le": char * char -> bool;
-	    val op > = _prim "WordU8_gt": char * char -> bool;
-	    val op >= = _prim "WordU8_ge": char * char -> bool;
 	    val chr = _prim "WordS32_toWord8": int -> char;
 	    val ord = _prim "WordU8_toWord32": char -> int;
 	    val toWord8 = _prim "WordU8_toWord8": char -> Word8.word;
+	 end
+
+      structure Char =
+	 struct
+	    open Char
+	    local
+	       structure S = Comparisons (Char)
+	    in
+	       open S
+	    end
 	 end
 
       structure CommandLine =
@@ -299,7 +333,8 @@ structure Primitive =
 
       structure Int8 =
 	 struct
-	    type int = Int8.int
+	    type t = Int8.int
+	    type int = t
 	       
 	    val precision' : Int.int = 8
 	    val maxInt' : int = 0x7f
@@ -321,9 +356,6 @@ structure Primitive =
 		  then _prim "WordS8_subCheck": int * int -> int;
 	       else -?
 	    val op < = _prim "WordS8_lt": int * int -> bool;
-	    val op <= = _prim "WordS8_le": int * int -> bool;
-	    val op > = _prim "WordS8_gt": int * int -> bool;
-	    val op >= = _prim "WordS8_ge": int * int -> bool;
 	    val quot = _prim "WordS8_quot": int * int -> int;
 	    val rem = _prim "WordS8_rem": int * int -> int;
 	    val << = _prim "Word8_lshift": int * Word.word -> int;
@@ -338,11 +370,12 @@ structure Primitive =
 	    val fromInt = _prim "WordS32_toWord8": Int.int -> int;
 	    val toInt = _prim "WordS8_toWord32": int -> Int.int;
 	 end
-      
+    
       structure Int16 =
 	 struct
-	    type int = Int16.int
-       
+	    type t = Int16.int
+	    type int = t
+	       
 	    val precision' : Int.int = 16
 	    val maxInt' : int = 0x7fff
 	    val minInt' : int = ~0x8000
@@ -363,9 +396,6 @@ structure Primitive =
 		  then _prim "WordS16_subCheck": int * int -> int;
 	       else -?
 	    val op < = _prim "WordS16_lt": int * int -> bool;
-	    val op <= = _prim "WordS16_le": int * int -> bool;
-	    val op > = _prim "WordS16_gt": int * int -> bool;
-	    val op >= = _prim "WordS16_ge": int * int -> bool;
 	    val quot = _prim "WordS16_quot": int * int -> int;
 	    val rem = _prim "WordS16_rem": int * int -> int;
 	    val << = _prim "Word16_lshift": int * Word.word -> int;
@@ -604,9 +634,11 @@ structure Primitive =
 	    val precision' = 31
 	    val toBig = _prim "WordU31_toWord32": int -> big;
 	 end
+      
       structure Int32 =
 	 struct
-	    type int = Int32.int
+	    type t = Int32.int
+	    type int = t
 
 	    val precision' : Int.int = 32
 	    val maxInt' : int = 0x7fffffff
@@ -628,9 +660,6 @@ structure Primitive =
 		  then _prim "WordS32_subCheck": int * int -> int;
 	       else -?
 	    val op < = _prim "WordS32_lt": int * int -> bool;
-	    val op <= = _prim "WordS32_le": int * int -> bool;
-	    val op > = _prim "WordS32_gt": int * int -> bool;
-	    val op >= = _prim "WordS32_ge": int * int -> bool;
 	    val quot = _prim "WordS32_quot": int * int -> int;
 	    val rem = _prim "WordS32_rem": int * int -> int;
 	    val << = _prim "Word32_lshift": int * Word.word -> int;
@@ -646,11 +675,10 @@ structure Primitive =
 	    val toInt : int -> int = fn x => x
 	 end
 
-      structure Int = Int32
-
       structure Int64 =
 	 struct
-	    type int = Int64.int
+	    type t = Int64.int
+	    type int = t
 
 	    val precision' : Int.int = 64
 	    val maxInt' : int = 0x7FFFFFFFFFFFFFFF
@@ -668,9 +696,6 @@ structure Primitive =
 		  then _prim "WordS64_subCheck": int * int -> int;
 	       else -?
 	    val op < = _prim "WordS64_lt": int * int -> bool;
-	    val op <= = _prim "WordS64_le": int * int -> bool;
-	    val op > = _prim "WordS64_gt": int * int -> bool;
-	    val op >= = _prim "WordS64_ge": int * int -> bool;
 	    val << = _prim "Word64_lshift": int * Word.word -> int;
 	    val >> = _prim "WordU64_rshift": int * Word.word -> int;
 	    val ~>> = _prim "WordS64_rshift": int * Word.word -> int;
@@ -697,6 +722,48 @@ structure Primitive =
 	       in
 		  ()
 	       end
+	 end
+
+      structure Int8 =
+	 struct
+	    open Int8
+	    local
+	       structure S = Comparisons (Int8)
+	    in
+	       open S
+	    end
+	 end
+      
+      structure Int16 =
+	 struct
+	    open Int16
+	    local
+	       structure S = Comparisons (Int16)
+	    in
+	       open S
+	    end
+	 end
+      
+      structure Int32 =
+	 struct
+	    open Int32
+	    local
+	       structure S = Comparisons (Int32)
+	    in
+	       open S
+	    end
+	 end
+      
+      structure Int = Int32
+
+      structure Int64 =
+	 struct
+	    open Int64
+	    local
+	       structure S = Comparisons (Int64)
+	    in
+	       open S
+	    end
 	 end
 
       structure Array =
@@ -1083,7 +1150,7 @@ structure Primitive =
 
       structure Real64 =
 	 struct
-	    type real = Real64.real
+	    open Real64
 
 	    structure Math =
 	       struct
@@ -1117,8 +1184,6 @@ structure Primitive =
 	    val op < = _prim "Real64_lt": real * real -> bool;
 	    val op <= = _prim "Real64_le": real * real -> bool;
 	    val == = _prim "Real64_equal": real * real -> bool;
-	    val op > = _prim "Real64_gt": real * real -> bool;
-	    val op >= = _prim "Real64_ge": real * real -> bool;
 	    val ?= = _prim "Real64_qequal": real * real -> bool;
 	    val abs = _prim "Real64_abs": real -> real;
 	    val class = _import "Real64_class": real -> int;
@@ -1146,7 +1211,7 @@ structure Primitive =
       
       structure Real32 =
 	 struct
-	    type real = Real32.real
+	    open Real32
 
 	    val precision : int = 24
 	    val radix : int = 2
@@ -1193,8 +1258,6 @@ structure Primitive =
 	    val op < = _prim "Real32_lt": real * real -> bool;
 	    val op <= = _prim "Real32_le": real * real -> bool;
 	    val == = _prim "Real32_equal": real * real -> bool;
-	    val op > = _prim "Real32_gt": real * real -> bool;
-	    val op >= = _prim "Real32_ge": real * real -> bool;
 	    val ?= = _prim "Real32_qequal": real * real -> bool;
 	    val abs = _prim "Real32_abs": real -> real;
 	    val class = _import "Real32_class": real -> int;
@@ -1212,6 +1275,26 @@ structure Primitive =
 	    val strto = _import "Real32_strto": NullString.t -> real;
 	    val toInt = _prim "Real32_toWordS32": real -> int;
 	    val ~ = _prim "Real32_neg": real -> real;
+	 end
+
+      structure Real32 =
+	 struct
+	    open Real32
+	    local
+	       structure S = RealComparisons (Real32)
+	    in
+	       open S
+	    end
+	 end
+
+      structure Real64 =
+	 struct
+	    open Real64
+	    local
+	       structure S = RealComparisons (Real64)
+	    in
+	       open S
+	    end
 	 end
 
       structure Ref =
@@ -1486,9 +1569,6 @@ structure Primitive =
 	    val div = _prim "WordU8_quot": word * word -> word;
 	    val fromInt = _prim "WordU32_toWord8": int -> word;
 	    val fromLarge = _prim "WordU64_toWord8": LargeWord.word -> word;
-	    val op >= = _prim "WordU8_ge": word * word -> bool;
-	    val op > = _prim "WordU8_gt" : word * word -> bool;
-	    val op <= = _prim "WordU8_le": word * word -> bool;
 	    val << = _prim "Word8_lshift": word * Word.word -> word;
 	    val op < = _prim "WordU8_lt" : word * word -> bool;
 	    val mod = _prim "WordU8_rem": word * word -> word;
@@ -1540,9 +1620,6 @@ structure Primitive =
 	    val div = _prim "WordU16_quot": word * word -> word;
 	    val fromInt = _prim "WordU32_toWord16": int -> word;
 	    val fromLarge = _prim "WordU64_toWord16": LargeWord.word -> word;
-	    val op >= = _prim "WordU16_ge": word * word -> bool;
-	    val op > = _prim "WordU16_gt" : word * word -> bool;
-	    val op <= = _prim "WordU16_le": word * word -> bool;
 	    val << = _prim "Word16_lshift": word * Word.word -> word;
 	    val op < = _prim "WordU16_lt" : word * word -> bool;
 	    val mod = _prim "WordU16_rem": word * word -> word;
@@ -1561,7 +1638,8 @@ structure Primitive =
 
       structure Word32 =
 	 struct
-	    type word = word32
+	    open Word32
+	       
 	    val wordSize: int = 32
 
 	    val + = _prim "Word32_add": word * word -> word;
@@ -1570,9 +1648,6 @@ structure Primitive =
 	    val div = _prim "WordU32_quot": word * word -> word;
 	    val fromInt = _prim "WordU32_toWord32": int -> word;
 	    val fromLarge = _prim "WordU64_toWord32": LargeWord.word -> word;
-	    val op >= = _prim "WordU32_ge": word * word -> bool;
-	    val op > = _prim "WordU32_gt" : word * word -> bool;
-	    val op <= = _prim "WordU32_le": word * word -> bool;
 	    val << = _prim "Word32_lshift": word * word -> word;
 	    val op < = _prim "WordU32_lt" : word * word -> bool;
 	    val mod = _prim "WordU32_rem": word * word -> word;
@@ -1590,7 +1665,7 @@ structure Primitive =
 	    val toLargeX = _prim "WordS32_toWord64": word -> LargeWord.word;
 	    val xorb = _prim "Word32_xorb": word * word -> word;
 	 end
-      structure Word = Word32
+
       structure Word64 =
 	 struct
 	    open Word64
@@ -1603,9 +1678,6 @@ structure Primitive =
 	    val div = _prim "WordU64_quot": word * word -> word;
 	    val fromInt = _prim "WordS32_toWord64": int -> word;
 	    val fromLarge: LargeWord.word -> word = fn x => x
-	    val op >= = _prim "WordU64_ge": word * word -> bool;
-	    val op > = _prim "WordU64_gt" : word * word -> bool;
-	    val op <= = _prim "WordU64_le": word * word -> bool;
 	    val << = _prim "Word64_lshift": word * Word.word -> word;
 	    val op < = _prim "WordU64_lt" : word * word -> bool;
 	    val mod = _prim "WordU64_rem": word * word -> word;
@@ -1620,6 +1692,48 @@ structure Primitive =
 	    val toLarge: word -> LargeWord.word = fn x => x
 	    val toLargeX: word -> LargeWord.word = fn x => x
 	    val xorb = _prim "Word64_xorb": word * word -> word;
+	 end
+
+      structure Word8 =
+	 struct
+	    open Word8
+	    local
+	       structure S = Comparisons (Word8)
+	    in
+	       open S
+	    end
+	 end
+      
+      structure Word16 =
+	 struct
+	    open Word16
+	    local
+	       structure S = Comparisons (Word16)
+	    in
+	       open S
+	    end
+	 end
+      
+      structure Word32 =
+	 struct
+	    open Word32
+	    local
+	       structure S = Comparisons (Word32)
+	    in
+	       open S
+	    end
+	 end
+
+      structure Word = Word32
+	 
+      structure Word64 =
+	 struct
+	    open Word64
+	    local
+	       structure S = Comparisons (Word64)
+	    in
+	       open S
+	    end
 	 end
 
       structure Word2 =

@@ -139,7 +139,7 @@ fun insertFunction (f: Function.t,
 		    ensureFree: Label.t -> Bytes.t) =
    let
       val {args, blocks, name, raises, returns, start} = Function.dest f
-      val greaterThan = Prim.wordGt (WordSize.default, {signed = false})
+      val lessThan = Prim.wordLt (WordSize.default, {signed = false})
       val newBlocks = ref []
       local
 	 val r: Label.t option ref = ref NONE
@@ -310,9 +310,9 @@ fun insertFunction (f: Function.t,
 	     fun stackCheck (maybeFirst, z): Label.t =
 		let
 		   val (statements, transfer) =
-		      primApp (greaterThan,
-			       Operand.Runtime StackTop,
+		      primApp (lessThan,
 			       Operand.Runtime StackLimit,
+			       Operand.Runtime StackTop,
 			       z)
 		in
 		   newBlock (maybeFirst, statements, transfer)
@@ -359,9 +359,9 @@ fun insertFunction (f: Function.t,
 		       dst = SOME (res, Type.defaultWord),
 		       prim = Prim.wordSub WordSize.default}
 		   val (statements, transfer) =
-		      primApp (greaterThan,
-			       amount,
+		      primApp (lessThan,
 			       Operand.Var {var = res, ty = Type.defaultWord},
+			       amount,
 			       z)
 		   val statements = Vector.concat [Vector.new1 s, statements]
 		in
@@ -389,9 +389,9 @@ fun insertFunction (f: Function.t,
 		ignore
 		(if Bytes.<= (bytes, Runtime.limitSlop)
 		    then frontierCheck (true,
-					greaterThan,
-					Operand.Runtime Frontier,
+					lessThan,
 					Operand.Runtime Limit,
+					Operand.Runtime Frontier,
 					insert (Operand.word
 						(WordX.zero WordSize.default)))
 		 else heapCheck (true,

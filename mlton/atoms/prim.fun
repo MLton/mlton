@@ -113,8 +113,6 @@ datatype 'a t =
  | Real_add of RealSize.t (* codegen *)
  | Real_div of RealSize.t (* codegen *)
  | Real_equal of RealSize.t (* codegen *)
- | Real_ge of RealSize.t (* codegen *)
- | Real_gt of RealSize.t (* codegen *)
  | Real_ldexp of RealSize.t (* codegen *)
  | Real_le of RealSize.t (* codegen *)
  | Real_lt of RealSize.t (* codegen *)
@@ -153,9 +151,6 @@ datatype 'a t =
  | Word_addCheck of WordSize.t * {signed: bool} (* codegen *)
  | Word_andb of WordSize.t (* codegen *)
  | Word_equal of WordSize.t (* codegen *)
- | Word_ge of WordSize.t * {signed: bool} (* codegen *)
- | Word_gt of WordSize.t * {signed: bool} (* codegen *)
- | Word_le of WordSize.t * {signed: bool} (* codegen *)
  | Word_lshift of WordSize.t (* codegen *)
  | Word_lt of WordSize.t * {signed: bool} (* codegen *)
  | Word_mul of WordSize.t * {signed: bool} (* codegen *)
@@ -269,8 +264,6 @@ fun toString (n: 'a t): string =
        | Real_add s => real (s, "add")
        | Real_div s => real (s, "div")
        | Real_equal s => real (s, "equal")
-       | Real_ge s => real (s, "ge")
-       | Real_gt s => real (s, "gt")
        | Real_ldexp s => real (s, "ldexp")
        | Real_le s => real (s, "le")
        | Real_lt s => real (s, "lt")
@@ -310,9 +303,6 @@ fun toString (n: 'a t): string =
        | Word_addCheck (s, sg) => wordS (s, sg, "addCheck")
        | Word_andb s => word (s, "andb")
        | Word_equal s => word (s, "equal")
-       | Word_ge (s, sg) => wordS (s, sg, "ge")
-       | Word_gt (s, sg) => wordS (s, sg, "gt")
-       | Word_le (s, sg) => wordS (s, sg, "le")
        | Word_lshift s => word (s, "lshift")
        | Word_lt (s, sg) => wordS (s, sg, "lt")
        | Word_mul (s, sg) => wordS (s, sg, "mul")
@@ -402,8 +392,6 @@ val equals: 'a t * 'a t -> bool =
     | (Real_add s, Real_add s') => RealSize.equals (s, s')
     | (Real_div s, Real_div s') => RealSize.equals (s, s')
     | (Real_equal s, Real_equal s') => RealSize.equals (s, s')
-    | (Real_ge s, Real_ge s') => RealSize.equals (s, s')
-    | (Real_gt s, Real_gt s') => RealSize.equals (s, s')
     | (Real_ldexp s, Real_ldexp s') => RealSize.equals (s, s')
     | (Real_le s, Real_le s') => RealSize.equals (s, s')
     | (Real_lt s, Real_lt s') => RealSize.equals (s, s')
@@ -443,12 +431,6 @@ val equals: 'a t * 'a t -> bool =
 	 WordSize.equals (s, s') andalso sg = sg'
     | (Word_andb s, Word_andb s') => WordSize.equals (s, s')
     | (Word_equal s, Word_equal s') => WordSize.equals (s, s')
-    | (Word_ge (s, sg), Word_ge (s', sg')) =>
-	 WordSize.equals (s, s') andalso sg = sg'
-    | (Word_gt (s, sg), Word_gt (s', sg')) =>
-	 WordSize.equals (s, s') andalso sg = sg'
-    | (Word_le (s, sg), Word_le (s', sg')) =>
-	 WordSize.equals (s, s') andalso sg = sg'
     | (Word_lshift s, Word_lshift s') => WordSize.equals (s, s')
     | (Word_lt (s, sg), Word_lt (s', sg')) =>
 	 WordSize.equals (s, s') andalso sg = sg'
@@ -556,8 +538,6 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Real_add z => Real_add z
     | Real_div z => Real_div z
     | Real_equal z => Real_equal z
-    | Real_ge z => Real_ge z
-    | Real_gt z => Real_gt z
     | Real_ldexp z => Real_ldexp z
     | Real_le z => Real_le z
     | Real_lt z => Real_lt z
@@ -592,9 +572,6 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Word_addCheck z => Word_addCheck z
     | Word_andb z => Word_andb z
     | Word_equal z => Word_equal z
-    | Word_ge z => Word_ge z
-    | Word_gt z => Word_gt z
-    | Word_le z => Word_le z
     | Word_lshift z => Word_lshift z
     | Word_lt z => Word_lt z
     | Word_mul z => Word_mul z
@@ -647,9 +624,6 @@ val wordAdd = Word_add
 val wordAddCheck = Word_addCheck
 val wordAndb = Word_andb
 val wordEqual = Word_equal
-val wordGe = Word_ge
-val wordGt = Word_gt
-val wordLe = Word_le
 val wordLshift = Word_lshift
 val wordLt = Word_lt
 val wordMul = Word_mul
@@ -759,8 +733,6 @@ val kind: 'a t -> Kind.t =
        | Real_add _ => Functional
        | Real_div _ => Functional
        | Real_equal _ => Functional
-       | Real_ge _ => Functional
-       | Real_gt _ => Functional
        | Real_ldexp _ => Functional
        | Real_le _ => Functional
        | Real_lt _ => Functional
@@ -800,9 +772,6 @@ val kind: 'a t -> Kind.t =
        | Word_addCheck _ => SideEffect
        | Word_andb _ => Functional
        | Word_equal _ => Functional
-       | Word_ge _ => Functional
-       | Word_gt _ => Functional
-       | Word_le _ => Functional
        | Word_lshift _ => Functional
        | Word_lt _ => Functional
        | Word_mul _ => Functional
@@ -846,8 +815,6 @@ local
        (Real_add s),
        (Real_div s),
        (Real_equal s),
-       (Real_ge s),
-       (Real_gt s),
        (Real_ldexp s),
        (Real_le s),
        (Real_lt s),
@@ -864,9 +831,6 @@ local
 	 val sg = {signed = signed}
       in
 	 List.map ([Word_addCheck,
-		    Word_ge,
-		    Word_gt,
-		    Word_le,
 		    Word_lt,
 		    Word_mul,
 		    Word_mulCheck,
@@ -1214,9 +1178,6 @@ fun ('a, 'b) apply (p: 'a t,
 	   | (Word_addCheck s, [Word w1, Word w2]) => wcheck (op +, s, w1, w2)
 	   | (Word_andb _, [Word w1, Word w2]) => word (WordX.andb (w1, w2))
            | (Word_equal _, [Word w1, Word w2]) => bool (WordX.equals (w1, w2))
-	   | (Word_ge s, [Word w1, Word w2]) => wordCmp (WordX.ge, s, w1, w2)
-	   | (Word_gt s, [Word w1, Word w2]) => wordCmp (WordX.gt, s, w1, w2)
-	   | (Word_le s, [Word w1, Word w2]) => wordCmp (WordX.le, s, w1, w2)
 	   | (Word_lshift _, [Word w1, Word w2]) => word (WordX.lshift (w1, w2))
 	   | (Word_lt s, [Word w1, Word w2]) => wordCmp (WordX.lt, s, w1, w2)
 	   | (Word_mul s, [Word w1, Word w2]) => wordS (WordX.mul, s, w1, w2)
@@ -1367,18 +1328,6 @@ fun ('a, 'b) apply (p: 'a t,
 			else if WordX.isAllOnes w
 				then Var x
 			     else Unknown
-		   | Word_ge (_, sg) =>
-			if inOrder
-			   then if WordX.isMin (w, sg) then t else Unknown
-			else if WordX.isMax (w, sg) then t else Unknown
-		   | Word_gt (_, sg) =>
-			if inOrder
-			   then if WordX.isMax (w, sg) then f else Unknown
-			else if WordX.isMin (w, sg) then f else Unknown
-		   | Word_le (_, sg) =>
-			if inOrder
-			   then if WordX.isMax (w, sg) then t else Unknown
-			else if WordX.isMin (w, sg) then t else Unknown
 		   | Word_lshift s => shift s
 		   | Word_lt (_, sg) =>
 			if inOrder
@@ -1529,14 +1478,9 @@ fun ('a, 'b) apply (p: 'a t,
 			      | Real_lt _ => f
 			      | Real_le _ => t
 			      | Real_equal _ => t
-			      | Real_gt _ => f
-			      | Real_ge _ => t
 			      | Real_qequal _ => t
 			      | Word_andb _ => Var x
                               | Word_equal _ => t
-			      | Word_ge _ => t
-			      | Word_gt _ => f
-			      | Word_le _ => t
 			      | Word_lt _ => f
 			      | Word_orb _ => Var x
 			      | Word_quot (s, _) => word (WordX.one s)
@@ -1582,8 +1526,6 @@ fun ('a, 'b) layoutApp (p: 'a t,
        | Real_add _ => two "+"
        | Real_div _ => two "/"
        | Real_equal _ => two "=="
-       | Real_ge _ => two ">="
-       | Real_gt _ => two ">"
        | Real_le _ => two "<="
        | Real_lt _ => two "<"
        | Real_mul _ => two "*"
@@ -1598,9 +1540,6 @@ fun ('a, 'b) layoutApp (p: 'a t,
        | Word_addCheck _ => two "+"
        | Word_andb _ => two "&"
        | Word_equal _ => two "="
-       | Word_ge _ => two ">="
-       | Word_gt _ => two ">"
-       | Word_le _ => two "<="
        | Word_lshift _ => two "<<"
        | Word_lt _ => two "<"
        | Word_mul _ => two "*"

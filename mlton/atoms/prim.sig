@@ -104,8 +104,6 @@ signature PRIM =
 	     | Real_add of RealSize.t (* codegen *)
 	     | Real_div of RealSize.t (* codegen *)
 	     | Real_equal of RealSize.t (* codegen *)
-	     | Real_ge of RealSize.t (* codegen *)
-	     | Real_gt of RealSize.t (* codegen *)
 	     | Real_ldexp of RealSize.t (* codegen *)
 	     | Real_le of RealSize.t (* codegen *)
 	     | Real_lt of RealSize.t (* codegen *)
@@ -144,9 +142,6 @@ signature PRIM =
 	     | Word_addCheck of WordSize.t * {signed: bool} (* codegen *)
 	     | Word_andb of WordSize.t (* codegen *)
 	     | Word_equal of WordSize.t (* codegen *)
-	     | Word_ge of WordSize.t * {signed: bool} (* codegen *)
-	     | Word_gt of WordSize.t * {signed: bool} (* codegen *)
-	     | Word_le of WordSize.t * {signed: bool} (* codegen *)
 	     | Word_lshift of WordSize.t (* codegen *)
 	     | Word_lt of WordSize.t * {signed: bool} (* codegen *)
 	     | Word_mul of WordSize.t * {signed: bool} (* codegen *)
@@ -255,9 +250,6 @@ signature PRIM =
       val wordAddCheck: WordSize.t * {signed: bool} -> 'a t
       val wordAndb: WordSize.t -> 'a t
       val wordEqual: WordSize.t -> 'a t
-      val wordGe: WordSize.t * {signed: bool} -> 'a t
-      val wordGt: WordSize.t * {signed: bool} -> 'a t
-      val wordLe: WordSize.t * {signed: bool} -> 'a t
       val wordLt: WordSize.t * {signed: bool} -> 'a t
       val wordLshift: WordSize.t -> 'a t
       val wordMul: WordSize.t * {signed: bool} -> 'a t

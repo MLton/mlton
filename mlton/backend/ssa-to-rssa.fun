@@ -461,8 +461,6 @@ structure Name =
 	     | Real_add s => realBinary s
 	     | Real_div s => realBinary s
 	     | Real_equal s => realCompare s
-	     | Real_ge s => realCompare s
-	     | Real_gt s => realCompare s
 	     | Real_ldexp s =>
 		  let
 		     val t = real s
@@ -487,9 +485,6 @@ structure Name =
 	     | Word_add s => wordBinary (s, {signed = false})
 	     | Word_andb s => wordBinary (s, {signed = false})
 	     | Word_equal s => wordCompare (s, {signed = false})
-	     | Word_ge z => wordCompare z
-	     | Word_gt z => wordCompare z
-	     | Word_le z => wordCompare z
 	     | Word_lshift s => wordShift (s, {signed = false})
 	     | Word_lt z => wordCompare z
 	     | Word_mul z => wordBinary z

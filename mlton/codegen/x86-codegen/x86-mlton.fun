@@ -60,8 +60,6 @@ struct
 	 | Real_add _ => true
 	 | Real_div _ => true
 	 | Real_equal _ => true
-	 | Real_ge _ => true
-	 | Real_gt _ => true
 	 | Real_ldexp _ => true
 	 | Real_le _ => true
 	 | Real_lt _ => true
@@ -87,9 +85,6 @@ struct
 	 | Word_addCheck _ => true
 	 | Word_andb _ => true
 	 | Word_equal s => w32168 s
-	 | Word_ge (s, _) => w32168 s
-	 | Word_gt (s, _) => w32168 s
-	 | Word_le (s, _) => w32168 s
 	 | Word_lshift s => w32168 s
 	 | Word_lt (s, _) => w32168 s
 	 | Word_mul (s, _) => w32168 s
@@ -1075,68 +1070,6 @@ struct
 			size = dstsize}],
 		    transfer = NONE}]
 		end
-	     | Real_gt _
-	     => let
-		  val (dst,dstsize) = getDst1 ()
-		  val ((src1,src1size),
-		       (src2,src2size))= getSrc2 ()
-		  val _
-		    = Assert.assert
-		      ("applyPrim: Real_gt, src1size/src2size",
-		       fn () => src1size = src2size)
-		in
-		  AppendList.fromList
-		  [Block.mkBlock'
-		   {entry = NONE,
-		    statements
-		    = [Assembly.instruction_pfcom
-		       {src1 = src1,
-			src2 = src2,
-			size = src1size},
-		       Assembly.instruction_fstsw
-		       {dst = fpswTempContentsOperand,
-			check = false},
-		       Assembly.instruction_test
-		       {src1 = fpswTempContentsOperand,
-			src2 = Operand.immediate_const_word 0wx4500,
-			size = Size.WORD},
-		       Assembly.instruction_setcc
-		       {condition = Instruction.Z,
-			dst = dst,
-			size = dstsize}],
-		    transfer = NONE}]
-		end
-	     | Real_ge _
-	     => let
-		  val (dst,dstsize) = getDst1 ()
-		  val ((src1,src1size),
-		       (src2,src2size))= getSrc2 ()
-		  val _
-		    = Assert.assert
-		      ("applyPrim: Real_ge, src1size/src2size",
-		       fn () => src1size = src2size)
-		in
-		  AppendList.fromList
-		  [Block.mkBlock'
-		   {entry = NONE,
-		    statements
-		    = [Assembly.instruction_pfcom
-		       {src1 = src1,
-			src2 = src2,
-			size = src1size},
-		       Assembly.instruction_fstsw
-		       {dst = fpswTempContentsOperand,
-			check = false},
-		       Assembly.instruction_test
-		       {src1 = fpswTempContentsOperand,
-			src2 = Operand.immediate_const_word 0wx500,
-			size = Size.WORD},
-		       Assembly.instruction_setcc
-		       {condition = Instruction.Z,
-			dst = dst,
-			size = dstsize}],
-		    transfer = NONE}]
-		end
 	     | Real_qequal _
 	     => let
 		  val (dst,dstsize) = getDst1 ()
@@ -1309,9 +1242,6 @@ struct
 		  | W64 => binal64 (Instruction.ADD, Instruction.ADC))
 	     | Word_andb s => bitop (s, Instruction.AND)
 	     | Word_equal _ => cmp Instruction.E
-	     | Word_ge (s, sg) => compare (s, sg, Instruction.GE, Instruction.AE)
-	     | Word_gt (s, sg) => compare (s, sg, Instruction.G, Instruction.A)
-	     | Word_le (s, sg) => compare (s, sg, Instruction.LE, Instruction.BE)
 	     | Word_lshift s => shift (s, Instruction.SHL)
 	     | Word_lt (s, sg) => compare (s, sg, Instruction.L, Instruction.B)
 	     | Word_mul (s, {signed}) =>

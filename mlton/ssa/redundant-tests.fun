@@ -121,15 +121,11 @@ fun simplify (Program.T {globals, datatypes, functions, main}) =
 			     lhs = arg a,
 			     rhs = arg b})
 	    fun doit rel = z (rel, 0, 1)
-	    fun doit' rel = z (rel, 1, 0)
 	    datatype z = datatype Prim.Name.t
 	 in
 	    case Prim.name prim of
 	       MLton_eq => doit EQ
 	     | Word_equal _ => doit EQ
-	     | Word_ge (_, sg) => doit' (LE sg)
-	     | Word_gt (_, sg) => doit' (LT sg)
-	     | Word_le (_, sg) => doit (LE sg)
 	     | Word_lt (_, sg) => doit (LT sg)
 	     | _ => None
 	 end

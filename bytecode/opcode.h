@@ -55,8 +55,6 @@
 	binary (Real##size, Real##size##_add)		\
 	binary (Real##size, Real##size##_div)		\
 	compare (Real##size, Real##size##_equal)	\
-	compare (Real##size, Real##size##_ge)		\
-	compare (Real##size, Real##size##_gt)		\
 	compare (Real##size, Real##size##_le)		\
 	compare (Real##size, Real##size##_lt)		\
 	binary (Real##size, Real##size##_mul)		\
@@ -68,12 +66,6 @@
 	binary (Word##size, Word##size##_add)		\
 	binary (Word##size, Word##size##_andb)		\
 	compare (Word##size, Word##size##_equal)	\
-	compare (Word##size, WordS##size##_ge)		\
-	compare (Word##size, WordU##size##_ge)		\
-	compare (Word##size, WordS##size##_gt)		\
-	compare (Word##size, WordU##size##_gt)		\
-	compare (Word##size, WordS##size##_le)		\
-	compare (Word##size, WordU##size##_le)		\
 	compare (Word##size, WordS##size##_lt)		\
 	compare (Word##size, WordU##size##_lt)		\
 	shift (Word##size, Word##size##_lshift)		\
@@ -174,7 +166,7 @@ enum {
 	opcodes ()
 };
 
-typedef Word16 Opcode;
+typedef Word8 Opcode;
 
 #undef coerce
 #undef coerceOp
