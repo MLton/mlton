@@ -17,7 +17,7 @@ HOSTTYPE=linux
 
 all:
 	$(MAKE) dirs
-	cd $(COMP) && $(MAKE)
+	cd $(COMP) && $(MAKE) HOST=$(HOST)
 	mv $(COMP)/$(AOUT) $(LIB)
 	$(MAKE) world
 	$(MAKE) script
