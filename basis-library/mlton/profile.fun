@@ -17,6 +17,7 @@ functor Profile (S:
 			  include MLTON_PROFILE
 			  val cleanAtExit: unit -> unit
 			  val cleanAtLoadWorld: unit -> unit
+			  val init: unit -> unit
 		       end =
 struct
 
@@ -128,8 +129,6 @@ fun setCurrent (d as Data.T {array, isCurrent, isFreed, ...}) =
 
 fun init () = setCurrent (Data.make (S.current ()))
 
-val _ = if isOn then init () else ()
-
 fun cleanAtExit () =
    let
       val _ = Data.write (current (), "mlmon.out")
@@ -142,7 +141,6 @@ fun cleanAtLoadWorld () =
    let
       (* In a new world, all of the old profiling data is invalid. *)
       val _ = Data.all := []
-      val _ = init ()
    in
       ()
    end

@@ -38,12 +38,18 @@ static uint	*current = NULL,
 #define END (uint)&etext
 
 Pointer MLton_ProfileTime_current () {
+	if (DEBUG_PROFILE)
+		fprintf (stderr, "0x%08x = MLton_ProfileTime_current ()\n",
+				(uint)current);
 	return (Pointer)current;
 }
 
 void MLton_ProfileTime_setCurrent (Pointer d) {
 	uint *data;
 
+	if (DEBUG_PROFILE)
+		fprintf (stderr, "MLton_ProfileTime_setCurrent (0x%08x)\n",
+				(uint)d);
 	data = (uint*)d;
 	assert (data != NULL);
 	current = data;
@@ -70,13 +76,13 @@ void MLton_ProfileTime_Data_free (Pointer d) {
 	uint *data;
 
 	if (DEBUG_PROFILE)
-		fprintf (stderr, "MLton_ProfileTime_Data_free (0x%08x)\n",
+		fprintf (stderr, "MLton_ProfileTime_Data_free (0x%08x)",
 				(uint)d);
 	data = (uint*)d;
 	assert ((card != 0) and (data != NULL));
 	free (data);
 	if (DEBUG_PROFILE)
-		fprintf (stderr, "free ok\n");
+		fprintf (stderr, "\n");
 }
 
 void MLton_ProfileTime_Data_reset (Pointer d) {
@@ -105,6 +111,9 @@ void MLton_ProfileTime_Data_write (Pointer d, Word fd) {
 	uint *data;
 	uint i;
 
+	if (DEBUG_PROFILE) 
+		fprintf (stderr, "MLton_ProfileTime_Data_Write (0x%08x, %d)\n",
+				(uint)d, fd);
 	data = (uint*)d;
 	swrite (fd, MAGIC, sizeof(MAGIC));
 	swriteUint (fd, gcState.magic);
@@ -112,19 +121,16 @@ void MLton_ProfileTime_Data_write (Pointer d, Word fd) {
 	swriteUint (fd, END);
 	swriteUint (fd, sizeof(*data));
 	swriteUint (fd, MLPROF_KIND_TIME);
-	if (DEBUG_PROFILE) fprintf (stderr, "writing unknown\n");
 	unless (0 == data[card]) {
 		swriteUint (fd, 0);
 		swriteUint (fd, data[card]);
 	}
-	if (DEBUG_PROFILE) fprintf (stderr, "writing data\n");
 	for (i = 0; i < card - 1; ++i) {
 		unless (0 == data[i]) {
 			swriteUint (fd, START + i);
 			swriteUint (fd, data[i]); 
 		}
 	}
-	if (DEBUG_PROFILE) fprintf (stderr, "done\n");
 }
 
 /*
