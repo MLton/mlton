@@ -3,6 +3,14 @@ Here are the changes since version 20030716.
 * 2003-09-25
   - Fixed Posix.IO.getfl, which had mistakenly called fcntl with
     F_GETFD instead of F_GETFL.
+  - Tracking basis library changes: 
+    o Socket module datagram functions no longer return amount
+      written, since they always write the entire amount or fail.  So,
+      send{Arr,Vec}To{,'} now return unit instead of int.
+    o Added nonblocking versions of all the send and recv functions,
+      as well as accept and connect.  So, we now have:
+      acceptNB, connectNB, recv{Arr,Vec}{,From}NB{,'},
+      send{Arr,Vec}{,To}NB{,'}
 
 * 2003-09-24
   - Tracking basis library changes:

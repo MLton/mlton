@@ -1030,19 +1030,23 @@ structure Primitive =
 
 	    type flags = word
 	    val MSG_DONTROUTE = _const "Socket_MSG_DONTROUTE": flags;
+	    val MSG_DONTWAIT = _const "Socket_MSG_DONTWAIT": flags;
 	    val MSG_OOB = _const "Socket_MSG_OOB": flags;
 	    val MSG_PEEK = _const "Socket_MSG_PEEK": flags;
 
-	    val send = _import "Socket_send": sock * word8 vector * 
-                                           int * int * word -> int;
-	    val sendTo = _import "Socket_sendTo": sock * word8 vector * 
-                                               int * int * word *
-                                               sock_addr * int -> int;
-	    val recv = _import "Socket_recv": sock * word8 array * 
-                                           int * int * word -> int;
-	    val recvFrom = _import "Socket_recvFrom": sock * word8 array * 
-	                                           int * int * word *
-                                                   pre_sock_addr * int ref -> int;
+	    val sendArr = _import "Socket_send":
+	       sock * word8 array * int * int * word -> int;
+	    val sendVec = _import "Socket_send":
+	       sock * word8 vector * int * int * word -> int;
+	    val sendToArr = _import "Socket_sendTo":
+	       sock * word8 array * int * int * word * sock_addr * int -> int;
+	    val sendToVec = _import "Socket_sendTo":
+	       sock * word8 vector * int * int * word * sock_addr * int -> int;
+	    val recv = _import "Socket_recv":
+	       sock * word8 array * int * int * word -> int;
+	    val recvFrom = _import "Socket_recvFrom":
+	       sock * word8 array * int * int * word * pre_sock_addr * int ref
+	       -> int;
 
 	    structure GenericSock =
 	       struct

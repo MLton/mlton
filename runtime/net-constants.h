@@ -47,6 +47,7 @@
 #define Socket_SHUT_WR SHUT_WR
 #define Socket_SHUT_RDWR SHUT_RDWR
 #define Socket_MSG_DONTROUTE MSG_DONTROUTE
+#define Socket_MSG_DONTWAIT MSG_DONTWAIT
 #define Socket_MSG_OOB MSG_OOB
 #define Socket_MSG_PEEK MSG_PEEK
 #define Socket_INetSock_TCP_SOL_TCP IPPROTO_TCP

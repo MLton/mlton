@@ -94,7 +94,7 @@ structure PosixIO: POSIX_IO =
 	 Word.fromInt (checkReturnResult (Prim.fcntl2 (fd, F_GETFD)))
 
       fun setfd (FD fd, flags): unit =
-	 checkResult (Prim.fcntl3 (fd, F_SETFD, Word.toInt flags))
+	 checkResult (Prim.fcntl3 (fd, F_SETFD, Word.toIntX flags))
 			    
       fun getfl (FD fd): O.flags * open_mode =
 	 let val n = Prim.fcntl2 (fd, F_GETFL)
@@ -108,7 +108,7 @@ structure PosixIO: POSIX_IO =
 	 end
       
       fun setfl (FD fd, flags: O.flags): unit  =
-	 checkResult (Prim.fcntl3 (fd, F_SETFL, Word.toInt flags))
+	 checkResult (Prim.fcntl3 (fd, F_SETFL, Word.toIntX flags))
 	 
       datatype whence = SEEK_SET | SEEK_CUR | SEEK_END
 
