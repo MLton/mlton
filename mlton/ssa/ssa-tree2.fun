@@ -13,6 +13,50 @@ open S
 
 type word = Word.t
 
+structure Prod =
+   struct
+      datatype 'a t = T of {elt: 'a, isMutable: bool} vector
+
+      fun dest (T p) = p
+
+      val make = T
+
+      fun empty () = T (Vector.new0 ())
+
+      fun isEmpty p = Vector.isEmpty (dest p)
+
+      fun sub (T p, i) = Vector.sub (p, i)
+
+      fun elt (p, i) = #elt (sub (p, i))
+
+      fun length p = Vector.length (dest p)
+
+      val equals: 'a t * 'a t * ('a * 'a -> bool) -> bool =
+	 fn (p1, p2, equals) =>
+	 Vector.equals (dest p1, dest p2,
+			fn ({elt = e1, isMutable = m1},
+			    {elt = e2, isMutable = m2}) =>
+			m1 = m2 andalso equals (e1, e2))
+
+      local 
+	 open Layout
+      in
+	 fun layout (p, layout) =
+	    paren (seq (separate (Vector.toListMap
+				  (dest p, fn {elt, isMutable} =>
+				   if isMutable
+				      then seq [layout elt, str " ref"]
+				   else layout elt),
+				  " * ")))
+      end
+
+      val map: 'a t * ('a -> 'b) -> 'b t =
+	 fn (p, f) =>
+	 make (Vector.map (dest p, fn {elt, isMutable} =>
+			   {elt = f elt,
+			    isMutable = isMutable}))
+   end
+
 structure Type =
    struct
       datatype t =
@@ -23,14 +67,15 @@ structure Type =
 	 Array of t
 	| Datatype of Tycon.t
 	| IntInf
-	| Object of {args: {elt: t, isMutable: bool} vector,
+	| Object of {args: prod,
 		     con: Con.t option}
 	| Real of RealSize.t
 	| Thread
 	| Vector of t
 	| Weak of t
 	| Word of WordSize.t
-
+      withtype prod = t Prod.t
+	 
       local
 	 fun make f (T r) = f r
       in
@@ -52,10 +97,7 @@ structure Type =
 	     | (IntInf, IntInf) => true
 	     | (Object {args = a1, con = c1}, Object {args = a2, con = c2}) =>
 		  Option.equals (c1, c2, Con.equals)
-		  andalso
-		  Vector.equals (a1, a2, fn ({elt = e1, isMutable = m1},
-					     {elt = e2, isMutable = m2}) =>
-				 m1 = m2 andalso equals (e1, e2))
+		  andalso Prod.equals (a1, a2, equals)
 	     | (Real s1, Real s2) => RealSize.equals (s1, s2)
 	     | (Thread, Thread) => true
 	     | (Vector t1, Vector t2) => equals (t1, t2)
@@ -136,7 +178,7 @@ structure Type =
 		     NONE => tuple
 		   | SOME c => Con.hash c
 	       val hash =
-		  Vector.fold (args, base, fn ({elt, ...}, w) =>
+		  Vector.fold (Prod.dest args, base, fn ({elt, ...}, w) =>
 			       Word.xorb (w * generator, hash elt))
 	    in
 	       lookup (hash, Object {args = args, con = con})
@@ -147,15 +189,16 @@ structure Type =
 	 
       fun tuple ts = object {args = ts, con = NONE}
 
-      fun reff t = object {args = Vector.new1 {elt = t, isMutable = true},
-			   con = NONE}
+      fun reff t =
+	 object {args = Prod.make (Vector.new1 {elt = t, isMutable = true}),
+		 con = NONE}
 	 
-      val unit = tuple (Vector.new0 ())
+      val unit: t = tuple (Prod.empty ())
 
       val isUnit: t -> bool =
 	 fn t =>
 	 case dest t of
-	    Object {args, con} => Vector.isEmpty args andalso Option.isNone con
+	    Object {args, con} => Prod.isEmpty args andalso Option.isNone con
 	  | _ => false
 
       local
@@ -175,15 +218,7 @@ structure Type =
 		       then str "unit"
 		    else
 		       (case con of
-			   NONE =>
-			      paren
-			      (seq (separate (Vector.toListMap
-					      (args, fn {elt, isMutable} =>
-					       if isMutable
-						  then seq [layout elt,
-							    str " ref"]
-					       else layout elt),
-					      " * ")))
+			   NONE => Prod.layout (args, layout)
 			 | SOME c => Con.layout c)
 	       | Real s => str (concat ["real", RealSize.toString s])
 	       | Thread => str "thread"
@@ -191,7 +226,12 @@ structure Type =
 	       | Weak t => seq [layout t, str " weak"]
 	       | Word s => str (concat ["word", WordSize.toString s])))
       end
+   end
 
+structure Type =
+   struct
+      open Type
+	 
       fun checkPrimApp {args, prim, result, targs}: bool =
 	 let
 	    datatype z = datatype Prim.Name.t
@@ -1145,8 +1185,7 @@ structure Block =
 structure Datatype =
    struct
       datatype t =
-	 T of {cons: {args: {elt: Type.t,
-			     isMutable: bool} vector,
+	 T of {cons: {args: Type.t Prod.t,
 		      con: Con.t} vector,
 	       tycon: Tycon.t}
 
@@ -1159,16 +1198,8 @@ structure Datatype =
 		 alignPrefix
 		 (Vector.toListMap
 		  (cons, fn {con, args} =>
-		   seq [Con.layout con,
-			if Vector.isEmpty args
-			   then empty
-			else seq [str " of ",
-				  Vector.layout
-				  (fn {elt, isMutable} =>
-				   if isMutable
-				      then seq [Type.layout elt, str " ref"]
-				   else Type.layout elt)
-				  args]]),
+		   seq [Con.layout con, str " of ",
+			Prod.layout (args, Type.layout)]),
 		  "| ")]
 	 end
 

@@ -37,6 +37,7 @@ local
    open Ssa
 in
    structure Con = Con
+   structure Prod = Prod
    structure Tycon = Tycon
 end
 
@@ -2077,7 +2078,8 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 		      TyconRep.make
 		      (Vector.map
 		       (cons, fn {args, con, pointerTycon} =>
-			{args = Vector.map (args, fn {elt, isMutable} =>
+			{args = Vector.map (Prod.dest args,
+					    fn {elt, isMutable} =>
 					    {isMutable = isMutable,
 					     rep = Value.get (typeRep elt),
 					     ty = elt}),
@@ -2178,15 +2180,16 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 			NONE =>
 			   let
 			      val pt = PointerTycon.new ()
-			      val rs = Vector.map (args, typeRep o #elt)
+			      val rs =
+				 Vector.map (Prod.dest args, typeRep o #elt)
 			      fun compute () =
 				 TupleRep.make
 				 (pt,
-				  Vector.map2
-				  (rs, args, fn (r, {elt, isMutable}) =>
-				   {isMutable = isMutable,
-				    rep = Value.get r,
-				    ty = elt}))
+				  Vector.map2 (rs, Prod.dest args,
+					       fn (r, {elt, isMutable}) =>
+					       {isMutable = isMutable,
+						rep = Value.get r,
+						ty = elt}))
 			      val tr =
 				 Value.new {compute = compute,
 					    equals = TupleRep.equals,
@@ -2264,7 +2267,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	 (datatypes, fn {cons, rep, ...} =>
 	  Vector.foreach
 	  (cons, fn {args, con, ...} =>
-	   Vector.foreach (args, fn {elt, ...} =>
+	   Vector.foreach (Prod.dest args, fn {elt, ...} =>
 			   Value.affect (typeRep elt, rep))))
       val typeRep =
 	 Trace.trace ("typeRep", S.Type.layout, Value.layout Rep.layout)
@@ -2348,7 +2351,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
 	    S.Type.Object {args, con} =>
 	       Selects.select
 	       (getSelects (con, objectTy),
-		{dst = (dst, valOf (toRtype (#elt (Vector.sub (args, offset))))),
+		{dst = (dst, valOf (toRtype (Prod.elt (args, offset)))),
 		 object = object,
 		 offset = offset})
 	  | _ => Error.bug "select of non object"

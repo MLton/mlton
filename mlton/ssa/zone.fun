@@ -215,7 +215,7 @@ fun zoneFunction f =
 			   val s =
 			      Statement.T
 			      {exp = Object {args = components, con = NONE},
-			       ty = Type.tuple componentTys,
+			       ty = Type.tuple (Prod.make componentTys),
 			       var = SOME tuple}
 			in
 			   addBlockSelects (Vector.concat [Vector.new1 s,

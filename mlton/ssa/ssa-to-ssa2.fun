@@ -22,6 +22,12 @@ in
    structure Var = Var
 end
 
+local
+   open S2
+in
+   structure Prod = Prod
+end
+
 fun convert (S.Program.T {datatypes, functions, globals, main}) =
    let
       val {get = convertType: S.Type.t -> S2.Type.t, ...} =
@@ -37,9 +43,10 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 	    | S.Type.Ref t => S2.Type.reff (convertType t)
 	    | S.Type.Thread => S2.Type.thread
 	    | S.Type.Tuple ts =>
-		 S2.Type.tuple (Vector.map (ts, fn t =>
-					    {elt = convertType t,
-					     isMutable = false}))
+		 S2.Type.tuple (Prod.make
+				(Vector.map (ts, fn t =>
+					     {elt = convertType t,
+					      isMutable = false})))
 	    | S.Type.Vector t => S2.Type.vector (convertType t)
 	    | S.Type.Weak t => S2.Type.weak (convertType t)
 	    | S.Type.Word s => S2.Type.word s))
@@ -53,9 +60,11 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 	  S2.Datatype.T
 	  {cons = Vector.map (cons, fn {args, con} =>
 			      let
-				 val args = Vector.map (args, fn t =>
-							{elt = convertType t,
-							 isMutable = false})
+				 val args =
+				    Prod.make
+				    (Vector.map (args, fn t =>
+						 {elt = convertType t,
+						  isMutable = false}))
 				 val () =
 				    setConType (con, S2.Type.conApp (con, args))
 			      in
@@ -148,7 +157,7 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 		 in
 		    case S2.Type.dest objectTy of
 		       S2.Type.Object {args, ...} =>
-			  if 0 = Vector.length args
+			  if Prod.isEmpty args
 			     then (c, l)
 			  else
 			     let
@@ -157,7 +166,7 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 				val (xs, statements) =
 				   Vector.unzip
 				   (Vector.mapi
-				    (args, fn (i, {elt = ty, ...}) =>
+				    (Prod.dest args, fn (i, {elt = ty, ...}) =>
 				     let
 					val x = Var.newNoname ()
 					val exp =

@@ -27,7 +27,7 @@ signature ANALYZE2 =
 	  fromType: Type.t -> 'a,
 	  inject: {sum: Tycon.t, variant: 'a} -> 'a,
 	  layout: 'a -> Layout.t,
-	  object: {args: {elt: 'a, isMutable: bool} vector,
+	  object: {args: 'a Prod.t,
 		   con: Con.t option,
 		   resultType: Type.t} -> 'a,
 	  primApp: {args: 'a vector,

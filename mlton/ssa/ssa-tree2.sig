@@ -15,6 +15,21 @@ signature SSA_TREE2_STRUCTS =
 signature SSA_TREE2 = 
    sig
       include SSA_TREE2_STRUCTS
+     
+      structure Prod:
+	 sig
+	    type 'a t
+
+	    val dest: 'a t -> {elt: 'a, isMutable: bool} vector
+	    val elt: 'a t * int -> 'a
+	    val empty: unit -> 'a t
+	    val isEmpty: 'a t -> bool
+	    val layout: 'a t * ('a -> Layout.t) -> Layout.t
+	    val length: 'a t -> int
+	    val make: {elt: 'a, isMutable: bool} vector -> 'a t
+	    val map: 'a t * ('a -> 'b) -> 'b t
+	    val sub: 'a t * int -> {elt: 'a, isMutable: bool}
+	 end
 
       structure Type:
 	 sig
@@ -24,7 +39,7 @@ signature SSA_TREE2 =
 	       Array of t
 	     | Datatype of Tycon.t
 	     | IntInf
-	     | Object of {args: {elt: t, isMutable: bool} vector,
+	     | Object of {args: t Prod.t,
 			  con: Con.t option}
 	     | Real of RealSize.t
 	     | Thread
@@ -34,7 +49,7 @@ signature SSA_TREE2 =
 
 	    val array: t -> t
 	    val bool: t
-	    val conApp: Con.t * {elt: t, isMutable: bool} vector -> t
+	    val conApp: Con.t * t Prod.t -> t
 	    val checkPrimApp: {args: t vector,
 			       prim: t Prim.t,
 			       result: t,
@@ -45,14 +60,13 @@ signature SSA_TREE2 =
 	    val intInf: t
 	    val isUnit: t -> bool
 	    val layout: t -> Layout.t
-	    val object: {args: {elt: t, isMutable: bool} vector,
-			 con: Con.t option} -> t
+	    val object: {args: t Prod.t, con: Con.t option} -> t
 	    val ofConst: Const.t -> t
 	    val plist: t -> PropertyList.t
 	    val real: RealSize.t -> t
 	    val reff: t -> t
 	    val thread: t
-	    val tuple: {elt: t, isMutable: bool} vector -> t
+	    val tuple: t Prod.t -> t
 	    val vector: t -> t
 	    val weak: t -> t
 	    val word: WordSize.t -> t
@@ -182,8 +196,7 @@ signature SSA_TREE2 =
       structure Datatype:
 	 sig
 	    datatype t =
-	       T of {cons: {args: {elt: Type.t,
-				   isMutable: bool} vector,
+	       T of {cons: {args: Type.t Prod.t,
 			    con: Con.t} vector,
 		     tycon: Tycon.t}
 

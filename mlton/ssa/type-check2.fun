@@ -382,7 +382,7 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
 	       Type.Object {args = args', con = con'} =>
 		  (if Option.equals (con, con', Con.equals)
 		      andalso (Vector.foreach2
-			       (args, args',
+			       (Prod.dest args, Prod.dest args',
 				fn ({elt = t, isMutable = _}, {elt = t', ...}) =>
 				coerce {from = t, to = t'})
 			       ; true)
@@ -392,13 +392,13 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
 	 end
       fun select {object: Type.t, offset: int, resultType = _}: Type.t =
 	 case Type.dest object of
-	    Type.Object {args, ...} => #elt (Vector.sub (args, offset))
+	    Type.Object {args, ...} => Prod.elt (args, offset)
 	  | _ => error ("select of non object", Layout.empty)
       fun update {object, offset, value} =
 	 case Type.dest object of
 	    Type.Object {args, ...} =>
 	       let
-		  val {elt, isMutable} = Vector.sub (args, offset)
+		  val {elt, isMutable} = Prod.sub (args, offset)
 		  val () = coerce {from = value, to = elt}
 		  val () =
 		     if isMutable

@@ -213,10 +213,12 @@ fun 'a analyze
 			val args =
 			   case Type.dest ty of
 			      Type.Object {args = ts, ...} =>
-				 Vector.map2
-				 (args, ts, fn (x, {isMutable, ...}) =>
-				  {elt = value x,
-				   isMutable = isMutable})
+				 Prod.make
+				 (Vector.map2
+				  (args, Prod.dest ts,
+				   fn (x, {isMutable, ...}) =>
+				   {elt = value x,
+				    isMutable = isMutable}))
 			    | _ => Error.bug "analyze saw strange object"
 		     in
 			object {args = args,

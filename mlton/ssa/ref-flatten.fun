@@ -33,7 +33,7 @@ structure Unary =
 
 structure Finish =
    struct
-      datatype t = T of {flat: {elt: Type.t, isMutable: bool} vector option, 
+      datatype t = T of {flat: Type.t Prod.t option, 
 			 ty: Type.t}
 
       fun notFlat ty = T {flat = NONE, ty = ty}
@@ -44,12 +44,7 @@ structure Finish =
 	    open Layout
 	 in
 	    record [("flat",
-		     Option.layout
-		     (Vector.layout
-		      (fn {elt, isMutable} =>
-		       record [("elt", Type.layout elt),
-			       ("isMutable", Bool.layout isMutable)]))
-		     flat),
+		     Option.layout (fn p => Prod.layout (p, Type.layout)) flat),
 		    ("ty", Type.layout ty)]
 	 end
    end
@@ -68,10 +63,9 @@ structure Value =
 		     offset: int}
 	| Unknown
       withtype object =
-	 {args: {elt: t, isMutable: bool} vector,
+	 {args: t Prod.t,
 	  con: Con.t option,
-	  finalComponents: {elt: Type.t,
-			    isMutable: bool} vector option ref,
+	  finalComponents: Type.t Prod.t option ref,
 	  finalOffsets: int vector option ref,
 	  finalType: Type.t option ref,
 	  flat: flat Set.t}
@@ -96,7 +90,7 @@ structure Value =
 	     | Unknown => str "Unknown"
 	 and layoutObject {args, con, finalType, flat, ...} =
 	    seq [str "Object ",
-		 record [("args", Vector.layout (layout o #elt) args),
+		 record [("args", Prod.layout (args, layout)),
 			 ("con", Option.layout Con.layout con),
 			 ("finalType", Option.layout Type.layout (!finalType)),
 			 ("flat", layoutFlat (Set.value flat))]]
@@ -155,7 +149,7 @@ structure Value =
 	    (* Only may flatten objects with mutable fields. *)
 	    val flat =
 	       Set.singleton
-	       (if Vector.exists (args, fn {elt, isMutable} =>
+	       (if Vector.exists (Prod.dest args, fn {elt, isMutable} =>
 				  isMutable andalso not (isUnit elt))
 		   then Unknown
 		else NotFlat)
@@ -168,16 +162,11 @@ structure Value =
 		    flat = flat}
 	 end
 	    
-      val tuple: {elt: t, isMutable: bool} vector -> t =
+      val tuple: t Prod.t -> t =
 	 fn vs => object {args = vs, con = NONE}
 
       val tuple =
-	 Trace.trace ("Value.tuple",
-		      Vector.layout
-		      (fn {elt, isMutable} =>
-		       Layout.record [("elt", layout elt),
-				      ("isMutable", Bool.layout isMutable)]),
-		      layout)
+	 Trace.trace ("Value.tuple", fn p => Prod.layout (p, layout), layout)
 	 tuple
 
       val rec unify: t * t -> unit =
@@ -188,8 +177,8 @@ structure Value =
 	     Object {args = a', flat = f', ...}) =>
 	       (Set.union (f, f')
 		; (Vector.foreach2
-		   (a, a', fn ({elt = e, ...}, {elt = e', ...}) =>
-		    unify (e, e'))))
+		   (Prod.dest a, Prod.dest a',
+		    fn ({elt = e, ...}, {elt = e', ...}) => unify (e, e'))))
 	  | (Unary {arg = a, ...}, Unary {arg = a', ...}) => unify (a, a')
 	  | _ => Error.bug "strange unify"
 
@@ -245,27 +234,22 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		    let
 		       fun doit () =
 			  let
-			     val args =
-				Vector.map
-				(args, fn {elt, isMutable} =>
-				 {elt = makeTypeValue elt,
-				  isMutable = isMutable})
-			     val mayFlatten = Vector.exists (args, #isMutable)
+			     val args = Prod.map (args, makeTypeValue)
+			     val mayFlatten =
+				Vector.exists (Prod.dest args, #isMutable)
 			     val needToMake =
 				mayFlatten
 				orelse
-				Vector.exists (args, fn {elt, ...} =>
+				Vector.exists (Prod.dest args, fn {elt, ...} =>
 					       case elt of
 						  Const _ => false
 						| Make _ => true)
 			     fun make () =
 				Value.object
-				{args = (Vector.map
-					 (args, fn {elt, isMutable} =>
-					  {elt = (case elt of
+				{args = Prod.map (args, fn elt =>
+						  case elt of
 						     Const v => v
 						   | Make f => f ()),
-					   isMutable = isMutable})),
 				 con = con}
 			  in
 			     if needToMake
@@ -326,7 +310,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			       NONE => ()
 			     | SOME {args = args', ...} =>
 				  Vector.foreach2
-				  (args, args',
+				  (Prod.dest args, Prod.dest args',
 				   fn ({elt = a, ...}, {elt = a', ...}) =>
 				   coerce {from = a, to = a'})
 		      in
@@ -338,12 +322,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 	 Trace.trace
 	 ("object",
 	  fn {args, con, ...} =>
-	  Layout.record [("args",
-			  Vector.layout
-			  (fn {elt, isMutable} =>
-			   Layout.record [("elt", Value.layout elt),
-					  ("isMutable", Bool.layout isMutable)])
-			  args),
+	  Layout.record [("args", Prod.layout (args, Value.layout)),
 			 ("con", Option.layout Con.layout con)],
 	  Value.layout)
 	 object
@@ -414,9 +393,9 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		  Ground t =>
 		     (case Type.dest t of
 			 Type.Object {args, ...} =>
-			    typeValue (#elt (Vector.sub (args, offset)))
+			    typeValue (Prod.elt (args, offset))
 		       | _ => Error.bug "select Ground")
-		| Object {args, ...} => #elt (Vector.sub (args, offset))
+		| Object {args, ...} => Prod.elt (args, offset)
 		| _ => Error.bug "select"
 	 end
       fun update {object, offset, value} =
@@ -631,15 +610,17 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
       and objectFinalComponents (z as {args, finalComponents, ...}) =
 	 memoize
 	 (finalComponents, fn () =>
-	  Vector.fromList
-	  (Vector.foldr
-	   (args, [], fn ({elt, isMutable = i}, ac) =>
-	    case Value.deFlat {inner = elt, outer = z} of
-	       NONE => {elt = valueType elt, isMutable = i} :: ac
-	     | SOME z => 
-		  Vector.foldr
-		  (objectFinalComponents z, ac, fn ({elt, isMutable = i'}, ac) =>
-		   {elt = elt, isMutable = i orelse i'} :: ac))))
+	  Prod.make
+	  (Vector.fromList
+	   (Vector.foldr
+	    (Prod.dest args, [], fn ({elt, isMutable = i}, ac) =>
+	     case Value.deFlat {inner = elt, outer = z} of
+		NONE => {elt = valueType elt, isMutable = i} :: ac
+	      | SOME z => 
+		   Vector.foldr
+		   (Prod.dest (objectFinalComponents z), ac,
+		    fn ({elt, isMutable = i'}, ac) =>
+		    {elt = elt, isMutable = i orelse i'} :: ac)))))
       and objectFinalOffsets (z as {args, finalOffsets, flat, ...}: Object.t) =
 	 memoize
 	 (finalOffsets, fn () =>
@@ -650,12 +631,12 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		 | _ => 0
 	     val (_, offsets) =
 		Vector.fold
-		(args, (initial, []), fn ({elt, ...}, (offset, ac)) =>
+		(Prod.dest args, (initial, []), fn ({elt, ...}, (offset, ac)) =>
 		 let
 		    val width =
 		       case Value.deFlat {inner = elt, outer = z} of
 			  NONE => 1
-			| SOME z => Vector.length (objectFinalComponents z)
+			| SOME z => Prod.length (objectFinalComponents z)
 		 in
 		    (offset + width, offset :: ac)
 		 end)
@@ -680,7 +661,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 			 obj as {args, ...}: Object.t,
 			 ac: Var.t list): Var.t list =
 	 Vector.foldri
-	 (args, ac, fn (i, {elt, ...}, ac) =>
+	 (Prod.dest args, ac, fn (i, {elt, ...}, ac) =>
 	  case Value.deFlat {inner = elt, outer = obj} of
 	     NONE => 
 		let
