@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function doit () {
-	rm -rf *~ *.a *.o CM core mlmon.out
+	rm -rf .*~ *~ *.a *.o CM core mlmon.out
 	if [ -r .cvsignore ]; then
 		for f in `cat .cvsignore`; do rm -rf $f; done
 	fi
