@@ -2477,12 +2477,11 @@ struct
 				             (cases,
 					      fn target => update target),
 			             default = update default}
-	         | Transfer.CCall {target, args, dst, live, return}
+	         | Transfer.CCall {target, args, return, dstsize}
 	         => Transfer.CCall {target = target,
 				    args = args,
-				    dst = dst,
-				    live = live,
-				    return = update return}
+				    return = update return,
+				    dstsize = dstsize}
 	         | transfer => transfer
 
 	    val blocks

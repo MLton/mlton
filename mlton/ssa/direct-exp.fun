@@ -69,16 +69,29 @@ val detupleBind = DetupleBind
 val handlee = Handle
 val lett = Let
 val name = Name
-val primApp = PrimApp
 val raisee = Raise
-val runtime = Runtime
 val select = Select
 val seq = Seq
+
 fun tuple (r as {exps, ...}) =
    if 1 = Vector.length exps
       then Vector.sub (exps, 0)
    else Tuple r
+
 val var = Var
+
+fun primApp {args, prim, targs, ty} = 
+   if (case Prim.name prim of
+	  Prim.Name.MLton_halt => true
+	| Prim.Name.Thread_copyCurrent => true
+	| _ => false)
+      then Runtime {args = args,
+		    prim = prim,
+		    ty = ty}
+   else PrimApp {args = args,
+		 prim = prim,
+		 targs = targs,
+		 ty = ty}
 
 local
    fun make c = conApp {con = c, args = Vector.new0 (), ty = Type.bool}

@@ -92,7 +92,12 @@
 #define Chunk(n)				\
 	static void ChunkName(n)() {		\
 		char *stackTop;			\
-		pointer frontier
+		pointer frontier;
+		char CReturnC;
+		double CReturnD;
+		int CReturnI;
+		char *CReturnP;
+		uint CReturnU;
 
 #define ChunkSwitch				\
 		CacheGC();			\
@@ -137,7 +142,7 @@ int main(int argc, char **argv) {					\
 		PrepFarJump(mc, ml);					\
 	} else {							\
 		/* Return to the saved world */				\
-		nextFun = *(int*)gcState.stackTop;			\
+		nextFun = *(int*)(gcState.stackTop - WORD_SIZE);	\
 		nextChunk = nextChunks[nextFun];			\
 	}								\
 	/* Trampoline */						\
@@ -153,7 +158,7 @@ int main(int argc, char **argv) {					\
 #define PrepFarJump(n, l)			\
 	do {					\
 		nextChunk = ChunkName(n);	\
-		nextFun = l ## _index;		\
+		nextFun = l;			\
 	} while (0)
 
 #define FarJump(n, l)	 			\
@@ -162,25 +167,18 @@ int main(int argc, char **argv) {					\
 		goto leaveChunk;		\
 	} while (0)
 
-
-#ifdef GLOBAL_REGS
-#define Reg(name, i) (local ## name [ i ])
-#define Declare(ty, name, i) 
-#else
 #define Reg(name, i) local ## name ## i
-#define Declare(ty, name, i) ty Reg(name, i)
-#endif 
-
 #define RC(n) Reg(c, n)
 #define RD(n) Reg(d, n)
 #define RI(n) Reg(i, n)
 #define RP(n) Reg(p, n)
 #define RU(n) Reg(u, n)
 
+#define Declare(ty, name, i) ty Reg(name, i)
 #define DC(n) Declare(uchar, c, n)
 #define DD(n) Declare(double, d, n)
 #define DI(n) Declare(int, i, n)
-#define DP(n) Declare(pointer, p, n)
+#define DP(n) Declare(Pointer, p, n)
 #define DU(n) Declare(uint, u, n)
 
 #define Slot(ty, i) *(ty*)(stackTop + (i))
@@ -222,13 +220,13 @@ int main(int argc, char **argv) {					\
 #define Push(bytes)							\
 	do {								\
 		stackTop += (bytes);					\
-		assert(gcState.stackBottom <= stackTop + WORD_SIZE);	\
+		assert(gcState.stackBottom <= stackTop);		\
 	} while (0)
 
-#define Return()				\
-	do {					\
-		nextFun = *(int*)stackTop;	\
-		goto top;			\
+#define Return()						\
+	do {							\
+		nextFun = *(word*)(stackTop - WORD_SIZE);	\
+		goto top;					\
 	} while (0)
 
 #define ExnStack gcState.currentThread->exnStack
@@ -246,14 +244,14 @@ int main(int argc, char **argv) {					\
 		ExnStack = stackTop + (offset) - StackBottom;	\
 	} while (0)
 
-#define SetSlotExnStack(offset)						\
-	do {								\
-		*(uint*)(stackTop + (offset) + WORD_SIZE) = ExnStack;	\
+#define SetSlotExnStack(offset)					\
+	do {							\
+		*(uint*)(stackTop + (offset)) = ExnStack;	\
 	} while (0)
 
-#define SetExnStackSlot(offset) 					\
-	do {								\
-		ExnStack = *(uint*)(stackTop + (offset) + WORD_SIZE);	\
+#define SetExnStackSlot(offset)					\
+	do {							\
+		ExnStack = *(uint*)(stackTop + (offset));	\
 	} while (0)
 
 /* ------------------------------------------------- */
@@ -278,13 +276,11 @@ int main(int argc, char **argv) {					\
 #define InvokeRuntime(call, frameSize, ret)		\
 	do {						\
 		stackTop += (frameSize);		\
-		*(uint*)stackTop = (ret ## _index);	\
+		*(uint*)(stackTop - WORD_SIZE) = ret;	\
 		FlushGC();				\
 		call;					\
 		CacheGC();				\
 		Return();				\
-		ret:					\
-		stackTop -= (frameSize);		\
 	} while (0)
 
 #define GC_collect(frameSize, ret)						\
@@ -316,13 +312,14 @@ int main(int argc, char **argv) {					\
 
 #define EndObject(bytes)					\
 	do {							\
-		frontier += GC_OBJECT_HEADER_SIZE + (bytes);	\
+		frontier += (bytes);				\
 	} while (0)
 
 #define LimitCheck(frameSize, ret, b, other)				\
 	do {								\
 		declareFirst;						\
 									\
+/*		fprintf(stderr, "%d  LimitCheck\n", __LINE__); 	*/	\
 		if (GC_EVERY_CHECK					\
 		or (GC_FIRST_CHECK and gc_first)			\
 		or frontier + (b) > gcState.limit			\
@@ -337,10 +334,10 @@ int main(int argc, char **argv) {					\
 			frameSize, ret);				\
 			clearFirst;					\
 		}							\
-		assert(gcState.stackBottom <= stackTop + WORD_SIZE);	\
+		assert(gcState.stackBottom <= stackTop);		\
 	} while (0)
 
-#define StackOverflowCheck (stackTop >= gcState.stackLimit)
+#define StackOverflowCheck (stackTop > gcState.stackLimit)
 
 /* ------------------------------------------------- */
 /*                      Arrays                       */
@@ -385,11 +382,6 @@ int main(int argc, char **argv) {					\
 		frontier = (dst) + ((0 == (numElts)) 				\
 			? POINTER_SIZE						\
 			: (numElts) * (numPointers) * POINTER_SIZE);		\
-		{								\
-			word *p;						\
-			for (p = (word*) (dst); p < (word*) frontier; ++p)	\
-				*p = 0x1;					\
-		}								\
 	} while (0)
 
 /* ------------------------------------------------- */
@@ -428,33 +420,9 @@ int main(int argc, char **argv) {					\
 
 #define Int_add(n1, n2) ((n1) + (n2))
 #define Int_mul(n1, n2) ((n1) * (n2))
-#define Int_sub(n1, n2) (/*fprintf(stderr, "Int_sub(%d, %d) = %d\n", n1, n2, (n1) - (n2)),*/ (n1) - (n2))
+#define Int_sub(n1, n2) ((n1) - (n2))
 int Int_bogus;
-#define Int_addCheck(dst, n1, n2, l)				\
-	do {							\
-		int res;					\
-		if (Int_addOverflow(n1, n2, &res)) goto l;	\
-		dst = res;					\
-	} while (0)
-#define Int_mulCheck(dst, n1, n2, l)				\
-	do {							\
-		int res;					\
-		if (Int_mulOverflow(n1, n2, &res)) goto l;	\
-		dst = res;					\
-	} while (0)
-#define Int_negCheck(dst, n, l)					\
-	do {							\
-		int res;					\
-		if (Int_negOverflow(n, &res)) goto l;		\
-		dst = res;					\
-	} while (0)
-#define Int_subCheck(dst, n1, n2, l)				\
-	do {							\
-		int res;					\
-		if (Int_subOverflow(n1, n2, &res)) goto l;	\
-		dst = res;					\
-	} while (0)
-#define checkNew(dst, n1, n2, l, f);						\
+#define check(dst, n1, n2, l, f);						\
 	do {									\
 		int overflow;							\
 		dst = f(n1, n2, &overflow);					\
@@ -466,16 +434,16 @@ int Int_bogus;
 			goto l;							\
 		}								\
 	} while (0)
-#define Int_addCheckNew(dst, n1, n2, l)				\
-	checkNew(dst, n1, n2, l, Int_addOverflowNew)
-#define Int_mulCheckNew(dst, n1, n2, l)				\
-	checkNew(dst, n1, n2, l, Int_mulOverflowNew)
-#define Int_subCheckNew(dst, n1, n2, l)				\
-	checkNew(dst, n1, n2, l, Int_subOverflowNew)
-#define Int_negCheckNew(dst, n, l)			\
+#define Int_addCheck(dst, n1, n2, l)			\
+	check(dst, n1, n2, l, Int_addOverflow)
+#define Int_mulCheck(dst, n1, n2, l)			\
+	check(dst, n1, n2, l, Int_mulOverflow)
+#define Int_subCheck(dst, n1, n2, l)			\
+	check(dst, n1, n2, l, Int_subOverflow)
+#define Int_negCheck(dst, n, l)				\
 	do {						\
 		int overflow;				\
-		dst = Int_negOverflowNew(n, &overflow);	\
+		dst = Int_negOverflow(n, &overflow);	\
 		if (overflow) goto l;			\
 	} while (0)
 
@@ -629,7 +597,7 @@ int Int_bogus;
 
 #define Thread_copy(frameSize, ret, thread)					\
 	do {									\
-		pointer t = thread;						\
+		GC_thread t = thread;						\
 		InvokeRuntime(GC_copyThread(&gcState, t), frameSize, ret);	\
 	} while (0)
 
@@ -638,24 +606,23 @@ int Int_bogus;
 		InvokeRuntime(GC_copyCurrentThread(&gcState), frameSize, ret);	\
 	} while (0)
 
-#define Thread_finishHandler(frameSize, ret, thread)			\
-	do {								\
-		GC_thread t = thread;					\
-		InvokeRuntime(GC_finishHandler(&gcState, t),		\
-					frameSize, ret);		\
+#define Thread_finishHandler(frameSize, ret, thread)				\
+	do {									\
+		GC_thread t = thread;						\
+		InvokeRuntime(GC_finishHandler(&gcState, t), frameSize, ret);	\
 	} while (0)
 
 #define Thread_switchTo(frameSize, ret, thread)					\
 	do {									\
 		GC_thread t = thread;						\
 		stackTop += (frameSize);					\
-		*(uint*)stackTop = (ret ## _index);				\
+		*(uint*)(stackTop - WORD_SIZE) = ret;				\
 	 	gcState.currentThread->stack->used =				\
-			stackTop + WORD_SIZE - gcState.stackBottom;		\
+			stackTop - gcState.stackBottom;				\
 	 	gcState.currentThread = t;					\
 		gcState.stackBottom =						\
 			((pointer)t->stack) + sizeof(struct GC_stack);		\
-		stackTop = gcState.stackBottom + t->stack->used - WORD_SIZE;	\
+		stackTop = gcState.stackBottom + t->stack->used;		\
 		gcState.stackLimit =						\
 			gcState.stackBottom + t->stack->reserved		\
 			- 2 * gcState.maxFrameSize;				\
@@ -665,8 +632,6 @@ int Int_bogus;
 			gcState.limit = 0;					\
 		/* Thread_atomicEnd () */					\
 		Return();							\
-		ret:								\
-		stackTop -= (frameSize);					\
 	} while (0)
 
 /* ------------------------------------------------- */
@@ -758,11 +723,11 @@ int Int_bogus;
 /*                       World                       */
 /* ------------------------------------------------- */
 
-#define World_save(frameSize, ret, file)					\
-	do {									\
-		pointer f = (file);						\
-		InvokeRuntime(GC_saveWorld(&gcState, f, &saveGlobals),		\
-					frameSize, ret);			\
+#define World_save(frameSize, ret, file)				\
+	do {								\
+		pointer f = (file);					\
+		InvokeRuntime(GC_saveWorld(&gcState, f, &saveGlobals),	\
+					frameSize, ret);		\
 	} while (0)
 
 #endif /* #ifndef _CCODEGEN_H_ */

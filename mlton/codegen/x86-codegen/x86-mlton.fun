@@ -23,24 +23,24 @@ struct
   val intInfOverheadBytes = arrayHeaderBytes + wordBytes
    
   local
-    open MachineOutput.Type
+    open Machine.Type
   in
-    fun toX86Size t
-      = case dest t
+    fun toX86Size' t
+      = case t
 	  of Char => x86.Size.BYTE
 	   | Double => x86.Size.DBLE
 	   | Int => x86.Size.LONG
 	   | Pointer => x86.Size.LONG
 	   | Uint => x86.Size.LONG
-	   | Void => Error.bug "toX86Size: Void"
-    fun toX86Scale t
-      = case dest t
+    val toX86Size = fn t => toX86Size' (dest t)
+    fun toX86Scale' t
+      = case t
 	  of Char => x86.Scale.One
 	   | Double => x86.Scale.Eight
 	   | Int => x86.Scale.Four
 	   | Pointer => x86.Scale.Four
 	   | Uint => x86.Scale.Four
-	   | Void => Error.bug "toX86Scale: Void"
+    val toX86Scale = fn t => toX86Scale' (dest t)
   end
 
   (*
@@ -182,6 +182,33 @@ struct
   val c_stackPDerefDoubleOperand
     = Operand.memloc c_stackPDerefDouble
 
+  local
+    open Machine.Type
+    val cReturnTempBYTE = Label.fromString "cReturnTempB"
+    val cReturnTempBYTEContents 
+      = makeContents {base = Immediate.label cReturnTempBYTE,
+		      size = x86.Size.BYTE,
+		      class = Classes.StaticTemp}
+    val cReturnTempDBLE = Label.fromString "cReturnTempD"
+    val cReturnTempDBLEContents 
+      = makeContents {base = Immediate.label cReturnTempDBLE,
+		      size = x86.Size.DBLE,
+		      class = Classes.StaticTemp}
+    val cReturnTempLONG = Label.fromString "cReturnTempL"
+    val cReturnTempLONGContents 
+      = makeContents {base = Immediate.label cReturnTempLONG,
+		      size = x86.Size.LONG,
+		      class = Classes.StaticTemp}
+  in
+    fun cReturnTempContents size
+      = case size
+	  of x86.Size.BYTE => cReturnTempBYTEContents
+	   | x86.Size.DBLE => cReturnTempDBLEContents
+	   | x86.Size.LONG => cReturnTempLONGContents
+	   | _ => Error.bug "cReturnTempContents: size"
+    val cReturnTempContentsOperand = Operand.memloc o cReturnTempContents
+  end
+
   val limitCheckTemp = Label.fromString "limitCheckTemp"
   val limitCheckTempContents 
     = makeContents {base = Immediate.label limitCheckTemp,
@@ -189,6 +216,13 @@ struct
 		    class = Classes.StaticTemp}
   val limitCheckTempContentsOperand 
     = Operand.memloc limitCheckTempContents
+  val gcFirstAuxTemp = Label.fromString "gcFirstAuxTemp"
+  val gcFirstAuxTempContents 
+    = makeContents {base = Immediate.label gcFirstAuxTemp,
+		    size = pointerSize,
+		    class = Classes.StaticTemp}
+  val gcFirstAuxTempContentsOperand 
+    = Operand.memloc gcFirstAuxTempContents
      
   val arrayAllocateTemp = Label.fromString "arrayAllocateTemp"
   val arrayAllocateTempContents 
@@ -311,7 +345,7 @@ struct
     = Operand.memloc fpswTempContents
 
   local
-    open MachineOutput.Type
+    open Machine.Type
     val localC_base = Label.fromString "localuchar"
     val localD_base = Label.fromString "localdouble"
     val localI_base = Label.fromString "localint"
@@ -325,11 +359,10 @@ struct
 	   | Int     => localI_base
 	   | Pointer => localP_base
 	   | Uint    => localU_base
-	   | Void    => Error.bug "local_base: Void"
   end
 
   local
-    open MachineOutput.Type
+    open Machine.Type
     val globalC_base = Label.fromString "globaluchar"
     val globalC_num = Label.fromString "num_globaluchar"
     val globalD_base = Label.fromString "globaldouble"
@@ -348,7 +381,6 @@ struct
 	   | Int     => globalI_base
 	   | Pointer => globalP_base
 	   | Uint    => globalU_base
-	   | Void    => Error.bug "global_base: Void"
   end
 
   val globalPointerNonRoot_base = Label.fromString "globalpointerNonRoot"
@@ -477,6 +509,14 @@ struct
 		     class = Classes.Stack}
   val gcState_stackTopDerefOperand
     = Operand.memloc gcState_stackTopDeref
+  val gcState_stackTopMinusWordDeref
+    = MemLoc.simple {base = gcState_stackTopContents, 
+		     index = Immediate.const_int ~1,
+		     scale = wordScale,
+		     size = pointerSize,
+		     class = Classes.Stack}
+  val gcState_stackTopMinusWordDerefOperand
+    = Operand.memloc gcState_stackTopMinusWordDeref
 
   val gcState_stackBottom 
     = Immediate.binexp {oper = Immediate.Addition,
@@ -655,19 +695,22 @@ struct
 				 | Overflow => "Overflow"
 				 | _ => "?"))
 
-  fun applyFF {target: Label.t,
-	       args: (Operand.t * Size.t) list,
-	       dst: (Operand.t * Size.t) option,
-	       live: Operand.t list,
-	       liveInfo: x86Liveness.LiveInfo.t} : Block.t' AppendList.t
+  type transInfo = {addData : x86.Assembly.t list -> unit,
+		    frameLayouts: x86.Label.t ->
+		                  {size: int,
+				   frameLayoutsIndex: int} option,
+		    live: x86.Label.t -> x86.Operand.t list,
+		    liveInfo: x86Liveness.LiveInfo.t}
+
+  fun applyFF {target : Label.t, 
+	       args : (Operand.t * Size.t) list,
+	       dst : (Operand.t * Size.t) option,
+	       live : Operand.t list,
+	       transInfo as {liveInfo, ...} : transInfo}
     = let
 	val return = Label.newString "creturn"
 	val _ = x86Liveness.LiveInfo.setLiveOperands
-	        (liveInfo, 
-		 return,
-		 case dst
-		   of SOME (dst,_) => dst::live
-		    | NONE => live)
+	        (liveInfo, return, live)
 
 	val (comment_begin,
 	     comment_end)
@@ -683,84 +726,19 @@ struct
 	  statements = comment_begin,
 	  transfer = SOME (Transfer.ccall {target = target,
 					   args = args,
-					   dst = dst,
-					   live = MemLocSet.empty,
-					   return = return})},
+					   return = return,
+					   dstsize = Option.map (dst, #2)})},
 	 Block.T'
-	 {entry = SOME (Entry.creturn {label = return}),
+	 {entry = SOME (Entry.creturn {label = return, dst = dst}),
 	  profileInfo = ProfileInfo.none,
 	  statements = comment_end,
 	  transfer = NONE}]
       end
 
-  fun invokeRuntime {prim: Prim.t, 
-		     args: (Operand.t * Size.t) list, 
-		     info as {frameSize: int, 
-			      live: Operand.t list,
-			      return: Label.t},
-		     addData: Assembly.t list -> unit,
-		     frameLayouts: Label.t -> {size: int, 
-					       frameLayoutsIndex: int} option,
-		     liveInfo: x86Liveness.LiveInfo.t} : Block.t' AppendList.t
-    = let
-	val (comment_begin,
-	     comment_end)
-	  = if !Control.Native.commented > 0
-	      then ([x86.Assembly.comment "begin invokeRuntime"],
-		    [x86.Assembly.comment "end invokeRuntime"])
-	      else ([],[])
-	val _ = x86Liveness.LiveInfo.setLiveOperands
-	        (liveInfo, return, live)
-	val frameInfo = case frameLayouts return
-			  of NONE => Error.bug "invokeRuntime, frameInfo"
-			   | SOME {size, frameLayoutsIndex}
-			   => let
-				val _
-				  = Assert.assert
-				    ("invokeRuntime, frame size",
-				     fn () => size = frameSize)
-			      in 
-				x86.Entry.FrameInfo.frameInfo
-			        {size = size, frameLayoutsIndex = frameLayoutsIndex}
-			      end
-      in
-	AppendList.fromList
-	[Block.T'
-	 {entry = NONE,
-	  profileInfo = ProfileInfo.none,
-	  statements = comment_begin,
-	  transfer = SOME (Transfer.runtime {prim = prim,
-					     args = args,
-					     live = MemLocSet.empty,
-					     return = return,
-					     size = frameSize})},
-	 Block.T'
-	 {entry = SOME (Entry.runtime {label = return,
-				       frameInfo = frameInfo}),
-	  profileInfo = ProfileInfo.none,
-	  statements = comment_end,
-	  transfer = NONE}]
-      end
-
-  structure Prim = MachineOutput.Prim
-
-  structure PrimInfo =
-    struct
-      datatype t
-	= None
-        | Runtime of {frameSize: int, 
-		      live: x86.Operand.t list,
-		      return: x86.Label.t}
-        | Normal of x86.Operand.t list
-    end
-
-  fun applyPrim {prim: Prim.t,
-		 args: (Operand.t * Size.t) vector,
-		 dst: (Operand.t * Size.t) option,
-		 pinfo: PrimInfo.t,
-		 addData: Assembly.t list -> unit,
-		 frameLayouts: Label.t -> {size: int, frameLayoutsIndex: int} option,
-		 liveInfo: x86Liveness.LiveInfo.t} : Block.t' AppendList.t
+  fun prim {prim : Prim.t,
+	    args : (Operand.t * Size.t) vector,
+	    dst : (Operand.t * Size.t) option,
+	    transInfo as {addData, frameLayouts, live, liveInfo} : transInfo}
     = let
 	val primName = Prim.toString prim
 	datatype z = datatype Prim.Name.t
@@ -778,14 +756,7 @@ struct
 	fun getSrc3 ()
 	  = (Vector.sub (args, 0), Vector.sub (args, 1), Vector.sub (args, 2))
 	    handle _ => Error.bug "applyPrim: getSrc3"
-	fun getRuntimeInfo ()
-	  = case pinfo
-	      of PrimInfo.Runtime gcInfo => gcInfo
-	       | _ => Error.bug "applyPrim: getRuntimeInfo"
-	fun getPrimInfoNormal ()
-	  = case pinfo
-	      of PrimInfo.Normal live => live
-	       | _ => Error.bug "applyPrim: getPrimInfoNormal"
+
 	fun unimplemented s
 	  = AppendList.fromList
 	    [Block.T'
@@ -937,175 +908,6 @@ struct
 		transfer = NONE}]
 	    end	  
 
-	fun thread ()
-	  = let
-	      val (thread,threadsize) = getSrc1 ()
-	      val info = getRuntimeInfo ()
-	      val _ 
-		= Assert.assert
-		  ("applyPrim: thread",
-		   fn () => threadsize = pointerSize)
-	    in
-	      AppendList.appends
-	      [AppendList.fromList
-	       [(* thread might be of the form SX(?),
-		 *  and invoke runtime will change the stackTop,
-		 *  so copy the thread to a local location.
-		 *)
-		Block.T'
-		{entry = NONE,
-		 profileInfo = ProfileInfo.none,
-		 statements 
-		 = [Assembly.instruction_mov
-		    {dst = threadTempContentsOperand,
-		     src = thread,
-		     size = threadsize}],
-		 transfer = NONE}],
-	       (invokeRuntime {prim = prim,
-			       args = [(Operand.immediate_label gcState, pointerSize),
-				       (threadTempContentsOperand, threadsize)],
-			       info = info,
-			       addData = addData,
-			       frameLayouts = frameLayouts,
-			       liveInfo = liveInfo})]
-	    end
-
-	fun copyCurrent () =
-	   invokeRuntime
-	   {prim = prim,
-	    args = [(Operand.immediate_label gcState, pointerSize)],
-	    info = getRuntimeInfo (),
-	    addData = addData,
-	    frameLayouts = frameLayouts,
-	    liveInfo = liveInfo}
-
-	fun intInf_comp f
-	  = let
-	      val (dst,dstsize) = getDst ()
-	      val _
-		= Assert.assert
-		  ("applyPrim: intInf_comp, dstsize",
-		   fn () => dstsize = wordSize)
-	      val ((src1,src1size),
-		   (src2,src2size)) = getSrc2 ()
-	      val _ 
-		= Assert.assert
-		  ("applyPrim: intInf_comp, src1size",
-		   fn () => src1size = pointerSize)
-	      val _ 
-		= Assert.assert
-		  ("applyPrim: intInf_comp, src2size",
-		   fn () => src2size = pointerSize)
-	      val live = getPrimInfoNormal ()
-	    in
-	      (applyFF {target = f,
-			args = [(src1,src2size),
-				(src2,src2size)],
-			dst = SOME (dst,dstsize),
-			live = live,
-			liveInfo = liveInfo})
-	    end
-
-	fun intInf_binop f
-	  = let
-	      val (dst,dstsize) = getDst ()
-	      val _ 
-		= Assert.assert
-		  ("applyPrim: intInf_binop, dstsize",
-		   fn () => dstsize = pointerSize)
-	      val ((src1,src1size),
-		   (src2,src2size),
-		   (src3,src3size)) = getSrc3 ()
-	      val _ 
-		= Assert.assert
-		  ("applyPrim: intInf_binop, src1size",
-		   fn () => src1size = pointerSize)
-	      val _ 
-		= Assert.assert
-		  ("applyPrim: intInf_binop, src2size",
-		   fn () => src2size = pointerSize)
-	      val _ 
-		= Assert.assert
-		  ("applyPrim: intInf_binop, src3size",
-		   fn () => src3size = pointerSize)
-
-	      val live = getPrimInfoNormal ()
-	    in
-	      AppendList.appends
-	      [(* intInfTemp = f(src1,src2,src3,frontier) *)
-	       applyFF {target = f,
-			args = [(src1,src2size),
-				(src2,src2size),
-				(src3,src3size),
-				(gcState_frontierContentsOperand, pointerSize)],
-			dst = SOME (intInfTempContentsOperand, pointerSize),
-			live = live,
-			liveInfo = liveInfo},
-	       AppendList.fromList
-	       [Block.T'
-		{entry = NONE,
-		 profileInfo = ProfileInfo.none,
-		 statements 
-		 = [(* gcState.frontier = intInfTemp->frontier *)
-		    Assembly.instruction_mov
-		    {dst = gcState_frontierContentsOperand,
-		     src = intInfTempFrontierContentsOperand,
-		     size = pointerSize},
-		    (* dst = intInfTemp->value *)
-		    Assembly.instruction_mov
-		    {dst = dst,
-		     src = intInfTempValueContentsOperand,
-		     size = dstsize}],
-		 transfer = NONE}]]
-	    end
-
-	fun intInf_unop f
-	  = let
-	      val (dst,dstsize) = getDst ()
-	      val _ 
-		= Assert.assert
-		  ("applyPrim: intInf_unop, dstsize",
-		   fn () => dstsize = pointerSize)
-	      val ((src1,src1size),
-		   (src2,src2size)) = getSrc2 ()
-	      val _ 
-		= Assert.assert
-		  ("applyPrim: intInf_unop, src1size",
-		   fn () => src1size = pointerSize)
-	      val _ 
-		= Assert.assert
-		  ("applyPrim: intInf_unop, src2size",
-		   fn () => src2size = pointerSize)
-
-	      val live = getPrimInfoNormal ()
-	    in
-	      AppendList.appends
-	      [(* intInfTemp = f(src1,src2,frontier) *)
-	       applyFF {target = f,
-			args = [(src1,src2size),
-				(src2,src2size),
-				(gcState_frontierContentsOperand, pointerSize)],
-			dst = SOME (intInfTempContentsOperand, pointerSize),
-			live = live,
-			liveInfo = liveInfo},
-	       AppendList.fromList
-	       [Block.T'
-		{entry = NONE,
-		 profileInfo = ProfileInfo.none,
-		 statements 
-		 = [(* gcState.frontier = intInfTemp->frontier *)
-		    Assembly.instruction_mov
-		    {dst = gcState_frontierContentsOperand,
-		     src = intInfTempFrontierContentsOperand,
-		     size = pointerSize},
-		    (* dst = intInfTemp->value *)
-		    Assembly.instruction_mov
-		    {dst = dst,
-		     src = intInfTempValueContentsOperand,
-		     size = dstsize}],
-		 transfer = NONE}]]
-	    end
-
 	fun mov ()
 	  = let
 	      val (dst,dstsize) = getDst ()
@@ -1176,11 +978,7 @@ struct
 	  = let
 	      val ((src1,src1size),
 		   (src2,src2size)) = getSrc2 ()
-	      val (dst,dstsize)
-		= case dst
-		    of NONE 
-		     => (overflowCheckTempContentsOperand, src1size)
-		     | SOME (dst,dstsize) => (dst,dstsize)
+	      val (dst,dstsize) = getDst ()
 	      val _ 
 		= Assert.assert
 		  ("applyPrim: binal, dstsize/src1size/src2size",
@@ -1231,11 +1029,7 @@ struct
 	  = let
 	      val ((src1,src1size),
 		   (src2,src2size)) = getSrc2 ()
-	      val (dst,dstsize)
-		= case dst
-		    of NONE 
-		     => (overflowCheckTempContentsOperand, src1size)
-		     | SOME (dst,dstsize) => (dst,dstsize)
+	      val (dst,dstsize) = getDst ()
 	      val _ 
 		= Assert.assert
 		  ("applyPrim: pmd, dstsize/src1size/src2size",
@@ -1280,11 +1074,7 @@ struct
 	  = let
 	      val ((src1,src1size),
 		   (src2,src2size)) = getSrc2 ()
-	      val (dst,dstsize)
-		= case dst
-		    of NONE 
-		     => (overflowCheckTempContentsOperand, src1size)
-		     | SOME (dst,dstsize) => (dst,dstsize)
+	      val (dst,dstsize) = getDst ()
 	      val _ 
 		= Assert.assert
 		  ("applyPrim: pmd, dstsize/src1size/src2size",
@@ -1323,11 +1113,7 @@ struct
 	fun unal oper
 	  = let
 	      val (src,srcsize) = getSrc1 ()
-	      val (dst,dstsize) 
-		= case dst
-		    of NONE
-		     => (overflowCheckTempContentsOperand, srcsize)
-		     | SOME (dst,dstsize) => (dst,dstsize)
+	      val (dst,dstsize) = getDst ()
 	      val _ 
 		= Assert.assert
 		  ("applyPrim: unal, dstsize/srcsize",
@@ -1604,34 +1390,6 @@ struct
 		transfer = NONE}]
 	    end
 
-	fun real_ff1 f
-	  = let
-	      val (dst,dstsize) = getDst ()
-	      val (src,srcsize) = getSrc1 ()
-	      val live = getPrimInfoNormal ()
-	    in 
-	      applyFF {target = Label.fromString f,
-		       args = [(src,srcsize)],
-		       dst = SOME (dst,dstsize),
-		       live = live,
-		       liveInfo = liveInfo}
-	    end 
-
-	fun real_ff2 f
-	  = let
-	      val (dst,dstsize) = getDst ()
-	      val ((src1,src1size),
-		   (src2,src2size)) = getSrc2 ()
-	      val live = getPrimInfoNormal ()
-	    in 
-	      applyFF {target = Label.fromString f,
-		       args = [(src1,src1size),
-			       (src2,src2size)],
-		       dst = SOME (dst,dstsize),
-		       live = live,
-		       liveInfo = liveInfo}
-	    end 
-
 	val (comment_begin,
 	     comment_end)
 	  = if !Control.Native.commented > 0
@@ -1644,7 +1402,7 @@ struct
 			profileInfo = x86.ProfileInfo.none,
 			statements 
 			= [x86.Assembly.comment 
-			   ("begin applyPrim: " ^ comment)],
+			   ("begin prim: " ^ comment)],
 			transfer = NONE}),
 		      AppendList.single
 		      (x86.Block.T'
@@ -1652,7 +1410,7 @@ struct
 			profileInfo = x86.ProfileInfo.none,
 			statements 
 			= [x86.Assembly.comment 
-			   ("end applyPrim: " ^ comment)],
+			   ("end prim: " ^ comment)],
 			transfer = NONE}))
 		   end
 	      else (AppendList.empty,AppendList.empty)
@@ -1718,34 +1476,10 @@ struct
 				    {dst = dst,
 				     src = Operand.memloc memloc,
 				     size = dstsize}
-				 | _ => Error.bug "applyPrim: FFI"],
+				 | _ => Error.bug "prim: FFI"],
 			   transfer = NONE}]
 		       end
- 	            | SOME _ => let
-				  val live = getPrimInfoNormal ()
-				in 
-				  applyFF {target = Label.fromString s,
-					   args = Vector.toList args,
-					   dst = dst,
-					   live = live,
-					   liveInfo = liveInfo}
-				end)
-	     | GC_collect 
-	     => let
-		  val info = getRuntimeInfo ()
-		in 
-		  invokeRuntime 
-		  {prim = prim,
-		   args = [(Operand.immediate_label gcState, pointerSize),
-			   (Operand.immediate_const_int 0, wordSize),
-			   (Operand.immediate_const_int 1, wordSize),
-			   (fileName, pointerSize),
-			   (fileLine (), wordSize)],
-		   info = info,
-		   addData = addData,
-		   frameLayouts = frameLayouts,
-		   liveInfo = liveInfo}
-		end
+ 	            | SOME _ => Error.bug "prim: FFI")
              | Int_add => binal Instruction.ADD
 	     | Int_sub => binal Instruction.SUB
 	     | Int_mul => imul2 () 
@@ -1758,10 +1492,6 @@ struct
 	     | Int_ge => cmp Instruction.GE
 	     | Int_gtu => cmp Instruction.A
 	     | Int_geu => cmp Instruction.AE
-             | IntInf_compare 
-	     => intInf_comp (Label.fromString "IntInf_compare")
-	     | IntInf_equal 
-	     => intInf_comp (Label.fromString "IntInf_equal")
   	     | IntInf_isSmall 
 	     => let
 	 	  val (dst,dstsize) = getDst ()
@@ -1835,120 +1565,13 @@ struct
 			size = dstsize}],
 		    transfer = NONE}]
 		end 
-	     | IntInf_add 
-	     => intInf_binop (Label.fromString "IntInf_do_add")
-	     | IntInf_sub 
-	     => intInf_binop (Label.fromString "IntInf_do_sub")
-	     | IntInf_mul 
-	     => intInf_binop (Label.fromString "IntInf_do_mul")
-	     | IntInf_quot 
-	     => intInf_binop (Label.fromString "IntInf_do_quot")
-	     | IntInf_rem 
-	     => intInf_binop (Label.fromString "IntInf_do_rem")
-	     | IntInf_neg 
-	     => intInf_unop (Label.fromString "IntInf_do_neg")
-	     | IntInf_toString
-	     => let
-		  val (dst,dstsize) = getDst()
-		  val _ 
-		    = Assert.assert
-		      ("applyPrim: IntInf_toString, dstsize",
-		       fn () => dstsize = pointerSize)
-		  val ((src1,src1size),
-		       (src2,src2size),
-		       (src3,src3size)) = getSrc3 ()
-		  val _ 
-		    = Assert.assert
-		      ("applyPrim: IntInf_toString, src1size/src2size/src3size",
-		       fn () => src1size = pointerSize andalso
-		                src2size = wordSize andalso
-				src3size = pointerSize)
-
-		  val live = getPrimInfoNormal ()
-		in
-		  AppendList.appends
-		  [(* intInfTemp 
-		    *    = IntInf_do_toString(src1,src2,src3,frontier) 
-		    *)
-		   applyFF {target = Label.fromString "IntInf_do_toString",
-			    args = [(src1,src2size),
-				    (src2,src2size),
-				    (src3,src3size),
-				    (gcState_frontierContentsOperand, pointerSize)],
-			    dst = SOME (intInfTempContentsOperand, pointerSize),
-			    live = live,
-			    liveInfo = liveInfo},
-		   AppendList.fromList
-		   [Block.T'
-		    {entry = NONE,
-		     profileInfo = ProfileInfo.none,
-		     statements 
-		     = [(* gcState.frontier = intInfTemp->frontier *)
-			Assembly.instruction_mov
-			{dst = gcState_frontierContentsOperand,
-			 src = intInfTempFrontierContentsOperand,
-			 size = pointerSize},
-			(* dst = intInfTemp->value *)
-			Assembly.instruction_mov
-			{dst = dst,
-			 src = intInfTempValueContentsOperand,
-			 size = dstsize}],
-		     transfer = NONE}]]
-		end
 	     | IntInf_fromArray => mov ()
 	     | IntInf_toVector => mov ()
 	     | IntInf_fromWord => mov ()
 	     | IntInf_toWord => mov ()
-	     | MLton_bug =>
-		  applyFF {target = Label.fromString "MLton_bug",
-			   args = Vector.toList args,
-			   dst = dst,
-			   live = getPrimInfoNormal (),
-			   liveInfo = liveInfo}
 	     | MLton_eq => cmp Instruction.E
-	     | MLton_halt 
-	     => let
-		  val (status,statussize) = getSrc1 ()
-		  val info = getRuntimeInfo ()
-		  val _ 
-		    = Assert.assert
-		      ("applyPrim: MLton_halt, statussize",
-		       fn () => statussize = wordSize)
-		in
-		  AppendList.cons
-		  ((* status might be of the form SX(?),
-		    *  and invoke runtime will change the stackTop,
-		    *  so copy the status to a local location.
-		    *)
-		   Block.T'
-		   {entry = NONE,
-		    profileInfo = ProfileInfo.none,
-		    statements 
-		    = [Assembly.instruction_mov
-		       {dst = statusTempContentsOperand,
-			src = status,
-			size = statussize}],
-		    transfer = NONE},
-		   (invokeRuntime 
-		    {prim = prim,
-		     args = [(statusTempContentsOperand, statussize)],
-		     info = info,
-		     addData = addData,
-		     frameLayouts = frameLayouts,
-		     liveInfo = liveInfo}))
-		end
 	     | MLton_serialize => unimplemented primName
 	     | MLton_deserialize => unimplemented primName
-	     | MLton_size 
-	     => let
-		  val live = getPrimInfoNormal ()
-		in 
-		  applyFF {target = Label.fromString "MLton_size",
-			   args = Vector.toList args,
-			   dst = dst,
-			   live = live,
-			   liveInfo = liveInfo}
-		end
 	     | Real_Math_acos 
 	     => let
 		  val (dst,dstsize) = getDst ()
@@ -2104,7 +1727,6 @@ struct
 		    transfer = NONE}]
 		end
 	     | Real_Math_cos => funa Instruction.FCOS
-	     | Real_Math_cosh => real_ff1 "cosh"
 	     | Real_Math_exp 
 	     => let
 		  val (dst,dstsize) = getDst ()
@@ -2163,9 +1785,7 @@ struct
 		end
  	     | Real_Math_ln => flogarithm Instruction.LN2
 	     | Real_Math_log10 => flogarithm Instruction.LG2
-	     | Real_Math_pow => real_ff2 "pow"
 	     | Real_Math_sin => funa Instruction.FSIN
-	     | Real_Math_sinh => real_ff1 "sinh"
 	     | Real_Math_sqrt => funa Instruction.FSQRT
 	     | Real_Math_tan
 	     => let
@@ -2190,7 +1810,6 @@ struct
 			size = dstsize}],
 		    transfer = NONE}]
 		end
-	     | Real_Math_tanh => real_ff1 "tanh"
 	     | Real_mul => fbina Instruction.FMUL
 	     | Real_muladd => fbina_fmul Instruction.FADD
 	     | Real_mulsub => fbina_fmul Instruction.FSUB
@@ -2395,8 +2014,6 @@ struct
 		    transfer = NONE}]
 		end
 	     | Real_abs => funa Instruction.FABS
-	     | Real_copysign => real_ff2 "copysign" 
-	     | Real_frexp => real_ff2 "frexp"
 	     | Real_fromInt 
 	     => let
 		  val (dst,dstsize) = getDst ()
@@ -2466,26 +2083,13 @@ struct
 			size = dstsize}],
 		    transfer = NONE}]
 		end
-	     | Real_modf => real_ff2 "modf"
 	     | Real_neg => funa Instruction.FCHS
 	     | Real_round => funa Instruction.FRNDINT
-	     | String_equal 
-	     => let
-		  val live = getPrimInfoNormal ()
-		in 
-		  applyFF {target = Label.fromString "String_equal",
-			   args = Vector.toList args,
-			   dst = dst,
-			   live = live,
-			   liveInfo = liveInfo}
-		end
 	     | String_fromCharVector => mov ()
 	     | String_fromWord8Vector => mov ()
 	     | String_size => lengthArrayVectorString ()
 	     | String_toCharVector => mov ()
 	     | String_toWord8Vector => mov ()
-	     | Thread_copy => thread ()
-	     | Thread_copyCurrent => copyCurrent ()
 	     | Thread_current
 	     => let
 		  val (dst,dstsize) = getDst ()
@@ -2505,8 +2109,6 @@ struct
 			size = wordSize}],
 		    transfer = NONE}]
 		end
-	     | Thread_finishHandler => thread ()
-	     | Thread_switchTo => thread ()
 	     | Vector_length => lengthArrayVectorString ()
 	     | Word8_toInt => movx Instruction.MOVZX
 	     | Word8_toIntX => movx Instruction.MOVSX
@@ -2560,16 +2162,530 @@ struct
 	     | Word32_lshift => sral Instruction.SHL
 	     | Word32_rshift => sral Instruction.SHR
 	     | Word32_arshift => sral Instruction.SAR
+	     | _ => Error.bug ("prim: strange Prim.Name.t: " ^ primName)),
+	 comment_end]
+      end
+
+  fun ccall {prim : Prim.t,
+	     args : (Operand.t * Size.t) vector,
+	     return : Label.t,
+	     dstsize : Size.t option,
+	     transInfo as {...} : transInfo}
+    = let
+	val primName = Prim.toString prim
+	datatype z = datatype Prim.Name.t
+
+	fun getDstsize ()
+	  = case dstsize
+	      of SOME dstsize => dstsize
+	       | NONE => Error.bug "ccall: getDstsize"
+	fun getSrc1 ()
+	  = Vector.sub (args, 0)
+	    handle _ => Error.bug "ccall: getSrc1"
+	fun getSrc2 ()
+	  = (Vector.sub (args, 0), Vector.sub (args, 1))
+	    handle _ => Error.bug "ccall: getSrc2"
+	fun getSrc3 ()
+	  = (Vector.sub (args, 0), Vector.sub (args, 1), Vector.sub (args, 2))
+	    handle _ => Error.bug "ccall: getSrc3"
+
+	fun intInf_comp f
+	  = let
+	      val _
+		= Assert.assert
+		  ("ccall: intInf_comp, dstsize",
+		   fn () => getDstsize () = wordSize)
+	      val ((src1,src1size),
+		   (src2,src2size)) = getSrc2 ()
+	      val _ 
+		= Assert.assert
+		  ("ccall: intInf_comp, src1size",
+		   fn () => src1size = pointerSize)
+	      val _ 
+		= Assert.assert
+		  ("ccall: intInf_comp, src2size",
+		   fn () => src2size = pointerSize)
+
+	      val args = [(src1,src1size), (src2,src2size)]
+	    in
+	      AppendList.single
+	      (Block.T'
+	       {entry = NONE,
+		profileInfo = ProfileInfo.none,
+		statements = [],
+		transfer = SOME (Transfer.ccall {target = Label.fromString f,
+						 args = args,
+						 return = return,
+						 dstsize = dstsize})})
+	    end
+
+	fun intInf_binop f
+	  = let
+	      val _ 
+		= Assert.assert
+		  ("ccall: intInf_binop, dstsize",
+		   fn () => getDstsize () = pointerSize)
+	      val ((src1,src1size),
+		   (src2,src2size),
+		   (src3,src3size)) = getSrc3 ()
+	      val _ 
+		= Assert.assert
+		  ("ccall: intInf_binop, src1size",
+		   fn () => src1size = pointerSize)
+	      val _ 
+		= Assert.assert
+		  ("ccall: intInf_binop, src2size",
+		   fn () => src2size = pointerSize)
+	      val _ 
+		= Assert.assert
+		  ("ccall: intInf_binop, src3size",
+		   fn () => src3size = pointerSize)
+
+	      val args = [(src1,src2size),
+			  (src2,src2size),
+			  (src3,src3size),
+			  (gcState_frontierContentsOperand, pointerSize)]
+	    in
+	      AppendList.single
+	      ((* intInfTemp = f(src1,src2,src3,frontier) *)
+	       Block.T'
+	       {entry = NONE,
+		profileInfo = ProfileInfo.none,
+		statements = [],
+		transfer = SOME (Transfer.ccall {target = Label.fromString f,
+						 args = args,
+						 return = return,
+						 dstsize = dstsize})})
+	    end
+
+	fun intInf_unop f
+	  = let
+	      val _ 
+		= Assert.assert
+		  ("ccall: intInf_unnop, dstsize",
+		   fn () => getDstsize () = pointerSize)
+	      val ((src1,src1size),
+		   (src2,src2size)) = getSrc2 ()
+	      val _ 
+		= Assert.assert
+		  ("ccall: intInf_unnop, src1size",
+		   fn () => src1size = pointerSize)
+	      val _ 
+		= Assert.assert
+		  ("ccall: intInf_unnop, src2size",
+		   fn () => src2size = pointerSize)
+
+	      val args = [(src1,src2size),
+			  (src2,src2size),
+			  (gcState_frontierContentsOperand, pointerSize)]
+	    in
+	      AppendList.single
+	      ((* intInfTemp = f(src1,src2,frontier) *)
+	       Block.T'
+	       {entry = NONE,
+		profileInfo = ProfileInfo.none,
+		statements = [],
+		transfer = SOME (Transfer.ccall {target = Label.fromString f,
+						 args = args,
+						 return = return,
+						 dstsize = dstsize})})
+	    end
+
+	fun real_ff1 f
+	  = let
+	      val (src,srcsize) = getSrc1 ()
+	      val args = [(src,srcsize)]
+	    in 
+	      AppendList.single
+	      (Block.T'
+	       {entry = NONE,
+		profileInfo = ProfileInfo.none,
+		statements = [],
+		transfer = SOME (Transfer.ccall {target = Label.fromString f,
+						 args = args,
+						 return = return,
+						 dstsize = dstsize})})
+	    end
+
+	fun real_ff2 f
+	  = let
+	      val ((src1,src1size),
+		   (src2,src2size)) = getSrc2 ()
+	      val args = [(src1,src1size), (src2,src2size)]
+	    in 
+	      AppendList.single
+	      (Block.T'
+	       {entry = NONE,
+		profileInfo = ProfileInfo.none,
+		statements = [],
+		transfer = SOME (Transfer.ccall {target = Label.fromString f,
+						 args = args,
+						 return = return,
+						 dstsize = dstsize})})
+	    end 
+	  
+	val comment_begin
+	  = if !Control.Native.commented > 0
+	      then let
+		     val comment = primName
+		   in
+		     AppendList.single
+		     (x86.Block.T'
+		      {entry = NONE,
+		       profileInfo = x86.ProfileInfo.none,
+		       statements 
+		       = [x86.Assembly.comment 
+			  ("begin ccall: " ^ comment)],
+		       transfer = NONE})
+		   end
+	      else AppendList.empty
+      in
+	AppendList.appends
+	[comment_begin,
+	 (case Prim.name prim
+	    of FFI s
+	     => (case Prim.numArgs prim
+		   of NONE => Error.bug "ccall: FFI"
+		    | SOME _ 
+		    => AppendList.single
+		       (Block.T'
+			{entry = NONE,
+			 profileInfo = ProfileInfo.none,
+			 statements = [],
+			 transfer = SOME (Transfer.ccall 
+					  {target = Label.fromString s,
+					   args = Vector.toList args,
+					   return = return,
+					   dstsize = dstsize})}))
+	     | IntInf_compare => intInf_comp "IntInf_compare"
+	     | IntInf_equal => intInf_comp "IntInf_equal"
+	     | IntInf_add => intInf_binop "IntInf_do_add"
+	     | IntInf_sub => intInf_binop "IntInf_do_sub"
+	     | IntInf_mul => intInf_binop "IntInf_do_mul"
+	     | IntInf_quot => intInf_binop "IntInf_do_quot"
+	     | IntInf_rem => intInf_binop "IntInf_do_rem"
+	     | IntInf_neg => intInf_unop "IntInf_do_neg"
+	     | IntInf_toString
+	     => let
+		  val _ 
+		    = Assert.assert
+		      ("ccall: IntInf_toString, dstsize",
+		       fn () => getDstsize () = pointerSize)
+		  val ((src1,src1size),
+		       (src2,src2size),
+		       (src3,src3size)) = getSrc3 ()
+		  val _ 
+		    = Assert.assert
+		      ("ccall: IntInf_toString, src1size/src2size/src3size",
+		       fn () => src1size = pointerSize andalso
+		                src2size = wordSize andalso
+				src3size = pointerSize)
+
+		  val args = [(src1,src2size),
+			      (src2,src2size),
+			      (src3,src3size),
+			      (gcState_frontierContentsOperand, pointerSize)]
+		in
+		  AppendList.single
+		  ((* intInfTemp 
+		    *    = IntInf_do_toString(src1,src2,src3,frontier) 
+		    *)
+		   Block.T'
+		   {entry = NONE,
+		    profileInfo = ProfileInfo.none,
+		    statements = [],
+		    transfer = SOME (Transfer.ccall 
+				     {target = Label.fromString "IntInf_do_toString",
+				      args = args,
+				      return = return,
+				      dstsize = dstsize})})
+		end
+	     | MLton_bug 
+	     => AppendList.single
+		(Block.T'
+		 {entry = NONE,
+		  profileInfo = ProfileInfo.none,
+		  statements = [],
+		  transfer = SOME (Transfer.ccall 
+				   {target = Label.fromString "MLton_bug",
+				    args = Vector.toList args,
+				    return = return,
+				    dstsize = dstsize})})
+	     | MLton_size
+	     => AppendList.single
+		(Block.T'
+		 {entry = NONE,
+		  profileInfo = ProfileInfo.none,
+		  statements = [],
+		  transfer = SOME (Transfer.ccall 
+				   {target = Label.fromString "MLton_size",
+				    args = Vector.toList args,
+				    return = return,
+				    dstsize = dstsize})})
+	     | Real_Math_cosh => real_ff1 "cosh"
+	     | Real_Math_pow => real_ff2 "pow"
+	     | Real_Math_sinh => real_ff1 "sinh"
+	     | Real_Math_tanh => real_ff1 "tanh"
+	     | Real_copysign => real_ff2 "copysign" 
+	     | Real_frexp => real_ff2 "frexp"
+	     | Real_modf => real_ff2 "modf"
+	     | String_equal
+	     => AppendList.single
+		(Block.T'
+		 {entry = NONE,
+		  profileInfo = ProfileInfo.none,
+		  statements = [],
+		  transfer = SOME (Transfer.ccall 
+				   {target = Label.fromString "String_equal",
+				    args = Vector.toList args,
+				    return = return,
+				    dstsize = dstsize})})
+	     | _ => Error.bug ("ccall: strange Prim.Name.t: " ^ primName))]
+      end
+
+  fun creturn {prim : Prim.t,
+	       label : Label.t,
+	       dst : (Operand.t * Size.t) option,
+	       transInfo as {liveInfo, live, ...} : transInfo}
+    = let
+	val primName = Prim.toString prim
+	datatype z = datatype Prim.Name.t
+
+	fun getDst ()
+	  = case dst
+	      of SOME dst => dst
+	       | NONE => Error.bug "creturn: getDst"
+
+	fun default ()
+	  = let
+	      val _ = x86Liveness.LiveInfo.setLiveOperands
+	              (liveInfo, label, live label)
+	    in 
+	      AppendList.single
+	      (x86.Block.T'
+	       {entry = SOME (Entry.creturn {label = label,
+					     dst = dst}),
+		profileInfo = ProfileInfo.none,
+		statements = [],
+		transfer = NONE})
+	    end
+
+	fun intInf ()
+	  = let
+	      val (dst,dstsize) = getDst ()
+
+	      val _ = x86Liveness.LiveInfo.setLiveOperands
+	              (liveInfo, label, live label)
+	    in
+	      AppendList.single
+	      (Block.T'
+	       {entry = SOME (Entry.creturn 
+			      {label = label,
+			       dst = SOME (intInfTempContentsOperand, pointerSize)}),
+		profileInfo = ProfileInfo.none,
+		statements 
+		= [(* gcState.frontier = intInfTemp->frontier *)
+		   Assembly.instruction_mov
+		   {dst = gcState_frontierContentsOperand,
+		    src = intInfTempFrontierContentsOperand,
+		    size = pointerSize},
+		    (* dst = intInfTemp->value *)
+		   Assembly.instruction_mov
+		   {dst = dst,
+		    src = intInfTempValueContentsOperand,
+		    size = dstsize}],
+		transfer = NONE})
+	    end
+
+	val comment_end
+	  = if !Control.Native.commented > 0
+	      then let
+		     val comment = primName
+		   in
+		     AppendList.single
+		     (x86.Block.T'
+		      {entry = NONE,
+		       profileInfo = x86.ProfileInfo.none,
+		       statements 
+		       = [x86.Assembly.comment 
+			  ("end creturn: " ^ comment)],
+		       transfer = NONE})
+		   end
+	      else AppendList.empty
+      in
+	AppendList.appends
+	[(case Prim.name prim
+	    of FFI s
+	     => (case Prim.numArgs prim
+		   of NONE => Error.bug "ccall: FFI"
+		    | SOME _ => default ())
+	     | IntInf_compare => default ()
+	     | IntInf_equal => default ()
+	     | IntInf_add => intInf ()
+	     | IntInf_sub => intInf ()
+	     | IntInf_mul => intInf ()
+	     | IntInf_quot => intInf ()
+	     | IntInf_rem => intInf ()
+	     | IntInf_neg => intInf ()
+	     | IntInf_toString => intInf ()
+	     | MLton_bug => default ()
+	     | MLton_size => default ()
+	     | Real_Math_cosh => default ()
+	     | Real_Math_pow => default ()
+	     | Real_Math_sinh => default ()
+	     | Real_Math_tanh => default ()
+	     | Real_copysign => default ()
+	     | Real_frexp => default ()
+	     | Real_modf => default ()
+	     | String_equal => default ()
+	     | _ => Error.bug ("creturn: strange Prim.Name.t: " ^ primName)),
+	comment_end]
+      end
+
+  fun runtimecall {prim : Prim.t,
+		   args : (Operand.t * Size.t) vector,
+		   return : Label.t,
+		   transInfo as {frameLayouts, ...} : transInfo}
+    = let
+    	val primName = Prim.toString prim
+	datatype z = datatype Prim.Name.t
+
+	fun getSrc1 ()
+	  = Vector.sub (args, 0)
+	    handle _ => Error.bug "runtimecall: getSrc1"
+	fun getSrc2 ()
+	  = (Vector.sub (args, 0), Vector.sub (args, 1))
+	    handle _ => Error.bug "runtimecall: getSrc2"
+	fun getSrc3 ()
+	  = (Vector.sub (args, 0), Vector.sub (args, 1), Vector.sub (args, 2))
+	    handle _ => Error.bug "runtimecall: getSrc3"
+
+	val frameSize = case frameLayouts return
+			  of NONE => Error.bug "runtimecall: framesize"
+			   | SOME {size, ...} => size
+
+	fun thread ()
+	  = let
+	      val (thread,threadsize) = getSrc1 ()
+	      val _ 
+		= Assert.assert
+		  ("runtimecall: thread",
+		   fn () => threadsize = pointerSize)
+	    in
+	      AppendList.single
+	      ((* thread might be of the form SX(?),
+		*  and invoke runtime will change the stackTop,
+		*  so copy the thread to a local location.
+		*)
+	       Block.T'
+	       {entry = NONE,
+		profileInfo = ProfileInfo.none,
+		statements 
+		= [Assembly.instruction_mov
+		   {dst = threadTempContentsOperand,
+		    src = thread,
+		    size = threadsize}],
+		transfer 
+		= SOME (Transfer.runtime 
+			{prim = prim,
+			 args = [(Operand.immediate_label gcState, pointerSize),
+				 (threadTempContentsOperand, threadsize)],
+			 return = return,
+			 size = frameSize})})
+	    end
+
+	fun thread_copyCurrent ()
+	  = let
+	    in
+	      AppendList.single
+	      (Block.T'
+	       {entry = NONE,
+		profileInfo = ProfileInfo.none,
+		statements = [],
+		transfer 
+		= SOME (Transfer.runtime 
+			{prim = prim,
+			 args = [(Operand.immediate_label gcState, pointerSize)],
+			 return = return,
+			 size = frameSize})})
+	    end
+
+	val comment_begin
+	  = if !Control.Native.commented > 0
+	      then let
+		     val comment = primName
+		   in
+		     AppendList.single
+		     (x86.Block.T'
+		      {entry = NONE,
+		       profileInfo = x86.ProfileInfo.none,
+		       statements 
+		       = [x86.Assembly.comment 
+			  ("begin runtimecall: " ^ comment)],
+		       transfer = NONE})
+		   end
+	      else AppendList.empty
+      in
+	AppendList.appends
+	[comment_begin,
+	 (case Prim.name prim
+	    of GC_collect
+	     => AppendList.single
+	        (Block.T'
+		 {entry = NONE,
+		  profileInfo = ProfileInfo.none,
+		  statements = [],
+		  transfer 
+		  = SOME (Transfer.runtime 
+			  {prim = prim,
+			   args = [(Operand.immediate_label gcState, pointerSize),
+				   (Operand.immediate_const_int 0, wordSize),
+				   (Operand.immediate_const_int 1, wordSize),
+				   (fileName, pointerSize),
+				   (fileLine (), wordSize)],
+			   return = return,
+			   size = frameSize})})
+	     | MLton_halt
+	     => let
+		  val (status,statussize) = getSrc1 ()
+		  val _ 
+		    = Assert.assert
+		      ("runtimecall: MLton_halt, statussize",
+		       fn () => statussize = wordSize)
+		in
+		  AppendList.single
+		  ((* status might be of the form SX(?),
+		    *  and invoke runtime will change the stackTop,
+		    *  so copy the status to a local location.
+		    *)
+		   Block.T'
+		   {entry = NONE,
+		    profileInfo = ProfileInfo.none,
+		    statements 
+		    = [Assembly.instruction_mov
+		       {dst = statusTempContentsOperand,
+			src = status,
+			size = statussize}],
+		    transfer 
+		    = SOME (Transfer.runtime 
+			    {prim = prim,
+			     args = [(statusTempContentsOperand, statussize)],
+			     return = return,
+			     size = frameSize})})
+		end
+	     | Thread_copy => thread ()
+	     | Thread_copyCurrent => thread_copyCurrent ()
+	     | Thread_finishHandler => thread ()
+	     | Thread_switchTo => thread ()
 	     | World_save
 	     => let
 		  val (file,filesize) = getSrc1 ()
-		  val info = getRuntimeInfo ()
-		  val _
+		  val _ 
 		    = Assert.assert
-		      ("applyPrim: World_save, filesize",
+		      ("runtimecall: World_save, filesize",
 		       fn () => filesize = pointerSize)
 		in
-		  AppendList.cons
+		  AppendList.single
 		  ((* file might be of the form SX(?),
 		    *  and invoke runtime will change the stackTop,
 		    *  so copy the file to a local location.
@@ -2582,32 +2698,76 @@ struct
 		       {dst = fileTempContentsOperand,
 			src = file,
 			size = filesize}],
-		    transfer = NONE},
-		   (invokeRuntime 
-		    {prim = prim,
-		     args = [(Operand.immediate_label gcState, pointerSize),
-			     (fileTempContentsOperand, filesize),
-			     (Operand.immediate_label saveGlobals, 
-			      pointerSize)],
-		     info = info,
-		     addData = addData,
-		     frameLayouts = frameLayouts,
-		     liveInfo = liveInfo}))
+		    transfer 
+		    = SOME (Transfer.runtime 
+			    {prim = prim,
+			     args = [(Operand.immediate_label gcState, pointerSize),
+				     (fileTempContentsOperand, filesize),
+				     (Operand.immediate_label saveGlobals, 
+				      pointerSize)],
+			     return = return,
+			     size = frameSize})})
 		end
-	     | _ 
-	     => Error.bug ("applyPrim: strange Prim.Name.t: " ^ primName)),
-	 comment_end]
+	     | _ => Error.bug ("runtimecall: strange Prim.Name.t: " ^ primName))]
       end
+
+  fun runtimereturn {prim : Machine.Prim.t,
+		     label : Label.t,
+		     frameInfo : Entry.FrameInfo.t,
+		     transInfo as {frameLayouts, live, liveInfo, ...} : transInfo}
+    = let
+        val primName = Prim.toString prim
+        datatype z = datatype Prim.Name.t
+  
+        fun default ()
+          = let
+              val _ = x86Liveness.LiveInfo.setLiveOperands
+                      (liveInfo, label, live label)
+            in 
+              AppendList.single
+              (x86.Block.T'
+               {entry = SOME (Entry.runtime {label = label,
+                                             frameInfo = frameInfo}),
+                profileInfo = ProfileInfo.none,
+                statements = [],
+                transfer = NONE})
+            end
+  
+        val comment_end
+          = if !Control.Native.commented > 0
+              then let
+                     val comment = primName
+                   in
+                     AppendList.single
+                     (x86.Block.T'
+                      {entry = NONE,
+                       profileInfo = x86.ProfileInfo.none,
+                       statements 
+                       = [x86.Assembly.comment 
+                          ("end runtimereturn: " ^ comment)],
+                       transfer = NONE})
+                   end
+              else AppendList.empty
+        in
+        AppendList.appends
+        [(case Prim.name prim
+            of GC_collect => default ()
+             | MLton_halt => default ()
+             | Thread_copy => default ()
+             | Thread_copyCurrent => default ()
+             | Thread_finishHandler => default ()
+             | Thread_switchTo => default ()
+             | World_save => default ()
+             | _ => Error.bug ("runtimereturn: strange Prim.Name.t: " ^ primName)),
+         comment_end]
+        end
 
   fun arith {prim : Prim.t,
 	     args : (Operand.t * Size.t) vector,
 	     dst : (Operand.t * Size.t),
 	     overflow : Label.t,
 	     success : Label.t,
-	     addData : Assembly.t list -> unit,
-	     frameLayouts : Label.t
-	                    -> {size: int, frameLayoutsIndex: int} option,
-	     liveInfo : x86Liveness.LiveInfo.t} : Block.t' AppendList.t
+	     transInfo as {addData, frameLayouts, live, liveInfo, ...} : transInfo}
     = let
 	val primName = Prim.toString prim
 	datatype z = datatype Prim.Name.t
@@ -2739,7 +2899,7 @@ struct
 			profileInfo = x86.ProfileInfo.none,
 			statements 
 			= [x86.Assembly.comment 
-			   ("begin applyPrim: " ^ comment)],
+			   ("begin arith: " ^ comment)],
 			transfer = NONE}),
 		      AppendList.single
 		      (x86.Block.T'
@@ -2747,7 +2907,7 @@ struct
 			profileInfo = x86.ProfileInfo.none,
 			statements 
 			= [x86.Assembly.comment 
-			   ("end applyPrim: " ^ comment)],
+			   ("end arith: " ^ comment)],
 			transfer = NONE}))
 		   end
 	      else (AppendList.empty,AppendList.empty)
@@ -2759,20 +2919,16 @@ struct
 	     | Int_subCheck => binal x86.Instruction.SUB
 	     | Int_mulCheck => imul2_check ()
 	     | Int_negCheck => unal x86.Instruction.NEG
-	     | _ 
-	     => Error.bug ("arith: strange Prim.Name.t: " ^ primName)),
+	     | _ => Error.bug ("arith: strange Prim.Name.t: " ^ primName)),
 	 comment_end]
       end
 
-
   val bug_msg_label = Label.fromString "MLton_bug_msg"
-  fun bug {liveInfo: x86Liveness.LiveInfo.t}
+  fun bug {transInfo as {addData, frameLayouts, live, liveInfo, ...} : transInfo}
     = let
 	val bugLabel = Label.newString "bug"
 	val _ = x86Liveness.LiveInfo.setLiveOperands
-	        (liveInfo, 
-		 bugLabel,
-		 [])
+	        (liveInfo, bugLabel, [])
       in 
 	AppendList.appends
 	[AppendList.fromList
@@ -2791,7 +2947,7 @@ struct
 			    pointerSize)],
 		   dst = NONE,
 		   live = [],
-		   liveInfo = liveInfo}),
+		   transInfo = transInfo}),
 	 AppendList.fromList
 	 [Block.T'
 	  {entry = NONE,

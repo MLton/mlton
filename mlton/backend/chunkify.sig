@@ -5,7 +5,7 @@ type int = Int.t
 
 signature CHUNKIFY_STRUCTS = 
    sig
-      include SSA
+      include RSSA
    end
 
 signature CHUNKIFY = 

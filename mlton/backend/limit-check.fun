@@ -1,125 +1,118 @@
-(* Copyright (C) 1997-1999 NEC Research Institute.
- * Please see the file LICENSE for license information.
- *)
-(* Insert limit checks at
- * 1. Loop headers
- * 2. Continuations
- * 3. Handlers
- *)
-functor LimitCheck (S: LIMIT_CHECK_STRUCTS): LIMIT_CHECK = 
+functor LimitCheck (S: LIMIT_CHECK_STRUCTS): LIMIT_CHECK =
 struct
 
 open S
-datatype z = datatype Exp.t
-datatype z = datatype Transfer.t
+open Rssa
 
-datatype t = No | Maybe | Yes
-
-val toString =
-   fn Maybe => "Maybe"
-    | No => "No"
-    | Yes => "Yes"
-
-val layout = Layout.str o toString
-
-val op < =
-   fn (Yes, _) => false
-    | (Maybe, Yes) => true
-    | (No, No) => false
-    | (No, _) => true
-    | _ => false
-
-structure Edge = DirectedGraph.Edge
-structure Node = DirectedGraph.Node
-
-fun limitCheck (program as Program.T {functions, ...})=
+fun insertFunction (f: Function.t) =
    let
-      val usesSignals =
-	 Program.hasPrim (program, fn p =>
-			  Prim.name p = Prim.Name.Thread_finishHandler)
-   in
-      fn f =>
-      let
-	 val {blocks, name, ...} = Function.dest f
-	 val {get = labelInfo: Label.t -> {inBody: bool ref,
-					   limitCheck: t ref}, ...} =
-	    Property.get (Label.plist,
-			  Property.initFun (fn _ => {inBody = ref false,
-						     limitCheck = ref No}))
-	 fun up (r: t ref, v: t) =
-	    if !r < v
-	       then r := v
-	    else ()
-	 val _ =
-	    if !Control.limitCheckPerBlock
-	       then
-		  Vector.foreach
-		  (blocks, fn Block.T {label, statements, ...} =>
-		   if Vector.exists (statements, Statement.mayAllocate)
-		      then #limitCheck (labelInfo label) := Maybe
-		   else ())
-	    else ()
-	 val _ = 
-	    Vector.foreach
-	    (blocks, fn Block.T {statements, ...} =>
-	     Vector.foreach
-	     (statements, fn Statement.T {exp, ...} =>
-	      case exp of
-		 SetHandler h => up (#limitCheck (labelInfo h), Maybe)
-	       | _ => ()))
-	 val {labelNode, nodeBlock, ...} = Function.controlFlow f
-	 val _ =
-	    Tree.traverse
-	    (Function.dominatorTree f, fn Block.T {label, ...} =>
-	     let
-		val {inBody, ...} = labelInfo label
-		val _ = inBody := true
-	     in
-		fn () =>
+      val {args, blocks, name, start} = Function.dest f
+      val extra = ref []
+      fun add {args, blockKind, lcKind, start, success} =
+	 let
+	    val failure = Label.newNoname ()
+	 in
+	    extra :=
+	    Block.T {args = args,
+		     kind = blockKind,
+		     label = start,
+		     statements = Vector.new0 (),
+		     transfer = Transfer.LimitCheck {failure = failure,
+						     kind = lcKind,
+						     success = success}}
+	    :: Block.T {args = Vector.new0 (),
+			kind = Kind.Runtime {prim = Prim.gcCollect},
+			label = failure,
+			statements = Vector.new0 (),
+			transfer = Transfer.Goto {dst = success,
+						  args = Vector.new0 ()}}
+	    :: !extra
+	 end
+      val blocks =
+	 Vector.map
+	 (blocks,
+	  fn block as Block.T {args, kind, label, statements, transfer} =>
+	  let
+	     val bytes = 
+		Vector.fold (statements, 0, fn (s, ac) =>
+			     case s of
+				Statement.Object
+				{numPointers = p,
+				 numWordsNonPointers = np, ...} =>
+				   ac + Runtime.objectHeaderSize
+				   + (Runtime.objectSize
+				      {numPointers = p,
+				       numWordsNonPointers = np})
+			      | _ => ac)
+	     fun insert (lcKind: LimitCheck.t) =
 		let
-		   val _ =
-		      List.foreach
-		      (Node.successors (labelNode label), fn e =>
-		       let
-			  val n = Edge.to e
-			  val {inBody, limitCheck, ...} =
-			     labelInfo (Block.label (nodeBlock n))
-		       in if !inBody
-			     then up (limitCheck,
-				      if usesSignals then Yes else Maybe)
-			  else ()
-		       end)
-		   val _ = inBody := false
+		   val success = Label.newNoname ()
+		   val _ = add {args = args,
+				blockKind = kind,
+				lcKind = lcKind,
+				start = label,
+				success = success}
 		in
-		   ()
+		   Block.T {args = Vector.new0 (),
+			    kind = Kind.Jump,
+			    label = success,
+			    statements = statements,
+			    transfer = transfer}
 		end
-	     end)
-	 val _ =
-	    Control.diagnostics
-	    (fn display =>
-	     let
-		open Layout
-		val _ =
-		   display (seq [str "limit checks for ",
-				 Func.layout name])
-		val _ =
-		   Vector.foreach
-		   (blocks, fn Block.T {label, ...} =>
-		    let
-		       val {limitCheck, ...} = labelInfo label
-		    in
-		       display (seq [Label.layout label,
-				     str " ",
-				     layout (!limitCheck)])
-		    end)
-	     in
-		()
-	     end)
-      in
-	 ! o #limitCheck o labelInfo
-      end
+	     fun normal () =
+		if bytes > 0
+		   then insert (LimitCheck.Heap {bytes = bytes,
+						 stackToo = false})
+		else block
+	  in
+	     if 0 < Vector.length statements
+		then
+		   case Vector.sub (statements, 0) of
+		      Statement.Array {dst, numBytesNonPointers, numElts,
+				       numPointers} =>
+			 let
+			    val bytesPerElt =
+			       if numPointers = 0
+				  then numBytesNonPointers
+			       else if numBytesNonPointers = 0
+				       then numPointers * Runtime.pointerSize
+				    else Error.unimplemented "tricky arrays"
+			    val extraBytes =
+			       bytes
+			       + Runtime.arrayHeaderSize
+			       (* Spare for forwarding pointer for zero length
+				* arrays.
+				*)
+			       + Runtime.pointerSize
+			 in
+			    insert
+			    (if bytesPerElt = 0
+				then LimitCheck.Heap {bytes = extraBytes,
+						      stackToo = false}
+			     else LimitCheck.Array {bytesPerElt = bytesPerElt,
+						    extraBytes = extraBytes,
+						    numElts = numElts,
+						    stackToo = false})
+			 end
+                    | _ => normal ()
+	     else normal ()
+	  end)
+      val newStart = Label.newNoname ()
+      val _ = add {args = Vector.new0 (),
+		   blockKind = Kind.Jump,
+		   lcKind = LimitCheck.Stack,
+		   start = newStart,
+		   success = start}
+      val blocks = Vector.concat [blocks, Vector.fromList (!extra)]
+   in
+      Function.new {args = args,
+		    blocks = blocks,
+		    name = name,
+		    start = newStart}
    end
-   
+
+fun insert (Program.T {functions, main}) =
+   Program.T {functions = List.revMap (functions, insertFunction),
+	      main = insertFunction main}
+
 end
-
-

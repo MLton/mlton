@@ -6,250 +6,242 @@ type word = Word.t
    
 signature MACHINE_STRUCTS = 
    sig
-      structure MachineOutput: MACHINE_OUTPUT
+      structure Label: HASH_ID
+      structure Prim: PRIM
    end
 
 signature MACHINE = 
    sig
-      structure MachineOutput: MACHINE_OUTPUT
-     
-      structure Label: HASH_ID sharing Label = MachineOutput.Label
+      include MACHINE_STRUCTS
+	 
       structure ChunkLabel: UNIQUE_ID
-      structure Prim: PRIM
       structure Type: MTYPE
 
       structure Register:
 	 sig
-	    type t
+	    datatype t = T of {index: int,
+			       ty: Type.t}
 
 	    val equals: t * t -> bool
+	    val index: t -> int
 	    val layout: t -> Layout.t
+	    val toString: t -> string
 	    val ty: t -> Type.t
 	 end
 
       structure Global:
 	 sig
-	    type t
+	    datatype t = T of {index: int,
+			       ty: Type.t}
 
 	    val equals: t * t -> bool
+	    val index: t -> int
+	    val layout: t -> Layout.t
+	    val toString: t -> string
 	    val ty: t -> Type.t
 	 end
 
       structure Operand:
 	 sig
-	    type t
-
-	    val arrayOffset: {base: t, offset: t, ty: Type.t} -> t
-	    val castInt: t -> t (* takes an IntOrPointer and makes it an int *)
-	    val char: char -> t
-	    val contents: t * Type.t -> t
-	    val deRegister: t -> Register.t option
-	    val deStackOffset: t -> {offset: int, ty: Type.t} option
-	    val equals: t * t -> bool
-	    val float: string -> t
-	    val int: int -> t
-	    val intInf: Word.t -> t
-	    val interfere: {write: t, read: t} -> bool
-	    val isPointer: t -> bool
-	    val label: Label.t -> t
-	    val layout: t -> Layout.t
-	    val offset: {base: t, offset: int, ty: Type.t} -> t
-	    val pointer: int -> t (* In (pointer n), n must be nonzero mod 4. *)
-	    val register: Register.t -> t
-	    val stackOffset: {offset: int, ty: Type.t} -> t
-	    val ty: t -> Type.t
-	    val uint: word -> t
-	 end
-
-      (* GCInfo.t is the information that the garbage collector needs to know
-       * at a program point in order to do a collection.
-       *)
-      structure GCInfo:
-	 sig
-	    type t
-
-	    val layout: t -> Layout.t
-	    val make:
-	       {(* Size of stack frame in bytes, including return address. *)
-		frameSize: int,
-		(* Live stack offsets. *)
-		live: Operand.t list
-		} -> t
-	 end
-
-      structure LimitCheck:
-	 sig
 	    datatype t =
-	       No
-	     | Maybe of GCInfo.t
-	     | Yes of GCInfo.t
-	     | Stack of GCInfo.t
+	       ArrayOffset of {base: t,
+			       index: t,
+			       ty: Type.t}
+	     | CastInt of t (* takes an IntOrPointer and makes it an int *)
+	     | Char of char
+	     | Contents of {oper: t,
+			    ty: Type.t}
+	     | Float of string 
+	     | Global of Global.t
+	     | GlobalPointerNonRoot of int
+	     | Int of int
+	     | IntInf of word
+	     | Label of Label.t
+	     | Offset of {base: t,
+			  offset: int,
+			  ty: Type.t}
+	     | Pointer of int (* the int must be nonzero mod Runtime.wordSize. *)
+	     | Register of Register.t
+	     | StackOffset of {offset: int,
+			       ty: Type.t}
+	     | Uint of Word.t
 
+	    val equals: t * t -> bool
+	    val interfere: {write: t, read: t} -> bool
 	    val layout: t -> Layout.t
-	    val live : t -> Operand.t list
-	 end
-
-      structure PrimInfo:
-	 sig
-	    type t
-	      
-	    val deRuntime: t -> GCInfo.t
-	    val layout: t -> Layout.t
-	    val none: t
-	    val normal: Operand.t list -> t
-	    val runtime: GCInfo.t -> t
+	    val toString: t -> string
+	    val ty: t -> Type.t
 	 end
 
       structure Statement:
 	 sig
-	    type t
+	    datatype t =
+	       (* Variable-sized allocation. *)
+	       Array of {dst: Operand.t,
+			 numBytesNonPointers: int,
+			 numElts: Operand.t,
+			 numPointers: int}
+	     (* When registers or offsets appear in operands, there is an
+	      * implicit contents of.
+	      * When they appear as locations, there is not.
+	      *)
+	     | Move of {dst: Operand.t,
+			src: Operand.t}
+	     | Noop
+	     (* Fixed-size allocation. *)
+	     | Object of {dst: Operand.t,
+			  numPointers: int,
+			  numWordsNonPointers: int,
+			  stores: {offset: int,
+				   value: Operand.t} vector}
+	     | PrimApp of {args: Operand.t vector,
+			   dst: Operand.t option,
+			   prim: Prim.t}
+	     | SetExnStackLocal of {offset: int}
+	     | SetExnStackSlot of {offset: int}
+	     | SetSlotExnStack of {offset: int}
 
-	    (* Fixed-size allocation. *)
-	    val allocate:
-	       {dst: Operand.t,
-		size: int,
-		numPointers: int,
-		numWordsNonPointers: int,
-		stores: {offset: int,
-			 value: Operand.t} list
-		} -> t
-	    (* Variable-sized allocation. *)
-	    val allocateArray: {dst: Operand.t,
-				numElts: Operand.t,
-				numPointers: int,
-				numBytesNonPointers: int,
-				gcInfo: GCInfo.t
-				} -> t
-	    val assign: {dst: Operand.t option,
-			 prim: Prim.t,
-			 pinfo: PrimInfo.t,
-			 args: Operand.t vector} -> t
+	    val foldOperands: t * 'a * (Operand.t * 'a -> 'a) -> 'a
 	    val layout: t -> Layout.t
-	    val limitCheck: LimitCheck.t -> t
-	    (* When registers or offsets appear in operands, there is an
-	     * implicit contents of.
-	     * When they appear as locations, there is not.
-	     *)
 	    val move: {dst: Operand.t, src: Operand.t} -> t
 	    (* Error if dsts and srcs aren't of same length. *)
-	    val moves: {
-			dsts: Operand.t vector,
-			srcs: Operand.t vector
-		       } -> t list
-	    (* pop number of bytes from stack *)
-	    val pop: int -> t
-	    (* push number of bytes from stack *)
-	    val push: int -> t
-	    val setExnStackLocal: {offset: int} -> t
-	    val setExnStackSlot: {offset: int} -> t
-	    val setSlotExnStack: {offset: int} -> t
+	    val moves: {dsts: Operand.t vector,
+			srcs: Operand.t vector} -> t vector
 	 end
 
       structure Cases: MACHINE_CASES sharing Label = Cases.Label
 
+      structure LimitCheck:
+	 sig
+	    datatype t =
+	       Array of {bytesPerElt: int, (* > 0 *)
+			 extraBytes: int, (* >= 0.  for subsequent allocation. *)
+			 numElts: Operand.t, (* of type int, but not an immediate *)
+			 stackToo: bool}
+	     | Heap of {bytes: int,
+			stackToo: bool}
+	     | Signal
+	     | Stack
+	 end
+   
       structure Transfer:
 	 sig
-	    type t
+	    datatype t =
+	       (* In an arith transfer, dst is modified whether or not the
+		* prim succeeds.
+		*)
+	       Arith of {args: Operand.t vector,
+			 dst: Operand.t,
+			 overflow: Label.t,
+			 prim: Prim.t,
+			 success: Label.t}
+	     | Bug
+	     | CCall of {args: Operand.t vector,
+			 prim: Prim.t,
+			 (* return must be CReturn with matching prim. *)
+			 return: Label.t,
+			 (* returnTy must CReturn dst. *)
+			 returnTy: Type.t option}
+	     | Call of {label: Label.t, (* label must be a Func *)
+			live: Operand.t vector,
+			return: {return: Label.t,
+				 handler: Label.t option,
+				 size: int} option}
+	     | Goto of Label.t (* label must be a Jump *)
+	     | LimitCheck of {(* failure must be Runtime. *)
+			      failure: Label.t, 
+			      kind: LimitCheck.t,
+			      (* success must be Jump. *)
+			      success: Label.t} 
+	     | Raise
+	     | Return of {live: Operand.t vector}
+	     | Runtime of {args: Operand.t vector,
+			   prim: Prim.t,
+			   return: Label.t} (* Must be of Runtime kind. *)
+	     | Switch of {test: Operand.t,
+			  cases: Cases.t,
+			  default: Label.t option}
+	     (* Switch to one of two labels, based on whether the operand is an
+	      * Integer or a Pointer.  Pointers are word aligned and integers
+	      * are not.
+	      *)
+	     | SwitchIP of {test: Operand.t,
+			    int: Label.t,
+			    pointer: Label.t}
 
-	    (* In an arith transfer, dst is modified whether or not the
-	     * prim succeeds.
-	     *)
-	    val arith: {prim: Prim.t,
-			args: Operand.t vector,
-			dst: Operand.t,
-			overflow: Label.t,
-			success: Label.t} -> t
-	    val bug: t
-	    val farJump: {chunkLabel: ChunkLabel.t,
-			  label: Label.t,
-			  live: Operand.t list,
-			  return: {return: Label.t,
-				   handler: Label.t option,
-				   size: int} option} -> t
-	    val isSwitch: t -> bool
+	    val foldOperands: t * 'a * (Operand.t * 'a -> 'a) -> 'a
 	    val layout: t -> Layout.t
-	    val nearJump: {label: Label.t,
-			   return: {return: Label.t,
-				    handler: Label.t option,
-				    size: int} option} -> t
-	    val return: {live: Operand.t list} -> t
-	    val raisee: t
-	    val switch: {
-			 test: Operand.t,
-			 cases: Cases.t,
-			 default: Label.t option
-			} -> t
-	    (* Switch to one of two labels, based on whether the operand is an
-	     * Integer or a Pointer.  Pointers are word aligned and integers
-	     * are not.
-	     *)
-	    val switchIP: {
-			   test: Operand.t,
-			   int: Label.t,
-			   pointer: Label.t
-			  } -> t
-	    val toMOut: t -> MachineOutput.Transfer.t
 	 end
 
-      structure Block:
-	sig
-	  structure Kind:
-	    sig
-	      type t
+      structure FrameInfo:
+	 sig
+	    datatype t =
+	       T of {(* Index into frameOffsets *)
+		     frameOffsetsIndex: int,
+		     (* Size of frame in bytes, including return address. *)
+		     size: int}
 
-	      val func: {args: Operand.t list} -> t
-	      val jump: t
-	      val cont: {args: Operand.t list, size: int} -> t
-	      val handler: {offset: int} -> t
-	    end
-	end
+	    val bogus: t
+	    val layout: t -> Layout.t
+	    val size: t -> int
+	 end
+      
+      structure Kind:
+	 sig
+	    datatype t =
+	       Cont of {args: Operand.t vector,
+			frameInfo: FrameInfo.t}
+	     | CReturn of {dst: Operand.t option,
+			   prim: Prim.t}
+	     | Func of {args: Operand.t vector}
+	     | Handler of {offset: int}
+	     | Jump
+	     | Runtime of {frameInfo: FrameInfo.t,
+			   prim: Prim.t}
+
+	    val frameInfoOpt: t -> FrameInfo.t option
+	 end
+      
+      structure Block:
+	 sig
+	    datatype t =
+	       T of {kind: Kind.t,
+		     label: Label.t,
+		     (* Live registers and stack offsets at beginning of block. *)
+		     live: Operand.t vector,
+		     profileInfo: {func: string, label: string},
+		     statements: Statement.t vector,
+		     transfer: Transfer.t}
+
+	    val label: t -> Label.t
+	 end
 
       structure Chunk:
 	 sig
-	    type t
-
-	    val label: t -> ChunkLabel.t
-	    val equals: t * t -> bool
-	    val newBlock: 
-	       t * {
-		    label: Label.t,
-		    kind: Block.Kind.t,
-		    live: Operand.t list,
-		    profileInfo: {func: string, label: string},
-		    statements: Statement.t list,
-		    transfer: Transfer.t
-		   } -> unit
-	    val register: t * int * Type.t -> Register.t
-	    val addEntry: t * Label.t -> unit
-	    val tempRegister: t * Type.t -> Register.t
+	    datatype t = T of {blocks: Block.t vector,
+			       chunkLabel: ChunkLabel.t,
+			       regMax: Type.t -> int}
 	 end
 
       structure Program:
 	 sig
-	    type t
+	    datatype t =
+	       T of {chunks: Chunk.t list,
+		     floats: (Global.t * string) list,
+		     (* Each vector in frame Offsets is a specifies the offsets
+		      * of live pointers in a stack frame.  A vector is referred
+		      * to by index as the frameOffsetsIndex in a block kind.
+		      *)
+		     frameOffsets: int vector vector,
+		     globals: Type.t -> int,
+		     globalsNonRoot: int,
+		     intInfs: (Global.t * string) list,
+		     main: {chunkLabel: ChunkLabel.t,
+			    label: Label.t},
+		     maxFrameSize: int,
+		     strings: (Global.t * string) list}
 
-	    val clear: t -> unit
-	    val new: unit -> t
-	    val newChunk: t -> Chunk.t
-	    val newFrame:
-	       t * {return: Label.t, (* where to return to *)
-		    chunkLabel: ChunkLabel.t,
-		    (* Number of bytes in frame, including return address. *)
-		    size: int,
-		    (* The locations of operands in the current stack frame
-		     * relative to the stack pointer of the frame below.
-		     *)
-		    live: Operand.t list
-		    } -> unit
-	    val newGlobal: t * Type.t -> Operand.t
-	    (* A global pointer that the GC doesn't use as a root *)
-	    val newGlobalPointerNonRoot: t -> Operand.t
-	    val newHandler: t * {chunkLabel: ChunkLabel.t, 
-				 label: Label.t} -> unit
-	    val newString: t * string -> Operand.t
-	    val newIntInf: t * string -> Operand.t
-	    val newFloat: t * string -> Operand.t
-	    val setMain: t * {chunkLabel: ChunkLabel.t, label: Label.t} -> unit
-	    val toMachineOutput: t -> MachineOutput.Program.t
+	    val layouts: t * (Layout.t -> unit) -> unit
+	    val typeCheck: t -> unit
 	 end
    end

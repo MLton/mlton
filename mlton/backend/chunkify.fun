@@ -5,13 +5,12 @@ functor Chunkify (S: CHUNKIFY_STRUCTS): CHUNKIFY =
 struct
 
 open S
-datatype z = datatype Exp.t
 datatype z = datatype Transfer.t
-
+   
 (* A chunkifier that puts each function in its own chunk. *)
-fun chunkPerFunc (Program.T {functions, ...}) =
+fun chunkPerFunc (Program.T {functions, main}) =
    Vector.fromListMap
-   (functions, fn f =>
+   (main :: functions, fn f =>
     let
        val {name, blocks, ...} = Function.dest f
     in
@@ -21,12 +20,16 @@ fun chunkPerFunc (Program.T {functions, ...}) =
    
 (* A simple chunkifier that puts all code in the same chunk.
  *)
-fun oneChunk (Program.T {functions, ...}) =
-   Vector.new1
-   {funcs = Vector.fromListMap (functions, Function.name),
-    labels = Vector.concatV (Vector.fromListMap
-			     (functions, fn f =>
-			      Vector.map (Function.blocks f, Block.label)))}
+fun oneChunk (Program.T {functions, main, ...}) =
+   let
+      val functions = main :: functions
+   in
+      Vector.new1
+      {funcs = Vector.fromListMap (functions, Function.name),
+       labels = Vector.concatV (Vector.fromListMap
+				(functions, fn f =>
+				 Vector.map (Function.blocks f, Block.label)))}
+   end
 
 structure Set = DisjointSet
 
@@ -34,31 +37,36 @@ fun blockSize (Block.T {statements, transfer, ...}): int =
    let
       val transferSize =
 	 case transfer of
-	    Case {cases, ...} => 1 + Cases.length cases
+	    Switch {cases, ...} => 1 + Cases.length cases
 	  | _ => 1
    in transferSize + Vector.length statements
    end
 
 (* Compute the list of functions that each function returns to *)
-fun returnsTo (Program.T {functions, ...}) =
+fun returnsTo (Program.T {functions, main, ...}) =
    let
+      val functions = main :: functions
       val {get: Func.t -> {returnsTo: Label.t list ref,
 			   tailCalls: Func.t list ref},
-	   destroy, ...} =
-	 Property.destGet (Func.plist,
-			   Property.initFun (fn _ =>
-					     {returnsTo = ref [],
-					      tailCalls = ref []}))
+	   rem, ...} =
+	 Property.get (Func.plist,
+		       Property.initFun (fn _ =>
+					 {returnsTo = ref [],
+					  tailCalls = ref []}))
       fun returnTo (f: Func.t, j: Label.t): unit =
-	 let val {returnsTo, tailCalls} = get f
-	 in if List.exists (!returnsTo, fn j' => Label.equals (j, j'))
+	 let
+	    val {returnsTo, tailCalls} = get f
+	 in
+	    if List.exists (!returnsTo, fn j' => Label.equals (j, j'))
 	       then ()
 	    else (List.push (returnsTo, j)
 		  ; List.foreach (!tailCalls, fn f => returnTo (f, j)))
 	 end
       fun tailCall (from: Func.t, to: Func.t): unit =
-	 let val {returnsTo, tailCalls} = get from
-	 in if List.exists (!tailCalls, fn f => Func.equals (to, f))
+	 let
+	    val {returnsTo, tailCalls} = get from
+	 in
+	    if List.exists (!tailCalls, fn f => Func.equals (to, f))
 	       then ()
 	    else (List.push (tailCalls, to)
 		  ; List.foreach (!returnsTo, fn j => returnTo (to, j)))
@@ -66,7 +74,8 @@ fun returnsTo (Program.T {functions, ...}) =
       val _ =
 	 List.foreach
 	 (functions, fn f =>
-	  let val {name, blocks, ...} = Function.dest f
+	  let
+	     val {name, blocks, ...} = Function.dest f
 	  in
 	     Vector.foreach
 	     (blocks, fn Block.T {transfer, ...} =>
@@ -79,23 +88,24 @@ fun returnsTo (Program.T {functions, ...}) =
 	       | _ => ())
 	  end)
    in
-      {returnsTo = ! o #returnsTo o get,
-       destroy = fn () => ()}
+      {rem = rem,
+       returnsTo = ! o #returnsTo o get}
    end
 
 structure Graph = EquivalenceGraph
 structure Class = Graph.Class
-fun coalesce (program as Program.T {functions, ...}, limit) =
+fun coalesce (program as Program.T {functions, main, ...}, limit) =
    let
+      val functions = main :: functions
       val graph = Graph.new ()
       val {get = funcClass: Func.t -> Class.t, set = setFuncClass,
-	   destroy = destroyFuncClass} =
-	 Property.destGetSetOnce (Func.plist,
-				  Property.initRaise ("class", Func.layout))
+	   rem = remFuncClass, ...} =
+	 Property.getSetOnce (Func.plist,
+			      Property.initRaise ("class", Func.layout))
       val {get = labelClass: Label.t -> Class.t, set = setLabelClass,
-	   destroy = destroyLabelClass} =
-	 Property.destGetSetOnce (Label.plist,
-				  Property.initRaise ("class", Label.layout))
+	   rem = remLabelClass, ...} =
+	 Property.getSetOnce (Label.plist,
+			      Property.initRaise ("class", Label.layout))
       (* Build the initial partition.
        * Ensure that all Ssa labels are in the same equivalence class.
        *)
@@ -120,17 +130,20 @@ fun coalesce (program as Program.T {functions, ...}, limit) =
 		    case transfer of
 		       Arith {overflow, success, ...} =>
 			  (same overflow; same success)
-		     | Case {cases, default, ...} =>
+		     | CCall {return, ...} => same return
+		     | Goto {dst, ...} => same dst
+		     | LimitCheck {success, ...} => same success
+		     | Switch {cases, default, ...} =>
 			  (Cases.foreach (cases, same)
 			   ; Option.app (default, same))
-		     | Goto {dst, ...} => same dst
-		     | Runtime {return, ...} => same return
+		     | SwitchIP {int, pointer, ...} =>
+			  (same int; same pointer)
 		     | _ => ()
 		 end)
 	  in
 	     ()
 	  end)
-      val {returnsTo, destroy = destroyReturnsTo} = returnsTo program
+      val {returnsTo, rem = remReturnsTo} = returnsTo program
       (* Add edges, and then coalesce the graph. *)
       val _ =
 	 List.foreach
@@ -165,9 +178,8 @@ fun coalesce (program as Program.T {functions, ...}, limit) =
       type chunk = {funcs: Func.t list ref,
 		    labels: Label.t list ref}
       val chunks: chunk list ref = ref []
-      val {get = classChunk: Class.t -> chunk,
-	   destroy = destroyClassChunk, ...} =
-	 Property.destGet
+      val {get = classChunk: Class.t -> chunk, ...} =
+	 Property.get
 	 (Class.plist,
 	  Property.initFun (fn _ =>
 			    let val c = {funcs = ref [],
@@ -195,14 +207,21 @@ fun coalesce (program as Program.T {functions, ...}, limit) =
 		end)
 	 in ()
 	 end
-   in destroyFuncClass ()
-      ; destroyLabelClass ()
-      ; destroyClassChunk ()
-      ; destroyReturnsTo ()
-      ; (Vector.fromListMap
-         (!chunks, fn {funcs, labels} =>
-	  {funcs = Vector.fromList (!funcs),
-	   labels = Vector.fromList (!labels)}))
+      val _ =
+	 List.foreach
+	 (functions, fn f =>
+	  let
+	     val {blocks, name, ...} = Function.dest f
+	     val _ = remFuncClass name
+	     val _ = remReturnsTo name
+	     val _ = Vector.foreach (blocks, remLabelClass o Block.label)
+	  in
+	     ()
+	  end)
+   in 
+      Vector.fromListMap (!chunks, fn {funcs, labels} =>
+			  {funcs = Vector.fromList (!funcs),
+			   labels = Vector.fromList (!labels)})
    end
 
 fun chunkify p =

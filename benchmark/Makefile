@@ -45,7 +45,7 @@ test: $(NAME)
 
 QBENCH = $(BENCH)
 
-QBFLAGS = -mlton "mlton -drop-pass knownCase" -mlton "mlton"
+QBFLAGS = -mlton "mlton-stable" -mlton "mlton"
 
 .PHONY: qtest
 qtest: $(NAME)

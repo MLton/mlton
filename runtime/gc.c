@@ -36,16 +36,12 @@
 
 /* The mutator should maintain the invariants
  *
- *  function entry: stackTop + maxFrameSize + WORD_SIZE <= endOfStack
- *  anywhere else: stackTop + 2 * maxFrameSize + WORD_SIZE <= endOfStack
+ *  function entry: stackTop + maxFrameSize <= endOfStack
+ *  anywhere else: stackTop + 2 * maxFrameSize <= endOfStack
  * 
  * The latter will give it enough space to make a function call and always
  * satisfy the former.  The former will allow it to make a gc call at the
- * function entry limit.  The WORD_SIZEs are there because stackTop points at
- * the top word in use on the stack, not at the top of the stack.
- *
- * We do a slight cheat and don't bother subtracting off the WORD_SIZE when
- * computing the stackLimit, since the stack overflow test does a >= stackLimit.
+ * function entry limit.
  */
 
 enum {
@@ -144,14 +140,21 @@ roundPage(size_t size)
 /*                      display                      */
 /* ------------------------------------------------- */
 
-static void display(GC_state s, FILE *stream) {
-	fprintf(stream, "base = %x  frontier = %x  limit = %x  stack used = %d\n",
-		(uint) s->base, (uint) s->frontier, (uint) s->limit,
-		s->currentThread->stack->used);
-	fprintf(stream, "frontier - base = %d  limit - base = %d\n",
-		(int)(s->frontier - s->base),
-		(int)(s->limit - s->base));
-	fprintf(stderr, "canHandle = %d\n", s->canHandle);
+void GC_display(GC_state s, FILE *stream) {
+	fprintf(stream, "base = %x  frontier - base = %d  limit - frontier = %d\n",
+			(uint) s->base, 
+			s->frontier - s->base,
+			s->limit - s->frontier);
+	fprintf(stream, "canHandle = %d\n", s->canHandle);
+	fprintf(stream, "exnStack = %d  bytesNeeded = %d  reserved = %d  used = %d\n",
+			s->currentThread->exnStack,
+			s->currentThread->bytesNeeded,
+			s->currentThread->stack->reserved,
+			s->currentThread->stack->used);
+	fprintf(stream, "stackBottom = %x\nstackTop - stackBottom = %d\nstackLimit - stackTop = %d\n",
+			(uint)s->stackBottom,
+			s->stackTop - s->stackBottom,
+			(s->stackLimit - s->stackTop));
 }
 
 /* ------------------------------------------------- */
@@ -199,6 +202,7 @@ getFrameLayout(GC_state s, word returnAddress)
 		index = (uint)returnAddress;
 	assert(0 <= index && index <= s->maxFrameIndex);
 	layout = &(s->frameLayouts[index]);
+	assert(layout->numBytes > 0);
 	return layout;
 }
 
@@ -241,7 +245,7 @@ stackBottom(GC_stack stack)
 static inline pointer
 stackTop(GC_stack stack)
 {
-	return stackBottom(stack) + stack->used - WORD_SIZE;
+	return stackBottom(stack) + stack->used;
 }
 
 /* The maximum value stackTop may take on. */
@@ -251,9 +255,6 @@ stackTop(GC_stack stack)
 static inline pointer
 stackLimit(GC_state s, GC_stack stack)
 {
-	/* We subtract WORD_SIZE because the stackTop points at the last word
-	 * used in the stack (ugh), not the top of the stack.
-	 */
 	return stackBottom(stack) + stack->reserved - stackSlop(s);
 }
 
@@ -264,7 +265,7 @@ stackLimit(GC_state s, GC_stack stack)
 static inline uint
 currentStackUsed(GC_state s)
 {
-	return s->stackTop + WORD_SIZE - s->stackBottom;
+	return s->stackTop - s->stackBottom;
 }
 
 static inline bool
@@ -279,7 +280,7 @@ topFrameSize(GC_state s, GC_stack stack)
 	GC_frameLayout *layout;
 	
 	assert(not(stackIsEmpty(stack)));
-	layout = getFrameLayout(s, *(word*)stackTop(stack));
+	layout = getFrameLayout(s, *(word*)(stackTop(stack) - WORD_SIZE));
 	return layout->numBytes;
 }
 
@@ -289,7 +290,8 @@ topFrameSize(GC_state s, GC_stack stack)
 static inline bool
 stackTopIsOk(GC_state s, GC_stack stack)
 {
-	return stackTop(stack) < stackLimit(s, stack) 
+	return stackTop(stack) 
+		       	<= stackLimit(s, stack) 
 			+ (stackIsEmpty(stack) ? 0 : topFrameSize(s, stack));
 }
 
@@ -419,9 +421,9 @@ GC_foreachPointerInObject(GC_state s, GC_pointerFun f, pointer p)
 		bottom = stackBottom(stack);
 		top = stackTop(stack);
 		assert(stack->used <= stack->reserved);
-		while (top >= bottom) {
-			/* Invariant: top points at a "return address". */
-			returnAddress = *(word*) top;
+		while (top > bottom) {
+			/* Invariant: top points just past a "return address". */
+			returnAddress = *(word*) (top - WORD_SIZE);
 			if (DEBUG)
 				fprintf(stderr, 
 					"  top = %d  return address = %d.\n", 
@@ -441,7 +443,7 @@ GC_foreachPointerInObject(GC_state s, GC_pointerFun f, pointer p)
 					  (top + frameOffsets[i + 1]));
 			}
 		}
-		assert(top == bottom - WORD_SIZE);
+		assert(top == bottom);
 		p += sizeof(struct GC_stack) + stack->reserved;
 	} else { /* It's an array. */
 		uint numBytes;
@@ -589,7 +591,7 @@ invariant(GC_state s)
 	GC_foreachPointerInRange(s, s->base, &s->frontier, assertIsInFromSpace);
 	/* Current thread. */
 	{
-		uint offset;
+/*		uint offset; */
 		GC_stack stack;
 
 		stack = s->currentThread->stack;
@@ -599,16 +601,17 @@ invariant(GC_state s)
 	 	assert(s->stackLimit == stackLimit(s, stack));
 		assert(stack->used == currentStackUsed(s));
 		assert(stack->used < stack->reserved);
-	 	assert(s->stackBottom <= s->stackTop + WORD_SIZE);
-		for (offset = s->currentThread->exnStack; 
-			offset != BOGUS_EXN_STACK; ) {
-			unless (s->stackBottom + offset 
-					<= s->stackTop + WORD_SIZE)
-				fprintf(stderr, "s->stackBottom = %d  offset = %d s->stackTop = %d\n", (uint)(s->stackBottom), offset, (uint)(s->stackTop));
-			assert(s->stackBottom + offset 
-					<= s->stackTop + WORD_SIZE);
-			offset = *(uint*)(s->stackBottom + offset + WORD_SIZE);
-		}
+	 	assert(s->stackBottom <= s->stackTop);
+/* Can't walk down the exception stack these days, because there is no 
+ * guarantee that the handler link and slot are next to each other.
+ */
+/* 		for (offset = s->currentThread->exnStack;  */
+/* 			offset != BOGUS_EXN_STACK; ) { */
+/* 			unless (s->stackBottom + offset <= s->stackTop) */
+/* 				fprintf(stderr, "s->stackBottom = %d  offset = %d s->stackTop = %d\n", (uint)(s->stackBottom), offset, (uint)(s->stackTop)); */
+/* 			assert(s->stackBottom + offset <= s->stackTop); */
+/* 			offset = *(uint*)(s->stackBottom + offset + WORD_SIZE); */
+/* 		} */
 	}
 
 	return TRUE;
@@ -617,6 +620,8 @@ invariant(GC_state s)
 bool
 GC_mutatorInvariant(GC_state s)
 {
+	if (DEBUG)
+		GC_display(s, stderr);
 	assert(stackTopIsOk(s, s->currentThread->stack));
 	assert(invariant(s));
 	return TRUE;
@@ -712,7 +717,7 @@ GC_enter(GC_state s)
 	/* used needs to be set because the mutator has changed s->stackTop. */
 	s->currentThread->stack->used = currentStackUsed(s);
 	if (DEBUG) 
-		display(s, stderr);
+		GC_display(s, stderr);
 	unless (s->inSignalHandler) {
 		blockSignals(s);
 		if (s->limit == 0)
@@ -758,16 +763,6 @@ GC_copyThread(GC_state s, GC_thread t)
 	assert(s->frontier <= s->limit);
 	leave(s);
 }
-
-inline void 
-GC_switchToThread(GC_state s, GC_thread t) {
-	s->currentThread->stack->used = s->stackTop + WORD_SIZE - s->stackBottom;
-	switchToThread(s, t);
-	s->canHandle--;
-	if (s->signalIsPending && 0 == s->canHandle)
-	s->limit = 0;  
-}
-
 
 extern struct GC_state gcState;
 
@@ -1332,7 +1327,7 @@ void GC_gc(GC_state s, uint bytesRequested, bool force,
 	GC_enter(s);
 	if (DEBUG) {
 		fprintf (stderr, "%s %d: ", file, line);
-		display(s, stderr);
+		GC_display(s, stderr);
 	}
 	stackBytesRequested =
 		(stackTopIsOk(s, s->currentThread->stack))
@@ -1371,7 +1366,7 @@ void GC_gc(GC_state s, uint bytesRequested, bool force,
 		/* Switch to the signal handler thread. */
 		if (DEBUG) {
 			fprintf(stderr, "switching to signal handler\n");
-			display(s, stderr);
+			GC_display(s, stderr);
 		}
 		assert(s->signalIsPending);
 		s->signalIsPending = FALSE;
@@ -1484,7 +1479,7 @@ GC_finishHandler(GC_state s, GC_thread t)
 {
 	if (DEBUG) {
 		fprintf(stderr, "GC_finishHandler\n");
-		display(s, stderr);
+		GC_display(s, stderr);
 	}
 	GC_enter(s);
 	assert(t != BOGUS_THREAD);

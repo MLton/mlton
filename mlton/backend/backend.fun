@@ -1,1618 +1,867 @@
 (* Copyright (C) 1997-1999 NEC Research Institute.
  * Please see the file LICENSE for license information.
  *)
-functor Backend (S: BACKEND_STRUCTS): BACKEND = 
+functor Backend (S: BACKEND_STRUCTS): BACKEND =
 struct
 
 open S
 
-local open Ssa
+structure M = Machine
+local
+   open Machine
 in
-   structure Block = Block
+   structure Chunk = Chunk
+end
+
+structure Rssa = Rssa (open Ssa
+		       structure Cases = Machine.Cases
+		       structure Type = Machine.Type)
+structure R = Rssa
+local
+   open Rssa
+in
    structure Cases = Cases
    structure Con = Con
    structure Const = Const
-   structure Datatype = Datatype
-   structure Exp = Exp
    structure Func = Func
    structure Function = Function
-   structure Handler = Handler
    structure Label = Label
-   structure Sprogram = Program
    structure Prim = Prim
-   structure Return = Return
-   structure Statement = Statement
-   structure Stransfer = Transfer
    structure Tycon = Tycon
-   structure Stype = Type
+   structure Type = Type
    structure Var = Var
 end 
 
-local open Machine
-in
-   structure Mcases = Cases
-   structure Chunk = Chunk
-   structure GCInfo = GCInfo
-   structure Kind = Block.Kind
-   structure Mlabel = Label
-   structure MlimitCheck = LimitCheck
-   structure Mtype = Type
-   structure Mprogram = Program
-   structure Operand = Operand
-   structure MPrimInfo = PrimInfo
-   structure Register = Register
-   structure Mstatement = Statement
-   structure Mtransfer = Transfer
-   structure MOtransfer = MachineOutput.Transfer
-end
-
-val traceGenBlock =
-   Trace.trace ("Backend.genBlock", Label.layout o Block.label, Unit.layout)
-
-val traceGenConstBind =
-   Trace.trace ("Backend.genConstBind", Statement.layout, Bool.layout)
-   
-val traceGenFunc =
-   Trace.trace ("Backend.genFunc", Func.layout o Function.name, Unit.layout)
+structure AllocateRegisters = AllocateRegisters (structure Machine = Machine
+						 structure Rssa = Rssa)
+structure ArrayInit = ArrayInit (structure Rssa = Rssa)
+structure Chunkify = Chunkify (Rssa)
+structure LimitCheck = LimitCheck (structure Rssa = Rssa)
+structure ParallelMove = ParallelMove ()
+structure SignalCheck = SignalCheck(structure Rssa = Rssa)
+structure SsaToRssa = SsaToRssa (structure Rssa = Rssa
+				 structure Ssa = Ssa)
 
 nonfix ^
 fun ^ r = valOf (!r)
-
-fun id x = x
-
-structure ImplementHandlers = ImplementHandlers (structure Ssa = Ssa)
+val wordSize: int = 4
+val labelSize = Type.size Type.label
    
-structure Chunkify = Chunkify (Ssa)
-
-structure ParallelMove = ParallelMove ()
-
-structure Representation = Representation (structure Ssa = Ssa
-					   structure Mtype = Mtype)
-
-structure AllocateRegisters = AllocateRegisters (structure Ssa = Ssa
-						 structure Machine = Machine)
-local open AllocateRegisters
-in structure Info = Info
-end
-
-local open Representation
-in structure TyconRep = TyconRep
-   structure ConRep = ConRep
-end
-
 structure VarOperand =
    struct
       datatype t =
-	 Allocate of {isUsed: bool ref,
-		      operand: Operand.t option ref}
-       | Const of Operand.t
-       | Global of Operand.t
-       | Void
-
-      val operandOpt =
-	 fn Allocate {operand, ...} => SOME (^operand)
-	  | Const oper => SOME oper
-	  | Global oper => SOME oper
-	  | Void => NONE
-
-      val operand = fn x => ((valOf o operandOpt) x)
+	 Allocate of {operand: M.Operand.t option ref}
+       | Const of M.Operand.t
 
       fun layout i =
-	 let open Layout
-	 in case i of
-	    Allocate {isUsed, operand, ...} =>
-	       seq [str "Allocate ",
-		    record [("isUsed", Bool.layout (!isUsed)),
-			    ("operand", Option.layout Operand.layout (!operand))
-			    ]]
-	  | Const oper => seq [str "Const ", Operand.layout oper]
-	  | Global oper => seq [str "Global ", Operand.layout oper]
-	  | Void => str "Void "
+	 let
+	    open Layout
+	 in
+	    case i of
+	       Allocate {operand, ...} =>
+		  seq [str "Allocate ",
+		       record [("operand",
+				Option.layout M.Operand.layout (!operand))]]
+	     | Const oper => seq [str "Const ", M.Operand.layout oper]
 	 end
 
-      val use =
-	 fn Allocate {isUsed, ...} => isUsed := true
-	  | _ => ()
+      val operand: t -> M.Operand.t =
+	 fn Allocate {operand, ...} => ^operand
+	  | Const oper => oper
    end
 
-fun generate (p as Sprogram.T {functions, ...}): Mprogram.t =
+structure IntSet = UniqueSet (val cacheSize: int = 1
+			      val bits: int = 14
+			      structure Element =
+				 struct
+				    open Int
+				    fun hash n = Word.fromInt n
+				 end)
+
+structure Chunk =
+   struct
+      datatype t = T of {blocks: M.Block.t list ref,
+			 chunkLabel: M.ChunkLabel.t,
+			 regMax: Type.t -> int ref}
+
+      fun label (T {chunkLabel, ...}) = chunkLabel
+	 
+      fun equals (T {blocks = r, ...}, T {blocks = r', ...}) = r = r'
+	 
+      fun new (): t =
+	 T {blocks = ref [],
+	    chunkLabel = M.ChunkLabel.new (),
+	    regMax = Type.memo (fn _ => ref 0)}
+	 
+      fun register (T {regMax, ...}, n, ty) =
+	 let
+	    val r = regMax ty
+	    val _ = r := Int.max (!r, n + 1)
+	 in
+	    M.Register.T {index = n, ty = ty}
+	 end
+      
+      fun tempRegister (c as T {regMax, ...}, ty) =
+	 register (c, !(regMax ty), ty)
+	 
+      fun newBlock (T {blocks, ...}, z) =
+	 List.push (blocks, M.Block.T z)
+   end
+
+val traceGenBlock =
+   Trace.trace ("Backend.genBlock",
+		Label.layout o R.Block.label,
+		Unit.layout)
+
+fun toMachine (program: Ssa.Program.t) =
    let
-      val _ =
-	 if true
-	    then ()
-	 else
-	    List.foreach
-	    (functions, fn f =>
-	     let
-		val {name, blocks, ...} = Function.dest f
-		val handlerStacks = Function.inferHandlers f
-		val _ =
-		   Int.for
-		   (0, Vector.length blocks, fn i =>
-		    let open Layout
-		    in
-		       outputl (seq [Label.layout (Block.label
-						   (Vector.sub (blocks, i))),
-				     str " ",
-				     Option.layout (List.layout Label.layout)
-				     (Array.sub (handlerStacks, i))],
-				Out.error)
-		    end)
-	     in
-		()
-	     end)
-      val program as Sprogram.T {datatypes, globals, functions, main} =
-	 ImplementHandlers.doit p
-      val _ =
-	 Control.trace (Control.Pass, "checkHandlers")
-	 Ssa.Program.checkHandlers program
-      val {tyconRep, conRep, toMtype} = Representation.compute program
-      val _ =
-	 Control.diagnostics
-	 (fn display =>
-	  (display (Layout.str "Representations:")
-	   ; (Vector.foreach
-	      (datatypes, fn Datatype.T {tycon, cons} =>
-	       let open Layout
-	       in display (seq [Tycon.layout tycon,
-				str " ",
-				TyconRep.layout (tyconRep tycon)])
-		  ; display (indent
-			     (Vector.layout (fn {con, ...} =>
-					     seq [Con.layout con,
-						  str " ",
-						  ConRep.layout (conRep con)])
-			      cons,
-			      2))
-	       end))))
-      fun toMtypes ts = Vector.map (ts, toMtype)
-      val wordSize = 4
-      val labelSize = Mtype.size Mtype.label
-      val tagOffset = 0
-      val tagType = Mtype.int
+      fun pass (name, doit, program) =
+	 Control.passTypeCheck {display = Control.Layouts Rssa.Program.layouts,
+				name = name,
+				style = Control.No,
+				suffix = "rssa",
+				thunk = fn () => doit program,
+				typeCheck = R.Program.typeCheck}
+      val program = pass ("ssaToRssa", SsaToRssa.convert, program)
+      val program = pass ("insertLimitChecks", LimitCheck.insert, program)
+      val program = pass ("insertSignalChecks", SignalCheck.insert, program)
+      val program = pass ("insertArrayInits", ArrayInit.insert, program)
+      val R.Program.T {functions, main} = program
       (* Chunk information *)
-      val chunks = Chunkify.chunkify program
       val {get = labelChunk, set = setLabelChunk, ...} =
 	 Property.getSetOnce (Label.plist,
 			      Property.initRaise ("labelChunk", Label.layout))
-      val {get = funcChunk: Func.t -> Chunk.t,
-	   set = setFuncChunk, ...} =
+      val {get = funcChunk: Func.t -> Chunk.t, set = setFuncChunk, ...} =
 	 Property.getSetOnce (Func.plist,
 			      Property.initRaise ("funcChunk", Func.layout))
       val funcChunkLabel = Chunk.label o funcChunk
-      val mprogram = Mprogram.new ()
-      (* Create the mprogram chunks. *)
-      val machineChunks = ref []
+      val globalCounter = Type.memo (fn _ => Counter.new 0)
+      fun newGlobal ty =
+	 M.Global.T {index = Counter.next (globalCounter ty),
+		     ty = ty}
+      val globalPointerNonRootCounter = Counter.new 0
+      val constantCounter = Type.memo (fn _ => Counter.new 0)
+      val chunks = ref []
+      fun newChunk () =
+	 let
+	    val c = Chunk.new ()
+	    val _ = List.push (chunks, c)
+	 in
+	    c
+	 end
+      val handlers = ref []
+      val frames: {chunkLabel: M.ChunkLabel.t,
+		   offsets: int list,
+		   return: Label.t,
+		   size: int} list ref = ref []
+      (* Set funcChunk and labelChunk. *)
       val _ =
 	 Vector.foreach
-	 (chunks, fn {funcs, labels} =>
+	 (Chunkify.chunkify program, fn {funcs, labels} =>
 	  let 
-	     val c = Mprogram.newChunk mprogram
-	     val _ = Vector.foreach (funcs, fn f =>
-				     Chunk.addEntry (c, funcToLabel f))
+	     val c = newChunk ()
+	     val _ = Vector.foreach (funcs, fn f => setFuncChunk (f, c))
+	     val _ = Vector.foreach (labels, fn l => setLabelChunk (l, c))
 	  in
-	     List.push (machineChunks, c)
-	     ; Vector.foreach (funcs, fn f => setFuncChunk (f, c))
-	     ; Vector.foreach (labels, fn l => setLabelChunk (l, c))
+	     ()
 	  end)
       (* The global raise operands. *)
       local
-	 val table: {hash: word, 
-		     ts: Stype.t vector,
-		     raiseGlobals: Operand.t vector} HashSet.t =
-	    HashSet.new {hash = #hash}
+	 val table: (Type.t vector * M.Operand.t vector) list ref = ref []
       in
-	 fun raiseOperands (ts: Stype.t vector): Operand.t vector =
-	    let
-	       val hash = Vector.fold (ts, 0wx0, fn (t, hash) => 
-				       Word.xorb(hash, Stype.hash t))
-	       val {raiseGlobals, ...} =
-		  HashSet.lookupOrInsert
-		  (table, hash, 
-		   fn {ts = ts', ...} => Vector.equals (ts, ts', Stype.equals),
-		   fn () => let
-			       val opers =
-				  Vector.map
-				  (ts, fn t =>
-				   let
-				      val t = toMtype t
-				   in
-				      if Mtype.isPointer t
-				         then Mprogram.newGlobalPointerNonRoot mprogram
-				      else Mprogram.newGlobal (mprogram, t)
-				   end)
-			    in
-			       {hash = hash,
-				ts = ts,
-				raiseGlobals = opers}
-			    end)
-	    in
-	       raiseGlobals
-	    end
-      end
-(*	   
-      (* The global raise operand. *)
-      local
-	 val raiseGlobals: Operand.t vector option ref = ref NONE
-      in
-	 fun raiseOperands (ts: Stype.t vector): Operand.t vector =
-	    case !raiseGlobals of
-	       SOME z => z
-	     | NONE =>
+	 fun raiseOperands (ts: Type.t vector): M.Operand.t vector =
+	    case List.peek (!table, fn (ts', _) =>
+			    Vector.equals (ts, ts', Type.equals)) of
+	       NONE =>
 		  let
 		     val opers =
 			Vector.map
 			(ts, fn t =>
-			 let
-			    val t = toMtype t
-			 in
-			    if Mtype.isPointer t
-			       then
-				  Mprogram.newGlobalPointerNonRoot mprogram
-			    else Mprogram.newGlobal (mprogram, t)
-			 end)
-		     val _ = raiseGlobals := SOME opers
+			 if Type.isPointer t
+			    then
+			       M.Operand.GlobalPointerNonRoot
+			       (Counter.next globalPointerNonRootCounter)
+			 else M.Operand.Global (newGlobal t))
+		     val _ = List.push (table, (ts, opers))
 		  in
 		     opers
 		  end
+	     | SOME (_, os) => os
       end
-*)
-      (* labelInfo, which is only set while processing each function. *)
-      val {get = labelInfo: Label.t -> {args: (Var.t * Stype.t) vector,
-					cont: (Handler.t * Mlabel.t) list ref,
-					handler: Mlabel.t option ref},
-	   set = setLabelInfo, ...} =
-	 Property.getSetOnce (Label.plist,
-			      Property.initRaise ("label info", Label.layout))
-      val labelArgs = #args o labelInfo
-      fun labelCont (c, h: Handler.t) = 
-	 #2 (valOf (List.peek (! (#cont (labelInfo c)), fn (h', l') =>
-			       Handler.equals (h, h'))))
-      val isCont = not o List.isEmpty o ! o #cont o labelInfo
-      val labelHandler = ^ o #handler o labelInfo
-      val isHandler = isSome o ! o #handler o labelInfo
-      val labelHandler =
-	 Trace.trace ("labelHandler", Label.layout, Mlabel.layout) labelHandler
-      (* primInfo is defined for primitives that enter the runtime system. *)
       val {get = varInfo: Var.t -> {operand: VarOperand.t,
-				    primInfo: MPrimInfo.t ref,
-				    ty: Stype.t},
+				    ty: Type.t},
 	   set = setVarInfo, ...} =
 	 Property.getSetOnce (Var.plist,
 			      Property.initRaise ("Backend.info", Var.layout))
+      val setVarInfo =
+	 Trace.trace2 ("Backend.setVarInfo",
+		       Var.layout, VarOperand.layout o #operand, Unit.layout)
+	 setVarInfo
       val varInfo =
 	 Trace.trace ("Backend.varInfo",
 		      Var.layout,
-		      fn {operand, primInfo, ...} =>
-		      Layout.record [("operand", VarOperand.layout operand),
-				     ("primInfo", MPrimInfo.layout (!primInfo))])
+		      fn {operand, ...} =>
+		      Layout.record [("operand", VarOperand.layout operand)])
 	 varInfo
-      fun varOptInfo x =
-	 case x of
-	    NONE => {operand = VarOperand.Void,
-		     primInfo = ref MPrimInfo.none,
-		     ty = Stype.unit}
-	  | SOME x => varInfo x
-      fun newVarInfo (x, oper, ty) =
-	 setVarInfo (x, {operand = oper,
-			 primInfo = ref MPrimInfo.none,
-			 ty = ty})
-      val newVarInfo =
-	 Trace.trace3 ("Backend.newVarInfo",
-		       Var.layout, VarOperand.layout, Layout.ignore,
-		       Unit.layout)
-	 newVarInfo
-      val varOperand = #operand o varInfo
-      fun varOperands xs = List.map (xs, varOperand)
-      val varOperandOpt = VarOperand.operandOpt o varOperand
-      val vo: Var.t -> Operand.t = fn x => (valOf o varOperandOpt) x
-
-      fun sortTypes (initialOffset: int,
-		     tys: Mtype.t vector): {size: int,
-					    offsets: int vector,
-					    numWordsNonPointers: int,
-					    numPointers: int} =
-	 let
-	    val voids = ref []
-	    val bytes = ref []
-	    val doubleWords = ref []
-	    val words = ref []
-	    val pointers = ref []
-	    val numPointers = ref 0
-	    val _ = Vector.foreachi (tys, fn (i, t) =>
-				     List.push
-				     (if Mtype.isPointer t
-					 then (Int.inc numPointers; pointers)
-				      else (case Mtype.size t of
-					       0 => voids
-					     | 1 => bytes
-					     | 4 => words
-					     | 8 => doubleWords
-					     | _ => Error.bug "strange size"),
-					 (i, t)))
-	    fun build (r, size, accum) =
-	       List.fold (!r, accum, fn ((index, ty), (res, offset)) =>
-			  ({index = index, offset = offset, ty = ty} :: res,
-			   offset + size))
-	    val (accum, offset) =
-	       build
-	       (voids, 0,
-		build (bytes, 1,
-		       build (words, 4,
-			      build (doubleWords, 8, ([], initialOffset)))))
-	    val offset = Mtype.align (Mtype.pointer, offset)
-	    val numWordsNonPointers = (offset - initialOffset) div wordSize
-	    val (components, size) = build (pointers, 4, (accum, offset))
-	    val offsets =
-	       Vector.tabulate
-	       (Vector.length tys,
-		fn i => #offset (List.lookup (components, fn {index, ...} =>
-					      i = index)))
-	 in {size = size,
-	     offsets = offsets,
-	     numWordsNonPointers = numWordsNonPointers,
-	     numPointers = !numPointers}
-	 end
-      (* Compute layout for each con and associate it with the con. *)
+      val varOperand: Var.t -> M.Operand.t =
+	 VarOperand.operand o #operand o varInfo
+      fun varOperands xs = Vector.map (xs, varOperand)
+      (* Hash tables for uniquifying globals. *)
       local
-	 val {get, set, ...} =
-	    Property.getSetOnce (Con.plist,
-				 Property.initRaise ("con info", Con.layout))
-      in
-	 val _ =
-	    Vector.foreach
-	    (datatypes, fn Datatype.T {cons, ...} =>
-	     Vector.foreach (cons, fn {con, args} =>
-			     let
-				fun doit n =
-				   let
-				      val mtypes = toMtypes args
-				      val info = sortTypes (n, mtypes)
-				   in set (con, {info = info,
-						 mtypes = mtypes})
-				   end
-			     in case conRep con of
-				ConRep.Tuple => doit 0
-			      | ConRep.TagTuple _ => doit 4
-			      | _ => ()
-			     end))
-	 val conInfo = get
-      end
-      (* Compute layout for each tuple type. *)
-      local
-	 val {get, ...} =
-	    Property.get (Stype.plist,
-			  Property.initFun
-			  (fn t => sortTypes (0, toMtypes (Stype.detuple t))))
-      in
-	 val tupleInfo = get
-	 fun tupleOffset (t: Stype.t, n: int): int =
-	    Vector.sub (#offsets (get t), n)
-      end
-      (* genConstBind returns true iff var is set to a constant operand.
-       *)
-      fun genConstBind (Statement.T {var, ty, exp}): bool =
-	 let
-	    fun set' (oper: VarOperand.t): bool =
-	       (Option.app (var, fn var => newVarInfo (var, oper, ty))
-		; true)
-	    fun set oper = set' (VarOperand.Const oper)
-	    fun global (new, s) = set (new (mprogram, s))
-	    fun bogus () = set' VarOperand.Void
-	 in
-	    case exp of
-	       Exp.ConApp {con, args} =>
-		  (case conRep con of
-		      ConRep.Void => bogus ()
-		    | ConRep.Int n => set (Operand.int n)
-		    | ConRep.IntCast n => set (Operand.pointer n)
-		    | _ => false)
-	     | Exp.Const c =>
+	 fun 'a make (ty: Type.t, toString: 'a -> string) =
+	    let
+	       val set: {global: M.Global.t,
+			 hash: word,
+			 string: string} HashSet.t = HashSet.new {hash = #hash}
+	       fun get (a: 'a): M.Operand.t =
 		  let
-		     datatype z = datatype Const.Node.t
-		  in case Const.node c of
-		     Char c => set (Operand.char c)
-		   | Int n =>
-			(Assert.assert
-			 ("genConstBind Const", fn () =>
-			  Tycon.equals (Const.tycon c, Tycon.int))
-			 ; set (Operand.int n))
-		   | IntInf i =>
-			if Const.SmallIntInf.isSmall i
-			   then
-			      set (Operand.intInf
-				   (Const.SmallIntInf.toWord i))
-			else global (Mprogram.newIntInf,
-				     IntInf.format (i, StringCvt.DEC))
-		   | Real f => if !Control.Native.native
-				  then global (Mprogram.newFloat, f)
-			       else set (Operand.float f)
-		   | String s => global (Mprogram.newString, s)
-		   | Word w =>
-			set
-			(let val t = Const.tycon c
-			 in if Tycon.equals (t, Tycon.word)
-			       then Operand.uint w
-			    else if Tycon.equals (t, Tycon.word8)
-				    then (Operand.char
-					  (Char.chr (Word.toInt w)))
-				 else Error.bug "strange word"
-			 end)
+		     val s = toString a
+		     val hash = String.hash s
+		  in
+		     M.Operand.Global
+		     (#global
+		      (HashSet.lookupOrInsert
+		       (set, hash, fn {string, ...} => s = string,
+			fn () => {hash = hash,
+				  global = newGlobal ty,
+				  string = s})))
 		  end
-	     | Exp.PrimApp {prim, ...} =>
-		  (case Prim.name prim of
-		      Prim.Name.MLton_bogus =>
-			 set (case Mtype.dest (toMtype ty) of
-				 Mtype.Char => Operand.char #"\000"
-			       | Mtype.Double => Mprogram.newFloat (mprogram, "0.0")
-(*			       | Mtype.Double => Operand.float "0.0" *)
-			       | Mtype.Int => Operand.int 0
-			       | Mtype.Uint => Operand.uint 0w0
-			       | Mtype.Pointer => Operand.pointer 1
-			       | _ => Error.bug "bogus not implemented for type")
-		    | _ => false)
-	     | Exp.Select _ => Mtype.isVoid (toMtype ty) andalso bogus ()
-	     | Exp.Tuple xs =>
-		  if 0 = Vector.length xs
-		     then bogus ()
-		  else false
-	     | Exp.Var x =>
-		  (case #operand (varInfo x) of
-		      VarOperand.Const oper => set oper
-		    | _ => false)
-	     | _ => false
-	 end
-      val genConstBind = traceGenConstBind genConstBind
-      val use = VarOperand.use o #operand o varInfo
-      val use = Trace.trace ("Backend.use", Var.layout, Unit.layout) use
-      val _ =
-	 Vector.foreach
-	 (globals, fn s as Statement.T {var, ty, exp} =>
-	  (Exp.foreachVar (exp, use)
-	   ; if genConstBind s
-		then ()
-	     else
-		Option.app
-		(var, fn var =>
-		 case exp of
-		    Exp.Var x => setVarInfo (var, varInfo x)
-		  | _ =>
-		       newVarInfo
-		       (var,
-			let val m = toMtype ty
-			in if Mtype.isVoid m
-			      then VarOperand.Void
-			   else VarOperand.Global (Mprogram.newGlobal
-						   (mprogram, m))
-			end,
-			ty))))
-      local
-	 val varInfo =
-	    fn x =>
-	    let val {operand, primInfo, ty, ...} = varInfo x
-	    in {operand = (case operand of
-			      VarOperand.Allocate {isUsed, operand, ...} =>
-				 if !isUsed
-				    then SOME operand
-				 else NONE
-			    | _ => NONE),
-		primInfo = primInfo,
-		ty = toMtype ty}
+	       fun all () =
+		  HashSet.fold
+		  (set, [], fn ({global, string, ...}, ac) =>
+		   (global, string) :: ac)
+	    in
+	       (all, get)
 	    end
       in
-	 val allocateFunc =
-	    AllocateRegisters.allocate {funcChunk = funcChunk,
-					isCont = isCont,
-					isHandler = isHandler,
-					labelChunk = labelChunk,
-					labelToLabel = labelToLabel,
-					program = program,
-					varInfo = varInfo}
-	 val allocateFunc = 
-	    Trace.trace
-	    ("Backend.allocateFunc", Func.layout o Function.name, Layout.ignore)
-	    allocateFunc
+	 val (allIntInfs, globalIntInf) =
+	    make (Type.pointer, fn i => IntInf.format (i, StringCvt.DEC))
+	 val (allFloats, globalFloat) = make (Type.double, fn s => s)
+	 val (allStrings, globalString) = make (Type.pointer, fn s => s)
+	 fun constOperand (c: Const.t): M.Operand.t =
+	    let
+	       datatype z = datatype Const.Node.t
+	    in
+	       case Const.node c of
+		  Char n => M.Operand.Char n
+		| Int n => M.Operand.Int n
+		| IntInf i =>
+		     if Const.SmallIntInf.isSmall i
+			then M.Operand.IntInf (Const.SmallIntInf.toWord i)
+		     else globalIntInf i
+		| Real f =>
+		     if !Control.Native.native
+			then globalFloat f
+		     else M.Operand.Float f
+		| String s => globalString s
+		| Word w =>
+		     let val t = Const.tycon c
+		     in if Tycon.equals (t, Tycon.word)
+			   then M.Operand.Uint w
+			else if Tycon.equals (t, Tycon.word8)
+				then M.Operand.Char (Char.chr (Word.toInt w))
+			     else Error.bug "strange word"
+		     end
+	    end
       end
-      fun parallelMove {srcs, dsts, chunk} =
+      fun parallelMove {chunk,
+			dsts: M.Operand.t vector,
+			srcs: M.Operand.t vector}: M.Statement.t vector =
 	 let
 	    val moves =
-	       List.fold2 (srcs, dsts, [],
-			   fn (src, dst, ac) => {src = src, dst = dst} :: ac)
+	       Vector.fold2 (srcs, dsts, [],
+			     fn (src, dst, ac) => {src = src, dst = dst} :: ac)
 	    fun temp r =
-	       Operand.register (Chunk.tempRegister (chunk, Operand.ty r))
-	 (* 	     val temp =
-	  * 		Trace.trace ("temp", Operand.layout, Operand.layout) temp
-	  *)
+	       M.Operand.Register (Chunk.tempRegister (chunk, M.Operand.ty r))
 	 in
-	    (* 	     Trace.trace
-	     * 	     ("parallelMove",
-	     * 	      fn {moves, ...} =>
-	     * 	      List.layout (fn {src, dst} =>
-	     * 			   Layout.tuple
-	     * 			   [Operand.layout src, Operand.layout dst])
-	     * 	      moves,
-	     * 	      Layout.ignore)
-	     *)
-	    ParallelMove.move {
-			       equals = Operand.equals,
-			       move = Mstatement.move,
-			       moves = moves,
-			       interfere = Operand.interfere,
-			       temp = temp
-			       }
+	    Vector.fromList
+	    (ParallelMove.move {
+				equals = M.Operand.equals,
+				move = M.Statement.move,
+				moves = moves,
+				interfere = M.Operand.interfere,
+				temp = temp
+				})
 	 end
-      fun conSelects (variant: Operand.t, con: Con.t): Operand.t vector =
+      fun translateOperand (oper: R.Operand.t): M.Operand.t =
 	 let
-	    val _ = Assert.assert ("conSelects", fn () =>
-				   case conRep con of
-				      ConRep.TagTuple _ => true
-				    | ConRep.Tuple => true
-				    | _ => false)
-	    val {info = {offsets, ...}, mtypes} = conInfo con
-	 in Vector.map2 (offsets, mtypes, fn (i, t) =>
-			 Operand.offset {base = variant, offset = i, ty = t})
+	    datatype z = datatype R.Operand.t
+	 in
+	    case oper of
+	       ArrayOffset {base, index, ty} =>
+		  M.Operand.ArrayOffset {base = varOperand base,
+					 index = varOperand index,
+					 ty = ty}
+	     | CastInt x => M.Operand.CastInt (varOperand x)
+	     | Const c => constOperand c
+	     | Offset {base, bytes, ty} =>
+		  M.Operand.Offset {base = varOperand base,
+				    offset = bytes,
+				    ty = ty}
+	     | Pointer n => M.Operand.Pointer n
+	     | Var {var, ...} => varOperand var
 	 end
-      val conSelects =
-	 Trace.trace2 ("Backend.conSelects",
-		       Operand.layout, Con.layout,
-		       Vector.layout Operand.layout)
-	 conSelects
-      fun genStatement (Statement.T {var, ty, exp},
-			chunk: Chunk.t,
-			handlerOffset): Mstatement.t list =
+      fun translateOperands ops = Vector.map (ops, translateOperand)
+      fun genStatement (s: R.Statement.t,
+			handlerLinkOffset: {handler: int,
+					    link: int} option): M.Statement.t =
 	 let
-	    val {operand, primInfo, ty, ...} = varOptInfo var
-	    fun sideEffectFree () = not (Exp.maySideEffect exp)
-	 in if (case operand of
-		   VarOperand.Allocate {isUsed, ...} =>
-		      not (!isUsed) andalso sideEffectFree ()
-		 | VarOperand.Const _ => true
-		 | VarOperand.Global _ => false
-		 | VarOperand.Void => sideEffectFree ())
-	       then []
-	    else
-	       let
-		  fun xop () =
-		     case operand of
-			VarOperand.Allocate {operand, ...} => ^operand
-		      | VarOperand.Global z => z
-		      | _ => Error.bug "xop"
-		  fun move src = [Mstatement.move {dst = xop (), src = src}]
-		  fun makeStores (ys: Var.t vector, offsets) =
-		     Vector.fold2 (ys, offsets, [], fn (y, offset, stores) =>
-				   case varOperandOpt y of
-				      NONE => stores
-				    | SOME value => 
-					 {offset = offset, value = value}
-					 :: stores)
-		  fun allocate (ys: Var.t vector,
-				{size, offsets,
-				 numPointers, numWordsNonPointers}) =
-		     [Mstatement.allocate
-		      {dst = xop (),
-		       size = size,
-		       numPointers = numPointers,
-		       numWordsNonPointers = numWordsNonPointers,
-		       stores = makeStores (ys, offsets)}]
-		  fun allocateTagged (n: int,
-				      ys: Var.t vector,
-				      {size, offsets,
-				       numPointers, numWordsNonPointers}) =
-		     [Mstatement.allocate
-		      {dst = xop (),
-		       size = size,
-		       numPointers = numPointers,
-		       numWordsNonPointers =
-		       (* for the tag *) 1 + numWordsNonPointers,
-		       stores = ({offset = tagOffset, value = Operand.int n}
-				 :: makeStores (ys, offsets))}]
-		  datatype z = datatype Exp.t
-	       in case exp of
-		  ConApp {con, args} =>
-		     let 
-			fun tuple () = allocate (args, #info (conInfo con))
-		     in case conRep con of
-			ConRep.Transparent _ =>
-			   move (vo (Vector.sub (args, 0)))
-		      | ConRep.Tuple => tuple ()
-		      | ConRep.TagTuple n =>
-			   allocateTagged (n, args, #info (conInfo con))
-		      | _ => Error.bug "strange ConApp"
-		     end
-		| PrimApp {prim, targs, args, ...} =>
-		     let
-			fun a i = Vector.sub (args, i)
-			fun offset (a, i, ty) =
-			   Operand.arrayOffset {base = a,
-						offset = i,
-						ty = ty}
-			fun unsafeSub (ty: Mtype.t) =
-			   move (offset (vo (a 0), vo (a 1), ty))
-			fun array (n: Operand.t, t: Mtype.t): Mstatement.t list =
-			   let
-			      val (nbnp, np) =
-				 if Mtype.isPointer t
-				    then (0, 1)
-				 else (Mtype.size t, 0)
-			      val gcInfo = MPrimInfo.deRuntime (!primInfo)
-			   in [Mstatement.allocateArray
-			       {dst = xop (),
-				numElts = n,
-				numBytesNonPointers = nbnp,
-				numPointers = np,
-				gcInfo = gcInfo}]
-			   end
-			fun normal () =
-			   let
-			      val pinfo = !primInfo
-			      val dst =
-				 let datatype z = datatype VarOperand.t
-				 in case operand of
-				    Allocate {isUsed, operand, ...} =>
-				       if !isUsed
-					  then SOME (^operand)
-				       else NONE
-				  | Const oper => SOME oper
-				  | Global oper => SOME oper
-				  | Void => NONE
-				 end
-			   in
-			      [Mstatement.assign
-			       {dst = dst,
-				prim = prim,
-				args = Vector.map (args, vo),
-				pinfo = pinfo}]
-			   end
-			fun targ () = toMtype (Vector.sub (targs, 0))
-			datatype z = datatype Prim.Name.t
-		     in case Prim.name prim of
-			Array_array => array (vo (a 0), targ ())
-		      | Array_sub => unsafeSub (targ ())
-		      | Array_update =>
-			   let
-			      val t = targ ()
-			   in case Mtype.dest t of
-			      Mtype.Void => []
-			    | _ => [Mstatement.move
-				    {dst = offset (vo (a 0), vo (a 1), t),
-				     src = vo (a 2)}]
-			   end
-		      | MLton_eq =>
-			   if Mtype.isVoid (targ ())
-			      then [Mstatement.move {dst = xop (),
-						     src = Operand.int 1}]
-			   else normal ()
-		      | Ref_assign =>
-			   let
-			      val t = targ ()
-			   in case Mtype.dest t of
-			      Mtype.Void => []
-			    | _ => [Mstatement.move
-				    {dst = Operand.contents (vo (a 0), t),
-				     src = vo (a 1)}]
-			   end
-		      | Ref_deref =>
-			   let
-			      val t = targ ()
-			   in case Mtype.dest t of
-			      Mtype.Void => []
-			    | _ => move (Operand.contents (vo (a 0), t))
-			   end
-		      | Ref_ref =>
-			   let
-			      val t = targ ()
-			      val (ys, ts) = if Mtype.isVoid t
-						then (Vector.new0 (),
-						      Vector.new0 ())
-					     else (Vector.new1 (a 0),
-						   Vector.new1 t)
-			   in allocate (ys, sortTypes (0, ts))
-			   end
-		      | String_sub => unsafeSub Mtype.char
-		      | Vector_fromArray => move (vo (a 0))
-		      | Vector_sub => unsafeSub (targ ())
-		      | _ => normal ()
-		     end
-		| Select {tuple, offset} =>
-		     let val {operand, ty = ty', ...} = varInfo tuple
-		     in move (Operand.offset
-			      {base = VarOperand.operand operand,
-			       offset = tupleOffset (ty', offset),
-			       ty = toMtype ty})
-		     end
-		| SetExnStackLocal =>
-		     [Mstatement.setExnStackLocal {offset = valOf handlerOffset}]
-		| SetExnStackSlot =>
-		     [Mstatement.setExnStackSlot {offset = valOf handlerOffset}]
-		| SetHandler h =>
-		     [Mstatement.move
-		      {dst = Operand.stackOffset {offset = valOf handlerOffset,
-						  ty = Mtype.label},
-		       src = Operand.label (labelHandler h)}]
-		| SetSlotExnStack =>
-		     [Mstatement.setSlotExnStack {offset = valOf handlerOffset}]
-		| Tuple ys => allocate (ys, tupleInfo ty)
-		| Var y => move (vo y)
-		| _ => Error.bug "genStatement saw strange primExp"
-	       end
+	    fun handlerOffset () = #handler (valOf handlerLinkOffset)
+	    fun linkOffset () = #link (valOf handlerLinkOffset)
+	    datatype z = datatype R.Statement.t
+	 in
+	    case s of
+	       Array {dst, numBytesNonPointers, numElts, numPointers} =>
+		  M.Statement.Array {dst = varOperand dst,
+				     numBytesNonPointers = numBytesNonPointers,
+				     numElts = varOperand numElts,
+				     numPointers = numPointers}
+	     | Move {dst, src} =>
+		  if (case dst of
+			 R.Operand.Var {var, ...} =>
+			    (case #operand (varInfo var) of
+				VarOperand.Const _ => true
+			      | _ => false)
+		       | _ => false)
+		     then M.Statement.Noop
+		  else M.Statement.move {dst = translateOperand dst,
+					 src = translateOperand src}
+	     | Object {dst, numPointers, numWordsNonPointers, stores} =>
+		  M.Statement.Object
+		  {dst = varOperand dst,
+		   numPointers = numPointers,
+		   numWordsNonPointers = numWordsNonPointers,
+		   stores = Vector.map (stores, fn {offset, value} =>
+					{offset = offset,
+					 value = translateOperand value})}
+	     | PrimApp {dst, prim, args} =>
+		  M.Statement.PrimApp {args = translateOperands args,
+				       dst = Option.map (dst, varOperand o #1),
+				       prim = prim}
+	     | SetExnStackLocal =>
+		  M.Statement.SetExnStackLocal {offset = handlerOffset ()}
+	     | SetExnStackSlot =>
+		  M.Statement.SetExnStackSlot {offset = linkOffset ()}
+	     | SetHandler h =>
+		  M.Statement.move
+		  {dst = M.Operand.StackOffset {offset = handlerOffset (),
+						ty = Type.label},
+		   src = M.Operand.Label h}
+	     | SetSlotExnStack =>
+		  M.Statement.SetSlotExnStack {offset = linkOffset ()}
 	 end
       val genStatement =
 	 Trace.trace ("Backend.genStatement",
-		      Statement.layout o #1,
-		      List.layout Mstatement.layout)
+		      R.Statement.layout o #1, M.Statement.layout)
 	 genStatement
-      fun genStatements (ss: Statement.t vector,
-			 chunk: Chunk.t,
-			 handlerOffset): Mstatement.t list =
-	 List.concat
-	 (Vector.toListMap (ss, fn s =>
-			    genStatement (s, chunk, handlerOffset)))
-      (* Build the initGlobals chunk. *)
-      val initGlobals = Mlabel.newString "initGlobals"
-      val chunk = Mprogram.newChunk mprogram
-      val _ = Chunk.addEntry (chunk, initGlobals)
-      val initGlobalsStatements =
-	 Mstatement.limitCheck
-	 (MlimitCheck.Maybe
-	  (GCInfo.make {live = [],
-			frameSize = Mtype.size Mtype.label}))
-	 ::
-	 List.fold
-	 (Vector.fold (globals, [], fn (s, statements) =>
-		      (genStatement (s, chunk, NONE) :: statements)),
-	  [], op @)
-      val _ =
-	 Mprogram.setMain (mprogram, {chunkLabel = Chunk.label chunk, 
-				      label = initGlobals})
-      val _ =
-	 Chunk.newBlock
-	 (chunk, {label = initGlobals,
-		  kind = Kind.func {args = []},
-		  live = [],
-		  profileInfo = {func = Mlabel.toString initGlobals,
-				 label = Mlabel.toString initGlobals},
-		  statements = initGlobalsStatements,
-		  transfer = Mtransfer.farJump {chunkLabel = funcChunkLabel main,
-					        label = funcToLabel main,
-						live = [],
-						return = NONE}})
-      fun setVarInfo (x, ty) =
-	 newVarInfo (x,
-		     if Mtype.isVoid (toMtype ty)
-			then VarOperand.Void
-		     else VarOperand.Allocate {isUsed = ref false,
-					       operand = ref NONE},
-		     ty)
-      fun setVarInfos xts = Vector.foreach (xts, setVarInfo)
-      fun genFunc (f: Function.t): unit =
+      val {get = labelInfo: Label.t -> {args: (Var.t * Type.t) vector},
+	   set = setLabelInfo, ...} =
+	 Property.getSetOnce
+	 (Label.plist, Property.initRaise ("labelInfo", Label.layout))
+      val setLabelInfo =
+	 Trace.trace2 ("Backend.setLabelInfo",
+		       Label.layout, Layout.ignore, Unit.layout)
+	 setLabelInfo
+      fun genFunc (f: Function.t, isMain: bool): unit =
 	 let
 	    val {args, blocks, name, start, ...} = Function.dest f
-	    val _ =
-	       Control.diagnostic
-	       (fn () =>
-		let
-		   open Layout
-		in
-		   seq [str "Generating code for function ", Func.layout name]
-		end)
-	    val _ = setVarInfos args
-	    val profileInfoFunc = Func.toString name
 	    val chunk = funcChunk name
-	    (* Set the var infos. *)
+	    fun labelArgOperands (l: R.Label.t): M.Operand.t vector =
+	       Vector.map (#args (labelInfo l), varOperand o #1)
+	    fun newVarInfo (x, ty) =
+	       setVarInfo
+	       (x, {operand = if isMain
+				 then
+				    VarOperand.Const (M.Operand.Global
+						      (newGlobal ty))
+			      else VarOperand.Allocate {operand = ref NONE},
+                    ty = ty})
+	    fun newVarInfos xts = Vector.foreach (xts, newVarInfo)
+	    (* Set the constant operands, labelInfo, and varInfo. *)
+	    val _ = newVarInfos args
 	    val _ =
-	       Tree.foreachPre
-	       (Function.dominatorTree f,
-		fn Block.T {args, statements, transfer, ...} =>
+	       Rssa.Function.dfs
+	       (f, fn R.Block.T {args, label, statements, transfer, ...} =>
 		let
-		   val _ = setVarInfos args
+		   val _ = setLabelInfo (label, {args = args})
+		   val _ = newVarInfos args
 		   val _ =
 		      Vector.foreach
-		      (statements, fn s as Statement.T {var, ty, exp, ...} =>
-		       (Exp.foreachVar (exp, use)
-			; if genConstBind s
-			     then ()
-			  else Option.app (var, fn var =>
-					   setVarInfo (var, ty))))
-		   val _ = Stransfer.foreachVar (transfer, use)
+		      (statements, fn s =>
+		       let
+			  fun normal () = R.Statement.foreachDef (s, newVarInfo)
+		       in
+			  case s of
+			     R.Statement.Move {dst = R.Operand.Var {var, ty}, src} =>
+				let
+				   fun set oper =
+				      setVarInfo
+				      (var, {operand = VarOperand.Const oper,
+					     ty = ty})
+				in
+				   case src of
+				      R.Operand.Const c => set (constOperand c)
+				    | R.Operand.Pointer n =>
+					 set (M.Operand.Pointer n)
+				    | R.Operand.Var {var = var', ...} =>
+					 (case #operand (varInfo var') of
+					     VarOperand.Const oper => set oper
+					   | VarOperand.Allocate _ => normal ())
+				    | _ => normal ()
+				end
+			   | _ => normal ()
+		       end)
+		   val _ = R.Transfer.foreachDef (transfer, newVarInfo)
 		in
-		   ()
+		   fn () => ()
 		end)
-	    (* Create info for labels used as conts and handlers. *)
-	    fun newCont (c, h) =
-	       let val {cont, ...} = labelInfo c
-	       in case List.peek (!cont, fn (h', _) => Handler.equals (h, h')) of
-		     SOME _ => ()
-		   | NONE => let
-				val l = Mlabel.new (labelToLabel c)
-				val _ = List.push(cont, (h, l))
-				val _ = Chunk.addEntry (labelChunk c, l)
-			     in
-			        ()
-			     end
-	       end
-	    fun newHandler h =
-	       let val {args, handler, ...} = labelInfo h
-	       in case !handler of
-		     SOME _ => ()
-		   | NONE => let
-				val l = Mlabel.new (labelToLabel h)	
-				val _ = handler := SOME l
-				val _ = Chunk.addEntry (labelChunk h, l)
-			     in
-			        ()
-			     end
-	       end
-	    val _ =
-	       Vector.foreach
-	       (blocks, fn Block.T {label, args, ...} =>
-		(setLabelInfo (label, {args = args,
-				       cont = ref [],
-				       handler = ref NONE})))
-	    val _ =
-	       Vector.foreach
-	       (blocks, fn Block.T {transfer, ...} =>
-		case transfer of
-		   Stransfer.Call {return, ...} =>
-		      (case return of
-			  Return.NonTail {cont, handler} =>
-			     (newCont (cont, handler);
-			      Handler.foreachLabel (handler, newHandler))
-			| _ => ())
-		 | _ => ())
-	    val {handlerOffset, labelInfo = labelRegInfo, limitCheck, ...} =
-	       allocateFunc f
+	    fun callReturnOperands (xs: 'a vector,
+				    ty: 'a -> Type.t,
+				    shift: int): M.Operand.t vector =
+	       #1 (Vector.mapAndFold
+		   (xs, 0,
+		    fn (x, offset) =>
+		    let
+		       val ty = ty x
+		       val offset = Type.align (ty, offset)
+		    in
+		       (M.Operand.StackOffset {offset = shift + offset, 
+					       ty = ty},
+			offset + Type.size ty)
+		    end))
+	    (* Allocate stack slots. *)
 	    local
-	       fun make sel (l: Label.t) =
-		  let val Info.T r = labelRegInfo l
-		  in sel r
+	       val varInfo =
+		  fn x =>
+		  let
+		     val {operand, ty, ...} = varInfo x
+		  in
+		     {operand = (case operand of
+				    VarOperand.Allocate {operand, ...} => SOME operand
+				  | _ => NONE),
+		      ty = ty}
+		  end
+	       fun newRegister (l, n, ty) =
+		  let
+		     val chunk =
+			case l of
+			   NONE => chunk
+			 | SOME l => labelChunk l
+		  in
+		     Chunk.register (chunk, n, ty)
 		  end
 	    in
-	       val labelLive = make #live
-	       val labelLiveNoFormals = make #liveNoFormals
+	       val {handlerLinkOffset, labelInfo = labelRegInfo, ...} =
+		  AllocateRegisters.allocate
+		  {argOperands = callReturnOperands (args, #2, 0),
+		   function = f,
+		   newRegister = newRegister,
+		   varInfo = varInfo}
 	    end
-	    fun tail' (to: Label.t, srcs: 'a vector, srcOp: 'a -> Operand.t)
-	       : Mstatement.t list * Mtransfer.t * bool =
-	       let
-		  val t = Mtransfer.nearJump {label = labelToLabel to,
-					      return = NONE}
-	       in
-		  if Vector.isEmpty srcs
-		     then ([], t, false)
-		  else
-		     let
-			val {args, ...} = labelInfo to
-			val (srcs, dsts) =
-			   Vector.fold2
-			   (srcs, args, ([], []),
-			    fn (src, (x, _), ac as (srcs, dsts)) =>
-			    let
-			       val {operand, ...} = varInfo x
-			    in
-			       case operand of
-				  VarOperand.Allocate
-				  {isUsed = ref true, operand, ...} =>
-				     (srcOp src :: srcs, ^operand :: dsts)
-				| _ => ac
-			    end)
-		     in
-			(parallelMove {srcs = srcs,
-				       dsts = dsts,
-				       chunk = labelChunk to},
-			 t,
-			 length srcs > 0)
-		     end
-	       end
-	    val tail =
-	       Trace.trace ("Backend.tail",
-			    Label.layout o #1,
-			    fn (s, t, _) =>
-			    Layout.tuple [List.layout Mstatement.layout s,
-					  Mtransfer.layout t])
-	       tail'
-	    fun tail (to: Label.t, srcs: 'a vector, srcOp: 'a -> Operand.t) =
-	       let val (s, t, _) = tail' (to, srcs, srcOp)
-	       in (s, t)
-	       end
-	    (* ------------------------------------------------- *)
-	    (*                      genCase                      *)
-	    (* ------------------------------------------------- *)
-	    fun genCase {chunk: Chunk.t,
-			 label: Label.t, 
-			 test: Var.t,
-			 testRep: TyconRep.t,
-			 cases: (Con.t * Label.t) vector,
-			 default: Label.t option} =
-	       let
-		  fun addTest (os: Operand.t list): Operand.t list =
-		     case varOperand test of
-			VarOperand.Allocate {operand, ...} => (^operand) :: os
-		      | _ => os
-		  (* Creating this new block without limit checks is OK because
-		   * all it does is a few moves and then a transfer.  I.E. it
-		   * does no allocations and can not trigger a GC.
-		   *)
-		  fun newBlock (j, live, statements, transfer): Mlabel.t =
-		     let
-			val l = Mlabel.newNoname ()
-			val _ =
-			   Chunk.newBlock (chunk,
-					   {label = l,
-					    kind = Kind.jump,
-					    profileInfo = {func = profileInfoFunc,
-							   label = Label.toString j},
-					    live = live,
-					    statements = statements,
-					    transfer = transfer})
-		     in
-			l
-		     end
-		  fun switch {test = test', cases, default, live, numLeft}
-		     : {live: Operand.t list, transfer: Mtransfer.t} =
-		     let
-			datatype z = None | One of Mlabel.t | Many
-			val (live, default) =
-			   if numLeft = 0
-			      then (live, NONE)
-			   else
-			      case default of
-				 NONE => (live, NONE)
-			       | SOME j => (labelLive j @ live,
-					    SOME (labelToLabel j))
-			val targets =
-			   Mcases.fold
-			   (cases,
-			    case default of
-			       SOME l => One l
-			     | NONE => None,
-				  fn (l, Many) => Many
-				   | (l, One l') => if Mlabel.equals (l, l')
-						       then One l'
-						    else Many
-				   | (l, None) => One l)
-			val (live, transfer) =
-			   case targets of
-			      None => Error.bug "no targets"
-			    | One l =>
-				 (live,
-				  Mtransfer.nearJump {label = l,
-						      return = NONE})
-			    | Many =>
-				 (addTest live,
-				  Mtransfer.switch {test = test',
-						    cases = cases,
-						    default = default})
-		     in {live = live, 
-			 transfer = transfer}
-		     end
-		  fun enum (test: Operand.t, numEnum: int)
-		     : {live: Operand.t list, transfer: Mtransfer.t} =
-		     let
-			val (live, cases, numLeft) =
-			   Vector.fold
-			   (cases, ([], [], numEnum),
-			    fn ((c, j), (os, cases, numLeft)) =>
-			    let
-			       fun keep n =
-				  (labelLiveNoFormals j @ os,
-				   (n, labelToLabel j) :: cases,
-				   numLeft - 1)
-			    in
-			       case conRep c of
-				  ConRep.Int n => keep n
-				| ConRep.IntCast n => keep n
-				| _ => (os, cases, numLeft)
-			    end)
-		     in switch {test = test,
-				cases = Mcases.Int cases, default = default,
-				live = live, numLeft = numLeft}
-		     end
-		  fun transferToLabel {live, transfer}: Mlabel.t =
-		     case Mtransfer.toMOut transfer of
-			MOtransfer.NearJump {label, ...} => label
-		      | _ => newBlock (label, live, [], transfer)
-		  fun switchIP (numEnum, pointer: Mlabel.t): Mtransfer.t =
-		     let
-			val test = vo test
-			val int =
-			   transferToLabel (enum (Operand.castInt test, numEnum))
-		     in Mtransfer.switchIP {test = test,
-					    int = int,
-					    pointer = pointer}
-		     end
-		  fun doTail (j: Label.t, args: Operand.t vector)
-		     : Operand.t list * Mlabel.t =
-		     let
-			val (s, t, testIsUsed) = tail' (j, args, fn a => a)
-		     in
-			case (s, Mtransfer.toMOut t) of
-			   ([], MOtransfer.NearJump {label, ...}) =>
-			      (labelLive j, label)
-			 | _ => let
-				   val live = labelLiveNoFormals j
-				   val live = if testIsUsed
-						 then addTest live
-					      else live
-				in (live, newBlock (j, live, s, t))
-				end
-		     end
-		  fun enumAndOne (numEnum: int): Mtransfer.t =
-		     let
-			val test = vo test
-		     in
-			if not (Operand.isPointer test)
-			   then #transfer (enum (Operand.castInt test, numEnum))
-			else
-			   let
-			      val z =
-				 Vector.loop
-				 (cases, fn (c, j) =>
-				  case conRep c of
-				     ConRep.Transparent _ =>
-					SOME (j, Vector.new1 test)
-				   | ConRep.Tuple =>
-					SOME (j, conSelects (test, c))
-				   | _ => NONE,
-					fn () =>
-					case default of
-					   NONE =>
-					      Error.bug "enumAndOne: no default"
-					 | SOME j => (j, Vector.new0 ()))
-			   in switchIP (numEnum, #2 (doTail z))
-			   end
-		     end
-		  fun indirectTag (numTag: int) =
-		     let
-			val test = vo test
-		     in
-			if not (Operand.isPointer test)
-			   then {live = [], transfer = Mtransfer.bug}
-			else
-			   let
-			      val (live, cases, numLeft) =
-				 Vector.fold
-				 (cases, ([], [], numTag),
-				  fn ((c, j), (live, cases, numLeft)) =>
-				  case conRep c of
-				     ConRep.TagTuple n =>
-					let
-					   val (live', l) =
-					      doTail (j, conSelects (test, c))
-					in (live' @ live,
-					    (n, l) :: cases, numLeft - 1)
-					end
-				   | _ => (live, cases, numLeft))
-			   in switch {test = Operand.offset {base = test,
-							     offset = tagOffset,
-							     ty = tagType},
-				      cases = Mcases.Int cases,
-				      default = default,
-				      live = live, numLeft = numLeft}
-			   end
-		     end
-	       in case testRep of
-		  TyconRep.Prim mtype =>
-		     (case (Vector.length cases, default) of
-			 (1, _) =>
-			    (* We use _ instead of NONE for the default becuase
-			     * there may be an unreachable default case.
-			     *)
-			    let
-			       val (c, l) = Vector.sub (cases, 0)
-			    in
-			       case conRep c of
-				  ConRep.Void => tail (l, Vector.new0 (), id)
-				| ConRep.Transparent _ =>
-				     tail (l, Vector.new1 test, vo)
-				| ConRep.Tuple =>
-				     tail (l, conSelects (vo test, c), id)
-				| _ => Error.bug "strange conRep for Prim"
-			    end
-		       | (0, SOME j) => tail (j, Vector.new0 (), id)
-		       | _ => Error.bug "prim datatype with more than one case")
-		| TyconRep.Enum {numEnum} =>
-		     ([], #transfer (enum (vo test, numEnum)))
-		| TyconRep.EnumDirect {numEnum} => ([], enumAndOne numEnum)
-		| TyconRep.EnumIndirect {numEnum} => ([], enumAndOne numEnum)
-		| TyconRep.EnumIndirectTag {numEnum, numTag} =>
-		     ([], switchIP (numEnum,
-				    transferToLabel (indirectTag numTag)))
-		| TyconRep.IndirectTag {numTag} =>
-		     ([], #transfer (indirectTag numTag))
-	       end
-	    fun varsRegs (xs: Var.t list): Register.t list =
-	       List.fold (xs, [], fn (x, rs) =>
-			  case varOperandOpt x of
-			     NONE => rs
-			   | SOME oper => 
-				case Operand.deRegister oper of
-				   NONE => rs
-				 | SOME r => r :: rs)
-	    (* ------------------------------------------------- *)
-	    (*                      genCont                      *)
-	    (* ------------------------------------------------- *)
-	    fun genCont (c: Chunk.t,
-			 l: Mlabel.t,
-			 j: Label.t,
-			 h: Handler.t,
-			 args: (Var.t * Stype.t) vector): unit =
-	       let
-		  val Info.T {liveFrame, liveNoFormals, size, adjustSize, ...} =
-		     labelRegInfo j
-		  val liveFrame =
-		     #2 (valOf (List.peek (liveFrame, fn (h', liveFrame) =>
-					   Handler.equals (h, h'))))
-		  val size =
-		     case h of
-		        Handler.Handle h =>
-			   let val Info.T {size = size', ...} = labelRegInfo h
-			   in Int.max (size, size')
-			   end
-		      | Handler.None => size
-		      | Handler.CallerHandler => size
-		  val size' = size
-		  val {size, shift} = if !Control.newReturn
-					then adjustSize size
-				      else {size = Mtype.wordAlign size, shift = 0}
-		  val _ = Mprogram.newFrame (mprogram,
-					     {return = l,
-					      chunkLabel = Chunk.label c,
-					      size = size,
-					      live = liveFrame})
-		  val (args, (argsl, offset)) =
-		     if !Control.newReturn
-		       then 
-		       Vector.mapAndFold
-		       (args, ([], 0),
-			fn ((var, ty), (argsl, offset)) =>
-			let
-			   val ty = toMtype ty
-			   val offset = Mtype.align (ty, offset)
-			   val arg =
-			      Operand.stackOffset
-			      {offset = size' + shift + offset,
-			       ty = ty}
-			   val isUsed =
-			      case varInfo var of 
-				 {operand =
-				  VarOperand.Allocate {isUsed, ...}, ...} =>
-				    !isUsed
-			       | _ => false
-			in (arg,
-			    (if isUsed
-			       then arg::argsl
-			     else argsl,
-			     offset + Mtype.size ty))
-			end)
-		     else
-		     Vector.mapAndFold
-		     (args, ([], 4),
-		      fn ((var, ty), (argsl, offset)) =>
-		      let
-			 val ty = toMtype ty
-			 val offset = Mtype.align (ty, offset)
-			 val calleeOffset = offset + size
-			 val arg = Operand.stackOffset {offset = calleeOffset,
-							ty = ty}
-			 val isUsed
-			    = case varInfo var of 
-			         {operand = VarOperand.Allocate {isUsed, ...}, ...} 
-			           => !isUsed
-			       | _ => false
-		      in (arg,
-			  (if isUsed
-			      then arg::argsl
-			   else argsl,
-			   offset + Mtype.size ty))
-		      end)
-		  val (statements, transfer) = tail (j, args, id)
-		  val limitCheck =
-		     MlimitCheck.Maybe (GCInfo.make 
-					{frameSize = if !Control.newReturn
-						       then size
-						     else size + offset,
-					 live = argsl @ liveNoFormals})
-		  val statements =
-		     Mstatement.limitCheck limitCheck
-		     :: statements
-		  val chunk = labelChunk j
-		  val _ =
-		     Chunk.newBlock
-		     (chunk, {label = l,
-			      kind = Kind.cont {args = argsl,
-						size = size},
-			      live = liveNoFormals,
-			      profileInfo = {func = profileInfoFunc,
-					     label = Label.toString j},
-			      statements = statements,
-			      transfer = transfer})
-	       in ()
-	       end
-	    (* ------------------------------------------------- *)
-	    (*                    genHandler                     *)
-	    (* ------------------------------------------------- *)
-	    fun genHandler (c: Chunk.t,
-			    l: Mlabel.t,
-			    j: Label.t): unit =
-	       let
-		  val _ = Mprogram.newHandler (mprogram, 
-					       {chunkLabel = Chunk.label c,
-						label = l})
-		  val Info.T {liveNoFormals, ...} = labelRegInfo j
-		  val offset = valOf handlerOffset
-		  val args = raiseOperands (Vector.map (labelArgs j, #2))
-		  val (statements, transfer) = tail (j, args, id)
-	       in Chunk.newBlock (labelChunk j,
-				  {label = l,
-				   kind = Kind.handler {offset = offset},
-				   live = liveNoFormals,
-				   profileInfo = {func = profileInfoFunc,
-						  label = Label.toString j},
-				   statements = statements,
-				   transfer = transfer})
-	       end
+	    val profileInfoFunc = Func.toString name
 	    (* ------------------------------------------------- *)
 	    (*                    genTransfer                    *)
 	    (* ------------------------------------------------- *)
-	    fun genTransfer (t: Stransfer.t,
+	    fun genTransfer (t: R.Transfer.t,
 			     chunk: Chunk.t,
-			     label: Label.t,
-			     handlerOffset: int option)
-	       : Mstatement.t list * Mtransfer.t =
-	       case t of
-		  Stransfer.Arith {prim, args, overflow, success} =>
-		     let
-			val temp =
-			   Operand.register
-			   (Chunk.tempRegister (chunk, Mtype.int))
-			val noOverflowLabel = Mlabel.newNoname ()
-			val live = labelLiveNoFormals success
-			val (live, statements) =
-			   let
-			      val {operand, ...} =
-				 varInfo (#1 (Vector.sub
-					      (#args (labelInfo success), 0)))
-			   in
-			      case operand of
-				 VarOperand.Allocate {isUsed, operand, ...} =>
-				    if !isUsed
-				       then
-					  (temp :: live,
-					   [Mstatement.move {dst = ^operand,
-							     src = temp}])
-				    else (live, [])
-			       | _ => (live, [])
-			   end
-			val _ =
-			   Chunk.newBlock
-			   (chunk,
-			    {label = noOverflowLabel,
-			     kind = Kind.jump,
-			     live = live,
-			     statements = statements,
-			     transfer = (Mtransfer.nearJump
-					 {label = labelToLabel success,
-					  return = NONE}),
-			     profileInfo = {func = profileInfoFunc,
-					    label = Label.toString success}})
-		     in
-			([],
-			 Mtransfer.arith
-			 {prim = prim,
-			  args = Vector.map (args, vo),
-			  dst = temp,
-			  overflow = labelToLabel overflow,
-			  success = noOverflowLabel})
-		     end
-		| Stransfer.Bug => ([], Mtransfer.bug)
-		| Stransfer.Call {func, args, return} =>
-		     let
-			val args = Vector.toList args
-			val offsets =
-			   rev (#2 (List.fold
-				    (args, (4, []), (* 4 is for return address *)
-				     fn (arg, (offset, offsets)) =>
-				     case varOperandOpt arg of
-					NONE => (offset, offset :: offsets)
-				      | SOME oper =>
-					   let val ty = Operand.ty oper
-					      val offset = Mtype.align (ty, offset)
-					   in (offset + Mtype.size ty,
-					       offset :: offsets)
-					   end)))
-			val (frameSize, return, handlerLive) =
-			   case return of
-			      Return.Dead => (0, NONE, [])
-			    | Return.Tail => (0, NONE, [])
-			    | Return.HandleOnly => (0, NONE, [])
-			    | Return.NonTail {cont, handler} =>
-				 let
-				    val return = labelCont (cont, handler)
-				    val Info.T {size, adjustSize, ...} = 
-				       labelRegInfo cont
-				    val (size, handler, handlerLive) =
-				       case handler of
-					  Handler.CallerHandler =>
-					     (size, NONE, [])
-					| Handler.None => (size, NONE, [])
-					| Handler.Handle h =>
-					     let
-					        val Info.T {size = size', ...} =
-						   labelRegInfo h
-						val handlerOffset =
-						   valOf handlerOffset
-					     in
-						(Int.max(size, size'),
-						 SOME (labelHandler h),
-						 (Operand.stackOffset 
-						  {offset = handlerOffset,
-						   ty = Mtype.uint})::
-						 (Operand.stackOffset 
-						  {offset = handlerOffset + 
-						   labelSize,
-						   ty = Mtype.uint})::
-						 nil)
-					     end
-				    val size = 
-				       if !Control.newReturn
-					 then #size (adjustSize size)
-				       else Mtype.wordAlign size
-				 in
-				    (size, 
-				     SOME {return = return,
-					   handler = handler,
-					   size = size},
-				     handlerLive)
-				 end
-			val (live, setupArgs) =
-			   let
-			      val (live, moves) =
-				 List.fold2
-				 (args, offsets, (handlerLive, []), 
-				  fn (arg, offset, (live, ac)) =>
-				  case varOperandOpt arg of
-				     NONE => (live, ac)
-				   | SOME oper =>
-					let
-					   val so = Operand.stackOffset
-					      {offset = frameSize + offset,
-					       ty = Operand.ty oper}
-					in
-					   (so::live,
-					    {src = oper,
-					     dst = so}::ac)
-					end)
-			      fun temp r =
-				 Operand.register
-				 (Chunk.tempRegister (chunk, Operand.ty r))
-			   in
-			      (live,
-			       ParallelMove.move {equals = Operand.equals,
-						  move = Mstatement.move,
-						  moves = moves,
-						  interfere = Operand.interfere,
-						  temp = temp})
-			   end
-			val chunk' = funcChunk func
-			val transfer =
-			   if !Control.Native.native
-			      orelse (not (Chunk.equals (chunk, chunk')))
-			      then
-				 Mtransfer.farJump
-				 {chunkLabel = Chunk.label chunk',
-				  label = funcToLabel func,
-				  live = live,
-				  return = return}
-			   else 
-			      Mtransfer.nearJump 
+			     label: Label.t)
+	       : M.Statement.t vector * M.Transfer.t =
+	       let
+		  fun simple t = (Vector.new0 (), t)
+	       in
+		  case t of
+		     R.Transfer.Arith {args, dst, overflow, prim, success} =>
+			simple
+			(M.Transfer.Arith {args = varOperands args,
+					   dst = varOperand dst,
+					   overflow = overflow,
+					   prim = prim,
+					   success = success})
+		   | R.Transfer.Bug => simple M.Transfer.Bug
+		   | R.Transfer.CCall {args, prim, return, returnTy} =>
+			simple (M.Transfer.CCall {args = translateOperands args,
+						  prim = prim,
+						  return = return,
+						  returnTy = returnTy})
+		   | R.Transfer.Call {func, args, return} =>
+			let
+			   val (frameSize, return, handlerLive) =
+			      case return of
+				 R.Return.Dead => (0, NONE, Vector.new0 ())
+			       | R.Return.Tail => (0, NONE, Vector.new0 ())
+			       | R.Return.HandleOnly => (0, NONE, Vector.new0 ())
+			       | R.Return.NonTail {cont, handler} =>
+				    let
+				       val {size, adjustSize, ...} =
+					  labelRegInfo cont
+				       val (handler, handlerLive) =
+					  case handler of
+					     R.Handler.CallerHandler =>
+						(NONE, Vector.new0 ())
+					   | R.Handler.None =>
+						(NONE, Vector.new0 ())
+					   | R.Handler.Handle h =>
+						let
+						   val {size = size', ...} =
+						      labelRegInfo h
+						   val {handler, link} =
+						      valOf handlerLinkOffset
+						in
+						   (SOME h,
+						    Vector.new2
+						    (M.Operand.StackOffset 
+						     {offset = handler,
+						      ty = Type.label},
+						     M.Operand.StackOffset 
+						     {offset = link,
+						      ty = Type.uint}))
+						end
+				       val size = 
+					  if !Control.newReturn
+					     then #size (adjustSize size)
+					  else size
+				    in
+				       (size, 
+					SOME {return = cont,
+					      handler = handler,
+					      size = size},
+					handlerLive)
+				    end
+			   val dsts =
+			      callReturnOperands (args, R.Operand.ty, frameSize)
+			   val setupArgs =
+			      parallelMove {chunk = chunk,
+					    dsts = dsts,
+					    srcs = translateOperands args}
+			   val chunk' = funcChunk func
+			   val transfer =
+			      M.Transfer.Call
 			      {label = funcToLabel func,
+			       live = Vector.concat [handlerLive, dsts],
 			       return = return}
-		     in (setupArgs, transfer)
-		     end
-		| Stransfer.Case {test, cases, default, ...} =>
-		     let
-			fun id x = x
-			fun doit (l, f, branch) =
-			   ([],
-			    Mtransfer.switch
-			    {test = vo test,
-			     cases = f (Vector.toListMap
-					(l, fn (i, j) =>
-					 (branch i, labelToLabel j))),
-			     default = Option.map (default, labelToLabel)})
-		     in
-			case cases of
-			   Cases.Char l => doit (l, Mcases.Char, id)
-			 | Cases.Int l => doit (l, Mcases.Int, id)
-			 | Cases.Word l => doit (l, Mcases.Word, id)
-			 | Cases.Word8 l => doit (l, Mcases.Char, Word8.toChar)
-			 | Cases.Con cases =>
-			      (case (Vector.length cases, default) of
-				  (0, NONE) => ([], Mtransfer.bug)
-				| _ => 
-				     let
-					val (tycon, tys) =
-					   Stype.tyconArgs (#ty (varInfo test))
-				     in
-					if Vector.isEmpty tys
-					   then genCase {cases = cases,
-							 chunk = chunk,
-							 label = label,
-							 default = default,
-							 test = test,
-							 testRep = tyconRep tycon}
-					else Error.bug "strange type in case"
-				     end)
-		     end
-		| Stransfer.Goto {dst, args} => tail (dst, args, vo)
-		| Stransfer.Raise xs =>
-		     (Mstatement.moves
-		      {dsts = raiseOperands (Vector.map (xs, #ty o varInfo)),
-		       srcs = Vector.map (xs, vo)},
-		      Mtransfer.raisee)
-		| Stransfer.Return xs =>
-		     let
-			val (_, live, moves) =
-			   if !Control.newReturn
-			   then let
-			          val shift =
-				     Vector.fold
-				     (xs, 0, fn (x, shift) =>
-				      case varOperandOpt x of
-					 NONE => shift
-				       | SOME x => 
-					    let val ty = Operand.ty x
-					    in Mtype.align (ty, shift) + 
-					       Mtype.size ty
-					    end)
-				  val shift = Mtype.wordAlign shift
-				  val shift = ~shift
-				in
-			   Vector.fold
-			   (xs, (0, [], []), fn (x, (offset, live, moves)) =>
-			    case varOperandOpt x of
-			       NONE => (offset, live, moves)
-			     | SOME x =>
-				  let 
-				     val ty = Operand.ty x
-				     val offset = Mtype.align (ty, offset)
-				     val so =
-				        Operand.stackOffset
-					{offset = offset + shift,
-					 ty = ty}
-				  in
-				     (offset + Mtype.size ty,
-				      so::live,
-				      {src = x,
-				       dst = so}
-				      :: moves)
-				  end)
-				end
-			   else
-			   Vector.fold
-			   (xs, (4, [], []), fn (x, (offset, live, moves)) =>
-			    case varOperandOpt x of
-			       NONE => (offset, live, moves)
-			     | SOME x =>
-				  let 
-				     val ty = Operand.ty x
-				     val offset = Mtype.align (ty, offset)
-				     val so =
-					Operand.stackOffset {offset = offset, 
-							     ty = ty}
-				  in 
-				     (offset + Mtype.size ty,
-				      so::live,
-				      {src = x,
-				       dst = so}
-				      :: moves)
-				  end)
-			fun temp r =
-			   Operand.register
-			   (Chunk.tempRegister (chunk, Operand.ty r))
-		     in
-			(ParallelMove.move {equals = Operand.equals,
-					    move = Mstatement.move,
-					    moves = moves,
-					    interfere = Operand.interfere,
-					    temp = temp},
-			 Mtransfer.return {live = live})
-		     end
-		| Stransfer.Runtime {prim, args, return} => 
-		     let
-		       val info = labelRegInfo return
-		       val pinfo = MPrimInfo.runtime
-			           (GCInfo.make {frameSize = Info.size info,
-						 live = Info.live info})
-		     in
-		       ([Mstatement.assign
-			 {dst = NONE,
+			in (setupArgs, transfer)
+			end
+		   | R.Transfer.Goto {dst, args} =>
+			(parallelMove {srcs = translateOperands args,
+				       dsts = labelArgOperands dst,
+				       chunk = labelChunk dst},
+			 M.Transfer.Goto dst)
+		   | R.Transfer.LimitCheck {failure, kind, success} =>
+			let
+			   datatype z = datatype R.LimitCheck.t
+			   val kind =
+			      case kind of
+				 Array {bytesPerElt, extraBytes, numElts,
+					stackToo} =>
+				    M.LimitCheck.Array
+				    {bytesPerElt = bytesPerElt,
+				     extraBytes = extraBytes,
+				     numElts = varOperand numElts,
+				     stackToo = stackToo}
+			       | Heap z => M.LimitCheck.Heap z
+			       | Signal => M.LimitCheck.Signal
+			       | Stack => M.LimitCheck.Stack
+			   (* It doesn't matter whether we use live or
+			    * liveNoFormals, since the return is nullary.
+			    *)
+			in
+			   simple
+			   (M.Transfer.LimitCheck {failure = failure,
+						   kind = kind,
+						   success = success})
+			end
+		   | R.Transfer.Raise srcs =>
+			(M.Statement.moves
+			 {dsts = raiseOperands (Vector.map
+						(srcs, R.Operand.ty)),
+			  srcs = translateOperands srcs},
+			 M.Transfer.Raise)
+		   | R.Transfer.Return xs =>
+			let
+			   val dsts = callReturnOperands (xs, R.Operand.ty, 0)
+			in
+			   (parallelMove {chunk = chunk,
+					  srcs = translateOperands xs,
+					  dsts = dsts},
+			    M.Transfer.Return {live = dsts})
+			end
+		   | R.Transfer.Runtime {prim, args, return} => 
+			simple
+			(M.Transfer.Runtime
+			 {args = Vector.map (args, translateOperand),
 			  prim = prim,
-			  args = Vector.map (args, vo),
-			  pinfo = pinfo}],
-			Mtransfer.nearJump {label = labelToLabel return,
-					    return = NONE})
-		     end
+			  return = return})
+		   | R.Transfer.Switch {cases, default, test} =>
+			let
+			   fun doit l =
+			      simple
+			      (case (l, default) of
+				  ([], NONE) => M.Transfer.Bug
+				| ([(_, dst)], NONE) => M.Transfer.Goto dst
+				| ([], SOME dst) => M.Transfer.Goto dst
+				| _ =>
+				     M.Transfer.Switch
+				     {cases = cases,
+				      default = default,
+				      test = translateOperand test})
+			in
+			   case cases of
+			      Cases.Char l => doit l
+			    | Cases.Int l => doit l
+			    | Cases.Word l => doit l
+			end
+		   | R.Transfer.SwitchIP {int, pointer, test} =>
+			simple (M.Transfer.SwitchIP
+				{int = int,
+				 pointer = pointer,
+				 test = translateOperand test})
+	       end
 	    val genTransfer =
 	       Trace.trace ("Backend.genTransfer",
-			    Stransfer.layout o #1,
-			    Layout.tuple2 (List.layout Mstatement.layout,
-					   Mtransfer.layout))
+			    R.Transfer.layout o #1,
+			    Layout.tuple2 (Vector.layout M.Statement.layout,
+					   M.Transfer.layout))
 	       genTransfer
-	    val live = Info.live (labelRegInfo start)
 	    val _ =
-	       Chunk.newBlock
-	       (chunk,
-		{label = funcToLabel name,
-		 kind = Kind.func {args = live},
-		 live = live,
-		 profileInfo = {func = profileInfoFunc,
-				label = profileInfoFunc},
-		 statements = [Mstatement.limitCheck limitCheck],
-		 transfer = (Mtransfer.nearJump
-			     {label = labelToLabel start,
-			      return = NONE})})
-	    fun genBlock (Block.T {label, args, statements, transfer, ...}) =
 	       let
-		  val _ =
-		     Control.diagnostic
-		     (fn () =>
-		      let
-			 open Layout
-		      in
-			 seq [str "Generating code for block ",
-			      Label.layout label]
-		      end)
-		  val Info.T {limitCheck, live, ...} = labelRegInfo label
-		  val chunk = labelChunk label
-
-		  val {cont, handler, ...} = labelInfo label
-		  val _ =
-		     List.foreach (!cont, fn (h, l) =>
-				   genCont (chunk, l, label, h, args))
-		  val _ =
-		     Option.app (!handler, fn l =>
-				 genHandler (chunk, l, label))
-
-		  val statements = 
-		     genStatements (statements, chunk, handlerOffset)
-		  val (preTransfer, transfer) =
-		     genTransfer (transfer, chunk, label, handlerOffset)
-		  val statements =
-		     Mstatement.limitCheck limitCheck
-		     :: (statements @ preTransfer)
+		  val live = #live (labelRegInfo start)
 	       in
-		  Chunk.newBlock (chunk, {label = labelToLabel label,
-					  kind = Kind.jump,
-					  live = live,
-					  profileInfo = {func = profileInfoFunc,
-							 label = Label.toString label},
-					  statements = statements,
-					  transfer = transfer})
+		  Chunk.newBlock
+		  (chunk, {label = funcToLabel name,
+			   kind = M.Kind.Func {args = live},
+			   live = live,
+			   profileInfo = {func = profileInfoFunc,
+					  label = profileInfoFunc},
+			   statements = Vector.new0 (),
+			   transfer = M.Transfer.Goto start})
+	       end
+	    fun genBlock (R.Block.T {args, kind, label, statements, transfer,
+				     ...}) : unit =
+	       let
+		  val {adjustSize, live, liveNoFormals, size, ...} =
+		     labelRegInfo label
+		  val chunk = labelChunk label
+		  val statements =
+		     Vector.map (statements, fn s =>
+				 genStatement (s, handlerLinkOffset))
+		  val (preTransfer, transfer) =
+		     genTransfer (transfer, chunk, label)
+		  fun frame () =
+		     let
+			val offsets =
+			   Vector.fold
+			   (liveNoFormals, [], fn (oper, ac) =>
+			    case oper of
+			       M.Operand.StackOffset {offset, ty} =>
+				  (case Type.dest ty of
+				      Type.Pointer => offset :: ac
+				    | _ => ac)
+			     | _ => ac)
+		     in
+			List.push (frames, {chunkLabel = Chunk.label chunk,
+					    offsets = offsets,
+					    return = label,
+					    size = size})
+		     end
+		  val (kind, live, pre) =
+		     case kind of
+			R.Kind.Cont {handler} =>
+			   let
+			      val _ = frame ()
+			      val srcs = callReturnOperands (args, #2, size)
+			   in
+			      (M.Kind.Cont {args = srcs,
+					    frameInfo = M.FrameInfo.bogus},
+			       liveNoFormals,
+			       parallelMove
+			       {chunk = chunk,
+				dsts = Vector.map (args, varOperand o #1),
+				srcs = srcs})
+			   end
+		      | R.Kind.CReturn {prim} =>
+			   let
+			      val dst =
+				 if 0 < Vector.length args
+				    then SOME (varOperand
+					       (#1 (Vector.sub (args, 0))))
+				 else NONE
+			   in
+			      (M.Kind.CReturn {dst = dst,
+					       prim = prim},
+			       liveNoFormals,
+			       Vector.new0 ())
+			   end
+		      | R.Kind.Handler =>
+			   let
+			      val _ =
+				 List.push
+				 (handlers, {chunkLabel = Chunk.label chunk,
+					     label = label})
+			      val {handler, ...} = valOf handlerLinkOffset
+			      val dsts = Vector.map (args, varOperand o #1)
+			   in
+			      (M.Kind.Handler {offset = handler},
+			       liveNoFormals,
+			       M.Statement.moves
+			       {dsts = dsts,
+				srcs = (raiseOperands
+					(Vector.map (dsts, M.Operand.ty)))})
+			   end
+		      | R.Kind.Jump => (M.Kind.Jump, live, Vector.new0 ())
+		      | R.Kind.Runtime {prim} =>
+			   let
+			      val _ = frame ()
+			   in
+			      (M.Kind.Runtime {frameInfo = M.FrameInfo.bogus,
+					       prim = prim},
+			       liveNoFormals,
+			       Vector.new0 ())
+			   end
+		  val statements = Vector.concat [pre, statements, preTransfer]
+	       in
+		  Chunk.newBlock (chunk,
+				  {kind = kind,
+				   label = label,
+				   live = live,
+				   profileInfo = {func = profileInfoFunc,
+						  label = Label.toString label},
+				   statements = statements,
+				   transfer = transfer})
 	       end
 	    val genBlock = traceGenBlock genBlock
 	    val _ = Vector.foreach (blocks, genBlock)
-	    val _ = Vector.foreach (blocks, Block.clear)
 	    val _ =
-	       Control.diagnostic
-	       (fn () =>
-		let
-		   open Layout
-		in
-		   seq [str "Done generating code for function ",
-			Func.layout name]
-		end)
+	       if isMain
+		  then ()
+	       else Vector.foreach (blocks, R.Block.clear)
 	 in
 	    ()
 	 end
-      val genFunc = traceGenFunc genFunc
-      val _ = List.foreach (functions, genFunc)
-      (* The Mprogram.clear is necessary because Funcs and Labels are turned into
-       * Labels in the resulting mprogram, and properties have been attached to
-       * them by the backend.
+      val genFunc =
+	 Trace.trace2 ("Backend.genFunc",
+		       Func.layout o Function.name, Bool.layout, Unit.layout)
+	 genFunc
+      (* Generate the main function first.
+       * Need to do this in order to set globals.
        *)
-      val _ = Mprogram.clear mprogram
+      val _ = genFunc (main, true)
+      val _ = List.foreach (functions, fn f => genFunc (f, false))
+      val chunks = !chunks
+      val _ = IntSet.reset ()
+      val c = Counter.new 0
+      val frameOffsets = ref []
+      val {get: IntSet.t -> int, ...} =
+	 Property.get
+	 (IntSet.plist,
+	  Property.initFun
+	  (fn offsets =>
+	   let val index = Counter.next c
+	   in
+	      List.push (frameOffsets, IntSet.toList offsets)
+	      ; index
+	   end))
+      val {get = frameInfo: Label.t -> M.FrameInfo.t, set = setFrameInfo, ...} = 
+	 Property.getSetOnce (Label.plist,
+			      Property.initRaise ("frameInfo", Label.layout))
+      val setFrameInfo =
+	 Trace.trace2 ("Backend.setFrameInfo",
+		       Label.layout, M.FrameInfo.layout, Unit.layout)
+	 setFrameInfo
+      val _ =
+	 List.foreach
+	 (!frames, fn {return, size, offsets, ...} =>
+	  setFrameInfo
+	  (return,
+	   M.FrameInfo.T {size = size,
+			  frameOffsetsIndex = get (IntSet.fromList offsets)}))
+      (* Reverse the list of frameOffsets because offsetIndex 
+       * is from back of list.
+       *)
+      val frameOffsets =
+	 Vector.rev (Vector.fromListMap (!frameOffsets, Vector.fromList))
+      fun blockToMachine (M.Block.T {kind, label, live, profileInfo,
+				     statements, transfer}) =
+	 let
+	    datatype z = datatype M.Kind.t
+	    val kind =
+	       case kind of
+		  Cont {args, ...} => Cont {args = args,
+					    frameInfo = frameInfo label}
+		| Runtime {prim, ...} => Runtime {frameInfo = frameInfo label,
+						  prim = prim}
+		| _ => kind
+	 in
+	    M.Block.T {kind = kind,
+		       label = label,
+		       live = live,
+		       profileInfo = profileInfo,
+		       statements = statements,
+		       transfer = transfer}
+	 end
+      fun chunkToMachine (Chunk.T {chunkLabel, blocks, regMax}) =
+	 Machine.Chunk.T {chunkLabel = chunkLabel,
+			  blocks = Vector.fromListMap (!blocks, blockToMachine),
+			  regMax = ! o regMax}
+      val mainName = R.Function.name main
+      val main = {chunkLabel = Chunk.label (funcChunk mainName),
+		  label = funcToLabel mainName}
+      val chunks = List.revMap (chunks, chunkToMachine)
+      (* The clear is necessary because properties have been attached to Funcs
+       * and Labels, and they appear as labels in the resulting program.
+       *)
+      val _ = List.foreach (chunks, fn M.Chunk.T {blocks, ...} =>
+			    Vector.foreach (blocks, Label.clear o M.Block.label))
+      val maxFrameSize =
+	 List.fold
+	 (chunks, 0, fn (M.Chunk.T {blocks, ...}, max) =>
+	  Vector.fold
+	  (blocks, max, fn (M.Block.T {kind, statements, transfer, ...}, max) =>
+	   let
+	      fun doFrameInfo (M.FrameInfo.T {size, ...}, max) =
+		 Int.max (max, size)
+	      fun doOperand (z: M.Operand.t, max) =
+		 let
+		    datatype z = datatype M.Operand.t
+		 in
+		    case z of
+		       ArrayOffset {base, index, ...} =>
+			  doOperand (base, doOperand (index, max))
+		     | CastInt z => doOperand (z, max)
+		     | Contents {oper, ...} => doOperand (oper, max)
+		     | Offset {base, ...} => doOperand (base, max)
+		     | StackOffset {offset, ty} =>
+			  Int.max (offset + Type.size ty, max)
+		     | _ => max
+		 end
+	      val max =
+		 case kind of
+		    M.Kind.Cont {frameInfo, ...} =>
+		       doFrameInfo (frameInfo, max)
+		  | M.Kind.Runtime {frameInfo, ...} =>
+		       doFrameInfo (frameInfo, max)
+		  | _ => max
+	      val max =
+		 Vector.fold
+		 (statements, max, fn (s, max) =>
+		  M.Statement.foldOperands (s, max, doOperand))
+	      val max =
+		 M.Transfer.foldOperands (transfer, max, doOperand)
+	   in
+	      max
+	   end))
+      val maxFrameSize = Type.wordAlign maxFrameSize
    in
-      mprogram
+      Machine.Program.T 
+      {chunks = chunks,
+       floats = allFloats (),
+       frameOffsets = frameOffsets, 
+       globals = Counter.value o globalCounter,
+       globalsNonRoot = Counter.value globalPointerNonRootCounter,
+       intInfs = allIntInfs (), 
+       main = main,
+       maxFrameSize = maxFrameSize,
+       strings = allStrings ()}
    end
 
 end
+   

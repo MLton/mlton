@@ -9,6 +9,11 @@ fun fold (opt, b, f) =
    case opt of
       NONE => b
     | SOME x => f (x, b)
+
+fun forall (z, f) =
+   case z of
+      NONE => true
+    | SOME x => f x
 	 
 fun app (opt, f) =
    case opt of

@@ -1,11 +1,11 @@
-signature LIMIT_CHECK_STRUCTS = 
+signature ARRAY_INIT_STRUCTS = 
    sig
       structure Rssa: RSSA
    end
 
-signature LIMIT_CHECK = 
+signature ARRAY_INIT = 
    sig
-      include LIMIT_CHECK_STRUCTS
-
+      include ARRAY_INIT_STRUCTS
+      
       val insert: Rssa.Program.t -> Rssa.Program.t
    end

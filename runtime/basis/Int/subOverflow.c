@@ -2,12 +2,10 @@
 
 #include "my-lib.h"
 
-Bool Int_subOverflow(Int lhs, Int rhs, Int *res) {
+Int Int_subOverflow(Int lhs, Int rhs, Bool *overflow) {
 	long long	tmp;
 
 	tmp = (long long)lhs - rhs;
-	if (tmp != (int)tmp)
-		return (TRUE);
-	*res = tmp;
-	return (FALSE);
+	*overflow = (tmp != (int)tmp);
+	return tmp;
 }

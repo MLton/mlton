@@ -12,39 +12,33 @@ datatype dest =
  | Int
  | Pointer
  | Uint
- | Void
 
 datatype t = T of {dest: dest}
 
-fun dest(T{dest, ...}) = dest
+fun dest (T {dest, ...}) = dest
 
-fun equals(t, t') = dest t = dest t'
+fun equals (t, t') = dest t = dest t'
 
 local
-   fun new dest = T{dest = dest}
+   fun new dest = T {dest = dest}
 in
    val char = new Char
    val double = new Double
    val int = new Int
    val pointer = new Pointer
    val uint = new Uint
-   val void = new Void
 end
 
-val all = [char, double, int, pointer, uint, void]
+val all = [char, double, int, pointer, uint]
 
 fun memo f =
    let val all = List.revMap (all, fn t => (t, f t))
    in fn t => #2 (List.lookup (all, fn (t', _) => equals (t, t')))
    end
 
+val bool = int
 val label = uint
   
-fun isVoid t =
-   case dest t of
-      Void => true
-    | _ => false
-
 fun isPointer t =
    case dest t of
       Pointer => true
@@ -62,7 +56,6 @@ in
        | Int => word
        | Pointer => word
        | Uint => word
-       | Void => 0
 end
 
 fun name t =
@@ -72,7 +65,6 @@ fun name t =
     | Int => "I"
     | Pointer => "P"
     | Uint => "U"
-    | Void => "V"
 
 fun toString t =
    case dest t of
@@ -81,7 +73,6 @@ fun toString t =
     | Int => "int"
     | Pointer => "pointer"
     | Uint => "uint"
-    | Void => "void"
 
 val layout = Layout.str o toString
 
@@ -102,6 +93,5 @@ fun align (ty: t, n: int): int =
     | Int => wordAlign n
     | Pointer => wordAlign n
     | Uint => wordAlign n
-    | Void => n
 
 end

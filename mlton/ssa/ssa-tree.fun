@@ -470,10 +470,12 @@ structure Handler =
 	     | None => none
       end
 
-      fun foreachLabel (h, f) =
+      fun foldLabel (h, a, f) =
 	 case h of
-	    Handle l => f l
-	  | _ => ()
+	    Handle l => f (l, a)
+	  | _ => a
+
+      fun foreachLabel (h, f) = foldLabel (h, (), f o #1)
 
       fun map (h, f) =
 	 case h of
@@ -536,12 +538,13 @@ structure Return =
 	    NonTail {handler, ...} => Handler.foreachLabel (handler, f)
 	  | _ => ()
 
-      fun foreachLabel (r, f) =
+      fun foldLabel (r, a, f) =
 	 case r of
 	    NonTail {cont, handler} =>
-	       (f cont
-		; Handler.foreachLabel (handler, f))
-	  | _ => ()
+	       f (cont, Handler.foldLabel (handler, a, f))
+	  | _ => a
+
+      fun foreachLabel (r, f) = foldLabel (r, (), f o #1)
 
       fun map (r, f) =
 	 case r of
@@ -573,24 +576,22 @@ structure Transfer =
          Arith of {prim: Prim.t,
 		   args: Var.t vector,
 		   overflow: Label.t, (* Must be nullary. *)
-		   success: Label.t (* Must be unary. *)
-		  }
+		   success: Label.t} (* Must be unary. *)
        | Bug (* MLton thought control couldn't reach here. *)
        | Call of {func: Func.t,
 		  args: Var.t vector,
 		  return: Return.t}
        | Case of {test: Var.t,
 		  cases: Label.t Cases.t,
-		  default: Label.t option (* Must be nullary. *)
-		 }
+		  default: Label.t option} (* Must be nullary. *)
        | Goto of {dst: Label.t,
 		  args: Var.t vector}
        | Raise of Var.t vector
        | Return of Var.t vector
        | Runtime of {prim: Prim.t,
 		     args: Var.t vector,
-		     return: Label.t (* Must be nullary. *)
-		    }
+		     return: Label.t} (* Must be nullary. *)
+	 
       fun foreachFuncLabelVar (t, func, label: Label.t -> unit, var) =
 	 let
 	    fun vars xs = Vector.foreach (xs, var)
@@ -818,18 +819,16 @@ end
 structure Block =
    struct
       datatype t =
-	 T of {
+	 T of {args: (Var.t * Type.t) vector,
 	       label: Label.t,
-	       args: (Var.t * Type.t) vector,
 	       statements: Statement.t vector,
-	       transfer: Transfer.t
-	       }
+	       transfer: Transfer.t}
 	 
       local
 	 fun make f (T r) = f r
       in
-	 val label = make #label
 	 val args = make #args
+	 val label = make #label
 	 val statements = make #statements
 	 val transfer = make #transfer
       end
@@ -1304,27 +1303,15 @@ structure Function =
 		  (Node.plist, Property.initRaise ("info", Node.layout))
 	       val _ =
 		  Vector.foreach
-		  (blocks, fn b as Block.T {label, statements, transfer, ...} =>
+		  (blocks, fn b as Block.T {label, transfer, ...} =>
 		   let
 		      val from = labelNode label
 		      val _ = setNodeInfo (from, {block = b})
-		      fun edge (to: Label.t): unit =
-			(Graph.addEdge (g, {from = from, to = labelNode to})
-			 ; ())
 		      val _ =
-			 case transfer of
-			   Arith {overflow, success, ...} =>
-			      (edge overflow; edge success)
-			 | Bug => ()
-			 | Call {return, ...} =>
-			      Return.foreachLabel (return, edge)
-			 | Case {cases, default, ...} =>
-			      (Cases.foreach (cases, edge)
-			       ; Option.app (default, edge))
-			 | Goto {dst, ...} => edge dst
-			 | Raise _ => ()
-			 | Return _ => ()
-			 | Runtime {return, ...} => edge return
+			 Transfer.foreachLabel
+			 (transfer, fn to =>
+			  (Graph.addEdge (g, {from = from, to = labelNode to})
+			   ; ()))
 		   in
 		      ()
 		   end)

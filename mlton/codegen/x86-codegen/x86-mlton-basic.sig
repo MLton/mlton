@@ -7,9 +7,9 @@ type word = Word.t
 signature X86_MLTON_BASIC_STRUCTS =
   sig
     structure x86 : X86_PSEUDO
-    structure MachineOutput: MACHINE_OUTPUT
-    sharing x86.Label = MachineOutput.Label
-    sharing x86.Prim = MachineOutput.Prim
+    structure Machine: MACHINE
+    sharing x86.Label = Machine.Label
+    sharing x86.Prim = Machine.Prim
   end
 
 signature X86_MLTON_BASIC =
@@ -31,8 +31,8 @@ signature X86_MLTON_BASIC =
     val arrayHeaderBytes : int
     val intInfOverheadBytes : int
 
-    val toX86Size : MachineOutput.Type.t -> x86.Size.t
-    val toX86Scale : MachineOutput.Type.t -> x86.Scale.t
+    val toX86Size : Machine.Type.t -> x86.Size.t
+    val toX86Scale : Machine.Type.t -> x86.Scale.t
 
     (*
      * Memory classes
@@ -78,8 +78,13 @@ signature X86_MLTON_BASIC =
     val c_stackPDerefOperand : x86.Operand.t
     val c_stackPDerefDoubleOperand : x86.Operand.t
 
+    (* CReturn locations *)
+    val cReturnTempContents : x86.Size.t -> x86.MemLoc.t
+    val cReturnTempContentsOperand : x86.Size.t -> x86.Operand.t
+
     (* Static temps defined in x86codegen.h *)
     val limitCheckTempContentsOperand : x86.Operand.t
+    val gcFirstAuxTempContentsOperand : x86.Operand.t
     val arrayAllocateTempContents : x86.MemLoc.t
     val arrayAllocateTempContentsOperand : x86.Operand.t
     val arrayAllocateLoopTempContentsOperand : x86.Operand.t
@@ -98,8 +103,8 @@ signature X86_MLTON_BASIC =
     val intInfTempFrontierContentsOperand : x86.Operand.t
 
     (* Static arrays defined in x86codegen.h *)
-    val local_base : MachineOutput.Type.t -> x86.Label.t
-    val global_base : MachineOutput.Type.t -> x86.Label.t
+    val local_base : Machine.Type.t -> x86.Label.t
+    val global_base : Machine.Type.t -> x86.Label.t
     val globalPointerNonRoot_base : x86.Label.t
 
     (* Static functions defined in x86codegen.h *)
@@ -137,6 +142,8 @@ signature X86_MLTON_BASIC =
     val gcState_stackTopContentsOperand : x86.Operand.t
     val gcState_stackTopDeref : x86.MemLoc.t
     val gcState_stackTopDerefOperand : x86.Operand.t
+    val gcState_stackTopMinusWordDeref : x86.MemLoc.t
+    val gcState_stackTopMinusWordDerefOperand : x86.Operand.t
     val gcState_stackBottomContents : x86.MemLoc.t
     val gcState_stackBottomContentsOperand : x86.Operand.t
     val gcState_stackLimitContents : x86.MemLoc.t

@@ -236,22 +236,11 @@ structure Name =
       val mayRaise = mayOverflow
 
       val entersRuntime =
-	 fn Array_array => true
-	  | Array_array0 => true
-	  | GC_collect => true
-	  | MLton_deserialize => true
+	 fn GC_collect => true
 	  | MLton_halt => true
-	  | MLton_serialize => true
 	  | Thread_copy => true
 	  | Thread_copyCurrent => true
 	  | Thread_finishHandler => true
-	  | Thread_switchTo => true
-	  | World_save => true
-	  | _ => false
-
-      val runtimeTransfer =
-	 fn MLton_halt => true
-	  | Thread_copyCurrent => true
 	  | Thread_switchTo => true
 	  | World_save => true
 	  | _ => false
@@ -506,15 +495,13 @@ val mayAllocate = Name.mayAllocate o name
 val mayOverflow = Name.mayOverflow o name
 val mayRaise = Name.mayRaise o name
 val isArrayAllocation = Name.isArrayAllocation o name
-val impCall = Name.impCall o name
+fun impCall p = case name p
+		  of Name.FFI _ => isSome (numArgs p)
+		   | p => Name.impCall p
 
 val entersRuntime = Name.entersRuntime o name
 val entersRuntime =
    Trace.trace ("entersRuntime", layout, Bool.layout) entersRuntime
-
-val runtimeTransfer = Name.runtimeTransfer o name
-val runtimeTransfer =
-   Trace.trace ("runtimeTransfer", layout, Bool.layout) runtimeTransfer
 			  
 structure Scheme =
    struct

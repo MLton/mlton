@@ -6,14 +6,14 @@ type word = Word.t
 
 signature X86_CODEGEN_STRUCTS =
   sig
-    structure MachineOutput: MACHINE_OUTPUT
+    structure Machine: MACHINE
   end
 
 signature X86_CODEGEN =
   sig
     include X86_CODEGEN_STRUCTS
 
-    val output: {program: MachineOutput.Program.t,
+    val output: {program: Machine.Program.t,
                  includes: string list,
                  outputC: unit -> {file: File.t,
 				   print: string -> unit,

@@ -3,7 +3,7 @@
  *)
 signature LIVE_STRUCTS = 
    sig
-      include SSA
+      include RSSA
    end
 
 signature LIVE = 
@@ -12,22 +12,10 @@ signature LIVE =
 
       val live:
 	 Function.t * {shouldConsider: Var.t -> bool}
-	 -> {
-	     labelLive:
-	     Label.t -> {
-                         (* live at beginning of block. *)
-                         begin: Var.t list,
-			 (* live at the beginning of a block, except formals. *)
-			 beginNoFormals: Var.t list,
-			 (* live at frame corresponding to the block. *)
-			 (* only valid for continuations *)
-			 frame: (Handler.t * Var.t list) list,
-			 (* live handler slots at beginning of block. *)
-			 handlerSlots: bool * bool
-			 },
-	     (* live variables at primitives that require live variables.
-	      *)
-	     primLive: Var.t -> {vars: Var.t list,
-				 handlerSlots: bool * bool}
-	     }
+	 -> Label.t -> {(* live at beginning of block. *)
+			begin: Var.t list,
+			(* live at the beginning of a block, except formals. *)
+			beginNoFormals: Var.t list,
+			(* live handler slots at beginning of block. *)
+			handlerSlots: bool * bool}
    end

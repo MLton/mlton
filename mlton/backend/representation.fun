@@ -19,37 +19,43 @@ end
 structure TyconRep =
    struct
       datatype t =
-	 Prim of Mtype.t
-       | Enum of {numEnum: int}
+	 Enum of {numEnum: int}
        | EnumDirect of {numEnum: int}
        | EnumIndirect of {numEnum: int}
        | EnumIndirectTag of {numEnum: int,
 			     numTag: int}
        | IndirectTag of {numTag: int}
+       | Prim of Mtype.t
+       | Void
 
       val pointer = Prim Mtype.pointer
-      val void = Prim Mtype.void
 
       val toMtype =
-	 fn Prim t => t
-	  | Enum _ => Mtype.int
-	  | EnumDirect _ => Mtype.pointer
-	  | EnumIndirect _ => Mtype.pointer
-	  | EnumIndirectTag _ => Mtype.pointer
-	  | IndirectTag _ => Mtype.pointer
+	 fn Enum _ => SOME Mtype.int
+	  | EnumDirect _ => SOME Mtype.pointer
+	  | EnumIndirect _ => SOME Mtype.pointer
+	  | EnumIndirectTag _ => SOME Mtype.pointer
+	  | IndirectTag _ => SOME Mtype.pointer
+	  | Prim t => SOME t
+	  | Void => NONE
 
       val layout =
-	 let open Layout
-	 in fn Prim m => Mtype.layout m
-       | Enum {numEnum} => seq [str "Enum ", Int.layout numEnum]
-       | EnumDirect {numEnum} => seq [str "EnumDirect ", Int.layout numEnum]
-       | EnumIndirect {numEnum} =>
-	    seq [str "EnumIndirect ", Int.layout numEnum]
-       | EnumIndirectTag {numEnum, numTag} =>
-	    seq [str "EnumIndirectTag",
-		 record [("numEnum", Int.layout numEnum),
-			 ("numTag", Int.layout numTag)]]
-       | IndirectTag {numTag} => seq [str "IndirectTag ", Int.layout numTag]
+	 let
+	    open Layout
+	 in
+	    fn Enum {numEnum} => seq [str "Enum ", Int.layout numEnum]
+	     | EnumDirect {numEnum} =>
+		  seq [str "EnumDirect ", Int.layout numEnum]
+	     | EnumIndirect {numEnum} =>
+		  seq [str "EnumIndirect ", Int.layout numEnum]
+	     | EnumIndirectTag {numEnum, numTag} =>
+		  seq [str "EnumIndirectTag",
+		       record [("numEnum", Int.layout numEnum),
+			       ("numTag", Int.layout numTag)]]
+	     | IndirectTag {numTag} =>
+		  seq [str "IndirectTag ", Int.layout numTag]
+	     | Prim m => Mtype.layout m
+	     | Void => str "Void"
 	 end
       
       val equals =
@@ -61,6 +67,7 @@ structure TyconRep =
 	     EnumIndirectTag {numEnum = n', numTag = t'}) =>
 	    n = n' andalso t = t'
 	   | (IndirectTag {numTag = n}, IndirectTag {numTag = n'}) => n = n'
+	   | (Void, Void) => true
 	   | _ => false
    end
 
@@ -102,25 +109,27 @@ fun compute (Ssa.Program.T {datatypes, ...}) =
 	 Property.getSetOnce (Con.plist, Property.initRaise ("rep", Con.layout))
       val tyconMtype = TyconRep.toMtype o tyconRep
       fun toMtype t =
-	 let datatype z = datatype Type.dest
-	 in case Type.dest t of
-	    Array _ => Mtype.pointer
-	  | Char => Mtype.char
-	  | Datatype c => tyconMtype c
-	  | Int => Mtype.int
-	  | IntInf => Mtype.pointer
-	  | Pointer => Mtype.uint
-	  | PreThread => Mtype.pointer
-	  | Real => Mtype.double
-	  | Ref _ => Mtype.pointer
-	  | String => Mtype.pointer
-	  | Thread => Mtype.pointer
-	  | Tuple ts => if Vector.isEmpty ts
-			   then Mtype.void
-			else Mtype.pointer
-	  | Vector _ => Mtype.pointer
-	  | Word => Mtype.uint
-	  | Word8 => Mtype.char
+	 let
+	    datatype z = datatype Type.dest
+	 in
+	    case Type.dest t of
+	       Array _ => SOME Mtype.pointer
+	     | Char => SOME Mtype.char
+	     | Datatype c => tyconMtype c
+	     | Int => SOME Mtype.int
+	     | IntInf => SOME Mtype.pointer
+	     | Pointer => SOME Mtype.uint
+	     | PreThread => SOME Mtype.pointer
+	     | Real => SOME Mtype.double
+	     | Ref _ => SOME Mtype.pointer
+	     | String => SOME Mtype.pointer
+	     | Thread => SOME Mtype.pointer
+	     | Tuple ts => if Vector.isEmpty ts
+			      then NONE
+			   else SOME Mtype.pointer
+	     | Vector _ => SOME Mtype.pointer
+	     | Word => SOME Mtype.uint
+	     | Word8 => SOME Mtype.char
 	 end
       (* You can't memoize toMtype here because it depends on tyconMtype, which
        * is in the midst of being computed.
@@ -128,13 +137,13 @@ fun compute (Ssa.Program.T {datatypes, ...}) =
       (* Split constructors into those that carry values and those that don't. *)
       fun splitCons cons =
 	 Vector.fold (cons, ([], []), fn ({con, args}, (no, have)) =>
-		      if Vector.forall (args, Mtype.isVoid o toMtype)
+		      if Vector.forall (args, Option.isNone o toMtype)
 			 then (con :: no, have)
 		      else (no, {con = con, args = args} :: have))
       (* Compute a least-fixed-point on tycon representations. *)
       val _ =
 	 Vector.foreach (datatypes, fn Datatype.T {tycon, ...} =>
-			 setTyconRep (tycon, TyconRep.void))
+			 setTyconRep (tycon, TyconRep.Void))
       val _ =
 	 FixedPoint.fix'
 	 (fn continue =>
@@ -147,13 +156,15 @@ fun compute (Ssa.Program.T {datatypes, ...}) =
 	      val old = tyconRep tycon
 	      val new =
 		 case (noArgs, haveArgs) of
-		    ([],     [])           => TyconRep.void
-		  | ([_],    [])           => TyconRep.void
+		    ([],     [])           => TyconRep.Void
+		  | ([_],    [])           => TyconRep.Void
 		  | (_,      [])           => TyconRep.Enum {numEnum = numEnum}
 		  | ([],     [{args, ...}]) =>
 		       (case Vector.length args of
 			   0 => Error.bug "args should be nonempty"
-			 | 1 => TyconRep.Prim (toMtype (Vector.sub (args, 0)))
+			 | 1 => (case toMtype (Vector.sub (args, 0)) of
+				    NONE => TyconRep.Void
+				  | SOME t => TyconRep.Prim t)
 			 | _ => TyconRep.pointer)
 		  | (_,      [{args, ...}]) =>
 		       if (if 1 = Vector.length args
@@ -217,35 +228,42 @@ fun compute (Ssa.Program.T {datatypes, ...}) =
       val _ =
 	 Vector.foreach
 	 (datatypes, fn Datatype.T {tycon, cons} =>
-	  let val (noArgs, haveArgs) = splitCons cons
-	  in case tyconRep tycon of
-	     TyconRep.Prim t =>
-		(case (noArgs, haveArgs) of
-		    ([], []) => ()
-		  | ([con], []) => setConRep (con, ConRep.Void)
-		  | ([], [{con, args}]) => direct (con, args, t)
-		  | _ => Error.bug ("strange TyconRep.Prim for "
-				    ^ Layout.toString (Tycon.layout tycon)))
-	   | TyconRep.Enum _ =>
-		if Tycon.equals (tycon, Tycon.bool)
-		   then (setConRep (Con.falsee, ConRep.Int 0)
-			 ; setConRep (Con.truee, ConRep.Int 1))
-		else List.foreachi (noArgs, fn (i, c) =>
-				    setConRep (c, ConRep.Int i))
-	   | TyconRep.EnumDirect _ =>
-		(enum noArgs
-		 ; (case haveArgs of
-		       [{con, args}] => direct (con, args, Mtype.pointer)
-		     | _ => Error.bug "strange haveArgs for EnumDirect"))
-	   | TyconRep.EnumIndirect _ =>
-		(enum noArgs
-		 ; List.foreach (haveArgs, fn {con, ...} =>
-				 setConRep (con, ConRep.Tuple)))
-	   | TyconRep.EnumIndirectTag _ => (enum noArgs; indirectTag haveArgs)
-	   | TyconRep.IndirectTag _ => indirectTag haveArgs
+	  let
+	     val (noArgs, haveArgs) = splitCons cons
+	  in
+	     case tyconRep tycon of
+		TyconRep.Prim t =>
+		   (case (noArgs, haveArgs) of
+		       ([], []) => ()
+		     | ([con], []) => setConRep (con, ConRep.Void)
+		     | ([], [{con, args}]) => direct (con, args, t)
+		     | _ => Error.bug ("strange TyconRep.Prim for "
+				       ^ Layout.toString (Tycon.layout tycon)))
+	      | TyconRep.Enum _ =>
+		   if Tycon.equals (tycon, Tycon.bool)
+		      then (setConRep (Con.falsee, ConRep.Int 0)
+			    ; setConRep (Con.truee, ConRep.Int 1))
+		   else List.foreachi (noArgs, fn (i, c) =>
+				       setConRep (c, ConRep.Int i))
+	      | TyconRep.EnumDirect _ =>
+		   (enum noArgs
+		    ; (case haveArgs of
+			  [{con, args}] => direct (con, args, Mtype.pointer)
+			| _ => Error.bug "strange haveArgs for EnumDirect"))
+	      | TyconRep.EnumIndirect _ =>
+		   (enum noArgs
+		    ; List.foreach (haveArgs, fn {con, ...} =>
+				    setConRep (con, ConRep.Tuple)))
+	      | TyconRep.EnumIndirectTag _ => (enum noArgs; indirectTag haveArgs)
+	      | TyconRep.IndirectTag _ => indirectTag haveArgs
+	      | TyconRep.Void =>
+		   (case (noArgs, haveArgs) of
+		       ([], []) => ()
+		     | ([con], []) => setConRep (con, ConRep.Void)
+		     | _ => Error.bug "strange TyconRep.Void")
 	  end)
-
-   in {tyconRep = tyconRep,
+   in
+      {tyconRep = tyconRep,
        conRep = conRep,
        toMtype = toMtype}
    end

@@ -44,10 +44,11 @@ signature REPRESENTATION =
 	      * args and adding an integer tag.
 	      *)
 	     | IndirectTag of {numTag: int}
+	     | Void
 
 	    val equals: t * t -> bool
 	    val layout: t -> Layout.t
-	    val toMtype: t -> Mtype.t
+	    val toMtype: t -> Mtype.t option
 	 end
 
       (* How a constructor variant of a datatype is represented. *)
@@ -75,6 +76,6 @@ signature REPRESENTATION =
 	 -> {
 	     tyconRep: Ssa.Tycon.t -> TyconRep.t,
 	     conRep: Ssa.Con.t -> ConRep.t,
-	     toMtype: Ssa.Type.t -> Mtype.t
+	     toMtype: Ssa.Type.t -> Mtype.t option
 	    }
    end

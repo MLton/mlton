@@ -450,8 +450,26 @@ struct
 		       = case entry
 			   of Jump {label}
 			    => near label
-			    | CReturn {label}
-			    => near label
+			    | CReturn {label, dst}
+			    => AppendList.append
+			       (near label,
+				case dst
+				  of NONE => AppendList.empty
+				   | SOME (dst, dstsize)
+				   => (case Size.class dstsize
+					 of Size.INT
+					  => AppendList.single
+					     (x86.Assembly.instruction_mov
+					      {dst = dst,
+					       src = x86MLton.cReturnTempContentsOperand dstsize,
+					       size = dstsize})
+					  | Size.FLT
+					  => AppendList.single
+					     (x86.Assembly.instruction_pfmov
+					      {dst = dst,
+					       src = x86MLton.cReturnTempContentsOperand dstsize,
+					       size = dstsize})
+					  | _ => Error.bug "CReturn"))
 			    | Func {label,...}
 			    => AppendList.append
 			       (AppendList.fromList
@@ -808,10 +826,10 @@ struct
 
 		     val stackTop 
 		       = x86MLton.gcState_stackTopContentsOperand
-		     val stackTopDeref'
-		       = x86MLton.gcState_stackTopDeref
-		     val stackTopDeref
-		       = x86MLton.gcState_stackTopDerefOperand
+		     val stackTopMinusWordDeref'
+		       = x86MLton.gcState_stackTopMinusWordDeref
+		     val stackTopMinusWordDeref
+		       = x86MLton.gcState_stackTopMinusWordDerefOperand
 		     val bytes 
 		       = x86.Operand.immediate_const_int size
 
@@ -834,13 +852,13 @@ struct
 			 dst = stackTop,
 			 src = bytes, 
 			 size = pointerSize},
-			(* *(stackTop) = return *)
+			(* *(stackTop - WORD_SIZE) = return *)
 			x86.Assembly.instruction_mov
-			{dst = stackTopDeref,
+			{dst = stackTopMinusWordDeref,
 			 src = Operand.immediate_label return,
 			 size = pointerSize},
 			x86.Assembly.directive_force
-			{commit_memlocs = MemLocSet.singleton stackTopDeref',
+			{commit_memlocs = MemLocSet.singleton stackTopMinusWordDeref',
 			 commit_classes = ClassSet.empty,
 			 remove_memlocs = MemLocSet.empty,
 			 remove_classes = ClassSet.empty,
@@ -853,16 +871,16 @@ struct
 		   end
 		| Return {live}
 		=> let
-		     val stackTopDeref
-		       = x86MLton.gcState_stackTopDerefOperand
+		     val stackTopMinusWordDeref
+		       = x86MLton.gcState_stackTopMinusWordDerefOperand
 		   in
 		     (* flushing at far transfer *)
 		     (farTransfer live
 		      AppendList.empty
 		      (AppendList.single
-		       (* jmp *(stackTop) *)
+		       (* jmp *(stackTop - WORD_SIZE) *)
 		       (x86.Assembly.instruction_jmp
-			{target = stackTopDeref,
+			{target = stackTopMinusWordDeref,
 			 absolute = true})))
 		   end
 		| Raise {live}
@@ -895,7 +913,7 @@ struct
 			 {target = stackTopDeref,
 			  absolute = true})))
 		    end
-		| Runtime {prim, args, live, return, size}
+		| Runtime {prim, args, return, size}
 		=> let
 		     val _ = enque return
 		     
@@ -909,12 +927,10 @@ struct
 		       = x86MLton.gcState_stackTopContentsOperand
 		     val bytes 
 		       = x86.Operand.immediate_const_int size
-		     val stackTopDeref
-		       = x86MLton.gcState_stackTopDerefOperand
+		     val stackTopMinusWordDeref
+		       = x86MLton.gcState_stackTopMinusWordDerefOperand
 
-		     val liveReturn = x86Liveness.LiveInfo.getLive(liveInfo, return)
-		     val live = MemLocSet.unions [live,
-						  liveReturn]
+		     val live = x86Liveness.LiveInfo.getLive(liveInfo, return)
 
 		     fun default f
 		       = let
@@ -986,9 +1002,9 @@ struct
 			      dst = stackTop,
 			      src = bytes, 
 			      size = pointerSize},
-			     (* *(stackTop) = return *)
+			     (* *(stackTop - WORD_SIZE) = return *)
 			     x86.Assembly.instruction_mov
-			     {dst = stackTopDeref,
+			     {dst = stackTopMinusWordDeref,
 			      src = Operand.immediate_label return,
 			      size = pointerSize},
 			     (* flushing at Runtime *)
@@ -1025,9 +1041,9 @@ struct
 			    (farTransfer MemLocSet.empty
 			     AppendList.empty
 			     (AppendList.single
-			      (* jmp *(stackTop) *)
+			      (* jmp *(stackTop - WORD_SIZE) *)
 			      (x86.Assembly.instruction_jmp
-			       {target = stackTopDeref,
+			       {target = stackTopMinusWordDeref,
 				absolute = true})))]
 			 end
 
@@ -1036,7 +1052,8 @@ struct
 			   val (thread,threadsize)
 			     = case args
 				 of [_, (thread,threadsize)] => (thread,threadsize)
-				  | _ => Error.bug "x86GenerateTransfers::Runtime: args"
+				  | _ => Error.bug 
+				         "x86GenerateTransfers::Runtime: args"
 
 			   val threadTemp
 			     = x86MLton.threadTempContentsOperand
@@ -1079,9 +1096,9 @@ struct
 			      dst = stackTop,
 			      src = bytes, 
 			      size = pointerSize},
-			     (* *(stackTop) = return *)
+			     (* *(stackTop - WORD_SIZE) = return *)
 			     x86.Assembly.instruction_mov
-			     {dst = stackTopDeref,
+			     {dst = stackTopMinusWordDeref,
 			      src = Operand.immediate_label return,
 			      size = pointerSize},
 			     (* flushing at Runtime *)
@@ -1100,16 +1117,11 @@ struct
 			      dead_memlocs = MemLocSet.empty,
 			      dead_classes = threadflushClasses},
 			     (* currentThread->stack->used
-			      *   = stackTop + wordSize - stackBottom
+			      *   = stackTop - stackBottom
 			      *)
 			     Assembly.instruction_mov
 			     {dst = stack_used,
 			      src = stackTop,
-			      size = pointerSize},
-			     Assembly.instruction_binal
-			     {oper = Instruction.ADD,
-			      dst = stack_used,
-			      src = Operand.immediate_const_int x86MLton.wordBytes,
 			      size = pointerSize},
 			     Assembly.instruction_binal
 			     {oper = Instruction.SUB,
@@ -1131,8 +1143,7 @@ struct
 			      dst = stackBottom,
 			      src = Operand.immediate_const_int 8,
 			      size = pointerSize},
-			     (* stackTop
-			      *   = stackBottom + currentThread->stack->used - wordSize
+			     (* stackTop = stackBottom + currentThread->stack->used
 			      *)
 			     Assembly.instruction_mov
 			     {dst = stackTop,
@@ -1142,11 +1153,6 @@ struct
 			     {oper = Instruction.ADD,
 			      dst = stackTop,
 			      src = stack_used,
-			      size = pointerSize},
-			     Assembly.instruction_binal
-			     {oper = Instruction.SUB,
-			      dst = stackTop,
-			      src = Operand.immediate_const_int x86MLton.wordBytes,
 			      size = pointerSize},
 			     (* stackLimit
 			      *   = stackBottom + currentThread->stack->reserved
@@ -1253,9 +1259,9 @@ struct
 			    (farTransfer MemLocSet.empty
 			     AppendList.empty
 			     (AppendList.single
-			      (* jmp *(stackTop) *)
+			      (* jmp *(stackTop - WORD_SIZE) *)
 			      (x86.Assembly.instruction_jmp
-			       {target = stackTopDeref,
+			       {target = stackTopMinusWordDeref,
 				absolute = true}))))
 			 end
 		       
@@ -1271,7 +1277,7 @@ struct
 			| World_save => default "GC_saveWorld"
 			| _ => Error.bug "x86GenerateTransfers::Runtime: prim"
 		   end
-		| CCall {target, args, dst, live, return}
+		| CCall {target, args, return, dstsize}
 		=> let
 		     val {dead, ...}
 		       = livenessTransfer {transfer = transfer,
@@ -1332,7 +1338,7 @@ struct
 		      AppendList.fromList
 		      [(* flushing at Ccall *)
 		       Assembly.directive_force
-		       {commit_memlocs = live,
+		       {commit_memlocs = MemLocSet.empty,
 			commit_classes = ccallflushClasses,
 			remove_memlocs = MemLocSet.empty,
 			remove_classes = ClassSet.empty,
@@ -1349,22 +1355,19 @@ struct
 			remove_classes = ClassSet.empty,
 			dead_memlocs = MemLocSet.empty,
 			dead_classes = ccallflushClasses}],
-		      (case dst
+		      (case dstsize
 			 of NONE => AppendList.empty
-			  | SOME (dst,dstsize) 
-			  => (case Operand.deMemloc dst
-				of NONE => Error.bug "applyFF: dst"
-				 | SOME dst
-				 => (case Size.class dstsize
-				       of Size.INT
-					=> AppendList.single
-					   (Assembly.directive_return
-					    {memloc = dst})
-				        | Size.FLT
-					=> AppendList.single
-					   (Assembly.directive_fltreturn
-					    {memloc = dst})
-				        | _ => Error.bug "applyFF: dstsize"))),
+			  | SOME dstsize
+			  => (case Size.class dstsize
+				of Size.INT
+				 => AppendList.single
+				    (Assembly.directive_return
+				     {memloc = x86MLton.cReturnTempContents dstsize})
+				 | Size.FLT
+				 => AppendList.single
+				    (Assembly.directive_fltreturn
+				     {memloc = x86MLton.cReturnTempContents dstsize})
+			         | _ => Error.bug "CCall")),
 		      (if size_args > 0
 			 then AppendList.single
 			      (Assembly.instruction_binal
@@ -2552,8 +2555,26 @@ struct
 		       = case entry
 			   of Jump {label}
 			    => near label
-			    | CReturn {label}
-			    => near label
+			    | CReturn {label, dst}
+			    => AppendList.append
+			       (near label,
+				case dst
+				  of NONE => AppendList.empty
+				   | SOME (dst, dstsize)
+				   => (case Size.class dstsize
+					 of Size.INT
+					  => AppendList.single
+					     (x86.Assembly.instruction_mov
+					      {dst = dst,
+					       src = x86MLton.cReturnTempContentsOperand dstsize,
+					       size = dstsize})
+					  | Size.FLT
+					  => AppendList.single
+					     (x86.Assembly.instruction_pfmov
+					      {dst = dst,
+					       src = x86MLton.cReturnTempContentsOperand dstsize,
+					       size = dstsize})
+					  | _ => Error.bug "CReturn"))
 			    | Func {label,...}
 			    => AppendList.append
 			       (AppendList.fromList
@@ -3079,10 +3100,10 @@ struct
 
 		     val stackTop 
 		       = x86MLton.gcState_stackTopContentsOperand
-		     val stackTopDeref'
-		       = x86MLton.gcState_stackTopDeref
-		     val stackTopDeref
-		       = x86MLton.gcState_stackTopDerefOperand
+		     val stackTopMinusWordDeref'
+		       = x86MLton.gcState_stackTopMinusWordDeref
+		     val stackTopMinusWordDeref
+		       = x86MLton.gcState_stackTopMinusWordDerefOperand
 		     val bytes 
 		       = x86.Operand.immediate_const_int size
 
@@ -3105,13 +3126,13 @@ struct
 			 dst = stackTop,
 			 src = bytes, 
 			 size = pointerSize},
-			(* *(stackTop) = return *)
+			(* *(stackTop - WORD_SIZE) = return *)
 			x86.Assembly.instruction_mov
-			{dst = stackTopDeref,
+			{dst = stackTopMinusWordDeref,
 			 src = Operand.immediate_label return,
 			 size = pointerSize},
 			x86.Assembly.directive_force
-			{commit_memlocs = MemLocSet.singleton stackTopDeref',
+			{commit_memlocs = MemLocSet.singleton stackTopMinusWordDeref',
 			 commit_classes = ClassSet.empty,
 			 remove_memlocs = MemLocSet.empty,
 			 remove_classes = ClassSet.empty,
@@ -3124,16 +3145,16 @@ struct
 		   end
 		| Return {live}
 		=> let
-		     val stackTopDeref
-		       = x86MLton.gcState_stackTopDerefOperand
+		     val stackTopMinusWordDeref
+		       = x86MLton.gcState_stackTopMinusWordDerefOperand
 		   in
 		     (* flushing at far transfer *)
 		     (farTransfer live
 		      AppendList.empty
 		      (AppendList.single
-		       (* jmp *(stackTop) *)
+		       (* jmp *(stackTop - WORD_SIZE) *)
 		       (x86.Assembly.instruction_jmp
-			{target = stackTopDeref,
+			{target = stackTopMinusWordDeref,
 			 absolute = true})))
 		   end
 		| Raise {live}
@@ -3142,8 +3163,8 @@ struct
 		       = x86MLton.gcState_currentThread_exnStackContentsOperand
 		     val stackTop 
 		       = x86MLton.gcState_stackTopContentsOperand
-		     val stackTopDeref
-		       = x86MLton.gcState_stackTopDerefOperand
+		     val stackTopMinusWordDeref
+		       = x86MLton.gcState_stackTopMinusWordDerefOperand
 		     val stackBottom 
 		       = x86MLton.gcState_stackBottomContentsOperand
 		    in
@@ -3161,12 +3182,12 @@ struct
 			  src = exnStack,
 			  size = pointerSize}])
 		       (AppendList.single
-			(* jmp *(stackTop) *)
+			(* jmp *(stackTop - WORD_SIZE) *)
 			(x86.Assembly.instruction_jmp
-			 {target = stackTopDeref,
+			 {target = stackTopMinusWordDeref,
 			  absolute = true})))
 		    end
-		| Runtime {prim, args, live, return, size}
+		| Runtime {prim, args, return, size}
 		=> let
 		     val _ = enque {source = label, 
 				    target = return}
@@ -3181,12 +3202,10 @@ struct
 		       = x86MLton.gcState_stackTopContentsOperand
 		     val bytes 
 		       = x86.Operand.immediate_const_int size
-		     val stackTopDeref
-		       = x86MLton.gcState_stackTopDerefOperand
+		     val stackTopMinusWordDeref
+		       = x86MLton.gcState_stackTopMinusWordDerefOperand
 
-		     val liveReturn = x86Liveness.LiveInfo.getLive(liveInfo, return)
-		     val live = MemLocSet.unions [live,
-						  liveReturn]
+		     val live = x86Liveness.LiveInfo.getLive(liveInfo, return)
 
 		     fun default f
 		       = let
@@ -3258,9 +3277,9 @@ struct
 			      dst = stackTop,
 			      src = bytes, 
 			      size = pointerSize},
-			     (* *(stackTop) = return *)
+			     (* *(stackTop - WORD_SIZE) = return *)
 			     x86.Assembly.instruction_mov
-			     {dst = stackTopDeref,
+			     {dst = stackTopMinusWordDeref,
 			      src = Operand.immediate_label return,
 			      size = pointerSize},
 			     (* flushing at Runtime *)
@@ -3297,9 +3316,9 @@ struct
 			    (farTransfer MemLocSet.empty
 			     AppendList.empty
 			     (AppendList.single
-			      (* jmp *(stackTop) *)
+			      (* jmp *(stackTop - WORD_SIZE) *)
 			      (x86.Assembly.instruction_jmp
-			       {target = stackTopDeref,
+			       {target = stackTopMinusWordDeref,
 				absolute = true})))]
 			 end
 
@@ -3351,9 +3370,9 @@ struct
 			      dst = stackTop,
 			      src = bytes, 
 			      size = pointerSize},
-			     (* *(stackTop) = return *)
+			     (* *(stackTop - WORD_SIZE) = return *)
 			     x86.Assembly.instruction_mov
-			     {dst = stackTopDeref,
+			     {dst = stackTopMinusWordDeref,
 			      src = Operand.immediate_label return,
 			      size = pointerSize},
 			     (* flushing at Runtime *)
@@ -3525,9 +3544,9 @@ struct
 			    (farTransfer MemLocSet.empty
 			     AppendList.empty
 			     (AppendList.single
-			      (* jmp *(stackTop) *)
+			      (* jmp *(stackTop - WORD_SIZE) *)
 			      (x86.Assembly.instruction_jmp
-			       {target = stackTopDeref,
+			       {target = stackTopMinusWordDeref,
 				absolute = true}))))
 			 end
 		       
@@ -3543,7 +3562,7 @@ struct
 			| World_save => default "GC_saveWorld"
 			| _ => Error.bug "x86GenerateTransfers::Runtime: prim"
 		   end
-		| CCall {target, args, dst, live, return}
+		| CCall {target, args, return, dstsize}
 		=> let
 		     val {dead, ...}
 		       = livenessTransfer {transfer = transfer,
@@ -3604,7 +3623,7 @@ struct
 		      AppendList.fromList
 		      [(* flushing at Ccall *)
 		       Assembly.directive_force
-		       {commit_memlocs = live,
+		       {commit_memlocs = MemLocSet.empty,
 			commit_classes = ccallflushClasses,
 			remove_memlocs = MemLocSet.empty,
 			remove_classes = ClassSet.empty,
@@ -3621,22 +3640,19 @@ struct
 			remove_classes = ClassSet.empty,
 			dead_memlocs = MemLocSet.empty,
 			dead_classes = ccallflushClasses}],
-		      (case dst
+		      (case dstsize
 			 of NONE => AppendList.empty
-			  | SOME (dst,dstsize) 
-			  => (case Operand.deMemloc dst
-				of NONE => Error.bug "applyFF: dst"
-				 | SOME dst
-				 => (case Size.class dstsize
-				       of Size.INT
-					=> AppendList.single
-					   (Assembly.directive_return
-					    {memloc = dst})
-				        | Size.FLT
-					=> AppendList.single
-					   (Assembly.directive_fltreturn
-					    {memloc = dst})
-				        | _ => Error.bug "applyFF: dstsize"))),
+			  | SOME dstsize
+			  => (case Size.class dstsize
+				of Size.INT
+				 => AppendList.single
+				    (Assembly.directive_return
+				     {memloc = x86MLton.cReturnTempContents dstsize})
+				 | Size.FLT
+				 => AppendList.single
+				    (Assembly.directive_fltreturn
+				     {memloc = x86MLton.cReturnTempContents dstsize})
+			         | _ => Error.bug "CCall")),
 		      (if size_args > 0
 			 then AppendList.single
 			      (Assembly.instruction_binal

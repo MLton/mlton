@@ -11,7 +11,11 @@
 	word divTemp;							\
 	struct GC_state gcState;				       	\
 	word c_stackP;							\
+	char cReturnTempB;     						\
+	word cReturnTempL;     						\
+	double cReturnTempD;   						\
 	word limitCheckTemp;						\
+	word gcFirstAuxTemp;						\
 	word arrayAllocateTemp;						\
 	word arrayAllocateLoopTemp;    					\
 	word overflowCheckTemp;						\
@@ -91,7 +95,7 @@ int main(int argc, char **argv) {					\
 		float_Init();						\
 		jump = (pointer)&ml;   					\
 	} else {       							\
-		jump = *(pointer*)gcState.stackTop;			\
+		jump = *(pointer*)(gcState.stackTop - WORD_SIZE); 	\
 	}								\
 	__asm__ __volatile__ 						\
         ("movl %%esp,%0;movl %1,%%eax;movl %2,%%ebp;movl %3,%%esp;jmp *%%eax" \

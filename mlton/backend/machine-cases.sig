@@ -16,8 +16,10 @@ signature MACHINE_CASES =
        | Word of (word * Label.t) list
 
       val fold: t * 'a * (Label.t * 'a -> 'a) -> 'a
+      val forall: t * (Label.t -> bool) -> bool
       val foreach: t * (Label.t -> unit) -> unit
       val layout: t -> Layout.t
+      val length: t -> int
    end
 
 

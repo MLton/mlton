@@ -19,17 +19,16 @@ signature MTYPE =
        | Int
        | Pointer
        | Uint
-       | Void
 
       val align: t * int -> int       (* align an address *)	 
       val all: t list
+      val bool: t (* same as int *)
       val char: t
       val dest: t -> dest
       val double: t
       val equals: t * t -> bool
       val int: t
       val isPointer: t -> bool
-      val isVoid: t -> bool
       val label: t (* same as uint *)
       val layout: t -> Layout.t
       val memo: (t -> 'a) -> (t -> 'a)
@@ -38,6 +37,5 @@ signature MTYPE =
       val size: t -> int (* bytes *)
       val toString: t -> string
       val uint: t
-      val void: t
       val wordAlign: int -> int
    end

@@ -107,7 +107,7 @@ struct
 		      => ()
 		      | Runtime {return, ...}
 		      => (doit'' return)
-		      | CCall {dst, return, ...}
+		      | CCall {return, ...}
 		      => (doit' return)
 		 end)
 
