@@ -220,8 +220,30 @@ GZIP_MAN = false
 endif
 
 .PHONY: install
-install:
-	mkdir -p $(TDOC) $(TLIB) $(TBIN) $(TMAN)
+install: install-docs install-no-docs
+
+.PHONY: install-no-docs
+install-no-docs:
+	mkdir -p $(TLIB) $(TBIN) $(TMAN)
+	$(CP) $(LIB)/. $(TLIB)/
+	sed "/^lib=/s;'.*';'$(prefix)/$(ULIB)';" 			\
+			<$(SRC)/bin/mlton >$(TBIN)/mlton
+	chmod +x $(TBIN)/mlton
+	$(CP) $(BIN)/$(LEX) $(BIN)/$(PROF) $(BIN)/$(YACC) $(TBIN)/
+	( cd $(SRC)/man && tar cf - mllex.1 mlprof.1 mlton.1 mlyacc.1 ) | \
+		( cd $(TMAN)/ && tar xf - )
+	if $(GZIP_MAN); then						\
+		cd $(TMAN) && $(GZIP) mllex.1 mlprof.1 mlton.1		\
+			mlyacc.1;					\
+	fi
+	for f in $(TLIB)/$(AOUT) \
+		$(TBIN)/$(LEX) $(TBIN)/$(PROF) $(TBIN)/$(YACC); do \
+		strip --remove-section=.comment --remove-section=.note $$f; \
+	done
+
+.PHONY: install-docs
+install-docs:
+	mkdir -p $(TDOC)
 	(									\
 		cd $(SRC)/doc &&						\
 		$(CP) changelog cmcat.sml examples license README $(TDOC)/	\
@@ -234,23 +256,8 @@ install:
 	done
 	$(GZIP) -c $(LEX)/$(LEX).ps >$(TDOC)/$(LEX).ps.gz
 	$(GZIP) -c $(YACC)/$(YACC).ps >$(TDOC)/$(YACC).ps.gz
-	$(CP) $(LIB)/. $(TLIB)/
-	sed "/^lib=/s;'.*';'$(prefix)/$(ULIB)';" 			\
-			<$(SRC)/bin/mlton >$(TBIN)/mlton
-	chmod +x $(TBIN)/mlton
-	$(CP) $(BIN)/$(LEX) $(BIN)/$(PROF) $(BIN)/$(YACC) $(TBIN)/
-	( cd $(SRC)/man && tar cf - mllex.1 mlprof.1 mlton.1 mlyacc.1 ) | \
-		( cd $(TMAN)/ && tar xf - )
-	if $(GZIP_MAN); then						\
-		cd $(TMAN) && $(GZIP) mllex.1 mlprof.1 mlton.1		\
-			mlyacc.1;					\
-	fi
 	find $(TDOC)/ -name CVS -type d | xargs rm -rf
 	find $(TDOC)/ -name .cvsignore -type f | xargs rm -rf
-	for f in $(TLIB)/$(AOUT) \
-		$(TBIN)/$(LEX) $(TBIN)/$(PROF) $(TBIN)/$(YACC); do \
-		strip --remove-section=.comment --remove-section=.note $$f; \
-	done
 
 TDOCBASE = $(DESTDIR)$(prefix)/share/doc-base
 
