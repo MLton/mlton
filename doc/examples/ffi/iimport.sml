@@ -74,15 +74,22 @@ structure DynLink :> DYN_LINK =
 	 end
 
       val dlclose = fn hndl =>
-	 let
-	    val res = dlclose hndl
-	 in
-	    if res = 0
-	       then ()
+	 if MLton.Platform.OS = MLton.Platform.Darwin
+	    then ()  (* Darwin reports the following error message if you
+		      * try to close a dynamic library.
+		      *   "dynamic libraries cannot be closed"
+		      * So, we disable dlclose on Darwin.
+		      *)
+	 else
+	    let
+	       val res = dlclose hndl
+	    in
+	       if res = 0
+		  then ()
 	       else raise Fail (case dlerror () of
 				   NONE => "???"
 				 | SOME s => s)
-	 end
+	    end
    end
 
 val dll =
@@ -91,6 +98,7 @@ val dll =
    in
       case host of
 	 Cygwin => "cygwin1.dll"
+       | Darwin => "libm.dylib"
        | _ => "libm.so"
    end
 
