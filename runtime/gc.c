@@ -1053,6 +1053,7 @@ GC_initCounters(GC_state s)
 	s->maxBytesLive = 0;
 	s->numGCs = 0;
 	s->numLCs = 0;
+	s->ramSlop = 0.85;
 	s->savedThread = BOGUS_THREAD;
 	s->signalHandler = BOGUS_THREAD;
 	sigemptyset(&s->signalsHandled);
