@@ -84,7 +84,7 @@ ssh $machine "cd $tmp/runtime && tar cf - *.a" |
 	( cd $lib/$crossTarget && tar xf - )
 ( cd $src &&
 	make TARGET=$crossTarget TARGET_ARCH=$crossArch TARGET_OS=$crossOS \
-		targetmap )
+		mlbpathmap targetmap )
 ( cd $src/runtime && make clean )
 
 exe='print-constants'
