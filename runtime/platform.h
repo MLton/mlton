@@ -180,9 +180,6 @@ enum {
 /*                        Utility libraries                         */
 /* ---------------------------------------------------------------- */
 
-extern bool isBigEndian(void);
-#define MLton_Platform_Arch_bigendian isBigEndian()
-
 string boolToString (bool b);
 void decommit (void *base, size_t length);
 /* issue error message and exit */
@@ -233,6 +230,22 @@ void swriteUint (int fd, uint n);
 Word32 totalRam (GC_state s);
 string uintToCommaString (uint n);
 string ullongToCommaString (ullong n);
+
+static inline bool isBigEndian(void) {
+	union {
+		Word16 x;
+	        Word8 y;
+	} z;
+	
+	/* gcc optimizes the following code to just return the result. */
+	z.x = 0xABCDU;
+	if (z.y == 0xAB) return TRUE; /* big endian */
+	if (z.y == 0xCD) return FALSE; /* little endian */
+	die ("Could not detect endian --- neither big nor little!\n");
+	return 0;
+}
+
+#define MLton_Platform_Arch_bigendian isBigEndian()
 
 /* ---------------------------------------------------------------- */
 /*                         MLton libraries                          */
