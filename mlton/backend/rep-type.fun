@@ -150,15 +150,6 @@ structure Type =
 	    end
 	 fun w i = word (Bits.fromInt i)
       in
-	 val fromCType: CType.t -> t =
-	    fn C.Pointer => w 32
-	     | C.Real32 => real RealSize.R32
-	     | C.Real64 => real RealSize.R64
-	     | C.Word8 => w 8
-	     | C.Word16 => w 16
-	     | C.Word32 => w 32
-	     | C.Word64 => w 64
-
 	 val rec toCType: t -> CType.t =
 	    fn t =>
 	    if isPointer t
@@ -480,6 +471,7 @@ structure BuiltInCFunction =
 	 
       val bug = vanilla {args = Vector.new1 string,
 			 name = "MLton_bug",
+			 prototype = (Vector.new1 CType.pointer, NONE),
 			 return = unit}
 
       local
@@ -503,6 +495,12 @@ structure BuiltInCFunction =
 		   maySwitchThreads = b,
 		   modifiesFrontier = true,
 		   name = "GC_gc",
+		   prototype = let
+				  open CType
+			       in
+				  (Vector.new5 (Pointer, Word32, bool, Pointer, Word32),
+				   NONE)
+			       end,
 		   readsStackTop = true,
 		   return = unit,
 		   writesStackTop = true}

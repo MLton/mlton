@@ -21,7 +21,7 @@ structure Atoms =
 			       structure RealSize = RealSize
 			       structure WordSize = WordSize)
       structure Con = Con ()
-      structure CType = CType ()
+      structure CType = CType (structure WordSize = WordSize)
       structure RealX = RealX (structure RealSize = RealSize)
       structure WordX = WordX (structure WordSize = WordSize)
       structure Func =
@@ -36,7 +36,7 @@ structure Atoms =
 	 end
       structure Const = Const (structure RealX = RealX
 			       structure WordX = WordX)
-      structure CFunction = CFunction ()
+      structure CFunction = CFunction (structure CType = CType)
       structure Prim = Prim (structure CFunction = CFunction
 			     structure CType = CType
 			     structure Con = Con

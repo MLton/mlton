@@ -301,43 +301,31 @@ struct
 
 
   local
-     fun make name size =
-	Label.fromString (concat ["local", name, size])
-     val r = make "Real"
-     val w = make "Word"
-     datatype z = datatype CType.t
+     fun make prefix =
+	let
+	   fun make name size = Label.fromString (concat [prefix, name, size])
+	   val r = make "Real"
+	   val w = make "Word"
+	   datatype z = datatype CType.t
+	in
+	   CType.memo
+	   (fn t =>
+	    case t of
+	       Int8 => w "8"
+	     | Int16 => w "16"
+	     | Int32 => w "32"
+	     | Int64 => w "64"
+	     | Pointer => Label.fromString (concat [prefix, "Pointer"])
+	     | Real32 => r "32"
+	     | Real64 => r "64"
+	     | Word8 => w "8"
+	     | Word16 => w "16"
+	     | Word32 => w "32"
+	     | Word64 => w "64")
+	end
   in
-     val local_base =
-	CType.memo
-	(fn t =>
-	 case t of
-	    Pointer => Label.fromString "localPointer"
-	  | Real32 => r "32"
-	  | Real64 => r "64"
-	  | Word8 => w "8"
-	  | Word16 => w "16"
-	  | Word32 => w "32"
-	  | Word64 => w "64")
-  end
-
-  local
-     fun make name size =
-	Label.fromString (concat ["global", name, size])
-     val r = make "Real"
-     val w = make "Word"
-    datatype z = datatype CType.t
-  in
-     val global_base =
-	CType.memo
-	(fn t =>
-	 case t of
-	    Pointer => Label.fromString "globalPointer"
-	  | Real32 => r "32"
-	  | Real64 => r "64"
-	  | Word8 => w "8"
-	  | Word16 => w "16"
-	  | Word32 => w "32"
-	  | Word64 => w "64")
+     val local_base = make "local"
+     val global_base = make "global"
   end
 
   val globalPointerNonRoot_base = Label.fromString "globalPointerNonRoot"

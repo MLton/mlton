@@ -160,6 +160,7 @@ fun insertFunction (f: Function.t,
 				     maySwitchThreads = false,
 				     modifiesFrontier = false,
 				     name = "MLton_allocTooLarge",
+				     prototype = (Vector.new0 (), NONE),
 				     readsStackTop = false,
 				     return = Type.unit,
 				     writesStackTop = false}

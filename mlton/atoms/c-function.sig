@@ -9,6 +9,7 @@ type int = Int.t
    
 signature C_FUNCTION_STRUCTS = 
    sig
+      structure CType: C_TYPE
    end
 
 signature C_FUNCTION = 
@@ -38,6 +39,7 @@ signature C_FUNCTION =
 			     maySwitchThreads: bool,
 			     modifiesFrontier: bool,
 			     name: string,
+			     prototype: CType.t vector * CType.t option,
 			     readsStackTop: bool,
 			     return: 'a,
 			     writesStackTop: bool}
@@ -58,5 +60,6 @@ signature C_FUNCTION =
       val writesStackTop: 'a t -> bool
       val vanilla: {args: 'a vector,
 		    name: string,
+		    prototype: CType.t vector * CType.t option,
 		    return: 'a} -> 'a t
    end

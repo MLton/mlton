@@ -7,6 +7,7 @@
 
 signature C_TYPE_STRUCTS = 
    sig
+      structure WordSize: WORD_SIZE
    end
 
 signature C_TYPE = 
@@ -14,7 +15,11 @@ signature C_TYPE =
       include C_TYPE_STRUCTS
 
       datatype t =
-	 Pointer
+	 Int8
+       | Int16
+       | Int32
+       | Int64
+       | Pointer
        | Real32
        | Real64
        | Word8
@@ -28,7 +33,7 @@ signature C_TYPE =
       val char: t
       val equals: t * t -> bool
       val memo: (t -> 'a) -> t -> 'a
-      (* name: R{32,64} W{8,16,32,64} *)
+      (* name: I{8,16,32,64} R{32,64} W{8,16,32,64} *)
       val name: t -> string
       val layout: t -> Layout.t
       val pointer: t
@@ -36,4 +41,5 @@ signature C_TYPE =
       val size: t -> Bytes.t
       val thread: t
       val toString: t -> string
+      val word: WordSize.t * {signed: bool} -> t
    end

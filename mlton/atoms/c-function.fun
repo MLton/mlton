@@ -24,6 +24,7 @@ datatype 'a t = T of {args: 'a vector,
 		      maySwitchThreads: bool,
 		      modifiesFrontier: bool,
 		      name: string,
+		      prototype: CType.t vector * CType.t option,
 		      readsStackTop: bool,
 		      return: 'a,
 		      writesStackTop: bool}
@@ -63,8 +64,8 @@ end
 fun equals (f, f') = name f = name f'
 
 fun map (T {args, bytesNeeded, convention, ensuresBytesFree, mayGC,
-	    maySwitchThreads, modifiesFrontier, name, readsStackTop, return,
-	    writesStackTop},
+	    maySwitchThreads, modifiesFrontier, name, prototype, readsStackTop,
+	    return, writesStackTop},
 	 f) =
    T {args = Vector.map (args, f),
       bytesNeeded = bytesNeeded,
@@ -74,6 +75,7 @@ fun map (T {args, bytesNeeded, convention, ensuresBytesFree, mayGC,
       maySwitchThreads = maySwitchThreads,
       modifiesFrontier = modifiesFrontier,
       name = name,
+      prototype = prototype,
       readsStackTop = readsStackTop,
       return = f return,
       writesStackTop = writesStackTop}
@@ -94,7 +96,7 @@ fun isOk (T {ensuresBytesFree, mayGC, maySwitchThreads, modifiesFrontier,
 		     andalso readsStackTop andalso writesStackTop)
 	    else true)
 
-fun vanilla {args, name, return} =
+fun vanilla {args, name, prototype, return} =
    T {args = args,
       bytesNeeded = NONE,
       convention = Convention.Cdecl,
@@ -103,6 +105,7 @@ fun vanilla {args, name, return} =
       maySwitchThreads = false,
       modifiesFrontier = false,
       name = name,
+      prototype = prototype,
       readsStackTop = false,
       return = return,
       writesStackTop = false}

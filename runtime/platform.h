@@ -306,7 +306,7 @@ Pointer IntInf_xorb (Pointer lhs, Pointer rhs, uint bytes);
 
 Word IntInf_smallMul (Word lhs, Word rhs, Pointer carry);
 Int IntInf_compare (Pointer lhs, Pointer rhs);
-Int IntInf_equal (Pointer lhs, Pointer rhs);
+Bool IntInf_equal (Pointer lhs, Pointer rhs);
 
 /* ------------------------------------------------- */
 /*                      Itimer                       */

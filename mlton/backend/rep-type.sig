@@ -69,7 +69,6 @@ signature REP_TYPE =
       val defaultWord: t
       val equals: t * t -> bool
       val exnStack: t
-      val fromCType: CType.t -> t
       val gcState: t
       val intInf: t
       val isCPointer: t -> bool

@@ -17,7 +17,7 @@ structure CFunction =
       end
 
       local
-	 fun make {args, name} =
+	 fun make {args, name, prototype} =
 	    T {args = args,
 	       bytesNeeded = NONE,
 	       convention = Convention.Cdecl,
@@ -26,19 +26,23 @@ structure CFunction =
 	       maySwitchThreads = false,
 	       modifiesFrontier = false,
 	       name = name,
+	       prototype = (prototype, NONE),
 	       readsStackTop = true,
 	       return = unit,
 	       writesStackTop = false}
       in
 	 val profileEnter =
 	    make {args = Vector.new1 gcState,
-		  name = "GC_profileEnter"}
+		  name = "GC_profileEnter",
+		  prototype = Vector.new1 CType.Pointer}
 	 val profileInc =
 	    make {args = Vector.new2 (gcState, Word32),
-		  name = "GC_profileInc"}
+		  name = "GC_profileInc",
+		  prototype = Vector.new2 (CType.Pointer, CType.Word32)}
 	 val profileLeave =
 	    make {args = Vector.new1 gcState,
-		  name = "GC_profileLeave"}
+		  name = "GC_profileLeave",
+		  prototype = Vector.new1 CType.Pointer}
       end
    end
 

@@ -61,6 +61,11 @@ structure CFunction =
 	    maySwitchThreads = false,
 	    modifiesFrontier = true,
 	    name = "GC_copyCurrentThread",
+	    prototype = let
+			   open CType
+			in
+			   (Vector.new1 Pointer, NONE)
+			end,
 	    readsStackTop = true,
 	    return = unit,
 	    writesStackTop = true}
@@ -74,6 +79,11 @@ structure CFunction =
 	    maySwitchThreads = false,
 	    modifiesFrontier = true,
 	    name = "GC_copyThread",
+	    prototype = let
+			   open CType
+			in
+			   (Vector.new2 (Pointer, Pointer), SOME Pointer)
+			end,
 	    readsStackTop = true,
 	    return = Type.thread,
 	    writesStackTop = true}
@@ -87,6 +97,11 @@ structure CFunction =
 	    maySwitchThreads = false,
 	    modifiesFrontier = true,
 	    name = "MLton_exit",
+	    prototype = let
+			   open CType
+			in
+			   (Vector.new1 Word32, NONE)
+			end,
 	    readsStackTop = true,
 	    return = unit,
 	    writesStackTop = true}
@@ -100,6 +115,12 @@ structure CFunction =
 	    maySwitchThreads = false,
 	    modifiesFrontier = true,
 	    name = "GC_arrayAllocate",
+	    prototype = let
+			   open CType
+			in
+			   (Vector.new4 (Pointer, Word32, Word32, Word32),
+			    SOME Pointer)
+			end,
 	    readsStackTop = true,
 	    return = return,
 	    writesStackTop = true}
@@ -114,6 +135,11 @@ structure CFunction =
 	       maySwitchThreads = false,
 	       modifiesFrontier = true,
 	       name = name,
+	       prototype = let
+			      open CType
+			   in
+			      (Vector.new1 Pointer, NONE)
+			   end,
 	       readsStackTop = true,
 	       return = unit,
 	       writesStackTop = true}
@@ -131,6 +157,11 @@ structure CFunction =
 	    maySwitchThreads = true,
 	    modifiesFrontier = true,
 	    name = "Thread_returnToC",
+	    prototype = let
+			   open CType
+			in
+			   (Vector.new0 (), NONE)
+			end,
 	    readsStackTop = true,
 	    return = unit,
 	    writesStackTop = true}
@@ -144,6 +175,11 @@ structure CFunction =
 	    maySwitchThreads = true,
 	    modifiesFrontier = true,
 	    name = "Thread_switchTo",
+	    prototype = let
+			   open CType
+			in
+			   (Vector.new2 (Pointer, Word32), NONE)
+			end,
 	    readsStackTop = true,
 	    return = unit,
 	    writesStackTop = true}
@@ -151,11 +187,21 @@ structure CFunction =
       fun weakCanGet t =
 	 vanilla {args = Vector.new1 t,
 		  name = "GC_weakCanGet",
+		  prototype = let
+				 open CType
+			      in
+				 (Vector.new1 Pointer, SOME bool)
+			      end,
 		  return = Type.bool}
 	 
       fun weakGet {arg, return} =
 	 vanilla {args = Vector.new1 arg,
 		  name = "GC_weakGet",
+		  prototype = let
+				 open CType
+			      in
+				 (Vector.new1 Pointer, SOME Pointer)
+			      end,
 		  return = return}
 		  
       fun weakNew {arg, return} =
@@ -167,7 +213,12 @@ structure CFunction =
 	    maySwitchThreads = false,
 	    modifiesFrontier = true,
 	    name = "GC_weakNew",
-	    readsStackTop = true,
+	    prototype = let
+			   open CType
+			in
+			   (Vector.new3 (Pointer, Word32, Pointer), SOME Pointer)
+			end,
+            readsStackTop = true,
 	    return = return,
 	    writesStackTop = true}
 
@@ -180,6 +231,11 @@ structure CFunction =
 	    maySwitchThreads = false,
 	    modifiesFrontier = true,
 	    name = "GC_saveWorld",
+	    prototype = let
+			   open CType
+			in
+			   (Vector.new2 (Pointer, Word32), NONE)
+			end,
 	    readsStackTop = true,
 	    return = unit,
 	    writesStackTop = true}
@@ -187,11 +243,21 @@ structure CFunction =
       fun share t =
 	 vanilla {args = Vector.new1 t,
 		  name = "MLton_share",
+		  prototype = let
+				 open CType
+			      in
+				 (Vector.new1 Pointer, NONE)
+			      end,
 		  return = unit}
 
       fun size t =
 	 vanilla {args = Vector.new1 t,
 		  name = "MLton_size",
+		  prototype = let
+				 open CType
+			      in
+				 (Vector.new1 Pointer, SOME Word32)
+			      end,
 		  return = Word32}
    end
 
@@ -207,9 +273,13 @@ structure Name =
 	    val name = toString n
 	    val word = Type.word o WordSize.bits
 	    val vanilla = CFunction.vanilla
-	    fun coerce (t1, t2) =
+	    fun coerce (t1, t2, sg) =
 	       vanilla {args = Vector.new1 t1,
 			name = name,
+			prototype = (Vector.new1
+				     (CType.word
+				      (WordSize.fromBits (Type.width t1), sg)),
+				     SOME (Type.toCType t2)),
 			return = t2}
 	    fun intInfBinary () =
 	       CFunction.T {args = Vector.new3 (Type.intInf, Type.intInf,
@@ -221,6 +291,12 @@ structure Name =
 			    maySwitchThreads = false,
 			    modifiesFrontier = true,
 			    name = name,
+			    prototype = let
+					   open CType
+					in
+					   (Vector.new3 (Pointer, Pointer, Word32),
+					    SOME Pointer)
+					end,
 			    readsStackTop = false,
 			    return = Type.intInf,
 			    writesStackTop = false}
@@ -235,6 +311,12 @@ structure Name =
 			    maySwitchThreads = false,
 			    modifiesFrontier = true,
 			    name = name,
+			    prototype = let
+					   open CType
+					in
+					   (Vector.new3 (Pointer, Word32, Word32),
+					    SOME Pointer)
+					end,
 			    readsStackTop = false,
 			    return = Type.intInf,
 			    writesStackTop = false}
@@ -249,6 +331,12 @@ structure Name =
 			    maySwitchThreads = false,
 			    modifiesFrontier = true,
 			    name = name,
+			    prototype = let
+					   open CType
+					in
+					   (Vector.new3 (Pointer, Word32, Word32),
+					    SOME Pointer)
+					end,
 			    readsStackTop = false,
 			    return = Type.string,
 			    writesStackTop = false}
@@ -261,28 +349,56 @@ structure Name =
 			    maySwitchThreads = false,
 			    modifiesFrontier = true,
 			    name = name,
+			    prototype = let
+					   open CType
+					in
+					   (Vector.new2 (Pointer, Word32),
+					    SOME Pointer)
+					end,
 			    readsStackTop = false,
 			    return = Type.intInf,
 			    writesStackTop = false}
-	    fun wordBinary s =
+	    fun wordBinary (s, sg) =
 	       let
 		  val t = word s
 	       in
 		  vanilla {args = Vector.new2 (t, t),
 			   name = name,
+			   prototype = let
+					  val t = CType.word (s, sg)
+				       in
+					  (Vector.new2 (t, t), SOME t)
+				       end,
 			   return = t}
 	       end
-	    fun wordCompare s =
+	    fun wordCompare (s, sg) =
 	       vanilla {args = Vector.new2 (word s, word s),
 			name = name,
+			prototype = let
+				       val t = CType.word (s, sg)
+				    in
+				       (Vector.new2 (t, t), SOME CType.bool)
+				    end,
 			return = Type.bool}
-	    fun wordShift s =
+	    fun wordShift (s, sg) =
 	       vanilla {args = Vector.new2 (word s, Type.defaultWord),
 			name = name,
+			prototype = let
+				       open CType
+				    in
+				       (Vector.new2 (word (s, sg), Word32),
+					SOME bool)
+				    end,
 			return = word s}
 	    fun wordUnary s =
 	       vanilla {args = Vector.new1 (word s),
 			name = name,
+			prototype = let
+				       open CType
+				       val t = word (s, {signed = false})
+				    in
+				       (Vector.new1 t, SOME t)
+				    end,
 			return = word s}
 	 in
 	    case n of
@@ -292,10 +408,22 @@ structure Name =
 	     | IntInf_compare => 
 		  vanilla {args = Vector.new2 (Type.intInf, Type.intInf),
 			   name = name,
+			   prototype = let
+					  open CType
+				       in
+					  (Vector.new2 (Pointer, Pointer),
+					   SOME Int32)
+				       end,
 			   return = Type.defaultWord}
 	     | IntInf_equal =>
 		  vanilla {args = Vector.new2 (Type.intInf, Type.intInf),
 			   name = name,
+			   prototype = let
+					  open CType
+				       in
+					  (Vector.new2 (Pointer, Pointer),
+					   SOME bool)
+				       end,
 			   return = Type.bool}
 	     | IntInf_gcd => intInfBinary ()
 	     | IntInf_lshift => intInfShift ()
@@ -310,30 +438,31 @@ structure Name =
 	     | IntInf_xorb => intInfBinary ()
 	     | MLton_bug => CFunction.bug
 	     | Thread_returnToC => CFunction.returnToC
-	     | Word_add s => wordBinary s
-	     | Word_andb s => wordBinary s
-	     | Word_equal s => wordCompare s
-	     | Word_ge (s, _) => wordCompare s
-	     | Word_gt (s, _) => wordCompare s
-	     | Word_le (s, _) => wordCompare s
-	     | Word_lshift s => wordShift s
-	     | Word_lt (s, _) => wordCompare s
-	     | Word_mul (s, _) => wordBinary s
+	     | Word_add s => wordBinary (s, {signed = false})
+	     | Word_andb s => wordBinary (s, {signed = false})
+	     | Word_equal s => wordCompare (s, {signed = false})
+	     | Word_ge z => wordCompare z
+	     | Word_gt z => wordCompare z
+	     | Word_le z => wordCompare z
+	     | Word_lshift s => wordShift (s, {signed = false})
+	     | Word_lt z => wordCompare z
+	     | Word_mul z => wordBinary z
 	     | Word_neg s => wordUnary s
 	     | Word_notb s => wordUnary s
-	     | Word_orb s => wordBinary s
-	     | Word_quot (s, _) => wordBinary s
-	     | Word_rem (s, _) => wordBinary s
-	     | Word_rol s => wordShift s
-	     | Word_ror s => wordShift s
-	     | Word_rshift (s, _) => wordShift s
-	     | Word_sub s => wordBinary s
-	     | Word_toReal (s1, s2, _) =>
-		  coerce (Type.word (WordSize.bits s1), Type.real s2)
-	     | Word_toWord (s1, s2, _) =>
+	     | Word_orb s => wordBinary (s, {signed = false})
+	     | Word_quot z => wordBinary z
+	     | Word_rem z => wordBinary z
+	     | Word_rol s => wordShift (s, {signed = false})
+	     | Word_ror s => wordShift (s, {signed = false})
+	     | Word_rshift z => wordShift z
+	     | Word_sub s => wordBinary (s, {signed = false})
+	     | Word_toReal (s1, s2, sg) =>
+		  coerce (Type.word (WordSize.bits s1), Type.real s2, sg)
+	     | Word_toWord (s1, s2, sg) =>
 		  coerce (Type.word (WordSize.bits s1),
-			  Type.word (WordSize.bits s2))
-	     | Word_xorb s => wordBinary s
+			  Type.word (WordSize.bits s2),
+			  sg)
+	     | Word_xorb s => wordBinary (s, {signed = false})
 	     | _ => raise Fail "cFunctionRaise"
 	 end
 

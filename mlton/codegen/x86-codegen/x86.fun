@@ -126,7 +126,11 @@ struct
       in
 	 fun fromCType t =
 	    case t of
-	       Pointer => Vector.new1 LONG
+	       Int8 => Vector.new1 BYTE
+	     | Int16 => Vector.new1 WORD
+	     | Int32 => Vector.new1 LONG
+	     | Int64 => Vector.new2 (LONG, LONG)
+	     | Pointer => Vector.new1 LONG
 	     | Real32 => Vector.new1 SNGL
 	     | Real64 => Vector.new1 DBLE
 	     | Word8 => Vector.new1 BYTE
@@ -667,7 +671,11 @@ struct
       in
 	 fun fromCType t =
 	    case t of
-	       Pointer => Four
+	       Int8 => One
+	     | Int16 => Two
+	     | Int32 => Four
+	     | Int64 => Eight
+	     | Pointer => Four
 	     | Real32 => Four
 	     | Real64 => Eight
 	     | Word8 => One
@@ -1394,23 +1402,32 @@ struct
 	    if RepType.isUnit ty
 	       then []
 	    else
-	       case RepType.toCType ty of
-		  Pointer => [{src = register Register.eax,
-			       dst = cReturnTempContent (0, LONG)}]
-		| Real32 => [{src = fltregister FltRegister.top,
-			      dst = cReturnTempContent (0, SNGL)}]
-		| Real64 => [{src = fltregister FltRegister.top,
-			      dst = cReturnTempContent (0, DBLE)}]
-		| Word8 => [{src = register Register.al,
-			     dst = cReturnTempContent (0, BYTE)}]
-		| Word16 => [{src = register Register.ax,
-			      dst = cReturnTempContent (0, WORD)}]
-		| Word32 => [{src = register Register.eax,
-			      dst = cReturnTempContent (0, LONG)}]
-		| Word64 => [{src = register Register.eax,
-			      dst = cReturnTempContent (0, LONG)},
-			     {src = register Register.edx,
-			      dst = cReturnTempContent (4, LONG)}]
+	       let
+		  fun w (r, s) =
+		     [{src = register r, dst = cReturnTempContent (0, s)}]
+		  val w8 = w (Register.al, BYTE)
+		  val w16 = w (Register.ax, WORD)
+		  val w32 = w (Register.eax, LONG)
+		  val w64 =[{src = register Register.eax,
+			     dst = cReturnTempContent (0, LONG)},
+			    {src = register Register.edx,
+			     dst = cReturnTempContent (4, LONG)}]
+	       in
+		  case RepType.toCType ty of
+		     Int8 => w8
+		   | Int16 => w16
+		   | Int32 => w32
+		   | Int64 => w64
+		   | Pointer => w32
+		   | Real32 => [{src = fltregister FltRegister.top,
+				 dst = cReturnTempContent (0, SNGL)}]
+		   | Real64 => [{src = fltregister FltRegister.top,
+				 dst = cReturnTempContent (0, DBLE)}]
+		   | Word8 => w8
+		   | Word16 => w16
+		   | Word32 => w32
+		   | Word64 => w64
+	       end
       end
     end
 

@@ -40,24 +40,26 @@ structure CFunction =
    struct
       open CFunction
 	 
-      fun prototype (T {args, convention, name, return, ...}) =
+      fun prototype (T {convention, name, prototype = (args, return), ...}) =
 	 let
+	    val attributes =
+	       if convention <> Convention.Cdecl
+		  then concat [" __attribute__ ((",
+			       Convention.toString convention,
+			       ")) "]
+	       else " "
 	    val c = Counter.new 0
-	    fun arg t = concat [CType.toString (Type.toCType t),
-				" x", Int.toString (Counter.next c)]
+	    fun arg t =
+	       concat [CType.toString t, " x", Int.toString (Counter.next c)]
+	    val return =
+	       case return of
+		  NONE => "void"
+		| SOME t => CType.toString t
 	 in
 	    concat
-	    [if Type.isUnit return
-		then "void"
-	     else CType.toString (Type.toCType return),
-		if convention <> Convention.Cdecl
-		   then concat [" __attribute__ ((",
-				Convention.toString convention,
-				")) "]
-		else " ",
-		   name, " (",
-		   concat (List.separate (Vector.toListMap (args, arg), ", ")),
-		   ")"]
+	    [return, attributes, name,
+	     " (", concat (List.separate (Vector.toListMap (args, arg), ", ")),
+	     ")"]
 	 end
    end
 

@@ -652,10 +652,9 @@ structure Type =
 
       val nullary: (string * CType.t * Tycon.t) list =
 	 let
-	    fun sized (tycon: Bits.t -> Tycon.t) =
+	    fun sized (tycon: Bits.t -> Tycon.t, ctypes) =
 	       List.map
-	       ([CType.Word8, CType.Word16, CType.Word32, CType.Word64],
-		fn cty =>
+	       (ctypes, fn cty =>
 		let
 		   val c = tycon (Bytes.toBits (CType.size cty))
 		   val s = Tycon.toString c
@@ -675,10 +674,20 @@ structure Type =
 	     ("Char", CType.char, Tycon.char),
 	     ("Pointer", CType.preThread, Tycon.preThread),
 	     ("Thread", CType.thread, Tycon.thread)]
-	    @ sized (Tycon.int o IntSize.I)
+	    @ sized (Tycon.int o IntSize.I,
+		     let
+			open CType
+		     in
+			[Int8, Int16, Int32, Int64]
+		     end)
 	    @ [("Real32", CType.Real32, Tycon.real RealSize.R32),
 	       ("Real64", CType.Real64, Tycon.real RealSize.R64)]
-	    @ sized (Tycon.word o WordSize.fromBits)
+	    @ sized (Tycon.word o WordSize.fromBits,
+		     let
+			open CType
+		     in
+			[Word8, Word16, Word32, Word64]
+		     end)
 	 end
 
       val nullary =
@@ -812,6 +821,8 @@ fun import {attributes: Attribute.t list,
 			       mayGC = true,
 			       maySwitchThreads = false,
 			       name = name,
+			       prototype = (Vector.map (args, #ctype),
+					    Option.map (result, #ctype)),
 			       readsStackTop = true,
 			       return = (case result of
 					    NONE => Type.unit

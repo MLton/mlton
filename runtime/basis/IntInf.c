@@ -330,7 +330,7 @@ Int IntInf_compare (pointer lhs, pointer rhs) {
 /*
  * Check if two IntInf.int's are equal.
  */
-Int IntInf_equal (pointer lhs, pointer rhs) {
+Bool IntInf_equal (pointer lhs, pointer rhs) {
 	if (lhs == rhs)
 		return TRUE;
 	if (eitherIsSmall (lhs, rhs))

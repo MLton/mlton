@@ -42,14 +42,15 @@ signature ATOMS' =
       structure WordX: WORD_X
 
       sharing CFunction = Ffi.CFunction = Prim.CFunction
-      sharing CType = Ffi.CType = Prim.CType 
+      sharing CType = CFunction.CType = Ffi.CType = Prim.CType 
       sharing Con = Prim.Con
       sharing Const = Prim.Const
       sharing IntSize = Tycon.IntSize
       sharing RealSize = Prim.RealSize = RealX.RealSize = Tycon.RealSize
       sharing RealX = Const.RealX
       sharing SourceInfo = ProfileExp.SourceInfo
-      sharing WordSize = Prim.WordSize = Tycon.WordSize = WordX.WordSize
+      sharing WordSize = CType.WordSize = Prim.WordSize = Tycon.WordSize
+	 = WordX.WordSize
       sharing WordX = Const.WordX
    end
 
