@@ -12,8 +12,11 @@ val pointerSize = wordSize
  * must agree with runtime/gc.h.
  *)
 
-val pointerBits: int = 15
-val nonPointerBits: int = 15
+val arrayTag: word =  0wx00000000
+val normalTag: word = 0wx80000000
+val pointerBits: int = 14
+val nonPointerBits: int = 14
+val nonPointersShift: int = pointerBits
 
 fun make (p', np') =
    let
@@ -30,6 +33,15 @@ in
       f (numPointers, numWordsNonPointers)
 end
 
+fun objectHeader (z as {numPointers, numWordsNonPointers})  =
+   let
+      val _ = Assert.assert ("objectHeader", fn () => isValidObjectHeader z)
+      open Word
+   in
+      orb (orb (normalTag, fromInt numPointers),
+	   << (fromInt numWordsNonPointers, fromInt nonPointersShift))
+   end
+
 fun objectSize {numPointers, numWordsNonPointers} =
    wordSize * (numPointers + numWordsNonPointers)
 
@@ -44,6 +56,15 @@ in
 	       else numPointers = 0)
       andalso f (numPointers, numBytesNonPointers)
 end
+
+fun arrayHeader (z as {numBytesNonPointers, numPointers}) =
+   let
+      val _ = Assert.assert ("arrayHeader", fn () => isValidArrayHeader z)
+      open Word
+   in
+      orb (orb (arrayTag, fromInt numPointers),
+	   << (fromInt numBytesNonPointers, fromInt nonPointersShift))
+   end
    
 fun isWordAligned (n: int): bool =
    0 = Int.rem (n, wordSize)

@@ -5,19 +5,23 @@ signature RUNTIME =
    sig
       (* All sizes are in bytes, unless they explicitly say "pointers". *)
 
+      val arrayHeader: {numBytesNonPointers: int,
+			numPointers: int} -> word
       val arrayHeaderSize: int
       val isValidObjectHeader: {numPointers: int,
 				numWordsNonPointers: int} -> bool
-      (* objectSize does not include the header. *)
-      val objectSize: {numPointers: int,
-		       numWordsNonPointers: int} -> int
       val isValidArrayHeader: {numBytesNonPointers: int,
 			       numPointers: int} -> bool
       val labelSize: int
       (* Same as LIMIT_SLOP from gc.c. *)
       val limitSlop: int
       val maxFrameSize: int
+      val objectHeader: {numPointers: int,
+			 numWordsNonPointers: int} -> word
       val objectHeaderSize: int
+      (* objectSize does not include the header. *)
+      val objectSize: {numPointers: int,
+		       numWordsNonPointers: int} -> int
       val pointerSize: int
       val wordSize: int
    end

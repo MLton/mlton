@@ -15,25 +15,6 @@
 #include <values.h>
 
 #define METER FALSE  /* Displays distribution of object sizes at program exit. */
-/* 
- * Object headers.
- *
- * bit 31 == 1
- *   normal object
- * bit 31 == 0
- *   bit 29 == 0
- *     array
- *   bit 29 == 1
- *     bit 28 == 0
- *       stack
- *     bit 28 == 1
- *       cont
- *
- * The only difference between conts and stacks is that the former has 
- *   used == reserved.
- *
- * bit 30 is used as a mark bit.  For now, it is only used in GC_size.
- */
 
 /* The mutator should maintain the invariants
  *
@@ -49,14 +30,14 @@ enum {
 	BOGUS_EXN_STACK = 0xFFFFFFFF,
 	BOGUS_POINTER = 0x1,
 	DEBUG = FALSE,
+	DEBUG_DETAILED = FALSE,
 	FORWARDED = 0xFFFFFFFF,
 	HEADER_SIZE = WORD_SIZE,
 	LIMIT_SLOP = 512,
-	STACK_HEADER = 0x30000000,
-	CONT_HEADER = 0x20000000,
 	STACK_HEADER_SIZE = WORD_SIZE,
 };
 
+#define STACK_HEADER STACK_TAG
 #define BOGUS_THREAD (GC_thread)BOGUS_POINTER
 #define STRING_HEADER GC_arrayHeader(1, 0)
 #define WORD8_VECTOR_HEADER GC_arrayHeader(1, 0)
@@ -64,21 +45,12 @@ enum {
 
 static void leave(GC_state s);
 
-static inline void splitHeader(word header, uint *numPointers, 
-				uint *numNonPointers) {
-	*numPointers = header & ONES(POINTER_BITS);
-	*numNonPointers = 
-		(header >> NON_POINTERS_SHIFT) & ONES(NON_POINTER_BITS);
-}
-
-static inline bool isNormal(word header) {
-	return header & HIGH_BIT;
-}
-
-static inline bool isStackOrContHeader(word header) {
-	assert(not(isNormal(header)));
-	return header & 0x20000000;
-}
+#define SPLIT_HEADER()								\
+	do {									\
+		tag = header & TAG_MASK;					\
+		numNonPointers = (header & NON_POINTER_MASK) >> POINTER_BITS;	\
+		numPointers = header & POINTER_MASK;				\
+	} while (0)
 
 static inline uint toBytes(uint n) {
 	return n << 2;
@@ -297,11 +269,11 @@ stackTopIsOk(GC_state s, GC_stack stack)
 }
 
 static inline GC_stack
-newStack(GC_state s, word header, uint size)
+newStack(GC_state s, uint size)
 {
 	GC_stack stack;
 
-	stack = (GC_stack)object(s, header, stackBytes(size));
+	stack = (GC_stack)object(s, STACK_HEADER, stackBytes(size));
 	stack->reserved = size;
 	stack->used = 0;
 	return stack;
@@ -377,12 +349,12 @@ computeSemiSize(GC_state s, uint live, uint used, int try)
 }
 
 /* ------------------------------------------------- */
-/*               extractArrayNumBytes                */
+/*                    arrayNumBytes                  */
 /* ------------------------------------------------- */
 
 /* The number of bytes in an array, not including the header. */
 static inline uint
-extractArrayNumBytes(pointer p, 
+arrayNumBytes(pointer p, 
 		     uint numPointers,
 		     uint numNonPointers)
 {
@@ -433,18 +405,22 @@ GC_foreachPointerInObject(GC_state s, GC_pointerFun f, pointer p)
 	word header;
 	uint numPointers;
 	uint numNonPointers;
+	uint tag;
 
 	header = GC_getHeader(p);
-	if (isNormal(header)) { /* It's a normal object. */
+	SPLIT_HEADER();
+	if (DEBUG_DETAILED)
+		fprintf(stderr, "foreachPointerInObject p = %x  header = %x  tag = %x  numNonPointers = %d  numPointers = %d\n", 
+			(uint)p, header, tag, numPointers, numNonPointers);
+	if (NORMAL_TAG == tag) { /* It's a normal object. */
 		pointer max;
 
-		splitHeader(header, &numPointers, &numNonPointers);
 		p += toBytes(numNonPointers);
 		max = p + toBytes(numPointers);
 		/* Apply f to all internal pointers. */
 		for ( ; p < max; p += POINTER_SIZE) 
 			maybeCall(f, s, (pointer*)p);
-	} else if (isStackOrContHeader(header)) {
+	} else if (STACK_TAG == tag) {
 		GC_stack stack;
 		pointer top, bottom;
 		int i;
@@ -483,8 +459,8 @@ GC_foreachPointerInObject(GC_state s, GC_pointerFun f, pointer p)
 	} else { /* It's an array. */
 		uint numBytes;
 
-		splitHeader(header, &numPointers, &numNonPointers);
-		numBytes = extractArrayNumBytes(p, numPointers, numNonPointers);
+		assert(ARRAY_TAG == tag);
+		numBytes = arrayNumBytes(p, numPointers, numNonPointers);
 		if (numBytes == 0)
 			/* An empty array -- skip the POINTER_SIZE bytes
 			 * for the forwarding pointer.
@@ -535,10 +511,9 @@ toData(pointer p)
 	word header;	
 
 	header = *(word*)p;
-
-	return ((isNormal(header) or isStackOrContHeader(header))
-		? p + WORD_SIZE
-		: p + 2 * WORD_SIZE);
+	return ((ARRAY_TAG == (header & TAG_MASK))
+		? p + 2 * WORD_SIZE
+		: p + WORD_SIZE);
 }
 
 /* ------------------------------------------------- */
@@ -684,13 +659,13 @@ initialThreadBytes(GC_state s)
 }
 
 static inline GC_thread
-newThreadOfSize(GC_state s, word header, uint stackSize)
+newThreadOfSize(GC_state s, uint stackSize)
 {
 	GC_stack stack;
 	GC_thread t;
 
 	ensureFree(s, stackBytes(stackSize) + threadBytes());
-	stack = newStack(s, header, stackSize);
+	stack = newStack(s, stackSize);
 	t = (GC_thread)object(s, THREAD_HEADER, threadBytes());
 	t->exnStack = BOGUS_EXN_STACK;
 	t->stack = stack;
@@ -705,7 +680,7 @@ switchToThread(GC_state s, GC_thread t)
 }
 
 static inline void
-copyThread(GC_state s, GC_thread from, word header, uint size)
+copyThread(GC_state s, GC_thread from, uint size)
 {
 	GC_thread to;
 
@@ -713,7 +688,7 @@ copyThread(GC_state s, GC_thread from, word header, uint size)
 	 * Hence we need to stash from where the GC can find it.
 	 */
 	s->savedThread = from;
-	to = newThreadOfSize(s, header, size);
+	to = newThreadOfSize(s, size);
 	from = s->savedThread;
 	stackCopy(from->stack, to->stack);
 	to->exnStack = from->exnStack;
@@ -782,7 +757,7 @@ GC_copyCurrentThread(GC_state s)
 
 	GC_enter(s);
 	t = s->currentThread;
-	copyThread(s, t, CONT_HEADER, t->stack->used);
+	copyThread(s, t, t->stack->used);
 	assert(s->frontier <= s->limit);
 	leave(s);
 }
@@ -798,7 +773,7 @@ GC_copyThread(GC_state s, GC_thread t)
 {
 	GC_enter (s);
 	assert (t->stack->reserved == t->stack->used);
-	copyThread (s, t, STACK_HEADER, stackNeedsReserved(s, t->stack));
+	copyThread (s, t, stackNeedsReserved(s, t->stack));
 	assert(s->frontier <= s->limit);
 	leave(s);
 }
@@ -1168,7 +1143,7 @@ void GC_newWorld(GC_state s)
 	s->frontier = s->base;
 	s->toSize = s->fromSize;
 	GC_toSpace(s); /* FIXME: Why does toSpace need to be allocated? */
-	switchToThread(s, newThreadOfSize(s, STACK_HEADER, initialStackSize(s)));
+	switchToThread(s, newThreadOfSize(s, initialStackSize(s)));
 	assert(initialThreadBytes(s) == s->frontier - s->base);
 	assert(s->frontier + s->bytesLive <= s->limit);
 	assert(GC_mutatorInvariant(s));
@@ -1190,7 +1165,10 @@ forward(GC_state s, pointer *pp)
 {
 	pointer p;
 	word header;
+	word tag;
 
+	if (DEBUG_DETAILED)
+		fprintf(stderr, "forward  pp = %x  *pp = %x\n", (uint)pp, (uint)*pp);
 	assert(isInFromSpace(s, *pp));
 	p = *pp;
 	header = GC_getHeader(p);
@@ -1199,18 +1177,18 @@ forward(GC_state s, pointer *pp)
 		uint numPointers, numNonPointers;
 
 		/* Compute the space taken by the header and object body. */
-		splitHeader(header, &numPointers, &numNonPointers);
-		if (isNormal(header)) { /* Fixed size object. */
+		SPLIT_HEADER();
+		if (NORMAL_TAG == tag) { /* Fixed size object. */
 			headerBytes = GC_OBJECT_HEADER_SIZE;
 			objectBytes = toBytes(numPointers + numNonPointers);
 			skip = 0;
-		} else if (isStackOrContHeader(header)) { /* Stack. */
+		} else if (STACK_TAG == tag) { /* Stack. */
 			GC_stack stack;
 
 			headerBytes = STACK_HEADER_SIZE;
 			/* Resize stacks not being used as continuations. */
 			stack = (GC_stack)p;
-			if (STACK_HEADER == header) {
+			if (stack->used != stack->reserved) {
 				if (4 * stack->used <= stack->reserved)
 					stack->reserved = stack->reserved / 2;
 				else if (4 * stack->used > 3 * stack->reserved)
@@ -1225,8 +1203,9 @@ forward(GC_state s, pointer *pp)
 			objectBytes = sizeof (struct GC_stack) + stack->used;
 			skip = stack->reserved - stack->used;
 		} else { /* Array. */
+			assert(ARRAY_TAG == tag);
 			headerBytes = GC_ARRAY_HEADER_SIZE;
-			objectBytes = extractArrayNumBytes(p, numPointers,
+			objectBytes = arrayNumBytes(p, numPointers,
 								numNonPointers);
 			skip = 0;
 			/* Empty arrays have POINTER_SIZE bytes for the 
@@ -1357,6 +1336,8 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 	/* toSpace is ready.  */
 	assert(s->toBase != (void*)NULL);
  	if (DEBUG or s->messages) {
+		fprintf(stderr, "fromSpace = %x  toSpace = %x\n",
+			(uint)s->base, (uint)s->toBase);
 	 	fprintf(stderr, 
 			"fromSpace size = %s", uintToCommaString(s->fromSize));
 		fprintf(stderr, 
@@ -1497,7 +1478,7 @@ void GC_gc(GC_state s, uint bytesRequested, bool force,
 		/* The newStack can't cause a GC, because we checked above to 
 		 * make sure there was enough space. 
 		 */
-		stack = newStack(s, STACK_HEADER, size);
+		stack = newStack(s, size);
 		stackCopy(s->currentThread->stack, stack);
 		s->currentThread->stack = stack;
 		GC_setStack(s);
@@ -1651,20 +1632,20 @@ GC_objectSize(pointer p)
 {
 	uint headerBytes, objectBytes;
        	word header;
-	uint numPointers, numNonPointers;
+	uint tag, numPointers, numNonPointers;
 
 	header = GC_getHeader(p);
-	splitHeader(header, &numPointers, &numNonPointers);
-	if (isNormal(header)) { /* Fixed size object. */
+	SPLIT_HEADER();
+	if (NORMAL_TAG == tag) { /* Fixed size object. */
 		headerBytes = GC_OBJECT_HEADER_SIZE;
 		objectBytes = toBytes(numPointers + numNonPointers);
-	} else if (isStackOrContHeader(header)) { /* Stack. */
+	} else if (STACK_TAG == tag) { /* Stack. */
 		headerBytes = STACK_HEADER_SIZE;
 		objectBytes = sizeof(struct GC_stack) + ((GC_stack)p)->reserved;
 	} else { /* Array. */
+		assert(ARRAY_TAG == tag);
 		headerBytes = GC_ARRAY_HEADER_SIZE;
-		objectBytes = extractArrayNumBytes(p, numPointers,
-							numNonPointers);
+		objectBytes = arrayNumBytes(p, numPointers, numNonPointers);
 		/* Empty arrays have POINTER_SIZE bytes for the 
 		 * forwarding pointer.
 		 */

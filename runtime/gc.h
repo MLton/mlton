@@ -3,9 +3,50 @@
  */
 #ifndef _MLTON_GC_H
 #define _MLTON_GC_H
+
 /*
- * A stop-and-copy GC with a fixed size heap.
- * Handles fixed size objects, arrays, and continutations.
+ * A two-space stop-and-copy GC.
+ *
+ * Has three kinds of objects: normal (fixed size), arrays, and stacks.
+ *
+ * Object Layout
+ * -------------
+ * Pointers always point at the first data word of the object.
+ * All objects are preceded by a header word.
+ * Array header words are preceded by a length.
+ * 
+ * Here are the header bits.
+ *
+ *               al mark 
+ *         31 30 29 28   27 -- 14		13 -- 0
+ * normal   1  0         # words nonpointers	# pointers
+ * stack    1  1         unused			unused
+ * array    0  0	 # bytes of nonpointers	# pointers	
+ *
+ * Length word
+ *         31
+ *          0
+ *
+ * al stands for alignment and is currently unused.  Someday it will be used 
+ * for better double alignment.
+ *
+ * The mark bit is only used during GC_size.
+ *
+ * For now, arrays must be either all pointers or all nonpointers.
+ *
+ * There are are two things that the GC needs to do
+ * 1. Locate the header given a pointer to the (first data word) object.
+ * 2. Locate the header given a pointer to the beginning of the object, which
+ *    is either the header or the array length.
+ *
+ * (1) happens for every (live) pointer during a GC, while (2) happens for every
+ * live object.  Since (1) occurs more frequently than (2), the design of header
+ * bits is optimized for that case.
+ *
+ * (1) is easy, because the header is the preceeding word.
+ *
+ * (2) is easy, because if the high bit is set, we are looking at the header.
+ * If not, the next word is the header.
  */
 
 #include <signal.h>
@@ -23,27 +64,31 @@ enum {
 	WORD_SIZE = 4,
 	GC_OBJECT_HEADER_SIZE = WORD_SIZE,
 	GC_ARRAY_HEADER_SIZE = WORD_SIZE + GC_OBJECT_HEADER_SIZE,
-/*
- * Array lengths can't have any of the top three bits set, because bit 31 and 29
- * are used as tag bits and bit 30 is used as a mark bit.
- * An array is too long if its length is >= GC_MAX_ARRAY_LENGTH.
- */
-	GC_MAX_ARRAY_LENGTH = 0x20000000,
 	/* High bit in an object identifies its type.
 	 * Normal objects have a high bit of 1.
 	 * Arrays and stacks have a high bit of 0.
 	 */
-	HIGH_BIT = 0x80000000,
 	/* The mark bit in an object is used by runtime utilities that need to 
 	 * perform a depth first search of objects.
 	 */
-	MARK_BIT = 0x40000000,
 	/* Number of bits specifying the number of nonpointers in an object. */
-	NON_POINTER_BITS = 15,
+	NON_POINTER_BITS = 14,
 	/* Number of bits specifying the number of pointers in an object. */
-	POINTER_BITS = 15,
+	POINTER_BITS = 14,
 	NON_POINTERS_SHIFT = POINTER_BITS,
 	POINTER_SIZE = WORD_SIZE,
+
+	/* Here are the masks for the various parts of header words. */	
+	TAG_MASK = 		0xC0000000,
+	ALIGNMENT_BIT = 	0x20000000,
+	MARK_BIT = 		0x10000000,
+	NON_POINTER_MASK =	0x0FFFC000,
+	POINTER_MASK = 		0x00003FFF,
+
+	/* Here are the tags for the three kinds of objects. */
+	ARRAY_TAG = 		0x00000000,
+	STACK_TAG = 		0xC0000000,
+	NORMAL_TAG = 		0x80000000,
 };
 
 #define TWOPOWER(n) (1 << (n))
@@ -58,7 +103,7 @@ enum {
 static inline word GC_objectHeader(uint np, uint p) {
 	assert(np < TWOPOWER(NON_POINTER_BITS));
 	assert(p < TWOPOWER(POINTER_BITS));
-	return HIGH_BIT | p | (np << NON_POINTERS_SHIFT);
+	return NORMAL_TAG | p | (np << NON_POINTERS_SHIFT);
 }
 
 /*
@@ -71,7 +116,7 @@ static inline word GC_arrayHeader(uint np, uint p) {
          */
 	assert(np < TWOPOWER(NON_POINTER_BITS - 1));
 	assert(p < TWOPOWER(POINTER_BITS));
-	return p | (np << NON_POINTERS_SHIFT);
+	return ARRAY_TAG | p | (np << NON_POINTERS_SHIFT);
 }
 
 /* ------------------------------------------------- */
@@ -106,6 +151,9 @@ typedef struct GC_frameLayout {
 /*                     GC_stack                      */
 /* ------------------------------------------------- */
 
+/* 
+ * Stacks with used == reserved are continuations.
+ */
 typedef struct GC_stack {
 	uint reserved;	/* Number of bytes reserved for stack. */
 	uint used;	/* Number of bytes in use. */

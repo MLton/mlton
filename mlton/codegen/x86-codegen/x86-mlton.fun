@@ -597,90 +597,20 @@ struct
   (*
    * GC related constants and functions
    *)
-  val WORD_SIZE = 4 : int
-  val POINTER_SIZE = WORD_SIZE
-  val GC_OBJECT_HEADER_SIZE = WORD_SIZE
-  val GC_ARRAY_HEADER_SIZE = WORD_SIZE + GC_OBJECT_HEADER_SIZE
+  val WORD_SIZE = Runtime.wordSize
+  val POINTER_SIZE = Runtime.pointerSize
+  val GC_OBJECT_HEADER_SIZE = Runtime.objectHeaderSize
+  val GC_ARRAY_HEADER_SIZE = Runtime.arrayHeaderSize
 
-  (*
-   * Array lengths can't have the top two bits set because the high bit is
-   * used to distinguish between objects and arrays, and the next bit is the
-   * mark bit.  They also can't be 30 one bits, because that is reserved for 
-   * the stack object header, which must be distinguishable from an array 
-   * length.
-   *)
-  val GC_MAX_ARRAY_LENGTH = 0x20000000 : int
+  fun gcObjectHeader {nonPointers, pointers} =
+     Immediate.const_word (Runtime.objectHeader
+			   {numPointers = pointers,
+			    numWordsNonPointers = nonPointers})
 
-  (*
-   * High bit in an object identifies its type.
-   * Normal objects have a high bit of 1.
-   * Arrays and stacks have a high bit of 0.
-   *)
-  val HIGH_BIT = 0wx80000000 : word
-    
-  (*
-   * The mark bit in an object is used by runtime utilities that need to
-   * perform a depth first search of objects.
-   *)
-  val MARK_BIT = 0wx40000000 : word
-
-  (*
-   * Number of bits specifying the number of nonpointers in an object.
-   *)
-  val NON_POINTER_BITS = 15 : int
-  (*
-   * Number of bits specifying the number of pointers in an object.
-   *)
-  val POINTER_BITS = 15 : int
-  val NON_POINTERS_SHIFT = POINTER_BITS
-
-  fun two_power n = Word.toInt (Word.<<(0w1, Word.fromInt n))
-
-  (*
-   * Build the one word header for an object,
-   * given the number of words of nonpointers and the number of pointers.
-   *)
-  fun gcObjectHeader {nonPointers, pointers}
-    = let
-	val _ = Assert.assert
-	        ("gcObjectHeader: too many nonPointers",
-		 fn () => nonPointers < two_power(NON_POINTER_BITS))
-	val _ = Assert.assert
-	        ("gcObjectHeader: too many pointers",
-	         fn () => pointers < two_power(POINTER_BITS))
-	val w 
-	  = Word.orb(HIGH_BIT,
-		     Word.orb(Word.fromInt pointers,
-			      Word.<<(Word.fromInt nonPointers,
-				      Word.fromInt NON_POINTERS_SHIFT)))
-      in
-	Immediate.const_word w
-      end
-
-  (*
-   * Build the one word header for an object,
-   * given the number of bytes of nonpointers and the number of pointers.
-   *)
-  fun gcArrayHeader {nonPointers, pointers}
-    = let
-	(* 
-	 * Arrays are allowed one fewer nonpointer bit, because the top
-	 * nonpointer bit is used for the continuation header word.
-	 *)
-	val _ = Assert.assert
-	        ("gcArrayHeader: too many nonPointers",
-		 fn () => nonPointers < two_power(NON_POINTER_BITS - 1))
-	val _ = Assert.assert
-	        ("gcArrayHeader: too many pointers",
-	         fn () => pointers < two_power(POINTER_BITS))
-	val w 
-	  = Word.orb(Word.fromInt pointers,
-		     Word.<<(Word.fromInt nonPointers,
-			     Word.fromInt NON_POINTERS_SHIFT))
-      in
-	Immediate.const_word w
-      end
-
+  fun gcArrayHeader {nonPointers, pointers} =
+     Immediate.const_word (Runtime.arrayHeader
+			   {numBytesNonPointers = nonPointers,
+			    numPointers = pointers})
   (* init *)
   fun init () = let
 		  val _ = Classes.initClasses ()

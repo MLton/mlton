@@ -46,7 +46,7 @@ val d = tabulate(100, fn i => i mod 7);
 val test3 = check'(fn _ => d sub 27 = 6);
 val _ = prtest("test3", test3);
 val test4a = (tabulate(maxLen+1, fn i => i) seq "WRONG")
-             handle Size => "OK" | _ => "WRONG";
+             handle Overflow => "OK" | Size => "OK" | _ => "WRONG";
 val _ = prtest("test4a", test4a);
 val test4b = (tabulate(~1, fn i => i)       seq "WRONG")
              handle Size => "OK" | _ => "WRONG";

@@ -1,5 +1,12 @@
 Here are the changes from version 20011006 to version VERSION.
 
+* 2002-02-10
+  - Reworked object header words so that Array.maxLen = valOf Int.maxInt.  
+    Also fixed a long-standing minor bug in MLton, where
+    Array.array (Array.maxLen, ...) would raise Size instead of attempting
+    to allocate the array.  It was an off-by-one error in the meaning of 
+    Array.maxLen.
+
 * 2002-02-08
   - Modifications to runtime to behave better in situations where the amount of
     live data is a signifant fraction of the amount of RAM, based on code from

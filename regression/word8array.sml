@@ -57,7 +57,7 @@ val d = tabulate(100, fn i => i2w (i mod 7))
 val test3:unit = tst' "test3" (fn () => d sub 27 = i2w 6)
 
 val test4a:unit = tst0 "test4a" ((tabulate(maxLen+1, i2w) seq "WRONG")
-			    handle Size => "OK" | _ => "WRONG")
+			    handle Overflow => "OK" | Size => "OK" | _ => "WRONG")
 
 val test4b:unit = tst0 "test4b" ((tabulate(~1, i2w)       seq "WRONG")
 			    handle Size => "OK" | _ => "WRONG")

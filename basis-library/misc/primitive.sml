@@ -56,7 +56,8 @@ structure Primitive =
 	 struct
 	    val array0 = fn () => _prim "Array_array0": unit -> 'a array; ()
 	    val length = fn x => _prim "Array_length": 'a array -> int; x
-	    val maxLen = _prim "Array_maxLen": int;
+	    (* There is no maximum length on arrays, so maxLen = maxInt. *)
+	    val maxLen: int = 0x7FFFFFFF
 	    val sub = fn x => _prim "Array_sub": 'a array * int -> 'a; x
 	    val update =
 	       fn x => _prim "Array_update": 'a array * int * 'a -> unit; x
@@ -228,9 +229,8 @@ structure Primitive =
 	 struct
 	    open Array
 	       
-      	    val array =
-	       fn n =>
-	       if safe andalso Int.geu (n, maxLen)
+      	    fun array n =
+	       if safe andalso Int.< (n, 0)
 		  then raise Size
 	       else _prim "Array_array": int -> 'a array; n
 	 end

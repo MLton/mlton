@@ -52,7 +52,7 @@ val test3 =
 
 val test4a = tst0 "test4a"
              ((tabulate(maxLen+1, fn i => i) seq "WRONG")
-            handle Size => "OK" | _ => "WRONG");
+            handle Overflow => "OK" | Size => "OK" | _ => "WRONG");
 
 val test4b = tst0 "test4b"
              ((tabulate(~1, fn i => i) seq "WRONG")

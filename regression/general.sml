@@ -43,7 +43,7 @@ val _ = List.map prExn
      ("Bind",      getExn(fn _ => let val true = false in () end)),
      ("Match",     getExn(fn _ => (fn true => ()) false)),
      ("Subscript", getExn(fn _ => Vector.sub(vector [], ~1))),
-     ("Size",      getExn(fn _ => Array.array(Array.maxLen+1, ()))),
+     ("Overflow",      getExn(fn _ => Array.array(Array.maxLen+1, ()))),
 (*   ("Overflow",  getExn(fn _ => Math.exp 1E99)),
      ("Domain",    getExn(fn _ => Math.ln ~1.0)),
 *)   ("Div",       getExn(fn _ => 1 div 0)),
