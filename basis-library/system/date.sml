@@ -34,8 +34,8 @@ structure Date :> DATE =
 	wday   : weekday,
 	yday   : int,		        (* 0-365 *)
 	isDst  : bool option,		(* daylight savings time in force *)
-	offset : int option			(* signed seconds East of UTC: this 
-					       zone = UTC+t; ~43200 < t <= 43200 *)
+	offset : int option		(* signed seconds East of UTC:
+				           this zone = UTC+t; ~43200 < t <= 43200 *)
       }
 
     exception Date

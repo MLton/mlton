@@ -88,10 +88,8 @@ signature BASIS =
       structure Char : CHAR	
       structure CharVector : MONO_VECTOR	
       structure CharVectorSlice : MONO_VECTOR_SLICE	
-(*
       structure CommandLine : COMMAND_LINE	
       structure Date : DATE	
-*)
       structure General : GENERAL	
       structure IEEEReal : IEEE_REAL	
       structure Int : INTEGER	
@@ -118,10 +116,8 @@ signature BASIS =
       structure TextPrimIO : PRIM_IO	
 *)
       structure Text : TEXT	
-(*
-      structure Timer : TIMER	
-*)
       structure Time : TIME	
+      structure Timer : TIMER	
       structure VectorSlice : VECTOR_SLICE	
       structure Vector : VECTOR	
       structure Word8Array2 : MONO_ARRAY2	
@@ -191,9 +187,7 @@ signature BASIS =
 (*
       structure UnixSock : UNIX_SOCK
 *)
-(*
       structure Unix : UNIX
-*)
 (*
       structure WideCharArray : MONO_ARRAY
       structure WideCharArray2 : MONO_ARRAY2
@@ -363,6 +357,7 @@ signature BASIS =
       sharing type Real64Vector.elem = Real64.real
       sharing type Real64VectorSlice.vector = Real64Vector.vector
       sharing type Real64VectorSlice.elem = Real64.real
+      sharing type Unix.exit_status = Posix.Process.exit_status
       sharing type Word32Array.vector = Word32Vector.vector
       sharing type Word32Array.elem = Word32.word
       sharing type Word32Array2.vector = Word32Vector.vector

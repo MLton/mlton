@@ -1,7 +1,6 @@
 signature TIME =
    sig
       eqtype time
-
       exception Time
 
       val zeroTime: time 
@@ -24,7 +23,7 @@ signature TIME =
       val fmt: int -> time -> string 
       val toString: time -> string 
       val fromString: string -> time option 
-      val scan: (char, 'a) StringCvt.reader -> 'a -> (time * 'a) option
+      val scan: (char, 'a) StringCvt.reader -> (time, 'a) StringCvt.reader
    end
 
 signature TIME_EXTRA =

@@ -14,10 +14,8 @@ structure Basis:> BASIS =
       structure Char = Char
       structure CharVector = CharVector
       structure CharVectorSlice = CharVectorSlice
-(*
       structure CommandLine = CommandLine
       structure Date = Date
-*)
       structure General = General
       structure IEEEReal = IEEEReal
       structure Int = Int
@@ -44,10 +42,8 @@ structure Basis:> BASIS =
       structure TextPrimIO = TextPrimIO
 *)
       structure Text = Text
-(*
-      structure Timer = Timer
-*)
       structure Time = Time
+      structure Timer = Timer
       structure VectorSlice = VectorSlice
       structure Vector = Vector
       structure Word8Array2 = Word8Array2
@@ -117,9 +113,7 @@ structure Basis:> BASIS =
 (*
       structure UnixSock = UnixSock
 *)
-(*
       structure Unix = Unix
-*)
 (*
       structure WideCharArray = WideCharArray
       structure WideCharArray2 = WideCharArray2

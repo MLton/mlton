@@ -21,6 +21,8 @@ structure Unix: UNIX =
     structure SS = Substring
 
     type signal = Posix.Signal.signal
+    datatype exit_status = datatype Posix.Process.exit_status
+    val fromStatus = Posix.Process.fromStatus
 
     structure Mask = MLton.Signal.Mask
 
@@ -29,11 +31,9 @@ structure Unix: UNIX =
        in DynamicWind.wind(fn () => f x, fn () => Mask.unblock Mask.all)
        end
        
-    datatype proc = PROC of {
-        pid: P.pid,
-        ins: TextIO.instream,
-        outs: TextIO.outstream
-      }
+    datatype ('a, 'b) proc = PROC of {pid: P.pid,
+				      ins: 'a,
+				      outs: 'b}
 
     fun executeInEnv (cmd, argv, env) =
        if not(PF.access(cmd, [PF.A_EXEC]))
@@ -49,11 +49,11 @@ structure Unix: UNIX =
 	     val base = SS.string(SS.taker (fn c => c <> #"/") (SS.all cmd))
 	     fun startChild () =
 		case protect P.fork () of
-		   SOME pid =>  pid           (* parent *)
+		   SOME pid => pid (* parent *)
 		 | NONE => let
 			      val oldin = #infd p1
-			      val newin = PF.stdin
 			      val oldout = #outfd p2
+			      val newin = PF.stdin
 			      val newout = PF.stdout
 			   in
 			      PIO.close (#outfd p1);
@@ -87,9 +87,11 @@ structure Unix: UNIX =
 
     fun execute (cmd, argv) = executeInEnv (cmd, argv, PE.environ())
 
+    fun textInstreamOf (PROC{ins, ...}) = ins
+    fun binInstreamOf (PROC{ins, ...}) = ins
+    fun textOutstreamOf (PROC{outs, ...}) = outs
+    fun binOutstreamOf (PROC{outs, ...}) = outs
     fun streamsOf (PROC{ins, outs, ...}) = (ins, outs)
-
-    fun kill (PROC{pid, ...}, signal) = P.kill (P.K_PROC pid, signal)
 
     fun reap (PROC{pid, ins, outs}) =
        (TextIO.closeIn ins
@@ -99,4 +101,7 @@ structure Unix: UNIX =
 	   *)
 	protect OS_Process.wait pid)
 
+    fun kill (PROC{pid, ...}, signal) = P.kill (P.K_PROC pid, signal)
+
+    fun exit st = OS_Process.exit (Word8.toInt st)
   end (* structure Unix *)

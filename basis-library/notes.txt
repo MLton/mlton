@@ -280,3 +280,10 @@ POSIX_SIGNAL
 Discussion:
 "The name of the corresponding..." is repeated.
 
+
+Time:
+Time now include negative values?
+ -> what is the semantics of toSeconds for negative values, 
+    still, just drop fractional part?
++, - raise Overflow when result not representable; why not raise Time?
+- is written prefix instead of infix in description.

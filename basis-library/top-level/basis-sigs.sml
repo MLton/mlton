@@ -7,10 +7,8 @@ signature BIN_IO = BIN_IO
 signature BOOL = BOOL 
 signature BYTE = BYTE 
 signature CHAR = CHAR 
-(*
 signature COMMAND_LINE = COMMAND_LINE 
 signature DATE = DATE 
-*)
 signature GENERAL = GENERAL 
 signature IEEE_REAL = IEEE_REAL 
 (*
@@ -48,9 +46,9 @@ signature TEXT = TEXT
 (*
 signature TEXT_IO = TEXT_IO 
 signature TEXT_STREAM_IO = TEXT_STREAM_IO 
+*)
 signature TIME = TIME 
 signature TIMER = TIMER 
-*)
 signature VECTOR = VECTOR 
 signature VECTOR_SLICE = VECTOR_SLICE 
 signature WORD = WORD
@@ -82,7 +80,9 @@ signature POSIX_SYS_DB = POSIX_SYS_DB
 signature POSIX_TTY = POSIX_TTY 
 (*
 signature SOCKET = SOCKET 
+*)
 signature UNIX = UNIX 
+(*
 signature UNIX_SOCK = UNIX_SOCK 
 signature WINDOWS = WINDOWS
 *)

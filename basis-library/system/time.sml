@@ -20,8 +20,8 @@ structure Time: TIME_EXTRA =
       
       val zeroTime = T {sec = 0,
 			usec = 0}
-	 
-      fun fromReal (r: LargeReal.real): time  =
+
+      fun fromReal (r: LargeReal.real): time =
 	 if r < 0.0
 	    then raise Time
 	 else let
@@ -37,11 +37,11 @@ structure Time: TIME_EXTRA =
 	 LargeInt.fromInt sec
 
       fun toMilliseconds (T {sec, usec}): LargeInt.int =
-	 1000 * LargeInt.fromInt sec
+	 thousand * LargeInt.fromInt sec
 	 + LargeInt.fromInt (Int.quot (usec, thousand))
 	 
       fun toMicroseconds (T {sec, usec}): LargeInt.int =
-	 1000000 * LargeInt.fromInt sec + LargeInt.fromInt usec
+	 million * LargeInt.fromInt sec + LargeInt.fromInt usec
 
       fun convert (s: LargeInt.int): int =
 	 LargeInt.toInt s handle Overflow => raise Time
@@ -50,17 +50,18 @@ structure Time: TIME_EXTRA =
 	 if Primitive.safe andalso s < 0
 	    then raise Time
 	 else T {sec = convert s, usec = 0}
-      
-      fun fromMilliseconds (ms: LargeInt.int): time =
-	 if Primitive.safe andalso ms < 0
+
+      fun fromMilliseconds (msec: LargeInt.int): time =
+	 if Primitive.safe andalso msec < 0
 	    then raise Time
 	 else
 	    let
-	       val (sec, ms) = IntInf.quotRem (ms, 1000)
-	       val (sec, ms) = (IntInf.toLarge sec, IntInf.toLarge ms)
+	       val msec = IntInf.fromLarge msec
+	       val (sec, msec) = IntInf.quotRem (msec, thousand)
+	       val (sec, msec) = (IntInf.toLarge sec, IntInf.toLarge msec)
 	    in
 	       T {sec = convert sec,
-		  usec = LargeInt.toInt ms * 1000}
+		  usec = LargeInt.toInt msec * thousand}
 	    end
 	    
       fun fromMicroseconds (usec: LargeInt.int): time =
@@ -68,7 +69,8 @@ structure Time: TIME_EXTRA =
 	    then raise Time
 	 else
 	    let
-	       val (sec, usec) = IntInf.quotRem (usec, 1000000)
+	       val usec = IntInf.fromLarge usec
+	       val (sec, usec) = IntInf.quotRem (usec, million)
 	       val (sec, usec) = (IntInf.toLarge sec, IntInf.toLarge usec)
 	    in
 	       T {sec = convert sec,
