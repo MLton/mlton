@@ -60,6 +60,22 @@ structure IEEEReal: IEEE_REAL =
 		     if c = Char.toLower c'
 			then f state'
 		     else NONE
+	    fun readString (s, state, failure, success) =
+	       let
+		  val n = String.size s
+		  fun loop (i, state) =
+		     if i = n
+			then success state
+		     else
+			case reader state of
+			   NONE => failure ()
+			 | SOME (c, state) =>
+			      if Char.toLower c = String.sub (s, i)
+				 then loop (i + 1, state)
+			      else failure ()
+	       in
+		  loop (0, state)
+	       end
 	    fun charToDigit c = Char.ord c - Char.ord #"0"
 	    fun digitStar (ds: int list, state) =
 	       let
@@ -191,11 +207,18 @@ structure IEEEReal: IEEE_REAL =
 	       case Char.toLower c of
 		  #"i" => readc (#"n", state, fn state =>
 				 readc (#"f", state, fn state =>
-					SOME ({class = INF,
-					       digits = [],
-					       exp = 0,
-					       sign = false},
-					      state)))
+					let
+					   fun res state =
+					      SOME ({class = INF,
+						     digits = [],
+						     exp = 0,
+						     sign = false},
+						    state)
+					in
+					   readString ("inity", state,
+						       fn () => res state,
+						       res)
+					end))
 		| #"n" => readc (#"a", state, fn state =>
 				 readc (#"n", state, fn state =>
 					SOME ({class = NAN,
