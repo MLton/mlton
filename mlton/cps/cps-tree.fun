@@ -1380,7 +1380,7 @@ structure Function =
 		  in
 		     ()
 		  end
-	       fun loop (e: Exp.t, from: Node.t, name: string) =
+	       fun loop (e: Exp.t, from: Node.t, handlers, name: string) =
 		  let
 		     val {decs, transfer} = Exp.dest e
 		     fun edge (j: Jump.t,
@@ -1437,7 +1437,11 @@ structure Function =
 			      (edge (dst, "", Solid)
 			       ; [Jump.toString dst, " ",
 				  Var.prettys (args, global)])
-			 | Raise xs => ["raise ", Var.prettys (xs, global)]
+			 | Raise xs =>
+			      (case List.fold (decs, handlers, deltaHandlers) of
+				  j :: _ => edge (j, "", Solid)
+				| _ => ()
+                               ; ["raise ", Var.prettys (xs, global)])
 			 | Return xs => ["return ", Var.prettys (xs, global)]
 		     val lab =
 			List.fold
@@ -1458,7 +1462,7 @@ structure Function =
 				   PrimExp.toPretty (exp, global), "\\l"] @ ac
 			       end
 			  | Fun {name, args, body, ...} =>
-			       (loop (body, jumpNode name,
+			       (loop (body, jumpNode name, jumpHandlers name,
 				      concat [Jump.toString name, " ",
 					      Layout.toString
 					      (Layout.vector
@@ -1480,7 +1484,7 @@ structure Function =
 		     ()
 		  end
 	       val root = newNode ()
-	       val _ = loop (body, root, Func.toString name)
+	       val _ = loop (body, root, [], Func.toString name)
 	       val l =
 		  Graph.LayoutDot.layout
 		  {graph = g,
