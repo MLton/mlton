@@ -135,7 +135,7 @@ install:
 	) &&								\
 	(								\
 		cd $(BIN) &&						\
-		sed "/^lib=/s;'.*';'$(ULIB)';" <mlton >$(TBIN)/mlton &&	\
+		sed "/^lib=/s;\".*\";'$(ULIB)';" <mlton >$(TBIN)/mlton &&	\
 		chmod +x $(TBIN)/mlton &&				\
 		$(CP) $(LEX) $(PROF) $(YACC) $(TBIN)			\
 	) &&								\
