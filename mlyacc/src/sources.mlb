@@ -8,7 +8,11 @@ local
   hdr.sml
   yacc.grm.sig
   yacc.grm.sml
-  yacc.lex.sml
+  local
+     $(MLTON_ROOT)/basis/unsafe.mlb
+  in
+     yacc.lex.sml
+  end
   parse.sml
   grammar.sml
   core.sml
