@@ -37,6 +37,8 @@ structure Place =
 
 val buildConstants: bool ref = ref false
 val coalesce: int option ref = ref NONE
+val gcc: string ref = ref "gcc"
+val gccSwitches : string list ref = ref []
 val includeDirs: string list ref = ref []
 val keepGenerated = ref false
 val keepO = ref false
@@ -48,17 +50,11 @@ val optimization: int ref = ref 1
 val showBasis: bool ref = ref false
 val stop = ref Place.OUT
 
-val libRef: Dir.t option ref = ref NONE
-fun getLib (): Dir.t =
-   case !libRef of
-      NONE => Error.bug "lib not set"
-    | SOME l => l
-
 val hostMap: unit -> {host: string, hostType: Control.hostType} list =
    Promise.lazy
    (fn () =>
     List.map
-    (File.lines (concat [getLib (), "/hostmap"]), fn line =>
+    (File.lines (concat [!Control.libDir, "/hostmap"]), fn line =>
      case String.tokens (line, Char.isSpace) of
 	[host, hostType] =>
 	   {host = host,
@@ -84,8 +80,18 @@ fun makeOptions {usage} =
        (Expert, "card-size-log2", " n",
 	"log (base 2) of card size used by GC",
 	intRef cardSizeLog2),
+       (Expert, "cc", " gcc", "gcc command line",
+	SpaceString (fn s =>
+		     case String.tokens (s, Char.isSpace) of
+			x :: xs => (gcc := x
+				    ; (case xs of
+					  [] => ()
+					| _ => gccSwitches := xs))
+		      | _ => usage "-cc must specify gcc")),
        (Expert, "coalesce", " n", "coalesce chunk size for C codegen",
 	Int (fn n => coalesce := SOME n)),
+       (Expert, "ccopt", " opt", "pass option to C compiler",
+	SpaceString (fn s => List.push (gccSwitches, s))),
        (Expert, "debug", " {false|true}", "produce executable with debug info",
 	boolRef debug),
        (Normal, "detect-overflow", " {true|false}",
@@ -157,6 +163,8 @@ fun makeOptions {usage} =
 				    end
 		   | NONE => usage (concat ["invalid -keep-pass flag: ", s])))),
        (Normal, "l", "library", "link with library", push libs),
+       (Expert, "lib", " lib", "set MLton lib directory",
+	SpaceString (fn s => libDir := s)),
        (Expert, "limit-check", " {lhle|pb|ebb|lh|lhf|lhfle}",
 	"limit check insertion algorithm",
 	SpaceString (fn s =>
@@ -217,8 +225,6 @@ fun makeOptions {usage} =
 	Bool (fn b => if b then () else polyvariance := NONE)),
        (Normal, "o", " file", "name of output file",
 	SpaceString (fn s => output := SOME s)),
-       (Expert, "O", "digit", "gcc optimization level",
-	Digit (fn d => optimization := d)),
        (Normal, "profile", " {no|alloc|time}",
 	"produce executable suitable for profiling",
 	SpaceString
@@ -294,31 +300,18 @@ val usage = fn s => (usage s; raise Fail "unreachable")
 fun commandLine (args: string list): unit =
    let
       open Control
-      fun error () = Error.bug "incorrect args from shell script"
-      val (lib, gcc, gccSwitches, args) =
+      val args =
 	 case args of
-	    lib :: gcc :: args =>
-	       let
-		  fun loop (args, ac) =
-		     case args of
-			[] => error ()
-		      | arg :: args =>
-			   if arg = "END"
-			      then (rev ac, args)
-			   else loop (args, arg :: ac)
-		  val (gccSwitches, args) = loop (args, [])
-	       in
-		  (lib, gcc, gccSwitches, args)
-	       end
-	  | _ => error ()
-      val _ = libRef := SOME lib
+	    lib :: args => (libDir := lib; args)
+	  | _ => Error.bug "incorrect args from shell script"
       val result = parse args
+      val gcc = !gcc
       val host = !host
       val hostString =
 	 case host of
 	    Cross s => s
 	  | Self => "self"
-      val lib = concat [lib, "/", hostString]
+      val lib = concat [!libDir, "/", hostString]
       val _ = Control.libDir := lib
       val libDirs = lib :: !libDirs
       val includeDirs = concat [lib, "/include"] :: !includeDirs
@@ -570,7 +563,7 @@ fun commandLine (args: string list): unit =
 			    [concat ["-O", Int.toString (!optimization)]],
 			    if !Native.native
 			       then []
-			    else gccSwitches]
+			    else !gccSwitches]
 			val switches =
 			   case host of
 			      Cross s => "-b" :: s :: switches

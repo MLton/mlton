@@ -193,7 +193,7 @@ val keepPasses = control {name = "keep passes",
 				      Regexp.Compiled.layout)}
 
 val libDir = control {name = "lib dir",
-		      default = "<none>",
+		      default = "<libDir unset>",
 		      toString = fn s => s}
    
 structure LimitCheck =
