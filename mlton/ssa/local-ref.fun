@@ -262,20 +262,136 @@ fun eliminate (program: Program.t): Program.t =
 	   set = setLabelInfo, ...}
 	= Property.getSetOnce
 	  (Label.plist, Property.initRaise ("localRef.labelInfo", Label.layout))
+      fun rewrite (f: Function.t, refs): Function.t =
+	 let
+	    val {args, blocks, mayInline, name, raises, returns, start} =
+	       Function.dest f
+	    (* Diagnostics *)
+	    val _ =
+	       Control.diagnostics
+	       (fn display =>
+		let
+		   open Layout
+		in
+		   display (seq [Func.layout name,
+				 str " LocalRefs: ",
+				 List.layout 
+				 (fn x =>
+				  seq [Var.layout x,
+				       str ": ",
+				       VarInfo.layout (varInfo x)])
+				 refs])
+		end)
+	    (* Rewrite. *)
+	    fun rewriteStatement (s: Statement.t as Statement.T {exp, var, ...})
+	       = let
+		    datatype z = datatype Prim.Name.t
+		 in
+		    case exp
+		       of PrimApp {prim, args, ...}
+			  => let
+				fun arg n = Vector.sub (args, n)
+
+				fun rewriteReffAssign rvar var
+				   = let
+					val vi = varInfo rvar
+				     in
+					if VarInfo.isLocal vi
+					   then Statement.T
+					      {var = SOME rvar,
+					       ty = #2 (valOf (VarInfo.reff vi)),
+					       exp = Var var}
+					else s
+				     end
+				fun rewriteReff ()
+				   = case var 
+				   of NONE => s
+				 | SOME var => rewriteReffAssign var (arg 0)
+				fun rewriteAssign () = rewriteReffAssign (arg 0) (arg 1)
+				fun rewriteDeref rvar
+				   = let
+					val vi = varInfo rvar
+				     in
+					if VarInfo.isLocal vi
+					   then let
+						in
+						   Statement.T
+						   {var = var,
+						    ty = #2 (valOf (VarInfo.reff vi)),
+						    exp = Var rvar}
+						end
+					else s
+				     end
+				val rewriteDeref
+				   = fn () => rewriteDeref (arg 0)
+			     in
+				case Prim.name prim
+				   of Ref_ref => rewriteReff ()
+				 | Ref_assign => rewriteAssign ()
+				 | Ref_deref => rewriteDeref ()
+				 | _ => s
+			     end
+			| _ => s
+		 end
+	    fun rewriteBlock (Block.T {label, args, statements, transfer})
+	       = let
+		    val li = labelInfo label
+		    (* Don't need to rewrite the statements
+		     * if this block doesn't mention localizable refs.
+		     *)
+		    val statements
+		       = if List.exists (LabelInfo.reffs' li, isLocal)
+		       orelse
+		       List.exists (LabelInfo.assigns' li, isLocal)
+		       orelse
+		       List.exists (LabelInfo.derefs' li, isLocal)
+			    then Vector.map (statements, rewriteStatement)
+			 else statements
+		 in
+		    Block.T {label = label,
+			     args = args,
+			     statements = statements,
+			     transfer = transfer}
+		 end
+	    val blocks = Vector.map (blocks, rewriteBlock)
+	    val f = Function.new {args = args,
+				  blocks = blocks,
+				  mayInline = mayInline,
+				  name = name,
+				  raises = raises,
+				  returns = returns,
+				  start = start}
+	    val f = restore f
+	    val f = shrink f
+	 in
+	    f
+	 end
       val functions =
 	 List.revMap
 	 (functions, fn f =>
 	  let
-	     val {locals, ...} = funcInfo (Function.name f)
+	     val {name, ...} = Function.dest f
+	     val {locals, ...} = funcInfo name
 	     val locals = !locals
 	     val f =
 		if List.isEmpty locals
-		   then f
+		   then (print (concat ["skipping ", Func.toString name, "\n"])
+			 ; f)
 		else
 		   let
+		      val _ =
+			 print (concat ["patching ", Func.toString name, "\n"])
 		      val {args, blocks, mayInline, name, raises, returns,
 			   start} = Function.dest f
 		      val locals = Vector.fromListRev locals
+		      val _ =
+			 let
+			    open Layout
+			 in
+			    outputl (seq [str "locals ",
+					  Vector.layout Statement.layout locals],
+				     Out.error)
+			 end
 		      val localsLabel = Label.newNoname ()
 		      val localsBlock =
 			 Block.T {label = localsLabel,
@@ -294,8 +410,6 @@ fun eliminate (program: Program.t): Program.t =
 				    returns = returns,
 				    start = localsLabel}
 		   end
-	     val {args, blocks, mayInline, name, raises, returns, start} =
-		Function.dest f
 	     (* Find all localizable refs. *)
 	     val refs = ref []
 	     fun visitStatement label (Statement.T {var, ty, exp})
@@ -349,7 +463,6 @@ fun eliminate (program: Program.t): Program.t =
 		 end
 	     val _ = Function.dfs (f, visitBlock)
 	     val refs = List.keepAll (!refs, isLocal)
-
 	     (* Thread criteria *)
 	     val refs
 	       = if usesThreadsOrConts
@@ -399,124 +512,21 @@ fun eliminate (program: Program.t): Program.t =
 			  end);
 			 List.keepAll (refs, isLocal))
 		   else refs
-
-	     (* Escape early when there are no localizable refs *)
-	     val _ = if List.length refs = 0
-		       then (Function.clear f;
-			     Control.diagnostics
-			     (fn display =>
-			      let
-				open Layout
-			      in
-				display (seq [str "\n",
-					      Func.layout name,
-					      str " NoLocalRefs"])
-			      end);
-			     raise NoLocalRefs)
-		       else ()
-
-	     (* Diagnostics *)
-	     val _ = Control.diagnostics
-	             (fn display =>
-		      let
+	  in
+	     if 0 < List.length refs
+		then rewrite (f, refs)
+	     else
+		(Function.clear f
+		 ; (Control.diagnostics
+		    (fn display =>
+		     let
 			open Layout
-		      in
-			display (seq [str "\n",
-				      Func.layout name,
-				      str " LocalRefs: ",
-				      List.layout 
-				      (fn x =>
-				       seq [Var.layout x,
-					    str ": ",
-					    VarInfo.layout (varInfo x)])
-				      refs])
-		      end)
-
-	     (* Rewrite. *)
-	     fun rewriteStatement (s: Statement.t as Statement.T {exp, var, ...})
-	       = let
-		   datatype z = datatype Prim.Name.t
-		 in
-		   case exp
-		     of PrimApp {prim, args, ...}
-		      => let
-			   fun arg n = Vector.sub (args, n)
-
-			   fun rewriteReffAssign rvar var
-			     = let
-				 val vi = varInfo rvar
-			       in
-				 if VarInfo.isLocal vi
-				   then Statement.T
-				        {var = SOME rvar,
-					 ty = #2 (valOf (VarInfo.reff vi)),
-					 exp = Var var}
-				   else s
-			       end
-			   fun rewriteReff ()
-			     = case var 
-				 of NONE => s
-				  | SOME var => rewriteReffAssign var (arg 0)
-			   fun rewriteAssign () = rewriteReffAssign (arg 0) (arg 1)
-			   fun rewriteDeref rvar
-			     = let
-				 val vi = varInfo rvar
-			       in
-				 if VarInfo.isLocal vi
-				   then let
-					in
-					  Statement.T
-					  {var = var,
-					   ty = #2 (valOf (VarInfo.reff vi)),
-					   exp = Var rvar}
-					end
-				   else s
-			       end
-			   val rewriteDeref
-			     = fn () => rewriteDeref (arg 0)
-			 in
-			   case Prim.name prim
-			     of Ref_ref => rewriteReff ()
-		              | Ref_assign => rewriteAssign ()
-			      | Ref_deref => rewriteDeref ()
-			      | _ => s
-			 end
-		      | _ => s
-		 end
-	     fun rewriteBlock (Block.T {label, args, statements, transfer})
-	       = let
-		   val li = labelInfo label
-		   (* Don't need to rewrite the statements
-		    * if this block doesn't mention localizable refs.
-		    *)
-		   val statements
-		     = if List.exists (LabelInfo.reffs' li, isLocal)
-		          orelse
-			  List.exists (LabelInfo.assigns' li, isLocal)
-			  orelse
-			  List.exists (LabelInfo.derefs' li, isLocal)
-			 then Vector.map (statements, rewriteStatement)
-			 else statements
-		 in
-		   Block.T {label = label,
-			    args = args,
-			    statements = statements,
-			    transfer = transfer}
-		 end
-	     val blocks = Vector.map (blocks, rewriteBlock)
-	     val f = Function.new {args = args,
-				   blocks = blocks,
-				   mayInline = mayInline,
-				   name = name,
-				   raises = raises,
-				   returns = returns,
-				   start = start}
-	     val f = restore f
-	     val f = shrink f
-	   in
-	     f
-	   end
-	   handle NoLocalRefs => f)
+		     in
+			display (seq [Func.layout name,
+				      str " NoLocalRefs"])
+		     end))
+		 ; f)
+	  end)
       val program = Program.T {datatypes = datatypes,
 			       globals = globals,
 			       functions = functions,
