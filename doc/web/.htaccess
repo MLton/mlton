@@ -40,6 +40,8 @@ Redirect permanent /user-guide/node57.html http://www.mlton.org/user-guide/Credi
 Redirect permanent /user-guide/node59.html http://www.mlton.org/user-guide/Deviations_SML_NJ_from.html
 #RedirectMatch permanent /user-guide/node* http://www.mlton.org/user-guide/index.html
 
+Redirect permanent /sources.html http://www.mlton.org/download.html
+
 #ErrorDocument 401 
 #ErrorDocument 403
 
