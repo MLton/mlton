@@ -1187,7 +1187,7 @@ structure Program =
 		 in
 		    saveToFile
 		    ({suffix = "call-graph.dot"},
-		     No, (), Layout (fn () =>
+		     Dot, (), Layout (fn () =>
 				     layoutCallGraph (p, !Control.inputFile)))
 		 end
 	 end
