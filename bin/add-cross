@@ -82,7 +82,7 @@ ssh $machine "rm -rf $tmp && mkdir $tmp"
 echo 'Making runtime.' 
 ( cd $src && tar cf - bin runtime ) | 
 	ssh $machine "cd $tmp && tar xf - && cd runtime &&
-		mmake COMPILE_FAST=yes TARGET_ARCH=$crossArch TARGET_OS=$crossOS clean all"
+		../bin/mmake COMPILE_FAST=yes TARGET_ARCH=$crossArch TARGET_OS=$crossOS clean all"
 ssh $machine "cd $tmp/runtime && tar cf - *.a" | 
 	( cd $lib/$crossTarget && tar xf - )
 ( cd $src &&
