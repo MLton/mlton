@@ -2,18 +2,8 @@
 
 # This script makes binary and source RPMs and puts them in the current 
 # directory.
-#
 
 name=`basename $0`
-
-# You must have ss to run this script.  ss lets us run commands as root.
-# This lets us set it up so that the installed RPMS will have files owned by 
-# root.  Not doing so would be a security hole.
-
-ss true 2>/dev/null || {
-	echo 'You must have ss.' >&2
-	exit 1
-}
 
 function usage() {
 	echo >&2 "usage: $name [-home]"
@@ -84,9 +74,8 @@ done
 
 echo 'Creating source tgz'
 cd $root/SOURCES
-ss chown -R root.root mlton-$version
 tar.write mlton-$version | gzip >mlton-$version.tgz
-ss rm -rf mlton-$version
+rm -rf mlton-$version
 
 echo 'Building rpms'
 (
