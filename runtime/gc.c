@@ -88,6 +88,7 @@ enum {
 	DEBUG_ARRAY = FALSE,
 	DEBUG_CARD_MARKING = FALSE,
 	DEBUG_DETAILED = FALSE,
+	DEBUG_ENTER_LEAVE = FALSE,
 	DEBUG_GENERATIONAL = FALSE,
 	DEBUG_MARK_COMPACT = FALSE,
 	DEBUG_MEM = FALSE,
@@ -2958,7 +2959,12 @@ static void majorGC (GC_state s, W32 bytesRequested, bool mayResize) {
 
 static inline void enterGC (GC_state s) {
 	if (s->profilingIsOn) {
-		if (s->profileStack)
+		/* We don't need to profileEnter for count profiling because it
+		 * has already bumped the counter.  If we did allow the bump,
+		 * then the count would look like function(s) had run an extra
+ 		 * time.
+		 */  
+		if (s->profileStack and not (PROFILE_COUNT == s->profileKind))
 			GC_profileEnter (s);
 		s->amInGC = TRUE;
 	}
@@ -2966,7 +2972,7 @@ static inline void enterGC (GC_state s) {
 
 static inline void leaveGC (GC_state s) {
 	if (s->profilingIsOn) {
-		if (s->profileStack)
+		if (s->profileStack and not (PROFILE_COUNT == s->profileKind))
 			GC_profileLeave (s);
 		s->amInGC = FALSE;
 	}
@@ -3465,6 +3471,15 @@ void GC_profileDone (GC_state s) {
 	}
 }
 
+static int profileDepth = 0;
+
+static void profileIndent () {
+	int i;
+
+	for (i = 0; i < profileDepth; ++i)
+		fprintf (stderr, " ");
+}
+
 static inline void profileEnterSource (GC_state s, uint i) {
 	GC_profile p;
 	GC_profileStack ps;
@@ -3492,9 +3507,12 @@ static void profileEnter (GC_state s, uint sourceSeqIndex) {
 	sourceSeq = s->sourceSeqs[sourceSeqIndex];
 	for (i = 1; i <= sourceSeq[0]; ++i) {
 		sourceIndex = sourceSeq[i];
-		if (DEBUG_PROFILE)
-			fprintf (stderr, "entering %s\n", 
+		if (DEBUG_ENTER_LEAVE or DEBUG_PROFILE) {
+			profileIndent ();
+			fprintf (stderr, "(entering %s\n", 
 					sourceName (s, sourceIndex));
+			profileDepth++;
+		}
 		profileEnterSource (s, sourceIndex);
 		profileEnterSource (s, profileMaster (s, sourceIndex));
 	}
@@ -3532,9 +3550,12 @@ static void profileLeave (GC_state s, uint sourceSeqIndex) {
 	sourceSeq = s->sourceSeqs[sourceSeqIndex];
 	for (i = sourceSeq[0]; i > 0; --i) {
 		sourceIndex = sourceSeq[i];
-		if (DEBUG_PROFILE)
-			fprintf (stderr, "leaving %s\n",
+		if (DEBUG_ENTER_LEAVE or DEBUG_PROFILE) {
+			profileDepth--;
+			profileIndent ();
+			fprintf (stderr, "leaving %s)\n",
 					sourceName (s, sourceIndex));
+		}
 		profileLeaveSource (s, sourceIndex);
 		profileLeaveSource (s, profileMaster (s, sourceIndex));
 	}
@@ -3552,9 +3573,11 @@ static inline void profileInc (GC_state s, W32 amount, uint sourceSeqIndex) {
 	topSourceIndex = sourceSeq[0] > 0
 		? sourceSeq[sourceSeq[0]]
 		: SOURCES_INDEX_UNKNOWN;
-	if (DEBUG_PROFILE)
+	if (DEBUG_PROFILE) {
+		profileIndent ();
 		fprintf (stderr, "bumping %s by %u\n",
 				sourceName (s, topSourceIndex), (uint)amount);
+	}
 	s->profile->countTop[topSourceIndex] += amount;
 	s->profile->countTop[profileMaster (s, topSourceIndex)] += amount;
 	if (s->profileStack)
@@ -4480,6 +4503,20 @@ int GC_init (GC_state s, int argc, char **argv) {
 	if (PROFILE_NONE == s->profileKind)
 		s->profilingIsOn = FALSE;
 	else {
+		if (DEBUG_PROFILE) {
+			int i;
+
+			for (i = 0; i < s->frameSourcesSize; ++i) {
+				int j;
+				uint *sourceSeq;
+
+				fprintf (stderr, "%d\n", i);
+				sourceSeq = s->sourceSeqs[s->frameSources[i]];
+				for (j = 1; j <= sourceSeq[0]; ++j)
+					fprintf (stderr, "\t%s\n",
+							s->sourceNames[s->sources[sourceSeq[j]].nameIndex]);
+			}
+		}
 		s->profilingIsOn = TRUE;
 		assert (s->frameSourcesSize == s->frameLayoutsSize);
 		switch (s->profileKind) {
