@@ -122,6 +122,7 @@ structure FlexibleTycon =
 			 defn: exn ref,
 			 hasCons: bool,
 			 id: TyconId.t,
+			 kind: Kind.t,
 			 plist: PropertyList.t} Set.t
       withtype copy = t option ref
 
@@ -152,13 +153,14 @@ structure FlexibleTycon =
 
       val copies: copy list ref = ref []
 	 
-      fun new {defn: Defn.t, hasCons: bool}: t =
+      fun new {defn: Defn.t, hasCons: bool, kind: Kind.t}: t =
 	 T (Set.singleton {admitsEquality = ref AdmitsEquality.Sometimes,
 			   copy = ref NONE,
 			   creationTime = Time.current (),
 			   defn = ref defn,
 			   hasCons = hasCons,
 			   id = TyconId.new (),
+			   kind = kind,
 			   plist = PropertyList.new ()})
    end
 
@@ -458,12 +460,14 @@ and copyDefn (d: Defn.t): Defn.t =
 and copyFlexibleTycon (FlexibleTycon.T s): FlexibleTycon.t =
    let
       open FlexibleTycon
-      val {admitsEquality = a, copy, defn, hasCons, ...} = Set.value s
+      val {admitsEquality = a, copy, defn, hasCons, kind, ...} = Set.value s
    in
       case !copy of
 	 NONE => 
 	    let
-	       val c = new {defn = copyDefn (!defn), hasCons = hasCons}
+	       val c = new {defn = copyDefn (!defn),
+			    hasCons = hasCons,
+			    kind = kind}
 	       val _ = admitsEquality c := !a
 	       val _ = List.push (copies, copy)
 	       val _ = copy := SOME c
@@ -557,17 +561,10 @@ structure FlexibleTycon =
    struct
       open FlexibleTycon
 
-      fun realize (T s, e: EtypeStr.t): unit =
-	 let
- 	    val {defn, ...} = Set.value s
-	 in
-	    defn := Defn.realized e
-	 end
-
       fun share (T s, T s') =
 	 let
-	    val {admitsEquality = a, creationTime = t, hasCons = h, id, plist,
-		 ...} =
+	    val {admitsEquality = a, creationTime = t, hasCons = h, id, kind,
+		 plist, ...} =
 	       Set.value s
 	    val {admitsEquality = a', creationTime = t', hasCons = h', ...} =
 	       Set.value s'
@@ -580,6 +577,7 @@ structure FlexibleTycon =
 		    defn = ref Defn.undefined,
 		    hasCons = h orelse h',
 		    id = id,
+		    kind = kind,
 		    plist = plist})
 	 in
 	    ()
@@ -602,9 +600,10 @@ structure Tycon =
    struct
       open Tycon
 
-      fun make {hasCons} =
+      fun make {hasCons, kind} =
 	 Flexible (FlexibleTycon.new {defn = Defn.undefined,
-				      hasCons = hasCons})
+				      hasCons = hasCons,
+				      kind = kind})
    end
 
 structure Scheme =
@@ -774,18 +773,6 @@ structure TypeStr =
    end
 
 structure UniqueId = IntUniqueId ()
-
-structure TyconMap =
-   struct
-      datatype 'a t = T of {strs: (Strid.t * 'a t) array,
-			    types: (Ast.Tycon.t * 'a) array}
-
-      fun empty (): 'a t = T {strs = Array.new0 (),
-			      types = Array.new0 ()}
-
-      fun isEmpty (T {strs, types}) =
-	 0 = Array.length strs andalso 0 = Array.length types
-   end
 
 (*---------------------------------------------------*)
 (*                   Main Datatype                   *)
@@ -1028,6 +1015,65 @@ val share =
     Unit.layout)
    share
 
+fun copy (I: t): t =
+   let
+      (* Keep track of all nodes that have forward pointers to copies, so
+       * that we can gc them when done.
+       *)
+      val copies: copy list ref = ref []
+      fun loop (T s): t =
+	 let
+	    val r as {copy, ...} = Set.value s
+	 in
+	    case !copy of
+	       NONE =>
+		  let
+		     val {shape, strs, types, vals, ...} = r
+		     val types =
+			Array.map (types, fn (name, typeStr) =>
+				   (name, TypeStr.copy typeStr))
+		     val vals =
+			Array.map (vals, fn (name, (status, scheme)) =>
+				   (name, (status, Scheme.copy scheme)))
+		     val strs =
+			Array.map (strs, fn (name, I) => (name, loop I))
+		     val I = T (Set.singleton {copy = ref NONE,
+					       plist = PropertyList.new (),
+					       shape = shape,
+					       strs = strs,
+					       types = types,
+					       uniqueId = UniqueId.new (),
+					       vals = vals})
+		     val _ = List.push (copies, copy)
+		     val _ = copy := SOME I
+		  in
+		     I
+		  end
+	     | SOME I => I
+	 end
+      val I = loop I
+      fun clear copies = List.foreach (!copies, fn copy => copy := NONE)
+      val _ = clear copies
+      val _ = clear FlexibleTycon.copies
+      val _ = FlexibleTycon.copies := []
+   in
+      I
+   end
+
+val copy = Trace.trace ("Interface.copy", layout, layout) copy
+
+structure TyconMap =
+   struct
+      datatype 'a t = T of {strs: (Strid.t * 'a t) array,
+			    types: (Ast.Tycon.t * 'a) array}
+
+      fun empty (): 'a t = T {strs = Array.new0 (),
+			      types = Array.new0 ()}
+
+      fun isEmpty (T {strs, types}) =
+	 0 = Array.length strs andalso 0 = Array.length types
+   end
+
 fun tyconMap (I: t): FlexibleTycon.t TyconMap.t =
    let
       val {destroy = destroy1,
@@ -1055,21 +1101,28 @@ fun tyconMap (I: t): FlexibleTycon.t TyconMap.t =
 		     (types, fn (tycon, typeStr) =>
 		      (tycon,
 		       case TypeStr.toTyconOpt typeStr of
-			  SOME (Tycon.Flexible c) =>
+			  SOME (Tycon.Flexible (c as FlexibleTycon.T s)) =>
 			     let
-				val r = tyconShortest c
+				val {defn, ...} = Set.value s
 			     in
-				if length >= #length (!r)
-				   then ref NONE
-				else 
-				   let
-				      val _ = #flex (!r) := NONE
-				      val flex = ref (SOME c)
-				      val _ = r := {flex = flex,
-						    length = length}
-				   in
-				      flex
-				   end
+				case Defn.dest (!defn) of
+				   Defn.Undefined =>
+				      let
+					 val r = tyconShortest c
+				      in
+					 if length >= #length (!r)
+					    then ref NONE
+					 else 
+					    let
+					       val _ = #flex (!r) := NONE
+					       val flex = ref (SOME c)
+					       val _ = r := {flex = flex,
+							     length = length}
+					    in
+					       flex
+					    end
+				      end
+				 | _ => ref NONE
 			     end
 			| _ => ref NONE))
 		  val strs =
@@ -1101,93 +1154,30 @@ fun tyconMap (I: t): FlexibleTycon.t TyconMap.t =
       collapse tm
    end
 
-fun 'a copyAndRealize (I: t, {followStrid, init: 'a, realizeTycon}): t =
+fun 'a realize (I, {init, followStrid, realizeTycon}) =
    let
-      (* Keep track of all nodes that have forward pointers to copies, so
-       * that we can gc them when done.
-       *)
-      val copies: copy list ref = ref []
-      fun loop (T s, a: 'a): t =
+      val I = copy I
+      fun loop (TyconMap.T {strs, types}, a: 'a): unit =
 	 let
-	    val {copy, shape, strs, types, vals, ...} = Set.value s
+	    val _ =
+	       Array.foreach
+	       (types, fn (name, FlexibleTycon.T s) =>
+		let
+		   val {admitsEquality, defn, hasCons, kind, ...} = Set.value s
+		in
+		   defn := (Defn.realized
+			    (realizeTycon (a, name, !admitsEquality, kind,
+					   {hasCons = hasCons})))
+		end)
+	    val _ =
+	       Array.foreach
+	       (strs, fn (strid, tm) => loop (tm, followStrid (a, strid)))
 	 in
-	    case !copy of
-	       NONE =>
-		  let
-		     val types =
-			Array.map
-			(types, fn (name, typeStr) =>
-			 let
-			    val typeStr = TypeStr.copy typeStr
-			    val _ =
-			       case realizeTycon of
-				  NONE => ()
-				| SOME f =>
-				     case TypeStr.toTyconOpt typeStr of
-					SOME (Tycon.Flexible c) =>
-					   let
-					      val FlexibleTycon.T s = c
-					      val {admitsEquality, defn, hasCons,
-						   ...} =
-						 Set.value s
-					   in
-					      case Defn.dest (!defn) of
-						 Defn.Realized _ => ()
-					       | Defn.TypeStr _ => ()
-					       | Defn.Undefined =>
-						    FlexibleTycon.realize
-						    (c,
-						     f (a, name,
-							!admitsEquality,
-							TypeStr.kind typeStr,
-							{hasCons = hasCons}))
-					   end
-				      | _ => ()
-			 in
-			    (name, typeStr)
-			 end)
-		     val vals =
-			Array.map
-			(vals, fn (name, (status, scheme)) =>
-			 (name, (status, Scheme.copy scheme)))
-		     val strs =
-			Array.map (strs, fn (name, I) =>
-				   (name, loop (I, followStrid (a, name))))
-		     val I = T (Set.singleton {copy = ref NONE,
-					       plist = PropertyList.new (),
-					       shape = shape,
-					       strs = strs,
-					       types = types,
-					       uniqueId = UniqueId.new (),
-					       vals = vals})
-		     val _ = List.push (copies, copy)
-		     val _ = copy := SOME I
-		  in
-		     I
-		  end
-	     | SOME I => I
+	    ()
 	 end
-      val I = loop (I, init)
-      fun clear copies = List.foreach (!copies, fn copy => copy := NONE)
-      val _ = clear copies
-      val _ = clear FlexibleTycon.copies
-      val _ = FlexibleTycon.copies := []
+      val _ = loop (tyconMap I, init)
    in
       I
    end
-
-fun copy I = copyAndRealize (I, {init = (),
-				 followStrid = fn _ => (),
-				 realizeTycon = NONE})
-				 
-val copy = Trace.trace ("Interface.copy", layout, layout) copy
-
-val info = Trace.info "Interface.realize"
-   
-fun realize (I, {init, followStrid, realizeTycon}) =
-   Trace.traceInfo' (info ,layout o #1, layout)
-   copyAndRealize (I, {init = init,
-		       followStrid = followStrid,
-		       realizeTycon = SOME realizeTycon})
 
 end

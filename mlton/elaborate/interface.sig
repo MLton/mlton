@@ -59,7 +59,7 @@ signature INTERFACE =
 	     | Rigid of EnvTypeStr.Tycon.t * Kind.t
 
 	    val admitsEquality: t -> AdmitsEquality.t ref
-	    val make: {hasCons: bool} -> t
+	    val make: {hasCons: bool, kind: Kind.t} -> t
 	 end
       structure Tyvar:
 	 sig
