@@ -1287,64 +1287,66 @@ fun shrink (Program.T {datatypes, globals, functions, main}) =
 		 main = main}
    end
 
+fun eliminateDeadBlocksFunction f =
+   let
+      val {args, blocks, name, raises, returns, sourceInfo, start} =
+	 Function.dest f
+      val {get = isLive, set = setLive, rem} =
+	 Property.getSetOnce (Label.plist, Property.initConst false)
+      val _ = Function.dfs (f, fn Block.T {label, ...} =>
+			    (setLive (label, true)
+			     ; fn () => ()))
+      fun statementIsLive (Statement.T {exp, ...}) =
+	 case exp of
+	    HandlerPop l => isLive l
+	  | HandlerPush l => isLive l
+	  | _ => true
+      val f =
+	 if Vector.forall (blocks, isLive o Block.label)
+	    then f
+	 else
+	    let 
+	       val blocks =
+		  Vector.keepAllMap
+		  (blocks,
+		   fn block as Block.T {args, label, statements,
+					transfer} =>
+		   if isLive label
+		      then
+			 SOME
+			 (if Vector.forall (statements, statementIsLive)
+			     then block
+			  else
+			     let
+			        val statements =
+				   Vector.keepAll
+				   (statements, statementIsLive)
+			     in
+			        Block.T {args = args,
+					 label = label,
+					 statements = statements,
+					 transfer = transfer}
+			     end)
+		   else NONE)
+	    in
+	       Function.new {args = args,
+			     blocks = blocks,
+			     name = name,
+			     raises = raises,
+			     returns = returns,
+			     sourceInfo = sourceInfo,
+			     start = start}
+	    end
+       val _ = Vector.foreach (blocks, rem o Block.label)
+   in
+     f
+   end
+
 fun eliminateDeadBlocks (Program.T {datatypes, globals, functions, main}) =
    let
       val functions =
 	 List.revMap
-	 (functions, fn f =>
-	  let
-	     val {args, blocks, name, raises, returns, sourceInfo, start} =
-		Function.dest f
-	     val {get = isLive, set = setLive, rem} =
-		Property.getSetOnce (Label.plist, Property.initConst false)
-	     val _ = Function.dfs (f, fn Block.T {label, ...} =>
-				   (setLive (label, true)
-				    ; fn () => ()))
-	     fun statementIsLive (Statement.T {exp, ...}) =
-		case exp of
-		   HandlerPop l => isLive l
-		 | HandlerPush l => isLive l
-		 | _ => true
-	     val f =
-		if Vector.forall (blocks, isLive o Block.label)
-		   then f
-		else
-		   let 
-		      val blocks =
-			 Vector.keepAllMap
-			 (blocks,
-			  fn block as Block.T {args, label, statements,
-					       transfer} =>
-			  if isLive label
-			     then
-				SOME
-				(if Vector.forall (statements, statementIsLive)
-				    then block
-				 else
-				    let
-				       val statements =
-					  Vector.keepAll
-					  (statements, statementIsLive)
-				    in
-				       Block.T {args = args,
-						label = label,
-						statements = statements,
-						transfer = transfer}
-				    end)
-			  else NONE)
-		   in
-		      Function.new {args = args,
-				    blocks = blocks,
-				    name = name,
-				    raises = raises,
-				    returns = returns,
-				    sourceInfo = sourceInfo,
-				    start = start}
-		   end
-	     val _ = Vector.foreach (blocks, rem o Block.label)
-	  in
-	     f
-	  end)
+	 (functions, eliminateDeadBlocksFunction)
    in
       Program.T {datatypes = datatypes,
 		 globals = globals,

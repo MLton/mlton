@@ -1014,6 +1014,10 @@ val doMany
 	     val _ = Control.diagnostics
 	             (fn display =>
 		      display (Function.layout f))
+	     val f = eliminateDeadBlocksFunction f
+	     val _ = Control.diagnostics
+	             (fn display =>
+		      display (Function.layout f))
 	     val f = restore f
 	     val _ = Control.diagnostics
 	             (fn display =>

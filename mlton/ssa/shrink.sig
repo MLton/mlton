@@ -17,6 +17,7 @@ signature SHRINK =
    sig
       include SHRINK_STRUCTS
 
+      val eliminateDeadBlocksFunction: Function.t -> Function.t
       val eliminateDeadBlocks: Program.t -> Program.t
       val shrinkFunction: Statement.t vector -> Function.t -> Function.t
 (*      val shrinkFunctionNoDelete: Function.t -> Function.t *)
