@@ -58,7 +58,6 @@ val linkOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val output: string option ref = ref NONE
 val profileSet: bool ref = ref false
 val runtimeArgs: string list ref = ref ["@MLton"]
-val showBasis: bool ref = ref false
 val stop = ref Place.OUT
 
 val targetMap: unit -> {arch: MLton.Platform.Arch.t,
@@ -148,6 +147,9 @@ fun makeOptions {usage} =
 		     List.push (ccOpts, {opt = s, pred = OptPred.Yes}))),
        (Expert, "coalesce", " <n>", "coalesce chunk size for C codegen",
 	Int (fn n => coalesce := SOME n)),
+       (Expert, "dead-code", " {true|false}",
+	"basis library dead code elimination",
+	boolRef deadCode),
        (Expert, "debug", " {false|true}", "produce executable with debug info",
 	boolRef debug),
        (Normal, "detect-overflow", " {true|false}",
@@ -528,17 +530,16 @@ fun commandLine (args: string list): unit =
       case result of
       Result.No msg => usage msg
     | Result.Yes [] =>
-	 (case !verbosity of
-	     Silent =>
-		if !showBasis
-		   then Layout.outputl (Compile.layoutBasisLibrary (),
-					Out.standard)
-		else if !buildConstants
-		   then Compile.outputBasisConstants Out.standard
-	        else printVersion Out.standard
-	   | Top => printVersion Out.standard
-	   | _ => (inputFile := ""
-		   ; outputHeader' (No, Out.standard)))
+	 (inputFile := "<none>"
+	  ; if !showBasis orelse (!stop = Place.TypeCheck)
+	       then
+		  trace (Top, "Type Check Basis")
+		  Compile.elaborate {input = []}
+	    else if !buildConstants
+               then Compile.outputBasisConstants Out.standard
+	    else if !verbosity = Silent
+               then printVersion Out.standard
+	    else outputHeader' (No, Out.standard))
     | Result.Yes (input :: rest) =>
 	 let
 	    val _ = inputFile := File.base (File.fileOf input)
@@ -761,7 +762,7 @@ fun commandLine (args: string list): unit =
 			   case stop of
 			      Place.TypeCheck =>
 				 trace (Top, "Type Check SML")
-				 Compile.typeCheck {input = files}
+				 Compile.elaborate {input = files}
 			    | _ => 
 				 trace (Top, "Compile SML")
 				 Compile.compile

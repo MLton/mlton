@@ -62,6 +62,10 @@ val chunk = control {name = "chunk",
 		     default = Coalesce {limit = 4096},
 		     toString = Chunk.toString}
 
+val deadCode = control {name = "dead code",
+			default = true,
+			toString = Bool.toString}
+   
 val debug = control {name = "debug",
 		     default = false,
 		     toString = Bool.toString}
@@ -384,6 +388,10 @@ val safe = control {name = "safe",
 		    default = true,
 		    toString = Bool.toString}
 
+val showBasis = control {name = "show basis",
+			 default = false,
+			 toString = Bool.toString}
+   
 val showBasisUsed = control {name = "show basis used",
 			     default = false,
 			     toString = Bool.toString}

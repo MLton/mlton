@@ -423,35 +423,31 @@ fun selectBasisLibrary () =
 	   end
    end
 
-fun layoutBasisLibrary () = 
-   let
-      val _ = selectBasisLibrary ()
-      val _ = Env.setTyconNames basisEnv
-   in
-      Env.layoutPretty basisEnv
-   end
-
 (* ------------------------------------------------- *)
 (*                      compile                      *)
 (* ------------------------------------------------- *)
 
-fun elaborate {input: File.t list} =
+fun elaborate {input: File.t list}: Xml.Program.t =
    let
       fun parseElabMsg () = (lexAndParseMsg (); elaborateMsg ())
       val {basis, prefix, suffix, ...} = selectBasisLibrary ()
       val _ = Elaborate.allowRebindEquals := false
       fun parseAndElab () =
 	 parseAndElaborateFiles (input, basisEnv, lookupConstantError)
-      val input =
+      val _ =
 	 if !Control.showBasisUsed
-	    then let
-		    val _ = Elaborate.Env.scopeAll (basisEnv, parseAndElab)
-		    val _ = Layout.outputl (Elaborate.Env.layoutUsed basisEnv,
-					    Out.standard)
-		 in
-		    Process.succeed ()
-		 end
-	 else parseAndElab ()
+	    then (Elaborate.Env.scopeAll (basisEnv, parseAndElab)
+		  ; Layout.outputl (Elaborate.Env.layoutUsed basisEnv,
+				    Out.standard)
+		  ; Process.succeed ())
+	 else ()
+      val input = parseAndElab ()
+      val _ =
+	 if !Control.showBasis
+	    then (Env.setTyconNames basisEnv
+		  ; Layout.outputl (Env.layoutPretty basisEnv, Out.standard)
+		  ; Process.succeed ())
+	 else ()
       val _ =
 	 if not (!Control.exportHeader)
 	    then ()
@@ -466,18 +462,20 @@ fun elaborate {input: File.t list} =
 	    in
 	       Process.succeed ()
 	    end
-      val user = Decs.appends [prefix, input, suffix]
+      val user = Decs.toList (Decs.appends [prefix, input, suffix])
       val _ = parseElabMsg ()
       val basis = Decs.toList basis
-      val user = Decs.toList user
-      val basis = 
-	 Control.pass
-	 {name = "deadCode",
-	  suffix = "basis",
-	  style = Control.ML,
-	  thunk = fn () => DeadCode.deadCode {basis = basis,
-					      user = user},
-	  display = Control.Layout (List.layout CoreML.Dec.layout)}
+      val basis =
+	 if !Control.deadCode
+	    then
+	       Control.pass
+	       {name = "deadCode",
+		suffix = "basis",
+		style = Control.ML,
+		thunk = fn () => DeadCode.deadCode {basis = basis,
+						    user = user},
+		display = Control.Layout (List.layout CoreML.Dec.layout)}
+	 else basis
       val decs =
 	 Vector.concat [primitiveDecs,
 			Vector.fromList basis,
@@ -586,10 +584,7 @@ fun preCodegen {input}: Machine.Program.t =
    in
       machine
    end
-
-fun typeCheck {input: File.t list}: unit =
-   (elaborate {input = input}; ())
-   
+ 
 fun compile {input: File.t list, outputC, outputS}: unit =
    let
       val machine =
@@ -611,5 +606,7 @@ fun compile {input: File.t list, outputC, outputS}: unit =
    in
       ()
    end
-   
+
+val elaborate = fn {input: File.t list} => (elaborate {input = input}; ())
+
 end

@@ -38,6 +38,8 @@ signature CONTROL =
 
       val chunk: chunk ref
 
+      val deadCode: bool ref
+	 
       (* Generate an executable with debugging info. *)
       val debug: bool ref
 
@@ -204,6 +206,9 @@ signature CONTROL =
       (* Array bounds checking. *)
       val safe: bool ref
 
+      (* Show the basis library and exit. *)
+      val showBasis: bool ref
+	 
       (* Show the basis library used and exit. *)
       val showBasisUsed: bool ref
 	 

@@ -14,7 +14,7 @@ signature COMPILE_STRUCTS =
 signature COMPILE =
    sig
       include COMPILE_STRUCTS
-	 
+
       val compile: {input: File.t list,
 		    outputC: unit -> {file: File.t,
 				      print: string -> unit,
@@ -22,10 +22,9 @@ signature COMPILE =
 		    outputS: unit -> {file: File.t,
 				      print: string -> unit,
 				      done: unit -> unit}} -> unit
+      val elaborate: {input: File.t list} -> unit
       val forceBasisLibrary: Dir.t -> unit
-      val layoutBasisLibrary: unit -> Layout.t
       (* output a C file to print out the basis constants. *)
       val outputBasisConstants: Out.t -> unit
       val setBasisLibraryDir: Dir.t -> unit
-      val typeCheck: {input: File.t list} -> unit
    end
