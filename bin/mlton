@@ -37,5 +37,5 @@ doit () {
 
 doit "$root" "$gcc" -w -fomit-frame-pointer -fno-strength-reduce \
 	-march=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=5 \
-	-fschedule-insns2 -fscheduleinsns -mwidemultiply END \
+	-fschedule-insns2 END \
 	-I"$include" -include mlton.h -L"$lib" -lgmp -lm "$@"
