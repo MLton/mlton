@@ -28,7 +28,7 @@ LIB_DEPENDS=	gmp.6:${PORTSDIR}/math/libgmp4
 RUN_DEPENDS=	bash:${PORTSDIR}/shells/bash2
 
 SRC_DIST=	${DISTNAME}-1.freebsd.src.tgz
-BOOT_DIST=	${PORTNAME}-${BOOT_VER}-1.${MACHINE_ARCH}-freebsd.tbz
+BOOT_DIST=	${PORTNAME}-${BOOT_VER}-1.${MACHINE_ARCH}-freebsd.${BOOT_SUF}
 
 ONLY_FOR_ARCHS=	i386
 
@@ -50,14 +50,18 @@ PORTDIR=	usr/ports/lang/mlton
 .include <bsd.port.pre.mk>
 
 .if ${OSVERSION} < 500000
-BOOT_VER=      20040227
+BOOT_EXTRACT=	--gzip
+BOOT_SUF=	tgz
+BOOT_VER=	20040227
 .else
-BOOT_VER=      20040623
+BOOT_EXTRACT=	--bzip
+BOOT_SUF=	tbz
+BOOT_VER=	20040623
 .endif
 
 post-extract:
 	@${MKDIR} ${BOOT_WRKSRC}
-	@${TAR} xf ${DISTDIR}/${BOOT_DIST} --bzip -C ${BOOT_WRKSRC}
+	@${TAR} xf ${DISTDIR}/${BOOT_DIST} ${BOOT_EXTRACT} -C ${BOOT_WRKSRC}
 	@${REINPLACE_CMD} -e \
 		"s|lib=\'${LOCALBASE}/|lib=\'${BOOT_WRKSRC}/|" \
 	${BOOT_WRKSRC}/bin/mlton
