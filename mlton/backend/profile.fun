@@ -259,6 +259,9 @@ fun profile program =
 	       Statement.Move
 	       {dst = Operand.Runtime Runtime.GCField.CurrentSource,
 		src = Operand.word (Word.fromInt n)}
+	    fun funcNeedsCurrentSource (f: CFunction.t): bool =
+	       (profileAlloc andalso CFunction.needsCurrentSource f)
+	       orelse profileTime
 	    fun backward {args,
 			  kind,
 			  label,
@@ -267,7 +270,11 @@ fun profile program =
 			  statements: Statement.t list,
 			  transfer: Transfer.t}: unit =
 	       let
-		  val (_, npl, sourceSeq, statements) =
+		  fun addCurrent (ss, ncs, sourceSeq) =
+		     if profileAlloc andalso ncs
+			then setCurrentSource (sourceSeqIndex sourceSeq) :: ss
+		     else ss
+		  val (ncs, npl, sourceSeq, statements) =
 		     List.fold
 		     (statements,
 		      (needsCurrentSource, true, sourceSeq, []),
@@ -290,15 +297,24 @@ fun profile program =
 						  then sis
 					       else Error.bug "mismatched Enter")
 				   | Leave si => sourceInfoIndex si :: sourceSeq
-			       val ss =
-				  if profileAlloc andalso needsCurrentSource
-				     then (setCurrentSource
-					   (sourceSeqIndex sourceSeq) :: ss)
-				  else ss
+			       val ss = addCurrent (ss, ncs, sourceSeq)
 			    in
 			       (false, false, sourceSeq', ss)
 			    end
 		       | _ => (ncs, true, sourceSeq, s :: ss))
+		  val statements = addCurrent (statements, ncs, sourceSeq)
+		  val statements =
+		     if not ncs
+			andalso (case kind of
+				    Kind.CReturn {func, ...} =>
+				       funcNeedsCurrentSource func
+				  | _ => false)
+			then setCurrentSource ~1 :: statements
+		     else statements
+		  val statements =
+		     if profileTime andalso npl
+			then profileLabel sourceSeq :: statements
+		     else statements
 		  val {args, kind, label} =
 		     if profileStack andalso (case kind of
 						 Kind.Cont _ => true
@@ -332,10 +348,6 @@ fun profile program =
 			       label = newLabel}
 			   end
 		     else {args = args, kind = kind, label = label}
-		  val statements =
-		     if profileTime andalso npl
-			then profileLabel sourceSeq :: statements
-		     else statements
 	       in		       
 		  List.push (blocks,
 			     Block.T {args = args,
@@ -376,9 +388,6 @@ fun profile program =
 		   func = func,
 		   return = SOME newLabel}
 	       end
-	    fun needsCurrentSource (f: CFunction.t): bool =
-	       (profileAlloc andalso CFunction.needsCurrentSource f)
-	       orelse profileTime
 	    fun goto (l: Label.t, pushes: Push.t list): unit =
 	       let
 		  val _ =
@@ -447,17 +456,9 @@ fun profile program =
 				 kind = kind,
 				 label = label,
 				 statements = statements}
-			val statements = Vector.toList statements
-			val statements =
-			   if (case kind of
-				  Kind.CReturn {func, ...} =>
-				     needsCurrentSource func
-				| _ => false)
-			      then setCurrentSource ~1 :: statements
-			   else statements
 			val {args, bytesAllocated, kind, label, pushes,
 			     statements} =
-			   List.fold
+			   Vector.fold
 			   (statements,
 			    {args = args,
 			     bytesAllocated = 0,
@@ -559,7 +560,7 @@ fun profile program =
 			val (statements, transfer) =
 			   case transfer of
 			      Transfer.CCall {func, ...} =>
-				 if needsCurrentSource func
+				 if funcNeedsCurrentSource func
 				    then
 				       let
 					  val name = CFunction.name func
