@@ -638,6 +638,8 @@ static inline pointer object (GC_state s, uint header, W32 bytesRequested,
 static inline GC_stack newStack (GC_state s, uint size, bool allocInOldGen) {
 	GC_stack stack;
 
+	if (size > s->maxStackSizeSeen)
+		s->maxStackSizeSeen = size;
 	stack = (GC_stack) object (s, STACK_HEADER, stackBytes (size),
 					allocInOldGen);
 	stack->reserved = size;
@@ -1078,8 +1080,8 @@ static W32 heapDesiredSize (GC_state s, W64 live, W32 currentSize) {
 		/* If the heap is currently close in size to what we want, leave
 		 * it alone.  Favor growing over shrinking.
 		 */
-		unless (currentSize <= 0.8 * res
-				or currentSize >= 2.0 * res)
+		unless (res >= 1.5 * currentSize 
+				or res <= .5 * currentSize)
 			res = currentSize;
 	} else if (ratio >= s->copyRatio + s->growRatio) {
 		/* Cheney copying fits in RAM. */
@@ -1117,27 +1119,25 @@ static W32 heapDesiredSize (GC_state s, W64 live, W32 currentSize) {
 	return res;
 }
 
-static inline void heapInit (GC_state s, GC_heap h) {
+static inline void heapInit (GC_heap h) {
 	h->size = 0;
 	h->start = NULL;
 	h->totalSize = 0;
+}
+
+static inline bool heapIsInit (GC_heap h) {
+	return 0 == h->size;
 }
 
 static inline void heapRelease (GC_state s, GC_heap h) {
 	if (NULL == h->start)
 		return;
-	if (s->messages)
+	if (DEBUG or s->messages)
 		fprintf (stderr, "Releasing heap at 0x%08x of size %s.\n", 
 				(uint)h->start, 
-				uintToCommaString (h->totalSize));
+				uintToCommaString (h->size));
 	release (h->start, h->totalSize);
-	h->size = 0;
-	h->start = NULL;
-	h->totalSize = 0;
-}
-
-static inline void releaseToSpace (GC_state s) {
-	heapRelease (s, &s->heap2);
+	heapInit (h);
 }
 
 static inline void heapShrink (GC_state s, GC_heap h, W32 keep) {
@@ -1155,8 +1155,8 @@ static inline void heapShrink (GC_state s, GC_heap h, W32 keep) {
 			fprintf (stderr, 
 				"Shrinking space at 0x%08x of size %s to %s bytes.\n",
 				(uint)h->start, 
-				uintToCommaString ((uint)h->totalSize), 
-				uintToCommaString ((uint)h->totalSize - remove));
+				uintToCommaString (h->size),
+				uintToCommaString (keep));
 		h->size = keep;
 		if (remove > 0) {
 			decommit (h->start + h->totalSize - remove, remove);
@@ -1180,15 +1180,15 @@ static inline void setNursery (GC_state s, W32 oldGenBytesRequested) {
 	h = &s->heap;
 	h->nurserySize = h->size - h->oldGenSize - oldGenBytesRequested;
 	assert (isAligned (h->nurserySize, WORD_SIZE));
-	if ( 	/* The mutator marks cards. */
+	if (	/* The mutator marks cards. */
 		s->mutatorMarksCards
 		/* The live ratio is low enough to make generational GC
 		 * worthwhile.
 		 */
-		and (float)s->heap.size / (float)s->bytesLive 
+		and (float)h->size / (float)s->bytesLive 
 			<= s->generationalRatio
 		/* The nursery is large enough to be worth it. */
-		and ((float)(s->heap.size - s->bytesLive) 
+		and ((float)(h->size - s->bytesLive) 
 			/ (float)h->nurserySize) <= s->nurseryRatio) {
 		h->canMinor = TRUE;
 		h->nurserySize /= 2;
@@ -1202,16 +1202,6 @@ static inline void setNursery (GC_state s, W32 oldGenBytesRequested) {
 	assert (h->oldGen + h->oldGenSize + oldGenBytesRequested <= h->nursery);
 	s->frontier = h->nursery;
 	setLimit (s);
-}
-
-static inline void shrinkFromSpace (GC_state s, W32 keep) {
-	assert (keep <= s->heap.size);
-	heapShrink (s, &s->heap, keep);
-}
-
-static inline void shrinkToSpace (GC_state s, W32 keep) {
-	assert (keep <= s->heap2.size);
-	heapShrink (s, &s->heap2, keep);
 }
 
 static inline void heapClearCardMap (GC_heap h) {
@@ -1236,7 +1226,7 @@ static inline bool heapCreate (GC_state s, GC_heap h,
 		fprintf (stderr, "heapCreate  desired size = %s  min size = %s\n",
 				uintToCommaString (desiredSize),
 				uintToCommaString (minSize));
-	heapRelease (s, h);
+	assert (heapIsInit (h));
 	if (desiredSize < minSize)
 		desiredSize = minSize;
 	desiredSize = align (desiredSize, s->cardSize);
@@ -1311,7 +1301,7 @@ static inline bool heapCreate (GC_state s, GC_heap h,
 				}
 				if (DEBUG or s->messages)
 					fprintf (stderr, "Created heap of size %s at 0x%08x.\n",
-							uintToCommaString (h->totalSize),
+							uintToCommaString (h->size),
 							(uint)h->start);
 				assert (h->size >= minSize);
 				return TRUE;
@@ -1459,6 +1449,7 @@ static void swapSemis (GC_state s) {
 static inline void cheneyCopy (GC_state s) {
 	struct rusage ru_start;
 
+	assert (s->heap2.size >= s->heap.oldGenSize);
 	startTiming (&ru_start);		
 	s->numCopyingGCs++;
 	s->crossMapHeap = &s->heap2;
@@ -2162,40 +2153,43 @@ static void translateHeap (GC_state s, pointer from, pointer to, uint size) {
 }
 
 /* ---------------------------------------------------------------- */
-/*                          growFromSpace                           */
+/*                             heapGrow                             */
 /* ---------------------------------------------------------------- */
 
-static inline void growFromSpace (GC_state s, W32 desired, W32 minSize) {
+static inline void heapGrow (GC_state s, GC_heap h, W32 desired, W32 minSize) {
+	struct GC_heap h2;
 	pointer old;
 	uint size;
 
-	assert (desired >= s->heap.size);
+	assert (desired >= h->size);
 	if (DEBUG_RESIZING)
-		fprintf (stderr, "Growing from space.  oldGenSize = %s\n",
-				uintToCommaString (s->heap.oldGenSize));
-	releaseToSpace (s);
-	old = s->heap.oldGen;
-	size = s->heap.oldGenSize;
-	assert (size <= s->heap.size);
-	shrinkFromSpace (s, size);
+		fprintf (stderr, "Growing heap at 0x%08x of size %s to %s bytes.\n",
+				(uint)h->start,
+				uintToCommaString (h->size),
+       				uintToCommaString (desired));
+	old = h->oldGen;
+	size = h->oldGenSize;
+	assert (size <= h->size);
+	heapShrink (s, h, size);
+	heapInit (&h2);
 	/* Allocate a space of the desired size. */
-	if (heapCreate (s, &s->heap2, desired, minSize)) {
+	if (heapCreate (s, &h2, desired, minSize)) {
 		pointer from;
 		pointer to;
 
 		from = old + size;
-		to = s->heap2.oldGen + size;
+		to = h2.oldGen + size;
 copy:			
 		from -= COPY_CHUNK_SIZE;
 		to -= COPY_CHUNK_SIZE;
 		if (from > old) {
 			copy (from, to, COPY_CHUNK_SIZE);
-			heapShrink (s, &s->heap, from - old);
+			heapShrink (s, h, from - old);
 			goto copy;
 		}
-		copy (old, s->heap2.oldGen, from + COPY_CHUNK_SIZE - old);
-		heapRelease (s, &s->heap);
-		swapSemis (s);
+		copy (old, h2.oldGen, from + COPY_CHUNK_SIZE - old);
+		heapRelease (s, h);
+		*h = h2;
 	} else {
 		/* Write the heap to a file and try again. */
 		FILE *stream;
@@ -2210,10 +2204,10 @@ copy:
 		stream = sfopen (template, "wb");
 		sfwrite (old, 1, size, stream);
 		sfclose (stream);
-		heapRelease (s, &s->heap);
-		if (heapCreate (s, &s->heap, desired, minSize)) {
+		heapRelease (s, h);
+		if (heapCreate (s, h, desired, minSize)) {
 			stream = sfopen (template, "rb");
-			sfread (s->heap.oldGen, 1, size, stream);
+			sfread (h->oldGen, 1, size, stream);
 			sfclose (stream);
 			sunlink (template);
 		} else {
@@ -2224,8 +2218,8 @@ copy:
 				uintToCommaString (minSize));
 		}
 	}
-	s->heap.oldGenSize = size;
-	translateHeap (s, old, s->heap.oldGen, size);
+	h->oldGenSize = size;
+	translateHeap (s, old, h->oldGen, size);
 }
 
 /* ---------------------------------------------------------------- */
@@ -2241,14 +2235,15 @@ static inline void resizeHeap (GC_state s, W64 need) {
 	if (DEBUG_RESIZING)
 		fprintf (stderr, "resizeHeap  need = %s fromSize = %s\n",
 				ullongToCommaString (need), 
-				uintToCommaString (s->heap.totalSize));
+				uintToCommaString (s->heap.size));
 	desired = heapDesiredSize (s, need, s->heap.size);
 	assert (need <= desired);
-	/* Shrink or grow the heap. */
 	if (desired <= s->heap.size)
-		shrinkFromSpace (s, desired);
-	else
-		growFromSpace (s, desired, need);
+		heapShrink (s, &s->heap, desired);
+	else {
+		heapRelease (s, &s->heap2);
+		heapGrow (s, &s->heap, desired, need);
+	}
 	setNursery (s, 0);
 	setStack (s);
 	/* Resize to space. */
@@ -2260,9 +2255,9 @@ static inline void resizeHeap (GC_state s, W64 need) {
  		s->heap2.size < s->heap.size
 		or /* Holding on to toSpace may cause paging. */
 		s->heap.size + s->heap2.size > s->ram)
-		releaseToSpace (s);
+		heapRelease (s, &s->heap2);
 	else
-		shrinkToSpace (s, s->heap.size);
+		heapShrink (s, &s->heap2, s->heap.size);
 	assert (s->heap.size >= need);
 	assert (invariant (s));
 }
@@ -2276,8 +2271,6 @@ static void growStack (GC_state s) {
 		fprintf (stderr, "Growing stack to size %s.\n",
 				uintToCommaString (stackBytes (size)));
 	assert (hasBytesFree (s, stackBytes (size), 0));
-	if (size > s->maxStackSizeSeen)
-		s->maxStackSizeSeen = size;
 	stack = newStack (s, size, TRUE);
 	stackCopy (s->currentThread->stack, stack);
 	s->currentThread->stack = stack;
@@ -2291,11 +2284,13 @@ static void growStack (GC_state s) {
 
 static inline void majorGC (GC_state s, W32 bytesRequested) {
 	s->numMinorsSinceLastMajor = 0;
+	s->bytesAllocated += s->frontier - s->heap.nursery;
         if (not s->useFixedHeap
  		and s->heap.size < s->ram
-		and heapCreate (s, &s->heap2,
+		and (not heapIsInit (&s->heap2)
+			or heapCreate (s, &s->heap2,
 					heapDesiredSize (s, (W64)s->bytesLive + bytesRequested, 0),
-					s->heap.oldGenSize))
+					s->heap.oldGenSize)))
 		cheneyCopy (s);
 	else
 		markCompact (s);
@@ -2349,8 +2344,8 @@ void doGC (GC_state s,
 	s->maxPause = max (s->maxPause, gcTime);
 	if (DEBUG or s->messages) {
 		fprintf (stderr, "Finished gc.\n");
-		fprintf (stderr, "time (ms): %s\n", intToCommaString (gcTime));
-		fprintf (stderr, "old gen size (bytes): %s (%.1f%%)\n", 
+		fprintf (stderr, "time: %s ms\n", intToCommaString (gcTime));
+		fprintf (stderr, "old gen size: %s bytes (%.1f%%)\n", 
 				intToCommaString (s->heap.oldGenSize),
 				100.0 * ((double) s->heap.oldGenSize) 
 					/ s->heap.size);
@@ -2972,8 +2967,7 @@ static void newWorld (GC_state s)
 	for (i = 0; i < s->numGlobals; ++i)
 		s->globals[i] = (pointer)BOGUS_POINTER;
 	setInitialBytesLive (s);
-	heapCreate (s, &s->heap, 
-			heapDesiredSize (s, s->bytesLive, 0),
+	heapCreate (s, &s->heap, heapDesiredSize (s, s->bytesLive, 0),
 			s->bytesLive);
 	s->frontier = s->heap.oldGen;
 	initIntInfs (s);
@@ -2981,7 +2975,6 @@ static void newWorld (GC_state s)
 	assert (s->frontier - s->heap.oldGen <= s->bytesLive);
 	s->heap.oldGenSize = s->frontier - s->heap.oldGen;
 	setNursery (s, 0);
-	heapInit (s, &s->heap2);
 	switchToThread (s, newThreadOfSize (s, initialStackSize (s)));
 }
 
@@ -3006,11 +2999,9 @@ static void loadWorld (GC_state s, char *fileName) {
 	s->heap.oldGenSize = sfreadUint (file);
 	s->currentThread = (GC_thread) sfreadUint (file);
 	s->signalHandler = (GC_thread) sfreadUint (file);
-       	heapCreate (s, &s->heap, 
-			heapDesiredSize (s, s->heap.oldGenSize, 0),
+       	heapCreate (s, &s->heap, heapDesiredSize (s, s->heap.oldGenSize, 0),
 			s->heap.oldGenSize);
 	setNursery (s, 0);
-	heapInit (s, &s->heap2);
 	sfread (s->heap.oldGen, 1, s->heap.oldGenSize, file);
 	(*s->loadGlobals) (file);
 	unless (EOF == fgetc (file))
@@ -3035,7 +3026,7 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->cardSize = 0x1 << s->cardSizeLog2;
 	s->copyRatio = 2.0;
 	s->currentThread = BOGUS_THREAD;
-	s->generationalRatio = 5.0;
+	s->generationalRatio = 4.0;
 	s->growRatio = 1.5;
 	s->inSignalHandler = FALSE;
 	s->isOriginal = TRUE;
@@ -3064,6 +3055,8 @@ int GC_init (GC_state s, int argc, char **argv) {
 	s->signalIsPending = FALSE;
 	s->startTime = currentTime ();
 	s->summary = FALSE;
+	heapInit (&s->heap);
+	heapInit (&s->heap2);
 	sigemptyset (&s->signalsHandled);
 	initSignalStack (s);
 	sigemptyset (&s->signalsPending);
@@ -3178,14 +3171,6 @@ int GC_init (GC_state s, int argc, char **argv) {
 	return i;
 }
 
-static void displayUint (FILE * out, string name, uint n) {
-	fprintf (out, "%s: %s\n", name, uintToCommaString (n));
-}
-
-static void displayUllong (FILE *out, string name, ullong n) {
-	fprintf (out, "%s: %s\n", name, ullongToCommaString (n));
-}
-
 static void displayCol (FILE *out, int width, string s) {
 	int extra;
 	int i;
@@ -3214,14 +3199,12 @@ inline void GC_done (GC_state s) {
 
 	enter (s);
 	out = stderr;
-	heapRelease (s, &s->heap);
-	heapRelease (s, &s->heap2);
 	if (s->summary) {
 		double time;
 		uint gcTime;
 
 		gcTime = rusageTime (&s->ru_gc);
-		fprintf (out, "GC type\t\tmilisec\t number\t          bytes\n");
+		fprintf (out, "GC type\t\ttime ms\t number\t          bytes\n");
 		fprintf (out, "-------------\t-------\t-------\t---------------\n");
 		displayCollectionStats
 			(out, "copying\t\t", &s->ru_gcCopy, s->numCopyingGCs, 
@@ -3232,23 +3215,30 @@ inline void GC_done (GC_state s) {
 		displayCollectionStats
 			(out, "minor\t\t", &s->ru_gcMinor, s->numMinorGCs, 
 				s->bytesCopiedMinor);
-		time = (double)(currentTime() - s->startTime);
-		fprintf (out, "total GC milisec: %s (%.1f%%)\n",
+		time = (double)(currentTime () - s->startTime);
+		fprintf (out, "total GC time: %s ms (%.1f%%)\n",
 				intToCommaString (gcTime), 
 				(0.0 == time) 
 					? 0.0 
 					: 100.0 * ((double) gcTime) / time);
-		displayUint (out, "max milisec pause", s->maxPause);
-		displayUllong (out, "bytes allocated",
-	 			s->bytesAllocated 
-				+ (s->frontier - s->heap.nursery));
-		displayUint (out, "max bytes live", s->maxBytesLive);
-		displayUint (out, "max semispace bytes", 
-				s->maxHeapSizeSeen);
-		displayUint (out, "max stack bytes", s->maxStackSizeSeen);
-		displayUllong (out, "marked cards", s->markedCards);
-		displayUllong (out, "minor bytes scanned", s->minorBytesScanned);
-		displayUllong (out, "minor bytes skipped", s->minorBytesSkipped);
+		fprintf (out, "max pause: %s ms\n",
+				uintToCommaString (s->maxPause));
+		fprintf (out, "total allocated: %s bytes\n",
+	 			uintToCommaString 
+				(s->bytesAllocated 
+					+ (s->frontier - s->heap.nursery)));
+		fprintf (out, "max live: %s bytes\n",
+				uintToCommaString (s->maxBytesLive));
+		fprintf (out, "max semispace: %s bytes\n", 
+				uintToCommaString (s->maxHeapSizeSeen));
+		fprintf (out, "max stack size: %s bytes\n", 
+				uintToCommaString (s->maxStackSizeSeen));
+		fprintf (out, "marked cards: %s\n", 
+				ullongToCommaString (s->markedCards));
+		fprintf (out, "minor scanned: %s bytes\n",
+				uintToCommaString (s->minorBytesScanned));
+		fprintf (out, "minor skipped: %s bytes\n", 
+				uintToCommaString (s->minorBytesSkipped));
 #if METER
 		{
 			int i;
@@ -3259,6 +3249,8 @@ inline void GC_done (GC_state s) {
 		}
 #endif
 	}
+	heapRelease (s, &s->heap);
+	heapRelease (s, &s->heap2);
 }
 
 void GC_finishHandler (GC_state s) {
@@ -3325,18 +3317,18 @@ void GC_pack (GC_state s) {
 	enter (s);
 	if (DEBUG or s->messages)
 		fprintf (stderr, "Packing heap of size %s.\n",
-				uintToCommaString (s->heap.totalSize));
+				uintToCommaString (s->heap.size));
 	/* Could put some code here to skip the GC if there hasn't been much
 	 * allocated since the last collection.  But you would still need to 
 	 * do a minor GC to make all objects contiguous.
  	 */
 	doGC (s, 0, 0, TRUE);
-	shrinkFromSpace (s, s->bytesLive * 1.1);
+	heapShrink (s, &s->heap, s->bytesLive * 1.1);
 	setNursery (s, 0);
-	releaseToSpace (s);
+	heapRelease (s, &s->heap2);
 	if (DEBUG or s->messages)
 		fprintf (stderr, "Packed heap to size %s.\n",
-				uintToCommaString (s->heap.totalSize));
+				uintToCommaString (s->heap.size));
 	leave (s);
 }
 
