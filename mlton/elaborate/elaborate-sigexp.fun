@@ -316,7 +316,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, E: Env.t): Interface.t =
 	     Sigexp.Spec spec => (* rule 62 *)
 		let
 		   val I = elaborateSpec (spec, I)
-		   val _ = Interface.reportDuplicates I
+		   val _ = Interface.reportDuplicates (I, Sigexp.region sigexp)
 		in
 		   I
 		end

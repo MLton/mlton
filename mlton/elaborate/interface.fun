@@ -612,10 +612,10 @@ and element =
 	    status: Status.t}
 withtype copy = t option ref
 
-fun reportDuplicates (T s) =
+fun reportDuplicates (T s, region) =
    let
       val {elements, ...} = Set.value s
-      fun make (kind, region, toString) =
+      fun make (kind, toString) =
 	 let
 	    val h = HashSet.new {hash = #hash}
 	 in
@@ -634,7 +634,7 @@ fun reportDuplicates (T s) =
 		    in
 		       if !isNew
 			  then ()
-		       else Control.error (region n,
+		       else Control.error (region,
 					   Layout.str
 					   (concat ["duplicate ",
 						    kind,
@@ -643,9 +643,9 @@ fun reportDuplicates (T s) =
 					   Layout.empty)
 		    end
 	 end
-      val str = make ("structure", Ast.Strid.region, Ast.Strid.toString)
-      val ty = make ("type", Ast.Tycon.region, Ast.Tycon.toString)
-      val vid = make ("variable", Ast.Vid.region, Ast.Vid.toString)
+      val str = make ("structure", Ast.Strid.toString)
+      val ty = make ("type", Ast.Tycon.toString)
+      val vid = make ("variable", Ast.Vid.toString)
    in
       List.foreach
       (elements, fn e =>
