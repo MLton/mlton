@@ -11,7 +11,11 @@
 	word divTemp;							\
 	struct GC_state gcState;				       	\
 	word c_stackP;							\
+	char cReturnTempB;     						\
+	word cReturnTempL;     						\
+	double cReturnTempD;   						\
 	word limitCheckTemp;						\
+	word gcFirstAuxTemp;						\
 	word arrayAllocateTemp;						\
 	word arrayAllocateLoopTemp;    					\
 	word overflowCheckTemp;						\

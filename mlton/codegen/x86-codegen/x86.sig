@@ -1016,7 +1016,8 @@ signature X86 =
 			offset: int}
 	  | Runtime of {label: Label.t,
 			frameInfo: FrameInfo.t}
-	  | CReturn of {label: Label.t}
+	  | CReturn of {label: Label.t,
+			dst: (Operand.t * Size.t) option}
 
 	val toString : t -> string
 	val uses_defs_kills : t -> {uses: Operand.t list, 
@@ -1037,7 +1038,8 @@ signature X86 =
 		       offset: int} -> t
 	val runtime : {label: Label.t,
 		       frameInfo: FrameInfo.t} -> t
-	val creturn : {label: Label.t} -> t
+	val creturn : {label: Label.t,
+		       dst: (Operand.t * Size.t) option} -> t
 
 	val isNear : t -> bool
       end
@@ -1113,14 +1115,12 @@ signature X86 =
 	  | Raise of {live: MemLocSet.t}
 	  | Runtime of {prim: Prim.t,
 			args: (Operand.t * Size.t) list,
-			live: MemLocSet.t,
 			return: Label.t,
 			size: int}
 	  | CCall of {target: Label.t,
 		      args: (Operand.t * Size.t) list,
-		      dst: (Operand.t * Size.t) option,
-		      live: MemLocSet.t,
-		      return: Label.t}
+		      return: Label.t,
+		      dstsize: Size.t option}
 
 	val toString : t -> string
 
@@ -1150,14 +1150,12 @@ signature X86 =
 	val raisee : {live: MemLocSet.t} -> t
 	val runtime : {prim: Prim.t,
 		       args: (Operand.t * Size.t) list,
-		       live: MemLocSet.t,
 		       return: Label.t,
 		       size: int} -> t
 	val ccall : {target: Label.t,
 		     args: (Operand.t * Size.t) list,
-		     dst: (Operand.t * Size.t) option,
-		     live: MemLocSet.t,
-		     return: Label.t} -> t		       
+		     return: Label.t,
+		     dstsize: Size.t option} -> t		       
       end
 
     structure Block :

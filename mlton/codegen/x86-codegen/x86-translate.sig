@@ -18,14 +18,14 @@ signature X86_TRANSLATE =
   sig
     include X86_TRANSLATE_STRUCTS
 
-    val translateChunk : {chunk: x86MLton.MachineOutput.Chunk.t,
-			  frameLayouts: x86MLton.MachineOutput.Label.t ->
+    val translateChunk : {chunk: x86MLton.Machine.Chunk.t,
+			  frameLayouts: x86MLton.Machine.Label.t ->
 			                {size: int, frameLayoutsIndex: int} option,
 			  liveInfo: x86Liveness.LiveInfo.t} ->
                          {chunk: x86.Chunk.t}
 
-    val translateProgram : {program: x86MLton.MachineOutput.Program.t,
-			    frameLayouts: x86MLton.MachineOutput.Label.t ->
+    val translateProgram : {program: x86MLton.Machine.Program.t,
+			    frameLayouts: x86MLton.Machine.Label.t ->
 			                  {size: int, frameLayoutsIndex: int} option,
 			    liveInfo: x86Liveness.LiveInfo.t} ->
                            {chunks: x86.Chunk.t list}

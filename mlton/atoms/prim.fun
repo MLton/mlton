@@ -495,7 +495,9 @@ val mayAllocate = Name.mayAllocate o name
 val mayOverflow = Name.mayOverflow o name
 val mayRaise = Name.mayRaise o name
 val isArrayAllocation = Name.isArrayAllocation o name
-val impCall = Name.impCall o name
+fun impCall p = case name p
+		  of Name.FFI _ => numArgs p <> SOME 0
+		   | p => Name.impCall p
 
 val entersRuntime = Name.entersRuntime o name
 val entersRuntime =

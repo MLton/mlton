@@ -297,7 +297,7 @@ struct
 		      => ()
 		      | Runtime {return, ...}
 		      => (doit'' return)
-		      | CCall {dst, return, ...}
+		      | CCall {return, ...}
 		      => (doit' return)
 		 end)
 
@@ -801,7 +801,7 @@ struct
 			 => ()
 			 | Runtime {return, ...}
 			 => (doit'' return)
-			 | CCall {dst, return, ...}
+			 | CCall {return, ...}
 			 => (doit'' return)
 		    end
 	    end
@@ -918,7 +918,7 @@ struct
 		       => ()
 		       | Runtime {return, ...}
 		       => (doit'' return)
-		       | CCall {dst, return, ...}
+		       | CCall {return, ...}
 		       => (doit' return)
 		  end
 	    in

@@ -12,12 +12,12 @@ struct
   val intInfOverhead = arrayHeaderSize + wordSize (* for the sign *)
 
   structure x86 
-    = x86(structure Label = MachineOutput.Label
-	  structure Prim = MachineOutput.Prim)
+    = x86(structure Label = Machine.Label
+	  structure Prim = Machine.Prim)
 
   structure x86MLtonBasic
     = x86MLtonBasic(structure x86 = x86
-		    structure MachineOutput = MachineOutput)
+		    structure Machine = Machine)
 
   structure x86Liveness
     = x86Liveness(structure x86 = x86
@@ -118,8 +118,8 @@ struct
     end
 
   open x86
-  structure Type = MachineOutput.Type
-  fun output {program as MachineOutput.Program.T 
+  structure Type = Machine.Type
+  fun output {program as Machine.Program.T 
 	                 {globals,
 			  globalsNonRoot,
 			  intInfs,
@@ -130,7 +130,7 @@ struct
 			  maxFrameSize,
 			  chunks,
 			  main,
-			  ...}: MachineOutput.Program.t,
+			  ...}: Machine.Program.t,
 	      includes: string list,
 	      outputC,
 	      outputS}: unit
@@ -149,7 +149,7 @@ struct
 	  = List.fold
 	    (chunks,
 	     [],
-	     fn (MachineOutput.Chunk.T {entries,gcReturns,...}, l)
+	     fn (Machine.Chunk.T {entries,gcReturns,...}, l)
 	      => List.fold(entries @ gcReturns,
 			   l,
 			   fn (label, l')
@@ -243,7 +243,7 @@ struct
 	      fun locals ty
 		= List.fold(chunks,
 			    0,
-			    fn (MachineOutput.Chunk.T {regMax, ...},max)
+			    fn (Machine.Chunk.T {regMax, ...},max)
 			     => if regMax ty > max
 				  then regMax ty
 				  else max)
@@ -265,7 +265,7 @@ struct
 		   (intInfs, 
 		    fn (g, s) 
 		     => (C.callNoSemi("IntInf",
-				      [C.int(MachineOutput.Global.index g),
+				      [C.int(Machine.Global.index g),
 				       C.string s],
 				      print);
 			 print "\n"));
@@ -277,7 +277,7 @@ struct
 		   (strings, 
 		    fn (g, s) 
 		     => (C.callNoSemi("String",
-				      [C.int(MachineOutput.Global.index g),
+				      [C.int(Machine.Global.index g),
 				       C.string s,
 				       C.int(String.size s)],
 				      print);
@@ -290,7 +290,7 @@ struct
 		   (floats,
 		    fn (g, f)
 		     => (C.callNoSemi("Float",
-				      [C.int(MachineOutput.Global.index g),
+				      [C.int(Machine.Global.index g),
 				       C.float f],
 				      print);
 			 print "\n"));
@@ -389,12 +389,12 @@ struct
 	val liveInfo = x86Liveness.LiveInfo.newLiveInfo ()
 	val jumpInfo = x86JumpInfo.newJumpInfo ()
 
-	fun outputChunk (chunk as MachineOutput.Chunk.T {chunkLabel, 
-							 entries, ...},
+	fun outputChunk (chunk as Machine.Chunk.T {chunkLabel, 
+						   entries, ...},
 			 print)
 	  = let
 	      val isMain 
-		= MachineOutput.ChunkLabel.equals(#chunkLabel main, chunkLabel)
+		= Machine.ChunkLabel.equals(#chunkLabel main, chunkLabel)
 
 	      val {chunk}
 		= x86Translate.translateChunk 

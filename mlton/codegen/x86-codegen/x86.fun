@@ -3445,7 +3445,8 @@ struct
 		      offset: int}
 	| Runtime of {label: Label.t,
 		      frameInfo: FrameInfo.t}
-	| CReturn of {label: Label.t}
+	| CReturn of {label: Label.t,
+		      dst: (Operand.t * Size.t) option}
 				    
       val toString
 	= fn Jump {label} => concat ["Jump::",
@@ -3491,13 +3492,19 @@ struct
 		      Label.toString label,
 		      " ",
 		      FrameInfo.toString frameInfo]
-	   | CReturn {label} 
+	   | CReturn {label, dst} 
 	   => concat ["CReturn::",
-		      Label.toString label]
+		      Label.toString label,
+		      " ",
+		      case dst
+			of SOME (dst,dstsize) => Operand.toString dst
+			 | NONE => ""]
       val layout = Layout.str o toString
 
       val uses_defs_kills
-	= fn _ => {uses = [], defs = [], kills = []}
+	= fn CReturn {dst = SOME (dst, _), ...} 
+	   => {uses = [], defs = [dst], kills = []}
+	   | _ => {uses = [], defs = [], kills = []}
 	   
       val label
 	= fn Jump {label, ...} => label
@@ -3773,14 +3780,12 @@ struct
 	| Raise of {live: MemLocSet.t}
 	| Runtime of {prim: Prim.t,
 		      args: (Operand.t * Size.t) list,
-		      live: MemLocSet.t,
 		      return: Label.t,
 		      size: int}
 	| CCall of {target: Label.t,
 		    args: (Operand.t * Size.t) list,
-		    dst: (Operand.t * Size.t) option,
-		    live: MemLocSet.t,
-		    return: Label.t}
+		    return: Label.t,
+		    dstsize: Size.t option}
 
       val toString
 	= fn Goto {target}
@@ -3858,43 +3863,26 @@ struct
 			fn (memloc, l) => (MemLoc.toString memloc)::l),
 		       ", "),
 		      "]"]
-	   | Runtime {prim, args, live, return, size}
+	   | Runtime {prim, args, return, size}
 	   => concat ["RUNTIME ",
 		      Prim.toString prim,
 		      "(",
 		      (concat o List.separate)
 		      (List.map(args, fn (oper,_) => Operand.toString oper),
 		       ", "),
-		      ") [",
-		      (concat o List.separate)
-		      (MemLocSet.fold
-		       (live,
-			[],
-			fn (memloc, l) => (MemLoc.toString memloc)::l),
-		       ", "),
-		      "] <",
+		      ") <",
 		      Label.toString return,
 		      " ",
 		      Int.toString size,
 		      ">"]
-	   | CCall {target, args, dst, live, return}
+	   | CCall {target, args, return, dstsize}
 	   => concat ["CCALL ",
-		      case dst
-			of SOME (oper,_) => concat [Operand.toString oper, " = "]
-			 | NONE => "",
 		      Label.toString target,
 		      "(",
 		      (concat o List.separate)
 		      (List.map(args, fn (oper,_) => Operand.toString oper),
 		       ", "),
-		      ") [",
-		      (concat o List.separate)
-		      (MemLocSet.fold
-		       (live,
-			[],
-			fn (memloc, l) => (MemLoc.toString memloc)::l),
-		       ", "),
-		      "] <",
+		      ") <",
 		      Label.toString return,
 		      ">"]
       val layout = Layout.str o toString
@@ -3906,11 +3894,9 @@ struct
 	   => {uses = List.map(args, fn (oper,_) => oper),
 	       defs = [],
 	       kills = []}
-	   | CCall {args, dst, ...}
+	   | CCall {args, ...}
 	   => {uses = List.map(args, fn (oper,_) => oper),
-	       defs = case dst
-			of SOME (oper,_) => [oper]
-			 | NONE => [],
+	       defs = [],
 	       kills = []}
 	   | _ => {uses = [], defs = [], kills = []}
 
@@ -3936,8 +3922,6 @@ struct
 	   | NonTail {live,...} => live
 	   | Return {live,...} => live
 	   | Raise {live,...} => live
-	   | Runtime {live,...} => live
-	   | CCall {live,...} => live
 	   | _ => MemLocSet.empty
 
       fun replace replacer
@@ -3945,32 +3929,24 @@ struct
 	   => Switch {test = replacer {use = true, def = false} test,
 		      cases = cases,
 		      default = default}
-	   | Runtime {prim, args, live, return, size}
+	   | Runtime {prim, args, return, size}
 	   => Runtime {prim = prim,
 		       args = List.map(args,
 				       fn (oper,size) => (replacer {use = true,
 								    def = false}
 							           oper,
 							  size)),
-		       live = live,
 		       return = return,
 		       size = size}
-	   | CCall {target, args, dst, live, return}
+	   | CCall {target, args, return, dstsize}
 	   => CCall {target = target,
 		     args = List.map(args,
 				     fn (oper,size) => (replacer {use = true,
 								  def = false}
 							         oper,
 							size)),
-		     dst = case dst
-			     of SOME (oper, size) 
-			      => SOME (replacer {use = false,
-						 def = true}
-				                oper,
-				       size)
-			      | NONE => NONE,
-		     live = live,
-		     return = return}
+		     return = return,
+		     dstsize = dstsize}
            | transfer => transfer
 
       val goto = Goto

@@ -445,8 +445,26 @@ struct
 		       = case entry
 			   of Jump {label}
 			    => near label
-			    | CReturn {label}
-			    => near label
+			    | CReturn {label, dst}
+			    => AppendList.append
+			       (near label,
+				case dst
+				  of NONE => AppendList.empty
+				   | SOME (dst, dstsize)
+				   => (case Size.class dstsize
+					 of Size.INT
+					  => AppendList.single
+					     (x86.Assembly.instruction_mov
+					      {dst = dst,
+					       src = x86MLton.cReturnTempContentsOperand dstsize,
+					       size = dstsize})
+					  | Size.FLT
+					  => AppendList.single
+					     (x86.Assembly.instruction_pfmov
+					      {dst = dst,
+					       src = x86MLton.cReturnTempContentsOperand dstsize,
+					       size = dstsize})
+					  | _ => Error.bug "CReturn"))
 			    | Func {label,...}
 			    => AppendList.append
 			       (AppendList.fromList
@@ -890,7 +908,7 @@ struct
 			 {target = stackTopDeref,
 			  absolute = true})))
 		    end
-		| Runtime {prim, args, live, return, size}
+		| Runtime {prim, args, return, size}
 		=> let
 		     val _ = enque return
 		     
@@ -907,9 +925,7 @@ struct
 		     val stackTopDeref
 		       = x86MLton.gcState_stackTopDerefOperand
 
-		     val liveReturn = x86Liveness.LiveInfo.getLive(liveInfo, return)
-		     val live = MemLocSet.unions [live,
-						  liveReturn]
+		     val live = x86Liveness.LiveInfo.getLive(liveInfo, return)
 
 		     fun default f
 		       = let
@@ -1266,7 +1282,7 @@ struct
 			| World_save => default "GC_saveWorld"
 			| _ => Error.bug "x86GenerateTransfers::Runtime: prim"
 		   end
-		| CCall {target, args, dst, live, return}
+		| CCall {target, args, return, dstsize}
 		=> let
 		     val {dead, ...}
 		       = livenessTransfer {transfer = transfer,
@@ -1327,7 +1343,7 @@ struct
 		      AppendList.fromList
 		      [(* flushing at Ccall *)
 		       Assembly.directive_force
-		       {commit_memlocs = live,
+		       {commit_memlocs = MemLocSet.empty,
 			commit_classes = ccallflushClasses,
 			remove_memlocs = MemLocSet.empty,
 			remove_classes = ClassSet.empty,
@@ -1344,22 +1360,19 @@ struct
 			remove_classes = ClassSet.empty,
 			dead_memlocs = MemLocSet.empty,
 			dead_classes = ccallflushClasses}],
-		      (case dst
+		      (case dstsize
 			 of NONE => AppendList.empty
-			  | SOME (dst,dstsize) 
-			  => (case Operand.deMemloc dst
-				of NONE => Error.bug "applyFF: dst"
-				 | SOME dst
-				 => (case Size.class dstsize
-				       of Size.INT
-					=> AppendList.single
-					   (Assembly.directive_return
-					    {memloc = dst})
-				        | Size.FLT
-					=> AppendList.single
-					   (Assembly.directive_fltreturn
-					    {memloc = dst})
-				        | _ => Error.bug "applyFF: dstsize"))),
+			  | SOME dstsize
+			  => (case Size.class dstsize
+				of Size.INT
+				 => AppendList.single
+				    (Assembly.directive_return
+				     {memloc = x86MLton.cReturnTempContents dstsize})
+				 | Size.FLT
+				 => AppendList.single
+				    (Assembly.directive_fltreturn
+				     {memloc = x86MLton.cReturnTempContents dstsize})
+			         | _ => Error.bug "CCall")),
 		      (if size_args > 0
 			 then AppendList.single
 			      (Assembly.instruction_binal
@@ -2547,8 +2560,26 @@ struct
 		       = case entry
 			   of Jump {label}
 			    => near label
-			    | CReturn {label}
-			    => near label
+			    | CReturn {label, dst}
+			    => AppendList.append
+			       (near label,
+				case dst
+				  of NONE => AppendList.empty
+				   | SOME (dst, dstsize)
+				   => (case Size.class dstsize
+					 of Size.INT
+					  => AppendList.single
+					     (x86.Assembly.instruction_mov
+					      {dst = dst,
+					       src = x86MLton.cReturnTempContentsOperand dstsize,
+					       size = dstsize})
+					  | Size.FLT
+					  => AppendList.single
+					     (x86.Assembly.instruction_pfmov
+					      {dst = dst,
+					       src = x86MLton.cReturnTempContentsOperand dstsize,
+					       size = dstsize})
+					  | _ => Error.bug "CReturn"))
 			    | Func {label,...}
 			    => AppendList.append
 			       (AppendList.fromList
@@ -3161,7 +3192,7 @@ struct
 			 {target = stackTopDeref,
 			  absolute = true})))
 		    end
-		| Runtime {prim, args, live, return, size}
+		| Runtime {prim, args, return, size}
 		=> let
 		     val _ = enque {source = label, 
 				    target = return}
@@ -3179,9 +3210,7 @@ struct
 		     val stackTopDeref
 		       = x86MLton.gcState_stackTopDerefOperand
 
-		     val liveReturn = x86Liveness.LiveInfo.getLive(liveInfo, return)
-		     val live = MemLocSet.unions [live,
-						  liveReturn]
+		     val live = x86Liveness.LiveInfo.getLive(liveInfo, return)
 
 		     fun default f
 		       = let
@@ -3538,7 +3567,7 @@ struct
 			| World_save => default "GC_saveWorld"
 			| _ => Error.bug "x86GenerateTransfers::Runtime: prim"
 		   end
-		| CCall {target, args, dst, live, return}
+		| CCall {target, args, return, dstsize}
 		=> let
 		     val {dead, ...}
 		       = livenessTransfer {transfer = transfer,
@@ -3599,7 +3628,7 @@ struct
 		      AppendList.fromList
 		      [(* flushing at Ccall *)
 		       Assembly.directive_force
-		       {commit_memlocs = live,
+		       {commit_memlocs = MemLocSet.empty,
 			commit_classes = ccallflushClasses,
 			remove_memlocs = MemLocSet.empty,
 			remove_classes = ClassSet.empty,
@@ -3616,22 +3645,19 @@ struct
 			remove_classes = ClassSet.empty,
 			dead_memlocs = MemLocSet.empty,
 			dead_classes = ccallflushClasses}],
-		      (case dst
+		      (case dstsize
 			 of NONE => AppendList.empty
-			  | SOME (dst,dstsize) 
-			  => (case Operand.deMemloc dst
-				of NONE => Error.bug "applyFF: dst"
-				 | SOME dst
-				 => (case Size.class dstsize
-				       of Size.INT
-					=> AppendList.single
-					   (Assembly.directive_return
-					    {memloc = dst})
-				        | Size.FLT
-					=> AppendList.single
-					   (Assembly.directive_fltreturn
-					    {memloc = dst})
-				        | _ => Error.bug "applyFF: dstsize"))),
+			  | SOME dstsize
+			  => (case Size.class dstsize
+				of Size.INT
+				 => AppendList.single
+				    (Assembly.directive_return
+				     {memloc = x86MLton.cReturnTempContents dstsize})
+				 | Size.FLT
+				 => AppendList.single
+				    (Assembly.directive_fltreturn
+				     {memloc = x86MLton.cReturnTempContents dstsize})
+			         | _ => Error.bug "CCall")),
 		      (if size_args > 0
 			 then AppendList.single
 			      (Assembly.instruction_binal
