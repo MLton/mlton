@@ -4,16 +4,15 @@
 functor x86(S: X86_STRUCTS): X86 =
 struct
 
-    val tracer
-    = fn s => Control.traceBatch (Control.Detail, s)
-(*
-    = fn s => fn f => (Control.trace (Control.Detail, s) f, fn () => ())
-*)
-
     val tracerTop
     = fn s => Control.traceBatch (Control.Pass, s)
 (*
     = fn s => fn f => (Control.trace (Control.Pass, s) f, fn () => ())
+*)
+    val tracer
+    = fn s => Control.traceBatch (Control.Detail, s)
+(*
+    = fn s => fn f => (Control.trace (Control.Detail, s) f, fn () => ())
 *)
 
   (* compensate for differences between 
@@ -4126,7 +4125,7 @@ struct
 			     profileInfo = ProfileInfo.none,
 			     statements = statements1 @ statements2,
 			     transfer = transfer2})::blocks)
-           | _ => Error.bug "Blocks.compress"
+	   | _ => Error.bug "Blocks.compress"
     end
 
   structure Chunk =

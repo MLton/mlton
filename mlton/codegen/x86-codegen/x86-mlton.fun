@@ -2942,8 +2942,7 @@ struct
 	     | Int_subCheck => binal x86.Instruction.SUB
 	     | Int_mulCheck => imul2_check ()
 	     | Int_negCheck => unal x86.Instruction.NEG
-	     | _ => Error.bug ("arith: strange Prim.Name.t: " ^ primName)),
-	 comment_end]
+	     | _ => Error.bug ("arith: strange Prim.Name.t: " ^ primName))]
       end
 
   val bug_msg_label = Label.fromString "MLton_bug_msg"

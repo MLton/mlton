@@ -3518,73 +3518,58 @@ struct
 		start, 
 		statements as
 		[[(Assembly.Instruction instruction,
-		   info as {...})]],
-		finish as [], 
-		transfer as (Transfer.Iff {condition = Instruction.O,
-					   truee,
-					   falsee},
-			     {...})}
-	     => NONE
-	     | {entry,
-		profileInfo,
-		start, 
-		statements as
-		[[(Assembly.Instruction instruction,
-		   info as {...})]],
-		finish as [], 
-		transfer as (Transfer.Iff {condition = Instruction.NO,
-					   truee,
-					   falsee},
-			     {...})}
-	     => NONE
-	     | {entry,
-		profileInfo,
-		start, 
-		statements as
-		[[(Assembly.Instruction instruction,
 		   info as {liveOut,...})]],
 		finish, 
 		transfer}
-	     => let
+	     => if List.fold
+	           (finish, false, fn (asm, b) => b orelse isComment asm)
+		   andalso
+		   (case #1 transfer
+		      of Transfer.Iff _ => true
+		       | _ => false)
+		  then NONE
+		  else let
 (*
-		  val label = let
-				val (entry,_) = entry
-			      in 
-				Entry.label entry
-			      end
-		  val {dsts, ...} = Instruction.srcs_dsts instruction
-		  val _ = print (Label.toString label)
-		  val _ = print ": "
-		  val _ = Option.app
-		          (dsts,
-			   fn dsts 
-			    => List.foreach
-			       (dsts,
-				fn operand 
-				 => (print (Operand.toString operand);
-				     print " ")))
-		  val _ = print "\n"
+			  val label = let
+					val (entry,_) = entry
+				      in 
+					Entry.label entry
+				      end
+			  val {dsts, ...} = Instruction.srcs_dsts instruction
+			  val _ = print (Label.toString label)
+			  val _ = print ": "
+			  val _ = print (Instruction.toString instruction)
+			  val _ = print ": "
+			  val _ = Option.app
+			          (dsts,
+				   fn dsts 
+				   => List.foreach
+				   (dsts,
+				    fn operand 
+				    => (print (Operand.toString operand);
+					print " ")))
+			  val _ = print "\n"
 *)
 
-		  val {statements, live}
-		    = LivenessBlock.reLivenessStatements
-		      {statements = List.rev start,
-		       live = liveOut}
-
-		  val {entry, ...}
-		    = LivenessBlock.reLivenessEntry
-		      {entry = entry,
-		       live = live}
-
-		  val statements
-		    = List.concat [statements, finish]
-		in
-		  SOME (LivenessBlock.T
-			{entry = entry,
-			 profileInfo = profileInfo,
-			 statements = statements,
-			 transfer = transfer})
-		end
+			  val {statements, live}
+			    = LivenessBlock.reLivenessStatements
+			      {statements = List.rev start,
+			       live = liveOut}
+			      
+			  val {entry, ...}
+			    = LivenessBlock.reLivenessEntry
+			      {entry = entry,
+			       live = live}
+			      
+			  val statements
+			    = List.concat [statements, finish]
+		       in
+			 SOME (LivenessBlock.T
+			       {entry = entry,
+				profileInfo = profileInfo,
+				statements = statements,
+				transfer = transfer})
+		       end
              | _ => Error.bug "Peephole: elimDeadDsts"
 
 	val (callback,elimDeadDsts_msg)
