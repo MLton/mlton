@@ -778,7 +778,7 @@ structure Primitive =
 	       _import "Real64_gdtoa": real * int * int * int ref -> cstring;
 	    val fromInt = _prim "Int32_toReal64": int -> real;
 	    val ldexp =
-	       if Native.native
+	       if MLton.native
 		  then _prim "Real64_ldexp": real * int -> real;
 	       else _import "ldexp": real * int -> real;
 	    val maxFinite = _import "Real64_maxFinite": real;
@@ -787,7 +787,7 @@ structure Primitive =
 	    val modf = _import "Real64_modf": real * real ref -> real;
 	    val nextAfter = _import "nextAfter": real * real -> real;
 	    val round =
-	       if Native.native
+	       if MLton.native
 		  then _prim "Real64_round": real -> real;
 	       else _import "rint": real -> real;
 	    val signBit = _import "Real64_signBit": real -> bool;
@@ -862,16 +862,16 @@ structure Primitive =
 	       _import "Real32_gdtoa": real * int * int * int ref -> cstring;
 	    val fromInt = _prim "Int32_toReal32": int -> real;
 	    val ldexp =
-	       if Native.native
+	       if MLton.native
 		  then _prim "Real32_ldexp": real * int -> real;
-	       else fn (r, i) => fromLarge (Real64.ldexp (toLarge (r, i)))
+	       else fn (r, i) => fromLarge (Real64.ldexp (toLarge r, i))
 	    val maxFinite = _import "Real32_maxFinite": real;
 	    val minNormalPos = _import "Real32_minNormalPos": real;
 	    val minPos = _import "Real32_minPos": real;
 	    val modf = _import "Real32_modf": real * real ref -> real;
 	    val nextAfter = _import "nextAfterf": real * real -> real;
 	    val round =
-	       if Native.native
+	       if MLton.native
 		  then _prim "Real32_round": real -> real;
 	       else _import "rintf": real -> real;
 	    val signBit = _import "Real32_signBit": real -> bool;
