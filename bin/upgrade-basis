@@ -25,6 +25,11 @@ esac
 
 tmp="$$.sml"
 
+echo "val () = print \"I work\"" >$tmp
+if ! mlton $tmp 1>&2; then
+	die "Error: cannot upgrade basis because the compiler doesn't work" 
+fi
+
 feature () {
 	feature="$1"
 	sml="$2"
@@ -90,6 +95,9 @@ structure LargeWord = Word'
 
 eval `$bin/platform`
 case $HOST_ARCH in
+powerpc)
+	arch='PowerPC'
+;;
 sparc)
 	arch='Sparc'
 ;;
@@ -103,6 +111,9 @@ esac
 case $HOST_OS in
 cygwin)
 	os='Cygwin'
+;;
+darwin)
+	os='Darwin'
 ;;
 freebsd)
 	os='FreeBSD'
@@ -140,9 +151,11 @@ structure MLton =
 
             structure Arch =
                struct
-                  datatype t = Sparc | X86
+                  datatype t = PowerPC | Sparc | X86
 
-                  val all = [(Sparc, "Sparc"), (X86, "X86")]
+                  val all = [(PowerPC, "PowerPC"), 
+                             (Sparc, "Sparc"), 
+                             (X86, "X86")]
 
                   fun fromString s =
                      let
@@ -153,15 +166,21 @@ structure MLton =
 
                   val host = $arch
 
+                  val isBigEndian =
+                    fn PowerPC => true
+                     | Sparc => true
+                     | X86 => false
+
                   fun toString a = #2 (valOf (peek (all, fn (a', _) => a = a')))
                end
 
             structure OS =
                struct
-                  datatype t = Cygwin | FreeBSD | Linux | MinGW | NetBSD 
+                  datatype t = Cygwin | Darwin | FreeBSD | Linux | MinGW | NetBSD
                              | OpenBSD | Solaris
 
                   val all = [(Cygwin, "Cygwin"),
+                             (Darwin, "Darwin"),
                              (FreeBSD, "FreeBSD"),
                              (Linux, "Linux"),
                              (MinGW, "MinGW"),

@@ -28,7 +28,7 @@ signature MLTON_THREAD =
       (* new f
        * create a new thread that, when run, applies f to
        * the value given to the thread.  f must terminate by
-       * <VALREF/switch/ing to another thread or exiting the process.
+       * switch-ing to another thread or exiting the process.
        *)
       val new: ('a -> unit) -> 'a t
       (* prepend(t, f)

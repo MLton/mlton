@@ -32,5 +32,7 @@
 #define HAS_WEAK 1
 #define USE_MMAP TRUE
 
+#define MLton_Platform_OS_host "solaris"
+
 #define LOG_AUTHPRIV LOG_AUTH
 #define LOG_PERROR 0

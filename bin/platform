@@ -26,14 +26,17 @@ esac
 uname=`uname`
 
 case "$uname" in
-Linux)
-	HOST_OS='linux'
-;;
 CYGWIN*)
 	HOST_OS='cygwin'
 ;;
+Darwin)
+	HOST_OS='darwin'
+;;
 FreeBSD*)
 	HOST_OS='freebsd'
+;;
+Linux)
+	HOST_OS='linux'
 ;;
 MINGW*)
 	HOST_OS='mingw'
@@ -57,6 +60,9 @@ arch=`uname -m`
 case "$arch" in
 i?86)
 	HOST_ARCH=x86
+;;
+Power*)
+	HOST_ARCH=powerpc
 ;;
 sun*)
 	HOST_ARCH=sparc

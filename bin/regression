@@ -142,10 +142,10 @@ for f in `ls *.sml`; do
 			# it will also include finalize.2.
 			gcc -o $f -w -O1				\
 				-I "../build/lib/include"		\
-				-L "../build/lib/$crossTarget"		\
-				-L /usr/pkg/lib				\
-				-L /usr/local/lib			\
-				$f.[0-9].[cS]				\
+				-L"../build/lib/$crossTarget"		\
+				-L/usr/pkg/lib				\
+				-L/usr/local/lib			\
+				$f.[0-9].[cS] $f.[0-9][0-9].[cS]	\
 				$libs				
 		;;
 		esac

@@ -2,10 +2,11 @@ signature MLTON_PLATFORM =
    sig
       structure Arch:
 	 sig
-	    datatype t = Sparc | X86
+	    datatype t = PowerPC | Sparc | X86
 
 	    val fromString: string -> t option
 	    val host: t
+	    val isBigEndian: t -> bool
 	    val toString: t -> string
 	 end
 	 
@@ -13,6 +14,7 @@ signature MLTON_PLATFORM =
 	 sig
 	    datatype t =
 	       Cygwin
+	     | Darwin
 	     | FreeBSD
 	     | Linux
 	     | MinGW

@@ -21,6 +21,8 @@
 
 #include "gmp.h"
 
+#define MLton_Platform_OS_host "cygwin"
+
 #define HAS_MREMAP FALSE
 #define HAS_PTRACE FALSE
 #define HAS_SIGALTSTACK FALSE

@@ -100,6 +100,19 @@ fun abs (x: int) = if x < zero then ~ x else x
 
 val {compare, min, max} = Util.makeCompare (op <)
 
+(* fmt constructs a string to represent the integer by building it into a
+ * statically allocated buffer.  For the most part, this is a textbook
+ * algorithm: loop starting at the end of the buffer; we use rem to
+ * extract the next digit to put into the buffer; and we use quot to
+ * figure out the part of the integer that we haven't yet formatted.
+ * However, this function uses the negative absolute value of the input
+ * number, which allows it to take into account minInt without any
+ * special-casing.  This requires the rem function to behave in a very
+ * specific way, or else things will go terribly wrong.  This may be a
+ * concern when porting to platforms where the division hardware has a
+ * different interpretation than SML about what happens when doing
+ * division of negative numbers.
+ *)
 local
    (* Allocate a buffer large enough to hold any formatted integer in any radix.
     * The most that will be required is for minInt in binary.

@@ -8,12 +8,14 @@ TEX_FILES = \
 	credits.tex		\
 	cross-compiling.tex	\
 	cygwin.tex		\
+	darwin.tex		\
 	drawbacks.tex		\
 	extensions.tex		\
 	features.tex		\
 	freebsd.tex		\
 	ffi.tex			\
 	getting-started.tex	\
+	linux.tex		\
 	macros.tex		\
 	main.tex		\
 	man-page.tex		\

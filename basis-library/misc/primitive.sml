@@ -760,24 +760,27 @@ structure Primitive =
 	       struct
 		  structure Arch =
 		     struct
-			datatype t = Sparc | X86
+			datatype t = PowerPC | Sparc | X86
 
 			val host: t =
-			   case _const "MLton_Platform_Arch_host": int; of
-			      0 => Sparc
-			    | 1 => X86
+			   case _const "MLton_Platform_Arch_host": string; of
+			      "powerpc" => PowerPC
+			    | "sparc" => Sparc
+			    | "x86" => X86
 			    | _ => raise Fail "strange MLton_Platform_Arch_host"
 
 			val isBigEndian =
 			   case host of
-			      X86 => false
+			      PowerPC => true
 			    | Sparc => true
+			    | X86 => false
 		     end
 
 		  structure OS =
 		     struct
 			datatype t =
 			   Cygwin
+			 | Darwin
 			 | FreeBSD
 			 | Linux
 			 | MinGW
@@ -786,14 +789,15 @@ structure Primitive =
 			 | Solaris
 
 			val host: t =
-			   case _const "MLton_Platform_OS_host": int; of
-			      0 => Cygwin
-			    | 1 => FreeBSD
-			    | 2 => Linux
-			    | 3 => MinGW
-			    | 4 => NetBSD
-			    | 5 => OpenBSD
-			    | 6 => Solaris
+			   case _const "MLton_Platform_OS_host": string; of
+			      "cygwin" => Cygwin
+			    | "darwin" => Darwin
+			    | "freebsd" => FreeBSD
+			    | "linux" => Linux
+			    | "mingw" => MinGW
+			    | "netbsd" => NetBSD
+			    | "openbsd" => OpenBSD
+			    | "solaris" => Solaris
 			    | _ => raise Fail "strange MLton_Platform_OS_Host"
 		     end
 	       end

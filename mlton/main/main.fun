@@ -95,7 +95,8 @@ fun setTargetType (target: string, usage): unit =
 	    targetArch := arch
 	    ; targetOS := os
 	    ; (case arch of
-		  Sparc => (align := Align8; codegen := CCodegen)
+		  PowerPC => codegen := CCodegen
+		| Sparc => (align := Align8; codegen := CCodegen)
 		| _ => ())
 	 end
 
@@ -107,6 +108,16 @@ fun warnDeprecated (flag, use) =
 fun setConst (flag: string, name: string, value: string) =
    (warnDeprecated (flag, concat ["-const '", name, " <value>'"])
     ; Compile.setCommandLineConstant {name = name, value = value})
+
+fun hasNative () =
+   let
+      datatype z = datatype Control.arch
+   in
+      case !Control.targetArch of
+	 PowerPC => false
+       | Sparc => false
+       | X86 => true
+   end
 
 fun makeOptions {usage} = 
    let
@@ -120,7 +131,8 @@ fun makeOptions {usage} =
        [
        (Normal, "align",
 	case !targetArch of
-	   Sparc => " {8|4}"
+	   PowerPC => " {4|8}"
+	 | Sparc => " {8|4}"
 	 | X86 => " {4|8}",
 	"object alignment",
 	(SpaceString (fn s =>
@@ -165,7 +177,7 @@ fun makeOptions {usage} =
        (Expert, "coalesce", " <n>", "coalesce chunk size for C codegen",
 	Int (fn n => coalesce := SOME n)),
        (Normal, "codegen",
-	if !targetArch = Sparc then " {c}" else " {native|bytecode|c}",
+	if hasNative () then " {native|c}" else " {c}",
 	"which code generator to use",
 	SpaceString (fn s =>
 		     case s of
@@ -324,8 +336,7 @@ fun makeOptions {usage} =
 	boolRef markCards),
        (Expert, "max-function-size", " <n>", "max function size (blocks)",
 	intRef maxFunctionSize),
-       (Expert, "native",
-	if !targetArch = Sparc then " {false}" else " {true|false}",
+       (Expert, "native", if hasNative () then " {true|false}" else " {false}",
 	"use native code generator",
 	Bool (fn b =>
 	      (warnDeprecated ("native", "-codegen")
@@ -605,8 +616,9 @@ fun commandLine (args: string list): unit =
 		      linkWithGmp,
 		      addTargetOpts linkOpts]
       val _ =
-	 if !Control.codegen = Native andalso targetArch = Sparc
-	    then usage "can't use native codegen on Sparc"
+	 if !Control.codegen = Native andalso not (hasNative ())
+	    then usage (concat ["can't use native codegen on ",
+				MLton.Platform.Arch.toString targetArch])
 	 else ()
       val _ =
 	 chunk :=

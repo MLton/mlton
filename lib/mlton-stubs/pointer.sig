@@ -3,6 +3,7 @@ signature MLTON_POINTER =
       eqtype t
 
       val add: t * word -> t
+      val compare: t * t -> order
       val diff: t * t -> word
       val getInt8: t * int -> Int8.int
       val getInt16: t * int -> Int16.int

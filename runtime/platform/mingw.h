@@ -21,6 +21,8 @@
 #define HAS_WEAK FALSE
 #define USE_VIRTUAL_ALLOC TRUE
 
+#define MLton_Platform_OS_host "mingw"
+
 typedef unsigned short gid_t;
 typedef unsigned short uid_t;
 

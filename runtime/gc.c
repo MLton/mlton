@@ -3781,7 +3781,11 @@ static GC_state catcherState;
 /*
  * Called on each SIGPROF interrupt.
  */
-#if (defined (__linux__) || defined (__FreeBSD__) || defined (__OpenBSD__) || defined (__sun__))
+#if (defined (__Darwin__) ||\
+	defined (__FreeBSD__) ||\
+	defined (__linux__) ||\
+	defined (__OpenBSD__) ||\
+	defined (__sun__))
 static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {
 #elif (defined (__NetBSD__))
 static void catcher (int sig, int code, struct sigcontext *ucp) {
@@ -3794,13 +3798,15 @@ static void catcher (int sig, int code, struct sigcontext *ucp) {
 	uint sourceSeqIndex;
 
 	s = catcherState;
-#if (defined (__linux__))
+#if (defined (__Darwin__))
+ 	pc = (pointer) ucp->uc_mcontext->ss.srr0;
+#elif (defined (__FreeBSD__))
+	pc = (pointer) ucp->uc_mcontext.mc_eip;
+#elif (defined (__linux__))
 #ifndef EIP
 #define EIP	14
 #endif
         pc = (pointer) ucp->uc_mcontext.gregs[EIP];
-#elif (defined (__FreeBSD__))
-	pc = (pointer) ucp->uc_mcontext.mc_eip;
 #elif (defined (__NetBSD__) || defined (__OpenBSD__))
 	pc = (pointer) ucp->sc_eip;
 #elif (defined (__sun__))
@@ -3901,7 +3907,11 @@ static void profileTimeInit (GC_state s) {
 	catcherState = s;
 	sa.sa_handler = (void (*)(int))catcher;
 	sigemptyset (&sa.sa_mask);
-#if (defined (__linux__) || defined (__FreeBSD__) || defined (__OpenBSD__) || defined (__sun__))
+#if (defined (__Darwin__) ||\
+	defined (__FreeBSD__) ||\
+	defined (__linux__) ||\
+	defined (__OpenBSD__) ||\
+	defined (__sun__))
 	sa.sa_flags = SA_ONSTACK | SA_RESTART | SA_SIGINFO;
 #elif (defined (__NetBSD__))
 	sa.sa_flags = SA_ONSTACK | SA_RESTART;

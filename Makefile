@@ -19,6 +19,7 @@ YACC = mlyacc
 PATH = $(BIN):$(shell echo $$PATH)
 CP = /bin/cp -fpR
 GZIP = gzip --force --best
+RANLIB = ranlib
 
 VERSION = $(shell date +%Y%m%d)
 RELEASE = 1
@@ -219,6 +220,7 @@ runtime:
 	$(MAKE) -C bytecode
 	bytecode/print-opcodes >$(LIB)/opcodes
 	ar r $(LIB)/$(TARGET)/libmlton.a bytecode/interpret.o 
+	for x in $(LIB)/$(TARGET)/*.a; do $(RANLIB) $$x; done
 
 .PHONY: script
 script:
@@ -316,12 +318,17 @@ install-no-docs:
 		cd $(TMAN) && $(GZIP) mllex.1 mlprof.1 mlton.1		\
 			mlyacc.1;					\
 	fi
-	if [ $(TARGET_OS) != solaris ]; then					\
-	for f in $(TLIB)/$(AOUT) 						\
-		$(TBIN)/$(LEX) $(TBIN)/$(PROF) $(TBIN)/$(YACC); do 		\
-		strip --remove-section=.comment --remove-section=.note $$f; 	\
-	done									\
-	fi
+	case "$(TARGET_OS)" in						\
+	darwin|solaris)							\
+	;;								\
+	*)								\
+		for f in $(TLIB)/$(AOUT) 				\
+			$(TBIN)/$(LEX) $(TBIN)/$(PROF)			\
+			$(TBIN)/$(YACC); do 				\
+			strip --remove-section=.comment			\
+				--remove-section=.note $$f; 		\
+		done							\
+	esac
 
 .PHONY: install-docs
 install-docs:

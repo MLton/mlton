@@ -28,8 +28,14 @@
 
 #include "assert.h"
 
+#if (defined (__APPLE_CC__))
+#define __Darwin__
+#endif
+
 #if (defined (__CYGWIN__))
 #include "platform/cygwin.h"
+#elif (defined (__Darwin__))
+#include "platform/darwin.h"
 #elif (defined (__FreeBSD__))
 #include "platform/freebsd.h"
 #elif (defined (__linux__))
@@ -42,6 +48,8 @@
 #include "platform/openbsd.h"
 #elif (defined (__sun__))
 #include "platform/solaris.h"
+#else
+#error unknown platform
 #endif
 
 #ifndef EXECVP
@@ -50,6 +58,10 @@
 
 #ifndef EXECVE
 #define EXECVE execve
+#endif
+
+#ifndef MLton_Platform_OS_host
+#error MLton_Platform_OS_host not defined
 #endif
 
 #ifndef HAS_MREMAP
@@ -337,30 +349,14 @@ Word MLton_size (Pointer p);
 /*           MLton.Platform           */
 /* ---------------------------------- */
 
-#if (defined (__sparc__))
-#define MLton_Platform_Arch_host 0
+#if (defined (__ppc__))
+#define MLton_Platform_Arch_host "powerpc"
+#elif (defined (__sparc__))
+#define MLton_Platform_Arch_host "sparc"
 #elif (defined (__i386__))
-#define MLton_Platform_Arch_host 1
+#define MLton_Platform_Arch_host "x86"
 #else
 #error MLton_Platform_Arch_host not defined
-#endif
-
-#if (defined (__CYGWIN__))
-#define MLton_Platform_OS_host 0
-#elif (defined (__FreeBSD__))
-#define MLton_Platform_OS_host 1
-#elif (defined (__linux__))
-#define MLton_Platform_OS_host 2
-#elif (defined (__MINGW32__))
-#define MLton_Platform_OS_host 3
-#elif (defined (__NetBSD__))
-#define MLton_Platform_OS_host 4
-#elif (defined (__OpenBSD__))
-#define MLton_Platform_OS_host 5
-#elif (defined (__sun__))
-#define MLton_Platform_OS_host 6
-#else
-#error MLton_Platform_OS_host not defined
 #endif
 
 /* ---------------------------------- */

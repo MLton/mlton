@@ -29,6 +29,8 @@
 #define HAS_WEAK 1
 #define USE_MMAP TRUE
 
+#define MLton_Platform_OS_host "linux"
+
 /* We need the value of MREMAP_MAYMOVE, which should come from sys/mman.h, but
  * isn't there.  It is in linux/mman.h, but we can't #include that here, because
  * kernel headers don't mix with system headers.  We could create a separate

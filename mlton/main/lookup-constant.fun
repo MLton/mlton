@@ -42,7 +42,7 @@ fun escape s =
 		     in
 			implode [dig 100, dig 10, dig 1]
 		     end)
-   
+
 fun unescape s =
    let
       fun sub i = Char.toInt (String.sub (s, i)) - Char.toInt #"0"
@@ -104,7 +104,7 @@ fun build (constants, out) =
 	       case ty of
 		  Bool => ("%s", concat [value, "? \"true\" : \"false\""])
 		| Real => ("%.20f", value)
-		| String => ("%s", concat ["\"", escape value, "\""])
+		| String => ("%s", value)
 		| Word => ("%u", value)
 	 in
 	    concat ["fprintf (stdout, \"", name, " = ", format, "\\n\", ",
@@ -184,7 +184,7 @@ fun load (ins: In.t, commandLineConstants)
 		  (case RealX.make (value, RealSize.default) of
 		      NONE => error "real"
 		    | SOME r => Const.Real r)
-	     | String => Const.string (unescape value)
+	     | String => Const.string value
 	     | Word =>
 		  (case IntInf.fromString value of
 		      NONE => error "int"

@@ -70,6 +70,7 @@ doit "$lib" \
 		-mv8
 		-mcpu=ultrasparc'				\
 	-target-link-opt cygwin '-lgmp'				\
+ 	-target-link-opt darwin '-lgmp'				\
 	-target-link-opt freebsd '-L/usr/local/lib/ -lgmp'	\
 	-target-link-opt linux '-ldl'				\
 	-target-link-opt mingw 					\

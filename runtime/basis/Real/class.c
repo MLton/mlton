@@ -80,6 +80,22 @@ Int Real64_class (Real64 d) {
 	return res;
 }
 
+#elif (defined __ppc__ && defined __Darwin__)
+
+Int Real64_class (Real64 d) {
+	int c = fpclassify (d);
+	switch (c) {
+		/* FIXME: not distinguishing between nanSignalling and nanQuiet */
+		case FP_NAN:		return Real_Class_nanQuiet;
+		case FP_INFINITE:	return Real_Class_inf;
+		case FP_ZERO:		return Real_Class_zero;
+		case FP_NORMAL:		return Real_Class_normal;
+		case FP_SUBNORMAL:	return Real_Class_subnormal;
+		default: die("Real_class error: invalid class %d\n", c);
+	}
+}
+
+
 #elif (defined __sparc__)
 
 Int Real64_class (Real64 d) {

@@ -47,6 +47,8 @@ structure MLton: MLTON =
       val isMLton = Array.maxLen = 0x7FFFFFFF
       val safe = true
       val serialize = fn _ => raise Fail "serialize"
+      val share = fn _ => raise Fail "share"
+      val shareAll = fn _ => raise Fail "shareAll"
       val size = fn _ => ~1: int
 
       structure Array =
@@ -158,14 +160,21 @@ structure MLton: MLTON =
 	 
 	    structure Arch =
 	       struct
-		  datatype t = Sparc | X86
+		  datatype t = PowerPC | Sparc | X86
 
 		  val host: t = X86
 
-		  val all = [(Sparc, "sparc"), (X86, "x86")]
+		  val all = [(PowerPC, "powerpc"),
+			     (Sparc, "sparc"),
+			     (X86, "x86")]
 
 		  fun fromString s = omap (peek (all, fn (_, s') => s = s'), #1)
 
+		  val isBigEndian =
+		     fn PowerPC => true
+		      | Sparc => true
+		      | X86 => false
+			   
 		  fun toString a = #2 (valOf (peek (all, fn (a', _) => a = a')))
 	       end
 
@@ -173,6 +182,7 @@ structure MLton: MLTON =
 	       struct
 		  datatype t =
 		     Cygwin
+		   | Darwin
 		   | FreeBSD
 		   | Linux
 		   | MinGW
@@ -183,6 +193,7 @@ structure MLton: MLTON =
 		  val host: t = Linux
 
 		  val all = [(Cygwin, "cygwin"),
+			     (Darwin, "darwin"),
 			     (FreeBSD, "freebsd"),
 			     (Linux, "linux"),
 			     (MinGW, "mingw"),
@@ -201,6 +212,7 @@ structure MLton: MLTON =
 	    type t = unit
 	       
 	    val add = fn _ => raise Fail "Pointer.add"
+	    val compare = fn _ => raise Fail "Pointer.compare"
 	    val diff = fn _ => raise Fail "Pointer.diff"
 	    val getInt8 = fn _ => raise Fail "Pointer.getInt8"
 	    val getInt16 = fn _ => raise Fail "Pointer.getInt16"

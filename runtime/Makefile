@@ -24,10 +24,19 @@ ifeq ($(TARGET_ARCH), sparc)
 FLAGS += -Wa,-xarch=v8plusa -fcall-used-g5 -fcall-used-g7 -funroll-all-loops -m32 -mv8 -mcpu=ultrasparc
 endif
 
+# The following defines are a hack to work around the fact the
+# strto{d,f} are defined in libc on Darwin, and hence cannot be also
+# defined by libgdtoa.
+ifeq ($(TARGET_OS), darwin)
+FLAGS += -Dstrtod=mlton_strtod -Dstrtof=mlton_strtof
+endif
+
 ifeq ($(TARGET), self)
 AR = ar rc
+RANLIB = ranlib
 else
 AR = $(TARGET)-ar rc
+RANLIB = $(TARGET)-ranlib
 FLAGS += -b $(TARGET)
 endif
 
@@ -74,6 +83,7 @@ all:  libgdtoa.a libmlton.a libmlton-gdb.a
 libgdtoa.a: gdtoa/arith.h
 	cd gdtoa && $(CC) $(CFLAGS) -w -O1 -c -DINFNAN_CHECK *.c
 	$(AR) libgdtoa.a gdtoa/*.o
+	$(RANLIB) libgdtoa.a
 
 gdtoa/arithchk.c:
 	zcat gdtoa.tgz | tar xf -	
@@ -87,9 +97,11 @@ gdtoa/arith.h: gdtoa/arithchk.out
 
 libmlton.a: $(OBJS) 
 	$(AR) libmlton.a $(OBJS)
+	$(RANLIB) libmlton.a	
 
 libmlton-gdb.a: $(DEBUG_OBJS)
 	$(AR) libmlton-gdb.a $(DEBUG_OBJS)
+	$(RANLIB) libmlton-gdb.a
 
 runtime.c: $(CFILES)
 	cat $(CFILES) >runtime.c

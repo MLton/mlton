@@ -662,10 +662,7 @@ val targetArch = control {name = "target arch",
 			  default = X86,
 			  toString = MLton.Platform.Arch.toString}
 
-fun targetIsBigEndian () =
-   case !targetArch of
-      X86 => false
-    | Sparc => true
+fun targetIsBigEndian () = MLton.Platform.Arch.isBigEndian (!targetArch)
 
 datatype os = datatype MLton.Platform.OS.t
 

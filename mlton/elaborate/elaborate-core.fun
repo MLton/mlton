@@ -2275,7 +2275,8 @@ fun elaborateDec (d, {env = E, nest}) =
 						  (Vector.sub (ts, 0))) of
 					       NONE => false
 					     | SOME (c, _) => 
-						  Tycon.equals (c, Tycon.char))
+						  Tycon.equals
+						  (c, Tycon.word WordSize.byte))
 						then ConstType.String
 					     else
 						bug ()

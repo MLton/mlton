@@ -1,4 +1,5 @@
 #include <grp.h>
+#include <limits.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -6,8 +7,8 @@
 #include <pwd.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-#include <sys/param.h>
 #include <sys/poll.h>
+#include <sys/ptrace.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/sysctl.h>
@@ -17,20 +18,18 @@
 #include <sys/wait.h>
 #include <syslog.h>
 #include <termios.h>
+#include <ucontext.h>
 
-/* On NetBSD, we want gmp to be installed into the pkg tree (which represents
- * the FreeBSD ports tree). For now we use the same method as in the FreeBSD
- * case, but we note that this should be changed so the makefile provides the
- * correct -I flags to the compiler
+/* As far as I can tell, gmp does not come with Mac OS X, so the user will
+ * install it himself in /usr/local.
  */
-#include "/usr/pkg/include/gmp.h"
+#include "/usr/local/include/gmp.h"
 
-#define HAS_MREMAP FALSE
-#define HAS_PTRACE FALSE
-#define HAS_SIGALTSTACK TRUE
 #define HAS_SPAWN FALSE
-#define HAS_TIME_PROFILING TRUE
-#define HAS_WEAK 1
+#define HAS_MREMAP FALSE
+#define HAS_SIGALTSTACK TRUE
+#define HAS_TIME_PROFILING FALSE
+#define HAS_WEAK 0
 #define USE_MMAP TRUE
 
-#define MLton_Platform_OS_host "netbsd"
+#define MLton_Platform_OS_host "darwin"

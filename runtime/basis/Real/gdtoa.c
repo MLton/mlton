@@ -9,7 +9,7 @@
 #define _0 1
 #define _1 0
 
-#elif (defined (__sparc__))
+#elif (defined (__ppc__) || defined (__sparc__))
 #define _0 0
 #define _1 1
 

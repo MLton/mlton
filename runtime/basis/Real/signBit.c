@@ -7,7 +7,7 @@ enum {
 	R64_byte = 7,
 };
 
-#elif (defined __sparc__)
+#elif (defined __ppc__ || defined __sparc__)
 
 enum {
 	R32_byte = 0,
