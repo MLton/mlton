@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 # This script makes binary and source RPMs in topdir (your RPM _topdir).
 # It can either grab the sources from the CVS repository or from a local
