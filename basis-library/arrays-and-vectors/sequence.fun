@@ -176,10 +176,6 @@ functor Sequence (S: sig
 
       fun copy s = map (fn x => x) s
 
-      (* This concat is not used for now, since it is 3X slower than the
-       * following one.  As soon as we get better intraprocedural flattening,
-       * we should replace it.
-       *)
       fun 'a concat (vs: 'a sequence list): 'a sequence =
 	 case vs of
 	    [] => fromArray (Primitive.Array.array0 ())
@@ -200,34 +196,7 @@ functor Sequence (S: sig
 			  in loop
 			  end)
 	       end
-
-      fun concat sequences =
-	 case sequences of
-	    [] => fromArray (Primitive.Array.array0 ())
-	  | [s] => if isMutable then copy s else s
-	  | _ => 
-	       let
-		  val size = List.foldl (fn (s, n) => n +? length s) 0 sequences
-		  val a = array size
-		  val _ =
-		     List.foldl
-		     (fn (s, n) =>
-		      let
-			 val imax = length s
-			 fun loop i =
-			    if i >= imax
-			       then ()
-			    else (Array.update (a, n + i, S.sub (s, i))
-				  ; loop (i + 1))
-			 val _ = loop 0
-		      in
-			 n + imax
-		      end)
-		     0 sequences
-	       in
-		  fromArray a
-	       end
-     
+ 
       fun prefixToList (s, n) =
 	 let
 	    fun loop (i, l) =
