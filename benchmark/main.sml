@@ -413,7 +413,8 @@ fun main args =
 			   open Justify
 			   val _ =
 			      outputTable
-			      (table {justs = (Left ::
+			      (table {columnHeads = NONE,
+				      justs = (Left ::
 					       List.revMap (compilers,
 							    fn _ => Right)),
 				      rows = rows},
