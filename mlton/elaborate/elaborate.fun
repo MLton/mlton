@@ -131,7 +131,7 @@ fun elaborateProgram (program,
 		   (ds, Decs.empty, fn (d, decs) =>
 		    Decs.append (decs, elabStrdec d))
 	      | Strdec.Structure strbinds => (* rules 57, 61 *)
-		   List.fold
+		   Vector.fold
 		   (strbinds, Decs.empty, fn ({name, def, constraint}, decs) =>
 		    let
 		       val nest = Strid.toString name :: nest
@@ -184,13 +184,13 @@ fun elaborateProgram (program,
 	  case Topdec.node d of
 	     Topdec.Strdec d => elabStrdec (d, [])
 	   | Topdec.Signature sigbinds =>
-		(List.foreach
+		(Vector.foreach
 		 (sigbinds, fn (sigid, sigexp) =>
 		  Env.extendSigid (E, sigid, elabSigexp sigexp))
 		 ; Decs.empty)
 	   | Topdec.Functor funbinds =>
 		(* Appendix A, p.58 *)
-		(List.foreach
+		(Vector.foreach
 		 (funbinds, fn ({name, arg, result, body}) =>
 		  let
 		     val body = Strexp.constrained (body, result)

@@ -202,9 +202,9 @@ datatype strdecNode =
    Core of Dec.t
   | Local of strdec * strdec
   | Seq of strdec list
-  | Structure of {name: Strid.t,
-		 def: strexp,
-		 constraint: SigConst.t} list
+  | Structure of {constraint: SigConst.t,
+		  def: strexp,
+		  name: Strid.t} vector
 
 and strexpNode =
    App of Fctid.t * strexp
@@ -217,16 +217,17 @@ and strdec = strdecNode Wrap.t
 
 fun layoutStrdec d =
    case node d of
-      Structure strbs =>
-	 layoutAndsBind ("structure", "=", strbs, fn {name, def, constraint} =>
+      Core d => Dec.layout d
+    | Local (d, d') => Pretty.locall (layoutStrdec d, layoutStrdec d')
+    | Seq ds => align (layoutStrdecs ds)
+    | Structure strbs =>
+	 layoutAndsBind ("structure", "=", Vector.toList strbs,
+			 fn {name, def, constraint} =>
 			 (case node def of
 			     Var _ => OneLine
 			   | _ => Split 3,
 				seq [Strid.layout name, SigConst.layout constraint],
 				layoutStrexp def))
-    | Local (d, d') => Pretty.locall (layoutStrdec d, layoutStrdec d')
-    | Seq ds => align (layoutStrdecs ds)
-    | Core d => Dec.layout d
 
 and layoutStrdecs ds = layouts (ds, layoutStrdec)
    
@@ -359,12 +360,12 @@ structure Topdec =
    struct
       open Wrap
       datatype node =
-	 Strdec of Strdec.t
-       | Signature of (Sigid.t * Sigexp.t) list
-       | Functor of {name: Fctid.t,
-		     arg: FctArg.t,
-		     result: SigConst.t,
-		     body: Strexp.t} list
+	 Functor of {arg: FctArg.t,
+		     body: Strexp.t,
+		     name: Fctid.t,
+		     result: SigConst.t} vector
+       | Signature of (Sigid.t * Sigexp.t) vector
+       | Strdec of Strdec.t
       type t = node Wrap.t
       type node' = node
       type obj = t
@@ -373,14 +374,15 @@ structure Topdec =
 	 case node d of
 	    Strdec d => Strdec.layout d
 	  | Signature sigbs =>
-	       layoutAndsBind ("signature", "=", sigbs, fn (name, def) =>
+	       layoutAndsBind ("signature", "=", Vector.toList sigbs,
+			       fn (name, def) =>
 			       (case Sigexp.node def of
 				   Sigexp.Var _ => OneLine
 				 | _ => Split 3,
 				      Sigid.layout name,
 				      Sigexp.layout def))
 	  | Functor fctbs =>
-	       layoutAndsBind ("functor", "=", fctbs,
+	       layoutAndsBind ("functor", "=", Vector.toList fctbs,
 			       fn {name, arg, result, body} =>
 			       (Split 0,
 				seq [Fctid.layout name,
@@ -486,10 +488,11 @@ structure Program =
 		     
 	    fun strdec d =
 	       case Strdec.node d of
-		  Structure ds => List.foreach (ds, fn {def, ...} => strexp def)
-		| Seq ds => List.foreach (ds, strdec)
+		  Core d => dec d
 		| Local (d, d') => (strdec d; strdec d')
-		| Core d => dec d
+		| Seq ds => List.foreach (ds, strdec)
+		| Structure ds =>
+		     Vector.foreach (ds, fn {def, ...} => strexp def)
 	    and strexp e =
 	       case Strexp.node e of
 		  Struct d => strdec d
@@ -501,7 +504,8 @@ structure Program =
 	    fun topdec d =
 	       case Topdec.node d of
 		  Strdec d => strdec d
-		| Functor ds => List.foreach (ds, fn {body, ...} => strexp body)
+		| Functor ds =>
+		     Vector.foreach (ds, fn {body, ...} => strexp body)
 		| _ => ()
 	 in List.foreach (ds, topdec);
 	    !n

@@ -119,7 +119,7 @@ signature AST =
 	     | Seq of t list
 	     | Structure of {name: Strid.t,
 			     def: Strexp.t,
-			     constraint: SigConst.t} list
+			     constraint: SigConst.t} vector
 
 	    include WRAPPED sharing type node' = node
 			    sharing type obj = t
@@ -132,7 +132,7 @@ signature AST =
 	    val seq: t list -> t
             val structuree: {name: Strid.t,
 			     def: Strexp.t,
-			     constraint: SigConst.t} list -> t
+			     constraint: SigConst.t} vector -> t
 	 end
       sharing type Strdec.t = Strexp.strdec
 
@@ -150,11 +150,11 @@ signature AST =
 	 sig
 	    type t
 	    datatype node =
-	       Functor of {name: Fctid.t,
-			   arg: FctArg.t,
-			   result: SigConst.t,
-			   body: Strexp.t} list
-	     | Signature of (Sigid.t * Sigexp.t) list
+	       Functor of {arg: FctArg.t,
+			   body: Strexp.t,
+			   name: Fctid.t,
+			   result: SigConst.t} vector
+	     | Signature of (Sigid.t * Sigexp.t) vector
 	     | Strdec of Strdec.t
 
 	    include WRAPPED sharing type node' = node
@@ -164,9 +164,9 @@ signature AST =
 	    val functorr: {name: Fctid.t,
 			   arg: FctArg.t,
 			   result: SigConst.t,
-			   body: Strexp.t} list -> t
+			   body: Strexp.t} vector -> t
 	    val layout: t -> Layout.t
-	    val signaturee: (Sigid.t * Sigexp.t) list -> t
+	    val signaturee: (Sigid.t * Sigexp.t) vector -> t
             val strdec: Strdec.t -> t
 	 end
 

@@ -486,9 +486,34 @@ topdec : topdecnode (Topdec.makeRegion' (topdecnode,
 					 topdecnodeleft,
 					 topdecnoderight))
 
-topdecnode : strdec                     (Topdec.Strdec strdec)
-           | SIGNATURE sigbinds	        (Topdec.Signature sigbinds)
-           | FUNCTOR funbinds	        (Topdec.Functor funbinds)
+topdecnode
+   : strdec
+     (Topdec.Strdec strdec)
+   | SIGNATURE sigbinds
+     (let
+	 val sigbinds = Vector.fromList sigbinds
+	 val _ =
+	    reportDuplicates (sigbinds,
+			      "signature definition",
+			      fn ((s, _), (s', _)) => Sigid.equals (s, s'),
+			      Sigid.layout o #1,
+			      Sigid.region o #1)
+      in
+	 Topdec.Signature sigbinds
+      end)
+   | FUNCTOR funbinds
+     (let
+	 val funbinds = Vector.fromList funbinds
+	 val _ =
+	    reportDuplicates (funbinds,
+			      "functor definition",
+			      fn ({name = n, ...}, {name = n', ...}) =>
+			      Fctid.equals (n, n'),
+			      Fctid.layout o #name,
+			      Fctid.region o #name)
+      in
+	 Topdec.Functor funbinds
+      end)
 
 (*---------------------------------------------------*)
 (*                    Structures                     *)
@@ -504,11 +529,24 @@ strdecsnode :                    (Strdec.Seq [])
 strdec : strdecnode (Strdec.makeRegion' (strdecnode,
 					 strdecnodeleft, strdecnoderight))
 
-strdecnode : STRUCTURE strbinds	           (Strdec.Structure strbinds)
-           | LOCAL strdecs IN strdecs END  (Strdec.Local (strdecs1, strdecs2))
-           | decnolocal
-	       (Strdec.Core
-		(Dec.makeRegion' (decnolocal, decnolocalleft, decnolocalright)))
+strdecnode
+   : STRUCTURE strbinds
+     (let
+	 val strbinds = Vector.fromList strbinds
+	 val _ =
+	    reportDuplicates
+	    (strbinds,
+	     "structure definition",
+	     fn ({name = n, ...}, {name = n', ...}) => Strid.equals (n, n'),
+	     Strid.layout o #name,
+	     Strid.region o #name)
+      in
+	 Strdec.Structure strbinds
+      end)
+   | LOCAL strdecs IN strdecs END  (Strdec.Local (strdecs1, strdecs2))
+   | decnolocal
+     (Strdec.Core (Dec.makeRegion' (decnolocal,
+				    decnolocalleft, decnolocalright)))
 
 strbinds : strid sigconst EQUALOP strbinds'
            (let val (def,strbinds) = strbinds'
