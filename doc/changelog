@@ -1,6 +1,10 @@
 Here are the changes since version 20030716.
 
-* 2003-0924
+* 2003-09-25
+  - Fixed Posix.IO.getfl, which had mistakenly called fcntl with
+    F_GETFD instead of F_GETFL.
+
+* 2003-09-24
   - Tracking basis library changes:
     o TextIO.inputLine now returns a string option.
     o Slices used in Byte, PRIM_IO, PrimIO, Posix.IO, StreamIO
