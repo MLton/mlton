@@ -4,10 +4,13 @@ Here are the changes from version 20020923.
   - Added support for the latest Basis Library specification.
   - Added option -basis to choose Basis Library version.  Currently available
     basis libraries are basis-2002, basis-2002-strict, basis-1997, and none.
-  - Added IntInf.{orb,xorb,andb,notb,<<,~>>}.
-  - Added OS.IO.{poll_desc,poll_info}.
-  - Added OS.IO.{pollDesc,pollToIODesc,infoToPollDesc,Poll}
-  - Added OS.IO.{pollIn,pollOut,pollPri,poll,isIn,isOut,isPri}.
+  - Added IntInf.{orb,xorb,andb,notb,<<,~>>} values.
+  - Added OS.IO.{poll_desc,poll_info} types.
+  - Added OS.IO.{pollDesc,pollToIODesc,infoToPollDesc,Poll} values.
+  - Added OS.IO.{pollIn,pollOut,pollPri,poll,isIn,isOut,isPri} values.
+  - Added BinPrimIO,TextPrimIO structures.
+  - Added StreamIO,ImperativeIO functors.
+  
 	
 * 2002-11-22
   - Fixed bug that caused time profiling to fail (with a segfault) when resuming
