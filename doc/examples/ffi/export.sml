@@ -20,6 +20,8 @@ val a = g2 ()
 
 val _ = print (concat ["0wx", Word.toString (Array.sub (a, 0)), "\n"])
 
+val e = _export "f3": unit -> unit;
+
 val _ = e (fn () => print "hello\n");
 
 val g3 = _ffi "g3": unit -> unit;
