@@ -3509,6 +3509,7 @@ inline string GC_sourceName (GC_state s, uint i) {
 }
 
 static inline GC_profileStack profileStackInfo (GC_state s, uint i) {
+	assert (s->profile != NULL);
 	return &(s->profile->stack[i]);
 }
 
