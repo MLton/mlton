@@ -854,7 +854,9 @@ fun 'a apply (p, args, varEquals) =
 		      | Relation.GREATER => 1)
 	   | (IntInf_equal, [IntInf i1, IntInf i2]) =>
 		bool (IntInf.equals (i1, i2))
-	   | (IntInf_fromWord, [Word w]) => intInf (SmallIntInf.fromWord w)
+	   | (IntInf_fromWord, [Word w]) =>
+		(intInf (SmallIntInf.fromWord w)
+		 handle _ => ApplyResult.Unknown)
 	   | (IntInf_toWord, [IntInf i]) =>
 		(case SmallIntInf.toWord i of
 		    NONE => ApplyResult.Unknown

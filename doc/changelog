@@ -5,6 +5,8 @@ Here are the changes since version 20030312.
     raise the TypeError exception, along with a lot of XML IL.
     The type-check.sml regression contains simple examples of what
     failed.
+  - Fixed a bug in the simplifier that could cause the message:
+    shrinker raised Prim.apply raised assertion failure: SmallIntInf.fromWord
 
 * 2003-05-15
   - Fixed bug in Real.class introduced on 04-28 that cause many
