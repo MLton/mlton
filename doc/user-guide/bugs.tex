@@ -35,4 +35,13 @@ in
 end
 \end{verbatim}
 
+\item
+{\mlton} allows rebinding of constructors via {\tt val rec}
+declarations, as in
+\begin{verbatim}
+val rec NONE = fn x => x;
+\end{verbatim}
+The Definition of SML requires this program to type check, but to
+raise {\tt Bind}.
+
 \end{itemize}
