@@ -20,7 +20,6 @@ signature INTERFACE =
    sig
       include INTERFACE_STRUCTS
 
-      structure ShapeId: UNIQUE_ID
       structure AdmitsEquality: ADMITS_EQUALITY
       structure Tycon:
 	 sig
@@ -115,7 +114,6 @@ signature INTERFACE =
 			* TypeStr.Kind.t -> EnvTypeStr.t) -> t
       val renameTycons: (unit -> unit) ref
       val reportDuplicates: t * Region.t -> unit
-      val shapeId: t -> ShapeId.t
       val share: t * Ast.Longstrid.t * Ast.Longstrid.t * Time.t -> unit
       val shareType: t * Ast.Longtycon.t * Ast.Longtycon.t * Time.t -> unit
       val strs: {name: Ast.Strid.t, interface: t} vector -> t
