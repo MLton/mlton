@@ -53,6 +53,7 @@ PATH=.:$PATH
 		;;
 		esac
 	done 
+	make clean
 ) 2>&1 | tee $log
 
 rm -f $tmp
