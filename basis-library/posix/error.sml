@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-1999 NEC Research Institute.
  *
@@ -72,12 +72,14 @@ structure PosixError: POSIX_ERROR_EXTRA =
 			val {return, post, handlers} = 
 			   f () handle exn => (Thread.atomicEnd (); raise exn)
 		     in
-			if return = ~1
+			if ~1 = return
 			   then
 			      (* Must getErrno () in the critical section. *)
-			      let val e = getErrno ()
-			      in Thread.atomicEnd ()
-				 ; err {errno = e, handlers = handlers}
+			      let
+				 val e = getErrno ()
+				 val () = Thread.atomicEnd ()
+			      in
+				 err {errno = e, handlers = handlers}
 			      end
 			   else DynamicWind.wind (post, Thread.atomicEnd)
 		     end
@@ -89,10 +91,11 @@ structure PosixError: POSIX_ERROR_EXTRA =
 		      | SOME (_, handler) => handler ()
 		  fun errBlocked {errno: syserror,
 				  handlers: (syserror * (unit -> 'a)) list}: 'a =
-		     err {default = fn () => raiseSys errno, 
+		     err {default = fn () => raiseSys errno,
 			  errno = errno, handlers = handlers}
-		  fun errUnblocked {errno: syserror,
-				    handlers: (syserror * (unit -> 'a)) list}: 'a =
+		  fun errUnblocked
+		     {errno: syserror,
+		      handlers: (syserror * (unit -> 'a)) list}: 'a =
 		     err {default = fn () =>
 			  if restart andalso errno = intr andalso !restartFlag
 			     then if Thread.canHandle () = 0
