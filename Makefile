@@ -62,9 +62,9 @@ constants:
 
 .PHONY: deb
 deb:
-	$(MAKE) clean-cvs version
-	fakeroot dpkg-buildpackage -us -uc
-#	debuild
+	$(MAKE) clean clean-cvs version
+	cd .. && tar cf - mlton-$(VERSION) | gzip >mlton_$(VERSION).orig.tar.gz
+	dpkg-buildpackage -rfakeroot -us -uc
 
 .PHONY: deb-binary
 deb-binary:
@@ -72,7 +72,7 @@ deb-binary:
 
 .PHONY: deb-lint
 deb-lint:
-	lintian ../mlton_$(VERSION).1-1_i386.deb
+	lintian ../mlton_$(VERSION)-1_i386.deb
 
 .PHONY: dirs
 dirs:
