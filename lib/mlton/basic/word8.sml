@@ -1,6 +1,6 @@
 structure Word8 =
    struct
-      open Pervasive.Word8
+      open Pervasive.Word8  MLton.Word8
 
       type t = word
 

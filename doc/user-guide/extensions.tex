@@ -566,12 +566,18 @@ signature MLTON_WORD =
       type word
 	 
       val ~ : word -> word
+      val rol: word * Word.word -> word
+      val ror: word * Word.word -> word
    end
 \end{verbatim}
 
 \begin{description}
 \entry{\~{} w}
-unary negation of {\tt w}.
+bitwise complement of {\tt w}.
+\entr{rol (w, w')}
+rotate left.
+\entr{ror (w, w')}
+rotate right.
 \end{description}
 
 \subsubsec{{\tt MLton.World}}{world}

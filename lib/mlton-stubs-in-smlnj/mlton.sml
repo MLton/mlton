@@ -314,6 +314,20 @@ structure MLton: MLTON =
 	    open Word
 
 	    fun ~ (x: word) = 0w0 - x
+	    fun rol (w, w') =
+	       let
+		  val w' = w' mod (fromInt wordSize)
+	       in
+		  orb (>> (w, fromInt wordSize - w'),
+		       << (w, w'))
+	       end
+	    fun ror (w, w') =
+	       let
+		  val w' = w' mod (fromInt wordSize)
+	       in
+		  orb (>> (w, w'),
+		       << (w, fromInt wordSize - w'))
+	       end
 	 end
       
       structure Word8 =
@@ -321,5 +335,20 @@ structure MLton: MLTON =
 	    open Word8
 
 	    fun ~ (x: word) = 0w0 - x
+	    val _ = >> : word * Word.word -> word
+	    fun rol (w: word, w': Word.word): word =
+	       let
+		  val w' = Word.mod (w', Word.fromInt wordSize)
+	       in
+		  orb (>> (w, Word.- (Word.fromInt wordSize, w')),
+		       << (w, w'))
+	       end
+	    fun ror (w, w') =
+	       let
+		  val w' = Word.mod (w', Word.fromInt wordSize)
+	       in
+		  orb (>> (w, w'),
+		       << (w, Word.- (Word.fromInt wordSize, w')))
+	       end
 	 end
    end

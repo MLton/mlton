@@ -27,6 +27,8 @@ signature WORD =
       val notb: t -> t
       val nthBitIsSet: t * int -> bool
       val orb: t * t -> t
+      val rol: t * Pervasive.Word.word -> t
+      val ror: t * Pervasive.Word.word -> t
       val toChar: t -> char
       val toInt: t -> int
       val toIntX: t -> int

@@ -2840,6 +2840,8 @@ struct
 	     | Word8_gt => cmp Instruction.A
 	     | Word8_ge => cmp Instruction.AE
 	     | Word8_lshift => sral Instruction.SHL
+	     | Word8_rol => sral Instruction.ROL
+	     | Word8_ror => sral Instruction.ROR
 	     | Word8_rshift => sral Instruction.SHR
 	     | Word8_arshift => sral Instruction.SAR
 	     | Word8Array_subWord => subWord8ArrayVector ()
@@ -2863,6 +2865,8 @@ struct
 	     | Word32_ge => cmp Instruction.AE
 	     | Word32_lshift => sral Instruction.SHL
 	     | Word32_rshift => sral Instruction.SHR
+	     | Word32_rol => sral Instruction.ROL
+	     | Word32_ror => sral Instruction.ROR
 	     | Word32_arshift => sral Instruction.SAR
 	     | World_save
 	     => let

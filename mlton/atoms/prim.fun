@@ -159,6 +159,8 @@ structure Name =
        | Word32_neg
        | Word32_notb
        | Word32_orb
+       | Word32_rol
+       | Word32_ror
        | Word32_rshift
        | Word32_sub
        | Word32_toIntX
@@ -182,6 +184,8 @@ structure Name =
        | Word8_neg
        | Word8_notb
        | Word8_orb
+       | Word8_rol
+       | Word8_ror
        | Word8_rshift
        | Word8_sub
        | Word8_toInt
@@ -357,6 +361,8 @@ structure Name =
 	  (Word32_neg, Functional, "Word32_neg"),
 	  (Word32_notb, Functional, "Word32_notb"),
 	  (Word32_orb, Functional, "Word32_orb"),
+	  (Word32_rol, Functional, "Word32_rol"),
+	  (Word32_ror, Functional, "Word32_ror"),
 	  (Word32_rshift, Functional, "Word32_rshift"),
 	  (Word32_sub, Functional, "Word32_sub"),
 	  (Word32_toIntX, Functional, "Word32_toIntX"),
@@ -380,6 +386,8 @@ structure Name =
 	  (Word8_neg, Functional, "Word8_neg"),
 	  (Word8_notb, Functional, "Word8_notb"),
 	  (Word8_orb, Functional, "Word8_orb"),
+	  (Word8_rol, Functional, "Word8_rol"),
+	  (Word8_ror, Functional, "Word8_ror"),
 	  (Word8_rshift, Functional, "Word8_rshift"),
 	  (Word8_sub, Functional, "Word8_sub"),
 	  (Word8_toInt, Functional, "Word8_toInt"),
@@ -645,7 +653,6 @@ structure ApplyResult =
 	     | Unknown => str "Unknown"
 	     | Var x => layoutX x
 	 end
-      
    end
 
 (*
@@ -765,6 +772,8 @@ fun 'a apply (p, args, varEquals) =
 	   | (Word8_le, [Word w1, Word w2]) => w8p (Word8.<=, w1, w2)
 	   | (Word8_gt, [Word w1, Word w2]) => w8p (Word8.>, w1, w2)
 	   | (Word8_ge, [Word w1, Word w2]) => w8p (Word8.>=, w1, w2)
+	   | (Word8_rol, [Word w1, Word w2]) => w8w (Word8.rol, w1, w2)
+	   | (Word8_ror, [Word w1, Word w2]) => w8w (Word8.ror, w1, w2)
 	   | (Word8_rshift, [Word w1, Word w2]) => w8w (Word8.>>, w1, w2)
 	   | (Word8_andb, [Word w1, Word w2]) => w8o (Word8.andb, w1, w2)
 	   | (Word8_div, [Word w1, Word w2]) => w8o (Word8.div, w1, w2)
@@ -789,6 +798,8 @@ fun 'a apply (p, args, varEquals) =
 	   | (Word32_le, [Word w1, Word w2]) => pred (Word.<=, w1, w2)
 	   | (Word32_gt, [Word w1, Word w2]) => pred (Word.>, w1, w2)
 	   | (Word32_ge, [Word w1, Word w2]) => pred (Word.>=, w1, w2)
+	   | (Word32_rol, [Word w1, Word w2]) => wo (Word.rol, w1, w2)
+	   | (Word32_ror, [Word w1, Word w2]) => wo (Word.ror, w1, w2)
 	   | (Word32_rshift, [Word w1, Word w2]) => wo (Word.>>, w1, w2)
 	   | (Word32_andb, [Word w1, Word w2]) => wo (Word.andb, w1, w2)
 	   | (Word32_div, [Word w1, Word w2]) => wo (Word.div, w1, w2)
@@ -894,6 +905,18 @@ fun 'a apply (p, args, varEquals) =
 		     else if w = allOnes isWord8
 			     then maxRes isWord8
 			  else Unknown
+		  fun ro isWord8 =
+		     if inOrder
+			then
+			   if 0w0 = Word.mod (w, if isWord8 then 0w8 else 0w32)
+			      then Var x
+			   else Unknown
+		     else
+			if w = 0w0
+			   then zero isWord8
+			else if w = allOnes isWord8
+				then maxRes isWord8
+			     else Unknown
 		  fun shift isWord8 =
 		     if inOrder
 			then if w = 0w0
@@ -947,6 +970,10 @@ fun 'a apply (p, args, varEquals) =
 		| Word32_mul => mul false
 		| Word8_orb => orb true
 		| Word32_orb => orb false
+		| Word8_rol => ro true
+		| Word32_rol => ro false
+		| Word8_ror => ro true
+		| Word32_ror => ro false
 		| Word8_rshift => shift true
 		| Word32_rshift => shift false
 		| Word8_sub => sub true

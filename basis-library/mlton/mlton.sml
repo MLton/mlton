@@ -67,17 +67,7 @@ structure TextIO =
 structure Thread = Thread
 structure Vector = Vector
 structure World = World
-
-structure Word =
-   struct
-      open Word
-      val ~ = Primitive.Word32.~
-   end
-
-structure Word8 =
-   struct
-      open Word8
-      val ~ = Primitive.Word8.~
-   end
+structure Word = Primitive.Word32
+structure Word8 = Primitive.Word8
 
 end

@@ -156,6 +156,8 @@ signature PRIM =
 	     | Word32_neg
 	     | Word32_notb
 	     | Word32_orb
+	     | Word32_rol
+	     | Word32_ror
 	     | Word32_rshift
 	     | Word32_sub
 	     | Word32_toIntX
@@ -179,6 +181,8 @@ signature PRIM =
 	     | Word8_neg
 	     | Word8_notb
 	     | Word8_orb
+	     | Word8_rol
+	     | Word8_ror
 	     | Word8_rshift
 	     | Word8_sub
 	     | Word8_toInt
