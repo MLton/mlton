@@ -33,7 +33,7 @@ enum {
 	CURRENT_SOURCE_UNDEFINED = 0xFFFFFFFF,
 	DEBUG_ARRAY = FALSE,
 	DEBUG_CARD_MARKING = FALSE,
-	DEBUG_DETAILED = TRUE,
+	DEBUG_DETAILED = FALSE,
 	DEBUG_ENTER_LEAVE = FALSE,
 	DEBUG_GENERATIONAL = FALSE,
 	DEBUG_MARK_COMPACT = FALSE,
@@ -3267,11 +3267,10 @@ pointer GC_arrayAllocate (GC_state s, W32 ensureBytesFree, W32 numElts,
 	pointer res;
 	uint tag;
 
-	fprintf (stderr, "GC_arrayAllocate (0x%08x, %u, %u, 0x%08x)\n",
-			(uint)s, 
-			(uint)ensureBytesFree, 
-			(uint)numElts,
-			(uint)header);
+	if (DEBUG)
+		fprintf (stderr, "GC_arrayAllocate (0x%08x, %u, %u, 0x%08x)\n",
+				(uint)s, (uint)ensureBytesFree, 
+				(uint)numElts, (uint)header);
 	SPLIT_HEADER();
 	eltSize = numPointers * POINTER_SIZE + numNonPointers;
 	arraySize64 = 
