@@ -542,7 +542,7 @@ static inline uint getFrameIndex (GC_state s, word returnAddress) {
 		res = *((uint*)(returnAddress - WORD_SIZE));
 	} else {
 		if (DEBUG_PROFILE)
-			fprintf (stderr, "getFrameIndex (%u) = ", returnAddress);
+			fprintf (stderr, "getFrameIndex () = ");
 		res = (uint)returnAddress;
 	}
 	if (DEBUG_PROFILE)
