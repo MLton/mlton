@@ -42,7 +42,8 @@ structure Mask =
 
       fun create m =
 	 case m of
-	    AllBut signals =>
+	    All => checkResult (Prim.sigfillset ())
+	  | AllBut signals =>
 	       (checkResult (Prim.sigfillset ())
 		; List.app (checkResult o Prim.sigdelset) signals)
 	  | Some signals =>
