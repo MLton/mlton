@@ -460,13 +460,6 @@ struct
 				    of Fail s => s
 				     | _ => "?"))
 
-	      val _ = x86Validate.validate 
-		      {assembly = allocated_assembly}
-		      handle exn
-		       => Error.bug ("x86Validate.validate::" ^ 
-				     (case exn
-					of Fail s => s
-					 | _ => "?"))
 	      val _ 
 		= Assert.assert
 		  ("x86CodeGen.output: invalid",
