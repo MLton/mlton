@@ -744,7 +744,7 @@ fun commandLine (args: string list): unit =
 		     val tmpDir =
 			let
 			   val (tmpVar, default) =
-			      case targetOS of
+			      case MLton.Platform.OS.host of
 				 MinGW => ("TEMP", "C:/WINNT/TEMP")
 			       | _ => ("TMPDIR", "/tmp")
 			in
