@@ -30,6 +30,7 @@ functor Peephole(T : PEEPHOLE_TYPES): PEEPHOLE =
 		     transfer: transfer_element}
 	
     type match = {entry: entry_type,
+		  profileLabel: profileLabel_type,
 		  start: statement_type list,
 		  statements: statement_type list list,
 		  finish: statement_type list,
@@ -51,6 +52,7 @@ functor Peephole(T : PEEPHOLE_TYPES): PEEPHOLE =
 
     type find_state = {remaining: optimization list,
 		       state: {entry: entry_type,
+			       profileLabel: profileLabel_type,
 			       start: statement_type list,
 			       finish: statement_type list,
 			       transfer: transfer_type}}
@@ -164,7 +166,7 @@ functor Peephole(T : PEEPHOLE_TYPES): PEEPHOLE =
 			match_state: match_state}
       = let
 	  fun next {remaining: optimization list,
-		    state as {entry, start, finish, transfer}} : 
+		    state as {entry, profileLabel, start, finish, transfer}} : 
 	           find_state option 
 	    = (case remaining
 		 of [] => NONE
@@ -174,6 +176,7 @@ functor Peephole(T : PEEPHOLE_TYPES): PEEPHOLE =
 			 | statement::finish
 			 => SOME {remaining = optimizations,
 				  state = {entry = entry,
+					   profileLabel = profileLabel,
 					   start = statement::start,
 					   finish = finish,
 					   transfer = transfer}})
@@ -192,6 +195,7 @@ functor Peephole(T : PEEPHOLE_TYPES): PEEPHOLE =
 							 = template_transfer},
 					    ...}::_,
 			      state as {entry,
+					profileLabel,
 					start, 
 					finish, 
 					transfer}}) : 
@@ -202,6 +206,7 @@ functor Peephole(T : PEEPHOLE_TYPES): PEEPHOLE =
 		       of SOME find_state => findMatch' find_state
 			| NONE 
 			=> Done {block = T {entry = entry,
+					    profileLabel = profileLabel,
 					    statements = List.fold(start,
 								   finish,
 								   op ::),
@@ -225,6 +230,7 @@ functor Peephole(T : PEEPHOLE_TYPES): PEEPHOLE =
 			     else Continue {remaining = remaining,
 					    match 
 					    = {entry = entry,
+					       profileLabel = profileLabel,
 					       start = start,
 					       statements = statements,
 					       finish = finish,
@@ -234,11 +240,13 @@ functor Peephole(T : PEEPHOLE_TYPES): PEEPHOLE =
 
 	  fun findMatch (match_state: match_state) : match_state
 	    = case match_state
-		of Start {block as T {entry, statements, transfer}}
+		of Start {block as T {entry, profileLabel, 
+				      statements, transfer}}
 		 => let
 		      val find_state
 			= {remaining = optimizations,
 			   state = {entry = entry,
+				    profileLabel = profileLabel,
 				    start = [],
 				    finish = statements,
 				    transfer = transfer}}
@@ -247,6 +255,7 @@ functor Peephole(T : PEEPHOLE_TYPES): PEEPHOLE =
 		    end
 	         | Continue {remaining,
 			     match as {entry, 
+				       profileLabel,
 				       start, 
 				       statements, 
 				       finish, 
@@ -259,6 +268,7 @@ functor Peephole(T : PEEPHOLE_TYPES): PEEPHOLE =
 		      val find_state
 			= {remaining = remaining,
 			   state = {entry = entry,
+				    profileLabel = profileLabel,
 				    start = start,
 				    finish = finish,
 				    transfer = transfer}}
@@ -266,6 +276,7 @@ functor Peephole(T : PEEPHOLE_TYPES): PEEPHOLE =
 		      case next find_state
 			of NONE => Done {block 
 					 = T {entry = entry,
+					      profileLabel = profileLabel,
 					      statements = List.fold(start,
 								     finish,
 								     op ::),

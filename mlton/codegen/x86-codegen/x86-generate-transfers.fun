@@ -125,6 +125,7 @@ struct
 
   fun generateTransfers {chunk as Chunk.T {data, blocks, ...},
 			 optimize: int,
+			 newProfileLabel: x86.ProfileLabel.t -> x86.ProfileLabel.t,
 			 liveInfo : x86Liveness.LiveInfo.t,
 			 jumpInfo : x86JumpInfo.t,
 			 reserveEsp: bool}
@@ -351,6 +352,22 @@ struct
 		   setLayoutInfo(label, SOME block)
 		 end)
 
+ 	val profileLabel as {get = getProfileLabel : Label.t -> ProfileLabel.t option,
+			     set = setProfileLabel,
+			     destroy = destProfileLabel}
+	  = Property.destGetSetOnce
+	    (Label.plist, 
+	     Property.initRaise ("profileLabel", Label.layout))
+	val _ 
+	  = List.foreach
+	    (blocks,
+	     fn block as Block.T {entry, profileLabel, ...}
+	      => let
+		   val label = Entry.label entry
+		 in 
+		   setProfileLabel(label, profileLabel)
+		 end)
+
 	local	
 	  val stack = ref []
 	  val queue = ref (Queue.empty ())
@@ -371,8 +388,11 @@ struct
 	  = let
 	      val label' = Label.new label
 	      val live = getLive(liveInfo, label)
+	      val profileLabel = getProfileLabel label
+	      val profileLabel' = Option.map (profileLabel, newProfileLabel)
 	      val block
 		= Block.T {entry = Entry.jump {label = label'},
+			   profileLabel = profileLabel',
 			   statements 
 			   = (Assembly.directive_restoreregalloc
 			      {live = MemLocSet.add
@@ -385,6 +405,7 @@ struct
 			   transfer = Transfer.goto {target = label}}
 	    in
 	      setLive(liveInfo, label', live);
+	      setProfileLabel(label', profileLabel');
 	      incNear(jumpInfo, label');
 	      Assert.assert("pushCompensationBlock",
 			    fn () => getNear(jumpInfo, label') = Count 1);
@@ -420,7 +441,7 @@ struct
 			Assembly.t AppendList.t
 	  = (case getLayoutInfo label
 	       of NONE => AppendList.empty
-	        | SOME (Block.T {entry, statements, transfer})
+	        | SOME (Block.T {entry, profileLabel, statements, transfer})
 		=> let
 		     val _ = setLayoutInfo(label, NONE)
 
@@ -475,7 +496,10 @@ struct
 			in
 			   AppendList.appends
 			   [align,
-			    AppendList.single (Assembly.label label),
+			    AppendList.single 
+			    (Assembly.label label),
+			    AppendList.fromList 
+			    (ProfileLabel.toAssemblyOpt profileLabel),
 			    assumes]
 			end
 		     val pre
@@ -536,13 +560,15 @@ struct
 					       (* assignTo dst *)
 					       getReturn ()]
 					in
-					  AppendList.append
-					  (AppendList.fromList
+					  AppendList.appends
+					  [AppendList.fromList
 					   [Assembly.pseudoop_p2align 
 					    (Immediate.const_int 4, NONE, NONE),
 					    Assembly.pseudoop_long 
 					    [Immediate.const_int frameLayoutsIndex],
 					    Assembly.label label],
+					   AppendList.fromList
+					   (ProfileLabel.toAssemblyOpt profileLabel),
 					   if maySwitchThreads
 					     then (* entry from far assumptions *)
 					          farEntry finish
@@ -568,31 +594,35 @@ struct
 							  => {memloc = memloc,
 							      sync = sync,
 							      weight = 1024}))})],
-						   finish))
+						   finish)]
 					end
 				 else AppendList.append (near label, getReturn ())
 			       end
 			    | Func {label,...}
-			    => AppendList.append
-			       (AppendList.fromList
+			    => AppendList.appends
+			       [AppendList.fromList
 				[Assembly.pseudoop_p2align 
 				 (Immediate.const_int 4, NONE, NONE),
 				 Assembly.pseudoop_global label,
 				 Assembly.label label],
+				AppendList.fromList
+				(ProfileLabel.toAssemblyOpt profileLabel),
 				(* entry from far assumptions *)
-				(farEntry AppendList.empty))
+				(farEntry AppendList.empty)]
 			    | Cont {label, 
 				    frameInfo = FrameInfo.T {size,
 							     frameLayoutsIndex},
 				    ...}
 			    =>
-			       AppendList.append
-			       (AppendList.fromList
+			       AppendList.appends
+			       [AppendList.fromList
 				[Assembly.pseudoop_p2align
 				 (Immediate.const_int 4, NONE, NONE),
 				 Assembly.pseudoop_long
 				 [Immediate.const_int frameLayoutsIndex],
 				 Assembly.label label],
+				AppendList.fromList
+				(ProfileLabel.toAssemblyOpt profileLabel),
 				(* entry from far assumptions *)
 				(farEntry
 				 (let
@@ -609,18 +639,20 @@ struct
 				       src = bytes, 
 				       size = pointerSize},
 				      profileStackTopCommit)
-				  end)))
+				  end))]
 		            | Handler {frameInfo = (FrameInfo.T
 						    {frameLayoutsIndex, size}),
 				       label,
 				       ...}
-			    => AppendList.append
-			       (AppendList.fromList
+			    => AppendList.appends
+			       [AppendList.fromList
 				[Assembly.pseudoop_p2align 
 				 (Immediate.const_int 4, NONE, NONE),
 				 Assembly.pseudoop_long
 				 [Immediate.const_int frameLayoutsIndex],
 				 Assembly.label label],
+				AppendList.fromList
+				(ProfileLabel.toAssemblyOpt profileLabel),
 				(* entry from far assumptions *)
 				(farEntry
 				 (let
@@ -637,8 +669,8 @@ struct
 				       src = bytes, 
 				       size = pointerSize},
 				      profileStackTopCommit)
-				  end)))
-val pre
+				  end))]
+		     val pre
 		       = AppendList.appends
 		         [if !Control.Native.commented > 1
 			    then AppendList.single
@@ -1887,6 +1919,7 @@ val pre
 		       | block => block::(doit ())))
 	val assembly = doit ()
 	val _ = destLayoutInfo ()
+	val _ = destProfileLabel ()
       in
 	data::assembly
       end

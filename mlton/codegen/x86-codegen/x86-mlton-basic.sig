@@ -13,6 +13,7 @@ signature X86_MLTON_BASIC_STRUCTS =
     structure x86 : X86_PSEUDO
     structure Machine: MACHINE
     sharing x86.Label = Machine.Label
+    sharing type x86.ProfileLabel.t = Machine.ProfileLabel.t
     sharing x86.Runtime = Machine.Runtime
   end
 

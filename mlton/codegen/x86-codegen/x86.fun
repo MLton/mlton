@@ -3712,11 +3712,6 @@ struct
 	            | _ => false
     end
 
-  val addProfileLabel: (string * Label.t -> unit) ref =
-     ref (fn _ => ())
-
-  fun setAddProfileLabel x = addProfileLabel := x
-     
   structure Transfer =
     struct
       structure Cases =
@@ -4063,36 +4058,72 @@ struct
       val ccall = CCall
     end
 
+  structure ProfileLabel =
+    struct
+      open ProfileLabel
+
+      fun toAssembly pl =
+	let
+	  val label = Label.fromString (toString pl)
+	in
+	  [Assembly.pseudoop_global label,
+	   Assembly.label label]
+	end
+      fun toAssemblyOpt pl =
+	case pl of
+	  NONE => []
+	| SOME pl => toAssembly pl
+    end
+
   structure Block =
     struct
       datatype t' = T' of {entry: Entry.t option,
+			   profileLabel: ProfileLabel.t option,
 			   statements: Assembly.t list,
 			   transfer: Transfer.t option}
+      fun mkBlock' {entry, statements, transfer} =
+	T' {entry = entry,
+	    profileLabel = NONE,
+	    statements = statements,
+	    transfer = transfer}
+      fun mkProfileBlock' {profileLabel} =
+	T' {entry = NONE,
+	    profileLabel = SOME profileLabel,
+	    statements = [],
+	    transfer = NONE}
+
       datatype t = T of {entry: Entry.t,
+			 profileLabel: ProfileLabel.t option,
 			 statements: Assembly.t list,
 			 transfer: Transfer.t}
 
-      fun printBlock (T {entry, statements, transfer})
+      fun printBlock (T {entry, profileLabel, statements, transfer, ...})
 	= (print (Entry.toString entry);
 	   print ":\n";
+	   Option.app
+	   (profileLabel, fn profileLabel =>
+	    (print (ProfileLabel.toString profileLabel);
+	     print ":\n"));
 	   List.foreach
-	   (statements,
-	    fn asm
-	     => (print (Assembly.toString asm);
-		 print "\n"));
+	   (statements, fn asm => 
+	    (print (Assembly.toString asm);
+	     print "\n"));
 	   print (Transfer.toString transfer);
 	   print "\n")
 
-      fun print_block' (T' {entry, statements, transfer})
+      fun printBlock' (T' {entry, profileLabel, statements, transfer, ...})
 	= (print (if isSome entry
 		    then Entry.toString (valOf entry)
 		    else "---");
 	   print ":\n";
+	   Option.app
+	   (profileLabel, fn profileLabel =>
+	    (print (ProfileLabel.toString profileLabel);
+	     print ":\n"));
 	   List.foreach
-	   (statements,
-	    fn asm
-	     => (print (Assembly.toString asm);
-		 print "\n"));
+	   (statements, fn asm => 
+	    (print (Assembly.toString asm);
+	     print "\n"));
 	   print (if isSome transfer
 		    then Transfer.toString (valOf transfer)
 		    else "NONE");
@@ -4101,25 +4132,46 @@ struct
       val rec compress
 	= fn [] => []
            | [T' {entry = SOME entry1,
+		  profileLabel = profileLabel1,
 		  statements = statements1,
 		  transfer = SOME transfer1}]
 	   => [T {entry = entry1,
+		  profileLabel = profileLabel1,
 		  statements = statements1,
 		  transfer = transfer1}]
 	   | (T' {entry = SOME entry1,
+		  profileLabel = profileLabel1,
 		  statements = statements1,
 		  transfer = SOME transfer1})::blocks
 	   => (T {entry = entry1,
+		  profileLabel = profileLabel1,
 		  statements = statements1,
 		  transfer = transfer1})::(compress blocks)
 	   | (T' {entry = SOME entry1, 
-		  statements = statements1, 
-		 transfer = NONE})::
+		  profileLabel = NONE,
+		  statements = [], 
+		  transfer = NONE})::
 	     (T' {entry = NONE, 
+		  profileLabel = profileLabel2,
 		  statements = statements2, 
 		  transfer = transfer2})::blocks
            => compress ((T' {entry = SOME entry1,
-			     statements = statements1 @ statements2,
+			     profileLabel = profileLabel2,
+			     statements = statements2,
+			     transfer = transfer2})::blocks)
+	   | (T' {entry = SOME entry1, 
+		  profileLabel = profileLabel1,
+		  statements = statements1, 
+		  transfer = NONE})::
+	     (T' {entry = NONE, 
+		  profileLabel = profileLabel2,
+		  statements = statements2, 
+		  transfer = transfer2})::blocks
+           => compress ((T' {entry = SOME entry1,
+			     profileLabel = profileLabel1,
+			     statements = statements1 @
+			                  (ProfileLabel.toAssemblyOpt profileLabel2) @
+			                  statements2,
 			     transfer = transfer2})::blocks)
 	   | _ => Error.bug "Blocks.compress"
     end

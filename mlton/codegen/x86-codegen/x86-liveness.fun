@@ -504,10 +504,11 @@ struct
   structure LivenessBlock =
     struct
       datatype t = T of {entry: (Entry.t * Liveness.t),
+			 profileLabel: ProfileLabel.t option,
 			 statements: (Assembly.t * Liveness.t) list,
 			 transfer: Transfer.t * Liveness.t}
 
-      fun toString (T {entry, statements, transfer})
+      fun toString (T {entry, statements, transfer, ...})
 	= concat [let
 		    val (entry,info) = entry
 		  in
@@ -533,7 +534,7 @@ struct
 			   "\n"]
 		  end]
 
-      fun printBlock (T {entry, statements, transfer})
+      fun printBlock (T {entry, statements, transfer, ...})
 	= (let
 	     val (entry,info) = entry
 	   in 
@@ -650,7 +651,8 @@ struct
 	     live = live}
 	  end
 
-      fun toLivenessBlock {block as Block.T {entry, statements, transfer},
+      fun toLivenessBlock {block as Block.T {entry, profileLabel,
+					     statements, transfer},
 			   liveInfo : LiveInfo.t}
 	= let
 	    val {transfer, live}
@@ -667,6 +669,7 @@ struct
 
 	    val liveness_block
 	      = T {entry = entry,
+		   profileLabel = profileLabel,
 		   statements = statements,
 		   transfer = transfer}
 	  in 
@@ -717,7 +720,7 @@ struct
 	     live = live'}
 	  end
 
-      fun verifyLivenessBlock {block as T {entry, statements, transfer},
+      fun verifyLivenessBlock {block as T {entry, statements, transfer, ...},
 			       liveInfo: LiveInfo.t}
 	= let
 	    val {verified = verified_transfer,
@@ -754,13 +757,15 @@ struct
 	  "verifyLivenessBlock"
           verifyLivenessBlock
 
-      fun toBlock {block as T {entry, statements, transfer}}
+      fun toBlock {block as T {entry, profileLabel,
+			       statements, transfer}}
 	= let
 	    val (entry,info) = entry
 	    val statements = List.map(statements, fn (asm,info) => asm)
 	    val (transfer,info) = transfer
 	  in 
 	    Block.T {entry = entry,
+		     profileLabel = profileLabel,
 		     statements = statements,
 		     transfer = transfer}
 	  end

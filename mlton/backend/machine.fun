@@ -21,6 +21,7 @@ end
 
 structure Atoms = MachineAtoms (structure Label = Label
 				structure Prim = Prim
+				structure ProfileLabel = ProfileLabel
 				structure Runtime = Runtime
 				structure SourceInfo = SourceInfo)
    
@@ -678,6 +679,53 @@ structure ProfileInfo =
 		      (sourceSuccessors, fn i =>
 		       0 <= i andalso i < sourceSeqsLength))
 	 end
+
+       fun modify (T {frameSources, labels, sourceSeqs, sourceSuccessors, sources}) :
+	          {newProfileLabel: ProfileLabel.t -> ProfileLabel.t,
+		   delProfileLabel: ProfileLabel.t -> unit,
+		   getProfileInfo: unit -> t} =
+	  let
+	     val {get: ProfileLabel.t -> int, set, ...} =
+	        Property.getSet
+		(ProfileLabel.plist, 
+		 Property.initRaise ("ProfileInfo.extend", ProfileLabel.layout))
+	     val _ =
+	        Vector.foreach
+		(labels, fn {label, sourceSeqsIndex} =>
+		 set (label, sourceSeqsIndex))
+	     val new = ref []
+	     fun newProfileLabel l =
+	       let
+		  val i = get l
+		  val l' = ProfileLabel.new ()
+		  val _ = set (l', i)
+		  val _ = List.push (new, {label = l', sourceSeqsIndex = i})
+	       in
+		  l'
+	       end
+	     fun delProfileLabel l = set (l, ~1)
+	     fun getProfileInfo () =
+	        let
+		   val labels = Vector.concat
+		                [labels, Vector.fromList (!new)]
+		   val labels = Vector.keepAll
+		                (labels, fn {label, ...} =>
+				 get label <> ~1)
+		   val pi = T {frameSources = frameSources,
+			       labels = Vector.concat
+			                [labels, Vector.fromList (!new)],
+			       sourceSeqs = sourceSeqs,
+			       sourceSuccessors = sourceSuccessors,
+			       sources = sources}
+		in
+		  Assert.assert ("newProfileInfo", fn () => isOK pi);
+		  pi
+		end
+	  in
+	     {newProfileLabel = newProfileLabel,
+	      delProfileLabel = delProfileLabel,
+	      getProfileInfo = getProfileInfo}
+	  end
    end
 
 structure Program =

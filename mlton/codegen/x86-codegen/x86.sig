@@ -11,15 +11,15 @@ type word = Word.t
 signature X86_STRUCTS =
   sig
     structure Label: HASH_ID
+    structure ProfileLabel: PROFILE_LABEL
     structure Runtime: RUNTIME
   end
 
 signature X86 =
   sig
-    include X86_STRUCTS
+    structure Label: HASH_ID
+    structure Runtime: RUNTIME
 
-    val setAddProfileLabel: (string * Label.t -> unit) -> unit
-       
     val tracer : string -> ('a -> 'b) -> 
                  (('a -> 'b) * (unit -> unit))
     val tracerTop : string -> ('a -> 'b) -> 
@@ -1163,16 +1163,31 @@ signature X86 =
 		    target: Label.t} -> t		       
       end
 
+    structure ProfileLabel :
+      sig
+	include PROFILE_LABEL
+	val toAssembly : t -> Assembly.t list
+	val toAssemblyOpt : t option -> Assembly.t list
+      end
+
     structure Block :
       sig
 	datatype t' = T' of {entry: Entry.t option,
+			     profileLabel: ProfileLabel.t option,
 			     statements: Assembly.t list,
 			     transfer: Transfer.t option}
+	val mkBlock': {entry: Entry.t option,
+		       statements: Assembly.t list,
+		       transfer: Transfer.t option} -> t'
+	val mkProfileBlock': {profileLabel: ProfileLabel.t} -> t'
+	val printBlock' : t' -> unit
+
 	datatype t = T of {entry: Entry.t,
+			   profileLabel: ProfileLabel.t option,
 			   statements: Assembly.t list,
 			   transfer: Transfer.t}
-
 	val printBlock : t -> unit
+
 	val compress : t' list -> t list
       end
 

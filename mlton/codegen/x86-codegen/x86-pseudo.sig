@@ -453,15 +453,24 @@ signature X86_PSEUDO =
 		     target: Label.t} -> t
       end
 
-    structure Block :
+    structure ProfileLabel :
       sig
-	datatype t' = T' of {entry: Entry.t option,
-			     statements: Assembly.t list,
-			     transfer: Transfer.t option}
-	datatype t = T of {entry: Entry.t,
-			   statements: Assembly.t list,
-			   transfer: Transfer.t}
-	val compress : t' list -> t list
+	type t
+      end
+
+    structure Block :
+      sig	
+	type t'
+	val mkBlock': {entry: Entry.t option,
+		       statements: Assembly.t list,
+		       transfer: Transfer.t option} -> t'
+	val mkProfileBlock': {profileLabel: ProfileLabel.t} -> t'
+	val printBlock' : t' -> unit
+
+	type t
+	val printBlock : t -> unit
+
+	val compress: t' list -> t list
       end
 
     structure Chunk :

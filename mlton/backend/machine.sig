@@ -12,6 +12,7 @@ signature MACHINE_STRUCTS =
    sig
       structure Label: HASH_ID
       structure Prim: PRIM
+      structure ProfileLabel: PROFILE_LABEL
       structure SourceInfo: SOURCE_INFO
    end
 
@@ -223,6 +224,10 @@ signature MACHINE =
 		     sourceSeqs: int vector vector,
 		     sourceSuccessors: int vector,
 		     sources: SourceInfo.t vector}
+
+	    val modify: t -> {newProfileLabel: ProfileLabel.t -> ProfileLabel.t,
+			      delProfileLabel: ProfileLabel.t -> unit,
+			      getProfileInfo: unit -> t}
 	 end
 
       structure Program:

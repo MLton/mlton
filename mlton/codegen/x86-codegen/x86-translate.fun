@@ -221,7 +221,7 @@ struct
 	      => let
 		 in
 		   AppendList.single
-		   (x86.Block.T'
+		   (x86.Block.mkBlock'
 		    {entry = SOME (x86.Entry.jump {label = label}),
 		     statements = [],
 		     transfer = NONE})
@@ -238,7 +238,7 @@ struct
 			       | NONE => args)
 		 in
 		   AppendList.single
-		   (x86.Block.T'
+		   (x86.Block.mkBlock'
 		    {entry = SOME (x86.Entry.func {label = label,
 						   live = args}),
 		     statements = [],
@@ -258,7 +258,7 @@ struct
 			       | NONE => args)
 		 in
 		   AppendList.single
-		   (x86.Block.T'
+		   (x86.Block.mkBlock'
 		    {entry = SOME (x86.Entry.cont {label = label,
 						   live = args,
 						   frameInfo = frameInfo}),
@@ -269,7 +269,7 @@ struct
 	      => let
 		 in 
 		   AppendList.single
-		   (x86.Block.T'
+		   (x86.Block.mkBlock'
 		    {entry = SOME (x86.Entry.handler
 				   {frameInfo = frameInfoToX86 frameInfo,
 				    label = label,
@@ -300,14 +300,14 @@ struct
 		   val comment = (Layout.toString o layout) statement
 		 in
 		   (AppendList.single
-		    (x86.Block.T'
+		    (x86.Block.mkBlock'
 		     {entry = NONE,
 		      statements = [x86.Assembly.comment
 				    (concat ["begin: ",
 					     comment])],
 		      transfer = NONE}),
 		    AppendList.single
-		    (x86.Block.T'
+		    (x86.Block.mkBlock'
 		     {entry = NONE,
 		      statements = [x86.Assembly.comment
 				    (concat ["end: ",
@@ -340,7 +340,7 @@ struct
 		   AppendList.appends
 		   [comment_begin,
 		    AppendList.single
-		    (x86.Block.T'
+		    (x86.Block.mkBlock'
 		     {entry = NONE,
 		      statements
 		      = [(* dst = src *)
@@ -372,17 +372,9 @@ struct
 		    comment_end]
 		 end
 	      | ProfileLabel l =>
-		   let
-		      val label =
-			 Label.fromString (Machine.ProfileLabel.toString l)
-		   in
-		      AppendList.single
-		      (x86.Block.T'
-		       {entry = NONE,
-			statements = [x86.Assembly.pseudoop_global label,
-				      x86.Assembly.label label],
-			transfer = NONE})
-		   end
+		   AppendList.single
+		   (x86.Block.mkProfileBlock'
+		    {profileLabel = l})
  	      | SetSlotExnStack {offset}
 	      => let
 		   val (comment_begin, comment_end) = comments statement
@@ -408,7 +400,7 @@ struct
 		   AppendList.appends
 		   [comment_begin,
 		    AppendList.single
-		    (x86.Block.T'
+		    (x86.Block.mkBlock'
 		     {entry = NONE,
 		      statements =
 		      [(* *(stackTop + offset) = exnStack *)
@@ -432,7 +424,7 @@ struct
 		   AppendList.appends
 		   [comment_begin,
 		    AppendList.single
-		    (x86.Block.T'
+		    (x86.Block.mkBlock'
 		     {entry = NONE,
 		      statements
 		      = [(* exnStack = (stackTop + offset) - stackBottom *)
@@ -479,7 +471,7 @@ struct
 		   AppendList.appends
 		   [comment_begin,
 		    AppendList.single
-		    (x86.Block.T'
+		    (x86.Block.mkBlock'
 		     {entry = NONE,
 		      statements 
 		      = [(* exnStack = *(stackTop + offset) *)
@@ -552,7 +544,7 @@ struct
 		   AppendList.appends
 		   [comment_begin,
 		    AppendList.single
-		    (x86.Block.T'
+		    (x86.Block.mkBlock'
 		     {entry = NONE,
 		      statements
 		      = ((* *(frontier) = header *)
@@ -587,7 +579,7 @@ struct
 
       fun goto l
 	= AppendList.single
-	  (x86.Block.T'
+	  (x86.Block.mkBlock'
 	   {entry = NONE,
 	    statements = [],
 	    transfer = SOME (x86.Transfer.goto
@@ -600,7 +592,7 @@ struct
 	  in
 	    if Label.equals(a, b)
 	      then AppendList.single
-		   (x86.Block.T'
+		   (x86.Block.mkBlock'
 		    {entry = NONE,
 		     statements = [],
 		     transfer = SOME (x86.Transfer.goto {target = a})})
@@ -608,7 +600,7 @@ struct
 		   ((* if (test) goto a
 		     * goto b
 		     *)
-		    x86.Block.T'
+		    x86.Block.mkBlock'
 		    {entry = NONE,
 		     statements 
 		     = [x86.Assembly.instruction_test
@@ -629,7 +621,7 @@ struct
 	  in
 	    if Label.equals(a, b)
 	      then AppendList.single
-		   (x86.Block.T'
+		   (x86.Block.mkBlock'
 		    {entry = NONE,
 		     statements = [],
 		     transfer = SOME (x86.Transfer.goto {target = a})})
@@ -637,7 +629,7 @@ struct
 		   ((* if (test = k) goto a
 		     * goto b
 		     *)
-		    x86.Block.T'
+		    x86.Block.mkBlock'
 		    {entry = NONE,
 		     statements 
 		     = [x86.Assembly.instruction_cmp
@@ -656,7 +648,7 @@ struct
 	    val test = Operand.toX86Operand test
 	  in
 	    AppendList.single
-	    (x86.Block.T'
+	    (x86.Block.mkBlock'
 	     {entry = NONE,
 	      statements = [],
 	      transfer = SOME (x86.Transfer.switch
@@ -722,7 +714,7 @@ struct
 		   val comment = (Layout.toString o layout) transfer
 		 in
 		   AppendList.single
-		   (x86.Block.T'
+		   (x86.Block.mkBlock'
 		    {entry = NONE,
 		     statements = [x86.Assembly.comment comment],
 		      transfer = NONE})
@@ -764,7 +756,7 @@ struct
 	      => AppendList.append
 	         (comments transfer,
 		  AppendList.single
-		  (x86.Block.T'
+		  (x86.Block.mkBlock'
 		   {entry = NONE,
 		    statements = [],
 		    transfer 
@@ -784,7 +776,7 @@ struct
 	      => AppendList.append
 	         (comments transfer,
 		  AppendList.single
-		  (x86.Block.T'
+		  (x86.Block.mkBlock'
 		   {entry = NONE,
 		    statements = [],
 		    transfer 
@@ -817,7 +809,7 @@ struct
 			      ((* if (test & 0x3) goto int 
 				* goto pointer
 				*)
-			       x86.Block.T'
+			       x86.Block.mkBlock'
 			       {entry = NONE,
 				statements 
 				= [x86.Assembly.instruction_test
@@ -845,7 +837,7 @@ struct
 		  (comments transfer,
 		   AppendList.single
 		   ((* goto label *)
-		    x86.Block.T'
+		    x86.Block.mkBlock'
 		    {entry = NONE,
 		     statements = [],
 		     transfer = SOME (x86.Transfer.goto {target = label})})))
@@ -874,7 +866,7 @@ struct
 		    AppendList.append
 		    (com,
 		     AppendList.single
-		     (x86.Block.T' {entry = NONE,
+		     (x86.Block.mkBlock' {entry = NONE,
 				    statements = [],
 				    transfer = SOME transfer}))
 		 end)
@@ -902,7 +894,7 @@ struct
 		 (Entry.toX86Blocks {label = label,
 				     kind = kind,
 				     transInfo = transInfo},
-		  x86.Block.T'
+		  x86.Block.mkBlock'
 		  {entry = NONE,
 		   statements 
 		   = if !Control.Native.commented > 0
@@ -928,23 +920,8 @@ struct
 				    transInfo = transInfo}, l)))
 
 	    val pseudo_blocks = AppendList.toList pseudo_blocks
-		 
-	    val blocks = x86.Block.compress pseudo_blocks
 
-	    val blocks
-	      = if !Control.profile = Control.ProfileNone
-		   then blocks
-		else
-		       List.map
-		       (blocks,
-			fn (x86.Block.T {entry, statements, transfer})
-			 => let
-			      val label = x86.Entry.label entry
-			    in
-			      x86.Block.T {entry = entry,
-					   statements = statements,
-					   transfer = transfer}
-			    end)
+	    val blocks = x86.Block.compress pseudo_blocks
 	  in
 	    blocks
 	  end

@@ -60,6 +60,7 @@ signature X86_LIVENESS =
     structure LivenessBlock:
       sig
 	datatype t = T of {entry: (x86.Entry.t * Liveness.t),
+			   profileLabel: x86.ProfileLabel.t option,
 			   statements: (x86.Assembly.t * Liveness.t) list,
 			   transfer: (x86.Transfer.t * Liveness.t)}
 

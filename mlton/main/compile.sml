@@ -21,6 +21,7 @@ structure Sxml = Xml
 structure Ssa = Ssa (open Atoms)
 structure Machine = Machine (structure Label = Ssa.Label
 			     structure Prim = Atoms.Prim
+			     structure ProfileLabel = Atoms.ProfileLabel
 			     structure SourceInfo = Ssa.SourceInfo)
 local
    open Machine

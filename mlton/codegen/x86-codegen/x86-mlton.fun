@@ -49,7 +49,7 @@ struct
 
 	fun unimplemented s
 	  = AppendList.fromList
-	    [Block.T'
+	    [Block.mkBlock'
 	     {entry = NONE,
 	      statements = [Assembly.comment ("UNIMPLEMENTED PRIM: " ^ s)],
 	      transfer = NONE}]
@@ -80,7 +80,7 @@ struct
                                "applyPrim: lengthArrayVectorString, src"
 	    in
 	      AppendList.fromList
-	      [Block.T'
+	      [Block.mkBlock'
 	       {entry = NONE,
 		statements 
 		= [Assembly.instruction_mov
@@ -132,7 +132,7 @@ struct
 		     | _ => Error.bug "applyPrim: subWord8ArrayVector, src2"
 	    in
 	      AppendList.fromList
-	      [Block.T'
+	      [Block.mkBlock'
 	       {entry = NONE,
 		statements 
 		= [Assembly.instruction_mov
@@ -184,7 +184,7 @@ struct
 		     | _ => Error.bug "applyPrim: updateWord8Array, src2"
 	    in
 	      AppendList.fromList
-	      [Block.T'
+	      [Block.mkBlock'
 	       {entry = NONE,
 		statements 
 		= [Assembly.instruction_mov
@@ -204,7 +204,7 @@ struct
 		   fn () => srcsize = dstsize)
 	    in
 	      AppendList.fromList
-	      [Block.T'
+	      [Block.mkBlock'
 	       {entry = NONE,
 		statements
 		= [Assembly.instruction_mov
@@ -224,7 +224,7 @@ struct
 		   fn () => Size.lt(srcsize,dstsize))
 	    in
 	      AppendList.fromList
-	      [Block.T'
+	      [Block.mkBlock'
 	       {entry = NONE,
 		statements
 		= [Assembly.instruction_movx
@@ -246,7 +246,7 @@ struct
 		   fn () => Size.lt(dstsize,srcsize))
 	    in
 	      AppendList.fromList
-	      [Block.T'
+	      [Block.mkBlock'
 	       {entry = NONE,
 		statements
 		= [Assembly.instruction_xvom
@@ -292,7 +292,7 @@ struct
 		    else (src1,src2)
 	    in
 	      AppendList.fromList
-	      [Block.T'
+	      [Block.mkBlock'
 	       {entry = NONE,
 		statements
 		= [Assembly.instruction_mov
@@ -336,7 +336,7 @@ struct
 		    else (src1,src2)
 	    in
 	      AppendList.fromList
-	      [Block.T'
+	      [Block.mkBlock'
 	       {entry = NONE,
 		statements
 		= [Assembly.instruction_mov
@@ -376,7 +376,7 @@ struct
 		     | _ => (src1,src2)
 	    in
 	      AppendList.fromList
-	      [Block.T'
+	      [Block.mkBlock'
 	       {entry = NONE,
 		statements
 		= [Assembly.instruction_mov
@@ -400,7 +400,7 @@ struct
 		   fn () => srcsize = dstsize)
 	    in
 	      AppendList.fromList
-	      [Block.T'
+	      [Block.mkBlock'
 	       {entry = NONE,
 		statements 
 		= [Assembly.instruction_mov
@@ -429,7 +429,7 @@ struct
 		   fn () => src2size = wordSize)
 	    in
 	      AppendList.fromList
-	      [Block.T'
+	      [Block.mkBlock'
 	       {entry = NONE,
 		statements
 		= [Assembly.instruction_mov
@@ -463,7 +463,7 @@ struct
 	       *)
 	      case Operand.deImmediate src1
 		of SOME _ => AppendList.fromList
-		             [Block.T'
+		             [Block.mkBlock'
 			      {entry = NONE,
 			       statements
 			       = [Assembly.instruction_cmp
@@ -477,7 +477,7 @@ struct
 				   size = dstsize}],
 			       transfer = NONE}]
 		 | NONE => AppendList.fromList
-			   [Block.T'
+			   [Block.mkBlock'
 			    {entry = NONE,	
 			     statements
 			     = [Assembly.instruction_cmp
@@ -510,7 +510,7 @@ struct
 	       *)
 	      case Operand.deImmediate src1
 		of SOME _ => AppendList.fromList
-		             [Block.T'
+		             [Block.mkBlock'
 			      {entry = NONE,
 			       statements
 			       = [Assembly.instruction_test
@@ -524,7 +524,7 @@ struct
 				   size = dstsize}],
 			       transfer = NONE}]
 		 | NONE => AppendList.fromList
-			   [Block.T'
+			   [Block.mkBlock'
 			    {entry = NONE,
 			     statements
 			     = [Assembly.instruction_test
@@ -562,7 +562,7 @@ struct
 		     | _ => (oper,src1,src2)
 	    in
 	      AppendList.fromList
-	      [Block.T'
+	      [Block.mkBlock'
 	       {entry = NONE,
 		statements
 		= [Assembly.instruction_pfmov
@@ -591,7 +591,7 @@ struct
 			    src3size = dstsize)
 	    in
 	      AppendList.fromList
-	      [Block.T'
+	      [Block.mkBlock'
 	       {entry = NONE,
 		statements
 		= [Assembly.instruction_pfmov
@@ -621,7 +621,7 @@ struct
 		   fn () => srcsize = dstsize)
 	    in
 	      AppendList.fromList
-	      [Block.T'
+	      [Block.mkBlock'
 	       {entry = NONE,
 		statements 
 		= [Assembly.instruction_pfmov
@@ -645,7 +645,7 @@ struct
 		   fn () => srcsize = dstsize)
 	    in	
 	      AppendList.fromList
-	      [Block.T'
+	      [Block.mkBlock'
 	       {entry = NONE,
 		statements 
 		= [Assembly.instruction_pfldc
@@ -667,14 +667,14 @@ struct
 		     val comment = primName
 		   in 
 		     (AppendList.single
-		      (x86.Block.T'
+		      (x86.Block.mkBlock'
 		       {entry = NONE,
 			statements 
 			= [x86.Assembly.comment 
 			   ("begin prim: " ^ comment)],
 			transfer = NONE}),
 		      AppendList.single
-		      (x86.Block.T'
+		      (x86.Block.mkBlock'
 		       {entry = NONE,
 			statements 
 			= [x86.Assembly.comment 
@@ -700,7 +700,7 @@ struct
 		  val (src,srcsize) = getSrc1 ()
 		in
 		  AppendList.fromList
-		  [Block.T'
+		  [Block.mkBlock'
 		   {entry = NONE,
 		    statements 
 		    = [Assembly.instruction_cmp
@@ -726,7 +726,7 @@ struct
 			      class = Classes.CStatic}
 		       in
 			 AppendList.fromList
-			 [Block.T'
+			 [Block.mkBlock'
 			  {entry = NONE,
 			   statements
 			   = [case Size.class dstsize
@@ -769,7 +769,7 @@ struct
 		       fn () => srcsize = dstsize)
 		in
 		  AppendList.fromList
-		  [Block.T'
+		  [Block.mkBlock'
 		   {entry = NONE,
 		    statements
 		    = [Assembly.instruction_pfmov
@@ -819,7 +819,7 @@ struct
 		       fn () => srcsize = dstsize)
 		in
 		  AppendList.fromList
-		  [Block.T'
+		  [Block.mkBlock'
 		   {entry = NONE,
 		    statements
 		    = [Assembly.instruction_pfmov
@@ -865,7 +865,7 @@ struct
 		       fn () => srcsize = dstsize)
 		in
 		  AppendList.fromList
-		  [Block.T'
+		  [Block.mkBlock'
 		   {entry = NONE,
 		    statements 
 		    = [Assembly.instruction_pfmov
@@ -895,7 +895,7 @@ struct
 		                src2size = dstsize)
 		in
 		  AppendList.fromList
-		  [Block.T'
+		  [Block.mkBlock'
 		   {entry = NONE,
 		    statements 
 		    = [Assembly.instruction_pfmov
@@ -920,7 +920,7 @@ struct
 		       fn () => srcsize = dstsize)
 		in
 		  AppendList.fromList
-		  [Block.T'
+		  [Block.mkBlock'
 		   {entry = NONE,
 		    statements 
 		    = [Assembly.instruction_pfldc
@@ -979,7 +979,7 @@ struct
 		       fn () => srcsize = dstsize)
 		in
 		  AppendList.fromList
-		  [Block.T'
+		  [Block.mkBlock'
 		   {entry = NONE,
 		    statements 
 		    = [Assembly.instruction_pfmov
@@ -1008,7 +1008,7 @@ struct
 		       fn () => src1size = src2size)
 		in
 		  AppendList.fromList
-		  [Block.T'
+		  [Block.mkBlock'
 		   {entry = NONE,
 		    statements
 		    = [Assembly.instruction_pfcom
@@ -1039,7 +1039,7 @@ struct
 		       fn () => src1size = src2size)
 		in
 		  AppendList.fromList
-		  [Block.T'
+		  [Block.mkBlock'
 		   {entry = NONE,
 		    statements
 		    = [Assembly.instruction_pfcom
@@ -1070,7 +1070,7 @@ struct
 		       fn () => src1size = src2size)
 		in
 		  AppendList.fromList
-		  [Block.T'
+		  [Block.mkBlock'
 		   {entry = NONE,
 		    statements
 		    = [Assembly.instruction_pfucom
@@ -1106,7 +1106,7 @@ struct
 		       fn () => src1size = src2size)
 		in
 		  AppendList.fromList
-		  [Block.T'
+		  [Block.mkBlock'
 		   {entry = NONE,
 		    statements
 		    = [Assembly.instruction_pfcom
@@ -1137,7 +1137,7 @@ struct
 		       fn () => src1size = src2size)
 		in
 		  AppendList.fromList
-		  [Block.T'
+		  [Block.mkBlock'
 		   {entry = NONE,
 		    statements
 		    = [Assembly.instruction_pfcom
@@ -1168,7 +1168,7 @@ struct
 		       fn () => src1size = src2size)
 		in
 		  AppendList.fromList
-		  [Block.T'
+		  [Block.mkBlock'
 		   {entry = NONE,
 		    statements
 		    = [Assembly.instruction_pfucom
@@ -1195,7 +1195,7 @@ struct
 		  val (src,srcsize) = getSrc1 ()
 		in
 		  AppendList.fromList
-		  [Block.T'
+		  [Block.mkBlock'
 		   {entry = NONE,
 		    statements 
 		    = [Assembly.instruction_pfmovfi
@@ -1211,7 +1211,7 @@ struct
 		  val (src,srcsize) = getSrc1 ()
 		in
 		  AppendList.fromList
-		  [Block.T'
+		  [Block.mkBlock'
 		   {entry = NONE,
 		    statements 
 		    = [Assembly.instruction_pfmovti
@@ -1236,7 +1236,7 @@ struct
 		       fn () => src2size = Size.LONG)
 		in
 		  AppendList.fromList
-		  [Block.T'
+		  [Block.mkBlock'
 		   {entry = NONE,
 		    statements 
 		    = [Assembly.instruction_pfmovfi
@@ -1321,7 +1321,7 @@ struct
 	val dstsize = Option.map (returnTy, toX86Size)
 	val comment_begin
 	  = if !Control.Native.commented > 0
-	      then AppendList.single (x86.Block.T'
+	      then AppendList.single (x86.Block.mkBlock'
 				      {entry = NONE,
 				       statements 
 				       = [x86.Assembly.comment
@@ -1332,7 +1332,7 @@ struct
 	AppendList.appends
 	[comment_begin,
 	 AppendList.single
-	 (Block.T'
+	 (Block.mkBlock'
 	  {entry = NONE,
 	   statements = [],
 	   transfer = SOME (Transfer.ccall 
@@ -1361,7 +1361,7 @@ struct
 		      (liveInfo, label, live label)
 	    in 
 	      AppendList.single
-	      (x86.Block.T'
+	      (x86.Block.mkBlock'
 	       {entry = SOME (Entry.creturn {dst = dst,
 					     frameInfo = frameInfo,
 					     func = func,
@@ -1372,7 +1372,7 @@ struct
 	val comment_end
 	  = if !Control.Native.commented > 0
 	      then (AppendList.single
-		    (x86.Block.T' {entry = NONE,
+		    (x86.Block.mkBlock' {entry = NONE,
 				   statements = [x86.Assembly.comment 
 						 ("end creturn: " ^ name)],
 				   transfer = NONE}))
@@ -1400,7 +1400,7 @@ struct
 		 fn () => src1size = dstsize)
 	fun check (src, statement, condition)
 	  = AppendList.single
-	    (x86.Block.T'
+	    (x86.Block.mkBlock'
 	     {entry = NONE,	
 	      statements = [x86.Assembly.instruction_mov
 			    {dst = dst,
@@ -1516,14 +1516,14 @@ struct
 		     val comment = primName
 		   in 
 		     (AppendList.single
-		      (x86.Block.T'
+		      (x86.Block.mkBlock'
 		       {entry = NONE,
 			statements 
 			= [x86.Assembly.comment 
 			   ("begin arith: " ^ comment)],
 			transfer = NONE}),
 		      AppendList.single
-		      (x86.Block.T'
+		      (x86.Block.mkBlock'
 		       {entry = NONE,
 			statements 
 			= [x86.Assembly.comment 

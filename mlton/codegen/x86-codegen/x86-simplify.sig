@@ -25,6 +25,7 @@ signature X86_SIMPLIFY =
 
     val simplify : {chunk : x86.Chunk.t,
 		    optimize : int,
+		    delProfileLabel : x86.ProfileLabel.t -> unit,
 		    liveInfo : x86Liveness.LiveInfo.t,
 		    jumpInfo : x86JumpInfo.t} -> x86.Chunk.t
 

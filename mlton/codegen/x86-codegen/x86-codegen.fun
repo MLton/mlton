@@ -11,6 +11,7 @@ struct
 
   structure x86 
     = x86(structure Label = Machine.Label
+	  structure ProfileLabel = Machine.ProfileLabel
 	  structure Runtime = Machine.Runtime)
 
   structure x86MLtonBasic
@@ -78,15 +79,7 @@ struct
 
   open x86
   structure Type = Machine.Type
-  fun output {program as Machine.Program.T {chunks,
-					    frameLayouts,
-					    frameOffsets,
-					    handlesSignals,
-					    intInfs,
-					    main,
-					    maxFrameSize,
-					    strings,
-					    ...},
+  fun output {program as Machine.Program.T {chunks, frameLayouts, main, ...},
               includes: string list,
 	      outputC,
 	      outputS}: unit
@@ -105,9 +98,41 @@ struct
 	val makeC = outputC
 	val makeS = outputS
 
+	val Machine.Program.T {profileInfo, ...} = program
+	val {newProfileLabel, delProfileLabel, getProfileInfo} = 
+	  Machine.ProfileInfo.modify profileInfo
+
 	(* C specific *)
 	fun outputC ()
 	  = let
+	      local
+		val Machine.Program.T 
+		    {chunks, 
+		     frameLayouts, 
+		     frameOffsets, 
+		     handlesSignals, 
+		     intInfs, 
+		     main, 
+		     maxFrameSize, 
+		     objectTypes, 
+		     reals, 
+		     strings, ...} =
+		  program
+	      in
+		val program =
+		  Machine.Program.T 
+		  {chunks = chunks, 
+		   frameLayouts = frameLayouts, 
+		   frameOffsets = frameOffsets, 
+		   handlesSignals = handlesSignals, 
+		   intInfs = intInfs,  
+		   main = main, 
+		   maxFrameSize = maxFrameSize, 
+		   objectTypes = objectTypes, 
+		   profileInfo = getProfileInfo (),
+		   reals = reals, 
+		   strings = strings} 
+	      end
 	      val {file, print, done} = makeC ()
 	      fun make (name, l, pr, last) =
 		 (print (concat ["static ", name, " = {"])
@@ -209,6 +234,7 @@ struct
 		   optimize = if isMain
 				then 0
 				else !Control.Native.optimize,
+		   delProfileLabel = delProfileLabel,
 		   liveInfo = liveInfo,
 		   jumpInfo = jumpInfo}
 		  handle exn
@@ -221,6 +247,7 @@ struct
 		= (x86GenerateTransfers.generateTransfers
 		   {chunk = chunk,
 		    optimize = !Control.Native.optimize,
+		    newProfileLabel = newProfileLabel,
 		    liveInfo = liveInfo,
 		    jumpInfo = jumpInfo,
 		    reserveEsp = reserveEsp})
@@ -306,7 +333,7 @@ struct
 	val outputAssembly =
 	   Control.trace (Control.Pass, "outputAssembly") outputAssembly
       in
-	outputC()
-	; outputAssembly()
+	outputAssembly()
+	; outputC()
       end 
 end

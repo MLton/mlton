@@ -11,6 +11,7 @@ signature MACHINE_ATOMS_STRUCTS =
    sig
       structure Label: HASH_ID
       structure Prim: PRIM
+      structure ProfileLabel: PROFILE_LABEL
       structure Runtime: RUNTIME
       structure SourceInfo: SOURCE_INFO
    end
@@ -112,18 +113,6 @@ signature MACHINE_ATOMS =
 	    val thread: t
 	    val toRuntime: t -> Runtime.ObjectType.t
 	    val wordVector: t
-	 end
-
-      structure ProfileLabel:
-	 sig
-	    type t
-
-	    val clear: t -> unit
-	    val equals: t * t -> bool
-	    val layout: t -> Layout.t
-	    val new: unit -> t
-	    val plist: t -> PropertyList.t
-	    val toString: t -> string
 	 end
 
       val castIsOk: {from: Type.t,
