@@ -75,19 +75,19 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 				   body = makeNullaryJump dst})::decs
 			     val {decs, transfer} = Exp.dest body
 			   in
-			      case (decs, transfer) of
-				 ([], Raise vars) =>
-				    if 0 = Vector.length args
+			      case (decs, transfer)
+				of ([], Raise vars) 
+				 => if 0 = Vector.length args
 				       andalso 1 = Vector.length vars
 				       andalso List.isEmpty (jumpHandlers name)
-				       then let
-					       val var = Vector.sub(vars, 0)
-					    in
-					       case commonBlock var
-						  of SOME j => default' j
+				      then let
+					     val var = Vector.sub(vars, 0)
+					   in
+					     case commonBlock var
+					       of SOME j => default' j
 						| NONE => default ()
-					    end
-				    else default ()
+					   end
+				      else default ()
                                | _ => default ()
 			   end
 			| (dec, decs) => dec::decs)
@@ -97,7 +97,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main})
 		end
 
 	    val {decs, transfer} = Exp.dest (loopExp body)
-	    val decs = (!newDecs) @ decs
+	    val decs = List.appendRev(!newDecs, decs)
 	    val body = Exp.make {decs = decs, transfer = transfer}
 	  in
 	    Function.T {name = name,
