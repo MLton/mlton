@@ -9,7 +9,7 @@
 
   <body bgcolor = "white" text = "black">
     <center>
-    <a href = "download.html">download</a>
+    <a href = "download/index.html">download</a>
     | <a href = "history.html">history</a>
     | home
     | <a href = "papers/index.html">papers</a>
@@ -37,12 +37,13 @@
         </ul>
       <li> Generates standalone executables with
         <a href = "performance.html">excellent running times</a>
-      <li> SML 97 compliant, with a 
-	<a href = "user-guide/Basis_library.html">complete
+      <li> Supports the full SML 97 language
+      <li> <a href = "user-guide/Basis_library.html">Complete
 	      basis library</a> (except for <tt>use</tt>) matching the
-	    2002 basis library specification
+	    2002 specification
       <li> Untagged native integers and reals, and unboxed native arrays
-      <li> <a href = "user-guide/Foreign_function_interface.html">Fast C FFI</a>
+      <li> <a href = "user-guide/Foreign_function_interface.html">Fast
+		    C FFI</a> for calling from SML to C or from C to SML
       <li> <a href = "user-guide/Profiling.html">Source-level
 		    profiling</a> of both time and allocation
       <li> Multiple garbage collection strategies
@@ -53,39 +54,35 @@
 	  multiprecision library</a>
       <li> <a href = "user-guide/MLton_structure.html">Libraries</a> for
 	continuations,
+	heap save and restore,
 	interval timers,
 	random numbers,
 	resource limits,
 	resource usage,
 	signal handlers,
 	system logging,
-	threads,
-	heap save and restore.
+	threads.
     </ul>
 
     <h3>What's new?</h3>
-    Version 20030312 is the latest public release.  For a complete list of
+    Version 200307?? is the latest public release.  For a complete list of
     changes and bug fixes since the last release, see the <a href = 
     "changelog">changelog</a>.  Notable changes since the last public
-    release, 20020923, include:
+    release, 20030312, include:
 
     <ul>
-      <li> Added source-level profiling of both time and allocation.
-	  <tt>mlprof</tt> can also produce source-function call
-	  graphs.
-
-      <li> Updated basis library to 2002 specification.  To obtain the
-	    old library, compile with <tt>-basis 1997</tt>.
-
-      <li> Added many modules to basis library: 
-           <tt>BinPrimIO</tt>, <tt>GenericSock</tt>,
-	      <tt>ImperativeIO</tt>, <tt>INetSock</tt>,
-	      <tt>NetHostDB</tt>, <tt>NetProtDB</tt>,
-	      <tt>NetServDB</tt>, <tt>Socket</tt>, <tt>StreamIO</tt>,
-	      <tt>TextPrimIO</tt>, <tt>UnixSock</tt>.
-
-      <li> Completed implementation of <tt>IntInf</tt> and
-		<tt>OS.IO</tt>.
+      <li> Added support for Sparc/SunOS using the C code generator
+      <li> Completed the basis library implementation.
+      <li> Added <tt>_export</tt>, which allows one to call SML
+	      functions from C
+      <li> Added weak pointers (via MLton.Weak) and finalization (via
+		MLton.Finalizable)
+      <li> Added new integer modules: Int8, Int16
+      <li> Improved profiling, allowing splitting to be determined in
+		    mlprof
+      <li> Fixed conversions between reals and their decimal
+		      representations to be correct using the gdtoa
+		      library
     </ul>
 
    <h3>How do you pronounce MLton?</h3>
@@ -106,7 +103,7 @@
     <hr>
 <a href = "http://www.mlton.org">MLton</a><br>
 <!-- hhmts start -->
-Last modified: Tue Jun 24 15:59:53 PDT 2003
+Last modified: Mon Jul  7 17:22:42 PDT 2003
 <!-- hhmts end -->
 <p><a href="http://sourceforge.net">
     <img src="http://sourceforge.net/sflogo.php?group_id=50419&type=4"

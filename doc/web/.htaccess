@@ -1,34 +1,14 @@
 # Indexes is necessary for the benchmark directory to be shown.
 Options FollowSymLinks Indexes
 
-# The changelog used to be called CHANGES.
-Redirect permanent /CHANGES http://www.mlton.org/changelog
-
+# Suresh has a broken link that points to /MLton.
 Redirect permanent /MLton http://www.mlton.org/
 
-Redirect permanent /user-guide/cm.html http://www.mlton.org/user-guide/CM.html
-
-# The user guide used to be in the HTML directory.
-RedirectMatch permanent /HTML* http://www.mlton.org/user-guide/index.html
-
-# The user guide used to use node names like user-guide/node??.html
-RedirectMatch permanent /user-guide/node* http://www.mlton.org/user-guide/index.html
-
-Redirect permanent /improvements.html http://www.mlton.org/projects.html
-Redirect permanent /sources.html http://www.mlton.org/download.html
-
-Redirect permanent /favicon.ico	http://www.mlton.org/not-found.html
-RedirectMatch permanent /*formmail.pl http://www.mlton.org/not-found.html
-RedirectMatch permanent /*Formmail.pl http://www.mlton.org/not-found.html
-
+# ViewCVS
 Redirect permanent /cvs http://cvs.mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton
 Redirect permanent /cvs/ http://cvs.mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton
-Redirect permanent /download/ http://prdownloads.sourceforge.net/mlton/
-Redirect permanent /experimental/ http://sourceforge.net/project/showfiles.php?group_id=50419
-Redirect permanent /experimental http://sourceforge.net/project/showfiles.php?group_id=50419
 
-#ErrorDocument 401 
-#ErrorDocument 403
+# Moved on 2003-07-07
+Redirect permanent /download.html http://www.mlton.org/download/index.html
 
-# If you do the following, then you can't see 404's in the error_log.
 ErrorDocument 404 /not-found.html
