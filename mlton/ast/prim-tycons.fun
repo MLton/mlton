@@ -58,32 +58,33 @@ val words =
     (word64, W64)]
 
 datatype z = datatype Kind.t
+datatype z = datatype AdmitsEquality.t
    
 val prims =
-   [(array, Arity 1),
-    (arrow, Arity 2),
-    (bool, Arity 0),
-    (char, Arity 0),
-    (exn, Arity 0),
-    (int8, Arity 0),
-    (int16, Arity 0),
-    (int32, Arity 0),
-    (int64, Arity 0),
-    (intInf, Arity 0),
-    (list, Arity 1),
-    (pointer, Arity 0),
-    (preThread, Arity 0),
-    (real32, Arity 0),
-    (real64, Arity 0),
-    (reff, Arity 1),
-    (thread, Arity 0),
-    (tuple, Nary),
-    (vector, Arity 1),
-    (weak, Arity 1),
-    (word8, Arity 0),
-    (word16, Arity 0),
-    (word32, Arity 0),
-    (word64, Arity 0)]
+   [(array, Arity 1, Always),
+    (arrow, Arity 2, Never),
+    (bool, Arity 0, Always),
+    (char, Arity 0, Always),
+    (exn, Arity 0, Never),
+    (int8, Arity 0, Always),
+    (int16, Arity 0, Always),
+    (int32, Arity 0, Always),
+    (int64, Arity 0, Always),
+    (intInf, Arity 0, Always),
+    (list, Arity 1, Sometimes),
+    (pointer, Arity 0, Always),
+    (preThread, Arity 0, Never),
+    (real32, Arity 0, Never),
+    (real64, Arity 0, Never),
+    (reff, Arity 1, Always),
+    (thread, Arity 0, Never),
+    (tuple, Nary, Sometimes),
+    (vector, Arity 1, Sometimes),
+    (weak, Arity 1, Never),
+    (word8, Arity 0, Always),
+    (word16, Arity 0, Always),
+    (word32, Arity 0, Always),
+    (word64, Arity 0, Always)]
    
 val int =
    fn I8 => int8

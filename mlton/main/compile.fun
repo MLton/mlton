@@ -218,7 +218,7 @@ in
 	    let
 	       val _ =
 		  List.foreach
-		  (Tycon.prims, fn (tycon, kind) =>
+		  (Tycon.prims, fn (tycon, kind, _) =>
 		   extendTycon
 		   (E, Ast.Tycon.fromString (Tycon.originalName tycon,
 					     Region.bogus),

@@ -11,6 +11,7 @@ struct
 open S
 structure Wrap = Region.Wrap
 
+structure AdmitsEquality = AdmitsEquality ()
 structure IntSize = IntSize ()
 structure RealSize = RealSize ()
 structure WordSize = WordSize ()
@@ -23,7 +24,8 @@ structure Tycon =
       open Id
 
       structure P =
-	 PrimTycons (structure IntSize = IntSize
+	 PrimTycons (structure AdmitsEquality = AdmitsEquality
+		     structure IntSize = IntSize
 		     structure Kind = Kind
 		     structure RealSize = RealSize
 		     structure WordSize = WordSize

@@ -7,6 +7,7 @@
  *)
 signature PRIM_TYCONS_STRUCTS =
    sig
+      structure AdmitsEquality: ADMITS_EQUALITY
       structure IntSize: INT_SIZE
       structure Kind: TYCON_KIND
       structure RealSize: REAL_SIZE
@@ -21,6 +22,7 @@ signature PRIM_TYCONS_STRUCTS =
 
 signature PRIM_TYCONS =
    sig
+      structure AdmitsEquality: ADMITS_EQUALITY
       structure IntSize: INT_SIZE
       structure Kind: TYCON_KIND
       structure RealSize: REAL_SIZE
@@ -48,7 +50,7 @@ signature PRIM_TYCONS =
       val list: tycon
       val pointer: tycon
       val preThread: tycon
-      val prims: (tycon * Kind.t) list
+      val prims: (tycon * Kind.t * AdmitsEquality.t) list
       val real: RealSize.t -> tycon
       val reals: (tycon * RealSize.t) list
       val reff: tycon

@@ -47,8 +47,7 @@ structure Scheme =
    struct
       open Scheme
 	 
-      fun bogus () = fromType (Type.new {canGeneralize = true,
-					 equality = true})
+      fun bogus () = fromType (Type.new ())
    end
 
 structure TypeScheme = Scheme

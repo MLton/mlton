@@ -15,7 +15,7 @@
 
 infix 4 = <> > >= < <=
 
-val op = = fn z => _prim "MLton_equal": 'a * 'a -> bool; z
+val op = = fn z => _prim "MLton_equal": ''a * ''a -> bool; z
 
 type 'a array = 'a array
 structure Bool =
@@ -64,7 +64,9 @@ structure Real64 =
    end
 structure Real = Real64
 
+val _ = ref 13
 datatype ref = datatype ref
+val _ = ref 17
 type preThread = preThread
 type thread = thread
 

@@ -77,6 +77,8 @@ in
    structure WordX = WordX
 end
 
+structure AdmitsEquality = Tycon.AdmitsEquality
+
 local
    open Record
 in
@@ -149,9 +151,6 @@ structure Lookup =
 		      | _ => f t)
    end
 
-fun newType () = Type.new {canGeneralize = true,
-			   equality = false}
-
 fun elaborateType (ty: Atype.t, lookup: Lookup.t): Type.t =
    let 
       fun loop (ty: Atype.t): Type.t =
@@ -185,7 +184,7 @@ fun elaborateType (ty: Atype.t, lookup: Lookup.t): Type.t =
 				       Kind.layout kind],
 				  empty)
 			   in
-			      newType ()
+			      Type.new ()
 			   end
 		     end
 	       in
@@ -277,7 +276,7 @@ fun unify (t1: Type.t, t2: Type.t,
 fun unifyList (trs: (Type.t * Region.t) vector,
 	       lay: unit -> Layout.t): Type.t =
    if 0 = Vector.length trs
-      then Type.list (newType ())
+      then Type.list (Type.new ())
    else
       let
 	 val (t, _) = Vector.sub (trs, 0)
@@ -334,7 +333,7 @@ fun elaboratePat (p: Apat.t, E: Env.t, amInRvb: bool)
 	 end
       fun bind (x: Avar.t): Var.t * Type.t =
 	 let
-	    val t = newType ()
+	    val t = Type.new ()
 	 in
 	    (bindToType (x, t), t)
 	 end
@@ -360,8 +359,8 @@ fun elaboratePat (p: Apat.t, E: Env.t, amInRvb: bool)
 		      val {args, instance} = Scheme.instantiate s
 		      val args = args ()
 		      val p = loop p
-		      val argType = newType ()
-		      val resultType = newType ()
+		      val argType = Type.new ()
+		      val resultType = Type.new ()
 		      val _ =
 			 unify
 			 (instance, Type.arrow (argType, resultType), fn _ =>
@@ -411,7 +410,7 @@ fun elaboratePat (p: Apat.t, E: Env.t, amInRvb: bool)
 		   let
 		      val t =
 			 case constraint of
-			    NONE => newType ()
+			    NONE => Type.new ()
 			  | SOME t => elaborateType (t, Lookup.fromEnv E)
 		      val x = bindToType (x, t)
 		      val pat' = loop pat
@@ -471,7 +470,7 @@ fun elaboratePat (p: Apat.t, E: Env.t, amInRvb: bool)
 				     else
 					Control.error
 					(region,
-					 str "unresolved ... in flexible record pattern",
+					 str "unresolved ... in record pattern",
 					 seq [str "pattern: ", lay ()])
 				  val _ = List.push (overloads, resolve)
 			       in
@@ -518,7 +517,7 @@ fun elaboratePat (p: Apat.t, E: Env.t, amInRvb: bool)
 					       Ast.Longvid.layout name],
 					  empty)
 				   in
-				      Cpat.make (Cpat.Wild, newType ())
+				      Cpat.make (Cpat.Wild, Type.new ())
 				   end
 			   | SOME (c, s) =>
 				let
@@ -530,7 +529,7 @@ fun elaboratePat (p: Apat.t, E: Env.t, amInRvb: bool)
 				end)
 		   end
 	      | Apat.Wild =>
-		   Cpat.make (Cpat.Wild, newType ())
+		   Cpat.make (Cpat.Wild, Type.new ())
 	  end) arg
       val p = loop p
    in
@@ -889,39 +888,60 @@ fun elaborateDec (d, {env = E,
 		in
 		   tycon
 		end)
-	    val _ = elabTypBind withtypes
-	    val (dbs, strs) =
-	       Vector.unzip
-	       (Vector.map2
-		(tycons, datatypes,
-		 fn (tycon, {cons, tycon = astTycon, tyvars, ...}) =>
-		 let
-		    val resultType: Type.t =
-		       Type.con (tycon, Vector.map (tyvars, Type.var))
-		    val (cons, datatypeCons) =
-		       Vector.unzip
-		       (Vector.map
-			(cons, fn (name, arg) =>
-			 let
-			    val con = Con.fromAst name
-			    val (arg, ty) =
-			       case arg of
-				  NONE => (NONE, resultType)
-				| SOME t =>
-				     let
-					val t = elabType t
-				     in
-					(SOME t, Type.arrow (t, resultType))
-				     end
-			    val scheme =
-			       Scheme.make {canGeneralize = true,
-					    ty = ty,
-					    tyvars = tyvars}
-			    val _ = Env.extendCon (E, name, con, scheme)
-			 in
-			    ({con = con, name = name, scheme = scheme},
-			     {arg = arg, con = con})
-			 end))
+	    val change = ref false
+	    fun elabAll () =
+	       (elabTypBind withtypes
+		; (Vector.map2
+		   (tycons, datatypes,
+		    fn (tycon, {cons, tycon = astTycon, tyvars, ...}) =>
+		    let
+		       val resultType: Type.t =
+			  Type.con (tycon, Vector.map (tyvars, Type.var))
+		       val (cons, datatypeCons) =
+			  Vector.unzip
+			  (Vector.map
+			   (cons, fn (name, arg) =>
+			    let
+			       val con = Con.fromAst name
+			       val (arg, ty) =
+				  case arg of
+				     NONE => (NONE, resultType)
+				   | SOME t =>
+					let
+					   val t = elabType t
+					in
+					   (SOME t, Type.arrow (t, resultType))
+					end
+			       val scheme =
+				  Scheme.make {canGeneralize = true,
+					       ty = ty,
+					       tyvars = tyvars}
+			       val _ = Env.extendCon (E, name, con, scheme)
+			    in
+			       ({con = con, name = name, scheme = scheme},
+				{arg = arg, con = con})
+			    end))
+		       val _ =
+			  let
+			     val r = TypeEnv.tyconAdmitsEquality tycon
+			     datatype z = datatype AdmitsEquality.t
+			  in
+			     case !r of
+				Always => Error.bug "datatype Always"
+			      | Never => ()
+			      | Sometimes =>
+				   if Vector.forall
+				      (datatypeCons, fn {arg, ...} =>
+				       case arg of
+					  NONE => true
+					| SOME ty =>
+					     Scheme.admitsEquality
+					     (Scheme.make {canGeneralize = true,
+							   ty = ty,
+							   tyvars = tyvars}))
+				      then ()
+				   else (r := Never; change := true)
+			  end
 		    val typeStr =
 		       TypeStr.data (tycon,
 				     Kind.Arity (Vector.length tyvars),
@@ -933,7 +953,17 @@ fun elaborateDec (d, {env = E,
 		      tyvars = tyvars},
 		     {tycon = astTycon,
 		      typeStr = typeStr})
-		 end))
+		 end)))
+	    (* Maximize equality. *)
+	    fun loop () =
+	       let
+		  val res = elabAll ()
+	       in
+		  if !change
+		     then (change := false; loop ())
+		  else res
+	       end
+	    val (dbs, strs) = Vector.unzip (loop ())
 	 in
 	    (Decs.single (Cdec.Datatype dbs), strs)
 	 end
@@ -1122,7 +1152,7 @@ fun elaborateDec (d, {env = E,
 					     lay ())
 					 end
 				val var = Var.fromAst func
-				val ty = newType ()
+				val ty = Type.new ()
 				val _ = Env.extendVar (E, func, var,
 						       Scheme.fromType ty)
 				val _ = markFunc var
@@ -1408,7 +1438,7 @@ fun elaborateDec (d, {env = E,
 				if 0 = Vector.length bound
 				   then ("anon" :: nest,
 					 Var.newNoname (),
-					 newType ())
+					 Type.new ())
 				else
 				   let
 				      val (x, x', t) = Vector.sub (bound, 0)
@@ -1577,8 +1607,8 @@ fun elaborateDec (d, {env = E,
 		   let
 		      val e1 = elab e1
 		      val e2 = elab e2
-		      val argType = newType ()
-		      val resultType = newType ()
+		      val argType = Type.new ()
+		      val resultType = Type.new ()
 		      val _ =
 			 unify (Cexp.ty e1, Type.arrow (argType, resultType),
 				fn (l, _) =>
@@ -1851,7 +1881,7 @@ fun elaborateDec (d, {env = E,
 			  (region,
 			   str "raise of non-exnception",
 			   seq [str "exp type: ", l1]))
-		      val resultType = newType ()
+		      val resultType = Type.new ()
 		   in
 		      Cexp.make (Cexp.Raise {exn = exn, region = region},
 				 resultType)
@@ -1959,8 +1989,8 @@ fun elaborateDec (d, {env = E,
 	 let
 	    val region = Amatch.region m
 	    val Amatch.T rules = Amatch.node m
-	    val argType = newType ()
-	    val resultType = newType ()
+	    val argType = Type.new ()
+	    val resultType = Type.new ()
 	    val rules =
 	       Vector.map
 	       (rules, fn (pat, exp) =>
@@ -1980,18 +2010,18 @@ fun elaborateDec (d, {env = E,
 		       (Cpat.ty p, argType, fn (l1, l2) =>
 			(Apat.region pat,
 			 str "rule patterns of different types",
-			 align [seq [str "this rule: ", l1],
-				seq [str "previous:  ", l2],
-				Amatch.layout m]))
+			 align [seq [str "pattern:  ", l1],
+				seq [str "previous: ", l2],
+				seq [str "in: ", lay ()]]))
 		    val e = elabExp (exp, nest)
 		    val _ =
 		       unify
 		       (Cexp.ty e, resultType, fn (l1, l2) =>
 			(Aexp.region exp,
 			 str "rule results of different types",
-			 align [seq [str "this case: ", l1],
-				seq [str "previous:  ", l2],
-				Amatch.layout m]))
+			 align [seq [str "result:   ", l1],
+				seq [str "previous: ", l2],
+				seq [str "in: ", lay ()]]))
 		 in
 		    {exp = e,
 		     lay = SOME lay,

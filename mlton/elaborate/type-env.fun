@@ -10,6 +10,7 @@ struct
 
 open S
 
+structure AdmitsEquality = Tycon.AdmitsEquality
 structure Field = Record.Field
 structure Srecord = SortedRecord
 structure Set = DisjointSet
@@ -57,11 +58,175 @@ structure Time:>
       fun tick () = (clock := 1 + !clock
 		     ; !clock)
    end
+
+structure Lay =
+   struct
+      type t = Layout.t * {isChar: bool, needsParen: bool}
+
+      fun simple (l: Layout.t): t =
+	 (l, {isChar = false, needsParen = false})
+   end
+      
+structure UnifyResult =
+   struct
+      datatype t =
+	 NotUnifiable of Lay.t * Lay.t
+       | Unified
+
+      val layout =
+	 let
+	    open Layout
+	 in
+	    fn NotUnifiable _ => str "NotUnifiable"
+	     | Unified => str "Unified"
+	 end
+   end
+
+val {get = tyconAdmitsEquality: Tycon.t -> AdmitsEquality.t ref, ...} =
+   Property.get (Tycon.plist,
+		 Property.initFun (fn _ => ref AdmitsEquality.Sometimes))
+
+val _ =
+   List.foreach (Tycon.prims, fn (c, _, a) => tyconAdmitsEquality c := a)
+
+structure Equality:>
+   sig
+      type t
+
+      val and2: t * t -> t
+      val andd: t vector -> t
+      val applyTycon: Tycon.t * t vector -> t
+      val falsee: t
+      val fromBool: bool -> t
+      val toBool: t -> bool
+      val toBoolOpt: t -> bool option
+      val truee: t
+      val unify: t * t -> UnifyResult.t
+      val unknown: unit -> t
+   end =
+   struct
+      datatype maybe =
+	 Known of bool
+       | Unknown of {whenKnown: (bool -> bool) list ref}
+      datatype t =
+	 False
+       | Maybe of maybe ref
+       | True
+
+      fun unknown () = Maybe (ref (Unknown {whenKnown = ref []}))
+
+      fun set (e: t, b: bool): bool =
+	 case e of
+	    False => b = false
+	  | Maybe r =>
+	       (case !r of
+		   Known b' => b = b'
+		 | Unknown {whenKnown} =>
+		      (r := Known b; List.forall (!whenKnown, fn f => f b)))
+	  | True => b = true
+
+      fun when (e: t, f: bool -> bool): bool =
+	 case e of
+	    False => f false
+	  | Maybe r =>
+	       (case !r of
+		   Known b => f b
+		 | Unknown {whenKnown} => (List.push (whenKnown, f); true))
+	  | True => f true
+
+      fun unify (e: t, e': t): bool =
+	 when (e, fn b => set (e', b))
+	 andalso when (e', fn b => set (e, b))
+
+      fun and2 (e, e') =
+	 case (e, e') of
+	    (False, _) => False
+	  | (_, False) => False
+	  | (True, _) => e'
+	  | (_, True) => e
+	  | (Maybe r, Maybe r') =>
+	       (case (!r, !r') of
+		   (Known false, _) => False
+		 | (_, Known false) => False
+		 | (Known true, _) => e'
+		 | (_, Known true) => e
+		 | (Unknown _, Unknown _) =>
+		      let
+			 val e'' = unknown ()
+			 val _ =
+			    when
+			    (e'', fn b =>
+			     if b
+				then set (e, true) andalso set (e', true)
+			     else
+				let
+				   fun dep (e, e') =
+				      when (e, fn b =>
+					    not b orelse set (e', false))
+				in
+				   dep (e, e') andalso dep (e', e)
+				end)
+			 fun dep (e, e') =
+			    when (e, fn b =>
+				  if b then unify (e', e'')
+				  else set (e'', false))
+			 val _ = dep (e, e')
+			 val _ = dep (e', e)
+		      in
+			 e''
+		      end)
+	    
+      val falsee = False
+      val truee = True
+
+      val fromBool = fn false => False | true => True
+
+      fun toBoolOpt (e: t): bool option =
+	 case e of
+	    False => SOME false
+	  | Maybe r =>
+	       (case !r of
+		   Known b => SOME b
+		 | Unknown _ => NONE)
+	  | True => SOME true
+
+      fun toBool e =
+	 case toBoolOpt e of
+	    NONE => Error.bug "Equality.toBool"
+	  | SOME b => b
+
+      fun andd (es: t vector): t = Vector.fold (es, truee, and2)
+
+      val applyTycon: Tycon.t * t vector -> t =
+	 fn (c, es) =>
+	 let
+	    datatype z = datatype AdmitsEquality.t
+	 in
+	    case !(tyconAdmitsEquality c) of
+	       Always => truee
+	     | Sometimes => andd es
+	     | Never => falsee
+	 end
+	 
+      val unify: t * t -> UnifyResult.t =
+	 fn (e, e') =>
+	 if unify (e, e')
+	    then UnifyResult.Unified
+	 else
+	    let
+	       fun lay e =
+		  Lay.simple
+		  (Layout.str (if toBool e
+				  then "<equality>"
+			       else "<non-equality>"))
+	    in
+	       UnifyResult.NotUnifiable (lay e, lay e')
+	    end
+   end
    
 structure Unknown =
    struct
       datatype t = T of {canGeneralize: bool,
-			 equality: bool,
 			 id: int,
 			 time: Time.t ref}
 
@@ -101,15 +266,13 @@ structure Unknown =
 	 fun newId () = (Int.inc r; !r)
       end
 
-      fun new {canGeneralize, equality} =
+      fun new {canGeneralize} =
 	 T {canGeneralize = canGeneralize,
-	    equality = equality,
 	    id = newId (),
 	    time = ref (Time.now ())}
 
       fun join (T r, T r'): t =
 	 T {canGeneralize = #canGeneralize r andalso #canGeneralize r',
-	    equality = #equality r andalso #equality r',
 	    id = newId (),
 	    time = ref (Time.min (! (#time r), ! (#time r')))}
    end
@@ -218,8 +381,9 @@ structure Type =
       (* Tuples of length <> 1 are always represented as records.
        * There will never be tuples of length one.
        *)
-      datatype t = T of {ty: ty,
-			 plist: PropertyList.t} Set.t
+      datatype t = T of {equality: Equality.t,
+			 plist: PropertyList.t,
+			 ty: ty} Set.t
       and ty =
 	 Con of Tycon.t * t vector
 	| FlexRecord of {fields: fields,
@@ -250,8 +414,9 @@ structure Type =
       local
 	 fun make f (T s) = f (Set.value s)
       in
-	 val toType: t -> ty = make #ty
+	 val equality = make #equality
 	 val plist: t -> PropertyList.t = make #plist
+	 val toType: t -> ty = make #ty
       end
 
       local
@@ -286,6 +451,11 @@ structure Type =
       end
 
       val toString = Layout.toString o layout
+
+      val admitsEquality = Equality.toBool o equality
+
+      val admitsEquality =
+	 Trace.trace ("admitsEquality", layout, Bool.layout) admitsEquality
 
       fun union (T s, T s') = Set.union (s, s')
 
@@ -425,47 +595,63 @@ structure Type =
 	    Con x => SOME x
 	  | _ => NONE
 
-      fun newTy (ty: ty): t =
-	 T (Set.singleton {ty = ty,
-			   plist = PropertyList.new ()})
+      fun newTy (ty: ty, eq: Equality.t): t =
+	 T (Set.singleton {equality = eq,
+			   plist = PropertyList.new (),
+			   ty = ty})
 
-      fun new z =
+      fun unknown {canGeneralize, equality} =
 	 let
-	    val t = newTy (Unknown (Unknown.new z))
+	    val t = newTy (Unknown (Unknown.new {canGeneralize = canGeneralize}),
+			   equality)
 	    val _ = List.push (freeUnknowns, t)
 	 in
 	    t
 	 end
+
+      fun new () = unknown {canGeneralize = true,
+			    equality = Equality.unknown ()}
+
+      fun newFlex {fields, spine} =
+	 newTy (FlexRecord {fields = fields,
+			    spine = spine,
+			    time = ref (Time.now ())},
+		Equality.and2
+		(Equality.andd (Vector.fromListMap (fields, equality o #2)),
+		 Equality.unknown ()))
 
       fun flexRecord record =
 	 let
 	    val v = Srecord.toVector record
 	    val spine = Spine.new (Vector.toListMap (v, #1))
 	    fun isResolved (): bool = not (Spine.canAddFields spine)
-	    val t =
-	       newTy (FlexRecord {fields = Vector.toList v,
-				  spine = spine,
-				  time = ref (Time.now ())})
+	    val t = newFlex {fields = Vector.toList v,
+			     spine = spine}
 	    val _ = List.push (freeFlexes, t)
 	 in
 	    (t, isResolved)
 	 end
 	 
-      val record = newTy o Record
+      fun record r =
+	 newTy (Record r,
+		Equality.andd (Vector.map (Srecord.range r, equality)))
 
       fun tuple ts =
 	 if 1 = Vector.length ts
 	    then Vector.sub (ts, 0)
-	 else newTy (Record (Srecord.tuple ts))
+	 else newTy (Record (Srecord.tuple ts),
+		     Equality.andd (Vector.map (ts, equality)))
 
       fun con (tycon, ts) =
-	 if Tycon.equals (tycon, Tycon.tuple) then tuple ts
-	 else newTy (Con (tycon, ts))
+	 if Tycon.equals (tycon, Tycon.tuple)
+	    then tuple ts
+	 else newTy (Con (tycon, ts),
+		     Equality.applyTycon (tycon, Vector.map (ts, equality)))
 
       val char = con (Tycon.char, Vector.new0 ())
       val string = con (Tycon.vector, Vector.new1 char)
 
-      val var = newTy o Var
+      fun var a = newTy (Var a, Equality.fromBool (Tyvar.isEquality a))
    end
 
 structure Ops = TypeOps (structure IntSize = IntSize
@@ -525,9 +711,9 @@ structure Type =
       local
 	 fun make ty () = newTy ty
       in
-	 val unresolvedInt = make Int
-	 val unresolvedReal = make Real
-	 val unresolvedWord = make Word
+	 val unresolvedInt = make (Int, Equality.truee)
+	 val unresolvedReal = make (Real, Equality.falsee)
+	 val unresolvedWord = make (Word, Equality.truee)
       end
    
       val traceCanUnify =
@@ -587,26 +773,6 @@ structure Type =
 	    ()
 	 end
 
-      structure Lay =
-	 struct
-	    type t = Layout.t * {isChar: bool, needsParen: bool}
-	 end
-      
-      structure UnifyResult =
-	 struct
-	    datatype t =
-	       NotUnifiable of Lay.t * Lay.t
-	     | Unified
-
-	    val layout =
-	       let
-		  open Layout
-	       in
-		  fn NotUnifiable _ => str "NotUnifiable"
-		   | Unified => str "Unified"
-	       end
-	 end
-
       datatype z = datatype UnifyResult.t
 
       val traceUnify = Trace.trace2 ("unify", layout, layout, UnifyResult.layout)
@@ -623,8 +789,7 @@ structure Type =
 		   let
 		      fun notUnifiable (l: Lay.t, l': Lay.t) =
 			 (NotUnifiable (l, l'),
-			  Unknown (Unknown.new {canGeneralize = true,
-						equality = true}))
+			  Unknown (Unknown.new {canGeneralize = true}))
 		      fun oneFlex ({fields, spine, time}, r, outer, swap) =
 			 let
 			    val _ = minTime (outer, !time)
@@ -638,7 +803,7 @@ structure Type =
 					 NotUnifiable (l, l') =>
 					    ((f, l) :: ac, (f, l') :: ac')
 				       | Unified => (ac, ac'))
-			    val differences =
+			    val (ac, ac') =
 			       List.fold
 			       (Spine.fields spine, differences,
 				fn (f, (ac, ac')) =>
@@ -649,24 +814,12 @@ structure Type =
 				   case Srecord.peek (r, f) of
 				      NONE => ((f, dontCare) :: ac, ac')
 				    | SOME _ => (ac, ac'))
-			    val differences =
+			    val ac' =
 			       Srecord.foldi
-			       (r, differences, fn (f, t, (ac, ac')) =>
-				let
-				   val ac' =
-				      if Spine.ensureField (spine, f)
-					 then ac'
-				      else (f, dontCare) :: ac'
-				in
-				   case List.peek (fields, fn (f', _) =>
-						   Field.equals (f, f')) of
-				      NONE => (ac, ac')
-				    | SOME (_, t') =>
-					 case unify (t, t') of
-					    NotUnifiable (l, l') =>
-					       ((f, l') :: ac, (f, l) :: ac')
-					  | Unified => (ac, ac')
-				end)
+			       (r, ac', fn (f, t, ac') =>
+				if Spine.ensureField (spine, f)
+				   then ac'
+				else (f, dontCare) :: ac')
 			    val _ = Spine.noMoreFields spine
 			 in
 			    case differences of
@@ -682,8 +835,8 @@ structure Type =
 			 end
 		      fun genFlexError () =
 			 Error.bug "GenFlexRecord seen in unify"
-		      val {ty = t, plist} = Set.value s
-		      val {ty = t', ...} = Set.value s'
+		      val {equality = e, ty = t, plist} = Set.value s
+		      val {equality = e', ty = t', ...} = Set.value s'
 		      fun not () =
 			 notUnifiable (layoutTopLevel t, layoutTopLevel t')
 		      fun conAnd (c, ts, t, t', swap) =
@@ -899,12 +1052,23 @@ structure Type =
 			       else not ()
 			  | (Word, Word) => (Unified, Word)
 			  | _ => not ()
-		      val _ =
+		      val res =
 			 case res of
-			    NotUnifiable _ => ()
+			    NotUnifiable _ => res
 			  | Unified =>
-			       (Set.union (s, s')
-				;  Set.setValue (s, {ty = t, plist = plist}))
+			       let
+				  val res = Equality.unify (e, e')
+				  val _ =
+				     case res of
+					NotUnifiable _ => ()
+				      | Unified => 
+					   (Set.union (s, s')
+					    ;  Set.setValue (s, {equality = e,
+								 plist = plist,
+								 ty = t}))
+			       in
+				  res
+			       end
 		   in
 		      res
 		   end) arg
@@ -936,7 +1100,7 @@ structure Type =
 	  | UnifyResult.Unified => Unified
 
       val word8 = word WordSize.W8
-	 
+      
       fun 'a simpleHom {con: t * Tycon.t * 'a vector -> 'a,
 			record: t * (Field.t * 'a) vector -> 'a,
 			var: t * Tyvar.t -> 'a} =
@@ -1042,7 +1206,7 @@ structure Scheme =
 
       val fromType = Type
 
-      fun instantiate (t: t, subst) =
+      fun instantiate' (t: t, subst) =
 	 case t of
 	    Type ty => {args = fn () => Vector.new0 (),
 			instance = ty}
@@ -1071,18 +1235,17 @@ structure Scheme =
 		  fun con (ty, c, zs) =
 		     if Vector.exists (zs, isNew)
 			then {isNew = true,
-			      ty = newTy (Con (c, Vector.map (zs, #ty)))}
+			      ty = Type.con (c, Vector.map (zs, #ty))}
 		     else keep ty
 		  val flexInsts = ref []
 		  fun genFlexRecord (t, {extra, fields, spine}) =
 		     let
 			val fields = List.revMap (fields, fn (f, t: z) =>
 						  (f, #ty t))
-			val flex = newTy (FlexRecord {fields = fields,
-						      spine = spine,
-						      time = ref (Time.now ())})
-			val _ = List.push (flexInsts, {spine = spine,
-						       flex = flex})
+			val flex = newFlex {fields = fields,
+					    spine = spine}
+			val _ = List.push (flexInsts, {flex = flex,
+						       spine = spine})
 		     in
 			{isNew = true,
 			 ty = flex}
@@ -1090,15 +1253,10 @@ structure Scheme =
 		  fun record (t, r) =
 		     if Srecord.exists (r, isNew)
 			then {isNew = true,
-			      ty = newTy (Record (Srecord.map (r, #ty)))}
+			      ty = Type.record (Srecord.map (r, #ty))}
 		     else keep t
 		  fun recursive t =
-		     if true
-			then Error.bug "instantiating recursive type"
-		     else
-			{isNew = true,
-			 ty = new {canGeneralize = true,
-				   equality = true}}
+		     Error.bug "instantiating recursive type"
 		  fun var (ty, a) =
 		     case tyvarInst a of
 			NONE => {isNew = false, ty = ty}
@@ -1162,18 +1320,28 @@ structure Scheme =
 	       end
 
       fun apply (s, ts) =
-	 #instance (instantiate (s, fn {index, ...} => Vector.sub (ts, index)))
-	    			    
-      val instantiate =
-	 fn s =>
-	 instantiate (s, fn {canGeneralize, equality, ...} =>
-		      Type.new {canGeneralize = canGeneralize,
-				equality = equality})
-				
+	 #instance (instantiate' (s, fn {index, ...} => Vector.sub (ts, index)))
+	 
+      fun instantiate s =
+	 instantiate'
+	 (s, fn {canGeneralize, equality, ...} =>
+	  Type.unknown {canGeneralize = canGeneralize,
+			equality = if equality
+				      then Equality.truee
+				   else Equality.unknown ()})
+
       val instantiate =
 	 Trace.trace ("Scheme.instantiate", layout, Type.layout o #instance)
 	 instantiate
-	 
+
+      fun admitsEquality s =
+	 Type.admitsEquality
+	 (#instance
+	  (instantiate'
+	   (s, fn {canGeneralize, equality, ...} =>
+	    Type.unknown {canGeneralize = canGeneralize,
+			  equality = Equality.truee})))
+
       fun haveFrees (v: t vector): bool vector =
 	 let
 	    exception Yes
@@ -1237,13 +1405,21 @@ fun close (ensure: Tyvar.t vector, region)
 	    (!Type.freeUnknowns, (Vector.toList ensure, []),
 	     fn (t, (tyvars, ac)) =>
 	     case Type.toType t of
-		Type.Unknown (Unknown.T {canGeneralize, equality, time, ...}) =>
+		Type.Unknown (Unknown.T {canGeneralize, time, ...}) =>
 		   if canGeneralize andalso Time.<= (genTime, !time)
 		      then
 			 let
-			    val a = Tyvar.newNoname {equality = equality}
-			    val _ = Type.set (t, {ty = Type.Var a,
-						  plist = PropertyList.new ()})
+			    val equality = Type.equality t
+			    val b =
+			       case Equality.toBoolOpt equality of
+				  NONE =>
+				     (Equality.unify (equality, Equality.falsee)
+				      ; false)
+				| SOME b => b
+			    val a = Tyvar.newNoname {equality = b}
+			    val _ = Type.set (t, {equality = equality,
+						  plist = PropertyList.new (),
+						  ty = Type.Var a})
 			 in
 			    (a :: tyvars, ac)
 			 end
@@ -1256,7 +1432,7 @@ fun close (ensure: Tyvar.t vector, region)
 	    List.fold
 	    (!Type.freeFlexes, ([], []), fn (t as Type.T s, (flexes, ac)) =>
 	     let
-		val {ty, plist} = Set.value s
+		val {equality, plist, ty} = Set.value s
 	     in
 		case ty of
 		   Type.FlexRecord {fields, spine, time, ...} =>
@@ -1276,7 +1452,8 @@ fun close (ensure: Tyvar.t vector, region)
 					  spine = spine}
 			       val _ = 
 				  Set.setValue
-				  (s, {plist = plist,
+				  (s, {equality = equality,
+				       plist = plist,
 				       ty = Type.GenFlexRecord gfr})
 			    in
 			       (gfr :: flexes, ac)

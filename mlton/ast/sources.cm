@@ -7,6 +7,7 @@
  *)
 Group
 
+signature ADMITS_EQUALITY
 signature AST
 signature FIELD
 signature INT_SIZE
@@ -20,6 +21,7 @@ signature TYVAR
 signature WORD_SIZE
 signature WRAPPED
 
+functor AdmitsEquality
 functor Ast
 functor Field
 functor PrimCons
@@ -33,6 +35,8 @@ is
 ../../lib/mlton/sources.cm
 ../control/sources.cm
 
+admits-equality.fun
+admits-equality.sig
 ast-atoms.fun
 ast-atoms.sig
 ast-const.fun

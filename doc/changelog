@@ -3,6 +3,8 @@ Here are the changes since version 20030716.
 * 2003-10-13
   - Added -warn-match to control display nonexhaustive and redundant
     match warnings. 
+  - Fixed space leak in StreamIO causing the entire stream to be
+    retained.   Thanks to Jared Showalter for the bug report and fix.
 
 * 2003-10-10
   - Added "-stop tc" switch to stop after type checking.

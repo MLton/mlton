@@ -13,9 +13,11 @@ open S
 structure Id = HashId (val noname = "t")
 open Id
 
+structure AdmitsEquality = AdmitsEquality ()
 structure Kind = TyconKind ()
    
-structure P = PrimTycons (structure IntSize = IntSize
+structure P = PrimTycons (structure AdmitsEquality = AdmitsEquality
+			  structure IntSize = IntSize
 			  structure Kind = Kind
 			  structure RealSize = RealSize
 			  structure WordSize = WordSize
@@ -26,7 +28,7 @@ fun stats () =
    let open Layout
    in
       align
-      (List.map (prims, fn (c, _) =>
+      (List.map (prims, fn (c, _, _) =>
 		 seq [layout c, str " size is ",
 		      Int.layout (MLton.size c),
 		      str " plist length is ",

@@ -63,8 +63,7 @@ doit "$lib" \
 		-fcall-used-g7
 		-m32
 		-mv8
-		-mcpu=ultrasparc
-		-mno-epilogue'					\
+		-mcpu=ultrasparc'				\
 	-target-link-opt sunos '-ldl -lnsl -lsocket'		\
 	-link-opt '-lgdtoa -lm'					\
 	"$@"

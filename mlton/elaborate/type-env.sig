@@ -19,6 +19,7 @@ signature TYPE_ENV =
 	 sig
 	    include TYPE_OPS
 
+	    val admitsEquality: t -> bool
             (* can two types be unified?  not side-effecting. *)
             val canUnify: t * t -> bool
 	    val char: t
@@ -30,7 +31,7 @@ signature TYPE_ENV =
 	    val isUnit: t -> bool
 	    val layout: t -> Layout.t
 	    val layoutPretty: t -> Layout.t
-	    val new: {canGeneralize: bool, equality: bool} -> t
+	    val new: unit -> t
 	    val record: t SortedRecord.t -> t
 	    val string: t
 	    val toString: t -> string
@@ -52,6 +53,7 @@ signature TYPE_ENV =
 	 sig
 	    type t
 
+	    val admitsEquality: t -> bool
 	    val apply: t * Type.t vector -> Type.t
 	    val fromType: Type.t -> t
 	    val haveFrees: t vector -> bool vector
@@ -78,6 +80,7 @@ signature TYPE_ENV =
 	 -> {bound: unit -> Tyvar.t vector,
 	     schemes: Scheme.t vector}
       val closeTop: Region.t -> unit
+      val tyconAdmitsEquality: Tycon.t -> Tycon.AdmitsEquality.t ref
    end
 
 signature INFER_TYPE_ENV = TYPE_ENV

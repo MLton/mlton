@@ -79,6 +79,12 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
       fun outstreamSel (Out v, sel) = sel v
       fun outstreamWriter os = outstreamSel (os, #writer)
       fun writerSel (PIO.WR v, sel) = sel v
+      fun outstreamName os =
+	 let
+	    val PIO.WR {name, ...} = outstreamWriter os
+	 in
+	    name
+	 end
       fun outstreamName os = writerSel (outstreamWriter os, #name)
 
       fun flushGen (write: 'a -> int,

@@ -67,8 +67,6 @@ datatype writer =
 	  writeVec: (vector_slice -> int) option,
 	  writeVecNB: (vector_slice -> int option) option}
 
-
-
 fun liftExn name function cause = raise IO.Io {name = name,
 					       function = function,
 					       cause = cause}

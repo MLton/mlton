@@ -187,7 +187,7 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
 	 Property.destGetSet (Tycon.plist,
 			      Property.initRaise ("mono", Tycon.layout))
       val _ =
-	 List.foreach (Tycon.prims, fn (t, _) =>
+	 List.foreach (Tycon.prims, fn (t, _, _) =>
 		       setTycon (t, fn ts => Stype.con (t, ts)))
       val {set = setTyvar, get = getTyvar: Tyvar.t -> Stype.t, ...} =
 	 Property.getSet (Tyvar.plist,
