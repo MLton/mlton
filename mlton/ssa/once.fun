@@ -47,7 +47,7 @@ fun once (program as Program.T {globals, functions, main, ...}) =
 	 List.foreach
 	 (Graph.stronglyConnectedComponents graph,
 	  fn [] => ()
-	   | [n] => if Node.hasEdge {from = n, to = n}
+	   | [n] => if not (Node.hasEdge {from = n, to = n})
 	               then let val Block.T {statements, ...} = nodeBlock n
 			    in Vector.foreach
 			       (statements, fn Statement.T {var, exp, ...} =>
