@@ -928,7 +928,7 @@ fun output {program as Machine.Program.T {chunks,
 		     if 0 = !Control.Native.commented
 			then ()
 		     else
-			if true
+			if false
 			   then
 			      Vector.foreach
 			      (live, fn z =>
