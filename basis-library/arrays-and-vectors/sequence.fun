@@ -161,9 +161,9 @@ functor Sequence (S: sig
 		  val min = start
 		  val max = start +? len
 		  fun loop (i, b) =
-		     if i <= min then b
+		     if i < min then b
 		     else loop (i -? 1, f (i -? min, S.sub (seq, i), b))
-	       in loop (max, b)
+	       in loop (max -? 1, b)
 	       end
 	    local
 	       fun make foldi f b sl = foldi (fn (_, x, b) => f (x, b)) b sl
