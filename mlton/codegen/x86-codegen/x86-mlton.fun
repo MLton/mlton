@@ -30,16 +30,18 @@ struct
 
   fun prim {prim : Prim.t,
 	    args : (Operand.t * Size.t) vector,
-	    dst : (Operand.t * Size.t) option,
+	    dsts : (Operand.t * Size.t) vector,
 	    transInfo as {live, liveInfo, ...} : transInfo}
     = let
 	val primName = Prim.toString prim
 	datatype z = datatype Prim.Name.t
 
-	fun getDst ()
-	  = case dst
-	      of SOME dst => dst
-	       | NONE => Error.bug "applyPrim: getDst"
+	fun getDst1 ()
+	  = Vector.sub (dsts, 0)
+	    handle _ => Error.bug "applyPrim: getDst1"
+	fun getDst2 ()
+	  = (Vector.sub (dsts, 0), Vector.sub (dsts, 1))
+	    handle _ => Error.bug "applyPrim: getDst2"
 	fun getSrc1 ()
 	  = Vector.sub (args, 0)
 	    handle _ => Error.bug "applyPrim: getSrc1"
@@ -49,6 +51,10 @@ struct
 	fun getSrc3 ()
 	  = (Vector.sub (args, 0), Vector.sub (args, 1), Vector.sub (args, 2))
 	    handle _ => Error.bug "applyPrim: getSrc3"
+	fun getSrc4 ()
+	  = (Vector.sub (args, 0), Vector.sub (args, 1), 
+	     Vector.sub (args, 2), Vector.sub (args, 3))
+	    handle _ => Error.bug "applyPrim: getSrc4"
 
 	fun unimplemented s
 	  = AppendList.fromList
@@ -59,7 +65,7 @@ struct
 
 	fun mov ()
 	  = let
-	      val (dst,dstsize) = getDst ()
+	      val (dst,dstsize) = getDst1 ()
 	      val (src,srcsize) = getSrc1 ()
 	      val _ 
 		= Assert.assert
@@ -79,7 +85,7 @@ struct
 	  
 	fun movx oper
 	  = let
-	      val (dst,dstsize) = getDst ()
+	      val (dst,dstsize) = getDst1 ()
 	      val (src,srcsize) = getSrc1 ()
 	      val _ 
 		= Assert.assert
@@ -101,7 +107,7 @@ struct
 
 	fun xvom ()
 	  = let
-	      val (dst,dstsize) = getDst ()
+	      val (dst,dstsize) = getDst1 ()
 	      val (src,srcsize) = getSrc1 ()
 	      val _ 
 		= Assert.assert
@@ -124,7 +130,7 @@ struct
 	  = let
 	      val ((src1,src1size),
 		   (src2,src2size)) = getSrc2 ()
-	      val (dst,dstsize) = getDst ()
+	      val (dst,dstsize) = getDst1 ()
 	      val _ 
 		= Assert.assert
 		  ("applyPrim: binal, dstsize/src1size/src2size",
@@ -174,7 +180,7 @@ struct
 	  = let
 	      val ((src1,src1size),
 		   (src2,src2size)) = getSrc2 ()
-	      val (dst,dstsize) = getDst ()
+	      val (dst,dstsize) = getDst1 ()
 	      val _ 
 		= Assert.assert
 		  ("applyPrim: pmd, dstsize/src1size/src2size",
@@ -218,7 +224,7 @@ struct
 	  = let
 	      val ((src1,src1size),
 		   (src2,src2size)) = getSrc2 ()
-	      val (dst,dstsize) = getDst ()
+	      val (dst,dstsize) = getDst1 ()
 	      val _ 
 		= Assert.assert
 		  ("applyPrim: pmd, dstsize/src1size/src2size",
@@ -256,7 +262,7 @@ struct
 	fun unal oper
 	  = let
 	      val (src,srcsize) = getSrc1 ()
-	      val (dst,dstsize) = getDst ()
+	      val (dst,dstsize) = getDst1 ()
 	      val _ 
 		= Assert.assert
 		  ("applyPrim: unal, dstsize/srcsize",
@@ -279,7 +285,7 @@ struct
 
 	fun sral oper
 	  = let
-	      val (dst,dstsize) = getDst ()
+	      val (dst,dstsize) = getDst1 ()
 	      val ((src1,src1size),
 		   (src2,src2size)) = getSrc2 ()
 	      val _ 
@@ -309,7 +315,7 @@ struct
 
 	fun cmp condition
 	  = let
-	      val (dst,dstsize) = getDst ()
+	      val (dst,dstsize) = getDst1 ()
 	      val ((src1,src1size),
 		   (src2,src2size)) = getSrc2 ()
 	      val _ 
@@ -356,7 +362,7 @@ struct
 
 	fun test condition
 	  = let
-	      val (dst,dstsize) = getDst ()
+	      val (dst,dstsize) = getDst1 ()
 	      val ((src1,src1size),
 		   (src2,src2size)) = getSrc2 ()
 	      val _ 
@@ -403,7 +409,7 @@ struct
 	  
 	fun fbina oper
 	  = let
-	      val (dst,dstsize) = getDst ()
+	      val (dst,dstsize) = getDst1 ()
 	      val ((src1,src1size),
 		   (src2,src2size)) = getSrc2 ()
 	      val _ 
@@ -442,7 +448,7 @@ struct
 
 	fun fbina_fmul oper
 	  = let
-	      val (dst,dstsize) = getDst ()
+	      val (dst,dstsize) = getDst1 ()
 	      val ((src1,src1size),
 		   (src2,src2size),
 		   (src3,src3size)) = getSrc3 ()
@@ -476,7 +482,7 @@ struct
 
 	fun funa oper
 	  = let
-	      val (dst,dstsize) = getDst ()
+	      val (dst,dstsize) = getDst1 ()
 	      val (src,srcsize) = getSrc1 ()
 	      val _ 
 		= Assert.assert
@@ -500,7 +506,7 @@ struct
 
 	fun flogarithm oper
 	  = let
-	      val (dst,dstsize) = getDst ()
+	      val (dst,dstsize) = getDst1 ()
 	      val (src,srcsize) = getSrc1 ()
 	      val _ 
 		= Assert.assert
@@ -551,7 +557,7 @@ struct
 	 (case Prim.name prim of
 	     Cpointer_isNull 
 	     => let
-		  val (dst,dstsize) = getDst ()
+		  val (dst,dstsize) = getDst1 ()
 		  val (src,srcsize) = getSrc1 ()
 		in
 		  AppendList.fromList
@@ -570,7 +576,7 @@ struct
 		end
 	     | FFI_Symbol {name, ...}
 	     => let
-		   val (dst,dstsize) = getDst ()
+		   val (dst,dstsize) = getDst1 ()
 		   val memloc
 		      = x86.MemLoc.makeContents 
 		      {base = Immediate.label (Label.fromString name),
@@ -683,7 +689,7 @@ struct
 	     => let
 		  fun default () =
 		    let
-		      val (dst,dstsize) = getDst ()
+		      val (dst,dstsize) = getDst1 ()
 		      val (src,srcsize) = getSrc1 ()
 		    in
 		      AppendList.fromList
@@ -699,7 +705,7 @@ struct
 		    end 
 		  fun default' () =
 		    let
-		      val (dst,dstsize) = getDst ()
+		      val (dst,dstsize) = getDst1 ()
 		      val (src,srcsize) = getSrc1 ()
 		      val (tmp,tmpsize) =
 			 (fildTempContentsOperand, Size.WORD)
@@ -749,7 +755,7 @@ struct
 	     | MLton_eq => cmp Instruction.E
 	     | Real_Math_acos _
 	     => let
-		  val (dst,dstsize) = getDst ()
+		  val (dst,dstsize) = getDst1 ()
 		  val (src,srcsize) = getSrc1 ()
 		  val _
 		    = Assert.assert
@@ -802,7 +808,7 @@ struct
 		end
 	     | Real_Math_asin _
 	     => let
-		  val (dst,dstsize) = getDst ()
+		  val (dst,dstsize) = getDst1 ()
 		  val (src,srcsize) = getSrc1 ()
 		  val _
 		    = Assert.assert
@@ -851,7 +857,7 @@ struct
 		end
 	     | Real_Math_atan _
 	     => let
-		  val (dst,dstsize) = getDst ()
+		  val (dst,dstsize) = getDst1 ()
 		  val (src,srcsize) = getSrc1 ()
 		  val _
 		    = Assert.assert
@@ -882,7 +888,7 @@ struct
 		end
 	     | Real_Math_atan2 _
 	     => let
-		  val (dst,dstsize) = getDst ()
+		  val (dst,dstsize) = getDst1 ()
 		  val ((src1,src1size),
 		       (src2,src2size))= getSrc2 ()
 		  val _
@@ -909,7 +915,7 @@ struct
 	     | Real_Math_cos _ => funa Instruction.FCOS
 	     | Real_Math_exp _
 	     => let
-		  val (dst,dstsize) = getDst ()
+		  val (dst,dstsize) = getDst1 ()
 		  val (src,srcsize) = getSrc1 ()
 		  val _
 		    = Assert.assert
@@ -971,7 +977,7 @@ struct
 	     | Real_Math_sqrt _ => funa Instruction.FSQRT
 	     | Real_Math_tan _
 	     => let
-		  val (dst,dstsize) = getDst ()
+		  val (dst,dstsize) = getDst1 ()
 		  val (src,srcsize) = getSrc1 ()
 		  val _
 		    = Assert.assert
@@ -999,7 +1005,7 @@ struct
 	     | Real_div _ => fbina Instruction.FDIV
 	     | Real_lt _
 	     => let
-		  val (dst,dstsize) = getDst ()
+		  val (dst,dstsize) = getDst1 ()
 		  val ((src1,src1size),
 		       (src2,src2size))= getSrc2 ()
 		  val _
@@ -1030,7 +1036,7 @@ struct
 		end
 	     | Real_le _
 	     => let
-		  val (dst,dstsize) = getDst ()
+		  val (dst,dstsize) = getDst1 ()
 		  val ((src1,src1size),
 		       (src2,src2size))= getSrc2 ()
 		  val _
@@ -1061,7 +1067,7 @@ struct
 		end
 	     | Real_equal _
 	     => let
-		  val (dst,dstsize) = getDst ()
+		  val (dst,dstsize) = getDst1 ()
 		  val ((src1,src1size),
 		       (src2,src2size))= getSrc2 ()
 		  val _
@@ -1097,7 +1103,7 @@ struct
 		end
 	     | Real_gt _
 	     => let
-		  val (dst,dstsize) = getDst ()
+		  val (dst,dstsize) = getDst1 ()
 		  val ((src1,src1size),
 		       (src2,src2size))= getSrc2 ()
 		  val _
@@ -1128,7 +1134,7 @@ struct
 		end
 	     | Real_ge _
 	     => let
-		  val (dst,dstsize) = getDst ()
+		  val (dst,dstsize) = getDst1 ()
 		  val ((src1,src1size),
 		       (src2,src2size))= getSrc2 ()
 		  val _
@@ -1159,7 +1165,7 @@ struct
 		end
 	     | Real_qequal _
 	     => let
-		  val (dst,dstsize) = getDst ()
+		  val (dst,dstsize) = getDst1 ()
 		  val ((src1,src1size),
 		       (src2,src2size))= getSrc2 ()
 		  val _
@@ -1193,7 +1199,7 @@ struct
 	     => let
 		  fun default () =
 		    let
-		      val (dst,dstsize) = getDst ()
+		      val (dst,dstsize) = getDst1 ()
 		      val (src,srcsize) = getSrc1 ()
 		    in
 		      AppendList.fromList
@@ -1209,7 +1215,7 @@ struct
 		    end 
 		  fun default' () =
 		    let
-		      val (dst,dstsize) = getDst ()
+		      val (dst,dstsize) = getDst1 ()
 		      val (src,srcsize) = getSrc1 ()
 		      val (tmp,tmpsize) =
 			 (fildTempContentsOperand, Size.WORD)
@@ -1243,7 +1249,7 @@ struct
 		end
              | Real_toReal (s, s')
 	     => let
-		  val (dst,dstsize) = getDst ()
+		  val (dst,dstsize) = getDst1 ()
 		  val (src,srcsize) = getSrc1 ()
 		  fun mov () =
 		     AppendList.fromList
@@ -1286,7 +1292,7 @@ struct
 		end 
 	     | Real_ldexp _ 
 	     => let
-		  val (dst,dstsize) = getDst ()
+		  val (dst,dstsize) = getDst1 ()
 		  val ((src1,src1size),
 		       (src2,src2size)) = getSrc2 ()
 		  val _
@@ -1403,7 +1409,7 @@ struct
 	     return: x86.Label.t option,
 	     transInfo: transInfo}
     = let
-	val CFunction.T {convention, name, return = returnTy, ...} = func
+	val CFunction.T {convention, name, ...} = func
 	val name =
 	   if convention = CFunction.Convention.Stdcall
 	      then
@@ -1415,7 +1421,6 @@ struct
 		    concat [name, "@", Int.toString argsSize]
 		 end
 	   else name
-	val dstsize = Option.map (returnTy, toX86Size)
 	val comment_begin
 	  = if !Control.Native.commented > 0
 	      then AppendList.single (x86.Block.mkBlock'
@@ -1434,24 +1439,19 @@ struct
 	   statements = [],
 	   transfer = SOME (Transfer.ccall 
 			    {args = Vector.toList args,
-			     dstsize = dstsize,
 			     frameInfo = frameInfo,
 			     func = func,
 			     return = return,
 			     target = Label.fromString name})})]
       end
 
-  fun creturn {dst: (x86.Operand.t * x86.Size.t) option,
+  fun creturn {dsts: (x86.Operand.t * x86.Size.t) vector,
 	       frameInfo: x86.FrameInfo.t option,
 	       func: CFunction.t,
 	       label: x86.Label.t, 
 	       transInfo as {live, liveInfo, ...}: transInfo}
     = let
 	val name = CFunction.name func
-	fun getDst ()
-	  = case dst
-	      of SOME dst => dst
-	       | NONE => Error.bug "creturn: getDst"
 	fun default ()
 	  = let
 	      val _ = x86Liveness.LiveInfo.setLiveOperands
@@ -1459,7 +1459,7 @@ struct
 	    in 
 	      AppendList.single
 	      (x86.Block.mkBlock'
-	       {entry = SOME (Entry.creturn {dst = dst,
+	       {entry = SOME (Entry.creturn {dsts = dsts,
 					     frameInfo = frameInfo,
 					     func = func,
 					     label = label}),
@@ -1480,7 +1480,7 @@ struct
 
   fun arith {prim : Prim.t,
 	     args : (Operand.t * Size.t) vector,
-	     dst : (Operand.t * Size.t),
+	     dsts : (Operand.t * Size.t) vector,
 	     overflow : Label.t,
 	     success : Label.t,
 	     transInfo as {live, liveInfo, ...} : transInfo}
@@ -1488,21 +1488,34 @@ struct
 	val primName = Prim.toString prim
 	datatype z = datatype Prim.Name.t
 
-	fun arg i = Vector.sub (args, i)
-	  
-	val (src1, src1size) = arg 0
-	val (dst, dstsize) = dst
-	val _ = Assert.assert
-	        ("arith: dstsize/srcsize",
-		 fn () => src1size = dstsize)
-	fun check (src, statement, condition)
+	fun getDst1 ()
+	  = Vector.sub (dsts, 0)
+	    handle _ => Error.bug "arith: getDst1"
+	fun getDst2 ()
+	  = (Vector.sub (dsts, 0), Vector.sub (dsts, 1))
+	    handle _ => Error.bug "arith: getDst2"
+	fun getSrc1 ()
+	  = Vector.sub (args, 0)
+	    handle _ => Error.bug "arith: getSrc1"
+	fun getSrc2 ()
+	  = (Vector.sub (args, 0), Vector.sub (args, 1))
+	    handle _ => Error.bug "arith: getSrc2"
+	fun getSrc3 ()
+	  = (Vector.sub (args, 0), Vector.sub (args, 1), Vector.sub (args, 2))
+	    handle _ => Error.bug "arith: getSrc3"
+	fun getSrc4 ()
+	  = (Vector.sub (args, 0), Vector.sub (args, 1), 
+	     Vector.sub (args, 2), Vector.sub (args, 3))
+	    handle _ => Error.bug "arith: getSrc4"
+
+	fun check (dst, src, size, statement, condition)
 	  = AppendList.single
 	    (x86.Block.mkBlock'
 	     {entry = NONE,	
 	      statements = [x86.Assembly.instruction_mov
 			    {dst = dst,
 			     src = src,
-			     size = src1size},
+			     size = size},
 			    statement],
 	      transfer = SOME (x86.Transfer.iff
 			       {condition = condition,
@@ -1510,10 +1523,11 @@ struct
 				falsee = success})})
 	fun binal (oper: x86.Instruction.binal, condition)
 	  = let
-	      val (src2, src2size) = arg 1
+	      val (dst, dstsize) = getDst1 ()
+	      val ((src1, src1size), (src2, src2size)) = getSrc2 ()
 	      val _ = Assert.assert
-		      ("arith: binal, dstsize/src2size",
-		       fn () => src2size = dstsize)
+		      ("arith: binal, dstsize/src1size/src2size",
+		       fn () => src1size = dstsize andalso src2size = dstsize)
 	      (* Reverse src1/src2 when src1 and src2 are
 	       * temporaries and the oper is commutative. 
 	       *)
@@ -1530,7 +1544,7 @@ struct
 			    | _ => (src1,src2)
 		    else (src1,src2)
 	    in
-	      check (src1,
+	      check (dst, src1, dstsize,
 		     x86.Assembly.instruction_binal
 		     {oper = oper,
 		      dst = dst,
@@ -1540,10 +1554,11 @@ struct
 	    end
  	fun pmd (oper: x86.Instruction.md, condition)
   	  = let
- 	      val (src2, src2size) = arg 1
- 	      val _ = Assert.assert
- 		      ("arith: pmd, dstsize/src2size",
- 		       fn () => src2size = dstsize)
+	      val (dst, dstsize) = getDst1 ()
+	      val ((src1, src1size), (src2, src2size)) = getSrc2 ()
+	      val _ = Assert.assert
+		      ("arith: pmd, dstsize/src1size/src2size",
+		       fn () => src1size = dstsize andalso src2size = dstsize)
  	      (* Reverse src1/src2 when src1 and src2 are
  	       * temporaries and the oper is commutative. 
  	       *)
@@ -1560,7 +1575,7 @@ struct
  			    | _ => (src1,src2)
  		    else (src1,src2)
  	    in
- 	      check (src1,
+ 	      check (dst, src1, dstsize,
 		     x86.Assembly.instruction_pmd
  		     {oper = oper,
  		      dst = dst,
@@ -1570,20 +1585,26 @@ struct
  	    end
 	fun unal (oper: x86.Instruction.unal, condition)
 	  = let
+	      val (dst, dstsize) = getDst1 ()
+	      val (src1, src1size) = getSrc1 ()
+	      val _ = Assert.assert
+		      ("arith: unal, dstsize/src1size",
+		       fn () => src1size = dstsize)
 	    in
-	      check (src1,
+	      check (dst, src1, dstsize,
 		     x86.Assembly.instruction_unal 
 		     {oper = oper,
 		      dst = dst,
 		      size = dstsize},
 		     condition)
 	    end
-	fun imul2_check condition
+	fun imul2 condition
 	  = let
-	      val (src2, src2size) = arg 1
+	      val (dst, dstsize) = getDst1 ()
+	      val ((src1, src1size), (src2, src2size)) = getSrc2 ()
 	      val _ = Assert.assert
-		      ("arith: imul2_check, dstsizesrc2size",
-		       fn () => src2size = dstsize)
+		      ("arith: imul2, dstsize/src1size/src2size",
+		       fn () => src1size = dstsize andalso src2size = dstsize)
 	      (* Reverse src1/src2 when src1 and src2 are
 	       * temporaries and the oper is commutative. 
 	       *)
@@ -1598,7 +1619,7 @@ struct
 			  else (src1,src2)
 		     | _ => (src1,src2)
 	    in
-	      check (src1,
+	      check (dst, src1, dstsize,
 		     x86.Assembly.instruction_imul2
 		     {dst = dst,
 		      src = src2,
@@ -1637,8 +1658,8 @@ struct
 	   | Int_mulCheck s => 
 	       (case s of
 		  I8 => pmd (x86.Instruction.IMUL, x86.Instruction.O)
-		| I16 => imul2_check x86.Instruction.O
-		| I32 => imul2_check x86.Instruction.O
+		| I16 => imul2 x86.Instruction.O
+		| I32 => imul2 x86.Instruction.O
 		| I64 => Error.bug "FIXME")
 	   | Int_negCheck _ => unal (x86.Instruction.NEG, x86.Instruction.O)
 	   | Word_addCheck _ => binal (x86.Instruction.ADD, x86.Instruction.C)

@@ -29,6 +29,7 @@ signature X86_PSEUDO =
 	  | FPIS | FPIL | FPIQ
 	val fromBytes : int -> t
 	val toBytes : t -> int
+	val fromCType : CFunction.CType.t -> t vector
 	val class : t -> class
 	val eq : t * t -> bool
 	val lt : t * t -> bool
@@ -74,6 +75,7 @@ signature X86_PSEUDO =
       sig
 	datatype t = One | Two | Four | Eight
 	val fromBytes : int -> t
+	val fromCType : CFunction.CType.t -> t
       end
 
     structure MemLoc :
@@ -113,6 +115,10 @@ signature X86_PSEUDO =
 		       scale: Scale.t,
 		       size: Size.t,
 		       class: Class.t} -> t
+	val shift : {origin: t,
+		     disp: Immediate.t,
+		     scale: Scale.t,
+		     size: Size.t} -> t
 	  
 	val class : t -> Class.t
 	val compare : t * t -> order
@@ -416,7 +422,7 @@ signature X86_PSEUDO =
 	val cont: {label: Label.t,
 		   live: MemLocSet.t,
 		   frameInfo: FrameInfo.t} -> t
-	val creturn: {dst: (Operand.t * Size.t) option,
+	val creturn: {dsts: (Operand.t * Size.t) vector,
 		      frameInfo: FrameInfo.t option,
 		      func: CFunction.t,
 		      label: Label.t} -> t
@@ -459,7 +465,6 @@ signature X86_PSEUDO =
 	val return : {live: MemLocSet.t} -> t 
 	val raisee : {live: MemLocSet.t} -> t
 	val ccall : {args: (Operand.t * Size.t) list,
-		     dstsize: Size.t option,
 		     frameInfo: FrameInfo.t option,
 		     func: CFunction.t,
 		     return: Label.t option,

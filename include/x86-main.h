@@ -9,6 +9,8 @@ word checkTemp;
 word cReturnTemp[16];
 word c_stackP;
 word divTemp;
+word eq1Temp;
+word eq2Temp;
 word fileTemp;
 word fildTemp;
 word fpswTemp;

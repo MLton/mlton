@@ -43,6 +43,7 @@ signature X86 =
 	val toString' : t -> string
 	val fromBytes : int -> t
 	val toBytes : t -> int
+	val fromCType : CFunction.CType.t -> t vector
 	val class : t -> class
 	val toFPI : t -> t
 	val eq : t * t -> bool
@@ -69,7 +70,9 @@ signature X86 =
 	val coincident' : reg -> t list
 	val coincident : t -> t list
 
+(*
 	val return : Size.t -> t
+*)
 	val eax : t
 	val ebx : t
 	val ecx : t
@@ -99,7 +102,9 @@ signature X86 =
 	datatype t = T of int
 	val toString : t -> string
 	val eq: t * t -> bool
+(*
 	val return : t
+*)
 	val top : t
 	val one : t
 	val total : int
@@ -167,6 +172,7 @@ signature X86 =
 	val eq : t * t -> bool
 	val toImmediate : t -> Immediate.t
 	val fromBytes : int -> t
+	val fromCType : CFunction.CType.t -> t
       end
 
     structure Address :
@@ -230,6 +236,10 @@ signature X86 =
 		       scale: Scale.t,
 		       size: Size.t,
 		       class: Class.t} -> t
+	val shift : {origin: t,
+		     disp: Immediate.t,
+		     scale: Scale.t,
+		     size: Size.t} -> t
 	val destruct : t -> u
 	val clearAll : unit -> unit
 
@@ -251,7 +261,10 @@ signature X86 =
 			    size: Size.t,
 			    class: Class.t} -> t
 	(* CReturn locations *)
+(*
 	val cReturnTempContent : Size.t -> t
+	val cReturnTempContents : CFunction.CType.t -> t list
+*)
     end
 
     structure ClassSet : SET
@@ -291,6 +304,8 @@ signature X86 =
 
 	val size : t -> Size.t option
 	val eq : t * t -> bool
+
+	val cReturnTemps: CFunction.CType.t -> {src: t, dst: MemLoc.t} list
       end
 
     structure Instruction :
@@ -716,14 +731,10 @@ signature X86 =
 	     * used before C calls.
 	     *)
 	  | CCall
-	    (* Assert that the return value is in a register;
-	     * used after C calls.
-	     *)
-	  | Return of {memloc: MemLoc.t}
-	    (* Assert that the return value is in a float register;
-	     * used after C calls.
-	     *)
-	  | FltReturn of {memloc: MemLoc.t}
+	  (* Assert the return value;
+	   * used after C calls.
+	   *)
+          | Return of {returns: {src:Operand.t, dst: MemLoc.t} list}
 	  (* Misc. *)
 	    (* Assert that the register is not free for the allocator;
 	     * used ???
@@ -780,8 +791,7 @@ signature X86 =
 		     dead_memlocs: MemLocSet.t,
 		     dead_classes: ClassSet.t} -> t
 	val ccall : unit -> t
-	val return : {memloc: MemLoc.t} -> t
-	val fltreturn : {memloc: MemLoc.t} -> t
+	val return : {returns: {src: Operand.t, dst: MemLoc.t} list} -> t
 	val reserve : {registers: Register.t list} -> t
 	val unreserve : {registers: Register.t list} -> t
 	val clearflt : unit -> t
@@ -864,8 +874,7 @@ signature X86 =
 			       dead_memlocs: MemLocSet.t,
 			       dead_classes: ClassSet.t} -> t
 	val directive_ccall : unit -> t
-	val directive_return : {memloc: MemLoc.t} -> t
-	val directive_fltreturn : {memloc: MemLoc.t} -> t
+	val directive_return : {returns: {src: Operand.t, dst: MemLoc.t} list} -> t
 	val directive_reserve : {registers: Register.t list} -> t
 	val directive_unreserve : {registers: Register.t list} -> t
 	val directive_saveregalloc : {live: MemLocSet.t,
@@ -1060,7 +1069,7 @@ signature X86 =
 	  | Handler of {frameInfo: FrameInfo.t,
 			label: Label.t,
 			live: MemLocSet.t}
-	  | CReturn of {dst: (Operand.t * Size.t) option,
+	  | CReturn of {dsts: (Operand.t * Size.t) vector,
 			frameInfo: FrameInfo.t option,
 			func: CFunction.t,
 			label: Label.t}
@@ -1068,7 +1077,7 @@ signature X86 =
 	val cont : {label: Label.t,
 		    live: MemLocSet.t,
 		    frameInfo: FrameInfo.t} -> t
-	val creturn: {dst: (Operand.t * Size.t) option,
+	val creturn: {dsts: (Operand.t * Size.t) vector,
 		      frameInfo: FrameInfo.t option,
 		      func: CFunction.t,
 		      label: Label.t}  -> t
@@ -1149,7 +1158,6 @@ signature X86 =
 	  | Return of {live: MemLocSet.t}
 	  | Raise of {live: MemLocSet.t}
 	  | CCall of {args: (Operand.t * Size.t) list,
-		      dstsize: Size.t option,
 		      frameInfo: FrameInfo.t option,
 		      func: CFunction.t,
 		      return: Label.t option,
@@ -1182,7 +1190,6 @@ signature X86 =
 	val return : {live: MemLocSet.t} -> t 
 	val raisee : {live: MemLocSet.t} -> t
 	val ccall: {args: (Operand.t * Size.t) list,
-		    dstsize: Size.t option,
 		    frameInfo: FrameInfo.t option,
 		    func: CFunction.t,
 		    return: Label.t option,

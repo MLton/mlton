@@ -506,30 +506,35 @@ struct
 		       = case entry
 			   of Jump {label}
 			    => near label
-			    | CReturn {dst, frameInfo, func, label}
+			    | CReturn {dsts, frameInfo, func, label}
 			    => let
-				 fun getReturn ()
-				   = case dst 
-				       of NONE => AppendList.empty
-				        | SOME (dst, dstsize)
-					=> (case Size.class dstsize
-					      of Size.INT
-					       => AppendList.single
-						  (x86.Assembly.instruction_mov
-						   {dst = dst,
-						    src = Operand.memloc
-						          (MemLoc.cReturnTempContent 
-							   dstsize),
-						    size = dstsize})
-					       | Size.FLT
-					       => AppendList.single
-						  (x86.Assembly.instruction_pfmov
-						   {dst = dst,
-						    src = Operand.memloc
-						          (MemLoc.cReturnTempContent 
-							   dstsize),
-						    size = dstsize})
-					       | _ => Error.bug "CReturn")
+				 fun getReturn () =
+				    if Vector.length dsts = 0
+				       then AppendList.empty
+				       else let
+					       val srcs =
+						  case CFunction.return func of
+						     NONE => Vector.new0 ()
+						   | SOME ty =>
+							(Vector.fromList o List.map)
+							(Operand.cReturnTemps ty,
+							 fn {src, dst} => dst)
+					    in
+					       (AppendList.fromList o Vector.fold2)
+					       (dsts, srcs, [], fn ((dst,dstsize),src,stmts) =>
+						case Size.class dstsize of
+						   Size.INT =>
+						      (x86.Assembly.instruction_mov
+						       {dst = dst,
+							src = Operand.memloc src,
+							size = dstsize})::stmts
+						 | Size.FLT =>
+						      (x86.Assembly.instruction_pfmov
+						       {dst = dst,
+							src = Operand.memloc src,
+							size = dstsize})::stmts
+						 | _ => Error.bug "CReturn")
+					    end
 			       in
 				 case frameInfo of
 				   SOME fi =>
@@ -1073,12 +1078,13 @@ struct
 			 {target = x86MLton.gcState_stackTopMinusWordDerefOperand (),
 			  absolute = true})))
 		    end
-	        | CCall {args, dstsize, frameInfo, func, return, target}
+	        | CCall {args, frameInfo, func, return, target}
 		=> let
 		     val CFunction.T {convention,
 				      maySwitchThreads,
 				      modifiesFrontier,
-				      modifiesStackTop, ...} = func
+				      modifiesStackTop, 
+				      return = returnTy, ...} = func
 		     val stackTopMinusWordDeref
 		       = x86MLton.gcState_stackTopMinusWordDerefOperand ()
 		     val {dead, ...}
@@ -1284,20 +1290,13 @@ struct
 						   s
 						 end,
 				  dead_classes = ccallflushClasses})
-		     val getResult
-		       = case dstsize
-			   of NONE => AppendList.empty
-			    | SOME dstsize
-			    => (case Size.class dstsize
-				  of Size.INT
-				   => AppendList.single
-				      (Assembly.directive_return
-				       {memloc = MemLoc.cReturnTempContent dstsize})
-				   | Size.FLT 
-				   => AppendList.single
-				      (Assembly.directive_fltreturn
-				       {memloc = MemLoc.cReturnTempContent dstsize})
-				   | _ => Error.bug "CCall")
+		     val getResult =
+			case returnTy of
+			   NONE => AppendList.empty
+			 | SOME ty =>
+			      AppendList.single
+			      (Assembly.directive_return
+			       {returns = Operand.cReturnTemps ty})
 		     val fixCStack =
 			if size_args > 0
 			   andalso convention = CFunction.Convention.Cdecl

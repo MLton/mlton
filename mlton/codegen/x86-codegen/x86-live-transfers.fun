@@ -861,24 +861,20 @@ struct
 							liveFltRegsTransfers)}
 		      fun doit'' label = enque {label = label, 
 						hints = ([],[])}
-		      fun doit''' dstsize label 
+		      fun doit''' func label 
 			= enque {label = label,
-				 hints = case dstsize
-					   of NONE => ([],[])
-					    | SOME dstsize
-					    => (case Size.class dstsize
-						  of Size.INT 
-						   => ([(MemLoc.cReturnTempContent
-							 dstsize,
-							 Register.return dstsize,
-							 ref true)],
-						       [])
-						   | Size.FLT 
-						   => ([],
-						       [(MemLoc.cReturnTempContent
-							 dstsize,
-							 ref true)])
-						   | _ => Error.bug "CCall")}
+				 hints = case CFunction.return func of
+				           NONE => ([],[])
+					 | SOME ty =>
+					      List.fold
+					      (Operand.cReturnTemps ty,
+					       ([],[]), fn ({src, dst}, (regHints, fltregHints)) =>
+					       case src of
+						  Operand.Register reg =>
+						     ((dst, reg, ref true)::regHints, fltregHints)
+						| Operand.FltRegister reg =>
+						     (regHints, (dst, ref true)::fltregHints)
+						| _ => (regHints, fltregHints))}
 		      datatype z = datatype Transfer.t
 		    in
 		      case transfer
@@ -901,10 +897,10 @@ struct
 			 => ()
 			 | Raise {...}
 			 => ()
-			 | CCall {dstsize, func, return, ...}
+			 | CCall {func, return, ...}
 			 => if CFunction.maySwitchThreads func
 			      then Option.app (return, doit'')
-			    else Option.app (return, doit''' dstsize)
+			    else Option.app (return, doit''' func)
 		    end
 	    end
 

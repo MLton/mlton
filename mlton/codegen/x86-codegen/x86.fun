@@ -43,13 +43,19 @@ struct
 
   open S
 
-   local
-      open Runtime
-   in
-      structure CFunction = CFunction
-   end
-
-   structure CType = CFunction.CType
+  local
+     open Runtime
+  in
+     structure CFunction = CFunction
+  end
+  structure CType = CFunction.CType
+  local
+     open CType
+  in
+     structure IntSize = IntSize
+     structure RealSize = RealSize
+     structure WordSize = WordSize
+  end
    
   structure Label =
      struct
@@ -131,6 +137,35 @@ struct
 	   | FPIL => 4
 	   | FPIQ => 8
 
+      local
+	 datatype z = datatype CType.t
+      in
+	 fun fromCType t =
+	    case t of
+	       Int s =>
+		  let datatype z = datatype IntSize.t
+		  in case s of
+		       I8 => Vector.new1 BYTE
+		     | I16 => Vector.new1 WORD
+		     | I32 => Vector.new1 LONG
+		     | I64 => Vector.new2 (LONG, LONG)
+		  end
+	     | Pointer => Vector.new1 LONG
+	     | Real s => 
+		  let datatype z = datatype RealSize.t
+		  in case s of
+		       R32 => Vector.new1 SNGL
+		     | R64 => Vector.new1 DBLE
+		  end
+	     | Word s =>
+		  let datatype z = datatype WordSize.t
+		  in case s of
+		       W8 => Vector.new1 BYTE
+		     | W16 => Vector.new1 WORD 
+		     | W32 => Vector.new1 LONG
+		  end
+      end
+
       val class
 	= fn BYTE => INT
 	   | WORD => INT
@@ -206,17 +241,19 @@ struct
 
       fun eq(T r1, T r2) = r1 = r2
 
+(*
       fun return size
 	= T {reg = EAX, part = case size
 				 of Size.BYTE => L
 				  | Size.WORD => X
 				  | Size.LONG => E
 				  | _ => Error.bug "Register.return"}
-
+*)
       val eax = T {reg = EAX, part = E}
       val ebx = T {reg = EBX, part = E}
       val ecx = T {reg = ECX, part = E}
       val edx = T {reg = EDX, part = E}
+      val ax = T {reg= EAX, part = X}
       val al = T {reg = EAX, part = L}
       val bl = T {reg = EBX, part = L}
       val cl = T {reg = ECX, part = L}
@@ -377,7 +414,9 @@ struct
       fun pop (T i) = T (i - 1)
       fun id (T i) = T i
 
+(*
       val return = T 0
+*)
       val top = T 0
       val one = T 1
       val total = 8 : int
@@ -676,6 +715,34 @@ struct
 	   | Two => 2
 	   | Four => 4
 	   | Eight => 8
+      local
+	 datatype z = datatype CType.t
+      in
+	 fun fromCType t =
+	    case t of
+	       Int s =>
+		  let datatype z = datatype IntSize.t
+		  in case s of
+		       I8 => One
+		     | I16 => Two
+		     | I32 => Four
+		     | I64 => Eight
+		  end
+	     | Pointer => Four
+	     | Real s => 
+		  let datatype z = datatype RealSize.t
+		  in case s of
+		       R32 => Four
+		     | R64 => Eight
+		  end
+	     | Word s =>
+		  let datatype z = datatype WordSize.t
+		  in case s of
+		       W8 => One
+		     | W16 => Two
+		     | W32 => Four
+		  end
+      end
 
       fun eq(s1, s2) = s1 = s2
       val compare = fn (s1, s2) => Int.compare (toBytes s1, toBytes s2)
@@ -1179,6 +1246,33 @@ struct
 			 scale = scale,
 			 size = size,
 			 class = class})
+      val shift = fn {origin, disp, scale, size} 
+        => let	
+	      val disp =
+		 Immediate.binexp
+		 {oper = Immediate.Multiplication,
+		  exp1 = disp,
+		  exp2 = Scale.toImmediate scale}
+	      val U {immBase, memBase, 
+		     immIndex, memIndex, 
+		     scale, class, ...} =
+		 destruct origin
+	   in
+	      construct (U {immBase = immBase,
+			    memBase = memBase,
+			    immIndex = 
+			    case immIndex of
+			       NONE => SOME disp
+			     | SOME immIndex => SOME (Immediate.binexp
+						      {oper = Immediate.Addition,
+						       exp1 = immIndex,
+						       exp2 = disp}),
+			    memIndex = memIndex,
+			    scale = scale,
+			    size = size,
+			    class = class})
+	   end
+
       local
 	val num : int ref = ref 0
       in
@@ -1199,15 +1293,10 @@ struct
 	       scale = Scale.Four,
 	       size = size,
 	       class = class}
+(*
       local
-	val cReturnTemp = Label.fromString "cReturnTemp"
-	fun cReturnTempContent (index, size) =
-	   imm
-	   {base = Immediate.label cReturnTemp,
-	    index = Immediate.const_int index,
-	    scale = Scale.One,
-	    size = size,
-	    class = Class.StaticTemp}
+	datatype z = datatype CType.t
+	datatype z = datatype Size.t
       in
 	 fun cReturnTempContents sizes =
 	    (List.rev o #1)
@@ -1217,7 +1306,30 @@ struct
 	       index + Size.toBytes size)))
 	 fun cReturnTempContent size =
 	    List.first(cReturnTempContents [size])
+	 val cReturnTempContents = fn size =>
+	    cReturnTempContents (
+	    case size of
+	       Int s => let datatype z = datatype IntSize.t
+			in case s of
+			     I8 => [BYTE]
+			   | I16 => [WORD]
+			   | I32 => [LONG]
+			   | I64 => [LONG, LONG]
+			end
+	     | Pointer => [LONG]
+	     | Real s => let datatype z = datatype RealSize.t
+			 in case s of
+			      R32 => [SNGL]
+			    | R64 => [DBLE]
+			 end
+	     | Word s => let datatype z = datatype WordSize.t
+			 in case s of
+			      W8 => [BYTE]
+			    | W16 => [WORD]
+			    | W32 => [LONG]
+			 end)
       end
+*)
     end
 
   local
@@ -1342,6 +1454,53 @@ struct
       val deMemloc 
 	= fn MemLoc x => SOME x
            | _ => NONE
+
+      local
+	val cReturnTemp = Label.fromString "cReturnTemp"
+	fun cReturnTempContent (index, size) =
+	   MemLoc.imm
+	   {base = Immediate.label cReturnTemp,
+	    index = Immediate.const_int index,
+	    scale = Scale.One,
+	    size = size,
+	    class = MemLoc.Class.StaticTemp}
+	 datatype z = datatype CType.t
+	 datatype z = datatype Size.t
+      in
+	 fun cReturnTemps ty =
+	    case ty of
+	       Int s => let datatype z = datatype IntSize.t
+			in case s of
+			     I8 => [{src = register Register.al,
+				     dst = cReturnTempContent (0, BYTE)}]
+			   | I16 => [{src = register Register.ax,
+				      dst = cReturnTempContent (0, WORD)}]
+			   | I32 => [{src = register Register.eax,
+				      dst = cReturnTempContent (0, LONG)}]
+			   | I64 => [{src = register Register.eax,
+				      dst = cReturnTempContent (0, LONG)},
+				     {src = register Register.edx,
+				      dst = cReturnTempContent (4, LONG)}]
+			end
+	     | Pointer => [{src = register Register.eax,
+			    dst = cReturnTempContent (0, LONG)}]
+	     | Real s => let datatype z = datatype RealSize.t
+			 in case s of
+			      R32 => [{src = fltregister FltRegister.top,
+				       dst = cReturnTempContent (0, SNGL)}]
+			    | R64 => [{src = fltregister FltRegister.top,
+				       dst = cReturnTempContent (0, DBLE)}]
+			 end
+	     | Word s => let datatype z = datatype WordSize.t
+			 in case s of
+			      W8 => [{src = register Register.al,
+				      dst = cReturnTempContent (0, BYTE)}]
+			    | W16 => [{src = register Register.ax,
+				       dst = cReturnTempContent (0, WORD)}]
+			    | W32 => [{src = register Register.eax,
+				       dst = cReturnTempContent (0, LONG)}]
+			 end
+      end
     end
 
   structure Instruction =
@@ -3023,14 +3182,10 @@ struct
 	   * used before C calls.
 	   *)
 	| CCall
-	  (* Assert that the return value is in a register;
-	   * used after C calls.
-	   *)
-	| Return of {memloc: MemLoc.t}
-          (* Assert that the return value is in a float register;
-	   * used after C calls.
-	   *)
-	| FltReturn of {memloc: MemLoc.t}
+        (* Assert the return value;
+	 * used after C calls.
+	 *)
+        | Return of {returns: {src: Operand.t, dst: MemLoc.t} list}
 	(* Misc. *)
 	  (* Assert that the register is not free for the allocator;
 	   * used ???
@@ -3151,10 +3306,10 @@ struct
 	   => concat["Reset"]
 	   | CCall
 	   => concat["CCall"]
-	   | Return {memloc}
-	   => concat["Return: ", MemLoc.toString memloc]
-	   | FltReturn {memloc}
-	   => concat["FltReturn: ", MemLoc.toString memloc]
+	   | Return {returns}
+	   => concat["Return: ", List.toString (fn {src,dst} =>
+						concat ["(", Operand.toString src,
+							",", MemLoc.toString dst, ")"]) returns]
 	   | Reserve {registers}
 	   => concat["Reserve: ", 
 		     "registers: ",
@@ -3235,10 +3390,13 @@ struct
 	       defs = [], 
 	       kills = []}
 	   | CCall => {uses = [], defs = [], kills = []}
-           | Return {memloc}
-           => {uses = [], defs = [Operand.memloc memloc], kills = []}
-           | FltReturn {memloc}
-           => {uses = [], defs = [Operand.memloc memloc], kills = []}
+           | Return {returns}
+	   => let 
+		 val uses = List.map(returns, fn {src, ...} => src)
+		 val defs = List.map(returns, fn {dst, ...} => Operand.memloc dst)
+	      in
+		 {uses = uses, defs = defs, kills = []}
+	      end
 	   | Reserve {registers} => {uses = [], defs = [], kills = []}
 	   | Unreserve {registers} => {uses = [], defs = [], kills = []}
 	   | ClearFlt => {uses = [], defs = [], kills = []}
@@ -3331,16 +3489,15 @@ struct
 				            | _ => Error.bug "Directive.replace"),
 		     dead_classes = dead_classes}
 	   | CCall => CCall
-           | Return {memloc}
-           => Return {memloc = case replacer {use = true, def = false}
-                                             (Operand.memloc memloc)
-			         of Operand.MemLoc memloc => memloc
-			          | _ => Error.bug "Directive.replace"}
-           | FltReturn {memloc}
-           => FltReturn {memloc = case replacer {use = true, def = false}
-                                                (Operand.memloc memloc)
-			            of Operand.MemLoc memloc => memloc
-			             | _ => Error.bug "Directive.replace"}
+           | Return {returns}
+	   => Return {returns = List.map
+                                (returns, fn {src,dst} =>
+				 {src = src,
+				  dst = 
+				  case replacer {use = true, def = false}
+				       (Operand.memloc dst)
+				    of Operand.MemLoc memloc => memloc
+				     | _ => Error.bug "Directive.replace"})}
 	   | Reserve {registers} => Reserve {registers = registers}
 	   | Unreserve {registers} => Unreserve {registers = registers}
 	   | ClearFlt => ClearFlt
@@ -3355,7 +3512,6 @@ struct
       val force = Force
       val ccall = fn () => CCall
       val return = Return
-      val fltreturn = FltReturn
       val reserve = Reserve
       val unreserve = Unreserve
       val saveregalloc = SaveRegAlloc
@@ -3557,7 +3713,6 @@ struct
       val directive_force = Directive o Directive.force
       val directive_ccall = Directive o Directive.ccall
       val directive_return = Directive o Directive.return
-      val directive_fltreturn = Directive o Directive.fltreturn
       val directive_reserve = Directive o Directive.reserve
       val directive_unreserve = Directive o Directive.unreserve
       val directive_saveregalloc = Directive o Directive.saveregalloc
@@ -3661,7 +3816,7 @@ struct
 	| Handler of {frameInfo: FrameInfo.t,
 		      label: Label.t,
 		      live: MemLocSet.t}
-	| CReturn of {dst: (Operand.t * Size.t) option,
+	| CReturn of {dsts: (Operand.t * Size.t) vector,
 		      frameInfo: FrameInfo.t option,
 		      func: CFunction.t,
 		      label: Label.t}
@@ -3705,13 +3860,11 @@ struct
 		      "] (",
 		      FrameInfo.toString frameInfo,
 		      ")"]
-	   | CReturn {dst, frameInfo, func, label} 
+	   | CReturn {dsts, frameInfo, func, label} 
 	   => concat ["CReturn::",
 		      Label.toString label,
 		      " ",
-		      case dst
-			of SOME (dst, _) => Operand.toString dst
-			 | NONE => "",
+		      Vector.toString (fn (dst,dstsize) => Operand.toString dst) dsts,
 		      " ",
 		      CFunction.name func,
 		      " ",
@@ -3721,9 +3874,20 @@ struct
       val layout = Layout.str o toString
 
       val uses_defs_kills
-	= fn CReturn {dst = SOME (dst, dstsize), ...} 
-	   => {uses = [Operand.memloc (MemLoc.cReturnTempContent dstsize)],
-	       defs = [dst], kills = []}
+	= fn CReturn {dsts, func, ...} 
+	   => let 
+		 val uses =
+		    case CFunction.return func of
+		       NONE => []
+		     | SOME ty => 
+			  List.map
+			  (Operand.cReturnTemps ty,
+			   fn {src, dst} => Operand.memloc dst)
+	      in
+		 {uses = uses, 
+		  defs = Vector.toListMap(dsts, fn (dst, dstsize) => dst), 
+		  kills = []}
+	      end
 	   | _ => {uses = [], defs = [], kills = []}
 	   
       val label
@@ -3938,7 +4102,6 @@ struct
 	| Return of {live: MemLocSet.t}
 	| Raise of {live: MemLocSet.t}
 	| CCall of {args: (Operand.t * Size.t) list,
-		    dstsize: Size.t option,
 		    frameInfo: FrameInfo.t option,
 		    func: CFunction.t,
 		    return: Label.t option,
@@ -4020,7 +4183,7 @@ struct
 			fn (memloc, l) => (MemLoc.toString memloc)::l),
 		       ", "),
 		      "]"]
-	   | CCall {args, dstsize, frameInfo, func, return, target}
+	   | CCall {args, frameInfo, func, return, target}
 	   => concat ["CCALL ",
 		      Label.toString target,
 		      "(",
@@ -4035,13 +4198,19 @@ struct
       val uses_defs_kills
 	= fn Switch {test, cases, default}
 	   => {uses = [test], defs = [], kills = []}
-	   | CCall {args, dstsize, ...}
-	   => {uses = List.map(args, fn (oper,_) => oper),
-	       defs = case dstsize 
-			of NONE => []
-			 | SOME dstsize 
-			 => [Operand.memloc (MemLoc.cReturnTempContent dstsize)],
-	       kills = []}
+	   | CCall {args, func, ...}
+	   => let
+		 val defs =
+		    case CFunction.return func of
+		       NONE => []
+		     | SOME ty => 
+			  List.map
+			  (Operand.cReturnTemps ty,
+			   fn {src, dst} => Operand.memloc dst)
+	      in
+		 {uses = List.map(args, fn (oper,_) => oper),
+		  defs = defs, kills = []}
+	      end
 	   | _ => {uses = [], defs = [], kills = []}
 
       val nearTargets
@@ -4075,13 +4244,12 @@ struct
 	   => Switch {test = replacer {use = true, def = false} test,
 		      cases = cases,
 		      default = default}
-	   | CCall {args, dstsize, frameInfo, func, return, target}
+	   | CCall {args, frameInfo, func, return, target}
 	   => CCall {args = List.map(args,
 				     fn (oper,size) => (replacer {use = true,
 								  def = false}
 							         oper,
 							size)),
-		     dstsize = dstsize,
 		     frameInfo = frameInfo,
 		     func = func,
 		     return = return,

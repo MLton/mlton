@@ -31,24 +31,24 @@ signature X86_MLTON =
 		      liveInfo: x86Liveness.LiveInfo.t}
 
     (* arith, c call, and primitive assembly sequences. *)
-    val arith: {prim : Machine.Prim.t,
-		args : (x86.Operand.t * x86.Size.t) vector,
-		dst : (x86.Operand.t * x86.Size.t),
-		overflow : x86.Label.t,
-		success : x86.Label.t,
+    val arith: {prim: Machine.Prim.t,
+		args: (x86.Operand.t * x86.Size.t) vector,
+		dsts: (x86.Operand.t * x86.Size.t) vector,
+		overflow: x86.Label.t,
+		success: x86.Label.t,
 		transInfo : transInfo} -> x86.Block.t' AppendList.t
     val ccall: {args: (x86.Operand.t * x86.Size.t) vector,
 		frameInfo: x86.FrameInfo.t option,
 		func: Machine.CFunction.t,
 		return: x86.Label.t option,
 		transInfo: transInfo} -> x86.Block.t' AppendList.t
-    val creturn: {dst: (x86.Operand.t * x86.Size.t) option,
+    val creturn: {dsts: (x86.Operand.t * x86.Size.t) vector,
 		  frameInfo: x86.FrameInfo.t option,
 		  func: Machine.CFunction.t,
 		  label: x86.Label.t, 
 		  transInfo: transInfo} -> x86.Block.t' AppendList.t
-    val prim: {prim : Machine.Prim.t,
-	       args : (x86.Operand.t * x86.Size.t) vector,
-	       dst : (x86.Operand.t * x86.Size.t) option,
-	       transInfo : transInfo} -> x86.Block.t' AppendList.t
+    val prim: {prim: Machine.Prim.t,
+	       args: (x86.Operand.t * x86.Size.t) vector,
+	       dsts: (x86.Operand.t * x86.Size.t) vector,
+	       transInfo: transInfo} -> x86.Block.t' AppendList.t
   end

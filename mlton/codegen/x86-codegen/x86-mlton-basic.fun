@@ -36,44 +36,6 @@ struct
   val normalHeaderBytes = Runtime.normalHeaderSize
   val arrayHeaderBytes = Runtime.arrayHeaderSize
   val intInfOverheadBytes = Runtime.intInfOverheadSize
-   
-  local
-     datatype z = datatype CType.t
-     datatype z = datatype x86.Size.t
-  in
-    fun toX86Size' t =
-       case t of
-	  Int s =>
-	     let
-		datatype z = datatype IntSize.t
-	     in
-		case s of
-		   I8 => BYTE
-		 | I16 => WORD
-		 | I32 => LONG
-		 | I64 => Error.bug "FIXME"
-	     end
-	| Pointer => LONG
-	| Real s =>
-	     let
-		datatype z = datatype RealSize.t
-	     in
-		case s of
-		   R32 => SNGL
-		 | R64 => DBLE
-	     end
-	| Word s =>
-	     let
-		datatype z = datatype WordSize.t
-	     in
-		case s of
-		   W8 => BYTE
-		 | W16 => WORD 
-		 | W32 => LONG
-	     end
-    val toX86Size = toX86Size'
-    fun toX86Scale t = x86.Scale.fromBytes (CType.size t)
-  end
 
   (*
    * Memory classes
@@ -327,6 +289,22 @@ struct
   val fildTempContentsOperand
     = Operand.memloc fildTempContents
 
+  val eq1Temp = Label.fromString "eq1Temp"
+  val eq1TempContents 
+    = makeContents {base = Immediate.label eq1Temp,
+		    size = wordSize,
+		    class = Classes.StaticTemp}
+  val eq1TempContentsOperand
+    = Operand.memloc eq1TempContents
+  val eq2Temp = Label.fromString "eq2Temp"
+  val eq2TempContents 
+    = makeContents {base = Immediate.label eq2Temp,
+		    size = wordSize,
+		    class = Classes.StaticTemp}
+  val eq2TempContentsOperand
+    = Operand.memloc eq2TempContents
+
+
   local
     val localI_base =
        IntSize.memoize
@@ -510,7 +488,7 @@ struct
   fun gcState_offset {offset, ty} =
     let
       val (_,_,operand) = 
-	make' (offset, toX86Size ty, Classes.GCState)
+	make' (offset, Vector.sub(x86.Size.fromCType ty, 0), Classes.GCState)
     in
       operand ()
     end

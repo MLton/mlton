@@ -34,6 +34,7 @@ structure CFunction =
 	 open CType
       in
 	 val Int32 = Int I32
+	 val Int64 = Int I64
 	 val Word32 = Word W32
       end
 
@@ -117,6 +118,14 @@ structure CFunction =
       in
 	 val intInfCompare = make "IntInf_compare"
 	 val intInfEqual = make "IntInf_equal"
+      end
+
+      local
+	 fun make name = vanilla {args = Vector.new2 (Int64, Int64),
+				  name = name,
+				  return = SOME CType.defaultInt}
+      in
+	 val int64Equal = make "Int64_equal"
       end
 
       val getPointer =
@@ -616,7 +625,51 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 					     testRep = tyconRep tycon}
 			    else Error.bug "strange type in case"
 			 end)
-	     | S.Cases.Int (s, cs) => simple (s, cs, Switch.Int, id, IntX.<=)
+	     | S.Cases.Int (s, cs) => 
+		  if s = IntSize.I64 andalso !Control.Native.native
+		     then let
+			     val defaultLabel =
+				case default of
+				   SOME default => default
+				 | NONE => Error.bug "case has no default"
+			     val firstLabel =
+				Vector.foldr
+				(cs, defaultLabel, fn ((i, l), nextLabel) =>
+				 let	
+				    val b = (Var.newNoname (), Type.bool)	
+				    val transfer =
+				       Transfer.ifInt
+				       (Operand.Var {var = #1 b, ty = #2 b}, 
+					{truee = l, falsee = nextLabel})
+				    val return =
+				       newBlock
+				       {args = Vector.new1 b,
+					kind = Kind.CReturn {func = CFunction.int64Equal},
+					statements = Vector.new0 (),
+					transfer = transfer}
+				    val args =
+				       Vector.new2
+				       (Operand.Var {var = test,
+						     ty = Type.int IntSize.I64},
+					Operand.Const (Const.int i))
+				    val transfer =
+				       Transfer.CCall
+				       {args = args,
+					func = CFunction.int64Equal,
+					return = SOME return}
+				    val label =
+				       newBlock
+				       {args = Vector.new0 (),
+					kind = Kind.Jump,
+					statements = Vector.new0 (),
+					transfer = transfer}
+				 in
+				    label
+				 end)
+			  in
+			     ([], Transfer.Goto {args = Vector.new0 (), dst = firstLabel})
+			  end
+		     else simple (s, cs, Switch.Int, id, IntX.<=)
 	     | S.Cases.Word (s, cs) => simple (s, cs, Switch.Word, id, WordX.<=)
 	 end
       val {get = labelInfo: (Label.t ->
@@ -1157,6 +1210,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			       | GC_unpack =>
 				    ccall {args = Vector.new1 Operand.GCState,
 					   func = CFunction.unpack}
+			       | Int_equal s =>
+				    if s = IntSize.I64 andalso !Control.Native.native 
+				       then simpleCCall CFunction.int64Equal
+				       else normal ()
 			       | IntInf_add => simpleCCall CFunction.intInfAdd
 			       | IntInf_andb => simpleCCall CFunction.intInfAndb
 			       | IntInf_arshift =>

@@ -53,20 +53,31 @@ struct
      struct
 	open Machine.Global
 
-	fun toX86MemLoc (g: t) =
+	fun toX86Operand (g: t) : (x86.Operand.t * x86.Size.t) vector =
 	   let
 	      val ty = Machine.Type.toCType (ty g)
+	      val index = index g
 	      val base =
 		 x86.Immediate.label
 		 (if isRoot g
 		     then x86MLton.global_base ty
 		  else x86MLton.globalPointerNonRoot_base)
+	      val origin =
+		 x86.MemLoc.imm
+		 {base = base,
+		  index = x86.Immediate.const_int index,
+		  scale = x86.Scale.fromCType ty,
+		  size = x86.Size.BYTE,
+		  class = x86MLton.Classes.Globals}
+	      val sizes = x86.Size.fromCType ty
 	   in
-	      x86.MemLoc.imm {base = base,
-			      index = x86.Immediate.const_int (index g),
-			      scale = x86MLton.toX86Scale ty,
-			      size = x86MLton.toX86Size ty,
-			      class = x86MLton.Classes.Globals}
+	      (#1 o Vector.mapAndFold)
+	      (sizes, 0, fn (size,offset) =>
+	       (((x86.Operand.memloc o x86.MemLoc.shift)
+		 {origin = origin,
+		  disp = x86.Immediate.const_int offset,
+		  scale = x86.Scale.One,
+		  size = size}, size), offset + x86.Size.toBytes size))
 	   end
 
 	val toString = Layout.toString o layout
@@ -76,15 +87,26 @@ struct
     struct
       open Machine.Operand
 
-      val toX86Size = x86MLton.toX86Size o Type.toCType o ty
+      fun get (f: ('a * 'b) -> 'c) (i: int) (v: ('a * 'b) vector) =
+	 f (Vector.sub (v, i))
+	 handle _ => Error.bug (concat ["toX86Operand: get"])
+      fun getOp0 v =
+	 get #1 0 v
 
-      val rec toX86Operand =
-	 fn ArrayOffset {base, index, ty} =>
-	       let
+      val rec toX86Operand : t -> (x86.Operand.t * x86.Size.t) vector =
+	 fn ArrayOffset {base, index, ty}
+ 	    => let
 		  val base = toX86Operand base
+		  val _ = Assert.assert("x86Translate.Operand.toX86Operand: Array/base",
+					fn () => Vector.length base = 1)
+		  val base = getOp0 base
 		  val index = toX86Operand index
+		  val _ = Assert.assert("x86Translate.Operand.toX86Operand: Array/index",
+				       fn () => Vector.length index = 1)
+		  val index = getOp0 index
+		     
 		  val ty = Type.toCType ty
-		  val memloc =
+		  val origin =
 		     case (x86.Operand.deMemloc base,
 			   x86.Operand.deImmediate index,
 			   x86.Operand.deMemloc index) of
@@ -92,126 +114,258 @@ struct
 			   x86.MemLoc.simple 
 			   {base = base,
 			    index = index,
-			    scale = x86MLton.toX86Scale ty,
-			    size = x86MLton.toX86Size ty,
+			    scale = x86.Scale.fromCType ty,
+			    size = x86.Size.BYTE,
 			    class = x86MLton.Classes.Heap}
 		      | (SOME base, _, SOME index) =>
 			   x86.MemLoc.complex 
 			   {base = base,
 			    index = index,
-			    scale = x86MLton.toX86Scale ty,
-			    size = x86MLton.toX86Size ty,
+			    scale = x86.Scale.fromCType ty,
+			    size = x86.Size.BYTE,
 			    class = x86MLton.Classes.Heap}
 		      | _ => Error.bug (concat ["toX86Operand: strange Offset:",
 						" base: ",
 						x86.Operand.toString base,
 						" index: ",
 						x86.Operand.toString index])
+		  val sizes = x86.Size.fromCType ty
 	       in
-		  x86.Operand.memloc memloc
+		  (#1 o Vector.mapAndFold)
+		  (sizes, 0, fn (size,offset) =>
+		   (((x86.Operand.memloc o x86.MemLoc.shift)
+		     {origin = origin,
+		      disp = x86.Immediate.const_int offset,
+		      scale = x86.Scale.One,
+		      size = size}, size), offset + x86.Size.toBytes size))
 	       end
 	  | Cast (z, _) => toX86Operand z
 	  | Contents {oper, ty} =>
 	       let
 		  val ty = Type.toCType ty
 		  val base = toX86Operand oper
+		  val _ = Assert.assert("x86Translate.Operand.toX86Operand: Contents/base",
+					fn () => Vector.length base = 1)
+		  val base = getOp0 base
 		  val offset = x86.Immediate.const_int 0
-		  val size = x86MLton.toX86Size ty
-		  val memloc =
+		  val origin =
 		     case x86.Operand.deMemloc base of
 			SOME base =>
 			   x86.MemLoc.simple 
 			   {base = base,
 			    index = x86.Immediate.const_int 0,
 			    scale = x86.Scale.One,
-			    size = x86MLton.toX86Size ty,
+			    size = x86.Size.BYTE,
 			    class = x86MLton.Classes.Heap}
 		      | _ => Error.bug (concat
 					["toX86Operand: strange Contents",
 					 " base: ",
-					 x86.Operand.toString base])
+					 x86.Operand.toString base])	
+		  val sizes = x86.Size.fromCType ty
 	       in
-		  x86.Operand.memloc memloc
+		  (#1 o Vector.mapAndFold)
+		  (sizes, 0, fn (size,offset) =>
+		   (((x86.Operand.memloc o x86.MemLoc.shift)
+		     {origin = origin,
+		      disp = x86.Immediate.const_int offset,
+		      scale = x86.Scale.One,
+		      size = size}, size), offset + x86.Size.toBytes size))
 	       end
-	  | File => x86MLton.fileName
-	  | Frontier => x86MLton.gcState_frontierContentsOperand ()
-	  | GCState => x86.Operand.label x86MLton.gcState_label
-	  | Global g => x86.Operand.memloc (Global.toX86MemLoc g)
+	  | File => Vector.new1 (x86MLton.fileName, x86MLton.pointerSize)
+	  | Frontier => 
+	       let 
+		  val frontier = x86MLton.gcState_frontierContentsOperand ()
+	       in
+		  Vector.new1 (frontier, valOf (x86.Operand.size frontier))
+	       end
+	  | GCState => 
+	       Vector.new1 (x86.Operand.label x86MLton.gcState_label,
+			    x86MLton.pointerSize)
+	  | Global g => Global.toX86Operand g
 	  | Int i =>
 	       let
-		  val i' = IntX.toIntInf i
+		  val i'' = fn () => x86.Operand.immediate_const_int (IntX.toInt i)
 	       in
-		  x86.Operand.immediate_const_int (IntInf.toInt i')
+		  case IntX.size i of
+		     I8 => Vector.new1 (i'' (), x86.Size.BYTE)
+		   | I16 => Vector.new1 (i'' (), x86.Size.WORD)
+		   | I32 => Vector.new1 (i'' (), x86.Size.LONG)
+		   | I64 => let
+			       fun convert1 (ii: IntInf.t): Word.t * Word.t =
+				  let
+				     val lo = Word.fromIntInf ii
+				     val ii = IntInf.~>> (ii, 0w32)
+				     val hi = Word.fromIntInf ii
+				  in
+				     (lo, hi)
+				  end
+(*
+			       fun convert2 (ii: IntInf.t): Word.t * Word.t =
+				  let
+				     fun finish (iis: String.t, c: Char.t) =
+					let
+					   val s =
+					      String.concat
+					      [String.tabulate
+					       (16 - String.size iis, fn _ => c),
+					       iis]
+					   fun cvt s = valOf (Word.fromString s)
+					   val lo = cvt(String.extract(s, 8, SOME 8))
+					   val hi = cvt(String.extract(s, 0, SOME 8))
+					in
+					   (lo, hi)
+					end
+				  in
+				     if IntInf.<(ii, IntInf.fromInt 0)
+					then let
+						val ii = IntInf.-(IntInf.~ ii, IntInf.fromInt 1)
+						val iis =
+						   String.translate
+						   (IntInf.format(ii, StringCvt.HEX),
+						    fn #"0" => "F"
+						     | #"1" => "E"
+						     | #"2" => "D"
+						     | #"3" => "C"
+						     | #"4" => "B"
+						     | #"5" => "A"
+						     | #"6" => "9"
+						     | #"7" => "8"
+						     | #"8" => "7"
+						     | #"9" => "6"
+						     | #"A" => "5"
+						     | #"B" => "4"
+						     | #"C" => "3"
+						     | #"D" => "2"
+						     | #"E" => "1"
+						     | #"F" => "0"
+						     | #"a" => "5"
+						     | #"b" => "4"
+						     | #"c" => "3"
+						     | #"d" => "2"
+						     | #"e" => "1"
+						     | #"f" => "0"
+						     | c => "")
+					     in
+						finish (iis, #"F")
+					     end
+					else finish (IntInf.format(ii, StringCvt.HEX), #"0")
+				  end
+*)
+			       val ii = IntX.toIntInf i
+			       val (lo, hi) = convert1 ii
+			    in
+			       Vector.new2
+			       ((x86.Operand.immediate_const_word lo, x86.Size.LONG),
+				(x86.Operand.immediate_const_word hi, x86.Size.LONG))
+			    end
 	       end
-	  | Label l => x86.Operand.immediate_label l
-	  | Line => x86MLton.fileLine ()
+	  | Label l => 
+	       Vector.new1 (x86.Operand.immediate_label l, x86MLton.pointerSize)
+	  | Line => 
+	       Vector.new1 (x86MLton.fileLine (), x86MLton.wordSize)
 	  | Offset {base = GCState, offset, ty} =>
 	       let
-		 val ty = Type.toCType ty
+		  val ty = Type.toCType ty
+		  val offset = x86MLton.gcState_offset {offset = offset, ty = ty}
 	       in
-		 x86MLton.gcState_offset {offset = offset, ty = ty}
+		  Vector.new1 (offset, valOf (x86.Operand.size offset))
 	       end
 	  | Offset {base, offset, ty} =>
 	       let
-		 val base = toX86Operand base
 		 val ty = Type.toCType ty
-		 val memloc =
+		 val base = toX86Operand base
+		 val _ = Assert.assert("x86Translate.Operand.toX86Operand: Contents/base",
+				       fn () => Vector.length base = 1)
+		 val base = getOp0 base
+		 val origin =
 		   case x86.Operand.deMemloc base of
 		     SOME base =>
 		       x86.MemLoc.simple 
 		       {base = base,
 			index = x86.Immediate.const_int offset,
 			scale = x86.Scale.One,
-			size = x86MLton.toX86Size ty,
+			size = x86.Size.BYTE,
 			class = x86MLton.Classes.Heap}
 		   | _ => Error.bug (concat ["toX86Operand: strange Offset:",
 					     " base: ",
 					     x86.Operand.toString base])
+		  val sizes = x86.Size.fromCType ty
 	       in
-		 x86.Operand.memloc memloc
+		  (#1 o Vector.mapAndFold)
+		  (sizes, 0, fn (size,offset) =>
+		   (((x86.Operand.memloc o x86.MemLoc.shift)
+		     {origin = origin,
+		      disp = x86.Immediate.const_int offset,
+		      scale = x86.Scale.One,
+		      size = size}, size), offset + x86.Size.toBytes size))
 	       end
 	  | Real _ => Error.bug "toX86Operand: Real unimplemented"
 	  | Register r =>
 	       let
 		  val ty = Machine.Type.toCType (Register.ty r)
+		  val index = Machine.Register.index r
 		  val base = x86.Immediate.label (x86MLton.local_base ty)
+		  val sizes = x86.Size.fromCType ty
+		  val origin =
+		     x86.MemLoc.imm
+		     {base = base,
+		      index = x86.Immediate.const_int index,
+		      scale = x86.Scale.fromCType ty,
+		      size = x86.Size.BYTE,
+		      class = x86MLton.Classes.Locals}
+		  val sizes = x86.Size.fromCType ty
 	       in
-		  x86.Operand.memloc
-		  (x86.MemLoc.imm {base = base,
-				   index = (x86.Immediate.const_int
-					    (Register.index r)),
-				   scale = x86MLton.toX86Scale ty,
-				   size = x86MLton.toX86Size ty,
-				   class = x86MLton.Classes.Locals})
+		  (#1 o Vector.mapAndFold)
+		  (sizes, 0, fn (size,offset) =>
+		   (((x86.Operand.memloc o x86.MemLoc.shift)
+		     {origin = origin,
+		      disp = x86.Immediate.const_int offset,
+		      scale = x86.Scale.One,
+		      size = size}, size), offset + x86.Size.toBytes size))
 	       end
-	  | SmallIntInf ii => x86.Operand.immediate_const_word ii
+	  | SmallIntInf ii => 
+	       Vector.new1 (x86.Operand.immediate_const_word ii,x86.Size.LONG)
 	  | StackOffset {offset, ty} =>
 	       let
 		  val ty = Type.toCType ty
-		  val memloc =
+		  val origin =
 		     x86.MemLoc.simple 
 		     {base = x86MLton.gcState_stackTopContents (), 
 		      index = x86.Immediate.const_int offset,
 		      scale = x86.Scale.One,
-		      size = x86MLton.toX86Size ty,
+		      size = x86.Size.BYTE,
 		      class = x86MLton.Classes.Stack}
+		  val sizes = x86.Size.fromCType ty
 	       in
-		  x86.Operand.memloc memloc
+		  (#1 o Vector.mapAndFold)
+		  (sizes, 0, fn (size,offset) =>
+		   (((x86.Operand.memloc o x86.MemLoc.shift)
+		     {origin = origin,
+		      disp = x86.Immediate.const_int offset,
+		      scale = x86.Scale.One,
+		      size = size}, size), offset + x86.Size.toBytes size))
 	       end
-	  | StackTop => x86MLton.gcState_stackTopContentsOperand ()
+	  | StackTop => 
+	       let 
+		  val stackTop = x86MLton.gcState_stackTopContentsOperand ()
+	       in
+		  Vector.new1 (stackTop, valOf (x86.Operand.size stackTop))
+	       end
 	  | Word w =>
 	       let
 		  val w' = WordX.toWord w
+		  val w'' = x86.Operand.immediate_const_word w'
 	       in
-		  x86.Operand.immediate_const_word w'
+		  case WordX.size w of
+		     W8 => Vector.new1 (w'', x86.Size.BYTE)
+		   | W16 => Vector.new1 (w'', x86.Size.WORD)
+		   | W32 => Vector.new1 (w'', x86.Size.LONG)
 	       end
 	       
       val toX86Operand =
 	 fn operand =>
 	 toX86Operand operand
 	 handle exn => Error.reraise (exn, "x86Translate.Operand.toX86Operand")
-
-      fun convert x = (toX86Operand x, toX86Size x)
     end
 
   type transInfo = x86MLton.transInfo
@@ -257,15 +411,16 @@ struct
 	      | Kind.Cont {args, frameInfo, ...}
 	      => let
 		    val frameInfo = frameInfoToX86 frameInfo
-		   val args
-		     = Vector.fold
-		       (args,
-			x86.MemLocSet.empty,
-			fn (operand, args)
-			 => case x86.Operand.deMemloc
-			         (Operand.toX86Operand operand)
-			      of SOME memloc => x86.MemLocSet.add(args, memloc)
-			       | NONE => args)
+		    val args =
+		       Vector.fold
+		       (args, x86.MemLocSet.empty,
+			fn (operand,args) =>
+			Vector.fold
+			(Operand.toX86Operand operand, args,
+			 fn ((operand,size),args) =>
+			 case x86.Operand.deMemloc operand of
+			    SOME memloc => x86.MemLocSet.add(args, memloc)
+			  | NONE => args))
 		 in
 		   AppendList.single
 		   (x86.Block.mkBlock'
@@ -289,10 +444,13 @@ struct
 		 end
 	      | Kind.CReturn {dst, frameInfo, func}
 	      => let
-		   val dst = Option.map (dst, Operand.convert)
+		   val dsts =
+		      case dst of
+			 NONE => Vector.new0 ()
+		       | SOME dst => Operand.toX86Operand dst
 		 in
 		   x86MLton.creturn
-		   {dst = dst,
+		   {dsts = dsts,
 		    frameInfo = Option.map (frameInfo, frameInfoToX86),
 		    func = func,
 		    label = label,
@@ -336,16 +494,8 @@ struct
 		   val (comment_begin,
 			comment_end) = comments statement
 		     
-		   val dstsize = Operand.toX86Size dst
-		   val dst = Operand.toX86Operand dst
-		     
-		   val srcsize = Operand.toX86Size src
-		   val src = Operand.toX86Operand src 
-		     
-		   val _ 
-		     = Assert.assert
-		       ("toX86Blocks: Move",
-			fn () => srcsize = dstsize)
+		   val dsts = Operand.toX86Operand dst
+		   val srcs = Operand.toX86Operand src
 		 in
 		   AppendList.appends
 		   [comment_begin,
@@ -353,31 +503,37 @@ struct
 		    (x86.Block.mkBlock'
 		     {entry = NONE,
 		      statements
-		      = [(* dst = src *)
+		      = (Vector.toList o Vector.map2)
+		        (dsts,srcs,fn ((dst,dstsize),(src,srcsize)) =>
+			 (* dst = src *)
 			 case x86.Size.class srcsize
-			   of x86.Size.INT => x86.Assembly.instruction_mov 
-			                      {dst = dst,
-					       src = src,
-					       size = srcsize}
-			    | x86.Size.FLT => x86.Assembly.instruction_pfmov
-					      {dst = dst,
-					       src = src,
-					       size = srcsize}
-			    | _ => Error.bug "toX86Blocks: Move"],
+			    of x86.Size.INT => x86.Assembly.instruction_mov 
+			                       {dst = dst,
+						src = src,
+						size = srcsize}
+			  | x86.Size.FLT => x86.Assembly.instruction_pfmov
+					    {dst = dst,
+					     src = src,
+					     size = srcsize}
+			  | _ => Error.bug "toX86Blocks: Move"),
 		      transfer = NONE}),
 		    comment_end]
 		 end 
 	      | PrimApp {dst, prim, args}
    	      => let
 		   val (comment_begin, comment_end) = comments statement
-		   val args = Vector.map (args, Operand.convert)
-		   val dst = Option.map (dst, Operand.convert)
+		   val args = (Vector.concatV o Vector.map)
+		              (args, Operand.toX86Operand)
+		   val dsts = 
+		      case dst of
+			 NONE => Vector.new0 ()
+		       | SOME dst => Operand.toX86Operand dst
 		 in
 		   AppendList.appends
 		   [comment_begin,
 		    (x86MLton.prim {prim = prim,
 				    args = args,
-				    dst = dst,
+				    dsts = dsts,
 				    transInfo = transInfo}),
 		    comment_end]
 		 end
@@ -389,16 +545,10 @@ struct
 	      => let
 		   val (comment_begin,
 			comment_end) = comments statement
-		     
-		   val dstsize = Operand.toX86Size dst
-		   val dst = Operand.toX86Operand dst
+		   val (dst,dstsize) = Vector.sub(Operand.toX86Operand dst, 0)
 		   val dst' = case x86.Operand.deMemloc dst
 				of SOME dst' => dst'
 				 | NONE => Error.bug "Allocate: strange dst"
-		   val _ 
-		     = Assert.assert
-		       ("toX86Assembly: Allocate, dstsize",
-			fn () => dstsize = x86MLton.pointerSize)
 		       
 		   val frontier = x86MLton.gcState_frontierContentsOperand ()
 		   val frontierDeref = x86MLton.gcState_frontierDerefOperand ()
@@ -412,36 +562,39 @@ struct
 		       
 		   fun stores_toX86Assembly ({offset, value}, l)
 		     = let
-			 val size =
-			    x86MLton.toX86Size
-			    (Type.toCType (Operand.ty value))
-			 val value = Operand.toX86Operand value
-			 val dst
-			   = let
-			       val index = x86.Immediate.const_int offset
-			       val memloc
-				 = x86.MemLoc.simple
-				   {base = dst',
-				    index = index,
-				    scale = x86.Scale.One,
-				    size = size,
-				    class = x86MLton.Classes.Heap}
-			     in
-			       x86.Operand.memloc memloc
-			     end
+			 val origin =
+			    x86.MemLoc.simple
+			    {base = dst',
+			     index = x86.Immediate.const_int offset,
+			     scale = x86.Scale.One,
+			     size = x86.Size.BYTE,
+			     class = x86MLton.Classes.Heap}
 		       in
-			 (case x86.Size.class size
-			    of x86.Size.INT 
-			     => x86.Assembly.instruction_mov 
-			        {dst = dst,
-				 src = value,
-				 size = size}
-			     | x86.Size.FLT 
-			     => x86.Assembly.instruction_pfmov
-				{dst = dst,
-				 src = value,
-				 size = size}
-			     | _ => Error.bug "toX86Blocks: Allocate")::l
+			 (
+			 (Vector.toList o #1 o Vector.mapAndFold)
+			 (Operand.toX86Operand value, 0, fn ((src,srcsize),offset) =>
+			  let
+			     val dst =
+				(x86.Operand.memloc o x86.MemLoc.shift)
+				{origin = origin,
+				 disp = x86.Immediate.const_int offset,
+				 scale = x86.Scale.One,
+				 size = srcsize}
+			  in
+			     (case x86.Size.class srcsize of 
+				 x86.Size.INT => 
+				    x86.Assembly.instruction_mov 
+				    {dst = dst,
+				     src = src,
+				     size = srcsize}
+			       | x86.Size.FLT => 
+				    x86.Assembly.instruction_pfmov
+				    {dst = dst,
+				     src = src,
+				     size = srcsize}
+			       | _ => Error.bug "toX86Blocks: Allocate",
+			      offset + x86.Size.toBytes srcsize)
+			  end)) @ l
 		       end
 		 in
 		   AppendList.appends
@@ -490,8 +643,8 @@ struct
  
       fun iff (test, a, b)
 	= let
-	    val size = Operand.toX86Size test
-	    val test = Operand.toX86Operand test
+	    val (test,testsize) =
+	       Vector.sub (Operand.toX86Operand test, 0)
 	  in
 	    if Label.equals(a, b)
 	      then AppendList.single
@@ -509,7 +662,7 @@ struct
 		     = [x86.Assembly.instruction_test
 			{src1 = test,
 			 src2 = test,
-			 size = size}],
+			 size = testsize}],
 		     transfer
 		     = SOME (x86.Transfer.iff
 			     {condition = x86.Instruction.NZ,
@@ -519,8 +672,8 @@ struct
 
       fun cmp (test, k, a, b)
 	= let
-	    val size = Operand.toX86Size test
-	    val test = Operand.toX86Operand test
+	    val (test,testsize) =
+	       Vector.sub (Operand.toX86Operand test, 0)
 	  in
 	    if Label.equals(a, b)
 	      then AppendList.single
@@ -538,7 +691,7 @@ struct
 		     = [x86.Assembly.instruction_cmp
 			{src1 = test,
 			 src2 = x86.Operand.immediate k,
-			 size = size}],
+			 size = testsize}],
 		     transfer
 		     = SOME (x86.Transfer.iff
 			     {condition = x86.Instruction.E,
@@ -549,6 +702,7 @@ struct
       fun switch(test, cases, default)
 	= let
 	    val test = Operand.toX86Operand test
+	    val (test,testsize) = Vector.sub(test, 0)
 	  in
 	    AppendList.single
 	    (x86.Block.mkBlock'
@@ -560,7 +714,7 @@ struct
 				default = default})})
 	  end
 
-       fun doSwitchChar (test, cases, default)
+      fun doSwitchChar (test, cases, default)
 	= (case (cases, default)
 	     of ([],            NONE)
 	      => Error.bug "toX86Blocks: doSwitchChar"
@@ -630,21 +784,23 @@ struct
 	= (case transfer
 	     of Arith {prim, args, dst, overflow, success, ty}
 	      => let
-		   val args = Vector.map (args, Operand.convert)
-		   val dst = Operand.convert dst
+		   val args = (Vector.concatV o Vector.map)
+		              (args, Operand.toX86Operand)
+		   val dsts = Operand.toX86Operand dst
 		 in
 		   AppendList.append
 		   (comments transfer,
 		    x86MLton.arith {prim = prim,
 				    args = args,
-				    dst = dst,
+				    dsts = dsts,
 				    overflow = overflow,
 				    success = success,
 				    transInfo = transInfo})
 		 end
 	      | CCall {args, frameInfo, func, return}
 	      => let
-		   val args = Vector.map (args, Operand.convert)
+		   val args = (Vector.concatV o Vector.map)
+		              (args, Operand.toX86Operand)
 		 in
 		   AppendList.append
 		   (comments transfer,	
@@ -670,11 +826,13 @@ struct
 				    NONE => Error.bug "strange Return"
 				  | SOME zs => zs),
 				x86.MemLocSet.empty,
-				fn (operand, live)
-				 => case x86.Operand.deMemloc
-				         (Operand.toX86Operand operand)
-				      of SOME memloc => x86.MemLocSet.add(live, memloc)
-				       | NONE => live)})}))
+				fn (operand, live) =>
+				Vector.fold
+				(Operand.toX86Operand operand, live,
+				 fn ((operand,size),live) =>
+				 case x86.Operand.deMemloc operand of
+				    SOME memloc => x86.MemLocSet.add(live, memloc)
+				  | NONE => live))})}))
   	      | Raise
 	      => AppendList.append
 	         (comments transfer,
@@ -702,8 +860,8 @@ struct
 		    case switch of
 		       EnumPointers {enum, pointers, test} =>
 			  let
-			     val size = Operand.toX86Size test
-			     val test = Operand.toX86Operand test
+			     val (test,testsize) =
+				Vector.sub(Operand.toX86Operand test, 0)
 			  in
 			     AppendList.append
 			     (comments transfer,
@@ -717,7 +875,7 @@ struct
 				= [x86.Assembly.instruction_test
 				   {src1 = test,
 				    src2 = x86.Operand.immediate_const_word 0wx3,
-				    size = size}],
+				    size = testsize}],
 				transfer 
 				= SOME (x86.Transfer.iff
 					{condition = x86.Instruction.NZ,
@@ -725,12 +883,14 @@ struct
 					 falsee = pointers})}))
 			  end
 		     | Int {cases, default, size, test} =>
-			  simple ({cases = (Vector.map
-					    (cases, fn (i, l) =>
-					     (IntX.toInt i, l))),
-				   default = default,
-				   test = test},
-				  doSwitchInt)
+			  (Assert.assert("x86Translate.Transfer.toX86Blocks: Switch/Int", 
+					 fn () => size <> IntSize.I64)
+			   ; simple ({cases = (Vector.map
+					       (cases, fn (i, l) =>
+						(IntX.toInt i, l))),
+				      default = default,
+				      test = test},
+				     doSwitchInt))
 		     | Pointer {cases, default, tag, ...} =>
 			  simple ({cases = (Vector.map
 					    (cases, fn {dst, tag, ...} =>
@@ -756,15 +916,15 @@ struct
 		     statements = [],
 		     transfer = SOME (x86.Transfer.goto {target = label})})))
 	      | Call {label, live, return, ...}
-	      =>
-		 let
+	      => let
 		    val live =
 		       Vector.fold
 		       (live, x86.MemLocSet.empty, fn (operand, live) =>
-			case (x86.Operand.deMemloc
-			      (Operand.toX86Operand operand)) of
-			   NONE => live
-			 | SOME memloc => x86.MemLocSet.add (live, memloc))
+			Vector.fold
+			(Operand.toX86Operand operand, live, fn ((operand,size),live) =>
+			 case x86.Operand.deMemloc operand of
+			    NONE => live
+			  | SOME memloc => x86.MemLocSet.add (live, memloc)))
 		    val com = comments transfer
 		    val transfer =
 		       case return of
@@ -862,7 +1022,9 @@ struct
 	    val _ = Vector.foreach
 	            (blocks, fn Block.T {label, live, ...} =>
 		     setLive (label,
-			      Vector.toListMap (live, Operand.toX86Operand)))
+			      (Vector.toList o #1 o Vector.unzip o 
+			       Vector.concatV o Vector.map)
+			      (live, Operand.toX86Operand)))
 	    val transInfo = {addData = addData,
 			     frameInfoToX86 = frameInfoToX86,
 			     live = live,

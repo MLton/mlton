@@ -37,9 +37,6 @@ signature X86_MLTON_BASIC =
     val arrayHeaderBytes : int
     val intInfOverheadBytes : int
 
-    val toX86Size : x86.CFunction.CType.t -> x86.Size.t
-    val toX86Scale : x86.CFunction.CType.t -> x86.Scale.t
-
     (*
      * Memory classes
      *)
@@ -88,6 +85,8 @@ signature X86_MLTON_BASIC =
     val fildTempContentsOperand : x86.Operand.t
     val fpswTempContentsOperand : x86.Operand.t
     val statusTempContentsOperand : x86.Operand.t
+    val eq1TempContentsOperand : x86.Operand.t
+    val eq2TempContentsOperand : x86.Operand.t
 
     (* Static arrays defined in main.h and x86-main.h *)
     val local_base : x86.CFunction.CType.t -> x86.Label.t

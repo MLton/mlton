@@ -529,10 +529,8 @@ struct
 			       andalso
 			       (Size.class (MemLoc.size memloc) <> Size.INT)))::
 		      future
-		   | Directive.Return {memloc}
-		   => (M (FDEF, memloc))::future
-		   | Directive.FltReturn {memloc}
-		   => (M (FDEF, memloc))::future
+		   | Directive.Return {returns}
+		   => (List.map(returns, fn {dst, ...} => M (FDEF, dst))) @ future
 		   | Directive.ClearFlt
 		   => (MP (FMREMOVEP,
 			   fn memloc
@@ -6020,6 +6018,67 @@ struct
 	     registerAllocation = registerAllocation}
 	  end
 
+      fun return {returns: {src: Operand.t, dst: MemLoc.t} list,
+		  info: Liveness.t,
+		  registerAllocation: t} =
+	 let
+	    val killed_values =
+	       valueFilter {filter = fn value as {memloc, ...} =>
+			    List.exists
+			    (returns, fn {dst = return_memloc, ...} =>
+			     List.exists(MemLoc.utilized memloc,
+					 fn memloc' =>
+					 MemLoc.eq(memloc', return_memloc))
+			     orelse
+			     MemLoc.mayAlias(return_memloc, memloc)),
+			    registerAllocation = registerAllocation}
+	    val killed_memlocs = List.revMap(killed_values, #memloc)
+
+	    val registerAllocation =
+	       removes {memlocs = killed_memlocs,
+			registerAllocation = registerAllocation}
+
+	    val registerAllocation =
+	       List.fold
+	       (returns, registerAllocation, fn ({src = operand, 
+						  dst = return_memloc}, registerAllocation) =>
+		case operand of
+		   Operand.Register return_register =>
+		      update {value = {register = return_register,
+				       memloc = return_memloc,
+				       weight = 1024,
+				       sync = false,
+				       commit = NO},
+			      registerAllocation = registerAllocation}
+	         | Operand.FltRegister return_register => 
+		      #registerAllocation
+		      (fltpush {value = {fltregister = return_register,
+					 memloc = return_memloc,
+					 weight = 1024,
+					 sync = false,
+					 commit = NO},
+				registerAllocation = registerAllocation})
+		 | _ => Error.bug "return")
+
+	    val (final_defs, defs) =
+	       List.fold
+	       (returns, ([],[]), fn ({src,dst},(final_defs,defs)) =>
+		(src::final_defs,(Operand.memloc dst)::defs))
+	    val {assembly = assembly_post,
+		 registerAllocation}
+	      = post {uses = [],
+		      final_uses = [],
+		      defs = defs,
+		      final_defs = final_defs,
+		      kills = [],
+		      info = info,
+		      registerAllocation = registerAllocation}
+	  in
+	    {assembly = assembly_post,
+	     registerAllocation = registerAllocation}
+	  end
+
+(*
       fun return {memloc = return_memloc,
 		  info: Liveness.t,
 		  registerAllocation: t}
@@ -6095,6 +6154,7 @@ struct
 	    {assembly = assembly_post,
 	     registerAllocation = registerAllocation}
 	  end
+*)
 
       fun clearflt {info: Liveness.t,
 		    registerAllocation: t}
@@ -10709,16 +10769,11 @@ struct
 		   => RegisterAllocation.ccall
 		      {info = info,
 		       registerAllocation = registerAllocation}
-		   | Return {memloc}
+		   | Return {returns}
 		   => RegisterAllocation.return
-		      {memloc = memloc,
+		      {returns = returns,
 		       info = info,
 		       registerAllocation = registerAllocation}
-		   | FltReturn {memloc}
-		   => RegisterAllocation.fltreturn
-		      {memloc = memloc,
-		       info = info,
-		       registerAllocation = registerAllocation}		      
 		   | Reserve {registers}
 		   => RegisterAllocation.reserve 
 		      {registers = registers,
