@@ -5,6 +5,14 @@
 # $FreeBSD$
 #
 
+#.include <bsd.port.pre.mk>
+
+#.if ${OSVERSION} < 500000
+#BOOT_VER=      20040227
+#.else
+BOOT_VER=      20040623
+#.endif
+
 # Because MLton is written in SML, it needs an SML compiler to build.
 # It is easiest to use another (earlier) binary version of MLton as
 # the SML compiler.  So, this Makefile fetches and installs an
@@ -28,7 +36,7 @@ LIB_DEPENDS=	gmp.6:${PORTSDIR}/math/libgmp4
 RUN_DEPENDS=	bash:${PORTSDIR}/shells/bash2
 
 SRC_DIST=	${DISTNAME}-1.freebsd.src.tgz
-BOOT_DIST=	${PORTNAME}-20040623-1.i386-freebsd.tbz
+BOOT_DIST=	${PORTNAME}-${BOOT_VER}-1.${MACHINE_ARCH}-freebsd.tbz
 
 ONLY_FOR_ARCHS=	i386
 
@@ -42,7 +50,7 @@ USE_REINPLACE=	yes
 ALL_TARGET=	all
 USE_GMAKE=	yes
 MAKE_ARGS=	DESTDIR='' \
-		PATH=${WRKSRC}/build/bin:${PREFIX}/bin:${BOOT_WRKSRC}/bin:${PATH} \
+		PATH=${WRKSRC}/build/bin:${BOOT_WRKSRC}/bin:${PATH} \
 		PREFIX=${PREFIX}
 
 PORTDIR=	usr/ports/lang/mlton
@@ -93,3 +101,4 @@ pkg-plist:
 		<${TMP_PLIST} >${PLIST}
 
 .include <bsd.port.mk>
+#.include <bsd.port.post.mk>
