@@ -18,11 +18,11 @@ $(AOUT): $(shell $(MLTON) -stop f mlton.cm)
 
 $(NAME).cm: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 	(								\
-		echo 'Group is';					\
+		echo 'Group is'&&					\
 		cmcat sources.cm | grep -v 'mlton-stubs-in-smlnj' |	\
-			grep mlyacc;					\
+			grep mlyacc &&					\
 		cmcat sources.cm | grep -v 'mlton-stubs-in-smlnj' |	\
-			grep -v mlyacc;					\
+			grep -v mlyacc &&				\
 		echo 'call-main.sml';					\
 	) >$(NAME).cm
 

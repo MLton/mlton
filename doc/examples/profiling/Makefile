@@ -6,7 +6,6 @@ all: profile
 .PHONY: profile
 profile: profiling mlmon.out
 	$(mlprof) profiling mlmon.out
-#	$(mlprof) -d 1 profiling mlmon.out
 
 mlmon.out: profiling
 	profiling

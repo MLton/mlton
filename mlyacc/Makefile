@@ -13,8 +13,8 @@ $(NAME): $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)
 
 $(NAME).cm: src/yacc.lex.sml src/yacc.grm.sig src/yacc.grm.sml
 	(								\
-		echo 'Group is';					\
-		cmcat sources.cm | grep -v 'mlton-stubs-in-smlnj';	\
+		echo 'Group is' &&					\
+		cmcat sources.cm | grep -v 'mlton-stubs-in-smlnj' &&	\
 		echo 'call-main.sml';					\
 	) >$(NAME).cm
 
