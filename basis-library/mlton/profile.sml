@@ -101,6 +101,14 @@ fun setCurrent (d as Data.T {isCurrent, isFreed, raw, ...}) =
 	    ()
 	 end
 
+fun withData (d: Data.t, f: unit -> 'a): 'a =
+   let
+      val old = current ()
+      val _ = setCurrent d
+   in
+      DynamicWind.wind (f, fn () => setCurrent old)
+   end
+
 fun init () = setCurrent (Data.make (P.current ()))
 
 val _ =
