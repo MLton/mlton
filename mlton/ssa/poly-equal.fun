@@ -106,7 +106,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
 	    SOME f => f
 	  | NONE =>
 	       let
-		  val name = Func.newString ("equal_" ^ (Tycon.originalName tycon))
+		  val name = Func.newString ("equal_" ^ Tycon.originalName tycon)
 		  val _ = setEqualFunc (tycon, SOME name)
 
 		  local
