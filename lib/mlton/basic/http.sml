@@ -71,9 +71,11 @@ structure Regexp =
       val fieldvalue' = Save.new ()
       val fieldvalue = star (or [fieldcontent, LWS])
       val messageheader =
-	 compileDFA (seq [fieldname, char #":",
-			  save (optional fieldvalue, fieldvalue'),
-			  CRLF])
+	 Promise.lazy
+	 (fn () =>
+	  compileDFA (seq [fieldname, char #":",
+			   save (optional fieldvalue, fieldvalue'),
+			   CRLF]))
       val method' = Save.new ()
       val method = save (token, method')
       val star' = Save.new ()
@@ -81,23 +83,28 @@ structure Regexp =
       val absPath' = Save.new ()
       val authority' = Save.new ()
       val query' = Save.new ()
-      val requestUri = let open Uri.Regexp
-		       in or [save (char #"*", star'),
-			     save (absoluteUri, absoluteUri'),
-			     seq [save (absPath, absPath'),
-				 optional (seq [char #"?", save (query, query')])],
-			     save (authority, authority')]
-		       end
+      val requestUri =
+	 let open Uri.Regexp
+	 in or [save (char #"*", star'),
+		save (absoluteUri, absoluteUri'),
+		seq [save (absPath, absPath'),
+		     optional (seq [char #"?", save (query, query')])],
+		save (authority, authority')]
+	 end
       val requestLine =
-	 compileDFA (seq [method, SP, requestUri, SP, version, CRLF])
-      val contentLength = compileDFA (oneOrMore DIGIT)
+	 Promise.lazy
+	 (fn () =>
+	  compileDFA (seq [method, SP, requestUri, SP, version, CRLF]))
+      val contentLength =
+	 Promise.lazy (fn () => compileDFA (oneOrMore DIGIT))
       val status' = Save.new ()
       val status = save (seq [DIGIT, DIGIT, DIGIT], status')
       val reason =
 	 star (isChar (fn c =>
 		     Char.isPrint c andalso c <> #"\r" andalso c <> #"\n"))
       val responseLine =
-	 compileDFA (seq [version, SP, status, SP, reason, CRLF])
+	 Promise.lazy
+	 (fn () => compileDFA (seq [version, SP, status, SP, reason, CRLF]))
    end
 
 structure Method =
@@ -314,7 +321,7 @@ structure Header =
 	   ("content-length",
 	    fn (s: string) =>
 	    let open Regexp
-	    in if Regexp.Compiled.matchesAll (contentLength, s)
+	    in if Regexp.Compiled.matchesAll (contentLength (), s)
 		  then Option.map (Int.fromString s, ContentLength)
 	       else NONE
 	    end),
@@ -355,7 +362,7 @@ structure Header =
 	       if i = n
 		  then Result.Yes (rev ac)
 	       else let open Regexp
-		    in case Compiled.matchLong (messageheader, s, i) of
+		    in case Compiled.matchLong (messageheader (), s, i) of
 		       NONE => no
 		     | SOME m => 
 			  let
@@ -417,7 +424,7 @@ structure Request =
 	 let
 	    open Regexp
 	 in Option.map
-	    (Compiled.matchAll (requestLine, s), fn m =>
+	    (Compiled.matchAll (requestLine (), s), fn m =>
 	     let
 		val {peek, lookup, exists, ...} = Match.stringFuns m
 		val method = Method.fromString (lookup method')
@@ -744,7 +751,7 @@ structure Response =
 	    val line = In.inputLine ins
 	    open Regexp
 	 in
-	    case Compiled.matchAll (responseLine, line) of
+	    case Compiled.matchAll (responseLine (), line) of
 	       NONE => Result.No line
 	     | SOME m => 
 		  let val {lookup, ...} = Match.stringFuns m

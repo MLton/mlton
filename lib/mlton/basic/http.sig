@@ -98,7 +98,7 @@ signature HTTP =
 	    val input: In.t -> t Result.t
 	    val layout: t -> Layout.t
 	    val output: t * Out.t -> unit
-	    val regexp: Regexp.Compiled.t
+	    val regexp: unit -> Regexp.Compiled.t
 	    val requestLine: string -> {method: Method.t,
 					uri: RequestUri.t,
 					version: Version.t} option
@@ -163,7 +163,7 @@ signature HTTP =
 	    val input: In.t -> t Result.t
 	    val layout: t -> Layout.t
 	    val output: t * Out.t -> unit
-	    val regexp: Regexp.Compiled.t
+	    val regexp: unit -> Regexp.Compiled.t
 	    val toString: t -> string
 	 end
       
@@ -194,7 +194,7 @@ open S
 val _ = 
    Assert.assert
    ("Http", fn () =>
-    Regexp.Compiled.matchesAll (Request.regexp,
+    Regexp.Compiled.matchesAll (Request.regexp (),
 				"CONNECT trading.etrade.com:443 HTTP/1.0\r\n")
     andalso
     isSome (Request.requestLine "GET http://Norma140.emp3.com/ HTTP/1.0\n")
