@@ -4107,7 +4107,7 @@ static uint stringToBytes (string s) {
 		goto bad;
 	}
 	d *= factor;
-	unless ('\000' == *endptr
+	unless (strlen (s) == endptr - s
 			and (double)INT_MIN <= d 
 			and d <= (double)INT_MAX)
 		goto bad;
