@@ -3,7 +3,7 @@ Section: devel
 Priority: optional
 Maintainer: Stephen Weeks <sweeks@sweeks.com>
 Build-Depends: hevea, mlton (>= 20020410.1), libgmp3-dev (>= 4.0.1), tetex-bin, tetex-extra, time
-Standards-Version: 3.6.0
+Standards-Version: 3.6.1
 
 Package: mlton
 Architecture: i386
