@@ -175,7 +175,7 @@ functor RealComparisons (type t
 			 val <= : t * t -> bool) =
    struct
       fun > (a, b) = < (b, a)
-      fun >= (a, b) = >= (b, a)
+      fun >= (a, b) = <= (b, a)
    end
 
 structure Primitive =
