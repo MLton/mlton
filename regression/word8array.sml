@@ -99,9 +99,9 @@ fun equal (v, v') =
       val n = Word8Vector.length v
       val n' = Word8Vector.length v'
       fun loop i =
-	 i < n
-	 andalso Word8Vector.sub (v, i) = Word8Vector.sub (v', i)
-	 andalso loop (i + 1)
+	 i = n
+	 orelse (Word8Vector.sub (v, i) = Word8Vector.sub (v', i)
+		 andalso loop (i + 1))
    in
       n = n' andalso loop 0
    end

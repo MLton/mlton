@@ -42,8 +42,20 @@ val a = fromList (List.map i2w [0,1,2,3,4,5,6]);
 val b = fromList (List.map i2w [44,55,66]);
 val c = fromList (List.map i2w [0,1,2,3,4,5,6]);
 
-val test1:unit = tst' "test1" (fn _ => a<>b);
-val test2:unit = tst' "test2" (fn _ => a=c);
+fun equal (v, v') =
+   let
+      val n = Word8Vector.length v
+      val n' = Word8Vector.length v'
+      fun loop i =
+	 i = n
+	 orelse (Word8Vector.sub (v, i) = Word8Vector.sub (v', i)
+		 andalso loop (i + 1))
+   in
+      n = n' andalso loop 0
+   end
+
+val test1:unit = tst' "test1" (fn _ => not (equal (a,b)));
+val test2:unit = tst' "test2" (fn _ => equal (a, c));
 
 val d = tabulate(100, fn i => i2w (i mod 7));
 
@@ -71,11 +83,12 @@ val test8:unit = tst' "test8" (fn _ => length (concat []) = 0);
 
 val f = extract (e, 100, SOME 3);
 
-val test9:unit = tst' "test9" (fn _ => f = b);
+val test9:unit = tst' "test9" (fn _ => equal (f, b));
 
-val test9a:unit = tst' "test9a" (fn _ => e = extract(e, 0, SOME (length e)) 
-			    andalso e = extract(e, 0, NONE));
-val test9b:unit = tst' "test9b" (fn _ => fromList [] = extract(e, 100, SOME 0));
+val test9a:unit = tst' "test9a" (fn _ => equal (e, extract(e, 0, SOME (length e))) 
+				 andalso equal (e, extract(e, 0, NONE)));
+val test9b:unit = tst' "test9b" (fn _ => equal (fromList [],
+						extract(e, 100, SOME 0)));
 val test9c:unit = tst0 "test9c" ((extract(e, ~1, SOME (length e))  seq "WRONG") 
 			    handle Subscript => "OK" | _ => "WRONG")
 val test9d:unit = tst0 "test9d" ((extract(e, length e + 1, SOME 0)  seq "WRONG") 
@@ -88,20 +101,20 @@ val test9g:unit = tst0 "test9g" ((extract(e, ~1, NONE)  seq "WRONG")
 			    handle Subscript => "OK" | _ => "WRONG")
 val test9h:unit = tst0 "test9h" ((extract(e, length e + 1, NONE)  seq "WRONG") 
 			    handle Subscript => "OK" | _ => "WRONG")
-val test9i:unit = tst' "test9i" (fn _ => fromList [] = extract(e, length e, SOME 0)
-			    andalso fromList [] = extract(e, length e, NONE));
+val test9i:unit = tst' "test9i" (fn _ => equal (fromList [], extract (e, length e, SOME 0))
+				 andalso equal (fromList [], extract(e, length e, NONE)));
 
-fun chkiter iter f vec reslast =
+fun chkiter iter f vec (res', last') =
     tst' "test_chkiter" (fn _ =>
 	   let val last = ref (0w255:word8)
 	       val res = iter (fn x => (last := x; f x)) vec
-	   in (res, !last) = reslast end)
+	   in equal (res, res') andalso !last = last' end)
 
-fun chkiteri iter f vec reslast =
+fun chkiteri iter f vec (res', last') =
     tst' "test_chkiteri" (fn _ =>
 	   let val last = ref ~1
 	       val res = iter (fn (i, x) => (last := i; f x)) vec
-	   in (res, !last) = reslast end)
+	   in equal (res, res') andalso  !last = last' end)
 
 val test10a:unit = 
     chkiter map (fn x => 0w2*x) b (fromList [0w88,0w110,0w132], 0w66)
