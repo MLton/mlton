@@ -33,6 +33,8 @@ introduce-loops.fun
 introduce-loops.sig
 local-flatten.fun
 local-flatten.sig
+loop-invariant.fun
+loop-invariant.sig
 poly-equal.fun
 poly-equal.sig
 redundant.fun

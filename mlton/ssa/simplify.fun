@@ -15,7 +15,7 @@ structure ImplementHandlers = ImplementHandlers (S)
 structure Inline = Inline (S)
 structure IntroduceLoops = IntroduceLoops (S)
 structure LocalFlatten = LocalFlatten (S)
-(* structure LoopInvariant = LoopInvariant (S) *)
+structure LoopInvariant = LoopInvariant (S)
 structure PolyEqual = PolyEqual (S)
 structure Redundant = Redundant (S)
 structure RedundantTests = RedundantTests (S)
@@ -67,20 +67,21 @@ val passes =
      ("removeUnusedX6", RemoveUnused.remove),
      ("introduceLoops", IntroduceLoops.introduceLoops),
      ("removeUnusedX7", RemoveUnused.remove),
-(*    ("loopInvariant", LoopInvariant.loopInvariant), *)
+     ("loopInvariant", LoopInvariant.loopInvariant),
+     ("removeUnusedX8", RemoveUnused.remove),
      (* flatten cannot be omitted.  It ensures(?) that no spurious
       * allocations occur between allocation of an intInf return 
       * and the call to the primitive.
       *)
 (*    ("flatten", Flatten.flatten), *)
      ("localFlatten3", LocalFlatten.flatten),
-     ("removeUnusedX8", RemoveUnused.remove),
-     ("commonSubexp", CommonSubexp.eliminate),
      ("removeUnusedX9", RemoveUnused.remove),
-     ("commonBlock", CommonBlock.eliminate),
+     ("commonSubexp", CommonSubexp.eliminate),
      ("removeUnusedX10", RemoveUnused.remove),
-     ("redundantTests", RedundantTests.simplify),
+     ("commonBlock", CommonBlock.eliminate),
      ("removeUnusedX11", RemoveUnused.remove),
+     ("redundantTests", RedundantTests.simplify),
+     ("removeUnusedX12", RemoveUnused.remove),
      ("redundant", Redundant.redundant),
      (* removeUnused cannot be omitted.
       * The final shrink pass ensures that constant operands are
