@@ -108,10 +108,9 @@ fun mkLexAndParse () =
 				  | c::s => loopVar (s, c::acc)
 			      val (s, var) = loopVar (s, [])
 			   in
-			      loop (s, [],
-				    case OS.Process.getEnv var of
-				       NONE => accs
-				     | SOME p => p::accs)
+			      case OS.Process.getEnv var of
+				 NONE => loop (s, [], accs)
+			       | SOME p => loop ((String.explode p) @ s, [], accs)
 			   end
 		      | c::s => loop (s, c::acc, accs)
 	       in
