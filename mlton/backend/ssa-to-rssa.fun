@@ -146,26 +146,27 @@ structure CFunction =
       local
 	 val int = ("Int", CType.Int, IntSize.memoize, IntSize.toString)
 	 val word = ("Word", CType.Word, WordSize.memoize, WordSize.toString)
+	 val wordX = ("WordX", CType.Word, WordSize.memoize, WordSize.toString)
 	 fun make ((fromName, fromType, fromMemo, fromString),
 		   (toName, toType, toMemo, toString)) =
-	    let
-	       val f =
-		  fromMemo
-		  (fn s1 =>
-		   toMemo
-		   (fn s2 =>
-		    vanilla {args = Vector.new1 (fromType s1),
-			     name = concat [fromName, fromString s1,
-					    "_to", toName, toString s2],
-			     return = SOME (toType s2)}))
-	    in
-	       fn (s1, s2) => f s1 s2
-	    end
+	    fn (s1, s2) =>
+	    vanilla {args = Vector.new1 (fromType s1),
+		     name = concat [fromName, fromString s1,
+				    "_to", toName, toString s2],
+		     return = SOME (toType s2)}
       in
 	 val intToInt = make (int, int)
 	 val intToWord = make (int, word)
 	 val wordToInt = make (word, int)
+	 val wordToWord = make (word, word)
       end
+
+      fun wordToWordX (s1, s2) =
+	 vanilla {args = Vector.new1 (CType.Word s1),
+		  name = concat ["Word", WordSize.toString s1,
+				 "_toWord", WordSize.toString s2,
+				 "X"],
+		  return = SOME (CType.Word s2)}
    
       local
 	 fun make name =
@@ -1216,17 +1217,16 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 						simpleCCall
 						(CFunction.intToInt (s1, s2))
 					  else normal ()
-				       val id = cast
 				       val s1 = IntSize.roundUpToPrim s1
 				       val s2 = IntSize.roundUpToPrim s2
 				       val b1 = IntSize.bits s1
 				       val b2 = IntSize.bits s2
 				    in
-				       if b1 = 64 orelse b2 = 64
-					  then call ()
-				       else if b1 = b2
-					       then id ()
-					    else primApp (Prim.intToInt (s1, s2))
+				       if b1 = b2
+					  then cast ()
+				       else if b1 = 64 orelse b2 = 64
+					       then call ()
+				       else primApp (Prim.intToInt (s1, s2))
 				    end
 			       | Int_toWord (s1, s2) =>
 				    if (case (IntSize.prim s1,
@@ -1452,6 +1452,12 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			       | Word_toIntInf => cast ()
 			       | Word_toWord (s1, s2) =>
 				    let
+				       fun call () =
+					  if !Control.Native.native
+					     then
+						simpleCCall
+						(CFunction.wordToWord (s1, s2))
+					  else normal ()
 				       val s1 = WordSize.roundUpToPrim s1
 				       val s2 = WordSize.roundUpToPrim s2
 				       val b1 = WordSize.bits s1
@@ -1459,7 +1465,21 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				    in
 				       if b1 = b2
 					  then cast ()
+				       else if b1 = 64 orelse b2 = 64
+					       then call ()
 				       else primApp (Prim.wordToWord (s1, s2))
+				    end
+			       | Word_toWordX (s1, s2) =>
+				    let
+				       val b1 = WordSize.bits s1
+				       val b2 = WordSize.bits s2
+				    in
+				       if (b1 = 64 orelse b2 = 64)
+					  andalso (!Control.Native.native)
+					  then
+					     simpleCCall
+					     (CFunction.wordToWordX (s1, s2))
+				       else normal ()
 				    end
 			       | WordVector_toIntInf => cast ()
 			       | Word8Array_subWord => sub Type.defaultWord

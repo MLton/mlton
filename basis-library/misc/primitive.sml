@@ -1441,8 +1441,8 @@ structure Primitive =
 	    val toChar = _prim "Word8_toChar": word -> char;
 	    val toInt = _prim "Word8_toInt32": word -> int;
 	    val toIntX = _prim "Word8_toInt32X": word -> int;
-	    val toLarge = _import "Word8_toWord64": word -> LargeWord.word;
-	    val toLargeX = _import "Word8_toWord64X": word -> LargeWord.word;
+	    val toLarge = _prim "Word8_toWord64": word -> LargeWord.word;
+	    val toLargeX = _prim "Word8_toWord64X": word -> LargeWord.word;
 	    val xorb = _prim "Word8_xorb": word * word -> word;
 	 end
 
@@ -1496,8 +1496,8 @@ structure Primitive =
 	    val - = _prim "Word16_sub": word * word -> word;
 	    val toInt = _prim "Word16_toInt32": word -> int;
 	    val toIntX = _prim "Word16_toInt32X": word -> int;
-	    val toLarge = _import "Word16_toWord64": word -> LargeWord.word;
-	    val toLargeX = _import "Word16_toWord64X": word -> LargeWord.word;
+	    val toLarge = _prim "Word16_toWord64": word -> LargeWord.word;
+	    val toLargeX = _prim "Word16_toWord64X": word -> LargeWord.word;
 	    val xorb = _prim "Word16_xorb": word * word -> word;
 	 end
 
@@ -1530,8 +1530,8 @@ structure Primitive =
 	    val - = _prim "Word32_sub": word * word -> word;
 	    val toInt = _prim "Word32_toInt32": word -> int;
 	    val toIntX = _prim "Word32_toInt32X": word -> int;
-	    val toLarge = _import "Word32_toWord64": word -> LargeWord.word;
-	    val toLargeX = _import "Word32_toWord64X": word -> LargeWord.word;
+	    val toLarge = _prim "Word32_toWord64": word -> LargeWord.word;
+	    val toLargeX = _prim "Word32_toWord64X": word -> LargeWord.word;
 	    val xorb = _prim "Word32_xorb": word * word -> word;
 	 end
       structure Word = Word32
