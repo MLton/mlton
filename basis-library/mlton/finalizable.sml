@@ -17,7 +17,7 @@ datatype 'a t = T of {afters: (unit -> unit) list ref,
 
 fun touch (r: 'a ref) =
    if r = ref (!r)
-      then print "bug\n"
+      then raise Fail "Finalize.touch bug\n"
    else ()
 	    
 fun withValue (T {value, ...}, f) =
