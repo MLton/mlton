@@ -31,11 +31,7 @@ signature MLTON_THREAD_EXTRA =
    sig
       include MLTON_THREAD
 
+      val amInSignalHandler: unit -> bool
       val setHandler: (unit t -> unit t) -> unit
-
-      datatype state =
-	 Normal
-       | InHandler
-	 
-      val state: state ref
+      val switchToHandler: unit -> unit
    end

@@ -6,6 +6,7 @@ signature POSIX_SIGNAL
 #endif   
 structure Array
 structure Array2
+structure BinIO
 structure Bool
 structure Byte
 structure Char
@@ -61,6 +62,7 @@ import.cm
 
 array.sml
 array2.sml
+bin-io.sml
 char.sml
 date.sml
 int-inf-sig.cm

@@ -9,10 +9,12 @@ is
 ../mlton-stubs-in-smlnj/sources.cm
 
 array.sig
+bin-io.sig
 cont.sig
 exn.sig
 gc.sig
 int-inf.sig
+io.sig
 itimer.sig
 mlton.sig
 mlton.sml
@@ -21,6 +23,7 @@ process.sig
 profile.sig
 ptrace.sig
 random.sig
+random.sml
 rlimit.sig
 rusage.sig
 signal.sig

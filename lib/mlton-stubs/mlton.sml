@@ -6,6 +6,27 @@
  * Please see the file MLton-LICENSE for license information.
  *)
 
+functor IO (S : sig
+		   type instream
+		   type outstream
+		   val openOut: string -> outstream
+		end) =
+   struct
+      open S
+
+      fun inFd _ = raise Fail "inFd"
+      fun mkstemps {prefix, suffix} =
+	 let
+	    val name = concat [prefix, Random.alphaNumString 6, suffix]
+	 in (name, openOut name)
+	 end
+      fun mkstemp s = mkstemps {prefix = s, suffix = ""}
+      fun newIn _ = raise Fail "newIn"
+      fun newOut _ = raise Fail "newOut"
+      fun outFd _ = raise Fail "outFd"
+      fun setIn _ = raise Fail "setIn"
+   end
+
 (* This file is just a dummy provided in place of the structure that MLton
  * supplies so that we can compile under SML/NJ.
  *) 
@@ -41,6 +62,8 @@ structure MLton: MLTON =
 	       end
 	 end
       
+      structure BinIO = IO (BinIO)
+
       structure Cont =
 	 struct
 	    type 'a t = unit
@@ -61,9 +84,11 @@ structure MLton: MLTON =
       structure GC =
 	 struct
 	    fun collect _ = ()
+	    fun pack _ = ()
 	    fun setMessages _ = ()
 	    fun setSummary _ = ()
 	    fun time _ = Time.zeroTime
+	    fun unpack _ = ()
 	 end
 
       structure IntInf =
@@ -74,7 +99,10 @@ structure MLton: MLTON =
 	       Small of Word.word
 	     | Big of Word.word Vector.vector
 
+	    val areSmall =
+	       fn _ => raise Fail "MLton.IntInf.areSmall unimplemented"
 	    val gcd = fn _ => raise Fail "MLton.IntInf.gcd unimplemented"
+	    val isSmall = fn _ => raise Fail "MLton.IntInf.isSmall unimplemented"
 	    val rep = fn _ => raise Fail "MLton.IntInf.rep unimplemented"
 	    val size = fn _ => raise Fail "MLton.IntInf.size unimplemented"
 	 end
@@ -147,58 +175,13 @@ structure MLton: MLTON =
 	    fun sysCall _ = raise Fail "sysCall"
 	 end
 
-      structure Random =
-	 struct
-	    fun seed _ = 0w13: Word32.word
-	    fun useed _ = 0w13: Word32.word
-	    local
-	       val seed: word ref = ref 0w13
-	    in
-	       (* From page 284 of Numerical Recipes in C. *)
-	       fun rand (): word =
-		  let
-		     val res = 0w1664525 * !seed + 0w1013904223
-		     val _ = seed := res
-		  in
-		     res
-		  end
-
-	       fun srand (w: word): unit = seed := w
-
-	       structure String =
-		  struct
-		     open String
-			
-		     val tabulate = CharVector.tabulate
-		  end
-	       local
-		  val chars =
-		     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-		  val n = Word.fromInt (String.size chars)
-		  val r: word ref = ref 0w0
-	       in
-		  fun alphaNumString (length: int) =
-		     String.tabulate
-		     (length, fn i =>
-		      let
-			 val _ =
-			    if 0 = Int.quot (i, 6) (* n^6 = 62^6 = 965,660,736 *)
-			       then r := rand ()
-			    else ()
-			 val w = !r
-			 val c = String.sub (chars, Word.toInt (Word.mod (w, n)))
-			 val _ = r := Word.div (w, n)
-		      in
-			 c
-		      end)
-	       end
-	    end
-	 end
+      structure Random = Random
 
       structure Rlimit =
 	 struct
 	    type rlim = Word.word
 	       
+
 	    val infinity: rlim = 0w0
 
 	    type resource = int
@@ -365,23 +348,7 @@ structure MLton: MLTON =
 	    val openlog = fn _ => raise Fail "Syslog.openlog"
 	 end
 
-      structure TextIO =
-	 struct
-	    fun equalsIn _ = raise Fail "equalsIn"
-	    fun equalsOut _ = raise Fail "equalsOut"
-	    fun inFd _ = raise Fail "inFd"
-	    fun tempName _ = raise Fail "MLton.textIO.tempName"
-	    fun mkstemps {prefix, suffix} =
-	       let
-		  val name = concat [prefix, Random.alphaNumString 6, suffix]
-	       in (name, TextIO.openOut name)
-	       end
-	    fun mkstemp s = mkstemps {prefix = s, suffix = ""}
-	    fun newIn _ = raise Fail "newIn"
-	    fun newOut _ = raise Fail "newOut"
-	    fun outFd _ = raise Fail "outFd"
-	    fun setIn _ = raise Fail "setIn"
-	 end
+      structure TextIO = IO (TextIO)
 
       structure Thread = Thread
 
