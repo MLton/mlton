@@ -551,9 +551,10 @@ fun attribute (AFile.T {data, etext = e, start = s},
 			       IntInf.+ (ticks, count), l, buckets')
 	  end
     in
-      loop (ProfileInfo.T ([{data = {name = (case kind of
-						Kind.Alloc => "<runtime>"
-					      | Kind.Time => "<unknown>")},
+      loop (ProfileInfo.T ([{data = {name =
+				     (case kind of
+					 Kind.Alloc => "<runtime>"
+				       | Kind.Time => "<shared libraries>")},
 			     minor = ProfileInfo.T []}]),
 	    IntInf.fromInt 0, data, buckets)
     end
