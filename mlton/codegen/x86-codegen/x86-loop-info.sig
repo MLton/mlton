@@ -24,5 +24,7 @@ signature X86_LOOP_INFO =
     val getLoopForest : t -> x86.Label.t list Tree.t list
     val getLoopTreeAt : t * x86.Label.t -> {up: x86.Label.t list Tree.t,
 					    down: x86.Label.t list Tree.t} option
+    val getLoopDepth : t * x86.Label.t -> int option
+    val isLoopHeader : t * x86.Label.t -> bool
     val getLoopDistance : t * x86.Label.t * x86.Label.t -> int option
   end

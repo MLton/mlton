@@ -12,7 +12,8 @@ struct
 
   datatype t = T of {loopForest : Label.t list Tree.t list,
 		     getLoopInfo : Label.t -> 
-		                   {treeAt: {up: Label.t list Tree.t,
+		                   {loopHeader: bool,
+				    treeAt: {up: Label.t list Tree.t,
 					     down: Label.t list Tree.t} option}}
     
   fun createLoopInfo {chunk = Chunk.T {blocks, ...}, farLoops}
@@ -38,7 +39,8 @@ struct
 
 	val loopInfo as {get = getLoopInfo : 
 			       Label.t -> 
-			       {treeAt: {up: x86.Label.t list Tree.t,
+			       {loopHeader: bool,
+				treeAt: {up: x86.Label.t list Tree.t,
 					 down: x86.Label.t list Tree.t} option},
 			 set = setLoopInfo, ...}
 	  = Property.getSetOnce
@@ -109,7 +111,7 @@ struct
 		      => (doit' return)
 		 end)
 
-	val {forest, graphToForest, loopNodes, parent}
+	val {forest, graphToForest, headers, isHeader, loopNodes, parent}
 	  = Graph.loopForestSteensgaard {graph = G, root = root}
 
 	val loopForest
@@ -147,19 +149,22 @@ struct
 			     end)
 
 		    val up = Tree.T (loopLabels, Vector.fromList up)
-		    val down =
-		       Tree.T (loopLabels, 
-			       Vector.fromListMap
-			       (unfinished_nodes, fn node =>
-				doit {node = node, up = [up]}))
+		    val down 
+		      = Tree.T (loopLabels, 
+				Vector.fromListMap
+				(unfinished_nodes, fn node =>
+				 doit {node = node, up = [up]}))
 		  in
 		    List.foreach
 		    (finished_nodes, 
 		     fn node => let
-				  val l = getNodeInfo (hd (loopNodes node))
+				  val node' = hd (loopNodes node)
 				in 
-				  setLoopInfo(l, {treeAt = SOME {up = up, 
-								 down = down}})
+				  setLoopInfo
+				  (getNodeInfo node', 
+				   {loopHeader = isHeader node',
+				    treeAt = SOME {up = up, 
+						   down = down}})
 				end) ;
 		    down
 		  end
@@ -167,9 +172,11 @@ struct
 	      List.foreach
 	      (finished_roots,
 	       fn node => let
-			    val l = getNodeInfo (hd (loopNodes node))
+			    val node' = hd (loopNodes node)
 			  in 
-			    setLoopInfo(l, {treeAt = NONE})
+			    setLoopInfo(getNodeInfo node', 
+					{loopHeader = isHeader node',
+					 treeAt = NONE})
 			  end) ;
 	      List.map
 	      (unfinished_roots,
@@ -189,6 +196,24 @@ struct
   fun getLoopTreeAt (T {getLoopInfo, ...}, label) = #treeAt (getLoopInfo label)
 
   fun getLoopForest (T {loopForest, ...}) = loopForest
+
+  fun getLoopDepth (T {getLoopInfo, ...}, l)
+    = (case (#treeAt (getLoopInfo l))
+	 of NONE => NONE
+          | SOME {up, ...}
+	  => let
+	       fun depth' (Tree.T (labels, tree), d)
+		 = (case Vector.length tree
+		      of 0 => d
+		       | 1 => depth' (Vector.sub (tree, 0), d + 1)
+		       | _ => Error.bug "x86LoopInfo:depth'")
+	       fun depth tree = depth' (tree, 0: int)
+	     in
+	       SOME (depth up)
+	     end)
+
+  fun isLoopHeader (T {getLoopInfo, ...}, l)
+    = #loopHeader (getLoopInfo l)
 
   fun getLoopDistance (T {getLoopInfo, ...}, from, to)
     = (case (#treeAt (getLoopInfo from), #treeAt (getLoopInfo to))
