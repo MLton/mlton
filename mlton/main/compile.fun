@@ -429,57 +429,50 @@ fun layoutBasisLibrary () =
 fun elaborate {input: File.t list} =
    let
       fun parseElabMsg () = (lexAndParseMsg (); elaborateMsg ())
+      val {basis, prefix, suffix, ...} = selectBasisLibrary ()
+      val _ = Elaborate.allowRebindEquals := false
+      fun parseAndElab () =
+	 parseAndElaborateFiles (input, basisEnv, lookupConstantError)
+      val input =
+	 if !Control.showBasisUsed
+	    then let
+		    val _ = Elaborate.Env.scopeAll (basisEnv, parseAndElab)
+		    val _ = Layout.outputl (Elaborate.Env.layoutUsed basisEnv,
+					    Out.standard)
+		 in
+		    Process.succeed ()
+		 end
+	 else parseAndElab ()
+      val _ =
+	 if not (!Control.exportHeader)
+	    then ()
+	 else 
+	    let
+	       val _ =
+		  File.outputContents
+		  (concat [!Control.libDir, "/include/types.h"],
+		   Out.standard)
+	       val _ = print "\n"
+	       val _ = Ffi.declareHeaders {print = print}
+	    in
+	       Process.succeed ()
+	    end
+      val user = Decs.appends [prefix, input, suffix]
+      val _ = parseElabMsg ()
+      val basis = Decs.toList basis
+      val user = Decs.toList user
+      val basis = 
+	 Control.pass
+	 {name = "deadCode",
+	  suffix = "basis",
+	  style = Control.ML,
+	  thunk = fn () => DeadCode.deadCode {basis = basis,
+					      user = user},
+	  display = Control.Layout (List.layout CoreML.Dec.layout)}
       val decs =
-	 let 
-	    val {basis, prefix, suffix, ...} = selectBasisLibrary ()
-	    val _ = Elaborate.allowRebindEquals := false
-	    fun parseAndElab () =
-	       parseAndElaborateFiles (input, basisEnv, lookupConstantError)
-	    val input =
-	       if !Control.showBasisUsed
-		  then let
-			  val input =
-			     Elaborate.Env.scopeAll (basisEnv, parseAndElab)
-			  val _ =
-			     Layout.outputl
-			     (Elaborate.Env.layoutUsed basisEnv,
-			      Out.standard)
-		       in
-			  Process.succeed ()
-		       end
-	       else
-		  parseAndElab () 
-	    val _ =
-	       if not (!Control.exportHeader)
-		  then ()
-	       else 
-		  let
-		     val _ =
-			File.outputContents
-			(concat [!Control.libDir, "/include/types.h"],
-			 Out.standard)
-		     val _ = print "\n"
-		     val _ = Ffi.declareHeaders {print = print}
-		  in
-		     Process.succeed ()
-		  end
-	    val user = Decs.appends [prefix, input, suffix]
-	    val _ = parseElabMsg ()
-	    val basis = Decs.toList basis
-	    val user = Decs.toList user
- 	    val basis = 
- 	       Control.pass
- 	       {name = "deadCode",
- 		suffix = "basis",
- 		style = Control.ML,
- 		thunk = fn () => DeadCode.deadCode {basis = basis,
- 						    user = user},
- 		display = Control.Layout (List.layout CoreML.Dec.layout)}
-	 in
-	    Vector.concat [primitiveDecs,
-			   Vector.fromList basis,
-			   Vector.fromList user]
-	 end
+	 Vector.concat [primitiveDecs,
+			Vector.fromList basis,
+			Vector.fromList user]
       val coreML = CoreML.Program.T {decs = decs}
 (*       val _ = Control.message (Control.Detail, fn () =>
  * 			       CoreML.Program.layoutStats coreML)
