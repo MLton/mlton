@@ -2,6 +2,8 @@ Here are the changes from version 20020923.
 
 * 2002-10-31
   - Eliminated MLton.debug.
+  - Fixed bug in the optimizer that affected IntInf.fmt.  The optimizer
+    had been always using base 10, instead of the passed in radix.
 
 * 2002-09-30
   - Fixed rpath problem with packaging.  All executables in packages previously

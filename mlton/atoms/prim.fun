@@ -1115,8 +1115,18 @@ fun 'a apply (p, args, varEquals) =
 	 in
 	    case (name, args) of
 	       (IntInf_neg, [Const (IntInf i), _]) => intInf (IntInf.~ i)
-	     | (IntInf_toString, [Const (IntInf i), _, _]) =>
-		  string (IntInf.toString i)
+	     | (IntInf_toString, [Const (IntInf i), Const (Int base), _]) =>
+		  let
+		     val base =
+			case base of
+			   2 => StringCvt.BIN
+			 | 8 => StringCvt.OCT 
+			 | 10 => StringCvt.DEC
+			 | 16 => StringCvt.HEX
+			 | _ => Error.bug "strange base for IntInf_toString"
+		  in
+		     string (IntInf.format (i, base))
+		  end
 	     | (_, [Con {con = c, hasArg = h}, Con {con = c', hasArg = h'}]) =>
 		  if name = MLton_equal orelse name = MLton_eq
 		     then if Con.equals (c, c')
