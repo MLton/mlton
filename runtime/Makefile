@@ -357,7 +357,6 @@ libmlton-gdb.a: $(DEBUG_OBJS)
 .PHONY: clean
 clean:
 	../bin/clean
-	rm -f gmp.h
 
 .PHONY: depend
 depend:
