@@ -1423,8 +1423,7 @@ struct
 		     
 		   val tempP 
 		     = let
-			 val index 
-			   = x86.Immediate.const_int (offset + wordBytes)
+			 val index = x86.Immediate.const_int offset
 			 val memloc 
 			   = x86.MemLoc.simple 
 			     {base = x86MLton.gcState_stackTopContents, 
@@ -1443,7 +1442,7 @@ struct
 		     {entry = NONE,
 		      profileInfo = x86.ProfileInfo.none,
 		      statements 
-		      = [(* exnStack = *(stackTop + offset + wordSize) *)
+		      = [(* exnStack = *(stackTop + offset) *)
 			 x86.Assembly.instruction_mov 
 			 {dst = exnStack,
 			  src = tempP,

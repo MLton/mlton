@@ -884,8 +884,8 @@ struct
 		       = x86MLton.gcState_currentThread_exnStackContentsOperand
 		     val stackTop 
 		       = x86MLton.gcState_stackTopContentsOperand
-		     val stackTopMinusWordDeref
-		       = x86MLton.gcState_stackTopMinusWordDerefOperand
+		     val stackTopDeref
+		       = x86MLton.gcState_stackTopDerefOperand
 		     val stackBottom 
 		       = x86MLton.gcState_stackBottomContentsOperand
 		    in
@@ -903,9 +903,9 @@ struct
 			  src = exnStack,
 			  size = pointerSize}])
 		       (AppendList.single
-			(* jmp *(stackTop - WORD_SIZE) *)
+			(* jmp *(stackTop) *)
 			(x86.Assembly.instruction_jmp
-			 {target = stackTopMinusWordDeref,
+			 {target = stackTopDeref,
 			  absolute = true})))
 		    end
 		| Runtime {prim, args, return, size}
@@ -1047,7 +1047,8 @@ struct
 			   val (thread,threadsize)
 			     = case args
 				 of [_, (thread,threadsize)] => (thread,threadsize)
-				  | _ => Error.bug "x86GenerateTransfers::Runtime: args"
+				  | _ => Error.bug 
+				         "x86GenerateTransfers::Runtime: args"
 
 			   val threadTemp
 			     = x86MLton.threadTempContentsOperand
@@ -1111,16 +1112,11 @@ struct
 			      dead_memlocs = MemLocSet.empty,
 			      dead_classes = threadflushClasses},
 			     (* currentThread->stack->used
-			      *   = stackTop + wordSize - stackBottom
+			      *   = stackTop - stackBottom
 			      *)
 			     Assembly.instruction_mov
 			     {dst = stack_used,
 			      src = stackTop,
-			      size = pointerSize},
-			     Assembly.instruction_binal
-			     {oper = Instruction.ADD,
-			      dst = stack_used,
-			      src = Operand.immediate_const_int x86MLton.wordBytes,
 			      size = pointerSize},
 			     Assembly.instruction_binal
 			     {oper = Instruction.SUB,
@@ -1142,8 +1138,7 @@ struct
 			      dst = stackBottom,
 			      src = Operand.immediate_const_int 8,
 			      size = pointerSize},
-			     (* stackTop
-			      *   = stackBottom + currentThread->stack->used - wordSize
+			     (* stackTop = stackBottom + currentThread->stack->used
 			      *)
 			     Assembly.instruction_mov
 			     {dst = stackTop,
@@ -1153,11 +1148,6 @@ struct
 			     {oper = Instruction.ADD,
 			      dst = stackTop,
 			      src = stack_used,
-			      size = pointerSize},
-			     Assembly.instruction_binal
-			     {oper = Instruction.SUB,
-			      dst = stackTop,
-			      src = Operand.immediate_const_int x86MLton.wordBytes,
 			      size = pointerSize},
 			     (* stackLimit
 			      *   = stackBottom + currentThread->stack->reserved
