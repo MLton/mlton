@@ -570,9 +570,8 @@ fun commandLine (args: string list): unit =
 	       (rest, fn f =>
 		if List.exists ([".c", ".o", ".s", ".S"], fn suffix =>
 				String.isSuffix {string = f, suffix = suffix})
-		   andalso File.canRead f
-		   then ()
-		else usage (concat ["invalid file: ", f]))
+		   then File.withIn (f, fn _ => ())
+		else usage (concat ["invalid file suffix: ", f]))
 	    val csoFiles = rest
 	    val stop = !stop
 	 in
