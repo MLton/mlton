@@ -350,6 +350,10 @@ libmlton.a: $(OBJS)
 libmlton-gdb.a: $(DEBUG_OBJS)
 	$(AR) libmlton-gdb.a $(DEBUG_OBJS)
 
+# gcc 3.2 is buggy when compiling Real.c with -O2
+basis/Real.o: basis/Real.c
+	$(CC) $(CFLAGS) -O1 -c -o $@ $<
+
 %-gdb.o: %.c
 	$(CC) $(DEBUGFLAGS) -DASSERT=1 -c -o $@ $<
 
