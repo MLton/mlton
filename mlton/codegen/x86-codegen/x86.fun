@@ -597,10 +597,14 @@ struct
 	  = fn T {immediate, ...} => immediate
 
 	fun clearAll ()
-(*
-	  = (table := HashSet.new {hash = hash})
-*)
-	  = ()
+	  = HashSet.foreach
+	    (!table, fn T {immediate, plist, ...} =>
+	     let in
+	       PropertyList.clear plist;
+	       case immediate
+		 of Label l => Label.clear l
+		  | _ => ()
+	     end)
       end
 
       val const = construct o Const
@@ -883,15 +887,11 @@ struct
 	     => memloc
 
 	fun clearAll ()
-(*
-	  = (HashSet.foreach
-	     (!table, 
-	      fn T {plist, ...} 
-	       => PropertyList.clear plist) ;
-	     table := HashSet.new {hash = hash} ;
-	     Counter.reset (counter, 0))
-*)
-	  = ()
+	  = HashSet.foreach
+	    (!table, fn T {plist, ...} =>
+	     let in
+	       PropertyList.clear plist
+	     end)
       end
 
       val rec mayAliasImmIndex 
