@@ -2,6 +2,10 @@ Here are the changes since version 20030312.
 
 At this point, the only missing basis library function is "use".
 
+* 2003-06-04
+  - Fixed bug in known case SSA optimization that could case incorrect 
+    results in compiled programs.
+	
 * 2003-06-03
   - Fixed bug in SSA optimizer that could cause the error message
 	Type error: Type.equals
