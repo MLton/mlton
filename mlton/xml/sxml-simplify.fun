@@ -93,8 +93,9 @@ local
 
    val passGens =
       polyvariancePassGen ::
-      (List.map([("shrink", S.shrink),
-		 ("implementExceptions", ImplementExceptions.doit)], 
+      (List.map([("sxmlShrink", S.shrink),
+		 ("implementExceptions", ImplementExceptions.doit), 
+		 ("implementSuffix", ImplementSuffix.doit)],
 		mkSimplePassGen))
 
    fun sxmlPassesSet s =

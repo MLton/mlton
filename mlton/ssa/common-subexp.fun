@@ -113,16 +113,15 @@ fun eliminate (Program.T {globals, datatypes, functions, main}) =
       (* The hash-cons'ing of globals in ConstantPropagation ensures
        *  that each global is unique.
        *)
-      val _
-	= Vector.foreach
-	  (globals,
-	   fn Statement.T {var, exp, ...}
-	    => let
-		 val exp = canon exp
-		 val _ = lookup (valOf var, exp, Exp.hash exp)
-	       in
-		 ()
-	       end)
+      val _ = 
+	 Vector.foreach
+	 (globals, fn Statement.T {var, exp, ...} => 
+	  let
+	     val exp = canon exp
+	     val _ = lookup (valOf var, exp, Exp.hash exp)
+	  in
+	     ()
+	  end)
 
       fun doitTree tree =
 	 let

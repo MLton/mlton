@@ -18,7 +18,7 @@ type int = Int.t
  * For each datatype tycon and vector type, it builds an equality function and
  * translates calls to = into calls to that function.
  *
- * Also generates calls to primitives intEqual, intInfEqual, and wordEqual.
+ * Also generates calls to primitives intInfEqual and wordEqual.
  *
  * For tuples, it does the equality test inline.  I.E. it does not create
  * a separate equality function for each tuple type.

@@ -182,7 +182,7 @@ fun checkScopes (program as
       ()
    end
 
-val checkScopes = Control.trace (Control.Pass, "checkScopes") checkScopes
+val checkScopes = Control.trace (Control.Detail, "checkScopes") checkScopes
 
 structure Function =
    struct
@@ -310,7 +310,7 @@ structure Function =
 fun checkProf (Program.T {functions, ...}): unit =
    List.foreach (functions, fn f => Function.checkProf f)
 
-val checkProf = Control.trace (Control.Pass, "checkProf") checkProf
+val checkProf = Control.trace (Control.Detail, "checkProf") checkProf
 
 fun typeCheck (program as Program.T {datatypes, ...}): unit =
    let
@@ -417,5 +417,7 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
    in
       ()
    end
+
+val typeCheck = Control.trace (Control.Pass, "typeCheck") typeCheck
 
 end

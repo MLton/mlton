@@ -40,11 +40,11 @@ signature LAMBDA_FREE =
        * lambdaRec(fn z =>) = [f]
        *)
       val lambdaFree:
-	 Program.t
-	 * Var.t
-	 * (Var.t -> {frees: Var.t list ref ref,
-		      status: Status.t ref})
-	 * (Lambda.t -> {frees: Var.t vector ref,
-			 recs: Var.t vector ref})
+	 {program: Program.t,
+	  overflow: Var.t,
+	  varInfo: Var.t -> {frees: Var.t list ref ref,
+			     status: Status.t ref},
+	  lambdaInfo: Lambda.t -> {frees: Var.t vector ref,
+				   recs: Var.t vector ref}}
 	 -> unit
    end

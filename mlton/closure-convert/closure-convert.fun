@@ -376,14 +376,14 @@ fun closureConvert
       val _ =
 	 Control.trace (Control.Pass, "free variables")
 	 LambdaFree.lambdaFree
-	 (program,
-	  overflow,
-	  fn x => let val {frees, status, ...} = varInfo x
-		  in {frees = frees, status = status}
-		  end,
-          fn l => let val LambdaInfo.T {frees, recs, ...} = lambdaInfo l
-		  in {frees = frees, recs = recs}
-		  end)
+	 {program = program,
+	  overflow = overflow,
+	  varInfo = fn x => let val {frees, status, ...} = varInfo x
+			    in {frees = frees, status = status}
+			    end,
+	  lambdaInfo = fn l => let val LambdaInfo.T {frees, recs, ...} = lambdaInfo l
+			       in {frees = frees, recs = recs}
+			       end}
       val _ =
 	 Control.trace (Control.Pass, "globalize")
 	 Globalize.globalize {program = program,

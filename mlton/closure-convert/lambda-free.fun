@@ -19,12 +19,12 @@ structure Status =
    end
 datatype status = datatype Status.t
 
-fun lambdaFree (Program.T {body, ...},
-		overflowVar: Var.t,
+fun lambdaFree {program = Program.T {body, ...},
+		overflow: Var.t,
 		varInfo: Var.t -> {frees: Var.t list ref ref,
 				   status: Status.t ref},
 		lambdaInfo: Lambda.t -> {frees: Var.t vector ref,
-					 recs: Var.t vector ref}) =
+					 recs: Var.t vector ref}} =
    let
       fun setFree (l: Lambda.t, xs: Var.t vector): unit =
 	 #frees (lambdaInfo l) := xs
@@ -118,7 +118,7 @@ fun lambdaFree (Program.T {body, ...},
 	       end
 	  | PrimApp {prim, args, ...} => 
 	       (if Prim.mayOverflow prim
-		  then var (overflowVar, s)
+		  then var (overflow, s)
 		  else ();
 		varExps (args, s))
 	  | Profile _ => ()

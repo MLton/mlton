@@ -11,8 +11,8 @@ struct
 open S
 open Exp Transfer
 
-(* Flatten a jump arg as long as it is only flows to selects and there some
- * tuple constructed in this function that flows to it.
+(* Flatten a jump arg as long as it is only flows to selects and there is 
+ * some tuple constructed in this function that flows to it.
  *)
    
 structure ArgInfo =

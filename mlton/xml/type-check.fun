@@ -313,7 +313,9 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
       ()
    end
 
-val typeCheck =
+val typeCheck = 
    Trace.trace ("Xml.typeCheck", Program.layout, Unit.layout) typeCheck
+
+val typeCheck = Control.trace (Control.Pass, "typeCheck") typeCheck
 
 end

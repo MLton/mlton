@@ -18,8 +18,8 @@ type pass = {name: string,
 
 val xmlPasses : pass list ref = ref
    [
-    {name = "xmlShrink1", doit = S.shrink},
-    {name = "simplifyTypes", doit = SimplifyTypes.simplifyTypes}
+    {name = "xmlShrink", doit = S.shrink},
+    {name = "xmlSimplifyTypes", doit = SimplifyTypes.simplifyTypes}
    ]
 
 local
@@ -35,8 +35,8 @@ local
       end
 
    val passGens =
-      (List.map([("shrink", S.shrink),
-		 ("simplifyTypes", SimplifyTypes.simplifyTypes)],
+      (List.map([("xmlShrink", S.shrink),
+		 ("xmlSimplifyTypes", SimplifyTypes.simplifyTypes)],
 		mkSimplePassGen))
 
    fun xmlPassesSet s =

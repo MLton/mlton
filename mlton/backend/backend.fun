@@ -150,20 +150,34 @@ fun toMachine (program: Ssa.Program.t, codegen) =
 				thunk = fn () => doit program,
 				typeCheck = R.Program.typeCheck}
       val program = pass ("ssaToRssa", SsaToRssa.convert, (program, codegen))
-      val program = pass ("rssaShrink1", Rssa.Program.shrink, program)
-      val program = pass ("insertLimitChecks", LimitCheck.insert, program)
-      val program = pass ("insertSignalChecks", SignalCheck.insert, program)
-      val program = pass ("implementHandlers", ImplementHandlers.doit, program)
-      val program = pass ("rssaShrink2", Rssa.Program.shrink, program)
-      val () = R.Program.checkHandlers program
+      fun rssaSimplify program = 
+	 let
+	    val program = pass ("rssaShrink1", Rssa.Program.shrink, program)
+	    val program = pass ("insertLimitChecks", LimitCheck.insert, program)
+	    val program = pass ("insertSignalChecks", SignalCheck.insert, program)
+	    val program = pass ("implementHandlers", ImplementHandlers.doit, program)
+	    val program = pass ("rssaShrink2", Rssa.Program.shrink, program)
+	    val () = R.Program.checkHandlers program
+	    val (program, makeProfileInfo) =
+	       Control.passTypeCheck
+	       {display = Control.Layouts (fn ((program, _), output) =>
+					   Rssa.Program.layouts (program, output)),
+		name = "implementProfiling",
+		style = Control.No,
+		suffix = "rssa",
+		thunk = fn () => Profile.profile program,
+		typeCheck = R.Program.typeCheck o #1}
+	 in
+	    (program, makeProfileInfo)
+	 end
       val (program, makeProfileInfo) =
 	 Control.passTypeCheck
 	 {display = Control.Layouts (fn ((program, _), output) =>
 				     Rssa.Program.layouts (program, output)),
-	  name = "profile",
+	  name = "rssaSimplify",
 	  style = Control.No,
 	  suffix = "rssa",
-	  thunk = fn () => Profile.profile program,
+	  thunk = fn () => rssaSimplify program,
 	  typeCheck = R.Program.typeCheck o #1}
       val _ =
 	 let

@@ -405,7 +405,7 @@ fun elaborate {input: String.t}: Xml.Program.t =
       val decs =
 	 Control.pass
 	 {name = "deadCode",
-	  suffix = "basis",
+	  suffix = "core-ml",
 	  style = Control.ML,
 	  thunk = fn () => let
 			      val decs = 
@@ -463,9 +463,11 @@ fun elaborate {input: String.t}: Xml.Program.t =
 fun preCodegen {input}: Machine.Program.t =
    let
       val xml = elaborate {input = input}
+      val _ = Control.message (Control.Detail, fn () =>
+			       Xml.Program.layoutStats xml)
       val xml =
 	  Control.passTypeCheck
-	  {name = "simplify Xml",
+	  {name = "xmlSimplify",
 	   suffix = "xml",
 	   style = Control.ML,
 	   thunk = fn () => Xml.simplify xml,
@@ -474,25 +476,41 @@ fun preCodegen {input}: Machine.Program.t =
       val _ = Control.message (Control.Detail, fn () =>
 			       Xml.Program.layoutStats xml)
       val sxml =
-	 Control.passSimplify
-	 {name = "mono",
+	 Control.passTypeCheck
+	 {name = "monomorphise",
 	  suffix = "sxml",
 	  style = Control.ML,
 	  thunk = fn () => Monomorphise.monomorphise xml,
 	  display = Control.Layout Sxml.Program.layout,
-	  typeCheck = Sxml.typeCheck,
-	  simplify = Sxml.simplify}
+	  typeCheck = Sxml.typeCheck}
+      val _ = Control.message (Control.Detail, fn () =>
+			       Sxml.Program.layoutStats sxml)
+      val sxml =
+	 Control.passTypeCheck
+	 {name = "sxmlSimplify",
+	  suffix = "sxml",
+	  style = Control.ML,
+	  thunk = fn () => Sxml.simplify sxml,
+	  display = Control.Layout Sxml.Program.layout,
+	  typeCheck = Sxml.typeCheck}
       val _ = Control.message (Control.Detail, fn () =>
 			       Sxml.Program.layoutStats sxml)
       val ssa =
-	 Control.passSimplify
+	 Control.passTypeCheck
 	 {name = "closureConvert",
 	  suffix = "ssa",
 	  style = Control.No,
 	  thunk = fn () => ClosureConvert.closureConvert sxml,
 	  typeCheck = Ssa.typeCheck,
-	  display = Control.Layouts Ssa.Program.layouts,
-	  simplify = Ssa.simplify}
+	  display = Control.Layouts Ssa.Program.layouts}
+      val ssa =
+	 Control.passTypeCheck
+	 {name = "ssaSimplify",
+	  suffix = "ssa",
+	  style = Control.No,
+	  thunk = fn () => Ssa.simplify ssa,
+	  typeCheck = Ssa.typeCheck,
+	  display = Control.Layouts Ssa.Program.layouts}
       val _ =
 	 let
 	    open Control
@@ -503,14 +521,21 @@ fun preCodegen {input}: Machine.Program.t =
 	    else ()
 	 end
       val ssa2 =
-	 Control.passSimplify
+	 Control.passTypeCheck
 	 {name = "toSsa2",
 	  suffix = "ssa2",
 	  style = Control.No,
 	  thunk = fn () => SsaToSsa2.convert ssa,
 	  typeCheck = Ssa2.typeCheck,
-	  display = Control.Layouts Ssa2.Program.layouts,
-	  simplify = Ssa2.simplify}
+	  display = Control.Layouts Ssa2.Program.layouts}
+      val ssa2 =
+	 Control.passTypeCheck
+	 {name = "ssa2Simplify",
+	  suffix = "ssa2",
+	  style = Control.No,
+	  thunk = fn () => Ssa2.simplify ssa2,
+	  typeCheck = Ssa2.typeCheck,
+	  display = Control.Layouts Ssa2.Program.layouts}
       val _ =
 	 let
 	    open Control
