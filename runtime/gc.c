@@ -1750,13 +1750,9 @@ static inline void forward (GC_state s, pointer *pp) {
 					}
 				}
 			} else {
-				/* Shrink heap stacks that don't use a 
-				 * lot of their reserved space.
+				/* Shrink heap stacks.
 				 */
-				if (stack->used <= stack->reserved / 4)
-					stack->reserved = stackReserved (s, stack->reserved / 2);
-				else if (stack->used <= stack->reserved / 2)
-					stack->reserved = stackReserved (s, stack->used);
+				stack->reserved = stackReserved (s, max(stack->reserved / 2, stack->used));
 				if (DEBUG_STACKS)
 					fprintf (stderr, "Shrinking stack to size %s.\n",
 							uintToCommaString (stack->reserved));
@@ -3148,6 +3144,7 @@ void GC_switchToThread (GC_state s, GC_thread t, uint ensureBytesFree) {
 		s->currentThread->stack->used = currentStackUsed (s);
 		s->currentThread->exnStack = s->exnStack;
 		/* END: enter(s); */
+		s->currentThread->bytesNeeded = ensureBytesFree;
 		switchToThread (s, t);
 		s->canHandle--;
 		if (s->canHandle == 0 and s->signalIsPending) {
