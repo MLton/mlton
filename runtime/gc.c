@@ -1732,7 +1732,7 @@ static void translateHeap (GC_state s, pointer from, pointer to, uint size) {
 	foreachPointerInRange (s, to, &limit, translatePointer);
 }
 
-/* Resize from space and to space, guaranteeing that at least need bytes are
+/* Resize from space and to space, guaranteeing that at least 'need' bytes are
  * available in from space and that to space is either the same size as from
  * space or is unmapped.
  */
@@ -1864,7 +1864,6 @@ uint getStackBytesRequested (GC_state s) {
 
 void doGC (GC_state s, uint bytesRequested) {
 	uint gcTime;
-	W64 need;
 	uint size;
 	uint stackBytesRequested;
 	struct rusage ru_start, ru_finish, ru_total;
@@ -1877,12 +1876,12 @@ void doGC (GC_state s, uint bytesRequested) {
  	s->bytesAllocated += s->frontier - (s->base + s->bytesLive);
 	size = s->fromSize;
 	stackBytesRequested = getStackBytesRequested (s);
-	need = (W64)s->bytesLive + (W64)bytesRequested 
-			+ (W64)stackBytesRequested;
         if (not s->useFixedHeap
 		and (W64)s->bytesLive + (W64)s->fromSize 
 			<= s->ramSlop * s->totalRam
-		and prepareToSpace (s, need, s->fromSize))
+		and prepareToSpace (s, (W64)s->bytesLive + (W64)bytesRequested 
+					        + (W64)stackBytesRequested,
+					s->fromSize))
 		cheneyCopy (s);
 	else
 		markCompact (s);
@@ -1891,7 +1890,8 @@ void doGC (GC_state s, uint bytesRequested) {
 	s->bytesLive = s->frontier - s->base;
 	if (s->bytesLive > s->maxBytesLive)
 		s->maxBytesLive = s->bytesLive;
-	resizeHeap (s, need);
+	resizeHeap (s, (W64)s->bytesLive + (W64)bytesRequested 
+ 			+ (W64)stackBytesRequested);
 	if (stackBytesRequested > 0)
 		growStack (s);
 	fixedGetrusage (RUSAGE_SELF, &ru_finish);
