@@ -20,6 +20,7 @@ fun checkrange bounds = check o range bounds;
 
 local 
     open Char Substring
+    val all = full
     fun base2 (a, b) = (base a, base b)
 
     val s1 = ""				(* String.size s1 =  0 *)
