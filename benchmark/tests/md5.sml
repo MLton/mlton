@@ -135,8 +135,8 @@ structure MD5 :> MD5 =
     in packLittle [A,B,C,D]
     end
     and transform ({A,B,C,D},i,buf) = let
-      val off = i div Pack32Little.bytesPerElem
-      fun x (n)  = Pack32Little.subVec (buf,n + off)
+      val off = i div PackWord32Little.bytesPerElem
+      fun x (n)  = PackWord32Little.subVec (buf,n + off)
       val (a,b,c,d) = (A,B,C,D)
       (* fetch to avoid range checks *)
       val x_00 = x (0)  val x_01 = x (1)  val x_02 = x (2)  val x_03 = x (3)
