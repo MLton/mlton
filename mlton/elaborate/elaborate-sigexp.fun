@@ -62,38 +62,37 @@ fun elaborateType (ty: Atype.t, E: Env.t): Tyvar.t vector * Type.t =
 	       let
 		  val ts = Vector.map (ts, loop)
 		  fun normal () =
-		     let
-			val s =
-			   case Env.lookupLongtycon (E, c) of
-			      NONE => TypeStr.bogus Kind.Nary
-			    | SOME s => s
-			val kind = TypeStr.kind s
-			val numArgs = Vector.length ts
-		     in
-			if (case kind of
-			       Kind.Arity n => n = numArgs
-			     | Kind.Nary => true)
-			   then TypeStr.apply (s, ts)
-			else
+		     case Env.lookupLongtycon (E, c) of
+			NONE => Type.bogus
+		      | SOME s => 
 			   let
-			      open Layout
-			      val _ = 
-				 Control.error
-				 (Atype.region ty,
-				  seq [str "type constructor ",
-				       Ast.Longtycon.layout c,
-				       str " given ",
-				       Int.layout numArgs,
-				       str (if numArgs = 1
-					       then " argument"
-					       else " arguments"),
-				       str " but wants ",
-				       Kind.layout kind],
-				  empty)
+			      val kind = TypeStr.kind s
+			      val numArgs = Vector.length ts
 			   in
-			      Type.bogus
+			      if (case kind of
+				     Kind.Arity n => n = numArgs
+				   | Kind.Nary => true)
+				 then TypeStr.apply (s, ts)
+			      else
+				 let
+				    open Layout
+				    val () = 
+				       Control.error
+				       (Atype.region ty,
+					seq [str "type constructor ",
+					     Ast.Longtycon.layout c,
+					     str " given ",
+					     Int.layout numArgs,
+					     str (if numArgs = 1
+						     then " argument"
+						  else " arguments"),
+					     str " but wants ",
+					     Kind.layout kind],
+					empty)
+				 in
+				    Type.bogus
+				 end
 			   end
-		     end
 	       in
 		  case (Ast.Longtycon.split c, Vector.length ts) of
 		     (([], c), 2) =>
