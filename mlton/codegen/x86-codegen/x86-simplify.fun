@@ -3254,22 +3254,39 @@ struct
 		start, 
 		statements =
 		[[(Assembly.Instruction (Instruction.MOV 
-					 {...}),
-		   _)]],
+					 {src = Operand.MemLoc memloc, ...}),
+		   Liveness.T {liveOut,...})]],
 		finish, 
 		transfer}
-	     => let
-		  val statements
-		    = List.fold(start,
-				finish,
-				op ::)
-		in 
-		  SOME (LivenessBlock.T
-			{entry = entry,
-			 profileLabel = profileLabel,
-			 statements = statements,
-			 transfer = transfer})
-		end
+	     => if List.exists (MemLoc.utilized memloc, x86Liveness.track)
+		   then let
+			   val {statements, live} =
+			      LivenessBlock.reLivenessStatements
+			      {statements = List.rev start,
+			       live = liveOut}
+			   val {entry, ...} =
+			      LivenessBlock.reLivenessEntry
+			      {entry = entry,
+			       live = live}
+			   val statements =
+			      List.concat [statements, finish]
+			in 
+			   SOME (LivenessBlock.T
+				 {entry = entry,
+				  profileLabel = profileLabel,
+				  statements = statements,
+				  transfer = transfer})
+			end
+		   else let
+			   val statements =
+			      List.fold(start, finish, op ::)
+			in
+			   SOME (LivenessBlock.T
+				 {entry = entry,
+				  profileLabel = profileLabel,
+				  statements = statements,
+				  transfer = transfer})
+			end
 	     | _ => Error.bug "Peephole: elimSelfMove"
 
 	val (callback,elimSelfMove_msg)
