@@ -14,7 +14,7 @@
 structure Debug : DEBUG =
    struct
       structure C = Critical
-      val debugFlg = true
+      val debugFlg = false
 
       fun sayDebug (msgs: (unit -> string) list, 
 		    msg: unit -> string) =

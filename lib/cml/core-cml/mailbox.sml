@@ -54,32 +54,38 @@ structure Mailbox : MAILBOX_EXTRA =
       fun send (MB state, x) = 
 	 let
 	    val () = Assert.assertNonAtomic' "Mailbox.send"
-	    val () = debug' "send(1)" (* NonAtomic *)
+	    val () = debug' "Mailbox.send(1)" (* NonAtomic *)
 	    val () = Assert.assertNonAtomic' "Mailbox.send(1)"
 	    val () = S.atomicBegin ()
-	    val () = debug' "send(2)" (* Atomic 1 *)
+	    val () = debug' "Mailbox.send(2)" (* Atomic 1 *)
 	    val () = Assert.assertAtomic' ("Mailbox.send(2)", SOME 1)
 	    val () = 
 	       case !state of 
-		  EMPTY q => (case (cleanAndDeque q) of
-				 (NONE, _) => 
-				    (let val q = Q.new ()
-				     in state := NONEMPTY (1, Q.enque (q, x))
-				     end
-				     ; S.atomicEnd())
-			       | (SOME (transId', t'), q') =>
-				    S.atomicReadyAndSwitch
-				    (fn () =>
-				     (state := EMPTY q'
-				      ; TransID.force transId'
-				      ; S.prepVal (t', x))))
+		  EMPTY q => 
+		     let
+			val () = debug' "Mailbox.send(3.1.1)" (* Atomic 1 *)
+			val () = Assert.assertAtomic' ("Mailbox.send(3.1.1)", SOME 1)
+		     in
+			case (cleanAndDeque q) of
+			   (NONE, _) => 
+			      (let val q = Q.new ()
+			       in state := NONEMPTY (1, Q.enque (q, x))
+			       end
+			       ; S.atomicEnd())
+			 | (SOME (transId', t'), q') =>
+			      S.readyAndSwitch
+			      (fn () =>
+			       (state := EMPTY q'
+				; TransID.force transId'
+				; S.prepVal (t', x)))
+		     end
 		| NONEMPTY (p, q) => 
 		     (* we force a context switch here to prevent 
 		      * a producer from outrunning a consumer.
 		      *)
 		     S.atomicReadyAndSwitchToNext
 		     (fn () => state := NONEMPTY (p, Q.enque (q, x)))
-	    val () = debug' "send(4)" (* NonAtomic *)
+	    val () = debug' "Mailbox.send(4)" (* NonAtomic *)
 	    val () = Assert.assertNonAtomic' "Channel.send(4)"
 	 in
 	    ()
@@ -102,10 +108,10 @@ structure Mailbox : MAILBOX_EXTRA =
       fun recv (MB state) = 
 	 let
 	    val () = Assert.assertNonAtomic' "Mailbox.recv"
-	    val () = debug' "recv(1)" (* NonAtomic *)
+	    val () = debug' "Mailbox.recv(1)" (* NonAtomic *)
 	    val () = Assert.assertNonAtomic' "Mailbox.recv(1)"
 	    val () = S.atomicBegin ()
-	    val () = debug' "recv(2)" (* Atomic 1 *)
+	    val () = debug' "Mailbox.recv(2)" (* Atomic 1 *)
 	    val () = Assert.assertAtomic' ("Mailbox.recv(2)", SOME 1)
 	    val msg =
 	       case !state of 
@@ -119,7 +125,7 @@ structure Mailbox : MAILBOX_EXTRA =
 			; msg
 		     end
 		| NONEMPTY (_, q) => getMsg (state, q)
-	    val () = debug' "recv(4)" (* NonAtomic *)
+	    val () = debug' "Mailbox.recv(4)" (* NonAtomic *)
 	    val () = Assert.assertNonAtomic' "Channel.recv(4)"
 	 in
 	    msg

@@ -74,16 +74,16 @@ structure Channel : CHANNEL_EXTRA =
       fun send (CHAN {prio, inQ, outQ}, msg) = 
 	 let
 	    val () = Assert.assertNonAtomic' "Channel.send"
-	    val () = debug' "send(1)" (* NonAtomic *)
+	    val () = debug' "Chennel.send(1)" (* NonAtomic *)
 	    val () = Assert.assertNonAtomic' "Channel.send(1)"
 	    val () = S.atomicBegin ()
-	    val () = debug' "send(2)" (* Atomic 1 *)
+	    val () = debug' "Channel.send(2)" (* Atomic 1 *)
 	    val () = Assert.assertAtomic' ("Channel.send(2)", SOME 1)
 	    val () = 
 	       case cleanAndDeque inQ of 
 		  SOME (rtxid, rt) => 
 		     let
-			val () = debug' "send(3.1.1)" (* Atomic 1 *)
+			val () = debug' "Channel.send(3.1.1)" (* Atomic 1 *)
 			val () = Assert.assertAtomic' ("Channel.send(3.1.1)", SOME 1)
 			val () =
 			   S.readyAndSwitch
@@ -91,27 +91,27 @@ structure Channel : CHANNEL_EXTRA =
 			    (prio := 1
 			     ; TransID.force rtxid
 			     ; S.prepVal (rt, msg)))
-			val () = debug' "send(3.1.2)" (* NonAtomic *)
+			val () = debug' "Channel.send(3.1.2)" (* NonAtomic *)
 			val () = Assert.assertNonAtomic' "Channel.send(3.1.2)"
 		     in
 			()
 		     end
 		| NONE => 
 		     let
-			val () = debug' "send(3.2.1)" (* Atomic 1 *)
+			val () = debug' "Channel.send(3.2.1)" (* Atomic 1 *)
 			val () = Assert.assertAtomic' ("Channel.send(3.2.1)", SOME 1)
 			val rt = 
 			   S.atomicSwitchToNext
 			   (fn st => Q.enque (outQ, (TransID.mkTxId (), st)))
-			val () = debug' "send(3.2.2)" (* Atomic 1 *)
+			val () = debug' "Channel.send(3.2.2)" (* Atomic 1 *)
 			val () = Assert.assertAtomic' ("Channel.send(3.2.2)", SOME 1)
 			val () = S.atomicReadyAndSwitch (fn () => S.prepVal (rt, msg))
-			val () = debug' "send(3.2.3)" (* NonAtomic *)
+			val () = debug' "Chanell.send(3.2.3)" (* NonAtomic *)
 			val () = Assert.assertNonAtomic' "Channel.send(3.2.2)"
 		     in
 			()
 		     end
-	    val () = debug' "send(4)" (* NonAtomic *)
+	    val () = debug' "Channel.send(4)" (* NonAtomic *)
 	    val () = Assert.assertNonAtomic' "Channel.send(4)"
 	 in
 	    ()
@@ -123,7 +123,7 @@ structure Channel : CHANNEL_EXTRA =
 	       let
 		  val () = Assert.assertAtomic' ("Channel.sendEvt.doitFn", NONE)
 		  val (rtxid, rt) = valOf (Q.deque inQ)
-		  val () = debug' "sendEvt(3.1.1)" (* Atomic 1 *)
+		  val () = debug' "Channel.sendEvt(3.1.1)" (* Atomic 1 *)
 		  val () = Assert.assertAtomic' ("Channel.sendEvt(3.1.1)", SOME 1)
 		  val () =
 		     S.readyAndSwitch
@@ -131,7 +131,7 @@ structure Channel : CHANNEL_EXTRA =
 		      (prio := 1
 		       ; TransID.force rtxid
 		       ; S.prepVal (rt, msg)))
-		  val () = debug' "sendEvt(3.1.2)" (* NonAtomic *)
+		  val () = debug' "Channel.sendEvt(3.1.2)" (* NonAtomic *)
 		  val () = Assert.assertNonAtomic' "Channel.sendEvt(3.1.2)"
 	       in
 		  ()
@@ -139,18 +139,18 @@ structure Channel : CHANNEL_EXTRA =
 	    fun blockFn {transId, cleanUp, next} = 
 	       let
 		  val () = Assert.assertAtomic' ("Channel.sendEvt.blockFn", NONE)
-		  val () = debug' "sendEvt(3.2.1)" (* Atomic 1 *)
+		  val () = debug' "Channel.sendEvt(3.2.1)" (* Atomic 1 *)
 		  val () = Assert.assertAtomic' ("Channel.sendEvt(3.2.1)", SOME 1)
 		  val rt = 
 		     S.atomicSwitch
 		     (fn st =>
 		      (enqueAndClean (outQ, (transId, st))
 		       ; next ()))
-		  val () = debug' "sendEvt(3.2.2)" (* Atomic 1 *)
+		  val () = debug' "Channel.sendEvt(3.2.2)" (* Atomic 1 *)
 		  val () = Assert.assertAtomic' ("Channel.sendEvt(3.2.2)", SOME 1)
 		  val () = cleanUp ()
 		  val () = S.atomicReadyAndSwitch (fn () => S.prepVal (rt, msg))
-		  val () = debug' "sendEvt(3.2.3)" (* NonAtomic *)
+		  val () = debug' "Channel.sendEvt(3.2.3)" (* NonAtomic *)
 		  val () = Assert.assertNonAtomic' "Channel.sendEvt(3.2.2)"
 	       in
 		  ()
@@ -158,7 +158,7 @@ structure Channel : CHANNEL_EXTRA =
 	  fun pollFn () = 
 	     let
 		val () = Assert.assertAtomic' ("Channel.sendEvt.pollFn", NONE)
-		val () = debug' "sendEvt(2)" (* Atomic 1 *)
+		val () = debug' "Channel.sendEvt(2)" (* Atomic 1 *)
 		val () = Assert.assertAtomic' ("Channel.sendEvt(2)", SOME 1)
 	     in
 		case cleanAndChk (prio, inQ) of
@@ -172,16 +172,16 @@ structure Channel : CHANNEL_EXTRA =
       fun sendPoll (CHAN {prio, inQ, ...}, msg) = 
 	 let
 	    val () = Assert.assertNonAtomic' "Channel.sendPoll"
-	    val () = debug' "sendPoll(1)" (* NonAtomic *)
+	    val () = debug' "Channel.sendPoll(1)" (* NonAtomic *)
 	    val () = Assert.assertNonAtomic' "Channel.sendPoll(1)"
 	    val () = S.atomicBegin ()
-	    val () = debug' "sendPoll(2)" (* Atomic 1 *)
+	    val () = debug' "Channel.sendPoll(2)" (* Atomic 1 *)
 	    val () = Assert.assertAtomic' ("Channel.sendPoll(1)", SOME 1)
 	    val b = 
 	       case cleanAndDeque inQ of 
 		  SOME (rtxid, rt) => 
 		     let
-			val () = debug' "sendPoll(3.1.1)" (* Atomic 1 *)
+			val () = debug' "Channel.sendPoll(3.1.1)" (* Atomic 1 *)
 			val () = Assert.assertAtomic' ("Channel.sendPoll(3.1.1)", SOME 1)
 			val () =
 			   S.readyAndSwitch
@@ -190,25 +190,25 @@ structure Channel : CHANNEL_EXTRA =
 			     ; TransID.force rtxid
 			     ; S.prepVal (rt, msg)))
 			val b = true
-			val () = debug' "sendPoll(3.1.2)" (* NonAtomic *)
+			val () = debug' "Channel.sendPoll(3.1.2)" (* NonAtomic *)
 			val () = Assert.assertNonAtomic' "Channel.sendPoll(3.1.2)"
 		     in
 			b
 		     end
 		| NONE => 
 		     let
-			val () = debug' "sendPoll(3.2.1)" (* Atomic 1 *)
+			val () = debug' "Channel.sendPoll(3.2.1)" (* Atomic 1 *)
 			val () = Assert.assertAtomic' ("Channel.sendPoll(3.2.1)", SOME 1)
 			val b = false
-			val () = debug' "sendPoll(3.2.2)" (* Atomic 1 *)
+			val () = debug' "Channel.sendPoll(3.2.2)" (* Atomic 1 *)
 			val () = Assert.assertAtomic' ("Channel.sendPoll(3.2.2)", SOME 1)
 			val () = S.atomicEnd ()
-			val () = debug' "sendPoll(3.2.3)" (* NonAtomic *)
+			val () = debug' "Channel.sendPoll(3.2.3)" (* NonAtomic *)
 			val () = Assert.assertNonAtomic' "Channel.sendPoll(3.2.2)"
 		     in
 			b
 		     end
-	    val () = debug' "sendPoll(4)" (* NonAtomic *)
+	    val () = debug' "Channel.sendPoll(4)" (* NonAtomic *)
 	    val () = Assert.assertNonAtomic' "Channel.sendPoll(4)"
 	 in
 	    b
@@ -217,16 +217,16 @@ structure Channel : CHANNEL_EXTRA =
       fun recv (CHAN {prio, inQ, outQ}) =
 	 let
 	    val () = Assert.assertNonAtomic' "Channel.recv"
-	    val () = debug' "recv(1)" (* NonAtomic *)
+	    val () = debug' "Channel.recv(1)" (* NonAtomic *)
 	    val () = Assert.assertNonAtomic' "Channel.recv(1)"
 	    val () = S.atomicBegin ()
-	    val () = debug' "recv(2)" (* Atomic 1 *)
+	    val () = debug' "Channel.recv(2)" (* Atomic 1 *)
 	    val () = Assert.assertAtomic' ("Channel.recv(2)", SOME 1)
 	    val msg = 
 	       case cleanAndDeque outQ of
 		  SOME (stxid, st) =>	
 		     let
-			val () = debug' "recv(3.1.1)" (* Atomic 1 *)
+			val () = debug' "Channel.recv(3.1.1)" (* Atomic 1 *)
 			val () = Assert.assertAtomic' ("Channel.recv(3.1.1)", SOME 1)
 			val msg =
 			   S.switch
@@ -234,27 +234,27 @@ structure Channel : CHANNEL_EXTRA =
 			    (prio := 1
 			     ; TransID.force stxid
 			     ; S.prepVal (st, rt)))
-			val () = debug' "recv(3.1.2)" (* NonAtomic *)
+			val () = debug' "Channel.recv(3.1.2)" (* NonAtomic *)
 			val () = Assert.assertNonAtomic' "Channel.recv(3.1.1)"
 		     in
 			msg
 		     end
 		| NONE =>
 		     let
-			val () = debug' "recv(3.2.1)" (* Atomic 1 *)
+			val () = debug' "Channel.recv(3.2.1)" (* Atomic 1 *)
 			val () = Assert.assertAtomic' ("Channel.recv(3.2.1)", SOME 1)
 			val msg =
 			   S.atomicSwitchToNext
 			   (fn rt => enqueAndClean (inQ, (TransID.mkTxId (), rt)))
-			val () = debug' "recv(3.2.2)" (* Atomic 1 *)
+			val () = debug' "Channel.recv(3.2.2)" (* Atomic 1 *)
 			val () = Assert.assertAtomic' ("Channel.recv(3.2.2)", SOME 1)
 			val () = S.atomicEnd ()
-			val () = debug' "recv(3.2.3)" (* NonAtomic *)
+			val () = debug' "Channel.recv(3.2.3)" (* NonAtomic *)
 			val () = Assert.assertNonAtomic' "Channel.recv(3.2.3)"
 		     in
 			msg
 		     end
-	    val () = debug' "recv(4)" (* NonAtomic *)
+	    val () = debug' "Channel.recv(4)" (* NonAtomic *)
 	    val () = Assert.assertNonAtomic' "Channel.recv(4)"
 	 in
 	    msg
@@ -266,7 +266,7 @@ structure Channel : CHANNEL_EXTRA =
 	       let
 		  val () = Assert.assertAtomic' ("Channel.recvEvt.doitFn", NONE)
 		  val (stxid, st) = valOf (Q.deque outQ)
-		  val () = debug' "recvEvt(3.1.1)" (* Atomic 1 *)
+		  val () = debug' "Channel.recvEvt(3.1.1)" (* Atomic 1 *)
 		  val () = Assert.assertAtomic' ("Channel.recvEvt(3.1.1)", SOME 1)
 		  val msg =
 		     S.switch
@@ -274,7 +274,7 @@ structure Channel : CHANNEL_EXTRA =
 		      (prio := 1
 		       ; TransID.force stxid
 		       ; S.prepVal (st, rt)))
-		  val () = debug' "recvEvt(3.1.2)" (* NonAtomic *)
+		  val () = debug' "Channel.recvEvt(3.1.2)" (* NonAtomic *)
 		  val () = Assert.assertNonAtomic' "Channel.recvEvt(3.1.1)"
 	       in
 		  msg
@@ -282,18 +282,18 @@ structure Channel : CHANNEL_EXTRA =
 	    fun blockFn {transId, cleanUp, next} = 
 	       let
 		  val () = Assert.assertAtomic' ("Channel.recvEvt.blockFn", NONE)
-		  val () = debug' "recvEvt(3.2.1)" (* Atomic 1 *)
+		  val () = debug' "Channel.recvEvt(3.2.1)" (* Atomic 1 *)
 		  val () = Assert.assertAtomic' ("Channel.recvEvt(3.2.1)", SOME 1)
 		  val msg =
 		     S.atomicSwitch
 		     (fn rt =>
 		      (enqueAndClean (inQ, (transId, rt))
 		       ; next ()))
-		  val () = debug' "recvEvt(3.2.2)" (* Atomic 1 *)
+		  val () = debug' "Channel.recvEvt(3.2.2)" (* Atomic 1 *)
 		  val () = Assert.assertAtomic' ("Channel.recvEvt(3.2.2)", SOME 1)
 		  val () = cleanUp ()
 		  val () = S.atomicEnd ()
-		  val () = debug' "recvEvt(3.2.3)" (* NonAtomic *)
+		  val () = debug' "Channel.recvEvt(3.2.3)" (* NonAtomic *)
 		  val () = Assert.assertNonAtomic' "Channel.recvEvt(3.2.3)"
 	       in
 		  msg
@@ -301,7 +301,7 @@ structure Channel : CHANNEL_EXTRA =
 	    fun pollFn () = 
 	       let
 		  val () = Assert.assertAtomic' ("Channel.recvEvt.pollFn", NONE)
-		  val () = debug' "recvEvt(2)" (* Atomic 1 *)
+		  val () = debug' "Channel.recvEvt(2)" (* Atomic 1 *)
 		  val () = Assert.assertAtomic' ("Channel.recvEvt(2)", SOME 1)
 	       in
 		  case cleanAndChk (prio, outQ) of 
@@ -315,16 +315,16 @@ structure Channel : CHANNEL_EXTRA =
       fun recvPoll (CHAN {prio, outQ, ...}) = 
 	 let
 	    val () = Assert.assertNonAtomic' "Channel.recvPoll"
-	    val () = debug' "recvPoll(1)" (* NonAtomic *)
+	    val () = debug' "Channel.recvPoll(1)" (* NonAtomic *)
 	    val () = Assert.assertNonAtomic' "Channel.recvPoll(1)"
 	    val () = S.atomicBegin ()
-	    val () = debug' "recvPoll(2)" (* Atomic 1 *)
+	    val () = debug' "Channel.recvPoll(2)" (* Atomic 1 *)
 	    val () = Assert.assertAtomic' ("Channel.recvPoll(2)", SOME 1)
 	    val msg =
 	       case cleanAndDeque outQ of 
 		  SOME (stxid, st) => 
 		     let
-			val () = debug' "recvPoll(3.1.1)" (* Atomic 1 *)
+			val () = debug' "Channel.recvPoll(3.1.1)" (* Atomic 1 *)
 			val () = Assert.assertAtomic' ("Channel.recvPoll(3.1.1)", SOME 1)
 			val msg =
 			   S.switch
@@ -333,25 +333,25 @@ structure Channel : CHANNEL_EXTRA =
 			     ; TransID.force stxid
 			     ; S.prepVal (st, rt)))
 			val msg = SOME msg
-			val () = debug' "recvPoll(3.1.2)" (* NonAtomic *)
+			val () = debug' "Channel.recvPoll(3.1.2)" (* NonAtomic *)
 			val () = Assert.assertNonAtomic' "Channel.recvPoll(3.1.1)"
 		     in
 			msg
 		     end
 		| NONE => 
 		     let
-			val () = debug' "recv(3.2.1)" (* Atomic 1 *)
+			val () = debug' "Channel.recv(3.2.1)" (* Atomic 1 *)
 			val () = Assert.assertAtomic' ("Channel.recv(3.2.1)", SOME 1)
 			val msg = NONE
-			val () = debug' "recvPoll(3.2.2)" (* Atomic 1 *)
+			val () = debug' "Channel.recvPoll(3.2.2)" (* Atomic 1 *)
 			val () = Assert.assertAtomic' ("Channel.recvPoll(3.2.2)", SOME 1)
 			val () = S.atomicEnd ()
-			val () = debug' "recvPoll(3.2.3)" (* NonAtomic *)
+			val () = debug' "Channel.recvPoll(3.2.3)" (* NonAtomic *)
 			val () = Assert.assertNonAtomic' "Channel.recvPoll(3.2.3)"
 		     in
 			msg
 		     end
-	    val () = debug' "recvPoll(4)" (* NonAtomic *)
+	    val () = debug' "Channel.recvPoll(4)" (* NonAtomic *)
 	    val () = Assert.assertNonAtomic' "Channel.recvPoll(4)"
 	 in
 	    msg

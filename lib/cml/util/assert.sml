@@ -6,7 +6,7 @@
 structure Assert: ASSERT =
    struct
       structure C = Critical
-      val assertFlg = true
+      val assertFlg = false
       
       fun fail msg =
 	 (C.atomicBegin ();
