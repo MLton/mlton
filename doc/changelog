@@ -1,5 +1,12 @@
 Here are the changes from version 20020923.
 
+* 2003-02-11
+  - Regularization of options.
+	-l --> -link
+	-L --> -lib-search
+	-o --> -output
+	-v --> -verbose
+
 * 2003-02-10
   - Added option to mlton: -profile-combine {false|true}
 

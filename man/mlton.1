@@ -7,40 +7,48 @@ language
 [file\fB.\fP{\fBS\fP|\fBo\fP} ...] [library ...]\fR
 .SH DESCRIPTION
 .PP
-Typical use of \fBMLton\fP is
-.br
-.EX
-\fBmlton \fIxxx\fB.sml\fR
-.EE
-.br
-which will produce the executable \fIxxx\fP.
+Typical use of \fBMLton\fP is \fBmlton \fIxxx\fB.sml\fR, which will
+produce the executable \fIxxx\fP.
 \fBMLton\fP has no notion of separate compilation.
 The program must be the entire program you wish to compile; however, it may
 refer to signatures and structures defined in the SML basis library.
 
-\fBMLton\fP's options allow you to control the name of the output file, the
-verbosity of compile-time messages, and whether or not certain optimizations are
-performed.  They also allow you to specify which intermediate files are saved
-and to stop the compilation process early, at some intermediate pass, which case
-compilation can be resumed by passing the resulting files to \fBMLton\fP.
-\fBMLton\fP uses the input file suffix to determine the type of input program.
-The possibilities are \fB.cm\fR, \fB.sml\fR, \fB.c\fR, \fB.S\fR, and \fB.o\fR.
+\fBMLton\fP's options allow you to control the name of the output
+file, the verbosity of compile-time messages, and whether or not
+certain optimizations are performed.  They also allow you to specify
+which intermediate files are saved and to stop the compilation process
+early, at some intermediate pass, in which case compilation can be
+resumed by passing the resulting files to \fBMLton\fP.  \fBMLton\fP
+uses the input file suffix to determine the type of input program.
+The possibilities are \fB.cm\fR, \fB.sml\fR, \fB.c\fR, \fB.S\fR, and
+\fB.o\fR.
 
-For developing large programs spanning many files, \fBMLton\fP upports a
-limited subset of SML/NJ Compilation Manager (CM) files.  From \fBMLton\fP's
-point of view, a CM file \fBfoo.cm\fR defines a list of SML source files.  The
-call \fBmlton foo.cm\fR is equivalent to compiling an SML program consisting of
-the concatenation of these files.  As always with \fBMLton\fP, the concatenation
-must be the whole program you wish to compile.  See the \fBMLton\fP user guide
-for details.
+For developing large programs spanning many files, \fBMLton\fP upports
+a limited subset of SML/NJ Compilation Manager (CM) files.  From
+\fBMLton\fP's point of view, a CM file \fBfoo.cm\fR defines a list of
+SML source files.  The call \fBmlton foo.cm\fR is equivalent to
+compiling an SML program consisting of the concatenation of these
+files.  As always with \fBMLton\fP, the concatenation must be the
+whole program you wish to compile.  See the \fBMLton User Guide\fP for
+details.
 
-For a usage message, run \fBMLton\fP with an invalid switch, e.g., \fBmlton
--z\fP.  In the explanation below and in the usage message, for flags that take a
-boolean argument (\fI{\fBtrue\fI|\fBfalse\fI}\fR), the first value listed is the
-default. For example, by default, overflow checking on is performed on integer
-arithmetic.
+With no arguments, \fBMLton\fP prints the version number and exits.
+For a usage message, run \fBMLton\fP with an invalid switch, e.g.,
+\fBmlton -z\fP.  In the explanation below and in the usage message,
+for flags that take a boolean argument
+(\fI{\fBtrue\fI|\fBfalse\fI}\fR), the first value listed is the
+default. For example, by default, overflow checking on is performed on
+integer arithmetic.
 
 .SH Compile-time options
+.TP
+\fB-basis \fI{\fB2002\fP|\fB2002-strict\fP|\fB1997\fP|\fBnone\fP}\fP
+Selects a Basis Library to be used by the input program.  \fB2002\fP
+and \fB2002-strict\fP implement the 2002 Basis Library
+specification; \fB2002-strict\fP removes MLton extensions.  \fB1997\fP
+implements the 1997 version of the Basis Library specification.
+\fBnone\fP removes all Basis Library functionality.
+
 .TP
 \fB-detect-overflow \fI{\fBtrue\fI|\fBfalse\fI}\fR
 This flag controls whether or not overflow checking is performed on integer
@@ -58,10 +66,10 @@ at each exception construction, raise, and handle.
 
 .TP
 \fB-host \fI{\fBself\fP|\fI...}\fR
-Generate an executable that runs on the specified host.  The default is
-\fBself\fP, which means to compile for the machine that \fBMLton\fP is running
-on.  To use any other host, you must first install a cross compiler.  See the
-user guide for details.
+Generate an executable that runs on the specified host.  The default
+is \fBself\fP, which means to compile for the machine that \fBMLton\fP
+is running on.  To use any other host, you must first install a cross
+compiler.  See the \fBMLton User Guide\fP for details.
 
 .TP
 \fB-ieee-fp \fI{\fBfalse\fP|\fBtrue\fP}\fR
@@ -95,14 +103,13 @@ If no \fB-keep\fP argument is given, then only the final file is saved.
 .in -.5i
 
 .TP
-\fB-l\fIlib\fR
-Specify an additional library to link with.
-This switch is passed unchanged to the linker.
+\fB-lib-search \fIdir\fR
+Specify an additional directory to be searched for libraries when
+linking.  Like \fBgcc -L\fP.
 
 .TP
-\fB-L\fIdir\fR
-Specify an additional directory to be searched for libraries.
-This switch is passed unchanged to the linker.
+\fB-link \fIlib\fR
+Specify an additional library to link with.  Like \fBgcc -l\fP.
 
 .TP
 \fB-may-load-world \fI{\fBtrue\fP|\fBfalse\fP}\fP
@@ -117,7 +124,7 @@ generating C and using \fBgcc\fP.  With native code generation,
 code.
 
 .TP
-\fB-o\fI file\fR
+\fB-output \fIfile\fR
 Specify the name of the final output file.
 The default name is the input file name with its suffix removed and an
 appropriate suffix added.
@@ -176,7 +183,7 @@ Specify pass to stop at.
 .in -.5i
 
 .TP
-\fB-v\fI[\fB0123\fI]\fR
+\fB-verbose\fP \fI{\fB0\fP|\fB1\fP|\fB2\fP|\fB3\fP}\fP
 Be verbose about what passes are running.  The default is 0.
 .in +.5i
 \fB0\fP  silent.
@@ -187,9 +194,6 @@ Be verbose about what passes are running.  The default is 0.
 .br
 \fB3\fP  2 + some data structure sizes.
 .in -.5i
-With no other arguments, \fBmlton -v\fP prints out the version number and build
-information.  With \fB -v2\fP, it also prints the default settings of all
-options.
 
 .SH Runtime system options
 To control the runtime system, executables produced by \fBMLton\fP take
@@ -230,4 +234,4 @@ the runtime views as the amount of RAM it can use.
 
 .SH "SEE ALSO"
 .BR mlprof (1)
-and the \fBMLton\fP user guide.
+and the \fBMLton User Guide\fP.

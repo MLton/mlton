@@ -52,5 +52,5 @@ doit "$lib" \
 		-malign-loops=2
 		-mcpu=pentiumpro
 		-w' \
-	-lm \
+	-link m \
 	"$@"

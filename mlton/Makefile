@@ -4,7 +4,7 @@ BIN = $(BUILD)/bin
 LIB = $(BUILD)/lib
 MLTON = mlton
 HOST = self
-FLAGS = @MLton $(RUNTIME_ARGS) gc-summary -- -host $(HOST) -v -o $(AOUT)
+FLAGS = @MLton $(RUNTIME_ARGS) gc-summary -- -host $(HOST)
 NAME = mlton
 AOUT = mlton-compile
 PATH = $(BIN):$(shell echo $$PATH)
@@ -20,12 +20,18 @@ else
 endif
 endif
 
+ifeq (old,$(shell PATH=$(BIN):$$PATH; $(MLTON) -v >/dev/null 2>&1 && echo old))
+  EXTRA_FLAGS = -v -o $(AOUT)
+else
+  EXTRA_FLAGS = -verbose 1 -output $(AOUT)
+endif
+
 .PHONY: all
 all: $(AOUT)
 
 $(AOUT): $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)
 	@echo 'Compiling mlton (takes a while)'
-	$(MLTON) $(FLAGS) $(CM)
+	$(MLTON) $(FLAGS) $(EXTRA_FLAGS) $(CM)
 	size $(AOUT)
 
 .PHONY:	$(NAME)_cm

@@ -72,8 +72,9 @@ fun makeOptions {usage} =
    let
       val usage = fn s => (usage s; raise Fail "unreachable")
       open Control Popt
-      fun push r = String (fn s => List.push (r, s))
-   in List.map
+      fun push r = SpaceString (fn s => List.push (r, s))
+   in
+      List.map
       (
        [
        (Normal, "basis", " {2002|1997|...}",
@@ -159,7 +160,7 @@ fun makeOptions {usage} =
 (*        (Normal, "include", " file.h", "include a .h file",
  * 	SpaceString (fn s => List.push (includes, s))),
  *)
-       (Normal, "inline", " n", "inlining threshold",
+       (Normal, "inline", " <n>", "inlining threshold",
 	Int setInlineSize),
        (* -inline-array true is no longer allowed, because GC_arrayAllocate
 	* knows intimate details of the generational GC.
@@ -189,9 +190,10 @@ fun makeOptions {usage} =
 				    in List.push (keepPasses, re)
 				    end
 		   | NONE => usage (concat ["invalid -keep-pass flag: ", s])))),
-       (Normal, "l", "library", "link with library", push libs),
        (Expert, "lib", " lib", "set MLton lib directory",
 	SpaceString (fn s => libDir := s)),
+       (Normal, "lib-search", " <dir>", "search dir for libraries (like gcc -L)",
+	push libDirs),
        (Expert, "limit-check", " {lhle|pb|ebb|lh|lhf|lhfle}",
 	"limit check insertion algorithm",
 	SpaceString (fn s =>
@@ -210,20 +212,20 @@ fun makeOptions {usage} =
        (Expert, "limit-check-counts", " {false|true}",
 	"compute dynamic counts of limit checks",
 	boolRef limitCheckCounts),
+       (Normal, "link", " <library>", "link with library (like gcc -l)",
+	push libs),
        (Expert, "loop-passes", " n", "loop optimization passes (1)",
 	Int 
 	(fn i => 
 	 if i >= 1
 	    then loopPasses := i
 	    else usage (concat ["invalid -loop-passes arg: ", Int.toString i]))),
-       (Normal, "L", "dir", "search dir for libraries",
-	push libDirs),
        (Expert, "mark-cards", " {true|false}", "mutator marks cards",
 	boolRef markCards),
        (Normal, "may-load-world", " {true|false}",
 	"may @MLton load-world be used",
 	boolRef mayLoadWorld),
-       (Normal, "native", " {true|false}", "use native x86 code generator",
+       (Normal, "native", " {true|false}", "use native code generator",
 	boolRef Native.native),
        (Expert, "native-commented", " n", "level of comments  (0)",
 	intRef Native.commented),
@@ -253,7 +255,7 @@ fun makeOptions {usage} =
 	boolRef newReturn),
        (Expert, "polyvariance", " {true|false}", "use polyvariance",
 	Bool (fn b => if b then () else polyvariance := NONE)),
-       (Normal, "o", " file", "name of output file",
+       (Normal, "output", " <file>", "name of output file",
 	SpaceString (fn s => output := SOME s)),
        (Normal, "profile", " {no|alloc|time}",
 	"produce executable suitable for profiling",
@@ -313,12 +315,11 @@ fun makeOptions {usage} =
 	intRef textIOBufSize),
        (Expert, "type-check", " {false|true}", "type check ILs",
 	boolRef typeCheck),
-       (Normal, "v", "{|0|1|2|3}", "verbosity (also version number)",
-	String
+       (Normal, "verbose", " {0|1|2|3}", "how verbose to be",
+	SpaceString
 	(fn s =>
 	 verbosity := (case s of
-			  "" => Top
-			| "0" => Silent
+			  "0" => Silent
 			| "1" => Top
 			| "2" => Pass
 			| "3" =>  Detail
@@ -400,7 +401,7 @@ fun commandLine (args: string list): unit =
 					Out.standard)
 		else if !buildConstants
 		   then Compile.outputBasisConstants Out.standard
-	        else usage "must supply a file"
+	        else printVersion ()
 	   | Top => printVersion ()
 	   | _ => (inputFile := ""
 		   ; outputHeader' (No, Out.standard)))

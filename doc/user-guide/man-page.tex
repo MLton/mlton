@@ -26,10 +26,12 @@ and to stop the compilation process early, at some intermediate pass.  {\mlton}
 uses the input file suffix to determine the type of input program.  The
 possibilities are {\tt .cm}, {\tt .sml}, {\tt .c}, {\tt .S} and {\tt .o}.
 
-For a usage message, run {\mlton} with an invalid switch, e.g. {\tt mlton -z}.
-In the explanation below and in the usage message, for flags that take a boolean
-argument ({\tt {true|false}}), the first value listed is the default.  For
-example, by default, overflow checking on is performed on integer arithmetic.
+With no arguments, {\mlton} prints the version number and exits.  For
+a usage message, run {\mlton} with an invalid switch, e.g. {\tt mlton
+-z}.  In the explanation below and in the usage message, for flags
+that take a boolean argument ({\tt {true|false}}), the first value
+listed is the default.  For example, by default, overflow checking on
+is performed on integer arithmetic.
 
 \newcommand{\option}[1]{\item[{\tt #1}]\hspace{1em}\\}
 
@@ -37,9 +39,9 @@ example, by default, overflow checking on is performed on integer arithmetic.
 
 \option{-basis \{2002|2002-strict|1997|none\}}
 Selects a Basis Library to be used by the input program.  {\tt 2002}
-and {\tt 2002-strict} implement the current Basis Library
+and {\tt 2002-strict} implement the 2002 Basis Library
 specification; {\tt 2002-strict} removes all extensions described in
-\secref{mlton}.  {\tt 1997} implements a previous version of the Basis
+\secref{mlton}.  {\tt 1997} implements the 1997 version of the Basis
 Library specification; see \secref{basis1997} for more information.
 {\tt none} removes all Basis Library functionality.
 
@@ -94,13 +96,12 @@ no {\tt -keep} argument is given, then only the final file(s) is saved.\\
 {\tt sml} & SML file\\
 \end{tabular}
 
-\option{-l\mbox{\rm lib}}
-Specify an additional library to link with.
-This switch is passed unchanged to the linker.
+\option{-lib-search \mbox{\rm dir}}
+Specify an additional directory to be searched for libraries when
+linking.
 
-\option{-L\mbox{\rm dir}}
-Specify an additional directory to be searched for libraries.
-This switch is passed unchanged to the linker.
+\option{-link \mbox{\rm lib}}
+Specify an additional library to link with.
 
 \option{-may-load-world \{true|false\}}
 Controls whether or not the generated executable supports the {\tt
@@ -111,10 +112,10 @@ Controls whether or not to use native code generation, as opposed to
 generating C and using {\tt gcc}.  With native code generation,
 {\mlton} typically compiles more quickly and generates better code.
 
-\option{-o \mbox{\rm file}}
-Specify the name of the final output file.
-The default name is the input file name with its
-suffix removed and an appropriate suffix added.
+\option{-output \mbox{\rm file}}
+Specify the name of the final output file. The default name is the
+input file name with its suffix removed and an appropriate suffix
+added.
 
 \option{-profile \{no|alloc|time\}}
 Produce an executable that will gather allocation or time profiling
@@ -154,7 +155,7 @@ Secify pass to stop at.\\
 If you compile {\tt -stop g} or {\tt -stop o}, you can resume compilation by
 running {\tt mlton} on the generated {\tt .c} and {\tt .S} or {\tt .o} files.
 
-\option{-v[0123]}
+\option{-verbose \{0|1|2|3\}}
 How verbose to be about what passes are running.  The default is 0.\\
 \begin{tabular}{ll}
 {\tt 0} & silent\\
@@ -162,15 +163,13 @@ How verbose to be about what passes are running.  The default is 0.\\
 {\tt 2} & show all intermediate compiler passes\\
 {\tt 3} & show all intermediate compiler passes, and some data structure sizes\\
 \end{tabular}\\
-With no other arguments, {\tt mlton -v} prints out the version number and build
-information.  With {\tt -v2}, it also prints the default settings of all options.
 
 \end{description}
 
 %\subsec{Compiler hacker options}{hacker-options}
 %
 %Some options are useful only to compiler hackers.  They can be seen by
-%calling {\tt mlton -v -z}.  Some are documented here.
+%calling {\tt mlton -expert true -z}.  Some are documented here.
 %
 %\begin{description}
 %

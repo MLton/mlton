@@ -63,7 +63,7 @@ compiler:
 constants:
 	@echo 'Creating constants file.'
 	$(BIN)/mlton -build-constants >tmp.c
-	$(BIN)/mlton -o tmp tmp.c
+	$(BIN)/mlton -output tmp tmp.c
 	./tmp >$(LIB)/$(HOST)/constants
 	rm -f tmp tmp.c
 
