@@ -66,7 +66,7 @@ structure Word8: WORD_EXTRA =
       val toLargeInt = LargeInt.fromInt o toInt
 
       fun fromLargeInt (i: LargeInt.int): word =
-	 fromInt (LargeInt.toInt (LargeInt.mod (i, LargeInt.fromInt 0x100)))
+	 fromInt (LargeInt.toInt (LargeInt.mod (i, 0x100)))
    end
 
 structure Word16: WORD_EXTRA =
@@ -77,7 +77,7 @@ structure Word16: WORD_EXTRA =
       val toLargeInt = LargeInt.fromInt o toInt
 
       fun fromLargeInt (i: LargeInt.int): word =
-	 fromInt (LargeInt.toInt (LargeInt.mod (i, LargeInt.fromInt 0x10000)))
+	 fromInt (LargeInt.toInt (LargeInt.mod (i, 0x10000)))
    end
 
 structure Word32: WORD32_EXTRA =
