@@ -342,6 +342,14 @@ DEBUG_OBJS =					\
 	libmlton-gdb.o				\
 	my-lib-gdb.o
 
+all: libmlton.a libmlton-gdb.a
+
+libmlton.a: $(OBJS) 
+	$(AR) libmlton.a $(OBJS)
+
+libmlton-gdb.a: $(DEBUG_OBJS)
+	$(AR) libmlton-gdb.a $(DEBUG_OBJS)
+
 %-gdb.o: %.c
 	$(CC) $(DEBUGFLAGS) -DASSERT=1 -c -o $@ $<
 
@@ -353,14 +361,6 @@ DEBUG_OBJS =					\
 
 %.o: %.S
 	$(CC) $(CFLAGS) -c -o $@ $<
-
-all: libmlton.a libmlton-gdb.a
-
-libmlton.a: $(OBJS) 
-	$(AR) libmlton.a $(OBJS)
-
-libmlton-gdb.a: $(DEBUG_OBJS)
-	$(AR) libmlton-gdb.a $(DEBUG_OBJS)
 
 .PHONY: clean
 clean:
