@@ -1067,7 +1067,7 @@ fun infer {program = p: CoreML.Program.t, lookupConstant}: Xml.Program.t =
       val _ = List.foreach (!overloads, fn p => (p (); ()))
       val _ = overloads := []
       val (body, _) =
-	 Control.trace (Control.Pass, "finish infer")
+	 Control.trace (Control.Pass, "finishInfer")
 	 ds (Xexp.unit (), Xtype.unit)
       val xml = Xml.Program.T {datatypes = Vector.fromList (!dbsRef),
 			       body = Xexp.toExp body}

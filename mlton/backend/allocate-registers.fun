@@ -436,11 +436,4 @@ fun allocate {program = program as Program.T {globals, functions, ...},
        jumpInfo = jumpInfo}
    end
 
-val allocate =
-   Trace.trace
-   ("allocate",
-    fn {program, ...} => Cps.Program.layout program,
-    Layout.ignore)
-   allocate
-   
 end

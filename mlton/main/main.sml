@@ -276,7 +276,7 @@ fun commandLine (args: string list): unit =
 		 ; outputHeader' (No, Out.standard)))
     | Result.Yes (input :: rest) =>
 	 let
-	    val _ = inputFile := input
+	    val _ = inputFile := File.base input
 	    val (start, base) =
 	       let
 		  val rec loop =

@@ -502,8 +502,8 @@ fun displays (suffix: string, thunk: (Layout.t -> unit) -> 'a): 'a =
    File.withOut (concat [!inputFile, ".", suffix], fn out =>
 		 thunk (fn l => (Layout.outputl (l, out))))
    
-fun display (name: string, thunk: unit -> Layout.t): unit =
-   displays (name, fn disp => disp (trace (Pass, "layout") thunk ()))
+fun saveToFile ({suffix: string}, lay: Layout.t): unit =
+   displays (suffix, fn disp => disp lay)
 
 fun pass {name: string,
 	  suffix: string,
