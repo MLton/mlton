@@ -1,6 +1,6 @@
 Summary: An optimizing compiler for the Standard ML programming language.
 Name: mlton
-Version:
+Version: VERSION
 Release:
 Copyright: GPL
 Group: Development/Languages
@@ -17,19 +17,19 @@ language.  The MLton home page is http://www.mlton.org/.
 %setup
 
 %build
-make STUBS=no
+make bootstrap VERSION=%{version} 
 
 %install
 rm -rf $RPM_BUILD_ROOT
-make DESTDIR=$RPM_BUILD_ROOT VERSION=%{version} install
+make install DESTDIR=$RPM_BUILD_ROOT VERSION=%{version}
 
 %files
-%attr(-, root, root)		/usr/local/share/doc/mlton
+%attr(-, root, root)		/usr/share/doc/mlton
 %attr(-, root, root)		/usr/local/bin/mllex
 %attr(-, root, root)		/usr/local/bin/mlprof
 %attr(-, root, root)		/usr/local/bin/mlton
 %attr(-, root, root)		/usr/local/bin/mlyacc
 %attr(-, root, root)		/usr/local/lib/mlton
-%attr(-, root, root)		/usr/local/share/man/man1/mlprof.1
-%attr(-, root, root)		/usr/local/share/man/man1/mlton.1
+%attr(-, root, root)		/usr/share/man/man1/mlprof.1
+%attr(-, root, root)		/usr/share/man/man1/mlton.1
 

@@ -34,7 +34,7 @@ install: build
 	dh_clean -k
 	dh_installdirs
 	# Add here commands to install the package into debian/mlton.
-	$(MAKE) install DESTDIR=$(CURDIR)/debian/mlton prefix=/usr
+	$(MAKE) install DESTDIR=$(CURDIR)/debian/mlton
 	( cd debian/mlton/usr/share/doc/mlton \
 	  && rm -r license )
 
