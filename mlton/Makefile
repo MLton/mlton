@@ -107,6 +107,7 @@ SML	= sml
 
 .PHONY: nj-mlton
 nj-mlton: $(SOURCES)
+	@echo You must use SML/NJ 110.44.
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
@@ -115,6 +116,7 @@ nj-mlton: $(SOURCES)
 		echo 'CM.make "sources.cm";';					\
 		echo 'Main.exportNJ ("$(SRC)/basis-library", "$(LIB)/mlton");'	\
 	) | $(SML)
+	@echo You must use SML/NJ 110.44.
 
 .PHONY: nj-mlton-dual
 nj-mlton-dual: $(SOURCES)
