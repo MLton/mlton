@@ -11,7 +11,8 @@ type word = Word.t
 fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
    let
       (* Keep track of arguments and in-degree of blocks. *)
-      val {get = labelInfo: Label.t -> {inDeg: int ref,
+      val {get = labelInfo: Label.t -> {args: (Var.t * Type.t) vector,
+					inDeg: int ref,
 					success: Exp.t option ref,
 					failure: Exp.t option ref},
 	   set = setLabelInfo, ...} =
@@ -232,12 +233,25 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 		  val transfer = Transfer.replaceVar (transfer, canonVar)
 		  val transfer =
 		     case transfer of 
-		        Prim {prim, args, failure, success} =>
+		        Goto {dst, args} =>
+			   let
+			      val {args = args', inDeg, ...} = labelInfo dst
+			   in
+			      if !inDeg = 1
+				 then (Vector.foreach2
+				       (args, args', fn (var, (var', _)) =>
+					setReplace (var', SOME var))
+				       ; transfer)
+			      else transfer
+			   end
+		      | Prim {prim, args, failure, success} =>
                            let
-			      val {inDeg = succInDeg,
+			      val {args = succArgs,
+				   inDeg = succInDeg,
 				   success = succ, ...} =
 				 labelInfo success
-			      val {inDeg = failInDeg,
+			      val {args = failArgs,
+				   inDeg = failInDeg,
 				   failure = fail, ...} =
 				 labelInfo failure
 			      val exp = canon (PrimApp {prim = prim,
@@ -247,13 +261,18 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 			   in
 			      case HashSet.peek
 				   (table, hash,
-				    fn {exp = exp', ...} => Exp.equals(exp, exp')) of
-				 SOME {var = var', ...} =>
-				    if failureVar var'
+				    fn {exp = exp', ...} => Exp.equals (exp, exp')) of
+				 SOME {var, ...} =>
+				    if failureVar var
 				       then Goto {dst = failure,
 						  args = Vector.new0 ()}
-				    else Goto {dst = success,
-					       args = Vector.new1 var'}
+				    else (if !succInDeg = 1
+					     then setReplace 
+					          (#1 (Vector.sub (succArgs, 0)), 
+						   SOME var)
+					  else ()
+					  ; Goto {dst = success,
+						  args = Vector.new1 var})
 			       | NONE => (if !succInDeg = 1
 					     then succ := SOME exp
 					  else () ;
@@ -289,7 +308,8 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 	     val _ =
 		Vector.foreach
 		(blocks, fn Block.T {label, args, ...} =>
-		 (setLabelInfo (label, {success = ref NONE,
+		 (setLabelInfo (label, {args = args,
+					success = ref NONE,
 					failure = ref NONE,
 					inDeg = ref 0})))
 	     val _ =
