@@ -58,8 +58,7 @@ following grammar:
                 ({\tt and} {\it funid} [{\tt =} {\it funid}])* \\
 & $\alt$ & {\it path.}{\tt sml} \\
 & $\alt$ & {\it path.}{\tt mlb} \\
-& $\alt$ & {\tt ann} {\it id} ({\it id})* ({\tt ,}  {\it id} ({\it id})*)*
-           {\tt in} {\it basdec} {\tt end} \\
+& $\alt$ & {\tt ann} {\tt"}{\it anns}{\tt"} {\tt in} {\it basdec} {\tt end} \\
 \\
 {\it basexp}
 & ::=    & {\tt bas} {\it basdec} {\tt end} \\
@@ -410,9 +409,11 @@ Annotations are a mechanism that allows a library author to control
 options that affect the elaboration of SML source files.
 Conceptually, a basis file is elaborated in a default annotation
 environment (just as it is elaborated in an empty basis).  The {\tt
-ann {\it anns} in {\it basdec} end} declaration merges the annotations
-{\it anns} with the ``current'' annotation environment for the
-elaboration of {\it basdec}.  
+ann "{\it anns}" in {\it basdec} end} declaration merges the
+annotations {\it anns} with the ``current'' annotation environment for
+the elaboration of {\it basdec}.  To allow for future expansion, {\it
+anns} is lexed as a single SML string constant; individual annotations
+within {\it anns} should be separated by a comma ({\tt,}).
 
 In the explanation below, for annotations that take a boolean argument
 {\tt \trueFalse}, the first value listed is the default annotation.
@@ -460,7 +461,7 @@ do so, the programmer simply annotates the generated code with the
 local
   $(GEN_ROOT)/gen-lib.mlb
 
-  ann warnMatch false in
+  ann "warnMatch" false in
     foo.gen.sml
   end
 in
@@ -481,9 +482,9 @@ some libraries.  Hence, a library author may choose to deliver a
 library as follows:
 \begin{verbatim}
 ann 
-  sequenceUnit false,
-  warnMatch true,
-  warnUnused true, forceUsed
+  "sequenceUnit false, \
+  \warnMatch true, \
+  \warnUnused true, forceUsed"
 in
   local
     file1.sml

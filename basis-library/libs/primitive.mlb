@@ -1,13 +1,12 @@
-
 ann 
-   allowConstant true, 
-   allowImport true,
-   allowPrim true, 
-   allowRebindEquals true,
-   deadCode true,
-   sequenceUnit true,
-   warnMatch true,
-   warnUnused true  
+   "allowConstant true, \
+   \allowImport true, \
+   \allowPrim true, \
+   \allowRebindEquals true, \
+   \deadCode true, \
+   \sequenceUnit true, \
+   \warnMatch true, \
+   \warnUnused true"
 in
    _prim
    ../misc/primitive.sml

@@ -1,8 +1,8 @@
 ann  
-   deadCode true,
-   sequenceUnit true,
-   warnMatch true,
-   warnUnused true, forceUsed
+   "deadCode true, \
+   \sequenceUnit true, \
+   \warnMatch true, \
+   \warnUnused true, forceUsed"
 in
   local
     ../primitive.mlb
@@ -222,7 +222,7 @@ in
     ../../mlton/socket.sig
     ../../mlton/socket.sml
     ../../mlton/syslog.sig
-    ann allowImport true in ../../mlton/syslog.sml end
+    ann "allowImport true" in ../../mlton/syslog.sml end
     ../../mlton/vector.sig
     ../../mlton/weak.sig
     ../../mlton/weak.sml
@@ -241,7 +241,7 @@ in
 
     top-level/basis.sig
     ann
-      allowRebindEquals true 
+      "allowRebindEquals true"
     in 
       top-level/basis.sml 
     end
@@ -251,7 +251,7 @@ in
     top-level/basis-funs.sml
     ann
       (* for _basis_done *)
-      allowPrim true 
+      "allowPrim true"
     in
       top-level/top-level.sml 
     end

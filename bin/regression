@@ -127,10 +127,10 @@ for f in `ls *.sml`; do
 				\$(MLTON_ROOT)/basis/mlton.mlb
 				\$(MLTON_ROOT)/basis/sml-nj.mlb
  				ann 
-					allowExport true, 
-					allowImport true, 
-					allowOverload true,
-					warnMatch false
+					\"allowExport true, \\
+					\\allowImport true, \\
+					\\allowOverload true, \\
+					\\warnMatch false\"
 				in $f.sml 
 				end" >$mlb
 			cmd="$mlton $flags $extraFlags -output $f $mlb"

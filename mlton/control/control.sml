@@ -277,6 +277,11 @@ structure Elaborate =
       val withAnn = withAnn
       val setDef = setDef
       val setAble = setAble
+
+      fun parse s = 
+	 List.map (String.tokens (s, fn #"," => true | _ => false), fn s =>
+		   String.tokens (s, Char.isSpace))
+      fun fold (s, b, f) = List.fold (parse s, b, f)
    end
 
 val elaborateOnly =

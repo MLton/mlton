@@ -178,7 +178,7 @@ hexDigit=[0-9a-fA-F];
 		       fun make (t, v) =
 			  t (v, !stringStart, Source.getPos (source, yypos + 1))
                     in YYBEGIN INITIAL
-		       ; make (Tokens.FILE, s)
+		       ; make (Tokens.STRING, s)
                     end);
 <S>\\a		=> (addChar #"\a"; continue ());
 <S>\\b		=> (addChar #"\b"; continue ());

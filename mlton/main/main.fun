@@ -211,10 +211,9 @@ fun makeOptions {usage} =
        (Normal, "default-ann", " <ann>", "set annotation default for mlb files",
 	SpaceString 
 	(fn s =>
-	 List.foreach
-	 (String.tokens (s, fn #"," => true | _ => false), fn s =>
-	  if Control.Elaborate.setDef (String.tokens
-				       (s, fn #" " => true | _ => false))
+	 Control.Elaborate.fold
+	 (s, (), fn (ss, ()) => 
+	  if Control.Elaborate.setDef ss
 	     then ()
 	     else usage (concat ["invalid -default-ann flag: ", s])))),
        (Expert, "detect-overflow", " {true|false}",
@@ -235,10 +234,9 @@ fun makeOptions {usage} =
        (Normal, "disable-ann", " <ann>", "disable annotation in mlb files",
 	SpaceString 
 	(fn s =>
-	 List.foreach
-	 (String.tokens (s, fn #"," => true | _ => false), fn s =>
-	  if Control.Elaborate.setAble
-	     (false, String.deleteSurroundingWhitespace s)
+	 Control.Elaborate.fold
+	 (s, (), fn (ss, ()) => 
+	  if List.length ss = 1 andalso Control.Elaborate.setAble (false, hd ss)
 	     then ()
 	     else usage (concat ["invalid -disable-ann flag: ", s])))),
        (Expert, "drop-pass", " <pass>", "omit optimization pass",
@@ -254,10 +252,9 @@ fun makeOptions {usage} =
        (Expert, "enable-ann", " <ann>", "globally enable annotation",
 	SpaceString 
 	(fn s =>
-	 List.foreach
-	 (String.tokens (s, fn #"," => true | _ => false), fn s =>
-	  if Control.Elaborate.setAble 
-	     (true, String.deleteSurroundingWhitespace s)
+	 Control.Elaborate.fold
+	 (s, (), fn (ss, ()) =>
+	  if List.length ss = 1 andalso Control.Elaborate.setAble (true, hd ss)
 	     then ()
 	     else usage (concat ["invalid -enable-ann flag: ", s])))),
        (Expert, "error-threshhold", " 20", "error threshhold",

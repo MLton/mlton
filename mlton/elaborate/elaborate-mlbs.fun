@@ -15,11 +15,11 @@ local
    open Control.Elaborate
 in
    val withDef = withDef
-   fun withAnns (anns, f) =
+   fun withAnns (anns, reg, f) =
       let
 	 val restore = 
-	    List.fold
-	    (anns, fn () => (), fn ((ann,reg), restore) =>
+	    fold
+	    (anns, fn () => (), fn (ann, restore) =>
 	     let
 		fun warn () =
 		   if !Control.warnAnn
@@ -206,12 +206,12 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
 			 end
 		    else ()
 		 ; Env.openBasis (E, primBasis))
-	   | Basdec.Ann (anns, basdec) =>
+	   | Basdec.Ann (anns, reg, basdec) =>
 		let
 		   val old = forceUsed ()
 		in
 		   withAnns 
-		   (anns, fn () => 
+		   (anns, reg, fn () => 
 		    if forceUsed () <> old
 		       then Env.forceUsedLocal (E, fn () => elabBasdec basdec)
 		       else elabBasdec basdec)

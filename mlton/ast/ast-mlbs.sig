@@ -39,7 +39,7 @@ signature AST_MLBS =
 	 sig
 	    type t
 	    datatype node =
-	       Ann of (string list * Region.t) list * t
+	       Ann of string * Region.t * t
 	     | Basis of {name: Basid.t, def: Basexp.t} vector
 	     | Defs of ModIdBind.t
 	     | Local of t * t
@@ -52,7 +52,7 @@ signature AST_MLBS =
 	    include WRAPPED sharing type node' = node
 	                    sharing type obj = t
 
-	    val ann: (string list * Region.t) list * t -> t
+	    val ann: string * Region.t * t -> t
 	    val basis: {name: Basid.t, def: Basexp.t} vector -> t
 	    val defs: ModIdBind.t -> t
 	    val empty: t

@@ -170,6 +170,13 @@ nj-mlton-dual:
 	$(MAKE) script basis mlbpathmap targetmap constants libraries-no-check
 	@echo 'Build of MLton succeeded.'
 
+.PHONY: nj-mlton-quad
+nj-mlton-quad:
+	$(MAKE) dirs runtime
+	$(MAKE) -C $(COMP) nj-mlton-dual
+	$(MAKE) script basis mlbpathmap targetmap constants libraries-no-check
+	@echo 'Build of MLton succeeded.'
+
 .PHONY: mlbpathmap
 mlbpathmap:
 	touch $(MLBPATHMAP)

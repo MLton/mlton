@@ -87,6 +87,9 @@ signature CONTROL =
 	    val setDef: string list -> bool
 	    val withAnn: string list -> (unit -> unit) option
 	    val withDef: (unit -> 'a) -> 'a
+
+	    val parse: string -> string list list
+	    val fold: string * 'b * (string list * 'b -> 'b) -> 'b
 	 end
 
       (* stop after elaboration.  So, no need for the elaborator to generate

@@ -27,7 +27,7 @@ datatype basexpNode =
  | Let of basdec * basexp
  | Var of Basid.t
 and basdecNode =
-   Ann of (string list * Region.t) list * basdec
+   Ann of string * Region.t * basdec
  | Basis of {name: Basid.t, def: basexp} vector
  | Defs of ModIdBind.t
  | Local of basdec * basdec
@@ -46,15 +46,12 @@ fun layoutBasexp exp =
     | Var basid => Basid.layout basid 
 and layoutBasdec dec =
    case node dec of
-      Ann (anns, dec) =>
+      Ann (anns,_, dec) =>
 	 align [str "ann", 
-		indent ((seq o separate)
-			(List.map (anns, fn (ann,_) =>
-				   (seq o separate) (List.map (ann, str), " ")), 
-			 ","),
-			3),
+		indent (seq [str String.dquote, str anns, str String.dquote], 3),
 		str "in", 
-		indent (layoutBasdec dec, 3), str "end"]
+		indent (layoutBasdec dec, 3), 
+		str "end"]
     | Basis basbnds =>
 	 layoutAndsBind
 	 ("basis", "=", basbnds, fn {name, def} =>
@@ -79,7 +76,7 @@ fun checkSyntaxBasexp (e: basexp): unit =
     | Var _ => ()
 and checkSyntaxBasdec (d: basdec): unit =
    case node d of
-      Ann (_, dec) => checkSyntaxBasdec dec
+      Ann (_, _, dec) => checkSyntaxBasdec dec
     | Basis basbnds =>
 	 reportDuplicates
 	 (basbnds, {equals = (fn ({name = id, ...}, {name = id', ...}) =>
@@ -113,7 +110,7 @@ fun sourceFiles (d: basdec): File.t vector =
 	  | Var _ => ()
       and sourceFilesBasdec (d: basdec): unit =
 	 case node d of
-	    Ann (_, dec) => sourceFilesBasdec dec
+	    Ann (_, _, dec) => sourceFilesBasdec dec
 	  | Basis basbnds =>
 	       Vector.foreach
 	       (basbnds, fn {def, ...} =>

@@ -12,7 +12,7 @@ FLAGS = @MLton ram-slop 0.7 gc-summary $(RUNTIME_ARGS) --
 
 ifeq (self, $(shell if [ -x $(BIN)/mlton ]; then echo self; fi))
   # We're compiling MLton with itself, so don't use any stubs.
-  CM = mlton.cm
+  CM = mlton.mlb
   FLAGS += -default-ann 'sequenceUnit true'
 else
 ifeq (cygwin, $(shell $(SRC)/bin/host-os))
@@ -116,6 +116,22 @@ nj-mlton-dual: $(SOURCES)
 		echo 'Control.polyEqWarn := false;';				\
 		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server1", pathtrans = NONE, pref = 0};';\
 		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server2", pathtrans = NONE, pref = 0};';\
+		echo 'CM.make "sources.cm";';					\
+		echo 'Main.exportNJ ("$(LIB)/mlton");'	\
+	) | $(SML)
+
+.PHONY: nj-mlton-quad
+nj-mlton-quad: $(SOURCES)
+	$(MAKE) check-nj-version
+	(									\
+		echo 'SMLofNJ.Internals.GC.messages false;';			\
+		echo '#set CM.Control.verbose false;';				\
+		echo '#set CM.Control.warn_obsolete false;';			\
+		echo 'Control.polyEqWarn := false;';				\
+		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server1", pathtrans = NONE, pref = 0};';\
+		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server2", pathtrans = NONE, pref = 0};';\
+		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server3", pathtrans = NONE, pref = 0};';\
+		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server4", pathtrans = NONE, pref = 0};';\
 		echo 'CM.make "sources.cm";';					\
 		echo 'Main.exportNJ ("$(LIB)/mlton");'	\
 	) | $(SML)

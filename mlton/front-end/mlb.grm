@@ -24,13 +24,10 @@ type basbinds = {name: Basid.t, def: Basexp.t} list
       ID of string | COMMA | SEMICOLON | EOF
     | AND | BAS | BASIS | END | EQUALOP | FUNCTOR | IN | LET 
     | LOCAL | OPEN | SIGNATURE | STRUCTURE
-    | ANN | PRIM | FILE of string
+    | ANN | PRIM | FILE of string | STRING of string
 
 %nonterm
-	 ann of string list
-       | anns of (string list * Region.t) list
-       | anns' of (string list * Region.t) list
-       | basbinds of basbinds
+	 basbinds of basbinds
        | basbinds' of Basexp.t * basbinds
        | basbinds'' of basbinds
        | basdec of Basdec.t
@@ -122,8 +119,13 @@ basdecnode
      (let val reg = reg (FILEleft, FILEright)
       in lexAndParseProgOrMLB (FILE, reg)
       end)
+   | STRING
+     (let val reg = reg (STRINGleft, STRINGright)
+      in lexAndParseProgOrMLB (STRING, reg)
+      end)
    | PRIM (Basdec.Prim)
-   | ANN anns IN basdecs END  (Basdec.Ann (anns, basdecs))
+   | ANN STRING IN basdecs END  
+     (Basdec.Ann (STRING, reg (STRINGleft, STRINGright), basdecs))
 
 fctbinds : fctid EQUALOP fctbinds'
            (let val (def, fctbinds) = fctbinds'
@@ -191,10 +193,3 @@ sigid : id  (Sigid.fromSymbol id)
 strid : id  (Strid.fromSymbol id)
 id : ID     (Symbol.fromString ID, reg (IDleft, IDright))
 
-anns : ann anns'  ((ann, reg (annleft, annright))::anns')
-
-anns' :             ([])
-      | COMMA anns  (anns)
-
-ann :         ([]) 
-    | ID ann  (ID::ann)
