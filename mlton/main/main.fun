@@ -123,10 +123,12 @@ fun makeOptions {usage} =
 			   | "8" => Align8
 			   | _ => usage (concat ["invalid -align flag: ",
 						 s]))))),
-       (Normal, "basis", " {2002|1997|...}",
+       (Expert, "basis", " {2002|1997|...}",
 	"select basis library to prefix to the program",
 	SpaceString (fn s =>
 		     let
+			val _ = Out.output (Out.error,
+					    "Warning: -basis is deprecated\n")
 			val s' = concat ["basis-", s]
 		     in
 			if List.contains (basisLibs, s', String.equals)

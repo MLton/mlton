@@ -1,5 +1,10 @@
 Here are the changes since version 20030716.
 
+* 2003-12-17
+  - Removed -basis as a normal flag.  It is still available as an
+    expert flag, but its use is deprecated.  It will almost certainly
+    disappear after the next release.
+
 * 2003-12-10
   - Allow multiple @MLton -- runtime args in sequnce.  This makes it
     easier for scripts to prefix @MLton args without having to splice

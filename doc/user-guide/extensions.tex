@@ -1200,17 +1200,3 @@ signature UNSAFE =
       where type elem = Real64Array.elem
   end
 \end{verbatim}
-
-\subsec{{\tt Basis1997: BASIS\_1997}}{basis1997}
-
-Opening this module at the top-level will, for the most part, simulate
-the Basis Library as implemented in previous versions of {\mlton}.
-However, there are two major caveats.  First, {\tt Basis1997} inherits
-much of the current Basis Library implementation.  Hence, some
-functions violate the stated semantics of the previous Basis Library
-specification.  For the most part, such violations are benign; the
-major exception is the {\tt Time} module which now supports negative
-time-values.  Second, since Standard ML does not support declaring
-signatures within structures, opening this module will not introduce
-signatures.  To recover such signatures, compile with {\tt -basis
-1997} instead.
