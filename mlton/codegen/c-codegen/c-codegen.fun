@@ -214,17 +214,12 @@ structure Statement =
 				  NONE => ()
 				| SOME dst =>
 				     print (concat [Operand.toString dst, " = "])
-			    fun doit () =
+			    val _ =
 			       C.call (Prim.toString prim,
 				       Vector.toListMap (args, Operand.toString),
 				       print)
 			 in 
-			    case Prim.name prim of
-			       Prim.Name.FFI s =>
-				  (case Prim.numArgs prim of
-				      NONE => print (concat [s, ";\n"])
-				    | SOME _ => doit ())
-			     | _ => doit ()
+			    ()
 			 end
 		    | SetExnStackLocal {offset} =>
 			 C.call ("SetExnStackLocal", [C.int offset], print)
@@ -541,10 +536,17 @@ fun output {program = Machine.Program.T {chunks,
 			      case returnTy of
 				 NONE => ()
 			       | SOME t => print (concat [creturn t, " = "])
-			   val _ = 
+			   fun doit () =
 			      C.call (Prim.toString prim,
 				      Vector.toListMap (args, Operand.toString),
 				      print)
+			   val _ =
+			      case Prim.name prim of
+				 Prim.Name.FFI s =>
+				    (case Prim.numArgs prim of
+					NONE => print (concat [s, ";\n"])
+				      | SOME _ => doit ())
+			       | _ => doit ()
 			   val _ = gotoLabel return
 			in
 			   ()
@@ -605,11 +607,12 @@ fun output {program = Machine.Program.T {chunks,
 		   | Raise => C.call ("\tRaise", [], print)
 		   | Return _ => C.call ("\tReturn", [], print)
 		   | Runtime {args, prim, return, ...} =>
-			C.call (Prim.toString prim,
-				[C.int (labelFrameSize return),
-				 Label.toStringIndex return]
-				@ Vector.toListMap (args, Operand.toString),
-				print)
+			(print "\t"
+			 ; C.call (Prim.toString prim,
+				   [C.int (labelFrameSize return),
+				    Label.toStringIndex return]
+				   @ Vector.toListMap (args, Operand.toString),
+				   print))
 		   | Switch {test, cases, default} =>
 			let 
 			   val test = Operand.toString test

@@ -612,6 +612,7 @@ structure Program =
 		      andalso frameOffsetsIndex <= Vector.length frameOffsets
 		      andalso 0 <= size
 		      andalso size <= maxFrameSize
+		      andalso size <= Runtime.maxFrameSize
 		      andalso 0 = Int.rem (size, 4)
 		   fun checkFrameInfo i =
 		      check' (i, "frame info", frameInfoOk, FrameInfo.layout)

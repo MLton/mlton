@@ -291,9 +291,8 @@ fun allocate {argOperands: Machine.Operand.t vector,
 	  Var.layout, Option.layout Label.layout, Bool.layout, Stack.layout,
 	  Stack.layout)
 	 allocateVar
-      val stack = Stack.empty
       (* Create the initial stack and set the stack slots for the formals. *)
-      val _ =
+      val stack =
 	 Stack.new
 	 (Vector.foldr2 (args, argOperands, [],
 			 fn ((x, t), oper, ac) =>

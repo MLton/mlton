@@ -43,6 +43,8 @@ rssa.fun
 rssa.sig
 runtime.sig
 runtime.sml
+signal-check.fun
+signal-check.sig
 ssa-to-rssa.fun
 ssa-to-rssa.sig
 

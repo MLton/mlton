@@ -37,6 +37,7 @@ structure AllocateRegisters = AllocateRegisters (structure Machine = Machine
 structure Chunkify = Chunkify (Rssa)
 structure LimitCheck = LimitCheck (structure Rssa = Rssa)
 structure ParallelMove = ParallelMove ()
+structure SignalCheck = SignalCheck(structure Rssa = Rssa)
 structure SsaToRssa = SsaToRssa (structure Rssa = Rssa
 				 structure Ssa = Ssa)
 
@@ -106,8 +107,6 @@ structure Chunk =
 	 List.push (blocks, M.Block.T z)
    end
 
-val maxFrameSize = Int.^ (2, 16)
-
 val traceGenBlock =
    Trace.trace ("Backend.genBlock",
 		Label.layout o R.Block.label,
@@ -115,20 +114,16 @@ val traceGenBlock =
 
 fun toMachine (program: Ssa.Program.t) =
    let
-      val program =
-	 Control.passTypeCheck {name = "ssaToRssa",
-				suffix = "rssa",
+      fun pass (name, doit, program) =
+	 Control.passTypeCheck {display = Control.Layouts Rssa.Program.layouts,
+				name = name,
 				style = Control.No,
-				thunk = fn () => SsaToRssa.convert program,
-				display = Control.Layouts Rssa.Program.layouts,
-				typeCheck = R.Program.typeCheck}
-      val program = 
-	 Control.passTypeCheck {name = "insertLimitChecks",
 				suffix = "rssa",
-				style = Control.No,
-				thunk = fn () => LimitCheck.insert program,
-				display = Control.Layouts Rssa.Program.layouts,
+				thunk = fn () => doit program,
 				typeCheck = R.Program.typeCheck}
+      val program = pass ("ssaToRssa", SsaToRssa.convert, program)
+      val program = pass ("insertLimitChecks", LimitCheck.insert, program)
+      val program = pass ("insertSignalChecks", SignalCheck.insert, program)
       val R.Program.T {functions, main} = program
       (* Chunk information *)
       val {get = labelChunk, set = setLabelChunk, ...} =
@@ -157,32 +152,6 @@ fun toMachine (program: Ssa.Program.t) =
 		   offsets: int list,
 		   return: Label.t,
 		   size: int} list ref = ref []
-      fun newFrame (f as {chunkLabel, live, return, size}) = 
-	 let
-	    val _ =
-	       if size >= maxFrameSize
-		  then (Error.bug
-			(concat ["MLton cannot handle stack frames larger than ",
-				 Int.toString maxFrameSize,
-				 " bytes."]))
-	       else ()
-	    val offsets =
-	       Vector.fold (live, [], fn (oper, ac) =>
-			    case oper of
-			       M.Operand.StackOffset {offset, ty} =>
-				  (case Type.dest ty of
-				      Type.Pointer => offset :: ac
-				    | _ => ac)
-			     | _ => ac)
-	 in
-	    List.push (frames, {chunkLabel = chunkLabel,
-				offsets = offsets,
-				return = return,
-				size = size})
-	 end
-      val newFrame =
-	 Trace.trace ("Backend.newFrame", Label.layout o #return, Unit.layout)
-	 newFrame
       (* Set funcChunk and labelChunk. *)
       val _ =
 	 Vector.foreach
@@ -409,8 +378,8 @@ fun toMachine (program: Ssa.Program.t) =
 	    (* Set the constant operands, labelInfo, and varInfo. *)
 	    val _ = newVarInfos args
 	    val _ =
-	       Vector.foreach
-	       (blocks, fn R.Block.T {args, label, statements, transfer, ...} =>
+	       Rssa.Function.dfs
+	       (f, fn R.Block.T {args, label, statements, transfer, ...} =>
 		let
 		   val _ = setLabelInfo (label, {args = args})
 		   val _ = newVarInfos args
@@ -442,7 +411,7 @@ fun toMachine (program: Ssa.Program.t) =
 		       end)
 		   val _ = R.Transfer.foreachDef (transfer, newVarInfo)
 		in
-		   ()
+		   fn () => ()
 		end)
 	    fun callReturnOperands (xs: 'a vector,
 				    ty: 'a -> Type.t,
@@ -580,7 +549,8 @@ fun toMachine (program: Ssa.Program.t) =
 			   datatype z = datatype R.LimitCheck.t
 			   val kind =
 			      case kind of
-				 Array {bytesPerElt, extraBytes, numElts, stackToo} =>
+				 Array {bytesPerElt, extraBytes, numElts,
+					stackToo} =>
 				    M.LimitCheck.Array
 				    {bytesPerElt = bytesPerElt,
 				     extraBytes = extraBytes,
@@ -675,16 +645,28 @@ fun toMachine (program: Ssa.Program.t) =
 		  val (preTransfer, transfer) =
 		     genTransfer (transfer, chunk, label)
 		  fun frame () =
-		     newFrame {chunkLabel = Chunk.label chunk,
-			       live = liveNoFormals,
-			       return = label,
-			       size = size}
+		     let
+			val offsets =
+			   Vector.fold
+			   (liveNoFormals, [], fn (oper, ac) =>
+			    case oper of
+			       M.Operand.StackOffset {offset, ty} =>
+				  (case Type.dest ty of
+				      Type.Pointer => offset :: ac
+				    | _ => ac)
+			     | _ => ac)
+		     in
+			List.push (frames, {chunkLabel = Chunk.label chunk,
+					    offsets = offsets,
+					    return = label,
+					    size = size})
+		     end
 		  val (kind, pre) =
 		     case kind of
 			R.Kind.Cont {handler} =>
 			   let
 			      val _ = frame ()
-			      val srcs = callReturnOperands (args, #2, 0)
+			      val srcs = callReturnOperands (args, #2, size)
 			   in
 			      (M.Kind.Cont {args = srcs,
 					    frameInfo = M.FrameInfo.bogus},

@@ -651,20 +651,20 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 					   NONE => none ()
 					 | SOME t =>
 					      let
-						 val c =
-						    case Type.dest t of
-						       Type.Char =>
-							  Const.fromChar #"\000"
-						     | Type.Double =>
-							  Const.fromReal "0.0"
-						     | Type.Int =>
-							  Const.fromInt 0
-						     | Type.Pointer =>
-							  Const.fromInt 1
-						     | Type.Uint =>
-							  Const.fromWord 0w0
+						 val c = Operand.Const
 					      in
-						 move (Operand.Const c)
+						 move
+						 (case Type.dest t of
+						     Type.Char =>
+							c (Const.fromChar #"\000")
+						   | Type.Double =>
+							c (Const.fromReal "0.0")
+						   | Type.Int =>
+							c (Const.fromInt 0)
+						   | Type.Pointer =>
+							Operand.Pointer 1
+						   | Type.Uint =>
+							c (Const.fromWord 0w0))
 					      end)
 				  | MLton_eq =>
 				       (case targ () of

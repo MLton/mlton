@@ -319,6 +319,7 @@ int main(int argc, char **argv) {					\
 	do {								\
 		declareFirst;						\
 									\
+/*		fprintf(stderr, "%d  LimitCheck\n", __LINE__); 	*/	\
 		if (GC_EVERY_CHECK					\
 		or (GC_FIRST_CHECK and gc_first)			\
 		or frontier + (b) > gcState.limit			\
@@ -605,7 +606,7 @@ int Int_bogus;
 		InvokeRuntime(GC_copyThread(&gcState, t), frameSize, ret);	\
 	} while (0)
 
-#define Thread_copyCurrent(frameSize)						\
+#define Thread_copyCurrent(frameSize, ret)					\
 	do {									\
 		InvokeRuntime(GC_copyCurrentThread(&gcState), frameSize, ret);	\
 	} while (0)
@@ -620,7 +621,7 @@ int Int_bogus;
 	do {									\
 		GC_thread t = thread;						\
 		stackTop += (frameSize);					\
-		*(uint*)(stackTop - WORD_SIZE) = (ret ## _index);		\
+		*(uint*)(stackTop - WORD_SIZE) = ret;				\
 	 	gcState.currentThread->stack->used =				\
 			stackTop - gcState.stackBottom;				\
 	 	gcState.currentThread = t;					\

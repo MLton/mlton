@@ -97,6 +97,11 @@ structure Statement =
        | SetHandler of Label.t
        | SetSlotExnStack
 
+      fun hasPrim (s, f) =
+	 case s of
+	    PrimApp {prim, ...} => f prim
+	  | _ => false
+
       fun 'a foldDefUse (s, a: 'a, {def: Var.t * Type.t * 'a -> 'a,
 				    use: Var.t * 'a -> 'a}): 'a =
 	 let
@@ -237,6 +242,13 @@ structure Transfer =
 		      pointer: Label.t,
 		      test: Operand.t}
 
+      fun hasPrim (t, f) =
+	 case t of
+	    Arith {prim, ...} => f prim
+	  | CCall {prim, ...} => f prim
+	  | Runtime {prim, ...} => f prim
+	  | _ => false
+	    
       fun layout t =
 	 let
 	    open Layout
@@ -438,6 +450,10 @@ structure Block =
 	  ; Vector.foreach (statements, Statement.clear)
 	  ; Transfer.clear transfer)
 
+      fun hasPrim (T {statements, transfer, ...}, f) =
+	 Vector.exists (statements, fn s => Statement.hasPrim (s, f))
+	 orelse Transfer.hasPrim (transfer, f)
+
       fun layout (T {args, kind, label, statements, transfer}) =
 	 let
 	    open Layout
@@ -480,6 +496,9 @@ structure Function =
 	 (Func.clear name
 	  ; Vector.foreach (args, Var.clear o #1)
 	  ; Vector.foreach (blocks, Block.clear))
+
+      fun hasPrim (T {blocks, ...}, pred) =
+	 Vector.exists (blocks, fn b => Block.hasPrim (b, pred))
 
       fun layout (T {args, blocks, name, start}): Layout.t =
 	 let
@@ -576,6 +595,13 @@ structure Program =
       fun clear (T {functions, main, ...}) =
 	 (List.foreach (functions, Function.clear)
 	  ; Function.clear main)
+
+      fun hasPrim (T {functions, main}, pred) =
+	 let
+	    fun has f = Function.hasPrim (f, pred)
+	 in
+	    has main orelse List.exists (functions, has)
+	 end
 	 
       fun layouts (T {functions, main}, output': Layout.t -> unit): unit =
 	 let

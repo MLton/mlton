@@ -8,17 +8,17 @@ fun insertFunction (f: Function.t) =
    let
       val {args, blocks, name, start} = Function.dest f
       val extra = ref []
-      fun add {args, kind, start, success} =
+      fun add {args, blockKind, lcKind, start, success} =
 	 let
 	    val failure = Label.newNoname ()
 	 in
 	    extra :=
 	    Block.T {args = args,
-		     kind = Kind.Jump,
+		     kind = blockKind,
 		     label = start,
 		     statements = Vector.new0 (),
 		     transfer = Transfer.LimitCheck {failure = failure,
-						     kind = kind,
+						     kind = lcKind,
 						     success = success}}
 	    :: Block.T {args = Vector.new0 (),
 			kind = Kind.Runtime {prim = Prim.gcCollect},
@@ -48,12 +48,13 @@ fun insertFunction (f: Function.t) =
 		let
 		   val success = Label.newNoname ()
 		   val _ = add {args = args,
-				kind = lcKind,
+				blockKind = kind,
+				lcKind = lcKind,
 				start = label,
 				success = success}
 		in
 		   Block.T {args = Vector.new0 (),
-			    kind = kind,
+			    kind = Kind.Jump,
 			    label = success,
 			    statements = statements,
 			    transfer = transfer}
@@ -85,17 +86,21 @@ fun insertFunction (f: Function.t) =
 			       + Runtime.pointerSize
 			 in
 			    insert
-			    (LimitCheck.Array {bytesPerElt = bytesPerElt,
-					       extraBytes = bytes,
-					       numElts = numElts,
-					       stackToo = false})
+			    (if bytesPerElt = 0
+				then LimitCheck.Heap {bytes = extraBytes,
+						      stackToo = false}
+			     else LimitCheck.Array {bytesPerElt = bytesPerElt,
+						    extraBytes = extraBytes,
+						    numElts = numElts,
+						    stackToo = false})
 			 end
                     | _ => normal ()
 	     else normal ()
 	  end)
       val newStart = Label.newNoname ()
       val _ = add {args = Vector.new0 (),
-		   kind = LimitCheck.Stack,
+		   blockKind = Kind.Jump,
+		   lcKind = LimitCheck.Stack,
 		   start = newStart,
 		   success = start}
       val blocks = Vector.concat [blocks, Vector.fromList (!extra)]

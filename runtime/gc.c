@@ -140,7 +140,7 @@ roundPage(size_t size)
 /*                      display                      */
 /* ------------------------------------------------- */
 
-static void display(GC_state s, FILE *stream) {
+void GC_display(GC_state s, FILE *stream) {
 	fprintf(stream, "base = %x  frontier - base = %d  limit - frontier = %d\n",
 			(uint) s->base, 
 			s->frontier - s->base,
@@ -621,7 +621,7 @@ bool
 GC_mutatorInvariant(GC_state s)
 {
 	if (DEBUG)
-		display(s, stderr);
+		GC_display(s, stderr);
 	assert(stackTopIsOk(s, s->currentThread->stack));
 	assert(invariant(s));
 	return TRUE;
@@ -717,7 +717,7 @@ GC_enter(GC_state s)
 	/* used needs to be set because the mutator has changed s->stackTop. */
 	s->currentThread->stack->used = currentStackUsed(s);
 	if (DEBUG) 
-		display(s, stderr);
+		GC_display(s, stderr);
 	unless (s->inSignalHandler) {
 		blockSignals(s);
 		if (s->limit == 0)
@@ -1327,7 +1327,7 @@ void GC_gc(GC_state s, uint bytesRequested, bool force,
 	GC_enter(s);
 	if (DEBUG) {
 		fprintf (stderr, "%s %d: ", file, line);
-		display(s, stderr);
+		GC_display(s, stderr);
 	}
 	stackBytesRequested =
 		(stackTopIsOk(s, s->currentThread->stack))
@@ -1366,7 +1366,7 @@ void GC_gc(GC_state s, uint bytesRequested, bool force,
 		/* Switch to the signal handler thread. */
 		if (DEBUG) {
 			fprintf(stderr, "switching to signal handler\n");
-			display(s, stderr);
+			GC_display(s, stderr);
 		}
 		assert(s->signalIsPending);
 		s->signalIsPending = FALSE;
@@ -1479,7 +1479,7 @@ GC_finishHandler(GC_state s, GC_thread t)
 {
 	if (DEBUG) {
 		fprintf(stderr, "GC_finishHandler\n");
-		display(s, stderr);
+		GC_display(s, stderr);
 	}
 	GC_enter(s);
 	assert(t != BOGUS_THREAD);

@@ -197,6 +197,7 @@ signature RSSA =
 	    val statements: t -> Statement.t vector
 	    val transfer: t -> Transfer.t
 	 end
+
       structure Function:
 	 sig
 	    type t
@@ -230,6 +231,7 @@ signature RSSA =
 		     main: Function.t}
 
 	    val clear: t -> unit
+	    val hasPrim: t * (Prim.t -> bool) -> bool
 	    val layouts: t * (Layout.t -> unit) -> unit
 	    val typeCheck: t -> unit
 	 end

@@ -44,5 +44,7 @@ fun isWordAligned (n: int): bool =
    
 fun isValidObjectSize (n: int): bool =
    n > 0 andalso isWordAligned n
-   
+
+val maxFrameSize = Int.^ (2, 16)
+
 end

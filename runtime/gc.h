@@ -412,6 +412,8 @@ void GC_setHeapParams(GC_state s, uint size);
  */
 uint GC_computeHeapSize(GC_state s, uint live, uint ratio);
 
+void GC_display(GC_state s, FILE *stream);
+
 bool GC_mutatorInvariant(GC_state s);
 
 void GC_fromSpace(GC_state s);

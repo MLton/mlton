@@ -224,11 +224,8 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
        * occurs before the use.  But, a back propagated use will always
        * come after a def in the same block
        *)
-      val _ =
-	 List.foreach
-	 ([(handlerCodeDefUses, #1),
-	   (handlerLinkDefUses, #2)], fn (defuse, sel) =>
-	  let
+      fun handlerLink (defuse, sel) =
+	 let
 	    val todo: LiveInfo.t list ref = ref []
 	    val defs =
 	       List.foldr
@@ -238,7 +235,7 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 		      if List.exists (defs, fn b' => LiveInfo.equals (b, b'))
 			 then defs
 		      else (sel liveHS := true
-			    ; List.push(todo, b)
+			    ; List.push (todo, b)
 			    ; defs))
 	    fun consider (b as LiveInfo.T {liveHS, ...}) =
 	       if List.exists (defs, fn b' => LiveInfo.equals (b, b'))
@@ -255,8 +252,10 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 		      ; loop ())
 	    val _ = loop ()
 	 in
-	   ()
-	 end)
+	    ()
+	 end
+      val _ = handlerLink (handlerCodeDefUses, #1)
+      val _ = handlerLink (handlerLinkDefUses, #2)
       fun labelLive (l: Label.t) =
 	 let
 	    val {bodyInfo, argInfo, ...} = labelInfo l
