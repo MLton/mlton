@@ -1,0 +1,29 @@
+Group
+
+signature REPRESENT
+functor Represent
+
+signature RCPS
+functor Rcps
+
+is
+
+../atoms/sources.cm
+../control/sources.cm
+../cps/sources.cm
+../../lib/mlton/sources.cm
+
+rcps-tree.sig
+rcps-tree.fun
+
+type-check.sig
+type-check.fun
+
+simplify.sig
+simplify.fun
+
+rcps.sig
+rcps.fun
+
+represent.sig
+represent.fun
