@@ -218,6 +218,14 @@ static void showMem() {
 
 #endif
 
+static inline void releaseFromSpace (GC_state s) {
+	if (s->messages)
+		fprintf (stderr, "Releasing from space.\n");
+	release (s->base, s->fromSize);
+	s->base = NULL;
+	s->fromSize = 0;
+}
+
 static inline void releaseToSpace (GC_state s) {
 	if (s->messages)
 		fprintf (stderr, "Releasing to space.\n");
@@ -1697,13 +1705,42 @@ static void swapSemis (GC_state s) {
 	s->toSize = tmp;
 }
 
+static void pageFromSpace (GC_state s, uint bytesRequested) {
+	FILE *stream;
+	char template[80] = "/tmp/FromSpaceXXXXXX";
+	int fd;
+	pointer old;
+
+	fd = smkstemp (template);
+	sclose (fd);
+	if (s->messages)
+		fprintf (stderr, "Paging fromSpace to %s.\n", template);
+	stream = sfopen (template, "wb");
+	old = s->base;
+	sfwrite (s->base, 1, s->bytesLive, stream);
+	sfclose (stream);
+	releaseFromSpace (s);
+	prepareToSpace (s, bytesRequested, 0);
+	if (s->bytesLive + bytesRequested > s->toSize) {
+		sunlink (template);
+		if (s->messages)
+			showMem ();
+		die ("Out of memory.  Unable to allocate semispace.  bytesRequested = %s.", uintToCommaString (bytesRequested));
+	}
+	swapSemis (s);
+	stream = sfopen (template, "rb");
+	sfread (s->base, 1, s->bytesLive, stream);
+	sfclose (stream);
+	sunlink (template);
+	GC_translateHeap (s, old, s->base, s->bytesLive);
+}
+
 /* If the GC didn't create enough space, then release toSpace, shrink 
  * fromSpace as much as possible, shifting it to a new location.  Then
  * try to allocate the semispace again.
  */
-static void shiftFromSpace (GC_state s, uint bytesRequested, 
-				uint stackBytesRequested) {
-	pointer old;
+static void shiftFromSpace (GC_state s, uint bytesRequested) {
+	pointer old, semi;
 	W32 keep, size;
 
 	if (s->messages)
@@ -1715,28 +1752,34 @@ static void shiftFromSpace (GC_state s, uint bytesRequested,
 	/* Allocate a new from space that is just large enough. */
 	keep = roundPage (s, s->bytesLive);
 	s->fromSize = keep;
-	s->base = allocateSemi (s, keep);
-	if ((void*)-1 == s->base) {
-		if (s->messages)
-			showMem ();
-		die ("Out of memory.  Unable to shift from space.");
+	semi = allocateSemi (s, keep);
+	if ((void*)-1 == semi)
+		pageFromSpace (s, bytesRequested);
+	else {
+		s->base = semi;
+		memcpy (s->base, old, keep);
+		GC_translateHeap (s, old, s->base, s->bytesLive);
+		release (old, size);
+		/* Allocate a new toSpace and copy to it. */
+		prepareToSpace (s, bytesRequested, 0);
+		if (s->bytesLive + bytesRequested > s->toSize) {
+			releaseToSpace (s);
+			pageFromSpace (s, bytesRequested);
+		} else {
+			old = s->base;
+			memcpy (s->toBase, s->base, keep);
+			GC_translateHeap (s, old, s->toBase, s->bytesLive);
+			release (s->base, keep);
+			s->base = s->toBase;
+			s->fromSize = s->toSize;
+			s->toBase = NULL;
+			s->toSize = 0;
+		}
 	}
-	memcpy (s->base, old, keep);
-	GC_translateHeap (s, old, s->base, s->bytesLive);
-	release (old, size);
-	/* Allocate a new toSpace and copy to it. */
-	prepareToSpace (s, bytesRequested, stackBytesRequested);
-	old = s->base;
-	memcpy (s->toBase, s->base, keep);
-	GC_translateHeap (s, old, s->toBase, s->bytesLive);
-	release (s->base, keep);
-	s->base = s->toBase;
-	s->fromSize = s->toSize;
-	s->toBase = NULL;
-	s->toSize = 0;
 	GC_setStack (s);
 	s->frontier = s->base + s->bytesLive;
 	setLimit (s);
+	assert (bytesRequested <= s->limit - s->frontier);
 }
 
 void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
@@ -1778,12 +1821,7 @@ void GC_doGC(GC_state s, uint bytesRequested, uint stackBytesRequested) {
 	s->bytesCopied += s->bytesLive;
 	setLimit(s);
 	if (bytesRequested > s->limit - s->frontier) {
-		shiftFromSpace (s, bytesRequested, stackBytesRequested);
-		if (bytesRequested > s->limit - s->frontier) {
-			if (s->messages)
-				showMem ();
-			die ("Out of memory.");
-		}
+		shiftFromSpace (s, bytesRequested);
 	} else {
 		resizeHeap (s, bytesRequested);
 		setLimit (s);

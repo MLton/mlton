@@ -43,6 +43,20 @@ void asfail(char *file, int line, char *prop)
 	abort();
 }
 
+void sclose (int fd) {
+	unless (0 == close (fd)) 
+		diee ("unable to close %d", fd);
+}
+
+int smkstemp (char *template) {
+	int fd;
+
+	fd = mkstemp (template);
+	if (-1 == fd)
+		diee ("unable to make temporary file");
+	return fd;
+}
+
 /* safe version of write */
 void swrite(int fd, const void *buf, size_t count) {
 	if (0 == count) return;
@@ -52,6 +66,12 @@ void swrite(int fd, const void *buf, size_t count) {
 
 void swriteUint(int fd, uint n) {
 	swrite(fd, &n, sizeof(uint));
+}
+
+/* safe version of fclose */
+void sfclose (FILE *file) {
+	unless (0 == fclose (file))
+		diee ("unable to close file");
 }
 
 /* safe version of fopen */
@@ -195,4 +215,9 @@ void smunmap(void *base, size_t length) {
 		return;
 	if (0 != munmap(base, length))
 		diee("munmap failed");
+}
+
+void sunlink (char *path) {
+	unless (0 == unlink (path))
+		diee ("unkink (%s) failed", path);
 }

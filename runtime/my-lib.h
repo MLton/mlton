@@ -60,11 +60,14 @@ extern void asfail(char *file, int line, char *prop);
 #define	assert(p)	((p) ? (void)0 : asfail(__FILE__, __LINE__, #p))
 #endif
 
-/* safe version of write */
+/* safe version of close, mkstemp, write */
+int smkstemp (char *template);
+void sclose (int fd);
 void swrite(int fd, const void *buf, size_t count);
 void swriteUint(int fd, uint n);
 
 /* safe versions of fopen, fread, fwrite */
+void sfclose (FILE *file);
 FILE *sfopen(char *fileName, char *mode);
 void sfread(void *ptr, size_t size, size_t nmemb, FILE *file);
 uint sfreadUint(FILE *file);
@@ -74,6 +77,7 @@ void sfwriteUint(uint n, FILE *file);
 /* safe mmap and munmap */
 void *smmap(size_t length);
 void smunmap(void *base, size_t length);
+void sunlink (char *path);
 
 /* Return a statically allocated comma separated string */
 string intToCommaString(int n);
