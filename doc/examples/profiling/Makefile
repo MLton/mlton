@@ -11,7 +11,6 @@ all: profile-time profile-alloc profile-stack profile-multiple
 clean:
 	../../../bin/clean
 
-
 .PHONY: profile-alloc
 profile-alloc:
 	$(mlton) -profile alloc $(ALLOC_EX).sml
