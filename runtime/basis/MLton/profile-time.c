@@ -1,13 +1,12 @@
 #if (defined (__linux__) || defined (__FreeBSD__))
-#include <signal.h>
 #include <errno.h>
-#include <string.h>
-#include <sys/time.h>
-#include <signal.h>
-#include <ucontext.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
+#include <signal.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <ucontext.h>
 
 #include "gc.h"
 #include "mlton-basis.h"
