@@ -72,10 +72,9 @@ fun 'a parse {name: string,
 	       case f of
 		  Fixval.Nonfix => ()
 		| _ =>
-		     (Control.errorStr
-		      (region e,
-		       concat [name, " begins with infix identifier"])
-		      ; raise Fail "bug") (* FIXME *)
+		     Control.errorStr
+		     (region e,
+		      concat [name, " begins with infix identifier"])
 	 in
 	    NONf (e, p)
 	 end
