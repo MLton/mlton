@@ -79,10 +79,10 @@ structure CList =
    CList (structure F = MLton.Finalizable
 	  structure Prim =
 	     struct
-		val cons = _ffi "listCons": int * Word32.word -> Word32.word;
-		val free = _ffi "listFree": Word32.word -> unit;
-		val sing = _ffi "listSing": int -> Word32.word;
-		val sum = _ffi "listSum": Word32.word -> int;
+		val cons = _import "listCons": int * Word32.word -> Word32.word;
+		val free = _import "listFree": Word32.word -> unit;
+		val sing = _import "listSing": int -> Word32.word;
+		val sum = _import "listSum": Word32.word -> int;
 	     end)
 
 structure S = Test (structure CList = CList
