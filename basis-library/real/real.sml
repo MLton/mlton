@@ -38,15 +38,19 @@ structure Real: REAL =
 	 val maxFinite =
 	    let
 	       fun up (x: real): real =
-		  let val y = reify (x * 2.0)
-		  in if isFinite y
-			then up (y)
+		  let
+		     val y = reify (x * 2.0)
+		  in
+		     if isFinite y
+			then up y
 		     else x
 		  end
 	       fun down (x: real, y: real): real =
-		  let val y = y / 2.0
+		  let
+		     val y = y / 2.0
 		     val z = reify (x + y)
-		  in if isFinite z
+		  in
+		     if isFinite z
 			then down (z, y)
 		     else x
 		  end
