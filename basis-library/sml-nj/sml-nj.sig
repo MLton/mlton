@@ -15,13 +15,6 @@ signature SML_OF_NJ =
 	    val getOSKind: unit -> os_kind
 	    val getOSName: unit -> string
 	 end
-      structure Internals:
-	 sig
-	    structure GC:
-	       sig
-		  val messages: bool -> unit
-	       end	       
-	 end
 
       val exnHistory: exn -> string list
       val exportFn: string * (string * string list -> OS.Process.status) -> unit

@@ -29,21 +29,12 @@ structure SMLofNJ: SML_OF_NJ =
 	    fun getOSName () = MLton.Platform.OS.toString MLton.Platform.OS.host
 	 end
       
-      structure Internals =
-	 struct
-	    structure GC =
-	       struct
-		  fun messages _ = ()
-	       end
-	 end
-
       val getCmdName = CommandLine.name
       val getArgs = CommandLine.arguments
 
       fun getAllArgs () = getCmdName () :: getArgs ()
 
       val exnHistory = MLtonExn.history
-	 
 
       fun exportFn (file: string, f) =
 	 let
