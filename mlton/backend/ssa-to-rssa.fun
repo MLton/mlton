@@ -622,31 +622,56 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 		     fun add s = loop (i - 1, s :: ss, t)
 		     fun adds ss' = loop (i - 1, ss' @ ss, t)
 		     val s = Vector.sub (statements, i)
+		     fun updates (object, us, update1) =
+			let
+			   val ({isPointerUpdate}, ss) =
+			      Vector.foldr
+			      (us, ({isPointerUpdate = false}, []),
+			       fn ({offset, value},
+				   z as ({isPointerUpdate}, ac)) =>
+			       case toRtype (varType value) of
+				  NONE => z
+				| SOME t => 
+				     ({isPointerUpdate =
+				       isPointerUpdate orelse Type.isPointer t},
+				      update1 {offset = offset,
+					       value = varOp value} @ ac))
+			   val ss =
+			      if !Control.markCards
+				 andalso isPointerUpdate
+				 then updateCard object @ ss
+			      else ss
+			in
+			   adds ss
+			end
 		  in
 		     case s of
-			S.Statement.Update {object, offset, value} =>
-			   (case toRtype (varType value) of
-			       NONE => none ()
-			     | SOME _ => 
-				  let
-				     val objectTy = varType object
-				     val object = varOp object
-				     val value = varOp value
-				     val ss =
-					update {object = object,
-						objectTy = objectTy,
-						offset = offset,
-						value = value}
-				     val ss =
-					if !Control.markCards
-					   andalso
-					   Type.isPointer (Operand.ty value)
-					   then updateCard object @ ss
-					else ss
-				  in
-				     adds ss
-				  end)
-		       | S.Statement.Bind {exp, ty, var} =>
+			S.Statement.Profile e => add (Statement.Profile e)
+		      | S.Statement.Updates ({object}, us) =>
+			   let
+			      val objectTy = varType object
+			      val object = varOp object
+			   in
+			      updates (object, us, fn {offset, value} =>
+				       update {object = object,
+					       objectTy = objectTy,
+					       offset = offset,
+					       value = value})
+			   end
+		      | S.Statement.VectorUpdates ({index, vector}, us) =>
+			   let
+			      val vectorTy = varType vector
+			      val vector = varOp vector
+			      val index = varOp index
+			   in
+			      updates (vector, us, fn {offset, value} =>
+				       vectorUpdate {index = index,
+						     offset = offset,
+						     value = value,
+						     vector = vector,
+						     vectorTy = vectorTy})
+			   end
+		      | S.Statement.Bind {exp, ty, var} =>
 	          let
 		     fun split (args, kind,
 				ss: Statement.t list,
@@ -1062,7 +1087,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 					   func = CFunction.worldSave}
 			       | _ => codegenOrC prim
 			   end
-		      | S.Exp.Profile e => add (Statement.Profile e)
 		      | S.Exp.Select {object, offset} =>
 			   (case var of
 			       NONE => none ()
@@ -1091,34 +1115,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 						offset = offset,
 						vector = varOp vector,
 						vectorTy = varType vector})))
-		      | S.Exp.VectorUpdates (vector, us) =>
-			   let
-			      val vectorTy = varType vector
-			      val vector = varOp vector
-			      val ss =
-				 Vector.foldr
-				 (us, [], fn ({index, offset, value}, ac) =>
-				  case toRtype (varType value) of
-				     NONE => ac
-				   | SOME _ => 
-					vectorUpdate {index = varOp index,
-						      offset = offset,
-						      value = varOp value,
-						      vector = vector,
-						      vectorTy = vectorTy} @ ac)
-			      val ss =
-				 if !Control.markCards
-				    andalso
-				    Vector.exists
-				    (us, fn {value, ...} =>
-				     case toRtype (varType value) of
-					NONE => false
-				      | SOME t => Type.isPointer t)
-				    then updateCard vector @ ss
-				 else ss
-			   in
-			      adds ss
-			   end
 		  end
 		  end
 	 in

@@ -87,20 +87,15 @@ signature SSA_TREE2 =
 	     | PrimApp of {args: Var.t vector,
 			   prim: Type.t Prim.t,
 			   targs: Type.t vector}
-	     | Profile of ProfileExp.t
 	     | Select of {object: Var.t,
 			  offset: int}
 	     | Var of Var.t
 	     | VectorSub of {index: Var.t,
 			     offset: int,
 			     vector: Var.t}
-	     | VectorUpdates of Var.t * {index: Var.t,
-					 offset: int,
-					 value: Var.t} vector
 
 	    val equals: t * t -> bool
 	    val foreachVar: t * (Var.t -> unit) -> unit
-	    val isProfile: t -> bool
 	    val hash: t -> Word.t
 	    val layout: t -> Layout.t
 	    val maySideEffect: t -> bool
@@ -115,12 +110,14 @@ signature SSA_TREE2 =
 	       Bind of {exp: Exp.t,
 			ty: Type.t,
 			var: Var.t option}
-	     | Update of {object: Var.t,
-			  offset: int,
-			  value: Var.t}
+	     | Profile of ProfileExp.t
+	     | Updates of {object: Var.t} * {offset: int,
+					     value: Var.t} vector
+	     | VectorUpdates of {index: Var.t,
+				 vector: Var.t} * {offset: int,
+						   value: Var.t} vector
 
 	    val clear: t -> unit (* clear the var *)
-	    val equals: t * t -> bool
 	    val foreachDef: t * (Var.t * Type.t -> unit) -> unit
 	    val foreachUse: t * (Var.t -> unit) -> unit
 	    val layout: t -> Layout.t

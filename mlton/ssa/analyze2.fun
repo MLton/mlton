@@ -230,7 +230,6 @@ fun 'a analyze
 			args = values args,
 			resultType = ty,
 			resultVar = var}
-	  | Profile _ => unit
 	  | Select {object, offset} =>
 	       select {object = value object,
 		       offset = offset,
@@ -240,13 +239,6 @@ fun 'a analyze
 	       vectorSub {index = value index,
 			  offset = offset,
 			  vector = value vector}
-	  | VectorUpdates (vector, us) =>
-	       (Vector.foreach (us, fn {index, offset, value = v} =>
-				vectorUpdate {index = value index,
-					      offset = offset,
-					      value = value v,
-					      vector = value vector})
-		; unit)
       fun loopStatement (s: Statement.t): unit =
 	 (case s of
 	     Bind (b as {ty, var, ...}) =>
@@ -265,10 +257,27 @@ fun 'a analyze
 			    end
 		    else setValue (var, v))
 		end
-	   | Update {object, offset, value = v} =>
-		update {object = value object,
-			offset = offset,
-			value = value v})
+	  | Profile _ => ()
+	  | Updates ({object}, us) =>
+	       let
+		  val object = value object
+	       in
+		  Vector.foreach (us, fn {offset, value = v} =>
+				  update {object = object,
+					  offset = offset,
+					  value = value v})
+	       end
+	  | VectorUpdates ({index, vector}, us) =>
+	       let
+		  val index = value index
+		  val vector = value vector
+	       in
+		  Vector.foreach (us, fn {offset, value = v} =>
+				  vectorUpdate {index = index,
+						offset = offset,
+						value = value v,
+						vector = vector})
+	       end)
 	     handle exn =>
 		Error.bug (concat ["loopStatement: ",
 				   Layout.toString (Statement.layout s),

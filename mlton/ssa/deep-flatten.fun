@@ -914,7 +914,6 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 				    prim = prim,
 				    targs = targs})
 		  end
-	     | Profile _ => simple ()
 	     | Select {object, offset} =>
 		  (case var of
 		      NONE => none ()
@@ -960,51 +959,64 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
 		   * flattened.
 		   *)
 		  simple ()
+	 end
+      fun transformStatement (s: Statement.t): Statement.t list =
+	 let
+	    fun simple () = [Statement.replaceUses (s, replaceVar)]
+	 in
+	    case s of
+	       Bind b => transformBind b
+	     | Profile _ => simple ()
+	     | Updates ({object}, us) =>
+		  let
+		     val objectValue = varValue object
+		     val object = replaceVar object
+		     val ss = ref []
+		     val us =
+			Vector.foldr
+			(us, [], fn ({offset, value}, ac) =>
+			 let
+			    val child =
+			       Value.finalTree
+			       (Value.select {object = objectValue,
+					      offset = offset})
+			    val offset = Value.finalOffset (objectValue, offset)
+			 in
+			    if not (TypeTree.isFlat child)
+			       then {offset = offset,
+				     value = replaceVar value} :: ac
+			    else
+			       let
+				  val (vt, ss') =
+				     coerceTree {from = varTree value,
+						 to = child}
+				  val () = ss := ss' @ (!ss)
+				  val r = ref offset
+				  val us = ref ac
+				  val () =
+				     VarTree.foreachRoot
+				     (vt, fn var =>
+				      let
+					 val offset = !r
+					 val () = r := 1 + !r
+				      in
+					 List.push (us, {offset = offset,
+							 value = var})
+				      end)
+			       in
+				  !us
+			       end
+			 end)
+		  in
+		     !ss @ [Updates ({object = object},
+				     Vector.fromList us)]
+		  end
 	     | VectorUpdates (vector, us) =>
 		  (* FIXME: this should be changed once vectors can be
 		   * flattened.
 		   *)
 		  simple ()
 	 end
-      fun transformStatement (s: Statement.t): Statement.t list =
-	 case s of
-	    Bind b => transformBind b
-	  | Update {object, offset, value} =>
-	       let
-		  val objectValue = varValue object
-		  val object = replaceVar object
-		  val child =
-		     Value.finalTree
-		     (Value.select {object = objectValue,
-				    offset = offset})
-		  val offset = Value.finalOffset (objectValue, offset)
-	       in
-		  if not (TypeTree.isFlat child)
-		     then [Update {object = object,
-				   offset = offset,
-				   value = replaceVar value}]
-		  else
-		     let
-			val (vt, ss) =
-			   coerceTree {from = varTree value,
-				       to = child}
-			val r = ref offset
-			val ss' = ref []
-			val () =
-			   VarTree.foreachRoot
-			   (vt, fn var =>
-			    let
-			       val offset = !r
-			       val () = r := 1 + !r
-			    in
-			       List.push (ss', Update {object = object,
-						       offset = offset,
-						       value = var})
-			    end)
-		     in
-			ss @ (!ss')
-		     end
-	       end
       val transformStatement =
 	 Trace.trace ("DeepFlatten.transformStatement",
 		      Statement.layout,

@@ -334,11 +334,7 @@ fun shrinkFunction {globals: Statement.t vector} =
 			      val s = Vector.sub (statements, i)
 			   in
 			      case s of
-				 Bind {exp as Profile _, ...} =>
-				    loop (i + 1,
-					  Bind {exp = exp,
-						ty = Type.unit,
-						var = NONE} :: ac)
+				 Profile _ => loop (i + 1, s :: ac)
 			       | _ => normal ()
 			   end
 		  in
@@ -1204,7 +1200,6 @@ fun shrinkFunction {globals: Statement.t vector} =
 				       targs = targs,
 				       args = args}
 		     end
-		| Profile _ => simple {sideEffect = true}
 		| Select {object, offset} =>
 		     let
 			val object as VarInfo.T {ty, value, ...} = varInfo object
@@ -1230,15 +1225,20 @@ fun shrinkFunction {globals: Statement.t vector} =
 		     end
 		| Var x => setVar (varInfo x)
 		| VectorSub _ => simple {sideEffect = false}
-		| VectorUpdates _ => simple {sideEffect = true}
 	    end
 	 and evalStatement arg : Statement.t list -> Statement.t list =
 	    traceEvalStatement
 	    (fn s =>
-	     case s of
-		Bind b => evalBind b
-	      | Update _ =>
-		   fn ss => Statement.replaceUses (s, use o varInfo) :: ss) arg
+	     let
+		fun simple () =
+		   fn ss => Statement.replaceUses (s, use o varInfo) :: ss
+	     in
+		case s of
+		   Bind b => evalBind b
+		 | Profile _ => simple ()
+		 | Updates _ => simple ()
+		 | VectorUpdates _ => simple ()
+	     end) arg
 	 val start = labelMeaning start
 	 val () = forceMeaningBlock start
 	 val f = 
@@ -1271,7 +1271,7 @@ structure Statement =
 
       fun isProfile (s: t): bool =
 	 case s of
-	    Bind {exp, ...} => Exp.isProfile exp
+	    Profile _ => true
 	  | _ => false
    end
 
@@ -1292,10 +1292,9 @@ fun eliminateUselessProfile (f: Function.t): Function.t =
 		     Vector.fold
 		     (statements, [], fn (s, stack) =>
 		      case s of
-			 Bind {exp = Profile (Leave si), ...} =>
+			 Profile (Leave si) =>
 			    (case stack of
-				Bind {exp = Profile (Enter si'), ...}
-				:: rest =>
+				Profile (Enter si') :: rest =>
 				   if SourceInfo.equals (si, si')
 				      then rest
 				   else Error.bug "mismatched Leave\n"

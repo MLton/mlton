@@ -558,16 +558,12 @@ structure Exp =
        | PrimApp of {prim: Type.t Prim.t,
 		     targs: Type.t vector,
 		     args: Var.t vector}
-       | Profile of ProfileExp.t
        | Select of {object: Var.t,
 		    offset: int}
        | Var of Var.t
        | VectorSub of {index: Var.t,
 		       offset: int,
 		       vector: Var.t}
-       | VectorUpdates of Var.t * {index: Var.t,
-				   offset: int,
-				   value: Var.t} vector
 
       val unit = Object {con = NONE,
 			 args = Vector.new0 ()}
@@ -581,13 +577,9 @@ structure Exp =
 	     | Inject {variant, ...} => v variant
 	     | Object {args, ...} => vs args
 	     | PrimApp {args, ...} => vs args
-	     | Profile _ => ()
 	     | Select {object, ...} => v object
 	     | Var x => v x
 	     | VectorSub {index, vector, ...} => (v index; v vector)
-	     | VectorUpdates (x, us) =>
-		  (v x; Vector.foreach (us, fn {index, value, ...} =>
-					(v index; v value)))
 	 end
 
       fun replaceVar (e, fx) =
@@ -600,7 +592,6 @@ structure Exp =
 	     | Object {con, args} => Object {con = con, args = fxs args}
 	     | PrimApp {prim, targs, args} =>
 		  PrimApp {prim = prim, targs = targs, args = fxs args}
-	     | Profile _ => e
 	     | Select {object, offset} =>
 		  Select {object = fx object, offset = offset}
 	     | Var x => Var (fx x)
@@ -608,12 +599,6 @@ structure Exp =
 		  VectorSub {index = fx index,
 			     offset = offset,
 			     vector = fx vector}
-	     | VectorUpdates (x, us) =>
-		  VectorUpdates (fx x,
-				 Vector.map (us, fn {index, offset, value} =>
-					     {index = fx index,
-					      offset = offset,
-					      value = fx value}))
 	 end
 
       fun layout' (e, layoutVar) =
@@ -637,7 +622,6 @@ structure Exp =
 			       else Vector.layout Type.layout targs
 		       else empty,
 		       seq [str " ", layoutTuple args]]
-	     | Profile p => ProfileExp.layout p
 	     | Select {object, offset} =>
 		  seq [str "#", Int.layout offset, str " ",
 		       layoutVar object]
@@ -645,18 +629,9 @@ structure Exp =
 	     | VectorSub {index, offset, vector} =>
 		  seq [if 0 = offset
 			  then empty
-		       else str "#", Int.layout offset, str " ",
+		       else seq [str "#", Int.layout offset, str " "],
 		       layoutVar vector,
 		       str "[", layoutVar index, str "]"]
-	     | VectorUpdates (x, us) =>
-		  align (Vector.toListMap
-			 (us, fn {index, offset, value} =>
-			  seq [if 0 = offset
-				  then empty
-			       else seq [str "#", Int.layout offset, str " "],
-			       layoutVar x,
-			       str "[", layoutVar index, str "]",
-			       str " := ", layoutVar value]))
 	 end
 
       fun layout e = layout' (e, Var.layout)
@@ -675,11 +650,9 @@ structure Exp =
 	  | Inject _ => false
 	  | Object _ => false
 	  | PrimApp {prim,...} => Prim.maySideEffect prim
-	  | Profile _ => false
 	  | Select _ => false
 	  | Var _ => false
 	  | VectorSub _ => false
-	  | VectorUpdates _ => true
 
       fun varsEquals (xs, xs') = Vector.equals (xs, xs', Var.equals)
 
@@ -692,7 +665,6 @@ structure Exp =
 	  | (PrimApp {prim, args, ...},
 	     PrimApp {prim = prim', args = args', ...}) =>
 	       Prim.equals (prim, prim') andalso varsEquals (args, args')
-	  | (Profile p, Profile p') => ProfileExp.equals (p, p')
 	  | (Select {object = o1, offset = i1},
 	     Select {object = o2, offset = i2}) =>
 	       Var.equals (o1, o2) andalso i1 = i2
@@ -702,27 +674,15 @@ structure Exp =
 	       Var.equals (i1, i2)
 	       andalso o1 = o2
 	       andalso Var.equals (v1, v2)
-	  | (VectorUpdates (v1, us1), VectorUpdates (v2, us2)) =>
-	       Var.equals (v1, v2)
-	       andalso
-	       Vector.equals (us1, us2,
-			      fn ({index = i1, offset = o1, value = v1},
-				  {index = i2, offset = o2, value = v2}) =>
-			      Var.equals (i1, i2)
-			      andalso o1 = o2
-			      andalso Var.equals (v1, v2))
 	  | _ => false
 
       local
 	 val newHash = Random.word
 	 val inject = newHash ()
 	 val primApp = newHash ()
-	 val profile = newHash ()
 	 val select = newHash ()
 	 val tuple = newHash ()
-	 val update = newHash ()
 	 val vectorSub = newHash ()
-	 val vectorUpdate = newHash ()
 	 fun hashVars (xs: Var.t vector, w: Word.t): Word.t =
 	    Vector.fold (xs, w, fn (x, w) => Word.xorb (w, Var.hash x))
       in
@@ -737,7 +697,6 @@ structure Exp =
 			       NONE => tuple
 			     | SOME c => Con.hash c)
 	     | PrimApp {args, ...} => hashVars (args, primApp)
-	     | Profile p => Word.xorb (profile, ProfileExp.hash p)
 	     | Select {object, offset} =>
 		  Word.xorb (select, Var.hash object + Word.fromInt offset)
 	     | Var x => Var.hash x
@@ -746,20 +705,9 @@ structure Exp =
 		  (vectorSub,
 		   Word.xorb (Var.hash index + Word.fromInt offset,
 			     Var.hash vector))
-	     | VectorUpdates (v, us) =>
-		  Vector.fold
-		  (us, Word.xorb (Var.hash v, vectorUpdate),
-		   fn ({index, offset, value}, ac) =>
-		   Word.xorb (ac,
-			      Word.xorb (Var.hash index + Word.fromInt offset,
-					 Var.hash value)))
       end
 
       val hash = Trace.trace ("Exp.hash", layout, Word.layout) hash
-
-      val isProfile =
-	 fn Profile _ => true
-	  | _ => false
    end
 datatype z = datatype Exp.t
 
@@ -769,9 +717,12 @@ structure Statement =
 	 Bind of {var: Var.t option,
 		  ty: Type.t,
 		  exp: Exp.t}
-       | Update of {object: Var.t,
-		    offset: int,
-		    value: Var.t}
+       | Profile of ProfileExp.t
+       | Updates of {object: Var.t} * {offset: int,
+				       value: Var.t} vector
+       | VectorUpdates of {index: Var.t,
+			   vector: Var.t} * {offset: int,
+					     value: Var.t} vector
 
       fun layout' (s: t, layoutVar): Layout.t =
 	 let
@@ -788,10 +739,24 @@ structure Statement =
 				       else empty,
 					  str " = "]],
 		       Exp.layout' (exp, layoutVar)]
-      	     | Update {object, offset, value} =>
-		  seq [str "#", Int.layout offset, str " ",
-		       layoutVar object,
-		       str " := ", layoutVar value]
+	     | Profile p => ProfileExp.layout p
+      	     | Updates ({object}, us) =>
+		  align (Vector.toListMap
+			 (us, fn {offset, value} =>
+			  seq [if 0 = offset
+				  then empty
+			       else seq [str "#", Int.layout offset, str " "],
+				  layoutVar object,
+				  str " := ", layoutVar value]))
+	     | VectorUpdates ({index, vector}, us) =>
+		  align (Vector.toListMap
+			 (us, fn {offset, value} =>
+			  seq [if 0 = offset
+				  then empty
+			       else seq [str "#", Int.layout offset, str " "],
+			       layoutVar vector,
+			       str "[", layoutVar index, str "]",
+			       str " := ", layoutVar value]))
 	 end
 
       fun layout s = layout' (s, Var.layout)
@@ -802,31 +767,14 @@ structure Statement =
 				      NONE => Var.layout x
 				    | SOME s => Layout.str s))
 
-      fun equals (s: t, s': t): bool =
-	 case (s, s') of
-	    (Bind {exp = e, ty = t, var = v},
-	     Bind {exp = e', ty = t', var = v'}) =>
-	       Option.equals (v, v', Var.equals)
-	       andalso Type.equals (t, t')
-	       andalso Exp.equals (e, e')
-	  | (Update {object = o1, offset = i1, value = v1},
-	     Update {object = o2, offset = i2, value = v2}) =>
-	       i1 = i2 andalso Var.equals (o1, o2) andalso Var.equals (v1, v2)
-	  | _ => false
-
       fun maySideEffect (s: t): bool =
 	 case s of
 	    Bind {exp, ...} => Exp.maySideEffect exp
-	  | Update _ => true
+	  | Profile _ => false
+	  | Updates _ => true
+	  | VectorUpdates _ => true
 
-      local
-	 fun make f x =
-	    Bind {var = NONE,
-		  ty = Type.unit,
-		  exp = f x}
-      in
-	 val profile = make Exp.Profile
-      end
+      val profile = Profile
 
       fun foreachDef (s: t, f: Var.t * Type.t -> unit): unit =
 	 case s of
@@ -879,25 +827,31 @@ structure Statement =
       fun foreachUse (s: t, f: Var.t -> unit): unit =
 	 case s of
 	    Bind {exp, ...} => Exp.foreachVar (exp, f)
-	  | Update {object, value, ...} => (f object; f value)
-
-      fun replaceDefsUses (s: t, f: Var.t -> Var.t): t =
-	 case s of
-	    Bind {exp, ty, var} =>
-	       Bind {exp = Exp.replaceVar (exp, f),
-		     ty = ty,
-		     var = Option.map (var, f)}
-	  | Update {object, offset, value} =>
-	       Update {object = f object, offset = offset, value = f value}
+	  | Profile _ => ()
+	  | Updates ({object}, us) =>
+	       (f object; Vector.foreach (us, f o #value))
+	  | VectorUpdates ({index, vector}, us) =>
+	       (f index; f vector; Vector.foreach (us, f o #value))
 	       
-      fun replaceUses (s: t, f: Var.t -> Var.t): t =
+      fun replaceDefsUses (s: t, {def: Var.t -> Var.t, use: Var.t -> Var.t}): t =
 	 case s of
 	    Bind {exp, ty, var} =>
-	       Bind {exp = Exp.replaceVar (exp, f),
+	       Bind {exp = Exp.replaceVar (exp, use),
 		     ty = ty,
-		     var = var}
-	  | Update {object, offset, value} =>
-	       Update {object = f object, offset = offset, value = f value}
+		     var = Option.map (var, def)}
+	  | Profile _ => s
+	  | Updates ({object}, us) =>
+	       Updates ({object = use object},
+			Vector.map (us, fn {offset, value} =>
+				    {offset = offset, value = use value}))
+	  | VectorUpdates ({index, vector}, us) =>
+	       VectorUpdates ({index = use index,
+			       vector = use vector},
+			      Vector.map (us, fn {offset, value} =>
+					  {offset = offset,
+					   value = use value}))
+
+      fun replaceUses (s, f) = replaceDefsUses (s, {def = fn x => x, use = f})
    end
 
 datatype z = datatype Statement.t
@@ -1803,9 +1757,11 @@ structure Function =
 		Block.T {label = lookupLabel label,
 			 args = Vector.map (args, fn (x, ty) =>
 					    (lookupVar x, ty)),
-			 statements = Vector.map
-			              (statements, fn s =>
-				       Statement.replaceDefsUses (s, lookupVar)),
+			 statements = (Vector.map
+				       (statements, fn s =>
+					Statement.replaceDefsUses
+					(s, {def = lookupVar,
+					     use = lookupVar}))),
 			 transfer = Transfer.replaceLabelVar
 			            (transfer, lookupLabel, lookupVar)})
 	    val start = lookupLabel start
@@ -1841,20 +1797,14 @@ structure Function =
 	       Vector.map
 	       (blocks, fn Block.T {args, label, statements, transfer} =>
 		let
-		   fun make (exp: Exp.t): Statement.t =
-		      Statement.Bind {exp = exp,
-				      ty = Type.unit,
-				      var = NONE}
 		   val statements =
 		      if Label.equals (label, start)
 			 then (Vector.concat
 			       [Vector.new1
-				(make (Exp.Profile
-				       (ProfileExp.Enter sourceInfo))),
+				(Profile (ProfileExp.Enter sourceInfo)),
 				statements])
 		      else statements
-		   fun leave () =
-		      make (Exp.Profile (ProfileExp.Leave sourceInfo))
+		   fun leave () = Profile (ProfileExp.Leave sourceInfo)
 		   fun prefix (l: Label.t,
 			       statements: Statement.t vector): Label.t =
 		      let

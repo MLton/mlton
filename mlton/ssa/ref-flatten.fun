@@ -811,14 +811,18 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
       fun transformStatement (s: Statement.t): Statement.t vector =
 	 case s of
 	    Bind b => transformBind b
-	  | Update {object, offset, value} =>
+	  | Updates ({object}, us) =>
 	       Vector.new1
 	       (case varObject object of
 		   NONE => s
-		 | SOME obj => 
-		      Update {object = object,
-			      offset = objectOffset (obj, offset),
-			      value = value})
+		 | SOME obj =>
+		      Updates
+		      ({object = object},
+		       Vector.map
+		       (us, fn {offset, value} =>
+			{offset = objectOffset (obj, offset),
+			 value = value})))
+	  | _ => Vector.new1 s
       val transformStatement =
 	 Trace.trace ("transformStatement",
 		      Statement.layout,

@@ -248,7 +248,7 @@ structure Function =
 			      Vector.fold
 			      (statements, sources, fn (s, sources) =>
 			       case s of
-				  Bind {exp = Profile pe, ...} =>
+				  Profile pe =>
 				     (case pe of
 					 Enter s => s :: sources
 				       | Leave s =>

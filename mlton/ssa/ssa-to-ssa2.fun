@@ -130,15 +130,17 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 						  S2.Type.vector1 t))
 			    end
 		       | Array_update =>
-			    simple
-			    (S2.Exp.VectorUpdates
-			     (arg 0, Vector.new1 {index = arg 1,
-						  offset = 0,
-						  value = arg 2}))
+			    Vector.new1
+			    (S2.Statement.VectorUpdates
+			     ({index = arg 1,
+			       vector = arg 0},
+			      Vector.new1 {offset = 0,
+					   value = arg 2}))
 		       | Ref_assign =>
-			    Vector.new1 (S2.Statement.Update {object = arg 0,
-							      offset = 0,
-							      value = arg 1})
+			    Vector.new1 (S2.Statement.Updates
+					 ({object = arg 0},
+					  Vector.new1 {offset = 0,
+						       value = arg 1}))
 		       | Ref_deref =>
 			    simple (S2.Exp.Select {object = arg 0,
 						   offset = 0})
@@ -154,7 +156,7 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
 		       | Vector_sub => sub ()
 		       | _ => doit (convertTypes targs)
 		   end
-	     | S.Exp.Profile e => simple (S2.Exp.Profile e)
+	     | S.Exp.Profile e => Vector.new1 (S2.Statement.Profile e)
 	     | S.Exp.Select {offset, tuple} =>
 		  simple (S2.Exp.Select {object = tuple, offset = offset})
 	     | S.Exp.Tuple v => simple (S2.Exp.Object {args = v, con = NONE})
