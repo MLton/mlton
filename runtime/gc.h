@@ -82,6 +82,16 @@ enum {
 
 #define TWOPOWER(n) (1 << (n))
 
+/* The GC can either always use copying, always use mark-compact, or
+ * automatically switch between the two, using copying for small heaps and
+ * mark-compact for large heaps.
+ */
+typedef enum {
+	GC_METHOD_AUTO_SWITCH,
+	GC_METHOD_COPY,
+	CC_METHOD_MARK_COMPACT,
+} GCMethod;
+
 /* ------------------------------------------------- */
 /*                    object type                    */
 /* ------------------------------------------------- */
@@ -195,8 +205,6 @@ typedef struct GC_state {
 	GC_frameLayout *frameLayouts;
 	uint fromSize; /* Size (bytes) of from space. */
 	pointer *globals; /* An array of size numGlobals. */
-	uint halfMem; /* bytes */
-	uint halfRam; /* bytes */
 	bool inSignalHandler; 	/* TRUE iff a signal handler is running. */
 	/* canHandle == 0 iff GC may switch to the signal handler
  	 * thread.  This is used to implement critical sections.
@@ -204,11 +212,7 @@ typedef struct GC_state {
 	volatile int canHandle;
 	bool isOriginal;
 	pointer limitPlusSlop; /* limit + LIMIT_SLOP */
-	uint liveThresh1;
-	uint liveThresh2;
-	uint liveThresh3;
 	uint magic; /* The magic number required for a valid world file. */
-	uint markSize;
 	uint maxBytesLive;
 	uint maxFrameIndex; /* 0 <= frameIndex < maxFrameIndex */
 	uint maxFrameSize;
@@ -218,14 +222,16 @@ typedef struct GC_state {
 	uint maxPause; /* max time spent in any gc in milliseconds. */
 	uint maxStackSizeSeen;
 	bool messages; /* Print out a message at the start and end of each gc. */
+	GCMethod method;
 	/* native is true iff the native codegen was used.
 	 * The GC needs to know this because it affects how it finds the
 	 * layout of stack frames.
  	 */
 	bool native;
- 	uint numGCs; /* Total number of GCs done. */
+	uint numCopyingGCs;
 	uint numGlobals; /* Number of pointers in globals array. */
  	ullong numLCs;
+ 	uint numMarkCompactGCs;
 	GC_ObjectType *objectTypes; /* Array of object types. */
 	uint pageSize; /* bytes */
 	float ramSlop;
@@ -303,10 +309,6 @@ static inline int GC_arrayNumElements (pointer a) {
 	return *(GC_arrayNumElementsp (a));
 }
 
-static inline void GC_arrayShrink (pointer array, uint numElements) {
-	*GC_arrayNumElementsp (array) = numElements;
-}
-
 /* GC_copyThread (s, t) returns a copy of the thread pointed to by t.
  */
 pointer GC_copyThread (GC_state s, GC_thread t);
@@ -333,34 +335,16 @@ void GC_createStrings (GC_state s, struct GC_stringInit inits[]);
 /* GC_display (s, str) prints out the state s to stream str. */
 void GC_display (GC_state s, FILE *stream);
 
-/* GC_doGC is for use by GC related functions only.  External callers should
- * use GC_gc.
- */
-void GC_doGC (GC_state s, uint bytesRequested, uint stackBytesRequested);
-
 /* GC_done should be called after the program is done.
  * munmaps heap and stack.
  * Prints out gc statistics if s->summary is set.
  */
 void GC_done (GC_state s);
 
-/* GC_enter is fo use by GC functions only.
- * It is called when transitioning from the mutator to the GC.
- */
-void GC_enter (GC_state s);
-
 /* GC_finishHandler should be called by the mutator signal handler thread when
  * it is done handling the signal.
  */
 void GC_finishHandler (GC_state s);
-
-/* GC_foreachPointerInObject (s, f, p) applies f to each pointer in the object
- * pointer to by p.
- */
-typedef void (*GC_pointerFun)(GC_state s, pointer *p);
-pointer GC_foreachPointerInObject(GC_state s, GC_pointerFun f, pointer p);
-
-void GC_fromSpace (GC_state s);
 
 /* GC_gc does a gc.
  * This will also resize the stack if necessary.
@@ -422,16 +406,10 @@ static inline bool GC_isValidSlot (GC_state s, pointer slot) {
 		and slot < s->stackBottom + s->currentThread->stack->reserved;
 }
 
-/* GC_leave is for use by GC functions only. 
- * It is called when transition from the GC to the mutator.
- */
-void GC_leave (GC_state s);
-
 void GC_loadWorld (GC_state s, 
 			char *fileName,
 			void (*loadGlobals)(FILE *file));
 
-bool GC_mutatorInvariant (GC_state s);
 
 /*
  * Build the header for an object, given the index to its type info.
@@ -447,18 +425,7 @@ void GC_saveWorld (GC_state s, int fd);
 /* Return a serialized version of the object rooted at root. */
 /* pointer GC_serialize(GC_state s, pointer root); */
 
-void GC_setHeapParams (GC_state s, uint size);
-
-void GC_setStack (GC_state s);
-
 /* Return the amount of heap space taken by the object pointed to by root. */
 uint GC_size (GC_state s, pointer root);
-
-void GC_toSpace (GC_state s);
-
-/* Translate all pointers to the heap from within the stack and the heap for
- * a heap that has moved from s->base == old to s->base.
- */
-void GC_translateHeap(GC_state s, pointer from, pointer to, uint size);
 
 #endif /* #ifndef _MLTON_GC_H */
