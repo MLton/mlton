@@ -92,17 +92,14 @@ val options =
 	push includeDirs),
        (Normal, "keep", " {cps|g|il|o|sml}", "save intermediate files",
 	SpaceString (fn s =>
-		     let
-			val r =
-			   case s of
-			      "cps" => keepCps
-			    | "g" => keepGenerated
-			    | "il" => aux
-			    | "o" => keepO
-			    | "sml" => keepSML
-			    | _ => usage (concat ["invalid -keep flag: ", s])
-		     in r := true
-		     end)),
+		     case s of
+			"cps" => keepCps := true
+		      | "dot" => (keepDot := true; keepCps := true)
+		      | "g" => keepGenerated := true
+		      | "il" => aux := true
+		      | "o" => keepO := true
+		      | "sml" => keepSML := true
+		      | _ => usage (concat ["invalid -keep flag: ", s]))),
        (Normal, "l", "library", "link with library", push libs),
        (Expert, "local-flatten", " {true|false}",
 	"CPS local flattening optimization",

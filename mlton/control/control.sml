@@ -112,6 +112,10 @@ val keepCps = control {name = "keep Cps",
 		       default = false,
 		       toString = Bool.toString}
 
+val keepDot = control {name = "keep Dot",
+		       default = false,
+		       toString = Bool.toString}
+
 val localFlatten = control {name = "localFlatten",
 			    default = true,
 			    toString = Bool.toString}

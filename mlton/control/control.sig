@@ -60,6 +60,8 @@ signature CONTROL =
 
       val keepCps: bool ref
 
+      val keepDot: bool ref
+
       val localFlatten: bool ref
 
       structure Native:

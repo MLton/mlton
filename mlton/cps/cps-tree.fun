@@ -1090,12 +1090,148 @@ structure Function =
 		body: Exp.t,
 		returns: Type.t vector}
 
-      structure Graph = DirectedGraph
-      structure Node = Graph.Node
-      structure Edge = Graph.Edge
-	 
-      fun layout ({name, args, body, returns}, jumpHandlers) =
-	 let open Layout
+      local
+	 structure Graph = DirectedGraph
+	 structure Node = Graph.Node
+	 structure Edge = Graph.Edge
+      in
+	 fun layoutDot ({name, args, body, returns}: t, jumpHandlers) =
+	    let
+	       open Graph.LayoutDot
+	       val {destroy, get = jumpNode, set = setJumpNode} =
+		  Property.destGetSet
+		  (Jump.plist,
+		   Property.initRaise ("node", Jump.layout))
+	       val {get = edgeOptions, set = setEdgeOptions} =
+		  Property.getSetOnce
+		  (Edge.plist, Property.initConst [])
+	       val {get = nodeOptions, ...} =
+		  Property.get
+		  (Node.plist,
+		   Property.initFun (fn _ => ref []))
+	       val g = Graph.new ()
+	       fun addEdge (from, to, opts) =
+		  let
+		     val e = Graph.addEdge (g, {from = from,
+						to = jumpNode to})
+		     val _ = setEdgeOptions (e, opts)
+		  in
+		     ()
+		  end
+	       fun nodeOption (n, opt) =
+		  List.push (nodeOptions n, opt)
+	       val main = Graph.newNode g
+	       fun loop (e: Exp.t, from: Node.t, name: string) =
+		  let
+		     val {decs, transfer} = Exp.dest e
+		     fun edge (j: Jump.t,
+			       label: string,
+			       style: style): unit =
+			addEdge (from, j,
+				 [EdgeOption.Label label,
+				  EdgeOption.Style style])
+		     val _ =
+			List.foreach
+			(decs,
+			 fn Bind {var, exp, ...} =>
+			 (case exp of
+			     PrimApp {info, ...} =>
+				PrimInfo.foreachJump
+				(info, fn j =>
+				 edge
+				 (j, "Overflow", Dashed))
+			   | _ => ())
+			  | Fun {name, body, ...} =>
+			       let
+				  val n = Graph.newNode g
+				  val _ = setJumpNode (name, n)
+			       in
+				  loop (body, n, Jump.toString name)
+			       end
+			  | _ => ())
+		     val rest =
+			case transfer of
+			   Bug => "\nbug"
+			 | Call {func, cont, ...} =>
+			      let
+				 val f = Func.toString func
+			      in
+				 case cont of
+				    NONE => concat ["\ntail ", f]
+				  | SOME j =>
+				       (edge (j, (concat
+						  ["nontail ", f]),
+					      Dotted)
+					; (case jumpHandlers j of
+					      h :: _ =>
+						 edge
+						 (h, "", Dotted)
+					    | _ => ())
+					; "")
+			      end
+			 | Case {cases, default, ...} =>
+			      (nodeOption
+			       (from, NodeOption.Shape Diamond)
+			       ; let
+				    fun doit (v, toString) =
+				       Vector.foreach
+				       (v, fn (x, j) =>
+					edge (j, toString x, Solid))
+				 in case cases of
+				    Cases.Char v =>
+				       doit (v, Char.toString)
+				  | Cases.Con v =>
+				       doit (v, Con.toString)
+				  | Cases.Int v =>
+				       doit (v, Int.toString)
+				  | Cases.Word v =>
+				       doit (v, Word.toString)
+				  | Cases.Word8 v =>
+				       doit (v, Word8.toString)
+				 end
+			       ; (case default of
+				     NONE => ()
+				   | SOME j =>
+					edge (j, "default", Solid))
+				 ; "")
+			 | Jump {dst, ...} =>
+			      (edge (dst, "", Solid)
+			       ; "")
+			 | Raise _ => "\nraise"
+			 | Return _ => "\nreturn"
+		     val _ = 
+			nodeOption
+			(from,
+			 NodeOption.Label (concat [name, rest]))
+		  in
+		     ()
+		  end
+	       val _ = loop (body, main, Func.toString name)
+	       val l =
+		  Graph.LayoutDot.layout
+		  {graph = g,
+		   title = Func.toString name,
+		   options = [],
+		   edgeOptions = edgeOptions,
+		   nodeOptions = ! o nodeOptions}
+	       val _ = destroy ()
+	    in
+	       l
+	    end
+      end
+   
+      fun layout (func as {name, args, body, returns}, jumpHandlers) =
+	 let
+	    val _ =
+	       if !Control.keepDot
+		  then
+		     File.withOut
+		     (concat [!Control.inputFile, ".",
+			      Func.toString name, ".dot"],
+		      fn out =>
+		      Layout.outputl (layoutDot (func, jumpHandlers), out))
+	       else ()
+	    open Layout
 	 in align [seq [str "fun ",
 			Func.layout name,
 			str " ",
@@ -1111,132 +1247,7 @@ structure Function =
 			    then Exp.layout body
 			 else Exp.layoutFlat body
 		   in indent (body, !Control.indentation)
-		   end,
-		   if true
-		      then
-			 let
-			    open Graph.LayoutDot
-			    val {destroy, get = jumpNode, set = setJumpNode} =
-			       Property.destGetSet
-			       (Jump.plist,
-				Property.initRaise ("node", Jump.layout))
-			    val {get = edgeOptions, set = setEdgeOptions} =
-			       Property.getSetOnce
-			       (Edge.plist, Property.initConst [])
-			    val {get = nodeOptions, ...} =
-			       Property.get
-			       (Node.plist,
-				Property.initFun (fn _ => ref []))
-			    val g = Graph.new ()
-			    fun addEdge (from, to, opts) =
-			       let
-				  val e = Graph.addEdge (g, {from = from,
-							     to = jumpNode to})
-				  val _ = setEdgeOptions (e, opts)
-			       in
-				  ()
-			       end
-			    fun nodeOption (n, opt) =
-			       List.push (nodeOptions n, opt)
-			    val main = Graph.newNode g
-			    fun loop (e: Exp.t, from: Node.t, name: string) =
-			       let
-				  val {decs, transfer} = Exp.dest e
-				  fun edge (j: Jump.t,
-					    label: string,
-					    style: style): unit =
-				     addEdge (from, j,
-					      [EdgeOption.Label label,
-					       EdgeOption.Style style])
-				  val _ =
-				     List.foreach
-				     (decs,
-				      fn Bind {var, exp, ...} =>
-				           (case exp of
-					       PrimApp {info, ...} =>
-						  PrimInfo.foreachJump
-						  (info, fn j =>
-						   edge
-						   (j, "Overflow", Dashed))
-					     | _ => ())
-				       | Fun {name, body, ...} =>
-					    let
-					       val n = Graph.newNode g
-					       val _ = setJumpNode (name, n)
-					    in
-					       loop (body, n, Jump.toString name)
-					    end
-				       | _ => ())
-				  val rest =
-				     case transfer of
-					Bug => "\nbug"
-				      | Call {func, cont, ...} =>
-					   let
-					      val f = Func.toString func
-					   in
-					      case cont of
-						 NONE => concat ["\ntail ", f]
-					       | SOME j =>
-						    (edge (j, (concat
-							       ["nontail ", f]),
-							   Dotted)
-						     ; (case jumpHandlers j of
-							   h :: _ =>
-							      edge
-							      (h, "", Dotted)
-							 | _ => ())
-						     ; "")
-					   end
-				      | Case {cases, default, ...} =>
-					   (nodeOption
-					    (from, NodeOption.Shape Diamond)
-					    ; let
-						 fun doit (v, toString) =
-						    Vector.foreach
-						    (v, fn (x, j) =>
-						     edge (j, toString x, Solid))
-					      in case cases of
-						 Cases.Char v =>
-						    doit (v, Char.toString)
-					       | Cases.Con v =>
-						    doit (v, Con.toString)
-					       | Cases.Int v =>
-						    doit (v, Int.toString)
-					       | Cases.Word v =>
-						    doit (v, Word.toString)
-					       | Cases.Word8 v =>
-						    doit (v, Word8.toString)
-					      end
-					    ; (case default of
-						  NONE => ()
-						| SOME j =>
-						     edge (j, "default", Solid))
-					    ; "")
-				    | Jump {dst, ...} =>
-					 (edge (dst, "", Solid)
-					  ; "")
-				    | Raise _ => "\nraise"
-				    | Return _ => "\nreturn"
-				  val _ = 
-				     nodeOption
-				     (from,
-				      NodeOption.Label (concat [name, rest]))
-			       in
-				  ()
-			       end
-			    val _ = loop (body, main, Func.toString name)
-			    val l =
-			       Graph.LayoutDot.layout
-			       {graph = g,
-				title = Func.toString name,
-				options = [],
-				edgeOptions = edgeOptions,
-				nodeOptions = ! o nodeOptions}
-			    val _ = destroy ()
-			 in
-			    l
-			 end
-		   else empty]
+		   end]
 	 end
       
       fun layouts (fs, jumpHandlers, output: Layout.t -> unit): unit =

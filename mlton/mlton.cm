@@ -287,7 +287,6 @@ type-inference/match-compile.fun
 type-inference/infer.fun
 cps/cps-tree.sig
 cps/analyze.sig
-cps/infer-handlers.sig
 cps/type-check.sig
 cps/shrink.sig
 cps/simplify.sig
@@ -332,7 +331,6 @@ cps/simplify.fun
 ../lib/mlton/basic/mono-vector.fun
 cps/shrink.fun
 cps/type-check.fun
-cps/infer-handlers.fun
 cps/analyze.fun
 cps/cps-tree.fun
 cps/cps.fun
