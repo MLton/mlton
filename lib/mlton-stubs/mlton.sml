@@ -163,6 +163,8 @@ structure MLton: MLTON =
 	 struct
 	    type pid = Posix.Process.pid
 
+	    val atExit = OS.Process.atExit
+	       
 	    fun exit n =
 	       let
 		  open OS.Process
@@ -218,22 +220,21 @@ structure MLton: MLTON =
       structure Rlimit =
 	 struct
 	    type rlim = Word.word
-	       
 
 	    val infinity: rlim = 0w0
 
-	    type resource = int
+	    type t = int
 	       
-	    val cpuTime: resource = 0
-	    val coreFileSize: resource = 0
-	    val dataSize: resource = 0
-	    val fileSize: resource = 0
-	    val lockedInMemorySize: resource = 0
-	    val numFiles: resource = 0
-	    val numProcesses: resource = 0
-	    val residentSetSize: resource = 0
-	    val stackSize: resource = 0
-	    val virtualMemorySize: resource = 0
+	    val cpuTime: t = 0
+	    val coreFileSize: t = 0
+	    val dataSize: t = 0
+	    val fileSize: t = 0
+	    val lockedInMemorySize: t = 0
+	    val numFiles: t = 0
+	    val numProcesses: t = 0
+	    val residentSetSize: t = 0
+	    val stackSize: t = 0
+	    val virtualMemorySize: t = 0
 
 	    fun get _ = raise Fail "Rlimit.get"
 	    fun set _ = raise Fail "Rlimit.set"

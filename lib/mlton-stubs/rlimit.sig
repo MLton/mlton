@@ -6,19 +6,19 @@ signature MLTON_RLIMIT =
 	       
       val infinity: rlim
 
-      type resource
+      type t
 	       
-      val cpuTime: resource             (* CPU     CPU time in seconds *)
-      val coreFileSize: resource        (* CORE    max core file size *)
-      val dataSize: resource            (* DATA    max data size *)
-      val fileSize: resource            (* FSIZE   Maximum filesize *)
-      val lockedInMemorySize: resource  (* MEMLOCK max locked address space *)
-      val numFiles: resource            (* NOFILE  max number of open files *)  
-      val numProcesses: resource        (* NPROC   max number of processes *)
-      val residentSetSize: resource     (* RSS     max resident set size *)
-      val stackSize: resource           (* STACK   max stack size *)
-      val virtualMemorySize: resource   (* AS      virtual memory limit *)
+      val cpuTime: t             (* CPU     CPU time in seconds *)
+      val coreFileSize: t        (* CORE    max core file size *)
+      val dataSize: t            (* DATA    max data size *)
+      val fileSize: t            (* FSIZE   Maximum filesize *)
+      val lockedInMemorySize: t  (* MEMLOCK max locked address space *)
+      val numFiles: t            (* NOFILE  max number of open files *)  
+      val numProcesses: t        (* NPROC   max number of processes *)
+      val residentSetSize: t     (* RSS     max resident set size *)
+      val stackSize: t           (* STACK   max stack size *)
+      val virtualMemorySize: t   (* AS      virtual memory limit *)
       
-      val get: resource -> {hard: rlim, soft: rlim}
-      val set: resource * {hard: rlim, soft: rlim} -> unit
+      val get: t -> {hard: rlim, soft: rlim}
+      val set: t * {hard: rlim, soft: rlim} -> unit
    end
