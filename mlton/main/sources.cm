@@ -23,19 +23,20 @@ structure Vector
 is
 
 ../../lib/mlton/sources.cm
-../control/sources.cm
-../cm/sources.cm
 ../ast/sources.cm
-../front-end/sources.cm
 ../atoms/sources.cm
-../core-ml/sources.cm
-../elaborate/sources.cm
-../xml/sources.cm
-../type-inference/sources.cm
-../closure-convert/sources.cm
-../cps/sources.cm
 ../backend/sources.cm
+../closure-convert/sources.cm
+../cm/sources.cm
 ../codegen/sources.cm
+../control/sources.cm
+../core-ml/sources.cm
+../cps/sources.cm
+../elaborate/sources.cm
+../front-end/sources.cm
+../ssa/sources.cm
+../type-inference/sources.cm
+../xml/sources.cm
 
 compile.sig
 compile.sml
