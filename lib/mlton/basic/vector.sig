@@ -87,6 +87,7 @@ signature VECTOR =
       val new3: 'a * 'a * 'a -> 'a t
       val new4: 'a * 'a * 'a * 'a -> 'a t
       val peek: 'a t * ('a -> bool) -> 'a option
+      val peeki: 'a t * (int * 'a -> bool) -> (int * 'a) option
       val peekMap: 'a t * ('a -> 'b option) -> 'b option
       val peekMapi: 'a t * ('a -> 'b option) -> (int * 'b) option
       val rev: 'a t -> 'a t
