@@ -1,7 +1,7 @@
 (* nonexhaustive.sml *)
 
 val _ =
-   case 1 of
+   case 2 of
       2 => 3
     | 3 => 4
 	 
