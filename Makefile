@@ -96,10 +96,10 @@ docs:
 BSDSRC = /tmp/mlton-$(VERSION)
 .PHONY: freebsd
 freebsd:
+	$(MAKE) clean clean-cvs version
 	rm -rf $(BSDSRC)
 	mkdir -p $(BSDSRC)
 	( cd $(SRC) && tar -cpf - . ) | ( cd $(BSDSRC) && tar -xpf - )
-	cd $(BSDSRC) && $(MAKE) clean clean-cvs version
 	cd /tmp && tar -cpf - mlton-$(VERSION) | \
 		 gzip >/usr/ports/distfiles/mlton-$(VERSION)-1.src.tgz
 	cd $(BSDSRC)/freebsd && make build-package
@@ -131,12 +131,12 @@ TOPDIR = 'TOPDIR-unset'
 SOURCEDIR = $(TOPDIR)/SOURCES/mlton-$(VERSION)
 .PHONY: rpms
 rpms:
+	$(MAKE) clean clean-cvs version
 	mkdir -p $(TOPDIR)
 	cd $(TOPDIR) && mkdir -p BUILD RPMS/i386 SOURCES SPECS SRPMS
 	rm -rf $(SOURCEDIR)
 	mkdir -p $(SOURCEDIR)
 	( cd $(SRC) && tar -cpf - . ) | ( cd $(SOURCEDIR) && tar -xpf - )
-	cd $(SOURCEDIR) && $(MAKE) clean clean-cvs version
 	$(CP) $(SOURCEDIR)/doc/mlton.spec $(TOPDIR)/SPECS/mlton.spec
 	( cd $(TOPDIR)/SOURCES && tar -cpf - mlton-$(VERSION) )		\
 		| gzip >$(SOURCEDIR).tgz
