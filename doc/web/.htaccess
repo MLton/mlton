@@ -1,6 +1,9 @@
 # Indexes is necessary for the benchmark directory to be shown.
 Options FollowSymLinks Indexes
 
+# The changelog used to be called CHANGES.
+Redirect permanent /CHANGES http://www.mlton.org/changelog
+
 # The user guide used to be in the HTML directory.
 RedirectMatch permanent /HTML* http://www.mlton.org/user-guide/index.html
 
