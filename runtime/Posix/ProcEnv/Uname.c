@@ -1,10 +1,20 @@
+#include <stdio.h>
 #include <sys/utsname.h>
 #include "mlton-posix.h"
+
+enum {
+	DEBUG = 0,
+};
 
 static struct utsname utsname;
 
 Int Posix_ProcEnv_Uname_uname() {
-	return uname(&utsname);
+	Int res;
+	
+	res = uname(&utsname);
+	if (DEBUG)
+		fprintf (stderr, "%d = Posix_ProcEnv_Uname_uname ()\n", res);
+	return res;
 }
 
 Cstring Posix_ProcEnv_Uname_sysname() {

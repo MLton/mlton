@@ -1,11 +1,21 @@
+#include <stdio.h>
 #include <sys/time.h>
 #include <unistd.h>
 #include "mlton-basis.h"
 
+enum {
+	DEBUG = 0,
+};
+
 static struct timeval timeval;
 
 Int Time_gettimeofday () {
-	return gettimeofday (&timeval, (struct timezone*)NULL);
+	Int res;
+
+	res = gettimeofday (&timeval, (struct timezone*)NULL);
+	if (DEBUG)
+		fprintf (stderr, "%d = Time_gettimeofday ()\n", res);
+	return res;
 }
 
 Int Time_sec () {

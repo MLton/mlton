@@ -1,6 +1,11 @@
 #include "mlton-basis.h"
 
+#include <stdio.h>
 #include <time.h>
+
+enum {
+	DEBUG = 0,
+};
 
 static struct tm tm;
 static struct tm *tmp;
@@ -96,6 +101,9 @@ Int Date_localOffset() {
 
 void Date_localTime(Pointer p) {
 	tmp = localtime((time_t*)p);
+	if (DEBUG)
+		fprintf (stderr, "0x%08x = Date_localTime (0x%08x)\n", 
+				(unsigned int)tmp, (unsigned int)p);
 }
 
 Int Date_mkTime() {
