@@ -895,7 +895,7 @@ structure Primitive =
 	    val minNormalPos = _import "Real32_minNormalPos": real;
 	    val minPos = _import "Real32_minPos": real;
 	    val modf = _import "Real32_modf": real * real ref -> real;
-	    val nextAfter = _import "nextAfterf": real * real -> real;
+	    val nextAfter = _import "nextafterf": real * real -> real;
 	    val round =
 	       if MLton.native
 		  then _prim "Real32_round": real -> real;
