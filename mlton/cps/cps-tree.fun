@@ -1115,8 +1115,7 @@ structure Function =
 		  (Edge.plist, Property.initConst [])
 	       val {get = nodeOptions, ...} =
 		  Property.get
-		  (Node.plist,
-		   Property.initFun (fn _ => ref []))
+		  (Node.plist, Property.initFun (fn _ => ref []))
 	       val g = Graph.new ()
 	       fun addEdge (from, to, opts) =
 		  let
@@ -1373,6 +1372,76 @@ structure Program =
    struct
       open Program
 
+      local
+	 structure Graph = DirectedGraph
+	 structure Node = Graph.Node
+	 structure Edge = Graph.Edge
+      in
+	 fun layoutCallGraph (T {functions, main, ...},
+			      title: string): Layout.t =
+	    let
+	       open Graph.LayoutDot
+	       val g = Graph.new ()
+	       val {get = nodeOptions, set = setNodeOptions, ...} =
+		  Property.getSetOnce
+		  (Node.plist, Property.initRaise ("options", Node.layout))
+	       val {get = funcNode, destroy} =
+		  Property.destGet
+		  (Func.plist, Property.initFun
+		   (fn f =>
+		    let
+		       val n = Graph.newNode g
+		       val _ = setNodeOptions (n, [NodeOption.Label
+						   (Func.toString f)])
+		    in
+		       n
+		    end))
+	       val {get = edgeOptions, set = setEdgeOptions} =
+		  Property.getSetOnce (Edge.plist, Property.initConst [])
+	       val _ =
+		  Vector.foreach
+		  (functions, fn {name, body, ...} =>
+		   let
+		      val from = funcNode name
+		      val {get, destroy} =
+			 Property.destGet
+			 (Node.plist,
+			  Property.initFun (fn _ => {nontail = ref false,
+						     tail = ref false}))
+		      val _ = 
+			 Exp.foreachCall
+			 (body, fn {func, cont, ...} =>
+			  let
+			     val to = funcNode func
+			     val {tail, nontail} = get to
+			     val r = if isSome cont then nontail else tail
+			  in
+			     if !r
+				then ()
+			     else (r := true
+				   ; (setEdgeOptions
+				      (Graph.addEdge (g, {from = from, to = to}),
+				       if isSome cont
+					  then []
+				       else [EdgeOption.Style Dotted])))
+			  end)
+		      val _ = destroy ()
+		   in
+		      ()
+		   end)
+	       val l =
+		  Graph.LayoutDot.layout
+		  {graph = g,
+		   title = title,
+		   options = [],
+		   edgeOptions = edgeOptions,
+		   nodeOptions = nodeOptions}
+	       val _ = destroy ()
+	    in
+	       l
+	    end
+      end
+
       fun foreachVar (T {globals, functions, ...}, f) =
 	 (Vector.foreach (globals, fn {var, ty, ...} => f (var, ty))
 	  ; Vector.foreach (functions, fn {args, body, ...} =>
@@ -1391,6 +1460,14 @@ structure Program =
 	    ; output (str "\n\nFunctions:")
 	    ; Function.layouts (functions, jumpHandlers, output)
 	    ; output (seq [str "\n\nMain: ", Func.layout main])
+	    ; if not (!Control.keepDot)
+	       then ()
+	      else
+		 File.withOut
+		 (concat [!Control.inputFile, ".dot"],
+		  fn out =>
+		  Layout.outputl (layoutCallGraph (p, !Control.inputFile),
+				  out))
 	 end
 
       fun layout (p as T {datatypes, globals, functions, main}) =
