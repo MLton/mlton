@@ -23,78 +23,78 @@ signature PRIM =
       structure Name:
 	 sig
 	    datatype t =
-	       Array_array (* implemented in backend *)
-	     | Array_array0Const (* implemented in constant-propagation.fun *)
-	     | Array_length
-	     | Array_sub (* implemented in backend *)
-	     | Array_update (* implemented in backend *)
-	     | BuildConstant of string
-	     | Byte_byteToChar
-	     | Byte_charToByte
-	     | C_CS_charArrayToWord8Array
-	     | Char_lt
-	     | Char_le
-	     | Char_gt
-	     | Char_ge
-	     | Char_chr
-	     | Char_ord
-	     | Constant of string (* implemented in infer.fun *)
-	     | Cpointer_isNull
-	     | Exn_extra (* implemented in implement-exceptions.fun *)
+	       Array_array (* backend *)
+	     | Array_array0Const (* constant propagation *)
+	     | Array_length (* ssa to rssa *)
+	     | Array_sub (* backend *)
+	     | Array_update (* backend *)
+	     | BuildConstant of string (* type inference *)
+	     | Byte_byteToChar (* ssa to rssa *)
+	     | Byte_charToByte (* ssa to rssa *)
+	     | C_CS_charArrayToWord8Array (* ssa to rssa *)
+	     | Char_lt (* codegen *)
+	     | Char_le (* codegen *)
+	     | Char_gt (* codegen *)
+	     | Char_ge (* codegen *)
+	     | Char_chr (* codegen *)
+	     | Char_ord (* codegen *)
+	     | Constant of string (* type inference *)
+	     | Cpointer_isNull (* codegen *)
+	     | Exn_extra (* implement exceptions *)
 	     | Exn_keepHistory (* a compile-time boolean *)
-	     | Exn_name (* implemented in implement-exceptions.fun *)
-	     | Exn_setExtendExtra (* implemented in implement-exceptions.fun *)
-	     | Exn_setInitExtra (* implemented in implement-exceptions.fun *)
-	     | Exn_setTopLevelHandler (* implemented in implement-exceptions.fun *)
-	     | FFI of string
-	     | GC_collect
-	     | GC_pack
-	     | GC_unpack
-             | Int_add
-             | Int_addCheck
-             | Int_ge
-             | Int_geu
-             | Int_gt
-             | Int_gtu
-             | Int_le
-             | Int_lt
-             | Int_mul
-             | Int_mulCheck
-             | Int_neg
-             | Int_negCheck
-             | Int_quot
-             | Int_rem
-             | Int_sub
-             | Int_subCheck
-	     | IntInf_add
-	     | IntInf_andb
-	     | IntInf_arshift
-	     | IntInf_compare
-	     | IntInf_equal
-	     | IntInf_fromVector
-	     | IntInf_fromWord
-	     | IntInf_gcd
-	     | IntInf_lshift
-	     | IntInf_mul
-	     | IntInf_notb
-	     | IntInf_neg
-	     | IntInf_orb
-	     | IntInf_quot
-	     | IntInf_rem
-	     | IntInf_sub
-	     | IntInf_toString
-	     | IntInf_toVector
-	     | IntInf_toWord
-	     | IntInf_xorb
-	     | MLton_bogus (* of type unit -> 'a.
-			    * implemented in backend.
+	     | Exn_name (* implement exceptions *)
+	     | Exn_setExtendExtra (* implement exceptions *)
+	     | Exn_setInitExtra (* implement exceptions *)
+	     | Exn_setTopLevelHandler (* implement exceptions *)
+	     | FFI of string (* ssa to rssa *)
+	     | GC_collect (* ssa to rssa *)
+	     | GC_pack (* ssa to rssa *)
+	     | GC_unpack (* ssa to rssa *)
+             | Int_add (* codegen *)
+             | Int_addCheck (* codegen *)
+             | Int_ge (* codegen *)
+             | Int_geu (* codegen *)
+             | Int_gt (* codegen *)
+             | Int_gtu (* codegen *)
+             | Int_le (* codegen *)
+             | Int_lt (* codegen *)
+             | Int_mul (* codegen *)
+             | Int_mulCheck (* codegen *)
+             | Int_neg (* codegen *)
+             | Int_negCheck (* codegen *)
+             | Int_quot (* codegen *)
+             | Int_rem (* codegen *)
+             | Int_sub (* codegen *)
+             | Int_subCheck (* codegen *)
+	     | IntInf_add (* ssa to rssa *)
+	     | IntInf_andb (* ssa to rssa *)
+	     | IntInf_arshift (* ssa to rssa *)
+	     | IntInf_compare (* ssa to rssa *)
+	     | IntInf_equal (* ssa to rssa *)
+	     | IntInf_fromVector (* ssa to rssa *)
+	     | IntInf_fromWord (* ssa to rssa *)
+	     | IntInf_gcd (* ssa to rssa *)
+	     | IntInf_lshift (* ssa to rssa *)
+	     | IntInf_mul (* ssa to rssa *)
+	     | IntInf_neg (* ssa to rssa *)
+	     | IntInf_notb (* ssa to rssa *)
+	     | IntInf_orb (* ssa to rssa *)
+	     | IntInf_quot (* ssa to rssa *)
+	     | IntInf_rem (* ssa to rssa *)
+	     | IntInf_sub (* ssa to rssa *)
+	     | IntInf_toString (* ssa to rssa *)
+	     | IntInf_toVector (* ssa to rssa *)
+	     | IntInf_toWord (* ssa to rssa *)
+	     | IntInf_xorb (* ssa to rssa *)
+	     | MLton_bogus (* ssa to rssa *)
+	                   (* of type unit -> 'a.
 			    * Makes a bogus value of any type.
 			    *)
-	     | MLton_bug
-	     | MLton_deserialize
-	     | MLton_eq
-	     | MLton_equal (* implemented in ssa/poly-equal.fun *)
-	     | MLton_halt
+	     | MLton_bug (* ssa to rssa *)
+	     | MLton_deserialize (* unused *)
+	     | MLton_eq (* codegen *)
+	     | MLton_equal (* polymorphic equality *)
+	     | MLton_halt (* ssa to rssa *)
 	     (* MLton_handlesSignals and MLton_installSignalHandler work together
 	      * to inform the optimizer and basis library whether or not the
 	      * program uses signal handlers.
@@ -107,120 +107,120 @@ signature PRIM =
 	      * MLton_handlesSignals is translated by closure conversion into
 	      * a boolean, and is true iff MLton_installsSignalHandler is called.
 	      *)
-	     | MLton_handlesSignals
-	     | MLton_installSignalHandler
-	     | MLton_serialize
-	     | MLton_size
-	     | Real_Math_acos
-	     | Real_Math_asin
-	     | Real_Math_atan
-	     | Real_Math_atan2
-	     | Real_Math_cos
-	     | Real_Math_cosh
-	     | Real_Math_exp
-	     | Real_Math_ln
-	     | Real_Math_log10 
-	     | Real_Math_pow
-	     | Real_Math_sin
-	     | Real_Math_sinh
-	     | Real_Math_sqrt
-	     | Real_Math_tan
-	     | Real_Math_tanh
-	     | Real_mul
-	     | Real_muladd
-	     | Real_mulsub
-	     | Real_add
-	     | Real_sub
-	     | Real_div
-	     | Real_lt
-	     | Real_le
-	     | Real_equal
-	     | Real_gt
-	     | Real_ge
-	     | Real_qequal
-	     | Real_abs
-	     | Real_copysign
-	     | Real_frexp
-	     | Real_fromInt
-	     | Real_ldexp
-	     | Real_modf
-	     | Real_toInt
-	     | Real_neg	 
-	     | Real_round
-	     | Ref_assign (* implemented in backend *)
-	     | Ref_deref (* implemented in backend *)
-	     | Ref_ref (* implemented in backend *)
-	     | String_fromWord8Vector
-	     | String_toWord8Vector
-	     | Thread_atomicBegin (* implemented in backend *)
-	     | Thread_atomicEnd (* implemented in backend *)
-	     | Thread_canHandle (* implemented in backend *)
-	     | Thread_copy
-	     | Thread_copyCurrent
-	     | Thread_returnToC
+	     | MLton_handlesSignals (* closure conversion *)
+	     | MLton_installSignalHandler (* backend *)
+	     | MLton_serialize (* unused *)
+	     | MLton_size (* ssa to rssa *)
+	     | Real_Math_acos (* codegen *)
+	     | Real_Math_asin (* codegen *)
+	     | Real_Math_atan (* codegen *)
+	     | Real_Math_atan2 (* codegen *)
+	     | Real_Math_cos (* codegen *)
+	     | Real_Math_cosh (* codegen *)
+	     | Real_Math_exp (* codegen *)
+	     | Real_Math_ln (* codegen *)
+	     | Real_Math_log10  (* codegen *)
+	     | Real_Math_pow (* codegen *)
+	     | Real_Math_sin (* codegen *)
+	     | Real_Math_sinh (* codegen *)
+	     | Real_Math_sqrt (* codegen *)
+	     | Real_Math_tan (* codegen *)
+	     | Real_Math_tanh (* codegen *)
+	     | Real_abs (* codegen *)
+	     | Real_add (* codegen *)
+	     | Real_copysign (* codegen *)
+	     | Real_div (* codegen *)
+	     | Real_equal (* codegen *)
+	     | Real_frexp (* ssa to rssa *)
+	     | Real_fromInt (* codegen *)
+	     | Real_ge (* codegen *)
+	     | Real_gt (* codegen *)
+	     | Real_ldexp (* codegen *)
+	     | Real_le (* codegen *)
+	     | Real_lt (* codegen *)
+	     | Real_modf (* ssa to rssa *)
+	     | Real_mul (* codegen *)
+	     | Real_muladd (* codegen *)
+	     | Real_mulsub (* codegen *)
+	     | Real_neg	  (* codegen *)
+	     | Real_qequal (* codegen *)
+	     | Real_round (* codegen *)
+	     | Real_sub (* codegen *)
+	     | Real_toInt (* codegen *)
+	     | Ref_assign (* backend *)
+	     | Ref_deref (* backend *)
+	     | Ref_ref (* backend *)
+	     | String_fromWord8Vector (* ssa to rssa *)
+	     | String_toWord8Vector (* ssa to rssa *)
+	     | Thread_atomicBegin (* backend *)
+	     | Thread_atomicEnd (* backend *)
+	     | Thread_canHandle (* backend *)
+	     | Thread_copy (* ssa to rssa *)
+	     | Thread_copyCurrent (* ssa to rssa *)
+	     | Thread_returnToC (* codegen *)
 	     (* switchTo has to be a _prim because we have to know that it
 	      * enters the runtime -- because everything must be saved
 	      * on the stack.
 	      *)
-	     | Thread_switchTo
-	     | Vector_fromArray (* implemented in backend *)
-	     | Vector_length
-	     | Vector_sub (* implemented in backend *)
-	     | Weak_canGet (* implemented in SsaToRssa *)
-	     | Weak_get (* implemented in SsaToRssa *)
-	     | Weak_new (* implemented in SsaToRssa *)
-	     | Word32_add
-	     | Word32_addCheck
-	     | Word32_andb
-	     | Word32_arshift
-	     | Word32_div
-	     | Word32_fromInt
-	     | Word32_ge
-	     | Word32_gt
-	     | Word32_le
-	     | Word32_lshift
-	     | Word32_lt
-	     | Word32_mod
-	     | Word32_mul
-	     | Word32_mulCheck
-	     | Word32_neg
-	     | Word32_notb
-	     | Word32_orb
-	     | Word32_rol
-	     | Word32_ror
-	     | Word32_rshift
-	     | Word32_sub
-	     | Word32_toIntX
-	     | Word32_xorb
-	     | Word8Array_subWord
-	     | Word8Array_updateWord
-	     | Word8Vector_subWord
-	     | Word8_add
-	     | Word8_andb
-	     | Word8_arshift
-	     | Word8_div
-	     | Word8_fromInt
-	     | Word8_fromLargeWord
-	     | Word8_ge
-	     | Word8_gt
-	     | Word8_le
-	     | Word8_lshift
-	     | Word8_lt
-	     | Word8_mod
-	     | Word8_mul
-	     | Word8_neg
-	     | Word8_notb
-	     | Word8_orb
-	     | Word8_rol
-	     | Word8_ror
-	     | Word8_rshift
-	     | Word8_sub
-	     | Word8_toInt
-	     | Word8_toIntX
-	     | Word8_toLargeWord
-	     | Word8_toLargeWordX
-	     | Word8_xorb
-	     | World_save
+	     | Thread_switchTo (* ssa to rssa *)
+	     | Vector_fromArray (* backend *)
+	     | Vector_length (* ssa to rssa *)
+	     | Vector_sub (* backend *)
+	     | Weak_canGet (* ssa to rssa *)
+	     | Weak_get (* ssa to rssa *)
+	     | Weak_new (* ssa to rssa *)
+	     | Word32_add (* codegen *)
+	     | Word32_addCheck (* codegen *)
+	     | Word32_andb (* codegen *)
+	     | Word32_arshift (* codegen *)
+	     | Word32_div (* codegen *)
+	     | Word32_fromInt (* ssa to rssa *)
+	     | Word32_ge (* codegen *)
+	     | Word32_gt (* codegen *)
+	     | Word32_le (* codegen *)
+	     | Word32_lshift (* codegen *)
+	     | Word32_lt (* codegen *)
+	     | Word32_mod (* codegen *)
+	     | Word32_mul (* codegen *)
+	     | Word32_mulCheck (* codegen *)
+	     | Word32_neg (* codegen *)
+	     | Word32_notb (* codegen *)
+	     | Word32_orb (* codegen *)
+	     | Word32_rol (* codegen *)
+	     | Word32_ror (* codegen *)
+	     | Word32_rshift (* codegen *)
+	     | Word32_sub (* codegen *)
+	     | Word32_toIntX (* ssa to rssa *)
+	     | Word32_xorb (* codegen *)
+	     | Word8Array_subWord (* codegen *)
+	     | Word8Array_updateWord (* codegen *)
+	     | Word8Vector_subWord (* codegen *)
+	     | Word8_add (* codegen *)
+	     | Word8_andb (* codegen *)
+	     | Word8_arshift (* codegen *)
+	     | Word8_div (* codegen *)
+	     | Word8_fromInt (* codegen *)
+	     | Word8_fromLargeWord (* codegen *)
+	     | Word8_ge (* codegen *)
+	     | Word8_gt (* codegen *)
+	     | Word8_le (* codegen *)
+	     | Word8_lshift (* codegen *)
+	     | Word8_lt (* codegen *)
+	     | Word8_mod (* codegen *)
+	     | Word8_mul (* codegen *)
+	     | Word8_neg (* codegen *)
+	     | Word8_notb (* codegen *)
+	     | Word8_orb (* codegen *)
+	     | Word8_rol (* codegen *)
+	     | Word8_ror (* codegen *)
+	     | Word8_rshift (* codegen *)
+	     | Word8_sub (* codegen *)
+	     | Word8_toInt (* codegen *)
+	     | Word8_toIntX (* codegen *)
+	     | Word8_toLargeWord (* codegen *)
+	     | Word8_toLargeWordX (* codegen *)
+	     | Word8_xorb (* codegen *)
+	     | World_save (* ssa to rssa *)
 
 	    val layout: t -> Layout.t
 	    val toString: t -> string
