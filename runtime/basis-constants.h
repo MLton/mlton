@@ -22,10 +22,11 @@
 /*                       MLton                       */
 /* ------------------------------------------------- */
 
-#ifndef MLton_debug
-#define MLton_debug FALSE
+#if (defined (__CYGWIN__))
+#define MLton_hostType 0
+#elif (defined (__linux__))
+#define MLton_hostType 1
 #endif
-
 #define MLton_isLittleEndian TRUE
 
 /* ------------------------------------------------- */

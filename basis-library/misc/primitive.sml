@@ -287,6 +287,13 @@ structure Primitive =
 
       structure MLton =
 	 struct
+	    datatype hostType =
+	       Cygwin | Linux
+	    val hostType: hostType =
+	       case _const "MLton_hostType": int; of
+		  0 => Cygwin
+		| 1 => Linux
+
 	    structure Profile =
 	       struct
 		  val profile = _build_const "MLton_profile": bool;
