@@ -44,6 +44,10 @@ representation.  This is fast and supports easy exchange of data with C.
 In {\mlton}, array lengths can be up to $2^{31} - 1$, the largest possible
 twos-complement 32 bit integer.
 
+\feature{support for large files}
+In {\mlton}, file positions and sizes are 64-bit integers, so files
+can be as large as is supported by the platform.
+
 \feature{several garbage collection strategies}
 The {\mlton} runtime system uses copying, mark-compact, and generational
 collection, automatically deciding which to use based on the amount of live
