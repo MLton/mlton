@@ -8,7 +8,8 @@ tgz}.  You can compile with either {\mlton} or {\smlnj}.
 To compile with {\mlton}, you need binary versions of {\tt mlton},
 {\tt mllex}, and {\tt mlyacc} that come with a {\mlton} binary {\tt
 rpm} or {\tt tgz} (an older or newer version of {\mlton} should work).
-To compile, run {\tt make} from within the {\tt src} directory.
+To compile, run {\tt make} from within the root directory directory of the
+sources.
 \begin{verbatim}
 % make
 mlyacc front-end/ml.grm
@@ -33,8 +34,8 @@ have successfully built {\mlton}, you should recompile it with itself, which
 will use {\tt mlton.cm} to bypass the stubs and use the real {\tt MLton}
 structure from the basis library.
 
-Compiling {\mlton} requires at least 400m of memory.  Thus, if your machine has
-less than 512m, it is likely that self-compilation will take a very long time
+Compiling {\mlton} requires at least 256m of memory.  Thus, if your machine has
+less than this, it is likely that self-compilation will take a very long time
 due to paging.  Even if you have enough memory, there simply may not be enough
 available, due to memory consumed by other processes.  In this case, you will
 likely see the following error during self-compilation.
@@ -45,16 +46,31 @@ The only fix is to make sure that enough virtual memory is available.
 
 \subsection{Compiling with {\smlnj}}
 
-To compile with {\smlnj} version 110.35 or later, run {\tt make nj-mlton} from
-within the {\tt mlton} subdirectory of the sources.
+To compile with {\smlnj} version 110.39 or later, do {\tt make nj-mlton} from
+within the root directory of the sources.
 \begin{verbatim}
 % make nj-mlton
-(                                                                       \
-        echo 'SMLofNJ.Internals.GC.messages false;';                    \
+make dirs
+make[1]: Entering directory `/home/sweeks/mlton/src'
+mkdir -p /home/sweeks/mlton/src/build/bin /home/sweeks/mlton/src/build/lib/self/include
+make[1]: Leaving directory `/home/sweeks/mlton/src'
+cd /home/sweeks/mlton/src/mlton && make nj-mlton
+make[1]: Entering directory `/home/sweeks/mlton/src/mlton'
+(									\
+	echo 'SMLofNJ.Internals.GC.messages false;';			\
+	echo '#set CM.Control.verbose false;';				\
+	echo '#set CM.Control.warn_obsolete false;';			\
+	echo 'Control.polyEqWarn := false;';				\
+	echo 'CM.make "sources.cm";';					\
+	echo 'Main.exportNJ("/home/sweeks/mlton/src/basis-library", "/home/sweeks/mlton/src/build/lib/mlton");'	\
+) | time sml
+Standard ML of New Jersey v110.39 [FLINT v1.5], February 15, 2002
 ...
-)
-...
-Standard ML of New Jersey v110.37 [FLINT v1.5], November 21, 2001
-...
-write 5,0: 271 big objects (6473 pages) @ 0x4fd000
+Creating constants file.
+/home/sweeks/mlton/src/build/bin/mlton -build-constants >tmp.c
+/home/sweeks/mlton/src/build/bin/mlton -o tmp tmp.c
+./tmp >/home/sweeks/mlton/src/build/lib/self/constants
+rm -f tmp tmp.c
+make[1]: Leaving directory `/home/sweeks/mlton/src'
+Build of MLton succeeded.
 \end{verbatim}
