@@ -82,7 +82,12 @@ fun checkScopes (program as
 				  * the handler stack at its entry.
 				  *)
 				 bindJump name
-				 ; List.foreach (jumpHandlers name, getJump)
+				 (* But, we're not checking that handlers are
+				  * defined before their use -- the only
+				  * reason was to propery compute liveness
+				  * in live.fun.  That is no being handled differently.
+				  *)
+(*				 ; List.foreach (jumpHandlers name, getJump) *)
 				 ; loopFunc (args, body))
 			   | HandlerPush h => getJump h
 			   | HandlerPop => ())

@@ -66,6 +66,9 @@ val removeUnused = trace ("removeUnused", RemoveUnused.remove)
 structure SimplifyTypes = SimplifyTypes (S)
 val simplifyTypes = trace ("simplifyTypes", SimplifyTypes.simplify)
 
+structure UnusedArgs = UnusedArgs (S)
+val unusedArgs = trace ("unusedArgs", UnusedArgs.unusedArgs)
+
 structure Useless = Useless (S)
 val useless = trace ("useless", Useless.useless)
 
@@ -110,6 +113,7 @@ val passes =
 			   *)
     useless,
     removeUnused,
+    unusedArgs,
     simplifyTypes,
     polyEqual, (* polyEqual cannot be omitted.  It implements MLton_equal. *)
     contify,
@@ -118,11 +122,13 @@ val passes =
     removeUnused,
     raiseToJump,
     contify,
+    unusedArgs,
     introduceLoops,
     loopInvariant,
     flatten,
     localFlatten,
     redundant,
+    unusedArgs,
     removeUnused  (* removeUnused cannot be omitted.
 		   * The final shrink pass ensures that constant operands are
 		   * not used in dead switch branches in a type-unsafe way.
@@ -134,6 +140,34 @@ val passes =
    
 fun simplify p =
    List.fold (passes, stats p, fn (pass, p) => typeCheck (pass p))
+
+(*
+fun display (pass, p, s, i)
+  = let open Control
+    in if !keepCps
+	 then (Ref.fluidLet
+	       (aux, true, fn () =>
+		displays (s ^ "." ^ pass ^ ".cps" ^ (Int.toString i), fn disp =>
+			  (outputHeader (No, disp)
+			   ; Program.layouts (p, disp)))))
+	 else ()
+    end
+in
+fun simplify p =
+   List.fold
+   (passes,
+    stats p,
+    fn (pass, p)
+     => let
+	  val _ = display (pass, p, "pre", !n)
+	  val p' = pass p
+	  val _ = display (pass, p', "post", !n)
+	  val _ = n := !n + 1
+	in
+	  typeCheck p'
+	end)
+end
+*)
    
 val typeCheck = S.typeCheck
    

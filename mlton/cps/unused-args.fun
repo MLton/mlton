@@ -259,7 +259,7 @@ fun unusedArgs (program as Program.T {datatypes, globals, functions, main})
 	    => {name = name,
 		args = args,
 		body = (analyzeExp body ; 
-			loopExp body),
+			shrinkExp (loopExp body)),
 		returns = returns})
 
       val program'
@@ -268,20 +268,7 @@ fun unusedArgs (program as Program.T {datatypes, globals, functions, main})
 		     functions = functions,
 		     main = main}
 
-     val functions 
-	= Vector.map 
-	  (functions, 
-	   fn {name, args, body, returns}
-	    => {name = name,
-		args = args,
-		body = shrinkExp body,
-		returns = returns})
-
-      val program''
-	= Program.T {datatypes = datatypes,
-		     globals = globals,
-		     functions = functions,
-		     main = main}
+(*
       val _ 
 	= if true
 	    then Control.displays
@@ -312,9 +299,9 @@ fun unusedArgs (program as Program.T {datatypes, globals, functions, main})
 					       Option.layout Jump.layout (!wrapper)]
 				       end))
 *)
-		       ; Program.layouts (program', display)
-		       ; Program.layouts (program'', display)))
+		       ; Program.layouts (program', display)))
 	 else ()
+*)
       val _ 
 	= if stats
 	    then (Out.output(Out.standard,
@@ -329,8 +316,13 @@ fun unusedArgs (program as Program.T {datatypes, globals, functions, main})
 	    else ()
 
      in 
-      Program.clear program''
+      Program.clear program'
       ; program'
     end
+
+val unusedArgs 
+  = fn p => if !Control.unusedArgs
+	      then unusedArgs p
+	      else p
 
 end
