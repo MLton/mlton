@@ -26,21 +26,17 @@ signature TYPE_ENV =
 	    val deEta: t * Tyvar.t vector -> Tycon.t option
 	    val deRecord: t -> (Record.Field.t * t) vector
 	    val flexRecord: t SortedRecord.t -> t * (unit -> bool)
-	    datatype expandOpaque =
-	       Always
-	     | Never
-	     | Sometimes of Tycon.t -> bool
-	    val expandOpaque: t * expandOpaque -> t
 	    val hom: t * {con: Tycon.t * 'a vector -> 'a,
-			  expandOpaque: expandOpaque,
+			  expandOpaque: bool,
 			  record: 'a SortedRecord.t -> 'a,
+			  replaceCharWithWord8: bool,
 			  var: Tyvar.t -> 'a} -> 'a
 	    val isChar: t -> bool
 	    val isUnit: t -> bool
 	    val layout: t -> Layout.t
 	    val layoutPretty: t -> Layout.t
 	    val makeHom: {con: Tycon.t * 'a vector -> 'a,
-			  expandOpaque: expandOpaque,
+			  expandOpaque: bool,
 			  var: Tyvar.t -> 'a} -> {destroy: unit -> unit,
 						  hom: t -> 'a}
 	    val makeLayoutPretty:

@@ -478,11 +478,6 @@ structure Type =
 		      Layout.ignore)
 	 opaqueTyconExpansion
 
-      datatype expandOpaque =
-	 Always
-	| Never
-	| Sometimes of Tycon.t -> bool
-
       fun makeHom {con, expandOpaque, flexRecord, genFlexRecord, int, real,
 		   record, recursive, unknown, var, word} =
 	 let
@@ -516,11 +511,7 @@ structure Type =
 						NONE => no ()
 					      | SOME f => get (f ts))
 				      in
-					 case expandOpaque of
-					    Always => yes ()
-					  | Never => no ()
-					  | Sometimes f =>
-					       if f c then yes () else no ()
+					 if expandOpaque then yes () else no ()
 				      end
 				 | Int => int t
 				 | FlexRecord {fields, spine, time} =>
@@ -615,7 +606,7 @@ structure Type =
 	    fun word _ = simple (str "word")
 	    fun lay t =
 	       hom (t, {con = con,
-			expandOpaque = Never,
+			expandOpaque = false,
 			flexRecord = flexRecord,
 			genFlexRecord = genFlexRecord,
 			int = int,
@@ -830,7 +821,7 @@ structure Type =
 	    val {destroy, hom} =
 	       makeHom
 	       {con = fn _ => (),
-		expandOpaque = Never,
+		expandOpaque = false,
 		flexRecord = fn (_, {time = r, ...}) => doit r,
 		genFlexRecord = fn _ => (),
 		int = fn _ => (),
@@ -1177,7 +1168,7 @@ structure Type =
       val word8 = word WordSize.W8
 	 
       fun 'a simpleHom {con: t * Tycon.t * 'a vector -> 'a,
-			expandOpaque: expandOpaque,
+			expandOpaque: bool,
 			record: t * (Field.t * 'a) vector -> 'a,
 			replaceCharWithWord8: bool,
 			var: t * Tyvar.t -> 'a} =
@@ -1343,7 +1334,7 @@ structure Scheme =
 		      | SOME ty => {isNew = true, ty = ty}
 		  val {ty: Type.t, ...} =
 		     Type.hom (ty, {con = con,
-				    expandOpaque = Never,
+				    expandOpaque = false,
 				    flexRecord = keep o #1,
 				    genFlexRecord = genFlexRecord,
 				    int = keep,
@@ -1428,7 +1419,7 @@ structure Scheme =
 	    exception Yes
 	    val {destroy, hom} =
 	       Type.makeHom {con = fn _ => (),
-			     expandOpaque = Type.Never,
+			     expandOpaque = false,
 			     flexRecord = fn _ => (),
 			     genFlexRecord = fn _ => (),
 			     int = fn _ => (),
@@ -1622,7 +1613,7 @@ structure Type =
 	    val {hom, destroy} =
 	       simpleHom
 	       {con = fn (t, _, _) => (t, NONE),
-		expandOpaque = Never,
+		expandOpaque = false,
 		record = fn (t, fs) => (t,
 					SOME (Vector.map (fs, fn (f, (t, _)) =>
 							  (f, t)))),
@@ -1645,7 +1636,7 @@ structure Type =
 					if Tycon.equals (c, Tycon.tuple)
 					   then SOME (Vector.map (ts, #1))
 					else NONE),
-		expandOpaque = Never,
+		expandOpaque = false,
                 var = fn (t, _) => (t, NONE)}
 	    val res = #2 (hom t)
 	    val _ = destroy ()
@@ -1660,26 +1651,20 @@ structure Type =
 
       val deTuple = valOf o deTupleOpt
 
-      fun hom (t, {con, expandOpaque, record, var}) =
+      fun hom (t, {con, expandOpaque = e, record, replaceCharWithWord8 = r,
+		   var}) =
 	 let
 	    val {hom, destroy} =
 	       simpleHom {con = fn (_, c, v) => con (c, v),
-			  expandOpaque = expandOpaque,
+			  expandOpaque = e,
 			  record = fn (_, fs) => record (Srecord.fromVector fs),
-			  replaceCharWithWord8 = false,
+			  replaceCharWithWord8 = r,
 			  var = fn (_, a) => var a}
 	    val res = hom t
 	    val _ = destroy ()
 	 in
 	    res
 	 end
-
-      fun expandOpaque (t: t, e): t =
-	 hom (t, {con = con, expandOpaque = e, record = record, var = var})
-
-      val expandOpaque =
-	 Trace.trace ("expandOpaque", layoutPretty o #1, layoutPretty)
-	 expandOpaque
 
       val unify =
 	 fn (t1: t, t2: t, preError: unit -> unit,

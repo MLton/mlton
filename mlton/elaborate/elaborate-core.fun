@@ -218,7 +218,7 @@ val freeTyvarChecks: (unit -> unit) list ref = ref []
 
 val {hom = typeTycon: Type.t -> Tycon.t option, ...} =
    Type.makeHom {con = fn (c, _) => SOME c,
-		 expandOpaque = Type.Never,
+		 expandOpaque = false,
 		 var = fn _ => NONE}
  
 fun resolveConst (c: Aconst.t, ty: Type.t): Const.t =
@@ -831,6 +831,13 @@ fun export {attributes, name: string, region: Region.t, ty: Type.t}: Aexp.t =
 		 Exp.tuple (Vector.new0 ()))
 	     end)))))))
    end
+
+val export =
+   Trace.trace
+   ("export",
+    fn {name, ...} => String.layout name,
+    Aexp.layout)
+   export
 
 structure Aexp =
    struct
@@ -1835,7 +1842,13 @@ fun elaborateDec (d, {env = E,
 	      | Aexp.Prim {kind, name, ty} =>
 		   let
 		      val ty = elabType ty
-		      val expandedTy = Type.expandOpaque (ty, Type.Always)
+		      val expandedTy =
+			 Type.hom
+			 (ty, {con = Type.con,
+			       expandOpaque = true,
+			       record = Type.record,
+			       replaceCharWithWord8 = true,
+			       var = Type.var})
 		      (* We use expandedTy to get the underlying primitive right
 		       * but we use wrap in the end to make the result of the
 		       * final expression be ty, because that is what the rest
@@ -1974,7 +1987,15 @@ fun elaborateDec (d, {env = E,
 				  unify
 				  (Cexp.ty e,
 				   Type.arrow (expandedTy, Type.unit),
-				   fn _ => Error.bug "export unify failure")
+				   fn (l1, l2) =>
+				   let
+				      open Layout
+				   in
+				      (region,
+				       str "export unify bug",
+				       align [seq [str "inferred: ", l1],
+					      seq [str "expanded: ", l2]])
+				   end)
 			    in
 			       wrap (e, Type.arrow (ty, Type.unit))
 			    end

@@ -52,7 +52,7 @@ structure CoreML = CoreML (open Atoms
 				 val makeHom =
 				    fn {con, var} =>
 				    makeHom {con = con,
-					     expandOpaque = Always,
+					     expandOpaque = true,
 					     var = var}
 				    
 				 val layout = layoutPretty

@@ -187,8 +187,9 @@ structure TypeStr = TypeStr (structure AdmitsEquality = AdmitsEquality
 
 				   fun hom (t, {con, record, var}) =
 				      Type.hom (t, {con = con,
-						    expandOpaque = Type.Never,
+						    expandOpaque = false,
 						    record = record,
+						    replaceCharWithWord8 = false,
 						    var = var})
 				end
 			     structure Tyvar = Tyvar)
@@ -1875,8 +1876,9 @@ fun functorClosure
 			       | SOME s => TypeStr.apply (s, ts)
 			in
 			   Type.hom (t, {con = con,
-					 expandOpaque = Type.Never,
+					 expandOpaque = false,
 					 record = Type.record,
+					 replaceCharWithWord8 = false,
 					 var = Type.var})
 			end
 		     fun replaceScheme (s: Scheme.t): Scheme.t =
