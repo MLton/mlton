@@ -162,7 +162,8 @@ world:
 # The DESTDIR and is added onto them to indicate where the Makefile actually
 # puts them.
 DESTDIR = $(CURDIR)/install
-prefix = /usr
+PREFIX = /usr
+prefix = $(PREFIX)
 TBIN = $(DESTDIR)$(prefix)/bin
 ULIB = lib/mlton
 TLIB = $(DESTDIR)$(prefix)/$(ULIB)
