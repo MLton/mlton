@@ -1021,7 +1021,7 @@ initSignalStack(GC_state s)
 #if (defined (__linux__))
         static stack_t altstack;
 	size_t ss_size = roundPage(s, SIGSTKSZ);
-	size_t psize = getpagesize();
+	size_t psize = s->pageSize;
 	void *ss_sp = ssmmap(2 * ss_size, psize, psize);
 	altstack.ss_sp = ss_sp + ss_size;
 	altstack.ss_size = ss_size;
@@ -1764,7 +1764,7 @@ inline void
 GC_handler(GC_state s, int signum)
 {
 	if (DEBUG)
-		fprintf(stderr, "GC_handler\n");
+		fprintf(stderr, "GC_handler  signum = %d\n", signum);
 	if (0 == s->canHandle) {
 		if (DEBUG)
 			fprintf(stderr, "setting limit = 0\n");
@@ -1772,6 +1772,8 @@ GC_handler(GC_state s, int signum)
 	}
 	sigaddset(&s->signalsPending, signum);
 	s->signalIsPending = TRUE;
+	if (DEBUG)
+		fprintf(stderr, "GC_handler done\n");
 }
 
 inline void
