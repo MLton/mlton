@@ -1,8 +1,10 @@
-(* Modified by sweeks@acm.org on 2000-8-22.
- * Removed SML/NJ-isms.
- * Made work with my library.
+(* Copyright (C) 2004 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ * MLton is released under the GNU General Public License (GPL).
+ * Please see the file MLton-LICENSE for license information.
  *)
-(*
+(* Based on the file entity/lexer.sml in the SML/NJ CM sources.
+ *
  * entity/lexer.sml: lexical analysis of description files
  *
  *   Copyright (c) 1995 by AT&T Bell Laboratories
