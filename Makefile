@@ -22,6 +22,9 @@ GZIP = gzip --force --best
 VERSION = $(shell date +%Y%m%d)
 RELEASE = 1
 
+.PHONY: top
+top: bootstrap
+
 .PHONY: all
 all:
 	$(MAKE) compiler dirs
