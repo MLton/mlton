@@ -261,6 +261,9 @@ fun makeOptions {usage} =
 		      | "alloc" => ProfileAlloc
 		      | "time" => ProfileTime
 		      | _ => usage (concat ["invalid -profile arg: ", s])))),
+       (Expert, "profile-basis", " {false|true}",
+	"profile the basis implementation",
+	boolRef profileBasis),
        (Expert, "profile-il", " {xml}", "where to insert profile exps",
 	SpaceString
 	(fn s =>

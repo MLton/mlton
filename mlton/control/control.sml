@@ -367,6 +367,10 @@ structure ProfileIL =
 	  | ProfileXML => "ProfileXML"
    end
 
+val profileBasis = control {name = "profile basis",
+			    default = false,
+			    toString = Bool.toString}
+
 datatype profileIL = datatype ProfileIL.t
    
 val profileIL = control {name = "profile IL",

@@ -238,7 +238,8 @@ fun profile program =
 			   if let
 				 open SourceInfo
 			      in
-				 not (isBasis si)
+				 !Control.profileBasis
+				 orelse not (isBasis si)
 				 orelse (equals (si', main)
 					 andalso not (equals (si, main)))
 				 orelse (equals (si', unknown))

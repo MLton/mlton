@@ -199,6 +199,8 @@ signature CONTROL =
       datatype profile = ProfileNone | ProfileAlloc | ProfileTime
       val profile: profile ref
 
+      val profileBasis: bool ref
+
       datatype profileIL = ProfileXML | ProfileSSA
       val profileIL: profileIL ref
 	 
