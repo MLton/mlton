@@ -1293,12 +1293,31 @@ fun eliminateDeadBlocks (Program.T {datatypes, globals, functions, main}) =
 	 (functions, fn f =>
 	  let
 	     val {args, blocks, name, raises, returns, start} = Function.dest f
-	     val {get, set, rem} =
+	     val {get = isLive, set = setLive, rem} =
 		Property.getSetOnce (Label.plist, Property.initConst false)
 	     val _ = Function.dfs (f, fn Block.T {label, ...} =>
-				   (set (label, true)
+				   (setLive (label, true)
 				    ; fn () => ()))
-	     val blocks = Vector.keepAll (blocks, get o Block.label)
+	     val blocks =
+		Vector.keepAllMap
+		(blocks, fn Block.T {args, label, statements, transfer} =>
+		 if isLive label
+		    then
+		       let
+			  val statements =
+			     Vector.keepAll
+			     (statements, fn Statement.T {exp, ...} =>
+			      case exp of
+				 HandlerPop l => isLive l
+			       | HandlerPush l => isLive l
+			       | _ => true)
+		       in
+			  SOME (Block.T {args = args,
+					 label = label,
+					 statements = statements,
+					 transfer = transfer})
+		       end
+		 else NONE)
 	     val _ = Vector.foreach (blocks, rem o Block.label)
 	  in
 	     Function.new {args = args,
