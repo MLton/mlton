@@ -6,7 +6,7 @@ signature BIN_STREAM_IO =
    end
 
 (*
-signature TEXT_STREAM_IO =
+signature BIN_STREAM_IO =
    sig
       (* STREAM_IO *)
       type elem = Word8Vector.elem
