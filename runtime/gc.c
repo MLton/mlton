@@ -168,12 +168,14 @@ static inline uint align (uint a, uint b) {
 	return a;	
 }
 
-static inline uint w64align (W64 a, uint b) {
+static inline W64 w64align (W64 a, uint b) {
+	W64 res;
+
 	assert (a >= 0);
 	assert (b >= 1);
-	a += b - 1;
-	a -= a % b;
-	return a;	
+	res = a + b - 1;
+	res = res - res % b;
+	return res;
 }
 
 static bool isAligned (uint a, uint b) {
