@@ -89,7 +89,7 @@ local
 	  | Seq of t list
 	  | Save of t * Save.t
 	  | Star of t
-
+	       
 	 fun layout (r: t): Layout.t =
 	    let
 	       open Layout
@@ -1670,11 +1670,10 @@ in
          (* POSIX 1003.2 regular expressions 
 	  *  caveats: does not support back references '\N'
 	  *           does not support unmatched ')'
-	  *           does not support '^' or '$'
 	  *           does not support '[=' style coallating elements
 	  *           does not support coallating elements as range endpoints
 	  * 
-	  * grammer:
+	  * grammar:
 	  *    S ::= Re
           *   Re ::= Br Re0
 	  *  Re0 ::= e | '|' Br Re0
