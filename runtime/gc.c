@@ -1037,10 +1037,33 @@ static void readProcessor() {
 	processor_has_sse2=0;
 }
 
+/* ------------------------------------------------- */
+/*                    getRAMsize                     */
+/* ------------------------------------------------- */
+
+/*
+ * Set RAM and SWAP size.  Very Linux specific.
+ * Note the total amount of RAM is multiplied by ramSlop so that we don't
+ * use all of memory or start swapping.  It used to be .95, but Linux
+ * 2.2 is more aggressive about swapping.
+ */
+
+static inline void
+setMemInfo(GC_state s)
+{
+	struct sysinfo	sbuf;
+
+	unless (0 == sysinfo(&sbuf))
+		diee("sysinfo failed");
+	s->totalRam = sbuf.totalram;
+	s->totalSwap = sbuf.totalswap;
+}
+
 inline void
 GC_initCounters(GC_state s)
 {
 	initSignalStack(s);
+	setMemInfo(s);
 	s->bytesAllocated = 0;
 	s->bytesCopied = 0;
 	s->canHandle = 0;
@@ -1053,7 +1076,6 @@ GC_initCounters(GC_state s)
 	s->maxBytesLive = 0;
 	s->numGCs = 0;
 	s->numLCs = 0;
-	s->ramSlop = 0.85;
 	s->savedThread = BOGUS_THREAD;
 	s->signalHandler = BOGUS_THREAD;
 	sigemptyset(&s->signalsHandled);
@@ -1074,27 +1096,6 @@ GC_initCounters(GC_state s)
 }
 
 /* ------------------------------------------------- */
-/*                    getRAMsize                     */
-/* ------------------------------------------------- */
-
-/*
- * Get RAM size.  Very Linux specific.
- * Note the total amount of RAM is multiplied by ramSlop so that we don't
- * use all of memory or start swapping.  It used to be .95, but Linux
- * 2.2 is more aggressive about swapping.
- */
-
-static inline uint
-getRAMsize(GC_state s)
-{
-	struct sysinfo	sbuf;
-
-	unless (sysinfo(&sbuf) == 0)
-		diee("sysinfo failed");
-	return (roundPage(s->ramSlop * (float)sbuf.totalram));
-}
-
-/* ------------------------------------------------- */
 /*                 GC_setHeapParams                  */
 /* ------------------------------------------------- */
 
@@ -1107,11 +1108,16 @@ GC_setHeapParams(GC_state s, uint size)
 {
 	if (s->useFixedHeap) {
 		if (0 == s->fromSize)
-			s->fromSize = getRAMsize(s);
+			s->fromSize = roundPage(s->ramSlop * s->totalRam);
 	        s->fromSize = roundPage(s->fromSize / 2);
 	} else {
-		if (0 == s->maxHeapSize) 
-			s->maxHeapSize = getRAMsize(s);
+		if (0 == s->maxHeapSize) {
+			s->maxHeapSize =
+				roundPage(s->ramSlop *
+						(s->maxHeapSwap
+						? s->totalRam + s->totalSwap
+						: s->totalRam));
+		}
 		s->maxHeapSize = roundPage(s->maxHeapSize / 2);
 		s->fromSize = computeHeapSize(s, size, s->liveRatio);
 	}
@@ -1392,9 +1398,9 @@ toSpaceReady:
 	
 		if ((s->toSize < s->fromSize)
 		       /* For improved memory behavior when swapping, unmap
-			* toSpace.  2^27 is pretty arbitrary.
+			* toSpace if total memory used is >totalRam.
 			*/
-  		    or (s->toSize >= (128ul*1024ul*1024ul))
+  		    or (s->fromSize + s->toSize > s->ramSlop * s->totalRam)
 		    or (computeHeapSize(s, needed, s->maxLive) > s->fromSize)) {
 			/* prepare to allocate new toSpace at next GC */
 			smunmap(s->toBase, s->toSize);

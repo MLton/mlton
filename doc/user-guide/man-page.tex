@@ -218,8 +218,11 @@ Run the computation with an automatically resized heap that is never
 larger than n.  The meaning of [{\tt km}] is the same as with the
 {\tt fixed-heap} option.
 
+\option{max-heap-swap}
+Include swap space when deciding how much memory to use.
+
 \option{ram-slop {\mbox{\rm x}}}
-Multiply {\tt x} by the amount of RAM to obtain the max heap size.
+Multiply {\tt x} by the amount of memory to obtain the max heap size.
 \end{description}
 These options can also control the compiler, as in
 \begin{verbatim}

@@ -250,6 +250,9 @@ typedef struct GC_state {
 	uint maxStackSizeSeen;
 	uint maxBytesLive;
 	float ramSlop;
+	uint totalRam; /* bytes */
+	uint totalSwap; /* bytes */
+	bool maxHeapSwap; /* include available swap when setting max heap size */
 } *GC_state;
 
 /* ------------------------------------------------- */
