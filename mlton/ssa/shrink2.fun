@@ -186,13 +186,13 @@ fun shrinkFunction {globals: Statement.t vector} =
 	 Property.getSet (Var.plist, 
 			  Property.initFun (fn x => VarInfo.new (x, NONE)))
       val setVarInfo =
-	 Trace.trace2 ("Shrink.setVarInfo",
+	 Trace.trace2 ("Shrink2.setVarInfo",
 		       Var.layout, VarInfo.layout, Unit.layout)
 	 setVarInfo
       fun varInfos xs = Vector.map (xs, varInfo)
       fun simplifyVar (x: Var.t) = use (varInfo x)
       val simplifyVar =
-	 Trace.trace ("Shrink.simplifyVar", Var.layout, Var.layout) simplifyVar
+	 Trace.trace ("Shrink2.simplifyVar", Var.layout, Var.layout) simplifyVar
       fun simplifyVars xs = Vector.map (xs, simplifyVar)
       fun incVarInfo (x: VarInfo.t): unit =
 	 Int.inc (VarInfo.numOccurrences x)
@@ -463,11 +463,11 @@ fun shrinkFunction {globals: Statement.t vector} =
 	       State.Visited m => m
 	     | _ => Error.bug "indexMeaning not computed"
 	 val indexMeaning =
-	    Trace.trace ("Shrink.indexMeaning", Int.layout, LabelMeaning.layout)
+	    Trace.trace ("Shrink2.indexMeaning", Int.layout, LabelMeaning.layout)
 	    indexMeaning
 	 val labelMeaning = indexMeaning o labelIndex
 	 val labelMeaning =
-	    Trace.trace ("Shrink.labelMeaning",
+	    Trace.trace ("Shrink2.labelMeaning",
 			 Label.layout, LabelMeaning.layout)
 	    labelMeaning
 	 fun meaningLabel m =
@@ -650,26 +650,26 @@ fun shrinkFunction {globals: Statement.t vector} =
 		  end
 	 (* Another DFS, this time accumulating the new blocks. *)
       	 val traceForceMeaningBlock =
-	    Trace.trace ("Shrink.forceMeaningBlock",
+	    Trace.trace ("Shrink2.forceMeaningBlock",
 			layoutLabelMeaning, Unit.layout)
 	 val traceSimplifyBlock =
-	    Trace.trace ("Shrink.simplifyBlock",
+	    Trace.trace ("Shrink2.simplifyBlock",
 			 layoutLabel o Block.label,
 			 Layout.tuple2 (List.layout Statement.layout,
 					Transfer.layout))
 	 val traceGotoMeaning =
 	    Trace.trace2
-	    ("Shrink.gotoMeaning",
+	    ("Shrink2.gotoMeaning",
 	     layoutLabelMeaning,
 	     Vector.layout VarInfo.layout,
 	     Layout.tuple2 (List.layout Statement.layout, Transfer.layout))
 	 val traceEvalStatement =
 	    Trace.trace
-	    ("Shrink.evalStatement",
+	    ("Shrink2.evalStatement",
 	     Statement.layout,
 	     Layout.ignore: (Statement.t list -> Statement.t list) -> Layout.t)
 	 val traceSimplifyTransfer =
-	    Trace.trace ("Shrink.simplifyTransfer",
+	    Trace.trace ("Shrink2.simplifyTransfer",
 			 Transfer.layout,
 			 Layout.tuple2 (List.layout Statement.layout,
 					Transfer.layout))
@@ -724,12 +724,18 @@ fun shrinkFunction {globals: Statement.t vector} =
 	    traceSimplifyBlock
 	    (fn (Block.T {statements, transfer, ...}) =>
 	    let
-	       val fs = Vector.map (statements, evalStatement)
+	       val f = evalStatements statements
 	       val (ss, transfer) = simplifyTransfer transfer
-	       val statements = Vector.foldr (fs, ss, fn (f, ss) => f ss)
 	    in
-	       (statements, transfer)
+	       (f ss, transfer)
 	    end) arg
+	 and evalStatements (ss: Statement.t vector)
+	    : Statement.t list -> Statement.t list =
+	    let
+	       val fs = Vector.map (ss, evalStatement)
+	    in
+	       fn ss => Vector.foldr (fs, ss, fn (f, ss) => f ss)
+	    end
 	 and simplifyTransfer arg : Statement.t list * Transfer.t =
 	    traceSimplifyTransfer
 	    (fn (t: Transfer.t) =>
@@ -973,10 +979,13 @@ fun shrinkFunction {globals: Statement.t vector} =
 				    val VarInfo.T {value, ...} = variant
 				 in
 				    case !value of
-				       SOME (Value.Object {con = SOME con, ...}) => 
+				       SOME (Value.Object
+					     {args, con = SOME con, ...}) => 
 					  findCase (cases,
 						    fn c => Con.equals (con, c),
-						    Vector.new1 variant)
+						    if 0 = Vector.length args
+						       then Vector.new0 ()
+						    else Vector.new1 variant)
 				     | _ => cantSimplify ()
 				 end
 			    | _ => cantSimplify ()
@@ -1162,10 +1171,10 @@ fun shrinkFunction {globals: Statement.t vector} =
 		     let
 			val args = varInfos args
 			fun apply {prim, targs, args} =
-			   doit {sideEffect = Prim.maySideEffect prim,
-				 makeExp = fn () => PrimApp {prim = prim,
+			   doit {makeExp = fn () => PrimApp {prim = prim,
 							     targs = targs,
 							     args = uses args},
+				 sideEffect = Prim.maySideEffect prim,
 				 value = NONE}
 			datatype z = datatype Prim.ApplyResult.t
 		     in
@@ -1175,13 +1184,22 @@ fun shrinkFunction {globals: Statement.t vector} =
 						     args = Vector.fromList args}
 			 | Bool b =>
 			      let
+				 val variant = Var.newNoname ()
 				 val con = SOME (Con.fromBool b)
 			      in
-				 construct (Value.Object {args = Vector.new0 (),
-							  con = con},
-					    fn () =>
-					    Object {args = Vector.new0 (),
-						    con = con})
+				 evalStatements
+				 (Vector.new2
+				  (Statement.T
+				   {exp = Object {args = Vector.new0 (),
+						  con = con},
+				    ty = Type.object {args = Prod.empty (),
+						      con = con},
+				    var = SOME variant},
+				   Statement.T
+				   {exp = Inject {sum = Tycon.bool,
+						  variant = variant},
+				    ty = Type.bool,
+				    var = var}))
 			      end
 			 | Const c => construct (Value.Const c,
 						 fn () => Exp.Const c)
