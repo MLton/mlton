@@ -2158,6 +2158,7 @@ W32 mark (GC_state s, pointer root, MarkMode mode, Bool shouldHashCons) {
 	Header header;
 	uint index; /* The i'th pointer in the object (element) being marked. */
 	GC_frameLayout *layout;
+	Header mark; /* Used to set or clear the mark bit. */
 	pointer next; /* The next object to mark. */
 	Header *nextHeaderp;
 	Header nextHeader;
@@ -2172,6 +2173,7 @@ W32 mark (GC_state s, pointer root, MarkMode mode, Bool shouldHashCons) {
 	if (modeEqMark (mode, root))
 		/* Object has already been marked. */
 		return 0;
+	mark = (MARK_MODE == mode) ? MARK_MASK : 0;
 	size = 0;
 	cur = root;
 	prev = NULL;
@@ -2211,9 +2213,7 @@ mark:
 	assert (not modeEqMark (mode, cur));
 	assert (header == GC_getHeader (cur));
 	assert (headerp == GC_getHeaderp (cur));
-	header = (MARK_MODE == mode)
-			? header | MARK_MASK
-			: header & ~MARK_MASK;
+	header ^= 0x80000000;
 	/* Store the mark.  In the case of an object that contains a pointer to
 	 * itself, it is essential that we store the marked header before marking
 	 * the internal pointers (markInNormal below).  If we didn't, then we
@@ -2254,8 +2254,7 @@ markNextInNormal:
 		}
 		nextHeaderp = GC_getHeaderp (next);
 		nextHeader = *nextHeaderp;
-		if ((nextHeader & MARK_MASK)
-			== (MARK_MODE == mode ? MARK_MASK : 0)) {
+		if (mark == (nextHeader & MARK_MASK)) {
 			maybeSharePointer (s, (pointer*)todo, shouldHashCons);
 			goto markNextInNormal;
 		}
@@ -2315,8 +2314,7 @@ markNextInArray:
 		}
 		nextHeaderp = GC_getHeaderp (next);
 		nextHeader = *nextHeaderp;
-		if ((nextHeader & MARK_MASK)
-			== (MARK_MODE == mode ? MARK_MASK : 0)) {
+		if (mark == (nextHeader & MARK_MASK)) {
 			maybeSharePointer (s, (pointer*)todo, shouldHashCons);
 			goto markNextInArray;
 		}
@@ -2363,8 +2361,7 @@ markInFrame:
 		}
 		nextHeaderp = GC_getHeaderp (next);
 		nextHeader = *nextHeaderp;
-		if ((nextHeader & MARK_MASK)
-			== (MARK_MODE == mode ? MARK_MASK : 0)) {
+		if (mark == (nextHeader & MARK_MASK)) {
 			index++;
 			maybeSharePointer (s, (pointer*)todo, shouldHashCons);
 			goto markInFrame;
