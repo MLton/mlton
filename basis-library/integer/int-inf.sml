@@ -802,36 +802,26 @@ structure IntInf: INT_INF_EXTRA =
       (*
        * bigInt log2
        *)
-      structure Int =
+      structure Word =
 	 struct
-	    open Int
-	    fun log2 (n: int): int =
+	    open Word
+	    fun log2 (w: word): int =
 	       let
-		  fun loop (n, pow, exp, ac): Int.int =
-		     if n = 1
+		  fun loop (n, s, ac): word =
+		     if n = 0w1
 			then ac
 		     else
 			let
 			   val (n, ac) =
-			      if n >= pow
-				 then (Int.quot (n, pow), ac + exp)
+			      if n >= << (0w1, s)
+				 then (>> (n, s), ac + s)
 			      else (n, ac)
 			in
-			   loop (n, quot (pow, 2), exp - 1, ac)
+			   loop (n, >> (s, 0w1), ac)
 			end
 	       in
-		  loop (n, 0x10000, 16, 0)
+		  toInt (loop (w, 0w16, 0w0))
 	       end
-	 end
-
-      structure Word =
-	 struct
-	    open Word
-
-	    fun log2 w =
-	       if Word.>= (w, 0wx80000000)
-		  then 31
-	       else Int.log2 (Word.toInt w)
 	 end
 
       local
@@ -845,7 +835,7 @@ structure IntInf: INT_INF_EXTRA =
 		  Big v =>
 		     Int.+ (Int.* (bitsPerLimb, Int.- (Vector.length v, 2)),
 			    Word.log2 (Vector.sub (v, Int.- (Vector.length v, 1))))
-		| Small w => Int.log2 (Word.toInt w)
+		| Small w => Word.log2 w
       end
    
       type int = bigInt
