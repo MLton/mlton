@@ -86,6 +86,7 @@ signature REGEXP =
       val isChar: (char -> bool) -> t
       val isNotChar: (char -> bool) -> t
       val nonDigit: t
+      val none: t
       val notChar: char -> t
       val notOneOf: string -> t
       val null: t  (* empty string *)

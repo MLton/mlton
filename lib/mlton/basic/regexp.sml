@@ -1446,6 +1446,7 @@ in
 	 val ascii = isChar (fn c => ord c <= 127)
 	 val asciis = star ascii
 
+	 val none = isChar (fn _ => false)
 	 fun oneOf s = isChar (fn c => String.contains (s, c))
 	 fun notOneOf s = isNotChar (fn c => String.contains (s, c))
 	 val digs = "0123456789"
