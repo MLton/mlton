@@ -405,15 +405,16 @@ structure Structure =
 		     datatype z = datatype Vid.t
 		  in
 		     case vid of
-			Con _ => simple "con"
+			Con _ => NONE
 		      | Exn c =>
-			   seq [str "exception ", Con.layout c, 
-				case Type.deArrowOpt (Scheme.ty scheme) of
-				   NONE => empty
-				 | SOME (t, _) =>
-				      seq [str " of ", Type.layoutPretty t]]
-		      | Overload  _ => simple "val"
-		      | Var _ => simple "val"
+			   SOME
+			   (seq [str "exception ", Con.layout c, 
+				 case Type.deArrowOpt (Scheme.ty scheme) of
+				    NONE => empty
+				  | SOME (t, _) =>
+				       seq [str " of ", Type.layoutPretty t]])
+		      | Overload  _ => SOME (simple "val")
+		      | Var _ => SOME (simple "val")
 		  end
 	       fun layoutStrSpec (d: Strid.t, r) =
 		  let
@@ -430,14 +431,16 @@ structure Structure =
 			align (Array.foldr
 			       (a, [], fn ({domain, isUsed, range, ...}, ac) =>
 				if keep {isUsed = !isUsed}
-				   then layout (domain, range) :: ac
+				   then (case layout (domain, range) of
+					    NONE => ac
+					  | SOME l => l :: ac)
 				else ac))
 		  in
 		     align
 		     [str "sig",
-		      indent (align [doit (types, layoutTypeSpec),
+		      indent (align [doit (types, SOME o layoutTypeSpec),
 				     doit (vals, layoutValSpec),
-				     doit (strs, layoutStrSpec)],
+				     doit (strs, SOME o layoutStrSpec)],
 			      3),
 		      str "end"]
 		  end
@@ -959,9 +962,13 @@ fun layout' (E: t, f, fStr): Layout.t =
 			   NONE => empty
 			 | SOME S =>
 			      indent (seq [str ": ", #1 (layoutAbbrev S)], 3)])
+      val vals = align (Array.foldr (vals, [], fn (vs, ac) =>
+				     case valSpec vs of
+					NONE => ac
+				      | SOME l => l :: ac))
    in
       align [doit (types, typeSpec),
-	     doit (vals, valSpec),
+	     vals,
 	     sigs,
 	     fcts,
 	     doit (strs, strSpec)]
