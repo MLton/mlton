@@ -7,7 +7,11 @@ structure DirectExp =
 struct
    
 datatype t =
-   Call of {func: Func.t,
+   Arith of {prim: Prim.t,
+	     args: t vector,
+	     overflow: t,
+	     ty: Type.t}
+ | Call of {func: Func.t,
 	    args: t vector,
 	    ty: Type.t}
  | Case of {cases: cases,
@@ -32,12 +36,14 @@ datatype t =
  | Let of {decs: {var: Var.t, exp: t} list,
 	   body: t}
  | Name of t * (Var.t -> t)
- | PrimApp of {args: t vector,
-	       overflow: t option,
-	       prim: Prim.t,
+ | PrimApp of {prim: Prim.t,
 	       targs: Type.t vector,
+	       args: t vector,
 	       ty: Type.t}
  | Raise of t
+ | Runtime of {prim: Prim.t,
+	       args: t vector,
+	       ty: Type.t}
  | Select of {tuple: t,
 	      offset: int,
 	      ty: Type.t}
@@ -53,6 +59,7 @@ and cases =
  | Word of (word * t) vector
  | Word8 of (Word8.t * t) vector
 
+val arith = Arith
 val call = Call
 val casee = Case
 val conApp = ConApp
@@ -62,8 +69,9 @@ val detupleBind = DetupleBind
 val handlee = Handle
 val lett = Let
 val name = Name
-val primApp' = PrimApp
+val primApp = PrimApp
 val raisee = Raise
+val runtime = Runtime
 val select = Select
 val seq = Seq
 fun tuple (r as {exps, ...}) =
@@ -71,13 +79,6 @@ fun tuple (r as {exps, ...}) =
       then Vector.sub (exps, 0)
    else Tuple r
 val var = Var
-
-fun primApp {prim, targs, args, ty} =
-   primApp' {args = args,
-	     overflow = NONE,
-	     prim = prim,
-	     targs = targs,
-	     ty = ty}
 
 local
    fun make c = conApp {con = c, args = Vector.new0 (), ty = Type.bool}
@@ -103,7 +104,10 @@ local
 in
    fun layout e : Layout.t =
       case e of
-	 Call {func, args, ty} =>
+         Arith {prim, args, overflow, ty} =>
+	    align [Prim.layoutApp (prim, args, layout),
+		   seq [str "Overflow => ", layout overflow]]
+       | Call {func, args, ty} =>
 	    seq [Func.layout func, str " ", layouts args,
 		 str ": ", Type.layout ty]
        | Case {cases, default, test, ty} =>
@@ -156,12 +160,11 @@ in
 			     seq [Var.layout var, str " = ", layout exp])),
 		     layout body)
        | Name _ => str "Name"
-       | PrimApp {args, overflow, prim, targs, ty} =>
-	    align [Prim.layoutApp (prim, args, layout),
-		   case overflow of
-		      NONE => empty
-		    | SOME e => seq [str "Overflow => ", layout e]]
+       | PrimApp {prim, targs, args, ty} =>
+	    Prim.layoutApp (prim, args, layout)
        | Raise e => seq [str "raise ", layout e]
+       | Runtime {prim, args, ty} =>
+	    Prim.layoutApp (prim, args, layout)
        | Select {tuple, offset, ...} =>
 	    seq [str "#", str (Int.toString (1 + offset)), str " ",
 		 layout tuple]
@@ -361,7 +364,21 @@ fun linearize' (e: t, h: Handler.t, k: Cont.t): Label.t * Block.t list =
 	 traceLinearizeLoop
 	 (fn (e: t, h: Handler.t, k: Cont.t) =>
 	 case e of
-	    Call {func, args, ty} =>
+	    Arith {prim, args, overflow, ty} =>
+	       loops
+	       (args, h, fn xs =>
+		let
+		   val l = reify (k, ty)
+		   val k = Cont.goto l
+		in
+		   {statements = [],
+		    transfer =
+		    Transfer.Arith {prim = prim,
+				    args = xs,
+				    overflow = newLabel0 (overflow, h, k),
+				    success = l}}
+		end)
+	  | Call {func, args, ty} =>
 	       loops
 	       (args, h, fn xs =>
 		{statements = [],
@@ -484,25 +501,12 @@ fun linearize' (e: t, h: Handler.t, k: Cont.t): Label.t * Block.t list =
 		  each decs
 	       end
 	  | Name (e, f) => loopf (e, h, fn (x, _) => loop (f x, h, k))
-	  | PrimApp {args, overflow, prim, targs, ty} =>
+	  | PrimApp {prim, targs, args, ty} =>
 	       loops
 	       (args, h, fn xs =>
-		case overflow of
-		   NONE => Cont.sendExp (k, ty, Exp.PrimApp {prim = prim,
-							     targs = targs,
-							     args = xs})
-		 | SOME e =>
-		      let
-			 val l = reify (k, ty)
-			 val k = Cont.goto l
-		      in
-			 {statements = [],
-			  transfer =
-			  Transfer.Prim {prim = prim,
-					 args = xs,
-					 failure = newLabel0 (e, h, k),
-					 success = l}}
-		      end)
+		Cont.sendExp (k, ty, Exp.PrimApp {prim = prim,
+						  targs = targs,
+						  args = xs}))
 	  | Raise e =>
 	       loopf (e, h, fn (x, _) =>
 		      {statements = [],
@@ -514,6 +518,20 @@ fun linearize' (e: t, h: Handler.t, k: Cont.t): Label.t * Block.t list =
 			      Transfer.Goto {dst = l,
 					     args = Vector.new1 x}
 			 | Handler.None => Error.bug "raise to None")})
+	  | Runtime {prim, args, ty} =>
+	       loops
+	       (args, h, fn xs =>
+		let
+		   val l = reify (k, ty)
+		   val k = Cont.goto l
+		in
+		   {statements = [],
+		    transfer =
+		    Transfer.Runtime {prim = prim,
+				      args = xs,
+				      return = newLabel0 (tuple {exps = Vector.new0 (),
+								 ty = ty}, h, k)}}
+		end)
 	  | Select {tuple, offset, ty} =>
 	       loopf (tuple, h, fn (tuple, _) =>
 		      Cont.sendExp (k, ty, Exp.Select {tuple = tuple,

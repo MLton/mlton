@@ -69,7 +69,9 @@ fun checkScopes (program as
 	    ()
 	 end
       val loopTransfer =
-	 fn Bug => ()
+	 fn Arith {args, overflow, success, ...} =>
+	       (getVars args; getLabel overflow; getLabel success)
+	  | Bug => ()
 	  | Call {func, args, return} =>
 	       (getFunc func
 		; getVars args
@@ -79,10 +81,10 @@ fun checkScopes (program as
 		; Cases.foreach' (cases, getLabel, getCon)
 		; Option.app (default, getLabel))
 	  | Goto {dst, args} => (getLabel dst; getVars args)
-	  | Prim {args, failure, success, ...} =>
-	       (getVars args; getLabel failure; getLabel success)
 	  | Raise xs => getVars xs
 	  | Return xs => getVars xs
+	  | Runtime {args, return, ...} => 
+	       (getVars args; getLabel return)
       fun loopFunc (f: Function.t) =
 	 let
 	    val {name, args, start, blocks, returns, ...} = Function.dest f

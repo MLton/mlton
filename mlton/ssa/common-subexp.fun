@@ -14,12 +14,12 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
       val {get = labelInfo: Label.t -> {args: (Var.t * Type.t) vector,
 					inDeg: int ref,
 					success: Exp.t option ref,
-					failure: Exp.t option ref},
+					overflow: Exp.t option ref},
 	   set = setLabelInfo, ...} =
 	 Property.getSetOnce (Label.plist,
 			      Property.initRaise ("info", Label.layout))
-      (* Keep track of variables used as failure variables. *)
-      val {get = failureVar: Var.t -> bool, set = setFailureVar, ...} =
+      (* Keep track of variables used as overflow variables. *)
+      val {get = overflowVar: Var.t -> bool, set = setFailureVar, ...} =
 	 Property.getSetOnce (Var.plist, Property.initConst false)
       (* Keep track of the replacements of variables. *)
       val {get = replace: Var.t -> Var.t option, set = setReplace, ...} =
@@ -122,7 +122,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 			      children)): unit =
 	       let
 		  val removes = ref []
-		  val {success, failure, ...} = labelInfo label
+		  val {success, overflow, ...} = labelInfo label
 		  val _ = Option.app
 		          (!success, fn exp =>
 			   let
@@ -136,7 +136,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 			      ()
 			   end)
 		  val _ = Option.app
-		          (!failure, fn exp =>
+		          (!overflow, fn exp =>
 			   let
 			      val hash = Exp.hash exp
 			      val var = Var.newNoname ()
@@ -216,27 +216,16 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 		  val transfer = Transfer.replaceVar (transfer, canonVar)
 		  val transfer =
 		     case transfer of 
-		        Goto {dst, args} =>
-			   let
-			      val {args = args', inDeg, ...} = labelInfo dst
-			   in
-			      if !inDeg = 1
-				 then (Vector.foreach2
-				       (args, args', fn (var, (var', _)) =>
-					setReplace (var', SOME var))
-				       ; transfer)
-			      else transfer
-			   end
-		      | Prim {prim, args, failure, success} =>
+		        Arith {prim, args, overflow, success} =>
                            let
 			      val {args = succArgs,
 				   inDeg = succInDeg,
 				   success = succ, ...} =
 				 labelInfo success
-			      val {args = failArgs,
-				   inDeg = failInDeg,
-				   failure = fail, ...} =
-				 labelInfo failure
+			      val {args = overArgs,
+				   inDeg = overInDeg,
+				   overflow = over, ...} =
+				 labelInfo overflow
 			      val exp = canon (PrimApp {prim = prim,
 							targs = Vector.new0 (),
 							args = args})
@@ -246,8 +235,8 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 				   (table, hash,
 				    fn {exp = exp', ...} => Exp.equals (exp, exp')) of
 				 SOME {var, ...} =>
-				    if failureVar var
-				       then Goto {dst = failure,
+				    if overflowVar var
+				       then Goto {dst = overflow,
 						  args = Vector.new0 ()}
 				    else (if !succInDeg = 1
 					     then setReplace 
@@ -259,10 +248,21 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 			       | NONE => (if !succInDeg = 1
 					     then succ := SOME exp
 					  else () ;
-					  if !failInDeg = 1
-					     then fail := SOME exp
+					  if !overInDeg = 1
+					     then over := SOME exp
 					  else () ;
 					  transfer)
+			   end
+		      | Goto {dst, args} =>
+			   let
+			      val {args = args', inDeg, ...} = labelInfo dst
+			   in
+			      if !inDeg = 1
+				 then (Vector.foreach2
+				       (args, args', fn (var, (var', _)) =>
+					setReplace (var', SOME var))
+				       ; transfer)
+			      else transfer
 			   end
 		      | _ => transfer
 		  val block = Block.T {args = args,
@@ -293,7 +293,7 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 		(blocks, fn Block.T {label, args, ...} =>
 		 (setLabelInfo (label, {args = args,
 					success = ref NONE,
-					failure = ref NONE,
+					overflow = ref NONE,
 					inDeg = ref 0})))
 	     val _ =
 		Vector.foreach

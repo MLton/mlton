@@ -278,7 +278,29 @@ structure Transfer =
 		; maybePrintLabel b)
 	 in
 	    case t of
-	       Bug => (print "\t"; C.bug ("machine", print))
+	       Arith {prim, args, dst, overflow, success} =>
+		  let
+		     val prim =
+			let
+			   datatype z = datatype Prim.Name.t
+			in
+			   case Prim.name prim of
+			      Int_addCheck => "\tInt_addCheckNew"
+			    | Int_mulCheck => "\tInt_mulCheckNew"
+			    | Int_negCheck => "\tInt_negCheckNew"
+			    | Int_subCheck => "\tInt_subCheckNew"
+			    | _ => Error.bug "strange overflow prim"
+			end
+		  in
+		     C.call (prim,
+			     Operand.toString dst
+			     :: (Vector.toListMap (args, Operand.toString)
+				 @ [Label.toString overflow]),
+			     print)
+		     ; gotoLabel success 
+		     ; maybePrintLabel overflow
+		  end
+	     | Bug => (print "\t"; C.bug ("machine", print))
 	     | FarJump {chunkLabel, label, return, ...} =>
 		  (case return
 		     of SOME {return, handler, size}
@@ -306,28 +328,6 @@ structure Transfer =
 					    print))
 		      | NONE => ();
 		   gotoLabel label)
-	     | Overflow {args, dst, failure, prim, success} =>
-		  let
-		     val prim =
-			let
-			   datatype z = datatype Prim.Name.t
-			in
-			   case Prim.name prim of
-			      Int_addCheck => "\tInt_addCheckNew"
-			    | Int_mulCheck => "\tInt_mulCheckNew"
-			    | Int_negCheck => "\tInt_negCheckNew"
-			    | Int_subCheck => "\tInt_subCheckNew"
-			    | _ => Error.bug "strange overflow prim"
-			end
-		  in
-		     C.call (prim,
-			     Operand.toString dst
-			     :: (Vector.toListMap (args, Operand.toString)
-				 @ [Label.toString failure]),
-			     print)
-		     ; gotoLabel success 
-		     ; maybePrintLabel failure
-		  end
 	     | Raise => C.call ("\tRaise", [], print)
 	     | Return {...} => C.call ("\tReturn", [], print)
 	     | Switch {test, cases, default} =>
@@ -417,8 +417,8 @@ structure Chunk =
 		    in
 		       case transfer of
 			  NearJump {label, ...} => jump label
-			| Overflow {failure, success, ...} =>
-			     (force failure; jump success)
+			| Arith {overflow, success, ...} =>
+			     (force overflow; jump success)
 			| Switch {cases, default, ...} =>
 			     (Cases.foreach (cases, force)
 			      ; (case default

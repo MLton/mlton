@@ -118,12 +118,13 @@ fun coalesce (program as Program.T {functions, ...}, limit) =
 		       Graph.== (graph, c, labelClass j)
 		 in
 		    case transfer of
-		       Case {cases, default, ...} =>
+		       Arith {overflow, success, ...} =>
+			  (same overflow; same success)
+		     | Case {cases, default, ...} =>
 			  (Cases.foreach (cases, same)
 			   ; Option.app (default, same))
 		     | Goto {dst, ...} => same dst
-		     | Prim {failure, success, ...} =>
-			  (same failure; same success)
+		     | Runtime {return, ...} => same return
 		     | _ => ()
 		 end)
 	  in

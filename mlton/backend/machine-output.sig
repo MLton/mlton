@@ -120,7 +120,12 @@ signature MACHINE_OUTPUT =
       structure Transfer:
 	 sig
 	    datatype t =
-	       Bug
+	       Arith of {prim: Prim.t,
+			 args: Operand.t vector,
+			 dst: Operand.t,
+			 overflow: Label.t,
+			 success: Label.t}
+	     | Bug
 	     | FarJump of {chunkLabel: ChunkLabel.t,
 			   label: Label.t,
 			   live: Operand.t list,
@@ -131,11 +136,6 @@ signature MACHINE_OUTPUT =
 			    return: {return: Label.t,
 				     handler: Label.t option,
 				     size: int} option}
-	     | Overflow of {args: Operand.t vector,
-			    dst: Operand.t,
-			    failure: Label.t,
-			    prim: Prim.t,
-			    success: Label.t}
 	     | Raise
 	     | Return of {live: Operand.t list}
 	     | Switch of {test: Operand.t,

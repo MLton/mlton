@@ -54,7 +54,15 @@ fun 'a analyze
 			shouldReturns: 'a vector option,
 			shouldRaises: 'a vector option): unit =
 	(case t of
-	    Bug => ()
+	    Arith {prim, args, overflow, success} =>
+	       (coerces (Vector.new0 (), labelArgs overflow)
+		; coerce {from = primApp {prim = prim,
+					  targs = Vector.new0 (),
+					  args = values args,
+					  resultType = Type.int,
+					  resultVar = NONE},
+			  to = Vector.sub (labelArgs success, 0)})
+	  | Bug => ()
 	  | Call {func = f, args, return, ...} =>
 	       let
 		  val {args = formals, raises, returns} = func f
@@ -150,14 +158,6 @@ fun 'a analyze
 	       in ()
 	       end
 	  | Goto {dst, args} => coerces (values args, labelArgs dst)
-	  | Prim {prim, args, failure, success} =>
-	       (coerces (Vector.new0 (), labelArgs failure)
-		; coerce {from = primApp {prim = prim,
-					  targs = Vector.new0 (),
-					  args = values args,
-					  resultType = Type.int,
-					  resultVar = NONE},
-			  to = Vector.sub (labelArgs success, 0)})
 	  | Raise xs =>
 	       (case shouldRaises of
 		   NONE => raise Fail "raise mismatch at raise"
@@ -165,9 +165,16 @@ fun 'a analyze
 	  | Return xs =>
 	       (case shouldReturns of
 		   NONE => raise Fail "return mismatch at return"
-		 | SOME vs => coerces (values xs, vs)))
+		 | SOME vs => coerces (values xs, vs))
+	  | Runtime {prim, args, return} =>
+	       (primApp {prim = prim,
+			 targs = Vector.new0 (),
+			 args = values args,
+			 resultType = Type.unit,
+			 resultVar = NONE};
+		coerces (Vector.new0 (), labelArgs return)))
 	handle exn => 
-	   Error.bug (concat ["loopTransfer:", 
+	   Error.bug (concat ["loopTransfer: ", 
 			      Layout.toString (Transfer.layout t),
 			      ": ",
 			      (case exn of 

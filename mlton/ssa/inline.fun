@@ -43,13 +43,14 @@ structure Size =
 	      then escape (size, check)
 	   else statementSize (size, max) (doExp, doTransfer) statement))
       val defaultTransferSize =
-	 fn Bug => 1
+	 fn Arith {args, ...} => 1 + Vector.length args
+	  | Bug => 1
 	  | Call {args, ...} => 1 + Vector.length args
 	  | Case {cases, ...} => 1 + Cases.length cases
 	  | Goto {args, ...} => 1 + Vector.length args
-	  | Prim {args, ...} => 1 + Vector.length args
-	  | Raise x => 1 + 1
+	  | Raise xs => 1 + Vector.length xs
 	  | Return xs => 1 + Vector.length xs
+	  | Runtime {args, ...} => 1 + Vector.length args
       fun transferSize (size, max) (doExp, doTransfer) transfer =
 	 let
 	    val size' = doTransfer transfer

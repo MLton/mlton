@@ -1259,7 +1259,51 @@ fun generate (p as Sprogram.T {functions, ...}): Mprogram.t =
 			     handlerOffset: int option)
 	       : Mstatement.t list * Mtransfer.t =
 	       case t of
-		  Stransfer.Bug => ([], Mtransfer.bug)
+		  Stransfer.Arith {prim, args, overflow, success} =>
+		     let
+			val temp =
+			   Operand.register
+			   (Chunk.tempRegister (chunk, Mtype.int))
+			val noOverflowLabel = Mlabel.newNoname ()
+			val live = labelLiveNoFormals success
+			val (live, statements) =
+			   let
+			      val {operand, ...} =
+				 varInfo (#1 (Vector.sub
+					      (#args (labelInfo success), 0)))
+			   in
+			      case operand of
+				 VarOperand.Allocate {isUsed, operand, ...} =>
+				    if !isUsed
+				       then
+					  (temp :: live,
+					   [Mstatement.move {dst = ^operand,
+							     src = temp}])
+				    else (live, [])
+			       | _ => (live, [])
+			   end
+			val _ =
+			   Chunk.newBlock
+			   (chunk,
+			    {label = noOverflowLabel,
+			     kind = Kind.jump,
+			     live = live,
+			     statements = statements,
+			     transfer = (Mtransfer.nearJump
+					 {label = labelToLabel success,
+					  return = NONE}),
+			     profileInfo = {func = profileInfoFunc,
+					    label = Label.toString success}})
+		     in
+			([],
+			 Mtransfer.arith
+			 {prim = prim,
+			  args = Vector.map (args, vo),
+			  dst = temp,
+			  overflow = labelToLabel overflow,
+			  success = noOverflowLabel})
+		     end
+		| Stransfer.Bug => ([], Mtransfer.bug)
 		| Stransfer.Call {func, args, return} =>
 		     let
 			val args = Vector.toList args
@@ -1400,50 +1444,6 @@ fun generate (p as Sprogram.T {functions, ...}): Mprogram.t =
 				     end)
 		     end
 		| Stransfer.Goto {dst, args} => tail (dst, args, vo)
-		| Stransfer.Prim {prim, args, failure, success} =>
-		     let
-			val temp =
-			   Operand.register
-			   (Chunk.tempRegister (chunk, Mtype.int))
-			val noOverflowLabel = Mlabel.newNoname ()
-			val live = labelLiveNoFormals success
-			val (live, statements) =
-			   let
-			      val {operand, ...} =
-				 varInfo (#1 (Vector.sub
-					      (#args (labelInfo success), 0)))
-			   in
-			      case operand of
-				 VarOperand.Allocate {isUsed, operand, ...} =>
-				    if !isUsed
-				       then
-					  (temp :: live,
-					   [Mstatement.move {dst = ^operand,
-							     src = temp}])
-				    else (live, [])
-			       | _ => (live, [])
-			   end
-			val _ =
-			   Chunk.newBlock
-			   (chunk,
-			    {label = noOverflowLabel,
-			     kind = Kind.jump,
-			     live = live,
-			     statements = statements,
-			     transfer = (Mtransfer.nearJump
-					 {label = labelToLabel success,
-					  return = NONE}),
-			     profileInfo = {func = profileInfoFunc,
-					    label = Label.toString success}})
-		     in
-			([],
-			 Mtransfer.overflow
-			 {args = Vector.map (args, vo),
-			  dst = temp,
-			  failure = labelToLabel failure,
-			  prim = prim,
-			  success = noOverflowLabel})
-		     end
 		| Stransfer.Raise xs =>
 		     (Mstatement.moves
 		      {dsts = raiseOperands (Vector.map (xs, #ty o varInfo)),
@@ -1516,6 +1516,21 @@ fun generate (p as Sprogram.T {functions, ...}): Mprogram.t =
 					    interfere = Operand.interfere,
 					    temp = temp},
 			 Mtransfer.return {live = live})
+		     end
+		| Stransfer.Runtime {prim, args, return} => 
+		     let
+		       val info = labelRegInfo return
+		       val pinfo = MPrimInfo.runtime
+			           (GCInfo.make {frameSize = Info.size info,
+						 live = Info.live info})
+		     in
+		       ([Mstatement.assign
+			 {dst = NONE,
+			  oper = prim,
+			  args = Vector.map (args, vo),
+			  pinfo = pinfo}],
+			Mtransfer.nearJump {label = labelToLabel return,
+					    return = NONE})
 		     end
 	    val genTransfer =
 	       Trace.trace ("Backend.genTransfer",

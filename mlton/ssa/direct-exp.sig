@@ -23,6 +23,10 @@ signature DIRECT_EXP =
 	    | Word of (word * t) vector
 	    | Word8 of (Word8.t * t) vector
 
+	   val arith: {prim: Prim.t,
+		       args: t vector,
+		       overflow: t,
+		       ty: Type.t} -> t
 	   (* For now, call always uses Handler.None.  This means it should only
 	    * be used for functions that cannot raise.
 	    *)
@@ -59,14 +63,12 @@ signature DIRECT_EXP =
 	   val name: t * (Var.t -> t) -> t
 	   val primApp: {prim: Prim.t, 
 			 targs: Type.t vector, 
-			 args: t vector, 
-			 ty: Type.t} -> t
-	   val primApp': {prim: Prim.t,
-			  overflow: t option,
-			  targs: Type.t vector,
-			  args: t vector,
-			  ty: Type.t} -> t
+			 args: t vector,
+			 ty: Type.t} -> t 
 	   val raisee: t -> t
+	   val runtime: {prim: Prim.t,
+			 args: t vector,
+			 ty: Type.t} -> t
 	   val select: {tuple: t, 
 			offset: int, 
 			ty: Type.t} -> t

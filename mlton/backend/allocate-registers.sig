@@ -38,6 +38,7 @@ signature ALLOCATE_REGISTERS =
 		     }
 
 	    val live: t -> Machine.Operand.t list
+	    val size: t -> int
 	 end
       
       (* Use Machine.Chunk.newRegister with the appropriate chunk to get a new

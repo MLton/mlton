@@ -816,15 +816,20 @@ fun closureConvert
 				devector = Type.devector},
 			       Vector.map (args, convertVarInfo))
 			   end
-		  val overflow =
-		     if Prim.mayOverflow prim
-			then SOME (Dexp.raisee (convertVar overflow))
-		     else NONE
-	       in simple (Dexp.primApp' {prim = prim,
-					 overflow = overflow,
-					 ty = ty,
-					 targs = targs,
-					 args = args})
+	       in
+		 if Prim.mayOverflow prim
+		   then simple (Dexp.arith {prim = prim,
+					    args = args,
+					    overflow = Dexp.raisee (convertVar overflow),
+					    ty = ty})
+		 else if Prim.runtimeTransfer prim
+		   then simple (Dexp.runtime {prim = prim,
+					      args = args,
+					      ty = ty})
+		 else simple (Dexp.primApp {prim = prim,
+					    targs = targs,
+					    args = args,
+					    ty = ty})
 	       end
 	  | SprimExp.Tuple xs =>
 	       simple (Dexp.tuple {exps = Vector.map (xs, convertVarExp),

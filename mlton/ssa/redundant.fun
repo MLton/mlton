@@ -309,7 +309,12 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 
 		    val transfer =
 		       case transfer of
-			  Bug => Bug
+			  Arith {prim, args, overflow, success} =>
+			     Arith {prim = prim,
+				    args = loopVars args,
+				    overflow = overflow,
+				    success = success}
+			| Bug => Bug
 			| Call {func, args, return} =>
 			     Call {func = func, 
 				   args = loopVars (keepUseful 
@@ -325,16 +330,14 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
 				   args = loopVars (keepUseful 
 						    (#argsRed (labelReds dst), 
 						     args))}
-			| Prim {prim, args, failure, success} =>
-			     Prim {prim = prim,
-				   args = loopVars args,
-				   failure = failure,
-				   success = success}
 			| Raise xs => Raise (loopVars xs)
 			| Return xs =>
 			     Return (loopVars
 				     (keepUseful (valOf returnsRed, xs)))
-
+			| Runtime {prim, args, return} =>
+			     Runtime {prim = prim,
+				      args = loopVars args,
+				      return = return}
 		 in
 		    Block.T {label = label,
 			     args = args,

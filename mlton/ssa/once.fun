@@ -14,10 +14,8 @@ in
    structure Node = Node
 end
 
-fun usesConts p = Program.hasPrim (p, fn p =>
-				   case Prim.name p of
-				      Prim.Name.Thread_switchTo => true
-				    | _ => false)
+fun usesConts p = 
+   Program.hasPrim (p, fn p => Prim.name p = Prim.Name.Thread_switchTo)
        
 (*
  * Build control flow graph for main function.

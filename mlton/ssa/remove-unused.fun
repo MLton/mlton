@@ -433,7 +433,12 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	    else maybeVisitVarExp (var, exp)
       fun visitTransfer (t: Transfer.t, fi: FuncInfo.t)
 	= case t
-	    of Bug => ()
+	    of Arith {args, overflow, success, ...} 
+	     => (FuncInfo.sideEffect fi;
+		 visitVars args;
+		 visitLabel overflow;
+		 visitLabel success)
+	     | Bug => ()
 	     | Call {func, args, return}
 	     => let
 		  datatype u = None
@@ -558,17 +563,17 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 		  in
 		     ()
 		  end
-	     | Prim {args, failure, success, ...} 
-	     => (FuncInfo.sideEffect fi;
-		 visitVars args;
-		 visitLabel failure;
-		 visitLabel success)
 	     | Raise xs 
 	     => (FuncInfo.raisee fi;
 		 flowVarInfoTysVars (valOf (FuncInfo.raises fi), xs))
 	     | Return xs 
 	     => (FuncInfo.return fi;
 		 flowVarInfoTysVars (valOf (FuncInfo.returns fi), xs))
+	     | Runtime {args, return, ...} 
+	     => (FuncInfo.sideEffect fi;
+		 visitVars args;
+		 visitLabel return)
+
       val visitTransfer
 	= Trace.trace ("RemoveUnused.visitTransfer",
 		       Layout.tuple2 (Transfer.layout, FuncInfo.layout),
@@ -794,8 +799,9 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 			  in
 			    (x, t)
 			  end))
-      val getPrimFailureWrapperLabel = getOriginalWrapperLabel
-      val getPrimSuccessWrapperLabel = getOriginalWrapperLabel
+      val getArithOverflowWrapperLabel = getOriginalWrapperLabel
+      val getArithSuccessWrapperLabel = getOriginalWrapperLabel
+      val getRuntimeWrapperLabel = getOriginalWrapperLabel
       fun getBugFunc (fi: FuncInfo.t): Label.t
 	= let
 	    val r = FuncInfo.bugLabel fi
@@ -935,7 +941,13 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 	= Vector.keepAllMap (ss, fn s => simplifyStatement (s, fi))
       fun simplifyTransfer (t: Transfer.t, fi: FuncInfo.t): Transfer.t
 	= case t
-	    of Call {func, args, return}
+	    of Arith {prim, args, overflow, success} 
+	     => Arith {prim = prim,
+		       args = args,
+		       overflow = getArithOverflowWrapperLabel overflow,
+		       success = getArithSuccessWrapperLabel success}
+	     | Bug => Bug
+	     | Call {func, args, return}
 	     => let
 		  val fi' = funcInfo func
 		  datatype u = None
@@ -1067,6 +1079,10 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 					    else keep (SOME l)
 					end
 		end
+	     | Case {test, cases, default}
+	     => Case {test = test,
+		      cases = cases,
+		      default = default}
 	     | Goto {dst, args}
 	     => Goto {dst = dst, 
 		      args = (Vector.keepAllMap2
@@ -1074,11 +1090,6 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 			       fn (x, (y, t)) => if VarInfo.isUsed y
 						   then SOME x
 						   else NONE))}
-	     | Prim {prim, args, failure, success} 
-	     => Prim {prim = prim,
-		      args = args,
-		      failure = getPrimFailureWrapperLabel failure,
-		      success = getPrimSuccessWrapperLabel success}
 	     | Raise xs
 	     => Raise (Vector.keepAllMap2
 		       (xs, valOf (FuncInfo.raises fi),
@@ -1091,7 +1102,10 @@ fun remove (program as Program.T {datatypes, globals, functions, main})
 			 fn (x, (y, t)) => if VarInfo.isUsed y
 					     then SOME x
 					     else NONE))
-	   | _ => t
+	     | Runtime {prim, args, return}
+	     => Runtime {prim = prim,
+			 args = args,
+			 return = getRuntimeWrapperLabel return}
       val simplifyTransfer
 	= Trace.trace ("RemoveUnused.simplifyTransfer",
 		       Layout.tuple2 (Transfer.layout, FuncInfo.layout),

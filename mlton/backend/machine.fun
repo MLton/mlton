@@ -497,7 +497,7 @@ structure Transfer =
       val bug = Bug
       val farJump = FarJump
       val nearJump = NearJump
-      val overflow = Overflow
+      val arith = Arith
       val return = Return
       val raisee = Raise
       val switchIP = SwitchIP
@@ -647,9 +647,9 @@ structure Chunk =
 			   val goto = memo
 			   val rest =
 			      case transfer of
-				 NearJump {label, ...} => goto label
-			       | Overflow {failure, success, ...} =>
-				    Int.max (goto failure, goto success)
+			         Arith {overflow, success, ...} =>
+				    Int.max (goto overflow, goto success)
+			       | NearJump {label, ...} => goto label
 			       | SwitchIP {int, pointer, ...} =>
 				    Int.max (goto int, goto pointer)
 			       | Switch {cases, default, ...} =>

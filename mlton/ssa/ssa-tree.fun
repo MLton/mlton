@@ -531,29 +531,37 @@ structure Return =
 structure Transfer =
    struct
       datatype t =
-	 Bug
+         Arith of {prim: Prim.t,
+		   args: Var.t vector,
+		   overflow: Label.t, (* Must be nullary. *)
+		   success: Label.t (* Must be unary. *)
+		  }
+       | Bug (* MLton thought control couldn't reach here. *)
        | Call of {func: Func.t,
 		  args: Var.t vector,
 		  return: Return.t}
        | Case of {test: Var.t,
 		  cases: Label.t Cases.t,
-		  default: Label.t option}
+		  default: Label.t option (* Must be nullary. *)
+		 }
        | Goto of {dst: Label.t,
 		  args: Var.t vector}
-       | Prim of {prim: Prim.t,
-		  args: Var.t vector,
-		  failure: Label.t, (* Must be nullary. *)
-		  success: Label.t  (* Must be unary. *)
-		  }
        | Raise of Var.t vector
        | Return of Var.t vector
-
+       | Runtime of {prim: Prim.t,
+		     args: Var.t vector,
+		     return: Label.t (* Must be nullary. *)
+		    }
       fun foreachFuncLabelVar (t, func, label: Label.t -> unit, var) =
 	 let
 	    fun vars xs = Vector.foreach (xs, var)
 	 in
 	    case t of
-	       Bug => ()
+	       Arith {args, overflow, success, ...} =>
+		  (vars args
+		   ; label overflow 
+		   ; label success)
+	     | Bug => ()
 	     | Call {func = f, args, return, ...} =>
 		  (func f
 		   ; Return.foreachLabel (return, label)
@@ -563,10 +571,11 @@ structure Transfer =
 		   ; Cases.foreach (cases, label)
 		   ; Option.app (default, label))
 	     | Goto {dst, args, ...} => (vars args; label dst)
-	     | Prim {args, failure, success, ...} =>
-		  (vars args; label failure; label success)
 	     | Raise xs => vars xs
 	     | Return xs => vars xs
+	     | Runtime {args, return, ...} =>
+		  (vars args
+		   ; label return)
 	 end
 
       fun foreachLabelVar (t, label, var) =
@@ -580,7 +589,12 @@ structure Transfer =
 	    fun fxs xs = Vector.map (xs, fx)
 	 in
 	    case t of
-	       Bug => Bug
+	       Arith {prim, args, overflow, success} =>
+		  Arith {prim = prim,
+			 args = fxs args,
+			 overflow = fl overflow,
+			 success = fl success}
+	     | Bug => Bug
 	     | Call {func, args, return} =>
 		  Call {func = func, 
 			args = fxs args,
@@ -592,13 +606,12 @@ structure Transfer =
 	     | Goto {dst, args} => 
 		  Goto {dst = fl dst, 
 			args = fxs args}
-	     | Prim {prim, args, failure, success} =>
-		  Prim {prim = prim,
-			args = fxs args,
-			failure = fl failure,
-			success = fl success}
 	     | Raise xs => Raise (fxs xs)
 	     | Return xs => Return (fxs xs)
+	     | Runtime {prim, args, return} =>
+		  Runtime {prim = prim,
+			   args = fxs args,
+			   return = fl return}
 	 end
 
       fun replaceLabel (t, f) = replaceLabelVar (t, f, fn x => x)
@@ -630,7 +643,12 @@ structure Transfer =
 	    end
 
 	 val layout =
-	    fn Bug => str "Bug"
+	    fn Arith {prim, args, overflow, success} =>
+		  seq [Label.layout success,
+		       tuple [Prim.layoutApp (prim, args, Var.layout)],
+		       str " Overflow => ",
+		       Label.layout overflow, str " ()"]
+	     | Bug => str "Bug"
 	     | Call {func, args, return} =>
 		  let
 		     val call = seq [Func.layout func, str " ", layoutTuple args]
@@ -656,15 +674,13 @@ structure Transfer =
 	     | Case arg => layoutCase arg
 	     | Goto {dst, args} =>
 		  seq [Label.layout dst, str " ", layoutTuple args]
-	     | Prim {prim, args, failure, success} =>
-		  seq [Label.layout success,
-		       tuple [Prim.layoutApp (prim, args, Var.layout)],
-		       str " Overflow => ",
-		       Label.layout failure, str " ()"]
 	     | Raise xs => seq [str "raise ", layoutTuple xs]
 	     | Return xs => if 1 = Vector.length xs
 			       then Var.layout (Vector.sub (xs, 0))
 			    else layoutTuple xs
+	     | Runtime {prim, args, return} =>
+		  seq [Label.layout return, str " ", 
+		       tuple [Prim.layoutApp (prim, args, Var.layout)]]
       end
    end
 datatype z = datatype Transfer.t
@@ -1091,7 +1107,9 @@ structure Function =
 		     ExnStack.forcePoint (global, ExnStack.Point.Caller)
 		in
 		   case transfer of
-		      Bug => ()
+		      Arith {overflow, success, ...} =>
+			(goto overflow; goto success)
+		    | Bug => ()
 		    | Call {return, ...} =>
 			 assert
 			 ("return",
@@ -1119,10 +1137,9 @@ structure Function =
 			 (Cases.foreach (cases, goto)
 			  ; Option.app (default, goto))
 		    | Goto {dst, ...} => goto dst
-		    | Prim {failure, success, ...} =>
-			 (goto failure; goto success)
 		    | Raise _ => tail "raise"
 		    | Return _ => tail "return"
+		    | Runtime {return, ...} => goto return
 		end
 	    val info as HandlerInfo.T {global, ...} = labelInfo start
 	    val _ = ExnStack.forcePoint (global, ExnStack.Point.Caller)
@@ -1177,17 +1194,18 @@ structure Function =
 			 ; ())
 		      val _ =
 			 case transfer of
-			   Bug => ()
+			   Arith {overflow, success, ...} =>
+			      (edge overflow; edge success)
+			 | Bug => ()
 			 | Call {return, ...} =>
 			      Return.foreachLabel (return, edge)
 			 | Case {cases, default, ...} =>
 			      (Cases.foreach (cases, edge)
 			       ; Option.app (default, edge))
 			 | Goto {dst, ...} => edge dst
-			 | Prim {failure, success, ...} =>
-			      (edge failure; edge success)
 			 | Raise _ => ()
 			 | Return _ => ()
+			 | Runtime {return, ...} => edge return
 		   in
 		      ()
 		   end)
@@ -1290,7 +1308,14 @@ structure Function =
 			 end
 		      val rest =
 			 case transfer of
-			    Bug => ["bug"]
+			    Arith {prim, args, overflow, success} =>
+			       (edge (success, "", Solid)
+				; edge (overflow, "Overflow", Dashed)
+				; [Layout.toString
+				   (Prim.layoutApp (prim, args, fn x =>
+						    Layout.str
+						    (Var.pretty (x, global))))])
+			  | Bug => ["bug"]
 			  | Call {func, args, return, ...} =>
 			       let
 				  val f = Func.toString func
@@ -1336,15 +1361,14 @@ structure Function =
 			       (edge (dst, "", Solid)
 				; [Label.toString dst, " ",
 				   Var.prettys (args, global)])
-			  | Prim {prim, args, failure, success} =>
-			       (edge (success, "", Solid)
-				; edge (failure, "Overflow", Dashed)
+			  | Raise xs => ["raise ", Var.prettys (xs, global)]
+			  | Return xs => ["return ", Var.prettys (xs, global)]
+			  | Runtime {prim, args, return} =>
+			       (edge (return, "", Solid)
 				; [Layout.toString
 				   (Prim.layoutApp (prim, args, fn x =>
 						    Layout.str
 						    (Var.pretty (x, global))))])
-			  | Raise xs => ["raise ", Var.prettys (xs, global)]
-			  | Return xs => ["return ", Var.prettys (xs, global)]
 		      val lab =
 			 Vector.foldr
 			 (statements, [(concat rest, Left)],
@@ -1752,13 +1776,25 @@ structure Program =
 			 then escape true
 		      else ()
 		 | _ => ()
+	     fun loopTransfer t =
+	        case t of
+		   Arith {prim, ...} =>
+		      if f prim
+			 then escape true
+		      else ()
+		 | Runtime {prim, ...} =>
+		      if f prim
+			 then escape true
+		      else ()
+		 | _ => ()
 	     val _ = Vector.foreach (globals, loopStatement)
 	     val _ =
 		List.foreach
 		(functions, fn f =>
 		 Vector.foreach
-		 (Function.blocks f, fn Block.T {statements, ...} =>
-		  Vector.foreach (statements, loopStatement)))
+		 (Function.blocks f, fn Block.T {statements, transfer, ...} =>
+		  (Vector.foreach (statements, loopStatement);
+		   loopTransfer transfer)))
 	  in
 	     false
 	  end)

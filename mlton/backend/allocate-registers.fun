@@ -78,6 +78,7 @@ structure Info =
 	 fun make f (T r) = f r
       in
 	 val live = make #live
+	 val size = make #size
       end
 
       fun layout (T {limitCheck, 

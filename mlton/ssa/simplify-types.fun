@@ -565,7 +565,12 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
 	 simplifyExp
       fun simplifyTransfer (t : Transfer.t): Statement.t vector * Transfer.t =
 	 case t of
-	    Bug => (Vector.new0 (), t)
+	    Arith {prim, args, overflow, success} =>
+	       (Vector.new0 (), Arith {prim = prim,
+				       args = Vector.map (args, simplifyVar),
+				       overflow = overflow,
+				       success = success})
+	  | Bug => (Vector.new0 (), t)
 	  | Call {func, args, return} =>
 	       (Vector.new0 (),
 		Call {func = func, return = return,
@@ -628,13 +633,12 @@ fun simplify (program as Program.T {datatypes, globals, functions, main}) =
 	  | Case _ => (Vector.new0 (), t)
 	  | Goto {dst, args} =>
 	       (Vector.new0 (), Goto {dst = dst, args = removeUselessVars args})
-	  | Prim {prim, args, failure, success} =>
-	       (Vector.new0 (), Prim {prim = prim,
-				      args = Vector.map (args, simplifyVar),
-				      failure = failure,
-				      success = success})
 	  | Raise xs => (Vector.new0 (), Raise (removeUselessVars xs))
 	  | Return xs => (Vector.new0 (), Return (removeUselessVars xs))
+	  | Runtime {prim, args, return} =>
+	       (Vector.new0 (), Runtime {prim = prim,
+					 args = Vector.map (args, simplifyVar),
+					 return = return})
       val simplifyTransfer =
 	 Trace.trace
 	 ("SimplifyTypes.simplifyTransfer", Transfer.layout,

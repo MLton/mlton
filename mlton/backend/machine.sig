@@ -151,6 +151,14 @@ signature MACHINE =
 	 sig
 	    type t
 
+	    (* In an arith transfer, dst is modified whether or not the
+	     * prim succeeds.
+	     *)
+	    val arith: {prim: Prim.t,
+			args: Operand.t vector,
+			dst: Operand.t,
+			overflow: Label.t,
+			success: Label.t} -> t
 	    val bug: t
 	    val farJump: {chunkLabel: ChunkLabel.t,
 			  label: Label.t,
@@ -164,14 +172,6 @@ signature MACHINE =
 			   return: {return: Label.t,
 				    handler: Label.t option,
 				    size: int} option} -> t
-	    (* In an overflow transfer, dst is modified whether or not the
-	     * prim succeeds.
-	     *)
-	    val overflow: {args: Operand.t vector,
-			   dst: Operand.t,
-			   failure: Label.t,
-			   prim: Prim.t,
-			   success: Label.t} -> t
 	    val return: {live: Operand.t list} -> t
 	    val raisee: t
 	    val switch: {

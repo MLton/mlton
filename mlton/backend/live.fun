@@ -222,7 +222,11 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 	    fun goto l = LiveInfo.addEdge (b, #argInfo (labelInfo l))
 	    val _ =
 	       case transfer of
-		  Bug => ()
+		  Arith {args, overflow, success, ...} =>
+		     (uses (b, args)
+		      ; goto overflow
+		      ; goto success)
+		| Bug => ()
 		| Call {args, return, ...} =>
 		     (uses (b, args)
 		      ; (case return of
@@ -262,12 +266,11 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
 					 else ())
 			; goto dst
 		     end
-		| Prim {args, failure, success, ...} =>
-		     (uses (b, args)
-		      ; goto failure
-		      ; goto success)
 		| Raise xs => uses (b, xs)
 		| Return xs => uses (b, xs)
+		| Runtime {args, return, ...} =>
+		     (uses (b, args)
+		      ; goto return)
 	 in ()
 	 end
       val addEdgesForBlock =

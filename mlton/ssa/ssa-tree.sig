@@ -159,29 +159,31 @@ signature SSA_TREE =
       structure Transfer:
 	 sig
 	    datatype t =
-	       Bug  (* MLton thought control couldn't reach here. *)
+	       Arith of {prim: Prim.t,
+			 args: Var.t vector,
+			 overflow: Label.t, (* Must be nullary. *)
+			 success: Label.t (* Must be unary. *)
+			}
+	     | Bug  (* MLton thought control couldn't reach here. *)
 	     | Call of {func: Func.t,
 			args: Var.t vector,
 			return: Return.t}
-	     | Case of {
-			test: Var.t,
+	     | Case of {test: Var.t,
 			cases: Label.t Cases.t,
-			default: Label.t option  (* Must be nullary. *)
+			default: Label.t option (* Must be nullary. *)
 		       }
-	     | Goto of {
-			dst: Label.t,
+	     | Goto of {dst: Label.t,
 			args: Var.t vector
 			}
-	     | Prim of {prim: Prim.t,
-			args: Var.t vector,
-			failure: Label.t, (* Must be nullary. *)
-			success: Label.t (* Must be unary. *)
-			}
-	       (* Raise implicitly raises to the caller.  I.E. the local handler
-		* stack must be empty.
-		*)
+	     (* Raise implicitly raises to the caller.  
+	      * I.E. the local handler stack must be empty.
+	      *)
 	     | Raise of Var.t vector
 	     | Return of Var.t vector
+	     | Runtime of {prim: Prim.t,
+			   args: Var.t vector,
+			   return: Label.t (* Must be nullary. *)
+			  }
 
 	    val foreachLabel: t * (Label.t -> unit) -> unit
 	    val foreachLabelVar: t * (Label.t -> unit) * (Var.t -> unit) -> unit

@@ -311,7 +311,12 @@ fun shrinkFunction (globals: Statement.t vector) =
 	       fun normal () = doit LabelMeaning.Block
 	    in
 	       case transfer of
-		  Bug =>
+		  Arith {args, overflow, success, ...} =>
+		     (incVars args
+		      ; incLabel overflow
+		      ; incLabel success
+		      ; normal ())
+		| Bug =>
 		     if 0 = Vector.length statements
 			andalso (case returns of
 				    NONE => true
@@ -409,11 +414,6 @@ fun shrinkFunction (globals: Statement.t vector) =
 				 end
 			   end
 		     end
-		| Prim {args, failure, success, ...} =>
-		     (incVars args
-		      ; incLabel failure
-		      ; incLabel success
-		      ; normal ())
 		| Raise xs =>
 		     let
 			val _ = incVars xs
@@ -434,6 +434,10 @@ fun shrinkFunction (globals: Statement.t vector) =
 			    then doit (LabelMeaning.Return (extract xs))
 			 else normal ()
 		      end
+		 | Runtime {args, return, ...} =>
+		     (incVars args
+		      ; incLabel return
+		      ; normal ())
 	    end
 	 val _ = incLabel start
 	 fun indexMeaning i =
@@ -709,7 +713,51 @@ fun shrinkFunction (globals: Statement.t vector) =
 	    traceSimplifyTransfer
 	    (fn (t: Transfer.t) =>
 	    case t of
-	       Bug => ([], Bug)
+	        Arith {prim, args, overflow, success} =>
+		   let
+		      val args = varInfos args
+		   in
+		      case primApp (prim, args) of
+			 Prim.ApplyResult.Const c =>
+			    let
+			       val _ = deleteLabel overflow
+			       val x = Var.newNoname ()
+			       val isUsed = ref false
+			       val vi =
+				  VarInfo.T {isUsed = isUsed,
+					     numOccurrences = ref 0,
+					     value = ref (SOME (Value.Const c)),
+					     var = x}
+			       val (ss, t) = goto (success, Vector.new1 vi)
+			       val ss =
+				  if !isUsed
+				     then Statement.T {var = SOME x,
+						       ty = Type.ofConst c,
+						       exp = Exp.Const c}
+					:: ss
+				  else ss
+			    in
+			       (ss, t)
+			    end
+		       | Prim.ApplyResult.Var x =>
+			    let
+			       val _ = deleteLabel overflow
+			    in
+			       goto (success, Vector.new1 x)
+			    end
+		       | Prim.ApplyResult.Overflow =>
+			    let
+			       val _ = deleteLabel success
+			    in
+			       goto (overflow, Vector.new0 ())
+			    end
+		       | _ =>
+			    ([], Arith {prim = prim,
+					args = uses args,
+					overflow = simplifyLabel overflow,
+					success = simplifyLabel success})
+		   end
+	     | Bug => ([], Bug)
 	     | Call {func, args, return} =>
 		  let
 		     val return =
@@ -780,52 +828,12 @@ fun shrinkFunction (globals: Statement.t vector) =
 		       test = test}
 		   end
 	      | Goto {dst, args} => goto (dst, varInfos args)
-	      | Prim {prim, args, failure, success} =>
-		   let
-		      val args = varInfos args
-		   in
-		      case primApp (prim, args) of
-			 Prim.ApplyResult.Const c =>
-			    let
-			       val _ = deleteLabel failure
-			       val x = Var.newNoname ()
-			       val isUsed = ref false
-			       val vi =
-				  VarInfo.T {isUsed = isUsed,
-					     numOccurrences = ref 0,
-					     value = ref (SOME (Value.Const c)),
-					     var = x}
-			       val (ss, t) = goto (success, Vector.new1 vi)
-			       val ss =
-				  if !isUsed
-				     then Statement.T {var = SOME x,
-						       ty = Type.ofConst c,
-						       exp = Exp.Const c}
-					:: ss
-				  else ss
-			    in
-			       (ss, t)
-			    end
-		       | Prim.ApplyResult.Var x =>
-			    let
-			       val _ = deleteLabel failure
-			    in
-			       goto (success, Vector.new1 x)
-			    end
-		       | Prim.ApplyResult.Overflow =>
-			    let
-			       val _ = deleteLabel success
-			    in
-			       goto (failure, Vector.new0 ())
-			    end
-		       | _ =>
-			    ([], Prim {prim = prim,
-				       args = uses args,
-				       failure = simplifyLabel failure,
-				       success = simplifyLabel success})
-		   end
 	      | Raise xs => ([], Raise (simplifyVars xs))
 	      | Return xs => ([], Return (simplifyVars xs))
+	      | Runtime {prim, args, return} =>
+		   ([], Runtime {prim = prim, 
+				 args = simplifyVars args, 
+				 return = simplifyLabel return})
 		   ) arg
 	 and simplifyCase {cantSimplify, cases, default, gone, test: VarInfo.t}
 	    : Statement.t list * Transfer.t =

@@ -253,11 +253,11 @@ structure Transfer =
 		      return: {return: Label.t,
 			       handler: Label.t option,
 			       size: int} option}
-       | Overflow of {args: Operand.t vector,
-		      dst: Operand.t,
-		      failure: Label.t,
-		      prim: Prim.t,
-		      success: Label.t}
+       | Arith of {prim: Prim.t,
+		   args: Operand.t vector,
+		   dst: Operand.t,
+		   overflow: Label.t,
+		   success: Label.t}
        | Raise
        | Return of {live: Operand.t list}
        | Switch of {test: Operand.t,
@@ -271,7 +271,14 @@ structure Transfer =
       fun layout t =
 	 let open Layout
 	 in case t of
-	    Bug => str "Bug"
+	    Arith {prim, args, dst, overflow, success} =>
+	       seq [str "Arith ",
+		    record [("prim", Prim.layout prim),
+			    ("args", Vector.layout Operand.layout args),
+			    ("dst", Operand.layout dst),
+			    ("overflow", Label.layout overflow),
+			    ("success", Label.layout success)]]
+	  | Bug => str "Bug"
 	  | FarJump {label, live, return, ...} => 
                seq [str "FarJump ", 
 		    record [("label", Label.layout label),
@@ -291,13 +298,6 @@ structure Transfer =
 						    ("handler", Option.layout Label.layout handler),
 						    ("size", Int.layout size)])
 				       return)]]
-	  | Overflow {args, dst, failure, prim, success} =>
-	       seq [str "Overflow ",
-		    record [("args", Vector.layout Operand.layout args),
-			    ("dst", Operand.layout dst),
-			    ("failure", Label.layout failure),
-			    ("prim", Prim.layout prim),
-			    ("success", Label.layout success)]]
 	  | Raise => str "Raise"
 	  | Return {live} => 
                seq [str "Return ",

@@ -122,7 +122,11 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 			| _ => ())
 		   val _ =
 		      case transfer of
-			 Bug => ()
+		         Arith {args, overflow, success, ...} =>
+			    (forces args
+			     ; forceArgs overflow
+			     ; forceArgs success) 
+		       | Bug => ()
 		       | Call {args, return, ...} =>
 			    (forces args
 			     ; Return.foreachLabel (return, forceArgs))
@@ -138,12 +142,11 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 				       VarInfo.Arg i' => ArgInfo.<= (i', i)
 				     | VarInfo.None => ()
 				     | VarInfo.Tuple => ArgInfo.tuple i))
-		       | Prim {args, failure, success, ...} =>
-			    (forces args
-			     ; forceArgs failure
-			     ; forceArgs success) 
 		       | Raise xs => forces xs
 		       | Return xs => forces xs
+		       | Runtime {args, return, ...} =>
+			    (forces args
+			     ; forceArgs return)
 		in
 		   fn () => ()
 		end

@@ -288,6 +288,7 @@ signature PRIM =
       val newNullary: string -> t (* new of type unit -> unit *)
       val numArgs: t -> int option
       val reff: t
+      val runtimeTransfer: t -> bool
       val scheme: t -> Scheme.t
       val serialize: t
       val stringEqual: t

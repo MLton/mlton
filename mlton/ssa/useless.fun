@@ -819,7 +819,28 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
 			raises: Value.t vector option)
 	 : Block.t list * Transfer.t =
 	 case t of
-	    Bug => ([], Bug)
+	    Arith {prim, args, overflow, success} =>
+	       let
+		  val v = Value.fromType Type.int
+		  val _ = Value.Useful.makeUseful (Value.deground v)
+		  val res = Vector.new1 v
+		  val sargs = label success
+	       in
+		  if agree (v, Vector.sub (sargs, 0))
+		     then ([], t)
+		  else let
+		          val (l, b) = dropUseless
+			               (res, sargs, fn args =>
+					Goto {dst = success, args = args})
+		       in
+			  ([b],
+			   Arith {prim = prim,
+				  args = args,
+				  overflow = overflow,
+				  success = l})
+		       end
+	       end
+	  | Bug => ([], Bug)
 	  | Call {func = f, args, return} =>
 	       let
 		  val {args = fargs, returns = freturns, ...} = func f
@@ -911,29 +932,10 @@ fun useless (program as Program.T {datatypes, globals, functions, main}) =
 	       end
 	  | Goto {dst, args} =>
 	       ([], Goto {dst = dst, args = keepUseful (args, label dst)})
-	  | Prim {prim, args, failure, success} =>
-	       let
-		  val v = Value.fromType Type.int
-		  val _ = Value.Useful.makeUseful (Value.deground v)
-		  val res = Vector.new1 v
-		  val sargs = label success
-	       in
-		  if agree (v, Vector.sub (sargs, 0))
-		     then ([], t)
-		  else let
-		          val (l, b) = dropUseless
-			               (res, sargs, fn args =>
-					Goto {dst = success, args = args})
-		       in
-			  ([b],
-			   Prim {prim = prim,
-				 args = args,
-				 failure = failure,
-				 success = l})
-		       end
-	       end
 	  | Raise xs => ([], Raise (keepUseful (xs, valOf raises)))
 	  | Return xs => ([], Return (keepUseful (xs, valOf returns)))
+	  | Runtime {prim, args, return} =>
+	       ([], Runtime {prim = prim, args = args, return = return})
       val doitTransfer =
 	 Trace.trace3 ("Useless.doitTransfer",
 		       Transfer.layout,
