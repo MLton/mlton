@@ -77,7 +77,7 @@ fun live {exp, formals: (Var.t * Type.t) vector, jumpHandlers, shouldConsider} =
 	 else ()
 
       val _ =
-	 Exp.foreach
+	 Exp.foreach''
 	 (exp,
 	  {handleDec 
 	   = fn Fun {name, args, ...}
