@@ -70,6 +70,13 @@ structure MLton: MLTON =
 	 struct
 	    fun setenv _ = raise Fail "setenv"
 	 end
+
+      structure Profile =
+	 struct
+	    val profile = false
+	    val reset = fn () => ()
+	    val write = fn f => ()
+	 end
       
       structure Ptrace =
 	 struct

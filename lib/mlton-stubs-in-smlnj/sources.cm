@@ -4,6 +4,7 @@ signature MLTON_CONT
 signature MLTON_GC
 signature MLTON_ITIMER
 signature MLTON_PTRACE
+signature MLTON_PROFILE
 signature MLTON_SIGNAL
 signature MLTON_SOCKET
 signature MLTON_THREAD
@@ -86,6 +87,7 @@ open-int32.sml
 os.sml
 other.sml
 proc-env.sig
+profile.sig
 ptrace.sig
 random.sig
 real.sml

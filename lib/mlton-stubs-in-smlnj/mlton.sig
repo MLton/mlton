@@ -20,6 +20,7 @@ signature MLTON =
       structure GC: MLTON_GC
       structure Itimer: MLTON_ITIMER
       structure ProcEnv: MLTON_PROC_ENV
+      structure Profile: MLTON_PROFILE
       structure Ptrace: MLTON_PTRACE
       structure Random: MLTON_RANDOM
       structure Rlimit: MLTON_RLIMIT
