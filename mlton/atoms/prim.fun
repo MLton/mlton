@@ -86,6 +86,7 @@ structure Name =
        | Int_rem of IntSize.t (* codegen *)
        | Int_sub of IntSize.t (* codegen *)
        | Int_subCheck of IntSize.t (* codegen *)
+       | Int_toInt of IntSize.t * IntSize.t (* codegen *)
        | Int_toReal of IntSize.t * RealSize.t (* codegen *)
        | Int_toWord of IntSize.t * WordSize.t (* codegen *)
        | IntInf_add (* ssa to rssa *)
@@ -433,7 +434,8 @@ structure Name =
 		 val coercesX = fn z => coerces' "X" z
 	      end
 	   in
-	      List.concat [coerces (Int_toReal, int, real),
+	      List.concat [coerces (Int_toInt, int, int),
+			   coerces (Int_toReal, int, real),
 			   coerces (Int_toWord, int, word),
 			   coerces (Word_toInt, word, int),
 			   coercesX (Word_toIntX, word, int),

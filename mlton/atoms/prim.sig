@@ -71,6 +71,7 @@ signature PRIM =
 	     | Int_rem of IntSize.t (* codegen *)
 	     | Int_sub of IntSize.t (* codegen *)
 	     | Int_subCheck of IntSize.t (* codegen *)
+	     | Int_toInt of IntSize.t * IntSize.t (* codegen *)
 	     | Int_toReal of IntSize.t * RealSize.t (* codegen *)
 	     | Int_toWord of IntSize.t * WordSize.t (* codegen *)
 	     | IntInf_add (* ssa to rssa *)
