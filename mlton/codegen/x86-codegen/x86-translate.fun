@@ -238,15 +238,16 @@ struct
 	 
       fun toX86Blocks {label, kind, 
 		       transInfo as {frameLayouts, live, liveInfo, ...} : transInfo}
-	= (case kind
+	= (
+	   x86Liveness.LiveInfo.setLiveOperands
+	   (liveInfo, label, live label);
+(*
+	   x86Liveness.LiveInfo.setLiveOperands
+	   (liveInfo, label, []);
+*)
+	   case kind
 	     of Kind.Jump
 	      => let
-(*
-		   val _ = x86Liveness.LiveInfo.setLiveOperands
-		           (liveInfo, label, live label)
-*)
-		   val _ = x86Liveness.LiveInfo.setLiveOperands
-		           (liveInfo, label, [])
 		 in
 		   AppendList.single
 		   (x86.Block.T'
@@ -257,13 +258,6 @@ struct
 		 end
 	      | Kind.Func {args}
 	      => let
-(*
-		   val _ = x86Liveness.LiveInfo.setLiveOperands
-		           (liveInfo, label, live label)
-*)
-		   val _ = x86Liveness.LiveInfo.setLiveOperands
-		           (liveInfo, label, [])
-			   
 		   val args
 		     = Vector.fold
 		       (args,
@@ -284,12 +278,6 @@ struct
 		 end
 	      | Kind.Cont {args, frameInfo}
 	      => let
-(*
-		   val _ = x86Liveness.LiveInfo.setLiveOperands
-		           (liveInfo, label, live label)
-*)
-		   val _ = x86Liveness.LiveInfo.setLiveOperands
-		           (liveInfo, label, [])
 	           val frameInfo = FrameInfo.toX86FrameInfo {label = label,
 							     frameInfo = frameInfo,
 							     transInfo = transInfo}
@@ -314,12 +302,6 @@ struct
 		 end
 	      | Kind.Handler {offset}
 	      => let
-(*
-		   val _ = x86Liveness.LiveInfo.setLiveOperands
-		           (liveInfo, label, live label)
-*)
-		   val _ = x86Liveness.LiveInfo.setLiveOperands
-		           (liveInfo, label, [])
 		 in 
 		   AppendList.single
 		   (x86.Block.T'
@@ -332,13 +314,6 @@ struct
 		 end
 	      | Kind.CReturn {prim, dst}
 	      => let
-		   val _ = x86Liveness.LiveInfo.setLiveOperands
-		           (liveInfo, label, [])
-(*
-		   val _ = x86Liveness.LiveInfo.setLiveOperands
-		           (liveInfo, label, live label)
-*)
-
 		   fun convert x
 		     = (Operand.toX86Operand x,
 			x86MLton.toX86Size (Operand.ty x))
@@ -352,13 +327,6 @@ struct
 		 end
 	      | Kind.Runtime {frameInfo, prim}
 	      => let
-(*
-		   val _ = x86Liveness.LiveInfo.setLiveOperands
-		           (liveInfo, label, live label)
-*)
-		   val _ = x86Liveness.LiveInfo.setLiveOperands
-		           (liveInfo, label, [])
-
 	           val frameInfo = FrameInfo.toX86FrameInfo {label = label,
 							     frameInfo = frameInfo,
 							     transInfo = transInfo}

@@ -709,12 +709,8 @@ struct
 	       transInfo as {liveInfo, ...} : transInfo}
     = let
 	val return = Label.newString "creturn"
-(*
 	val _ = x86Liveness.LiveInfo.setLiveOperands
 	        (liveInfo, return, live)
-*)
-	val _ = x86Liveness.LiveInfo.setLiveOperands
-	        (liveInfo, return, [])
 
 	val (comment_begin,
 	     comment_end)
@@ -2462,12 +2458,8 @@ struct
 
 	fun default ()
 	  = let
-(*
 	      val _ = x86Liveness.LiveInfo.setLiveOperands
 	              (liveInfo, label, live label)
-*)
-	      val _ = x86Liveness.LiveInfo.setLiveOperands
-		      (liveInfo, label, [])
 	    in 
 	      AppendList.single
 	      (x86.Block.T'
@@ -2482,12 +2474,8 @@ struct
 	  = let
 	      val (dst,dstsize) = getDst ()
 
-(*
 	      val _ = x86Liveness.LiveInfo.setLiveOperands
 	              (liveInfo, label, live label)
-*)
-	      val _ = x86Liveness.LiveInfo.setLiveOperands
-		      (liveInfo, label, [])
 	    in
 	      AppendList.single
 	      (Block.T'
@@ -2733,12 +2721,8 @@ struct
   
         fun default ()
           = let
-(*
               val _ = x86Liveness.LiveInfo.setLiveOperands
                       (liveInfo, label, live label)
-*)
-	      val _ = x86Liveness.LiveInfo.setLiveOperands
-		      (liveInfo, label, [])
             in 
               AppendList.single
               (x86.Block.T'
