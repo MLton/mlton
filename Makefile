@@ -74,6 +74,10 @@ deb-binary:
 deb-lint:
 	lintian ../mlton_$(VERSION)-1_i386.deb
 
+.PHONY: deb-spell
+deb-spell:
+	ispell -g debian/control
+
 .PHONY: dirs
 dirs:
 	mkdir -p $(BIN) $(LIB)/$(HOST)/include
