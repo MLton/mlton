@@ -78,9 +78,9 @@ signature MACHINE =
 	    datatype t =
 	       (* Variable-sized allocation. *)
 	       Array of {dst: Operand.t,
+			 numBytesNonPointers: int,
 			 numElts: Operand.t,
-			 numPointers: int,
-			 numBytesNonPointers: int}
+			 numPointers: int}
 	     (* When registers or offsets appear in operands, there is an
 	      * implicit contents of.
 	      * When they appear as locations, there is not.

@@ -201,13 +201,20 @@ structure Statement =
 	 let
 	    open Layout
 	 in
-	    fn Array {dst, ...} => seq [Operand.layout dst, str " = Array"]
+	    fn Array {dst, numBytesNonPointers, numElts, numPointers} =>
+	    seq [Operand.layout dst,
+		 str " = Array",
+		 record [("numBytesNonPointers", Int.layout numBytesNonPointers),
+			 ("numElts", Operand.layout numElts),
+			 ("numPointers", Int.layout numPointers)]]
 	     | Move {dst, src} =>
 		  seq [Operand.layout dst, str " = ", Operand.layout src]
 	     | Noop => str "Noop"
 	     | Object {dst, ...} => seq [Operand.layout dst, str " = Object"]
 	     | PrimApp {args, dst, prim, ...} =>
-		  seq [Option.layout Operand.layout dst, str " = ",
+		  seq [case dst of
+			  NONE => empty
+			| SOME z => seq [Operand.layout z, str " = "],
 		       Prim.layout prim, str " ",
 		       Vector.layout Operand.layout args]
 	     | SetExnStackLocal {offset} =>

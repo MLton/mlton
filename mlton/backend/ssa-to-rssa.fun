@@ -36,6 +36,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
       val varType = #ty o varInfo
       fun varOp (x: Var.t): Operand.t =
 	 Var {var = x, ty = valOf (toType (varType x))}
+      fun varOps xs = Vector.map (xs, varOp)
       val _ =
 	 Control.diagnostics
 	 (fn display =>
@@ -580,7 +581,7 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 			      fun normal () =
 				 add (PrimApp {dst = dst (),
 					       prim = prim,
-					       args = args})
+					       args = varOps args})
 			      datatype z = datatype Prim.Name.t
 			   in
 			      if Prim.impCall prim

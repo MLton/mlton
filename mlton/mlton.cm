@@ -323,6 +323,8 @@ backend/live.sig
 backend/live.fun
 backend/allocate-registers.sig
 backend/allocate-registers.fun
+backend/array-init.sig
+backend/array-init.fun
 backend/backend.fun
 xml/xml-type.sig
 xml/xml-tree.sig

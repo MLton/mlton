@@ -89,9 +89,9 @@ structure Statement =
 		    numWordsNonPointers: int,
 		    stores: {offset: int,
 			     value: Operand.t} vector}
-       | PrimApp of {dst: (Var.t * Type.t) option,
-		     prim: Prim.t,
-		     args: Var.t vector}
+       | PrimApp of {args: Operand.t vector,
+		     dst: (Var.t * Type.t) option,
+		     prim: Prim.t}
        | SetExnStackLocal
        | SetExnStackSlot
        | SetHandler of Label.t
@@ -122,7 +122,7 @@ structure Statement =
 		  Vector.fold (args,
 			       Option.fold (dst, a, fn ((x, t), a) =>
 					    def (x, t, a)),
-			       use)
+			       useOperand)
 	     | SetExnStackLocal => a
 	     | SetExnStackSlot => a
 	     | SetHandler _ => a
@@ -148,7 +148,12 @@ structure Statement =
 	 let
 	    open Layout
 	 in
-	    fn Array {dst, ...} => seq [Var.layout dst, str " = Array"]
+	    fn Array {dst, numBytesNonPointers, numElts, numPointers} =>
+	    seq [Var.layout dst,
+		 str " = Array ",
+		 record [("numBytesNonPointers", Int.layout numBytesNonPointers),
+			 ("numElts", Var.layout numElts),
+			 ("numPointers", Int.layout numPointers)]]
 	     | Move {dst, src} =>
 		  seq [Operand.layout dst, str " = ", Operand.layout src]
 	     | Object {dst, ...} => seq [Var.layout dst, str " = Object"]
@@ -157,7 +162,7 @@ structure Statement =
 			   NONE => empty
 			 | SOME (x, _) => seq [Var.layout x, str " = "]),
 		       Prim.layout prim, str " ",
-		       Vector.layout Var.layout args]
+		       Vector.layout Operand.layout args]
 	     | SetExnStackLocal => str "SetExnStackLocal"
 	     | SetExnStackSlot => str "SetExnStackSlot "
 	     | SetHandler l => seq [str "SetHandler ", Label.layout l]
@@ -757,7 +762,9 @@ structure Program =
 			  ; (Runtime.isValidObjectHeader
 			     {numPointers = numPointers,
 			      numWordsNonPointers = numWordsNonPointers}))
-		   | PrimApp {args, dst, prim} => true
+		   | PrimApp {args, ...} =>
+			(Vector.foreach (args, checkOperand)
+			 ; true)
 		   | SetExnStackLocal => true
 		   | SetExnStackSlot => true
 		   | SetHandler l =>

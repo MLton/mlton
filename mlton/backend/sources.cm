@@ -16,6 +16,8 @@ is
 
 allocate-registers.fun
 allocate-registers.sig
+array-init.fun
+array-init.sig
 backend.fun
 backend.sig
 chunkify.fun

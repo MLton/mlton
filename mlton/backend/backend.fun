@@ -34,6 +34,7 @@ end
 
 structure AllocateRegisters = AllocateRegisters (structure Machine = Machine
 						 structure Rssa = Rssa)
+structure ArrayInit = ArrayInit (structure Rssa = Rssa)
 structure Chunkify = Chunkify (Rssa)
 structure LimitCheck = LimitCheck (structure Rssa = Rssa)
 structure ParallelMove = ParallelMove ()
@@ -124,6 +125,7 @@ fun toMachine (program: Ssa.Program.t) =
       val program = pass ("ssaToRssa", SsaToRssa.convert, program)
       val program = pass ("insertLimitChecks", LimitCheck.insert, program)
       val program = pass ("insertSignalChecks", SignalCheck.insert, program)
+      val program = pass ("insertArrayInits", ArrayInit.insert, program)
       val R.Program.T {functions, main} = program
       (* Chunk information *)
       val {get = labelChunk, set = setLabelChunk, ...} =
@@ -333,7 +335,7 @@ fun toMachine (program: Ssa.Program.t) =
 					{offset = offset,
 					 value = translateOperand value})}
 	     | PrimApp {dst, prim, args} =>
-		  M.Statement.PrimApp {args = Vector.map (args, varOperand),
+		  M.Statement.PrimApp {args = translateOperands args,
 				       dst = Option.map (dst, varOperand o #1),
 				       prim = prim}
 	     | SetExnStackLocal =>

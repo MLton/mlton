@@ -382,11 +382,6 @@ int main(int argc, char **argv) {					\
 		frontier = (dst) + ((0 == (numElts)) 				\
 			? POINTER_SIZE						\
 			: (numElts) * (numPointers) * POINTER_SIZE);		\
-		{								\
-			word *p;						\
-			for (p = (word*) (dst); p < (word*) frontier; ++p)	\
-				*p = 0x1;					\
-		}								\
 	} while (0)
 
 /* ------------------------------------------------- */

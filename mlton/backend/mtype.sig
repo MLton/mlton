@@ -22,6 +22,7 @@ signature MTYPE =
 
       val align: t * int -> int       (* align an address *)	 
       val all: t list
+      val bool: t (* same as int *)
       val char: t
       val dest: t -> dest
       val double: t

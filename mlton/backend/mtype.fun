@@ -15,12 +15,12 @@ datatype dest =
 
 datatype t = T of {dest: dest}
 
-fun dest(T{dest, ...}) = dest
+fun dest (T {dest, ...}) = dest
 
-fun equals(t, t') = dest t = dest t'
+fun equals (t, t') = dest t = dest t'
 
 local
-   fun new dest = T{dest = dest}
+   fun new dest = T {dest = dest}
 in
    val char = new Char
    val double = new Double
@@ -36,6 +36,7 @@ fun memo f =
    in fn t => #2 (List.lookup (all, fn (t', _) => equals (t, t')))
    end
 
+val bool = int
 val label = uint
   
 fun isPointer t =

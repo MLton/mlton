@@ -77,7 +77,7 @@ signature RSSA =
 			  numWordsNonPointers: int,
 			  stores: {offset: int, (* bytes *)
 				   value: Operand.t} vector}
-	     | PrimApp of {args: Var.t vector,
+	     | PrimApp of {args: Operand.t vector,
 			   dst: (Var.t * Type.t) option,
 			   prim: Prim.t}
 	     | SetExnStackLocal

@@ -36,7 +36,12 @@ local
    val f = make (pointerBits, nonPointerBits - 1)
 in
    fun isValidArrayHeader {numBytesNonPointers, numPointers} =
-      f (numPointers, numBytesNonPointers)
+      numBytesNonPointers >= 0
+      andalso numPointers >= 0
+      andalso (if numBytesNonPointers = 0
+		  then numPointers <= 1
+	       else numPointers = 0)
+      andalso f (numPointers, numBytesNonPointers)
 end
    
 fun isWordAligned (n: int): bool =
