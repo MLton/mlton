@@ -54,11 +54,13 @@ datatype status = TODO | CURRENT | DONE
 structure JumpData =
   struct
     datatype t = T of {node: DirectedGraph.Node.t option ref,
+		       inside: bool ref,
 		       rootEdge: bool ref,
 		       status: status ref,
 		       prefixes: Func.t list ref}
       
     fun new () = T {node = ref NONE,
+		    inside = ref false,
 		    rootEdge = ref false,
 		    status = ref TODO,
 		    prefixes = ref []}
@@ -72,6 +74,7 @@ structure JumpData =
 		   end
     in
       val (node', node) = make #node
+      val (inside', inside) = make #inside
       val (rootEdge', rootEdge) = make #rootEdge
       val (status', status) = make #status
       val (prefixes', prefixes) = make #prefixes
@@ -361,7 +364,72 @@ structure AnalyzeDom =
 	  val fm_node = getFuncNode fm
 	  (* {(Root, fm)} *)
 	  val _ = addEdge {from = Root, to = fm_node}
-	    
+
+	  val _
+	    = Vector.foreach
+	      (functions,
+	       fn Function.T {name = f, body = f_body, ...}
+	        => let
+		     val f_reach = FuncData.reach (getFuncData f)
+		     val f_node = getFuncNode f
+		   in
+		     if f_reach
+		       then Exp.foreach
+			    (f_body,
+			     {handleDec
+			      = fn Fun {name = j, ...}
+			         => let
+				      val inside = JumpData.inside' (getJumpData j)
+				    in
+				      inside := true;
+				      fn () => inside := false
+				    end
+				 | _ => ignore,
+			      handleTransfer
+			      = fn Call {func = g, cont, ...}
+			         => if FuncData.reach (getFuncData g)
+				      then let
+					     val g_node = getFuncNode g
+					   in
+					     case cont
+					       of NONE
+						=> (* {(f, g) | (f, g) in T
+						    *       and Reach (f)} *)
+						   addEdge {from = f_node,
+							    to = g_node}
+						| SOME j
+						=> let
+						     val j_node = getJumpNode j
+						     val inside
+						       = JumpData.inside
+						         (getJumpData j)
+						     val rootEdge
+						       = JumpData.rootEdge'
+						         (getJumpData j)
+						   in
+						     if !rootEdge
+						       then ()
+						       else ((* {(Root, j) | j in Jump} *)
+							     addEdge {from = Root,
+								      to = j_node};
+							     rootEdge := true);
+						     if inside
+						       then addEdge {from = Root,
+								     to = g_node}
+						       else (* {(j, g) | (f, g, j) in N
+							             and Reach (f)} *)
+							    addEdge {from = j_node,
+								     to = g_node}
+						   end
+					   end
+				      else ()
+				 | _ => ()})
+		       else (* {(Root, f) | not (Reach (f))} *)
+			    addEdge {from = Root,
+				     to = f_node}
+		   end)
+
+(*
 	  val _
 	    = Vector.foreach
 	      (functions,
@@ -408,6 +476,7 @@ structure AnalyzeDom =
 			    addEdge {from = Root,
 				     to = f_node}
 		   end)
+*)
           in () end
 	  val buildGraph 
 	    = Control.trace (Control.Pass, "buildGraph") buildGraph
@@ -518,6 +587,15 @@ structure Transform =
 		     val FuncData.T {A, contify, callers, callees, ...} 
 		       = getFuncData f
 		     val f_node = getFuncNode f
+
+		     val _ = Control.diagnostics
+		             (fn display 
+			       => let open Layout
+				  in
+				    display (seq [Func.layout f,
+						  str ": ",
+						  Return.layout (!A)])
+				  end)
 		   in
 		     case !A
 		       of Uncalled => (List.push (roots, f_node);
@@ -785,6 +863,13 @@ structure Transform =
 		     if !contify
 		       then let
 			      val jump = Jump.newString (Func.originalName f)
+			      val _ = Control.diagnostics
+				      (fn display 
+				        => let open Layout
+					   in display (seq [Func.layout f,
+							    str " -> ",
+							    Jump.layout jump])
+					   end)
 			    in 
 			      replace := SOME {jump = jump,
 					       args = f_args,
@@ -857,8 +942,6 @@ structure Transform =
 		       = getFuncData f
 		     val {jump, args, body} 
 		       = valOf (!replace)
-		         handle Option => Error.bug (concat ["valOf (!replace): ",
-							     Func.toString f])
 		     val body = prefix_exp (!prefixes, c, walkExp (f, body, c))
 		   in
 		     Fun {name = jump, args = args, body = body} :: ds
@@ -895,11 +978,11 @@ structure Transform =
 				       = prefix_exp (!prefixes, 
 						     NONE, 
 						     walkExp (f, f_body, NONE))
-				     val f_body = shrinkExp f_body
+				     val f_body' = shrinkExp f_body
 				   in
 				      Function.T {name = f,
 						  args = f_args,
-						  body = f_body,
+						  body = f_body',
 						  returns = f_returns}
 				      :: functions
 				   end
