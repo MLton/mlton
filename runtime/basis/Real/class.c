@@ -139,7 +139,9 @@ Int Real64_class (Real64 d) {
 	}
 }
 
-#error Real32_class not defined
+Int Real32_class (Real32 f) {
+	diee ("Real32_class unimplemented.");
+}
 
 #else
 
