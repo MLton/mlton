@@ -449,7 +449,6 @@ fun elaborate {input: File.t list}: Xml.Program.t =
 		  ; Process.succeed ())
 	 else ()
       val input = parseAndElab ()
-      val _ = Symbol.foreach (PropertyList.clear o Symbol.plist)
       val _ = if !Control.elaborateOnly then raise Done else ()
       val _ =
 	 if !Control.showBasis
