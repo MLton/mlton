@@ -1,3 +1,4 @@
+#if (defined (__linux__))
 #include <signal.h>
 #include <errno.h>
 #include <string.h>
@@ -144,3 +145,4 @@ void MLton_Profile_installHandler (void)
 	unless (sigaction(SIGPROF, &sa, NULL) == 0)
 		diee("sigaction() failed");
 }
+#endif /* (defined (__linux__)) */

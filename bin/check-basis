@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # This script checks MLton's basis library implementation for type errors using
 # SML/NJ.

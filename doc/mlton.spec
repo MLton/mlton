@@ -17,12 +17,10 @@ language.  The MLton home page is http://www.sourcelight.com/MLton.
 %setup
 
 %build
-cd src
 make
 
 %install
 rm -rf $RPM_BUILD_ROOT
-cd src
 make PREFIX=$RPM_BUILD_ROOT VERSION=%{version} install
 
 %files

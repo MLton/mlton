@@ -3,7 +3,9 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/mman.h>
+#if (defined (__linux__))
 #include <values.h>
+#endif
 
 void
 die(char *fmt, ...)
@@ -94,6 +96,9 @@ string intToCommaString(int n) {
 	
 	if (0 == n)
 		buf[i--] = '0';
+#if (defined (__CYGWIN__))
+#define MININT 0x80000000
+#endif
  	else if (MININT == n) {
 		/* must treat MININT specially, because I negate stuff later */
 		strcpy(buf + 1, "-2,147,483,648");

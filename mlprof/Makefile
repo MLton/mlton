@@ -1,7 +1,7 @@
 NAME = mlprof
 MLTON = mlton
-FLAGS = #-DMLton_debug
-PATH = ../../bin:$(shell echo $$PATH)
+FLAGS =
+PATH = ../build/bin:$(shell echo $$PATH)
 
 all:	$(NAME)
 

@@ -9,10 +9,11 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
-#include <sys/sysinfo.h>
 #include <sys/times.h>
 #include <time.h>
+#if (defined (__linux__))
 #include <values.h>
+#endif
 
 #define METER FALSE  /* Displays distribution of object sizes at program exit. */
 
@@ -1014,6 +1015,7 @@ currentTime()
 static inline void
 initSignalStack(GC_state s)
 {
+#if (defined (__linux__))
         static stack_t altstack;
 	size_t ss_size = roundPage(s, SIGSTKSZ);
 	size_t psize = getpagesize();
@@ -1022,6 +1024,7 @@ initSignalStack(GC_state s)
 	altstack.ss_size = ss_size;
 	altstack.ss_flags = 0;
 	sigaltstack(&altstack, NULL);
+#endif
 }
 
 /* ------------------------------------------------- */
@@ -1069,6 +1072,8 @@ static void readProcessor() {
  * Ensure that s->totalRam + s->totalSwap < 4G.
  */
 
+#if (defined (__linux__))
+#include <sys/sysinfo.h>
 static inline void
 setMemInfo(GC_state s)
 {
@@ -1089,6 +1094,15 @@ setMemInfo(GC_state s)
 		fprintf(stderr, "totalRam = %u  totalSwap = %u  maxSemi = %u\n",
 			s->totalRam, s->totalSwap, s->maxSemi);
 }
+#elif (defined (__CYGWIN__))
+static inline void
+setMemInfo(GC_state s)
+{
+	s->totalRam = roundPage (s, 128 * 1024 * 1024);
+	s->totalSwap = 0;
+	s->maxSemi = roundPage(s, s->ramSlop * (double)s->totalRam / 2);
+}
+#endif
 
 static void newWorld(GC_state s)
 {
@@ -1254,9 +1268,9 @@ GC_init(GC_state s, int argc, char **argv,
 	setMemInfo(s);
 	
 	if (s->isOriginal)
-		newWorld(&gcState);
+		newWorld(s);
 	else
-		GC_loadWorld(&gcState, worldFile, loadGlobals);
+		GC_loadWorld(s, worldFile, loadGlobals);
 
 	return i;
 }

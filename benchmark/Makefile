@@ -1,7 +1,7 @@
 NAME = benchmark
 MLTON = mlton
 FLAGS =
-PATH = $(shell cd ../../bin && pwd):$(shell echo $$PATH)
+PATH = $(shell cd ../build/bin && pwd):$(shell echo $$PATH)
 
 all:	$(NAME)
 

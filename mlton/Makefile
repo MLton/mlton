@@ -1,11 +1,11 @@
-ROOT = ../..
-BIN = $(ROOT)/bin
-LIB = $(ROOT)/lib
-SRC = $(ROOT)/src
+SRC = $(shell cd .. && pwd)
+BUILD = $(SRC)/build
+BIN = $(BUILD)/bin
+LIB = $(BUILD)/lib
 MLTON = mlton
 NAME = mlton
 AOUT = mlton-compile
-FLAGS = @MLton gc-summary -- -v -o $(AOUT)
+FLAGS = @MLton gc-summary -- -keep o -v -o $(AOUT)
 PATH = $(BIN):$(shell echo $$PATH)
 
 all: $(AOUT)

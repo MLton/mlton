@@ -1,30 +1,41 @@
-#!/bin/sh
+#!/bin/bash
 
 # This script runs the regression tests in src/regression.
 # It also compiles the tests in benchmark/tests
 
 name=`basename $0`
 
-function usage() {
-	echo >&2 "usage: $name"
+function usage {
+	echo >&2 "usage: $name [-cross] [-run-only]"
 	exit 1
 }
 
-case "$#" in
-0)
-	;;
-*)
-	usage
-	;;
-esac
+cross='no'
+runOnly='no'
+while [ "$#" -gt 0 ]; do
+	case "$1" in
+	-cross)
+		cross='yes'
+		shift
+		;;
+	-run-only)
+		runOnly='yes'
+		shift
+		;;
+	*)
+		usage
+		;;
+	esac
+done
 
 dir=`dirname $0`
-root=`cd $dir/../.. && pwd`
-src="$root/src"
-lib="$root/lib"
-bin="$root/bin"
+src=`cd $dir/.. && pwd`
+bin="$src/build/bin"
 mlton="$bin/mlton"
-flags='-type-check true -native true -gc-check first'
+flags='-type-check true -native false -gc-check first'
+if [ $cross = 'yes' ]; then
+	flags="$flags -host cygwin"
+fi
 cont='callcc.sml callcc2.sml callcc3.sml'
 signal='signals.sml'
 thread='thread0.sml thread1.sml thread2.sml mutex.sml prodcons.sml same-fringe.sml timeout.sml'
@@ -33,81 +44,81 @@ tmp=/tmp/z.regression.$$
 log=$src/regression-log
 PATH=.:$PATH
 
-(
-	cd $src/regression
-	for f in `ls *.sml`
-	do
-		f=`basename $f .sml`
+cd $src/regression
+for f in `ls *.sml`; do
+	f=`basename $f .sml`
+	case "$f" in
+	cobol|serialize|testdyn2)
+		echo "skipping $f"
+	;;
+	*)
+			echo "testing $f"
 		case "$f" in
-		cobol|serialize|testdyn2)
-			echo "skipping $f"
+		exnHistory*)
+			extraFlags="-exn-history true"
 		;;
 		*)
- 			echo "testing $f"
-			case "$f" in
-			exnHistory*)
-				extraFlags="-exn-history true"
-			;;
-			*)
-				extraFlags=""
-			;;
-			esac
+			extraFlags=""
+		;;
+		esac
+		if [ $runOnly = 'no' ]; then
 			$mlton $flags $extraFlags $f.sml
 			if [ $? -ne 0 ]; then
 				echo "compilation of $f failed"
-#				exit 1
-			elif [ ! -r $f.nonterm ]; then
-				$f >$tmp 2>&1
-				if [ -r $f.ok ]; then
-					diff $f.ok $tmp
-				fi
+				exit 1
 			fi
-			rm -f $f $f.ssa $f.c
-		;;
-		esac
-	done 
-	make clean > /dev/null
-        cd $src/benchmark/tests
-	for f in `ls *.sml`
-	do
-		f=`basename $f .sml`
-		tmpf=/tmp/$f.$$
-		case "$f" in
-		fxp)
-			echo "skipping $f"
-		;;
-		*)
- 			echo "testing $f"
-			echo "val _ = Main.doit ()" | cat $f.sml - > $tmpf.sml
-			$mlton $flags $tmpf.sml
-			if [ $? -ne 0 ]; then
-				echo "compilation of $f failed"
+		fi
+		if [ ! -r $f.nonterm -a $cross = 'no' ]; then
+			$f >$tmp 2>&1
+#			rm -f $f
+			if [ -r $f.ok ]; then
+				diff $f.ok $tmp
 			fi
-			rm -f $tmpf $tmpf.sml
-		;;
-		esac
-	done 
-	make clean > /dev/null
-	cd $src
-	for f in mllex mlyacc mlprof
-	do
-	    tmpf=/tmp/$f.$$
-	    cd $src/$f
-	    case "$f" in
-	    foobar)
-		    echo "skipping $f"
-	    ;;
-	    *)
-		    echo "testing $f"
-		    make -W $f > /dev/null
-		    $mlton $flags -o $tmpf $f.cm
-		    if [ $? -ne 0 ]; then
-				echo "compilation of $f failed"
-		    fi
-		    rm -f $tmpf
-	    ;;
-	    esac
-      done
-) 2>&1 | tee $log
+		fi
+	;;
+	esac
+done 
+if [ $cross = 'no' ]; then
+	make clean >/dev/null
+fi
+cd $src/benchmark/tests
+for f in `ls *.sml`; do
+	f=`basename $f .sml`
+	tmpf=/tmp/$f.$$
+	case "$f" in
+	fxp)
+		echo "skipping $f"
+	;;
+	*)
+			echo "testing $f"
+		echo "val _ = Main.doit ()" | cat $f.sml - > $tmpf.sml
+		$mlton $flags $tmpf.sml
+		if [ $? -ne 0 ]; then
+			echo "compilation of $f failed"
+		fi
+		rm -f $tmpf $tmpf.sml
+	;;
+	esac
+done 
+make clean > /dev/null
+cd $src
+for f in mllex mlyacc mlprof; do
+    tmpf=/tmp/$f.$$
+    cd $src/$f
+    case "$f" in
+    foobar)
+	    echo "skipping $f"
+    ;;
+    *)
+	    echo "testing $f"
+	    make -W $f > /dev/null
+	    $mlton $flags -o $tmpf $f.cm
+	    if [ $? -ne 0 ]; then
+			echo "compilation of $f failed"
+	    fi
+	    rm -f $tmpf
+    ;;
+    esac
+done
 
 rm -f $tmp

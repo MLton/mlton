@@ -32,6 +32,7 @@
 /*                      Ptrace                       */
 /* ------------------------------------------------- */
 
+#if (defined (__linux__))
 #include <sys/ptrace.h>
 
 #define Ptrace_TRACEME PTRACE_TRACEME
@@ -51,7 +52,7 @@
 #define Ptrace_GETFPREGS PTRACE_GETFPREGS
 #define Ptrace_SETFPREGS PTRACE_SETFPREGS
 #define Ptrace_SYSCALL PTRACE_SYSCALL
-
+#endif
 /* ------------------------------------------------- */
 /*                      Socket                       */
 /* ------------------------------------------------- */

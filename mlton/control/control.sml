@@ -75,6 +75,22 @@ val gcCheck = control {name = "gc check",
 		       default = Limit,
 		       toString = GcCheck.toString}
 
+structure Host =
+   struct
+      datatype t =
+	 Cygwin
+       | Linux
+
+      val toString =
+	 fn Cygwin => "Cygwin"
+	  | Linux => "Linux"
+   end
+
+datatype host = datatype Host.t
+val host = control {name = "host",
+		    default = Linux,
+		    toString = Host.toString}
+
 val indentation = control {name = "indentation",
 			   default = 3,
 			   toString = Int.toString}

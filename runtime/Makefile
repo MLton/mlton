@@ -1,6 +1,10 @@
-CC =		gcc -Wall -I. -mcpu=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=5 -fomit-frame-pointer
+CC =		gcc -Wall -I. -mcpu=pentiumpro -malign-loops=2 -malign-jumps=2 -malign-functions=5 -fomit-frame-pointer -b $(HOST)
 CFLAGS =	-O9 -DNODEBUG
+ifeq ($(HOST), i686-pc-cygwin)
+AR = 		/usr/local/i686-pc-cygwin/bin/ar rc
+else
 AR =		ar rc
+endif
 
 OBJS =						\
 	basis/Array/numElements.o		\
@@ -30,8 +34,8 @@ OBJS =						\
 	basis/OS/FileSys/tmpnam.o		\
 	basis/PackReal/subVec.o			\
 	basis/PackReal/update.o			\
-	basis/Ptrace/ptrace2.o			\
-	basis/Ptrace/ptrace4.o			\
+ 	basis/Ptrace/ptrace2.o			\
+ 	basis/Ptrace/ptrace4.o			\
 	basis/Real.o				\
 	basis/Real_const.o			\
 	basis/Socket/Host.o			\
@@ -170,7 +174,7 @@ DEBUG_OBJS =					\
 	basis/MLton/allocTooLarge-gdb.o		\
 	basis/MLton/bug-gdb.o			\
 	basis/MLton/exit-gdb.o			\
-	basis/MLton/profile-gdb.o		\
+ 	basis/MLton/profile-gdb.o		\
 	basis/MLton/random-gdb.o		\
 	basis/MLton/rlimit-gdb.o		\
 	basis/MLton/rusage-gdb.o		\
@@ -178,8 +182,8 @@ DEBUG_OBJS =					\
 	basis/OS/FileSys/tmpnam-gdb.o		\
 	basis/PackReal/subVec-gdb.o		\
 	basis/PackReal/update-gdb.o		\
-	basis/Ptrace/ptrace2-gdb.o		\
-	basis/Ptrace/ptrace4-gdb.o		\
+ 	basis/Ptrace/ptrace2-gdb.o		\
+ 	basis/Ptrace/ptrace4-gdb.o		\
 	basis/Real-gdb.o			\
 	basis/Real_const-gdb.o			\
 	basis/Socket/Host-gdb.o			\
@@ -317,6 +321,28 @@ libmlton.a: $(OBJS)
 
 libmlton-gdb.a: $(DEBUG_OBJS)
 	$(AR) libmlton-gdb.a $(DEBUG_OBJS)
+
+ifeq ($(HOST), i686-pc-cygwin)
+basis/IntInf.o: gmp.h
+endif
+
+GMP = gmp-4.0.1
+gmp.h:
+	{ [ gmp.h -nt $(GMP).tgz ]						\
+		&& [ libgmp.a -nt $(GMP).tgz ]; } || {				\
+			rm -rf gmp.h libgmp.a gmp-stuff &&			\
+			mkdir gmp-stuff gmp-stuff/info &&			\
+			echo '!@File: dir,#Node: Top' | tr '!@#' '\037\n\t' > gmp-stuff/info/dir &&	\
+			{ [ -d $(GMP) ] ||					\
+				zcat <$(GMP).tgz | tar xf -; } &&		\
+				cd $(GMP) &&					\
+				./configure --host=$(HOST) --prefix=`pwd`/../gmp-stuff &&	\
+				make CFLAGS=-O install distclean &&		\
+				cd .. &&					\
+				rm -rf $(GMP) &&				\
+				mv gmp-stuff/include/gmp.h . &&			\
+				mv gmp-stuff/lib/libgmp.a .;			\
+	}
 
 .PHONY: clean
 clean:

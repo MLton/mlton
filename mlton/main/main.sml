@@ -37,7 +37,6 @@ val includeDirs: string list ref = ref []
 val keepGenerated = ref false
 val keepO = ref false
 val keepSML = ref false
-val lib = ref "mlton"
 val libs: string list ref = ref []
 val libDirs: string list ref = ref []
 val output: string option ref = ref NONE
@@ -87,8 +86,7 @@ val options =
 	"enable Exn.history",
 	boolRef Control.exnHistory),
        (Expert, "g", "", "produce executable with debug info",
-	None (fn () => (debug := true
-			; lib := "mlton-gdb"))),
+	None (fn () => debug := true)),
        (Expert, "gc-check", " {limit|first|every}", "force GCs",
 	SpaceString (fn s =>
 		     case s of
@@ -101,6 +99,13 @@ val options =
        (Normal, "h", " heapSize [{k|m}]",
 	"heap size used by resulting executable",
 	Mem (fn n => fixedHeap := SOME n)),
+       (Normal, "host", " {linux|cygwin}",
+	"host type that executable will run on",
+	SpaceString (fn s =>
+		     host := (case s of
+				 "cygwin" => Cygwin
+			       | "linux" => Linux
+			       | _ => usage (concat ["invalid host: ", s])))),
        (Normal, "ieee-fp", " {false|true}", "use strict IEEE floating-point",
 	boolRef Native.IEEEFP),
        (Expert, "indentation", " n", "indentation level in ILs",
@@ -268,9 +273,9 @@ fun commandLine (args: string list): unit =
    let
       open Control
       fun error () = Error.bug "incorrect args from shell script"
-      val (root, gcc, gccSwitches, args) =
+      val (lib, cygwin, linux, gcc, gccSwitches, args) =
 	 case args of
-	    root :: gcc :: args =>
+	    lib :: cygwin :: linux :: gcc :: args =>
 	       let
 		  fun loop (args, ac) =
 		     case args of
@@ -280,12 +285,20 @@ fun commandLine (args: string list): unit =
 			      then (rev ac, args)
 			   else loop (args, arg :: ac)
 		  val (gccSwitches, args) = loop (args, [])
-	       in (root, gcc, gccSwitches, args)
+	       in
+		  (lib, cygwin, linux, gcc, gccSwitches, args)
 	       end
 	  | _ => error ()
       val result =
 	 Popt.parse {switches = args,
 		     opts = List.map (options, fn (_, a, _, _, c) => (a, c))}
+      val hostId =
+	 case !host of
+	    Cygwin => cygwin
+	  | Linux => linux
+      val lib = concat [lib, "/", hostId]
+      val libDirs = lib :: !libDirs
+      val includeDirs = concat [lib, "/include"] :: !includeDirs
       val _ =
 	 chunk := (if !Native.native
 		      then
@@ -389,16 +402,20 @@ fun commandLine (args: string list): unit =
 					linkLibs])
 		  val definesAndIncludes =
 		     List.concat [list ("-D", !defines),
-				  list ("-I", rev (!includeDirs))]
+				  list ("-I", rev (includeDirs))]
 		  val linkLibs: string list =
-		     List.concat [list ("-L", rev (!libDirs)),
-				  list ("-l", !lib :: !libs)]
+		     List.concat [list ("-L", rev (libDirs)),
+				  list ("-l",
+					(if !debug
+					    then "mlton-gdb"
+					 else "mlton") :: !libs)]
 		  fun compileO (inputs: File.t list) =
 		     trace (Top, "Link")
 		     (fn () =>
 		      docc (inputs,
 			    maybeOut "",
-			    List.concat [if !debug then ["-g"] else [],
+			    List.concat [["-b", hostId],
+					 if !debug then ["-g"] else [],
 					 if !static then ["-static"] else []],
 			    rest @ linkLibs))
 		     ()
@@ -420,6 +437,7 @@ fun commandLine (args: string list): unit =
 				       (if isMain then "-g" else "-Wa,--gstabs")
 					   :: switches
 				 else switches
+			      val switches = "-b" :: hostId :: switches
 			      val output =
 				 if stop = Place.O orelse !keepO
 				    then
@@ -464,6 +482,7 @@ fun commandLine (args: string list): unit =
 			    List.concat
 			    [[concat ["-O", Int.toString (!optimization)]],
 			     gccSwitches]]
+			val switches = "-b" :: hostId :: switches
 			val output = temp ".s"
 			val _ =
 			   trace (Top, "Compile C")

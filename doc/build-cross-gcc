@@ -1,0 +1,92 @@
+#!/bin/bash
+
+# This script builds and installs a gcc cross-compiler with a cygwin target.
+#
+# It requires that you have obtained the following packages, whose
+# tarfiles shoud be in the current directory:
+#	binutils, cygwin, gcc, w32api
+# You can find ftp sites to download binutils and gcc-core at gnu.org.
+# I got cygwin and w32api by installing cygwin in a Windows machine (using
+# Cygwin's setup.exe program) and then getting the bzip'ed tar files out of
+# their Cygwin packages dir.
+#
+# You may need to change the version numbers below.
+# You also might want to change the installation prefix.
+
+binutils='binutils-2.11.2'
+cygwin='cygwin-1.3.9-1'
+gccVers='3.0.3'
+gcc="gcc-$gccVers"
+gccTar="gcc-core-$gccVers.tar"
+w32api='w32api-1.2-1'
+
+root=`pwd`
+target='i686-pc-cygwin'
+prefix='/usr/local'
+
+name=`basename $0`
+
+function die() {
+	echo >&2 "$1"
+	exit 1
+}
+
+function usage() {
+	die "usage: $name"
+}
+
+case "$#" in
+0)
+	;;
+*)
+	usage
+	;;
+esac
+
+function exists() {
+	if [ ! -r "$1" ]; then
+		die "$1 does not exist"
+	fi
+}
+
+echo 'Checking that needed files exist.'
+exists $binutils.tar
+exists $cygwin.tar
+exists $gccTar
+exists $w32api.tar
+
+echo 'Copying include files and libraries needed by cross compiler.'
+cd $root
+mkdir -p cygwin
+cd cygwin
+tar x <../$cygwin.tar
+tar x <../$w32api.tar
+mkdir -p $prefix/$target || 
+	die "Cannot create $prefix/$target."
+(cd usr && tar c include lib) | (cd $prefix/$target/ && tar x)
+
+echo 'Building binutils.'
+cd $root
+if [ ! -d $binutils ]; then
+	tar x <$binutils.tar
+fi
+mkdir -p build-binutils
+cd build-binutils
+../$binutils/configure --prefix=$prefix --target=$target \
+	>$root/configure-binutils-log 2>&1 ||
+	die "Configure of binutils failed."
+make all install >$root/build-binutils-log 2>&1 ||
+	die "Build of binutils failed."
+
+echo 'Building gcc.'
+cd $root
+tar x <$gccTar
+mkdir -p build-gcc
+cd build-gcc
+../$gcc/configure --enable-languages=c --prefix=$prefix --target=$target \
+	>$root/configure-gcc-log 2>&1 ||
+	die "Configure of gcc failed."
+make all install >$root/build-gcc-log 2>&1 ||
+	die "Build of gcc failed."
+
+echo 'Success.'

@@ -10,7 +10,11 @@ static void handler(Int signum) {
 }
 
 enum {
+#if (defined (__linux__))
 	SA_FLAGS = SA_ONSTACK,
+#elif (defined (__CYGWIN__))
+	SA_FLAGS = 0,
+#endif
 };
 
 Int Posix_Signal_default(Int signum) {

@@ -43,6 +43,11 @@ signature CONTROL =
        | Every
       val gcCheck: gcCheck ref
 
+      datatype host =
+	 Cygwin
+       | Linux
+      val host: host ref
+
       (* Indentation used in laying out ILs. *)
       val indentation: int ref
 	 

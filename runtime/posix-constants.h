@@ -156,7 +156,7 @@ enum {
 	Posix_ProcEnv_numgroups = 100,
 };
 
-#include <wait.h>
+#include <sys/wait.h>
 #define Posix_Process_wnohang WNOHANG
 #define Posix_Process_W_untraced WUNTRACED
 

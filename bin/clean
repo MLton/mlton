@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 function doit () {
 	rm -rf *~ *.a *.o CM core mlmon.out

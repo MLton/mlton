@@ -1,4 +1,4 @@
-#include <wait.h>
+#include <sys/wait.h>
 #include "mlton-posix.h"
 
 Signal Posix_Process_stopSig(Status s) {

@@ -1,79 +1,58 @@
-ROOT = $(shell cd .. && pwd)
-BIN = $(ROOT)/bin
-INC = $(ROOT)/include
-LIB = $(ROOT)/lib
-SRC = $(ROOT)/src
+ROOT = $(shell pwd)
+BUILD = $(ROOT)/build
+SRC = $(ROOT)
+BIN = $(BUILD)/bin
+LIB = $(BUILD)/lib
 COMP = $(SRC)/mlton
 RUN = $(SRC)/runtime
 MLTON = $(BIN)/mlton
-RUNTIME = $(LIB)/libmlton.a $(LIB)/libmlton-gdb.a $(INC)/mlton.h
 AOUT = mlton-compile
 LEX = mllex
 PROF = mlprof
 YACC = mlyacc
+LINUX = i686-pc-linux-gnu
+CYGWIN = i686-pc-cygwin
 PATH = $(BIN):$(shell echo $$PATH)
 CP = /bin/cp -fp
 
-all:	$(MLTON) $(BIN)/$(LEX) $(BIN)/$(PROF) $(BIN)/$(YACC)
-	cd $(SRC)/doc/user-guide && $(MAKE)
-	chmod a-w $(INC)/*
-	@echo 'Build of MLton succeeded'
-
-$(BIN)/$(LEX): $(LEX)/$(LEX)
-	$(CP) $(LEX)/$(LEX) $(BIN)
-
-$(LEX)/$(LEX): $(MLTON) 
-	cd $(LEX) && $(MAKE) clean && $(MAKE)
-
-$(BIN)/$(PROF): $(PROF)/$(PROF)
-	$(CP) $(PROF)/$(PROF) $(BIN)
-
-$(PROF)/$(PROF): $(MLTON) 
-	cd $(PROF) && $(MAKE) clean && $(MAKE)
-
-$(BIN)/$(YACC): $(YACC)/$(YACC)
-	$(CP) $(YACC)/$(YACC) $(BIN)
-
-$(YACC)/$(YACC): $(MLTON) $(BIN)/$(LEX)
-	cd $(YACC) && $(MAKE) clean && $(MAKE)
-
-.PHONY: runtime
-runtime: $(RUNTIME)
-
-$(MLTON): bin/mlton $(LIB)/$(AOUT) $(LIB)/world.mlton $(RUNTIME)
+all:
+	$(MAKE) dirs
+	cd $(COMP) && $(MAKE)
+	$(CP) $(COMP)/$(AOUT) $(LIB)
+	$(MAKE) world
+	$(MAKE) runtimes
 	@echo 'Setting root path in mlton script'
 	rm -f $(MLTON)
-	sed "/^root=/s;'.*';'$(ROOT)';" <bin/mlton >$(MLTON)
+	sed "/^lib=/s;'.*';'$(LIB)';" <bin/mlton >$(MLTON)
 	chmod a+x-w $(MLTON) 
+	cd $(LEX) && $(MAKE) && $(CP) $(LEX) $(BIN)
+	cd $(YACC) && $(MAKE) && $(CP) $(YACC) $(BIN)
+	cd $(PROF) && $(MAKE) && $(CP) $(PROF) $(BIN)
+	cd $(SRC)/doc/user-guide && $(MAKE)
+	@echo 'Build of MLton succeeded'
 
-$(LIB)/$(AOUT): $(COMP)/$(AOUT)
-	$(CP) $(COMP)/$(AOUT) $(LIB)
+.PHONY: dirs
+dirs:
+	mkdir -p $(BIN) $(LIB)/$(LINUX)/include $(LIB)/$(CYGWIN)/include
 
-$(COMP)/$(AOUT):
-	cd $(COMP) && $(MAKE)
+.PHONY: runtimes
+runtimes:
+	$(MAKE) runtime HOST=$(LINUX)
+	$(MAKE) runtime HOST=$(CYGWIN)
 
-$(LIB)/libmlton.a: $(RUN)/libmlton.a
-	$(CP) $(RUN)/libmlton.a $(LIB)
-
-$(LIB)/libmlton-gdb.a: $(RUN)/libmlton-gdb.a
-	$(CP) $(RUN)/libmlton-gdb.a $(LIB)
-
-$(RUN)/libmlton.a $(RUN)/libmlton-gdb.a:
-	@echo 'Compiling MLton runtime system'
-	cd runtime && $(MAKE)
-
-$(INC)/mlton.h: include/mlton.h runtime/*.h
-	$(CP) include/*.h $(INC)
-	$(CP) runtime/*.h $(INC)
+.PHONY: runtime
+runtime:
+	$(MAKE) dirs
+	@echo 'Compiling MLton runtime system for $(HOST)'
+	cd runtime && $(MAKE) HOST=$(HOST)
+	$(CP) $(RUN)/*.a $(LIB)/$(HOST)
+	$(CP) runtime/*.h include/*.h $(LIB)/$(HOST)/include
+	cd runtime && $(MAKE) clean
 
 .PHONY: world
 world: 
-	$(LIB)/$(AOUT) $(SRC)/basis-library $(LIB)/world
-
-$(LIB)/world.mlton: $(LIB)/$(AOUT) \
-		$(shell find basis-library | egrep '*.(fun|sml|sig)$$')
 	@echo 'Processing basis library'
-	$(MAKE) world
+	$(LIB)/$(AOUT) $(SRC)/basis-library $(LIB)/world
 
 .PHONY: clean
 clean:
@@ -92,26 +71,20 @@ TDOC = $(PREFIX)/usr/share/doc/mlton-$(VERSION)
 
 .PHONY: install
 install:
-	mkdir -p $(TDOC) $(TBIN) $(TLIB)/lib $(TLIB)/include $(TMAN) &&	\
+	mkdir -p $(TDOC) $(TLIB) $(TBIN) $(TMAN) &&			\
 	(								\
 		cd $(SRC)/doc &&					\
-		$(CP) -r CHANGES cmcat.sml examples license README 	\
-			$(TDOC) && 					\
+		$(CP) -r CHANGES build-cross-gcc cmcat.sml examples	\
+			license README $(TDOC) &&			\
 		mv user-guide/main $(TDOC)/HTML &&			\
 		gzip -c user-guide/main.ps >$(TDOC)/user-guide.ps.gz	\
 	) &&								\
-	(								\
-		cd $(LIB) &&						\
-		$(CP) *.a $(AOUT) world.mlton $(TLIB)/lib		\
-	) &&								\
-	(								\
-		cd $(INC) &&						\
-		$(CP) *.h $(TLIB)/include &&				\
-		chmod u+w $(TLIB)/include/*				\
+	( 								\
+		cd $(LIB) && $(CP) -r . $(TLIB) 			\
 	) &&								\
 	(								\
 		cd $(BIN) &&						\
-		sed "/^root=/s;'.*';'$(ULIB)';" <mlton >$(TBIN)/mlton &&	\
+		sed "/^lib=/s;'.*';'$(ULIB)';" <mlton >$(TBIN)/mlton &&	\
 		chmod +x $(TBIN)/mlton &&				\
 		$(CP) $(LEX) $(PROF) $(YACC) $(TBIN)			\
 	) &&								\

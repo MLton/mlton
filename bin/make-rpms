@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash -x
 
 # This script makes binary and source RPMs in topdir (your RPM _topdir).
 # It can either grab the sources from the CVS repository or from a local
@@ -8,9 +8,13 @@
 
 name=`basename $0`
 
-function usage() {
-	echo >&2 "usage: $name [-home dir] [-local dir] topdir"
+function die() {
+	echo >&2 $1
 	exit 1
+}
+
+function usage() {
+	die "usage: $name [-home dir] [-local dir] topdir"
 }
 
 home='no'
@@ -53,33 +57,39 @@ version=`date +%Y%m%d`
 release="1"
 package="mlton-$version-$release"
 
+function tar.read {
+	tar -p -xf - "$@"
+}
+
+function tar.write {
+	tar -p -cf - "$@"
+}
+
 echo 'Cleaning up'
 root="$topdir"
-src="$root/SOURCES/mlton-$version/src"
+src="$root/SOURCES/mlton-$version"
 cd $root
 mkdir -p BUILD RPMS/i386 SOURCES SPECS SRPMS
 cd $root/SOURCES
 rm -rf mlton-$version
-mkdir mlton-$version
-cd mlton-$version
-mkdir bin lib include
 if [ $local = 'yes' ]; then
 	echo 'Getting local sources'
-	mkdir src
-	(cd $localDir && tar.write .) | (cd src && tar.read && make clean)
+	mkdir mlton-$version
+	(cd $localDir && tar.write .) | 
+		(cd mlton-$version && tar.read && make clean)
 else
  	echo 'Checking out sources'
- 	cvs -Q co -d src mlton
- 	if [ ! -d src/basis-library ]; then
+ 	cvs -Q co -d mlton-$version mlton
+ 	if [ ! -d mlton-$version/basis-library ]; then
  		echo >&2 'Could'\''t check out sources.'
 		exit 1
  	fi
  	cvs rtag -d "release-$version" mlton
- 	(cd src && cvs tag "release-$version")
- 	cvs -Q release src
+ 	(cd mlton-$version && cvs tag "release-$version")
+ 	cvs -Q release mlton-$version
 fi
-find src -type d | grep CVS | xargs rm -rf
-find src -type f | grep cvsignore | xargs rm -f
+find mlton-$version -type d | grep CVS | xargs rm -rf
+find mlton-$version -type f | grep cvsignore | xargs rm -f
 
 function doInst() {
 	sed "s/\(.*\)VERSION\(.*\)/\1$version\2/" <$1 >z
@@ -115,7 +125,8 @@ rm -rf mlton-$version
 
 echo 'Building rpms'
 (
-	time rpm -ba --quiet --clean $root/SPECS/mlton.spec
+	time rpm -ba --quiet --clean $root/SPECS/mlton.spec ||
+		die 'rpm build failed'
 	touch $root/RPMS/i386/$package.i386.rpm $root/SRPMS/$package.src.rpm
 )
 
