@@ -248,6 +248,7 @@ signature PRIM =
       (* impCall p = true iff p is implemented in the codegen as a call to a C function
        * examples: FFI, MLton_size, String_equal, IntInf_*, 
        *)
+      val gcCollect: t
       val impCall: t -> bool
       val intInfEqual: t
       val intAdd: t

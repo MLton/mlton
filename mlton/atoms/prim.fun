@@ -549,6 +549,7 @@ in
       new (Name.MLton_deserialize, make1 (fn a => vector word8 --> a))
    val eq = new (Name.MLton_eq, makeEqual1 (fn a => tuple [a, a] --> bool))
    val equal = new (Name.MLton_equal, makeEqual1 (fn a => tuple [a, a] --> bool))
+   val gcCollect = new (Name.GC_collect, make0 (unit --> unit))
    val reff = new (Name.Ref_ref, make1 (fn a => a --> reff a))
    val serialize = new (Name.MLton_serialize, make1 (fn a => a --> vector word8))
    val vectorLength = new (Name.Vector_length, make1 (fn a => vector a --> int))
