@@ -670,6 +670,7 @@ fun output {program = Machine.Program.T {chunks,
 	 in
 	    C.profile ("Chunk (magic)", overhead, print)
 	    ; C.callNoSemi ("Chunk", [ChunkLabel.toString chunkLabel], print)
+	    ; print "\n"
 	    (* Declare registers. *)
 	    ; List.foreach (Type.all, fn ty =>
 			    Int.for (0, regMax ty,
