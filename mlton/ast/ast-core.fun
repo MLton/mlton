@@ -374,18 +374,35 @@ fun layoutExp arg =
       fun delimit t = if isDelimited then t else paren t
    in
       case node e of
-	 Var {name, fixop} => seq [Fixop.layout fixop, layoutLongvid name]
-       | Fn m => delimit (seq [str "fn ", layoutMatch m])
-       | FlatApp es => seq (separate (Vector.toListMap (es, layoutExpF), " "))
+	 Andalso (e, e') =>
+	    delimit (mayAlign [layoutExpF e,
+			       seq [str "andalso ", layoutExpF e']])
        | App (function, argument) =>
 	    delimit (mayAlign [layoutExpF function, layoutExpF argument])
        | Case (expr, match) =>
 	    delimit (align [seq [str "case ", layoutExpT expr,
 				 str " of"],
 			    indent (layoutMatch match, 2)])
-       | Let (dec, expr) => Pretty.lett (layoutDec dec, layoutExpT expr)
-       | Seq es => paren (align (separateRight (layoutExpsT es, " ;")))
        | Const c => Const.layout c
+       | Constraint (expr, constraint) =>
+	    delimit (layoutConstraint (layoutExpF expr, constraint))
+       | FlatApp es =>
+	    delimit (seq (separate (Vector.toListMap (es, layoutExpF), " ")))
+       | Fn m => delimit (seq [str "fn ", layoutMatch m])
+       | Handle (try, match) =>
+	    delimit (align [layoutExpF try,
+			    seq [str "handle ", layoutMatch match]])
+       | If (test, thenCase, elseCase) =>
+	    delimit (mayAlign [seq [str "if ", layoutExpT test],
+			       seq [str "then ", layoutExpT thenCase],
+			       seq [str "else ", layoutExpT elseCase]])
+       | Let (dec, expr) => Pretty.lett (layoutDec dec, layoutExpT expr)
+       | List es => list (Vector.toListMap (es, layoutExpT))
+       | Orelse (e, e') =>
+	    delimit (mayAlign [layoutExpF e,
+			       seq [str "orelse ", layoutExpF e']])
+       | Prim {name, ...} => str name
+       | Raise exn => delimit (seq [str "raise ", layoutExpF exn])
        | Record r =>
 	    let
 	       fun layoutTuple es =
@@ -399,28 +416,12 @@ fun layoutExp arg =
 			      layoutTuple = layoutTuple,
 			      layoutElt = layoutExpT}
 	    end
-       | List es => list (Vector.toListMap (es, layoutExpT))
        | Selector f => seq [str "#", Field.layout f]
-       | Constraint (expr, constraint) =>
-	    delimit (layoutConstraint (layoutExpF expr, constraint))
-       | Handle (try, match) =>
-	    delimit (align [layoutExpF try,
-			    seq [str "handle ", layoutMatch match]])
-       | Raise exn => delimit (seq [str "raise ", layoutExpF exn])
-       | If (test, thenCase, elseCase) =>
-	    delimit (mayAlign [seq [str "if ", layoutExpT test],
-			       seq [str "then ", layoutExpT thenCase],
-			       seq [str "else ", layoutExpT elseCase]])
-       | Andalso (e, e') =>
-	    delimit (mayAlign [layoutExpF e,
-			       seq [str "andalso ", layoutExpF e']])
-       | Orelse (e, e') =>
-	    delimit (mayAlign [layoutExpF e,
-			       seq [str "orelse ", layoutExpF e']])
+       | Seq es => paren (align (separateRight (layoutExpsT es, " ;")))
+       | Var {name, fixop} => seq [Fixop.layout fixop, layoutLongvid name]
        | While {test, expr} =>
 	    delimit (align [seq [str "while ", layoutExpT test],
 			    seq [str "do ", layoutExpT expr]])
-       | Prim {name, ...} => str name
    end) arg
 and layoutExpsT es = Vector.toListMap (es, layoutExpT)
 and layoutExpT e = layoutExp (e, true)
