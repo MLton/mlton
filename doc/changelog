@@ -2,6 +2,11 @@ Here are the changes since version 20030312.
 
 At this point, the only missing basis library function is "use".
 
+* 2003-06-02
+  - Fixed Real.rem to work correctly on infs and nans.
+  - Fixed bug in profiling that caused the function name to be omitted
+    on functions defined by val rec.
+
 * 2003-05-31
   - Fixed Real.{fmt,fromString,scan,toString} to match the basis
     library spec.

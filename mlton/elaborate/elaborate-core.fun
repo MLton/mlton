@@ -666,7 +666,7 @@ fun elaborateDec (d, nest, E) =
 			 (rvbs, fn {pat, ...} =>
 			  let
 			     val (vars, types) = varsAndTypes (pat, [], [])
-			     val (name, var) =
+			     val (nest, var) =
 				case vars of
 				   [] => ("<anon>" :: nest, Cvar.newNoname ())
 				 | x :: _ =>
