@@ -31,6 +31,7 @@ OBJS =						\
 	basis/Ptrace/ptrace2.o			\
 	basis/Ptrace/ptrace4.o			\
 	basis/Real.o				\
+	basis/Real_const.o			\
 	basis/Socket/Host.o			\
 	basis/Socket/accept.o			\
 	basis/Socket/connect.o			\
@@ -173,6 +174,7 @@ DEBUG_OBJS =					\
 	basis/Ptrace/ptrace2-gdb.o		\
 	basis/Ptrace/ptrace4-gdb.o		\
 	basis/Real-gdb.o			\
+	basis/Real_const-gdb.o			\
 	basis/Socket/Host-gdb.o			\
 	basis/Socket/accept-gdb.o		\
 	basis/Socket/connect-gdb.o		\
@@ -292,6 +294,12 @@ DEBUG_OBJS =					\
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+%-gdb.o: %.S
+	$(CC) -g -c -o $@ $<
+
+%.o: %.S
+	$(CC) $(CFLAGS) -c -o $@ $<
+
 all: gmp libmlton.a libmlton-gdb.a prof.o
 
 libmlton.a: $(OBJS) 
@@ -308,7 +316,7 @@ gmp:
 		&& [ libgmp.a -nt gmp-2.0.2.tgz ]; } || {			\
 			rm -rf gmp.h libgmp.a gmp-stuff &&			\
 			mkdir gmp-stuff gmp-stuff/info &&			\
-			echo '!@File: dir,#Node: Top' | tr '!@#' '\037\n\t' >gmp-stuff/info/dir &&	\
+			echo '!@File: dir,#Node: Top' | tr '!@#' '\037\n\t' > gmp-stuff/info/dir &&	\
 			{ [ -d gmp-2.0.2 ] ||					\
 				zcat <gmp-2.0.2.tgz | tar xf -; } &&		\
 				cd gmp-2.0.2 &&					\

@@ -14,6 +14,7 @@ structure Real: REAL =
       infix 4 == != ?=
       type real = real
 
+(*
       local
 	 (* In computing minNormalPos, minPos, and maxFinite, we use a C routine
 	  * (isNormal, isPositive, and isFinite) to check that the value is OK.
@@ -63,6 +64,7 @@ structure Real: REAL =
 	       down (z, z)
 	    end
       end
+*)
    
       val radix: int = 2
 
