@@ -1,4 +1,16 @@
-Here are the changes from version 20010806 to version VERSION.
+Here are the changes from version 20011003 to version VERSION.
+
+* 2001-10-4
+  - Fixed bug in the implementation of "open" declarations, which in the case of
+    "open A B" had opened A and then looked up B in the resulting environment.  
+    The correct behaviour (see rule 22 of the Definition) is to lookup each
+    longstrid in the current environment, and then open them all in sequence. 
+    This is now checked for in the open.sml regression test.  Thanks to Andreas
+    Rossberg for pointing this bug out.
+
+--------------------------------------------------------------------------------
+
+Here are the changes from version 20010806 to version 20011003.
 
 Summary:
    + Added MLton.Exn.history, which is similar to SMLofNJ.exnHistory.

@@ -501,10 +501,19 @@ fun elaborateDec (d, E) =
 					    fn () => elabDec d,
 					    fn () => elabDec d'))
 	   | Adec.Open paths =>
-		(Vector.foreach (paths, fn p =>
-				 Env.openStructure
-				 (E, Env.lookupLongstrid (E, p)))
-		 ; Decs.empty)
+		let
+		   (* The following code is careful to first lookup all of the
+		    * paths in the current environment, and then extend the
+		    * environment with all of the results.
+		    * See rule 22 of the Definition.
+		    *)
+		   val _ =
+		      Vector.foreach
+		      (Vector.map (paths, fn p => Env.lookupLongstrid (E, p)),
+		       fn s => Env.openStructure (E, s))
+		in
+		   Decs.empty
+		end
 	   | Adec.Overload (x, t, xs) =>
 		let
 		   val x' = Cvar.fromAst x
