@@ -23,7 +23,7 @@ Int MLton_Process_spawne (NullString p, Pointer a, Pointer e) {
 	args[an] = (char *) NULL;
 	env[en] = (char *) NULL;
 	result = spawnve(0, path, 
-				(char * const *)args,
+				(const char * const *)args,
 				(const char * const *)env);
 	args[an] = asaved;
 	env[en] = esaved;

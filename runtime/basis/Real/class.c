@@ -67,7 +67,7 @@ Int Real64_class (Real64 d) {
 			res = Real_Class_zero;
 	}
 	if (DEBUG)
-		fprintf (stderr, "%d = Real_class (%g)\n", res, d);
+		fprintf (stderr, "%d = Real_class (%g)\n", (int)res, d);
 	return res;
 }
 
