@@ -2,6 +2,7 @@
 #define _X86CODEGEN_H_
 
 #define Globals(c, d, i, p, u, nr)				       	\
+	word raTemp;							\
 	word raTemp1;							\
 	double raTemp2;							\
 	word spill[16];							\
