@@ -11,6 +11,9 @@
 #include <fcntl.h>
 #include <math.h>
 #include <string.h>
+#if (defined (__FreeBSD__))
+#include <sys/types.h>
+#endif
 #include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/times.h>
@@ -20,6 +23,9 @@
 #endif
 #if (defined (__linux__))
 #include <values.h>
+#endif
+#if (defined (__FreeBSD__))
+#include <limits.h>
 #endif
 
 typedef unsigned long long W64;
@@ -71,7 +77,7 @@ static inline uint toBytes(uint n) {
 	return n << 2;
 }
 
-#if (defined (__linux__))
+#if (defined (__linux__) || defined (__FreeBSD__))
 static inline uint min(uint x, uint y) {
 	return ((x < y) ? x : y);
 }
@@ -81,7 +87,7 @@ static inline uint max(uint x, uint y) {
 }
 #endif
 
-#if (defined (__linux__))
+#if (defined (__linux__) || defined (__FreeBSD__))
 /* A super-safe mmap.
  *  Allocates a region of memory with dead zones at the high and low ends.
  *  Any attempt to touch the dead zone (read or write) will cause a
@@ -113,7 +119,7 @@ static void release (void *base, size_t length) {
 				(uint)base);
 	if (0 == VirtualFree (base, 0, MEM_RELEASE))
 		die ("VirtualFree release failed");
-#elif (defined (__linux__))
+#elif (defined (__linux__) || defined (__FreeBSD__))
 	smunmap (base, length);
 #endif
 }
@@ -125,7 +131,7 @@ static void decommit (void *base, size_t length) {
 				(uint)base, (uint)length);
 	if (0 == VirtualFree (base, length, MEM_DECOMMIT))
 		die ("VirtualFree decommit failed");
-#elif (defined (__linux__))
+#elif (defined (__linux__) || defined (__FreeBSD__))
 	smunmap (base, length);
 #endif
 }
@@ -213,6 +219,15 @@ static void showMem() {
 	static char buffer[256];
 
 	sprintf(buffer, "/bin/cat /proc/%d/maps\n", getpid());
+	(void)system(buffer);
+}
+
+#elif (defined (__FreeBSD__))
+
+static void showMem() {
+	static char buffer[256];
+
+	sprintf(buffer, "/bin/cat /proc/%d/map\n", getpid());
 	(void)system(buffer);
 }
 
@@ -960,7 +975,7 @@ static void *allocateSemi (GC_state s, size_t length) {
 			fprintf (stderr, "0x%x = VirtualAlloc (0x%x, %u, MEM_COMMIT, PAGE_READWRITE)\n",
 					(uint)result, (uint)address,
 					(uint)length);
-#elif (defined (__linux__))
+#elif (defined (__linux__) || defined (__FreeBSD__))
 		result = mmap(address+(void*)0, length, PROT_READ | PROT_WRITE,
 				MAP_PRIVATE | MAP_ANON, -1, 0);
 #endif
@@ -1137,7 +1152,7 @@ currentTime()
 static inline void
 initSignalStack(GC_state s)
 {
-#if (defined (__linux__))
+#if (defined (__linux__) || defined (__FreeBSD__))
         static stack_t altstack;
 	size_t ss_size = roundPage(s, SIGSTKSZ);
 	size_t psize = s->pageSize;
@@ -1249,7 +1264,60 @@ setMemInfo(GC_state s)
 	s->totalRam = ms.dwTotalPhys;
 	s->totalSwap = ms.dwTotalPageFile;
 }
-#endif
+#elif (defined (__FreeBSD__))
+
+/* returns total amount of swap available */
+static int 
+get_total_swap() 
+{
+        static char buffer[256];
+        FILE *file;
+        int total_size = 0;
+
+        file = popen("/usr/sbin/swapinfo -k | awk '{ print $4; }'\n", "r");
+        if (file == NULL) 
+                diee("swapinfo failed");
+
+        /* skip header */
+        fgets(buffer, 255, file);
+
+        while (fgets(buffer, 255, file) != NULL) { 
+                total_size += atoi(buffer);
+        }
+
+        pclose(file);
+
+        return total_size * 1024;
+}
+
+/* returns total amount of memory available */
+static int 
+get_total_mem() 
+{
+        static char buffer[256];
+        FILE *file;
+        int total_size = 0;
+
+        file = popen("/sbin/sysctl hw.physmem | awk '{ print $2; }'\n", "r");
+        if (file == NULL) 
+                diee("sysctl failed");
+
+
+        fgets(buffer, 255, file);
+
+        pclose(file);
+
+        return atoi(buffer);
+}
+
+static inline void
+setMemInfo(GC_state s)
+{
+	s->totalRam = get_total_mem();
+	s->totalSwap = get_total_swap();
+}
+
+#endif /* definition of setMemInfo */
 
 static void newWorld(GC_state s)
 {
@@ -1684,7 +1752,7 @@ static inline void resizeHeap (GC_state s, uint bytesRequested) {
 static inline void shrinkFromSpace (GC_state s, W32 keep) {
 
 }
-#elif (defined (__linux__))
+#elif (defined (__linux__) || defined (__FreeBSD__))
 static inline void shrinkFromSpace (GC_state s, W32 keep) {
 	if (keep < s->fromSize) {
 		decommit (s->base + keep, s->fromSize - keep);

@@ -1,8 +1,8 @@
 #include <netdb.h>
+#include <sys/types.h>
 #include <netinet/in.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <sys/types.h>
 #include "mlton-basis.h"
 #include "my-lib.h"
 

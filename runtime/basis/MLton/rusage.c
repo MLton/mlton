@@ -1,3 +1,6 @@
+#if (defined (__FreeBSD__))
+#include <sys/time.h>
+#endif
 #include <sys/resource.h>
 
 #include "gc.h"

@@ -1,6 +1,6 @@
+#include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-#include <sys/types.h>
 #include "mlton-basis.h"
 #include "my-lib.h"
 

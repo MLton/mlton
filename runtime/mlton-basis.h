@@ -178,6 +178,9 @@ Int Real_signBit(Double d);
 /*                      Rlimit                       */
 /* ------------------------------------------------- */
 
+#if (defined (__FreeBSD__))
+#include <sys/time.h>
+#endif
 #include <sys/resource.h>
 
 #if (defined (__CYGWIN__))

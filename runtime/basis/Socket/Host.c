@@ -1,4 +1,7 @@
 #include <netdb.h>
+#if (defined (__FreeBSD__))
+#include <sys/types.h>
+#endif
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include "mlton-basis.h"

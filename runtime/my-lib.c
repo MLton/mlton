@@ -9,6 +9,9 @@
 #if (defined (__linux__))
 #include <values.h>
 #endif
+#if (defined (__FreeBSD__))
+#include <limits.h>
+#endif
 
 void
 die(char *fmt, ...)
@@ -129,7 +132,7 @@ string intToCommaString(int n) {
 	
 	if (0 == n)
 		buf[i--] = '0';
-#if (defined (__CYGWIN__))
+#if (defined (__CYGWIN__) || defined (__FreeBSD__))
 #define MININT 0x80000000
 #endif
  	else if (MININT == n) {
@@ -200,7 +203,7 @@ void *smmap(size_t length) {
 	result = VirtualAlloc (0, length, MEM_COMMIT, PAGE_READWRITE);
 	if (NULL == result)
 		die("VirtualAlloc failed");
-#elif (defined (__linux__))
+#elif (defined (__linux__) || defined (__FreeBSD__))
 	result = mmap(NULL, length, PROT_READ | PROT_WRITE, 
 			MAP_PRIVATE | MAP_ANON, -1, 0);
 	if (result == (void*)-1) 
