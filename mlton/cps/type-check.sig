@@ -3,7 +3,7 @@
  *)
 signature TYPE_CHECK_STRUCTS = 
    sig
-      include INFER_HANDLERS
+      include ANALYZE
    end
 
 signature TYPE_CHECK = 

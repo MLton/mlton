@@ -963,6 +963,126 @@ structure Datatype =
 	 end
    end
 
+structure Set = DisjointSet
+   
+structure Handler':
+   sig
+      type t
+
+      val dest: t -> Jump.t
+      val equals: t * t -> bool
+      val layout: t -> Layout.t
+      val new: Jump.t -> t
+      val unknown: unit -> t
+   end =
+   struct
+      datatype t = T of Jump.t option Set.t
+
+      fun layout (T s) = Option.layout Jump.layout (Set.value s)
+      val new = T o Set.singleton o SOME
+      fun unknown () = T (Set.singleton NONE)
+
+      fun equals (T s, T s'): bool =
+	 Set.canUnion
+	 (s, s',
+	  fn (NONE, h) => SOME h
+	   | (h, NONE) => SOME h
+	   | (SOME h, SOME h') =>
+		if Jump.equals (h, h') then SOME (SOME h) else NONE)
+
+      val equals =
+	 Trace.trace2 ("Handler'.equals", layout, layout, Bool.layout)
+	 equals
+
+      fun dest (T s) =
+	 case Set.value s of
+	    NONE => Error.bug "unknown handler"
+	  | SOME h => h
+   end
+
+structure Handlers:
+   sig
+      type t
+
+      val equals: t * t -> bool
+      val empty: t
+      val layout: t -> Layout.t
+      val pop: t -> t
+      val push: t * Handler'.t -> t
+      val toList: t -> Jump.t list option
+      val unknown: unit -> t
+   end =
+   struct
+      datatype t = T of handlers Set.t
+      and handlers =
+	 Unknown
+	| Empty
+	| Push of {top: Handler'.t,
+		   rest: t}
+
+      fun layout (T s) =
+	 let open Layout
+	 in case Set.value s of
+	    Unknown => str "Unknown"
+	  | Empty => str "Empty"
+	  | Push {top, rest} => seq [Handler'.layout top,
+				     str " :: ",
+				     layout rest]
+	 end
+
+      val new = T o Set.singleton
+      val empty = new Empty
+      fun unknown () = new Unknown
+      fun push (rest: t, top: Handler'.t) = new (Push {top = top,
+						       rest = rest})
+      val push =
+	 Trace.trace2 ("Handlers.push", layout, Handler'.layout, layout)
+	 push
+
+      fun pop (T s) =
+	 case Set.value s of
+	    Empty => Error.bug "pop of empty handler stack"
+	  | Push {rest, ...} => rest
+	  | Unknown =>
+	       let val rest = unknown ()
+	       in Set.setValue (s, Push {top = Handler'.unknown (),
+					 rest = rest})
+		  ; rest
+	       end
+
+      fun isEmpty (T s) =
+	 case Set.value s of
+	    Empty => true
+	  | _ => false
+
+      fun toList (hs: t): Jump.t list option =
+	 let
+	    fun loop (T s, ac) =
+	       case Set.value s of
+		  Unknown => NONE
+		| Empty => SOME (rev ac)
+		| Push {top, rest} => loop (rest, Handler'.dest top :: ac)
+	 in loop (hs, [])
+	 end
+
+      fun equals (T s, T s'): bool =
+	 Set.canUnion
+	 (s, s',
+	  fn (Unknown, hs) => SOME hs
+	   | (hs, Unknown) => SOME hs
+	   | (Empty, Empty) => SOME Empty
+	   | (hs as Push {top = t, rest = r}, Push {top = t', rest = r'}) =>
+		if Handler'.equals (t, t') andalso equals (r, r')
+		   then SOME hs
+		else NONE
+	   | _ => NONE)	     
+      val equals =
+	 Trace.trace2 ("Handlers.equals", layout, layout, Bool.layout)
+	 equals
+   end
+
+open Dec PrimExp Transfer
+
 structure Function =
    struct
       type t = {name: Func.t,
@@ -972,8 +1092,9 @@ structure Function =
 
       structure Graph = DirectedGraph
       structure Node = Graph.Node
+      structure Edge = Graph.Edge
 	 
-      fun layout {name, args, body, returns} =
+      fun layout ({name, args, body, returns}, jumpHandlers) =
 	 let open Layout
 	 in align [seq [str "fun ",
 			Func.layout name,
@@ -999,47 +1120,117 @@ structure Function =
 			       Property.destGetSet
 			       (Jump.plist,
 				Property.initRaise ("node", Jump.layout))
+			    val {get = edgeOptions, set = setEdgeOptions} =
+			       Property.getSetOnce
+			       (Edge.plist, Property.initConst [])
 			    val {get = nodeOptions, ...} =
 			       Property.get
 			       (Node.plist,
 				Property.initFun (fn _ => ref []))
 			    val g = Graph.new ()
-			    fun addLabel (n, l) =
-			       List.push (nodeOptions n, NodeOption.Label l)
-			    val main = Graph.newNode g
-			    val _ = addLabel (main, Func.toString name)
-			    fun loop (e, from) =
+			    fun addEdge (from, to, opts) =
 			       let
-				  val {decs, transfer} = Exp.dest e
-				  val _ =
-				     List.foreach
-				     (decs,
-				      fn Dec.Fun {name, body, ...} =>
-				           let
-					      val n = Graph.newNode g
-					      val _ = setJumpNode (name, n)
-					      val _ =
-						 addLabel (n, Jump.toString name)
-					   in
-					      loop (body, n)
-					   end
-				       | _ => ())
-				  val _ =
-				     Transfer.foreachJump
-				     (transfer, fn j =>
-				      (Graph.addEdge (g, {from = from,
-							  to = jumpNode j})
-				       ; ()))
+				  val e = Graph.addEdge (g, {from = from,
+							     to = jumpNode to})
+				  val _ = setEdgeOptions (e, opts)
 			       in
 				  ()
 			       end
-			    val _ = loop (body, main)
+			    fun nodeOption (n, opt) =
+			       List.push (nodeOptions n, opt)
+			    val main = Graph.newNode g
+			    fun loop (e: Exp.t, from: Node.t, name: string) =
+			       let
+				  val {decs, transfer} = Exp.dest e
+				  fun edge (j: Jump.t,
+					    label: string,
+					    style: style): unit =
+				     addEdge (from, j,
+					      [EdgeOption.Label label,
+					       EdgeOption.Style style])
+				  val _ =
+				     List.foreach
+				     (decs,
+				      fn Bind {var, exp, ...} =>
+				           (case exp of
+					       PrimApp {info, ...} =>
+						  PrimInfo.foreachJump
+						  (info, fn j =>
+						   edge
+						   (j, "Overflow", Dashed))
+					     | _ => ())
+				       | Fun {name, body, ...} =>
+					    let
+					       val n = Graph.newNode g
+					       val _ = setJumpNode (name, n)
+					    in
+					       loop (body, n, Jump.toString name)
+					    end
+				       | _ => ())
+				  val rest =
+				     case transfer of
+					Bug => "\nbug"
+				      | Call {func, cont, ...} =>
+					   let
+					      val f = Func.toString func
+					   in
+					      case cont of
+						 NONE => concat ["\ntail ", f]
+					       | SOME j =>
+						    (edge (j, (concat
+							       ["nontail ", f]),
+							   Dotted)
+						     ; (case jumpHandlers j of
+							   h :: _ =>
+							      edge
+							      (h, "", Dotted)
+							 | _ => ())
+						     ; "")
+					   end
+				      | Case {cases, default, ...} =>
+					   (nodeOption
+					    (from, NodeOption.Shape Diamond)
+					    ; let
+						 fun doit (v, toString) =
+						    Vector.foreach
+						    (v, fn (x, j) =>
+						     edge (j, toString x, Solid))
+					      in case cases of
+						 Cases.Char v =>
+						    doit (v, Char.toString)
+					       | Cases.Con v =>
+						    doit (v, Con.toString)
+					       | Cases.Int v =>
+						    doit (v, Int.toString)
+					       | Cases.Word v =>
+						    doit (v, Word.toString)
+					       | Cases.Word8 v =>
+						    doit (v, Word8.toString)
+					      end
+					    ; (case default of
+						  NONE => ()
+						| SOME j =>
+						     edge (j, "default", Solid))
+					    ; "")
+				    | Jump {dst, ...} =>
+					 (edge (dst, "", Solid)
+					  ; "")
+				    | Raise _ => "\nraise"
+				    | Return _ => "\nreturn"
+				  val _ = 
+				     nodeOption
+				     (from,
+				      NodeOption.Label (concat [name, rest]))
+			       in
+				  ()
+			       end
+			    val _ = loop (body, main, Func.toString name)
 			    val l =
 			       Graph.LayoutDot.layout
 			       {graph = g,
 				title = Func.toString name,
 				options = [],
-				edgeOptions = fn _ => [],
+				edgeOptions = edgeOptions,
 				nodeOptions = ! o nodeOptions}
 			    val _ = destroy ()
 			 in
@@ -1048,8 +1239,8 @@ structure Function =
 		   else empty]
 	 end
       
-      fun layouts (fs, output) =
-	 Vector.foreach (fs, output o layout)
+      fun layouts (fs, jumpHandlers, output: Layout.t -> unit): unit =
+	 Vector.foreach (fs, fn f => output (layout (f, jumpHandlers)))
    end
 
 structure Program =
@@ -1065,6 +1256,103 @@ structure Program =
 	       functions: Function.t vector,
 	       main: Func.t
 	       }
+   end
+
+val traceJump = Trace.trace ("InferHandlers.jump", Jump.layout, Handlers.layout)
+val traceSetJump =
+   Trace.trace2
+   ("InferHandlers.setJump", Jump.layout, Handlers.layout, Unit.layout)
+   
+fun inferHandlers (Program.T {functions, ...}) =
+   let
+      val {get = jump, set = setJump} =
+	 Property.getSetOnce (Jump.plist,
+			      Property.initRaise ("handlers", Jump.layout))
+      val jump = traceJump jump
+      val setJump = traceSetJump setJump
+      val _ =
+	 Vector.foreach
+	 (functions, fn {body, ...} =>
+	  let
+	     fun loop (e: Exp.t, hs: Handlers.t): unit =
+		let
+		   fun check (msg, hs, hs') =
+		      let
+			 fun disp () =
+			    Control.message
+			    (Control.Silent, fn () =>
+			     let open Layout
+			     in align [seq [str "exp: ", Exp.layout e],
+				       seq [str "hs: ", Handlers.layout hs],
+				       seq [str "hs': ", Handlers.layout hs']]
+			     end)
+		      in if Handlers.equals (hs, hs')
+			    then ()
+			 else (disp ()
+			       ; Error.bug (concat
+					    ["handler stack mismatch at ", msg]))
+		      end
+		   val {decs, transfer} = Exp.dest e
+		   val after =
+		      List.fold
+		      (decs, hs, fn (d, hs) =>
+		       case d of
+			  Bind {exp = PrimApp {info = PrimInfo.Overflow j, ...},
+				...} =>
+			  (check ("PrimApp", hs, jump j)
+			   ; hs)
+			      | Fun {name, body, ...} =>
+				   (let val hs = Handlers.unknown ()
+				    in setJump (name, hs)
+				    end
+				       ; loop (body, jump name)
+				       ; hs)
+			      | HandlerPush h =>
+				   let
+				      val hs = Handlers.push (hs, Handler'.new h)
+				   in check ("push", hs, jump h)
+				      ; hs
+				   end
+			      | HandlerPop => Handlers.pop hs
+			      | _ => hs)
+		   fun checkJump j = check ("jump", after, jump j)
+		   fun empty msg = check (msg, after, Handlers.empty)
+		in case transfer of
+		   Bug => ()
+		 | Call {cont = c, ...} =>
+		      (case c of
+			  NONE => empty "tail call"
+			| SOME c => check ("nontail call", after, jump c))
+		 | Case {cases, default, ...} =>
+		      (Cases.foreach (cases, checkJump)
+		       ; Option.app (default, checkJump))
+		 | Jump {dst, ...} => checkJump dst
+		 | Raise _ => ()
+		 | Return _ => empty "return"
+		end
+	  in loop (body, Handlers.empty)
+	  end)
+   in
+      fn j => (case Handlers.toList (jump j) of
+		  NONE => Error.bug (concat ["toList (jump ",
+					     Jump.toString j,
+					     ") of unknown handler stack"])
+		| SOME l => l)
+   end
+
+val inferHandlers = Control.trace (Control.Pass, "inferHandlers") inferHandlers
+   
+fun deltaHandlers (d, hs) =
+   case d of
+      HandlerPush h => h :: hs
+    | HandlerPop => (case hs of
+			_ :: hs => hs
+		      | _ => Error.bug "deltaHandlers")
+    | _ => hs
+
+structure Program =
+   struct
+      open Program
 
       fun foreachVar (T {globals, functions, ...}, f) =
 	 (Vector.foreach (globals, fn {var, ty, ...} => f (var, ty))
@@ -1072,25 +1360,30 @@ structure Program =
 			   (Vector.foreach (args, f)
 			    ; Exp.foreachVar (body, f))))
 	 
-      fun layouts (T {datatypes, globals, functions, main},
+      fun layouts (p as T {datatypes, globals, functions, main},
 		   output': Layout.t -> unit) =
-	 let open Layout
+	 let
+	    val jumpHandlers = inferHandlers p
+	    open Layout
 	    val output = output'
 	 in output (Datatype.layout datatypes)
 	    ; output (str "\n\nGlobals:")
 	    ; Vector.foreach (globals, output o Bind.layout)
 	    ; output (str "\n\nFunctions:")
-	    ; Function.layouts (functions, output)
+	    ; Function.layouts (functions, jumpHandlers, output)
 	    ; output (seq [str "\n\nMain: ", Func.layout main])
 	 end
 
-      fun layout (T {datatypes, globals, functions, main}) =
-	 let open Layout
+      fun layout (p as T {datatypes, globals, functions, main}) =
+	 let
+	    val jumpHandlers = inferHandlers p
+	    open Layout
 	 in align [Datatype.layout datatypes,
 		   str "Globals:",
 		   align (Vector.toListMap (globals, Bind.layout)),
 		   str "Functions:",
-		   align (Vector.toListMap (functions, Function.layout)),
+		   align (Vector.toListMap (functions, fn f =>
+					    Function.layout (f, jumpHandlers))),
 		   seq [str "Main: ", Func.layout main]]
 	 end
 

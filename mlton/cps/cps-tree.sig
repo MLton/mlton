@@ -318,4 +318,7 @@ signature CPS_TREE =
 	    val layouts: t * (Layout.t -> unit) -> unit
 	    val layoutStats: t -> Layout.t
 	 end
+
+      val deltaHandlers: Dec.t * Jump.t list -> Jump.t list
+      val inferHandlers: Program.t -> Jump.t -> Jump.t list
    end

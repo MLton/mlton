@@ -3,7 +3,7 @@
  *)
 signature ONCE_STRUCTS = 
    sig
-      include INFER_HANDLERS
+      include ANALYZE
    end
 
 signature ONCE = 

@@ -4,14 +4,66 @@ struct
 open S
 open Dec PrimExp Transfer
 
-(* Flatten a jump arg as long as it is only used in selects.
+(* Flatten a jump arg as long as it is only flows to selects and only flows
+ * from tuples.
  *)
    
-structure Rep =
+structure Lattice = TwoPointLattice (val bottom = "true"
+				     val top = "false")
+
+structure ArgInfo =
    struct
-      structure L = TwoPointLattice (val bottom = "flat"
-				     val top = "tupled")
-      open L
+      datatype t = T of {fromTuple: bool ref,
+			 fromForce: t list ref,
+			 toSelect: bool ref,
+			 toForce: t list ref}
+
+      fun isFlat (T {fromTuple, toSelect, ...}) =
+	 !fromTuple andalso !toSelect
+
+      val isTupled = not o isFlat
+
+      fun layout (i: t): Layout.t =
+	 Layout.str (if isFlat i then "flat" else "tupled")
+
+      fun new () = T {fromTuple = ref true,
+		      fromForce = ref [],
+		      toSelect = ref true,
+		      toForce = ref []}
+
+      fun nonTuple (T {fromTuple = f, fromForce, ...}) =
+	 if !f
+	    then (f := false; List.foreach (!fromForce, nonTuple))
+	 else ()
+
+      fun nonSelect (T {toSelect = t, toForce, ...}) =
+	 if !t
+	    then (t := false; List.foreach (!toForce, nonSelect))
+	 else ()
+	    
+      val op <= =
+	 fn (lhs as T {fromTuple = f, fromForce, ...},
+	     rhs as T {toSelect = t, toForce, ...}) =>
+	 let
+	    val _ =
+	       if !f
+		  then List.push (fromForce, rhs)
+	       else nonTuple rhs
+	    val _ =
+	       if !t
+		  then List.push (toForce, lhs)
+	       else nonSelect lhs
+	 in
+	    ()
+	 end
+   end
+
+structure VarInfo =
+   struct
+      datatype t =
+	 None
+       | Arg of ArgInfo.t
+       | Tuple
    end
 
 fun flatten (program as Program.T {globals, datatypes, functions, main}) =
@@ -19,12 +71,11 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
       then program
    else
    let
-      val {get = argRep: Var.t -> Rep.t option,
-	   set = setArgRep} =
-	 Property.getSetOnce (Var.plist,
-			      Property.initConst NONE)
-      type argReps = (Rep.t * Type.t) option vector
-      val {get = jumpArgs: Jump.t -> argReps,
+      val {get = varInfo: Var.t -> VarInfo.t,
+	   set = setVarInfo} =
+	 Property.getSetOnce (Var.plist, Property.initConst VarInfo.None)
+      type argsInfo = (ArgInfo.t * Type.t) option vector
+      val {get = jumpArgs: Jump.t -> argsInfo,
 	   set = setJumpArgs} =
 	 Property.getSetOnce (Jump.plist,
 			      Property.initRaise ("args", Jump.layout))
@@ -37,23 +88,25 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 		let
 		   val {decs, transfer} = Exp.dest e
 		   fun force (x: Var.t): unit =
-		      case argRep x of
-			 NONE => ()
-		       | SOME r => Rep.makeTop r
+		      case varInfo x of
+			 VarInfo.Arg i => ArgInfo.nonSelect i
+		       | _ => ()
 		   fun forces (xs: Var.t vector): unit =
 		      Vector.foreach (xs, force)
 		   fun forceArgs (j: Jump.t): unit =
 		      Vector.foreach (jumpArgs j,
 				      fn NONE => ()
-				       | SOME (r, _) => Rep.makeTop r)
+				       | SOME (i, _) => ArgInfo.nonSelect i)
 		   val _ =
 		      List.foreach
 		      (decs,
-		       fn Bind {exp, ...} =>
+		       fn Bind {var, exp, ...} =>
 		             (case exp of
 				 ConApp {args, ...} => forces args
 			       | PrimApp {args, ...} => forces args
-			       | Tuple args => forces args
+			       | Tuple args =>
+				    (setVarInfo (var, VarInfo.Tuple)
+				     ; forces args)
 			       | Var x => force x
 			       | _ => ())
 			| Fun {name, args, body, ...} =>
@@ -63,10 +116,11 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 				       if Type.isTuple t
 					  then
 					     let
-						val r = Rep.new ()
-						val _ = setArgRep (x, SOME r)
+						val i = ArgInfo.new ()
+						val _ =
+						   setVarInfo (x, VarInfo.Arg i)
 					     in
-						SOME (r, t)
+						SOME (i, t)
 					     end
 				       else NONE)))
 			      ; loop body)
@@ -85,9 +139,11 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 			    Vector.foreach2
 			    (args, jumpArgs dst,
 			     fn (_, NONE) => ()
-			      | (x, SOME (r, _)) =>
-				   Option.app (argRep x, fn r' =>
-					       Rep.<= (r, r')))
+			      | (x, SOME (i, _)) =>
+				   (case varInfo x of
+				       VarInfo.Arg i' => ArgInfo.<= (i', i)
+				     | VarInfo.None => ArgInfo.nonTuple i
+				     | VarInfo.Tuple => ()))
 		       | Raise xs => forces xs
 		       | Return xs => forces xs
 		in
@@ -95,7 +151,7 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 		end
 	     val _ = loop body
 	     fun makeTuple (formals: (Var.t * Type.t) vector,
-			    reps: argReps)
+			    reps: argsInfo)
 		: (Var.t * Type.t) vector * Dec.t list =
 		let
 		   val (argss, decs) =
@@ -103,8 +159,8 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 		      (formals, reps, [], fn ((x, t), rep, decs) =>
 		       case rep of
 			  NONE => (Vector.new1 (x, t), decs)
-			| SOME (r, t) =>
-			     if Rep.isTop r
+			| SOME (i, t) =>
+			     if ArgInfo.isTupled i
 				then (Vector.new1 (x, t), decs)
 			     else
 				let
@@ -122,15 +178,15 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 		in (Vector.concatV argss, decs)
 		end
 	     fun makeSelects (args: Var.t vector,
-			      formals: argReps): Var.t vector * Dec.t list =
+			      formals: argsInfo): Var.t vector * Dec.t list =
 		let
 		   val (argss, decs) =
 		      Vector.map2AndFold
 		      (args, formals, [], fn (arg, formal, ac) =>
 		       case formal of
 			  NONE => (Vector.new1 arg, ac)
-			| SOME (r, t) =>
-			     if Rep.isTop r
+			| SOME (i, t) =>
+			     if ArgInfo.isTupled i
 				then (Vector.new1 arg, ac)
 			     else
 				let
@@ -150,10 +206,10 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 				end)
 		in (Vector.concatV argss, decs)
 		end
-	     fun anyFlat (v: argReps): bool =
+	     fun anyFlat (v: argsInfo): bool =
 		Vector.exists (v,
 			       fn NONE => false
-				| SOME (r, _) => Rep.isBottom r)
+				| SOME (i, _) => ArgInfo.isFlat i)
 	     fun loop (e: Exp.t): Exp.t =
 		let
 		   val {decs, transfer} = Exp.dest e
@@ -228,14 +284,14 @@ fun flatten (program as Program.T {globals, datatypes, functions, main}) =
 	       ("local-flatten", fn display =>
 		(Program.layouts (program, display)
 		 ; Program.foreachVar (program, fn (x, _) =>
-				       case argRep x of
-					  NONE => ()
-					| SOME r =>
+				       case varInfo x of
+					  VarInfo.Arg i =>
 					     display (let open Layout
 						      in seq [Var.layout x,
 							      str " ",
-							      Rep.layout r]
-						      end))
+							      ArgInfo.layout i]
+						      end)
+					| _ => ())
 		 ; Program.layouts (program', display)))
 	 else ()
    in

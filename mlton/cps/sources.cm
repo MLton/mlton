@@ -12,7 +12,6 @@ is
 
 cps-tree.sig
 analyze.sig
-infer-handlers.sig
 type-check.sig
 type-check.fun
 shrink.sig
@@ -53,7 +52,6 @@ remove-unused.sig
 remove-unused.fun
 simplify.fun
 shrink.fun
-infer-handlers.fun
 cps.sig
 analyze.fun
 cps-tree.fun
