@@ -109,6 +109,16 @@ in
 				handle _ => "WRONG")
 end
 
+val _ =
+   List.app
+   (fn (new, old) =>
+    if isLink new handle OS.SysErr _ => false
+       then ()
+    else Posix.FileSys.symlink {new = new, old = old})
+   [("testlink", "README"),
+    ("testcycl", "testcycl"),
+    ("testbadl", "exists.not")]
+
 val test8a = 
     tst' "test8a" (fn _ => fullPath "." = getDir ());
 val test8b = 
@@ -193,6 +203,15 @@ val test15d = tst0 "test15d" ((fileId "testbadl" seq "WRONG")
 val test15e = tst0 "test15e" ((fileId "testcycl" seq "WRONG")
 			      handle OS.SysErr _ => "OK" | _ => "WRONG")
 (* Unix only: *)
+
+val _ =
+   (if access ("hardlinkA", [])
+       then ()
+    else TextIO.closeOut (TextIO.openOut "hardlinkA")
+    ; if access ("hardlinkB", [])
+	 then ()
+      else Posix.FileSys.link {old = "hardlinkA", new = "hardlinkB"})
+   
 val test15f = 
   tst' "test15f" (fn _ => fileId "hardlinkA" = fileId "hardlinkB")
 val test15g =

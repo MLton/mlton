@@ -5,7 +5,8 @@ all:
 .PHONY: clean
 clean:
 	$(ROOT)/src/bin/clean
-	rm -rf *.dat log outFuhMishra* textio.tmp PM
+	rm -rf *.dat log outFuhMishra* textio.tmp PM hardlinkA hardlinkB \
+		testbadl testcycl testlink
 	for d in fail modules nonterminate; do \
  		cd $$d && $(ROOT)/src/bin/clean && cd ..; \
 	done
