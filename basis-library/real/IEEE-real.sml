@@ -200,7 +200,13 @@ structure IEEEReal: IEEE_REAL_EXTRA =
 		     Int of int
 		   | Overflow of DecimalApprox.t
 		  val exp =
-		     case (SOME (List.foldl (fn (d, n) => n * 10 + d) 0 digits)
+		     case (SOME (let
+				    val i =
+				       List.foldl (fn (d, n) => n * 10 + d)
+				       0 digits
+				 in
+				    if negate then Int.~ i else i
+				 end)
 			   handle General.Overflow => NONE) of
 			NONE => Overflow (if negate
 					     then DecimalApprox.zero
