@@ -64,9 +64,8 @@ structure Real64 =
    end
 structure Real = Real64
 
-val _ = ref 13
 datatype ref = datatype ref
-val _ = ref 17
+
 type preThread = preThread
 type thread = thread
 
