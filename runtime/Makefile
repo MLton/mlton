@@ -168,7 +168,6 @@ OBJS =						\
 	Posix/TTY/getpgrp.o			\
 	Posix/TTY/sendbreak.o			\
 	Posix/TTY/setpgrp.o			\
-	bcopy.o					\
 	gc.o					\
 	libmlton.o				\
 	my-lib.o
@@ -329,7 +328,6 @@ DEBUG_OBJS =					\
 	Posix/TTY/getpgrp-gdb.o			\
 	Posix/TTY/sendbreak-gdb.o		\
 	Posix/TTY/setpgrp-gdb.o			\
-	bcopy.o					\
 	gc-gdb.o				\
 	libmlton-gdb.o				\
 	my-lib-gdb.o
