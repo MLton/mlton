@@ -68,7 +68,7 @@ nj-whole: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 		cmcat sources.cm | grep -v 'mlyacc' |				\
 			grep -v 'mlton-stubs-in-smlnj' | xargs cat; 		\
 		echo 'in';							\
-		echo 'val _ = Main.exportNJ("$(SRC)/basis-library", "$(LIB)/mlton")';	\
+		echo 'val _ = Main.exportNJ ("$(SRC)/basis-library", "$(LIB)/mlton")';	\
 		echo 'end';							\
 	) >$(NAME).whole.sml
 	time $(SML) <$(NAME).whole.sml
@@ -107,7 +107,7 @@ nj-mlton: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 		echo '#set CM.Control.warn_obsolete false;';			\
 		echo 'Control.polyEqWarn := false;';				\
 		echo 'CM.make "sources.cm";';					\
-		echo 'Main.exportNJ("$(SRC)/basis-library", "$(LIB)/mlton");'	\
+		echo 'Main.exportNJ ("$(SRC)/basis-library", "$(LIB)/mlton");'	\
 	) | time $(SML)
 
 .PHONY: nj-mlton-dual
@@ -120,14 +120,14 @@ nj-mlton-dual: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server1", pathtrans = NONE, pref = 0};';\
 		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server2", pathtrans = NONE, pref = 0};';\
 		echo 'CM.make "sources.cm";';					\
-		echo 'Main.exportNJ("$(SRC)/basis-library", "$(LIB)/mlton");'	\
+		echo 'Main.exportNJ ("$(SRC)/basis-library", "$(LIB)/mlton");'	\
 	) | time $(SML)
 
 .PHONY: nj-mlton-110.9.1
 nj-mlton-110.9.1: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
-		echo 'CM.verbose(SOME false);';					\
+		echo 'CM.verbose (SOME false);';				\
 		echo 'CM.make'\''{group = "sources.cm", force_relink = true};';	\
-		echo 'Main.exportNJ("$(SRC)/basis-library", "$(LIB)/mlton");'	\
+		echo 'Main.exportNJ ("$(SRC)/basis-library", "$(LIB)/mlton");'	\
 	) | $(SML)
