@@ -593,6 +593,9 @@ struct
 	= fn T {immediate as Const c, ...} => SOME c
 	   | _ => NONE
       val label = construct o Label
+      val deLabel
+	= fn T {immediate as Label l, ...} => SOME l
+	   | _ => NONE
       val unexp = construct o ImmedUnExp
       val binexp = construct o ImmedBinExp
     end

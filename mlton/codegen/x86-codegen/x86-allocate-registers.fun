@@ -10280,9 +10280,13 @@ struct
 	       | SOME label' => unroll label'
 
 	fun replacer _ oper
-	  = (case Operand.deLabel oper
-	       of SOME label => Operand.label (unroll label)
-		| NONE => oper)
+	  = (case (Operand.deImmediate, Operand.deLabel) oper
+	       of (SOME immediate, _) 
+		=> (case Immediate.deLabel immediate
+		      of SOME label => Operand.immediate_label (unroll label)
+		       | NONE => oper)
+	        | (_, SOME label) => Operand.label (unroll label)
+		| _ => oper)
 
 	val assembly
 	  = List.fold

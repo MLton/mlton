@@ -126,6 +126,7 @@ signature X86 =
 	val const_word : word -> t
 	val deConst : t -> const option
 	val label : Label.t -> t
+	val deLabel : t -> Label.t option
 	val unexp : {oper: un, 
 		     exp: t} -> t
 	val binexp : {oper: bin, 
