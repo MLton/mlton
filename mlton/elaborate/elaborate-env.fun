@@ -1113,7 +1113,7 @@ val propertyFun:
       (uncurry get, {destroy = destroy})
    end
 
-fun dummyStructure (T {strs, types, vals, ...}, I: Interface.t)
+fun dummyStructure (T {strs, types, vals, ...}, prefix: string, I: Interface.t)
    : Structure.t * (Structure.t * (Tycon.t * TypeStr.t -> unit) -> unit) =
    let
       val tycons: (Longtycon.t * Tycon.t) list ref = ref []
@@ -1121,7 +1121,7 @@ fun dummyStructure (T {strs, types, vals, ...}, I: Interface.t)
 	 Interface.realize
 	 (I, fn (c, a, k) =>
 	  let
-	     val c' = newTycon (Longtycon.toString c, k)
+	     val c' = newTycon (concat [prefix, Longtycon.toString c], k)
 	     val _ = TypeEnv.tyconAdmitsEquality c' := a
 	     val _ = List.push (tycons, (c, c'))
 	  in
@@ -1174,12 +1174,13 @@ fun dummyStructure (T {strs, types, vals, ...}, I: Interface.t)
 
 val dummyStructure =
    Trace.trace ("dummyStructure",
-		Interface.layout o #2,
+		Interface.layout o #3,
 		Structure.layoutPretty o #1)
    dummyStructure
 	 
 (* section 5.3, 5.5, 5.6 and rules 52, 53 *)
-fun cut (E: t, S: Structure.t, I: Interface.t, {opaque: bool}, region)
+fun cut (E: t, S: Structure.t, I: Interface.t,
+	 {opaque: bool, prefix: string}, region)
    : Structure.t * Decs.t =
    let
       val decs = ref []
@@ -1537,7 +1538,7 @@ fun cut (E: t, S: Structure.t, I: Interface.t, {opaque: bool}, region)
 		    in
 		       {con = con, name = name, scheme = scheme}
 		    end))
-	       val (S', instantiate) = dummyStructure (E, I)
+	       val (S', instantiate) = dummyStructure (E, prefix, I)
 	       val _ = instantiate (S, fn (c, s) =>
 				    TypeEnv.setOpaqueTyconExpansion
 				    (c, fn ts => TypeStr.apply (s, ts)))
@@ -1688,10 +1689,11 @@ val useFunctorSummary = ref false
 		     
 fun functorClosure
    (E: t,
+    prefix: string,
     argInt: Interface.t,
     makeBody: Structure.t * string list -> Decs.t * Structure.t) =
    let
-      val (formal, instantiate) = dummyStructure (E, argInt)
+      val (formal, instantiate) = dummyStructure (E, prefix, argInt)
       val _ = useFunctorSummary := true
       (* Keep track of all tycons created during the instantiation of the
        * functor.  These will later become the generative tycons that will need
@@ -1705,7 +1707,8 @@ fun functorClosure
       val restore = snapshot E
       fun apply (arg, nest, region) =
 	 let
-	    val (actual, decs) = cut (E, arg, argInt, {opaque = false}, region)
+	    val (actual, decs) =
+	       cut (E, arg, argInt, {opaque = false, prefix = ""}, region)
 	 in
 	    if !useFunctorSummary
 	       then

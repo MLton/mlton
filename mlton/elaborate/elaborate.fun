@@ -80,13 +80,21 @@ fun elaborateProgram (program,
    let
       val Ast.Program.T decs = Ast.Program.coalesce program 
       fun elabSigexp s = ElaborateSigexp.elaborateSigexp (s, E)
-      fun elabSigexpConstraint (cons: SigConst.t, S: Structure.t)
+      fun elabSigexpConstraint (cons: SigConst.t, S: Structure.t,
+				nest: string list)
 	 : Decs.t * Structure.t =
 	 let
 	    fun s (sigexp, opaque) =
 	       let
+		  val prefix =
+		     case nest of
+			[] => ""
+		      | _ => concat (List.fold (nest, [], fn (s, ac) =>
+						s :: "." :: ac))
 		  val (S, decs) =
-		     Env.cut (E, S, elabSigexp sigexp, {opaque = opaque},
+		     Env.cut (E, S, elabSigexp sigexp,
+			      {opaque = opaque,
+			       prefix = prefix},
 			      Sigexp.region sigexp)
 	       in
 		  (decs, S)
@@ -125,9 +133,10 @@ fun elaborateProgram (program,
 		   List.fold
 		   (strbinds, Decs.empty, fn ({name, def, constraint}, decs) =>
 		    let
-		       val (decs', S) = elabStrexp (def,
-						    Strid.toString name :: nest)
-		       val (decs'', S) = elabSigexpConstraint (constraint, S)
+		       val nest = Strid.toString name :: nest
+		       val (decs', S) = elabStrexp (def, nest)
+		       val (decs'', S) =
+			  elabSigexpConstraint (constraint, S, nest)
 		       val _ = Env.extendStrid (E, name, S)
 		    in
 		       Decs.appends [decs, decs', decs'']
@@ -150,7 +159,7 @@ fun elaborateProgram (program,
 	     | Strexp.Constrained (e, c) => (* rules 52, 53 *)
 		  let
 		     val (decs, S) = elabStrexp e
-		     val (decs', S) = elabSigexpConstraint (c, S)
+		     val (decs', S) = elabSigexpConstraint (c, S, nest)
 		  in
 		     (Decs.append (decs, decs'), S)
 		  end
@@ -184,9 +193,11 @@ fun elaborateProgram (program,
 		 (funbinds, fn ({name, arg, result, body}) =>
 		  let
 		     val body = Strexp.constrained (body, result)
-		     val (arg, argSig, body) =
+		     val (arg, argSig, body, prefix) =
 			case FctArg.node arg of
-			   FctArg.Structure (arg, argSig) => (arg, argSig, body)
+			   FctArg.Structure (arg, argSig) =>
+			      (arg, argSig, body,
+			       concat [Strid.toString arg, "."])
 			 | FctArg.Spec spec =>
 			      let
 				 val strid =
@@ -198,12 +209,13 @@ fun elaborateProgram (program,
 				  Strexp.lett
 				  (Strdec.openn (Vector.new1
 						 (Longstrid.short strid)),
-				   body))
+				   body),
+				  "")
 			      end
 		     val argInt = elabSigexp argSig
 		     val closure =
 			Env.functorClosure
-			(E, argInt,
+			(E, prefix, argInt,
 			 fn (formal, nest) => (Env.extendStrid (E, arg, formal)
 					       ; elabStrexp (body, nest)))
 		  in Env.extendFctid (E, name, closure)

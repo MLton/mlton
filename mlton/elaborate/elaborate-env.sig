@@ -88,7 +88,8 @@ signature ELABORATE_ENV =
        * in the interface.  It proceeds recursively on substructures.
        *)
       val cut:
-	 t * Structure.t * Interface.t * {opaque: bool} * Region.t
+	 t * Structure.t * Interface.t
+	 * {opaque: bool, prefix: string} * Region.t
 	 -> Structure.t * Decs.t
       val empty: unit -> t
       val extendCon: t * Ast.Con.t * CoreML.Con.t * Scheme.t -> unit
@@ -103,7 +104,8 @@ signature ELABORATE_ENV =
 	 t * Ast.Var.t * (CoreML.Var.t * Type.t) vector * Scheme.t
 	 -> unit
       val functorClosure:
-	 t * Interface.t * (Structure.t * string list -> Decs.t * Structure.t)
+	 t * string * Interface.t
+	 * (Structure.t * string list -> Decs.t * Structure.t)
 	 -> FunctorClosure.t
       val layout: t -> Layout.t
       val layoutPretty: t -> Layout.t

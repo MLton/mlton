@@ -1090,11 +1090,7 @@ fun copyAndRealize (I: t, getTypeFcnOpt): t =
 			List.map
 			(elements, fn e =>
 			 case e of
-			    Str {name, interface} =>
-			       Str {interface = loop (interface,
-						      strids @ [name]),
-				    name = name}
-			  | Type {name, typeStr} =>
+			    Type {name, typeStr} =>
 			       let
 				  val typeStr = TypeStr.copy typeStr
 				  val _ =
@@ -1123,9 +1119,9 @@ fun copyAndRealize (I: t, getTypeFcnOpt): t =
 							  (EtypeStr.Tycon c,
 							   EtypeStr.Datatype
 							   {tycon = c', ...}) =>
-							     if Etycon.equals (c, c')
-								then doit s'
-							     else ()
+							  if Etycon.equals (c, c')
+							     then doit s'
+							  else ()
 							 | _ => ()
 						    end
 					   end
@@ -1134,6 +1130,16 @@ fun copyAndRealize (I: t, getTypeFcnOpt): t =
 				  Type {name = name,
 					typeStr = typeStr}
 			       end
+			  | _ => e)
+		     val elements =
+			List.map
+			(elements, fn e =>
+			 case e of
+			    Str {name, interface} =>
+			       Str {interface = loop (interface,
+						      strids @ [name]),
+				    name = name}
+			  | Type _ => e
 			  | Val {name, scheme, status} =>
 			       Val {name = name,
 				    scheme = Scheme.copy scheme,
