@@ -5,7 +5,7 @@ void g () {
 	Char c;
 
 	fprintf (stderr, "g starting\n");
-	c = f (13, 17.15);
+	c = f (13, 17.15, 'a');
 	fprintf (stderr, "g done  char = %c\n", c);
 }
 

@@ -1,5 +1,5 @@
-val e = _export "f": int * real -> char;
-val _ = e (fn (i, r) =>
+val e = _export "f": int * real * char -> char;
+val _ = e (fn (i, r, _) =>
 	   (print (concat ["i = ", Int.toString i,
 			   "  r = ", Real.toString r, "\n"])
 	    ; #"g"))
