@@ -456,8 +456,7 @@ struct
 
 	val isInstructionBinALMD_operCommute : statement_type -> bool
 	  = fn Assembly.Instruction (Instruction.BinAL
-				     {oper,
-				      ...})
+				     {oper, src, dst, ...})
 	     => ((oper = Instruction.ADD)
 		 orelse
 		 (oper = Instruction.ADC)
@@ -476,8 +475,7 @@ struct
 			     fn memloc => MemLoc.mayAlias(memloc, dst)))
 	            | _ => true)
 	     | Assembly.Instruction (Instruction.pMD
-				     {oper,
-				      ...})
+				     {oper, src, dst, ...})
 	     => ((oper = Instruction.IMUL)
 		 orelse
 		 (oper = Instruction.MUL))
