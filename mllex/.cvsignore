@@ -1,3 +1,4 @@
+*.ssa
 lexgen.aux
 lexgen.dvi
 lexgen.log

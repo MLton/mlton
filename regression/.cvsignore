@@ -1,4 +1,5 @@
 *.dat
+*.ssa
 PM
 RepeatParserCombinator.txt
 hardlinkA
