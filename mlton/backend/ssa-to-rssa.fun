@@ -335,7 +335,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
       val tagOffset = 0
       fun genCase {cases: (Con.t * Label.t) vector,
 		   default: Label.t option,
-		   test: Operand.t,
+		   test: Var.t,
 		   testRep: TyconRep.t}: Statement.t list * Transfer.t =
 	 let
 	    fun enum (test: Operand.t): Transfer.t =
@@ -404,6 +404,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 	       (makePointersTransfer: Operand.t -> Statement.t list * Transfer.t)
 	       : Transfer.t =
 	       let
+		  val test = varOp test
 		  val {enum = e, pointers = p} =
 		     case Operand.ty test of
 			Type.EnumPointers ep => ep
@@ -575,11 +576,11 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 				    args = Vector.new0 ()}
 			 | ConRep.Transparent _ =>
 			      Goto {dst = l,
-				    args = Vector.new1 test}
+				    args = Vector.new1 (varOp test)}
 			 | ConRep.Tuple r =>
 			      Goto {dst = l,
 				    args = conSelects {rep = r,
-						       variant = test}}
+						       variant = (varOp test)}}
 			 | _ => Error.bug "strange conRep for Prim"
 		     end
 		| (0, SOME l) => Goto {dst = l, args = Vector.new0 ()}
@@ -587,11 +588,11 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 	 in
 	    case testRep of
 	       TyconRep.Direct => ([], prim ())
-	     | TyconRep.Enum => ([], enum test)
+	     | TyconRep.Enum => ([], enum (varOp test))
 	     | TyconRep.EnumDirect => ([], enumAndOne ())
 	     | TyconRep.EnumIndirect => ([], enumAndOne ())
 	     | TyconRep.EnumIndirectTag => ([], switchEP indirectTag)
-	     | TyconRep.IndirectTag => indirectTag test
+	     | TyconRep.IndirectTag => indirectTag (varOp test)
 	     | TyconRep.Void => ([], prim ())
 	 end
       fun translateCase ({test: Var.t,
@@ -621,7 +622,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...})
 			    if Vector.isEmpty tys
 			       then genCase {cases = cases,
 					     default = default,
-					     test = varOp test,
+					     test = test,
 					     testRep = tyconRep tycon}
 			    else Error.bug "strange type in case"
 			 end)
