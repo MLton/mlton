@@ -229,8 +229,8 @@ pointer IntInf_do_sub(pointer lhs, pointer rhs, uint bytes)
 	return binary(lhs, rhs, bytes, &mpz_sub);
 }
 
-uint
-IntInf_smallMul(uint lhs, uint rhs, pointer carry)
+Word
+IntInf_smallMul(Word lhs, Word rhs, pointer carry)
 {
 	llong	prod;
 
