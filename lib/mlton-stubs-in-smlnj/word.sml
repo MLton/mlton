@@ -1,4 +1,4 @@
-structure LargeWord:> WORD = Word32
+structure LargeWord: WORD = Word32
    
 signature WORD =
    sig
