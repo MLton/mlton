@@ -32,17 +32,23 @@ fun map (l, f) = mapi (l, f o #2)
    
 fun layout f l = Layout.list (map (l, f))
 
-fun keepAllMap (l, f) =
-   rev (fold (l, [], fn (x, l) =>
-	      case f x of
-		 NONE => l
-	       | SOME y => y :: l))
+fun revKeepAllMap (l, f) =
+   fold (l, [], fn (x, ac) =>
+	 case f x of
+	    NONE => ac
+	  | SOME y => y :: ac)
 
-fun keepAll (l, f) = keepAllMap (l, fn x => if f x then SOME x else NONE)
-			       
-val subset = keepAll
+fun keepAllMap z = rev (revKeepAllMap z)
 
-fun removeAll (l, f) = subset (l, not o f)
+fun revKeepAll (l, f) =
+   fold (l, [], fn (x, ac) => if f x then x :: ac else ac)
+
+fun keepAll z = rev (revKeepAll z)
+
+fun revRemoveAll (l, f) =
+   fold (l, [], fn (x, ac) => if f x then ac else x :: ac)
+
+fun removeAll z = rev (revRemoveAll z)
 
 end
 

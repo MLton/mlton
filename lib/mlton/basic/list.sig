@@ -108,6 +108,7 @@ signature LIST =
        * Returns original list if predicate is false on every elt.
        *)
       val remove: 'a t * ('a -> bool) -> 'a t
+      (* removeAll (l, f) removes all x in l such that f x and reverses order. *)
       val removeAll: 'a t * ('a -> bool) -> 'a t
       val removeCommonPrefix: 'a t * 'a t * ('a * 'a -> bool) -> 'a t * 'a t
       val removeDuplicates: 'a t * ('a * 'a -> bool) -> 'a t
@@ -115,8 +116,13 @@ signature LIST =
       val removeFirst: 'a t * ('a -> bool) -> 'a t
       val removePrefix: 'a t * ('a -> bool) -> 'a t
       val rev: 'a t -> 'a t
-      (* revMap = rev o map *)
+      (* The "rev" versions of functions are there for efficiency, when it is
+       * easier to fold over the input and accumulate the result in reverse.
+       *)
       val revMap: 'a t * ('a -> 'b) -> 'b t
+      val revKeepAll: 'a t * ('a -> bool) -> 'a t
+      val revKeepAllMap: 'a t * ('a -> 'b option) -> 'b t
+      val revRemoveAll: 'a t * ('a -> bool) -> 'a t
       val separate: 'a t * 'a -> 'a t
       val set: {equals: 'a * 'a -> bool,
 		layout: 'a -> Layout.t}
@@ -145,7 +151,6 @@ signature LIST =
       val splitLast: 'a t -> 'a t * 'a
       val splitPrefix: 'a t * ('a -> bool) -> 'a t * 'a t
 (*      val suffixes: 'a t -> 'a t t *)
-      val subset: 'a t * ('a -> bool) -> 'a t
       (* subsets (l, n) = subsets of exactly size n *)
       val subsets: 'a t * int -> 'a t t
       val tabulate: int * (int -> 'a) -> 'a t
