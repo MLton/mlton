@@ -5,37 +5,35 @@
 # $FreeBSD$
 #
 
+# Because MLton is written in SML, it needs an SML compiler to build.
+# It is easiest to use another (earlier) binary version of MLton as
+# the SML compiler.  So, this Makefile fetches and installs an
+# alread-built version of MLton, BOOT_DIST, to use for bootstrapping.
+
 PORTNAME=	mlton
 PORTVERSION=	MLTONVERSION
 CATEGORIES=	lang
 MASTER_SITES=	http://www.mlton.org/download/	\
 		http://www.mlton.org/experimental/
-#DISTFILES=	${BOOT_DIST} ${SRC_DIST}
-DISTFILES=	${SRC_DIST}
+DISTFILES=	${BOOT_DIST} ${SRC_DIST}
 EXTRACT_ONLY=	${SRC_DIST}
 
 MAINTAINER=	MLton@mlton.org
 COMMENT=	An optimizing Standard ML compiler
 
-# MLton build depends on itself.  There is no easy way to avoid this.
-# This Makefile fetches and installs an alread-built version of
-# MLton, BOOT_DIST, to use for bootstrapping.
-BUILD_DEPENDS=	hevea:${PORTSDIR}/textproc/hevea: \
+BUILD_DEPENDS=	hevea:${PORTSDIR}/textproc/hevea: 	\
 		latex:${PORTSDIR}/print/teTeX:
-#		mlton:${PORTSDIR}/lang/mlton:
 LIB_DEPENDS=	gmp.6:${PORTSDIR}/math/libgmp4
 
 SRC_DIST=	${DISTNAME}-1.freebsd.src.tgz
-#BOOT_DIST=	${DISTNAME}-1.i386-freebsd.tbz
+BOOT_DIST=	${PORTNAME}-20040623-1.i386-freebsd.tbz
 
 ONLY_FOR_ARCHS=	i386
 
 MAN1=		mllex.1 mlprof.1 mlton.1 mlyacc.1
 MANCOMPRESSED=	yes
 
-#BOOT_WRKSRC=	${WRKDIR}/mlton-bootstrap
-
-#PATH=		${BOOT_WRKSRC}/bin:${PATH}
+BOOT_WRKSRC=	${WRKDIR}/mlton-bootstrap
 
 USE_REINPLACE=	yes
 ALL_TARGET=	all
@@ -45,19 +43,19 @@ MAKE_ARGS=	DESTDIR='' \
 
 PORTDIR=	usr/ports/lang/mlton
 
-#.PHONY: post-extract
-#post-extract:
-#	@${MKDIR} ${BOOT_WRKSRC}
-#	@${TAR} xf ${DISTDIR}/${BOOT_DIST} --bzip -C ${BOOT_WRKSRC}
-#	@${REINPLACE_CMD} -e \
-#		"s|lib=\'${LOCALBASE}/|lib=\'${BOOT_WRKSRC}/|" \
-#	${BOOT_WRKSRC}/bin/mlton
+.PHONY: post-extract
+post-extract:
+	@${MKDIR} ${BOOT_WRKSRC}
+	@${TAR} xf ${DISTDIR}/${BOOT_DIST} --bzip -C ${BOOT_WRKSRC}
+	@${REINPLACE_CMD} -e \
+		"s|lib=\'${LOCALBASE}/|lib=\'${BOOT_WRKSRC}/|" \
+	${BOOT_WRKSRC}/bin/mlton
 
 # Stuff below this line is for maintainer use only.
 
 .PHONY: build-package
 build-package:
-	${MAKE} build
+	export PATH=${BOOT_WRKSRC}/bin:${PATH} && ${MAKE} build
 	${MAKE} pkg-plist
 	${MAKE} deinstall
 	${MAKE} install
