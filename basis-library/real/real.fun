@@ -600,16 +600,16 @@ functor Real (R: PRE_REAL): REAL =
    
       val toString = fmt (StringCvt.GEN NONE)
 
-      val fromLargeInt: IntInf.int -> real =
+      val fromLargeInt: LargeInt.int -> real =
 	 fn i =>
-	 fromInt (IntInf.toInt i)
+	 fromInt (Int.fromLarge i)
 	 handle Overflow =>
 	    let
 	       val (i, sign) =
-		  if IntInf.< (i, 0)
-		     then (IntInf.~ i, true)
+		  if LargeInt.< (i, LargeInt.fromInt 0)
+		     then (LargeInt.~ i, true)
 		  else (i, false)
-	       val x = Prim.strto (concat [IntInf.toString i, "\000"])
+	       val x = Prim.strto (concat [LargeInt.toString i, "\000"])
 	    in
 	       if sign then ~ x else x		   
 	    end
@@ -619,15 +619,15 @@ functor Real (R: PRE_REAL): REAL =
 	 case class x of
 	    INF => raise Overflow
 	  | NAN => raise Domain
-	  | ZERO => 0
+	  | ZERO => Int.toLarge 0
 	  | _ =>
 	       let
 		  val x = roundReal (x, mode)
 	       in
 		  if minInt <= x andalso x <= maxInt
-		     then IntInf.fromInt (Prim.toInt x)
+		     then LargeInt.fromInt (Prim.toInt x)
 		  else
-		     valOf (IntInf.fromString (fmt (StringCvt.FIX (SOME 0)) x))
+		     valOf (LargeInt.fromString (fmt (StringCvt.FIX (SOME 0)) x))
 	       end
 	 
       structure Math =

@@ -117,8 +117,8 @@ cat >>$basis <<-EOF
           type int16 = Int32.int
           type int32 = Int32.int
           type int64 = Int32.int
-	  type int = int32
-          type intInf = int
+          type intInf = int32
+          type int = int32
           datatype list = datatype list
           datatype pointer = T
           type real32 = real

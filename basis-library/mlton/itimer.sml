@@ -16,7 +16,12 @@ structure MLtonItimer =
 
       fun set' (t, {interval, value}) =
 	 let
-	    fun split t = IntInf.quotRem (Time.toMicroseconds t, 1000000)
+	    fun split t =
+	       let
+		  val (q, r) = IntInf.quotRem (Time.toMicroseconds t, 1000000)
+	       in
+		  (IntInf.toInt q, IntInf.toInt r)
+	       end
 	    val (s1, u1) = split interval
 	    val (s2, u2) = split value
 	 in

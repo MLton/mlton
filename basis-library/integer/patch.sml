@@ -5,8 +5,7 @@
  * MLton is released under the GNU General Public License (GPL).
  * Please see the file MLton-LICENSE for license information.
  *)
-(* Patch in fromLarge and toLarge now that IntInf is defined.
- *)
+(* Patch in fromLarge and toLarge now that IntInf is defined. *)
 
 structure Int8: INTEGER_EXTRA =
    struct
@@ -61,22 +60,22 @@ structure Word8: WORD_EXTRA =
    struct
       open Word8
 
-      val toLargeIntX = IntInf.fromInt o toIntX
-      val toLargeInt = IntInf.fromInt o toInt
+      val toLargeIntX = LargeInt.fromInt o toIntX
+      val toLargeInt = LargeInt.fromInt o toInt
 
-      fun fromLargeInt (i: IntInf.int): word =
-	 fromInt (IntInf.toInt (IntInf.mod (i, 256)))
+      fun fromLargeInt (i: LargeInt.int): word =
+	 fromInt (LargeInt.toInt (LargeInt.mod (i, LargeInt.fromInt 0x100)))
    end
 
 structure Word16: WORD_EXTRA =
    struct
       open Word16
 
-      val toLargeIntX = IntInf.fromInt o toIntX
-      val toLargeInt = IntInf.fromInt o toInt
+      val toLargeIntX = LargeInt.fromInt o toIntX
+      val toLargeInt = LargeInt.fromInt o toInt
 
-      fun fromLargeInt (i: IntInf.int): word =
-	 fromInt (IntInf.toInt (IntInf.mod (i, 65536)))
+      fun fromLargeInt (i: LargeInt.int): word =
+	 fromInt (LargeInt.toInt (LargeInt.mod (i, LargeInt.fromInt 0x10000)))
    end
 
 structure Word32: WORD32_EXTRA =
@@ -89,12 +88,7 @@ structure Word32: WORD32_EXTRA =
 
       fun toLargeInt (w: word): LargeInt.int =
 	 if highBitSet w
-	    then
-	       (* Use 2 * 0x40000000 instead of 0x80000000 so that SML/NJ
-		* doesn't complain about an integer constant being too large.
-		*)
-	       IntInf.+ (IntInf.* (2, 0x40000000), 
-			 toLargeIntX (andb (w, 0wx7FFFFFFF)))
+	    then IntInf.+ (0x80000000, toLargeIntX (andb (w, 0wx7FFFFFFF)))
 	 else toLargeIntX w
 
       fun toReal (w: word): real =
@@ -105,8 +99,8 @@ structure Word32: WORD32_EXTRA =
 	 else Real.fromInt (toIntX w)
 
       local
-	 val t32 = IntInf.pow (2, 32)
-	 val t31 = IntInf.pow (2, 31)
+	 val t32: LargeInt.int = 0x100000000
+	 val t31: LargeInt.int = 0x80000000
       in
 	 fun fromLargeInt (i: IntInf.int): word =
 	    fromInt
@@ -131,13 +125,14 @@ structure Word64: WORD =
 
       structure W = Word64
 
-      val t32 = IntInf.pow (2, 32)
-      val t64 = IntInf.pow (2, 64)
+      val t32: LargeInt.int = 0x100000000
+      val t64: LargeInt.int = 0x10000000000000000
 	 
       fun toLargeInt w =
-	 IntInf.+ (Word32.toLargeInt (Word32.fromLarge w),
-		   IntInf.<< (Word32.toLargeInt (Word32.fromLarge (>> (w, 0w32))),
-			      0w32))
+	 IntInf.+
+	 (Word32.toLargeInt (Word32.fromLarge w),
+	  IntInf.<< (Word32.toLargeInt (Word32.fromLarge (>> (w, 0w32))),
+		     0w32))
 
       fun toLargeIntX w =
 	 if Word32.toLarge 0w0 = andb (w, << (Word32.toLarge 0w1, 0w63))

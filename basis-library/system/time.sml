@@ -29,9 +29,10 @@ fun toReal (T i) =
 local
    fun make ticksPer =
       let
-	 val d = ticksPerSec div ticksPer
+	 val d = LargeInt.quot (ticksPerSec, ticksPer)
       in
-	 (fn i => T (i * d), fn T i => LargeInt.quot (i, d))
+	 (fn i => T (LargeInt.* (i, d)),
+	  fn T i => LargeInt.quot (i, d))
       end
 in
    val (fromSeconds, toSeconds) = make 1
@@ -57,8 +58,8 @@ end
 local
    fun getNow (): time =
       (Prim.gettimeofday ()
-       ; T (LargeInt.fromInt (Prim.sec ()) * ticksPerSec
-	    + LargeInt.fromInt (Prim.usec ())))
+       ; T (LargeInt.+ (LargeInt.* (LargeInt.fromInt (Prim.sec ()), ticksPerSec),
+			LargeInt.fromInt (Prim.usec ()))))
    val prev = ref (getNow ())
 in
    fun now (): time =
@@ -87,8 +88,10 @@ fun scan getc src =
 	 let
 	    val sec = intv
 	    val usec = (pow10 (7-decs) * fracv + 5) div 10
-	    val t = Int.toLarge intv * ticksPerSec + Int.toLarge usec
-	    val t = if sign then t else ~ t
+	    val t =
+	       LargeInt.+ (LargeInt.* (Int.toLarge intv, ticksPerSec),
+			   Int.toLarge usec)
+	    val t = if sign then t else LargeInt.~ t
 	 in
 	    T t
 	 end
