@@ -74,6 +74,23 @@ signature DIRECTED_GRAPH =
 (*      exception Input *)
 (*     val input: In.t * (In.t -> 'a)* (In.t -> 'b) -> t * 'a * (Edge.t -> 'b) *)
 (*      val isCyclic: t -> bool*)
+
+      val loopForest:
+	 {headers: (* graph *) Node.t list -> (* graph *) Node.t list,
+	  graph: t,
+	  root: (* graph *) Node.t}
+	 -> {forest: t,
+	     graphToForest: (* graph *) Node.t -> (* forest *) Node.t,
+	     loopNodes: (* forest *) Node.t -> (* graph *) Node.t list,
+	     parent: (* forest *) Node.t -> (* forest *) Node.t option}
+      val loopForestSteensgaard:
+	 {graph: t,
+	  root: (* graph *) Node.t}
+	 -> {forest: t,
+	     graphToForest: (* graph *) Node.t -> (* forest *) Node.t,
+	     loopNodes: (* forest *) Node.t -> (* graph *) Node.t list,
+	     parent: (* forest *) Node.t -> (* forest *) Node.t option}
+
       val new: unit -> t
       val newNode: t -> Node.t
       val nodes: t -> Node.t list

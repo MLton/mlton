@@ -765,6 +765,10 @@ fun stronglyConnectedComponents g =
       ; !components
    end
 
+(*--------------------------------------------------------*)
+(*                    Dominators                          *)
+(*--------------------------------------------------------*)
+
 (* This is an implementation of the Lengauer/Tarjan dominator algorithm, as
  * described on p. 185-191 of Muchnick's "Advanced Compiler Design and
  * Implementation"
@@ -999,5 +1003,237 @@ fun dominatorTree {graph: t, root: Node.t} =
       {tree = tree,
        graphToTree = graphToTree}
    end
+
+(*--------------------------------------------------------*)
+(*                   Loop Forest                          *)
+(*--------------------------------------------------------*)
+
+(* This is an implementation of the G. Ramalingam loop forest construction,
+ * as described in "On Loops, Dominators, and Dominance Frontiers"
+ * (originally in PLDI00; revised technical report at
+ * http://www.research.ibm.com/people/r/rama/Papers/ibmtr21513.revised.ps).
+ *)
+
+structure GraphNodeInfo = 
+  struct
+    type t = {forestNode: Node.t}
+  end
+
+structure ForestNodeInfo = 
+  struct
+    type t = {parent: Node.t option,
+	      loopNodes: Node.t list}
+  end
+
+structure SubGraphNodeInfo =
+  struct
+    type t = {childSubGraphNode: Node.t option ref,
+	      graphNode: Node.t}
+  end
+
+(* loopForest : {headers: (* graph *) Node.t list -> (* graph *) Node.t list,
+ *               graph: t,
+ *               root: (* graph *) Node.t}
+ *              -> {forest: t,
+ *                  graphToForest: (* graph *) Node.t -> (* forest *) Node.t,
+ *                  loopNodes: (* forest *) Node.t -> (* graph *) Node.t list,
+ *                  parent: (* forest *) Node.t -> (* forest *) Node.t option}
+ *
+ * Inputs: graph -- a rooted control flow graph
+ *         root -- the root of graph
+ *         headers -- a function mapping strongly connected components of graph
+ *                     to a set of header nodes
+ * Outputs: forest -- the loop nesting forest
+ *                     "Consider any loop L.  Let G_L denote the subgraph induced by
+ *                      the vertices in L, but without the loopback edges of L.
+ *                      The 'children' of L in the 'forest' representation are
+ *                      the strongly connected components of G_L.  The non-trivial
+ *                      strongly connected components of G_L denote inner loops
+ *                      (which become internal nodes in the 'forest' representation),
+ *                      while the trivial strongly connected components of G_L
+ *                      denote vertices belonging to L but not to any inner loop of L,
+ *                      and these become 'leaves' of the 'forest'."
+ *          graphToForest -- maps a node in graph to it's corresponding leaf in forest
+ *          loopNodes -- maps an internal node in the forest to a set of nodes
+ *                        in graph that compose a loop
+ *          parent -- maps a node in forest to it's parent in forest
+ *)
+
+fun loopForest {headers, graph, root}
+  = let
+      val addEdge = ignore o addEdge
+
+      val {get = graphNodeInfo : Node.t -> GraphNodeInfo.t,
+	   set = setGraphNodeInfo}
+	= Property.getSetOnce 
+	  (Node.plist, Property.initRaise ("graphNodeInfo", Node.layout))
+      val forestNode = #forestNode o graphNodeInfo
+
+      val {get = forestNodeInfo : Node.t -> ForestNodeInfo.t,
+	   set = setForestNodeInfo}
+	= Property.getSetOnce 
+	  (Node.plist, Property.initRaise ("forestNodeInfo", Node.layout))
+      val parent = #parent o forestNodeInfo 
+      val loopNodes = #loopNodes o forestNodeInfo
+
+      val {get = subGraphNodeInfo : Node.t -> SubGraphNodeInfo.t,
+	   set = setSubGraphNodeInfo}
+	= Property.getSetOnce 
+	  (Node.plist, Property.initRaise ("subGraphNodeInfo", Node.layout))
+      val childSubGraphNode = #childSubGraphNode o subGraphNodeInfo
+      val childSubGraphNode' = ! o childSubGraphNode
+      val childSubGraphNode'' = valOf o childSubGraphNode'
+      val graphNode = #graphNode o subGraphNodeInfo
+
+      val F = new ()
+
+      fun subGraph {graph,
+		    scc}
+	= let
+	    val scc' = List.map(scc, #graphNode o subGraphNodeInfo)
+	    val headers = headers scc'
+	      
+	    val graph' = new ()
+	  in
+	    List.foreach
+	    (scc,
+	     fn n => let
+		       val n' = newNode graph'
+			 
+		       val {childSubGraphNode, graphNode, ...} 
+			 = subGraphNodeInfo n
+		     in
+		       childSubGraphNode := SOME n' ;
+		       setSubGraphNodeInfo
+		       (n', 
+			{childSubGraphNode = ref NONE,
+			 graphNode = graphNode})
+		     end) ;
+	    List.foreach
+	    (scc,
+	     fn n => List.foreach
+	             (Node.successors n,
+		      fn e => let 
+				val from = n
+				val to = Edge.to e
+			      in
+				if List.contains
+				   (scc, to, Node.equals)
+				   andalso
+				   not (List.contains
+					(headers, graphNode to, Node.equals))
+				  then let
+					 val from' = childSubGraphNode'' from
+					 val to' = childSubGraphNode'' to
+				       in
+					 addEdge (graph', {from = from', to = to'})
+				       end
+				  else ()
+			      end)) ;
+	    graph'
+	  end
+
+      fun nest {graph, parent}
+	= List.foreach
+	  (stronglyConnectedComponents graph,
+	   fn scc => let
+		       val scc' = List.map(scc, graphNode)
+		       val n' = newNode F
+		       fun default ()
+			 = let
+			     val graph' = subGraph {graph = graph,
+						    scc = scc}
+			   in
+			     setForestNodeInfo(n', {loopNodes = scc',
+						    parent = parent}) ;
+			     nest {graph = graph',
+				   parent = SOME n'}
+			   end
+
+		       fun default' n
+			 = let
+			   in 
+			     setForestNodeInfo (n', {loopNodes = [], 
+						     parent = parent}) ;
+			     setGraphNodeInfo (graphNode n, {forestNode = n'})
+			   end
+		     in
+		       case parent
+			 of NONE => ()
+			  | SOME parent => addEdge (F, {from = parent, to = n'}) ;
+		       case scc
+			 of [n] => if Node.hasEdge {from = n, to = n}
+				     then default ()
+				     else default' n
+			  | scc => default ()
+		     end)
+
+      val graph' 
+	= let
+	    val graph' = new ()
+	    val {get = nodeInfo': Node.t -> Node.t,
+		 destroy}
+	      = Property.destGet
+	        (Node.plist,
+		 Property.initFun (fn node => let
+						val node' = newNode graph'
+					      in 
+						setSubGraphNodeInfo
+						(node', 
+						 {childSubGraphNode = ref NONE,
+						  graphNode = node}) ; 
+						node'
+					      end))
+	  in
+	    foreachEdge
+	    (graph,
+	     fn (n, e) => let
+			    val from = n
+			    val from' = nodeInfo' from
+			    val to = Edge.to e
+			    val to' = nodeInfo' to
+			  in
+			    addEdge(graph', {from = from', to = to'})
+			  end) ;
+	    destroy () ;
+	    graph'
+	  end
+
+      val _ = nest {graph = graph', parent = NONE}
+    in
+      {forest = F,
+       graphToForest = forestNode,
+       loopNodes = loopNodes,
+       parent = parent}
+    end
+
+fun loopForestSteensgaard {graph, root}
+  = let
+      fun headers X
+	= List.keepAll
+	  (X,
+	   fn node 
+	    => DynamicWind.withEscape
+	       (fn escape
+		 => (foreachEdge
+		     (graph,
+		      fn (n, e) => let
+				     val from = n
+				     val to = Edge.to e
+				   in
+				     if Node.equals(node, to)
+				        andalso
+					List.contains(X, to, Node.equals)
+				        andalso
+					not (List.contains(X, from, Node.equals))
+				       then escape true
+				       else ()
+				   end);
+		     false)))
+    in
+      loopForest {headers = headers,
+		  graph = graph,
+		  root = root}
+    end
 
 end
