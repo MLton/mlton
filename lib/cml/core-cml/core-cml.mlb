@@ -7,9 +7,7 @@ local
   $(MLTON_ROOT)/basis/basis.mlb
   $(MLTON_ROOT)/basis/mlton.mlb
   ../util/util.mlb
-  local open MLton in
-    rep-types.sml
-  end
+  rep-types.sml
   running.sml
   trans-id.sig
   trans-id.sml

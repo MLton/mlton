@@ -769,7 +769,7 @@ signature MLTON_SIGNAL =
             type t
 
             val default: t
-            val handler: (Thread.ready_t -> Thread.ready_t) -> t
+            val handler: (Thread.Runnable.t -> Thread.Runnable.t) -> t
             val ignore: t
             val isDefault: t -> bool
             val isIgnore: t -> bool
@@ -801,7 +801,7 @@ signature MLTON_SIGNAL =
    end
 \end{verbatim}
 
-Signals handlers are functions from (ready) threads to (ready)
+Signals handlers are functions from (runnable) threads to (runnable)
 threads.  When a signal handler is invoked, it receives as an argument
 the thread that was interrupted by the signal.  The signal handler
 returns the thread that it would like to resume execution (this is
@@ -1097,21 +1097,23 @@ signature MLTON_THREAD =
       val atomically: (unit -> 'a) -> 'a
       val atomicState: unit -> AtomicState.t
 
+      structure Runnable :
+         sig
+            type t
+         end
+
       type 'a t
-      type ready_t
 
       val new: ('a -> unit) -> 'a t
       val prepend: 'a t * ('b -> 'a) -> 'b t
-      val prep: unit t -> ready_t
-      val prepFn: 'a t * (unit -> 'a) -> ready_t
-      val prepVal: 'a t * 'a -> ready_t
-      val switch: ('a t -> ready_t) -> 'a
-      val atomicSwitch: ('a t -> ready_t) -> 'a
+      val prepare: 'a t * 'a -> Runnable.t
+      val switch: ('a t -> Runnable.t) -> 'a
+      val atomicSwitch: ('a t -> Runnable.t) -> 'a
    end
 \end{verbatim}
 
 Threads are data structures that represent a paused computation.
-Ready threads are threads that will begin or continue computing when
+Runnable threads are threads that will begin or continue computing when
 {\tt switch}ed to.  {\tt MLton.Thread} does not include a default
 scheduling mechanism, but it can be used to implement both preemptive
 and non-preemptive threads.  For examples, see {\tt thread1.sml} and
@@ -1134,11 +1136,11 @@ runs {\tt f} in a critical section.
 \entry{atomicState ()}
 return the current atomic state.
 
+\entry{type Runnable.t}
+the type of threads that can be resumed.
+
 \entry{type 'a t}
 the type of threads that expect a value of type {\tt 'a}.
-
-\entry{type ready\_t}
-the type of threads that can be resumed.
 
 \entry{new f}
 create a new thread that, when run, applies {\tt f} to the value given
@@ -1150,21 +1152,13 @@ create a new thread (destroying {\tt t} in the process) that first
 applies {\tt f} to the value given to the thread and then continues
 with {\tt t}.  This is a constant time operation.
 
-\entry{prep t}
-create a new ready thread (destroying {\tt t} in the process)
-that will evaluate {\tt t}.
-
-\entry{prepFn (t, f)}
-create a new ready thread (destroying {\tt t} in the process)
-that will evaluate {\tt t} on {\tt f ()}.
-
-\entry{prepVal (t, v)}
-create a new ready thread (destroying {\tt t} in the process)
+\entry{prepare (t, v)}
+prepare a new runnable thread (destroying {\tt t} in the process)
 that will evaluate {\tt t} on {\tt v}.
 
 \entry{switch f}
 apply {\tt f} to the current thread to get {\tt rt}, and then start
-running (ready) thread {\tt rt}.  It is an error for {\tt f} to
+running thread {\tt rt}.  It is an error for {\tt f} to
 perform another {\tt switch}.  {\tt f} is guaranteed to run
 atomically.
 
@@ -1257,7 +1251,7 @@ signature MLTON_WORLD =
 
       val load: string -> 'a
       val save: string -> status
-      val saveThread: string * Thread.ready_t -> unit
+      val saveThread: string * Thread.Runnable.t -> unit
    end
 \end{verbatim}
 
@@ -1284,9 +1278,9 @@ I am the original
 I am the clone
 \end{verbatim}
 
-\entry{saveThread (f, t)}
+\entry{saveThread (f, rt)}
 save the entire state of the computation to
-the file {\tt f} that will resume with thread {\tt t} upon restart.
+the file {\tt f} that will resume with thread {\tt rt} upon restart.
 
 \end{description}
 %

@@ -56,13 +56,13 @@ structure Thread:
       open MLton
       open Itimer Signal Thread
 
-      val topLevel: Thread.ready_t option ref = ref NONE
+      val topLevel: Thread.Runnable.t option ref = ref NONE
 
       local
-	 val threads: Thread.ready_t Queue.t = Queue.new ()
+	 val threads: Thread.Runnable.t Queue.t = Queue.new ()
       in
 	 fun ready t = Queue.enque (threads, t)
-	 fun next () : Thread.ready_t =
+	 fun next () : Thread.Runnable.t =
 	    case Queue.deque threads of
 	       NONE => valOf (!topLevel)
 	     | SOME t => t
@@ -72,14 +72,15 @@ structure Thread:
 				   (print "exiting\n"
 				    ; next ()))
    
-      fun new (f: unit -> unit): Thread.ready_t =
-	 (Thread.prep o Thread.new)
-	 (fn () => ((f () handle _ => exit ())
-		    ; exit ()))
+      fun new (f: unit -> unit): Thread.Runnable.t =
+	 Thread.prepare
+	 (Thread.new (fn () => ((f () handle _ => exit ())
+				; exit ())),
+	  ())
 	    
       fun schedule t = (ready t; next ())
 
-      fun yield (): unit = switch (fn t => schedule (Thread.prep t))
+      fun yield (): unit = switch (fn t => schedule (Thread.prepare (t, ())))
 
       val spawn = ready o new
 
@@ -90,7 +91,7 @@ structure Thread:
 
       fun run (): unit =
 	 (switch (fn t =>
-		  (topLevel := SOME (Thread.prep t)
+		  (topLevel := SOME (Thread.prepare (t, ()))
 		   ; new (fn () =>
 			  (setHandler (alrm, Handler.handler schedule)
 			   ; setItimer (Time.fromMilliseconds 10)))))
@@ -126,7 +127,7 @@ structure Thread:
 	       (locked := false
 		; (case Queue.deque waiting of
 		      NONE => ()
-		    | SOME t => ready (Thread.prep t)))
+		    | SOME t => ready (Thread.prepare (t,()))))
 
 	    fun unlock (m: t) =
 	       (Thread.atomicBegin ()

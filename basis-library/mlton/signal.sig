@@ -8,7 +8,7 @@ signature MLTON_SIGNAL =
 	    type t
 
 	    val default: t
-	    val handler: (MLtonThread.ready_t -> MLtonThread.ready_t) -> t
+	    val handler: (MLtonThread.Runnable.t -> MLtonThread.Runnable.t) -> t
 	    val ignore: t
 	    val isDefault: t -> bool
 	    val isIgnore: t -> bool

@@ -40,7 +40,8 @@ signature SCHEDULER =
       val new : (thread_id -> ('a -> unit)) -> 'a thread
 
       val prepend : 'a thread * ('b -> 'a) -> 'b thread
-      val unwrap : (rdy_thread -> rdy_thread) -> (MLton.Thread.ready_t -> MLton.Thread.ready_t)
+      val unwrap : (rdy_thread -> rdy_thread) -> 
+                   (MLton.Thread.Runnable.t -> MLton.Thread.Runnable.t)
 
       val reset : bool -> unit
       val preempt : rdy_thread -> unit

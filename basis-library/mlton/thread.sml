@@ -36,7 +36,11 @@ datatype 'a thread =
  | Paused of ((unit -> 'a) -> unit) * Prim.thread
 
 datatype 'a t = T of 'a thread ref
-type ready_t = unit t
+
+structure Runnable =
+   struct
+      type t = unit t
+   end
 
 fun prepend (T r: 'a t, f: 'b -> 'a): 'b t =
    let
@@ -50,13 +54,8 @@ fun prepend (T r: 'a t, f: 'b -> 'a): 'b t =
       ; T (ref t)
    end
 
-fun prep (t: unit t): ready_t = t
-
-fun prepFn (t: 'a t, f: unit -> 'a): ready_t =
-   prep (prepend (t, f))
-
-fun prepVal (t: 'a t, v: 'a): ready_t =
-   prepFn (t, fn () => v)
+fun prepare (t: 'a t, v: 'a): Runnable.t =
+   prepend (t, fn () => v)
 
 fun new f = T (ref (New f))
 
@@ -92,7 +91,7 @@ local
    end
    val switching = ref false
 in
-   fun 'a atomicSwitch (f: 'a t -> ready_t): 'a =
+   fun 'a atomicSwitch (f: 'a t -> Runnable.t): 'a =
       (* Atomic 1 *)
       if !switching
 	 then let
@@ -112,7 +111,7 @@ in
 			  ; switching := false
 			  ; atomicEnd ()
 			  ; raise e)	
-	    val (T t': ready_t) = f (T t) handle e => fail e
+	    val (T t': Runnable.t) = f (T t) handle e => fail e
 	    val primThread =
 	       case !t' before t' := Dead of
 		  Dead => fail (Fail "switch to a Dead thread")
@@ -132,7 +131,7 @@ in
        ; atomicSwitch f)
 end
 
-fun fromPrimitive (t: Prim.thread): ready_t =
+fun fromPrimitive (t: Prim.thread): Runnable.t =
    T (ref (Interrupted t))
 
 fun toPrimitive (t as T r : unit t): Prim.thread =
@@ -144,11 +143,12 @@ fun toPrimitive (t as T r : unit t): Prim.thread =
     | New _ =>
 	 switch
 	 (fn cur : Prim.thread t =>
-	  prepFn
-	  (t, fn () =>
-	   switch
-	   (fn t' : unit t =>
-	    prepVal (cur, toPrimitive t'))))
+	  prepare
+	  (prepend (t, fn () =>
+		    switch
+		    (fn t' : unit t =>
+		     prepare (cur, toPrimitive t'))),
+	   ()))
     | Paused (f, t) =>
 	 (r := Dead
 	  ; f (fn () => ()) 
@@ -162,7 +162,7 @@ local
 in
    fun amInSignalHandler () = InHandler = !state
 
-   fun setHandler (f: ready_t -> ready_t): unit =
+   fun setHandler (f: Runnable.t -> Runnable.t): unit =
       let
 	 val _ = Primitive.installSignalHandler ()
 	 fun loop (): unit =

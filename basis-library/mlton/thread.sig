@@ -15,53 +15,43 @@ signature MLTON_THREAD =
       val atomically: (unit -> 'a) -> 'a
       val atomicState: unit -> AtomicState.t
 
-      type 'a t
-      type ready_t
+      structure Runnable :
+	 sig
+	    type t
+	 end
 
-      (* new f creates a new thread that will apply f to whatever is thrown
-       * to the thread.  f must terminate by throwing to another thread or
-       * exiting the process.
+      type 'a t
+
+      (* new f
+       * create a new thread that, when run, applies f to
+       * the value given to the thread.  f must terminate by
+       * <VALREF/switch/ing to another thread or exiting the process.
        *)
       val new: ('a -> unit) -> 'a t
       (* prepend(t, f)
-       * Create a new thread (destroying t in the process) that evaluates
-       * f and passes the result to t.
+       * create a new thread (destroying t in the process) that first
+       * applies f to the value given to the thread and then continues
+       * with t.  This is a constant time operation.
        *)
       val prepend: 'a t * ('b -> 'a) -> 'b t
-      (* ready(t)
-       * Create a new ready thread (destroying t in the process)
-       * that will evaluate t.
-       *)
-      val prep: unit t -> ready_t
-      (* readyFn(t, f)
-       * Create a new ready thread (destroying t in the process)
-       * that will evaluate t on f ().
-       *)
-      val prepFn: 'a t * (unit -> 'a) -> ready_t
-      (* readyVal(t, v)
-       * Create a new ready thread (destroying t in the process)
+      (* prepare(t, v)
+       * create a new runnable thread (destroying t in the process)
        * that will evaluate t on v.
        *)
-      val prepVal: 'a t * 'a -> ready_t
-      (* Equivalences
-       *
-       * prepFn(t, f) ==
-       * prep(prepend(t, f))
-       *
-       * prepVal(t, v) ==
-       * prepFn(t, fn () => v)
-       *
+      val prepare: 'a t * 'a -> Runnable.t
+      (* switch f 
+       * apply f to the current thread to get rt, and then start
+       * running thread rt.  It is an error for f to
+       * perform another switch.  f is guaranteed to run
+       * atomically.
        *)
-      (* switch f = rt
-       * Applies f to the current thread, and then switches to rt.  
-       * f runs in a critical section.
-       * It is an error for f to call switch.
+      val switch: ('a t -> Runnable.t) -> 'a
+      (* atomicSwitch f
+       * as switch, but assumes an atomic calling context.  Upon
+       * switch-ing back to the current thread, an implicit atomicEnd is
+       * performed.
        *)
-      val switch: ('a t -> ready_t) -> 'a
-      (* atomicSwitch is as above,
-       * but assumes an atomic calling context.
-       *)
-      val atomicSwitch: ('a t -> ready_t) -> 'a
+      val atomicSwitch: ('a t -> Runnable.t) -> 'a
    end
 
 signature MLTON_THREAD_EXTRA =
@@ -70,6 +60,6 @@ signature MLTON_THREAD_EXTRA =
 
       val amInSignalHandler: unit -> bool
       val register: int * (unit -> unit) -> unit
-      val setHandler: (ready_t -> ready_t) -> unit
+      val setHandler: (Runnable.t -> Runnable.t) -> unit
       val switchToHandler: unit -> unit
    end

@@ -29,9 +29,9 @@ structure Scheduler : SCHEDULER =
       datatype thread = datatype RepTypes.thread
       datatype rdy_thread = datatype RepTypes.rdy_thread
 
-      fun prep (THRD (tid, t)) = RTHRD (tid, T.prep t)
-      fun prepVal (THRD (tid, t), v) = RTHRD (tid, T.prepVal (t, v))
-      fun prepFn (THRD (tid, t), f) = RTHRD (tid, T.prepFn (t, f))
+      fun prep (THRD (tid, t)) = RTHRD (tid, T.prepare (t, ()))
+      fun prepVal (THRD (tid, t), v) = RTHRD (tid, T.prepare (t, v))
+      fun prepFn (THRD (tid, t), f) = RTHRD (tid, T.prepare (T.prepend (t, f), ()))
 
       (* the dummy thread Id; this is used when an ID is needed to get
        * the types right
@@ -168,7 +168,7 @@ structure Scheduler : SCHEDULER =
 	    THRD (tid, t)
 	 end
 
-      fun unwrap (f : rdy_thread -> rdy_thread) (t: T.ready_t) : T.ready_t =
+      fun unwrap (f : rdy_thread -> rdy_thread) (t: T.Runnable.t) : T.Runnable.t =
 	 let
 	    val () = Assert.assertAtomic' ("Scheduler.unwrap", NONE)
 	    val tid = getCurThreadId ()
