@@ -2,18 +2,6 @@ We are pleased to announce a new release of MLton, the whole-program
 optimizing compiler for Standard ML.  MLton runs on X86 machines with
 Linux. 
 
-Version VERSION is a major release over 20000906, and includes the following
-changes.
-
-    + Native X86 code generator (instead of using gcc)
-    + Significantly improved compile times 
-    + Significantly improved run times for generated executables
-    + Many bug fixes
-    + Correct raising of the Overflow exception for integer arithmetic
-    + New modules in the MLton structure
-
-For a complete list of changes and bugfixes, see the CHANGES file.  
-
 MLton has the following features.
 
    + Generates standalone executables with good runtime performance 
@@ -24,6 +12,26 @@ MLton has the following features.
    + Libraries for continuations, interval timers, random numbers,
        resource limits, resource usage, signal handlers, sockets, system
        logging, threads, and heap save and restore  
+
+Version VERSION is a bug-fix release over 20010706.  For a complete list of
+changes and bug fixes, see the CHANGES file. Notable changes include:
+
+    + Word.andb (w, 0xFF) now works correctly
+    + MLton.Rusage.rusage has a patch to work around a linux kernel bug
+    + Programs of the form "exp ; program" are now accepted
+    + Added the "MLton.Rlimit" structure
+    + Added the "-keep dot" flag, which produces call graphs, intraprocedural
+      control-flow graphs, and dominator trees.
+
+Version 20010706 was a major release over 20000906, and included the following
+changes.
+
+    + Native X86 code generator (instead of using gcc)
+    + Significantly improved compile times 
+    + Significantly improved run times for generated executables
+    + Many bug fixes
+    + Correct raising of the Overflow exception for integer arithmetic
+    + New modules in the MLton structure
 
 For more information, go to the MLton home page. 
 

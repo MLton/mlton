@@ -17,32 +17,6 @@
       ML</a> programming language.  MLton runs on X86 machines with
     Linux.
 
-    <h3>What's new?</h3>
-    Version VERSION is a bug-fix release over 20010706.  For a complete list of
-    changes and bug fixes, see the <a href = "CHANGES">CHANGES</a> file.
-    Notable changes include:
-    <ul>
-      <li> <tt>Word.andb (w, 0xFF)</tt> now works correctly.
-      <li> <tt>MLton.Rusage.rusage</tt> has a patch to work around a linux
-	kernel bug.
-      <li> Programs of the form <tt>exp ; program</tt> are
-	now accepted.
-      <li> Added the <tt>MLton.Rlimit</tt> structure.
-      <li> Added the <tt>-keep dot</tt> flag, which produces call graphs,
-	intraprocedural control-flow graphs, and dominator trees.
-    </ul>
-
-    Version 20010706 was major release over 20000906, and included the
-    following changes.
-    <ul>
-      <li> Native X86 code generator (instead of using <tt>gcc</tt>)
-      <li> Significantly improved compile times 
-      <li> Significantly improved run times for generated executables
-      <li> Many bug fixes
-      <li> Correct raising of the Overflow exception for integer arithmetic
-      <li> New modules in the <tt>MLton</tt> structure
-    </ul>
-
     <h3>Features of MLton</h3>
     MLton has the following features (for details, please see
     the user manual in <a href = "HTML/main.html">html</a>
@@ -69,6 +43,32 @@
 	<a href = "HTML/node29.html">system logging</a>,
 	<a href = "HTML/node31.html">threads</a>,
 	and <a href = "HTML/node33.html">heap save and restore</a>
+    </ul>
+
+    <h3>What's new?</h3>
+    Version VERSION is a bug-fix release over 20010706.  For a complete list of
+    changes and bug fixes, see the <a href = "CHANGES">CHANGES</a> file.
+    Notable changes include:
+    <ul>
+      <li> <tt>Word.andb (w, 0xFF)</tt> now works correctly
+      <li> <tt>MLton.Rusage.rusage</tt> has a patch to work around a linux
+	kernel bug
+      <li> Programs of the form <tt>exp ; program</tt> are
+	now accepted
+      <li> Added the <tt>MLton.Rlimit</tt> structure
+      <li> Added the <tt>-keep dot</tt> flag, which produces call graphs,
+	intraprocedural control-flow graphs, and dominator trees
+    </ul>
+
+    Version 20010706 was major release over 20000906, and included the
+    following changes.
+    <ul>
+      <li> Native X86 code generator (instead of using <tt>gcc</tt>)
+      <li> Significantly improved compile times 
+      <li> Significantly improved run times for generated executables
+      <li> Many bug fixes
+      <li> Correct raising of the Overflow exception for integer arithmetic
+      <li> New modules in the <tt>MLton</tt> structure
     </ul>
 
     <h3>Download</h3>
@@ -121,7 +121,7 @@
 
     <hr>
     <!-- hhmts start -->
-Last modified: Fri Aug  3 17:05:16 PDT 2001
+Last modified: Fri Aug  3 17:22:36 PDT 2001
 <!-- hhmts end -->
   </body>
 </html>
