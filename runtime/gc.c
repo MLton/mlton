@@ -2166,6 +2166,14 @@ static void translateHeap (GC_state s, pointer from, pointer to, uint size) {
 /*                            heapRemap                             */
 /* ---------------------------------------------------------------- */
 
+#if (defined (__CYGWIN__) || defined (__FreeBSD__))
+
+static bool heapRemap (GC_state s, GC_heap h, W32 desired, W32 minSize) {
+	return FALSE;
+}
+
+#elif (defined (__linux__))
+
 #include <linux/mman.h>
 static bool heapRemap (GC_state s, GC_heap h, W32 desired, W32 minSize) {
 	W32 backoff;
@@ -2195,6 +2203,8 @@ static bool heapRemap (GC_state s, GC_heap h, W32 desired, W32 minSize) {
 	}
 	return FALSE;
 }
+
+#endif
 
 /* ---------------------------------------------------------------- */
 /*                             heapGrow                             */
