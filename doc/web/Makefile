@@ -9,7 +9,7 @@ CHANGES: ../CHANGES
 	cp -p ../CHANGES ./
 
 user-guide:
-	cd ../user-guide && make
+	$(MAKE) -C ../user-guide
 	gzip -c ../user-guide/main.ps >user-guide.ps.gz
 	(cd ../user-guide/main && tar.write .) | \
 		(mkdir user-guide && cd user-guide && tar.read)

@@ -61,4 +61,4 @@ QBFLAGS = -mlton "mlton-stable -native-shuffle {true,false}"
 
 .PHONY: qtest
 qtest: $(NAME)
-	export PATH=$(PATH):$$PATH && cd tests && ../benchmark $(QBFLAGS) $(QBENCH) && make clean
+	export PATH=$(PATH):$$PATH && cd tests && ../benchmark $(QBFLAGS) $(QBENCH) && $(MAKE) clean
