@@ -224,12 +224,18 @@ functor Real (R: PRE_REAL): REAL =
 		  let
 		     val frac = Prim.modf (x, int)
 		     val whole = !int
-		     (* FreeBSD and SunOS don't always get sign of zero right. *)
+		     (* FreeBSD, NetBSD, and SunOS don't always get sign of
+		      * zero right.
+		      *)
 		     val (frac, whole) =
 			if let
 			      open MLton.Platform.OS
 			   in
-			      host = FreeBSD orelse host = SunOS
+			      case host of
+				 FreeBSD => true
+			       | NetBSD => true
+			       | SunOS => true
+			       | _ => false
 			   end
 			   then
 			      let
