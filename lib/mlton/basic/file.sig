@@ -10,6 +10,7 @@ signature FILE =
    sig
       type t = string
       type dir = string
+      type file = string
 
       val appendTo: t * string -> unit
       val base: t -> string
@@ -24,6 +25,7 @@ signature FILE =
       val ensureRead: t -> unit
       val ensureWrite: t -> unit
       val extension: t -> string option
+      val fileOf: t -> file
       (* Each line includes the newline. *)
       val foldLines: t * 'a * (string * 'a -> 'a) -> 'a
       val isNewer: t * t -> bool

@@ -365,7 +365,7 @@ fun commandLine (args: string list): unit =
 		 ; outputHeader' (No, Out.standard)))
     | Result.Yes (input :: rest) =>
 	 let
-	    val _ = inputFile := File.base input
+	    val _ = inputFile := (File.base o File.fileOf) input
 	    val (start, base) =
 	       let
 		  val rec loop =
@@ -373,7 +373,8 @@ fun commandLine (args: string list): unit =
 		      | (suf, start) :: sufs =>
 			   if String.isSuffix {string = input, suffix = suf}
 			      then (start,
-				    String.dropSuffix (input, String.size suf))
+				    String.dropSuffix (File.fileOf input, 
+						       String.size suf))
 			   else loop sufs
 		  datatype z = datatype Place.t
 	       in loop [(".cm", CM),

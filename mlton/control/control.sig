@@ -72,7 +72,7 @@ signature CONTROL =
       val layoutInline: inline -> Layout.t
       val setInlineSize: int -> unit
 
-      (* The input file on the command line *)
+      (* The input file on the command line, minus path and extension *)
       val inputFile: File.t ref
 
       (* call count instrumentation *)

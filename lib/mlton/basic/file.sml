@@ -11,6 +11,7 @@ structure FS = OS.FileSys
    
 type t = string
 type dir = string
+type file = string
 
 fun toString f = f
 val layout = Layout.str o toString
@@ -141,6 +142,7 @@ in
    val base = base
    val dirOf = dir
    val extension = ext
+   val fileOf = file
 end
 
 end
