@@ -556,7 +556,7 @@ structure Function =
       structure Node = Graph.Node
       structure Edge = Graph.Edge
 
-      fun dominatorTree' {blocks, start}: Block.t Tree.t =
+      fun dominatorTree (T {blocks, start, ...}): Block.t Tree.t =
 	 let
 	    open Dot
 	    val g = Graph.new ()
@@ -586,10 +586,6 @@ structure Function =
 	    Graph.dominatorTree (g, {root = labelNode start,
 				     nodeValue = #block o nodeInfo})
 	 end
-
-      fun dominatorTree (T {blocks, start, ...}): Block.t Tree.t =
-	 dominatorTree' {blocks = blocks,
-			 start = start}
    end
 
 structure Program =
@@ -660,8 +656,7 @@ structure Program =
 		   *)
 		  val _ =
 		     Tree.traverse
-		     (Function.dominatorTree' {blocks = blocks,
-					       start = start},
+		     (Function.dominatorTree f,
 		      fn Block.T {args, statements, transfer, ...} =>
 		      let
 			 val _ = Vector.foreach (args, bindVar o #1)
