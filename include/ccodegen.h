@@ -375,75 +375,97 @@ int main (int argc, char **argv) {					\
 /*                        Int                        */
 /* ------------------------------------------------- */
 
-#define Int_add(n1, n2) ((n1) + (n2))
-#define Int_mul(n1, n2) ((n1) * (n2))
-#define Int_sub(n1, n2) ((n1) - (n2))
+/* The old -DFAST_INT has been renamed to -DINT_JO. */
+#if (defined (FAST_INT))
+#define INT_JO
+#endif
 
-#ifdef FAST_INT
+/* The default is to use INT_TEST. */
+#if (! defined (INT_NO_CHECK) && ! defined (INT_JO) && ! defined (INT_TEST) && ! defined (INT_LONG))
+#define INT_TEST
+#endif
 
-static void MLton_overflow() {
-	die("Internal overflow detected. Halt.");
+enum {
+	MAXINT = 0x7FFFFFFF,
+	MININT = (int)0x80000000,
+	MAXWORD = 0xFFFFFFFF,
+};
+
+#if (defined (INT_NO_CHECK))
+#define Int_addCheck(dst, n1, n2, l) dst = n1 + n2
+#define Int_mulCheck(dst, n1, n2, l) dst = n1 * n2
+#define Int_negCheck(dst, n, l) dst = -n
+#define Int_subCheck(dst, n1, n2, l) dst = n1 - n2
+#define Word32_addCheck(dst, n1, n2, l) dst = n1 + n2
+#define Word32_mulCheck(dst, n1, n2, l) dst = n1 * n2
+#endif
+
+#if (defined (INT_TEST))
+#define Int_addCheckXC(dst, x, c, l) 		\
+	do {					\
+		if (c >= 0) {			\
+			if (x > MAXINT - c)	\
+				goto l;		\
+		} else if (x < MININT - c)	\
+				goto l;		\
+		dst = x + c;			\
+	} while (0)
+#define Int_addCheckCX(dst, c, x, l) Int_addCheckXC(dst, x, c, l)
+#define Int_subCheckCX(dst, c, x, l)		\
+	do {					\
+ 		if (c >= 0) {			\
+			if (x < c - MAXINT)	\
+				goto l;		\
+		} else if (x > c - MININT)	\
+			goto l;			\
+		dst = c - x;			\
+	} while (0)
+#define Int_subCheckXC(dst, x, c, l)		\
+	do {					\
+		if (c <= 0) {			\
+			if (x > MAXINT + c)	\
+				goto l;		\
+		} else if (x < MININT + c)	\
+			goto l;			\
+		dst = x - c;			\
+ 	} while (0)
+#define Word32_addCheckXC(dst, x, c, l)		\
+	do {					\
+		if (x > MAXWORD - c)		\
+			goto l;			\
+		dst = x + c;			\
+	} while (0)
+#define Word32_addCheckCX(dst, c, x, l) Word32_addCheckXC(dst, x, c, l)
+
+#define Int_addCheck Int_addCheckXC
+#define Int_subCheck Int_subCheckXC
+#define Word32_addCheck Word32_addCheckXC
+
+#endif
+
+static inline Int Int_addOverflow(Int lhs, Int rhs, Bool *overflow) {
+	long long	tmp;
+
+	tmp = (long long)lhs + rhs;
+	*overflow = (tmp != (int)tmp);
+	return tmp;
+}
+static inline Int Int_mulOverflow(Int lhs, Int rhs, Bool *overflow) {
+	long long	tmp;
+
+	tmp = (long long)lhs * rhs;
+	*overflow = (tmp != (int)tmp);
+	return tmp;
+}
+static inline Int Int_subOverflow(Int lhs, Int rhs, Bool *overflow) {
+	long long	tmp;
+
+	tmp = (long long)lhs - rhs;
+	*overflow = (tmp != (int)tmp);
+	return tmp;
 }
 
-static inline Int Int_addCheckFast(Int n1, Int n2) {
- 	__asm__ __volatile__ ("addl %1, %0\n\tjo MLton_overflow"
-			      : "+r" (n1) : "g" (n2) : "cc");
-
-	return n1;
-}
-
-static inline Int Int_mulCheckFast(Int n1, Int n2) {
- 	__asm__ __volatile__ ("imull %1, %0\n\tjo MLton_overflow"
-			      : "+r" (n1) : "g" (n2) : "cc");
-
-	return n1;
-}
-
-static inline Int Int_subCheckFast(Int n1, Int n2) {
- 	__asm__ __volatile__ ("subl %1, %0\n\tjo MLton_overflow"
-			      : "+r" (n1) : "g" (n2) : "cc" );
-
-	return n1;
-}
-
-static inline Word Word32_addCheckFast(Word n1, Word n2) {
- 	__asm__ __volatile__ ("addl %1, %0\n\tjc MLton_overflow"
-			      : "+r" (n1) : "g" (n2) : "cc");
-
-	return n1;
-}
-
-static inline Word Word32_mulCheckFast(Word n1, Word n2) {
- 	__asm__ __volatile__ ("imull %1, %0\n\tjc MLton_overflow"
-			      : "+r" (n1) : "g" (n2) : "cc");
-
-	return n1;
-}
-
-#define check(dst,n1,n2,l,f) dst = f(n1, n2)
-
-#define Int_addCheck(dst, n1, n2, l)			\
-	check(dst, n1, n2, l, Int_addCheckFast)
-#define Int_mulCheck(dst, n1, n2, l)			\
-	check(dst, n1, n2, l, Int_mulCheckFast)
-#define Int_subCheck(dst, n1, n2, l)			\
-	check(dst, n1, n2, l, Int_subCheckFast)
-#define Word32_addCheck(dst, n1, n2, l)			\
-	check(dst, n1, n2, l, Word32_addCheckFast)
-#define Word32_mulCheck(dst, n1, n2, l)			\
-	check(dst, n1, n2, l, Word32_mulCheckFast)
-
-static inline Int Int_negCheckFast(Int n) {
-	__asm__ __volatile__ ("negl %1\n\tjo MLton_overflow"
-				: "+r" (n) : : "cc" );
-	return n;
-}
-#define Int_negCheck(dst, n, l) dst = Int_negCheckFast(n)
-#define Int_rem(x, y) ((x)%(y))
-
-#else /* no FAST_INT */
-
-int Int_bogus;
+#if (defined (INT_TEST) || defined (INT_LONG))
 #define check(dst, n1, n2, l, f);						\
 	do {									\
 		int overflow;							\
@@ -456,23 +478,103 @@ int Int_bogus;
 			goto l;							\
 		}								\
 	} while (0)
-#define Int_addCheck(dst, n1, n2, l)			\
-	check(dst, n1, n2, l, Int_addOverflow)
 #define Int_mulCheck(dst, n1, n2, l)			\
 	check(dst, n1, n2, l, Int_mulOverflow)
+#define Int_negCheck(dst, n, l)			\
+	do {					\
+		if (n == MININT)		\
+			goto l;			\
+		dst = -n;			\
+	} while (0)
+#define Word32_mulCheck(dst, n1, n2, l)			\
+	check(dst, n1, n2, l, Word32_mulOverflow)
+#endif
+
+#if (defined (INT_LONG))
+#define Int_addCheck(dst, n1, n2, l)			\
+	check(dst, n1, n2, l, Int_addOverflow)
 #define Int_subCheck(dst, n1, n2, l)			\
 	check(dst, n1, n2, l, Int_subOverflow)
 #define Word32_addCheck(dst, n1, n2, l)			\
 	check(dst, n1, n2, l, Word32_addOverflow)
+#endif
+
+#if (defined (INT_JO))
+
+static void MLton_overflow () {
+	die("Internal overflow detected. Halt.");
+}
+
+static inline Int Int_addCheckFast (Int n1, Int n2) {
+ 	__asm__ __volatile__ ("addl %1, %0\n\tjo MLton_overflow"
+			      : "+r" (n1) : "g" (n2) : "cc");
+
+	return n1;
+}
+
+static inline Int Int_mulCheckFast (Int n1, Int n2) {
+ 	__asm__ __volatile__ ("imull %1, %0\n\tjo MLton_overflow"
+			      : "+r" (n1) : "g" (n2) : "cc");
+
+	return n1;
+}
+
+static inline Int Int_negCheckFast (Int n) {
+	__asm__ __volatile__ ("negl %1\n\tjo MLton_overflow"
+				: "+r" (n) : : "cc" );
+	return n;
+}
+
+static inline Int Int_subCheckFast (Int n1, Int n2) {
+ 	__asm__ __volatile__ ("subl %1, %0\n\tjo MLton_overflow"
+			      : "+r" (n1) : "g" (n2) : "cc" );
+
+	return n1;
+}
+
+static inline Word Word32_addCheckFast (Word n1, Word n2) {
+ 	__asm__ __volatile__ ("addl %1, %0\n\tjc MLton_overflow"
+			      : "+r" (n1) : "g" (n2) : "cc");
+
+	return n1;
+}
+
+static inline Word Word32_mulCheckFast (Word n1, Word n2) {
+ 	__asm__ __volatile__ ("imull %1, %0\n\tjc MLton_overflow"
+			      : "+r" (n1) : "g" (n2) : "cc");
+
+	return n1;
+}
+
+#define check(dst,n1,n2,l,f) dst = f(n1, n2)
+
+#define Int_addCheck(dst, n1, n2, l)			\
+	check(dst, n1, n2, l, Int_addCheckFast)
+#define Int_mulCheck(dst, n1, n2, l)			\
+	check(dst, n1, n2, l, Int_mulCheckFast)
+#define Int_negCheck(dst, n, l) 			\
+	dst = Int_negCheckFast(n)
+#define Int_subCheck(dst, n1, n2, l)			\
+	check(dst, n1, n2, l, Int_subCheckFast)
+#define Word32_addCheck(dst, n1, n2, l)			\
+	check(dst, n1, n2, l, Word32_addCheckFast)
 #define Word32_mulCheck(dst, n1, n2, l)			\
-	check(dst, n1, n2, l, Word32_mulOverflow)
-#define Int_negCheck(dst, n, l)				\
-	do {						\
-		int overflow;				\
-		dst = Int_negOverflow(n, &overflow);	\
-		if (overflow) goto l;			\
-	} while (0)
-#endif /* FAST_INT */
+	check(dst, n1, n2, l, Word32_mulCheckFast)
+
+#endif
+
+#if (defined (INT_NO_CHECK) || defined (INT_JO) || defined (INT_LONG))
+#define Int_addCheckCX Int_addCheck
+#define Int_addCheckXC Int_addCheck
+#define Int_subCheckCX Int_subCheck
+#define Int_subCheckXC Int_subCheck
+#define Word32_addCheckCX Word32_addCheck
+#define Word32_addCheckXC Word32_addCheck
+#endif
+
+#define Int_add(n1, n2) ((n1) + (n2))
+#define Int_mul(n1, n2) ((n1) * (n2))
+#define Int_sub(n1, n2) ((n1) - (n2))
 #define Int_lt(n1, n2) ((n1) < (n2))
 #define Int_le(n1, n2) ((n1) <= (n2))
 #define Int_gt(n1, n2) ((n1) > (n2))

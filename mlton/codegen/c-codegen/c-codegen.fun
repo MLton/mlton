@@ -616,13 +616,34 @@ fun output {program as Machine.Program.T {chunks,
 			   val prim =
 			      let
 				 datatype z = datatype Prim.Name.t
+				 fun const i =
+				    case Vector.sub (args, i) of
+				       Operand.Int _ => true
+				     | _ => false
+				 fun const0 () = const 0
+				 fun const1 () = const 1
 			      in
 				 case Prim.name prim of
-				    Int_addCheck => "\tInt_addCheck"
+				    Int_addCheck =>
+				       if const0 ()
+					  then "\tInt_addCheckCX"
+				       else if const1 ()
+					       then "\tInt_addCheckXC"
+					    else "\tInt_addCheck"
 				  | Int_mulCheck => "\tInt_mulCheck"
 				  | Int_negCheck => "\tInt_negCheck"
-				  | Int_subCheck => "\tInt_subCheck"
-				  | Word32_addCheck => "\tWord32_addCheck"
+				  | Int_subCheck =>
+				       if const0 ()
+					  then "\tInt_subCheckCX"
+				       else if const1 ()
+					       then "\tInt_subCheckXC"
+					    else "\tInt_subCheck"
+				  | Word32_addCheck =>
+				       if const0 ()
+					  then "\tWord32_addCheckCX"
+				       else if const1 ()
+					       then "\tWord32_addCheckXC"
+					    else "\tWord32_addCheck"
 				  | Word32_mulCheck => "\tWord32_mulCheck"  
 				  | _ => Error.bug "strange overflow prim"
 			      end
