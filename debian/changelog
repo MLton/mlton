@@ -1,6 +1,12 @@
 mlton (MLTONVERSION-1) unstable; urgency=low
 
   * new upstream version
+
+ -- Stephen Weeks <sweeks@sweeks.com>  Wed, 10 Dec 2003 10:45:33 -0800
+
+mlton (20031202-1) unstable; urgency=low
+
+  * new upstream version
   * define MREMAP_MAYMOVE to avoid including linux/mman.h, closes: #219987
   * Switched from laxex2html to HeVeA, closes: #221341
 
