@@ -237,7 +237,7 @@ signature PRIM =
       val entersRuntime: t -> bool
       val eq: t    (* pointer equality *)
       val equal: t (* polymorphic equality *)
-      val equals: t * t -> bool
+      val equals: t * t -> bool (* equality of names *)
       val extractTargs: {prim: t,
 			 args: 'a vector,
 			 result: 'a,

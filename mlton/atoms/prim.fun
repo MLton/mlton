@@ -462,8 +462,7 @@ datatype t =
 	 nameString: string,
 	 scheme: Scheme.t,
 	 kind: Kind.t,
-	 numArgs: int option,
-	 plist: PropertyList.t}
+	 numArgs: int option}
 
 local
    fun make sel (T r) = sel r
@@ -471,7 +470,6 @@ in
    val kind = make #kind
    val name = make #name
    val numArgs = make #numArgs
-   val plist = make #plist
    val scheme = make #scheme
    val toString = make #nameString
 end
@@ -510,13 +508,12 @@ structure Scheme =
 
 fun new (n: Name.t, k: Kind.t, s: Scheme.t): t =
    T {
-     kind = k,
-     name = n,
-     nameString = Name.toString n,
-     numArgs = Scheme.numArgs s,
-     plist = PropertyList.new (),
-     scheme = s
-     }
+      kind = k,
+      name = n,
+      nameString = Name.toString n,
+      numArgs = Scheme.numArgs s,
+      scheme = s
+      }
 
 fun equals (p, p') = Name.equals (name p, name p')
 
