@@ -1071,7 +1071,8 @@ fun dump (file, (img, width)) =
   in output_string (f, "P6\n# PL Club - translated to SML\n")
      ; output_string (f, concat[Int.toString width, " ",
 			       Int.toString height, "\n255\n"])
-     ; output_string (f, Byte.unpackString(img, 0, NONE))
+     ; output_string (f, Byte.unpackString (Word8ArraySlice.slice
+					    (img, 0, NONE)))
      ; close_out f
   end
 
