@@ -604,9 +604,7 @@ fun commandLine (args: string list): unit =
 			   let
 			      val suf = concat [".",
                                                 Int.toString (!r),
-                                                if !Control.debug
-                                                  then ".s"
-                                                  else ".S"]
+                                                if !debug then ".s" else ".S"]
 			      val file = (if !keepGenerated
 					     orelse stop = Place.Generated
 					     then suffix
