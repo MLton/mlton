@@ -153,7 +153,7 @@ structure Word8Vector
 structure Word32
    
 functor AlphaBeta
-functor BinaryHeap
+(* functor BinaryHeap *)
 functor BitVectorSet
 functor Cache
 functor Control
@@ -188,6 +188,6 @@ is
 
 basic/sources.cm
 directed-graph/sources.cm
-heap/sources.cm
+(* heap/sources.cm *)
 set/sources.cm
 env/sources.cm
