@@ -44,7 +44,7 @@ fun checkScopes (program as
       val (bindFunc, getFunc, _) = make (Func.layout, Func.plist)
       val (bindJump, getJump, unbindJump) = make (Jump.layout, Jump.plist)
       fun getVars xs = Vector.foreach (xs, getVar)
-      val jumpHandlers = inferHandlers program
+(*    val jumpHandlers = inferHandlers program *)
       val loopPrimExp =
 	 fn Const _ => ()
 	  | Var x => getVar x
@@ -141,6 +141,13 @@ fun typeCheck (program as Program.T {datatypes, functions, ...}): unit =
 						  ("to", Type.layout to)]
 				       end,
 				    Unit.layout) coerce
+      val coerces =
+	 Trace.trace ("TypeCheck.coerces",
+		      fn (from, to) => let open Layout
+				       in record [("from", Vector.layout Type.layout from),
+						  ("to", Vector.layout Type.layout to)]
+				       end,
+				    Unit.layout) coerces
       fun select {tuple: Type.t, offset: int, resultType}: Type.t =
 	 case Type.detupleOpt tuple of
 	    NONE => error "select of non tuple"
@@ -215,7 +222,10 @@ fun typeCheck (program as Program.T {datatypes, functions, ...}): unit =
 		  tuple = Type.tuple,
 		  useFromTypeOnBinds = true
 		  }
-	 handle _ => error "analyze raised an exception"
+	 handle exn => error ("analyze raised an exception: " ^
+			      (case exn
+				 of Fail s => s
+				  | _ => ""))
       val _ = destroyCon ()
    in
       ()
