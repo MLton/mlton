@@ -529,16 +529,10 @@ structure Primitive =
 
       structure String =
 	 struct
-	    val fromCharVector =
-	       _prim "String_fromCharVector": char vector -> string;
 	    val fromWord8Vector =
 	       _prim "String_fromWord8Vector": word8 vector -> string;
-	    val size = _prim "String_size": string -> int;
-	    val toCharVector =
-	       _prim "String_toCharVector": string -> char vector;
 	    val toWord8Vector =
 	       _prim "String_toWord8Vector": string -> word8 vector;
-	    val sub = _prim "String_sub": string * int -> char;
 	 end
 
       structure TextIO =

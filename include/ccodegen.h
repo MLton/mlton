@@ -549,10 +549,7 @@ int Int_bogus;
 /*                      String                       */
 /* ------------------------------------------------- */
 
-#define String_size GC_arrayNumElements
-#define String_fromCharVector(x) x
 #define String_fromWord8Vector(x) x
-#define String_toCharVector(x) x
 #define String_toWord8Vector(x) x
 
 /* ------------------------------------------------- */

@@ -168,9 +168,7 @@ functor Sequence (S: sig
 	    fun appi f sl = foldli (fn (i, x, ()) => f (i, x)) () sl
 	    fun app f sl = appi (f o #2) sl
 	    fun createi tabulate f (sl: 'a slice as {seq, start, len}) =
-	       tabulate (len, fn i => let val j = start +? i
-				      in f (j, S.sub (seq, j))
-				      end)
+	       tabulate (len, fn i => f (i, S.sub (seq, start +? i)))
 	    fun create tabulate f sl = createi tabulate (f o #2) sl
 	    fun mapi f sl = createi tabulate f sl
 	    fun map f sl = mapi (f o #2) sl

@@ -236,20 +236,27 @@ signature BASIS =
       sharing type exn = General.exn
       sharing type array = Array.array
       sharing type vector = Vector.vector
-(*
+      (*
       sharing type ref = General.ref
-*)
-(*
+      *)
+      (*
       sharing type bool = Bool.bool
-*)
+      *)
       sharing type option = Option.option
       sharing type order = General.order
-(*
+      (*
       sharing type list = List.list
-*)
+      *)
 
       (* Required structures *)
       sharing type Array.vector = Vector.vector
+(*
+      sharing type BinPrimIO.array = Word8Array.array
+      sharing type BinPrimIO.vector = Word8Vector.vector
+      sharing type BinPrimIO.elem = Word8.word
+      sharing type BinPrimIO.pos = Position.int
+*)
+      sharing type Char.string = string
       sharing type CharArray.vector = CharVector.vector
       sharing type CharArray.elem = char
       sharing type CharArraySlice.vector = CharVector.vector
@@ -267,6 +274,15 @@ signature BASIS =
       sharing type Substring.substring = CharVectorSlice.slice
       sharing type Substring.string = String.string
       sharing type Substring.char = char
+      (*
+      sharing type Text.Char.char = char
+      sharing type Text.String.string = string
+      *)
+(*
+      sharing type TextPrimIO.array = CharArray.array
+      sharing type TextPrimIO.vector = CharVector.vector
+      sharing type TextPrimIO.elem = Char.char
+*)
       sharing type Word8Array2.vector = Word8Vector.vector
       sharing type Word8Array2.elem = Word8.word
       sharing type Word8Array.vector = Word8Vector.vector
@@ -370,8 +386,20 @@ signature BASIS =
    where type bool = bool
    where type 'a list = 'a list
    (* Types referenced in signatures by structure name *)
+   where type Char.char = Char.char
+   where type Int.int = Int.int
    where type LargeInt.int = LargeInt.int
    where type LargeReal.real = LargeReal.real
    where type LargeWord.word = LargeWord.word
+   (*
+   where type IEEEReal.real_order = IEEEReal.real_order
+   where type IEEEReal.float_class = IEEEReal.float_class
+   where type IEEEReal.rounding_mode = IEEEReal.rounding_mode
+   where type StringCvt.radix = StringCvt.radix
+   where type StringCvt.realfmt = StringCvt.realfmt
+   where type ('a, 'b) StringCvt.reader = ('a, 'b) StringCvt.reader
+   *)
+   where type Word.word = Word.word
+   where type Word8.word = Word8.word
    where type Word8Array.array = Word8Array.array
    where type Word8Vector.vector = Word8Vector.vector

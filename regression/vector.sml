@@ -31,6 +31,9 @@ fun prtest (s, s') = print(s ^ ": " ^ s' ^ "\n")
 local
     open Vector;
     infix 9 sub;
+    fun extract (vec, s, l) = VectorSlice.vector (VectorSlice.slice (vec, s, l))
+    fun mapi f (vec, s, l) = 
+      VectorSlice.mapi (fn (i,x) => f (i+s,x)) (VectorSlice.slice (vec, s, l))
 in
 
 val a = fromList [0,1,2,3,4,5,6];

@@ -307,8 +307,7 @@ structure Date :> DATE =
 					    concat ["%", str fmtChar, "\000"])
 		in if len = 0
 		      then raise Fail "Date.fmt"
-		   else Primitive.String.fromCharVector (Array.extract
-							 (buf, 0, SOME len))
+		   else Array.extract (buf, 0, SOME len)
 		end
 	     val max = size fmtStr
 	     fun loop (i, start, accum) =

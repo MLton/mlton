@@ -278,6 +278,19 @@ functor FFunctionalIO(type vec
                   (impOpenIn fileName)))
   end
 
+structure Word8Vector = 
+  struct
+     open Word8Vector
+     fun extract (arr, s, l) = 
+       Word8VectorSlice.vector (Word8VectorSlice.slice (arr, s, l))
+  end
+structure CharVector = 
+  struct
+     open CharVector
+     fun extract (arr, s, l) = 
+       CharVectorSlice.vector (CharVectorSlice.slice (arr, s, l))
+  end
+
 structure FuncBinIO =
   FFunctionalIO(type vec = Word8Vector.vector
                 type element = Word8.word

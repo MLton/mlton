@@ -2,6 +2,7 @@ signature MONO_VECTOR =
    sig
       type vector
       type elem
+      val maxLen: int 
       val fromList: elem list -> vector 
       val tabulate: int * (int -> elem) -> vector 
       val length: vector -> int 
@@ -26,7 +27,6 @@ signature MONO_VECTOR_EXTRA_PRE =
    sig
       include MONO_VECTOR
 
-      val maxLen: int 
       val unsafeSub: vector * int -> elem
 
       (* Used to implement Substring/String functions *)

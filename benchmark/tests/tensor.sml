@@ -1,4 +1,26 @@
 (* Obtained at http://www.arrakis.es/~worm/ *)
+
+signature MONO_VECTOR =
+  sig
+    type vector
+    type elem
+    val maxLen : int
+    val fromList : elem list -> vector
+    val tabulate : (int * (int -> elem)) -> vector
+    val length : vector -> int
+    val sub : (vector * int) -> elem
+    val extract : (vector * int * int option) -> vector
+    val concat : vector list -> vector
+    val mapi : ((int * elem) -> elem) -> (vector * int * int option) -> vector
+    val map : (elem -> elem) -> vector -> vector
+    val appi : ((int * elem) -> unit) -> (vector * int * int option) -> unit
+    val app : (elem -> unit) -> vector -> unit
+    val foldli : ((int * elem * 'a) -> 'a) -> 'a -> (vector * int * int option) -> 'a
+    val foldri : ((int * elem * 'a) -> 'a) -> 'a -> (vector * int * int option) -> 'a
+    val foldl : ((elem * 'a) -> 'a) -> 'a -> vector -> 'a
+    val foldr : ((elem * 'a) -> 'a) -> 'a -> vector -> 'a 
+  end
+
 (*
  Copyright (c) Juan Jose Garcia Ripoll.
  All rights reserved.
@@ -645,7 +667,7 @@ structure Tensor : TENSOR =
 		    raise Match
 	end
 
-	fun appi f tensor = Array.appi f (toArray tensor, 0, NONE)
+	fun appi f tensor = Array.appi f (toArray tensor)
 
 	fun app f tensor = Array.app f (toArray tensor)
 
@@ -1382,7 +1404,6 @@ struct
 
 	fun foldl f init a = foldli (fn (_, a, x) => f(a,x)) init (a,0,NONE)
 	fun foldr f init a = foldri (fn (_, x, a) => f(x,a)) init (a,0,NONE)
-
     end
 end (* BasicCNumberArray *)
 
@@ -1658,7 +1679,7 @@ struct
 	    fun print_one (i,x) =
 		(print(cvt x); if not(i = length) then print ", " else ())
 	in
-	    Array.appi print_one (a, 0, NONE)
+	    Array.appi print_one a
 	end
     fun boolArray a = array Bool.toString a
     fun intArray a = array Int.toString a
@@ -1982,7 +2003,7 @@ structure MonoTensor  =
 		else
 		    raise Match
 	end
-	fun appi f tensor = Array.appi f (toArray tensor, 0, NONE)
+	fun appi f tensor = Array.appi f (toArray tensor)
 	fun app f tensor = Array.app f (toArray tensor)
 	fun all f tensor =
 	    let val a = toArray tensor
@@ -2267,7 +2288,7 @@ structure MonoTensor  =
 		else
 		    raise Match
 	end
-	fun appi f tensor = Array.appi f (toArray tensor, 0, NONE)
+	fun appi f tensor = Array.appi f (toArray tensor)
 	fun app f tensor = Array.app f (toArray tensor)
 	fun all f tensor =
 	    let val a = toArray tensor

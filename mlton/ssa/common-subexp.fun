@@ -207,11 +207,8 @@ fun eliminate (program as Program.T {globals, datatypes, functions, main}) =
 					      Array_array => knownLength (arg ())
 					    | Array_length => length ()
 					    | Vector_fromArray => conv ()
-					    | String_fromCharVector => conv ()
 					    | String_fromWord8Vector => conv ()
-					    | String_toCharVector => conv ()
 					    | String_toWord8Vector => conv ()
-					    | String_size => length ()
 					    | Vector_length => length ()
 					    | _ => if Prim.isFunctional prim
 						      then doit ()

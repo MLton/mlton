@@ -144,12 +144,7 @@ signature PRIM =
 	     | Ref_assign (* implemented in backend *)
 	     | Ref_deref (* implemented in backend *)
 	     | Ref_ref (* implemented in backend *)
-	     | String_equal
-	     | String_fromCharVector
 	     | String_fromWord8Vector
-	     | String_size
-	     | String_sub (* implemented in backend *)
-	     | String_toCharVector
 	     | String_toWord8Vector
 	     | Thread_atomicBegin (* implemented in backend *)
 	     | Thread_atomicEnd (* implemented in backend *)
@@ -311,7 +306,6 @@ signature PRIM =
       val reff: t
       val scheme: t -> Scheme.t
       val serialize: t
-      val stringEqual: t
       val toString: t -> string
       val vectorLength: t
       val vectorSub: t

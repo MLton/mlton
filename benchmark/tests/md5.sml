@@ -17,7 +17,12 @@ signature MD5 =
 structure MD5 :> MD5 =
   struct
     structure W32 = Word32
-    structure W8V = Word8Vector
+    structure W8V = 
+      struct
+	open Word8Vector
+	fun extract (vec, s, l) = 
+	  Word8VectorSlice.vector (Word8VectorSlice.slice (vec, s, l))
+      end
     type word64  = {hi:W32.word,lo:W32.word}
     type word128 = {A:W32.word, B:W32.word, C:W32.word,  D:W32.word}
     type md5state = {digest:word128,

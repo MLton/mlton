@@ -32,6 +32,9 @@ local
     open Word8Array 
     infix 9 sub;
     val array0 = fromList [];
+    val copy = fn {src, si, len, dst, di} =>
+      Word8ArraySlice.copy {src = Word8ArraySlice.slice (src, si, len),
+			    dst = dst, di = di}
 in
 
 val i2w = Word8.fromInt;

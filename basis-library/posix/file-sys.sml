@@ -121,7 +121,7 @@ structure PosixFileSys: POSIX_FILESYS_EXTRA =
 	       then (size := 2 * !size
 		     ; buffer := make ()
 		     ; getcwd ())
-	    else Primitive.String.fromCharVector (extract (!buffer))
+	    else extract (!buffer)
       end
 	 
       val stdin = FD 0

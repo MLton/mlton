@@ -30,6 +30,10 @@ use "auxil.sml";
 
 local
     open Word8Vector;
+    fun extract (vec, s, l) = 
+      Word8VectorSlice.vector (Word8VectorSlice.slice (vec, s, l))
+    fun mapi f (vec, s, l) = 
+      Word8VectorSlice.mapi (fn (i,x) => f (i+s,x)) (Word8VectorSlice.slice (vec, s, l))
     val i2w = Word8.fromInt;
     infix 9 sub;
 in

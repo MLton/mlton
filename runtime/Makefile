@@ -53,7 +53,6 @@ OBJS =						\
 	basis/Socket/listen.o			\
 	basis/Socket/shutdown.o			\
 	basis/Stdio.o				\
-	basis/String/equal.o			\
 	basis/Thread.o				\
 	basis/Time.o				\
 	basis/Word32/addOverflow.o		\
@@ -201,7 +200,6 @@ DEBUG_OBJS =					\
 	basis/Socket/listen-gdb.o		\
 	basis/Socket/shutdown-gdb.o		\
 	basis/Stdio-gdb.o			\
-	basis/String/equal-gdb.o		\
 	basis/Thread-gdb.o			\
 	basis/Time-gdb.o			\
 	basis/Word32/addOverflow-gdb.o		\

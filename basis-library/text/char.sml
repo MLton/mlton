@@ -69,7 +69,6 @@ structure Char: CHAR_EXTRA =
 
       val fromString = StringCvt.scanString scan
 
-      (* QUESTION: was scanC specifically accepting more than the old basis? *)
       fun 'a scanC (reader: (char, 'a) StringCvt.reader)
 	: (char, 'a) StringCvt.reader =
 	 let
@@ -94,7 +93,7 @@ structure Char: CHAR_EXTRA =
 		      | #"^" => control reader state'
 		      | #"x" =>
 			   Reader.mapOpt chrOpt
-			   (StringCvt.digitsExact (StringCvt.HEX, 2) reader)
+			   (StringCvt.digits StringCvt.HEX reader)
 			   state'
 		      | _ =>
 			   Reader.mapOpt chrOpt

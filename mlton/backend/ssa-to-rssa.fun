@@ -1114,9 +1114,6 @@ fun convert (p: S.Program.t): Rssa.Program.t =
 							Vector.new1 (SOME t))
 				    in allocate (ys, sortTypes (0, ts))
 				    end
-			       | String_equal =>
-				    simpleCCall CFunction.stringEqual
-			       | String_sub => sub Type.char
 			       | Thread_atomicBegin =>
 				    (* assert(gcState.canHandle >= 0);
 				     * gcState.canHandle++;

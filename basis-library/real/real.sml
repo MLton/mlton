@@ -257,8 +257,7 @@ structure Real64: REAL =
 			val res = 
 			   String.translate
 			   (fn #"-" => "~" | c => str c)
-			   (Primitive.String.fromCharVector
-			    (Array.extract (buffer, 0, SOME len)))
+			   (Array.extract (buffer, 0, SOME len))
 		     in res
 		     end
 	    end

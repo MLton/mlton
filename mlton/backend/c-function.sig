@@ -49,6 +49,5 @@ signature C_FUNCTION =
       val needsArrayInit: t -> bool
       val returnTy: t -> Type.t option
       val size: t
-      val stringEqual: t
       val vanilla: {name: string, returnTy: Type.t option} -> t
    end
