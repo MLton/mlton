@@ -4,7 +4,7 @@ BIN = $(BUILD)/bin
 LIB = $(BUILD)/lib
 MLTON = mlton
 TARGET = self
-FLAGS = -target $(TARGET) -default-ann 'sequenceUnit true' -default-ann 'warnUnused true'
+FLAGS = -target $(TARGET) -default-ann 'sequenceUnit true'
 NAME = mlnlffigen
 PATH = $(BIN):$(shell echo $$PATH)
 
