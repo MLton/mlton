@@ -216,9 +216,11 @@ functor Sequence (S: sig
 		  then map (fn x => x) sl
 	       else seq
 	    fun append (sl1: 'a slice, sl2: 'a slice): 'a sequence =
-	       if length sl2 = 0
+	       if length sl1 = 0
+		  then sequence sl2
+	       else if length sl2 = 0
 		  then sequence sl1
-	       else 
+	       else
 		  let
 		     val l1 = length sl1
 		     val l2 = length sl2
