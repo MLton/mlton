@@ -36,7 +36,7 @@ CFLAGS = -O2
 DEBUGFLAGS = -gstabs+ -g2
 
 CFILES = 							\
-	$(shell find basis -type f | grep '\.c$$' | grep -v Real/class)	\
+	$(shell find basis -type f | grep '\.c$$' | grep -v Real/)	\
 	$(shell find Posix -type f | grep '\.c$$')		\
 	gc.c							\
 	platform.c
@@ -51,9 +51,9 @@ FILES = $(basename $(CFILES))
 
 # EXTRA_CFILES is for files that we don't want compiled in the big
 # lump when compiling COMPILE_FAST.
-# Real/class can't be there because gcc -O2 messes it up.
+# Real/*.c can't be there because gcc -O2 messes some of them up.
 EXTRA_CFILES =			\
-	basis/Real/class.c	\
+	$(shell find basis/Real -type f | grep '\.c$$')	\
 	platform/$(TARGET_OS).c
 
 EXTRA_FILES = $(basename $(EXTRA_CFILES))
@@ -95,8 +95,9 @@ runtime.c: $(CFILES)
 	cat $(CFILES) >runtime.c
 
 # gcc 3.2 is buggy (or maybe we're not following the C spec) when
-# compiling Real/class.c with -O2. 
-basis/Real/class.o: basis/Real/class.c
+# compiling Real/*.c with -O2.   Files that have been known to cause
+# problems are class.c and gdtoa.c.  But there may be others.
+basis/Real/%.o: basis/Real/%.c
 	$(CC) $(CFLAGS) -O1 -c -o $@ $<
 
 %-gdb.o: %.c $(HFILES)
