@@ -552,6 +552,7 @@ data.
 \begin{verbatim}
 signature MLTON_RANDOM =
    sig
+      val alphaNumChar: unit -> char
       val alphaNumString: int -> string
       val rand: unit -> word
       val seed: unit -> word option
@@ -561,6 +562,9 @@ signature MLTON_RANDOM =
 \end{verbatim}
 
 \begin{description}
+\entry{alphaNumChar ()}
+returns a random alphanumeric character.
+
 \entry{alphaNumString n}
 return a string of length {\tt n} of random alphanumeric characters.
 
