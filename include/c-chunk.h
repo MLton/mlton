@@ -231,7 +231,7 @@ unaryReal(sqrt, sqrt)
 unaryReal(tan, tan)
 #undef unaryReal
 
-//Real64 ldexp (Real64 x, Int32 i);
+double ldexp (double x, int i);
 static inline Real64 Real64_ldexp (Real64 x, Int32 i) {
 	return ldexp (x, i);
 }
