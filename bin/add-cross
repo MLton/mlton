@@ -95,6 +95,6 @@ cd $original
 $src/build/bin/mlton -build-constants true | 
 	ssh $machine "cd $tmp/runtime &&
 			cat >$exe.c && 
-			gcc -I. -o $exe $exe.c libmlton.a"
+			gcc -I. -o $exe $exe.c libmlton.a -lgmp"
 ssh $machine "$tmp/runtime/$exe" >"$lib/$crossTarget/constants"
 ssh $machine "rm -rf $tmp"
