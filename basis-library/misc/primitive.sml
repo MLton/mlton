@@ -566,6 +566,7 @@ structure Primitive =
 	    val minNormalPos = _ffi "Real_minNormalPos": real;
 	    val minPos = _ffi "Real_minPos": real;
 	    val modf = _prim "Real_modf": real * real ref -> real;
+	    val nextAfter = _ffi "Real_nextAfter": real * real -> real;
 	    val round = _prim "Real_round": real -> real;
 	    val signBit = _ffi "Real_signBit": real -> bool;
 	    val toInt = _prim "Real_toInt": real -> int;

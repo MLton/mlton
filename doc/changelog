@@ -1,6 +1,7 @@
 Here are the changes since version 20030312.
 
 * 2003-05-25
+  - Added Real.nextAfter.
   - Added OS.Path.{from,to}UnixPath, which are the identity function
     on Unix.
 

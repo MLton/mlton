@@ -507,7 +507,7 @@ structure Real64: REAL =
 
       val toDecimal = fn _ => raise (Fail "<Real.toDecimal not implemented>")
       val fromDecimal = fn _ => raise (Fail "<Real.fromDecimal not implemented>")
-      val nextAfter = fn _ => raise (Fail "<Real.nextAfter not implemented>")
+      val nextAfter = Real.nextAfter
   end
 
 structure Real = Real64   
