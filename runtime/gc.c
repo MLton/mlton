@@ -3932,7 +3932,7 @@ static void setMemInfo (GC_state s) {
 static int totalSwap () {
 	static char buffer[256];
 	FILE *file;
-	int total_size = 0;
+	uint total_size = 0;
 
 	file = popen ("/sbin/swapctl -s | awk '{ print $8; }'\n", "r");
 	if (file == NULL)
@@ -3941,14 +3941,13 @@ static int totalSwap () {
 	fgets (buffer, 255, file);
 	total_size = atoi (buffer);
 	pclose (file);
-	printf ("Total amount of swap we think there is: %d\n", 
-		total_size * 1024);
 	return total_size * 1024;
 }
 
 /* returns total amount of memory available */
 static int totalRam () {
-	int mem, len, mib[2];
+	uint mem
+	int len, mib[2];
 	
 	mib[0] = CTL_HW;
 	mib[1] = HW_PHYSMEM;

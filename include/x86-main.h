@@ -37,7 +37,7 @@ word threadTemp;
 
 #if (defined (__CYGWIN__))
 #define ReturnToC "_Thread_returnToC"
-#elif (defined (__FreeBSD__) || defined (__linux__) || defined (__sun__))
+#elif (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__sun__))
 #define ReturnToC "Thread_returnToC"
 #else
 #error ReturnToC not defined
