@@ -6,7 +6,7 @@ MLTON = mlton
 NAME = mlton
 AOUT = mlton-compile
 HOST = self
-FLAGS = @MLton gc-summary -- -host $(HOST) -v -o $(AOUT)
+FLAGS = @MLton fixed-heap 500m gc-summary -- -host $(HOST) -v -o $(AOUT)
 PATH = $(BIN):$(shell echo $$PATH)
 # If we're compiling MLton with an older version of itself, use the stubs for
 # the MLton structure.  If we're compiling it with itself, don't.
@@ -28,14 +28,14 @@ $(AOUT): $(NAME).cm $(shell $(MLTON) -stop f mlton.cm)
 	size $(AOUT)
 	strip $(AOUT)
 
-.PHONY:	cm
-cm: cm-stubs
+.PHONY:	$(NAME)_cm
+$(NAME)_cm: $(NAME)-stubs_cm
 	grep -v mlton-stubs $(NAME)-stubs.cm >$(NAME).cm
 
 # This makes a version of MLton that can be compiled in the standard basis
 # library.  I.E. it doesn't require a MLton structure.
-.PHONY:	cm-stubs
-cm-stubs: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
+.PHONY:	$(NAME)-stubs_cm
+$(NAME)-stubs_cm: front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml
 	(								\
 		echo 'Group is'&&					\
 		cmcat sources.cm | grep -v 'mlton-stubs-in-smlnj' |	\
