@@ -362,6 +362,13 @@ fun commandLine (args: string list): unit =
 	 if !keepDot andalso List.isEmpty (!keepPasses)
 	    then keepSSA := true
 	 else ()
+      val _ =
+	 case !hostType of
+	    Cygwin => if !profile
+			 then usage "-profile true not allowed on Cygwin"
+		      else ()
+	  | FreeBSD => ()
+	  | Linux => ()
    in case result of
       Result.No switch => usage (concat ["invalid switch: ", switch])
     | Result.Yes [] =>
