@@ -1,5 +1,10 @@
 Here are the changes since version 20041109.
 
+* 2004-12-22
+  - Fixed Real32.fmt StringCvt.EXACT, which had been producing too
+    many digits of precision because it was converting to a
+    Real64.real.
+
 * 2004-12-15
   - Replaced MLB path variable MLTON_ROOT with SML_LIB, to use a more
     compiler-independent name.  We will keep MLTON_ROOT aliased to
@@ -10,8 +15,8 @@ Here are the changes since version 20041109.
 
 * 2004-11-24
   - Added support for MLton.Process.create, which works on all
-  platforms (including Windows-based ones like Cygwin and MinGW) and
-  allows better control over std{in,out,err} for child process.
+    platforms (including Windows-based ones like Cygwin and MinGW) and
+    allows better control over std{in,out,err} for child process.
 
 --------------------------------------------------------------------------------
 
