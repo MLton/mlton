@@ -96,7 +96,7 @@ val ssa2Passes : pass list ref = ref
 (*     {name = "removeUnused4", doit = RemoveUnused2.remove}, *)
      {name = "deepFlatten", doit = DeepFlatten.flatten},
      {name = "refFlatten", doit = RefFlatten.flatten},
-(*     {name = "removeUnused5", doit = RemoveUnused2.remove}, *)
+     {name = "removeUnused5", doit = RemoveUnused2.remove},
      {name = "zone", doit = Zone.zone}
     ]
 
