@@ -32,7 +32,6 @@ structure Const =
 fun unescape s =
    let
       fun sub i = Char.toInt (String.sub (s, i)) - Char.toInt #"0"
-	 
       fun loop (i, ac) =
 	 if i < 0
 	    then ac
@@ -40,7 +39,8 @@ fun unescape s =
 	    loop (i - 3,
 		  Char.fromInt ((sub (i - 2) * 10 + sub (i - 1)) * 10 + sub i)
 		  :: ac)
-   in implode (loop (String.size s - 1, []))
+   in
+      implode (loop (String.size s - 1, []))
    end
 
 val unescape = Trace.trace ("unescape", String.layout, String.layout) unescape
@@ -51,12 +51,13 @@ structure ConstType =
    end
 datatype z = datatype ConstType.t
 
-fun constants (decs: CoreML.Dec.t vector) =
+type res = (string * ConstType.t) list
+
+fun constants (decs: CoreML.Dec.t vector): res =
    let
       open CoreML
       open Exp Dec
-      type ac = (string * ConstType.t) list
-      fun loopExp (e: Exp.t, ac: ac): ac =
+      fun loopExp (e: Exp.t, ac: res): res =
 	 case Exp.node e of
 	    Prim p =>
 	       (case Prim.name p of
@@ -94,11 +95,11 @@ fun constants (decs: CoreML.Dec.t vector) =
 	  | Handle (e, m) => loopMatch (m, loopExp (e, ac))
 	  | Raise {exn, ...} => loopExp (exn, ac)
 	  | _ => ac
-      and loopMatch (m, ac: ac): ac =
+      and loopMatch (m, ac: res): res =
 	 Vector.fold (Match.rules m , ac, fn ((_, e), ac) => loopExp (e, ac))
-      and loopDecs (ds: Dec.t vector, ac: ac): ac =
+      and loopDecs (ds: Dec.t vector, ac: res): res =
 	 Vector.fold (ds, ac, loopDec)
-      and loopDec (d: Dec.t, ac: ac): ac =
+      and loopDec (d: Dec.t, ac: res): res =
 	 case Dec.node d of
 	    Val {exp, ...} => loopExp (exp, ac)
 	  | Fun {decs, ...} =>
@@ -110,39 +111,45 @@ fun constants (decs: CoreML.Dec.t vector) =
    end
    
 fun build (decs: CoreML.Dec.t vector, out: Out.t): unit =
-   let
-      val constants = constants decs
-   in
-      List.foreach
-      (List.concat
-       [["#include <stdio.h>"],
-	List.map (!Control.includes, fn i =>
-		  concat ["#include <", i, ">"]),
-	["struct GC_state gcState;",
-	 "int main (int argc, char **argv) {"],
-	List.map
-	(constants, fn (s, t) =>
-	 let
-	    fun doit (format, value) =
-	       concat ["fprintf (stdout, \"", format, "\\n\", ",
-		       value, ");"]
-	 in case t of
+   List.foreach
+   (List.concat
+    [["#include <stdio.h>"],
+     List.map (!Control.includes, fn i =>
+	       concat ["#include <", i, ">"]),
+     ["struct GC_state gcState;",
+      "int main (int argc, char **argv) {"],
+     List.map
+     (constants decs, fn (s, t) =>
+      let
+	 fun doit (format, value) =
+	    concat ["fprintf (stdout, \"", s, " = ", format, "\\n\", ",
+		    value, ");"]
+      in
+	 case t of
 	    Bool => doit ("%s", concat [s, "? \"true\" : \"false\""])
 	  | Int => doit ("%d", s)
 	  | Real => doit ("%.20f", s)
 	  | String =>
 	       concat ["MLton_printStringEscaped (f, ", s, ");"]
 	  | Word => doit ("%x", s)
-	 end),
-	["return 0;}"]],
-       fn l => (Out.output (out, l); Out.newline out))
-   end
+      end),
+     ["return 0;}"]],
+    fn l => (Out.output (out, l); Out.newline out))
 
 fun load (decs, ins: In.t): string -> Const.t =
    let
       val constants = constants decs
       val valueLines =
-	 List.map (In.lines ins, fn s => String.dropSuffix (s, 1))
+	 List.map2
+	 (constants, In.lines ins,
+	  fn ((name, _), s) =>
+	  case String.tokens (s, Char.isSpace) of
+	     [name', "=", value] =>
+		if name = name'
+		   then value
+		else Error.bug (concat ["expected ", name,
+					" but saw ", name'])
+	   | _ => Error.bug (concat ["strange constants line ", s]))
       (* Parse the output. *)
       val values =
 	 List.map2 (constants,
